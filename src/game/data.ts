@@ -164,30 +164,50 @@ export type ItemKey =
   | "weapon_3"
   | "armor_1"
   | "armor_2"
-  | "armor_3";
+  | "armor_3"
+  | "ring_power"
+  | "ring_vital";
+
+/** 아이템 등급 (클래식 MMORPG 관례 — 테두리/이름색 구분) */
+export type ItemTier = "common" | "rare" | "epic";
+
+/** 장비 강화 상한 (2D MMORPG 기본 요소 — 강화 시스템) */
+export const UPGRADE_MAX = 5;
+/** 강화 성공률 (%) — 현재 단계 인덱스 (0=+0→+1, … 4=+4→+5) */
+export const UPGRADE_RATES = [100, 85, 70, 55, 40];
+/** 강화 비용 — 무기/방어구 각 단계 기본가 */
+export const UPGRADE_COST = { weapon: 45, armor: 38 } as const;
 
 export type ItemDef = {
   key: ItemKey;
-  kind: "consumable" | "weapon" | "armor";
+  kind: "consumable" | "weapon" | "armor" | "accessory";
   name: string;
   icon: string; // 텍스처 키
   price: number; // 상점 구매가 (0 = 판매 안 함/기본 지급)
+  tier: ItemTier; // 등급 (UI 테두리/이름색)
   heal?: number; // HP 회복
   restore?: number; // MP 회복
   atk?: number; // 무기 공격력 보너스
   def?: number; // 방어구 방어력
+  crit?: number; // 장신구 — 크리티컬 확률 증가 (%p)
+  maxHp?: number; // 장신구 — 최대 HP 증가
 };
 
 export const ITEMS: Record<ItemKey, ItemDef> = {
-  potion_hp: { key: "potion_hp", kind: "consumable", name: "HP 물약", icon: "item_potion_hp", price: 30, heal: 50 },
-  potion_mp: { key: "potion_mp", kind: "consumable", name: "MP 물약", icon: "item_potion_mp", price: 25, restore: 30 },
-  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 0, atk: 0 },
-  weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 110, atk: 6 },
-  weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 260, atk: 14 },
-  armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 0, def: 0 },
-  armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 95, def: 3 },
-  armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 230, def: 7 },
+  potion_hp: { key: "potion_hp", kind: "consumable", name: "HP 물약", icon: "item_potion_hp", price: 30, tier: "common", heal: 50 },
+  potion_mp: { key: "potion_mp", kind: "consumable", name: "MP 물약", icon: "item_potion_mp", price: 25, tier: "common", restore: 30 },
+  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 0, tier: "common", atk: 0 },
+  weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 110, tier: "rare", atk: 6 },
+  weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 260, tier: "epic", atk: 14 },
+  armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 0, tier: "common", def: 0 },
+  armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 95, tier: "rare", def: 3 },
+  armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 230, tier: "epic", def: 7 },
+  ring_power: { key: "ring_power", kind: "accessory", name: "힘의 반지", icon: "item_ring_power", price: 150, tier: "rare", crit: 7 },
+  ring_vital: { key: "ring_vital", kind: "accessory", name: "생명의 반지", icon: "item_ring_vital", price: 130, tier: "rare", maxHp: 25 },
 };
+
+/** 강화 1단계당 보너스 */
+export const UPGRADE_BONUS = { weaponAtk: 2, armorDef: 1 } as const;
 
 /** 상점 판매 목록 (표시 순서) */
 export const SHOP_STOCK: ItemKey[] = [
@@ -197,6 +217,8 @@ export const SHOP_STOCK: ItemKey[] = [
   "armor_2",
   "weapon_3",
   "armor_3",
+  "ring_power",
+  "ring_vital",
 ];
 
 export type DialogueDef = { speaker: string; lines: string[] };

@@ -158,6 +158,10 @@ export class WorldScene extends Phaser.Scene {
       this.player.weapon = (savedPlayer.weapon ?? "weapon_1") as ItemKey;
       this.player.armor = (savedPlayer.armor ?? "armor_1") as ItemKey;
       this.player.owned = (savedPlayer.owned ?? ["weapon_1", "armor_1"]) as ItemKey[];
+      // 강화/장신구 복원 (구 세이브는 loadSave()가 기본값 채움)
+      this.player.upgrades.weapon = savedPlayer.upWea ?? 0;
+      this.player.upgrades.armor = savedPlayer.upArm ?? 0;
+      this.player.accessory = (savedPlayer.accessory ?? null) as ItemKey | null;
     }
     this.playerRef = this.player;
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
@@ -475,20 +479,21 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  spawnDamageText(x: number, y: number, val: number) {
+  spawnDamageText(x: number, y: number, val: number, crit = false) {
     const t = this.dmgPool.find((d) => d.scene && !d.active);
     if (!t) return; // 풀 소진 시 조용히 포기 (프레임 보호)
-    t.setText(`${val}`).setColor("#ffffff");
+    // 크리티컬: 금색 큰 글씨 + 느낌표 (타격감 강조)
+    t.setText(crit ? `${val}!` : `${val}`).setColor(crit ? "#ffd76a" : "#ffffff");
     t.setPosition(x, y)
       .setActive(true)
       .setVisible(true)
       .setAlpha(1)
-      .setScale(1);
+      .setScale(crit ? 1.45 : 1);
     this.tweens.add({
       targets: t,
-      y: y - 34,
+      y: y - (crit ? 46 : 34),
       alpha: 0,
-      duration: 550,
+      duration: crit ? 700 : 550,
       ease: "Quad.out",
       onComplete: () => t.setActive(false).setVisible(false),
     });
@@ -920,6 +925,13 @@ export class WorldScene extends Phaser.Scene {
     const onUse = (v: { kind: "hp" | "mp" }) => {
       this.player?.usePotion(v.kind);
     };
+    const onUpgrade = (v: { slot: "weapon" | "armor" }) => {
+      if (!this.player || this.dialoguing) return;
+      this.player.tryUpgrade(v.slot);
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
 
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
@@ -928,6 +940,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:buy", onBuy);
     EventBus.on("rpg:equip", onEquip);
     EventBus.on("rpg:use", onUse);
+    EventBus.on("rpg:upgrade", onUpgrade);
     EventBus.on("respawn", onRespawn);
     EventBus.on("dialogue:done", onDialogueDone);
     this.events.once("shutdown", () => {
@@ -938,6 +951,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:buy", onBuy);
       EventBus.off("rpg:equip", onEquip);
       EventBus.off("rpg:use", onUse);
+      EventBus.off("rpg:upgrade", onUpgrade);
       EventBus.off("respawn", onRespawn);
       EventBus.off("dialogue:done", onDialogueDone);
     });
@@ -1172,6 +1186,7 @@ export class WorldScene extends Phaser.Scene {
       gold: this.player.gold,
       atkTotal: this.player.atkTotal,
       defTotal: this.player.defTotal,
+      critRate: this.player.critRate,
     });
     this.emitRpgState();
   }
@@ -1186,6 +1201,9 @@ export class WorldScene extends Phaser.Scene {
       owned: [...this.player.owned],
       weapon: this.player.weapon,
       armor: this.player.armor,
+      accessory: this.player.accessory,
+      upWea: this.player.upgrades.weapon,
+      upArm: this.player.upgrades.armor,
       nearShop: this.nearShop,
       shopStock: [...SHOP_STOCK],
     };
@@ -1208,6 +1226,9 @@ export class WorldScene extends Phaser.Scene {
       weapon: this.player.weapon,
       armor: this.player.armor,
       owned: [...this.player.owned],
+      upWea: this.player.upgrades.weapon,
+      upArm: this.player.upgrades.armor,
+      accessory: this.player.accessory,
     });
   }
 
@@ -1272,6 +1293,18 @@ export class WorldScene extends Phaser.Scene {
   }
   sfxEquip() {
     audio.sfx.equip();
+  }
+  /** 크리티컬 명중 — metal_02 고피치 샤프 음 */
+  sfxCrit() {
+    audio.sfx.crit();
+  }
+  /** 강화 성공 — 퀘스트 차임 저피치 (무게감) */
+  sfxUpgradeOk() {
+    audio.sfx.upgradeOk();
+  }
+  /** 강화 실패 — hurt 저피치 (둔탁한 낙방음) */
+  sfxUpgradeFail() {
+    audio.sfx.upgradeFail();
   }
 
   /* ================= 정리 ================= */

@@ -1,12 +1,13 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
-import { ITEMS, type ItemKey } from "../data";
+import { ITEMS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_COST, type ItemKey } from "../data";
 
 /**
  * 주인공 세르츠.
  *  - 3프레임 베기 모션 + 참격 초승달 이펙트 / 전방 160px x 폭 116px 판정
  *  - 베기 시 살짝 전진(미세 러지) + 히트스톱 + 넉백 — 타격감
  *  - 2D MMORPG 기본 요소: 골드·물약·장비(무기 ATK/방어구 DEF)·방어 판정
+ *  - RPG 2차 확장: 크리티컬·장비 강화(+1~+5)·장신구 슬롯
  *  - 월드 경계 충돌
  */
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -25,8 +26,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   potions: { hp: number; mp: number } = { hp: 2, mp: 1 }; // 시작 지급
   weapon: ItemKey = "weapon_1";
   armor: ItemKey = "armor_1";
+  accessory: ItemKey | null = null; // 장신구 슬롯 (반지 1개)
   owned: ItemKey[] = ["weapon_1", "armor_1"];
+  upgrades: { weapon: number; armor: number } = { weapon: 0, armor: 0 }; // 강화 단계 (+0~+5)
   private potCd = 0;
+
+  /** 기본 크리티컬 확률 (%) — 장신구로 증가 */
+  private static readonly BASE_CRIT = 8;
+  private static readonly CRIT_MULT = 1.7;
 
   speed = 230;
   facing: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0);
@@ -194,7 +201,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (Math.abs(ex) <= halfW + tw && Math.abs(ey) <= halfH + th) {
         this.hitSet.add(e);
         hits++;
-        e.takeDamage(Math.round(this.atkTotal * dmgMul), dir, knock);
+        const { dmg, crit } = this.rollDamage(dmgMul);
+        if (crit) this.scene.sfxCrit();
+        e.takeDamage(dmg, dir, knock, crit);
       }
     }
     if (hits > 0) {
@@ -239,7 +248,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (d <= 118) {
           this.hitSet.add(e);
           const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-          e.takeDamage(Math.round(this.atkTotal * 1.6), away, 300);
+          const { dmg, crit } = this.rollDamage(1.6);
+          if (crit) this.scene.sfxCrit();
+          e.takeDamage(dmg, away, 300, crit);
         }
       }
       this.scene.onMeleeConnect(1);
@@ -284,7 +295,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
           if (d <= 64) {
             this.hitSet.add(e);
-            e.takeDamage(Math.round(this.atkTotal * 2.1), dir, 360);
+            const { dmg, crit } = this.rollDamage(2.1);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, dir, 360, crit);
             this.scene.onMeleeConnect(1);
           }
         }
@@ -337,8 +350,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.lv++;
       leveled = true;
       this.maxHp += 18;
+      this.maxMp += 6; // 레벨업 MP 성장
       this.atk += 3;
       this.hp = this.maxHp;
+      this.mp = this.maxMp;
     }
     if (leveled) {
       this.scene.sfxLevelUp();
@@ -353,14 +368,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /* ---------------- RPG 기본 요소 ---------------- */
 
-  /** 장비 포함 실제 공격력 */
+  /** 장비+강화 포함 실제 공격력 */
   get atkTotal(): number {
-    return this.atk + (ITEMS[this.weapon].atk ?? 0);
+    return this.atk + (ITEMS[this.weapon].atk ?? 0) + this.upgrades.weapon * 2;
   }
 
-  /** 장비 포함 실제 방어력 */
+  /** 장비+강화 포함 실제 방어력 */
   get defTotal(): number {
-    return ITEMS[this.armor].def ?? 0;
+    return (ITEMS[this.armor].def ?? 0) + this.upgrades.armor;
+  }
+
+  /** 크리티컬 확률 (%) — 기본 8% + 힘의 반지 +7%p */
+  get critRate(): number {
+    const bonus = this.accessory ? ITEMS[this.accessory].crit ?? 0 : 0;
+    return Player.BASE_CRIT + bonus;
+  }
+
+  /** 데미지 굴림 — 크리티컬 판정 포함 */
+  private rollDamage(mult: number): { dmg: number; crit: boolean } {
+    const crit = Math.random() * 100 < this.critRate;
+    return { dmg: Math.round(this.atkTotal * mult * (crit ? Player.CRIT_MULT : 1)), crit };
   }
 
   /** 피격 판정 — 방어력만큼 감쇄 (최소 1) */
@@ -405,13 +432,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.emitHud();
   }
 
-  /** 장비 장착 (인벤토리에서) */
+  /** 장비/장신구 장착 (인벤토리에서) */
   equip(key: ItemKey): boolean {
     const item = ITEMS[key];
     if (!item || !this.owned.includes(key)) return false;
-    if (item.kind === "weapon") this.weapon = key;
-    else if (item.kind === "armor") this.armor = key;
-    else return false;
+    if (item.kind === "weapon") {
+      this.weapon = key;
+    } else if (item.kind === "armor") {
+      this.armor = key;
+    } else if (item.kind === "accessory") {
+      if (this.accessory === key) return false;
+      // 이전 장신구 보너스 회수 (최대 HP)
+      const old = this.accessory ? ITEMS[this.accessory] : null;
+      if (old?.maxHp) {
+        this.maxHp -= old.maxHp;
+        this.hp = Math.min(this.hp, this.maxHp);
+      }
+      this.accessory = key;
+      // 새 장신구 보너스 적용 (초과분만큼 HP도 증가)
+      if (item.maxHp) {
+        this.maxHp += item.maxHp;
+        this.hp = Math.min(this.maxHp, this.hp + item.maxHp);
+      }
+    } else return false;
     this.scene.sfxEquip();
     this.scene.spawnPickupText(this.x, this.y - 30, `${item.name} 장착!`, "#ffd76a");
     this.scene.emitHud();
@@ -432,8 +475,44 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.owned.push(key);
     // 구매 즉시 장착 (더 좋은 티어면 자연스러운 흐름)
     if (item.kind === "weapon") this.weapon = key;
-    else this.armor = key;
+    else if (item.kind === "armor") this.armor = key;
+    else if (item.kind === "accessory") this.equip(key);
     return true;
+  }
+
+  /* ---------------- 장비 강화 (2D MMORPG 기본 요소) ---------------- */
+
+  readonly upMax = 5; // UPGRADE_MAX와 동일 값 (런타임 상수)
+
+  /** 다음 강화 비용 */
+  upgradeCost(slot: "weapon" | "armor"): number {
+    const base = slot === "weapon" ? UPGRADE_COST.weapon : UPGRADE_COST.armor;
+    return base * (this.upgrades[slot] + 1);
+  }
+
+  /** 다음 강화 성공률 (%) */
+  upgradeRate(slot: "weapon" | "armor"): number {
+    return UPGRADE_RATES[this.upgrades[slot]] ?? 0;
+  }
+
+  /** 강화 시도 — 결과 타입 반환 (골드는 성공/실패 모두 소모) */
+  tryUpgrade(slot: "weapon" | "armor"): "ok" | "fail" | "max" | "poor" {
+    const cur = this.upgrades[slot];
+    if (cur >= this.upMax) return "max";
+    const cost = this.upgradeCost(slot);
+    if (this.gold < cost) return "poor";
+    this.gold -= cost;
+    const ok = Math.random() * 100 < (UPGRADE_RATES[cur] ?? 0);
+    if (ok) {
+      this.upgrades[slot] = cur + 1;
+      this.scene.sfxUpgradeOk();
+      this.scene.spawnPickupText(this.x, this.y - 44, `강화 성공! +${cur + 1}`, "#ffd76a");
+    } else {
+      this.scene.sfxUpgradeFail();
+      this.scene.spawnPickupText(this.x, this.y - 44, "강화 실패…", "#ff9a9a");
+    }
+    this.scene.emitHud();
+    return ok ? "ok" : "fail";
   }
 
   revive(x: number, y: number) {

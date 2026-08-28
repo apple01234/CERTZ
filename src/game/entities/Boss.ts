@@ -248,7 +248,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   /* ---------- 피격/사망 ---------- */
 
-  takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number) {
+  takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
     this.hp -= dmg;
     this.knockVec.set(dir.x * knock * 0.12, dir.y * knock * 0.12); // 보스는 넉백 거의 안 됨
@@ -257,7 +257,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(60, () => {
       if (this.alive && this.active) this.clearTint();
     });
-    this.scene.spawnDamageText(this.x + Phaser.Math.Between(-14, 14), this.y - 44, dmg);
+    this.scene.spawnDamageText(this.x + Phaser.Math.Between(-14, 14), this.y - 44, dmg, crit);
     this.scene.spawnHitSpark(this.x, this.y - 30);
     EventBus.emit("boss:update", { hp: Math.max(0, this.hp), maxHp: this.maxHp });
 

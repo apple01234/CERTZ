@@ -15,6 +15,7 @@ export type HudState = {
   gold: number;
   atkTotal: number;
   defTotal: number;
+  critRate: number;
 };
 
 /** 인벤토리/상점 패널 상태 */
@@ -25,6 +26,9 @@ export type RpgState = {
   owned: string[];
   weapon: string;
   armor: string;
+  accessory: string | null;
+  upWea: number;
+  upArm: number;
   nearShop: boolean;
   shopStock: string[];
 };

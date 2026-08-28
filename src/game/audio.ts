@@ -131,4 +131,16 @@ export const sfx = {
   equip() {
     play("sfx_quest", 0.5, 0.85);
   },
+  /** 크리티컬 명중 — metal_02 고피치 샤프 음 (타격감 강조) */
+  crit() {
+    play("sfx_hit", 0.6, 1.55 + Math.random() * 0.15);
+  },
+  /** 강화 성공 — 퀘스트 차임 저피치 (무게감 있는 성공음) */
+  upgradeOk() {
+    play("sfx_quest", 0.6, 0.7);
+  },
+  /** 강화 실패 — hurt 저피치 (둔탁한 낙방음) */
+  upgradeFail() {
+    play("sfx_hurt", 0.5, 0.65);
+  },
 };

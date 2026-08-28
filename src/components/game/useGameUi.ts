@@ -7,12 +7,13 @@ type Skills = { mp: number; s1Cd: number; s1Max: number; s2Cd: number; s2Max: nu
 
 const emptyHud: HudState = {
   hp: 100, maxHp: 100, mp: 60, maxMp: 60, lv: 1, exp: 0, expNext: 60,
-  gold: 30, atkTotal: 12, defTotal: 0,
+  gold: 30, atkTotal: 12, defTotal: 0, critRate: 8,
 };
 const emptyQuest: QuestState = { title: "", desc: "", current: 0, target: 0, distance: null };
 const emptyRpg: RpgState = {
   gold: 30, hpPot: 2, mpPot: 1, owned: ["weapon_1", "armor_1"],
-  weapon: "weapon_1", armor: "armor_1", nearShop: false,
+  weapon: "weapon_1", armor: "armor_1", accessory: null,
+  upWea: 0, upArm: 0, nearShop: false,
   shopStock: [],
 };
 

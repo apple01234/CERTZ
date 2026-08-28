@@ -27,6 +27,10 @@ export type SaveData = {
   weapon?: string;
   armor?: string;
   owned?: string[];
+  /* ↓ RPG 2차 확장: 강화/장신구 (구 세이브 호환) */
+  upWea?: number;
+  upArm?: number;
+  accessory?: string | null;
 };
 
 export function loadSave(): SaveData | null {
@@ -42,6 +46,10 @@ export function loadSave(): SaveData | null {
     if (typeof d.weapon !== "string") d.weapon = "weapon_1";
     if (typeof d.armor !== "string") d.armor = "armor_1";
     if (!Array.isArray(d.owned)) d.owned = [d.weapon, d.armor];
+    // 강화/장신구 (구버전 세이브 호환)
+    if (typeof d.upWea !== "number") d.upWea = 0;
+    if (typeof d.upArm !== "number") d.upArm = 0;
+    if (d.accessory === undefined) d.accessory = null;
     return d;
   } catch {
     return null;

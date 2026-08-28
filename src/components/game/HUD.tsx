@@ -108,6 +108,9 @@ export function HUD({
             <span className="rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-sky-300 backdrop-blur-sm">
               방어 {hud.defTotal}
             </span>
+            <span className="rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-yellow-200 backdrop-blur-sm">
+              크리 {hud.critRate}%
+            </span>
           </div>
         </div>
       </div>

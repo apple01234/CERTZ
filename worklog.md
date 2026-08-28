@@ -230,3 +230,36 @@ Stage Summary:
 - 산출물: src/game/entities/Player.ts
 - 공격감: 완전 제자리 → "살짝 돌진 + 넉백 밀어내기" 조합 타격감 (사용자 피드백 반영)
 - 제약 준수: APK 미빌드 (사용자 지시 시에만)
+
+---
+Task ID: rpg-2
+Agent: Super Z (main)
+Task: 사용자 지시 "RPG 기본 요소 제작" + 업로드 "Pixel Crawler - Free Pack 2.11.zip" — 업로드 재차 미도착 확인 (2회째) → 기존 CC0 에셋으로 RPG 요소 2차 확장: 크리티컬·장비 강화·장신구·아이템 등급
+
+Work Log:
+- 업로드 확인: /home/z/my-project/upload/ 비어있음 (8/26 이후 갱신 없음), 전수 검색으로도 zip 미도착 — itch.io 안티봇으로 직접 다운로드도 불가 (assets-1 확인됨)
+- 에셋 (전부 기존 CC0 소스, scripts/build_rpg2_assets.py 베이크 3종):
+  - Kenney Tiny Dungeon tile_0101 틴트 2종 → item_ring_power(적색)/item_ring_vital(녹색)
+  - Kenney Tiny Dungeon tile_0117 → icon_hammer (강화 섹션 아이콘)
+- 신규 시스템 (RPG 2차 확장):
+  1) 크리티컬 히트 — 기본 8%, 힘의 반지 +7%p, 크리 데미지 x1.7 (round), 크리 시 데미지텍스트 금색 #ffd76a + 1.45배 + "!" 접미 + 전용 SFX(metal_02 고피치), 3개 공격 경로(기본베기/회전베기/돌진베기) 전부 적용
+  2) 장비 강화 — +1~+5, 성공률 [100,85,70,55,40]%, 비용 무기 45x단계/방어구 38x단계, 무기 +2 ATK·방어구 +1 DEF/단계, 실패 시 골드만 소모, 상점 패널 "장비 강화" 섹션(망치 아이콘) — rpg:upgrade 이벤트
+  3) 장신구 슬롯 — ring_power 힘의 반지(150G, 크리+7%p)/ring_vital 생명의 반지(130G, 최대HP+25), accessory 단일 슬롯, 장착 시 maxHp 이전/회수 처리, 구매 즉시 장착, 인벤토리 "장신구" 섹션
+  4) 아이템 등급 — ItemTier(common/rare/epic): 테두리+이름색(회색/초록/보라)+라벨, 물약·1티어=일반, 2티어·반지=고급, 3티어=희귀
+  5) 레벨업 성장 확장 — maxMp +6/레벨 (기존 maxHp+18, atk+3에 추가), 레벨업 시 MP 전회복
+- 파일: data.ts(ItemKey/ItemDef.tier/crit/maxHp/UPGRADE_* 상수), config.ts(SaveData upWea/upArm/accessory+기본값), Player.ts(critRate/rollDamage/upgrades/tryUpgrade/accessory equip·buy 확장), Enemy/Boss(takeDamage crit 파라미터), WorldScene(spawnDamageText crit 스타일/rpg:upgrade 핸들러/emit·save 확장/sfx 래퍼 3종), EventBus(HudState.critRate/RpgState 5필드), audio.ts(sfx.crit/upgradeOk/upgradeFail), HUD(크리 배지), Panels(강화 섹션/장신구 섹션/등급색), useGameUi(기본값), eslint.config.mjs(scripts·public·android ignore)
+- 검증 (agent-browser E2E 실측):
+  - 상점: 반지 2종 상품 표시(150G/130G), 강화 섹션(45G·100%/38G·100%) 렌더 스크린샷 확인, 등급 라벨(일반/고급/희귀) 표기
+  - 반지: 힘의 반지 구매(530→380G) → 즉시 장착, 크리 8→15% HUD 반영 / 생명의 반지 구매 → 자동 스왑, maxHp 100→125 / 인벤토리에서 힘의 반지 재장착 → 크리 15%·maxHp 100 복귀
+  - 강화: 무기 +1(45G·100%) 성공 → atkTotal 12→14, +2(90G·85%) 성공 → atkTotal 16 / 세이브에 upWea=2 기록
+  - 크리 굴림: rollDamage 200회 샘플 → 31크리(15.5%, 목표 15%), 일반 16/크리 27(=round(16x1.7)) 수학 검증, 실전 히트 데미지 텍스트(16) 확인, 크리 텍스트 스타일 동기 검증(27! / #ffd76a / 1.45배)
+  - 세이브: 리로드 → 이어하기 → upWea 2·accessory ring_power·크리 15%·atkTotal 16·gold·owned 전부 복원
+  - tsc 0 에러, ESLint 0 에러(scripts/public/android ignore 추가), 페이지 에러 0, 콘솔 에러 0, dev.log 컴파일 정상
+  - 테스트 중 사망 2회 → 부활 플로우 재확인 (기존 기능 무결)
+- 테스트 오염 세이브 localStorage.clear() 완료 (유저 신규 시작 보장)
+
+Stage Summary:
+- 산출물: scripts/build_rpg2_assets.py, public/assets/ +3종, src/game/{data,config,audio}.ts, entities/{Player,Enemy,Boss}.ts, scenes/WorldScene.ts, components/game/{EventBus,HUD,Panels,useGameUi}, eslint.config.mjs
+- RPG 루프 완성도: 사냥 → 드롭 → 골드 → 구매/강화/장신구 → 성장 (크리로 타격감 강화)
+- 이슈: Pixel Crawler 팩 2회째 미도착 — 도착 시 아이콘 리스킨 가능 (현재 Kenney CC0로 완결)
+- 제약 준수: APK 미빌드 (사용자 지시 시에만)

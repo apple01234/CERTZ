@@ -134,14 +134,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.modeTimer = t;
   }
 
-  takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number) {
+  takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
     this.hp -= dmg;
     this.hitFlash = 90;
     // 타격감: 화이트 플래시 (기존 빨간 틴트보다 명확한 피격 피드백)
     this.setTintFill(0xffffff);
     this.knockVec.set(dir.x * knock, dir.y * knock);
-    this.scene.spawnDamageText(this.x, this.y - 20, dmg);
+    this.scene.spawnDamageText(this.x, this.y - 20, dmg, crit);
     this.scene.spawnHitSpark(this.x, this.y);
     if (this.hpBarBg === null) {
       this.hpBarBg = this.scene.add.rectangle(this.x, this.y, 26, 4, 0x22262e).setDepth(20);
