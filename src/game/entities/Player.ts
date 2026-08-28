@@ -43,8 +43,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(10);
-    this.body!.setSize(14, 26);
-    this.body!.setOffset(6, 6);
+    // 96x64 캔버스 (몸 중심 x=48, 발 y=64) 기준 히트박스
+    this.body!.setSize(20, 44);
+    this.body!.setOffset(38, 20);
     this.play("hero-idle");
   }
 
@@ -82,8 +83,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (move.lengthSq() > 0.01) {
         this.setVelocity(move.x * this.speed, move.y * this.speed);
         this.facing.copy(move).normalize();
-        if (this.anims.currentAnim?.key !== "hero-walk") this.play("hero-walk");
-        if (move.x !== 0) this.setFlipX(move.x < 0);
+        // 방향 우세 축 기준 실제 걷기 프레임 사용 (아래/위/측면)
+        const horiz = Math.abs(move.x) >= Math.abs(move.y);
+        const key = horiz ? "hero-walk-side" : move.y > 0 ? "hero-walk" : "hero-walk-up";
+        if (this.anims.currentAnim?.key !== key) this.play(key);
+        if (horiz) this.setFlipX(move.x < 0); // 시트 기본: 오른쪽 향함
       } else {
         this.setVelocity(0, 0);
         if (this.anims.currentAnim?.key !== "hero-idle") this.play("hero-idle");
@@ -103,11 +107,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.atkCooldown = 330;
     this.slashAlt = !this.slashAlt;
     this.hitSet.clear();
-    this.play("hero-atk");
 
     // 전방 러지 — 베는 순간 살짝 전진해 타격감 부여
     const dir = this.aimDir();
     this.setVelocity(dir.x * 330, dir.y * 330);
+
+    // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    this.setFlipX(dir.y === 0 && dir.x < 0); // 측면 시트는 오른쪽 기준
+    this.play(atkKey);
 
     // 베기 타이밍: 70ms 후 판정+참격 (모션 2프레임 시점)
     this.scene.time.delayedCall(70, () => {
@@ -297,6 +305,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.iframes = 1200;
     this.setPosition(x, y);
     this.setAlpha(1);
+    this.setFlipX(false);
     this.play("hero-idle");
     this.scene.emitHud();
   }

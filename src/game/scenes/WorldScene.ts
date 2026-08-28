@@ -51,9 +51,15 @@ export class WorldScene extends Phaser.Scene {
   // F4: 참격 이펙트 풀
   private slashPool: Phaser.GameObjects.Image[] = [];
   private slashIdx = 0;
+  // 실제 에셋 기반 타격 스타 풀
+  private starPool: Phaser.GameObjects.Image[] = [];
+  private starIdx = 0;
+  private fragSparkle: Phaser.GameObjects.Sprite | null = null;
 
   private questTimer: Phaser.Time.TimerEvent | null = null;
   private hitStopActive = false;
+  // 스테이지별 누적 킬 (퀘스트 순서와 무관하게 토벌 진행 유지 — 소프트락 방지)
+  private killTotals: Record<string, number> = {};
 
   constructor() {
     super("world");
@@ -72,9 +78,11 @@ export class WorldScene extends Phaser.Scene {
     this.beacon = null;
     this.portalBeacon = null;
     this.questMark = null;
+    this.fragSparkle = null;
     this.dialoguing = false;
     this.attackQueued = false;
     this.hitStopActive = false;
+    this.killTotals = {};
     this.registry.set("initData", data);
   }
 
@@ -192,14 +200,16 @@ export class WorldScene extends Phaser.Scene {
     const rng = new Phaser.Math.RandomDataGenerator([stageKey + "-decor"]);
     this.solidGroup = this.physics.add.staticGroup();
 
-    // 나무 & 바위 (충돌 있음)
+    // 나무 & 소나무 & 바위 (충돌 있음) — 실제 에셋
     for (let i = 0; i < def.treeCount; i++) {
       const x = rng.between(80, this.stageW - 80);
       const y = rng.between(90, this.stageH - 80);
       if (Math.abs(y - this.stageH / 2) < 90) continue; // 길 위엔 안 심음
-      const t = this.add.image(x, y, "tree").setDepth(Math.floor(y / 10));
+      const tex = rng.pick(["tree", "tree", "pine"] as string[]);
+      const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
       this.solidGroup.add(t);
-      (t.body as Phaser.Physics.Arcade.StaticBody).setSize(24, 16).setOffset(16, 66);
+      // 64x64 캔버스 하단 줄기 부근만 충돌
+      (t.body as Phaser.Physics.Arcade.StaticBody).setSize(20, 14).setOffset(22, 46);
     }
     for (let i = 0; i < def.rockCount; i++) {
       const x = rng.between(80, this.stageW - 80);
@@ -207,7 +217,7 @@ export class WorldScene extends Phaser.Scene {
       if (Math.abs(y - this.stageH / 2) < 90) continue;
       const r = this.add.image(x, y, "rock").setDepth(Math.floor(y / 10));
       this.solidGroup.add(r);
-      (r.body as Phaser.Physics.Arcade.StaticBody).setSize(30, 14).setOffset(3, 10);
+      (r.body as Phaser.Physics.Arcade.StaticBody).setSize(44, 20).setOffset(10, 40);
     }
 
     // F1 핵심: 꽃은 def.flowerCount 송이만 (10 이하)
@@ -217,11 +227,35 @@ export class WorldScene extends Phaser.Scene {
       const y = rng.between(60, this.stageH - 60);
       this.add.image(x, y, rng.pick(flowers)).setDepth(1).setAlpha(0.95);
     }
+
+    // 심연 구역(알프헤임) 횃불 — 실제 Kenney 횃불 + 온기 글로우
+    if (stageKey === "alfheim") {
+      for (let i = 0; i < 6; i++) {
+        const tx = 200 + (i * (this.stageW - 400)) / 5;
+        const ty = i % 2 === 0 ? this.stageH / 2 - 140 : this.stageH / 2 + 140;
+        this.add.image(tx, ty, "torch").setDepth(2);
+        const g = this.add
+          .image(tx, ty, "glow")
+          .setDepth(1)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0xffa040)
+          .setScale(1.1)
+          .setAlpha(0.22);
+        this.tweens.add({ targets: g, alpha: 0.42, scale: 1.35, duration: 650, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      }
+    }
   }
 
   private spawnFragment(x: number, y: number) {
     this.fragment = this.physics.add.sprite(x, y, "fragment").setDepth(4);
-    (this.fragment.body as Phaser.Physics.Arcade.Body).setCircle(12, -3, -2);
+    (this.fragment.body as Phaser.Physics.Arcade.Body).setCircle(13, 3, 3);
+
+    // 실제 에셋 수정 위 반짝임 (objects.png 별/다이아 프레임)
+    this.fragSparkle = this.add
+      .sprite(x, y - 14, "sparkle0")
+      .setDepth(5)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .play("sparkle");
 
     // F2 핵심 1: 하늘까지 닿는 빛 기둥 비컨 — 멀리서도 확실히 보임
     this.beacon = this.add
@@ -241,8 +275,11 @@ export class WorldScene extends Phaser.Scene {
     // 바닥 글로우
     const glow = this.add.image(x, y + 8, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setScale(1.4);
     this.tweens.add({ targets: glow, scale: 1.7, alpha: 0.7, duration: 800, yoyo: true, repeat: -1 });
-    // 뜨는 모션
+    // 뜨는 모션 + 반짝임 동기화
     this.tweens.add({ targets: this.fragment, y: y - 8, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    if (this.fragSparkle) {
+      this.tweens.add({ targets: this.fragSparkle, y: y - 22, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
 
     this.physics.add.overlap(this.player, this.fragment, () => {
       if (!this.fragment || !this.fragment.active) return;
@@ -258,6 +295,8 @@ export class WorldScene extends Phaser.Scene {
     glow.destroy();
     this.tweens.add({ targets: this.beacon, alpha: 0, duration: 400, onComplete: () => this.beacon?.destroy() });
     this.beacon = null;
+    this.fragSparkle?.destroy();
+    this.fragSparkle = null;
     const f = this.fragment!;
     this.tweens.add({
       targets: f,
@@ -271,6 +310,11 @@ export class WorldScene extends Phaser.Scene {
     this.spawnBurstAt(f.x, f.y, 14, 0x9df0ff);
     this.showDialogue("fragment");
     this.advanceQuest();
+    // 늑대를 먼저 다 잡아둔 경우 — 토벌 퀘스트가 이미 충족됐으면 즉시 완료 처리
+    this.time.delayedCall(100, () => {
+      if (this.stageDef.key === "forest") this.tryCompleteHunt("wolf");
+      else this.tryCompleteHunt("minion");
+    });
     this.save();
   }
 
@@ -330,6 +374,8 @@ export class WorldScene extends Phaser.Scene {
     this.dmgPool = [];
     for (const s of this.slashPool) s.destroy();
     this.slashPool = [];
+    for (const s of this.starPool) s.destroy();
+    this.starPool = [];
 
     // 공유 파티클 이미터 2종
     this.hitEmitter = this.add.particles(0, 0, "spark", {
@@ -374,6 +420,17 @@ export class WorldScene extends Phaser.Scene {
         .setVisible(false);
       this.slashPool.push(s);
     }
+
+    // 타격 스타 4장 고정 풀 (실제 에셋: objects.png 폭발 프레임)
+    for (let i = 0; i < 4; i++) {
+      const s = this.add
+        .image(0, 0, "impact_star")
+        .setDepth(29)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setActive(false)
+        .setVisible(false);
+      this.starPool.push(s);
+    }
   }
 
   spawnDamageText(x: number, y: number, val: number) {
@@ -398,6 +455,26 @@ export class WorldScene extends Phaser.Scene {
   spawnHitSpark(x: number, y: number) {
     this.hitEmitter.setParticleTint(0xfff0a0);
     this.hitEmitter.explode(5, x, y);
+
+    // 실제 에셋 타격 스타 팝 (풀 재사용 — F4 규칙 준수)
+    const s = this.starPool[this.starIdx];
+    this.starIdx = (this.starIdx + 1) % this.starPool.length;
+    if (s && s.scene) {
+      s.setPosition(x, y - 8)
+        .setRotation(Phaser.Math.FloatBetween(0, Math.PI))
+        .setActive(true)
+        .setVisible(true)
+        .setAlpha(1)
+        .setScale(0.4);
+      this.tweens.add({
+        targets: s,
+        scale: 0.8,
+        alpha: 0,
+        duration: 150,
+        ease: "Quad.out",
+        onComplete: () => s.setActive(false).setVisible(false),
+      });
+    }
   }
 
   spawnBurstAt(x: number, y: number, n: number, tint: number) {
@@ -485,23 +562,36 @@ export class WorldScene extends Phaser.Scene {
     this.enemies = this.enemies.filter((e) => e.alive);
     this.totalKills++;
     this.player.gainExp(exp);
+    this.killTotals[key] = (this.killTotals[key] ?? 0) + 1;
     const q = this.currentQuest();
     if (q && q.type === "hunt" && this.stageDef.key === (key === "wolf" ? "forest" : "alfheim")) {
-      this.huntCount++;
-      if (this.huntCount >= (q.need ?? 0)) {
-        audio.sfx.questDone();
-        if (this.stageDef.key === "forest") {
-          this.showDialogue("wolvesDone");
-          this.advanceQuest(); // → 차원문 퀘스트
-          this.activatePortal();
-        } else {
-          this.advanceQuest(); // → 보스 퀘스트
-          this.spawnBoss();
-        }
-        this.save();
-      }
+      this.huntCount = Math.min(this.killTotals[key] ?? 0, q.need ?? 0);
+      this.tryCompleteHunt(key);
     }
     this.emitQuest();
+  }
+
+  /**
+   * 토벌 퀘스트 완료 시도.
+   * 늑대/하수인을 퀘스트 활성화 이전에 미리 다 잡아도 진행이 막히지 않도록
+   * 누적 킬(killTotals) 기준으로 판정한다 (소프트락 방지).
+   */
+  private tryCompleteHunt(_key: "wolf" | "minion") {
+    const q = this.currentQuest();
+    if (!q || q.type !== "hunt") return;
+    const total = this.killTotals[_key] ?? 0;
+    if (total < (q.need ?? 0)) return;
+    this.huntCount = Math.min(total, q.need ?? 0);
+    audio.sfx.questDone();
+    if (this.stageDef.key === "forest") {
+      this.showDialogue("wolvesDone");
+      this.advanceQuest(); // → 차원문 퀘스트
+      this.activatePortal();
+    } else {
+      this.advanceQuest(); // → 보스 퀘스트
+      this.spawnBoss();
+    }
+    this.save();
   }
 
   /* ================= 보스 ================= */

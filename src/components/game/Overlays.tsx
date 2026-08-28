@@ -59,7 +59,10 @@ export function TitleScreen() {
         <p className="text-[10px] font-bold text-white/45 sm:text-[11px]">
           이동: WASD / 왼쪽 화면 드래그 · 공격: SPACE · 스킬: K, L
         </p>
-        <p className="text-[9px] text-white/30">팬 게임 · 모든 그래픽과 사운드가 코드로 생성됩니다</p>
+        <p className="max-w-[92%] text-[8px] leading-relaxed text-white/30 sm:text-[9px]">
+          Graphics: Zelda-like by ArMM1998 (CC0) · Kenney (CC0) · LPC Wolf by williamthompsonj (CC-BY) · Sotrak Rewop by
+          gilgaphoenixignis (CC-BY) · Sound: WebAudio synth
+        </p>
       </div>
     </div>
   );

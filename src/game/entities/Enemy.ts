@@ -31,8 +31,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(9);
-    const bw = key === "wolf" ? 26 : 18;
-    const bh = key === "wolf" ? 18 : 22;
+    const bw = key === "wolf" ? 36 : 18;
+    const bh = key === "wolf" ? 20 : 24;
     this.body!.setSize(bw, bh);
     this.body!.setOffset((this.width - bw) / 2, this.height - bh - 2);
     this.play(`${key}-idle`);

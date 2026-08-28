@@ -61,6 +61,29 @@ export function HUD({
           </span>
         </div>
         <div className="flex flex-col gap-1">
+          {/* 실제 픽셀아트 하트 (Zelda-like pack, CC0) */}
+          <div className="flex items-center gap-0.5">
+            {Array.from({ length: 5 }).map((_, i) => {
+              const per = hud.maxHp / 5;
+              const fill = Math.max(0, Math.min(1, (hud.hp - i * per) / per));
+              const src =
+                fill > 0.62
+                  ? "/assets/ui/heart_full.png"
+                  : fill > 0.28
+                    ? "/assets/ui/heart_half.png"
+                    : "/assets/ui/heart_empty.png";
+              return (
+                <img
+                  key={i}
+                  src={src}
+                  alt=""
+                  draggable={false}
+                  className="h-5 w-5 sm:h-6 sm:w-6"
+                  style={{ imageRendering: "pixelated" }}
+                />
+              );
+            })}
+          </div>
           <Bar value={hud.hp} max={hud.maxHp} from="#c2273a" to="#ff7a68" label={`${hud.hp} / ${hud.maxHp}`} />
           <Bar value={hud.mp} max={hud.maxMp} from="#1e6fb8" to="#5ec5ff" label={`${hud.mp} / ${hud.maxMp}`} height={10} />
           {/* EXP 얇은 바 */}

@@ -41,8 +41,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(11);
-    this.body!.setSize(44, 60);
-    this.body!.setOffset(14, 24);
+    // 111x126 캔버스 (sotrak 보스) 기준 히트박스
+    this.body!.setSize(56, 72);
+    this.body!.setOffset(27, 48);
     this.play("boss-idle");
 
     for (let i = 0; i < 24; i++) {

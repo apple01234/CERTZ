@@ -1,0 +1,879 @@
+     1→     1→import Phaser from "phaser";
+     2→     2→import { STAGES, DIALOGUES, type StageKey, type StageDef } from "../data";
+     3→     3→import { Player } from "../entities/Player";
+     4→     4→import { Enemy } from "../entities/Enemy";
+     5→     5→import { Boss } from "../entities/Boss";
+     6→     6→import { EventBus, type QuestState } from "../../components/game/EventBus";
+     7→     7→import { writeSave, type SaveData } from "../config";
+     8→     8→import * as audio from "../audio";
+     9→     9→
+    10→    10→/**
+    11→    11→ * 메인 플레이 씬.
+    12→    12→ *  F1: 꽃/장식 배치를 정의된 소수로만 배치
+    13→    13→ *  F2: 목표물 빛기둥 비컨 + 화면 가장자리 화살표 + 실시간 거리 표시
+    14→    14→ *  F4: 데미지텍스트·참격·파티클 모두 풀링/공유 이미터 → 보스전 프레임 안정
+    15→    15→ */
+    16→    16→export class WorldScene extends Phaser.Scene {
+    17→    17→  stageDef!: StageDef;
+    18→    18→  stageW = 0;
+    19→    19→  stageH = 0;
+    20→    20→
+    21→    21→  player!: Player;
+    22→    22→  enemies: Enemy[] = [];
+    23→    23→  boss: Boss | null = null;
+    24→    24→  playerRef: Player | null = null;
+    25→    25→
+    26→    26→  questIdx = 0;
+    27→    27→  huntCount = 0;
+    28→    28→  totalKills = 0;
+    29→    29→  startTime = 0;
+    30→    30→  cleared = false;
+    31→    31→
+    32→    32→  private fragment: Phaser.Physics.Arcade.Sprite | null = null;
+    33→    33→  private portal: Phaser.Physics.Arcade.Sprite | null = null;
+    34→    34→  private portalActive = false;
+    35→    35→  private beacon: Phaser.GameObjects.Image | null = null;
+    36→    36→  private portalBeacon: Phaser.GameObjects.Image | null = null;
+    37→    37→  private edgeArrow: Phaser.GameObjects.Image | null = null;
+    38→    38→  private questMark: Phaser.GameObjects.Image | null = null;
+    39→    39→
+    40→    40→  private moveVec = new Phaser.Math.Vector2();
+    41→    41→  private touchMove = new Phaser.Math.Vector2();
+    42→    42→  private attackQueued = false;
+    43→    43→  private keys!: Record<string, Phaser.Input.Keyboard.Key>;
+    44→    44→  private dialoguing = false;
+    45→    45→
+    46→    46→  // F4: 공유 파티클 이미터 (생성 1회)
+    47→    47→  private hitEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+    48→    48→  private burstEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+    49→    49→  // F4: 데미지 텍스트 풀
+    50→    50→  private dmgPool: Phaser.GameObjects.Text[] = [];
+    51→    51→  // F4: 참격 이펙트 풀
+    52→    52→  private slashPool: Phaser.GameObjects.Image[] = [];
+    53→    53→  private slashIdx = 0;
+    54→    54→
+    55→    55→  private questTimer: Phaser.Time.TimerEvent | null = null;
+    56→    56→  private hitStopActive = false;
+    57→    57→
+    58→    58→  constructor() {
+    59→    59→    super("world");
+    60→    60→  }
+    61→    61→
+    62→    62→  init(data: { stage?: StageKey; save?: SaveData }) {
+    63→    63→    this.questIdx = 0;
+    64→    64→    this.huntCount = 0;
+    65→    65→    this.totalKills = 0;
+    66→    66→    this.startTime = this.time.now;
+    67→    67→    this.cleared = false;
+    68→    68→    this.enemies = [];
+    69→    69→    this.boss = null;
+    70→    70→    this.fragment = null;
+    71→    71→    this.portal = null;
+    72→    72→    this.beacon = null;
+    73→    73→    this.portalBeacon = null;
+    74→    74→    this.questMark = null;
+    75→    75→    this.dialoguing = false;
+    76→    76→    this.attackQueued = false;
+    77→    77→    this.hitStopActive = false;
+    78→    78→    this.registry.set("initData", data);
+    79→    79→  }
+    80→    80→
+    81→    81→  create() {
+    82→    82→    const data = this.registry.get("initData") as {
+    83→    83→      stage?: StageKey;
+    84→    84→      save?: SaveData;
+    85→    85→    };
+    86→    86→    const save = data.save;
+    87→    87→    const stageKey: StageKey = save ? (save.stage as StageKey) : data.stage ?? "forest";
+    88→    88→    this.stageDef = STAGES[stageKey];
+    89→    89→    this.stageW = this.stageDef.width;
+    90→    90→    this.stageH = this.stageDef.height;
+    91→    91→
+    92→    92→    /* ---------- 바닥 ---------- */
+    93→    93→    const groundTex = stageKey === "forest" ? "tile_grass" : "tile_dark";
+    94→    94→    this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
+    95→    95→    // 중앙 가로 길
+    96→    96→    this.add
+    97→    97→      .tileSprite(0, this.stageH / 2 - 52, this.stageW, 104, "tile_path")
+    98→    98→      .setOrigin(0)
+    99→    99→      .setDepth(0)
+   100→   100→      .setAlpha(0.9);
+   101→   101→    if (stageKey === "forest") {
+   102→   102→      this.add
+   103→   103→        .tileSprite(this.stageW * 0.55 - 52, 0, 104, this.stageH, "tile_path")
+   104→   104→        .setOrigin(0)
+   105→   105→        .setDepth(0)
+   106→   106→        .setAlpha(0.85);
+   107→   107→    }
+   108→   108→
+   109→   109→    this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
+   110→   110→    this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
+   111→   111→    this.cameras.main.setBackgroundColor(stageKey === "forest" ? "#0a1408" : "#0d0a1e");
+   112→   112→
+   113→   113→    /* ---------- 장식 (F1: 정의된 소수만) ---------- */
+   114→   114→    this.placeDecor(stageKey);
+   115→   115→
+   116→   116→    /* ---------- 플레이어 ---------- */
+   117→   117→    const savedPlayer = save;
+   118→   118→    this.player = new Player(this, 180, this.stageH / 2);
+   119→   119→    if (savedPlayer) {
+   120→   120→      this.player.lv = savedPlayer.lv;
+   121→   121→      this.player.atk = savedPlayer.atk;
+   122→   122→      this.player.maxHp = savedPlayer.maxHp;
+   123→   123→      this.player.hp = this.player.maxHp;
+   124→   124→    }
+   125→   125→    this.playerRef = this.player;
+   126→   126→    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+   127→   127→    this.physics.add.collider(this.player, this.solidGroup);
+   128→   128→
+   129→   129→    /* ---------- 적 배치 ---------- */
+   130→   130→    const rng = new Phaser.Math.RandomDataGenerator([stageKey]);
+   131→   131→    for (const group of this.stageDef.enemies) {
+   132→   132→      for (let i = 0; i < group.count; i++) {
+   133→   133→        let ex = 0;
+   134→   134→        let ey = 0;
+   135→   135→        let tries = 0;
+   136→   136→        do {
+   137→   137→          ex = stageKey === "forest" ? rng.between(this.stageW * 0.42, this.stageW - 140) : rng.between(240, this.stageW - 160);
+   138→   138→          ey = rng.between(120, this.stageH - 120);
+   139→   139→          tries++;
+   140→   140→        } while (Phaser.Math.Distance.Between(ex, ey, this.player.x, this.player.y) < 380 && tries < 30);
+   141→   141→        const e = new Enemy(this, ex, ey, group.key);
+   142→   142→        this.enemies.push(e);
+   143→   143→        this.physics.add.collider(e, this.solidGroup);
+   144→   144→      }
+   145→   145→    }
+   146→   146→
+   147→   147→    /* ---------- 퀘스트 오브젝트 ---------- */
+   148→   148→    if (stageKey === "forest") {
+   149→   149→      this.spawnFragment(this.stageW * 0.78, this.stageH * 0.26);
+   150→   150→      this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+   151→   151→    } else {
+   152→   152→      this.spawnPortalBossArena();
+   153→   153→    }
+   154→   154→
+   155→   155→    /* ---------- 이펙트 풀 ---------- */
+   156→   156→    this.buildFxPools();
+   157→   157→
+   158→   158→    /* ---------- 입력 ---------- */
+   159→   159→    this.setupInput();
+   160→   160→
+   161→   161→    /* ---------- 사운드/BGM ---------- */
+   162→   162→    audio.playBGM(stageKey === "forest" ? "field" : "boss");
+   163→   163→
+   164→   164→    /* ---------- 오프닝 대사 ---------- */
+   165→   165→    this.time.delayedCall(400, () => {
+   166→   166→      this.showDialogue(stageKey === "forest" ? "intro" : "alfheimIntro");
+   167→   167→    });
+   168→   168→
+   169→   169→    EventBus.emit("ui:playing");
+   170→   170→    this.emitHud();
+   171→   171→    this.emitQuest();
+   172→   172→
+   173→   173→    // F2: 거리 실시간 갱신 (300ms 주기 — 프레임 부담 없음)
+   174→   174→    this.questTimer = this.time.addEvent({
+   175→   175→      delay: 300,
+   176→   176→      loop: true,
+   177→   177→      callback: () => {
+   178→   178→        this.emitQuest();
+   179→   179→        this.emitSkills();
+   180→   180→      },
+   181→   181→    });
+   182→   182→
+   183→   183→    this.events.once("shutdown", () => this.cleanup());
+   184→   184→  }
+   185→   185→
+   186→   186→  private solidGroup!: Phaser.Physics.Arcade.StaticGroup;
+   187→   187→
+   188→   188→  /* ================= 배치 ================= */
+   189→   189→
+   190→   190→  private placeDecor(stageKey: StageKey) {
+   191→   191→    const def = this.stageDef;
+   192→   192→    const rng = new Phaser.Math.RandomDataGenerator([stageKey + "-decor"]);
+   193→   193→    this.solidGroup = this.physics.add.staticGroup();
+   194→   194→
+   195→   195→    // 나무 & 바위 (충돌 있음)
+   196→   196→    for (let i = 0; i < def.treeCount; i++) {
+   197→   197→      const x = rng.between(80, this.stageW - 80);
+   198→   198→      const y = rng.between(90, this.stageH - 80);
+   199→   199→      if (Math.abs(y - this.stageH / 2) < 90) continue; // 길 위엔 안 심음
+   200→   200→      const t = this.add.image(x, y, "tree").setDepth(Math.floor(y / 10));
+   201→   201→      this.solidGroup.add(t);
+   202→   202→      (t.body as Phaser.Physics.Arcade.StaticBody).setSize(24, 16).setOffset(16, 66);
+   203→   203→    }
+   204→   204→    for (let i = 0; i < def.rockCount; i++) {
+   205→   205→      const x = rng.between(80, this.stageW - 80);
+   206→   206→      const y = rng.between(90, this.stageH - 80);
+   207→   207→      if (Math.abs(y - this.stageH / 2) < 90) continue;
+   208→   208→      const r = this.add.image(x, y, "rock").setDepth(Math.floor(y / 10));
+   209→   209→      this.solidGroup.add(r);
+   210→   210→      (r.body as Phaser.Physics.Arcade.StaticBody).setSize(30, 14).setOffset(3, 10);
+   211→   211→    }
+   212→   212→
+   213→   213→    // F1 핵심: 꽃은 def.flowerCount 송이만 (10 이하)
+   214→   214→    const flowers = ["flower_r", "flower_y", "flower_w"];
+   215→   215→    for (let i = 0; i < def.flowerCount; i++) {
+   216→   216→      const x = rng.between(60, this.stageW - 60);
+   217→   217→      const y = rng.between(60, this.stageH - 60);
+   218→   218→      this.add.image(x, y, rng.pick(flowers)).setDepth(1).setAlpha(0.95);
+   219→   219→    }
+   220→   220→  }
+   221→   221→
+   222→   222→  private spawnFragment(x: number, y: number) {
+   223→   223→    this.fragment = this.physics.add.sprite(x, y, "fragment").setDepth(4);
+   224→   224→    (this.fragment.body as Phaser.Physics.Arcade.Body).setCircle(12, -3, -2);
+   225→   225→
+   226→   226→    // F2 핵심 1: 하늘까지 닿는 빛 기둥 비컨 — 멀리서도 확실히 보임
+   227→   227→    this.beacon = this.add
+   228→   228→      .image(x, y - 240, "beacon")
+   229→   229→      .setDepth(3)
+   230→   230→      .setBlendMode(Phaser.BlendModes.ADD)
+   231→   231→      .setAlpha(0.55);
+   232→   232→    this.tweens.add({
+   233→   233→      targets: this.beacon,
+   234→   234→      alpha: { from: 0.4, to: 0.75 },
+   235→   235→      scaleX: { from: 1, to: 1.25 },
+   236→   236→      duration: 900,
+   237→   237→      yoyo: true,
+   238→   238→      repeat: -1,
+   239→   239→      ease: "Sine.inOut",
+   240→   240→    });
+   241→   241→    // 바닥 글로우
+   242→   242→    const glow = this.add.image(x, y + 8, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setScale(1.4);
+   243→   243→    this.tweens.add({ targets: glow, scale: 1.7, alpha: 0.7, duration: 800, yoyo: true, repeat: -1 });
+   244→   244→    // 뜨는 모션
+   245→   245→    this.tweens.add({ targets: this.fragment, y: y - 8, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+   246→   246→
+   247→   247→    this.physics.add.overlap(this.player, this.fragment, () => {
+   248→   248→      if (!this.fragment || !this.fragment.active) return;
+   249→   249→      this.collectFragment(glow);
+   250→   250→    });
+   251→   251→  }
+   252→   252→
+   253→   253→  private collectFragment(glow: Phaser.GameObjects.Image) {
+   254→   254→    audio.sfx.pickup();
+   255→   255→    audio.sfx.questDone();
+   256→   256→    this.player.atk += 5; // 파편 보너스
+   257→   257→    this.player.healFull();
+   258→   258→    glow.destroy();
+   259→   259→    this.tweens.add({ targets: this.beacon, alpha: 0, duration: 400, onComplete: () => this.beacon?.destroy() });
+   260→   260→    this.beacon = null;
+   261→   261→    const f = this.fragment!;
+   262→   262→    this.tweens.add({
+   263→   263→      targets: f,
+   264→   264→      y: f.y - 60,
+   265→   265→      alpha: 0,
+   266→   266→      scale: 1.6,
+   267→   267→      duration: 500,
+   268→   268→      onComplete: () => f.destroy(),
+   269→   269→    });
+   270→   270→    this.fragment = null;
+   271→   271→    this.spawnBurstAt(f.x, f.y, 14, 0x9df0ff);
+   272→   272→    this.showDialogue("fragment");
+   273→   273→    this.advanceQuest();
+   274→   274→    this.save();
+   275→   275→  }
+   276→   276→
+   277→   277→  private spawnPortal(x: number, y: number) {
+   278→   278→    this.portal = this.physics.add.sprite(x, y, "portal0").setDepth(3).setTint(0x777777);
+   279→   279→    (this.portal.body as Phaser.Physics.Arcade.Body).setSize(30, 40).setOffset(13, 20);
+   280→   280→    this.physics.add.overlap(this.player, this.portal, () => {
+   281→   281→      if (!this.portalActive || !this.portal?.active) return;
+   282→   282→      this.enterPortal();
+   283→   283→    });
+   284→   284→  }
+   285→   285→
+   286→   286→  private activatePortal() {
+   287→   287→    if (!this.portal) return;
+   288→   288→    this.portalActive = true;
+   289→   289→    this.portal.clearTint();
+   290→   290→    this.portal.play("portal-spin");
+   291→   291→    audio.sfx.portal();
+   292→   292→    // F2: 차원문에도 작은 비컨
+   293→   293→    this.portalBeacon = this.add
+   294→   294→      .image(this.portal.x, this.portal.y - 230, "beacon")
+   295→   295→      .setDepth(2)
+   296→   296→      .setBlendMode(Phaser.BlendModes.ADD)
+   297→   297→      .setAlpha(0.4)
+   298→   298→      .setTint(0x9d7aff);
+   299→   299→    this.tweens.add({
+   300→   300→      targets: this.portalBeacon,
+   301→   301→      alpha: { from: 0.28, to: 0.5 },
+   302→   302→      duration: 800,
+   303→   303→      yoyo: true,
+   304→   304→      repeat: -1,
+   305→   305→    });
+   306→   306→    this.showBanner("차원문이 열렸다!");
+   307→   307→  }
+   308→   308→
+   309→   309→  private enterPortal() {
+   310→   310→    this.portalActive = false;
+   311→   311→    audio.sfx.portal();
+   312→   312→    this.cameras.main.fadeOut(500, 0, 0, 0);
+   313→   313→    this.player.state = "idle";
+   314→   314→    this.time.delayedCall(520, () => {
+   315→   315→      this.saveStage("alfheim");
+   316→   316→      this.scene.restart({ stage: "alfheim" });
+   317→   317→    });
+   318→   318→  }
+   319→   319→
+   320→   320→  private spawnPortalBossArena() {
+   321→   321→    // 보스전 스테이지는 차원문 없음 — 하수인 소탕 후 보스 등장
+   322→   322→  }
+   323→   323→
+   324→   324→  /* ================= 이펙트 풀 (F4) ================= */
+   325→   325→
+   326→   326→  private buildFxPools() {
+   327→   327→    // ⚠️ 씬 재시작(스테이지 전환) 시 풀이 누적되지 않도록 리셋
+   328→   328→    //   (파괴된 텍스트 재사용 → setText 크래시 원인)
+   329→   329→    for (const d of this.dmgPool) d.destroy();
+   330→   330→    this.dmgPool = [];
+   331→   331→    for (const s of this.slashPool) s.destroy();
+   332→   332→    this.slashPool = [];
+   333→   333→
+   334→   334→    // 공유 파티클 이미터 2종
+   335→   335→    this.hitEmitter = this.add.particles(0, 0, "spark", {
+   336→   336→      lifespan: 260,
+   337→   337→      speed: { min: 60, max: 190 },
+   338→   338→      scale: { start: 1, end: 0 },
+   339→   339→      emitting: false,
+   340→   340→      blendMode: Phaser.BlendModes.ADD,
+   341→   341→    }).setDepth(30);
+   342→   342→    this.burstEmitter = this.add.particles(0, 0, "spark", {
+   343→   343→      lifespan: 480,
+   344→   344→      speed: { min: 90, max: 300 },
+   345→   345→      scale: { start: 1.4, end: 0 },
+   346→   346→      emitting: false,
+   347→   347→      blendMode: Phaser.BlendModes.ADD,
+   348→   348→    }).setDepth(30);
+   349→   349→
+   350→   350→    // 데미지 텍스트 12장 고정 풀
+   351→   351→    for (let i = 0; i < 12; i++) {
+   352→   352→      const t = this.add
+   353→   353→        .text(0, 0, "", {
+   354→   354→          fontFamily: "sans-serif",
+   355→   355→          fontSize: "17px",
+   356→   356→          color: "#ffffff",
+   357→   357→          stroke: "#1a1020",
+   358→   358→          strokeThickness: 4,
+   359→   359→          fontStyle: "bold",
+   360→   360→        })
+   361→   361→        .setDepth(40)
+   362→   362→        .setActive(false)
+   363→   363→        .setVisible(false);
+   364→   364→      this.dmgPool.push(t);
+   365→   365→    }
+   366→   366→
+   367→   367→    // 참격 스프라이트 5장 고정 풀
+   368→   368→    for (let i = 0; i < 5; i++) {
+   369→   369→      const s = this.add
+   370→   370→        .image(0, 0, "slash_arc")
+   371→   371→        .setDepth(25)
+   372→   372→        .setBlendMode(Phaser.BlendModes.ADD)
+   373→   373→        .setActive(false)
+   374→   374→        .setVisible(false);
+   375→   375→      this.slashPool.push(s);
+   376→   376→    }
+   377→   377→  }
+   378→   378→
+   379→   379→  spawnDamageText(x: number, y: number, val: number) {
+   380→   380→    const t = this.dmgPool.find((d) => d.scene && !d.active);
+   381→   381→    if (!t) return; // 풀 소진 시 조용히 포기 (프레임 보호)
+   382→   382→    t.setText(`${val}`);
+   383→   383→    t.setPosition(x, y)
+   384→   384→      .setActive(true)
+   385→   385→      .setVisible(true)
+   386→   386→      .setAlpha(1)
+   387→   387→      .setScale(1);
+   388→   388→    this.tweens.add({
+   389→   389→      targets: t,
+   390→   390→      y: y - 34,
+   391→   391→      alpha: 0,
+   392→   392→      duration: 550,
+   393→   393→      ease: "Quad.out",
+   394→   394→      onComplete: () => t.setActive(false).setVisible(false),
+   395→   395→    });
+   396→   396→  }
+   397→   397→
+   398→   398→  spawnHitSpark(x: number, y: number) {
+   399→   399→    this.hitEmitter.setParticleTint(0xfff0a0);
+   400→   400→    this.hitEmitter.explode(5, x, y);
+   401→   401→  }
+   402→   402→
+   403→   403→  spawnBurstAt(x: number, y: number, n: number, tint: number) {
+   404→   404→    this.burstEmitter.setParticleTint(tint);
+   405→   405→    this.burstEmitter.explode(n, x, y);
+   406→   406→  }
+   407→   407→
+   408→   408→  spawnDeathBurst(x: number, y: number) {
+   409→   409→    this.spawnBurstAt(x, y, 10, 0xff9a8a);
+   410→   410→  }
+   411→   411→
+   412→   412→  spawnSlamBurst(x: number, y: number) {
+   413→   413→    this.spawnBurstAt(x, y, 16, 0xffb090);
+   414→   414→  }
+   415→   415→
+   416→   416→  spawnEnrageBurst(x: number, y: number) {
+   417→   417→    this.spawnBurstAt(x, y, 22, 0xff7080);
+   418→   418→  }
+   419→   419→
+   420→   420→  spawnLevelUpFx(x: number, y: number) {
+   421→   421→    const ring = this.add.image(x, y, "slash_ring").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setScale(0.2);
+   422→   422→    this.tweens.add({
+   423→   423→      targets: ring,
+   424→   424→      scale: 1.3,
+   425→   425→      alpha: 0,
+   426→   426→      duration: 500,
+   427→   427→      onComplete: () => ring.destroy(),
+   428→   428→    });
+   429→   429→  }
+   430→   430→
+   431→   431→  spawnCrack(x: number, y: number) {
+   432→   432→    const c = this.add.image(x, y + 20, "crack").setDepth(1).setAlpha(0.9);
+   433→   433→    this.tweens.add({ targets: c, alpha: 0, delay: 3500, duration: 800, onComplete: () => c.destroy() });
+   434→   434→  }
+   435→   435→
+   436→   436→  spawnSpinRing(x: number, y: number) {
+   437→   437→    return this.add
+   438→   438→      .image(x, y, "slash_ring")
+   439→   439→      .setDepth(26)
+   440→   440→      .setBlendMode(Phaser.BlendModes.ADD)
+   441→   441→      .setScale(0.3);
+   442→   442→  }
+   443→   443→
+   444→   444→  /** F5: 참격 초승달 이펙트 — 풀에서 꺼내 170ms 재생 */
+   445→   445→  spawnSlash(x: number, y: number, dir: Phaser.Math.Vector2, alt: boolean, scale = 1) {
+   446→   446→    const s = this.slashPool[this.slashIdx];
+   447→   447→    this.slashIdx = (this.slashIdx + 1) % this.slashPool.length;
+   448→   448→    if (!s || !s.scene) return;
+   449→   449→    const rot = dir.x > 0 ? 0 : dir.x < 0 ? Math.PI : dir.y > 0 ? Math.PI / 2 : -Math.PI / 2;
+   450→   450→    s.setPosition(x + dir.x * 34, y + dir.y * 34 - 6)
+   451→   451→      .setRotation(rot)
+   452→   452→      .setFlipY(alt)
+   453→   453→      .setActive(true)
+   454→   454→      .setVisible(true)
+   455→   455→      .setAlpha(1)
+   456→   456→      .setScale(0.55 * scale);
+   457→   457→    this.tweens.add({
+   458→   458→      targets: s,
+   459→   459→      scale: 1.15 * scale,
+   460→   460→      alpha: 0.15,
+   461→   461→      duration: 170,
+   462→   462→      ease: "Quad.out",
+   463→   463→      onComplete: () => s.setActive(false).setVisible(false),
+   464→   464→    });
+   465→   465→  }
+   466→   466→
+   467→   467→  /* ================= 히트스톱 / 타격감 ================= */
+   468→   468→
+   469→   469→  /** F5: 명중 시 45ms 전체 정지 + 미세 흔들림 — '베인' 느낌의 핵심 */
+   470→   470→  onMeleeConnect(_hits: number) {
+   471→   471→    audio.sfx.hit();
+   472→   472→    if (!this.hitStopActive) {
+   473→   473→      this.hitStopActive = true;
+   474→   474→      this.physics.world.pause();
+   475→   475→      this.time.delayedCall(45, () => {
+   476→   476→        this.physics.world.resume();
+   477→   477→        this.hitStopActive = false;
+   478→   478→      });
+   479→   479→    }
+   480→   480→    this.cameras.main.shake(50, 0.003);
+   481→   481→  }
+   482→   482→
+   483→   483→  onEnemyKilled(key: "wolf" | "minion", exp: number) {
+   484→   484→    // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
+   485→   485→    this.enemies = this.enemies.filter((e) => e.alive);
+   486→   486→    this.totalKills++;
+   487→   487→    this.player.gainExp(exp);
+   488→   488→    const q = this.currentQuest();
+   489→   489→    if (q && q.type === "hunt" && this.stageDef.key === (key === "wolf" ? "forest" : "alfheim")) {
+   490→   490→      this.huntCount++;
+   491→   491→      if (this.huntCount >= (q.need ?? 0)) {
+   492→   492→        audio.sfx.questDone();
+   493→   493→        if (this.stageDef.key === "forest") {
+   494→   494→          this.showDialogue("wolvesDone");
+   495→   495→          this.advanceQuest(); // → 차원문 퀘스트
+   496→   496→          this.activatePortal();
+   497→   497→        } else {
+   498→   498→          this.advanceQuest(); // → 보스 퀘스트
+   499→   499→          this.spawnBoss();
+   500→   500→        }
+   501→   501→        this.save();
+   502→   502→      }
+   503→   503→    }
+   504→   504→    this.emitQuest();
+   505→   505→  }
+   506→   506→
+   507→   507→  /* ================= 보스 ================= */
+   508→   508→
+   509→   509→  private spawnBoss() {
+   510→   510→    const bx = this.stageW * 0.6;
+   511→   511→    const by = this.stageH * 0.35;
+   512→   512→    audio.sfx.roar();
+   513→   513→    this.cameras.main.shake(260, 0.008);
+   514→   514→    this.showBanner("심연의 수호자가 나타났다!");
+   515→   515→    this.boss = new Boss(this, bx, by);
+   516→   516→    this.physics.add.collider(this.boss, this.solidGroup);
+   517→   517→    EventBus.emit("boss:show", { name: "심연의 수호자", hp: this.boss.hp, maxHp: this.boss.maxHp });
+   518→   518→  }
+   519→   519→
+   520→   520→  onBossDead() {
+   521→   521→    audio.sfx.bossDie();
+   522→   522→    audio.stopBGM();
+   523→   523→    this.cameras.main.shake(400, 0.01);
+   524→   524→    this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, 0x9d7aff);
+   525→   525→    this.player.gainExp(BOSS_EXP);
+   526→   526→    this.totalKills++;
+   527→   527→    this.cleared = true;
+   528→   528→    this.time.delayedCall(1200, () => {
+   529→   529→      this.showDialogue("victory");
+   530→   530→      this.time.delayedCall(400, () => {
+   531→   531→        this.saveCleared();
+   532→   532→      });
+   533→   533→      this.time.delayedCall(4600, () => {
+   534→   534→        // 엔드 화면이 최종 화면 — 타이틀 복귀는 EndScreen 버튼(reload)이 담당
+   535→   535→        EventBus.emit("end", {
+   536→   536→          victory: true,
+   537→   537→          playTime: Math.floor((this.time.now - this.startTime) / 1000),
+   538→   538→          kills: this.totalKills,
+   539→   539→          lv: this.player.lv,
+   540→   540→        });
+   541→   541→      });
+   542→   542→    });
+   543→   543→  }
+   544→   544→
+   545→   545→  onPlayerDead() {
+   546→   546→    audio.stopBGM();
+   547→   547→    this.cameras.main.fadeOut(600, 20, 0, 0);
+   548→   548→    this.time.delayedCall(700, () => {
+   549→   549→      EventBus.emit("end", {
+   550→   550→        victory: false,
+   551→   551→        playTime: Math.floor((this.time.now - this.startTime) / 1000),
+   552→   552→        kills: this.totalKills,
+   553→   553→        lv: this.player.lv,
+   554→   554→      });
+   555→   555→    });
+   556→   556→  }
+   557→   557→
+   558→   558→  respawnPlayer() {
+   559→   559→    this.cameras.main.fadeIn(400, 20, 0, 0);
+   560→   560→    this.player.revive(180, this.stageH / 2);
+   561→   561→    audio.playBGM(this.stageDef.key === "forest" ? "field" : "boss");
+   562→   562→  }
+   563→   563→
+   564→   564→  /* ================= 입력 ================= */
+   565→   565→
+   566→   566→  private setupInput() {
+   567→   567→    const kb = this.input.keyboard!;
+   568→   568→    this.keys = kb.addKeys(
+   569→   569→      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,J,K,L"
+   570→   570→    ) as Record<string, Phaser.Input.Keyboard.Key>;
+   571→   571→
+   572→   572→    const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);
+   573→   573→    const onAtk = () => (this.attackQueued = true);
+   574→   574→    const onS1 = () => this.player?.useSkill1();
+   575→   575→    const onS2 = () => this.player?.useSkill2();
+   576→   576→    const onRespawn = () => this.respawnPlayer();
+   577→   577→    const onDialogueDone = () => this.resumeFromDialogue();
+   578→   578→
+   579→   579→    EventBus.on("input:move", onMove);
+   580→   580→    EventBus.on("input:attack", onAtk);
+   581→   581→    EventBus.on("input:skill1", onS1);
+   582→   582→    EventBus.on("input:skill2", onS2);
+   583→   583→    EventBus.on("respawn", onRespawn);
+   584→   584→    EventBus.on("dialogue:done", onDialogueDone);
+   585→   585→    this.events.once("shutdown", () => {
+   586→   586→      EventBus.off("input:move", onMove);
+   587→   587→      EventBus.off("input:attack", onAtk);
+   588→   588→      EventBus.off("input:skill1", onS1);
+   589→   589→      EventBus.off("input:skill2", onS2);
+   590→   590→      EventBus.off("respawn", onRespawn);
+   591→   591→      EventBus.off("dialogue:done", onDialogueDone);
+   592→   592→    });
+   593→   593→  }
+   594→   594→
+   595→   595→  update(_time: number, delta: number) {
+   596→   596→    const dt = Math.min(delta, 50);
+   597→   597→    if (this.dialoguing || !this.player) return;
+   598→   598→    if (this.player.state === "dead") return;
+   599→   599→
+   600→   600→    // 키보드 이동
+   601→   601→    const mv = new Phaser.Math.Vector2(0, 0);
+   602→   602→    if (this.keys.A.isDown || this.keys.LEFT.isDown) mv.x -= 1;
+   603→   603→    if (this.keys.D.isDown || this.keys.RIGHT.isDown) mv.x += 1;
+   604→   604→    if (this.keys.W.isDown || this.keys.UP.isDown) mv.y -= 1;
+   605→   605→    if (this.keys.S.isDown || this.keys.DOWN.isDown) mv.y += 1;
+   606→   606→    if (mv.lengthSq() > 0) mv.normalize();
+   607→   607→
+   608→   608→    // 터치 우선
+   609→   609→    const useTouch = this.touchMove.lengthSq() > 0.01;
+   610→   610→    const move = useTouch ? this.touchMove : mv;
+   611→   611→
+   612→   612→    // 키보드 공격/스킬
+   613→   613→    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keys.J))
+   614→   614→      this.attackQueued = true;
+   615→   615→    if (Phaser.Input.Keyboard.JustDown(this.keys.K)) this.player.useSkill1();
+   616→   616→    if (Phaser.Input.Keyboard.JustDown(this.keys.L)) this.player.useSkill2();
+   617→   617→
+   618→   618→    this.player.update(dt, move, this.attackQueued);
+   619→   619→    this.attackQueued = false;
+   620→   620→
+   621→   621→    // 적 AI
+   622→   622→    for (const e of this.enemies) {
+   623→   623→      if (e.active && e.alive) e.tick(dt, this.player);
+   624→   624→    }
+   625→   625→    // 보스 AI
+   626→   626→    this.boss?.tick(dt, this.player);
+   627→   627→
+   628→   628→    // F2 핵심 2: 화면 가장자리 화살표 — 목표물이 안 보일 때 방향 안내
+   629→   629→    this.updateEdgeArrow();
+   630→   630→  }
+   631→   631→
+   632→   632→  currentMoveVec() {
+   633→   633→    return this.touchMove.lengthSq() > 0.01 ? this.touchMove.clone() : new Phaser.Math.Vector2();
+   634→   634→  }
+   635→   635→
+   636→   636→  getAllTargets(): (Enemy | Boss)[] {
+   637→   637→    const list: (Enemy | Boss)[] = [];
+   638→   638→    for (const e of this.enemies) if (e.active && e.alive) list.push(e);
+   639→   639→    if (this.boss && this.boss.active && this.boss.alive) list.push(this.boss);
+   640→   640→    return list;
+   641→   641→  }
+   642→   642→
+   643→   643→  /* ================= 가독성 (F2) ================= */
+   644→   644→
+   645→   645→  private questTargetPos(): Phaser.Math.Vector2 | null {
+   646→   646→    const q = this.currentQuest();
+   647→   647→    if (!q) return null;
+   648→   648→    switch (q.type) {
+   649→   649→      case "collect":
+   650→   650→        return this.fragment && this.fragment.active ? new Phaser.Math.Vector2(this.fragment.x, this.fragment.y) : null;
+   651→   651→      case "hunt": {
+   652→   652→        let best: Enemy | null = null;
+   653→   653→        let bd = Infinity;
+   654→   654→        for (const e of this.enemies) {
+   655→   655→          if (!e.active || !e.alive) continue;
+   656→   656→          const d = Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y);
+   657→   657→          if (d < bd) {
+   658→   658→            bd = d;
+   659→   659→            best = e;
+   660→   660→          }
+   661→   661→        }
+   662→   662→        return best ? new Phaser.Math.Vector2(best.x, best.y) : null;
+   663→   663→      }
+   664→   664→      case "reach":
+   665→   665→        return this.portal && this.portal.active ? new Phaser.Math.Vector2(this.portal.x, this.portal.y) : null;
+   666→   666→      case "boss":
+   667→   667→        return this.boss && this.boss.active && this.boss.alive
+   668→   668→          ? new Phaser.Math.Vector2(this.boss.x, this.boss.y)
+   669→   669→          : null;
+   670→   670→      default:
+   671→   671→        return null;
+   672→   672→    }
+   673→   673→  }
+   674→   674→
+   675→   675→  private updateEdgeArrow() {
+   676→   676→    const target = this.questTargetPos();
+   677→   677→    if (!target) {
+   678→   678→      if (this.edgeArrow) {
+   679→   679→        this.edgeArrow.destroy();
+   680→   680→        this.edgeArrow = null;
+   681→   681→      }
+   682→   682→      if (this.questMark) {
+   683→   683→        this.questMark.destroy();
+   684→   684→        this.questMark = null;
+   685→   685→      }
+   686→   686→      return;
+   687→   687→    }
+   688→   688→
+   689→   689→    // 목표물 바로 위 퀘스트 마커(!)
+   690→   690→    if (!this.questMark) {
+   691→   691→      this.questMark = this.add.image(target.x, target.y - 34, "quest_mark").setDepth(22);
+   692→   692→    }
+   693→   693→    this.questMark.setPosition(target.x, target.y - 34 + Math.sin(this.time.now / 200) * 3);
+   694→   694→
+   695→   695→    // 카메라 뷰 밖이면 가장자리 화살표 표시
+   696→   696→    const view = this.cameras.main.worldView;
+   697→   697→    const margin = 40;
+   698→   698→    const inside =
+   699→   699→      target.x > view.x + margin &&
+   700→   700→      target.x < view.right - margin &&
+   701→   701→      target.y > view.y + margin &&
+   702→   702→      target.y < view.bottom - margin;
+   703→   703→
+   704→   704→    if (!inside) {
+   705→   705→      if (!this.edgeArrow)
+   706→   706→        this.edgeArrow = this.add
+   707→   707→          .image(0, 0, "edge_arrow")
+   708→   708→          .setDepth(50)
+   709→   709→          .setScrollFactor(0)
+   710→   710→          .setBlendMode(Phaser.BlendModes.ADD);
+   711→   711→      const cx = this.cameras.main.width / 2;
+   712→   712→      const cy = this.cameras.main.height / 2;
+   713→   713→      const angle = Phaser.Math.Angle.Between(cx, cy, target.x - view.x, target.y - view.y);
+   714→   714→      // 화면 중심에서 끝까지 레이캐스트하여 클램프
+   715→   715→      const halfW = this.cameras.main.width / 2 - 46;
+   716→   716→      const halfH = this.cameras.main.height / 2 - 46;
+   717→   717→      const t = Math.min(
+   718→   718→        Math.abs(halfW / Math.cos(angle)) || Infinity,
+   719→   719→        Math.abs(halfH / Math.sin(angle)) || Infinity
+   720→   720→      );
+   721→   721→      this.edgeArrow.setPosition(cx + Math.cos(angle) * t, cy + Math.sin(angle) * t);
+   722→   722→      this.edgeArrow.setRotation(angle);
+   723→   723→      this.edgeArrow.setAlpha(0.65 + Math.sin(this.time.now / 150) * 0.3);
+   724→   724→    } else if (this.edgeArrow) {
+   725→   725→      this.edgeArrow.destroy();
+   726→   726→      this.edgeArrow = null;
+   727→   727→    }
+   728→   728→  }
+   729→   729→
+   730→   730→  /* ================= 퀘스트/세이브 ================= */
+   731→   731→
+   732→   732→  currentQuest() {
+   733→   733→    return this.stageDef.quests[this.questIdx] ?? null;
+   734→   734→  }
+   735→   735→
+   736→   736→  private advanceQuest() {
+   737→   737→    this.questIdx = Math.min(this.questIdx + 1, this.stageDef.quests.length);
+   738→   738→    this.huntCount = 0;
+   739→   739→    this.emitQuest();
+   740→   740→  }
+   741→   741→
+   742→   742→  emitQuest() {
+   743→   743→    const q = this.currentQuest();
+   744→   744→    if (!q) {
+   745→   745→      EventBus.emit("quest", {
+   746→   746→        title: "지역 클리어!",
+   747→   747→        desc: "",
+   748→   748→        current: 1,
+   749→   749→        target: 1,
+   750→   750→        distance: null,
+   751→   751→      } satisfies QuestState);
+   752→   752→      return;
+   753→   753→    }
+   754→   754→    let current = 0;
+   755→   755→    let target = 1;
+   756→   756→    if (q.type === "hunt") {
+   757→   757→      current = Math.min(this.huntCount, q.need ?? 0);
+   758→   758→      target = q.need ?? 0;
+   759→   759→    }
+   760→   760→    let distance: number | null = null;
+   761→   761→    const t = this.questTargetPos();
+   762→   762→    if (t) distance = Math.round(Phaser.Math.Distance.Between(this.player.x, this.player.y, t.x, t.y) / 32);
+   763→   763→    EventBus.emit("quest", {
+   764→   764→      title: q.title,
+   765→   765→      desc: q.desc,
+   766→   766→      current,
+   767→   767→      target,
+   768→   768→      distance,
+   769→   769→    } satisfies QuestState);
+   770→   770→  }
+   771→   771→
+   772→   772→  emitSkills() {
+   773→   773→    if (!this.player) return;
+   774→   774→    EventBus.emit("skills", {
+   775→   775→      mp: Math.round(this.player.mp),
+   776→   776→      s1Cd: Math.round(this.player.skill1Cd),
+   777→   777→      s1Max: this.player.skill1Max,
+   778→   778→      s2Cd: Math.round(this.player.skill2Cd),
+   779→   779→      s2Max: this.player.skill2Max,
+   780→   780→    });
+   781→   781→  }
+   782→   782→
+   783→   783→  emitHud() {
+   784→   784→    if (!this.player) return;
+   785→   785→    EventBus.emit("hud", {
+   786→   786→      hp: Math.max(0, Math.round(this.player.hp)),
+   787→   787→      maxHp: this.player.maxHp,
+   788→   788→      mp: Math.round(this.player.mp),
+   789→   789→      maxMp: this.player.maxMp,
+   790→   790→      lv: this.player.lv,
+   791→   791→      exp: this.player.exp,
+   792→   792→      expNext: this.player.expNext(),
+   793→   793→    });
+   794→   794→  }
+   795→   795→
+   796→   796→  private save() {
+   797→   797→    writeSave({
+   798→   798→      stage: this.stageDef.key,
+   799→   799→      lv: this.player.lv,
+   800→   800→      exp: this.player.exp,
+   801→   801→      maxHp: this.player.maxHp,
+   802→   802→      atk: this.player.atk,
+   803→   803→      cleared: this.cleared,
+   804→   804→    });
+   805→   805→  }
+   806→   806→
+   807→   807→  private saveStage(stage: StageKey) {
+   808→   808→    this.save();
+   809→   809→    void stage;
+   810→   810→  }
+   811→   811→
+   812→   812→  private saveCleared() {
+   813→   813→    writeSave({
+   814→   814→      stage: this.stageDef.key,
+   815→   815→      lv: this.player.lv,
+   816→   816→      exp: this.player.exp,
+   817→   817→      maxHp: this.player.maxHp,
+   818→   818→      atk: this.player.atk,
+   819→   819→      cleared: true,
+   820→   820→    });
+   821→   821→  }
+   822→   822→
+   823→   823→  /* ================= 대사/배너/사운드 브릿지 ================= */
+   824→   824→
+   825→   825→  showDialogue(id: string) {
+   826→   826→    const d = DIALOGUE_GET(id);
+   827→   827→    if (!d) return;
+   828→   828→    this.dialoguing = true;
+   829→   829→    this.player.setVelocity(0, 0);
+   830→   830→    this.physics.world.pause();
+   831→   831→    EventBus.emit("dialogue:show", d);
+   832→   832→  }
+   833→   833→
+   834→   834→  resumeFromDialogue() {
+   835→   835→    this.dialoguing = false;
+   836→   836→    this.physics.world.resume();
+   837→   837→    EventBus.emit("dialogue:hide");
+   838→   838→  }
+   839→   839→
+   840→   840→  showBanner(text: string) {
+   841→   841→    EventBus.emit("banner:show", { text });
+   842→   842→  }
+   843→   843→
+   844→   844→  sfxSwing() {
+   845→   845→    audio.sfx.swing();
+   846→   846→  }
+   847→   847→  sfxSpin() {
+   848→   848→    audio.sfx.spin();
+   849→   849→  }
+   850→   850→  sfxDash() {
+   851→   851→    audio.sfx.dash();
+   852→   852→  }
+   853→   853→  sfxHurt() {
+   854→   854→    audio.sfx.hurt();
+   855→   855→  }
+   856→   856→  sfxLevelUp() {
+   857→   857→    audio.sfx.levelup();
+   858→   858→  }
+   859→   859→  sfxRoar() {
+   860→   860→    audio.sfx.roar();
+   861→   861→  }
+   862→   862→  sfxEnemyDie() {
+   863→   863→    audio.sfx.enemyDie();
+   864→   864→  }
+   865→   865→
+   866→   866→  /* ================= 정리 ================= */
+   867→   867→
+   868→   868→  private cleanup() {
+   869→   869→    this.questTimer?.remove();
+   870→   870→    EventBus.emit("dialogue:hide");
+   871→   871→  }
+   872→   872→}
+   873→   873→
+   874→   874→const BOSS_EXP = 220;
+   875→   875→
+   876→   876→function DIALOGUE_GET(id: string) {
+   877→   877→  return DIALOGUES[id];
+   878→   878→}
+   879→   879→
