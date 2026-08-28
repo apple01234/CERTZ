@@ -14,6 +14,27 @@ export const COLORS = {
 /** 세이브 키 (Capacitor WebView localStorage 호환) */
 export const SAVE_KEY = "sertz_save_v2";
 
+/** 음소거 기본 설정 키 — 세이브와 별도 보관 (저장 데이터 삭제 후에도 유지) */
+const MUTE_KEY = "sertz_muted";
+
+export function loadMuted(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(MUTE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function writeMuted(m: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(MUTE_KEY, m ? "1" : "0");
+  } catch {
+    /* 무시 */
+  }
+}
+
 export type SaveData = {
   stage: string;
   lv: number;

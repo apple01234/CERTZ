@@ -11,6 +11,7 @@ import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen } from "./Overlay
 import { GamePanels } from "./Panels";
 import { Store } from "lucide-react";
 import * as audio from "@/game/audio";
+import { loadMuted, writeMuted } from "@/game/config";
 
 /**
  * 게임 루트: Phaser 캔버스 + React UI 오버레이의 합체점
@@ -20,8 +21,14 @@ export default function GameRoot() {
   const parentRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const { state, hud, quest, skills, dialogue, boss, banner, end, rpg, panel, setPanel } = useGameUi();
-  const [muted, setMuted] = useState(false);
+  // 클라이언트 전용 컴포넌트(ssr:false)라 localStorage 지연 초기화 안전 — 음소거 설정 복원
+  const [muted, setMuted] = useState(() => loadMuted());
   const [portraitMobile, setPortraitMobile] = useState(false);
+
+  // 부팅 시 저장된 음소거를 오디오 시스템에 적용 (BGM 재생 전 무음 유지)
+  useEffect(() => {
+    audio.setMuted(loadMuted());
+  }, []);
 
   // Phaser 부팅 (1회)
   useEffect(() => {
@@ -77,6 +84,7 @@ export default function GameRoot() {
                   const next = !muted;
                   setMuted(next);
                   audio.setMuted(next);
+                  writeMuted(next); // 설정 저장 — 새로고침/APK 재실행 후에도 유지
                 }}
                 onOpenInv={() => setPanel(panel === "inv" ? null : "inv")}
               />

@@ -15,6 +15,9 @@ let muted = false;
 /** PhaserGame 생성 직후 1회 호출 */
 export function attachAudio(g: Phaser.Game) {
   game = g;
+  // 모듈 muted 플래그를 새 사운드 매니저에 동기화
+  // (부팅 순서: React 음소거 복원 effect가 createGame보다 먼저 돌 수 있다)
+  if (muted) setMuted(true);
 }
 
 /** 유저 제스처 시점 오디언락 해제 (모바일 WebView 대비) */
@@ -26,7 +29,13 @@ export function initAudio() {
 
 export function setMuted(m: boolean) {
   muted = m;
-  if (game) game.sound.mute = m;
+  if (game) {
+    game.sound.mute = m;
+    // 일부 Chromium/WebView에선 mute 세터가 쓰는 setValueAtTime(..., 0)(과거 시점 스케줄)이
+    // 즉시 반영되지 않는다 — 전용 뮤트 노드 게인에 직접 기록 (볼륨 노드와 분리돼 있어 안전)
+    const sm = game.sound as unknown as { masterMuteNode?: { gain: AudioParam } | null };
+    if (sm.masterMuteNode) sm.masterMuteNode.gain.value = m ? 0 : 1;
+  }
   if (m) destroyBgm();
   else if (bgmKind) startBgm(bgmKind);
 }
