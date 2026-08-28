@@ -65,3 +65,7 @@ loop/loop-console.log
 *.apk
 *.aab
 android/app/build/
+backups/
+.gh_*
+.device_*
+nohup.out
