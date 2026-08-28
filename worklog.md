@@ -263,3 +263,23 @@ Stage Summary:
 - RPG 루프 완성도: 사냥 → 드롭 → 골드 → 구매/강화/장신구 → 성장 (크리로 타격감 강화)
 - 이슈: Pixel Crawler 팩 2회째 미도착 — 도착 시 아이콘 리스킨 가능 (현재 Kenney CC0로 완결)
 - 제약 준수: APK 미빌드 (사용자 지시 시에만)
+
+---
+Task ID: loop-setup
+Agent: Super Z (main)
+Task: 사용자 지시 — 자율 개발 루프 전체 셋업 [0]~[5] (뼈대만, 실제 개발 시작 금지. 단 이 문구는 PROMPT.md에 미반영)
+
+Work Log:
+- [0] git 저장소 기존 존재(init 불필요) → .gitignore에 logs/, loop/STOP, loop/loop.pid/lock, *.apk 등 런타임 산물 추가 커밋(7115029) + loop/ docs/feedback/ logs/ 폴더 생성
+- [1] loop/env.sh(모델/최대 턴/바퀴 대기/최대 바퀴 수 + run_agent_session 함수 — 대화 이어붙임 옵션 금지 주석) + loop/loop.sh(무한 루프, 바퀴마다 새 헤드리스 세션 -p, logs/YYYY-MM-DD.log 날짜별 로그, STOP 1초 단위 감시, flock 이중 실행 차단, 시그널 정리, LOOP_STUB 스모크 모드) 작성, bash -n 통과
+- [2] docs/DESIGN.md(초기 기획), docs/STATUS.md(매 바퀴 갱신), docs/feedback/INBOX.md(최우선 지시) — 전부 빈 틀
+- [3] loop/PROMPT.md 6절 틀: ①합격기준(빈칸) ②읽을 문서 3종+읽을 범위 칸(빈칸) ③규칙+왜 형식(빈칸+예시2) ④읽기→하나만→눈으로 확인→커밋→STATUS 갱신(작성) ⑤검사 통과 즉시 커밋/멈춘 자리에 커밋 없으면 소실(작성) ⑥스크린샷 직접 읽기/같은 지적 2회면 규칙+검사화(작성). "뼈대만" 문구 미반영 확인
+- [4] OS=Debian13이나 컨테이너(tini PID1)로 systemd 유저 세션 불가 → loop/systemd/sertz-loop.service.in 템플릿(PATH 명시+@ROOT@/@HOME@/@EXTRA_PATH@ 치환, Restart=on-failure, WantedBy=default.target) + loop/loopctl.sh(start/stop/hardstop/status/restart/test/log, systemd 감지 실패 시 nohup 폴백, 설치 시 claude/node 실경로 PATH 자동 삽입, loginctl linger) 작성. 유닛 렌더 검증 완료. loop/STOP 생성으로 꺼짐 상태 유지(켜지 않음)
+- [5] 스모크 테스트: LOOP_STUB=1 MAX_CYCLES=2 → 2바퀴 정상 기동·로그 기록·최대 바퀴 정상 종료 확인; STOP 존재 시 시작 거부 / 이중 실행 flock 차단(exit 1) / hardstop 즉시 종료 모두 실측. status 집계 중복 버그(루프 로그+헤더 블록 2중 카운트) 발견 → rg 정규식 타임스탬프 앵커로 수정 재검증(3회 실측 일치)
+- README.md 신설(파일 지도/동작 원리/켜기·끄기·상태/loop.sh 직접 실행 경고/①②③ 작성 가이드) + 골격 커밋(1b71b50)
+
+Stage Summary:
+- 산출물: loop/{loop.sh,env.sh,loopctl.sh,PROMPT.md,systemd/sertz-loop.service.in}, docs/{DESIGN,STATUS}.md, docs/feedback/INBOX.md, README.md, .gitignore 확장 — 커밋 7115029, 1b71b50
+- 검증: 2바퀴 스모크 + STOP/이중실행/hardstop 실측 통과. 현재 상태 "등록 완료 + 꺼짐(STOP ON)"
+- 환경 한계: 이 컨테이너는 systemd 유저 세션이 없어 재부팅 자동시작 불가(nohup 폴백만 동작) — systemd 머신에서는 ./loop/loopctl.sh start 한 번으로 완전 등록
+- 실제 에이전트 미연결 상태: env.sh의 AGENT_BIN(claude 기본)은 사용자 환경에 맞게 조정 필요. 실제 개발은 시작하지 않음(요구사항 준수)
