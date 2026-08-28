@@ -1,0 +1,23 @@
+[Unit]
+Description=SERTZ autonomous dev loop (headless agent sessions)
+Documentation=file://@ROOT@/README.md
+
+[Service]
+Type=simple
+WorkingDirectory=@ROOT@
+# ⚠ 자동 실행은 평소 터미널 환경을 물려받지 않는다 → PATH 를 반드시 명시한다.
+#   빠뜨리면 실행 파일을 못 찾고 조용히 죽는다. (@EXTRA_PATH@ 는 loopctl 설치 시 실제 경로로 채워진다)
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:@HOME@/.local/bin:@HOME@/.npm-global/bin:@HOME@/.bun/bin@EXTRA_PATH@"
+Environment="HOME=@HOME@"
+ExecStart=/bin/bash @ROOT@/loop/loop.sh
+# 비정상 종료(0 아닌 종료코드/신호)면 재시작, 정상 종료(STOP·최대 바퀴 도달·이미 실행 중)면 그대로 둔다
+Restart=on-failure
+RestartSec=10s
+# 설정 오류 등으로 무한 재시작 스핀 방지 (10분 내 10회 실패 시 멈춤 — 로그 확인 후 loopctl start 로 재개)
+StartLimitIntervalSec=600
+StartLimitBurst=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
