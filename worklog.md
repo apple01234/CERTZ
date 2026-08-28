@@ -381,3 +381,27 @@ Stage Summary:
 - 산출물: src/game/scenes/WorldScene.ts
 - 마을 기능성 보완: 상점(라고스) + 샘물 회복 + 주민 대화 — 비전투 회복 루프 완성
 - 제약 준수: APK 미빌드
+
+---
+Task ID: loop-5
+Agent: Super Z (main)
+Task: 자율 루프 바퀴 5 — 풀런 E2E QA + 발견된 치명 버그 수정
+
+Work Log:
+- 풀런 중 3건의 치명 버그 발견·수정 (97531ff):
+  1) 차원문 스테이지 전환 시 scene.restart({stage})를 세이브 없이 호출 → 골드/레벨/장비/물약이 기본값으로 초기화되는 진행 소실 (사용자 관점 최악의 버그). enterPortal이 buildSave(next)를 만들어 writeSave + restart({stage, save})로 캐리하도록 수정. 실측: 숲(골드130·atk17) → 알프헤임 진입 후 동일 값 유지
+  2) 사망/승리 화면 통계(처치/레벨/시간)가 씬 재시작마다 리셋(init의 totalKills/startTime) → registry(runKills/runStart)로 런 전체 유지, TitleScene 시작 시 fresh:true로 리셋. 승리 화면 실측: 처치 10·LV 3·1분 24초 정확
+  3) 부활 지점 몬스터 캠핑 → 즉사 루프 (리스폰 하수인이 부활점 어그로) — Enemy.resetHome() 추가해 respawnPlayer에서 전 몬스터 스폰지점 복귀+어그로 해제, revive 무적 1200→2200ms
+- 풀런 실측 (agent-browser):
+  - 마을(골드30) → 포탈 → 숲: 스탯 캐리 ✓
+  - 숲: 파편(atk+5, +40G) → 늑대4킬(+60G, 포탈 개방) → 알프헤임: 골드130·atk17 유지 ✓
+  - 알프헤임: 하수인 5킬 → 보스 등장 → 실전 관찰: 강타 텔레그래프 → 18피해 ×2 (boss AI 정상) → 보스 처치
+  - 승리 엔딩: "알프헤임 구원 완료!" 처치10·LV3·1분24초 스크린샷 ✓
+  - 부활 캠핑: respawnPlayer → 몬스터 정확히 스폰지점 복귀(match:true) ✓
+  - 밸런스 관찰: 하수인 11뎀/보스 18뎀 vs 플레이어 118~136HP+물약 — 도전적이지만 물약 운영으로 승리 가능. 골드 수급(풀런 410G+드롭) vs 상점/강화 가격 — v1 밸런스 양호
+  - page errors 0, tsc 0, eslint 0, localStorage.clear() 정리
+
+Stage Summary:
+- 산출물: WorldScene.ts(캐리/런통계/부활), Enemy.ts(resetHome), Player.ts(무적), TitleScene.ts(fresh)
+- 합격기준 전 항목 통과 — 게임 v1.0 완성 직전 (최종 대조만 남음)
+- 제약 준수: APK 미빌드
