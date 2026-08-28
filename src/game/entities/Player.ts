@@ -108,21 +108,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.slashAlt = !this.slashAlt;
     this.hitSet.clear();
 
-    // 전방 러지 — 베는 순간 살짝 전진해 타격감 부여
+    // 전방 러지 — 베는 순간 전진해 칼날이 들어가는 느낌
     const dir = this.aimDir();
-    this.setVelocity(dir.x * 330, dir.y * 330);
+    this.setVelocity(dir.x * 360, dir.y * 360);
 
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.setFlipX(dir.y === 0 && dir.x < 0); // 측면 시트는 오른쪽 기준
     this.play(atkKey);
 
-    // 베기 타이밍: 70ms 후 판정+참격 (모션 2프레임 시점)
-    this.scene.time.delayedCall(70, () => {
+    // 베기 타이밍: 65ms 후 판정+참격 스윕 (모션 2프레임 시점)
+    this.scene.time.delayedCall(65, () => {
       if (this.state !== "attack") return;
       this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt);
       this.scene.sfxSwing();
-      this.checkMeleeHit(dir, 130, 76, 1.0, 230);
+      this.checkMeleeHit(dir, 130, 84, 1.0, 280);
     });
 
     this.scene.time.delayedCall(200, () => {
@@ -140,7 +140,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return new Phaser.Math.Vector2(0, f.y >= 0 ? 1 : -1);
   }
 
-  /** 광역 근접 판정 — rect 방식으로 X축 사거리를 넉넉하게 */
+  /** 광역 근접 판정 — rect + 목표 크기 반영 (보스처럼 큰 적도 실제 몸통에 맞음) */
   checkMeleeHit(
     dir: Phaser.Math.Vector2,
     reach: number,
@@ -155,9 +155,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     let hits = 0;
     for (const e of this.scene.getAllTargets()) {
       if (!e.active || this.hitSet.has(e)) continue;
+      const tw = ((e as unknown as { hitW?: number }).hitW ?? 24) / 2;
+      const th = ((e as unknown as { hitH?: number }).hitH ?? 24) / 2;
       const ex = e.x - cx;
       const ey = (e.y - cy) * 1.15; // 조금 관대하게
-      if (Math.abs(ex) <= halfW && Math.abs(ey) <= halfH) {
+      if (Math.abs(ex) <= halfW + tw && Math.abs(ey) <= halfH + th) {
         this.hitSet.add(e);
         hits++;
         e.takeDamage(Math.round(this.atk * dmgMul), dir, knock);
@@ -177,9 +179,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.skill1Cd = this.skill1Max;
     this.state = "attack";
     this.hitSet.clear();
+    this.setVelocity(0, 0);
     this.scene.sfxSpin();
 
-    const ring = this.scene.spawnSpinRing(this.x, this.y);
+    // 회전 방향: 조준 측면 기준 (상하 조준 시 현재 플립 방향 따름)
+    const aim = this.aimDir();
+    const spin = aim.x !== 0 ? (aim.x > 0 ? 1 : -1) : this.flipX ? -1 : 1;
+
+    // 360° 궤도 반달 + 충격파 + 스파크
+    this.scene.spawnSpinSlash(this.x, this.y, spin);
+
+    // 몸통(스프라이트) 360° 회전 — 검 뻗은 공격 프레임을 돌려 휘두르는 동작
+    this.play("hero-atk");
+    this.scene.tweens.add({
+      targets: this,
+      rotation: spin * Math.PI * 2,
+      duration: 250,
+      ease: "Cubic.inOut",
+      onComplete: () => this.setRotation(0),
+    });
+
     this.scene.time.delayedCall(90, () => {
       // 360° 전체 판정
       for (const e of this.scene.getAllTargets()) {
@@ -193,8 +212,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       this.scene.onMeleeConnect(1);
     });
-    this.scene.time.delayedCall(260, () => {
-      ring.destroy();
+    this.scene.time.delayedCall(310, () => {
       if (this.state === "attack") this.state = "idle";
     });
     this.scene.emitHud();

@@ -63,3 +63,29 @@ Stage Summary:
 - 산출물: public/assets/ 65종(+CREDITS.md), scripts/build_assets.py, src/game/** 수정 5파일, HUD/Overlays
 - 제약 준수: APK 미빌드 (사용자 지시 시에만 — 이전 세션 빌드 도구는 세션 리셋으로 소실, 재설치 필요)
 - 이슈: 사용자 업로드 zip 미도착 → 재업로드 요청 필요 시 안내
+
+---
+Task ID: fx-1
+Agent: Super Z (main)
+Task: 사용자 지시 — ①회전베기 이펙트 개선 ②캐릭터가 바라보는 방향의 반달모양 베기 이펙트
+
+Work Log:
+- textures.ts: 기존 스트로크 호(slash_arc)를 "채워진 룬(lune)" 반달 텍스처(slash_crescent 128x128)로 교체
+  - 외호 O(44,64) R50 + 내호 I(10,64) r60.46 교차 → 끝이 뾰족하게 테이퍼되는 진짜 초승달
+  - 청백 라디얼 그라디언트 본체 + 외곽 글로우 2겹 + 칼날 외연 하이라이트 + 내부 에코 궤적 2줄
+- slash_ring 충격파 개선: 소프트 그라디언트 링(중심 투명→흰 코어→바깥 페이드)
+- WorldScene.ts:
+  - spawnSlash 재작성: 반달을 조준 방향에 배치(origin 0.344=반달 원심), 교차 스윕 ±35°, 스케일 팝 0.74→1.16, Sine.in 페이드 — 이전의 과도한 190° 회전 스윕 제거
+  - spawnSpinSlash 신설(구 spawnSpinRing 정적 링 제거): 반달 2장이 플레이어 중심축으로 360° 궤도 회전(본체+트레일), 회전 후반 확장 충격파, 청백 스파크 10발, 미세 카메라 킥
+- Player.ts useSkill1: setVelocity(0,0) 정지 추가, 몸통 스프라이트 360° rotation 트윈(Cubic.inOut 250ms, 완료 시 0 리셋), hero-atk 프레임으로 회전, 지속 260→310ms
+- 검증(agent-browser + __SERTZ__ 훅):
+  - 슬로우모션(timeScale 0.15)으로 우/하/상 반달 참격 직접 스폰 → 스크린샷 3종 모두 조준 방향 정확히 반달 렌더 확인
+  - useSkill1 실호환: 몸통 회전 + 궤도 반달 + 충격파 링 캡처 확인, 완료 후 rot=0/idle 복귀
+  - 실전 속도 통합: SPACE 키 → slash_active=1 state=attack 확인, K키 → mp 60→45 소모 확인
+  - tsc 0 에러, ESLint 0 에러, 콘솔 에러 0, world children 66 불변(누수 없음)
+- 테스트 노트: 합성 키 이벤트 테스트 시 dialoguing 게이트/스테일 키 플래그로 오판 가능 — 세션 재검증 시 dialogue 먼저 닫고 keys.reset() 후 진행
+
+Stage Summary:
+- 산출물: src/game/textures.ts, src/game/scenes/WorldScene.ts, src/game/entities/Player.ts
+- 참격이 "회전하는 선"에서 "조준 방향의 반달 검기"로, 회전베기가 "정적 링"에서 "몸통 360° 회전+궤도 반달+충격파"로 개선됨
+- 제약 준수: APK 미빌드 (사용자 지시 시에만)

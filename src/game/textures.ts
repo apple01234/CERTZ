@@ -19,40 +19,72 @@ function makeTex(scene: Phaser.Scene, key: string, w: number, h: number, draw: (
 
 /* ================= 이펙트 ================= */
 
-function slashArc(c: Ctx) {
-  // 96x96 참격 초승달 (오른쪽으로 베는 형태, 게임에서 회전/플립)
-  c.save();
-  c.translate(10, 48);
+/**
+ * 128x128 반달(초승달) 참격 — 채워진 룬(lune) 형태.
+ * 외호: 원심 O(44,64) R50 의 오른쪽 절반(-90°→+90°)
+ * 내호: 왼쪽으로 밀린 원 I(10,64) R60.46 을 되감아 두 호 사이를 채운다.
+ * 끝이 뾰족하게 테이퍼되는 진짜 반달 + 청백 그라디언트 + 외곽 글로우.
+ * 회전 축(pivot)은 원심 O — origin(0.344,0.5) 로 두면 캐릭터 중심에서 반달이 휘돈다.
+ */
+function slashCrescent(c: Ctx) {
+  const OX = 44, OY = 64, R = 50;
+  const lune = () => {
+    c.beginPath();
+    c.arc(OX, OY, R, -Math.PI / 2, Math.PI / 2, false);      // 외호 위→아래
+    c.arc(10, OY, 60.46, 0.972, -0.972, true);                // 내호 아래→위 (오목면)
+    c.closePath();
+  };
+  // 외곽 글로우 (넓고 연하게)
+  c.strokeStyle = "rgba(110, 215, 255, 0.30)";
+  c.lineWidth = 14;
   c.lineCap = "round";
-  c.strokeStyle = "rgba(120, 220, 255, 0.5)";
-  c.lineWidth = 16;
   c.beginPath();
-  c.arc(0, 0, 38, -1.1, 1.1);
+  c.arc(OX, OY, R, -Math.PI / 2, Math.PI / 2, false);
   c.stroke();
-  c.strokeStyle = "rgba(255,255,255,0.95)";
-  c.lineWidth = 7;
+  c.strokeStyle = "rgba(160, 235, 255, 0.5)";
+  c.lineWidth = 6;
   c.beginPath();
-  c.arc(0, 0, 38, -1.0, 1.0);
+  c.arc(OX, OY, R, -Math.PI / 2, Math.PI / 2, false);
   c.stroke();
-  c.strokeStyle = "rgba(200, 240, 255, 0.35)";
-  c.lineWidth = 3;
+  // 반달 본체 — 안쪽 청색 → 바깥 흰색 그라디언트
+  const g = c.createRadialGradient(OX, OY, 20, OX, OY, R + 2);
+  g.addColorStop(0, "rgba(150, 228, 255, 0.85)");
+  g.addColorStop(0.55, "rgba(200, 243, 255, 0.92)");
+  g.addColorStop(1, "rgba(255, 255, 255, 0.98)");
+  c.fillStyle = g;
+  lune();
+  c.fill();
+  // 칼날 외연 하이라이트
+  c.strokeStyle = "rgba(255, 255, 255, 0.95)";
+  c.lineWidth = 2.5;
   c.beginPath();
-  c.arc(0, 0, 26, -0.7, 0.7);
+  c.arc(OX, OY, R, -Math.PI / 2, Math.PI / 2, false);
   c.stroke();
-  c.restore();
+  // 안쪽 에코 잔상 — 검기 궤적
+  c.strokeStyle = "rgba(235, 250, 255, 0.5)";
+  c.lineWidth = 2.5;
+  c.beginPath();
+  c.arc(OX, OY, 34, -0.78, 0.78, false);
+  c.stroke();
+  c.strokeStyle = "rgba(235, 250, 255, 0.3)";
+  c.lineWidth = 2;
+  c.beginPath();
+  c.arc(OX, OY, 26, -0.6, 0.6, false);
+  c.stroke();
 }
 
 function slashRing(c: Ctx) {
-  c.strokeStyle = "rgba(255,255,255,0.95)";
-  c.lineWidth = 8;
+  // 140x140 충격파 링 — 바깥으로 갈수록 사라지는 소프트 그라디언트
+  const g = c.createRadialGradient(70, 70, 38, 70, 70, 66);
+  g.addColorStop(0, "rgba(120, 220, 255, 0)");
+  g.addColorStop(0.62, "rgba(170, 235, 255, 0.55)");
+  g.addColorStop(0.88, "rgba(255, 255, 255, 0.95)");
+  g.addColorStop(1, "rgba(120, 220, 255, 0)");
+  c.fillStyle = g;
   c.beginPath();
-  c.arc(70, 70, 56, 0, Math.PI * 2);
-  c.stroke();
-  c.strokeStyle = "rgba(120, 220, 255, 0.45)";
-  c.lineWidth = 16;
-  c.beginPath();
-  c.arc(70, 70, 56, 0, Math.PI * 2);
-  c.stroke();
+  c.arc(70, 70, 66, 0, Math.PI * 2);
+  c.arc(70, 70, 38, 0, Math.PI * 2, true);
+  c.fill();
 }
 
 function beaconTex(c: Ctx) {
@@ -173,7 +205,7 @@ function portalFrame(c: Ctx, f: number) {
 
 /** 로드된 실제 에셋 위에 필요한 런타임 VFX만 생성 */
 export function buildVfxTextures(scene: Phaser.Scene) {
-  makeTex(scene, "slash_arc", 96, 96, slashArc);
+  makeTex(scene, "slash_crescent", 128, 128, slashCrescent);
   makeTex(scene, "slash_ring", 140, 140, slashRing);
   makeTex(scene, "beacon", 48, 512, beaconTex);
   makeTex(scene, "glow", 64, 64, glowTex);

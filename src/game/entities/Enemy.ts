@@ -10,6 +10,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   hp: number;
   maxHp: number;
   alive = true;
+  // 근접 판정용 목표 크기 (스프라이트 실제 크기 기준)
+  hitW = 40;
+  hitH = 30;
 
   private mode: "wander" | "chase" | "windup" | "cooldown" = "wander";
   private modeTimer = 0;
@@ -36,6 +39,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.body!.setSize(bw, bh);
     this.body!.setOffset((this.width - bw) / 2, this.height - bh - 2);
     this.play(`${key}-idle`);
+    // 스프라이트 크기에 맞춘 근접 판정 크기
+    this.hitW = key === "wolf" ? 56 : 30;
+    this.hitH = key === "wolf" ? 30 : 32;
   }
 
   /** 씬에서 매 프레임 호출 */
@@ -45,8 +51,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.hitFlash = Math.max(0, this.hitFlash - dt);
     if (this.hitFlash <= 0 && this.tintTopLeft !== 0xffffff) this.clearTint();
 
-    // 넉백 감쇠
-    this.knockVec.scale(Math.pow(0.0016, dt / 1000));
+    // 넉백 감쇠 (죽은 뒤 제외 — destroy 후 접근 방지)
+    if (this.active) this.knockVec.scale(Math.pow(0.0016, dt / 1000));
 
     const dist = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
     const toPlayer = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
@@ -130,7 +136,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (!this.alive) return;
     this.hp -= dmg;
     this.hitFlash = 90;
-    this.setTint(0xff6666);
+    // 타격감: 화이트 플래시 (기존 빨간 틴트보다 명확한 피격 피드백)
+    this.setTintFill(0xffffff);
     this.knockVec.set(dir.x * knock, dir.y * knock);
     this.scene.spawnDamageText(this.x, this.y - 20, dmg);
     this.scene.spawnHitSpark(this.x, this.y);

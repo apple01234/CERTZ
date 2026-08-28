@@ -19,6 +19,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   maxHp = BOSS_DEF.hp;
   alive = true;
   enraged = false;
+  // 근접 판정용 목표 크기 — 커다란 보스 스프라이트에 맞춰 넉넉하게
+  hitW = 104;
+  hitH = 108;
 
   private mode: BossMode = "idle";
   private modeTimer = 1200;
@@ -41,9 +44,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(11);
-    // 111x126 캔버스 (sotrak 보스) 기준 히트박스
-    this.body!.setSize(56, 72);
-    this.body!.setOffset(27, 48);
+    // 111x126 캔버스 (sotrak 보스) — 스프라이트가 크므로 히트박스도 넉넉하게
+    this.body!.setSize(76, 92);
+    this.body!.setOffset(17, 30);
     this.play("boss-idle");
 
     for (let i = 0; i < 24; i++) {
@@ -244,6 +247,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     if (!this.alive) return;
     this.hp -= dmg;
     this.knockVec.set(dir.x * knock * 0.12, dir.y * knock * 0.12); // 보스는 넉백 거의 안 됨
+    // 타격감: 화이트 플래시
+    this.setTintFill(0xffffff);
+    this.scene.time.delayedCall(60, () => {
+      if (this.alive && this.active) this.clearTint();
+    });
     this.scene.spawnDamageText(this.x + Phaser.Math.Between(-14, 14), this.y - 44, dmg);
     this.scene.spawnHitSpark(this.x, this.y - 30);
     EventBus.emit("boss:update", { hp: Math.max(0, this.hp), maxHp: this.maxHp });

@@ -5,6 +5,7 @@ import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
 import { EventBus, type QuestState } from "../../components/game/EventBus";
 import { writeSave, type SaveData } from "../config";
+import { viewZoom } from "../PhaserGame";
 import * as audio from "../audio";
 
 /**
@@ -118,6 +119,10 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
     this.cameras.main.setBackgroundColor(stageKey === "forest" ? "#0a1408" : "#0d0a1e");
 
+    // 반응형: 화면 밀도 유지용 카메라 줌 (RESIZE 캔버스 1:1 + 카메라 확대)
+    this.applyCameraZoom();
+    this.scale.on("resize", this.applyCameraZoom, this);
+
     /* ---------- 장식 (F1: 정의된 소수만) ---------- */
     this.placeDecor(stageKey);
 
@@ -192,6 +197,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private solidGroup!: Phaser.Physics.Arcade.StaticGroup;
+
+  private applyCameraZoom() {
+    this.cameras.main.setZoom(viewZoom());
+  }
 
   /* ================= 배치 ================= */
 
@@ -410,10 +419,11 @@ export class WorldScene extends Phaser.Scene {
       this.dmgPool.push(t);
     }
 
-    // 참격 스프라이트 5장 고정 풀
+    // 참격(반달) 스프라이트 5장 고정 풀
     for (let i = 0; i < 5; i++) {
       const s = this.add
-        .image(0, 0, "slash_arc")
+        .image(0, 0, "slash_crescent")
+        .setOrigin(0.344, 0.5) // 회전 축 = 반달 원심 (캐릭터가 쥔 위치)
         .setDepth(25)
         .setBlendMode(Phaser.BlendModes.ADD)
         .setActive(false)
@@ -465,12 +475,12 @@ export class WorldScene extends Phaser.Scene {
         .setActive(true)
         .setVisible(true)
         .setAlpha(1)
-        .setScale(0.4);
+        .setScale(0.32);
       this.tweens.add({
         targets: s,
-        scale: 0.8,
+        scale: 0.68,
         alpha: 0,
-        duration: 150,
+        duration: 140,
         ease: "Quad.out",
         onComplete: () => s.setActive(false).setVisible(false),
       });
@@ -510,51 +520,111 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: c, alpha: 0, delay: 3500, duration: 800, onComplete: () => c.destroy() });
   }
 
-  spawnSpinRing(x: number, y: number) {
-    return this.add
-      .image(x, y, "slash_ring")
-      .setDepth(26)
+  /**
+   * 회전베기(Skill 1) 이펙트 — 검이 몸 주위를 360° 한 바퀴 돌며 베는 연출
+   *  1) 반달 참격 2장이 플레이어 중심을 축으로 360° 궤도 회전 (트레일 1장 추가)
+   *  2) 회전이 끝나는 시점에 확장 충격파 링
+   *  3) 청백 스파크 버스트 + 미세 카메라 킥
+   *  몸통 회전 자체는 Player.useSkill1에서 스프라이트 rotation 트윈으로 처리
+   */
+  spawnSpinSlash(x: number, y: number, spin: number) {
+    for (let i = 0; i < 2; i++) {
+      const s = this.slashPool[this.slashIdx];
+      this.slashIdx = (this.slashIdx + 1) % this.slashPool.length;
+      if (!s || !s.scene) continue;
+      this.tweens.killTweensOf(s);
+      const trail = i === 1;
+      s.setPosition(x, y - 4)
+        .setRotation(-0.5 * spin - (trail ? 0.55 * spin : 0))
+        .setActive(true)
+        .setVisible(true)
+        .setAlpha(trail ? 0.6 : 1)
+        .setScale(trail ? 0.82 : 0.98);
+      this.tweens.add({
+        targets: s,
+        rotation: Math.PI * 2 * spin + (trail ? -0.55 * spin : 0),
+        scale: trail ? 1.02 : 1.18,
+        alpha: 0,
+        delay: trail ? 70 : 0,
+        duration: trail ? 210 : 260,
+        ease: "Cubic.inOut",
+        onComplete: () => s.setActive(false).setVisible(false),
+      });
+    }
+
+    // 확장 충격파
+    const ring = this.add
+      .image(x, y - 4, "slash_ring")
+      .setDepth(24)
       .setBlendMode(Phaser.BlendModes.ADD)
-      .setScale(0.3);
+      .setScale(0.28)
+      .setAlpha(0.95);
+    this.tweens.add({
+      targets: ring,
+      scale: 1.45,
+      alpha: 0,
+      delay: 90,
+      duration: 310,
+      ease: "Cubic.out",
+      onComplete: () => ring.destroy(),
+    });
+
+    // 스파크 + 카메라 킥
+    this.burstEmitter.setParticleTint(0xa8ecff);
+    this.burstEmitter.explode(10, x, y);
+    this.cameras.main.shake(80, 0.0035);
   }
 
-  /** F5: 참격 초승달 이펙트 — 풀에서 꺼내 170ms 재생 */
+  /**
+   * F5+α: 반달 참격 — 캐릭터가 바라보는 방향에 초승달 검기를 배치하고
+   *  짧게 휘두르며(스윕 ±35°) 스케일 팝과 함께 사라진다.
+   *  alt로 위→아래 / 아래→위 교차 베기. 텍스처 회전축이 원심이라
+   *  스윕 시 반달이 캐릭터 주위를 도는 궤적을 그린다.
+   */
   spawnSlash(x: number, y: number, dir: Phaser.Math.Vector2, alt: boolean, scale = 1) {
     const s = this.slashPool[this.slashIdx];
     this.slashIdx = (this.slashIdx + 1) % this.slashPool.length;
     if (!s || !s.scene) return;
-    const rot = dir.x > 0 ? 0 : dir.x < 0 ? Math.PI : dir.y > 0 ? Math.PI / 2 : -Math.PI / 2;
-    s.setPosition(x + dir.x * 34, y + dir.y * 34 - 6)
-      .setRotation(rot)
-      .setFlipY(alt)
+    this.tweens.killTweensOf(s);
+    const base = Math.atan2(dir.y, dir.x);
+    const swing = alt ? 1 : -1; // 교차 베기 방향
+    s.setPosition(x + dir.x * 16, y - 4 + dir.y * 12)
+      .setRotation(base - 0.62 * swing)
       .setActive(true)
       .setVisible(true)
       .setAlpha(1)
-      .setScale(0.55 * scale);
+      .setScale(0.74 * scale);
     this.tweens.add({
       targets: s,
-      scale: 1.15 * scale,
-      alpha: 0.15,
-      duration: 170,
-      ease: "Quad.out",
+      rotation: base + 0.5 * swing,
+      scale: 1.16 * scale,
+      duration: 150,
+      ease: "Cubic.out",
+    });
+    this.tweens.add({
+      targets: s,
+      alpha: 0,
+      delay: 55,
+      duration: 110,
+      ease: "Sine.in",
       onComplete: () => s.setActive(false).setVisible(false),
     });
   }
 
   /* ================= 히트스톱 / 타격감 ================= */
 
-  /** F5: 명중 시 45ms 전체 정지 + 미세 흔들림 — '베인' 느낌의 핵심 */
+  /** F5: 명중 시 65ms 전체 정지 + 흔들림 강화 — '베인' 느낌의 핵심 */
   onMeleeConnect(_hits: number) {
     audio.sfx.hit();
     if (!this.hitStopActive) {
       this.hitStopActive = true;
       this.physics.world.pause();
-      this.time.delayedCall(45, () => {
+      this.time.delayedCall(65, () => {
         this.physics.world.resume();
         this.hitStopActive = false;
       });
     }
-    this.cameras.main.shake(50, 0.003);
+    this.cameras.main.shake(70, 0.006);
   }
 
   onEnemyKilled(key: "wolf" | "minion", exp: number) {
@@ -957,6 +1027,7 @@ export class WorldScene extends Phaser.Scene {
 
   private cleanup() {
     this.questTimer?.remove();
+    this.scale.off("resize", this.applyCameraZoom, this);
     EventBus.emit("dialogue:hide");
   }
 }
