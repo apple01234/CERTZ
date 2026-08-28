@@ -458,3 +458,19 @@ Stage Summary:
 - 스테이지 3→6개, 보스 1→3종, 몬스터 2→7종 — "이그드라실 뿌리 순행" 스토리 완결 (마을→숲→알프헤임→동굴→니플헤임→왕좌→진엔딩)
 - 구 세이브 전 케이스 호환 (v1.0 클리어 세이브도 신규 콘텐츠 이어가기)
 - 제약 준수: APK 미빌드 (사용자 지시 시에만)
+
+---
+Task ID: apk-1
+Agent: Super Z (main)
+Task: 사용자 지시 "Apk 빌드" — 첫 APK 빌드 (환경 초기화 복구 포함)
+
+Work Log:
+- 세션 환경 초기화로 프로젝트 유실 → GitHub(apple01234/CERTZ) 공개 클론으로 전체 복구, author 재설정
+- Android 빌드환경 신규 구축: cmdline-tools + platform-36 + build-tools 36/35 + platform-tools 설치, JRE-only → Temurin JDK 21 수동 설치
+- APK_EXPORT=1 정적 export 시 /api 라우트 충돌 → 임시 제외 후 export(.next-apk) → out 복사 → cap sync
+- ./gradlew assembleDebug 성공 (8.6MB, asset 150종 포함 확인)
+- android/ 플랫폼 + capacitor 의존성 커밋(535867e), 산출물: download/SERTZ-debug.apk
+
+Stage Summary:
+- SERTZ-debug.apk 첫 빌드 완료 — 디버그 서명 (사이드로드 설치 가능)
+- 미반영 요청 다음 루프 대기: E키 상호작용+스페이스 대화, 보스/스토리/퀘스트 10시간, 프롤로그 개편, 전직, 타격감, 키바인딩
