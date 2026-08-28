@@ -154,6 +154,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.alive = false;
     this.scene.sfxEnemyDie();
     this.scene.spawnDeathBurst(this.x, this.y);
+    // 2D MMORPG 기본 요소: 골드/물약 드롭
+    this.scene.dropLoot(this.x, this.y, this.def);
     if (this.hpBar) this.hpBar.destroy();
     if (this.hpBarBg) this.hpBarBg.destroy();
     this.hpBar = null;

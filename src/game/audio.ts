@@ -119,4 +119,16 @@ export const sfx = {
     play("sfx_bossdie", 0.85);
     play("sfx_roar", 0.55, 0.75);
   },
+  /** 골드 픽업 — item_gem_01 고피치 변주 (동일 CC0 파일 재사용) */
+  coin() {
+    play("sfx_pickup", 0.45, 1.3 + Math.random() * 0.2);
+  },
+  /** 물약 마심 — spell_01 저피치 단발 */
+  potion() {
+    play("sfx_levelup", 0.4, 1.25);
+  },
+  /** 장비 장착 — item_gem_04 저피치 (차임) */
+  equip() {
+    play("sfx_quest", 0.5, 0.85);
+  },
 };

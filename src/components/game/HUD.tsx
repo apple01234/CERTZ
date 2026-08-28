@@ -1,7 +1,7 @@
 "use client";
 
 import type { HudState, QuestState } from "./EventBus";
-import { Volume2, VolumeX, ScrollText } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack } from "lucide-react";
 
 function Bar({
   value,
@@ -43,11 +43,13 @@ export function HUD({
   quest,
   muted,
   onToggleMute,
+  onOpenInv,
 }: {
   hud: HudState;
   quest: QuestState;
   muted: boolean;
   onToggleMute: () => void;
+  onOpenInv: () => void;
 }) {
   const expPct = Math.min(100, (hud.exp / Math.max(1, hud.expNext)) * 100);
   return (
@@ -93,18 +95,42 @@ export function HUD({
               style={{ width: `${expPct}%` }}
             />
           </div>
+          {/* 골드 + 공격/방어 (2D MMORPG 기본 요소) */}
+          <div className="mt-0.5 flex items-center gap-1">
+            <span className="flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-amber-300 backdrop-blur-sm">
+              { }
+              <img src="/assets/item_coin.png" alt="" className="h-3.5 w-3.5" style={{ imageRendering: "pixelated" }} />
+              {hud.gold}
+            </span>
+            <span className="rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-rose-300 backdrop-blur-sm">
+              공격 {hud.atkTotal}
+            </span>
+            <span className="rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-sky-300 backdrop-blur-sm">
+              방어 {hud.defTotal}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* 우상단: 퀘스트 + 사운드 */}
+      {/* 우상단: 사운드/가방 + 퀘스트 */}
       <div className="absolute right-2 top-2 flex max-w-[46%] flex-col items-end gap-1.5 sm:right-3 sm:top-3">
-        <button
-          onClick={onToggleMute}
-          aria-label={muted ? "소리 켜기" : "소리 끄기"}
-          className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-black/55 text-white/90 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
-        >
-          {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={onToggleMute}
+            aria-label={muted ? "소리 켜기" : "소리 끄기"}
+            className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-black/55 text-white/90 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+          >
+            {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+          </button>
+          <button
+            onClick={onOpenInv}
+            aria-label="가방 열기 (I)"
+            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-sky-200/40 bg-black/55 text-sky-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+          >
+            <Backpack size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">I</span>
+          </button>
+        </div>
         <div className="pointer-events-none w-full rounded-lg border border-amber-200/40 bg-black/55 px-2.5 py-1.5 backdrop-blur-sm sm:px-3 sm:py-2">
           <div className="flex items-center gap-1.5">
             <ScrollText size={13} className="shrink-0 text-amber-300" />

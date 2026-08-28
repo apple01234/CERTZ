@@ -280,6 +280,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       for (const r of this.teleRings) r.destroy();
       this.teleRings = [];
       this.setVelocity(0, 0);
+      // 보스 격파 보상 — 대량 골드 + HP 물약 2개 (2D MMORPG 기본 요소)
+      this.scene.dropLootGold(this.x, this.y, BOSS_DEF.gold);
+      this.scene.dropLootItem(this.x + 26, this.y, "potion_hp");
+      this.scene.dropLootItem(this.x - 26, this.y, "potion_hp");
       EventBus.emit("boss:hide");
       this.scene.onBossDead();
       this.scene.time.delayedCall(900, () => this.destroy());

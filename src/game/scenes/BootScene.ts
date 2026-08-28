@@ -7,6 +7,7 @@ import { buildAllAnims } from "../textures";
  *   - Zelda-like (ArMM1998, CC0): 주인공/타일/장식/하트/? 마커/파편/불꽃
  *   - Kenney Tiny Dungeon & Roguelike & Particle Pack & Light Masks (CC0):
  *       고스트 하수인/나무/횃불/화살표/글로우·링·구슬·스코치/빛기둥
+ *       + 물약·무기·방패·상인 NPC·금화 (2D MMORPG 기본 요소)
  *   - Weapon Slash - Effect (Cethiel, CC0): 참격 6프레임
  *   - Animated Portal (varkalandar, CC-BY 4.0): 차원문 8프레임
  *   - LPC Wolf (williamthompsonj, CC-BY): 늑대 / Sotrak Rewop (gilgaphoenixignis, CC-BY): 보스
@@ -50,6 +51,12 @@ const ASSET_LIST = [
   "sparkle0", "sparkle1",
   "impact_star",
   "flame0", "flame1", "flame2", "flame3",
+  // RPG 기본 요소 (2D MMORPG) — Kenney Tiny Dungeon/Roguelike CC0
+  "item_coin",
+  "item_potion_hp", "item_potion_mp",
+  "item_weapon_1", "item_weapon_2", "item_weapon_3",
+  "item_armor_1", "item_armor_2", "item_armor_3",
+  "npc_merchant",
   // VFX (외부 에셋)
   "slash0", "slash1", "slash2", "slash3", "slash4", "slash5",
   "shock_ring",

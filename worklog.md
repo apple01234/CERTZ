@@ -168,3 +168,41 @@ Stage Summary:
 - 산출물: src/game/entities/{Player,Enemy,Boss}.ts, src/game/scenes/WorldScene.ts
 - 맵 이탈 버그 근본 수정 (3개 엔티티 경계 충돌) + 베기 모션 제자리화 + 참격 이펙트/판정 확대
 - 제약 준수: APK 미빌드 (사용자 지시 시에만)
+
+---
+Task ID: rpg-1
+Agent: Super Z (main)
+Task: 사용자 지시 — 나무위키 2D MMORPG 목록(바람의 나라/리니지/메이플스토리/라그나로크류) 참고, RPG 게임 기본 요소 추가
+
+Work Log:
+- 참고 자료: namu.wiki 온라인 게임/목록/MMORPG — 2D 오픈월드(바람의 나라·리니지·테일즈위버 등) + 2D 횡스크롤(메이플스토리 등) 기본 요소 채택
+- 에셋 (전부 실제 외부 CC0, scripts/build_rpg_assets.py 베이크 10종):
+  - Kenney Tiny Dungeon: HP/MP 물약(0115/0116), 무기 3티어 아이콘(단검 0103/검 0104/대검 0106), 방패 0102(티어별 브론즈/스틸/골드 틴트), 상인 NPC(0100)
+  - Kenney Roguelike: 금화 코인 (53,27)
+- 신규 시스템:
+  1) 골드 경제 — 늑대 8-14G/하수인 16-24G/보스 200G 코인 드롭(분산 물리 드롭), 퀘스트 보상 40/60/80/200G, HUD 골드 배지
+  2) 드롭/픽업 — Drop 엔티티(팝+바운스+250ms 후 자석 끌림 120px→접촉 픽업), 물약 확률 드롭(늑대 30/20%, 하수인 32/24%), 보스 HP물약 2개 고정
+  3) 물약 — HP+50/MP+30, 퀵슬롯 Q/E + 터치 버튼(수량 배지), 0.8s 쿨다운, 만회복 시 미사용
+  4) 상점 — 상인 라고스 NPC(양 스테이지 스폰 근처), 92px 접근 시 "상점 열기(F)" 버튼, 상점 패널(물약 30/25G, 강철검 110G, 가죽갑옷 95G, 대검 260G, 기사단갑옷 230G), 장비는 구매 즉시 장착
+  5) 장비 — 무기 3티어(ATK +0/+6/+14), 방어구 3티어(DEF +0/+3/+7), 인벤토리 장착, atkTotal/defTotal getter
+  6) 방어 판정 — 피해 = max(1, raw − DEF), 플레이어 피격 수치 데미지 텍스트 표시
+  7) 인벤토리 — 가방 버튼/I키, 물약 사용 + 장비 장착 UI
+  8) 미니맵 — 하단 중앙 156x88(카메라 줌 보정), 플레이어/적/보스/상인/목표/포탈 점 표시, 300ms 갱신
+- 데이터/세이브: ITEMS/SHOP_STOCK 신설, QuestDef.reward, EnemyDef.gold/dropHp/dropMp, SaveData 확장(gold/potions/weapon/armor/owned) + 구 세이브 로드 시 기본값 채움(하위 호환)
+- audio.ts: coin/potion/equip SFX 추가 (기존 CC0 파일 피치 변주 재사용)
+- UI: HUD 골드/공격/방어 배지 + 가방 버튼, TouchControls 물약 퀵슬롯 2버튼, Panels.tsx(상점/가방) 신설, 패널 열림 시 터치컨트롤 숨김
+- 검증 (agent-browser E2E):
+  - 신규 시작: 골드 30/물약 2·1/기본 장비 지급, 상인 스폰 확인
+  - 상점: 접근→버튼→패널→HP물약 구매(골드 30→0, 수량 2→3), 부족 시 버튼 disabled, ESC 닫기
+  - 물약: HP 40→90(+50), 수량 3→2
+  - 드롭: 늑대 4마리 처치 → 코인 자석 픽업 골드 0→47, 물약 드롭 확인
+  - 연쇄 퀘스트: 파편 수집 → f0 보상+40G & f1 토벌 보상+60G 자동 지급(47→147), 포탈 개방
+  - 장비: 강철 검 110G 구매 → 자동 장착 → atkTotal 17→23, owned 3종, "장착 중" 표시
+  - 미니맵/HUD 렌더 스크린샷 확인, 콘솔 에러 0, 세이브 저장 필드 확인
+  - 테스트 오염 세이브 삭제 완료 (유저 신규 시작 보장)
+- tsc 0 에러, ESLint 0 에러(경고 --fix 정리)
+
+Stage Summary:
+- 산출물: scripts/build_rpg_assets.py, public/assets/ +10종, src/game/{data,config,audio}.ts, entities/{Player,Enemy,Boss,Drop}.ts, scenes/{WorldScene,BootScene}.ts, components/game/{EventBus,useGameUi,HUD,TouchControls,Panels,GameRoot}.tsx, CREDITS.md 갱신
+- 클래식 2D MMORPG 기본 루프 완성: 사냥 → 골드/아이템 드롭 → 상점 구매 → 장비 성장 → 물약 전투 운영
+- 제약 준수: APK 미빌드 (사용자 지시 시에만)

@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { EventBus, type HudState, type QuestState, type EndState } from "./EventBus";
+import { EventBus, type HudState, type QuestState, type EndState, type RpgState, type PanelKind } from "./EventBus";
 
 type Skills = { mp: number; s1Cd: number; s1Max: number; s2Cd: number; s2Max: number };
 
-const emptyHud: HudState = { hp: 100, maxHp: 100, mp: 60, maxMp: 60, lv: 1, exp: 0, expNext: 60 };
+const emptyHud: HudState = {
+  hp: 100, maxHp: 100, mp: 60, maxMp: 60, lv: 1, exp: 0, expNext: 60,
+  gold: 30, atkTotal: 12, defTotal: 0,
+};
 const emptyQuest: QuestState = { title: "", desc: "", current: 0, target: 0, distance: null };
+const emptyRpg: RpgState = {
+  gold: 30, hpPot: 2, mpPot: 1, owned: ["weapon_1", "armor_1"],
+  weapon: "weapon_1", armor: "armor_1", nearShop: false,
+  shopStock: [],
+};
 
 export function useGameUi() {
   const [state, setState] = useState<"boot" | "title" | "playing">("boot");
@@ -17,6 +25,8 @@ export function useGameUi() {
   const [boss, setBoss] = useState<{ name: string; hp: number; maxHp: number } | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
   const [end, setEnd] = useState<EndState | null>(null);
+  const [rpg, setRpg] = useState<RpgState>(emptyRpg);
+  const [panel, setPanel] = useState<PanelKind>(null);
 
   useEffect(() => {
     const onHud = (v: HudState) => setHud(v);
@@ -36,10 +46,17 @@ export function useGameUi() {
       setState("title");
       setBoss(null);
       setEnd(null);
+      setPanel(null);
     };
     const onPlaying = () => setState("playing");
-    const onEnd = (v: EndState) => setEnd(v);
+    const onEnd = (v: EndState) => {
+      setEnd(v);
+      setPanel(null);
+    };
     const onRespawn = () => setEnd(null);
+    const onRpg = (v: RpgState) => setRpg(v);
+    const onPanel = (v: { panel: PanelKind }) =>
+      setPanel((cur) => (v.panel === "inv" ? (cur === "inv" ? null : "inv") : v.panel));
 
     EventBus.on("hud", onHud);
     EventBus.on("quest", onQuest);
@@ -54,6 +71,8 @@ export function useGameUi() {
     EventBus.on("ui:playing", onPlaying);
     EventBus.on("end", onEnd);
     EventBus.on("respawn", onRespawn);
+    EventBus.on("rpg:state", onRpg);
+    EventBus.on("ui:panel", onPanel);
 
     return () => {
       EventBus.off("hud", onHud);
@@ -69,10 +88,12 @@ export function useGameUi() {
       EventBus.off("ui:playing", onPlaying);
       EventBus.off("end", onEnd);
       EventBus.off("respawn", onRespawn);
+      EventBus.off("rpg:state", onRpg);
+      EventBus.off("ui:panel", onPanel);
     };
   }, []);
 
-  return { state, hud, quest, skills, dialogue, boss, banner, end };
+  return { state, hud, quest, skills, dialogue, boss, banner, end, rpg, panel, setPanel };
 }
 
 export type { Skills };

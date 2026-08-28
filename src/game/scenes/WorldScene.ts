@@ -1,10 +1,11 @@
 import Phaser from "phaser";
-import { STAGES, DIALOGUES, type StageKey, type StageDef } from "../data";
+import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, type StageKey, type StageDef, type ItemKey, type EnemyDef } from "../data";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
+import { Drop, type DropKind } from "../entities/Drop";
 import { EventBus, type QuestState } from "../../components/game/EventBus";
-import { writeSave, type SaveData } from "../config";
+import { writeSave, loadSave, type SaveData } from "../config";
 import { viewZoom } from "../PhaserGame";
 import * as audio from "../audio";
 
@@ -62,6 +63,14 @@ export class WorldScene extends Phaser.Scene {
   // 스테이지별 누적 킬 (퀘스트 순서와 무관하게 토벌 진행 유지 — 소프트락 방지)
   private killTotals: Record<string, number> = {};
 
+  /* ----- 2D MMORPG 기본 요소 ----- */
+  private drops: Drop[] = [];
+  private merchant: Phaser.GameObjects.Image | null = null;
+  private merchantLabel: Phaser.GameObjects.Text | null = null;
+  private nearShop = false;
+  private minimap: Phaser.GameObjects.Graphics | null = null;
+  private lastRpgSig = "";
+
   constructor() {
     super("world");
   }
@@ -84,6 +93,12 @@ export class WorldScene extends Phaser.Scene {
     this.attackQueued = false;
     this.hitStopActive = false;
     this.killTotals = {};
+    this.drops = [];
+    this.merchant = null;
+    this.merchantLabel = null;
+    this.nearShop = false;
+    this.minimap = null;
+    this.lastRpgSig = "";
     this.registry.set("initData", data);
   }
 
@@ -126,6 +141,9 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 장식 (F1: 정의된 소수만) ---------- */
     this.placeDecor(stageKey);
 
+    /* ---------- 상점 NPC (2D MMORPG 기본 요소) ---------- */
+    this.spawnMerchant();
+
     /* ---------- 플레이어 ---------- */
     const savedPlayer = save;
     this.player = new Player(this, 180, this.stageH / 2);
@@ -134,6 +152,12 @@ export class WorldScene extends Phaser.Scene {
       this.player.atk = savedPlayer.atk;
       this.player.maxHp = savedPlayer.maxHp;
       this.player.hp = this.player.maxHp;
+      // RPG 자원 복원 (구 세이브는 loadSave()가 기본값 채움)
+      this.player.gold = savedPlayer.gold ?? 30;
+      this.player.potions = { hp: savedPlayer.potions?.hp ?? 2, mp: savedPlayer.potions?.mp ?? 1 };
+      this.player.weapon = (savedPlayer.weapon ?? "weapon_1") as ItemKey;
+      this.player.armor = (savedPlayer.armor ?? "armor_1") as ItemKey;
+      this.player.owned = (savedPlayer.owned ?? ["weapon_1", "armor_1"]) as ItemKey[];
     }
     this.playerRef = this.player;
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
@@ -168,6 +192,10 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 이펙트 풀 ---------- */
     this.buildFxPools();
 
+    /* ---------- 미니맵 (2D MMORPG 기본 요소) ---------- */
+    this.minimap = this.add.graphics().setDepth(95).setScrollFactor(0).setAlpha(0.85);
+    this.redrawMinimap();
+
     /* ---------- 입력 ---------- */
     this.setupInput();
 
@@ -182,14 +210,17 @@ export class WorldScene extends Phaser.Scene {
     EventBus.emit("ui:playing");
     this.emitHud();
     this.emitQuest();
+    this.emitRpgState();
 
-    // F2: 거리 실시간 갱신 (300ms 주기 — 프레임 부담 없음)
+    // F2: 거리 실시간 갱신 (300ms 주기 — 프레임 부담 없음) + 미니맵/RPG 상태
     this.questTimer = this.time.addEvent({
       delay: 300,
       loop: true,
       callback: () => {
         this.emitQuest();
         this.emitSkills();
+        this.emitRpgState();
+        this.redrawMinimap();
       },
     });
 
@@ -200,6 +231,7 @@ export class WorldScene extends Phaser.Scene {
 
   private applyCameraZoom() {
     this.cameras.main.setZoom(viewZoom());
+    this.redrawMinimap();
   }
 
   /* ================= 배치 ================= */
@@ -446,7 +478,7 @@ export class WorldScene extends Phaser.Scene {
   spawnDamageText(x: number, y: number, val: number) {
     const t = this.dmgPool.find((d) => d.scene && !d.active);
     if (!t) return; // 풀 소진 시 조용히 포기 (프레임 보호)
-    t.setText(`${val}`);
+    t.setText(`${val}`).setColor("#ffffff");
     t.setPosition(x, y)
       .setActive(true)
       .setVisible(true)
@@ -519,6 +551,148 @@ export class WorldScene extends Phaser.Scene {
     // 외부 에셋 스코치(그을음) 마크 — 보스 강타 지면 표시
     const c = this.add.image(x, y + 20, "scorch").setDepth(1).setAlpha(0.75).setTint(0x8a7a66).setScale(1.4);
     this.tweens.add({ targets: c, alpha: 0, delay: 3500, duration: 800, onComplete: () => c.destroy() });
+  }
+
+  /* ================= 2D MMORPG 기본 요소 (골드/물약/장비/상점/미니맵) ================= */
+
+  /** 상점 NPC — 스폰 근처 대기 (스테이지 공통) */
+  private spawnMerchant() {
+    const mx = 340;
+    const my = this.stageH / 2 - 60;
+    const glow = this.add.image(mx, my + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.9).setAlpha(0.25);
+    this.tweens.add({ targets: glow, alpha: 0.42, scale: 1.15, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.merchant = this.add.image(mx, my, "npc_merchant").setDepth(Math.floor(my / 10)).setScale(1.7);
+    this.tweens.add({ targets: this.merchant, y: my - 3, duration: 1200, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.merchantLabel = this.add
+      .text(mx, my - 36, "상인 라고스", {
+        fontFamily: "sans-serif",
+        fontSize: "13px",
+        color: "#ffd76a",
+        stroke: "#1a1020",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(21);
+  }
+
+  private acquireDrop(): Drop | null {
+    const free = this.drops.find((d) => d.scene && !d.active);
+    if (free) return free;
+    if (this.drops.length < 24) {
+      const d = new Drop(this, 0, -9999);
+      this.drops.push(d);
+      return d;
+    }
+    return null;
+  }
+
+  /** 몬스터 사망 드롭 — 골드 코인 + 물약 확률 */
+  dropLoot(x: number, y: number, def: EnemyDef) {
+    const total = Phaser.Math.Between(def.gold[0], def.gold[1]);
+    this.dropLootGold(x, y, total);
+    const r = Math.random();
+    if (r < (def.dropHp ?? 0)) this.dropLootItem(x, y, "potion_hp");
+    else if (r < (def.dropHp ?? 0) + (def.dropMp ?? 0)) this.dropLootItem(x, y, "potion_mp");
+  }
+
+  /** 골드를 코인 여러 개로 분산 드롭 */
+  dropLootGold(x: number, y: number, total: number) {
+    const n = total >= 150 ? 5 : total >= 40 ? 3 : 2;
+    const per = Math.max(1, Math.round(total / n));
+    for (let i = 0; i < n; i++) {
+      const d = this.acquireDrop();
+      if (!d) break;
+      d.spawn("gold", x, y, i === n - 1 ? total - per * (n - 1) : per);
+    }
+  }
+
+  dropLootItem(x: number, y: number, key: DropKind) {
+    const d = this.acquireDrop();
+    d?.spawn(key, x, y, 1);
+  }
+
+  /** 픽업 처리 (Drop가 접촉 시 호출) */
+  collectDrop(kind: DropKind, amount: number, x: number, y: number) {
+    if (kind === "gold") {
+      this.player.addGold(amount);
+      audio.sfx.coin();
+      this.spawnPickupText(x, y - 14, `+${amount}G`, "#ffd76a");
+    } else if (kind === "potion_hp") {
+      this.player.addPotion("hp");
+      audio.sfx.pickup();
+      this.spawnPickupText(x, y - 14, "+HP 물약", "#ff8a8a");
+    } else if (kind === "potion_mp") {
+      this.player.addPotion("mp");
+      audio.sfx.pickup();
+      this.spawnPickupText(x, y - 14, "+MP 물약", "#7dc0ff");
+    }
+  }
+
+  /** 획득/보상 안내 텍스트 — 데미지 텍스트 풀 재사용 (F4 규칙) */
+  spawnPickupText(x: number, y: number, msg: string, color: string) {
+    const t = this.dmgPool.find((d) => d.scene && !d.active);
+    if (!t) return;
+    t.setText(msg).setColor(color);
+    t.setPosition(x, y)
+      .setActive(true)
+      .setVisible(true)
+      .setAlpha(1)
+      .setScale(1);
+    this.tweens.add({
+      targets: t,
+      y: y - 40,
+      alpha: 0,
+      duration: 750,
+      ease: "Quad.out",
+      onComplete: () => {
+        t.setColor("#ffffff");
+        t.setActive(false).setVisible(false);
+      },
+    });
+  }
+
+  /* ---------- 미니맵 (하단 중앙, 줌 보정) ---------- */
+
+  private redrawMinimap() {
+    const mm = this.minimap;
+    if (!mm || !mm.scene || !this.player) return;
+    const cam = this.cameras.main;
+    const z = cam.zoom || 1;
+    const gw = 156 / z;
+    const gh = 88 / z;
+    const cx = cam.width / 2;
+    const cy = cam.height / 2 + (cam.height - 12 - gh * z * 0.5 - cam.height / 2) / z;
+    mm.clear();
+    mm.fillStyle(0x0a0e18, 0.78).fillRoundedRect(cx - gw / 2, cy - gh / 2, gw, gh, 8 / z);
+    mm.lineStyle(1.5 / z, 0xffd76a, 0.5).strokeRoundedRect(cx - gw / 2, cy - gh / 2, gw, gh, 8 / z);
+    const mx = (wx: number) => cx - gw / 2 + (wx / this.stageW) * gw;
+    const my = (wy: number) => cy - gh / 2 + (wy / this.stageH) * gh;
+    // 적 (빨강) / 보스 (크게)
+    mm.fillStyle(0xff5a5a, 0.95);
+    for (const e of this.enemies) if (e.active && e.alive) mm.fillCircle(mx(e.x), my(e.y), 2.2 / z);
+    if (this.boss?.active && this.boss.alive) mm.fillCircle(mx(this.boss.x), my(this.boss.y), 3.4 / z);
+    // 상인 (녹색)
+    if (this.merchant) {
+      mm.fillStyle(0x7dffa8, 0.95);
+      mm.fillCircle(mx(this.merchant.x), my(this.merchant.y), 2.4 / z);
+    }
+    // 퀘스트 목표 (금색)
+    const t = this.questTargetPos();
+    if (t) {
+      mm.fillStyle(0xffd76a, 1);
+      mm.fillCircle(mx(t.x), my(t.y), 2.8 / z);
+    }
+    // 차원문 (활성 보라 / 비활성 회색)
+    if (this.portal?.active) {
+      mm.fillStyle(this.portalActive ? 0x9d7aff : 0x8a8a8a, 0.9);
+      mm.fillCircle(mx(this.portal.x), my(this.portal.y), 2.8 / z);
+    }
+    // 플레이어 (흰 점 + 링)
+    const px = mx(this.player.x);
+    const py = my(this.player.y);
+    mm.fillStyle(0xffffff, 1).fillCircle(px, py, 2.6 / z);
+    mm.lineStyle(1 / z, 0xffffff, 0.45).strokeCircle(px, py, 4.6 / z);
   }
 
   /**
@@ -676,6 +850,8 @@ export class WorldScene extends Phaser.Scene {
     this.player.gainExp(BOSS_EXP);
     this.totalKills++;
     this.cleared = true;
+    this.advanceQuest(); // 보스 퀘스트 완료 — 골드 보상 포함
+    this.save();
     this.time.delayedCall(1200, () => {
       this.showDialogue("victory");
       this.time.delayedCall(400, () => {
@@ -717,7 +893,7 @@ export class WorldScene extends Phaser.Scene {
   private setupInput() {
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,J,K,L"
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,J,K,L,Q,E,F,I"
     ) as Record<string, Phaser.Input.Keyboard.Key>;
 
     const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);
@@ -726,11 +902,32 @@ export class WorldScene extends Phaser.Scene {
     const onS2 = () => this.player?.useSkill2();
     const onRespawn = () => this.respawnPlayer();
     const onDialogueDone = () => this.resumeFromDialogue();
+    const onBuy = (v: { key: ItemKey }) => {
+      if (!this.player || this.dialoguing) return;
+      if (this.player.buy(v.key)) {
+        audio.sfx.questDone();
+        this.save();
+      }
+      this.emitRpgState();
+      this.emitHud();
+    };
+    const onEquip = (v: { key: ItemKey }) => {
+      if (!this.player || this.dialoguing) return;
+      this.player.equip(v.key);
+      this.emitRpgState();
+      this.save();
+    };
+    const onUse = (v: { kind: "hp" | "mp" }) => {
+      this.player?.usePotion(v.kind);
+    };
 
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
     EventBus.on("input:skill1", onS1);
     EventBus.on("input:skill2", onS2);
+    EventBus.on("rpg:buy", onBuy);
+    EventBus.on("rpg:equip", onEquip);
+    EventBus.on("rpg:use", onUse);
     EventBus.on("respawn", onRespawn);
     EventBus.on("dialogue:done", onDialogueDone);
     this.events.once("shutdown", () => {
@@ -738,6 +935,9 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("input:attack", onAtk);
       EventBus.off("input:skill1", onS1);
       EventBus.off("input:skill2", onS2);
+      EventBus.off("rpg:buy", onBuy);
+      EventBus.off("rpg:equip", onEquip);
+      EventBus.off("rpg:use", onUse);
       EventBus.off("respawn", onRespawn);
       EventBus.off("dialogue:done", onDialogueDone);
     });
@@ -769,12 +969,32 @@ export class WorldScene extends Phaser.Scene {
     this.player.update(dt, move, this.attackQueued);
     this.attackQueued = false;
 
+    // 물약 퀵슬롯 + 상점 열기
+    if (Phaser.Input.Keyboard.JustDown(this.keys.Q)) this.player.usePotion("hp");
+    if (Phaser.Input.Keyboard.JustDown(this.keys.E)) this.player.usePotion("mp");
+    if (Phaser.Input.Keyboard.JustDown(this.keys.F) && this.nearShop) EventBus.emit("ui:panel", { panel: "shop" });
+    if (Phaser.Input.Keyboard.JustDown(this.keys.I)) EventBus.emit("ui:panel", { panel: "inv" });
+
     // 적 AI
     for (const e of this.enemies) {
       if (e.active && e.alive) e.tick(dt, this.player);
     }
     // 보스 AI
     this.boss?.tick(dt, this.player);
+
+    // 드롭 아이템 (자석/픽업)
+    for (const d of this.drops) {
+      if (d.active) d.tick(dt, this.player.x, this.player.y);
+    }
+
+    // 상점 NPC 접근 감지
+    if (this.merchant) {
+      const near = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.merchant.x, this.merchant.y) < 92;
+      if (near !== this.nearShop) {
+        this.nearShop = near;
+        this.emitRpgState();
+      }
+    }
 
     // F2 핵심 2: 화면 가장자리 화살표 — 목표물이 안 보일 때 방향 안내
     this.updateEdgeArrow();
@@ -886,9 +1106,16 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private advanceQuest() {
+    const done = this.stageDef.quests[this.questIdx];
     this.questIdx = Math.min(this.questIdx + 1, this.stageDef.quests.length);
     this.huntCount = 0;
+    // 퀘스트 골드 보상 (2D MMORPG 기본 요소)
+    if (done?.reward) {
+      this.player.addGold(done.reward);
+      this.spawnPickupText(this.player.x, this.player.y - 44, `퀘스트 보상 +${done.reward}G`, "#ffd76a");
+    }
     this.emitQuest();
+    this.emitRpgState();
   }
 
   emitQuest() {
@@ -942,7 +1169,30 @@ export class WorldScene extends Phaser.Scene {
       lv: this.player.lv,
       exp: this.player.exp,
       expNext: this.player.expNext(),
+      gold: this.player.gold,
+      atkTotal: this.player.atkTotal,
+      defTotal: this.player.defTotal,
     });
+    this.emitRpgState();
+  }
+
+  /** 인벤토리/상점 패널 상태 브로드캐스트 (변경 시만) */
+  emitRpgState() {
+    if (!this.player) return;
+    const st = {
+      gold: this.player.gold,
+      hpPot: this.player.potions.hp,
+      mpPot: this.player.potions.mp,
+      owned: [...this.player.owned],
+      weapon: this.player.weapon,
+      armor: this.player.armor,
+      nearShop: this.nearShop,
+      shopStock: [...SHOP_STOCK],
+    };
+    const sig = JSON.stringify(st);
+    if (sig === this.lastRpgSig) return;
+    this.lastRpgSig = sig;
+    EventBus.emit("rpg:state", st);
   }
 
   private save() {
@@ -953,6 +1203,11 @@ export class WorldScene extends Phaser.Scene {
       maxHp: this.player.maxHp,
       atk: this.player.atk,
       cleared: this.cleared,
+      gold: this.player.gold,
+      potions: { ...this.player.potions },
+      weapon: this.player.weapon,
+      armor: this.player.armor,
+      owned: [...this.player.owned],
     });
   }
 
@@ -962,14 +1217,12 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private saveCleared() {
-    writeSave({
-      stage: this.stageDef.key,
-      lv: this.player.lv,
-      exp: this.player.exp,
-      maxHp: this.player.maxHp,
-      atk: this.player.atk,
-      cleared: true,
-    });
+    this.save();
+    const d = loadSave();
+    if (d) {
+      d.cleared = true;
+      writeSave(d);
+    }
   }
 
   /* ================= 대사/배너/사운드 브릿지 ================= */
@@ -1013,6 +1266,12 @@ export class WorldScene extends Phaser.Scene {
   }
   sfxEnemyDie() {
     audio.sfx.enemyDie();
+  }
+  sfxPotion() {
+    audio.sfx.potion();
+  }
+  sfxEquip() {
+    audio.sfx.equip();
   }
 
   /* ================= 정리 ================= */

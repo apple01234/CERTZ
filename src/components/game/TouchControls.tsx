@@ -13,7 +13,15 @@ const JOY_RADIUS = 52;
  *  - 오른쪽: 공격/회전베기/돌진베기 버튼 — pointerdown 즉시 발동
  *  - pointerId 추적으로 동시 조작 보장, touch-action:none으로 스크롤 차단
  */
-export function TouchControls({ skills }: { skills: Skills }) {
+export function TouchControls({
+  skills,
+  hpPot,
+  mpPot,
+}: {
+  skills: Skills;
+  hpPot: number;
+  mpPot: number;
+}) {
   const [joyOrigin, setJoyOrigin] = useState<{ x: number; y: number } | null>(null);
   const [joyKnob, setJoyKnob] = useState({ x: 0, y: 0 });
   const joyPointer = useRef<number | null>(null);
@@ -117,6 +125,21 @@ export function TouchControls({ skills }: { skills: Skills }) {
       {/* 버튼: 우하단 */}
       <div className="absolute bottom-4 right-3 flex items-end gap-2 sm:bottom-6 sm:right-5 sm:gap-3">
         <div className="flex flex-col gap-2">
+          {/* 물약 퀵슬롯 (2D MMORPG 기본 요소) */}
+          <PotionButton
+            kind="hp"
+            count={hpPot}
+            tint="from-rose-500 to-rose-700 border-rose-200/70"
+            onDown={() => EventBus.emit("rpg:use", { kind: "hp" })}
+          />
+          <PotionButton
+            kind="mp"
+            count={mpPot}
+            tint="from-sky-500 to-blue-800 border-sky-200/70"
+            onDown={() => EventBus.emit("rpg:use", { kind: "mp" })}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
           <SkillButton
             ready={s2Ready}
             cdPct={s2Pct}
@@ -151,6 +174,47 @@ export function TouchControls({ skills }: { skills: Skills }) {
         </button>
       </div>
     </>
+  );
+}
+
+function PotionButton({
+  kind,
+  count,
+  tint,
+  onDown,
+}: {
+  kind: "hp" | "mp";
+  count: number;
+  tint: string;
+  onDown: () => void;
+}) {
+  return (
+    <button
+      aria-label={kind === "hp" ? "HP 물약" : "MP 물약"}
+      disabled={count <= 0}
+      className={`relative flex h-12 w-12 touch-none select-none items-center justify-center rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 sm:h-14 sm:w-14 ${
+        count > 0 ? `bg-gradient-to-b ${tint}` : "border-white/20 bg-slate-700/70 opacity-50"
+      }`}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        if (count > 0) onDown();
+      }}
+    >
+      { }
+      <img
+        src={`/assets/item_potion_${kind}.png`}
+        alt=""
+        draggable={false}
+        className="h-6 w-6"
+        style={{ imageRendering: "pixelated" }}
+      />
+      <span className="absolute -bottom-0.5 right-0.5 rounded bg-slate-900/90 px-1 text-[9px] font-black leading-[14px] text-white">
+        {count}
+      </span>
+      <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/70">
+        {kind === "hp" ? "Q" : "E"}
+      </span>
+    </button>
   );
 }
 

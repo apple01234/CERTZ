@@ -9,6 +9,7 @@ export type QuestDef = {
   desc: string;
   need?: number; // hunt 몇 마리
   targetLabel: string; // 가독성용 목표명
+  reward?: number; // 완료 골드 보상 (2D MMORPG 기본 요소)
 };
 
 export type StageDef = {
@@ -44,6 +45,7 @@ export const STAGES: Record<StageKey, StageDef> = {
         title: "빛나는 파편 찾기",
         desc: "숲 어딘가 빛을 내는 세계수의 파편을 찾아 주워 보자.",
         targetLabel: "세계수 파편",
+        reward: 40,
       },
       {
         id: "f1",
@@ -52,6 +54,7 @@ export const STAGES: Record<StageKey, StageDef> = {
         desc: "뿌리숲을 어지럽히는 이그드라실 늑대 4마리를 처치하자.",
         need: 4,
         targetLabel: "늑대",
+        reward: 60,
       },
       {
         id: "f2",
@@ -82,6 +85,7 @@ export const STAGES: Record<StageKey, StageDef> = {
         desc: "심연의 하수인 5마리를 처치해 경계를 약하게 만들자.",
         need: 5,
         targetLabel: "심연 하수인",
+        reward: 80,
       },
       {
         id: "a1",
@@ -89,6 +93,7 @@ export const STAGES: Record<StageKey, StageDef> = {
         title: "심연의 수호자",
         desc: "알프헤임을 잠식한 심연의 수호자를 쓰러뜨리자!",
         targetLabel: "심연의 수호자",
+        reward: 200,
       },
     ],
     enemies: [{ key: "minion", count: 5 }],
@@ -105,6 +110,11 @@ export type EnemyDef = {
   aggro: number;
   exp: number;
   scale?: number;
+  /** 골드 드롭 범위 (2D MMORPG 기본 요소) */
+  gold: [number, number];
+  /** 물약 드롭 확률 */
+  dropHp?: number;
+  dropMp?: number;
 };
 
 export const ENEMIES: Record<"wolf" | "minion", EnemyDef> = {
@@ -116,6 +126,9 @@ export const ENEMIES: Record<"wolf" | "minion", EnemyDef> = {
     speed: 128,
     aggro: 280,
     exp: 14,
+    gold: [8, 14],
+    dropHp: 0.3,
+    dropMp: 0.2,
   },
   minion: {
     key: "minion",
@@ -125,6 +138,9 @@ export const ENEMIES: Record<"wolf" | "minion", EnemyDef> = {
     speed: 104,
     aggro: 300,
     exp: 20,
+    gold: [16, 24],
+    dropHp: 0.32,
+    dropMp: 0.24,
   },
 };
 
@@ -135,7 +151,53 @@ export const BOSS_DEF = {
   atk: 15,
   speed: 92,
   exp: 220,
+  gold: 200,
 };
+
+/* ================= 아이템 (2D MMORPG 기본 요소) ================= */
+
+export type ItemKey =
+  | "potion_hp"
+  | "potion_mp"
+  | "weapon_1"
+  | "weapon_2"
+  | "weapon_3"
+  | "armor_1"
+  | "armor_2"
+  | "armor_3";
+
+export type ItemDef = {
+  key: ItemKey;
+  kind: "consumable" | "weapon" | "armor";
+  name: string;
+  icon: string; // 텍스처 키
+  price: number; // 상점 구매가 (0 = 판매 안 함/기본 지급)
+  heal?: number; // HP 회복
+  restore?: number; // MP 회복
+  atk?: number; // 무기 공격력 보너스
+  def?: number; // 방어구 방어력
+};
+
+export const ITEMS: Record<ItemKey, ItemDef> = {
+  potion_hp: { key: "potion_hp", kind: "consumable", name: "HP 물약", icon: "item_potion_hp", price: 30, heal: 50 },
+  potion_mp: { key: "potion_mp", kind: "consumable", name: "MP 물약", icon: "item_potion_mp", price: 25, restore: 30 },
+  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 0, atk: 0 },
+  weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 110, atk: 6 },
+  weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 260, atk: 14 },
+  armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 0, def: 0 },
+  armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 95, def: 3 },
+  armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 230, def: 7 },
+};
+
+/** 상점 판매 목록 (표시 순서) */
+export const SHOP_STOCK: ItemKey[] = [
+  "potion_hp",
+  "potion_mp",
+  "weapon_2",
+  "armor_2",
+  "weapon_3",
+  "armor_3",
+];
 
 export type DialogueDef = { speaker: string; lines: string[] };
 

@@ -24,10 +24,11 @@
 ### Tiny Dungeon — Kenney
 - License: CC0 1.0
 - Source: https://kenney.nl/assets/tiny-dungeon
-- Used for: 심연 하수인(고스트)
+- Used for: 심연 하수인(고스트), HP/MP 물약, 무기 아이콘(단검/검/대검), 방패(방어구 티어 틴트), 상인 NPC(라고스)
 
 ### Roguelike/RPG pack — Kenney
 - License: CC0 1.0
+- (금화 코인 타일 추가 사용 — 2D MMORPG 골드 드롭)
 - Source: https://kenney.nl/assets/roguelike-rpg-pack
 - Used for: 나무, 소나무, 횃불, 화면 가장자리 방향 화살표
 

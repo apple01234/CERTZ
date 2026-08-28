@@ -21,6 +21,12 @@ export type SaveData = {
   maxHp: number;
   atk: number;
   cleared: boolean;
+  /* ↓ 2D MMORPG 기본 요소 (구 세이브 호환: 로드 시 기본값 채움) */
+  gold?: number;
+  potions?: { hp: number; mp: number };
+  weapon?: string;
+  armor?: string;
+  owned?: string[];
 };
 
 export function loadSave(): SaveData | null {
@@ -30,6 +36,12 @@ export function loadSave(): SaveData | null {
     if (!raw) return null;
     const d = JSON.parse(raw) as SaveData;
     if (!d || typeof d.stage !== "string") return null;
+    // 신규 필드 기본값 채우기 (구버전 세이브 호환)
+    if (typeof d.gold !== "number") d.gold = 30;
+    if (!d.potions) d.potions = { hp: 2, mp: 1 };
+    if (typeof d.weapon !== "string") d.weapon = "weapon_1";
+    if (typeof d.armor !== "string") d.armor = "armor_1";
+    if (!Array.isArray(d.owned)) d.owned = [d.weapon, d.armor];
     return d;
   } catch {
     return null;

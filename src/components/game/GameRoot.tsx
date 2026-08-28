@@ -8,6 +8,8 @@ import { HUD } from "./HUD";
 import { TouchControls } from "./TouchControls";
 import { DialogueBox } from "./DialogueBox";
 import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen } from "./Overlays";
+import { GamePanels } from "./Panels";
+import { Store } from "lucide-react";
 import * as audio from "@/game/audio";
 
 /**
@@ -17,7 +19,7 @@ import * as audio from "@/game/audio";
 export default function GameRoot() {
   const parentRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
-  const { state, hud, quest, skills, dialogue, boss, banner, end } = useGameUi();
+  const { state, hud, quest, skills, dialogue, boss, banner, end, rpg, panel, setPanel } = useGameUi();
   const [muted, setMuted] = useState(false);
   const [portraitMobile, setPortraitMobile] = useState(false);
 
@@ -76,11 +78,25 @@ export default function GameRoot() {
                   setMuted(next);
                   audio.setMuted(next);
                 }}
+                onOpenInv={() => setPanel(panel === "inv" ? null : "inv")}
               />
             </div>
-            <div className="pointer-events-auto contents">
-              <TouchControls skills={skills} />
-            </div>
+            {/* 상점 열기 버튼 — 상인 근처일 때만 (F키) */}
+            {rpg.nearShop && !panel && (
+              <button
+                onClick={() => setPanel("shop")}
+                className="pointer-events-auto absolute bottom-24 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2 text-[13px] font-black text-slate-900 shadow-xl transition-transform active:scale-95"
+              >
+                <Store size={16} />
+                상점 열기
+                <span className="rounded bg-slate-900/85 px-1 text-[9px] font-black text-amber-200">F</span>
+              </button>
+            )}
+            {!panel && (
+              <div className="pointer-events-auto contents">
+                <TouchControls skills={skills} hpPot={rpg.hpPot} mpPot={rpg.mpPot} />
+              </div>
+            )}
             <Banner text={banner} />
             <BossBar boss={boss} />
           </>
@@ -103,6 +119,8 @@ export default function GameRoot() {
             <EndScreen end={end} />
           </div>
         )}
+
+        <GamePanels panel={panel} rpg={rpg} onClose={() => setPanel(null)} />
 
         <RotatePrompt active={portraitMobile} />
       </div>

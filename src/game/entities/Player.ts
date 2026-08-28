@@ -1,14 +1,13 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
+import { ITEMS, type ItemKey } from "../data";
 
 /**
  * 주인공 세르츠.
- * F5 핵심 개선:
- *  - 3프레임 베기 모션(등뒤 준비 → 수평 베기 → 내려베기) + 참격 초승달 이펙트
- *  - X축 히트박스 대폭 확대(전방 160px, 폭 116px) — 사용자 지적 사항
- *  - 베기 시 제자리 정지(러지 제거 — 사용자 지적) + 히트스톱 + 넉백으로 '베는 맛' 강화
- *  - 상하 공격도 지원 (마지막 이동 방향 기준 4방향)
- *  - 월드 경계 충돌 — 맵 밖으로 걸어 나가는 버그 수정
+ *  - 3프레임 베기 모션 + 참격 초승달 이펙트 / 전방 160px x 폭 116px 판정
+ *  - 베기 제자리 정지 + 히트스톱 + 넉백
+ *  - 2D MMORPG 기본 요소: 골드·물약·장비(무기 ATK/방어구 DEF)·방어 판정
+ *  - 월드 경계 충돌
  */
 export class Player extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
@@ -20,6 +19,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   maxMp = 60;
   mp = 60;
   atk = 12;
+
+  /* ----- RPG 기본 자원 ----- */
+  gold = 30; // 시작 자금 (물약 1개 분)
+  potions: { hp: number; mp: number } = { hp: 2, mp: 1 }; // 시작 지급
+  weapon: ItemKey = "weapon_1";
+  armor: ItemKey = "armor_1";
+  owned: ItemKey[] = ["weapon_1", "armor_1"];
+  private potCd = 0;
 
   speed = 230;
   facing: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0);
@@ -63,6 +70,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.skill1Cd = Math.max(0, this.skill1Cd - ms);
     this.skill2Cd = Math.max(0, this.skill2Cd - ms);
     this.iframes = Math.max(0, this.iframes - ms);
+    this.potCd = Math.max(0, this.potCd - ms);
 
     // 마나 리젠
     this.mpRegenAcc += ms;
@@ -167,7 +175,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (Math.abs(ex) <= halfW + tw && Math.abs(ey) <= halfH + th) {
         this.hitSet.add(e);
         hits++;
-        e.takeDamage(Math.round(this.atk * dmgMul), dir, knock);
+        e.takeDamage(Math.round(this.atkTotal * dmgMul), dir, knock);
       }
     }
     if (hits > 0) {
@@ -212,7 +220,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (d <= 118) {
           this.hitSet.add(e);
           const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-          e.takeDamage(Math.round(this.atk * 1.6), away, 300);
+          e.takeDamage(Math.round(this.atkTotal * 1.6), away, 300);
         }
       }
       this.scene.onMeleeConnect(1);
@@ -257,7 +265,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
           if (d <= 64) {
             this.hitSet.add(e);
-            e.takeDamage(Math.round(this.atk * 2.1), dir, 360);
+            e.takeDamage(Math.round(this.atkTotal * 2.1), dir, 360);
             this.scene.onMeleeConnect(1);
           }
         }
@@ -271,11 +279,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(dmg: number, fromDir: Phaser.Math.Vector2) {
     if (this.iframes > 0 || this.state === "dead") return;
-    this.hp -= dmg;
+    const final = this.applyDefense(dmg);
+    this.hp -= final;
     this.iframes = 600;
     this.scene.sfxHurt();
     this.scene.cameras.main.shake(70, 0.004);
     this.setVelocity(fromDir.x * 200, fromDir.y * 200);
+    this.scene.spawnDamageText(this.x, this.y - 30, final);
     this.scene.tweens.add({
       targets: this,
       alpha: 0.35,
@@ -319,6 +329,91 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   expNext() {
     return Math.round(60 * Math.pow(this.lv, 1.35));
+  }
+
+  /* ---------------- RPG 기본 요소 ---------------- */
+
+  /** 장비 포함 실제 공격력 */
+  get atkTotal(): number {
+    return this.atk + (ITEMS[this.weapon].atk ?? 0);
+  }
+
+  /** 장비 포함 실제 방어력 */
+  get defTotal(): number {
+    return ITEMS[this.armor].def ?? 0;
+  }
+
+  /** 피격 판정 — 방어력만큼 감쇄 (최소 1) */
+  applyDefense(raw: number): number {
+    return Math.max(1, Math.round(raw - this.defTotal));
+  }
+
+  /** 물약 사용 (퀵슬롯) — 0.8초 쿨다운 */
+  usePotion(kind: "hp" | "mp"): boolean {
+    if (this.potCd > 0 || this.state === "dead") return false;
+    if (this.potions[kind] <= 0) return false;
+    const item = kind === "hp" ? ITEMS.potion_hp : ITEMS.potion_mp;
+    const used = kind === "hp" ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
+    if (!used) return false;
+    this.potions[kind]--;
+    this.potCd = 800;
+    this.scene.sfxPotion();
+    this.scene.spawnPickupText(this.x, this.y - 30, kind === "hp" ? `+${item.heal} HP` : `+${item.restore} MP`, "#7dffa8");
+    this.scene.emitHud();
+    return true;
+  }
+
+  private heal(v: number): boolean {
+    if (this.hp >= this.maxHp) return false;
+    this.hp = Math.min(this.maxHp, this.hp + v);
+    return true;
+  }
+
+  private restore(v: number): boolean {
+    if (this.mp >= this.maxMp) return false;
+    this.mp = Math.min(this.maxMp, this.mp + v);
+    return true;
+  }
+
+  addGold(v: number) {
+    this.gold = Math.max(0, this.gold + v);
+    this.scene.emitHud();
+  }
+
+  addPotion(kind: "hp" | "mp") {
+    this.potions[kind]++;
+    this.scene.emitHud();
+  }
+
+  /** 장비 장착 (인벤토리에서) */
+  equip(key: ItemKey): boolean {
+    const item = ITEMS[key];
+    if (!item || !this.owned.includes(key)) return false;
+    if (item.kind === "weapon") this.weapon = key;
+    else if (item.kind === "armor") this.armor = key;
+    else return false;
+    this.scene.sfxEquip();
+    this.scene.spawnPickupText(this.x, this.y - 30, `${item.name} 장착!`, "#ffd76a");
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 상점 구매 — 골드 차감/인벤토리 반영. 실패 시 false */
+  buy(key: ItemKey): boolean {
+    const item = ITEMS[key];
+    if (!item || this.gold < item.price) return false;
+    if (item.kind === "consumable") {
+      this.gold -= item.price;
+      this.addPotion(key === "potion_hp" ? "hp" : "mp");
+      return true;
+    }
+    if (this.owned.includes(key)) return false; // 이미 보유한 장비
+    this.gold -= item.price;
+    this.owned.push(key);
+    // 구매 즉시 장착 (더 좋은 티어면 자연스러운 흐름)
+    if (item.kind === "weapon") this.weapon = key;
+    else this.armor = key;
+    return true;
   }
 
   revive(x: number, y: number) {
