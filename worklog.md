@@ -424,3 +424,37 @@ Work Log:
 Stage Summary:
 - SERTZ v1.0 완성 — 6바퀴 자율 루프(loop-0~6)로 완성 마무리 5건 + 치명 버그 3건
 - 다음 단계: 사용자 "빌드" 지시 시 APK (하드 제약 준수 — 미빌드)
+
+---
+Task ID: stage-1
+Agent: Super Z (main)
+Task: 사용자 지시 "스토리대로 스테이지 마저 만들어" — 스토리 연장 스테이지 3개 + 보스 2종 + 진엔딩
+
+Work Log:
+- 스토리 설계: 기존 대사("이 모험은 언젠가 더 커진 세계로") 수재 — 수호자는 경계의 문지기였다는 반전, 심연의 근원을 쫓아 세계수 뿌리 순행(동굴→니플헤임→심연의 왕좌)
+- 에셋 (전부 기존 CC0/CC-BY 재활용, scripts/build_story_assets.py 베이크 43종):
+  - 몬스터 5종: 동굴 거미(TD 0110) / 수정 골렘(TD 0109) / 얼음 골렘(0109 청백 틴트) / 심연 유령(TD 0121 보라 틴트) / 서리 늑대(LPC 늑대 청백 틴트)
+  - 보스 2종: 눈보라의 거수(boss_2xdemon-behemot trim 0.45) / 심연의 군주(boss_2xboss-alvaric trim 0.5) — sotrak과 동일 파이프라인
+  - 타일 5종(tile_snow/ice/cave/abyss/path_dark — 기존 타일 틴트) + 데코 4종(pine_snow/dark, rock_snow/dark) + 아이템 2종(TD 0105 대검/0102 방패 보라 틴트)
+- data.ts: StageKey 6종, NEXT_STAGE 체인 맵, STAGES 3개 신규(quest targetKey 필드 신설), ENEMIES 7종, BOSS_DEFS 레코드화(tex/orbTint/introDialogue 주입형), 대사 9건 신규(guardianDone/caveIntro/fragment2/caveDone/niflIntro/bossIntroBehemoth/behemothDone/abyssIntro/bossIntroLord + victory 재작성), 아이템 4티어(심연의 대검 420G ATK+20 / 수호자의 갑옷 380G DEF+10)
+- Enemy.ts: EnemyKey 확장 + BODY_CFG 표(물리/판정/리스폰 버스트색) + burstTint getter
+- Boss.ts: BossDef 주입형(텍스처/히트박스 스프라이트 비례/구슬색/분노 배너/격파 보상) — 3종 보스 공용 AI 재사용
+- WorldScene.ts: 지면/길/배경색/데코 스테이지 테마화(동굴 수정 광맥·왕좌 보라 화염), 포탈 체인 NEXT_STAGE, 수확형(동굴)/보스형 스테이지 퀘스트 일반화, 보스 격파→안내 대사→대사 종료 후 포탈 활성화(pendingPortal+600ms 유예), 최종 스테이지만 cleared=true+엔딩, 복구 경로 일반화(보스전 중/보스후 세이브, 구 v1.0 클리어 세이브→포탈 복구)
+- BootScene/textures: 에셋 43종 로드 + 몬스터 5종/보스 2종 애니 등록
+- Overlays.tsx: 이어하기 스테이지명 6종 맵 + 엔딩 "세계수를 구원했다!" 갱신
+- 검증 (agent-browser E2E 실측):
+  - 마을 신규 시작 무결 → 세이브 주입으로 동굴 진입: 갈색 동굴+거미5/골렘3+수정 광맥 렌더, 스탯 캐리(atk 40)
+  - 파편2 수집(atk+5) → 거미 6킬(리스폰 포함) → caveDone 대사+포탈 개방 → 니플헤임 진입
+  - 니플헤임: 설원+얼음길+얼음골렘 렌더, 서리늑대 6킬 → 보스 "눈보라의 거수" 등장(920HP, boss2 스프라이트, 보스바/등장 대사) → 격파 → behemothDone 대사 → 포탈 → 심연의 왕좌
+  - 심연의 왕좌: 보라 지대+보라 화염 횃불 렌더, 유령 4킬 → 최종보스 "심연의 군주" 등장(1300HP, boss3 흑기사) → 격파 → **진엔딩 "세계수를 구원했다!" (처치24·LV7)**
+  - 보스전 중 이어하기: 니플헤임 q=1 세이브 → 재접속 시 보스 자동 등장 확인
+  - 구 v1.0 클리어 세이브(alfheim q=2, cleared=true): 타이틀 "클리어" 표기 → 이어하기 → 포탈 활성 복구 → 동굴 진입 → 신규 콘텐츠 이어가기 확인
+  - 장비: 심연의 대검 420G 구매→자동 장착(atkTotal 26→40), 골드 부족 구매 차단 확인
+  - tsc 0 / eslint 0 / 클린 로드 콘솔 에러 0 / localStorage.clear() 정리
+- 커밋: 스테이지 확장 1건 (에셋+코드+문서)
+
+Stage Summary:
+- 산출물: scripts/build_story_assets.py, public/assets/ +43종, src/game/{data,textures,config}.ts, entities/{Enemy,Boss}.ts, scenes/{WorldScene,BootScene}.ts, components/game/Overlays.tsx
+- 스테이지 3→6개, 보스 1→3종, 몬스터 2→7종 — "이그드라실 뿌리 순행" 스토리 완결 (마을→숲→알프헤임→동굴→니플헤임→왕좌→진엔딩)
+- 구 세이브 전 케이스 호환 (v1.0 클리어 세이브도 신규 콘텐츠 이어가기)
+- 제약 준수: APK 미빌드 (사용자 지시 시에만)

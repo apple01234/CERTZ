@@ -1,8 +1,19 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
-import { ENEMIES, type EnemyDef } from "../data";
+import { ENEMIES, type EnemyDef, type EnemyKey } from "../data";
 
-/** 일반 몬스터 (늑대 / 심연 하수인) — 상태머신 AI, 풀링 친화적 단순 구조 */
+/** 종별 물리/판정 크기 + 리스폰 버스트 색 */
+const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: number; burst: number }> = {
+  wolf: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0x9aa0b4 },
+  minion: { bw: 18, bh: 24, hw: 30, hh: 32, burst: 0xb08ae8 },
+  spider: { bw: 26, bh: 16, hw: 38, hh: 26, burst: 0xe86a5a },
+  golem: { bw: 22, bh: 24, hw: 36, hh: 36, burst: 0xd8a86a },
+  frostwolf: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0xa8d8fa },
+  icegolem: { bw: 22, bh: 24, hw: 36, hh: 36, burst: 0xa8d8fa },
+  wraith: { bw: 18, bh: 24, hw: 30, hh: 32, burst: 0xbe96eb },
+};
+
+/** 일반 몬스터 — 상태머신 AI, 풀링 친화적 단순 구조 */
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
 
@@ -31,7 +42,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private hpBarBg: Phaser.GameObjects.Rectangle | null = null;
   private hitFlash = 0;
 
-  constructor(scene: WorldScene, x: number, y: number, key: "wolf" | "minion") {
+  constructor(scene: WorldScene, x: number, y: number, key: EnemyKey) {
     super(scene, x, y, `${key}_idle0`);
     this.def = ENEMIES[key];
     this.hp = this.def.hp;
@@ -41,16 +52,20 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(9);
-    const bw = key === "wolf" ? 36 : 18;
-    const bh = key === "wolf" ? 20 : 24;
-    this.body!.setSize(bw, bh);
-    this.body!.setOffset((this.width - bw) / 2, this.height - bh - 2);
+    const cfg = BODY_CFG[key];
+    this.body!.setSize(cfg.bw, cfg.bh);
+    this.body!.setOffset((this.width - cfg.bw) / 2, this.height - cfg.bh - 2);
     // 추격/넉백으로 맵 밖으로 밀려 나가지 않도록 경계 충돌
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     this.play(`${key}-idle`);
     // 스프라이트 크기에 맞춘 근접 판정 크기
-    this.hitW = key === "wolf" ? 56 : 30;
-    this.hitH = key === "wolf" ? 30 : 32;
+    this.hitW = cfg.hw;
+    this.hitH = cfg.hh;
+  }
+
+  /** 리스폰 버스트 색 (월드 씬에서 사용) */
+  get burstTint() {
+    return BODY_CFG[this.def.key].burst;
   }
 
   /** 씬에서 매 프레임 호출 */

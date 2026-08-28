@@ -30,7 +30,21 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "wolf-run", ...fr("wolf_run", 4, 10, -1) });
   a.create({ key: "minion-idle", ...fr("minion_idle", 2, 3, -1) });
   a.create({ key: "minion-run", ...fr("minion_run", 4, 8, -1) });
+  // 스토리 확장 몬스터 (동굴/니플헤임/심연)
+  a.create({ key: "spider-idle", ...fr("spider_idle", 2, 3, -1) });
+  a.create({ key: "spider-run", ...fr("spider_run", 4, 9, -1) });
+  a.create({ key: "golem-idle", ...fr("golem_idle", 2, 2, -1) });
+  a.create({ key: "golem-run", ...fr("golem_run", 4, 6, -1) });
+  a.create({ key: "frostwolf-idle", ...fr("frostwolf_idle", 2, 2, -1) });
+  a.create({ key: "frostwolf-run", ...fr("frostwolf_run", 4, 10, -1) });
+  a.create({ key: "icegolem-idle", ...fr("icegolem_idle", 2, 2, -1) });
+  a.create({ key: "icegolem-run", ...fr("icegolem_run", 4, 6, -1) });
+  a.create({ key: "wraith-idle", ...fr("wraith_idle", 2, 3, -1) });
+  a.create({ key: "wraith-run", ...fr("wraith_run", 4, 7, -1) });
+  // 보스 3종 (guardian / behemoth / abysslord)
   a.create({ key: "boss-idle", ...fr("boss_idle", 2, 2, -1) });
+  a.create({ key: "boss2-idle", ...fr("boss2_idle", 2, 2, -1) });
+  a.create({ key: "boss3-idle", ...fr("boss3_idle", 2, 2, -1) });
   // VFX — 참격 초승달 스윕(외부 애니), 차원문 소용돌이
   a.create({ key: "fx-slash", ...fr("slash", 6, 30, 0) });
   a.create({ key: "portal-spin", ...fr("portal", 8, 10, -1) });

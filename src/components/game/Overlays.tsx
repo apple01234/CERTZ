@@ -3,7 +3,18 @@
 import { useEffect, useState } from "react";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState } from "./EventBus";
+import { STAGES } from "@/game/data";
 import { RotateCw, Play, Save, Swords, Skull, Trophy, Home } from "lucide-react";
+
+/** 세이브 이어하기 라벨용 스테이지 표기명 */
+const STAGE_LABEL: Record<string, string> = {
+  village: "시작 마을",
+  forest: "뿌리숲",
+  alfheim: "알프헤임",
+  cave: "동굴",
+  niflheim: "니플헤임",
+  abyss: "심연의 왕좌",
+};
 
 /* ---------- 타이틀 화면 ---------- */
 
@@ -38,7 +49,7 @@ export function TitleScreen() {
             <Save size={18} />
             이어하기
             <span className="text-[10px] font-bold text-sky-200">
-              LV{save.lv} · {save.cleared ? "클리어" : save.stage === "village" ? "시작 마을" : save.stage === "forest" ? "뿌리숲" : "알프헤임"}
+              LV{save.lv} · {save.cleared ? "클리어" : (STAGE_LABEL[save.stage] ?? STAGES[save.stage as keyof typeof STAGES]?.subtitle ?? "여행 중")}
             </span>
           </button>
         )}
@@ -138,11 +149,11 @@ export function EndScreen({ end }: { end: EndState }) {
           )}
         </div>
         <h2 className="text-2xl font-black text-white">
-          {end.victory ? "알프헤임 구원 완료!" : "쓰러졌다…"}
+          {end.victory ? "세계수를 구원했다!" : "쓰러졌다…"}
         </h2>
         <p className="mt-1 text-xs font-bold text-white/60">
           {end.victory
-            ? "심연의 수호자를 물리치고 세계수의 빛을 되찾았다"
+            ? "심연의 군주를 물리치고 세계수의 빛을 되찾았다"
             : "하지만 모험은 끝나지 않았다"}
         </p>
 

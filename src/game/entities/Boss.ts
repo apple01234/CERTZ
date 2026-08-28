@@ -1,10 +1,11 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
-import { BOSS_DEF } from "../data";
+import type { BossDef } from "../data";
 import { EventBus } from "../../components/game/EventBus";
 
 /**
- * 보스: 심연의 수호자
+ * 보스 (3종 — 스테이지별 정의 주입):
+ *  guardian: 심연의 수호자 (알프헤임) / behemoth: 눈보라의 거수 (니플헤임) / abysslord: 심연의 군주 (심연의 왕좌)
  * F4 최적화 핵심:
  *  - 투사체는 24발 고정 풀 재사용 (런타임 생성/파괴 없음)
  *  - 텔레그래프는 미리 만든 텍스처 스프라이트 트윈 (매 프레임 Graphics 그리기 없음)
@@ -15,8 +16,9 @@ type BossMode = "idle" | "slamTele" | "chargeTele" | "charging" | "volley" | "st
 export class Boss extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
 
-  hp = BOSS_DEF.hp;
-  maxHp = BOSS_DEF.hp;
+  def: BossDef;
+  hp: number;
+  maxHp: number;
   alive = true;
   enraged = false;
   // 근접 판정용 목표 크기 — 커다란 보스 스프라이트에 맞춰 넉넉하게
@@ -39,24 +41,31 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private orbPool: Phaser.Physics.Arcade.Image[] = [];
   private orbIdx = 0;
 
-  constructor(scene: WorldScene, x: number, y: number) {
-    super(scene, x, y, "boss_idle0");
+  constructor(scene: WorldScene, x: number, y: number, def: BossDef) {
+    super(scene, x, y, `${def.tex}_idle0`);
+    this.def = def;
+    this.hp = def.hp;
+    this.maxHp = def.hp;
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(11);
-    // 111x126 캔버스 (sotrak 보스) — 스프라이트가 크므로 히트박스도 넉넉하게
-    this.body!.setSize(76, 92);
-    this.body!.setOffset(17, 30);
+    // 보스 스프라이트 크기에 비례한 히트박스/근접 판정 (94x144 / 110x180 / 117x140 대응)
+    const bw = Math.round(this.width * 0.66);
+    const bh = Math.round(this.height * 0.6);
+    this.body!.setSize(bw, bh);
+    this.body!.setOffset((this.width - bw) / 2, this.height - bh - 6);
+    this.hitW = Math.round(this.width * 0.92);
+    this.hitH = Math.round(this.height * 0.92);
     // 돌진/넉백으로 아레나 밖으로 나가지 않도록 경계 충돌
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
-    this.play("boss-idle");
+    this.play(`${def.tex}-idle`);
 
     for (let i = 0; i < 24; i++) {
       const orb = scene.physics.add.image(0, 0, "orb");
-      // 외부 에셋 구슬(Kenney circle_05) — 보라 발광 에너지탄
-      orb.setTint(0x9d7aff).setBlendMode(Phaser.BlendModes.ADD);
+      // 외부 에셋 구슬(Kenney circle_05) — 보스별 테마색 발광 에너지탄
+      orb.setTint(def.orbTint).setBlendMode(Phaser.BlendModes.ADD);
       orb.setActive(false).setVisible(false);
-      orb.setData("dmg", BOSS_DEF.atk);
+      orb.setData("dmg", def.atk);
       (orb.body as Phaser.Physics.Arcade.Body).setCircle(7);
       this.orbPool.push(orb);
     }
@@ -88,7 +97,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     switch (this.mode) {
       case "idle": {
         // 추격하며 접근
-        this.setVelocity(toPlayer.x * BOSS_DEF.speed + this.knockVec.x, toPlayer.y * BOSS_DEF.speed + this.knockVec.y);
+        this.setVelocity(toPlayer.x * this.def.speed + this.knockVec.x, toPlayer.y * this.def.speed + this.knockVec.y);
         this.nextAttackCd -= dt;
         if (this.nextAttackCd <= 0 && dist < 520 && player.hp > 0) {
           const r = Math.random();
@@ -121,7 +130,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.setVelocity(this.chargeDir.x * 520 + this.knockVec.x, this.chargeDir.y * 520 + this.knockVec.y);
         if (!this.chargeHitDone && dist < 64) {
           this.chargeHitDone = true;
-          player.takeDamage(Math.round(BOSS_DEF.atk * 0.9), this.chargeDir.clone());
+          player.takeDamage(Math.round(this.def.atk * 0.9), this.chargeDir.clone());
         }
         if (this.modeTimer <= 0) this.endAttack(1400);
         break;
@@ -170,7 +179,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.scene.spawnCrack(tx, ty);
       if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 118) {
         const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
-        player.takeDamage(Math.round(BOSS_DEF.atk * 1.2), dir);
+        player.takeDamage(Math.round(this.def.atk * 1.2), dir);
       }
       this.scene.tweens.add({
         targets: ring,
@@ -231,7 +240,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     orb.enableBody(true, this.x, this.y - 20, true, true);
     this.scene.physics.velocityFromRotation(angle, speed, orb.body!.velocity);
     orb.setScale(this.enraged ? 1.2 : 1);
-    orb.setData("dmg", this.enraged ? Math.round(BOSS_DEF.atk * 0.75) : Math.round(BOSS_DEF.atk * 0.6));
+    orb.setData("dmg", this.enraged ? Math.round(this.def.atk * 0.75) : Math.round(this.def.atk * 0.6));
     // 수명 후 자동 회수
     this.scene.time.delayedCall(3200, () => this.killOrb(orb));
   }
@@ -266,7 +275,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.scene.sfxRoar();
       this.scene.cameras.main.shake(200, 0.008);
       this.scene.spawnEnrageBurst(this.x, this.y);
-      this.scene.showBanner("심연의 수호자가 분노한다!");
+      this.scene.showBanner(`${this.def.name}가 분노한다!`);
       this.setTint(0xff7080);
       this.scene.time.delayedCall(500, () => this.alive && this.clearTint());
     }
@@ -281,7 +290,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.teleRings = [];
       this.setVelocity(0, 0);
       // 보스 격파 보상 — 대량 골드 + HP 물약 2개 (2D MMORPG 기본 요소)
-      this.scene.dropLootGold(this.x, this.y, BOSS_DEF.gold);
+      this.scene.dropLootGold(this.x, this.y, this.def.gold);
       this.scene.dropLootItem(this.x + 26, this.y, "potion_hp");
       this.scene.dropLootItem(this.x - 26, this.y, "potion_hp");
       EventBus.emit("boss:hide");

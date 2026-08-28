@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, type StageKey, type StageDef, type ItemKey, type EnemyDef } from "../data";
+import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, BOSS_DEFS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef } from "../data";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
@@ -63,12 +63,16 @@ export class WorldScene extends Phaser.Scene {
   // 스테이지별 누적 킬 (퀘스트 순서와 무관하게 토벌 진행 유지 — 소프트락 방지)
   private killTotals: Record<string, number> = {};
   // 리스폰: 원래 스폰 지점 기록 (파밍 루프 — 사냥→골드→상점 순환이 적 소진으로 끊기지 않게)
-  private spawnRecords: { key: "wolf" | "minion"; x: number; y: number }[] = [];
+  private spawnRecords: { key: EnemyKey; x: number; y: number }[] = [];
   // 퀘스트 진행 세이브 — 스테이지별 questIdx (이어하기 무결성: 파편 ATK 중복/보상 중복/보스 소프트락 방지)
   private savedQuestIdx: Record<string, number> = {};
   // 마을 우물 샘물 회복 (비전투 회복 수단)
   private wellPos: Phaser.Math.Vector2 | null = null;
   private wellCd = 0;
+  // 보스 격파 후 대사가 끝나면 열어줄 차원문 (스토리 진행 — 최종 스테이지 제외)
+  private pendingPortal = false;
+  // 현재 스테이지 보스 정의 (onBossDead에서 사용)
+  private bossDef: BossDef | null = null;
 
   /* ----- 2D MMORPG 기본 요소 ----- */
   private drops: Drop[] = [];
@@ -104,6 +108,8 @@ export class WorldScene extends Phaser.Scene {
     this.savedQuestIdx = {};
     this.wellPos = null;
     this.wellCd = 0;
+    this.pendingPortal = false;
+    this.bossDef = null;
     this.drops = [];
     this.merchant = null;
     this.merchantLabel = null;
@@ -134,17 +140,26 @@ export class WorldScene extends Phaser.Scene {
     this.stageH = this.stageDef.height;
 
     /* ---------- 바닥 ---------- */
-    const groundTex = stageKey === "alfheim" ? "tile_dark" : "tile_grass";
+    const groundTex =
+      stageKey === "alfheim" ? "tile_dark"
+      : stageKey === "cave" ? "tile_cave"
+      : stageKey === "abyss" ? "tile_abyss"
+      : stageKey === "niflheim" ? "tile_snow"
+      : "tile_grass";
+    const pathTex =
+      stageKey === "niflheim" ? "tile_ice"
+      : stageKey === "cave" || stageKey === "abyss" ? "tile_path_dark"
+      : "tile_path";
     this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
     // 중앙 가로 길
     this.add
-      .tileSprite(0, this.stageH / 2 - 52, this.stageW, 104, "tile_path")
+      .tileSprite(0, this.stageH / 2 - 52, this.stageW, 104, pathTex)
       .setOrigin(0)
       .setDepth(0)
       .setAlpha(0.9);
     if (stageKey === "forest") {
       this.add
-        .tileSprite(this.stageW * 0.55 - 52, 0, 104, this.stageH, "tile_path")
+        .tileSprite(this.stageW * 0.55 - 52, 0, 104, this.stageH, pathTex)
         .setOrigin(0)
         .setDepth(0)
         .setAlpha(0.85);
@@ -152,9 +167,7 @@ export class WorldScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
     this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
-    this.cameras.main.setBackgroundColor(
-      stageKey === "alfheim" ? "#0d0a1e" : stageKey === "village" ? "#15270f" : "#0a1408"
-    );
+    this.cameras.main.setBackgroundColor(STAGE_BG[stageKey]);
 
     // 반응형: 화면 밀도 유지용 카메라 줌 (RESIZE 캔버스 1:1 + 카메라 확대)
     this.applyCameraZoom();
@@ -221,20 +234,31 @@ export class WorldScene extends Phaser.Scene {
       // 파편은 수집 퀘스트(f0) 진행 중에만 — 이어하기 시 ATK +5 중복 수령 방지
       if (this.questIdx < 1) this.spawnFragment(this.stageW * 0.78, this.stageH * 0.26);
       this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+    } else if (stageKey === "cave") {
+      // 동굴 파편 (c0 수집 퀘스트 진행 중에만)
+      if (this.questIdx < 1) this.spawnFragment(this.stageW * 0.78, this.stageH * 0.26);
+      this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
     } else {
-      this.spawnPortalBossArena();
+      // 보스전 스테이지 — 격파 후 차원문 등장 (최종 스테이지는 엔딩)
     }
 
     /* ---------- 퀘스트 진행 복구 (이어하기 — 진행 상태 정합, 오브젝트 생성 후) ---------- */
-    if (stageKey === "forest" && this.questIdx >= 2) {
-      // 토벌 완료 후 세이브 — 차원문을 열어둔 채 시작 (소프트락 방지)
+    const bossQuestIdx = this.stageDef.quests.findIndex((q) => q.type === "boss");
+    if (!this.stageDef.boss && stageKey !== "village" && this.questIdx >= this.stageDef.quests.length - 1) {
+      // 수확 완료 후 세이브 — 차원문을 열어둔 채 시작 (소프트락 방지)
       this.activatePortal(true);
     }
-    if (stageKey === "alfheim" && this.questIdx === 1) {
-      // 하수인 소탕 후 보스전 진행 중 세이브 — 입장 직후 보스 등장
-      this.time.delayedCall(900, () => {
-        if (!this.boss) this.spawnBoss();
-      });
+    if (this.stageDef.boss) {
+      if (bossQuestIdx >= 0 && this.questIdx === bossQuestIdx) {
+        // 보스전 진행 중 세이브 — 입장 직후 보스 등장 (복구 경로는 등장 대사 생략)
+        this.time.delayedCall(900, () => {
+          if (!this.boss) this.spawnBoss(false);
+        });
+      } else if (bossQuestIdx >= 0 && this.questIdx > bossQuestIdx && NEXT_STAGE[stageKey]) {
+        // 보스 격파 후 세이브 — 차원문 개방 상태 복구 (구 v1.0 클리어 세이브도 이 경로로 계속)
+        this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+        this.activatePortal(true);
+      }
     }
 
     /* ---------- 이펙트 풀 ---------- */
@@ -248,12 +272,11 @@ export class WorldScene extends Phaser.Scene {
     this.setupInput();
 
     /* ---------- 사운드/BGM ---------- */
-    audio.playBGM(stageKey === "alfheim" ? "boss" : "field");
+    audio.playBGM(stageKey === "alfheim" || stageKey === "abyss" ? "boss" : "field");
 
     /* ---------- 오프닝 대사 ---------- */
     this.time.delayedCall(400, () => {
-      const introId = stageKey === "village" ? "villageIntro" : stageKey === "forest" ? "intro" : "alfheimIntro";
-      this.showDialogue(introId);
+      this.showDialogue(STAGE_INTRO[stageKey]);
     });
 
     EventBus.emit("ui:playing");
@@ -307,13 +330,18 @@ export class WorldScene extends Phaser.Scene {
         : [];
     const blocked = (x: number, y: number) => reserved.some(([rx, ry]) => Phaser.Math.Distance.Between(x, y, rx, ry) < 170);
 
-    // 나무 & 소나무 & 바위 (충돌 있음) — 실제 에셋
+    // 나무 & 소나무 & 바위 (충돌 있음) — 실제 에셋, 스테이지 테마 변형
+    const treeSet: string[] =
+      stageKey === "niflheim" ? ["pine_snow"]
+      : stageKey === "abyss" ? ["pine_dark"]
+      : ["tree", "tree", "pine"];
+    const rockTex = stageKey === "niflheim" ? "rock_snow" : stageKey === "abyss" ? "rock_dark" : "rock";
     for (let i = 0; i < def.treeCount; i++) {
       const x = rng.between(80, this.stageW - 80);
       const y = rng.between(90, this.stageH - 80);
       if (Math.abs(y - this.stageH / 2) < 90) continue; // 길 위엔 안 심음
       if (blocked(x, y)) continue;
-      const tex = rng.pick(["tree", "tree", "pine"] as string[]);
+      const tex = rng.pick(treeSet);
       const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
       this.solidGroup.add(t);
       // 64x64 캔버스 하단 줄기 부근만 충돌
@@ -324,7 +352,7 @@ export class WorldScene extends Phaser.Scene {
       const y = rng.between(90, this.stageH - 80);
       if (Math.abs(y - this.stageH / 2) < 90) continue;
       if (blocked(x, y)) continue;
-      const r = this.add.image(x, y, "rock").setDepth(Math.floor(y / 10));
+      const r = this.add.image(x, y, rockTex).setDepth(Math.floor(y / 10));
       this.solidGroup.add(r);
       (r.body as Phaser.Physics.Arcade.StaticBody).setSize(44, 20).setOffset(10, 40);
     }
@@ -352,6 +380,43 @@ export class WorldScene extends Phaser.Scene {
           .setScale(1.1)
           .setAlpha(0.22);
         this.tweens.add({ targets: g, alpha: 0.42, scale: 1.35, duration: 650, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      }
+    }
+
+    // 스바르트알프헤임 동굴 — 심연에 물든 수정 광맥 (세계수 파편 텍스처 보라 변형 + 글로우)
+    if (stageKey === "cave") {
+      const rng2 = new Phaser.Math.RandomDataGenerator(["cave-crystal"]);
+      for (let i = 0; i < 7; i++) {
+        const cx2 = rng2.between(140, this.stageW - 140);
+        const cy2 = rng2.between(90, this.stageH - 90);
+        if (Math.abs(cy2 - this.stageH / 2) < 80) continue;
+        const c = this.add.image(cx2, cy2, "fragment").setDepth(1).setTint(0xc77aff).setScale(rng2.realInRange(0.7, 1.2));
+        const g = this.add
+          .image(cx2, cy2, "glow")
+          .setDepth(0)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0x9d5aff)
+          .setScale(1.2)
+          .setAlpha(0.18);
+        this.tweens.add({ targets: g, alpha: 0.38, scale: 1.5, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+        void c;
+      }
+    }
+
+    // 심연의 왕좌 — 보라 화염 횃불 (심연의 표식)
+    if (stageKey === "abyss") {
+      for (let i = 0; i < 5; i++) {
+        const tx = 220 + (i * (this.stageW - 440)) / 4;
+        const ty = i % 2 === 0 ? this.stageH / 2 - 130 : this.stageH / 2 + 130;
+        this.add.image(tx, ty, "torch").setDepth(2).setTint(0xb08aff);
+        const g = this.add
+          .image(tx, ty, "glow")
+          .setDepth(1)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0x8a5aff)
+          .setScale(1.2)
+          .setAlpha(0.24);
+        this.tweens.add({ targets: g, alpha: 0.45, scale: 1.4, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       }
     }
   }
@@ -418,12 +483,12 @@ export class WorldScene extends Phaser.Scene {
     });
     this.fragment = null;
     this.spawnBurstAt(f.x, f.y, 14, 0x9df0ff);
-    this.showDialogue("fragment");
+    this.showDialogue(this.stageDef.key === "forest" ? "fragment" : "fragment2");
     this.advanceQuest();
-    // 늑대를 먼저 다 잡아둔 경우 — 토벌 퀘스트가 이미 충족됐으면 즉시 완료 처리
+    // 토벌 퀘스트가 이미 충족돼 있으면 즉시 완료 처리 (늑대를 먼저 다 잡아둔 경우와 동일)
     this.time.delayedCall(100, () => {
-      if (this.stageDef.key === "forest") this.tryCompleteHunt("wolf");
-      else this.tryCompleteHunt("minion");
+      const huntKey = this.currentHuntKey();
+      if (huntKey) this.tryCompleteHunt(huntKey);
     });
     this.save();
   }
@@ -466,8 +531,9 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.portal();
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.player.state = "idle";
-    // 마을 → 뿌리숲 → 알프헤임 순차 진행
-    const next: StageKey = this.stageDef.key === "village" ? "forest" : "alfheim";
+    // 마을 → 뿌리숲 → 알프헤임 → 동굴 → 니플헤임 → 심연의 왕좌 순차 진행 (스토리 체인)
+    const next: StageKey | null = NEXT_STAGE[this.stageDef.key];
+    if (!next) return;
     this.time.delayedCall(520, () => {
       // ⚠️ 다음 스테이지에 현재 스탯/소지품을 그대로 넘긴다
       //   (restart에 save를 안 넘기면 기본값 플레이어로 시작 — 골드/레벨/장비 소실 버그)
@@ -475,10 +541,6 @@ export class WorldScene extends Phaser.Scene {
       writeSave(carry);
       this.scene.restart({ stage: next, save: carry });
     });
-  }
-
-  private spawnPortalBossArena() {
-    // 보스전 스테이지는 차원문 없음 — 하수인 소탕 후 보스 등장
   }
 
   /* ================= 시작 마을 (인간들의 마을) ================= */
@@ -935,7 +997,7 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.shake(70, 0.006);
   }
 
-  onEnemyKilled(key: "wolf" | "minion", exp: number, spawnX: number, spawnY: number) {
+  onEnemyKilled(key: EnemyKey, exp: number, spawnX: number, spawnY: number) {
     // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
     this.enemies = this.enemies.filter((e) => e.alive);
     this.totalKills++;
@@ -947,7 +1009,7 @@ export class WorldScene extends Phaser.Scene {
       this.respawnEnemy(key, spawnX, spawnY, 0)
     );
     const q = this.currentQuest();
-    if (q && q.type === "hunt" && this.stageDef.key === (key === "wolf" ? "forest" : "alfheim")) {
+    if (q && q.type === "hunt" && this.stageDef.enemies.some((g) => g.key === key)) {
       this.huntCount = Math.min(this.killTotals[key] ?? 0, q.need ?? 0);
       this.tryCompleteHunt(key);
     }
@@ -958,7 +1020,7 @@ export class WorldScene extends Phaser.Scene {
    * 몬스터 리스폰 — 원래 스폰 지점에서 페이드 인.
    * 플레이어가 스폰 지점 근처(140px)에 서 있으면 얼굴에 팝업하는 걸 막기 위해 2.5초씩 재시도.
    */
-  private respawnEnemy(key: "wolf" | "minion", x: number, y: number, tries: number) {
+  private respawnEnemy(key: EnemyKey, x: number, y: number, tries: number) {
     if (!this.scene.isActive() || this.player.state === "dead") {
       return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
     }
@@ -970,73 +1032,101 @@ export class WorldScene extends Phaser.Scene {
     const e = new Enemy(this, x, y, key);
     e.setAlpha(0);
     this.tweens.add({ targets: e, alpha: 1, duration: 420 });
-    this.spawnBurstAt(x, y, 6, key === "wolf" ? 0x9aa0b4 : 0xb08ae8);
+    this.spawnBurstAt(x, y, 6, e.burstTint);
     this.enemies.push(e);
     this.physics.add.collider(e, this.solidGroup);
   }
 
+  /** 현재 토벌 퀘스트의 대상 몬스터 키 (없으면 스테이지 첫 적 그룹) */
+  private currentHuntKey(): EnemyKey | null {
+    const q = this.currentQuest();
+    if (q?.targetKey) return q.targetKey;
+    return this.stageDef.enemies[0]?.key ?? null;
+  }
+
   /**
    * 토벌 퀘스트 완료 시도.
-   * 늑대/하수인을 퀘스트 활성화 이전에 미리 다 잡아도 진행이 막히지 않도록
+   * 몬스터를 퀘스트 활성화 이전에 미리 다 잡아도 진행이 막히지 않도록
    * 누적 킬(killTotals) 기준으로 판정한다 (소프트락 방지).
    */
-  private tryCompleteHunt(_key: "wolf" | "minion") {
+  private tryCompleteHunt(_key: EnemyKey) {
     const q = this.currentQuest();
     if (!q || q.type !== "hunt") return;
     const total = this.killTotals[_key] ?? 0;
     if (total < (q.need ?? 0)) return;
     this.huntCount = Math.min(total, q.need ?? 0);
     audio.sfx.questDone();
-    if (this.stageDef.key === "forest") {
+    if (this.stageDef.boss) {
+      this.advanceQuest(); // → 보스 퀘스트
+      this.spawnBoss();
+    } else if (this.stageDef.key === "forest") {
       this.showDialogue("wolvesDone");
       this.advanceQuest(); // → 차원문 퀘스트
       this.activatePortal();
     } else {
-      this.advanceQuest(); // → 보스 퀘스트
-      this.spawnBoss();
+      // 동굴 등 수확형 스테이지 — 차원문 개방
+      this.showDialogue("caveDone");
+      this.advanceQuest();
+      this.activatePortal();
     }
     this.save();
   }
 
   /* ================= 보스 ================= */
 
-  private spawnBoss() {
+  private spawnBoss(intro = true) {
+    const def = BOSS_DEFS[this.stageDef.bossKey ?? "guardian"];
+    this.bossDef = def;
     const bx = this.stageW * 0.6;
     const by = this.stageH * 0.35;
     audio.sfx.roar();
     this.cameras.main.shake(260, 0.008);
-    this.showBanner("심연의 수호자가 나타났다!");
-    this.boss = new Boss(this, bx, by);
+    this.showBanner(`${def.name} 출현!`);
+    this.boss = new Boss(this, bx, by, def);
     this.physics.add.collider(this.boss, this.solidGroup);
-    EventBus.emit("boss:show", { name: "심연의 수호자", hp: this.boss.hp, maxHp: this.boss.maxHp });
+    EventBus.emit("boss:show", { name: def.name, hp: this.boss.hp, maxHp: this.boss.maxHp });
+    // 등장 대사 — 이어하기 복구 경로는 생략 (오프닝 대사와 충돌 방지)
+    if (intro) this.showDialogue(def.introDialogue);
   }
 
   onBossDead() {
+    const def = this.bossDef;
     audio.sfx.bossDie();
     audio.stopBGM();
     this.cameras.main.shake(400, 0.01);
-    this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, 0x9d7aff);
-    this.player.gainExp(BOSS_EXP);
+    this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
+    this.player.gainExp(def?.exp ?? 220);
     this.totalKills++;
     this.registry.set("runKills", this.totalKills);
-    this.cleared = true;
+    // 최종 보스(심연의 군주)만 클리어 — 이전 보스는 차원문으로 다음 지역 진행
+    const final = NEXT_STAGE[this.stageDef.key] === null;
+    this.cleared = final;
     this.advanceQuest(); // 보스 퀘스트 완료 — 골드 보상 포함
     this.save();
-    this.time.delayedCall(1200, () => {
-      this.showDialogue("victory");
-      this.time.delayedCall(400, () => {
-        this.saveCleared();
-      });
-      this.time.delayedCall(4600, () => {
-        // 엔드 화면이 최종 화면 — 타이틀 복귀는 EndScreen 버튼(reload)이 담당
-        EventBus.emit("end", {
-          victory: true,
-          playTime: Math.floor((Date.now() - this.startTime) / 1000),
-          kills: this.totalKills,
-          lv: this.player.lv,
+    if (final) {
+      this.time.delayedCall(1200, () => {
+        this.showDialogue("victory");
+        this.time.delayedCall(400, () => {
+          this.saveCleared();
+        });
+        this.time.delayedCall(4600, () => {
+          // 엔드 화면이 최종 화면 — 타이틀 복귀는 EndScreen 버튼(reload)이 담당
+          EventBus.emit("end", {
+            victory: true,
+            playTime: Math.floor((Date.now() - this.startTime) / 1000),
+            kills: this.totalKills,
+            lv: this.player.lv,
+          });
         });
       });
-    });
+    } else {
+      this.time.delayedCall(1200, () => {
+        // 다음 지역 안내 대사 → 대사가 끝나면 차원문 활성화 (resumeFromDialogue 참조)
+        this.showDialogue(this.stageDef.key === "alfheim" ? "guardianDone" : "behemothDone");
+        this.pendingPortal = true;
+        this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+      });
+    }
   }
 
   onPlayerDead() {
@@ -1059,7 +1149,7 @@ export class WorldScene extends Phaser.Scene {
       if (e.active && e.alive) e.resetHome();
     }
     this.player.revive(180, this.stageH / 2);
-    audio.playBGM(this.stageDef.key === "forest" ? "field" : "boss");
+    audio.playBGM(this.stageDef.key === "alfheim" || this.stageDef.key === "abyss" ? "boss" : "field");
   }
 
   /* ================= 입력 ================= */
@@ -1445,6 +1535,12 @@ export class WorldScene extends Phaser.Scene {
     this.dialoguing = false;
     this.physics.world.resume();
     EventBus.emit("dialogue:hide");
+    // 보스 격파 후 안내 대사 종료 시 차원문 개방 (플레이어가 포탈 위에 서 있어도
+    // 대사 도중 즉시 전환되는 사고 방지 — 600ms 유예)
+    if (this.pendingPortal) {
+      this.pendingPortal = false;
+      this.time.delayedCall(600, () => this.activatePortal());
+    }
   }
 
   showBanner(text: string) {
@@ -1500,7 +1596,25 @@ export class WorldScene extends Phaser.Scene {
   }
 }
 
-const BOSS_EXP = 220;
+/* 스테이지 배경색 (카메라 클리어 컬러) */
+const STAGE_BG: Record<StageKey, string> = {
+  village: "#15270f",
+  forest: "#0a1408",
+  alfheim: "#0d0a1e",
+  cave: "#100a08",
+  niflheim: "#0c1826",
+  abyss: "#0d0616",
+};
+
+/* 스테이지 오프닝 대사 */
+const STAGE_INTRO: Record<StageKey, string> = {
+  village: "villageIntro",
+  forest: "intro",
+  alfheim: "alfheimIntro",
+  cave: "caveIntro",
+  niflheim: "niflIntro",
+  abyss: "abyssIntro",
+};
 
 function DIALOGUE_GET(id: string) {
   return DIALOGUES[id];
