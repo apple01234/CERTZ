@@ -283,3 +283,30 @@ Stage Summary:
 - 검증: 2바퀴 스모크 + STOP/이중실행/hardstop 실측 통과. 현재 상태 "등록 완료 + 꺼짐(STOP ON)"
 - 환경 한계: 이 컨테이너는 systemd 유저 세션이 없어 재부팅 자동시작 불가(nohup 폴백만 동작) — systemd 머신에서는 ./loop/loopctl.sh start 한 번으로 완전 등록
 - 실제 에이전트 미연결 상태: env.sh의 AGENT_BIN(claude 기본)은 사용자 환경에 맞게 조정 필요. 실제 개발은 시작하지 않음(요구사항 준수)
+
+---
+Task ID: loop-1
+Agent: Super Z (main)
+Task: 사용자 지시 "게임 완성할때까지 루프켜줘" — 자율 루프 바퀴 1: 몬스터 리스폰 시스템
+
+Work Log:
+- 루프 운영 방식 확정: 이 컨테이너에 외부 에이전트 CLI(claude/gemini/codex/aider) 없음 → loop/loopctl.sh 데몬 기동 불가. 대신 본 세션에서 직접 바퀴를 돌기로 함 (읽기→하나 구현→실측→커밋→STATUS 갱신)
+- 루프 문서 완성 (loop-0 / 4b6ed95): PROMPT.md 합격기준·문서읽기범위·규칙+왜 5건·검사명령 채움, DESIGN.md/STATUS.md 실상 반영
+- 리스폰 구현:
+  - Enemy.ts: spawnX/spawnY getter 노출(homeX/Y), die() → onEnemyKilled에 스폰 좌표 전달
+  - WorldScene.ts: spawnRecords[] 기록 → onEnemyKilled에서 Between(9000,13000)ms 후 respawnEnemy 예약
+  - respawnEnemy(): 플레이어 140px 근접 시 2.5초 재시도(최대 24회), 페이드인(420ms)+스폰 버스트, solidGroup collider 재부착
+  - 씬 재시작 시 타이머 자동 정리(Phaser per-scene clock), 퀘스트 판정은 killTotals 누적이라 리스폰 재사냥 무해
+- 부수 수정: Player.ts idle 정지 분기 `anims.currentAnim?.isPlaying` → `anims.isPlaying` (TS2339 — Phaser Animation 객체에 isPlaying 없음, 이전 세션 잔류 에러)
+- 검증 (agent-browser 실측):
+  - 숲 진입(enemies 4, spawnRecords 4) → 늑대 kill → 4→3 → 15s 후 4, 재생성 위치 = 원 스폰점 (dist 0, alpha 1)
+  - 근접 가드: 플레이어를 스폰점+30px에 주차하고 킬 → 13s 후에도 3(보류) → 이동 후 ~4.5s 내 4로 복귀, 위치 정확
+  - 스크린샷 육안 확인(respawn_verify.png), page errors 0, console errors 0
+  - tsc 0 / eslint 0 / HTTP 200
+  - 테스트 localStorage.clear() 완료 (사용자 신규 시작 보장)
+
+Stage Summary:
+- 산출물: src/game/entities/Enemy.ts, src/game/scenes/WorldScene.ts, src/game/entities/Player.ts(타입수정), loop/PROMPT.md, docs/{DESIGN,STATUS}.md
+- 커밋: 4b6ed95(문서), db7c063(리스폰)
+- 파밍 루프 복원: 사냥→골드→상점 순환이 적 소진으로 끊기지 않음
+- 제약 준수: APK 미빌드
