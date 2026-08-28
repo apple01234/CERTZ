@@ -335,3 +335,29 @@ Stage Summary:
 - 커밋: 5414a22
 - 기존 "보이지만 동작 안 하던" 음소거가 실질 완성 — APK 환경(WebView)에서도 무음 설정 유지
 - 제약 준수: APK 미빌드
+
+---
+Task ID: loop-3
+Agent: Super Z (main)
+Task: 자율 루프 바퀴 3 — 퀘스트 진행 세이브 (이어하기 무결성)
+
+Work Log:
+- 문제 3건 확인: ① 파편 재수집 → ATK+5 무한 복제 ② 퀘스트 골드 보상 중복 수령 ③ 알프헤임 하수인 소탕 후 저장→이어하기 시 보스 영영 미등장(소프트락)
+- config.ts: SaveData.questIdx?: Record<string,number> + loadSave 기본값 {} (구 세이브 호환)
+- WorldScene.ts:
+  - savedQuestIdx 복원 → questIdx = clamp(saved[stageKey], 0, quests.length)
+  - save()에 questIdx 맵 기록 (현재 스테이지 인덱스 병합)
+  - 복구: forest questIdx>=2 → activatePortal(true) (오브젝트 생성 후 실행 — spawnPortal보다 앞서면 no-op이라 순서 배치 주의)
+  - 복구: alfheim questIdx===1 → delayedCall(900ms) spawnBoss (보스전 중 이어하기 대응)
+  - 파편은 questIdx<1에서만 spawn (재수집 차단)
+- 검증 (agent-browser 실측):
+  - 진행 시나리오: 숲 파편 수집(q1, atk 12→17, 보상 40G) → 늑대 4킬(q2, 보상 60G, 골드 130, 차원문 개방) → 세이브 {forest:2}
+  - 리로드→이어하기: q=2·atk 17(중복 없음)·골드 130(중복 없음)·portalActive true·fragment 없음·퀘스트 "다음 지역으로"
+  - 알프헤임: 하수인 5킬 → q1·보스 등장·세이브 {alfheim:1} → 리로드→이어하기 → 보스 자동 등장 확인(HP바 스크린샷)
+  - 참고: 이어하기 직후 과도기(init 직후 create 전)에 questIdx=0이 잠깐 읽히는 건 정상 (복원은 create에서)
+  - tsc 0 / eslint 0 / localStorage.clear() 정리
+
+Stage Summary:
+- 산출물: src/game/config.ts, src/game/scenes/WorldScene.ts
+- 이어하기가 완전한 무결성을 갖춤 — 진행/스탯/보상 전부 정합
+- 제약 준수: APK 미빌드
