@@ -66,6 +66,9 @@ export class WorldScene extends Phaser.Scene {
   private spawnRecords: { key: "wolf" | "minion"; x: number; y: number }[] = [];
   // 퀘스트 진행 세이브 — 스테이지별 questIdx (이어하기 무결성: 파편 ATK 중복/보상 중복/보스 소프트락 방지)
   private savedQuestIdx: Record<string, number> = {};
+  // 마을 우물 샘물 회복 (비전투 회복 수단)
+  private wellPos: Phaser.Math.Vector2 | null = null;
+  private wellCd = 0;
 
   /* ----- 2D MMORPG 기본 요소 ----- */
   private drops: Drop[] = [];
@@ -99,6 +102,8 @@ export class WorldScene extends Phaser.Scene {
     this.killTotals = {};
     this.spawnRecords = [];
     this.savedQuestIdx = {};
+    this.wellPos = null;
+    this.wellCd = 0;
     this.drops = [];
     this.merchant = null;
     this.merchantLabel = null;
@@ -470,10 +475,21 @@ export class WorldScene extends Phaser.Scene {
     const cx = this.stageW / 2;
     const cy = this.stageH / 2;
 
-    // 광장 우물 (중앙 랜드마크, 충돌 있음)
+    // 광장 우물 (중앙 랜드마크, 충돌 있음) — 접근 시 샘물 회복
     const well = this.add.image(cx, cy, "well").setDepth(Math.floor(cy / 10));
     this.solidGroup.add(well);
     (well.body as Phaser.Physics.Arcade.StaticBody).setSize(56, 36).setOffset(20, 52);
+    this.wellPos = new Phaser.Math.Vector2(cx, cy);
+    this.add
+      .text(cx, cy - 44, "샘물 우물", {
+        fontFamily: "sans-serif",
+        fontSize: "11px",
+        color: "#bfe8ff",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(Math.floor(cy / 10));
 
     // 집 3채 (실제 Zelda-like 타일셋 건물, 충돌은 벽 하단만)
     const houses: { x: number; y: number; tex: string; flip?: boolean }[] = [
@@ -1096,6 +1112,20 @@ export class WorldScene extends Phaser.Scene {
     const dt = Math.min(delta, 50);
     if (this.dialoguing || !this.player) return;
     if (this.player.state === "dead") return;
+
+    this.wellCd = Math.max(0, this.wellCd - dt);
+
+    // 마을 우물 샘물 — 근접 시 풀회복 (HP/MP가 꽉 차 있으면 미발동, 8초 쿨다운)
+    if (this.wellPos && this.stageDef.key === "village" && this.wellCd <= 0) {
+      const nearWell = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.wellPos.x, this.wellPos.y) < 86;
+      if (nearWell && (this.player.hp < this.player.maxHp || this.player.mp < this.player.maxMp)) {
+        this.wellCd = 8000;
+        this.player.healFull();
+        this.sfxPotion();
+        this.spawnPickupText(this.player.x, this.player.y - 34, "샘물로 완전히 회복!", "#7dffa8");
+        this.spawnBurstAt(this.player.x, this.player.y, 8, 0x7de8ff);
+      }
+    }
 
     // 키보드 이동
     const mv = new Phaser.Math.Vector2(0, 0);
