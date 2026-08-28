@@ -89,3 +89,40 @@ Stage Summary:
 - 산출물: src/game/textures.ts, src/game/scenes/WorldScene.ts, src/game/entities/Player.ts
 - 참격이 "회전하는 선"에서 "조준 방향의 반달 검기"로, 회전베기가 "정적 링"에서 "몸통 360° 회전+궤도 반달+충격파"로 개선됨
 - 제약 준수: APK 미빌드 (사용자 지시 시에만)
+
+---
+Task ID: assets-2
+Agent: Super Z (main)
+Task: 사용자 지시 "너가 제작하지 말고 에셋 사용하라닌까" — 남은 절차 생성 VFX 11종 + WebAudio 합성 사운드 전부 외부 실제 에셋으로 전환
+
+Work Log:
+- 이전 세션(assets-1)에서 캐릭터/타일/장식은 외부화됐지만 textures.ts의 VFX 11종(slash_crescent/slash_ring/beacon/glow/edge_arrow/quest_mark/ring/orb/crack/shadow/portal)과 audio.ts 합성음이 남아있었음 → 전면 제거
+- 다운로드 (scripts/asset-sources/assets-src/):
+  - Weapon Slash - Effect by Cethiel (CC0): 청색 초승달 참격 24프레임 → 6프레임 선별
+  - Animated Portal or Wormhole by varkalandar (CC-BY 4.0): 8번 변형 64프레임 → 8프레임, 루미넌스 알파 변환(검은배경→투명)
+  - Kenney Particle Pack (CC0): 충격파링 circle_02 / 텔레그래프링 circle_03 / 글로우 light_01 / 구슬 circle_05 / 스코치 scorch_01
+  - Kenney Light Masks (CC0): 빛기둥 cone_b_blur (아래가 밝게 정렬 + 루미넌스 알파)
+  - Kenney Roguelike (CC0): 화살표 타일 (52,25) — 런타임 골드 틴트
+  - Zelda-like objects.png (CC0): "?" 말풍선 (3,8)
+  - Retro Game Music Pack by Juhani Junkala (CC0): BGM 3트랙 (WAV→OGG 변환, title/field=Level1/boss=Level3)
+  - 80 CC0 RPG SFX + 80 CC0 creature SFX by Rubberduck (CC0): SFX 12종 (blade/metal/hurt/gem/spell/roar/die/monster)
+- scripts/build_vfx_audio.py 신설 — VFX 프레임 베이크 + 오디오 변환/배치 (public/assets/ + audio/ 27파일)
+- 코드:
+  - textures.ts: 캔버스 절차 생성 전면 삭제 → buildAllAnims(외부 프레임 애니 등록)만 남김 (fx-slash 6프레임 30fps, portal-spin 8프레임 10fps)
+  - BootScene: VFX 이미지 24종 + 오디오 15종 로드 추가, buildVfxTextures 호출 제거
+  - audio.ts: WebAudio 신스 전면 삭제 → Phaser SoundManager 파일 재생 재작성 (API 서면 유지: initAudio/setMuted/playBGM/stopBGM/sfx.*), attachAudio(game) 신설
+  - PhaserGame: createGame에서 attachAudio 호출
+  - WorldScene: slashPool Image→Sprite("fx-slash" 애니 재생+animationcomplete 은퇴, 재사용 시 off 가드), spawnSlash 재작성(초승달 스윕 애니+교차 미세회전), 충격파 shock_ring, 지면 scorch(틴트 0x8a7a66), 빛기둥 beam(48x256, y-128), 차원문 8프레임 바디 재조정, 가장자리 화살표 골드 틴트, 퀘스트 마커 스케일 1.3
+  - Boss: 투사체 구슬 보라 틴트+ADD 블렌드, 강타 텔레그래프 적색 틴트
+  - Overlays: 타이틀 크레딧 갱신 / CREDITS.md 전면 재작성 (CC0 8종 + CC-BY 3종)
+- 검증:
+  - tsc 0 에러, ESLint 0 에러
+  - agent-browser E2E 풀 플로우: 타이틀→인트로→파편(빛기둥/글로우/?마커 렌더 확인)→수집(atk+5)→늑대 토벌→사망/부활(HP100 복원)→차원문(소용돌이 애니+보라 빛기둥)→알프헤임(횃불/고스트)→하수인 5킬→보스(붉은 링 텔레그래프/보라 발광 구슬/분노)→격파→클리어→엔드화면 전부 통과
+  - 콘솔 에러 0, world children 66 불변(누수 없음), BGM 필드 트랙 재생 확인
+  - 참격 4방향 스폰 검증(초승달 볼록 방향 = 무게중심 계산 slash0 약 +11°, 회전 오프셋 정합)
+  - 테스트로 오염된 localStorage 세이브 삭제 완료(유저 신규 시작 보장)
+
+Stage Summary:
+- 산출물: public/assets/ VFX 24종+audio 15종, scripts/build_vfx_audio.py, src/game/** 6파일, CREDITS.md
+- 게임 내 자체 제작 요소 0% — 그래픽/사운드 전부 실제 외부 에셋 (CC0 8팩 + CC-BY 3팩, 크레딧 표기)
+- 제약 준수: APK 미빌드 (사용자 지시 시에만 — 빌드 시 이전 세션 도구 소실로 JDK21/Android SDK 재설치 필요)

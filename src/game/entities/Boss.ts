@@ -51,6 +51,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
     for (let i = 0; i < 24; i++) {
       const orb = scene.physics.add.image(0, 0, "orb");
+      // 외부 에셋 구슬(Kenney circle_05) — 보라 발광 에너지탄
+      orb.setTint(0x9d7aff).setBlendMode(Phaser.BlendModes.ADD);
       orb.setActive(false).setVisible(false);
       orb.setData("dmg", BOSS_DEF.atk);
       (orb.body as Phaser.Physics.Arcade.Body).setCircle(7);
@@ -142,10 +144,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   private startSlam(player: PlayerLike2) {
     this.setMode("slamTele", 750);
-    // 텔레그래프: 플레이어 현재 위치에 붉은 원
+    // 텔레그래프: 플레이어 현재 위치에 붉은 원 — 외부 에셋 링(Kenney CC0) 적색 틴트
     const ring = this.scene.add
       .image(player.x, player.y, "ring")
       .setDepth(5)
+      .setTint(0xff5a5a)
       .setAlpha(0.4)
       .setScale(0.2);
     this.teleRings.push(ring);

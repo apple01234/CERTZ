@@ -49,8 +49,8 @@ export class WorldScene extends Phaser.Scene {
   private burstEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   // F4: 데미지 텍스트 풀
   private dmgPool: Phaser.GameObjects.Text[] = [];
-  // F4: 참격 이펙트 풀
-  private slashPool: Phaser.GameObjects.Image[] = [];
+  // F4: 참격 이펙트 풀 (외부 에셋 애니 스프라이트)
+  private slashPool: Phaser.GameObjects.Sprite[] = [];
   private slashIdx = 0;
   // 실제 에셋 기반 타격 스타 풀
   private starPool: Phaser.GameObjects.Image[] = [];
@@ -266,9 +266,9 @@ export class WorldScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.ADD)
       .play("sparkle");
 
-    // F2 핵심 1: 하늘까지 닿는 빛 기둥 비컨 — 멀리서도 확실히 보임
+    // F2 핵심 1: 하늘까지 닿는 빛 기둥 비컨 — 외부 에셋(Kenney Light Masks CC0)
     this.beacon = this.add
-      .image(x, y - 240, "beacon")
+      .image(x, y - 128, "beam")
       .setDepth(3)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.55);
@@ -328,8 +328,9 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private spawnPortal(x: number, y: number) {
+    // 외부 에셋 차원문(varkalandar CC-BY, 8프레임 소용돌이) — 비활성 시 회색 틴트
     this.portal = this.physics.add.sprite(x, y, "portal0").setDepth(3).setTint(0x777777);
-    (this.portal.body as Phaser.Physics.Arcade.Body).setSize(30, 40).setOffset(13, 20);
+    (this.portal.body as Phaser.Physics.Arcade.Body).setSize(34, 44).setOffset(15, 10);
     this.physics.add.overlap(this.player, this.portal, () => {
       if (!this.portalActive || !this.portal?.active) return;
       this.enterPortal();
@@ -344,7 +345,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.portal();
     // F2: 차원문에도 작은 비컨
     this.portalBeacon = this.add
-      .image(this.portal.x, this.portal.y - 230, "beacon")
+      .image(this.portal.x, this.portal.y - 120, "beam")
       .setDepth(2)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0.4)
@@ -419,11 +420,10 @@ export class WorldScene extends Phaser.Scene {
       this.dmgPool.push(t);
     }
 
-    // 참격(반달) 스프라이트 5장 고정 풀
+    // 참격(초승달 애니) 스프라이트 5장 고정 풀 — 외부 에셋(Cethiel CC0)
     for (let i = 0; i < 5; i++) {
       const s = this.add
-        .image(0, 0, "slash_crescent")
-        .setOrigin(0.344, 0.5) // 회전 축 = 반달 원심 (캐릭터가 쥔 위치)
+        .sprite(0, 0, "slash0")
         .setDepth(25)
         .setBlendMode(Phaser.BlendModes.ADD)
         .setActive(false)
@@ -505,7 +505,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   spawnLevelUpFx(x: number, y: number) {
-    const ring = this.add.image(x, y, "slash_ring").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setScale(0.2);
+    const ring = this.add.image(x, y, "shock_ring").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(0x86d9ff).setScale(0.2);
     this.tweens.add({
       targets: ring,
       scale: 1.3,
@@ -516,7 +516,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   spawnCrack(x: number, y: number) {
-    const c = this.add.image(x, y + 20, "crack").setDepth(1).setAlpha(0.9);
+    // 외부 에셋 스코치(그을음) 마크 — 보스 강타 지면 표시
+    const c = this.add.image(x, y + 20, "scorch").setDepth(1).setAlpha(0.75).setTint(0x8a7a66).setScale(1.4);
     this.tweens.add({ targets: c, alpha: 0, delay: 3500, duration: 800, onComplete: () => c.destroy() });
   }
 
@@ -533,13 +534,15 @@ export class WorldScene extends Phaser.Scene {
       this.slashIdx = (this.slashIdx + 1) % this.slashPool.length;
       if (!s || !s.scene) continue;
       this.tweens.killTweensOf(s);
+      s.off("animationcomplete");
       const trail = i === 1;
       s.setPosition(x, y - 4)
         .setRotation(-0.5 * spin - (trail ? 0.55 * spin : 0))
         .setActive(true)
         .setVisible(true)
         .setAlpha(trail ? 0.6 : 1)
-        .setScale(trail ? 0.82 : 0.98);
+        .setScale(trail ? 0.82 : 0.98)
+        .play("fx-slash");
       this.tweens.add({
         targets: s,
         rotation: Math.PI * 2 * spin + (trail ? -0.55 * spin : 0),
@@ -552,11 +555,12 @@ export class WorldScene extends Phaser.Scene {
       });
     }
 
-    // 확장 충격파
+    // 확장 충격파 — 외부 에셋 링(Kenney CC0)
     const ring = this.add
-      .image(x, y - 4, "slash_ring")
+      .image(x, y - 4, "shock_ring")
       .setDepth(24)
       .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0xa8ecff)
       .setScale(0.28)
       .setAlpha(0.95);
     this.tweens.add({
@@ -576,38 +580,25 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * F5+α: 반달 참격 — 캐릭터가 바라보는 방향에 초승달 검기를 배치하고
-   *  짧게 휘두르며(스윕 ±35°) 스케일 팝과 함께 사라진다.
-   *  alt로 위→아래 / 아래→위 교차 베기. 텍스처 회전축이 원심이라
-   *  스윕 시 반달이 캐릭터 주위를 도는 궤적을 그린다.
+   * F5+α: 참격 — 캐릭터가 바라보는 방향에 초승달 검기 애니(외부 에셋 6프레임 스윕)를
+   *  배치하고 교차 베기(alt)로 미세 회전을 바꿔 휘두르는 느낌을 강화한다.
    */
   spawnSlash(x: number, y: number, dir: Phaser.Math.Vector2, alt: boolean, scale = 1) {
     const s = this.slashPool[this.slashIdx];
     this.slashIdx = (this.slashIdx + 1) % this.slashPool.length;
     if (!s || !s.scene) return;
     this.tweens.killTweensOf(s);
+    s.off("animationcomplete"); // 재사용 시 지연된 완료 콜백 제거
     const base = Math.atan2(dir.y, dir.x);
-    const swing = alt ? 1 : -1; // 교차 베기 방향
-    s.setPosition(x + dir.x * 16, y - 4 + dir.y * 12)
-      .setRotation(base - 0.62 * swing)
+    s.setPosition(x + dir.x * 22, y - 6 + dir.y * 14)
+      .setRotation(base + (alt ? -0.28 : 0.28))
       .setActive(true)
       .setVisible(true)
       .setAlpha(1)
-      .setScale(0.74 * scale);
-    this.tweens.add({
-      targets: s,
-      rotation: base + 0.5 * swing,
-      scale: 1.16 * scale,
-      duration: 150,
-      ease: "Cubic.out",
-    });
-    this.tweens.add({
-      targets: s,
-      alpha: 0,
-      delay: 55,
-      duration: 110,
-      ease: "Sine.in",
-      onComplete: () => s.setActive(false).setVisible(false),
+      .setScale(0.92 * scale)
+      .play("fx-slash");
+    s.once("animationcomplete", () => {
+      s.setActive(false).setVisible(false);
     });
   }
 
@@ -846,9 +837,9 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    // 목표물 바로 위 퀘스트 마커(!)
+    // 목표물 바로 위 퀘스트 마커(?) — 외부 에셋(Zelda-like CC0 말풍선)
     if (!this.questMark) {
-      this.questMark = this.add.image(target.x, target.y - 34, "quest_mark").setDepth(22);
+      this.questMark = this.add.image(target.x, target.y - 34, "quest_mark").setDepth(22).setScale(1.3);
     }
     this.questMark.setPosition(target.x, target.y - 34 + Math.sin(this.time.now / 200) * 3);
 
@@ -867,6 +858,7 @@ export class WorldScene extends Phaser.Scene {
           .image(0, 0, "edge_arrow")
           .setDepth(50)
           .setScrollFactor(0)
+          .setTint(0xffd76a)
           .setBlendMode(Phaser.BlendModes.ADD);
       const cx = this.cameras.main.width / 2;
       const cy = this.cameras.main.height / 2;

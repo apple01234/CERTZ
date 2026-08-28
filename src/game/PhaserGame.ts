@@ -3,6 +3,7 @@ import { GAME_W, GAME_H } from "./config";
 import { BootScene } from "./scenes/BootScene";
 import { TitleScene } from "./scenes/TitleScene";
 import { WorldScene } from "./scenes/WorldScene";
+import { attachAudio } from "./audio";
 
 /**
  * F3 반응형 핵심:
@@ -44,6 +45,9 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     },
     scene: [BootScene, TitleScene, WorldScene],
   });
+
+  // 오디오 모듈에 게임 인스턴스 연결 (Phaser SoundManager 사용)
+  attachAudio(game);
 
   // E2E 검증/디버그 훅
   (window as unknown as { __SERTZ__?: unknown }).__SERTZ__ = { game };

@@ -60,8 +60,8 @@ export function TitleScreen() {
           이동: WASD / 왼쪽 화면 드래그 · 공격: SPACE · 스킬: K, L
         </p>
         <p className="max-w-[92%] text-[8px] leading-relaxed text-white/30 sm:text-[9px]">
-          Graphics: Zelda-like by ArMM1998 (CC0) · Kenney (CC0) · LPC Wolf by williamthompsonj (CC-BY) · Sotrak Rewop by
-          gilgaphoenixignis (CC-BY) · Sound: WebAudio synth
+          Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by
+          williamthompsonj (CC-BY) · Sotrak by gilgaphoenixignis (CC-BY) · Music: Juhani Junkala · SFX: Rubberduck (CC0)
         </p>
       </div>
     </div>
