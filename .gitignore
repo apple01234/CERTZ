@@ -52,3 +52,16 @@ prompt
 server.log
 # Skills directory
 /skills/backups/
+
+# ── 자율 개발 루프: 런타임 산물은 저장소에서 제외 ──
+# 로그 (한 바퀴마다 쌓이는 날짜별 로그)
+/logs/
+# 루프 신호/상태 파일 (STOP=꺼짐 스위치, pid/lock=실행 상태)
+loop/STOP
+loop/loop.pid
+loop/loop.lock
+loop/loop-console.log
+# 빌드 산출물 (APK 등)
+*.apk
+*.aab
+android/app/build/
