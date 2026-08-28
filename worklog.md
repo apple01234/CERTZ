@@ -405,3 +405,22 @@ Stage Summary:
 - 산출물: WorldScene.ts(캐리/런통계/부활), Enemy.ts(resetHome), Player.ts(무적), TitleScene.ts(fresh)
 - 합격기준 전 항목 통과 — 게임 v1.0 완성 직전 (최종 대조만 남음)
 - 제약 준수: APK 미빌드
+
+---
+Task ID: loop-6
+Agent: Super Z (main)
+Task: 자율 루프 바퀴 6 — 완성 선언 (합격기준 최종 대조)
+
+Work Log:
+- 합격기준 대조표:
+  1) 첫 플레이어 풀런(마을→뿌리숲→알프헤임→보스→엔딩) — loop-5 실측 통과 (처치10·LV3·1분24초 엔딩)
+  2) 사냥→골드→상점→강화 순환 + 리스폰 — loop-1 실측 통과 (9~13초, 원 스폰점, 근접 가드)
+  3) 기본 UX — 음소거 저장/복원(loop-2) + 샘물 회복(loop-4) + 부활 캠핑 방지(loop-5)
+  4) 이어하기 무결성 — questIdx(loop-3) + 스테이지 캐리(loop-5) + 파편/보상 중복 차단
+  5) tsc/eslint/콘솔 0 + 스크린샷 육안 — 매 바퀴 통과, 최종 재실행 확인
+- 최종 검사: tsc 0 / eslint 0 / dev HTTP 200 / 타이틀 렌더 스크린샷 / localStorage 클린
+- DESIGN.md 체크리스트 전부 [x], STATUS.md v1.0 완성 선언, INBOX.md 사용자 지시 처리 기록
+
+Stage Summary:
+- SERTZ v1.0 완성 — 6바퀴 자율 루프(loop-0~6)로 완성 마무리 5건 + 치명 버그 3건
+- 다음 단계: 사용자 "빌드" 지시 시 APK (하드 제약 준수 — 미빌드)
