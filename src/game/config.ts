@@ -52,6 +52,8 @@ export type SaveData = {
   upWea?: number;
   upArm?: number;
   accessory?: string | null;
+  /* ↓ 퀘스트 진행 (스테이지별 퀘스트 인덱스 — 구 세이브 호환 기본값 {}) */
+  questIdx?: Record<string, number>;
 };
 
 export function loadSave(): SaveData | null {
@@ -71,6 +73,8 @@ export function loadSave(): SaveData | null {
     if (typeof d.upWea !== "number") d.upWea = 0;
     if (typeof d.upArm !== "number") d.upArm = 0;
     if (d.accessory === undefined) d.accessory = null;
+    // 퀘스트 진행 (구버전 세이브 호환 — 처음부터)
+    if (!d.questIdx || typeof d.questIdx !== "object") d.questIdx = {};
     return d;
   } catch {
     return null;

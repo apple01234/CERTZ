@@ -64,6 +64,8 @@ export class WorldScene extends Phaser.Scene {
   private killTotals: Record<string, number> = {};
   // 리스폰: 원래 스폰 지점 기록 (파밍 루프 — 사냥→골드→상점 순환이 적 소진으로 끊기지 않게)
   private spawnRecords: { key: "wolf" | "minion"; x: number; y: number }[] = [];
+  // 퀘스트 진행 세이브 — 스테이지별 questIdx (이어하기 무결성: 파편 ATK 중복/보상 중복/보스 소프트락 방지)
+  private savedQuestIdx: Record<string, number> = {};
 
   /* ----- 2D MMORPG 기본 요소 ----- */
   private drops: Drop[] = [];
@@ -96,6 +98,7 @@ export class WorldScene extends Phaser.Scene {
     this.hitStopActive = false;
     this.killTotals = {};
     this.spawnRecords = [];
+    this.savedQuestIdx = {};
     this.drops = [];
     this.merchant = null;
     this.merchantLabel = null;
@@ -167,6 +170,9 @@ export class WorldScene extends Phaser.Scene {
       this.player.upgrades.weapon = savedPlayer.upWea ?? 0;
       this.player.upgrades.armor = savedPlayer.upArm ?? 0;
       this.player.accessory = (savedPlayer.accessory ?? null) as ItemKey | null;
+      // 퀘스트 진행 복원 (이어하기 — 파편/보상 중복 수령 방지)
+      this.savedQuestIdx = { ...(savedPlayer.questIdx ?? {}) };
+      this.questIdx = Phaser.Math.Clamp(this.savedQuestIdx[stageKey] ?? 0, 0, this.stageDef.quests.length);
     }
     this.playerRef = this.player;
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
@@ -198,10 +204,23 @@ export class WorldScene extends Phaser.Scene {
       this.spawnPortal(this.stageW - 110, this.stageH * 0.52);
       this.activatePortal(true);
     } else if (stageKey === "forest") {
-      this.spawnFragment(this.stageW * 0.78, this.stageH * 0.26);
+      // 파편은 수집 퀘스트(f0) 진행 중에만 — 이어하기 시 ATK +5 중복 수령 방지
+      if (this.questIdx < 1) this.spawnFragment(this.stageW * 0.78, this.stageH * 0.26);
       this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
     } else {
       this.spawnPortalBossArena();
+    }
+
+    /* ---------- 퀘스트 진행 복구 (이어하기 — 진행 상태 정합, 오브젝트 생성 후) ---------- */
+    if (stageKey === "forest" && this.questIdx >= 2) {
+      // 토벌 완료 후 세이브 — 차원문을 열어둔 채 시작 (소프트락 방지)
+      this.activatePortal(true);
+    }
+    if (stageKey === "alfheim" && this.questIdx === 1) {
+      // 하수인 소탕 후 보스전 진행 중 세이브 — 입장 직후 보스 등장
+      this.time.delayedCall(900, () => {
+        if (!this.boss) this.spawnBoss();
+      });
     }
 
     /* ---------- 이펙트 풀 ---------- */
@@ -1345,6 +1364,7 @@ export class WorldScene extends Phaser.Scene {
       upWea: this.player.upgrades.weapon,
       upArm: this.player.upgrades.armor,
       accessory: this.player.accessory,
+      questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },
     });
   }
 
