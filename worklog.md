@@ -310,3 +310,28 @@ Stage Summary:
 - 커밋: 4b6ed95(문서), db7c063(리스폰)
 - 파밍 루프 복원: 사냥→골드→상점 순환이 적 소진으로 끊기지 않음
 - 제약 준수: APK 미빌드
+
+---
+Task ID: loop-2
+Agent: Super Z (main)
+Task: 자율 루프 바퀴 2 — 설정(음소거) UI 완성 (상태 저장·복원)
+
+Work Log:
+- 현황 확인: HUD 음소거 토글 버튼+audio.setMuted 연결은 기존 존재. 없던 것은 "상태 저장" (새로고침 시 무음 해제)
+- config.ts: MUTE_KEY("sertz_muted") + loadMuted()/writeMuted() — 세이브와 별도 보관(저장 삭제 후에도 설정 유지)
+- GameRoot.tsx: useState lazy init(loadMuted) + 부팅 effect에서 audio.setMuted 적용 + 토글 시 writeMuted
+- 버그 2건 발견·수정 (기존 기능이 실제로 반쯤 broken이었음):
+  1) 부팅 순서 — 음소거 복원 effect가 createGame보다 먼저 실행 → audio 모듈의 game이 null → sound.mute 미적용. attachAudio()에서 muted 플래그 동기화로 해결
+  2) WebView mute 세터 — Phaser WebAudioSoundManager.mute 세터가 setValueAtTime(...,0)(과거 시점 스케줄)을 쓰는데 헤드리스/일부 WebView에서 게인이 즉시 반영 안 됨(직접 대입해도 .value 불변 확인). masterMuteNode.gain.value 직접 기록 폴백 추가 (볼륨 노드와 분리돼 안전)
+  - ESLint react-hooks/set-state-in-effect 위반 → lazy initializer 패턴으로 해결
+- 검증 (agent-browser 실측):
+  - 음소거 토글: sound.mute true + stored "1" / 해제: false + "0" / 재토글: true + "1"
+  - 새로고침 → 게임 재시작 → sound.mute true 자동 복원 (아이콘 VolumeX 표시 확인)
+  - 스크린샷 육안 확인(mute_on_hud.png — 우상단 X 스피커), tsc 0 / eslint 0
+  - localStorage.clear() 정리 완료
+
+Stage Summary:
+- 산출물: src/game/config.ts, src/components/game/GameRoot.tsx, src/game/audio.ts
+- 커밋: 5414a22
+- 기존 "보이지만 동작 안 하던" 음소거가 실질 완성 — APK 환경(WebView)에서도 무음 설정 유지
+- 제약 준수: APK 미빌드
