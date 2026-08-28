@@ -72,7 +72,7 @@ export class TitleScene extends Phaser.Scene {
       audio.sfx.questDone();
       this.cameras.main.fadeOut(400, 0, 0, 0);
       this.time.delayedCall(420, () => {
-        this.scene.start("world", { stage: "village" });
+        this.scene.start("world", { stage: "village", fresh: true });
       });
     };
     const onContinue = (save: SaveData) => {
@@ -82,7 +82,7 @@ export class TitleScene extends Phaser.Scene {
       audio.sfx.questDone();
       this.cameras.main.fadeOut(400, 0, 0, 0);
       this.time.delayedCall(420, () => {
-        this.scene.start("world", { save });
+        this.scene.start("world", { save, fresh: true });
       });
     };
 

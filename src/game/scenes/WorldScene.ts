@@ -82,7 +82,7 @@ export class WorldScene extends Phaser.Scene {
     super("world");
   }
 
-  init(data: { stage?: StageKey; save?: SaveData }) {
+  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean }) {
     this.questIdx = 0;
     this.huntCount = 0;
     this.totalKills = 0;
@@ -110,6 +110,15 @@ export class WorldScene extends Phaser.Scene {
     this.nearShop = false;
     this.minimap = null;
     this.lastRpgSig = "";
+    // 런 통계(처치/플레이타임) — 씬 재시작(스테이지 전환)과 무관하게 유지
+    // fresh=true는 타이틀에서 새 시작/이어하기일 때만 (사망화면 정확한 통계)
+    if (data.fresh) {
+      this.registry.set("runKills", 0);
+      this.registry.set("runStart", Date.now());
+    }
+    this.totalKills = (this.registry.get("runKills") as number | undefined) ?? 0;
+    const runStart = this.registry.get("runStart") as number | undefined;
+    this.startTime = runStart ?? this.time.now;
     this.registry.set("initData", data);
   }
 
@@ -460,8 +469,11 @@ export class WorldScene extends Phaser.Scene {
     // 마을 → 뿌리숲 → 알프헤임 순차 진행
     const next: StageKey = this.stageDef.key === "village" ? "forest" : "alfheim";
     this.time.delayedCall(520, () => {
-      this.saveStage(next);
-      this.scene.restart({ stage: next });
+      // ⚠️ 다음 스테이지에 현재 스탯/소지품을 그대로 넘긴다
+      //   (restart에 save를 안 넘기면 기본값 플레이어로 시작 — 골드/레벨/장비 소실 버그)
+      const carry = this.buildSave(next);
+      writeSave(carry);
+      this.scene.restart({ stage: next, save: carry });
     });
   }
 
@@ -927,6 +939,7 @@ export class WorldScene extends Phaser.Scene {
     // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
     this.enemies = this.enemies.filter((e) => e.alive);
     this.totalKills++;
+    this.registry.set("runKills", this.totalKills);
     this.player.gainExp(exp);
     this.killTotals[key] = (this.killTotals[key] ?? 0) + 1;
     // 리스폰 예약 — 9~13초 후 원래 스폰 지점에서 재생성 (파밍 루프 유지)
@@ -1005,6 +1018,7 @@ export class WorldScene extends Phaser.Scene {
     this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, 0x9d7aff);
     this.player.gainExp(BOSS_EXP);
     this.totalKills++;
+    this.registry.set("runKills", this.totalKills);
     this.cleared = true;
     this.advanceQuest(); // 보스 퀘스트 완료 — 골드 보상 포함
     this.save();
@@ -1017,7 +1031,7 @@ export class WorldScene extends Phaser.Scene {
         // 엔드 화면이 최종 화면 — 타이틀 복귀는 EndScreen 버튼(reload)이 담당
         EventBus.emit("end", {
           victory: true,
-          playTime: Math.floor((this.time.now - this.startTime) / 1000),
+          playTime: Math.floor((Date.now() - this.startTime) / 1000),
           kills: this.totalKills,
           lv: this.player.lv,
         });
@@ -1031,7 +1045,7 @@ export class WorldScene extends Phaser.Scene {
     this.time.delayedCall(700, () => {
       EventBus.emit("end", {
         victory: false,
-        playTime: Math.floor((this.time.now - this.startTime) / 1000),
+        playTime: Math.floor((Date.now() - this.startTime) / 1000),
         kills: this.totalKills,
         lv: this.player.lv,
       });
@@ -1040,6 +1054,10 @@ export class WorldScene extends Phaser.Scene {
 
   respawnPlayer() {
     this.cameras.main.fadeIn(400, 20, 0, 0);
+    // 부활 캠핑 방지 — 몬스터를 원래 스폰 지점으로 되돌리고 어그로 해제
+    for (const e of this.enemies) {
+      if (e.active && e.alive) e.resetHome();
+    }
     this.player.revive(180, this.stageH / 2);
     audio.playBGM(this.stageDef.key === "forest" ? "field" : "boss");
   }
@@ -1379,8 +1397,13 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private save() {
-    writeSave({
-      stage: this.stageDef.key,
+    writeSave(this.buildSave());
+  }
+
+  /** 세이브 페이로드 생성 — stageOverride는 스테이지 전환 캐리용 */
+  private buildSave(stageOverride?: StageKey): SaveData {
+    return {
+      stage: stageOverride ?? this.stageDef.key,
       lv: this.player.lv,
       exp: this.player.exp,
       maxHp: this.player.maxHp,
@@ -1395,12 +1418,7 @@ export class WorldScene extends Phaser.Scene {
       upArm: this.player.upgrades.armor,
       accessory: this.player.accessory,
       questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },
-    });
-  }
-
-  private saveStage(stage: StageKey) {
-    this.save();
-    void stage;
+    };
   }
 
   private saveCleared() {

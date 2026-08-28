@@ -180,6 +180,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+  /** 부활 캠핑 방지 — 원래 스폰 지점 복귀 + 어그로 해제 (플레이어 부활 시 호출) */
+  resetHome() {
+    this.setPosition(this.homeX, this.homeY);
+    this.knockVec.set(0, 0);
+    this.setVelocity(0, 0);
+    this.setMode("wander", 600);
+    this.clearTint();
+  }
+
   destroyAll() {
     if (this.hpBar) this.hpBar.destroy();
     if (this.hpBarBg) this.hpBarBg.destroy();

@@ -529,7 +529,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hp = this.maxHp;
     this.mp = this.maxMp;
     this.state = "idle";
-    this.iframes = 1200;
+    this.iframes = 2200; // 부활 무적 2.2초 — 캠핑 몬스터 즉사 루프 방지
     this.setPosition(x, y);
     this.setAlpha(1);
     this.setFlipX(false);
