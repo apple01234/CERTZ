@@ -126,3 +126,20 @@ Stage Summary:
 - 산출물: public/assets/ VFX 24종+audio 15종, scripts/build_vfx_audio.py, src/game/** 6파일, CREDITS.md
 - 게임 내 자체 제작 요소 0% — 그래픽/사운드 전부 실제 외부 에셋 (CC0 8팩 + CC-BY 3팩, 크레딧 표기)
 - 제약 준수: APK 미빌드 (사용자 지시 시에만 — 빌드 시 이전 세션 도구 소실로 JDK21/Android SDK 재설치 필요)
+
+---
+Task ID: verify-1
+Agent: Super Z (main)
+Task: 사용자 신규 지시 "너가 만든요소도 꼭 필요할때는 써" — 정책 갱신(외부 에셋 우선 + 필요시 자체 제작 허용) 수용 및 현재 디스크 상태 전수 재검증
+
+Work Log:
+- 디스크 상태 확인: src/game/** 전부 존재, public/assets/ 87종(이미지+audio 15종) 존재 — assets-2 완료 상태 그대로 보존
+- textures.ts 확인: 애니 등록 전용(절차 텍스처 생성 코드 0) / BootScene: 외부 에셋 65종+오디오 15종 로드 구조
+- bunx tsc --noEmit → 0 에러, dev 서버 정상 컴파일
+- agent-browser 실측: 타이틀(크레딧 표기 확인)→새로운 모험→월드 렌더(주인공/늑대/타일/꽃 밀도/빛나는 파편 퀘스트 54m 트래커/HUD 하트 5칸 전부 외부 에셋)→대화 진행
+- worldChildren 66 불변(누수 없음, assets-2 검증치와 일치), 페이지 에러 0, 콘솔 에러 0
+- 정책 반영: 그래픽/사운드 자체 제작 요소는 현재 0% — 되돌릴 항목 없음, 향후 꼭 필요한 요소(예: 외부 팩에 없는 특수 이펙트)에 한해 자체 제작 허용
+
+Stage Summary:
+- 현행 빌드는 6항 피드백 전부 반영 + 외부 에셋 100% 상태로 검증됨
+- APK 미빌드 (사용자 지시 시에만 — 빌드 시 JDK21/Android SDK 재설치 필요)
