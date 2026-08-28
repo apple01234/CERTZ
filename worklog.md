@@ -206,3 +206,27 @@ Stage Summary:
 - 산출물: scripts/build_rpg_assets.py, public/assets/ +10종, src/game/{data,config,audio}.ts, entities/{Player,Enemy,Boss,Drop}.ts, scenes/{WorldScene,BootScene}.ts, components/game/{EventBus,useGameUi,HUD,TouchControls,Panels,GameRoot}.tsx, CREDITS.md 갱신
 - 클래식 2D MMORPG 기본 루프 완성: 사냥 → 골드/아이템 드롭 → 상점 구매 → 장비 성장 → 물약 전투 운영
 - 제약 준수: APK 미빌드 (사용자 지시 시에만)
+
+---
+Task ID: feel-1
+Agent: Super Z (main)
+Task: 사용자 피드백 "살짝 돌진하면서 적들이 밀려나는게 타격감이 좋네" — 기본 공격에 미세 러지 복원 (fix-2의 완전 제자리 베기 → 살짝 전진 조정)
+
+Work Log:
+- Player.ts: 공격 미세 러지 시스템 신설 — LUNGE_SPEED=190 / LUNGE_MS=170 (fix-2 이전 러지 360 상시 적용 대비 절반 이하 속도 + 선형 감쇠)
+  - doAttack(): lungeDir=lunge 방향 설정 + 초기 속도 부여
+  - update(): attack 상태에서 lungeTime 감쇠 → 속도 선형 0 수렴 (총 이동 실기 ~16px, 헤드리스 저프레임 실측 ~27px)
+  - takeDamage(): lungeTime=0 리셋 — 피격 넉백이 러지에 덮이지 않게
+  - 월드 경계 충돌(collideWorldBounds)이 이미 설정돼 있어 러지로도 맵 이탈 불가
+- 검증 (agent-browser + touchMove/attackQueued 실입력 경로):
+  - 러지: 20ms 샘플링 → 러지 피크 vx=190 확인, 공격 종료 후 vx=0 완전 정지 (잔여 이동 0), 총 전진 ~27px(저프레임 환경)
+  - 넉백: 밀접 34px에서 늑대 타격 → hp 34→22, 98px 밀려남 확인
+  - 경계: 왼쪽 벽(x=10, blocked.left=true)에서 좌향 공격 → min_x=10 유지, 이탈 0
+  - tsc 0 에러, 페이지 에러 0, 콘솔 에러 0
+  - 테스트 중 늑대 무리에 사망 1회 → 부활 UI로 재검증 (사망→부활 플로우 부수 확인)
+- 테스트 오염 세이브 localStorage.clear() 완료 (유저 신규 시작 보장)
+
+Stage Summary:
+- 산출물: src/game/entities/Player.ts
+- 공격감: 완전 제자리 → "살짝 돌진 + 넉백 밀어내기" 조합 타격감 (사용자 피드백 반영)
+- 제약 준수: APK 미빌드 (사용자 지시 시에만)

@@ -5,7 +5,7 @@ import { ITEMS, type ItemKey } from "../data";
 /**
  * 주인공 세르츠.
  *  - 3프레임 베기 모션 + 참격 초승달 이펙트 / 전방 160px x 폭 116px 판정
- *  - 베기 제자리 정지 + 히트스톱 + 넉백
+ *  - 베기 시 살짝 전진(미세 러지) + 히트스톱 + 넉백 — 타격감
  *  - 2D MMORPG 기본 요소: 골드·물약·장비(무기 ATK/방어구 DEF)·방어 판정
  *  - 월드 경계 충돌
  */
@@ -45,6 +45,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private iframes = 0;
   private dashTime = 0;
   private dashDir = new Phaser.Math.Vector2();
+
+  /** 공격 미세 러지 — "살짝 돌진" 타격감 (예전 360 상시 돌진보다 작고 빠르게 감쇠) */
+  private static readonly LUNGE_SPEED = 190;
+  private static readonly LUNGE_MS = 170;
+  private lungeTime = 0;
+  private lungeDir = new Phaser.Math.Vector2();
 
   constructor(scene: WorldScene, x: number, y: number) {
     super(scene, x, y, "hero_idle0");
@@ -90,6 +96,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    // 공격 중 미세 러지 — 선형 감쇠로 "살짝" 전진 (총 이동 ~16px)
+    if (this.state === "attack" && this.lungeTime > 0) {
+      this.lungeTime -= ms;
+      const k = Math.max(0, this.lungeTime / Player.LUNGE_MS);
+      this.setVelocity(
+        this.lungeDir.x * Player.LUNGE_SPEED * k,
+        this.lungeDir.y * Player.LUNGE_SPEED * k
+      );
+      if (this.lungeTime <= 0) this.setVelocity(0, 0);
+    }
+
     // 이동
     if (this.state === "idle") {
       if (move.lengthSq() > 0.01) {
@@ -120,9 +137,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.slashAlt = !this.slashAlt;
     this.hitSet.clear();
 
-    // 벌 때 제자리 정지 (러지 제거 — 사용자 지시: 휘두를 때 돌진 금지)
+    // 살짝 돌진 — 미세 러지 + 넉백 조합 (사용자 피드백: 타격감)
     const dir = this.aimDir();
-    this.setVelocity(0, 0);
+    this.lungeDir.copy(dir);
+    this.lungeTime = Player.LUNGE_MS;
+    this.setVelocity(dir.x * Player.LUNGE_SPEED, dir.y * Player.LUNGE_SPEED);
 
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
@@ -285,6 +304,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.sfxHurt();
     this.scene.cameras.main.shake(70, 0.004);
     this.setVelocity(fromDir.x * 200, fromDir.y * 200);
+    this.lungeTime = 0; // 피격 넉백이 러지에 덮이지 않게
     this.scene.spawnDamageText(this.x, this.y - 30, final);
     this.scene.tweens.add({
       targets: this,
