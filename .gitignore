@@ -69,3 +69,5 @@ backups/
 .gh_*
 .device_*
 nohup.out
+out/
+.next-apk/
