@@ -20,6 +20,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private knockVec = new Phaser.Math.Vector2();
   private homeX: number;
   private homeY: number;
+  /** 리스폰용 원래 스폰 지점 (클래식 MMORPG — 죽은 자리가 아니라 스폰 지점에서 재생성) */
+  get spawnX() {
+    return this.homeX;
+  }
+  get spawnY() {
+    return this.homeY;
+  }
   private hpBar: Phaser.GameObjects.Rectangle | null = null;
   private hpBarBg: Phaser.GameObjects.Rectangle | null = null;
   private hitFlash = 0;
@@ -161,12 +168,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.hpBar = null;
     this.hpBarBg = null;
     const exp = this.def.exp;
+    const sx = this.spawnX;
+    const sy = this.spawnY;
     // ⚠️ destroy()가 this.scene을 null로 만들므로 반드시 먼저 캡처
     //   (늑대 퀘스트가 끝까지 진행 안 되던 근본 원인)
     const scene = this.scene;
     scene.time.delayedCall(60, () => {
       if (!scene.scene.isActive()) return;
-      scene.onEnemyKilled(this.def.key, exp);
+      scene.onEnemyKilled(this.def.key, exp, sx, sy);
       this.destroy();
     });
   }

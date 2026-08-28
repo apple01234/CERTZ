@@ -62,6 +62,8 @@ export class WorldScene extends Phaser.Scene {
   private hitStopActive = false;
   // 스테이지별 누적 킬 (퀘스트 순서와 무관하게 토벌 진행 유지 — 소프트락 방지)
   private killTotals: Record<string, number> = {};
+  // 리스폰: 원래 스폰 지점 기록 (파밍 루프 — 사냥→골드→상점 순환이 적 소진으로 끊기지 않게)
+  private spawnRecords: { key: "wolf" | "minion"; x: number; y: number }[] = [];
 
   /* ----- 2D MMORPG 기본 요소 ----- */
   private drops: Drop[] = [];
@@ -93,6 +95,7 @@ export class WorldScene extends Phaser.Scene {
     this.attackQueued = false;
     this.hitStopActive = false;
     this.killTotals = {};
+    this.spawnRecords = [];
     this.drops = [];
     this.merchant = null;
     this.merchantLabel = null;
@@ -183,6 +186,7 @@ export class WorldScene extends Phaser.Scene {
         } while (Phaser.Math.Distance.Between(ex, ey, this.player.x, this.player.y) < 380 && tries < 30);
         const e = new Enemy(this, ex, ey, group.key);
         this.enemies.push(e);
+        this.spawnRecords.push({ key: group.key, x: ex, y: ey });
         this.physics.add.collider(e, this.solidGroup);
       }
     }
@@ -884,18 +888,43 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.shake(70, 0.006);
   }
 
-  onEnemyKilled(key: "wolf" | "minion", exp: number) {
+  onEnemyKilled(key: "wolf" | "minion", exp: number, spawnX: number, spawnY: number) {
     // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
     this.enemies = this.enemies.filter((e) => e.alive);
     this.totalKills++;
     this.player.gainExp(exp);
     this.killTotals[key] = (this.killTotals[key] ?? 0) + 1;
+    // 리스폰 예약 — 9~13초 후 원래 스폰 지점에서 재생성 (파밍 루프 유지)
+    this.time.delayedCall(Phaser.Math.Between(9000, 13000), () =>
+      this.respawnEnemy(key, spawnX, spawnY, 0)
+    );
     const q = this.currentQuest();
     if (q && q.type === "hunt" && this.stageDef.key === (key === "wolf" ? "forest" : "alfheim")) {
       this.huntCount = Math.min(this.killTotals[key] ?? 0, q.need ?? 0);
       this.tryCompleteHunt(key);
     }
     this.emitQuest();
+  }
+
+  /**
+   * 몬스터 리스폰 — 원래 스폰 지점에서 페이드 인.
+   * 플레이어가 스폰 지점 근처(140px)에 서 있으면 얼굴에 팝업하는 걸 막기 위해 2.5초씩 재시도.
+   */
+  private respawnEnemy(key: "wolf" | "minion", x: number, y: number, tries: number) {
+    if (!this.scene.isActive() || this.player.state === "dead") {
+      return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
+    }
+    const nearPlayer = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 140;
+    if (nearPlayer && tries < 24) {
+      this.time.delayedCall(2500, () => this.respawnEnemy(key, x, y, tries + 1));
+      return;
+    }
+    const e = new Enemy(this, x, y, key);
+    e.setAlpha(0);
+    this.tweens.add({ targets: e, alpha: 1, duration: 420 });
+    this.spawnBurstAt(x, y, 6, key === "wolf" ? 0x9aa0b4 : 0xb08ae8);
+    this.enemies.push(e);
+    this.physics.add.collider(e, this.solidGroup);
   }
 
   /**

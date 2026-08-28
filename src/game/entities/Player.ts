@@ -135,7 +135,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         } else if (f.y < 0) {
           tex = "hero_walkup0"; // 위쪽 — 뒷모습 서있기
         }
-        if (this.anims.currentAnim?.isPlaying) this.anims.stop();
+        if (this.anims.isPlaying) this.anims.stop();
         if (this.texture.key !== tex) this.setTexture(tex);
       }
     }
