@@ -57,6 +57,9 @@ const ASSET_LIST = [
   "item_weapon_1", "item_weapon_2", "item_weapon_3",
   "item_armor_1", "item_armor_2", "item_armor_3",
   "npc_merchant",
+  // 시작 마을 (인간들의 마을)
+  "npc_villager1", "npc_villager2",
+  "house_a", "house_b", "well",
   // VFX (외부 에셋)
   "slash0", "slash1", "slash2", "slash3", "slash4", "slash5",
   "shock_ring",

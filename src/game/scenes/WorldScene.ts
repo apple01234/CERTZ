@@ -114,7 +114,7 @@ export class WorldScene extends Phaser.Scene {
     this.stageH = this.stageDef.height;
 
     /* ---------- 바닥 ---------- */
-    const groundTex = stageKey === "forest" ? "tile_grass" : "tile_dark";
+    const groundTex = stageKey === "alfheim" ? "tile_dark" : "tile_grass";
     this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
     // 중앙 가로 길
     this.add
@@ -132,7 +132,9 @@ export class WorldScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
     this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
-    this.cameras.main.setBackgroundColor(stageKey === "forest" ? "#0a1408" : "#0d0a1e");
+    this.cameras.main.setBackgroundColor(
+      stageKey === "alfheim" ? "#0d0a1e" : stageKey === "village" ? "#15270f" : "#0a1408"
+    );
 
     // 반응형: 화면 밀도 유지용 카메라 줌 (RESIZE 캔버스 1:1 + 카메라 확대)
     this.applyCameraZoom();
@@ -186,7 +188,12 @@ export class WorldScene extends Phaser.Scene {
     }
 
     /* ---------- 퀘스트 오브젝트 ---------- */
-    if (stageKey === "forest") {
+    if (stageKey === "village") {
+      this.buildVillage();
+      // 마을 차원문은 항상 열려 있음 (뿌리숲으로 출발)
+      this.spawnPortal(this.stageW - 110, this.stageH * 0.52);
+      this.activatePortal(true);
+    } else if (stageKey === "forest") {
       this.spawnFragment(this.stageW * 0.78, this.stageH * 0.26);
       this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
     } else {
@@ -204,11 +211,12 @@ export class WorldScene extends Phaser.Scene {
     this.setupInput();
 
     /* ---------- 사운드/BGM ---------- */
-    audio.playBGM(stageKey === "forest" ? "field" : "boss");
+    audio.playBGM(stageKey === "alfheim" ? "boss" : "field");
 
     /* ---------- 오프닝 대사 ---------- */
     this.time.delayedCall(400, () => {
-      this.showDialogue(stageKey === "forest" ? "intro" : "alfheimIntro");
+      const introId = stageKey === "village" ? "villageIntro" : stageKey === "forest" ? "intro" : "alfheimIntro";
+      this.showDialogue(introId);
     });
 
     EventBus.emit("ui:playing");
@@ -245,11 +253,29 @@ export class WorldScene extends Phaser.Scene {
     const rng = new Phaser.Math.RandomDataGenerator([stageKey + "-decor"]);
     this.solidGroup = this.physics.add.staticGroup();
 
+    // 마을 건물/우물/주민 영역 보호 — 장식이 집 위에 심기지 않게
+    const vx = def.width / 2;
+    const vy = def.height / 2;
+    const reserved: [number, number][] =
+      stageKey === "village"
+        ? [
+            [vx - 400, vy - 170],
+            [vx + 90, vy - 200],
+            [vx - 190, vy + 215],
+            [vx, vy],
+            [vx + 210, vy + 120],
+            [vx - 90, vy - 90],
+            [def.width - 110, vy], // 차원문
+          ]
+        : [];
+    const blocked = (x: number, y: number) => reserved.some(([rx, ry]) => Phaser.Math.Distance.Between(x, y, rx, ry) < 170);
+
     // 나무 & 소나무 & 바위 (충돌 있음) — 실제 에셋
     for (let i = 0; i < def.treeCount; i++) {
       const x = rng.between(80, this.stageW - 80);
       const y = rng.between(90, this.stageH - 80);
       if (Math.abs(y - this.stageH / 2) < 90) continue; // 길 위엔 안 심음
+      if (blocked(x, y)) continue;
       const tex = rng.pick(["tree", "tree", "pine"] as string[]);
       const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
       this.solidGroup.add(t);
@@ -260,6 +286,7 @@ export class WorldScene extends Phaser.Scene {
       const x = rng.between(80, this.stageW - 80);
       const y = rng.between(90, this.stageH - 80);
       if (Math.abs(y - this.stageH / 2) < 90) continue;
+      if (blocked(x, y)) continue;
       const r = this.add.image(x, y, "rock").setDepth(Math.floor(y / 10));
       this.solidGroup.add(r);
       (r.body as Phaser.Physics.Arcade.StaticBody).setSize(44, 20).setOffset(10, 40);
@@ -270,6 +297,7 @@ export class WorldScene extends Phaser.Scene {
     for (let i = 0; i < def.flowerCount; i++) {
       const x = rng.between(60, this.stageW - 60);
       const y = rng.between(60, this.stageH - 60);
+      if (blocked(x, y)) continue;
       this.add.image(x, y, rng.pick(flowers)).setDepth(1).setAlpha(0.95);
     }
 
@@ -373,12 +401,12 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  private activatePortal() {
+  private activatePortal(silent = false) {
     if (!this.portal) return;
     this.portalActive = true;
     this.portal.clearTint();
     this.portal.play("portal-spin");
-    audio.sfx.portal();
+    if (!silent) audio.sfx.portal();
     // F2: 차원문에도 작은 비컨
     this.portalBeacon = this.add
       .image(this.portal.x, this.portal.y - 120, "beam")
@@ -393,7 +421,7 @@ export class WorldScene extends Phaser.Scene {
       yoyo: true,
       repeat: -1,
     });
-    this.showBanner("차원문이 열렸다!");
+    if (!silent) this.showBanner("차원문이 열렸다!");
   }
 
   private enterPortal() {
@@ -401,14 +429,73 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.portal();
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.player.state = "idle";
+    // 마을 → 뿌리숲 → 알프헤임 순차 진행
+    const next: StageKey = this.stageDef.key === "village" ? "forest" : "alfheim";
     this.time.delayedCall(520, () => {
-      this.saveStage("alfheim");
-      this.scene.restart({ stage: "alfheim" });
+      this.saveStage(next);
+      this.scene.restart({ stage: next });
     });
   }
 
   private spawnPortalBossArena() {
     // 보스전 스테이지는 차원문 없음 — 하수인 소탕 후 보스 등장
+  }
+
+  /* ================= 시작 마을 (인간들의 마을) ================= */
+
+  private buildVillage() {
+    const cx = this.stageW / 2;
+    const cy = this.stageH / 2;
+
+    // 광장 우물 (중앙 랜드마크, 충돌 있음)
+    const well = this.add.image(cx, cy, "well").setDepth(Math.floor(cy / 10));
+    this.solidGroup.add(well);
+    (well.body as Phaser.Physics.Arcade.StaticBody).setSize(56, 36).setOffset(20, 52);
+
+    // 집 3채 (실제 Zelda-like 타일셋 건물, 충돌은 벽 하단만)
+    const houses: { x: number; y: number; tex: string; flip?: boolean }[] = [
+      { x: cx - 400, y: cy - 170, tex: "house_a" },
+      { x: cx + 90, y: cy - 200, tex: "house_b" },
+      { x: cx - 190, y: cy + 215, tex: "house_a", flip: true },
+    ];
+    for (const h of houses) {
+      const img = this.add.image(h.x, h.y, h.tex).setDepth(Math.floor(h.y / 10));
+      if (h.flip) img.setFlipX(true);
+      this.solidGroup.add(img);
+      const bw = h.tex === "house_a" ? 110 : 100;
+      (img.body as Phaser.Physics.Arcade.StaticBody)
+        .setSize(bw, 56)
+        .setOffset((img.width - bw) / 2, img.height - 66);
+    }
+
+    // 마을 주민 2인 — 접근하면 대화 (바운스 애니 + 이름표)
+    const villagers: { x: number; y: number; tex: string; name: string; dlg: string }[] = [
+      { x: cx + 210, y: cy + 120, tex: "npc_villager1", name: "주민", dlg: "villager1" },
+      { x: cx - 90, y: cy - 90, tex: "npc_villager2", name: "마을 아이", dlg: "villager2" },
+    ];
+    for (const v of villagers) {
+      const img = this.add.image(v.x, v.y, v.tex).setDepth(Math.floor(v.y / 10)).setScale(1.6);
+      this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      this.add
+        .text(v.x, v.y - 34, v.name, {
+          fontFamily: "sans-serif",
+          fontSize: "11px",
+          color: "#ffe9b0",
+          stroke: "#000000",
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5)
+        .setDepth(Math.floor(v.y / 10));
+      const zone = this.add.zone(v.x, v.y, 100, 100);
+      this.physics.add.existing(zone, true);
+      let cd = 0;
+      this.physics.add.overlap(this.player, zone, () => {
+        if (this.dialoguing || this.player.state === "dead") return;
+        if (this.time.now < cd) return;
+        cd = this.time.now + 4000;
+        this.showDialogue(v.dlg);
+      });
+    }
   }
 
   /* ================= 이펙트 풀 (F4) ================= */
@@ -898,7 +985,7 @@ export class WorldScene extends Phaser.Scene {
   private setupInput() {
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,J,K,L,Q,E,F,I"
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,X,Z,C,Q,E,F,I"
     ) as Record<string, Phaser.Input.Keyboard.Key>;
 
     const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);
@@ -974,11 +1061,11 @@ export class WorldScene extends Phaser.Scene {
     const useTouch = this.touchMove.lengthSq() > 0.01;
     const move = useTouch ? this.touchMove : mv;
 
-    // 키보드 공격/스킬
-    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keys.J))
+    // 키보드 공격/스킬 — 방향키 이동 + X 공격 + Z/C 스킬 (사용자 지정 왼손 배치)
+    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keys.X))
       this.attackQueued = true;
-    if (Phaser.Input.Keyboard.JustDown(this.keys.K)) this.player.useSkill1();
-    if (Phaser.Input.Keyboard.JustDown(this.keys.L)) this.player.useSkill2();
+    if (Phaser.Input.Keyboard.JustDown(this.keys.Z)) this.player.useSkill1();
+    if (Phaser.Input.Keyboard.JustDown(this.keys.C)) this.player.useSkill2();
 
     this.player.update(dt, move, this.attackQueued);
     this.attackQueued = false;

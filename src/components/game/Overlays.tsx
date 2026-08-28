@@ -38,7 +38,7 @@ export function TitleScreen() {
             <Save size={18} />
             이어하기
             <span className="text-[10px] font-bold text-sky-200">
-              LV{save.lv} · {save.cleared ? "클리어" : save.stage === "forest" ? "뿌리숲" : "알프헤임"}
+              LV{save.lv} · {save.cleared ? "클리어" : save.stage === "village" ? "시작 마을" : save.stage === "forest" ? "뿌리숲" : "알프헤임"}
             </span>
           </button>
         )}
@@ -57,7 +57,7 @@ export function TitleScreen() {
 
       <div className="absolute bottom-3 flex flex-col items-center gap-1 text-center">
         <p className="text-[10px] font-bold text-white/45 sm:text-[11px]">
-          이동: WASD / 왼쪽 화면 드래그 · 공격: SPACE · 스킬: K, L
+          이동: 방향키 / 왼쪽 화면 드래그 · 공격: X · 스킬: Z, C · 물약: Q, E
         </p>
         <p className="max-w-[92%] text-[8px] leading-relaxed text-white/30 sm:text-[9px]">
           Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by

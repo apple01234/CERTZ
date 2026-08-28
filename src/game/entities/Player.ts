@@ -126,7 +126,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (horiz) this.setFlipX(move.x < 0); // 시트 기본: 오른쪽 향함
       } else {
         this.setVelocity(0, 0);
-        if (this.anims.currentAnim?.key !== "hero-idle") this.play("hero-idle");
+        // 정지 시 마지막 바라본 방향 유지 (정면 idle로 튀는 문제 방지 — 사용자 피드백)
+        const f = this.facing;
+        let tex = "hero_idle0"; // 기본: 정면 (아래쪽 바라볼 때/초기)
+        if (Math.abs(f.x) >= Math.abs(f.y) && f.x !== 0) {
+          this.setFlipX(f.x < 0); // 측면 시트는 오른쪽 기준
+          tex = "hero_walkside0";
+        } else if (f.y < 0) {
+          tex = "hero_walkup0"; // 위쪽 — 뒷모습 서있기
+        }
+        if (this.anims.currentAnim?.isPlaying) this.anims.stop();
+        if (this.texture.key !== tex) this.setTexture(tex);
       }
     }
 

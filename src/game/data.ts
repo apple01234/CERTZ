@@ -1,6 +1,6 @@
 /** 스테이지 / 퀘스트 / 적 / 대사 데이터 (전부 오리지널 명칭) */
 
-export type StageKey = "forest" | "alfheim";
+export type StageKey = "village" | "forest" | "alfheim";
 
 export type QuestDef = {
   id: string;
@@ -28,6 +28,28 @@ export type StageDef = {
 };
 
 export const STAGES: Record<StageKey, StageDef> = {
+  village: {
+    key: "village",
+    name: "시작 마을",
+    subtitle: "인간들의 마을",
+    width: 1500,
+    height: 950,
+    groundTint: 0x9adf6a,
+    flowerCount: 8,
+    treeCount: 7,
+    rockCount: 2,
+    quests: [
+      {
+        id: "v0",
+        type: "reach",
+        title: "뿌리숲으로 출발",
+        desc: "마을 동쪽 차원문을 지나 뿌리숲에 도착하자.",
+        targetLabel: "차원문",
+      },
+    ],
+    enemies: [],
+    boss: false,
+  },
   forest: {
     key: "forest",
     name: "제1지역",
@@ -224,6 +246,28 @@ export const SHOP_STOCK: ItemKey[] = [
 export type DialogueDef = { speaker: string; lines: string[] };
 
 export const DIALOGUES: Record<string, DialogueDef> = {
+  villageIntro: {
+    speaker: "요정 아리",
+    lines: [
+      "세르츠, 드디어 모험을 떠나는 날이네!",
+      "마을 동쪽 차원문을 지나면 뿌리숲이야. 세계수의 파편이 떨어졌어!",
+      "출발 전에 라고스 아저씨에게 물약을 챙기면 좋아. 갔다 와!",
+    ],
+  },
+  villager1: {
+    speaker: "마을 주민",
+    lines: [
+      "어머, 세르츠! 드디어 모험가가 되려구?",
+      "차원문 너머 숲엔 늑대들이 돌아다녀. 물약 꼭 챙기고 다녀오렴.",
+    ],
+  },
+  villager2: {
+    speaker: "마을 아이",
+    lines: [
+      "형아도 이제 진짜 모험가다! 부러워요.",
+      "저는 마을 우물을 지키고 있을게요. 꼭 이겨요!",
+    ],
+  },
   intro: {
     speaker: "요정 아리",
     lines: [
