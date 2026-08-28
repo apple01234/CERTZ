@@ -38,6 +38,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const bh = key === "wolf" ? 20 : 24;
     this.body!.setSize(bw, bh);
     this.body!.setOffset((this.width - bw) / 2, this.height - bh - 2);
+    // 추격/넉백으로 맵 밖으로 밀려 나가지 않도록 경계 충돌
+    (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     this.play(`${key}-idle`);
     // 스프라이트 크기에 맞춘 근접 판정 크기
     this.hitW = key === "wolf" ? 56 : 30;

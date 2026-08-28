@@ -590,12 +590,12 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.killTweensOf(s);
     s.off("animationcomplete"); // 재사용 시 지연된 완료 콜백 제거
     const base = Math.atan2(dir.y, dir.x);
-    s.setPosition(x + dir.x * 22, y - 6 + dir.y * 14)
+    s.setPosition(x + dir.x * 30, y - 6 + dir.y * 16)
       .setRotation(base + (alt ? -0.28 : 0.28))
       .setActive(true)
       .setVisible(true)
       .setAlpha(1)
-      .setScale(0.92 * scale)
+      .setScale(1.35 * scale) // 사용자 지시: 검 이펙트 크게 (원본 64x76 → 실제 표시 ~86x103)
       .play("fx-slash");
     s.once("animationcomplete", () => {
       s.setActive(false).setVisible(false);

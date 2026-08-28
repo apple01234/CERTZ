@@ -5,9 +5,10 @@ import type { WorldScene } from "../scenes/WorldScene";
  * 주인공 세르츠.
  * F5 핵심 개선:
  *  - 3프레임 베기 모션(등뒤 준비 → 수평 베기 → 내려베기) + 참격 초승달 이펙트
- *  - X축 히트박스 대폭 확대(전방 130px) — 사용자 지적 사항
- *  - 전방 러지(전진 모멘텀) + 히트스톱 + 넉백으로 '베는 맛' 강화
+ *  - X축 히트박스 대폭 확대(전방 160px, 폭 116px) — 사용자 지적 사항
+ *  - 베기 시 제자리 정지(러지 제거 — 사용자 지적) + 히트스톱 + 넉백으로 '베는 맛' 강화
  *  - 상하 공격도 지원 (마지막 이동 방향 기준 4방향)
+ *  - 월드 경계 충돌 — 맵 밖으로 걸어 나가는 버그 수정
  */
 export class Player extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
@@ -46,6 +47,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 96x64 캔버스 (몸 중심 x=48, 발 y=64) 기준 히트박스
     this.body!.setSize(20, 44);
     this.body!.setOffset(38, 20);
+    // 맵 밖으로 나가지 않도록 월드 경계 충돌 (러지/넉백/대시 전부 차단)
+    (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
+    (this.body as Phaser.Physics.Arcade.Body).pushable = false;
     this.play("hero-idle");
   }
 
@@ -108,9 +112,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.slashAlt = !this.slashAlt;
     this.hitSet.clear();
 
-    // 전방 러지 — 베는 순간 전진해 칼날이 들어가는 느낌
+    // 벌 때 제자리 정지 (러지 제거 — 사용자 지시: 휘두를 때 돌진 금지)
     const dir = this.aimDir();
-    this.setVelocity(dir.x * 360, dir.y * 360);
+    this.setVelocity(0, 0);
 
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
@@ -122,7 +126,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.state !== "attack") return;
       this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt);
       this.scene.sfxSwing();
-      this.checkMeleeHit(dir, 130, 84, 1.0, 280);
+      // 참격 판정 확대 — 전방 160px x 폭 116px (사용자 지시: 히트박스 크게)
+      this.checkMeleeHit(dir, 160, 116, 1.0, 280);
     });
 
     this.scene.time.delayedCall(200, () => {

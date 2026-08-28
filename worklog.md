@@ -143,3 +143,28 @@ Work Log:
 Stage Summary:
 - 현행 빌드는 6항 피드백 전부 반영 + 외부 에셋 100% 상태로 검증됨
 - APK 미빌드 (사용자 지시 시에만 — 빌드 시 JDK21/Android SDK 재설치 필요)
+
+---
+Task ID: fix-2
+Agent: Super Z (main)
+Task: 사용자 피드백 2건 — ①캐릭터가 맵 밖으로 (카메라) 나가는 오류 ②벨 때 돌진 금지 + 검 이펙트/히트박스 확대
+
+Work Log:
+- ① 원인: Player/Enemy/Boss 어디에도 setCollideWorldBounds 미설정 → 물리 월드 경계가 있어도 바디가 무시하고 이탈 (카메라는 bounds에 걸려 멈추고 캐릭터만 맵 밖으로)
+  - Player: setCollideWorldBounds(true) + pushable=false (러지/넉백/대시 전부 경계 차단)
+  - Enemy: 동일 적용 (추격/넉백 이탈 방지) / Boss: 동일 적용 (돌진/넉백 아레나 이탈 방지)
+  - TS 유니온 타입 이슈로 (body as Arcade.Body) 캐스팅 필요 (StaticBody엔 setCollideWorldBounds 메서드 없음)
+- ② Player.doAttack(): 전방 러지(setVelocity dir*360) 제거 → setVelocity(0,0) 제자리 베기
+  - 참격 판정 확대: checkMeleeHit(dir, 130,84) → (dir, 160,116) — 전방 160px x 폭 116px
+  - WorldScene.spawnSlash(): 스케일 0.92 → 1.35 (64x76 원본 → 화면 ~86x103), 전방 오프셋 22→30
+- 검증 (agent-browser + touchMove/attackQueued 실입력 경로):
+  - 경계: x=180에서 좌 이동 2.6초 → x=10에서 blocked.left=true 정지 (수정 전이면 -418) / 늑대 넉백 후에도 맵 내 유지
+  - 돌진: 공격 타임라인 20ms 샘플링 → 공격 내내 vx=0, 위치 변화 0
+  - 참격: slash sprite scaleX=1.35 확인, 슬로모션 캡처에서 대형 초승달 렌더
+  - 히트박스: 늑대와 160px 거리에서 공격 → 명중(34→22) — 구판정 최대사거리 ~153px로는 불가능한 거리
+- tsc 0 에러, ESLint 0 에러, 콘솔 에러 0, localStorage 오염 없음
+
+Stage Summary:
+- 산출물: src/game/entities/{Player,Enemy,Boss}.ts, src/game/scenes/WorldScene.ts
+- 맵 이탈 버그 근본 수정 (3개 엔티티 경계 충돌) + 베기 모션 제자리화 + 참격 이펙트/판정 확대
+- 제약 준수: APK 미빌드 (사용자 지시 시에만)

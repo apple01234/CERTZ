@@ -47,6 +47,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     // 111x126 캔버스 (sotrak 보스) — 스프라이트가 크므로 히트박스도 넉넉하게
     this.body!.setSize(76, 92);
     this.body!.setOffset(17, 30);
+    // 돌진/넉백으로 아레나 밖으로 나가지 않도록 경계 충돌
+    (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     this.play("boss-idle");
 
     for (let i = 0; i < 24; i++) {
