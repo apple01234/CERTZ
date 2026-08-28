@@ -361,3 +361,23 @@ Stage Summary:
 - 산출물: src/game/config.ts, src/game/scenes/WorldScene.ts
 - 이어하기가 완전한 무결성을 갖춤 — 진행/스탯/보상 전부 정합
 - 제약 준수: APK 미빌드
+
+---
+Task ID: loop-4
+Agent: Super Z (main)
+Task: 자율 루프 바퀴 4 — 마을 우물 샘물 회복 (비전투 회복 수단)
+
+Work Log:
+- WorldScene.ts: wellPos/wellCd 필드, buildVillage에서 우물 위치 기록 + "샘물 우물" 라벨 추가
+- update(): village 스테이지에서 우물 86px 근접 + (hp<max || mp<max) + 쿨다운 0 → healFull + 픽업텍스트 + 버스트 + sfx
+- 교훈: 테스트 시 dialoguing=true면 update()가 정지해 회복도 안 뜸 — eval 검증 전 대화 닫기 필수
+- 검증 (agent-browser 실측):
+  - 대화 닫고 hp40/mp10 → 우물 접근 600ms 내 100/60 풀회복, wellCd 7300 작동
+  - 쿨다운 중 재데미지(hp50/mp20) → 회복 차단(그대로 유지), 만료 후 재회복(100/60)
+  - 스크린샷: "샘물 우물" 라벨 + 만혈 상태 확인
+  - tsc 0 / eslint 0 / localStorage.clear() 정리
+
+Stage Summary:
+- 산출물: src/game/scenes/WorldScene.ts
+- 마을 기능성 보완: 상점(라고스) + 샘물 회복 + 주민 대화 — 비전투 회복 루프 완성
+- 제약 준수: APK 미빌드
