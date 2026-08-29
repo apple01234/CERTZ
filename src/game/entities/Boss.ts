@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
-import type { BossDef } from "../data";
+import type { BossDef, BossAttackKind } from "../data";
 import { EventBus } from "../../components/game/EventBus";
 
 /**
@@ -11,7 +11,16 @@ import { EventBus } from "../../components/game/EventBus";
  *  - 텔레그래프는 미리 만든 텍스처 스프라이트 트윈 (매 프레임 Graphics 그리기 없음)
  *  - 파티클은 씬의 공유 이미터 explode() 재사용
  */
-type BossMode = "idle" | "slamTele" | "chargeTele" | "charging" | "volley" | "stagger" | "dead";
+type BossMode =
+  | "idle"
+  | "slamTele"
+  | "chargeTele"
+  | "charging"
+  | "volley"
+  | "ringTele"
+  | "zonesTele"
+  | "summonTele"
+  | "dead";
 
 export class Boss extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
@@ -21,6 +30,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   maxHp: number;
   alive = true;
   enraged = false;
+  /** 현재 페이즈 (1: 100~66%, 2: 66~33%, 3: 33%~0) */
+  phase = 1;
   // 근접 판정용 목표 크기 — 커다란 보스 스프라이트에 맞춰 넉넉하게
   hitW = 104;
   hitH = 108;
@@ -32,10 +43,14 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private chargeDir = new Phaser.Math.Vector2();
   private teleRing: Phaser.GameObjects.Image | null = null;
   private teleRings: Phaser.GameObjects.Image[] = [];
+  /** 장판 패턴(존스)용 예고 링들 */
+  private zoneRings: Phaser.GameObjects.Image[] = [];
   private chargeTarget = new Phaser.Math.Vector2();
   private volleyCount = 0;
   private volleyTimer: Phaser.Time.TimerEvent | null = null;
   private chargeHitDone = false;
+  /** 직전 공격 종류 — 같은 패턴 연속 반복 방지 */
+  private lastAttack: BossAttackKind | null = null;
 
   // F4: 투사체 고정 풀
   private orbPool: Phaser.Physics.Arcade.Image[] = [];
@@ -60,7 +75,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     this.play(`${def.tex}-idle`);
 
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 44; i++) {
       const orb = scene.physics.add.image(0, 0, "orb");
       // 외부 에셋 구슬(Kenney circle_05) — 보스별 테마색 발광 에너지탄
       orb.setTint(def.orbTint).setBlendMode(Phaser.BlendModes.ADD);
@@ -79,7 +94,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const toPlayer = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
     const dist = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
 
-    // 투사체-플레이어 충돌 (풀 순회, 24개 고정 — 저렴함)
+    this.updatePhase();
+
+    // 투사체-플레이어 충돌 (풀 순회, 44개 고정 — 저렴함)
     for (const orb of this.orbPool) {
       if (!orb.active) continue;
       if (Phaser.Math.Distance.Between(orb.x, orb.y, player.x, player.y) < 26) {
@@ -99,12 +116,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         // 추격하며 접근
         this.setVelocity(toPlayer.x * this.def.speed + this.knockVec.x, toPlayer.y * this.def.speed + this.knockVec.y);
         this.nextAttackCd -= dt;
-        if (this.nextAttackCd <= 0 && dist < 520 && player.hp > 0) {
-          const r = Math.random();
-          if (dist < 150) this.startSlam(player);
-          else if (r < 0.5) this.startCharge(player);
-          else if (r < 0.8) this.startVolley();
-          else this.startSlam(player);
+        if (this.nextAttackCd <= 0 && dist < 560 && player.hp > 0) {
+          this.pickAttack(player, dist);
         }
         break;
       }
@@ -135,6 +148,21 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         if (this.modeTimer <= 0) this.endAttack(1400);
         break;
       }
+      case "ringTele": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        if (this.modeTimer <= 0) this.doRing();
+        break;
+      }
+      case "zonesTele": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        if (this.modeTimer <= 0) this.doZones(player);
+        break;
+      }
+      case "summonTele": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        if (this.modeTimer <= 0) this.doSummon();
+        break;
+      }
       case "volley": {
         this.setVelocity(this.knockVec.x, this.knockVec.y);
         break;
@@ -144,6 +172,68 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (Math.abs(this.body!.velocity.x) > 8) this.setFlipX(this.body!.velocity.x < 0);
+  }
+
+  /* ---------- 페이즈 관리 ---------- */
+
+  /** HP 비율 기준 페이즈 계산 — 전환 시 연출 + 패턴 풀 확장 */
+  private updatePhase() {
+    const r = this.hp / this.maxHp;
+    const next = r > 0.66 ? 1 : r > 0.33 ? 2 : 3;
+    if (next > this.phase) {
+      this.phase = next;
+      this.onPhaseChange();
+    }
+  }
+
+  private onPhaseChange() {
+    if (!this.alive) return;
+    this.volleyTimer?.remove();
+    this.clearTint();
+    this.mode = "idle";
+    this.nextAttackCd = 900;
+    if (this.phase === 3) this.enraged = true;
+    this.scene.sfxRoar();
+    this.scene.cameras.main.shake(220, this.phase === 3 ? 0.01 : 0.007);
+    this.scene.spawnBurstAt(this.x, this.y, 20, this.def.orbTint);
+    this.scene.showBanner(
+      this.phase === 3
+        ? `${this.def.name} — 최후의 힘을 해방한다!`
+        : `${this.def.name} — 2 페이즈!`
+    );
+    // 페이즈 전환 플래시
+    this.setTintFill(0xffffff);
+    this.scene.time.delayedCall(120, () => this.alive && this.clearTint());
+  }
+
+  /** 페이즈 패턴 풀에서 공격 선택 (직전 공격 제외 — 연속 반복 방지) */
+  private pickAttack(player: PlayerLike2, dist: number) {
+    const pool =
+      this.phase === 1 ? this.def.patterns.p1 : this.phase === 2 ? this.def.patterns.p2 : this.def.patterns.p3;
+    let candidates = pool.filter((k) => k !== this.lastAttack);
+    if (candidates.length === 0) candidates = pool;
+    const kind = Phaser.Utils.Array.GetRandom(candidates);
+    this.lastAttack = kind;
+    switch (kind) {
+      case "slam":
+        this.startSlam(player);
+        break;
+      case "charge":
+        this.startCharge(player);
+        break;
+      case "volley":
+        this.startVolley();
+        break;
+      case "ring":
+        this.startRing();
+        break;
+      case "zones":
+        this.startZones(player);
+        break;
+      case "summon":
+        this.startSummon();
+        break;
+    }
   }
 
   private setMode(m: BossMode, t: number) {
@@ -206,7 +296,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private startVolley() {
     this.setMode("volley", 10);
     this.setTint(0x88a0ff);
-    this.volleyCount = this.enraged ? 8 : 5;
+    // 페이즈별 탄 수 증가 (1:5 / 2:7 / 3:9)
+    this.volleyCount = this.phase === 1 ? 5 : this.phase === 2 ? 7 : 9;
     let remaining = this.volleyCount;
     this.volleyTimer?.remove();
     this.volleyTimer = this.scene.time.addEvent({
@@ -217,9 +308,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         const target = this.scene.playerRef;
         if (!target) return;
         const base = Math.atan2(target.y - this.y, target.x - this.x);
-        // 부채꼴 발사
-        const spread = this.enraged ? 0.16 : 0.22;
-        const n = this.enraged ? 2 : 1;
+        // 부채꼴 발사 — 페이즈가 오를수록 좁고 촘촘
+        const spread = this.phase === 3 ? 0.14 : 0.22;
+        const n = this.phase >= 2 ? 2 : 1;
         for (let k = 0; k < n; k++) {
           const a = base + (k === 0 ? 0 : k % 2 === 1 ? spread * k : -spread * (k - 1));
           this.fireOrb(a, 200);
@@ -234,13 +325,103 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  private fireOrb(angle: number, speed: number) {
+  /* ---------- 스킬 4: 원형 탄막 (링) ---------- */
+
+  private startRing() {
+    this.setMode("ringTele", 420);
+    this.setTint(0xffe08a);
+  }
+
+  private doRing() {
+    this.clearTint();
+    // 보스를 중심으로 방사형 탄막 — 페이즈 3은 2연속 파동
+    const waves = this.phase === 3 ? 2 : 1;
+    const count = this.phase === 1 ? 10 : this.phase === 2 ? 14 : 16;
+    for (let w = 0; w < waves; w++) {
+      this.scene.time.delayedCall(w * 340, () => {
+        if (!this.alive) return;
+        const offset = w * 0.19; // 두 번째 파동은 틀어진 각도 — 틈새 사격
+        for (let i = 0; i < count; i++) {
+          this.fireOrb(offset + (Math.PI * 2 * i) / count, 165 + w * 25, Math.round(this.def.atk * 0.5));
+        }
+        this.scene.sfxSwing();
+      });
+    }
+    this.endAttack(1600);
+  }
+
+  /* ---------- 스킬 5: 바닥 장판 (존스) ---------- */
+
+  private startZones(player: PlayerLike2) {
+    this.setMode("zonesTele", 850);
+    this.setTint(0xffa060);
+    // 플레이어 위치 중심 3개 장판 예고 — 1개는 보스 근처 무작위
+    const spots: [number, number][] = [
+      [player.x, player.y],
+      [
+        Phaser.Math.Clamp(player.x + Phaser.Math.Between(-220, 220), 60, this.scene.stageW - 60),
+        Phaser.Math.Clamp(player.y + Phaser.Math.Between(-180, 180), 60, this.scene.stageH - 60),
+      ],
+      [
+        Phaser.Math.Clamp(this.x + Phaser.Math.Between(-160, 160), 60, this.scene.stageW - 60),
+        Phaser.Math.Clamp(this.y + Phaser.Math.Between(-140, 140), 60, this.scene.stageH - 60),
+      ],
+    ];
+    for (const [zx, zy] of spots) {
+      const ring = this.scene.add
+        .image(zx, zy, "ring")
+        .setDepth(5)
+        .setTint(0xff8848)
+        .setAlpha(0.35)
+        .setScale(0.2);
+      this.zoneRings.push(ring);
+      this.scene.tweens.add({ targets: ring, scale: 0.82, alpha: 0.9, duration: 820 });
+    }
+  }
+
+  private doZones(player: PlayerLike2) {
+    this.clearTint();
+    this.scene.cameras.main.shake(110, 0.005);
+    for (const ring of this.zoneRings) {
+      this.scene.spawnSlamBurst(ring.x, ring.y);
+      if (Phaser.Math.Distance.Between(ring.x, ring.y, player.x, player.y) < 95) {
+        const dir = new Phaser.Math.Vector2(player.x - ring.x, player.y - ring.y).normalize();
+        player.takeDamage(Math.round(this.def.atk * 0.9), dir);
+      }
+      this.scene.tweens.add({ targets: ring, alpha: 0, duration: 150, onComplete: () => ring.destroy() });
+    }
+    this.zoneRings = [];
+    this.endAttack(1500);
+  }
+
+  /* ---------- 스킬 6: 소환 ---------- */
+
+  private startSummon() {
+    this.setMode("summonTele", 620);
+    this.setTint(0xc070ff);
+  }
+
+  private doSummon() {
+    this.clearTint();
+    const key = this.def.summonKey;
+    if (key) {
+      this.scene.requestSummon(key, this.phase === 3 ? 2 : 1, this.x, this.y);
+      this.scene.spawnBurstAt(this.x, this.y, 16, 0xc070ff);
+      this.scene.showBanner(`${this.def.name}가 권속을 부른다!`);
+    }
+    this.endAttack(1700);
+  }
+
+  private fireOrb(angle: number, speed: number, dmgOverride?: number) {
     const orb = this.orbPool[this.orbIdx];
     this.orbIdx = (this.orbIdx + 1) % this.orbPool.length;
     orb.enableBody(true, this.x, this.y - 20, true, true);
     this.scene.physics.velocityFromRotation(angle, speed, orb.body!.velocity);
     orb.setScale(this.enraged ? 1.2 : 1);
-    orb.setData("dmg", this.enraged ? Math.round(this.def.atk * 0.75) : Math.round(this.def.atk * 0.6));
+    orb.setData(
+      "dmg",
+      dmgOverride ?? (this.enraged ? Math.round(this.def.atk * 0.75) : Math.round(this.def.atk * 0.6))
+    );
     // 수명 후 자동 회수
     this.scene.time.delayedCall(3200, () => this.killOrb(orb));
   }
@@ -270,16 +451,6 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.spawnHitSpark(this.x, this.y - 30);
     EventBus.emit("boss:update", { hp: Math.max(0, this.hp), maxHp: this.maxHp });
 
-    if (!this.enraged && this.hp <= this.maxHp * 0.5) {
-      this.enraged = true;
-      this.scene.sfxRoar();
-      this.scene.cameras.main.shake(200, 0.008);
-      this.scene.spawnEnrageBurst(this.x, this.y);
-      this.scene.showBanner(`${this.def.name}가 분노한다!`);
-      this.setTint(0xff7080);
-      this.scene.time.delayedCall(500, () => this.alive && this.clearTint());
-    }
-
     if (this.hp <= 0) {
       this.hp = 0;
       this.alive = false;
@@ -288,6 +459,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       for (const orb of this.orbPool) this.killOrb(orb);
       for (const r of this.teleRings) r.destroy();
       this.teleRings = [];
+      for (const r of this.zoneRings) r.destroy();
+      this.zoneRings = [];
       this.setVelocity(0, 0);
       // 보스 격파 보상 — 대량 골드 + HP 물약 2개 (2D MMORPG 기본 요소)
       this.scene.dropLootGold(this.x, this.y, this.def.gold);
@@ -303,8 +476,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.volleyTimer?.remove();
     for (const orb of this.orbPool) orb.destroy();
     for (const r of this.teleRings) r.destroy();
+    for (const r of this.zoneRings) r.destroy();
     this.orbPool = [];
     this.teleRings = [];
+    this.zoneRings = [];
   }
 }
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState } from "./EventBus";
 import { STAGES } from "@/game/data";
-import { RotateCw, Play, Save, Swords, Skull, Trophy, Home } from "lucide-react";
+import { RotateCw, Play, Save, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles } from "lucide-react";
 
 /** 세이브 이어하기 라벨용 스테이지 표기명 */
 const STAGE_LABEL: Record<string, string> = {
@@ -204,6 +204,105 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
       <div className="flex items-center justify-center gap-1 text-amber-200">{icon}</div>
       <div className="mt-0.5 text-sm font-black text-white">{value}</div>
       <div className="text-[9px] font-bold text-white/50">{label}</div>
+    </div>
+  );
+}
+
+/* ---------- 상호작용 프롬프트 (E키 상호작용 — NPC 대화/상점 공용) ---------- */
+
+export function InteractPrompt() {
+  const [st, setSt] = useState<{ active: boolean; label: string; kind: "talk" | "shop" | null }>({
+    active: false,
+    label: "",
+    kind: null,
+  });
+
+  useEffect(() => {
+    const on = (v: { active: boolean; label: string; kind: "talk" | "shop" | null }) =>
+      setSt({ active: !!v.active, label: v.label ?? "", kind: v.kind ?? null });
+    EventBus.on("ui:interact", on);
+    return () => {
+      EventBus.off("ui:interact", on);
+    };
+  }, []);
+
+  if (!st.active || !st.label) return null;
+
+  return (
+    <button
+      onPointerDown={(e) => {
+        e.preventDefault();
+        if (st.kind === "shop") EventBus.emit("ui:panel", { panel: "shop" });
+        else EventBus.emit("input:interact");
+      }}
+      className="pointer-events-auto absolute bottom-24 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border-2 border-emerald-200/80 bg-gradient-to-b from-emerald-400 to-emerald-600 px-4 py-2 text-[13px] font-black text-slate-900 shadow-xl transition-transform active:scale-95"
+    >
+      {st.kind === "shop" ? <Store size={16} /> : <MessageCircle size={16} />}
+      {st.label}
+      <span className="rounded bg-slate-900/85 px-1 text-[9px] font-black text-emerald-200">E</span>
+    </button>
+  );
+}
+
+/* ---------- 인트로: 이름 정하기 (책장 넘기기 대신 마을 우물에서 플레이 중 입력) ---------- */
+
+export function NamePanel() {
+  const [open, setOpen] = useState(false);
+  const [val, setVal] = useState("");
+
+  useEffect(() => {
+    const ask = () => {
+      setOpen(true);
+      setVal("");
+    };
+    EventBus.on("name:ask", ask);
+    return () => {
+      EventBus.off("name:ask", ask);
+    };
+  }, []);
+
+  if (!open) return null;
+
+  const confirm = () => {
+    const name = val.trim();
+    if (!name) return;
+    setOpen(false);
+    EventBus.emit("name:set", { name });
+  };
+
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/55 px-4">
+      <div className="w-full max-w-sm rounded-2xl border-2 border-amber-200/70 bg-slate-950/95 p-5 shadow-2xl">
+        <div className="mb-1 flex items-center gap-2">
+          <Sparkles size={18} className="text-amber-300" />
+          <span className="text-base font-black text-amber-300">이름을 정해 주자!</span>
+        </div>
+        <p className="mb-3 text-[12px] font-bold leading-relaxed text-white/70">
+          요정 아리: &quot;세계수가 기억할 이름을 지어 줘. 모험가의 이름이야!&quot;
+        </p>
+        <input
+          autoFocus
+          value={val}
+          maxLength={8}
+          onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              confirm();
+            }
+          }}
+          placeholder="1~8자 (한글/영문/숫자)"
+          className="w-full rounded-xl border-2 border-white/25 bg-slate-900 px-3 py-3 text-lg font-black tracking-wider text-white outline-none placeholder:text-white/30 focus:border-amber-300"
+        />
+        <div className="mt-1 text-right text-[10px] font-bold text-white/40">{val.length}/8</div>
+        <button
+          onClick={confirm}
+          disabled={!val.trim()}
+          className="mt-2 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-3 text-sm font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:opacity-40"
+        >
+          이 이름으로 모험 시작!
+        </button>
+      </div>
     </div>
   );
 }

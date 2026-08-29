@@ -1,11 +1,11 @@
 import Phaser from "phaser";
-import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, BOSS_DEFS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef } from "../data";
+import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, BOSS_DEFS, ENEMIES, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef } from "../data";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
-import { EventBus, type QuestState } from "../../components/game/EventBus";
-import { writeSave, loadSave, type SaveData } from "../config";
+import { EventBus, type QuestState, type InteractState } from "../../components/game/EventBus";
+import { writeSave, loadSave, type SaveData, setPlayerName } from "../config";
 import { viewZoom } from "../PhaserGame";
 import * as audio from "../audio";
 
@@ -73,6 +73,23 @@ export class WorldScene extends Phaser.Scene {
   private pendingPortal = false;
   // 현재 스테이지 보스 정의 (onBossDead에서 사용)
   private bossDef: BossDef | null = null;
+  // 반복 토벌 의뢰 — 사이클별 목표 수 (완료할수록 +2)
+  private repeatNeed = 0;
+
+  /* ----- E키 상호작용 (NPC 대화/상점 — 접근 자동 트리거 제거) ----- */
+  private interactables: { x: number; y: number; kind: "talk" | "shop"; dlg?: string; npcId?: string; label: string }[] = [];
+  private nearInteract: (typeof this.interactables)[number] | null = null;
+  private activeNpcId: string | null = null;
+  private talkedNpcs = new Set<string>();
+
+  /* ----- 인트로 플레이 시퀀스 (책장 넘기기 대신 직접 이동하며 진행) ----- */
+  private introStep = -1; // -1=해당없음/완료, 0=이동 학습, 1=우물 이동, 2=이름 입력, 3=완료
+  private introMoveDist = 0;
+  private introMarker: Phaser.GameObjects.Image | null = null;
+  private introGuide: Phaser.GameObjects.Image | null = null;
+  private introGuideSpark: Phaser.GameObjects.Sprite | null = null;
+  private playerNameTag: Phaser.GameObjects.Text | null = null;
+  private queuedDialogue: string | null = null;
 
   /* ----- 2D MMORPG 기본 요소 ----- */
   private drops: Drop[] = [];
@@ -116,6 +133,18 @@ export class WorldScene extends Phaser.Scene {
     this.nearShop = false;
     this.minimap = null;
     this.lastRpgSig = "";
+    this.repeatNeed = 0;
+    this.interactables = [];
+    this.nearInteract = null;
+    this.activeNpcId = null;
+    this.talkedNpcs = new Set();
+    this.introStep = -1;
+    this.introMoveDist = 0;
+    this.introMarker = null;
+    this.introGuide = null;
+    this.introGuideSpark = null;
+    this.playerNameTag = null;
+    this.queuedDialogue = null;
     // 런 통계(처치/플레이타임) — 씬 재시작(스테이지 전환)과 무관하게 유지
     // fresh=true는 타이틀에서 새 시작/이어하기일 때만 (사망화면 정확한 통계)
     if (data.fresh) {
@@ -200,7 +229,10 @@ export class WorldScene extends Phaser.Scene {
       // 퀘스트 진행 복원 (이어하기 — 파편/보상 중복 수령 방지)
       this.savedQuestIdx = { ...(savedPlayer.questIdx ?? {}) };
       this.questIdx = Phaser.Math.Clamp(this.savedQuestIdx[stageKey] ?? 0, 0, this.stageDef.quests.length);
+      // 플레이어 이름 복원 (인트로에서 지정)
+      if (savedPlayer.playerName) setPlayerName(savedPlayer.playerName);
     }
+    this.repeatNeed = this.stageDef.repeat?.need ?? 0;
     this.playerRef = this.player;
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.physics.add.collider(this.player, this.solidGroup);
@@ -230,26 +262,16 @@ export class WorldScene extends Phaser.Scene {
       // 마을 차원문은 항상 열려 있음 (뿌리숲으로 출발)
       this.spawnPortal(this.stageW - 110, this.stageH * 0.52);
       this.activatePortal(true);
-    } else if (stageKey === "forest") {
-      // 파편은 수집 퀘스트(f0) 진행 중에만 — 이어하기 시 ATK +5 중복 수령 방지
-      if (this.questIdx < 1) this.spawnFragment(this.stageW * 0.78, this.stageH * 0.26);
-      this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
-    } else if (stageKey === "cave") {
-      // 동굴 파편 (c0 수집 퀘스트 진행 중에만)
-      if (this.questIdx < 1) this.spawnFragment(this.stageW * 0.78, this.stageH * 0.26);
-      this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
     } else {
-      // 보스전 스테이지 — 격파 후 차원문 등장 (최종 스테이지는 엔딩)
+      if (!this.stageDef.boss) this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+      // 수확(collect) 퀘스트 진행 중 — 파편 스폰 (이어하기 무결: ATK 중복 수령 방지)
+      if (this.currentQuest()?.type === "collect") this.spawnFragmentForQuest();
     }
 
     /* ---------- 퀘스트 진행 복구 (이어하기 — 진행 상태 정합, 오브젝트 생성 후) ---------- */
     const bossQuestIdx = this.stageDef.quests.findIndex((q) => q.type === "boss");
-    if (!this.stageDef.boss && stageKey !== "village" && this.questIdx >= this.stageDef.quests.length - 1) {
-      // 수확 완료 후 세이브 — 차원문을 열어둔 채 시작 (소프트락 방지)
-      this.activatePortal(true);
-    }
     if (this.stageDef.boss) {
-      if (bossQuestIdx >= 0 && this.questIdx === bossQuestIdx) {
+      if (this.currentQuest()?.type === "boss") {
         // 보스전 진행 중 세이브 — 입장 직후 보스 등장 (복구 경로는 등장 대사 생략)
         this.time.delayedCall(900, () => {
           if (!this.boss) this.spawnBoss(false);
@@ -259,6 +281,9 @@ export class WorldScene extends Phaser.Scene {
         this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
         this.activatePortal(true);
       }
+    } else if (stageKey !== "village" && this.currentQuest()?.type === "reach") {
+      // 수확 완료 후 세이브 — 차원문을 열어둔 채 시작 (소프트락 방지)
+      this.activatePortal(true);
     }
 
     /* ---------- 이펙트 풀 ---------- */
@@ -274,10 +299,15 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 사운드/BGM ---------- */
     audio.playBGM(stageKey === "alfheim" || stageKey === "abyss" ? "boss" : "field");
 
-    /* ---------- 오프닝 대사 ---------- */
-    this.time.delayedCall(400, () => {
-      this.showDialogue(STAGE_INTRO[stageKey]);
-    });
+    /* ---------- 오프닝 대사 (인트로 시퀀스 중이면 인트로가 인계) ---------- */
+    if (stageKey === "village" && !savedPlayer?.playerName) {
+      // 신규 플레이어 — 책장 넘기기 대신 플레이형 인트로 (이동 → 우물 → 이름 짓기)
+      this.startIntroSequence();
+    } else {
+      this.time.delayedCall(400, () => {
+        this.showDialogue(STAGE_INTRO[stageKey]);
+      });
+    }
 
     EventBus.emit("ui:playing");
     this.emitHud();
@@ -485,11 +515,8 @@ export class WorldScene extends Phaser.Scene {
     this.spawnBurstAt(f.x, f.y, 14, 0x9df0ff);
     this.showDialogue(this.stageDef.key === "forest" ? "fragment" : "fragment2");
     this.advanceQuest();
-    // 토벌 퀘스트가 이미 충족돼 있으면 즉시 완료 처리 (늑대를 먼저 다 잡아둔 경우와 동일)
-    this.time.delayedCall(100, () => {
-      const huntKey = this.currentHuntKey();
-      if (huntKey) this.tryCompleteHunt(huntKey);
-    });
+    // 다음 목표 범용 배치 (파편 연속 수확/토벌/개방 등) — 대사 종료 후 자연스럽게 진행
+    this.afterAdvance();
     this.save();
   }
 
@@ -581,7 +608,7 @@ export class WorldScene extends Phaser.Scene {
         .setOffset((img.width - bw) / 2, img.height - 66);
     }
 
-    // 마을 주민 2인 — 접근하면 대화 (바운스 애니 + 이름표)
+    // 마을 주민 2인 — E키 상호작용 (접근 자동 트리거 제거, 바운스 애니 + 이름표 유지)
     const villagers: { x: number; y: number; tex: string; name: string; dlg: string }[] = [
       { x: cx + 210, y: cy + 120, tex: "npc_villager1", name: "주민", dlg: "villager1" },
       { x: cx - 90, y: cy - 90, tex: "npc_villager2", name: "마을 아이", dlg: "villager2" },
@@ -599,15 +626,7 @@ export class WorldScene extends Phaser.Scene {
         })
         .setOrigin(0.5)
         .setDepth(Math.floor(v.y / 10));
-      const zone = this.add.zone(v.x, v.y, 100, 100);
-      this.physics.add.existing(zone, true);
-      let cd = 0;
-      this.physics.add.overlap(this.player, zone, () => {
-        if (this.dialoguing || this.player.state === "dead") return;
-        if (this.time.now < cd) return;
-        cd = this.time.now + 4000;
-        this.showDialogue(v.dlg);
-      });
+      this.interactables.push({ x: v.x, y: v.y, kind: "talk", dlg: v.dlg, npcId: v.dlg, label: `${v.name}와 대화` });
     }
   }
 
@@ -779,6 +798,8 @@ export class WorldScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(21);
+    // 상점도 E키 상호작용 대상 (F키 병행)
+    this.interactables.push({ x: mx, y: my, kind: "shop", label: "라고스 상점" });
   }
 
   private acquireDrop(): Drop | null {
@@ -1009,11 +1030,39 @@ export class WorldScene extends Phaser.Scene {
       this.respawnEnemy(key, spawnX, spawnY, 0)
     );
     const q = this.currentQuest();
-    if (q && q.type === "hunt" && this.stageDef.enemies.some((g) => g.key === key)) {
-      this.huntCount = Math.min(this.killTotals[key] ?? 0, q.need ?? 0);
-      this.tryCompleteHunt(key);
+    if (q && q.type === "hunt") {
+      if (this.repeatActive()) {
+        // 반복 토벌 의뢰 — 메인 체인 종료 후 무한 파밍 (사이클별 카운트)
+        if (q.targetKey === key) {
+          this.huntCount++;
+          if (this.huntCount >= this.repeatNeed) this.completeRepeat();
+          else this.emitQuest();
+        }
+      } else if (this.stageDef.enemies.some((g) => g.key === key)) {
+        this.huntCount = Math.min(this.killTotals[key] ?? 0, q.need ?? 0);
+        this.tryCompleteHunt(key);
+      }
     }
     this.emitQuest();
+  }
+
+  /** 메인 체인 완료 후 반복 의뢰 활성 여부 */
+  private repeatActive(): boolean {
+    return this.questIdx >= this.stageDef.quests.length && !!this.stageDef.repeat;
+  }
+
+  /** 반복 토벌 완료 — 보상 지급 후 목표 +2 (무한 확장) */
+  private completeRepeat() {
+    const r = this.stageDef.repeat!;
+    audio.sfx.questDone();
+    this.player.addGold(r.gold);
+    this.player.gainExp(r.exp);
+    this.spawnPickupText(this.player.x, this.player.y - 44, `토벌 완료 +${r.gold}G`, "#ffd76a");
+    this.huntCount = 0;
+    this.repeatNeed += 2;
+    this.save();
+    this.emitQuest();
+    this.emitRpgState();
   }
 
   /**
@@ -1056,20 +1105,46 @@ export class WorldScene extends Phaser.Scene {
     if (total < (q.need ?? 0)) return;
     this.huntCount = Math.min(total, q.need ?? 0);
     audio.sfx.questDone();
-    if (this.stageDef.boss) {
-      this.advanceQuest(); // → 보스 퀘스트
-      this.spawnBoss();
-    } else if (this.stageDef.key === "forest") {
-      this.showDialogue("wolvesDone");
-      this.advanceQuest(); // → 차원문 퀘스트
-      this.activatePortal();
-    } else {
-      // 동굴 등 수확형 스테이지 — 차원문 개방
-      this.showDialogue("caveDone");
-      this.advanceQuest();
-      this.activatePortal();
-    }
+    this.advanceQuest();
+    this.afterAdvance();
     this.save();
+  }
+
+  /**
+   * 퀘스트 진행기 — 체인의 다음 목표를 범용으로 배치한다.
+   *  reach → 안내 대사 후 차원문 개방 / collect → 파편 스폰 / boss → 보스 등장
+   *  hunt → 이미 조건 충족이면 즉시 연쇄 완료 (미리 잡은 경우 소프트락 방지)
+   */
+  private afterAdvance() {
+    const q = this.currentQuest();
+    this.emitQuest();
+    if (!q) return;
+    if (q.type === "reach") {
+      if (!this.portal) this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+      if (!this.portalActive) {
+        if (q.dialogue) {
+          // 대사 중 포탈 위 즉시 전환 방지 — 대사 종료 후 개방 (resumeFromDialogue)
+          this.pendingPortal = true;
+          if (this.dialoguing) {
+            // 이미 대사 진행 중 (파편 수집 직후 등) — 예약 후 순차 재생
+            this.queuedDialogue = q.dialogue;
+          } else {
+            this.showDialogue(q.dialogue);
+          }
+        } else {
+          this.activatePortal();
+        }
+      } else if (q.dialogue && !this.dialoguing) {
+        this.showDialogue(q.dialogue);
+      }
+    } else if (q.type === "collect") {
+      if (!this.fragment) this.spawnFragmentForQuest();
+    } else if (q.type === "boss") {
+      if (!this.boss) this.spawnBoss();
+    } else if (q.type === "hunt") {
+      const k = q.targetKey;
+      if (k && (this.killTotals[k] ?? 0) >= (q.need ?? 0)) this.tryCompleteHunt(k);
+    }
   }
 
   /* ================= 보스 ================= */
@@ -1101,7 +1176,7 @@ export class WorldScene extends Phaser.Scene {
     // 최종 보스(심연의 군주)만 클리어 — 이전 보스는 차원문으로 다음 지역 진행
     const final = NEXT_STAGE[this.stageDef.key] === null;
     this.cleared = final;
-    this.advanceQuest(); // 보스 퀘스트 완료 — 골드 보상 포함
+    this.advanceQuest(); // 보스 퀘스트 완료 — 골드/경험치 보상 포함
     this.save();
     if (final) {
       this.time.delayedCall(1200, () => {
@@ -1120,12 +1195,8 @@ export class WorldScene extends Phaser.Scene {
         });
       });
     } else {
-      this.time.delayedCall(1200, () => {
-        // 다음 지역 안내 대사 → 대사가 끝나면 차원문 활성화 (resumeFromDialogue 참조)
-        this.showDialogue(this.stageDef.key === "alfheim" ? "guardianDone" : "behemothDone");
-        this.pendingPortal = true;
-        this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
-      });
+      // 다음 지역 안내 대사 + 차원문 개방은 afterAdvance가 일반 처리 (1200ms 유예)
+      this.time.delayedCall(1200, () => this.afterAdvance());
     }
   }
 
@@ -1157,7 +1228,7 @@ export class WorldScene extends Phaser.Scene {
   private setupInput() {
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,X,Z,C,Q,E,F,I"
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,X,Z,C,Q,E,F,I,R"
     ) as Record<string, Phaser.Input.Keyboard.Key>;
 
     const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);
@@ -1166,6 +1237,10 @@ export class WorldScene extends Phaser.Scene {
     const onS2 = () => this.player?.useSkill2();
     const onRespawn = () => this.respawnPlayer();
     const onDialogueDone = () => this.resumeFromDialogue();
+    const onInteract = () => this.tryInteract();
+    const onNameSet = (v: { name: string }) => {
+      if (this.introStep === 2) this.finishIntro(v.name);
+    };
     const onBuy = (v: { key: ItemKey }) => {
       if (!this.player || this.dialoguing) return;
       if (this.player.buy(v.key)) {
@@ -1196,6 +1271,8 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("input:attack", onAtk);
     EventBus.on("input:skill1", onS1);
     EventBus.on("input:skill2", onS2);
+    EventBus.on("input:interact", onInteract);
+    EventBus.on("name:set", onNameSet);
     EventBus.on("rpg:buy", onBuy);
     EventBus.on("rpg:equip", onEquip);
     EventBus.on("rpg:use", onUse);
@@ -1207,6 +1284,8 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("input:attack", onAtk);
       EventBus.off("input:skill1", onS1);
       EventBus.off("input:skill2", onS2);
+      EventBus.off("input:interact", onInteract);
+      EventBus.off("name:set", onNameSet);
       EventBus.off("rpg:buy", onBuy);
       EventBus.off("rpg:equip", onEquip);
       EventBus.off("rpg:use", onUse);
@@ -1256,11 +1335,21 @@ export class WorldScene extends Phaser.Scene {
     this.player.update(dt, move, this.attackQueued);
     this.attackQueued = false;
 
-    // 물약 퀵슬롯 + 상점 열기
+    // 물약 퀵슬롯 + 상점 열기 + E키 상호작용
     if (Phaser.Input.Keyboard.JustDown(this.keys.Q)) this.player.usePotion("hp");
-    if (Phaser.Input.Keyboard.JustDown(this.keys.E)) this.player.usePotion("mp");
+    if (Phaser.Input.Keyboard.JustDown(this.keys.R)) this.player.usePotion("mp");
+    if (Phaser.Input.Keyboard.JustDown(this.keys.E)) this.tryInteract();
     if (Phaser.Input.Keyboard.JustDown(this.keys.F) && this.nearShop) EventBus.emit("ui:panel", { panel: "shop" });
     if (Phaser.Input.Keyboard.JustDown(this.keys.I)) EventBus.emit("ui:panel", { panel: "inv" });
+
+    // E키 상호작용 감지 — 가장 가까운 NPC/상점 프롬프트 갱신
+    this.updateInteractPrompt();
+
+    // 플레이어 이름표 추적 (인트로에서 지정 후)
+    this.playerNameTag?.setPosition(this.player.x, this.player.y - 48);
+
+    // 인트로 플레이 시퀀스 (이동 학습 → 우물 → 이름 짓기)
+    if (this.introStep >= 0 && this.introStep < 2) this.tickIntro(dt, move);
 
     // 적 AI
     for (const e of this.enemies) {
@@ -1289,6 +1378,189 @@ export class WorldScene extends Phaser.Scene {
 
   currentMoveVec() {
     return this.touchMove.lengthSq() > 0.01 ? this.touchMove.clone() : new Phaser.Math.Vector2();
+  }
+
+  /* ================= E키 상호작용 ================= */
+
+  /** 가장 가까운 상호작용 대상 탐색 → React 프롬프트 갱신 (변경 시만 emit) */
+  private updateInteractPrompt() {
+    let best: (typeof this.interactables)[number] | null = null;
+    let bd = 130;
+    for (const it of this.interactables) {
+      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, it.x, it.y);
+      if (d < bd) {
+        bd = d;
+        best = it;
+      }
+    }
+    const prev = this.nearInteract;
+    if (best === prev) return;
+    this.nearInteract = best;
+    const payload: InteractState = best
+      ? { active: true, label: best.label, kind: best.kind }
+      : { active: false, label: "", kind: null };
+    EventBus.emit("ui:interact", payload);
+  }
+
+  /** E키/모바일 버튼 — 가까운 NPC 대화 시작 또는 상점 열기 */
+  tryInteract() {
+    if (this.dialoguing || !this.player || this.player.state === "dead") return;
+    const it = this.nearInteract;
+    if (!it) return;
+    if (it.kind === "shop") {
+      EventBus.emit("ui:panel", { panel: "shop" });
+    } else if (it.kind === "talk" && it.dlg) {
+      this.showDialogue(it.dlg, it.npcId ?? null);
+    }
+  }
+
+  /** 주민 대화 종료 — talk 퀘스트 진행 (마을 첫 퀘스트) */
+  private onNpcTalked(npcId: string) {
+    if (this.talkedNpcs.has(npcId)) return;
+    this.talkedNpcs.add(npcId);
+    const q = this.currentQuest();
+    if (!q || q.type !== "talk") return;
+    this.huntCount = Math.min(this.talkedNpcs.size, q.need ?? 0);
+    audio.sfx.questDone();
+    this.spawnPickupText(this.player.x, this.player.y - 40, "대화 완료!", "#7dffa8");
+    if (this.talkedNpcs.size >= (q.need ?? 0)) {
+      this.advanceQuest();
+      this.afterAdvance();
+      this.save();
+    } else {
+      this.emitQuest();
+    }
+  }
+
+  /** 보스 소환 패턴 — 권속 등장 (리스폰 대상 제외, 상한 방어) */
+  requestSummon(key: EnemyKey, count: number, bx: number, by: number) {
+    if (this.enemies.length >= 9) return;
+    for (let i = 0; i < count; i++) {
+      const ex = Phaser.Math.Clamp(bx + Phaser.Math.Between(-90, 90), 60, this.stageW - 60);
+      const ey = Phaser.Math.Clamp(by + Phaser.Math.Between(-70, 70), 60, this.stageH - 60);
+      const e = new Enemy(this, ex, ey, key);
+      e.setAlpha(0);
+      this.tweens.add({ targets: e, alpha: 1, duration: 380 });
+      this.spawnBurstAt(ex, ey, 10, 0xc070ff);
+      this.enemies.push(e);
+      this.physics.add.collider(e, this.solidGroup);
+    }
+  }
+
+  /* ================= 인트로 플레이 시퀀스 ================= */
+  /**
+   * 책장 넘기기 대신 직접 플레이하는 오프닝:
+   *  0) 이동 학습 — 아리의 안내로 실제로 걸어보기
+   *  1) 마을 우물로 이동 — 빛 기둥 마커 추적
+   *  2) 우물 앞에서 이름 정하기 (인게임 패널)
+   *  3) 이름 리액션 대사 → 마을 오프닝 → 퀘스트 시작
+   */
+  private startIntroSequence() {
+    this.introStep = 0;
+    this.introMoveDist = 0;
+    this.introGuide = this.add
+      .image(this.player.x + 26, this.player.y - 30, "glow")
+      .setDepth(50)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0x9df0ff)
+      .setScale(0.55)
+      .setAlpha(0.9);
+    this.tweens.add({ targets: this.introGuide, scale: 0.75, alpha: 0.65, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.introGuideSpark = this.add
+      .sprite(this.player.x + 26, this.player.y - 48, "sparkle0")
+      .setDepth(51)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .play("sparkle");
+    this.showBanner("방향키/WASD 또는 조이스틱으로 이동해 보자!");
+  }
+
+  private tickIntro(dt: number, move: Phaser.Math.Vector2) {
+    const p = this.player;
+    // 아리 가이드가 플레이어를 따라다님
+    this.introGuide?.setPosition(p.x + 24, p.y - 30);
+    this.introGuideSpark?.setPosition(p.x + 24, p.y - 48);
+
+    if (this.introStep === 0) {
+      // 이동 학습 — 실제로 움직인 거리 누적
+      const spd = Math.hypot(move.x, move.y);
+      if (spd > 0.1) this.introMoveDist += (spd * dt) / 10;
+      if (this.introMoveDist > 240) {
+        this.introStep = 1;
+        const wp = this.wellPos;
+        const wx = wp?.x ?? this.stageW * 0.5;
+        const wy = wp?.y ?? this.stageH * 0.5;
+        // 우물 위 빛 기둥 마커
+        this.introMarker = this.add
+          .image(wx, wy - 110, "beam")
+          .setDepth(3)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0x9df0ff)
+          .setAlpha(0.55);
+        this.tweens.add({ targets: this.introMarker, alpha: { from: 0.4, to: 0.8 }, scaleX: { from: 1, to: 1.2 }, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+        this.showBanner("요정 아리: 마을 우물로 와! 네 이름을 정해 주고 싶어!");
+      }
+    } else if (this.introStep === 1) {
+      const wp = this.wellPos;
+      if (wp) this.introMarker?.setPosition(wp.x, wp.y - 110);
+      if (!wp || Phaser.Math.Distance.Between(p.x, p.y, wp.x, wp.y) < 120) {
+        this.introStep = 2;
+        this.introMarker?.destroy();
+        this.introMarker = null;
+        // 이름 입력 중 게임 일시 정지 (업데이트 루프 차단)
+        this.dialoguing = true;
+        this.player.setVelocity(0, 0);
+        EventBus.emit("name:ask");
+      }
+    }
+  }
+
+  /** 이름 결정 — 저장 + 이름표 연출 + 오프닝 인계 */
+  private finishIntro(name: string) {
+    this.introStep = 3;
+    this.dialoguing = false;
+    setPlayerName(name);
+    // 플레이어 이름표 (머리 위)
+    this.playerNameTag = this.add
+      .text(this.player.x, this.player.y - 48, name, {
+        fontFamily: "sans-serif",
+        fontSize: "12px",
+        color: "#baf3ff",
+        stroke: "#0a2030",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(60);
+    // 축하 연출
+    audio.sfx.levelup();
+    this.spawnBurstAt(this.player.x, this.player.y, 26, 0x9df0ff);
+    this.cameras.main.shake(140, 0.004);
+    this.player.healFull();
+    // 세이브에 이름 기록
+    this.save();
+    // 가이드 페이드아웃
+    this.tweens.add({
+      targets: [this.introGuide, this.introGuideSpark],
+      alpha: 0,
+      duration: 700,
+      onComplete: () => {
+        this.introGuide?.destroy();
+        this.introGuideSpark?.destroy();
+      },
+    });
+    this.introGuide = null;
+    this.introGuideSpark = null;
+    // 이름 리액션 → 마을 오프닝(아뜰란티스 세계관) 순차 재생
+    this.queuedDialogue = "villageIntro";
+    this.showDialogue("introNamed");
+    this.emitQuest();
+  }
+
+  /** 수확(collect) 퀘스트용 파편 스폰 — 맵 우측 원영역 무작위 */
+  private spawnFragmentForQuest() {
+    const fx = Math.round(this.stageW * Phaser.Math.FloatBetween(0.55, 0.85));
+    const fy = Math.round(this.stageH * Phaser.Math.FloatBetween(0.18, 0.42));
+    this.spawnFragment(fx, fy);
   }
 
   getAllTargets(): (Enemy | Boss)[] {
@@ -1321,6 +1593,20 @@ export class WorldScene extends Phaser.Scene {
       }
       case "reach":
         return this.portal && this.portal.active ? new Phaser.Math.Vector2(this.portal.x, this.portal.y) : null;
+      case "talk": {
+        // 아직 대화하지 않은 주민 중 가장 가까운 곳
+        let best: { x: number; y: number } | null = null;
+        let bd = Infinity;
+        for (const it of this.interactables) {
+          if (it.kind !== "talk" || (it.npcId && this.talkedNpcs.has(it.npcId))) continue;
+          const d = Phaser.Math.Distance.Between(it.x, it.y, this.player.x, this.player.y);
+          if (d < bd) {
+            bd = d;
+            best = it;
+          }
+        }
+        return best ? new Phaser.Math.Vector2(best.x, best.y) : null;
+      }
       case "boss":
         return this.boss && this.boss.active && this.boss.alive
           ? new Phaser.Math.Vector2(this.boss.x, this.boss.y)
@@ -1388,7 +1674,20 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= 퀘스트/세이브 ================= */
 
-  currentQuest() {
+  /** 현재 퀘스트 — 메인 체인 종료 후 반복 토벌 의뢰를 합성 퀘스트로 반환 */
+  currentQuest(): QuestDef | null {
+    if (this.repeatActive()) {
+      const r = this.stageDef.repeat!;
+      return {
+        id: "repeat",
+        type: "hunt",
+        title: r.title,
+        desc: r.desc,
+        need: this.repeatNeed,
+        targetKey: r.targetKey,
+        targetLabel: ENEMIES[r.targetKey].name,
+      };
+    }
     return this.stageDef.quests[this.questIdx] ?? null;
   }
 
@@ -1396,16 +1695,31 @@ export class WorldScene extends Phaser.Scene {
     const done = this.stageDef.quests[this.questIdx];
     this.questIdx = Math.min(this.questIdx + 1, this.stageDef.quests.length);
     this.huntCount = 0;
-    // 퀘스트 골드 보상 (2D MMORPG 기본 요소)
+    // 퀘스트 보상 — 골드 + 경험치 (2D MMORPG 기본 요소)
     if (done?.reward) {
       this.player.addGold(done.reward);
       this.spawnPickupText(this.player.x, this.player.y - 44, `퀘스트 보상 +${done.reward}G`, "#ffd76a");
+    }
+    if (done?.expReward) {
+      this.player.gainExp(done.expReward);
+      this.spawnPickupText(this.player.x, this.player.y - 62, `경험치 +${done.expReward}`, "#8fe84a");
     }
     this.emitQuest();
     this.emitRpgState();
   }
 
   emitQuest() {
+    // 인트로 시퀀스 중 — 아리의 안내를 퀘스트 패널에 표시
+    if (this.introStep >= 0 && this.introStep < 3) {
+      EventBus.emit("quest", {
+        title: "요정 아리의 안내",
+        desc: "배너를 따라 마을을 돌아보자",
+        current: 1,
+        target: 1,
+        distance: null,
+      } satisfies QuestState);
+      return;
+    }
     const q = this.currentQuest();
     if (!q) {
       EventBus.emit("quest", {
@@ -1421,6 +1735,9 @@ export class WorldScene extends Phaser.Scene {
     let target = 1;
     if (q.type === "hunt") {
       current = Math.min(this.huntCount, q.need ?? 0);
+      target = q.need ?? 0;
+    } else if (q.type === "talk") {
+      current = Math.min(this.talkedNpcs.size, q.need ?? 0);
       target = q.need ?? 0;
     }
     let distance: number | null = null;
@@ -1522,9 +1839,10 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= 대사/배너/사운드 브릿지 ================= */
 
-  showDialogue(id: string) {
-    const d = DIALOGUE_GET(id);
+  showDialogue(id: string, npcId: string | null = null) {
+    const d = DIALOGUES[id];
     if (!d) return;
+    this.activeNpcId = npcId;
     this.dialoguing = true;
     this.player.setVelocity(0, 0);
     this.physics.world.pause();
@@ -1535,6 +1853,25 @@ export class WorldScene extends Phaser.Scene {
     this.dialoguing = false;
     this.physics.world.resume();
     EventBus.emit("dialogue:hide");
+    // 대화 닫기 키의 잔여 justDown 소비 — 스페이스로 대화 넘긴 직후 공격이 새어나가는 것 방지
+    if (this.keys) {
+      for (const k of [this.keys.SPACE, this.keys.X, this.keys.Z, this.keys.C, this.keys.E]) {
+        Phaser.Input.Keyboard.JustDown(k);
+      }
+    }
+    // 주민 대화 종료 → talk 퀘스트 진행
+    if (this.activeNpcId) {
+      const npc = this.activeNpcId;
+      this.activeNpcId = null;
+      this.onNpcTalked(npc);
+    }
+    // 예약 대사 (이름 리액션 → 마을 오프닝 등 순차 재생)
+    if (this.queuedDialogue) {
+      const next = this.queuedDialogue;
+      this.queuedDialogue = null;
+      this.time.delayedCall(60, () => this.showDialogue(next));
+      return;
+    }
     // 보스 격파 후 안내 대사 종료 시 차원문 개방 (플레이어가 포탈 위에 서 있어도
     // 대사 도중 즉시 전환되는 사고 방지 — 600ms 유예)
     if (this.pendingPortal) {
@@ -1615,7 +1952,3 @@ const STAGE_INTRO: Record<StageKey, string> = {
   niflheim: "niflIntro",
   abyss: "abyssIntro",
 };
-
-function DIALOGUE_GET(id: string) {
-  return DIALOGUES[id];
-}

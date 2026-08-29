@@ -373,7 +373,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   expNext() {
-    return Math.round(60 * Math.pow(this.lv, 1.35));
+    // 장기 성장 곡선 — 30개 퀘스트 체인 + 보스 페이즈전 기준 체감 플레이타임 확장
+    // (Lv1→2: 55, Lv5→6: 743, Lv10→11: 3,616, Lv15→16: 8,447, Lv20 총 누적 약 6만)
+    return Math.round(55 * Math.pow(this.lv, 1.72));
   }
 
   /* ---------------- RPG 기본 요소 ---------------- */

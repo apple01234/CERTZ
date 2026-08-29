@@ -212,7 +212,7 @@ function PotionButton({
         {count}
       </span>
       <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/70">
-        {kind === "hp" ? "Q" : "E"}
+        {kind === "hp" ? "Q" : "R"}
       </span>
     </button>
   );

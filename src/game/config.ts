@@ -35,6 +35,21 @@ export function writeMuted(m: boolean) {
   }
 }
 
+/** 기본 주인공 이름 — 인트로에서 이름을 정하기 전까지 대사 치환용 */
+export const DEFAULT_NAME = "세르츠";
+
+/** 플레이어 이름 (세이브 무관 전역 — DialogueBox/배너 치환용) */
+let playerName = DEFAULT_NAME;
+
+export function getPlayerName(): string {
+  return playerName;
+}
+
+export function setPlayerName(name: string) {
+  const trimmed = name.trim().slice(0, 8);
+  playerName = trimmed.length > 0 ? trimmed : DEFAULT_NAME;
+}
+
 export type SaveData = {
   stage: string;
   lv: number;
@@ -42,6 +57,8 @@ export type SaveData = {
   maxHp: number;
   atk: number;
   cleared: boolean;
+  /* ↓ 플레이어 이름 (인트로 플레이 시퀀스에서 지정 — 구 세이브 호환 기본값) */
+  playerName?: string;
   /* ↓ 2D MMORPG 기본 요소 (구 세이브 호환: 로드 시 기본값 채움) */
   gold?: number;
   potions?: { hp: number; mp: number };

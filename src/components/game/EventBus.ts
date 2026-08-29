@@ -50,3 +50,10 @@ export type EndState = {
   kills: number;
   lv: number;
 };
+
+/** 상호작용 프롬프트 상태 (NPC 대화/상점 — E키·모바일 버튼 공용) */
+export type InteractState = {
+  active: boolean;
+  label: string;
+  kind: "talk" | "shop" | null;
+};

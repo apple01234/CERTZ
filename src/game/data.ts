@@ -15,17 +15,24 @@ export const NEXT_STAGE: Record<StageKey, StageKey | null> = {
 
 export type QuestDef = {
   id: string;
-  type: "collect" | "hunt" | "reach" | "boss";
+  type: "collect" | "hunt" | "reach" | "boss" | "talk";
   title: string;
   desc: string;
-  need?: number; // hunt 몇 마리
+  need?: number; // hunt 몇 마리 / talk 몇 명
   /** hunt 대상 몬스터 키 (판정/안내용) */
   targetKey?: EnemyKey;
   targetLabel: string; // 가독성용 목표명
   reward?: number; // 완료 골드 보상 (2D MMORPG 기본 요소)
+  /** 완료 경험치 보상 — 장기 성장 곡선의 핵심 지급원 */
+  expReward?: number;
+  /** 완료 직후 재생할 마일스톤 대사 (체인 연결 스토리) */
+  dialogue?: string;
 };
 
 export type BossKey = "guardian" | "behemoth" | "abysslord";
+
+/** 보스 공격 패턴 종류 (페이즈별 풀에서 랜덤 선택) */
+export type BossAttackKind = "slam" | "charge" | "volley" | "ring" | "zones" | "summon";
 
 export type BossDef = {
   key: BossKey;
@@ -41,6 +48,10 @@ export type BossDef = {
   orbTint: number;
   /** 등장 대사 키 */
   introDialogue: string;
+  /** 페이즈별 공격 패턴 풀 (HP 66%/33% 기준 전환) */
+  patterns: { p1: BossAttackKind[]; p2: BossAttackKind[]; p3: BossAttackKind[] };
+  /** 소환 패턴이 있을 때 불러올 잡몹 */
+  summonKey?: EnemyKey;
 };
 
 export type StageDef = {
@@ -57,6 +68,8 @@ export type StageDef = {
   enemies: { key: EnemyKey; count: number }[];
   boss: boolean;
   bossKey?: BossKey; // boss=true일 때 소환할 보스
+  /** 메인 체인 완료 후 무한 반복 토벌 의뢰 (파밍/오버레벨링 — 체감 플레이타임 확장) */
+  repeat?: { targetKey: EnemyKey; need: number; gold: number; exp: number; title: string; desc: string };
 };
 
 export const STAGES: Record<StageKey, StageDef> = {
@@ -73,6 +86,15 @@ export const STAGES: Record<StageKey, StageDef> = {
     quests: [
       {
         id: "v0",
+        type: "talk",
+        title: "마을 주민과 인사",
+        desc: "주민에게 가까이 가서 E키(모바일은 버튼)로 대화해 보자.",
+        need: 2,
+        targetLabel: "마을 주민",
+        expReward: 25,
+      },
+      {
+        id: "v1",
         type: "reach",
         title: "뿌리숲으로 출발",
         desc: "마을 동쪽 차원문을 지나 뿌리숲에 도착하자.",
@@ -100,6 +122,7 @@ export const STAGES: Record<StageKey, StageDef> = {
         desc: "숲 어딘가 빛을 내는 세계수의 파편을 찾아 주워 보자.",
         targetLabel: "세계수 파편",
         reward: 40,
+        expReward: 35,
       },
       {
         id: "f1",
@@ -110,17 +133,48 @@ export const STAGES: Record<StageKey, StageDef> = {
         targetKey: "wolf",
         targetLabel: "늑대",
         reward: 60,
+        expReward: 40,
       },
       {
         id: "f2",
+        type: "hunt",
+        title: "늑대 무리 소멸",
+        desc: "심연 기운에 미친 늑대 무리 10마리를 더 처치하자!",
+        need: 10,
+        targetKey: "wolf",
+        targetLabel: "늑대",
+        reward: 110,
+        expReward: 90,
+        dialogue: "wolfRoutDone",
+      },
+      {
+        id: "f3",
+        type: "collect",
+        title: "숲 깊은 곳의 반응",
+        desc: "늑대들이 지키던 곳에서 또 하나의 빛이 느껴진다.",
+        targetLabel: "세계수 파편",
+        reward: 60,
+        expReward: 45,
+      },
+      {
+        id: "f4",
         type: "reach",
         title: "다음 지역으로",
         desc: "열린 차원문에 닿아 알프헤임으로 이동하자.",
         targetLabel: "차원문",
+        dialogue: "wolvesDone",
       },
     ],
     enemies: [{ key: "wolf", count: 4 }],
     boss: false,
+    repeat: {
+      targetKey: "wolf",
+      need: 8,
+      gold: 70,
+      exp: 70,
+      title: "[반복] 늑대 토벌 의뢰",
+      desc: "마을 토벌 의뢰 — 늑대를 계속 사냥해 골드와 경험치를 얻자.",
+    },
   },
   alfheim: {
     key: "alfheim",
@@ -142,26 +196,58 @@ export const STAGES: Record<StageKey, StageDef> = {
         targetKey: "minion",
         targetLabel: "심연 하수인",
         reward: 80,
+        expReward: 65,
       },
       {
         id: "a1",
+        type: "collect",
+        title: "경계의 빛",
+        desc: "하수인들이 숨겨둔 세계수의 파편을 되찾자.",
+        targetLabel: "세계수 파편",
+        reward: 80,
+        expReward: 55,
+      },
+      {
+        id: "a2",
+        type: "hunt",
+        title: "하수인 대소탕",
+        desc: "수호자를 부르는 의식을 막자 — 하수인 12마리 처치!",
+        need: 12,
+        targetKey: "minion",
+        targetLabel: "심연 하수인",
+        reward: 150,
+        expReward: 140,
+        dialogue: "minionPurgeDone",
+      },
+      {
+        id: "a3",
         type: "boss",
         title: "심연의 수호자",
         desc: "알프헤임을 잠식한 심연의 수호자를 쓰러뜨리자!",
         targetLabel: "심연의 수호자",
-        reward: 200,
+        reward: 220,
+        expReward: 200,
       },
       {
-        id: "a2",
+        id: "a4",
         type: "reach",
         title: "지하로 이동",
         desc: "열린 차원문에 닿아 스바르트알프헤임 동굴로 이동하자.",
         targetLabel: "차원문",
+        dialogue: "guardianDone",
       },
     ],
     enemies: [{ key: "minion", count: 5 }],
     boss: true,
     bossKey: "guardian",
+    repeat: {
+      targetKey: "minion",
+      need: 10,
+      gold: 95,
+      exp: 95,
+      title: "[반복] 경계 순찰 의뢰",
+      desc: "알프헤임 순찰 — 하수인을 계속 처치해 훈련하자.",
+    },
   },
   cave: {
     key: "cave",
@@ -181,6 +267,7 @@ export const STAGES: Record<StageKey, StageDef> = {
         desc: "뿌리가 뚫고 내려간 동굴 어딘가에서 두 번째 파편이 빛나고 있다.",
         targetLabel: "세계수 파편",
         reward: 60,
+        expReward: 65,
       },
       {
         id: "c1",
@@ -191,13 +278,47 @@ export const STAGES: Record<StageKey, StageDef> = {
         targetKey: "spider",
         targetLabel: "동굴 거미",
         reward: 90,
+        expReward: 80,
       },
       {
         id: "c2",
+        type: "hunt",
+        title: "수정 골렘 파괴",
+        desc: "거미들을 조종하는 수정 골렘 4기를 부숴 버리자.",
+        need: 4,
+        targetKey: "golem",
+        targetLabel: "수정 골렘",
+        reward: 130,
+        expReward: 110,
+      },
+      {
+        id: "c3",
+        type: "hunt",
+        title: "동굴 정화",
+        desc: "거미 둥지를 완전히 태우자 — 거미 10마리 처치!",
+        need: 10,
+        targetKey: "spider",
+        targetLabel: "동굴 거미",
+        reward: 160,
+        expReward: 150,
+        dialogue: "spiderDone",
+      },
+      {
+        id: "c4",
+        type: "collect",
+        title: "뿌리 속의 잔광",
+        desc: "세계수 뿌리 사이에서 마지막 잔광이 느껴진다.",
+        targetLabel: "세계수 파편",
+        reward: 70,
+        expReward: 70,
+      },
+      {
+        id: "c5",
         type: "reach",
         title: "설원으로 이동",
         desc: "열린 차원문에 닿아 니플헤임으로 이동하자.",
         targetLabel: "차원문",
+        dialogue: "caveDone",
       },
     ],
     enemies: [
@@ -205,6 +326,14 @@ export const STAGES: Record<StageKey, StageDef> = {
       { key: "golem", count: 3 },
     ],
     boss: false,
+    repeat: {
+      targetKey: "spider",
+      need: 10,
+      gold: 115,
+      exp: 115,
+      title: "[반복] 둥지 소개 의뢰",
+      desc: "동굴 탐사자 협회 의뢰 — 거미를 계속 사냥하자.",
+    },
   },
   niflheim: {
     key: "niflheim",
@@ -226,21 +355,56 @@ export const STAGES: Record<StageKey, StageDef> = {
         targetKey: "frostwolf",
         targetLabel: "서리 늑대",
         reward: 130,
+        expReward: 120,
       },
       {
         id: "n1",
+        type: "hunt",
+        title: "얼음 골렘 격파",
+        desc: "뿌리를 얼리고 있는 얼음 골렘 4기를 격파하자.",
+        need: 4,
+        targetKey: "icegolem",
+        targetLabel: "얼음 골렘",
+        reward: 170,
+        expReward: 150,
+      },
+      {
+        id: "n2",
+        type: "collect",
+        title: "얼음 속의 파편",
+        desc: "얼음 결정 사이에서 세계수 파편의 빛이 반짝인다.",
+        targetLabel: "세계수 파편",
+        reward: 100,
+        expReward: 90,
+      },
+      {
+        id: "n3",
+        type: "hunt",
+        title: "설원 정화",
+        desc: "보스의 권속인 서리 늑대 12마리를 처치하자!",
+        need: 12,
+        targetKey: "frostwolf",
+        targetLabel: "서리 늑대",
+        reward: 210,
+        expReward: 190,
+        dialogue: "frostRoutDone",
+      },
+      {
+        id: "n4",
         type: "boss",
         title: "눈보라의 거수",
         desc: "얼어붙은 뿌리를 지키는 거수를 쓰러뜨리자!",
         targetLabel: "눈보라의 거수",
-        reward: 280,
+        reward: 320,
+        expReward: 300,
       },
       {
-        id: "n2",
+        id: "n5",
         type: "reach",
         title: "최후의 차원문",
         desc: "열린 차원문 너머 심연의 왕좌로 향하자.",
         targetLabel: "차원문",
+        dialogue: "behemothDone",
       },
     ],
     enemies: [
@@ -249,6 +413,14 @@ export const STAGES: Record<StageKey, StageDef> = {
     ],
     boss: true,
     bossKey: "behemoth",
+    repeat: {
+      targetKey: "frostwolf",
+      need: 12,
+      gold: 145,
+      exp: 145,
+      title: "[반복] 설원 순찰 의뢰",
+      desc: "니플헤임 정찰 의뢰 — 서리 늑대를 계속 사냥하자.",
+    },
   },
   abyss: {
     key: "abyss",
@@ -270,19 +442,50 @@ export const STAGES: Record<StageKey, StageDef> = {
         targetKey: "wraith",
         targetLabel: "심연 유령",
         reward: 150,
+        expReward: 140,
       },
       {
         id: "y1",
+        type: "collect",
+        title: "살켜진 빛",
+        desc: "군주가 삼키지 못한 마지막 파편을 회수하자.",
+        targetLabel: "세계수 파편",
+        reward: 120,
+        expReward: 110,
+      },
+      {
+        id: "y2",
+        type: "hunt",
+        title: "왕좌 앞길 열기",
+        desc: "심연 유령 10마리를 처치해 왕좌의 문을 열자!",
+        need: 10,
+        targetKey: "wraith",
+        targetLabel: "심연 유령",
+        reward: 240,
+        expReward: 220,
+        dialogue: "wraithDone",
+      },
+      {
+        id: "y3",
         type: "boss",
         title: "심연의 군주",
         desc: "세계수의 마지막 파편을 삼킨 심연의 군주를 쓰러뜨리자!",
         targetLabel: "심연의 군주",
-        reward: 450,
+        reward: 600,
+        expReward: 450,
       },
     ],
     enemies: [{ key: "wraith", count: 4 }],
     boss: true,
     bossKey: "abysslord",
+    repeat: {
+      targetKey: "wraith",
+      need: 12,
+      gold: 165,
+      exp: 165,
+      title: "[반복] 왕좌 정찰 의뢰",
+      desc: "심연의 기운이 강해지고 있다 — 유령을 계속 처치하자.",
+    },
   },
 };
 
@@ -310,7 +513,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     atk: 8,
     speed: 128,
     aggro: 280,
-    exp: 14,
+    exp: 20,
     gold: [8, 14],
     dropHp: 0.3,
     dropMp: 0.2,
@@ -322,7 +525,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     atk: 11,
     speed: 104,
     aggro: 300,
-    exp: 20,
+    exp: 30,
     gold: [16, 24],
     dropHp: 0.32,
     dropMp: 0.24,
@@ -334,7 +537,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     atk: 12,
     speed: 118,
     aggro: 300,
-    exp: 26,
+    exp: 40,
     gold: [18, 26],
     dropHp: 0.3,
     dropMp: 0.22,
@@ -346,7 +549,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     atk: 15,
     speed: 74,
     aggro: 240,
-    exp: 38,
+    exp: 58,
     gold: [26, 38],
     dropHp: 0.34,
     dropMp: 0.26,
@@ -358,7 +561,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     atk: 16,
     speed: 142,
     aggro: 320,
-    exp: 32,
+    exp: 50,
     gold: [22, 32],
     dropHp: 0.3,
     dropMp: 0.22,
@@ -370,7 +573,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     atk: 18,
     speed: 70,
     aggro: 240,
-    exp: 44,
+    exp: 66,
     gold: [30, 42],
     dropHp: 0.34,
     dropMp: 0.26,
@@ -382,7 +585,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
     atk: 17,
     speed: 96,
     aggro: 320,
-    exp: 40,
+    exp: 62,
     gold: [28, 40],
     dropHp: 0.32,
     dropMp: 0.26,
@@ -393,38 +596,54 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   guardian: {
     key: "guardian",
     name: "심연의 수호자",
-    hp: 640,
+    hp: 950,
     atk: 15,
     speed: 92,
-    exp: 220,
-    gold: 200,
+    exp: 320,
+    gold: 260,
     tex: "boss",
     orbTint: 0x9d7aff,
     introDialogue: "bossIntroGuardian",
+    patterns: {
+      p1: ["slam", "charge", "volley"],
+      p2: ["slam", "charge", "volley", "ring"],
+      p3: ["slam", "charge", "volley", "ring", "zones"],
+    },
   },
   behemoth: {
     key: "behemoth",
     name: "눈보라의 거수",
-    hp: 920,
+    hp: 1500,
     atk: 18,
     speed: 84,
-    exp: 340,
-    gold: 280,
+    exp: 500,
+    gold: 380,
     tex: "boss2",
     orbTint: 0x8ad4ff,
     introDialogue: "bossIntroBehemoth",
+    patterns: {
+      p1: ["slam", "volley", "zones"],
+      p2: ["slam", "charge", "volley", "zones", "ring"],
+      p3: ["slam", "charge", "volley", "zones", "ring"],
+    },
   },
   abysslord: {
     key: "abysslord",
     name: "심연의 군주",
-    hp: 1300,
+    hp: 2200,
     atk: 22,
     speed: 98,
-    exp: 520,
-    gold: 450,
+    exp: 800,
+    gold: 600,
     tex: "boss3",
     orbTint: 0xff5a7a,
     introDialogue: "bossIntroLord",
+    patterns: {
+      p1: ["volley", "charge", "slam"],
+      p2: ["volley", "charge", "ring", "zones"],
+      p3: ["volley", "charge", "ring", "zones", "summon"],
+    },
+    summonKey: "wraith",
   },
 };
 
@@ -504,88 +723,134 @@ export const SHOP_STOCK: ItemKey[] = [
 export type DialogueDef = { speaker: string; lines: string[] };
 
 export const DIALOGUES: Record<string, DialogueDef> = {
+  introNamed: {
+    speaker: "요정 아리",
+    lines: [
+      "{name}…! 좋은 이름이야. 세계수가 기억할 이름이야.",
+      "자, {name}. 오늘부터 네 모험이 시작돼!",
+    ],
+  },
   villageIntro: {
     speaker: "요정 아리",
     lines: [
-      "세르츠, 드디어 모험을 떠나는 날이네!",
-      "마을 동쪽 차원문을 지나면 뿌리숲이야. 세계수의 파편이 떨어졌어!",
-      "출발 전에 라고스 아저씨에게 물약을 챙기면 좋아. 갔다 와!",
+      "{name}, 드디어 모험을 떠나는 날이네!",
+      "저 아래 가라앉은 아뜰란티스 — 옛 바다의 대륙이 잠들어 있는 곳이야.",
+      "그 폐허에서 번져 나온 심연이 세계수 이그드라실을 뒤틀고 있어.",
+      "마을 동쪽 차원문을 지나면 뿌리숲. 세계수의 파편이 떨어졌어!",
+      "출발 전에 라고스 아저씨에게 물약을 챙기면 좋아. 갔다 와, {name}!",
     ],
   },
   villager1: {
     speaker: "마을 주민",
     lines: [
-      "어머, 세르츠! 드디어 모험가가 되려구?",
+      "어머, {name}! 드디어 모험가가 되려구?",
       "차원문 너머 숲엔 늑대들이 돌아다녀. 물약 꼭 챙기고 다녀오렴.",
+      "…요즘 밤마다 땅 밑에서 이상한 소리가 들려.",
+      "아뜰란티스의 폐허가 다시 숨을 쉬기 시작한 게 분명해. 조심하게!",
     ],
   },
   villager2: {
     speaker: "마을 아이",
     lines: [
-      "형아도 이제 진짜 모험가다! 부러워요.",
-      "저는 마을 우물을 지키고 있을게요. 꼭 이겨요!",
+      "{name} 형아도 이제 진짜 모험가다! 부러워요.",
+      "저는 마을 우물을 지키고 있을게요. 우물 물은 아프면 꼭 필요하답니다!",
+      "전설의 모험가들도 처음엔 다 마을에서 출발했대요.",
+      "꼭 이겨요, {name} 형아!",
     ],
   },
   intro: {
     speaker: "요정 아리",
     lines: [
-      "세르츠! 봤어? 저기 하늘로 빛 기둥이 솟았어.",
-      "세계수의 파편이 떨어진 거야. 파편을 찾아 주워 줘!",
+      "{name}, 봤어? 저기 하늘로 빛 기둥이 솟았어.",
+      "세계수의 파편이 떨어진 거야. 파편은 이그드라실의 힘 그 자체야.",
+      "심연도 그 빛을 노리고 있어. 서두르자!",
       "숲이 어두우니, 빛나는 기둥과 화살표를 따라가 보자.",
     ],
   },
   fragment: {
-    speaker: "세르츠",
+    speaker: "{name}",
     lines: [
       "이게… 세계수의 파편! 몸에 힘이 넘쳐흘러.",
       "공격력이 올라간 것 같아. 이제 이 검으로 숲을 지키자!",
     ],
   },
+  wolfRoutDone: {
+    speaker: "요정 아리",
+    lines: [
+      "늑대 무리가 완전히 흩어졌어!",
+      "…그런데 이상해. 무리의 왕이 없었어. 저마다 뭔가에 이끌리듯 동쪽으로 달려갔었지.",
+      "심연의 기운이 숲을 지나 더 깊은 곳으로 흘러가고 있어, {name}.",
+    ],
+  },
   wolvesDone: {
     speaker: "요정 아리",
     lines: [
-      "늑대를 전부 처리했네! 저기 차원문이 열리고 있어!",
+      "숲이 조금씩 눈을 뜨고 있어! 저기 차원문이 열리고 있어!",
       "빛나는 차원문으로 들어가면 알프헤임에 도착할 거야.",
+      "가자, {name}. 심연의 근원을 향해 더 내려가 보자!",
     ],
   },
   alfheimIntro: {
     speaker: "요정 아리",
     lines: [
       "알프헤임에 도착했어… 하지만 공기가 무거워.",
-      "심연의 기운이야. 하수인들을 먼저 정리하자!",
+      "심연의 기운이야. 요정들의 숲이 통째로 잠식당하고 있어.",
+      "저 하수인들은 심연의 전령 — 놈들이 의식을 마치기 전에 끊어야 해.",
+      "하수인들을 먼저 정리하자, {name}!",
+    ],
+  },
+  minionPurgeDone: {
+    speaker: "요정 아리",
+    lines: [
+      "하수인들이 전부 물러났어! 의식은 막았어.",
+      "…하지만 의식의 진앙에서 기운이 모이고 있어. 뭔가가 깨어나는 중이야.",
+      "준비됐지, {name}? 심연의 수호자가 올 거야!",
     ],
   },
   bossIntroGuardian: {
     speaker: "심연의 수호자",
-    lines: ["…세계수의 빛을 든 자여. 여기서 끝장내 주지."],
+    lines: [
+      "…세계수의 빛을 든 자여. 여기서 끝장내 주지.",
+      "가라앉은 아뜰란티스처럼, 너의 세계도 어둠에 잠길 것이다!",
+    ],
   },
   guardianDone: {
     speaker: "요정 아리",
     lines: [
       "수호자를 쓰러뜨렸는데도… 심연이 사라지지 않아!",
       "수호자는 경계의 문지기일 뿐이었어. 근원은 세계수 뿌리가 뚫고 내려간 더 깊은 곳…",
-      "저기 새 차원문이 열렸어! 동굴에서 두 번째 파편 빛이 느껴져. 가자, 세르츠!",
+      "저기 새 차원문이 열렸어! 동굴에서 두 번째 파편 빛이 느껴져. 가자, {name}!",
     ],
   },
   caveIntro: {
     speaker: "요정 아리",
     lines: [
       "스바르트알프헤임… 세계수의 뿌리가 꿰뚫은 지하 동굴이야.",
-      "어둠 속엔 심연에 물든 거미와 골렘이 돌아다녀. 조심해!",
-      "파편의 빛기둥과 화살표를 따라가 보자.",
+      "여긴 옛 아뜰란티스 사람들이 빛나던 수정을 캐던 곳이래.",
+      "지금은 어둠이 수정을 삼켰어. 심연에 물든 거미와 골렘이 돌아다녀. 조심해!",
+      "파편의 빛기둥과 화살표를 따라가 보자, {name}.",
     ],
   },
   fragment2: {
-    speaker: "세르츠",
+    speaker: "{name}",
     lines: [
       "두 번째 파편! 온몸에 세계수 뿌리의 힘이 스며든다…",
-      "어둠이 깊어질수록 이 빛은 더 밝아져. 이제 동굴을 정리하자!",
+      "어둠이 깊어질수록 이 빛은 더 밝아져.",
+      "동굴을 정리하고, 설원 너머로 나아가자!",
+    ],
+  },
+  spiderDone: {
+    speaker: "요정 아리",
+    lines: [
+      "거미 둥지가 완전히 정리됐어! 동굴의 수정이 다시 빛을 내기 시작해.",
+      "…{name}, 봐. 뿌리를 타고 위쪽이 아니라 아래쪽으로 얼음기운이 흘러.",
+      "심연의 근원은 더 깊은 곳에 있어. 마지막 파편도 그 근처에 있대.",
     ],
   },
   caveDone: {
     speaker: "요정 아리",
     lines: [
-      "거미들을 전부 정리했네! 동굴 반대편 차원문이 열리고 있어!",
+      "동굴 반대편 차원문이 열리고 있어!",
       "저 문 너머는 니플헤임 — 세계수에서 가장 추운 뿌리 끝이야.",
     ],
   },
@@ -594,41 +859,64 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     lines: [
       "니플헤임이야… 숨만 쉴어도 몸이 얼어붙는 곳.",
       "설원의 서리 늑대들이 파편의 빛을 가리고 있어!",
-      "먼저 힘을 비교해 보고, 얼어붙은 뿌리를 지키는 '그것'을 처리하자.",
+      "보스는 얼어붙은 뿌리 한가운데 잠들어 있대. '눈보라의 거수'…",
+      "먼저 힘을 비교해 보고, 뿌리를 지키는 '그것'을 처리하자, {name}.",
+    ],
+  },
+  frostRoutDone: {
+    speaker: "요정 아리",
+    lines: [
+      "설원이 조용해졌어… 이제 얼어붙은 뿌리의 주인만 남았어.",
+      "{name}, 곧 보스전이야. 물약 확인했지?",
+      "이기면 마지막 차원문이 열려. 진정하고 가자!",
     ],
   },
   bossIntroBehemoth: {
     speaker: "눈보라의 거수",
-    lines: ["…이 뿌리는 이제 심연의 것이다. 얼어붙어라!"],
+    lines: [
+      "…이 뿌리는 이제 심연의 것이다. 얼어붙어라!",
+      "아뜰란티스가 그랬던 것처럼, 너희의 숨결도 얼음 아래 가라앉힐 것이다!",
+    ],
   },
   behemothDone: {
     speaker: "요정 아리",
     lines: [
       "거수가 무너지자 얼어붙은 차원문이 녹아나고 있어!",
       "…그런데 저 마지막 문에서 느껴지는 기운은 달라. 심연의 왕좌로 가는 길이야.",
-      "마지막이야, 세르츠. 준비됐지?",
+      "마지막이야, {name}. 준비됐지?",
     ],
   },
   abyssIntro: {
     speaker: "요정 아리",
     lines: [
-      "…여기가 심연의 왕좌야. 세계수의 마지막 파편이 저 안에 있어.",
+      "…여기가 심연의 왕좌야. 아뜰란티스의 침몰이 시작된 바로 그 자리…",
+      "세계수의 마지막 파편이 저 안에 있어.",
       "왕좌를 지키는 유령들을 정리하면 군주가 나타날 거야.",
-      "군주를 쓰러뜨리면 세계수의 빛이 돌아와. 부탁해, 세르츠!",
+      "군주를 쓰러뜨리면 세계수의 빛이 돌아와. 부탁해, {name}!",
+    ],
+  },
+  wraithDone: {
+    speaker: "요정 아리",
+    lines: [
+      "왕좌 앞이 비었다… 이제 마지막 전투만 남았어.",
+      "{name}, 네 손에 세 개의 파편 빛이 모여 있어.",
+      "심호흡 한번 하고… 진정해. 세계수가 함께할 거야!",
     ],
   },
   bossIntroLord: {
     speaker: "심연의 군주",
     lines: [
       "작은 파편 수집가가 여기까지 왔군…",
-      "세계수의 빛도, 이 세계도 전부 심연으로 귀할 것이다!",
+      "나는 가라앉은 왕국의 원한이다. 아뜰란티스와 함께, 모든 것이 심연으로 귀할 것이다!",
+      "세계수의 빛도, 이 세계도, 네 이름조차도 — 전부 잊히리라!",
     ],
   },
   victory: {
     speaker: "요정 아리",
     lines: [
-      "해냈어, 세르츠…! 세계수의 빛이 모든 뿌리를 따라 퍼지고 있어!",
+      "해냈어, {name}…! 세계수의 빛이 모든 뿌리를 따라 퍼지고 있어!",
       "동굴도, 설원도, 심연의 왕좌도 다시 빛을 되찾았어.",
+      "가라앉은 아뜰란티스의 영혼들도 이제 평온해질 거야.",
       "고마워… 이 모험은 이제 진짜 전설이 될 거야!",
     ],
   },
