@@ -212,3 +212,5 @@ Work Log:
 Stage Summary:
 - 산출물: download/SERTZ-v2.3.apk (16.7MB, v2.3 7건 전부 포함 — 몬스터 증원/리젠 단축, 자동배분 폴백, 라고스 반복의뢰, 정사각 실내, 채팅 자가복구, 재입장 대사 1회화)
 - 다운로드 직링: https://github.com/apple01234/CERTZ/raw/main/download/SERTZ-v2.3.apk
+- ⚠️ 원격 리포지토리가 private 확인 → 익명 raw 접근 404, 로그인(소유자/협업자) 상태에서는 정상 다운로드(206 확인).
+  공유용 공개 직링이 필요하면 리포지토리 공개 전환 필요 (Settings → General → Danger Zone → Change visibility)
