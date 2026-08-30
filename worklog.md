@@ -629,3 +629,24 @@ Stage Summary:
 - v1.6 = 현재 HEAD = v1.1 최대 콘텐츠 + 타격감 + 타일개선 + 이전 효과음 (롤백 불필요 증명)
 - 사용자 전달 경로: ①소스 zip 덮어쓰기 ②미리보기 링크 ③토큰 제공 시 GitHub push
 - 제약 준수: APK 미빌드 (사용자 명시 시), 푸시 보류 (토큰 없음 + 사용자 발화 필요)
+
+---
+Task ID: audit-1
+Agent: Super Z (main)
+Task: 사용자 지시 "ff9c04c" — 타격감 커밋 기준 현재 코드 전수 비교 + 기능 실측 증명
+
+Work Log:
+- git diff ff9c04c..HEAD (src/package/android/audio): 84파일, +75줄/-3줄 — 실질 변경은
+  BootScene 타일 TX 로딩(+9)과 WorldScene buildGroundBlend 지형 프린지(+62)뿐 (나머지 0줄 모드변경)
+- ff9c04c 타격감 3요소 전부 현행 존재 확인: src/game/fx/ImpactFX.ts(셰이크 등급 프로파일),
+  src/game/ai/FSM.ts(범용 AI), src/game/collision/sweep.ts(선분-AABB 스윕) — 삭제 0
+- 기능 감사: 상점(라코스 구매+강화)/가방/장신구/퀘스트 30/HUD 퀘스트 트래커/BGM 3종(field·boss·title)/
+  멀티터치 가상패드 — 전부 존재. 멀티플레이(네트워크)·키맵핑 UI는 ff9c04c 포함 전 커밋에 존재한 적 없음
+- 브라우저 E2E 실측: 타이틀 v1.6 배지 → 새로운 모험 → 월드 진입 → X 공격 2회 → I 가방 패널
+  (HP/MP 물약 사용, 장비 장착중, 장신구, 30G) → HUD 퀘스트 "왕국의 위협 (1/4)" — 콘솔 에러 0
+- 증거 스크린샷 4장: download/proof-v1.6/ (1-title, 2-world-attack, 3-bag-panel, 4-hud)
+
+Stage Summary:
+- ff9c04c는 현재 v1.6(HEAD)에 100% 포함 — "ff9c04c로 되돌리기" 불필요, 오히려 되돌리면 타일 개선·v1.6 표식만 손실
+- 사용자 불만(기능 없음/타격감 없음)의 원인은 여전히 구버전 빌드 실행(GitHub 13커밋 뒤처짐, ahead 13)
+- 미결: 멀티플레이·키맵핑은 신규 개발 과제 (키맵핑=소규모, 멀티=서버 필요 별도 협의)
