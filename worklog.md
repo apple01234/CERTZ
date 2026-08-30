@@ -493,3 +493,36 @@ Work Log:
 
 Stage Summary:
 - v1.1: 체감 플레이타임 대폭 확장 (퀘 30개+반복의뢰+보스 페이즈전+성장곡선) + 조작 개선 (E/스페이스) + 플레이형 오프닝
+
+---
+Task ID: fx-1
+Agent: Super Z (main)
+Task: 사용자 3개 프롬프트 실전 적용 — 히트스톱+카메라 셰이크 / 거리 기반 FSM AI / 선분-AABB 스윕 충돌
+
+Work Log:
+- 신규 모듈 3종:
+  - src/game/fx/ImpactFX.ts — 히트스톱(물리 정지)+카메라 셰이크 등급 프로파일 (basic/crit/skill)
+  - src/game/ai/FSM.ts — 범용 유한 상태 머신 (enter/update/exit 훅 + timeInState)
+  - src/game/collision/sweep.ts — Liang-Barsky 선분-AABB 스윕 판정 (segmentHitsRect/sweptHitsTarget)
+- 기본공격 흔들림 과다 피드백 반영 (타격감 유지): WorldScene.onMeleeConnect → ImpactFX 위임
+  - 기존: 전 타격 공통 shake(70ms, 0.006) + 히트스톱 65ms
+  - 신규: basic 셰이크 45ms/0.0018 (약 70% 절제, 히트스톱 65ms 유지) / crit 110ms/0.0035+히트스톱 90ms / skill 110ms/0.003+70ms
+  - checkMeleeHit가 anyCrit 집계 → 크리 포함 타격은 crit 프로파일 (강한 순간만 강조하는 대비)
+- Enemy.ts FSM 리팩터: wander(LONG)/chase(MID)/windup(SHORT)/cooldown — 수치·전이·연출 100% 보존
+  - resetHome은 ai.set("wander")+modeTimer로 동일 결과, GC 0(문맥 객체 재사용)
+- Player.useSkill2 돌진베기: 40ms 틱 간 "이전 위치→현재 위치" 선분 스윕 판정 추가 (sweptHitsTarget margin 6px)
+- E2E 실측 (agent-browser, 숲 세이브 주입):
+  - 테스트1: 기본공격 → kinds=["basic"], trigger 순간 physics.world.isRunning=false(히트스톱 실측), 재개 확인, 데미지 25
+  - 테스트2: FSM wander(500px)→chase(220px,실추격 dist147)→windup→cooldown(근접공격 플레이어 150→70 피해 실측)→chase 복귀
+  - 테스트3: 돌진베기 110px 대상 타격 53dmg + kinds에 "skill" 2건 (프로파일 차등 실측)
+  - 주의(테스트 노하우): 이어하기 직후 스토리 대사(dialoguing=true) 중엔 update 정지 — Space 다수 입력으로 대사 종료 후 검증
+  - 대상 즉사→destroy 시 eval 참조가 꼬므로 hp 500으로 즉사 방지 후 관측
+- page errors 0 / console 에러 0 / tsc 0 / eslint 0 / localStorage.clear() 정리
+- 커밋 ff9c04c (작성자 apple01234)
+
+Stage Summary:
+- 산출물: src/game/fx/ImpactFX.ts, src/game/ai/FSM.ts, src/game/collision/sweep.ts, entities/{Player,Enemy}.ts, scenes/WorldScene.ts
+- 타격감 3단계 등급화로 "기본공격 흔들림 과다" 해결 + 크리/스킬 대비 강화
+- 몬스터 AI가 FSM 기반이 되어 상태 추가(원거리형 keepDistance 등)가 한 줄 확장으로 가능
+- 스윕 판정은 돌진베기에 적용, 이후 투사체/얇은 벽 충돌에도 재사용 가능
+- 제약 준수: APK 미빌드, 기존 기능 삭제 0
