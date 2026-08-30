@@ -7,6 +7,7 @@ import { Drop, type DropKind } from "../entities/Drop";
 import { EventBus, type QuestState, type InteractState } from "../../components/game/EventBus";
 import { writeSave, loadSave, type SaveData, setPlayerName } from "../config";
 import { viewZoom } from "../PhaserGame";
+import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import * as audio from "../audio";
 
 /**
@@ -59,7 +60,8 @@ export class WorldScene extends Phaser.Scene {
   private fragSparkle: Phaser.GameObjects.Sprite | null = null;
 
   private questTimer: Phaser.Time.TimerEvent | null = null;
-  private hitStopActive = false;
+  /** 히트스톱/카메라 셰이크 등급 프로파일 (기본공격 절제 / 크리·스킬 강조) */
+  impactFX!: ImpactFX;
   // 스테이지별 누적 킬 (퀘스트 순서와 무관하게 토벌 진행 유지 — 소프트락 방지)
   private killTotals: Record<string, number> = {};
   // 리스폰: 원래 스폰 지점 기록 (파밍 루프 — 사냥→골드→상점 순환이 적 소진으로 끊기지 않게)
@@ -119,7 +121,6 @@ export class WorldScene extends Phaser.Scene {
     this.fragSparkle = null;
     this.dialoguing = false;
     this.attackQueued = false;
-    this.hitStopActive = false;
     this.killTotals = {};
     this.spawnRecords = [];
     this.savedQuestIdx = {};
@@ -158,6 +159,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   create() {
+    this.impactFX = new ImpactFX(this);
     const data = this.registry.get("initData") as {
       stage?: StageKey;
       save?: SaveData;
@@ -1004,18 +1006,12 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= 히트스톱 / 타격감 ================= */
 
-  /** F5: 명중 시 65ms 전체 정지 + 흔들림 강화 — '베인' 느낌의 핵심 */
-  onMeleeConnect(_hits: number) {
+  /** F5: 명중 시 히트스톱 + 등급별 카메라 셰이크 — '베인' 느낌의 핵심.
+   *  기본공격(basic)은 히트스톱 65ms 유지로 타격감을 살리고 흔들림은 최소로 절제,
+   *  크리티컬(crit)/스킬(skill)만 더 강한 흔들림으로 대비를 만든다. (피드백: 기본공격 흔들림 과다) */
+  onMeleeConnect(_hits: number, profile: ImpactKind = "basic") {
     audio.sfx.hit();
-    if (!this.hitStopActive) {
-      this.hitStopActive = true;
-      this.physics.world.pause();
-      this.time.delayedCall(65, () => {
-        this.physics.world.resume();
-        this.hitStopActive = false;
-      });
-    }
-    this.cameras.main.shake(70, 0.006);
+    this.impactFX.trigger(profile);
   }
 
   onEnemyKilled(key: EnemyKey, exp: number, spawnX: number, spawnY: number) {

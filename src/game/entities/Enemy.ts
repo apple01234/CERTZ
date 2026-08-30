@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import { ENEMIES, type EnemyDef, type EnemyKey } from "../data";
+import { FSM, type FSMState } from "../ai/FSM";
 
 /** 종별 물리/판정 크기 + 리스폰 버스트 색 */
 const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: number; burst: number }> = {
@@ -13,7 +14,28 @@ const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: numbe
   wraith: { bw: 18, bh: 24, hw: 30, hh: 32, burst: 0xbe96eb },
 };
 
-/** 일반 몬스터 — 상태머신 AI, 풀링 친화적 단순 구조 */
+/**
+ * FSM 문맥 — 매 프레임 거리 밴드 판정에 필요한 값 (객체 재사용 → GC 0)
+ * 거리 밴드: LONG(어그로 밖) / MID(어그로 이내) / SHORT(근접 공격 범위)
+ */
+interface AICtx {
+  enemy: Enemy;
+  player: PlayerLike;
+  dist: number;
+  toPlayer: Phaser.Math.Vector2;
+  vx: number;
+  vy: number;
+}
+
+/**
+ * 일반 몬스터 — 거리 기반 FSM 상태머신 AI (풀링 친화적 단순 구조)
+ *
+ *   wander(LONG: 배회) → chase(MID: 추격) → windup(SHORT: 예고 후 공격) → cooldown(물러남) → chase…
+ *
+ * 상태 전이 규칙과 모든 수치는 FSM 도입 전과 동일하다 (구조 개선 — 동작 보존).
+ * 상태 추가 예시: 원거리형 몬스터라면 chase와 windup 사이에 "keepDistance(사거리 유지)" 상태를
+ * FSM에 add() 한 줄로 끼워 넣으면 된다.
+ */
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
 
@@ -25,7 +47,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   hitW = 40;
   hitH = 30;
 
-  private mode: "wander" | "chase" | "windup" | "cooldown" = "wander";
   private modeTimer = 0;
   private wanderDir = new Phaser.Math.Vector2();
   private knockVec = new Phaser.Math.Vector2();
@@ -42,6 +63,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private hpBarBg: Phaser.GameObjects.Rectangle | null = null;
   private hitFlash = 0;
 
+  private ai: FSM<AICtx>;
+  private aiCtx: AICtx;
+
   constructor(scene: WorldScene, x: number, y: number, key: EnemyKey) {
     super(scene, x, y, `${key}_idle0`);
     this.def = ENEMIES[key];
@@ -49,6 +73,80 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.maxHp = this.def.hp;
     this.homeX = x;
     this.homeY = y;
+
+    /* ---------- 거리 기반 FSM 상태 등록 ---------- */
+    this.aiCtx = {
+      enemy: this,
+      player: null as unknown as PlayerLike,
+      dist: 0,
+      toPlayer: new Phaser.Math.Vector2(),
+      vx: 0,
+      vy: 0,
+    };
+    this.ai = new FSM<AICtx>(this.aiCtx);
+    const wanderState: FSMState<AICtx> = {
+      name: "wander", // LONG — 어그로 밖: 배회
+      update: (c) => {
+        const e = c.enemy;
+        if (e.modeTimer <= 0) {
+          e.modeTimer = Phaser.Math.Between(900, 2200);
+          if (Math.random() < 0.45) e.wanderDir.set(0, 0);
+          else e.wanderDir.set(Phaser.Math.Between(-1, 1), Phaser.Math.Between(-1, 1)).normalize();
+        }
+        c.vx = e.wanderDir.x * e.def.speed * 0.35;
+        c.vy = e.wanderDir.y * e.def.speed * 0.35;
+        if (c.dist < e.def.aggro && c.player.hp > 0) {
+          e.modeTimer = 400;
+          return "chase";
+        }
+      },
+    };
+    const chaseState: FSMState<AICtx> = {
+      name: "chase", // MID — 어그로 이내: 추격
+      update: (c) => {
+        const e = c.enemy;
+        c.vx = c.toPlayer.x * e.def.speed;
+        c.vy = c.toPlayer.y * e.def.speed;
+        if (c.dist <= 44 && c.player.hp > 0) {
+          e.modeTimer = 340;
+          return "windup"; // SHORT — 근접: 예고 동작 진입
+        } else if (c.dist > e.def.aggro * 1.5) {
+          e.modeTimer = 600;
+          return "wander";
+        }
+      },
+    };
+    const windupState: FSMState<AICtx> = {
+      name: "windup", // SHORT — 공격 예고: 제자리 부들부들
+      enter: (c) => c.enemy.setTint(0xffb0a0), // 예고 플래시
+      update: (c) => {
+        const e = c.enemy;
+        c.vx = Math.sin(e.scene.time.now * 0.06) * 12;
+        c.vy = 0;
+        if (e.modeTimer <= 0) {
+          if (c.dist <= 58) {
+            c.player.takeDamage(e.def.atk, c.toPlayer);
+          }
+          e.modeTimer = 620;
+          return "cooldown";
+        }
+      },
+    };
+    const cooldownState: FSMState<AICtx> = {
+      name: "cooldown", // 공격 후 — 살짝 물러남
+      enter: (c) => c.enemy.clearTint(),
+      update: (c) => {
+        c.vx = -c.toPlayer.x * c.enemy.def.speed * 0.3;
+        c.vy = -c.toPlayer.y * c.enemy.def.speed * 0.3;
+        if (c.enemy.modeTimer <= 0) {
+          c.enemy.modeTimer = 0;
+          return "chase";
+        }
+      },
+    };
+    this.ai.add(wanderState, chaseState, windupState, cooldownState);
+    this.ai.set("wander");
+
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(9);
@@ -78,69 +176,25 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     // 넉백 감쇠 (죽은 뒤 제외 — destroy 후 접근 방지)
     if (this.active) this.knockVec.scale(Math.pow(0.0016, dt / 1000));
 
-    const dist = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
-    const toPlayer = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
+    // FSM 문맥 갱신 — 거리/방향을 1회 계산해 상태들과 공유
+    const c = this.aiCtx;
+    c.player = player;
+    c.dist = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
+    c.toPlayer.set(player.x - this.x, player.y - this.y).normalize();
+    c.vx = 0;
+    c.vy = 0;
 
-    let vx = 0;
-    let vy = 0;
+    this.ai.update(dt);
 
-    switch (this.mode) {
-      case "wander": {
-        if (this.modeTimer <= 0) {
-          this.modeTimer = Phaser.Math.Between(900, 2200);
-          if (Math.random() < 0.45) this.wanderDir.set(0, 0);
-          else
-            this.wanderDir.set(
-              Phaser.Math.Between(-1, 1),
-              Phaser.Math.Between(-1, 1)
-            ).normalize();
-        }
-        vx = this.wanderDir.x * this.def.speed * 0.35;
-        vy = this.wanderDir.y * this.def.speed * 0.35;
-        if (dist < this.def.aggro && player.hp > 0) this.setMode("chase", 400);
-        break;
-      }
-      case "chase": {
-        vx = toPlayer.x * this.def.speed;
-        vy = toPlayer.y * this.def.speed;
-        if (dist <= 44 && player.hp > 0) {
-          this.setMode("windup", 340);
-          this.setTint(0xffb0a0); // 예고 플래시
-        } else if (dist > this.def.aggro * 1.5) {
-          this.setMode("wander", 600);
-        }
-        break;
-      }
-      case "windup": {
-        // 공격 예고: 제자리에서 부들부들
-        vx = Math.sin(this.scene.time.now * 0.06) * 12;
-        vy = 0;
-        if (this.modeTimer <= 0) {
-          if (dist <= 58) {
-            player.takeDamage(this.def.atk, toPlayer);
-          }
-          this.setMode("cooldown", 620);
-          this.clearTint();
-        }
-        break;
-      }
-      case "cooldown": {
-        vx = -toPlayer.x * this.def.speed * 0.3; // 살짝 물러남
-        vy = -toPlayer.y * this.def.speed * 0.3;
-        if (this.modeTimer <= 0) this.setMode("chase", 0);
-        break;
-      }
-    }
-
-    this.setVelocity(vx + this.knockVec.x, vy + this.knockVec.y);
+    this.setVelocity(c.vx + this.knockVec.x, c.vy + this.knockVec.y);
 
     // 애니메이션 & 방향
-    const moving = Math.abs(vx) + Math.abs(vy) > 12;
+    const moving = Math.abs(c.vx) + Math.abs(c.vy) > 12;
     const runKey = `${this.def.key}-run`;
     const idleKey = `${this.def.key}-idle`;
     if (moving && this.anims.currentAnim?.key !== runKey) this.play(runKey);
     else if (!moving && this.anims.currentAnim?.key !== idleKey) this.play(idleKey);
-    if (vx !== 0) this.setFlipX(vx < 0);
+    if (c.vx !== 0) this.setFlipX(c.vx < 0);
 
     // HP바
     if (this.hpBar && this.hpBarBg) {
@@ -149,11 +203,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.hpBar.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
       this.hpBar.width = Math.max(1, (24 * this.hp) / this.maxHp);
     }
-  }
-
-  private setMode(m: typeof this.mode, t: number) {
-    this.mode = m;
-    this.modeTimer = t;
   }
 
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
@@ -200,7 +249,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setPosition(this.homeX, this.homeY);
     this.knockVec.set(0, 0);
     this.setVelocity(0, 0);
-    this.setMode("wander", 600);
+    this.modeTimer = 600;
+    this.ai.set("wander");
     this.clearTint();
   }
 

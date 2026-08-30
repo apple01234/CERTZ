@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import { ITEMS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_COST, type ItemKey } from "../data";
+import { sweptHitsTarget } from "../collision/sweep";
 
 /**
  * 주인공 세르츠.
@@ -202,6 +203,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const halfW = dir.x !== 0 ? reach / 2 : width / 2;
     const halfH = dir.x !== 0 ? width / 2 : reach / 2;
     let hits = 0;
+    let anyCrit = false;
     for (const e of this.scene.getAllTargets()) {
       if (!e.active || this.hitSet.has(e)) continue;
       const tw = ((e as unknown as { hitW?: number }).hitW ?? 24) / 2;
@@ -212,12 +214,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.hitSet.add(e);
         hits++;
         const { dmg, crit } = this.rollDamage(dmgMul);
-        if (crit) this.scene.sfxCrit();
+        if (crit) {
+          this.scene.sfxCrit();
+          anyCrit = true;
+        }
         e.takeDamage(dmg, dir, knock, crit);
       }
     }
     if (hits > 0) {
-      this.scene.onMeleeConnect(hits);
+      // 크리티컬이 섞인 타격은 crit 등급 — 히트스톱 연장 + 셰이크 강조 (타격감 대비)
+      this.scene.onMeleeConnect(hits, anyCrit ? "crit" : "basic");
     }
     return hits;
   }
@@ -263,7 +269,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           e.takeDamage(dmg, away, 300, crit);
         }
       }
-      this.scene.onMeleeConnect(1);
+      this.scene.onMeleeConnect(1, "skill");
     });
     this.scene.time.delayedCall(310, () => {
       if (this.state === "attack") this.state = "idle";
@@ -295,22 +301,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       });
     }
 
-    // 돌진 중 연속 판정
+    // 돌진 중 연속 판정 — 이전 틱 위치→현재 위치 선분 스윕으로 터널링 방지
+    // (돌진 640px/s: 40ms 틱 사이 약 26px 이동 — 프레임 드롭 시 구간이 더 벌어진다)
+    let sweepFromX = this.x;
+    let sweepFromY = this.y;
     const tick = this.scene.time.addEvent({
       delay: 40,
       repeat: 4,
       callback: () => {
+        const toX = this.x;
+        const toY = this.y;
         for (const e of this.scene.getAllTargets()) {
           if (!e.active || this.hitSet.has(e)) continue;
           const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
-          if (d <= 64) {
+          // 현재 위치 원판 판정 + 이전 틱→현재 선분 스윕 판정 (둘 중 하나라도 닿으면 명중)
+          const swept = sweptHitsTarget(sweepFromX, sweepFromY, toX, toY, e, 6);
+          if (d <= 64 || swept) {
             this.hitSet.add(e);
             const { dmg, crit } = this.rollDamage(2.1);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, dir, 360, crit);
-            this.scene.onMeleeConnect(1);
+            this.scene.onMeleeConnect(1, "skill");
           }
         }
+        sweepFromX = toX;
+        sweepFromY = toY;
       },
     });
     this.scene.time.delayedCall(260, () => tick.remove());
