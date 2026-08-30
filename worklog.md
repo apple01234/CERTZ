@@ -608,3 +608,24 @@ Stage Summary:
 - 복구 경로 = GitHub push(사용자 발화 시 즉시 실행, 규칙 준수) → 사용자 git pull
 - 미리보기 플레이 시엔 링크 새로 열기(최신 서빙 확인됨)
 - 제약 준수: APK 미빌드, 푸시는 사용자 확인 전까지 보류
+
+---
+Task ID: v1.6
+Agent: Super Z (main)
+Task: 사용자 지시 "1.6 버전으로" + "제일 기능+스토리 많던 커밋 불러와" — 버전 확정·증명·전달 경로 정리
+
+Work Log:
+- 버전 1.6 통일: package.json 0.2.1→1.6.0, android versionCode 1→2/versionName 1.0→1.6,
+  타이틀 부제 옆 v1.6 배지 추가 (Overlays.tsx) — 커밋 b43af2c, 브라우저 렌더 확인
+- "가장 기능+스토리 많던 커밋" 조사: orphan/소실 커밋 0 (fsck), 
+  현재 HEAD vs 9ea6543(v1.1 최대 콘텐츠 커밋) — data.ts·DialogueBox.tsx diff 0줄 (100% 포함)
+- 증명: 현재 data.ts 923줄(퀘스트 30/스토리 확장) vs GitHub origin/main 635줄(구버전, 퀘스트 15)
+  → 사용자가 보는 "기능 적은 버전"은 GitHub 뒤처진 복사본, 삭제된 것 없음
+- GitHub push 시도 불가 확인: 인증 토큰(.gh_*) 워크스페이스 리셋으로 소실, gh CLI/credential 없음
+- 전달용 산출물: download/SERTZ-v1.6-src.zip (4.1MB, 415파일 — src/public/android/설정만, 
+  349MB 전체번들·81MB 증분번들은 용량 과다로 폐기, upload/ 에셋원본 zip 커밋 포함이 원인)
+
+Stage Summary:
+- v1.6 = 현재 HEAD = v1.1 최대 콘텐츠 + 타격감 + 타일개선 + 이전 효과음 (롤백 불필요 증명)
+- 사용자 전달 경로: ①소스 zip 덮어쓰기 ②미리보기 링크 ③토큰 제공 시 GitHub push
+- 제약 준수: APK 미빌드 (사용자 명시 시), 푸시 보류 (토큰 없음 + 사용자 발화 필요)
