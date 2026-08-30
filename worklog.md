@@ -669,3 +669,21 @@ Stage Summary:
 - ff9c04c 직접 실행 확인 완료: 내용물이 현재 v1.6에 100% 포함됨을 실행 레벨로 재증명
 - 롤백 불필요 — 되돌릴 경우 타일 개선·v1.6 표식만 손실
 - 사용자 체감 문제의 근원은 구버전 빌드(GitHub origin/main 뒤처짐) 실행으로 동결
+
+---
+Task ID: push-1
+Agent: Super Z (main)
+Task: 사용자 제공 GitHub 토큰으로 미푸시 커밋 전부 push (동기화 경로 확정)
+
+Work Log:
+- 토큰 수신 → /home/z/my-project/.gh_token 저장 (chmod 600, .gh_* gitignore 확인)
+- ls-remote로 토큰 검증: GitHub HEAD = 1b520f4 (구버전, 예상과 일치)
+- push: `git push https://x-access-token:<TOKEN>@github.com/apple01234/CERTZ.git main`
+  → 성공: 1b520f4..e81b8ab main -> main (15커밋: 9ea6543 최대콘텐츠, ff9c04c 타격감,
+    4ac0324 타일, b35e190 효과음 롤백, b43af2c v1.6 등 전부 포함)
+- fetch + status 검증: main...origin/main 동기화 완료 (ahead/behind 0)
+
+Stage Summary:
+- GitHub과 로컬 완전 동기화 — 사용자는 `git pull → npm install → npm run dev`로 신버전 플레이 가능
+- 이후 push는 .gh_token 사용 (사용자 발화 시), 토큰은 사용자가 언제든 GitHub에서 폐기/재발급 가능
+- 로컬 변경 사항 있을 시 git stash → pull 순서 안내 필요
