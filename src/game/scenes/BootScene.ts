@@ -81,6 +81,8 @@ const ASSET_LIST = [
   // 시작 마을 (인간들의 마을)
   "npc_villager1", "npc_villager2",
   "house_a", "house_b", "well",
+  // 펫 (v1.9 BM)
+  "pet_slime", "pet_pixie",
   // VFX (외부 에셋)
   "slash0", "slash1", "slash2", "slash3", "slash4", "slash5",
   "shock_ring",

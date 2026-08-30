@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
-import { ITEMS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_COST, type ItemKey } from "../data";
+import {
+  ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_COST,
+  type ItemKey, type BuffKey, type PetKey, type CosmeticKey,
+} from "../data";
 import {
   classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf,
   type ClassKey, type ClassBonus,
@@ -39,6 +42,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** 경로 누적 보너스 캐시 — cls 변경 시에만 갱신 (getter 프레임 호출 부담 제거) */
   private clsBonus: ClassBonus = bonusOf(null);
   private potCd = 0;
+
+  /* ----- AP 스탯 (v1.9 — 메이플식 4스탯, 레벨업당 AP +5) ----- */
+  stats: { str: number; dex: number; int: number; luk: number } = { str: 5, dex: 5, int: 5, luk: 5 };
+  ap = 0;
+
+  /* ----- BM (v1.9 — 버프 물약 / 펫 / 치장) ----- */
+  buffItems: Partial<Record<BuffKey, number>> = {};
+  /** 활성 버프 — remain 감소, 같은 버프 재사용 시 시간 갱신 */
+  buffs: { key: BuffKey; remain: number; total: number }[] = [];
+  pets: PetKey[] = [];
+  pet: PetKey | null = null;
+  cosmetics: CosmeticKey[] = [];
+  cosmetic: CosmeticKey | null = null;
 
   /** 기본 크리티컬 확률 (%) — 장신구로 증가 */
   private static readonly BASE_CRIT = 8;
@@ -104,6 +120,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.skill2Cd = Math.max(0, this.skill2Cd - ms);
     this.iframes = Math.max(0, this.iframes - ms);
     this.potCd = Math.max(0, this.potCd - ms);
+    this.tickBuffs(ms);
 
     // 마나 리젠
     this.mpRegenAcc += ms;
@@ -453,7 +470,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   gainExp(v: number) {
-    this.exp += v;
+    // 지혜의 물약 — 경험치 +50% 버프 (v1.9 BM)
+    const gain = this.hasBuff("buff_exp") ? Math.round(v * 1.5) : v;
+    this.exp += gain;
     let leveled = false;
     while (this.exp >= this.expNext()) {
       this.exp -= this.expNext();
@@ -462,6 +481,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.maxHp += 18;
       this.maxMp += 6; // 레벨업 MP 성장
       this.atk += 3;
+      this.ap += 5; // AP 스탯 포인트 (v1.9 — 메이플식 레벨업 5포인트)
       this.hp = this.maxHp;
       this.mp = this.maxMp;
     }
@@ -523,28 +543,114 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.recalcSpeed();
   }
 
-  /** 기본 속도 × 경로 누적 속도 보너스 (합산 → 곱) */
+  /** 세이브 로드 후 속도 재계산 (버프 포함 — recalcSpeed 공개 래퍼) */
+  recalcSpeedForLoad() {
+    this.recalcSpeed();
+  }
+
+  /* ---------------- AP 스탯 (v1.9 — 메이플식 4스탯) ---------------- */
+
+  /** 스탯 배분 — 즉시 효과 적용 (힘=공격/민첽=크리는 getter에서 반영, 지력=MP/행운=HP는 여기서 가산) */
+  allocateStat(k: "str" | "dex" | "int" | "luk", n: number): boolean {
+    if (n <= 0 || this.ap < n) return false;
+    this.ap -= n;
+    this.stats[k] += n;
+    if (k === "int") {
+      this.maxMp += 4 * n;
+      this.mp = Math.min(this.maxMp, this.mp + 4 * n);
+    } else if (k === "luk") {
+      this.maxHp += 5 * n;
+      this.hp = Math.min(this.maxHp, this.hp + 5 * n);
+    }
+    this.scene.emitHud();
+    return true;
+  }
+
+  /* ---------------- 버프 (v1.9 BM — 지속시간 효과) ---------------- */
+
+  hasBuff(key: BuffKey): boolean {
+    return this.buffs.some((b) => b.key === key);
+  }
+
+  addBuffItem(key: BuffKey, n = 1) {
+    this.buffItems[key] = (this.buffItems[key] ?? 0) + n;
+    this.scene.emitHud();
+  }
+
+  /** 버프 물약 사용 — 소지품 차감 + 활성 버프 갱신 */
+  useBuffItem(key: BuffKey): boolean {
+    const def = BUFF_DEFS[key];
+    if (!def || (this.buffItems[key] ?? 0) <= 0) return false;
+    this.buffItems[key] = (this.buffItems[key] ?? 0) - 1;
+    const existing = this.buffs.find((b) => b.key === key);
+    if (existing) {
+      existing.remain = def.duration; // 같은 버프 재사용 — 시간 갱신
+      existing.total = def.duration;
+    } else {
+      this.buffs.push({ key, remain: def.duration, total: def.duration });
+    }
+    this.recalcSpeed(); // 신속 물약 반영
+    this.scene.sfxPotion();
+    this.scene.spawnPickupText(this.x, this.y - 34, `${def.name}! ${def.desc}`, def.color);
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 버프 틱 — update에서 매 프레임 호출, 만료 시 해제 */
+  private tickBuffs(ms: number) {
+    if (this.buffs.length === 0) return;
+    const before = this.buffs.length;
+    for (const b of this.buffs) b.remain -= ms;
+    const expired = this.buffs.filter((b) => b.remain <= 0);
+    this.buffs = this.buffs.filter((b) => b.remain > 0);
+    if (expired.length > 0) {
+      for (const b of expired) {
+        if (b.key === "buff_spd") this.recalcSpeed();
+        const def = BUFF_DEFS[b.key];
+        this.scene.spawnPickupText(this.x, this.y - 30, `${def.name} 효과 종료`, "#ffffff");
+      }
+      this.scene.emitHud();
+    } else if (before > 0) {
+      // 남은 시간 HUD 갱신 — 초 단위 변화 시에만 emit (프레임 부담 절감)
+      this.buffEmitAcc += ms;
+      if (this.buffEmitAcc >= 500) {
+        this.buffEmitAcc = 0;
+        this.scene.emitHud();
+      }
+    }
+  }
+  private buffEmitAcc = 0;
+
+  /** 기본 속도 × 경로 누적 속도 보너스 × 신속 버프 (합산 → 곱) */
   private recalcSpeed() {
-    this.speed = Math.round(Player.BASE_SPEED * (1 + this.clsBonus.speedPct / 100));
+    const buff = this.hasBuff("buff_spd") ? 1.25 : 1;
+    this.speed = Math.round(Player.BASE_SPEED * (1 + this.clsBonus.speedPct / 100) * buff);
   }
 
   /* ---------------- RPG 기본 요소 ---------------- */
 
-  /** 장비+강화+클래스 경로 포함 실제 공격력 */
+  /** 장비+강화+클래스 경로+힘 스탯 포함 실제 공격력 (v1.9: 힘 +0.3/점, 분노 버프 +25%) */
   get atkTotal(): number {
-    const base = this.atk + (ITEMS[this.weapon].atk ?? 0) + this.upgrades.weapon * 2;
-    return Math.round(base * (1 + this.clsBonus.atkPct / 100));
+    const base = this.atk + (ITEMS[this.weapon].atk ?? 0) + this.upgrades.weapon * 2 + this.stats.str * 0.3;
+    const buff = this.hasBuff("buff_atk") ? 1.25 : 1;
+    return Math.round(base * (1 + this.clsBonus.atkPct / 100) * buff);
   }
 
-  /** 장비+강화+클래스 경로 포함 실제 방어력 */
+  /** 장비+강화+클래스 경로 포함 실제 방어력 (v1.9: 수호 버프 +8) */
   get defTotal(): number {
-    return (ITEMS[this.armor].def ?? 0) + this.upgrades.armor + this.clsBonus.defAdd;
+    const buff = this.hasBuff("buff_def") ? 8 : 0;
+    return (ITEMS[this.armor].def ?? 0) + this.upgrades.armor + this.clsBonus.defAdd + buff;
   }
 
-  /** 크리티컬 확률 (%) — 기본 8% + 힘의 반지 +7%p + 클래스 경로 누적 */
+  /** 크리티컬 확률 (%) — 기본 8% + 힘의 반지 +7%p + 클래스 경로 누적 + 민첽 0.4%p/점 */
   get critRate(): number {
     const acc = this.accessory ? ITEMS[this.accessory].crit ?? 0 : 0;
-    return Player.BASE_CRIT + acc + this.clsBonus.critAdd;
+    return Math.round((Player.BASE_CRIT + acc + this.clsBonus.critAdd + this.stats.dex * 0.4) * 10) / 10;
+  }
+
+  /** 펫 골드 보너스 (%) — 소환 중인 펫의 효과 */
+  get petGoldBonusPct(): number {
+    return this.pet ? PET_DEFS[this.pet].bonusGoldPct : 0;
   }
 
   /** 데미지 굴림 — 크리티컬 판정 포함 (스킬은 skillMult 곱) */
@@ -634,6 +740,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.addPotion(key === "potion_hp" ? "hp" : "mp");
       return true;
     }
+    // BM (v1.9): 버프는 개수 누적, 펫/치장은 1회 구매
+    if (item.kind === "buff") {
+      this.gold -= item.price;
+      this.addBuffItem(key as BuffKey);
+      return true;
+    }
+    if (item.kind === "pet") {
+      if (this.pets.includes(key as PetKey)) return false;
+      this.gold -= item.price;
+      this.pets.push(key as PetKey);
+      this.pet = key as PetKey; // 구매 즉시 소환
+      return true;
+    }
+    if (item.kind === "cosmetic") {
+      if (this.cosmetics.includes(key as CosmeticKey)) return false;
+      this.gold -= item.price;
+      this.cosmetics.push(key as CosmeticKey);
+      this.cosmetic = key as CosmeticKey; // 구매 즉시 착용
+      return true;
+    }
     if (this.owned.includes(key)) return false; // 이미 보유한 장비
     this.gold -= item.price;
     this.owned.push(key);
@@ -641,6 +767,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (item.kind === "weapon") this.weapon = key;
     else if (item.kind === "armor") this.armor = key;
     else if (item.kind === "accessory") this.equip(key);
+    return true;
+  }
+
+  /* ---------------- 펫 / 치장 (v1.9 BM) ---------------- */
+
+  /** 펫 소환/해제 (가방에서) */
+  setPet(key: PetKey | null): boolean {
+    if (key && !this.pets.includes(key)) return false;
+    if (this.pet === key) return false;
+    this.pet = key;
+    this.scene.onPetChanged();
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 치장 착용/해제 (가방에서) — 오라 연출만, 전투 능력 없음 */
+  setCosmetic(key: CosmeticKey | null): boolean {
+    if (key && !this.cosmetics.includes(key)) return false;
+    if (this.cosmetic === key) return false;
+    this.cosmetic = key;
+    this.scene.onCosmeticChanged();
+    this.scene.emitHud();
     return true;
   }
 

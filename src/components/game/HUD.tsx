@@ -2,7 +2,29 @@
 
 import type { HudState, QuestState } from "./EventBus";
 import { classDef, classLabel } from "@/game/classes";
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles } from "lucide-react";
+import { BUFF_DEFS, type BuffKey } from "@/game/data";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings } from "lucide-react";
+
+/** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
+function BuffChip({ buff }: { buff: HudState["buffs"][number] }) {
+  const def = BUFF_DEFS[buff.key as BuffKey];
+  if (!def) return null;
+  const pct = Math.max(0, Math.min(100, (buff.remain / buff.total) * 100));
+  const sec = Math.ceil(buff.remain / 1000);
+  return (
+    <div className="relative h-8 w-8 overflow-hidden rounded-md border border-white/25 bg-black/60">
+      <img src={`/assets/${def.icon}.png`} alt={def.name} className="h-full w-full" style={{ imageRendering: "pixelated" }} />
+      <div className="absolute inset-x-0 bottom-0 h-[3px] bg-black/70">
+        <div className="h-full" style={{ width: `${pct}%`, background: def.color }} />
+      </div>
+      <span
+        className="absolute inset-x-0 top-0 text-center text-[8px] font-black text-white [text-shadow:0_1px_1px_#000]"
+      >
+        {sec > 99 ? "99" : sec}
+      </span>
+    </div>
+  );
+}
 
 function Bar({
   value,
@@ -48,6 +70,9 @@ export function HUD({
   onToggleMute,
   onOpenInv,
   onOpenJob,
+  onOpenStat,
+  onOpenQuest,
+  onOpenOpt,
 }: {
   hud: HudState;
   quest: QuestState;
@@ -59,6 +84,12 @@ export function HUD({
   onToggleMute: () => void;
   onOpenInv: () => void;
   onOpenJob: () => void;
+  /** 스탯 창 (T) — AP 남으면 강조 */
+  onOpenStat: () => void;
+  /** 퀘스트 로그 (J) */
+  onOpenQuest: () => void;
+  /** 설정/키 매핑 (O) */
+  onOpenOpt: () => void;
 }) {
   const expPct = Math.min(100, (hud.exp / Math.max(1, hud.expNext)) * 100);
   return (
@@ -93,7 +124,15 @@ export function HUD({
               style={{ width: `${expPct}%` }}
             />
           </div>
-          {/* 골드 + 공격/방어 (2D MMORPG 기본 요소) */}
+        {/* 버프 아이콘 (v1.9 BM — 남은 시간 바) */}
+        {hud.buffs.length > 0 && (
+          <div className="flex items-center gap-1">
+            {hud.buffs.map((b) => (
+              <BuffChip key={b.key} buff={b} />
+            ))}
+          </div>
+        )}
+        {/* 골드 + 공격/방어 (2D MMORPG 기본 요소) */}
           <div className="mt-0.5 flex items-center gap-1">
             <span className="flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-amber-300 backdrop-blur-sm">
               { }
@@ -145,6 +184,35 @@ export function HUD({
               <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${canJob ? "text-amber-200" : "text-white/50"}`}>전직</span>
             </button>
           )}
+          {/* v1.9: 스탯(T) / 퀘스트 로그(J) / 설정·키 매핑(O) */}
+          <button
+            onClick={onOpenStat}
+            aria-label="스탯 창 열기 (T)"
+            className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-sm transition-colors active:scale-95 ${
+              hud.ap > 0
+                ? "animate-pulse border-lime-300/70 bg-gradient-to-b from-lime-500/80 to-emerald-700/80 text-lime-100"
+                : "border-white/20 bg-black/55 text-white/70 hover:bg-black/75"
+            }`}
+          >
+            <Gauge size={17} />
+            <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>T</span>
+          </button>
+          <button
+            onClick={onOpenQuest}
+            aria-label="퀘스트 로그 열기 (J)"
+            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-black/55 text-white/70 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+          >
+            <ListChecks size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">J</span>
+          </button>
+          <button
+            onClick={onOpenOpt}
+            aria-label="설정/키 매핑 열기 (O)"
+            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-black/55 text-white/70 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+          >
+            <Settings size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">O</span>
+          </button>
         </div>
         <div className="pointer-events-none w-full rounded-lg border border-amber-200/40 bg-black/55 px-2.5 py-1.5 backdrop-blur-sm sm:px-3 sm:py-2">
           <div className="flex items-center gap-1.5">

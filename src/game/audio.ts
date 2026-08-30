@@ -54,8 +54,13 @@ function destroyBgm() {
 
 function startBgm(kind: "field" | "boss" | "title") {
   if (!game) return;
-  bgmSound = game.sound.add(`bgm_${kind}`, { loop: true, volume: 0.42 });
-  bgmSound.play();
+  try {
+    bgmSound = game.sound.add(`bgm_${kind}`, { loop: true, volume: 0.42 });
+    bgmSound.play();
+  } catch {
+    // 브라우저 자동재생 정책(사용자 입력 전) — 첫 입력에서 initAudio 후 재개됨
+    bgmSound = null;
+  }
 }
 
 export function playBGM(kind: "field" | "boss" | "title") {

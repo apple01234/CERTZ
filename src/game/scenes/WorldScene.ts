@@ -1,11 +1,13 @@
 import Phaser from "phaser";
-import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, BOSS_DEFS, ENEMIES, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef } from "../data";
+import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, BOSS_DEFS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey } from "../data";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
-import { EventBus, type QuestState, type InteractState } from "../../components/game/EventBus";
+import { Pet } from "../entities/Pet";
+import { EventBus, type QuestState, type InteractState, type QuestLogState } from "../../components/game/EventBus";
 import { writeSave, loadSave, type SaveData, setPlayerName, getPlayerName } from "../config";
+import { loadKeyMap, type KeyMap, type GameAction } from "../keymap";
 import {
   classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST,
   type ClassKey,
@@ -83,8 +85,8 @@ export class WorldScene extends Phaser.Scene {
   // 반복 토벌 의뢰 — 사이클별 목표 수 (완료할수록 +2)
   private repeatNeed = 0;
 
-  /* ----- E키 상호작용 (NPC 대화/상점 — 접근 자동 트리거 제거) ----- */
-  private interactables: { x: number; y: number; kind: "talk" | "shop"; dlg?: string; npcId?: string; label: string }[] = [];
+  /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
+  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
   private activeNpcId: string | null = null;
   private talkedNpcs = new Set<string>();
@@ -129,6 +131,16 @@ export class WorldScene extends Phaser.Scene {
   private pProjPool: Phaser.Physics.Arcade.Image[] = [];
   private pProjIdx = 0;
 
+  /* ----- v1.9: 키 매핑 / 펫 / 치장 오라 / 강화 오라 ----- */
+  private keymap: KeyMap = loadKeyMap();
+  private keyObjs: Record<string, Phaser.Input.Keyboard.Key> = {};
+  private pet: Pet | null = null;
+  /** 플레이어 추적 오브젝트 (치장 오라/강화 오라/날개 입자) */
+  private cosmeticAura: Phaser.GameObjects.Image | null = null;
+  private cosmeticEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private upgradeGlow: Phaser.GameObjects.Image | null = null;
+  private jobNpc: Phaser.GameObjects.Image | null = null;
+
   constructor() {
     super("world");
   }
@@ -169,6 +181,13 @@ export class WorldScene extends Phaser.Scene {
     this.pProjPool = []; // 씬 소유 오브젝트는 씬 종료와 함께 정리 — 인덱스만 초기화
     this.pProjIdx = 0;
     this.repeatNeed = 0;
+    this.keymap = loadKeyMap();
+    this.keyObjs = {};
+    this.pet = null;
+    this.cosmeticAura = null;
+    this.cosmeticEmitter = null;
+    this.upgradeGlow = null;
+    this.jobNpc = null;
     this.interactables = [];
     this.nearInteract = null;
     this.activeNpcId = null;
@@ -199,7 +218,9 @@ export class WorldScene extends Phaser.Scene {
       save?: SaveData;
     };
     const save = data.save;
-    const stageKey: StageKey = save ? (save.stage as StageKey) : data.stage ?? "forest";
+    const rawStage = save ? (save.stage as StageKey) : data.stage ?? "village";
+    /* 유효하지 않은 스테이지 키(구 세이브/수정 세이브) 방어 — 빌라스로 안전 폴백 */
+    const stageKey: StageKey = STAGES[rawStage] ? rawStage : "village";
     this.stageDef = STAGES[stageKey];
     this.stageW = this.stageDef.width;
     this.stageH = this.stageDef.height;
@@ -254,6 +275,11 @@ export class WorldScene extends Phaser.Scene {
       this.player.atk = savedPlayer.atk;
       this.player.maxHp = savedPlayer.maxHp;
       this.player.hp = this.player.maxHp;
+      // 레벨업 MP 성장 복원 (v1.9 — 구 세이브는 60 유지)
+      if (typeof savedPlayer.maxMp === "number") {
+        this.player.maxMp = Math.max(60, savedPlayer.maxMp);
+        this.player.mp = this.player.maxMp;
+      }
       // RPG 자원 복원 (구 세이브는 loadSave()가 기본값 채움)
       this.player.gold = savedPlayer.gold ?? 30;
       this.player.potions = { hp: savedPlayer.potions?.hp ?? 2, mp: savedPlayer.potions?.mp ?? 1 };
@@ -271,11 +297,31 @@ export class WorldScene extends Phaser.Scene {
       if (savedPlayer.playerName) setPlayerName(savedPlayer.playerName);
       // 전직 클래스 복원 (v1.7 — 구 세이브 null 호환)
       this.player.applySavedClass(savedPlayer.cls);
+      // AP 스탯 복원 (v1.9 — 구 세이브는 loadSave()가 5/5/5/5 + 소급 AP 채움)
+      // 지력/행운의 maxMp/maxHp 가산은 세이브 maxHp에 이미 포함 — 여기선 수치만 복원
+      const st = savedPlayer.stats ?? { str: 5, dex: 5, int: 5, luk: 5 };
+      this.player.stats = { ...st };
+      this.player.ap = savedPlayer.ap ?? 0;
+      // BM 복원 (v1.9)
+      this.player.buffItems = { ...(savedPlayer.buffItems ?? {}) } as Partial<Record<BuffKey, number>>;
+      this.player.buffs = (savedPlayer.buffs ?? [])
+        .filter((b) => b.key in BUFF_DEFS)
+        .map((b) => ({ key: b.key as BuffKey, remain: b.remain, total: b.total }));
+      this.player.pets = (savedPlayer.pets ?? []).filter((k) => k in PET_DEFS) as PetKey[];
+      this.player.pet = (savedPlayer.pet && savedPlayer.pet in PET_DEFS ? (savedPlayer.pet as PetKey) : null);
+      this.player.cosmetics = (savedPlayer.cosmetics ?? []).filter((k) => k in COSMETIC_DEFS) as CosmeticKey[];
+      this.player.cosmetic = (savedPlayer.cosmetic && savedPlayer.cosmetic in COSMETIC_DEFS ? (savedPlayer.cosmetic as CosmeticKey) : null);
+      this.player.recalcSpeedForLoad();
     }
     this.repeatNeed = this.stageDef.repeat?.need ?? 0;
     this.playerRef = this.player;
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.physics.add.collider(this.player, this.solidGroup);
+
+    /* ---------- BM 복원 (v1.9 — 펫 소환/치장 오라/강화 오라) ---------- */
+    this.syncPet();
+    this.syncCosmeticAura();
+    this.syncUpgradeGlow();
 
     /* ---------- 적 배치 ---------- */
     const rng = new Phaser.Math.RandomDataGenerator([stageKey]);
@@ -357,7 +403,7 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 멀티플레이 (같은 서버 접속자 동기화 — v1.7) ---------- */
     this.initNet();
 
-    // F2: 거리 실시간 갱신 (300ms 주기 — 프레임 부담 없음) + 미니맵/RPG 상태
+    // F2: 거리 실시간 갱신 (300ms 주기 — 프레임 부담 없음) + 미니맵/RPG 상태/퀘스트 로그
     this.questTimer = this.time.addEvent({
       delay: 300,
       loop: true,
@@ -365,6 +411,7 @@ export class WorldScene extends Phaser.Scene {
         this.emitQuest();
         this.emitSkills();
         this.emitRpgState();
+        this.emitQuestLog();
         this.redrawMinimap();
       },
     });
@@ -721,6 +768,26 @@ export class WorldScene extends Phaser.Scene {
         .setDepth(Math.floor(v.y / 10));
       this.interactables.push({ x: v.x, y: v.y, kind: "talk", dlg: v.dlg, npcId: v.dlg, label: `${v.name}와 대화` });
     }
+
+    // 직업 교관 카이엔 (v1.9 — 전직 NPC, E키 상담 후 전직 패널 열림)
+    const jx = cx + 90;
+    const jy = cy - 120;
+    const jglow = this.add.image(jx, jy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.8).setAlpha(0.22);
+    this.tweens.add({ targets: jglow, alpha: 0.4, scale: 1.05, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.jobNpc = this.add.image(jx, jy, "npc_villager1").setDepth(Math.floor(jy / 10)).setScale(1.7).setTint(0xffd76a);
+    this.tweens.add({ targets: this.jobNpc, y: jy - 3, duration: 1000, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.add
+      .text(jx, jy - 38, "직업 교관 카이엔", {
+        fontFamily: "sans-serif",
+        fontSize: "12px",
+        color: "#ffd76a",
+        stroke: "#1a1020",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(21);
+    this.interactables.push({ x: jx, y: jy, kind: "job", npcId: "jobmaster", label: "카이엔 교관 — 전직 상담" });
   }
 
   /* ================= 이펙트 풀 (F4) ================= */
@@ -931,20 +998,23 @@ export class WorldScene extends Phaser.Scene {
     d?.spawn(key, x, y, 1);
   }
 
-  /** 픽업 처리 (Drop가 접촉 시 호출) */
-  collectDrop(kind: DropKind, amount: number, x: number, y: number) {
+  /** 픽업 처리 (Drop가 접촉 시 호출 — viaPet은 펫 자동 줍기) */
+  collectDrop(kind: DropKind, amount: number, x: number, y: number, viaPet = false) {
     if (kind === "gold") {
-      this.player.addGold(amount);
+      // 펫 골드 보너스 (v1.9 BM — 슬라임 +10%, 핑크이 +20%)
+      const bonus = this.player.petGoldBonusPct;
+      const gold = bonus > 0 ? Math.max(1, Math.round(amount * (1 + bonus / 100))) : amount;
+      this.player.addGold(gold);
       audio.sfx.coin();
-      this.spawnPickupText(x, y - 14, `+${amount}G`, "#ffd76a");
+      this.spawnPickupText(x, y - 14, viaPet ? `+${gold}G (펫)` : `+${gold}G`, "#ffd76a");
     } else if (kind === "potion_hp") {
       this.player.addPotion("hp");
       audio.sfx.pickup();
-      this.spawnPickupText(x, y - 14, "+HP 물약", "#ff8a8a");
+      this.spawnPickupText(x, y - 14, viaPet ? "+HP 물약 (펫)" : "+HP 물약", "#ff8a8a");
     } else if (kind === "potion_mp") {
       this.player.addPotion("mp");
       audio.sfx.pickup();
-      this.spawnPickupText(x, y - 14, "+MP 물약", "#7dc0ff");
+      this.spawnPickupText(x, y - 14, viaPet ? "+MP 물약 (펫)" : "+MP 물약", "#7dc0ff");
     }
   }
 
@@ -1314,9 +1384,15 @@ export class WorldScene extends Phaser.Scene {
 
   private setupInput() {
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,X,Z,C,Q,E,F,I,R,K"
-    ) as Record<string, Phaser.Input.Keyboard.Key>;
+    // v1.9 키 매핑 — 모든 배정 가능 키를 미리 등록해 두고 keymap에서 조회
+    // (재배치 시 키 재등록 불필요, 이동 W/A/S/D + 화살표는 고정)
+    const allKeys =
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,Q,E,R,T,Y,U,I,O,P,F,G,H,J,K,L,V,B,N,M,Z,X,C";
+    const raw = kb.addKeys(allKeys) as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = raw;
+    for (const letter of allKeys.split(",")) {
+      if (letter.length === 1) this.keyObjs[letter] = raw[letter];
+    }
 
     const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);
     const onAtk = () => (this.attackQueued = true);
@@ -1325,6 +1401,9 @@ export class WorldScene extends Phaser.Scene {
     const onRespawn = () => this.respawnPlayer();
     const onDialogueDone = () => this.resumeFromDialogue();
     const onInteract = () => this.tryInteract();
+    const onKeymapChanged = (m: KeyMap) => {
+      this.keymap = m;
+    };
     const onNameSet = (v: { name: string }) => {
       if (this.introStep === 2) this.finishIntro(v.name);
     };
@@ -1332,6 +1411,10 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       if (this.player.buy(v.key)) {
         audio.sfx.questDone();
+        // BM 즉시 반영 — 펫 구매 시 스프라이트 교체, 치장 구매 시 오라 교체 (v1.9)
+        const kind = ITEMS[v.key]?.kind;
+        if (kind === "pet") this.syncPet();
+        else if (kind === "cosmetic") this.syncCosmeticAura();
         this.save();
       }
       this.emitRpgState();
@@ -1346,9 +1429,32 @@ export class WorldScene extends Phaser.Scene {
     const onUse = (v: { kind: "hp" | "mp" }) => {
       this.player?.usePotion(v.kind);
     };
+    const onUseBuff = (v: { key: BuffKey }) => {
+      if (!this.player || this.dialoguing) return;
+      this.player.useBuffItem(v.key);
+      this.save();
+      this.emitRpgState();
+    };
+    const onAllocate = (v: { stat: "str" | "dex" | "int" | "luk"; n: number }) => {
+      if (!this.player || this.dialoguing) return;
+      if (this.player.allocateStat(v.stat, v.n)) this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    const onPetSet = (v: { key: PetKey | null }) => {
+      if (!this.player || this.dialoguing) return;
+      if (this.player.setPet(v.key)) this.save();
+      this.emitRpgState();
+    };
+    const onCosmeticSet = (v: { key: CosmeticKey | null }) => {
+      if (!this.player || this.dialoguing) return;
+      if (this.player.setCosmetic(v.key)) this.save();
+      this.emitRpgState();
+    };
     const onUpgrade = (v: { slot: "weapon" | "armor" }) => {
       if (!this.player || this.dialoguing) return;
       this.player.tryUpgrade(v.slot);
+      this.syncUpgradeGlow(); // 강화 오라 갱신 (+4 이상)
       this.save();
       this.emitRpgState();
       this.emitHud();
@@ -1418,9 +1524,14 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("input:skill2", onS2);
     EventBus.on("input:interact", onInteract);
     EventBus.on("name:set", onNameSet);
+    EventBus.on("keymap:changed", onKeymapChanged);
     EventBus.on("rpg:buy", onBuy);
     EventBus.on("rpg:equip", onEquip);
     EventBus.on("rpg:use", onUse);
+    EventBus.on("rpg:useBuff", onUseBuff);
+    EventBus.on("rpg:allocate", onAllocate);
+    EventBus.on("rpg:pet", onPetSet);
+    EventBus.on("rpg:cosmetic", onCosmeticSet);
     EventBus.on("rpg:upgrade", onUpgrade);
     EventBus.on("respawn", onRespawn);
     EventBus.on("dialogue:done", onDialogueDone);
@@ -1435,9 +1546,14 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("input:skill2", onS2);
       EventBus.off("input:interact", onInteract);
       EventBus.off("name:set", onNameSet);
+      EventBus.off("keymap:changed", onKeymapChanged);
       EventBus.off("rpg:buy", onBuy);
       EventBus.off("rpg:equip", onEquip);
       EventBus.off("rpg:use", onUse);
+      EventBus.off("rpg:useBuff", onUseBuff);
+      EventBus.off("rpg:allocate", onAllocate);
+      EventBus.off("rpg:pet", onPetSet);
+      EventBus.off("rpg:cosmetic", onCosmeticSet);
       EventBus.off("rpg:upgrade", onUpgrade);
       EventBus.off("respawn", onRespawn);
       EventBus.off("dialogue:done", onDialogueDone);
@@ -1446,6 +1562,11 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("job:select", onJobSelect);
       EventBus.off("job:switch", onJobSwitch);
     });
+  }
+
+  /** 액션에 배정된 키 객체 (키 매핑 v1.9) */
+  private keyFor(a: GameAction): Phaser.Input.Keyboard.Key {
+    return this.keyObjs[this.keymap[a]] ?? this.keys[this.keymap[a]];
   }
 
   update(_time: number, delta: number) {
@@ -1495,22 +1616,25 @@ export class WorldScene extends Phaser.Scene {
     const useTouch = this.touchMove.lengthSq() > 0.01;
     const move = useTouch ? this.touchMove : mv;
 
-    // 키보드 공격/스킬 — 방향키 이동 + X 공격 + Z/C 스킬 (사용자 지정 왼손 배치)
-    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keys.X))
+    // 키보드 공격/스킬 — 이동은 WASD+화살표 고정, 액션 키는 키 매핑 따름 (v1.9)
+    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
       this.attackQueued = true;
-    if (Phaser.Input.Keyboard.JustDown(this.keys.Z)) this.player.useSkill1();
-    if (Phaser.Input.Keyboard.JustDown(this.keys.C)) this.player.useSkill2();
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
 
     this.player.update(dt, move, this.attackQueued);
     this.attackQueued = false;
 
-    // 물약 퀵슬롯 + 상점 열기 + E키 상호작용
-    if (Phaser.Input.Keyboard.JustDown(this.keys.Q)) this.player.usePotion("hp");
-    if (Phaser.Input.Keyboard.JustDown(this.keys.R)) this.player.usePotion("mp");
-    if (Phaser.Input.Keyboard.JustDown(this.keys.E)) this.tryInteract();
-    if (Phaser.Input.Keyboard.JustDown(this.keys.F) && this.nearShop) EventBus.emit("ui:panel", { panel: "shop" });
-    if (Phaser.Input.Keyboard.JustDown(this.keys.I)) EventBus.emit("ui:panel", { panel: "inv" });
-    if (Phaser.Input.Keyboard.JustDown(this.keys.K)) EventBus.emit("ui:panel", { panel: "job" });
+    // 물약 퀵슬롯 + 상점/패널 열기 + E키 상호작용 (v1.9 — 모두 키 매핑 대응)
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("potHp"))) this.player.usePotion("hp");
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("potMp"))) this.player.usePotion("mp");
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("interact"))) this.tryInteract();
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("shop")) && this.nearShop) EventBus.emit("ui:panel", { panel: "shop" });
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("bag"))) EventBus.emit("ui:panel", { panel: "inv" });
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("job"))) EventBus.emit("ui:panel", { panel: "job" });
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("stat"))) EventBus.emit("ui:panel", { panel: "stat" });
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("quest"))) EventBus.emit("ui:panel", { panel: "quest" });
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("opt"))) EventBus.emit("ui:panel", { panel: "opt" });
 
     // E키 상호작용 감지 — 가장 가까운 NPC/상점 프롬프트 갱신
     this.updateInteractPrompt();
@@ -1528,10 +1652,21 @@ export class WorldScene extends Phaser.Scene {
     // 보스 AI
     this.boss?.tick(dt, this.player);
 
-    // 드롭 아이템 (자석/픽업)
+    // 드롭 아이템 (자석/픽업) — 펫이 소환 중이면 근처 드롭을 펫이 직접 줍는다 (v1.9)
     for (const d of this.drops) {
-      if (d.active) d.tick(dt, this.player.x, this.player.y);
+      if (!d.active) continue;
+      d.tick(dt, this.player.x, this.player.y);
+      if (d.active && this.pet && Phaser.Math.Distance.Between(d.x, d.y, this.pet.x, this.pet.y) < 26) {
+        this.collectDrop(d.kind, d.amount, d.x, d.y, true);
+        d.release();
+      }
     }
+    // 펫 추적 — 드롭이 있으면 그쪽으로 헤엄침
+    this.pet?.tick(dt, this.player.x, this.player.y);
+
+    // 추적 오브젝트 (치장 오라/강화 오라) 위치 갱신
+    if (this.cosmeticAura) this.cosmeticAura.setPosition(this.player.x, this.player.y - 8);
+    if (this.upgradeGlow) this.upgradeGlow.setPosition(this.player.x, this.player.y - 10);
 
     // 상점 NPC 접근 감지
     if (this.merchant) {
@@ -1758,13 +1893,16 @@ export class WorldScene extends Phaser.Scene {
     EventBus.emit("ui:interact", payload);
   }
 
-  /** E키/모바일 버튼 — 가까운 NPC 대화 시작 또는 상점 열기 */
+  /** E키/모바일 버튼 — 가까운 NPC 대화 시작, 전직 상담 또는 상점 열기 */
   tryInteract() {
     if (this.dialoguing || !this.player || this.player.state === "dead") return;
     const it = this.nearInteract;
     if (!it) return;
     if (it.kind === "shop") {
       EventBus.emit("ui:panel", { panel: "shop" });
+    } else if (it.kind === "job") {
+      // 전직 교관 — 상담 대사 후 전직 패널 자동 오픈 (v1.9)
+      this.showDialogue("jobMaster", "jobmaster");
     } else if (it.kind === "talk" && it.dlg) {
       this.showDialogue(it.dlg, it.npcId ?? null);
     }
@@ -1924,6 +2062,111 @@ export class WorldScene extends Phaser.Scene {
     for (const e of this.enemies) if (e.active && e.alive) list.push(e);
     if (this.boss && this.boss.active && this.boss.alive) list.push(this.boss);
     return list;
+  }
+
+  /* ================= BM (v1.9 — 펫/치장/강화 오라) ================= */
+
+  /** 펫 기준 가장 가까운 활성 드롭 (Pet.tick 목표 탐색) */
+  nearestDrop(x: number, y: number, range: number): Drop | null {
+    let best: Drop | null = null;
+    let bd = range;
+    for (const d of this.drops) {
+      if (!d.active) continue;
+      const dist = Phaser.Math.Distance.Between(x, y, d.x, d.y);
+      if (dist < bd) {
+        bd = dist;
+        best = d;
+      }
+    }
+    return best;
+  }
+
+  /** 펫 소환 상태 동기화 — 가방/상점에서 변경 시 호출 */
+  onPetChanged() {
+    this.syncPet();
+    this.save();
+  }
+
+  private syncPet() {
+    if (this.pet) {
+      this.pet.destroy();
+      this.pet = null;
+    }
+    if (this.player?.pet) {
+      this.pet = new Pet(this, this.player.pet, this.player.x + 26, this.player.y + 6);
+    }
+  }
+
+  /** 치장 착용 상태 동기화 — 오라/날개 입자 갱신 */
+  onCosmeticChanged() {
+    this.syncCosmeticAura();
+    this.save();
+  }
+
+  private syncCosmeticAura() {
+    this.cosmeticAura?.destroy();
+    this.cosmeticAura = null;
+    this.cosmeticEmitter?.destroy();
+    this.cosmeticEmitter = null;
+    const key = this.player?.cosmetic;
+    if (!key) return;
+    if (key === "cos_wings") {
+      // 요정 날개 — 플레이어 주위 반짝임 입자 트레일
+      this.cosmeticEmitter = this.add.particles(0, 0, "sparkle0", {
+        lifespan: 620,
+        speedY: { min: -26, max: -10 },
+        speedX: { min: -14, max: 14 },
+        scale: { start: 0.8, end: 0 },
+        alpha: { start: 0.9, end: 0 },
+        frequency: 90,
+        blendMode: Phaser.BlendModes.ADD,
+      }).setDepth(11);
+      this.cosmeticEmitter.startFollow(this.player);
+    } else {
+      // 오라 계열 — 플레이어 뒤 은은한 후광 (tint는 치장 정의)
+      this.cosmeticAura = this.add
+        .image(this.player.x, this.player.y - 8, "glow")
+        .setDepth(9)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(COSMETIC_DEFS[key].tint)
+        .setScale(1.7)
+        .setAlpha(0.26);
+      this.tweens.add({
+        targets: this.cosmeticAura,
+        alpha: 0.44,
+        scale: 2.0,
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+    }
+  }
+
+  /** 강화 오라 — 무기 +4 이상이면 금빛 글로우가 플레이어를 따라다님 (강화 효과 가시화) */
+  private syncUpgradeGlow() {
+    const up = this.player?.upgrades.weapon ?? 0;
+    if (up >= 4 && !this.upgradeGlow && this.player) {
+      this.upgradeGlow = this.add
+        .image(this.player.x, this.player.y - 10, "glow")
+        .setDepth(9)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(0xffd76a)
+        .setScale(1.35)
+        .setAlpha(0.3);
+      this.tweens.add({
+        targets: this.upgradeGlow,
+        alpha: 0.5,
+        scale: 1.55,
+        duration: 700,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+    } else if (up < 4 && this.upgradeGlow) {
+      this.upgradeGlow.destroy();
+      this.upgradeGlow = null;
+    }
   }
 
   /* ================= 가독성 (F2) ================= */
@@ -2134,6 +2377,10 @@ export class WorldScene extends Phaser.Scene {
       defTotal: this.player.defTotal,
       critRate: this.player.critRate,
       cls: this.player.cls,
+      /* v1.9 — 버프 바 + AP 배지 + 속도 */
+      buffs: this.player.buffs.map((b) => ({ key: b.key, remain: b.remain, total: b.total })),
+      ap: this.player.ap,
+      speed: this.player.speed,
     });
     this.emitRpgState();
   }
@@ -2155,11 +2402,39 @@ export class WorldScene extends Phaser.Scene {
       shopStock: [...SHOP_STOCK],
       cls: this.player.cls,
       canJob: canJobNow(this.player.lv, this.player.cls),
+      /* v1.9 BM + 스탯 */
+      buffItems: { ...this.player.buffItems } as Record<string, number>,
+      pets: [...this.player.pets],
+      pet: this.player.pet,
+      cosmetics: [...this.player.cosmetics],
+      cosmetic: this.player.cosmetic,
+      stats: { ...this.player.stats },
+      ap: this.player.ap,
     };
     const sig = JSON.stringify(st);
     if (sig === this.lastRpgSig) return;
     this.lastRpgSig = sig;
     EventBus.emit("rpg:state", st);
+  }
+
+  /** 퀘스트 로그 (J) — 스테이지 메인 체인 전체 진행 상황 */
+  emitQuestLog() {
+    if (!this.player) return;
+    const list = this.stageDef.quests.map((q, i) => ({
+      title: q.title,
+      desc: q.desc,
+      state: (i < this.questIdx ? "done" : i === this.questIdx ? "active" : "locked") as
+        | "done"
+        | "active"
+        | "locked",
+    }));
+    const r = this.stageDef.repeat;
+    const payload: QuestLogState = {
+      stageName: `${this.stageDef.name} — ${this.stageDef.subtitle}`,
+      list,
+      repeat: r ? { title: r.title, desc: r.desc } : null,
+    };
+    EventBus.emit("questlog", payload);
   }
 
   private save() {
@@ -2173,6 +2448,7 @@ export class WorldScene extends Phaser.Scene {
       lv: this.player.lv,
       exp: this.player.exp,
       maxHp: this.player.maxHp,
+      maxMp: this.player.maxMp,
       atk: this.player.atk,
       cleared: this.cleared,
       gold: this.player.gold,
@@ -2185,6 +2461,16 @@ export class WorldScene extends Phaser.Scene {
       accessory: this.player.accessory,
       questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },
       cls: this.player.cls,
+      playerName: getPlayerName(),
+      /* v1.9 — AP 스탯 + BM */
+      stats: { ...this.player.stats },
+      ap: this.player.ap,
+      buffItems: { ...this.player.buffItems } as Record<string, number>,
+      buffs: this.player.buffs.map((b) => ({ key: b.key, remain: Math.round(b.remain), total: b.total })),
+      pets: [...this.player.pets],
+      pet: this.player.pet,
+      cosmetics: [...this.player.cosmetics],
+      cosmetic: this.player.cosmetic,
     };
   }
 
@@ -2219,11 +2505,16 @@ export class WorldScene extends Phaser.Scene {
         Phaser.Input.Keyboard.JustDown(k);
       }
     }
-    // 주민 대화 종료 → talk 퀘스트 진행
+    // 주민 대화 종료 → talk 퀘스트 진행 (전직 교관은 퀘스트 카운트 제외)
     if (this.activeNpcId) {
       const npc = this.activeNpcId;
       this.activeNpcId = null;
-      this.onNpcTalked(npc);
+      if (npc === "jobmaster") {
+        // 전직 상담 종료 → 전직 패널 자동 오픈 (v1.9 전직 NPC)
+        this.time.delayedCall(120, () => EventBus.emit("ui:panel", { panel: "job" }));
+      } else {
+        this.onNpcTalked(npc);
+      }
     }
     // 예약 대사 (이름 리액션 → 마을 오프닝 등 순차 재생)
     if (this.queuedDialogue) {

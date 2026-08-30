@@ -716,3 +716,64 @@ Stage Summary:
 - v1.7 = 전직(전사/궁수/마법사, Lv10, 1회성) + 멀티플레이(실시간 위치동기화·전체채팅·전직방송) + 채팅 UI 정식 탑재
 - GitHub origin/main = 로컬 = v1.7 완전 동기화 — 사용자 git pull 시 전부 수령
 - 미결: APK 미빌드(사용자 지시 시), 안드로이드 APK 단독 실행은 서버 없어 멀티 자동 비활성(설계대로)
+
+---
+Task ID: v1.8
+Agent: Super Z (main)
+Task: 사용자 지시 — 나무위키 메이플스토리/직업 문서 2건 참고해 전직 시스템 고도화
+
+Work Log:
+- page_reader로 나무위키 메이플 문서 2건 추출(scripts/maple-extract.py) — 모험가 구조 확인:
+  1차 계열선택 → 2차 세부직업 → 3/4차 승격, 자유전직(메소 소모, 계열 내), 계열별 전투방식 차이
+- classes.ts 전면 재작성: 15클래스 트리(1차3/2차6/3차6) + chainOf/bonusOf/jobOptions/freeJobOption/canJobNow 헬퍼
+  전사→버서커|가디언→워로드|팔라딘, 궁수→스나이퍼|윈드러너→이글아이|템페스트,
+  마법사→아크메이지|세이지→스톰브링어|크로니컬. 1차 수치는 v1.7과 완전 동일(구 전직자 무영향)
+- Player: clsBonus 캐시 기반 누적 getter(atk/def/crit), applyClass 티어·부모 검증,
+  switchClass(자유전직, HP/MP 증감 클램프), recalcSpeed(BASE_SPEED 230 배율),
+  스킬 계열 분기(궁수 화살 3연발/마법사 볼트/전사 회전베기) + skill1MaxEff cdMult 반영
+- WorldScene: 플레이어 투사체 풀 24발(firePlayerProj/tickPlayerProjs — 관통/수명/판정),
+  onJobSelect 다차원화, onJobSwitch 신설(5000G 검사), rpg.cls/canJob emit
+- UI: JobPanel 트리 리뉴얼(브레드크럼/단계별 카드/잠금 안내/자유전직 섹션), HUD classLabel 배지,
+  전직 버튼 클래스 보유 시 상시(펄스는 승격 가능 시만), server.js 클래스명 15키
+- E2E(2세션): 2차 버서커 선택→배지/세이브, 자유전직 가디언(6000→1000G 차감),
+  3차 이글아이 승격(maxHp 1180→1240), 크리 58%=8+12+18+20 누적 검증,
+  화살 3연발 부채꼴 렌더+MP15, A의 전직 3회 모두 B에서 시스템 방송 수신 — 콘솔 에러 0
+- 테스트 이슈 1건 발견(비게임): find text 클릭이 패널 버튼에 안 닿아 세이브 미갱신으로 보였던 것 —
+  ref 클릭으로 정상 확인. 게임 코드 문제 아님
+- 커밋 3a67c2c + GitHub push, 증거 스크린샷 9장(download/proof-v1.8/)
+
+Stage Summary:
+- v1.8 = 메이플 모험가 구조의 다차원 전직(1~3차) + 자유전직(5000G) + 계열별 스킬 체계 탑재
+- 세이브 호환: null/1차키/2차키/3차키 전부 무설정 로드 — 기존 유저 영향 0
+
+---
+Task ID: v1.9
+Agent: Super Z (main)
+Task: 사용자 불만 해소 — "전직 NPC + 퀘스트, 키 매핑, BM(펫·버프·치장템), 스텟, 강화 효과 다 어디감??"
+
+Work Log:
+- 원인 규명: 기능은 이전 세션에서 전부 구현돼 자동커밋 890cc22(UUID명)로 존재했으나 ①GitHub 미푸시(ahead 2)
+  ②정식 커밋 메시지 없음 ③worklog 미기록 — 사용자가 GitHub pull로 받은 구버전을 실행해 못 본 것
+- 전수조사: keymap.ts(113행, 12액션 재배치+스왑), Pet.ts(드롭 자동줍기+골드보너스), data.ts BM 정의
+  (버프4/펫2/치장4/강화 상한+5·성공률[100,85,70,55,40]), WorldScene 전직NPC·StatPanel·QuestLogPanel·
+  KeymapPanel·ShopPanel 강화/BM 섹션 전부 존재 확인
+- E2E 실측(agent-browser, 합성 KeyboardEvent keyCode 필요 — agent-browser keydown은 keyCode 누락으로 Phaser 무시):
+  ①전직NPC: 카이엔 교관(마을 cx+90,cy-120) E키 → "어서 오게" 대사 → 종료 시 전직패널 자동오픈
+    → 전사 선택 → 배지 "전사·검사", HP340→460, 공격22→25, 채팅 방송 "세르츠 님이 전사(으)로 전직했습니다"
+  ②스탯(T): Lv/경험치/HP/MP/공격/방어/크리/이속 + 계산식 해설 + AP배분(STR+1/+5) — STR+10 → 공격25→29, 남은AP 0
+  ③퀘스트(J): 진행중("마을 주민과 인사 0/2")/잠김("뿌리숲으로 출발") 구분 표시 + 우상단 트래커 연동
+  ④키매핑(O): 12액션 전부 표시, 공격 X→U 재배치 실측 → 저장, X 원복 확인
+  ⑤BM: 슬라임 펫 구매(8000→7720G)→펫 스프라이트 스폰, 새벽빛 오라 구매(→7520G)→하늘빛 후광 이펙트,
+    분노물약 사용→HUD 아이콘+34초 카운트다운, 공격29→36(+25%)
+  ⑥강화: 무기 +1(45G·100%)→+2(135G·70%), "강철 검 +2 공격력+6+4" 표시, 실패 시 골드만 소모 안내
+- 버그 수정 1건: 유효하지 않은 스테이지 키 세이브(STAGES[키] undefined) → WorldScene.create 크래시 →
+  village 안전 폴백 가드 추가 (WorldScene.ts:221)
+- 타이틀 버전 배지 v1.8→v1.9 갱신, tsc 0 / eslint 0
+- 커밋 정리: UUID 자동커밋 2개(890cc22·455b30d)를 v1.8에서 mixed reset → 정식 v1.9 커밋 1개로 재생성
+  (scripts/ 테스트 스크린샷·tool-results/ 제외, public/assets BM 아이콘 10종·proof-v1.9 15장 포함)
+- GitHub push 완료 — origin/main = 로컬 동기화
+
+Stage Summary:
+- 사용자가 지적한 6개 영역(전직NPC·퀘스트·키매핑·BM·스탯·강화) 전부 구현돼 있었음을 실측으로 입증하고 GitHub 동기화로 해소
+- 근본 원인은 기능 부재가 아니라 미푸시 — 이후 "기능이 없다" 불만 시 origin/main vs 로컬 HEAD 비교가 1순위 점검 항목
+- E2E 유의사항: agent-browser keydown은 keyCode 미전송 → Phaser 입력 무시. 합성 KeyboardEvent(keyCode 필수)로 대체

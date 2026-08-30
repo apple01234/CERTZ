@@ -20,7 +20,7 @@ import { loadMuted, writeMuted } from "@/game/config";
 export default function GameRoot() {
   const parentRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
-  const { state, hud, quest, skills, dialogue, boss, banner, end, rpg, panel, setPanel } = useGameUi();
+  const { state, hud, quest, questLog, skills, dialogue, boss, banner, end, rpg, panel, setPanel } = useGameUi();
   // 클라이언트 전용 컴포넌트(ssr:false)라 localStorage 지연 초기화 안전 — 음소거 설정 복원
   const [muted, setMuted] = useState(() => loadMuted());
   const [portraitMobile, setPortraitMobile] = useState(false);
@@ -90,6 +90,9 @@ export default function GameRoot() {
                 }}
                 onOpenInv={() => setPanel(panel === "inv" ? null : "inv")}
                 onOpenJob={() => setPanel(panel === "job" ? null : "job")}
+                onOpenStat={() => setPanel(panel === "stat" ? null : "stat")}
+                onOpenQuest={() => setPanel(panel === "quest" ? null : "quest")}
+                onOpenOpt={() => setPanel(panel === "opt" ? null : "opt")}
               />
             </div>
             {/* 상호작용 프롬프트 — NPC 대화/상점 (E키·모바일 버튼 공용) */}
@@ -127,7 +130,7 @@ export default function GameRoot() {
         {/* 인트로 이름 짓기 패널 */}
         <NamePanel />
 
-        <GamePanels panel={panel} rpg={rpg} onClose={() => setPanel(null)} />
+        <GamePanels panel={panel} rpg={rpg} hud={hud} questLog={questLog} onClose={() => setPanel(null)} />
 
         <RotatePrompt active={portraitMobile} />
       </div>

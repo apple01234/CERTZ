@@ -661,7 +661,17 @@ export type ItemKey =
   | "armor_3"
   | "armor_4"
   | "ring_power"
-  | "ring_vital";
+  | "ring_vital"
+  | "buff_atk"
+  | "buff_def"
+  | "buff_spd"
+  | "buff_exp"
+  | "pet_slime"
+  | "pet_pixie"
+  | "cos_dawn"
+  | "cos_gold"
+  | "cos_abyss"
+  | "cos_wings";
 
 /** 아이템 등급 (클래식 MMORPG 관례 — 테두리/이름색 구분) */
 export type ItemTier = "common" | "rare" | "epic";
@@ -675,7 +685,7 @@ export const UPGRADE_COST = { weapon: 45, armor: 38 } as const;
 
 export type ItemDef = {
   key: ItemKey;
-  kind: "consumable" | "weapon" | "armor" | "accessory";
+  kind: "consumable" | "weapon" | "armor" | "accessory" | "buff" | "pet" | "cosmetic";
   name: string;
   icon: string; // 텍스처 키
   price: number; // 상점 구매가 (0 = 판매 안 함/기본 지급)
@@ -701,12 +711,76 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   armor_4: { key: "armor_4", kind: "armor", name: "수호자의 갑옷", icon: "item_armor_4", price: 380, tier: "epic", def: 10 },
   ring_power: { key: "ring_power", kind: "accessory", name: "힘의 반지", icon: "item_ring_power", price: 150, tier: "rare", crit: 7 },
   ring_vital: { key: "ring_vital", kind: "accessory", name: "생명의 반지", icon: "item_ring_vital", price: 130, tier: "rare", maxHp: 25 },
+  /* ---- BM (v1.9): 버프 물약 / 펫 / 치장 ---- */
+  buff_atk: { key: "buff_atk", kind: "buff", name: "분노의 물약", icon: "item_buff_atk", price: 60, tier: "rare" },
+  buff_def: { key: "buff_def", kind: "buff", name: "수호의 물약", icon: "item_buff_def", price: 55, tier: "rare" },
+  buff_spd: { key: "buff_spd", kind: "buff", name: "신속의 물약", icon: "item_buff_spd", price: 50, tier: "rare" },
+  buff_exp: { key: "buff_exp", kind: "buff", name: "지혜의 물약", icon: "item_buff_exp", price: 90, tier: "rare" },
+  pet_slime: { key: "pet_slime", kind: "pet", name: "슬라임 젤리", icon: "pet_slime", price: 280, tier: "rare" },
+  pet_pixie: { key: "pet_pixie", kind: "pet", name: "요정 핑크이", icon: "pet_pixie", price: 520, tier: "epic" },
+  cos_dawn: { key: "cos_dawn", kind: "cosmetic", name: "새벽빛 오라", icon: "cos_dawn", price: 200, tier: "rare" },
+  cos_gold: { key: "cos_gold", kind: "cosmetic", name: "황금 오라", icon: "cos_gold", price: 200, tier: "rare" },
+  cos_abyss: { key: "cos_abyss", kind: "cosmetic", name: "심연 오라", icon: "cos_abyss", price: 260, tier: "epic" },
+  cos_wings: { key: "cos_wings", kind: "cosmetic", name: "요정 날개", icon: "cos_wings", price: 340, tier: "epic" },
 };
 
 /** 강화 1단계당 보너스 */
 export const UPGRADE_BONUS = { weaponAtk: 2, armorDef: 1 } as const;
 
-/** 상점 판매 목록 (표시 순서) */
+/* ================= BM (v1.9 — 버프/펫/치장, 메이플 BM 감각) ================= */
+
+export type BuffKey = "buff_atk" | "buff_def" | "buff_spd" | "buff_exp";
+export type PetKey = "pet_slime" | "pet_pixie";
+export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings";
+
+/** 버프 물약 효과 — 사용 시 지속시간 동안 적용 (같은 버프 재사용 시 시간 갱신) */
+export type BuffDef = {
+  key: BuffKey;
+  name: string;
+  icon: string;
+  desc: string;
+  duration: number;
+  color: string;
+  price: number;
+};
+export const BUFF_DEFS: Record<BuffKey, BuffDef> = {
+  buff_atk: { key: "buff_atk", name: "분노의 물약", icon: "item_buff_atk", desc: "공격력 +25%", duration: 60_000, color: "#ff8a8a", price: 60 },
+  buff_def: { key: "buff_def", name: "수호의 물약", icon: "item_buff_def", desc: "방어력 +8", duration: 60_000, color: "#8fb8ff", price: 55 },
+  buff_spd: { key: "buff_spd", name: "신속의 물약", icon: "item_buff_spd", desc: "이동속도 +25%", duration: 60_000, color: "#9af0c8", price: 50 },
+  buff_exp: { key: "buff_exp", name: "지혜의 물약", icon: "item_buff_exp", desc: "경험치 +50%", duration: 120_000, color: "#e8a8ff", price: 90 },
+};
+
+/** 펫 정의 — 플레이어를 따라다니며 드롭 자동 줍기 + 골드 보너스 */
+export type PetDef = {
+  key: PetKey;
+  name: string;
+  icon: string;
+  desc: string;
+  bonusGoldPct: number;
+  price: number;
+};
+export const PET_DEFS: Record<PetKey, PetDef> = {
+  pet_slime: { key: "pet_slime", name: "슬라임 젤리", icon: "pet_slime", desc: "드롭 자동 줍기 · 골드 +10%", bonusGoldPct: 10, price: 280 },
+  pet_pixie: { key: "pet_pixie", name: "요정 핑크이", icon: "pet_pixie", desc: "드롭 자동 줍기 · 골드 +20%", bonusGoldPct: 20, price: 520 },
+};
+
+/** 치장 아이템 — 플레이어 뒤에 따라붙는 오라 연출 (전투 능력 없음, 순수 치장) */
+export type CosmeticDef = {
+  key: CosmeticKey;
+  name: string;
+  icon: string;
+  desc: string;
+  price: number;
+  tint: number;
+};
+export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
+  cos_dawn: { key: "cos_dawn", name: "새벽빛 오라", icon: "cos_dawn", desc: "하늘빛 후광", price: 200, tint: 0x7dc0ff },
+  cos_gold: { key: "cos_gold", name: "황금 오라", icon: "cos_gold", desc: "금빛 후광", price: 200, tint: 0xffd76a },
+  cos_abyss: { key: "cos_abyss", name: "심연 오라", icon: "cos_abyss", desc: "보라빛 후광", price: 260, tint: 0xa875ff },
+  cos_wings: { key: "cos_wings", name: "요정 날개", icon: "cos_wings", desc: "반짝임 입자 트레일", price: 340, tint: 0xbaf3ff },
+};
+
+/** 상점 판매 목록 (표시 순서 — BM 섹션은 kind로 분리 렌더) */
 export const SHOP_STOCK: ItemKey[] = [
   "potion_hp",
   "potion_mp",
@@ -718,6 +792,16 @@ export const SHOP_STOCK: ItemKey[] = [
   "armor_4",
   "ring_power",
   "ring_vital",
+  "buff_atk",
+  "buff_def",
+  "buff_spd",
+  "buff_exp",
+  "pet_slime",
+  "pet_pixie",
+  "cos_dawn",
+  "cos_gold",
+  "cos_abyss",
+  "cos_wings",
 ];
 
 export type DialogueDef = { speaker: string; lines: string[] };
@@ -918,6 +1002,16 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "동굴도, 설원도, 심연의 왕좌도 다시 빛을 되찾았어.",
       "가라앉은 아뜰란티스의 영혼들도 이제 평온해질 거야.",
       "고마워… 이 모험은 이제 진짜 전설이 될 거야!",
+    ],
+  },
+  jobMaster: {
+    speaker: "직업 교관 카이엔",
+    lines: [
+      "어서 오게, {name}. 나는 모험가들에게 길을 열어 주는 직업 교관 카이엔이다.",
+      "이제 네 몸에 흐르는 힘이 꽤 뚜렷해졌군. 전직할 자격이 있는지 보자!",
+      "전사·궁수·마법사 — 세 계열 중 하나를 택하면 2차, 3차로 더 깊이 들어갈 수 있어.",
+      "계열 안에서 방향이 바뀌고 싶으면 언제든 자유 전직을 찾아오게. 골드만 있으면 된다!",
+      "자, 결정하게. 네 가호를 새겨 주마!",
     ],
   },
 };

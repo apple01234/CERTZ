@@ -57,6 +57,8 @@ export type SaveData = {
   maxHp: number;
   atk: number;
   cleared: boolean;
+  /* ↓ 레벨업 MP 성장 복원 (v1.9 — 구 세이브 호환: 없으면 60 기본) */
+  maxMp?: number;
   /* ↓ 플레이어 이름 (인트로 플레이 시퀀스에서 지정 — 구 세이브 호환 기본값) */
   playerName?: string;
   /* ↓ 2D MMORPG 기본 요소 (구 세이브 호환: 로드 시 기본값 채움) */
@@ -73,6 +75,16 @@ export type SaveData = {
   questIdx?: Record<string, number>;
   /* ↓ 전직 클래스 (v1.7 — 구 세이브 호환 기본값 null) */
   cls?: string | null;
+  /* ↓ AP 스탯 (v1.9 — 구 세이브 호환: 기본 5/5/5/5 + 레벨만큼 AP 소급) */
+  stats?: { str: number; dex: number; int: number; luk: number };
+  ap?: number;
+  /* ↓ BM (v1.9 — 버프 물약/펫/치장) */
+  buffItems?: Record<string, number>;
+  buffs?: { key: string; remain: number; total: number }[];
+  pets?: string[];
+  pet?: string | null;
+  cosmetics?: string[];
+  cosmetic?: string | null;
 };
 
 export function loadSave(): SaveData | null {
@@ -96,6 +108,20 @@ export function loadSave(): SaveData | null {
     if (!d.questIdx || typeof d.questIdx !== "object") d.questIdx = {};
     // 전직 클래스 (구버전 세이브 호환 — 미전직)
     if (d.cls === undefined) d.cls = null;
+    // AP 스탯 (v1.9 — 구 세이브는 기본 5/5/5/5 + 레벨만큼 AP 소급 지급)
+    if (!d.stats || typeof d.stats !== "object") {
+      const lv = typeof d.lv === "number" ? d.lv : 1;
+      d.stats = { str: 5, dex: 5, int: 5, luk: 5 };
+      d.ap = Math.max(0, (lv - 1) * 5);
+    }
+    if (typeof d.ap !== "number") d.ap = 0;
+    // BM (v1.9 — 구 세이브 호환 기본값)
+    if (!d.buffItems || typeof d.buffItems !== "object") d.buffItems = {};
+    if (!Array.isArray(d.buffs)) d.buffs = [];
+    if (!Array.isArray(d.pets)) d.pets = [];
+    if (d.pet === undefined) d.pet = null;
+    if (!Array.isArray(d.cosmetics)) d.cosmetics = [];
+    if (d.cosmetic === undefined) d.cosmetic = null;
     return d;
   } catch {
     return null;

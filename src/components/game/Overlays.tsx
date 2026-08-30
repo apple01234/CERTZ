@@ -30,7 +30,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아뜰란티스
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v1.8</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v1.9</span>
         </p>
       </div>
 
@@ -212,14 +212,14 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
 /* ---------- 상호작용 프롬프트 (E키 상호작용 — NPC 대화/상점 공용) ---------- */
 
 export function InteractPrompt() {
-  const [st, setSt] = useState<{ active: boolean; label: string; kind: "talk" | "shop" | null }>({
+  const [st, setSt] = useState<{ active: boolean; label: string; kind: "talk" | "shop" | "job" | null }>({
     active: false,
     label: "",
     kind: null,
   });
 
   useEffect(() => {
-    const on = (v: { active: boolean; label: string; kind: "talk" | "shop" | null }) =>
+    const on = (v: { active: boolean; label: string; kind: "talk" | "shop" | "job" | null }) =>
       setSt({ active: !!v.active, label: v.label ?? "", kind: v.kind ?? null });
     EventBus.on("ui:interact", on);
     return () => {
@@ -236,11 +236,15 @@ export function InteractPrompt() {
         if (st.kind === "shop") EventBus.emit("ui:panel", { panel: "shop" });
         else EventBus.emit("input:interact");
       }}
-      className="pointer-events-auto absolute bottom-24 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border-2 border-emerald-200/80 bg-gradient-to-b from-emerald-400 to-emerald-600 px-4 py-2 text-[13px] font-black text-slate-900 shadow-xl transition-transform active:scale-95"
+      className={`pointer-events-auto absolute bottom-24 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border-2 px-4 py-2 text-[13px] font-black shadow-xl transition-transform active:scale-95 ${
+        st.kind === "job"
+          ? "border-amber-200/80 bg-gradient-to-b from-amber-300 to-amber-600 text-slate-900"
+          : "border-emerald-200/80 bg-gradient-to-b from-emerald-400 to-emerald-600 text-slate-900"
+      }`}
     >
-      {st.kind === "shop" ? <Store size={16} /> : <MessageCircle size={16} />}
+      {st.kind === "shop" ? <Store size={16} /> : st.kind === "job" ? <Sparkles size={16} /> : <MessageCircle size={16} />}
       {st.label}
-      <span className="rounded bg-slate-900/85 px-1 text-[9px] font-black text-emerald-200">E</span>
+      <span className={`rounded px-1 text-[9px] font-black ${st.kind === "job" ? "bg-slate-900/85 text-amber-200" : "bg-slate-900/85 text-emerald-200"}`}>E</span>
     </button>
   );
 }
