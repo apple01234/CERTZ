@@ -2,7 +2,14 @@
  * 멀티플레이 네트워크 레이어 (v1.7) — socket.io 싱글턴 래퍼
  *  - 같은 서버(미리보기/로컬 dev)에 접속한 모든 플레이어 실시간 동기화
  *  - 오프라인/APK 단독 실행 시 조용히 비활성 (게임플레이 무영향)
+ *
+ * v2.0 APK 대응:
+ *  - 네이티브 WebView는 same-origin(https://localhost)에 게임 서버가 없다.
+ *  - localStorage 'sertz.server.url' 에 서버 주소(https://… )를 지정하면 해당 서버로 접속해
+ *    웹 플레이어와 같은 서버 멀티플레이가 가능하다.
+ *  - 미지정이면 연결 시도 자체를 생략(완전 오프라인 — 재접속 루프/배터리 낭비 없음).
  */
+import { Capacitor } from "@capacitor/core";
 import { io, type Socket } from "socket.io-client";
 
 export type NetPlayer = {
@@ -26,11 +33,34 @@ export type NetChatMsg = {
 
 let socket: Socket | null = null;
 
+/**
+ * 접속 대상 서버 URL 결정:
+ *  - 웹 → undefined (same-origin: server.js socket.io)
+ *  - APK + localStorage 'sertz.server.url' → 그 주소 (멀티플레이 서버)
+ *  - APK + 미지정 → null (오프라인 모드 — 연결 시도 없음)
+ */
+function resolveServerUrl(): string | null | undefined {
+  if (typeof window === "undefined") return undefined;
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const raw = window.localStorage.getItem("sertz.server.url");
+      const u = raw?.trim();
+      if (u && /^https?:\/\//i.test(u)) return u.replace(/\/$/, "");
+    } catch {
+      /* localStorage 접근 불가 — 오프라인 처리 */
+    }
+    return null;
+  }
+  return undefined;
+}
+
 export function netConnect(): Socket | null {
   if (typeof window === "undefined") return null;
   try {
     if (!socket) {
-      socket = io({ path: "/socket.io", transports: ["websocket", "polling"] });
+      const url = resolveServerUrl();
+      if (url === null) return null; // APK 오프라인 모드
+      socket = io(url, { path: "/socket.io", transports: ["websocket", "polling"] });
     }
     return socket;
   } catch {

@@ -6,7 +6,7 @@
 const config = {
   appId: "com.sertz.yggdrasil",
   appName: "SERTZ",
-  webDir: "out",
+  webDir: ".next-apk",
   server: {
     androidScheme: "https",
   },

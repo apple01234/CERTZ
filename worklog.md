@@ -68,3 +68,27 @@ Work Log:
 
 Stage Summary:
 - v2.0 push 완료 (원격 동기화)
+
+---
+Task ID: v2-apk
+Agent: Super Z (main)
+Task: 사용자 요청 "Apk로 줘" — SERTZ v2.0 Android APK 패키징
+
+Work Log:
+- 기존 Capacitor 8 안드로이드 프로젝트(android/) 활용, 최초 실빌드 완료
+- Android SDK 설치 (cmdline-tools + platform 36 + build-tools 36.0.0 → /home/z/android-sdk)
+- 루트/sudo 불가 환경 → 포터블 Temurin JDK 21 (/home/z/jdk) 다운로드 후 JAVA_HOME 지정 (javac 확보)
+- net.ts v2.0 APK 대응: Capacitor 네이티브 판별 + localStorage 'sertz.server.url' 오버라이드
+  (지정 시 해당 서버 멀티플레이, 미지정 시 연결 시도 생략 — 오프라인 재접속 루프 제거)
+- src/app/api/route.ts: output:export 대응 force-static 추가
+- capacitor.config.ts webDir: out → .next-apk (커스텀 distDir export 실제 출력 위치)
+- APK export 빌드 성공 (APK_EXPORT=1 next build → .next-apk, 에셋 294종 포함)
+- 런처 아이콘 교체: public/logo.svg → mipmap 전밀도 PNG (scripts/build_launcher_icons.js, sharp) + 적응형 배경 #05070D
+- 릴리즈 서명: android/sertz-release.keystore 생성 (alias sertz / storepass sertz2020) + signingConfig 적용
+- 버전 bump: versionCode 5 / versionName "2.0"
+- 스모크 테스트(Playwright, 정적 서빙): 타이틀 렌더·canvas 부팅·404 0건·콘솔에러 0건 확인
+- 원커맨드 재빌드 스크립트 추가 (scripts/build_apk.sh)
+
+Stage Summary:
+- 산출물: download/SERTZ-v2.0.apk (16MB, minSdk 24(Android 7.0)+, targetSdk 36, release 서명)
+- APK는 완전 오프라인 실행(세이브 localStorage) + localStorage 'sertz.server.url' 설정 시 웹 서버와 멀티플레이 연동

@@ -73,3 +73,11 @@ out/
 .next-apk/
 prev-project/
 upload/
+
+# android (capacitor)
+android/.gradle
+android/local.properties
+android/capacitor-cordova-android-plugins
+android/app/src/main/assets
+*.keystore
+!android/sertz-release.keystore
