@@ -7,7 +7,7 @@ import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
 import { Pet } from "../entities/Pet";
 import { EventBus, type QuestState, type InteractState, type QuestLogState } from "../../components/game/EventBus";
-import { writeSave, loadSave, type SaveData, setPlayerName, getPlayerName } from "../config";
+import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
 import { loadKeyMap, type KeyMap, type GameAction } from "../keymap";
 import {
   classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST, chainOf,
@@ -516,41 +516,48 @@ export class WorldScene extends Phaser.Scene {
       : "gp";
     const T = 64;
     const rng = new Phaser.Math.RandomDataGenerator([stageKey + "-blend"]);
-    const y0 = this.stageH / 2 - 52; // 가로 길 상단
-    const y1 = this.stageH / 2 + 52; // 가로 길 하단
+    const yc = this.stageH / 2;
+    const half = 52;
 
-    // 1) 지면 명도 변형 스캐터 — 길 영역 제외 (균일 반복 패턴 깨기)
+    /* v2.1 타일맵 자연화 — v2.0의 격자 프린지(자로 잰 직선 경계)를 개선:
+     *  ① 도로 경계를 두 개 사인파 합성으로 물결치게 (구역별 고정 위상 → 재방문 시 동일 지형)
+     *  ② 지면 변형 타일을 격자 중심이 아닌 지터 위치에 배치
+     *  ③ 프린지/침식 밀도와 뒤집기 다양화 */
+    const wobTop = (x: number) => Math.sin(x * 0.008) * 13 + Math.sin(x * 0.021 + 2.1) * 7;
+    const wobBot = (x: number) => Math.sin(x * 0.009 + 1.3) * 12 + Math.sin(x * 0.023 + 0.6) * 7;
+
+    // 1) 지면 명도 변형 스캐터 — 지터 위치 (도로 근처 제외)
     for (let gy = 0; gy < this.stageH; gy += T) {
       for (let gx = 0; gx < this.stageW; gx += T) {
-        if (gy + T > y0 && gy < y1) continue; // 길 영역
+        const jx = gx + T / 2 + rng.between(-20, 20);
+        const jy = gy + T / 2 + rng.between(-20, 20);
+        if (jy > yc - half + wobTop(jx) - 24 && jy < yc + half + wobBot(jx) + 24) continue;
         const r = rng.frac();
-        if (r < 0.028) this.add.image(gx + T / 2, gy + T / 2, `tx_${set}_gvar1`).setDepth(0);
-        else if (r < 0.056) this.add.image(gx + T / 2, gy + T / 2, `tx_${set}_gvar2`).setDepth(0);
+        const tex = r < 0.032 ? `tx_${set}_gvar1` : r < 0.064 ? `tx_${set}_gvar2` : null;
+        if (tex) this.add.image(jx, jy, tex).setDepth(0).setFlipX(rng.frac() < 0.5).setAlpha(0.88 + rng.frac() * 0.12);
       }
     }
 
-    // 2) 가로 길 — 안 변형 + 경계 프린지 + 침식
-    for (let gx = 0; gx < this.stageW; gx += T) {
-      if (rng.frac() < 0.14) this.add.image(gx + T / 2, y0 + 32, `tx_${set}_pvar`).setDepth(0);
-      if (rng.frac() < 0.14) this.add.image(gx + T / 2, y1 - 32, `tx_${set}_pvar`).setDepth(0);
-      // 프린지 — 길(아래)에서 지면(위)으로/지면(아래)에서 길로 뻗은 블롭 (flipX로 2배 변형)
-      if (rng.frac() < 0.45)
-        this.add.image(gx + T / 2, y0 - 40, `tx_${set}_edge_dn`).setDepth(0).setFlipX(rng.frac() < 0.5);
-      if (rng.frac() < 0.45)
-        this.add.image(gx + T / 2, y1 + 40, `tx_${set}_edge_up`).setDepth(0).setFlipX(rng.frac() < 0.5);
-      // 침식 — 지면이 길 안쪽으로 파여드는 블롭
-      if (rng.frac() < 0.16) this.add.image(gx + T / 2, y0 + 20, `tx_${set}_bite_dn`).setDepth(0);
-      if (rng.frac() < 0.16) this.add.image(gx + T / 2, y1 - 20, `tx_${set}_bite_up`).setDepth(0);
+    // 2) 도로 경계 — 물결을 따라가는 프린지 + 침식 + 도로 내부 미세 변형
+    for (let x = 0; x <= this.stageW; x += 46) {
+      const yT = yc - half + wobTop(x);
+      const yB = yc + half + wobBot(x);
+      if (rng.frac() < 0.6) this.add.image(x, yT - rng.between(2, 10), `tx_${set}_edge_dn`).setDepth(0).setFlipX(rng.frac() < 0.5);
+      if (rng.frac() < 0.6) this.add.image(x, yB + rng.between(2, 10), `tx_${set}_edge_up`).setDepth(0).setFlipX(rng.frac() < 0.5);
+      if (rng.frac() < 0.24) this.add.image(x, yT + rng.between(8, 26), `tx_${set}_bite_dn`).setDepth(0).setFlipX(rng.frac() < 0.5);
+      if (rng.frac() < 0.24) this.add.image(x, yB - rng.between(8, 26), `tx_${set}_bite_up`).setDepth(0).setFlipX(rng.frac() < 0.5);
+      if (rng.frac() < 0.14)
+        this.add.image(x + rng.between(-18, 18), rng.between(Math.round(yT) + 16, Math.round(yB) - 16), `tx_${set}_pvar`)
+          .setDepth(0).setFlipX(rng.frac() < 0.5).setAlpha(0.82);
     }
 
-    // 3) 숲 세로 길 — 좌우 경계 프린지 (flipY로 2배 변형)
+    // 3) 숲 세로 길 — 좌우 경계 프린지 (요철 + flipY 변형)
     if (ch === "forest") {
       const vcx = this.stageW * 0.55;
-      for (let gy = 0; gy < this.stageH; gy += T) {
-        if (rng.frac() < 0.45)
-          this.add.image(vcx - 52 - 40, gy + T / 2, `tx_${set}_edge_rt`).setDepth(0).setFlipY(rng.frac() < 0.5);
-        if (rng.frac() < 0.45)
-          this.add.image(vcx + 52 + 40, gy + T / 2, `tx_${set}_edge_lt`).setDepth(0).setFlipY(rng.frac() < 0.5);
+      const wobL = (y: number) => Math.sin(y * 0.01 + 0.7) * 12 + Math.sin(y * 0.027 + 1.9) * 5;
+      for (let y = 0; y <= this.stageH; y += 46) {
+        if (rng.frac() < 0.6) this.add.image(vcx - 92 + wobL(y), y, `tx_${set}_edge_rt`).setDepth(0).setFlipY(rng.frac() < 0.5);
+        if (rng.frac() < 0.6) this.add.image(vcx + 92 + wobL(y + 1.7), y, `tx_${set}_edge_lt`).setDepth(0).setFlipY(rng.frac() < 0.5);
       }
     }
   }
@@ -586,9 +593,24 @@ export class WorldScene extends Phaser.Scene {
       : ch === "cave" || ch === "nidavellir" ? ["pine"]
       : ["tree", "tree", "pine"];
     const rockTex = ch === "niflheim" ? "rock_snow" : ch === "abyss" || ch === "hel" ? "rock_dark" : ch === "muspelheim" || ch === "nidavellir" ? "rock_stone" : "rock";
+
+    /* v2.1 자연 배치 — 균일 산포 대신 2~3개 군집 중심 + 의사-가우시안 산포 (자연 숲 패턴) */
+    const clusterN = ch === "village" ? 2 : 3;
+    const clusters: [number, number][] = [];
+    for (let i = 0; i < clusterN; i++)
+      clusters.push([rng.between(200, this.stageW - 200), rng.between(140, this.stageH - 140)]);
+    const natPoint = (): [number, number] => {
+      if (rng.frac() < 0.62) {
+        const [kx, ky] = rng.pick(clusters);
+        return [
+          Phaser.Math.Clamp(kx + (rng.frac() + rng.frac() - 1) * 210, 80, this.stageW - 80),
+          Phaser.Math.Clamp(ky + (rng.frac() + rng.frac() - 1) * 150, 90, this.stageH - 80),
+        ];
+      }
+      return [rng.between(80, this.stageW - 80), rng.between(90, this.stageH - 80)];
+    };
     for (let i = 0; i < def.treeCount; i++) {
-      const x = rng.between(80, this.stageW - 80);
-      const y = rng.between(90, this.stageH - 80);
+      const [x, y] = natPoint();
       if (Math.abs(y - this.stageH / 2) < 90) continue; // 길 위엔 안 심음
       if (blocked(x, y)) continue;
       const tex = rng.pick(treeSet);
@@ -598,8 +620,7 @@ export class WorldScene extends Phaser.Scene {
       (t.body as Phaser.Physics.Arcade.StaticBody).setSize(20, 14).setOffset(22, 46);
     }
     for (let i = 0; i < def.rockCount; i++) {
-      const x = rng.between(80, this.stageW - 80);
-      const y = rng.between(90, this.stageH - 80);
+      const [x, y] = natPoint();
       if (Math.abs(y - this.stageH / 2) < 90) continue;
       if (blocked(x, y)) continue;
       const r = this.add.image(x, y, rockTex).setDepth(Math.floor(y / 10));
@@ -1810,6 +1831,20 @@ export class WorldScene extends Phaser.Scene {
       net.netAnnounceJob(alt.key);
     };
 
+    // 친구 따라가기 (v2.1 — 친구가 접속 중인 구역으로 즉시 이동)
+    const onFriendGoto = (v: { stage: string }) => {
+      if (!this.player || this.player.state === "dead") return;
+      const target = resolveStage(String(v?.stage || ""));
+      if (!target || target === this.stageDef.key) return;
+      this.cameras.main.fadeOut(420, 0, 0, 0);
+      this.player.state = "idle";
+      this.time.delayedCall(440, () => {
+        const carry = this.buildSave(target);
+        writeSave(carry);
+        this.scene.restart({ stage: target, save: carry });
+      });
+    };
+
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
     EventBus.on("input:skill1", onS1);
@@ -1831,6 +1866,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("chat:send", onChatSend);
     EventBus.on("job:select", onJobSelect);
     EventBus.on("job:switch", onJobSwitch);
+    EventBus.on("friend:goto", onFriendGoto);
     this.events.once("shutdown", () => {
       EventBus.off("input:move", onMove);
       EventBus.off("input:attack", onAtk);
@@ -1853,6 +1889,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("chat:send", onChatSend);
       EventBus.off("job:select", onJobSelect);
       EventBus.off("job:switch", onJobSwitch);
+      EventBus.off("friend:goto", onFriendGoto);
     });
   }
 
@@ -2024,10 +2061,17 @@ export class WorldScene extends Phaser.Scene {
   private initNet() {
     try {
       const s = net.netConnect();
-      if (!s) return;
+      if (!s) {
+        // APK 오프라인 모드 — 멀티 사용법을 한 번만 안내 (v2.1)
+        if (net.netStatus().native) {
+          this.time.delayedCall(1100, () => this.showBanner("오프라인 모드 — 타이틀 화면 우하단에서 서버 연결 시 멀티플레이"));
+        }
+        return;
+      }
       const offPlayers = net.netOnPlayers((list) => this.syncRemotes(list));
       const offChat = net.netOnChat((m) => EventBus.emit("chat:msg", m));
-      this.netOffs = [offPlayers, offChat];
+      const offFriends = net.netOnFriends((list) => EventBus.emit("friends:online", list));
+      this.netOffs = [offPlayers, offChat, offFriends];
       this.events.once("shutdown", () => this.shutdownNet());
       // 소켓 연결 안정화 후 입장 방송 (v2.0 — netJoin이 connect 전이면 대기열 후 자동 발송)
       this.time.delayedCall(650, () => {
@@ -2039,6 +2083,7 @@ export class WorldScene extends Phaser.Scene {
           x: Math.round(this.player.x),
           y: Math.round(this.player.y),
           stage: this.stageDef.key,
+          code: getFcode(), // v2.1 친구 고유번호
         });
       });
     } catch {
@@ -2208,7 +2253,7 @@ export class WorldScene extends Phaser.Scene {
     if (best === prev) return;
     this.nearInteract = best;
     const payload: InteractState = best
-      ? { active: true, label: best.label, kind: best.kind === "inn" || best.kind === "house" ? "talk" : best.kind }
+      ? { active: true, label: best.label, kind: best.kind === "inn" || best.kind === "house" ? "talk" : best.kind, x: best.x, y: best.y }
       : { active: false, label: "", kind: null };
     EventBus.emit("ui:interact", payload);
     this.syncEBubble();

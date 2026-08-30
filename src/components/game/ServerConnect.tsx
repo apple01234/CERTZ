@@ -22,22 +22,31 @@ function readUrl(): string {
  *  - 웹(브라우저)에서는 same-origin 서버를 자동 사용하므로 이 UI를 렌더링하지 않는다
  */
 export function ServerConnect() {
-  const [native, setNative] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [url, setUrl] = useState("");
-  const [saved, setSaved] = useState("");
+  // 클라이언트 전용(ssr:false) — lazy 초기화로 마운트 effect 없이 상태 확정
+  const [native] = useState(() => Capacitor.isNativePlatform());
+  const [open, setOpen] = useState(() => {
+    if (!Capacitor.isNativePlatform()) return false;
+    const u = readUrl();
+    if (u) return false;
+    let asked = false;
+    try {
+      asked = window.localStorage.getItem("sertz.server.asked") === "1";
+      window.localStorage.setItem("sertz.server.asked", "1");
+    } catch {
+      /* noop */
+    }
+    return !asked; // 첫 실행이면 서버 설정창 자동 오픈 (v2.1)
+  });
+  const [url, setUrl] = useState(() => readUrl());
+  const [saved] = useState(() => readUrl());
   const [online, setOnline] = useState(false);
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-    setNative(true);
-    const u = readUrl();
-    setUrl(u);
-    setSaved(u);
-    if (u) netConnect(); // 타이틀에서 조기 접속 → 상태 실시간 표시
+    if (!native) return;
+    if (saved) netConnect(); // 타이틀에서 조기 접속 → 상태 실시간 표시
     const t = setInterval(() => setOnline(netJoined()), 1500);
     return () => clearInterval(t);
-  }, []);
+  }, [native, saved]);
 
   if (!native) return null;
 

@@ -88,7 +88,52 @@ export type SaveData = {
   jobStoryDone?: number[];
   cosmetics?: string[];
   cosmetic?: string | null;
-};
+  /* ↓ 친구 시스템 (v2.1 — 구 세이브 호환: 로드 시 자동 발급/기본값) */
+  fcode?: string;
+  friends?: { code: string; name: string }[];
+}
+
+/* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */
+const FCODE_CHARS = "ACDEFGHJKLMNPQRTUVWXY34679";
+
+export function makeFcode(): string {
+  let s = "";
+  for (let i = 0; i < 6; i++) {
+    s += FCODE_CHARS[Math.floor(Math.random() * FCODE_CHARS.length)];
+  }
+  return s;
+}
+
+/** 세이브의 친구 코드 확보 — 없으면 발급 후 즉시 저장 (멀티 접속 시 서버 전파용) */
+export function ensureFcode(save: SaveData): string {
+  if (save.fcode && /^[A-Z0-9]{4,12}$/.test(save.fcode)) return save.fcode;
+  save.fcode = makeFcode();
+  writeSave(save);
+  return save.fcode;
+}
+
+/** 첫 세이브 생성 전 임시 코드 (세션 내 고정 — 이후 첫 저장 시 승격) */
+let sessionFcode: string | null = null;
+
+/** 친구 코드 조회 — 세이브 있으면 저장된 값, 없으면 세션 임시 코드 */
+export function getFcode(): string {
+  const save = loadSave();
+  if (save) return ensureFcode(save);
+  if (!sessionFcode) sessionFcode = makeFcode();
+  return sessionFcode;
+}
+
+/** 세이브 친구 목록 조작 헬퍼 — 로드→변경→저장 후 반환 */
+export function mutateFriends(fn: (list: { code: string; name: string }[]) => { code: string; name: string }[]): { code: string; name: string }[] {
+  const save = loadSave();
+  const list = save?.friends ?? [];
+  const next = fn(list.map((f) => ({ code: String(f.code || "").toUpperCase().slice(0, 12), name: String(f.name || "").slice(0, 8) })));
+  if (save) {
+    save.friends = next;
+    writeSave(save);
+  }
+  return next;
+}
 
 export function loadSave(): SaveData | null {
   if (typeof window === "undefined") return null;
@@ -128,6 +173,12 @@ export function loadSave(): SaveData | null {
     // 전직 스토리 (v2.0 — 구 세이브 호환)
     if (d.jobStory === undefined) d.jobStory = null;
     if (!Array.isArray(d.jobStoryDone)) d.jobStoryDone = [];
+    // 친구 (v2.1 — 구 세이브 호환: 코드 자동 발급)
+    if (!d.fcode || !/^[A-Z0-9]{4,12}$/.test(d.fcode)) {
+      d.fcode = makeFcode();
+      // 발급만으로 저장하지 않음 — 다음 writeSave 시 반영 (로드 폭주 방지)
+    }
+    if (!Array.isArray(d.friends)) d.friends = [];
     return d;
   } catch {
     return null;

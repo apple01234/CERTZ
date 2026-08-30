@@ -36,12 +36,20 @@ export function PartyWidget() {
 
   const create = () => {
     setErr("");
+    if (!net.netJoined()) {
+      setErr(net.netStatus().hasServer ? "서버 연결 중입니다 — 잠시 후 다시 시도" : "오프라인 모드 — 타이틀 화면에서 서버 연결 후 이용할 수 있습니다");
+      return;
+    }
     net.netPartyCreate();
   };
   const join = () => {
     setErr("");
     const c = code.trim().toUpperCase();
     if (!c) return;
+    if (!net.netJoined()) {
+      setErr(net.netStatus().hasServer ? "서버 연결 중입니다 — 잠시 후 다시 시도" : "오프라인 모드 — 타이틀 화면에서 서버 연결 후 이용할 수 있습니다");
+      return;
+    }
     net.netPartyJoin(c);
   };
   const leave = () => {

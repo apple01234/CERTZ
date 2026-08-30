@@ -66,6 +66,16 @@ app.prepare().then(() => {
     io.emit("chat", msg); // 새 메시지 1건만 브로드캐스트 (히스토리는 접속 시 1회)
   }
 
+  /* v2.1 친구 시스템 — 전체 접속자 요약 (코드/이름/레벨/클래스/구역) */
+  function friendsPayload() {
+    const list = [];
+    for (const p of players.values()) {
+      list.push({ code: p.code || "", name: p.name, lv: p.lv, cls: p.cls, stage: p.stage || "village" });
+      if (list.length >= 300) break;
+    }
+    return list;
+  }
+
   /* ---------- 파티 상태 (v2.0) ---------- */
   /** partyId → { id, leader( sockId ), max, members: Set<sockId> } */
   const parties = new Map();
@@ -103,6 +113,7 @@ app.prepare().then(() => {
         flip: false,
         moving: false,
         stage: typeof p.stage === "string" ? p.stage.slice(0, 24) : "village",
+        code: typeof p.code === "string" ? p.code.slice(0, 12) : "",
         t: Date.now(),
       });
       broadcastPlayers(true);
@@ -253,6 +264,15 @@ app.prepare().then(() => {
   });
 
   httpServer.listen(port, () => {
-    console.log(`> SERTZ 서버 준비됨 — http://localhost:${port} (멀티플레이 소켓 + 파티 포함)`);
+    console.log(`> SERTZ 서버 준비됨 — http://localhost:${port} (멀티플레이 소켓 + 파티 + 친구 포함)`);
   });
+
+  /* v2.1 하트비트 동기화 (2초) — join/이동 브로드캐스트를 놓친 클라이언트 자동 복구
+   *  (증상: 먼저 접속한 클라이언트가 나중 접속자를 영원히 못 보는 문제 — 가만히 있면 트래픽 0)
+   *  friends 목록도 같은 주기로 전파 (친구 온라인 표시용) */
+  setInterval(() => {
+    if (players.size === 0) return;
+    broadcastPlayers(true);
+    io.emit("friends", friendsPayload());
+  }, 2000);
 });

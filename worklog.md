@@ -108,3 +108,29 @@ Work Log:
 
 Stage Summary:
 - APK에서 타이틀 화면 → 우하단 "오프라인 모드" 버튼 → 서버 주소 입력 시 웹 플레이어와 동일 서버 멀티 가능
+
+---
+Task ID: v2.1-fixes
+Agent: Super Z (main)
+Task: 사용자 5건 보고 수정 — ①NPC 상호작용 UI 위치 ②타일맵 부자연 ③친구 시스템 신규 ④파티 생성/가입 ⑤크로스플랫폼 상호 시야
+
+Work Log:
+- ⑤ 원인 실측 추적: 서버 소켓 대칭성 테스트(정상) → 클라이언트 프로브 → 2페이지 headless 동결 특성 확인
+  + 결정적 구조 결함: 서버가 join/이동 시에만 브로드캐스트 → 나중 접속자 join 1건을 놓치면 영원히 안 보임
+  → server.js 2초 하트비트 broadcastPlayers 도입으로 자가 복구
+- ④ 파티 자체는 정상 실측(P1 생성→참여→멤버 2명 양쪽 확인). 문제는 미연결 상태에서 조용히 무시되는 UX
+  → PartyWidget 생성/참여 버튼에 미연결 가드 + 안내 메시지 추가
+- ③ 친구 시스템 신규: config fcode(6자리)/friends 필드 + makeFcode/getFcode/mutateFriends,
+  net.ts netOnFriends(netStatus 포함), server.js join 코드 수신 + friendsPayload 2초 전파,
+  FriendsWidget(내 코드 복사·추가·삭제·온라인 점·구역·이동), WorldScene friend:goto 핸들러(구역 이동)
+- ① InteractPrompt 하단 고정 → NPC 월드좌표 수신 후 월드→화면 변환으로 NPC 머리 위 앵커링(rAF 카메라 추적)
+- ② buildGroundBlend 재작성: 도로 경계 사인파 물결 + 지터 스캐터 + 프린지 밀도/반전 다양화,
+  placeDecor 나무/바위 2~3 군집 의사-가우시안 배치
+- ServerConnect 첫 실행 자동 오픈, APK 오프라인 진입 시 배너 안내
+- E2E(script/e2e_v21.js, 서로 다른 브라우저 2개 + 자식 서버 :3105): 상호 시야·파티·친구 온라인·프롬프트 앵커 ALL PASS
+- tsc/eslint 0 에러, 정적 export 스모크 통과, APK v2.1(versionCode 6) 재빌드
+- 플랫폼이 세션 프로세스를 정리하는 관계로 :3000 서버는 수동 재기동 필요할 수 있음
+
+Stage Summary:
+- v2.1: 5건 전부 해소. 친구 시스템(친구코드·고유번호·온라인 표시·따라가기) 신규 탑재
+- 다운로드: download/SERTZ-v2.1.apk

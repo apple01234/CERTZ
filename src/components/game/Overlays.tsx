@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
@@ -222,31 +222,61 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
 /* ---------- 상호작용 프롬프트 (E키 상호작용 — NPC 대화/상점 공용) ---------- */
 
 export function InteractPrompt() {
-  const [st, setSt] = useState<{ active: boolean; label: string; kind: "talk" | "shop" | "job" | null }>({
+  const [st, setSt] = useState<{ active: boolean; label: string; kind: "talk" | "shop" | "job" | null; x?: number; y?: number }>({
     active: false,
     label: "",
     kind: null,
   });
+  const ref = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const on = (v: { active: boolean; label: string; kind: "talk" | "shop" | "job" | null }) =>
-      setSt({ active: !!v.active, label: v.label ?? "", kind: v.kind ?? null });
+    const on = (v: { active: boolean; label: string; kind: "talk" | "shop" | "job" | null; x?: number; y?: number }) =>
+      setSt({ active: !!v.active, label: v.label ?? "", kind: v.kind ?? null, x: v.x, y: v.y });
     EventBus.on("ui:interact", on);
     return () => {
       EventBus.off("ui:interact", on);
     };
   }, []);
 
+  /* v2.1 — 프롬프트를 대상(NPC/건물) 머리 위에 고정 (월드→화면 좌표 변환, 카메라 추적) */
+  useEffect(() => {
+    if (!st.active || st.x === undefined || st.y === undefined) return;
+    const wx = st.x;
+    const wy = st.y;
+    let raf = 0;
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      const el = ref.current;
+      const g = (window as unknown as { __SERTZ__?: { game?: { scene: { getScene: (k: string) => { cameras?: { main?: { scrollX: number; scrollY: number; zoom: number } } } } } } }).__SERTZ__;
+      const cam = g?.game?.scene.getScene("world")?.cameras?.main;
+      if (!el || !cam) return;
+      const zoom = cam.zoom || 1;
+      const vw = window.innerWidth;
+      const sx = Math.min(Math.max((wx - cam.scrollX) * zoom, 84), vw - 84);
+      const sy = Math.max((wy - cam.scrollY) * zoom - 66 * zoom, 10);
+      el.style.left = `${sx}px`;
+      el.style.top = `${sy}px`;
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }, [st.active, st.x, st.y]);
+
   if (!st.active || !st.label) return null;
+
+  const anchored = st.x !== undefined && st.y !== undefined;
 
   return (
     <button
+      ref={ref}
       onPointerDown={(e) => {
         e.preventDefault();
         if (st.kind === "shop") EventBus.emit("ui:panel", { panel: "shop" });
         else EventBus.emit("input:interact");
       }}
-      className={`pointer-events-auto absolute bottom-24 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border-2 px-4 py-2 text-[13px] font-black shadow-xl transition-transform active:scale-95 ${
+      style={anchored ? { left: -9999, top: -9999, transform: "translate(-50%, -100%)" } : undefined}
+      className={`pointer-events-auto absolute flex items-center gap-1.5 rounded-full border-2 px-4 py-2 text-[13px] font-black shadow-xl transition-transform active:scale-95 ${
+        anchored ? "" : "bottom-24 left-1/2 -translate-x-1/2"
+      } ${
         st.kind === "job"
           ? "border-amber-200/80 bg-gradient-to-b from-amber-300 to-amber-600 text-slate-900"
           : "border-emerald-200/80 bg-gradient-to-b from-emerald-400 to-emerald-600 text-slate-900"

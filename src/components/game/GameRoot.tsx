@@ -11,6 +11,7 @@ import { ServerConnect } from "./ServerConnect";
 import { GamePanels } from "./Panels";
 import { ChatBox } from "./ChatBox";
 import { PartyWidget } from "./PartyWidget";
+import { FriendsWidget } from "./FriendsWidget";
 import * as audio from "@/game/audio";
 import { useGameUi } from "./useGameUi";
 import { loadMuted, writeMuted } from "@/game/config";
@@ -110,6 +111,8 @@ export default function GameRoot() {
             <ChatBox />
             {/* 파티 위젯 (v2.0 — 파티 & 보스 토벌) */}
             <PartyWidget />
+            {/* 친구 위젯 (v2.1 — 친구코드·고유번호) */}
+            <FriendsWidget />
           </>
         )}
 

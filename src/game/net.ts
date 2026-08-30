@@ -61,6 +61,8 @@ export function netConnect(): Socket | null {
       const url = resolveServerUrl();
       if (url === null) return null; // APK 오프라인 모드
       socket = io(url, { path: "/socket.io", transports: ["websocket", "polling"] });
+      // E2E/디버그 훅 — 소켓 상태 실측용
+      (window as unknown as { __SERTZ_NET__?: unknown }).__SERTZ_NET__ = socket;
     }
     return socket;
   } catch {
@@ -76,7 +78,15 @@ export function netJoined(): boolean {
   return !!socket?.connected;
 }
 
-export type JoinInfo = { name: string; lv: number; cls: string | null; x: number; y: number; stage?: string };
+/** UI 표시용 연결 상태 (v2.1) */
+export function netStatus(): { connected: boolean; hasServer: boolean; native: boolean } {
+  const native = typeof window !== "undefined" && Capacitor.isNativePlatform();
+  let hasServer = true; // 웹 = same-origin 서버 항상 존재
+  if (native) hasServer = resolveServerUrl() != null;
+  return { connected: !!socket?.connected, hasServer, native };
+}
+
+export type JoinInfo = { name: string; lv: number; cls: string | null; x: number; y: number; stage?: string; code?: string };
 
 /* v2.0 수정 (지시 #14 — 채팅 안됨 원인):
  *  netJoin이 소켓 connect 이전에 호출되면 조용히 실패하고,
@@ -92,6 +102,7 @@ function hookConnectFlush() {
   s.on("connect", () => {
     if (pendingJoin) {
       s.emit("join", pendingJoin);
+      pendingJoin = null;
     }
   });
 }
@@ -103,6 +114,7 @@ export function netJoin(info: JoinInfo) {
   pendingJoin = info; // 최신 상태로 갱신 (리스폰/스테이지 이동 재합류 대응)
   if (s.connected) {
     s.emit("join", info);
+    pendingJoin = null;
   }
 }
 
@@ -178,4 +190,16 @@ export function netOnChat(cb: (m: NetChatMsg) => void): () => void {
   if (!s) return () => {};
   s.on("chat", cb);
   return () => s.off("chat", cb);
+}
+
+/* ================= 친구 (v2.1 — 친구코드·고유번호) ================= */
+
+export type NetFriendOnline = { code: string; name: string; lv: number; cls: string | null; stage: string };
+
+/** 서버 2초 하트비트로 전파되는 전체 접속자 요약 — 클라에서 내 친구 코드와 대조 */
+export function netOnFriends(cb: (list: NetFriendOnline[]) => void): () => void {
+  const s = netConnect();
+  if (!s) return () => {};
+  s.on("friends", cb);
+  return () => s.off("friends", cb);
 }

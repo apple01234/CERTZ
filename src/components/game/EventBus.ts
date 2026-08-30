@@ -91,4 +91,7 @@ export type InteractState = {
   active: boolean;
   label: string;
   kind: "talk" | "shop" | "job" | null;
+  /** 대상 월드 좌표 (v2.1 — 프롬프트를 NPC 위에 고정) */
+  x?: number;
+  y?: number;
 };
