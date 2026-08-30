@@ -197,3 +197,18 @@ Work Log:
 Stage Summary:
 - v2.3 품질 검증 완료 — 추가 수정 불필요. 원격=로컬 동기화 확인
 - 커뮤니케이션 언어 한국어로 전환 (사용자 지적 반영)
+
+---
+Task ID: v2.3-apk
+Agent: Super Z (main)
+Task: 사용자 요청 "Apk만 줘" — v2.3 Android APK 재빌드
+
+Work Log:
+- android/app/build.gradle: versionCode 7→8, versionName 2.2→2.3
+- scripts/build_apk.sh: 산출물명 SERTZ-v2.2.apk → SERTZ-v2.3.apk 갱신
+- build_apk.sh 실행: APK_EXPORT=1 next build → cap sync android → gradlew assembleRelease (BUILD SUCCESSFUL 34s)
+- 검증: aapt badging — versionCode 8 / versionName 2.3 / minSdk 24 / targetSdk 36, apksigner --print-certs — CN=SERTZ 릴리즈 서명 정상
+
+Stage Summary:
+- 산출물: download/SERTZ-v2.3.apk (16.7MB, v2.3 7건 전부 포함 — 몬스터 증원/리젠 단축, 자동배분 폴백, 라고스 반복의뢰, 정사각 실내, 채팅 자가복구, 재입장 대사 1회화)
+- 다운로드 직링: https://github.com/apple01234/CERTZ/raw/main/download/SERTZ-v2.3.apk
