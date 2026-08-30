@@ -259,3 +259,18 @@ Work Log:
 Stage Summary:
 - 산출물: download/SERTZ-v2.4.apk (16.7MB) — 레벨 게이트 퀘스트 18구역, 구역 1~9 소프트락 수정, 이름 변경 UI, 이름표 유지 수정 전부 포함
 - 다운로드 직링: https://github.com/apple01234/CERTZ/raw/main/download/SERTZ-v2.4.apk
+
+---
+Task ID: v2.4-push
+Agent: Super Z (main)
+Task: GitHub 토큰 수령 — v2.4 APK 커밋 푸시 + 공개 직링 최종 검증
+
+Work Log:
+- 사용자 제공 토큰으로 .gh_token 저장(gitignore .gh_* 확인) → push e74d812..1270ea1 성공
+- git ls-remote 원격 HEAD = 1270ea1 로컬 동기화 확인
+- 익명 직링 검증: github.com/apple01234/CERTZ/raw/main/download/SERTZ-v2.4.apk → 302→200, content-length 16,767,492
+- 전체 다운로드 무결성: SHA-256(abd1a360…) 로컬 빌드와 정확히 일치
+
+Stage Summary:
+- v2.4 APK 공개 직링 확정: https://github.com/apple01234/CERTZ/raw/main/download/SERTZ-v2.4.apk
+- 로그인 없이 누구나 다운로드 가능, v2.3과 동일 키스토어라 기존 설치 위 업데이트 설치 가능
