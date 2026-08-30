@@ -134,3 +134,25 @@ Work Log:
 Stage Summary:
 - v2.1: 5건 전부 해소. 친구 시스템(친구코드·고유번호·온라인 표시·따라가기) 신규 탑재
 - 다운로드: download/SERTZ-v2.1.apk
+
+---
+Task ID: v2.2-feel
+Agent: Super Z (main)
+Task: 사용자 2건 — ①기본 공격 타격감/스터터 ②여관·집 실내 맵 + 취침 연출
+
+Work Log:
+- ① 스터터 원인: 공격 러지(190px/s×170ms)가 입력 이동을 덮어써 방향을 꺾고, 러지 종료 시 velocity 0 → 매 스윑 멈춤
+  → Player.ts: 이동 중 공격 시 러지 생략(정지 시만), 공격 중 이동 55→80%, 스윙 판정(65ms) 후 걷기 애니 복귀,
+    종료 시 입력 없을 때만 정지, 쿨다운 330→300ms
+- ① 타격감: Enemy 스쿼시(눌림 반동 tween), 타격 충격 링(shock_ring 확산), 히트스톱 65→55ms
+- ② 실내 맵: stages.ts interior_inn/home(1152×648, 세이브 미기록), data.ts 로안 대사 3종,
+  WorldScene buildInterior(나무바닥·벽·러그·침대·모닥불 애니·촛불·카운터·출구 문),
+  건물 E→입장 / 로안 대화→취침 연출(암막+Zzz 2.6초)→풀회복+버프(atk/def 60초)+저장→마무리 대사,
+  출구 문 E→건물 앞 복귀(entry 좌표 스폰), create() data.stage 우선 수정,
+  수면 중 입력 봉인, cv_candle/sv_door 부팅 로드 추가
+- E2E(scripts/e2e_v22.js): 이동 중 연타 속도 샘플 16개 전부 184~230(정지 0),
+  여관 플로우 입장→대화→결제→버프(gold 100→80, buff_atk/def)→퇴장 복귀 ALL PASS
+- tsc/eslint 0 에러, 스모크 통과, APK v2.2(versionCode 7) 빌드 → download/SERTZ-v2.2.apk
+
+Stage Summary:
+- v2.2 완성. 공격이 달리면서 나가고, 여관/집이 실제 공간으로 동작
