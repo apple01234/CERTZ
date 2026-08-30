@@ -7,6 +7,7 @@ import { HUD } from "./HUD";
 import { TouchControls } from "./TouchControls";
 import { DialogueBox } from "./DialogueBox";
 import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel } from "./Overlays";
+import { ServerConnect } from "./ServerConnect";
 import { GamePanels } from "./Panels";
 import { ChatBox } from "./ChatBox";
 import { PartyWidget } from "./PartyWidget";
@@ -115,6 +116,8 @@ export default function GameRoot() {
         {state === "title" && (
           <div className="pointer-events-auto contents">
             <TitleScreen />
+            {/* APK 전용 — 멀티플레이 서버 주소 설정 (웹에서는 미렌더링) */}
+            <ServerConnect />
           </div>
         )}
 

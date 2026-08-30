@@ -92,3 +92,19 @@ Work Log:
 Stage Summary:
 - 산출물: download/SERTZ-v2.0.apk (16MB, minSdk 24(Android 7.0)+, targetSdk 36, release 서명)
 - APK는 완전 오프라인 실행(세이브 localStorage) + localStorage 'sertz.server.url' 설정 시 웹 서버와 멀티플레이 연동
+
+---
+Task ID: v2-apk-multi
+Agent: Super Z (main)
+Task: APK 멀티플레이 불가 원인 해소 — 서버 주소 설정 UI 추가
+
+Work Log:
+- 원인 정리: socket.io 서버(server.js, Node)는 APK 내부에 존재 불가 → 웹은 same-origin 자동 접속, APK는 origin=localhost라 접속 대상 없음
+- ServerConnect.tsx 신규 (타이틀 우하단, 네이티브 전용): 서버 주소 입력 → localStorage 'sertz.server.url' 저장 & 새로고침 / 오프라인 전환 / 연결 상태 표시(서버 연결됨·연결 중…·오프라인 모드)
+- GameRoot 타이틀 분기에 ServerConnect 마운트
+- net.ts 오버라이드 정규식 wss:// 허용 확장
+- tsc 0 에러, 스모크 테스트 재통과 (canvas 렌더·404 0건·콘솔에러 0건)
+- scripts/build_apk.sh 로 APK 재빌드 → download/SERTZ-v2.0.apk 갱신
+
+Stage Summary:
+- APK에서 타이틀 화면 → 우하단 "오프라인 모드" 버튼 → 서버 주소 입력 시 웹 플레이어와 동일 서버 멀티 가능

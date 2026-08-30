@@ -45,7 +45,7 @@ function resolveServerUrl(): string | null | undefined {
     try {
       const raw = window.localStorage.getItem("sertz.server.url");
       const u = raw?.trim();
-      if (u && /^https?:\/\//i.test(u)) return u.replace(/\/$/, "");
+      if (u && /^(https?|wss?):\/\//i.test(u)) return u.replace(/\/$/, "");
     } catch {
       /* localStorage 접근 불가 — 오프라인 처리 */
     }
