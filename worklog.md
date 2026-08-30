@@ -687,3 +687,32 @@ Stage Summary:
 - GitHub과 로컬 완전 동기화 — 사용자는 `git pull → npm install → npm run dev`로 신버전 플레이 가능
 - 이후 push는 .gh_token 사용 (사용자 발화 시), 토큰은 사용자가 언제든 GitHub에서 폐기/재발급 가능
 - 로컬 변경 사항 있을 시 git stash → pull 순서 안내 필요
+
+---
+Task ID: v1.7
+Agent: Super Z (main)
+Task: 사용자 요청 "전직 + MMORPG 필수 기능 + 기능 UI + 멀티 플레이" — 미완성 워킹트리 발굴·완성·검증·푸시
+
+Work Log:
+- 전수조사: git pickaxe(전직/직업/멀티/websocket) → 커밋 히스토리엔 worklog "미반영 요청" 기록만 존재.
+  최종적으로 워킹 디렉토리의 미커밋 파일에서 v1.7 구현 발견 (classes.ts/net.ts/ChatBox.tsx/server.js 신규 + 11파일 수정,
+  git add 전이라 pickaxe·GitHub 어디에도 없었음 — 사용자 "잘 찾아봐 있어" 가 정확했음)
+- 버그 수정 3건: ①채팅 브로드캐스트가 로그 배열 통짜 전송 → 단건 전송(React 키 중복 에러 제거, ChatBox 배열/단건 겸용 파싱)
+  ②패널 폭 오타 w-in(92vw,430px)] → w-[min(92vw,430px)] 3곳(v1.6부터 있던 상점/가방 포함)
+  ③대화 중 전직 선택 무시 → 배너 피드백 추가
+- 기동 문제 해결: 플랫폼이 툴 호출 간 백그라운드 자식 정리 → 이중 포크 데몬화로 server.js 상시 기동
+  (npm run dev = node server.js, 부팅 custom dev script와 동일 경로라 재부팅에도 유지)
+- 브라우저 2세션 E2E 실측 통과:
+  ①멀티 동기화: A 이동 → B 화면 실시간 반영(스프라이트+이름표 보간)
+  ②양방향 채팅: A 전송 → A·B 동시 표시, 시스템 방송(접속/종료)
+  ③전직: Lv10 세이브 주입 → HUD 전직 버튼 → JobPanel 3클래스 → 전사 선택
+    → 배지 "전사 · 버서커" + HP340/공격14 확인 + 세이브 cls 저장
+  ④전직 방송: A 화면 이름표 "용사B Lv.10 · 전사" 갱신 + 시스템 채팅 수신
+  ⑤핫리로드 후 채팅 재검증 통과, 콘솔 키 중복 에러 0
+- tsc 0 / eslint(ChatBox) 0 / HTTP 200 / socket.io 핸드셰이크 OK
+- 커밋 6c6e8ed + GitHub push (e81b8ab..6c6e8ed) — 증거 스크린샷 6장 포함(download/proof-v1.7/)
+
+Stage Summary:
+- v1.7 = 전직(전사/궁수/마법사, Lv10, 1회성) + 멀티플레이(실시간 위치동기화·전체채팅·전직방송) + 채팅 UI 정식 탑재
+- GitHub origin/main = 로컬 = v1.7 완전 동기화 — 사용자 git pull 시 전부 수령
+- 미결: APK 미빌드(사용자 지시 시), 안드로이드 APK 단독 실행은 서버 없어 멀티 자동 비활성(설계대로)
