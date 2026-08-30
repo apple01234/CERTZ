@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import { ITEMS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_COST, type ItemKey } from "../data";
+import { CLASSES, isClassKey, type ClassKey } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
 
 /**
@@ -30,6 +31,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   accessory: ItemKey | null = null; // 장신구 슬롯 (반지 1개)
   owned: ItemKey[] = ["weapon_1", "armor_1"];
   upgrades: { weapon: number; armor: number } = { weapon: 0, armor: 0 }; // 강화 단계 (+0~+5)
+  /** 전직 클래스 (v1.7 — Lv10 달성 시 1회 선택, 미전직 null) */
+  cls: ClassKey | null = null;
   private potCd = 0;
 
   /** 기본 크리티컬 확률 (%) — 장신구로 증가 */
@@ -393,11 +396,36 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return Math.round(55 * Math.pow(this.lv, 1.72));
   }
 
+  /* ---------------- 전직 (v1.7) ---------------- */
+
+  /** 전직 실행 — 1회성 (이미 전직했으면 false). HP/MP 가산 + 풀회복 + 속도 배율 적용 */
+  applyClass(key: ClassKey): boolean {
+    if (this.cls || !isClassKey(key)) return false;
+    this.cls = key;
+    const d = CLASSES[key];
+    this.maxHp += d.hpAdd;
+    this.maxMp += d.mpAdd;
+    this.hp = this.maxHp;
+    this.mp = this.maxMp;
+    this.speed = Math.round(this.speed * d.speedMult);
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 세이브 복원용 — HP/MP 가산은 세이브 maxHp에 이미 포함, 여기선 클래스+속도만 재적용 */
+  applySavedClass(key: string | null | undefined) {
+    if (!isClassKey(key) || this.cls) return;
+    this.cls = key;
+    this.speed = Math.round(this.speed * CLASSES[key].speedMult);
+  }
+
   /* ---------------- RPG 기본 요소 ---------------- */
 
-  /** 장비+강화 포함 실제 공격력 */
+  /** 장비+강화+클래스 포함 실제 공격력 */
   get atkTotal(): number {
-    return this.atk + (ITEMS[this.weapon].atk ?? 0) + this.upgrades.weapon * 2;
+    const base = this.atk + (ITEMS[this.weapon].atk ?? 0) + this.upgrades.weapon * 2;
+    const mult = this.cls ? CLASSES[this.cls].atkMult : 1;
+    return Math.round(base * mult);
   }
 
   /** 장비+강화 포함 실제 방어력 */
@@ -405,10 +433,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return (ITEMS[this.armor].def ?? 0) + this.upgrades.armor;
   }
 
-  /** 크리티컬 확률 (%) — 기본 8% + 힘의 반지 +7%p */
+  /** 크리티컬 확률 (%) — 기본 8% + 힘의 반지 +7%p + 클래스 보너스 */
   get critRate(): number {
-    const bonus = this.accessory ? ITEMS[this.accessory].crit ?? 0 : 0;
-    return Player.BASE_CRIT + bonus;
+    const acc = this.accessory ? ITEMS[this.accessory].crit ?? 0 : 0;
+    const cls = this.cls ? CLASSES[this.cls].critAdd : 0;
+    return Player.BASE_CRIT + acc + cls;
   }
 
   /** 데미지 굴림 — 크리티컬 판정 포함 */

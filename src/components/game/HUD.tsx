@@ -1,7 +1,8 @@
 "use client";
 
 import type { HudState, QuestState } from "./EventBus";
-import { Volume2, VolumeX, ScrollText, Backpack } from "lucide-react";
+import { classDef } from "@/game/classes";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles } from "lucide-react";
 
 function Bar({
   value,
@@ -42,14 +43,18 @@ export function HUD({
   hud,
   quest,
   muted,
+  canJob,
   onToggleMute,
   onOpenInv,
+  onOpenJob,
 }: {
   hud: HudState;
   quest: QuestState;
   muted: boolean;
+  canJob: boolean;
   onToggleMute: () => void;
   onOpenInv: () => void;
+  onOpenJob: () => void;
 }) {
   const expPct = Math.min(100, (hud.exp / Math.max(1, hud.expNext)) * 100);
   return (
@@ -63,6 +68,18 @@ export function HUD({
           </span>
         </div>
         <div className="flex flex-col gap-1">
+          {/* 클래스 배지 (전직 후) */}
+          {hud.cls && (() => {
+            const d = classDef(hud.cls);
+            return d ? (
+              <span
+                className="w-fit rounded-md border px-1.5 py-0.5 text-[10px] font-black backdrop-blur-sm"
+                style={{ color: d.color, borderColor: `${d.color}55`, background: "rgba(0,0,0,0.55)" }}
+              >
+                {d.name} · {d.title}
+              </span>
+            ) : null;
+          })()}
           <Bar value={hud.hp} max={hud.maxHp} from="#c2273a" to="#ff7a68" label={`${hud.hp} / ${hud.maxHp}`} />
           <Bar value={hud.mp} max={hud.maxMp} from="#1e6fb8" to="#5ec5ff" label={`${hud.mp} / ${hud.maxMp}`} height={10} />
           {/* EXP 얇은 바 */}
@@ -110,6 +127,16 @@ export function HUD({
             <Backpack size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">I</span>
           </button>
+          {canJob && (
+            <button
+              onClick={onOpenJob}
+              aria-label="전직 열기 (K)"
+              className="pointer-events-auto relative flex h-9 animate-pulse items-center justify-center rounded-lg border border-amber-300/70 bg-gradient-to-b from-amber-500/80 to-amber-700/80 text-amber-100 backdrop-blur-sm transition-transform hover:from-amber-400/90 active:scale-95"
+            >
+              <Sparkles size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-200">전직</span>
+            </button>
+          )}
         </div>
         <div className="pointer-events-none w-full rounded-lg border border-amber-200/40 bg-black/55 px-2.5 py-1.5 backdrop-blur-sm sm:px-3 sm:py-2">
           <div className="flex items-center gap-1.5">

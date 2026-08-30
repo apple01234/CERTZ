@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { EventBus, type PanelKind, type RpgState } from "./EventBus";
 import { ITEMS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_COST, type ItemKey, type ItemTier } from "@/game/data";
+import { CLASS_LIST, JOB_LEVEL, type ClassDef } from "@/game/classes";
 
 /**
  * 2D MMORPG 기본 요소 UI — 상점 / 인벤토리 패널
@@ -334,5 +335,93 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
 export function GamePanels({ panel, rpg, onClose }: { panel: PanelKind; rpg: RpgState; onClose: () => void }) {
   if (panel === "shop") return <ShopPanel rpg={rpg} onClose={onClose} />;
   if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} />;
+  if (panel === "job") return <JobPanel rpg={rpg} onClose={onClose} />;
   return null;
+}
+
+/* ---------- 전직 패널 (v1.7 — Lv 달성 시 1회 클래스 선택) ---------- */
+
+function statLines(d: ClassDef): string[] {
+  const out = [`공격력 +${Math.round((d.atkMult - 1) * 100)}%`];
+  if (d.critAdd > 0) out.push(`크리티컬 +${d.critAdd}%p`);
+  if (d.hpAdd > 0) out.push(`최대 HP +${d.hpAdd}`);
+  if (d.mpAdd > 0) out.push(`최대 MP +${d.mpAdd}`);
+  if (d.speedMult !== 1) out.push(`이동속도 +${Math.round((d.speedMult - 1) * 100)}%`);
+  return out;
+}
+
+function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const locked = !rpg.canJob;
+  return (
+    <div
+      className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="pointer-events-auto max-h-[86vh] w-[min(92vw,430px)] overflow-y-auto rounded-xl border border-amber-300/30 bg-slate-950/95 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="전직"
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-black text-amber-200">⚔ 전직 — 클래스 선택</h2>
+          <button
+            onClick={onClose}
+            aria-label="전직 닫기"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/70 hover:bg-white/10"
+          >
+            ✕
+          </button>
+        </div>
+
+        {locked ? (
+          <p className="rounded-lg border border-dashed border-white/15 px-3 py-6 text-center text-xs font-bold text-white/50">
+            Lv {JOB_LEVEL} 달성 시 전직이 열립니다
+          </p>
+        ) : (
+          <p className="mb-3 text-[11px] font-bold text-white/55">
+            한 번 선택하면 되돌릴 수 없습니다 — 신중하게 고르세요!
+          </p>
+        )}
+
+        <div className="flex flex-col gap-2">
+          {CLASS_LIST.map((d) => (
+            <div
+              key={d.key}
+              className="rounded-lg border bg-white/[0.04] px-3 py-2.5"
+              style={{ borderColor: `${d.color}44` }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-black" style={{ color: d.color }}>
+                    {d.name} <span className="text-[10px] font-bold text-white/45">— {d.title}</span>
+                  </p>
+                  <p className="mt-0.5 truncate text-[10px] text-white/55">{d.desc}</p>
+                  <p className="mt-1 flex flex-wrap gap-x-2 text-[10px] font-bold text-emerald-300/90">
+                    {statLines(d).map((s) => (
+                      <span key={s}>{s}</span>
+                    ))}
+                  </p>
+                </div>
+                <button
+                  disabled={locked}
+                  onClick={() => {
+                    EventBus.emit("job:select", { key: d.key });
+                    onClose();
+                  }}
+                  className="shrink-0 rounded-md px-3 py-2 text-[11px] font-black text-slate-900 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+                  style={{ background: d.color }}
+                >
+                  전직
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-center text-[10px] text-white/40">K키로 열기 · ESC로 닫기</p>
+      </div>
+    </div>
+  );
 }

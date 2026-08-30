@@ -5,7 +5,9 @@ import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
 import { EventBus, type QuestState, type InteractState } from "../../components/game/EventBus";
-import { writeSave, loadSave, type SaveData, setPlayerName } from "../config";
+import { writeSave, loadSave, type SaveData, setPlayerName, getPlayerName } from "../config";
+import { classDef, JOB_LEVEL, type ClassKey } from "../classes";
+import * as net from "../net";
 import { viewZoom } from "../PhaserGame";
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import * as audio from "../audio";
@@ -101,6 +103,25 @@ export class WorldScene extends Phaser.Scene {
   private minimap: Phaser.GameObjects.Graphics | null = null;
   private lastRpgSig = "";
 
+  /* ----- 멀티플레이 (v1.7 — socket.io 동일 서버 접속자 동기화) ----- */
+  private remotes = new Map<
+    string,
+    {
+      sp: Phaser.GameObjects.Sprite;
+      tag: Phaser.GameObjects.Text;
+      tx: number;
+      ty: number;
+      flip: boolean;
+      moving: boolean;
+      cls: string | null;
+      lv: number;
+      name: string;
+    }
+  >();
+  private netOffs: (() => void)[] = [];
+  private chatFocused = false;
+  private netAcc = 0;
+
   constructor() {
     super("world");
   }
@@ -134,6 +155,10 @@ export class WorldScene extends Phaser.Scene {
     this.nearShop = false;
     this.minimap = null;
     this.lastRpgSig = "";
+    this.remotes.clear();
+    this.netOffs = [];
+    this.chatFocused = false;
+    this.netAcc = 0;
     this.repeatNeed = 0;
     this.interactables = [];
     this.nearInteract = null;
@@ -235,6 +260,8 @@ export class WorldScene extends Phaser.Scene {
       this.questIdx = Phaser.Math.Clamp(this.savedQuestIdx[stageKey] ?? 0, 0, this.stageDef.quests.length);
       // 플레이어 이름 복원 (인트로에서 지정)
       if (savedPlayer.playerName) setPlayerName(savedPlayer.playerName);
+      // 전직 클래스 복원 (v1.7 — 구 세이브 null 호환)
+      this.player.applySavedClass(savedPlayer.cls);
     }
     this.repeatNeed = this.stageDef.repeat?.need ?? 0;
     this.playerRef = this.player;
@@ -317,6 +344,9 @@ export class WorldScene extends Phaser.Scene {
     this.emitHud();
     this.emitQuest();
     this.emitRpgState();
+
+    /* ---------- 멀티플레이 (같은 서버 접속자 동기화 — v1.7) ---------- */
+    this.initNet();
 
     // F2: 거리 실시간 갱신 (300ms 주기 — 프레임 부담 없음) + 미니맵/RPG 상태
     this.questTimer = this.time.addEvent({
@@ -1276,7 +1306,7 @@ export class WorldScene extends Phaser.Scene {
   private setupInput() {
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,X,Z,C,Q,E,F,I,R"
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,X,Z,C,Q,E,F,I,R,K"
     ) as Record<string, Phaser.Input.Keyboard.Key>;
 
     const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);
@@ -1314,6 +1344,35 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
       this.emitHud();
     };
+    // 채팅 입력 포커스 — 게임 키 입력 완전 차단 (v1.7 멀티플레이 채팅)
+    const onChatFocus = (v: { focus: boolean }) => {
+      this.chatFocused = v.focus;
+      if (v.focus) this.touchMove.set(0, 0);
+    };
+    const onChatSend = (v: { text: string }) => net.netSendChat(v.text);
+    // 전직 선택 (JobPanel → v1.7)
+    const onJobSelect = (v: { key: string }) => {
+      if (!this.player || this.player.state === "dead") return;
+      if (this.dialoguing) {
+        EventBus.emit("banner:show", { text: "대화 중에는 전직할 수 없습니다" });
+        return;
+      }
+      if (this.player.cls) return;
+      if (this.player.lv < JOB_LEVEL) {
+        EventBus.emit("banner:show", { text: `전직은 Lv ${JOB_LEVEL}부터 가능합니다` });
+        return;
+      }
+      const def = classDef(v.key);
+      if (!def || !this.player.applyClass(def.key)) return;
+      audio.sfx.levelup();
+      this.spawnLevelUpFx(this.player.x, this.player.y);
+      EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
+      this.refreshPlayerTag();
+      this.save();
+      this.emitHud();
+      this.emitRpgState();
+      net.netAnnounceJob(def.key);
+    };
 
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
@@ -1327,6 +1386,9 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:upgrade", onUpgrade);
     EventBus.on("respawn", onRespawn);
     EventBus.on("dialogue:done", onDialogueDone);
+    EventBus.on("chat:focus", onChatFocus);
+    EventBus.on("chat:send", onChatSend);
+    EventBus.on("job:select", onJobSelect);
     this.events.once("shutdown", () => {
       EventBus.off("input:move", onMove);
       EventBus.off("input:attack", onAtk);
@@ -1340,12 +1402,28 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:upgrade", onUpgrade);
       EventBus.off("respawn", onRespawn);
       EventBus.off("dialogue:done", onDialogueDone);
+      EventBus.off("chat:focus", onChatFocus);
+      EventBus.off("chat:send", onChatSend);
+      EventBus.off("job:select", onJobSelect);
     });
   }
 
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
-    if (this.dialoguing || !this.player) return;
+
+    // 원격 플레이어 보간 — 대화/채팅/사망과 무관하게 항상 갱신 (v1.7 멀티플레이)
+    const lerpK = Math.min(1, (dt / 1000) * 9);
+    for (const r of this.remotes.values()) {
+      r.sp.x += (r.tx - r.sp.x) * lerpK;
+      r.sp.y += (r.ty - r.sp.y) * lerpK;
+      r.sp.setFlipX(r.flip);
+      r.tag.setPosition(r.sp.x, r.sp.y - 52);
+      const want = r.moving ? "hero-walk-side" : "hero-idle";
+      if (r.sp.anims.currentAnim?.key !== want) r.sp.play(want);
+    }
+
+    // 채팅 입력 중 — 게임 키/이동 완전 차단 (원격 보간은 위에서 계속)
+    if (this.chatFocused || this.dialoguing || !this.player) return;
     if (this.player.state === "dead") return;
 
     this.wellCd = Math.max(0, this.wellCd - dt);
@@ -1389,6 +1467,7 @@ export class WorldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.keys.E)) this.tryInteract();
     if (Phaser.Input.Keyboard.JustDown(this.keys.F) && this.nearShop) EventBus.emit("ui:panel", { panel: "shop" });
     if (Phaser.Input.Keyboard.JustDown(this.keys.I)) EventBus.emit("ui:panel", { panel: "inv" });
+    if (Phaser.Input.Keyboard.JustDown(this.keys.K)) EventBus.emit("ui:panel", { panel: "job" });
 
     // E키 상호작용 감지 — 가장 가까운 NPC/상점 프롬프트 갱신
     this.updateInteractPrompt();
@@ -1422,10 +1501,120 @@ export class WorldScene extends Phaser.Scene {
 
     // F2 핵심 2: 화면 가장자리 화살표 — 목표물이 안 보일 때 방향 안내
     this.updateEdgeArrow();
+
+    // 멀티플레이 상태 송신 (약 8Hz — v1.7)
+    this.netAcc += dt;
+    if (this.netAcc >= 120) {
+      this.netAcc = 0;
+      net.netState({
+        x: Math.round(this.player.x),
+        y: Math.round(this.player.y),
+        flip: this.player.flipX,
+        moving: move.lengthSq() > 0.01 || this.player.state === "attack",
+        lv: this.player.lv,
+        cls: this.player.cls,
+      });
+    }
   }
 
   currentMoveVec() {
     return this.touchMove.lengthSq() > 0.01 ? this.touchMove.clone() : new Phaser.Math.Vector2();
+  }
+
+  /* ================= 멀티플레이 (v1.7) ================= */
+
+  /** 같은 서버에 접속한 다른 플레이어 실시간 동기화 — 오프라인이면 조용히 생략 */
+  private initNet() {
+    try {
+      const s = net.netConnect();
+      if (!s) return;
+      const offPlayers = net.netOnPlayers((list) => this.syncRemotes(list));
+      const offChat = net.netOnChat((m) => EventBus.emit("chat:msg", m));
+      this.netOffs = [offPlayers, offChat];
+      this.events.once("shutdown", () => this.shutdownNet());
+      // 소켓 연결 안정화 후 입장 방송
+      this.time.delayedCall(650, () => {
+        if (!this.player) return;
+        net.netJoin({
+          name: getPlayerName(),
+          lv: this.player.lv,
+          cls: this.player.cls,
+          x: Math.round(this.player.x),
+          y: Math.round(this.player.y),
+        });
+      });
+    } catch {
+      /* 오프라인/APK 단독 실행 — 멀티 없이 진행 */
+    }
+  }
+
+  private shutdownNet() {
+    for (const off of this.netOffs) off();
+    this.netOffs = [];
+    this.clearRemotes();
+  }
+
+  /** 서버 브로드캐스트 → 원격 플레이어 스프라이트/이름표 동기화 */
+  private syncRemotes(list: net.NetPlayer[]) {
+    const myId = net.netId();
+    const seen = new Set<string>();
+    for (const p of list) {
+      if (!p || p.id === myId) continue;
+      seen.add(p.id);
+      let r = this.remotes.get(p.id);
+      if (!r) {
+        const sp = this.add.sprite(p.x, p.y, "hero_idle0").setDepth(9).setAlpha(0.96);
+        sp.play("hero-idle");
+        const d = classDef(p.cls);
+        const tag = this.add
+          .text(p.x, p.y - 52, `${p.name} Lv.${p.lv}`, {
+            fontFamily: "sans-serif",
+            fontSize: "11px",
+            color: d ? d.color : "#ffe9b0",
+            stroke: "#0a2030",
+            strokeThickness: 4,
+            fontStyle: "bold",
+          })
+          .setOrigin(0.5)
+          .setDepth(60);
+        r = { sp, tag, tx: p.x, ty: p.y, flip: p.flip, moving: p.moving, cls: p.cls, lv: p.lv, name: p.name };
+        this.remotes.set(p.id, r);
+      }
+      r.tx = p.x;
+      r.ty = p.y;
+      r.flip = p.flip;
+      r.moving = p.moving;
+      if (r.cls !== p.cls || r.lv !== p.lv || r.name !== p.name) {
+        r.cls = p.cls;
+        r.lv = p.lv;
+        r.name = p.name;
+        const d = classDef(p.cls);
+        r.tag.setText(`${p.name} Lv.${p.lv}${d ? ` · ${d.name}` : ""}`);
+        r.tag.setColor(d ? d.color : "#ffe9b0");
+      }
+    }
+    for (const [id, r] of this.remotes) {
+      if (!seen.has(id)) {
+        r.sp.destroy();
+        r.tag.destroy();
+        this.remotes.delete(id);
+      }
+    }
+  }
+
+  private clearRemotes() {
+    for (const r of this.remotes.values()) {
+      r.sp.destroy();
+      r.tag.destroy();
+    }
+    this.remotes.clear();
+  }
+
+  /** 내 이름표에 클래스 반영 (인트로에서 이름표 생성된 뒤 유효) */
+  private refreshPlayerTag() {
+    if (!this.playerNameTag || !this.player) return;
+    const d = classDef(this.player.cls);
+    this.playerNameTag.setText(d ? `${getPlayerName()} · ${d.name}` : getPlayerName());
   }
 
   /* ================= E키 상호작용 ================= */
@@ -1825,6 +2014,7 @@ export class WorldScene extends Phaser.Scene {
       atkTotal: this.player.atkTotal,
       defTotal: this.player.defTotal,
       critRate: this.player.critRate,
+      cls: this.player.cls,
     });
     this.emitRpgState();
   }
@@ -1844,6 +2034,7 @@ export class WorldScene extends Phaser.Scene {
       upArm: this.player.upgrades.armor,
       nearShop: this.nearShop,
       shopStock: [...SHOP_STOCK],
+      canJob: this.player.lv >= JOB_LEVEL && !this.player.cls,
     };
     const sig = JSON.stringify(st);
     if (sig === this.lastRpgSig) return;
@@ -1873,6 +2064,7 @@ export class WorldScene extends Phaser.Scene {
       upArm: this.player.upgrades.armor,
       accessory: this.player.accessory,
       questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },
+      cls: this.player.cls,
     };
   }
 

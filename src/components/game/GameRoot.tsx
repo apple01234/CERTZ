@@ -8,6 +8,7 @@ import { TouchControls } from "./TouchControls";
 import { DialogueBox } from "./DialogueBox";
 import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel } from "./Overlays";
 import { GamePanels } from "./Panels";
+import { ChatBox } from "./ChatBox";
 import * as audio from "@/game/audio";
 import { useGameUi } from "./useGameUi";
 import { loadMuted, writeMuted } from "@/game/config";
@@ -79,6 +80,7 @@ export default function GameRoot() {
                 hud={hud}
                 quest={quest}
                 muted={muted}
+                canJob={rpg.canJob && !panel}
                 onToggleMute={() => {
                   const next = !muted;
                   setMuted(next);
@@ -86,6 +88,7 @@ export default function GameRoot() {
                   writeMuted(next); // 설정 저장 — 새로고침/APK 재실행 후에도 유지
                 }}
                 onOpenInv={() => setPanel(panel === "inv" ? null : "inv")}
+                onOpenJob={() => setPanel(panel === "job" ? null : "job")}
               />
             </div>
             {/* 상호작용 프롬프트 — NPC 대화/상점 (E키·모바일 버튼 공용) */}
@@ -97,6 +100,8 @@ export default function GameRoot() {
             )}
             <Banner text={banner} />
             <BossBar boss={boss} />
+            {/* 멀티플레이 전체 채팅 (v1.7) */}
+            <ChatBox />
           </>
         )}
 

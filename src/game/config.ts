@@ -71,6 +71,8 @@ export type SaveData = {
   accessory?: string | null;
   /* ↓ 퀘스트 진행 (스테이지별 퀘스트 인덱스 — 구 세이브 호환 기본값 {}) */
   questIdx?: Record<string, number>;
+  /* ↓ 전직 클래스 (v1.7 — 구 세이브 호환 기본값 null) */
+  cls?: string | null;
 };
 
 export function loadSave(): SaveData | null {
@@ -92,6 +94,8 @@ export function loadSave(): SaveData | null {
     if (d.accessory === undefined) d.accessory = null;
     // 퀘스트 진행 (구버전 세이브 호환 — 처음부터)
     if (!d.questIdx || typeof d.questIdx !== "object") d.questIdx = {};
+    // 전직 클래스 (구버전 세이브 호환 — 미전직)
+    if (d.cls === undefined) d.cls = null;
     return d;
   } catch {
     return null;

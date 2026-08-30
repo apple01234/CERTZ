@@ -16,6 +16,8 @@ export type HudState = {
   atkTotal: number;
   defTotal: number;
   critRate: number;
+  /** 전직 클래스 (미전직 null) — HUD 배지 */
+  cls: string | null;
 };
 
 /** 인벤토리/상점 패널 상태 */
@@ -31,9 +33,11 @@ export type RpgState = {
   upArm: number;
   nearShop: boolean;
   shopStock: string[];
+  /** 전직 가능 조건 (Lv 달성 + 미전직) — HUD 전직 버튼 */
+  canJob: boolean;
 };
 
-export type PanelKind = "shop" | "inv" | null;
+export type PanelKind = "shop" | "inv" | "job" | null;
 
 export type QuestState = {
   title: string;
