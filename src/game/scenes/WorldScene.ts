@@ -195,6 +195,8 @@ export class WorldScene extends Phaser.Scene {
         .setDepth(0)
         .setAlpha(0.85);
     }
+    // 지형 전환 프린지 + 지면 변형 — 자로 잰 직선 경계/균일 반복 패턴을 자연스럽게 (타일맵 부자연 개선)
+    this.buildGroundBlend(stageKey, groundTex, pathTex);
 
     this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
     this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
@@ -339,6 +341,56 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /* ================= 배치 ================= */
+
+  /**
+   * 지형 전환 프린지 + 지면 변형 타일 배치 (타일맵 부자연 개선).
+   *  - 경계 프린지(edge_*): 길 텍스처가 지면 쪽으로 불규칙하게 뻗어나감
+   *  - 침식(bite_*): 길 안쪽으로 지면이 파여드는 블롭
+   *  - 변형(gvar/pvar): 같은 타일 반복의 단조로움을 명도 변형으로 분산
+   * 배치는 스테이지 시드 결정적 RNG — 매 실행 동일한 지형.
+   */
+  private buildGroundBlend(stageKey: StageKey, groundTex: string, pathTex: string) {
+    const set = GROUND_SET[stageKey] ?? "gp";
+    const T = 64;
+    const rng = new Phaser.Math.RandomDataGenerator([stageKey + "-blend"]);
+    const y0 = this.stageH / 2 - 52; // 가로 길 상단
+    const y1 = this.stageH / 2 + 52; // 가로 길 하단
+
+    // 1) 지면 명도 변형 스캐터 — 길 영역 제외 (균일 반복 패턴 깨기)
+    for (let gy = 0; gy < this.stageH; gy += T) {
+      for (let gx = 0; gx < this.stageW; gx += T) {
+        if (gy + T > y0 && gy < y1) continue; // 길 영역
+        const r = rng.frac();
+        if (r < 0.028) this.add.image(gx + T / 2, gy + T / 2, `tx_${set}_gvar1`).setDepth(0);
+        else if (r < 0.056) this.add.image(gx + T / 2, gy + T / 2, `tx_${set}_gvar2`).setDepth(0);
+      }
+    }
+
+    // 2) 가로 길 — 안 변형 + 경계 프린지 + 침식
+    for (let gx = 0; gx < this.stageW; gx += T) {
+      if (rng.frac() < 0.14) this.add.image(gx + T / 2, y0 + 32, `tx_${set}_pvar`).setDepth(0);
+      if (rng.frac() < 0.14) this.add.image(gx + T / 2, y1 - 32, `tx_${set}_pvar`).setDepth(0);
+      // 프린지 — 길(아래)에서 지면(위)으로/지면(아래)에서 길로 뻗은 블롭 (flipX로 2배 변형)
+      if (rng.frac() < 0.45)
+        this.add.image(gx + T / 2, y0 - 40, `tx_${set}_edge_dn`).setDepth(0).setFlipX(rng.frac() < 0.5);
+      if (rng.frac() < 0.45)
+        this.add.image(gx + T / 2, y1 + 40, `tx_${set}_edge_up`).setDepth(0).setFlipX(rng.frac() < 0.5);
+      // 침식 — 지면이 길 안쪽으로 파여드는 블롭
+      if (rng.frac() < 0.16) this.add.image(gx + T / 2, y0 + 20, `tx_${set}_bite_dn`).setDepth(0);
+      if (rng.frac() < 0.16) this.add.image(gx + T / 2, y1 - 20, `tx_${set}_bite_up`).setDepth(0);
+    }
+
+    // 3) 숲 세로 길 — 좌우 경계 프린지 (flipY로 2배 변형)
+    if (stageKey === "forest") {
+      const vcx = this.stageW * 0.55;
+      for (let gy = 0; gy < this.stageH; gy += T) {
+        if (rng.frac() < 0.45)
+          this.add.image(vcx - 52 - 40, gy + T / 2, `tx_${set}_edge_rt`).setDepth(0).setFlipY(rng.frac() < 0.5);
+        if (rng.frac() < 0.45)
+          this.add.image(vcx + 52 + 40, gy + T / 2, `tx_${set}_edge_lt`).setDepth(0).setFlipY(rng.frac() < 0.5);
+      }
+    }
+  }
 
   private placeDecor(stageKey: StageKey) {
     const def = this.stageDef;
@@ -1937,6 +1989,16 @@ const STAGE_BG: Record<StageKey, string> = {
   cave: "#100a08",
   niflheim: "#0c1826",
   abyss: "#0d0616",
+};
+
+/* 스테이지별 지형 전환 타일 세트 (build_tile_transitions.py 생성물) */
+const GROUND_SET: Record<StageKey, string> = {
+  village: "gp",
+  forest: "gp",
+  alfheim: "dp",
+  cave: "cp",
+  niflheim: "si",
+  abyss: "ap",
 };
 
 /* 스테이지 오프닝 대사 */

@@ -3,8 +3,10 @@ import type Phaser from "phaser";
 /**
  * 외부 오디오 에셋 재생 (public/assets/audio/)
  *  - BGM: Retro Game Music Pack — Juhani Junkala (CC0)
- *  - SFX: 80 CC0 RPG SFX / 80 CC0 creature SFX — Rubberduck (CC0)
- * 자체 합성(WebAudio 오실레이터)은 전면 제거 — Phaser SoundManager 사용.
+ *  - SFX: 효과음연구소 (soundeffect-lab.info — 상업 무료/크레딧 불필요) +
+ *         小森平の使いやすい効果音 (taira-komori.net — 상업 무료/크레딧 불필요)
+ *         두 사이트 모두 원본 파일 재배포만 금지 → 게임 내장은 허용 범위
+ *         (구 Rubberduck CC0 SFX는 사용자 지정 소스로 전면 교체됨 — 2026-08 fx-2)
  */
 
 let game: Phaser.Game | null = null;
@@ -76,80 +78,80 @@ function play(key: string, vol: number, rate = 1) {
   game.sound.play(key, { volume: vol, rate });
 }
 
-/* ---------- SFX (Rubberduck CC0 팩 매핑) ---------- */
+/* ---------- SFX (효과음연구소 + 小森平 효과음 매핑) ---------- */
 
 export const sfx = {
-  /** 검 휘두르기 — blade_01, 매번 미세 피치 변주 */
+  /** 검 휘두르기 — sword-slash2(효과음연구소), 매번 미세 피치 변주 */
   swing() {
     play("sfx_swing", 0.5, 0.95 + Math.random() * 0.12);
   },
-  /** 명중 — metal_02 (검 금속음) */
+  /** 명중 — blow2(효과음연구소, 타격 임팩트) */
   hit() {
     play("sfx_hit", 0.55);
   },
-  /** 회전베기 — blade_03 저피치 */
+  /** 회전베기 — katana-continuity1(효과음연구소, 연속 베기) 저피치 */
   spin() {
-    play("sfx_spin", 0.6, 0.8);
+    play("sfx_spin", 0.6, 0.9);
   },
-  /** 돌진 — blade_02 고피치 */
+  /** 돌진 — highspeed-movement1(효과음연구소, 고속 이동) */
   dash() {
-    play("sfx_dash", 0.45, 1.1);
+    play("sfx_dash", 0.45, 1.05);
   },
-  /** 플레이어 피격 — hurt_01 */
+  /** 플레이어 피격 — damage2(小森平, 데미지 익성) */
   hurt() {
     play("sfx_hurt", 0.6);
   },
-  /** 파편 줍기 — item_gem_01 */
+  /** 파편/아이템 획득 — pickup02(小森平) */
   pickup() {
     play("sfx_pickup", 0.6);
   },
-  /** 퀘스트 완료 — item_gem_04 */
+  /** 퀘스트 완료 — correct_answer3(小森平, 성공 지시음) */
   questDone() {
     play("sfx_quest", 0.6);
   },
-  /** 레벨업 — spell_01 */
+  /** 레벨업 — levelup1(효과음연구소, 전용 레벨업음) */
   levelup() {
     play("sfx_levelup", 0.65);
   },
-  /** 차원문 — spell_02 */
+  /** 차원문 — magic-worp1(효과음연구소, 워프) */
   portal() {
     play("sfx_portal", 0.55);
   },
-  /** 보스 등장 포효 — roar_01 */
+  /** 보스 등장 포효 — dragon_roar(小森平) */
   roar() {
     play("sfx_roar", 0.75);
   },
-  /** 일반 몬스터 사망 — creature_die_01, 피치 변주 */
+  /** 일반 몬스터 사망 — end_of_a_monster(小森平), 피치 변주 */
   enemyDie() {
     play("sfx_die", 0.55, 0.9 + Math.random() * 0.2);
   },
-  /** 보스 사망 — monster_06 + 포효 */
+  /** 보스 사망 — wall-destruction1(효과음연구소, 대형 붕괴) + 포효 */
   bossDie() {
     play("sfx_bossdie", 0.85);
     play("sfx_roar", 0.55, 0.75);
   },
-  /** 골드 픽업 — item_gem_01 고피치 변주 (동일 CC0 파일 재사용) */
+  /** 골드 픽업 — coin02(小森平, 전용 코인음) */
   coin() {
-    play("sfx_pickup", 0.45, 1.3 + Math.random() * 0.2);
+    play("sfx_coin", 0.5);
   },
-  /** 물약 마심 — spell_01 저피치 단발 */
+  /** 물약 마심 — magic-cure2(효과음연구소, 회복 마법) */
   potion() {
-    play("sfx_levelup", 0.4, 1.25);
+    play("sfx_potion", 0.5);
   },
-  /** 장비 장착 — item_gem_04 저피치 (차임) */
+  /** 장비 장착 — armor-work-1(효과음연구소, 갑옷 움직임) */
   equip() {
-    play("sfx_quest", 0.5, 0.85);
+    play("sfx_equip", 0.55);
   },
-  /** 크리티컬 명중 — metal_02 고피치 샤프 음 (타격감 강조) */
+  /** 크리티컬 명중 — large-sword-slash1(효과음연구소, 대검 강베기 — 타격감 강조) */
   crit() {
-    play("sfx_hit", 0.6, 1.55 + Math.random() * 0.15);
+    play("sfx_crit", 0.65, 1.0 + Math.random() * 0.08);
   },
-  /** 강화 성공 — 퀘스트 차임 저피치 (무게감 있는 성공음) */
+  /** 강화 성공 — jajean1(효과음연구소, '자잔!' 성공음) */
   upgradeOk() {
-    play("sfx_quest", 0.6, 0.7);
+    play("sfx_upgradeOk", 0.6);
   },
-  /** 강화 실패 — hurt 저피치 (둔탁한 낙방음) */
+  /** 강화 실패 — buzzer1(小森平) 앞부분 트리밍 — 낙방음 */
   upgradeFail() {
-    play("sfx_hurt", 0.5, 0.65);
+    play("sfx_upgradeFail", 0.5);
   },
 };

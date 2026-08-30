@@ -64,6 +64,18 @@
 - License: CC0 1.0
 - Source: https://opengameart.org/content/80-cc0-rpg-sfx
          https://opengameart.org/content/80-cc0-creature-sfx
-- Used for: 효과음 12종 — 검 휘두르기(blade), 명중(metal), 피격(hurt),
-  파편 줍기(item_gem), 퀘스트 완료(item_gem), 레벨업/차원문(spell),
-  보스 포효(roar), 몬스터 사망(creature_die), 보스 사망(monster)
+- Used for: (구) 효과음 12종 — 2026-08 사용자 지정 소스로 전면 교체됨
+
+### 효과음연구소 (soundeffect-lab.info)
+- License: 상업 이용 무료 / 크레딧 표기·사용 보고 불필요 / 원본 파일 재배포 금지
+- Source: https://soundeffect-lab.info/
+- Used for: 효과음 11종 — 검 휘두르기(sword-slash2), 명중(blow2), 크리티컬(large-sword-slash1),
+  회전베기(katana-continuity1), 돌진(highspeed-movement1), 차원문(magic-worp1),
+  물약/회복(magic-cure2), 장비 장착(armor-work-1), 보스 사망(wall-destruction1),
+  레벨업(levelup1), 강화 성공(jajean1)
+
+### 小森平の使いやすい効果音 (taira-komori.net)
+- License: 상업/비상업 무료 / 크레딧 불필요 / 원본 파일 재배포 금지
+- Source: https://taira-komori.net/freesoundkr.html
+- Used for: 효과음 7종 — 피격(damage2), 몬스터 사망(end_of_a_monster), 보스 등장 포효(dragon_roar),
+  아이템 획득(pickup02), 골드(coin02), 퀘스트 완료(correct_answer3), 강화 실패(buzzer1)
