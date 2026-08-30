@@ -182,3 +182,18 @@ Work Log:
 Stage Summary:
 - v2.3: 7건 전부 해소(⑤는 빌드 생략 확인). 사냥 밀도·성장속도 상향, 반복 의뢰는 NPC 수주제, 실내 정사각화, 채팅 자가 복구
 - 다음 APK 빌드 시 versionCode 8 / versionName 2.3 필요
+
+---
+Task ID: v2.3-verify
+Agent: Super Z (main)
+Task: v2.3 7건 구현 스팟 검증 + 원격 동기화 확인 (사용자 언어 지적 → 한국어 전환)
+
+Work Log:
+- git ls-remote(token) 실측: 원격 main = 로컬 HEAD(4a8ac0a) 동일 — v2.3 커밋(7efb469) 포함 푸시 완료 상태 확인
+- 로컬 stale origin/main 참조 갱신 (update-ref)
+- 코드 스팟 체크: ①seenSet/markSeen 영속화(WorldScene 126/3251/3278) ②몬스터 ×1.6+sub/2 상한20(stages 491)·리젠 3.2~4.8초(1516)·재시도 1.2초(1594) ③자동배분 warrior 폴백(Panels 672) ④반복의뢰 라고스 수주제(3083/3333) ⑥실내 832×832(stages 592) ⑦채팅 lastJoin 재참여(net)+미연결 피드백(ChatBox 70-75) 전부 확인
+- tsc --noEmit 0 에러, 작업트리 clean
+
+Stage Summary:
+- v2.3 품질 검증 완료 — 추가 수정 불필요. 원격=로컬 동기화 확인
+- 커뮤니케이션 언어 한국어로 전환 (사용자 지적 반영)
