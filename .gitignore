@@ -63,6 +63,8 @@ loop/loop.lock
 loop/loop-console.log
 # 빌드 산출물 (APK 등)
 *.apk
+# 배포용 APK는 예외 — download/ 동기화
+!download/*.apk
 *.aab
 android/app/build/
 backups/
