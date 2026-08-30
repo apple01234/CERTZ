@@ -300,3 +300,19 @@ Work Log:
 Stage Summary:
 - v2.5: 7건 전부 구현 — 전직이 3슬롯 전부 바뀌고, 펫 있으면 자동사냥, 귀환서/부적으로 이동 편의성, 아이템 10종 확장
 - 산출물: download/SERTZ-v2.5.apk (16.7MB) — 공개 직링: https://github.com/apple01234/CERTZ/raw/main/download/SERTZ-v2.5.apk
+
+---
+Task ID: v2.5-web-restart
+Agent: Super Z (main)
+Task: 웹 버전이 구버전/오류로 보이는 문제 — 웹 서버 재기동 + v2.5 재빌드
+
+Work Log:
+- 원인 진단: 샌드박스 재시작으로 node 서버(3000) 다운, Caddy(81)만 생존 → 브라우저엔 캐시된 구버전 노출
+- npx next build (웹 standalone 빌드, v2.5 소스) 완료
+- NODE_ENV=production setsid node server.js 백기동 — socket.io 멀티플레이 포함
+- 검증: 3000/81 포트 HTTP 200, socket.io polling 200, 청크 1a3dc253557bc914.js에서 귀환서/지역워프 문자열 확인(서빙물=v2.5)
+- GitHub Releases v2.5 생성 + APK 업로드(무결성 3c15ca82 일치) — raw 캐시 우회 채널
+
+Stage Summary:
+- 웹 버전 복구 완료: 프리뷰 URL 접속 시 v2.5 서빙. 강력 새로고침 필요할 수 있음.
+- 릴리스 페이지: https://github.com/apple01234/CERTZ/releases/latest
