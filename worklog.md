@@ -561,3 +561,24 @@ Stage Summary:
 - 사용자가 지정한 두 사이트 소스로 SFX 전면 교체 + 지형 경계 프린지로 타일맵 부자연 해결
 - BGM(Juhani Junkala CC0)은 유지, 기존 기능 삭제 0
 - 제약 준수: APK 미빌드
+
+---
+Task ID: sfx-2
+Agent: Super Z (main)
+Task: 사용자 피드백 "효과음 이상함 = 전에꺼가 훨신 나음" — 효과음 이전 세트(Rubberduck CC0) 롤백
+
+Work Log:
+- sfx-1(4ac0324)에서 교체했던 18종(효과음연구소 11+小森平 7) → 기존 Rubberduck CC0 12종 전면 복원
+- git checkout 4ac0324^ -- audio 12종 ogg + audio.ts(피치 변주 매핑) + CREDITS.md, 신설 6종 ogg 삭제
+- BootScene.ts는 AUDIO_LIST만 수동 롤백(18→12종) — TX 타일 로드(tile-1)는 보존
+- scripts/sfx-fetch/* 스크랩 파일은 게임 영향 0이라 보존 (추후 재시도 가능성 대비)
+- 검증: 브라우저 네트워크 ogg 15/15(200: sfx 12+bgm 3), 제거 6종 미요청 확인,
+  숲 세이브 주입→대사 스킵→이동·공격 4회 → 콘솔/페이지 에러 0, 타일 프린지 육안 유지 확인
+- tsc 0 / eslint 0 / localStorage.clear() 정리
+- 커밋 b35e190 (작성자 apple01234)
+
+Stage Summary:
+- 효과음은 다시 기존 Rubberduck CC0 세트 (사용자가 더 낫다고 평가한 버전)
+- coin/potion/equip/crit/upgradeOk/upgradeFail도 이전처럼 기존음 피치 변주 방식으로 재생
+- 타일맵 개선(tile-1)·타격감(fx-1)은 영향 없음 — 그대로 유지
+- 제약 준수: APK 미빌드, 기존 기능 삭제 0 (교체 음원만 원복)
