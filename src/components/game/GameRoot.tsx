@@ -80,7 +80,8 @@ export default function GameRoot() {
                 hud={hud}
                 quest={quest}
                 muted={muted}
-                canJob={rpg.canJob && !panel}
+                canJob={rpg.canJob}
+                jobAvail={(rpg.canJob || rpg.cls !== null) && !panel} /* 클래스 보유 시 언제든 트리 열람·자유전직 */
                 onToggleMute={() => {
                   const next = !muted;
                   setMuted(next);

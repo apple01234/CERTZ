@@ -6,7 +6,10 @@ import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
 import { EventBus, type QuestState, type InteractState } from "../../components/game/EventBus";
 import { writeSave, loadSave, type SaveData, setPlayerName, getPlayerName } from "../config";
-import { classDef, JOB_LEVEL, type ClassKey } from "../classes";
+import {
+  classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST,
+  type ClassKey,
+} from "../classes";
 import * as net from "../net";
 import { viewZoom } from "../PhaserGame";
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
@@ -122,6 +125,10 @@ export class WorldScene extends Phaser.Scene {
   private chatFocused = false;
   private netAcc = 0;
 
+  /* ----- 플레이어 투사체 (v1.8 — 궁수 관통 화살 / 마법사 매직 볼트) ----- */
+  private pProjPool: Phaser.Physics.Arcade.Image[] = [];
+  private pProjIdx = 0;
+
   constructor() {
     super("world");
   }
@@ -159,6 +166,8 @@ export class WorldScene extends Phaser.Scene {
     this.netOffs = [];
     this.chatFocused = false;
     this.netAcc = 0;
+    this.pProjPool = []; // 씬 소유 오브젝트는 씬 종료와 함께 정리 — 인덱스만 초기화
+    this.pProjIdx = 0;
     this.repeatNeed = 0;
     this.interactables = [];
     this.nearInteract = null;
@@ -1350,20 +1359,25 @@ export class WorldScene extends Phaser.Scene {
       if (v.focus) this.touchMove.set(0, 0);
     };
     const onChatSend = (v: { text: string }) => net.netSendChat(v.text);
-    // 전직 선택 (JobPanel → v1.7)
+    // 전직/승격 선택 (JobPanel → v1.8 다차원 트리)
     const onJobSelect = (v: { key: string }) => {
       if (!this.player || this.player.state === "dead") return;
       if (this.dialoguing) {
         EventBus.emit("banner:show", { text: "대화 중에는 전직할 수 없습니다" });
         return;
       }
-      if (this.player.cls) return;
-      if (this.player.lv < JOB_LEVEL) {
-        EventBus.emit("banner:show", { text: `전직은 Lv ${JOB_LEVEL}부터 가능합니다` });
+      const def = classDef(v.key);
+      if (!def) return;
+      const need = nextJobLevel(this.player.cls);
+      if (need === null) {
+        EventBus.emit("banner:show", { text: "이미 최종 전직 완료 — 자유 전직을 이용하세요" });
         return;
       }
-      const def = classDef(v.key);
-      if (!def || !this.player.applyClass(def.key)) return;
+      if (this.player.lv < need) {
+        EventBus.emit("banner:show", { text: `전직은 Lv ${need}부터 가능합니다` });
+        return;
+      }
+      if (!this.player.applyClass(def.key)) return;
       audio.sfx.levelup();
       this.spawnLevelUpFx(this.player.x, this.player.y);
       EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
@@ -1372,6 +1386,30 @@ export class WorldScene extends Phaser.Scene {
       this.emitHud();
       this.emitRpgState();
       net.netAnnounceJob(def.key);
+    };
+
+    // 자유 전직 (v1.8 — 메이플 자유전직 재현: 같은 계열 내 반대 경로, 골드 소모)
+    const onJobSwitch = (v: { key: string }) => {
+      if (!this.player || this.player.state === "dead") return;
+      if (this.dialoguing) {
+        EventBus.emit("banner:show", { text: "대화 중에는 전직할 수 없습니다" });
+        return;
+      }
+      const alt = freeJobOption(this.player.cls);
+      if (!alt || alt.key !== v.key) return;
+      if (this.player.gold < FREE_JOB_COST) {
+        EventBus.emit("banner:show", { text: `자유 전직에는 ${FREE_JOB_COST}G가 필요합니다` });
+        return;
+      }
+      if (!this.player.switchClass(alt.key)) return;
+      this.player.gold -= FREE_JOB_COST;
+      EventBus.emit("banner:show", { text: `자유 전직! ${alt.name} — ${alt.title} (-${FREE_JOB_COST}G)` });
+      audio.sfx.levelup();
+      this.refreshPlayerTag();
+      this.save();
+      this.emitHud();
+      this.emitRpgState();
+      net.netAnnounceJob(alt.key);
     };
 
     EventBus.on("input:move", onMove);
@@ -1389,6 +1427,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("chat:focus", onChatFocus);
     EventBus.on("chat:send", onChatSend);
     EventBus.on("job:select", onJobSelect);
+    EventBus.on("job:switch", onJobSwitch);
     this.events.once("shutdown", () => {
       EventBus.off("input:move", onMove);
       EventBus.off("input:attack", onAtk);
@@ -1405,6 +1444,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("chat:focus", onChatFocus);
       EventBus.off("chat:send", onChatSend);
       EventBus.off("job:select", onJobSelect);
+      EventBus.off("job:switch", onJobSwitch);
     });
   }
 
@@ -1421,6 +1461,9 @@ export class WorldScene extends Phaser.Scene {
       const want = r.moving ? "hero-walk-side" : "hero-idle";
       if (r.sp.anims.currentAnim?.key !== want) r.sp.play(want);
     }
+
+    // 플레이어 투사체 진행/판정 — 대화/채팅 중에도 날아가는 것은 계속 (v1.8)
+    this.tickPlayerProjs(dt);
 
     // 채팅 입력 중 — 게임 키/이동 완전 차단 (원격 보간은 위에서 계속)
     if (this.chatFocused || this.dialoguing || !this.player) return;
@@ -1615,6 +1658,82 @@ export class WorldScene extends Phaser.Scene {
     if (!this.playerNameTag || !this.player) return;
     const d = classDef(this.player.cls);
     this.playerNameTag.setText(d ? `${getPlayerName()} · ${d.name}` : getPlayerName());
+  }
+
+  /* ================= 플레이어 투사체 (v1.8) ================= */
+
+  /** 궁수 화살 / 마법사 볼트 발사 — 보스 orb 풀 패턴 재사용 (물리 velocity + 수동 판정) */
+  firePlayerProj(cfg: {
+    x: number;
+    y: number;
+    angle: number;
+    speed: number;
+    /** 관통 가능 적 수 (1 = 단일 대상) */
+    pierce: number;
+    dmg: number;
+    crit: boolean;
+    tint: number;
+    knock: number;
+    scale?: number;
+  }) {
+    if (this.pProjPool.length === 0) {
+      for (let i = 0; i < 24; i++) {
+        const p = this.physics.add.image(0, 0, "orb");
+        p.setBlendMode(Phaser.BlendModes.ADD).setDepth(12);
+        p.setActive(false).setVisible(false);
+        (p.body as Phaser.Physics.Arcade.Body).setCircle(6);
+        this.pProjPool.push(p);
+      }
+    }
+    const p = this.pProjPool[this.pProjIdx];
+    this.pProjIdx = (this.pProjIdx + 1) % this.pProjPool.length;
+    p.enableBody(true, cfg.x, cfg.y, true, true);
+    this.physics.velocityFromRotation(cfg.angle, cfg.speed, p.body!.velocity);
+    p.setTint(cfg.tint).setScale(cfg.scale ?? 0.9).setAlpha(0.95);
+    p.setRotation(cfg.angle);
+    p.setData("dmg", cfg.dmg);
+    p.setData("crit", cfg.crit);
+    p.setData("pierce", cfg.pierce);
+    p.setData("knock", cfg.knock);
+    p.setData("tint", cfg.tint);
+    p.setData("life", 1700);
+  }
+
+  /** 투사체 진행 — 수명 감소 + 적 원판 판정(관통 소모) + 회수 */
+  private tickPlayerProjs(dt: number) {
+    if (this.pProjPool.length === 0) return;
+    for (const p of this.pProjPool) {
+      if (!p.active) continue;
+      const life = (p.getData("life") as number) - dt;
+      if (life <= 0) {
+        p.disableBody(true, true);
+        continue;
+      }
+      p.setData("life", life);
+      const vel = p.body!.velocity;
+      const dir = new Phaser.Math.Vector2(vel.x, vel.y).normalize();
+      for (const e of this.getAllTargets()) {
+        let pierce = p.getData("pierce") as number;
+        if (pierce <= 0) break;
+        if (!e.active) continue;
+        if (Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y) <= 28) {
+          pierce--;
+          p.setData("pierce", pierce);
+          e.takeDamage(
+            p.getData("dmg") as number,
+            dir,
+            p.getData("knock") as number,
+            p.getData("crit") as boolean
+          );
+          this.onMeleeConnect(1, "skill");
+          this.spawnBurstAt(p.x, p.y, 4, (p.getData("tint") as number) ?? 0xffffff);
+          if (pierce <= 0) {
+            p.disableBody(true, true);
+            break;
+          }
+        }
+      }
+    }
   }
 
   /* ================= E키 상호작용 ================= */
@@ -1994,9 +2113,9 @@ export class WorldScene extends Phaser.Scene {
     EventBus.emit("skills", {
       mp: Math.round(this.player.mp),
       s1Cd: Math.round(this.player.skill1Cd),
-      s1Max: this.player.skill1Max,
+      s1Max: this.player.skill1MaxEff,
       s2Cd: Math.round(this.player.skill2Cd),
-      s2Max: this.player.skill2Max,
+      s2Max: this.player.skill2MaxEff,
     });
   }
 
@@ -2034,7 +2153,8 @@ export class WorldScene extends Phaser.Scene {
       upArm: this.player.upgrades.armor,
       nearShop: this.nearShop,
       shopStock: [...SHOP_STOCK],
-      canJob: this.player.lv >= JOB_LEVEL && !this.player.cls,
+      cls: this.player.cls,
+      canJob: canJobNow(this.player.lv, this.player.cls),
     };
     const sig = JSON.stringify(st);
     if (sig === this.lastRpgSig) return;

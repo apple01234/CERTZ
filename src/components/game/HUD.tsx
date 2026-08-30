@@ -1,7 +1,7 @@
 "use client";
 
 import type { HudState, QuestState } from "./EventBus";
-import { classDef } from "@/game/classes";
+import { classDef, classLabel } from "@/game/classes";
 import { Volume2, VolumeX, ScrollText, Backpack, Sparkles } from "lucide-react";
 
 function Bar({
@@ -44,6 +44,7 @@ export function HUD({
   quest,
   muted,
   canJob,
+  jobAvail,
   onToggleMute,
   onOpenInv,
   onOpenJob,
@@ -51,7 +52,10 @@ export function HUD({
   hud: HudState;
   quest: QuestState;
   muted: boolean;
+  /** 전직/승격 가능 — 버튼 강조(펄스) */
   canJob: boolean;
+  /** 전직 패널 접근 가능 (승격 가능 or 2차 이상 자유전직) */
+  jobAvail: boolean;
   onToggleMute: () => void;
   onOpenInv: () => void;
   onOpenJob: () => void;
@@ -68,7 +72,7 @@ export function HUD({
           </span>
         </div>
         <div className="flex flex-col gap-1">
-          {/* 클래스 배지 (전직 후) */}
+          {/* 클래스 배지 (전직 후 — 1차 "전사 · 검사", 2차+ 클래스명) */}
           {hud.cls && (() => {
             const d = classDef(hud.cls);
             return d ? (
@@ -76,7 +80,7 @@ export function HUD({
                 className="w-fit rounded-md border px-1.5 py-0.5 text-[10px] font-black backdrop-blur-sm"
                 style={{ color: d.color, borderColor: `${d.color}55`, background: "rgba(0,0,0,0.55)" }}
               >
-                {d.name} · {d.title}
+                {classLabel(hud.cls)}
               </span>
             ) : null;
           })()}
@@ -127,14 +131,18 @@ export function HUD({
             <Backpack size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">I</span>
           </button>
-          {canJob && (
+          {jobAvail && (
             <button
               onClick={onOpenJob}
               aria-label="전직 열기 (K)"
-              className="pointer-events-auto relative flex h-9 animate-pulse items-center justify-center rounded-lg border border-amber-300/70 bg-gradient-to-b from-amber-500/80 to-amber-700/80 text-amber-100 backdrop-blur-sm transition-transform hover:from-amber-400/90 active:scale-95"
+              className={`pointer-events-auto relative flex h-9 items-center justify-center rounded-lg border backdrop-blur-sm transition-transform active:scale-95 ${
+                canJob
+                  ? "animate-pulse border-amber-300/70 bg-gradient-to-b from-amber-500/80 to-amber-700/80 text-amber-100 hover:from-amber-400/90"
+                  : "border-white/20 bg-black/55 text-white/70 hover:bg-black/75"
+              }`}
             >
               <Sparkles size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-200">전직</span>
+              <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${canJob ? "text-amber-200" : "text-white/50"}`}>전직</span>
             </button>
           )}
         </div>

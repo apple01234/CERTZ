@@ -1,15 +1,31 @@
 /**
- * 전직 시스템 — 클래스 정의 (v1.7)
- *  - Lv 10 도달 시 1회 전직 (세이브에 cls 저장, 구 세이브 호환: null)
- *  - 보너스는 스탯 getter에서 곱연산/합연산 적용 — 기존 전투 코드 무변경
+ * 전직 시스템 — 메이플스토리 모험가 구조 참고 다차원 클래스 트리 (v1.8)
+ *  - 1차(Lv10) 계열 선택 → 2차(Lv30) 세부 직업 선택 → 3차(Lv60) 최종 승격
+ *  - 자유 전직(메이플 자유전직 재현): 2차 이상에서 같은 계열 내 반대 경로로 전환 (골드 소모, 횟수 무제한)
+ *  - 보너스는 경로(1차→2차→3차) 누적 합산 — 기존 v1.7 전직자(cls=warrior 등) 스탯 완전 동일 유지
+ *  - 세이브에는 현재 클래스키 하나만 저장 (구 세이브 호환: null / 1차키)
  */
 
-export const JOB_LEVEL = 10;
+export const JOB_LEVELS = { t1: 10, t2: 30, t3: 60 } as const;
+/** 자유 전직 비용 (골드) — 메이플 메소 소모 자유전직 재현 */
+export const FREE_JOB_COST = 5000;
 
-export type ClassKey = "warrior" | "ranger" | "mage";
+export type Tier = 1 | 2 | 3;
+export type FamilyKey = "warrior" | "ranger" | "mage";
+export type ClassKey =
+  | FamilyKey /* 1차 */
+  | "berserker" | "guardian" /* 전사 2차 */
+  | "sniper" | "windrunner" /* 궁수 2차 */
+  | "archmage" | "sage" /* 마법사 2차 */
+  | "warlord" | "paladin" /* 전사 3차 */
+  | "eagleeye" | "tempest" /* 궁수 3차 */
+  | "stormbringer" | "chronicle"; /* 마법사 3차 */
 
 export type ClassDef = {
   key: ClassKey;
+  tier: Tier;
+  /** 상위 클래스키 (t2 → 1차키, t3 → 2차키, t1 → null) */
+  parent: ClassKey | null;
   /** 클래스명 (HUD 배지/이름표) */
   name: string;
   /** 칭호 (전직 배너) */
@@ -18,68 +34,268 @@ export type ClassDef = {
   color: string;
   /** 게임 내 마커색 (hex) */
   hex: number;
-  /** 공격력 배율 (atkTotal에 곱함) */
-  atkMult: number;
-  /** 크리티컬 추가 (%p) */
+  /** 공격력 가산 (%) — 체인 합산 후 atkTotal에 곱함 */
+  atkPct: number;
+  /** 크리티컬 가산 (%p) */
   critAdd: number;
-  /** 전직 즉시 최대 HP 가산 */
+  /** 방어력 가산 */
+  defAdd: number;
+  /** 전직 즉시 최대 HP 가산 (누적 합산) */
   hpAdd: number;
-  /** 전직 즉시 최대 MP 가산 */
+  /** 전직 즉시 최대 MP 가산 (누적 합산) */
   mpAdd: number;
-  /** 이동속도 배율 */
-  speedMult: number;
+  /** 이동속도 가산 (%) — 체인 합산 후 속도에 곱함 */
+  speedPct: number;
+  /** 스킬 쿨다운 배율 (곱 누적 — 낮을수록 좋음) */
+  cdMult: number;
+  /** 스킬 피해 배율 (곱 누적) */
+  skillMult: number;
   desc: string;
 };
 
-export const CLASSES: Record<ClassKey, ClassDef> = {
-  warrior: {
-    key: "warrior",
-    name: "전사",
-    title: "버서커",
-    color: "#ff9a8a",
-    hex: 0xff9a8a,
-    atkMult: 1.18,
-    critAdd: 0,
-    hpAdd: 120,
-    mpAdd: 0,
-    speedMult: 1.0,
-    desc: "끈질긴 생명력과 무모한 화력. 앞에 서는 자의 길.",
-  },
-  ranger: {
-    key: "ranger",
-    name: "궁수",
-    title: "윈드러너",
-    color: "#7dffa8",
-    hex: 0x7dffa8,
-    atkMult: 1.08,
-    critAdd: 12,
-    hpAdd: 60,
-    mpAdd: 20,
-    speedMult: 1.15,
-    desc: "치명타와 기동성의 대가. 붓처럼 지도를 달린다.",
-  },
-  mage: {
-    key: "mage",
-    name: "마법사",
-    title: "아크메이지",
-    color: "#a5b9ff",
-    hex: 0xa5b9ff,
-    atkMult: 1.3,
-    critAdd: 4,
-    hpAdd: 30,
-    mpAdd: 60,
-    speedMult: 1.0,
-    desc: "세계의 마나를 화력으로 바꾼다. 유리 대포.",
-  },
+/* ================= 1차 — 계열 선택 (Lv10, v1.7 수치 그대로 유지) ================= */
+
+const WARRIOR: ClassDef = {
+  key: "warrior", tier: 1, parent: null,
+  name: "전사", title: "검사",
+  color: "#ff9a8a", hex: 0xff9a8a,
+  atkPct: 18, critAdd: 0, defAdd: 0, hpAdd: 120, mpAdd: 0, speedPct: 0,
+  cdMult: 1, skillMult: 1,
+  desc: "끈질긴 생명력과 무모한 화력. 앞에 서는 자의 길.",
+};
+const RANGER: ClassDef = {
+  key: "ranger", tier: 1, parent: null,
+  name: "궁수", title: "궁도",
+  color: "#7dffa8", hex: 0x7dffa8,
+  atkPct: 8, critAdd: 12, defAdd: 0, hpAdd: 60, mpAdd: 20, speedPct: 15,
+  cdMult: 1, skillMult: 1,
+  desc: "치명타와 기동성의 대가. 붓처럼 지도를 달린다.",
+};
+const MAGE: ClassDef = {
+  key: "mage", tier: 1, parent: null,
+  name: "마법사", title: "주술사",
+  color: "#a5b9ff", hex: 0xa5b9ff,
+  atkPct: 30, critAdd: 4, defAdd: 0, hpAdd: 30, mpAdd: 60, speedPct: 0,
+  cdMult: 1, skillMult: 1,
+  desc: "세계의 마나를 화력으로 바꾼다. 유리 대포.",
 };
 
-export const CLASS_LIST: ClassDef[] = [CLASSES.warrior, CLASSES.ranger, CLASSES.mage];
+/* ================= 2차 — 세부 직업 선택 (Lv30, 계열별 2종) ================= */
+
+const BERSERKER: ClassDef = {
+  key: "berserker", tier: 2, parent: "warrior",
+  name: "버서커", title: "광전사",
+  color: "#ff7a5c", hex: 0xff7a5c,
+  atkPct: 18, critAdd: 6, defAdd: 0, hpAdd: 80, mpAdd: 0, speedPct: 0,
+  cdMult: 1, skillMult: 1.05,
+  desc: "공격에 공격을 더한다. 방어는 사치.",
+};
+const GUARDIAN: ClassDef = {
+  key: "guardian", tier: 2, parent: "warrior",
+  name: "가디언", title: "수호자",
+  color: "#ffb08a", hex: 0xffb08a,
+  atkPct: 6, critAdd: 0, defAdd: 8, hpAdd: 160, mpAdd: 0, speedPct: 5,
+  cdMult: 1, skillMult: 1,
+  desc: "아군의 방패. 무너지지 않는 성벽.",
+};
+const SNIPER: ClassDef = {
+  key: "sniper", tier: 2, parent: "ranger",
+  name: "스나이퍼", title: "매의 눈",
+  color: "#5cff8f", hex: 0x5cff8f,
+  atkPct: 10, critAdd: 18, defAdd: 0, hpAdd: 40, mpAdd: 0, speedPct: 0,
+  cdMult: 1, skillMult: 1.05,
+  desc: "한 발로 끝낸다. 치명타의 신.",
+};
+const WINDRUNNER: ClassDef = {
+  key: "windrunner", tier: 2, parent: "ranger",
+  name: "윈드러너", title: "질풍",
+  color: "#9dffc4", hex: 0x9dffc4,
+  atkPct: 6, critAdd: 6, defAdd: 0, hpAdd: 60, mpAdd: 20, speedPct: 10,
+  cdMult: 0.9, skillMult: 1,
+  desc: "바람보다 빠른 연사와 기동.",
+};
+const ARCHMAGE: ClassDef = {
+  key: "archmage", tier: 2, parent: "mage",
+  name: "아크메이지", title: "대마법사",
+  color: "#8fa6ff", hex: 0x8fa6ff,
+  atkPct: 22, critAdd: 0, defAdd: 0, hpAdd: 20, mpAdd: 40, speedPct: 0,
+  cdMult: 1, skillMult: 1.15,
+  desc: "한 방의 화력을 세계 끝까지.",
+};
+const SAGE: ClassDef = {
+  key: "sage", tier: 2, parent: "mage",
+  name: "세이지", title: "현자",
+  color: "#c3cfff", hex: 0xc3cfff,
+  atkPct: 10, critAdd: 4, defAdd: 3, hpAdd: 60, mpAdd: 80, speedPct: 0,
+  cdMult: 0.85, skillMult: 1,
+  desc: "무한 마나와 짧은 회전. 지혜의 전투.",
+};
+
+/* ================= 3차 — 최종 승격 (Lv60, 2차 경로 자동 이어짐) ================= */
+
+const WARLORD: ClassDef = {
+  key: "warlord", tier: 3, parent: "berserker",
+  name: "워로드", title: "전장의 지배자",
+  color: "#ff5c3c", hex: 0xff5c3c,
+  atkPct: 20, critAdd: 8, defAdd: 0, hpAdd: 100, mpAdd: 0, speedPct: 5,
+  cdMult: 1, skillMult: 1.1,
+  desc: "전장 그 자체가 무기. 최전선의 절대자.",
+};
+const PALADIN: ClassDef = {
+  key: "paladin", tier: 3, parent: "guardian",
+  name: "팔라딘", title: "성기사",
+  color: "#ffd29a", hex: 0xffd29a,
+  atkPct: 8, critAdd: 4, defAdd: 12, hpAdd: 200, mpAdd: 20, speedPct: 5,
+  cdMult: 1, skillMult: 1,
+  desc: "빛의 맹세로 서는 자. 불굴의 성벽.",
+};
+const EAGLEEYE: ClassDef = {
+  key: "eagleeye", tier: 3, parent: "sniper",
+  name: "이글아이", title: "절대 명중",
+  color: "#3cff7a", hex: 0x3cff7a,
+  atkPct: 12, critAdd: 20, defAdd: 0, hpAdd: 60, mpAdd: 20, speedPct: 5,
+  cdMult: 0.95, skillMult: 1.1,
+  desc: "매는 두 번 쏘지 않는다.",
+};
+const TEMPEST: ClassDef = {
+  key: "tempest", tier: 3, parent: "windrunner",
+  name: "템페스트", title: "폭풍의 화신",
+  color: "#b9ffe0", hex: 0xb9ffe0,
+  atkPct: 8, critAdd: 8, defAdd: 0, hpAdd: 80, mpAdd: 40, speedPct: 10,
+  cdMult: 0.85, skillMult: 1.05,
+  desc: "폭풍처럼 몰아치는 화망.",
+};
+const STORMBRINGER: ClassDef = {
+  key: "stormbringer", tier: 3, parent: "archmage",
+  name: "스톰브링어", title: "폭풍소환자",
+  color: "#6f8cff", hex: 0x6f8cff,
+  atkPct: 25, critAdd: 4, defAdd: 0, hpAdd: 40, mpAdd: 50, speedPct: 0,
+  cdMult: 0.95, skillMult: 1.2,
+  desc: "하늘의 분노를 부리는 종단의 마법사.",
+};
+const CHRONICLE: ClassDef = {
+  key: "chronicle", tier: 3, parent: "sage",
+  name: "크로니컬", title: "서사의 기록자",
+  color: "#e2e8ff", hex: 0xe2e8ff,
+  atkPct: 12, critAdd: 6, defAdd: 6, hpAdd: 100, mpAdd: 100, speedPct: 5,
+  cdMult: 0.8, skillMult: 1.05,
+  desc: "모든 마법의 순환을 통괄하는 현자의 정점.",
+};
+
+export const CLASSES: Record<ClassKey, ClassDef> = {
+  warrior: WARRIOR, ranger: RANGER, mage: MAGE,
+  berserker: BERSERKER, guardian: GUARDIAN,
+  sniper: SNIPER, windrunner: WINDRUNNER,
+  archmage: ARCHMAGE, sage: SAGE,
+  warlord: WARLORD, paladin: PALADIN,
+  eagleeye: EAGLEEYE, tempest: TEMPEST,
+  stormbringer: STORMBRINGER, chronicle: CHRONICLE,
+};
+
+/** 1차 계열 3종 (초기 전직 선택지) */
+export const CLASS_LIST: ClassDef[] = [WARRIOR, RANGER, MAGE];
+
+/* ================= 헬퍼 ================= */
 
 export function isClassKey(v: unknown): v is ClassKey {
-  return v === "warrior" || v === "ranger" || v === "mage";
+  return typeof v === "string" && Object.prototype.hasOwnProperty.call(CLASSES, v);
 }
 
-/** 세이브 문자열 → 정의 (무효값 null 방어) */
+/** 세이브 문자열 → 정의 (무효값 null 방지) */
 export function classDef(key?: string | null): ClassDef | null {
   return isClassKey(key) ? CLASSES[key] : null;
+}
+
+/** 루트(1차) 계열키 — 계열별 전투 방식 분기(스킬 등)에 사용 */
+export function familyOf(key?: string | null): FamilyKey | null {
+  const chain = chainOf(key);
+  if (chain.length === 0) return null;
+  return chain[0].key as FamilyKey;
+}
+
+/** 경로 체인 — [1차, 2차?, 3차?] */
+export function chainOf(key?: string | null): ClassDef[] {
+  const out: ClassDef[] = [];
+  let cur = classDef(key);
+  while (cur) {
+    out.unshift(cur);
+    cur = classDef(cur.parent);
+  }
+  return out;
+}
+
+export type ClassBonus = {
+  atkPct: number;
+  critAdd: number;
+  defAdd: number;
+  hpAdd: number;
+  mpAdd: number;
+  speedPct: number;
+  cdMult: number;
+  skillMult: number;
+};
+
+/** 경로 누적 보너스 — 합산은 합, 배율은 곱 */
+export function bonusOf(key?: string | null): ClassBonus {
+  const acc: ClassBonus = {
+    atkPct: 0, critAdd: 0, defAdd: 0, hpAdd: 0, mpAdd: 0, speedPct: 0,
+    cdMult: 1, skillMult: 1,
+  };
+  for (const d of chainOf(key)) {
+    acc.atkPct += d.atkPct;
+    acc.critAdd += d.critAdd;
+    acc.defAdd += d.defAdd;
+    acc.hpAdd += d.hpAdd;
+    acc.mpAdd += d.mpAdd;
+    acc.speedPct += d.speedPct;
+    acc.cdMult *= d.cdMult;
+    acc.skillMult *= d.skillMult;
+  }
+  return acc;
+}
+
+/** 다음 전직 단계 (3차 완료면 null) */
+export function nextTierOf(key?: string | null): Tier | null {
+  const cur = classDef(key);
+  const next = (cur ? cur.tier + 1 : 1) as Tier;
+  return next <= 3 ? next : null;
+}
+
+/** 다음 단계 요구 레벨 (완료 상태면 null) */
+export function nextJobLevel(key?: string | null): number | null {
+  const t = nextTierOf(key);
+  return t === null ? null : JOB_LEVELS[`t${t}`];
+}
+
+/** 지금 전직/승격 가능 여부 — 다음 단계 요구 레벨 달성 */
+export function canJobNow(lv: number, key?: string | null): boolean {
+  const need = nextJobLevel(key);
+  return need !== null && lv >= need;
+}
+
+/** 다음 전직 선택지 — 미전직: 1차 3계열 / 1차: 계열별 2차 2종 / 2차: 경로 3차 1종 */
+export function jobOptions(key?: string | null): ClassDef[] {
+  const cur = classDef(key);
+  if (!cur) return CLASS_LIST;
+  const next = nextTierOf(cur.key);
+  if (next === null) return [];
+  return Object.values(CLASSES).filter((d) => d.tier === next && d.parent === cur.key);
+}
+
+/** 자유 전직 대상 — 같은 단계·같은 계열의 반대 경로 (2차 이상) */
+export function freeJobOption(key?: string | null): ClassDef | null {
+  const cur = classDef(key);
+  if (!cur || cur.tier < 2) return null;
+  const alt = Object.values(CLASSES).find(
+    (d) => d.tier === cur.tier && d.parent === cur.parent && d.key !== cur.key
+  );
+  return alt ?? null;
+}
+
+/** HUD 표기용 — "전사 · 검사" / 2차 이상 "버서커" */
+export function classLabel(key?: string | null): string {
+  const chain = chainOf(key);
+  if (chain.length === 0) return "";
+  if (chain.length === 1) return `${chain[0].name} · ${chain[0].title}`;
+  return `${chain[chain.length - 1].name}`;
 }

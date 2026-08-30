@@ -98,7 +98,15 @@ app.prepare().then(() => {
       if (!p || typeof cls !== "string") return;
       p.cls = cls;
       broadcastPlayers(true);
-      const names = { warrior: "전사", ranger: "궁수", mage: "마법사" };
+      const names = {
+        warrior: "전사", ranger: "궁수", mage: "마법사",
+        berserker: "버서커", guardian: "가디언",
+        sniper: "스나이퍼", windrunner: "윈드러너",
+        archmage: "아크메이지", sage: "세이지",
+        warlord: "워로드", paladin: "팔라딘",
+        eagleeye: "이글아이", tempest: "템페스트",
+        stormbringer: "스톰브링어", chronicle: "크로니컬",
+      };
       sysChat(`${p.name} 님이 ${names[cls] || cls}(으)로 전직했습니다!`);
     });
 

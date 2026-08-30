@@ -1,7 +1,10 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import { ITEMS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_COST, type ItemKey } from "../data";
-import { CLASSES, isClassKey, type ClassKey } from "../classes";
+import {
+  classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf,
+  type ClassKey, type ClassBonus,
+} from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
 
 /**
@@ -31,8 +34,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   accessory: ItemKey | null = null; // 장신구 슬롯 (반지 1개)
   owned: ItemKey[] = ["weapon_1", "armor_1"];
   upgrades: { weapon: number; armor: number } = { weapon: 0, armor: 0 }; // 강화 단계 (+0~+5)
-  /** 전직 클래스 (v1.7 — Lv10 달성 시 1회 선택, 미전직 null) */
+  /** 전직 클래스 (v1.8 다차원 트리 — 1차/2차/3차 키, 미전직 null) */
   cls: ClassKey | null = null;
+  /** 경로 누적 보너스 캐시 — cls 변경 시에만 갱신 (getter 프레임 호출 부담 제거) */
+  private clsBonus: ClassBonus = bonusOf(null);
   private potCd = 0;
 
   /** 기본 크리티컬 확률 (%) — 장신구로 증가 */
@@ -40,6 +45,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private static readonly CRIT_MULT = 1.7;
 
   speed = 230;
+  /** 이동 기본값 — 클래스 속도 보너스는 이 값에 배율 (recalcSpeed) */
+  static readonly BASE_SPEED = 230;
   facing: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0);
 
   state: "idle" | "attack" | "dash" | "dead" = "idle";
@@ -47,16 +54,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private slashAlt = false; // 위/아래 교차 베기
   private hitSet: Set<unknown> = new Set();
 
-  skill1Cd = 0; // 회전베기
-  skill2Cd = 0; // 돌진베기
+  skill1Cd = 0; // 계열별 주력기 (전사 회전베기 / 궁수 관통 화살 / 마법사 매직 볼트)
+  skill2Cd = 0; // 계열별 기동기 (전사·궁수 돌진 / 마법사 점멸)
   readonly skill1Max = 4000;
   readonly skill2Max = 6000;
+  /** 클래스 cdMult 반영 실효 쿨다운 */
+  get skill1MaxEff(): number {
+    return Math.round(this.skill1Max * this.clsBonus.cdMult);
+  }
+  get skill2MaxEff(): number {
+    return Math.round(this.skill2Max * this.clsBonus.cdMult);
+  }
   private mpRegenAcc = 0;
 
   private iframes = 0;
   private dashTime = 0;
   private dashDir = new Phaser.Math.Vector2();
 
+  /** 대시 속도 — 계열별 차등 (마법사 점멸은 짧고 즉발) */
+  private dashSpeed = 640;
   /** 공격 미세 러지 — "살짝 돌진" 타격감 (예전 360 상시 돌진보다 작고 빠르게 감쇠) */
   private static readonly LUNGE_SPEED = 190;
   private static readonly LUNGE_MS = 170;
@@ -99,7 +115,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (this.state === "dash") {
       this.dashTime -= ms;
-      this.setVelocity(this.dashDir.x * 640, this.dashDir.y * 640);
+      this.setVelocity(this.dashDir.x * this.dashSpeed, this.dashDir.y * this.dashSpeed);
       if (this.dashTime <= 0) {
         this.state = "idle";
         this.setVelocity(0, 0);
@@ -231,15 +247,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return hits;
   }
 
-  /* ---------------- 스킬 ---------------- */
+  /* ---------------- 스킬 (v1.8 — 계열별 전투 방식 차별화, 메이플 계열 정체성 참고) ---------------- */
 
+  /** 주력기(Z) — 전사·미전직: 회전베기 / 궁수: 관통 화살 3연발 / 마법사: 매직 볼트(관통) */
   useSkill1() {
     if (this.state !== "idle" || this.skill1Cd > 0 || this.mp < 15) return;
     this.mp -= 15;
-    this.skill1Cd = this.skill1Max;
+    this.skill1Cd = this.skill1MaxEff;
     this.state = "attack";
     this.hitSet.clear();
     this.setVelocity(0, 0);
+    const fam = familyOf(this.cls);
+    if (fam === "ranger") return this.skill1Arrows();
+    if (fam === "mage") return this.skill1Bolt();
+    this.skill1Spin();
+  }
+
+  /** 전사(+미전직) — 회전베기 360° */
+  private skill1Spin() {
     this.scene.sfxSpin();
 
     // 회전 방향: 조준 측면 기준 (상하 조준 시 현재 플립 방향 따름)
@@ -267,7 +292,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (d <= 118) {
           this.hitSet.add(e);
           const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-          const { dmg, crit } = this.rollDamage(1.6);
+          const { dmg, crit } = this.rollDamage(1.6, true);
           if (crit) this.scene.sfxCrit();
           e.takeDamage(dmg, away, 300, crit);
         }
@@ -275,6 +300,50 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.onMeleeConnect(1, "skill");
     });
     this.scene.time.delayedCall(310, () => {
+      if (this.state === "attack") this.state = "idle";
+    });
+    this.scene.emitHud();
+  }
+
+  /** 궁수 — 관통 화살 3연발 (부채꼴, 각 화살 최대 2명 관통) */
+  private skill1Arrows() {
+    const aim = this.aimDir();
+    const base = Math.atan2(aim.y, aim.x);
+    this.play("hero-atk");
+    this.scene.sfxSpin();
+    for (let i = 0; i < 3; i++) {
+      this.scene.time.delayedCall(i * 110, () => {
+        if (this.state === "dead") return;
+        const { dmg, crit } = this.rollDamage(1.2, true);
+        if (crit) this.scene.sfxCrit();
+        this.scene.firePlayerProj({
+          x: this.x, y: this.y - 8,
+          angle: base + (i - 1) * 0.09,
+          speed: 580, pierce: 2, dmg, crit,
+          tint: 0x7dffa8, knock: 220, scale: 0.8,
+        });
+      });
+    }
+    this.scene.time.delayedCall(360, () => {
+      if (this.state === "attack") this.state = "idle";
+    });
+    this.scene.emitHud();
+  }
+
+  /** 마법사 — 매직 볼트 (느리지만 대폭 관통·고배율) */
+  private skill1Bolt() {
+    const aim = this.aimDir();
+    const angle = Math.atan2(aim.y, aim.x);
+    this.play("hero-atk");
+    this.scene.sfxSpin();
+    const { dmg, crit } = this.rollDamage(2.0, true);
+    if (crit) this.scene.sfxCrit();
+    this.scene.firePlayerProj({
+      x: this.x, y: this.y - 10,
+      angle, speed: 430, pierce: 5, dmg, crit,
+      tint: 0x8fa6ff, knock: 260, scale: 1.15,
+    });
+    this.scene.time.delayedCall(300, () => {
       if (this.state === "attack") this.state = "idle";
     });
     this.scene.emitHud();
@@ -288,13 +357,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         ? move.clone().normalize()
         : this.aimDir();
     this.mp -= 20;
-    this.skill2Cd = this.skill2Max;
+    this.skill2Cd = this.skill2MaxEff;
     this.state = "dash";
     this.dashDir.copy(dir);
-    this.dashTime = 190;
     this.hitSet.clear();
     this.setFlipX(dir.x < 0);
     this.scene.sfxDash();
+
+    // 계열별 기동기 성격 — 전사: 묵직한 돌진 / 궁수: 짧고 날렵한 질풍 / 마법사: 점멸(즉발 이동)
+    const fam = familyOf(this.cls);
+    if (fam === "ranger") {
+      this.dashTime = 160;
+      this.dashSpeed = 700;
+    } else if (fam === "mage") {
+      this.dashTime = 130;
+      this.dashSpeed = 760;
+      this.scene.spawnBurstAt(this.x, this.y, 8, 0x8fa6ff);
+    } else {
+      this.dashTime = 190;
+      this.dashSpeed = 640;
+    }
 
     // 돌진 경로에 참격 잔상 3연발
     for (let i = 0; i < 3; i++) {
@@ -321,7 +403,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const swept = sweptHitsTarget(sweepFromX, sweepFromY, toX, toY, e, 6);
           if (d <= 64 || swept) {
             this.hitSet.add(e);
-            const { dmg, crit } = this.rollDamage(2.1);
+            const { dmg, crit } = this.rollDamage(2.1, true);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, dir, 360, crit);
             this.scene.onMeleeConnect(1, "skill");
@@ -396,18 +478,39 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return Math.round(55 * Math.pow(this.lv, 1.72));
   }
 
-  /* ---------------- 전직 (v1.7) ---------------- */
+  /* ---------------- 전직 (v1.8 다차원 트리 — 메이플 모험가 구조 참고) ---------------- */
 
-  /** 전직 실행 — 1회성 (이미 전직했으면 false). HP/MP 가산 + 풀회복 + 속도 배율 적용 */
+  /** 전직/승격 실행 — 티어 순서·부모 경로 검증. HP/MP 증분 가산 + 풀회복 + 속도 재계산 */
   applyClass(key: ClassKey): boolean {
-    if (this.cls || !isClassKey(key)) return false;
+    const d = classDef(key);
+    if (!d) return false;
+    const next = nextTierOf(this.cls); // 3차 완료면 null
+    if (!next || d.tier !== next || d.parent !== this.cls) return false;
     this.cls = key;
-    const d = CLASSES[key];
+    this.clsBonus = bonusOf(key);
     this.maxHp += d.hpAdd;
     this.maxMp += d.mpAdd;
     this.hp = this.maxHp;
     this.mp = this.maxMp;
-    this.speed = Math.round(this.speed * d.speedMult);
+    this.recalcSpeed();
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 자유 전직 (메이플 자유전직 재현) — 같은 단계·같은 계열 반대 경로로 전환. 골드 소모는 씬에서 검사.
+   *  전직과 달리 풀회복 없음 — HP/MP는 새 상한으로 클램프 */
+  switchClass(key: ClassKey): boolean {
+    const alt = freeJobOption(this.cls);
+    if (!alt || alt.key !== key) return false;
+    const prev = this.clsBonus;
+    const d = classDef(key)!;
+    this.cls = key;
+    this.clsBonus = bonusOf(key);
+    this.maxHp += d.hpAdd - prev.hpAdd;
+    this.maxMp += d.mpAdd - prev.mpAdd;
+    this.hp = Math.min(this.hp, this.maxHp);
+    this.mp = Math.min(this.mp, this.maxMp);
+    this.recalcSpeed();
     this.scene.emitHud();
     return true;
   }
@@ -416,34 +519,39 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   applySavedClass(key: string | null | undefined) {
     if (!isClassKey(key) || this.cls) return;
     this.cls = key;
-    this.speed = Math.round(this.speed * CLASSES[key].speedMult);
+    this.clsBonus = bonusOf(key);
+    this.recalcSpeed();
+  }
+
+  /** 기본 속도 × 경로 누적 속도 보너스 (합산 → 곱) */
+  private recalcSpeed() {
+    this.speed = Math.round(Player.BASE_SPEED * (1 + this.clsBonus.speedPct / 100));
   }
 
   /* ---------------- RPG 기본 요소 ---------------- */
 
-  /** 장비+강화+클래스 포함 실제 공격력 */
+  /** 장비+강화+클래스 경로 포함 실제 공격력 */
   get atkTotal(): number {
     const base = this.atk + (ITEMS[this.weapon].atk ?? 0) + this.upgrades.weapon * 2;
-    const mult = this.cls ? CLASSES[this.cls].atkMult : 1;
-    return Math.round(base * mult);
+    return Math.round(base * (1 + this.clsBonus.atkPct / 100));
   }
 
-  /** 장비+강화 포함 실제 방어력 */
+  /** 장비+강화+클래스 경로 포함 실제 방어력 */
   get defTotal(): number {
-    return (ITEMS[this.armor].def ?? 0) + this.upgrades.armor;
+    return (ITEMS[this.armor].def ?? 0) + this.upgrades.armor + this.clsBonus.defAdd;
   }
 
-  /** 크리티컬 확률 (%) — 기본 8% + 힘의 반지 +7%p + 클래스 보너스 */
+  /** 크리티컬 확률 (%) — 기본 8% + 힘의 반지 +7%p + 클래스 경로 누적 */
   get critRate(): number {
     const acc = this.accessory ? ITEMS[this.accessory].crit ?? 0 : 0;
-    const cls = this.cls ? CLASSES[this.cls].critAdd : 0;
-    return Player.BASE_CRIT + acc + cls;
+    return Player.BASE_CRIT + acc + this.clsBonus.critAdd;
   }
 
-  /** 데미지 굴림 — 크리티컬 판정 포함 */
-  private rollDamage(mult: number): { dmg: number; crit: boolean } {
+  /** 데미지 굴림 — 크리티컬 판정 포함 (스킬은 skillMult 곱) */
+  private rollDamage(mult: number, isSkill = false): { dmg: number; crit: boolean } {
     const crit = Math.random() * 100 < this.critRate;
-    return { dmg: Math.round(this.atkTotal * mult * (crit ? Player.CRIT_MULT : 1)), crit };
+    const m = isSkill ? mult * this.clsBonus.skillMult : mult;
+    return { dmg: Math.round(this.atkTotal * m * (crit ? Player.CRIT_MULT : 1)), crit };
   }
 
   /** 피격 판정 — 방어력만큼 감쇄 (최소 1) */

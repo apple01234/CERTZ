@@ -14,7 +14,7 @@ const emptyRpg: RpgState = {
   gold: 30, hpPot: 2, mpPot: 1, owned: ["weapon_1", "armor_1"],
   weapon: "weapon_1", armor: "armor_1", accessory: null,
   upWea: 0, upArm: 0, nearShop: false,
-  shopStock: [], canJob: false,
+  shopStock: [], cls: null, canJob: false,
 };
 
 export function useGameUi() {

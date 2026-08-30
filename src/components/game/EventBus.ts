@@ -33,7 +33,9 @@ export type RpgState = {
   upArm: number;
   nearShop: boolean;
   shopStock: string[];
-  /** 전직 가능 조건 (Lv 달성 + 미전직) — HUD 전직 버튼 */
+  /** 현재 전직 클래스키 (v1.8 다차원 트리 — 미전직 null) */
+  cls: string | null;
+  /** 전직/승격 가능 조건 (다음 단계 Lv 달성) — HUD 전직 버튼 */
   canJob: boolean;
 };
 

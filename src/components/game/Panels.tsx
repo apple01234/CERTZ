@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { EventBus, type PanelKind, type RpgState } from "./EventBus";
 import { ITEMS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_COST, type ItemKey, type ItemTier } from "@/game/data";
-import { CLASS_LIST, JOB_LEVEL, type ClassDef } from "@/game/classes";
+import { CLASS_LIST, FREE_JOB_COST, chainOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 
 /**
  * 2D MMORPG 기본 요소 UI — 상점 / 인벤토리 패널
@@ -339,20 +339,81 @@ export function GamePanels({ panel, rpg, onClose }: { panel: PanelKind; rpg: Rpg
   return null;
 }
 
-/* ---------- 전직 패널 (v1.7 — Lv 달성 시 1회 클래스 선택) ---------- */
+/* ---------- 전직 패널 (v1.8 — 메이플 모험가 구조: 1차 계열 → 2차 세부직업 → 3차 승격 + 자유전직) ---------- */
 
+/** 이번 단계 증분 보너스 라인 */
 function statLines(d: ClassDef): string[] {
-  const out = [`공격력 +${Math.round((d.atkMult - 1) * 100)}%`];
+  const out: string[] = [];
+  if (d.atkPct > 0) out.push(`공격력 +${d.atkPct}%`);
   if (d.critAdd > 0) out.push(`크리티컬 +${d.critAdd}%p`);
+  if (d.defAdd > 0) out.push(`방어력 +${d.defAdd}`);
   if (d.hpAdd > 0) out.push(`최대 HP +${d.hpAdd}`);
   if (d.mpAdd > 0) out.push(`최대 MP +${d.mpAdd}`);
-  if (d.speedMult !== 1) out.push(`이동속도 +${Math.round((d.speedMult - 1) * 100)}%`);
+  if (d.speedPct > 0) out.push(`이동속도 +${d.speedPct}%`);
+  if (d.cdMult !== 1) out.push(`스킬 쿨다운 -${Math.round((1 - d.cdMult) * 100)}%`);
+  if (d.skillMult !== 1) out.push(`스킬 피해 +${Math.round((d.skillMult - 1) * 100)}%`);
   return out;
+}
+
+const TIER_LABEL: Record<number, string> = { 1: "1차 전직", 2: "2차 전직", 3: "3차 전직" };
+
+function JobCard({
+  d,
+  locked,
+  lockText,
+  btnText,
+  onPick,
+  dim,
+}: {
+  d: ClassDef;
+  locked: boolean;
+  lockText?: string;
+  btnText: string;
+  onPick: () => void;
+  dim?: boolean;
+}) {
+  return (
+    <div
+      className="rounded-lg border bg-white/[0.04] px-3 py-2.5"
+      style={{ borderColor: `${d.color}44`, opacity: dim ? 0.55 : 1 }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[13px] font-black" style={{ color: d.color }}>
+            {d.name} <span className="text-[10px] font-bold text-white/45">— {d.title}</span>
+          </p>
+          <p className="mt-0.5 truncate text-[10px] text-white/55">{d.desc}</p>
+          <p className="mt-1 flex flex-wrap gap-x-2 text-[10px] font-bold text-emerald-300/90">
+            {statLines(d).map((s) => (
+              <span key={s}>{s}</span>
+            ))}
+          </p>
+          {locked && lockText ? (
+            <p className="mt-1 text-[10px] font-bold text-amber-300/80">🔒 {lockText}</p>
+          ) : null}
+        </div>
+        <button
+          disabled={locked}
+          onClick={onPick}
+          className="shrink-0 rounded-md px-3 py-2 text-[11px] font-black text-slate-900 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+          style={{ background: d.color }}
+        >
+          {btnText}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  const chain = chainOf(rpg.cls);
+  const opts = jobOptions(rpg.cls);
+  const alt = freeJobOption(rpg.cls);
+  const need = nextJobLevel(rpg.cls);
   const locked = !rpg.canJob;
+  const fin = chain.length >= 3; // 3차 완료
+
   return (
     <div
       className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
@@ -360,13 +421,13 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
       role="presentation"
     >
       <div
-        className="pointer-events-auto max-h-[86vh] w-[min(92vw,430px)] overflow-y-auto rounded-xl border border-amber-300/30 bg-slate-950/95 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
+        className="pointer-events-auto max-h-[86vh] w-[min(92vw,470px)] overflow-y-auto rounded-xl border border-amber-300/30 bg-slate-950/95 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="전직"
       >
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-black text-amber-200">⚔ 전직 — 클래스 선택</h2>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-base font-black text-amber-200">⚔ 전직 — 클래스 트리</h2>
           <button
             onClick={onClose}
             aria-label="전직 닫기"
@@ -376,50 +437,79 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
           </button>
         </div>
 
-        {locked ? (
-          <p className="rounded-lg border border-dashed border-white/15 px-3 py-6 text-center text-xs font-bold text-white/50">
-            Lv {JOB_LEVEL} 달성 시 전직이 열립니다
+        {/* 현재 경로 — 메이플식 계열 트리 표기 */}
+        <p className="mb-3 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-bold text-white/70">
+          {chain.length === 0 ? (
+            <>현재: <span className="text-white/45">미전직 (평민)</span></>
+          ) : (
+            <>
+              현재: {chain.map((c, i) => (
+                <span key={c.key} style={{ color: c.color }}>
+                  {i > 0 && " → "}{c.name}
+                </span>
+              ))}
+            </>
+          )}
+        </p>
+
+        {/* 다음 전직 단계 */}
+        {fin ? (
+          <p className="mb-3 rounded-lg border border-amber-300/25 bg-amber-500/10 px-3 py-2.5 text-center text-[11px] font-black text-amber-200">
+            🏆 최종 전직 완료 — {chain[2].name}의 정점에 섰습니다
+          </p>
+        ) : locked ? (
+          <p className="mb-3 rounded-lg border border-dashed border-white/15 px-3 py-4 text-center text-xs font-bold text-white/50">
+            {TIER_LABEL[chain.length + 1]}: Lv {need} 달성 시 열립니다
+            {chain.length === 1 ? " — 계열 내 세부 직업을 고르세요" : ""}
           </p>
         ) : (
           <p className="mb-3 text-[11px] font-bold text-white/55">
-            한 번 선택하면 되돌릴 수 없습니다 — 신중하게 고르세요!
+            {chain.length === 0
+              ? "계열을 선택하세요 — 2차 전직 때 같은 계열의 세부 직업을 고릅니다."
+              : chain.length === 1
+                ? "계열의 세부 직업을 고르세요 — 경로에 따라 3차가 갈립니다."
+                : "경로의 최종 클래스로 승격합니다."}
           </p>
         )}
 
         <div className="flex flex-col gap-2">
-          {CLASS_LIST.map((d) => (
-            <div
+          {(chain.length === 0 ? CLASS_LIST : opts).map((d) => (
+            <JobCard
               key={d.key}
-              className="rounded-lg border bg-white/[0.04] px-3 py-2.5"
-              style={{ borderColor: `${d.color}44` }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-[13px] font-black" style={{ color: d.color }}>
-                    {d.name} <span className="text-[10px] font-bold text-white/45">— {d.title}</span>
-                  </p>
-                  <p className="mt-0.5 truncate text-[10px] text-white/55">{d.desc}</p>
-                  <p className="mt-1 flex flex-wrap gap-x-2 text-[10px] font-bold text-emerald-300/90">
-                    {statLines(d).map((s) => (
-                      <span key={s}>{s}</span>
-                    ))}
-                  </p>
-                </div>
-                <button
-                  disabled={locked}
-                  onClick={() => {
-                    EventBus.emit("job:select", { key: d.key });
-                    onClose();
-                  }}
-                  className="shrink-0 rounded-md px-3 py-2 text-[11px] font-black text-slate-900 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
-                  style={{ background: d.color }}
-                >
-                  전직
-                </button>
-              </div>
-            </div>
+              d={d}
+              locked={locked}
+              lockText={`Lv ${need} 필요`}
+              btnText={chain.length >= 2 ? "승격" : "전직"}
+              onPick={() => {
+                EventBus.emit("job:select", { key: d.key });
+                onClose();
+              }}
+            />
           ))}
         </div>
+
+        {/* 자유 전직 — 같은 계열 반대 경로 (2차 이상, 골드 소모) */}
+        {alt ? (
+          <div className="mt-4 border-t border-white/10 pt-3">
+            <p className="mb-1.5 text-[11px] font-black text-sky-200/90">
+              ⇄ 자유 전직 <span className="ml-1 rounded bg-white/10 px-1 text-[9px] font-black text-white/50">{FREE_JOB_COST}G</span>
+            </p>
+            <p className="mb-2 text-[10px] text-white/45">
+              같은 계열의 반대 길로 갈아탑니다 (메소 대신 골드). 횟수 제한 없음.
+            </p>
+            <JobCard
+              d={alt}
+              locked={rpg.gold < FREE_JOB_COST}
+              lockText={`${FREE_JOB_COST}G 필요 (보유 ${rpg.gold}G)`}
+              btnText="전환"
+              onPick={() => {
+                EventBus.emit("job:switch", { key: alt.key });
+                onClose();
+              }}
+            />
+          </div>
+        ) : null}
+
         <p className="mt-2 text-center text-[10px] text-white/40">K키로 열기 · ESC로 닫기</p>
       </div>
     </div>
