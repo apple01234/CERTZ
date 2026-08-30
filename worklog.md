@@ -582,3 +582,29 @@ Stage Summary:
 - coin/potion/equip/crit/upgradeOk/upgradeFail도 이전처럼 기존음 피치 변주 방식으로 재생
 - 타일맵 개선(tile-1)·타격감(fx-1)은 영향 없음 — 그대로 유지
 - 제약 준수: APK 미빌드, 기존 기능 삭제 0 (교체 음원만 원복)
+
+---
+Task ID: sync-1
+Agent: Super Z (main)
+Task: 사용자 피드백 "MMORPG 기능 및 UI 전부 어디감??" — 소실 여부 전수 조사
+
+Work Log:
+- 최근 커밋 전수 조사: b35e190(효과음 롤백)은 오디오 21파일만 변경 — 기능/UI 코드 손대지 않음
+- UUID 자동체크포인트 커밋 3개(b21b664/ce738f9/d0970ea)는 스크린샷·파일모드만 포함 — 무관 확인
+- 현재 워크스페이스 실측(agent-browser E2E):
+  · 타이틀(SERTZ/새로운 모험) OK · 플레이형 인트로(마을+배리 안내+우물+NPC) OK
+  · 월드: HUD 배지(LV/HP/MP/골드/공격/방어/크리) OK · 퀘스트 트래커 OK · 미니맵 OK
+  · 가방 패널(I): 소비아이템 사용/장비 장착중/장신구 슬롯/골드 표시 OK
+  · 상점 프롬프트(라고스 상점 E) OK · E키 상호작용/스페이스 대화 OK
+  · 코드 레벨: Panels.tsx(상점/가방/강화/장신구)·HUD.tsx·data.ts 퀘스트 전부 존재
+- 원인 확정: GitHub origin/main이 10커밋 뒤처져 있음(1b520f4 = stage-1 시절)
+  — 미푸시 10커밋 = 535867e(APK환경) 9ea6543(v1.1 대규모 콘텐츠) ff9c04c(타격감)
+    4ac0324(효과음+타일) b35e190(효과음 롤백) + 자동체크포인트 5개
+  → 사용자가 GitHub 클론(VSCode 로컬)으로 실행 시 옛날 버전만 보임 (MMORPG 신규 콘텐츠·UI 개선 부재로 보임)
+- download/의 transfer-1 zip 3종도 워크스페이스 리셋으로 소실 확인 (README.md만 남음, 복구 불필요 — git 히스토리가 전체 보존)
+
+Stage Summary:
+- 기능 삭제 사실 없음 — 현재 개발본에 MMORPG 기능/UI 100% 존재 (실측 증명)
+- 복구 경로 = GitHub push(사용자 발화 시 즉시 실행, 규칙 준수) → 사용자 git pull
+- 미리보기 플레이 시엔 링크 새로 열기(최신 서빙 확인됨)
+- 제약 준수: APK 미빌드, 푸시는 사용자 확인 전까지 보류
