@@ -100,8 +100,6 @@ const AUDIO_LIST = [
   "sfx_swing", "sfx_hit", "sfx_spin", "sfx_dash", "sfx_hurt",
   "sfx_pickup", "sfx_quest", "sfx_levelup", "sfx_portal",
   "sfx_roar", "sfx_die", "sfx_bossdie",
-  /* 효과음연구소·小森平 효과음 통합 — 전용음 신설 (기존 타키 재사용 매핑 독립화) */
-  "sfx_crit", "sfx_coin", "sfx_potion", "sfx_equip", "sfx_upgradeOk", "sfx_upgradeFail",
 ] as const;
 
 /* 지형 전환 타일 세트/종류 (scripts/build_tile_transitions.py 생성) */
