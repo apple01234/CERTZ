@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
-import { Swords, RefreshCw, Zap } from "lucide-react";
+import { Swords, RefreshCw, Zap, Bot, Pause } from "lucide-react";
 import type { Skills } from "./useGameUi";
 
 const JOY_RADIUS = 52;
@@ -17,10 +17,20 @@ export function TouchControls({
   skills,
   hpPot,
   mpPot,
+  atkName,
+  s1Name,
+  s2Name,
+  canAutoHunt,
+  autoHunt,
 }: {
   skills: Skills;
   hpPot: number;
   mpPot: number;
+  atkName?: string;
+  s1Name?: string;
+  s2Name?: string;
+  canAutoHunt?: boolean;
+  autoHunt?: boolean;
 }) {
   const [joyOrigin, setJoyOrigin] = useState<{ x: number; y: number } | null>(null);
   const [joyKnob, setJoyKnob] = useState({ x: 0, y: 0 });
@@ -125,6 +135,26 @@ export function TouchControls({
       {/* 버튼: 우하단 */}
       <div className="absolute bottom-4 right-3 flex items-end gap-2 sm:bottom-6 sm:right-5 sm:gap-3">
         <div className="flex flex-col gap-2">
+          {/* v2.5 — 자동사냥 토글 (펫 보유 시) */}
+          {canAutoHunt && (
+            <button
+              aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
+              className={`relative flex h-12 w-12 touch-none select-none items-center justify-center rounded-full border-2 shadow-lg transition-transform active:scale-90 sm:h-14 sm:w-14 ${
+                autoHunt
+                  ? "border-lime-200/80 bg-gradient-to-b from-lime-500 to-emerald-700 text-white animate-pulse"
+                  : "border-white/25 bg-slate-800/85 text-white/80"
+              }`}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                EventBus.emit("rpg:autohunt", {});
+              }}
+            >
+              {autoHunt ? <Pause size={20} /> : <Bot size={20} />}
+              <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/80">
+                {autoHunt ? "자동중" : "자동"}
+              </span>
+            </button>
+          )}
           {/* 물약 퀵슬롯 (2D MMORPG 기본 요소) */}
           <PotionButton
             kind="hp"
@@ -143,7 +173,7 @@ export function TouchControls({
           <SkillButton
             ready={s2Ready}
             cdPct={s2Pct}
-            label="돌진베기"
+            label={s2Name || "돌진베기"}
             mp={20}
             onDown={() => EventBus.emit("input:skill2")}
           >
@@ -152,7 +182,7 @@ export function TouchControls({
           <SkillButton
             ready={s1Ready}
             cdPct={s1Pct}
-            label="회전베기"
+            label={s1Name || "회전베기"}
             mp={15}
             onDown={() => EventBus.emit("input:skill1")}
           >
@@ -169,7 +199,7 @@ export function TouchControls({
         >
           <div className="flex flex-col items-center">
             <Swords size={26} />
-            <span className="mt-0.5 text-[10px] font-black tracking-wide">공격</span>
+            <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
           </div>
         </button>
       </div>

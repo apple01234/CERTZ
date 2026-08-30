@@ -101,6 +101,12 @@ const ASSET_LIST = [
   // RPG 기본 요소 (2D MMORPG) — Kenney Tiny Dungeon/Roguelike CC0
   "item_coin",
   "item_potion_hp", "item_potion_mp",
+  // v2.5 신규 아이템 아이콘 (상급 물약/상위 장비/장신구/스크롤)
+  "item_potion_hp2", "item_potion_mp2",
+  "item_weapon_5", "item_weapon_6",
+  "item_armor_5", "item_armor_6",
+  "item_ring_crit", "item_ring_guard",
+  "item_scroll_return", "item_scroll_warp",
   "item_weapon_1", "item_weapon_2", "item_weapon_3", "item_weapon_4",
   "item_armor_1", "item_armor_2", "item_armor_3", "item_armor_4",
   "npc_merchant",

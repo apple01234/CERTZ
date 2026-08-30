@@ -48,6 +48,36 @@ export function attachAudio(g: Phaser.Game) {
   // 모듈 muted 플래그를 새 사운드 매니저에 동기화
   // (부팅 순서: React 음소거 복원 effect가 createGame보다 먼저 돌 수 있다)
   if (muted) setMuted(true);
+  attachLifecycle(g);
+}
+
+/* ---------- 앱 백그라운드 오디오 정지 (v2.5 — 지시 #4) ----------
+ * WebView가 백그라운드(홈 전환/화면 꺼짐)로 가도 WebAudio는 계속 재생된다.
+ * visibilitychange로 숨김 시 전체 정지, 복귀 시 BGM 재개. */
+let lifecycleAttached = false;
+
+function attachLifecycle(g: Phaser.Game) {
+  if (lifecycleAttached || typeof document === "undefined") return;
+  lifecycleAttached = true;
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      // 숨김 — 전체 정지 (BGM kind는 유지해 복귀 시 재개)
+      try {
+        g.sound.pauseAll();
+      } catch {
+        /* noop */
+      }
+      destroyBgm();
+    } else {
+      try {
+        g.sound.resumeAll();
+      } catch {
+        /* noop */
+      }
+      // 복귀 — 음소거 아니고 BGM 지정이 있으면 재개
+      if (!muted && bgmKind && !bgmSound) startBgm(bgmKind);
+    }
+  });
 }
 
 /** 유저 제스처 시점 오디언락 해제 (모바일 WebView 대비) */

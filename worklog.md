@@ -274,3 +274,29 @@ Work Log:
 Stage Summary:
 - v2.4 APK 공개 직링 확정: https://github.com/apple01234/CERTZ/raw/main/download/SERTZ-v2.4.apk
 - 로그인 없이 누구나 다운로드 가능, v2.3과 동일 키스토어라 기존 설치 위 업데이트 설치 가능
+
+---
+Task ID: v2.5-qol
+Agent: Super Z (main)
+Task: 사용자 7건 — ①가로 고정 ②인벤토리 스크롤 ③전직 3슬롯 교체 ④백그라운드 소리 ⑤아이템 확장 ⑥마을 귀환서 ⑦지역 워프 부적 ⑧펫 자동사냥
+
+Work Log:
+- ① AndroidManifest screenOrientation="sensorLandscape" — 앱 실행 즉시 가로 고정(양방향)
+- ② InventoryPanel 컨테이너에 max-h-[86vh] overflow-y-auto 누락 발견·추가(다른 패널엔 전부 있었음) — 가로 화면에서 하단 잘림/스크롤 불가 해소
+- ③ 전직 3슬롯 전면 개편(지시 #3): 기본공격 계열 분기 — 미전직 참격 / 전사 강화 참격(2연타·사거리 176·1.1x) / 궁수 활쏘기(화살 0.95x 관통1) / 마법사 마법탄(1.0x 관통2).
+  스킬1 티어 강화 — 전사 회전베기 1.6+0.15/t·반경 118+8/t, 궁수 관통화살 3+t발, 마법사 볼트 2.0+0.25/t·관통 5+2/t(티어3 유도뢰 2발 추가).
+  스킬2 마무리 효과 — 전사 충격파(96px 0.9x), 궁수 후퇴사격(1.3x), 마법사 마나 폭발(104px 0.9x).
+  attackName/skill1Name/skill2Name getter → skills 이벤트 → TouchControls 버튼 라벨 실시간 교체
+- ④ audio.ts visibilitychange 핸들러 — 백그라운드 숨김 시 pauseAll+BGM 정지, 복귀 시 resumeAll+BGM 재개(음소거 상태 존중)
+- ⑤ 아이템 10종 확장: weapon_5/6(atk 28/38), armor_5/6(def 14/18), potion_hp2/mp2(회복 130/80), ring_crit(crit+12)/ring_guard(maxHp+60), scroll_return/scroll_warp.
+  상점 재고 등록 + PIL 색조 변형 아이콘 10종 생성 + BootScene 로드 등록. buy() consumable 분기 확장(소지품 기반)
+- ⑥ 마을 귀환서(40G) — 사용 즉시 미드가르드 마을로 워프+소모
+- ⑦ 지역 이동 부적(120G) — visited 세이브 필드 신설(구역 도착 시 자동 기록), WarpPanel(챕터별 그룹 UI)에서 방문 구역 선택 이동, 1장 소모. WarpPanel은 loadSave() 직접 조회
+- ⑧ 자동사냥(펫 보유 시): HUD(우상단)+TouchControls(물약 위) 토글 버튼, tickAutoHunt — 최근접 적 추적(원거리 계열 250px 서서 공격)/스킬 로테이션/HP45%·MP15 물약 자동. 조이스틱 터치 시 수동 우선. 세이브 autoHunt 필드(펫 없으면 강제 OFF)
+- EventBus RpgState에 autoHunt/canAutoHunt 추가, PanelKind에 warp 추가
+- 검증: tsc 0 / eslint 0 / next build 성공 / e2e_v25 신규 23 PASS 0 FAIL(귀환서·부적·3슬롯 라벨·자동사냥 실전 킬 2회·스크롤·상급 물약) / e2e_v24 회귀 10 PASS / e2e_v23 회귀 19 PASS
+- 버전: versionCode 10 / versionName 2.5 — APK 빌드(BUILD SUCCESSFUL 3m), aapt/apksigner 검증(sensorLandscape 0x6 확인, CN=SERTZ 동일 키스토어)
+
+Stage Summary:
+- v2.5: 7건 전부 구현 — 전직이 3슬롯 전부 바뀌고, 펫 있으면 자동사냥, 귀환서/부적으로 이동 편의성, 아이템 10종 확장
+- 산출물: download/SERTZ-v2.5.apk (16.7MB) — 공개 직링: https://github.com/apple01234/CERTZ/raw/main/download/SERTZ-v2.5.apk

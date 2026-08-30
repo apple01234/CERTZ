@@ -95,6 +95,10 @@ export type SaveData = {
   repeatOn?: boolean;
   /* ↓ 이미 본 스토리 대사 (v2.3 — 재입장 시 대사 재생 방지, 지시 #1) */
   seen?: string[];
+  /* ↓ 방문한 구역 목록 (v2.5 — 지역 이동 부적 워프 대상, 지시 #7) */
+  visited?: string[];
+  /* ↓ 자동사냥 토글 (v2.5 — 펫 보유 시에만 유효, 지시 #8) */
+  autoHunt?: boolean;
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */
@@ -186,6 +190,9 @@ export function loadSave(): SaveData | null {
     // 반복 의뢰 해금/본 대사 (v2.3 — 구 세이브 호환 기본값)
     if (typeof d.repeatOn !== "boolean") d.repeatOn = false;
     if (!Array.isArray(d.seen)) d.seen = [];
+    // 방문 기록/자동사냥 (v2.5 — 구 세이브 호환 기본값)
+    if (!Array.isArray(d.visited)) d.visited = [];
+    if (typeof d.autoHunt !== "boolean") d.autoHunt = false;
     return d;
   } catch {
     return null;

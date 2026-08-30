@@ -5,7 +5,7 @@ import {
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey,
 } from "../data";
 import {
-  classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf,
+  classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf,
   type ClassKey, type ClassBonus,
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
@@ -203,7 +203,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  /* ---------------- 기본 공격 ---------------- */
+  /* ---------------- 기본 공격 ----------------
+   * v2.5 (지시 #3) — 계열별 기본공격: 미전직 참격 / 전사 강화 참격(2연타) / 궁수 활쏘기 / 마법사 마법탄 */
 
   private doAttack() {
     this.state = "attack";
@@ -224,6 +225,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       // 이동 관성 유지 — 다음 프레임의 공격 중 이동 분기가 입력 방향으로 이어받음
     }
 
+    // 계열별 공격 분기 — 원거리 계열은 발사형
+    const fam = familyOf(this.cls);
+    if (fam === "ranger") return this.atkBow(dir);
+    if (fam === "mage") return this.atkBolt(dir);
+    this.atkSlash(dir);
+  }
+
+  /** 참격 (미전직 + 전사 공용 뼈대) — 전사는 2연타·확대 판정·강화 배율 */
+  private atkSlash(dir: Phaser.Math.Vector2) {
+    const fam = familyOf(this.cls);
+    const warrior = fam === "warrior";
+    const dmgMul = warrior ? 1.1 : 1.0;
+    const reach = warrior ? 176 : 160; // 전사 — 전방 판정 확대
+    const knock = warrior ? 320 : 280;
+
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.setFlipX(dir.y === 0 && dir.x < 0); // 측면 시트는 오른쪽 기준
@@ -233,16 +249,82 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(65, () => {
       if (this.state !== "attack") return;
       this.swingDone = true;
-      this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt);
+      this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, warrior ? 1.15 : 1);
       this.scene.sfxSwing();
       // 참격 판정 확대 — 전방 160px x 폭 116px (사용자 지시: 히트박스 크게)
-      this.checkMeleeHit(dir, 160, 116, 1.0, 280);
+      this.checkMeleeHit(dir, reach, 116, dmgMul, knock);
     });
+
+    // 전사 — 2연타 (130ms 후 후속 참격, 이중 판정)
+    if (warrior) {
+      this.scene.time.delayedCall(195, () => {
+        if (this.state !== "attack") return;
+        this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, 0.95);
+        this.scene.sfxSwing();
+        this.checkMeleeHit(dir, reach, 116, dmgMul, knock * 0.8);
+      });
+    }
 
     this.scene.time.delayedCall(200, () => {
       if (this.state === "attack") {
         this.state = "idle";
         // v2.2 — 이동 입력이 없을 때만 정지 (입력 중이면 다음 프레임 걷기로 자연 연결)
+        if (this.lastMove.lengthSq() > 0.01) return;
+        this.setVelocity(0, 0);
+      }
+    });
+  }
+
+  /** 궁수 기본공격 — 활쏘기 (화살 1발, 관통 1) */
+  private atkBow(dir: Phaser.Math.Vector2) {
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.play(atkKey);
+
+    this.scene.time.delayedCall(65, () => {
+      if (this.state !== "attack") return;
+      this.swingDone = true;
+      this.scene.sfxSwing();
+      const angle = Math.atan2(dir.y, dir.x);
+      const { dmg, crit } = this.rollDamage(0.95);
+      this.scene.firePlayerProj({
+        x: this.x, y: this.y - 8,
+        angle, speed: 620, pierce: 1, dmg, crit,
+        tint: 0x7dffa8, knock: 180, scale: 0.75,
+      });
+    });
+
+    this.scene.time.delayedCall(200, () => {
+      if (this.state === "attack") {
+        this.state = "idle";
+        if (this.lastMove.lengthSq() > 0.01) return;
+        this.setVelocity(0, 0);
+      }
+    });
+  }
+
+  /** 마법사 기본공격 — 마법탄 (볼트 1발, 관통 2) */
+  private atkBolt(dir: Phaser.Math.Vector2) {
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.play(atkKey);
+
+    this.scene.time.delayedCall(65, () => {
+      if (this.state !== "attack") return;
+      this.swingDone = true;
+      this.scene.sfxSwing();
+      const angle = Math.atan2(dir.y, dir.x);
+      const { dmg, crit } = this.rollDamage(1.0);
+      this.scene.firePlayerProj({
+        x: this.x, y: this.y - 10,
+        angle, speed: 480, pierce: 2, dmg, crit,
+        tint: 0x8fa6ff, knock: 200, scale: 0.9,
+      });
+    });
+
+    this.scene.time.delayedCall(200, () => {
+      if (this.state === "attack") {
+        this.state = "idle";
         if (this.lastMove.lengthSq() > 0.01) return;
         this.setVelocity(0, 0);
       }
@@ -294,9 +376,41 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return hits;
   }
 
-  /* ---------------- 스킬 (v1.8 — 계열별 전투 방식 차별화, 메이플 계열 정체성 참고) ---------------- */
+  /* ---------------- 스킬 (v1.8 — 계열별 전투 방식 차별화, 메이플 계열 정체성 참고) ----------------
+   * v2.5 (지시 #3) — 전직 시 3슬롯 전부 교체: 기본공격까지 계열별 분기 + 티어(1/2/3차)별 강화 */
 
-  /** 주력기(Z) — 전사·미전직: 회전베기 / 궁수: 관통 화살 3연발 / 마법사: 매직 볼트(관통) */
+  /** 전직 티어 — 미전직 0 / 1차 1 / 2차 2 / 3차 3 (스킬 강화 배율용) */
+  get tier(): number {
+    return chainOf(this.cls).length;
+  }
+
+  /** 기본공격 이름 — 계열별 (HUD/터치 컨트롤 표기) */
+  get attackName(): string {
+    const fam = familyOf(this.cls);
+    if (fam === "ranger") return "활쏘기";
+    if (fam === "mage") return "마법탄";
+    if (fam === "warrior") return this.tier >= 1 ? "강화 참격" : "참격";
+    return "참격";
+  }
+
+  /** 주력기(Z) 이름 — 계열별 */
+  get skill1Name(): string {
+    const fam = familyOf(this.cls);
+    if (fam === "ranger") return "관통 화살";
+    if (fam === "mage") return "매직 볼트";
+    return "회전베기";
+  }
+
+  /** 기동기(C) 이름 — 계열별 */
+  get skill2Name(): string {
+    const fam = familyOf(this.cls);
+    if (fam === "ranger") return "질풍 차지";
+    if (fam === "mage") return "점멸";
+    return "돌진베기";
+  }
+
+  /** 주력기(Z) — 전사·미전직: 회전베기 / 궁수: 관통 화살 / 마법사: 매직 볼트
+   *  v2.5 — 티어별 강화: 전사 범위·배율↑ / 궁수 발수↑ / 마법사 배율·관통↑ */
   useSkill1() {
     if (this.state !== "idle" || this.skill1Cd > 0 || this.mp < 15) return;
     this.mp -= 15;
@@ -310,16 +424,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.skill1Spin();
   }
 
-  /** 전사(+미전직) — 회전베기 360° */
+  /** 전사(+미전직) — 회전베기 360° (티어별 배율/반경 강화) */
   private skill1Spin() {
+    const t = this.tier; // 0(미전직)~3
+    const dmgMul = 1.6 + 0.15 * t;
+    const radius = 118 + 8 * t;
     this.scene.sfxSpin();
 
     // 회전 방향: 조준 측면 기준 (상하 조준 시 현재 플립 방향 따름)
     const aim = this.aimDir();
     const spin = aim.x !== 0 ? (aim.x > 0 ? 1 : -1) : this.flipX ? -1 : 1;
 
-    // 360° 궤도 반달 + 충격파 + 스파크
+    // 360° 궤도 반달 + 충격파 + 스파크 — 티어 2 이상에서 충격 링 추가
     this.scene.spawnSpinSlash(this.x, this.y, spin);
+    if (t >= 2) this.scene.spawnBurstAt(this.x, this.y, 10, 0xff9a8a);
 
     // 몸통(스프라이트) 360° 회전 — 검 뻗은 공격 프레임을 돌려 휘두르는 동작
     this.play("hero-atk");
@@ -336,10 +454,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       for (const e of this.scene.getAllTargets()) {
         if (!e.active || this.hitSet.has(e)) continue;
         const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
-        if (d <= 118) {
+        if (d <= radius) {
           this.hitSet.add(e);
           const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-          const { dmg, crit } = this.rollDamage(1.6, true);
+          const { dmg, crit } = this.rollDamage(dmgMul, true);
           if (crit) this.scene.sfxCrit();
           e.takeDamage(dmg, away, 300, crit);
         }
@@ -352,44 +470,60 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.emitHud();
   }
 
-  /** 궁수 — 관통 화살 3연발 (부채꼴, 각 화살 최대 2명 관통) */
+  /** 궁수 — 관통 화살 다연발 (부채꼴, 티어별 발수 증가: 미전직 계열 3발 / 1차 4발 / 2차 5발 / 3차 6발) */
   private skill1Arrows() {
     const aim = this.aimDir();
     const base = Math.atan2(aim.y, aim.x);
     this.play("hero-atk");
     this.scene.sfxSpin();
-    for (let i = 0; i < 3; i++) {
-      this.scene.time.delayedCall(i * 110, () => {
+    const count = 3 + this.tier;
+    for (let i = 0; i < count; i++) {
+      this.scene.time.delayedCall(i * 100, () => {
         if (this.state === "dead") return;
         const { dmg, crit } = this.rollDamage(1.2, true);
         if (crit) this.scene.sfxCrit();
         this.scene.firePlayerProj({
           x: this.x, y: this.y - 8,
-          angle: base + (i - 1) * 0.09,
+          angle: base + (i - (count - 1) / 2) * 0.09,
           speed: 580, pierce: 2, dmg, crit,
           tint: 0x7dffa8, knock: 220, scale: 0.8,
         });
       });
     }
-    this.scene.time.delayedCall(360, () => {
+    this.scene.time.delayedCall(count * 100 + 260, () => {
       if (this.state === "attack") this.state = "idle";
     });
     this.scene.emitHud();
   }
 
-  /** 마법사 — 매직 볼트 (느리지만 대폭 관통·고배율) */
+  /** 마법사 — 매직 볼트 (느리지만 대폭 관통·고배율, 티어별 배율/관통 강화) */
   private skill1Bolt() {
     const aim = this.aimDir();
     const angle = Math.atan2(aim.y, aim.x);
     this.play("hero-atk");
     this.scene.sfxSpin();
-    const { dmg, crit } = this.rollDamage(2.0, true);
+    const t = this.tier;
+    const { dmg, crit } = this.rollDamage(2.0 + 0.25 * t, true);
     if (crit) this.scene.sfxCrit();
     this.scene.firePlayerProj({
       x: this.x, y: this.y - 10,
-      angle, speed: 430, pierce: 5, dmg, crit,
-      tint: 0x8fa6ff, knock: 260, scale: 1.15,
+      angle, speed: 430, pierce: 5 + 2 * t, dmg, crit,
+      tint: 0x8fa6ff, knock: 260, scale: 1.15 + 0.08 * t,
     });
+    // 티어 3 — 볼트 후속 유도뢰 2발 추가 (스톰브링어/크로니컬 강화)
+    if (t >= 3) {
+      for (let i = 0; i < 2; i++) {
+        this.scene.time.delayedCall(140 + i * 110, () => {
+          if (this.state === "dead") return;
+          const d2 = this.rollDamage(1.0, true);
+          this.scene.firePlayerProj({
+            x: this.x, y: this.y - 10,
+            angle: angle + (i === 0 ? 0.22 : -0.22), speed: 520, pierce: 2, dmg: d2.dmg, crit: d2.crit,
+            tint: 0xc3cfff, knock: 180, scale: 0.85,
+          });
+        });
+      }
+    }
     this.scene.time.delayedCall(300, () => {
       if (this.state === "attack") this.state = "idle";
     });
@@ -460,6 +594,57 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         sweepFromY = toY;
       },
     });
+    // v2.5 — 계열별 마무리 효과 (전직 스킬 강화, 지시 #3)
+    const fam2 = familyOf(this.cls);
+    if (fam2 === "warrior") {
+      // 전사 — 돌진 종료 지점 충격파 (주변 96px, 0.9x, 강 넉백)
+      this.scene.time.delayedCall(215, () => {
+        if (this.state === "dead") return;
+        this.scene.spawnBurstAt(this.x, this.y, 12, 0xff9a8a);
+        for (const e of this.scene.getAllTargets()) {
+          if (!e.active || this.hitSet.has(e)) continue;
+          const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
+          if (d <= 96) {
+            this.hitSet.add(e);
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = this.rollDamage(0.9, true);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 420, crit);
+          }
+        }
+      });
+    } else if (fam2 === "ranger") {
+      // 궁수 — 돌진 종료 시 후퇴사격: 조준 방향 화살 1발 (1.3x)
+      this.scene.time.delayedCall(190, () => {
+        if (this.state === "dead") return;
+        const aim = this.aimDir();
+        const angle = Math.atan2(aim.y, aim.x);
+        const { dmg, crit } = this.rollDamage(1.3, true);
+        if (crit) this.scene.sfxCrit();
+        this.scene.firePlayerProj({
+          x: this.x, y: this.y - 8,
+          angle, speed: 640, pierce: 2, dmg, crit,
+          tint: 0xbaf3ff, knock: 240, scale: 0.9,
+        });
+      });
+    } else if (fam2 === "mage") {
+      // 마법사 — 점멸 종료 지점 마나 폭발 (반경 104px, 0.9x)
+      this.scene.time.delayedCall(165, () => {
+        if (this.state === "dead") return;
+        this.scene.spawnBurstAt(this.x, this.y, 14, 0x8fa6ff);
+        for (const e of this.scene.getAllTargets()) {
+          if (!e.active || this.hitSet.has(e)) continue;
+          const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
+          if (d <= 104) {
+            this.hitSet.add(e);
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = this.rollDamage(0.9, true);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 300, crit);
+          }
+        }
+      });
+    }
     this.scene.time.delayedCall(260, () => tick.remove());
     this.scene.emitHud();
   }
@@ -734,6 +919,40 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.emitHud();
   }
 
+  /* ---------------- 소지품 기반 소모품 (v2.5 — 상급 물약/스크롤) ---------------- */
+
+  /** 소지품 보유 확인 */
+  hasConsumable(key: ItemKey): boolean {
+    return this.owned.includes(key);
+  }
+
+  /** 소지품 차감 — 스크롤 사용 성공 후 씬에서 호출 */
+  consumeConsumable(key: ItemKey): boolean {
+    const i = this.owned.indexOf(key);
+    if (i < 0) return false;
+    this.owned.splice(i, 1);
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 상급 물약 사용 — 즉시 효과 + 차감 */
+  useConsumablePotion(key: "potion_hp2" | "potion_mp2"): boolean {
+    if (this.state === "dead") return false;
+    const item = ITEMS[key];
+    if (!item || !this.owned.includes(key)) return false;
+    const used = key === "potion_hp2" ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
+    if (!used) return false;
+    this.consumeConsumable(key);
+    this.scene.sfxPotion();
+    this.scene.spawnPickupText(
+      this.x, this.y - 30,
+      key === "potion_hp2" ? `+${item.heal} HP` : `+${item.restore} MP`,
+      "#7dffa8"
+    );
+    this.scene.emitHud();
+    return true;
+  }
+
   /** 장비/장신구 장착 (인벤토리에서) */
   equip(key: ItemKey): boolean {
     const item = ITEMS[key];
@@ -769,7 +988,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (!item || this.gold < item.price) return false;
     if (item.kind === "consumable") {
       this.gold -= item.price;
-      this.addPotion(key === "potion_hp" ? "hp" : "mp");
+      if (key === "potion_hp") this.addPotion("hp");
+      else if (key === "potion_mp") this.addPotion("mp");
+      else this.owned.push(key); // v2.5 — 상급 물약/스크롤류는 소지품 기반
       return true;
     }
     // BM (v1.9): 버프는 개수 누적, 펫/치장은 1회 구매

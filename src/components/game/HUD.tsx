@@ -3,7 +3,8 @@
 import type { HudState, QuestState } from "./EventBus";
 import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot } from "lucide-react";
+import { EventBus } from "./EventBus";
 
 /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
 function BuffChip({ buff }: { buff: HudState["buffs"][number] }) {
@@ -67,6 +68,8 @@ export function HUD({
   muted,
   canJob,
   jobAvail,
+  canAutoHunt,
+  autoHunt,
   onToggleMute,
   onOpenInv,
   onOpenJob,
@@ -81,6 +84,9 @@ export function HUD({
   canJob: boolean;
   /** 전직 패널 접근 가능 (승격 가능 or 2차 이상 자유전직) */
   jobAvail: boolean;
+  /** v2.5 자동사냥 (펫 보유 시) */
+  canAutoHunt: boolean;
+  autoHunt: boolean;
   onToggleMute: () => void;
   onOpenInv: () => void;
   onOpenJob: () => void;
@@ -155,6 +161,21 @@ export function HUD({
       {/* 우상단: 사운드/가방 + 퀘스트 */}
       <div className="absolute right-2 top-2 flex max-w-[46%] flex-col items-end gap-1.5 sm:right-3 sm:top-3">
         <div className="flex items-center gap-1.5">
+          {/* v2.5 — 자동사냥 토글 (펫 보유 시만 표시) */}
+          {canAutoHunt && (
+            <button
+              onClick={() => EventBus.emit("rpg:autohunt", {})}
+              aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
+              className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-sm transition-colors active:scale-95 ${
+                autoHunt
+                  ? "animate-pulse border-lime-300/80 bg-gradient-to-b from-lime-600/90 to-emerald-800/90 text-lime-100"
+                  : "border-white/20 bg-black/55 text-white/80 hover:bg-black/75"
+              }`}
+            >
+              <Bot size={17} />
+              <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${autoHunt ? "text-lime-200" : "text-white/60"}`}>자동</span>
+            </button>
+          )}
           <button
             onClick={onToggleMute}
             aria-label={muted ? "소리 켜기" : "소리 끄기"}

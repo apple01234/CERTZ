@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { EventBus, type PanelKind, type RpgState, type HudState, type QuestLogState } from "./EventBus";
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, upgradeCost, autoAllocPlan,
-  type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey,
+  CHAPTERS, STAGE_SHORT, parseStage,
+  type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey,
 } from "@/game/data";
 import { CLASS_LIST, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
-import { getPlayerName } from "@/game/config"; // v2.4 — 이름 변경 표시
+import { getPlayerName, loadSave } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록
 
 /**
  * 2D MMORPG 기본 요소 UI — 상점 / 인벤토리 패널
@@ -245,7 +246,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
       onPointerDown={onClose}
     >
       <div
-        className="w-[min(92vw,430px)] rounded-xl border-2 border-sky-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[86vh] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-sky-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -292,6 +293,45 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
             );
           })}
         </div>
+
+        {/* 소지품 (v2.5 — 상급 물약/스크롤류, owned 기반) */}
+        {(() => {
+          const consumables = rpg.owned.filter((k) => {
+            const it = ITEMS[k as ItemKey];
+            return it && (k === "potion_hp2" || k === "potion_mp2" || k === "scroll_return" || k === "scroll_warp");
+          });
+          if (consumables.length === 0) return null;
+          return (
+            <>
+              <p className="mb-1 text-[11px] font-bold text-white/50">소지품</p>
+              <div className="mb-3 flex flex-col gap-1.5">
+                {consumables.map((k) => {
+                  const item = ITEMS[k as ItemKey];
+                  const isScroll = k === "scroll_return" || k === "scroll_warp";
+                  const effect = k === "potion_hp2" ? `HP +${item.heal} 회복`
+                    : k === "potion_mp2" ? `MP +${item.restore} 회복`
+                    : k === "scroll_return" ? "미드가르드 마을로 즉시 귀환"
+                    : "방문한 적 있는 구역으로 이동";
+                  return (
+                    <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
+                      <ItemIcon icon={item.icon} size={26} tier={item.tier} />
+                      <div className="min-w-0 flex-1">
+                        <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{item.name}</p>
+                        <p className="text-[10px] text-emerald-300/90">{effect}</p>
+                      </div>
+                      <button
+                        onClick={() => EventBus.emit("rpg:useItem", { key: k })}
+                        className="shrink-0 rounded-md bg-sky-500 px-2.5 py-1.5 text-[11px] font-black text-white hover:bg-sky-400 active:scale-95"
+                      >
+                        {isScroll ? "사용" : "마시기"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
 
         {/* 장비 */}
         <p className="mb-1 text-[11px] font-bold text-white/50">장비</p>
@@ -469,11 +509,105 @@ export function GamePanels({
 }) {
   if (panel === "shop") return <ShopPanel rpg={rpg} onClose={onClose} />;
   if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} />;
+  if (panel === "warp") return <WarpPanel rpg={rpg} onClose={onClose} />;
   if (panel === "job") return <JobPanel rpg={rpg} onClose={onClose} />;
   if (panel === "stat") return <StatPanel rpg={rpg} hud={hud} onClose={onClose} />;
   if (panel === "quest") return <QuestLogPanel questLog={questLog} onClose={onClose} />;
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
+}
+
+/* ---------- 지역 이동 패널 (v2.5 — 지시 #7: 방문한 적 있는 구역으로 워프, 부적 1장 소모) ---------- */
+
+export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  // 방문 기록 — 세이브에서 직접 조회 (씬이 구역 도착 시 저장)
+  const [visited, setVisited] = useState<string[]>(() => loadSave()?.visited ?? []);
+  useEffect(() => {
+    const t = setInterval(() => {
+      const v = loadSave()?.visited ?? [];
+      setVisited((cur) => (cur.length === v.length && cur.every((s) => v.includes(s)) ? cur : v));
+    }, 600);
+    return () => clearInterval(t);
+  }, []);
+
+  const hasScroll = rpg.owned.includes("scroll_warp");
+  const visitedSet = new Set(visited);
+  // 마을 + 챕터별 구역 그룹핑
+  const groups: { label: string; stages: { key: StageKey; name: string }[] }[] = [
+    { label: "시작 마을", stages: visitedSet.has("village" as StageKey) ? [{ key: "village" as StageKey, name: STAGE_SHORT["village" as StageKey] }] : [] },
+  ];
+  for (const ch of CHAPTERS) {
+    const stages: { key: StageKey; name: string }[] = [];
+    for (let sub = 1; sub <= 10; sub++) {
+      const key = `${ch.key}${sub}` as StageKey;
+      if (visitedSet.has(key)) stages.push({ key, name: STAGE_SHORT[key] ?? key });
+    }
+    if (stages.length > 0) groups.push({ label: `제${ch.num}장 ${ch.title}`, stages });
+  }
+  const empty = visited.length === 0 || groups.every((g) => g.stages.length === 0);
+
+  return (
+    <div
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+      onPointerDown={onClose}
+    >
+      <div
+        className="max-h-[86vh] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-violet-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="text-sm font-black text-violet-200">지역 이동 (부적)</p>
+          <button
+            onClick={onClose}
+            aria-label="지역 이동 닫기"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70"
+          >
+            ✕
+          </button>
+        </div>
+
+        {!hasScroll && (
+          <p className="mb-2 rounded-lg border border-amber-300/40 bg-amber-500/10 px-2.5 py-2 text-[11px] font-bold text-amber-200">
+            지역 이동 부적이 없습니다 — 상인 라고스에게서 구매할 수 있어요 (120G)
+          </p>
+        )}
+
+        {empty ? (
+          <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/40">
+            아직 기록된 방문 구역이 없습니다 — 구역에 한 번이라도 도착하면 여기에 기록되고, 부적으로 이동할 수 있어요.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {groups.map((g) =>
+              g.stages.length === 0 ? null : (
+                <div key={g.label}>
+                  <p className="mb-1 text-[11px] font-bold text-white/50">{g.label}</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {g.stages.map((s) => (
+                      <button
+                        key={s.key}
+                        disabled={!hasScroll}
+                        onClick={() => EventBus.emit("rpg:warp", { stage: s.key })}
+                        className={`rounded-lg border px-2.5 py-2 text-left text-[11px] font-bold transition-colors ${
+                          hasScroll
+                            ? "border-white/15 bg-white/[0.05] text-white hover:border-violet-300/60 hover:bg-violet-500/15 active:scale-95"
+                            : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/35"
+                        }`}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        )}
+        <p className="mt-2.5 text-center text-[10px] text-white/40">이동 1회당 지역 이동 부적 1장 소모 · ESC로 닫기</p>
+      </div>
+    </div>
+  );
 }
 
 /* ---------- 전직 패널 (v1.8 — 메이플 모험가 구조: 1차 계열 → 2차 세부직업 → 3차 승격 + 자유전직) ---------- */

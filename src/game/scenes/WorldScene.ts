@@ -125,6 +125,12 @@ export class WorldScene extends Phaser.Scene {
   /* ----- v2.3: 본 스토리 대사 기록 (재입장 시 대사 재생 방지 — 지시 #1) ----- */
   private seenSet = new Set<string>();
   /* ----- v2.3: 반복 토벌 의뢰 수주 해금 (상인 NPC에게 말 걸어 해금 — 지시 #4) ----- */
+  /* ----- v2.5: 방문 구역 기록(지역 이동 부적) + 자동사냥(펫 보유 시) ----- */
+  private visited = new Set<string>();
+  private autoHunt = false;
+  /** 자동사냥 이동 벡터 — update에서 계산해 move로 주입 */
+  private autoHuntMove = new Phaser.Math.Vector2();
+
   private repeatOn = false;
 
   /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
@@ -222,6 +228,9 @@ export class WorldScene extends Phaser.Scene {
     this.netAcc = 0;
     this.pProjPool = []; // 씬 소유 오브젝트는 씬 종료와 함께 정리 — 인덱스만 초기화
     this.pProjIdx = 0;
+    this.visited = new Set();
+    this.autoHunt = false;
+    this.autoHuntMove.set(0, 0);
     this.repeatNeed = 0;
     this.keymap = loadKeyMap();
     this.keyObjs = {};
@@ -388,7 +397,16 @@ export class WorldScene extends Phaser.Scene {
       // v2.3 — 본 대사 기록 + 반복 의뢰 수주 해금 복원 (지시 #1/#4)
       this.seenSet = new Set(savedPlayer.seen ?? []);
       this.repeatOn = savedPlayer.repeatOn ?? false;
+      // v2.5 — 방문 기록 복원 + 자동사냥(펫 보유 시에만 유효)
+      this.visited = new Set(savedPlayer.visited ?? []);
+      this.autoHunt = (savedPlayer.autoHunt ?? false) && !!this.player.pet;
       this.player.recalcSpeedForLoad();
+    }
+    // v2.5 — 현재 구역 방문 기록 (실내 제외) — 지역 이동 부적 워프 대상
+    if (!this.isInterior) {
+      const before = this.visited.size;
+      this.visited.add(this.stageDef.key);
+      if (this.visited.size !== before) this.save();
     }
     this.repeatNeed = this.stageDef.repeat?.need ?? 0;
     this.playerRef = this.player;
@@ -1965,6 +1983,90 @@ export class WorldScene extends Phaser.Scene {
       });
     };
 
+    // v2.5 — 소지품 사용 (상급 물약/마을 귀환서/지역 이동 부적 — 지시 #5/#6/#7)
+    const onUseItem = (v: { key: string }) => {
+      if (!this.player || this.dialoguing || this.player.state === "dead") return;
+      const key = v.key as ItemKey;
+      if (key === "potion_hp2" || key === "potion_mp2") {
+        this.player.useConsumablePotion(key);
+        this.emitRpgState();
+        return;
+      }
+      if (key === "scroll_return") {
+        // 마을 귀환서 — 미드가르드 마을로 즉시 귀환 (지시 #6)
+        if (this.stageDef.key === "village") {
+          EventBus.emit("banner:show", { text: "이미 마을에 있습니다" });
+          return;
+        }
+        if (!this.player.hasConsumable(key)) return;
+        this.player.consumeConsumable(key);
+        audio.sfx.portal();
+        EventBus.emit("banner:show", { text: "마을 귀환서 사용! 미드가르드 마을로 이동합니다…" });
+        this.cameras.main.fadeOut(420, 0, 0, 0);
+        this.player.state = "idle";
+        this.time.delayedCall(440, () => {
+          const carry = this.buildSave("village");
+          writeSave(carry);
+          this.scene.restart({ stage: "village", save: carry });
+        });
+        return;
+      }
+      if (key === "scroll_warp") {
+        // 지역 이동 부적 — 방문한 구역 선택 UI 오픈 (차감은 워프 실행 시)
+        if (this.visited.size === 0) {
+          EventBus.emit("banner:show", { text: "기록된 방문 구역이 없습니다" });
+          return;
+        }
+        EventBus.emit("ui:panel", { panel: "warp" });
+        return;
+      }
+    };
+
+    // v2.5 — 지역 이동 부적 워프 실행 (WarpPanel → 방문한 구역으로)
+    const onWarp = (v: { stage: string }) => {
+      if (!this.player || this.dialoguing || this.player.state === "dead") return;
+      const target = resolveStage(String(v?.stage || ""));
+      if (!target) return;
+      if (!this.visited.has(target)) {
+        EventBus.emit("banner:show", { text: "한 번이라도 도착한 구역만 이동할 수 있어요" });
+        return;
+      }
+      if (target === this.stageDef.key) {
+        EventBus.emit("banner:show", { text: "이미 있는 구역입니다" });
+        return;
+      }
+      if (!this.player.hasConsumable("scroll_warp")) {
+        EventBus.emit("banner:show", { text: "지역 이동 부적이 없습니다 — 상인 라고스에게서 구매" });
+        EventBus.emit("ui:panel", { panel: null });
+        return;
+      }
+      this.player.consumeConsumable("scroll_warp");
+      audio.sfx.portal();
+      EventBus.emit("ui:panel", { panel: null });
+      EventBus.emit("banner:show", { text: `부적 사용! ${STAGE_SHORT[target] ?? target}(으)로 이동합니다…` });
+      this.cameras.main.fadeOut(420, 0, 0, 0);
+      this.player.state = "idle";
+      this.time.delayedCall(440, () => {
+        const carry = this.buildSave(target);
+        writeSave(carry);
+        this.scene.restart({ stage: target, save: carry });
+      });
+    };
+
+    // v2.5 — 자동사냥 토글 (펫 보유 시에만 — 지시 #8)
+    const onAutoHunt = () => {
+      if (!this.player) return;
+      if (!this.player.pet) {
+        EventBus.emit("banner:show", { text: "자동사냥은 펫이 있을 때만 사용할 수 있어요" });
+        return;
+      }
+      this.autoHunt = !this.autoHunt;
+      this.autoHuntMove.set(0, 0);
+      EventBus.emit("banner:show", { text: this.autoHunt ? "자동사냥 ON — 펫이 몬스터를 유인합니다" : "자동사냥 OFF" });
+      this.emitRpgState();
+      this.save();
+    };
+
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
     EventBus.on("input:skill1", onS1);
@@ -1987,6 +2089,9 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("job:select", onJobSelect);
     EventBus.on("job:switch", onJobSwitch);
     EventBus.on("friend:goto", onFriendGoto);
+    EventBus.on("rpg:useItem", onUseItem);
+    EventBus.on("rpg:warp", onWarp);
+    EventBus.on("rpg:autohunt", onAutoHunt);
     this.events.once("shutdown", () => {
       EventBus.off("input:move", onMove);
       EventBus.off("input:attack", onAtk);
@@ -2010,6 +2115,9 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("job:select", onJobSelect);
       EventBus.off("job:switch", onJobSwitch);
       EventBus.off("friend:goto", onFriendGoto);
+      EventBus.off("rpg:useItem", onUseItem);
+      EventBus.off("rpg:warp", onWarp);
+      EventBus.off("rpg:autohunt", onAutoHunt);
     });
   }
 
@@ -2060,7 +2168,10 @@ export class WorldScene extends Phaser.Scene {
 
     // 터치 우선
     const useTouch = this.touchMove.lengthSq() > 0.01;
-    const move = useTouch ? this.touchMove : mv;
+    // v2.5 — 자동사냥 (펫 보유 시): 가장 가까운 적 추적·공격 — 조이스틱/키보드 입력 시 수동 우선
+    this.tickAutoHunt();
+    let move = useTouch ? this.touchMove : mv;
+    if (this.autoHunt && this.player.pet && !useTouch) move = this.autoHuntMove;
 
     // 키보드 공격/스킬 — 이동은 WASD+화살표 고정, 액션 키는 키 매핑 따름 (v1.9)
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
@@ -2174,6 +2285,50 @@ export class WorldScene extends Phaser.Scene {
     if (lastY === "W" || lastY === "UP") mv.y = -1;
     else if (lastY === "S" || lastY === "DOWN") mv.y = 1;
     return mv;
+  }
+
+  /** v2.5 — 자동사냥 틱 (펫 보유 시): 가장 가까운 적 추적·공격 + 물약 자동 사용.
+   *  이동은 autoHuntMove 주입(조이스틱 터치 중이면 무시), 공격은 attackQueued로 자연 연결 */
+  private tickAutoHunt() {
+    this.autoHuntMove.set(0, 0);
+    if (!this.autoHunt || !this.player || !this.player.pet) return;
+    if (this.dialoguing || this.sleeping) return;
+    this.autoPotion();
+    if (this.player.state !== "idle") return; // 공격/돌진/사망 중엔 개입 안 함
+    const targets = this.getAllTargets();
+    if (targets.length === 0) return; // 적 없음 — 대기
+    let best: Enemy | Boss = targets[0];
+    let bestD = Infinity;
+    for (const e of targets) {
+      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
+      if (d < bestD) {
+        bestD = d;
+        best = e;
+      }
+    }
+    const fam = familyOf(this.player.cls);
+    const ranged = fam === "ranger" || fam === "mage";
+    const atkRange = ranged ? 250 : 56;
+    if (bestD > atkRange) {
+      // 접근 — 방향 주입 (player.update의 이동/facing 로직 재사용)
+      const dir = new Phaser.Math.Vector2(best.x - this.player.x, best.y - this.player.y).normalize();
+      this.autoHuntMove.copy(dir);
+    } else {
+      // 사거리 내 — 공격 + 스킬 로테이션
+      this.attackQueued = true;
+      if (this.player.skill1Cd <= 0 && this.player.mp >= 15) this.player.useSkill1();
+      else if (this.player.skill2Cd <= 0 && this.player.mp >= 20) this.player.useSkill2();
+    }
+  }
+
+  /** v2.5 — 자동 물약 (자동사냥 중 HP 45%/MP 15 이하) */
+  private autoPotion() {
+    if (!this.player) return;
+    if (this.player.hp < this.player.maxHp * 0.45 && this.player.potions.hp > 0) {
+      this.player.usePotion("hp");
+    } else if (this.player.mp < 15 && this.player.potions.mp > 0) {
+      this.player.usePotion("mp");
+    }
   }
 
   currentMoveVec() {
@@ -3193,6 +3348,10 @@ export class WorldScene extends Phaser.Scene {
       s1Max: this.player.skill1MaxEff,
       s2Cd: Math.round(this.player.skill2Cd),
       s2Max: this.player.skill2MaxEff,
+      /* v2.5 — 계열별 스킬 라벨 (기본공격 포함 3슬롯 교체 표기) */
+      atkName: this.player.attackName,
+      s1Name: this.player.skill1Name,
+      s2Name: this.player.skill2Name,
     });
   }
 
@@ -3244,6 +3403,9 @@ export class WorldScene extends Phaser.Scene {
       cosmetic: this.player.cosmetic,
       stats: { ...this.player.stats },
       ap: this.player.ap,
+      /* v2.5 — 자동사냥 상태 (펫 보유 시에만 ON 가능) */
+      autoHunt: this.autoHunt && !!this.player.pet,
+      canAutoHunt: !!this.player.pet,
     };
     const sig = JSON.stringify(st);
     if (sig === this.lastRpgSig) return;
@@ -3314,6 +3476,9 @@ export class WorldScene extends Phaser.Scene {
       /* v2.3 — 반복 의뢰 수주 해금 + 본 스토리 대사 기록 */
       repeatOn: this.repeatOn,
       seen: [...this.seenSet].slice(-160),
+      /* v2.5 — 방문 구역 기록 + 자동사냥 토글 */
+      visited: [...this.visited],
+      autoHunt: this.autoHunt && !!this.player.pet,
     };
   }
 

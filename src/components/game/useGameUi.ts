@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { EventBus, type HudState, type QuestState, type EndState, type RpgState, type PanelKind, type QuestLogState } from "./EventBus";
 
-type Skills = { mp: number; s1Cd: number; s1Max: number; s2Cd: number; s2Max: number };
+type Skills = { mp: number; s1Cd: number; s1Max: number; s2Cd: number; s2Max: number; atkName?: string; s1Name?: string; s2Name?: string };
 
 const emptyHud: HudState = {
   hp: 100, maxHp: 100, mp: 60, maxMp: 60, lv: 1, exp: 0, expNext: 60,
@@ -18,6 +18,7 @@ const emptyRpg: RpgState = {
   shopStock: [], cls: null, canJob: false,
   buffItems: {}, pets: [], pet: null, cosmetics: [], cosmetic: null,
   stats: { str: 5, dex: 5, int: 5, luk: 5 }, ap: 0,
+  autoHunt: false, canAutoHunt: false,
 };
 const emptyQuestLog: QuestLogState = { stageName: "", list: [], repeat: null };
 

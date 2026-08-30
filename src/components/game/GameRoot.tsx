@@ -85,6 +85,8 @@ export default function GameRoot() {
                 muted={muted}
                 canJob={rpg.canJob}
                 jobAvail={(rpg.canJob || rpg.cls !== null) && !panel} /* 클래스 보유 시 언제든 트리 열람·자유전직 */
+                canAutoHunt={rpg.canAutoHunt}
+                autoHunt={rpg.autoHunt}
                 onToggleMute={() => {
                   const next = !muted;
                   setMuted(next);
@@ -102,7 +104,16 @@ export default function GameRoot() {
             <InteractPrompt />
             {!panel && (
               <div className="pointer-events-auto contents">
-                <TouchControls skills={skills} hpPot={rpg.hpPot} mpPot={rpg.mpPot} />
+                <TouchControls
+                  skills={skills}
+                  hpPot={rpg.hpPot}
+                  mpPot={rpg.mpPot}
+                  atkName={skills.atkName}
+                  s1Name={skills.s1Name}
+                  s2Name={skills.s2Name}
+                  canAutoHunt={rpg.canAutoHunt}
+                  autoHunt={rpg.autoHunt}
+                />
               </div>
             )}
             <Banner text={banner} />

@@ -64,9 +64,14 @@ export type RpgState = {
   /** AP 스탯 */
   stats: { str: number; dex: number; int: number; luk: number };
   ap: number;
+  /* ----- v2.5 자동사냥 (펫 보유 시) ----- */
+  /** 자동사냥 ON 여부 (펫 없으면 항상 false) */
+  autoHunt: boolean;
+  /** 자동사냥 사용 가능 (펫 보유) */
+  canAutoHunt: boolean;
 };
 
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | null;
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | null;
 
 export type QuestState = {
   title: string;

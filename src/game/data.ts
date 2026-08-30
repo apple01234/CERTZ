@@ -51,16 +51,26 @@ export function upgradeCost(slot: "weapon" | "armor", level: number): number {
 export type ItemKey =
   | "potion_hp"
   | "potion_mp"
+  | "potion_hp2"
+  | "potion_mp2"
   | "weapon_1"
   | "weapon_2"
   | "weapon_3"
   | "weapon_4"
+  | "weapon_5"
+  | "weapon_6"
   | "armor_1"
   | "armor_2"
   | "armor_3"
   | "armor_4"
+  | "armor_5"
+  | "armor_6"
   | "ring_power"
   | "ring_vital"
+  | "ring_crit"
+  | "ring_guard"
+  | "scroll_return"
+  | "scroll_warp"
   | "buff_atk"
   | "buff_def"
   | "buff_spd"
@@ -100,16 +110,30 @@ export type ItemDef = {
 export const ITEMS: Record<ItemKey, ItemDef> = {
   potion_hp: { key: "potion_hp", kind: "consumable", name: "HP 물약", icon: "item_potion_hp", price: 30, tier: "common", heal: 50 },
   potion_mp: { key: "potion_mp", kind: "consumable", name: "MP 물약", icon: "item_potion_mp", price: 25, tier: "common", restore: 30 },
+  /* v2.5 — 상급 물약 (지시 #5 아이템 확장) */
+  potion_hp2: { key: "potion_hp2", kind: "consumable", name: "상급 HP 물약", icon: "item_potion_hp2", price: 70, tier: "rare", heal: 130 },
+  potion_mp2: { key: "potion_mp2", kind: "consumable", name: "상급 MP 물약", icon: "item_potion_mp2", price: 60, tier: "rare", restore: 80 },
+  /* v2.5 — 이동 소모품 (지시 #6 귀환서 / #7 지역 워프 부적) */
+  scroll_return: { key: "scroll_return", kind: "consumable", name: "마을 귀환서", icon: "item_scroll_return", price: 40, tier: "common" },
+  scroll_warp: { key: "scroll_warp", kind: "consumable", name: "지역 이동 부적", icon: "item_scroll_warp", price: 120, tier: "rare" },
   weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 0, tier: "common", atk: 0 },
   weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 110, tier: "rare", atk: 6 },
   weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 260, tier: "epic", atk: 14 },
   weapon_4: { key: "weapon_4", kind: "weapon", name: "심연의 대검", icon: "item_weapon_4", price: 420, tier: "epic", atk: 20 },
+  /* v2.5 — 상위 장비 티어 (지시 #5 아이템 확장) */
+  weapon_5: { key: "weapon_5", kind: "weapon", name: "용인의 마검", icon: "item_weapon_5", price: 560, tier: "epic", atk: 28 },
+  weapon_6: { key: "weapon_6", kind: "weapon", name: "심연룡의 절세검", icon: "item_weapon_6", price: 900, tier: "epic", atk: 38 },
   armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 0, tier: "common", def: 0 },
   armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 95, tier: "rare", def: 3 },
   armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 230, tier: "epic", def: 7 },
   armor_4: { key: "armor_4", kind: "armor", name: "수호자의 갑옷", icon: "item_armor_4", price: 380, tier: "epic", def: 10 },
+  armor_5: { key: "armor_5", kind: "armor", name: "용린 갑주", icon: "item_armor_5", price: 480, tier: "epic", def: 14 },
+  armor_6: { key: "armor_6", kind: "armor", name: "심연룡의 비늘갑옷", icon: "item_armor_6", price: 820, tier: "epic", def: 18 },
   ring_power: { key: "ring_power", kind: "accessory", name: "힘의 반지", icon: "item_ring_power", price: 150, tier: "rare", crit: 7 },
   ring_vital: { key: "ring_vital", kind: "accessory", name: "생명의 반지", icon: "item_ring_vital", price: 130, tier: "rare", maxHp: 25 },
+  /* v2.5 — 상위 장신구 (지시 #5 아이템 확장) */
+  ring_crit: { key: "ring_crit", kind: "accessory", name: "매의 눈 반지", icon: "item_ring_crit", price: 400, tier: "epic", crit: 12 },
+  ring_guard: { key: "ring_guard", kind: "accessory", name: "수호 반지", icon: "item_ring_guard", price: 380, tier: "epic", maxHp: 60 },
   /* ---- BM (v1.9): 버프 물약 / 펫 / 치장 ---- */
   buff_atk: { key: "buff_atk", kind: "buff", name: "분노의 물약", icon: "item_buff_atk", price: 60, tier: "rare" },
   buff_def: { key: "buff_def", kind: "buff", name: "수호의 물약", icon: "item_buff_def", price: 55, tier: "rare" },
@@ -183,14 +207,24 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
 export const SHOP_STOCK: ItemKey[] = [
   "potion_hp",
   "potion_mp",
+  "potion_hp2",
+  "potion_mp2",
   "weapon_2",
   "armor_2",
   "weapon_3",
   "armor_3",
   "weapon_4",
   "armor_4",
+  "weapon_5",
+  "armor_5",
+  "weapon_6",
+  "armor_6",
   "ring_power",
   "ring_vital",
+  "ring_crit",
+  "ring_guard",
+  "scroll_return",
+  "scroll_warp",
   "buff_atk",
   "buff_def",
   "buff_spd",
