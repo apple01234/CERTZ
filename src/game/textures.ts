@@ -45,6 +45,31 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "boss-idle", ...fr("boss_idle", 2, 2, -1) });
   a.create({ key: "boss2-idle", ...fr("boss2_idle", 2, 2, -1) });
   a.create({ key: "boss3-idle", ...fr("boss3_idle", 2, 2, -1) });
+  // v2.0 아뜰란티스 확장 몬스터 (v1.5 이관)
+  a.create({ key: "swampbeast-idle", ...fr("swampbeast_idle", 2, 2, -1) });
+  a.create({ key: "swampbeast-run", ...fr("swampbeast_run", 4, 7, -1) });
+  a.create({ key: "emberwolf-idle", ...fr("emberwolf_idle", 2, 2, -1) });
+  a.create({ key: "emberwolf-run", ...fr("emberwolf_run", 4, 10, -1) });
+  a.create({ key: "firespirit-idle", ...fr("firespirit_idle", 2, 3, -1) });
+  a.create({ key: "firespirit-run", ...fr("firespirit_run", 4, 8, -1) });
+  a.create({ key: "runegolem-idle", ...fr("runegolem_idle", 2, 2, -1) });
+  a.create({ key: "runegolem-run", ...fr("runegolem_run", 4, 6, -1) });
+  a.create({ key: "helhound-idle", ...fr("helhound_idle", 2, 2, -1) });
+  a.create({ key: "helhound-run", ...fr("helhound_run", 4, 10, -1) });
+  // v2.0 아뜰란티스 신규 보스
+  a.create({ key: "boss_nidhog-idle", ...fr("boss_nidhog_idle", 2, 2, -1) });
+  a.create({ key: "boss_surt-idle", ...fr("boss_surt_idle", 2, 2, -1) });
+  a.create({ key: "boss_fenrir-idle", ...fr("boss_fenrir_idle", 2, 2, -1) });
+  a.create({ key: "boss_skoll-idle", ...fr("boss_skoll_idle", 2, 2, -1) });
+  a.create({ key: "boss_gram-idle", ...fr("boss_gram_idle", 2, 2, -1) });
+  a.create({ key: "boss_abudditos-idle", ...fr("boss_abudditos_idle", 2, 2, -1) });
+  // 배치1 — 마을 모닥불 (Serene_Village campfire 32x32 4프레임)
+  a.create({
+    key: "sv-campfire",
+    frames: [0, 1, 2, 3].map((f) => ({ key: "sv_campfire", frame: f })),
+    frameRate: 6,
+    repeat: -1,
+  });
   // VFX — 참격 초승달 스윕(외부 애니), 차원문 소용돌이
   a.create({ key: "fx-slash", ...fr("slash", 6, 30, 0) });
   a.create({ key: "portal-spin", ...fr("portal", 8, 10, -1) });

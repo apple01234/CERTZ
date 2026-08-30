@@ -83,6 +83,9 @@ export type SaveData = {
   buffs?: { key: string; remain: number; total: number }[];
   pets?: string[];
   pet?: string | null;
+  /* ↓ 전직 스토리 진행 (v2.0 — 구 세이브 호환 기본값) */
+  jobStory?: { tier: 2 | 3; step: number; hunt: number } | null;
+  jobStoryDone?: number[];
   cosmetics?: string[];
   cosmetic?: string | null;
 };
@@ -122,6 +125,9 @@ export function loadSave(): SaveData | null {
     if (d.pet === undefined) d.pet = null;
     if (!Array.isArray(d.cosmetics)) d.cosmetics = [];
     if (d.cosmetic === undefined) d.cosmetic = null;
+    // 전직 스토리 (v2.0 — 구 세이브 호환)
+    if (d.jobStory === undefined) d.jobStory = null;
+    if (!Array.isArray(d.jobStoryDone)) d.jobStoryDone = [];
     return d;
   } catch {
     return null;

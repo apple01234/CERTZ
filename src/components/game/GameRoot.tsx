@@ -9,6 +9,7 @@ import { DialogueBox } from "./DialogueBox";
 import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel } from "./Overlays";
 import { GamePanels } from "./Panels";
 import { ChatBox } from "./ChatBox";
+import { PartyWidget } from "./PartyWidget";
 import * as audio from "@/game/audio";
 import { useGameUi } from "./useGameUi";
 import { loadMuted, writeMuted } from "@/game/config";
@@ -106,6 +107,8 @@ export default function GameRoot() {
             <BossBar boss={boss} />
             {/* 멀티플레이 전체 채팅 (v1.7) */}
             <ChatBox />
+            {/* 파티 위젯 (v2.0 — 파티 & 보스 토벌) */}
+            <PartyWidget />
           </>
         )}
 

@@ -71,3 +71,5 @@ backups/
 nohup.out
 out/
 .next-apk/
+prev-project/
+upload/

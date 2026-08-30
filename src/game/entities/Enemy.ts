@@ -12,6 +12,11 @@ const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: numbe
   frostwolf: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0xa8d8fa },
   icegolem: { bw: 22, bh: 24, hw: 36, hh: 36, burst: 0xa8d8fa },
   wraith: { bw: 18, bh: 24, hw: 30, hh: 32, burst: 0xbe96eb },
+  swampbeast: { bw: 22, bh: 24, hw: 36, hh: 36, burst: 0x8ade7a },
+  emberwolf: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0xffa05a },
+  firespirit: { bw: 22, bh: 24, hw: 36, hh: 36, burst: 0xffc06a },
+  runegolem: { bw: 22, bh: 24, hw: 36, hh: 36, burst: 0xffe08a },
+  helhound: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0xe86a8a },
 };
 
 /**
@@ -66,9 +71,39 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private ai: FSM<AICtx>;
   private aiCtx: AICtx;
 
-  constructor(scene: WorldScene, x: number, y: number, key: EnemyKey) {
+  /** 화면 표시명 (정예/시험 상대 등 변형 개체 — null이면 종명 사용) */
+  displayName: string | null = null;
+
+  /**
+   * v2.0 — 챕터/구역 난이도 배율 opts 지원
+   *   hp/atk/exp/gold: 기본 정의 대비 배율, scale: 스프라이트 확대, tint: 엘리트 틴트
+   */
+  constructor(
+    scene: WorldScene,
+    x: number,
+    y: number,
+    key: EnemyKey,
+    opts?: { hp?: number; atk?: number; exp?: number; gold?: number; scale?: number; tint?: number; displayName?: string }
+  ) {
     super(scene, x, y, `${key}_idle0`);
-    this.def = ENEMIES[key];
+    const base = ENEMIES[key];
+    if (opts && (opts.hp !== undefined || opts.atk !== undefined || opts.exp !== undefined || opts.gold !== undefined)) {
+      this.def = {
+        ...base,
+        hp: Math.round(base.hp * (opts.hp ?? 1)),
+        atk: Math.round(base.atk * (opts.atk ?? 1) * 10) / 10,
+        exp: Math.round(base.exp * (opts.exp ?? 1)),
+        gold: [
+          Math.max(1, Math.round(base.gold[0] * (opts.gold ?? 1))),
+          Math.max(1, Math.round(base.gold[1] * (opts.gold ?? 1))),
+        ],
+      };
+    } else {
+      this.def = base;
+    }
+    if (opts?.scale) this.setScale(opts.scale);
+    if (opts?.tint !== undefined) this.setTint(opts.tint);
+    if (opts?.displayName) this.displayName = opts.displayName;
     this.hp = this.def.hp;
     this.maxHp = this.def.hp;
     this.homeX = x;
@@ -172,6 +207,17 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.modeTimer -= dt;
     this.hitFlash = Math.max(0, this.hitFlash - dt);
     if (this.hitFlash <= 0 && this.tintTopLeft !== 0xffffff) this.clearTint();
+    // v2.0 프롤로그 보호 — 인트로/입장 유예 중 어그로·공격 차단 (제자리 대기)
+    if (this.scene.isPrologueSafe) {
+      this.setVelocity(0, 0);
+      if (this.anims.currentAnim?.key !== `${this.def.key}-idle`) this.play(`${this.def.key}-idle`);
+      if (this.hpBar && this.hpBarBg) {
+        const show = this.hp < this.maxHp;
+        this.hpBarBg.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
+        this.hpBar.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
+      }
+      return;
+    }
 
     // 넉백 감쇠 (죽은 뒤 제외 — destroy 후 접근 방지)
     if (this.active) this.knockVec.scale(Math.pow(0.0016, dt / 1000));

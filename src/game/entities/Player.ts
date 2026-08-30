@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import {
-  ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_COST,
+  ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_FALLBACK_FROM, upgradeCost,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey,
 } from "../data";
 import {
@@ -175,6 +175,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.anims.isPlaying) this.anims.stop();
         if (this.texture.key !== tex) this.setTexture(tex);
       }
+    } else if (this.state === "attack" && this.lungeTime <= 0 && move.lengthSq() > 0.01) {
+      // v2.0 (지시 #4) — 공격 중에도 이동 허용 (55% 속도 캐스팅 취소 없는 부드러운 무빙샷)
+      this.setVelocity(move.x * this.speed * 0.55, move.y * this.speed * 0.55);
+      this.facing.copy(move).normalize();
+      if (Math.abs(move.x) >= Math.abs(move.y)) this.setFlipX(move.x < 0);
     }
 
     // 기본 공격
@@ -214,6 +219,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(200, () => {
       if (this.state === "attack") {
         this.state = "idle";
+        // v2.0 — 공격 종료 후 이동 입력이 있으면 정지 처리하지 않음 (부드러운 이어 걷기)
+        if (this.body && (this.body.velocity.x !== 0 || this.body.velocity.y !== 0)) return;
         this.setVelocity(0, 0);
       }
     });
@@ -794,12 +801,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /* ---------------- 장비 강화 (2D MMORPG 기본 요소) ---------------- */
 
-  readonly upMax = 5; // UPGRADE_MAX와 동일 값 (런타임 상수)
+  readonly upMax = UPGRADE_MAX; // v2.0 — +12 (메이플 스타포스식, 구 세이브 +5 호환)
 
-  /** 다음 강화 비용 */
+  /** 다음 강화 비용 — 단계별 눈덩이 곡선 (v2.0 밸런스) */
   upgradeCost(slot: "weapon" | "armor"): number {
-    const base = slot === "weapon" ? UPGRADE_COST.weapon : UPGRADE_COST.armor;
-    return base * (this.upgrades[slot] + 1);
+    return upgradeCost(slot, this.upgrades[slot]);
   }
 
   /** 다음 강화 성공률 (%) */
@@ -819,6 +825,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.upgrades[slot] = cur + 1;
       this.scene.sfxUpgradeOk();
       this.scene.spawnPickupText(this.x, this.y - 44, `강화 성공! +${cur + 1}`, "#ffd76a");
+    } else if (cur >= UPGRADE_FALLBACK_FROM) {
+      // v2.0 — +9 이상 실패 시 1단계 하락 (스타포스식 리스크)
+      this.upgrades[slot] = cur - 1;
+      this.scene.sfxUpgradeFail();
+      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… +${cur - 1} 하락`, "#ff9a9a");
     } else {
       this.scene.sfxUpgradeFail();
       this.scene.spawnPickupText(this.x, this.y - 44, "강화 실패…", "#ff9a9a");

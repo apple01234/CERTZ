@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { EventBus, type PanelKind, type RpgState, type HudState, type QuestLogState } from "./EventBus";
 import {
-  ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_COST,
+  ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, upgradeCost, autoAllocPlan,
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey,
 } from "@/game/data";
-import { CLASS_LIST, FREE_JOB_COST, chainOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
+import { CLASS_LIST, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
 
 /**
@@ -191,7 +191,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
               if (!item) return null;
               const up = slot === "weapon" ? rpg.upWea : rpg.upArm;
               const maxed = up >= UPGRADE_MAX;
-              const cost = (slot === "weapon" ? UPGRADE_COST.weapon : UPGRADE_COST.armor) * (up + 1);
+              const cost = upgradeCost(slot, up);
               const rate = UPGRADE_RATES[up] ?? 0;
               const affordable = rpg.gold >= cost;
               return (
@@ -665,6 +665,15 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
   useEscClose(onClose);
   const allocate = (stat: "str" | "dex" | "int" | "luk", n: number) =>
     EventBus.emit("rpg:allocate", { stat, n });
+  // v2.0 자동 배분 (지시 #18) — 클래스 계열에 맞춰 AP를 비율대로 한 번에 분배
+  const autoAlloc = () => {
+    const fam = familyOf(rpg.cls);
+    if (!fam || rpg.ap < 1) return;
+    const plan = autoAllocPlan(fam, rpg.ap);
+    (Object.entries(plan) as ["str" | "dex" | "int" | "luk", number][]).forEach(([k, n]) => {
+      if (n > 0) allocate(k, n);
+    });
+  };
   return (
     <div
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
@@ -710,9 +719,19 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
         {/* AP 배분 */}
         <div className="mb-1.5 flex items-center justify-between">
           <p className="text-[12px] font-black text-lime-200">AP 배분</p>
-          <span className={`rounded-md px-2 py-0.5 text-[11px] font-black ${rpg.ap > 0 ? "bg-lime-500/25 text-lime-200" : "bg-white/10 text-white/40"}`}>
-            남은 AP {rpg.ap}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              disabled={rpg.ap < 1}
+              onClick={autoAlloc}
+              aria-label="AP 자동 배분"
+              className="rounded-md border border-amber-300/50 bg-amber-500/25 px-2.5 py-1 text-[11px] font-black text-amber-100 enabled:hover:bg-amber-500/40 enabled:active:scale-95 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-white/35"
+            >
+              ✨ 자동 배분
+            </button>
+            <span className={`rounded-md px-2 py-0.5 text-[11px] font-black ${rpg.ap > 0 ? "bg-lime-500/25 text-lime-200" : "bg-white/10 text-white/40"}`}>
+              남은 AP {rpg.ap}
+            </span>
+          </div>
         </div>
         <div className="flex flex-col gap-1.5">
           {STAT_META.map((m) => (
@@ -741,7 +760,7 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
             </div>
           ))}
         </div>
-        <p className="mt-2 text-center text-[10px] text-white/40">레벨업마다 AP +5 지급 · 배분은 즉시 적용 · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/40">레벨업마다 AP +5 지급 · 배분은 즉시 적용 · 자동 배분은 계열 권장 비율 (4:1) · ESC로 닫기</p>
       </div>
     </div>
   );

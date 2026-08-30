@@ -2,15 +2,45 @@ import type Phaser from "phaser";
 
 /**
  * 외부 오디오 에셋 재생 (public/assets/audio/)
- *  - BGM: Retro Game Music Pack — Juhani Junkala (CC0)
+ *  - BGM: Retro Game Music Pack — Juhani Junkala (CC0) + OpenGameArt CC0/CC-BY 5트랙 (v1.2)
+ *    title/field/boss + village/alfheim/cave/snow/abyss — 스테이지별 전용 테마 8종 (v2.0 전면 활성화)
  *  - SFX: 80 CC0 RPG SFX / 80 CC0 creature SFX — Rubberduck (CC0)
  * 자체 합성(WebAudio 오실레이터)은 전면 제거 — Phaser SoundManager 사용.
  */
 
 let game: Phaser.Game | null = null;
 let bgmSound: Phaser.Sound.BaseSound | null = null;
-let bgmKind: "field" | "boss" | "title" | null = null;
+let bgmKind: BGMKind | null = null;
 let muted = false;
+
+export type BGMKind = "field" | "boss" | "title" | "village" | "alfheim" | "cave" | "snow" | "abyss";
+
+/** 스테이지 → 전용 BGM 매핑 (v2.0 — 9챕터 × 10구역 키 지원) */
+export function stageBgm(stage: string): BGMKind {
+  const ch = stage.replace(/([1-9]|10)$/, "");
+  switch (ch) {
+    case "village":
+      return "village";
+    case "kingdom":
+      return "village";
+    case "alfheim":
+      return "alfheim";
+    case "cave":
+    case "nidavellir":
+      return "cave";
+    case "niflheim":
+      return "snow";
+    case "muspelheim":
+    case "hel":
+      return "abyss";
+    case "abyss":
+      return "abyss";
+    case "forest":
+      return "field";
+    default:
+      return "field";
+  }
+}
 
 /** PhaserGame 생성 직후 1회 호출 */
 export function attachAudio(g: Phaser.Game) {
@@ -52,7 +82,7 @@ function destroyBgm() {
   }
 }
 
-function startBgm(kind: "field" | "boss" | "title") {
+function startBgm(kind: BGMKind) {
   if (!game) return;
   try {
     bgmSound = game.sound.add(`bgm_${kind}`, { loop: true, volume: 0.42 });
@@ -63,7 +93,7 @@ function startBgm(kind: "field" | "boss" | "title") {
   }
 }
 
-export function playBGM(kind: "field" | "boss" | "title") {
+export function playBGM(kind: BGMKind) {
   if (bgmKind === kind && bgmSound?.isPlaying) return;
   destroyBgm();
   bgmKind = kind;

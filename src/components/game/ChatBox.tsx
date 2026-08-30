@@ -9,7 +9,7 @@ import { MessageCircle } from "lucide-react";
  *  - Enter: 입력 열기/전송 · ESC: 취소
  *  - 입력 포커스 동안 게임 키 완전 차단 (EventBus "chat:focus" → WorldScene)
  */
-type Msg = { id: string; name: string; text: string; sys?: boolean; t: number };
+type Msg = { id: string; name: string; text: string; sys?: boolean; party?: boolean; t: number };
 
 export function ChatBox() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -63,10 +63,10 @@ export function ChatBox() {
           <p
             key={`${m.t}-${m.id}`}
             className={`w-fit max-w-full truncate rounded bg-black/45 px-1.5 py-0.5 text-[10px] leading-snug backdrop-blur-[2px] sm:text-[11px] ${
-              m.sys ? "font-bold text-sky-300/90" : "text-white/85"
+              m.sys ? "font-bold text-sky-300/90" : m.party ? "font-bold text-emerald-300/90" : "text-white/85"
             }`}
           >
-            {m.sys ? m.text : <><span className="font-black text-amber-200">{m.name}</span>: {m.text}</>}
+            {m.sys ? m.text : <>{m.party && <span className="mr-1 rounded bg-emerald-400/25 px-1 text-[9px] text-emerald-100">[파티]</span>}<span className="font-black text-amber-200">{m.name}</span>: {m.text}</>}
           </p>
         ))}
       </div>

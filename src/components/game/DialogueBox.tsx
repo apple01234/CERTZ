@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
 import { getPlayerName } from "@/game/config";
 
-/** 대화창: 타이프라이터 + 스페이스/엔터·탭으로 진행, 마지막 줄 완료 시 게임 재개 */
+/** 대화창: 타이프라이터 + 스페이스/엔터·탭으로 진행, 마지막 줄 완료 시 게임 재개.
+ *  v2.0 (사용자 지시 #3): 스페이스바/클릭을 꾹 누르면 대화가 계속 빠르게 넘어간다. */
 export function DialogueBox({
   dialogue,
 }: {
@@ -13,6 +14,8 @@ export function DialogueBox({
   const [idx, setIdx] = useState(0);
   const [shown, setShown] = useState("");
   const timer = useRef<number | null>(null);
+  const holdTimer = useRef<number | null>(null);
+  const lastAdvance = useRef(0);
 
   const name = getPlayerName();
   // {name} 치환 — 플레이어가 지은 이름이 대사에 반영됨
@@ -40,6 +43,14 @@ export function DialogueBox({
     };
   }, [line, dialogue]);
 
+  // 언마운트/대화 종료 시 홀드 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (holdTimer.current) window.clearInterval(holdTimer.current);
+      holdTimer.current = null;
+    };
+  }, [dialogue]);
+
   const advance = () => {
     if (shown.length < line.length) {
       // 타이핑 스킵
@@ -55,29 +66,48 @@ export function DialogueBox({
     }
   };
 
-  // PC: 스페이스바/엔터로 대화 넘기기 (사용자 지시 — 대화 진행 키)
+  /** 홀드 고속 진행 — 반복 키 입력/홀드 타이머가 일정 간격으로 advance 호출 */
+  const advanceThrottled = () => {
+    const now = performance.now();
+    if (now - lastAdvance.current < 130) return;
+    lastAdvance.current = now;
+    advance();
+  };
+
+  // PC: 스페이스바/엔터로 대화 넘기기 — 꾹 누르면 계속 빠르게 (e.repeat 활용)
   useEffect(() => {
     if (!dialogue) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.repeat) return;
       if (e.code === "Space" || e.code === "Enter" || e.code === "NumpadEnter") {
         e.preventDefault();
-        advance();
+        advanceThrottled();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  // 모바일: 화면 홀드 — 누르는 동안 고속 진행
+  const startHold = (e: React.PointerEvent) => {
+    e.preventDefault();
+    advanceThrottled();
+    if (holdTimer.current) window.clearInterval(holdTimer.current);
+    holdTimer.current = window.setInterval(advanceThrottled, 150);
+  };
+  const stopHold = () => {
+    if (holdTimer.current) window.clearInterval(holdTimer.current);
+    holdTimer.current = null;
+  };
+
   if (!dialogue) return null;
 
   return (
     <div
       className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-4 sm:px-6 sm:pb-6"
-      onPointerDown={(e) => {
-        e.preventDefault();
-        advance();
-      }}
+      onPointerDown={startHold}
+      onPointerUp={stopHold}
+      onPointerLeave={stopHold}
+      onPointerCancel={stopHold}
     >
       <div className="w-full max-w-2xl cursor-pointer touch-none rounded-xl border-2 border-amber-200/60 bg-slate-950/90 p-3.5 shadow-2xl backdrop-blur-sm sm:p-4">
         <div className="mb-1 inline-block rounded-md bg-amber-300/90 px-2 py-0.5 text-[11px] font-black text-slate-900 sm:text-xs">
@@ -89,9 +119,9 @@ export function DialogueBox({
         </p>
         <div className="mt-1 text-right text-[10px] font-bold text-white/50 sm:text-[11px]">
           {shown.length < line.length
-            ? "스페이스·탭으로 건너뛰기"
+            ? "스페이스·탭으로 건너뛰기 (꾹 누르면 빠르게)"
             : idx < dialogue.lines.length - 1
-              ? "스페이스·탭으로 계속 ▸"
+              ? "스페이스·탭으로 계속 ▸ (꾹 누르면 빠르게)"
               : "스페이스·탭으로 닫기"}
         </div>
       </div>

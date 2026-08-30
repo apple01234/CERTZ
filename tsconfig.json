@@ -40,6 +40,11 @@
     "node_modules",
     "scripts",
     "examples",
-    "skills"
+    "skills",
+    "prev-project",
+    "upload",
+    "download",
+    "loop",
+    "mini-services"
   ]
 }

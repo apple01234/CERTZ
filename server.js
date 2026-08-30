@@ -1,7 +1,10 @@
 /**
- * SERTZ 커스텀 서버 (v1.7) — Next.js + socket.io 멀티플레이
+ * SERTZ 커스텀 서버 (v2.0) — Next.js + socket.io 멀티플레이
  *  - `npm run dev` / `npm start` 모두 이 서버를 사용 (기존 워크플로 유지)
  *  - 게임 상태: 접속자 좌표/레벨/클래스 실시간 브로드캐스트 + 전체 채팅
+ *  - v2.0 (지시 #9/#15 최적화): 스테이지 기반 AOI — 같은 구역(스테이지) 접속자에게만 동기화
+ *  - v2.0 (지시 #14): join 전 채팅 폐기 문제 — join 대기열 + connect 플러시 (클라 net.ts)
+ *  - v2.0 (지시 #5): 파티 시스템 (생성/참여/탈퇴/파티 채팅/보스 토벌 방송)
  */
 const { createServer } = require("node:http");
 const next = require("next");
@@ -21,7 +24,7 @@ app.prepare().then(() => {
   });
 
   /* ---------- 멀티플레이 방 상태 ---------- */
-  /** sockId → { name, lv, cls, x, y, flip, moving, t } */
+  /** sockId → { name, lv, cls, x, y, flip, moving, stage, t } */
   const players = new Map();
   let chatLog = [];
 
@@ -42,7 +45,18 @@ app.prepare().then(() => {
       return;
     }
     lastBroadcast = now;
-    io.emit("players", playerList());
+    /* v2.0 AOI — 스테이지별로 그룹핑해 같은 구역 플레이어에게만 전송 (페이로드 절감) */
+    const byStage = new Map();
+    for (const [id, p] of players) {
+      const key = p.stage || "village";
+      if (!byStage.has(key)) byStage.set(key, []);
+      byStage.get(key).push({ id, ...p });
+    }
+    for (const [id, sock] of io.of("/").sockets) {
+      const me = players.get(id);
+      const list = byStage.get(me?.stage || "village") || [];
+      sock.emit("players", list);
+    }
   }
 
   function sysChat(text) {
@@ -50,6 +64,29 @@ app.prepare().then(() => {
     chatLog.push(msg);
     chatLog = chatLog.slice(-30);
     io.emit("chat", msg); // 새 메시지 1건만 브로드캐스트 (히스토리는 접속 시 1회)
+  }
+
+  /* ---------- 파티 상태 (v2.0) ---------- */
+  /** partyId → { id, leader( sockId ), max, members: Set<sockId> } */
+  const parties = new Map();
+  let partySeq = 0;
+  const PARTY_MAX = 4;
+
+  function partyPayload(p) {
+    const members = [...p.members]
+      .map((id) => players.get(id))
+      .filter(Boolean)
+      .map((m) => ({ id: m.id, name: m.name, lv: m.lv, cls: m.cls }));
+    return { id: p.id, leader: players.get(p.leader)?.name ?? "?", members, max: p.max };
+  }
+
+  function broadcastParty(partyId) {
+    const p = parties.get(partyId);
+    if (!p) return;
+    const payload = partyPayload(p);
+    for (const mid of p.members) {
+      io.of("/").sockets.get(mid)?.emit("party", payload);
+    }
   }
 
   io.on("connection", (sock) => {
@@ -65,6 +102,7 @@ app.prepare().then(() => {
         y: Number(p.y) || 300,
         flip: false,
         moving: false,
+        stage: typeof p.stage === "string" ? p.stage.slice(0, 24) : "village",
         t: Date.now(),
       });
       broadcastPlayers(true);
@@ -80,6 +118,7 @@ app.prepare().then(() => {
       p.moving = !!s.moving;
       if (Number.isFinite(s.lv)) p.lv = Math.max(1, Number(s.lv));
       if (s.cls === null || typeof s.cls === "string") p.cls = s.cls;
+      if (typeof s.stage === "string") p.stage = s.stage.slice(0, 24);
       broadcastPlayers();
     });
 
@@ -110,15 +149,110 @@ app.prepare().then(() => {
       sysChat(`${p.name} 님이 ${names[cls] || cls}(으)로 전직했습니다!`);
     });
 
+    /* ---------- 파티 (v2.0 — 지시 #5) ---------- */
+    sock.on("party:create", () => {
+      const p = players.get(sock.id);
+      if (!p) return;
+      // 이미 가입한 파티가 있으면 무시
+      for (const pt of parties.values()) {
+        if (pt.members.has(sock.id)) return;
+      }
+      const id = `P${++partySeq}`;
+      parties.set(id, { id, leader: sock.id, max: PARTY_MAX, members: new Set([sock.id]) });
+      sock.emit("party", partyPayload(parties.get(id)));
+      sysChat(`${p.name} 님이 파티를 창설했습니다 — 코드 ${id}`);
+    });
+
+    sock.on("party:join", (rawId) => {
+      const p = players.get(sock.id);
+      const id = String(rawId ?? "").trim().toUpperCase();
+      const pt = parties.get(id);
+      if (!p || !pt) {
+        sock.emit("party", null);
+        return;
+      }
+      if (pt.members.size >= pt.max || pt.members.has(sock.id)) return;
+      // 다른 파티 가입 중이면 먼저 탈퇴
+      for (const other of parties.values()) {
+        other.members.delete(sock.id);
+        if (other.members.size === 0) parties.delete(other.id);
+        else {
+          if (other.leader === sock.id) other.leader = [...other.members][0];
+          broadcastParty(other.id);
+        }
+      }
+      pt.members.add(sock.id);
+      broadcastParty(pt.id);
+      sysChat(`${p.name} 님이 파티 ${id}에 참여했습니다 (${pt.members.size}/${pt.max})`);
+    });
+
+    sock.on("party:leave", () => {
+      for (const pt of parties.values()) {
+        if (!pt.members.has(sock.id)) continue;
+        pt.members.delete(sock.id);
+        if (pt.members.size === 0) {
+          parties.delete(pt.id);
+        } else {
+          if (pt.leader === sock.id) pt.leader = [...pt.members][0];
+          broadcastParty(pt.id);
+        }
+      }
+      sock.emit("party", null);
+    });
+
+    sock.on("party:chat", (raw) => {
+      const p = players.get(sock.id);
+      const text = String(raw ?? "").trim().slice(0, 80);
+      if (!p || !text) return;
+      const msg = { id: sock.id, name: p.name, text, party: true, t: Date.now() };
+      for (const pt of parties.values()) {
+        if (pt.members.has(sock.id)) {
+          for (const mid of pt.members) {
+            io.of("/").sockets.get(mid)?.emit("chat", msg);
+          }
+          break;
+        }
+      }
+    });
+
+    /** 보스 출현/토벌 방송 — 파티원 전체 공지 (지시 #5 보스 토벌 콘텐츠) */
+    sock.on("boss:announce", (b = {}) => {
+      const p = players.get(sock.id);
+      if (!p) return;
+      const name = String(b.name ?? "").slice(0, 24);
+      const stage = String(b.stage ?? "").slice(0, 24);
+      if (!name) return;
+      for (const pt of parties.values()) {
+        if (!pt.members.has(sock.id)) continue;
+        for (const mid of pt.members) {
+          if (mid === sock.id) continue;
+          io.of("/").sockets.get(mid)?.emit("chat", {
+            id: "sys", name: "", sys: true, t: Date.now(),
+            text: `[파티] ${p.name} — ${stage}에서 ${name}와 조우!`,
+          });
+        }
+        break;
+      }
+    });
+
     sock.on("disconnect", () => {
       const p = players.get(sock.id);
       if (p) sysChat(`${p.name} 님이 접속을 종료했습니다`);
       players.delete(sock.id);
+      for (const pt of parties.values()) {
+        if (!pt.members.has(sock.id)) continue;
+        pt.members.delete(sock.id);
+        if (pt.members.size === 0) parties.delete(pt.id);
+        else {
+          if (pt.leader === sock.id) pt.leader = [...pt.members][0];
+          broadcastParty(pt.id);
+        }
+      }
       broadcastPlayers(true);
     });
   });
 
   httpServer.listen(port, () => {
-    console.log(`> SERTZ 서버 준비됨 — http://localhost:${port} (멀티플레이 소켓 포함)`);
+    console.log(`> SERTZ 서버 준비됨 — http://localhost:${port} (멀티플레이 소켓 + 파티 포함)`);
   });
 });

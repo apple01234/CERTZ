@@ -91,6 +91,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.modeTimer -= dt;
     this.knockVec.scale(Math.pow(0.002, dt / 1000));
 
+    // v2.0 프롤로그 보호 — 인트로/입장 유예 중 보스 행동 정지 (투사체는 유지)
+    if (this.scene.isPrologueSafe) {
+      this.setVelocity(0, 0);
+      if (this.anims.currentAnim?.key !== `${this.def.tex}-idle`) this.play(`${this.def.tex}-idle`);
+      return;
+    }
+
     const toPlayer = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
     const dist = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
 

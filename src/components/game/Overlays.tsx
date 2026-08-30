@@ -3,18 +3,28 @@
 import { useEffect, useState } from "react";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState } from "./EventBus";
-import { STAGES } from "@/game/data";
+import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
 import { RotateCw, Play, Save, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles } from "lucide-react";
 
-/** 세이브 이어하기 라벨용 스테이지 표기명 */
+/** 세이브 이어하기 라벨용 스테이지 표기명 (v2.0 — 구역 체인 대응) */
 const STAGE_LABEL: Record<string, string> = {
-  village: "시작 마을",
-  forest: "뿌리숲",
+  village: "미드가르드 마을",
+  forest: "숲의 신전",
+  kingdom: "쿠소디아",
   alfheim: "알프헤임",
-  cave: "동굴",
+  muspelheim: "무스펠헤임",
   niflheim: "니플헤임",
-  abyss: "심연의 왕좌",
+  cave: "스바르트알프헤임",
+  nidavellir: "니다벨리르",
+  hel: "헬",
+  abyss: "아뜰란티스",
 };
+
+/** 이어하기 라벨 — 구 세이브 키도 폴백 처리 */
+function stageLabel(key: string): string {
+  const resolved = resolveStage(key);
+  return STAGE_LABEL[key] ?? STAGE_SHORT[resolved] ?? STAGES[resolved]?.subtitle ?? "여행 중";
+}
 
 /* ---------- 타이틀 화면 ---------- */
 
@@ -29,8 +39,8 @@ export function TitleScreen() {
           SERTZ
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
-          이그드라실 : 아뜰란티스
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v1.9</span>
+          바다의 수호자 : 아뜰란티스
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v2.0 · 10장 90구역</span>
         </p>
       </div>
 
@@ -50,7 +60,7 @@ export function TitleScreen() {
             <Save size={18} />
             이어하기
             <span className="text-[10px] font-bold text-sky-200">
-              LV{save.lv} · {save.cleared ? "클리어" : (STAGE_LABEL[save.stage] ?? STAGES[save.stage as keyof typeof STAGES]?.subtitle ?? "여행 중")}
+              LV{save.lv} · {save.cleared ? "클리어" : stageLabel(save.stage)}
             </span>
           </button>
         )}
@@ -283,7 +293,7 @@ export function NamePanel() {
           <span className="text-base font-black text-amber-300">이름을 정해 주자!</span>
         </div>
         <p className="mb-3 text-[12px] font-bold leading-relaxed text-white/70">
-          요정 아리: &quot;세계수가 기억할 이름을 지어 줘. 모험가의 이름이야!&quot;
+          펜던트의 정령 아부디토스: &quot;바다가 기억할 이름을 지어 줘. 인어 후예의 이름이야!&quot;
         </p>
         <input
           autoFocus
