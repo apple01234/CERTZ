@@ -243,3 +243,19 @@ Work Log:
 Stage Summary:
 - v2.4: 레벨 게이트 퀘스트로 진행 동기부여 강화 + 구역 1~9 진행 소프트락 근본 수정 + 이름 변경 UI
 - 커밋만 수행 (APK 미빌드 — 사용자 기존 지시 유지). 다음 빌드 시 versionCode 9 / versionName 2.4
+
+---
+Task ID: v2.4-apk
+Agent: Super Z (main)
+Task: 사용자 요청 "ㄱㄱ" — v2.4 Android APK 빌드 (이전 세션 빌드 중단 복구)
+
+Work Log:
+- 이전 세션에서 v2.4 커밋(e74d812) 후 APK 빌드 요청 중 세션 오류로 중단됨 → 신규 세션에서 재개
+- 신규 샌드박스라 빌드 환경 재구축: Temurin JDK 21(javac 21.0.5) + Android SDK(platform 36, build-tools 36.0.0) + npm install + prisma generate
+- android/app/build.gradle: versionCode 8→9, versionName 2.3→2.4
+- 빌드: APK_EXPORT=1 next build → cap sync android → gradlew assembleRelease (BUILD SUCCESSFUL 2m58s)
+- 검증: aapt — versionCode 9 / versionName 2.4 / minSdk 24 / targetSdk 36, apksigner — CN=SERTZ 릴리즈 서명 정상(v2.3과 동일 키스토어, 기존 설치 앱 위에 업데이트 설치 가능)
+
+Stage Summary:
+- 산출물: download/SERTZ-v2.4.apk (16.7MB) — 레벨 게이트 퀘스트 18구역, 구역 1~9 소프트락 수정, 이름 변경 UI, 이름표 유지 수정 전부 포함
+- 다운로드 직링: https://github.com/apple01234/CERTZ/raw/main/download/SERTZ-v2.4.apk
