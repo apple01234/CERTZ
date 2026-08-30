@@ -650,3 +650,22 @@ Stage Summary:
 - ff9c04c는 현재 v1.6(HEAD)에 100% 포함 — "ff9c04c로 되돌리기" 불필요, 오히려 되돌리면 타일 개선·v1.6 표식만 손실
 - 사용자 불만(기능 없음/타격감 없음)의 원인은 여전히 구버전 빌드 실행(GitHub 13커밋 뒤처짐, ahead 13)
 - 미결: 멀티플레이·키맵핑은 신규 개발 과제 (키맵핑=소규모, 멀티=서버 필요 별도 협의)
+
+---
+Task ID: audit-2
+Agent: Super Z (main)
+Task: 사용자 재요청 "ff9c04c 이거 확인해봐" — ff9c04c 시점 게임을 실제 실행해 실측 비교
+
+Work Log:
+- git worktree로 ff9c04c를 별도 체크아웃(/home/z/my-project/ff9c04c-check, node_modules 심링크),
+  next dev -p 3001로 기동 — 메인 3000(v1.6) 서빙 유지한 채 병행 검증
+- ff9c04c 실측 E2E: 타이틀(새로운 모험) → 월드 진입 → X 공격 2회 → I 가방 패널 — 정상 작동, 콘솔 에러 0
+- 시각 비교 결과: ff9c04c와 현재 v1.6의 HUD/퀘스트 트래커("왕국의 위협 1/4")/가방(물약·장비·장신구·30G) 동일.
+  유일한 차이 ①타이틀 v1.6 배지 유무 ②지형 경계 프린지(현재에만 있음)
+- 검증 스크린샷: download/proof-ff9c04c/ 3장 (기존 download/proof-v1.6/ 4장과 대조)
+- 정리: 3001 서버 종료(fuser), worktree remove --force — worktree list 메인만 확인, 3000 HTTP 200 유지
+
+Stage Summary:
+- ff9c04c 직접 실행 확인 완료: 내용물이 현재 v1.6에 100% 포함됨을 실행 레벨로 재증명
+- 롤백 불필요 — 되돌릴 경우 타일 개선·v1.6 표식만 손실
+- 사용자 체감 문제의 근원은 구버전 빌드(GitHub origin/main 뒤처짐) 실행으로 동결
