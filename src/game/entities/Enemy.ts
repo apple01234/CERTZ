@@ -260,6 +260,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.knockVec.set(dir.x * knock, dir.y * knock);
     this.scene.spawnDamageText(this.x, this.y - 20, dmg, crit);
     this.scene.spawnHitSpark(this.x, this.y);
+    // v2.2 타격감 — 스쿼시(눌림) 반동: 맞은 순간 납작해졌다 복귀
+    const sx = this.scaleX;
+    const sy = this.scaleY;
+    this.scene.tweens.killTweensOf(this);
+    this.setScale(sx * 1.16, sy * 0.84);
+    this.scene.tweens.add({ targets: this, scaleX: sx, scaleY: sy, duration: 110, ease: "Back.out" });
     if (this.hpBarBg === null) {
       this.hpBarBg = this.scene.add.rectangle(this.x, this.y, 26, 4, 0x22262e).setDepth(20);
       this.hpBar = this.scene.add.rectangle(this.x, this.y, 24, 2, 0xe84a5a).setDepth(21);

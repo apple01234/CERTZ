@@ -44,6 +44,9 @@ const ASSET_LIST = [
   "flower_r",
   "flower_y",
   "flower_w",
+  // v2.2 실내 소품 (여관/내 집)
+  "cv_candle",
+  "sv_door",
   // 주인공
   "hero_idle0", "hero_idle1", "hero_idle2", "hero_idle3",
   "hero_walk0", "hero_walk1", "hero_walk2", "hero_walk3",

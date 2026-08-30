@@ -116,8 +116,14 @@ export class WorldScene extends Phaser.Scene {
   /* ----- v2.0: 여관/집 상호작용 쿨다운 ----- */
   private restCd = 0;
 
+  /* ----- v2.2: 실내(여관/집) + 취침 연출 ----- */
+  private isInterior = false;
+  private sleeping = false;
+  private sleepPending = false;
+  private entryPos: { x: number; y: number } | null = null;
+
   /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
-  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "inn" | "house"; dlg?: string; npcId?: string; label: string }[] = [];
+  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "inn" | "house" | "innkeeper" | "bed" | "exit"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
   private activeNpcId: string | null = null;
   private talkedNpcs = new Set<string>();
@@ -176,7 +182,7 @@ export class WorldScene extends Phaser.Scene {
     super("world");
   }
 
-  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean }) {
+  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number } }) {
     this.questIdx = 0;
     this.huntCount = 0;
     this.totalKills = 0;
@@ -236,6 +242,11 @@ export class WorldScene extends Phaser.Scene {
     this.eliteEnemy = null;
     this.agroHoldUntil = 0;
     this.huntBaseline = {};
+    /* v2.2 실내/취침 */
+    this.isInterior = false;
+    this.sleeping = false;
+    this.sleepPending = false;
+    this.entryPos = data.entry ?? null;
     this.eBubble = null;
     this.eBubbleText = null;
     this.dirOrder = { x: [], y: [] };
@@ -262,15 +273,21 @@ export class WorldScene extends Phaser.Scene {
       fresh?: boolean;
     };
     const save = data.save;
-    const rawStage = save ? (save.stage as StageKey) : data.stage ?? "village";
+    /* v2.2 — data.stage 명시 시 우선 (실내 진입: save는 village 캐리, stage는 interior) */
+    const rawStage = (data.stage as StageKey | undefined) ?? (save ? (save.stage as StageKey) : "village");
     /* 유효하지 않은 스테이지 키(구 세이브/수정 세이브) 방어 — 체인 시작점으로 안전 폴백 (v2.0 구세이브 폴백 내장) */
     const stageKey: StageKey = resolveStage(rawStage);
     this.stageDef = STAGES[stageKey];
     this.stageW = this.stageDef.width;
     this.stageH = this.stageDef.height;
 
-    /* ---------- 바닥 (v2.0 — 10챕터 테마 테이블) ---------- */
+    /* ---------- 바닥 (v2.0 — 10챕터 테마 테이블 / v2.2 실내 분기) ---------- */
     const theme = STAGE_THEME[stageKey] ?? STAGE_THEME.village;
+    this.solidGroup = this.physics.add.staticGroup();
+    this.isInterior = stageKey === "interior_inn" || stageKey === "interior_home";
+    if (this.isInterior) {
+      this.buildInterior(stageKey);
+    } else {
     const groundTex = theme.ground;
     const pathTex = theme.path;
     this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
@@ -289,24 +306,29 @@ export class WorldScene extends Phaser.Scene {
     }
     // 지형 전환 프린지 + 지면 변형 — 자로 잰 직선 경계/균일 반복 패턴을 자연스럽게 (타일맵 부자연 개선)
     this.buildGroundBlend(stageKey, groundTex, pathTex);
+    }
 
     this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
     this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
-    this.cameras.main.setBackgroundColor(theme.bg);
+    if (!this.isInterior) this.cameras.main.setBackgroundColor(theme.bg);
 
     // 반응형: 화면 밀도 유지용 카메라 줌 (RESIZE 캔버스 1:1 + 카메라 확대)
     this.applyCameraZoom();
     this.scale.on("resize", this.applyCameraZoom, this);
 
-    /* ---------- 장식 (F1: 정의된 소수만) ---------- */
-    this.placeDecor(stageKey);
+    /* ---------- 장식 (F1: 정의된 소수만 — 실내는 buildInterior가 자체 배치) ---------- */
+    if (!this.isInterior) this.placeDecor(stageKey);
 
     /* ---------- 상점 NPC (2D MMORPG 기본 요소) ---------- */
-    this.spawnMerchant();
+    if (!this.isInterior) this.spawnMerchant();
 
-    /* ---------- 플레이어 ---------- */
+    /* ---------- 플레이어 (v2.2 — 실내는 문 앞 스폰, 복귀 entry 좌표 우선) ---------- */
     const savedPlayer = save;
-    this.player = new Player(this, 180, this.stageH / 2);
+    this.player = new Player(
+      this,
+      this.entryPos?.x ?? (this.isInterior ? this.stageW / 2 : 180),
+      this.entryPos?.y ?? (this.isInterior ? this.stageH - 70 : this.stageH / 2)
+    );
     if (savedPlayer) {
       this.player.lv = savedPlayer.lv;
       this.player.atk = savedPlayer.atk;
@@ -407,8 +429,10 @@ export class WorldScene extends Phaser.Scene {
       this.cameras.main.shake(240, 0.007);
     }
 
-    /* ---------- 퀘스트 오브젝트 ---------- */
-    if (stageKey === "village") {
+    /* ---------- 퀘스트 오브젝트 (v2.2 — 실내는 포탈/퀘스트 오브젝트 없음) ---------- */
+    if (this.isInterior) {
+      /* 실내 — 출구 문은 interactables로 처리 */
+    } else if (stageKey === "village") {
       this.buildVillage();
       // 마을 차원문은 항상 열려 있음 (숲 1구역으로 출발)
       this.spawnPortal(this.stageW - 110, this.stageH * 0.52);
@@ -418,8 +442,8 @@ export class WorldScene extends Phaser.Scene {
       // 수확(collect) 퀘스트 진행 중 — 파편 스폰 (이어하기 무결: ATK 중복 수령 방지)
       if (this.currentQuest()?.type === "collect") this.spawnFragmentForQuest();
     }
-    /* ---------- 복귀 차원문 (v2.0 — 이전 구역 자유 왕복, 지시 #8) ---------- */
-    this.spawnReturnPortal();
+    /* ---------- 복귀 차원문 (v2.0 — 이전 구역 자유 왕복, 지시 #8 / 실내 제외) ---------- */
+    if (!this.isInterior) this.spawnReturnPortal();
 
     /* ---------- 퀘스트 진행 복구 (이어하기 — 진행 상태 정합, 오브젝트 생성 후) ---------- */
     const bossQuestIdx = this.stageDef.quests.findIndex((q) => q.type === "boss");
@@ -449,17 +473,19 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 입력 ---------- */
     this.setupInput();
 
-    /* ---------- 사운드/BGM (v2.0 — 챕터별 전용 테마 8트랙) ---------- */
-    audio.playBGM(audio.stageBgm(stageKey));
+    /* ---------- 사운드/BGM (v2.0 — 챕터별 전용 테마 8트랙 / 실내는 마을 BGM) ---------- */
+    audio.playBGM(this.isInterior ? "village" : audio.stageBgm(stageKey));
 
-    /* ---------- 오프닝 대사 (인트로 시퀀스 중이면 인트로가 인계) ---------- */
-    if (stageKey === "village" && !savedPlayer?.playerName) {
-      // 신규 플레이어 — 책장 넘기기 대신 플레이형 인트로 (이동 → 우물 → 이름 짓기)
-      this.startIntroSequence();
-    } else {
-      this.time.delayedCall(400, () => {
-        this.showDialogue(stageIntro(stageKey));
-      });
+    /* ---------- 오프닝 대사 (인트로 시퀀스 중이면 인트로가 인계 / 실내는 연출 생략) ---------- */
+    if (!this.isInterior) {
+      if (stageKey === "village" && !savedPlayer?.playerName) {
+        // 신규 플레이어 — 책장 넘기기 대신 플레이형 인트로 (이동 → 우물 → 이름 짓기)
+        this.startIntroSequence();
+      } else {
+        this.time.delayedCall(400, () => {
+          this.showDialogue(stageIntro(stageKey));
+        });
+      }
     }
 
     EventBus.emit("ui:playing");
@@ -467,8 +493,8 @@ export class WorldScene extends Phaser.Scene {
     this.emitQuest();
     this.emitRpgState();
 
-    /* ---------- 멀티플레이 (같은 서버 접속자 동기화 — v1.7) ---------- */
-    this.initNet();
+    /* ---------- 멀티플레이 (같은 서버 접속자 동기화 — v1.7 / 실내는 제외) ---------- */
+    if (!this.isInterior) this.initNet();
 
     // 프롤로그 유예 — 입장 대사 종료 후 몬스터 즉시 공격 방지 (v2.0)
     this.agroHoldUntil = this.time.now + 2600;
@@ -566,7 +592,6 @@ export class WorldScene extends Phaser.Scene {
     const def = this.stageDef;
     const ch = parseStage(stageKey).ch;
     const rng = new Phaser.Math.RandomDataGenerator([stageKey + "-decor"]);
-    this.solidGroup = this.physics.add.staticGroup();
 
     // 마을 건물/우물/주민 영역 보호 — 장식이 집 위에 심기지 않게
     const vx = def.width / 2;
@@ -999,8 +1024,8 @@ export class WorldScene extends Phaser.Scene {
     this.addBuildingSign(cx - 400, cy - 236, "여관 — 20G 회복+저장", "#7de8ff");
     this.addBuildingSign(cx + 90, cy - 266, "전직관", "#ffd76a");
     this.addBuildingSign(cx - 190, cy + 149, "내 집 — 무료 휴식", "#9af0c8");
-    this.interactables.push({ x: cx - 400, y: cy - 96, kind: "inn", label: "여관 — 20G로 휴식+저장" });
-    this.interactables.push({ x: cx - 190, y: cy + 289, kind: "house", label: "내 집 — 휴식하기" });
+    this.interactables.push({ x: cx - 400, y: cy - 140, kind: "inn", label: "여관 — 들어가기" });
+    this.interactables.push({ x: cx - 190, y: cy + 289, kind: "house", label: "내 집 — 들어가기" });
 
     // 마을 주민 2인 — E키 상호작용 (접근 자동 트리거 제거, 바운스 애니 + 이름표 유지)
     const villagers: { x: number; y: number; tex: string; name: string; dlg: string }[] = [
@@ -1159,6 +1184,17 @@ export class WorldScene extends Phaser.Scene {
   spawnHitSpark(x: number, y: number) {
     this.hitEmitter.setParticleTint(0xfff0a0);
     this.hitEmitter.explode(5, x, y);
+
+    // v2.2 타격감 — 충격 링 (shock_ring 확산)
+    const ring = this.add.image(x, y, "shock_ring").setDepth(19).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0.85).setTint(0xfff2c0);
+    this.tweens.add({
+      targets: ring,
+      scale: 0.85,
+      alpha: 0,
+      duration: 170,
+      ease: "Cubic.out",
+      onComplete: () => ring.destroy(),
+    });
 
     // 실제 에셋 타격 스타 팝 (풀 재사용 — F4 규칙 준수)
     const s = this.starPool[this.starIdx];
@@ -1948,7 +1984,12 @@ export class WorldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
 
-    this.player.update(dt, move, this.attackQueued);
+    // 수면 연출 중 — 입력 봉인 (v2.2)
+    if (this.sleeping) {
+      this.player.update(dt, Phaser.Math.Vector2.ZERO, false);
+    } else {
+      this.player.update(dt, move, this.attackQueued);
+    }
     this.attackQueued = false;
 
     // 물약 퀵슬롯 + 상점/패널 열기 + E키 상호작용 (v1.9 — 모두 키 매핑 대응)
@@ -2253,7 +2294,13 @@ export class WorldScene extends Phaser.Scene {
     if (best === prev) return;
     this.nearInteract = best;
     const payload: InteractState = best
-      ? { active: true, label: best.label, kind: best.kind === "inn" || best.kind === "house" ? "talk" : best.kind, x: best.x, y: best.y }
+      ? {
+          active: true,
+          label: best.label,
+          kind: best.kind === "shop" ? "shop" : best.kind === "job" ? "job" : "talk",
+          x: best.x,
+          y: best.y,
+        }
       : { active: false, label: "", kind: null };
     EventBus.emit("ui:interact", payload);
     this.syncEBubble();
@@ -2286,9 +2333,9 @@ export class WorldScene extends Phaser.Scene {
     this.eBubble.setPosition(bx, by);
     this.eBubbleText?.setPosition(bx, by);
   }
-  /** E키/모바일 버튼 — 가까운 NPC 대화 시작, 전직 상담, 여관/집 휴식, 상점 열기 */
+  /** E키/모바일 버튼 — 가까운 NPC 대화 시작, 전직 상담, 건물 출입, 실내 상호작용, 상점 열기 */
   tryInteract() {
-    if (this.dialoguing || !this.player || this.player.state === "dead") return;
+    if (this.dialoguing || this.sleeping || !this.player || this.player.state === "dead") return;
     const it = this.nearInteract;
     if (!it) return;
     if (it.kind === "shop") {
@@ -2297,43 +2344,184 @@ export class WorldScene extends Phaser.Scene {
       // 전직 교관 — 상담 대사 후 전직 패널 자동 오픈 (v1.9)
       this.showDialogue("jobMaster", "jobmaster");
     } else if (it.kind === "inn") {
-      this.restAtInn();
+      this.enterInterior("interior_inn");
     } else if (it.kind === "house") {
-      this.restAtHouse();
+      this.enterInterior("interior_home");
+    } else if (it.kind === "innkeeper") {
+      // 여관주인 대사 → 대사 종료 후 취침 연출로 이어짐 (resumeFromDialogue 훅)
+      this.sleepPending = true;
+      this.showDialogue("innkeeper", "innkeeper");
+    } else if (it.kind === "bed") {
+      this.trySleep();
+    } else if (it.kind === "exit") {
+      this.leaveInterior();
     } else if (it.kind === "talk" && it.dlg) {
       this.showDialogue(it.dlg, it.npcId ?? null);
     }
   }
 
-  /* 여관 — 20G로 풀회복 + 저장 (v2.0 지시 #12) */
-  private restAtInn() {
+  /* ================= 실내(여관/내 집) + 취침 연출 (v2.2 — 사용자 지시) ================= */
+
+  /** 건물 E — 실내 맵으로 이동 (세이브 스테이지는 유지) */
+  private enterInterior(key: "interior_inn" | "interior_home") {
     if (this.restCd > 0) return;
-    if (this.player.gold < 20) {
-      this.showBanner("여관 숙박비 20G가 필요합니다");
-      return;
-    }
-    this.player.gold -= 20;
-    this.restCd = 2500;
-    this.player.healFull();
-    this.save();
+    this.restCd = 1500;
+    audio.sfx.portal();
+    this.player.state = "idle";
+    this.player.setVelocity(0, 0);
     this.cameras.main.fadeOut(420, 0, 0, 0);
     this.time.delayedCall(460, () => {
-      this.cameras.main.fadeIn(500, 0, 0, 0);
-      this.spawnPickupText(this.player.x, this.player.y - 40, "푹 쉬었다! 저장 완료", "#7de8ff");
-      this.spawnBurstAt(this.player.x, this.player.y, 10, 0x7de8ff);
+      // ⚠️ buildSave("village") — 실내는 세이브에 기록하지 않음(종료 시 마을로 복귀)
+      const carry = this.buildSave("village");
+      this.scene.restart({ stage: key, save: carry });
     });
-    this.emitRpgState();
-    this.emitHud();
   }
 
-  /* 내 집 — 무료 휴식 (풀회복, 2.5초 쿨다운) */
-  private restAtHouse() {
-    if (this.restCd > 0) return;
-    this.restCd = 2500;
-    this.player.healFull();
-    this.spawnPickupText(this.player.x, this.player.y - 40, "집에서 휴식! 완전히 회복", "#9af0c8");
-    this.spawnBurstAt(this.player.x, this.player.y, 8, 0x9af0c8);
-    this.sfxPotion();
+  /** 실내 출구 문 E — 밖(건물 앞)으로 복귀 */
+  private leaveInterior() {
+    if (this.restCd > 0 || this.sleeping) return;
+    this.restCd = 1500;
+    audio.sfx.portal();
+    this.player.state = "idle";
+    this.player.setVelocity(0, 0);
+    this.cameras.main.fadeOut(380, 0, 0, 0);
+    this.time.delayedCall(420, () => {
+      const carry = this.buildSave("village");
+      writeSave(carry);
+      const def = STAGES.village;
+      const cx = def.width / 2;
+      const cy = def.height / 2;
+      const entry = this.stageDef.key === "interior_inn"
+        ? { x: cx - 400, y: cy - 60 } // 여관 문 앞
+        : { x: cx - 190, y: cy + 330 }; // 내 집 문 앞
+      this.scene.restart({ stage: "village", save: carry, entry });
+    });
+  }
+
+  /** 취침 — 여관(20G)/내 집(무료): 암막 + Zzz 연출 → 풀회복 + 버프 + 저장 */
+  private trySleep() {
+    if (this.sleeping || this.restCd > 0) return;
+    const paid = this.stageDef.key === "interior_inn";
+    if (paid && this.player.gold < 20) {
+      this.showDialogue("innkeeperNoMoney", "innkeeper");
+      return;
+    }
+    if (paid) this.player.gold -= 20;
+    this.sleeping = true;
+    this.player.state = "idle";
+    this.player.setVelocity(0, 0);
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.emitHud();
+    this.time.delayedCall(700, () => {
+      const vw = this.scale.width;
+      const vh = this.scale.height;
+      // 암막 + Zzz 연출
+      const veil = this.add.rectangle(0, 0, vw, vh, 0x000000, 1).setOrigin(0).setScrollFactor(0).setDepth(300).setAlpha(0);
+      this.tweens.add({ targets: veil, alpha: 1, duration: 380 });
+      const zzz = this.add
+        .text(vw / 2, vh / 2 - 24, "Zzz…", {
+          fontFamily: "sans-serif", fontSize: "44px", color: "#ffe9b0", fontStyle: "bold",
+          stroke: "#000000", strokeThickness: 6,
+        })
+        .setOrigin(0.5).setScrollFactor(0).setDepth(301).setAlpha(0);
+      this.tweens.add({ targets: zzz, alpha: 1, y: "-=14", duration: 950, yoyo: true, repeat: 1, ease: "Sine.inOut" });
+      const sub = this.add
+        .text(vw / 2, vh / 2 + 40, paid ? "20G를 내고 푹 잤다…" : "내 침대에서 푹 잤다…", {
+          fontFamily: "sans-serif", fontSize: "14px", color: "#ffffffcc", fontStyle: "bold",
+        })
+        .setOrigin(0.5).setScrollFactor(0).setDepth(301).setAlpha(0);
+      this.tweens.add({ targets: sub, alpha: 1, duration: 600, delay: 300 });
+      this.time.delayedCall(2600, () => {
+        veil.destroy();
+        zzz.destroy();
+        sub.destroy();
+        this.player.healFull();
+        // 숙면 보상 — 공격력·방어력 버프 (인벤토리 지급 후 즉시 사용)
+        this.player.addBuffItem("buff_atk");
+        this.player.useBuffItem("buff_atk");
+        this.player.addBuffItem("buff_def");
+        this.player.useBuffItem("buff_def");
+        this.save();
+        this.restCd = 1500;
+        this.sleeping = false;
+        this.cameras.main.fadeIn(500, 0, 0, 0);
+        this.showBanner("푹 잤다! HP/MP 완전 회복 + 공격력·방어력 버프 (60초)");
+        this.spawnBurstAt(this.player.x, this.player.y, 12, 0xffe9b0);
+        this.emitHud();
+        this.emitRpgState();
+        if (paid) this.time.delayedCall(600, () => this.showDialogue("innkeeperSlept", "innkeeper"));
+      });
+    });
+  }
+
+  /** 실내 맵 — 나무 바닥 + 벽 + 침대/모닥불/촛불 + 여관주인(여관) + 출구 문 */
+  private buildInterior(stageKey: StageKey) {
+    const W = this.stageW;
+    const H = this.stageH;
+    const isInn = stageKey === "interior_inn";
+    this.cameras.main.setBackgroundColor("#150e08");
+
+    // 벽 + 나무판 바닥
+    this.add.rectangle(0, 0, W, 104, 0x34220f).setOrigin(0).setDepth(0);
+    this.add.rectangle(0, 96, W, 8, 0x1c1108).setOrigin(0).setDepth(1);
+    this.add.tileSprite(0, 104, W, H - 104, "tile_path").setOrigin(0).setDepth(0).setAlpha(0.96);
+    // 러그
+    this.add.ellipse(W / 2, H / 2 + 46, 330, 132, isInn ? 0x7a3030 : 0x2f5a7a, 0.55).setDepth(0);
+
+    // 상단 벽 충돌 (보이지 않는 벽)
+    const wall = this.add.rectangle(W / 2, 92, W, 28, 0x000000, 0);
+    this.solidGroup.add(wall);
+
+    // 벽 촛불 2개 — 은은한 조명
+    for (const cx of [W * 0.24, W * 0.76]) {
+      this.add.image(cx, 78, "cv_candle").setDepth(2).setScale(1.15);
+      const g = this.add.image(cx, 92, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.6).setAlpha(0.16);
+      this.tweens.add({ targets: g, alpha: 0.3, scale: 1.9, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+
+    // 침대 (그래픽 조합) — 프레임/매트리스/베개/이불
+    const bx = 92;
+    const by = 168;
+    this.add.rectangle(bx, by, 68, 100, 0x5a3a1e).setOrigin(0).setDepth(2);
+    this.add.rectangle(bx + 6, by + 6, 56, 88, 0xe8dcc4).setOrigin(0).setDepth(3);
+    this.add.rectangle(bx + 6, by + 6, 56, 24, 0xf7f2e2).setOrigin(0).setDepth(4);
+    this.add.rectangle(bx + 6, by + 42, 56, 52, isInn ? 0x3f6f8f : 0x7a4f8f).setOrigin(0).setDepth(4);
+    const bedBody = this.add.rectangle(bx + 34, by + 50, 68, 96, 0x000000, 0);
+    this.solidGroup.add(bedBody);
+
+    if (isInn) {
+      // 모닥불 — 여관 감성 (4프레임 애니메이션)
+      const fire = this.add.sprite(W - 108, 158, "sv_campfire", 0).setDepth(3);
+      if (this.anims.exists("sv-campfire")) fire.play("sv-campfire");
+      const fg = this.add.image(W - 108, 158, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setTint(0xff9a40).setScale(1.8).setAlpha(0.2);
+      this.tweens.add({ targets: fg, alpha: 0.34, scale: 2.1, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      // 카운터 + 여관주인 로안
+      this.add.rectangle(W / 2 + 40, 150, 150, 18, 0x6b4423).setOrigin(0).setDepth(3);
+      this.add.rectangle(W / 2 + 40, 132, 150, 10, 0x8a5a2e).setOrigin(0).setDepth(3);
+      const keeper = this.add.image(W / 2 + 115, 118, "npc_villager1").setDepth(4);
+      this.add
+        .text(keeper.x, keeper.y - 34, "로안", {
+          fontFamily: "sans-serif", fontSize: "11px", color: "#ffe9b0",
+          stroke: "#0a2030", strokeThickness: 4, fontStyle: "bold",
+        })
+        .setOrigin(0.5).setDepth(60);
+      this.interactables.push({ x: keeper.x, y: keeper.y + 26, kind: "innkeeper", npcId: "innkeeper", label: "로안 — 잠자기 (20G)" });
+    } else {
+      // 내 집 — 화분/선반 느낌의 소품
+      this.add.image(W - 96, 148, "fm_shrub1").setDepth(3).setScale(1.2);
+      this.add.rectangle(W * 0.62, 142, 110, 14, 0x6b4423).setOrigin(0).setDepth(3);
+    }
+
+    // 침대 상호작용
+    this.interactables.push({
+      x: bx + 34, y: by + 118,
+      kind: "bed",
+      label: isInn ? "침대 — 쉬기 (20G)" : "침대 — 쉬기",
+    });
+
+    // 출구 문 (하단 중앙)
+    this.add.image(W / 2, H - 34, "sv_door").setDepth(3);
+    this.interactables.push({ x: W / 2, y: H - 44, kind: "exit", label: "밖으로 나가기" });
   }
 
   /* ================= 전직 스토리 (v2.0 — 지시 #13) ================= */
@@ -3022,6 +3210,13 @@ export class WorldScene extends Phaser.Scene {
       for (const k of [this.keys.SPACE, this.keys.X, this.keys.Z, this.keys.C, this.keys.E]) {
         Phaser.Input.Keyboard.JustDown(k);
       }
+    }
+    // v2.2 — 여관주인 대사 종료 → 취침 연출로 자연스럽게 이어짐
+    if (this.sleepPending) {
+      this.sleepPending = false;
+      this.activeNpcId = null;
+      this.time.delayedCall(160, () => this.trySleep());
+      return;
     }
     // 주민 대화 종료 → talk 퀘스트 진행 (전직 교관은 퀘스트 카운트 제외)
     if (this.activeNpcId) {

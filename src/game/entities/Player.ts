@@ -68,6 +68,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   state: "idle" | "attack" | "dash" | "dead" = "idle";
   private atkCooldown = 0;
   private slashAlt = false; // 위/아래 교차 베기
+  private swingDone = false; // v2.2 — 스윙 판정(65ms) 완료 플래그 (공격 중 걷기 복귀용)
+  private lastMove = new Phaser.Math.Vector2(); // v2.2 — 최근 입력 이동 (러지 여부 판단)
   private hitSet: Set<unknown> = new Set();
 
   skill1Cd = 0; // 계열별 주력기 (전사 회전베기 / 궁수 관통 화살 / 마법사 매직 볼트)
@@ -140,7 +142,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // 공격 중 미세 러지 — 선형 감쇠로 "살짝" 전진 (총 이동 ~16px)
+    // 공격 중 미세 러지 — 선형 감쇠로 "살짝" 전진 (총 이동 ~16px) — v2.2: 정지 상태 공격에서만
     if (this.state === "attack" && this.lungeTime > 0) {
       this.lungeTime -= ms;
       const k = Math.max(0, this.lungeTime / Player.LUNGE_MS);
@@ -175,12 +177,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.anims.isPlaying) this.anims.stop();
         if (this.texture.key !== tex) this.setTexture(tex);
       }
-    } else if (this.state === "attack" && this.lungeTime <= 0 && move.lengthSq() > 0.01) {
-      // v2.0 (지시 #4) — 공격 중에도 이동 허용 (55% 속도 캐스팅 취소 없는 부드러운 무빙샷)
-      this.setVelocity(move.x * this.speed * 0.55, move.y * this.speed * 0.55);
-      this.facing.copy(move).normalize();
-      if (Math.abs(move.x) >= Math.abs(move.y)) this.setFlipX(move.x < 0);
+    } else if (this.state === "attack" && this.lungeTime <= 0) {
+      // v2.2 — 공격 중 이동: 입력 방향 우선(80% 속도), 러지가 입력을 덮어쓰지 않음 → 뚝 끊기는 감삭 제거
+      if (move.lengthSq() > 0.01) {
+        this.setVelocity(move.x * this.speed * 0.8, move.y * this.speed * 0.8);
+        this.facing.copy(move).normalize();
+        const horiz = Math.abs(move.x) >= Math.abs(move.y);
+        if (horiz) this.setFlipX(move.x < 0);
+        // 스윙 판정(65ms) 이후엔 걷기 애니로 복귀 — 공격 포즈로 미끄러지는 얼음막기 감삭 제거
+        if (this.swingDone) {
+          const key = horiz ? "hero-walk-side" : move.y > 0 ? "hero-walk" : "hero-walk-up";
+          if (this.anims.currentAnim?.key !== key) this.play(key);
+        }
+      } else if (this.swingDone) {
+        this.setVelocity(0, 0);
+      }
     }
+
+    // 마지막 이동 입력 기억 — doAttack에서 러지 여부 판단에 사용
+    (this.lastMove as Phaser.Math.Vector2).copy(move);
 
     // 기본 공격
     if (attackPressed && this.atkCooldown <= 0 && this.state === "idle") {
@@ -192,15 +207,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private doAttack() {
     this.state = "attack";
-    this.atkCooldown = 330;
+    this.atkCooldown = 300;
+    this.swingDone = false;
     this.slashAlt = !this.slashAlt;
     this.hitSet.clear();
 
-    // 살짝 돌진 — 미세 러지 + 넉백 조합 (사용자 피드백: 타격감)
+    // 살짝 돌진 — 정지 상태에서 공격할 때만 (이동 중엔 입력 방향 유지 — 스터터 제거 v2.2)
     const dir = this.aimDir();
-    this.lungeDir.copy(dir);
-    this.lungeTime = Player.LUNGE_MS;
-    this.setVelocity(dir.x * Player.LUNGE_SPEED, dir.y * Player.LUNGE_SPEED);
+    const moving = this.lastMove.lengthSq() > 0.01;
+    if (!moving) {
+      this.lungeDir.copy(dir);
+      this.lungeTime = Player.LUNGE_MS;
+      this.setVelocity(dir.x * Player.LUNGE_SPEED, dir.y * Player.LUNGE_SPEED);
+    } else {
+      this.lungeTime = 0;
+      // 이동 관성 유지 — 다음 프레임의 공격 중 이동 분기가 입력 방향으로 이어받음
+    }
 
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
@@ -210,6 +232,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 베기 타이밍: 65ms 후 판정+참격 스윕 (모션 2프레임 시점)
     this.scene.time.delayedCall(65, () => {
       if (this.state !== "attack") return;
+      this.swingDone = true;
       this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt);
       this.scene.sfxSwing();
       // 참격 판정 확대 — 전방 160px x 폭 116px (사용자 지시: 히트박스 크게)
@@ -219,8 +242,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(200, () => {
       if (this.state === "attack") {
         this.state = "idle";
-        // v2.0 — 공격 종료 후 이동 입력이 있으면 정지 처리하지 않음 (부드러운 이어 걷기)
-        if (this.body && (this.body.velocity.x !== 0 || this.body.velocity.y !== 0)) return;
+        // v2.2 — 이동 입력이 없을 때만 정지 (입력 중이면 다음 프레임 걷기로 자연 연결)
+        if (this.lastMove.lengthSq() > 0.01) return;
         this.setVelocity(0, 0);
       }
     });

@@ -573,6 +573,38 @@ for (let ci = 0; ci < CHAPTERS.length; ci++) {
   }
 }
 
+/* ================= 인테리어 (v2.2 — 여관/내 집 실내 맵, 사용자 지시) =================
+ *  - 건물에 E로 들어가면 실내 맵으로 이동: 여관주인과 대화 → 돈 내고 취침 연출 → 버프
+ *  - 실내는 세이브 스테이지에 기록하지 않는다(들어가기 전 구역 유지 — 종료 시 마을 앞으로 복귀)
+ */
+export type InteriorKey = "interior_inn" | "interior_home";
+
+function buildInteriorDef(key: InteriorKey): StageDef {
+  return {
+    key,
+    name: key === "interior_inn" ? "여관 로안의 실내" : "내 집",
+    subtitle: key === "interior_inn" ? "따뜻한 모닥불 냄새" : "나만의 아늑한 공간",
+    /* 카메라 줌(화면높이/560)을 채우는 최소 크기 — 레터박스 방지 (1280×720 기준 가시 1024×576) */
+    width: 1152,
+    height: 648,
+    groundTint: 0xffffff,
+    flowerCount: 0,
+    treeCount: 0,
+    rockCount: 0,
+    quests: [],
+    enemies: [],
+    boss: false,
+  };
+}
+STAGES.interior_inn = buildInteriorDef("interior_inn");
+STAGES.interior_home = buildInteriorDef("interior_home");
+NEXT_STAGE.interior_inn = null;
+NEXT_STAGE.interior_home = null;
+PREV_STAGE.interior_inn = "village";
+PREV_STAGE.interior_home = "village";
+STAGE_SHORT.interior_inn = "여관";
+STAGE_SHORT.interior_home = "내 집";
+
 /** 구 세이브 키 폴백 — v1.x 6스테이지 → 신규 체인 시작점 */
 export const LEGACY_STAGE_FALLBACK: Record<string, StageKey> = {
   forest: "forest1",
