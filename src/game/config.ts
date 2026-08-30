@@ -91,6 +91,10 @@ export type SaveData = {
   /* ↓ 친구 시스템 (v2.1 — 구 세이브 호환: 로드 시 자동 발급/기본값) */
   fcode?: string;
   friends?: { code: string; name: string }[];
+  /* ↓ 반복 토벌 의뢰 수주 해금 (v2.3 — NPC에게 말 걸어 해금, 지시 #4) */
+  repeatOn?: boolean;
+  /* ↓ 이미 본 스토리 대사 (v2.3 — 재입장 시 대사 재생 방지, 지시 #1) */
+  seen?: string[];
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */
@@ -179,6 +183,9 @@ export function loadSave(): SaveData | null {
       // 발급만으로 저장하지 않음 — 다음 writeSave 시 반영 (로드 폭주 방지)
     }
     if (!Array.isArray(d.friends)) d.friends = [];
+    // 반복 의뢰 해금/본 대사 (v2.3 — 구 세이브 호환 기본값)
+    if (typeof d.repeatOn !== "boolean") d.repeatOn = false;
+    if (!Array.isArray(d.seen)) d.seen = [];
     return d;
   } catch {
     return null;

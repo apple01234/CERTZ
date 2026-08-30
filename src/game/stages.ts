@@ -430,8 +430,9 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
   const verbs = ["토벌", "소탕", "박멸", "정찰 지원", "제거"];
   const main = labels[spec.main];
   if (quests.length < 2) {
-    // 자동 토벌 퀘스트 — 구역이 깊을수록 목표 수 증가
-    const n = 3 + sub * 2;
+    // 자동 토벌 퀘스트 — v2.3 밸런스 (지시 #4): 목표 수 상한 12 (기존 3+sub*2는 후반 21마리로 지루함)
+    // 경험치는 살짝 더 많게 — 스토리 진행이 자연스럽게 이어지도록
+    const n = Math.min(12, 4 + Math.floor(sub * 0.8));
     quests.push({
       id: `${prefix}-auto-hunt`,
       type: "hunt",
@@ -441,7 +442,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       targetKey: spec.main,
       targetLabel: main,
       reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G),
-      expReward: Math.round((45 + sub * 12) * CH_EXP[spec.num - 2] * 0.8),
+      expReward: Math.round((60 + sub * 14) * CH_EXP[spec.num - 2] * 0.9),
     });
   }
   if (sub === 9) {
@@ -483,9 +484,11 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
   const key = `${spec.key}${sub}`;
   const prefix = `${spec.key}${sub}`;
   const boss = sub === 10 && !!spec.boss;
+  /* v2.3 몬스터 증원 (지시 #2 — 마릿수 적음 + 사냥 지루함 해소):
+   *  기본 ×1.6 + 구역 보너스, 상한 11→20. 맵이 넓어도 사냥터가 텅 비지 않게 */
   const enemies = spec.enemies.map((g) => ({
     key: g.key,
-    count: Math.min(11, g.count + Math.floor(sub / 2)),
+    count: Math.min(20, Math.round(g.count * 1.6) + Math.floor(sub / 2)),
   }));
   const def: StageDef = {
     key,
@@ -579,14 +582,15 @@ for (let ci = 0; ci < CHAPTERS.length; ci++) {
  */
 export type InteriorKey = "interior_inn" | "interior_home";
 
+  /* v2.2 실내/취침 — v2.3: 정사각형 방 느낌 (사용자 지시 — 여관/집은 굳이 크게 만들지 않는다)
+   * 832×832 정사각형 + 실내 전용 카메라 줌(×1.45)으로 아늑한 한 방 연출 */
 function buildInteriorDef(key: InteriorKey): StageDef {
   return {
     key,
     name: key === "interior_inn" ? "여관 로안의 실내" : "내 집",
     subtitle: key === "interior_inn" ? "따뜻한 모닥불 냄새" : "나만의 아늑한 공간",
-    /* 카메라 줌(화면높이/560)을 채우는 최소 크기 — 레터박스 방지 (1280×720 기준 가시 1024×576) */
-    width: 1152,
-    height: 648,
+    width: 832,
+    height: 832,
     groundTint: 0xffffff,
     flowerCount: 0,
     treeCount: 0,

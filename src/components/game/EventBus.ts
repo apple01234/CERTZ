@@ -3,6 +3,11 @@ import Phaser from "phaser";
 /** Phaser 게임 ↔ React UI 사이의 유일한 통로 */
 export const EventBus = new Phaser.Events.EventEmitter();
 
+/* E2E/디버그 훅 — UI 이벤트 직접 트리거/감시용 (window.__SERTZ_EB__) */
+if (typeof window !== "undefined") {
+  (window as unknown as { __SERTZ_EB__?: unknown }).__SERTZ_EB__ = EventBus;
+}
+
 /** 활성 버프 상태 (v1.9 BM) */
 export type HudBuff = { key: string; remain: number; total: number };
 
@@ -77,6 +82,8 @@ export type QuestLogState = {
   stageName: string;
   list: { title: string; desc: string; state: "done" | "active" | "locked" }[];
   repeat: { title: string; desc: string } | null;
+  /* v2.3 — 반복 의뢰 수주 여부 (미수주 시 NPC 수주 안내 표시) */
+  repeatActive?: boolean;
 };
 
 export type EndState = {

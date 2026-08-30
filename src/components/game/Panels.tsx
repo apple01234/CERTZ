@@ -666,9 +666,11 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
   const allocate = (stat: "str" | "dex" | "int" | "luk", n: number) =>
     EventBus.emit("rpg:allocate", { stat, n });
   // v2.0 자동 배분 (지시 #18) — 클래스 계열에 맞춰 AP를 비율대로 한 번에 분배
+  // v2.3 수정 (지시 #3): 미전직(cls null)이면 familyOf가 null을 반환해 조용히 무시되는 버그
+  //  → 전사 비율(힘4:민첩1) 폴백 — 어차피 전사 계열 주스탯이라 초반 효율이 가장 좋다
   const autoAlloc = () => {
-    const fam = familyOf(rpg.cls);
-    if (!fam || rpg.ap < 1) return;
+    const fam = familyOf(rpg.cls) ?? "warrior";
+    if (rpg.ap < 1) return;
     const plan = autoAllocPlan(fam, rpg.ap);
     (Object.entries(plan) as ["str" | "dex" | "int" | "luk", number][]).forEach(([k, n]) => {
       if (n > 0) allocate(k, n);
@@ -760,7 +762,7 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
             </div>
           ))}
         </div>
-        <p className="mt-2 text-center text-[10px] text-white/40">레벨업마다 AP +5 지급 · 배분은 즉시 적용 · 자동 배분은 계열 권장 비율 (4:1) · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/40">레벨업마다 AP +5 지급 · 배분은 즉시 적용 · 자동 배분은 계열 권장 비율 (4:1, 미전직은 힘:민첩) · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -823,9 +825,12 @@ function QuestLogPanel({ questLog, onClose }: { questLog: QuestLogState; onClose
         {questLog.repeat && (
           <div className="mt-3 border-t border-white/10 pt-2.5">
             <p className="mb-1 text-[11px] font-black text-sky-200/90">반복 의뢰 (메인 체인 완료 후)</p>
-            <div className="rounded-lg border border-sky-300/25 bg-sky-500/[0.06] px-2.5 py-2">
+            <div className={`rounded-lg border px-2.5 py-2 ${questLog.repeatActive ? "border-sky-300/25 bg-sky-500/[0.06]" : "border-dashed border-white/15 bg-transparent opacity-60"}`}>
               <p className="text-[12px] font-bold text-sky-100">{questLog.repeat.title}</p>
               <p className="mt-0.5 text-[10px] text-white/55">{questLog.repeat.desc}</p>
+              {!questLog.repeatActive && (
+                <p className="mt-1 text-[10px] font-bold text-amber-200/90">🔒 미수주 — 마을 상인 라고스에게 말을 걸어 수주하자</p>
+              )}
             </div>
           </div>
         )}

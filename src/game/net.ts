@@ -91,8 +91,13 @@ export type JoinInfo = { name: string; lv: number; cls: string | null; x: number
 /* v2.0 수정 (지시 #14 — 채팅 안됨 원인):
  *  netJoin이 소켓 connect 이전에 호출되면 조용히 실패하고,
  *  서버는 join하지 않은 소켓의 채팅을 폐기 → 채팅이 영원히 안 되는 버그.
- *  → join을 대기열에 넣고 connect 이벤트에 자동 발송한다. */
+ *  → join을 대기열에 넣고 connect 이벤트에 자동 발송한다.
+ * v2.3 수정 (지시 #7 — 채팅 안됨 2차 원인):
+ *  socket.io 자동 재접속 시 서버 players 맵에서는 이미 삭제된 상태인데
+ *  클라가 join을 다시 보내지 않아 채팅/멀티가 조용히 죽는 문제.
+ *  → 마지막 join 정보(lastJoin)를 보관하고 매 connect마다 재발송한다. */
 let pendingJoin: JoinInfo | null = null;
+let lastJoin: JoinInfo | null = null;
 let joinHooked = false;
 
 function hookConnectFlush() {
@@ -100,10 +105,9 @@ function hookConnectFlush() {
   if (!s || joinHooked) return;
   joinHooked = true;
   s.on("connect", () => {
-    if (pendingJoin) {
-      s.emit("join", pendingJoin);
-      pendingJoin = null;
-    }
+    const info = pendingJoin ?? lastJoin;
+    pendingJoin = null;
+    if (info) s.emit("join", info); // 재접속 시에도 자동 재참여 — 채팅/멀티 자가 복구
   });
 }
 
@@ -111,11 +115,17 @@ export function netJoin(info: JoinInfo) {
   const s = netConnect();
   if (!s) return;
   hookConnectFlush();
+  lastJoin = info; // v2.3 — 재접속 재참여용 최신 상태 보관
   pendingJoin = info; // 최신 상태로 갱신 (리스폰/스테이지 이동 재합류 대응)
   if (s.connected) {
     s.emit("join", info);
     pendingJoin = null;
   }
+}
+
+/** 채팅 가능 여부 — 미연결이면 UI에서 안내 메시지를 보여준다 (v2.3, 지시 #7) */
+export function netChatReady(): boolean {
+  return !!socket?.connected;
 }
 
 export type NetState = {

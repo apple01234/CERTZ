@@ -1,0 +1,648 @@
+     1→/**
+     2→ * SERTZ 스테이지 시스템 (v2.0 — 사용자 지시 #6/#19 반영)
+     3→ *  - 챕터(해역) 9개 × 구역(sub-stage) 10개 = 90 필드 + 시작 마을
+     4→ *  - 챕터가 1씩 증가할수록 어렵고 스토리가 길어짐 (난이도/보상 곡선 내장)
+     5→ *  - 구역 5 = 정예 토벌(미드 보스급), 구역 10 = 챕터 보스 결전
+     6→ *  - 이전 작업분(v1.5) 스토리 데이터(대사/보스/몬스터/퀘스트) 전부 이관 + 복귀 차원문 체인
+     7→ */
+     8→
+     9→/* ================= 타입 ================= */
+    10→
+    11→export type ChapterKey =
+    12→  | "forest" | "kingdom" | "alfheim" | "muspelheim" | "niflheim"
+    13→  | "cave" | "nidavellir" | "hel" | "abyss";
+    14→
+    15→/** 스테이지 키 — "village" | "forest1".."abyss10" (구 세이브 키도 런타임 폴백 처리) */
+    16→export type StageKey = string;
+    17→
+    18→export type EnemyKey =
+    19→  | "wolf" | "minion" | "spider" | "golem" | "frostwolf" | "icegolem" | "wraith"
+    20→  | "swampbeast" | "emberwolf" | "firespirit" | "runegolem" | "helhound";
+    21→
+    22→export type EnemyDef = {
+    23→  key: EnemyKey;
+    24→  name: string;
+    25→  hp: number;
+    26→  atk: number;
+    27→  speed: number;
+    28→  aggro: number;
+    29→  exp: number;
+    30→  scale?: number;
+    31→  /** 골드 드롭 범위 (2D MMORPG 기본 요소) */
+    32→  gold: [number, number];
+    33→  /** 물약 드롭 확률 */
+    34→  dropHp?: number;
+    35→  dropMp?: number;
+    36→};
+    37→
+    38→export type QuestDef = {
+    39→  id: string;
+    40→  type: "collect" | "hunt" | "reach" | "boss" | "talk";
+    41→  title: string;
+    42→  desc: string;
+    43→  need?: number;
+    44→  targetKey?: EnemyKey;
+    45→  targetLabel: string;
+    46→  reward?: number;
+    47→  expReward?: number;
+    48→  dialogue?: string;
+    49→};
+    50→
+    51→export type BossKey =
+    52→  | "guardian" | "behemoth" | "abysslord"
+    53→  | "nidhog" | "surt" | "fenrir" | "skoll" | "gram" | "abudditos";
+    54→
+    55→export type BossAttackKind = "slam" | "charge" | "volley" | "ring" | "zones" | "summon";
+    56→
+    57→export type BossDef = {
+    58→  key: BossKey;
+    59→  name: string;
+    60→  hp: number;
+    61→  atk: number;
+    62→  speed: number;
+    63→  exp: number;
+    64→  gold: number;
+    65→  tex: string;
+    66→  orbTint: number;
+    67→  introDialogue: string;
+    68→  patterns: { p1: BossAttackKind[]; p2: BossAttackKind[]; p3: BossAttackKind[] };
+    69→  summonKey?: EnemyKey;
+    70→};
+    71→
+    72→export type StageDef = {
+    73→  key: StageKey;
+    74→  name: string;
+    75→  subtitle: string;
+    76→  width: number;
+    77→  height: number;
+    78→  groundTint: number;
+    79→  flowerCount: number;
+    80→  treeCount: number;
+    81→  rockCount: number;
+    82→  quests: QuestDef[];
+    83→  enemies: { key: EnemyKey; count: number }[];
+    84→  boss: boolean;
+    85→  bossKey?: BossKey;
+    86→  /** 구역 5 정예 몬스터 (미드 보스급 단일 스폰) */
+    87→  elite?: { key: EnemyKey; hpMult: number; atkMult: number; name: string };
+    88→  repeat?: { targetKey: EnemyKey; need: number; gold: number; exp: number; title: string; desc: string };
+    89→};
+    90→
+    91→/* ================= 챕터 스펙 ================= */
+    92→
+    93→type StoryBeat = { sub: number; dialogue: string };
+    94→
+    95→type ChapterSpec = {
+    96→  key: ChapterKey;
+    97→  /** 장 번호 (제2장~제10장 — village가 제1장) */
+    98→  num: number;
+    99→  title: string;
+   100→  subtitle: string;
+   101→  intro: string;
+   102→  /** 구역 10 챕터 보스 */
+   103→  boss?: BossKey;
+   104→  /** 보스 격파 후 도달 구역의 대사 (차원문 개방 전 스토리) */
+   105→  bossDone: string;
+   106→  width: number;
+   107→  height: number;
+   108→  groundTint: number;
+   109→  groundTex: string;
+   110→  pathTex: string;
+   111→  bg: string;
+   112→  flowers: number;
+   113→  trees: number;
+   114→  rocks: number;
+   115→  enemies: { key: EnemyKey; count: number }[];
+   116→  /** 챕터 대표 몬스터 (반복 의뢰/정예 대상) */
+   117→  main: EnemyKey;
+   118→  /** 스토리 배치 — 고정 퀘스트가 놓일 구역 (비는 구역은 자동 토벌 퀘스트로 채움) */
+   119→  beats: (StoryBeat & { quest: QuestDef })[];
+   120→  repeat: { need: number; gold: number; exp: number; title: string; desc: string };
+   121→};
+   122→
+   123→/* 보상 밸런스 (사용자 지시 #6 — 골드 과다 지급 수정: 기존 기준 ×0.8) */
+   124→const G = 0.8;
+   125→
+   126→export const CHAPTERS: ChapterSpec[] = [
+   127→  {
+   128→    key: "forest", num: 2, title: "숲의 신전", subtitle: "미드가르드 서쪽 숲",
+   129→    intro: "intro", boss: "guardian", bossDone: "wolvesDone",
+   130→    width: 2400, height: 1350, groundTint: 0x9adf6a, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0a1408",
+   131→    flowers: 10, trees: 14, rocks: 8,
+   132→    enemies: [{ key: "wolf", count: 5 }],
+   133→    main: "wolf",
+   134→    beats: [
+   135→      { sub: 2, dialogue: "fragment", quest: { id: "f0", type: "collect", title: "보석의 흔적 찾기", desc: "숲 어딘가 빛을 내는 보석의 흔적을 찾아 주워 보자. 아부디토스가 기다린다.", targetLabel: "보석의 흔적", reward: Math.round(40 * G), expReward: 35 } },
+   136→      { sub: 3, dialogue: "", quest: { id: "f1", type: "hunt", title: "숲의 늑대 토벌", desc: "신전으로 가는 길을 막는 미드가르드 늑대 4마리를 처치하자.", need: 4, targetKey: "wolf", targetLabel: "늑대", reward: Math.round(60 * G), expReward: 40 } },
+   137→      { sub: 6, dialogue: "wolfRoutDone", quest: { id: "f2", type: "hunt", title: "능대 무리 소멸", desc: "어둠에 미친 늑대 무리 10마리를 더 처치하자!", need: 10, targetKey: "wolf", targetLabel: "늑대", reward: Math.round(110 * G), expReward: 90 } },
+   138→      { sub: 8, dialogue: "", quest: { id: "f3", type: "collect", title: "능대들이 지키던 보석", desc: "능대들이 지키던 곳에서 또 하나의 빛이 느껴진다.", targetLabel: "보석의 흔적", reward: Math.round(60 * G), expReward: 45 } },
+   139→    ],
+   140→    repeat: { need: 8, gold: Math.round(70 * G), exp: 70, title: "[반복] 늑대 토벌 의뢰", desc: "마을 토벌 의뢰 — 늑대를 계속 사냥해 골드와 경험치를 얻자." },
+   141→  },
+   142→  {
+   143→    key: "kingdom", num: 3, title: "쿠소디아", subtitle: "선박의 왕국 · 늪지대",
+   144→    intro: "kingdomIntro", boss: "behemoth", bossDone: "kingdomDone",
+   145→    width: 2200, height: 1250, groundTint: 0x86c95e, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0d1808",
+   146→    flowers: 8, trees: 9, rocks: 6,
+   147→    enemies: [{ key: "swampbeast", count: 6 }],
+   148→    main: "swampbeast",
+   149→    beats: [
+   150→      { sub: 2, dialogue: "", quest: { id: "k1", type: "collect", title: "능지 속 보석의 조각", desc: "식인초들이 품고 있던 보석의 조각을 되찾자.", targetLabel: "보석의 흔적", reward: Math.round(80 * G), expReward: 70 } },
+   151→      { sub: 3, dialogue: "", quest: { id: "k0", type: "hunt", title: "능지의 식인초 소탕", desc: "보석의 기운을 먹고 자란 늪의 식인초 6그루를 처치하자.", need: 6, targetKey: "swampbeast", targetLabel: "식인초", reward: Math.round(90 * G), expReward: 80 } },
+   152→      { sub: 5, dialogue: "", quest: { id: "k2", type: "hunt", title: "왕국 신뢰 얻기", desc: "기사단을 도와 식인초 무리 8그루를 더 베어 내자!", need: 8, targetKey: "swampbeast", targetLabel: "식인초", reward: Math.round(140 * G), expReward: 130 } },
+   153→      { sub: 7, dialogue: "swampDone", quest: { id: "k3", type: "hunt", title: "왕국의 위협 제거", desc: "능지의 어둠이 짙어진다 — 식인초 10그루를 처치하자!", need: 10, targetKey: "swampbeast", targetLabel: "식인초", reward: Math.round(170 * G), expReward: 160 } },
+   154→    ],
+   155→    repeat: { need: 10, gold: Math.round(100 * G), exp: 100, title: "[반복] 늪지 정화 의뢰", desc: "쿠소디아 기사단 의뢰 — 식인초를 계속 사냥하자." },
+   156→  },
+   157→  {
+   158→    key: "alfheim", num: 4, title: "알프헤임", subtitle: "요정의 성전 · 숲의 보석",
+   159→    intro: "alfheimIntro", boss: "nidhog", bossDone: "guardianDone",
+   160→    width: 1900, height: 1080, groundTint: 0x8f7fd8, groundTex: "tile_dark", pathTex: "tile_path", bg: "#0d0a1e",
+   161→    flowers: 6, trees: 10, rocks: 10,
+   162→    enemies: [{ key: "minion", count: 5 }],
+   163→    main: "minion",
+   164→    beats: [
+   165→      { sub: 2, dialogue: "", quest: { id: "a0", type: "hunt", title: "하수인 소탕", desc: "니드호그가 부린 심연의 하수인 5마리를 처치해 성전의 길을 열자.", need: 5, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(80 * G), expReward: 65 } },
+   166→      { sub: 3, dialogue: "", quest: { id: "a1", type: "collect", title: "여왕의 가호", desc: "하수인들이 숨겨둔 보석의 조각을 회수해 여왕에게 바치자.", targetLabel: "보석의 흔적", reward: Math.round(80 * G), expReward: 55 } },
+   167→      { sub: 6, dialogue: "minionPurgeDone", quest: { id: "a2", type: "hunt", title: "성전 지키기", desc: "니드호그를 부르는 의식을 막자 — 하수인 12마리 처치!", need: 12, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(150 * G), expReward: 140 } },
+   168→    ],
+   169→    repeat: { need: 10, gold: Math.round(95 * G), exp: 95, title: "[반복] 성전 순찰 의뢰", desc: "요정 여왕의 의뢰 — 하수인을 계속 처치해 훈련하자." },
+   170→  },
+   171→  {
+   172→    key: "muspelheim", num: 5, title: "무스펠헤임", subtitle: "극열의 해역 · 화산 지대",
+   173→    intro: "muspelIntro", boss: "surt", bossDone: "surtDone",
+   174→    width: 2200, height: 1250, groundTint: 0xd88a4a, groundTex: "tile_magma", pathTex: "tile_magma_path", bg: "#1c0d06",
+   175→    flowers: 0, trees: 4, rocks: 12,
+   176→    enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 4 }],
+   177→    main: "emberwolf",
+   178→    beats: [
+   179→      { sub: 2, dialogue: "", quest: { id: "m0", type: "hunt", title: "불꽃 늑대 사냥", desc: "네바다를 내달리는 불꽃 늑대 6마리를 처치하자.", need: 6, targetKey: "emberwolf", targetLabel: "불꽃 늑대", reward: Math.round(150 * G), expReward: 140 } },
+   180→      { sub: 4, dialogue: "", quest: { id: "m1", type: "hunt", title: "화염 정령 진압", desc: "열이 가장 강한 날 — 화염 정령 5마리를 처치하자.", need: 5, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(170 * G), expReward: 150 } },
+   181→      { sub: 5, dialogue: "", quest: { id: "m2", type: "collect", title: "화염 속의 빛", desc: "용암 사이에서 보석의 조각이 반짝인다. 회수하자.", targetLabel: "보석의 흔적", reward: Math.round(100 * G), expReward: 95 } },
+   182→      { sub: 7, dialogue: "spiritPurgeDone", quest: { id: "m3", type: "hunt", title: "호족촌 구원", desc: "엘렌을 도와 — 지하도시를 노리는 화염 정령 10마리를 처치하자!", need: 10, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(220 * G), expReward: 200 } },
+   183→    ],
+   184→    repeat: { need: 10, gold: Math.round(130 * G), exp: 130, title: "[반복] 화산 지대 순찰 의뢰", desc: "호족촌 의뢰 — 불꽃 늑대를 계속 사냥하자." },
+   185→  },
+   186→  {
+   187→    key: "niflheim", num: 6, title: "니플헤임", subtitle: "극한의 해역 · 얼음의 성전",
+   188→    intro: "niflIntro", boss: "fenrir", bossDone: "fenrirDone",
+   189→    width: 2100, height: 1200, groundTint: 0xdfeaf8, groundTex: "tile_snow", pathTex: "tile_ice", bg: "#0c1826",
+   190→    flowers: 0, trees: 10, rocks: 10,
+   191→    enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }],
+   192→    main: "frostwolf",
+   193→    beats: [
+   194→      { sub: 2, dialogue: "", quest: { id: "n0", type: "hunt", title: "서리 늑대 사냥", desc: "설원을 유랑하는 서리 늑대 6마리를 처치하자.", need: 6, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(130 * G), expReward: 120 } },
+   195→      { sub: 4, dialogue: "", quest: { id: "n1", type: "hunt", title: "얼음 골렘 격파", desc: "성전 길을 얼리고 있는 얼음 골렘 4기를 격파하자.", need: 4, targetKey: "icegolem", targetLabel: "얼음 골렘", reward: Math.round(170 * G), expReward: 150 } },
+   196→      { sub: 6, dialogue: "", quest: { id: "n2", type: "collect", title: "얼음 속의 보석", desc: "얼음 결정 사이에서 보석의 빛이 반짝인다.", targetLabel: "보석의 흔적", reward: Math.round(100 * G), expReward: 90 } },
+   197→      { sub: 7, dialogue: "frostRoutDone", quest: { id: "n3", type: "hunt", title: "설원 정화", desc: "펜리르의 권속인 서리 늑대 12마리를 처치하자!", need: 12, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(210 * G), expReward: 190 } },
+   198→    ],
+   199→    repeat: { need: 12, gold: Math.round(145 * G), exp: 145, title: "[반복] 설원 순찰 의뢰", desc: "니플헤임 정찰 의뢰 — 서리 늑대를 계속 사냥하자." },
+   200→  },
+   201→  {
+   202→    key: "cave", num: 7, title: "스바르트알프헤임", subtitle: "어둠 요정들의 해역 · 수정 광맥",
+   203→    intro: "caveIntro", boss: "abysslord", bossDone: "caveDone",
+   204→    width: 2100, height: 1200, groundTint: 0x8a6a4a, groundTex: "tile_cave", pathTex: "tile_path_dark", bg: "#100a08",
+   205→    flowers: 0, trees: 0, rocks: 14,
+   206→    enemies: [{ key: "spider", count: 5 }, { key: "golem", count: 3 }],
+   207→    main: "spider",
+   208→    beats: [
+   209→      { sub: 2, dialogue: "", quest: { id: "c0", type: "collect", title: "지하 깊은 곳의 빛", desc: "어둠 요정들의 지하 어딘가에서 보석의 조각이 빛나고 있다.", targetLabel: "보석의 흔적", reward: Math.round(60 * G), expReward: 65 } },
+   210→      { sub: 3, dialogue: "", quest: { id: "c1", type: "hunt", title: "동굴 거미 소탕", desc: "어둠에 물든 동굴 거미 6마리를 처치하자.", need: 6, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(90 * G), expReward: 80 } },
+   211→      { sub: 5, dialogue: "", quest: { id: "c2", type: "hunt", title: "수정 골렘 파괴", desc: "거미들을 조종하는 수정 골렘 4기를 부숴 버리자.", need: 4, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(130 * G), expReward: 110 } },
+   212→      { sub: 7, dialogue: "spiderDone", quest: { id: "c3", type: "hunt", title: "지하 정화", desc: "거미 둥지를 완전히 태우자 — 거미 10마리 처치!", need: 10, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(160 * G), expReward: 150 } },
+   213→      { sub: 8, dialogue: "", quest: { id: "c4", type: "collect", title: "여왕의 두 번째 부탁", desc: "어둠 요정 여왕의 마지막 부탁 — 뿌리 사이의 잔광을 회수하자.", targetLabel: "보석의 흔적", reward: Math.round(70 * G), expReward: 70 } },
+   214→    ],
+   215→    repeat: { need: 10, gold: Math.round(115 * G), exp: 115, title: "[반복] 지하 정화 의뢰", desc: "어둠 요정 여왕의 의뢰 — 거미를 계속 사냥하자." },
+   216→  },
+   217→  {
+   218→    key: "nidavellir", num: 8, title: "니다벨리르", subtitle: "난쟁이들의 해역 · 룬 광산",
+   219→    intro: "nidavellirIntro", boss: "skoll", bossDone: "skollDone",
+   220→    width: 2100, height: 1200, groundTint: 0x9a8a6a, groundTex: "tile_stone", pathTex: "tile_path_dark", bg: "#121008",
+   221→    flowers: 0, trees: 0, rocks: 16,
+   222→    enemies: [{ key: "runegolem", count: 4 }, { key: "golem", count: 2 }],
+   223→    main: "runegolem",
+   224→    beats: [
+   225→      { sub: 2, dialogue: "", quest: { id: "d0", type: "hunt", title: "룬 골렘 정지", desc: "폭주한 룬 골렘 5기를 정지시키자.", need: 5, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(200 * G), expReward: 180 } },
+   226→      { sub: 4, dialogue: "", quest: { id: "d1", type: "collect", title: "룬 각인 판", desc: "광산 깊은 곳의 보석 조각 — 룬 각인판을 회수하자.", targetLabel: "보석의 흔적", reward: Math.round(120 * G), expReward: 110 } },
+   227→      { sub: 6, dialogue: "runePurgeDone", quest: { id: "d2", type: "hunt", title: "광산 탈환", desc: "난쟁이 마을을 되돌리자 — 룬 골렘 10기 처치!", need: 10, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(260 * G), expReward: 230 } },
+   228→      { sub: 8, dialogue: "", quest: { id: "d3", type: "hunt", title: "수정 골렘 정리", desc: "광산을 어지럽히는 수정 골렘 4기를 부수자.", need: 4, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(220 * G), expReward: 200 } },
+   229→    ],
+   230→    repeat: { need: 10, gold: Math.round(150 * G), exp: 150, title: "[반복] 광산 경비 의뢰", desc: "난쟁이 광산 조합 의뢰 — 룬 골렘을 계속 처치하자." },
+   231→  },
+   232→  {
+   233→    key: "hel", num: 9, title: "헬", subtitle: "절벽 너머의 해역 · 대전쟁의 땅",
+   234→    intro: "helIntro", boss: "gram", bossDone: "gramDone",
+   235→    width: 2100, height: 1200, groundTint: 0x4a3a5a, groundTex: "tile_hel", pathTex: "tile_path_dark", bg: "#0d0616",
+   236→    flowers: 0, trees: 6, rocks: 12,
+   237→    enemies: [{ key: "helhound", count: 5 }, { key: "wraith", count: 3 }],
+   238→    main: "helhound",
+   239→    beats: [
+   240→      { sub: 2, dialogue: "", quest: { id: "h0", type: "hunt", title: "헬 하운드 사냥", desc: "절벽을 지키는 헬 하운드 6마리를 처치하자.", need: 6, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(260 * G), expReward: 240 } },
+   241→      { sub: 3, dialogue: "", quest: { id: "h1", type: "collect", title: "대지의 결정", desc: "절벽 아래 대지의 결정 — 보석의 흔적을 회수하자.", targetLabel: "보석의 흔적", reward: Math.round(150 * G), expReward: 140 } },
+   242→      { sub: 5, dialogue: "houndPurgeDone", quest: { id: "h2", type: "hunt", title: "절벽 열기", desc: "헬 하운드 12마리를 처치해 저택의 문을 열자!", need: 12, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(320 * G), expReward: 290 } },
+   243→      { sub: 7, dialogue: "", quest: { id: "h3", type: "hunt", title: "심연 유령 소탕", desc: "일기장을 지키는 심연 유령 6마리를 처치하자.", need: 6, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(280 * G), expReward: 260 } },
+   244→    ],
+   245→    repeat: { need: 10, gold: Math.round(175 * G), exp: 175, title: "[반복] 절벽 정찰 의뢰", desc: "헬의 기운이 강해지고 있다 — 하운드를 계속 처치하자." },
+   246→  },
+   247→  {
+   248→    key: "abyss", num: 10, title: "아뜰란티스", subtitle: "요르문간드의 바다 · 왕좌",
+   249→    intro: "abyssIntro", boss: "abudditos", bossDone: "victory",
+   250→    width: 1800, height: 1050, groundTint: 0x3a2c52, groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#0d0616",
+   251→    flowers: 0, trees: 0, rocks: 12,
+   252→    enemies: [{ key: "wraith", count: 5 }],
+   253→    main: "wraith",
+   254→    beats: [
+   255→      { sub: 2, dialogue: "", quest: { id: "y0", type: "hunt", title: "바다의 유령 소탕", desc: "왕좌를 지키는 심연 유령 4마리를 처치하자.", need: 4, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(150 * G), expReward: 140 } },
+   256→      { sub: 4, dialogue: "", quest: { id: "y1", type: "collect", title: "빼앗긴 빛의 흔적", desc: "아부디토스가 삼키지 못한 보석의 흔적을 회수하자.", targetLabel: "보석의 흔적", reward: Math.round(120 * G), expReward: 110 } },
+   257→      { sub: 6, dialogue: "wraithDone", quest: { id: "y2", type: "hunt", title: "왕좌 앞길 열기", desc: "심연 유령 10마리를 처치해 왕좌의 문을 열자!", need: 10, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(240 * G), expReward: 220 } },
+   258→    ],
+   259→    repeat: { need: 12, gold: Math.round(165 * G), exp: 165, title: "[반복] 왕좌 정찰 의뢰", desc: "바다의 기운이 강해지고 있다 — 유령을 계속 처치하자." },
+   260→  },
+   261→];
+   262→
+   263→/* ================= 몬스터 정의 (v1.5 데이터 이관) ================= */
+   264→
+   265→export const ENEMIES: Record<EnemyKey, EnemyDef> = {
+   266→  wolf: { key: "wolf", name: "이그드라실 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 24, gold: [5, 8], dropHp: 0.3, dropMp: 0.2 },
+   267→  minion: { key: "minion", name: "심연 하수인", hp: 78, atk: 18, speed: 108, aggro: 320, exp: 36, gold: [9, 13], dropHp: 0.32, dropMp: 0.24 },
+   268→  spider: { key: "spider", name: "동굴 거미", hp: 88, atk: 19, speed: 122, aggro: 320, exp: 48, gold: [10, 14], dropHp: 0.3, dropMp: 0.22 },
+   269→  golem: { key: "golem", name: "수정 골렘", hp: 148, atk: 24, speed: 78, aggro: 260, exp: 70, gold: [14, 21], dropHp: 0.34, dropMp: 0.26 },
+   270→  frostwolf: { key: "frostwolf", name: "서리 늑대", hp: 112, atk: 25, speed: 146, aggro: 340, exp: 62, gold: [12, 18], dropHp: 0.3, dropMp: 0.22 },
+   271→  icegolem: { key: "icegolem", name: "얼음 골렘", hp: 170, atk: 29, speed: 74, aggro: 260, exp: 80, gold: [17, 23], dropHp: 0.34, dropMp: 0.26 },
+   272→  wraith: { key: "wraith", name: "심연 유령", hp: 130, atk: 28, speed: 100, aggro: 340, exp: 76, gold: [15, 22], dropHp: 0.32, dropMp: 0.26 },
+   273→  swampbeast: { key: "swampbeast", name: "늪의 식인초", hp: 95, atk: 20, speed: 96, aggro: 300, exp: 55, gold: [10, 15], dropHp: 0.3, dropMp: 0.22 },
+   274→  emberwolf: { key: "emberwolf", name: "불꽃 늑대", hp: 150, atk: 31, speed: 150, aggro: 340, exp: 85, gold: [14, 21], dropHp: 0.3, dropMp: 0.22 },
+   275→  firespirit: { key: "firespirit", name: "화염 정령", hp: 175, atk: 34, speed: 92, aggro: 300, exp: 100, gold: [17, 24], dropHp: 0.34, dropMp: 0.26 },
+   276→  runegolem: { key: "runegolem", name: "룬 골렘", hp: 210, atk: 37, speed: 72, aggro: 260, exp: 115, gold: [19, 28], dropHp: 0.34, dropMp: 0.26 },
+   277→  helhound: { key: "helhound", name: "헬 하운드", hp: 190, atk: 36, speed: 148, aggro: 360, exp: 105, gold: [18, 25], dropHp: 0.32, dropMp: 0.26 },
+   278→};
+   279→
+   280→/* ================= 보스 정의 (v1.5 데이터 이관 + 챕터 보강) ================= */
+   281→
+   282→export const BOSS_DEFS: Record<BossKey, BossDef> = {
+   283→  guardian: {
+   284→    key: "guardian", name: "심연의 수호자",
+   285→    hp: 3200, atk: 24, speed: 92, exp: 320, gold: 220,
+   286→    tex: "boss", orbTint: 0x9d7aff, introDialogue: "bossIntroGuardian",
+   287→    patterns: {
+   288→      p1: ["slam", "charge", "volley"],
+   289→      p2: ["slam", "charge", "volley", "ring"],
+   290→      p3: ["slam", "charge", "volley", "ring", "zones"],
+   291→    },
+   292→  },
+   293→  behemoth: {
+   294→    key: "behemoth", name: "눈보라의 거수",
+   295→    hp: 5200, atk: 31, speed: 84, exp: 500, gold: 300,
+   296→    tex: "boss2", orbTint: 0x8ad4ff, introDialogue: "bossIntroBehemoth",
+   297→    patterns: {
+   298→      p1: ["slam", "volley", "zones"],
+   299→      p2: ["slam", "charge", "volley", "zones", "ring"],
+   300→      p3: ["slam", "charge", "volley", "zones", "ring"],
+   301→    },
+   302→  },
+   303→  abysslord: {
+   304→    key: "abysslord", name: "심연의 군주",
+   305→    hp: 8500, atk: 38, speed: 98, exp: 800, gold: 420,
+   306→    tex: "boss3", orbTint: 0xff5a7a, introDialogue: "bossIntroLord",
+   307→    patterns: {
+   308→      p1: ["volley", "charge", "slam"],
+   309→      p2: ["volley", "charge", "ring", "zones"],
+   310→      p3: ["volley", "charge", "ring", "zones", "summon"],
+   311→    },
+   312→    summonKey: "wraith",
+   313→  },
+   314→  nidhog: {
+   315→    key: "nidhog", name: "탐식의 드래곤 니드호그",
+   316→    hp: 3600, atk: 26, speed: 90, exp: 380, gold: 260,
+   317→    tex: "boss_nidhog", orbTint: 0x7dff9a, introDialogue: "bossIntroNidhog",
+   318→    patterns: {
+   319→      p1: ["slam", "charge", "volley"],
+   320→      p2: ["slam", "charge", "volley", "ring"],
+   321→      p3: ["slam", "charge", "volley", "ring", "zones"],
+   322→    },
+   323→    summonKey: "swampbeast",
+   324→  },
+   325→  surt: {
+   326→    key: "surt", name: "분노의 정령 수르트",
+   327→    hp: 5400, atk: 33, speed: 88, exp: 560, gold: 340,
+   328→    tex: "boss_surt", orbTint: 0xffa05a, introDialogue: "bossIntroSurt",
+   329→    patterns: {
+   330→      p1: ["slam", "volley", "zones"],
+   331→      p2: ["slam", "charge", "volley", "zones", "ring"],
+   332→      p3: ["slam", "charge", "volley", "zones", "ring"],
+   333→    },
+   334→  },
+   335→  fenrir: {
+   336→    key: "fenrir", name: "탐욕의 늑대 펜리르",
+   337→    hp: 7400, atk: 36, speed: 96, exp: 640, gold: 380,
+   338→    tex: "boss_fenrir", orbTint: 0xc08aff, introDialogue: "bossIntroFenrir",
+   339→    patterns: {
+   340→      p1: ["charge", "volley", "ring"],
+   341→      p2: ["slam", "charge", "volley", "zones"],
+   342→      p3: ["slam", "charge", "volley", "zones", "ring"],
+   343→    },
+   344→  },
+   345→  skoll: {
+   346→    key: "skoll", name: "교만의 쌍두 스콜&하티",
+   347→    hp: 8600, atk: 39, speed: 100, exp: 720, gold: 420,
+   348→    tex: "boss_skoll", orbTint: 0xffd97a, introDialogue: "bossIntroSkoll",
+   349→    patterns: {
+   350→      p1: ["volley", "charge", "slam"],
+   351→      p2: ["volley", "charge", "ring", "zones"],
+   352→      p3: ["volley", "charge", "ring", "zones", "summon"],
+   353→    },
+   354→    summonKey: "runegolem",
+   355→  },
+   356→  gram: {
+   357→    key: "gram", name: "대지의 괴물 그람",
+   358→    hp: 10600, atk: 42, speed: 86, exp: 860, gold: 480,
+   359→    tex: "boss_gram", orbTint: 0x8affc0, introDialogue: "bossIntroGram",
+   360→    patterns: {
+   361→      p1: ["slam", "charge", "volley", "zones"],
+   362→      p2: ["slam", "charge", "volley", "ring", "zones"],
+   363→      p3: ["slam", "charge", "volley", "ring", "zones", "summon"],
+   364→    },
+   365→    summonKey: "helhound",
+   366→  },
+   367→  abudditos: {
+   368→    key: "abudditos", name: "대악마 아부디토스",
+   369→    hp: 14500, atk: 46, speed: 100, exp: 1200, gold: 650,
+   370→    tex: "boss_abudditos", orbTint: 0xff3a6a, introDialogue: "bossIntroAbudditos",
+   371→    patterns: {
+   372→      p1: ["volley", "charge", "ring"],
+   373→      p2: ["volley", "charge", "ring", "zones", "summon"],
+   374→      p3: ["slam", "charge", "volley", "ring", "zones", "summon"],
+   375→    },
+   376→    summonKey: "helhound",
+   377→  },
+   378→};
+   379→
+   380→/* ================= 스테이지 생성기 ================= */
+   381→
+   382→/** 챕터별 난이도 배율 (인덱스 = 장번호-2 → forest(2장)부터) */
+   383→const CH_HP = [1, 1.2, 1.55, 1.95, 2.45, 3.0, 3.7, 4.5, 5.4];
+   384→const CH_ATK = [1, 1.12, 1.28, 1.48, 1.7, 1.95, 2.25, 2.6, 3.0];
+   385→const CH_EXP = [1, 1.35, 1.8, 2.35, 3.0, 3.8, 4.8, 6.0, 7.5];
+   386→
+   387→/** 스테이지 키 → {챕터, 구역} 파싱 */
+   388→export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: number } {
+   389→  if (key === "village" || !key) return { ch: "village", sub: 0 };
+   390→  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss)([1-9]|10)$/.exec(key);
+   391→  if (!m) return { ch: "village", sub: 0 };
+   392→  return { ch: m[1] as ChapterKey, sub: parseInt(m[2], 10) };
+   393→}
+   394→
+   395→export function chapterSpec(key: StageKey): ChapterSpec | null {
+   396→  const { ch } = parseStage(key);
+   397→  return CHAPTERS.find((c) => c.key === ch) ?? null;
+   398→}
+   399→
+   400→/** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스) */
+   401→export function stageScale(key: StageKey): { hp: number; atk: number; exp: number; gold: number } {
+   402→  const spec = chapterSpec(key);
+   403→  if (!spec) return { hp: 1, atk: 1, exp: 1, gold: 1 };
+   404→  const { sub } = parseStage(key);
+   405→  const i = spec.num - 2;
+   406→  const subMul = 1 + (sub - 1) * 0.055;
+   407→  return {
+   408→    hp: CH_HP[i] * subMul,
+   409→    atk: CH_ATK[i] * (1 + (sub - 1) * 0.045),
+   410→    exp: CH_EXP[i] * subMul,
+   411→    gold: (1 + i * 0.42) * subMul,
+   412→  };
+   413→}
+   414→
+   415→/** 구역 5 정예 이름 */
+   416→const ELITE_TITLE = ["정예", "광포한", "심연에 물든", "각성한", "포화의", "얼어붙은", "먹이는", "폭주하는", "절규하는", "종언의"];
+   417→
+   418→function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[] {
+   419→  const quests: QuestDef[] = [];
+   420→  const beat = spec.beats.find((b) => b.sub === sub);
+   421→  if (beat) {
+   422→    quests.push({ ...beat.quest, id: `${prefix}-${beat.quest.id}` });
+   423→  }
+   424→  const labels: Record<EnemyKey, string> = {
+   425→    wolf: "늑대", minion: "심연 하수인", spider: "동굴 거미", golem: "수정 골렘",
+   426→    frostwolf: "서리 늑대", icegolem: "얼음 골렘", wraith: "심연 유령",
+   427→    swampbeast: "식인초", emberwolf: "불꽃 늑대", firespirit: "화염 정령",
+   428→    runegolem: "룬 골렘", helhound: "헬 하운드",
+   429→  };
+   430→  const verbs = ["토벌", "소탕", "박멸", "정찰 지원", "제거"];
+   431→  const main = labels[spec.main];
+   432→  if (quests.length < 2) {
+   433→    // 자동 토벌 퀘스트 — 구역이 깊을수록 목표 수 증가
+   434→    const n = 3 + sub * 2;
+   435→    quests.push({
+   436→      id: `${prefix}-auto-hunt`,
+   437→      type: "hunt",
+   438→      title: `${main} ${verbs[sub % verbs.length]}`,
+   439→      desc: `${spec.title} ${spec.subtitle} — ${main} ${n}마리(그루)를 처치하자.`,
+   440→      need: n,
+   441→      targetKey: spec.main,
+   442→      targetLabel: main,
+   443→      reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G),
+   444→      expReward: Math.round((45 + sub * 12) * CH_EXP[spec.num - 2] * 0.8),
+   445→    });
+   446→  }
+   447→  if (sub === 9) {
+   448→    // 챕터 결전 직전 수확 퀘스트
+   449→    quests.push({
+   450→      id: `${prefix}-pre-boss-collect`,
+   451→      type: "collect",
+   452→      title: "마지막 보석의 흔적",
+   453→      desc: `${spec.title}의 심장부 — 보석의 흔적이 강하게 빛나고 있다.`,
+   454→      targetLabel: "보석의 흔적",
+   455→      reward: Math.round(140 * CH_EXP[spec.num - 2] * 0.7 * G),
+   456→      expReward: Math.round(120 * CH_EXP[spec.num - 2]),
+   457→    });
+   458→  }
+   459→  if (sub === 10 && spec.boss) {
+   460→    quests.push({
+   461→      id: `${prefix}-boss`,
+   462→      type: "boss",
+   463→      title: BOSS_DEFS[spec.boss].name,
+   464→      desc: `${spec.title}의 주인 — ${BOSS_DEFS[spec.boss].name}를 처치하자!`,
+   465→      targetLabel: BOSS_DEFS[spec.boss].name,
+   466→      reward: Math.round(320 * CH_EXP[spec.num - 2] * 0.7 * G),
+   467→      expReward: Math.round(260 * CH_EXP[spec.num - 2]),
+   468→    });
+   469→    // 챕터 최종 — 다음 챕터로 나가는 차원문
+   470→    quests.push({
+   471→      id: `${prefix}-next`,
+   472→      type: "reach",
+   473→      title: "다음 해역으로",
+   474→      desc: "열린 차원문에 닿아 다음 해역으로 이동하자.",
+   475→      targetLabel: "차원문",
+   476→      dialogue: spec.bossDone,
+   477→    });
+   478→  }
+   479→  return quests;
+   480→}
+   481→
+   482→function buildStage(spec: ChapterSpec, sub: number): StageDef {
+   483→  const key = `${spec.key}${sub}`;
+   484→  const prefix = `${spec.key}${sub}`;
+   485→  const boss = sub === 10 && !!spec.boss;
+   486→  const enemies = spec.enemies.map((g) => ({
+   487→    key: g.key,
+   488→    count: Math.min(11, g.count + Math.floor(sub / 2)),
+   489→  }));
+   490→  const def: StageDef = {
+   491→    key,
+   492→    name: `제${spec.num}장 ${spec.title}`,
+   493→    subtitle: `${sub}구역 — ${spec.subtitle}`,
+   494→    width: spec.width + sub * 130,
+   495→    height: spec.height + sub * 30,
+   496→    groundTint: spec.groundTint,
+   497→    flowerCount: spec.flowers,
+   498→    treeCount: spec.trees,
+   499→    rockCount: spec.rocks,
+   500→    quests: buildQuests(spec, sub, prefix),
+   501→    enemies,
+   502→    boss,
+   503→    bossKey: boss ? spec.boss : undefined,
+   504→    repeat: {
+   505→      targetKey: spec.main,
+   506→      need: spec.repeat.need + sub,
+   507→      gold: Math.round(spec.repeat.gold * stageScale(key).gold * 0.9),
+   508→      exp: Math.round(spec.repeat.exp * stageScale(key).exp * 0.9),
+   509→      title: spec.repeat.title,
+   510→      desc: spec.repeat.desc,
+   511→    },
+   512→  };
+   513→  if (sub === 5) {
+   514→    def.elite = {
+   515→      key: spec.main,
+   516→      hpMult: 7.5,
+   517→      atkMult: 1.5,
+   518→      name: `${ELITE_TITLE[spec.num - 2]} ${ENEMIES[spec.main].name}`,
+   519→    };
+   520→  }
+   521→  return def;
+   522→}
+   523→
+   524→/* 마을 (제1장 — 미드가르드 항구 마을) */
+   525→const VILLAGE: StageDef = {
+   526→  key: "village",
+   527→  name: "제1장 미드가르드",
+   528→  subtitle: "항구 마을 — 모험의 시작",
+   529→  width: 1500,
+   530→  height: 950,
+   531→  groundTint: 0x9adf6a,
+   532→  flowerCount: 8,
+   533→  treeCount: 7,
+   534→  rockCount: 2,
+   535→  quests: [
+   536→    {
+   537→      id: "v0",
+   538→      type: "talk",
+   539→      title: "마을 주민과 인사",
+   540→      desc: "주민에게 가까이 가서 E키(모바일은 버튼)로 대화해 보자.",
+   541→      need: 2,
+   542→      targetLabel: "마을 주민",
+   543→      expReward: 25,
+   544→    },
+   545→    {
+   546→      id: "v1",
+   547→      type: "reach",
+   548→      title: "서쪽 숲의 신전으로",
+   549→      desc: "펜던트가 이끄는 대로 마을 동쪽 차원문을 지나 숲의 폐허 신전에 도착하자.",
+   550→      targetLabel: "차원문",
+   551→    },
+   552→  ],
+   553→  enemies: [],
+   554→  boss: false,
+   555→};
+   556→
+   557→/* ---------- 90 구역 생성 ---------- */
+   558→
+   559→export const STAGES: Record<StageKey, StageDef> = { village: VILLAGE };
+   560→export const NEXT_STAGE: Record<StageKey, StageKey | null> = { village: "forest1" };
+   561→export const PREV_STAGE: Record<StageKey, StageKey | null> = { village: null };
+   562→/** 구역 라벨 — "2-3" 형식 (복귀 차원문/HUD 표기) */
+   563→export const STAGE_SHORT: Record<StageKey, string> = { village: "미드가르드 마을" };
+   564→
+   565→for (let ci = 0; ci < CHAPTERS.length; ci++) {
+   566→  const spec = CHAPTERS[ci];
+   567→  for (let sub = 1; sub <= 10; sub++) {
+   568→    const key = `${spec.key}${sub}`;
+   569→    STAGES[key] = buildStage(spec, sub);
+   570→    STAGE_SHORT[key] = `${spec.num}-${sub}`;
+   571→    NEXT_STAGE[key] = sub < 10 ? `${spec.key}${sub + 1}` : ci < CHAPTERS.length - 1 ? `${CHAPTERS[ci + 1].key}1` : null;
+   572→    PREV_STAGE[key] = sub > 1 ? `${spec.key}${sub - 1}` : ci > 0 ? `${CHAPTERS[ci - 1].key}10` : "village";
+   573→  }
+   574→}
+   575→
+   576→/* ================= 인테리어 (v2.2 — 여관/내 집 실내 맵, 사용자 지시) =================
+   577→ *  - 건물에 E로 들어가면 실내 맵으로 이동: 여관주인과 대화 → 돈 내고 취침 연출 → 버프
+   578→ *  - 실내는 세이브 스테이지에 기록하지 않는다(들어가기 전 구역 유지 — 종료 시 마을 앞으로 복귀)
+   579→ */
+   580→export type InteriorKey = "interior_inn" | "interior_home";
+   581→
+   582→function buildInteriorDef(key: InteriorKey): StageDef {
+   583→  return {
+   584→    key,
+   585→    name: key === "interior_inn" ? "여관 로안의 실내" : "내 집",
+   586→    subtitle: key === "interior_inn" ? "따뜻한 모닥불 냄새" : "나만의 아늑한 공간",
+   587→    /* 카메라 줌(화면높이/560)을 채우는 최소 크기 — 레터박스 방지 (1280×720 기준 가시 1024×576) */
+   588→    width: 1152,
+   589→    height: 648,
+   590→    groundTint: 0xffffff,
+   591→    flowerCount: 0,
+   592→    treeCount: 0,
+   593→    rockCount: 0,
+   594→    quests: [],
+   595→    enemies: [],
+   596→    boss: false,
+   597→  };
+   598→}
+   599→STAGES.interior_inn = buildInteriorDef("interior_inn");
+   600→STAGES.interior_home = buildInteriorDef("interior_home");
+   601→NEXT_STAGE.interior_inn = null;
+   602→NEXT_STAGE.interior_home = null;
+   603→PREV_STAGE.interior_inn = "village";
+   604→PREV_STAGE.interior_home = "village";
+   605→STAGE_SHORT.interior_inn = "여관";
+   606→STAGE_SHORT.interior_home = "내 집";
+   607→
+   608→/** 구 세이브 키 폴백 — v1.x 6스테이지 → 신규 체인 시작점 */
+   609→export const LEGACY_STAGE_FALLBACK: Record<string, StageKey> = {
+   610→  forest: "forest1",
+   611→  kingdom: "kingdom1",
+   612→  alfheim: "alfheim1",
+   613→  muspelheim: "muspelheim1",
+   614→  niflheim: "niflheim1",
+   615→  cave: "cave1",
+   616→  nidavellir: "nidavellir1",
+   617→  hel: "hel1",
+   618→  abyss: "abyss1",
+   619→};
+   620→
+   621→/** 유효 스테이지 키 검증 (+구 세이브 폴백) */
+   622→export function resolveStage(key: string): StageKey {
+   623→  if (STAGES[key]) return key;
+   624→  if (LEGACY_STAGE_FALLBACK[key]) return LEGACY_STAGE_FALLBACK[key];
+   625→  return "village";
+   626→}
+   627→
+   628→/** 오프닝 대사 매핑 — 구역 1은 챕터 인트로, 나머지는 구역 안내 */
+   629→export function stageIntro(key: StageKey): string {
+   630→  const spec = chapterSpec(key);
+   631→  if (!spec) return "villageIntro";
+   632→  const { sub } = parseStage(key);
+   633→  if (sub === 1) return spec.intro;
+   634→  if (sub === 5) return `eliteWarn${spec.num}`;
+   635→  if (sub === 10) return `bossApproach${spec.num}`;
+   636→  return `ch${spec.num}Walk${((sub - 2) % 3) + 1}`;
+   637→}
+   638→
+   639→/** 스테이지 지형 테마 (WorldScene 배치용) */
+   640→export const STAGE_THEME: Record<StageKey, { ground: string; path: string; bg: string }> = {
+   641→  village: { ground: "tile_grass", path: "tile_path", bg: "#15270f" },
+   642→};
+   643→for (const spec of CHAPTERS) {
+   644→  for (let sub = 1; sub <= 10; sub++) {
+   645→    STAGE_THEME[`${spec.key}${sub}`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
+   646→  }
+   647→}
+   648→

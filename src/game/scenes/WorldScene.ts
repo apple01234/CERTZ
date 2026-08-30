@@ -122,6 +122,11 @@ export class WorldScene extends Phaser.Scene {
   private sleepPending = false;
   private entryPos: { x: number; y: number } | null = null;
 
+  /* ----- v2.3: 본 스토리 대사 기록 (재입장 시 대사 재생 방지 — 지시 #1) ----- */
+  private seenSet = new Set<string>();
+  /* ----- v2.3: 반복 토벌 의뢰 수주 해금 (상인 NPC에게 말 걸어 해금 — 지시 #4) ----- */
+  private repeatOn = false;
+
   /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
   private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "inn" | "house" | "innkeeper" | "bed" | "exit"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
@@ -246,6 +251,9 @@ export class WorldScene extends Phaser.Scene {
     this.isInterior = false;
     this.sleeping = false;
     this.sleepPending = false;
+    /* v2.3 — 재시작(스테이지 전환) 시 대사 기록/의뢰 해금 리셋 후 세이브에서 복원 */
+    this.seenSet = new Set();
+    this.repeatOn = false;
     this.entryPos = data.entry ?? null;
     this.eBubble = null;
     this.eBubbleText = null;
@@ -375,6 +383,9 @@ export class WorldScene extends Phaser.Scene {
         this.jobStory = { tier: savedPlayer.jobStory.tier, step: savedPlayer.jobStory.step, hunt: savedPlayer.jobStory.hunt };
       }
       this.jobStoryDone = [...(savedPlayer.jobStoryDone ?? [])];
+      // v2.3 — 본 대사 기록 + 반복 의뢰 수주 해금 복원 (지시 #1/#4)
+      this.seenSet = new Set(savedPlayer.seen ?? []);
+      this.repeatOn = savedPlayer.repeatOn ?? false;
       this.player.recalcSpeedForLoad();
     }
     this.repeatNeed = this.stageDef.repeat?.need ?? 0;
@@ -476,14 +487,16 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 사운드/BGM (v2.0 — 챕터별 전용 테마 8트랙 / 실내는 마을 BGM) ---------- */
     audio.playBGM(this.isInterior ? "village" : audio.stageBgm(stageKey));
 
-    /* ---------- 오프닝 대사 (인트로 시퀀스 중이면 인트로가 인계 / 실내는 연출 생략) ---------- */
+    /* ---------- 오프닝 대사 (인트로 시퀀스 중이면 인트로가 인계 / 실내는 연출 생략) ----------
+     *  v2.3 (지시 #1): 이미 본 대사는 재입장 시 재생하지 않는다 — 이전/다음 맵 왕복마다
+     *  인트로·구역 안내 대사가 반복되던 버그 수정 */
     if (!this.isInterior) {
       if (stageKey === "village" && !savedPlayer?.playerName) {
         // 신규 플레이어 — 책장 넘기기 대신 플레이형 인트로 (이동 → 우물 → 이름 짓기)
         this.startIntroSequence();
       } else {
         this.time.delayedCall(400, () => {
-          this.showDialogue(stageIntro(stageKey));
+          this.showDialogueOnce(stageIntro(stageKey));
         });
       }
     }
@@ -518,7 +531,8 @@ export class WorldScene extends Phaser.Scene {
   private solidGroup!: Phaser.Physics.Arcade.StaticGroup;
 
   private applyCameraZoom() {
-    this.cameras.main.setZoom(viewZoom());
+    // v2.3 — 실내(정사각 방 832×832)는 확대 줌으로 아늑한 한 방 연출 (지시 #6)
+    this.cameras.main.setZoom(this.isInterior ? Math.min(3, viewZoom() * 1.45) : viewZoom());
     this.redrawMinimap();
   }
 
@@ -1498,8 +1512,8 @@ export class WorldScene extends Phaser.Scene {
     this.registry.set("runKills", this.totalKills);
     this.player.gainExp(exp);
     this.killTotals[key] = (this.killTotals[key] ?? 0) + 1;
-    // 리스폰 예약 — 9~13초 후 원래 스폰 지점에서 재생성 (파밍 루프 유지)
-    this.time.delayedCall(Phaser.Math.Between(9000, 13000), () =>
+    // 리스폰 예약 — v2.3 단축: 9~13초 → 3.2~4.8초 (지시 #2 — 리젠이 너무 길어 사냥이 끊긴다)
+    this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
       this.respawnEnemy(key, spawnX, spawnY, 0)
     );
     const q = this.currentQuest();
@@ -1534,9 +1548,22 @@ export class WorldScene extends Phaser.Scene {
     this.emitQuest();
   }
 
-  /** 메인 체인 완료 후 반복 의뢰 활성 여부 */
+  /** 메인 체인 완료 후 반복 의뢰 활성 여부
+   *  v2.3 (지시 #4): 스토리 체인이 끝나도 자동 활성되지 않는다 —
+   *  마을 상인에게 말을 걸어 수주해야 [반복] 토벌 의뢰가 퀘스트창에 뜬다 */
   private repeatActive(): boolean {
-    return this.questIdx >= this.stageDef.quests.length && !!this.stageDef.repeat;
+    return this.repeatOn && this.questIdx >= this.stageDef.quests.length && !!this.stageDef.repeat;
+  }
+
+  /** 반복 의뢰 시스템 수주 가능 여부 — 완료한 체인 중 반복 의뢰가 있는 구역이 하나라도 있으면 */
+  private repeatUnlockable(): boolean {
+    if (this.repeatOn || this.isInterior) return false;
+    if (this.stageDef.repeat && this.questIdx >= this.stageDef.quests.length) return true;
+    for (const [k, idx] of Object.entries(this.savedQuestIdx)) {
+      const def = STAGES[k];
+      if (def?.repeat && idx >= def.quests.length) return true;
+    }
+    return false;
   }
 
   /** 반복 토벌 완료 — 보상 지급 후 목표 +2 (무한 확장) */
@@ -1563,7 +1590,8 @@ export class WorldScene extends Phaser.Scene {
     }
     const nearPlayer = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 140;
     if (nearPlayer && tries < 24) {
-      this.time.delayedCall(2500, () => this.respawnEnemy(key, x, y, tries + 1));
+      // v2.3 — 재시도 간격 2.5초 → 1.2초 (리젠 단축에 맞춰 스폰 지점 대기도 짧게)
+      this.time.delayedCall(1200, () => this.respawnEnemy(key, x, y, tries + 1));
       return;
     }
     const e = new Enemy(this, x, y, key);
@@ -1613,20 +1641,22 @@ export class WorldScene extends Phaser.Scene {
     if (q.type === "reach") {
       if (!this.portal) this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
       if (!this.portalActive) {
-        if (q.dialogue) {
+        // v2.3 (지시 #1) — 이미 본 체인 대사는 재생하지 않고 바로 개방
+        if (q.dialogue && !this.seenSet.has(q.dialogue)) {
           // 대사 중 포탈 위 즉시 전환 방지 — 대사 종료 후 개방 (resumeFromDialogue)
           this.pendingPortal = true;
           if (this.dialoguing) {
-            // 이미 대사 진행 중 (파편 수집 직후 등) — 예약 후 순차 재생
+            // 이미 대사 진행 중 (파편 수집 직후 등) — 기록 후 예약 순차 재생
+            this.markSeen(q.dialogue);
             this.queuedDialogue = q.dialogue;
           } else {
-            this.showDialogue(q.dialogue);
+            this.showDialogueOnce(q.dialogue); // 표시 + 기록
           }
         } else {
           this.activatePortal();
         }
-      } else if (q.dialogue && !this.dialoguing) {
-        this.showDialogue(q.dialogue);
+      } else if (q.dialogue && !this.dialoguing && !this.seenSet.has(q.dialogue)) {
+        this.showDialogueOnce(q.dialogue);
       }
     } else if (q.type === "collect") {
       if (!this.fragment) this.spawnFragmentForQuest();
@@ -1664,8 +1694,8 @@ export class WorldScene extends Phaser.Scene {
     net.netAnnounceBoss(def.name, STAGE_SHORT[this.stageDef.key] ?? this.stageDef.key);
     // 보스전 전용 BGM (v2.0)
     audio.playBGM("boss");
-    // 등장 대사 — 이어하기 복구 경로는 생략 (오프닝 대사와 충돌 방지)
-    if (intro) this.showDialogue(def.introDialogue);
+    // 등장 대사 — 이어하기 복구 경로는 생략 (오프닝 대사와 충돌 방지) / v2.3: 1회만 재생
+    if (intro) this.showDialogueOnce(def.introDialogue);
   }
 
   onBossDead() {
@@ -1686,7 +1716,7 @@ export class WorldScene extends Phaser.Scene {
     this.save();
     if (final) {
       this.time.delayedCall(1200, () => {
-        this.showDialogue("victory");
+        this.showDialogueOnce("victory");
         this.time.delayedCall(400, () => {
           this.saveCleared();
         });
@@ -2339,7 +2369,12 @@ export class WorldScene extends Phaser.Scene {
     const it = this.nearInteract;
     if (!it) return;
     if (it.kind === "shop") {
-      EventBus.emit("ui:panel", { panel: "shop" });
+      // v2.3 (지시 #4) — 반복 의뢰 수주 가능하면 상점 대신 수주 대사부터
+      if (this.repeatUnlockable()) {
+        this.showDialogue("merchantRepeat", "merchant");
+      } else {
+        EventBus.emit("ui:panel", { panel: "shop" });
+      }
     } else if (it.kind === "job") {
       // 전직 교관 — 상담 대사 후 전직 패널 자동 오픈 (v1.9)
       this.showDialogue("jobMaster", "jobmaster");
@@ -2454,34 +2489,53 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** 실내 맵 — 나무 바닥 + 벽 + 침대/모닥불/촛불 + 여관주인(여관) + 출구 문 */
+  /** 실내 맵 — v2.3 정사각 방 개편 (지시 #6: 여관/집은 굳이 크게 만들 필요 없다)
+   *  832×832 정사각 한 방 + 실내 전용 확대 줌 → 아늑한 방 느낌.
+   *  나무 바닥 + 상단/좌우 벽 + 원형 러그 + 침대/모닥불/촛불 + 여관주인(여관) + 출구 문 */
   private buildInterior(stageKey: StageKey) {
     const W = this.stageW;
     const H = this.stageH;
     const isInn = stageKey === "interior_inn";
     this.cameras.main.setBackgroundColor("#150e08");
 
-    // 벽 + 나무판 바닥
+    // 상단 벽 + 나무판 바닥
     this.add.rectangle(0, 0, W, 104, 0x34220f).setOrigin(0).setDepth(0);
     this.add.rectangle(0, 96, W, 8, 0x1c1108).setOrigin(0).setDepth(1);
     this.add.tileSprite(0, 104, W, H - 104, "tile_path").setOrigin(0).setDepth(0).setAlpha(0.96);
-    // 러그
-    this.add.ellipse(W / 2, H / 2 + 46, 330, 132, isInn ? 0x7a3030 : 0x2f5a7a, 0.55).setDepth(0);
+    // 좌우 벽 — 정사각 방 테두리 (원목 패널 + 어두운 베이스보드 라인)
+    this.add.rectangle(0, 104, 22, H - 104, 0x2c1c0c).setOrigin(0).setDepth(2);
+    this.add.rectangle(22, 104, 5, H - 104, 0x1c1108).setOrigin(0).setDepth(2);
+    this.add.rectangle(W - 22, 104, 22, H - 104, 0x2c1c0c).setOrigin(0).setDepth(2);
+    this.add.rectangle(W - 27, 104, 5, H - 104, 0x1c1108).setOrigin(0).setDepth(2);
+    // 원형 러그 — 방 중앙
+    this.add.ellipse(W / 2, H / 2 + 30, 300, 210, isInn ? 0x7a3030 : 0x2f5a7a, 0.55).setDepth(0);
 
-    // 상단 벽 충돌 (보이지 않는 벽)
+    // 충돌 (보이지 않는 벽) — 상단 벽 + 좌우 벽
     const wall = this.add.rectangle(W / 2, 92, W, 28, 0x000000, 0);
     this.solidGroup.add(wall);
+    const wallL = this.add.rectangle(11, (104 + H) / 2, 26, H - 104, 0x000000, 0);
+    this.solidGroup.add(wallL);
+    const wallR = this.add.rectangle(W - 11, (104 + H) / 2, 26, H - 104, 0x000000, 0);
+    this.solidGroup.add(wallR);
 
-    // 벽 촛불 2개 — 은은한 조명
-    for (const cx of [W * 0.24, W * 0.76]) {
+    // 벽 촛불 — 상단 2개 + 측벽 2개, 은은한 조명
+    for (const cx of [W * 0.26, W * 0.74]) {
       this.add.image(cx, 78, "cv_candle").setDepth(2).setScale(1.15);
       const g = this.add.image(cx, 92, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.6).setAlpha(0.16);
       this.tweens.add({ targets: g, alpha: 0.3, scale: 1.9, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     }
+    for (const cy of [H * 0.4, H * 0.66]) {
+      this.add.image(40, cy, "cv_candle").setDepth(3).setScale(0.9);
+      this.add.image(W - 40, cy, "cv_candle").setDepth(3).setScale(0.9);
+      const gl = this.add.image(40, cy + 10, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.1).setAlpha(0.13);
+      const gr = this.add.image(W - 40, cy + 10, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.1).setAlpha(0.13);
+      this.tweens.add({ targets: gl, alpha: 0.24, duration: 820, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      this.tweens.add({ targets: gr, alpha: 0.24, duration: 940, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
 
-    // 침대 (그래픽 조합) — 프레임/매트리스/베개/이불
-    const bx = 92;
-    const by = 168;
+    // 침대 (그래픽 조합) — 프레임/매트리스/베개/이불 (좌측 상단)
+    const bx = 52;
+    const by = 150;
     this.add.rectangle(bx, by, 68, 100, 0x5a3a1e).setOrigin(0).setDepth(2);
     this.add.rectangle(bx + 6, by + 6, 56, 88, 0xe8dcc4).setOrigin(0).setDepth(3);
     this.add.rectangle(bx + 6, by + 6, 56, 24, 0xf7f2e2).setOrigin(0).setDepth(4);
@@ -2490,15 +2544,15 @@ export class WorldScene extends Phaser.Scene {
     this.solidGroup.add(bedBody);
 
     if (isInn) {
-      // 모닥불 — 여관 감성 (4프레임 애니메이션)
-      const fire = this.add.sprite(W - 108, 158, "sv_campfire", 0).setDepth(3);
+      // 모닥불 — 여관 감성 (4프레임 애니메이션, 우측 상단)
+      const fire = this.add.sprite(W - 100, 160, "sv_campfire", 0).setDepth(3);
       if (this.anims.exists("sv-campfire")) fire.play("sv-campfire");
-      const fg = this.add.image(W - 108, 158, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setTint(0xff9a40).setScale(1.8).setAlpha(0.2);
+      const fg = this.add.image(W - 100, 160, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setTint(0xff9a40).setScale(1.8).setAlpha(0.2);
       this.tweens.add({ targets: fg, alpha: 0.34, scale: 2.1, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-      // 카운터 + 여관주인 로안
-      this.add.rectangle(W / 2 + 40, 150, 150, 18, 0x6b4423).setOrigin(0).setDepth(3);
-      this.add.rectangle(W / 2 + 40, 132, 150, 10, 0x8a5a2e).setOrigin(0).setDepth(3);
-      const keeper = this.add.image(W / 2 + 115, 118, "npc_villager1").setDepth(4);
+      // 카운터 + 여관주인 로안 (상단 중앙)
+      this.add.rectangle(W / 2 - 75, 148, 150, 18, 0x6b4423).setOrigin(0).setDepth(3);
+      this.add.rectangle(W / 2 - 75, 130, 150, 10, 0x8a5a2e).setOrigin(0).setDepth(3);
+      const keeper = this.add.image(W / 2, 116, "npc_villager1").setDepth(4);
       this.add
         .text(keeper.x, keeper.y - 34, "로안", {
           fontFamily: "sans-serif", fontSize: "11px", color: "#ffe9b0",
@@ -2507,9 +2561,9 @@ export class WorldScene extends Phaser.Scene {
         .setOrigin(0.5).setDepth(60);
       this.interactables.push({ x: keeper.x, y: keeper.y + 26, kind: "innkeeper", npcId: "innkeeper", label: "로안 — 잠자기 (20G)" });
     } else {
-      // 내 집 — 화분/선반 느낌의 소품
-      this.add.image(W - 96, 148, "fm_shrub1").setDepth(3).setScale(1.2);
-      this.add.rectangle(W * 0.62, 142, 110, 14, 0x6b4423).setOrigin(0).setDepth(3);
+      // 내 집 — 화분/선반 느낌의 소품 (우측 상단)
+      this.add.image(W - 84, 150, "fm_shrub1").setDepth(3).setScale(1.2);
+      this.add.rectangle(W * 0.3, 142, 110, 14, 0x6b4423).setOrigin(0).setDepth(3);
     }
 
     // 침대 상호작용
@@ -2747,8 +2801,9 @@ export class WorldScene extends Phaser.Scene {
     });
     this.introGuide = null;
     this.introGuideSpark = null;
-    // 이름 리액션 → 마을 오프닝(아뜰란티스 세계관) 순차 재생
+    // 이름 리액션 → 마을 오프닝(아뜰란티스 세계관) 순차 재생 (v2.3 — 기록 후 재생 방지)
     this.queuedDialogue = "villageIntro";
+    this.markSeen("villageIntro");
     this.showDialogue("introNamed");
     this.emitQuest();
   }
@@ -3024,6 +3079,17 @@ export class WorldScene extends Phaser.Scene {
     }
     const q = this.currentQuest();
     if (!q) {
+      // v2.3 (지시 #4) — 체인 완료 + 반복 의뢰 존재 + 미수주 → 수주 안내
+      if (!this.isInterior && this.stageDef.repeat && !this.repeatOn) {
+        EventBus.emit("quest", {
+          title: "반복 의뢰 수주 가능",
+          desc: "마을 상인 라고스에게 말을 걸어 [반복] 토벌 의뢰를 수주하자",
+          current: 1,
+          target: 1,
+          distance: null,
+        } satisfies QuestState);
+        return;
+      }
       EventBus.emit("quest", {
         title: "지역 클리어!",
         desc: "",
@@ -3136,12 +3202,15 @@ export class WorldScene extends Phaser.Scene {
       stageName: `${this.stageDef.name} — ${this.stageDef.subtitle}`,
       list,
       repeat: r ? { title: r.title, desc: r.desc } : null,
+      repeatActive: this.repeatActive(),
     };
     EventBus.emit("questlog", payload);
   }
 
   private save() {
-    writeSave(this.buildSave());
+    // v2.3 — 실내(여관/집)에서의 저장도 세이브 스테이지는 진행 구역 유지
+    //  (설계 의도대로 실내가 세이브에 기록되지 않게 — 재접속 시 마을에서 계속)
+    writeSave(this.buildSave(this.isInterior ? "village" : undefined));
   }
 
   /** 세이브 페이로드 생성 — stageOverride는 스테이지 전환 캐리용 */
@@ -3177,6 +3246,9 @@ export class WorldScene extends Phaser.Scene {
       /* v2.0 — 전직 스토리 진행 */
       jobStory: this.jobStory ? { ...this.jobStory } : null,
       jobStoryDone: [...this.jobStoryDone],
+      /* v2.3 — 반복 의뢰 수주 해금 + 본 스토리 대사 기록 */
+      repeatOn: this.repeatOn,
+      seen: [...this.seenSet].slice(-160),
     };
   }
 
@@ -3199,6 +3271,23 @@ export class WorldScene extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.physics.world.pause();
     EventBus.emit("dialogue:show", d);
+  }
+
+  /** v2.3 (지시 #1) — 스토리 대사 1회 재생: 이미 본 대사(세이브 기록)는 스킵.
+   *  인트로/구역 안내/체인 대사/보스 등장 대사 등 재입장 시 다시 뜨던 버그 방지 */
+  private showDialogueOnce(id: string, npcId: string | null = null): boolean {
+    if (!DIALOGUES[id] || this.seenSet.has(id)) return false;
+    this.seenSet.add(id);
+    this.save();
+    this.showDialogue(id, npcId);
+    return true;
+  }
+
+  /** 대사 기록만 저장 (예약 재생 대상 — queuedDialogue) */
+  private markSeen(id: string) {
+    if (this.seenSet.has(id)) return;
+    this.seenSet.add(id);
+    this.save();
   }
 
   resumeFromDialogue() {
@@ -3237,6 +3326,17 @@ export class WorldScene extends Phaser.Scene {
         } else {
           // 전직 상담 종료 → 전직 패널 자동 오픈 (v1.9 전직 NPC)
           this.time.delayedCall(120, () => EventBus.emit("ui:panel", { panel: "job" }));
+        }
+      } else if (npc === "merchant") {
+        // v2.3 (지시 #4) — 상인 대화 종료 → 반복 토벌 의뢰 수주
+        if (this.repeatUnlockable()) {
+          this.repeatOn = true;
+          this.save();
+          audio.sfx.questDone();
+          this.showBanner("토벌 의뢰 수주 완료! 구역 체인을 끝낸 곳에서 [반복] 의뢰 진행 가능");
+          this.spawnPickupText(this.player.x, this.player.y - 44, "의뢰 수주!", "#7dffa8");
+          this.emitQuest();
+          this.emitQuestLog();
         }
       } else {
         this.onNpcTalked(npc);

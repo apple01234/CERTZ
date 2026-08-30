@@ -156,3 +156,29 @@ Work Log:
 
 Stage Summary:
 - v2.2 완성. 공격이 달리면서 나가고, 여관/집이 실제 공간으로 동작
+
+---
+Task ID: v2.3-qol
+Agent: Super Z (main)
+Task: 사용자 7건 — ①재입장 대사/퀘스트 재표시 버그 ②몬스터 수/리젠/성장속도 ③스탯 자동배분 버그 ④반복퀘스트 NPC 수주+밸런스 ⑤APK 빌드 없이 커밋만 ⑥여관/집 정사각 방 ⑦채팅 안됨
+
+Work Log:
+- ① seenSet(본 대사 기록) 세이브 영속화 — showDialogueOnce/markSeen 도입, 스테이지 인트로/체인 대사/보스 등장/victory 1회 재생.
+  재입장·여관 왕복마다 villageIntro/구역 안내가 반복되던 버그 수정. reach 대사 미기록 엣지 보완(큐 시 markSeen)
+- ② 몬스터 증원(count ×1.6+sub/2, 상한 11→20), 리젠 9~13초→3.2~4.8초, 스폰 재시도 2.5→1.2초,
+  expNext 55×lv^1.72→50×lv^1.62 (성장 체감 1.5~2배+)
+- ③ 자동 배분 버그 — 미전직 cls null에서 familyOf()=null → 조용히 return. warrior 비율 폴백 (힘4:민첩1)
+- ④ 반복 토벌 의뢰가 체인 완료 후 자동 활성되던 것 차단 → 마을 상인 라고스 E 대화로 수주(repeatOn 세이브).
+  퀘스트 트래커/로그에 "미수주" 안내. 자동 토벌 퀘스트 목표 상한 12(기존 최대 21), expReward 상향 — 스토리 진행 경험치 딱 맞게
+- ⑤ APK 빌드 생략 — 커밋/푸시만 수행
+- ⑥ 여관/집 실내 1152×648 → 832×832 정사각 방 + 실내 전용 줌 ×1.45(좁고 아늑하게),
+  좌우 벽 패널+측벽 촛불+원형 러그, 실내 저장 시 세이브 스테이지가 village 유지되는 버그도 수정
+- ⑦ 채팅 — socket.io 재접속 시 join 재발송 안 해 조용히 죽던 버그(lastJoin 자동 재참여),
+  미연결 시 전송하면 로컬 안내 메시지(조용히 증발 방지), 모바일 전송 버튼+enterKeyHint, onBlur 즉닫기 제거(가상 키보드)
+- EventBus window.__SERTZ_EB__ 디버그 훅 추가(E2E용)
+- 검증: tsc 0 / eslint 0 / next build 성공 / e2e_v23 19 PASS 0 FAIL (스크린샷: v23-*.png)
+- 버전 2.3.0 (APK versionName 업데이트는 다음 빌드 시)
+
+Stage Summary:
+- v2.3: 7건 전부 해소(⑤는 빌드 생략 확인). 사냥 밀도·성장속도 상향, 반복 의뢰는 NPC 수주제, 실내 정사각화, 채팅 자가 복구
+- 다음 APK 빌드 시 versionCode 8 / versionName 2.3 필요

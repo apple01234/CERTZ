@@ -2,12 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, SendHorizontal } from "lucide-react";
+import { netChatReady } from "@/game/net";
 
 /**
- * 멀티플레이 전체 채팅 (v1.7)
- *  - Enter: 입력 열기/전송 · ESC: 취소
+ * 멀티플레이 전체 채팅 (v1.7 / v2.3 개선)
+ *  - Enter: 입력 열기/전송 · ESC: 취소 · 전송 버튼(모바일) 추가
  *  - 입력 포커스 동안 게임 키 완전 차단 (EventBus "chat:focus" → WorldScene)
+ *  - v2.3 (지시 #7): 미연결 시 조용히 사라지던 메시지 → 로컬 안내 메시지로 즉시 피드백
+ *  - v2.3: onBlur 즉시 닫기 제거 (모바일 가상 키보드 blur로 입력이 닫히는 문제)
+ *    → 전송/ESC/바깥 포인터다운으로만 닫기
  */
 type Msg = { id: string; name: string; text: string; sys?: boolean; party?: boolean; t: number };
 
@@ -16,6 +20,7 @@ export function ChatBox() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // 서버는 접속 시 히스토리(배열), 이후 새 메시지(단건)를 보낸다 — 둘 다 처리
@@ -49,14 +54,34 @@ export function ChatBox() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // v2.3 — 바깥 포인터다운 시 닫기 (blur 대체: 모바일 키보드 blur 무시)
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointer);
+    return () => window.removeEventListener("pointerdown", onPointer);
+  }, [open]);
+
   const send = () => {
     const t = text.trim().slice(0, 80);
-    if (t) EventBus.emit("chat:send", { text: t });
+    if (t) {
+      if (netChatReady()) {
+        EventBus.emit("chat:send", { text: t });
+      } else {
+        // v2.3 — 미연결 피드백: 보낸 말이 조용히 증발하지 않게 로컬 안내
+        setMsgs((cur) =>
+          [...cur, { id: "local", name: "", text: "서버 미연결 — 멀티 서버 접속 시 채팅을 사용할 수 있어요", sys: true, t: Date.now() }].slice(-41),
+        );
+      }
+    }
+    setText("");
     setOpen(false);
   };
 
   return (
-    <div className="absolute bottom-2 left-2 w-[300px] max-w-[52vw] sm:bottom-3 sm:left-3">
+    <div ref={rootRef} className="absolute bottom-2 left-2 w-[300px] max-w-[52vw] sm:bottom-3 sm:left-3">
       {/* 최근 메시지 (아래가 최신 — 최대 7개, 살짝 투명) */}
       <div className="pointer-events-none mb-1 flex flex-col gap-0.5">
         {msgs.slice(-7).map((m) => (
@@ -72,21 +97,31 @@ export function ChatBox() {
       </div>
 
       {open ? (
-        <input
-          ref={inputRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") send();
-            else if (e.key === "Escape") setOpen(false);
-            e.stopPropagation();
-          }}
-          onBlur={() => setOpen(false)}
-          placeholder="메시지 입력… (Enter 전송 · ESC 취소)"
-          maxLength={80}
-          aria-label="전체 채팅 입력"
-          className="pointer-events-auto w-full rounded-md border border-white/25 bg-black/75 px-2 py-1.5 text-xs font-bold text-white shadow-lg outline-none backdrop-blur-sm placeholder:text-white/35 focus:border-amber-300/60"
-        />
+        <div className="pointer-events-auto flex items-center gap-1.5">
+          <input
+            ref={inputRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") send();
+              else if (e.key === "Escape") setOpen(false);
+              e.stopPropagation();
+            }}
+            enterKeyHint="send"
+            placeholder="메시지 입력… (Enter 전송 · ESC 취소)"
+            maxLength={80}
+            aria-label="전체 채팅 입력"
+            className="min-w-0 flex-1 rounded-md border border-white/25 bg-black/75 px-2 py-1.5 text-xs font-bold text-white shadow-lg outline-none backdrop-blur-sm placeholder:text-white/35 focus:border-amber-300/60"
+          />
+          {/* v2.3 전송 버튼 — 모바일 가상 키보드에서 Enter 대신 누를 수 있게 */}
+          <button
+            onClick={send}
+            aria-label="채팅 전송"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-amber-300/50 bg-amber-500/30 text-amber-100 backdrop-blur-sm transition-colors hover:bg-amber-500/50 active:scale-95"
+          >
+            <SendHorizontal size={14} />
+          </button>
+        </div>
       ) : (
         <button
           onClick={() => {
