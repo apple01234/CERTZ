@@ -364,6 +364,8 @@ export class WorldScene extends Phaser.Scene {
       if (savedPlayer.playerName) setPlayerName(savedPlayer.playerName);
       // 전직 클래스 복원 (v1.7 — 구 세이브 null 호환)
       this.player.applySavedClass(savedPlayer.cls);
+      // v2.4 — 이어하기 시에도 이름표 유지 (클래스 복원 후 생성 — "이름 · 클래스" 표기)
+      if (savedPlayer.playerName) this.ensurePlayerTag();
       // AP 스탯 복원 (v1.9 — 구 세이브는 loadSave()가 5/5/5/5 + 소급 AP 채움)
       // 지력/행운의 maxMp/maxHp 가산은 세이브 maxHp에 이미 포함 — 여기선 수치만 복원
       const st = savedPlayer.stats ?? { str: 5, dex: 5, int: 5, luk: 5 };
@@ -472,10 +474,16 @@ export class WorldScene extends Phaser.Scene {
     } else if (stageKey !== "village" && this.currentQuest()?.type === "reach") {
       // 수확 완료 후 세이브 — 차원문을 열어둔 채 시작 (소프트락 방지)
       this.activatePortal(true);
+    } else if (stageKey !== "village" && !this.stageDef.boss && this.questIdx >= this.stageDef.quests.length) {
+      // v2.4 — 체인 완료 상태로 이어하기 시 전진 포탈 개방 복구 (구역 1~9 소프트락 방지)
+      this.activatePortal(true);
     }
-
     /* ---------- 이펙트 풀 ---------- */
     this.buildFxPools();
+
+    /* v2.4 — 이어하기 시 레벨 게이트가 이미 충족된 상태면 즉시 연쇄 완료
+     *  (구세이브는 questIdx가 신규 체인의 앞쪽으로 밀려날 수 있다 — 자기 레벨이 충분하면 게이트 스킵) */
+    if (this.currentQuest()?.type === "level") this.tryCompleteLevel();
 
     /* ---------- 미니맵 (2D MMORPG 기본 요소) ---------- */
     this.minimap = this.add.graphics().setDepth(95).setScrollFactor(0).setAlpha(0.85);
@@ -483,6 +491,9 @@ export class WorldScene extends Phaser.Scene {
 
     /* ---------- 입력 ---------- */
     this.setupInput();
+
+    // E2E/디버그 훅 — 씬 인스턴스 실측용 (v2.4)
+    (window as unknown as { __SERTZ_SCENE__?: unknown }).__SERTZ_SCENE__ = this;
 
     /* ---------- 사운드/BGM (v2.0 — 챕터별 전용 테마 8트랙 / 실내는 마을 BGM) ---------- */
     audio.playBGM(this.isInterior ? "village" : audio.stageBgm(stageKey));
@@ -1633,10 +1644,23 @@ export class WorldScene extends Phaser.Scene {
   private afterAdvance() {
     const q = this.currentQuest();
     this.emitQuest();
-    if (!q) return;
+    if (!q) {
+      /* v2.4 치명 버그 수정 — 구역 1~9(보스 없는 구역)에서 체인 완료 후 전진 포탈이
+       *  활성화되지 않는 소프트락. v1.9는 모든 스테이지가 reach로 끝났지만 v2.0 구역
+       *  시스템에서 이 경로가 누락됐다. 체인 종료 = 곧바로 다음 사냥터 개방. */
+      if (!this.isInterior && !this.stageDef.boss && this.portal && !this.portalActive) {
+        this.activatePortal();
+      }
+      return;
+    }
     if (q.type === "hunt" && q.targetKey && !(q.targetKey in this.huntBaseline)) {
       // 토벌 퀘스트 시작 기준선 — 시작 이후 킬만 진행 (지시 #17)
       this.huntBaseline[q.targetKey] = this.killTotals[q.targetKey] ?? 0;
+    }
+    if (q.type === "level") {
+      // v2.4 — 이미 목표 레벨을 넘었으면 즉시 연쇄 완료 (소프트락 방지)
+      this.tryCompleteLevel();
+      return;
     }
     if (q.type === "reach") {
       if (!this.portal) this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
@@ -1666,6 +1690,28 @@ export class WorldScene extends Phaser.Scene {
       const k = q.targetKey;
       if (k && (this.killTotals[k] ?? 0) >= (q.need ?? 0)) this.tryCompleteHunt(k);
     }
+  }
+
+  /**
+   * v2.4 레벨 목표 퀘스트 완료 판정 — 현재 체인 퀘스트가 "level"이고
+   *  목표 레벨에 도달했으면 즉시 완료. 레벨업 순간(Player.onLevelUp 훅)과
+   *  체인 진입 시각(afterAdvance) 양쪽에서 호출된다.
+   */
+  private tryCompleteLevel() {
+    const q = this.currentQuest();
+    if (!q || q.type !== "level") return;
+    if (this.player.lv < (q.need ?? 1)) return;
+    audio.sfx.questDone();
+    this.showBanner(`목표 달성 — Lv ${this.player.lv}! 다음 목표로!`);
+    this.spawnPickupText(this.player.x, this.player.y - 58, `Lv ${q.need} 달성!`, "#8fe84a");
+    this.advanceQuest();
+    this.afterAdvance();
+    this.save();
+  }
+
+  /** Player.gainExp 레벨업 훅 — 레벨 목표 퀘스트 즉시 판정 (v2.4) */
+  onLevelUp() {
+    this.tryCompleteLevel();
   }
 
   /* ================= 보스 ================= */
@@ -1784,7 +1830,15 @@ export class WorldScene extends Phaser.Scene {
       this.keymap = m;
     };
     const onNameSet = (v: { name: string }) => {
-      if (this.introStep === 2) this.finishIntro(v.name);
+      if (this.introStep === 2) {
+        this.finishIntro(v.name);
+        return;
+      }
+      // v2.4 — 인트로 외 이름 변경 (옵션 패널 → NamePanel 공용) — "이름 지정 어디감?" 해소
+      setPlayerName(v.name);
+      this.refreshPlayerTag();
+      this.save();
+      EventBus.emit("banner:show", { text: `이름이 '${v.name}'(으)로 바뀌었어요!` });
     };
     const onBuy = (v: { key: ItemKey }) => {
       if (!this.player || this.dialoguing) return;
@@ -2229,6 +2283,23 @@ export class WorldScene extends Phaser.Scene {
     if (!this.playerNameTag || !this.player) return;
     const d = classDef(this.player.cls);
     this.playerNameTag.setText(d ? `${getPlayerName()} · ${d.name}` : getPlayerName());
+  }
+
+  /** 플레이어 이름표 확보 — v2.4 수정: 재접속/씬 재시작 시에도 이름표 유지 (기존엔 인트로에서만 생성) */
+  private ensurePlayerTag() {
+    if (this.playerNameTag || !this.player) return;
+    this.playerNameTag = this.add
+      .text(this.player.x, this.player.y - 48, getPlayerName(), {
+        fontFamily: "sans-serif",
+        fontSize: "12px",
+        color: "#baf3ff",
+        stroke: "#0a2030",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(60);
+    this.refreshPlayerTag();
   }
 
   /* ================= 플레이어 투사체 (v1.8) ================= */
@@ -2770,18 +2841,8 @@ export class WorldScene extends Phaser.Scene {
     this.introStep = 3;
     this.dialoguing = false;
     setPlayerName(name);
-    // 플레이어 이름표 (머리 위)
-    this.playerNameTag = this.add
-      .text(this.player.x, this.player.y - 48, name, {
-        fontFamily: "sans-serif",
-        fontSize: "12px",
-        color: "#baf3ff",
-        stroke: "#0a2030",
-        strokeThickness: 4,
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(60);
+    // 플레이어 이름표 (머리 위) — v2.4: 이어하기 경로와 공용 생성기 사용
+    this.ensurePlayerTag();
     // 축하 연출
     audio.sfx.levelup();
     this.spawnBurstAt(this.player.x, this.player.y, 26, 0x9df0ff);
@@ -3107,6 +3168,10 @@ export class WorldScene extends Phaser.Scene {
     } else if (q.type === "talk") {
       current = Math.min(this.talkedNpcs.size, q.need ?? 0);
       target = q.need ?? 0;
+    } else if (q.type === "level") {
+      // v2.4 — 현재 레벨 / 목표 레벨 진행 바
+      current = Math.min(this.player.lv, q.need ?? 1);
+      target = q.need ?? 1;
     }
     let distance: number | null = null;
     const t = this.questTargetPos();

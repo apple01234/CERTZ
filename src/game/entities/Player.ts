@@ -518,6 +518,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (leveled) {
       this.scene.sfxLevelUp();
       this.scene.spawnLevelUpFx(this.x, this.y);
+      this.scene.onLevelUp(); // v2.4 — 레벨 목표 퀘스트 즉시 판정
     }
     this.scene.emitHud();
   }

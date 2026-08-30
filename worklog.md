@@ -216,3 +216,30 @@ Stage Summary:
   공유용 공개 직링이 필요하면 리포지토리 공개 전환 필요 (Settings → General → Danger Zone → Change visibility)
 - 사용자가 리포지토리 공개 전환 완료 → visibility: public 실측. 익명 raw 직링 206 정상,
   전체 다운로드 무결성 검증(16,766,788B / versionCode 8, versionName 2.3) 통과 — 공개 직링 확정
+
+---
+Task ID: v2.4-quest
+Agent: Super Z (main)
+Task: 사용자 지시 — ①레벨 목표 퀘스트("5레벨을 찍자!!" 동기부여) + 다음 사냥터 진행 게이트 ②이름 지정 위치
+
+Work Log:
+- ⚠️ 치명 소프트락 발견·수정: v2.0 구역 시스템에서 구역 1~9(보스 없는 구역) 체인 완료 후
+  전진 포탈이 영원히 비활성(v1.9는 모든 스테이지가 reach로 끝나 문제 없었다 — E2E가 세이브 텔레포트만
+  테스트해 미발견). afterAdvance 체인종료 분기 + create 이어하기 복구 분기에 activatePortal 추가
+- 퀘스트 타입 "level" 신규: need=목표 레벨. Player.gainExp 레벨업 → scene.onLevelUp 훅 →
+  tryCompleteLevel 즉시 판정. afterAdvance 체인 진입 시 이미 충족이면 연쇄 완료(소프트락 방지).
+  emitQuest 진행바(lv/need), 이어하기 시 초과 충족 게이트 자동 스킵(구세이브 questIdx 호환)
+- 9챕터 × 2게이트 = 18구역 배치: sub1 진입 + sub4 중간. 숲 3/5, 왕국 8/10, 알프헤임 14/16,
+  무스펠 20/23, 니플 27/30, 동굴 34/38, 니다벨리르 42/46, 헬 50/54, 아뜰란티스 58/62.
+  보상 골드/경험치는 챕터 배율 반영 (check_v24_chain.ts로 배치 무결성 검증)
+- 이름 문제 해소: ①원인 — 이름표/입력이 인트로 시퀀스에만 존재(재접속 시 이름표 소실 버그 발견 포함).
+  옵션(설정) 패널에 "이름 변경" 섹션 추가 → NamePanel 공용(name:ask/name:set) →
+  WorldScene onNameSet에 인트로 외 리네임 경로 추가(전역 이름+이름표+세이브 반영)
+- ensurePlayerTag 추출: 이어하기/씬 재시작 시에도 머리 위 이름표 재생성(기존엔 finishIntro에서만)
+- WorldScene __SERTZ_SCENE__ 디버그 훅 추가
+- 검증: tsc 0 / eslint 0 / next build 성공 / e2e_v24 10 PASS 0 FAIL (게이트 배치·레벨업 연쇄·
+  구세이브 스킵·포탈 활성·이름 변경) / e2e_v23 회귀 19 PASS 0 FAIL
+
+Stage Summary:
+- v2.4: 레벨 게이트 퀘스트로 진행 동기부여 강화 + 구역 1~9 진행 소프트락 근본 수정 + 이름 변경 UI
+- 커밋만 수행 (APK 미빌드 — 사용자 기존 지시 유지). 다음 빌드 시 versionCode 9 / versionName 2.4

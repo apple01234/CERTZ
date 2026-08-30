@@ -37,7 +37,8 @@ export type EnemyDef = {
 
 export type QuestDef = {
   id: string;
-  type: "collect" | "hunt" | "reach" | "boss" | "talk";
+  /** v2.4: "level" — 레벨 목표 퀘스트 (need = 목표 레벨, 명확한 동기부여 + 다음 사냥터 진행 게이트) */
+  type: "collect" | "hunt" | "reach" | "boss" | "talk" | "level";
   title: string;
   desc: string;
   need?: number;
@@ -118,6 +119,8 @@ type ChapterSpec = {
   /** 스토리 배치 — 고정 퀘스트가 놓일 구역 (비는 구역은 자동 토벌 퀘스트로 채움) */
   beats: (StoryBeat & { quest: QuestDef })[];
   repeat: { need: number; gold: number; exp: number; title: string; desc: string };
+  /** v2.4 레벨 게이트 — 챕터 진입(sub1)·중간(sub4) 목표 레벨 ("N레벨 달성!" 동기부여 퀘스트) */
+  lvGate: { enter: number; mid: number };
 };
 
 /* 보상 밸런스 (사용자 지시 #6 — 골드 과다 지급 수정: 기존 기준 ×0.8) */
@@ -138,6 +141,7 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 8, dialogue: "", quest: { id: "f3", type: "collect", title: "능대들이 지키던 보석", desc: "능대들이 지키던 곳에서 또 하나의 빛이 느껴진다.", targetLabel: "보석의 흔적", reward: Math.round(60 * G), expReward: 45 } },
     ],
     repeat: { need: 8, gold: Math.round(70 * G), exp: 70, title: "[반복] 늑대 토벌 의뢰", desc: "마을 토벌 의뢰 — 늑대를 계속 사냥해 골드와 경험치를 얻자." },
+    lvGate: { enter: 3, mid: 5 },
   },
   {
     key: "kingdom", num: 3, title: "쿠소디아", subtitle: "선박의 왕국 · 늪지대",
@@ -153,6 +157,7 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 7, dialogue: "swampDone", quest: { id: "k3", type: "hunt", title: "왕국의 위협 제거", desc: "능지의 어둠이 짙어진다 — 식인초 10그루를 처치하자!", need: 10, targetKey: "swampbeast", targetLabel: "식인초", reward: Math.round(170 * G), expReward: 160 } },
     ],
     repeat: { need: 10, gold: Math.round(100 * G), exp: 100, title: "[반복] 늪지 정화 의뢰", desc: "쿠소디아 기사단 의뢰 — 식인초를 계속 사냥하자." },
+    lvGate: { enter: 8, mid: 10 },
   },
   {
     key: "alfheim", num: 4, title: "알프헤임", subtitle: "요정의 성전 · 숲의 보석",
@@ -167,6 +172,7 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 6, dialogue: "minionPurgeDone", quest: { id: "a2", type: "hunt", title: "성전 지키기", desc: "니드호그를 부르는 의식을 막자 — 하수인 12마리 처치!", need: 12, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(150 * G), expReward: 140 } },
     ],
     repeat: { need: 10, gold: Math.round(95 * G), exp: 95, title: "[반복] 성전 순찰 의뢰", desc: "요정 여왕의 의뢰 — 하수인을 계속 처치해 훈련하자." },
+    lvGate: { enter: 14, mid: 16 },
   },
   {
     key: "muspelheim", num: 5, title: "무스펠헤임", subtitle: "극열의 해역 · 화산 지대",
@@ -182,6 +188,7 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 7, dialogue: "spiritPurgeDone", quest: { id: "m3", type: "hunt", title: "호족촌 구원", desc: "엘렌을 도와 — 지하도시를 노리는 화염 정령 10마리를 처치하자!", need: 10, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(220 * G), expReward: 200 } },
     ],
     repeat: { need: 10, gold: Math.round(130 * G), exp: 130, title: "[반복] 화산 지대 순찰 의뢰", desc: "호족촌 의뢰 — 불꽃 늑대를 계속 사냥하자." },
+    lvGate: { enter: 20, mid: 23 },
   },
   {
     key: "niflheim", num: 6, title: "니플헤임", subtitle: "극한의 해역 · 얼음의 성전",
@@ -197,6 +204,7 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 7, dialogue: "frostRoutDone", quest: { id: "n3", type: "hunt", title: "설원 정화", desc: "펜리르의 권속인 서리 늑대 12마리를 처치하자!", need: 12, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(210 * G), expReward: 190 } },
     ],
     repeat: { need: 12, gold: Math.round(145 * G), exp: 145, title: "[반복] 설원 순찰 의뢰", desc: "니플헤임 정찰 의뢰 — 서리 늑대를 계속 사냥하자." },
+    lvGate: { enter: 27, mid: 30 },
   },
   {
     key: "cave", num: 7, title: "스바르트알프헤임", subtitle: "어둠 요정들의 해역 · 수정 광맥",
@@ -213,6 +221,7 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 8, dialogue: "", quest: { id: "c4", type: "collect", title: "여왕의 두 번째 부탁", desc: "어둠 요정 여왕의 마지막 부탁 — 뿌리 사이의 잔광을 회수하자.", targetLabel: "보석의 흔적", reward: Math.round(70 * G), expReward: 70 } },
     ],
     repeat: { need: 10, gold: Math.round(115 * G), exp: 115, title: "[반복] 지하 정화 의뢰", desc: "어둠 요정 여왕의 의뢰 — 거미를 계속 사냥하자." },
+    lvGate: { enter: 34, mid: 38 },
   },
   {
     key: "nidavellir", num: 8, title: "니다벨리르", subtitle: "난쟁이들의 해역 · 룬 광산",
@@ -228,6 +237,7 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 8, dialogue: "", quest: { id: "d3", type: "hunt", title: "수정 골렘 정리", desc: "광산을 어지럽히는 수정 골렘 4기를 부수자.", need: 4, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(220 * G), expReward: 200 } },
     ],
     repeat: { need: 10, gold: Math.round(150 * G), exp: 150, title: "[반복] 광산 경비 의뢰", desc: "난쟁이 광산 조합 의뢰 — 룬 골렘을 계속 처치하자." },
+    lvGate: { enter: 42, mid: 46 },
   },
   {
     key: "hel", num: 9, title: "헬", subtitle: "절벽 너머의 해역 · 대전쟁의 땅",
@@ -243,6 +253,7 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 7, dialogue: "", quest: { id: "h3", type: "hunt", title: "심연 유령 소탕", desc: "일기장을 지키는 심연 유령 6마리를 처치하자.", need: 6, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(280 * G), expReward: 260 } },
     ],
     repeat: { need: 10, gold: Math.round(175 * G), exp: 175, title: "[반복] 절벽 정찰 의뢰", desc: "헬의 기운이 강해지고 있다 — 하운드를 계속 처치하자." },
+    lvGate: { enter: 50, mid: 54 },
   },
   {
     key: "abyss", num: 10, title: "아뜰란티스", subtitle: "요르문간드의 바다 · 왕좌",
@@ -257,6 +268,7 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 6, dialogue: "wraithDone", quest: { id: "y2", type: "hunt", title: "왕좌 앞길 열기", desc: "심연 유령 10마리를 처치해 왕좌의 문을 열자!", need: 10, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(240 * G), expReward: 220 } },
     ],
     repeat: { need: 12, gold: Math.round(165 * G), exp: 165, title: "[반복] 왕좌 정찰 의뢰", desc: "바다의 기운이 강해지고 있다 — 유령을 계속 처치하자." },
+    lvGate: { enter: 58, mid: 62 },
   },
 ];
 
@@ -417,6 +429,24 @@ const ELITE_TITLE = ["정예", "광포한", "심연에 물든", "각성한", "�
 
 function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[] {
   const quests: QuestDef[] = [];
+  /* v2.4 레벨 게이트 (사용자 지시 — "5레벨을 찍자!!" 식의 명확한 동기부여):
+   *  각 챕터 진입(sub1)·중간(sub4)에 목표 레벨 퀘스트를 체인 맨 앞에 배치해
+   *  다음 사냥터로 넘어가는 진행 게이트이자 성장 목표를 제공한다.
+   *  보상 exp는 게이트 달성 직후 다음 목표로 자연스럽게 이어지도록 챕터 배율 반영 */
+  const gateLv = sub === 1 ? spec.lvGate.enter : sub === 4 ? spec.lvGate.mid : null;
+  if (gateLv != null) {
+    const gateExp = Math.round((70 + gateLv * 6) * CH_EXP[spec.num - 2] * 0.55);
+    quests.push({
+      id: `${prefix}-lv-gate`,
+      type: "level",
+      title: `Lv ${gateLv} 달성!!`,
+      desc: `${spec.title}에 들어온 이상 약해서는 안 된다. ${gateLv}레벨을 찍어 몬스터를 쓰러뜨릴 준비를 하자!`,
+      need: gateLv,
+      targetLabel: `Lv ${gateLv}`,
+      reward: Math.round((45 + gateLv * 3) * G),
+      expReward: gateExp,
+    });
+  }
   const beat = spec.beats.find((b) => b.sub === sub);
   if (beat) {
     quests.push({ ...beat.quest, id: `${prefix}-${beat.quest.id}` });

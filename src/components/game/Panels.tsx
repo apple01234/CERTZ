@@ -8,6 +8,7 @@ import {
 } from "@/game/data";
 import { CLASS_LIST, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
+import { getPlayerName } from "@/game/config"; // v2.4 — 이름 변경 표시
 
 /**
  * 2D MMORPG 기본 요소 UI — 상점 / 인벤토리 패널
@@ -894,6 +895,23 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
             className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70"
           >
             ✕
+          </button>
+        </div>
+
+        {/* v2.4 — 이름 변경 (인트로를 놓친 경우에도 언제든 이름 지정/변경 가능) */}
+        <div className="mb-2.5 mt-3 flex items-center gap-2.5 rounded-lg border border-amber-200/30 bg-amber-400/[0.07] px-2.5 py-2.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-black text-amber-200">이름 변경</p>
+            <p className="truncate text-[10px] text-white/50">현재 이름: {getPlayerName() || "세르츠"}</p>
+          </div>
+          <button
+            onClick={() => {
+              onClose(); // 설정 창 닫고 이름 패널 오픈
+              EventBus.emit("name:ask");
+            }}
+            className="shrink-0 rounded-md bg-amber-400 px-3 py-1.5 text-[11px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
+          >
+            이름 짓기
           </button>
         </div>
 
