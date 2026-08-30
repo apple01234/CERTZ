@@ -526,3 +526,38 @@ Stage Summary:
 - 몬스터 AI가 FSM 기반이 되어 상태 추가(원거리형 keepDistance 등)가 한 줄 확장으로 가능
 - 스윕 판정은 돌진베기에 적용, 이후 투사체/얇은 벽 충돌에도 재사용 가능
 - 제약 준수: APK 미빌드, 기존 기능 삭제 0
+
+---
+Task ID: sfx-1 + tile-1
+Agent: Super Z (main)
+Task: 사용자 승인 2건 — 효과음 통합(효과음연구소+小森平) + 타일맵 자연스러움 개선
+
+Work Log:
+[효과음 (sfx-1)]
+- 소스 확인: 효과음연구소(soundeffect-lab.info — 상업 무료/크레딧 불필요/재배포만 금지), 小森平(taira-komori.net — 동일 조건) → 게임 내장 허용 범위
+- 카테고리 페이지 파싱으로 mp3 직접 URL 수집, 18종 다운로드 (lab 11 + tk 7)
+  - lab은 핫링크 방지(403) → 카테고리 페이지 Referer 지정으로 해결
+  - 매핑: swing=sword-slash2, hit=blow2, crit=large-sword-slash1(신설), spin=katana-continuity1,
+    dash=highspeed-movement1, portal=magic-worp1, potion=magic-cure2(신설), equip=armor-work-1(신설),
+    bossdie=wall-destruction1, levelup=levelup1, upgradeOk=jajean1(신설) /
+    hurt=damage2, die=end_of_a_monster, roar=dragon_roar, pickup=pickup02, coin=coin02(신설),
+    quest=correct_answer3, upgradeFail=buzzer1(신설, 24초→0.8s 트리밍)
+- ffmpeg OGG 변환(44.1kHz libvorbis q4, 총 ~550KB) + 긴 원본 트리밍(spin 1.5s/equip 1.4s/potion 2.6s/die 2.2s)
+- BootScene AUDIO_LIST +6, audio.ts 전용음 매핑(기존 피치 재사용 매핑 독립화), CREDITS.md 출처 기록
+- 검증: 사운드 키 로드 18/18 OK, 재생 OK, page errors 0
+
+[타일맵 (tile-1)]
+- 원인: 전체 지면/길이 tileSprite 단일 반복 + 자로 잰 직선 경계 → 기계적으로 보임
+- scripts/build_tile_transitions.py (PIL, 결정적 시드): 64x64 전환 타일 45종 생성 (5세트 gp/dp/cp/si/ap x 9종)
+  - edge_dn/up/lt/rt: 길 텍스처가 지면으로 불규칙 뻗음 / bite_dn/up: 길 안쪽 침식 / gvar1/2·pvar: 명도 변형(0.95/1.045)
+- WorldScene.buildGroundBlend 신설: 스테이지 시드 RNG로 가로길 상하단 프린지(45%)+침식(16%)+변형 스캐터, 숲 세로길 좌우 프린지
+- BootScene TX_SETS/TX_KINDS 루프 로드, GROUND_SET 스테이지 매핑 (village·forest=gp, alfheim=dp, cave=cp, niflheim=si, abyss=ap)
+- 검증: 숲+니플헤임 스크린샷 육안 합격 (직선 경계 소멸, 반복 패턴 분산) — gvar 명도차 1차(0.92/1.07)→2차(0.95/1.045) 튜닝으로 사각형 티 제거
+- tsc 0 / eslint 0 / localStorage.clear() 정리
+- 커밋 4ac0324 (작성자 apple01234)
+
+Stage Summary:
+- 산출물: public/assets/audio +6종/교체 12종, public/assets/tx_* 45종, scripts/sfx-fetch/*, scripts/build_tile_transitions.py, src/game/{audio.ts,scenes/BootScene.ts,scenes/WorldScene.ts}
+- 사용자가 지정한 두 사이트 소스로 SFX 전면 교체 + 지형 경계 프린지로 타일맵 부자연 해결
+- BGM(Juhani Junkala CC0)은 유지, 기존 기능 삭제 0
+- 제약 준수: APK 미빌드
