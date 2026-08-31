@@ -47,7 +47,10 @@ async function restartWith(page, stage, patch) {
   await page.waitForTimeout(1800);
   await page.evaluate(() => {
     const w = window.__SERTZ__.game.scene.getScene("world");
+    // v3.0.3 — 대사 강제 종료 시 physics.world.pause() 잔존 방지 (정식 종료 경로 사용)
+    if (w.dialoguing) w.resumeFromDialogue();
     w.dialoguing = false; w.introStep = -1; w.sleepPending = false;
+    w.physics.world.resume();
   });
   await page.waitForTimeout(300);
 }

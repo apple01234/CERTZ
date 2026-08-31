@@ -24,6 +24,11 @@ const X2_MONSTERS = [
   "x2_frog", "x2_rat", "x2_bat", "x2_firebird", "x2_frostfly",
   "x2_snail", "x2_stonegolem", "x2_darkhound", "x2_reeffish",
 ] as const;
+/** v3.0.3 — 0x72 DungeonTileset II (itch.io) 신규 몬스터 7종 */
+const X3_MONSTERS = [
+  "x3_swampy", "x3_imp", "x3_icezombie", "x3_tinyzombie",
+  "x3_ogre", "x3_chort", "x3_necromancer",
+] as const;
 /** [키, 시트폭, 프레임폭] — 프레임폭은 시트 높이와 동일 (가로 나열) */
 const X2_SPELLS: [string, number, number][] = [
   ["x2_sp_arcane", 96, 16],
@@ -184,6 +189,16 @@ export class BootScene extends Phaser.Scene {
       for (const f of ["idle0", "idle1", "run0", "run1", "run2", "run3", "atk0"]) {
         this.load.image(`${k}_${f}`, `${k}_${f}.png`);
       }
+    }
+    /* v3.0.3 — 0x72 DungeonTileset II (itch.io, CC0): 신규 몬스터 7종 idle4/run4/atk1
+     *  + 무기 스프라이트 (활/지팡이/단검/표창) + GM NPC */
+    for (const k of X3_MONSTERS) {
+      for (const f of ["idle0", "idle1", "idle2", "idle3", "run0", "run1", "run2", "run3", "atk0"]) {
+        this.load.image(`${k}_${f}`, `${k}_${f}.png`);
+      }
+    }
+    for (const k of ["x3_bow", "x3_staff", "x3_dagger", "x3_shuriken", "npc_gm"]) {
+      this.load.image(k, `${k}.png`);
     }
     for (const [k, w, h] of X2_SPELLS) this.load.spritesheet(k, `${k}.png`, { frameWidth: h, frameHeight: h });
     for (const k of ["x2_arrow", "x2_bricks", "x2_bow"]) this.load.image(k, `${k}.png`);

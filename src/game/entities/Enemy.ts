@@ -2,7 +2,6 @@ import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import { ENEMIES, type EnemyDef, type EnemyKey } from "../data";
 import { FSM, type FSMState } from "../ai/FSM";
-
 /** 종별 물리/판정 크기 + 리스폰 버스트 색 */
 const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: number; burst: number }> = {
   wolf: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0x9aa0b4 },
@@ -27,6 +26,14 @@ const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: numbe
   x2_stonegolem: { bw: 24, bh: 24, hw: 38, hh: 38, burst: 0xb0a890 },
   x2_darkhound: { bw: 34, bh: 20, hw: 54, hh: 30, burst: 0x8a5aaa },
   x2_reeffish: { bw: 24, bh: 18, hw: 36, hh: 28, burst: 0x5ab0d8 },
+  // v3.0.3 — 0x72 DungeonTileset II (itch.io, CC0) 신규 7종
+  x3_swampy: { bw: 24, bh: 16, hw: 38, hh: 26, burst: 0x7ade4a },
+  x3_imp: { bw: 20, bh: 18, hw: 34, hh: 30, burst: 0xff8a3a },
+  x3_icezombie: { bw: 20, bh: 22, hw: 32, hh: 32, burst: 0xa8e0fa },
+  x3_tinyzombie: { bw: 20, bh: 18, hw: 32, hh: 28, burst: 0x8ab07a },
+  x3_ogre: { bw: 28, bh: 26, hw: 44, hh: 42, burst: 0xd8a86a },
+  x3_chort: { bw: 20, bh: 20, hw: 34, hh: 34, burst: 0xe86450 },
+  x3_necromancer: { bw: 20, bh: 22, hw: 34, hh: 34, burst: 0x9a6ad8 },
 };
 
 /**
@@ -61,6 +68,27 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   // 근접 판정용 목표 크기 (스프라이트 실제 크기 기준)
   hitW = 40;
   hitH = 30;
+
+  /* v3.0.3 — 상태이상 (시간왜곡 필드 감속 / 이터널 루프 기절) */
+  private slowUntil = 0;
+  private slowMult = 1;
+  private stunUntil = 0;
+  /** 돌진형 전용 — 돌진 방향 캐시 */
+  private chargeDir = new Phaser.Math.Vector2();
+
+  applySlow(mult: number, durMs: number) {
+    this.slowMult = Math.min(this.slowMult, mult);
+    this.slowUntil = Math.max(this.slowUntil, this.scene.time.now + durMs);
+  }
+
+  applyStun(durMs: number) {
+    this.stunUntil = Math.max(this.stunUntil, this.scene.time.now + durMs);
+  }
+
+  /** 감속 반영 실효 속도 */
+  private get effSpeed(): number {
+    return this.def.speed * (this.scene.time.now < this.slowUntil ? this.slowMult : 1);
+  }
 
   private modeTimer = 0;
   private wanderDir = new Phaser.Math.Vector2();
@@ -120,6 +148,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.homeY = y;
 
     /* ---------- 거리 기반 FSM 상태 등록 ---------- */
+    /* v3.0.3 — profile.ranged/charge에 따라 같은 뼈대라도 전투 방식이 완전히 달라진다:
+     *  근접형: chase → windup(예고) → 근접타
+     *  원거리형: chase(사거리 밖 접근, 너무 붙으면 후퇴) → windup(주문 시전) → 투사체 발사
+     *  돌진형: chase → windup(조준 예고) → chargeDash(직선 돌진) → cooldown */
     this.aiCtx = {
       enemy: this,
       player: null as unknown as PlayerLike,
@@ -129,6 +161,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       vy: 0,
     };
     this.ai = new FSM<AICtx>(this.aiCtx);
+    const prof = this.def.profile;
     const wanderState: FSMState<AICtx> = {
       name: "wander", // LONG — 어그로 밖: 배회
       update: (c) => {
@@ -138,8 +171,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
           if (Math.random() < 0.45) e.wanderDir.set(0, 0);
           else e.wanderDir.set(Phaser.Math.Between(-1, 1), Phaser.Math.Between(-1, 1)).normalize();
         }
-        c.vx = e.wanderDir.x * e.def.speed * 0.35;
-        c.vy = e.wanderDir.y * e.def.speed * 0.35;
+        c.vx = e.wanderDir.x * e.effSpeed * 0.35;
+        c.vy = e.wanderDir.y * e.effSpeed * 0.35;
         if (c.dist < e.def.aggro && c.player.hp > 0) {
           e.modeTimer = 400;
           return "chase";
@@ -150,11 +183,32 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       name: "chase", // MID — 어그로 이내: 추격
       update: (c) => {
         const e = c.enemy;
-        c.vx = c.toPlayer.x * e.def.speed;
-        c.vy = c.toPlayer.y * e.def.speed;
-        if (c.dist <= 44 && c.player.hp > 0) {
-          e.modeTimer = 340;
-          return "windup"; // SHORT — 근접: 예고 동작 진입
+        const rng = prof?.ranged;
+        if (rng) {
+          /* 원거리 캐스터 — 사거리 내 접근 시 시전, 너무 붙으면 뒤로 키팅 */
+          if (c.dist <= rng.range && c.player.hp > 0) {
+            e.modeTimer = 360;
+            return "windup";
+          }
+          if (c.dist < rng.range * 0.4) {
+            c.vx = -c.toPlayer.x * e.effSpeed;
+            c.vy = -c.toPlayer.y * e.effSpeed;
+            return;
+          }
+          c.vx = c.toPlayer.x * e.effSpeed;
+          c.vy = c.toPlayer.y * e.effSpeed;
+          if (c.dist > e.def.aggro * 1.5) {
+            e.modeTimer = 600;
+            return "wander";
+          }
+          return;
+        }
+        c.vx = c.toPlayer.x * e.effSpeed;
+        c.vy = c.toPlayer.y * e.effSpeed;
+        const meleeBand = prof?.charge ? 230 : 44;
+        if (c.dist <= meleeBand && c.player.hp > 0) {
+          e.modeTimer = prof?.charge ? 480 : 340;
+          return "windup"; // SHORT — 근접/돌진 조준: 예고 동작 진입
         } else if (c.dist > e.def.aggro * 1.5) {
           e.modeTimer = 600;
           return "wander";
@@ -162,17 +216,72 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       },
     };
     const windupState: FSMState<AICtx> = {
-      name: "windup", // SHORT — 공격 예고: 제자리 부들부들
-      enter: (c) => c.enemy.setTint(0xffb0a0), // 예고 플래시
+      name: "windup", // SHORT — 공격 예고: 제자리 부들부들 / 원거리는 주문 시전 / 돌진형은 조준 플래시
+      enter: (c) => c.enemy.setTint(prof?.charge ? 0xffd0b0 : 0xffb0a0),
       update: (c) => {
         const e = c.enemy;
         c.vx = Math.sin(e.scene.time.now * 0.06) * 12;
         c.vy = 0;
-        if (e.modeTimer <= 0) {
-          if (c.dist <= 58) {
-            c.player.takeDamage(e.def.atk, c.toPlayer);
+        if (e.modeTimer > 0) return;
+        const rng = prof?.ranged;
+        if (rng) {
+          // 원거리 — 투사체 발사 (사거리 이탈했으면 재추격)
+          if (c.dist <= rng.range * 1.1 && c.player.hp > 0) {
+            const ang = Math.atan2(c.player.y - e.y, c.player.x - e.x);
+            e.scene.fireEnemyProj({
+              x: e.x, y: e.y - 6,
+              angle: ang, speed: rng.projSpeed,
+              dmg: Math.round(e.def.atk * 1.1),
+              anim: rng.projAnim,
+              tint: e.burstTint,
+            });
+            e.modeTimer = 620;
+            return "cooldown";
           }
-          e.modeTimer = 620;
+          e.modeTimer = 300;
+          return "chase";
+        }
+        if (prof?.charge) {
+          // 돌진형 — 조준 후 직선 돌진 (돌진 경로 스윕 판정은 chargeDash에서)
+          e.chargeDir.copy(c.toPlayer);
+          e.modeTimer = prof.charge.time;
+          return "chargeDash";
+        }
+        if (c.dist <= 58) {
+          c.player.takeDamage(e.def.atk, c.toPlayer);
+          /* v3.0.3 — 접촉 공격 상태이상 (출혈/독/감속) */
+          const ap = prof?.apply;
+          if (ap && Math.random() < ap.chance) {
+            c.player.applyEnemyStatus(ap.kind, ap.dps, ap.dur);
+          }
+        }
+        e.modeTimer = 620;
+        return "cooldown";
+      },
+    };
+    const chargeDashState: FSMState<AICtx> = {
+      name: "chargeDash", // v3.0.3 — 돌진형 전용: 조준 방향 직선 돌진 (접촉 판정)
+      enter: (c) => {
+        c.enemy.setTint(0xff8060);
+        c.enemy.scene.sfxDash?.();
+      },
+      update: (c) => {
+        const e = c.enemy;
+        const prof2 = e.def.profile?.charge;
+        if (!prof2) return "chase";
+        c.vx = e.chargeDir.x * prof2.speed;
+        c.vy = e.chargeDir.y * prof2.speed;
+        // 돌진 접촉 판정 — 플레이어 원판
+        if (c.dist <= 40 && c.player.hp > 0) {
+          c.player.takeDamage(e.def.atk * 1.3, e.chargeDir);
+          const ap = e.def.profile?.apply;
+          if (ap && Math.random() < ap.chance) c.player.applyEnemyStatus(ap.kind, ap.dps, ap.dur);
+          e.modeTimer = 700;
+          e.scene.spawnBurstAt(e.x, e.y, 8, e.burstTint);
+          return "cooldown";
+        }
+        if (e.modeTimer <= 0) {
+          e.modeTimer = 700;
           return "cooldown";
         }
       },
@@ -181,8 +290,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       name: "cooldown", // 공격 후 — 살짝 물러남
       enter: (c) => c.enemy.clearTint(),
       update: (c) => {
-        c.vx = -c.toPlayer.x * c.enemy.def.speed * 0.3;
-        c.vy = -c.toPlayer.y * c.enemy.def.speed * 0.3;
+        c.vx = -c.toPlayer.x * c.enemy.effSpeed * 0.3;
+        c.vy = -c.toPlayer.y * c.enemy.effSpeed * 0.3;
         if (c.enemy.modeTimer <= 0) {
           c.enemy.modeTimer = 0;
           return "chase";
@@ -190,6 +299,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       },
     };
     this.ai.add(wanderState, chaseState, windupState, cooldownState);
+    if (prof?.charge) this.ai.add(chargeDashState);
     this.ai.set("wander");
 
     scene.add.existing(this);
@@ -227,6 +337,21 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.hpBar.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
       }
       return;
+    }
+
+    /* v3.0.3 — 기절(시간 정지): FSM 정지 + 애니 정지 + 반짝임 */
+    if (this.scene.time.now < this.stunUntil) {
+      this.setVelocity(0, 0);
+      if (this.anims.isPlaying) this.anims.pause();
+      this.setTint(0xb0a0ff);
+      if (this.hpBar && this.hpBarBg) {
+        this.hpBarBg.setPosition(this.x, this.y - this.displayHeight / 2 - 8);
+        this.hpBar.setPosition(this.x, this.y - this.displayHeight / 2 - 8);
+      }
+      return;
+    } else if (this.anims.isPaused) {
+      this.anims.resume();
+      this.clearTint();
     }
 
     // 넉백 감쇠 (죽은 뒤 제외 — destroy 후 접근 방지)
@@ -287,6 +412,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.alive = false;
     this.scene.sfxEnemyDie();
     this.scene.spawnDeathBurst(this.x, this.y);
+    /* v3.0.3 — 사망 장판 (늪지 독괴물 등 — 죽어도 독 구덩이를 남긴다) */
+    const fod = this.def.profile?.fieldOnDeath;
+    if (fod) {
+      this.scene.spawnField({
+        x: this.x, y: this.y, radius: fod.radius, dur: fod.dur, dps: fod.dps,
+        kind: fod.kind, owner: "enemy",
+      });
+    }
     // 2D MMORPG 기본 요소: 골드/물약 드롭
     this.scene.dropLoot(this.x, this.y, this.def);
     if (this.hpBar) this.hpBar.destroy();
@@ -329,4 +462,6 @@ export interface PlayerLike {
   y: number;
   hp: number;
   takeDamage(dmg: number, fromDir: Phaser.Math.Vector2): void;
+  /** v3.0.3 — 몬스터 상태이상 부여 (출혈/독/감속) */
+  applyEnemyStatus(kind: "bleed" | "poison" | "slow", dps: number, durMs: number): void;
 }

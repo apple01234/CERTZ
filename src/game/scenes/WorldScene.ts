@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
-import { familyOf } from "../classes";
+import { familyOf, isClassKey, classLabel } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
@@ -171,7 +171,7 @@ export class WorldScene extends Phaser.Scene {
   private repeatOn = false;
 
   /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
-  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "inn" | "house" | "innkeeper" | "bed" | "exit"; dlg?: string; npcId?: string; label: string }[] = [];
+  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
   private activeNpcId: string | null = null;
   private talkedNpcs = new Set<string>();
@@ -215,6 +215,27 @@ export class WorldScene extends Phaser.Scene {
   /* ----- 플레이어 투사체 (v1.8 — 궁수 관통 화살 / 마법사 매직 볼트) ----- */
   private pProjPool: Phaser.Physics.Arcade.Sprite[] = [];
   private pProjIdx = 0;
+
+  /* ----- v3.0.3: 몬스터 투사체 (임프 화염구/강령술사 다크볼트 등) ----- */
+  private eProjPool: Phaser.Physics.Arcade.Sprite[] = [];
+  private eProjIdx = 0;
+
+  /* ----- v3.0.3: 지면 장판 (독/화염/성역/시간왜곡) — owner별 판정 분기 ----- */
+  private fields: {
+    zone: Phaser.GameObjects.Arc;
+    x: number; y: number; radius: number;
+    dur: number; dps: number; kind: "poison" | "fire" | "light" | "time";
+    owner: "enemy" | "player";
+    tickAcc: number;
+    heal?: boolean; slow?: boolean; stun?: boolean;
+  }[] = [];
+
+  /* ----- v3.0.3: 무기 스프라이트 (활/지팡이/단검 — 손에 들고 다니는 장비 비주얼) ----- */
+  private weaponImg: Phaser.GameObjects.Image | null = null;
+  private weaponKey: "x3_bow" | "x3_staff" | "x3_dagger" | null = null;
+
+  /* ----- v3.0.3: 그림자 칼날 오비트 (나이트블레이드/섀도우로드 3차기) ----- */
+  private orbitBlades: { imgs: Phaser.GameObjects.Image[]; angle: number; until: number; dmgMul: number; tint: number; hitCd: Map<unknown, number> } | null = null;
 
   /* ----- v1.9: 키 매핑 / 펫 / 치장 오라 / 강화 오라 ----- */
   private keymap: KeyMap = loadKeyMap();
@@ -270,6 +291,13 @@ export class WorldScene extends Phaser.Scene {
     this.netAcc = 0;
     this.pProjPool = []; // 씬 소유 오브젝트는 씬 종료와 함께 정리 — 인덱스만 초기화
     this.pProjIdx = 0;
+    /* v3.0.3 — 신규 씬 소유 리소스 리셋 (씬 재시작 후 파괴된 구 객체 참조 방지) */
+    this.eProjPool = [];
+    this.eProjIdx = 0;
+    this.fields = [];
+    this.weaponImg = null;
+    this.weaponKey = null;
+    this.orbitBlades = null;
     this.visited = new Set();
     this.plantHazards = [];
     this.layout = null;
@@ -331,6 +359,10 @@ export class WorldScene extends Phaser.Scene {
 
   create() {
     this.impactFX = new ImpactFX(this);
+    /* v3.0.3 — 씬 재시작 시 물리 월드 일시정지 상태가 이월되는 문제 방지:
+     *  대사 중 씬 재시작(포탈/사망 등)이 일어나면 구 씬의 world.pause()가
+     *  새 씬에서도 유지되어 캐릭터·몬스터가 완전히 멈춘다. 재시작마다 강제 resume. */
+    this.physics.world.resume();
     const data = this.registry.get("initData") as {
       stage?: StageKey;
       save?: SaveData;
@@ -1367,6 +1399,28 @@ export class WorldScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(21);
     this.interactables.push({ x: jx, y: jy, kind: "job", npcId: "jobmaster", label: "카이엔 교관 — 전직 상담" });
+
+    /* v3.0.3 (사용자 지시 #2) — 임시 GM NPC: 자유전직/골드/레벨 지원
+     *  마을 전직관 옆에 배치. E키 → GM 패널 (전직 무제한/골드/레벨 조정) */
+    const gx = jx + 70;
+    const gy = jy + 6;
+    const gglow = this.add.image(gx, gy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe9a0).setScale(0.75).setAlpha(0.3);
+    this.tweens.add({ targets: gglow, alpha: 0.5, scale: 0.95, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    const gmNpc = this.add.image(gx, gy, "npc_gm").setDepth(Math.floor(gy / 10)).setScale(1.15);
+    this.tweens.add({ targets: gmNpc, y: gy - 3, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.add
+      .text(gx, gy - 46, "GM", {
+        fontFamily: "sans-serif", fontSize: "12px", color: "#ffd76a",
+        stroke: "#1a1020", strokeThickness: 4, fontStyle: "bold",
+      })
+      .setOrigin(0.5).setDepth(21);
+    this.add
+      .text(gx, gy - 34, "운영자 지원", {
+        fontFamily: "sans-serif", fontSize: "10px", color: "#ffe9b0",
+        stroke: "#000000", strokeThickness: 3,
+      })
+      .setOrigin(0.5).setDepth(21);
+    this.interactables.push({ x: gx, y: gy, kind: "gm", npcId: "gm", label: "GM — 자유전직·골드·레벨 지원" });
   }
 
   /** 건물 간판 — 목재 패널 스타일 텍스트 */
@@ -2388,6 +2442,34 @@ export class WorldScene extends Phaser.Scene {
       this.save();
     };
 
+    /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구) */
+    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap"; value?: number | string }) => {
+      if (!this.player) return;
+      const p = this.player;
+      if (v.type === "job" && typeof v.value === "string") {
+        if (!isClassKey(v.value)) return;
+        const ok = p.gmSetClass(v.value);
+        EventBus.emit("banner:show", { text: ok ? `GM 전직 완료 — ${classLabel(v.value)}` : "전직 실패" });
+        this.emitSkills();
+        this.emitRpgState();
+        this.save();
+      } else if (v.type === "gold" && typeof v.value === "number") {
+        p.addGold(v.value);
+        EventBus.emit("banner:show", { text: `GM — 골드 ${v.value >= 0 ? "+" : ""}${v.value}` });
+      } else if (v.type === "lv" && typeof v.value === "number") {
+        p.gmSetLevel(v.value);
+        EventBus.emit("banner:show", { text: `GM — 레벨 ${p.lv}` });
+        this.emitSkills();
+      } else if (v.type === "heal") {
+        p.healFull();
+        EventBus.emit("banner:show", { text: "GM — HP/MP 완전 회복" });
+      } else if (v.type === "ap" && typeof v.value === "number") {
+        p.ap += v.value;
+        this.emitHud();
+        EventBus.emit("banner:show", { text: `GM — AP +${v.value}` });
+      }
+    };
+
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
     EventBus.on("input:skill1", onS1);
@@ -2414,6 +2496,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:useItem", onUseItem);
     EventBus.on("rpg:warp", onWarp);
     EventBus.on("rpg:autohunt", onAutoHunt);
+    EventBus.on("rpg:gm", onGm);
     this.events.once("shutdown", () => {
       EventBus.off("input:move", onMove);
       EventBus.off("input:attack", onAtk);
@@ -2441,6 +2524,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:useItem", onUseItem);
       EventBus.off("rpg:warp", onWarp);
       EventBus.off("rpg:autohunt", onAutoHunt);
+      EventBus.off("rpg:gm", onGm);
     });
   }
 
@@ -2465,6 +2549,12 @@ export class WorldScene extends Phaser.Scene {
 
     // 플레이어 투사체 진행/판정 — 대화/채팅 중에도 날아가는 것은 계속 (v1.8)
     this.tickPlayerProjs(dt);
+    // v3.0.3 — 몬스터 투사체/장판/오비트 칼날 + 무기 비주얼 (사망/대화 중에도 진행)
+    this.tickEnemyProjs(dt);
+    this.tickFields(dt);
+    this.tickOrbitBlades(dt);
+    if (this.player && this.player.state !== "dead") this.syncWeaponSprite();
+    else if (this.weaponImg) { this.weaponImg.setVisible(false); }
 
     // 채팅 입력 중 — 게임 키/이동 완전 차단 (원격 보간은 위에서 계속)
     if (this.chatFocused || this.dialoguing || !this.player) return;
@@ -2501,6 +2591,9 @@ export class WorldScene extends Phaser.Scene {
       this.attackQueued = true;
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
+    /* v3.0.3 — 3차기(V) / 4차기(B): 해금 티어 미달/쿨/MP 무시하고 호출하면 내부에서 무시된다 */
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill3"))) this.player.useSkill3();
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill4"))) this.player.useSkill4();
 
     // 수면 연출 중 — 입력 봉인 (v2.2)
     if (this.sleeping) {
@@ -2666,6 +2759,13 @@ export class WorldScene extends Phaser.Scene {
         // 궁수 관통 화살 — 군집(2+) 또는 보스 한정 (단일 몹엔 기본공격으로 MP 절약)
         else if (this.countTargetsNear(340) >= 2 || best instanceof Boss) p.useSkill1();
       }
+      /* v3.0.3 — 3차기: 보스/군집에서 우선 사용, 4차기: 보스 또는 군집 3+ */
+      if (p.skill3Unlocked && p.skill3Cd <= 0 && p.mp >= 40 && (best instanceof Boss || this.countTargetsNear(300) >= 2)) {
+        p.useSkill3();
+      }
+      if (p.skill4Unlocked && p.skill4Cd <= 0 && p.mp >= 60 && (best instanceof Boss || this.countTargetsNear(340) >= 3)) {
+        p.useSkill4();
+      }
     } else {
       // 근접 (전사/도적/미전직)
       if (bestD > atkRange) {
@@ -2685,6 +2785,13 @@ export class WorldScene extends Phaser.Scene {
       if (p.skill1Cd <= 0 && p.mp >= 15) {
         const spinR = 118 + 8 * p.tier;
         if (this.countTargetsNear(spinR) >= 2 || best instanceof Boss) p.useSkill1();
+      }
+      /* v3.0.3 — 3차기/4차기: 군집·보스 상황에서 자동 기동 */
+      if (p.skill3Unlocked && p.skill3Cd <= 0 && p.mp >= 40 && (best instanceof Boss || this.countTargetsNear(260) >= 2)) {
+        p.useSkill3();
+      }
+      if (p.skill4Unlocked && p.skill4Cd <= 0 && p.mp >= 60 && (best instanceof Boss || this.countTargetsNear(320) >= 3)) {
+        p.useSkill4();
       }
     }
   }
@@ -2892,6 +2999,8 @@ export class WorldScene extends Phaser.Scene {
     blend?: "add" | "normal";
     /** angle로 스프라이트 회전 (화살 등 방향성 텍스처) */
     rot?: boolean;
+    /** v3.0.3 — 유도 (데드아이 신의 화살비): 가장 가까운 적으로 진로 수정 */
+    homing?: boolean;
   }) {
     if (this.pProjPool.length === 0) {
       for (let i = 0; i < 24; i++) {
@@ -2919,6 +3028,7 @@ export class WorldScene extends Phaser.Scene {
     p.setData("pierce", cfg.pierce);
     p.setData("knock", cfg.knock);
     p.setData("tint", cfg.tint);
+    p.setData("homing", cfg.homing === true);
     p.setData("life", 1700);
   }
 
@@ -2934,6 +3044,27 @@ export class WorldScene extends Phaser.Scene {
       }
       p.setData("life", life);
       const vel = p.body!.velocity;
+      /* v3.0.3 — 유도 화살: 활성 적 중 가장 가까운 대상으로 진로 서서히 수정 */
+      if (p.getData("homing") === true) {
+        let tgt: Enemy | Boss | null = null;
+        let bd = 420;
+        for (const e of this.getAllTargets()) {
+          if (!e.active) continue;
+          const d = Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y);
+          if (d < bd) { bd = d; tgt = e; }
+        }
+        if (tgt) {
+          const want = Math.atan2(tgt.y - p.y, tgt.x - p.x);
+          const cur = Math.atan2(vel.y, vel.x);
+          let diff = want - cur;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          const speed = Math.hypot(vel.x, vel.y);
+          const na = cur + Phaser.Math.Clamp(diff, -0.12, 0.12);
+          p.body!.velocity.set(Math.cos(na) * speed, Math.sin(na) * speed);
+          vel.setTo(p.body!.velocity.x, p.body!.velocity.y);
+        }
+      }
       const dir = new Phaser.Math.Vector2(vel.x, vel.y).normalize();
       for (const e of this.getAllTargets()) {
         let pierce = p.getData("pierce") as number;
@@ -2965,6 +3096,244 @@ export class WorldScene extends Phaser.Scene {
         }
       }
     }
+  }
+
+  /* ================= v3.0.3 — 몬스터 투사체 (고유 개성: 원거리 캐스터) ================= */
+
+  /** 몬스터 투사체 발사 — 임프 화염구 / 강령술사 다크볼트 / 서리 날도요 얼음창 등 */
+  fireEnemyProj(cfg: { x: number; y: number; angle: number; speed: number; dmg: number; anim: string; tint?: number; scale?: number }) {
+    if (this.eProjPool.length === 0) {
+      for (let i = 0; i < 16; i++) {
+        const p = this.physics.add.sprite(0, 0, "orb");
+        p.setBlendMode(Phaser.BlendModes.ADD).setDepth(12);
+        p.setActive(false).setVisible(false);
+        (p.body as Phaser.Physics.Arcade.Body).setCircle(6);
+        this.eProjPool.push(p);
+      }
+    }
+    const p = this.eProjPool[this.eProjIdx];
+    this.eProjIdx = (this.eProjIdx + 1) % this.eProjPool.length;
+    p.enableBody(true, cfg.x, cfg.y, true, true);
+    this.physics.velocityFromRotation(cfg.angle, cfg.speed, p.body!.velocity);
+    p.anims.stop();
+    if (this.anims.exists(cfg.anim)) p.play(cfg.anim);
+    else p.setTexture("orb");
+    p.setTint(cfg.tint ?? 0xffffff).setScale(cfg.scale ?? 0.85).setAlpha(0.95);
+    p.setBlendMode(Phaser.BlendModes.ADD);
+    p.setData("dmg", cfg.dmg);
+    p.setData("life", 2600);
+  }
+
+  /** 몬스터 투사체 진행 — 플레이어 원판 판정 */
+  private tickEnemyProjs(dt: number) {
+    if (!this.player || this.eProjPool.length === 0) return;
+    for (const p of this.eProjPool) {
+      if (!p.active) continue;
+      const life = (p.getData("life") as number) - dt;
+      if (life <= 0) {
+        p.disableBody(true, true);
+        continue;
+      }
+      p.setData("life", life);
+      const d = Phaser.Math.Distance.Between(p.x, p.y, this.player.x, this.player.y);
+      if (d <= 26 && this.player.state !== "dead") {
+        const dir = new Phaser.Math.Vector2(p.body!.velocity.x, p.body!.velocity.y).normalize();
+        this.player.takeDamage(p.getData("dmg") as number, dir);
+        this.spawnBurstAt(p.x, p.y, 6, (p.getData("tint") as number) ?? 0xffffff);
+        p.disableBody(true, true);
+      }
+    }
+  }
+
+  /* ================= v3.0.3 — 지면 장판 (독/화염/성역/시간왜곡) ================= */
+
+  /** 범용 장판 생성 — owner=enemy(플레이어에 데미지) / player(적에 데미지+옵션 힐/감속) */
+  spawnField(cfg: {
+    x: number; y: number; radius: number; dur: number; dps: number;
+    kind: "poison" | "fire" | "light" | "time";
+    owner: "enemy" | "player";
+    heal?: boolean; slow?: boolean; stun?: boolean;
+  }) {
+    const tint = cfg.kind === "poison" ? 0x7ade4a : cfg.kind === "fire" ? 0xff8a3a : cfg.kind === "light" ? 0xffe9a0 : 0xb0a0ff;
+    const zone = this.add.circle(cfg.x, cfg.y, cfg.radius, tint, 0.22).setDepth(2).setStrokeStyle(2, tint, 0.55);
+    this.tweens.add({ targets: zone, alpha: { from: 0.85, to: 0.5 }, duration: 900, yoyo: true, repeat: -1 });
+    this.fields.push({
+      zone, x: cfg.x, y: cfg.y, radius: cfg.radius,
+      dur: cfg.dur, dps: cfg.dps, kind: cfg.kind, owner: cfg.owner,
+      tickAcc: 0, heal: cfg.heal, slow: cfg.slow, stun: cfg.stun,
+    });
+  }
+
+  private tickFields(dt: number) {
+    if (this.fields.length === 0) return;
+    for (let i = this.fields.length - 1; i >= 0; i--) {
+      const f = this.fields[i];
+      f.dur -= dt;
+      f.tickAcc += dt;
+      if (f.dur <= 0) {
+        f.zone.destroy();
+        this.fields.splice(i, 1);
+        continue;
+      }
+      if (f.tickAcc < 500) continue; // 0.5초마다 판정
+      f.tickAcc = 0;
+      const dmgTick = Math.max(1, Math.round(f.dps * 0.5));
+      if (f.owner === "enemy") {
+        // 몬스터 장판 — 플레이어가 밟으면 피해 (+독이면 상태이상도)
+        if (this.player && this.player.state !== "dead" &&
+            Phaser.Math.Distance.Between(f.x, f.y, this.player.x, this.player.y) <= f.radius) {
+          this.player.applyFieldDamage(dmgTick, f.kind === "poison" ? "poison" : "burn");
+          if (f.kind === "poison") this.player.applyDot("poison", f.dps * 0.6, 2000);
+        }
+      } else {
+        // 플레이어 장판 — 적 피해 (+감속/기절/힐 옵션)
+        for (const e of this.getAllTargets()) {
+          if (!e.active) continue;
+          if (Phaser.Math.Distance.Between(f.x, f.y, e.x, e.y) > f.radius) continue;
+          const away = new Phaser.Math.Vector2(e.x - f.x, e.y - f.y).normalize();
+          e.takeDamage(dmgTick, away, 40, false);
+          const now = this.time.now;
+          if (f.slow) (e as Enemy).applySlow?.(0.45, 1200);
+          if (f.stun) (e as Enemy).applyStun?.(600);
+          void now;
+        }
+        if (f.heal && this.player && this.player.state !== "dead" &&
+            Phaser.Math.Distance.Between(f.x, f.y, this.player.x, this.player.y) <= f.radius) {
+          const healAmt = Math.max(2, Math.round(this.player.maxHp * 0.015));
+          this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmt);
+          this.spawnHealFx(this.player.x, this.player.y, 0xffe9a0);
+          this.emitHud();
+        }
+      }
+    }
+  }
+
+  /* ================= v3.0.3 — 신규 스킬 이펙트 헬퍼 ================= */
+
+  /** 힐 이펙트 — 상승하는 초록/빛 반짝임 */
+  spawnHealFx(x: number, y: number, tint = 0x7dffa8) {
+    this.burstEmitter.setParticleTint(tint);
+    this.burstEmitter.explode(10, x, y - 10);
+    const ring = this.add.image(x, y - 6, "shock_ring").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.18).setAlpha(0.9);
+    this.tweens.add({ targets: ring, scale: 0.9, alpha: 0, duration: 420, onComplete: () => ring.destroy() });
+  }
+
+  /** 빛기둥 — 크루세이더 심판/낙뢰 공용 기둥 이펙트 */
+  spawnPillar(x: number, y: number, tint = 0xffe9a0, height = 120) {
+    const pillar = this.add.rectangle(x, y - height / 2 + 14, 22, height, tint, 0.75).setDepth(25).setBlendMode(Phaser.BlendModes.ADD);
+    const glow = this.add.image(x, y, "glow").setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(1.2).setAlpha(0.8);
+    this.tweens.add({ targets: pillar, alpha: 0, scaleY: 0.2, duration: 320, ease: "Quad.in", onComplete: () => pillar.destroy() });
+    this.tweens.add({ targets: glow, alpha: 0, scale: 0.4, duration: 380, onComplete: () => glow.destroy() });
+    this.spawnBurstAt(x, y, 12, tint);
+  }
+
+  /** 그림자 칼날 오비트 시작 — 나이트블레이드/섀도우로드 3차기 */
+  startOrbitBlades(dmgMul: number, tint: number, durMs = 6000) {
+    if (this.orbitBlades) {
+      for (const im of this.orbitBlades.imgs) im.destroy();
+    }
+    const imgs: Phaser.GameObjects.Image[] = [];
+    for (let i = 0; i < 3; i++) {
+      const im = this.add.image(0, 0, "slash0").setDepth(14).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.55).setRotation(i * ((Math.PI * 2) / 3));
+      imgs.push(im);
+    }
+    this.orbitBlades = { imgs, angle: 0, until: this.time.now + durMs, dmgMul, tint, hitCd: new Map() };
+  }
+
+  private tickOrbitBlades(dt: number) {
+    const ob = this.orbitBlades;
+    if (!ob || !this.player) return;
+    if (this.time.now >= ob.until || this.player.state === "dead") {
+      for (const im of ob.imgs) im.destroy();
+      this.orbitBlades = null;
+      return;
+    }
+    ob.angle += dt * 0.0055; // 초당 ~315°
+    const r = 78;
+    for (let i = 0; i < ob.imgs.length; i++) {
+      const a = ob.angle + (i * Math.PI * 2) / ob.imgs.length;
+      ob.imgs[i].setPosition(this.player.x + Math.cos(a) * r, this.player.y - 8 + Math.sin(a) * r * 0.72);
+      ob.imgs[i].setRotation(a + Math.PI / 2);
+    }
+    // 판정 — 개체별 380ms 재히트 쿨
+    for (const e of this.getAllTargets()) {
+      if (!e.active) continue;
+      const last = ob.hitCd.get(e) ?? 0;
+      if (this.time.now - last < 380) continue;
+      for (const im of ob.imgs) {
+        if (Phaser.Math.Distance.Between(im.x, im.y, e.x, e.y) <= 34) {
+          ob.hitCd.set(e, this.time.now);
+          const away = new Phaser.Math.Vector2(e.x - this.player.x, e.y - this.player.y).normalize();
+          e.takeDamage(Math.round(this.player.atkTotal * ob.dmgMul), away, 140, false);
+          break;
+        }
+      }
+    }
+  }
+
+  /** 그림자 분신 자폭 — 섀도우로드 4차기 (플레이어 위치에서 대상에게 돌진 후 폭발) */
+  fireShadowClone(target: Enemy | Boss, tint: number, dmgMul: number) {
+    if (!this.player) return;
+    const sx = this.player.x;
+    const sy = this.player.y;
+    const clone = this.add.image(sx, sy, "hero_idle0").setDepth(14).setTint(tint).setAlpha(0.85);
+    this.tweens.add({
+      targets: clone,
+      x: target.x, y: target.y,
+      duration: 240, ease: "Cubic.in",
+      onComplete: () => {
+        this.spawnBurstAt(target.x, target.y, 18, tint);
+        const away = new Phaser.Math.Vector2(1, 0);
+        target.takeDamage(Math.round(this.player!.atkTotal * dmgMul), away, 240, false);
+        clone.destroy();
+      },
+    });
+  }
+
+  /* ================= v3.0.3 — 무기 스프라이트 (활/지팡이/단검 손에 들기) =================
+   *  사용자 지시 #6 — "궁수가 왜 활을 안씀? 마법사가 왜 지팡이를 안씀? 도적이 왜 단검을 안씀?":
+   *  계열별 무기를 항상 손에 든 채로 렌더링. 바라보는 방향에 따라 앞/뒤 레이어가 바뀐다. */
+  private syncWeaponSprite() {
+    if (!this.player) return;
+    const fam = familyOf(this.player.cls);
+    const want = fam === "ranger" ? "x3_bow" : fam === "mage" ? "x3_staff" : fam === "thief" ? "x3_dagger" : null;
+    if (!want) {
+      if (this.weaponImg) { this.weaponImg.setVisible(false); }
+      return;
+    }
+    if (this.weaponKey !== want) {
+      if (!this.weaponImg) {
+        this.weaponImg = this.add.image(0, 0, want).setDepth(11);
+      } else {
+        this.weaponImg.setTexture(want);
+      }
+      this.weaponKey = want;
+    }
+    const w = this.weaponImg!;
+    w.setVisible(true);
+    const p = this.player;
+    const f = p.facing;
+    const aimingUp = Math.abs(f.x) < Math.abs(f.y) && f.y < 0;
+    const aimingDown = Math.abs(f.x) < Math.abs(f.y) && f.y > 0;
+    if (want === "x3_bow") {
+      // 활 — 조준 방향을 향함 (각도 회전)
+      const ang = Math.atan2(f.y, f.x);
+      w.setRotation(ang + Math.PI / 2);
+      w.setPosition(p.x + f.x * 14, p.y - 8 + f.y * 10);
+      w.setScale(0.62);
+    } else if (want === "x3_staff") {
+      // 지팡이 — 어깨 옆에 세워 들기 (위를 보면 뒤로 기울임)
+      w.setRotation(aimingUp ? -0.35 : aimingDown ? 0.15 : 0.1);
+      w.setPosition(p.x + (p.flipX ? -13 : 13), p.y - 10);
+      w.setScale(0.58);
+    } else {
+      // 단검 — 허리 옆 (역습 시 그림자연타 스윕과 함께)
+      w.setRotation(p.flipX ? 2.4 : 0.7);
+      w.setPosition(p.x + (p.flipX ? -11 : 11), p.y - 2);
+      w.setScale(0.9);
+    }
+    // 측면 반대 방향을 볼 때 몸 뒤로 (원근감)
+    w.setDepth(f.x < 0 && Math.abs(f.x) >= Math.abs(f.y) ? 9 : 11);
   }
 
   /* ================= E키 상호작용 ================= */
@@ -3038,6 +3407,9 @@ export class WorldScene extends Phaser.Scene {
     } else if (it.kind === "job") {
       // 전직 교관 — 상담 대사 후 전직 패널 자동 오픈 (v1.9)
       this.showDialogue("jobMaster", "jobmaster");
+    } else if (it.kind === "gm") {
+      /* v3.0.3 — GM NPC: 전직 상담 없이 즉시 GM 패널 오픈 */
+      EventBus.emit("ui:panel", { panel: "gm" });
     } else if (it.kind === "inn") {
       this.enterInterior("interior_inn");
     } else if (it.kind === "house") {
@@ -3829,10 +4201,19 @@ export class WorldScene extends Phaser.Scene {
       s1Max: this.player.skill1MaxEff,
       s2Cd: Math.round(this.player.skill2Cd),
       s2Max: this.player.skill2MaxEff,
+      /* v3.0.3 — 3차기(V)/4차기(B) 쿨다운 + 해금 */
+      s3Cd: Math.round(this.player.skill3Cd),
+      s3Max: this.player.skill3MaxEff,
+      s4Cd: Math.round(this.player.skill4Cd),
+      s4Max: this.player.skill4MaxEff,
+      s3Unlocked: this.player.skill3Unlocked,
+      s4Unlocked: this.player.skill4Unlocked,
       /* v2.5 — 계열별 스킬 라벨 (기본공격 포함 3슬롯 교체 표기) */
       atkName: this.player.attackName,
       s1Name: this.player.skill1Name,
       s2Name: this.player.skill2Name,
+      s3Name: this.player.skill3Name,
+      s4Name: this.player.skill4Name,
     });
   }
 

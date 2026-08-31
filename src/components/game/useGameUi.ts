@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { EventBus, type HudState, type QuestState, type EndState, type RpgState, type PanelKind, type QuestLogState } from "./EventBus";
 
-type Skills = { mp: number; s1Cd: number; s1Max: number; s2Cd: number; s2Max: number; atkName?: string; s1Name?: string; s2Name?: string };
+type Skills = { mp: number; s1Cd: number; s1Max: number; s2Cd: number; s2Max: number; s3Cd: number; s3Max: number; s4Cd: number; s4Max: number; s3Unlocked: boolean; s4Unlocked: boolean; atkName?: string; s1Name?: string; s2Name?: string; s3Name?: string; s4Name?: string };
 
 const emptyHud: HudState = {
   hp: 100, maxHp: 100, mp: 60, maxMp: 60, lv: 1, exp: 0, expNext: 60,
@@ -26,7 +26,7 @@ export function useGameUi() {
   const [state, setState] = useState<"boot" | "title" | "playing">("boot");
   const [hud, setHud] = useState<HudState>(emptyHud);
   const [quest, setQuest] = useState<QuestState>(emptyQuest);
-  const [skills, setSkills] = useState<Skills>({ mp: 60, s1Cd: 0, s1Max: 4000, s2Cd: 0, s2Max: 6000 });
+  const [skills, setSkills] = useState<Skills>({ mp: 60, s1Cd: 0, s1Max: 4000, s2Cd: 0, s2Max: 6000, s3Cd: 0, s3Max: 9000, s4Cd: 0, s4Max: 14000, s3Unlocked: false, s4Unlocked: false });
   const [dialogue, setDialogue] = useState<{ speaker: string; lines: string[] } | null>(null);
   const [boss, setBoss] = useState<{ name: string; hp: number; maxHp: number } | null>(null);
   const [banner, setBanner] = useState<string | null>(null);

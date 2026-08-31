@@ -415,34 +415,104 @@ export function freeJobOption(key?: string | null): ClassDef | null {
   return alt ?? null;
 }
 
-/* v3.0.2 (사용자 지시 #10 — "전직을 해도 스킬이 안바뀜"):
- *  2차 이상 클래스별 스킬 3슬롯 이름 테이블 — 전직하면 스킬 이름이 즉시 바뀌어 체감되게 한다.
- *  [기본공격, 주력기(Z), 기동기(C)] — 1차 라벨은 Player getter 기본값 유지 */
-export const SKILL_LABELS: Partial<Record<ClassKey, [string, string, string]>> = {
-  berserker: ["광폭 연타", "파괴의 회전베기", "살상 돌진"],
-  guardian: ["수호 참격", "성벽 회전베기", "방패 돌진"],
-  sniper: ["저격 사격", "매의 관통 화살", "매의 질풍"],
-  windrunner: ["질풍 연사", "회오리 화살", "질풍 가르기"],
-  archmage: ["대폭발 마법탄", "아크 볼트", "대전이 점멸"],
-  sage: ["현자의 마법탄", "지혜의 볼트", "순환 점멸"],
-  assassin: ["암살 연타", "그림자 회전베기", "암습 돌진"],
-  swashbuckler: ["화려한 연타", "검무 회전베기", "화려한 돌진"],
-  warlord: ["지배의 참격", "전장 선회베기", "전장 돌파"],
-  paladin: ["성검 참격", "심판의 회전베기", "빛의 돌진"],
-  eagleeye: ["신관 사격", "절명 화살", "매의 부리"],
-  tempest: ["폭풍 연사", "폭풍 화망", "폭풍 질주"],
-  stormbringer: ["뇌전 마법탄", "스톰 볼트", "뇌우 점멸"],
-  chronicle: ["서사의 마법탄", "크로니 볼트", "시간 점멸"],
-  nightblade: ["야경 연타", "야그림자 회전베기", "야간 돌진"],
-  duelist: ["결투 연타", "결투의 회전베기", "결투 돌진"],
-  warbringer: ["종언의 참격", "전쟁의 회오리", "파멸 돌진"],
-  crusader: ["천벌의 참격", "성역의 회전베기", "심판 돌진"],
-  deadeye: ["신의 사격", "심판의 화살", "차원 사격"],
-  skylord: ["천공 연사", "하늘의 화망", "천공 질주"],
-  arclord: ["절대 마법탄", "아크로드 볼트", "차원 점멸"],
-  eternal: ["영겁의 마법탄", "이터널 볼트", "영원의 점멸"],
-  shadowlord: ["심연 연타", "암흑 회전베기", "그림자 돌진"],
-  blademaster: ["신살 연타", "쌍검 회전베기", "극한 돌진"],
+/* v3.0.2 (사용자 지시 #10 — "전직을 해도 스킬이 안바뀜") → v3.0.3 확장:
+ *  클래스별 스킬 5슬롯 테이블 — [기본공격, 주력기(Z), 기동기(C), 3차기(V), 4차기(B)]
+ *  v3.0.3 (지시 — "3차에는 스킬 3개, 4차는 4개"):
+ *   - 3차 클래스부터 스킬 3개 (s3 해금), 4차는 스킬 4개 (s4 해금)
+ *   - 각 상위직은 고유 메커니즘을 가진다 (세이지 계열=힐/빛, 암살 계열=출혈 등)
+ *   - 1차/2차 라벨은 s3/s4 자리가 빈 문자열 — Player getter가 계열 기본값 처리 */
+export const SKILL_LABELS: Partial<Record<ClassKey, [string, string, string, string, string]>> = {
+  berserker: ["광폭 연타", "파괴의 회전베기", "살상 돌진", "", ""],
+  guardian: ["수호 참격", "성벽 회전베기", "방패 돌진", "", ""],
+  sniper: ["저격 사격", "매의 관통 화살", "매의 질풍", "", ""],
+  windrunner: ["질풍 연사", "회오리 화살", "질풍 가르기", "", ""],
+  archmage: ["대폭발 마법탄", "아크 볼트", "대전이 점멸", "", ""],
+  sage: ["현자의 마법탄", "지혜의 볼트", "순환 점멸", "", ""],
+  assassin: ["암살 연타", "그림자 회전베기", "암습 돌진", "", ""],
+  swashbuckler: ["화려한 연타", "검무 회전베기", "화려한 돌진", "", ""],
+  warlord: ["지배의 참격", "전장 선회베기", "전장 돌파", "전장의 함성", ""],
+  paladin: ["성검 참격", "심판의 회전베기", "빛의 돌진", "성역 — 빛의 결계", ""],
+  eagleeye: ["신관 사격", "절명 화살", "매의 부리", "절사명중 사격", ""],
+  tempest: ["폭풍 연사", "폭풍 화망", "폭풍 질주", "폭풍의 눈", ""],
+  stormbringer: ["뇌전 마법탄", "스톰 볼트", "뇌우 점멸", "낙뢰 소환", ""],
+  chronicle: ["서사의 마법탄", "크로니 볼트", "시간 점멸", "시간 왜곡", ""],
+  nightblade: ["야경 연타", "야그림자 회전베기", "야간 돌진", "그림자 칼날", ""],
+  duelist: ["결투 연타", "결투의 회전베기", "결투 돌진", "연격 무도", ""],
+  warbringer: ["종언의 참격", "전쟁의 회오리", "파멸 돌진", "전장의 함성", "종언의 일격"],
+  crusader: ["천벌의 참격", "성역의 회전베기", "심판 돌진", "성역 — 빛의 결계", "심판의 빛기둥"],
+  deadeye: ["신의 사격", "심판의 화살", "차원 사격", "절사명중 사격", "신의 화살비"],
+  skylord: ["천공 연사", "하늘의 화망", "천공 질주", "폭풍의 눈", "천공의 폭풍"],
+  arclord: ["절대 마법탄", "아크로드 볼트", "차원 점멸", "낙뢰 소환", "마나 붕괴"],
+  eternal: ["영겁의 마법탄", "이터널 볼트", "영원의 점멸", "시간 왜곡", "영원의 고리"],
+  shadowlord: ["심연 연타", "암흑 회전베기", "그림자 돌진", "그림자 칼날", "그림자 군주"],
+  blademaster: ["신살 연타", "쌍검 회전베기", "극한 돌진", "연격 무도", "검무 — 극한"],
+};
+
+/* v3.0.3 — 클래스별 스킬 메커니즘 디스패치 키.
+ *  3차(V)/4차(B) 스킬은 클래스 "계열"이 아니라 클래스 "고유" 구현으로 간다.
+ *  같은 메커니즘을 공유하는 클래스는 같은 키를 쓰되 수치/색이 클래스 배지색을 따른다. */
+export type Skill3Kind =
+  | "warcry"      /* warlord/warbringer — 전장의 함성: 광역+자신 공격력 버프 */
+  | "sanctuary"   /* paladin/crusader — 성역: 빛의 결계 필드 (적 딜링+자힐) */
+  | "trueshot"    /* eagleeye/deadeye — 절사명중: 확정크리 관통 저격 */
+  | "tornado"     /* tempest/skylord — 폭풍의 눈: 다수 회오리 투사체 */
+  | "thunder"     /* stormbringer/arclord — 낙뢰: 다수 적에게 하늘에서 직격 */
+  | "timewarp"    /* chronicle/eternal — 시간 왜곡: 감속 필드 */
+  | "shadowblad"  /* nightblade/shadowlord — 그림자 칼날: 회전 오비트 */
+  | "flurry";     /* duelist/blademaster — 연격 무도: 연속 급습+흡혈 */
+
+export type Skill4Kind =
+  | "doomsday"    /* warbringer — 종언의 일격: 돌진 후 대폭발 */
+  | "judgment"    /* crusader — 심판의 빛기둥: 다수 빛 기둥+성방어 */
+  | "godarrow"    /* deadeye — 신의 화살비: 유도 화살 8발 */
+  | "skystorm"    /* skylord — 천공의 폭풍: 나선 회오리+신속 */
+  | "manaburst"   /* arclord — 마나 붕괴: MP 소모 대폭발 */
+  | "eternalloop" /* eternal — 영원의 고리: 광역 기절(시간 정지) */
+  | "shadowclon"  /* shadowlord — 그림자 군주: 그림자 분신 자폭 */
+  | "bladedance"; /* blademaster — 검무: 적 사이 점멸 연격 */
+
+export const SKILL3_KIND: Partial<Record<ClassKey, Skill3Kind>> = {
+  warlord: "warcry", warbringer: "warcry",
+  paladin: "sanctuary", crusader: "sanctuary",
+  eagleeye: "trueshot", deadeye: "trueshot",
+  tempest: "tornado", skylord: "tornado",
+  stormbringer: "thunder", arclord: "thunder",
+  chronicle: "timewarp", eternal: "timewarp",
+  nightblade: "shadowblad", shadowlord: "shadowblad",
+  duelist: "flurry", blademaster: "flurry",
+};
+
+export const SKILL4_KIND: Partial<Record<ClassKey, Skill4Kind>> = {
+  warbringer: "doomsday",
+  crusader: "judgment",
+  deadeye: "godarrow",
+  skylord: "skystorm",
+  arclord: "manaburst",
+  eternal: "eternalloop",
+  shadowlord: "shadowclon",
+  blademaster: "bladedance",
+};
+
+/** GM/전직 패널용 스킬 설명 — 3차기/4차기 */
+export const SKILL3_DESC: Record<Skill3Kind, string> = {
+  warcry: "광역 외침 + 자신 공격력 버프",
+  sanctuary: "빛의 결계 — 적 타격 + 결계 내 자힐",
+  trueshot: "확정 크리티컬 관통 저격",
+  tornado: "다수 회오리 투사체 발사",
+  thunder: "하늘에서 낙뢰 다수 직격",
+  timewarp: "시간 왜곡 필드 — 적 감속",
+  shadowblad: "그림자 칼날이 주위를 선회",
+  flurry: "연속 급습 + 피해 흡수",
+};
+export const SKILL4_DESC: Record<Skill4Kind, string> = {
+  doomsday: "돌진 후 종언의 대폭발",
+  judgment: "빛기둥 심판 + 성스러운 방어",
+  godarrow: "유도되는 신의 화살 8발",
+  skystorm: "나선 폭풍 + 신속 버프",
+  manaburst: "MP를 태워 대폭발",
+  eternalloop: "시간 정지 — 광역 기절",
+  shadowclon: "그림자 분신 자폭",
+  bladedance: "적 사이를 점멸하는 검무",
 };
 
 /** HUD 표기용 — "전사 · 검사" / 2차 이상 "버서커" */

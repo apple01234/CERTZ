@@ -74,7 +74,7 @@ export type RpgState = {
   canAutoHunt: boolean;
 };
 
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | null;
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | null;
 
 export type QuestState = {
   title: string;

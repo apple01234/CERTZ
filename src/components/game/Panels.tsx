@@ -7,7 +7,7 @@ import {
   CHAPTERS, STAGE_SHORT, parseStage,
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey,
 } from "@/game/data";
-import { CLASS_LIST, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
+import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
 import { getPlayerName, loadSave } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록
 
@@ -35,11 +35,18 @@ function useEscClose(close: () => void) {
   }, [close]);
 }
 
-function ItemIcon({ icon, size = 34, tier }: { icon: string; size?: number; tier?: ItemTier }) {
+/** v3.0.3 (지시 #4) — 보유 아이템 키별 개수 집계 (모든 아이템 겹침) */
+function stackEquips(arr: string[]): [string, number][] {
+  const m = new Map<string, number>();
+  for (const k of arr) m.set(k, (m.get(k) ?? 0) + 1);
+  return [...m.entries()];
+}
+
+function ItemIcon({ icon, size = 34, tier, count }: { icon: string; size?: number; tier?: ItemTier; count?: number }) {
   const border = tier ? TIER_STYLE[tier].border : "border-white/10";
   return (
     <div
-      className={`shrink-0 rounded-md border-2 bg-black/40 ${border}`}
+      className={`relative shrink-0 rounded-md border-2 bg-black/40 ${border}`}
       style={{ padding: 2, lineHeight: 0 }}
     >
       <img
@@ -48,6 +55,12 @@ function ItemIcon({ icon, size = 34, tier }: { icon: string; size?: number; tier
         draggable={false}
         style={{ width: size, height: size, imageRendering: "pixelated" }}
       />
+      {/* v3.0.3 — 겹침 수량 배지 (2개 이상일 때) */}
+      {count !== undefined && count > 1 && (
+        <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/95 px-1 text-[8px] font-black leading-[12px] text-white [text-shadow:0_1px_1px_#000]">
+          {count}
+        </span>
+      )}
     </div>
   );
 }
@@ -307,16 +320,20 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
 
         {/* 소지품 (v2.5 — 상급 물약/스크롤류, owned 기반) */}
         {(() => {
-          const consumables = rpg.owned.filter((k) => {
-            const it = ITEMS[k as ItemKey];
-            return it && (k === "potion_hp2" || k === "potion_mp2" || k === "scroll_return" || k === "scroll_warp");
-          });
+          const consumables = Object.entries(
+            rpg.owned.reduce<Record<string, number>>((acc, k) => {
+              if (k === "potion_hp2" || k === "potion_mp2" || k === "scroll_return" || k === "scroll_warp") {
+                acc[k] = (acc[k] ?? 0) + 1;
+              }
+              return acc;
+            }, {})
+          ); /* v3.0.3 (지시 #4) — 같은 소모품은 한 행으로 겹침 (보유 수량 표기) */
           if (consumables.length === 0) return null;
           return (
             <>
               <p className="mb-1 text-[11px] font-bold text-white/50">소지품</p>
               <div className="mb-3 flex flex-col gap-1.5">
-                {consumables.map((k) => {
+                {consumables.map(([k, count]) => {
                   const item = ITEMS[k as ItemKey];
                   const isScroll = k === "scroll_return" || k === "scroll_warp";
                   const effect = k === "potion_hp2" ? `HP +${item.heal} 회복`
@@ -325,9 +342,9 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                     : "방문한 적 있는 구역으로 이동";
                   return (
                     <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
-                      <ItemIcon icon={item.icon} size={26} tier={item.tier} />
+                      <ItemIcon icon={item.icon} size={26} tier={item.tier} count={count} />
                       <div className="min-w-0 flex-1">
-                        <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{item.name}</p>
+                        <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{item.name} <span className="text-white/60">×{count}</span></p>
                         <p className="text-[10px] text-emerald-300/90">{effect}</p>
                       </div>
                       <button
@@ -344,19 +361,19 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
           );
         })()}
 
-        {/* 장비 */}
+        {/* 장비 — v3.0.3 (지시 #4): 아이콘+수량으로 겹침 (×N) */}
         <p className="mb-1 text-[11px] font-bold text-white/50">장비</p>
         <div className="flex flex-col gap-1.5">
-          {equips.map((k) => {
+          {stackEquips(equips).map(([k, count]) => {
             const item = ITEMS[k as ItemKey];
             if (!item) return null;
             const equipped = rpg.weapon === k || rpg.armor === k;
             const up = item.kind === "weapon" ? rpg.upWea : rpg.upArm;
             return (
               <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
-                <ItemIcon icon={item.icon} size={26} tier={item.tier} />
+                <ItemIcon icon={item.icon} size={26} tier={item.tier} count={count} />
                 <div className="min-w-0 flex-1">
-                  <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{displayName(item.name, up)}</p>
+                  <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{displayName(item.name, up)}{count > 1 ? ` ×${count}` : ""}</p>
                   <p className="text-[10px] text-emerald-300/90">{itemEffect(item, up)}</p>
                 </div>
                 {equipped ? (
@@ -413,11 +430,10 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               보유한 장신구가 없습니다 — 상인 라고스에게서 구매할 수 있어요
             </p>
           )}
-          {accs.map((k) => {
+          {stackEquips(accs).map(([k, ownedN]) => {
             const item = ITEMS[k as ItemKey];
             if (!item) return null;
-            /* v2.9 — 중복 장착: 보유 n개 중 장착 m개 */
-            const ownedN = accs.filter((x) => x === k).length;
+            /* v2.9 — 중복 장착: 보유 n개 중 장착 m개 (v3.0.3 — count가 보유 n) */
             if (k !== accs.filter((x) => x === k)[0]) return null; // 동일 키 1회만 렌더
             const wornN = rpg.accessories.filter((x) => x === k).length;
             const canWearMore = wornN < ownedN;
@@ -538,6 +554,118 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
   );
 }
 
+/* ---------- v3.0.3 — GM 패널 (사용자 지시 #2: 임시 GM NPC로 자유전직/골드/레벨 수정) ---------- */
+
+const GM_FAM_LABEL: Record<string, string> = {
+  warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적",
+};
+
+export function GmPanel({ onClose }: { onClose: () => void }) {
+  useEscClose(onClose);
+  const tierLabel = (t: number) => (t === 1 ? "1차" : t === 2 ? "2차" : t === 3 ? "3차" : "4차");
+  const all = Object.values(CLASSES);
+  const byTier = [1, 2, 3, 4].map((t) => all.filter((d) => d.tier === t));
+  return (
+    <div
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+      onPointerDown={onClose}
+    >
+      <div
+        className="max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto rounded-xl border-2 border-amber-300/60 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="text-sm font-black text-amber-300">GM — 운영자 지원 (임시)</p>
+          <button
+            onClick={onClose}
+            aria-label="GM 패널 닫기"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70"
+          >
+            ✕
+          </button>
+        </div>
+        <p className="mb-3 rounded-lg border border-amber-300/25 bg-amber-400/5 px-2.5 py-2 text-[10px] leading-relaxed text-amber-200/80">
+          자유전직은 트리·레벨 조건 없이 즉시 적용됩니다. 스킬 슬롯(3차 3개 / 4차 4개)이 전직 즉시 바뀌고 HP/MP가 재계산됩니다.
+        </p>
+
+        {/* 자유전직 — 전체 28 클래스 */}
+        <p className="mb-1 text-[11px] font-bold text-white/50">자유 전직 (전 직업 · 전 티어)</p>
+        <div className="mb-3 flex flex-col gap-2">
+          {byTier.map((list) => (
+            <div key={list[0]?.tier}>
+              <p className="mb-1 text-[10px] font-bold text-white/35">{tierLabel(list[0]?.tier ?? 1)} ({list.length})</p>
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                {list.map((d) => (
+                  <button
+                    key={d.key}
+                    onClick={() => EventBus.emit("rpg:gm", { type: "job", value: d.key })}
+                    className="flex flex-col items-start rounded-lg border px-2 py-1.5 text-left transition-transform active:scale-95"
+                    style={{ borderColor: `${d.color}44`, background: `linear-gradient(135deg, ${d.color}14, rgba(0,0,0,0.4))` }}
+                  >
+                    <span className="truncate text-[11px] font-black" style={{ color: d.color }}>{d.name}</span>
+                    <span className="w-full truncate text-[9px] text-white/45">
+                      {d.tier === 1 ? GM_FAM_LABEL[d.key] ?? "" : d.title}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 골드/레벨/기타 */}
+        <p className="mb-1 text-[11px] font-bold text-white/50">자원 조정</p>
+        <div className="mb-2 grid grid-cols-3 gap-1.5">
+          {([10000, 100000, 1000000] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => EventBus.emit("rpg:gm", { type: "gold", value: v })}
+              className="rounded-lg border border-amber-300/40 bg-amber-400/10 px-2 py-2 text-[11px] font-black text-amber-200 hover:bg-amber-400/20 active:scale-95"
+            >
+              +{v >= 1000000 ? "100만" : v >= 10000 ? `${v / 10000}만` : v} G
+            </button>
+          ))}
+        </div>
+        <div className="mb-2 grid grid-cols-3 gap-1.5">
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "lv", value: 10 })}
+            className="rounded-lg border border-sky-300/40 bg-sky-400/10 px-2 py-2 text-[11px] font-black text-sky-200 hover:bg-sky-400/20 active:scale-95"
+          >
+            Lv 10
+          </button>
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "lv", value: 100 })}
+            className="rounded-lg border border-sky-300/40 bg-sky-400/10 px-2 py-2 text-[11px] font-black text-sky-200 hover:bg-sky-400/20 active:scale-95"
+          >
+            Lv 100
+          </button>
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "lv", value: 200 })}
+            className="rounded-lg border border-sky-300/40 bg-sky-400/10 px-2 py-2 text-[11px] font-black text-sky-200 hover:bg-sky-400/20 active:scale-95"
+          >
+            Lv 200
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "heal" })}
+            className="rounded-lg border border-emerald-300/40 bg-emerald-400/10 px-2 py-2 text-[11px] font-black text-emerald-200 hover:bg-emerald-400/20 active:scale-95"
+          >
+            HP/MP 풀회복
+          </button>
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "ap", value: 50 })}
+            className="rounded-lg border border-lime-300/40 bg-lime-400/10 px-2 py-2 text-[11px] font-black text-lime-200 hover:bg-lime-400/20 active:scale-95"
+          >
+            AP +50
+          </button>
+        </div>
+        <p className="mt-2 text-center text-[10px] text-white/40">ESC로 닫기 · 변경 사항은 즉시 세이브에 반영</p>
+      </div>
+    </div>
+  );
+}
+
 export function GamePanels({
   panel,
   rpg,
@@ -555,6 +683,7 @@ export function GamePanels({
   if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} />;
   if (panel === "warp") return <WarpPanel rpg={rpg} onClose={onClose} />;
   if (panel === "job") return <JobPanel rpg={rpg} onClose={onClose} />;
+  if (panel === "gm") return <GmPanel onClose={onClose} />; // v3.0.3 — GM NPC
   if (panel === "stat") return <StatPanel rpg={rpg} hud={hud} onClose={onClose} />;
   if (panel === "quest") return <QuestLogPanel questLog={questLog} onClose={onClose} />;
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;

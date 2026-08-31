@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
-import { Swords, RefreshCw, Zap, Bot, Pause } from "lucide-react";
+import { Swords, RefreshCw, Zap, Bot, Pause, Flame, Star } from "lucide-react";
 import type { Skills } from "./useGameUi";
 
 const JOY_RADIUS = 52;
@@ -20,6 +20,8 @@ export function TouchControls({
   atkName,
   s1Name,
   s2Name,
+  s3Name,
+  s4Name,
   canAutoHunt,
   autoHunt,
 }: {
@@ -29,6 +31,9 @@ export function TouchControls({
   atkName?: string;
   s1Name?: string;
   s2Name?: string;
+  /** v3.0.3 — 3차기/4차기 (미해금 시 빈 문자열 → 버튼 숨김) */
+  s3Name?: string;
+  s4Name?: string;
   canAutoHunt?: boolean;
   autoHunt?: boolean;
 }) {
@@ -97,6 +102,11 @@ export function TouchControls({
   const s2Ready = skills.s2Cd <= 0 && skills.mp >= 20;
   const s1Pct = skills.s1Cd > 0 ? (skills.s1Cd / skills.s1Max) * 100 : 0;
   const s2Pct = skills.s2Cd > 0 ? (skills.s2Cd / skills.s2Max) * 100 : 0;
+  /* v3.0.3 — 3차기/4차기 */
+  const s3Ready = skills.s3Cd <= 0 && skills.mp >= 25;
+  const s4Ready = skills.s4Cd <= 0 && skills.mp >= 40;
+  const s3Pct = skills.s3Cd > 0 ? (skills.s3Cd / Math.max(1, skills.s3Max)) * 100 : 0;
+  const s4Pct = skills.s4Cd > 0 ? (skills.s4Cd / Math.max(1, skills.s4Max)) * 100 : 0;
 
   return (
     <>
@@ -172,6 +182,30 @@ export function TouchControls({
           />
         </div>
         <div className="flex flex-col gap-2">
+          {/* v3.0.3 — 4차기(B): 해금 시만 표시 */}
+          {s4Name && (
+            <SkillButton
+              ready={s4Ready}
+              cdPct={s4Pct}
+              label={s4Name}
+              mp={40}
+              onDown={() => EventBus.emit("input:skill4")}
+            >
+              <Star size={22} />
+            </SkillButton>
+          )}
+          {/* v3.0.3 — 3차기(V): 해금 시만 표시 */}
+          {s3Name && (
+            <SkillButton
+              ready={s3Ready}
+              cdPct={s3Pct}
+              label={s3Name}
+              mp={25}
+              onDown={() => EventBus.emit("input:skill3")}
+            >
+              <Flame size={20} />
+            </SkillButton>
+          )}
           <SkillButton
             ready={s2Ready}
             cdPct={s2Pct}

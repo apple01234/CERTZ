@@ -43,7 +43,10 @@ async function restartWith(page, stage, patch) {
   await page.waitForTimeout(1800);
   await page.evaluate(() => {
     const w = window.__SERTZ__.game.scene.getScene("world");
+    // v3.0.3 — 대사 강제 종료 시 physics.world.pause() 잔존 방지 (정식 종료 경로 사용)
+    if (w.dialoguing) w.resumeFromDialogue();
     w.dialoguing = false; w.introStep = -1; w.sleepPending = false;
+    w.physics.world.resume();
   });
   await page.waitForTimeout(300);
 }
@@ -166,6 +169,9 @@ async function teleportNear(page, idx, d) {
       if (p.body && p.body.reset) p.body.reset(t.x + 50, t.y); else { p.x = t.x + 50; p.y = t.y; }
       p.setVelocity(0, 0);
       p.mp = p.maxMp; p.skill1Cd = 0; p.skill2Cd = 6000; p.state = "idle";
+      /* v3.0.3 — 리스폰 오염 차단: 이전 페이즈 처치분이 사거리 내 재등장해
+       *  이탈 분기(<150px)를 트리거하는 플레이크 제거 (결정론적 군집 유지) */
+      w.respawnEnemy = () => {};
       return true;
     });
     const wSpin = clustered ? await sample(page, 2600) : null;
@@ -208,15 +214,30 @@ async function teleportNear(page, idx, d) {
       const w = window.__SERTZ__.game.scene.getScene("world");
       const p = w.player;
       const ts = w.getAllTargets().filter((e) => e.active);
+      if (ts.length < 2) return false;
+      const wb = w.physics.world.bounds;
+      // v3.0.3 — 결정론적 군집 배치: ① 나머지 전부 대칭점 밖으로 ② t를 210px에 ③ o를 243px에
+      const push = (e) => {
+        const jx = (Math.random() - 0.5) * 300, jy = (Math.random() - 0.5) * 300;
+        const nx = Math.min(Math.max(wb.width - p.x + jx, 80), wb.width - 80);
+        const ny = Math.min(Math.max(wb.height - p.y + jy, 80), wb.height - 80);
+        if (e.body && e.body.reset) e.body.reset(nx, ny); else { e.x = nx; e.y = ny; }
+        e.setVelocity(0, 0);
+      };
       const t = ts[0];
-      const others = ts.filter((e) => e !== t);
-      if (others.length === 0) return false;
-      const o = others[0];
-      if (o.body && o.body.reset) o.body.reset(t.x + 440, t.y); else { o.x = t.x + 440; o.y = t.y; } // 플레이어(200,-40) 기준 ~243px — 사거리 내·이탈 분기 밖
+      for (const e of ts) { if (e !== t) push(e); }
+      const a1 = Math.random() * Math.PI * 2;
+      const tx = Math.min(Math.max(p.x + Math.cos(a1) * 210, 80), wb.width - 80);
+      const ty = Math.min(Math.max(p.y + Math.sin(a1) * 210, 80), wb.height - 80);
+      if (t.body && t.body.reset) t.body.reset(tx, ty); else { t.x = tx; t.y = ty; }
+      t.setVelocity(0, 0);
+      const o = ts[1];
+      if (o.body && o.body.reset) o.body.reset(tx + 240, ty); else { o.x = tx + 240; o.y = ty; } // 플레이어 기준 ~243px — 사거리 내·이탈 분기 밖
       o.setVelocity(0, 0);
-      if (p.body && p.body.reset) p.body.reset(t.x + 200, t.y - 40); else { p.x = t.x + 200; p.y = t.y - 40; }
-      p.setVelocity(0, 0);
       p.mp = p.maxMp; p.skill1Cd = 0; p.skill2Cd = 6000; p.state = "idle";
+      /* v3.0.3 — 리스폰 오염 차단: 이전 페이즈 처치분이 사거리 내 재등장해
+       *  이탈 분기(<150px)를 트리거하는 플레이크 제거 (결정론적 군집 유지) */
+      w.respawnEnemy = () => {};
       return true;
     });
     const rArr = rCluster ? await sample(page, 2600) : null;

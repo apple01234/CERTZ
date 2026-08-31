@@ -8,6 +8,8 @@ export type GameAction =
   | "attack"
   | "skill1"
   | "skill2"
+  | "skill3"
+  | "skill4"
   | "potHp"
   | "potMp"
   | "interact"
@@ -22,11 +24,14 @@ export type KeyMap = Record<GameAction, string>; // 값은 Phaser KeyCode 문자
 
 const KEYMAP_STORAGE = "sertz_keymap_v1";
 
-/** 기본 배치 — v1.8까지의 왼손 배치 + 신규 패널 키 */
+/** 기본 배치 — v1.8까지의 왼손 배치 + 신규 패널 키
+ *  v3.0.3 — 스킬 3(V)/스킬 4(B): 3차/4차 전직기 */
 export const DEFAULT_KEYMAP: KeyMap = {
   attack: "X",
   skill1: "Z",
   skill2: "C",
+  skill3: "V",
+  skill4: "B",
   potHp: "Q",
   potMp: "R",
   interact: "E",
@@ -43,6 +48,8 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   attack: "공격",
   skill1: "스킬 1 (주력기)",
   skill2: "스킬 2 (기동기)",
+  skill3: "스킬 3 (3차기)",
+  skill4: "스킬 4 (4차기)",
   potHp: "HP 물약",
   potMp: "MP 물약",
   interact: "대화/상호작용",

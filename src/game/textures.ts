@@ -34,6 +34,15 @@ export function buildAllAnims(scene: Phaser.Scene) {
     a.create({ key: `${k}-run`, ...fr(`${k}_run`, 4, 10, -1) });
     a.create({ key: `${k}-atk`, ...fr(`${k}_atk`, 1, 1, 0) });
   }
+  /* v3.0.3 — 0x72 DungeonTileset II (itch.io, CC0) 신규 몬스터 7종: idle4+run4 */
+  for (const k of [
+    "x3_swampy", "x3_imp", "x3_icezombie", "x3_tinyzombie",
+    "x3_ogre", "x3_chort", "x3_necromancer",
+  ]) {
+    a.create({ key: `${k}-idle`, ...fr(`${k}_idle`, 4, 4, -1) });
+    a.create({ key: `${k}-run`, ...fr(`${k}_run`, 4, 10, -1) });
+    a.create({ key: `${k}-atk`, ...fr(`${k}_atk`, 1, 1, 0) });
+  }
   /* v3.0.2 — 마법 투사체/시전 이펙트 (Pixelart Spells, CC0) */
   a.create({ key: "fx-arcane", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_arcane", frame: i })), frameRate: 14, repeat: -1 });
   a.create({ key: "fx-magicorb", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_magicorb", frame: i })), frameRate: 12, repeat: -1 });
