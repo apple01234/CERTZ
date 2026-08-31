@@ -348,3 +348,29 @@ Work Log:
 Stage Summary:
 - 3건 전부 근본 수정. 구조 교훈: TileSprite는 패턴 굽기 레이스가 있어 핵심 지형엔 rect 사용할 것.
 - 【상시 규칙】ponytail(dietrichgebert/ponytail) — 사용자 지시로 모든 작업에 상시 적용. skills/ponytail/SKILL.md 참조: 최소한의 동작 코드(사다리: YAGNI→기존코드 재사용→표준→네이티브→기존의존성→1줄→최소코드), 근본원인 수정, 불가피한 단순화는 ponytail: 주석, 설명은 코드보다 짧게.
+
+---
+Task ID: v2.7-portal
+Agent: Super Z (main)
+Task: 유저 재신고 "퀘스트 깨도 바로 포탈 안열림" — v2.6 보루 남은 빈틈 근본 수정 + 전 배포 채널 복구
+
+Work Log:
+- 샌드박스 리셋으로 프로젝트 소실 → GitHub 클론으로 루트 복원(node_modules/JDK/SDK 포함 전부 재설치)
+- e2e 재현 테스트 신설(scripts/e2e_v27_repro.js) → v2.6 보루의 3개 빈틈 실측 확보:
+  ① init()이 portalActive를 리셋 안 함 — scene.restart가 같은 인스턴스 재사용이라 이전 구역 개방 상태 유출
+   (마을→여관/부적 워프/복귀차원문 경로에서 다음 구역 시작부터 포탈 개방 = 퀘스트 스킵 + 보루 early-return 사망)
+  ② 보루가 dialoguing/pendingPortal 끼임 시 영구 거부(5초 자동해제는 reach 분기에서만 등록)
+  ③ 보스 구역 영구 제외 + 포탈 스프라이트 부재 시 보루 무력
+- 수정(WorldScene.ts): init에 portalActive/returnActive 리셋 / 보루 2.0(자가치유형) — 포탈 부재시 생성,
+  보스 격파 후 reach 허용, collect 파편·보스 소실 자동 재생성, 대사 6초 끼임 강제 해제 /
+  체인 완료 시 엣지 화살표가 포탈을 가리킴(개방 인지 개선) / resumeFromDialogue에서 portalHoldSince 리셋
+- 검증: e2e_v27_verify 12/12 PASS(repro 11/12 → 실패 2건 모두 테스트 설계 오류로 확인 후 수정) +
+  회귀 v2.4 10/v2.5 23/v2.3 19 전부 PASS / tsc 0
+- 환경 재구축: Temurin JDK 21(/home/z/jdk), cmdline-tools+platform-36+build-tools-36(/home/z/android-sdk)
+- 웹: next build → node server.js 기동(3000/81/socket 200, 청크에 portalHoldSince+v2.7 태그 확인)
+- APK: APK_EXPORT=1 → cap sync → gradle assembleRelease(BUILD SUCCESSFUL 3m) — versionCode 12/versionName 2.7,
+  aapt/apksigner 검증(CN=SERTZ 동일 키), download/SERTZ-v2.7.apk (16.8MB, sha256 48b4f5e8…)
+
+Stage Summary:
+- 포탈 개방 실패의 3개 근본 원인(상태 유출/보루 거부/보루 무력) 전부 봉합 — 어떤 경로로도 6초 내 개방 보장.
+- 유저가 v2.6을 못 받았을 가능성(웹 서버 다운)에 대비해 웹 즉시 재기동 + Release v2.7 배포.

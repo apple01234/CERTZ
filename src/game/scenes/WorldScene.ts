@@ -104,6 +104,8 @@ export class WorldScene extends Phaser.Scene {
   private wellCd = 0;
   // 보스 격파 후 대사가 끝나면 열어줄 차원문 (스토리 진행 — 최종 스테이지 제외)
   private pendingPortal = false;
+  // v2.7 — 대사/개방 유예가 시작된 시각 (보루 6초 자가해제용)
+  private portalHoldSince = 0;
   // 현재 스테이지 보스 정의 (onBossDead에서 사용)
   private bossDef: BossDef | null = null;
   // 반복 토벌 의뢰 — 사이클별 목표 수 (완료할수록 +2)
@@ -226,6 +228,10 @@ export class WorldScene extends Phaser.Scene {
     this.boss = null;
     this.fragment = null;
     this.portal = null;
+    /* v2.7 — 씬 재시작 같은 인스턴스 재사용: 이전 구역 개방 상태가 유출되면
+     *  다음 구역에서 시작부터 포탈이 열려 퀘스트를 건너뛰고, 보루도 early-return으로 죽는다 */
+    this.portalActive = false;
+    this.returnActive = false;
     this.beacon = null;
     this.portalBeacon = null;
     this.questMark = null;
@@ -238,6 +244,7 @@ export class WorldScene extends Phaser.Scene {
     this.wellPos = null;
     this.wellCd = 0;
     this.pendingPortal = false;
+    this.portalHoldSince = 0;
     this.bossDef = null;
     this.drops = [];
     this.merchant = null;
@@ -521,16 +528,36 @@ export class WorldScene extends Phaser.Scene {
      *  (구세이브는 questIdx가 신규 체인의 앞쪽으로 밀려날 수 있다 — 자기 레벨이 충분하면 게이트 스킵) */
     if (this.currentQuest()?.type === "level") this.tryCompleteLevel();
 
-    /* v2.6 — 포탈 개방 보루: 어떤 경로로든 개방을 놓쳤으면 1.5초마다 복구.
-     *  퀘스트 전부 클리어(q 없음) 또는 reach 퀘스트(포탈이 목표) 상태인데 포탈이 닫혀있으면 연다. */
+    /* v2.7 — 포탈 개방 보루 2.0 (자가치유형): 개방 실패의 모든 원인을 1.5초 안에 스스로 봉합.
+     *  v2.6 보루의 빈틈 — dialoguing/pendingPortal 끼임 시 영구 거부, 보스 구역 영구 제외,
+     *  포탈 스프라이트 부재 시 무력 — 를 닫는다 (유저 재신고: "퀘스트 깨도 바로 포탈 안열림") */
     this.time.addEvent({
       delay: 1500,
       loop: true,
       callback: () => {
-        if (!this.portal || this.portalActive || this.isInterior || this.stageDef.boss) return;
-        if (this.dialoguing || this.pendingPortal) return;
+        if (this.portalActive || this.isInterior) return;
         const q = this.currentQuest();
-        if (!q || q.type === "reach") this.activatePortal();
+        /* 오브젝트 소실 보루 — 파편/보스가 없으면 퀘스트가 영구 안 풀려 포탈이 안 열린다 */
+        if (q?.type === "collect" && !this.fragment) this.spawnFragmentForQuest();
+        if (q?.type === "boss" && !this.boss) this.spawnBoss(false);
+        const chainDone = this.questIdx >= this.stageDef.quests.length;
+        const shouldOpen = !q || q.type === "reach" || (chainDone && this.repeatOn);
+        /* 보스 구역은 격파 전(boss 진행 중) 개방 금지 — 격파 후 reach는 개방 대상 */
+        if (!shouldOpen || (this.stageDef.boss && q?.type !== "reach")) return;
+        if (this.dialoguing || this.pendingPortal) {
+          /* 대사 중엔 물리 정지로 전환 사고가 없다 — 유예하되 6초 이상 붙어있으면 강제 해제 */
+          if (!this.portalHoldSince) this.portalHoldSince = this.time.now;
+          else if (this.time.now - this.portalHoldSince > 6000) {
+            this.portalHoldSince = 0;
+            this.pendingPortal = false;
+            if (!this.portal) this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+            this.activatePortal();
+          }
+          return;
+        }
+        this.portalHoldSince = 0;
+        if (!this.portal) this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+        this.activatePortal();
       },
     });
 
@@ -3210,7 +3237,10 @@ export class WorldScene extends Phaser.Scene {
 
   private questTargetPos(): Phaser.Math.Vector2 | null {
     const q = this.currentQuest();
-    if (!q) return null;
+    if (!q) {
+      /* v2.7 — 체인 완료 시 화살표가 사라져 포탈 개방을 못 알아봄 (체감 "안열림") → 개방된 포탈을 가리킨다 */
+      return this.portalActive && this.portal?.active ? new Phaser.Math.Vector2(this.portal.x, this.portal.y) : null;
+    }
     switch (q.type) {
       case "collect":
         return this.fragment && this.fragment.active ? new Phaser.Math.Vector2(this.fragment.x, this.fragment.y) : null;
@@ -3585,6 +3615,7 @@ export class WorldScene extends Phaser.Scene {
 
   resumeFromDialogue() {
     this.dialoguing = false;
+    this.portalHoldSince = 0; // v2.7 — 정상 종료면 강제개방 카운터도 리셋
     this.physics.world.resume();
     EventBus.emit("dialogue:hide");
     // 대화 닫기 키의 잔여 justDown 소비 — 스페이스로 대화 넘긴 직후 공격이 새어나가는 것 방지
