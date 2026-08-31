@@ -538,3 +538,50 @@ Work Log:
 Stage Summary:
 - 15항목 중 14항목 구현+실측 완료. (해명: ⑨20마리 캡은 이미 v3.0에 있었으나 정예/보스 빈틈을 이번에 봉합 — "고쳤다" 주장은 E2E 실측으로만 함)
 - 남은 과제: 외부 에셋 추가 확충(몬스터 스프라이트 시트 애니화 등), 에랄드 구매 연동, 전직 4슬롯 확장 — 3.0.3+ 후보
+
+---
+Task ID: v3.0.3-six
+Agent: Super Z (main)
+Task: 유저 6항목 — 3/4차 스킬 확장 + GM NPC + 몬스터 고유 개성 + 아이템 스태킹 + 무기 완전 구현 — v3.0.3 배포
+
+Work Log:
+- ①스킬 슬롯 확장: SKILL_LABELS 5슬롯화(기본공격/Z/C/V/B), skill3(9s·25MP)/skill4(14s·40MP) 신설.
+  3차부터 V 해금(스킬 3개), 4차부터 B 해금(스킬 4개). 8종 3차 메커니즘(warcry/sanctuary/trueshot/
+  tornado/thunder/timewarp/shadowblad/flurry) + 8종 4차 궁극기(doomsday/judgment/godarrow 유도/
+  skystorm/manaburst MP연소/eternalloop 광역기절/shadowclon 분신/bladedance 점멸연격).
+  자기버프 필드(selfAtk/selfDef/selfSpd) + 전장의 함성 공증·심판 방어·천공 신속 반영
+- ②GM NPC: 마을 전직관 옆 npc_gm(0x72 knight_m 금색 재조색). E키 → GM 패널(PanelKind "gm"):
+  28클래스 전 티어 자유전직(rpg:gm job→gmSetClass, 체인 HP/MP 가산 재계산+쿨 리셋),
+  골드 +1만/10만/100만, 레벨 10/100/200(gmSetLevel 증분 등가), 풀회복, AP+50
+- ③몬스터 개성: itch.io 0x72 DungeonTilesetII(CC0) 직접 다운로드(download_url POST → file/<id>) —
+  7종 신규(x3_swampy 독+사망장판 / x3_imp·x3_necromancer 원거리 캐스터 / x3_icezombie 감속 /
+  x3_tinyzombie 출혈 고속추격 / x3_chort 돌진 / x3_ogre 중장근접). EnemyProfile 타입
+  (ranged/charge/apply/fieldOnDeath) + FSM 확장(키팅·주문시전·chargeDash 상태) + 적 투사체 풀
+  (fireEnemyProj 16발) + 장판 시스템(spawnField owner enemy/player, 0.5s 틱) + 기존종 10종 개성 부여
+  (거미·독개구리 독, 헬하운드·그늘 이리 출혈, 유령·화염정령 원거리화, 암초물고기 얼음창 등).
+  플레이어 상태이상(출혈/독 DoT 1s 틱 + 감속 recalcSpeed 연동)
+- ④아이템 스태킹: InventoryPanel 소모품 키별 그룹핑(귀환서 여러 장이 별도 행으로 나오던 버그 수정),
+  장비/장신구 stackEquips ×N 병합 + ItemIcon 수량 배지. 가방 패널 max-h/w 클래스명 오타 수정
+- ⑤무기: syncWeaponSprite — 궁수 x3_bow(조준 방향 회전)/마법사 x3_staff(어깨 세움)/도적 x3_dagger
+  상시 장착 렌더(바라보는 방향 따라 앞/뒤 레이어). 도적 기본공격 3회마다 x3_shuriken 투척(atkShuriken).
+  무기 4종·GM NPC는 0x72 팩에서 가공, 표창만 PIL 픽셀아트 신규 생성
+- 버그 수정(테스트 중 발견): ①씬 재시작 시 physics.world.pause() 이월 — 대사 중 재시작하면 게임 전체
+  정지하는 실버그 → create()에서 강제 resume ②신규 씬 소유 리소스(weaponImg/fields/eProjPool/
+  orbitBlades) init 리셋 누락 → 파괴된 구 객체 참조 크래시 수정
+- UI: TouchControls 3차기(V·Flame 아이콘)/4차기(B·Star 아이콘) 버튼(해금 시만 표시), 키맵 skill3/skill4
+  액션 추가(재배치 가능), 자동사냥이 3차기(보스/군집2+)·4차기(보스/군집3+) 자동 기동,
+  emitSkills s3/s4 확장, 타이틀 배지 "v3.0.3 · 스킬 3/4차·GM NPC·몬스터 개성"
+- 검증: tsc 0 / e2e_v303_features 23 PASS 0 FAIL(GM·성역 필드·4차 라벨·임프 투사체 16발·독 장판·
+  출혈 도트·활/지팡이/단검 장착·표창·hel7 촐트 돌진 프로필) / 회귀 v2.7 12·12, v3.0.1 10·0 3연속,
+  v3.0.2 12·0, v3.0 레이아웃(cap20 유지) 전부 통과 / 실스크린샷 4종(GM NPC·활·지팡이·GM 패널) 육안 확인
+- 테스트 교훈: ①E2E 헬퍼가 dialoguing=false만 설정하면 physics pause가 남아 엔티티 전체 정지 —
+  resumeFromDialogue 경로 사용할 것 ②리스폰 예약이 이전 페이즈 처치분을 사거리 내 재등장시켜
+  원거리 AI 테스트를 오염시킴 — respawnEnemy 인스턴스 덮어쓰기로 차단
+- 배포: 웹 재빌드+데몬 재기동(200/socket 200), APK versionCode 18/"3.0.3" 16,915,031B —
+  aapt(CN=SERTZ 동일 키) 검증, sha256 330795c8…, Release v3.0.3(id 379782836) 업로드 무결성 MATCH,
+  download/에 SERTZ-v3.0.3.apk만 존재(구버전 전량 삭제), 푸시 43dcaf3
+
+Stage Summary:
+- 6항목 전부 구현+실측. 상위직 24클래스가 각자 다른 전투 방식을 갖고(공유 메커니즘도 클래스색·수치 차등),
+  몬스터 28종이 각자 다른 AI 프로필로 싸운다. GM NPC는 "임시" 성격 유지 — 정식화 시 별도 서버 검증 필요.
+- 다음 후보: 세이지 라인 순수 힐러 스킬(아군 대상) 확장, 에랄드 구매 연동, 파티원 대상 버프 스킬
