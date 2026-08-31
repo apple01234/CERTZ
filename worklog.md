@@ -316,3 +316,19 @@ Work Log:
 Stage Summary:
 - 웹 버전 복구 완료: 프리뷰 URL 접속 시 v2.5 서빙. 강력 새로고침 필요할 수 있음.
 - 릴리스 페이지: https://github.com/apple01234/CERTZ/releases/latest
+
+---
+Task ID: v2.5-root-restore
+Agent: Super Z (main)
+Task: 플랫폼 프리뷰 배포 실패("problem deploying the code") — 게임을 프로젝트 루트로 복원
+
+Work Log:
+- 원인: 본 세션에서 게임을 CERTZ/ 하위로 클론해두어 루트에 실행 가능한 앱이 없었음 → 플랫폼 배포 파이프라인 실패. CERTZ 히스토리의 UUID 스냅샷 커밋 23개로 원래 루트 프로젝트임을 확정
+- 복원: CERTZ 전체(트래킹된 .git 포함)를 /home/z/my-project 루트로 이동. download/scripts/upload rsync 병합, skills/는 현 샌드박스 것 유지(트래킹 경로와 내용 일치 확인)
+- 스캐폴드 잔여물(.git-scaffold-old 등) 삭제, .env는 모드만 commit(chmod +x)
+- 루트에서 npx next build 재빌드 → NODE_ENV=production node server.js 재기동
+- 검증: 3000/81 포트 200, socket.io 200, 청크 1a3dc253…에 귀환서 마커(서빙물=v2.5)
+
+Stage Summary:
+- 루트 복원으로 플랫폼 미리보기 배포 경로 정상화. CERTZ/ 폴더는 더 이상 존재하지 않음(이후 작업은 전부 루트에서).
+- 서버: NODE_ENV=production node server.js (socket.io 멀티플레이 포함)
