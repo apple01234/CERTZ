@@ -34,7 +34,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   potions: { hp: number; mp: number } = { hp: 2, mp: 1 }; // 시작 지급
   weapon: ItemKey = "weapon_1";
   armor: ItemKey = "armor_1";
-  accessory: ItemKey | null = null; // 장신구 슬롯 (반지 1개)
+  /** v2.9 (#8) — 장신구 슬롯: 반지 4개 + 펜던트 2개 중복 장착 (메이플 장비창 감각) */
+  accessories: ItemKey[] = [];
+  static RING_SLOTS = 4;
+  static PENDANT_SLOTS = 2;
+  /** v2.9 (#12) — 과금 화폐 에메랄드 (상점 코스메틱/편의 구매용 시드) */
+  emerald = 0;
   owned: ItemKey[] = ["weapon_1", "armor_1"];
   upgrades: { weapon: number; armor: number } = { weapon: 0, armor: 0 }; // 강화 단계 (+0~+5)
   /** 전직 클래스 (v1.8 다차원 트리 — 1차/2차/3차 키, 미전직 null) */
@@ -389,6 +394,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const fam = familyOf(this.cls);
     if (fam === "ranger") return "활쏘기";
     if (fam === "mage") return "마법탄";
+    if (fam === "thief") return this.tier >= 1 ? "그림자 연타" : "단검 베기";
     if (fam === "warrior") return this.tier >= 1 ? "강화 참격" : "참격";
     return "참격";
   }
@@ -398,6 +404,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const fam = familyOf(this.cls);
     if (fam === "ranger") return "관통 화살";
     if (fam === "mage") return "매직 볼트";
+    if (fam === "thief") return "그림자 회전베기";
     return "회전베기";
   }
 
@@ -859,9 +866,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return (ITEMS[this.armor].def ?? 0) + this.upgrades.armor + this.clsBonus.defAdd + buff;
   }
 
-  /** 크리티컬 확률 (%) — 기본 8% + 힘의 반지 +7%p + 클래스 경로 누적 + 민첽 0.4%p/점 */
+  /** 크리티컬 확률 (%) — 기본 8% + 장신구(반지/펜던트 합산) + 클래스 경로 누적 + 민첽 0.4%p/점 */
   get critRate(): number {
-    const acc = this.accessory ? ITEMS[this.accessory].crit ?? 0 : 0;
+    const acc = this.accessories.reduce((s, k) => s + (ITEMS[k].crit ?? 0), 0);
     return Math.round((Player.BASE_CRIT + acc + this.clsBonus.critAdd + this.stats.dex * 0.4) * 10) / 10;
   }
 
@@ -962,15 +969,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else if (item.kind === "armor") {
       this.armor = key;
     } else if (item.kind === "accessory") {
-      if (this.accessory === key) return false;
-      // 이전 장신구 보너스 회수 (최대 HP)
-      const old = this.accessory ? ITEMS[this.accessory] : null;
-      if (old?.maxHp) {
-        this.maxHp -= old.maxHp;
-        this.hp = Math.min(this.hp, this.maxHp);
+      /* v2.9 (#8) — 중복 장착: 반지 4개/펜던트 2개 슬롯. 같은 아이템도 보유 수만큼 장착 가능 */
+      const slot = item.slot ?? "ring";
+      const cap = slot === "ring" ? Player.RING_SLOTS : Player.PENDANT_SLOTS;
+      const same = (k: ItemKey) => (ITEMS[k].slot ?? "ring") === slot;
+      const wornSame = this.accessories.filter(same);
+      const ownedCount = this.owned.filter((k) => k === key).length;
+      const wornCount = wornSame.filter((k) => k === key).length;
+      if (wornCount >= ownedCount) return false; // 보유량 초과 중복 장착 금지
+      if (wornSame.length >= cap) {
+        // 슬롯이 꽉 참 — 같은 슬롯 종류의 첫 번째를 교체
+        const victim = wornSame[0];
+        this.removeAccessory(victim);
       }
-      this.accessory = key;
-      // 새 장신구 보너스 적용 (초과분만큼 HP도 증가)
+      this.accessories.push(key);
       if (item.maxHp) {
         this.maxHp += item.maxHp;
         this.hp = Math.min(this.maxHp, this.hp + item.maxHp);
@@ -980,6 +992,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.spawnPickupText(this.x, this.y - 30, `${item.name} 장착!`, "#ffd76a");
     this.scene.emitHud();
     return true;
+  }
+
+  /** v2.9 (#8) — 장신구 해제 (슬롯 클릭). 보너스 회수 포함 */
+  unequipAccessory(key: ItemKey): boolean {
+    const idx = this.accessories.indexOf(key);
+    if (idx < 0) return false;
+    this.removeAccessory(key);
+    this.scene.emitHud();
+    return true;
+  }
+
+  private removeAccessory(key: ItemKey) {
+    const idx = this.accessories.indexOf(key);
+    if (idx < 0) return;
+    this.accessories.splice(idx, 1);
+    const it = ITEMS[key];
+    if (it?.maxHp) {
+      this.maxHp = Math.max(1, this.maxHp - it.maxHp);
+      this.hp = Math.min(this.hp, this.maxHp);
+    }
   }
 
   /** 상점 구매 — 골드 차감/인벤토리 반영. 실패 시 false */

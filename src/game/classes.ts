@@ -6,20 +6,26 @@
  *  - 세이브에는 현재 클래스키 하나만 저장 (구 세이브 호환: null / 1차키)
  */
 
-export const JOB_LEVELS = { t1: 10, t2: 30, t3: 60 } as const;
+export const JOB_LEVELS = { t1: 10, t2: 30, t3: 50, t4: 100 } as const;
 /** 자유 전직 비용 (골드) — 메이플 메소 소모 자유전직 재현 */
 export const FREE_JOB_COST = 5000;
 
-export type Tier = 1 | 2 | 3;
-export type FamilyKey = "warrior" | "ranger" | "mage";
+export type Tier = 1 | 2 | 3 | 4;
+export type FamilyKey = "warrior" | "ranger" | "mage" | "thief";
 export type ClassKey =
   | FamilyKey /* 1차 */
   | "berserker" | "guardian" /* 전사 2차 */
   | "sniper" | "windrunner" /* 궁수 2차 */
   | "archmage" | "sage" /* 마법사 2차 */
+  | "assassin" | "swashbuckler" /* 도적 2차 */
   | "warlord" | "paladin" /* 전사 3차 */
   | "eagleeye" | "tempest" /* 궁수 3차 */
-  | "stormbringer" | "chronicle"; /* 마법사 3차 */
+  | "stormbringer" | "chronicle" /* 마법사 3차 */
+  | "nightblade" | "duelist" /* 도적 3차 */
+  | "warbringer" | "crusader" /* 전사 4차 (Lv100) */
+  | "deadeye" | "skylord" /* 궁수 4차 */
+  | "arclord" | "eternal" /* 마법사 4차 */
+  | "shadowlord" | "blademaster"; /* 도적 4차 */
 
 export type ClassDef = {
   key: ClassKey;
@@ -77,7 +83,16 @@ const MAGE: ClassDef = {
   color: "#a5b9ff", hex: 0xa5b9ff,
   atkPct: 30, critAdd: 4, defAdd: 0, hpAdd: 30, mpAdd: 60, speedPct: 0,
   cdMult: 1, skillMult: 1,
-  desc: "세계의 마나를 화력으로 바꾼다. 유리 대포.",
+  desc: "세계의 마나를 화력으로 바꾼다. 유리 대포. — \"마법은 지혜가 곧 힘이다.\"",
+};
+/* v2.9 (사용자 지시 #9) — 4번째 계열 도적 추가: 빠른 연타와 치명타 특화 */
+const THIEF: ClassDef = {
+  key: "thief", tier: 1, parent: null,
+  name: "도적", title: "그림자 검객",
+  color: "#e8c0ff", hex: 0xe8c0ff,
+  atkPct: 10, critAdd: 16, defAdd: 0, hpAdd: 70, mpAdd: 20, speedPct: 20,
+  cdMult: 0.9, skillMult: 1,
+  desc: "그림자처럼 다가와 단검으로 목을 후린다. 치명타와 회피의 달인. — \"보물은 스스로 걸어온다. 내가 훔칠 뿐.\"",
 };
 
 /* ================= 2차 — 세부 직업 선택 (Lv30, 계열별 2종) ================= */
@@ -131,7 +146,7 @@ const SAGE: ClassDef = {
   desc: "무한 마나와 짧은 회전. 지혜의 전투.",
 };
 
-/* ================= 3차 — 최종 승격 (Lv60, 2차 경로 자동 이어짐) ================= */
+/* ================= 3차 — 승격 (Lv50, 2차 경로 자동 이어짐) ================= */
 
 const WARLORD: ClassDef = {
   key: "warlord", tier: 3, parent: "berserker",
@@ -182,18 +197,126 @@ const CHRONICLE: ClassDef = {
   desc: "모든 마법의 순환을 통괄하는 현자의 정점.",
 };
 
+/* ================= 도적 2차/3차 (v2.9) ================= */
+
+const ASSASSIN: ClassDef = {
+  key: "assassin", tier: 2, parent: "thief",
+  name: "어세신", title: "암살자",
+  color: "#d89aff", hex: 0xd89aff,
+  atkPct: 14, critAdd: 14, defAdd: 0, hpAdd: 40, mpAdd: 10, speedPct: 10,
+  cdMult: 0.85, skillMult: 1.1,
+  desc: "한 방의 치명타. 그림자 속의 죽음.",
+};
+const SWASHBUCKLER: ClassDef = {
+  key: "swashbuckler", tier: 2, parent: "thief",
+  name: "스와시버클러", title: "검객",
+  color: "#f0c8ff", hex: 0xf0c8ff,
+  atkPct: 12, critAdd: 8, defAdd: 4, hpAdd: 90, mpAdd: 20, speedPct: 10,
+  cdMult: 0.9, skillMult: 1,
+  desc: "화려한 연타로 적을 농락한다. 바다의 검객.",
+};
+const NIGHTBLADE: ClassDef = {
+  key: "nightblade", tier: 3, parent: "assassin",
+  name: "나이트블레이드", title: "야경의 칼날",
+  color: "#c08aff", hex: 0xc08aff,
+  atkPct: 18, critAdd: 16, defAdd: 0, hpAdd: 60, mpAdd: 30, speedPct: 10,
+  cdMult: 0.8, skillMult: 1.15,
+  desc: "어둠이 곧 무기. 베이고 나서 보이지 않는다.",
+};
+const DUELIST: ClassDef = {
+  key: "duelist", tier: 3, parent: "swashbuckler",
+  name: "듀얼리스트", title: "결투의 정점",
+  color: "#ffd8ff", hex: 0xffd8ff,
+  atkPct: 16, critAdd: 10, defAdd: 6, hpAdd: 120, mpAdd: 30, speedPct: 10,
+  cdMult: 0.85, skillMult: 1.1,
+  desc: "일대일 결투에서 무적. 쌍단검의 화신.",
+};
+
+/* ================= 4차 — 각성 (Lv100, 사용자 지시 #9) ================= */
+
+const WARBRINGER: ClassDef = {
+  key: "warbringer", tier: 4, parent: "warlord",
+  name: "워브링어", title: "전쟁의 화신",
+  color: "#ff3c1c", hex: 0xff3c1c,
+  atkPct: 30, critAdd: 10, defAdd: 5, hpAdd: 300, mpAdd: 0, speedPct: 5,
+  cdMult: 0.9, skillMult: 1.25,
+  desc: "전쟁 그 자체. 세계를 가르는 일격.",
+};
+const CRUSADER: ClassDef = {
+  key: "crusader", tier: 4, parent: "paladin",
+  name: "크루세이더", title: "심판의 빛",
+  color: "#ffe29a", hex: 0xffe29a,
+  atkPct: 15, critAdd: 8, defAdd: 20, hpAdd: 400, mpAdd: 40, speedPct: 5,
+  cdMult: 0.9, skillMult: 1.15,
+  desc: "불굴의 성벽이 심판의 검을 든다.",
+};
+const DEADEYE: ClassDef = {
+  key: "deadeye", tier: 4, parent: "eagleeye",
+  name: "데드아이", title: "신의 시선",
+  color: "#1cff5c", hex: 0x1cff5c,
+  atkPct: 20, critAdd: 30, defAdd: 0, hpAdd: 120, mpAdd: 40, speedPct: 10,
+  cdMult: 0.85, skillMult: 1.25,
+  desc: "모든 화살은 신의 심판이 된다.",
+};
+const SKYLORD: ClassDef = {
+  key: "skylord", tier: 4, parent: "tempest",
+  name: "스카이로드", title: "하늘의 지배자",
+  color: "#ccffe8", hex: 0xccffe8,
+  atkPct: 15, critAdd: 12, defAdd: 0, hpAdd: 160, mpAdd: 80, speedPct: 20,
+  cdMult: 0.75, skillMult: 1.2,
+  desc: "바람이 그의 명령을 기다린다.",
+};
+const ARCLORD: ClassDef = {
+  key: "arclord", tier: 4, parent: "stormbringer",
+  name: "아크로드", title: "마나의 절대자",
+  color: "#5c7cff", hex: 0x5c7cff,
+  atkPct: 35, critAdd: 8, defAdd: 0, hpAdd: 100, mpAdd: 120, speedPct: 0,
+  cdMult: 0.85, skillMult: 1.35,
+  desc: "한 발의 마법이 지평선을 지운다.",
+};
+const ETERNAL: ClassDef = {
+  key: "eternal", tier: 4, parent: "chronicle",
+  name: "이터널", title: "시간을 초월한 자",
+  color: "#ffffff", hex: 0xffffff,
+  atkPct: 18, critAdd: 10, defAdd: 10, hpAdd: 220, mpAdd: 200, speedPct: 10,
+  cdMult: 0.7, skillMult: 1.2,
+  desc: "모든 마법이 그의 이름 앞에 무릎 꿇는다.",
+};
+const SHADOWLORD: ClassDef = {
+  key: "shadowlord", tier: 4, parent: "nightblade",
+  name: "섀도우로드", title: "그림자 군주",
+  color: "#a86aff", hex: 0xa86aff,
+  atkPct: 25, critAdd: 25, defAdd: 0, hpAdd: 150, mpAdd: 60, speedPct: 15,
+  cdMult: 0.7, skillMult: 1.3,
+  desc: "그림자가 그를 따라 세계를 덮는다.",
+};
+const BLADEMASTER: ClassDef = {
+  key: "blademaster", tier: 4, parent: "duelist",
+  name: "블레이드마스터", title: "검의 극한",
+  color: "#ffaaff", hex: 0xffaaff,
+  atkPct: 22, critAdd: 18, defAdd: 8, hpAdd: 220, mpAdd: 60, speedPct: 15,
+  cdMult: 0.75, skillMult: 1.25,
+  desc: "단검 두 자루로 신을 벤다.",
+};
+
 export const CLASSES: Record<ClassKey, ClassDef> = {
-  warrior: WARRIOR, ranger: RANGER, mage: MAGE,
+  warrior: WARRIOR, ranger: RANGER, mage: MAGE, thief: THIEF,
   berserker: BERSERKER, guardian: GUARDIAN,
   sniper: SNIPER, windrunner: WINDRUNNER,
   archmage: ARCHMAGE, sage: SAGE,
+  assassin: ASSASSIN, swashbuckler: SWASHBUCKLER,
   warlord: WARLORD, paladin: PALADIN,
   eagleeye: EAGLEEYE, tempest: TEMPEST,
   stormbringer: STORMBRINGER, chronicle: CHRONICLE,
+  nightblade: NIGHTBLADE, duelist: DUELIST,
+  warbringer: WARBRINGER, crusader: CRUSADER,
+  deadeye: DEADEYE, skylord: SKYLORD,
+  arclord: ARCLORD, eternal: ETERNAL,
+  shadowlord: SHADOWLORD, blademaster: BLADEMASTER,
 };
 
-/** 1차 계열 3종 (초기 전직 선택지) */
-export const CLASS_LIST: ClassDef[] = [WARRIOR, RANGER, MAGE];
+/** 1차 계열 4종 (초기 전직 선택지 — v2.9 도적 추가) */
+export const CLASS_LIST: ClassDef[] = [WARRIOR, RANGER, MAGE, THIEF];
 
 /* ================= 헬퍼 ================= */
 
@@ -254,11 +377,11 @@ export function bonusOf(key?: string | null): ClassBonus {
   return acc;
 }
 
-/** 다음 전직 단계 (3차 완료면 null) */
+/** 다음 전직 단계 (4차 완료면 null) */
 export function nextTierOf(key?: string | null): Tier | null {
   const cur = classDef(key);
   const next = (cur ? cur.tier + 1 : 1) as Tier;
-  return next <= 3 ? next : null;
+  return next <= 4 ? next : null;
 }
 
 /** 다음 단계 요구 레벨 (완료 상태면 null) */

@@ -43,7 +43,10 @@ export type RpgState = {
   owned: string[];
   weapon: string;
   armor: string;
-  accessory: string | null;
+  /** v2.9 (#8) — 장착 중 장신구 (반지 4 + 펜던트 2 중복 장착) */
+  accessories: string[];
+  /** v2.9 (#12) — 과금 화폐 에메랄드 */
+  emerald: number;
   upWea: number;
   upArm: number;
   nearShop: boolean;

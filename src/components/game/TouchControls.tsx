@@ -35,7 +35,9 @@ export function TouchControls({
   const [joyOrigin, setJoyOrigin] = useState<{ x: number; y: number } | null>(null);
   const [joyKnob, setJoyKnob] = useState({ x: 0, y: 0 });
   const joyPointer = useRef<number | null>(null);
-  const [visible, setVisible] = useState(
+  /* v2.9 (사용자 지시 #2) — PC에서도 스킬 쿨타임/물약/자동사냥 버튼을 보여준다.
+   *  isTouch = 조이스틱 표시 여부. PC(마우스 전용)면 버튼만, 터치면 조이스틱+버튼 */
+  const [isTouch, setIsTouch] = useState(
     () =>
       typeof window !== "undefined" &&
       (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900)
@@ -44,10 +46,10 @@ export function TouchControls({
   useEffect(() => {
     const reevaluate = () => {
       const coarse = window.matchMedia("(pointer: coarse)").matches;
-      setVisible(coarse || window.innerWidth < 900);
+      setIsTouch(coarse || window.innerWidth < 900);
     };
     reevaluate();
-    const onTouch = () => setVisible(true);
+    const onTouch = () => setIsTouch(true);
     window.addEventListener("touchstart", onTouch, { once: true, passive: true });
     window.addEventListener("resize", reevaluate);
     return () => {
@@ -91,8 +93,6 @@ export function TouchControls({
     sendMove(0, 0);
   };
 
-  if (!visible) return null;
-
   const s1Ready = skills.s1Cd <= 0 && skills.mp >= 15;
   const s2Ready = skills.s2Cd <= 0 && skills.mp >= 20;
   const s1Pct = skills.s1Cd > 0 ? (skills.s1Cd / skills.s1Max) * 100 : 0;
@@ -100,7 +100,8 @@ export function TouchControls({
 
   return (
     <>
-      {/* 조이스틱 영역: 화면 왼쪽 45% */}
+      {/* 조이스틱 영역: 화면 왼쪽 45% — 터치 기기에서만 (PC는 마우스 클릭 방해 금지) */}
+      {isTouch && (
       <div
         className="absolute inset-y-0 left-0 w-[45%] touch-none"
         onPointerDown={onJoyDown}
@@ -131,8 +132,9 @@ export function TouchControls({
           </>
         )}
       </div>
+      )}
 
-      {/* 버튼: 우하단 */}
+      {/* 버튼: 우하단 — 터치/PC 공용 (사용자 지시 #2) */}
       <div className="absolute bottom-4 right-3 flex items-end gap-2 sm:bottom-6 sm:right-5 sm:gap-3">
         <div className="flex flex-col gap-2">
           {/* v2.5 — 자동사냥 토글 (펫 보유 시) */}

@@ -62,6 +62,16 @@ function GoldChip({ gold }: { gold: number }) {
   );
 }
 
+/** v2.9 (#12) — 과금 화폐 에메랄드 배지 (상점 표시용 — 구매 연동은 다음 릴리스) */
+function EmeraldChip({ emerald }: { emerald: number }) {
+  return (
+    <span className="flex items-center gap-1 rounded-md bg-black/50 px-2 py-1 text-[12px] font-black text-emerald-300">
+      <img src="/assets/item_pendant_arcane.png" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
+      {emerald}
+    </span>
+  );
+}
+
 function itemEffect(item: (typeof ITEMS)[ItemKey], up = 0): string {
   if (item.kind === "buff") return BUFF_DEFS[item.key as BuffKey]?.desc ?? "버프";
   if (item.kind === "pet") return PET_DEFS[item.key as PetKey]?.desc ?? "펫";
@@ -116,6 +126,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           </div>
           <div className="flex items-center gap-2">
             <GoldChip gold={rpg.gold} />
+            <EmeraldChip emerald={rpg.emerald} />
             <button
               onClick={onClose}
               aria-label="상점 닫기"
@@ -227,7 +238,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           </div>
         </div>
 
-        <p className="mt-2 text-center text-[10px] text-white/40">장비는 구매 시 즉시 장착됩니다 · 장신구는 1개만 장착 · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/40">장비는 구매 시 즉시 장착됩니다 · 반지 4개/펜던트 2개 중복 장착 가능 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -365,8 +376,37 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
           })}
         </div>
 
-        {/* 장신구 (RPG 2차 확장) */}
-        <p className="mb-1 mt-2.5 text-[11px] font-bold text-white/50">장신구</p>
+        {/* 장신구 (v2.9 #8 — 메이플식 슬롯: 반지 4 + 펜던트 2 중복 장착) */}
+        <p className="mb-1 mt-2.5 text-[11px] font-bold text-white/50">장신구 슬롯 (반지 4 · 펜던트 2)</p>
+        {/* 장착 슬롯 그리드 — 메이플 장비창 감각 */}
+        <div className="mb-2 grid grid-cols-4 gap-1.5">
+          {(() => {
+            const worn = [...rpg.accessories]; // 원본 변이 금지 — 복사본에서 순서대로 소비
+            return Array.from({ length: 6 }).map((_, i) => {
+            const isPendant = i >= 4;
+            const slotKind = isPendant ? "pendant" : "ring";
+            const wornIdx = worn.findIndex((k) => (ITEMS[k as ItemKey]?.slot ?? "ring") === slotKind);
+            const wornKey = wornIdx >= 0 ? (worn.splice(wornIdx, 1)[0] as string) : null;
+            const item = wornKey ? ITEMS[wornKey as ItemKey] : null;
+            return (
+              <button
+                key={i}
+                title={item ? `${item.name} — 탭하여 해제` : `${isPendant ? "펜던트" : "반지"} 슬롯 (비어 있음)`}
+                onClick={() => wornKey && EventBus.emit("rpg:unequip", { key: wornKey as ItemKey })}
+                className={`flex aspect-square flex-col items-center justify-center gap-0.5 rounded-lg border-2 ${
+                  item ? "border-amber-300/50 bg-amber-400/10" : "border-dashed border-white/15 bg-white/[0.02]"
+                }`}
+              >
+                {item ? (
+                  <ItemIcon icon={item.icon} size={24} tier={item.tier} />
+                ) : (
+                  <span className="text-[9px] font-bold text-white/30">{isPendant ? "펜던트" : "반지"}</span>
+                )}
+              </button>
+            );
+            });
+          })()}
+        </div>
         <div className="flex flex-col gap-1.5">
           {accs.length === 0 && (
             <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-2 text-[11px] text-white/35">
@@ -376,25 +416,29 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
           {accs.map((k) => {
             const item = ITEMS[k as ItemKey];
             if (!item) return null;
-            const equipped = rpg.accessory === k;
+            /* v2.9 — 중복 장착: 보유 n개 중 장착 m개 */
+            const ownedN = accs.filter((x) => x === k).length;
+            if (k !== accs.filter((x) => x === k)[0]) return null; // 동일 키 1회만 렌더
+            const wornN = rpg.accessories.filter((x) => x === k).length;
+            const canWearMore = wornN < ownedN;
             return (
               <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
                 <ItemIcon icon={item.icon} size={26} tier={item.tier} />
                 <div className="min-w-0 flex-1">
-                  <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{item.name}</p>
-                  <p className="text-[10px] text-emerald-300/90">{itemEffect(item)}</p>
+                  <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{item.name}{ownedN > 1 ? ` ×${ownedN}` : ""}</p>
+                  <p className="text-[10px] text-emerald-300/90">{itemEffect(item)}{wornN > 0 ? ` · 장착 ${wornN}/${ownedN}` : ""}</p>
                 </div>
-                {equipped ? (
-                  <span className="shrink-0 rounded-md bg-emerald-700/40 px-2.5 py-1.5 text-[11px] font-black text-emerald-300">
-                    장착 중
-                  </span>
-                ) : (
+                {canWearMore ? (
                   <button
                     onClick={() => EventBus.emit("rpg:equip", { key: k as ItemKey })}
                     className="shrink-0 rounded-md bg-amber-400 px-2.5 py-1.5 text-[11px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
                   >
                     장착
                   </button>
+                ) : (
+                  <span className="shrink-0 rounded-md bg-emerald-700/40 px-2.5 py-1.5 text-[11px] font-black text-emerald-300">
+                    장착 중
+                  </span>
                 )}
               </div>
             );

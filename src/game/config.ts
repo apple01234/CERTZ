@@ -71,6 +71,9 @@ export type SaveData = {
   upWea?: number;
   upArm?: number;
   accessory?: string | null;
+  /* v2.9 (#8) — 장신구 다중 슬롯 (반지 4 + 펜던트 2) · 과금 화폐 */
+  accessories?: string[];
+  emerald?: number;
   /* ↓ 퀘스트 진행 (스테이지별 퀘스트 인덱스 — 구 세이브 호환 기본값 {}) */
   questIdx?: Record<string, number>;
   /* ↓ 전직 클래스 (v1.7 — 구 세이브 호환 기본값 null) */
@@ -160,6 +163,9 @@ export function loadSave(): SaveData | null {
     if (typeof d.upWea !== "number") d.upWea = 0;
     if (typeof d.upArm !== "number") d.upArm = 0;
     if (d.accessory === undefined) d.accessory = null;
+    // v2.9 — 장신구 다중 슬롯 마이그레이션 (구 accessory 1개 → 배열)
+    if (!Array.isArray(d.accessories)) d.accessories = d.accessory ? [d.accessory] : [];
+    if (typeof d.emerald !== "number") d.emerald = 0;
     // 퀘스트 진행 (구버전 세이브 호환 — 처음부터)
     if (!d.questIdx || typeof d.questIdx !== "object") d.questIdx = {};
     // 전직 클래스 (구버전 세이브 호환 — 미전직)

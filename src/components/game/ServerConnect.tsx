@@ -7,6 +7,10 @@ import { netConnect, netJoined } from "@/game/net";
 
 const KEY = "sertz.server.url";
 
+/** v2.9 (사용자 지시 #10) — 기본 게임 서버. APK 첫 실행 시 이 주소로 바로 연결해
+ *  “멀티 안됨” 문제를 해소한다. 주소가 바뀌면 이 상수만 고치면 된다. */
+const DEFAULT_SERVER = "https://preview-6a94b1ab.space-z.ai";
+
 function readUrl(): string {
   try {
     return window.localStorage.getItem(KEY)?.trim() ?? "";
@@ -40,6 +44,19 @@ export function ServerConnect() {
   const [url, setUrl] = useState(() => readUrl());
   const [saved] = useState(() => readUrl());
   const [online, setOnline] = useState(false);
+
+  /* v2.9 — 서버 주소가 비어 있으면 기본 서버를 자동 저장해 즉시 연결 (멀티 첫 경험 개선).
+   *  오프라인을 원하면 아래 ‘오프라인’ 버튼으로 해제 가능. */
+  useEffect(() => {
+    if (!native) return;
+    if (readUrl()) return;
+    try {
+      window.localStorage.setItem(KEY, DEFAULT_SERVER);
+    } catch {
+      /* noop */
+    }
+    window.location.reload();
+  }, [native]);
 
   useEffect(() => {
     if (!native) return;

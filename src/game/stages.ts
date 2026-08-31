@@ -84,6 +84,8 @@ export type StageDef = {
   enemies: { key: EnemyKey; count: number }[];
   boss: boolean;
   bossKey?: BossKey;
+  /** v2.9 (사용자 지시 #5) — 마을형 안전 구역 (여관/전직관/우물 등 마을 시설 재사용) */
+  isVillage?: boolean;
   /** 구역 5 정예 몬스터 (미드 보스급 단일 스폰) */
   elite?: { key: EnemyKey; hpMult: number; atkMult: number; name: string };
   repeat?: { targetKey: EnemyKey; need: number; gold: number; exp: number; title: string; desc: string };
@@ -132,11 +134,12 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "intro", boss: "guardian", bossDone: "wolvesDone",
     width: 2400, height: 1350, groundTint: 0x9adf6a, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0a1408",
     flowers: 10, trees: 14, rocks: 8,
-    enemies: [{ key: "wolf", count: 5 }],
+    /* v2.9 (지시 #1) — 챕터 몬스터 풀 3종: 2구역마다 1종 로테이션(1~6) → 2종(7~8) → 3종(9) → 보스+3종(10) */
+    enemies: [{ key: "wolf", count: 6 }, { key: "spider", count: 5 }, { key: "swampbeast", count: 4 }],
     main: "wolf",
     beats: [
       { sub: 2, dialogue: "fragment", quest: { id: "f0", type: "collect", title: "보석의 흔적 찾기", desc: "숲 어딘가 빛을 내는 보석의 흔적을 찾아 주워 보자. 아부디토스가 기다린다.", targetLabel: "보석의 흔적", reward: Math.round(40 * G), expReward: 35 } },
-      { sub: 3, dialogue: "", quest: { id: "f1", type: "hunt", title: "숲의 늑대 토벌", desc: "신전으로 가는 길을 막는 미드가르드 늑대 4마리를 처치하자.", need: 4, targetKey: "wolf", targetLabel: "늑대", reward: Math.round(60 * G), expReward: 40 } },
+      { sub: 3, dialogue: "", quest: { id: "f1", type: "hunt", title: "숲의 거미 소탕", desc: "신전으로 가는 길을 막는 숲의 거미 5마리를 처치하자.", need: 5, targetKey: "spider", targetLabel: "숲의 거미", reward: Math.round(60 * G), expReward: 40 } },
       { sub: 6, dialogue: "wolfRoutDone", quest: { id: "f2", type: "hunt", title: "능대 무리 소멸", desc: "어둠에 미친 늑대 무리 10마리를 더 처치하자!", need: 10, targetKey: "wolf", targetLabel: "늑대", reward: Math.round(110 * G), expReward: 90 } },
       { sub: 8, dialogue: "", quest: { id: "f3", type: "collect", title: "능대들이 지키던 보석", desc: "능대들이 지키던 곳에서 또 하나의 빛이 느껴진다.", targetLabel: "보석의 흔적", reward: Math.round(60 * G), expReward: 45 } },
     ],
@@ -148,7 +151,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "kingdomIntro", boss: "behemoth", bossDone: "kingdomDone",
     width: 2200, height: 1250, groundTint: 0x86c95e, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0d1808",
     flowers: 8, trees: 9, rocks: 6,
-    enemies: [{ key: "swampbeast", count: 6 }],
+    enemies: [{ key: "swampbeast", count: 6 }, { key: "wolf", count: 4 }, { key: "golem", count: 3 }],
     main: "swampbeast",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "k1", type: "collect", title: "능지 속 보석의 조각", desc: "식인초들이 품고 있던 보석의 조각을 되찾자.", targetLabel: "보석의 흔적", reward: Math.round(80 * G), expReward: 70 } },
@@ -164,7 +167,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "alfheimIntro", boss: "nidhog", bossDone: "guardianDone",
     width: 1900, height: 1080, groundTint: 0x8f7fd8, groundTex: "tile_dark", pathTex: "tile_path", bg: "#0d0a1e",
     flowers: 6, trees: 10, rocks: 10,
-    enemies: [{ key: "minion", count: 5 }],
+    enemies: [{ key: "minion", count: 5 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }],
     main: "minion",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "a0", type: "hunt", title: "하수인 소탕", desc: "니드호그가 부린 심연의 하수인 5마리를 처치해 성전의 길을 열자.", need: 5, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(80 * G), expReward: 65 } },
@@ -179,7 +182,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "muspelIntro", boss: "surt", bossDone: "surtDone",
     width: 2200, height: 1250, groundTint: 0xd88a4a, groundTex: "tile_magma", pathTex: "tile_magma_path", bg: "#1c0d06",
     flowers: 0, trees: 4, rocks: 12,
-    enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 4 }],
+    enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 4 }, { key: "golem", count: 3 }],
     main: "emberwolf",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "m0", type: "hunt", title: "불꽃 늑대 사냥", desc: "네바다를 내달리는 불꽃 늑대 6마리를 처치하자.", need: 6, targetKey: "emberwolf", targetLabel: "불꽃 늑대", reward: Math.round(150 * G), expReward: 140 } },
@@ -195,7 +198,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "niflIntro", boss: "fenrir", bossDone: "fenrirDone",
     width: 2100, height: 1200, groundTint: 0xdfeaf8, groundTex: "tile_snow", pathTex: "tile_ice", bg: "#0c1826",
     flowers: 0, trees: 10, rocks: 10,
-    enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }],
+    enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }, { key: "wraith", count: 3 }],
     main: "frostwolf",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "n0", type: "hunt", title: "서리 늑대 사냥", desc: "설원을 유랑하는 서리 늑대 6마리를 처치하자.", need: 6, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(130 * G), expReward: 120 } },
@@ -211,7 +214,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "caveIntro", boss: "abysslord", bossDone: "caveDone",
     width: 2100, height: 1200, groundTint: 0x8a6a4a, groundTex: "tile_cave", pathTex: "tile_path_dark", bg: "#100a08",
     flowers: 0, trees: 0, rocks: 14,
-    enemies: [{ key: "spider", count: 5 }, { key: "golem", count: 3 }],
+    enemies: [{ key: "spider", count: 5 }, { key: "minion", count: 4 }, { key: "golem", count: 3 }],
     main: "spider",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "c0", type: "collect", title: "지하 깊은 곳의 빛", desc: "어둠 요정들의 지하 어딘가에서 보석의 조각이 빛나고 있다.", targetLabel: "보석의 흔적", reward: Math.round(60 * G), expReward: 65 } },
@@ -228,7 +231,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "nidavellirIntro", boss: "skoll", bossDone: "skollDone",
     width: 2100, height: 1200, groundTint: 0x9a8a6a, groundTex: "tile_stone", pathTex: "tile_path_dark", bg: "#121008",
     flowers: 0, trees: 0, rocks: 16,
-    enemies: [{ key: "runegolem", count: 4 }, { key: "golem", count: 2 }],
+    enemies: [{ key: "runegolem", count: 4 }, { key: "golem", count: 3 }, { key: "spider", count: 3 }],
     main: "runegolem",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "d0", type: "hunt", title: "룬 골렘 정지", desc: "폭주한 룬 골렘 5기를 정지시키자.", need: 5, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(200 * G), expReward: 180 } },
@@ -244,7 +247,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "helIntro", boss: "gram", bossDone: "gramDone",
     width: 2100, height: 1200, groundTint: 0x4a3a5a, groundTex: "tile_hel", pathTex: "tile_path_dark", bg: "#0d0616",
     flowers: 0, trees: 6, rocks: 12,
-    enemies: [{ key: "helhound", count: 5 }, { key: "wraith", count: 3 }],
+    enemies: [{ key: "helhound", count: 5 }, { key: "wraith", count: 4 }, { key: "golem", count: 3 }],
     main: "helhound",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "h0", type: "hunt", title: "헬 하운드 사냥", desc: "절벽을 지키는 헬 하운드 6마리를 처치하자.", need: 6, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(260 * G), expReward: 240 } },
@@ -260,7 +263,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "abyssIntro", boss: "abudditos", bossDone: "victory",
     width: 1800, height: 1050, groundTint: 0x3a2c52, groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#0d0616",
     flowers: 0, trees: 0, rocks: 12,
-    enemies: [{ key: "wraith", count: 5 }],
+    enemies: [{ key: "wraith", count: 5 }, { key: "minion", count: 4 }, { key: "helhound", count: 3 }],
     main: "wraith",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "y0", type: "hunt", title: "바다의 유령 소탕", desc: "왕좌를 지키는 심연 유령 4마리를 처치하자.", need: 4, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(150 * G), expReward: 140 } },
@@ -399,6 +402,9 @@ const CH_EXP = [1, 1.35, 1.8, 2.35, 3.0, 3.8, 4.8, 6.0, 7.5];
 /** 스테이지 키 → {챕터, 구역} 파싱 */
 export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: number } {
   if (key === "village" || !key) return { ch: "village", sub: 0 };
+  /* v2.9 — 챕터 마을(Xv)도 챕터 소속으로 파싱 */
+  const v = /^([a-z]+)v$/.exec(key);
+  if (v) return { ch: v[1] as ChapterKey, sub: 0 };
   const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss)([1-9]|10)$/.exec(key);
   if (!m) return { ch: "village", sub: 0 };
   return { ch: m[1] as ChapterKey, sub: parseInt(m[2], 10) };
@@ -426,6 +432,29 @@ export function stageScale(key: StageKey): { hp: number; atk: number; exp: numbe
 
 /** 구역 5 정예 이름 */
 const ELITE_TITLE = ["정예", "광포한", "심연에 물든", "각성한", "포화의", "얼어붙은", "먹이는", "폭주하는", "절규하는", "종언의"];
+
+/** v2.9 (지시 #1) — 구역 → 몬스터 조합. 2구역마다 주력몬 교체로 단조로움 해소 */
+function subEnemyMix(spec: ChapterSpec, sub: number): { key: EnemyKey; count: number }[] {
+  const pool = spec.enemies.map((g) => g.key);
+  const a = pool[0];
+  const b = pool[1] ?? pool[0];
+  const c = pool[2] ?? b;
+  const grp = (n: number) => Math.max(3, Math.min(20, Math.round(n * 1.6) + Math.floor(sub / 2)));
+  const base = 9; // 구역당 총 스폰량 기준
+  if (sub <= 2) return [{ key: a, count: grp(base) }];
+  if (sub <= 4) return [{ key: b, count: grp(base) }];
+  if (sub <= 6) return [{ key: c, count: grp(base) }];
+  if (sub <= 8)
+    return [
+      { key: a, count: grp(base * 0.55) },
+      { key: b, count: grp(base * 0.45) },
+    ];
+  return [
+    { key: a, count: grp(base * 0.4) },
+    { key: b, count: grp(base * 0.3) },
+    { key: c, count: grp(base * 0.3) },
+  ]; // 9구역 3종 / 10구역 보스 + 3종
+}
 
 function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[] {
   const quests: QuestDef[] = [];
@@ -514,12 +543,10 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
   const key = `${spec.key}${sub}`;
   const prefix = `${spec.key}${sub}`;
   const boss = sub === 10 && !!spec.boss;
-  /* v2.3 몬스터 증원 (지시 #2 — 마릿수 적음 + 사냥 지루함 해소):
-   *  기본 ×1.6 + 구역 보너스, 상한 11→20. 맵이 넓어도 사냥터가 텅 비지 않게 */
-  const enemies = spec.enemies.map((g) => ({
-    key: g.key,
-    count: Math.min(20, Math.round(g.count * 1.6) + Math.floor(sub / 2)),
-  }));
+  /* v2.9 (사용자 지시 #1) — 구역별 몬스터 조합 개편:
+   *  1~2구역 풀[0] 1종 / 3~4 풀[1] 1종 / 5~6 풀[2] 1종 (2구역마다 몬스터 교체)
+   *  7~8구역 2종 / 9구역 3종 / 10구역 보스 + 3종(잡몹 소규모) */
+  const enemies = subEnemyMix(spec, sub);
   const def: StageDef = {
     key,
     name: `제${spec.num}장 ${spec.title}`,
@@ -565,6 +592,7 @@ const VILLAGE: StageDef = {
   flowerCount: 8,
   treeCount: 7,
   rockCount: 2,
+  isVillage: true,
   quests: [
     {
       id: "v0",
@@ -601,9 +629,37 @@ for (let ci = 0; ci < CHAPTERS.length; ci++) {
     const key = `${spec.key}${sub}`;
     STAGES[key] = buildStage(spec, sub);
     STAGE_SHORT[key] = `${spec.num}-${sub}`;
-    NEXT_STAGE[key] = sub < 10 ? `${spec.key}${sub + 1}` : ci < CHAPTERS.length - 1 ? `${CHAPTERS[ci + 1].key}1` : null;
+    /* v2.9 (지시 #5) — 10구역 통과 후 다음 챕터의 마을에 들린 뒤 1구역으로 */
+    const next = ci < CHAPTERS.length - 1 ? `${CHAPTERS[ci + 1].key}v` : null;
+    NEXT_STAGE[key] = sub < 10 ? `${spec.key}${sub + 1}` : next;
     PREV_STAGE[key] = sub > 1 ? `${spec.key}${sub - 1}` : ci > 0 ? `${CHAPTERS[ci - 1].key}10` : "village";
   }
+  /* 챕터 마을 체인 — 이전 챕터 10구역 ↔ 마을 ↔ 이 챕터 1구역 */
+  const vk = `${spec.key}v`;
+  STAGES[vk] = buildChapterVillageDef(spec);
+  STAGE_SHORT[vk] = `${spec.title} 마을`;
+  NEXT_STAGE[vk] = `${spec.key}1`;
+  PREV_STAGE[vk] = ci > 0 ? `${CHAPTERS[ci - 1].key}10` : "village";
+}
+
+/* v2.9 (사용자 지시 #5) — 챕터별 마을: 모든 챕터에 안전 마을(여관/전직관/우물)을 둔다.
+ *  진행 경로: 이전 챕터 10구역 → 다음 챕터 마을(Xv) → 다음 챕터 1구역 */
+function buildChapterVillageDef(spec: ChapterSpec): StageDef {
+  return {
+    key: `${spec.key}v`,
+    name: `${spec.title} 마을`,
+    subtitle: `${spec.subtitle} — 여행자들의 안식처`,
+    width: 1500,
+    height: 860,
+    groundTint: spec.groundTint,
+    flowerCount: 6,
+    treeCount: 6,
+    rockCount: 2,
+    quests: [],
+    enemies: [],
+    boss: false,
+    isVillage: true,
+  };
 }
 
 /* ================= 인테리어 (v2.2 — 여관/내 집 실내 맵, 사용자 지시) =================
@@ -675,6 +731,8 @@ export const STAGE_THEME: Record<StageKey, { ground: string; path: string; bg: s
   village: { ground: "tile_grass", path: "tile_path", bg: "#15270f" },
 };
 for (const spec of CHAPTERS) {
+  /* v2.9 — 챕터 마을도 챕터 지형 테마를 따른다 */
+  STAGE_THEME[`${spec.key}v`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
   for (let sub = 1; sub <= 10; sub++) {
     STAGE_THEME[`${spec.key}${sub}`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
   }

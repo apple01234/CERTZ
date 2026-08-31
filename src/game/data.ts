@@ -69,6 +69,8 @@ export type ItemKey =
   | "ring_vital"
   | "ring_crit"
   | "ring_guard"
+  | "pendant_vital"
+  | "pendant_arcane"
   | "scroll_return"
   | "scroll_warp"
   | "buff_atk"
@@ -105,6 +107,7 @@ export type ItemDef = {
   def?: number; // 방어구 방어력
   crit?: number; // 장신구 — 크리티컬 확률 증가 (%p)
   maxHp?: number; // 장신구 — 최대 HP 증가
+  slot?: "ring" | "pendant"; // v2.9 (#8) — 중복 장착 슬롯 종류 (기본 ring)
 };
 
 export const ITEMS: Record<ItemKey, ItemDef> = {
@@ -129,11 +132,14 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   armor_4: { key: "armor_4", kind: "armor", name: "수호자의 갑옷", icon: "item_armor_4", price: 380, tier: "epic", def: 10 },
   armor_5: { key: "armor_5", kind: "armor", name: "용린 갑주", icon: "item_armor_5", price: 480, tier: "epic", def: 14 },
   armor_6: { key: "armor_6", kind: "armor", name: "심연룡의 비늘갑옷", icon: "item_armor_6", price: 820, tier: "epic", def: 18 },
-  ring_power: { key: "ring_power", kind: "accessory", name: "힘의 반지", icon: "item_ring_power", price: 150, tier: "rare", crit: 7 },
-  ring_vital: { key: "ring_vital", kind: "accessory", name: "생명의 반지", icon: "item_ring_vital", price: 130, tier: "rare", maxHp: 25 },
+  ring_power: { key: "ring_power", kind: "accessory", name: "힘의 반지", icon: "item_ring_power", price: 150, tier: "rare", crit: 7, slot: "ring" },
+  ring_vital: { key: "ring_vital", kind: "accessory", name: "생명의 반지", icon: "item_ring_vital", price: 130, tier: "rare", maxHp: 25, slot: "ring" },
   /* v2.5 — 상위 장신구 (지시 #5 아이템 확장) */
-  ring_crit: { key: "ring_crit", kind: "accessory", name: "매의 눈 반지", icon: "item_ring_crit", price: 400, tier: "epic", crit: 12 },
-  ring_guard: { key: "ring_guard", kind: "accessory", name: "수호 반지", icon: "item_ring_guard", price: 380, tier: "epic", maxHp: 60 },
+  ring_crit: { key: "ring_crit", kind: "accessory", name: "매의 눈 반지", icon: "item_ring_crit", price: 400, tier: "epic", crit: 12, slot: "ring" },
+  ring_guard: { key: "ring_guard", kind: "accessory", name: "수호 반지", icon: "item_ring_guard", price: 380, tier: "epic", maxHp: 60, slot: "ring" },
+  /* v2.9 (#8) — 펜던트 (2개 중복 장착) */
+  pendant_vital: { key: "pendant_vital", kind: "accessory", name: "생명의 펜던트", icon: "item_pendant_vital", price: 300, tier: "rare", maxHp: 45, slot: "pendant" },
+  pendant_arcane: { key: "pendant_arcane", kind: "accessory", name: "신비의 펜던트", icon: "item_pendant_arcane", price: 520, tier: "epic", crit: 10, slot: "pendant" },
   /* ---- BM (v1.9): 버프 물약 / 펫 / 치장 ---- */
   buff_atk: { key: "buff_atk", kind: "buff", name: "분노의 물약", icon: "item_buff_atk", price: 60, tier: "rare" },
   buff_def: { key: "buff_def", kind: "buff", name: "수호의 물약", icon: "item_buff_def", price: 55, tier: "rare" },
@@ -223,6 +229,8 @@ export const SHOP_STOCK: ItemKey[] = [
   "ring_vital",
   "ring_crit",
   "ring_guard",
+  "pendant_vital",
+  "pendant_arcane",
   "scroll_return",
   "scroll_warp",
   "buff_atk",
@@ -759,17 +767,20 @@ const JOB_SPKR: Record<FamilyKey, string> = {
   warrior: "전사 계열의 시조 '강철의 마르테'",
   ranger: "궁수 계열의 시조 '바람의 세이렌'",
   mage: "마법사 계열의 시조 '만개한 세이렌'",
+  thief: "도적 계열의 시조 '그림자의 로크'",
 };
 
 function jobStory(family: FamilyKey, tier: 2 | 3): JobStoryDef {
-  const nameOf: Record<FamilyKey, string> = { warrior: "전사", ranger: "궁수", mage: "마법사" };
+  const nameOf: Record<FamilyKey, string> = { warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적" };
   const stepBase = tier === 2 ? 10 : 22;
   const title =
     family === "warrior"
       ? tier === 2 ? "강철의 각오" : "전장의 정점"
       : family === "ranger"
         ? tier === 2 ? "바람의 재능" : "천공의 사수"
-        : tier === 2 ? "마나의 문" : "심연의 지혜";
+        : family === "thief"
+          ? tier === 2 ? "그림자의 맹세" : "검의 그림자"
+          : tier === 2 ? "마나의 문" : "심연의 지혜";
   return {
     family,
     tier,
@@ -821,6 +832,7 @@ export const JOBSTORY: Record<FamilyKey, Record<2 | 3, JobStoryDef>> = {
   warrior: { 2: jobStory("warrior", 2), 3: jobStory("warrior", 3) },
   ranger: { 2: jobStory("ranger", 2), 3: jobStory("ranger", 3) },
   mage: { 2: jobStory("mage", 2), 3: jobStory("mage", 3) },
+  thief: { 2: jobStory("thief", 2), 3: jobStory("thief", 3) },
 };
 
 /* 전직 스토리 대사 (계열 × 차수 × 단계) */
@@ -873,9 +885,26 @@ const JS_LINES: Record<FamilyKey, Record<2 | 3, { start: string[]; s1: string[];
       done: ["『이제 너의 마법은 세계의 법칙을 다시 쓸 것이다.』", "『일어나라, 아크메이지(세이지)!』"],
     },
   },
+  /* v2.9 — 도적 계열 전직 스토리 (시조 '그림자의 로크') */
+  thief: {
+    2: {
+      start: ["『…소리도 없이 왔군. 나는 그림자의 로크 — 최초의 도적이다.』", "『도적의 힘은 칼날이 아니라 '보이지 않음'에서 나온다. 증명해라!』"],
+      s1: ["『발소리가 사라졌군. 이제 칼이 남았다.』", "『그림자는 다치지 않는 법. 다음을 보여라.』"],
+      s2: ["『…그 빛, 훔친 보석의 빛과 같군.』", "『인정한다. 마지막 시험 — 나에게서 훔쳐라!』"],
+      s3: ["『…내 품의 금화를 건드리지 않고 베었군.』", "『오늘부로 너는 진정한 도적이다. 그림자의 맹세를 이어받아라!』"],
+      done: ["『어둠이 짙을수록 — 너의 단검은 더 날카로워질 것이다.』", "『기대하마, 도적여.』"],
+    },
+    3: {
+      start: ["『시간이 흘렀군, 도적여. 검의 그림자가 너를 부른다.』", "『이번 시험은 '빛 그 자체'. 가장 밝은 곳에서 숨어라!』"],
+      s1: ["『빛 속의 그림자를 익혔군. 하지만 아직 부족하다.』", "『도적의 칼날은 눈에 보이지 않아야 한다!』"],
+      s2: ["『…전설 도적들의 유물을 훔쳐왔군.』", "『그 가치를 감당할 자만이 그림자의 정점에 선다!』"],
+      s3: ["『…심연의 정예도 네 앞에서는 시야에서 사라졌군.』", "『완성이다. 검의 그림자를 받아라!』"],
+      done: ["『이제 너의 이름은 어둠의 전설이 될 것이다.』", "『서라, 어세신(스와시버클러). 바다가 너를 기억한다!』"],
+    },
+  },
 };
 
-for (const fam of ["warrior", "ranger", "mage"] as FamilyKey[]) {
+for (const fam of ["warrior", "ranger", "mage", "thief"] as FamilyKey[]) {
   for (const tier of [2, 3] as const) {
     const L = JS_LINES[fam][tier];
     const base = `js${fam}${tier}`;
@@ -893,6 +922,7 @@ export const AUTO_ALLOC: Record<FamilyKey, { str: number; dex: number; int: numb
   warrior: { str: 4, dex: 1, int: 0, luk: 0 }, // 힘 4 : 민첩 1
   ranger: { str: 1, dex: 4, int: 0, luk: 0 }, // 민첩 4 : 힘 1
   mage: { str: 0, dex: 0, int: 4, luk: 1 }, // 지력 4 : 행운 1
+  thief: { str: 2, dex: 2, int: 0, luk: 1 }, // 힘 2 : 민첩 2 : 행운 1 (치명타 특화)
 };
 
 /** AP를 계열 배분 비율로 나눠 담는다 (남는 AP는 주스탯에 몰아줌) */

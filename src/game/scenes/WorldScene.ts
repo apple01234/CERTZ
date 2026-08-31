@@ -143,6 +143,8 @@ export class WorldScene extends Phaser.Scene {
 
   /* ----- v2.2: 실내(여관/집) + 취침 연출 ----- */
   private isInterior = false;
+  /** v2.9 — 실내(여관/집)에 들어가기 전 마을 스테이지 키 (챕터 마을 복귀용) */
+  private interiorFrom: StageKey = "village";
   private sleeping = false;
   private sleepPending = false;
   private entryPos: { x: number; y: number } | null = null;
@@ -387,7 +389,10 @@ export class WorldScene extends Phaser.Scene {
       // 강화/장신구 복원 (구 세이브는 loadSave()가 기본값 채움)
       this.player.upgrades.weapon = savedPlayer.upWea ?? 0;
       this.player.upgrades.armor = savedPlayer.upArm ?? 0;
-      this.player.accessory = (savedPlayer.accessory ?? null) as ItemKey | null;
+      /* v2.9 (#8) — 다중 장신구 마이그레이션 (구 세이브 accessory 1개 → 배열) */
+      this.player.accessories = ((savedPlayer.accessories as ItemKey[] | undefined) ??
+        (savedPlayer.accessory ? [savedPlayer.accessory as ItemKey] : [])) as ItemKey[];
+      this.player.emerald = savedPlayer.emerald ?? 0;
       // 퀘스트 진행 복원 (이어하기 — 파편/보상 중복 수령 방지)
       this.savedQuestIdx = { ...(savedPlayer.questIdx ?? {}) };
       this.questIdx = Phaser.Math.Clamp(this.savedQuestIdx[stageKey] ?? 0, 0, this.stageDef.quests.length);
@@ -488,9 +493,10 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 퀘스트 오브젝트 (v2.2 — 실내는 포탈/퀘스트 오브젝트 없음) ---------- */
     if (this.isInterior) {
       /* 실내 — 출구 문은 interactables로 처리 */
-    } else if (stageKey === "village") {
+    } else if (this.stageDef.isVillage) {
+      /* v2.9 — 본마을 + 챕터 마을 공용 마을 빌드 (우물/여관/전직관/주민) */
       this.buildVillage();
-      // 마을 차원문은 항상 열려 있음 (숲 1구역으로 출발)
+      // 마을 차원문은 항상 열려 있음 (다음 구역으로 출발)
       this.spawnPortal(this.stageW - 110, this.stageH * 0.52);
       this.activatePortal(true);
     } else {
@@ -699,7 +705,7 @@ export class WorldScene extends Phaser.Scene {
     const vx = def.width / 2;
     const vy = def.height / 2;
     const reserved: [number, number][] =
-      stageKey === "village"
+      STAGES[stageKey]?.isVillage
         ? [
             [vx - 400, vy - 170],
             [vx + 90, vy - 200],
@@ -899,7 +905,7 @@ export class WorldScene extends Phaser.Scene {
     }
 
     // 마을 모닥불 (Serene Village, CC-BY) — 광장 남서 고정 + 글로우
-    if (stageKey === "village") {
+    if (STAGES[stageKey]?.isVillage) {
       const fx7 = this.stageW / 2 - 250;
       const fy7 = this.stageH / 2 + 150;
       const fire = this.add.sprite(fx7, fy7, "sv_campfire").setDepth(Math.floor(fy7 / 10)).play("sv-campfire");
@@ -1967,6 +1973,13 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
       this.save();
     };
+    /* v2.9 (#8) — 장신구 슬롯 클릭 해제 */
+    const onUnequip = (v: { key: ItemKey }) => {
+      if (!this.player || this.dialoguing) return;
+      this.player.unequipAccessory(v.key);
+      this.emitRpgState();
+      this.save();
+    };
     const onUse = (v: { kind: "hp" | "mp" }) => {
       this.player?.usePotion(v.kind);
     };
@@ -2083,21 +2096,23 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       if (key === "scroll_return") {
-        // 마을 귀환서 — 미드가르드 마을로 즉시 귀환 (지시 #6)
-        if (this.stageDef.key === "village") {
+        // v2.9 (지시 #6) — 마을 귀환서: “가장 가까운 마을(현재 챕터의 마을)”로 즉시 귀환
+        if (this.stageDef.isVillage) {
           EventBus.emit("banner:show", { text: "이미 마을에 있습니다" });
           return;
         }
         if (!this.player.hasConsumable(key)) return;
         this.player.consumeConsumable(key);
         audio.sfx.portal();
-        EventBus.emit("banner:show", { text: "마을 귀환서 사용! 미드가르드 마을로 이동합니다…" });
+        const { ch } = parseStage(this.stageDef.key);
+        const vk: StageKey = ch === "village" ? "village" : `${ch}v`;
+        EventBus.emit("banner:show", { text: `마을 귀환서 사용! ${STAGES[vk]?.name ?? "마을"}로 이동합니다…` });
         this.cameras.main.fadeOut(420, 0, 0, 0);
         this.player.state = "idle";
         this.time.delayedCall(440, () => {
-          const carry = this.buildSave("village");
+          const carry = this.buildSave(vk);
           writeSave(carry);
-          this.scene.restart({ stage: "village", save: carry });
+          this.scene.restart({ stage: vk, save: carry });
         });
         return;
       }
@@ -2166,6 +2181,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("keymap:changed", onKeymapChanged);
     EventBus.on("rpg:buy", onBuy);
     EventBus.on("rpg:equip", onEquip);
+    EventBus.on("rpg:unequip", onUnequip);
     EventBus.on("rpg:use", onUse);
     EventBus.on("rpg:useBuff", onUseBuff);
     EventBus.on("rpg:allocate", onAllocate);
@@ -2192,6 +2208,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("keymap:changed", onKeymapChanged);
       EventBus.off("rpg:buy", onBuy);
       EventBus.off("rpg:equip", onEquip);
+      EventBus.off("rpg:unequip", onUnequip);
       EventBus.off("rpg:use", onUse);
       EventBus.off("rpg:useBuff", onUseBuff);
       EventBus.off("rpg:allocate", onAllocate);
@@ -2241,7 +2258,7 @@ export class WorldScene extends Phaser.Scene {
     this.restCd = Math.max(0, this.restCd - dt);
 
     // 마을 우물 샘물 — 근접 시 풀회복 (HP/MP가 꽉 차 있으면 미발동, 8초 쿨다운)
-    if (this.wellPos && this.stageDef.key === "village" && this.wellCd <= 0) {
+    if (this.wellPos && this.stageDef.isVillage && this.wellCd <= 0) {
       const nearWell = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.wellPos.x, this.wellPos.y) < 86;
       if (nearWell && (this.player.hp < this.player.maxHp || this.player.mp < this.player.maxMp)) {
         this.wellCd = 8000;
@@ -2717,13 +2734,15 @@ export class WorldScene extends Phaser.Scene {
   private enterInterior(key: "interior_inn" | "interior_home") {
     if (this.restCd > 0) return;
     this.restCd = 1500;
+    /* v2.9 — 어느 마을(챕터 마을 포함)에서 들어왔는지 기억 → 퇴장 시 그 마을로 복귀 */
+    this.interiorFrom = this.stageDef.isVillage ? this.stageDef.key : "village";
     audio.sfx.portal();
     this.player.state = "idle";
     this.player.setVelocity(0, 0);
     this.cameras.main.fadeOut(420, 0, 0, 0);
     this.time.delayedCall(460, () => {
-      // ⚠️ buildSave("village") — 실내는 세이브에 기록하지 않음(종료 시 마을로 복귀)
-      const carry = this.buildSave("village");
+      // 실내는 세이브에 기록하지 않음(종료 시 들어온 마을로 복귀)
+      const carry = this.buildSave(this.interiorFrom);
       this.scene.restart({ stage: key, save: carry });
     });
   }
@@ -2737,15 +2756,17 @@ export class WorldScene extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.cameras.main.fadeOut(380, 0, 0, 0);
     this.time.delayedCall(420, () => {
-      const carry = this.buildSave("village");
+      /* v2.9 — 들어온 마을(챕터 마을 포함)로 복귀 */
+      const vk = STAGES[this.interiorFrom] ? this.interiorFrom : "village";
+      const carry = this.buildSave(vk);
       writeSave(carry);
-      const def = STAGES.village;
+      const def = STAGES[vk];
       const cx = def.width / 2;
       const cy = def.height / 2;
       const entry = this.stageDef.key === "interior_inn"
         ? { x: cx - 400, y: cy - 60 } // 여관 문 앞
         : { x: cx - 190, y: cy + 330 }; // 내 집 문 앞
-      this.scene.restart({ stage: "village", save: carry, entry });
+      this.scene.restart({ stage: vk, save: carry, entry });
     });
   }
 
@@ -3481,7 +3502,8 @@ export class WorldScene extends Phaser.Scene {
       owned: [...this.player.owned],
       weapon: this.player.weapon,
       armor: this.player.armor,
-      accessory: this.player.accessory,
+      accessories: [...this.player.accessories],
+      emerald: this.player.emerald,
       upWea: this.player.upgrades.weapon,
       upArm: this.player.upgrades.armor,
       nearShop: this.nearShop,
@@ -3550,7 +3572,8 @@ export class WorldScene extends Phaser.Scene {
       owned: [...this.player.owned],
       upWea: this.player.upgrades.weapon,
       upArm: this.player.upgrades.armor,
-      accessory: this.player.accessory,
+      accessories: [...this.player.accessories],
+      emerald: this.player.emerald,
       questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },
       cls: this.player.cls,
       playerName: getPlayerName(),

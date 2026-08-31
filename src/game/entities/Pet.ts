@@ -29,23 +29,27 @@ export class Pet extends Phaser.GameObjects.Image {
     });
   }
 
-  /** 매 프레임 — 플레이어 추적 + 가장 가까운 드롭으로 헤엄치기 */
+  /** 매 프레임 — 플레이어 추적 + 가장 가까운 드롭으로 헤엄치기
+   *  v2.9 — 맵 전체 드롭 흡입 (사용자 지시 #4): 사거리 제한 삭제, 멀수록 빠르게 수렴 */
   tick(dt: number, px: number, py: number) {
     const t = dt / 1000;
-    // 목표: 근처 드롭이 있으면 그쪽, 없으면 플레이어 뒤쪽
-    const drop = this.scene.nearestDrop(this.x, this.y, 150);
+    // 목표: 맵 전체에서 가장 가까운 드롭, 없으면 플레이어 뒤쪽
+    const drop = this.scene.nearestDrop(this.x, this.y, 99999);
     let tx = px - 26;
     let ty = py + 6;
+    let k = 4.2;
     if (drop) {
       tx = drop.x;
       ty = drop.y;
+      const d = Phaser.Math.Distance.Between(this.x, this.y, drop.x, drop.y);
+      k = d > 320 ? 14 : 7.5; // 원거리 드롭은 자석처럼 빠르게 끌려온다
     } else if (this.scene.player.flipX) {
       tx = px + 26;
     }
-    const k = Math.min(1, t * (drop ? 7.5 : 4.2));
-    this.x += (tx - this.x) * k;
+    const step = Math.min(1, t * k);
+    this.x += (tx - this.x) * step;
     // 부유 트윈과 충돌하지 않게 y는 부드럽게 보정 (baseY는 트윈이 관리)
-    this.y += (ty - this.y) * k * 0.9;
+    this.y += (ty - this.y) * step * 0.9;
     // 방향 전환 (드롭 쪽을 볼 때만)
     if (drop) this.setFlipX(drop.x < this.x);
   }

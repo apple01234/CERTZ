@@ -13,7 +13,7 @@ const emptyHud: HudState = {
 const emptyQuest: QuestState = { title: "", desc: "", current: 0, target: 0, distance: null };
 const emptyRpg: RpgState = {
   gold: 30, hpPot: 2, mpPot: 1, owned: ["weapon_1", "armor_1"],
-  weapon: "weapon_1", armor: "armor_1", accessory: null,
+  weapon: "weapon_1", armor: "armor_1", accessories: [], emerald: 0,
   upWea: 0, upArm: 0, nearShop: false,
   shopStock: [], cls: null, canJob: false,
   buffItems: {}, pets: [], pet: null, cosmetics: [], cosmetic: null,

@@ -17,7 +17,8 @@ export type BGMKind = "field" | "boss" | "title" | "village" | "alfheim" | "cave
 
 /** 스테이지 → 전용 BGM 매핑 (v2.0 — 9챕터 × 10구역 키 지원) */
 export function stageBgm(stage: string): BGMKind {
-  const ch = stage.replace(/([1-9]|10)$/, "");
+  /* v2.9 — 챕터 마을(Xv)은 해당 챕터 BGM을 따른다 */
+  const ch = stage.endsWith("v") && stage !== "village" ? stage.slice(0, -1) : stage.replace(/([1-9]|10)$/, "");
   switch (ch) {
     case "village":
       return "village";
