@@ -2542,7 +2542,9 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** v2.5 — 자동사냥 틱 (펫 보유 시): 가장 가까운 적 추적·공격 + 물약 자동 사용.
-   *  이동은 autoHuntMove 주입(조이스틱 터치 중이면 무시), 공격은 attackQueued로 자연 연결 */
+   *  이동은 autoHuntMove 주입(조이스틱 터치 중이면 무시), 공격은 attackQueued로 자연 연결
+   *  v3.0.1 — 직업별 스킬 최적화: 조준 보정 / 원거리 카이팅+이탈 점멸 / 근접 돌진 갭클로저 /
+   *  광역기(회전베기·관통 화살)는 군집·보스 한정, 마법사 볼트는 쿨마다 */
   private tickAutoHunt() {
     this.autoHuntMove.set(0, 0);
     if (!this.autoHunt || !this.player || !this.player.pet) return;
@@ -2563,26 +2565,105 @@ export class WorldScene extends Phaser.Scene {
     const fam = familyOf(this.player.cls);
     const ranged = fam === "ranger" || fam === "mage";
     const atkRange = ranged ? 250 : 56;
-    if (bestD > atkRange) {
-      // 접근 — 방향 주입 (player.update의 이동/facing 로직 재사용)
-      /* v3.0 (#7) — 개미굴 레이아웃: 다른 셀이면 BFS 경로의 다음 셀 중심으로 우회 */
-      let dir: Phaser.Math.Vector2;
-      const pc = this.layout ? cellIndexOf(this.layout, this.player.x, this.player.y) : -1;
-      const tc = this.layout ? cellIndexOf(this.layout, best.x, best.y) : -1;
-      const step = this.layout ? nextStepToward(this.layout, pc, tc) : null;
-      if (this.layout && step !== null && step !== pc) {
-        const c = cellCenterOf(this.layout, step);
-        dir = new Phaser.Math.Vector2(c.x - this.player.x, c.y - this.player.y).normalize();
-      } else {
-        dir = new Phaser.Math.Vector2(best.x - this.player.x, best.y - this.player.y).normalize();
+    const p = this.player;
+
+    // 조준 보정 — 공격 전 대상 방향으로 facing 고정 (정지 뒤 조준이 어긋나는 문제 제거)
+    const aimAt = () => {
+      const aim = new Phaser.Math.Vector2(best.x - p.x, best.y - p.y);
+      if (aim.lengthSq() > 0.001) p.facing.copy(aim).normalize();
+    };
+
+    if (ranged) {
+      // 원거리 — 적이 붙으면 이탈: 점멸/질풍 차지 가능하면 돌진기로, 아니면 걷기 후퇴
+      if (bestD < 150) {
+        const away = this.autoRetreatDir(best);
+        if (p.skill2Cd <= 0 && p.mp >= 20) {
+          p.autoDashDir = away;
+          p.useSkill2();
+        } else {
+          this.autoHuntMove.copy(away);
+        }
+        return;
       }
-      this.autoHuntMove.copy(dir);
-    } else {
-      // 사거리 내 — 공격 + 스킬 로테이션
+      if (bestD > atkRange) {
+        this.autoApproach(best);
+        return;
+      }
+      // 사거리 내 — 조준 보정 후 공격 + 직업별 주력기 판단
+      aimAt();
       this.attackQueued = true;
-      if (this.player.skill1Cd <= 0 && this.player.mp >= 15) this.player.useSkill1();
-      else if (this.player.skill2Cd <= 0 && this.player.mp >= 20) this.player.useSkill2();
+      if (p.skill1Cd <= 0 && p.mp >= 15) {
+        if (fam === "mage") p.useSkill1(); // 매직 볼트 — 주력 딜링, 쿨마다
+        // 궁수 관통 화살 — 군집(2+) 또는 보스 한정 (단일 몹엔 기본공격으로 MP 절약)
+        else if (this.countTargetsNear(340) >= 2 || best instanceof Boss) p.useSkill1();
+      }
+    } else {
+      // 근접 (전사/도적/미전직)
+      if (bestD > atkRange) {
+        // 돌진 갭클로저 — 240px 이내 + 직선 경로 개방 시 돌진기 접근 (2.1x 스윕 + 전사 충격파)
+        if (bestD <= 240 && p.skill2Cd <= 0 && p.mp >= 20 && this.dashPathClear(best)) {
+          aimAt();
+          p.autoDashDir = new Phaser.Math.Vector2(best.x - p.x, best.y - p.y).normalize();
+          p.useSkill2();
+          return;
+        }
+        this.autoApproach(best);
+        return;
+      }
+      aimAt();
+      this.attackQueued = true;
+      // 회전베기 — 주변 2+ 군집 또는 보스일 때만 (단일 대상엔 기본공격)
+      if (p.skill1Cd <= 0 && p.mp >= 15) {
+        const spinR = 118 + 8 * p.tier;
+        if (this.countTargetsNear(spinR) >= 2 || best instanceof Boss) p.useSkill1();
+      }
     }
+  }
+
+  /** v3.0.1 — BFS 우회 접근 (개미굴 레이아웃: 다른 셀이면 경로의 다음 셀 중심으로) */
+  private autoApproach(best: Enemy | Boss) {
+    if (!this.player) return;
+    let dir: Phaser.Math.Vector2;
+    const pc = this.layout ? cellIndexOf(this.layout, this.player.x, this.player.y) : -1;
+    const tc = this.layout ? cellIndexOf(this.layout, best.x, best.y) : -1;
+    const step = this.layout ? nextStepToward(this.layout, pc, tc) : null;
+    if (this.layout && step !== null && step !== pc) {
+      const c = cellCenterOf(this.layout, step);
+      dir = new Phaser.Math.Vector2(c.x - this.player.x, c.y - this.player.y).normalize();
+    } else {
+      dir = new Phaser.Math.Vector2(best.x - this.player.x, best.y - this.player.y).normalize();
+    }
+    this.autoHuntMove.copy(dir);
+  }
+
+  /** v3.0.1 — 돌진 갭클로저 직선 경로 개방 확인 (중간 지점이 열려 있어야 허용) */
+  private dashPathClear(best: Enemy | Boss): boolean {
+    if (!this.layout || !this.player) return true;
+    return isOpenXY(this.layout, (this.player.x + best.x) / 2, (this.player.y + best.y) / 2);
+  }
+
+  /** v3.0.1 — 사거리 내 적 수 (광역기 가치 판단) */
+  private countTargetsNear(r: number): number {
+    if (!this.player) return 0;
+    let n = 0;
+    for (const e of this.getAllTargets()) {
+      if (!e.active) continue;
+      if (Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) <= r) n++;
+    }
+    return n;
+  }
+
+  /** v3.0.1 — 이탈 방향: 대상 반대편 (개미굴 벽이면 45°씩 회전해 열린 방향 탐색) */
+  private autoRetreatDir(threat: Enemy | Boss): Phaser.Math.Vector2 {
+    const p = this.player!;
+    const base = new Phaser.Math.Vector2(p.x - threat.x, p.y - threat.y);
+    if (base.lengthSq() < 0.001) base.set(1, 0);
+    base.normalize();
+    for (const ang of [0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1, Math.PI]) {
+      const d = base.clone().rotate(ang);
+      if (!this.layout || isOpenXY(this.layout, p.x + d.x * 72, p.y + d.y * 72)) return d;
+    }
+    return base;
   }
 
   /** v2.5 — 자동 물약 (자동사냥 중 HP 45%/MP 15 이하) */

@@ -79,6 +79,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   skill1Cd = 0; // 계열별 주력기 (전사 회전베기 / 궁수 관통 화살 / 마법사 매직 볼트)
   skill2Cd = 0; // 계열별 기동기 (전사·궁수 돌진 / 마법사 점멸)
+  /** v3.0.1 — 자동사냥이 돌진 방향을 지정 (설정 시 조이스틱/조준보다 우선, 사용 후 1회 소모) */
+  autoDashDir: Phaser.Math.Vector2 | null = null;
   readonly skill1Max = 4000;
   readonly skill2Max = 6000;
   /** 클래스 cdMult 반영 실효 쿨다운 */
@@ -487,7 +489,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** 궁수 — 관통 화살 다연발 (부채꼴, 티어별 발수 증가: 미전직 계열 3발 / 1차 4발 / 2차 5발 / 3차 6발) */
   private skill1Arrows() {
-    const aim = this.aimDir();
+    const aim = this.aimDirFree(); // v3.0.1 — 8방향 자유 조준 (자동사냥 명중률 + 대각선 일관)
     const base = Math.atan2(aim.y, aim.x);
     this.play("hero-atk");
     this.scene.sfxSpin();
@@ -548,10 +550,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   useSkill2() {
     if (this.state !== "idle" || this.skill2Cd > 0 || this.mp < 20) return;
     const move = this.scene.currentMoveVec();
+    const auto = this.autoDashDir; // v3.0.1 — 자동 지정 방향 최우선 (1회 소모)
+    this.autoDashDir = null;
     const dir =
-      move.lengthSq() > 0.01
-        ? move.clone().normalize()
-        : this.aimDir();
+      auto && auto.lengthSq() > 0.01
+        ? auto.clone().normalize()
+        : move.lengthSq() > 0.01
+          ? move.clone().normalize()
+          : this.aimDir();
     this.mp -= 20;
     this.skill2Cd = this.skill2MaxEff;
     this.state = "dash";

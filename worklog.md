@@ -482,3 +482,32 @@ Work Log:
 Stage Summary:
 - 【상시 규칙】다음 릴리스명 = 3.0.1 / versionCode 16 (build.gradle + build_apk.sh + 타이틀 태그 동시 갱신).
 - 남은 백로그(외부 CC0 에셋 통합, 전직 4슬롯 확장, 에랄드 구매 연동 등)는 3.0.x 패치로 반영.
+
+---
+Task ID: v3.0.1-autohunt
+Agent: Super Z (main)
+Task: 유저 지시 "직업별로 스킬에 따라 자동전투 시스템 최적화" — v3.0.1 배포
+
+Work Log:
+- WorldScene tickAutoHunt 재작성(제네릭 skill1→skill2 로테이션 폐기):
+  ① 조준 보정 — 공격 전 대상 방향으로 facing 고정(정지 뒤 조준 어긋남 제거)
+  ② 전사/도적/미전직 — 돌진기 갭클로저(240px 내 + 중간점 isOpenXY 개방 시 autoDashDir 지정 점프, 2.1x 스윕+전사 충격파),
+     회전베기는 군집 2+(spinR 118+8t) 또는 보스 한정, 단일엔 기본공격(MP 절약)
+  ③ 궁수 — 관통 화살 군집 2+(340px) 또는 보스 한정 + skill1Arrows aimDir→aimDirFree(8방향, 4방향 스냅 잔재 제거)
+  ④ 마법사 — 볼트 쿨마다 즉시(주력 딜링)
+  ⑤ 원거리 공통 — 적 150px 접근 시 이탈: 돌진기 가능하면 대시 탈출(autoRetreatDir), 아니면 걷기 카이팅
+     (이탈 방향 = 대상 반대편, 개미굴 벽이면 45°씩 회전해 isOpenXY 탐색)
+- Player.ts: autoDashDir 필드 신설(자동 돌진 방향 지정, useSkill2에서 1회 소모 — 수동 조작 간섭 없음)
+- 검증: tsc 0 / e2e_v301_autohunt.js 신설 10 PASS 0 FAIL(전사 갭클로저 대시+MP-20, 군집 회전베기, 단일 절제,
+  마법사 볼트 쿨마다, 점멸 이탈, 걷기 카이팅 9→163px, 궁수 군집 화살, 단일 절제 1560ms 클린윈도우) /
+  회귀 e2e_v27_verify 12/12 PASS, e2e_v30_layout PASS(cap 20 유지)
+- 테스트 교훈(2건): ①Arcade dynamic body는 gameObject x/y 직접 대입이 바디에 덮여 될 때가 있음 → body.reset 사용
+  ②월드(2790×1440) 밖으로 적을 밀면 바디가 전부 같은 구석에 클램프되어 플레이어 옆에 재유입(오염) →
+  밀어낼 곳은 맵 중심 대칭점+클램프로 경계 내 배치할 것
+- 버전: versionCode 16 / versionName "3.0.1", 타이틀 배지 "v3.0.1 · 직업별 자동전투", build_apk.sh 산출물명 갱신
+- 배포: 웹 재빌드+데몬 기동(3000/socket 200, 청크 마커 확인), APK 16,784,324B — aapt versionCode 16/"3.0.1",
+  apksigner CN=SERTZ 동일 키, sha256 b9d92760…
+
+Stage Summary:
+- 자동사냥이 직업 정체성대로 싸움: 전사/도적=돌진접근+군집 회전베기, 궁수=카이팅+군집 화살, 마법사=볼트 쿨마다+점멸 이탈.
+- 단일 몹 상대로는 스킬을 아끼고 기본공격 — MP 효율 개선. 수동 조작(조이스틱/키) 우선 로직 기존과 동일 유지.
