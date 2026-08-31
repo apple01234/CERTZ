@@ -389,3 +389,25 @@ Work Log:
 
 Stage Summary:
 - 프리뷰(웹) 상시 v2.7 서빙 + 다음 재부팅부터도 자동 기동. 포탈 버그 재발 시 e2e_v27_verify.js로 회귀 점검 가능.
+
+---
+Task ID: v2.8-arrow
+Agent: Super Z (main)
+Task: 유저 신고 "어시스턴트 화살표가 거꾸로" — 가장자리 안내 화살표 180° 반전 수정 + v2.8 배포
+
+Work Log:
+- 샌드박스 재초기화로 프로젝트 소실 → GitHub 클론으로 루트 복원 (2회차)
+- 원인 규명: edge_arrow.png 텍스처가 '왼쪽(◀)'을 향해 그려져 있음 — Phaser setRotation(angle) 규약은
+  angle 0 = 텍스처 '오른쪽' 기준이라 항상 정반대를 가리킴 (퀘스트 목표 안내 + v2.7 포탈 안내 공통)
+- 근본 수정: public/assets/edge_arrow.png 180° 회전(오른쪽 향으로) — 코드 무변경, 에셋이 표준 규약을 따르게 함
+- 판정 방법 주의: 삼각형은 밑변 쪽에 질량 집중 → 좌/우 픽셀 수가 아니라 꼭짓점 컬럼 평균 높이로 판정해야 함
+- 버전: versionCode 13 / versionName 2.8, 타이틀 태그 v2.8
+- 환경 재구축: node_modules(npm install), Temurin JDK 21(/home/z/jdk), cmdline-tools+platform-36+build-tools-36(/home/z/android-sdk)
+  ※ 시스템 java(/usr/lib/jvm)는 JRE라 javac 없음 — 반드시 /home/z/jdk 사용
+- 검증: tsc 0 에러 / 웹 빌드 성공 + 데몬 스포너로 3000포트 기동(200) / 서빙·APK 내부 화살표 모두 오른쪽 향 실측 확인
+- APK: BUILD SUCCESSFUL(2m1s) — download/SERTZ-v2.8.apk 16,775,741B, aapt versionCode 13/"2.8",
+  apksigner CN=SERTZ 동일 키, sha256 445f2a94…
+
+Stage Summary:
+- 화살표 반전의 근본 원인은 코드가 아니라 에셋의 방향 규약 불일치였음. 에셋 교정 1건으로 완결.
+- 부팅 시 dev.sh가 프로덕션 서버 자동 기동(v2.7 ops) — 이번 세션에서도 정상 동작 확인.
