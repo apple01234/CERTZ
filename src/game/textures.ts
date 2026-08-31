@@ -38,6 +38,8 @@ export function buildAllAnims(scene: Phaser.Scene) {
   for (const k of [
     "x3_swampy", "x3_imp", "x3_icezombie", "x3_tinyzombie",
     "x3_ogre", "x3_chort", "x3_necromancer",
+    /* v3.0.4 — itch.io 추가 6종 */
+    "x3_maskedorc", "x3_orcwarrior", "x3_orcshaman", "x3_wogol", "x3_goblin", "x3_bigzombie",
   ]) {
     a.create({ key: `${k}-idle`, ...fr(`${k}_idle`, 4, 4, -1) });
     a.create({ key: `${k}-run`, ...fr(`${k}_run`, 4, 10, -1) });

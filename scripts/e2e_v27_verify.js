@@ -167,7 +167,9 @@ async function huntThrough(page) {
     const w = window.__SERTZ__.game.scene.getScene("world");
     w.portalActive = false; w.pendingPortal = true; w.dialoguing = false;
   });
-  await sleep(7800);
+  /* v3.0.4 — 자가개방 상한은 1.5s(루프 페이즈) + 6s(유예) + 1.5s(틱 그레인) = 최대 9.0s.
+   *  기존 7.8s 대기는 하한 근처라 루프 페이즈에 따라 간헐 실패(플래키) — 10.5s로 상향 */
+  await sleep(10500);
   s = await W(page);
   ok(s.portalActive && !s.pendingPortal, `E1 pendingPortal 끼임 → 6초 유예 후 자가 개방 (active=${s.portalActive}, pending=${s.pendingPortal})`);
   // E2: dialoguing 끼임 — 6초 유예 후 강제 개방

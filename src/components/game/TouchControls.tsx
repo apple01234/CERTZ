@@ -144,14 +144,15 @@ export function TouchControls({
       </div>
       )}
 
-      {/* 버튼: 우하단 — 터치/PC 공용 (사용자 지시 #2) */}
-      <div className="absolute bottom-4 right-3 flex items-end gap-2 sm:bottom-6 sm:right-5 sm:gap-3">
-        <div className="flex flex-col gap-2">
+      {/* 버튼: 우하단 — 터치/PC 공용 (사용자 지시 #2) — v3.0.4: 모바일에서 스킬 버튼 축소+2×2 그리드 (지시 #6) */
+      }
+      <div className="absolute bottom-3 right-2 flex items-end gap-1.5 sm:bottom-6 sm:right-5 sm:gap-3">
+        <div className="flex flex-col gap-1.5">
           {/* v2.5 — 자동사냥 토글 (펫 보유 시) */}
           {canAutoHunt && (
             <button
               aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
-              className={`relative flex h-12 w-12 touch-none select-none items-center justify-center rounded-full border-2 shadow-lg transition-transform active:scale-90 sm:h-14 sm:w-14 ${
+              className={`relative flex h-10 w-10 touch-none select-none items-center justify-center rounded-full border-2 shadow-lg transition-transform active:scale-90 sm:h-14 sm:w-14 ${
                 autoHunt
                   ? "border-lime-200/80 bg-gradient-to-b from-lime-500 to-emerald-700 text-white animate-pulse"
                   : "border-white/25 bg-slate-800/85 text-white/80"
@@ -161,7 +162,7 @@ export function TouchControls({
                 EventBus.emit("rpg:autohunt", {});
               }}
             >
-              {autoHunt ? <Pause size={20} /> : <Bot size={20} />}
+              {autoHunt ? <Pause size={17} /> : <Bot size={17} />}
               <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/80">
                 {autoHunt ? "자동중" : "자동"}
               </span>
@@ -181,7 +182,8 @@ export function TouchControls({
             onDown={() => EventBus.emit("rpg:use", { kind: "mp" })}
           />
         </div>
-        <div className="flex flex-col gap-2">
+        {/* v3.0.4 — 스킬 2×2 그리드 (4차까지 해금돼도 자리 부족하지 않게: 지시 #6) */}
+        <div className="grid grid-cols-2 gap-1.5">
           {/* v3.0.3 — 4차기(B): 해금 시만 표시 */}
           {s4Name && (
             <SkillButton
@@ -191,7 +193,7 @@ export function TouchControls({
               mp={40}
               onDown={() => EventBus.emit("input:skill4")}
             >
-              <Star size={22} />
+              <Star size={17} />
             </SkillButton>
           )}
           {/* v3.0.3 — 3차기(V): 해금 시만 표시 */}
@@ -203,18 +205,9 @@ export function TouchControls({
               mp={25}
               onDown={() => EventBus.emit("input:skill3")}
             >
-              <Flame size={20} />
+              <Flame size={16} />
             </SkillButton>
           )}
-          <SkillButton
-            ready={s2Ready}
-            cdPct={s2Pct}
-            label={s2Name || "돌진베기"}
-            mp={20}
-            onDown={() => EventBus.emit("input:skill2")}
-          >
-            <Zap size={22} />
-          </SkillButton>
           <SkillButton
             ready={s1Ready}
             cdPct={s1Pct}
@@ -222,20 +215,29 @@ export function TouchControls({
             mp={15}
             onDown={() => EventBus.emit("input:skill1")}
           >
-            <RefreshCw size={20} />
+            <RefreshCw size={16} />
+          </SkillButton>
+          <SkillButton
+            ready={s2Ready}
+            cdPct={s2Pct}
+            label={s2Name || "돌진베기"}
+            mp={20}
+            onDown={() => EventBus.emit("input:skill2")}
+          >
+            <Zap size={18} />
           </SkillButton>
         </div>
         <button
           aria-label="공격"
-          className="flex h-20 w-20 touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90 sm:h-24 sm:w-24"
+          className="flex h-16 w-16 touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90 sm:h-20 sm:w-20"
           onPointerDown={(e) => {
             e.preventDefault();
             EventBus.emit("input:attack");
           }}
         >
           <div className="flex flex-col items-center">
-            <Swords size={26} />
-            <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
+            <Swords size={22} />
+            <span className="mt-0.5 text-[9px] font-black tracking-wide">{atkName || "공격"}</span>
           </div>
         </button>
       </div>
@@ -258,7 +260,7 @@ function PotionButton({
     <button
       aria-label={kind === "hp" ? "HP 물약" : "MP 물약"}
       disabled={count <= 0}
-      className={`relative flex h-12 w-12 touch-none select-none items-center justify-center rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 sm:h-14 sm:w-14 ${
+      className={`relative flex h-10 w-10 touch-none select-none items-center justify-center rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 sm:h-12 sm:w-12 ${
         count > 0 ? `bg-gradient-to-b ${tint}` : "border-white/20 bg-slate-700/70 opacity-50"
       }`}
       onPointerDown={(e) => {
@@ -271,10 +273,10 @@ function PotionButton({
         src={`/assets/item_potion_${kind}.png`}
         alt=""
         draggable={false}
-        className="h-6 w-6"
+        className="h-5 w-5"
         style={{ imageRendering: "pixelated" }}
       />
-      <span className="absolute -bottom-0.5 right-0.5 rounded bg-slate-900/90 px-1 text-[9px] font-black leading-[14px] text-white">
+      <span className="absolute -bottom-0.5 right-0.5 rounded bg-slate-900/90 px-1 text-[8px] font-black leading-[13px] text-white">
         {count}
       </span>
       <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/70">
@@ -303,7 +305,7 @@ function SkillButton({
     <button
       aria-label={label}
       disabled={!ready}
-      className={`relative flex h-14 w-14 touch-none select-none flex-col items-center justify-center overflow-hidden rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 sm:h-16 sm:w-16 ${
+      className={`relative flex h-11 w-11 touch-none select-none flex-col items-center justify-center overflow-hidden rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 sm:h-14 sm:w-14 ${
         ready
           ? "border-sky-200/70 bg-gradient-to-b from-sky-500 to-blue-800"
           : "border-white/20 bg-slate-700/70 opacity-60"
@@ -314,8 +316,8 @@ function SkillButton({
       }}
     >
       {children}
-      <span className="text-[8px] font-bold leading-tight">{label}</span>
-      <span className="text-[8px] font-bold text-sky-200">{mp}MP</span>
+      <span className="max-w-[42px] truncate text-[7px] font-bold leading-tight sm:max-w-none sm:text-[8px]">{label}</span>
+      <span className="text-[7px] font-bold text-sky-200 sm:text-[8px]">{mp}MP</span>
       {cdPct > 0 && (
         <div
           className="pointer-events-none absolute inset-0 bg-black/60"

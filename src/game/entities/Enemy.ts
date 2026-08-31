@@ -34,6 +34,13 @@ const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: numbe
   x3_ogre: { bw: 28, bh: 26, hw: 44, hh: 42, burst: 0xd8a86a },
   x3_chort: { bw: 20, bh: 20, hw: 34, hh: 34, burst: 0xe86450 },
   x3_necromancer: { bw: 20, bh: 22, hw: 34, hh: 34, burst: 0x9a6ad8 },
+  // v3.0.4 — itch.io 0x72 팩 추가 6종
+  x3_maskedorc: { bw: 22, bh: 22, hw: 36, hh: 36, burst: 0xc86a4a },
+  x3_orcwarrior: { bw: 24, bh: 22, hw: 38, hh: 36, burst: 0x8aa85a },
+  x3_orcshaman: { bw: 22, bh: 22, hw: 36, hh: 36, burst: 0x6ac8a8 },
+  x3_wogol: { bw: 22, bh: 20, hw: 36, hh: 32, burst: 0xd86a8a },
+  x3_goblin: { bw: 20, bh: 16, hw: 32, hh: 26, burst: 0x8ade6a },
+  x3_bigzombie: { bw: 30, bh: 26, hw: 46, hh: 44, burst: 0x9ab08a },
 };
 
 /**

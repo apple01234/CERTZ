@@ -245,16 +245,25 @@ export function HUD({
           </button>
         </div>
         <div className="pointer-events-auto w-full rounded-lg border border-amber-200/40 bg-black/55 px-2.5 py-1.5 backdrop-blur-sm sm:px-3 sm:py-2">
-          <div className="flex items-center gap-1.5">
+          {/* v3.0.4 (지시 #5) — 모바일에서 퀘스트창 키고끄기: 헤더 전체가 토글 버튼 (터치 영역 확대) */}
+          <div
+            role="button"
+            tabIndex={0}
+            /* v3.0.4 — onPointerDown 단독 (onClick 병용 시 탭 1회에 2번 토글되는 문제 방지) */
+            onPointerDown={(e) => {
+              e.preventDefault();
+              toggleTracker();
+            }}
+            className="flex cursor-pointer items-center gap-1.5 select-none"
+            aria-label={trackerOpen ? "퀘스트 트래커 접기" : "퀘스트 트래커 펼치기"}
+          >
             <ScrollText size={13} className="shrink-0 text-amber-300" />
             <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
-            <button
-              onClick={toggleTracker}
-              aria-label={trackerOpen ? "퀘스트 트래커 접기" : "퀘스트 트래커 펼치기"}
-              className="shrink-0 rounded border border-white/20 bg-black/40 px-1 text-[9px] font-black leading-4 text-white/70 hover:bg-black/70"
+            <span
+              className="flex h-7 w-9 shrink-0 items-center justify-center rounded border border-white/25 bg-black/50 text-[11px] font-black leading-4 text-white/80 active:scale-95"
             >
               {trackerOpen ? "▲" : "▼"}
-            </button>
+            </span>
           </div>
           {trackerOpen && (
             <>

@@ -1852,7 +1852,8 @@ export class WorldScene extends Phaser.Scene {
 
   /** v3.0.2 — 궁수 활 비주얼: 발사 순간 활 프레임 표시 (20x20, 각도 회전) */
   spawnBow(x: number, y: number, angle: number) {
-    const bow = this.add.image(x, y, "x2_bow").setDepth(11).setRotation(angle + Math.PI / 2).setScale(1.15);
+    // v3.0.4 — 활 텍스처는 오른쪽(촉 방향)을 향하므로 조준각 그대로 회전 (기존 +90° 오프셋 제거 — 지시 #1)
+    const bow = this.add.image(x, y, "x2_bow").setDepth(11).setRotation(angle).setScale(1.15);
     this.tweens.add({
       targets: bow,
       alpha: 0,
@@ -2201,6 +2202,9 @@ export class WorldScene extends Phaser.Scene {
     const onAtk = () => (this.attackQueued = true);
     const onS1 = () => this.player?.useSkill1();
     const onS2 = () => this.player?.useSkill2();
+    /* v3.0.4 (지시 #7) — 모바일 3/4차기 버튼이 발행하는 input:skill3/4 미수신으로 안 쓰이던 버그 수정 */
+    const onS3 = () => this.player?.useSkill3();
+    const onS4 = () => this.player?.useSkill4();
     const onRespawn = () => this.respawnPlayer();
     const onDialogueDone = () => this.resumeFromDialogue();
     const onInteract = () => this.tryInteract();
@@ -2304,6 +2308,15 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player.applyClass(def.key)) return;
       audio.sfx.levelup();
       this.spawnLevelUpFx(this.player.x, this.player.y);
+      /* v3.0.4 (지시 #2) — 전직 시 기존 스킬 강화 체감 연출: 클래스색 빛기둥+폭발+화면 플래시 */
+      {
+        const jhex = def.hex;
+        this.spawnPillar(this.player.x, this.player.y, jhex, 200);
+        this.spawnBurstAt(this.player.x, this.player.y, 34, jhex);
+        this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
+        this.cameras.main.shake(200, 0.008);
+        this.spawnPickupText(this.player.x, this.player.y - 56, `${def.name} 각성! 스킬 강화`, `#${jhex.toString(16).padStart(6, "0")}`);
+      }
       EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
       this.refreshPlayerTag();
       this.save();
@@ -2450,6 +2463,14 @@ export class WorldScene extends Phaser.Scene {
         if (!isClassKey(v.value)) return;
         const ok = p.gmSetClass(v.value);
         EventBus.emit("banner:show", { text: ok ? `GM 전직 완료 — ${classLabel(v.value)}` : "전직 실패" });
+        if (ok) {
+          /* v3.0.4 — GM 전직도 강화 연출 동일 적용 */
+          const jhex = classDef(v.value)?.hex ?? 0xffffff;
+          this.spawnPillar(p.x, p.y, jhex, 200);
+          this.spawnBurstAt(p.x, p.y, 34, jhex);
+          this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
+          this.cameras.main.shake(200, 0.008);
+        }
         this.emitSkills();
         this.emitRpgState();
         this.save();
@@ -2474,6 +2495,8 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("input:attack", onAtk);
     EventBus.on("input:skill1", onS1);
     EventBus.on("input:skill2", onS2);
+    EventBus.on("input:skill3", onS3);
+    EventBus.on("input:skill4", onS4);
     EventBus.on("input:interact", onInteract);
     EventBus.on("name:set", onNameSet);
     EventBus.on("keymap:changed", onKeymapChanged);
@@ -2502,6 +2525,8 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("input:attack", onAtk);
       EventBus.off("input:skill1", onS1);
       EventBus.off("input:skill2", onS2);
+      EventBus.off("input:skill3", onS3);
+      EventBus.off("input:skill4", onS4);
       EventBus.off("input:interact", onInteract);
       EventBus.off("name:set", onNameSet);
       EventBus.off("keymap:changed", onKeymapChanged);
@@ -2783,7 +2808,7 @@ export class WorldScene extends Phaser.Scene {
       this.attackQueued = true;
       // 회전베기 — 주변 2+ 군집 또는 보스일 때만 (단일 대상엔 기본공격)
       if (p.skill1Cd <= 0 && p.mp >= 15) {
-        const spinR = 118 + 8 * p.tier;
+        const spinR = 118 + 16 * p.tier; // v3.0.4 — 회전베기 강화 반경과 동기화
         if (this.countTargetsNear(spinR) >= 2 || best instanceof Boss) p.useSkill1();
       }
       /* v3.0.3 — 3차기/4차기: 군집·보스 상황에서 자동 기동 */
@@ -3316,9 +3341,10 @@ export class WorldScene extends Phaser.Scene {
     const aimingUp = Math.abs(f.x) < Math.abs(f.y) && f.y < 0;
     const aimingDown = Math.abs(f.x) < Math.abs(f.y) && f.y > 0;
     if (want === "x3_bow") {
-      // 활 — 조준 방향을 향함 (각도 회전)
+      // 활 — 조준 방향을 향함. v3.0.4 — 활 텍스처(현 왼쪽·활몸 오른쪽 → 오른쪽 발사)는
+      // 조준각 그대로 회전. 기존 +90° 오프셋이 활을 수직으로 세워 “이상하다”는 지시 #1 원인.
       const ang = Math.atan2(f.y, f.x);
-      w.setRotation(ang + Math.PI / 2);
+      w.setRotation(ang);
       w.setPosition(p.x + f.x * 14, p.y - 8 + f.y * 10);
       w.setScale(0.62);
     } else if (want === "x3_staff") {

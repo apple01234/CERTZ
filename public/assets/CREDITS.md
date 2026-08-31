@@ -95,3 +95,9 @@
 - Used for: v3.0.3 신규 몬스터 7종 (잉걸불 임프/늪지 독괴물/굶주린 좀비/악마다라 촐트/
   강령술사/광포한 오거/얼음 좀비) idle4+run4 프레임 + 무기 스프라이트
   (활/붉은 지팡이/단검) + GM NPC (knight_m 재조색)
+
+### 16x16 DungeonTileset II — 0x72 (v3.0.4 추가)
+- License: CC0 1.0 (Public Domain)
+- Source: https://0x72.itch.io/dungeontileset-ii (itch.io 직접 다운로드)
+- Used for: v3.0.4 신규 몬스터 6종 (가면 전사/오르크 전사/오르크 주술사/지옥견 워골/
+  고블린 약탈자/거대 시체) idle4+run4 프레임 — 전 구역 소량 혼합 스폰

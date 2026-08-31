@@ -438,28 +438,40 @@ export const SKILL_LABELS: Partial<Record<ClassKey, [string, string, string, str
   chronicle: ["서사의 마법탄", "크로니 볼트", "시간 점멸", "시간 왜곡", ""],
   nightblade: ["야경 연타", "야그림자 회전베기", "야간 돌진", "그림자 칼날", ""],
   duelist: ["결투 연타", "결투의 회전베기", "결투 돌진", "연격 무도", ""],
-  warbringer: ["종언의 참격", "전쟁의 회오리", "파멸 돌진", "전장의 함성", "종언의 일격"],
-  crusader: ["천벌의 참격", "성역의 회전베기", "심판 돌진", "성역 — 빛의 결계", "심판의 빛기둥"],
-  deadeye: ["신의 사격", "심판의 화살", "차원 사격", "절사명중 사격", "신의 화살비"],
-  skylord: ["천공 연사", "하늘의 화망", "천공 질주", "폭풍의 눈", "천공의 폭풍"],
-  arclord: ["절대 마법탄", "아크로드 볼트", "차원 점멸", "낙뢰 소환", "마나 붕괴"],
-  eternal: ["영겁의 마법탄", "이터널 볼트", "영원의 점멸", "시간 왜곡", "영원의 고리"],
-  shadowlord: ["심연 연타", "암흑 회전베기", "그림자 돌진", "그림자 칼날", "그림자 군주"],
-  blademaster: ["신살 연타", "쌍검 회전베기", "극한 돌진", "연격 무도", "검무 — 극한"],
+  /* v3.0.4 — 4차 전용 고유 3차기 (기존 3차 스킬 재탕 금지 — 겹침 0) */
+  warbringer: ["종언의 참격", "전쟁의 회오리", "파멸 돌진", "피의 격노", "종언의 일격"],
+  crusader: ["천벌의 참격", "성역의 회전베기", "심판 돌진", "성흔 폭발", "심판의 빛기둥"],
+  deadeye: ["신의 사격", "심판의 화살", "차원 사격", "화살 폭우", "신의 화살비"],
+  skylord: ["천공 연사", "하늘의 화망", "천공 질주", "폭풍 소용돌이", "천공의 폭풍"],
+  arclord: ["절대 마법탄", "아크로드 볼트", "차원 점멸", "연쇄 번개", "마나 붕괴"],
+  eternal: ["영겁의 마법탄", "이터널 볼트", "영원의 점멸", "중력 붕괴", "영원의 고리"],
+  shadowlord: ["심연 연타", "암흑 회전베기", "그림자 돌진", "그림자 지뢰", "그림자 군주"],
+  blademaster: ["신살 연타", "쌍검 회전베기", "극한 돌진", "파동 검기", "검무 — 극한"],
 };
 
 /* v3.0.3 — 클래스별 스킬 메커니즘 디스패치 키.
  *  3차(V)/4차(B) 스킬은 클래스 "계열"이 아니라 클래스 "고유" 구현으로 간다.
  *  같은 메커니즘을 공유하는 클래스는 같은 키를 쓰되 수치/색이 클래스 배지색을 따른다. */
+/* v3.0.4 (사용자 지시 #4 — "직업 및 세부직업 별로 겹치는 스킬 하나도 없게"):
+ *  16개 상위직이 전부 서로 다른 3차기(V) 메커니즘을 갖는다.
+ *  3차 8종(기존) + 4차 전용 신규 8종. 한 메커니즘을 공유하는 클래스는 더 이상 없다. */
 export type Skill3Kind =
-  | "warcry"      /* warlord/warbringer — 전장의 함성: 광역+자신 공격력 버프 */
-  | "sanctuary"   /* paladin/crusader — 성역: 빛의 결계 필드 (적 딜링+자힐) */
-  | "trueshot"    /* eagleeye/deadeye — 절사명중: 확정크리 관통 저격 */
-  | "tornado"     /* tempest/skylord — 폭풍의 눈: 다수 회오리 투사체 */
-  | "thunder"     /* stormbringer/arclord — 낙뢰: 다수 적에게 하늘에서 직격 */
-  | "timewarp"    /* chronicle/eternal — 시간 왜곡: 감속 필드 */
-  | "shadowblad"  /* nightblade/shadowlord — 그림자 칼날: 회전 오비트 */
-  | "flurry";     /* duelist/blademaster — 연격 무도: 연속 급습+흡혈 */
+  | "warcry"      /* warlord(3차) — 전장의 함성: 광역+자신 공격력 버프 */
+  | "sanctuary"   /* paladin(3차) — 성역: 빛의 결계 필드 (적 딜링+자힐) */
+  | "trueshot"    /* eagleeye(3차) — 절사명중: 확정크리 관통 저격 */
+  | "tornado"     /* tempest(3차) — 폭풍의 눈: 다수 회오리 투사체 */
+  | "thunder"     /* stormbringer(3차) — 낙뢰: 다수 적에게 하늘에서 직격 */
+  | "timewarp"    /* chronicle(3차) — 시간 왜곡: 감속 필드 */
+  | "shadowblad"  /* nightblade(3차) — 그림자 칼날: 회전 오비트 */
+  | "flurry"      /* duelist(3차) — 연격 무도: 연속 급습+흡혈 */
+  | "bloodrage"   /* warbringer(4차) — 피의 격노: 광역 출혈+공격/신속 동시 버프 */
+  | "holynova"    /* crusader(4차) — 성흔 폭발: 즉발 광역 빛 폭발+보호막 */
+  | "arrowrain"   /* deadeye(4차) — 화살 폭우: 조준 지점 하늘에서 화살 쏟아짐 */
+  | "cyclone"     /* skylord(4차) — 폭풍 소용돌이: 느리지만 전부 관통하는 대형 회오리 */
+  | "chainlight"  /* arclord(4차) — 연쇄 번개: 적→적으로 도약하는 번개 */
+  | "gravity"     /* eternal(4차) — 중력 붕괴: 적을 한 점으로 끌어당긴 뒤 폭발 */
+  | "shadowmine"  /* shadowlord(4차) — 그림자 지뢰: 접촉 시 출혈 폭발 지뢰 설치 */
+  | "swordaura";  /* blademaster(4차) — 파동 검기: 전방 전부 관통하는 검기 파동 */
 
 export type Skill4Kind =
   | "doomsday"    /* warbringer — 종언의 일격: 돌진 후 대폭발 */
@@ -471,15 +483,24 @@ export type Skill4Kind =
   | "shadowclon"  /* shadowlord — 그림자 군주: 그림자 분신 자폭 */
   | "bladedance"; /* blademaster — 검무: 적 사이 점멸 연격 */
 
+/* v3.0.4 — 16개 상위직 전부 고유 메커니즘 (겹침 0) */
 export const SKILL3_KIND: Partial<Record<ClassKey, Skill3Kind>> = {
-  warlord: "warcry", warbringer: "warcry",
-  paladin: "sanctuary", crusader: "sanctuary",
-  eagleeye: "trueshot", deadeye: "trueshot",
-  tempest: "tornado", skylord: "tornado",
-  stormbringer: "thunder", arclord: "thunder",
-  chronicle: "timewarp", eternal: "timewarp",
-  nightblade: "shadowblad", shadowlord: "shadowblad",
-  duelist: "flurry", blademaster: "flurry",
+  warlord: "warcry",
+  paladin: "sanctuary",
+  eagleeye: "trueshot",
+  tempest: "tornado",
+  stormbringer: "thunder",
+  chronicle: "timewarp",
+  nightblade: "shadowblad",
+  duelist: "flurry",
+  warbringer: "bloodrage",
+  crusader: "holynova",
+  deadeye: "arrowrain",
+  skylord: "cyclone",
+  arclord: "chainlight",
+  eternal: "gravity",
+  shadowlord: "shadowmine",
+  blademaster: "swordaura",
 };
 
 export const SKILL4_KIND: Partial<Record<ClassKey, Skill4Kind>> = {
@@ -493,7 +514,7 @@ export const SKILL4_KIND: Partial<Record<ClassKey, Skill4Kind>> = {
   blademaster: "bladedance",
 };
 
-/** GM/전직 패널용 스킬 설명 — 3차기/4차기 */
+/** GM/전직 패널용 스킬 설명 — 3차기/4차기 (v3.0.4 — 16종 전부 고유) */
 export const SKILL3_DESC: Record<Skill3Kind, string> = {
   warcry: "광역 외침 + 자신 공격력 버프",
   sanctuary: "빛의 결계 — 적 타격 + 결계 내 자힐",
@@ -503,6 +524,14 @@ export const SKILL3_DESC: Record<Skill3Kind, string> = {
   timewarp: "시간 왜곡 필드 — 적 감속",
   shadowblad: "그림자 칼날이 주위를 선회",
   flurry: "연속 급습 + 피해 흡수",
+  bloodrage: "광역 출혈 + 공격력·신속 동시 버프",
+  holynova: "즉발 빛 폭발 + 성스러운 보호막",
+  arrowrain: "조준 지점에 화살이 쏟아지는 폭우",
+  cyclone: "모든 것을 관통하는 대형 회오리",
+  chainlight: "적에서 적으로 도약하는 연쇄 번개",
+  gravity: "적을 한 점으로 끌어모아 폭발",
+  shadowmine: "접촉 시 출혈 폭발하는 지뢰 3기 설치",
+  swordaura: "전방을 전부 관통하는 거대 검기 파동",
 };
 export const SKILL4_DESC: Record<Skill4Kind, string> = {
   doomsday: "돌진 후 종언의 대폭발",

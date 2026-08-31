@@ -28,6 +28,8 @@ const X2_MONSTERS = [
 const X3_MONSTERS = [
   "x3_swampy", "x3_imp", "x3_icezombie", "x3_tinyzombie",
   "x3_ogre", "x3_chort", "x3_necromancer",
+  /* v3.0.4 — itch.io 0x72 팩 추가 6종 (지시 #8 — itch.io 에셋 확대) */
+  "x3_maskedorc", "x3_orcwarrior", "x3_orcshaman", "x3_wogol", "x3_goblin", "x3_bigzombie",
 ] as const;
 /** [키, 시트폭, 프레임폭] — 프레임폭은 시트 높이와 동일 (가로 나열) */
 const X2_SPELLS: [string, number, number][] = [
