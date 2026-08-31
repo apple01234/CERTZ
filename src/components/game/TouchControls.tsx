@@ -110,15 +110,22 @@ export function TouchControls({
 
   return (
     <>
-      {/* 조이스틱 영역: 화면 왼쪽 45% — 터치 기기에서만 (PC는 마우스 클릭 방해 금지) */}
+      {/* 조이스틱 영역 — v3.0.5: 화면 왼쪽 전체(45% × 전체 높이)에서 좌하단(46% × 아래 55%)으로 축소.
+          NPC 머리 위 상호작용 칩과 겹치던 인식 범위 문제 해소 (터치 기기에서만, PC는 마우스 방해 금지) */}
       {isTouch && (
       <div
-        className="absolute inset-y-0 left-0 w-[45%] touch-none"
+        className="absolute bottom-0 left-0 h-[55%] w-[46%] touch-none"
         onPointerDown={onJoyDown}
         onPointerMove={onJoyMove}
         onPointerUp={onJoyUp}
         onPointerCancel={onJoyUp}
       >
+        {/* 대기 중 안내 패드 — 조이스틱 영역이 어디인지 보여줌 (채팅 입력 위로 배치, 터치하면 실제 조이스틱으로 교체) */}
+        {!joyOrigin && (
+          <div className="pointer-events-none absolute bottom-20 left-6 flex h-[104px] w-[104px] items-center justify-center rounded-full border-2 border-dashed border-white/30 bg-black/25 sm:bottom-24 sm:left-10">
+            <span className="text-[10px] font-black tracking-widest text-white/45">이동</span>
+          </div>
+        )}
         {joyOrigin && (
           <>
             <div

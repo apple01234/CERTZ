@@ -635,3 +635,40 @@ Stage Summary:
 - 8항목 전부 구현+실측 완료. 16개 상위직이 전부 서로 다른 3차기를 갖고(겹침 0), 전직할 때마다
   기존 스킬이 눈에 보이게 강화된다. 모바일에서 3/4차기가 드디어 사용 가능.
 - 다음 후보: 세이지 계열 순수 힐러(아군 대상) 스킬, 에랄드 구매 연동, 신규 몬스터 전용 보스
+
+---
+Task ID: v3.0.5-two
+Agent: Super Z (main)
+Task: 유저 2요구 — ①장비 강화 (스타포스 및 강화 효과) 콘텐츠 ②터치 조이스틱 인식 범위 축소(NPC 상호작용) — v3.0.5 배포
+
+Work Log:
+- ①스타포스: UPGRADE_MAX 12→15, 성공률 [100,85,70,55,40,35,30,25,20,15,12,10,8,6,5], ★12+ 비용 1.6^(성-11) 가산 급증 구간
+- 마일스톤 보너스(누적): 무기 ★5 공+4·치+2% / ★10 공+6·치+3% / ★15 공+8·치+5% (최대 공+18·치+10%) /
+  방어구 ★5 HP+25 / ★10 방+2·HP+50 / ★15 방+3·HP+80 (최대 방+5·HP+155) — starWeaponBonus/starArmorBonus(data.ts)
+- Player.ts: atkTotal/defTotal/critRate에 마일스톤 반영, syncStarHp(방어구 HP 델타 가산) + restoreStarHp/starHpApplied(세이브 sfHp 중복 가산 방지),
+  tryUpgrade 개편(티어별 연출 분기 + 마일스톤 돌파 대형 연출 + 슬롯명 피커업 텍스트)
+- WorldScene.ts: syncUpgradeGlow 재작성 — 티어별 오라(★4~7 백금/★8~11 청록/★12~14 보라/★15 금색, 크기·알파·속도 차등) +
+  ★8+ 주변 스파클(업데이트 루프, 230/420ms) + ★15 impact_star 궤도성 2기 회전.
+  spawnStarForceBurst(성공 티어색 스타 버스트+링+스타 팝 / 실패 잿빛 퍼프), spawnStarForceBreakthrough(3중 링+플래시+쉐이크+배너)
+- 세이브: config sfHp 필드 + buildSave 2곳 + 로드 시 restoreStarHp→syncStarHp (구 세이브 upArm 복원 시 마일스톤 HP 소급)
+- Panels.tsx: "스타포스 강화" UI — 성 15칸 바(티어색)·마일스톤 3단 안내·스탯 미리보기(now→next)·
+  rpg:upgradeResult 수신 성공 금빛/실패 붉은 흔들림(sfshake keyframes)·비용 toLocaleString·"+N"→"★N" 표기 전환
+- ②조이스틱: TouchControls 영역 inset-y-0 w-45%(전체 높이) → bottom-0 h-55% w-46%(좌하단) 축소 + 대기 중 점선 안내 패드(채팅 입력 위 배치)
+  GameRoot 렌더 순서 교체 — InteractPrompt를 TouchControls 뒤로(z-order, 조이스틱이 칩을 던 원인 제거) + 칩 터치 타깃 확대(px-4→px-5)
+- E2E 신설 scripts/e2e_v305_starforce.js 33 PASS / 0 FAIL — 성공률 곡선·★1 성공(45G 차감+이벤트)·★5 돌파(공+6·치+2%·배너)·
+  ★9 실패 1성 하락·방어구 ★5 HP+25·sfHp=25 세이브/복원(maxHp 불변)·오라 티어 4단계+궤도성 2기+소멸·UI 성 바 30칸·
+  조이스틱 46%×55% 실측·GM 칩 탭 최상단=칩·칩 탭→GM 패널 오픈·조이스틱 드래그 이동
+- 회귀: v2.7 12·12 / v3.0.1 10·0 / v3.0.2 12·0 / v3.0.3 23·0 / v3.0.4 24·0
+- 테스트 교훈: ①intro 마을 대사가 뒤늦게 열리면 dialoguing=true로 player.update가 멈춰 스킬 발동/칩 렌더 검증 오염 —
+  enterWorld에 "dialoguing 연속 3회 false drain" 루프 필수(v304 하네스에도 적용해 잠재 오염 제거) ②spawn 서버는 NODE_ENV=production 명시(미지정 시 next dev 잠금 충돌)
+  ③좀비 server.js 프로세스가 테스트 포트를 점유 → 실행 전 정리 ④rpg:upgradeResult는 WorldScene onUpgrade 핸들러에서 emit —
+  테스트는 p.tryUpgrade 직접 호출 대신 EB.emit("rpg:upgrade")로 유저 경로 검증
+- 스크린샷: shop_starforce_pc(성 바·마일스톤·미리보기)·mobile_joystick_chip(좌하단 축소+GM 칩)·aura_star9_world 육안 확인
+- 배포: versionCode 20/"3.0.5" 3곳 동기화(build.gradle·build_apk.sh·Overlays 배지) → 웹 재빌드+데몬(200/socket 200) →
+  APK 16,955,437B aapt(versionCode 20·3.0.5)/apksigner(CN=SERTZ 동일 키) 검증, Release v3.0.5(id 379897526) 업로드 무결성 MATCH,
+  standalone 복원 재배포, download/에 SERTZ-v3.0.5.apk만 존재(구버전 삭제)
+
+Stage Summary:
+- 2요구 전부 구현+실측. 강화가 "숨은 수치"에서 ★15 보이는 성장 콘텐츠로 전환(티어 오라·스파클·궤도성·돌파 연출), 
+  모바일에서 NPC 상호작용 칩이 조이스틱에 가려지던 근본 원인(전체 높이 레이어+z-order) 제거.
+- 다음 후보: 장신구(반지/펜던트) 스타포스 확장, 강화 재료 아이템(강화 주문서), 세이지 계열 순수 힐러 스킬, 에랄드 구매 연동

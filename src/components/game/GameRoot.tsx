@@ -100,8 +100,6 @@ export default function GameRoot() {
                 onOpenOpt={() => setPanel(panel === "opt" ? null : "opt")}
               />
             </div>
-            {/* 상호작용 프롬프트 — NPC 대화/상점 (E키·모바일 버튼 공용) */}
-            <InteractPrompt />
             {!panel && (
               <div className="pointer-events-auto contents">
                 <TouchControls
@@ -118,6 +116,9 @@ export default function GameRoot() {
                 />
               </div>
             )}
+            {/* 상호작용 프롬프트 — NPC 대화/상점 (E키·모바일 버튼 공용)
+                v3.0.5 — TouchControls보다 위에 렌더링 (조이스틱 레이어가 칩을 덮는 문제 수정) */}
+            <InteractPrompt />
             <Banner text={banner} />
             <BossBar boss={boss} />
             {/* 멀티플레이 전체 채팅 (v1.7) */}

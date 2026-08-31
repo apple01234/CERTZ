@@ -40,10 +40,13 @@ export type {
 /** 몬스터 골드 드롭 조정 계수 (사용자 지시 #6 — 골드 과다 수정) */
 export const GOLD_DROP_SCALE = 0.62;
 
-/** 강화 비용 — 단계별 눈덩이 곡선 (높은 단계일수록 골드 소모 급증 → 골드 싱크) */
+/** 강화 비용 — 단계별 눈덩이 곡선 (높은 단계일수록 골드 소모 급증 → 골드 싱크)
+ *  v3.0.5 — ★12부터 추가 계수 1.6^(성-11) 가산 (스타포스 후반부 급증 구간) */
 export function upgradeCost(slot: "weapon" | "armor", level: number): number {
   const base = slot === "weapon" ? 45 : 38;
-  return Math.round(base * Math.pow(1.45, level));
+  const core = base * Math.pow(1.45, level);
+  const late = level > 11 ? Math.pow(1.6, level - 11) : 1;
+  return Math.round(core * late);
 }
 
 /* ================= 아이템 (v1.9 유지) ================= */
@@ -87,12 +90,58 @@ export type ItemKey =
 /** 아이템 등급 (클래식 MMORPG 관례 — 테두리/이름색 구분) */
 export type ItemTier = "common" | "rare" | "epic";
 
-/** 장비 강화 상한 (v2.0 — 메이플 스타포스식 +12 확장, 구 세이브 +5 호환) */
-export const UPGRADE_MAX = 12;
-/** 강화 성공률 (%) — 현재 단계 인덱스 (0=+0→+1, … 11=+11→+12) */
-export const UPGRADE_RATES = [100, 85, 70, 55, 40, 35, 30, 25, 20, 15, 12, 10];
-/** 강화 하락 시작 단계 (+9 이상 실패 시 1단계 하락 — 스타포스식 리스크) */
+/**
+ * v3.0.5 — 스타포스 강화 (메이플스토리 Star Force식)
+ *  - 상한 +15로 확장, 15단계 성공률 곡선
+ *  - ★5/★10/★15 마일스톤 돌파 시 추가 효과(공격/치명/방어/HP) + 돌파 연출
+ *  - +9 이상 실패 시 1성 하락 (스타포스식 리스크)
+ */
+export const UPGRADE_MAX = 15;
+/** 강화 성공률 (%) — 현재 성 인덱스 (0=★0→★1, … 14=★14→★15) */
+export const UPGRADE_RATES = [100, 85, 70, 55, 40, 35, 30, 25, 20, 15, 12, 10, 8, 6, 5];
+/** 강화 하락 시작 단계 (★9 이상 실패 시 1성 하락 — 스타포스식 리스크) */
 export const UPGRADE_FALLBACK_FROM = 9;
+
+/** 마일스톤 성 구간 */
+export const STAR_MILESTONES = [5, 10, 15] as const;
+
+/** 무기 마일스톤 보너스 (누적 — ★15 도달 시 공격+18·치명+10%) */
+export const WEAPON_MILESTONES: Readonly<Record<number, { atk: number; crit: number }>> = {
+  5: { atk: 4, crit: 2 },
+  10: { atk: 6, crit: 3 },
+  15: { atk: 8, crit: 5 },
+};
+/** 방어구 마일스톤 보너스 (누적 — ★15 도달 시 방어+5·최대HP+155) */
+export const ARMOR_MILESTONES: Readonly<Record<number, { def: number; hp: number }>> = {
+  5: { def: 0, hp: 25 },
+  10: { def: 2, hp: 50 },
+  15: { def: 3, hp: 80 },
+};
+
+/** 성수 up에서 누적된 무기 마일스톤 보너스 */
+export function starWeaponBonus(up: number): { atk: number; crit: number } {
+  let atk = 0, crit = 0;
+  for (const m of STAR_MILESTONES) {
+    if (up >= m) { atk += WEAPON_MILESTONES[m].atk; crit += WEAPON_MILESTONES[m].crit; }
+  }
+  return { atk, crit };
+}
+/** 성수 up에서 누적된 방어구 마일스톤 보너스 */
+export function starArmorBonus(up: number): { def: number; hp: number } {
+  let def = 0, hp = 0;
+  for (const m of STAR_MILESTONES) {
+    if (up >= m) { def += ARMOR_MILESTONES[m].def; hp += ARMOR_MILESTONES[m].hp; }
+  }
+  return { def, hp };
+}
+
+/** 성급 티어 (0=흰색 ★1~4 / 1=청록 ★5~9 / 2=보라 ★10~14 / 3=금색 ★15) */
+export function starTier(up: number): 0 | 1 | 2 | 3 {
+  return up >= 15 ? 3 : up >= 10 ? 2 : up >= 5 ? 1 : 0;
+}
+/** 성급 티어 색상 (hex) — 오라/파티클/피커업 텍스트 공용 */
+export const STAR_TIER_COLORS = [0xffffff, 0x6ff2d8, 0xd29dff, 0xffd76a] as const;
+export const STAR_TIER_CSS = ["#e8ecf2", "#6ff2d8", "#d29dff", "#ffd76a"] as const;
 
 export type ItemDef = {
   key: ItemKey;

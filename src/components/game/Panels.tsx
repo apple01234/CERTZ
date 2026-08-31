@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { EventBus, type PanelKind, type RpgState, type HudState, type QuestLogState } from "./EventBus";
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, upgradeCost, autoAllocPlan,
+  starWeaponBonus, starArmorBonus, starTier, STAR_TIER_CSS, UPGRADE_FALLBACK_FROM,
   CHAPTERS, STAGE_SHORT, parseStage,
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey,
 } from "@/game/data";
@@ -91,8 +92,16 @@ function itemEffect(item: (typeof ITEMS)[ItemKey], up = 0): string {
   if (item.kind === "cosmetic") return COSMETIC_DEFS[item.key as CosmeticKey]?.desc ?? "치장";
   if (item.heal) return `HP +${item.heal}`;
   if (item.restore) return `MP +${item.restore}`;
-  if (item.atk) return up > 0 ? `공격력 ${item.atk}+${up * 2}` : `공격력 +${item.atk}`;
-  if (item.def) return up > 0 ? `방어력 ${item.def}+${up}` : `방어력 +${item.def}`;
+  if (item.atk) {
+    if (up <= 0) return `공격력 +${item.atk}`;
+    const m = starWeaponBonus(up).atk;
+    return `공격력 ${item.atk}+${up * 2}${m > 0 ? `+${m}` : ""}`;
+  }
+  if (item.def) {
+    if (up <= 0) return `방어력 +${item.def}`;
+    const m = starArmorBonus(up).def;
+    return `방어력 ${item.def}+${up}${m > 0 ? `+${m}` : ""}`;
+  }
   if (item.crit) return `크리티컬 +${item.crit}%`;
   if (item.maxHp) return `최대 HP +${item.maxHp}`;
   return "";
@@ -112,13 +121,24 @@ function shopState(rpg: RpgState, k: ItemKey): "equipped" | "owned" | "buyable" 
   return affordable ? "buyable" : "poor";
 }
 
-/** 강화 단계가 반영된 표시명 */
+/** 강화 단계가 반영된 표시명 (v3.0.5 — 스타포스 ★ 표기) */
 function displayName(name: string, up: number): string {
-  return up > 0 ? `${name} +${up}` : name;
+  return up > 0 ? `${name} ★${up}` : name;
 }
 
 export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  /* v3.0.5 — 스타포스 강화 결과 플래시 (성공 금빛 링 / 실패 붉은 흔들림) */
+  const [flash, setFlash] = useState<{ slot: "weapon" | "armor"; result: "ok" | "fail"; seq: number } | null>(null);
+  useEffect(() => {
+    let seq = 0;
+    const on = (v: { slot: "weapon" | "armor"; result: "ok" | "fail" }) =>
+      setFlash({ slot: v.slot, result: v.result, seq: ++seq });
+    EventBus.on("rpg:upgradeResult", on);
+    return () => {
+      EventBus.off("rpg:upgradeResult", on);
+    };
+  }, []);
   return (
     <div
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
@@ -203,12 +223,18 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           })}
         </div>
 
-        {/* 장비 강화 (2D MMORPG 기본 요소 — 골드 싱크홀) */}
+        {/* v3.0.5 — 스타포스 강화 (★15 확장 · 마일스톤 보너스 · 결과 연출) */}
         <div className="mt-2 rounded-lg border border-amber-200/25 bg-amber-300/[0.05] p-2">
           <div className="mb-1.5 flex items-center gap-1.5">
             <img src="/assets/icon_hammer.png" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
-            <p className="text-[12px] font-black text-amber-200">장비 강화</p>
-            <p className="text-[10px] text-white/45">실패 시 골드만 소모 · 최대 +5</p>
+            <p className="text-[12px] font-black text-amber-200">스타포스 강화</p>
+            <p className="text-[10px] text-white/45">최대 ★{UPGRADE_MAX} · ★{UPGRADE_FALLBACK_FROM} 이상 실패 시 1성 하락</p>
+          </div>
+          {/* 마일스톤 효과 안내 */}
+          <div className="mb-1.5 flex flex-wrap gap-x-2.5 gap-y-0.5 rounded-md bg-white/[0.04] px-2 py-1 text-[9px] leading-relaxed text-white/55">
+            <span className="text-[#6ff2d8]">★5 무기 공격+4·치명+2% / 방어구 HP+25</span>
+            <span className="text-[#d29dff]">★10 무기 공격+6·치명+3% / 방어구 방어+2·HP+50</span>
+            <span className="text-[#ffd76a]">★15 무기 공격+8·치명+5% / 방어구 방어+3·HP+80</span>
           </div>
           <div className="flex flex-col gap-1.5">
             {(["weapon", "armor"] as const).map((slot) => {
@@ -220,8 +246,25 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
               const cost = upgradeCost(slot, up);
               const rate = UPGRADE_RATES[up] ?? 0;
               const affordable = rpg.gold >= cost;
+              const tier = starTier(up);
+              const tierCss = STAR_TIER_CSS[tier];
+              const flashing = flash && flash.slot === slot ? flash.result : null;
+              /* 다음 성 스탯 미리보기 (now → next) */
+              const statLine =
+                slot === "weapon"
+                  ? `${(item.atk ?? 0) + up * 2 + starWeaponBonus(up).atk} → ${maxed ? "-" : (item.atk ?? 0) + (up + 1) * 2 + starWeaponBonus(up + 1).atk} 공격력`
+                  : `${(item.def ?? 0) + up + starArmorBonus(up).def} → ${maxed ? "-" : (item.def ?? 0) + (up + 1) + starArmorBonus(up + 1).def} 방어력`;
               return (
-                <div key={slot} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5">
+                <div
+                  key={slot}
+                  className={`flex items-center gap-2.5 rounded-lg border px-2.5 py-1.5 transition-colors duration-500 ${
+                    flashing === "ok"
+                      ? "border-amber-300/90 bg-amber-300/15"
+                      : flashing === "fail"
+                        ? "animate-[sfshake_0.4s_ease] border-rose-400/70 bg-rose-400/10"
+                        : "border-white/10 bg-white/[0.04]"
+                  }`}
+                >
                   <ItemIcon icon={item.icon} size={26} tier={item.tier} />
                   <div className="min-w-0 flex-1">
                     <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>
@@ -230,7 +273,16 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                         {slot === "weapon" ? "무기" : "방어구"}
                       </span>
                     </p>
-                    <p className="text-[10px] text-emerald-300/90">{itemEffect(item, up)}</p>
+                    {/* v3.0.5 — 성 15칸 바 (티어색) */}
+                    <div className="mt-0.5 flex items-center gap-[2px] text-[10px] leading-none">
+                      {Array.from({ length: UPGRADE_MAX }, (_, i) => (
+                        <span key={i} style={{ color: i < up ? tierCss : "#3b4353" }}>★</span>
+                      ))}
+                    </div>
+                    <p className="mt-0.5 text-[10px] text-emerald-300/90">
+                      {itemEffect(item, up)}
+                      {!maxed && <span className="ml-1 text-white/35">({statLine})</span>}
+                    </p>
                   </div>
                   <button
                     disabled={maxed || !affordable}
@@ -243,7 +295,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                           : "cursor-not-allowed bg-slate-700/50 text-white/35"
                     }`}
                   >
-                    {maxed ? "최대" : `${cost} G · ${rate}%`}
+                    {maxed ? "최대" : `${cost.toLocaleString()} G · ${rate}%`}
                   </button>
                 </div>
               );

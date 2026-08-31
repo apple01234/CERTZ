@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           바다의 수호자 : 아뜰란티스
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.4 · 스킬 강화·전직별 고유기·모바일 개선 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.5 · 스타포스 강화·조이스틱 개선 · 10장 90구역</span>
         </p>
       </div>
 
@@ -316,7 +316,7 @@ export function InteractPrompt() {
         else EventBus.emit("input:interact");
       }}
       style={anchored ? { left: -9999, top: -9999, transform: "translate(-50%, -100%)" } : undefined}
-      className={`pointer-events-auto absolute flex items-center gap-1.5 rounded-full border-2 px-4 py-2 text-[13px] font-black shadow-xl transition-transform active:scale-95 ${
+      className={`pointer-events-auto absolute flex items-center gap-1.5 rounded-full border-2 px-5 py-2.5 text-[13px] font-black shadow-xl transition-transform active:scale-95 ${
         anchored ? "" : "bottom-24 left-1/2 -translate-x-1/2"
       } ${
         st.kind === "job"

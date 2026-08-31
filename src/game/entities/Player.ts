@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_FALLBACK_FROM, upgradeCost,
+  starWeaponBonus, starArmorBonus, STAR_MILESTONES,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey,
 } from "../data";
 import {
@@ -1787,22 +1788,46 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /* ---------------- RPG 기본 요소 ---------------- */
 
-  /** 장비+강화+클래스 경로+힘 스탯 포함 실제 공격력 (v1.9: 힘 +0.3/점, 분노 버프 +25%) */
+  /** 장비+강화+클래스 경로+힘 스탯 포함 실제 공격력 (v1.9: 힘 +0.3/점, 분노 버프 +25%)
+   *  v3.0.5 — 스타포스 마일스톤(★5/10/15) 공격 보너스 반영 */
   get atkTotal(): number {
-    const base = this.atk + (ITEMS[this.weapon].atk ?? 0) + this.upgrades.weapon * 2 + this.stats.str * 0.3;
+    const base =
+      this.atk + (ITEMS[this.weapon].atk ?? 0) + this.upgrades.weapon * 2 +
+      starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3;
     const buff = this.hasBuff("buff_atk") ? 1.25 : 1;
     return Math.round(base * (1 + this.clsBonus.atkPct / 100) * buff);
   }
 
-  /** 장비+강화+클래스 경로 포함 실제 방어력 (v1.9: 수호 버프 +8) */
+  /** 장비+강화+클래스 경로 포함 실제 방어력 (v1.9: 수호 버프 +8)
+   *  v3.0.5 — 스타포스 마일스톤 방어 보너스 반영 */
   get defTotal(): number {
     const buff = this.hasBuff("buff_def") ? 8 : 0;
-    return (ITEMS[this.armor].def ?? 0) + this.upgrades.armor + this.clsBonus.defAdd + buff;
+    return (
+      (ITEMS[this.armor].def ?? 0) + this.upgrades.armor +
+      starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff
+    );
   }
 
-  /** 크리티컬 확률 (%) — 기본 8% + 장신구(반지/펜던트 합산) + 클래스 경로 누적 + 민첽 0.4%p/점 */
+  /** v3.0.5 — 방어구 스타포스 마일스톤 최대 HP 보너스 (실제 적용치 추적) */
+  private sfHpApplied = 0;
+  /** 이미 maxHp에 가산된 스타포스 HP 총액 (세이브용) */
+  get starHpApplied() { return this.sfHpApplied; }
+  /** 세이브 복원 — 가산 이력만 선복원 (syncStarHp가 델타만 반영하게) */
+  restoreStarHp(applied: number) { this.sfHpApplied = applied || 0; }
+  /** 마일스톤 방어구 HP 보너스를 maxHp에 동기화 (로드/강화 후 호출) */
+  syncStarHp() {
+    const target = starArmorBonus(this.upgrades.armor).hp;
+    const delta = target - this.sfHpApplied;
+    if (delta === 0) return;
+    this.maxHp = Math.max(60, this.maxHp + delta);
+    this.sfHpApplied = target;
+    if (delta > 0) this.hp = Math.min(this.maxHp, this.hp + delta);
+  }
+
+  /** 크리티컬 확률 (%) — 기본 8% + 장신구(반지/펜던트 합산) + 클래스 경로 누적 + 민첽 0.4%p/점
+   *  v3.0.5 — 무기 스타포스 마일스톤 치명 보너스(★5+2/★10+3/★15+5) 반영 */
   get critRate(): number {
-    const acc = this.accessories.reduce((s, k) => s + (ITEMS[k].crit ?? 0), 0);
+    const acc = this.accessories.reduce((s, k) => s + (ITEMS[k].crit ?? 0), 0) + starWeaponBonus(this.upgrades.weapon).crit;
     return Math.round((Player.BASE_CRIT + acc + this.clsBonus.critAdd + this.stats.dex * 0.4) * 10) / 10;
   }
 
@@ -2027,7 +2052,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return UPGRADE_RATES[this.upgrades[slot]] ?? 0;
   }
 
-  /** 강화 시도 — 결과 타입 반환 (골드는 성공/실패 모두 소모) */
+  /** 강화 시도 — 결과 타입 반환 (골드는 성공/실패 모두 소모)
+   *  v3.0.5 — 스타포스: 티어별 연출 + ★5/10/15 돌파 대형 연출 + 마일스톤 HP 동기화 */
   tryUpgrade(slot: "weapon" | "armor"): "ok" | "fail" | "max" | "poor" {
     const cur = this.upgrades[slot];
     if (cur >= this.upMax) return "max";
@@ -2035,17 +2061,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.gold < cost) return "poor";
     this.gold -= cost;
     const ok = Math.random() * 100 < (UPGRADE_RATES[cur] ?? 0);
+    const slotName = slot === "weapon" ? "무기" : "방어구";
     if (ok) {
       this.upgrades[slot] = cur + 1;
+      const next = cur + 1;
+      const milestone = (STAR_MILESTONES as readonly number[]).includes(next);
       this.scene.sfxUpgradeOk();
-      this.scene.spawnPickupText(this.x, this.y - 44, `강화 성공! +${cur + 1}`, "#ffd76a");
+      if (milestone) {
+        this.scene.spawnStarForceBreakthrough(this.x, this.y, slot, next);
+        this.scene.spawnPickupText(this.x, this.y - 58, `${slotName} ★${next} 돌파!`, "#ffd76a");
+      } else {
+        this.scene.spawnStarForceBurst(this.x, this.y, this.upgrades[slot], true);
+        this.scene.spawnPickupText(this.x, this.y - 44, `강화 성공! ★${next}`, "#ffd76a");
+      }
+      if (slot === "armor") this.syncStarHp();
     } else if (cur >= UPGRADE_FALLBACK_FROM) {
-      // v2.0 — +9 이상 실패 시 1단계 하락 (스타포스식 리스크)
+      // +9 이상 실패 시 1성 하락 (스타포스식 리스크)
       this.upgrades[slot] = cur - 1;
       this.scene.sfxUpgradeFail();
-      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… +${cur - 1} 하락`, "#ff9a9a");
+      this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
+      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… ★${cur - 1} 하락`, "#ff9a9a");
+      if (slot === "armor") this.syncStarHp();
     } else {
       this.scene.sfxUpgradeFail();
+      this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
       this.scene.spawnPickupText(this.x, this.y - 44, "강화 실패…", "#ff9a9a");
     }
     this.scene.emitHud();

@@ -70,6 +70,8 @@ export type SaveData = {
   /* ↓ RPG 2차 확장: 강화/장신구 (구 세이브 호환) */
   upWea?: number;
   upArm?: number;
+  /* v3.0.5 — 스타포스 마일스톤 HP 보너스 (이미 maxHp에 가산된 총액 — 중복 가산 방지) */
+  sfHp?: number;
   accessory?: string | null;
   /* v2.9 (#8) — 장신구 다중 슬롯 (반지 4 + 펜던트 2) · 과금 화폐 */
   accessories?: string[];

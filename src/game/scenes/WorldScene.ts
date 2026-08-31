@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
+import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
 import { familyOf, isClassKey, classLabel } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -245,6 +245,11 @@ export class WorldScene extends Phaser.Scene {
   private cosmeticAura: Phaser.GameObjects.Image | null = null;
   private cosmeticEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private upgradeGlow: Phaser.GameObjects.Image | null = null;
+  /** v3.0.5 — 스타포스 궤도성(★15)/주변 스파클(★8+)/티어 추적 */
+  private sfOrbits: Phaser.GameObjects.Image[] = [];
+  private sfOrbitAng = 0;
+  private sfSparkTimer = 0;
+  private glowTier: 0 | 1 | 2 | 3 = 0;
   private jobNpc: Phaser.GameObjects.Image | null = null;
 
   constructor() {
@@ -313,6 +318,10 @@ export class WorldScene extends Phaser.Scene {
     this.cosmeticAura = null;
     this.cosmeticEmitter = null;
     this.upgradeGlow = null;
+    this.sfOrbits = [];
+    this.sfOrbitAng = 0;
+    this.sfSparkTimer = 0;
+    this.glowTier = 0;
     this.jobNpc = null;
     this.interactables = [];
     this.nearInteract = null;
@@ -454,6 +463,9 @@ export class WorldScene extends Phaser.Scene {
       // 강화/장신구 복원 (구 세이브는 loadSave()가 기본값 채움)
       this.player.upgrades.weapon = savedPlayer.upWea ?? 0;
       this.player.upgrades.armor = savedPlayer.upArm ?? 0;
+      /* v3.0.5 — 스타포스 마일스톤 HP 복원 (가산 이력 선복원 → 델타만 반영) */
+      this.player.restoreStarHp(savedPlayer.sfHp ?? 0);
+      this.player.syncStarHp();
       /* v2.9 (#8) — 다중 장신구 마이그레이션 (구 세이브 accessory 1개 → 배열) */
       this.player.accessories = ((savedPlayer.accessories as ItemKey[] | undefined) ??
         (savedPlayer.accessory ? [savedPlayer.accessory as ItemKey] : [])) as ItemKey[];
@@ -2275,8 +2287,11 @@ export class WorldScene extends Phaser.Scene {
     };
     const onUpgrade = (v: { slot: "weapon" | "armor" }) => {
       if (!this.player || this.dialoguing) return;
-      this.player.tryUpgrade(v.slot);
-      this.syncUpgradeGlow(); // 강화 오라 갱신 (+4 이상)
+      const r = this.player.tryUpgrade(v.slot);
+      this.syncUpgradeGlow(); // 스타포스 오라 갱신 (티어별)
+      /* v3.0.5 — 패널에 결과 통보 (성공 금빛/실패 붉은 흔들림 CSS 연출용) */
+      if (r === "ok" || r === "fail")
+        EventBus.emit("rpg:upgradeResult", { slot: v.slot, result: r, up: this.player.upgrades[v.slot] });
       this.save();
       this.emitRpgState();
       this.emitHud();
@@ -2670,6 +2685,41 @@ export class WorldScene extends Phaser.Scene {
     // 추적 오브젝트 (치장 오라/강화 오라) 위치 갱신
     if (this.cosmeticAura) this.cosmeticAura.setPosition(this.player.x, this.player.y - 8);
     if (this.upgradeGlow) this.upgradeGlow.setPosition(this.player.x, this.player.y - 10);
+    /* v3.0.5 — 스타포스: 궤도성 회전(★15) + 주변 스파클(★8+) */
+    if (this.sfOrbits.length && this.player) {
+      this.sfOrbitAng += dt * 0.0026;
+      for (let i = 0; i < this.sfOrbits.length; i++) {
+        const ang = this.sfOrbitAng + (i * Math.PI * 2) / this.sfOrbits.length;
+        this.sfOrbits[i].setPosition(
+          this.player.x + Math.cos(ang) * 27,
+          this.player.y - 12 + Math.sin(ang) * 11
+        );
+      }
+    }
+    if (this.upgradeGlow && this.player) {
+      const wUp = this.player.upgrades.weapon;
+      if (wUp >= 8) {
+        this.sfSparkTimer -= dt;
+        if (this.sfSparkTimer <= 0) {
+          this.sfSparkTimer = wUp >= 12 ? 230 : 420;
+          const sx = this.player.x + (Math.random() - 0.5) * 44;
+          const sy = this.player.y - 6 - Math.random() * 36;
+          const sp = this.add
+            .image(sx, sy, "sparkle0")
+            .setDepth(11)
+            .setBlendMode(Phaser.BlendModes.ADD)
+            .setScale(0.5 + Math.random() * 0.4)
+            .setAlpha(0.9);
+          this.tweens.add({
+            targets: sp,
+            y: sy - 16,
+            alpha: 0,
+            duration: 520,
+            onComplete: () => sp.destroy(),
+          });
+        }
+      }
+    }
 
     // 상점 NPC 접근 감지
     if (this.merchant) {
@@ -3954,30 +4004,128 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** 강화 오라 — 무기 +4 이상이면 금빛 글로우가 플레이어를 따라다님 (강화 효과 가시화) */
+  /**
+   * v3.0.5 — 스타포스 오라 (성급 티어별 강화 효과 가시화)
+   *  ★4~7  흰빛(따뜻한 백금) 글로우
+   *  ★8~11 청록 글로우 + 주변 스파클 입자 (update 루프)
+   *  ★12~14 보라 글로우 + 촘촘한 스파클
+   *  ★15   금색 글로우 + 궤도성 2기 + 최밀 스파클
+   * 티어 변경 시 오라 재생성. ★4 미만은 소멸.
+   */
   private syncUpgradeGlow() {
     const up = this.player?.upgrades.weapon ?? 0;
-    if (up >= 4 && !this.upgradeGlow && this.player) {
+    const tier = starTier(up);
+    // 궤도성은 항상 재평가 (★15 미만이면 제거)
+    if (up < 15 && this.sfOrbits.length) {
+      for (const o of this.sfOrbits) o.destroy();
+      this.sfOrbits = [];
+    }
+    if ((up < 4 || tier !== this.glowTier) && this.upgradeGlow) {
+      this.upgradeGlow.destroy();
+      this.upgradeGlow = null;
+    }
+    if (up >= 4 && this.player && !this.upgradeGlow) {
+      const raw = STAR_TIER_COLORS[tier];
+      const col = tier === 0 ? 0xffe9c9 : raw;
       this.upgradeGlow = this.add
         .image(this.player.x, this.player.y - 10, "glow")
         .setDepth(9)
         .setBlendMode(Phaser.BlendModes.ADD)
-        .setTint(0xffd76a)
-        .setScale(1.35)
-        .setAlpha(0.3);
+        .setTint(col)
+        .setScale(1.3 + tier * 0.14)
+        .setAlpha(0.28 + tier * 0.05);
       this.tweens.add({
         targets: this.upgradeGlow,
-        alpha: 0.5,
-        scale: 1.55,
-        duration: 700,
+        alpha: 0.46 + tier * 0.05,
+        scale: 1.5 + tier * 0.16,
+        duration: 700 - tier * 60,
         yoyo: true,
         repeat: -1,
         ease: "Sine.inOut",
       });
-    } else if (up < 4 && this.upgradeGlow) {
-      this.upgradeGlow.destroy();
-      this.upgradeGlow = null;
+      this.glowTier = tier;
     }
+    // ★15 — 궤도성 2기 (impact_star, ADD 블렌드 금색)
+    if (up >= 15 && this.player && this.sfOrbits.length === 0) {
+      for (let i = 0; i < 2; i++) {
+        const o = this.add
+          .image(this.player.x, this.player.y - 12, "impact_star")
+          .setDepth(12)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0xffd76a)
+          .setScale(0.42);
+        this.sfOrbits.push(o);
+      }
+      this.sfOrbitAng = 0;
+    }
+  }
+
+  /**
+   * v3.0.5 — 스타포스 강화 결과 연출
+   *  성공: 티어색 스타 버스트 + 확장 링 + 중앙 스타 팝
+   *  실패: 잿빛 연기 퍼프 (착실히 실패감)
+   */
+  spawnStarForceBurst(x: number, y: number, up: number, ok: boolean) {
+    if (ok) {
+      const raw = STAR_TIER_COLORS[starTier(up)];
+      const col = raw === 0xffffff ? 0xfff3c4 : raw;
+      this.spawnBurstAt(x, y - 14, 18, col);
+      const ring = this.add
+        .image(x, y - 10, "shock_ring")
+        .setDepth(27)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(col)
+        .setScale(0.15);
+      this.tweens.add({ targets: ring, scale: 0.95, alpha: 0, duration: 430, onComplete: () => ring.destroy() });
+      const star = this.add
+        .image(x, y - 40, "impact_star")
+        .setDepth(30)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(col)
+        .setScale(0.4);
+      this.tweens.add({
+        targets: star,
+        scale: 1.15,
+        alpha: 0,
+        duration: 470,
+        ease: "Cubic.out",
+        onComplete: () => star.destroy(),
+      });
+    } else {
+      this.spawnBurstAt(x, y - 10, 8, 0x8a8f99);
+      const puff = this.add
+        .image(x, y - 24, "glow")
+        .setDepth(27)
+        .setTint(0x555a66)
+        .setScale(0.4)
+        .setAlpha(0.7);
+      this.tweens.add({ targets: puff, scale: 1.05, alpha: 0, duration: 500, onComplete: () => puff.destroy() });
+    }
+  }
+
+  /** v3.0.5 — ★5/10/15 마일스톤 돌파 대형 연출 (3중 링 + 카메라 플래시/쉐이크 + 배너) */
+  spawnStarForceBreakthrough(x: number, y: number, slot: "weapon" | "armor", next: number) {
+    const col = STAR_TIER_COLORS[starTier(next)];
+    this.spawnBurstAt(x, y - 14, 40, col);
+    for (let i = 0; i < 3; i++) {
+      const ring = this.add
+        .image(x, y - 12, "shock_ring")
+        .setDepth(28)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(col)
+        .setScale(0.2);
+      this.tweens.add({
+        targets: ring,
+        scale: 1.5 + i * 0.45,
+        alpha: 0,
+        delay: i * 130,
+        duration: 650,
+        onComplete: () => ring.destroy(),
+      });
+    }
+    this.cameras.main.flash(240, (col >> 16) & 0xff, (col >> 8) & 0xff, col & 0xff);
+    this.cameras.main.shake(260, 0.006);
+    EventBus.emit("banner:show", { text: `${slot === "weapon" ? "무기" : "방어구"} ★${next} 돌파!` });
   }
 
   /* ================= 가독성 (F2) ================= */
@@ -4280,6 +4428,7 @@ export class WorldScene extends Phaser.Scene {
       emerald: this.player.emerald,
       upWea: this.player.upgrades.weapon,
       upArm: this.player.upgrades.armor,
+      sfHp: this.player.starHpApplied,
       nearShop: this.nearShop,
       shopStock: [...SHOP_STOCK],
       cls: this.player.cls,
@@ -4346,6 +4495,7 @@ export class WorldScene extends Phaser.Scene {
       owned: [...this.player.owned],
       upWea: this.player.upgrades.weapon,
       upArm: this.player.upgrades.armor,
+      sfHp: this.player.starHpApplied,
       accessories: [...this.player.accessories],
       emerald: this.player.emerald,
       questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },

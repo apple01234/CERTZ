@@ -32,6 +32,18 @@ async function enterWorld(page) {
   });
   await page.waitForTimeout(400);
   for (let i = 0; i < 5; i++) { await page.keyboard.press("Space"); await page.waitForTimeout(260); }
+  /* v3.0.5 — 대사 완전 소진: 뒤늦게 열리는 intro 대사가 player.update를 막아
+     skill3/4 발동 검증이 오염되는 것 방지 (dialoguing 연속 3회 false까지 drain) */
+  let cleanStreak = 0;
+  for (let i = 0; i < 20 && cleanStreak < 3; i++) {
+    const dlg = await page.evaluate(() => {
+      const w = window.__SERTZ__.game.scene.getScene("world");
+      if (w.dialoguing) { w.resumeFromDialogue(); return true; }
+      return false;
+    });
+    if (dlg) cleanStreak = 0; else cleanStreak++;
+    await page.waitForTimeout(300);
+  }
   await page.evaluate(() => {
     const w = window.__SERTZ__.game.scene.getScene("world");
     w.dialoguing = false; w.introStep = -1; w.sleepPending = false;
