@@ -374,3 +374,18 @@ Work Log:
 Stage Summary:
 - 포탈 개방 실패의 3개 근본 원인(상태 유출/보루 거부/보루 무력) 전부 봉합 — 어떤 경로로도 6초 내 개방 보장.
 - 유저가 v2.6을 못 받았을 가능성(웹 서버 다운)에 대비해 웹 즉시 재기동 + Release v2.7 배포.
+
+---
+Task ID: v2.7-deploy-ops
+Agent: Super Z (main)
+Task: v2.7 웹 서버 지속성 확보 — 샌드박스 세션 정리에 프로세스가 묻혀 죽는 문제 해결
+
+Work Log:
+- 원인 규명: 툴 세션에서 스폰한 프로세스(setsid/nohup/disown 무관)는 호출 종료 시 전부 정리됨 — 통제 실험으로 확정. 부팅 트리(PID 1 자식: caddy/ZAI)만 생존
+- 해결 ① 이중 포크 데몬 스포너(scripts/daemon_spawn.py, PPID 1) + 감독자(scripts/supervisor.sh)로 서버 기동 → 세션 정리 통과, 3000/81/socket 지속 200 확인
+- 해결 ② .zscripts/dev.sh를 프로덕션 기동 방식으로 개편(node server.js + 무한 감독 루프, 빌드물 없으면 next build) — 다음 부팅부터 플랫폼이 자동으로 게임 서버를 띄움
+- Release v2.7 생성 + APK 업로드, 다운로드 무결성 sha256 48b4f5e8… 일치 확인
+- 푸시: b4a11bc(v2.7 본체) + f9e819c(부팅 ops)
+
+Stage Summary:
+- 프리뷰(웹) 상시 v2.7 서빙 + 다음 재부팅부터도 자동 기동. 포탈 버그 재발 시 e2e_v27_verify.js로 회귀 점검 가능.
