@@ -19,6 +19,26 @@ import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import * as audio from "../audio";
 
 /**
+ * v2.6 — 길 코어 색 (챕터 길 타일의 최빈색).
+ *  TileSprite 패턴이 특정 타이밍에 빈 캔버스로 구워져 길이 아예 안 그려지는 레이스가 있어
+ *  (유저 신고: "길이 이상하게 배치" — 프린지 타일 파편만 보임), 확실한 rect로 길 코어를 그리고
+ *  프린지 타일이 위에 유기질 경계를 얹는 구조로 복원.
+ */
+const ROAD_BASE: Record<string, number> = {
+  /* tx_*_pvar(도로 내부 변형 타일) 베이스색 — 프린지와 같은 팔레트 */
+  village: 0x856c52,
+  forest: 0x856c52,
+  kingdom: 0x856c52,
+  alfheim: 0x856c52,
+  hel: 0x856c52,
+  cave: 0x565463,
+  nidavellir: 0x565463,
+  niflheim: 0x7e9baf,
+  muspelheim: 0x565463,
+  abyss: 0x565463,
+};
+
+/**
  * 메인 플레이 씬.
  *  F1: 꽃/장식 배치를 정의된 소수로만 배치
  *  F2: 목표물 빛기둥 비컨 + 화면 가장자리 화살표 + 실시간 거리 표시
@@ -43,6 +63,9 @@ export class WorldScene extends Phaser.Scene {
   private fragment: Phaser.Physics.Arcade.Sprite | null = null;
   private portal: Phaser.Physics.Arcade.Sprite | null = null;
   private portalActive = false;
+  /* v2.6 — 육식 식물 위험 오브젝트 (오버랩은 플레이어 생성 후 등록) */
+  private plantHazards: Phaser.GameObjects.Image[] = [];
+  private plantCd = 0;
   private beacon: Phaser.GameObjects.Image | null = null;
   private portalBeacon: Phaser.GameObjects.Image | null = null;
   private edgeArrow: Phaser.GameObjects.Image | null = null;
@@ -229,6 +252,8 @@ export class WorldScene extends Phaser.Scene {
     this.pProjPool = []; // 씬 소유 오브젝트는 씬 종료와 함께 정리 — 인덱스만 초기화
     this.pProjIdx = 0;
     this.visited = new Set();
+    this.plantHazards = [];
+    this.plantCd = 0;
     this.autoHunt = false;
     this.autoHuntMove.set(0, 0);
     this.repeatNeed = 0;
@@ -306,23 +331,13 @@ export class WorldScene extends Phaser.Scene {
       this.buildInterior(stageKey);
     } else {
     const groundTex = theme.ground;
-    const pathTex = theme.path;
     this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
-    // 중앙 가로 길
-    this.add
-      .tileSprite(0, this.stageH / 2 - 52, this.stageW, 104, pathTex)
-      .setOrigin(0)
-      .setDepth(0)
-      .setAlpha(0.9);
-    if (stageKey === "forest1") {
-      this.add
-        .tileSprite(this.stageW * 0.55 - 52, 0, 104, this.stageH, pathTex)
-        .setOrigin(0)
-        .setDepth(0)
-        .setAlpha(0.85);
-    }
+    // 중앙 가로 길 — v2.6: 확실한 rect 코어 (tile_path 최빈색) + 프린지 타일이 경계 장식
+    this.add.rectangle(0, this.stageH / 2 - 52, this.stageW, 104, ROAD_BASE[parseStage(stageKey).ch] ?? 0x94785c).setOrigin(0).setDepth(0);
+    if (stageKey === "forest1")
+      this.add.rectangle(this.stageW * 0.55 - 52, 0, 104, this.stageH, ROAD_BASE.forest).setOrigin(0).setDepth(0);
     // 지형 전환 프린지 + 지면 변형 — 자로 잰 직선 경계/균일 반복 패턴을 자연스럽게 (타일맵 부자연 개선)
-    this.buildGroundBlend(stageKey, groundTex, pathTex);
+    this.buildGroundBlend(stageKey, groundTex, "");
     }
 
     this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
@@ -412,6 +427,9 @@ export class WorldScene extends Phaser.Scene {
     this.playerRef = this.player;
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.physics.add.collider(this.player, this.solidGroup);
+    /* v2.6 — 육식 식물 접촉 데미지 등록 (플레이어 생성 후) */
+    for (const plant of this.plantHazards)
+      this.physics.add.overlap(this.player, plant, () => this.hitPlantHazard(plant));
 
     /* ---------- BM 복원 (v1.9 — 펫 소환/치장 오라/강화 오라) ---------- */
     this.syncPet();
@@ -502,6 +520,19 @@ export class WorldScene extends Phaser.Scene {
     /* v2.4 — 이어하기 시 레벨 게이트가 이미 충족된 상태면 즉시 연쇄 완료
      *  (구세이브는 questIdx가 신규 체인의 앞쪽으로 밀려날 수 있다 — 자기 레벨이 충분하면 게이트 스킵) */
     if (this.currentQuest()?.type === "level") this.tryCompleteLevel();
+
+    /* v2.6 — 포탈 개방 보루: 어떤 경로로든 개방을 놓쳤으면 1.5초마다 복구.
+     *  퀘스트 전부 클리어(q 없음) 또는 reach 퀘스트(포탈이 목표) 상태인데 포탈이 닫혀있으면 연다. */
+    this.time.addEvent({
+      delay: 1500,
+      loop: true,
+      callback: () => {
+        if (!this.portal || this.portalActive || this.isInterior || this.stageDef.boss) return;
+        if (this.dialoguing || this.pendingPortal) return;
+        const q = this.currentQuest();
+        if (!q || q.type === "reach") this.activatePortal();
+      },
+    });
 
     /* ---------- 미니맵 (2D MMORPG 기본 요소) ---------- */
     this.minimap = this.add.graphics().setDepth(95).setScrollFactor(0).setAlpha(0.85);
@@ -607,14 +638,15 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    // 2) 도로 경계 — 물결을 따라가는 프린지 + 침식 + 도로 내부 미세 변형
+    // 2) 도로 경계 — 물결을 따라가는 프린지 + 얕은 침식 + 도로 내부 미세 변형
+    /* v2.6 — 침식(bite)이 길 안쪽 8~26px까지 파고들어 길이 찢어져 보였음. 2~10px로 축소 */
     for (let x = 0; x <= this.stageW; x += 46) {
       const yT = yc - half + wobTop(x);
       const yB = yc + half + wobBot(x);
       if (rng.frac() < 0.6) this.add.image(x, yT - rng.between(2, 10), `tx_${set}_edge_dn`).setDepth(0).setFlipX(rng.frac() < 0.5);
       if (rng.frac() < 0.6) this.add.image(x, yB + rng.between(2, 10), `tx_${set}_edge_up`).setDepth(0).setFlipX(rng.frac() < 0.5);
-      if (rng.frac() < 0.24) this.add.image(x, yT + rng.between(8, 26), `tx_${set}_bite_dn`).setDepth(0).setFlipX(rng.frac() < 0.5);
-      if (rng.frac() < 0.24) this.add.image(x, yB - rng.between(8, 26), `tx_${set}_bite_up`).setDepth(0).setFlipX(rng.frac() < 0.5);
+      if (rng.frac() < 0.24) this.add.image(x, yT + rng.between(2, 10), `tx_${set}_bite_dn`).setDepth(0).setFlipX(rng.frac() < 0.5);
+      if (rng.frac() < 0.24) this.add.image(x, yB - rng.between(2, 10), `tx_${set}_bite_up`).setDepth(0).setFlipX(rng.frac() < 0.5);
       if (rng.frac() < 0.14)
         this.add.image(x + rng.between(-18, 18), rng.between(Math.round(yT) + 16, Math.round(yB) - 16), `tx_${set}_pvar`)
           .setDepth(0).setFlipX(rng.frac() < 0.5).setAlpha(0.82);
@@ -815,13 +847,27 @@ export class WorldScene extends Phaser.Scene {
     }
 
     // 쿠소디아/아뜰란티스 — 육한 식물·바위·뼈 (Cursed Land, CC0 — v1.5 배치1 이관)
+    /* v2.6 수정 — 식인초류(cl_jawsplant 등)는 장식이 아니라 '위험 오브젝트'.
+     *  밟으면 챕터 배율에 비례한 접촉 데미지 + 씹기 연출 (버그: 닿아도 데미지 없음) */
     if (ch === "kingdom" || ch === "abyss") {
       const rng6 = new Phaser.Math.RandomDataGenerator(["cursed-plants"]);
+      const hazardPlants = ["cl_jawsplant", "cl_eyeplant", "cl_manyeyes"];
+      const passiveProps = ["cl_mflower", "cl_pustules", "cl_rock", "cl_bones"];
+      const allProps = [...hazardPlants, ...passiveProps];
       for (let i = 0; i < 9; i++) {
         const px6 = rng6.between(120, this.stageW - 120);
         const py6 = rng6.between(70, this.stageH - 70);
         if (Math.abs(py6 - this.stageH / 2) < 85) continue;
-        this.add.image(px6, py6, rng6.pick(["cl_mflower", "cl_eyeplant", "cl_jawsplant", "cl_manyeyes", "cl_pustules", "cl_rock", "cl_bones"])).setDepth(1);
+        if (blocked(px6, py6)) continue;
+        const tex6 = rng6.pick(allProps);
+        const p6 = this.add.image(px6, py6, tex6).setDepth(1);
+        if (hazardPlants.includes(tex6)) {
+          // 육식 식물 — 목록 적재만 (오버랩은 플레이어 생성 후 일괄 등록)
+          this.physics.add.existing(p6, true);
+          (p6.body as Phaser.Physics.Arcade.StaticBody).setSize(56, 44); // center=true — 식물 중앙 배치
+          this.plantHazards.push(p6);
+          this.tweens.add({ targets: p6, scaleX: 1.06, scaleY: 0.96, duration: 900 + (i % 4) * 130, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+        }
       }
     }
 
@@ -840,6 +886,19 @@ export class WorldScene extends Phaser.Scene {
         .setScale(0.9)
         .setAlpha(0.2);
     }
+  }
+
+  /** v2.6 — 육식 식물(식인초) 접촉 데미지. 피격 처리(무적시간·연출)는 Player.takeDamage 재사용 */
+  private hitPlantHazard(plant: Phaser.GameObjects.Image) {
+    const p = this.player;
+    if (p.state === "dead" || this.time.now < this.plantCd) return;
+    this.plantCd = this.time.now + 700;
+    const dir = new Phaser.Math.Vector2(p.x - plant.x, p.y - plant.y);
+    if (dir.length() < 1) dir.set(1, 0);
+    p.takeDamage(Math.round(16 * stageScale(this.stageDef.key).atk), dir.normalize());
+    this.tweens.add({ targets: plant, angle: { from: -9, to: 9 }, yoyo: true, duration: 70, repeat: 1, onComplete: () => plant.setAngle(0) });
+    plant.setTint(0xff9a8a);
+    this.time.delayedCall(220, () => plant.clearTint());
   }
 
   private spawnFragment(x: number, y: number) {
@@ -1687,6 +1746,10 @@ export class WorldScene extends Phaser.Scene {
         if (q.dialogue && !this.seenSet.has(q.dialogue)) {
           // 대사 중 포탈 위 즉시 전환 방지 — 대사 종료 후 개방 (resumeFromDialogue)
           this.pendingPortal = true;
+          /* v2.6 보루 — 대사 종료 훅을 어떤 이유로 놓쳐도 5초 뒤엔 반드시 개방 */
+          this.time.delayedCall(5000, () => {
+            if (this.pendingPortal && !this.portalActive) { this.pendingPortal = false; this.activatePortal(); }
+          });
           if (this.dialoguing) {
             // 이미 대사 진행 중 (파편 수집 직후 등) — 기록 후 예약 순차 재생
             this.markSeen(q.dialogue);

@@ -332,3 +332,19 @@ Work Log:
 Stage Summary:
 - 루트 복원으로 플랫폼 미리보기 배포 경로 정상화. CERTZ/ 폴더는 더 이상 존재하지 않음(이후 작업은 전부 루트에서).
 - 서버: NODE_ENV=production node server.js (socket.io 멀티플레이 포함)
+
+---
+Task ID: v2.6-bugfix
+Agent: Super Z (main)
+Task: 유저 버그 3건 — 퀘스트 후 포탈 미개방 / 타일맵 길 파편 / 식인초 접촉 데미지 없음 + ponytail 상시 적용 선언
+
+Work Log:
+- ① 포탈: 개방이 대사 종료 훅(resumeFromDialogue) 단일 경로 의존 → 놓치면 영구 막힘. 수정: reach 퀘스트 5초 보루 타이머 + 1.5초 주기 개방 보루(체인 완료/reach 상태인데 닫혀있으면 개방, 보스 구역 제외)
+- ② 타일맵 길: 원인은 TileSprite 패턴이 특정 타이밍에 100% 투명 캔버스로 구워지는 레이스(실측: texture source 투명률 100%). 지금까지 보이던 '길'은 전부 프린지 타일 파편이었음. 수정: tile_path 최빈색 rect 코어 + 프린지 타일 조합으로 교체, bite 침식 8~26px→2~10px 완화. 헤드리스 브라우저 실측으로 연속 길 렌더 확인
+- ③ 식인초: cl_jawsplant/eyeplant/manyeyes가 순수 장식이었음. 위험 오브젝트로 전환 — 정적 바디(56x44 center) + 오버랩 → Player.takeDamage 재사용(무적시간/넉백/데미지텍스트 내장), 씬 쿨다운 700ms, 챕터 배율 데미지, 물어보는 연출(angle 흔들기+틴트). 실측: kingdom2에서 12 데미지 확인
+- 버전: versionCode 11 / versionName 2.6, 타이틀 태그 v2.6
+- 검증: tsc 0 에러 / next build 성공 / headless 브라우저에서 길 렌더·포탈 활성·식인초 데미지 3건 실측
+
+Stage Summary:
+- 3건 전부 근본 수정. 구조 교훈: TileSprite는 패턴 굽기 레이스가 있어 핵심 지형엔 rect 사용할 것.
+- 【상시 규칙】ponytail(dietrichgebert/ponytail) — 사용자 지시로 모든 작업에 상시 적용. skills/ponytail/SKILL.md 참조: 최소한의 동작 코드(사다리: YAGNI→기존코드 재사용→표준→네이티브→기존의존성→1줄→최소코드), 근본원인 수정, 불가피한 단순화는 ponytail: 주석, 설명은 코드보다 짧게.
