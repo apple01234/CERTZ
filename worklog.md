@@ -440,3 +440,30 @@ Stage Summary:
 - 13개 중 11개 항목 구현 완료. #3(에셋 다양화)은 몬스터 풀 3종/챕터 + 조합 로테이션으로 체감 다양화 대응,
   외부 CC0 대량 에셋 통합은 다음 릴리스 과제. #11도 동일.
 - 전직 "스킬 슬롯 추가"는 기존 2슬롯 체제 유지(티어별 강화로 대체) — 4슬롯 확장은 다음 과제.
+
+---
+Task ID: v3.0-eight
+Agent: Super Z (main)
+Task: 유저 8항목 (경험치 리셋/마법사 조준·히트박스/PC 상호작용/챕터 마을/마을 퀘스트 오표기/몬스터 캡/개미굴 맵+나무 교정/레벨업) — v3.0 배포
+
+Work Log:
+- #1 근본 원인: buildSave는 exp 저장하나 복원 경로(this.player.lv 복원 블록)에 exp 대입 누락 → 포탈/씬 재시작마다 경험치 0. 한 줄 복원으로 수정
+- #2 aimDir()의 4방향 스냅이 원거리 전체에 적용되던 것 → aimDirFree()(facing 정규화) 신설, atkBolt/atkBow/skill1Bolt 자유 조준.
+  투사체 판정 tickPlayerProjs: 평면 28px → projR(14×scale)+대상 몸통(hitW/hitH)/2+8px, 마법탄 480→540/scale 1.0
+- #3 PC(pointer:fine)는 NPC 머리 위 부유 버튼 대신 하단 중앙 고정 칩([E] 라벨). 터치는 기존 앵커 유지 (InteractPrompt isTouch 분기)
+- #4 CHAPTER_VILLAGE_NPC 9챕터 테이블 + vlg*A/B 대사 27종: 건물 틴트·마을 간판·주민 2인(이름/대사 챕터별)
+- #5 emitQuest() !q 분기에 isInterior/isVillage 전용 문구 추가 — "지역 클리어!"는 필드 전용으로
+- #6 subEnemyMix 총량제 재편(구역당 합계 ≤20) + respawnEnemy에 생존 수 ≥20이면 보류 게이트
+- #7 신규 src/game/mapgen.ts: 셀 그리드(~400×310) 터널 성장형 굴 생성(개방률 45~62%, 시드=스테이지키, entry/exit=BFS 최원거리).
+  WorldScene: buildDungeonWalls(챕터별 암벽 tilesprite+static body), 포탈/보스=exit셀, 복귀포탈/상인=entry셀,
+  적·정예·파편 개방셀 스폰(openPointRng), 미니맵 벽 블록, 자동사냥 BFS nextStepToward 우회, 장식 inOpenArea 필터,
+  cave/nidavellir 나무 pine(초록)→시든나무, muspelheim tree(초록)→pine_dark+시든나무
+- #8 expNext 50×lv^1.62 → 40×lv^1.45(45%↓) + 몬스터 경험치 ×1.35 (체감 ~2.5배 가속)
+- 검증: tsc 0 / e2e_v27 12·12 PASS / e2e_v30_layout 신설(레이아웃 연결성·벽 바디=벽 셀 수·벽 침투 0·포탈/적 개방셀·20캡) PASS / 실스크린샷 2종(cave 필드 벽+니플헤임 마을 테마 NPC·"마을 — 안전 지대" 패널·PC 고정 칩) 확인
+- 배포: 웹 재빌드+데몬 기동(200/socket 200), APK versionCode 15/"3.0" aapt+apksigner(CN=SERTZ) 검증,
+  Release v3.0(id 379644158) 업로드, CDN 재다운로드 sha256 f27cce46… 일치, 푸시 3139cd6
+
+Stage Summary:
+- 8개 항목 전부 구현. 개미굴 맵은 스테이지 키 시드라 같은 구역 재방문 시 동일 구조(멀티/리젠 안전), 구역 간에는 전부 상이.
+- 주의: MultiEdit은 원자적이지 않음 — 이번 세션에서 일부 편집만 적용되고 실패 리포트가 뜬 사례 1회. 편집 후 실측 확인 필수.
+- .gh_token 파일 소실(origin remote 임베디드 토큰으로 대체 사용). 다음 세션도 동일 경로.
