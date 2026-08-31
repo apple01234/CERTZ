@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           바다의 수호자 : 아뜰란티스
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v2.9 · 10장 90구역 · 챕터 마을</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0 · 개미굴 던전 · 10장 90구역</span>
         </p>
       </div>
 
@@ -228,6 +228,26 @@ export function InteractPrompt() {
     kind: null,
   });
   const ref = useRef<HTMLButtonElement>(null);
+  /* v3.0 (사용자 지시 #3) — PC(마우스)에서는 NPC 머리 위 부유 버튼이 위치가 어중간해 보여
+   *  화면 하단 중앙 고정 칩([E] 라벨)으로 교체. 터치 기기는 기존 NPC 머리 위 버튼 유지 */
+  const [isTouch, setIsTouch] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900)
+  );
+
+  useEffect(() => {
+    const reevaluate = () =>
+      setIsTouch(window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900);
+    reevaluate();
+    const onTouch = () => setIsTouch(true);
+    window.addEventListener("touchstart", onTouch, { once: true, passive: true });
+    window.addEventListener("resize", reevaluate);
+    return () => {
+      window.removeEventListener("touchstart", onTouch);
+      window.removeEventListener("resize", reevaluate);
+    };
+  }, []);
 
   useEffect(() => {
     const on = (v: { active: boolean; label: string; kind: "talk" | "shop" | "job" | null; x?: number; y?: number }) =>
@@ -240,7 +260,7 @@ export function InteractPrompt() {
 
   /* v2.1 — 프롬프트를 대상(NPC/건물) 머리 위에 고정 (월드→화면 좌표 변환, 카메라 추적) */
   useEffect(() => {
-    if (!st.active || st.x === undefined || st.y === undefined) return;
+    if (!isTouch || !st.active || st.x === undefined || st.y === undefined) return;
     const wx = st.x;
     const wy = st.y;
     let raf = 0;
@@ -262,6 +282,28 @@ export function InteractPrompt() {
   }, [st.active, st.x, st.y]);
 
   if (!st.active || !st.label) return null;
+
+  /* v3.0 (#3) — PC: 하단 중앙 고정 칩 / 터치: NPC 머리 위 부유 버튼 */
+  if (!isTouch) {
+    return (
+      <button
+        onPointerDown={(e) => {
+          e.preventDefault();
+          if (st.kind === "shop") EventBus.emit("ui:panel", { panel: "shop" });
+          else EventBus.emit("input:interact");
+        }}
+        className={`pointer-events-auto absolute bottom-24 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border-2 px-4 py-2 text-[13px] font-black shadow-xl transition-transform active:scale-95 ${
+          st.kind === "job"
+            ? "border-amber-200/80 bg-gradient-to-b from-amber-300 to-amber-600 text-slate-900"
+            : "border-emerald-200/80 bg-gradient-to-b from-emerald-400 to-emerald-600 text-slate-900"
+        }`}
+      >
+        {st.kind === "shop" ? <Store size={16} /> : st.kind === "job" ? <Sparkles size={16} /> : <MessageCircle size={16} />}
+        {st.label}
+        <span className={`rounded px-1 text-[9px] font-black ${st.kind === "job" ? "bg-slate-900/85 text-amber-200" : "bg-slate-900/85 text-emerald-200"}`}>E</span>
+      </button>
+    );
+  }
 
   const anchored = st.x !== undefined && st.y !== undefined;
 

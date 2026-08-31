@@ -953,3 +953,192 @@ export function autoAllocPlan(family: FamilyKey, ap: number): { str: number; dex
   }
   return out;
 }
+
+/* ================= v3.0 (사용자 지시 #4) — 챕터 분위기별 마을 주민 =================
+ *  v2.9에서 모든 챕터 마을이 같은 주민·같은 대사를 재사용했다.
+ *  챕터마다 이름·성격·대사가 바뀌는 주민 2인 + 건물 틴트로 마을 분위기를 분리한다. */
+
+export type VillageNpcSpec = {
+  /** 건물 3채 공통 틴트 (챕터 분위기색) */
+  houseTint: number;
+  /** 마을 간판 색 */
+  signColor: string;
+  /** 주민 2인 — 이름 + 대사키 */
+  npcA: { name: string; tex: string; dlg: string };
+  npcB: { name: string; tex: string; dlg: string };
+};
+
+export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
+  forest: {
+    houseTint: 0xbfe4a8,
+    signColor: "#b8f0a0",
+    npcA: { name: "허브 채집가 베르", tex: "npc_villager1", dlg: "vlgForestA" },
+    npcB: { name: "신전 관리인 노아", tex: "npc_villager2", dlg: "vlgForestB" },
+  },
+  kingdom: {
+    houseTint: 0xe8d0a0,
+    signColor: "#ffe9b0",
+    npcA: { name: "선원 롤프", tex: "npc_villager1", dlg: "vlgKingdomA" },
+    npcB: { name: "늪지 어부 팰", tex: "npc_villager2", dlg: "vlgKingdomB" },
+  },
+  alfheim: {
+    houseTint: 0xc2aef8,
+    signColor: "#d8c8ff",
+    npcA: { name: "요정 사절 리안", tex: "npc_villager1", dlg: "vlgAlfheimA" },
+    npcB: { name: "성전 견습 기사", tex: "npc_villager2", dlg: "vlgAlfheimB" },
+  },
+  muspelheim: {
+    houseTint: 0xffa878,
+    signColor: "#ffb080",
+    npcA: { name: "대장장이 브라키", tex: "npc_villager1", dlg: "vlgMuspelA" },
+    npcB: { name: "용암 광부 코일", tex: "npc_villager2", dlg: "vlgMuspelB" },
+  },
+  niflheim: {
+    houseTint: 0x9cccff,
+    signColor: "#a8e0ff",
+    npcA: { name: "얼음 낚시꾼 시그룬", tex: "npc_villager1", dlg: "vlgNiflA" },
+    npcB: { name: "눈보라 정찰병", tex: "npc_villager2", dlg: "vlgNiflB" },
+  },
+  cave: {
+    houseTint: 0xb09ccc,
+    signColor: "#c9a0ff",
+    npcA: { name: "수정 채굴자 그밀", tex: "npc_villager1", dlg: "vlgCaveA" },
+    npcB: { name: "어둠 요정 피난민", tex: "npc_villager2", dlg: "vlgCaveB" },
+  },
+  nidavellir: {
+    houseTint: 0xe8c474,
+    signColor: "#ffd76a",
+    npcA: { name: "룬 대장장이 두린", tex: "npc_villager1", dlg: "vlgNidavA" },
+    npcB: { name: "광산 감독관", tex: "npc_villager2", dlg: "vlgNidavB" },
+  },
+  hel: {
+    houseTint: 0xc89ae8,
+    signColor: "#d0a8ff",
+    npcA: { name: "전쟁 유령 아르벨", tex: "npc_villager1", dlg: "vlgHelA" },
+    npcB: { name: "저택 집사 무르", tex: "npc_villager2", dlg: "vlgHelB" },
+  },
+  abyss: {
+    houseTint: 0x9a8ade,
+    signColor: "#b09aff",
+    npcA: { name: "폐허 학자 테일", tex: "npc_villager1", dlg: "vlgAbyssA" },
+    npcB: { name: "마지막 항해사", tex: "npc_villager2", dlg: "vlgAbyssB" },
+  },
+};
+
+/* 챕터 마을 주민 대사 일괄 등록 — 각 챕터 분위기에 맞는 3줄 멘트 */
+{
+  const VLG: Record<string, { a: { sp: string; lines: string[] }; b: { sp: string; lines: string[] } }> = {
+    forest: {
+      a: { sp: "허브 채집가 베르", lines: [
+        "숲이 요즘 좀 이상해, {name}. 늑대들 눈빛이 달라졌어.",
+        "신전 깊은 곳에서 빛이 난다고 하던데… 네 펜던트도 반응하는 것 같아.",
+        "허브 물약이 필요하면 언제든 와. 사냥꾼들한테는 서비스야!",
+      ] },
+      b: { sp: "신전 관리인 노아", lines: [
+        "오래된 신전을 지키는 노아라고 해. 얼굴에 흙 묻은 채 미안하네.",
+        "신전 안 벽화에 '일곱 보석'이 새겨져 있어… 네가 찾는 것도 거기 있을까?",
+        "조심하고 가, {name}. 숲은 밤이 되면 완전히 다른 얼굴이 되거든.",
+      ] },
+    },
+    kingdom: {
+      a: { sp: "선원 롤프", lines: [
+        "배 밑바닥에 이상한 종양이 붙었다고, {name}. 심연에서 뭔가 자라나는 것 같아.",
+        "쿠소디아의 선박들은 모두 심연을 건너야 해. 바다가 불안하단 말이지.",
+        "네가 보석을 모은다니? 선원들의 미신으론 그게 유일한 희망이야.",
+      ] },
+      b: { sp: "늪지 어부 팰", lines: [
+        "늪 물고기들이 죄다 식인초를 물어왔어. 소화기관이 뒤집히는 줄 알았지.",
+        "움직이는 초들… 원래 저러는 게 아니야. 뭔가가 저들을 깨운 것 같아.",
+        "우물 물은 여전히 깨끗해. 마음 놓고 마셔, {name}.",
+      ] },
+    },
+    alfheim: {
+      a: { sp: "요정 사절 리안", lines: [
+        "요정왕의 명으로 이 마을을 돕고 있어, {name}. 네 펜던트에서 고대의 냄새가 나네.",
+        "알프헤임의 빛이 흐려지고 있어. 심연 유령들이 성전을 침식하고 있어.",
+        "요정들은 네 펜던트를 오래전부터 알고 있었대. '인어의 상징'이라고.",
+      ] },
+      b: { sp: "성전 견습 기사", lines: [
+        "성전 기사단 견습입니다! 아직 검이 무겁지만, 훈련은 매일 빠지지 않아요.",
+        "심연 유령은 물리 공격이 잘 안 먹힌다고 하니, 마법 계열이라면 큰 도움이 될 거예요.",
+        "{name} 님도 언젠가 제 실력을 시험해 주세요. 약속이에요!",
+      ] },
+    },
+    muspelheim: {
+      a: { sp: "대장장이 브라키", lines: [
+        "화염 정령이 날로 거세진다, {name}. 용광로가 흔들리고 있어.",
+        "이 지옥 같은 열기에서도 우물은 차갑지. 세계수의 은혜라고나 할까.",
+        "좋은 무기가 필요하면 상점을 가라. 내가 갈아놓은 물건들이다!",
+      ] },
+      b: { sp: "용암 광부 코일", lines: [
+        "광맥이 녹아내려… 일이 불가능해졌다고, {name}.",
+        "불꽃 늑대 무리가 광부들만 노려. 뭔가에게 부려진 것 같은데.",
+        "아이스크림… 그게 뭐냐? 여기선 얼음을 꿈꾸는 게 취미야.",
+      ] },
+    },
+    niflheim: {
+      a: { sp: "얼음 낚시꾼 시그룬", lines: [
+        "호수가 또 얼었어, {name}. 서리 늑대들이 얼음 위로 다니거든.",
+        "얼음 아래에서 무언가 빛나는 걸 봤어… 네가 찾는 보석일까?",
+        "여관에서 온기를 판다. 북극성 아래서 자면 감기 걸린다!",
+      ] },
+      b: { sp: "눈보라 정찰병", lines: [
+        "정찰 보고 — 얼음 골렘이 남쪽 언덕에서 내려오고 있습니다, {name}.",
+        "니플헤임의 밤은 영원해. 하지만 사람들은 불을 지키며 살아가죠.",
+        "네 펜던트… 흥미롭군요. 눈보라 속에서도 빛을 잃지 않아.",
+      ] },
+    },
+    cave: {
+      a: { sp: "수정 채굴자 그밀", lines: [
+        "수정 광맥이 울고 있어, {name}. 동굴 거미 떼가 채굴장을 삼켰다니까.",
+        "가장 깊은 갱도엔 어둠 요정들의 제단이 있대. 가까이 가지 마.",
+        "수정은 빛을 기억해. 네 펜던트처럼 말이야.",
+      ] },
+      b: { sp: "어둠 요정 피난민", lines: [
+        "저는 저들을 따르지 않았어요, {name}. 마을에 와주셔서 감사해요.",
+        "여왕의 속삭임이 갱도를 타고 퍼져요… 귀를 막고 다니세요.",
+        "언젠가 이 동굴에도 빛이 돌아올까요? …네가 그 빛이 될 수 있을까?",
+      ] },
+    },
+    nidavellir: {
+      a: { sp: "룬 대장장이 두린", lines: [
+        "룬 각인이 폭주했다, {name}. 골렘들이 망치 대신 광산을 부수고 다녀.",
+        "스콜과 하티가 최심부에 잠들었다던데… 전설인 줄만 알았지.",
+        "좋은 장비를 공짜로 줄 순 없지만, 테스트용 아드레날린은 무한하다!",
+      ] },
+      b: { sp: "광산 감독관", lines: [
+        "광산 인부 결근률 40%… 이러다 조합이 망한다, {name}.",
+        "룬 골렘은 머리의 룬 돌이 심장이야. 그걸 깨면 멈춘다!",
+        "네 펜던트에서 열기가 느껴지네. 다행히 이 광산엔 그게 필요해.",
+      ] },
+    },
+    hel: {
+      a: { sp: "전쟁 유령 아르벨", lines: [
+        "나는 이 절벽에서 목숨을 잃은 병사다… 하지만 두렵지 않다, {name}.",
+        "헬 하운드들은 대전쟁의 잔재야. 그들도 잊혀지길 원하지 않을 뿐이지.",
+        "저택의 불빛? 칼립소 할머니의 여동생이 살던 곳이다… 예전에는.",
+      ] },
+      b: { sp: "저택 집사 무르", lines: [
+        "어서 오세요, {name}. 죽음의 땅에서도 다과 시간은 유효합니다.",
+        "이 저택의 주인은 오래전 사라졌지요. 저는 약속을 지키며 기다릴 뿐입니다.",
+        "여관에서 잠이나 자고 가세요. 꿈에 유령이 나온다면… 그건 서비스입니다.",
+      ] },
+    },
+    abyss: {
+      a: { sp: "폐허 학자 테일", lines: [
+        "가라앉은 대륙 — 아뜰란티스의 수도였지, {name}. 네 고향이기도 하고.",
+        "왕좌의 불빛이 커지고 있어. 대악마 아부디토스… 펜던트의 정령과 같은 이름이라니.",
+        "기록에 따르면 '펜던트의 정령'은 둘이 될 수 없대. 그럼 저건 뭘까?",
+      ] },
+      b: { sp: "마지막 항해사", lines: [
+        "요르문간드가 바다를 감고 있어, {name}. 저 바다 위를 지날 수 있는 배는 없어.",
+        "모든 항로가 끝났다. 남은 건 네 발뿐이야.",
+        "마지막 보석을 박아 넣을 자리… 왕좌의 가장 깊은 곳에 있을 거야.",
+      ] },
+    },
+  };
+  for (const [key, v] of Object.entries(VLG)) {
+      DIALOGUES[`vlg${key.charAt(0).toUpperCase()}${key.slice(1)}A`] = { speaker: v.a.sp, lines: v.a.lines };
+      DIALOGUES[`vlg${key.charAt(0).toUpperCase()}${key.slice(1)}B`] = { speaker: v.b.sp, lines: v.b.lines };
+    }
+  }

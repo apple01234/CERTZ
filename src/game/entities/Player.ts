@@ -230,10 +230,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       // 이동 관성 유지 — 다음 프레임의 공격 중 이동 분기가 입력 방향으로 이어받음
     }
 
-    // 계열별 공격 분기 — 원거리 계열은 발사형
+    // 계열별 공격 분기 — 원거리 계열은 발사형(자유 조준 v3.0)
     const fam = familyOf(this.cls);
-    if (fam === "ranger") return this.atkBow(dir);
-    if (fam === "mage") return this.atkBolt(dir);
+    if (fam === "ranger") return this.atkBow(this.aimDirFree());
+    if (fam === "mage") return this.atkBolt(this.aimDirFree());
     this.atkSlash(dir);
   }
 
@@ -322,8 +322,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const { dmg, crit } = this.rollDamage(1.0);
       this.scene.firePlayerProj({
         x: this.x, y: this.y - 10,
-        angle, speed: 480, pierce: 2, dmg, crit,
-        tint: 0x8fa6ff, knock: 200, scale: 0.9,
+        angle, speed: 540, pierce: 2, dmg, crit,
+        tint: 0x8fa6ff, knock: 200, scale: 1.0,
       });
     });
 
@@ -336,11 +336,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  /** 조준 방향: 마지막 이동 방향(4방향 스냅) */
+  /** 조준 방향: 마지막 이동 방향(4방향 스냅 — 근접 애니메이션은 4방향 시트 기준) */
   private aimDir(): Phaser.Math.Vector2 {
     const f = this.facing;
     if (Math.abs(f.x) >= Math.abs(f.y)) return new Phaser.Math.Vector2(f.x >= 0 ? 1 : -1, 0);
     return new Phaser.Math.Vector2(0, f.y >= 0 ? 1 : -1);
+  }
+
+  /** v3.0 (사용자 지시 #2) — 자유 조준: facing 그대로 정규화해 반환
+   *  원거리 계열(마법사 볼트/궁수 화살)은 4방향 스냅 없이 8방향+대각선(아날로그) 조준 */
+  private aimDirFree(): Phaser.Math.Vector2 {
+    const f = this.facing;
+    if (f.lengthSq() < 0.001) return new Phaser.Math.Vector2(1, 0);
+    return f.clone().normalize();
   }
 
   /** 광역 근접 판정 — rect + 목표 크기 반영 (보스처럼 큰 적도 실제 몸통에 맞음) */
@@ -505,7 +513,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** 마법사 — 매직 볼트 (느리지만 대폭 관통·고배율, 티어별 배율/관통 강화) */
   private skill1Bolt() {
-    const aim = this.aimDir();
+    const aim = this.aimDirFree(); // v3.0 — 8방향 자유 조준
     const angle = Math.atan2(aim.y, aim.x);
     this.play("hero-atk");
     this.scene.sfxSpin();
@@ -716,10 +724,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   expNext() {
-    // v2.3 완화 곡선 (지시 #2 — 레벨이 너무 조금 오르는 불만 해소):
-    //  Lv1→2: 50, Lv5→6: 666, Lv10→11: 2,086, Lv15→16: 4,430, Lv20→21: 6,436
-    //  (기존 55×lv^1.72 대비 약 1.5~1.8배 빠른 성장 — 몬스터 증원/리젠 단축과 합산 시 체감 2~3배)
-    return Math.round(50 * Math.pow(this.lv, 1.62));
+    // v3.0 (사용자 지시 #8 — "레벨이 너무 안 올라") — 곡선 재완화:
+    //  40×lv^1.45 → Lv10: 1,128 / Lv20: 3,392 / Lv30: 5,765 / Lv50: 11,440
+    //  (v2.3 곡선 50×lv^1.62 대비 전 구간 45% 이상 완화 + 몬스터 경험치 +35%와 합산 체감 ~2.5배)
+    return Math.round(40 * Math.pow(this.lv, 1.45));
   }
 
   /* ---------------- 전직 (v1.8 다차원 트리 — 메이플 모험가 구조 참고) ---------------- */

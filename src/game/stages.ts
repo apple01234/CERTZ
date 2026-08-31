@@ -433,27 +433,28 @@ export function stageScale(key: StageKey): { hp: number; atk: number; exp: numbe
 /** 구역 5 정예 이름 */
 const ELITE_TITLE = ["정예", "광포한", "심연에 물든", "각성한", "포화의", "얼어붙은", "먹이는", "폭주하는", "절규하는", "종언의"];
 
-/** v2.9 (지시 #1) — 구역 → 몬스터 조합. 2구역마다 주력몬 교체로 단조로움 해소 */
+/** v2.9 (지시 #1) — 구역 → 몬스터 조합. 2구역마다 주력몬 교체로 단조로움 해소
+ *  v3.0 (사용자 지시 #6) — 구역당 동시 몬스터 상한 20마리 (최적화):
+ *  기존 grp()가 그룹별 20 캡이라 9~10구역 합계 26마리까지 늘었음 → 총량제로 재편 */
 function subEnemyMix(spec: ChapterSpec, sub: number): { key: EnemyKey; count: number }[] {
   const pool = spec.enemies.map((g) => g.key);
   const a = pool[0];
   const b = pool[1] ?? pool[0];
   const c = pool[2] ?? b;
-  const grp = (n: number) => Math.max(3, Math.min(20, Math.round(n * 1.6) + Math.floor(sub / 2)));
-  const base = 9; // 구역당 총 스폰량 기준
-  if (sub <= 2) return [{ key: a, count: grp(base) }];
-  if (sub <= 4) return [{ key: b, count: grp(base) }];
-  if (sub <= 6) return [{ key: c, count: grp(base) }];
+  const TOTAL = 20; // 구역당 동시 스폰 상한 (정예/보스 제외)
+  if (sub <= 2) return [{ key: a, count: TOTAL }];
+  if (sub <= 4) return [{ key: b, count: TOTAL }];
+  if (sub <= 6) return [{ key: c, count: TOTAL }];
   if (sub <= 8)
     return [
-      { key: a, count: grp(base * 0.55) },
-      { key: b, count: grp(base * 0.45) },
+      { key: a, count: 12 },
+      { key: b, count: 8 },
     ];
   return [
-    { key: a, count: grp(base * 0.4) },
-    { key: b, count: grp(base * 0.3) },
-    { key: c, count: grp(base * 0.3) },
-  ]; // 9구역 3종 / 10구역 보스 + 3종
+    { key: a, count: 9 },
+    { key: b, count: 6 },
+    { key: c, count: 5 },
+  ]; // 9구역 3종 20마리 / 10구역 보스 + 잡몹 20마리
 }
 
 function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[] {

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
+import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
 import { familyOf } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -17,6 +17,10 @@ import * as net from "../net";
 import { viewZoom } from "../PhaserGame";
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import * as audio from "../audio";
+import {
+  generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
+  type RoomLayout,
+} from "../mapgen";
 
 /**
  * v2.6 — 길 코어 색 (챕터 길 타일의 최빈색).
@@ -68,6 +72,12 @@ export class WorldScene extends Phaser.Scene {
   private plantCd = 0;
   private beacon: Phaser.GameObjects.Image | null = null;
   private portalBeacon: Phaser.GameObjects.Image | null = null;
+  /* v3.0 (사용자 지시 #7) — 아이작/개미굴식 구역 레이아웃 (필드 전용, 마을·실내는 null) */
+  private layout: RoomLayout | null = null;
+  /** 전진 차원문/보스가 놓이는 최원거리 셀 중심 (포탈 보루 폴백 위치로도 사용) */
+  private portalHome = new Phaser.Math.Vector2(0, 0);
+  /** 입구 셀 중심 — 플레이어 스폰/복귀 차원문 기준점 */
+  private entryHome = new Phaser.Math.Vector2(0, 0);
   private edgeArrow: Phaser.GameObjects.Image | null = null;
   private questMark: Phaser.GameObjects.Image | null = null;
 
@@ -262,6 +272,9 @@ export class WorldScene extends Phaser.Scene {
     this.pProjIdx = 0;
     this.visited = new Set();
     this.plantHazards = [];
+    this.layout = null;
+    this.portalHome = new Phaser.Math.Vector2(0, 0);
+    this.entryHome = new Phaser.Math.Vector2(0, 0);
     this.plantCd = 0;
     this.autoHunt = false;
     this.autoHuntMove.set(0, 0);
@@ -353,6 +366,22 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
     if (!this.isInterior) this.cameras.main.setBackgroundColor(theme.bg);
 
+    /* ---------- v3.0 (사용자 지시 #7) — 개미굴식 구역 레이아웃 (필드 전용) ----------
+     *  스테이지 키를 시드로 셀 그리드를 굴 형태로 개방하고 나머지는 벽으로 막는다.
+     *  마을/실내는 개방형 유지. 포탈·스폰·파편·보스 모두 레이아웃을 따른다. */
+    if (!this.isInterior && !this.stageDef.isVillage) {
+      const lay = generateRoomLayout(stageKey, this.stageW, this.stageH);
+      this.layout = lay;
+      const entryC = cellCenterOf(lay, lay.entry);
+      const exitC = cellCenterOf(lay, lay.exit);
+      this.entryHome.set(entryC.x + 70, entryC.y);
+      this.portalHome.set(exitC.x, exitC.y);
+      this.buildDungeonWalls(lay, parseStage(stageKey).ch);
+    } else {
+      this.portalHome.set(this.stageW - 130, this.stageH * 0.52);
+      this.entryHome.set(180, this.stageH / 2);
+    }
+
     // 반응형: 화면 밀도 유지용 카메라 줌 (RESIZE 캔버스 1:1 + 카메라 확대)
     this.applyCameraZoom();
     this.scale.on("resize", this.applyCameraZoom, this);
@@ -367,11 +396,15 @@ export class WorldScene extends Phaser.Scene {
     const savedPlayer = save;
     this.player = new Player(
       this,
-      this.entryPos?.x ?? (this.isInterior ? this.stageW / 2 : 180),
-      this.entryPos?.y ?? (this.isInterior ? this.stageH - 70 : this.stageH / 2)
+      this.entryPos?.x ?? (this.isInterior ? this.stageW / 2 : this.entryHome.x),
+      this.entryPos?.y ?? (this.isInterior ? this.stageH - 70 : this.entryHome.y)
     );
     if (savedPlayer) {
       this.player.lv = savedPlayer.lv;
+      /* v3.0 (사용자 지시 #1) — 경험치 복원 누락 수정:
+       *  buildSave는 exp를 저장하면서 복원 경로엔 없어 포탈 이동(씬 재시작)마다
+       *  경험치가 0으로 초기화되는 버그. lv 복원 직후 함께 복원한다. */
+      this.player.exp = savedPlayer.exp ?? 0;
       this.player.atk = savedPlayer.atk;
       this.player.maxHp = savedPlayer.maxHp;
       this.player.hp = this.player.maxHp;
@@ -448,30 +481,29 @@ export class WorldScene extends Phaser.Scene {
     this.syncCosmeticAura();
     this.syncUpgradeGlow();
 
-    /* ---------- 적 배치 (v2.0 — 챕터/구역 난이도 배율 적용) ---------- */
+    /* ---------- 적 배치 (v2.0 — 챕터/구역 난이도 배율 적용 / v3.0 — 개방 셀 스폰) ---------- */
     const sc = stageScale(stageKey);
     const rng = new Phaser.Math.RandomDataGenerator([stageKey]);
     for (const group of this.stageDef.enemies) {
       for (let i = 0; i < group.count; i++) {
-        let ex = 0;
-        let ey = 0;
-        let tries = 0;
-        do {
-          ex = stageKey === "forest1" ? rng.between(this.stageW * 0.42, this.stageW - 140) : rng.between(240, this.stageW - 160);
-          ey = rng.between(120, this.stageH - 120);
-          tries++;
-        } while (Phaser.Math.Distance.Between(ex, ey, this.player.x, this.player.y) < 380 && tries < 30);
-        const e = new Enemy(this, ex, ey, group.key, { hp: sc.hp, atk: sc.atk, exp: sc.exp, gold: sc.gold });
+        /* v3.0 (#7) — 굴 레이아웃의 개방 셀 안에만 스폰 (입구 셀 회피 + 플레이어 380px 거리) */
+        const p = this.openPointRng(rng, { minDist: 380, avoidEntry: true });
+        const e = new Enemy(this, p.x, p.y, group.key, {
+          /* v3.0 (#8) — 몬스터 경험치 +35% (레벨업 속도 개선, 곡선 완화와 합산) */
+          hp: sc.hp, atk: sc.atk, exp: sc.exp * 1.35, gold: sc.gold,
+        });
         this.enemies.push(e);
-        this.spawnRecords.push({ key: group.key, x: ex, y: ey });
+        this.spawnRecords.push({ key: group.key, x: p.x, y: p.y });
         this.physics.add.collider(e, this.solidGroup);
       }
     }
     /* ---------- 정예 몬스터 (구역 5 — 미드보스급 단일 스폰, 지시 #5) ---------- */
     if (this.stageDef.elite) {
       const el = this.stageDef.elite;
-      const ex = this.stageW * 0.62;
-      const ey = this.stageH * 0.34;
+      /* v3.0 (#7) — 정예도 개방 셀에 배치 (플레이어와 충분히 떨어진 방) */
+      const ep = this.openPointRng(rng, { minDist: 520, avoidEntry: true });
+      const ex = ep.x;
+      const ey = ep.y;
       const e = new Enemy(this, ex, ey, el.key, {
         hp: el.hpMult * sc.hp,
         atk: el.atkMult * sc.atk,
@@ -500,7 +532,7 @@ export class WorldScene extends Phaser.Scene {
       this.spawnPortal(this.stageW - 110, this.stageH * 0.52);
       this.activatePortal(true);
     } else {
-      if (!this.stageDef.boss) this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+      if (!this.stageDef.boss) this.spawnPortal(this.portalHome.x, this.portalHome.y);
       // 수확(collect) 퀘스트 진행 중 — 파편 스폰 (이어하기 무결: ATK 중복 수령 방지)
       if (this.currentQuest()?.type === "collect") this.spawnFragmentForQuest();
     }
@@ -517,7 +549,7 @@ export class WorldScene extends Phaser.Scene {
         });
       } else if (bossQuestIdx >= 0 && this.questIdx > bossQuestIdx && NEXT_STAGE[stageKey]) {
         // 보스 격파 후 세이브 — 차원문 개방 상태 복구 (구 v1.0 클리어 세이브도 이 경로로 계속)
-        this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+        this.spawnPortal(this.portalHome.x, this.portalHome.y);
         this.activatePortal(true);
       }
     } else if (stageKey !== "village" && this.currentQuest()?.type === "reach") {
@@ -556,13 +588,13 @@ export class WorldScene extends Phaser.Scene {
           else if (this.time.now - this.portalHoldSince > 6000) {
             this.portalHoldSince = 0;
             this.pendingPortal = false;
-            if (!this.portal) this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+            if (!this.portal) this.spawnPortal(this.portalHome.x, this.portalHome.y);
             this.activatePortal();
           }
           return;
         }
         this.portalHoldSince = 0;
-        if (!this.portal) this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+        if (!this.portal) this.spawnPortal(this.portalHome.x, this.portalHome.y);
         this.activatePortal();
       },
     });
@@ -696,6 +728,79 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /* ================= v3.0 — 개미굴 던전 레이아웃 (사용자 지시 #7) ================= */
+
+  /** 닫힌 셀을 챕터 분위기에 맞는 암벽 타일로 채워 벽(충돌)을 만든다 */
+  private buildDungeonWalls(lay: RoomLayout, ch: string) {
+    const WALLS: Record<string, { tex: string; tint: number }> = {
+      forest: { tex: "tile_stone", tint: 0x9ab07a },
+      kingdom: { tex: "tile_stone", tint: 0xa89878 },
+      alfheim: { tex: "tile_dark", tint: 0x9a8ac8 },
+      muspelheim: { tex: "tile_magma", tint: 0xa86038 },
+      niflheim: { tex: "tile_ice", tint: 0x9ab8d8 },
+      cave: { tex: "tile_cave", tint: 0x9a7a58 },
+      nidavellir: { tex: "tile_stone", tint: 0xb8a068 },
+      hel: { tex: "tile_hel", tint: 0x9a6aaa },
+      abyss: { tex: "tile_abyss", tint: 0x7a6a9a },
+    };
+    const wall = WALLS[ch] ?? { tex: "tile_stone", tint: 0xffffff };
+    const rng = new Phaser.Math.RandomDataGenerator([this.stageDef.key + "-walls"]);
+    for (let r = 0; r < lay.rows; r++) {
+      for (let c = 0; c < lay.cols; c++) {
+        const i = r * lay.cols + c;
+        if (lay.open[i]) continue;
+        const x = c * lay.cellW;
+        const y = r * lay.cellH;
+        // 셀마다 살짝 다른 명도 — 암벽 덩어리가 단조로운 격자로 보이지 않게
+        const v = 0.9 + rng.frac() * 0.14;
+        const tint = Phaser.Display.Color.IntegerToColor(wall.tint);
+        const scaled = Phaser.Display.Color.GetColor(tint.red * v, tint.green * v, tint.blue * v);
+        const ts = this.add
+          .tileSprite(x, y, lay.cellW + 1, lay.cellH + 1, wall.tex)
+          .setOrigin(0)
+          .setDepth(2)
+          .setTint(scaled);
+        this.solidGroup.add(ts);
+      }
+    }
+  }
+
+  /** 레이아웃 내 무작위 개방 지점 — 적/오브젝트 스폰 공용 (결정적 rng 주입) */
+  private openPointRng(
+    rng: Phaser.Math.RandomDataGenerator,
+    opts?: { minDist?: number; avoidEntry?: boolean }
+  ): { x: number; y: number } {
+    const lay = this.layout;
+    if (!lay) return { x: rng.between(240, this.stageW - 160), y: rng.between(120, this.stageH - 120) };
+    const idxs: number[] = [];
+    for (let i = 0; i < lay.open.length; i++) {
+      if (!lay.open[i]) continue;
+      if (opts?.avoidEntry && i === lay.entry && lay.open.filter(Boolean).length > 2) continue;
+      idxs.push(i);
+    }
+    if (idxs.length === 0) idxs.push(lay.entry);
+    const minDist = opts?.minDist ?? 0;
+    for (let tries = 0; tries < 24; tries++) {
+      const cell = idxs[rng.between(0, idxs.length - 1)];
+      const c = cellCenterOf(lay, cell);
+      const x = c.x + rng.realInRange(-lay.cellW * 0.26, lay.cellW * 0.26);
+      const y = c.y + rng.realInRange(-lay.cellH * 0.26, lay.cellH * 0.26);
+      if (minDist > 0 && this.player && Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < minDist) continue;
+      return { x, y };
+    }
+    return cellCenterOf(lay, idxs[rng.between(0, idxs.length - 1)]);
+  }
+
+  /** 실행 시점 무작위 개방 지점 (파편 등 — 재결정성 불필요) */
+  private openPointAny(opts?: { minDist?: number }): { x: number; y: number } {
+    return this.openPointRng(new Phaser.Math.RandomDataGenerator([`${Date.now()}-${Phaser.Math.Between(0, 1e9)}`]), opts);
+  }
+
+  /** 지점이 개방 영역인지 — 장식 배치 판정용 */
+  private inOpenArea(x: number, y: number): boolean {
+    return !this.layout || isOpenXY(this.layout, x, y);
+  }
+
   private placeDecor(stageKey: StageKey) {
     const def = this.stageDef;
     const ch = parseStage(stageKey).ch;
@@ -719,11 +824,12 @@ export class WorldScene extends Phaser.Scene {
     const blocked = (x: number, y: number) => reserved.some(([rx, ry]) => Phaser.Math.Distance.Between(x, y, rx, ry) < 170);
 
     // 나무 & 소나무 & 바위 (충돌 있음) — 실제 에셋, 챕터 테마 변형 (v2.0: 구역 키 대응)
+    // v3.0 (사용자 지시 #7) — 스바르트알프헤임(동굴) 초록 소나무 제거: 시든 나무·암석으로 교체
     const treeSet: string[] =
       ch === "niflheim" ? ["pine_snow"]
       : ch === "abyss" || ch === "hel" ? ["pine_dark"]
-      : ch === "muspelheim" ? ["pine_dark", "tree"]
-      : ch === "cave" || ch === "nidavellir" ? ["pine"]
+      : ch === "muspelheim" ? ["pine_dark", "ud_deadtree1", "ud_deadtree2"]
+      : ch === "cave" || ch === "nidavellir" ? ["ud_deadtree1", "ud_deadtree2", "ud_deadtree3", "pine_dark"]
       : ["tree", "tree", "pine"];
     const rockTex = ch === "niflheim" ? "rock_snow" : ch === "abyss" || ch === "hel" ? "rock_dark" : ch === "muspelheim" || ch === "nidavellir" ? "rock_stone" : "rock";
 
@@ -746,6 +852,8 @@ export class WorldScene extends Phaser.Scene {
       const [x, y] = natPoint();
       if (Math.abs(y - this.stageH / 2) < 90) continue; // 길 위엔 안 심음
       if (blocked(x, y)) continue;
+      /* v3.0 — 개미굴 벽 셀에는 심지 않음 */
+      if (!this.inOpenArea(x, y)) continue;
       const tex = rng.pick(treeSet);
       const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
       this.solidGroup.add(t);
@@ -756,6 +864,7 @@ export class WorldScene extends Phaser.Scene {
       const [x, y] = natPoint();
       if (Math.abs(y - this.stageH / 2) < 90) continue;
       if (blocked(x, y)) continue;
+      if (!this.inOpenArea(x, y)) continue;
       const r = this.add.image(x, y, rockTex).setDepth(Math.floor(y / 10));
       this.solidGroup.add(r);
       (r.body as Phaser.Physics.Arcade.StaticBody).setSize(44, 20).setOffset(10, 40);
@@ -767,6 +876,7 @@ export class WorldScene extends Phaser.Scene {
       const x = rng.between(60, this.stageW - 60);
       const y = rng.between(60, this.stageH - 60);
       if (blocked(x, y)) continue;
+      if (!this.inOpenArea(x, y)) continue;
       this.add.image(x, y, rng.pick(flowers)).setDepth(1).setAlpha(0.95);
     }
 
@@ -892,6 +1002,7 @@ export class WorldScene extends Phaser.Scene {
         const py6 = rng6.between(70, this.stageH - 70);
         if (Math.abs(py6 - this.stageH / 2) < 85) continue;
         if (blocked(px6, py6)) continue;
+        if (!this.inOpenArea(px6, py6)) continue;
         const tex6 = rng6.pick(allProps);
         const p6 = this.add.image(px6, py6, tex6).setDepth(1);
         if (hazardPlants.includes(tex6)) {
@@ -1065,8 +1176,9 @@ export class WorldScene extends Phaser.Scene {
   private spawnReturnPortal() {
     const prev = PREV_STAGE[this.stageDef.key];
     if (!prev || !this.player) return;
-    const rx = 110;
-    const ry = this.stageH * 0.52;
+    /* v3.0 (#7) — 필드는 입구 셀 중심에 복귀 차원문 (마을은 기존 좌측 가장자리) */
+    const rx = this.layout ? this.entryHome.x - 80 : 110;
+    const ry = this.layout ? this.entryHome.y : this.stageH * 0.52;
     this.returnPortal = this.physics.add.sprite(rx, ry, "portal0").setDepth(3).setTint(0x54c8ff).setScale(0.92);
     (this.returnPortal.body as Phaser.Physics.Arcade.Body).setSize(30, 40).setOffset(17, 12);
     this.returnPortal.play("portal-spin");
@@ -1141,6 +1253,10 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(Math.floor(cy / 10));
 
     // 건물 3채 (실제 Zelda-like 타일셋 건물, 충돌은 벽 하단만) — v2.0: 전부 기능 있음 (지시 #12)
+    // v3.0 (#4) — 챕터 마을은 챕터 분위기색 틴트 + 마을 간판
+    const chKey = parseStage(this.stageDef.key).ch;
+    const vSpec = chKey !== "village" ? CHAPTER_VILLAGE_NPC[chKey] : undefined;
+    const chSpec = chapterSpec(this.stageDef.key);
     const houses: { x: number; y: number; tex: string; flip?: boolean }[] = [
       { x: cx - 400, y: cy - 170, tex: "house_a" },
       { x: cx + 90, y: cy - 200, tex: "house_b" },
@@ -1148,12 +1264,17 @@ export class WorldScene extends Phaser.Scene {
     ];
     for (const h of houses) {
       const img = this.add.image(h.x, h.y, h.tex).setDepth(Math.floor(h.y / 10));
+      if (vSpec) img.setTint(vSpec.houseTint);
       if (h.flip) img.setFlipX(true);
       this.solidGroup.add(img);
       const bw = h.tex === "house_a" ? 110 : 100;
       (img.body as Phaser.Physics.Arcade.StaticBody)
         .setSize(bw, 56)
         .setOffset((img.width - bw) / 2, img.height - 66);
+    }
+    // v3.0 (#4) — 챕터 마을 간판 (마을 이름을 알려준다)
+    if (chSpec && vSpec) {
+      this.addBuildingSign(cx, cy - 320, `${chSpec.title} 마을`, vSpec.signColor);
     }
     // 건물 간판 + 기능 상호작용 — 여관(회복+저장), 내 집(무료 휴식), 전직관(카이엔 앞)
     this.addBuildingSign(cx - 400, cy - 236, "여관 — 20G 회복+저장", "#7de8ff");
@@ -1163,10 +1284,16 @@ export class WorldScene extends Phaser.Scene {
     this.interactables.push({ x: cx - 190, y: cy + 289, kind: "house", label: "내 집 — 들어가기" });
 
     // 마을 주민 2인 — E키 상호작용 (접근 자동 트리거 제거, 바운스 애니 + 이름표 유지)
-    const villagers: { x: number; y: number; tex: string; name: string; dlg: string }[] = [
-      { x: cx + 210, y: cy + 120, tex: "npc_villager1", name: "주민", dlg: "villager1" },
-      { x: cx - 90, y: cy - 90, tex: "npc_villager2", name: "마을 아이", dlg: "villager2" },
-    ];
+    // v3.0 (#4) — 챕터마다 이름/대사가 다른 주민 배치 (본마을은 기존 주민)
+    const villagers: { x: number; y: number; tex: string; name: string; dlg: string }[] = vSpec
+      ? [
+          { x: cx + 210, y: cy + 120, tex: vSpec.npcA.tex, name: vSpec.npcA.name, dlg: vSpec.npcA.dlg },
+          { x: cx - 90, y: cy - 90, tex: vSpec.npcB.tex, name: vSpec.npcB.name, dlg: vSpec.npcB.dlg },
+        ]
+      : [
+          { x: cx + 210, y: cy + 120, tex: "npc_villager1", name: "주민", dlg: "villager1" },
+          { x: cx - 90, y: cy - 90, tex: "npc_villager2", name: "마을 아이", dlg: "villager2" },
+        ];
     for (const v of villagers) {
       const img = this.add.image(v.x, v.y, v.tex).setDepth(Math.floor(v.y / 10)).setScale(1.6);
       this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
@@ -1390,8 +1517,9 @@ export class WorldScene extends Phaser.Scene {
 
   /** 상점 NPC — 스폰 근처 대기 (스테이지 공통) */
   private spawnMerchant() {
-    const mx = 340;
-    const my = this.stageH / 2 - 60;
+    /* v3.0 (#7) — 필드는 입구 셀 안에 상인 배치 (개미굴 벽에 묻히지 않게) */
+    const mx = this.layout ? this.entryHome.x - 120 : 340;
+    const my = this.layout ? this.entryHome.y - 40 : this.stageH / 2 - 60;
     const glow = this.add.image(mx, my + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.9).setAlpha(0.25);
     this.tweens.add({ targets: glow, alpha: 0.42, scale: 1.15, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.merchant = this.add.image(mx, my, "npc_merchant").setDepth(Math.floor(my / 10)).setScale(1.7);
@@ -1507,6 +1635,19 @@ export class WorldScene extends Phaser.Scene {
     mm.lineStyle(1.5 / z, 0xffd76a, 0.5).strokeRoundedRect(cx - gw / 2, cy - gh / 2, gw, gh, 8 / z);
     const mx = (wx: number) => cx - gw / 2 + (wx / this.stageW) * gw;
     const my = (wy: number) => cy - gh / 2 + (wy / this.stageH) * gh;
+    /* v3.0 (#7) — 개미굴 벽 셀을 어두운 블록으로 표시 */
+    if (this.layout) {
+      const lay = this.layout;
+      mm.fillStyle(0x2a3550, 0.9);
+      const cw = (lay.cellW / this.stageW) * gw;
+      const chh = (lay.cellH / this.stageH) * gh;
+      for (let r = 0; r < lay.rows; r++) {
+        for (let c = 0; c < lay.cols; c++) {
+          if (lay.open[r * lay.cols + c]) continue;
+          mm.fillRect(mx(c * lay.cellW), my(r * lay.cellH), cw + 0.5, chh + 0.5);
+        }
+      }
+    }
     // 적 (빨강) / 보스 (크게)
     mm.fillStyle(0xff5a5a, 0.95);
     for (const e of this.enemies) if (e.active && e.alive) mm.fillCircle(mx(e.x), my(e.y), 2.2 / z);
@@ -1709,6 +1850,11 @@ export class WorldScene extends Phaser.Scene {
     if (!this.scene.isActive() || this.player.state === "dead") {
       return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
     }
+    /* v3.0 (사용자 지시 #6) — 동시 몬스터 상한 20마리: 이미 가득하면 리스폰 보류 */
+    if (this.enemies.filter((e) => e.active && e.alive).length >= 20) {
+      this.time.delayedCall(2400, () => this.respawnEnemy(key, x, y, tries));
+      return;
+    }
     const nearPlayer = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 140;
     if (nearPlayer && tries < 24) {
       // v2.3 — 재시도 간격 2.5초 → 1.2초 (리젠 단축에 맞춰 스폰 지점 대기도 짧게)
@@ -1773,7 +1919,7 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
     if (q.type === "reach") {
-      if (!this.portal) this.spawnPortal(this.stageW - 130, this.stageH * 0.52);
+      if (!this.portal) this.spawnPortal(this.portalHome.x, this.portalHome.y);
       if (!this.portalActive) {
         // v2.3 (지시 #1) — 이미 본 체인 대사는 재생하지 않고 바로 개방
         if (q.dialogue && !this.seenSet.has(q.dialogue)) {
@@ -1842,8 +1988,9 @@ export class WorldScene extends Phaser.Scene {
       gold: Math.round(base.gold * sc.gold),
     };
     this.bossDef = def;
-    const bx = this.stageW * 0.6;
-    const by = this.stageH * 0.35;
+    /* v3.0 (#7) — 보스는 최원거리 셀(포탈 방)에 배치 — 격파 후 포탈이 바로 그 자리에 열림 */
+    const bx = this.portalHome.x;
+    const by = this.portalHome.y - 10;
     audio.sfx.roar();
     this.cameras.main.shake(260, 0.008);
     this.showBanner(`${def.name} 출현!`);
@@ -2418,7 +2565,17 @@ export class WorldScene extends Phaser.Scene {
     const atkRange = ranged ? 250 : 56;
     if (bestD > atkRange) {
       // 접근 — 방향 주입 (player.update의 이동/facing 로직 재사용)
-      const dir = new Phaser.Math.Vector2(best.x - this.player.x, best.y - this.player.y).normalize();
+      /* v3.0 (#7) — 개미굴 레이아웃: 다른 셀이면 BFS 경로의 다음 셀 중심으로 우회 */
+      let dir: Phaser.Math.Vector2;
+      const pc = this.layout ? cellIndexOf(this.layout, this.player.x, this.player.y) : -1;
+      const tc = this.layout ? cellIndexOf(this.layout, best.x, best.y) : -1;
+      const step = this.layout ? nextStepToward(this.layout, pc, tc) : null;
+      if (this.layout && step !== null && step !== pc) {
+        const c = cellCenterOf(this.layout, step);
+        dir = new Phaser.Math.Vector2(c.x - this.player.x, c.y - this.player.y).normalize();
+      } else {
+        dir = new Phaser.Math.Vector2(best.x - this.player.x, best.y - this.player.y).normalize();
+      }
       this.autoHuntMove.copy(dir);
     } else {
       // 사거리 내 — 공격 + 스킬 로테이션
@@ -2620,7 +2777,15 @@ export class WorldScene extends Phaser.Scene {
         let pierce = p.getData("pierce") as number;
         if (pierce <= 0) break;
         if (!e.active) continue;
-        if (Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y) <= 28) {
+        /* v3.0 (사용자 지시 #2) — 히트박스 확대: 투사체 크기 + 대상 몸통 반영
+         *  (기존 평면 28px는 마법사 볼트가 코앞을 스쳐도 빗나가는 체감 유발) */
+        const projR = 14 * (p.scaleX || 1);
+        const bodyR = Math.max(
+          ((e as unknown as { hitW?: number }).hitW ?? 24),
+          ((e as unknown as { hitH?: number }).hitH ?? 24)
+        ) * 0.5;
+        const hitR = projR + bodyR + 8;
+        if (Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y) <= hitR) {
           pierce--;
           p.setData("pierce", pierce);
           e.takeDamage(
@@ -3137,9 +3302,9 @@ export class WorldScene extends Phaser.Scene {
 
   /** 수확(collect) 퀘스트용 파편 스폰 — 맵 우측 원영역 무작위 */
   private spawnFragmentForQuest() {
-    const fx = Math.round(this.stageW * Phaser.Math.FloatBetween(0.55, 0.85));
-    const fy = Math.round(this.stageH * Phaser.Math.FloatBetween(0.18, 0.42));
-    this.spawnFragment(fx, fy);
+    /* v3.0 (#7) — 개방 셀 안, 플레이어와 충분히 먼 지점에 파편 배치 */
+    const p = this.openPointAny({ minDist: Math.max(420, this.stageW * 0.28) });
+    this.spawnFragment(p.x, p.y);
   }
 
   getAllTargets(): (Enemy | Boss)[] {
@@ -3414,6 +3579,28 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("quest", {
           title: "반복 의뢰 수주 가능",
           desc: "마을 상인 라고스에게 말을 걸어 [반복] 토벌 의뢰를 수주하자",
+          current: 1,
+          target: 1,
+          distance: null,
+        } satisfies QuestState);
+        return;
+      }
+      /* v3.0 (사용자 지시 #5) — 마을/실내는 "지역 클리어!" 오표기 버그 수정:
+       *  퀘스트 없는 안전 구역에 전투 구역 완료 배너가 뜨지 않게 전용 문구 사용 */
+      if (this.isInterior) {
+        EventBus.emit("quest", {
+          title: "실내 — 잠시 쉬어 가자",
+          desc: "",
+          current: 1,
+          target: 1,
+          distance: null,
+        } satisfies QuestState);
+        return;
+      }
+      if (this.stageDef.isVillage) {
+        EventBus.emit("quest", {
+          title: "마을 — 안전 지대",
+          desc: "우물·여관·상점·전직관을 이용하자",
           current: 1,
           target: 1,
           distance: null,
