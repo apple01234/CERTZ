@@ -17,6 +17,16 @@ const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: numbe
   firespirit: { bw: 22, bh: 24, hw: 36, hh: 36, burst: 0xffc06a },
   runegolem: { bw: 22, bh: 24, hw: 36, hh: 36, burst: 0xffe08a },
   helhound: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0xe86a8a },
+  // v3.0.2 — 신규 종 9종 (50 Monsters Pack, CC0)
+  x2_frog: { bw: 22, bh: 18, hw: 34, hh: 30, burst: 0x6ab0c8 },
+  x2_rat: { bw: 24, bh: 16, hw: 38, hh: 24, burst: 0xa8a0b8 },
+  x2_bat: { bw: 24, bh: 16, hw: 36, hh: 24, burst: 0x9a6ad8 },
+  x2_firebird: { bw: 24, bh: 20, hw: 36, hh: 30, burst: 0xffa05a },
+  x2_frostfly: { bw: 20, bh: 16, hw: 32, hh: 24, burst: 0xa8e0fa },
+  x2_snail: { bw: 24, bh: 18, hw: 36, hh: 26, burst: 0xc8b08a },
+  x2_stonegolem: { bw: 24, bh: 24, hw: 38, hh: 38, burst: 0xb0a890 },
+  x2_darkhound: { bw: 34, bh: 20, hw: 54, hh: 30, burst: 0x8a5aaa },
+  x2_reeffish: { bw: 24, bh: 18, hw: 36, hh: 28, burst: 0x5ab0d8 },
 };
 
 /**

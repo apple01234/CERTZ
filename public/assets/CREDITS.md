@@ -67,3 +67,24 @@
 - Used for: 효과음 12종 — 검 휘두르기(blade), 명중(metal), 피격(hurt),
   파편 줍기(item_gem), 퀘스트 완료(item_gem), 레벨업/차원문(spell),
   보스 포효(roar), 몬스터 사망(creature_die), 보스 사망(monster)
+
+### 50+ Monsters Pack 2D — isaiah658
+- License: CC0 1.0 (Public Domain)
+- Source: https://opengameart.org/content/50-monsters-pack-2d
+- Used for: v3.0.2 신규 몬스터 9종 (독개구리/궁전 뒷쥐/황혼 박쥐/잿불 새/서리 날도요/
+  동굴 달팽이/장벽 돌골렘/그늘 이리/심연 암초물고기) — idle/run/atk 프레임 가공
+
+### Pixelart Spells — Anokolisa
+- License: CC0 1.0
+- Source: https://opengameart.org/content/pixel-art-spells
+- Used for: 마법사 투사체(마법 구슬/아케인 볼트/다크 볼트) 6프레임 + 시전 이펙트(마나 불꽃)
+
+### 4-Color Dungeon Bricks 16x16 — LOSCH
+- License: CC0 1.0
+- Source: https://opengameart.org/content/4-color-dungeon-bricks-16x16
+- Used for: 개미굴 던전 벽 벽돌 타일 (벽/길 구분 개선)
+
+### Bow 20x20 — CoolNav.js
+- License: CC0 1.0
+- Source: https://opengameart.org/content/20x20-bow-sprites
+- Used for: 궁수 활 발사 비주얼 (회전 프레임 중 1프레임 + 코드 회전)

@@ -257,7 +257,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[86vh] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-sky-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-sky-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -597,7 +597,7 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[86vh] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-violet-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-violet-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -736,7 +736,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
       role="presentation"
     >
       <div
-        className="pointer-events-auto max-h-[86vh] w-[min(92vw,470px)] overflow-y-auto rounded-xl border border-amber-300/30 bg-slate-950/95 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
+        className="pointer-events-auto max-h-[min(86svh,560px)] w-[min(92vw,470px)] overflow-y-auto rounded-xl border border-amber-300/30 bg-slate-950/95 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="전직"
@@ -861,7 +861,7 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[86vh] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-lime-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-lime-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -957,7 +957,7 @@ function QuestLogPanel({ questLog, onClose }: { questLog: QuestLogState; onClose
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[86vh] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-amber-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-amber-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -1059,7 +1059,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[86vh] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-sky-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-sky-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">

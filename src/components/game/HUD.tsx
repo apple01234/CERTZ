@@ -1,3 +1,4 @@
+import React from "react";
 "use client";
 
 import type { HudState, QuestState } from "./EventBus";
@@ -98,6 +99,14 @@ export function HUD({
   onOpenOpt: () => void;
 }) {
   const expPct = Math.min(100, (hud.exp / Math.max(1, hud.expNext)) * 100);
+  /* v3.0.2 (지시 #4/#5) — 퀘스트 트래커 축소/펼침 토글 (모바일에서 너무 큰 문제) */
+  const [trackerOpen, setTrackerOpen] = React.useState(() => localStorage.getItem("sertz.trackerOpen") !== "0");
+  const toggleTracker = () => {
+    setTrackerOpen((v) => {
+      localStorage.setItem("sertz.trackerOpen", v ? "0" : "1");
+      return !v;
+    });
+  };
   return (
     <>
       {/* 좌상단: 상태 */}
@@ -235,26 +244,42 @@ export function HUD({
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">O</span>
           </button>
         </div>
-        <div className="pointer-events-none w-full rounded-lg border border-amber-200/40 bg-black/55 px-2.5 py-1.5 backdrop-blur-sm sm:px-3 sm:py-2">
+        <div className="pointer-events-auto w-full rounded-lg border border-amber-200/40 bg-black/55 px-2.5 py-1.5 backdrop-blur-sm sm:px-3 sm:py-2">
           <div className="flex items-center gap-1.5">
             <ScrollText size={13} className="shrink-0 text-amber-300" />
-            <span className="truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
+            <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
+            <button
+              onClick={toggleTracker}
+              aria-label={trackerOpen ? "퀘스트 트래커 접기" : "퀘스트 트래커 펼치기"}
+              className="shrink-0 rounded border border-white/20 bg-black/40 px-1 text-[9px] font-black leading-4 text-white/70 hover:bg-black/70"
+            >
+              {trackerOpen ? "▲" : "▼"}
+            </button>
           </div>
-          {quest.desc && (
-            <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/70 sm:text-[11px]">{quest.desc}</p>
+          {trackerOpen && (
+            <>
+              {quest.desc && (
+                <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/70 sm:text-[11px]">{quest.desc}</p>
+              )}
+              <div className="mt-1 flex items-center justify-between gap-2">
+                {quest.target > 1 && (
+                  <span className="text-[10px] font-bold text-emerald-300 sm:text-[11px]">
+                    {quest.current} / {quest.target}
+                  </span>
+                )}
+                {quest.distance !== null && (
+                  <span className="ml-auto rounded bg-emerald-900/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200 sm:text-[11px]">
+                    목표까지 {quest.distance}m
+                  </span>
+                )}
+              </div>
+              {quest.jobStory && (
+                <p className="mt-1 truncate rounded bg-violet-500/15 px-1.5 py-0.5 text-[9px] font-bold text-violet-200 sm:text-[10px]">
+                  ✦ 전직 스토리 {quest.jobStory.step}/{quest.jobStory.total} — {quest.jobStory.stepTitle}
+                </p>
+              )}
+            </>
           )}
-          <div className="mt-1 flex items-center justify-between gap-2">
-            {quest.target > 1 && (
-              <span className="text-[10px] font-bold text-emerald-300 sm:text-[11px]">
-                {quest.current} / {quest.target}
-              </span>
-            )}
-            {quest.distance !== null && (
-              <span className="ml-auto rounded bg-emerald-900/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200 sm:text-[11px]">
-                목표까지 {quest.distance}m
-              </span>
-            )}
-          </div>
         </div>
       </div>
     </>

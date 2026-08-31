@@ -25,6 +25,22 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "hero-atk", ...fr("hero_atk", 4, 16, 0) }); // 측면(오른쪽)
   a.create({ key: "hero-atk-down", ...fr("hero_atkdown", 4, 16, 0) });
   a.create({ key: "hero-atk-up", ...fr("hero_atkup", 4, 16, 0) });
+  /* v3.0.2 — 신규 외부 몬스터 9종 (50 Monsters Pack, CC0) */
+  for (const k of [
+    "x2_frog", "x2_rat", "x2_bat", "x2_firebird", "x2_frostfly",
+    "x2_snail", "x2_stonegolem", "x2_darkhound", "x2_reeffish",
+  ]) {
+    a.create({ key: `${k}-idle`, ...fr(`${k}_idle`, 2, 2, -1) });
+    a.create({ key: `${k}-run`, ...fr(`${k}_run`, 4, 10, -1) });
+    a.create({ key: `${k}-atk`, ...fr(`${k}_atk`, 1, 1, 0) });
+  }
+  /* v3.0.2 — 마법 투사체/시전 이펙트 (Pixelart Spells, CC0) */
+  a.create({ key: "fx-arcane", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_arcane", frame: i })), frameRate: 14, repeat: -1 });
+  a.create({ key: "fx-magicorb", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_magicorb", frame: i })), frameRate: 12, repeat: -1 });
+  a.create({ key: "fx-fireball", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_fireball", frame: i })), frameRate: 14, repeat: -1 });
+  a.create({ key: "fx-icelance", frames: Array.from({ length: 4 }, (_, i) => ({ key: "x2_sp_icelance", frame: i })), frameRate: 12, repeat: -1 });
+  a.create({ key: "fx-darkbolt", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_darkbolt", frame: i })), frameRate: 14, repeat: -1 });
+  a.create({ key: "fx-sparks", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_sparks", frame: i })), frameRate: 18, repeat: 0 });
   // 몬스터
   a.create({ key: "wolf-idle", ...fr("wolf_idle", 2, 2, -1) });
   a.create({ key: "wolf-run", ...fr("wolf_run", 4, 10, -1) });

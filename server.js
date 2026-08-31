@@ -104,6 +104,7 @@ app.prepare().then(() => {
     sock.emit("chat", chatLog);
 
     sock.on("join", (p = {}) => {
+      const known = players.has(sock.id);
       players.set(sock.id, {
         name: String(p.name || "이름없음").slice(0, 8),
         lv: Math.max(1, Number(p.lv) || 1),
@@ -117,7 +118,9 @@ app.prepare().then(() => {
         t: Date.now(),
       });
       broadcastPlayers(true);
-      sysChat(`${players.get(sock.id).name} 님이 접속했습니다`);
+      // v3.0.2 — 접속 공지는 소켓당 최초 1회만 (맵 이동마다 join으로 구역 AOI를 갱신하므로
+      // 매번 "접속했습니다"가 도배되던 버그 수정)
+      if (!known) sysChat(`${players.get(sock.id).name} 님이 접속했습니다`);
     });
 
     sock.on("state", (s = {}) => {

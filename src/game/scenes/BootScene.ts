@@ -19,6 +19,21 @@ import { buildAllAnims } from "../textures";
  *  절차 텍스처 생성은 없음 — 전부 실제 에셋.
  */
 
+/** v3.0.2 — 신규 외부 에셋 정의 (CC0) */
+const X2_MONSTERS = [
+  "x2_frog", "x2_rat", "x2_bat", "x2_firebird", "x2_frostfly",
+  "x2_snail", "x2_stonegolem", "x2_darkhound", "x2_reeffish",
+] as const;
+/** [키, 시트폭, 프레임폭] — 프레임폭은 시트 높이와 동일 (가로 나열) */
+const X2_SPELLS: [string, number, number][] = [
+  ["x2_sp_arcane", 96, 16],
+  ["x2_sp_magicorb", 96, 16],
+  ["x2_sp_fireball", 96, 16],
+  ["x2_sp_icelance", 64, 16],
+  ["x2_sp_darkbolt", 96, 16],
+  ["x2_sp_sparks", 96, 16],
+];
+
 const ASSET_LIST = [
   // 타일
   "tile_grass",
@@ -160,6 +175,18 @@ export class BootScene extends Phaser.Scene {
   preload() {
     this.load.setPath("assets");
     for (const key of ASSET_LIST) this.load.image(key, `${key}.png`);
+    /* v3.0.2 — 외부 신규 에셋 (전부 CC0, CREDITS.md 참조)
+     *  50 Monsters Pack (isaiah658): 신규 몬스터 9종 × idle2/run4/atk1 프레임
+     *  Pixelart Spells (Anokolisa?): 마법 투사체 6프레임 시트
+     *  4-Color Dungeon Bricks (LOSCH): 던전 벽 벽돌 타일
+     *  Bow 20x20 (CoolNav.js): 궁수 활 */
+    for (const k of X2_MONSTERS) {
+      for (const f of ["idle0", "idle1", "run0", "run1", "run2", "run3", "atk0"]) {
+        this.load.image(`${k}_${f}`, `${k}_${f}.png`);
+      }
+    }
+    for (const [k, w, h] of X2_SPELLS) this.load.spritesheet(k, `${k}.png`, { frameWidth: h, frameHeight: h });
+    for (const k of ["x2_arrow", "x2_bricks", "x2_bow"]) this.load.image(k, `${k}.png`);
     // 마을 모닥불 (Serene Village 32x32 4프레임 — v1.5 이관)
     this.load.spritesheet("sv_campfire", "sv_campfire.png", { frameWidth: 32, frameHeight: 32 });
     // 지형 전환 타일 5세트 x 9종 (build_tile_transitions.py — 타일맵 경계 부자연 개선)

@@ -83,6 +83,8 @@ export type QuestState = {
   target: number;
   /** 목표물까지의 거리 (m 단위 환산용 px 값) */
   distance: number | null;
+  /** v3.0.2 — 진행 중인 전직 스토리 (트래커 병기) */
+  jobStory?: { title: string; step: number; total: number; stepTitle: string };
 };
 
 /** 퀘스트 로그 (J — 스테이지별 메인 체인 진행 상황) */

@@ -87,7 +87,7 @@ export type SaveData = {
   pets?: string[];
   pet?: string | null;
   /* ↓ 전직 스토리 진행 (v2.0 — 구 세이브 호환 기본값) */
-  jobStory?: { tier: 2 | 3; step: number; hunt: number } | null;
+  jobStory?: { tier: 1 | 2 | 3; step: number; hunt: number } | null;
   jobStoryDone?: number[];
   cosmetics?: string[];
   cosmetic?: string | null;

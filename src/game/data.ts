@@ -755,7 +755,7 @@ export type JobStoryStep = {
 
 export type JobStoryDef = {
   family: FamilyKey;
-  tier: 2 | 3;
+  tier: 1 | 2 | 3;
   title: string;
   startDialogue: string;
   doneDialogue: string;
@@ -770,74 +770,134 @@ const JOB_SPKR: Record<FamilyKey, string> = {
   thief: "도적 계열의 시조 '그림자의 로크'",
 };
 
-function jobStory(family: FamilyKey, tier: 2 | 3): JobStoryDef {
+/* v3.0.2 (지시 #12 — "전직 스토리 퀘스트 어디감, 1차 10분 2차 20분 3차 30분 이런식으로"):
+ *  전 계열 × 전 티어(1~3차) 스토리 체인 — 단계 수가 티어마다 늘어난다 (t1 3단계/약10분, t2 4단계/약20분, t3 5단계/약30분) */
+function jobStory(family: FamilyKey, tier: 1 | 2 | 3): JobStoryDef {
   const nameOf: Record<FamilyKey, string> = { warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적" };
-  const stepBase = tier === 2 ? 10 : 22;
-  const title =
-    family === "warrior"
-      ? tier === 2 ? "강철의 각오" : "전장의 정점"
-      : family === "ranger"
-        ? tier === 2 ? "바람의 재능" : "천공의 사수"
-        : family === "thief"
-          ? tier === 2 ? "그림자의 맹세" : "검의 그림자"
-          : tier === 2 ? "마나의 문" : "심연의 지혜";
+  const stepBase = tier === 1 ? 8 : tier === 2 ? 10 : 14;
+  const huntMid = tier === 1 ? 0 : tier === 2 ? 15 : 20;
+  const titles: Record<FamilyKey, Record<1 | 2 | 3, string>> = {
+    warrior: { 1: "강철의 싹", 2: "강철의 각오", 3: "전장의 정점" },
+    ranger: { 1: "바람의 씨앗", 2: "바람의 재능", 3: "천공의 사수" },
+    thief: { 1: "그림자의 태동", 2: "그림자의 맹세", 3: "검의 그림자" },
+    mage: { 1: "마나의 눈뜸", 2: "마나의 문", 3: "심연의 지혜" },
+  };
+  const title = titles[family][tier];
+  const steps: JobStoryDef["steps"] = [
+    {
+      id: "s1",
+      type: "hunt",
+      title: tier === 1 ? "[전직 스토리] 첫 수련" : tier === 2 ? "[전직 스토리] 무장 훈련" : "[전직 스토리] 정예 사냥",
+      desc: `지금 머무는 해역의 몬스터 ${stepBase}마리를 처치하고 실전 감각을 되찾자.`,
+      need: stepBase,
+      targetLabel: "지금 해역의 몬스터",
+      dialogue: `js${family}${tier}Step1`,
+      reward: 120 + tier * 40,
+      expReward: 200 + tier * 120,
+    },
+    {
+      id: "s2",
+      type: "collect",
+      title: tier === 1 ? "[전직 스토리] 가호의 인연" : tier === 2 ? "[전직 스토리] 가호의 증표" : "[전직 스토리] 유산의 조각",
+      desc: "보석의 흔적 1개를 회수해 계열의 시조에게 바치자. (해역 어디든 빛나는 흔적)",
+      targetLabel: "보석의 흔적",
+      dialogue: `js${family}${tier}Step2`,
+      reward: 150 + tier * 50,
+      expReward: 240 + tier * 140,
+    },
+  ];
+  if (tier >= 2) {
+    steps.push({
+      id: "s3",
+      type: "hunt",
+      title: "[전직 스토리] 전장 적응",
+      desc: `더 강해진 몸을 확인하자 — 몬스터 ${huntMid}마리를 처치하자.`,
+      need: huntMid,
+      targetLabel: "지금 해역의 몬스터",
+      dialogue: `js${family}${tier}Step1`,
+      reward: 200 + tier * 60,
+      expReward: 320 + tier * 180,
+    });
+  }
+  if (tier >= 3) {
+    steps.push({
+      id: "s4",
+      type: "collect",
+      title: "[전직 스토리] 심심의 유물",
+      desc: "보석의 흔적 2개를 모아 시조의 가호를 완성하자.",
+      targetLabel: "보석의 흔적",
+      dialogue: `js${family}${tier}Step2`,
+      reward: 320,
+      expReward: 900,
+    });
+  }
+  steps.push({
+    id: `s${steps.length + 1}`,
+    type: "elite",
+    title: tier === 1 ? "[전직 스토리] 시조의 인정" : tier === 2 ? "[전직 스토리] 시조의 시험" : "[전직 스토리] 심연의 정예",
+    desc: "전직관에서 시조가 소환한 시험 상대를 쓰러뜨리자. (카이엔에게 말 걸기)",
+    targetLabel: "시험 상대",
+    dialogue: `js${family}${tier}Step3`,
+    reward: tier === 1 ? 260 : tier === 2 ? 250 : 800,
+    expReward: tier === 1 ? 380 : tier === 2 ? 400 : 1400,
+  });
   return {
     family,
     tier,
-    title: `${nameOf[family]} 계열 전직 스토리 — ${title}`,
+    title: `${nameOf[family]} 계열 ${tier}차 전직 스토리 — ${title} (약 ${tier * 10}분)`,
     startDialogue: `js${family}${tier}Start`,
     doneDialogue: `js${family}${tier}Done`,
     reward: {
-      gold: tier === 2 ? 400 : 1200,
-      ap: tier === 2 ? 5 : 10,
-      buffKey: tier === 2 ? "buff_atk" : "buff_exp",
+      gold: tier === 1 ? 260 : tier === 2 ? 400 : 1200,
+      ap: tier === 1 ? 3 : tier === 2 ? 5 : 10,
+      buffKey: tier === 3 ? "buff_exp" : "buff_atk",
     },
-    steps: [
-      {
-        id: "s1",
-        type: "hunt",
-        title: tier === 2 ? "[전직 스토리] 무장 훈련" : "[전직 스토리] 정예 사냥",
-        desc: `지금 머무는 해역의 몬스터 ${stepBase}마리를 처치하고 실전 감각을 되찾자.`,
-        need: stepBase,
-        targetLabel: "지금 해역의 몬스터",
-        dialogue: `js${family}${tier}Step1`,
-        reward: tier === 2 ? 150 : 400,
-        expReward: tier === 2 ? 220 : 800,
-      },
-      {
-        id: "s2",
-        type: "collect",
-        title: tier === 2 ? "[전직 스토리] 가호의 증표" : "[전직 스토리] 유산의 조각",
-        desc: "보석의 흔적 1개를 회수해 계열의 시조에게 바치자. (해역 어디든 빛나는 흔적)",
-        targetLabel: "보석의 흔적",
-        dialogue: `js${family}${tier}Step2`,
-        reward: tier === 2 ? 180 : 500,
-        expReward: tier === 2 ? 260 : 900,
-      },
-      {
-        id: "s3",
-        type: "elite",
-        title: tier === 2 ? "[전직 스토리] 시조의 시험" : "[전직 스토리] 심연의 정예",
-        desc: "전직관에서 시조가 소환한 시험 상대를 쓰러뜨리자. (카이엔에게 말 걸기)",
-        targetLabel: "시험 상대",
-        dialogue: `js${family}${tier}Step3`,
-        reward: tier === 2 ? 250 : 800,
-        expReward: tier === 2 ? 400 : 1400,
-      },
-    ],
+    steps,
   };
 }
 
-export const JOBSTORY: Record<FamilyKey, Record<2 | 3, JobStoryDef>> = {
-  warrior: { 2: jobStory("warrior", 2), 3: jobStory("warrior", 3) },
-  ranger: { 2: jobStory("ranger", 2), 3: jobStory("ranger", 3) },
-  mage: { 2: jobStory("mage", 2), 3: jobStory("mage", 3) },
-  thief: { 2: jobStory("thief", 2), 3: jobStory("thief", 3) },
+export const JOBSTORY: Record<FamilyKey, Record<1 | 2 | 3, JobStoryDef>> = {
+  warrior: { 1: jobStory("warrior", 1), 2: jobStory("warrior", 2), 3: jobStory("warrior", 3) },
+  ranger: { 1: jobStory("ranger", 1), 2: jobStory("ranger", 2), 3: jobStory("ranger", 3) },
+  mage: { 1: jobStory("mage", 1), 2: jobStory("mage", 2), 3: jobStory("mage", 3) },
+  thief: { 1: jobStory("thief", 1), 2: jobStory("thief", 2), 3: jobStory("thief", 3) },
 };
 
 /* 전직 스토리 대사 (계열 × 차수 × 단계) */
-const JS_LINES: Record<FamilyKey, Record<2 | 3, { start: string[]; s1: string[]; s2: string[]; s3: string[]; done: string[] }>> = {
+const T1_LINES: Record<FamilyKey, { start: string[]; s1: string[]; s2: string[]; s3: string[]; done: string[] }> = {
   warrior: {
+    start: ["『…어느 쪽이든 검을 든 팔이군. 나는 강철의 마르테 — 최초의 전사다.』", "『전사의 길은 힘이 아니라 '버티는 법'부터다. 몸으로 배워라!』"],
+    s1: ["『호오, 검이 몸에 붙기 시작했군.』", "『계속해라. 몸은 거짓말을 하지 않는다.』"],
+    s2: ["『그 흔적의 무게가 느껴지는가. 그것이 가호의 씨앗이다.』"],
+    s3: ["『인정한다. 이제 마지막 — 내가 부린 시험 상대를 상대해라!』"],
+    done: ["『오늘부로 너는 전사다. 강철의 싹이 되어 자라라!』"],
+  },
+  ranger: {
+    start: ["『…바람의 인연이 느껴지는 손이다. 나는 바람의 세이렌 — 최초의 궁수다.』", "『활은 멀리를 보는 자의 무기. 먼저 '눈'부터 트게 해주마!』"],
+    s1: ["『호오, 시야가 조금씩 열리는군.』", "『바람을 믿고 화살을 맡겨 봐라.』"],
+    s2: ["『그 빛나는 흔적 — 바람이 너를 알아보는 증표다.』"],
+    s3: ["『인정한다. 마지막으로 시험 상대를 겨눠라!』"],
+    done: ["『오늘부로 너는 궁수다. 바람의 씨앗이 되어 날아오르라!』"],
+  },
+  mage: {
+    start: ["『…마나가 손끝에 머무는구나. 나는 만개한 세이렌 — 최초의 마법사다.』", "『마법은 지혜가 곧 힘. 먼저 마나와 '대화'하는 법을 가르쳐주마!』"],
+    s1: ["『마나가 네 말을 듣기 시작했군.』", "『집중이 흐트러지면 마나는 도망친다. 계속해라.』"],
+    s2: ["『마나가 형태를 얻었다 — 그것이 너의 첫 주문이다.』"],
+    s3: ["『인정한다. 마지막으로 시험 상대에게 주문을 쏘아라!』"],
+    done: ["『오늘부로 너는 마법사다. 마나의 눈이 떴으니, 세계가 보일 것이다.』"],
+  },
+  thief: {
+    start: ["『…발소리가 없는 녀석이군. 나는 그림자의 로크 — 최초의 도적이다.』", "『도적의 첫 재능은 '보이지 않는 법'이다. 몸으로 배워라!』"],
+    s1: ["『호오, 그림자에 몸을 맡기기 시작했군.』", "『좋아. 칼날은 조용해야 한다.』"],
+    s2: ["『그 흔적 — 어둠이 너를 알아보는 증표다.』"],
+    s3: ["『인정한다. 마지막으로 시험 상대를 뒤에서 놀려라!』"],
+    done: ["『오늘부로 너는 도적이다. 그림자의 태동을 잊지 마라.』"],
+  },
+};
+
+const JS_LINES: Record<FamilyKey, Record<1 | 2 | 3, { start: string[]; s1: string[]; s2: string[]; s3: string[]; done: string[] }>> = {
+  warrior: {
+    1: T1_LINES.warrior,
     2: {
       start: ["『…왔는가, 후예여. 나는 강철의 마르테 — 최초의 전사다.』", "『전사의 힘은 검이 아니라 '버틸 결심'에서 나온다. 몸으로 보여라!』"],
       s1: ["『좋다. 검이 몸에 붙기 시작했군.』", "『하지만 힘만으로는 전장을 못 넘는다. 다음을 보여라.』"],
@@ -854,6 +914,7 @@ const JS_LINES: Record<FamilyKey, Record<2 | 3, { start: string[]; s1: string[];
     },
   },
   ranger: {
+    1: T1_LINES.ranger,
     2: {
       start: ["『…바람을 타고 왔구나. 나는 바람의 세이렌 — 최초의 궁수다.』", "『활은 멀리를 보는 자의 무기다. 네 '눈'을 보여라!』"],
       s1: ["『호오, 바람의 흐름을 읽기 시작했군.』", "『하지만 시야가 좁다. 더 넓은 세계를 봐라!』"],
@@ -870,6 +931,7 @@ const JS_LINES: Record<FamilyKey, Record<2 | 3, { start: string[]; s1: string[];
     },
   },
   mage: {
+    1: T1_LINES.mage,
     2: {
       start: ["『…마나가 네게 궁금해하고 있구나. 나는 만개한 세이렌 — 최초의 마법사다.』", "『마법은 지식이 아니라 '질문'이다. 물어봐라, 세계에!』"],
       s1: ["『오, 마나와 호흡이 맞기 시작했군.』", "『하지만 아직 얕다. 더 깊이 물어봐라!』"],
@@ -887,6 +949,7 @@ const JS_LINES: Record<FamilyKey, Record<2 | 3, { start: string[]; s1: string[];
   },
   /* v2.9 — 도적 계열 전직 스토리 (시조 '그림자의 로크') */
   thief: {
+    1: T1_LINES.thief,
     2: {
       start: ["『…소리도 없이 왔군. 나는 그림자의 로크 — 최초의 도적이다.』", "『도적의 힘은 칼날이 아니라 '보이지 않음'에서 나온다. 증명해라!』"],
       s1: ["『발소리가 사라졌군. 이제 칼이 남았다.』", "『그림자는 다치지 않는 법. 다음을 보여라.』"],

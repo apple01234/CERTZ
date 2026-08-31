@@ -415,6 +415,36 @@ export function freeJobOption(key?: string | null): ClassDef | null {
   return alt ?? null;
 }
 
+/* v3.0.2 (사용자 지시 #10 — "전직을 해도 스킬이 안바뀜"):
+ *  2차 이상 클래스별 스킬 3슬롯 이름 테이블 — 전직하면 스킬 이름이 즉시 바뀌어 체감되게 한다.
+ *  [기본공격, 주력기(Z), 기동기(C)] — 1차 라벨은 Player getter 기본값 유지 */
+export const SKILL_LABELS: Partial<Record<ClassKey, [string, string, string]>> = {
+  berserker: ["광폭 연타", "파괴의 회전베기", "살상 돌진"],
+  guardian: ["수호 참격", "성벽 회전베기", "방패 돌진"],
+  sniper: ["저격 사격", "매의 관통 화살", "매의 질풍"],
+  windrunner: ["질풍 연사", "회오리 화살", "질풍 가르기"],
+  archmage: ["대폭발 마법탄", "아크 볼트", "대전이 점멸"],
+  sage: ["현자의 마법탄", "지혜의 볼트", "순환 점멸"],
+  assassin: ["암살 연타", "그림자 회전베기", "암습 돌진"],
+  swashbuckler: ["화려한 연타", "검무 회전베기", "화려한 돌진"],
+  warlord: ["지배의 참격", "전장 선회베기", "전장 돌파"],
+  paladin: ["성검 참격", "심판의 회전베기", "빛의 돌진"],
+  eagleeye: ["신관 사격", "절명 화살", "매의 부리"],
+  tempest: ["폭풍 연사", "폭풍 화망", "폭풍 질주"],
+  stormbringer: ["뇌전 마법탄", "스톰 볼트", "뇌우 점멸"],
+  chronicle: ["서사의 마법탄", "크로니 볼트", "시간 점멸"],
+  nightblade: ["야경 연타", "야그림자 회전베기", "야간 돌진"],
+  duelist: ["결투 연타", "결투의 회전베기", "결투 돌진"],
+  warbringer: ["종언의 참격", "전쟁의 회오리", "파멸 돌진"],
+  crusader: ["천벌의 참격", "성역의 회전베기", "심판 돌진"],
+  deadeye: ["신의 사격", "심판의 화살", "차원 사격"],
+  skylord: ["천공 연사", "하늘의 화망", "천공 질주"],
+  arclord: ["절대 마법탄", "아크로드 볼트", "차원 점멸"],
+  eternal: ["영겁의 마법탄", "이터널 볼트", "영원의 점멸"],
+  shadowlord: ["심연 연타", "암흑 회전베기", "그림자 돌진"],
+  blademaster: ["신살 연타", "쌍검 회전베기", "극한 돌진"],
+};
+
 /** HUD 표기용 — "전사 · 검사" / 2차 이상 "버서커" */
 export function classLabel(key?: string | null): string {
   const chain = chainOf(key);

@@ -17,7 +17,10 @@ export type StageKey = string;
 
 export type EnemyKey =
   | "wolf" | "minion" | "spider" | "golem" | "frostwolf" | "icegolem" | "wraith"
-  | "swampbeast" | "emberwolf" | "firespirit" | "runegolem" | "helhound";
+  | "swampbeast" | "emberwolf" | "firespirit" | "runegolem" | "helhound"
+  /* v3.0.2 — 50 Monsters Pack (isaiah658, CC0) 신규 종 9종: 챕터별 다양화 */
+  | "x2_frog" | "x2_rat" | "x2_bat" | "x2_firebird" | "x2_frostfly"
+  | "x2_snail" | "x2_stonegolem" | "x2_darkhound" | "x2_reeffish";
 
 export type EnemyDef = {
   key: EnemyKey;
@@ -135,7 +138,7 @@ export const CHAPTERS: ChapterSpec[] = [
     width: 2400, height: 1350, groundTint: 0x9adf6a, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0a1408",
     flowers: 10, trees: 14, rocks: 8,
     /* v2.9 (지시 #1) — 챕터 몬스터 풀 3종: 2구역마다 1종 로테이션(1~6) → 2종(7~8) → 3종(9) → 보스+3종(10) */
-    enemies: [{ key: "wolf", count: 6 }, { key: "spider", count: 5 }, { key: "swampbeast", count: 4 }],
+    enemies: [{ key: "wolf", count: 5 }, { key: "spider", count: 4 }, { key: "swampbeast", count: 3 }, { key: "x2_frog", count: 3 }],
     main: "wolf",
     beats: [
       { sub: 2, dialogue: "fragment", quest: { id: "f0", type: "collect", title: "보석의 흔적 찾기", desc: "숲 어딘가 빛을 내는 보석의 흔적을 찾아 주워 보자. 아부디토스가 기다린다.", targetLabel: "보석의 흔적", reward: Math.round(40 * G), expReward: 35 } },
@@ -151,7 +154,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "kingdomIntro", boss: "behemoth", bossDone: "kingdomDone",
     width: 2200, height: 1250, groundTint: 0x86c95e, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0d1808",
     flowers: 8, trees: 9, rocks: 6,
-    enemies: [{ key: "swampbeast", count: 6 }, { key: "wolf", count: 4 }, { key: "golem", count: 3 }],
+    enemies: [{ key: "swampbeast", count: 5 }, { key: "wolf", count: 4 }, { key: "golem", count: 3 }, { key: "x2_rat", count: 3 }],
     main: "swampbeast",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "k1", type: "collect", title: "능지 속 보석의 조각", desc: "식인초들이 품고 있던 보석의 조각을 되찾자.", targetLabel: "보석의 흔적", reward: Math.round(80 * G), expReward: 70 } },
@@ -167,7 +170,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "alfheimIntro", boss: "nidhog", bossDone: "guardianDone",
     width: 1900, height: 1080, groundTint: 0x8f7fd8, groundTex: "tile_dark", pathTex: "tile_path", bg: "#0d0a1e",
     flowers: 6, trees: 10, rocks: 10,
-    enemies: [{ key: "minion", count: 5 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }],
+    enemies: [{ key: "minion", count: 4 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_bat", count: 3 }],
     main: "minion",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "a0", type: "hunt", title: "하수인 소탕", desc: "니드호그가 부린 심연의 하수인 5마리를 처치해 성전의 길을 열자.", need: 5, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(80 * G), expReward: 65 } },
@@ -182,7 +185,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "muspelIntro", boss: "surt", bossDone: "surtDone",
     width: 2200, height: 1250, groundTint: 0xd88a4a, groundTex: "tile_magma", pathTex: "tile_magma_path", bg: "#1c0d06",
     flowers: 0, trees: 4, rocks: 12,
-    enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 4 }, { key: "golem", count: 3 }],
+    enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 3 }, { key: "golem", count: 3 }, { key: "x2_firebird", count: 3 }],
     main: "emberwolf",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "m0", type: "hunt", title: "불꽃 늑대 사냥", desc: "네바다를 내달리는 불꽃 늑대 6마리를 처치하자.", need: 6, targetKey: "emberwolf", targetLabel: "불꽃 늑대", reward: Math.round(150 * G), expReward: 140 } },
@@ -198,7 +201,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "niflIntro", boss: "fenrir", bossDone: "fenrirDone",
     width: 2100, height: 1200, groundTint: 0xdfeaf8, groundTex: "tile_snow", pathTex: "tile_ice", bg: "#0c1826",
     flowers: 0, trees: 10, rocks: 10,
-    enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }, { key: "wraith", count: 3 }],
+    enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }],
     main: "frostwolf",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "n0", type: "hunt", title: "서리 늑대 사냥", desc: "설원을 유랑하는 서리 늑대 6마리를 처치하자.", need: 6, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(130 * G), expReward: 120 } },
@@ -214,7 +217,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "caveIntro", boss: "abysslord", bossDone: "caveDone",
     width: 2100, height: 1200, groundTint: 0x8a6a4a, groundTex: "tile_cave", pathTex: "tile_path_dark", bg: "#100a08",
     flowers: 0, trees: 0, rocks: 14,
-    enemies: [{ key: "spider", count: 5 }, { key: "minion", count: 4 }, { key: "golem", count: 3 }],
+    enemies: [{ key: "spider", count: 4 }, { key: "minion", count: 4 }, { key: "golem", count: 3 }, { key: "x2_snail", count: 3 }],
     main: "spider",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "c0", type: "collect", title: "지하 깊은 곳의 빛", desc: "어둠 요정들의 지하 어딘가에서 보석의 조각이 빛나고 있다.", targetLabel: "보석의 흔적", reward: Math.round(60 * G), expReward: 65 } },
@@ -231,7 +234,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "nidavellirIntro", boss: "skoll", bossDone: "skollDone",
     width: 2100, height: 1200, groundTint: 0x9a8a6a, groundTex: "tile_stone", pathTex: "tile_path_dark", bg: "#121008",
     flowers: 0, trees: 0, rocks: 16,
-    enemies: [{ key: "runegolem", count: 4 }, { key: "golem", count: 3 }, { key: "spider", count: 3 }],
+    enemies: [{ key: "runegolem", count: 4 }, { key: "golem", count: 3 }, { key: "spider", count: 3 }, { key: "x2_stonegolem", count: 3 }],
     main: "runegolem",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "d0", type: "hunt", title: "룬 골렘 정지", desc: "폭주한 룬 골렘 5기를 정지시키자.", need: 5, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(200 * G), expReward: 180 } },
@@ -247,7 +250,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "helIntro", boss: "gram", bossDone: "gramDone",
     width: 2100, height: 1200, groundTint: 0x4a3a5a, groundTex: "tile_hel", pathTex: "tile_path_dark", bg: "#0d0616",
     flowers: 0, trees: 6, rocks: 12,
-    enemies: [{ key: "helhound", count: 5 }, { key: "wraith", count: 4 }, { key: "golem", count: 3 }],
+    enemies: [{ key: "helhound", count: 4 }, { key: "wraith", count: 3 }, { key: "golem", count: 3 }, { key: "x2_darkhound", count: 3 }],
     main: "helhound",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "h0", type: "hunt", title: "헬 하운드 사냥", desc: "절벽을 지키는 헬 하운드 6마리를 처치하자.", need: 6, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(260 * G), expReward: 240 } },
@@ -263,7 +266,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "abyssIntro", boss: "abudditos", bossDone: "victory",
     width: 1800, height: 1050, groundTint: 0x3a2c52, groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#0d0616",
     flowers: 0, trees: 0, rocks: 12,
-    enemies: [{ key: "wraith", count: 5 }, { key: "minion", count: 4 }, { key: "helhound", count: 3 }],
+    enemies: [{ key: "wraith", count: 4 }, { key: "minion", count: 4 }, { key: "helhound", count: 3 }, { key: "x2_reeffish", count: 3 }],
     main: "wraith",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "y0", type: "hunt", title: "바다의 유령 소탕", desc: "왕좌를 지키는 심연 유령 4마리를 처치하자.", need: 4, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(150 * G), expReward: 140 } },
@@ -290,6 +293,16 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
   firespirit: { key: "firespirit", name: "화염 정령", hp: 175, atk: 34, speed: 92, aggro: 300, exp: 100, gold: [17, 24], dropHp: 0.34, dropMp: 0.26 },
   runegolem: { key: "runegolem", name: "룬 골렘", hp: 210, atk: 37, speed: 72, aggro: 260, exp: 115, gold: [19, 28], dropHp: 0.34, dropMp: 0.26 },
   helhound: { key: "helhound", name: "헬 하운드", hp: 190, atk: 36, speed: 148, aggro: 360, exp: 105, gold: [18, 25], dropHp: 0.32, dropMp: 0.26 },
+  /* v3.0.2 — 신규 종 9종 (챕터 배율은 stageScale이 곱함) */
+  x2_frog: { key: "x2_frog", name: "독개구리", hp: 52, atk: 12, speed: 116, aggro: 300, exp: 22, gold: [5, 9], dropHp: 0.3, dropMp: 0.22 },
+  x2_rat: { key: "x2_rat", name: "궁전 뒷쥐", hp: 84, atk: 17, speed: 156, aggro: 320, exp: 40, gold: [9, 14], dropHp: 0.3, dropMp: 0.22 },
+  x2_bat: { key: "x2_bat", name: "황혼 박쥐", hp: 126, atk: 27, speed: 164, aggro: 360, exp: 74, gold: [14, 21], dropHp: 0.3, dropMp: 0.24 },
+  x2_firebird: { key: "x2_firebird", name: "잿불 새", hp: 158, atk: 33, speed: 142, aggro: 340, exp: 92, gold: [15, 23], dropHp: 0.32, dropMp: 0.26 },
+  x2_frostfly: { key: "x2_frostfly", name: "서리 날도요", hp: 118, atk: 26, speed: 158, aggro: 340, exp: 66, gold: [12, 19], dropHp: 0.3, dropMp: 0.24 },
+  x2_snail: { key: "x2_snail", name: "동굴 달팽이", hp: 200, atk: 22, speed: 58, aggro: 240, exp: 60, gold: [11, 17], dropHp: 0.36, dropMp: 0.28 },
+  x2_stonegolem: { key: "x2_stonegolem", name: "장벽 돌골렘", hp: 235, atk: 39, speed: 66, aggro: 260, exp: 122, gold: [20, 30], dropHp: 0.34, dropMp: 0.26 },
+  x2_darkhound: { key: "x2_darkhound", name: "그늘 이리", hp: 205, atk: 38, speed: 154, aggro: 360, exp: 112, gold: [18, 27], dropHp: 0.32, dropMp: 0.24 },
+  x2_reeffish: { key: "x2_reeffish", name: "심연 암초물고기", hp: 182, atk: 40, speed: 128, aggro: 340, exp: 108, gold: [17, 26], dropHp: 0.32, dropMp: 0.26 },
 };
 
 /* ================= 보스 정의 (v1.5 데이터 이관 + 챕터 보강) ================= */
@@ -441,20 +454,30 @@ function subEnemyMix(spec: ChapterSpec, sub: number): { key: EnemyKey; count: nu
   const a = pool[0];
   const b = pool[1] ?? pool[0];
   const c = pool[2] ?? b;
-  const TOTAL = 20; // 구역당 동시 스폰 상한 (정예/보스 제외)
+  const d = pool[3] ?? a; // v3.0.2 — 챕터 4번째 종 (신규 몬스터)
+  const TOTAL = 20; // 구역당 동시 스폰 상한 (정예/보스 포함 총량)
   if (sub <= 2) return [{ key: a, count: TOTAL }];
   if (sub <= 4) return [{ key: b, count: TOTAL }];
-  if (sub <= 6) return [{ key: c, count: TOTAL }];
+  // 5구역은 정예 1기가 별도 스폰 → 잡몹 19 + 정예 1 = 20
+  if (sub <= 6) return [{ key: c, count: sub === 5 ? TOTAL - 1 : TOTAL }];
   if (sub <= 8)
     return [
-      { key: a, count: 12 },
+      // v3.0.2 — 7~8구역: 신규 종(d) 주력 + 1차 종 혼합
+      { key: d, count: 12 },
+      { key: a, count: 8 },
+    ];
+  if (sub === 10)
+    return [
+      // 10구역은 보스 1기 별도 스폰 → 잡몹 19 + 보스 1 = 20
       { key: b, count: 8 },
+      { key: c, count: 6 },
+      { key: d, count: 5 },
     ];
   return [
-    { key: a, count: 9 },
-    { key: b, count: 6 },
-    { key: c, count: 5 },
-  ]; // 9구역 3종 20마리 / 10구역 보스 + 잡몹 20마리
+    { key: b, count: 8 },
+    { key: c, count: 6 },
+    { key: d, count: 6 },
+  ]; // 9구역 3종 20마리
 }
 
 function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[] {
@@ -486,9 +509,17 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
     frostwolf: "서리 늑대", icegolem: "얼음 골렘", wraith: "심연 유령",
     swampbeast: "식인초", emberwolf: "불꽃 늑대", firespirit: "화염 정령",
     runegolem: "룬 골렘", helhound: "헬 하운드",
+    x2_frog: "독개구리", x2_rat: "궁전 뒷쥐", x2_bat: "황혼 박쥐", x2_firebird: "잿불 새",
+    x2_frostfly: "서리 날도요", x2_snail: "동굴 달팽이", x2_stonegolem: "장벽 돌골렘",
+    x2_darkhound: "그늘 이리", x2_reeffish: "심연 암초물고기",
   };
   const verbs = ["토벌", "소탕", "박멸", "정찰 지원", "제거"];
-  const main = labels[spec.main];
+  /* v3.0.2 (버그 수정 — "퀘스트는 늑대 소탕인데 맵에는 유령만"):
+   *  자동 토벌 대상을 spec.main(챕터 대표)이 아니라 이 구역에서 실제 스폰되는 몬스터로 지정.
+   *  v2.9 구역별 몬스터 로테이션(1~6구역 단일종)과 퀘스트 대상이 어긋난 것이 원인 */
+  const zoneMix = subEnemyMix(spec, sub);
+  const zoneMon = zoneMix.reduce((m, g) => (g.count > m.count ? g : m), zoneMix[0]).key;
+  const main = labels[zoneMon];
   if (quests.length < 2) {
     // 자동 토벌 퀘스트 — v2.3 밸런스 (지시 #4): 목표 수 상한 12 (기존 3+sub*2는 후반 21마리로 지루함)
     // 경험치는 살짝 더 많게 — 스토리 진행이 자연스럽게 이어지도록
@@ -499,7 +530,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       title: `${main} ${verbs[sub % verbs.length]}`,
       desc: `${spec.title} ${spec.subtitle} — ${main} ${n}마리(그루)를 처치하자.`,
       need: n,
-      targetKey: spec.main,
+      targetKey: zoneMon, // v3.0.2 — 이 구역에서 실제 스폰되는 몬스터
       targetLabel: main,
       reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G),
       expReward: Math.round((60 + sub * 14) * CH_EXP[spec.num - 2] * 0.9),
@@ -548,6 +579,16 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
    *  1~2구역 풀[0] 1종 / 3~4 풀[1] 1종 / 5~6 풀[2] 1종 (2구역마다 몬스터 교체)
    *  7~8구역 2종 / 9구역 3종 / 10구역 보스 + 3종(잡몹 소규모) */
   const enemies = subEnemyMix(spec, sub);
+  /* v3.0.2 — 스토리(beat) 토벌 대상이 이 구역 스폰 조합에 없으면 대상 몬스터를 스폰에 편입.
+   *  v2.9 구역별 단일종 로테이션 때문에 "퀘스트는 늑대 소탕인데 맵엔 유령만" 오류가 생김.
+   *  최다 그룹에서 3마리를 덜어 편입 — 총량 20 유지 (정예/보스 포함) */
+  const beatHere = spec.beats.find((b) => b.sub === sub);
+  if (beatHere && beatHere.quest.type === "hunt" && beatHere.quest.targetKey && !enemies.some((g) => g.key === beatHere.quest.targetKey)) {
+    const donor = enemies[0];
+    donor.count = Math.max(1, donor.count - 3);
+    const sum = enemies.reduce((t, g) => t + g.count, 0);
+    enemies.push({ key: beatHere.quest.targetKey, count: Math.max(1, Math.min(3, 20 - sum)) });
+  }
   const def: StageDef = {
     key,
     name: `제${spec.num}장 ${spec.title}`,

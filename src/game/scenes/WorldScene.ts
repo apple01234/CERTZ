@@ -145,7 +145,7 @@ export class WorldScene extends Phaser.Scene {
   /* ----- v2.0: 방향키 입력 순서 (마지막 누른 키 우선 — 지시 #16) ----- */
   private dirOrder: { x: string[]; y: string[] } = { x: [], y: [] };
   /* ----- v2.0: 전직 스토리 진행 (지시 #13) ----- */
-  jobStory: { tier: 2 | 3; step: number; hunt: number } | null = null;
+  jobStory: { tier: 1 | 2 | 3; step: number; hunt: number } | null = null;
   private jobStoryDone: number[] = []; // 완료한 티어 기록 [2, 3]
   private jobEliteSummoned = false; // 시험 상대 소환 여부 (소환 전 완료 판정 방지)
   /* ----- v2.0: 여관/집 상호작용 쿨다운 ----- */
@@ -213,7 +213,7 @@ export class WorldScene extends Phaser.Scene {
   private netAcc = 0;
 
   /* ----- 플레이어 투사체 (v1.8 — 궁수 관통 화살 / 마법사 매직 볼트) ----- */
-  private pProjPool: Phaser.Physics.Arcade.Image[] = [];
+  private pProjPool: Phaser.Physics.Arcade.Sprite[] = [];
   private pProjIdx = 0;
 
   /* ----- v1.9: 키 매핑 / 펫 / 치장 오라 / 강화 오라 ----- */
@@ -732,19 +732,26 @@ export class WorldScene extends Phaser.Scene {
 
   /** 닫힌 셀을 챕터 분위기에 맞는 암벽 타일로 채워 벽(충돌)을 만든다 */
   private buildDungeonWalls(lay: RoomLayout, ch: string) {
+    /* v3.0.2 — 벽 텍스처 전부 벽돌(x2_bricks)로 통일해 바닥과 질감 자체를 다르게.
+     *  챕터 구분은 틴트 색으로 (숲=연두빛, 설원=하늘빛 등) */
     const WALLS: Record<string, { tex: string; tint: number }> = {
-      forest: { tex: "tile_stone", tint: 0x9ab07a },
-      kingdom: { tex: "tile_stone", tint: 0xa89878 },
-      alfheim: { tex: "tile_dark", tint: 0x9a8ac8 },
-      muspelheim: { tex: "tile_magma", tint: 0xa86038 },
-      niflheim: { tex: "tile_ice", tint: 0x9ab8d8 },
-      cave: { tex: "tile_cave", tint: 0x9a7a58 },
-      nidavellir: { tex: "tile_stone", tint: 0xb8a068 },
-      hel: { tex: "tile_hel", tint: 0x9a6aaa },
-      abyss: { tex: "tile_abyss", tint: 0x7a6a9a },
+      forest: { tex: "x2_bricks", tint: 0x7a9a5a },
+      kingdom: { tex: "x2_bricks", tint: 0xa89878 },
+      alfheim: { tex: "x2_bricks", tint: 0x8a7ac8 },
+      muspelheim: { tex: "x2_bricks", tint: 0xa85a38 },
+      niflheim: { tex: "x2_bricks", tint: 0x8ab8d8 },
+      cave: { tex: "x2_bricks", tint: 0x9a7a58 },
+      nidavellir: { tex: "x2_bricks", tint: 0xb8a068 },
+      hel: { tex: "x2_bricks", tint: 0x8a5aaa },
+      abyss: { tex: "x2_bricks", tint: 0x6a5a9a },
     };
-    const wall = WALLS[ch] ?? { tex: "tile_stone", tint: 0xffffff };
+    const wall = WALLS[ch] ?? { tex: "x2_bricks", tint: 0xffffff };
     const rng = new Phaser.Math.RandomDataGenerator([this.stageDef.key + "-walls"]);
+    /* v3.0.2 (지시 #2 — 벽과 길 구분 확실히):
+     *  ① 모든 벽을 벽돌 타일(x2_bricks)로 통일 — 바닥 타일과 질감 자체가 달라져 즉시 구분
+     *  ② 벽은 바닥보다 확실히 어둡게(45~55% 명도) — 통로가 밝게 파여 보임
+     *  ③ 벽-길 경계 앰비언트 셰이딩: 벽 모서리에 밝은 림, 길 쪽에 그림자 스트립 → 입체적 통로 */
+    const openAt = (c: number, r: number) => c >= 0 && r >= 0 && c < lay.cols && r < lay.rows && lay.open[r * lay.cols + c];
     for (let r = 0; r < lay.rows; r++) {
       for (let c = 0; c < lay.cols; c++) {
         const i = r * lay.cols + c;
@@ -752,7 +759,7 @@ export class WorldScene extends Phaser.Scene {
         const x = c * lay.cellW;
         const y = r * lay.cellH;
         // 셀마다 살짝 다른 명도 — 암벽 덩어리가 단조로운 격자로 보이지 않게
-        const v = 0.9 + rng.frac() * 0.14;
+        const v = 0.44 + rng.frac() * 0.1;
         const tint = Phaser.Display.Color.IntegerToColor(wall.tint);
         const scaled = Phaser.Display.Color.GetColor(tint.red * v, tint.green * v, tint.blue * v);
         const ts = this.add
@@ -761,6 +768,37 @@ export class WorldScene extends Phaser.Scene {
           .setDepth(2)
           .setTint(scaled);
         this.solidGroup.add(ts);
+        // 벽 셀 중 통로에 맞닿은 면에 밝은 림(하이라이트) — 벽 윤곽 강조
+        const rim = Phaser.Display.Color.GetColor(
+          Math.min(255, tint.red * 0.9), Math.min(255, tint.green * 0.9), Math.min(255, tint.blue * 0.9)
+        );
+        const RIM = 3;
+        if (openAt(c, r - 1))
+          this.add.rectangle(x, y, lay.cellW, RIM, rim, 0.34).setOrigin(0).setDepth(3);
+        if (openAt(c, r + 1))
+          this.add.rectangle(x, y + lay.cellH - RIM, lay.cellW, RIM, 0x000000, 0.3).setOrigin(0).setDepth(3);
+        if (openAt(c - 1, r))
+          this.add.rectangle(x, y, RIM, lay.cellH, rim, 0.26).setOrigin(0).setDepth(3);
+        if (openAt(c + 1, r))
+          this.add.rectangle(x + lay.cellW - RIM, y, RIM, lay.cellH, 0x000000, 0.26).setOrigin(0).setDepth(3);
+      }
+    }
+    // 길 쪽 그림자(앰비언트 오클루전) — 벽 옆 통로가 파인 것처럼 보이게
+    const SH = 14;
+    for (let r = 0; r < lay.rows; r++) {
+      for (let c = 0; c < lay.cols; c++) {
+        const i = r * lay.cols + c;
+        if (!lay.open[i]) continue;
+        const x = c * lay.cellW;
+        const y = r * lay.cellH;
+        if (!openAt(c, r - 1))
+          this.add.rectangle(x, y, lay.cellW, SH, 0x000000, 0.22).setOrigin(0).setDepth(2.5);
+        if (!openAt(c, r + 1))
+          this.add.rectangle(x, y + lay.cellH - SH, lay.cellW, SH, 0x000000, 0.16).setOrigin(0).setDepth(2.5);
+        if (!openAt(c - 1, r))
+          this.add.rectangle(x, y, SH, lay.cellH, 0x000000, 0.2).setOrigin(0).setDepth(2.5);
+        if (!openAt(c + 1, r))
+          this.add.rectangle(x + lay.cellW - SH, y, SH, lay.cellH, 0x000000, 0.14).setOrigin(0).setDepth(2.5);
       }
     }
   }
@@ -1737,13 +1775,15 @@ export class WorldScene extends Phaser.Scene {
    * F5+α: 참격 — 캐릭터가 바라보는 방향에 초승달 검기 애니(외부 에셋 6프레임 스윕)를
    *  배치하고 교차 베기(alt)로 미세 회전을 바꿔 휘두르는 느낌을 강화한다.
    */
-  spawnSlash(x: number, y: number, dir: Phaser.Math.Vector2, alt: boolean, scale = 1) {
+  spawnSlash(x: number, y: number, dir: Phaser.Math.Vector2, alt: boolean, scale = 1, tint?: number) {
     const s = this.slashPool[this.slashIdx];
     this.slashIdx = (this.slashIdx + 1) % this.slashPool.length;
     if (!s || !s.scene) return;
     this.tweens.killTweensOf(s);
     s.off("animationcomplete"); // 재사용 시 지연된 완료 콜백 제거
     const base = Math.atan2(dir.y, dir.x);
+    if (tint) s.setTint(tint); // v3.0.2 — 계열별 검기 색 (도적 보라 등)
+    else s.clearTint();
     s.setPosition(x + dir.x * 30, y - 6 + dir.y * 16)
       .setRotation(base + (alt ? -0.28 : 0.28))
       .setActive(true)
@@ -1752,8 +1792,27 @@ export class WorldScene extends Phaser.Scene {
       .setScale(1.35 * scale) // 사용자 지시: 검 이펙트 크게 (원본 64x76 → 실제 표시 ~86x103)
       .play("fx-slash");
     s.once("animationcomplete", () => {
-      s.setActive(false).setVisible(false);
+      s.setActive(false).setVisible(false).clearTint();
     });
+  }
+
+  /** v3.0.2 — 궁수 활 비주얼: 발사 순간 활 프레임 표시 (20x20, 각도 회전) */
+  spawnBow(x: number, y: number, angle: number) {
+    const bow = this.add.image(x, y, "x2_bow").setDepth(11).setRotation(angle + Math.PI / 2).setScale(1.15);
+    this.tweens.add({
+      targets: bow,
+      alpha: 0,
+      scale: 0.85,
+      duration: 170,
+      onComplete: () => bow.destroy(),
+    });
+  }
+
+  /** v3.0.2 — 마법사 시전 이펙트: 손 앞 마나 불꽃 (Pixelart Spells 6프레임 1회) */
+  spawnCast(x: number, y: number) {
+    const fx = this.add.sprite(x, y, "x2_sp_sparks").setDepth(11).setScale(1.2);
+    fx.play("fx-sparks");
+    fx.once("animationcomplete", () => fx.destroy());
   }
 
   /* ================= 히트스톱 / 타격감 ================= */
@@ -1850,8 +1909,12 @@ export class WorldScene extends Phaser.Scene {
     if (!this.scene.isActive() || this.player.state === "dead") {
       return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
     }
-    /* v3.0 (사용자 지시 #6) — 동시 몬스터 상한 20마리: 이미 가득하면 리스폰 보류 */
-    if (this.enemies.filter((e) => e.active && e.alive).length >= 20) {
+    /* v3.0 (사용자 지시 #6) — 동시 몬스터 상한 20마리: 이미 가득하면 리스폰 보류
+     * v3.0.2 — 정예/보스도 총량에 포함 (잡몹 20 + 정예/보스로 21~22마리 되던 빈틈 봉합) */
+    const aliveMobs = this.enemies.filter((e) => e.active && e.alive).length;
+    const eliteAlive = this.eliteEnemy?.active && this.eliteEnemy.alive ? 1 : 0;
+    const bossAlive = this.boss?.active && this.boss.alive ? 1 : 0;
+    if (aliveMobs + eliteAlive + bossAlive >= 20) {
       this.time.delayedCall(2400, () => this.respawnEnemy(key, x, y, tries));
       return;
     }
@@ -2193,6 +2256,12 @@ export class WorldScene extends Phaser.Scene {
       this.emitHud();
       this.emitRpgState();
       net.netAnnounceJob(def.key);
+      // v3.0.2 — 1차 전직 직후 스토리 즉시 시작 (트래커에 표시). 2차 이상은 전직관 시조 대화로 시작
+      if (chainOf(this.player.cls).length === 1) {
+        this.time.delayedCall(600, () => this.maybeStartJobStory());
+      } else {
+        this.time.delayedCall(1400, () => this.showBanner("전직관에서 카이엔과 대화하면 전직 스토리가 이어집니다"));
+      }
     };
 
     // 자유 전직 (v1.8 — 메이플 자유전직 재현: 같은 계열 내 반대 경로, 골드 소모)
@@ -2805,6 +2874,7 @@ export class WorldScene extends Phaser.Scene {
   /* ================= 플레이어 투사체 (v1.8) ================= */
 
   /** 궁수 화살 / 마법사 볼트 발사 — 보스 orb 풀 패턴 재사용 (물리 velocity + 수동 판정) */
+  /** v3.0.2 — tex/anim/blend 지원: 궁수는 실제 화살(normal), 마법사는 스펠 애니 프레임 */
   firePlayerProj(cfg: {
     x: number;
     y: number;
@@ -2817,10 +2887,15 @@ export class WorldScene extends Phaser.Scene {
     tint: number;
     knock: number;
     scale?: number;
+    tex?: string;
+    anim?: string;
+    blend?: "add" | "normal";
+    /** angle로 스프라이트 회전 (화살 등 방향성 텍스처) */
+    rot?: boolean;
   }) {
     if (this.pProjPool.length === 0) {
       for (let i = 0; i < 24; i++) {
-        const p = this.physics.add.image(0, 0, "orb");
+        const p = this.physics.add.sprite(0, 0, "orb");
         p.setBlendMode(Phaser.BlendModes.ADD).setDepth(12);
         p.setActive(false).setVisible(false);
         (p.body as Phaser.Physics.Arcade.Body).setCircle(6);
@@ -2831,8 +2906,14 @@ export class WorldScene extends Phaser.Scene {
     this.pProjIdx = (this.pProjIdx + 1) % this.pProjPool.length;
     p.enableBody(true, cfg.x, cfg.y, true, true);
     this.physics.velocityFromRotation(cfg.angle, cfg.speed, p.body!.velocity);
+    p.anims.stop(); // 풀 재사용 — 이전 애니/텍스처 잔존 제거
+    if (cfg.tex) p.setTexture(cfg.tex);
+    else if (p.texture.key !== "orb") p.setTexture("orb");
     p.setTint(cfg.tint).setScale(cfg.scale ?? 0.9).setAlpha(0.95);
-    p.setRotation(cfg.angle);
+    p.setBlendMode(cfg.blend === "normal" ? Phaser.BlendModes.NORMAL : Phaser.BlendModes.ADD);
+    if (cfg.anim && this.anims.exists(cfg.anim)) p.play(cfg.anim);
+    else if (cfg.anim) p.setTexture("orb");
+    p.setRotation(cfg.rot ? cfg.angle : 0);
     p.setData("dmg", cfg.dmg);
     p.setData("crit", cfg.crit);
     p.setData("pierce", cfg.pierce);
@@ -3167,21 +3248,22 @@ export class WorldScene extends Phaser.Scene {
   jobStoryDef(): JobStoryDef | null {
     const fam = familyOf(this.player.cls ?? "");
     if (!fam) return null;
-    return JOBSTORY[fam][this.jobStory?.tier ?? 2] ?? null;
+    return JOBSTORY[fam][this.jobStory?.tier ?? 1] ?? null;
   }
 
-  /** 전직 스토리 시작 — 카이엔 대화 후 (resumeFromDialogue에서 호출) */
+  /** 전직 스토리 시작 — 카이엔 대화 후 (resumeFromDialogue에서 호출)
+   *  v3.0.2 — 1차(전직 직후)도 지원, 티어 연쇄 게이팅(t2는 t1 완료, t3는 t2 완료 필요) */
   private maybeStartJobStory() {
     if (!this.player) return;
     const fam = familyOf(this.player.cls ?? "");
     if (!fam) return;
     const tier = chainOf(this.player.cls).length; // 0=미전직, 1=1차, 2=2차, 3=3차
-    if (tier < 2) return;
-    const t = tier as 2 | 3;
+    if (tier < 1) return;
+    const t = tier as 1 | 2 | 3;
     if (this.jobStoryDone.includes(t)) return;
     if (this.jobStory && this.jobStory.tier === t) return;
     // 이전 티어 스토리 먼저 완료해야 다음 티어 진행
-    if (t === 3 && !this.jobStoryDone.includes(2)) return;
+    if (t >= 2 && !this.jobStoryDone.includes((t - 1) as 1 | 2)) return;
     this.jobStory = { tier: t, step: 0, hunt: 0 };
     const story = JOBSTORY[fam][t];
     this.showDialogue(story.startDialogue);
@@ -3641,10 +3723,27 @@ export class WorldScene extends Phaser.Scene {
     this.emitRpgState();
   }
 
+  /** v3.0.2 — 모든 퀘스트 emit에 진행 중인 전직 스토리 정보 병기 (트래커 발견성) */
+  private emitQuestState(st: QuestState) {
+    if (this.jobStory) {
+      const story = this.jobStoryDef();
+      const step = story?.steps[this.jobStory.step];
+      if (story && step) {
+        st.jobStory = {
+          title: story.title,
+          step: this.jobStory.step + 1,
+          total: story.steps.length,
+          stepTitle: step.title.replace("[전직 스토리] ", ""),
+        };
+      }
+    }
+    EventBus.emit("quest", st);
+  }
+
   emitQuest() {
     // 인트로 시퀀스 중 — 아부디토스의 안내를 퀘스트 패널에 표시
     if (this.introStep >= 0 && this.introStep < 3) {
-      EventBus.emit("quest", {
+      this.emitQuestState({
         title: "펜던트의 정령 아부디토스의 안내",
         desc: "배너를 따라 마을을 돌아보자",
         current: 1,
@@ -3657,7 +3756,7 @@ export class WorldScene extends Phaser.Scene {
     if (!q) {
       // v2.3 (지시 #4) — 체인 완료 + 반복 의뢰 존재 + 미수주 → 수주 안내
       if (!this.isInterior && this.stageDef.repeat && !this.repeatOn) {
-        EventBus.emit("quest", {
+        this.emitQuestState({
           title: "반복 의뢰 수주 가능",
           desc: "마을 상인 라고스에게 말을 걸어 [반복] 토벌 의뢰를 수주하자",
           current: 1,
@@ -3669,7 +3768,7 @@ export class WorldScene extends Phaser.Scene {
       /* v3.0 (사용자 지시 #5) — 마을/실내는 "지역 클리어!" 오표기 버그 수정:
        *  퀘스트 없는 안전 구역에 전투 구역 완료 배너가 뜨지 않게 전용 문구 사용 */
       if (this.isInterior) {
-        EventBus.emit("quest", {
+        this.emitQuestState({
           title: "실내 — 잠시 쉬어 가자",
           desc: "",
           current: 1,
@@ -3679,7 +3778,7 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       if (this.stageDef.isVillage) {
-        EventBus.emit("quest", {
+        this.emitQuestState({
           title: "마을 — 안전 지대",
           desc: "우물·여관·상점·전직관을 이용하자",
           current: 1,
@@ -3688,7 +3787,7 @@ export class WorldScene extends Phaser.Scene {
         } satisfies QuestState);
         return;
       }
-      EventBus.emit("quest", {
+      this.emitQuestState({
         title: "지역 클리어!",
         desc: "",
         current: 1,
@@ -3713,7 +3812,7 @@ export class WorldScene extends Phaser.Scene {
     let distance: number | null = null;
     const t = this.questTargetPos();
     if (t) distance = Math.round(Phaser.Math.Distance.Between(this.player.x, this.player.y, t.x, t.y) / 32);
-    EventBus.emit("quest", {
+    this.emitQuestState({
       title: q.title,
       desc: q.desc,
       current,
@@ -3931,7 +4030,7 @@ export class WorldScene extends Phaser.Scene {
         const step = this.jobStory ? this.jobStoryDef()?.steps[this.jobStory.step] : null;
         if (step?.type === "elite") {
           this.summonJobElite();
-        } else if (familyOf(this.player?.cls ?? "") && chainOf(this.player?.cls ?? "").length >= 2 && !this.jobStory && !this.jobStoryDone.includes(chainOf(this.player?.cls ?? "").length as 2 | 3)) {
+        } else if (familyOf(this.player?.cls ?? "") && chainOf(this.player?.cls ?? "").length >= 1 && !this.jobStory && !this.jobStoryDone.includes(chainOf(this.player?.cls ?? "").length as 1 | 2 | 3)) {
           // 전직 후 미진행 스토리 → 스토리 시작 (패널 오픈보다 먼저)
           this.maybeStartJobStory();
           // 스토리가 시작되지 않았으면 패널 오픈 (완료/조건 미달)
