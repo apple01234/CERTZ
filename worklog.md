@@ -937,3 +937,24 @@ Stage Summary:
 - 게임 1개 통합 완료 — SERTZ 본게임 단일 진입(스핀오프 입구·파일·에셋 전부 제거), 아뜰란티스 기원 몬스터/기능은 v3.0.10 통합분으로 보존
 - 산출물: download/SERTZ-v3.0.10.apk (17.5MB, versionCode 25, 서명 일치)
 - 사용자 "Apk내놔" 지시에 따른 빌드 수행 — 이후 다시 "빌드해" 말할 때까지 커밋만 원칙 유지
+
+---
+Task ID: 6
+Agent: Super Z (main)
+Task: 사용자 피드백 5항목 — 토네이도 스킬 개편·돌진 직업 특색·2차 스킬 체감·3/4차 아이콘·복귀 포탈 수정
+
+Work Log:
+- [1 토네이도] fx_tornado.png 8프레임 64x64 신규 생성(scripts/gen_tornado_fx.py — wind ring 4단+코어+파편, 프레임마다 위상 회전) → BootScene spritesheet 로드 + textures.ts "fx-tornado" 애님 등록
+- [1 토네이도] WorldScene.fireCyclone 신규 — 이동하는 대형 회오리(끌어당김 pull·사인 S자 와인딩·크기 맥동·소멸 시 폭발 마무리 타격). skylord V(cyclone, 라벨 "폭풍 소용돌이"→"하늘의 희망" 변경)=대형 2기+잔풍 4기, B(skystorm)=나선 미니 토네이도 12기+중심 대형 1기. 윈드러너 gustarrow(fireGustTornado)도 원→토네이도 스프라이트 승격
+- [2 돌진] Player.update dash 상태에서 주행 애니 복구(기존엔 프레임 얼어붙은 채 슬라이드) + WorldScene 계열별 헬퍼 4종 신규: spawnDashDust(전사 먼지)/spawnWindStreak(궁수 바람꼬리)/spawnShadowAfterimage(도적 실루엣 잔상)/spawnRuneRing(마법사 룬링, 출발+도착). windslash·flashydash는 기존 참격 잔상 유지(정체성)
+- [3 2차 체감] skill1Spin(bleed=true, 버서커) 완전 분기 — 붉은 분노 오라 3겹+전방 러지(500속도 240ms)+이중 참격판+"파괴의 광기!" 텍스트. useSkill1에 3차+ 클래스색 진화 오라 링 추가(상위직 Z 강화 체감)
+- [4 아이콘] scripts/gen_skillicon_34.py — 3차 s3 8종+4차 s3/s4 16종 = 24종 32x32 픽셀아트 생성(토네이도/낙뢰/빛기둥/무한고리 등 테마별) + SKILL_ICONS에 s3Icon/s4Icon 매핑(UI는 기존 s3Icon/s4Icon 지원)
+- [5 포탈] stages.ts PREV_STAGE 수정 — sub=1 복귀처를 이전 챕터 10구역 → 자기 챕터 마을(Xv)로. 전진 체인(1-10→2v→2-1)의 정확한 역순 복귀(2-1→2v→1-10)
+- 검증: tsc 0에러 → eslint 0(변경 6파일) → next build 성공 → E2E scripts/e2e_v311_feedback.js 16 PASS/0 FAIL(토네이도 스프라이트 6기/17기 활성 실측, s3/s4 img DOM 렌더, 버서커 러지 75px vs 전사 0px, 3-1 복귀 라벨 "← 쿠소디아 마을", pageerror 0) → 스크린샷 2장 실측
+- 커밋만 수행 (APK/EXE 미빌드 — 유저 규칙 유지)
+
+Stage Summary:
+- 5항목 전부 해소. 산출물 커밋 ec7fc03 push 완료 (df7beec..ec7fc03)
+- 신규 에셋: fx_tornado.png + skillicon s3 16종·s4 8종 (총 25 PNG)
+- 스킬 라벨 변경: skylord V "폭풍 소용돌이" → "하늘의 희망" (사용자 호칭과 일치)
+- 다음 후보: 다른 3차/4차 스킬도 토네이도급 임팩트 재검토, 챕터 1(forest1) 복귀는 본마을 직행 유지 확인, 차기 빌드 시 versionCode 26·v3.0.11
