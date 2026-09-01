@@ -916,3 +916,24 @@ Stage Summary:
 - 사용자 6항목 중 ②③④⑥ 검증 완료(P0), ①⑤ 구현 완료(P1) — 몬스터/기능 보존하에 스토리만 본게임 세계관으로 통합·증축
 - 커밋만 수행 (APK/EXE 미빌드 — 유저가 "빌드해" 말할 때까지 금지). 차기 빌드 시 versionCode 25·v3.0.10으로 진행 필요
 - 남은 후보: 챕터 클리어 아웃트로 컷신·컷신 스킵 버튼·아뜰란티스 스핀오프 쪽 히어로 스킨·v3.0.7 백로그 4종
+
+---
+Task ID: 5
+Agent: Super Z (main)
+Task: "게임 2개 분리 금지" 해소 — 스핀오프 /atlantis 완전 제거·게임 1개 통합 + APK 빌드 전달 ("Apk내놔")
+
+Work Log:
+- 조사: 본게임(src/game)은 atlantis 모듈을 전혀 import하지 않는 완전 독립 제2의 게임임을 실측 (BootScene 주석의 "아뜰란티스 확장 몬스터"는 v1.5 이관 완료 표기로 본게임 에셋 정상)
+- 삭제: src/app/atlantis·src/components/atlantis·src/game/atlantis(6파일 2,893줄)·public/atlantis(988K 200여 건)·atlantis 전용 스크립트 3건 = 총 216건
+- Overlays.tsx: 타이틀 스핀오프 링크 버튼 제거(Link import 정리, Sparkles는 유지) + 배지 "v3.0.10 · 스핀오프 통합 완료 — 게임 1개 · 10장 90구역"
+- 버전 3곳 동기화: build.gradle 25/"3.0.10"·build_apk.sh SERTZ-v3.0.10.apk·배지
+- 검증: tsc 0에러(.next 캐시 오류는 캐시 삭제로 해소) → 커밋 21f87bb → GitHub push (e00208f..21f87bb)
+- APK 빌드: APK_EXPORT=1 next build(0) → cap sync(0.336s) → gradlew assembleRelease(BUILD SUCCESSFUL 1m11s)
+- APK 실측: aapt versionCode=25 versionName=3.0.10 ✓ / apksigner SHA-256 cc774f34(기존 키 일치) ✓ / assets 656건 / atlantis 잔여 0건 ✓
+- 구버전 SERTZ-v3.0.9.apk 삭제(최신만 보존), android/app/build·.gradle 정리
+- 트러블슈팅: 3000 포트 좀비 서버(pid 25597, .next 삭제로 hung) 종료 → 웹용 plain next build 재실행 → node server.js 기동 HTTP 200
+
+Stage Summary:
+- 게임 1개 통합 완료 — SERTZ 본게임 단일 진입(스핀오프 입구·파일·에셋 전부 제거), 아뜰란티스 기원 몬스터/기능은 v3.0.10 통합분으로 보존
+- 산출물: download/SERTZ-v3.0.10.apk (17.5MB, versionCode 25, 서명 일치)
+- 사용자 "Apk내놔" 지시에 따른 빌드 수행 — 이후 다시 "빌드해" 말할 때까지 커밋만 원칙 유지
