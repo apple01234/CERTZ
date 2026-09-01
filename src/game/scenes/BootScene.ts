@@ -129,6 +129,7 @@ const ASSET_LIST = [
   "item_armor_5", "item_armor_6",
   "item_ring_crit", "item_ring_guard",
   "item_scroll_return", "item_scroll_warp",
+  "item_scroll_star", // v3.0.7 — 강화 주문서
   "item_weapon_1", "item_weapon_2", "item_weapon_3", "item_weapon_4",
   "item_armor_1", "item_armor_2", "item_armor_3", "item_armor_4",
   "npc_merchant",

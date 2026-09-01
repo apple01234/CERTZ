@@ -76,6 +76,7 @@ export type ItemKey =
   | "pendant_arcane"
   | "scroll_return"
   | "scroll_warp"
+  | "scroll_star"
   | "buff_atk"
   | "buff_def"
   | "buff_spd"
@@ -151,6 +152,19 @@ export function starArmorBonus(up: number): { def: number; hp: number } {
   return { def, hp };
 }
 
+/** v3.0.7 — 강화 주문서 1장당 성공률 보너스 (%p, 중첩 최대 3장 = +45%p) */
+export const STAR_BLESS_RATE = 15;
+export const STAR_BLESS_MAX = 3;
+
+/** v3.0.7 — 장신구 스타포스 마일스톤 보너스 (crit 트랙: 반지 계열 / hp 트랙: 펜던트 계열)
+ *  무기·방어구와 동일 ★5/★10/★15 구간. crit 스탯이 있으면 치명 트랙, maxHp가 있으면 HP 트랙 (둘 다 가능). */
+export function starAccBonus(up: number, item: { crit?: number; maxHp?: number }): { crit: number; hp: number } {
+  let crit = 0, hp = 0;
+  if (item.crit) crit = up >= 15 ? 12 : up >= 10 ? 6 : up >= 5 ? 2 : 0;
+  if (item.maxHp) hp = up >= 15 ? 110 : up >= 10 ? 55 : up >= 5 ? 20 : 0;
+  return { crit, hp };
+}
+
 /** 성급 티어 (0=흰색 ★1~4 / 1=청록 ★5~9 / 2=보라 ★10~14 / 3=금색 ★15) */
 export function starTier(up: number): 0 | 1 | 2 | 3 {
   return up >= 15 ? 3 : up >= 10 ? 2 : up >= 5 ? 1 : 0;
@@ -191,6 +205,8 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   /* v2.5 — 이동 소모품 (지시 #6 귀환서 / #7 지역 워프 부적) */
   scroll_return: { key: "scroll_return", kind: "consumable", name: "마을 귀환서", icon: "item_scroll_return", price: 40, tier: "common" },
   scroll_warp: { key: "scroll_warp", kind: "consumable", name: "지역 이동 부적", icon: "item_scroll_warp", price: 120, tier: "rare" },
+  /* v3.0.7 — 강화 주문서: 사용 시 다음 강화 시도 1회 성공률 +15%p (최대 3중첩) */
+  scroll_star: { key: "scroll_star", kind: "consumable", name: "강화 주문서", icon: "item_scroll_star", price: 150, tier: "rare" },
   weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 0, tier: "common", atk: 0 },
   weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 110, tier: "rare", atk: 6 },
   weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 260, tier: "epic", atk: 14 },
@@ -320,6 +336,7 @@ export const SHOP_STOCK: ItemKey[] = [
   "potion_mp",
   "potion_hp2",
   "potion_mp2",
+  "scroll_star", // v3.0.7 — 강화 주문서
   "weapon_2",
   "armor_2",
   "weapon_3",
@@ -350,11 +367,40 @@ export const SHOP_STOCK: ItemKey[] = [
   "cos_wings",
 ];
 
-/** v3.0.6 (지시 #4) — 아이템 판매가 (상점가의 40%, 최소 1G · 보스 전용은 고정가) */
+/** v3.0.6 (지시 #4) — 아이템 판매가 (상점가의 40%, 최소 1G · 보스 전용은 고정가)
+ *  v3.0.7 — 보스 전용 드롭(tradeLock)은 골드 판매 불가 → 거래소 에메랄드 판매(tradeValue)로 이동 */
 export function sellValue(item: ItemDef): number {
+  if (item.tradeLock) return 0;
   if (item.tier === "legend") return item.bmOnly ? 0 : 400;
   return Math.max(1, Math.floor(item.price * 0.4));
 }
+
+/* ================= v3.0.7 — 유저 거래소 (보스 드롭 전용 사고팔기) =================
+ *  보스 드롭 9종은 상점에서 살 수 없다(tradeLock) → 거래소에서 에메랄드로만 거래.
+ *  판매가 = 구매가의 60% (거래 수수료 컨셉). 에메랄드 수급처: 보스+2/정예+1/반복 사이클+1/GM. */
+export const TRADE_PRICES: Record<string, number> = {
+  bd_guardian: 8,   // 심연의 수호자 (1챕터)
+  bd_behemoth: 10,  // 눈보라의 거수
+  bd_nidhog: 12,    // 니드호그
+  bd_surt: 14,      // 수르트
+  bd_fenrir: 16,    // 펜리르
+  bd_skoll: 18,     // 스콜&하티
+  bd_gram: 20,      // 그람
+  bd_abysslord: 24, // 심연의 군주
+  bd_abudditos: 30, // 아부디토스 (최종 보스)
+};
+
+/** 거래소 판매가 (에메랄드) — 구매가의 60%, 최소 1 */
+export function tradeValue(key: ItemKey): number {
+  const p = TRADE_PRICES[key];
+  return p ? Math.max(1, Math.floor(p * 0.6)) : 0;
+}
+
+/** 거래소 진열 목록 (보스 드롭 9종 — 등급순) */
+export const TRADE_STOCK: ItemKey[] = [
+  "bd_guardian", "bd_behemoth", "bd_nidhog", "bd_surt", "bd_fenrir",
+  "bd_skoll", "bd_gram", "bd_abysslord", "bd_abudditos",
+];
 
 /** v3.0.6 (지시 #1) — BM 상점 판매 목록 (에메랄드 전용 — 골드 상점과 분리) */
 export const BM_STOCK: ItemKey[] = ["pet_atlas", "ring_bless", "buff_king", "cos_aurora"];

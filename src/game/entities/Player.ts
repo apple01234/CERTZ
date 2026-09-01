@@ -3,6 +3,7 @@ import type { WorldScene } from "../scenes/WorldScene";
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_FALLBACK_FROM, upgradeCost, sellValue, type BuffKey as BuffKeyT,
   starWeaponBonus, starArmorBonus, STAR_MILESTONES,
+  TRADE_PRICES, tradeValue, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey,
 } from "../data";
 import {
@@ -48,6 +49,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   emerald = 0;
   owned: ItemKey[] = ["weapon_1", "armor_1"];
   upgrades: { weapon: number; armor: number } = { weapon: 0, armor: 0 }; // 강화 단계 (+0~+5)
+  /** v3.0.7 — 장신구 스타포스 (itemKey → 성 0~15) — 장착/미장착 무관 보유 단위 유지 */
+  accUp: Record<string, number> = {};
+  /** v3.0.7 — 강화 주문서 충전 수 (다음 강화 성공률 +15%p/장, 최대 3) */
+  starBless = 0;
   /** 전직 클래스 (v1.8 다차원 트리 — 1차/2차/3차 키, 미전직 null) */
   cls: ClassKey | null = null;
   /** 경로 누적 보너스 캐시 — cls 변경 시에만 갱신 (getter 프레임 호출 부담 제거) */
@@ -1022,12 +1027,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           }
         }
         // 타격당 자힐 — 현자 계열 정체성
+        // v3.0.7 — 힐러 정체성 강화: 자힐 상향(8+4t) + MP 회복(+4+2t) + 반경 내 원격 아군 치유 파동
         if (hits > 0) {
-          const heal = (6 + 3 * t) * hits;
+          const heal = (8 + 4 * t) * hits;
           this.hp = Math.min(this.maxHp, this.hp + heal);
+          this.mp = Math.min(this.maxMp, this.mp + 4 + 2 * t);
           this.scene.spawnPickupText(this.x, this.y - 40, `+${heal} HP`, "#7dffa8");
+          if (t >= 2) this.scene.spawnHealFx(this.x, this.y, 0x7dffa8);
           this.scene.onMeleeConnect(hits, "skill");
         }
+        // v3.0.7 — 순수 힐러 지원: 파동이 닿는 아군(멀티 동접자)에게 치유 파동 연출
+        this.scene.healRemotesPulse(this.x, this.y, radius, 8 + 4 * t);
       });
     };
     wave(80);
@@ -1483,11 +1493,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           x: this.x, y: this.y + 12, radius: 300, dur: 9000,
           dps: Math.max(8, Math.round(this.atkTotal * 0.7)),
           kind: "time", owner: "player", slow: true,
+          /* v3.0.7 — 크로니컬 힐러 강화: 필드가 자신의 HP를 틱마다 회복 (시간이 상처를 되감음) */
+          selfHealPerTick: Math.max(2, Math.round(this.maxHp * 0.01)),
         });
         this.scene.spawnBurstAt(this.x, this.y, 24, 0xb0a0ff);
         this.scene.spawnPillar(this.x, this.y, 0xb0a0ff, 130);
         this.scene.cameras.main.flash(80, 200, 180, 255);
-        this.scene.spawnPickupText(this.x, this.y - 44, "시간 왜곡 — 적 감속", "#e2e8ff");
+        this.scene.spawnPickupText(this.x, this.y - 44, "시간 왜곡 — 적 감속 · 자신 회복", "#e2e8ff");
         break;
       }
       /* 나이트블레이드 — 그림자 칼날: 선회 오비트 — v3.0.4 임팩트 상향 */
@@ -1917,6 +1929,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const { dmg } = this.rollDamage(2.6, true);
           e.takeDamage(dmg, away, 60, false);
         }
+        /* v3.0.7 — 영원(크로니컬 계열) 힐러 정점: 시간 정지 동안 자신 HP 25% + MP 50% 즉시 회복 */
+        {
+          const heal = Math.max(10, Math.round(this.maxHp * 0.25));
+          const mana = Math.max(5, Math.round(this.maxMp * 0.5));
+          this.hp = Math.min(this.maxHp, this.hp + heal);
+          this.mp = Math.min(this.maxMp, this.mp + mana);
+          this.scene.spawnHealFx(this.x, this.y, 0x7dffa8);
+          this.scene.spawnPickupText(this.x, this.y - 66, `+${heal} HP · +${mana} MP`, "#7dffa8");
+        }
         this.scene.spawnBurstAt(this.x, this.y, 30, 0xb0a0ff);
         this.scene.spawnPillar(this.x, this.y, 0xb0a0ff, 160);
         this.scene.cameras.main.flash(140, 220, 200, 255);
@@ -2333,9 +2354,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** 크리티컬 확률 (%) — 기본 8% + 장신구(반지/펜던트 합산) + 클래스 경로 누적 + 민첽 0.4%p/점
-   *  v3.0.5 — 무기 스타포스 마일스톤 치명 보너스(★5+2/★10+3/★15+5) 반영 */
+   *  v3.0.5 — 무기 스타포스 마일스톤 치명 보너스(★5+2/★10+3/★15+5) 반영
+   *  v3.0.7 — 장신구 스타포스 마일스톤 치명 보너스(★5+2/★10+6/★15+12) 반영 */
   get critRate(): number {
-    const acc = this.accessories.reduce((s, k) => s + (ITEMS[k].crit ?? 0), 0) + starWeaponBonus(this.upgrades.weapon).crit;
+    let acc = 0;
+    for (const k of this.accessories) {
+      acc += (ITEMS[k].crit ?? 0) + starAccBonus(this.accUp[k] ?? 0, ITEMS[k]).crit;
+    }
+    acc += starWeaponBonus(this.upgrades.weapon).crit;
     return Math.round((Player.BASE_CRIT + acc + this.clsBonus.critAdd + this.stats.dex * 0.4) * 10) / 10;
   }
 
@@ -2465,6 +2491,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.maxHp += item.maxHp;
         this.hp = Math.min(this.maxHp, this.hp + item.maxHp);
       }
+      this.syncAccStarHp(); // v3.0.7 — 장신구 스타포스 HP 마일스톤 동기화
     } else return false;
     this.scene.sfxEquip();
     this.scene.spawnPickupText(this.x, this.y - 30, `${item.name} 장착!`, "#ffd76a");
@@ -2477,6 +2504,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const idx = this.accessories.indexOf(key);
     if (idx < 0) return false;
     this.removeAccessory(key);
+    this.syncAccStarHp(); // v3.0.7 — 스타포스 HP 마일스톤 회수
     this.scene.emitHud();
     return true;
   }
@@ -2490,6 +2518,66 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.maxHp = Math.max(1, this.maxHp - it.maxHp);
       this.hp = Math.min(this.hp, this.maxHp);
     }
+  }
+
+  /* ---------------- v3.0.7 — 장신구 스타포스 ---------------- */
+
+  /** 장신구 HP 마일스톤 총액 (현재 장착 중 장신구 기준) */
+  private accHpTarget(): number {
+    let hp = 0;
+    for (const k of this.accessories) hp += starAccBonus(this.accUp[k] ?? 0, ITEMS[k]).hp;
+  return hp;
+  }
+  /** 장착 변경/강화 후 maxHp 동기화 — 방어구 syncStarHp와 동일 패턴 (델타만 가산) */
+  syncAccStarHp() {
+    const target = this.accHpTarget();
+    const delta = target - this.accHpApplied;
+    if (delta === 0) return;
+    this.maxHp = Math.max(60, this.maxHp + delta);
+    this.accHpApplied = target;
+    if (delta > 0) this.hp = Math.min(this.maxHp, this.hp + delta);
+  }
+  private accHpApplied = 0;
+  /** 세이브 복원 — 가산 이력 선복원 (syncAccStarHp가 델타만 반영) */
+  restoreAccHp(applied: number) { this.accHpApplied = applied || 0; }
+  get accHpAppliedVal() { return this.accHpApplied; }
+
+  /** v3.0.7 — 장신구 스타포스 강화 시도. 비용/성공률 체계는 무기·방어구와 동일, 실패 ★9+ 하락 */
+  tryUpgradeAcc(key: ItemKey): "ok" | "fail" | "max" | "poor" | "none" {
+    const item = ITEMS[key];
+    if (!item || item.kind !== "accessory") return "none";
+    const cur = this.accUp[key] ?? 0;
+    if (cur >= this.upMax) return "max";
+    const cost = upgradeCost("weapon", cur);
+    if (this.gold < cost) return "poor";
+    this.gold -= cost;
+    const ok = Math.random() * 100 < (UPGRADE_RATES[cur] ?? 0);
+    if (ok) {
+      this.accUp[key] = cur + 1;
+      const next = cur + 1;
+      const milestone = (STAR_MILESTONES as readonly number[]).includes(next);
+      this.scene.sfxUpgradeOk();
+      if (milestone) {
+        this.scene.spawnStarForceBreakthrough(this.x, this.y, "weapon", next);
+        this.scene.spawnPickupText(this.x, this.y - 58, `${item.name} ★${next} 돌파!`, "#ffd76a");
+      } else {
+        this.scene.spawnStarForceBurst(this.x, this.y, next, true);
+        this.scene.spawnPickupText(this.x, this.y - 44, `${item.name} 강화 성공! ★${next}`, "#ffd76a");
+      }
+      this.syncAccStarHp();
+    } else if (cur >= UPGRADE_FALLBACK_FROM) {
+      this.accUp[key] = cur - 1;
+      this.scene.sfxUpgradeFail();
+      this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
+      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… ★${cur - 1} 하락`, "#ff9a9a");
+      this.syncAccStarHp();
+    } else {
+      this.scene.sfxUpgradeFail();
+      this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
+      this.scene.spawnPickupText(this.x, this.y - 44, "강화 실패…", "#ff9a9a");
+    }
+    this.scene.emitHud();
+    return ok ? "ok" : "fail";
   }
 
   /** 상점 구매 — 골드 차감/인벤토리 반영. 실패 시 false */
@@ -2548,20 +2636,66 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const value = sellValue(item);
     if (value <= 0) return false;
     this.owned.splice(idx, 1);
-    // 장신구는 장착 슬롯에서도 제거
+    // 장신구는 장착 슬롯에서도 제거 (v3.0.7 — 스타포스 HP 마일스톤 회수 포함)
     if (item.kind === "accessory") {
-      const acc = this.accessories.indexOf(key);
-      if (acc >= 0) {
-        this.accessories.splice(acc, 1);
-        if (item.maxHp) {
-          this.maxHp = Math.max(60, this.maxHp - item.maxHp);
-          this.hp = Math.min(this.hp, this.maxHp);
-        }
-      }
+      this.removeAccessory(key);
+      this.syncAccStarHp();
     }
     this.gold += value;
     audio.sfx.coin();
     this.scene.spawnPickupText(this.x, this.y - 30, `${item.name} 판매 +${value}G`, "#ffd76a");
+    this.scene.emitHud();
+    return true;
+  }
+
+  /* ---------------- v3.0.7 — 유저 거래소 / 강화 주문서 ---------------- */
+
+  /** 거래소 구매 (에메랄드) — 보스 드롭 9종 전용. 상점(buy)은 여전히 tradeLock 차단 */
+  tradeBuy(key: ItemKey): boolean {
+    const item = ITEMS[key];
+    const price = TRADE_PRICES[key];
+    if (!item || !item.tradeLock || !price) return false;
+    if (this.emerald < price) return false;
+    if (this.owned.includes(key)) return false; // 중복 보유 금지 (장신구 1개 한정)
+    this.emerald -= price;
+    this.owned.push(key);
+    this.equip(key); // 즉시 장착 (슬롯 넘치면 기존 교체)
+    this.syncAccStarHp();
+    audio.sfx.coin();
+    this.scene.spawnPickupText(this.x, this.y - 30, `거래소 구매 ${item.name}`, "#8ff2d8");
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 거래소 판매 (에메랄드) — 구매가의 60% 환급 (tradeValue) */
+  tradeSell(key: ItemKey): boolean {
+    const item = ITEMS[key];
+    if (!item || !item.tradeLock) return false;
+    const idx = this.owned.indexOf(key);
+    if (idx < 0) return false;
+    const value = tradeValue(key);
+    if (value <= 0) return false;
+    this.owned.splice(idx, 1);
+    if (item.kind === "accessory") {
+      this.removeAccessory(key);
+      this.syncAccStarHp();
+    }
+    this.emerald += value;
+    audio.sfx.coin();
+    this.scene.spawnPickupText(this.x, this.y - 30, `거래소 판매 +${value} 에메랄드`, "#8ff2d8");
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 강화 주문서 사용 — 충전 1 증가 (최대 3). 다음 강화 시도 시 소모되어 성공률 +15%p/장 */
+  useStarScroll(): boolean {
+    const idx = this.owned.indexOf("scroll_star");
+    if (idx < 0) return false;
+    if (this.starBless >= STAR_BLESS_MAX) return false;
+    this.owned.splice(idx, 1);
+    this.starBless += 1;
+    audio.sfx.potion(); // 사용음 — 물약과 동일 계열 (주문서 소모)
+    this.scene.spawnPickupText(this.x, this.y - 36, `강화 주문서 충전 ${this.starBless}/${STAR_BLESS_MAX} (+${this.starBless * STAR_BLESS_RATE}%p)`, "#d29dff");
     this.scene.emitHud();
     return true;
   }
@@ -2666,8 +2800,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const cost = this.upgradeCost(slot);
     if (this.gold < cost) return "poor";
     this.gold -= cost;
-    const ok = Math.random() * 100 < (UPGRADE_RATES[cur] ?? 0);
+    // v3.0.7 — 강화 주문서 충전분 성공률 가산 후 1회 소모 (성공/실패 무관)
+    const bless = Math.min(this.starBless, STAR_BLESS_MAX);
+    if (bless > 0) this.starBless -= 1;
+    const rate = (UPGRADE_RATES[cur] ?? 0) + bless * STAR_BLESS_RATE;
+    const ok = Math.random() * 100 < rate;
     const slotName = slot === "weapon" ? "무기" : "방어구";
+    const blessTag = bless > 0 ? ` · 주문서 +${bless * STAR_BLESS_RATE}%p` : "";
     if (ok) {
       this.upgrades[slot] = cur + 1;
       const next = cur + 1;
@@ -2675,10 +2814,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.sfxUpgradeOk();
       if (milestone) {
         this.scene.spawnStarForceBreakthrough(this.x, this.y, slot, next);
-        this.scene.spawnPickupText(this.x, this.y - 58, `${slotName} ★${next} 돌파!`, "#ffd76a");
+        this.scene.spawnPickupText(this.x, this.y - 58, `${slotName} ★${next} 돌파!${blessTag}`, "#ffd76a");
       } else {
         this.scene.spawnStarForceBurst(this.x, this.y, this.upgrades[slot], true);
-        this.scene.spawnPickupText(this.x, this.y - 44, `강화 성공! ★${next}`, "#ffd76a");
+        this.scene.spawnPickupText(this.x, this.y - 44, `강화 성공! ★${next}${blessTag}`, "#ffd76a");
       }
       if (slot === "armor") this.syncStarHp();
     } else if (cur >= UPGRADE_FALLBACK_FROM) {
@@ -2686,12 +2825,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.upgrades[slot] = cur - 1;
       this.scene.sfxUpgradeFail();
       this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
-      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… ★${cur - 1} 하락`, "#ff9a9a");
+      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… ★${cur - 1} 하락${blessTag}`, "#ff9a9a");
       if (slot === "armor") this.syncStarHp();
     } else {
       this.scene.sfxUpgradeFail();
       this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
-      this.scene.spawnPickupText(this.x, this.y - 44, "강화 실패…", "#ff9a9a");
+      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패…${blessTag}`, "#ff9a9a");
     }
     this.scene.emitHud();
     return ok ? "ok" : "fail";

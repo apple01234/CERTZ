@@ -725,3 +725,43 @@ Stage Summary:
 - v3.0.6 (versionCode 21) 전체 배포 체인 완료: 코드 push + Release + APK 업로드 + 무결성 MATCH
 - 미완 항목 없음. v3.0.6 배포 완전 종료.
 - 다음 후보 (worklog 기존 계획): 유저 거래소(보스 드롭 tradeLock 해제·판매/구매 UI), 강화 주문서 아이템, 세이지 계열 순수 힐러 확장, 장신구 스타포스
+
+---
+Task ID: v3.0.7
+Agent: Super Z (main)
+Task: v3.0.7 — 4대 기능(유저 거래소·강화 주문서·장신구 스타포스·세이지 힐러) 개발+배포
+
+Work Log:
+- ①유저 거래소: TRADE_PRICES(bd_* 9종 8~30 에메랄드)·tradeValue(구매가 60% 환급)·TRADE_STOCK 신설(data.ts).
+  Player.tradeBuy(에메랄드 차감+즉시 장착+중복 차단)/tradeSell(장착 해제+HP 마일스톤 회수) — buy()는 tradeLock 차단 유지.
+  TradePanel 신설(보유 전설 판매+9종 구매 목록+수수료 안내), PanelKind "trade", ShopPanel 헤더 거래소 버튼,
+  가방 보스 드롭 카드 "거래소 +N" 버튼, WorldScene rpg:tradeBuy/tradeSell 핸들러. sellValue(tradeLock)=0으로 골드 판매 차단 전환.
+- ②강화 주문서: scroll_star 아이템(150G, rare, 소지품) + item_scroll_star.png PIL 신규 생성(보라 별 두루마리) + BootScene 등록.
+  STAR_BLESS_RATE=15/STAR_BLESS_MAX=3, Player.useStarScroll(충전)·tryUpgrade에 성공률 가산+1장 소모(성공/실패 무관)+결과 텍스트 주문서 태그.
+  가방 '충전' 버튼(rpg:starScroll), ShopPanel 스타포스 헤더 충전 현황 배지+버튼 성공률 가산 표기.
+- ③장신구 스타포스: starAccBonus(★5/10/15 — crit 트랙 +2/+6/+12, HP 트랙 +20/+55/+110, 둘 다 가능).
+  Player.accUp(세이브)/tryUpgradeAcc(무기 비용·성공률 체계 동일, ★9+ 실패 하락)/syncAccStarHp·restoreAccHp·accHpApplied(델타 방식).
+  equip/unequip/sell/tradeSell 전 경로 HP 동기화, critRate 게터에 마일스톤 crit 반영.
+  가방 장신구 카드: 강화 버튼(비용·성공률)+성 바(티어색)+보너스 표기, rpg:upgradeAcc 핸들러.
+- ④세이지 힐러: purify 자힐 (6+3t)→(8+4t)+MP 회복(4+2t) 신규+반경 내 원격 아군 치유 파동(healRemotesPulse — 멀티 연출).
+  크로니컬 timewarp 필드 selfHealPerTick(자신 maxHp 1%/틱) 신설 — spawnField 확장+tickFields 힐 분기.
+  이터널 eternalloop HP 25%+MP 50% 즉시 회복 추가. SKILL3/4_DESC·sage 라벨 갱신.
+- 세이브: accUp/starBless/accHp 필드(config.ts 정규화+buildSave 2곳+로드 복원) — 구 세이브 호환 기본값.
+- RpgState에 accUp/starBless/accHp 노출(패널 표기용), __SERTZ_DEBUG__에 data 모듈 전체 노출(E2E 정적 검증).
+- E2E scripts/e2e_v307_features.js 신설 38 PASS / 0 FAIL — 거래소 사이클(구매 100→92·판매 92→96·중복 차단·이벤트 경로)·
+  주문서(구매 150G·충전·★9 결정론 60% 성공→★10·★10 실패→★9 하락·★8 유지·소모 3→2→1→0)·
+  장신구(강화 성공·골드 차감·★5 crit +2 실측·bd_behemoth ★5 HP+20·세이브 accUp/starBless/accHp)·
+  세이지(purify 자힐+MP 순증 -7[비용 15 대비 회복 8]·timewarp 필드·eternalloop +163HP/+210MP)·패널 UI 5종.
+  테스트 교훈: ①useSkill1 MP 게이트 15 — 충전량 미달이면 자힐 자체가 미발동(마을에는 적 없음 → forest1 이동 필요)
+  ②eternalloop MP 실측은 스킬 비용 40 차감 후 순증 기준 ③Math.random 스텁으로 성공률 결정론 실측.
+- 회귀: v2.7 12/12(E2 타이밍 플래키 1회→재실행 통과) · v3.0.1 10/10(카이팅 실측 플래키 1회→재실행 통과) ·
+  v3.0.2 12/12 · v3.0.3 23/23 · v3.0.4 24/24 · v3.0.5 33/33 · v3.0.6 44/44 — 총 194/194 + 신규 38 = 232 PASS.
+- 버전: versionCode 22/"3.0.7" 3곳 동기화(build.gradle·build_apk.sh·Overlays 배지 "유저 거래소·강화 주문서·장신구 스타포스·세이지 힐러")
+- 배포: 웹 재빌드+데몬 기동(200/socket 200) → APK 16,970,214B aapt(22/3.0.7)·apksigner(CN=SERTZ 동일 키 cc774f34…) 검증 →
+  Release v3.0.7(id 380184676) 업로드, 다운로드 sha256 914c8201… == 로컬 MATCH → download/ SERTZ-v3.0.7.apk 단독(구버전 삭제)
+
+Stage Summary:
+- 4대 기능 전부 구현+실측. "보스 드롭은 거래소에서 사고팔게"가 완성되며 v3.0.6 보스 전용 드롭의 후속 약속 이행.
+  강화 주문서로 스타포스 고구간 리스크 완화 루트 신설, 장신구도 ★15 성장 콘텐츠로 확장, 세이지 계열 힐러 정체성 3중 강화.
+- 다음 후보: 거래소 유저간 P2P 거래(서버 상장/검색), 강화 주문서 상위 등급(고급 주문서 +25%p), 장신구 전용 성급 UI 오라,
+  세이지 파티 힐 대상 확장(파티원 HP 동기화), 에메랄드 수급처 밸런스 조정

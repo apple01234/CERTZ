@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
 import { familyOf, isClassKey, classLabel } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -228,6 +228,8 @@ export class WorldScene extends Phaser.Scene {
     owner: "enemy" | "player";
     tickAcc: number;
     heal?: boolean; slow?: boolean; stun?: boolean;
+    /** v3.0.7 — 크로니컬 시간왜곡: 필드가 자신의 HP를 틱마다 회복 (플레이어 소유 장판 한정) */
+    selfHealPerTick?: number;
   }[] = [];
 
   /* ----- v3.0.3: 무기 스프라이트 (활/지팡이/단검 — 손에 들고 다니는 장비 비주얼) ----- */
@@ -469,6 +471,11 @@ export class WorldScene extends Phaser.Scene {
       /* v2.9 (#8) — 다중 장신구 마이그레이션 (구 세이브 accessory 1개 → 배열) */
       this.player.accessories = ((savedPlayer.accessories as ItemKey[] | undefined) ??
         (savedPlayer.accessory ? [savedPlayer.accessory as ItemKey] : [])) as ItemKey[];
+      /* v3.0.7 — 장신구 스타포스 복원 (성 + HP 가산 이력) */
+      this.player.accUp = { ...(savedPlayer.accUp ?? {}) };
+      this.player.starBless = savedPlayer.starBless ?? 0;
+      this.player.restoreAccHp(savedPlayer.accHp ?? 0);
+      this.player.syncAccStarHp();
       this.player.emerald = savedPlayer.emerald ?? 0;
       // 퀘스트 진행 복원 (이어하기 — 파편/보상 중복 수령 방지)
       this.savedQuestIdx = { ...(savedPlayer.questIdx ?? {}) };
@@ -2629,6 +2636,61 @@ export class WorldScene extends Phaser.Scene {
       this.save();
       this.emitRpgState();
     };
+    /* v3.0.7 — 유저 거래소: 구매(에메랄드 차감) */
+    const onTradeBuy = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const it = ITEMS[v.key as ItemKey];
+      const okBuy = this.player.tradeBuy(v.key as ItemKey);
+      if (okBuy) {
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        EventBus.emit("banner:show", { text: `거래소 구매 — ${it?.name ?? "아이템"} (-${TRADE_PRICES[v.key] ?? 0} 에메랄드)` });
+        audio.sfx.equip();
+      } else {
+        EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
+      }
+    };
+    /* v3.0.7 — 유저 거래소: 판매(에메랄드 환급) */
+    const onTradeSell = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const okSell = this.player.tradeSell(v.key as ItemKey);
+      if (okSell) {
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        EventBus.emit("banner:show", { text: `거래소 판매 — +${tradeValue(v.key as ItemKey)} 에메랄드` });
+      }
+    };
+    /* v3.0.7 — 강화 주문서 사용 (충전) */
+    const onStarScroll = () => {
+      if (!this.player || this.dialoguing) return;
+      if (!this.player.useStarScroll()) {
+        EventBus.emit("banner:show", { text: this.player.starBless >= 3 ? "충전 최대 3장 — 강화부터" : "강화 주문서가 없습니다" });
+        return;
+      }
+      this.save();
+      this.emitRpgState();
+    };
+    /* v3.0.7 — 장신구 스타포스 강화 */
+    const onUpgradeAcc = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const r = this.player.tryUpgradeAcc(v.key as ItemKey);
+      if (r === "poor") {
+        EventBus.emit("banner:show", { text: "골드가 부족합니다" });
+      } else if (r === "max") {
+        EventBus.emit("banner:show", { text: "이미 최대 성수입니다 (★15)" });
+      }
+      if (r === "ok" || r === "fail") {
+        this.save();
+        this.emitRpgState();
+        EventBus.emit("rpg:upgradeResult", { slot: "weapon", result: r === "ok" ? "ok" : "fail" });
+      }
+    };
+    EventBus.on("rpg:tradeBuy", onTradeBuy);
+    EventBus.on("rpg:tradeSell", onTradeSell);
+    EventBus.on("rpg:starScroll", onStarScroll);
+    EventBus.on("rpg:upgradeAcc", onUpgradeAcc);
     EventBus.on("rpg:sell", onSell);
     EventBus.on("rpg:bmBuy", onBmBuy);
     EventBus.on("rpg:autoset", onAutoSet);
@@ -2667,6 +2729,10 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:autoset", onAutoSet);
       EventBus.off("rpg:autohunt", onAutoHunt);
       EventBus.off("rpg:gm", onGm);
+      EventBus.off("rpg:tradeBuy", onTradeBuy);
+      EventBus.off("rpg:tradeSell", onTradeSell);
+      EventBus.off("rpg:starScroll", onStarScroll);
+      EventBus.off("rpg:upgradeAcc", onUpgradeAcc);
     });
   }
 
@@ -3527,6 +3593,7 @@ export class WorldScene extends Phaser.Scene {
     kind: "poison" | "fire" | "light" | "time";
     owner: "enemy" | "player";
     heal?: boolean; slow?: boolean; stun?: boolean;
+    selfHealPerTick?: number;
   }) {
     const tint = cfg.kind === "poison" ? 0x7ade4a : cfg.kind === "fire" ? 0xff8a3a : cfg.kind === "light" ? 0xffe9a0 : 0xb0a0ff;
     const zone = this.add.circle(cfg.x, cfg.y, cfg.radius, tint, 0.22).setDepth(2).setStrokeStyle(2, tint, 0.55);
@@ -3535,6 +3602,7 @@ export class WorldScene extends Phaser.Scene {
       zone, x: cfg.x, y: cfg.y, radius: cfg.radius,
       dur: cfg.dur, dps: cfg.dps, kind: cfg.kind, owner: cfg.owner,
       tickAcc: 0, heal: cfg.heal, slow: cfg.slow, stun: cfg.stun,
+      selfHealPerTick: cfg.selfHealPerTick,
     });
   }
 
@@ -3578,7 +3646,25 @@ export class WorldScene extends Phaser.Scene {
           this.spawnHealFx(this.player.x, this.player.y, 0xffe9a0);
           this.emitHud();
         }
+        // v3.0.7 — 시간왜곡 자신 회복 (selfHealPerTick — 크로니컬 힐러 강화)
+        if (f.selfHealPerTick && this.player && this.player.state !== "dead" &&
+            Phaser.Math.Distance.Between(f.x, f.y, this.player.x, this.player.y) <= f.radius) {
+          this.player.hp = Math.min(this.player.maxHp, this.player.hp + f.selfHealPerTick);
+          this.spawnHealFx(this.player.x, this.player.y, 0xb0a0ff);
+          this.emitHud();
+        }
       }
+    }
+  }
+
+  /** v3.0.7 — 세이지 정화의 파동: 반경 내 동접자(원격 아군)에게 치유 파동 연출.
+   *  HP는 각 클라이언트 로컬 권한이라 연출(이펙트+텍스트)만 — 멀티 힐러 정체성 표현 */
+  healRemotesPulse(x: number, y: number, radius: number, amount: number) {
+    for (const r of this.remotes.values()) {
+      if (!r.sp?.active) continue;
+      if (Phaser.Math.Distance.Between(x, y, r.tx, r.ty) > radius) continue;
+      this.spawnHealFx(r.tx, r.ty - 10, 0x7dffa8);
+      this.spawnPickupText(r.tx, r.ty - 42, `+${amount} HP`, "#7dffa8");
     }
   }
 
@@ -4729,6 +4815,9 @@ export class WorldScene extends Phaser.Scene {
       upWea: this.player.upgrades.weapon,
       upArm: this.player.upgrades.armor,
       sfHp: this.player.starHpApplied,
+      accUp: { ...this.player.accUp },
+      starBless: this.player.starBless,
+      accHp: this.player.accHpAppliedVal,
       nearShop: this.nearShop,
       shopStock: [...SHOP_STOCK],
       /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 (지시 #1/#5) */
@@ -4799,6 +4888,9 @@ export class WorldScene extends Phaser.Scene {
       upWea: this.player.upgrades.weapon,
       upArm: this.player.upgrades.armor,
       sfHp: this.player.starHpApplied,
+      accUp: { ...this.player.accUp },
+      starBless: this.player.starBless,
+      accHp: this.player.accHpAppliedVal,
       accessories: [...this.player.accessories],
       emerald: this.player.emerald,
       questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },

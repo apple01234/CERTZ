@@ -5,6 +5,7 @@ import { EventBus, type PanelKind, type RpgState, type HudState, type QuestLogSt
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, upgradeCost, autoAllocPlan,
   starWeaponBonus, starArmorBonus, starTier, STAR_TIER_CSS, UPGRADE_FALLBACK_FROM,
+  TRADE_PRICES, tradeValue, TRADE_STOCK, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
   CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue,
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey,
 } from "@/game/data";
@@ -291,6 +292,13 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           <div className="flex items-center gap-2">
             <GoldChip gold={rpg.gold} />
             <EmeraldChip emerald={rpg.emerald} />
+            {/* v3.0.7 — 유저 거래소 진입 (보스 드롭 전용 사고팔기) */}
+            <button
+              onClick={() => EventBus.emit("ui:panel", { panel: "trade" })}
+              className="rounded-md border border-teal-300/60 bg-teal-400/15 px-2 py-1 text-[10px] font-black text-teal-200 hover:bg-teal-400/30"
+            >
+              거래소
+            </button>
             {/* v3.0.6 (지시 #1) — BM 상점 진입 (에메랄드 전용 · 상점과 분리) */}
             <button
               onClick={() => EventBus.emit("ui:panel", { panel: "bmshop" })}
@@ -367,6 +375,12 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
             <img src="/assets/icon_hammer.png" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
             <p className="text-[12px] font-black text-amber-200">스타포스 강화</p>
             <p className="text-[10px] text-white/45">최대 ★{UPGRADE_MAX} · ★{UPGRADE_FALLBACK_FROM} 이상 실패 시 1성 하락</p>
+            {/* v3.0.7 — 강화 주문서 충전 현황 */}
+            {(rpg.starBless ?? 0) > 0 && (
+              <span className="ml-auto rounded-md border border-purple-300/50 bg-purple-400/15 px-1.5 py-0.5 text-[9px] font-black text-purple-200">
+                주문서 {(rpg.starBless ?? 0)}장 · +{(rpg.starBless ?? 0) * STAR_BLESS_RATE}%p
+              </span>
+            )}
           </div>
           {/* 마일스톤 효과 안내 */}
           <div className="mb-1.5 flex flex-wrap gap-x-2.5 gap-y-0.5 rounded-md bg-white/[0.04] px-2 py-1 text-[9px] leading-relaxed text-white/55">
@@ -382,7 +396,9 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
               const up = slot === "weapon" ? rpg.upWea : rpg.upArm;
               const maxed = up >= UPGRADE_MAX;
               const cost = upgradeCost(slot, up);
-              const rate = UPGRADE_RATES[up] ?? 0;
+              /* v3.0.7 — 강화 주문서 충전분 성공률 가산 표기 */
+              const bless = Math.min(rpg.starBless ?? 0, STAR_BLESS_MAX);
+              const rate = (UPGRADE_RATES[up] ?? 0) + bless * STAR_BLESS_RATE;
               const affordable = rpg.gold >= cost;
               const tier = starTier(up);
               const tierCss = STAR_TIER_CSS[tier];
@@ -433,7 +449,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                           : "cursor-not-allowed bg-slate-700/50 text-white/35"
                     }`}
                   >
-                    {maxed ? "최대" : `${cost.toLocaleString()} G · ${rate}%`}
+                    {maxed ? "최대" : `${cost.toLocaleString()} G · ${rate}%${bless > 0 ? ` (+${bless * STAR_BLESS_RATE})` : ""}`}
                   </button>
                 </div>
               );
@@ -442,6 +458,117 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
         </div>
 
         <p className="mt-2 text-center text-[10px] text-white/40">장비는 구매 시 즉시 장착됩니다 · 반지 4개/펜던트 2개 중복 장착 가능 · ESC로 닫기</p>
+      </div>
+    </div>
+  );
+}
+
+/* ================= v3.0.7 — 유저 거래소 (보스 드롭 9종 전용 사고팔기) =================
+ *  보스 드롭은 상점에서 살 수 없다(tradeLock) → 여기서만 에메랄드로 거래.
+ *  판매가는 구매가의 60% (수수료). 에메랄드 수급처: 보스 처치 +2 / 정예 +1 / 반복 의뢰 사이클 +1. */
+export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const ownedBd = TRADE_STOCK.filter((k) => rpg.owned.includes(k));
+  return (
+    <div
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+      onPointerDown={onClose}
+    >
+      <div
+        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-teal-200/60 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/assets/item_ring_guard.png" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
+            <div>
+              <p className="text-sm font-black text-teal-200">유저 거래소</p>
+              <p className="text-[10px] text-white/60">보스 전용 드롭은 여기서만 사고팔 수 있어요</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <EmeraldChip emerald={rpg.emerald} />
+            <button
+              onClick={onClose}
+              aria-label="거래소 닫기"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* 내 보유 전설 — 판매 */}
+        {ownedBd.length > 0 && (
+          <>
+            <p className="mb-1 text-[11px] font-bold text-white/50">보유 전설 — 판매</p>
+            <div className="mb-3 flex flex-col gap-1.5">
+              {ownedBd.map((k) => {
+                const item = ITEMS[k];
+                const up = rpg.accUp?.[k] ?? 0;
+                const worn = rpg.accessories.includes(k);
+                return (
+                  <div key={k} className="flex items-center gap-2.5 rounded-lg border border-amber-300/30 bg-amber-300/[0.06] px-2.5 py-2">
+                    <ItemIcon icon={item.icon} tier={item.tier} />
+                    <div className="min-w-0 flex-1">
+                      <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
+                        {displayName(item.name, up)}
+                        <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">전설</span>
+                      </p>
+                      <p className="text-[11px] text-emerald-300/90">{itemEffect(item, up)}{worn ? " · 장착 중" : ""}</p>
+                    </div>
+                    <button
+                      onClick={() => EventBus.emit("rpg:tradeSell", { key: k })}
+                      className="shrink-0 rounded-md bg-teal-400 px-2.5 py-1.5 text-[11px] font-black text-slate-900 hover:bg-teal-300 active:scale-95"
+                    >
+                      판매 +{tradeValue(k)}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* 구매 목록 — 9종 전체 */}
+        <p className="mb-1 text-[11px] font-bold text-white/50">판매 목록 (에메랄드)</p>
+        <div className="flex max-h-[38vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
+          {TRADE_STOCK.map((k) => {
+            const item = ITEMS[k];
+            const price = TRADE_PRICES[k] ?? 0;
+            const owned = rpg.owned.includes(k);
+            const affordable = rpg.emerald >= price && !owned;
+            return (
+              <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
+                <ItemIcon icon={item.icon} tier={item.tier} />
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
+                    {item.name}
+                    <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">전설</span>
+                  </p>
+                  <p className="text-[11px] text-emerald-300/90">{itemEffect(item)}</p>
+                </div>
+                <button
+                  disabled={!affordable}
+                  onClick={() => EventBus.emit("rpg:tradeBuy", { key: k })}
+                  className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${
+                    owned
+                      ? "cursor-default bg-emerald-700/40 text-emerald-300"
+                      : affordable
+                        ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
+                        : "cursor-not-allowed bg-slate-700/50 text-white/35"
+                  }`}
+                >
+                  {owned ? "보유함" : `${price} 에메랄드`}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="mt-2 text-center text-[10px] text-white/40">
+          판매가는 구매가의 60%입니다 · 에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1
+        </p>
       </div>
     </div>
   );
@@ -512,7 +639,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
         {(() => {
           const consumables = Object.entries(
             rpg.owned.reduce<Record<string, number>>((acc, k) => {
-              if (k === "potion_hp2" || k === "potion_mp2" || k === "scroll_return" || k === "scroll_warp") {
+              if (k === "potion_hp2" || k === "potion_mp2" || k === "scroll_return" || k === "scroll_warp" || k === "scroll_star") {
                 acc[k] = (acc[k] ?? 0) + 1;
               }
               return acc;
@@ -525,10 +652,12 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               <div className="mb-3 flex flex-col gap-1.5">
                 {consumables.map(([k, count]) => {
                   const item = ITEMS[k as ItemKey];
-                  const isScroll = k === "scroll_return" || k === "scroll_warp";
+                  const isScroll = k === "scroll_return" || k === "scroll_warp" || k === "scroll_star";
+                  const isStarScroll = k === "scroll_star";
                   const effect = k === "potion_hp2" ? `HP +${item.heal} 회복`
                     : k === "potion_mp2" ? `MP +${item.restore} 회복`
                     : k === "scroll_return" ? "미드가르드 마을로 즉시 귀환"
+                    : k === "scroll_star" ? `다음 강화 성공률 +${STAR_BLESS_RATE}%p (충전 최대 ${STAR_BLESS_MAX}장)`
                     : "방문한 적 있는 구역으로 이동";
                   return (
                     <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
@@ -538,10 +667,12 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         <p className="text-[10px] text-emerald-300/90">{effect}</p>
                       </div>
                       <button
-                        onClick={() => EventBus.emit("rpg:useItem", { key: k })}
-                        className="shrink-0 rounded-md bg-sky-500 px-2.5 py-1.5 text-[11px] font-black text-white hover:bg-sky-400 active:scale-95"
+                        onClick={() => (isStarScroll ? EventBus.emit("rpg:starScroll") : EventBus.emit("rpg:useItem", { key: k }))}
+                        className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black text-white active:scale-95 ${
+                          isStarScroll ? "bg-purple-500 hover:bg-purple-400" : "bg-sky-500 hover:bg-sky-400"
+                        }`}
                       >
-                        {isScroll ? "사용" : "마시기"}
+                        {isStarScroll ? "충전" : isScroll ? "사용" : "마시기"}
                       </button>
                     </div>
                   );
@@ -638,35 +769,71 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
             if (k !== accs.filter((x) => x === k)[0]) return null; // 동일 키 1회만 렌더
             const wornN = rpg.accessories.filter((x) => x === k).length;
             const canWearMore = wornN < ownedN;
+            /* v3.0.7 — 장신구 스타포스 표시/강화 버튼 */
+            const up = rpg.accUp?.[k] ?? 0;
+            const accBonus = starAccBonus(up, item);
+            const accMaxed = up >= UPGRADE_MAX;
+            const accCost = upgradeCost("weapon", up);
+            const accRate = UPGRADE_RATES[up] ?? 0;
+            const accAffordable = rpg.gold >= accCost;
             return (
               <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
                 <ItemIcon icon={item.icon} size={26} tier={item.tier} />
                 <div className="min-w-0 flex-1">
-                  <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{item.name}{ownedN > 1 ? ` ×${ownedN}` : ""}</p>
-                  <p className="text-[10px] text-emerald-300/90">{itemEffect(item)}{wornN > 0 ? ` · 장착 ${wornN}/${ownedN}` : ""}</p>
+                  <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{displayName(item.name, up)}{ownedN > 1 ? ` ×${ownedN}` : ""}</p>
+                  <p className="text-[10px] text-emerald-300/90">
+                    {itemEffect(item)}
+                    {accBonus.crit > 0 && <span className="ml-1 text-[#d29dff]">+치명 {accBonus.crit}%</span>}
+                    {accBonus.hp > 0 && <span className="ml-1 text-[#6ff2d8]">+HP {accBonus.hp}</span>}
+                    {wornN > 0 ? ` · 장착 ${wornN}/${ownedN}` : ""}
+                  </p>
+                  {/* v3.0.7 — 성 바 (장신구 스타포스) */}
+                  {up > 0 && (
+                    <div className="mt-0.5 flex items-center gap-[2px] text-[9px] leading-none">
+                      {Array.from({ length: UPGRADE_MAX }, (_, i) => (
+                        <span key={i} style={{ color: i < up ? STAR_TIER_CSS[starTier(up)] : "#3b4353" }}>★</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {canWearMore ? (
-                  <div className="flex shrink-0 flex-col gap-1">
+                <div className="flex shrink-0 flex-col gap-1">
+                  {!accMaxed && (
+                    <button
+                      disabled={!accAffordable}
+                      onClick={() => EventBus.emit("rpg:upgradeAcc", { key: k as ItemKey })}
+                      className={`rounded-md px-2 py-1 text-[10px] font-black active:scale-95 ${
+                        accAffordable ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-slate-700/50 text-white/35"
+                      }`}
+                    >
+                      강화 {accCost}G · {accRate}%
+                    </button>
+                  )}
+                  {canWearMore ? (
                     <button
                       onClick={() => EventBus.emit("rpg:equip", { key: k as ItemKey })}
-                      className="rounded-md bg-amber-400 px-2.5 py-1.5 text-[11px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
+                      className="rounded-md bg-sky-500 px-2.5 py-1 text-[10px] font-black text-white hover:bg-sky-400 active:scale-95"
                     >
                       장착
                     </button>
-                    {sellValue(item) > 0 && (
-                      <button
-                        onClick={() => EventBus.emit("rpg:sell", { key: k as ItemKey })}
-                        className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95"
-                      >
-                        판매 {sellValue(item)}G
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <span className="shrink-0 rounded-md bg-emerald-700/40 px-2.5 py-1.5 text-[11px] font-black text-emerald-300">
-                    장착 중
-                  </span>
-                )}
+                  ) : (
+                    <span className="rounded-md bg-emerald-700/40 px-2 py-1 text-center text-[10px] font-black text-emerald-300">장착 중</span>
+                  )}
+                  {tradeValue(k as ItemKey) > 0 ? (
+                    <button
+                      onClick={() => EventBus.emit("ui:panel", { panel: "trade" })}
+                      className="rounded-md border border-teal-300/40 bg-teal-400/10 px-2 py-1 text-[10px] font-black text-teal-200 hover:bg-teal-400/25 active:scale-95"
+                    >
+                      거래소 +{tradeValue(k as ItemKey)}
+                    </button>
+                  ) : sellValue(item) > 0 ? (
+                    <button
+                      onClick={() => EventBus.emit("rpg:sell", { key: k as ItemKey })}
+                      className="rounded-md border border-white/15 bg-white/[0.06] px-2 py-1 text-[10px] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95"
+                    >
+                      판매 {sellValue(item)}G
+                    </button>
+                  ) : null}
+                </div>
               </div>
             );
           })}
@@ -899,6 +1066,7 @@ export function GamePanels({
 }) {
   if (panel === "shop") return <ShopPanel rpg={rpg} onClose={onClose} />;
   if (panel === "bmshop") return <BmShopPanel rpg={rpg} onClose={onClose} />; // v3.0.6 — BM 상점
+  if (panel === "trade") return <TradePanel rpg={rpg} onClose={onClose} />; // v3.0.7 — 유저 거래소
   if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} />;
   if (panel === "warp") return <WarpPanel rpg={rpg} onClose={onClose} />;
   if (panel === "job") return <JobPanel rpg={rpg} onClose={onClose} />;

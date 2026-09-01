@@ -65,6 +65,8 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     stages: stagesMod,
     items: dataMod.ITEMS,
     bossDrops: dataMod.BOSS_DROP_ITEMS,
+    /* v3.0.7 — 거래소/강화 주문서 정적 검증용 */
+    data: dataMod,
   };
   return game;
 }

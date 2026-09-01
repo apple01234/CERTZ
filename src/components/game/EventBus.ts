@@ -49,6 +49,10 @@ export type RpgState = {
   emerald: number;
   upWea: number;
   upArm: number;
+  /* v3.0.7 — 장신구 스타포스 성(아이템별) + 강화 주문서 충전 수 + HP 가산 이력 */
+  accUp?: Record<string, number>;
+  starBless?: number;
+  accHp?: number;
   nearShop: boolean;
   shopStock: string[];
   /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 */
@@ -77,7 +81,7 @@ export type RpgState = {
   canAutoHunt: boolean;
 };
 
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | null;
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | null;
 
 export type QuestState = {
   title: string;
