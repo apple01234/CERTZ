@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Globe, X } from "lucide-react";
-import { netConnect, netJoined } from "@/game/net";
+import { netConnect, netJoined, isElectron } from "@/game/net";
 
 const KEY = "sertz.server.url";
 
@@ -27,9 +27,12 @@ function readUrl(): string {
  */
 export function ServerConnect() {
   // 클라이언트 전용(ssr:false) — lazy 초기화로 마운트 effect 없이 상태 확정
-  const [native] = useState(() => Capacitor.isNativePlatform());
+  // v3.0.8: EXE(Electron)도 설정 UI 표시 — 원격 멀티 서버 지정 가능 (기본 = 내장 로컬 서버)
+  const [native] = useState(() => Capacitor.isNativePlatform() || isElectron());
+  const [electron] = useState(() => isElectron());
   const [open, setOpen] = useState(() => {
-    if (!Capacitor.isNativePlatform()) return false;
+    if (!Capacitor.isNativePlatform() && !isElectron()) return false;
+    if (isElectron()) return false; // EXE는 기본(로컬 서버)으로 조용히 시작
     const u = readUrl();
     if (u) return false;
     let asked = false;
@@ -46,9 +49,10 @@ export function ServerConnect() {
   const [online, setOnline] = useState(false);
 
   /* v2.9 — 서버 주소가 비어 있으면 기본 서버를 자동 저장해 즉시 연결 (멀티 첫 경험 개선).
-   *  오프라인을 원하면 아래 ‘오프라인’ 버튼으로 해제 가능. */
+   *  오프라인을 원하면 아래 ‘오프라인’ 버튼으로 해제 가능.
+   *  v3.0.8: EXE(Electron) 제외 — 내장 로컬 서버(same-origin)가 기본. */
   useEffect(() => {
-    if (!native) return;
+    if (!Capacitor.isNativePlatform()) return;
     if (readUrl()) return;
     try {
       window.localStorage.setItem(KEY, DEFAULT_SERVER);
@@ -60,7 +64,7 @@ export function ServerConnect() {
 
   useEffect(() => {
     if (!native) return;
-    if (saved) netConnect(); // 타이틀에서 조기 접속 → 상태 실시간 표시
+    netConnect(); // 타이틀에서 조기 접속 → 상태 실시간 표시 (EXE: 내장 로컬 서버 or 저장 주소)
     const t = setInterval(() => setOnline(netJoined()), 1500);
     return () => clearInterval(t);
   }, [native, saved]);
@@ -98,8 +102,9 @@ export function ServerConnect() {
             </button>
           </div>
           <p className="mb-2 text-[10px] leading-relaxed text-white/50">
-            웹 버전이 실행 중인 서버 주소(https://…)를 입력하면 그 서버의 플레이어와 함께
-            플레이합니다. 비우면 오프라인(싱글) 모드로 실행됩니다.
+            {electron
+              ? "EXE는 내장 로컬 서버로 실행됩니다(싱글/같은 PC 멀티). 웹 버전 서버 주소를 입력하면 그 서버의 플레이어와 함께 플레이할 수 있습니다."
+              : "웹 버전이 실행 중인 서버 주소(https://…)를 입력하면 그 서버의 플레이어와 함께 플레이합니다. 비우면 오프라인(싱글) 모드로 실행됩니다."}
           </p>
           <input
             value={url}
@@ -132,12 +137,12 @@ export function ServerConnect() {
           className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/50 px-3 py-1.5 text-[10px] font-bold text-white/70 backdrop-blur active:scale-95"
         >
           <Globe size={12} className="text-sky-300" />
-          {saved ? (
-            online ? (
-              <span className="text-emerald-300">서버 연결됨</span>
-            ) : (
-              <span className="text-amber-200/80">연결 중…</span>
-            )
+          {online ? (
+            <span className="text-emerald-300">서버 연결됨</span>
+          ) : saved ? (
+            <span className="text-amber-200/80">연결 중…</span>
+          ) : electron ? (
+            <span>로컬 모드</span>
           ) : (
             <span>오프라인 모드</span>
           )}

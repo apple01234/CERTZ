@@ -88,3 +88,11 @@ tool-results/
 tmp/
 upload/
 asset_work/
+
+# electron exe build scraps (v3.0.8 — 재빌드 가능 산출물 추적 금지)
+/electron/dist/
+/electron/game/
+/.next-apk/
+/upload/extracted/
+*.nsis.7z
+/upload/

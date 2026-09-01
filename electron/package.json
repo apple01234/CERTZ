@@ -1,0 +1,44 @@
+{
+  "name": "sertz-desktop",
+  "productName": "SERTZ",
+  "version": "3.0.8",
+  "description": "SERTZ — 바다의 수호자: 아뜰란티스 (Next.js 게임 데스크톱 패키지)",
+  "author": "SERTZ <apple01234@users.noreply.github.com>",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "build": {
+    "appId": "com.sertz.game",
+    "productName": "SERTZ",
+    "electronVersion": "44.1.0",
+    "asar": false,
+    "compression": "normal",
+    "directories": {
+      "output": "dist",
+      "buildResources": "."
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      "game/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.png",
+      "artifactName": "SERTZ-${version}-win.${ext}"
+    },
+    "portable": {
+      "artifactName": "SERTZ-${version}-win.${ext}"
+    },
+    "linux": {
+      "target": ["dir"],
+      "icon": "icon.png",
+      "category": "Game"
+    }
+  }
+}

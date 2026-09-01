@@ -12,6 +12,14 @@
 import { Capacitor } from "@capacitor/core";
 import { io, type Socket } from "socket.io-client";
 
+/** v3.0.8 — Electron(EXE 데스크톱) 감지: UA에 Electron 포함.
+ *  EXE는 자체 로컬 서버(same-origin)를 내장하므로 웹과 동일하게 동작하되,
+ *  서버 주소 저장 시 원격 멀티플레이 서버로 접속 가능해야 한다. */
+export function isElectron(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return /Electron/i.test(navigator.userAgent || "");
+}
+
 export type NetPlayer = {
   id: string;
   name: string;
@@ -38,18 +46,21 @@ let socket: Socket | null = null;
  *  - 웹 → undefined (same-origin: server.js socket.io)
  *  - APK + localStorage 'sertz.server.url' → 그 주소 (멀티플레이 서버)
  *  - APK + 미지정 → null (오프라인 모드 — 연결 시도 없음)
+ *  - EXE(Electron) + 저장 주소 → 그 주소 (원격 멀티플레이 서버)
+ *  - EXE(Electron) + 미지정 → undefined (same-origin: 내장 로컬 서버 — 싱글+로컬 멀티)
  */
 function resolveServerUrl(): string | null | undefined {
   if (typeof window === "undefined") return undefined;
-  if (Capacitor.isNativePlatform()) {
+  const electron = isElectron();
+  if (Capacitor.isNativePlatform() || electron) {
     try {
       const raw = window.localStorage.getItem("sertz.server.url");
       const u = raw?.trim();
       if (u && /^(https?|wss?):\/\//i.test(u)) return u.replace(/\/$/, "");
     } catch {
-      /* localStorage 접근 불가 — 오프라인 처리 */
+      /* localStorage 접근 불가 — 폴백 처리 */
     }
-    return null;
+    return electron ? undefined : null;
   }
   return undefined;
 }
@@ -78,11 +89,11 @@ export function netJoined(): boolean {
   return !!socket?.connected;
 }
 
-/** UI 표시용 연결 상태 (v2.1) */
+/** UI 표시용 연결 상태 (v2.1) — v3.0.8: native에 EXE(Electron) 포함 */
 export function netStatus(): { connected: boolean; hasServer: boolean; native: boolean } {
-  const native = typeof window !== "undefined" && Capacitor.isNativePlatform();
-  let hasServer = true; // 웹 = same-origin 서버 항상 존재
-  if (native) hasServer = resolveServerUrl() != null;
+  const native = (typeof window !== "undefined" && Capacitor.isNativePlatform()) || isElectron();
+  let hasServer = true; // 웹/EXE = same-origin 서버 항상 존재
+  if (Capacitor.isNativePlatform()) hasServer = resolveServerUrl() != null;
   return { connected: !!socket?.connected, hasServer, native };
 }
 

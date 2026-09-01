@@ -793,3 +793,19 @@ Stage Summary:
 - 미완 BGM 작업은 롤백 정리 (유튜브 다운로드 스크립트 8종 untracked 유지 — 음악 작업 재개 시 활용)
 - APK 미배포 — 다음 버전(v3.0.8+) 정책에 따라 스핀오프 포함 재배포 여부 유저 확인 필요
 - 다음 후보: 모바일 터치 컨트롤(가상 조이스틱)·BGM 재개 시 audio.ts AI 플러밍 복원·아뜰란티스 전용 업적/수집 UI
+
+---
+Task ID: online-howto
+Agent: Super Z (main)
+Task: "온라인 하는법" 안내 + APK 기본 서버 주소 stale 픽스
+
+Work Log:
+- server.js/net.ts/ServerConnect.tsx 실측 리뷰: 웹=same-origin 자동 연결, APK=localStorage 'sertz.server.url' (DEFAULT_SERVER 자동 저장)
+- DEFAULT_SERVER가 옛 샌드박스 주소(preview-6a94b1ab)로 고정 → 현재 라이브 서버(preview-6a95efa8, hostname c-6a95efa8-… 패턴 매칭)로 갱신
+- 커밋 aa39e63 push 완료 (.gh_token 인증)
+- 서버 실측: localhost:3000 HTTP 200, socket.io same-origin 정상 기동 중
+
+Stage Summary:
+- 설치된 v3.0.7 APK에는 옛 기본 주소가 박혀 있음 → 타이틀 우하단 🌐 버튼에서 현재 주소 수동 입력 1회 필요
+- 웹 브라우저는 접속만으로 온라인(멀티) 자동 활성 — 별도 설정 불필요
+- 다음 APK 빌드(v3.0.8+)부터 새 기본 주소 자동 적용
