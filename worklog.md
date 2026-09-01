@@ -809,3 +809,38 @@ Stage Summary:
 - 설치된 v3.0.7 APK에는 옛 기본 주소가 박혀 있음 → 타이틀 우하단 🌐 버튼에서 현재 주소 수동 입력 1회 필요
 - 웹 브라우저는 접속만으로 온라인(멀티) 자동 활성 — 별도 설정 불필요
 - 다음 APK 빌드(v3.0.8+)부터 새 기본 주소 자동 적용
+
+---
+Task ID: redesign-v308
+Agent: Super Z (main)
+Task: 업로드 에셋 28팩 기반 게임 전체 디자인 개편 (기능 로직 불변) + EXE 파이프라인 검증 + 빌드 찌꺼기 정리
+
+Work Log:
+- 유저 지시 "exe 빌드 중지·찌꺼기 정리·커밋만" 수행: electron/dist·game·.next-apk 삭제, 구 APK(v3.0.7) 삭제, gitignore에 빌드 산출물·upload/ 추적 배제
+- push 차단 해소: 자동커밋에 포함된 233MB SERTZ.exe 블롭 → soft-reset으로 미푸시 커밋 3개 재구성 (0c24b9d push 완료)
+- EXE 파이프라인은 검증 완료 상태로 보관: electron-builder portable x64 → SERTZ-3.0.8-win.exe 123MB 생성 실측
+  (교훈: standalone game staging에 npm install 금지 — package.json 전체 트리 재설치로 1.1GB 폭증. socket.io는 루트 node_modules에서 수동 복사)
+- 에셋 인벤토리: 28팩 unzip -l 기록(UPLOAD INVENTORY.md) + 선별 추출 스크립트 3종 신설(extract_assets/extract_icons/inventory_assets)
+- 현 구조 실측(Explore 에이전트): public/assets 502 PNG 플랫, 키=파일명 규약, 64px 타일 타일스프라이트, 멀티이미지 애님, React 아이콘 = /assets/<키>.png
+- 컨버팅 스크립트 scripts/redesign_assets.py (프리뷰 몽타주 자동 생성):
+  ① 아이템 30종 교체 (RPG Icons 32×32 — 포션/무기6/방어구6/반지4/펜던트2/스크롤3/버프4/에메랄드=Gems1 Icon18)
+  ② 스킬 아이콘 56종 신설 /assets/skillicon/<cls>_{s1,s2}.png (28클래스 — Swordsman/Barbarian/Archer/Thief/Paladin/Priest/Pyromancer/Cryomancer/Lightning/Thief/Pirate/Necro 팩)
+  ③ SharpUI 스킨 26종 /assets/ui2/ (panel/button/gauge/list/avatar/close/ability 6/potion 5)
+  ④ 타일 9지면+4길 교체: Serene 잔디(96,0)·흙길(192,96) 실측 좌표, Cursed Land(magma/hel), RF Catacombs(cave/stone/abyss), x2_bricks=카타콤 벽돌 48×16 유지
+  ⑤ 데코: Serene 나무 64×96·바위·집 2종(156×194, bbox 실측 (8,688)-(90,790)/(8,930)-(90,1032))
+  ⑥ VFX 12종: Warped bolt(4f 48×32)/charged(6f)/Hits 3종(4f 96px)/pulse/spark + CFX elec(8f)/tri(2f)/boom/blood
+- 코드 통합 (기능 로직 불변 — 비주얼만):
+  BootScene vfx2 시트 10종+이미지 2종 로드 / textures.ts fx2-* 애님 8종 / WorldScene 히트 플립북 풀 6장(F4 규약) + spawnHitSpark 오버레이 /
+  Player 마법탄 fx-magicorb→fx2-bolt(Warped 스킨, ADD) / globals.css sertz-panel·sertz-btn·sertz-gauge·listrow 클래스 /
+  HUD HP·MP·EXP 게이지 프레임 / Panels 9개 다이얼로그 패널 스킨 / Overlays 타이틀 버튼 2종 SharpUI 스킨 /
+  classes.ts SKILL_ICONS 28클래스 + WorldScene skills 이벤트 아이콘 필드 + useGameUi 타입 + TouchControls SkillButton icon prop(폴백 lucide 유지)
+- 버그 픽스: SKILL_ICONS 값 키 s1/s2 → s1Icon/s2Icon (spread가 아이콘 필드를 만들지 않던 1차 버그)
+- 검증: tsc 0에러 → next build → 데몬 재기동 → 브라우저 실측(agent-browser 격리)
+  타이틀 SharpUI 버튼 렌더 ✓ / 마을 새 집·잔디·흙길 ✓ / 숲 워프 후 fx2 애님 8종 exists ✓ / hitFxPool 6장 활성 실측 ✓ /
+  아크메이지 지정 시 skills 이벤트 s1Icon·s2Icon 실측 ✓ + 스킬 버튼 픽셀 아이콘 렌더 스크린샷 ✓ / pageerror 0 · console 에러 0
+- 데몬 트러블슈팅: 구 데몬(05:58)이 포트 홀딩 → 전체 pkill 후 1개만 기동 (다중 daemon_spawn 방지)
+
+Stage Summary:
+- 게임 전체 비주얼 개편 5트랙(UI스킨/아이콘/스킬아이콘/타일테마/VFX) 완료 — 데미지·드롭·진행 로직 0 변경
+- 커밋만 수행 (APK/EXE 미빌드 — 유저 지시). 차기 빌드 시 v3.0.8(versionCode 23)로 APK+EXE 동시 배포 가능
+- 남은 후보: 히어로/몬스터 스프라이트 교체(32rogues·Minifantasy), Atlantis 스핀오프 스킨, CFX 플립북 추가 활용, 타이틀 배경 타일 패턴화

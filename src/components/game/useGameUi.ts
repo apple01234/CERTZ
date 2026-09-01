@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { EventBus, type HudState, type QuestState, type EndState, type RpgState, type PanelKind, type QuestLogState } from "./EventBus";
 
-type Skills = { mp: number; s1Cd: number; s1Max: number; s2Cd: number; s2Max: number; s3Cd: number; s3Max: number; s4Cd: number; s4Max: number; s3Unlocked: boolean; s4Unlocked: boolean; atkName?: string; s1Name?: string; s2Name?: string; s3Name?: string; s4Name?: string };
+type Skills = { mp: number; s1Cd: number; s1Max: number; s2Cd: number; s2Max: number; s3Cd: number; s3Max: number; s4Cd: number; s4Max: number; s3Unlocked: boolean; s4Unlocked: boolean; atkName?: string; s1Name?: string; s2Name?: string; s3Name?: string; s4Name?: string; s1Icon?: string; s2Icon?: string; s3Icon?: string; s4Icon?: string };
 
 const emptyHud: HudState = {
   hp: 100, maxHp: 100, mp: 60, maxMp: 60, lv: 1, exp: 0, expNext: 60,

@@ -52,6 +52,15 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "fx-icelance", frames: Array.from({ length: 4 }, (_, i) => ({ key: "x2_sp_icelance", frame: i })), frameRate: 12, repeat: -1 });
   a.create({ key: "fx-darkbolt", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_darkbolt", frame: i })), frameRate: 14, repeat: -1 });
   a.create({ key: "fx-sparks", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_sparks", frame: i })), frameRate: 18, repeat: 0 });
+  /* v3.0.8 디자인 개편 — Warped Shooting Fx / Cartoon FX Remaster 신규 VFX 애님 */
+  a.create({ key: "fx2-bolt", frames: Array.from({ length: 4 }, (_, i) => ({ key: "vfx2_bolt", frame: i })), frameRate: 12, repeat: -1 });
+  a.create({ key: "fx2-charged", frames: Array.from({ length: 6 }, (_, i) => ({ key: "vfx2_charged", frame: i })), frameRate: 14, repeat: -1 });
+  a.create({ key: "fx2-hit1", frames: Array.from({ length: 4 }, (_, i) => ({ key: "vfx2_hit1", frame: i })), frameRate: 22, repeat: 0 });
+  a.create({ key: "fx2-hit3", frames: Array.from({ length: 4 }, (_, i) => ({ key: "vfx2_hit3", frame: i })), frameRate: 22, repeat: 0 });
+  a.create({ key: "fx2-hit5", frames: Array.from({ length: 4 }, (_, i) => ({ key: "vfx2_hit5", frame: i })), frameRate: 22, repeat: 0 });
+  a.create({ key: "fx2-pulse", frames: Array.from({ length: 4 }, (_, i) => ({ key: "vfx2_pulse", frame: i })), frameRate: 8, repeat: -1 });
+  a.create({ key: "fx2-elec", frames: Array.from({ length: 8 }, (_, i) => ({ key: "vfx2_elec", frame: i })), frameRate: 20, repeat: 0 });
+  a.create({ key: "fx2-tri", frames: Array.from({ length: 2 }, (_, i) => ({ key: "vfx2_tri", frame: i })), frameRate: 16, repeat: 0 });
   // 몬스터
   a.create({ key: "wolf-idle", ...fr("wolf_idle", 2, 2, -1) });
   a.create({ key: "wolf-run", ...fr("wolf_run", 4, 10, -1) });

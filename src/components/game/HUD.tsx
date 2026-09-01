@@ -46,7 +46,7 @@ function Bar({
   const pct = Math.max(0, Math.min(100, (value / Math.max(1, max)) * 100));
   return (
     <div
-      className="relative w-44 overflow-hidden rounded-full border border-black/60 bg-black/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.8)] sm:w-56"
+      className="sertz-gauge relative w-44 overflow-hidden rounded-full border border-black/60 bg-black/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.8)] sm:w-56"
       style={{ height }}
     >
       <div
@@ -133,7 +133,7 @@ export function HUD({
           <Bar value={hud.hp} max={hud.maxHp} from="#c2273a" to="#ff7a68" label={`${hud.hp} / ${hud.maxHp}`} />
           <Bar value={hud.mp} max={hud.maxMp} from="#1e6fb8" to="#5ec5ff" label={`${hud.mp} / ${hud.maxMp}`} height={10} />
           {/* EXP 얇은 바 */}
-          <div className="relative h-[7px] w-44 overflow-hidden rounded-full border border-black/60 bg-black/60 sm:w-56">
+          <div className="sertz-gauge relative h-[7px] w-44 overflow-hidden rounded-full border border-black/60 bg-black/60 sm:w-56">
             <div
               className="h-full bg-gradient-to-b from-lime-300 to-green-600 transition-[width] duration-200"
               style={{ width: `${expPct}%` }}

@@ -158,7 +158,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-cyan-300/60 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-cyan-300/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -277,7 +277,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-amber-200/60 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-amber-200/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -475,7 +475,7 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-teal-200/60 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-teal-200/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -587,7 +587,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-sky-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-sky-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -949,7 +949,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto rounded-xl border-2 border-amber-300/60 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto rounded-xl border-2 border-amber-300/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -1113,7 +1113,7 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-violet-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-violet-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -1377,7 +1377,7 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-lime-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-lime-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -1473,7 +1473,7 @@ function QuestLogPanel({ questLog, onClose }: { questLog: QuestLogState; onClose
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-amber-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-amber-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -1575,7 +1575,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-sky-200/50 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-sky-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">

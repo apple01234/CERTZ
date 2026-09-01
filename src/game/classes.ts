@@ -10,6 +10,40 @@ export const JOB_LEVELS = { t1: 10, t2: 30, t3: 50, t4: 100 } as const;
 /** 자유 전직 비용 (골드) — 메이플 메소 소모 자유전직 재현 */
 export const FREE_JOB_COST = 5000;
 
+/* ═══ v3.0.8 디자인 개편 — 클래스별 스킬 아이콘 (RPG Icons Pixel Art) ═══
+ *  /assets/skillicon/<cls>_<slot>.png — TouchControls 스킬 버튼에 표시.
+ *  없는 조합은 기존 lucide 아이콘 폴백 (기능 무영향). */
+export const SKILL_ICONS: Partial<Record<ClassKey, { s1Icon: string; s2Icon: string; s3Icon?: string; s4Icon?: string }>> = {
+  warrior: { s1Icon: "/assets/skillicon/warrior_s1.png", s2Icon: "/assets/skillicon/warrior_s2.png" },
+  berserker: { s1Icon: "/assets/skillicon/berserker_s1.png", s2Icon: "/assets/skillicon/berserker_s2.png" },
+  guardian: { s1Icon: "/assets/skillicon/guardian_s1.png", s2Icon: "/assets/skillicon/guardian_s2.png" },
+  ranger: { s1Icon: "/assets/skillicon/ranger_s1.png", s2Icon: "/assets/skillicon/ranger_s2.png" },
+  sniper: { s1Icon: "/assets/skillicon/sniper_s1.png", s2Icon: "/assets/skillicon/sniper_s2.png" },
+  windrunner: { s1Icon: "/assets/skillicon/windrunner_s1.png", s2Icon: "/assets/skillicon/windrunner_s2.png" },
+  mage: { s1Icon: "/assets/skillicon/mage_s1.png", s2Icon: "/assets/skillicon/mage_s2.png" },
+  archmage: { s1Icon: "/assets/skillicon/archmage_s1.png", s2Icon: "/assets/skillicon/archmage_s2.png" },
+  sage: { s1Icon: "/assets/skillicon/sage_s1.png", s2Icon: "/assets/skillicon/sage_s2.png" },
+  thief: { s1Icon: "/assets/skillicon/thief_s1.png", s2Icon: "/assets/skillicon/thief_s2.png" },
+  warlord: { s1Icon: "/assets/skillicon/warlord_s1.png", s2Icon: "/assets/skillicon/warlord_s2.png" },
+  paladin: { s1Icon: "/assets/skillicon/paladin_s1.png", s2Icon: "/assets/skillicon/paladin_s2.png" },
+  eagleeye: { s1Icon: "/assets/skillicon/eagleeye_s1.png", s2Icon: "/assets/skillicon/eagleeye_s2.png" },
+  tempest: { s1Icon: "/assets/skillicon/tempest_s1.png", s2Icon: "/assets/skillicon/tempest_s2.png" },
+  stormbringer: { s1Icon: "/assets/skillicon/stormbringer_s1.png", s2Icon: "/assets/skillicon/stormbringer_s2.png" },
+  chronicle: { s1Icon: "/assets/skillicon/chronicle_s1.png", s2Icon: "/assets/skillicon/chronicle_s2.png" },
+  assassin: { s1Icon: "/assets/skillicon/assassin_s1.png", s2Icon: "/assets/skillicon/assassin_s2.png" },
+  swashbuckler: { s1Icon: "/assets/skillicon/swashbuckler_s1.png", s2Icon: "/assets/skillicon/swashbuckler_s2.png" },
+  warbringer: { s1Icon: "/assets/skillicon/warbringer_s1.png", s2Icon: "/assets/skillicon/warbringer_s2.png" },
+  crusader: { s1Icon: "/assets/skillicon/crusader_s1.png", s2Icon: "/assets/skillicon/crusader_s2.png" },
+  deadeye: { s1Icon: "/assets/skillicon/deadeye_s1.png", s2Icon: "/assets/skillicon/deadeye_s2.png" },
+  skylord: { s1Icon: "/assets/skillicon/skylord_s1.png", s2Icon: "/assets/skillicon/skylord_s2.png" },
+  arclord: { s1Icon: "/assets/skillicon/arclord_s1.png", s2Icon: "/assets/skillicon/arclord_s2.png" },
+  eternal: { s1Icon: "/assets/skillicon/eternal_s1.png", s2Icon: "/assets/skillicon/eternal_s2.png" },
+  nightblade: { s1Icon: "/assets/skillicon/nightblade_s1.png", s2Icon: "/assets/skillicon/nightblade_s2.png" },
+  duelist: { s1Icon: "/assets/skillicon/duelist_s1.png", s2Icon: "/assets/skillicon/duelist_s2.png" },
+  shadowlord: { s1Icon: "/assets/skillicon/shadowlord_s1.png", s2Icon: "/assets/skillicon/shadowlord_s2.png" },
+  blademaster: { s1Icon: "/assets/skillicon/blademaster_s1.png", s2Icon: "/assets/skillicon/blademaster_s2.png" },
+};
+
 export type Tier = 1 | 2 | 3 | 4;
 export type FamilyKey = "warrior" | "ranger" | "mage" | "thief";
 export type ClassKey =

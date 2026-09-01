@@ -209,6 +209,15 @@ export class BootScene extends Phaser.Scene {
     for (const k of ["x2_arrow", "x2_bricks", "x2_bow"]) this.load.image(k, `${k}.png`);
     // 마을 모닥불 (Serene Village 32x32 4프레임 — v1.5 이관)
     this.load.spritesheet("sv_campfire", "sv_campfire.png", { frameWidth: 32, frameHeight: 32 });
+    /* v3.0.8 디자인 개편 — Warped Shooting Fx / Cartoon FX Remaster 신규 VFX 시트 */
+    const VFX2: [string, number, number][] = [
+      ["vfx2_bolt", 48, 32], ["vfx2_charged", 63, 48],
+      ["vfx2_hit1", 96, 96], ["vfx2_hit3", 96, 96], ["vfx2_hit5", 96, 96],
+      ["vfx2_pulse", 64, 32], ["vfx2_wspark", 64, 32],
+      ["vfx2_elec", 128, 128], ["vfx2_tri", 128, 128], ["vfx2_cfx1", 128, 128],
+    ];
+    for (const [k, w, h] of VFX2) this.load.spritesheet(k, `${k}.png`, { frameWidth: w, frameHeight: h });
+    for (const k of ["vfx2_boom", "vfx2_blood"]) this.load.image(k, `${k}.png`);
     // 지형 전환 타일 5세트 x 9종 (build_tile_transitions.py — 타일맵 경계 부자연 개선)
     for (const s of TX_SETS) for (const k of TX_KINDS) this.load.image(`tx_${s}_${k}`, `tx_${s}_${k}.png`);
     this.load.setPath("assets/audio");

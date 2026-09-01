@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
-import { familyOf, isClassKey, classLabel } from "../classes";
+import { familyOf, isClassKey, classLabel, SKILL_ICONS } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
@@ -98,6 +98,9 @@ export class WorldScene extends Phaser.Scene {
   // 실제 에셋 기반 타격 스타 풀
   private starPool: Phaser.GameObjects.Image[] = [];
   private starIdx = 0;
+  /* v3.0.8 디자인 개편 — Warped Shooting Fx 히트 플립북 풀 */
+  private hitFxPool: Phaser.GameObjects.Sprite[] = [];
+  private hitFxIdx = 0;
   private fragSparkle: Phaser.GameObjects.Sprite | null = null;
 
   private questTimer: Phaser.Time.TimerEvent | null = null;
@@ -1497,6 +1500,8 @@ export class WorldScene extends Phaser.Scene {
     this.slashPool = [];
     for (const s of this.starPool) s.destroy();
     this.starPool = [];
+    for (const s of this.hitFxPool) s.destroy();
+    this.hitFxPool = [];
 
     // 공유 파티클 이미터 2종
     this.hitEmitter = this.add.particles(0, 0, "spark", {
@@ -1552,6 +1557,17 @@ export class WorldScene extends Phaser.Scene {
         .setVisible(false);
       this.starPool.push(s);
     }
+
+    /* v3.0.8 디자인 개편 — Warped 히트 플립북 6장 고정 풀 */
+    for (let i = 0; i < 6; i++) {
+      const s = this.add
+        .sprite(0, 0, "vfx2_hit1")
+        .setDepth(24)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setActive(false)
+        .setVisible(false);
+      this.hitFxPool.push(s);
+    }
   }
 
   spawnDamageText(x: number, y: number, val: number, crit = false) {
@@ -1577,6 +1593,19 @@ export class WorldScene extends Phaser.Scene {
   spawnHitSpark(x: number, y: number) {
     this.hitEmitter.setParticleTint(0xfff0a0);
     this.hitEmitter.explode(5, x, y);
+
+    /* v3.0.8 디자인 개편 — Warped Hits 플립북 오버레이 (3종 랜덤, ADD 블렌드) */
+    const fx = this.hitFxPool.find((s) => s.scene && !s.active);
+    if (fx) {
+      const anim = Phaser.Utils.Array.GetRandom(["fx2-hit1", "fx2-hit3", "fx2-hit5"]);
+      fx.setPosition(x, y - 4)
+        .setScale(0.55)
+        .setActive(true)
+        .setVisible(true)
+        .setAlpha(0.95)
+        .play(anim);
+      fx.once("animationcomplete", () => fx.setActive(false).setVisible(false));
+    }
 
     // v2.2 타격감 — 충격 링 (shock_ring 확산)
     const ring = this.add.image(x, y, "shock_ring").setDepth(19).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0.85).setTint(0xfff2c0);
@@ -4774,6 +4803,8 @@ export class WorldScene extends Phaser.Scene {
       s2Name: this.player.skill2Name,
       s3Name: this.player.skill3Name,
       s4Name: this.player.skill4Name,
+      /* v3.0.8 디자인 개편 — 클래스별 스킬 아이콘 (RPG Icons Pixel Art) */
+      ...(SKILL_ICONS[this.player.cls as keyof typeof SKILL_ICONS] ?? {}),
     });
   }
 

@@ -198,6 +198,7 @@ export function TouchControls({
               cdPct={s4Pct}
               label={s4Name}
               mp={40}
+              icon={skills.s4Icon}
               onDown={() => EventBus.emit("input:skill4")}
             >
               <Star size={17} />
@@ -210,6 +211,7 @@ export function TouchControls({
               cdPct={s3Pct}
               label={s3Name}
               mp={25}
+              icon={skills.s3Icon}
               onDown={() => EventBus.emit("input:skill3")}
             >
               <Flame size={16} />
@@ -220,6 +222,7 @@ export function TouchControls({
             cdPct={s1Pct}
             label={s1Name || "회전베기"}
             mp={15}
+            icon={skills.s1Icon}
             onDown={() => EventBus.emit("input:skill1")}
           >
             <RefreshCw size={16} />
@@ -229,6 +232,7 @@ export function TouchControls({
             cdPct={s2Pct}
             label={s2Name || "돌진베기"}
             mp={20}
+            icon={skills.s2Icon}
             onDown={() => EventBus.emit("input:skill2")}
           >
             <Zap size={18} />
@@ -300,6 +304,7 @@ function SkillButton({
   ready,
   cdPct,
   onDown,
+  icon,
 }: {
   children: React.ReactNode;
   label: string;
@@ -307,6 +312,7 @@ function SkillButton({
   ready: boolean;
   cdPct: number;
   onDown: () => void;
+  icon?: string;
 }) {
   return (
     <button
@@ -322,7 +328,12 @@ function SkillButton({
         if (ready) onDown();
       }}
     >
-      {children}
+      {/* v3.0.8 디자인 개편 — 클래스별 스킬 아이콘 (RPG Icons Pixel Art). 없으면 기존 lucide 폴백 */}
+      {icon ? (
+        <img src={icon} alt="" className="h-6 w-6 rounded-sm sm:h-7 sm:w-7" style={{ imageRendering: "pixelated" }} />
+      ) : (
+        children
+      )}
       <span className="max-w-[42px] truncate text-[7px] font-bold leading-tight sm:max-w-none sm:text-[8px]">{label}</span>
       <span className="text-[7px] font-bold text-sky-200 sm:text-[8px]">{mp}MP</span>
       {cdPct > 0 && (

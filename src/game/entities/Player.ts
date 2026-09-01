@@ -465,8 +465,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             x: this.x, y: this.y - 10,
             angle: angle + (shots > 1 ? (i - (shots - 1) / 2) * 0.09 : 0),
             speed: 540, pierce: 2, dmg, crit,
-            tint: 0xffffff, knock: 200, scale: 1.0 + 0.1 * t,
-            anim: "fx-magicorb", blend: "normal",
+            tint: 0xffffff, knock: 200, scale: 0.85 + 0.1 * t,
+            anim: "fx2-bolt", blend: "add", // v3.0.8 디자인 개편 — Warped 볼트 스킨 (피해 로직 불변)
           });
         });
       }

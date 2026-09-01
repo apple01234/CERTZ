@@ -101,3 +101,13 @@
 - Source: https://0x72.itch.io/dungeontileset-ii (itch.io 직접 다운로드)
 - Used for: v3.0.4 신규 몬스터 6종 (가면 전사/오르크 전사/오르크 주술사/지옥견 워골/
   고블린 약탈자/거대 시체) idle4+run4 프레임 — 전 구역 소량 혼합 스폰
+
+## v3.0.8 디자인 개편 추가 에셋
+- SharpUI (Penzilla Design) — React UI 스킨(panel/button/gauge/potion/ability): /assets/ui2/*
+- RPG Icons Pixel Art (CraftPix 무료팩) — 아이템 아이콘 30종 교체 + 클래스별 스킬 아이콘 56종 신설: /assets/skillicon/*
+- Warped Shooting Fx (Anokolisa) — 투사체 bolt/charged + 히트 플립북 3종/pulse/spark: /assets/vfx2_*
+- Cartoon FX Remaster (Jeong Seung Hyun/CFXR) — electric/hit triangle/explosion/blood: /assets/vfx2_*
+- Serene Village Revamped (Cainos) — 잔디/흙길 타일·집 2종·나무·바위
+- Free Cursed Land (aamatniekss? — itch.io) — 저주 땅 지면(magma/hel 변형)
+- RF Catacombs (ansimuz/Lunarian?) — 던전 바닥/벽돌(cave/stone/abyss/x2_bricks)
+- 각 팩 라이선스 원문은 upload/ 내 라이선스 파일 참조

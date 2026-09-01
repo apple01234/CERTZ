@@ -48,7 +48,7 @@ export function TitleScreen() {
       <div className="mt-8 flex w-56 flex-col gap-3 sm:w-64">
         <button
           onClick={() => EventBus.emit("game:new")}
-          className="flex items-center justify-center gap-2 rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-3 text-base font-black text-slate-900 shadow-[0_4px_16px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03] active:scale-95"
+          className="sertz-btn flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-black text-amber-100 shadow-[0_4px_16px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03] active:scale-95"
         >
           <Play size={18} />
           새로운 모험
@@ -56,7 +56,7 @@ export function TitleScreen() {
         {save && (
           <button
             onClick={() => EventBus.emit("game:continue", save)}
-            className="flex items-center justify-center gap-2 rounded-xl border-2 border-sky-200/70 bg-gradient-to-b from-sky-600 to-blue-900 px-4 py-3 text-base font-black text-white shadow-[0_4px_16px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03] active:scale-95"
+            className="sertz-btn flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-black text-white shadow-[0_4px_16px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03] active:scale-95"
           >
             <Save size={18} />
             이어하기

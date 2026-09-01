@@ -184,3 +184,36 @@ body {
   60% { transform: translateX(-3px); }
   80% { transform: translateX(3px); }
 }
+
+/* ═══════════ v3.0.8 디자인 개편 — SharpUI 스킨 (upload/SharpUI 팩) ═══════════ */
+/* 패널: SharpUI info_box 를 100% 스트레치 — 기존 bg 컬러 위에 렌더 */
+.sertz-panel {
+  background-image: url("/assets/ui2/panel.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+/* 대형 패널(상점/인벤 본체) — background 텍스처 */
+.sertz-panel-big {
+  background-image: url("/assets/ui2/panel_big.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+/* 프레임 버튼 (타이틀/다이얼로그 확인 등) */
+.sertz-btn {
+  background-image: url("/assets/ui2/button.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(255, 200, 130, 0.35) !important;
+}
+.sertz-btn:active { filter: brightness(1.25) saturate(1.2); }
+/* 게이지 프레임 — HP/MP/EXP 바 컨테이너 */
+.sertz-gauge {
+  background-image: url("/assets/ui2/bar_frame.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none !important;
+  background-color: rgba(0, 0, 0, 0.55);
+}
+/* 리스트 행 (인벤/상점 슬롯 행) */
+.sertz-listrow { background-image: url("/assets/ui2/list.png"); background-size: 100% 100%; }
+.sertz-listrow-sel { background-image: url("/assets/ui2/list_sel.png"); background-size: 100% 100%; }
