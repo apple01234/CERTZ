@@ -84,3 +84,7 @@ android/app/src/main/assets
 *.keystore
 !android/sertz-release.keystore
 tool-results/
+
+tmp/
+upload/
+asset_work/

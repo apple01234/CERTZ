@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
@@ -75,6 +76,14 @@ export function TitleScreen() {
             저장 데이터 삭제
           </button>
         )}
+        <Link
+          href="/atlantis"
+          className="mt-1 flex items-center justify-center gap-2 rounded-xl border-2 border-cyan-200/60 bg-gradient-to-b from-cyan-700/80 to-teal-900/90 px-4 py-2.5 text-sm font-black text-cyan-100 shadow-[0_4px_16px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03] active:scale-95"
+        >
+          <Sparkles size={16} />
+          스핀오프 · 아뜰란티스: 잠뜰의 인어
+          <span className="text-[9px] font-bold text-cyan-300/80">NEW</span>
+        </Link>
       </div>
 
       <div className="absolute bottom-3 flex flex-col items-center gap-1 text-center">

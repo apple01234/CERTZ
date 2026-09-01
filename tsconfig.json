@@ -45,6 +45,7 @@
     "upload",
     "download",
     "loop",
-    "mini-services"
+    "mini-services",
+    "tmp"
   ]
 }

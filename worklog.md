@@ -765,3 +765,31 @@ Stage Summary:
   강화 주문서로 스타포스 고구간 리스크 완화 루트 신설, 장신구도 ★15 성장 콘텐츠로 확장, 세이지 계열 힐러 정체성 3중 강화.
 - 다음 후보: 거래소 유저간 P2P 거래(서버 상장/검색), 강화 주문서 상위 등급(고급 주문서 +25%p), 장신구 전용 성급 UI 오라,
   세이지 파티 힐 대상 확장(파티원 HP 동기화), 에메랄드 수급처 밸런스 조정
+
+---
+Task ID: atlantis-v1
+Agent: Super Z (main)
+Task: 잠뜰 TV '아틀란티스' 스핀오프 2D 탑다운 게임 (/atlantis) 완성·검증·배포
+
+Work Log:
+- 전임 세션 산출물 인수 검토: public/atlantis/img 194종 에셋 + src/game/atlantis(BootScene/WorldScene/data/state/sfx) + AtlantisRoot 셸 — 9+1 세계·7성물·7보석·스토리 12단계 구현 상태 확인
+- 미완 BGM 표기 롤백: Overlays "AI BGM" 배지·TitleScene 크레딧·audio.ts/PhaserGame AI BGM diff 전부 HEAD 복원, 빈 bgm_manifest.json 삭제 (매니페스트 비어 무음 상태 — 유저 지시 "오래걸리면 굳이 음악 다운 안해도 돼" 반영, 레거시 BGM 정상)
+- 사용자 개발 프롬프트 요구 보강:
+  ① JSON 타일맵 로딩 시스템 — scripts/gen_atlantis_maps.mjs(bun, WORLDS ASCII → public/atlantis/maps/<id>.json 11종) + BootScene load.json + WorldScene.parseGrid JSON 우선·ASCII 폴백
+  ② 상성 시스템 클래스화 — RelicAffinity.ts 신설(check/multiplierFor/describe/forEquipped 싱글턴, 카운터 ×2.2 우선 → 라그나로크 ×0.6), WorldScene.elementMult 위임
+- 버그 픽스 2건:
+  ① 씬 재시작 잔여 객체 누적 — interactables/gates/monsters/chestObjs/proxCbs/loose를 create()에서 리셋 (이전 월드 포탈로 워프되는 고스팅 차단)
+  ② 아스가르드 개방 누락 엣지 — 마지막 수집이 상자/왕/현자 지급 성물이어도 개방되도록 checkAsgardReady 재평가(interactChest 공통 + king/sage 지급 후)
+- 진입 동선: 본편 타이틀 "스핀오프 · 아뜰란티스: 잠뜰의 인어(NEW)" 링크 ↔ /atlantis 타이틀 "← SERTZ 본편" 링크
+- E2E scripts/e2e_atlantis.js 신설 — 51 PASS / 0 FAIL:
+  JSON 타일맵 11종 · WASD 실측(velocity 96·변위) · 실공격 HP 감소 · 상성 3종 실측(중립 1.0/카운터 2.2/라그나로크 0.6) · 포탈 10기 · 상자 개봉 · 화염결계 반지 장착 해제 · 룬 오답 리셋+정답 개방+보상 상자 · 보스 4연전 드롭 · 성물7+보석7→아스가르드 개방 · 라그나로크 격파→엔딩→새로 시작 · localStorage 세이브/이어하기 · 본편 회귀(스핀오프 링크 클릭→재부팅)
+  테스트 교훈: page.evaluate 인자 1개 제한(객체 래핑) · 플래그는 실제 키('runesDone') 사용 · Phaser scene.restart는 동일 인스턴스 재사용(클래스 필드 누적 주의)
+- 회귀: 본편 e2e_v307_features.js 38 PASS / 0 FAIL (Overlays 타이틀 수정 무영향)
+- 배포: npx next build(standalone) + 데몬 재기동 — / 200, /atlantis 200
+- 브라우저 실측(agent-browser 격리 세션): 타이틀→신규 시작→미드가르드→허브→네바다 렌더 + pageerror 0 (공유 세션의 4건 에러는 이전 본편 테스트 잔여로 무관 확인)
+
+Stage Summary:
+- /atlantis 스핀오프 게임 본편 통합 완료. 사용자 프롬프트 3요구(2D 탑다운 타일맵·캐릭터 이동·JSON 타일맵 로딩·상성 시스템 클래스) 전부 충족.
+- 미완 BGM 작업은 롤백 정리 (유튜브 다운로드 스크립트 8종 untracked 유지 — 음악 작업 재개 시 활용)
+- APK 미배포 — 다음 버전(v3.0.8+) 정책에 따라 스핀오프 포함 재배포 여부 유저 확인 필요
+- 다음 후보: 모바일 터치 컨트롤(가상 조이스틱)·BGM 재개 시 audio.ts AI 플러밍 복원·아뜰란티스 전용 업적/수집 UI
