@@ -706,3 +706,22 @@ Stage Summary:
 - 15항목 전부 구현+실측 검증(44/0 + 회귀 136/136). "겹치는 스킬 하나도 없게"가 1차~2차 Z/C까지 완전 고유화로 완성,
   기본공격이 전직마다 눈에 보이게 강화되고, 보스는 관통+%피해로 후반 탱킹을 차단, 보스 전용 드롭으로 거래소 준비 재화 확보.
 - 다음 후보: 유저 거래소(보스 드롭 tradeLock 해제·판매/구매 UI), 강화 주문서 아이템, 세이지 계열 순수 힐러 확장, 장신구 스타포스
+
+---
+Task ID: v3.0.6-release
+Agent: Super Z (main)
+Task: GitHub push/Release v3.0.6 완료 (사용자 제공 신규 토큰)
+
+Work Log:
+- 사용자 제공 신규 GitHub 토큰 검증 (apple01234 계정 확인, api.github.com/user 200)
+- .gh_token 저장 (chmod 600)
+- 미푸시 커밋 2개 push: 78365f2..9a931fb (b2df42a v3.0.6 코드 + 9a931fb worklog docs)
+- Release v3.0.6 생성 (id 380163488, https://github.com/apple01234/CERTZ/releases/tag/v3.0.6)
+- SERTZ-v3.0.6.apk 업로드 (16,965,903B, state=uploaded)
+- 무결성 검증: 로컬 sha256 336004c5… == 릴리즈 다운로드 sha256 → MATCH
+- download/ 정리 확인: SERTZ-v3.0.6.apk 단독 존재 (지시 #15 준수, 구버전 전량 삭제 유지)
+
+Stage Summary:
+- v3.0.6 (versionCode 21) 전체 배포 체인 완료: 코드 push + Release + APK 업로드 + 무결성 MATCH
+- 미완 항목 없음. v3.0.6 배포 완전 종료.
+- 다음 후보 (worklog 기존 계획): 유저 거래소(보스 드롭 tradeLock 해제·판매/구매 UI), 강화 주문서 아이템, 세이지 계열 순수 힐러 확장, 장신구 스타포스
