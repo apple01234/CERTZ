@@ -415,21 +415,105 @@ export function freeJobOption(key?: string | null): ClassDef | null {
   return alt ?? null;
 }
 
+/* v3.0.6 (지시 #2/#4 — "2차에서 스킬이 변하는게 없다" + "겹치는 스킬 하나도 없게"):
+ *  Z(주력기)/C(기동기)를 클래스 "고유" 메커니즘으로 전면 분리.
+ *  1차 4계열 + 2차 8직업 = 12종 Z + 12종 C — 서로 다른 직업(형제 포함) 간 메커니즘 0개 공유.
+ *  3차/4차는 계열 승격이므로 2차기의 "강화판"을 사용 (전직마다 기존 스킬 강화 — 지시) —
+ *  resolveSkill1/2Of 헬퍼가 체인을 거슬러 최상위 정의를 찾는다. */
+export type Skill1Kind =
+  | "spin" /* warrior — 360° 회전베기 */
+  | "volley" /* ranger — 부채꼴 관통 화살 */
+  | "bolt" /* mage — 대관통 매직 볼트 */
+  | "bladestorm" /* thief — 전방 다연발 단검 투척 (전사 회전베기와 겹침 제거) */
+  | "ragespin" /* berserker — 파괴의 회전베기: 회전 + 명중 출혈 */
+  | "wallsmash" /* guardian — 성벽 강타: 전방 대참격 + 지진파 + 방어 버프 */
+  | "snipe" /* sniper — 매의 관통 화살: 즉발 히트스캔 저격 (무한 관통 라인) */
+  | "gustarrow" /* windrunner — 회오리 화살: 적을 끌어당기는 회오리 투사체 */
+  | "arcbolt" /* archmage — 아크 볼트: 착탄 광역 폭발 대형 볼트 */
+  | "purify" /* sage — 정화의 파동: 확산 파동 링, 타격당 자힐 */
+  | "shadowexec" /* assassin — 그림자 참수: 최근접 적 점멸 + 출혈 강타 */
+  | "flurrydance"; /* swashbuckler — 연타 난무: 전방 5연속 속공 */
+
+export type Skill2Kind =
+  | "dash" /* warrior — 돌진 + 종착 충격파 */
+  | "windstep" /* ranger — 질풍 차지 + 종착 후퇴사격 */
+  | "blink" /* mage — 점멸 + 양단 마나 폭발 */
+  | "shadowveil" /* thief — 그림자 숨기: 즉발 초단거리 텔레포트, 다음 기본공격 강화 */
+  | "savagerush" /* berserker — 살상 돌진: 종착 분노 폭발 + 공격 버프 */
+  | "bulwarkdash" /* guardian — 불굴 돌진: 종착 지진파 + 방어 버프 */
+  | "falconwind" /* sniper — 매의 질풍: 돌진 후 3발 부채꼴 저격 */
+  | "windslash" /* windrunner — 질풍 가르기: 돌진 경로에 관통 화살 잔상 */
+  | "grandblink" /* archmage — 대전이 점멸: 양단 대폭발 (반경 1.5배) */
+  | "cycleblink" /* sage — 순환 점멸: MP 회복 + 경로 마나 흡수 */
+  | "ambushdash" /* assassin — 암습 돌진: 경로상 적 출혈 부여 */
+  | "flashydash"; /* swashbuckler — 화려한 돌진: 경로 연타 + 화려한 검 잔상 */
+
+/* v3.0.6 — 1차+2차 12종 고유 정의 (3차/4차는 resolveSkill1Of가 계열 체인에서 승계) */
+export const SKILL1_KIND: Partial<Record<ClassKey, Skill1Kind>> = {
+  warrior: "spin",
+  ranger: "volley",
+  mage: "bolt",
+  thief: "bladestorm",
+  berserker: "ragespin",
+  guardian: "wallsmash",
+  sniper: "snipe",
+  windrunner: "gustarrow",
+  archmage: "arcbolt",
+  sage: "purify",
+  assassin: "shadowexec",
+  swashbuckler: "flurrydance",
+};
+
+export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
+  warrior: "dash",
+  ranger: "windstep",
+  mage: "blink",
+  thief: "shadowveil",
+  berserker: "savagerush",
+  guardian: "bulwarkdash",
+  sniper: "falconwind",
+  windrunner: "windslash",
+  archmage: "grandblink",
+  sage: "cycleblink",
+  assassin: "ambushdash",
+  swashbuckler: "flashydash",
+};
+
+/** 스킬 종류 승계 — 현재 클래스부터 루트까지 거슬러 처음 정의된 종류 (3차/4차는 2차기 강화판) */
+export function resolveSkill1Of(key?: string | null): Skill1Kind | null {
+  const chain = chainOf(key);
+  for (let i = chain.length - 1; i >= 0; i--) {
+    const k = SKILL1_KIND[chain[i].key];
+    if (k) return k;
+  }
+  return null;
+}
+
+export function resolveSkill2Of(key?: string | null): Skill2Kind | null {
+  const chain = chainOf(key);
+  for (let i = chain.length - 1; i >= 0; i--) {
+    const k = SKILL2_KIND[chain[i].key];
+    if (k) return k;
+  }
+  return null;
+}
+
 /* v3.0.2 (사용자 지시 #10 — "전직을 해도 스킬이 안바뀜") → v3.0.3 확장:
  *  클래스별 스킬 5슬롯 테이블 — [기본공격, 주력기(Z), 기동기(C), 3차기(V), 4차기(B)]
  *  v3.0.3 (지시 — "3차에는 스킬 3개, 4차는 4개"):
  *   - 3차 클래스부터 스킬 3개 (s3 해금), 4차는 스킬 4개 (s4 해금)
  *   - 각 상위직은 고유 메커니즘을 가진다 (세이지 계열=힐/빛, 암살 계열=출혈 등)
- *   - 1차/2차 라벨은 s3/s4 자리가 빈 문자열 — Player getter가 계열 기본값 처리 */
+ *   - 1차/2차 라벨은 s3/s4 자리가 빈 문자열 — Player getter가 계열 기본값 처리
+ *  v3.0.6 — Z/C 라벨을 신규 고유 메커니즘과 일치시킴 (성벽 강타/정화의 파동/그림자 참수/연타 난무/칼날 폭풍) */
 export const SKILL_LABELS: Partial<Record<ClassKey, [string, string, string, string, string]>> = {
   berserker: ["광폭 연타", "파괴의 회전베기", "살상 돌진", "", ""],
-  guardian: ["수호 참격", "성벽 회전베기", "방패 돌진", "", ""],
+  guardian: ["수호 참격", "성벽 강타", "불굴 돌진", "", ""],
   sniper: ["저격 사격", "매의 관통 화살", "매의 질풍", "", ""],
   windrunner: ["질풍 연사", "회오리 화살", "질풍 가르기", "", ""],
   archmage: ["대폭발 마법탄", "아크 볼트", "대전이 점멸", "", ""],
-  sage: ["현자의 마법탄", "지혜의 볼트", "순환 점멸", "", ""],
-  assassin: ["암살 연타", "그림자 회전베기", "암습 돌진", "", ""],
-  swashbuckler: ["화려한 연타", "검무 회전베기", "화려한 돌진", "", ""],
+  sage: ["현자의 마법탄", "정화의 파동", "순환 점멸", "", ""],
+  assassin: ["암살 연타", "그림자 참수", "암습 돌진", "", ""],
+  swashbuckler: ["화려한 연타", "연타 난무", "화려한 돌진", "", ""],
   warlord: ["지배의 참격", "전장 선회베기", "전장 돌파", "전장의 함성", ""],
   paladin: ["성검 참격", "심판의 회전베기", "빛의 돌진", "성역 — 빛의 결계", ""],
   eagleeye: ["신관 사격", "절명 화살", "매의 부리", "절사명중 사격", ""],

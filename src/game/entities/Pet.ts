@@ -42,7 +42,8 @@ export class Pet extends Phaser.GameObjects.Image {
       tx = drop.x;
       ty = drop.y;
       const d = Phaser.Math.Distance.Between(this.x, this.y, drop.x, drop.y);
-      k = d > 320 ? 14 : 7.5; // 원거리 드롭은 자석처럼 빠르게 끌려온다
+      // v3.0.6 — 아틀라스(3번째 펫)는 맵 전체 드롭을 더 빠르게 흡수
+      k = this.key === "pet_atlas" ? (d > 320 ? 22 : 14) : d > 320 ? 14 : 7.5;
     } else if (this.scene.player.flipX) {
       tx = px + 26;
     }

@@ -98,6 +98,12 @@ export type SaveData = {
   friends?: { code: string; name: string }[];
   /* ↓ 반복 토벌 의뢰 수주 해금 (v2.3 — NPC에게 말 걸어 해금, 지시 #4) */
   repeatOn?: boolean;
+  /* v3.0.6 — 반복 의뢰 진행도 (재입장 시 카운트 유지) */
+  repeatNeed?: number;
+  huntCount?: number;
+  repeatStage?: string;
+  /* v3.0.6 — 자동 물약/자동 버프 설정 (지시 #5) */
+  autoUse?: { hpPct: number; mpOn: boolean; buffs: string[] };
   /* ↓ 이미 본 스토리 대사 (v2.3 — 재입장 시 대사 재생 방지, 지시 #1) */
   seen?: string[];
   /* ↓ 방문한 구역 목록 (v2.5 — 지역 이동 부적 워프 대상, 지시 #7) */

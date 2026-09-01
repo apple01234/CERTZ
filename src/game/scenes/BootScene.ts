@@ -138,6 +138,8 @@ const ASSET_LIST = [
   "npc_jobmaster", // 전직 관리관 (v1.5 이관)
   // 펫 (v1.9 BM)
   "pet_slime", "pet_pixie",
+  // v3.0.6 — BM 상점 신규 아이콘 (에메랄드 전용)
+  "pet_atlas", "cos_aurora", "ring_bless", "buff_king",
   // VFX (외부 에셋)
   "slash0", "slash1", "slash2", "slash3", "slash4", "slash5",
   "shock_ring",

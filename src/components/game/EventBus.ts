@@ -51,6 +51,9 @@ export type RpgState = {
   upArm: number;
   nearShop: boolean;
   shopStock: string[];
+  /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 */
+  bmStock?: string[];
+  autoUse?: { hpPct: number; mpOn: boolean; buffs: string[] };
   /** 현재 전직 클래스키 (v1.8 다차원 트리 — 미전직 null) */
   cls: string | null;
   /** 전직/승격 가능 조건 (다음 단계 Lv 달성) — HUD 전직 버튼 */
@@ -74,7 +77,7 @@ export type RpgState = {
   canAutoHunt: boolean;
 };
 
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | null;
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | null;
 
 export type QuestState = {
   title: string;

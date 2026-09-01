@@ -5,7 +5,7 @@ import { EventBus, type PanelKind, type RpgState, type HudState, type QuestLogSt
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, upgradeCost, autoAllocPlan,
   starWeaponBonus, starArmorBonus, starTier, STAR_TIER_CSS, UPGRADE_FALLBACK_FROM,
-  CHAPTERS, STAGE_SHORT, parseStage,
+  CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue,
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey,
 } from "@/game/data";
 import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
@@ -24,6 +24,8 @@ const TIER_STYLE: Record<ItemTier, { border: string; name: string; label: string
   common: { border: "border-white/20", name: "text-white", label: "일반" },
   rare: { border: "border-emerald-400/60", name: "text-emerald-200", label: "고급" },
   epic: { border: "border-purple-400/60", name: "text-purple-200", label: "희귀" },
+  /* v3.0.6 — 보스 전용 드롭 전용 등급 (금색 발광) */
+  legend: { border: "border-amber-300 shadow-[0_0_8px_rgba(252,211,77,0.45)]", name: "text-amber-200", label: "전설" },
 };
 
 function useEscClose(close: () => void) {
@@ -126,6 +128,135 @@ function displayName(name: string, up: number): string {
   return up > 0 ? `${name} ★${up}` : name;
 }
 
+
+/* ================= v3.0.6 — BM 상점 (지시 #1) + 자동 사용 설정 (지시 #5) =================
+ *  에메랄드 전용 상점 — 골드 상점과 분리. 보스 +2 / 정예 +1 / 반복 사이클 +1로 획득.
+ *  자동 물약(HP 임계값/MP)과 자동 버프(여러 개)를 여기서 설정한다. */
+export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const auto = rpg.autoUse ?? { hpPct: 0, mpOn: false, buffs: [] };
+  const buffs: BuffKey[] = ["buff_atk", "buff_def", "buff_spd", "buff_exp", "buff_king"];
+  const buffNames: Record<string, string> = {
+    buff_atk: "분노 (공격+25%)",
+    buff_def: "수호 (방어+8)",
+    buff_spd: "신속 (이동+25%)",
+    buff_exp: "지혜 (경험치+50%)",
+    buff_king: "왕의 가호 (올인원)",
+  };
+  const bmState = (k: ItemKey): "buyable" | "owned" | "equipped" | "poor" => {
+    const it = ITEMS[k];
+    if (it.kind === "pet") return rpg.pets.includes(k) ? "owned" : rpg.emerald >= (it.bmPrice ?? 0) ? "buyable" : "poor";
+    if (it.kind === "cosmetic") return rpg.cosmetics.includes(k) ? "owned" : rpg.emerald >= (it.bmPrice ?? 0) ? "buyable" : "poor";
+    if (it.kind === "buff") return rpg.emerald >= (it.bmPrice ?? 0) ? "buyable" : "poor";
+    if (rpg.accessories.includes(k)) return "equipped";
+    return rpg.owned.includes(k) ? "owned" : rpg.emerald >= (it.bmPrice ?? 0) ? "buyable" : "poor";
+  };
+  return (
+    <div
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+      onPointerDown={onClose}
+    >
+      <div
+        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-cyan-300/60 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/assets/cos_aurora.png" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
+            <div>
+              <p className="text-sm font-black text-cyan-200">BM 상점</p>
+              <p className="text-[10px] text-white/60">에메랄드 전용 — 보스·정예·반복 의뢰에서 획득</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <EmeraldChip emerald={rpg.emerald} />
+            <button onClick={onClose} aria-label="BM 상점 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+          </div>
+        </div>
+
+        {/* BM 아이템 */}
+        <div className="flex flex-col gap-1.5">
+          {BM_STOCK.map((k) => {
+            const item = ITEMS[k as ItemKey];
+            const st = bmState(k as ItemKey);
+            const price = item.bmPrice ?? 0;
+            return (
+              <div key={k} className="flex items-center gap-2.5 rounded-lg border border-cyan-300/20 bg-cyan-300/[0.05] px-2.5 py-2">
+                <ItemIcon icon={item.icon} tier={item.tier} />
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
+                    {item.name}
+                    <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">{TIER_STYLE[item.tier].label}</span>
+                  </p>
+                  <p className="text-[11px] text-cyan-200/80">{item.kind === "pet" ? PET_DEFS[k as PetKey]?.desc : item.kind === "buff" ? BUFF_DEFS[k as BuffKey]?.desc : itemEffect(item)}</p>
+                </div>
+                <button
+                  disabled={st === "owned" || st === "equipped" || st === "poor"}
+                  onClick={() => EventBus.emit("rpg:bmBuy", { key: k as ItemKey })}
+                  className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${
+                    st === "equipped" ? "cursor-default bg-emerald-700/40 text-emerald-300"
+                      : st === "owned" ? "cursor-default bg-slate-700/50 text-white/50"
+                      : st === "buyable" ? "bg-cyan-400 text-slate-900 hover:bg-cyan-300"
+                      : "cursor-not-allowed bg-slate-700/50 text-white/35"
+                  }`}
+                >
+                  {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : `${price} 💎`}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 자동 물약/버프 설정 (지시 #5) */}
+        <div className="mt-3 rounded-lg border border-white/15 bg-white/[0.04] p-2.5">
+          <p className="mb-1.5 text-[12px] font-black text-white/80">자동 사용 설정</p>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between rounded-md bg-white/[0.04] px-2.5 py-1.5">
+              <p className="text-[12px] font-bold text-white/85">자동 HP 물약</p>
+              <button
+                onClick={() => EventBus.emit("rpg:autoset", { hpPct: auto.hpPct === 0 ? 30 : auto.hpPct === 30 ? 50 : auto.hpPct === 50 ? 70 : 0 })}
+                className="rounded-md bg-sky-500 px-2.5 py-1 text-[11px] font-black text-white hover:bg-sky-400 active:scale-95"
+              >
+                {auto.hpPct === 0 ? "끄기" : `${auto.hpPct}% 이하`}
+              </button>
+            </div>
+            <div className="flex items-center justify-between rounded-md bg-white/[0.04] px-2.5 py-1.5">
+              <p className="text-[12px] font-bold text-white/85">자동 MP 물약 (25% 이하)</p>
+              <button
+                onClick={() => EventBus.emit("rpg:autoset", { mpOn: !auto.mpOn })}
+                className={`rounded-md px-2.5 py-1 text-[11px] font-black text-white active:scale-95 ${auto.mpOn ? "bg-emerald-500 hover:bg-emerald-400" : "bg-slate-600 hover:bg-slate-500"}`}
+              >
+                {auto.mpOn ? "켜기" : "끄기"}
+              </button>
+            </div>
+            <p className="mt-1 text-[10px] text-white/45">자동 버프 — 보유 중인 물약을 자동으로 사용 (중복 선택 가능)</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {buffs.map((b) => {
+                const on = auto.buffs.includes(b);
+                const have = (rpg.buffItems[b] ?? 0) > 0;
+                return (
+                  <button
+                    key={b}
+                    onClick={() => EventBus.emit("rpg:autoset", { buffs: on ? auto.buffs.filter((x) => x !== b) : [...auto.buffs, b] })}
+                    className={`rounded-md border px-2 py-1.5 text-[10px] font-bold transition-colors ${
+                      on ? "border-amber-300/70 bg-amber-300/15 text-amber-200" : "border-white/10 bg-white/[0.03] text-white/55"
+                    }`}
+                  >
+                    {buffNames[b]}
+                    {!have && <span className="ml-1 text-white/35">(보유 없음)</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-2 text-center text-[10px] text-white/40">에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1 · ESC로 닫기</p>
+      </div>
+    </div>
+  );
+}
+
 export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
   /* v3.0.5 — 스타포스 강화 결과 플래시 (성공 금빛 링 / 실패 붉은 흔들림) */
@@ -145,7 +276,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
       onPointerDown={onClose}
     >
       <div
-        className="w-[min(92vw,430px)] rounded-xl border-2 border-amber-200/60 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-amber-200/60 bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -160,6 +291,13 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           <div className="flex items-center gap-2">
             <GoldChip gold={rpg.gold} />
             <EmeraldChip emerald={rpg.emerald} />
+            {/* v3.0.6 (지시 #1) — BM 상점 진입 (에메랄드 전용 · 상점과 분리) */}
+            <button
+              onClick={() => EventBus.emit("ui:panel", { panel: "bmshop" })}
+              className="rounded-md border border-cyan-300/60 bg-cyan-400/15 px-2 py-1 text-[10px] font-black text-cyan-200 hover:bg-cyan-400/30"
+            >
+              BM 상점
+            </button>
             <button
               onClick={onClose}
               aria-label="상점 닫기"
@@ -433,12 +571,23 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                     장착 중
                   </span>
                 ) : (
-                  <button
-                    onClick={() => EventBus.emit("rpg:equip", { key: k as ItemKey })}
-                    className="shrink-0 rounded-md bg-amber-400 px-2.5 py-1.5 text-[11px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
-                  >
-                    장착
-                  </button>
+                  <div className="flex shrink-0 flex-col gap-1">
+                    <button
+                      onClick={() => EventBus.emit("rpg:equip", { key: k as ItemKey })}
+                      className="rounded-md bg-amber-400 px-2.5 py-1.5 text-[11px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
+                    >
+                      장착
+                    </button>
+                    {/* v3.0.6 (지시 #4) — 아이템 판매 (상점가 40%) */}
+                    {sellValue(item) > 0 && (
+                      <button
+                        onClick={() => EventBus.emit("rpg:sell", { key: k as ItemKey })}
+                        className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95"
+                      >
+                        판매 {sellValue(item)}G
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             );
@@ -497,12 +646,22 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   <p className="text-[10px] text-emerald-300/90">{itemEffect(item)}{wornN > 0 ? ` · 장착 ${wornN}/${ownedN}` : ""}</p>
                 </div>
                 {canWearMore ? (
-                  <button
-                    onClick={() => EventBus.emit("rpg:equip", { key: k as ItemKey })}
-                    className="shrink-0 rounded-md bg-amber-400 px-2.5 py-1.5 text-[11px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
-                  >
-                    장착
-                  </button>
+                  <div className="flex shrink-0 flex-col gap-1">
+                    <button
+                      onClick={() => EventBus.emit("rpg:equip", { key: k as ItemKey })}
+                      className="rounded-md bg-amber-400 px-2.5 py-1.5 text-[11px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
+                    >
+                      장착
+                    </button>
+                    {sellValue(item) > 0 && (
+                      <button
+                        onClick={() => EventBus.emit("rpg:sell", { key: k as ItemKey })}
+                        className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95"
+                      >
+                        판매 {sellValue(item)}G
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <span className="shrink-0 rounded-md bg-emerald-700/40 px-2.5 py-1.5 text-[11px] font-black text-emerald-300">
                     장착 중
@@ -711,6 +870,13 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
           >
             AP +50
           </button>
+          {/* v3.0.6 — BM 상점 테스트용 에메랄드 지급 */}
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "em", value: 50 })}
+            className="rounded-lg border border-cyan-300/40 bg-cyan-400/10 px-2 py-2 text-[11px] font-black text-cyan-200 hover:bg-cyan-400/20 active:scale-95"
+          >
+            에메랄드 +50
+          </button>
         </div>
         <p className="mt-2 text-center text-[10px] text-white/40">ESC로 닫기 · 변경 사항은 즉시 세이브에 반영</p>
       </div>
@@ -732,6 +898,7 @@ export function GamePanels({
   onClose: () => void;
 }) {
   if (panel === "shop") return <ShopPanel rpg={rpg} onClose={onClose} />;
+  if (panel === "bmshop") return <BmShopPanel rpg={rpg} onClose={onClose} />; // v3.0.6 — BM 상점
   if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} />;
   if (panel === "warp") return <WarpPanel rpg={rpg} onClose={onClose} />;
   if (panel === "job") return <JobPanel rpg={rpg} onClose={onClose} />;

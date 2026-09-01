@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
-import type { ItemKey } from "../data";
+import { ITEMS, type ItemKey } from "../data";
 
 /**
  * 드롭 아이템 (2D MMORPG 기본 요소)
@@ -47,6 +47,33 @@ export class Drop extends Phaser.Physics.Arcade.Image {
     this.clearTint();
   }
 
+  /** v3.0.6 (지시 #9) — 보스 전용 아이템 드롭: 아이템 아이콘 텍스처 + 티어색 발광 */
+  spawnItem(key: ItemKey, x: number, y: number) {
+    const icon = ITEMS[key]?.icon ?? "item_coin";
+    this.kind = key;
+    this.amount = 1;
+    this.setTexture(icon);
+    this.setPosition(x + Phaser.Math.Between(-8, 8), y + Phaser.Math.Between(-6, 2));
+    this.setScale(1.05);
+    this.setActive(true).setVisible(true).setAlpha(1);
+    this.bornAt = this.scene.time.now;
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const a = Phaser.Math.FloatBetween(-Math.PI, Math.PI);
+    body.reset(this.x, this.y);
+    body.setVelocity(Math.cos(a) * 120, Math.sin(a) * 120 - 100);
+    // 전설 등급 발광 — 보스 드롭임을 즉각 인지
+    this.setTint(0xffe29a);
+    this.scene.tweens.add({
+      targets: this,
+      scaleX: 1.25,
+      scaleY: 1.25,
+      duration: 420,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.inOut",
+    });
+  }
+
   /** 씬 update에서 호출 — 자석 + 픽업 */
   tick(dt: number, px: number, py: number) {
     if (!this.active) return;
@@ -55,8 +82,10 @@ export class Drop extends Phaser.Physics.Arcade.Image {
     const age = this.scene.time.now - this.bornAt;
 
     // 튕긴 직후(250ms)는 자석 무시 — 자연스러운 흩어짐
-    if (age > 250 && d < 120) {
-      const pull = d < 34 ? 560 : 260;
+    // v3.0.6 (지시 #5) — 3번째 펫(아틀라스) 보유 시 맵 전체에서 즉시 끌려온다
+    const atlas = this.scene.player?.pet === "pet_atlas";
+    if (age > 250 && (atlas || d < 120)) {
+      const pull = atlas ? (d > 320 ? 620 : 420) : d < 34 ? 560 : 260;
       const a = Phaser.Math.Angle.Between(this.x, this.y, px, py);
       body.setVelocity(Math.cos(a) * pull, Math.sin(a) * pull);
     } else {
@@ -73,6 +102,9 @@ export class Drop extends Phaser.Physics.Arcade.Image {
 
   release() {
     this.setActive(false).setVisible(false);
+    this.scene.tweens.killTweensOf(this); // v3.0.6 — 발광 펄스 트윈 정리 (풀 재사용 잔존 방지)
+    this.setScale(0.72);
+    this.clearTint();
     (this.body as Phaser.Physics.Arcade.Body).reset(0, -9999);
     (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
   }

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
 import { familyOf, isClassKey, classLabel } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -501,6 +501,21 @@ export class WorldScene extends Phaser.Scene {
       // v2.3 — 본 대사 기록 + 반복 의뢰 수주 해금 복원 (지시 #1/#4)
       this.seenSet = new Set(savedPlayer.seen ?? []);
       this.repeatOn = savedPlayer.repeatOn ?? false;
+      /* v3.0.6 — 자동 물약/자동 버프 설정 복원 (지시 #5) */
+      if (savedPlayer.autoUse) {
+        this.player.autoUse = {
+          hpPct: savedPlayer.autoUse.hpPct ?? 0,
+          mpOn: savedPlayer.autoUse.mpOn ?? false,
+          buffs: (savedPlayer.autoUse.buffs ?? []) as BuffKey[],
+        };
+      }
+      /* v3.0.6 — 반복 의뢰 진행도 복원 (재입장 시 카운트 리셋 문제)
+       *  같은 구역 세이브에서만 복원 — 다른 구역이면 신규 시작 */
+      const savedRepeatStage = (savedPlayer as { repeatStage?: string }).repeatStage;
+      if (savedRepeatStage === this.stageDef.key) {
+        this.repeatNeed = (savedPlayer as { repeatNeed?: number }).repeatNeed ?? this.stageDef.repeat?.need ?? 0;
+        this.huntCount = (savedPlayer as { huntCount?: number }).huntCount ?? 0;
+      }
       // v2.5 — 방문 기록 복원 + 자동사냥(펫 보유 시에만 유효)
       this.visited = new Set(savedPlayer.visited ?? []);
       this.autoHunt = (savedPlayer.autoHunt ?? false) && !!this.player.pet;
@@ -512,7 +527,11 @@ export class WorldScene extends Phaser.Scene {
       this.visited.add(this.stageDef.key);
       if (this.visited.size !== before) this.save();
     }
-    this.repeatNeed = this.stageDef.repeat?.need ?? 0;
+    /* v3.0.6 — 반복 의뢰 진행도: 세이브에 같은 구역 기록이 있으면 유지, 없으면 신규 시작 */
+    if (!((savedPlayer as { repeatStage?: string } | undefined)?.repeatStage === this.stageDef.key)) {
+      this.repeatNeed = this.stageDef.repeat?.need ?? 0;
+      this.huntCount = 0;
+    }
     this.playerRef = this.player;
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.physics.add.collider(this.player, this.solidGroup);
@@ -557,6 +576,7 @@ export class WorldScene extends Phaser.Scene {
         tint: 0xff9090,
         displayName: el.name,
       });
+      e.dmgPct = DMG_PCT.elite; // v3.0.6 — 정예 % 피해 상향
       this.eliteEnemy = e;
       this.enemies.push(e);
       this.spawnRecords.push({ key: el.key, x: ex, y: ey });
@@ -1121,7 +1141,7 @@ export class WorldScene extends Phaser.Scene {
     this.plantCd = this.time.now + 700;
     const dir = new Phaser.Math.Vector2(p.x - plant.x, p.y - plant.y);
     if (dir.length() < 1) dir.set(1, 0);
-    p.takeDamage(Math.round(16 * stageScale(this.stageDef.key).atk), dir.normalize());
+    p.takeDamage(Math.round(16 * stageScale(this.stageDef.key).atk), dir.normalize(), 0, DMG_PCT.plant);
     this.tweens.add({ targets: plant, angle: { from: -9, to: 9 }, yoyo: true, duration: 70, repeat: 1, onComplete: () => plant.setAngle(0) });
     plant.setTint(0xff9a8a);
     this.time.delayedCall(220, () => plant.clearTint());
@@ -1697,6 +1717,16 @@ export class WorldScene extends Phaser.Scene {
       this.player.addPotion("mp");
       audio.sfx.pickup();
       this.spawnPickupText(x, y - 14, viaPet ? "+MP 물약 (펫)" : "+MP 물약", "#7dc0ff");
+    } else {
+      /* v3.0.6 (지시 #9) — 보스 전용 드롭 아이템: 인벤토리 지급
+       *  상점 판매 금지(tradeLock) — 추후 유저 거래소에서 사고팔 예정 */
+      const it = ITEMS[kind as ItemKey];
+      if (!it) return;
+      this.player.owned.push(kind as ItemKey);
+      audio.sfx.questDone();
+      this.spawnPickupText(x, y - 14, viaPet ? `${it.name} (펫)` : `${it.name} 획득!`, "#ffd76a");
+      this.showBanner(`${it.name} 획득! — 보스 전용 아이템 (상점 판매 금지 · 거래소 예정)`);
+      this.emitRpgState();
     }
   }
 
@@ -1963,7 +1993,11 @@ export class WorldScene extends Phaser.Scene {
     this.spawnPickupText(this.player.x, this.player.y - 44, `토벌 완료 +${r.gold}G`, "#ffd76a");
     this.huntCount = 0;
     this.repeatNeed += 2;
+    /* v3.0.6 — 반복 의뢰 사이클 완료 보너스 에메랄드 +1 */
+    this.player.emerald += 1;
+    this.spawnPickupText(this.player.x, this.player.y - 58, "+1 에메랄드", "#7de8ff");
     this.save();
+    this.emitRpgState();
     this.emitQuest();
     this.emitRpgState();
   }
@@ -2109,11 +2143,13 @@ export class WorldScene extends Phaser.Scene {
   private spawnBoss(intro = true) {
     const base = BOSS_DEFS[this.stageDef.bossKey ?? "guardian"];
     // v2.0 밸런스 — 챕터 보스는 구역 진행 배율만큼 강화 (지시 #6: 보스 체력 상향)
+    // v3.0.6 (지시 #8 — "보스가 너무 약함"): HP ×1.35·ATK ×1.05로 대폭 상향 (기존 ×0.9 완화)
+    //  + Boss 내부 관통 50%·페이즈별 태진 단축·탄막 증가가 함께 적용된다
     const sc = stageScale(this.stageDef.key);
     const def: BossDef = {
       ...base,
-      hp: Math.round(base.hp * Math.max(1, sc.hp * 0.9)),
-      atk: Math.round(base.atk * Math.max(1, sc.atk * 0.9)),
+      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.35)),
+      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.05)),
       exp: Math.round(base.exp * sc.exp),
       gold: Math.round(base.gold * sc.gold),
     };
@@ -2146,6 +2182,23 @@ export class WorldScene extends Phaser.Scene {
     this.player.gainExp(def?.exp ?? 220);
     this.totalKills++;
     this.registry.set("runKills", this.totalKills);
+    /* v3.0.6 (지시 #1) — 보스 처치 시 에메랄드 +2 (BM 상점 재화) */
+    this.player.emerald += 2;
+    this.spawnPickupText(this.player.x, this.player.y - 60, "+2 에메랄드", "#7de8ff");
+    this.emitRpgState();
+    /* v3.0.6 (지시 #9) — 보스 전용 드롭: 보스별 유니크 아이템 100% 드롭
+     *  상점에서 살 수 없음(tradeLock) — 추후 유저 거래소에서 사고팔게 할 예정 */
+    const dropKey = BOSS_DROP_ITEMS[def?.key ?? "guardian"];
+    if (dropKey && this.boss) {
+      const bx = this.boss.x;
+      const by = this.boss.y;
+      this.time.delayedCall(420, () => {
+        if (!this.scene.isActive()) return;
+        const d = this.acquireDrop();
+        if (d) d.spawnItem(dropKey, bx + Phaser.Math.Between(-14, 14), by + Phaser.Math.Between(-10, 6));
+        audio.sfx.roar();
+      });
+    }
     // 최종 보스(심연의 군주)만 클리어 — 이전 보스는 차원문으로 다음 지역 진행
     const final = NEXT_STAGE[this.stageDef.key] === null;
     this.cleared = final;
@@ -2471,7 +2524,7 @@ export class WorldScene extends Phaser.Scene {
     };
 
     /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구) */
-    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap"; value?: number | string }) => {
+    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em"; value?: number | string }) => {
       if (!this.player) return;
       const p = this.player;
       if (v.type === "job" && typeof v.value === "string") {
@@ -2503,6 +2556,11 @@ export class WorldScene extends Phaser.Scene {
         p.ap += v.value;
         this.emitHud();
         EventBus.emit("banner:show", { text: `GM — AP +${v.value}` });
+      } else if (v.type === "em" && typeof v.value === "number") {
+        /* v3.0.6 — GM 에메랄드 지급 (BM 상점 테스트용) */
+        p.emerald = Math.max(0, p.emerald + v.value);
+        this.emitRpgState();
+        EventBus.emit("banner:show", { text: `GM — 에메랄드 ${v.value >= 0 ? "+" : ""}${v.value}` });
       }
     };
 
@@ -2533,6 +2591,47 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("friend:goto", onFriendGoto);
     EventBus.on("rpg:useItem", onUseItem);
     EventBus.on("rpg:warp", onWarp);
+    /* v3.0.6 (지시 #4) — 아이템 판매 */
+    const onSell = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const okSell = this.player.sell(v.key as ItemKey);
+      if (okSell) {
+        this.save();
+        this.emitRpgState();
+        EventBus.emit("banner:show", { text: "판매 완료 — 상점가의 40%" });
+      }
+    };
+    /* v3.0.6 (지시 #1) — BM 상점 구매 (에메랄드) */
+    const onBmBuy = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const it = ITEMS[v.key as ItemKey];
+      const okBuy = this.player.buyBm(v.key as ItemKey);
+      if (okBuy) {
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"} 구매 완료! (-${it?.bmPrice ?? 0} 에메랄드)` });
+        if (it?.kind === "pet") this.onPetChanged();
+        if (it?.kind === "cosmetic") this.onCosmeticChanged();
+        audio.sfx.equip();
+      } else {
+        EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
+      }
+    };
+    /* v3.0.6 (지시 #5) — 자동 물약/자동 버프 설정 */
+    const onAutoSet = (v: { hpPct?: number; mpOn?: boolean; buffs?: string[] }) => {
+      if (!this.player) return;
+      this.player.setAutoUse({
+        hpPct: v.hpPct,
+        mpOn: v.mpOn,
+        buffs: v.buffs as BuffKey[] | undefined,
+      });
+      this.save();
+      this.emitRpgState();
+    };
+    EventBus.on("rpg:sell", onSell);
+    EventBus.on("rpg:bmBuy", onBmBuy);
+    EventBus.on("rpg:autoset", onAutoSet);
     EventBus.on("rpg:autohunt", onAutoHunt);
     EventBus.on("rpg:gm", onGm);
     this.events.once("shutdown", () => {
@@ -2563,6 +2662,9 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("friend:goto", onFriendGoto);
       EventBus.off("rpg:useItem", onUseItem);
       EventBus.off("rpg:warp", onWarp);
+      EventBus.off("rpg:sell", onSell);
+      EventBus.off("rpg:bmBuy", onBmBuy);
+      EventBus.off("rpg:autoset", onAutoSet);
       EventBus.off("rpg:autohunt", onAutoHunt);
       EventBus.off("rpg:gm", onGm);
     });
@@ -2811,14 +2913,35 @@ export class WorldScene extends Phaser.Scene {
     };
 
     if (ranged) {
-      // 원거리 — 적이 붙으면 이탈: 점멸/질풍 차지 가능하면 돌진기로, 아니면 걷기 후퇴
+      /* v3.0.6 (지시 #6 — "원거리 자동사냥시 몬스터가 너무 가까이 있으면 끼어버리는 버그"):
+       *  ① 후퇴 방향 탐색을 110px로 확대 + 다른 근접 위협까지 고려한 스코어링
+       *  ② 코너(8방향 전부 막힘) 판정 — 영원히 벽을 보고 후퇴만 하던 원인 제거:
+       *     - 돌진기 가능 → 적 "통과" 돌진으로 반대편 탈출
+       *     - 아니면 정면 반격 (공격+주력기) — 맞으면서라도 싸움
+       *  ③ 열린 후퇴로가 있으면 이탈하되 즉시 조준·사격 유지 (카이팅) */
       if (bestD < 150) {
+        const cornered = this.autoRetreatBlocked();
+        aimAt();
+        if (cornered) {
+          if (p.skill2Cd <= 0 && p.mp >= 20) {
+            // 적을 통과해 반대편으로 탈출 (돌진은 적과 충돌하지 않음 — 스윕 피해도 함께)
+            p.autoDashDir = new Phaser.Math.Vector2(best.x - p.x, best.y - p.y).normalize();
+            p.useSkill2();
+          } else {
+            // 반격 — 벽에 붙어서 맞기만 하던 상태를 끊음
+            this.attackQueued = true;
+            if (p.skill1Cd <= 0 && p.mp >= 15) p.useSkill1();
+          }
+          return;
+        }
         const away = this.autoRetreatDir(best);
         if (p.skill2Cd <= 0 && p.mp >= 20) {
           p.autoDashDir = away;
           p.useSkill2();
         } else {
+          // 카이팅 — 이탈 방향 이동 유지 (공격은 state가 attack이면 다음 틱에 이어서)
           this.autoHuntMove.copy(away);
+          this.attackQueued = true;
         }
         return;
       }
@@ -2904,17 +3027,62 @@ export class WorldScene extends Phaser.Scene {
     return n;
   }
 
-  /** v3.0.1 — 이탈 방향: 대상 반대편 (개미굴 벽이면 45°씩 회전해 열린 방향 탐색) */
+  /** v3.0.1 — 이탈 방향: 대상 반대편 (개미굴 벽이면 45°씩 회전해 열린 방향 탐색)
+   *  v3.0.6 (지시 #6) — 탐지 거리 72→110px 확대 + 각 후보 방향을 "주변 위협과의 최소거리"로 스코어링해
+   *  몬스터 사이로 끼이는 후퇴를 줄인다 */
   private autoRetreatDir(threat: Enemy | Boss): Phaser.Math.Vector2 {
     const p = this.player!;
+    const wb = this.physics.world.bounds;
     const base = new Phaser.Math.Vector2(p.x - threat.x, p.y - threat.y);
     if (base.lengthSq() < 0.001) base.set(1, 0);
     base.normalize();
+    const threats = this.getAllTargets().filter(
+      (e) => e.active && e !== threat && Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y) < 260
+    );
+    // v3.0.6 — 개미굴 벽 + 맵 가장자리(월드 바운드) 양쪽을 열림 판정에 반영
+    const openDir = (d: Phaser.Math.Vector2) => {
+      const nx = p.x + d.x * 110;
+      const ny = p.y + d.y * 110;
+      if (nx < 70 || nx > wb.width - 70 || ny < 70 || ny > wb.height - 70) return false;
+      return !this.layout || isOpenXY(this.layout, nx, ny);
+    };
+    let bestDir: Phaser.Math.Vector2 | null = null;
+    let bestScore = -Infinity;
     for (const ang of [0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1, Math.PI]) {
       const d = base.clone().rotate(ang);
-      if (!this.layout || isOpenXY(this.layout, p.x + d.x * 72, p.y + d.y * 72)) return d;
+      if (openDir(d)) {
+        // 스코어 = 이 방향으로 90px 이동했을 때의 최악 위협 거리 (클수록 좋음)
+        const nx = p.x + d.x * 90;
+        const ny = p.y + d.y * 90;
+        let score = 9999;
+        for (const e of threats) {
+          const dd = Phaser.Math.Distance.Between(nx, ny, e.x, e.y);
+          if (dd < score) score = dd;
+        }
+        // 진행 방향 앞쪽 후보에 소폭 가산 (제자리 회전 방지)
+        score += d.dot(base) * 24;
+        if (score > bestScore) {
+          bestScore = score;
+          bestDir = d;
+        }
+      }
     }
-    return base;
+    return bestDir ?? base;
+  }
+
+  /** v3.0.6 — 코너 판정: 8방향 모두 막혀 후퇴 불가 (원거리 자동사냥 "끼어버림" 해결용)
+   *  맵 가장자리(월드 바운드)도 벽으로 간주 — 개미굴이 아닌 개방 맵 코너도 잡는다 */
+  private autoRetreatBlocked(): boolean {
+    const p = this.player!;
+    const wb = this.physics.world.bounds;
+    for (const ang of [0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1, Math.PI]) {
+      const d = new Phaser.Math.Vector2(1, 0).rotate(ang);
+      const nx = p.x + d.x * 110;
+      const ny = p.y + d.y * 110;
+      if (nx < 70 || nx > wb.width - 70 || ny < 70 || ny > wb.height - 70) continue;
+      if (!this.layout || isOpenXY(this.layout, nx, ny)) return false;
+    }
+    return true;
   }
 
   /** v2.5 — 자동 물약 (자동사냥 중 HP 45%/MP 15 이하) */
@@ -3107,6 +3275,106 @@ export class WorldScene extends Phaser.Scene {
     p.setData("life", 1700);
   }
 
+  /* ================= v3.0.6 — 클래스 고유 주력기 신규 이펙트 4종 ================= */
+
+  /** 스나이퍼 저격 라인 — 즉발 히트스캔 빔 (짧게 번쩍이고 소멸) */
+  spawnSnipeBeam(x1: number, y1: number, x2: number, y2: number, hex: number) {
+    const line = this.add.line(0, 0, x1, y1, x2, y2, hex, 0.9)
+      .setDepth(22)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setLineWidth(3);
+    const core = this.add.line(0, 0, x1, y1, x2, y2, 0xffffff, 0.9)
+      .setDepth(23)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setLineWidth(1);
+    this.tweens.add({
+      targets: [line, core],
+      alpha: 0,
+      duration: 170,
+      ease: "Cubic.out",
+      onComplete: () => { line.destroy(); core.destroy(); },
+    });
+  }
+
+  /** 윈드러너 회오리 화살 — 느린 회오리 투사체: 경로상 적을 끌어당기고 틱 피해 */
+  fireGustTornado(cfg: {
+    x: number; y: number; angle: number; speed: number;
+    dmg: number; crit: boolean; hex: number; pull: number; radius: number; life: number;
+  }) {
+    const g = this.add.circle(cfg.x, cfg.y, 14, cfg.hex, 0.35)
+      .setDepth(13)
+      .setStrokeStyle(3, cfg.hex, 0.8);
+    const vx = Math.cos(cfg.angle) * cfg.speed;
+    const vy = Math.sin(cfg.angle) * cfg.speed;
+    let life = cfg.life;
+    const tick = this.time.addEvent({
+      delay: 120,
+      repeat: Math.ceil(cfg.life / 120),
+      callback: () => {
+        life -= 120;
+        if (!g.active || life <= 0) { tick.remove(); if (g.active) g.destroy(); return; }
+        g.setPosition(g.x + vx * 0.12, g.y + vy * 0.12);
+        const wb = this.physics.world.bounds;
+        for (const e of this.getAllTargets()) {
+          if (!e.active) continue;
+          const d = Phaser.Math.Distance.Between(g.x, g.y, e.x, e.y);
+          if (d <= cfg.radius) {
+            // 끌어당김 — 회오리 중심으로
+            const nx = Phaser.Math.Clamp(e.x + (g.x - e.x) * cfg.pull * 0.22, 40, wb.width - 40);
+            const ny = Phaser.Math.Clamp(e.y + (g.y - e.y) * cfg.pull * 0.22, 40, wb.height - 40);
+            (e as unknown as { body?: Phaser.Physics.Arcade.Body }).body?.reset?.(nx, ny);
+            // 틱 피해 — 낮은 배율 다발
+            if (Math.random() < 0.65) {
+              e.takeDamage(Math.max(1, Math.round(cfg.dmg * 0.28)), new Phaser.Math.Vector2(vx, vy).normalize(), 60, cfg.crit);
+            }
+          }
+        }
+        this.spawnBurstAt(g.x, g.y, 2, cfg.hex);
+      },
+    });
+    this.time.delayedCall(cfg.life, () => { if (g.active) g.destroy(); });
+  }
+
+  /** 아크메이지 아크 볼트 — 착탄 광역 폭발 투사체 (첫 명중 지점에서 폭발, 4차+ 2차 폭발) */
+  fireExplodingBolt(cfg: {
+    x: number; y: number; angle: number; speed: number;
+    dmg: number; crit: boolean; pierce: number; hex: number;
+    blastRadius: number; blastMul: number; secondary: boolean; scale: number;
+  }) {
+    this.firePlayerProj({
+      x: cfg.x, y: cfg.y, angle: cfg.angle, speed: cfg.speed,
+      pierce: cfg.pierce, dmg: cfg.dmg, crit: cfg.crit,
+      tint: cfg.hex, knock: 260, scale: cfg.scale,
+      anim: "fx-arcane", blend: "normal",
+    });
+    // 마지막 발사 투사체에 폭발 플래그 부여 — tickPlayerProjs에서 첫 명중 시 처리
+    const p = this.pProjPool[(this.pProjIdx + this.pProjPool.length - 1) % this.pProjPool.length];
+    if (p?.active) {
+      p.setData("explodeR", cfg.blastRadius);
+      p.setData("explodeMul", cfg.blastMul);
+      p.setData("explodeHex", cfg.hex);
+      p.setData("explodeSecondary", cfg.secondary);
+    }
+  }
+
+  /** 세이지 정화의 파동 — 확산 링 비주얼 */
+  spawnPurifyRing(x: number, y: number, radius: number, hex: number) {
+    const ring = this.add.image(x, y, "shock_ring")
+      .setDepth(19)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(hex)
+      .setScale(0.2)
+      .setAlpha(0.85);
+    this.tweens.add({
+      targets: ring,
+      scale: radius / 130,
+      alpha: 0,
+      duration: 420,
+      ease: "Cubic.out",
+      onComplete: () => ring.destroy(),
+    });
+  }
+
   /** 투사체 진행 — 수명 감소 + 적 원판 판정(관통 소모) + 회수 */
   private tickPlayerProjs(dt: number) {
     if (this.pProjPool.length === 0) return;
@@ -3164,6 +3432,37 @@ export class WorldScene extends Phaser.Scene {
           );
           this.onMeleeConnect(1, "skill");
           this.spawnBurstAt(p.x, p.y, 4, (p.getData("tint") as number) ?? 0xffffff);
+          /* v3.0.6 — 아크 볼트 착탄 폭발: 첫 명중 지점에서 광역 폭발 (4차+ 2차 폭발) */
+          const exR = p.getData("explodeR") as number | undefined;
+          if (exR) {
+            const exHex = (p.getData("explodeHex") as number) ?? 0x8fa6ff;
+            const blastDmg = Math.max(1, Math.round((p.getData("dmg") as number) * ((p.getData("explodeMul") as number) ?? 1)));
+            this.spawnBurstAt(p.x, p.y, 16, exHex);
+            const ringFx = this.add.image(p.x, p.y, "shock_ring").setDepth(19).setBlendMode(Phaser.BlendModes.ADD).setTint(exHex).setScale(0.25).setAlpha(0.9);
+            this.tweens.add({ targets: ringFx, scale: exR / 110, alpha: 0, duration: 320, ease: "Cubic.out", onComplete: () => ringFx.destroy() });
+            for (const e2 of this.getAllTargets()) {
+              if (!e2.active) continue;
+              const d2 = Phaser.Math.Distance.Between(p.x, p.y, e2.x, e2.y);
+              if (d2 <= exR) {
+                const away = new Phaser.Math.Vector2(e2.x - p.x, e2.y - p.y).normalize();
+                e2.takeDamage(blastDmg, away, 240, p.getData("crit") as boolean);
+              }
+            }
+            if (p.getData("explodeSecondary") === true) {
+              const sx = p.x, sy = p.y;
+              this.time.delayedCall(280, () => {
+                this.spawnBurstAt(sx, sy, 12, exHex);
+                for (const e3 of this.getAllTargets()) {
+                  if (!e3.active) continue;
+                  const d3 = Phaser.Math.Distance.Between(sx, sy, e3.x, e3.y);
+                  if (d3 <= exR * 0.85) {
+                    const away = new Phaser.Math.Vector2(e3.x - sx, e3.y - sy).normalize();
+                    e3.takeDamage(Math.round(blastDmg * 0.7), away, 200, false);
+                  }
+                }
+              });
+            }
+          }
           if (pierce <= 0) {
             p.disableBody(true, true);
             break;
@@ -3213,7 +3512,7 @@ export class WorldScene extends Phaser.Scene {
       const d = Phaser.Math.Distance.Between(p.x, p.y, this.player.x, this.player.y);
       if (d <= 26 && this.player.state !== "dead") {
         const dir = new Phaser.Math.Vector2(p.body!.velocity.x, p.body!.velocity.y).normalize();
-        this.player.takeDamage(p.getData("dmg") as number, dir);
+        this.player.takeDamage(p.getData("dmg") as number, dir, 0, DMG_PCT.mob); // v3.0.6 — 적 투사체 % 하한
         this.spawnBurstAt(p.x, p.y, 6, (p.getData("tint") as number) ?? 0xffffff);
         p.disableBody(true, true);
       }
@@ -3769,6 +4068,7 @@ export class WorldScene extends Phaser.Scene {
       tint: 0xb08aff,
       displayName: "시험 상대 — 룬 제령",
     });
+    e.dmgPct = DMG_PCT.elite; // v3.0.6 — 시험 상대 % 피해 상향
     this.eliteEnemy = e;
     this.jobEliteSummoned = true;
     this.enemies.push(e);
@@ -4431,6 +4731,9 @@ export class WorldScene extends Phaser.Scene {
       sfHp: this.player.starHpApplied,
       nearShop: this.nearShop,
       shopStock: [...SHOP_STOCK],
+      /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 (지시 #1/#5) */
+      bmStock: [...BM_STOCK],
+      autoUse: { ...this.player.autoUse },
       cls: this.player.cls,
       canJob: canJobNow(this.player.lv, this.player.cls),
       /* v1.9 BM + 스탯 */
@@ -4515,6 +4818,11 @@ export class WorldScene extends Phaser.Scene {
       jobStoryDone: [...this.jobStoryDone],
       /* v2.3 — 반복 의뢰 수주 해금 + 본 스토리 대사 기록 */
       repeatOn: this.repeatOn,
+      /* v3.0.6 — 반복 의뢰 진행도 (재입장 시 카운트 유지) */
+      repeatNeed: this.repeatNeed,
+      huntCount: this.huntCount,
+      repeatStage: this.stageDef.key,
+      autoUse: { ...this.player.autoUse },
       seen: [...this.seenSet].slice(-160),
       /* v2.5 — 방문 구역 기록 + 자동사냥 토글 */
       visited: [...this.visited],

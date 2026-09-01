@@ -104,12 +104,15 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.updatePhase();
 
     // 투사체-플레이어 충돌 (풀 순회, 44개 고정 — 저렴함)
+    // v3.0.6 — 보스 공격은 방어력 50% 관통 (pierce 0.5)
     for (const orb of this.orbPool) {
       if (!orb.active) continue;
       if (Phaser.Math.Distance.Between(orb.x, orb.y, player.x, player.y) < 26) {
         player.takeDamage(
           orb.getData("dmg"),
-          new Phaser.Math.Vector2(orb.body!.velocity.x, orb.body!.velocity.y).normalize()
+          new Phaser.Math.Vector2(orb.body!.velocity.x, orb.body!.velocity.y).normalize(),
+          0.5,
+          0.09 // v3.0.6 — 보스 탄막 maxHP % 하한
         );
         this.killOrb(orb);
       }
@@ -117,11 +120,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.killOrb(orb);
       }
     }
+    // v3.0.6 — 격노 시 추격 속도 상승
+    const chaseMul = this.enraged ? 1.18 : 1;
 
     switch (this.mode) {
       case "idle": {
-        // 추격하며 접근
-        this.setVelocity(toPlayer.x * this.def.speed + this.knockVec.x, toPlayer.y * this.def.speed + this.knockVec.y);
+        // 추격하며 접근 — v3.0.6: 페이즈별 속도 (격노 1.18배)
+        this.setVelocity(toPlayer.x * this.def.speed * chaseMul + this.knockVec.x, toPlayer.y * this.def.speed * chaseMul + this.knockVec.y);
         this.nextAttackCd -= dt;
         if (this.nextAttackCd <= 0 && dist < 560 && player.hp > 0) {
           this.pickAttack(player, dist);
@@ -150,7 +155,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.setVelocity(this.chargeDir.x * 520 + this.knockVec.x, this.chargeDir.y * 520 + this.knockVec.y);
         if (!this.chargeHitDone && dist < 64) {
           this.chargeHitDone = true;
-          player.takeDamage(Math.round(this.def.atk * 0.9), this.chargeDir.clone());
+          player.takeDamage(Math.round(this.def.atk * 1.1), this.chargeDir.clone(), 0.5, 0.10); // v3.0.6 — 관통 + maxHP % 하한
         }
         if (this.modeTimer <= 0) this.endAttack(1400);
         break;
@@ -276,7 +281,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.scene.spawnCrack(tx, ty);
       if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 118) {
         const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
-        player.takeDamage(Math.round(this.def.atk * 1.2), dir);
+        player.takeDamage(Math.round(this.def.atk * 1.35), dir, 0.5, 0.12); // v3.0.6 — 관통 + 강타 maxHP % 하한
       }
       this.scene.tweens.add({
         targets: ring,
@@ -303,8 +308,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private startVolley() {
     this.setMode("volley", 10);
     this.setTint(0x88a0ff);
-    // 페이즈별 탄 수 증가 (1:5 / 2:7 / 3:9)
-    this.volleyCount = this.phase === 1 ? 5 : this.phase === 2 ? 7 : 9;
+  /** 페이즈별 탄 수 증가 (1:5 / 2:7 / 3:12) — v3.0.6: 보스 강화 */
+    this.volleyCount = this.phase === 1 ? 5 : this.phase === 2 ? 7 : 12;
     let remaining = this.volleyCount;
     this.volleyTimer?.remove();
     this.volleyTimer = this.scene.time.addEvent({
@@ -341,9 +346,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   private doRing() {
     this.clearTint();
-    // 보스를 중심으로 방사형 탄막 — 페이즈 3은 2연속 파동
+    // 보스를 중심으로 방사형 탄막 — 페이즈 3은 2연속 파동 (v3.0.6: 탄수 상향 12/16/20)
     const waves = this.phase === 3 ? 2 : 1;
-    const count = this.phase === 1 ? 10 : this.phase === 2 ? 14 : 16;
+    const count = this.phase === 1 ? 12 : this.phase === 2 ? 16 : 20;
     for (let w = 0; w < waves; w++) {
       this.scene.time.delayedCall(w * 340, () => {
         if (!this.alive) return;
@@ -438,9 +443,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     orb.disableBody(true, true);
   }
 
+  /** 공격 종료 — 다음 공격까지 대기. v3.0.6: 페이즈별 태진 단축 (p1 0.85 / p2 0.7 / 격노 0.5) */
   private endAttack(cd: number) {
     this.mode = "idle";
-    this.nextAttackCd = this.enraged ? cd * 0.55 : cd;
+    this.nextAttackCd = this.enraged ? cd * 0.5 : this.phase === 2 ? cd * 0.7 : cd * 0.85;
   }
 
   /* ---------- 피격/사망 ---------- */
@@ -494,5 +500,6 @@ export interface PlayerLike2 {
   x: number;
   y: number;
   hp: number;
-  takeDamage(dmg: number, fromDir: Phaser.Math.Vector2): void;
+  /** v3.0.6 — pierce(0~1): 방어력 관통, hpPct(0~1): maxHP % 고정 피해 하한 (보스 공격 전용) */
+  takeDamage(dmg: number, fromDir: Phaser.Math.Vector2, pierce?: number, hpPct?: number): void;
 }

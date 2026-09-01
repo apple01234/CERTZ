@@ -640,6 +640,15 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
     const sum = enemies.reduce((t, g) => t + g.count, 0);
     enemies.push({ key: beatHere.quest.targetKey, count: Math.max(1, Math.min(3, 20 - sum)) });
   }
+  /* v3.0.6 (지시 #1 — "반복 의뢰 안됨") — [반복] 토벌 의뢰 대상(spec.main)이 이 구역 스폰 조합에 없으면 편입.
+   *  구역별 단일종 로테이션(1~6구역은 풀 1종만 스폰) 때문에 반복 의뢰 대상 몬스터가 맵에 아예 없어
+   *  사냥해도 카운트가 전혀 오르지 않던 근본 원인 제거 (스토리 beat 편입과 동일 패턴) */
+  if (!enemies.some((g) => g.key === spec.main)) {
+    const donor = enemies[0];
+    donor.count = Math.max(1, donor.count - 3);
+    const sum = enemies.reduce((t, g) => t + g.count, 0);
+    enemies.push({ key: spec.main, count: Math.max(1, Math.min(3, 20 - sum)) });
+  }
   const def: StageDef = {
     key,
     name: `제${spec.num}장 ${spec.title}`,

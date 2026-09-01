@@ -85,10 +85,26 @@ export type ItemKey =
   | "cos_dawn"
   | "cos_gold"
   | "cos_abyss"
-  | "cos_wings";
+  | "cos_wings"
+  /* v3.0.6 (지시 #9) — 보스 전용 드롭 (상점 판매 금지 — 유저 거래소 예정) */
+  | "bd_guardian"
+  | "bd_behemoth"
+  | "bd_nidhog"
+  | "bd_surt"
+  | "bd_fenrir"
+  | "bd_skoll"
+  | "bd_gram"
+  | "bd_abysslord"
+  | "bd_abudditos"
+  /* v3.0.6 — BM 상점 (에메랄드 전용 — 상점과 분리) */
+  | "pet_atlas"
+  | "cos_aurora"
+  | "ring_bless"
+  | "buff_king";
 
-/** 아이템 등급 (클래식 MMORPG 관례 — 테두리/이름색 구분) */
-export type ItemTier = "common" | "rare" | "epic";
+/** 아이템 등급 (클래식 MMORPG 관례 — 테두리/이름색 구분)
+ *  v3.0.6 — "legend" 추가 (보스 전용 드롭 전용 등급) */
+export type ItemTier = "common" | "rare" | "epic" | "legend";
 
 /**
  * v3.0.5 — 스타포스 강화 (메이플스토리 Star Force식)
@@ -157,6 +173,13 @@ export type ItemDef = {
   crit?: number; // 장신구 — 크리티컬 확률 증가 (%p)
   maxHp?: number; // 장신구 — 최대 HP 증가
   slot?: "ring" | "pendant"; // v2.9 (#8) — 중복 장착 슬롯 종류 (기본 ring)
+  /** v3.0.6 (지시 #9) — 상점 구매 금지 (보스 드롭 전용 — 추후 유저 거래소 판매 예정) */
+  tradeLock?: boolean;
+  /** v3.0.6 — BM 상점(에메랄드) 전용 가격 / 골드 상점 판매 금지 플래그 */
+  bmPrice?: number;
+  bmOnly?: boolean;
+  /** v3.0.6 — 보스 드롭 설명 (인벤토리 툴팁용) */
+  bossDrop?: string;
 };
 
 export const ITEMS: Record<ItemKey, ItemDef> = {
@@ -200,16 +223,44 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   cos_gold: { key: "cos_gold", kind: "cosmetic", name: "황금 오라", icon: "cos_gold", price: 200, tier: "rare" },
   cos_abyss: { key: "cos_abyss", kind: "cosmetic", name: "심연 오라", icon: "cos_abyss", price: 260, tier: "epic" },
   cos_wings: { key: "cos_wings", kind: "cosmetic", name: "요정 날개", icon: "cos_wings", price: 340, tier: "epic" },
+  /* ---- v3.0.6 (지시 #9) — 보스 전용 드롭 아이템 (전설 등급) ----
+   *  상점에서 살 수 없음(tradeLock) — 추후 유저 거래소에서 사고팔게 할 예정.
+   *  보스별 1종, 100% 드롭. 상점 에픽 대비 확실히 강한 수치. */
+  bd_guardian: { key: "bd_guardian", kind: "accessory", name: "수호자의 문장", icon: "item_ring_guard", price: 0, tier: "legend", maxHp: 90, crit: 5, slot: "ring", tradeLock: true, bossDrop: "심연의 수호자 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_behemoth: { key: "bd_behemoth", kind: "accessory", name: "눈보라의 심장", icon: "item_ring_vital", price: 0, tier: "legend", maxHp: 120, def: 2, slot: "pendant", tradeLock: true, bossDrop: "눈보라의 거수 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "item_ring_power", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "니드호그 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_surt: { key: "bd_surt", kind: "accessory", name: "화염 정령의 인장", icon: "item_ring_power", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "수르트 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_fenrir: { key: "bd_fenrir", kind: "accessory", name: "탐욕의 속니", icon: "item_ring_crit", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "펜리르 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_skoll: { key: "bd_skoll", kind: "accessory", name: "교만의 쌍두 귀걸이", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "스콜&하티 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "item_ring_guard", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "그람 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_abysslord: { key: "bd_abysslord", kind: "accessory", name: "심연의 군주의 관", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 14, maxHp: 100, slot: "pendant", tradeLock: true, bossDrop: "심연의 군주 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "대악마의 계약서", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "아부디토스 드롭 — 최고 보스 전리품 · 거래소 예정" },
+  /* ---- v3.0.6 — BM 상점 (에메랄드 전용 — 골드 상점과 분리, 지시 #1) ---- */
+  pet_atlas: { key: "pet_atlas", kind: "pet", name: "별의 정령 아틀라스", icon: "pet_atlas", price: 0, bmPrice: 30, bmOnly: true, tier: "legend" },
+  ring_bless: { key: "ring_bless", kind: "accessory", name: "가호의 반지", icon: "ring_bless", price: 0, bmPrice: 45, bmOnly: true, tier: "legend", crit: 15, maxHp: 100, slot: "ring" },
+  buff_king: { key: "buff_king", kind: "buff", name: "왕의 가호", icon: "buff_king", price: 0, bmPrice: 15, bmOnly: true, tier: "legend" },
+  cos_aurora: { key: "cos_aurora", kind: "cosmetic", name: "오로라 후광", icon: "cos_aurora", price: 0, bmPrice: 20, bmOnly: true, tier: "legend" },
 };
+
+/* v3.0.6 (지시 — "나중가면 플레이어가 너무 쌔닌까 보스 및 몬스터가 체력% 고정 데미지를 주게해"):
+ *  몬스터/보스 피해의 maxHP % 하한 — 방어력 스택으로 피해가 1로 굳는 후반 탱킹 방지.
+ *  최종 피해 = max(방어 감쇄 피해, maxHP × pct). 초반엔 원래 수치가 지배, 후반엔 %가 지배. */
+export const DMG_PCT = {
+  mob: 0.045,        // 일반 몬스터 접촉/투사체
+  elite: 0.06,       // 정예/시험 상대
+  boss: 0.09,        // 보스 탄막·돌진
+  bossSlam: 0.12,    // 보스 강타
+  plant: 0.05,       // 육식 식물
+} as const;
 
 /** 강화 1단계당 보너스 */
 export const UPGRADE_BONUS = { weaponAtk: 2, armorDef: 1 } as const;
 
 /* ================= BM (v1.9 — 버프/펫/치장, 메이플 BM 감각) ================= */
 
-export type BuffKey = "buff_atk" | "buff_def" | "buff_spd" | "buff_exp";
-export type PetKey = "pet_slime" | "pet_pixie";
-export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings";
+export type BuffKey = "buff_atk" | "buff_def" | "buff_spd" | "buff_exp" | "buff_king";
+export type PetKey = "pet_slime" | "pet_pixie" | "pet_atlas";
+export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | "cos_aurora";
 
 /** 버프 물약 효과 — 사용 시 지속시간 동안 적용 (같은 버프 재사용 시 시간 갱신) */
 export type BuffDef = {
@@ -226,6 +277,8 @@ export const BUFF_DEFS: Record<BuffKey, BuffDef> = {
   buff_def: { key: "buff_def", name: "수호의 물약", icon: "item_buff_def", desc: "방어력 +8", duration: 60_000, color: "#8fb8ff", price: 55 },
   buff_spd: { key: "buff_spd", name: "신속의 물약", icon: "item_buff_spd", desc: "이동속도 +25%", duration: 60_000, color: "#9af0c8", price: 50 },
   buff_exp: { key: "buff_exp", name: "지혜의 물약", icon: "item_buff_exp", desc: "경험치 +50%", duration: 120_000, color: "#e8a8ff", price: 90 },
+  /* v3.0.6 — BM 전용 올인원 버프 (왕의 가호) */
+  buff_king: { key: "buff_king", name: "왕의 가호", icon: "buff_king", desc: "공격 +30% · 방어 +10 · 신속 +25%", duration: 90_000, color: "#ffe29a", price: 0 },
 };
 
 /** 펫 정의 — 플레이어를 따라다니며 드롭 자동 줍기 + 골드 보너스 */
@@ -240,6 +293,8 @@ export type PetDef = {
 export const PET_DEFS: Record<PetKey, PetDef> = {
   pet_slime: { key: "pet_slime", name: "슬라임 젤리", icon: "pet_slime", desc: "드롭 자동 줍기 · 골드 +10%", bonusGoldPct: 10, price: 280 },
   pet_pixie: { key: "pet_pixie", name: "요정 핑크이", icon: "pet_pixie", desc: "드롭 자동 줍기 · 골드 +20%", bonusGoldPct: 20, price: 520 },
+  /* v3.0.6 — 3번째 펫: 맵 전체 드롭을 즉시 끌어오는 자석 정령 (BM 전용, 지시 #5) */
+  pet_atlas: { key: "pet_atlas", name: "별의 정령 아틀라스", icon: "pet_atlas", desc: "맵 전체 드롭 즉시 흡수 · 골드 +30%", bonusGoldPct: 30, price: 0 },
 };
 
 /** 치장 아이템 — 플레이어 뒤에 따라붙는 오라 연출 (전투 능력 없음, 순수 치장) */
@@ -256,6 +311,7 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_gold: { key: "cos_gold", name: "황금 오라", icon: "cos_gold", desc: "금빛 후광", price: 200, tint: 0xffd76a },
   cos_abyss: { key: "cos_abyss", name: "심연 오라", icon: "cos_abyss", desc: "보라빛 후광", price: 260, tint: 0xa875ff },
   cos_wings: { key: "cos_wings", name: "요정 날개", icon: "cos_wings", desc: "반짝임 입자 트레일", price: 340, tint: 0xbaf3ff },
+  cos_aurora: { key: "cos_aurora", name: "오로라 후광", icon: "cos_aurora", desc: "무지빛 오로라 후광", price: 0, tint: 0x9df0ff },
 };
 
 /** 상점 판매 목록 (표시 순서 — BM 섹션은 kind로 분리 렌더) */
@@ -293,6 +349,28 @@ export const SHOP_STOCK: ItemKey[] = [
   "cos_abyss",
   "cos_wings",
 ];
+
+/** v3.0.6 (지시 #4) — 아이템 판매가 (상점가의 40%, 최소 1G · 보스 전용은 고정가) */
+export function sellValue(item: ItemDef): number {
+  if (item.tier === "legend") return item.bmOnly ? 0 : 400;
+  return Math.max(1, Math.floor(item.price * 0.4));
+}
+
+/** v3.0.6 (지시 #1) — BM 상점 판매 목록 (에메랄드 전용 — 골드 상점과 분리) */
+export const BM_STOCK: ItemKey[] = ["pet_atlas", "ring_bless", "buff_king", "cos_aurora"];
+
+/** v3.0.6 (지시 #9) — 보스 → 전용 드롭 아이템 매핑 (100% 드롭, 상점 구매 불가) */
+export const BOSS_DROP_ITEMS: Record<string, ItemKey> = {
+  guardian: "bd_guardian",
+  behemoth: "bd_behemoth",
+  nidhog: "bd_nidhog",
+  surt: "bd_surt",
+  fenrir: "bd_fenrir",
+  skoll: "bd_skoll",
+  gram: "bd_gram",
+  abysslord: "bd_abysslord",
+  abudditos: "bd_abudditos",
+};
 
 export type DialogueDef = { speaker: string; lines: string[] };
 

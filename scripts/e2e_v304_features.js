@@ -138,8 +138,13 @@ async function gmSet(page, job, lv) {
         const cd3 = p.skill3Cd;
         return new Promise((res) => {
           setTimeout(() => {
-            eb.emit("input:skill4");
-            setTimeout(() => res({ u3ok, u4ok, cd3, cd4: p.skill4Cd, cls: p.cls }), 120);
+            // 3차기 연출(attack 310ms) 종료 후 발동 — 상태 플래키 제거
+            const waitIdle = () => {
+              if (p.state !== "idle") { setTimeout(waitIdle, 60); return; }
+              eb.emit("input:skill4");
+              setTimeout(() => res({ u3ok, u4ok, cd3, cd4: p.skill4Cd, cls: p.cls }), 120);
+            };
+            waitIdle();
           }, 120);
         });
       });
@@ -192,37 +197,38 @@ async function gmSet(page, job, lv) {
       });
       ok(spin4.hit === true, `4차 워브링어 회전베기 — 동일 160px 명중 (반경 182 강화, 거리 ${spin4.d})`);
 
-      // 궁수 — 관통 강화: 1차 pierce 3 / 4차 pierce 6
+      // 궁수 — v3.0.6 스킬 고유화: deadeye Z = snipe(즉발 히트스캔 저격 라인 — 화살 투사체 없음)
       await gmSet(page, "deadeye", 120);
       const arr = await page.evaluate(() => {
         const w = window.__SERTZ__.game.scene.getScene("world");
         const p = w.player;
-        p.mp = p.maxMp;
+        p.state = "idle"; p.skill1Cd = 0; p.mp = p.maxMp;
         p.facing.set(1, 0);
+        const kind = window.__SERTZ_DEBUG__.classes.resolveSkill1Of(p.cls);
         p.useSkill1();
         return new Promise((res) => setTimeout(() => {
           const act = w.pProjPool.filter((x) => x.active);
-          const pierces = act.map((x) => x.getData("pierce"));
-          res({ n: act.length, pierceMax: Math.max(0, ...pierces) });
+          res({ kind, n: act.length });
         }, 350));
       });
-      ok(arr.pierceMax === 6, `4차 화살 관통 6 (기존 2 → 2+tier 강화, 실측 ${arr.pierceMax}), 발수 ${arr.n}발`);
+      ok(arr.kind === "snipe" && arr.n === 0, `4차 데드아이 Z = snipe 히트스캔 저격 (kind ${arr.kind}, 투사체 ${arr.n}) — 계열 고유화`);
 
-      // 마법사 — 볼트 크기 강화: t4 scale 1.86 (상태/쿨 강제 초기화 후 발사)
-      await gmSet(page, "eternal", 120);
+      // 마법사 — v3.0.6 스킬 고유화: arclord Z = arcbolt(착탄 폭발 볼트 scale 1.5)
+      await gmSet(page, "arclord", 120);
       const bolt = await page.evaluate(() => {
         const w = window.__SERTZ__.game.scene.getScene("world");
         const p = w.player;
         p.state = "idle"; p.skill1Cd = 0; p.skill2Cd = 0; p.skill3Cd = 0; p.skill4Cd = 0;
         p.hp = p.maxHp; p.mp = p.maxMp;
         p.facing.set(1, 0);
+        const kind = window.__SERTZ_DEBUG__.classes.resolveSkill1Of(p.cls);
         p.useSkill1();
         return new Promise((res) => setTimeout(() => {
           const act = w.pProjPool.filter((x) => x.active);
-          res({ scaleMax: Math.max(0, ...act.map((x) => x.scaleX)), tier: p.tier });
+          res({ kind, scaleMax: Math.max(0, ...act.map((x) => x.scaleX)), tier: p.tier });
         }, 250));
       });
-      ok(bolt.scaleMax >= 1.8, `4차 볼트 크기 강화 (tier ${bolt.tier}, scale ${bolt.scaleMax.toFixed(2)}, 기존 t4 1.7 → 1.86)`);
+      ok(bolt.kind === "arcbolt" && bolt.scaleMax >= 1.4, `4차 아크로드 Z = arcbolt 착탄 폭발 볼트 (kind ${bolt.kind}, scale ${bolt.scaleMax.toFixed(2)}) — 계열 고유화`);
     }
 
     console.log("[5] 3/4차 임팩트 상향 (지시 #3)");

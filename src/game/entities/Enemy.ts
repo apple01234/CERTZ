@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
+import { DMG_PCT } from "../data";
 import { ENEMIES, type EnemyDef, type EnemyKey } from "../data";
 import { FSM, type FSMState } from "../ai/FSM";
 /** 종별 물리/판정 크기 + 리스폰 버스트 색 */
@@ -69,6 +70,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
 
   def: EnemyDef;
+  /** v3.0.6 — maxHP % 고정 피해 하한 (정예는 생성 후 상향 설정) */
+  dmgPct: number = DMG_PCT.mob;
   hp: number;
   maxHp: number;
   alive = true;
@@ -255,7 +258,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
           return "chargeDash";
         }
         if (c.dist <= 58) {
-          c.player.takeDamage(e.def.atk, c.toPlayer);
+          c.player.takeDamage(e.def.atk, c.toPlayer, 0, e.dmgPct); // v3.0.6 — maxHP % 하한
           /* v3.0.3 — 접촉 공격 상태이상 (출혈/독/감속) */
           const ap = prof?.apply;
           if (ap && Math.random() < ap.chance) {
@@ -280,7 +283,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         c.vy = e.chargeDir.y * prof2.speed;
         // 돌진 접촉 판정 — 플레이어 원판
         if (c.dist <= 40 && c.player.hp > 0) {
-          c.player.takeDamage(e.def.atk * 1.3, e.chargeDir);
+          c.player.takeDamage(e.def.atk * 1.3, e.chargeDir, 0, Math.min(0.09, e.dmgPct * 1.3)); // v3.0.6
           const ap = e.def.profile?.apply;
           if (ap && Math.random() < ap.chance) c.player.applyEnemyStatus(ap.kind, ap.dps, ap.dur);
           e.modeTimer = 700;
@@ -468,7 +471,8 @@ export interface PlayerLike {
   x: number;
   y: number;
   hp: number;
-  takeDamage(dmg: number, fromDir: Phaser.Math.Vector2): void;
+  /** v3.0.6 — hpPct: maxHP % 고정 피해 하한 (몬스터 공격 전용) */
+  takeDamage(dmg: number, fromDir: Phaser.Math.Vector2, pierce?: number, hpPct?: number): void;
   /** v3.0.3 — 몬스터 상태이상 부여 (출혈/독/감속) */
   applyEnemyStatus(kind: "bleed" | "poison" | "slow", dps: number, durMs: number): void;
 }

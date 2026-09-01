@@ -4,6 +4,13 @@ import { BootScene } from "./scenes/BootScene";
 import { TitleScene } from "./scenes/TitleScene";
 import { WorldScene } from "./scenes/WorldScene";
 import { attachAudio } from "./audio";
+/* v3.0.6 — E2E 정적 검증용 노출 (window.__SERTZ_DEBUG__) */
+import * as classesMod from "./classes";
+import * as stagesMod from "./stages";
+import * as dataMod from "./data";
+import { SFX_THROTTLE_MS, SFX_MAX_CONCURRENT, BGM_VOLUME, SFX_VOLUMES } from "./audio";
+
+const audioDebug = { throttle: SFX_THROTTLE_MS, cap: SFX_MAX_CONCURRENT, bgm: BGM_VOLUME, volumes: SFX_VOLUMES };
 
 /**
  * F3 반응형 핵심:
@@ -51,5 +58,13 @@ export function createGame(parent: HTMLElement): Phaser.Game {
 
   // E2E 검증/디버그 훅
   (window as unknown as { __SERTZ__?: unknown }).__SERTZ__ = { game };
+  // v3.0.6 — E2E 정적 검증용 모듈 노출 (클래스/사운드/스테이지/아이템 테이블)
+  (window as unknown as { __SERTZ_DEBUG__?: unknown }).__SERTZ_DEBUG__ = {
+    classes: classesMod,
+    audio: audioDebug,
+    stages: stagesMod,
+    items: dataMod.ITEMS,
+    bossDrops: dataMod.BOSS_DROP_ITEMS,
+  };
   return game;
 }
