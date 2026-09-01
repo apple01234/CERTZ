@@ -61,6 +61,8 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "fx2-pulse", frames: Array.from({ length: 4 }, (_, i) => ({ key: "vfx2_pulse", frame: i })), frameRate: 8, repeat: -1 });
   a.create({ key: "fx2-elec", frames: Array.from({ length: 8 }, (_, i) => ({ key: "vfx2_elec", frame: i })), frameRate: 20, repeat: 0 });
   a.create({ key: "fx2-tri", frames: Array.from({ length: 2 }, (_, i) => ({ key: "vfx2_tri", frame: i })), frameRate: 16, repeat: 0 });
+  /* v3.0.11 — 토네이도 회전 애님 (스카이로드 폭풍 소용돌이/천공의 폭풍/윈드러너 회오리 화살) */
+  a.create({ key: "fx-tornado", frames: Array.from({ length: 8 }, (_, i) => ({ key: "fx_tornado", frame: i })), frameRate: 16, repeat: -1 });
   // 몬스터
   a.create({ key: "wolf-idle", ...fr("wolf_idle", 2, 2, -1) });
   a.create({ key: "wolf-run", ...fr("wolf_run", 4, 10, -1) });

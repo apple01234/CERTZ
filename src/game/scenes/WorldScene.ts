@@ -3395,14 +3395,69 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** 윈드러너 회오리 화살 — 느린 회오리 투사체: 경로상 적을 끌어당기고 틱 피해 */
+  /* ================= v3.0.11 — 돌진 계열별 특색 이펙트 =================
+   *  전사=대지 먼지 / 궁수=질풍 바람꼬리 / 도적=그림자 잔상 / 마법사=룬 링 (직업 특색 돌진) */
+
+  /** 전사 계열 — 발밑 먼지 기둥 (대지를 박차는 무게감) */
+  spawnDashDust(x: number, y: number, tint = 0xff9a8a) {
+    for (let i = 0; i < 2; i++) {
+      const c = this.add.circle(x + (Math.random() - 0.5) * 24, y + 16 + Math.random() * 6, 3 + Math.random() * 3, 0xb8a890, 0.5)
+        .setDepth(9);
+      this.tweens.add({ targets: c, scale: 2.1, alpha: 0, y: c.y + 7, duration: 380, ease: "Cubic.out", onComplete: () => c.destroy() });
+    }
+    this.spawnBurstAt(x, y + 14, 1, tint);
+  }
+
+  /** 궁수 계열 — 몸 뒤로 흩어지는 바람 꼬리 선 (질풍 질주감) */
+  spawnWindStreak(x: number, y: number, dir: Phaser.Math.Vector2, tint = 0x9dffc4) {
+    const len = 34 + Math.random() * 18;
+    const ox = (Math.random() - 0.5) * 26;
+    const oy = (Math.random() - 0.5) * 30 - 6;
+    const line = this.add.line(
+      0, 0,
+      x + ox - dir.x * len, y + oy - dir.y * len,
+      x + ox, y + oy,
+      tint, 0.7
+    )
+      .setDepth(11)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setLineWidth(1.5);
+    this.tweens.add({ targets: line, alpha: 0, duration: 260, ease: "Cubic.out", onComplete: () => line.destroy() });
+  }
+
+  /** 도적 계열 — 내 실루엣이 어둡게 남는 그림자 잔상 */
+  spawnShadowAfterimage(p: Player, tint = 0x2a1040) {
+    const img = this.add.image(p.x, p.y, p.texture.key, p.frame.name)
+      .setDepth(p.depth - 1)
+      .setFlipX(p.flipX)
+      .setTint(tint)
+      .setAlpha(0.55);
+    this.tweens.add({ targets: img, alpha: 0, scale: 0.92, duration: 320, ease: "Cubic.out", onComplete: () => img.destroy() });
+  }
+
+  /** 마법사 계열(블링크) — 출발/도착 지점에 펼쳐지는 룬 링 */
+  spawnRuneRing(x: number, y: number, hex = 0x8fa6ff) {
+    const ring = this.add.circle(x, y + 10, 42, 0x8fa6ff, 0.001)
+      .setStrokeStyle(2, hex, 0.9)
+      .setDepth(12)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setScale(0.2);
+    this.tweens.add({ targets: ring, scale: 1, alpha: 0, duration: 340, ease: "Cubic.out", onComplete: () => ring.destroy() });
+  }
+
+  /** 윈드러너 회오리 화살 — 회오리 투사체: 경로상 적을 끌어당기고 틱 피해
+   *  v3.0.11 — 단색 원 → 토네이도 스프라이트(fx-tornado 8프레임 회전)로 교체 + 바람 꼬리 잔상 */
   fireGustTornado(cfg: {
     x: number; y: number; angle: number; speed: number;
     dmg: number; crit: boolean; hex: number; pull: number; radius: number; life: number;
   }) {
-    const g = this.add.circle(cfg.x, cfg.y, 14, cfg.hex, 0.35)
+    const g = this.add.sprite(cfg.x, cfg.y, "fx_tornado", 0)
       .setDepth(13)
-      .setStrokeStyle(3, cfg.hex, 0.8);
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(cfg.hex)
+      .setScale(1.15)
+      .setAlpha(0.92);
+    g.play("fx-tornado");
     const vx = Math.cos(cfg.angle) * cfg.speed;
     const vy = Math.sin(cfg.angle) * cfg.speed;
     let life = cfg.life;
@@ -3432,6 +3487,85 @@ export class WorldScene extends Phaser.Scene {
       },
     });
     this.time.delayedCall(cfg.life, () => { if (g.active) g.destroy(); });
+  }
+
+  /* v3.0.11 — 스카이로드 전용 대형 토네이도 (폭풍 소용돌이/천공의 폭풍).
+   *  회오리 스프라이트가 이동하며 주변 적을 강하게 빨아들이고 틱 피해.
+   *  종료 시(또는 벽 도달 시) 소용돌이가 터지며 마무리. */
+  fireCyclone(cfg: {
+    x: number; y: number; angle: number; speed: number;
+    dmg: number; crit: boolean; hex: number;
+    pull: number; radius: number; life: number; scale: number;
+  }) {
+    const g = this.add.sprite(cfg.x, cfg.y, "fx_tornado", 0)
+      .setDepth(14)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(cfg.hex)
+      .setScale(cfg.scale)
+      .setAlpha(0.95);
+    g.play("fx-tornado");
+    const vx = Math.cos(cfg.angle) * cfg.speed;
+    const vy = Math.sin(cfg.angle) * cfg.speed;
+    // 진행 축에 수직인 방향 — 소용돌이가 S자로 흔들리는 와인딩
+    const px = -Math.sin(cfg.angle);
+    const py = Math.cos(cfg.angle);
+    const wb0 = this.physics.world.bounds;
+    const hitOnce = new Set<Enemy | Boss>();
+    let life = cfg.life;
+    let t = 0;
+    const tick = this.time.addEvent({
+      delay: 100,
+      repeat: Math.ceil(cfg.life / 100),
+      callback: () => {
+        life -= 100;
+        t += 100;
+        if (!g.active || life <= 0) {
+          tick.remove();
+          if (g.active) {
+            // 소멸 연출 — 회오리가 터지며 마무리 타격
+            this.spawnBurstAt(g.x, g.y, 14, cfg.hex);
+            for (const e of this.getAllTargets()) {
+              if (!e.active || hitOnce.has(e)) continue;
+              const d = Phaser.Math.Distance.Between(g.x, g.y, e.x, e.y);
+              if (d <= cfg.radius * 1.1) {
+                hitOnce.add(e);
+                const away = new Phaser.Math.Vector2(e.x - g.x, e.y - g.y).normalize();
+                e.takeDamage(Math.max(1, Math.round(cfg.dmg * 0.9)), away, 340, cfg.crit);
+              }
+            }
+            g.destroy();
+          }
+          return;
+        }
+        // 이동 + 사인 와인딩 (토네이도 특유의 꿈틀거림)
+        const sway = Math.sin(t * 0.012) * 34;
+        g.setPosition(
+          Phaser.Math.Clamp(g.x + vx * 0.1 + px * sway * 0.1, 30, wb0.width - 30),
+          Phaser.Math.Clamp(g.y + vy * 0.1 + py * sway * 0.1, 30, wb0.height - 30)
+        );
+        // 크기 맥동 — 숨쉬는 회오리
+        g.setScale(cfg.scale * (0.94 + 0.1 * Math.sin(t * 0.02)));
+        const wb = this.physics.world.bounds;
+        for (const e of this.getAllTargets()) {
+          if (!e.active) continue;
+          const d = Phaser.Math.Distance.Between(g.x, g.y, e.x, e.y);
+          if (d <= cfg.radius) {
+            // 강한 끌어당김 — 회오리 안으로 빨려들어감
+            const nx = Phaser.Math.Clamp(e.x + (g.x - e.x) * cfg.pull * 0.3, 40, wb.width - 40);
+            const ny = Phaser.Math.Clamp(e.y + (g.y - e.y) * cfg.pull * 0.3, 40, wb.height - 40);
+            (e as unknown as { body?: Phaser.Physics.Arcade.Body }).body?.reset?.(nx, ny);
+            if (Math.random() < 0.7) {
+              e.takeDamage(Math.max(1, Math.round(cfg.dmg * 0.3)), new Phaser.Math.Vector2(vx, vy).normalize(), 40, cfg.crit);
+            }
+          }
+        }
+        // 바람 파편 — 회오리 가장자리에서 흩날림
+        if (Math.random() < 0.8) {
+          const a = Math.random() * Math.PI * 2;
+          this.spawnBurstAt(g.x + Math.cos(a) * cfg.radius * 0.5, g.y + Math.sin(a) * cfg.radius * 0.4, 1, cfg.hex);
+        }
+      },
+    });
   }
 
   /** 아크메이지 아크 볼트 — 착탄 광역 폭발 투사체 (첫 명중 지점에서 폭발, 4차+ 2차 폭발) */

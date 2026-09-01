@@ -204,6 +204,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.state === "dash") {
       this.dashTime -= ms;
       this.setVelocity(this.dashDir.x * this.dashSpeed, this.dashDir.y * this.dashSpeed);
+      /* v3.0.11 — 돌진 중 주행 애니 (기존엔 애니 없이 마지막 프레임이 얼어붙은 채 미끄러짐) */
+      {
+        const horiz = Math.abs(this.dashDir.x) >= Math.abs(this.dashDir.y);
+        const key = horiz ? "hero-walk-side" : this.dashDir.y > 0 ? "hero-walk" : "hero-walk-up";
+        if (horiz) this.setFlipX(this.dashDir.x > 0); // v3.0.10 — 시트 왼쪽 기준
+        if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) this.play(key);
+      }
       if (this.dashTime <= 0) {
         this.state = "idle";
         this.setVelocity(0, 0);
@@ -660,6 +667,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hitSet.clear();
     this.setVelocity(0, 0);
     const kind = resolveSkill1Of(this.cls) ?? "spin";
+    /* v3.0.11 — 3차/4차 주력기 진화감: 상위직은 클래스색 오라 링이 터지며 시전
+     *  (2차기 승계라 이름만 바뀌어 보이던 문제를 시각적으로도 "강화판"임을 드러냄) */
+    if (this.tier >= 3) {
+      const aura = this.scene.add.circle(this.x, this.y, 30)
+        .setStrokeStyle(2, this.clsHex(), 0.7)
+        .setDepth(12)
+        .setBlendMode(Phaser.BlendModes.ADD);
+      this.scene.tweens.add({ targets: aura, scale: 1.9, alpha: 0, duration: 400, ease: "Cubic.out", onComplete: () => aura.destroy() });
+    }
     switch (kind) {
       case "volley": return this.skill1Arrows();
       case "bolt": return this.skill1Bolt();
@@ -678,7 +694,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** 전사 — 회전베기 360° (v3.0.4 — 전직마다 기존 스킬 강화: 배율/반경 대폭 상향 + 단계별 부가효과)
    *  2차+ 잔상 강화 / 3차+ 이중 회전+적 끌어당김 / 4차+ 지면 균열+출혈 추가타
-   *  v3.0.6 — bleed=true는 버서커 "파괴의 회전베기"(ragespin): 명중 대상 출혈 추가타 (전사 원판과 분리) */
+   *  v3.0.6 — bleed=true는 버서커 "파괴의 회전베기"(ragespin)
+   *  v3.0.11 — 버서커 분기 완전 분리: 붉은 분노 오라 3겹 + 전방 러지 회전 + 이중 참격판
+   *  (기존엔 전사 원판과 동일 비주얼이라 "이름만 바뀐다"는 피드백을 받은 대표 사례) */
   private skill1Spin(bleed = false) {
     const t = this.tier; // 0(미전직)~4
     const dmgMul = 1.6 + 0.3 * t;
@@ -691,10 +709,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const spin = aim.x !== 0 ? (aim.x > 0 ? 1 : -1) : this.flipX ? 1 : -1;
     const famHex = familyOf(this.cls) === "thief" ? 0xb98aff : 0xff9a8a;
 
-    // 360° 궤도 반달 + 충격파 + 스파크 — 티어 2 이상에서 충격 링 추가
-    this.scene.spawnSpinSlash(this.x, this.y, spin);
-    if (t >= 2) this.scene.spawnBurstAt(this.x, this.y, 10 + 3 * t, famHex);
-    if (t >= 3) this.scene.spawnSpinSlash(this.x, this.y, -spin); // 이중 회전 잔상 (3차 강화)
+    if (bleed) {
+      /* ═══ 버서커 — 파괴의 회전베기 (전사 원판과 완전 별개 연출) ═══
+       *  광전사 정체성: 서서 돌지 않고 전방으로 박면서 돈다. 붉은 광기가 몸을 감쌈. */
+      const dir = aim.lengthSq() > 0.01 ? aim.clone().normalize() : new Phaser.Math.Vector2(this.flipX ? -1 : 1, 0);
+      this.scene.spawnSpinSlash(this.x, this.y, spin);
+      this.scene.spawnSpinSlash(this.x + dir.x * 52, this.y + dir.y * 52, -spin); // 전방 이중 참격판
+      this.scene.spawnBurstAt(this.x, this.y, 16, 0xff3c1c);
+      // 분노 오라 — 붉은 링 3겹이 터져나감
+      for (let i = 0; i < 3; i++) {
+        const ring = this.scene.add.circle(this.x, this.y, 26 + i * 13)
+          .setStrokeStyle(2, 0xff5c3c, 0.55)
+          .setDepth(12)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.scene.tweens.add({ targets: ring, scale: 1.7, alpha: 0, duration: 480 + i * 110, ease: "Cubic.out", onComplete: () => ring.destroy() });
+      }
+      // 전방 러지 — 박고 나서 멈춤 (공격에 공격을 더한다)
+      const body = this.body as Phaser.Physics.Arcade.Body;
+      body.setVelocity(dir.x * 500, dir.y * 500);
+      this.scene.time.delayedCall(240, () => {
+        if (this.state !== "dead") body.setVelocity(0, 0);
+      });
+      this.scene.spawnPickupText(this.x, this.y - 44, "파괴의 광기!", "#ff5c3c");
+      this.scene.cameras.main.shake(90, 0.004);
+    } else {
+      // 전사 원판 — 360° 궤도 반달 + 충격파 + 스파크 — 티어 2 이상에서 충격 링 추가
+      this.scene.spawnSpinSlash(this.x, this.y, spin);
+      if (t >= 2) this.scene.spawnBurstAt(this.x, this.y, 10 + 3 * t, famHex);
+      if (t >= 3) this.scene.spawnSpinSlash(this.x, this.y, -spin); // 이중 회전 잔상 (3차 강화)
+    }
 
     // 몸통(스프라이트) 360° 회전 — 검 뻗은 공격 프레임을 돌려 휘두르는 동작
     this.play("hero-atk");
@@ -1182,9 +1225,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.dashSpeed = cfg.speed;
     this.dashKind = kind;
 
-    /* 클래스별 이동 잔상 — 블링크 계열은 페이드아웃→재등장, 나머지는 참격 잔상 */
+    /* v3.0.11 — 클래스별 이동 잔상 — 계열별 특색 돌진 (직업 특색 지시):
+     *  마법사=블링크(룬 링+페이드) / 도적=그림자 잔상 / 궁수=질풍 바람꼬리 / 전사=대지 먼지 */
+    const fam = familyOf(this.cls);
     if (kind === "blink" || kind === "grandblink" || kind === "cycleblink") {
       this.scene.spawnBurstAt(this.x, this.y, 10, 0x8fa6ff);
+      this.scene.spawnRuneRing(this.x, this.y);
       this.scene.tweens.add({ targets: this, alpha: 0.12, duration: 70, yoyo: true, hold: 50 });
     } else if (kind === "shadowveil") {
       // 그림자 숨기 — 잔상 없이 사라졌다 나타남 + 다음 기본공격 강화 (도적 정체성)
@@ -1200,12 +1246,54 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         : kind === "ambushdash" ? 0xd89aff
         : kind === "flashydash" ? 0xf0c8ff
         : 0xff9a8a;
-      const slashes = kind === "flashydash" ? 5 : 3;
-      for (let i = 0; i < slashes; i++) {
-        this.scene.time.delayedCall(i * (kind === "flashydash" ? 40 : 55), () => {
-          if (this.state === "dead") return;
-          this.scene.spawnSlash(this.x, this.y, dir, i % 2 === 0, 0.7, trail);
-        });
+      if (fam === "ranger") {
+        // 궁수 계열 — 질풍: 몸 뒤로 바람 꼬리 선 (참격 대신 바람)
+        for (let i = 0; i < 5; i++) {
+          this.scene.time.delayedCall(i * 34, () => {
+            if (this.state === "dead") return;
+            this.scene.spawnWindStreak(this.x, this.y, dir, trail);
+          });
+        }
+        // 윈드러너(3차+ 템페스트 포함)만 경로 참격 잔상 유지 — 질풍 가르기 정체성
+        if (kind === "windslash") {
+          for (let i = 0; i < 2; i++) {
+            this.scene.time.delayedCall(i * 80, () => {
+              if (this.state === "dead") return;
+              this.scene.spawnSlash(this.x, this.y, dir, i % 2 === 0, 0.7, trail);
+            });
+          }
+        }
+      } else if (fam === "thief") {
+        // 도적 계열 — 어두운 그림자 잔상이 뒤따름
+        for (let i = 0; i < 4; i++) {
+          this.scene.time.delayedCall(i * 45, () => {
+            if (this.state === "dead") return;
+            this.scene.spawnShadowAfterimage(this, kind === "ambushdash" ? 0x2a1040 : 0x3a2050);
+          });
+        }
+        // 스와시버클러(3차+ 듀얼리스트 포함)만 화려한 연타 스윕 유지 — 화려함 정체성
+        if (kind === "flashydash") {
+          for (let i = 0; i < 3; i++) {
+            this.scene.time.delayedCall(i * 60, () => {
+              if (this.state === "dead") return;
+              this.scene.spawnSlash(this.x, this.y, dir, i % 2 === 0, 0.7, trail);
+            });
+          }
+        }
+      } else {
+        // 전사 계열 — 대지 질주: 발밑 먼지 기둥 + 낮은 참격 잔상 2회
+        for (let i = 0; i < 4; i++) {
+          this.scene.time.delayedCall(i * 48, () => {
+            if (this.state === "dead") return;
+            this.scene.spawnDashDust(this.x, this.y, trail);
+          });
+        }
+        for (let i = 0; i < 2; i++) {
+          this.scene.time.delayedCall(i * 80, () => {
+            if (this.state === "dead") return;
+            this.scene.spawnSlash(this.x, this.y, dir, i % 2 === 0, 0.7, trail);
+          });
+        }
       }
       this.scene.spawnBurstAt(this.x, this.y, 6, trail);
     }
@@ -1337,22 +1425,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           break;
         }
         case "blink": {
-          // 마법사 — 양단 마나 폭발 (반경 104+10t)
+          // 마법사 — 양단 마나 폭발 (반경 104+10t) + 도착 룬 링
           this.scene.spawnBurstAt(this.x, this.y, 14 + 2 * t, 0x8fa6ff);
+          this.scene.spawnRuneRing(this.x, this.y);
           burst(104 + 10 * t, 0.9 + 0.12 * t, 300);
           break;
         }
         case "grandblink": {
-          // 아크메이지 — 양단 대폭발 (반경 1.4배, 배율 상향)
+          // 아크메이지 — 양단 대폭발 (반경 1.4배, 배율 상향) + 도착 룬 링
           this.scene.spawnBurstAt(this.x, this.y, 22 + 2 * t, 0x8fa6ff);
           this.scene.spawnPillar(this.x, this.y, 0x8fa6ff, 80);
+          this.scene.spawnRuneRing(this.x, this.y);
           burst(145 + 10 * t, 1.15 + 0.1 * t, 320);
           break;
         }
         case "cycleblink": {
-          // 세이지 — 종착 MP 회복 + 소규모 정화 (마나 흡수는 경로상 처리)
+          // 세이지 — 종착 MP 회복 + 소규모 정화 (마나 흡수는 경로상 처리) + 도착 룬 링
           this.mp = Math.min(this.maxMp, this.mp + 8 + 2 * t);
           this.scene.spawnBurstAt(this.x, this.y, 12, 0xc3cfff);
+          this.scene.spawnRuneRing(this.x, this.y, 0xc3cfff);
           this.scene.spawnPickupText(this.x, this.y - 44, `+${8 + 2 * t} MP`, "#a5b9ff");
           break;
         }
@@ -1609,36 +1700,40 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnPickupText(this.x, this.y - 44, "화살 폭우!", "#1cff5c");
         break;
       }
-      /* 스카이로드 — 폭풍 소용돌이: 전부 관통하는 대형 회오리 2기 + 잔풍 4기 (폭풍의 눈과 완전 별개) */
+      /* 스카이로드 — 하늘의 희망: 대형 토네이도 2기 + 잔풍 소용돌이 4기 (폭풍의 눈과 완전 별개)
+   *  v3.0.11 — 매직볼트 → 진짜 토네이도(fx-tornado 회전 스프라이트):
+   *  이동하며 적을 빨아들이고 S자로 꿈틀대고, 소멸 시 폭발 마무리 */
       case "cyclone": {
         const aim = this.aimDirFree();
         const base = Math.atan2(aim.y, aim.x);
+        // 대형 토네이도 2기 — 좌우로 살짝 벌려 전진, 강한 빨아들이기
         for (let i = 0; i < 2; i++) {
           this.scene.time.delayedCall(i * 180, () => {
             if (this.state === "dead") return;
             const { dmg, crit } = this.rollDamage(1.7, true);
-            this.scene.firePlayerProj({
+            this.scene.fireCyclone({
               x: this.x, y: this.y - 8,
-              angle: base + (i === 0 ? 0.1 : -0.1), speed: 270, pierce: 99,
-              dmg, crit, tint: hex, knock: 320, scale: 2.7,
-              anim: "fx-arcane", blend: "add",
+              angle: base + (i === 0 ? 0.12 : -0.12), speed: 250,
+              dmg, crit, hex,
+              pull: 0.55, radius: 100, life: 2400, scale: 2.6,
             });
           });
         }
+        // 잔풍 소용돌이 4기 — 작은 회오리가 부채꼴로 빠르게
         for (let i = 0; i < 4; i++) {
           this.scene.time.delayedCall(120 + i * 90, () => {
             if (this.state === "dead") return;
             const { dmg } = this.rollDamage(0.9, true);
-            this.scene.firePlayerProj({
+            this.scene.fireCyclone({
               x: this.x, y: this.y - 8,
-              angle: base + (i - 1.5) * 0.3, speed: 340, pierce: 99,
-              dmg, crit: false, tint: hex, knock: 240, scale: 1.4,
-              anim: "fx-arcane", blend: "add",
+              angle: base + (i - 1.5) * 0.3, speed: 330,
+              dmg, crit: false, hex,
+              pull: 0.3, radius: 56, life: 1200, scale: 1.2,
             });
           });
         }
         this.scene.cameras.main.shake(110, 0.006);
-        this.scene.spawnPickupText(this.x, this.y - 44, "폭풍 소용돌이!", "#ccffe8");
+        this.scene.spawnPickupText(this.x, this.y - 44, "하늘의 희망!", "#ccffe8");
         break;
       }
       /* 아크로드 — 연쇄 번개: 적→적으로 최대 6회 도약 (낙뢰와 완전 별개) */
@@ -1880,20 +1975,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.cameras.main.shake(80, 0.004);
         break;
       }
-      /* 스카이로드 — 천공의 폭풍: 방사형 회오리 + 신속 버프 — v3.0.4 임팩트 상향 (12기) */
+      /* 스카이로드 — 천공의 폭풍: 나선 미니 토네이도 12기 + 중심 대형 회오리 + 신속 버프
+   *  v3.0.11 — 매직볼트 → 회오리 스프라이트 (시전 자리 대형 토네이도 = 폭풍의 눈) */
       case "skystorm": {
         for (let i = 0; i < 12; i++) {
           this.scene.time.delayedCall(i * 55, () => {
             if (this.state === "dead") return;
             const ang = (i / 12) * Math.PI * 2 + Math.random() * 0.2;
             const { dmg, crit } = this.rollDamage(1.8, true);
-            this.scene.firePlayerProj({
-              x: this.x, y: this.y - 8, angle: ang, speed: 440, pierce: 5,
-              dmg, crit, tint: hex, knock: 280, scale: 1.6,
-              anim: "fx-arcane", blend: "add",
+            this.scene.fireCyclone({
+              x: this.x, y: this.y - 8, angle: ang, speed: 400,
+              dmg, crit, hex,
+              pull: 0.35, radius: 60, life: 1100, scale: 1.35,
             });
           });
         }
+        // 중심 대형 토네이도 — 발동 자리에 세워지는 폭풍의 눈
+        this.scene.fireCyclone({
+          x: this.x, y: this.y - 8, angle: Math.atan2(0, 1), speed: 0,
+          dmg: this.rollDamage(2.2, true).dmg, crit: true, hex,
+          pull: 0.6, radius: 130, life: 1800, scale: 3.0,
+        });
         this.selfSpdBuff = { mult: 1.3, until: now + 5000 };
         this.recalcSpeed();
         this.scene.spawnBurstAt(this.x, this.y, 22, hex);

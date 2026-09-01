@@ -734,7 +734,11 @@ for (let ci = 0; ci < CHAPTERS.length; ci++) {
     /* v2.9 (지시 #5) — 10구역 통과 후 다음 챕터의 마을에 들린 뒤 1구역으로 */
     const next = ci < CHAPTERS.length - 1 ? `${CHAPTERS[ci + 1].key}v` : null;
     NEXT_STAGE[key] = sub < 10 ? `${spec.key}${sub + 1}` : next;
-    PREV_STAGE[key] = sub > 1 ? `${spec.key}${sub - 1}` : ci > 0 ? `${CHAPTERS[ci - 1].key}10` : "village";
+    /* v2.9 (지시 #5) — 10구역 통과 후 다음 챕터의 마을에 들린 뒤 1구역으로
+     *  v3.0.11 (피드백 #5) — 복귀 체인이 전진 체인의 정확한 역순이 되도록 수정:
+     *    전진: 1-10 → 2v마을 → 2-1  /  복귀: 2-1 → 2v마을 → 1-10
+     *    (기존엔 2-1 복귀가 1-10 사냥터로 바로 가 마을을 건너뛰던 버그) */
+    PREV_STAGE[key] = sub > 1 ? `${spec.key}${sub - 1}` : ci > 0 ? `${spec.key}v` : "village";
   }
   /* 챕터 마을 체인 — 이전 챕터 10구역 ↔ 마을 ↔ 이 챕터 1구역 */
   const vk = `${spec.key}v`;
