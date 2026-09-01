@@ -1305,7 +1305,9 @@ class AtlPlayer extends Phaser.Physics.Arcade.Sprite {
     this.attackUntil = (this.scene as WorldScene).time.now + 290;
     this.anims.resume();
     this.play(`p_atk_${facing==='left'?'side':facing}`, true);
-    this.setFlipX(facing==='left');
+    /* v3.0.10 픽스 — Mystic Woods 시트 기본이 "왼쪽" 향함 → 오른쪽일 때만 뒤집는다
+     *  (기존: facing==='left'에 flip → 좌우 애니메이션 반대로 보이던 버그) */
+    this.setFlipX(facing==='right');
   }
   knockback(sx:number, sy:number){
     const dx = this.x-sx, dy = this.y-sy;
@@ -1327,11 +1329,12 @@ class AtlPlayer extends Phaser.Physics.Arcade.Sprite {
       if (this.moving){
         const v = this.body as Phaser.Physics.Arcade.Body;
         if (Math.abs(v.velocity.x) > Math.abs(v.velocity.y)){
-          this.play('p_walk_side', true); this.setFlipX(v.velocity.x<0);
+          /* v3.0.10 픽스 — 시트 기본 왼쪽 향함 → 오른쪽 이동 시에만 flip */
+          this.play('p_walk_side', true); this.setFlipX(v.velocity.x>0);
         } else if (v.velocity.y<0) this.play('p_walk_up', true);
         else this.play('p_walk_down', true);
       } else {
-        this.anims.pause(); this.setFrame(this.flipX?6:0); // idle: row0 f0 (side면 flip)
+        this.anims.pause(); this.setFrame(this.flipX?6:0); // idle: row0 f0 (side면 flip — v3.0.10 flip=오른쪽 향함)
       }
     }
   }

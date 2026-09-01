@@ -183,7 +183,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         break;
     }
 
-    if (Math.abs(this.body!.velocity.x) > 8) this.setFlipX(this.body!.velocity.x < 0);
+    if (Math.abs(this.body!.velocity.x) > 8) this.setFlipX(this.body!.velocity.x > 0); // v3.0.10 — 보스 시트 왼쪽 기준 → flip 반전
   }
 
   /* ---------- 페이즈 관리 ---------- */

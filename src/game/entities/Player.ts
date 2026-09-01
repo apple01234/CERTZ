@@ -242,14 +242,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // v3.0.2 — idle에서 setTexture로 전환 후 currentAnim 키가 잔존해 같은 방향 재입력 시 play가 스킵되던 버그:
         // 재생 중이 아니면 항상 재시작 (정지→같은 방향 재입력 애니메이션 복구)
         if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) this.play(key);
-        if (horiz) this.setFlipX(move.x < 0); // 시트 기본: 오른쪽 향함
+        /* v3.0.10 픽스 — Mystic Woods 시트 기본이 "왼쪽" 향함 (기존 주석은 옛 시트 기준).
+         *  이제 오른쪽 이동 시에만 뒤집는다 — 좌우 걷기 애니 반전 버그 수정 */
+        if (horiz) this.setFlipX(move.x > 0);
       } else {
         this.setVelocity(0, 0);
         // 정지 시 마지막 바라본 방향 유지 (정면 idle로 튀는 문제 방지 — 사용자 피드백)
         const f = this.facing;
         let tex = "hero_idle0"; // 기본: 정면 (아래쪽 바라볼 때/초기)
         if (Math.abs(f.x) >= Math.abs(f.y) && f.x !== 0) {
-          this.setFlipX(f.x < 0); // 측면 시트는 오른쪽 기준
+          this.setFlipX(f.x > 0); // v3.0.10 — 측면 시트는 왼쪽 기준
           tex = "hero_walkside0";
         } else if (f.y < 0) {
           tex = "hero_walkup0"; // 위쪽 — 뒷모습 서있기
@@ -327,7 +329,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x < 0); // 측면 시트는 오른쪽 기준
+    this.setFlipX(dir.y === 0 && dir.x > 0); // v3.0.10 — 측면 시트는 왼쪽 기준
     this.play(atkKey);
     // v3.0.2 — 도적(단검)은 참격 검기를 보라색으로 (무기 정체성)
     const thiefTint = fam === "thief" ? 0xc08aff : undefined;
@@ -388,7 +390,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  v3.0.6 (지시 #3): 2차+ 2발 연사 / 3차+ 관통+1 / 4차+ 3발 부채꼴 발광 */
   private atkBow(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.setFlipX(dir.y === 0 && dir.x > 0);
     this.play(atkKey);
     const angle0 = Math.atan2(dir.y, dir.x);
     this.scene.spawnBow(this.x + dir.x * 10, this.y - 8, angle0);
@@ -443,7 +445,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  v3.0.6 (지시 #3): 2차+ 2발 / 3차+ 유도뢰 1발 추가 / 4차+ 3발 대형 */
   private atkBolt(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.setFlipX(dir.y === 0 && dir.x > 0);
     this.play(atkKey);
     this.scene.spawnCast(this.x + dir.x * 12, this.y - 12);
 
@@ -501,7 +503,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   private atkShuriken(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.setFlipX(dir.y === 0 && dir.x > 0);
     this.play(atkKey);
     const t = this.tier;
     const empowered = this.nextAtkEmpowered;
@@ -685,7 +687,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // 회전 방향: 조준 측면 기준 (상하 조준 시 현재 플립 방향 따름)
     const aim = this.aimDir();
-    const spin = aim.x !== 0 ? (aim.x > 0 ? 1 : -1) : this.flipX ? -1 : 1;
+    /* v3.0.10 — flip 의미 반전(시트 왼쪽 기준)에 맞춰 회전 방향 부호도 반전 */
+    const spin = aim.x !== 0 ? (aim.x > 0 ? 1 : -1) : this.flipX ? 1 : -1;
     const famHex = familyOf(this.cls) === "thief" ? 0xb98aff : 0xff9a8a;
 
     // 360° 궤도 반달 + 충격파 + 스파크 — 티어 2 이상에서 충격 링 추가
@@ -871,7 +874,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hex = this.clsHex();
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.play(atkKey);
-    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.setFlipX(dir.y === 0 && dir.x > 0);
     this.scene.sfxSpin();
     this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 1.5, hex);
     // 방어 버프 — 성벽 정체성 (전장의 함성 공격 버프와 별개 축)
@@ -1081,7 +1084,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           (this.body as Phaser.Physics.Arcade.Body).reset(nx, ny);
           this.scene.spawnBurstAt(nx, ny, 8, hex);
         }
-        this.setFlipX(lastDir.x < 0);
+        this.setFlipX(lastDir.x > 0); // v3.0.10 — 시트 왼쪽 기준
         this.scene.spawnSlash(this.x, this.y, lastDir, i % 2 === 0, 1.2, hex);
         const { dmg, crit } = this.rollDamage(3.0 + 0.25 * t, true);
         if (crit) this.scene.sfxCrit();
@@ -1111,7 +1114,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hex = this.clsHex();
     const hits = t >= 3 ? 7 : 5;
     this.play("hero-atk");
-    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.setFlipX(dir.y === 0 && dir.x > 0);
     this.scene.sfxSwing();
     let total = 0;
     for (let i = 0; i < hits; i++) {
@@ -1152,7 +1155,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.state = "dash";
     this.dashDir.copy(dir);
     this.hitSet.clear();
-    this.setFlipX(dir.x < 0);
+    this.setFlipX(dir.x > 0); // v3.0.10 — 시트 왼쪽 기준
     this.scene.sfxDash();
 
     // v3.0.6 — 기동기(C) 12종 클래스 고유 파라미터 (겹침 0 — 지시 #4)

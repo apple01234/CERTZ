@@ -400,11 +400,16 @@ export class WorldScene extends Phaser.Scene {
     } else {
     const groundTex = theme.ground;
     this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
-    // 중앙 가로 길 — v2.6: 확실한 rect 코어 (tile_path 최빈색) + 프린지 타일이 경계 장식
+    // 중앙 가로 길 — v3.0.10 지시 #4 개편: 진흙 블롭 프린지 전면 제거, 클린 타일 시상.
+    //  flat rect는 TileSprite 로드 지연 대비 폴백 코어, 그 위에 tile_path 텍스처를 타일링해
+    //  지저분한 갈색 웅덩이 없는 깔끔한 일관 도로가 나온다.
     this.add.rectangle(0, this.stageH / 2 - 52, this.stageW, 104, ROAD_BASE[parseStage(stageKey).ch] ?? 0x94785c).setOrigin(0).setDepth(0);
-    if (stageKey === "forest1")
+    this.add.tileSprite(0, this.stageH / 2 - 52, this.stageW, 104, theme.path).setOrigin(0).setDepth(0);
+    if (stageKey === "forest1") {
       this.add.rectangle(this.stageW * 0.55 - 52, 0, 104, this.stageH, ROAD_BASE.forest).setOrigin(0).setDepth(0);
-    // 지형 전환 프린지 + 지면 변형 — 자로 잰 직선 경계/균일 반복 패턴을 자연스럽게 (타일맵 부자연 개선)
+      this.add.tileSprite(this.stageW * 0.55 - 52, 0, 104, this.stageH, theme.path).setOrigin(0).setDepth(0);
+    }
+    // 지면 변형(잔풍)만 유지 — v3.0.10: 경계 프린지/침식 블롭은 buildGroundBlend에서 제거
     this.buildGroundBlend(stageKey, groundTex, "");
     }
 
@@ -738,10 +743,10 @@ export class WorldScene extends Phaser.Scene {
   /* ================= 배치 ================= */
 
   /**
-   * 지형 전환 프린지 + 지면 변형 타일 배치 (타일맵 부자연 개선).
-   *  - 경계 프린지(edge_*): 길 텍스처가 지면 쪽으로 불규칙하게 뻗어나감
-   *  - 침식(bite_*): 길 안쪽으로 지면이 파여드는 블롭
-   *  - 변형(gvar/pvar): 같은 타일 반복의 단조로움을 명도 변형으로 분산
+   * 지면 변형 타일 배치 (v3.0.10 지시 #4 — 클린 로드 개편).
+   *  기존: 경계 프린지(edge_*)/침식(bite_*)/도로 변형(pvar)을 고밀도로 뿌려
+   *        길 주변에 지저분한 진흙 웅덩이가 난립 (사용자 불만).
+   *  변경: 잔풍 변형(gvar)만 저밀도로 유지 — 도로는 위에서 tile_path 타일링으로 해결.
    * 배치는 스테이지 시드 결정적 RNG — 매 실행 동일한 지형.
    */
   private buildGroundBlend(stageKey: StageKey, groundTex: string, pathTex: string) {
@@ -758,46 +763,15 @@ export class WorldScene extends Phaser.Scene {
     const yc = this.stageH / 2;
     const half = 52;
 
-    /* v2.1 타일맵 자연화 — v2.0의 격자 프린지(자로 잰 직선 경계)를 개선:
-     *  ① 도로 경계를 두 개 사인파 합성으로 물결치게 (구역별 고정 위상 → 재방문 시 동일 지형)
-     *  ② 지면 변형 타일을 격자 중심이 아닌 지터 위치에 배치
-     *  ③ 프린지/침식 밀도와 뒤집기 다양화 */
-    const wobTop = (x: number) => Math.sin(x * 0.008) * 13 + Math.sin(x * 0.021 + 2.1) * 7;
-    const wobBot = (x: number) => Math.sin(x * 0.009 + 1.3) * 12 + Math.sin(x * 0.023 + 0.6) * 7;
-
-    // 1) 지면 명도 변형 스캐터 — 지터 위치 (도로 근처 제외)
+    // 지면 명도 변형 스캐터 — 지터 위치 (도로 근처 제외). 잔풍만, 저밀도 유지
     for (let gy = 0; gy < this.stageH; gy += T) {
       for (let gx = 0; gx < this.stageW; gx += T) {
         const jx = gx + T / 2 + rng.between(-20, 20);
         const jy = gy + T / 2 + rng.between(-20, 20);
-        if (jy > yc - half + wobTop(jx) - 24 && jy < yc + half + wobBot(jx) + 24) continue;
+        if (jy > yc - half - 24 && jy < yc + half + 24) continue;
         const r = rng.frac();
         const tex = r < 0.032 ? `tx_${set}_gvar1` : r < 0.064 ? `tx_${set}_gvar2` : null;
         if (tex) this.add.image(jx, jy, tex).setDepth(0).setFlipX(rng.frac() < 0.5).setAlpha(0.88 + rng.frac() * 0.12);
-      }
-    }
-
-    // 2) 도로 경계 — 물결을 따라가는 프린지 + 얕은 침식 + 도로 내부 미세 변형
-    /* v2.6 — 침식(bite)이 길 안쪽 8~26px까지 파고들어 길이 찢어져 보였음. 2~10px로 축소 */
-    for (let x = 0; x <= this.stageW; x += 46) {
-      const yT = yc - half + wobTop(x);
-      const yB = yc + half + wobBot(x);
-      if (rng.frac() < 0.6) this.add.image(x, yT - rng.between(2, 10), `tx_${set}_edge_dn`).setDepth(0).setFlipX(rng.frac() < 0.5);
-      if (rng.frac() < 0.6) this.add.image(x, yB + rng.between(2, 10), `tx_${set}_edge_up`).setDepth(0).setFlipX(rng.frac() < 0.5);
-      if (rng.frac() < 0.24) this.add.image(x, yT + rng.between(2, 10), `tx_${set}_bite_dn`).setDepth(0).setFlipX(rng.frac() < 0.5);
-      if (rng.frac() < 0.24) this.add.image(x, yB - rng.between(2, 10), `tx_${set}_bite_up`).setDepth(0).setFlipX(rng.frac() < 0.5);
-      if (rng.frac() < 0.14)
-        this.add.image(x + rng.between(-18, 18), rng.between(Math.round(yT) + 16, Math.round(yB) - 16), `tx_${set}_pvar`)
-          .setDepth(0).setFlipX(rng.frac() < 0.5).setAlpha(0.82);
-    }
-
-    // 3) 숲 세로 길 — 좌우 경계 프린지 (요철 + flipY 변형)
-    if (ch === "forest") {
-      const vcx = this.stageW * 0.55;
-      const wobL = (y: number) => Math.sin(y * 0.01 + 0.7) * 12 + Math.sin(y * 0.027 + 1.9) * 5;
-      for (let y = 0; y <= this.stageH; y += 46) {
-        if (rng.frac() < 0.6) this.add.image(vcx - 92 + wobL(y), y, `tx_${set}_edge_rt`).setDepth(0).setFlipY(rng.frac() < 0.5);
-        if (rng.frac() < 0.6) this.add.image(vcx + 92 + wobL(y + 1.7), y, `tx_${set}_edge_lt`).setDepth(0).setFlipY(rng.frac() < 0.5);
       }
     }
   }
@@ -969,8 +943,8 @@ export class WorldScene extends Phaser.Scene {
       const tex = rng.pick(treeSet);
       const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
       this.solidGroup.add(t);
-      // 64x64 캔버스 하단 줄기 부근만 충돌
-      (t.body as Phaser.Physics.Arcade.StaticBody).setSize(20, 14).setOffset(22, 46);
+      // v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과, 실제 줄기 위치에 맞춤)
+      (t.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 18).setOffset(23, 74);
     }
     for (let i = 0; i < def.rockCount; i++) {
       const [x, y] = natPoint();
@@ -979,7 +953,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.inOpenArea(x, y)) continue;
       const r = this.add.image(x, y, rockTex).setDepth(Math.floor(y / 10));
       this.solidGroup.add(r);
-      (r.body as Phaser.Physics.Arcade.StaticBody).setSize(44, 20).setOffset(10, 40);
+      (r.body as Phaser.Physics.Arcade.StaticBody).setSize(44, 28).setOffset(8, 35); // v3.0.10 — 64x64 바위 하단 실측
     }
 
     // F1 핵심: 꽃은 def.flowerCount 송이만 (10 이하)
@@ -1351,7 +1325,7 @@ export class WorldScene extends Phaser.Scene {
     // 광장 우물 (중앙 랜드마크, 충돌 있음) — 접근 시 샘물 회복
     const well = this.add.image(cx, cy, "well").setDepth(Math.floor(cy / 10));
     this.solidGroup.add(well);
-    (well.body as Phaser.Physics.Arcade.StaticBody).setSize(56, 36).setOffset(20, 52);
+    (well.body as Phaser.Physics.Arcade.StaticBody).setSize(68, 38).setOffset(14, 57); // v3.0.10 — 분수 72x72 하단 실측
     this.wellPos = new Phaser.Math.Vector2(cx, cy);
     this.add
       .text(cx, cy - 44, "샘물 우물", {
@@ -4803,8 +4777,9 @@ export class WorldScene extends Phaser.Scene {
       s2Name: this.player.skill2Name,
       s3Name: this.player.skill3Name,
       s4Name: this.player.skill4Name,
-      /* v3.0.8 디자인 개편 — 클래스별 스킬 아이콘 (RPG Icons Pixel Art) */
-      ...(SKILL_ICONS[this.player.cls as keyof typeof SKILL_ICONS] ?? {}),
+      /* v3.0.8 디자인 개편 — 클래스별 스킬 아이콘 (RPG Icons Pixel Art)
+       * v3.0.10 — 미전직(cls=null)은 "base" 아이콘 세트 사용 (스킬 아이콘 미적용 버그 수정) */
+      ...(SKILL_ICONS[(this.player.cls ?? "base") as keyof typeof SKILL_ICONS] ?? {}),
     });
   }
 

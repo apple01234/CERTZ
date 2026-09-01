@@ -385,7 +385,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const idleKey = `${this.def.key}-idle`;
     if (moving && this.anims.currentAnim?.key !== runKey) this.play(runKey);
     else if (!moving && this.anims.currentAnim?.key !== idleKey) this.play(idleKey);
-    if (c.vx !== 0) this.setFlipX(c.vx < 0);
+    if (c.vx !== 0) this.setFlipX(c.vx > 0); // v3.0.10 — 몬스터 시트(32rogues/0x72 등) 기본 왼쪽 향함 → 오른쪽 이동 시 flip
 
     // HP바
     if (this.hpBar && this.hpBarBg) {

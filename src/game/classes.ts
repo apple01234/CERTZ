@@ -12,8 +12,11 @@ export const FREE_JOB_COST = 5000;
 
 /* ═══ v3.0.8 디자인 개편 — 클래스별 스킬 아이콘 (RPG Icons Pixel Art) ═══
  *  /assets/skillicon/<cls>_<slot>.png — TouchControls 스킬 버튼에 표시.
- *  없는 조합은 기존 lucide 아이콘 폴백 (기능 무영향). */
-export const SKILL_ICONS: Partial<Record<ClassKey, { s1Icon: string; s2Icon: string; s3Icon?: string; s4Icon?: string }>> = {
+ *  없는 조합은 기존 lucide 아이콘 폴백 (기능 무영향).
+ *  v3.0.10 — "base" 키 추가: 미전직(cls=null) 상태에서도 아이콘이 나오도록
+ *  (기존엔 전직 전엔 lucide 폴백이라 "스킬 아이콘 적용 안 됨"으로 보였음) */
+export const SKILL_ICONS: Partial<Record<ClassKey | "base", { s1Icon: string; s2Icon: string; s3Icon?: string; s4Icon?: string }>> = {
+  base: { s1Icon: "/assets/skillicon/base_s1.png", s2Icon: "/assets/skillicon/base_s2.png" },
   warrior: { s1Icon: "/assets/skillicon/warrior_s1.png", s2Icon: "/assets/skillicon/warrior_s2.png" },
   berserker: { s1Icon: "/assets/skillicon/berserker_s1.png", s2Icon: "/assets/skillicon/berserker_s2.png" },
   guardian: { s1Icon: "/assets/skillicon/guardian_s1.png", s2Icon: "/assets/skillicon/guardian_s2.png" },

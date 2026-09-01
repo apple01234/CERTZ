@@ -875,3 +875,22 @@ Stage Summary:
 - 게임 전체 디자인 개편 2차 완료: 1차(UI스킨/아이콘/스킬아이콘/타일/VFX) + 2차(히어로/몬스터) = 업로드 에셋 28팩 기반 전면 개편
 - 남은 후보: Atlantis 스핀오프 스킨, 타이틀 배경 패턴, 몬스터 전투 렌더 스크린샷 확인
 - 빌드는 유저가 "빌드해" 말할 때까지 금지 — 커밋만
+
+---
+Task ID: 3
+Agent: Super Z (main)
+Task: "빌드해 apk만" — 빌드 찌꺼기 잔여 정리 확인 + 버전 3.0.9 동기화 + APK 단독 빌드 (EXE 금지)
+
+Work Log:
+- electron/dist·electron/game 스테이징 이미 소재(52K 잔여=main.js/icon만) 확인, /tmp 빌드 로그 정리, bun.lock 노이즈 git checkout 되돌림
+- 디자인 개편은 선행 세션에서 이미 2커밋(c0eb58a UI스킨/아이콘/타일/VFX, d1003f8 히어로+몬스터 43패밀리)으로 완료·실측 통과 상태임을 확인
+- 버전 3곳 동기화: build.gradle 24/"3.0.9", build_apk.sh SERTZ-v3.0.9.apk, Overlays.tsx 배지 "v3.0.9 · 디자인 전면 개편(에셋 팩 28종 통합)" → 커밋 23a4ec7
+- scripts/build_apk.sh 포그라운드 실행: APK_EXPORT=1 next build → cap sync → gradle assembleRelease → BUILD SUCCESSFUL 2m15s
+- 실측 검증: aapt badging versionCode=24 versionName=3.0.9 ✓ / apksigner SHA-256 cc774f34(기존 키 일치) ✓ / APK 내부 assets 620건(신규 hero_*/vfx2_* 포함) ✓
+- 규칙 준수: 구버전 SERTZ-v3.0.8.apk 삭제(최신 APK만 보존), EXE 빌드 안 함, android/app/build·android/.gradle 잔여물 정리(디스크 3.7G 여유)
+- 웹 서버 localhost:3000 HTTP 200 정상 확인, GitHub push d1003f8..23a4ec7 완료
+
+Stage Summary:
+- 산출물: /home/z/my-project/download/SERTZ-v3.0.9.apk (17.9MB, versionCode 24) — 디자인 개편판 최초 APK
+- GitHub main 동기화 완료 (커밋 23a4ec7 포함)
+- 신규 영구 규칙 유지: 사용자가 "빌드해"라고 말하지 않으면 커밋만 — 다음 수정부터 재적용
