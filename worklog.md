@@ -672,3 +672,37 @@ Stage Summary:
 - 2요구 전부 구현+실측. 강화가 "숨은 수치"에서 ★15 보이는 성장 콘텐츠로 전환(티어 오라·스파클·궤도성·돌파 연출), 
   모바일에서 NPC 상호작용 칩이 조이스틱에 가려지던 근본 원인(전체 높이 레이어+z-order) 제거.
 - 다음 후보: 장신구(반지/펜던트) 스타포스 확장, 강화 재료 아이템(강화 주문서), 세이지 계열 순수 힐러 스킬, 에랄드 구매 연동
+
+---
+Task ID: v3.0.6
+Agent: Super Z (main)
+Task: 유저 15항목 — 9항목(스킬 겹침 0·2차 스킬 교체·기본공격 강화·크리 초과분 크뎀·반복 의뢰·원거리 자동사냥·사운드 밸런스·보스 강화·보스 드롭템) + 6항목(BM 상점·maxHP% 피해·모바일 상점창·아이템 판매·3번째 펫+자동 사용·화살 방향)
+
+Work Log:
+- 샌드박스 리셋 복구: GitHub 클론(v3.0.5=versionCode 20) + npm install + Temurin JDK 21(/home/z/jdk) + Android SDK(platform-36·build-tools 35/36·cmdline-tools·licenses 수락)
+- ①반복 의뢰 근본 버그: makeStage가 구역 단일종 로테이션에서 [반복] 대상(spec.main)을 스폰에 미포함 → 카운트 불가. beat 편입과 동일 패턴으로 편입 + repeatNeed/huntCount/repeatStage 세이브(재입장 카운트 유지)
+- ②④스킬 겹침 0: classes.ts SKILL1_KIND/SKILL2_KIND 12+12종 클래스 고유(1차 4계열 + 2차 8직업) + resolveSkill1/2Of 체인 승계(3·4차는 2차기 강화판). 도적 Z를 회전베기→칼날 폭풍(단검 부채꼴)으로 교체, 가디언 성벽 강타·스나이퍼 snipe(히트스캔)·윈드러너 gustarrow(끌어당김)·아크메이지 arcbolt(착탄 폭발)·세이지 purify(자힐 파동)·어세신 shadowexec(점멸 참수)·스와시버클러 flurrydance 등 9종 Z 신규 + C 12종 파라미터/종착효과 분리(savagerush 공버프·bulwarkdash 방버프·falconwind 3발·windslash 경로 화살·grandblink 대폭발·cycleblink MP흡수·ambushdash 출혈·flashydash 연타·shadowveil 다음공격 강화)
+- ③기본공격 티어 래더: 미전직 1타 → 1차 2연타 → 2차 3연타 → 3차 검기 파동(관통 3) → 4차 대형 파동(관통 5) / 화살·볼트 1+(t≥1)+(t≥3) 발수 / 표창 3→2회마다·3차 2발·4차 3발
+- ⑤크리티컬: rollDamage chance=min(rate,100), critDmg=1.7+max(0,rate-100)/100 getter
+- ⑥원거리 자동사냥: autoRetreatDir 110px 탐지+위협 스코어링+월드 바운드 반영, autoRetreatBlocked 신설 — 코너 시 적 통과 돌진 탈출 또는 정면 반격, 카이팅 중 조준 유지
+- ⑦사운드: 동일 SFX 55ms 스로틀+동시 12캡, 볼륨 래더(swing 0.34 등 전투음 하향), BGM 0.42→0.34
+- ⑧보스: spawnBoss HP×1.25×(scale×1.35)(+69%)·ATK×1.05, Boss.takeDamage 전 관통 0.5+maxHP% 하한, 페이즈별 태진(0.85/0.7/0.5)·격노 추격 1.18배·탄막 12/16/20·volley 12
+- ⑨보스 드롭: BOSS_DROP_ITEMS 9종 전설 등급 100% 드롭, Drop.spawnItem(발광 펄스), tradeLock → buy() 차단, collectDrop → owned 지급
+- ⑩BM 상점: BmShopPanel 신설(에메랄드 전용) — pet_atlas(맵 전체 자석 펫)·ring_bless·buff_king(올인원 버프)·cos_aurora, 에메랄드 획득처: 보스+2/정예+1/반복 사이클+1/GM+50
+- ⑪maxHP% 고정 피해: DMG_PCT(mob 4.5%/elite 6%/boss 9%/slam 12%/plant 5%) — takeDamage pctFloor = max(방어감쇄, maxHP×pct)
+- ⑫모바일 상점창: ShopPanel 카드 max-h-[min(88svh,640px)]+overflow-y-auto(스타포스 섹션 포함 스크롤)
+- ⑬판매: sellValue(상점가 40%, 보스 400G), 인벤토리 장비/장신구 판매 버튼, 장착 중 판매 금지, rpg:sell 이벤트
+- ⑭펫 아틀라스: Drop.tick 자석 범위 무한+620 속도, Pet 추적 k 22
+- ⑮자동 사용: autoUse 세이브 설정{hpPct 0/30/50/70, mpOn, buffs[]}, tickAutoUse(물약 즉시·버프 12프레임 게이트), BM 상점 패널 UI 토글
+- ⑯화살 방향: update에서 공격 입력을 이동 분기 이전으로 이동(같은 프레임 이동이 facing을 덮어써 발사 방향이 튀던 근본 수정) + attack 중 facing 고정
+- 신규 아이콘 4종 생성(pet_atlas/cos_aurora/ring_bless/buff_king PIL 픽셀아트) + BootScene 등록
+- E2E scripts/e2e_v306_features.js 44 PASS / 0 FAIL — 겹침 0 전수(28클래스+형제 12쌍)·2차 스킬 교체·기본공격 스윙 실측(2→3)·크뎀 1:1·반복 의뢰(스폰 편입+8킬 보상+need+2+세이브)·코너 생존·보스 공식·드롭 tradeLock·화살 방향·maxHP% 피해·모바일 상점 뷰포트 실측·판매·BM 구매·아틀라스 자석·자동 물약/버프
+- 회귀: v2.7 12·12 / v3.0.1 10·0 / v3.0.2 12·0 / v3.0.3 23·0 / v3.0.4 24·0(스킬 고유화 반영 기대값 갱신) / v3.0.5 33·0
+- 테스트 교훈: ①E2E 섹션 간 세이브 이월 오염([6] 자동사냥 ON이 [10]으로 이월 → autohunt 볼트가 측정 오염, 섹션별 격리 필수) ②툴 출력에서 "[min("가 ANSI 이스케이프로 잘려 "in("처럼 보이는 착시 존재 — od 바이트 덤프로 검증 ③오토어택(attackQueued 잔여)이 히트 실측 오염 — doAttack 게이트로 차단
+- 배포: versionCode 21/"3.0.6" 3곳 동기화 → APK 16,965,903B aapt(21/3.0.6)·apksigner(CN=SERTZ 동일 키) 검증 → 웹 standalone 재빌드+데몬(200/socket 200) → download/ SERTZ-v3.0.6.apk 단독
+- 미완: GitHub push/Release — 샌드박스 리셋으로 .gh_token 소실. 로컬 커밋 b2df42a(v3.0.5 위 재구성 완료) + scripts/release_v306.py 준비 — 토큰 제공 시 즉시 push/릴리스 가능
+
+Stage Summary:
+- 15항목 전부 구현+실측 검증(44/0 + 회귀 136/136). "겹치는 스킬 하나도 없게"가 1차~2차 Z/C까지 완전 고유화로 완성,
+  기본공격이 전직마다 눈에 보이게 강화되고, 보스는 관통+%피해로 후반 탱킹을 차단, 보스 전용 드롭으로 거래소 준비 재화 확보.
+- 다음 후보: 유저 거래소(보스 드롭 tradeLock 해제·판매/구매 UI), 강화 주문서 아이템, 세이지 계열 순수 힐러 확장, 장신구 스타포스
