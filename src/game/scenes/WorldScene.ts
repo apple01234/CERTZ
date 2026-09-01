@@ -693,15 +693,25 @@ export class WorldScene extends Phaser.Scene {
 
     /* ---------- 오프닝 대사 (인트로 시퀀스 중이면 인트로가 인계 / 실내는 연출 생략) ----------
      *  v2.3 (지시 #1): 이미 본 대사는 재입장 시 재생하지 않는다 — 이전/다음 맵 왕복마다
-     *  인트로·구역 안내 대사가 반복되던 버그 수정 */
+     *  인트로·구역 안내 대사가 반복되던 버그 수정
+     *  v3.0.10 (메이플식 챕터 연출): 챕터 1구역 최초 진입 시 타이틀 카드 컷신 후 인트로 대사 */
     if (!this.isInterior) {
       if (stageKey === "village" && !savedPlayer?.playerName) {
         // 신규 플레이어 — 책장 넘기기 대신 플레이형 인트로 (이동 → 우물 → 이름 짓기)
         this.startIntroSequence();
       } else {
-        this.time.delayedCall(400, () => {
-          this.showDialogueOnce(stageIntro(stageKey));
-        });
+        const spec = chapterSpec(stageKey);
+        const introId = stageIntro(stageKey);
+        if (spec && parseStage(stageKey).sub === 1 && !this.seenSet.has(introId)) {
+          // 챕터 오프닝 컷신 — "제N장" 타이틀 카드 → 챕터 인트로 대사
+          this.time.delayedCall(350, () =>
+            this.showChapterCard(spec.num, spec.title, spec.subtitle, () => this.showDialogueOnce(introId))
+          );
+        } else {
+          this.time.delayedCall(400, () => {
+            this.showDialogueOnce(introId);
+          });
+        }
       }
     }
 
@@ -943,8 +953,9 @@ export class WorldScene extends Phaser.Scene {
       const tex = rng.pick(treeSet);
       const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
       this.solidGroup.add(t);
-      // v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과, 실제 줄기 위치에 맞춤)
-      (t.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 18).setOffset(23, 74);
+      // v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과)
+      //  v3.0.10 후속 — 신규 나무(bbox 2~62, 하단 밀착) 줄기 폭 실측 (중앙 x20~44)
+      (t.body as Phaser.Physics.Arcade.StaticBody).setSize(24, 20).setOffset(20, 74);
     }
     for (let i = 0; i < def.rockCount; i++) {
       const [x, y] = natPoint();
@@ -2178,7 +2189,26 @@ export class WorldScene extends Phaser.Scene {
     // 보스전 전용 BGM (v2.0)
     audio.playBGM("boss");
     // 등장 대사 — 이어하기 복구 경로는 생략 (오프닝 대사와 충돌 방지) / v2.3: 1회만 재생
-    if (intro) this.showDialogueOnce(def.introDialogue);
+    // v3.0.10 (메이플식 보스 조우 연출): 카메라가 보스에게 팬 → 보스 인트로 대사 → 카메라 복귀
+    if (intro) this.bossIntroCinematic(bx, by, def.introDialogue);
+  }
+
+  /** v3.0.10 — 보스 조우 시네마틱: 물리 정지 + 카메라 팬(보스) + 인트로 대사 + 카메라 복귀 */
+  private bossIntroCinematic(bx: number, by: number, introId: string) {
+    const cam = this.cameras.main;
+    this.dialoguing = true;
+    this.player.setVelocity(0, 0);
+    this.physics.world.pause();
+    cam.pan(bx, by - 20, 780, "Sine.easeInOut", true);
+    this.time.delayedCall(820, () => {
+      if (!this.scene.isActive()) return;
+      cam.pan(this.player.x, this.player.y, 520, "Sine.easeInOut", true);
+      // 이미 본 대사면 연출만 종료, 아니면 인트로 대사 재생(resume은 resumeFromDialogue가 담당)
+      if (!this.showDialogueOnce(introId)) {
+        this.dialoguing = false;
+        this.physics.world.resume();
+      }
+    });
   }
 
   onBossDead() {
@@ -4203,7 +4233,7 @@ export class WorldScene extends Phaser.Scene {
   /* ================= 인트로 플레이 시퀀스 ================= */
   /**
    * 책장 넘기기 대신 직접 플레이하는 오프닝:
-   *  0) 이동 학습 — 아부디토스의 안내로 실제로 걸어보기
+   *  0) 이동 학습 — 이그니의 안내로 실제로 걸어보기
    *  1) 마을 우물로 이동 — 빛 기둥 마커 추적
    *  2) 우물 앞에서 이름 정하기 (인게임 패널)
    *  3) 이름 리액션 대사 → 마을 오프닝 → 퀘스트 시작
@@ -4229,7 +4259,7 @@ export class WorldScene extends Phaser.Scene {
 
   private tickIntro(dt: number, move: Phaser.Math.Vector2) {
     const p = this.player;
-    // 아부디토스 가이드가 플레이어를 따라다님
+    // 이그니 가이드가 플레이어를 따라다님
     this.introGuide?.setPosition(p.x + 24, p.y - 30);
     this.introGuideSpark?.setPosition(p.x + 24, p.y - 48);
 
@@ -4250,7 +4280,7 @@ export class WorldScene extends Phaser.Scene {
           .setTint(0x9df0ff)
           .setAlpha(0.55);
         this.tweens.add({ targets: this.introMarker, alpha: { from: 0.4, to: 0.8 }, scaleX: { from: 1, to: 1.2 }, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-        this.showBanner("펜던트의 정령 아부디토스: 마을 우물로 와! 네 이름을 정해 주고 싶어!");
+        this.showBanner("룬 정령 이그니: 마을 우물로 와! 네 이름을 정해 주고 싶어!");
       }
     } else if (this.introStep === 1) {
       const wp = this.wellPos;
@@ -4293,7 +4323,7 @@ export class WorldScene extends Phaser.Scene {
     });
     this.introGuide = null;
     this.introGuideSpark = null;
-    // 이름 리액션 → 마을 오프닝(아뜰란티스 세계관) 순차 재생 (v2.3 — 기록 후 재생 방지)
+    // 이름 리액션 → 마을 오프닝(본게임 세계관) 순차 재생 (v2.3 — 기록 후 재생 방지)
     this.queuedDialogue = "villageIntro";
     this.markSeen("villageIntro");
     this.showDialogue("introNamed");
@@ -4676,10 +4706,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   emitQuest() {
-    // 인트로 시퀀스 중 — 아부디토스의 안내를 퀘스트 패널에 표시
+    // 인트로 시퀀스 중 — 이그니의 안내를 퀘스트 패널에 표시
     if (this.introStep >= 0 && this.introStep < 3) {
       this.emitQuestState({
-        title: "펜던트의 정령 아부디토스의 안내",
+        title: "룬 정령 이그니의 안내",
         desc: "배너를 따라 마을을 돌아보자",
         current: 1,
         target: 1,
@@ -4938,6 +4968,80 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /* ================= 대사/배너/사운드 브릿지 ================= */
+
+  /* v3.0.10 (메이플식 챕터 연출) — 챕터 타이틀 카드 컷신.
+   *  화면을 세미 클로즈업 어둡게 덮고 "제N장 / 챕터명 / 부제" 카드를 페이드 인·아웃한다.
+   *  컷신 중엔 물리를 일시 정지해 이동·전투가 멈춘다(대사 박스와 동일 규약). */
+  private showChapterCard(chNum: number, title: string, subtitle: string, cb?: () => void) {
+    const cam = this.cameras.main;
+    const vw = cam.width;
+    const vh = cam.height;
+    this.dialoguing = true;
+    this.player.setVelocity(0, 0);
+    this.physics.world.pause();
+    audio.sfx.questDone();
+    const depth = 118;
+    const veil = this.add
+      .rectangle(vw / 2, vh / 2, vw, vh, 0x06080f, 0.78)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth)
+      .setAlpha(0);
+    const rule = this.add
+      .rectangle(vw / 2, vh / 2 + 30, 0, 2, 0xffd76a, 0.95)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 1);
+    const tCh = this.add
+      .text(vw / 2, vh / 2 - 34, `제${chNum}장`, {
+        fontFamily: "Roboto, sans-serif",
+        fontSize: "26px",
+        color: "#ffd76a",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 1)
+      .setAlpha(0);
+    const tTitle = this.add
+      .text(vw / 2, vh / 2 + 2, title, {
+        fontFamily: "Roboto, sans-serif",
+        fontSize: "40px",
+        color: "#ffffff",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 1)
+      .setAlpha(0);
+    const tSub = this.add
+      .text(vw / 2, vh / 2 + 46, subtitle, {
+        fontFamily: "Roboto, sans-serif",
+        fontSize: "15px",
+        color: "#cfe3ff",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 1)
+      .setAlpha(0);
+    const cleanup = () => {
+      veil.destroy();
+      rule.destroy();
+      tCh.destroy();
+      tTitle.destroy();
+      tSub.destroy();
+      this.dialoguing = false;
+      this.physics.world.resume();
+      cb?.();
+    };
+    this.tweens.add({ targets: veil, alpha: 0.78, duration: 420, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: rule, width: 300, duration: 560, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: [tCh, tTitle], alpha: 1, y: "+10", duration: 560, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: tSub, alpha: 1, delay: 160, duration: 460, ease: "Sine.easeOut" });
+    this.time.delayedCall(2050, () => {
+      this.tweens.add({ targets: [veil, rule, tCh, tTitle, tSub], alpha: 0, duration: 420, ease: "Sine.easeIn", onComplete: cleanup });
+    });
+  }
 
   showDialogue(id: string, npcId: string | null = null) {
     const d = DIALOGUES[id];

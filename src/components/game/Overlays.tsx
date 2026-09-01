@@ -18,7 +18,7 @@ const STAGE_LABEL: Record<string, string> = {
   cave: "스바르트알프헤임",
   nidavellir: "니다벨리르",
   hel: "헬",
-  abyss: "아뜰란티스",
+  abyss: "세계수의 뿌리",
 };
 
 /** 이어하기 라벨 — 구 세이브 키도 폴백 처리 */
@@ -40,7 +40,7 @@ export function TitleScreen() {
           SERTZ
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
-          바다의 수호자 : 아뜰란티스
+          이그드라실 : 아홉 왕국
           <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.9 · 디자인 전면 개편(에셋 팩 28종 통합) · 10장 90구역</span>
         </p>
       </div>
@@ -374,7 +374,7 @@ export function NamePanel() {
           <span className="text-base font-black text-amber-300">이름을 정해 주자!</span>
         </div>
         <p className="mb-3 text-[12px] font-bold leading-relaxed text-white/70">
-          펜던트의 정령 아부디토스: &quot;바다가 기억할 이름을 지어 줘. 인어 후예의 이름이야!&quot;
+          룬 정령 이그니: &quot;세계수가 기억할 이름을 지어 줘. 세계수가 선택한 모험가의 이름이야!&quot;
         </p>
         <input
           autoFocus
