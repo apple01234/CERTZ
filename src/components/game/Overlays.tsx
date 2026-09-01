@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
@@ -41,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.9 · 디자인 전면 개편(에셋 팩 28종 통합) · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.10 · 스핀오프 통합 완료 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
@@ -76,14 +75,6 @@ export function TitleScreen() {
             저장 데이터 삭제
           </button>
         )}
-        <Link
-          href="/atlantis"
-          className="mt-1 flex items-center justify-center gap-2 rounded-xl border-2 border-cyan-200/60 bg-gradient-to-b from-cyan-700/80 to-teal-900/90 px-4 py-2.5 text-sm font-black text-cyan-100 shadow-[0_4px_16px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03] active:scale-95"
-        >
-          <Sparkles size={16} />
-          스핀오프 · 아뜰란티스: 잠뜰의 인어
-          <span className="text-[9px] font-bold text-cyan-300/80">NEW</span>
-        </Link>
       </div>
 
       <div className="absolute bottom-3 flex flex-col items-center gap-1 text-center">
