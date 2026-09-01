@@ -111,3 +111,16 @@
 - Free Cursed Land (aamatniekss? — itch.io) — 저주 땅 지면(magma/hel 변형)
 - RF Catacombs (ansimuz/Lunarian?) — 던전 바닥/벽돌(cave/stone/abyss/x2_bricks)
 - 각 팩 라이선스 원문은 upload/ 내 라이선스 파일 참조
+
+## v3.0.8 2차 개편 — 히어로/몬스터 스프라이트 전면 교체
+- Mystic Woods (Game Supply Guy, Free Version) — 히어로 7종 애님 28프레임
+  (idle/walk 4방향/공격 3방향, 참격 아크 포함): /assets/hero_*
+  ⚠ 라이선스: 비영리 프로젝트 한정 / 수정 가능 / 재배포 금지 — 원문: upload/extracted/mystic_woods_free_2.2/read_me.txt
+- 32rogues (Seth Boyles/Surt, v0.5.0) — 몬스터 42종 전면 교체 소스
+  (오크 4종/트롤/임프/리치/죽음의 기사/좀비/구울/리퍼/레이스/거미/박쥐/쥐/
+  와그(늑대 6종 파생 duotone)/록 골렘(골렘 5종 파생)/미노타우르스/바실리스크/
+  드래곤/코카트리스/램프리만더/자이언트 앤트/라이컨스로프/괴수 등)
+  파생 변형: 하단 앵커 스쿼시 idle/run 애님 합성 + 휘도 기반 duotone 테마색
+  (frost/ember/hel/dark/rune/ice/gold/surt/fenrir/gram/abyss/nidhog)
+  ⚠ 라이선스: 영리/비영리 사용 가능(단 NFT·블록체인·AI/ML 프로젝트 제외),
+  수정 가능, 재판매/재배포 금지 — 원문: upload/extracted/32rogues-0.5.0/32rogues/LICENSE.txt

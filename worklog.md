@@ -844,3 +844,34 @@ Stage Summary:
 - 게임 전체 비주얼 개편 5트랙(UI스킨/아이콘/스킬아이콘/타일테마/VFX) 완료 — 데미지·드롭·진행 로직 0 변경
 - 커밋만 수행 (APK/EXE 미빌드 — 유저 지시). 차기 빌드 시 v3.0.8(versionCode 23)로 APK+EXE 동시 배포 가능
 - 남은 후보: 히어로/몬스터 스프라이트 교체(32rogues·Minifantasy), Atlantis 스핀오프 스킨, CFX 플립북 추가 활용, 타이틀 배경 타일 패턴화
+
+---
+Task ID: redesign-v308-sprites
+Agent: Super Z (main)
+Task: 2차 디자인 개편 — 히어로/몬스터 스프라이트 전면 교체 (Mystic Woods + 32rogues) + 빌드 찌꺼기 추가 정리
+
+Work Log:
+- 빌드 찌꺼기 추가 정리: /tmp 빌드 로그 10종, ~/.cache/electron + electron-builder 302MB 삭제 (electron/dist·game·.next-apk는 이전 세션에 이미 정리 완료 확인)
+- 유저 규칙 준수: EXE 빌드 안 함, 이번 작업도 커밋만 수행
+- 소스 선정: Mystic Woods player.png (히어로 — 4방향 걷기+참격 공격 완비), 32rogues monsters.png (몬스터 42종 커버)
+- 규격 역산 트러블슈팅: MW 시트는 32x48 셀 (9x10행) — 32px 가정 시 머리만 잘리는 문제를 알파 투영(빈 행/열 런 측정)으로 해학 → 48px 밴드 + 밴드 내 빈 열 클러스터로 프레임 추출
+- scripts/redesign_sprites.py 신설:
+  ① 히어로 7종 애님 28프레임 (idle/walk/walkside/walkup/atk/atkdown/atkup) — 96x64 캔버스, 2x 스케일, 하단 y=57 앵커, 좌향 시트→우향 flipX 변환
+  ② 몬스터 42종 — 파일명/프레임 수/캔버스 100% 보존, 원본 bbox에 자동 피트 스케일
+  ③ 정적 셀 → 하단 앵커 스쿼시 사이클로 idle2/run4/atk1 애님 합성 (스쿼시: idle [1.0,0.94], run [1.0,0.90,1.0,0.96]×폭 1.06, atk=1.06 확대+1.22 밝기 러시)
+  ④ 테마 변형 24종 = 휘도 기반 duotone 틴트 (hue 회전은 저채도 아트에서 불가판정 → duotone 전환):
+     frostwolf/icegolem/x2_frostfly/x3_icezombie/boss_gram=빙결, emberwolf/x2_firebird/firespirit/boss_surt=화염,
+     helhound=흑적, x2_darkhound/boss_fenrir=암흑, runegolem/boss3/boss_abudditos=보라, boss_skoll=금색,
+     boss_nidhog=청록, golem/x2_snail/swampbeast/x3_swampy=늪·갈색, boss=석청, boss2=암적, x2_reeffish=청록
+- 실패 학습: `python | head` 파이프 SIGPIPE로 스크립트 중도 사망 → 파일 뒤섞임 → 출력 파일 리다이렉트로 전체 재실행, 매 실행 전 backup_assets에서 원본 복원
+- 검증: tsc 0에러 / 라이브 서버 public 직서빙 확인(재빌드 불요, served md5 일치) / 브라우저 실측(agent-browser):
+  타이틀→새 모험→이름 입력(용사)→마을 렌더—신규 히어로 idle·하단·상단 걷기 애님 실측 ✓ / 에셋 네트워크 512건 전부 200·304 (404 0) / pageerror 0 / console 에러 0 / 게임 루프 프레임 diff 실측 ✓
+  (몬스터 전투 중 렌더는 이동 탐색이 길어져 미촬영 — 에셋 무결성·로드·애님 키 규약 보존으로 커버, 다음 플레이 시 확인 권장)
+- CREDITS.md 갱신: Mystic Woods (비영리 한정) / 32rogues (NFT·AI/ML 제외) 라이선스 요건 명기
+- tmp_design/ (변환 백업+프리뷰) .gitignore 추가
+
+Stage Summary:
+- 히어로+몬스터 43패밀리 300파일 전면 교체 완료 — 코드 0 변경 (textures.ts 키 규약 그대로)
+- 게임 전체 디자인 개편 2차 완료: 1차(UI스킨/아이콘/스킬아이콘/타일/VFX) + 2차(히어로/몬스터) = 업로드 에셋 28팩 기반 전면 개편
+- 남은 후보: Atlantis 스핀오프 스킨, 타이틀 배경 패턴, 몬스터 전투 렌더 스크린샷 확인
+- 빌드는 유저가 "빌드해" 말할 때까지 금지 — 커밋만

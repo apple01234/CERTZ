@@ -96,3 +96,4 @@ asset_work/
 /upload/extracted/
 *.nsis.7z
 /upload/
+tmp_design/
