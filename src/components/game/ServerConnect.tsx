@@ -9,7 +9,7 @@ const KEY = "sertz.server.url";
 
 /** v2.9 (사용자 지시 #10) — 기본 게임 서버. APK 첫 실행 시 이 주소로 바로 연결해
  *  “멀티 안됨” 문제를 해소한다. 주소가 바뀌면 이 상수만 고치면 된다. */
-const DEFAULT_SERVER = "https://preview-6a94b1ab.space-z.ai";
+const DEFAULT_SERVER = "https://preview-6a95efa8.space-z.ai";
 
 function readUrl(): string {
   try {
