@@ -958,3 +958,17 @@ Stage Summary:
 - 신규 에셋: fx_tornado.png + skillicon s3 16종·s4 8종 (총 25 PNG)
 - 스킬 라벨 변경: skylord V "폭풍 소용돌이" → "하늘의 희망" (사용자 호칭과 일치)
 - 다음 후보: 다른 3차/4차 스킬도 토네이도급 임팩트 재검토, 챕터 1(forest1) 복귀는 본마을 직행 유지 확인, 차기 빌드 시 versionCode 26·v3.0.11
+
+---
+Task ID: 7
+Agent: Super Z (main)
+Task: 웹 미리보기 부재 원인 해소 — CERTZ(v3.0.11)를 워크스페이스 루트에 배치해 웹에서 플레이 가능하게 구성
+
+Work Log:
+- 원인 규명: 이전 세션은 클론·수정·GitHub 푸시만 수행, 미리보기용 루트 프로젝트/서버 없음 → 웹에서 안 보임
+- CERTZ 클론을 /home/z/my-project 루트로 rsync 이동(.git 이력 포함, diff 검증 일치), 하위 폴더 제거
+- npm install (electron/playwright 바이너리 스킵), prisma client 정상 확인
+- node server.js 백그라운드 실행(포트 3000), GET / 200·GameRoot/SERTZ 렌더·에러 로그 0건 실측
+
+Stage Summary:
+- 웹 미리보기에서 SERTZ v3.0.11(5개 피드백 수정분) 플레이 가능. 서버 로그: server-run.log
