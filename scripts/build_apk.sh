@@ -12,7 +12,7 @@ npx cap sync android
 
 echo "[3/5] Gradle assembleRelease"
 cd android
-JAVA_HOME=/home/z/jdk ANDROID_HOME=/home/z/android-sdk ./gradlew assembleRelease --no-daemon
+JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-21-openjdk-amd64} ANDROID_HOME=${ANDROID_HOME:-/home/z/android-sdk} ./gradlew assembleRelease --no-daemon
 
 echo "[4/5] APK 복사"
 cp -f app/build/outputs/apk/release/app-release.apk /home/z/my-project/download/SERTZ-v3.0.12.apk
