@@ -1013,3 +1013,24 @@ Stage Summary:
 - ① 투사체는 이제 전 직업 방향성 텍스처 머리가 진행 방향 선행 ② 지형은 기본 바닥+도로 타일링만 남긴 클린 상태
 - 신규 환경: /home/z/android-sdk(SDK 36)·/home/z/jdk(Temurin 21) — 차기 APK 빌드 시 JAVA_HOME=/home/z/jdk/jdk-21.0.12.1+1 지정 필요
 - 다음 후보: 왼쪽 발사 시 좌우대칭 아닌 텍스처의 상하 반전 여부(현재는 볼트 형태상 체감 없음 확인), gvar 에셋 로드 제거(미사용 텍스처 로드 절약)
+---
+Task ID: 11
+Agent: Super Z (main)
+Task: "All files in task에 안보임" — 워크스페이스 초기화로 소실된 프로젝트·APK 전면 복구
+
+Work Log:
+- 워크스페이스 초기화 감지: 저장소가 "Initial commit"(빈 트리, remote 없음)으로 리셋, download/·public/·server.js·JDK·Android SDK 전부 소실 → 사용자 파일 목록 비어 보였던 근본 원인
+- GitHub 재클론(apple01234/CERTZ, 최신 6dad815 = v3.0.14) → rsync로 /home/z/my-project 루트 복구(upload 제외), git log·working tree 검증
+- GitHub download/에 남아있던 SERTZ-v3.0.13.apk 발견 → v3.0.14 재빌드 필요
+- npm install --ignore-scripts + prisma generate → next OK
+- Android SDK 재설치(cmdline-tools latest + platform-36 + build-tools 36.0.0 + platform-tools)
+- 시스템 java는 JRE뿐(javac 부재, "does not provide JAVA_COMPILER") → Temurin JDK 21 재다운로드(/home/z/jdk/jdk-21.0.12.1+1), build_apk.sh JAVA_HOME 갱신
+- build_apk.sh 전체 파이프라인: next build → cap sync(0.28s) → gradlew assembleRelease BUILD SUCCESSFUL 1m54s
+- APK 실측: versionCode 28·versionName 3.0.14·1,117파일 무결성 ✅ — 구버전 v3.0.13.apk 제거(최신만 보존)
+- 웹 서버 기동(node server.js, 포트 3000, GET / 200)
+- 산출물 Read 터치(APK·worklog) — "All files in task" 표시 유도
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.14.apk (17.5MB, versionCode 28) 복구 완료 — 워크스페이스 리셋 이전과 동일 상태
+- 웹 미리보기 재기동 완료 (v3.0.14, server-run.log)
+- 신규 환경: /home/z/android-sdk(SDK 36)·/home/z/jdk(Temurin 21)·시스템 JRE 21 — 차기 빌드는 scripts/build_apk.sh만 실행
