@@ -988,3 +988,28 @@ Work Log:
 Stage Summary:
 - 산출물: download/SERTZ-v3.0.12.apk (17.5MB, versionCode 26, SHA-256 f2db46cf..., 투사체 방향 수정 포함)
 - 웹 미리보기 서버 재기동 완료 (v3.0.12, server-run.log)
+
+---
+Task ID: 9
+Agent: Super Z (main)
+Task: 사용자 피드백 2건 — ①투사체 거꾸로 ②이상한 타일 → 수정 + APK 빌드 전달("계속하고 작업마친뒤 apk 빌드해")
+
+Work Log:
+- [① 원인] 텍스처 8배 확대 육안 실측 — fx2-bolt(vfx2_bolt.png)가 머리(밝은 구체)가 왼쪽인 채 그려져 있음 → v3.0.12의 atan2 회전 적용 후 항상 꼬리부터 날아 "거꾸로"로 보임. x2_arrow/fx-arcane/fx-darkbolt는 오른쪽 기준으로 정상
+- [① 수정] scripts/flip_bolt_asset.py — 48x32 프레임 4개 단위 좌우 반전 (코드 변경 0줄). 반전 후 밝기 분석: 오른쪽 절반 밝기 179,610 vs 왼쪽 54,117 → 머리 오른쪽 정렬 확인
+- [② 원인1] 타일 12종 3회 타일링 미리보기 실측 — tile_path·tile_path_dark·tile_magma_path·tile_ice 4종의 오른쪽 가장자리(x44~64)에 v3.0.8 시트 추출 오류로 인접 타일 조각(잔디 띠/결정 띠)이 구워져 64px 간격 반복되며 "이상한 타일 줄"로 보임
+- [② 수정1] scripts/fix_tile_strip.py — 오염 띠를 같은 타일 x24~44 미러로 덮는 패치(4종). 패치 후 타일링 이음새·자갈 패턴 자연스러움 확인
+- [② 원인2] 오브젝트 덤프 — forest1에 tx_gp_gvar1/2 56개 산포. tile_grass(118,197,100)와 gvar(55,180,61)가 팩이 달라 색 불일치 → 64px 사각형으로 티가 남
+- [② 수정2] WorldScene.ts buildGroundBlend 함수+호출부 완전 제거(클린 지형). tsc 0·eslint 0
+- [검증] E2E scripts/verify_v313.js — 3개 챕터 gvar=0·missing=0, 마법사 볼트 4방향 실측: 회전각=속도각 오차 ≤0.001rad 전 방향 ✅, pageerror 0
+- [환경 복구] 워크스페이스 초기화로 소실된 Android SDK 재설치(cmdline-tools+platform-36+build-tools 36.0.0) + apt 불가 → Temurin JDK 21 포터블(/home/z/jdk) 확보 후 gradle 빌드
+- [APK] build_apk.sh 흐름 수동 실행 — APK_EXPORT=1 next build(0) → cap sync(0.48s) → gradlew assembleRelease(BUILD SUCCESSFUL 2m22s)
+- [APK 실측] aapt: versionCode 27·versionName 3.0.13 ✅ / apksigner SHA-256 cc774f34(기존 키 동일 — 덮어설치 호환) ✅ / APK 내부 tile_path 패치·볼트 반전 포함 확인 ✅
+- 자동커밋(f7e49fa·1d4faba) 확인 후 버전 3곳 동기화(versionCode 27·3.0.13·APK명·배지) → 커밋 4167ea3 push(36685b7..4167ea3), 구버전 v3.0.12.apk 제거(최신만 보존)
+- 웹 서버 재기동(포트 3000, GET / 200, tile_path.png 200)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.13.apk (17.5MB, versionCode 27, 동일 키 서명)
+- ① 투사체는 이제 전 직업 방향성 텍스처 머리가 진행 방향 선행 ② 지형은 기본 바닥+도로 타일링만 남긴 클린 상태
+- 신규 환경: /home/z/android-sdk(SDK 36)·/home/z/jdk(Temurin 21) — 차기 APK 빌드 시 JAVA_HOME=/home/z/jdk/jdk-21.0.12.1+1 지정 필요
+- 다음 후보: 왼쪽 발사 시 좌우대칭 아닌 텍스처의 상하 반전 여부(현재는 볼트 형태상 체감 없음 확인), gvar 에셋 로드 제거(미사용 텍스처 로드 절약)
