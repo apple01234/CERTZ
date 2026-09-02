@@ -23,26 +23,6 @@ import {
 } from "../mapgen";
 
 /**
- * v2.6 — 길 코어 색 (챕터 길 타일의 최빈색).
- *  TileSprite 패턴이 특정 타이밍에 빈 캔버스로 구워져 길이 아예 안 그려지는 레이스가 있어
- *  (유저 신고: "길이 이상하게 배치" — 프린지 타일 파편만 보임), 확실한 rect로 길 코어를 그리고
- *  프린지 타일이 위에 유기질 경계를 얹는 구조로 복원.
- */
-const ROAD_BASE: Record<string, number> = {
-  /* tx_*_pvar(도로 내부 변형 타일) 베이스색 — 프린지와 같은 팔레트 */
-  village: 0x856c52,
-  forest: 0x856c52,
-  kingdom: 0x856c52,
-  alfheim: 0x856c52,
-  hel: 0x856c52,
-  cave: 0x565463,
-  nidavellir: 0x565463,
-  niflheim: 0x7e9baf,
-  muspelheim: 0x565463,
-  abyss: 0x565463,
-};
-
-/**
  * 메인 플레이 씬.
  *  F1: 꽃/장식 배치를 정의된 소수로만 배치
  *  F2: 목표물 빛기둥 비컨 + 화면 가장자리 화살표 + 실시간 거리 표시
@@ -170,6 +150,15 @@ export class WorldScene extends Phaser.Scene {
   private autoHunt = false;
   /** 자동사냥 이동 벡터 — update에서 계산해 move로 주입 */
   private autoHuntMove = new Phaser.Math.Vector2();
+  /* ----- v3.0.14 — 자동사냥 장애물 회피/끼임 탈출 ----- */
+  /** 이동 명령 중 제자리(막힘) 지속 시간 (ms) */
+  private autoStuckMs = 0;
+  /** 직전 프레임 플레이어 위치 — 실제 이동량 측정용 */
+  private autoLastPos = new Phaser.Math.Vector2();
+  /** 탈출 강제 이동 유지 시각 (scene.time.now 기준) */
+  private autoUnstuckUntil = 0;
+  /** 탈출 강제 이동 방향 */
+  private autoUnstuckDir = new Phaser.Math.Vector2(1, 0);
 
   private repeatOn = false;
 
@@ -316,6 +305,9 @@ export class WorldScene extends Phaser.Scene {
     this.plantCd = 0;
     this.autoHunt = false;
     this.autoHuntMove.set(0, 0);
+    this.autoStuckMs = 0;
+    this.autoUnstuckUntil = 0;
+    this.autoLastPos.set(0, 0);
     this.repeatNeed = 0;
     this.keymap = loadKeyMap();
     this.keyObjs = {};
@@ -400,17 +392,10 @@ export class WorldScene extends Phaser.Scene {
     } else {
     const groundTex = theme.ground;
     this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
-    // 중앙 가로 길 — v3.0.10 지시 #4 개편: 진흙 블롭 프린지 전면 제거, 클린 타일 시상.
-    //  flat rect는 TileSprite 로드 지연 대비 폴백 코어, 그 위에 tile_path 텍스처를 타일링해
-    //  지저분한 갈색 웅덩이 없는 깔끔한 일관 도로가 나온다.
-    this.add.rectangle(0, this.stageH / 2 - 52, this.stageW, 104, ROAD_BASE[parseStage(stageKey).ch] ?? 0x94785c).setOrigin(0).setDepth(0);
-    this.add.tileSprite(0, this.stageH / 2 - 52, this.stageW, 104, theme.path).setOrigin(0).setDepth(0);
-    if (stageKey === "forest1") {
-      this.add.rectangle(this.stageW * 0.55 - 52, 0, 104, this.stageH, ROAD_BASE.forest).setOrigin(0).setDepth(0);
-      this.add.tileSprite(this.stageW * 0.55 - 52, 0, 104, this.stageH, theme.path).setOrigin(0).setDepth(0);
-    }
+    // v3.0.14 — 도로 표시 완전 제거: 가로/세로 일자 도로가 단조롭다는 피드백 ("길이 일자로만 되어있어")
+    //  지형은 테마 바닥 타일링만 남기고, 빈 지형은 placeDecor의 나무·바위·장식 배치로 자연감을 채운다.
     // v3.0.13 — 지면 변형 스캐터(gvar) 완전 제거: 타 세트 색상의 64px 사각형이
-    //  "이상한 타일이 막 배치"된 것처럼 보이는 사용자 불만 → 기본 바닥+도로 타일링만 사용 (클린 지형)
+    //  "이상한 타일이 막 배치"된 것처럼 보이는 사용자 불만 → 기본 바닥만 사용 (클린 지형)
     }
 
     this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
@@ -863,6 +848,16 @@ export class WorldScene extends Phaser.Scene {
     return !this.layout || isOpenXY(this.layout, x, y);
   }
 
+  /** v3.0.14 — 배치 겹침 방지: 지점이 기존 충돌 오브제(나무/바위) 중심에 너무 가까운지 */
+  private nearSolidObstacle(x: number, y: number, minDist: number): boolean {
+    for (const go of this.solidGroup.children.entries) {
+      if (!go.active || !go.getData("obstacle")) continue;
+      const s = go as Phaser.Physics.Arcade.Sprite;
+      if (Phaser.Math.Distance.Between(x, y, s.x, s.y) < minDist) return true;
+    }
+    return false;
+  }
+
   private placeDecor(stageKey: StageKey) {
     const def = this.stageDef;
     const ch = parseStage(stageKey).ch;
@@ -910,27 +905,41 @@ export class WorldScene extends Phaser.Scene {
       }
       return [rng.between(80, this.stageW - 80), rng.between(90, this.stageH - 80)];
     };
-    for (let i = 0; i < def.treeCount; i++) {
-      const [x, y] = natPoint();
-      if (Math.abs(y - this.stageH / 2) < 90) continue; // 길 위엔 안 심음
-      if (blocked(x, y)) continue;
-      /* v3.0 — 개미굴 벽 셀에는 심지 않음 */
-      if (!this.inOpenArea(x, y)) continue;
-      const tex = rng.pick(treeSet);
-      const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
-      this.solidGroup.add(t);
-      // v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과)
-      //  v3.0.10 후속 — 신규 나무(bbox 2~62, 하단 밀착) 줄기 폭 실측 (중앙 x20~44)
-      (t.body as Phaser.Physics.Arcade.StaticBody).setSize(24, 20).setOffset(20, 74);
+    /* v3.0.14 — 도로 제거에 따른 지형 오브젝트 배치 개편:
+     *  ① 일자 도로 위 회피 조항 제거 → 맵 전역(중앙 포함)에 자연 산포
+     *  ② 배치 수 1.5배 + 위치 후보 재시도(최대 6회) — 기존엔 단일 시도 실패 시 그냥 버려져 정의보다 적게 심김
+     *  ③ 배치된 오브젝트에 obstacle 플래그 → 자동사냥 장애물 회피·끼임 탈출 판정에 사용 */
+    const treeN = Math.round(def.treeCount * 1.5);
+    for (let i = 0; i < treeN; i++) {
+      for (let tries = 0; tries < 6; tries++) {
+        const [x, y] = natPoint();
+        if (blocked(x, y)) continue;
+        /* v3.0 — 개미굴 벽 셀에는 심지 않음 */
+        if (!this.inOpenArea(x, y)) continue;
+        if (this.nearSolidObstacle(x, y, 34)) continue;
+        const tex = rng.pick(treeSet);
+        const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
+        this.solidGroup.add(t);
+        // v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과)
+        //  v3.0.10 후속 — 신규 나무(bbox 2~62, 하단 밀착) 줄기 폭 실측 (중앙 x20~44)
+        (t.body as Phaser.Physics.Arcade.StaticBody).setSize(24, 20).setOffset(20, 74);
+        t.setData("obstacle", true);
+        break;
+      }
     }
-    for (let i = 0; i < def.rockCount; i++) {
-      const [x, y] = natPoint();
-      if (Math.abs(y - this.stageH / 2) < 90) continue;
-      if (blocked(x, y)) continue;
-      if (!this.inOpenArea(x, y)) continue;
-      const r = this.add.image(x, y, rockTex).setDepth(Math.floor(y / 10));
-      this.solidGroup.add(r);
-      (r.body as Phaser.Physics.Arcade.StaticBody).setSize(44, 28).setOffset(8, 35); // v3.0.10 — 64x64 바위 하단 실측
+    const rockN = Math.round(def.rockCount * 1.5);
+    for (let i = 0; i < rockN; i++) {
+      for (let tries = 0; tries < 6; tries++) {
+        const [x, y] = natPoint();
+        if (blocked(x, y)) continue;
+        if (!this.inOpenArea(x, y)) continue;
+        if (this.nearSolidObstacle(x, y, 34)) continue;
+        const r = this.add.image(x, y, rockTex).setDepth(Math.floor(y / 10));
+        this.solidGroup.add(r);
+        (r.body as Phaser.Physics.Arcade.StaticBody).setSize(44, 28).setOffset(8, 35); // v3.0.10 — 64x64 바위 하단 실측
+        r.setData("obstacle", true);
+        break;
+      }
     }
 
     // F1 핵심: 꽃은 def.flowerCount 송이만 (10 이하)
@@ -966,7 +975,6 @@ export class WorldScene extends Phaser.Scene {
       for (let i = 0; i < 7; i++) {
         const cx2 = rng2.between(140, this.stageW - 140);
         const cy2 = rng2.between(90, this.stageH - 90);
-        if (Math.abs(cy2 - this.stageH / 2) < 80) continue;
         const c = this.add.image(cx2, cy2, "fragment").setDepth(1).setTint(0xc77aff).setScale(rng2.realInRange(0.7, 1.2));
         const g = this.add
           .image(cx2, cy2, "glow")
@@ -2790,6 +2798,8 @@ export class WorldScene extends Phaser.Scene {
     const useTouch = this.touchMove.lengthSq() > 0.01;
     // v2.5 — 자동사냥 (펫 보유 시): 가장 가까운 적 추적·공격 — 조이스틱/키보드 입력 시 수동 우선
     this.tickAutoHunt();
+    // v3.0.14 — 끼임 탈출: 이동 명령 중 제자리면 측면 탈출로 autoHuntMove 덮어씀
+    this.tickAutoUnstuck(dt);
     let move = useTouch ? this.touchMove : mv;
     if (this.autoHunt && this.player.pet && !useTouch) move = this.autoHuntMove;
 
@@ -3059,7 +3069,8 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** v3.0.1 — BFS 우회 접근 (개미굴 레이아웃: 다른 셀이면 경로의 다음 셀 중심으로) */
+  /** v3.0.1 — BFS 우회 접근 (개미굴 레이아웃: 다른 셀이면 경로의 다음 셀 중심으로)
+   *  v3.0.14 — 셀 내부 오브젝트(나무·바위) 직선 돌파 방지: 바로 앞이 막혔으면 열린 각도로 우회 */
   private autoApproach(best: Enemy | Boss) {
     if (!this.player) return;
     let dir: Phaser.Math.Vector2;
@@ -3072,7 +3083,74 @@ export class WorldScene extends Phaser.Scene {
     } else {
       dir = new Phaser.Math.Vector2(best.x - this.player.x, best.y - this.player.y).normalize();
     }
+    dir = this.autoAvoidDir(dir);
     this.autoHuntMove.copy(dir);
+  }
+
+  /** v3.0.14 — 지점이 장애물(나무/바위) 충돌 박스와 겹치는지 (플레이어 반경 여유 포함) */
+  private blockedByObstacle(x: number, y: number): boolean {
+    for (const go of this.solidGroup.children.entries) {
+      if (!go.active || !go.getData("obstacle")) continue;
+      const b = (go as Phaser.Physics.Arcade.Image).body as Phaser.Physics.Arcade.StaticBody | null;
+      if (!b) continue;
+      if (x >= b.x - 14 && x <= b.x + b.width + 14 && y >= b.y - 12 && y <= b.y + b.height + 14) return true;
+    }
+    return false;
+  }
+
+  /** v3.0.14 — 진행 방향 장애물 회피: 전방 탐지점 3단계(40/110/180px) 중 하나라도 막히면
+   *  ±34°/±69°/±103°/±137° 순으로 열린 방향 탐색 (전부 막히면 원방향 유지 — 끼임 탈출이 처리) */
+  private autoAvoidDir(base: Phaser.Math.Vector2): Phaser.Math.Vector2 {
+    const p = this.player!;
+    const probe = (d: Phaser.Math.Vector2, dist: number) => {
+      const nx = p.x + d.x * dist;
+      const ny = p.y + d.y * dist;
+      if (this.layout && !isOpenXY(this.layout, nx, ny)) return false;
+      return !this.blockedByObstacle(nx, ny);
+    };
+    const clear = (d: Phaser.Math.Vector2) => probe(d, 40) && probe(d, 110) && probe(d, 180);
+    if (clear(base)) return base;
+    for (const ang of [0.6, -0.6, 1.2, -1.2, 1.8, -1.8, 2.4, -2.4]) {
+      const d = base.clone().rotate(ang);
+      if (clear(d)) return d;
+    }
+    return base;
+  }
+
+  /** v3.0.14 — 끼임 탈출: 이동 명령 중인데 실제 이동량이 0.35초 이상 미미하면
+   *  측면(±51°/±86°/±126°) 중 열린 방향으로 0.5초간 강제 이동 (autoHuntMove를 덮어씀) */
+  private tickAutoUnstuck(dt: number) {
+    if (!this.autoHunt || !this.player) return;
+    const p = this.player;
+    if (this.autoHuntMove.lengthSq() < 0.01) {
+      this.autoStuckMs = 0;
+      this.autoLastPos.set(p.x, p.y);
+      return;
+    }
+    if (this.time.now < this.autoUnstuckUntil) {
+      this.autoHuntMove.copy(this.autoUnstuckDir); // tickAutoHunt가 다시 덮어써도 탈출 유지
+      return;
+    }
+    const moved = Phaser.Math.Distance.Between(p.x, p.y, this.autoLastPos.x, this.autoLastPos.y);
+    this.autoLastPos.set(p.x, p.y);
+    /* 초당 ~48px 미만 이동이면 막힘으로 간주 (정상 속도의 절반 이하) */
+    if (moved < dt * 0.048) this.autoStuckMs += dt;
+    else this.autoStuckMs = 0;
+    if (this.autoStuckMs < 350) return;
+    const base = this.autoHuntMove.clone();
+    const wb = this.physics.world.bounds;
+    for (const ang of [0.9, -0.9, 1.5, -1.5, 2.2, -2.2]) {
+      const d = base.clone().rotate(ang);
+      const nx = p.x + d.x * 60;
+      const ny = p.y + d.y * 60;
+      if (nx < 60 || nx > wb.width - 60 || ny < 60 || ny > wb.height - 60) continue;
+      if (this.layout && !isOpenXY(this.layout, nx, ny)) continue;
+      if (this.blockedByObstacle(nx, ny)) continue;
+      this.autoUnstuckDir.copy(d);
+      this.autoUnstuckUntil = this.time.now + 500;
+      this.autoStuckMs = 0;
+      break;
+    }
   }
 
   /** v3.0.1 — 돌진 갭클로저 직선 경로 개방 확인 (중간 지점이 열려 있어야 허용) */
@@ -3105,10 +3183,12 @@ export class WorldScene extends Phaser.Scene {
       (e) => e.active && e !== threat && Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y) < 260
     );
     // v3.0.6 — 개미굴 벽 + 맵 가장자리(월드 바운드) 양쪽을 열림 판정에 반영
+    // v3.0.14 — 오브젝트(나무/바위) 방향도 후퇴 불가로 판정 — 후퇴 중 끼임 방지
     const openDir = (d: Phaser.Math.Vector2) => {
       const nx = p.x + d.x * 110;
       const ny = p.y + d.y * 110;
       if (nx < 70 || nx > wb.width - 70 || ny < 70 || ny > wb.height - 70) return false;
+      if (this.blockedByObstacle(p.x + d.x * 56, p.y + d.y * 56)) return false;
       return !this.layout || isOpenXY(this.layout, nx, ny);
     };
     let bestDir: Phaser.Math.Vector2 | null = null;
