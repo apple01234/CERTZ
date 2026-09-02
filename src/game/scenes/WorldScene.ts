@@ -409,8 +409,8 @@ export class WorldScene extends Phaser.Scene {
       this.add.rectangle(this.stageW * 0.55 - 52, 0, 104, this.stageH, ROAD_BASE.forest).setOrigin(0).setDepth(0);
       this.add.tileSprite(this.stageW * 0.55 - 52, 0, 104, this.stageH, theme.path).setOrigin(0).setDepth(0);
     }
-    // 지면 변형(잔풍)만 유지 — v3.0.10: 경계 프린지/침식 블롭은 buildGroundBlend에서 제거
-    this.buildGroundBlend(stageKey, groundTex, "");
+    // v3.0.13 — 지면 변형 스캐터(gvar) 완전 제거: 타 세트 색상의 64px 사각형이
+    //  "이상한 타일이 막 배치"된 것처럼 보이는 사용자 불만 → 기본 바닥+도로 타일링만 사용 (클린 지형)
     }
 
     this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
@@ -751,40 +751,6 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /* ================= 배치 ================= */
-
-  /**
-   * 지면 변형 타일 배치 (v3.0.10 지시 #4 — 클린 로드 개편).
-   *  기존: 경계 프린지(edge_*)/침식(bite_*)/도로 변형(pvar)을 고밀도로 뿌려
-   *        길 주변에 지저분한 진흙 웅덩이가 난립 (사용자 불만).
-   *  변경: 잔풍 변형(gvar)만 저밀도로 유지 — 도로는 위에서 tile_path 타일링으로 해결.
-   * 배치는 스테이지 시드 결정적 RNG — 매 실행 동일한 지형.
-   */
-  private buildGroundBlend(stageKey: StageKey, groundTex: string, pathTex: string) {
-    const { ch } = parseStage(stageKey);
-    const set = ch === "village" || ch === "forest" || ch === "kingdom" ? "gp"
-      : ch === "alfheim" ? "dp"
-      : ch === "cave" || ch === "nidavellir" ? "cp"
-      : ch === "niflheim" ? "si"
-      : ch === "muspelheim" || ch === "abyss" ? "ap"
-      : ch === "hel" ? "dp"
-      : "gp";
-    const T = 64;
-    const rng = new Phaser.Math.RandomDataGenerator([stageKey + "-blend"]);
-    const yc = this.stageH / 2;
-    const half = 52;
-
-    // 지면 명도 변형 스캐터 — 지터 위치 (도로 근처 제외). 잔풍만, 저밀도 유지
-    for (let gy = 0; gy < this.stageH; gy += T) {
-      for (let gx = 0; gx < this.stageW; gx += T) {
-        const jx = gx + T / 2 + rng.between(-20, 20);
-        const jy = gy + T / 2 + rng.between(-20, 20);
-        if (jy > yc - half - 24 && jy < yc + half + 24) continue;
-        const r = rng.frac();
-        const tex = r < 0.032 ? `tx_${set}_gvar1` : r < 0.064 ? `tx_${set}_gvar2` : null;
-        if (tex) this.add.image(jx, jy, tex).setDepth(0).setFlipX(rng.frac() < 0.5).setAlpha(0.88 + rng.frac() * 0.12);
-      }
-    }
-  }
 
   /* ================= v3.0 — 개미굴 던전 레이아웃 (사용자 지시 #7) ================= */
 
