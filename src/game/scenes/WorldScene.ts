@@ -3365,6 +3365,7 @@ export class WorldScene extends Phaser.Scene {
     if (cfg.anim && this.anims.exists(cfg.anim)) p.play(cfg.anim);
     else if (cfg.anim) p.setTexture("orb");
     p.setRotation(cfg.rot ? cfg.angle : 0);
+    p.setData("rot", cfg.rot === true); // v3.0.12 — 유도 중 회전 갱신용 플래그
     p.setData("dmg", cfg.dmg);
     p.setData("crit", cfg.crit);
     p.setData("pierce", cfg.pierce);
@@ -3578,7 +3579,7 @@ export class WorldScene extends Phaser.Scene {
       x: cfg.x, y: cfg.y, angle: cfg.angle, speed: cfg.speed,
       pierce: cfg.pierce, dmg: cfg.dmg, crit: cfg.crit,
       tint: cfg.hex, knock: 260, scale: cfg.scale,
-      anim: "fx-arcane", blend: "normal",
+      anim: "fx-arcane", blend: "normal", rot: true, // v3.0.12 — 아크 볼트도 비행 방향 회전
     });
     // 마지막 발사 투사체에 폭발 플래그 부여 — tickPlayerProjs에서 첫 명중 시 처리
     const p = this.pProjPool[(this.pProjIdx + this.pProjPool.length - 1) % this.pProjPool.length];
@@ -3639,6 +3640,8 @@ export class WorldScene extends Phaser.Scene {
           const na = cur + Phaser.Math.Clamp(diff, -0.12, 0.12);
           p.body!.velocity.set(Math.cos(na) * speed, Math.sin(na) * speed);
           vel.setTo(p.body!.velocity.x, p.body!.velocity.y);
+          // v3.0.12 — 유도 중 스프라이트도 진행 방향 추적 (화살/볼트가 옆으로 날아 보이던 문제)
+          if (p.getData("rot") === true) p.setRotation(na);
         }
       }
       const dir = new Phaser.Math.Vector2(vel.x, vel.y).normalize();

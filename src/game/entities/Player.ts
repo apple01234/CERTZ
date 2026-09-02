@@ -475,7 +475,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             angle: angle + (shots > 1 ? (i - (shots - 1) / 2) * 0.09 : 0),
             speed: 540, pierce: 2, dmg, crit,
             tint: 0xffffff, knock: 200, scale: 0.85 + 0.1 * t,
-            anim: "fx2-bolt", blend: "add", // v3.0.8 디자인 개편 — Warped 볼트 스킨 (피해 로직 불변)
+            anim: "fx2-bolt", blend: "add", rot: true, // v3.0.12 — 방향성 텍스처: 비행 방향으로 회전 (v3.0.8 스킨 교체 시 누락됐던 것)
           });
         });
       }
@@ -488,7 +488,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             x: this.x, y: this.y - 10,
             angle: angle + 0.14, speed: 600, pierce: 1, dmg: d2.dmg, crit: d2.crit,
             tint: 0xffffff, knock: 150, scale: 0.85,
-            anim: "fx-darkbolt", blend: "normal",
+            anim: "fx-darkbolt", blend: "normal", rot: true, // v3.0.12 — 다크볼트도 방향 회전
           });
         });
       }
@@ -851,7 +851,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       x: this.x, y: this.y - 10,
       angle, speed: 430, pierce: 5 + 2 * t, dmg, crit,
       tint: 0xffffff, knock: 260, scale: 1.3 + 0.14 * t,
-      anim: "fx-arcane", blend: "normal", // v3.0.2 — 아케인 볼트 6프레임
+      anim: "fx-arcane", blend: "normal", rot: true, // v3.0.2 — 아케인 볼트 6프레임 · v3.0.12 방향 회전
     });
     // 티어 3 — 볼트 후속 유도뢰 2발 (4차는 3발) 추가 (스톰브링어/크로니컬 강화)
     if (t >= 3) {
@@ -864,7 +864,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             x: this.x, y: this.y - 10,
             angle: angle + (i - (mines - 1) / 2) * 0.22, speed: 520, pierce: 2, dmg: d2.dmg, crit: d2.crit,
             tint: 0xffffff, knock: 180, scale: 0.95,
-            anim: "fx-darkbolt", blend: "normal", // v3.0.2 — 유도뢰는 다크 볼트로 구분
+            anim: "fx-darkbolt", blend: "normal", rot: true, // v3.0.2 — 유도뢰는 다크 볼트로 구분 · v3.0.12 방향 회전
           });
         });
       }
@@ -1556,7 +1556,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               angle: base + (i - (n - 1) / 2) * 0.36,
               speed: 470, pierce: 8, dmg, crit,
               tint: hex, knock: 300, scale: 1.9,
-              anim: "fx-arcane", blend: "add",
+              anim: "fx-arcane", blend: "add", rot: true, // v3.0.12 — 회오리 볼트도 비행 방향 정렬
             });
           });
         }
