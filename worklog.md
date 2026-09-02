@@ -972,3 +972,19 @@ Work Log:
 
 Stage Summary:
 - 웹 미리보기에서 SERTZ v3.0.11(5개 피드백 수정분) 플레이 가능. 서버 로그: server-run.log
+
+---
+Task ID: 8
+Agent: Super Z (main)
+Task: "Apk 빌드" — 워크스페이스 초기화 후 재구성 및 v3.0.12 APK 전달
+
+Work Log:
+- 워크스페이스 초기화 감지(프로젝트 소실) → GitHub 재클론 → main 최신 = v3.0.12 확인
+- 선행 세션 완료분 발견: 4454121(투사체 방향 정합 — fx2-bolt/fx-arcane/fx-darkbolt 비행 회전 + 유도 조향 회전, 전 직업×4방향 실측) + 36685b7(SERTZ-v3.0.12.apk 배포, versionCode 26, 서명 cc774f34)
+- APK 실측 검증: unzip 무결성 1,117파일 OK / assets/public 내부에서 "v3.0.12" 문자열 검출 / 투사체 수정 코드(fx2-bolt 등) 청크 존재 확인 → 재빌드 불필요 판단, 검증본 그대로 전달
+- 웹 서버 복구: npm install(바이너리 스킵) → prisma generate → node server.js(포트 3000) → GET / 200(45ms)·GameRoot/SERTZ 렌더·에러 로그 0건
+- git status의 upload/ 삭제 표시는 루트 마운트와 저장소 트래킹 충돌 노이즈 — 커밋하지 않음
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.12.apk (17.5MB, versionCode 26, SHA-256 f2db46cf..., 투사체 방향 수정 포함)
+- 웹 미리보기 서버 재기동 완료 (v3.0.12, server-run.log)
