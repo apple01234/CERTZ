@@ -206,7 +206,7 @@ export class BootScene extends Phaser.Scene {
       this.load.image(k, `${k}.png`);
     }
     for (const [k, w, h] of X2_SPELLS) this.load.spritesheet(k, `${k}.png`, { frameWidth: h, frameHeight: h });
-    for (const k of ["x2_arrow", "x2_bricks", "x2_bow"]) this.load.image(k, `${k}.png`);
+    for (const k of ["x2_arrow", "x2_arrow_green", "x2_bricks", "x2_bow"]) this.load.image(k, `${k}.png`); // v3.0.16 — 데드아이 초록 화살 추가
     // 마을 모닥불 (Serene Village 32x32 4프레임 — v1.5 이관)
     this.load.spritesheet("sv_campfire", "sv_campfire.png", { frameWidth: 32, frameHeight: 32 });
     /* v3.0.8 디자인 개편 — Warped Shooting Fx / Cartoon FX Remaster 신규 VFX 시트 */

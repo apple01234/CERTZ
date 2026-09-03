@@ -3685,6 +3685,8 @@ export class WorldScene extends Phaser.Scene {
     rot?: boolean;
     /** v3.0.3 — 유도 (데드아이 신의 화살비): 가장 가까운 적으로 진로 수정 */
     homing?: boolean;
+    /** v3.0.16 (#4) — 비행 잔상(트레일) 색. 지정하면 진행 경로가 발광 잔상으로 남는다 */
+    trail?: number;
   }) {
     if (this.pProjPool.length === 0) {
       for (let i = 0; i < 24; i++) {
@@ -3714,7 +3716,29 @@ export class WorldScene extends Phaser.Scene {
     p.setData("knock", cfg.knock);
     p.setData("tint", cfg.tint);
     p.setData("homing", cfg.homing === true);
+    p.setData("trail", cfg.trail ?? 0); // 0 = 트레일 없음
+    p.setData("trailAcc", 0);
     p.setData("life", 1700);
+  }
+
+  /** v3.0.16 (#4) — 투사체 잔상: 진행 경로를 따라 페이드아웃하는 발광 애프터이미지.
+   *  다중사격 부채꼴이 “화살비”처럼 보이는 핵심 연출. 이미지는 tween으로 자가 소멸 */
+  private spawnProjTrail(p: Phaser.Physics.Arcade.Sprite, hex: number) {
+    const img = this.add.image(p.x, p.y, p.texture.key)
+      .setRotation(p.rotation)
+      .setScale(p.scaleX, p.scaleY)
+      .setTint(hex)
+      .setAlpha(0.4)
+      .setDepth(11)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({
+      targets: img,
+      alpha: 0,
+      scale: p.scaleX * 0.5,
+      duration: 240,
+      ease: "Cubic.out",
+      onComplete: () => img.destroy(),
+    });
   }
 
   /* ================= v3.0.6 — 클래스 고유 주력기 신규 이펙트 4종 ================= */
@@ -3962,6 +3986,15 @@ export class WorldScene extends Phaser.Scene {
         continue;
       }
       p.setData("life", life);
+      /* v3.0.16 (#4) — 잔상 스폰 (50ms 간격): 텍스처가 화살/볼트일 때만 (구슬은 원래 발광이라 생략) */
+      const trailHex = p.getData("trail") as number;
+      if (trailHex && p.texture.key !== "orb") {
+        const acc = (p.getData("trailAcc") as number) + dt;
+        if (acc >= 50) {
+          this.spawnProjTrail(p, trailHex);
+          p.setData("trailAcc", acc - 50);
+        } else p.setData("trailAcc", acc);
+      }
       const vel = p.body!.velocity;
       /* v3.0.3 — 유도 화살: 활성 적 중 가장 가까운 대상으로 진로 서서히 수정 */
       if (p.getData("homing") === true) {

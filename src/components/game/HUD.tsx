@@ -244,7 +244,8 @@ export function HUD({
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">O</span>
           </button>
         </div>
-        <div className="pointer-events-auto w-full rounded-lg border border-amber-200/40 bg-black/55 px-2.5 py-1.5 backdrop-blur-sm sm:px-3 sm:py-2">
+        {/* v3.0.16 — 모바일에서 퀘스트 팝업을 아래로: 상단 버튼행과 간격 확대 (mt-8), PC는 유지 */}
+        <div className="pointer-events-auto mt-8 w-full rounded-lg border border-amber-200/40 bg-black/55 px-2.5 py-1.5 backdrop-blur-sm sm:mt-1 sm:px-3 sm:py-2">
           {/* v3.0.4 (지시 #5) — 모바일에서 퀘스트창 키고끄기: 헤더 전체가 토글 버튼 (터치 영역 확대) */}
           <div
             role="button"

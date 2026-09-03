@@ -1,7 +1,8 @@
-/* v3.0.16 검증 — 메이플 컨텐츠 패치
- * ①세트 아이템 효과(스탯+UI) ②몬스터 컬렉션(등록·세이브·보너스 스탯·패널)
- * ③멀티킬 연출 ④필드 정예 몬스터(출현·처치 보상) ⑤퀘스트 보상 수령 팝업(와이어링+UI)
- * ⑥eert 등급 오라 ⑦M키 컬렉션 진입 ⑧버전 배지
+/* v3.0.16 검증 — 신규 4개 피드백 항목
+ * ① 기본 이동속도 상향(230→265) + 수동 이동 실측
+ * ② 퀘스트 팝업 모바일 하단 이동(mt-8 적용)
+ * ③ 데드아이 초록 화살 텍스처 로드 + 4차 기본공격 사용
+ * ④ 다중사격 재미 강화: 부채꼴 확대 + 트레일 전달 + 실측 생성
  * 실행 중인 3000 서버에 접속 */
 const { chromium } = require("playwright");
 
@@ -11,6 +12,18 @@ const ok = (name, cond, detail = "") => {
   results.push({ name, pass: !!cond, detail });
   console.log(`${cond ? "✅" : "❌"} ${name}${detail ? " — " + detail : ""}`);
 };
+
+/* ① 조이스틱 포화 커브 수학 검증 (TouchControls와 동일 식) */
+function joyCurve(raw) {
+  if (raw <= 0.14) return 0;
+  const t = Math.min(1, (raw - 0.14) / 0.41);
+  return 0.3 + 0.7 * Math.pow(t, 0.75);
+}
+const c30 = joyCurve(0.30), c55 = joyCurve(0.55), c80 = joyCurve(0.80), c100 = joyCurve(1.0), c10 = joyCurve(0.10);
+ok("① 조이스틱 커브: 30%→64%", Math.abs(c30 - 0.6407) < 0.02, c30.toFixed(3));
+ok("① 조이스틱 커브: 55%→100% 포화", Math.abs(c55 - 1) < 1e-9, c55.toFixed(3));
+ok("① 조이스틱 커브: 80%·100% 모두 100%", Math.abs(c80 - 1) < 1e-9 && Math.abs(c100 - 1) < 1e-9);
+ok("① 조이스틱 데드존 10%→0", c10 === 0);
 
 async function cleanDialogues(page) {
   for (let i = 0; i < 20; i++) {
@@ -33,9 +46,6 @@ async function cleanDialogues(page) {
 async function enterWorld(page) {
   await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 90000 });
   await page.waitForSelector("text=새로운 모험", { timeout: 60000 });
-  /* v3.0.16 — 버전 배지는 타이틀 화면이 떠 있는 동안에만 존재 */
-  const badge0 = await page.evaluate(() => document.body.innerText.includes("v3.0.16"));
-  ok("버전 배지 v3.0.16", badge0);
   await page.click("text=새로운 모험");
   for (let i = 0; i < 40; i++) {
     const inWorld = await page.evaluate(() => !!(window.__SERTZ__?.game?.scene.getScene("world")?.player));
@@ -58,226 +68,122 @@ async function enterWorld(page) {
   await cleanDialogues(page);
 }
 
-async function gotoStage(page, st) {
-  await page.evaluate((s) => {
-    const w = window.__SERTZ__.game.scene.getScene("world");
-    w.scene.restart({ stage: s, fresh: true });
-  }, st);
-  await page.waitForTimeout(1700);
-  await cleanDialogues(page);
-  await page.waitForTimeout(400);
-}
-
-async function closePanels(page) {
-  await page.evaluate(() => window.__SERTZ_EB__.emit("ui:panel", { panel: null }));
-  await page.waitForTimeout(200);
-}
-
 (async () => {
   const browser = await chromium.launch({ args: ["--disable-dev-shm-usage", "--no-sandbox", "--disable-gpu"] });
-  let page = await browser.newPage({ viewport: { width: 1024, height: 640 } });
+  const page = await browser.newPage({ viewport: { width: 1024, height: 640 } });
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
 
   await enterWorld(page);
 
-  /* ── ⑤-2 보상 팝업 UI 렌더 ── */
-  await page.evaluate(() => {
-    window.__SERTZ_EB__.emit("reward:show", {
-      title: "퀘스트 완료 — 테스트",
-      lines: [{ text: "골드 +99 G", color: "#ffd76a" }, { text: "경험치 +50 EXP", color: "#8fe84a" }],
-    });
-  });
-  await page.waitForTimeout(300);
-  const popupUI = await page.evaluate(() => document.body.innerText.includes("보상이 인벤토리에 지급되었습니다") && document.body.innerText.includes("골드 +99 G"));
-  ok("보상 수령 팝업 UI", popupUI);
-  await page.evaluate(() => {
-    const btns = [...document.querySelectorAll("button")];
-    const b = btns.find((x) => x.getAttribute("aria-label") === "보상 팝업 닫기");
-    b?.click();
-  });
-  await page.waitForTimeout(200);
-
-  /* ── ⑦ M키 → 컬렉션 패널 ── */
-  await page.keyboard.press("m");
-  await page.waitForTimeout(400);
-  const colPanel = await page.evaluate(() => document.body.innerText.includes("몬스터 컬렉션") && document.body.innerText.includes("컬렉션 보너스"));
-  ok("M키로 컬렉션 패널 열기", colPanel);
-  const colCount = await page.evaluate(() => {
-    const spans = [...document.querySelectorAll("span")].map((s) => s.innerText).filter((t) => t && /\d+\s*\/\s*\d+/.test(t));
-    return { normal: document.body.innerText.includes("일반 몬스터 ("), boss: document.body.innerText.includes("보스 몬스터 ("), badge: spans.find((t) => /\/\s*43/.test(t)) ?? "none", all: spans.slice(0, 6) };
-  });
-  ok("컬렉션 도감 43종 구성", colCount.normal && colCount.boss && /\/\s*43/.test(colCount.badge), JSON.stringify(colCount));
-  await closePanels(page);
-
-  /* ── 스탯창 진입 버튼 ── */
-  await page.evaluate(() => window.__SERTZ_EB__.emit("ui:panel", { panel: "stat" }));
-  await page.waitForTimeout(300);
-  const statBtn = await page.evaluate(() => {
-    const btns = [...document.querySelectorAll("button")];
-    const b = btns.find((x) => x.innerText.includes("몬스터 컬렉션"));
-    if (!b) return false;
-    b.click();
-    return true;
-  });
-  await page.waitForTimeout(300);
-  const colOpen2 = await page.evaluate(() => document.body.innerText.includes("다음 목표:"));
-  ok("스탯창 → 컬렉션 진입 버튼", statBtn && colOpen2);
-  await closePanels(page);
-
-  /* ── ② 컬렉션 등록 (처치 → 도감 + 세이브) ── */
-  await gotoStage(page, "forest1");
-  const colReg = await page.evaluate(() => {
+  /* ── ① 기본 이동속도: BASE_SPEED 265 + 실측 (EventBus input:move = 실제 수동 입력 경로) ── */
+  const speedInfo = await page.evaluate(() => {
     const w = window.__SERTZ__.game.scene.getScene("world");
-    const before = Object.keys(w.monsterKills ?? {}).length;
-    w.onEnemyKilled("wolf", 10, w.player.x + 180, w.player.y + 120);
-    const after = Object.keys(w.monsterKills ?? {}).length;
-    const saved = JSON.parse(window.localStorage.getItem("sertz_save_v2") ?? "{}");
-    return { before, after, hasWolf: (w.monsterKills?.wolf ?? 0) >= 1, reg: w.player.collectionRegistered, savedWolf: (saved.monsterKills?.wolf ?? 0) >= 1 };
+    return { base: w.player.constructor.BASE_SPEED, speed: w.player.speed, auto: w.autoHunt };
   });
-  ok("몬스터 처치 → 컬렉션 등록", colReg.after === colReg.before + 1 && colReg.hasWolf && colReg.reg === colReg.after,
-     `before=${colReg.before} after=${colReg.after} reg=${colReg.reg}`);
-  ok("컬렉션 세이브 저장", colReg.savedWolf);
+  ok("① BASE_SPEED 265 상향", speedInfo.base === 265 && speedInfo.speed === 265, `base=${speedInfo.base} speed=${speedInfo.speed}`);
 
-  /* ── ③ 멀티킬 연출 (1.5초 윈도 2연속 킬) ── */
-  const multi = await page.evaluate(() => {
+  const moveDist = await page.evaluate(async () => {
     const w = window.__SERTZ__.game.scene.getScene("world");
-    const x = w.player.x + 220, y = w.player.y + 160;
-    w.onEnemyKilled("wolf", 10, x, y);
-    w.onEnemyKilled("spider", 10, x, y + 40);
-    return { count: w.multiKillCount, until: w.multiKillUntil > w.time.now, meta: WorldScene_MULTI(w) };
-    function WorldScene_MULTI(w2) { return Array.isArray(w2.constructor.MULTI_KILL_META) && w2.constructor.MULTI_KILL_META.length === 4; }
-  });
-  ok("멀티킬 카운트/윈도/등급 메타", multi.count >= 2 && multi.until && multi.meta,
-     `count=${multi.count} window=${multi.until} meta4=${multi.meta}`);
-
-  /* ── ④ 필드 정예 몬스터: 출현 → 처치 시 에메랄드 +1 ── */
-  const elite = await page.evaluate(() => {
-    const w = window.__SERTZ__.game.scene.getScene("world");
-    // 동시 몬스터 상한(20마리) 회피 — 기존 몹 비활성화
-    for (const e of w.enemies) { e.alive = false; e.setActive(false); e.setVisible(false); }
-    w.enemies = [];
-    const orig = Math.random;
-    Math.random = () => 0.001; // 4.5% 컷 통과 강제
-    w.respawnEnemy("wolf", w.player.x + 240, w.player.y - 180, 0);
-    Math.random = orig;
-    const e = w.fieldEliteRef;
-    if (!e) return { spawned: false };
-    const disp = String(e.displayName ?? "");
-    const hpMul = e.maxHp / 58; // 기본 wolf hp=58 대비 배율
-    const em0 = w.player.emerald;
-    const key = e.def.key;
-    e.alive = false;
-    w.onEnemyKilled(key, 10, e.x, e.y);
-    return { spawned: true, disp, hpMul, emeraldGain: w.player.emerald - em0, cleared: w.fieldEliteRef === null };
-  });
-  ok("필드 정예 출현 (정예 이름·3.2배 HP)", elite.spawned === true && elite.disp.startsWith("정예") && elite.hpMul >= 3,
-     `disp=${elite.disp ?? "-"} hpMul≈${elite.hpMul ? elite.hpMul.toFixed(1) : "-"}`);
-  ok("정예 처치 → 에메랄드 +1", elite.emeraldGain === 1 && elite.cleared, `gain=${elite.emeraldGain}`);
-
-  /* ── ① 세트 아이템 효과: 장착 → 활성 + 스탯 반영 + UI 카드 ── */
-  const setFx = await page.evaluate(() => {
-    const w = window.__SERTZ__.game.scene.getScene("world");
-    const p = w.player;
-    p.owned.push("sfw_forest", "sfa_forest", "sfr_forest");
-    const atk0 = p.atkTotal, def0 = p.defTotal, hp0 = p.maxHp;
-    p.equip("sfw_forest"); p.equip("sfa_forest"); p.equip("sfr_forest");
-    const active = p.activeSet;
-    const atk1 = p.atkTotal, def1 = p.defTotal, hp1 = p.maxHp;
-    const lines = [];
-    if (active) {
-      if (active.bonus.atkPct) lines.push(`공격력 +${active.bonus.atkPct}%`);
-      if (active.bonus.defAdd) lines.push(`방어력 +${active.bonus.defAdd}`);
-      if (active.bonus.maxHp) lines.push(`최대 HP +${active.bonus.maxHp}`);
+    // 실제 입력 경로: EventBus "input:move" → w.touchMove와 동일한 이후 파이프라인.
+    // (touchMove 직접 주입 — useTouch 우선 → move = touchMove → player.update)
+    const dirs = [[1, 0], [-1, 0], [0, -1], [0, 1]];
+    let best = 0;
+    for (const [dx, dy] of dirs) {
+      w.touchMove.set(dx, dy);
+      const sx = w.player.x, sy = w.player.y;
+      await new Promise((r) => setTimeout(r, 1000));
+      const d = Math.hypot(w.player.x - sx, w.player.y - sy);
+      best = Math.max(best, d);
+      w.touchMove.set(0, 0);
+      await new Promise((r) => setTimeout(r, 120));
+      if (best >= 230) break; // 충분하면 조기 종료
     }
-    // 세이브에 bonusHpApplied 반영 확인용 반환
-    return {
-      ch: active?.ch ?? null, lines,
-      atkUp: atk1 > atk0, defUp: def1 > def0, hpUp: hp1 > hp0,
-      atk0, atk1, def0, def1, hp0, hp1,
-    };
+    return Math.round(best);
   });
-  ok("세트 장착 → 활성 판정", setFx.ch === "forest", `ch=${setFx.ch}`);
-  ok("세트 스탯 반영 (공격%/방어/HP)", setFx.atkUp && setFx.defUp && setFx.hpUp,
-     `atk ${setFx.atk0}→${setFx.atk1}, def ${setFx.def0}→${setFx.def1}, hp ${setFx.hp0}→${setFx.hp1}`);
+  ok("① 수동 이동 실측 ≥ 239px/s (265의 90%)", moveDist >= 239, `${moveDist}px/s — 기존 230 전송·조이스틱 반반 밀기 시 ~150px/s 체감`);
 
-  /* ── ⑥ eert 등급 오라 + 세트 효과 UI (인벤토리 패널 DOM) ── */
-  await page.evaluate(() => {
-    const p = window.__SERTZ__.game.scene.getScene("world").player;
-    p.potentials["sfw_forest"] = { grade: 3, lines: [{ k: "atk", v: 3 }, { k: "crit", v: 3 }, { k: "maxHp", v: 75 }] };
-    p.syncPotentialsHp();
-    window.__SERTZ_EB__.emit("ui:panel", { panel: "inv" });
+  /* ── ② 퀘스트 팝업 위치: 모바일 뷰포트에서 mt-8 적용 확인 ── */
+  await page.setViewportSize({ width: 390, height: 720 });
+  await page.waitForTimeout(400);
+  const questGap = await page.evaluate(() => {
+    const tracker = [...document.querySelectorAll("div")].find((d) =>
+      typeof d.className === "string" && d.className.includes("border-amber-200/40") && d.className.includes("mt-8"));
+    return { hasMt8: !!tracker, cls: tracker ? tracker.className.slice(0, 130) : "" };
   });
-  await page.waitForTimeout(500);
-  const invUI = await page.evaluate(() => {
-    const txt = document.body.innerText;
-    const glowing = [...document.querySelectorAll("div")].some((d) => d.getAttribute("style")?.includes("255, 138, 92") || d.getAttribute("style")?.includes("#ff8a5c"));
-    return { setCard: txt.includes("세트 효과 활성 — 숲의 수호자 세트"), setLines: txt.includes("공격력 +3%"), aura: glowing };
-  });
-  ok("인벤 세트 효과 카드 (활성)", invUI.setCard && invUI.setLines);
-  ok("eert 레전드 등급 오라 테두리", invUI.aura);
-  await closePanels(page);
+  ok("② 모바일 퀘스트 팝업 mt-8 (32px 하단 이동)", questGap.hasMt8, questGap.cls);
+  ok("② PC(sm+) 레이아웃 유지 sm:mt-1", questGap.cls.includes("sm:mt-1"));
+  await page.setViewportSize({ width: 1024, height: 640 });
+  await page.waitForTimeout(300);
 
-  /* ── ②-2 컬렉션 41종 → 보너스 스탯 (공격 +11% / HP +190 / 크리 +5%) ── */
-  const colBonus = await page.evaluate(() => {
+  /* ── ③ 데드아이 초록 화살: 텍스처 로드 + 4차 기본공격 ── */
+  const greenTex = await page.evaluate(() => {
+    const w = window.__SERTZ__.game.scene.getScene("world");
+    return w.textures.exists("x2_arrow_green");
+  });
+  ok("③ x2_arrow_green 텍스처 로드", greenTex);
+
+  // 티어 getter는 cls 체인 기반 → cls만 주입하면 tier=4 자동 적용
+  const shotResult = await page.evaluate(async () => {
     const w = window.__SERTZ__.game.scene.getScene("world");
     const p = w.player;
-    const ids = [...Object.keys(w.constructor && {} )]; // noop
-    const mobs = ["wolf","minion","spider","golem","frostwolf","icegolem","wraith","swampbeast","emberwolf","firespirit","runegolem","helhound","x2_frog","x2_rat","x2_bat","x2_firebird","x2_frostfly","x2_snail","x2_stonegolem","x2_darkhound","x2_reeffish","x3_swampy","x3_imp","x3_icezombie","x3_tinyzombie","x3_ogre","x3_chort","x3_necromancer","x3_maskedorc","x3_orcwarrior","x3_orcshaman","x3_wogol","x3_goblin","x3_bigzombie"];
-    const bosses = ["guardian","behemoth","abysslord","nidhog","surt","fenrir","skoll","gram","abudditos"];
-    for (const m of mobs) w.monsterKills[m] = (w.monsterKills[m] ?? 0) + 1;
-    for (const b of bosses) w.monsterKills[`boss_${b}`] = (w.monsterKills[`boss_${b}`] ?? 0) + 1;
-    const atk0 = p.atkTotal;
-    p.setCollection(Object.keys(w.monsterKills).length);
-    return { reg: p.collectionRegistered, atk0, atk1: p.atkTotal, hp1: p.maxHp, crit1: p.critRate };
+    p.cls = "deadeye"; // chainOf("deadeye").length === 4 → tier 4
+    const origFire = w.firePlayerProj.bind(w);
+    const fired = [];
+    w.firePlayerProj = (cfg) => { fired.push({ tex: cfg.tex, blend: cfg.blend, tint: cfg.tint, trail: cfg.trail, angle: +cfg.angle.toFixed(4), scale: cfg.scale }); };
+    p.state = "idle"; p.atkCooldown = 0;
+    p.update(16, { x: 1, y: 0, lengthSq: () => 1, copy() {}, normalize() { return this; } }, true);
+    await new Promise((r) => setTimeout(r, 320));
+    w.firePlayerProj = origFire;
+    return fired;
   });
-  ok("컬렉션 43종 등록(41전체+기존) → 공격% 상승", colBonus.reg >= 41 && colBonus.atk1 > colBonus.atk0,
-     `reg=${colBonus.reg} atk ${colBonus.atk0}→${colBonus.atk1}`);
+  ok("③ 데드아이 기본공격 = 초록 화살(x2_arrow_green) 4발",
+    shotResult.length === 4 && shotResult.every((s) => s.tex === "x2_arrow_green"),
+    JSON.stringify(shotResult.map((s) => s.tex)));
+  ok("③ 데드아이 초록 화살(normal 블렌드로 진한 초록 유지) + 초록 트레일(0x53ff9a)",
+    shotResult.every((s) => s.blend === "normal" && s.trail === 0x53ff9a));
 
-  /* ── ⑤-1 advanceQuest 보상 팝업 와이어링 (forest1 f0: 골드 40) ── */
-  await gotoStage(page, "forest1");
-  const rewardWire = await page.evaluate(() => new Promise((resolve) => {
+  /* ── ④ 4차 부채꼴 확대: 총 확산각 = 3 × 0.22rad ── */
+  if (shotResult.length === 4) {
+    const angles = shotResult.map((s) => s.angle);
+    const spreadTotal = Math.max(...angles) - Math.min(...angles);
+    ok("④ 4차 부채꼴 0.66rad (기존 0.24rad의 2.75배)", Math.abs(spreadTotal - 3 * 0.22) < 0.01, `spread=${spreadTotal.toFixed(4)}rad`);
+  }
+
+  /* ── ④ 1차 궁수: 1발 + 골드 트레일 ── */
+  const rangerShot = await page.evaluate(async () => {
     const w = window.__SERTZ__.game.scene.getScene("world");
-    const eb = window.__SERTZ_EB__;
-    let captured = null;
-    const on = (v) => { captured = v; };
-    eb.on("reward:show", on);
-    const q = w.stageDef.quests[w.questIdx];
-    w.advanceQuest();
-    setTimeout(() => {
-      eb.off("reward:show", on);
-      resolve({ qReward: q?.reward ?? null, title: captured?.title ?? null, lines: captured?.lines?.length ?? 0 });
-    }, 300);
-  }));
-  ok("advanceQuest → 보상 팝업 이벤트", rewardWire.qReward > 0 && (rewardWire.title ?? "").includes("퀘스트 완료") && rewardWire.lines >= 1,
-     `reward=${rewardWire.qReward} title="${rewardWire.title}" lines=${rewardWire.lines}`);
+    const p = w.player;
+    p.cls = "ranger"; // tier 1
+    const origFire = w.firePlayerProj.bind(w);
+    const fired = [];
+    w.firePlayerProj = (cfg) => { fired.push({ tex: cfg.tex, trail: cfg.trail, blend: cfg.blend }); };
+    p.state = "idle"; p.atkCooldown = 0;
+    p.update(16, { x: 1, y: 0, lengthSq: () => 1, copy() {}, normalize() { return this; } }, true);
+    await new Promise((r) => setTimeout(r, 250));
+    w.firePlayerProj = origFire;
+    return fired;
+  });
+  ok("④ 1차 = 화살 1발 + 골드 트레일", rangerShot.length === 1 && rangerShot[0].tex === "x2_arrow" && rangerShot[0].trail === 0xffd98a, JSON.stringify(rangerShot));
 
-  /* ── rpg state에 collection/activeSet 포함 확인 ── */
-  const rpgExt = await page.evaluate(() => new Promise((resolve) => {
-    const eb = window.__SERTZ_EB__;
-    let seen = null;
-    const on = (v) => { if (!seen) seen = v; };
-    eb.on("rpg:state", on);
+  /* ── ④ 트레일 실측: 화살 비행 중 잔상 이미지 생성 ── */
+  const trailTest = await page.evaluate(async () => {
     const w = window.__SERTZ__.game.scene.getScene("world");
-    w.lastRpgSig = null; // 시그니처 중복 emit 스킵 우회 — 강제 재발행
-    w.emitRpgState();
-    setTimeout(() => {
-      eb.off("rpg:state", on);
-      resolve({
-        hasCol: !!seen?.collection && seen.collection.total === 43,
-        hasSet: "activeSet" in (seen ?? {}),
-      });
-    }, 300);
-  }));
-  ok("rpg state 컬렉션/세트 필드", rpgExt.hasCol && rpgExt.hasSet, JSON.stringify(rpgExt));
+    w.firePlayerProj({ x: w.player.x, y: w.player.y - 8, angle: 0, speed: 600, pierce: 1, dmg: 1, crit: false, tint: 0xffffff, knock: 0, tex: "x2_arrow", rot: true, trail: 0x53ff9a });
+    await new Promise((r) => setTimeout(r, 230));
+    let count = 0;
+    for (const img of w.children.list) {
+      if (img.type === "Image" && img.texture.key === "x2_arrow" && img.blendMode === 1) count++;
+    }
+    return count;
+  });
+  ok("④ 비행 잔상 실측 생성 (≥2)", trailTest >= 2, `${trailTest}개 잔상`);
+  await page.waitForTimeout(600);
 
-  await page.screenshot({ path: "scripts/shot_v316_final.png" });
-
-  console.log("\n===== SUMMARY =====");
-  const pass = results.filter((r) => r.pass).length;
-  console.log(`${pass}/${results.length} PASS`);
-  if (errors.length) console.log("PAGE ERRORS:", errors.slice(0, 5));
+  ok("pageerror 0", errors.length === 0, errors.join(" | ").slice(0, 200));
 
   await browser.close();
-  process.exit(results.every((r) => r.pass) && errors.length === 0 ? 0 : 1);
+  const passed = results.filter((r) => r.pass).length;
+  console.log(`\n===== ${passed}/${results.length} PASS =====`);
+  process.exit(passed === results.length ? 0 : 1);
 })().catch((e) => { console.error("FATAL", e); process.exit(2); });

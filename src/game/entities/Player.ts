@@ -88,9 +88,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v3.0.6 (지시 #8) — 보스 공격 방어 관통률 (Boss.takeDamage 호출 시 true) */
   bossPierceHit = false;
 
-  speed = 230;
-  /** 이동 기본값 — 클래스 속도 보너스는 이 값에 배율 (recalcSpeed) */
-  static readonly BASE_SPEED = 230;
+  speed = 265;
+  /** 이동 기본값 — 클래스 속도 보너스는 이 값에 배율 (recalcSpeed)
+   *  v3.0.16 — 230→265 (+15%): "기본 이동이 너무 느림" 피드백.
+   *  최속 적(서리/불꽃 늑대 150) 대비 여유 유지, 자동사냥과 체감 동일化 */
+  static readonly BASE_SPEED = 265;
   facing: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0);
 
   state: "idle" | "attack" | "dash" | "dead" = "idle";
@@ -399,7 +401,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** 궁수 기본공격 — 활쏘기 (화살 1발, 관통 1)
    *  v3.0.2 — 발광 구슬 대신 실제 화살 투사체 + 활 당기기 비주얼 (무기 정체성)
-   *  v3.0.15 (#4) — "N차마다 N개" 공식: 미전직·1차 1발 / 2차 2발 / 3차 3발 / 4차 4발 */
+   *  v3.0.15 (#4) — "N차마다 N개" 공식: 미전직·1차 1발 / 2차 2발 / 3차 3발 / 4차 4발
+   *  v3.0.16 (#3/#4) — 데드아이 전용 초록 발광 화살 + 다중사격 재미 강화:
+   *    부채꼴 확대(차수별 0.13~0.22rad) · 연사 간격 90→60ms · 발사 머즐 플래시 ·
+   *    비행 잔상(트레일) · 3발+ 동시 타격감 카메라 마이크로 셰이크 */
   private atkBow(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.setFlipX(dir.y === 0 && dir.x > 0);
@@ -412,35 +417,43 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.nextAtkEmpowered = false;
     const shots = Math.max(1, t); // v3.0.15 (#4): N차 = N발
     const pierce = 1 + (t >= 2 ? 1 : 0);
+    const deadeye = t >= 4;
+    const arrowTex = deadeye ? "x2_arrow_green" : "x2_arrow"; // v3.0.16 — 데드아이 초록 화살
+    const arrowTint = 0xffffff; // 텍스처 자체 색 사용 (초록 화살은 텍스처가 에메랄드)
+    const trailHex = deadeye ? 0x53ff9a : t >= 2 ? this.clsHex() : 0xffd98a; // 잔상색: 4차 초록발광 / 2~3차 클래스색 / 그 외 골드
+    const flashHex = deadeye ? 0x7dffb0 : t >= 2 ? this.clsHex() : 0xffe08a; // 머즐 플래시색
+    const spread = 0.1 + 0.03 * t; // v3.0.16 — 부채꼴 확대 (1차 0.13°rad ~ 4차 0.22rad)
+
+    const fireOne = (i: number) => {
+      const { dmg, crit } = this.rollDamage(0.95 + 0.04 * t + (i === 0 && empowered ? 0.5 : 0), i > 0);
+      if (crit) this.scene.sfxCrit();
+      this.scene.firePlayerProj({
+        x: this.x, y: this.y - 8,
+        angle: angle0 + (shots > 1 ? (i - (shots - 1) / 2) * spread : 0),
+        speed: 620 + Math.floor(Math.random() * 40) - 15, // 미세 속도 편차 — 화살비 유기적 느낌
+        pierce, dmg, crit,
+        tint: arrowTint, knock: 180, scale: 1.35 + 0.06 * t, // v3.0.15 (#15) 화살 크기 상향
+        tex: arrowTex, blend: "normal", rot: true, // v3.0.16 — normal 블렌드: ADD는 밝은 배경에서 초록이 하얗게 씻김 (텍스처 자체가 에메랄드+발광 트레일)
+        trail: trailHex, // v3.0.16 — 비행 잔상 (ADD 발광)
+      });
+      this.scene.spawnBurstAt(this.x + dir.x * 16, this.y - 8, 3, flashHex); // 머즐 플래시
+    };
 
     this.scene.time.delayedCall(65, () => {
       if (this.state !== "attack") return;
       this.swingDone = true;
       this.scene.sfxSwing();
-      const angle = Math.atan2(dir.y, dir.x);
       for (let i = 0; i < shots; i++) {
         if (i > 0) {
-          this.scene.time.delayedCall(i * 90, () => {
+          this.scene.time.delayedCall(i * 60, () => { // v3.0.16 — 90→60ms 연사 (다다다닥 타격감)
             if (this.state === "dead") return;
-            const { dmg: d2, crit: c2 } = this.rollDamage(0.95 + 0.04 * t, true);
-            this.scene.firePlayerProj({
-              x: this.x, y: this.y - 8,
-              angle: angle + (shots > 1 ? (i - (shots - 1) / 2) * 0.08 : 0),
-              speed: 620, pierce, dmg: d2, crit: c2,
-              tint: t >= 4 ? 0x9dffc4 : 0xffffff, knock: 180, scale: 1.35 + 0.06 * t, // v3.0.15 (#15) 화살 크기 상향
-              tex: "x2_arrow", blend: t >= 4 ? "add" : "normal", rot: true,
-            });
+            fireOne(i);
           });
         } else {
-          const { dmg, crit } = this.rollDamage(0.95 + 0.04 * t + (empowered ? 0.5 : 0));
-          this.scene.firePlayerProj({
-            x: this.x, y: this.y - 8,
-            angle, speed: 620, pierce, dmg, crit,
-            tint: t >= 4 ? 0x9dffc4 : 0xffffff, knock: 180, scale: 1.35 + 0.06 * t, // v3.0.15 (#15) 화살 크기 상향
-            tex: "x2_arrow", blend: t >= 4 ? "add" : "normal", rot: true,
-          });
+          fireOne(0);
         }
       }
+      if (shots >= 3) this.scene.cameras.main.shake(70, 0.0016); // 3발+ 동시 사격 임팩트
     });
 
     this.scene.time.delayedCall(200, () => {
@@ -807,7 +820,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** 궁수 — 관통 화살 다연발 (부채꼴, v3.0.4 — 전직마다 강화: 관통/발수/잔상 티어별 증가)
-   *  2차+ 클래스색 화살 / 3차+ 2차 연사 추가 / 4차+ 발광 화살+대폭 관통 */
+   *  2차+ 클래스색 화살 / 3차+ 2차 연사 추가 / 4차+ 발광 화살+대폭 관통
+   *  v3.0.16 (#4) — 부채꼴 확대(0.09→0.125) + 비행 잔상 트레일 + 넉백 상향(220→250) + 머즐 플래시 */
   private skill1Arrows() {
     const aim = this.aimDirFree(); // v3.0.1 — 8방향 자유 조준 (자동사냥 명중률 + 대각선 일관)
     const base = Math.atan2(aim.y, aim.x);
@@ -826,15 +840,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             x: this.x, y: this.y - 8,
             angle: base + (i - (n - 1) / 2) * spread,
             speed: 580, pierce: 2 + t, dmg, crit,
-            tint: t >= 2 ? hex : 0xffffff, knock: 220, scale: 1.0 + 0.08 * t,
+            tint: t >= 2 ? hex : 0xffffff, knock: 250, scale: 1.0 + 0.08 * t,
             tex: "x2_arrow", blend: t >= 4 ? "add" : "normal", rot: true,
+            trail: t >= 2 ? hex : 0xffd98a, // v3.0.16 — 잔상
           });
+          this.scene.spawnBurstAt(this.x + aim.x * 16, this.y - 8, 2, t >= 2 ? hex : 0xffe08a);
         });
       }
     };
-    fireVolley(count, 0.09, 1.2, 0);
+    fireVolley(count, 0.125, 1.2, 0);
     // v3.0.4 — 3차+: 2차 연사 추가 (기존 스킬 강화)
-    if (t >= 3) fireVolley(count, 0.055, 1.0, count * 100 + 40);
+    if (t >= 3) fireVolley(count, 0.075, 1.0, count * 100 + 40);
+    if (t >= 3) this.scene.cameras.main.shake(80, 0.0016); // 연사 볼레이 임팩트
     this.scene.time.delayedCall(count * 100 + (t >= 3 ? count * 100 + 60 : 0) + 260, () => {
       if (this.state === "attack") this.state = "idle";
     });

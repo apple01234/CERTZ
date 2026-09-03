@@ -92,12 +92,16 @@ export function TouchControls({
       dy = (dy / len) * JOY_RADIUS;
     }
     setJoyKnob({ x: dx, y: dy });
-    /* v3.0.15 (#21) — 반응 곡선: 손가락을 조금만 밀어도 충분한 속도가 나오게.
-     *  지수 0.5 → 반경 25%(13px)에서 50%, 50%(26px)에서 71%, 70%(36px)에서 84% 속도.
-     *  시각 노브는 실제 손가락 위치 그대로, 전송 강도만 증폭 */
+    /* v3.0.16 — 포화 커브: 스틱 55%만 밀어도 자동사냥과 "동일한" 최고 속도.
+     *  기존(sqrt 0.5)은 스틱 절반에서 71%라 수동 이동이 항상 느리게 느껴졌음.
+     *  14% 데드존 → 즉시 30% 속도, 30%에서 64%, 45%에서 87%, 55%+에서 100% */
     const raw = Math.min(1, len / JOY_RADIUS);
-    const boosted = len > 0.5 ? Math.pow(raw, 0.5) : 0;
-    if (len > 0.5) {
+    let boosted = 0;
+    if (raw > 0.14) {
+      const t = Math.min(1, (raw - 0.14) / 0.41);
+      boosted = 0.3 + 0.7 * Math.pow(t, 0.75);
+    }
+    if (boosted > 0) {
       sendMove((dx / len) * boosted, (dy / len) * boosted);
     } else {
       sendMove(0, 0);

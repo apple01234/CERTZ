@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.16 · 메이플 컨텐츠: 세트 효과 · 몬스터 컬렉션 · 정예 몬스터 · 멀티킬 · 보상 팝업 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.17 · 이동속도 +15%·조이스틱 55% 최고속·퀘스트 팝업 하단·데드아이 초록 화살·다중사격 잔상 + 메이플 컨텐츠 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
