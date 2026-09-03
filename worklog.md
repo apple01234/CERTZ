@@ -119,3 +119,30 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.19.apk (17.8MB, versionCode 33)
 - 지면 8종 전부 "잔디/지형 질감 + 규칙 타일 그리드" 동시 충족 — 시밀리스라 이음새 0
 - 다음 후보: 챕터별 지형 소품 추가(풀송이·자갈·꽃 밀도 조정), tile_path 계열도 질감화, 물/용암 애니메이션 타일
+
+---
+Task ID: 16
+Agent: Super Z (main)
+Task: 신규 피드백 10개 항목 구현 (v3.0.20, versionCode 34) + APK 빌드 전달
+
+Work Log:
+- [#1 스카이로드 구름색 화살] x2_arrow_sky(28×9 구름 블루, make_sky_arrow.py) 신규 생성 + atkBow/일제사격(volley) 텍스처 선택 cls==="skylord" 분기 — 데드아이 초록(x2_arrow_green)은 클래스키 판정으로 회귀 없이 유지. 잔상/머즐 0x9fd8ff/0xc2ecff. E2E 실측 발사 확인
+- [#2 타일 선 제거] "타일의 선이 보여 자연스럽게 이어줘" — gen_floor_tiles.py에서 64px grid_bevel 완전 제거 + 서브타일 하드 셀 밝기(±4.5%) → 연속 저주파 노이즈(±5%) 교체, 8종 전부 재생성. 수치 검증: 잔디 인젤행 평균 차이 2.49(선 있으면 8+). 스크린샷 육안 확인(격자선 0)
+- [#3 MP 자동사용 %] autoUse에 mpPct 추가(config/EventBus/Player/WorldScene/인벤 UI) — MP 버튼도 HP와 동일 0→30→50→70% 사이클, 기존 mpOn=true 세이브는 25%로 마이그레이션
+- [#4 자동사냥 밀집 선호] tickAutoHunt 타겟 선택에 densityEff(주변 220px 적 1마리당 유효거리 -12%, 최대 -45%) 도입 + 히스테리시스도 유효거리 기준 — 사냥터 한복판으로 자동 이동. bestD 실거리 판정 유지
+- [#5 이터널 노랑 기본공격] atkBolt 마법탄 tint 0xffdf6e + 3차 유도뢰 0xffc94a (시간지기 컨셉)
+- [#6 근접 검기 색 분리] "근접 직업들의 검기 색깔이 다 같아" — meleeSlashTint() 14클래스 맵(전사 은백/버서커 혈색/가디언 강철푸른/워로드 활화/팔라딘 성금/워브링어 진홍/크루세이더 성광/도적 보라 유지/어세신 심보라/스와시버클러 청록/나이트블레이드 보라/듀얼리스트 로즈/섀도우로드·블레이드마스터 고유색) + 3차 검기 파동 투사체 동일 적용
+- [#7 물약 판매+엘릭서] ①물약 판매: sellPotion(기본은 potions 카운터 차감, 상급/엘릭서는 owned) + 인벤 물약 행 [판매 N G] 버튼 + rpg:sellPotion ②엘릭서: potion_elixir(400G·epic·healFull) — HP/MP 100% 동시 회복(restoreAll), 상점 등록, 퀵슬롯 H/M 장착 가능, 골드 아이콘 생성(make_elixir_icon.py)
+- [#8 스타포스 1성당 성장] starPerStarAtk(+2+무기atk 8%)/starPerStarDef(+1+def 6%+HP12) 본당 즉시 상승 + 마일스톤 대폭 상향(무기 8/14/24·치명 3/6/12% / 방어구 1/3/6·HP 80/160/220, 장신구 본당 치명+0.5%p·HP+8 + 마일스톤 상향). atkTotal/defTotal/syncStarHp/상점 프리뷰/itemEffect 전 경로 동기화. E2E: 무기 ★3→★4 +5(구 +2), 방어구 HP 36 동기화 실측
+- [#9 eert 큐브화] "1개씩 소비, 마시는 게 아니라 큐브" — BM 전용(bmPrice 8💎, 골드 상점 제외) + 판매가 sellPrice 5000G 직접 지정 + 인벤 '마시기' 버튼 → [장비에서 사용] 안내 칩으로 교체 + 배너 문구 "(BM 상점 8💎)". 리롤 1개 소모 로직은 기존 유지(E2E 실측)
+- [#10 BGM 16트랙] gen_bgm2.py(절차 합성: 코드진행 AABA·리드모티프 반복·베이스/패드/아르페지오/드럼·딜레이·스테레오)로 8종 신규 오리지널 트랙(bgm_*2, 50~76s 총 4.1MB) + audio.ts 변주 로테이션(같은 분위기 직전 곡 제외 랜덤 + 78초 크로스페이드 전환) + BootScene 로드
+- 버전: build.gradle 34/3.0.20, 타이틀 배지 "v3.0.20 · 자연 지형 이음새 제거 + BGM 16트랙 로테이션 + 스타포스 1성당 성장 + 엘릭서"
+- 검증: tsc 0오류 + eslint 0 + verify_v320.js 신규 32/32 PASS(정적 20 + 런타임 12: 스카이 화살 발사/이터널 틴트/버서커 검기 틴트/엘릭서 풀회복/물약 판매 +12G/무기 본당 +5/eert 1개 소모/mpPct 50/이동 280px/s/pageerror 0) + verify_v318.js 14/15(유일 실패 = 공격 중 이동 230~244px/s 측정 분산, 본 패치 이동 코드 미변경·소스 0.92 유지 확인)
+- 이슈: 검증 중 ①MultiEdit 부분 적용으로 healFull 중복/WorldScene 핸들러 중복 발생 → 전수 점검 후 정리 ②기존 Player.healFull()과 이름 충돌 → restoreAll()로 개명 ③서버 EADDRINUSE 잔존 → fuser -k 후 재기동
+- APK: BUILD SUCCESSFUL(31s) → aapt versionCode 34·3.0.20·apksigner 서명 cc774f34(기존 키 동일·덮어설치 호환)·APK 내부 검출(bgm_*2 8종·x2_arrow_sky·item_potion_elixir·starPerStarAtk/densityEff 코드·배지 v3.0.20)·21.9MB(BGM 추가로 +4.1MB)
+- 커밋 95fdce2 push, 구버전 v3.0.19.apk 제거, 웹 서버 production 재기동(포트 3000, GET / 200)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.20.apk (21.9MB, versionCode 34, 기존 키 동일 — 29~33 모두에서 덮어설치 가능)
+- 신규 10개 피드백 전량 해소 — 비주얼 4종(화살/타일/검기/마법탄)·시스템 5종(MP%·밀집선호·판매/엘릭서·스타포스·eert)·사운드 1종(BGM 로테이션), E2E 32/32 입증
+- 다음 후보: 원소 반응(과부하/융해) 시각화, eert 잠재옵션 등급별 연출 강화, BGM 볼륨 개별 설정, 퀘스트 보상 수령 UI
