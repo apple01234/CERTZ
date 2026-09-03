@@ -251,3 +251,21 @@ Stage Summary:
 - BGM이 "130초 캡"에서 "원곡 풀버전 + 구역 1곡만 온디맨드 디코드"로 — 음질·길이 전부 상향, 메모리 안전
 - 스킬 48종 사운드 전원 개별 배치(기존 sfxSpin/sfxSwing 공용 해소)
 - 다음 후보: 이속 실측 밸런스 조정(225 느낌 피드백 대기), 재림 보스 보상 튜닝, 대사 초상화 전용 일러스트(현재 게임 스프라이트 확대)
+
+---
+Task ID: 21
+Agent: Super Z (main)
+Task: "download/SERTZ-v3.0.24.apk 안뜸" — All files 패널 미표시 원인 규명 및 배포 경로 3중 확보
+
+Work Log:
+- 원인 규명: v3.0.24 APK 140.9MB → GitHub 100MB 파일 한도 초과로 push 불가(.gitignore download/*.apk 추가됨) → 패널 미표시. 이전 버전(60.8/72.5MB)은 git 추적+push 되어 표시됐음. 단일 파일 용량 자체가 패널 한도(100MB급) 초과 가능성도 병존
+- 해결 1(분할): split -b 47M → part1 49.3MB + part2 49.3MB + part3 42.3MB, 재결합 sha256 f489ddac 원본과 일치·aapt versionCode 38 정상 검증. join_apk.bat(윈도우 copy /b)·join_apk.sh(mac/linux cat)·APK_다운로드_안내.txt 동봉
+- 해결 2(git): 파트 3개+스크립트 커밋(b9566ea)·push 성공(각 <100MB라 한도 회피)
+- 해결 3(웹 직접 다운로드): Next 프로덕션은 public 동적 서빙 불가(404 실측) → server.js에 DOWNLOAD_FILES 정적 라우트 신설(/SERTZ-v3.0.24.apk 200+Content-Length 140895442+attachment, /APK_download_guide.txt) → 서버 재기동 → 페이지 200·socket.io 핸드셰이크 OK 회귀 없음
+- 서버 경유 전체 다운로드 실측: 141MB 스트리밍 sha256 f489ddac416e16ad = 원본 동일(바이트 완전 일치)
+- 트러블슈팅: 재기동 직후 인스턴스가 다음 호출에서 리슨 상실(프로세스 생존, /proc/net/tcp 0BB8 부재) → 재기동 후 동일 호출 검증 + 후속 호출 지속성 재확인으로 해소(일시적 이상 인스턴스)
+
+Stage Summary:
+- 배포 경로 3중화: ① 게임 서버 주소 직접 다운로드(폰 브라우저에서 바로) ② 패널 분할 파트 3개+합치기 배치파일 ③ 안내 텍스트
+- 산출물: download/SERTZ-v3.0.24.apk(원본 유지) + part1~3 + join 스크립트 2종 + 안내 txt
+- 다음 후보: v3.0.25부터 APK 용량 계획(BGM 온디맨드 등) 또는 배포 경로를 웹 직접 다운로드로 고정

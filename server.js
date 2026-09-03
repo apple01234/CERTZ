@@ -16,7 +16,44 @@ const app = next({ dev: process.env.NODE_ENV !== "production" });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-  const httpServer = createServer((req, res) => handle(req, res));
+  /* v3.0.24: 배포 APK 직접 다운로드 — 140MB 단일 파일이 파일 패널 한도 초과로 미표시되어
+ *  게임 서버(http://<서버주소>:3000/SERTZ-v3.0.24.apk)에서 브라우저 다운로드를 제공 */
+const { createReadStream, statSync } = require("node:fs");
+const path = require("node:path");
+const DOWNLOAD_FILES = {
+  "/SERTZ-v3.0.24.apk": {
+    file: "download/SERTZ-v3.0.24.apk",
+    type: "application/vnd.android.package-archive",
+    attach: true,
+  },
+  "/APK_download_guide.txt": {
+    file: "download/APK_다운로드_안내.txt",
+    type: "text/plain; charset=utf-8",
+    attach: false,
+  },
+};
+const httpServer = createServer((req, res) => {
+  const entry = DOWNLOAD_FILES[(req.url || "").split("?")[0]];
+  if (entry) {
+    try {
+      const fp = path.join(__dirname, entry.file);
+      const size = statSync(fp).size;
+      res.writeHead(200, {
+        "Content-Type": entry.type,
+        "Content-Length": size,
+        ...(entry.attach
+          ? { "Content-Disposition": 'attachment; filename="SERTZ-v3.0.24.apk"' }
+          : {}),
+      });
+      createReadStream(fp).pipe(res);
+      return;
+    } catch (e) {
+      res.writeHead(404).end("not found");
+      return;
+    }
+  }
+  handle(req, res);
+});
 
   const io = new Server(httpServer, {
     path: "/socket.io",
