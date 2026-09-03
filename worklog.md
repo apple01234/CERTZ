@@ -202,3 +202,26 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.22.apk (60.8MB, versionCode 36, 덮어설치 호환)
 - 14개 항목 전량 해소 + 멀티 서버 원인 복구(standalone→커스텀 socket.io 서버) + 신규 스토리 기능(세계수 결정 9종/가호)
 - 다음 후보: 결정 도감 상세 카드(챕터별 획득 여부 아이콘), 전직 시험 연출 강화, 멀티 파티 UI 개선
+
+---
+Task ID: 19
+Agent: Super Z (main)
+Task: 피드백 6건 구현 (v3.0.23, versionCode 37) — BGM 곡 교체 제거·40곡 맵 배치·벽 카펫·알림창·AI톤 교체
+
+Work Log:
+- [#52 음악 랜덤 교체] 원인 = v3.0.21 셔플 백 로테이션(~2분마다 곡 교체) → audio.ts 전면 재작성: nextTrackOf·bgmBags·complete 핸들러 삭제, loop:true 고정 재생. 곡 교체 기능 자체가 코드에서 소멸
+- [#53 40곡 맵 배치] CHAPTER_TRACKS 배치표 — 숲=field5 / 쿠소디아=title2~5(웅장) / 알프헤임=alfheim5 / 무스펠헤임=화염(abyss3~5+boss2,3) / 니플헤임=snow5 / 스바르트=cave5 / 니다벨리르=cave 재활용+boss4,5 / 헬·심연=abyss+boss / 마을 10곳=village5 순환 / 보스 구역(10)=BOSS_TRACKS / 실내=village3,4 고정. 40/40 트랙 사용, 인접 구역 다른 곡, stageTrack() 결정론적
+- [#54 APK↔PC] ServerConnect에 현재 서버 주소 표시 + 복사 버튼 + "같은 주소를 PC 브라우저로 열면 만남" 안내 추가
+- [#55 검은 카펫] x2_bricks(어두운 벽돌+가시)를 44~54% 틴트 → 카펫처럼 보임. wall_rock.png(밝은 석벽 96px, scripts/make_wall_rock.py) 신규 생성, 명도 0.62~0.74 상향, 챕터 틴트 유지
+- [#56 알림창] RewardPopup이 pointer-events-none 컨테이너 안이라 X가 안 눌리던 버그 → 카드에 pointer-events-auto, 위치 top-14→top-28(모바일). HUD 퀘스트 트래커 mt-8→mt-20
+- [#57 AI 느낌 교체] 이그니 대사 개편(introNamed·villageIntro·fragment 9종·가호 — 과도한 물결·대시·설명톤 제거), 퀘스트 설명 "~하자" 40건 명령형 다변화(scripts/fix_quest_tone.py), NamePanel 문구, 타이틀 크레딧 Juhani→Kevin MacLeod 갱신(누락분), 배지 v3.0.23
+- 버그 발견·수정: ①205s 풀버전 40트랙이 WebAudio PCM ~1.4GB → 헤드리스 탭 크래시("Target crashed") 실측 → 130s 안전 규격으로 재인코딩(v3.0.21/22 검증 프로파일) + 루프 이음새 페이드 in/out 적용(66.6MB) ②부트 오디오 프리로드 완료 전 구역 진입 시 sound.add null → BGM 영영 무음 버그 → startTrack 0.5s 간격 30회 재시도 가드
+- 인코딩 스크립트: make_fixed_loops.py(로우 풀버전)/reencode_batch.sh/재인코딩_130s.sh — loudnorm 소스 ogg 재사용으로 고속 처리
+- 검증: tsc 0 + eslint 0 + verify_v323.js 28/28 PASS(정적 18 + 런타임 10: 루프 고정 재생 playing=true·재시작 동일 트랙·15구역 배치 실측 11종·보스구역 전투곡·실내 고정·pageerror 0) + 회귀 verify_v318 14/15(이동속도 측정 분산 1건 — 기존 동일)·verify_v322 22/23(버전 문자열 의존 1건)
+- APK: BUILD SUCCESSFUL(44s) → aapt versionCode 37·3.0.23·40 BGM·wall_rock 검출·apksigner cc774f34(키 동일)·72.5MB
+- 커밋 push(ffc9e8f), 구버전 v3.0.22.apk 제거, 웹빌드 재실행 후 커스텀 서버 재기동(page·BGM·wall_rock 200·socket.io 핸드셰이크 OK)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.23.apk (72.5MB, versionCode 37, 덮어설치 호환)
+- BGM이 "로테이션(랜덤 교체)"에서 "구역별 고정 1곡 무한루프 + 40곡 전체 맵 배치"로 재설계됨 — 같은 맵은 항상 같은 곡
+- 다음 후보: BGM 볼륨 개별 슬라이더, 대형 트랙 재도입 시 지연 로딩(테마풀 단계 로드) 필요
