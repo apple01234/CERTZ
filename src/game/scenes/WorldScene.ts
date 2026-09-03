@@ -555,6 +555,9 @@ export class WorldScene extends Phaser.Scene {
       // v2.3 — 본 대사 기록 + 반복 의뢰 수주 해금 복원 (지시 #1/#4)
       this.seenSet = new Set(savedPlayer.seen ?? []);
       this.repeatOn = savedPlayer.repeatOn ?? false;
+      /* v3.0.26 (#76) — 스토리 클리어 플래그 복원: 기존엔 런타임 리셋(init false) 후
+       *  복원이 누락돼 재접속 시 cleared 상태가 유실됐다. 일퀘 해금 판정의 전제 */
+      this.cleared = savedPlayer.cleared ?? false;
       /* v3.0.6 — 자동 물약/자동 버프 설정 복원 (지시 #5) */
       if (savedPlayer.autoUse) {
         this.player.autoUse = {
@@ -2132,12 +2135,13 @@ export class WorldScene extends Phaser.Scene {
     return this.repeatOn && this.questIdx >= this.stageDef.quests.length && !!this.stageDef.repeat;
   }
 
-  /** 반복 의뢰 시스템 수주 가능 여부 — v3.0.15 (#3): 수주 해금 완화.
-   *  기존엔 "체인을 끝낸 구역이 1개라도" 조건이라 대부분의 유저가 수주 자체가 안 됐다.
-   *  이제 마을 상인과 대화만 하면 항상 수주 가능 (진행은 체인 완료 구역에서만 — repeatActive 유지) */
+  /** 반복 의뢰 시스템 수주 가능 여부 — v3.0.26 (#76): 일퀘(라고스 의뢰)는
+   *  "전체 스토리(최종 보스) 완료 후"에만 해금 (사용자 요구: 메이플식 엔드게임 일일의뢰).
+   *  v3.0.15 (#3)의 "대화만 하면 항상 수주" 완화를 폐지 — 스토리 진행 중엔 라고스가
+   *  그냥 상점으로만 응대한다. 기존에 repeatOn=true로 수주해둔 유저는 그대로 진행 유지. */
   private repeatUnlockable(): boolean {
     if (this.repeatOn || this.isInterior) return false;
-    return true;
+    return this.cleared;
   }
 
   /* ================= v3.0.22 (#38) — 전직 퀘스트 게이트 =================
@@ -5460,7 +5464,7 @@ export class WorldScene extends Phaser.Scene {
     if (!q) return this.portalActive ? "▶ 차원문" : "";
     if (q.type === "hunt") return q.targetLabel ? `▶ ${q.targetLabel}` : "";
     if (q.type === "boss") return "▶ 보스";
-    if (q.type === "reach") return "▶ 차원문";
+    if (q.type === "reach") return "▶ 동쪽 차원문"; /* v3.0.26 (#75) — 목적지 방향 명시 */
     if (q.type === "collect") return "▶ 결정";
     return "";
   }
@@ -5630,7 +5634,8 @@ export class WorldScene extends Phaser.Scene {
     const q = this.currentQuest();
     if (!q) {
       // v2.3 (지시 #4) — 체인 완료 + 반복 의뢰 존재 + 미수주 → 수주 안내
-      if (!this.isInterior && this.stageDef.repeat && !this.repeatOn) {
+      /* v3.0.26 (#76) — 스토리 미완료 시엔 수주 안내 트래커도 노출 금지 */
+      if (!this.isInterior && this.cleared && this.stageDef.repeat && !this.repeatOn) {
         this.emitQuestState({
           title: "반복 의뢰 수주 가능",
           desc: "마을 상인 라고스에게 말을 걸어 [반복] 토벌 의뢰를 수주하자",
@@ -5875,7 +5880,8 @@ export class WorldScene extends Phaser.Scene {
     const payload: QuestLogState = {
       stageName: `${this.stageDef.name} — ${this.stageDef.subtitle}`,
       list,
-      repeat: r ? { title: r.title, desc: r.desc } : null,
+      /* v3.0.26 (#76) — 스토리 미완료 시 반복 의뢰 섹션 자체를 숨김 ("스토리 다 완료 후 창이 뜨게") */
+      repeat: this.cleared && r ? { title: r.title, desc: r.desc } : null,
       repeatActive: this.repeatActive(),
       repeatUnlocked: this.repeatOn,
       trackedList: tracked,

@@ -17,12 +17,12 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   /* v3.0.24: 배포 APK 직접 다운로드 — 140MB 단일 파일이 파일 패널 한도 초과로 미표시되어
- *  게임 서버(http://<서버주소>/SERTZ-v3.0.25.apk)에서 브라우저 다운로드를 제공 */
+ *  게임 서버(http://<서버주소>/SERTZ-v3.0.26.apk)에서 브라우저 다운로드를 제공 */
 const { createReadStream, statSync } = require("node:fs");
 const path = require("node:path");
 const DOWNLOAD_FILES = {
-  "/SERTZ-v3.0.25.apk": {
-    file: "download/SERTZ-v3.0.25.apk",
+  "/SERTZ-v3.0.26.apk": {
+    file: "download/SERTZ-v3.0.26.apk",
     type: "application/vnd.android.package-archive",
     attach: true,
   },
@@ -42,7 +42,7 @@ const httpServer = createServer((req, res) => {
         "Content-Type": entry.type,
         "Content-Length": size,
         ...(entry.attach
-          ? { "Content-Disposition": 'attachment; filename="SERTZ-v3.0.25.apk"' }
+          ? { "Content-Disposition": 'attachment; filename="SERTZ-v3.0.26.apk"' }
           : {}),
       });
       createReadStream(fp).pipe(res);

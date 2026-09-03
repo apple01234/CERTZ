@@ -295,3 +295,21 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.25.apk (140.9MB, versionCode 39) + part1~3 + 안내/join 스크립트
 - 멀티: PC 브라우저와 폰 APK가 같은 주소(sertz1234.space-z.ai) 접속으로 만남 — 도메인 500("problem deploying")은 플랫폼 배포 상태 이슈, push로 재배포 유도 예정
 - 다음 후보: 자동사냥 물약 임계치 튜닝, 어시스트 화살표 미니맵 연동, 보스 재도전 난이도 피드백 반영
+
+---
+Task ID: 23
+Agent: Super Z (main)
+Task: v3.0.26 (versionCode 40) — 피드백 "1차 전직 퀘스트의 서쪽숲이 없는데??" + "일퀘(라고스 의뢰)는 스토리 다 완료 후 창이 뜨게"
+
+Work Log:
+- [#75 서쪽숲] 원인: 마을 v1 퀘스트 제목이 "서쪽 숲의 신전으로"인데 실제 목적지는 동쪽 차원문 너머 '숲의 신전'(2-1) — 방향 모순 + 실존하지 않는 지역명으로 유저가 마을 서쪽을 헤맴. 수정: ① v1 제목→"숲의 신전으로", 설명에 실존 지역명+좌표 "'숲의 신전'(2-1)" 명시, targetLabel→"동쪽 차원문" ② villageIntro 대사 "동쪽 차원문을 지나면 숲의 신전이야" ③ 어시스트 라벨 reach "▶ 동쪽 차원문"
+- [#76 일퀘 해금] 원인: v3.0.15(#3)의 수주 완화로 repeatUnlockable()이 항상 true → 스토리 초반에도 라고스 수주 대사 노출. 수정: ① repeatUnlockable → this.cleared(최종 보스 클리어 플래그) 반환 ② 세이브 로드 시 cleared 복원 추가(기존엔 init false 리셋 후 복원 누락 — 재접속 시 유실 버그도 함께 해소) ③ 퀘스트창 repeat emit 게이트(스토리 미완료 시 섹션 자체 숨김) ④ 수주 안내 트래커 게이트 ⑤ merchantRepeat 대사 "아홉 왕국의 스토리를 전부 끝낸 진짜 모험가" 전용 문구 ⑥ Panels "반복 의뢰 (스토리 완료 후)" + 구 완화 문구 소멸. 기존 repeatOn=true 유저는 진행 유지
+- [버전] build.gradle versionCode 40/3.0.26, Overlays 배지, server.js 라우트, build_apk.sh, join_apk 2종, 안내 txt 전부 갱신
+- [빌드] 디스크 확보(v3.0.25 APK+파트·android build·npm캐시 정리, 1.1G) → 웹빌드 성공 → APK 140.9MB(aapt 40/3.0.26 실측) → 분할 50MB×3(재결합 sha256 fdf5521b 원본 일치) → APK 후 npm run build 재실행(standalone 복구) → 서버 재기동(루트/APK/안내 3개 라우트 200, APK Content-Length 전체 일치)
+- [git 정책] .gitignore에 download/*.apk.part* 추가 + v3.0.25 파트 3개 git 삭제 확정 — 141MB 바이너리는 git 미포함(500 배포 장애 재발 방지), 배포는 서버 직결 다운로드 단일 경로
+- 검증: verify_v326 29/29 PASS([A] 서쪽숲 7 + [B] 일퀘 해금 8 + [C] 버전 6 + [D] 배포물 5 + [E] 라이브 3). 오타 1건(A2)은 수정 주석에 구 제목 인용 → 검증 패턴 정확화
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.26.apk (140.9MB, versionCode 40) + part1~3 + join 스크립트 + 안내 txt
+- 유저 피드백 "3."이 빈 채로 전송됨 — 1·2건만 반영, 3번은 유저 다음 메시지 대기
+- 다음 후보: 이전 잔여(잔디 타일링 26+28, 검은 카펫, AI 느낌 텍스트 전수 교체), sertz1234.space-z.ai 재배포 상태 확인

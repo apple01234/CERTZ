@@ -1947,7 +1947,8 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
 
         {questLog.repeat && (
           <div className="mt-3 border-t border-white/10 pt-2.5">
-            <p className="mb-1 text-[11px] font-black text-sky-200/90">반복 의뢰 (메인 체인 완료 후)</p>
+            {/* v3.0.26 (#76) — 스토리 미완료 시 이 섹션 자체가 emit되지 않음 (창에서 숨김) */}
+            <p className="mb-1 text-[11px] font-black text-sky-200/90">반복 의뢰 (스토리 완료 후)</p>
             <div className={`rounded-lg border px-2.5 py-2 ${questLog.repeatActive ? "border-sky-300/25 bg-sky-500/[0.06]" : "border-dashed border-white/15 bg-transparent opacity-60"}`}>
               <p className="text-[12px] font-bold text-sky-100">{questLog.repeat.title}</p>
               <p className="mt-0.5 text-[10px] text-white/55">{questLog.repeat.desc}</p>
@@ -1955,7 +1956,7 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
                 <p className="mt-1 text-[10px] font-bold text-amber-200/90">
                   {questLog.repeatUnlocked
                     ? "수주 완료 — 구역 체인을 모두 끝내면 [반복] 의뢰가 이 퀘스트창에서 진행됩니다"
-                    : "🔒 미수주 — 마을 상인 라고스에게 말을 걸어 수주하자 (v3.0.15부터 항상 수주 가능)"}
+                    : "🔒 미수주 — 마을 상인 라고스에게 말을 걸어 수주하자"}
                 </p>
               )}
             </div>
