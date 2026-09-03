@@ -7,8 +7,15 @@ cd /home/z/my-project
 echo "[1/5] 정적 export 빌드 (APK_EXPORT=1 next build)"
 APK_EXPORT=1 npx next build
 
+echo "[1.5/5] public/ 내 APK 임시 격리 (cap sync 재수납 방지 — v3.0.25 279MB 사고 예방)"
+mkdir -p /tmp/apk-hold
+find public -maxdepth 1 -name "*.apk" -exec mv {} /tmp/apk-hold/ \;
+
 echo "[2/5] Capacitor sync (web assets → android)"
 npx cap sync android
+
+echo "[2.5/5] public/ APK 복원"
+mv /tmp/apk-hold/*.apk public/ 2>/dev/null || true
 
 echo "[3/5] Gradle assembleRelease"
 cd android

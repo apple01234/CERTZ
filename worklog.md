@@ -313,3 +313,27 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.26.apk (140.9MB, versionCode 40) + part1~3 + join 스크립트 + 안내 txt
 - 유저 피드백 "3."이 빈 채로 전송됨 — 1·2건만 반영, 3번은 유저 다음 메시지 대기
 - 다음 후보: 이전 잔여(잔디 타일링 26+28, 검은 카펫, AI 느낌 텍스트 전수 교체), sertz1234.space-z.ai 재배포 상태 확인
+
+---
+Task ID: 24
+Agent: Super Z (main)
+Task: "https://sertz1234.space-z.ai/SERTZ-v3.0.26.apk 붙여넣었는데 안됨" — APK 다운로드 링크 복구 (GitHub apple01234/CERTZ 소스로 전체 재복구)
+
+Work Log:
+- 진단: 사이트 자체는 구 버전 스냅샷(FC 배포분, socket.io/APK 라우트 없음, 404 HTML 실측)으로 생존 — 워크스페이스 초기화로 APK·최신 빌드 유실. GET /APK → Next HTML 404 확인
+- 복구 소스: 유저 제공 GitHub apple01234/CERTZ 클론(depth 1, 4103파일) → .git/skills/electron/scripts/asset-sources(229MB 원본 에셋) 제외하고 /home/z/my-project로 이전(167MB)
+- 플랫폼 부팅 스크립트 복원: 저장소의 .zscripts/dev.sh(v2.7 프로덕션 서버 + 15s 감독 루프)가 플랫폼 스캐폴드 dev.sh를 대체 — bun install(1106 pkg) → db:push → next build(standalone) → node server.js 순서 확인
+- 툴 세션 종료 시 백그라운드 프로세스 그룹 kill 문제 발견 → init-fullstack.sh와 동일한 (서브셸 + nohup + </dev/null) 패턴으로 기동해야 생존함을 실측
+- Android 툴체인 재구축: cmdline-tools 11076708 + platforms;android-36 + build-tools;35.0.0 설치(/home/z/android-sdk), 시스템 java가 JRE뿐이라 Temurin JDK 21을 /home/z/jdk에 수동 설치(apt 권한 없음)
+- APK 빌드: APK_EXPORT=1 next build → cap sync → gradle assembleRelease 1m52s 성공 → 140,893,558B, aapt versionCode 40 / versionName 3.0.26 / minSdk 24 / targetSdk 36 실측
+- [트러블슈팅] APK export 빌드가 .next를 부분 오염(BUILD_ID 교체 + 서빙 청크 1개 삭제 → 500) → rm -rf .next 후 깨끗이 재빌드(Cxd3mtnRTi3WdWI2vQuBl) → 전 청크 OK
+- [근본 원인 규명] FC 배포 패키지는 .zscripts/build.sh가 .next/standalone+static+public만 담고 start.sh가 standalone server.js를 구동 — root server.js(socket.io·DOWNLOAD_FILES 라우트)는 배포 불가. 과거 외부 APK 링크는 public/에 넣었던 APK가 정적 서빙된 것(v3.0.25 worklog "public/에 복사해둔 v3.0.24.apk" 참조) → **public/SERTZ-v3.0.26.apk 배치로 재배포 시 링크 자동 복구되도록 함**
+- 재발 방지: scripts/build_apk.sh에 [1.5] public/*.apk 임시 격리 단계 추가(cap sync 재수납 → 279MB 사고 예방, v3.0.25 실측 사고)
+- 배포물 3중화: download/SERTZ-v3.0.26.apk(서버 라우트용) + public/SERTZ-v3.0.26.apk(FC 정적 서빙용) + 50MB×3 분할 파트(재결합 sha256 0418a23a… 원본 일치)
+- 라이브 검증: 페이지 200·타이틀 렌더·새로운 모험 → 마을 진입·퀘스트창에 v3.0.26 문구("동쪽 차원문 → 숲의 신전") 실측 · socket.io 핸드셰이크 200 · APK 라우트 200(서버 스트리밍 sha256 원본 일치)
+
+Stage Summary:
+- 산출물: SERTZ-v3.0.26.apk 140.9MB(versionCode 40, 서명 동일 키) + 분할 3파트 + join 스크립트 + 안내 txt — 기존 세이브 그대로 이어서 설치 가능
+- 로컬 샌드박스 서버 완전 복구(게임+멀티+APK 라우트), FC 재배포는 Complete 트리거 예정 — 배포되면 https://sertz1234.space-z.ai/SERTZ-v3.0.26.apk 자동 복구
+- JDK/Android SDK가 /home/z/jdk·/home/z/android-sdk에 상주 — 향후 APK 재빌드는 bash scripts/build_apk.sh 한 줄
+- 알려진 한계: FC 배포본은 standalone 기반이라 멀티플레이(socket.io)는 샌드박스 서버에서만 동작(이전 배포와 동일 조건)
