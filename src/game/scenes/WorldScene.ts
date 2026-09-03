@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -159,6 +159,27 @@ export class WorldScene extends Phaser.Scene {
   private autoUnstuckUntil = 0;
   /** 탈출 강제 이동 방향 */
   private autoUnstuckDir = new Phaser.Math.Vector2(1, 0);
+  /* ----- v3.0.15 — 자동사냥 안정화 (제자리 와리가리 수정) ----- */
+  /** 현재 추적 대상 — 1.25배 이상 가까운 후보가 생길 때만 교체 (타겟 전환 진동 방지) */
+  private autoTarget: Enemy | Boss | null = null;
+  /** 접근 이동 방향 홀드 (240ms) — 매 프레임 재계산으로 인한 좌우 진동 제거 */
+  private autoDirHold = new Phaser.Math.Vector2();
+  private autoDirHoldUntil = 0;
+  /** 도달 불가(벽 뒤 등) 타겟 블랙리스트 — target → 포기 해제 시각 */
+  private autoBlacklist = new Map<Enemy | Boss, number>();
+  /* ----- v3.0.15 (#20) — 콤보(연속킬) 보너스 경험치 ----- */
+  /** 연속킬 카운트 (마지막 킬 후 5초 내 유지) */
+  private comboStreak = 0;
+  private comboUntil = 0;
+  /* ----- v3.0.15 (#2) — 레벨업 스탯 자동배분 on/off ----- */
+  private autoAlloc = false;
+  /* ----- v3.0.15 (#8) — 퀘스트 수락/추적 ----- */
+  /** 스테이지 → 수락한 체인 인덱스. undefined면 기존 세이브(자동 수락 상태) */
+  private acceptedQuests: Record<string, number> = {};
+  /** 추적 중인 스테이지 키 (HUD 트래커 표시 대상 — null이면 현재 구역) */
+  private trackedStage: string | null = null;
+  /* ----- v3.0.15 (#11) — 해금된 챕터 테마 장비 세트 ----- */
+  private unlockedSets: Set<string> = new Set();
 
   private repeatOn = false;
 
@@ -308,6 +329,11 @@ export class WorldScene extends Phaser.Scene {
     this.autoStuckMs = 0;
     this.autoUnstuckUntil = 0;
     this.autoLastPos.set(0, 0);
+    this.autoTarget = null;
+    this.autoDirHold.set(0, 0);
+    this.autoDirHoldUntil = 0;
+    this.autoBlacklist.clear();
+    this.autoAvoidLastSign = 0;
     this.repeatNeed = 0;
     this.keymap = loadKeyMap();
     this.keyObjs = {};
@@ -425,8 +451,8 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 장식 (F1: 정의된 소수만 — 실내는 buildInterior가 자체 배치) ---------- */
     if (!this.isInterior) this.placeDecor(stageKey);
 
-    /* ---------- 상점 NPC (2D MMORPG 기본 요소) ---------- */
-    if (!this.isInterior) this.spawnMerchant();
+    /* ---------- 상점 NPC (v3.0.15 #9 — 상인은 마을에만 배치. 필드 몬스터 구역에서 제거) ---------- */
+    if (!this.isInterior && this.stageDef.isVillage) this.spawnMerchant();
 
     /* ---------- 플레이어 (v2.2 — 실내는 문 앞 스폰, 복귀 entry 좌표 우선) ---------- */
     const savedPlayer = save;
@@ -516,15 +542,37 @@ export class WorldScene extends Phaser.Scene {
         this.repeatNeed = (savedPlayer as { repeatNeed?: number }).repeatNeed ?? this.stageDef.repeat?.need ?? 0;
         this.huntCount = (savedPlayer as { huntCount?: number }).huntCount ?? 0;
       }
-      // v2.5 — 방문 기록 복원 + 자동사냥(펫 보유 시에만 유효)
+      // v2.5 — 방문 기록 복원 + 자동사냥 (v3.0.15 #5: 펫 조건 제거)
       this.visited = new Set(savedPlayer.visited ?? []);
-      this.autoHunt = (savedPlayer.autoHunt ?? false) && !!this.player.pet;
+      this.autoHunt = savedPlayer.autoHunt ?? false;
+      /* ----- v3.0.15 복원 ----- */
+      this.autoAlloc = savedPlayer.autoAlloc ?? false;
+      if (savedPlayer.quickPots) this.player.quickPots = { ...savedPlayer.quickPots };
+      this.player.potentials = JSON.parse(JSON.stringify(savedPlayer.potentials ?? {}));
+      this.player.restorePotHp(savedPlayer.potHpApplied ?? 0);
+      this.player.syncPotentialsHp();
+      this.unlockedSets = new Set(savedPlayer.unlockedSets ?? []);
+      this.acceptedQuests = { ...(savedPlayer.questAccepted ?? {}) };
+      this.trackedStage = savedPlayer.questTracked ?? null;
       this.player.recalcSpeedForLoad();
     }
     // v2.5 — 현재 구역 방문 기록 (실내 제외) — 지역 이동 부적 워프 대상
     if (!this.isInterior) {
       const before = this.visited.size;
       this.visited.add(this.stageDef.key);
+      /* v3.0.15 (#11) — 챕터 해금 시 테마 장비 세트 해금: 무기·방어구·악세 1세트가 상점에 등장 */
+      const chKey = parseStage(stageKey).ch;
+      if (SET_GEAR[chKey] && !this.unlockedSets.has(chKey)) {
+        this.unlockedSets.add(chKey);
+        this.time.delayedCall(1600, () => {
+          EventBus.emit("banner:show", {
+            text: `장비 세트 해금! ${SET_GEAR[chKey].title} — 마을 상점에서 구매 가능`,
+          });
+          audio.sfx.questDone();
+        });
+        this.save();
+        this.emitRpgState();
+      }
       if (this.visited.size !== before) this.save();
     }
     /* v3.0.6 — 반복 의뢰 진행도: 세이브에 같은 구역 기록이 있으면 유지, 없으면 신규 시작 */
@@ -890,33 +938,31 @@ export class WorldScene extends Phaser.Scene {
       : ["tree", "tree", "pine"];
     const rockTex = ch === "niflheim" ? "rock_snow" : ch === "abyss" || ch === "hel" ? "rock_dark" : ch === "muspelheim" || ch === "nidavellir" ? "rock_stone" : "rock";
 
-    /* v2.1 자연 배치 — 균일 산포 대신 2~3개 군집 중심 + 의사-가우시안 산포 (자연 숲 패턴) */
+    /* v2.1 자연 배치 — 군집 중심 산포 (v3.0.15 #18: 군집 반경 축소로 진로 봉쇄 완화) */
     const clusterN = ch === "village" ? 2 : 3;
     const clusters: [number, number][] = [];
     for (let i = 0; i < clusterN; i++)
       clusters.push([rng.between(200, this.stageW - 200), rng.between(140, this.stageH - 140)]);
     const natPoint = (): [number, number] => {
-      if (rng.frac() < 0.62) {
+      if (rng.frac() < 0.55) {
         const [kx, ky] = rng.pick(clusters);
         return [
-          Phaser.Math.Clamp(kx + (rng.frac() + rng.frac() - 1) * 210, 80, this.stageW - 80),
-          Phaser.Math.Clamp(ky + (rng.frac() + rng.frac() - 1) * 150, 90, this.stageH - 80),
+          Phaser.Math.Clamp(kx + (rng.frac() + rng.frac() - 1) * 250, 80, this.stageW - 80),
+          Phaser.Math.Clamp(ky + (rng.frac() + rng.frac() - 1) * 180, 90, this.stageH - 80),
         ];
       }
       return [rng.between(80, this.stageW - 80), rng.between(90, this.stageH - 80)];
     };
-    /* v3.0.14 — 도로 제거에 따른 지형 오브젝트 배치 개편:
-     *  ① 일자 도로 위 회피 조항 제거 → 맵 전역(중앙 포함)에 자연 산포
-     *  ② 배치 수 1.5배 + 위치 후보 재시도(최대 6회) — 기존엔 단일 시도 실패 시 그냥 버려져 정의보다 적게 심김
-     *  ③ 배치된 오브젝트에 obstacle 플래그 → 자동사냥 장애물 회피·끼임 탈출 판정에 사용 */
-    const treeN = Math.round(def.treeCount * 1.5);
+    /* v3.0.15 (#18) — 오브젝트 수 축소: 진로 방해 완화. 배치수 0.7배 + 간격 48px.
+     *  (v3.0.14에서 1.5배로 늘려 산맥처럼 막히던 문제 되돌림) */
+    const treeN = Math.round(def.treeCount * 0.7);
     for (let i = 0; i < treeN; i++) {
       for (let tries = 0; tries < 6; tries++) {
         const [x, y] = natPoint();
         if (blocked(x, y)) continue;
         /* v3.0 — 개미굴 벽 셀에는 심지 않음 */
         if (!this.inOpenArea(x, y)) continue;
-        if (this.nearSolidObstacle(x, y, 34)) continue;
+        if (this.nearSolidObstacle(x, y, 48)) continue;
         const tex = rng.pick(treeSet);
         const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
         this.solidGroup.add(t);
@@ -927,13 +973,13 @@ export class WorldScene extends Phaser.Scene {
         break;
       }
     }
-    const rockN = Math.round(def.rockCount * 1.5);
+    const rockN = Math.round(def.rockCount * 0.7);
     for (let i = 0; i < rockN; i++) {
       for (let tries = 0; tries < 6; tries++) {
         const [x, y] = natPoint();
         if (blocked(x, y)) continue;
         if (!this.inOpenArea(x, y)) continue;
-        if (this.nearSolidObstacle(x, y, 34)) continue;
+        if (this.nearSolidObstacle(x, y, 48)) continue;
         const r = this.add.image(x, y, rockTex).setDepth(Math.floor(y / 10));
         this.solidGroup.add(r);
         (r.body as Phaser.Physics.Arcade.StaticBody).setSize(44, 28).setOffset(8, 35); // v3.0.10 — 64x64 바위 하단 실측
@@ -1529,11 +1575,14 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  spawnDamageText(x: number, y: number, val: number, crit = false) {
+  /** v3.0.15 (#16) — color/prefix 지원: 원소 약점 시 원소색 + "약점" 접두 표시 */
+  spawnDamageText(x: number, y: number, val: number, crit = false, color?: string, prefix?: string) {
     const t = this.dmgPool.find((d) => d.scene && !d.active);
     if (!t) return; // 풀 소진 시 조용히 포기 (프레임 보호)
-    // 크리티컬: 금색 큰 글씨 + 느낌표 (타격감 강조)
-    t.setText(crit ? `${val}!` : `${val}`).setColor(crit ? "#ffd76a" : "#ffffff");
+    // 크리티컬: 금색 큰 글씨 + 느낌표 (타격감 강조) · 약점: 원소색
+    const c = color ?? (crit ? "#ffd76a" : "#ffffff");
+    const label = `${prefix ? prefix + " " : ""}${val}${crit ? "!" : ""}`;
+    t.setText(label).setColor(c);
     t.setPosition(x, y)
       .setActive(true)
       .setVisible(true)
@@ -1923,7 +1972,17 @@ export class WorldScene extends Phaser.Scene {
     if (this.eliteEnemy && !this.eliteEnemy.alive) this.eliteEnemy = null;
     this.totalKills++;
     this.registry.set("runKills", this.totalKills);
-    this.player.gainExp(exp);
+    /* v3.0.15 (#20) — 콤보킬 보너스 경험치: 5초 내 연속 킬 시 콤보×5% (최대 +50%).
+     *  콤보 3 이상부터 "연속킬 xN" 플로팅 텍스트로 연출 */
+    const nowMs = this.time.now;
+    this.comboStreak = nowMs < this.comboUntil ? this.comboStreak + 1 : 1;
+    this.comboUntil = nowMs + 5000;
+    const comboMul = 1 + Math.min(0.5, (this.comboStreak - 1) * 0.05);
+    this.player.gainExp(Math.round(exp * comboMul));
+    if (this.comboStreak >= 3) {
+      const pct = Math.round((comboMul - 1) * 100);
+      this.spawnPickupText(this.player.x, this.player.y - 52 + (this.comboStreak % 2) * 12, `연속킬 x${this.comboStreak}! EXP +${pct}%`, "#ffd76a");
+    }
     this.killTotals[key] = (this.killTotals[key] ?? 0) + 1;
     // 리스폰 예약 — v2.3 단축: 9~13초 → 3.2~4.8초 (지시 #2 — 리젠이 너무 길어 사냥이 끊긴다)
     this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
@@ -1931,7 +1990,9 @@ export class WorldScene extends Phaser.Scene {
     );
     const q = this.currentQuest();
     if (q && q.type === "hunt") {
-      if (this.repeatActive()) {
+      if (!this.repeatActive() && !this.isQuestAccepted(this.stageDef.key, this.questIdx)) {
+        /* v3.0.15 (#8) — 미수락 토벌 퀘스트는 카운트하지 않는다 */
+      } else if (this.repeatActive()) {
         // 반복 토벌 의뢰 — 메인 체인 종료 후 무한 파밍 (사이클별 카운트)
         if (q.targetKey === key) {
           this.huntCount++;
@@ -1968,15 +2029,12 @@ export class WorldScene extends Phaser.Scene {
     return this.repeatOn && this.questIdx >= this.stageDef.quests.length && !!this.stageDef.repeat;
   }
 
-  /** 반복 의뢰 시스템 수주 가능 여부 — 완료한 체인 중 반복 의뢰가 있는 구역이 하나라도 있으면 */
+  /** 반복 의뢰 시스템 수주 가능 여부 — v3.0.15 (#3): 수주 해금 완화.
+   *  기존엔 "체인을 끝낸 구역이 1개라도" 조건이라 대부분의 유저가 수주 자체가 안 됐다.
+   *  이제 마을 상인과 대화만 하면 항상 수주 가능 (진행은 체인 완료 구역에서만 — repeatActive 유지) */
   private repeatUnlockable(): boolean {
     if (this.repeatOn || this.isInterior) return false;
-    if (this.stageDef.repeat && this.questIdx >= this.stageDef.quests.length) return true;
-    for (const [k, idx] of Object.entries(this.savedQuestIdx)) {
-      const def = STAGES[k];
-      if (def?.repeat && idx >= def.quests.length) return true;
-    }
-    return false;
+    return true;
   }
 
   /** 반복 토벌 완료 — 보상 지급 후 목표 +2 (무한 확장) */
@@ -2051,10 +2109,27 @@ export class WorldScene extends Phaser.Scene {
     this.save();
   }
 
+  /** v3.0.15 (#8) — 현재 구역 활성 퀘스트의 토벌 기준선 재설정 (수락 시점 킬만 카운트) */
+  private syncQuestBaseline() {
+    const q = this.currentQuest();
+    if (q?.type === "hunt" && q.targetKey && !this.repeatActive()) {
+      this.huntBaseline[q.targetKey] = this.killTotals[q.targetKey] ?? 0;
+    }
+  }
+
+  /** v3.0.15 (#8) — 현재 구역 체인 퀘스트가 수락됐는지.
+   *  기존 세이브(acceptedQuests에 기록 없음)는 자동 수락 상태로 간주 — 무중단 호환. */
+  private isQuestAccepted(stageKey: string, idx: number): boolean {
+    const a = this.acceptedQuests[stageKey];
+    return a === undefined || a >= idx;
+  }
+
   /**
    * 퀘스트 진행기 — 체인의 다음 목표를 범용으로 배치한다.
    *  reach → 안내 대사 후 차원문 개방 / collect → 파편 스폰 / boss → 보스 등장
    *  hunt → 이미 조건 충족이면 즉시 연쇄 완료 (미리 잡은 경우 소프트락 방지)
+   *  v3.0.15 (#8) — 수락되지 않은 hunt/collect/boss 퀘스트는 활성화하지 않는다
+   *  (reach는 구역 이동 자유도를 위해 수락 전에도 포탈 개방 유지)
    */
   private afterAdvance() {
     const q = this.currentQuest();
@@ -2128,9 +2203,16 @@ export class WorldScene extends Phaser.Scene {
     this.save();
   }
 
-  /** Player.gainExp 레벨업 훅 — 레벨 목표 퀘스트 즉시 판정 (v2.4) */
+  /** Player.gainExp 레벨업 훅 — 레벨 목표 퀘스트 즉시 판정 (v2.4)
+   *  v3.0.15 (#2) — 자동배분 ON이면 지급된 AP를 계열 권장 비율로 즉시 분배 */
   onLevelUp() {
     this.tryCompleteLevel();
+    if (this.autoAlloc && this.player.ap > 0) {
+      if (this.player.allocateAutoPoints()) {
+        this.spawnPickupText(this.player.x, this.player.y - 70, "AP 자동 배분!", "#a8ff7d");
+        this.emitHud();
+      }
+    }
   }
 
   /* ================= 보스 ================= */
@@ -2523,16 +2605,14 @@ export class WorldScene extends Phaser.Scene {
       });
     };
 
-    // v2.5 — 자동사냥 토글 (펫 보유 시에만 — 지시 #8)
+    // v2.5 — 자동사냥 토글 (v3.0.15 #5: 펫 없이도 사용 가능)
     const onAutoHunt = () => {
       if (!this.player) return;
-      if (!this.player.pet) {
-        EventBus.emit("banner:show", { text: "자동사냥은 펫이 있을 때만 사용할 수 있어요" });
-        return;
-      }
       this.autoHunt = !this.autoHunt;
       this.autoHuntMove.set(0, 0);
-      EventBus.emit("banner:show", { text: this.autoHunt ? "자동사냥 ON — 펫이 몬스터를 유인합니다" : "자동사냥 OFF" });
+      this.autoTarget = null;
+      this.autoDirHoldUntil = 0;
+      EventBus.emit("banner:show", { text: this.autoHunt ? "자동사냥 ON — 가까운 몬스터를 추적합니다" : "자동사냥 OFF" });
       this.emitRpgState();
       this.save();
     };
@@ -2694,12 +2774,86 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("rpg:upgradeResult", { slot: "weapon", result: r === "ok" ? "ok" : "fail" });
       }
     };
+    /* ================= v3.0.15 신규 리스너 ================= */
+    /* #2 — 레벨업 스탯 자동배분 on/off */
+    const onAutoAlloc = (v: { on: boolean }) => {
+      this.autoAlloc = !!v.on;
+      if (this.autoAlloc && this.player && this.player.ap > 0) {
+        if (this.player.allocateAutoPoints()) this.emitHud();
+      }
+      this.save();
+      this.emitRpgState();
+      EventBus.emit("banner:show", { text: v.on ? "레벨업 자동 배분 ON — 스탯을 자동으로 나눕니다" : "레벨업 자동 배분 OFF" });
+    };
+    /* #7 — 물약 퀵슬롯 장착 (인벤토리에서) */
+    const onQuickPot = (v: { slot: "hp" | "mp"; key: string }) => {
+      if (!this.player) return;
+      const item = ITEMS[v.key as ItemKey];
+      if (!item || item.kind !== "consumable") return;
+      this.player.quickPots[v.slot] = v.key;
+      this.save();
+      this.emitRpgState();
+      EventBus.emit("banner:show", { text: `${item.name} → ${v.slot === "hp" ? "HP" : "MP"} 버튼에 장착!` });
+    };
+    /* #13 — eert 큐브 리롤 */
+    const onEert = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const pot = this.player.rerollPotentials(v.key as ItemKey);
+      if (!pot) {
+        EventBus.emit("banner:show", { text: "eert 큐브가 없습니다 (상점 1200G)" });
+        return;
+      }
+      const meta = POT_GRADE_META[pot.grade];
+      const gradeHex = pot.grade === 3 ? 0xff8a5c : pot.grade === 2 ? 0xffd76a : pot.grade === 1 ? 0xc08aff : 0x6fb8ff;
+      this.spawnPillar(this.player.x, this.player.y, gradeHex, 220);
+      this.spawnBurstAt(this.player.x, this.player.y, 20, gradeHex);
+      EventBus.emit("banner:show", {
+        text: `eert 큐브 — ${meta.name} 등급! ${pot.lines.map((l) => potLineText(l)).join(" · ")}`,
+      });
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    /* #8 — 퀘스트 수락 */
+    const onQuestAccept = (v: { stage: string }) => {
+      const idx = v.stage === this.stageDef.key ? this.questIdx : this.savedQuestIdx[v.stage] ?? 0;
+      const def = STAGES[v.stage as StageKey];
+      if (!def || idx >= def.quests.length) {
+        EventBus.emit("banner:show", { text: "수락할 퀘스트가 없습니다" });
+        return;
+      }
+      this.acceptedQuests[v.stage] = idx;
+      // 현재 구역 퀘스트를 수락했다면 즉시 활성화 (기준선/파편/보스 배치)
+      if (v.stage === this.stageDef.key) {
+        this.syncQuestBaseline();
+        this.afterAdvance();
+      }
+      this.save();
+      EventBus.emit("banner:show", { text: `퀘스트 수락! — ${def.quests[idx].title}` });
+      audio.sfx.questDone();
+      this.emitQuest();
+      this.emitQuestLog();
+    };
+    /* #8 — 퀘스트 추적 선택 */
+    const onQuestTrack = (v: { stage: string | null }) => {
+      this.trackedStage = v.stage;
+      this.save();
+      this.emitQuest();
+      this.emitQuestLog();
+    };
+
     EventBus.on("rpg:tradeBuy", onTradeBuy);
     EventBus.on("rpg:tradeSell", onTradeSell);
     EventBus.on("rpg:starScroll", onStarScroll);
     EventBus.on("rpg:upgradeAcc", onUpgradeAcc);
     EventBus.on("rpg:sell", onSell);
     EventBus.on("rpg:bmBuy", onBmBuy);
+    /* v3.0.15 — 신규 패널 리스너 */
+    EventBus.on("rpg:autoAlloc", onAutoAlloc);
+    EventBus.on("rpg:quickpot", onQuickPot);
+    EventBus.on("rpg:eert", onEert);
+    EventBus.on("rpg:questAccept", onQuestAccept);
+    EventBus.on("rpg:questTrack", onQuestTrack);
     EventBus.on("rpg:autoset", onAutoSet);
     EventBus.on("rpg:autohunt", onAutoHunt);
     EventBus.on("rpg:gm", onGm);
@@ -2801,7 +2955,7 @@ export class WorldScene extends Phaser.Scene {
     // v3.0.14 — 끼임 탈출: 이동 명령 중 제자리면 측면 탈출로 autoHuntMove 덮어씀
     this.tickAutoUnstuck(dt);
     let move = useTouch ? this.touchMove : mv;
-    if (this.autoHunt && this.player.pet && !useTouch) move = this.autoHuntMove;
+    if (this.autoHunt && !useTouch) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
 
     // 키보드 공격/스킬 — 이동은 WASD+화살표 고정, 액션 키는 키 매핑 따름 (v1.9)
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
@@ -2961,24 +3115,51 @@ export class WorldScene extends Phaser.Scene {
    *  광역기(회전베기·관통 화살)는 군집·보스 한정, 마법사 볼트는 쿨마다 */
   private tickAutoHunt() {
     this.autoHuntMove.set(0, 0);
-    if (!this.autoHunt || !this.player || !this.player.pet) return;
+    // v3.0.15 (#5) — 펫 없이도 자동전투 가능 (펫 게이트 제거)
+    if (!this.autoHunt || !this.player) return;
     if (this.dialoguing || this.sleeping) return;
     this.autoPotion();
     if (this.player.state !== "idle") return; // 공격/돌진/사망 중엔 개입 안 함
     const targets = this.getAllTargets();
     if (targets.length === 0) return; // 적 없음 — 대기
-    let best: Enemy | Boss = targets[0];
+    /* v3.0.15 (#1) — 제자리 와리가리 수정 3종:
+     *  ① 블랙리스트 정리: 도달 불가 타겟은 만료 시 제외
+     *  ② 타겟 히스테리시스: 현재 타겟보다 25% 이상 가까울 때만 교체
+     *  ③ 접근 방향 홀드: autoApproach 내부에서 240ms 유지 (매 프레임 재계산 진동 제거) */
+    if (this.autoBlacklist.size > 0) {
+      for (const [k, until] of this.autoBlacklist) {
+        if (this.time.now >= until || !k.active) this.autoBlacklist.delete(k);
+      }
+    }
+    const live = targets.filter((e) => e.active && !this.autoBlacklist.has(e));
+    if (live.length === 0) return;
+    let best: Enemy | Boss = live[0];
     let bestD = Infinity;
-    for (const e of targets) {
+    for (const e of live) {
       const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
       if (d < bestD) {
         bestD = d;
         best = e;
       }
     }
+    const curT = this.autoTarget;
+    if (curT && curT !== best && curT.active && !this.autoBlacklist.has(curT)) {
+      const curD = Phaser.Math.Distance.Between(this.player.x, this.player.y, curT.x, curT.y);
+      if (curD <= bestD * 1.25 && curD < 420) best = curT; // 조금 더 가까워도 타겟 유지
+    }
+    this.autoTarget = best;
     const fam = familyOf(this.player.cls);
     const ranged = fam === "ranger" || fam === "mage";
     const atkRange = ranged ? 250 : 56;
+    /* v3.0.15 (#1) — 도달 불가 타겟 포기: 사거리 밖인데 1.2초 이상 제자리면(벽 뒤·장애물 뒤)
+     *  5초간 이 타겟을 제외하고 다음 가까운 적을 잡는다 */
+    if (bestD > atkRange && this.autoStuckMs > 1200) {
+      this.autoBlacklist.set(best, this.time.now + 5000);
+      this.autoStuckMs = 0;
+      this.autoTarget = null;
+      this.autoDirHoldUntil = 0;
+      return;
+    }
     const p = this.player;
 
     // 조준 보정 — 공격 전 대상 방향으로 facing 고정 (정지 뒤 조준이 어긋나는 문제 제거)
@@ -3073,6 +3254,12 @@ export class WorldScene extends Phaser.Scene {
    *  v3.0.14 — 셀 내부 오브젝트(나무·바위) 직선 돌파 방지: 바로 앞이 막혔으면 열린 각도로 우회 */
   private autoApproach(best: Enemy | Boss) {
     if (!this.player) return;
+    /* v3.0.15 (#1) — 이동 방향 홀드(240ms): 매 프레임 BFS/회피 재계산으로 좌우로 흔들리던
+     *  "제자리 와리가리" 제거. 홀드 중에는 직전 방향을 유지한다 */
+    if (this.time.now < this.autoDirHoldUntil) {
+      this.autoHuntMove.copy(this.autoDirHold);
+      return;
+    }
     let dir: Phaser.Math.Vector2;
     const pc = this.layout ? cellIndexOf(this.layout, this.player.x, this.player.y) : -1;
     const tc = this.layout ? cellIndexOf(this.layout, best.x, best.y) : -1;
@@ -3084,6 +3271,8 @@ export class WorldScene extends Phaser.Scene {
       dir = new Phaser.Math.Vector2(best.x - this.player.x, best.y - this.player.y).normalize();
     }
     dir = this.autoAvoidDir(dir);
+    this.autoDirHold.copy(dir);
+    this.autoDirHoldUntil = this.time.now + 300;
     this.autoHuntMove.copy(dir);
   }
 
@@ -3100,6 +3289,8 @@ export class WorldScene extends Phaser.Scene {
 
   /** v3.0.14 — 진행 방향 장애물 회피: 전방 탐지점 3단계(40/110/180px) 중 하나라도 막히면
    *  ±34°/±69°/±103°/±137° 순으로 열린 방향 탐색 (전부 막히면 원방향 유지 — 끼임 탈출이 처리) */
+  /** v3.0.15 (#1) — 직전 회피 부호 (±): 같은 쪽 회피를 우선해 좌우 번갈아 진동 억제 */
+  private autoAvoidLastSign = 0;
   private autoAvoidDir(base: Phaser.Math.Vector2): Phaser.Math.Vector2 {
     const p = this.player!;
     const probe = (d: Phaser.Math.Vector2, dist: number) => {
@@ -3109,10 +3300,19 @@ export class WorldScene extends Phaser.Scene {
       return !this.blockedByObstacle(nx, ny);
     };
     const clear = (d: Phaser.Math.Vector2) => probe(d, 40) && probe(d, 110) && probe(d, 180);
-    if (clear(base)) return base;
-    for (const ang of [0.6, -0.6, 1.2, -1.2, 1.8, -1.8, 2.4, -2.4]) {
+    if (clear(base)) {
+      this.autoAvoidLastSign = 0;
+      return base;
+    }
+    // 이전에 +쪽으로 피했다면 +쪽 후보를 먼저 검사 (부호 연속성)
+    const sign = this.autoAvoidLastSign || 1;
+    const angles = [0.6, -0.6, 1.2, -1.2, 1.8, -1.8, 2.4, -2.4].map((a) => a * sign);
+    for (const ang of angles) {
       const d = base.clone().rotate(ang);
-      if (clear(d)) return d;
+      if (clear(d)) {
+        this.autoAvoidLastSign = Math.sign(ang);
+        return d;
+      }
     }
     return base;
   }
@@ -3230,12 +3430,22 @@ export class WorldScene extends Phaser.Scene {
     return true;
   }
 
-  /** v2.5 — 자동 물약 (자동사냥 중 HP 45%/MP 15 이하) */
+  /** v2.5 — 자동 물약 (자동사냥 중).
+   *  v3.0.15 (#6) — 하드코딩 45% 대신 BM 설정값(autoUse.hpPct/mpOn)을 따르되,
+   *  설정이 꺼져 있어도 안전망(HP 35%)으로 기본 물약만 사용. 슬롯에 지정된 물약 사용. */
   private autoPotion() {
     if (!this.player) return;
-    if (this.player.hp < this.player.maxHp * 0.45 && this.player.potions.hp > 0) {
+    const cfg = this.player.autoUse;
+    const hpKey = (this.player.quickPots.hp ?? "potion_hp") as ItemKey;
+    const mpKey = (this.player.quickPots.mp ?? "potion_mp") as ItemKey;
+    const hpHave = hpKey === "potion_hp" ? this.player.potions.hp > 0 : this.player.owned.includes(hpKey);
+    const mpHave = mpKey === "potion_mp" ? this.player.potions.mp > 0 : this.player.owned.includes(mpKey);
+    if (this.player.potionCd > 0) return;
+    if (cfg.hpPct > 0 && this.player.hp <= this.player.maxHp * (cfg.hpPct / 100) && hpHave) {
       this.player.usePotion("hp");
-    } else if (this.player.mp < 15 && this.player.potions.mp > 0) {
+    } else if (this.player.hp < this.player.maxHp * 0.35 && hpHave) {
+      this.player.usePotion("hp"); // 안전망
+    } else if (cfg.mpOn && this.player.mp <= this.player.maxMp * 0.25 && mpHave) {
       this.player.usePotion("mp");
     }
   }
@@ -4858,6 +5068,9 @@ export class WorldScene extends Phaser.Scene {
     const done = this.stageDef.quests[this.questIdx];
     this.questIdx = Math.min(this.questIdx + 1, this.stageDef.quests.length);
     this.huntCount = 0;
+    /* v3.0.15 (#3) — 반복의뢰 수주 판정용 savedQuestIdx 즉시 갱신 (stale 판정 제거:
+     *  기존엔 씬 재입장 전까지 옛 인덱스를 보고 수주 조건을 false로 판정했다) */
+    this.savedQuestIdx[this.stageDef.key] = this.questIdx;
     // 퀘스트 보상 — 골드 + 경험치 (2D MMORPG 기본 요소)
     if (done?.reward) {
       this.player.addGold(done.reward);
@@ -4960,12 +5173,31 @@ export class WorldScene extends Phaser.Scene {
     let distance: number | null = null;
     const t = this.questTargetPos();
     if (t) distance = Math.round(Phaser.Math.Distance.Between(this.player.x, this.player.y, t.x, t.y) / 32);
+    /* v3.0.15 (#8) — 추적 중인 다른 구역 퀘스트 안내: 해당 구역으로 이동하라는 표시 */
+    if (this.trackedStage && this.trackedStage !== this.stageDef.key) {
+      const tdef = STAGES[this.trackedStage as StageKey];
+      const tIdx = tdef ? (this.savedQuestIdx[this.trackedStage] ?? 0) : 0;
+      const tq = tdef?.quests[tIdx];
+      if (tdef && tq) {
+        this.emitQuestState({
+          title: `[이동] ${tq.title}`,
+          desc: `${tdef.name}에서 진행할 수 있는 수락 퀘스트입니다`,
+          current: 0,
+          target: 1,
+          distance: null,
+        } satisfies QuestState);
+        return;
+      }
+    }
+    /* v3.0.15 (#8) — 현재 구역 퀘스트 미수락 시 수락 유도 */
+    const accepted = this.isQuestAccepted(this.stageDef.key, this.questIdx);
     this.emitQuestState({
-      title: q.title,
-      desc: q.desc,
-      current,
-      target,
-      distance,
+      title: accepted ? q.title : `[수락 대기] ${q.title}`,
+      desc: accepted ? q.desc : "퀘스트 로그(J)에서 수락하면 진행됩니다",
+      current: accepted ? current : 0,
+      target: accepted ? target : 1,
+      distance: accepted ? distance : null,
+      pending: !accepted,
     } satisfies QuestState);
   }
 
@@ -5052,9 +5284,15 @@ export class WorldScene extends Phaser.Scene {
       cosmetic: this.player.cosmetic,
       stats: { ...this.player.stats },
       ap: this.player.ap,
-      /* v2.5 — 자동사냥 상태 (펫 보유 시에만 ON 가능) */
-      autoHunt: this.autoHunt && !!this.player.pet,
-      canAutoHunt: !!this.player.pet,
+      /* v2.5 — 자동사냥 상태 (v3.0.15 #5: 펫 조건 제거) */
+      autoHunt: this.autoHunt,
+      canAutoHunt: true, // v3.0.15 (#5) — 펫 없이도 자동전투 가능
+      /* ----- v3.0.15 신규 ----- */
+      autoAlloc: this.autoAlloc,
+      quickPots: { ...this.player.quickPots },
+      potentials: JSON.parse(JSON.stringify(this.player.potentials)),
+      eertCube: this.player.owned.filter((k) => k === "eert_cube").length,
+      unlockedSets: [...this.unlockedSets],
     };
     const sig = JSON.stringify(st);
     if (sig === this.lastRpgSig) return;
@@ -5062,9 +5300,11 @@ export class WorldScene extends Phaser.Scene {
     EventBus.emit("rpg:state", st);
   }
 
-  /** 퀘스트 로그 (J) — 스테이지 메인 체인 전체 진행 상황 */
+  /** 퀘스트 로그 (J) — 스테이지 메인 체인 전체 진행 상황
+   *  v3.0.15 (#8) — 수락/추적 상태 + 전 구역 수락 퀘스트 목록 (메이플식 퀘스트 선택) */
   emitQuestLog() {
     if (!this.player) return;
+    const curAcc = this.isQuestAccepted(this.stageDef.key, this.questIdx);
     const list = this.stageDef.quests.map((q, i) => ({
       title: q.title,
       desc: q.desc,
@@ -5072,13 +5312,36 @@ export class WorldScene extends Phaser.Scene {
         | "done"
         | "active"
         | "locked",
+      /* 수락 가능: 현재 진행 인덱스 && 아직 미수락 */
+      canAccept: i === this.questIdx && !this.isQuestAccepted(this.stageDef.key, i),
+      accepted: i < this.questIdx || this.isQuestAccepted(this.stageDef.key, i),
     }));
+    /* 전 구역 수락 퀘스트 목록 — 다른 구역에서 수락해둔 것 (메이플식: 수락한 퀘스트 선택 진행) */
+    const tracked: QuestLogState["trackedList"] = [];
+    const allIdx: Record<string, number> = { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx };
+    for (const [k, idx] of Object.entries(allIdx)) {
+      const def = STAGES[k as StageKey];
+      if (!def || !this.isQuestAccepted(k, idx)) continue;
+      const q = def.quests[idx];
+      if (!q) continue;
+      tracked.push({
+        stage: k,
+        stageName: def.name,
+        title: q.title,
+        desc: q.desc,
+        isCurrent: k === this.stageDef.key,
+        isTracked: this.trackedStage === k,
+        state: (idx >= def.quests.length ? "done" : k === this.stageDef.key ? "active" : "move") as "done" | "active" | "move",
+      });
+    }
     const r = this.stageDef.repeat;
     const payload: QuestLogState = {
       stageName: `${this.stageDef.name} — ${this.stageDef.subtitle}`,
       list,
       repeat: r ? { title: r.title, desc: r.desc } : null,
       repeatActive: this.repeatActive(),
+      repeatUnlocked: this.repeatOn,
+      trackedList: tracked,
     };
     EventBus.emit("questlog", payload);
   }
@@ -5137,7 +5400,15 @@ export class WorldScene extends Phaser.Scene {
       seen: [...this.seenSet].slice(-160),
       /* v2.5 — 방문 구역 기록 + 자동사냥 토글 */
       visited: [...this.visited],
-      autoHunt: this.autoHunt && !!this.player.pet,
+      autoHunt: this.autoHunt,
+      /* ----- v3.0.15 ----- */
+      autoAlloc: this.autoAlloc,
+      quickPots: { ...this.player.quickPots },
+      potentials: JSON.parse(JSON.stringify(this.player.potentials)),
+      potHpApplied: this.player.potHpAppliedVal,
+      unlockedSets: [...this.unlockedSets],
+      questAccepted: { ...this.acceptedQuests },
+      questTracked: this.trackedStage,
     };
   }
 
@@ -5297,7 +5568,7 @@ export class WorldScene extends Phaser.Scene {
           this.repeatOn = true;
           this.save();
           audio.sfx.questDone();
-          this.showBanner("토벌 의뢰 수주 완료! 구역 체인을 끝낸 곳에서 [반복] 의뢰 진행 가능");
+          this.showBanner("토벌 의뢰 수주! 구역 체인을 모두 끝낸 사냥터에서 [반복] 의뢰를 진행할 수 있어요");
           this.spawnPickupText(this.player.x, this.player.y - 44, "의뢰 수주!", "#7dffa8");
           this.emitQuest();
           this.emitQuestLog();

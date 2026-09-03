@@ -1,7 +1,8 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import { DMG_PCT } from "../data";
-import { ENEMIES, type EnemyDef, type EnemyKey } from "../data";
+import { ENEMIES, type EnemyDef, type EnemyKey, CHAPTER_ELEM, elemAdvantage, ELEMENT_META, type ElemKey } from "../data";
+import { parseStage } from "../stages";
 import { FSM, type FSMState } from "../ai/FSM";
 /** 종별 물리/판정 크기 + 리스폰 버스트 색 */
 const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: number; burst: number }> = {
@@ -70,6 +71,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
 
   def: EnemyDef;
+  /** v3.0.15 (#16) — 이 적의 원소 (챕터 테마 결정: 무스펠헤임 화염 등) */
+  readonly elem: ElemKey;
   /** v3.0.6 — maxHP % 고정 피해 하한 (정예는 생성 후 상향 설정) */
   dmgPct: number = DMG_PCT.mob;
   hp: number;
@@ -135,6 +138,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   ) {
     super(scene, x, y, `${key}_idle0`);
     const base = ENEMIES[key];
+    /* v3.0.15 (#16) — 챕터 테마 원소 부여 */
+    this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "none";
     if (opts && (opts.hp !== undefined || opts.atk !== undefined || opts.exp !== undefined || opts.gold !== undefined)) {
       this.def = {
         ...base,
@@ -398,12 +403,22 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
-    this.hp -= dmg;
+    /* v3.0.15 (#16) — 원소 상성: 플레이어 공격 원소 vs 이 적의 원소.
+     *  유리 +25% (원소색 데미지 텍스트 "약점!") / 불리 -15% / 어둠끼리 서로 저항 */
+    const atkElem = this.scene.playerRef?.attackElem ?? "none";
+    const adv = elemAdvantage(atkElem, this.elem);
+    const weak = adv > 1;
+    const dealt = adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
+    this.hp -= dealt;
     this.hitFlash = 90;
     // 타격감: 화이트 플래시 (기존 빨간 틴트보다 명확한 피격 피드백)
     this.setTintFill(0xffffff);
     this.knockVec.set(dir.x * knock, dir.y * knock);
-    this.scene.spawnDamageText(this.x, this.y - 20, dmg, crit);
+    this.scene.spawnDamageText(
+      this.x, this.y - 20, dealt, crit || weak,
+      weak ? ELEMENT_META[this.elem].color : undefined,
+      weak ? "약점" : undefined
+    );
     this.scene.spawnHitSpark(this.x, this.y);
     // v2.2 타격감 — 스쿼시(눌림) 반동: 맞은 순간 납작해졌다 복귀
     const sx = this.scaleX;

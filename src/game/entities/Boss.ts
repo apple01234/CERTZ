@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import type { BossDef, BossAttackKind } from "../data";
+import { elemAdvantage, ELEMENT_META, type ElemKey, CHAPTER_ELEM } from "../data";
+import { parseStage } from "../stages";
 import { EventBus } from "../../components/game/EventBus";
 
 /**
@@ -27,6 +29,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   def: BossDef;
   hp: number;
+  /** v3.0.15 (#16) — 챕터 테마 원소 */
+  readonly elem: ElemKey;
   maxHp: number;
   alive = true;
   enraged = false;
@@ -59,6 +63,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   constructor(scene: WorldScene, x: number, y: number, def: BossDef) {
     super(scene, x, y, `${def.tex}_idle0`);
     this.def = def;
+    this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "dark"; // v3.0.15 (#16) 챕터 테마 원소
     this.hp = def.hp;
     this.maxHp = def.hp;
     scene.add.existing(this);
@@ -453,14 +458,22 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
-    this.hp -= dmg;
+    /* v3.0.15 (#16) — 보스도 챕터 테마 원소를 가진다 (상성 배율 적용) */
+    const atkElem = this.scene.playerRef?.attackElem ?? "none";
+    const adv = elemAdvantage(atkElem, this.elem);
+    const weak = adv > 1;
+    const dealt = adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
+    this.hp -= dealt;
     this.knockVec.set(dir.x * knock * 0.12, dir.y * knock * 0.12); // 보스는 넉백 거의 안 됨
     // 타격감: 화이트 플래시
     this.setTintFill(0xffffff);
     this.scene.time.delayedCall(60, () => {
       if (this.alive && this.active) this.clearTint();
     });
-    this.scene.spawnDamageText(this.x + Phaser.Math.Between(-14, 14), this.y - 44, dmg, crit);
+    this.scene.spawnDamageText(
+      this.x + Phaser.Math.Between(-14, 14), this.y - 44, dealt, crit || weak,
+      weak ? ELEMENT_META[this.elem].color : undefined, weak ? "약점" : undefined
+    );
     this.scene.spawnHitSpark(this.x, this.y - 30);
     EventBus.emit("boss:update", { hp: Math.max(0, this.hp), maxHp: this.maxHp });
 

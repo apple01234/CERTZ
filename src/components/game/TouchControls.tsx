@@ -17,6 +17,8 @@ export function TouchControls({
   skills,
   hpPot,
   mpPot,
+  quickPots,
+  potCount,
   atkName,
   s1Name,
   s2Name,
@@ -28,6 +30,9 @@ export function TouchControls({
   skills: Skills;
   hpPot: number;
   mpPot: number;
+  /* v3.0.15 (#7) — 퀵슬롯에 장착된 물약 아이템키/수량 */
+  quickPots?: { hp: string; mp: string };
+  potCount?: (k: string) => number;
   atkName?: string;
   s1Name?: string;
   s2Name?: string;
@@ -87,7 +92,16 @@ export function TouchControls({
       dy = (dy / len) * JOY_RADIUS;
     }
     setJoyKnob({ x: dx, y: dy });
-    sendMove(dx / JOY_RADIUS, dy / JOY_RADIUS);
+    /* v3.0.15 (#21) — 반응 곡선: 손가락을 조금만 밀어도 충분한 속도가 나오게.
+     *  지수 0.5 → 반경 25%(13px)에서 50%, 50%(26px)에서 71%, 70%(36px)에서 84% 속도.
+     *  시각 노브는 실제 손가락 위치 그대로, 전송 강도만 증폭 */
+    const raw = Math.min(1, len / JOY_RADIUS);
+    const boosted = len > 0.5 ? Math.pow(raw, 0.5) : 0;
+    if (len > 0.5) {
+      sendMove((dx / len) * boosted, (dy / len) * boosted);
+    } else {
+      sendMove(0, 0);
+    }
   };
 
   const onJoyUp = (e: React.PointerEvent) => {
@@ -120,9 +134,9 @@ export function TouchControls({
         onPointerUp={onJoyUp}
         onPointerCancel={onJoyUp}
       >
-        {/* 대기 중 안내 패드 — 조이스틱 영역이 어디인지 보여줌 (채팅 입력 위로 배치, 터치하면 실제 조이스틱으로 교체) */}
+        {/* 대기 중 안내 패드 — v3.0.15 (#10): 이동표시를 살짝 아래로 내림 (bottom-20→bottom-15) */}
         {!joyOrigin && (
-          <div className="pointer-events-none absolute bottom-20 left-6 flex h-[104px] w-[104px] items-center justify-center rounded-full border-2 border-dashed border-white/30 bg-black/25 sm:bottom-24 sm:left-10">
+          <div className="pointer-events-none absolute bottom-15 left-6 flex h-[104px] w-[104px] items-center justify-center rounded-full border-2 border-dashed border-white/30 bg-black/25 sm:bottom-19 sm:left-10">
             <span className="text-[10px] font-black tracking-widest text-white/45">이동</span>
           </div>
         )}
@@ -175,16 +189,20 @@ export function TouchControls({
               </span>
             </button>
           )}
-          {/* 물약 퀵슬롯 (2D MMORPG 기본 요소) */}
+          {/* 물약 퀵슬롯 — v3.0.15 (#7) 인벤토리에서 장착한 물약이 버튼에 표시/사용된다 */}
           <PotionButton
             kind="hp"
             count={hpPot}
+            itemKey={quickPots?.hp ?? "potion_hp"}
+            itemCount={potCount?.(quickPots?.hp ?? "potion_hp") ?? hpPot}
             tint="from-rose-500 to-rose-700 border-rose-200/70"
             onDown={() => EventBus.emit("rpg:use", { kind: "hp" })}
           />
           <PotionButton
             kind="mp"
             count={mpPot}
+            itemKey={quickPots?.mp ?? "potion_mp"}
+            itemCount={potCount?.(quickPots?.mp ?? "potion_mp") ?? mpPot}
             tint="from-sky-500 to-blue-800 border-sky-200/70"
             onDown={() => EventBus.emit("rpg:use", { kind: "mp" })}
           />
@@ -259,36 +277,46 @@ export function TouchControls({
 function PotionButton({
   kind,
   count,
+  itemKey,
+  itemCount,
   tint,
   onDown,
 }: {
   kind: "hp" | "mp";
   count: number;
+  /** v3.0.15 (#7) — 슬롯에 장착된 물약 아이템키 (기본 potion_hp/potion_mp) */
+  itemKey?: string;
+  itemCount?: number;
   tint: string;
   onDown: () => void;
 }) {
+  const shown = itemCount ?? count;
+  const iconSrc =
+    itemKey && itemKey !== "potion_hp" && itemKey !== "potion_mp"
+      ? `/assets/item_${itemKey}.png`
+      : `/assets/item_potion_${kind}.png`;
   return (
     <button
       aria-label={kind === "hp" ? "HP 물약" : "MP 물약"}
-      disabled={count <= 0}
+      disabled={shown <= 0}
       className={`relative flex h-10 w-10 touch-none select-none items-center justify-center rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 sm:h-12 sm:w-12 ${
-        count > 0 ? `bg-gradient-to-b ${tint}` : "border-white/20 bg-slate-700/70 opacity-50"
+        shown > 0 ? `bg-gradient-to-b ${tint}` : "border-white/20 bg-slate-700/70 opacity-50"
       }`}
       onPointerDown={(e) => {
         e.preventDefault();
-        if (count > 0) onDown();
+        if (shown > 0) onDown();
       }}
     >
       { }
       <img
-        src={`/assets/item_potion_${kind}.png`}
+        src={iconSrc}
         alt=""
         draggable={false}
         className="h-5 w-5"
         style={{ imageRendering: "pixelated" }}
       />
       <span className="absolute -bottom-0.5 right-0.5 rounded bg-slate-900/90 px-1 text-[8px] font-black leading-[13px] text-white">
-        {count}
+        {shown}
       </span>
       <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/70">
         {kind === "hp" ? "Q" : "R"}

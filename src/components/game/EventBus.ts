@@ -74,11 +74,22 @@ export type RpgState = {
   /** AP 스탯 */
   stats: { str: number; dex: number; int: number; luk: number };
   ap: number;
-  /* ----- v2.5 자동사냥 (펫 보유 시) ----- */
-  /** 자동사냥 ON 여부 (펫 없으면 항상 false) */
+  /* ----- v2.5 자동사냥 ----- */
+  /** 자동사냥 ON 여부 */
   autoHunt: boolean;
-  /** 자동사냥 사용 가능 (펫 보유) */
+  /** 자동사냥 사용 가능 (v3.0.15: 항상 true — 펫 조건 제거) */
   canAutoHunt: boolean;
+  /* ----- v3.0.15 ----- */
+  /** #2 — 레벨업 스탯 자동배분 on/off */
+  autoAlloc?: boolean;
+  /** #7 — 물약 퀵슬롯 장착 상태 */
+  quickPots?: { hp: string; mp: string };
+  /** #13 — eert 잠재옵션 (아이템키 → 잠재) */
+  potentials?: Record<string, { grade: number; lines: { k: string; v: number }[] }>;
+  /** #13 — eert 큐브 보유 수 */
+  eertCube?: number;
+  /** #11 — 해금된 챕터 테마 세트 (챕터키 목록) */
+  unlockedSets?: string[];
 };
 
 export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | null;
@@ -92,15 +103,21 @@ export type QuestState = {
   distance: number | null;
   /** v3.0.2 — 진행 중인 전직 스토리 (트래커 병기) */
   jobStory?: { title: string; step: number; total: number; stepTitle: string };
+  /** v3.0.15 (#8) — 퀘스트 미수락 (수락 대기 배지) */
+  pending?: boolean;
 };
 
 /** 퀘스트 로그 (J — 스테이지별 메인 체인 진행 상황) */
 export type QuestLogState = {
   stageName: string;
-  list: { title: string; desc: string; state: "done" | "active" | "locked" }[];
+  list: { title: string; desc: string; state: "done" | "active" | "locked"; canAccept?: boolean; accepted?: boolean }[];
   repeat: { title: string; desc: string } | null;
   /* v2.3 — 반복 의뢰 수주 여부 (미수주 시 NPC 수주 안내 표시) */
   repeatActive?: boolean;
+  /* v3.0.15 (#3) — 반복 의뢰 수주 해금 여부 */
+  repeatUnlocked?: boolean;
+  /* v3.0.15 (#8) — 전 구역 수락 퀘스트 목록 (메이플식 퀘스트 선택/추적) */
+  trackedList?: { stage: string; stageName: string; title: string; desc: string; isCurrent: boolean; isTracked: boolean; state: "done" | "active" | "move" }[];
 };
 
 export type EndState = {

@@ -19,6 +19,8 @@ const emptyRpg: RpgState = {
   buffItems: {}, pets: [], pet: null, cosmetics: [], cosmetic: null,
   stats: { str: 5, dex: 5, int: 5, luk: 5 }, ap: 0,
   autoHunt: false, canAutoHunt: false,
+  autoAlloc: false, quickPots: { hp: "potion_hp", mp: "potion_mp" },
+  potentials: {}, eertCube: 0, unlockedSets: [],
 };
 const emptyQuestLog: QuestLogState = { stageName: "", list: [], repeat: null };
 

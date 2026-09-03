@@ -101,7 +101,19 @@ export type ItemKey =
   | "pet_atlas"
   | "cos_aurora"
   | "ring_bless"
-  | "buff_king";
+  | "buff_king"
+  /* v3.0.15 (#13) — eert 큐브 (메이플 큐브 시스템 — 잠재옵션 리롤) */
+  | "eert_cube"
+  /* v3.0.15 (#11) — 챕터 테마 장비 세트 9종 (무기/방어구/반지 × 챕터) */
+  | "sfw_forest" | "sfa_forest" | "sfr_forest"
+  | "sfw_kingdom" | "sfa_kingdom" | "sfr_kingdom"
+  | "sfw_alfheim" | "sfa_alfheim" | "sfr_alfheim"
+  | "sfw_muspelheim" | "sfa_muspelheim" | "sfr_muspelheim"
+  | "sfw_niflheim" | "sfa_niflheim" | "sfr_niflheim"
+  | "sfw_cave" | "sfa_cave" | "sfr_cave"
+  | "sfw_nidavellir" | "sfa_nidavellir" | "sfr_nidavellir"
+  | "sfw_hel" | "sfa_hel" | "sfr_hel"
+  | "sfw_abyss" | "sfa_abyss" | "sfr_abyss";
 
 /** 아이템 등급 (클래식 MMORPG 관례 — 테두리/이름색 구분)
  *  v3.0.6 — "legend" 추가 (보스 전용 드롭 전용 등급) */
@@ -208,26 +220,26 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   /* v3.0.7 — 강화 주문서: 사용 시 다음 강화 시도 1회 성공률 +15%p (최대 3중첩) */
   scroll_star: { key: "scroll_star", kind: "consumable", name: "강화 주문서", icon: "item_scroll_star", price: 150, tier: "rare" },
   weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 0, tier: "common", atk: 0 },
-  weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 110, tier: "rare", atk: 6 },
-  weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 260, tier: "epic", atk: 14 },
-  weapon_4: { key: "weapon_4", kind: "weapon", name: "심연의 대검", icon: "item_weapon_4", price: 420, tier: "epic", atk: 20 },
+  weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 240, tier: "rare", atk: 6 },
+  weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 640, tier: "epic", atk: 14 },
+  weapon_4: { key: "weapon_4", kind: "weapon", name: "심연의 대검", icon: "item_weapon_4", price: 1400, tier: "epic", atk: 20 },
   /* v2.5 — 상위 장비 티어 (지시 #5 아이템 확장) */
-  weapon_5: { key: "weapon_5", kind: "weapon", name: "용인의 마검", icon: "item_weapon_5", price: 560, tier: "epic", atk: 28 },
-  weapon_6: { key: "weapon_6", kind: "weapon", name: "심연룡의 절세검", icon: "item_weapon_6", price: 900, tier: "epic", atk: 38 },
+  weapon_5: { key: "weapon_5", kind: "weapon", name: "용인의 마검", icon: "item_weapon_5", price: 2800, tier: "epic", atk: 28 },
+  weapon_6: { key: "weapon_6", kind: "weapon", name: "심연룡의 절세검", icon: "item_weapon_6", price: 5600, tier: "epic", atk: 38 },
   armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 0, tier: "common", def: 0 },
-  armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 95, tier: "rare", def: 3 },
-  armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 230, tier: "epic", def: 7 },
-  armor_4: { key: "armor_4", kind: "armor", name: "수호자의 갑옷", icon: "item_armor_4", price: 380, tier: "epic", def: 10 },
-  armor_5: { key: "armor_5", kind: "armor", name: "용린 갑주", icon: "item_armor_5", price: 480, tier: "epic", def: 14 },
-  armor_6: { key: "armor_6", kind: "armor", name: "심연룡의 비늘갑옷", icon: "item_armor_6", price: 820, tier: "epic", def: 18 },
-  ring_power: { key: "ring_power", kind: "accessory", name: "힘의 반지", icon: "item_ring_power", price: 150, tier: "rare", crit: 7, slot: "ring" },
-  ring_vital: { key: "ring_vital", kind: "accessory", name: "생명의 반지", icon: "item_ring_vital", price: 130, tier: "rare", maxHp: 25, slot: "ring" },
+  armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 210, tier: "rare", def: 3 },
+  armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 580, tier: "epic", def: 7 },
+  armor_4: { key: "armor_4", kind: "armor", name: "수호자의 갑옷", icon: "item_armor_4", price: 1250, tier: "epic", def: 10 },
+  armor_5: { key: "armor_5", kind: "armor", name: "용린 갑주", icon: "item_armor_5", price: 2400, tier: "epic", def: 14 },
+  armor_6: { key: "armor_6", kind: "armor", name: "심연룡의 비늘갑옷", icon: "item_armor_6", price: 4800, tier: "epic", def: 18 },
+  ring_power: { key: "ring_power", kind: "accessory", name: "힘의 반지", icon: "item_ring_power", price: 380, tier: "rare", crit: 7, slot: "ring" },
+  ring_vital: { key: "ring_vital", kind: "accessory", name: "생명의 반지", icon: "item_ring_vital", price: 340, tier: "rare", maxHp: 25, slot: "ring" },
   /* v2.5 — 상위 장신구 (지시 #5 아이템 확장) */
-  ring_crit: { key: "ring_crit", kind: "accessory", name: "매의 눈 반지", icon: "item_ring_crit", price: 400, tier: "epic", crit: 12, slot: "ring" },
-  ring_guard: { key: "ring_guard", kind: "accessory", name: "수호 반지", icon: "item_ring_guard", price: 380, tier: "epic", maxHp: 60, slot: "ring" },
+  ring_crit: { key: "ring_crit", kind: "accessory", name: "매의 눈 반지", icon: "item_ring_crit", price: 1300, tier: "epic", crit: 12, slot: "ring" },
+  ring_guard: { key: "ring_guard", kind: "accessory", name: "수호 반지", icon: "item_ring_guard", price: 1200, tier: "epic", maxHp: 60, slot: "ring" },
   /* v2.9 (#8) — 펜던트 (2개 중복 장착) */
-  pendant_vital: { key: "pendant_vital", kind: "accessory", name: "생명의 펜던트", icon: "item_pendant_vital", price: 300, tier: "rare", maxHp: 45, slot: "pendant" },
-  pendant_arcane: { key: "pendant_arcane", kind: "accessory", name: "신비의 펜던트", icon: "item_pendant_arcane", price: 520, tier: "epic", crit: 10, slot: "pendant" },
+  pendant_vital: { key: "pendant_vital", kind: "accessory", name: "생명의 펜던트", icon: "item_pendant_vital", price: 900, tier: "rare", maxHp: 45, slot: "pendant" },
+  pendant_arcane: { key: "pendant_arcane", kind: "accessory", name: "신비의 펜던트", icon: "item_pendant_arcane", price: 1600, tier: "epic", crit: 10, slot: "pendant" },
   /* ---- BM (v1.9): 버프 물약 / 펫 / 치장 ---- */
   buff_atk: { key: "buff_atk", kind: "buff", name: "분노의 물약", icon: "item_buff_atk", price: 60, tier: "rare" },
   buff_def: { key: "buff_def", kind: "buff", name: "수호의 물약", icon: "item_buff_def", price: 55, tier: "rare" },
@@ -256,6 +268,37 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   ring_bless: { key: "ring_bless", kind: "accessory", name: "가호의 반지", icon: "ring_bless", price: 0, bmPrice: 45, bmOnly: true, tier: "legend", crit: 15, maxHp: 100, slot: "ring" },
   buff_king: { key: "buff_king", kind: "buff", name: "왕의 가호", icon: "buff_king", price: 0, bmPrice: 15, bmOnly: true, tier: "legend" },
   cos_aurora: { key: "cos_aurora", kind: "cosmetic", name: "오로라 후광", icon: "cos_aurora", price: 0, bmPrice: 20, bmOnly: true, tier: "legend" },
+  /* ---- v3.0.15 (#13) — eert 큐브: 장비의 잠재옵션을 재추첨 (메이플 큐브 시스템) ----
+   *  eert = tree 거꾸로. 큐브 아이콘에도 거꾸로 나무가 그려진다. */
+  eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 1200, tier: "epic" },
+  /* ---- v3.0.15 (#11) — 챕터 테마 세트 장비 (상점에서 챕터 해금 시 노출) ---- */
+  sfw_forest: { key: "sfw_forest", kind: "weapon", name: "숲의 수호자 대검", icon: "item_weapon_2", price: 380, tier: "rare", atk: 9 },
+  sfa_forest: { key: "sfa_forest", kind: "armor", name: "숲의 수호자 갑옷", icon: "item_armor_2", price: 340, tier: "rare", def: 4 },
+  sfr_forest: { key: "sfr_forest", kind: "accessory", name: "숲의 수호자 반지", icon: "item_ring_vital", price: 360, tier: "rare", crit: 5, maxHp: 20, slot: "ring" },
+  sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "쿠소디아 기사검", icon: "item_weapon_3", price: 820, tier: "rare", atk: 15 },
+  sfa_kingdom: { key: "sfa_kingdom", kind: "armor", name: "쿠소디아 기사 갑옷", icon: "item_armor_3", price: 720, tier: "rare", def: 7 },
+  sfr_kingdom: { key: "sfr_kingdom", kind: "accessory", name: "쿠소디아 기사 반지", icon: "item_ring_power", price: 760, tier: "rare", crit: 7, maxHp: 30, slot: "ring" },
+  sfw_alfheim: { key: "sfw_alfheim", kind: "weapon", name: "정령왕의 마검", icon: "item_weapon_3", price: 1600, tier: "epic", atk: 21 },
+  sfa_alfheim: { key: "sfa_alfheim", kind: "armor", name: "정령왕의 갑주", icon: "item_armor_3", price: 1400, tier: "epic", def: 10 },
+  sfr_alfheim: { key: "sfr_alfheim", kind: "accessory", name: "정령왕의 반지", icon: "item_ring_crit", price: 1500, tier: "epic", crit: 9, maxHp: 40, slot: "ring" },
+  sfw_muspelheim: { key: "sfw_muspelheim", kind: "weapon", name: "화염의 군주 대검", icon: "item_weapon_4", price: 2700, tier: "epic", atk: 28 },
+  sfa_muspelheim: { key: "sfa_muspelheim", kind: "armor", name: "화염의 군주 갑주", icon: "item_armor_4", price: 2300, tier: "epic", def: 13 },
+  sfr_muspelheim: { key: "sfr_muspelheim", kind: "accessory", name: "화염의 군주 반지", icon: "item_ring_power", price: 2500, tier: "epic", crit: 11, maxHp: 55, slot: "ring" },
+  sfw_niflheim: { key: "sfw_niflheim", kind: "weapon", name: "서리바다의 검", icon: "item_weapon_4", price: 4300, tier: "epic", atk: 36 },
+  sfa_niflheim: { key: "sfa_niflheim", kind: "armor", name: "서리바다의 갑주", icon: "item_armor_4", price: 3700, tier: "epic", def: 16 },
+  sfr_niflheim: { key: "sfr_niflheim", kind: "accessory", name: "서리바다의 반지", icon: "item_ring_guard", price: 4000, tier: "epic", crit: 13, maxHp: 70, slot: "ring" },
+  sfw_cave: { key: "sfw_cave", kind: "weapon", name: "심연광의 대검", icon: "item_weapon_5", price: 7000, tier: "epic", atk: 45 },
+  sfa_cave: { key: "sfa_cave", kind: "armor", name: "심연광의 갑주", icon: "item_armor_5", price: 6000, tier: "epic", def: 20 },
+  sfr_cave: { key: "sfr_cave", kind: "accessory", name: "심연광의 반지", icon: "item_ring_crit", price: 6400, tier: "epic", crit: 15, maxHp: 90, slot: "ring" },
+  sfw_nidavellir: { key: "sfw_nidavellir", kind: "weapon", name: "드워프 장인의 검", icon: "item_weapon_5", price: 10800, tier: "epic", atk: 56 },
+  sfa_nidavellir: { key: "sfa_nidavellir", kind: "armor", name: "드워프 장인의 갑주", icon: "item_armor_5", price: 9200, tier: "epic", def: 24 },
+  sfr_nidavellir: { key: "sfr_nidavellir", kind: "accessory", name: "드워프 장인의 반지", icon: "item_ring_guard", price: 9800, tier: "epic", crit: 17, maxHp: 115, slot: "ring" },
+  sfw_hel: { key: "sfw_hel", kind: "weapon", name: "저승 파수꾼의 검", icon: "item_weapon_6", price: 16200, tier: "epic", atk: 68 },
+  sfa_hel: { key: "sfa_hel", kind: "armor", name: "저승 파수꾼의 갑주", icon: "item_armor_6", price: 13800, tier: "epic", def: 28 },
+  sfr_hel: { key: "sfr_hel", kind: "accessory", name: "저승 파수꾼의 반지", icon: "item_ring_power", price: 14700, tier: "epic", crit: 19, maxHp: 140, slot: "ring" },
+  sfw_abyss: { key: "sfw_abyss", kind: "weapon", name: "종언 마룡의 검", icon: "item_weapon_6", price: 24000, tier: "epic", atk: 82 },
+  sfa_abyss: { key: "sfa_abyss", kind: "armor", name: "종언 마룡의 갑주", icon: "item_armor_6", price: 20500, tier: "epic", def: 33 },
+  sfr_abyss: { key: "sfr_abyss", kind: "accessory", name: "종언 마룡의 반지", icon: "item_ring_crit", price: 22000, tier: "epic", crit: 23, maxHp: 180, slot: "ring" },
 };
 
 /* v3.0.6 (지시 — "나중가면 플레이어가 너무 쌔닌까 보스 및 몬스터가 체력% 고정 데미지를 주게해"):
@@ -332,6 +375,7 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
 
 /** 상점 판매 목록 (표시 순서 — BM 섹션은 kind로 분리 렌더) */
 export const SHOP_STOCK: ItemKey[] = [
+  "eert_cube", // v3.0.15 (#13) — 잠재옵션 리롤 큐브
   "potion_hp",
   "potion_mp",
   "potion_hp2",
@@ -365,6 +409,16 @@ export const SHOP_STOCK: ItemKey[] = [
   "cos_gold",
   "cos_abyss",
   "cos_wings",
+  /* v3.0.15 (#11) — 챕터 테마 세트 장비 (ShopPanel에서 unlockedSets 기반으로 미해금 숨김) */
+  "sfw_forest", "sfa_forest", "sfr_forest",
+  "sfw_kingdom", "sfa_kingdom", "sfr_kingdom",
+  "sfw_alfheim", "sfa_alfheim", "sfr_alfheim",
+  "sfw_muspelheim", "sfa_muspelheim", "sfr_muspelheim",
+  "sfw_niflheim", "sfa_niflheim", "sfr_niflheim",
+  "sfw_cave", "sfa_cave", "sfr_cave",
+  "sfw_nidavellir", "sfa_nidavellir", "sfr_nidavellir",
+  "sfw_hel", "sfa_hel", "sfr_hel",
+  "sfw_abyss", "sfa_abyss", "sfr_abyss",
 ];
 
 /** v3.0.6 (지시 #4) — 아이템 판매가 (상점가의 40%, 최소 1G · 보스 전용은 고정가)
@@ -403,7 +457,7 @@ export const TRADE_STOCK: ItemKey[] = [
 ];
 
 /** v3.0.6 (지시 #1) — BM 상점 판매 목록 (에메랄드 전용 — 골드 상점과 분리) */
-export const BM_STOCK: ItemKey[] = ["pet_atlas", "ring_bless", "buff_king", "cos_aurora"];
+export const BM_STOCK: ItemKey[] = ["pet_atlas", "ring_bless", "buff_king", "cos_aurora", "eert_cube"]; // v3.0.15 (#13) eert 큐브 추가
 
 /** v3.0.6 (지시 #9) — 보스 → 전용 드롭 아이템 매핑 (100% 드롭, 상점 구매 불가) */
 export const BOSS_DROP_ITEMS: Record<string, ItemKey> = {
@@ -416,6 +470,121 @@ export const BOSS_DROP_ITEMS: Record<string, ItemKey> = {
   gram: "bd_gram",
   abysslord: "bd_abysslord",
   abudditos: "bd_abudditos",
+};
+
+/* ================= v3.0.15 (#16) — 원소 데미지 시스템 (원신 참고) =================
+ *  5원소 + 무속성. 3각 상성(화염>자연>냉기>화염) + 빛↔어둠 상호 강세.
+ *  유리 상성 +25% / 불리 상성 -15%. 챕터 테마가 적 원소를 결정한다. */
+export type ElemKey = "none" | "fire" | "ice" | "nature" | "dark" | "light";
+export const ELEMENT_META: Record<ElemKey, { name: string; color: string; hex: number }> = {
+  none: { name: "무속성", color: "#e8ecf2", hex: 0xe8ecf2 },
+  fire: { name: "화염", color: "#ff8a5c", hex: 0xff8a5c },
+  ice: { name: "냉기", color: "#7dd8ff", hex: 0x7dd8ff },
+  nature: { name: "자연", color: "#7de86a", hex: 0x7de86a },
+  dark: { name: "어둠", color: "#c08aff", hex: 0xc08aff },
+  light: { name: "빛", color: "#ffe86a", hex: 0xffe86a },
+};
+
+/** 원소 상성 배율 — 유리 1.25 / 불리 0.85 / 나머지 1 */
+export function elemAdvantage(atk: ElemKey, def: ElemKey): number {
+  if (atk === "none" || def === "none") return 1;
+  if (atk === def) return atk === "dark" ? 0.85 : 1; // 어둠끼리는 서로 저항
+  if (atk === "fire" && def === "nature") return 1.25;
+  if (atk === "nature" && def === "ice") return 1.25;
+  if (atk === "ice" && def === "fire") return 1.25;
+  if (atk === "light" && def === "dark") return 1.25;
+  if (atk === "dark" && def === "light") return 1.25;
+  if (atk === "nature" && def === "fire") return 0.85;
+  if (atk === "ice" && def === "nature") return 0.85;
+  if (atk === "fire" && def === "ice") return 0.85;
+  return 1;
+}
+
+/** 챕터 테마별 적 원소 */
+export const CHAPTER_ELEM: Record<string, ElemKey> = {
+  village: "none", forest: "nature", kingdom: "nature", alfheim: "light",
+  muspelheim: "fire", niflheim: "ice", cave: "dark", nidavellir: "dark",
+  hel: "dark", abyss: "dark",
+};
+
+/** 플레이어 계열별 공격 원소 (미전직은 무속성) */
+export const FAMILY_ELEM: Record<string, ElemKey> = {
+  warrior: "fire", ranger: "nature", mage: "ice", thief: "dark",
+};
+
+/* ================= v3.0.15 (#13) — eert 큐브 잠재옵션 (메이플 큐브 시스템) =================
+ *  장비(무기/방어구/장신구)에 1~3줄의 잠재옵션 부여. eert 큐브 사용 시 재추첨.
+ *  등급: 레어(1줄) / 에픽(2줄) / 유니크(2줄 강) / 레전드(3줄 강) */
+export type PotStatKey = "atk" | "def" | "crit" | "maxHp";
+export type PotLine = { k: PotStatKey; v: number };
+export type Potentials = { grade: number; lines: PotLine[] }; // grade 0~3
+
+export const POT_GRADE_META = [
+  { name: "레어", color: "#6fb8ff", css: "text-sky-300", lines: 1, weight: 60 },
+  { name: "에픽", color: "#c08aff", css: "text-purple-300", lines: 2, weight: 28 },
+  { name: "유니크", color: "#ffd76a", css: "text-amber-300", lines: 2, weight: 10 },
+  { name: "레전드", color: "#ff8a5c", css: "text-orange-300", lines: 3, weight: 2 },
+] as const;
+
+export const POT_STAT_LABEL: Record<PotStatKey, string> = {
+  atk: "공격력", def: "방어력", crit: "크리티컬", maxHp: "최대 HP",
+};
+
+/** 잠재옵션 1줄 표시 문자열 */
+export function potLineText(l: PotLine): string {
+  if (l.k === "crit") return `크리티컬 +${l.v}%`;
+  if (l.k === "maxHp") return `최대 HP +${l.v}`;
+  return `${POT_STAT_LABEL[l.k]} +${l.v}`;
+}
+
+export function rollPotentials(): Potentials {
+  const r = Math.random() * 100;
+  let grade = 0;
+  let acc = 0;
+  for (let i = 0; i < POT_GRADE_META.length; i++) {
+    acc += POT_GRADE_META[i].weight;
+    if (r < acc) { grade = i; break; }
+  }
+  const strong = grade >= 2;
+  const kinds: PotStatKey[] = ["atk", "def", "crit", "maxHp"];
+  // 셔플 후 앞에서 n개
+  for (let i = kinds.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [kinds[i], kinds[j]] = [kinds[j], kinds[i]];
+  }
+  const lines: PotLine[] = kinds.slice(0, POT_GRADE_META[grade].lines).map((k) => {
+    const maxV = strong ? 3 : 2;
+    const v = 1 + Math.floor(Math.random() * maxV);
+    if (k === "crit") return { k, v };                 // 1~3%p
+    if (k === "maxHp") return { k, v: v * (strong ? 25 : 15) }; // 15~75
+    return { k, v };                                   // atk/def 1~3
+  });
+  return { grade, lines };
+}
+
+/** 잠재옵션 합계 — 장착 중 아이템들의 라인 합산 */
+export function sumPotLines(pots: (Potentials | undefined)[]): { atk: number; def: number; crit: number; maxHp: number } {
+  const out = { atk: 0, def: 0, crit: 0, maxHp: 0 };
+  for (const p of pots) {
+    if (!p) continue;
+    for (const l of p.lines) out[l.k] += l.v;
+  }
+  return out;
+}
+
+/* ================= v3.0.15 (#11) — 챕터 테마 장비 세트 9종 =================
+ *  챕터 해금(해당 챕터 구역 최초 진입) 시 상점에 그 테마의 무기·방어구·반지 1세트가 등장.
+ *  수치는 해당 챕터 구간 최고급 장비보다 살짝 위 — 세트 가치 프리미엄. */
+export const SET_GEAR: Record<string, { ch: string; num: number; title: string; w: ItemKey; a: ItemKey; r: ItemKey }> = {
+  forest: { ch: "forest", num: 2, title: "숲의 수호자 세트", w: "sfw_forest", a: "sfa_forest", r: "sfr_forest" },
+  kingdom: { ch: "kingdom", num: 3, title: "쿠소디아 기사단 세트", w: "sfw_kingdom", a: "sfa_kingdom", r: "sfr_kingdom" },
+  alfheim: { ch: "alfheim", num: 4, title: "정령왕 세트", w: "sfw_alfheim", a: "sfa_alfheim", r: "sfr_alfheim" },
+  muspelheim: { ch: "muspelheim", num: 5, title: "화염의 군주 세트", w: "sfw_muspelheim", a: "sfa_muspelheim", r: "sfr_muspelheim" },
+  niflheim: { ch: "niflheim", num: 6, title: "서리바다 세트", w: "sfw_niflheim", a: "sfa_niflheim", r: "sfr_niflheim" },
+  cave: { ch: "cave", num: 7, title: "심연광 세트", w: "sfw_cave", a: "sfa_cave", r: "sfr_cave" },
+  nidavellir: { ch: "nidavellir", num: 8, title: "드워프 장인 세트", w: "sfw_nidavellir", a: "sfa_nidavellir", r: "sfr_nidavellir" },
+  hel: { ch: "hel", num: 9, title: "저승 파수꾼 세트", w: "sfw_hel", a: "sfa_hel", r: "sfr_hel" },
+  abyss: { ch: "abyss", num: 10, title: "종언 마룡 세트", w: "sfw_abyss", a: "sfa_abyss", r: "sfr_abyss" },
 };
 
 export type DialogueDef = { speaker: string; lines: string[] };

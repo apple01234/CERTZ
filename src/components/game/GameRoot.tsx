@@ -106,6 +106,8 @@ export default function GameRoot() {
                   skills={skills}
                   hpPot={rpg.hpPot}
                   mpPot={rpg.mpPot}
+                  quickPots={rpg.quickPots}
+                  potCount={(k) => (k === "potion_hp" ? rpg.hpPot : k === "potion_mp" ? rpg.mpPot : rpg.owned.filter((x) => x === k).length)}
                   atkName={skills.atkName}
                   s1Name={skills.s1Name}
                   s2Name={skills.s2Name}

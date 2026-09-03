@@ -4,7 +4,8 @@ import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_FALLBACK_FROM, upgradeCost, sellValue, type BuffKey as BuffKeyT,
   starWeaponBonus, starArmorBonus, STAR_MILESTONES,
   TRADE_PRICES, tradeValue, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
-  type ItemKey, type BuffKey, type PetKey, type CosmeticKey,
+  sumPotLines, FAMILY_ELEM, rollPotentials,
+  type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
 } from "../data";
 import {
   classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf,
@@ -39,6 +40,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* ----- RPG 기본 자원 ----- */
   gold = 30; // 시작 자금 (물약 1개 분)
   potions: { hp: number; mp: number } = { hp: 2, mp: 1 }; // 시작 지급
+  /* v3.0.15 (#7) — 물약 퀵슬롯 장착 (슬롯 → 아이템키. 인벤토리에서 지정) */
+  quickPots: { hp: string; mp: string } = { hp: "potion_hp", mp: "potion_mp" };
+  /* v3.0.15 (#13) — eert 큐브 잠재옵션 (아이템키 → 잠재) */
+  potentials: Record<string, Potentials> = {};
   weapon: ItemKey = "weapon_1";
   armor: ItemKey = "armor_1";
   /** v2.9 (#8) — 장신구 슬롯: 반지 4개 + 펜던트 2개 중복 장착 (메이플 장비창 감각) */
@@ -394,7 +399,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** 궁수 기본공격 — 활쏘기 (화살 1발, 관통 1)
    *  v3.0.2 — 발광 구슬 대신 실제 화살 투사체 + 활 당기기 비주얼 (무기 정체성)
-   *  v3.0.6 (지시 #3): 2차+ 2발 연사 / 3차+ 관통+1 / 4차+ 3발 부채꼴 발광 */
+   *  v3.0.15 (#4) — "N차마다 N개" 공식: 미전직·1차 1발 / 2차 2발 / 3차 3발 / 4차 4발 */
   private atkBow(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.setFlipX(dir.y === 0 && dir.x > 0);
@@ -405,7 +410,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.tier;
     const empowered = this.nextAtkEmpowered;
     this.nextAtkEmpowered = false;
-    const shots = 1 + (t >= 1 ? 1 : 0) + (t >= 3 ? 1 : 0);
+    const shots = Math.max(1, t); // v3.0.15 (#4): N차 = N발
     const pierce = 1 + (t >= 2 ? 1 : 0);
 
     this.scene.time.delayedCall(65, () => {
@@ -422,7 +427,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               x: this.x, y: this.y - 8,
               angle: angle + (shots > 1 ? (i - (shots - 1) / 2) * 0.08 : 0),
               speed: 620, pierce, dmg: d2, crit: c2,
-              tint: t >= 4 ? 0x9dffc4 : 0xffffff, knock: 180, scale: 1.0 + 0.06 * t,
+              tint: t >= 4 ? 0x9dffc4 : 0xffffff, knock: 180, scale: 1.35 + 0.06 * t, // v3.0.15 (#15) 화살 크기 상향
               tex: "x2_arrow", blend: t >= 4 ? "add" : "normal", rot: true,
             });
           });
@@ -431,7 +436,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.firePlayerProj({
             x: this.x, y: this.y - 8,
             angle, speed: 620, pierce, dmg, crit,
-            tint: t >= 4 ? 0x9dffc4 : 0xffffff, knock: 180, scale: 1.0 + 0.06 * t,
+            tint: t >= 4 ? 0x9dffc4 : 0xffffff, knock: 180, scale: 1.35 + 0.06 * t, // v3.0.15 (#15) 화살 크기 상향
             tex: "x2_arrow", blend: t >= 4 ? "add" : "normal", rot: true,
           });
         }
@@ -449,7 +454,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** 마법사 기본공격 — 마법탄 (볼트 1발, 관통 2)
    *  v3.0.2 — 칼을 휘두르지 않고 시전 이펙트(마나 불꽃) + 마법 구슬 발사 (무기 정체성)
-   *  v3.0.6 (지시 #3): 2차+ 2발 / 3차+ 유도뢰 1발 추가 / 4차+ 3발 대형 */
+   *  v3.0.15 (#4) — "N차마다 N개" 공식 적용 (1차 1발 ~ 4차 4발) */
   private atkBolt(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.setFlipX(dir.y === 0 && dir.x > 0);
@@ -459,7 +464,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.tier;
     const empowered = this.nextAtkEmpowered;
     this.nextAtkEmpowered = false;
-    const shots = 1 + (t >= 1 ? 1 : 0) + (t >= 3 ? 1 : 0);
+    const shots = Math.max(1, t); // v3.0.15 (#4): N차 = N발
 
     this.scene.time.delayedCall(65, () => {
       if (this.state !== "attack") return;
@@ -2355,6 +2360,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
+  /** v3.0.15 (#2) — 레벨업 AP 자동배분: 계열 주스탯 80% + 행운 20%.
+   *  지력→MP/행운→HP는 allocateStat에서 즉시 가산되므로 그대로 이득. */
+  allocateAutoPoints(): boolean {
+    if (this.ap < 1) return false;
+    const fam = familyOf(this.cls);
+    const main: "str" | "dex" | "int" = fam === "mage" ? "int" : fam === "ranger" || fam === "thief" ? "dex" : "str";
+    const total = this.ap;
+    const mainN = Math.ceil(total * 0.8);
+    const subN = total - mainN;
+    if (mainN > 0) this.allocateStat(main, mainN);
+    if (subN > 0) this.allocateStat("luk", subN);
+    return true;
+  }
+
   /* ---------------- 버프 (v1.9 BM — 지속시간 효과) ---------------- */
 
   hasBuff(key: BuffKey): boolean {
@@ -2423,9 +2442,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** 장비+강화+클래스 경로+힘 스탯 포함 실제 공격력 (v1.9: 힘 +0.3/점, 분노 버프 +25%)
    *  v3.0.5 — 스타포스 마일스톤(★5/10/15) 공격 보너스 반영 */
   get atkTotal(): number {
+    /* v3.0.15 (#13) — 무기 잠재옵션 공격력 합산 */
+    const potAtk = sumPotLines([this.potentials[this.weapon]]).atk;
     const base =
       this.atk + (ITEMS[this.weapon].atk ?? 0) + this.upgrades.weapon * 2 +
-      starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3;
+      starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3 + potAtk;
     const buff = this.hasBuff("buff_atk") || this.hasBuff("buff_king") ? 1.25 : 1;
     const king = this.hasBuff("buff_king") ? 1.3 / 1.25 : 1; // v3.0.6 — 왕의 가호 공격 +30%
     return Math.round(base * (1 + this.clsBonus.atkPct / 100) * buff * king);
@@ -2436,9 +2457,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   get defTotal(): number {
     const kingDef = this.hasBuff("buff_king") ? 10 : 0; // v3.0.6 — 왕의 가호 방어 +10
     const buff = this.hasBuff("buff_def") ? 8 : 0;
+    /* v3.0.15 (#13) — 방어구 잠재옵션 방어력 합산 */
+    const potDef = sumPotLines([this.potentials[this.armor]]).def;
     return ((
       (ITEMS[this.armor].def ?? 0) + this.upgrades.armor +
-      starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff
+      starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff + potDef
     )) + kingDef;
   }
 
@@ -2458,6 +2481,40 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (delta > 0) this.hp = Math.min(this.maxHp, this.hp + delta);
   }
 
+  /* ---------------- v3.0.15 (#13) — 잠재옵션 maxHp 동기화 ---------------- */
+  /** 이미 maxHp에 가산된 잠재 maxHp 총액 (세이브용) */
+  private potHpApplied = 0;
+  get potHpAppliedVal() { return this.potHpApplied; }
+  /** 세이브 복원 — 가산 이력만 선복원 */
+  restorePotHp(applied: number) { this.potHpApplied = applied || 0; }
+  /** 장착 장비 잠재 maxHp를 maxHp에 동기화 (로드/장착/해제/eert 리롤 후 호출) */
+  syncPotentialsHp() {
+    const target = sumPotLines([
+      this.potentials[this.weapon], this.potentials[this.armor],
+      ...this.accessories.map((k) => this.potentials[k]),
+    ]).maxHp;
+    const delta = target - this.potHpApplied;
+    if (delta === 0) return;
+    this.maxHp = Math.max(60, this.maxHp + delta);
+    this.potHpApplied = target;
+    if (delta > 0) this.hp = Math.min(this.maxHp, this.hp + delta);
+    this.scene.emitHud();
+  }
+
+  /** eert 큐브 리롤 — 큐브 소모 후 잠재 재추첨. 결과를 반환 (씬에서 연출) */
+  rerollPotentials(key: ItemKey): Potentials | null {
+    const item = ITEMS[key];
+    if (!item || (item.kind !== "weapon" && item.kind !== "armor" && item.kind !== "accessory")) return null;
+    // 장비는 보유 중이어야 (장착 중이든 가방이든) / 큐브 보유 확인
+    if (!this.owned.includes(key) && this.weapon !== key && this.armor !== key && !this.accessories.includes(key)) return null;
+    if (!this.owned.includes("eert_cube")) return null;
+    this.consumeConsumable("eert_cube");
+    const pot = rollPotentials();
+    this.potentials[key] = pot;
+    this.syncPotentialsHp();
+    return pot;
+  }
+
   /** 크리티컬 확률 (%) — 기본 8% + 장신구(반지/펜던트 합산) + 클래스 경로 누적 + 민첽 0.4%p/점
    *  v3.0.5 — 무기 스타포스 마일스톤 치명 보너스(★5+2/★10+3/★15+5) 반영
    *  v3.0.7 — 장신구 스타포스 마일스톤 치명 보너스(★5+2/★10+6/★15+12) 반영 */
@@ -2467,7 +2524,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       acc += (ITEMS[k].crit ?? 0) + starAccBonus(this.accUp[k] ?? 0, ITEMS[k]).crit;
     }
     acc += starWeaponBonus(this.upgrades.weapon).crit;
+    /* v3.0.15 (#13) — 장착 장비 잠재옵션 치명 합산 (무기/방어구/장신구) */
+    acc += sumPotLines([
+      this.potentials[this.weapon], this.potentials[this.armor],
+      ...this.accessories.map((k) => this.potentials[k]),
+    ]).crit;
     return Math.round((Player.BASE_CRIT + acc + this.clsBonus.critAdd + this.stats.dex * 0.4) * 10) / 10;
+  }
+
+  /** v3.0.15 (#16) — 공격 원소 (계열 고정: 전사 화염/궁수 자연/마법사 냉기/도적 어둠, 미전직 무속성) */
+  get attackElem(): ElemKey {
+    const fam = familyOf(this.cls);
+    return fam ? (FAMILY_ELEM[fam] ?? "none") : "none";
   }
 
   /** 펫 골드 보너스 (%) — 소환 중인 펫의 효과 */
@@ -2498,17 +2566,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return Math.max(1, Math.round(raw - effDef));
   }
 
-  /** 물약 사용 (퀵슬롯) — 0.8초 쿨다운 */
+  /** v3.0.15 — 물약 쿨다운 잔여 ms (씬에서 자동물약 판정용) */
+  get potionCd(): number { return this.potCd; }
+
+  /** 물약 사용 (퀵슬롯) — 0.8초 쿨다운.
+   *  v3.0.15 (#7) — 퀵슬롯에 장착된 물약(기본/상급)을 사용. 슬롯 지정이 없으면 기본 물약. */
   usePotion(kind: "hp" | "mp"): boolean {
     if (this.potCd > 0 || this.state === "dead") return false;
-    if (this.potions[kind] <= 0) return false;
-    const item = kind === "hp" ? ITEMS.potion_hp : ITEMS.potion_mp;
-    const used = kind === "hp" ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
+    const slotKey = (this.quickPots[kind] ?? (kind === "hp" ? "potion_hp" : "potion_mp")) as ItemKey;
+    const item = ITEMS[slotKey];
+    if (!item) return false;
+    const isHp = kind === "hp";
+    // 슬롯에 지정한 물약 보유 확인 (기본 물약은 potions 카운터, 상급은 owned)
+    let have: boolean;
+    if (slotKey === "potion_hp") have = this.potions.hp > 0;
+    else if (slotKey === "potion_mp") have = this.potions.mp > 0;
+    else have = this.owned.includes(slotKey);
+    if (!have) return false;
+    const used = isHp ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
     if (!used) return false;
-    this.potions[kind]--;
+    if (slotKey === "potion_hp") this.potions.hp--;
+    else if (slotKey === "potion_mp") this.potions.mp--;
+    else this.consumeConsumable(slotKey);
     this.potCd = 800;
     this.scene.sfxPotion();
-    this.scene.spawnPickupText(this.x, this.y - 30, kind === "hp" ? `+${item.heal} HP` : `+${item.restore} MP`, "#7dffa8");
+    this.scene.spawnPickupText(this.x, this.y - 30, isHp ? `+${item.heal} HP` : `+${item.restore} MP`, "#7dffa8");
     this.scene.emitHud();
     return true;
   }
@@ -2846,9 +2928,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** 자동 물약/버프 틱 — update에서 호출 (지시 #5) */
   private tickAutoUse() {
     const cfg = this.autoUse;
-    if (cfg.hpPct > 0 && this.hp <= this.maxHp * (cfg.hpPct / 100) && this.potions.hp > 0 && this.potCd <= 0) {
+    /* v3.0.15 (#6/#7) — 퀵슬롯에 지정된 물약(기본/상급) 기준으로 자동 사용 판정 */
+    const hpKey = (this.quickPots.hp ?? "potion_hp") as ItemKey;
+    const mpKey = (this.quickPots.mp ?? "potion_mp") as ItemKey;
+    const hpHave = hpKey === "potion_hp" ? this.potions.hp > 0 : this.owned.includes(hpKey);
+    const mpHave = mpKey === "potion_mp" ? this.potions.mp > 0 : this.owned.includes(mpKey);
+    if (cfg.hpPct > 0 && this.hp <= this.maxHp * (cfg.hpPct / 100) && hpHave && this.potCd <= 0) {
       this.usePotion("hp");
-    } else if (cfg.mpOn && this.mp <= this.maxMp * 0.25 && this.potions.mp > 0 && this.potCd <= 0) {
+    } else if (cfg.mpOn && this.mp <= this.maxMp * 0.25 && mpHave && this.potCd <= 0) {
       this.usePotion("mp");
     }
     this.autoBuffAcc += 1;

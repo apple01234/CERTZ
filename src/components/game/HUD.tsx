@@ -259,6 +259,9 @@ export function HUD({
           >
             <ScrollText size={13} className="shrink-0 text-amber-300" />
             <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
+            {quest.pending && (
+              <span className="shrink-0 rounded bg-amber-400/25 px-1 py-px text-[8px] font-black text-amber-200">수락 대기</span>
+            )}
             <span
               className="flex h-7 w-9 shrink-0 items-center justify-center rounded border border-white/25 bg-black/50 text-[11px] font-black leading-4 text-white/80 active:scale-95"
             >

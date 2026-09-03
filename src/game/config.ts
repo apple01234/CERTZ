@@ -115,6 +115,19 @@ export type SaveData = {
   visited?: string[];
   /* ↓ 자동사냥 토글 (v2.5 — 펫 보유 시에만 유효, 지시 #8) */
   autoHunt?: boolean;
+  /* ----- v3.0.15 ----- */
+  /* #2 — 레벨업 시 스탯 자동배분 on/off */
+  autoAlloc?: boolean;
+  /* #6/#7 — 물약 퀵슬롯 장착 (슬롯 → 아이템키). 기본 potion_hp/potion_mp */
+  quickPots?: { hp: string; mp: string };
+  /* #13 — eert 큐브 잠재옵션 (아이템키 → 잠재) + maxHP 가산 이력 */
+  potentials?: Record<string, { grade: number; lines: { k: string; v: number }[] }>;
+  potHpApplied?: number;
+  /* #11 — 해금된 챕터 테마 장비 세트 (챕터키 목록) */
+  unlockedSets?: string[];
+  /* #8 — 퀘스트 수락/추적 (스테이지 → 수락 인덱스, 추적 스테이지 키) */
+  questAccepted?: Record<string, number>;
+  questTracked?: string | null;
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */
@@ -215,6 +228,14 @@ export function loadSave(): SaveData | null {
     // 방문 기록/자동사냥 (v2.5 — 구 세이브 호환 기본값)
     if (!Array.isArray(d.visited)) d.visited = [];
     if (typeof d.autoHunt !== "boolean") d.autoHunt = false;
+    // v3.0.15 — 신규 설정/시스템 기본값 (구 세이브 호환)
+    if (typeof d.autoAlloc !== "boolean") d.autoAlloc = false;
+    if (!d.quickPots || typeof d.quickPots !== "object") d.quickPots = { hp: "potion_hp", mp: "potion_mp" };
+    if (!d.potentials || typeof d.potentials !== "object") d.potentials = {};
+    if (typeof d.potHpApplied !== "number") d.potHpApplied = 0;
+    if (!Array.isArray(d.unlockedSets)) d.unlockedSets = [];
+    if (!d.questAccepted || typeof d.questAccepted !== "object") d.questAccepted = {};
+    if (d.questTracked === undefined) d.questTracked = null;
     return d;
   } catch {
     return null;
