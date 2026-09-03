@@ -130,6 +130,10 @@ export type SaveData = {
   questTracked?: string | null;
   /* v3.0.16 — 몬스터 컬렉션 처치 기록 (id → 처치 수, 최초 처치 시 등록) */
   monsterKills?: Record<string, number>;
+  /* v3.0.22 (#43/#44) — 챕터별 세계수 결정 수집 기록 (챕터키 → 수집 수) */
+  fragmentsFound?: Record<string, number>;
+  /* v3.0.22 (#50) — 세계수의 가호 (아홉 결정 전부 수집 시 영구 해방) */
+  worldtreeBlessing?: boolean;
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */
@@ -240,6 +244,9 @@ export function loadSave(): SaveData | null {
     if (d.questTracked === undefined) d.questTracked = null;
     // v3.0.16 — 몬스터 컬렉션 (구 세이브 호환)
     if (!d.monsterKills || typeof d.monsterKills !== "object") d.monsterKills = {};
+    // v3.0.22 — 결정 수집/세계수 가호 (구 세이브 호환)
+    if (!d.fragmentsFound || typeof d.fragmentsFound !== "object") d.fragmentsFound = {};
+    if (typeof d.worldtreeBlessing !== "boolean") d.worldtreeBlessing = false;
     return d;
   } catch {
     return null;

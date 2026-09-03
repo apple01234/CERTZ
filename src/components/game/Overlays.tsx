@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.21 · 실사 BGM 40트랙 전면 교체(테마당 5곡 로테이션) — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.22 · 자동사냥 맵 전체 밀집 이동 + 전직 퀘스트 게이트 + 세계수 결정 9종 + 멀티서버 복구 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
@@ -111,15 +111,16 @@ export function BossBar({ boss }: { boss: { name: string; hp: number; maxHp: num
   if (!boss) return null;
   const pct = Math.max(0, (boss.hp / boss.maxHp) * 100);
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center">
-      <div className="w-[72%] max-w-xl rounded-lg border border-purple-300/50 bg-black/70 px-3 py-2 shadow-xl backdrop-blur-sm">
+    <div className="pointer-events-none absolute inset-x-0 top-2 z-30 flex justify-center sm:top-3">
+      {/* v3.0.22 (#49) — 모바일에서 너무 컸던 보스 체력바 축소 (모바일 46%/얇은 바, 데스크톱 기존 유지) */}
+      <div className="w-[46%] max-w-[400px] rounded-md border border-purple-300/50 bg-black/70 px-2 py-1.5 shadow-xl backdrop-blur-sm sm:w-[72%] sm:max-w-xl sm:rounded-lg sm:px-3 sm:py-2">
         <div className="mb-1 flex items-center justify-between">
-          <span className="text-xs font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000] sm:text-sm">
+          <span className="text-[10px] font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000] sm:text-sm">
             {boss.name}
           </span>
-          <span className="text-[10px] font-bold text-white/70">{Math.ceil(pct)}%</span>
+          <span className="text-[9px] font-bold text-white/70 sm:text-[10px]">{Math.ceil(pct)}%</span>
         </div>
-        <div className="h-3.5 overflow-hidden rounded-full border border-black/70 bg-black/70">
+        <div className="h-2 overflow-hidden rounded-full border border-black/70 bg-black/70 sm:h-3.5">
           <div
             className="h-full bg-gradient-to-b from-fuchsia-400 to-purple-800 transition-[width] duration-200"
             style={{ width: `${pct}%` }}

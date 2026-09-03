@@ -685,6 +685,27 @@ export function nextCollectionGoal(registered: number): CollectionMilestone | nu
   return COLLECTION_MILESTONES.find((m) => registered < m.n) ?? null;
 }
 
+/* ================= v3.0.22 (#43/#44) — 챕터별 세계수 결정(파편) =================
+ *  "챕터마다 조각이 달라야 되는데 다 같음" — 챕터마다 고유 이름/색/보너스/수확 멘트.
+ *  atk 보너스는 챕터가 깊어질수록 커진다(후반 결정이 더 값지다). */
+export const FRAGMENT_META: Record<string, { name: string; color: number; atk: number; lines: string[] }> = {
+  forest: { name: "숲의 결정", color: 0x9df0ff, atk: 5, lines: ["촉촉한 초록빛 결정이다. 숲의 숨결이 손안에서 맴돈다.", "잎사귀 문양이 잠시 떠올랐다 사라진다.", "세계수의 가지가 스쳤던 흔적이 아직 따뜻하다."] },
+  kingdom: { name: "늪의 진주", color: 0x8fd8ff, atk: 8, lines: ["진주 표면에 늪의 안개가 흘러간다.", "쿠소디아 기사단의 문장이 비쳐 나온다.", "물속에서도 꺼지지 않는 빛이다."] },
+  alfheim: { name: "성전의 빛구슬", color: 0xfff3a8, atk: 11, lines: ["손안에서 종소리 같은 온기가 퍼진다.", "요정들의 노랫소리가 잠깐 들리는 것 같다.", "빛의 결정 — 세계수와 가장 가까운 조각."] },
+  muspelheim: { name: "화염의 심핵", color: 0xffa24a, atk: 14, lines: ["극열의 해역에서도 타오르는 심장 같은 결정.", "불티가 튀며 룬 문자가 타오른다.", "이 열기는 세계수를 지키는 불꽃이다."] },
+  niflheim: { name: "서리 결정", color: 0xbfe8ff, atk: 17, lines: ["서리꽃이 결정 위에서 피었다 진다.", "극한의 추위도 이 빛을 삼키지 못했다.", "차가운 표면 아래에서 숨결이 뛴다."] },
+  cave: { name: "심연 수정", color: 0xc79aff, atk: 20, lines: ["보랏빛이 어둠을 삼키네.", "어둠 요정들의 비밀이 수정 안에 갇혀 있다.", "수정을 비추면 깊은 동굴이 비친다."] },
+  nidavellir: { name: "룬 광석의 눈", color: 0xffd76a, atk: 23, lines: ["룬 문자가 읽힌다 — '세계수를 지켜라'.", "난쟁이 장인들의 망치 소리가 울리는 것 같다.", "광맥 깊은 곳에서도 빛을 잃지 않는다."] },
+  hel: { name: "전쟁의 잔광", color: 0xff8f6a, atk: 26, lines: ["수많은 용사들의 기억이 담긴 결정.", "대전쟁의 땅에서도 살아 있었어.", "잔광이 울부짖다 조용해진다."] },
+  abyss: { name: "세계수의 눈동자", color: 0x7de8ff, atk: 30, lines: ["마지막 조각 — 세계수가 직접 두었던 눈.", "아홉 왕국의 숨결이 손안에서 하나로 울린다.", "종언의 왕좌도 이 빛 앞에서는 조용하다."] },
+};
+
+/* ================= v3.0.22 (#50) — 세계수의 가호 (신규 기능) =================
+ *  아홉 챕터의 결정을 모두 수집하면 해방되는 영구 스탯 보너스 + 스토리 대사. */
+export const WORLDTREE_BLESSING = { atk: 20, def: 8, hpAdd: 200, atkPct: 3 };
+/** 결정 수집 완료 판정에 필요한 챕터 수 = FRAGMENT_META 키 수 */
+export const FRAGMENT_CHAPTERS = Object.keys(FRAGMENT_META);
+
 export type DialogueDef = { speaker: string; lines: string[] };
 
 /* ================= 스토리 대사 (v3.0.10 본게임 세계관 확정판) =================
@@ -750,6 +771,78 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "또 하나의 결정 조각… 몸속에서 세계수의 숨결이 출렁인다.",
       "이그니, 이 조각도 어딘가의 결정이 삼킨 조각이야?",
       "…그래. 조각이 모이면 진짜 결정의 위치가 드러나. 훌륭해, {name}!",
+    ],
+  },
+  /* v3.0.22 (#43/#44) — 챕터별 결정 첫 수확 스토리 대사 (9챕터 — 각 결정의 고유 이름 등장) */
+  fragment_forest: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "숲의 결정이야! 세계수의 가지가 스치며 남긴 흔적이지.",
+      "초록빛이 아직 살아 있어. 이걸 모으면 결정을 쫓을 수 있어, {name}!",
+    ],
+  },
+  fragment_kingdom: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "늪의 진주… 쿠소디아의 기사들이 지키던 결정이야.",
+      "물속에서도 빛을 잃지 않네. 세계수의 숨결이 점점 짙어지고 있어.",
+    ],
+  },
+  fragment_alfheim: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "성전의 빛구슬! 요정들이 천 년 동안 품어 왔던 결정이야.",
+      "…따뜻해. 빛의 결정은 세계수와 가장 가까운 존재라고 해.",
+    ],
+  },
+  fragment_muspelheim: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "화염의 심핵 — 극열의 해역에서도 타오르는 결정이야!",
+      "조심해, 손대면 뜨거워. 하지만 이 열기는 세계수를 지키는 불꽃이야.",
+    ],
+  },
+  fragment_niflheim: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "서리 결정… 얼음 아래에서도 숨을 쉬고 있어.",
+      "극한의 추위조차 이 빛을 삼키지 못했어. 대단해, {name}.",
+    ],
+  },
+  fragment_cave: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "심연 수정 — 어둠 요정들이 감춰 온 결정이야.",
+      "보랏빛이 어둠을 삼키네. 조각이 하나씩 제 빛을 찾아가고 있어.",
+    ],
+  },
+  fragment_nidavellir: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "룬 광석의 눈! 난쟁이 장인들이 룬을 새기다 남긴 결정이야.",
+      "룬 문자가 읽혀… '세계수를 지켜라'. 옛 맹세가 남아 있어.",
+    ],
+  },
+  fragment_hel: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "전쟁의 잔광… 대전쟁의 땅에서도 결정은 살아 있었어.",
+      "수많은 용사들의 기억이 담겨 있네. 잊지 말자, {name}.",
+    ],
+  },
+  fragment_abyss: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "…마지막 조각이야. 세계수의 눈동자.",
+      "이것으로 결정의 위치가 드러났어. 아홉 왕국의 숨결이 {name}의 손에 모였어!",
+    ],
+  },
+  /* v3.0.22 (#50) — 세계수의 가호 (결정 전부 수집 보너스) */
+  worldtreeBlessing: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "아홉 결정이 하나로 울렸어… {name}, 세계수가 너를 기억하고 있어!",
+      "『세계수의 가호』 — 이그드라실의 힘이 {name}의 팔과 몸에 깃든다. 영구히!",
     ],
   },
   wolfRoutDone: {

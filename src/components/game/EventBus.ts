@@ -62,6 +62,12 @@ export type RpgState = {
   cls: string | null;
   /** 전직/승격 가능 조건 (다음 단계 Lv 달성) — HUD 전직 버튼 */
   canJob: boolean;
+  /** v3.0.22 (#38) — 전직 퀘스트 게이트 미완료 사유 (null = 퀘스트 조건 충족) */
+  jobLock?: string | null;
+  /** v3.0.22 (#43/#44/#50) — 세계수 결정 수집 진행도 + 가호 여부 */
+  fragFound?: number;
+  fragTotal?: number;
+  blessing?: boolean;
   /* ----- v1.9 BM + 스탯 ----- */
   /** 버프 물약 보유 개수 (BuffKey → 개수) */
   buffItems: Record<string, number>;

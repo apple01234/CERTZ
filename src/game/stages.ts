@@ -444,9 +444,13 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
 /* ================= 스테이지 생성기 ================= */
 
 /** 챕터별 난이도 배율 (인덱스 = 장번호-2 → forest(2장)부터) */
-const CH_HP = [1, 1.2, 1.55, 1.95, 2.45, 3.0, 3.7, 4.5, 5.4];
-const CH_ATK = [1, 1.12, 1.28, 1.48, 1.7, 1.95, 2.25, 2.6, 3.0];
-const CH_EXP = [1, 1.35, 1.8, 2.35, 3.0, 3.8, 4.8, 6.0, 7.5];
+/* v3.0.22 (#50) — "챕터를 지날수록 쎄져야 하는데 약함" — 챕터 스케일링 전면 강화.
+ *  기존 곡선(HP 1→5.4·ATK 1→3.0)은 유저 장비 성장(스타포스/세트/잠재/엘릭서)을 전혀 못 따라갔다.
+ *  신규 곡선: HP 챕터당 ~×1.35 복합(최종 15.5배)·ATK ~×1.22 복합(최종 5.0배)·EXP 완화 병행.
+ *  1~2장은 기존 체감 유지(±0.1), 3장부터 격차가 벌어지기 시작한다. */
+const CH_HP = [1, 1.3, 1.85, 2.7, 3.9, 5.6, 8.0, 11.3, 15.5];
+const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0];
+const CH_EXP = [1, 1.4, 1.9, 2.55, 3.35, 4.35, 5.6, 7.2, 9.2];
 
 /** 스테이지 키 → {챕터, 구역} 파싱 */
 export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: number } {
@@ -470,10 +474,11 @@ export function stageScale(key: StageKey): { hp: number; atk: number; exp: numbe
   if (!spec) return { hp: 1, atk: 1, exp: 1, gold: 1 };
   const { sub } = parseStage(key);
   const i = spec.num - 2;
-  const subMul = 1 + (sub - 1) * 0.055;
+  /* v3.0.22 (#50) — 구역 진행 배율 상향: 구역당 HP +7.5%·ATK +6% (기존 5.5/4.5%) */
+  const subMul = 1 + (sub - 1) * 0.075;
   return {
     hp: CH_HP[i] * subMul,
-    atk: CH_ATK[i] * (1 + (sub - 1) * 0.045),
+    atk: CH_ATK[i] * (1 + (sub - 1) * 0.06),
     exp: CH_EXP[i] * subMul,
     gold: (1 + i * 0.42) * subMul,
   };

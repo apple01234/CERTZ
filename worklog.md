@@ -172,3 +172,33 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.21.apk (60.8MB, versionCode 35, 기존 키 동일 — 덮어설치 호환)
 - BGM이 "생성 음악"에서 "다운로드 실사 음악"으로 전면 교체 — 테마당 5곡 보장, 8테마 40트랙, 무한 로테이션
 - 다음 후보: BGM 볼륨 개별 슬라이더, 트랙명 표시 UI, 던전 보스 전용 트랙 추가
+
+---
+Task ID: 18
+Agent: Super Z (main)
+Task: 피드백 14개 항목 구현 (v3.0.22, versionCode 36) + 멀티 서버 복구 + APK 빌드 전달
+
+Work Log:
+- [#37 자동사냥 맵 전체 밀집] tickAutoHunt 스코어링 강화 — 클러스터 반경 220→260px, 밀집 감삭 최대 45→62%, 히스테리시스 1.25→1.3배·420→700px — 가장 많은 무리가 모인 곳으로 이동, 무리 정리 시 다음 밀집 무리로 자동 이동(한 곳 캠핑 제거). 노란 엣지 화살표 방향과 일치
+- [#38 전직 퀘스트 게이트] jobQuestCleared()/jobQuestLockText() 신규 — 미전직은 마을 체인 완료, 1→2차/2→3차는 해당 차수 [전직 스토리] 체인 완료 필요. canJob = 레벨 && 퀘스트. 패널에 "📜 전직 퀘스트 미완료 — {사유}" 표기. GM 자유전직은 유지
+- [#39 사운드 밸런스] BGM 0.34→0.38, 반복음 하향(스윙 0.30/명중 0.36/코인 0.32/픽업 0.42), 큰 순간 유지, 픽업 피치 변주 추가(매번 같은 소리 방지)
+- [#40 퀘스트창 기본 열림] GameRoot playing 진입 시 1회 자동 오픈, 유저가 닫으면 재오픈 안 함(questAutoOpened ref)
+- [#41 제자리 떨림] autoApproach 원거리 목표(340px+) 방향 홀드 300→1100ms + 히스테리시스 확대로 매 틱 타깃 플랩 제거
+- [#42 APK 멀티] 근원 = 프로덕션이 socket.io 없는 standalone 서버로 구동 중이었음 → package.json start를 커스텀 server.js(socket.io)로 전환, E2E로 서버 살아있음 입증(게임 클라+node 클라 상호 players 브로드캐스트 확인). ServerConnect 기본 서버 URL은 기존 워크스페이스 프리뷰 유지
+- [#43 조각 멘트] collectFragment 개편 — 챕터 첫 수확은 챕터별 스토리 대사(fragment_forest~abyss 9종 신규), 이후 3종 랜덤 멘트(showDialogueRaw 동적 단발 대사) + "「결정명」 획득! ATK +N" 토스트
+- [#44 챕터별 조각] FRAGMENT_META 9챕터(숲의 결정/늪의 진주/성전의 빛구슬/화염의 심핵/서리 결정/심연 수정/룬 광석의 눈/전쟁의 잔광/세계수의 눈동자) — 고유 이름·틴트 색·ATK 보너스 5→30 단계
+- [#45 엘릭서 보라] item_potion_elixir.png 재생성(R+35%/G-45%/B+75% 퍼플 변환)
+- [#46 시험 상대 무한 소환] 근원 = onEnemyKilled의 eliteEnemy===null 우연 의존 판정 → Enemy.die가 죽은 개체 참조 전달, jobTrialEnemy 전용 참조 일치 시에만 단계 완료 + 소환 가드 전용 참조 기준
+- [#47 퀘스트 여행] autoTravelPortal/stagePathTo(NEXT/PREV 양방향 BFS) — 추적 구역이 다르면 자동사냥이 경유 포탈로 실제 이동(포탈 잠김이면 현 구역 사냥 지속), questTargetPos가 포탈을 가리켜 엣지 화살표+미니맵 금색 점도 안내
+- [#48 반복의뢰] 원인 규명(상인 대화→수주 흐름은 정상, E2E R4 실측 repeatOn=true 성공) — 수주→체인완료 구역에서 [반복] 활성 흐름 유지, 이번 실측으로 입증
+- [#49 보스바 모바일] 72%/max-w-xl → 모바일 46%/max-w-400px·바 h-2·상단 여백 축소, sm: 데스크톱 기존 유지
+- [#50 스케일링+신규기능] ①CH_HP 1→15.5배·CH_ATK 1→5.0배·구역당 HP+7.5%/ATK+6%(기존 5.4배/3.0배)·보스 가중 HP 1.6/ATK 1.15 ②세계수 결정 수집 기능 신규: fragmentsFound 세이브, 9챕터 전부 수집 시 세계수의 가호(ATK+20·DEF+8·HP+200·공격+3% 영구) + 스토리 대사(worldtreeBlessing) + 컬렉션 패널 수집 현황 카드 — 기존 콘텐츠 삭제 없음
+- 이슈: ①IM 게이트웨이 출력이 "[m" 문자열을 지워 표시해 GameRoot 오타로 오인(실제 파일 정상 — 문자코드로 확인) ②verify_v322 1차: S6 체크 문자열 따옴표 오류·R8 2풀게임 렌더러 크래시 → node socket.io-client 방식으로 재설계 ③웹빌드 후 APK export 빌드가 .next를 덮어쓰는 순서 문제 → APK 빌드 후 npm run build 재실행 + 커스텀 서버 재기동 확립
+- 검증: tsc 0 + eslint 0 + verify_v322.js 23/23 PASS(정적 14 + 런타임 9: 퀘스트창 자동오픈/닫힘 유지/전직게이트 잠금사유/반복수주 repeatOn=true/여행 포탈 안내 일치/포탈 이동 575px/BGM 0.38/멀티 상호인식/pageerror 0) + verify_v318 15/15 + verify_v321 13/14(버전 문자열만 예상 실패)
+- APK: BUILD SUCCESSFUL(43s) → aapt versionCode 36·3.0.22·apksigner cc774f34(키 동일)·40 BGM·엘릭서 아이콘 검출·60.8MB
+- 커밋 push, 구버전 v3.0.21.apk 제거, 웹 서버 = 커스텀 server.js(socket.io) production 재기동(page 200·socket.io 핸드셰이크 OK·BGM/엘릭서 200)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.22.apk (60.8MB, versionCode 36, 덮어설치 호환)
+- 14개 항목 전량 해소 + 멀티 서버 원인 복구(standalone→커스텀 socket.io 서버) + 신규 스토리 기능(세계수 결정 9종/가호)
+- 다음 후보: 결정 도감 상세 카드(챕터별 획득 여부 아이콘), 전직 시험 연출 강화, 멀티 파티 UI 개선

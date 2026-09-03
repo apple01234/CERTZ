@@ -1268,6 +1268,19 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
           </div>
         </div>
 
+        {/* v3.0.22 (#43/#44/#50) — 세계수 결정 수집 현황 (챕터마다 다른 결정 + 완전 수집 시 영구 가호) */}
+        <div className={`mb-2 rounded-lg border p-2.5 ${rpg.blessing ? "border-sky-300/60 bg-sky-400/[0.1]" : "border-white/15 bg-white/[0.04]"}`}>
+          <p className="text-[12px] font-black text-sky-200">
+            🌳 세계수 결정 — {rpg.fragFound ?? 0} / {rpg.fragTotal ?? 9} 챕터 수집
+            {rpg.blessing ? " · 가호 활성" : ""}
+          </p>
+          <p className="mt-0.5 text-[10px] font-bold text-white/50">
+            {rpg.blessing
+              ? "아홉 왕국의 결정이 모두 모였다 — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)"
+              : "챕터마다 다른 결정이 숨어 있다. 전부 모으면 세계수의 가호를 얻는다 (ATK+20 · DEF+8 · HP+200 · 공격 +3%)"}
+          </p>
+        </div>
+
         {/* 보너스 요약 */}
         <div className={`mb-2 rounded-lg border p-2.5 ${bonusLines.length > 0 ? "border-emerald-300/50 bg-emerald-400/[0.08]" : "border-white/15 bg-white/[0.04]"}`}>
           <p className="text-[12px] font-black text-emerald-200">
@@ -1553,10 +1566,16 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
             🏆 최종 전직 완료 — {chain[2].name}의 정점에 섰습니다
           </p>
         ) : locked ? (
-          <p className="mb-3 rounded-lg border border-dashed border-white/15 px-3 py-4 text-center text-xs font-bold text-white/50">
-            {TIER_LABEL[chain.length + 1]}: Lv {need} 달성 시 열립니다
-            {chain.length === 1 ? " — 계열 내 세부 직업을 고르세요" : ""}
-          </p>
+          <div className="mb-3 rounded-lg border border-dashed border-white/15 px-3 py-4 text-center text-xs font-bold text-white/50">
+            <p>{TIER_LABEL[chain.length + 1]}: Lv {need} 달성 시 열립니다
+              {chain.length === 1 ? " — 계열 내 세부 직업을 고르세요" : ""}</p>
+            {/* v3.0.22 (#38) — 전직 퀘스트 게이트: 레벨과 별개로 스토리 퀘스트 완료가 필요 */}
+            {rpg.jobLock ? (
+              <p className="mt-1.5 text-[11px] font-black text-amber-300/85">
+                📜 전직 퀘스트 미완료 — {rpg.jobLock}
+              </p>
+            ) : null}
+          </div>
         ) : (
           <p className="mb-3 text-[11px] font-bold text-white/55">
             {chain.length === 0

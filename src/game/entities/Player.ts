@@ -4,7 +4,7 @@ import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_FALLBACK_FROM, upgradeCost, sellValue, type BuffKey as BuffKeyT,
   starWeaponBonus, starArmorBonus, STAR_MILESTONES, starPerStarAtk, starPerStarDef,
   TRADE_PRICES, tradeValue, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
-  sumPotLines, FAMILY_ELEM, rollPotentials, activeSetBonus, collectionBonus,
+  sumPotLines, FAMILY_ELEM, rollPotentials, activeSetBonus, collectionBonus, WORLDTREE_BLESSING,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
 } from "../data";
 import {
@@ -2494,10 +2494,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3 + potAtk;
     const buff = this.hasBuff("buff_atk") || this.hasBuff("buff_king") ? 1.25 : 1;
     const king = this.hasBuff("buff_king") ? 1.3 / 1.25 : 1; // v3.0.6 — 왕의 가호 공격 +30%
-    /* v3.0.16 — 세트 아이템 효과 + 몬스터 컬렉션 공격 % 보너스 */
+    /* v3.0.16 — 세트 아이템 효과 + 몬스터 컬렉션 공격 % 보너스
+     *  v3.0.22 (#50) — 세계수의 가호: 평ATK +20·공격 +3% (결정 전부 수집 보너스) */
     const setPct = this.activeSet?.bonus.atkPct ?? 0;
     const colPct = collectionBonus(this.collectionRegistered).atkPct;
-    return Math.round(base * (1 + (this.clsBonus.atkPct + setPct + colPct) / 100) * buff * king);
+    const blessFlat = this.worldtreeBlessing ? WORLDTREE_BLESSING.atk : 0;
+    const blessPct = this.worldtreeBlessing ? WORLDTREE_BLESSING.atkPct : 0;
+    return Math.round((base + blessFlat) * (1 + (this.clsBonus.atkPct + setPct + colPct + blessPct) / 100) * buff * king);
   }
 
   /* ---------------- v3.0.16 — 세트 아이템 효과 (메이플 세트 아이템) ---------------- */
@@ -2515,11 +2518,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const potDef = sumPotLines([this.potentials[this.armor]]).def;
     /* v3.0.16 — 세트 방어력 보너스 */
     const setDef = this.activeSet?.bonus.defAdd ?? 0;
+    /* v3.0.22 (#50) — 세계수의 가호 방어 +8 */
+    const blessDef = this.worldtreeBlessing ? WORLDTREE_BLESSING.def : 0;
     /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +1 + 기본 방어의 6% */
     const perStar = starPerStarDef(ITEMS[this.armor].def ?? 0).def * this.upgrades.armor;
     return ((
       (ITEMS[this.armor].def ?? 0) + perStar +
-      starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff + potDef + setDef
+      starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff + potDef + setDef + blessDef
     )) + kingDef;
   }
 
@@ -2549,7 +2554,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** 장착 세트 maxHp + 컬렉션 hpAdd를 maxHp에 동기화 (장착/해제/로드/컬렉션 등록 후 호출) */
   syncBonusHp() {
     const col = collectionBonus(this.collectionRegistered);
-    const target = (this.activeSet?.bonus.maxHp ?? 0) + col.hpAdd;
+    const target = (this.activeSet?.bonus.maxHp ?? 0) + col.hpAdd +
+      (this.worldtreeBlessing ? WORLDTREE_BLESSING.hpAdd : 0); // v3.0.22 (#50) 가호 HP +200
     const delta = target - this.bonusHpApplied;
     if (delta === 0) return;
     this.maxHp = Math.max(60, this.maxHp + delta);
@@ -2559,6 +2565,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
   /** 몬스터 컬렉션 등록 종수 — 씬에서 최초 처치/로드 시 갱신 */
   collectionRegistered = 0;
+
+  /* ---------------- v3.0.22 (#50) — 세계수의 가호 ---------------- */
+  /** 결정 전부 수집 보너스 활성 여부 (세이브) */
+  worldtreeBlessing = false;
+  /** 세계수의 가호 설정/해제 — atkTotal/defTotal/syncBonusHp에 즉시 반영 */
+  setWorldtreeBlessing(on: boolean) {
+    if (this.worldtreeBlessing === on) return;
+    this.worldtreeBlessing = on;
+    this.syncBonusHp();
+  }
   /** 컬렉션 등록 수 갱신 — 마일스톤 도달로 HP 보너스가 변하면 동기화 */
   setCollection(n: number) {
     if (n === this.collectionRegistered) return;

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -121,6 +121,10 @@ export class WorldScene extends Phaser.Scene {
   private returnActive = false;
   /* ----- v2.0: 정예 몬스터 (구역 5 미드보스급 — 사용자 지시 #5) ----- */
   private eliteEnemy: Enemy | null = null;
+  /* v3.0.22 (#46) — 전직 스토리 시험 상대 전용 참조 (정예 몬스터와 분리 — 처치 판정 정확화) */
+  private jobTrialEnemy: Enemy | null = null;
+  /* v3.0.22 (#43/#44) — 챕터별 세계수 결정 수집 기록 (챕터키 → 수집 수) */
+  private fragmentsFound: Record<string, number> = {};
   /* ----- v2.0: 프롤로그 보호 — 입장 직후 몬스터 즉시 공격 방지 ----- */
   private agroHoldUntil = 0;
   /** 지금 프롤로그 보호 상태인지 (인트로 시퀀스 또는 어그로 유예 중) — Enemy/Boss AI가 참조 */
@@ -372,6 +376,8 @@ export class WorldScene extends Phaser.Scene {
     this.returnBeacon = null;
     this.returnActive = false;
     this.eliteEnemy = null;
+    this.jobTrialEnemy = null; // v3.0.22 (#46) — 시험 상대 별도 참조 (처치 판정 정확화)
+    this.fragmentsFound = {}; // v3.0.22 (#44) — 세이브 복원 전 초기화
     this.fieldEliteRef = null;
     this.agroHoldUntil = 0;
     this.huntBaseline = {};
@@ -571,6 +577,9 @@ export class WorldScene extends Phaser.Scene {
       /* v3.0.16 — 몬스터 컬렉션 복원 + 등록 수 스탯 반영 */
       this.monsterKills = { ...(savedPlayer.monsterKills ?? {}) };
       this.player.setCollection(Object.keys(this.monsterKills).length);
+      /* v3.0.22 (#43/#44/#50) — 결정 수집 기록 + 세계수의 가호 복원 */
+      this.fragmentsFound = { ...(savedPlayer.fragmentsFound ?? {}) };
+      this.player.setWorldtreeBlessing(!!savedPlayer.worldtreeBlessing);
       this.player.recalcSpeedForLoad();
     }
     // v2.5 — 현재 구역 방문 기록 (실내 제외) — 지역 이동 부적 워프 대상
@@ -1187,7 +1196,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private spawnFragment(x: number, y: number) {
+    /* v3.0.22 (#44) — 챕터별 결정 색상 (결정 본체+글로우+비컨 틴트) */
+    const fmeta = FRAGMENT_META[parseStage(this.stageDef.key).ch];
     this.fragment = this.physics.add.sprite(x, y, "fragment").setDepth(4);
+    if (fmeta) this.fragment.setTint(fmeta.color);
     (this.fragment.body as Phaser.Physics.Arcade.Body).setCircle(13, 3, 3);
 
     // 실제 에셋 수정 위 반짝임 (objects.png 별/다이아 프레임)
@@ -1230,7 +1242,10 @@ export class WorldScene extends Phaser.Scene {
   private collectFragment(glow: Phaser.GameObjects.Image) {
     audio.sfx.pickup();
     audio.sfx.questDone();
-    this.player.atk += 5; // 파편 보너스
+    /* v3.0.22 (#43/#44) — 챕터별 고유 결정: 이름·색·보너스(ATK 5→30)가 전부 다르다 */
+    const ch = parseStage(this.stageDef.key).ch;
+    const meta = FRAGMENT_META[ch] ?? { name: "결정의 흔적", color: 0x9df0ff, atk: 5, lines: ["결정이 손안에서 빛난다."] };
+    this.player.atk += meta.atk; // 파편 보너스 — 챕터별 상이 (기존 고정 +5)
     this.player.healFull();
     glow.destroy();
     this.tweens.add({ targets: this.beacon, alpha: 0, duration: 400, onComplete: () => this.beacon?.destroy() });
@@ -1247,9 +1262,29 @@ export class WorldScene extends Phaser.Scene {
       onComplete: () => f.destroy(),
     });
     this.fragment = null;
-    this.spawnBurstAt(f.x, f.y, 14, 0x9df0ff);
-    const isForest = parseStage(this.stageDef.key).ch === "forest";
-    this.showDialogue(isForest ? "fragment" : "fragment2");
+    this.spawnBurstAt(f.x, f.y, 14, meta.color);
+    this.spawnPickupText(this.player.x, this.player.y - 80, `「${meta.name}」 획득! ATK +${meta.atk}`, "#9df0ff");
+    /* v3.0.22 (#43) — 수확 멘트 다양화: 챕터 첫 수확은 스토리 대사, 이후엔 3종 랜덤 멘트 */
+    const firstId = `fragment_${ch}`;
+    if (DIALOGUES[firstId] && !this.seenSet.has(firstId)) {
+      this.showDialogueOnce(firstId);
+    } else {
+      const line = meta.lines[Math.floor(Math.random() * meta.lines.length)];
+      this.showDialogueRaw({ speaker: "{name}", lines: [line] });
+    }
+    /* v3.0.22 (#50) — 세계수의 가호: 아홉 챕터의 결정을 모두 수집하면 영구 해방 */
+    this.fragmentsFound[ch] = (this.fragmentsFound[ch] ?? 0) + 1;
+    if (!this.player.worldtreeBlessing && FRAGMENT_CHAPTERS.every((k) => (this.fragmentsFound[k] ?? 0) > 0)) {
+      this.player.setWorldtreeBlessing(true);
+      audio.sfx.levelup();
+      this.spawnBurstAt(this.player.x, this.player.y, 26, 0x7de8ff);
+      this.showBanner("세계수의 가호 해방! — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)");
+      if (!this.queuedDialogue) {
+        this.markSeen("worldtreeBlessing");
+        this.queuedDialogue = "worldtreeBlessing";
+      }
+      this.emitRpgState();
+    }
     this.advanceQuest();
     // 전직 스토리 수확 단계 (지시 #13)
     if (this.jobStory) {
@@ -1990,7 +2025,7 @@ export class WorldScene extends Phaser.Scene {
     this.impactFX.trigger(profile);
   }
 
-  onEnemyKilled(key: EnemyKey, exp: number, spawnX: number, spawnY: number) {
+  onEnemyKilled(key: EnemyKey, exp: number, spawnX: number, spawnY: number, ref?: Enemy | Boss) {
     // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
     this.enemies = this.enemies.filter((e) => e.alive);
     if (this.eliteEnemy && !this.eliteEnemy.alive) this.eliteEnemy = null;
@@ -2055,8 +2090,12 @@ export class WorldScene extends Phaser.Scene {
         if (step.type === "hunt") {
           this.jobStory.hunt++;
           if (this.jobStory.hunt >= (step.need ?? 0)) this.completeJobStoryStep();
-        } else if (step.type === "elite" && this.jobEliteSummoned && this.eliteEnemy === null) {
+        } else if (step.type === "elite" && (ref === this.jobTrialEnemy || (this.jobEliteSummoned && this.eliteEnemy === null))) {
           // 소환된 시험 상대 처치 → 단계 완료
+          // v3.0.22 (#46) — 죽은 개체 참조 기반 판정(기존 eliteEnemy null 우연 의존 → 시험 상대가
+          //  몇 번이고 재소환되던 무한 루프 제거). 참조 일치 시에만 완료 처리
+          this.jobTrialEnemy = null;
+          this.jobEliteSummoned = false;
           this.completeJobStoryStep();
         }
       }
@@ -2077,6 +2116,91 @@ export class WorldScene extends Phaser.Scene {
   private repeatUnlockable(): boolean {
     if (this.repeatOn || this.isInterior) return false;
     return true;
+  }
+
+  /* ================= v3.0.22 (#38) — 전직 퀘스트 게이트 =================
+   *  "전직 퀘스트를 완료해야만 전직 시켜줘야지!!" — 레벨 조건만으로 전직되던 것을
+   *  퀘스트 완료까지 요구한다. 미전직 → 마을 체인 완료, 1→2차 · 2→3차 → 해당 차수의
+   *  [전직 스토리] 체인 완료. GM NPC 자유전직은 디버그 기능이므로 그대로 유지. */
+  private jobQuestCleared(): boolean {
+    const tier = chainOf(this.player?.cls ?? "").length;
+    if (tier >= 3) return true;
+    if (tier === 0) {
+      const vq = STAGES["village"].quests.length;
+      return (this.savedQuestIdx["village"] ?? 0) >= vq;
+    }
+    return this.jobStoryDone.includes(tier as 1 | 2 | 3);
+  }
+
+  /** 전직 잠금 사유 문구 (패널 표기용 — null이면 퀘스트 조건 충족) */
+  private jobQuestLockText(): string | null {
+    const tier = chainOf(this.player?.cls ?? "").length;
+    if (tier >= 3) return null;
+    if (tier === 0) {
+      const vq = STAGES["village"].quests.length;
+      if ((this.savedQuestIdx["village"] ?? 0) < vq) return "마을 퀘스트 체인 완료 (이그니와 함께)";
+      return null;
+    }
+    const names: Record<number, string> = { 1: "가호의 인연", 2: "가호의 증표" };
+    if (!this.jobStoryDone.includes(tier as 1 | 2 | 3)) {
+      return `[전직 스토리] ${names[tier] ?? "스토리"} 체인 완료 필요`;
+    }
+    return null;
+  }
+
+  /** v3.0.22 (#43) — 동적 단발 대사 (DIALOGUES 테이블 밖 — 결정 수확 랜덤 멘트) */
+  private showDialogueRaw(d: { speaker: string; lines: string[] }) {
+    if (!this.player) return;
+    this.activeNpcId = null;
+    this.dialoguing = true;
+    this.player.setVelocity(0, 0);
+    this.physics.world.pause();
+    EventBus.emit("dialogue:show", d);
+  }
+
+  /* ================= v3.0.22 (#47) — 추적 퀘스트 구역 자동 여행 =================
+   *  추적 구역이 다르면 경유 포탈 좌표를 반환한다. 전진 포탈은 체인 완료(활성)일 때만,
+   *  복귀 포탈은 항상. 포탈이 잠긴 구역은 null — 자동사냥이 현 구역 체인을 진행한다. */
+  private autoTravelPortal(): { x: number; y: number } | null {
+    if (!this.trackedStage || this.trackedStage === this.stageDef.key || this.isInterior) return null;
+    const path = this.stagePathTo(this.trackedStage);
+    if (!path || path.length === 0) return null;
+    const next = path[0];
+    if (NEXT_STAGE[this.stageDef.key] === next) {
+      if (this.portal?.active && this.portalActive) return { x: this.portal.x, y: this.portal.y };
+      return null;
+    }
+    if (PREV_STAGE[this.stageDef.key] === next) {
+      if (this.returnPortal?.active) return { x: this.returnPortal.x, y: this.returnPortal.y };
+      return null;
+    }
+    return null;
+  }
+
+  /** 현재 구역 → 목표 구역 최단 경로 (NEXT/PREV 양방향 BFS — 다음 경유지만 반환) */
+  private stagePathTo(target: string): string[] | null {
+    const cur = this.stageDef.key;
+    if (target === cur) return [];
+    const prev = new Map<string, string | null>([[cur, null]]);
+    const queue: string[] = [cur];
+    while (queue.length) {
+      const s = queue.shift()!;
+      for (const nx of [NEXT_STAGE[s as StageKey], PREV_STAGE[s as StageKey]]) {
+        if (!nx || prev.has(nx)) continue;
+        prev.set(nx, s);
+        if (nx === target) {
+          const path: string[] = [];
+          let c: string | null = nx;
+          while (c && c !== cur) {
+            path.unshift(c);
+            c = prev.get(c) ?? null;
+          }
+          return path;
+        }
+        queue.push(nx);
+      }
+    }
+    return null;
   }
 
   /** 반복 토벌 완료 — 보상 지급 후 목표 +2 (무한 확장) */
@@ -2311,12 +2435,13 @@ export class WorldScene extends Phaser.Scene {
     const base = BOSS_DEFS[this.stageDef.bossKey ?? "guardian"];
     // v2.0 밸런스 — 챕터 보스는 구역 진행 배율만큼 강화 (지시 #6: 보스 체력 상향)
     // v3.0.6 (지시 #8 — "보스가 너무 약함"): HP ×1.35·ATK ×1.05로 대폭 상향 (기존 ×0.9 완화)
+    // v3.0.22 (#50 — "챕터 지날수록 쎄져야"): 잡몹 곡선 강화에 맞춰 보스 가중치 HP ×1.6·ATK ×1.15로 재상향
     //  + Boss 내부 관통 50%·페이즈별 태진 단축·탄막 증가가 함께 적용된다
     const sc = stageScale(this.stageDef.key);
     const def: BossDef = {
       ...base,
-      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.35)),
-      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.05)),
+      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6)),
+      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15)),
       exp: Math.round(base.exp * sc.exp),
       gold: Math.round(base.gold * sc.gold),
     };
@@ -3228,6 +3353,18 @@ export class WorldScene extends Phaser.Scene {
     if (this.dialoguing || this.sleeping) return;
     this.autoPotion();
     if (this.player.state !== "idle") return; // 공격/돌진/사망 중엔 개입 안 함
+    /* v3.0.22 (#47) — 추적 퀘스트 구역 자동 여행: 자동사냥 중 추적 구역이 다르면
+     *  경유 포탈로 이동해 구역을 건너간다 (포탈이 잠겨 있으면 null — 현 구역 사냥 지속).
+     *  포탈 위에서는 정지 대기 — overlap 진입 처리에 맡긴다 */
+    if (!this.isInterior) {
+      const travel = this.autoTravelPortal();
+      if (travel) {
+        const td = Phaser.Math.Distance.Between(this.player.x, this.player.y, travel.x, travel.y);
+        if (td > 44) this.autoApproach(travel);
+        else this.autoHuntMove.set(0, 0);
+        return;
+      }
+    }
     const targets = this.getAllTargets();
     if (targets.length === 0) return; // 적 없음 — 대기
     /* v3.0.15 (#1) — 제자리 와리가리 수정 3종:
@@ -3243,15 +3380,18 @@ export class WorldScene extends Phaser.Scene {
     if (live.length === 0) return;
     let best: Enemy | Boss = live[0];
     let bestEff = Infinity;
-    /* v3.0.20 (#4) — 몬스터 밀집 지역 선호: 거리에 주변 밀집도 가중치 반영
-     *  주변(220px) 적 1마리당 유효 거리 12% 감소(최대 45%) → 자연스럽게 사냥터 한복판으로 이동 */
+    /* v3.0.22 (#37) — 맵 전체 최적 밀집 장소 선호 (기존 220px/45% → 260px/62% 강화):
+     *  모든 살아있는 적의 클러스터 점수(반경 260px 내 적 수)를 계산해
+     *  유효 거리 = 실거리 × (1 - min(0.62, cluster × 0.15)) — 가장 많은 무리가 모인 곳으로 이동.
+     *  무리가 정리되면(주변 적 감소) 자연히 다음 밀집 무리로 옮겨간다 — 한 곳 캠핑 없음.
+     *  화면 밖 무리 방향 = 노란 엣지 화살표 방향과 일치하므로 표시를 따라가는 것과 동일한 결과 */
     const densityEff = (e: Enemy | Boss, d: number): number => {
       let near = 0;
       for (const o of live) {
         if (o === e) continue;
-        if (Phaser.Math.Distance.Between(e.x, e.y, o.x, o.y) <= 220) near++;
+        if (Phaser.Math.Distance.Between(e.x, e.y, o.x, o.y) <= 260) near++;
       }
-      return d * (1 - Math.min(0.45, near * 0.12));
+      return d * (1 - Math.min(0.62, near * 0.15));
     };
     for (const e of live) {
       const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
@@ -3265,7 +3405,9 @@ export class WorldScene extends Phaser.Scene {
     if (curT && curT !== best && curT.active && !this.autoBlacklist.has(curT)) {
       const curD = Phaser.Math.Distance.Between(this.player.x, this.player.y, curT.x, curT.y);
       const curEff = densityEff(curT, curD);
-      if (curEff <= bestEff * 1.25 && curD < 420) best = curT; // 밀집 보너스 반영한 히스테리시스
+      /* v3.0.22 (#41) — 히스테리시스 확대(1.25→1.3·420→700px): 먼 무리 이동 중 매 틱 타깃이
+       *  바뀌며 제자리에서 방향만 흔들리던 떨림 제거 */
+      if (curEff <= bestEff * 1.3 && curD < 700) best = curT; // 밀집 보너스 반영한 히스테리시스
     }
     this.autoTarget = best;
     const bestD = Phaser.Math.Distance.Between(this.player.x, this.player.y, best.x, best.y); // v3.0.20 (#4) — 실거리 기준 판정 유지
@@ -3372,8 +3514,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** v3.0.1 — BFS 우회 접근 (개미굴 레이아웃: 다른 셀이면 경로의 다음 셀 중심으로)
-   *  v3.0.14 — 셀 내부 오브젝트(나무·바위) 직선 돌파 방지: 바로 앞이 막혔으면 열린 각도로 우회 */
-  private autoApproach(best: Enemy | Boss) {
+   *  v3.0.14 — 셀 내부 오브젝트(나무·바위) 직선 돌파 방지: 바로 앞이 막혔으면 열린 각도로 우회
+   *  v3.0.22 (#47) — 좌표 일반화: 적뿐 아니라 여행 포탈 좌표도 접근 가능
+   *  v3.0.22 (#41) — 원거리 목표(340px+)는 방향 홀드 1100ms — 제자리 떨림 제거 */
+  private autoApproach(target: { x: number; y: number }) {
     if (!this.player) return;
     /* v3.0.15 (#1) — 이동 방향 홀드(240ms): 매 프레임 BFS/회피 재계산으로 좌우로 흔들리던
      *  "제자리 와리가리" 제거. 홀드 중에는 직전 방향을 유지한다 */
@@ -3383,17 +3527,18 @@ export class WorldScene extends Phaser.Scene {
     }
     let dir: Phaser.Math.Vector2;
     const pc = this.layout ? cellIndexOf(this.layout, this.player.x, this.player.y) : -1;
-    const tc = this.layout ? cellIndexOf(this.layout, best.x, best.y) : -1;
+    const tc = this.layout ? cellIndexOf(this.layout, target.x, target.y) : -1;
     const step = this.layout ? nextStepToward(this.layout, pc, tc) : null;
     if (this.layout && step !== null && step !== pc) {
       const c = cellCenterOf(this.layout, step);
       dir = new Phaser.Math.Vector2(c.x - this.player.x, c.y - this.player.y).normalize();
     } else {
-      dir = new Phaser.Math.Vector2(best.x - this.player.x, best.y - this.player.y).normalize();
+      dir = new Phaser.Math.Vector2(target.x - this.player.x, target.y - this.player.y).normalize();
     }
     dir = this.autoAvoidDir(dir);
+    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, target.x, target.y);
     this.autoDirHold.copy(dir);
-    this.autoDirHoldUntil = this.time.now + 300;
+    this.autoDirHoldUntil = this.time.now + (dist > 340 ? 1100 : 300);
     this.autoHuntMove.copy(dir);
   }
 
@@ -4720,7 +4865,8 @@ export class WorldScene extends Phaser.Scene {
   private summonJobElite() {
     if (!this.jobStory || !this.player) return;
     if (this.jobStoryDef()?.steps[this.jobStory.step]?.type !== "elite") return;
-    if (this.eliteEnemy && this.eliteEnemy.alive) {
+    /* v3.0.22 (#46) — 시험 상대 생존 여부는 전용 참조로 판정 (정예 몬스터와 충돌 제거) */
+    if (this.jobTrialEnemy && this.jobTrialEnemy.alive) {
       this.showBanner("이미 시험 상대가 있어!");
       return;
     }
@@ -4736,6 +4882,7 @@ export class WorldScene extends Phaser.Scene {
     });
     e.dmgPct = DMG_PCT.elite; // v3.0.6 — 시험 상대 % 피해 상향
     this.eliteEnemy = e;
+    this.jobTrialEnemy = e; // v3.0.22 (#46) — 전용 참조 (처치 판정/재소환 방지)
     this.jobEliteSummoned = true;
     this.enemies.push(e);
     this.physics.add.collider(e, this.solidGroup);
@@ -5102,6 +5249,9 @@ export class WorldScene extends Phaser.Scene {
       /* v2.7 — 체인 완료 시 화살표가 사라져 포탈 개방을 못 알아봄 (체감 "안열림") → 개방된 포탈을 가리킨다 */
       return this.portalActive && this.portal?.active ? new Phaser.Math.Vector2(this.portal.x, this.portal.y) : null;
     }
+    /* v3.0.22 (#47) — 추적 퀘스트가 다른 구역이면 경유 포탈을 가리킨다 (방향 어시스턴트 + 미니맵 금색 점) */
+    const travel = this.autoTravelPortal();
+    if (travel) return new Phaser.Math.Vector2(travel.x, travel.y);
     switch (q.type) {
       case "collect":
         return this.fragment && this.fragment.active ? new Phaser.Math.Vector2(this.fragment.x, this.fragment.y) : null;
@@ -5436,7 +5586,13 @@ export class WorldScene extends Phaser.Scene {
       bmStock: [...BM_STOCK],
       autoUse: { ...this.player.autoUse },
       cls: this.player.cls,
-      canJob: canJobNow(this.player.lv, this.player.cls),
+      /* v3.0.22 (#38) — 전직은 레벨 + 전직 퀘스트 완료가 모두 필요. jobLock = 미완료 사유 */
+      canJob: canJobNow(this.player.lv, this.player.cls) && this.jobQuestCleared(),
+      jobLock: this.jobQuestLockText(),
+      /* v3.0.22 (#43/#44/#50) — 결정 수집 진행도 + 세계수의 가호 */
+      fragFound: FRAGMENT_CHAPTERS.filter((k) => (this.fragmentsFound[k] ?? 0) > 0).length,
+      fragTotal: FRAGMENT_CHAPTERS.length,
+      blessing: this.player.worldtreeBlessing,
       /* v1.9 BM + 스탯 */
       buffItems: { ...this.player.buffItems } as Record<string, number>,
       pets: [...this.player.pets],
@@ -5570,6 +5726,9 @@ export class WorldScene extends Phaser.Scene {
       jobStoryDone: [...this.jobStoryDone],
       /* v2.3 — 반복 의뢰 수주 해금 + 본 스토리 대사 기록 */
       repeatOn: this.repeatOn,
+      /* v3.0.22 (#43/#44/#50) — 결정 수집 + 세계수의 가호 */
+      fragmentsFound: { ...this.fragmentsFound },
+      worldtreeBlessing: this.player.worldtreeBlessing,
       /* v3.0.6 — 반복 의뢰 진행도 (재입장 시 카운트 유지) */
       repeatNeed: this.repeatNeed,
       huntCount: this.huntCount,

@@ -33,6 +33,16 @@ export default function GameRoot() {
     audio.setMuted(loadMuted());
   }, []);
 
+  /* v3.0.22 (#40) — 퀘스트 창 기본 열림: 게임 시작 시 1회 자동 오픈.
+   *  평소에는 열어두고, 유저가 직접 닫으면 그때부터 닫힌 상태를 유지한다 */
+  const questAutoOpened = useRef(false);
+  useEffect(() => {
+    if (state === "playing" && !questAutoOpened.current) {
+      questAutoOpened.current = true;
+      setPanel("quest");
+    }
+  }, [state, setPanel]);
+
   // Phaser 부팅 (1회)
   useEffect(() => {
     if (!parentRef.current || gameRef.current) return;

@@ -459,7 +459,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const scene = this.scene;
     scene.time.delayedCall(60, () => {
       if (!scene.scene.isActive()) return;
-      scene.onEnemyKilled(this.def.key, exp, sx, sy);
+      scene.onEnemyKilled(this.def.key, exp, sx, sy, this); // v3.0.22 (#46) — 죽은 개체 참조 전달
       this.destroy();
     });
   }
