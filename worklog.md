@@ -77,3 +77,24 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.17.apk (17.5MB, versionCode 31, 덮어설치 호환 — 29/30 모두에서 업그레이드 가능)
 - 신규 4개 피드백 전량 해소 + 평행 세션 Maple 콘텐츠(세트 효과·컬렉션·정예·멀티킬·보상 팝업·eert 오라) 동시 포함
 - 다음 후보: 다중사격 4차 궁극기 연출(화살비 폭풍), 원소 반응 추가(과부하/융해), 콤보킬 티어별 FX 고도화
+
+---
+Task ID: 14
+Agent: Super Z (main)
+Task: "조이스틱 걸림 + 이속 ㅈㄴ 느림" 근원 수술 (v3.0.18, versionCode 32) + APK 빌드 전달
+
+Work Log:
+- [근원 진단 6종] ①스틱 1px마다 setJoyKnob(setState) → WebView 매 프레임 리렌더 = 입력 지연 ②데드존 경계(14%)서 속도 0→30% 계단 점프 ③스틱 반경 52px 소형이라 풀 기울임 어려움(실질 60~85% 속도) ④BASE 265 한계 ⑤공격 중 이동 80% 감삭 ⑥나무 줄기 24x20/바위 44x28 히트박스 스침 정지 + 카메라 lerp 0.12 둔감
+- [TouchControls.tsx] 조이스틱 렌더링을 ref 직접 DOM 조작으로 전환 — 드래그 중 리렌더 0(베이스/노브 hidden 클래스 + display 토글, dragging 상태는 down/up만). JOY_RADIUS 52→64. 연속 커브 도입: 8% 데드존 → (raw-0.08)/0.34 클램프 → pow(t,0.58), 42%에서 포화 — 실측 9%→13%·15%→40%·25%→67%·35%→88%·42%+→100%
+- [Player.ts] BASE_SPEED 265→300(+13%, 최속 적 150의 2배), 공격 중 이동 감삭 0.8→0.92
+- [WorldScene.ts] 카메라 startFollow lerp 0.12→0.18, 나무 히트박스 24x20→16x14(offset 24,78), 바위 44x28→36x20(offset 14,39)
+- 버전: build.gradle 32/3.0.18, 타이틀 배지 갱신
+- 검증: tsc 0오류 + verify_v318.js 신규 작성 15/15 PASS(커브 수학·리렌더 제거·BASE 300 적용·수동 이동 실측 300px/s·공격 중 248px/s·lerp 0.18·히트박스 실측·pageerror 0) + verify_maple.js 17/17(배지 갱신) + verify_v316.js 14/15(유일 실패 = 의도된 BASE 265 기대값) — 회귀 0
+- 이슈: 검증기 1차 실행 4 실패 → ①·②는 검증기 기대값/주석 계산 실수, ④는 테스트가 마을 건물 벽 충돌(단일 방향) → 4방향 시도로 수정 후 전부 통과(게임 코드 문제 아님 확인)
+- APK: BUILD SUCCESSFUL(33s) → aapt versionCode 32·3.0.18·APK 내부 신규 코드 검출(배지 v3.0.18·setSize(16,14)·setSize(36,20)·x2_arrow_green)·17.5MB
+- 커밋 c4b0d01 push, 구버전 v3.0.17.apk 제거, 웹 서버 production 재기동(포트 3000, GET / 200)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.18.apk (17.5MB, versionCode 32, 기존 키 동일 — 29/30/31 모두에서 덮어설치 가능)
+- "걸리는 느낌" 3근원(리렌더 지연·계단 커브·히트박스) + "이속 느림" 3근원(반경·감삭·BASE) 전량 수술, E2E 실측 입증
+- 다음 후보: 이속 상향에 맞춘 몬스터 접근속도 재조정, 오토사냥 카이팅 거리 재튜닝, 조이스틱 진동 피드백(햅틱)
