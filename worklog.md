@@ -269,3 +269,29 @@ Stage Summary:
 - 배포 경로 3중화: ① 게임 서버 주소 직접 다운로드(폰 브라우저에서 바로) ② 패널 분할 파트 3개+합치기 배치파일 ③ 안내 텍스트
 - 산출물: download/SERTZ-v3.0.24.apk(원본 유지) + part1~3 + join 스크립트 2종 + 안내 txt
 - 다음 후보: v3.0.25부터 APK 용량 계획(BGM 온디맨드 등) 또는 배포 경로를 웹 직접 다운로드로 고정
+
+---
+Task ID: 22
+Agent: Super Z (main)
+Task: v3.0.25 (versionCode 39) — 조이스틱 풀당김 감속 버그 + 피드백 8건 (자동추적·길찾기제거·화살표·자동사냥·창분리·엘릭서·초상화·그루) + 멀티 서버 주소 갱신
+
+Work Log:
+- [조이스틱 버그] TouchControls onJoyMove: 64px 초과 당김 시 클램프된 dx를 [원본 len]으로 나눠 방향 벡터가 R/len(<1)로 축소(128px=반속·300px=0.21) → 클램프 후 길이로 정규화. 수학 시뮬레이션으로 구 공식 감속 곡선 실측 재현 + 신규 공식 전 구간 1.0 검증(verify_v325 [A])
+- [#1 자동추적] enterPortal에서 NEXT_STAGE 진행 시 trackedStage 동행 갱신 + questlog 재발신 — 다음 구역 퀘스트가 자동 추적됨
+- [#2 길찾기 제거] tickAutoHunt의 구역간 자동 여행(#47) 삭제 — 자동사냥은 현 구역에서만. autoTravelPortal은 화살표 안내(questTargetPos·Label)에만 유지
+- [#2 화살표 가독성] edge_arrow 16px → 스케일 2.7+맥동, quest_mark 1.3→2.1, 신규 edgeLabel(목표 구역명/퀘스트 목표명 표시, 화면 클램프)
+- [#3 자동사냥] ① 퀘스트 대상 몬스터 최우선 선택(hunt targetKey 매칭 풀) ② 적 없음 시 구역 내 배회(randomOpenPointNear, 2.8s 주기 리스폰 탐색) ③ 히스테리시스는 우선풀 내에서만
+- [#4 창분리] PanelKind "boss" 신설 + BossReplayPanel 전용 창 추출 + HUD 왕관 버튼(Crown) + 퀘스트창엔 연결 버튼만
+- [#5 엘릭서] item_potion_elixir를 HP물약 소스에서 적→보라 휴시프트 재생성(make_elixir_icon.py, 209픽셀) — PIL 팔레트 검증 통과
+- [#6 초상화 비율] DialogueBox 초상 <img> 강제 정사각형 → object-cover + object-top(원본 비율, 머리 상단 고정, 살짝 크롭 허용)
+- [#8 초상화 404] 보스 매핑이 없는 파일명(boss_nidhog.png 등) → 실제 프레임파일(def.tex_idle0)로 수정 + onLoad/onError 상태 관리(깨진 이미지 숨김) — 매핑 25종 전수 파일 존재 실측
+- [#7 그루] 반복 토벌 템플릿 "n마리(그루)" → "n마리"
+- [멀티 주소] ServerConnect DEFAULT_SERVER: 만료된 preview-6a95efa8(404) → https://sertz1234.space-z.ai + 안내문 개선
+- [사고 복구] 중단 빌드에서 279MB APK 원인 규명: public/에 복사해둔 v3.0.24.apk가 cap sync로 APK에 재수납 → public/·assets 중복 파일 제거, 디스크 풀(100%) 해소(1.5G 확보), git에서 bgm_work/raw 289MB·v3.0.24 분할파트 추적 제거
+- 배포: 웹빌드 + APK(140.9MB, aapt 39/3.0.25) + 47MB×3 분할(sha256 933b4a32 재결합 일치) + 안내/join 스크립트 v3.0.25 갱신 + 서버 라우트 전환 + 서버 재기동(page/APK 200·소켓 OK)
+- 검증: tsc 0 + eslint 0(HUD "use client" 순서 버그도 수정) + verify_v325 32/32 PASS([A] 수학시뮬 3 + [B] 정적 15 + [C] 8건 14)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.25.apk (140.9MB, versionCode 39) + part1~3 + 안내/join 스크립트
+- 멀티: PC 브라우저와 폰 APK가 같은 주소(sertz1234.space-z.ai) 접속으로 만남 — 도메인 500("problem deploying")은 플랫폼 배포 상태 이슈, push로 재배포 유도 예정
+- 다음 후보: 자동사냥 물약 임계치 튜닝, 어시스트 화살표 미니맵 연동, 보스 재도전 난이도 피드백 반영

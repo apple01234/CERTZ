@@ -8,8 +8,9 @@ import { netConnect, netJoined, isElectron } from "@/game/net";
 const KEY = "sertz.server.url";
 
 /** v2.9 (사용자 지시 #10) — 기본 게임 서버. APK 첫 실행 시 이 주소로 바로 연결해
- *  “멀티 안됨” 문제를 해소한다. 주소가 바뀌면 이 상수만 고치면 된다. */
-const DEFAULT_SERVER = "https://preview-6a95efa8.space-z.ai";
+ *  “멀티 안됨” 문제를 해소한다. 주소가 바뀌면 이 상수만 고치면 된다.
+ *  v3.0.25 — 만료된 구 프리뷰 주소를 실제 서비스 주소로 교체 */
+const DEFAULT_SERVER = "https://sertz1234.space-z.ai";
 
 function readUrl(): string {
   try {
@@ -129,7 +130,7 @@ export function ServerConnect() {
           <p className="mb-2 text-[10px] leading-relaxed text-white/50">
             {electron
               ? "EXE는 내장 로컬 서버로 실행됩니다(싱글/같은 PC 멀티). 웹 버전 서버 주소를 입력하면 그 서버의 플레이어와 함께 플레이할 수 있습니다."
-              : <>APK와 PC에서 만나기: 위 서버 주소를 PC 브라우저에서 열면 됩니다. 같은 주소로 접속한 기기끼리 같은 월드에서 플레이합니다.</>}
+              : <>멀티 하는 법: ① 위 주소를 PC 브라우저로 열어 게임 시작 ② 폰 APK도 같은 주소 입력(자동 연결). 같은 주소로 접속한 기기끼리 같은 월드에서 만납니다.</>}
           </p>
           <input
             value={url}

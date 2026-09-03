@@ -28,14 +28,16 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "난쟁이 광산 조합장": { tex: "npc_merchant", tone: "#fcd34d" },
   "마법사 흐레스": { tex: "npc_gm", tone: "#c4b5fd" },
   "세계수 이그드라실": { tex: "tree", tone: "#7dd3fc" },
-  "종언의 마룡 니드그림": { tex: "boss_nidhog", tone: "#fda4af" },
+  "종언의 마룡 니드그림": { tex: "boss_nidhog_idle0", tone: "#fda4af" }, // v3.0.25 — 없는 파일(boss_nidhog) 수정: 실제 프레임 파일명
   "{name}": { tex: "hero_idle0", tone: "#86efac" }, // 플레이어
 };
 
-/** 보스 대사 — BOSS_DEFS의 보스 이름과 일치하면 해당 보스 스프라이트 사용 */
+/** 보스 대사 — BOSS_DEFS의 보스 이름과 일치하면 해당 보스 스프라이트 사용
+ *  v3.0.25 (#이미지 안불러와짐) — 보스 텍스처는 idle 프레임 분할 파일(boss_*_idle0.png)이므로
+ *  기본명(boss_nidhog.png 등)은 404 → 전원 이미지가 깨졌다. 첫 idle 프레임을 초상화로 사용 */
 function bossPortrait(speaker: string): { tex: string; tone: string } | null {
   for (const def of Object.values(BOSS_DEFS)) {
-    if (def.name === speaker) return { tex: def.tex, tone: "#fda4af" };
+    if (def.name === speaker) return { tex: `${def.tex}_idle0`, tone: "#fda4af" };
   }
   return null;
 }
@@ -61,6 +63,12 @@ export function DialogueBox({
   const line = (dialogue?.lines[idx] ?? "").replaceAll("{name}", name);
   const speakerName = (dialogue?.speaker ?? "").replaceAll("{name}", name);
   const portrait = dialogue ? portraitOf(dialogue.speaker ?? "") : null;
+  /* v3.0.25 (#이미지 안불러와짐) — 초상화 로드 상태 추적: 404 등 실패 시 깨진 이미지 대신
+   *  프레임만 표시하고, 로드 완료 시에야 이미지를 보여준다 (깜빡임·깨짐 제거) */
+  const [portraitOk, setPortraitOk] = useState(true);
+  useEffect(() => {
+    setPortraitOk(true);
+  }, [portrait?.tex]);
 
   useEffect(() => {
     setIdx(0);
@@ -154,15 +162,20 @@ export function DialogueBox({
         {/* v3.0.24 — 화자 초상화 (클래식 RPG 대화창 레이아웃: 좌측 초상 프레임) */}
         {portrait && (
           <div
-            className="relative flex w-14 shrink-0 items-center justify-center self-start overflow-hidden rounded-lg border-2 bg-gradient-to-b from-slate-800/90 to-slate-950 sm:w-20"
+            className="relative h-14 w-14 shrink-0 self-start overflow-hidden rounded-lg border-2 bg-gradient-to-b from-slate-800/90 to-slate-950 sm:h-20 sm:w-20"
             style={{ borderColor: `${portrait.tone}88` }}
           >
+            {/* v3.0.25 (#비율 찌그러짐) — object-cover + object-top: 원본 비율 유지하며
+                프레임을 채우고(살짝 크롭 허용), 머리는 상단 고정 — 기존 강제 정사각형 스트레치 제거 */}
             <img
+              key={portrait.tex}
               src={`/assets/${portrait.tex}.png`}
               alt=""
               draggable={false}
-              className="h-14 w-14 sm:h-20 sm:w-20"
-              style={{ imageRendering: "pixelated" }}
+              onLoad={() => setPortraitOk(true)}
+              onError={() => setPortraitOk(false)}
+              className="h-full w-full object-cover object-top"
+              style={{ imageRendering: "pixelated", display: portraitOk ? undefined : "none" }}
             />
             {/* 초상 프레임 하단 음영 — 입체감 */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent" />

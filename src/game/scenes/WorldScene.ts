@@ -59,6 +59,7 @@ export class WorldScene extends Phaser.Scene {
   /** 입구 셀 중심 — 플레이어 스폰/복귀 차원문 기준점 */
   private entryHome = new Phaser.Math.Vector2(0, 0);
   private edgeArrow: Phaser.GameObjects.Image | null = null;
+  private edgeLabel: Phaser.GameObjects.Text | null = null;
   private questMark: Phaser.GameObjects.Image | null = null;
 
   private moveVec = new Phaser.Math.Vector2();
@@ -1352,6 +1353,12 @@ export class WorldScene extends Phaser.Scene {
     // 구역 체인 — 마을 → forest1..10 → kingdom1..10 → … → abyss10 순차 진행
     const next: StageKey | null = NEXT_STAGE[this.stageDef.key];
     if (!next) return;
+    /* v3.0.25 (#다음퀘스트 자동추적) — 다음 구역으로 진행하면 추적도 자동으로 따라간다
+     *  (기존은 이전 구역 추적이 유지돼 화살표가 뒤를 가리켰다) */
+    if (this.trackedStage === this.stageDef.key) {
+      this.trackedStage = next;
+      this.emitQuestLog();
+    }
     this.time.delayedCall(520, () => {
       // ⚠️ 다음 스테이지에 현재 스탯/소지품을 그대로 넘긴다
       //   (restart에 save를 안 넘기면 기본값 플레이어로 시작 — 골드/레벨/장비 소실 버그)
@@ -3468,20 +3475,14 @@ export class WorldScene extends Phaser.Scene {
     if (this.dialoguing || this.sleeping) return;
     this.autoPotion();
     if (this.player.state !== "idle") return; // 공격/돌진/사망 중엔 개입 안 함
-    /* v3.0.22 (#47) — 추적 퀘스트 구역 자동 여행: 자동사냥 중 추적 구역이 다르면
-     *  경유 포탈로 이동해 구역을 건너간다 (포탈이 잠겨 있으면 null — 현 구역 사냥 지속).
-     *  포탈 위에서는 정지 대기 — overlap 진입 처리에 맡긴다 */
-    if (!this.isInterior) {
-      const travel = this.autoTravelPortal();
-      if (travel) {
-        const td = Phaser.Math.Distance.Between(this.player.x, this.player.y, travel.x, travel.y);
-        if (td > 44) this.autoApproach(travel);
-        else this.autoHuntMove.set(0, 0);
-        return;
-      }
-    }
+    /* v3.0.25 (#길찾기제거) — 구역 간 자동 길찾기 제거: 자동사냥은 현 구역 안에서만 사냥하고,
+     *  다음 목표는 대형 어시스트 화살표(엣지 화살표 + 구역명 라벨)가 방향을 안내한다.
+     *  (기존 #47 자동 여행은 포탈 앞 정지·장거리 왕복 체감이 나빠 삭제 — #1 요청 반영) */
     const targets = this.getAllTargets();
-    if (targets.length === 0) return; // 적 없음 — 대기
+    if (targets.length === 0) {
+      this.autoWanderTick(); // v3.0.25 — 적 없음: 제자리 대신 구역 내 배회 (리스폰 탐색)
+      return;
+    }
     /* v3.0.15 (#1) — 제자리 와리가리 수정 3종:
      *  ① 블랙리스트 정리: 도달 불가 타겟은 만료 시 제외
      *  ② 타겟 히스테리시스: 현재 타겟보다 25% 이상 가까울 때만 교체
@@ -3492,8 +3493,17 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     const live = targets.filter((e) => e.active && !this.autoBlacklist.has(e));
-    if (live.length === 0) return;
-    let best: Enemy | Boss = live[0];
+    if (live.length === 0) {
+      this.autoWanderTick();
+      return;
+    }
+    /* v3.0.25 (#자동사냥개선) — 퀘스트 타겟 최우선: 추적/반복 토벌 대상 몬스터를 먼저 잡는다
+     *  (기존은 밀집도만 평가해 퀘스트와 무관한 몬스터에 시간 낭비) */
+    const cq = this.currentQuest();
+    const qKey = cq && cq.type === "hunt" ? cq.targetKey : null;
+    const pref = qKey ? live.filter((e) => (e as Enemy).def.key === qKey) : [];
+    const pool = pref.length > 0 ? pref : live;
+    let best: Enemy | Boss = pool[0];
     let bestEff = Infinity;
     /* v3.0.22 (#37) — 맵 전체 최적 밀집 장소 선호 (기존 220px/45% → 260px/62% 강화):
      *  모든 살아있는 적의 클러스터 점수(반경 260px 내 적 수)를 계산해
@@ -3508,7 +3518,7 @@ export class WorldScene extends Phaser.Scene {
       }
       return d * (1 - Math.min(0.62, near * 0.15));
     };
-    for (const e of live) {
+    for (const e of pool) {
       const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
       const eff = densityEff(e, d);
       if (eff < bestEff) {
@@ -3517,7 +3527,7 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     const curT = this.autoTarget;
-    if (curT && curT !== best && curT.active && !this.autoBlacklist.has(curT)) {
+    if (curT && curT !== best && curT.active && !this.autoBlacklist.has(curT) && pool.includes(curT)) {
       const curD = Phaser.Math.Distance.Between(this.player.x, this.player.y, curT.x, curT.y);
       const curEff = densityEff(curT, curD);
       /* v3.0.22 (#41) — 히스테리시스 확대(1.25→1.3·420→700px): 먼 무리 이동 중 매 틱 타깃이
@@ -3626,6 +3636,37 @@ export class WorldScene extends Phaser.Scene {
         p.useSkill4();
       }
     }
+  }
+
+  /** v3.0.25 (#자동사냥개선) — 적이 없을 때 구역 내 배회: 리스폰/남은 몬스터를 찾아 이동
+   *  (기존은 제자리 정지 — 화면 밖 몬스터를 영영 못 찾는 문제) */
+  private autoWanderPoint: { x: number; y: number } | null = null;
+  private autoWanderUntil = 0;
+  private autoWanderTick() {
+    if (!this.player) return;
+    if (this.time.now >= this.autoWanderUntil) {
+      this.autoWanderPoint = this.randomOpenPointNear(560);
+      this.autoWanderUntil = this.time.now + 2800;
+    }
+    const w = this.autoWanderPoint;
+    if (!w) return;
+    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, w.x, w.y) > 44) this.autoApproach(w);
+    else this.autoWanderUntil = 0;
+  }
+
+  /** 반경 내 열린 셀 중 무작위 지점 (배회 대상) */
+  private randomOpenPointNear(radius: number): { x: number; y: number } | null {
+    if (!this.layout || !this.player) return null;
+    const pcc = cellCenterOf(this.layout, cellIndexOf(this.layout, this.player.x, this.player.y));
+    const cand: number[] = [];
+    for (let i = 0; i < this.layout.open.length; i++) {
+      if (!this.layout.open[i]) continue;
+      const c = cellCenterOf(this.layout, i);
+      if (Phaser.Math.Distance.Between(pcc.x, pcc.y, c.x, c.y) <= radius) cand.push(i);
+    }
+    if (cand.length === 0) return null;
+    const c = cellCenterOf(this.layout, cand[Phaser.Math.Between(0, cand.length - 1)]);
+    return { x: c.x, y: c.y };
   }
 
   /** v3.0.1 — BFS 우회 접근 (개미굴 레이아웃: 다른 셀이면 경로의 다음 셀 중심으로)
@@ -5408,12 +5449,32 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** v3.0.25 (#화살표 가독성) — 어시스트 화살표 라벨: 이동 대상 구역명 / 퀘스트 목표명 */
+  private questTargetLabel(): string {
+    const travel = this.autoTravelPortal();
+    if (travel) {
+      const t = this.trackedStage ? STAGES[this.trackedStage as StageKey] : null;
+      return t ? `▶ ${t.name}` : "▶ 목표 구역";
+    }
+    const q = this.currentQuest();
+    if (!q) return this.portalActive ? "▶ 차원문" : "";
+    if (q.type === "hunt") return q.targetLabel ? `▶ ${q.targetLabel}` : "";
+    if (q.type === "boss") return "▶ 보스";
+    if (q.type === "reach") return "▶ 차원문";
+    if (q.type === "collect") return "▶ 결정";
+    return "";
+  }
+
   private updateEdgeArrow() {
     const target = this.questTargetPos();
     if (!target) {
       if (this.edgeArrow) {
         this.edgeArrow.destroy();
         this.edgeArrow = null;
+      }
+      if (this.edgeLabel) {
+        this.edgeLabel.destroy();
+        this.edgeLabel = null;
       }
       if (this.questMark) {
         this.questMark.destroy();
@@ -5423,8 +5484,9 @@ export class WorldScene extends Phaser.Scene {
     }
 
     // 목표물 바로 위 퀘스트 마커(?) — 외부 에셋(Zelda-like CC0 말풍선)
+    // v3.0.25 — 16px 텍스처 → 스케일 2.1 (기존 1.3은 너무 작음)
     if (!this.questMark) {
-      this.questMark = this.add.image(target.x, target.y - 34, "quest_mark").setDepth(22).setScale(1.3);
+      this.questMark = this.add.image(target.x, target.y - 34, "quest_mark").setDepth(22).setScale(2.1);
     }
     this.questMark.setPosition(target.x, target.y - 34 + Math.sin(this.time.now / 200) * 3);
 
@@ -5438,29 +5500,55 @@ export class WorldScene extends Phaser.Scene {
       target.y < view.bottom - margin;
 
     if (!inside) {
+      /* v3.0.25 (#화살표 가독성) — 16px 텍스처 → 스케일 2.7 + 맥동 강화 + 목표명 라벨
+       *  (기존 1.0 스케일 16px는 어시스트 화살표 역할을 못함 — #2 요청) */
       if (!this.edgeArrow)
         this.edgeArrow = this.add
           .image(0, 0, "edge_arrow")
           .setDepth(50)
           .setScrollFactor(0)
           .setTint(0xffd76a)
-          .setBlendMode(Phaser.BlendModes.ADD);
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setScale(2.7);
+      if (!this.edgeLabel)
+        this.edgeLabel = this.add
+          .text(0, 0, "", {
+            fontFamily: "sans-serif",
+            fontSize: "13px",
+            fontStyle: "900",
+            color: "#ffe9a8",
+            stroke: "#3a2400",
+            strokeThickness: 4,
+          })
+          .setDepth(50)
+          .setScrollFactor(0)
+          .setOrigin(0.5, 0);
       const cx = this.cameras.main.width / 2;
       const cy = this.cameras.main.height / 2;
       const angle = Phaser.Math.Angle.Between(cx, cy, target.x - view.x, target.y - view.y);
-      // 화면 중심에서 끝까지 레이캐스트하여 클램프
-      const halfW = this.cameras.main.width / 2 - 46;
-      const halfH = this.cameras.main.height / 2 - 46;
+      // 화면 중심에서 끝까지 레이캐스트하여 클램프 (큰 화살표 여유 64px)
+      const halfW = this.cameras.main.width / 2 - 64;
+      const halfH = this.cameras.main.height / 2 - 64;
       const t = Math.min(
         Math.abs(halfW / Math.cos(angle)) || Infinity,
         Math.abs(halfH / Math.sin(angle)) || Infinity
       );
       this.edgeArrow.setPosition(cx + Math.cos(angle) * t, cy + Math.sin(angle) * t);
       this.edgeArrow.setRotation(angle);
-      this.edgeArrow.setAlpha(0.65 + Math.sin(this.time.now / 150) * 0.3);
-    } else if (this.edgeArrow) {
-      this.edgeArrow.destroy();
+      this.edgeArrow.setScale(2.7 + Math.sin(this.time.now / 140) * 0.3);
+      this.edgeArrow.setAlpha(0.72 + Math.sin(this.time.now / 140) * 0.28);
+      const label = this.questTargetLabel();
+      this.edgeLabel.setText(label);
+      this.edgeLabel.setVisible(label.length > 0);
+      // 라벨은 화살표 안쪽에 붙이되 화면 밖으로 못 나가게 클램프
+      const lx = Phaser.Math.Clamp(cx + Math.cos(angle) * Math.max(0, t - 84), 70, this.cameras.main.width - 70);
+      const ly = Phaser.Math.Clamp(cy + Math.sin(angle) * Math.max(0, t - 24) + 12, 20, this.cameras.main.height - 34);
+      this.edgeLabel.setPosition(lx, ly);
+    } else if (this.edgeArrow || this.edgeLabel) {
+      this.edgeArrow?.destroy();
       this.edgeArrow = null;
+      this.edgeLabel?.destroy();
+      this.edgeLabel = null;
     }
   }
 

@@ -1408,6 +1408,7 @@ export function GamePanels({
   if (panel === "stat") return <StatPanel rpg={rpg} hud={hud} onClose={onClose} />;
   if (panel === "collection") return <CollectionPanel rpg={rpg} onClose={onClose} />; // v3.0.16 — 몬스터 컬렉션
   if (panel === "quest") return <QuestLogPanel questLog={questLog} rpg={rpg} onClose={onClose} />;
+  if (panel === "boss") return <BossReplayPanel rpg={rpg} onClose={onClose} />; // v3.0.25 — 보스 재도전 전용 창 (퀘스트창과 분리)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
 }
@@ -1832,7 +1833,6 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
 function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rpg?: RpgState; onClose: () => void }) {
   useEscClose(onClose);
   /* v3.0.24 (#보스재도전) — 클리어한 챕터 보스 재림판 도전 (스토리판 HP×5 · ATK×2.2) */
-  const bossKills = rpg?.collection?.kills ?? {};
   return (
     <div
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
@@ -1856,42 +1856,17 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
           </button>
         </div>
 
-        {/* v3.0.24 (#보스재도전) — 클리어 챕터 보스 재림판 도전 진입점 */}
+        {/* v3.0.25 (#창분리) — 보스 재도전은 전용 창으로 분리 (메이플스토리처럼 퀘스트창·보스창 별개) */}
         {rpg && (
-          <div className="mb-2.5 rounded-lg border border-rose-300/35 bg-rose-400/[0.06] p-2.5">
-            <p className="text-[12px] font-black text-rose-200">⚔ 보스 재도전 — 재림</p>
-            <p className="mt-0.5 text-[10px] leading-snug font-bold text-white/50">
-              정복한 챕터의 보스가 다시 태어났다. 스토리판보다 훨씬 강력하다 (HP ×5 · ATK ×2.2)
-              · 보상: 골드·경험치 ×3 + 에메랄드 +5
+          <button
+            onClick={() => EventBus.emit("ui:panel", { panel: "boss" })}
+            className="mb-2.5 w-full rounded-lg border border-rose-300/35 bg-rose-400/[0.06] px-2.5 py-2 text-left transition-colors hover:bg-rose-400/[0.12] active:scale-[0.99]"
+          >
+            <p className="text-[12px] font-black text-rose-200">
+              ⚔ 보스 재도전 — 재림 <span className="ml-1 text-[10px] font-bold text-white/45">전용 창 열기 ▸</span>
             </p>
-            <div className="mt-1.5 grid grid-cols-3 gap-1">
-              {CHAPTERS.map((ch) => {
-                const bk = ch.boss;
-                if (!bk) return null;
-                const cleared = (bossKills[`boss_${bk}`] ?? 0) > 0;
-                return (
-                  <button
-                    key={ch.key}
-                    disabled={!cleared}
-                    title={cleared ? `${BOSS_DEFS[bk].name} 재림판에 도전` : "스토리를 먼저 완료하세요"}
-                    onClick={() => EventBus.emit("rpg:bossReplay", { ch: ch.key })}
-                    className={`rounded-md border px-1 py-1.5 text-left transition-colors ${
-                      cleared
-                        ? "border-rose-300/50 bg-rose-500/15 hover:bg-rose-500/30 active:scale-95"
-                        : "cursor-not-allowed border-white/10 bg-white/[0.03]"
-                    }`}
-                  >
-                    <p className={`truncate text-[10px] font-black ${cleared ? "text-rose-100" : "text-white/35"}`}>
-                      {ch.num}장 {ch.title}
-                    </p>
-                    <p className={`truncate text-[9px] font-bold ${cleared ? "text-rose-200/90" : "text-white/25"}`}>
-                      {cleared ? BOSS_DEFS[bk].name : "스토리 진행 필요"}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+            <p className="mt-0.5 text-[10px] font-bold text-white/45">정복한 챕터의 보스가 다시 태어났다 — 스토리판보다 훨씬 강력하다</p>
+          </button>
         )}
 
         <div className="flex flex-col gap-1.5">
@@ -1987,6 +1962,71 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
           </div>
         )}
         <p className="mt-2 text-center text-[10px] text-white/40">우측 상단 추적기가 현재 목표를 안내합니다 · ESC로 닫기</p>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- v3.0.25 (#창분리) — 보스 재도전 전용 창 (퀘스트 로그에서 분리) ---------- */
+
+function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const bossKills = rpg?.collection?.kills ?? {};
+  return (
+    <div
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+      onPointerDown={onClose}
+    >
+      <div
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-rose-300/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-black text-rose-200">⚔ 보스 재도전 — 재림</p>
+            <p className="text-[10px] text-white/45">정복한 챕터의 보스가 다시 태어났다</p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="보스 재도전 닫기"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70"
+          >
+            ✕
+          </button>
+        </div>
+        <p className="mb-2.5 rounded-lg border border-rose-300/25 bg-rose-400/[0.05] px-2.5 py-2 text-[10px] leading-snug font-bold text-white/60">
+          재림판은 스토리판보다 훨씬 강력하다 — <span className="text-rose-200">HP ×5 · ATK ×2.2</span>
+          <br />
+          보상: 골드·경험치 ×3 + <span className="text-emerald-300">에메랄드 +5</span>
+        </p>
+        <div className="grid grid-cols-3 gap-1">
+          {CHAPTERS.map((ch) => {
+            const bk = ch.boss;
+            if (!bk) return null;
+            const cleared = (bossKills[`boss_${bk}`] ?? 0) > 0;
+            return (
+              <button
+                key={ch.key}
+                disabled={!cleared}
+                title={cleared ? `${BOSS_DEFS[bk].name} 재림판에 도전` : "스토리를 먼저 완료하세요"}
+                onClick={() => EventBus.emit("rpg:bossReplay", { ch: ch.key })}
+                className={`rounded-md border px-1 py-1.5 text-left transition-colors ${
+                  cleared
+                    ? "border-rose-300/50 bg-rose-500/15 hover:bg-rose-500/30 active:scale-95"
+                    : "cursor-not-allowed border-white/10 bg-white/[0.03]"
+                }`}
+              >
+                <p className={`truncate text-[10px] font-black ${cleared ? "text-rose-100" : "text-white/35"}`}>
+                  {ch.num}장 {ch.title}
+                </p>
+                <p className={`truncate text-[9px] font-bold ${cleared ? "text-rose-200/90" : "text-white/25"}`}>
+                  {cleared ? BOSS_DEFS[bk].name : "스토리 진행 필요"}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2.5 text-center text-[10px] text-white/40">스토리 클리어(토벌)한 챕터의 보스만 도전할 수 있습니다 · ESC로 닫기</p>
       </div>
     </div>
   );

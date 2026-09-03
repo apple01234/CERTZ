@@ -584,7 +584,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       id: `${prefix}-auto-hunt`,
       type: "hunt",
       title: `${main} ${verbs[sub % verbs.length]}`,
-      desc: `${spec.title} ${spec.subtitle} — ${main} ${n}마리(그루)를 처치해라.`,
+      desc: `${spec.title} ${spec.subtitle} — ${main} ${n}마리를 처치해라.`,
       need: n,
       targetKey: zoneMon, // v3.0.2 — 이 구역에서 실제 스폰되는 몬스터
       targetLabel: main,

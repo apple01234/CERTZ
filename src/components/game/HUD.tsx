@@ -1,10 +1,11 @@
-import React from "react";
 "use client";
+
+import React from "react";
 
 import type { HudState, QuestState } from "./EventBus";
 import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown } from "lucide-react";
 import { EventBus } from "./EventBus";
 
 /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
@@ -76,6 +77,7 @@ export function HUD({
   onOpenJob,
   onOpenStat,
   onOpenQuest,
+  onOpenBoss,
   onOpenOpt,
 }: {
   hud: HudState;
@@ -95,6 +97,8 @@ export function HUD({
   onOpenStat: () => void;
   /** 퀘스트 로그 (J) */
   onOpenQuest: () => void;
+  /** v3.0.25 — 보스 재도전 전용 창 */
+  onOpenBoss: () => void;
   /** 설정/키 매핑 (O) */
   onOpenOpt: () => void;
 }) {
@@ -234,6 +238,15 @@ export function HUD({
           >
             <ListChecks size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">J</span>
+          </button>
+          {/* v3.0.25 — 보스 재도전 전용 창 버튼 (퀘스트창과 분리) */}
+          <button
+            onClick={onOpenBoss}
+            aria-label="보스 재도전 창 열기"
+            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-rose-300/40 bg-black/55 text-rose-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+          >
+            <Crown size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-rose-300/80">보스</span>
           </button>
           <button
             onClick={onOpenOpt}

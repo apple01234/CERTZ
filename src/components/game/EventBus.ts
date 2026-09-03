@@ -103,7 +103,7 @@ export type RpgState = {
   activeSet?: { title: string; lines: string[] } | null;
 };
 
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | null;
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | null;
 
 export type QuestState = {
   title: string;

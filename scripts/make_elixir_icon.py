@@ -1,27 +1,49 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""v3.0.20 #7 — 엘릭서 아이콘 (HP/MP 100% 회복)
-HP 물약 실루엣 → 황금빛 엘릭서 (전체 회복 전설감). 24x24 RGBA."""
+"""v3.0.25 (#엘릭서 보라) — item_potion_elixir.png 를 선명한 보라 물약으로 재생성.
+HP 물약(item_potion_hp.png)과 같은 픽셀아트 스타일을 유지하기 위해
+빨강 계열 픽셀을 보라 램프로 매핑(휴 시프트)한다. 나머지(유리·코르크·외곽선)는 유지."""
 from PIL import Image
+import os
 
-A = "/home/z/my-project/public/assets"
+SRC = "/home/z/my-project/public/assets/item_potion_hp.png"
+DST = "/home/z/my-project/public/assets/item_potion_elixir.png"
 
-def hue_shift(src, dst, r_mul, g_mul, b_mul, bright=1.0):
-    im = Image.open(f"{A}/{src}.png").convert("RGBA")
-    px = im.load()
-    w, h = im.size
-    for y in range(h):
-        for x in range(w):
-            r, g, b, a = px[x, y]
-            if a == 0:
-                continue
-            nr = min(255, int(r * r_mul * bright))
-            ng = min(255, int(g * g_mul * bright))
-            nb = min(255, int(b * b_mul * bright))
+im = Image.open(SRC).convert("RGBA")
+px = im.load()
+w, h = im.size
+
+# 보라 램프 (밝을수록 밝은 보라)
+LILAC = [
+    (26, 6, 48),    # 가장 어두운 외곽 보라
+    (74, 20, 120),
+    (126, 34, 196),
+    (168, 62, 236),
+    (200, 110, 250),
+    (232, 178, 255), # 하이라이트
+]
+
+changed = 0
+for y in range(h):
+    for x in range(w):
+        r, g, b, a = px[x, y]
+        if a == 0:
+            continue
+        # 빨강 계열 판정: r이 우세하고 g/b는 낮음 (유리 흰색·외곽선 검정은 제외)
+        is_red = r >= 18 and r > g * 1.2 and r > b * 1.2
+        if is_red:
+            lum = (r + g + b) / 3
+            # 어두운 빨강 → 어두운 보라, 밝은 빨강 → 밝은 보라
+            t = min(1.0, max(0.0, (lum - 20) / 180))
+            idx = min(len(LILAC) - 1, int(t * (len(LILAC) - 1) + 0.5))
+            nr, ng, nb = LILAC[idx]
             px[x, y] = (nr, ng, nb, a)
-    im.save(f"{A}/{dst}.png")
-    print(f"  {dst}.png <- {src}.png")
+            changed += 1
 
-# 엘릭서 — 진한 황금빛 (빨간 물약을 골드로 변환 + 하이라이트 강조)
-hue_shift("item_potion_hp", "item_potion_elixir", 1.62, 1.28, 0.42, 1.14)
-print("완료")
+im.save(DST)
+print(f"OK — {changed} 픽셀 보라 전환, 저장: {DST}")
+
+# 결과 팔레트 확인
+from collections import Counter
+im2 = Image.open(DST).convert("RGBA")
+c = Counter(p for p in im2.getdata() if p[3] > 60)
+print("주요 색상:", [f"({r},{g},{b})x{n}" for (r, g, b, a), n in c.most_common(5)])

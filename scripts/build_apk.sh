@@ -15,7 +15,7 @@ cd android
 JAVA_HOME=${JAVA_HOME:-/home/z/jdk} ANDROID_HOME=${ANDROID_HOME:-/home/z/android-sdk} ./gradlew assembleRelease --no-daemon
 
 echo "[4/5] APK 복사"
-cp -f app/build/outputs/apk/release/app-release.apk /home/z/my-project/download/SERTZ-v3.0.24.apk
+cp -f app/build/outputs/apk/release/app-release.apk /home/z/my-project/download/SERTZ-v3.0.25.apk
 
-echo "[5/5] 완료 → /home/z/my-project/download/SERTZ-v3.0.24.apk"
-ls -la /home/z/my-project/download/SERTZ-v3.0.24.apk
+echo "[5/5] 완료 → /home/z/my-project/download/SERTZ-v3.0.25.apk"
+ls -la /home/z/my-project/download/SERTZ-v3.0.25.apk

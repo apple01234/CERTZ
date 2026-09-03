@@ -107,6 +107,7 @@ export default function GameRoot() {
                 onOpenJob={() => setPanel(panel === "job" ? null : "job")}
                 onOpenStat={() => setPanel(panel === "stat" ? null : "stat")}
                 onOpenQuest={() => setPanel(panel === "quest" ? null : "quest")}
+                onOpenBoss={() => setPanel(panel === "boss" ? null : "boss")}
                 onOpenOpt={() => setPanel(panel === "opt" ? null : "opt")}
               />
             </div>

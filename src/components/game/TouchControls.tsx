@@ -126,7 +126,12 @@ export function TouchControls({
     const t = Math.max(0, Math.min(1, (raw - 0.08) / 0.34));
     const boosted = t <= 0 ? 0 : Math.pow(t, 0.58);
     if (boosted > 0 && len > 0.001) {
-      sendMove((dx / len) * boosted, (dy / len) * boosted);
+      /* v3.0.25 버그 수정 — "조이스틱을 너무 세게 당기면 느려지는" 원인:
+       *  반경(64px) 초과 시 dx·dy를 클램프한 뒤 [원본 len]으로 나눠서
+       *  방향 벡터 크기가 R/len(<1)로 줄어들었다 (128px 당김 = 정확히 반속).
+       *  수정: 클램프 [후] 길이(min(len, R))로 정규화 — 어떻게 당겨도 풀속 유지 */
+      const outLen = Math.hypot(dx, dy) || 1; // 클램프 후 길이 = min(len, JOY_RADIUS)
+      sendMove((dx / outLen) * boosted, (dy / outLen) * boosted);
     } else {
       sendMove(0, 0);
     }
