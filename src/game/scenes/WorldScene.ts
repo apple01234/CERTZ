@@ -198,6 +198,12 @@ export class WorldScene extends Phaser.Scene {
 
   private repeatOn = false;
 
+  /* ----- v3.0.24 (#보스재도전) — 클리어한 챕터 보스 고능력치 재판 ----- */
+  /** 이동 중인 재도전 대상 챕터 (init data로 전달 — scene.restart 후 create에서 소비) */
+  private pendingReplayBoss: string | null = null;
+  /** 재도전 보스 진행 중 — onBossDead에서 일반 보스 보상/포탈 진행과 분기 */
+  private replayBossActive = false;
+
   /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
   private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
@@ -286,12 +292,15 @@ export class WorldScene extends Phaser.Scene {
     super("world");
   }
 
-  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number } }) {
+  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string }) {
     this.questIdx = 0;
     this.huntCount = 0;
     this.totalKills = 0;
     this.startTime = this.time.now;
     this.cleared = false;
+    this.replayBossActive = false; // v3.0.24 — 재도전 플래그 리셋
+    /* v3.0.24 — 보스 재도전: init data로 전달된 챕터키 보관 (create 후반 스폰) */
+    this.pendingReplayBoss = typeof data.replayBoss === "string" ? data.replayBoss : null;
     this.enemies = [];
     this.boss = null;
     this.fragment = null;
@@ -742,6 +751,13 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 미니맵 (2D MMORPG 기본 요소) ---------- */
     this.minimap = this.add.graphics().setDepth(95).setScrollFactor(0).setAlpha(0.85);
     this.redrawMinimap();
+
+    /* v3.0.24 (#보스재도전) — 클리어 챕터 보스 재도전: 보스 구역 도착 직후 재림 보스 스폰 */
+    if (this.pendingReplayBoss) {
+      const ch = this.pendingReplayBoss;
+      this.pendingReplayBoss = null;
+      this.time.delayedCall(350, () => this.spawnReplayBoss(ch));
+    }
 
     /* ---------- 입력 ---------- */
     this.setupInput();
@@ -2463,6 +2479,41 @@ export class WorldScene extends Phaser.Scene {
     if (intro) this.bossIntroCinematic(bx, by, def.introDialogue);
   }
 
+  /* v3.0.24 (#보스재도전) — 재림 보스 스폰: 클리어한 챕터 보스의 고능력치 판
+   *  유저 지시: "이미 스토리를 진행한 챕터의 보스전을 따로 플레이 (스토리 보스보다 훨씬 능력치가 높음)"
+   *  · 스토리판 대비 HP ×5.0 · ATK ×2.2 (챕터 스케일링 포함 위에 곱연산)
+   *  · 스토리 진행과 완전 분리 — 퀘스트 진행/포탈 개방/클리어 판정 없음 (onBossDead 분기)
+   *  · 보상: EXP/GOLD ×3 · 에메랄드 +5 (보상 팝업 표시) */
+  private spawnReplayBoss(ch: string) {
+    if (!this.player || this.boss || this.isInterior) return;
+    const spec = chapterSpec(`${ch}10`);
+    if (!spec?.boss) return;
+    const base = BOSS_DEFS[spec.boss];
+    const sc = stageScale(`${ch}10`);
+    const def: BossDef = {
+      ...base,
+      name: `재림한 ${base.name}`,
+      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * 5.0),
+      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15) * 2.2),
+      exp: Math.round(base.exp * sc.exp * 3),
+      gold: Math.round(base.gold * sc.gold * 3),
+    };
+    this.bossDef = def;
+    this.replayBossActive = true;
+    const bx = this.portalHome.x;
+    const by = this.portalHome.y - 10;
+    audio.sfx.roar();
+    this.cameras.main.shake(340, 0.01);
+    this.showBanner(`재림한 ${base.name} 출현!`);
+    this.boss = new Boss(this, bx, by, def);
+    this.physics.add.collider(this.boss, this.solidGroup);
+    EventBus.emit("boss:show", { name: def.name, hp: this.boss.hp, maxHp: this.boss.maxHp });
+    // 재도전 전투곡 — 일반 보스전과 동일 오버라이드
+    audio.playStageBGM(this.stageDef.key, true);
+    // 조우 연출은 카메라 팬만 (인트로 대사는 이미 본 대사 — 재생 생략 로직이 자동 처리)
+    this.bossIntroCinematic(bx, by, def.introDialogue);
+  }
+
   /** v3.0.10 — 보스 조우 시네마틱: 물리 정지 + 카메라 팬(보스) + 인트로 대사 + 카메라 복귀 */
   private bossIntroCinematic(bx: number, by: number, introId: string) {
     const cam = this.cameras.main;
@@ -2484,6 +2535,35 @@ export class WorldScene extends Phaser.Scene {
   onBossDead() {
     const def = this.bossDef;
     audio.sfx.bossDie();
+    /* v3.0.24 (#보스재도전) — 재림 보스 격파: 스토리 진행과 분리된 전용 보상 경로
+     *  퀘스트 진행/포탈 개방/클리어 판정 없음 → 골드·경험치·에메랄드 즉시 지급 후 구역 BGM 복귀 */
+    if (this.replayBossActive) {
+      this.replayBossActive = false;
+      this.totalKills++;
+      this.registry.set("runKills", this.totalKills);
+      this.cameras.main.shake(400, 0.01);
+      this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
+      const exp = def?.exp ?? 220;
+      const gold = def?.gold ?? 200;
+      this.player.gainExp(exp);
+      this.player.addGold(gold);
+      this.player.emerald += 5;
+      this.spawnPickupText(this.player.x, this.player.y - 60, "+5 에메랄드", "#7de8ff");
+      this.registerCollection(`boss_${def?.key ?? "guardian"}`, def?.name ?? "보스");
+      EventBus.emit("reward:show", {
+        title: `재도전 성공 — ${def?.name ?? "보스"}`,
+        lines: [
+          { text: `골드 +${gold} G`, color: "#ffd76a" },
+          { text: `경험치 +${exp} EXP`, color: "#8fe84a" },
+          { text: "에메랄드 +5", color: "#7de8ff" },
+        ] satisfies RewardPopupState["lines"],
+      });
+      this.emitRpgState();
+      this.emitHud();
+      this.save();
+      this.time.delayedCall(1400, () => audio.playStageBGM(this.stageDef.key));
+      return;
+    }
     // v2.0 수정 (지시 #7) — 보스전 종료 후 BGM이 멈추는 버그:
     // stopBGM 대신 1.4초 후 스테이지 테마 BGM으로 자연 전환
     this.time.delayedCall(1400, () => audio.playStageBGM(this.stageDef.key));
@@ -2599,15 +2679,19 @@ export class WorldScene extends Phaser.Scene {
       this.save();
       EventBus.emit("banner:show", { text: `이름이 '${v.name}'(으)로 바뀌었어요!` });
     };
-    const onBuy = (v: { key: ItemKey }) => {
+    const onBuy = (v: { key: ItemKey; qty?: number }) => {
       if (!this.player || this.dialoguing) return;
-      if (this.player.buy(v.key)) {
+      const qty = Math.max(1, Math.min(99, Math.floor(v.qty ?? 1))); // v3.0.24 — 수량 지정 구매
+      const it = ITEMS[v.key];
+      const cost = (it?.price ?? 0) * (it?.kind === "consumable" || it?.kind === "buff" ? qty : 1);
+      if (this.player.buy(v.key, qty)) {
         audio.sfx.questDone();
         // BM 즉시 반영 — 펫 구매 시 스프라이트 교체, 치장 구매 시 오라 교체 (v1.9)
         const kind = ITEMS[v.key]?.kind;
         if (kind === "pet") this.syncPet();
         else if (kind === "cosmetic") this.syncCosmeticAura();
         this.save();
+        EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost}G)` });
       }
       this.emitRpgState();
       this.emitHud();
@@ -2822,6 +2906,34 @@ export class WorldScene extends Phaser.Scene {
       });
     };
 
+    /* v3.0.24 (#보스재도전) — 클리어한 챕터 보스 고능력치 재판:
+     *  해당 챕터 보스 구역(`${ch}10`)으로 이동 후 "재림" 보스 스폰 (스토리판 HP ×5 · ATK ×2.2) */
+    const onBossReplay = (v: { ch: string }) => {
+      if (!this.player || this.dialoguing || this.player.state === "dead") return;
+      const ch = String(v?.ch ?? "");
+      const target = `${ch}10` as StageKey;
+      const spec = chapterSpec(target);
+      if (!spec || !spec.boss) return;
+      // 스토리 완료 확인 — 해당 보스 퀘스트가 진행 인덱스를 지난 경우만 (미완료 챕터는 거부)
+      const stageQuests = STAGES[target]?.quests ?? [];
+      const bossIdx = stageQuests.findIndex((q) => q.type === "boss");
+      const cleared = bossIdx >= 0 ? (this.savedQuestIdx[target] ?? 0) > bossIdx : false;
+      if (!cleared) {
+        EventBus.emit("banner:show", { text: "아직 스토리를 완료하지 않은 챕터의 보스입니다" });
+        return;
+      }
+      audio.sfx.portal();
+      EventBus.emit("ui:panel", { panel: null });
+      EventBus.emit("banner:show", { text: `재림 — ${BOSS_DEFS[spec.boss].name}의 재도전!` });
+      this.cameras.main.fadeOut(420, 0, 0, 0);
+      this.player.state = "idle";
+      this.time.delayedCall(440, () => {
+        const carry = this.buildSave(target);
+        writeSave(carry);
+        this.scene.restart({ stage: target, save: carry, replayBoss: ch });
+      });
+    };
+
     // v2.5 — 자동사냥 토글 (v3.0.15 #5: 펫 없이도 사용 가능)
     const onAutoHunt = () => {
       if (!this.player) return;
@@ -2902,6 +3014,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("friend:goto", onFriendGoto);
     EventBus.on("rpg:useItem", onUseItem);
     EventBus.on("rpg:warp", onWarp);
+    EventBus.on("rpg:bossReplay", onBossReplay); // v3.0.24 — 보스 재도전
     /* v3.0.6 (지시 #4) — 아이템 판매 */
     const onSell = (v: { key: string }) => {
       if (!this.player || this.dialoguing) return;
@@ -2922,16 +3035,18 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: "물약 판매 완료 — 상점가의 40%" });
       }
     };
-    /* v3.0.6 (지시 #1) — BM 상점 구매 (에메랄드) */
-    const onBmBuy = (v: { key: string }) => {
+    /* v3.0.6 (지시 #1) — BM 상점 구매 (에메랄드) · v3.0.24 — 수량 지정 + 소모품 재구매 버그 수정 */
+    const onBmBuy = (v: { key: string; qty?: number }) => {
       if (!this.player || this.dialoguing) return;
+      const qty = Math.max(1, Math.min(99, Math.floor(v.qty ?? 1)));
       const it = ITEMS[v.key as ItemKey];
-      const okBuy = this.player.buyBm(v.key as ItemKey);
+      const cost = (it?.bmPrice ?? 0) * (it?.kind === "consumable" || it?.kind === "buff" ? qty : 1);
+      const okBuy = this.player.buyBm(v.key as ItemKey, qty);
       if (okBuy) {
         this.save();
         this.emitRpgState();
         this.emitHud();
-        EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"} 구매 완료! (-${it?.bmPrice ?? 0} 에메랄드)` });
+        EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost} 에메랄드)` });
         if (it?.kind === "pet") this.onPetChanged();
         if (it?.kind === "cosmetic") this.onCosmeticChanged();
         audio.sfx.equip();
@@ -3114,6 +3229,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("friend:goto", onFriendGoto);
       EventBus.off("rpg:useItem", onUseItem);
       EventBus.off("rpg:warp", onWarp);
+      EventBus.off("rpg:bossReplay", onBossReplay);
       EventBus.off("rpg:sell", onSell);
       EventBus.off("rpg:sellPotion", onSellPotion);
       EventBus.off("rpg:bmBuy", onBmBuy);
@@ -5936,6 +6052,12 @@ export class WorldScene extends Phaser.Scene {
 
   sfxSwing() {
     audio.sfx.swing();
+  }
+  /** v3.0.24 — 직업별 스킬 전용 효과음 (audio.ts SKILL_SFX_FILES 매핑)
+   *  @param key 스킬 음향 키 (arrow/cast/knife/flame/wind/dark/holy/thunder/warcry 등)
+   *  @param rate 피치 배율 (상위직 강화판·계열 변주) */
+  sfxSkill(key: string, rate = 1) {
+    audio.sfx.skill(key, rate);
   }
   sfxSpin() {
     audio.sfx.spin();

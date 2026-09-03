@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.23 · 구역별 고정 BGM(곡 교체 없음·40곡 맵 배치) + 벽 텍스처 교체 + 알림창 수정 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.24 · BGM 풀버전 고품질(지연로딩) + 직업별 스킬 효과음 27종 + 보스 재도전·재림 + 상점 수량 구매 + 대사 초상화 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 

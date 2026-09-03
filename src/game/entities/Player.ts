@@ -88,12 +88,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v3.0.6 (지시 #8) — 보스 공격 방어 관통률 (Boss.takeDamage 호출 시 true) */
   bossPierceHit = false;
 
-  speed = 300;
+  speed = 225;
   /** 이동 기본값 — 클래스 속도 보너스는 이 값에 배율 (recalcSpeed)
-   *  v3.0.16 — 230→265 (+15%)
-   *  v3.0.18 — 265→300 (+13%): "이속이 ㅈㄴ 느림" 재피드백. 최속 적(150)의 2배로
-   *  카이팅 여유 확대 + 공격 중 감삭 0.8→0.92로 전투 중 체감 속도 동반 상향 */
-  static readonly BASE_SPEED = 300;
+   *  v3.0.16 — 230→265 (+15%) / v3.0.18 — 265→300 (+13%)
+   *  v3.0.24 — 300→225 되돌림 (유저: "기본 이속이 너무 빠름 — 강화 및 스텟을 올려야지 빠르게 해야지!!")
+   *  → 기본은 보수적으로, 민첩 스탯(+0.5%/점)과 강화(스타포스 +0.5%/성)에 투자해야 빨라진다 */
+  static readonly BASE_SPEED = 225;
   facing: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0);
 
   state: "idle" | "attack" | "dash" | "dead" = "idle";
@@ -378,7 +378,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.state !== "attack") return;
       this.swingDone = true;
       this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, warrior ? 1.15 : 1, slashTint);
-      this.scene.sfxSwing();
+      /* v3.0.24 — 도적(단검)=나이프음 / 전사·미전직=검 스윙 */
+      if (fam === "thief") this.scene.sfxSkill("knife", 0.98 + Math.random() * 0.06);
+      else this.scene.sfxSwing();
       // 참격 판정 확대 — 전방 160px x 폭 116px (사용자 지시: 히트박스 크게)
       this.checkMeleeHit(dir, reach, 116, dmgMul, knock);
     });
@@ -449,6 +451,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const trailHex = isDeadeye ? 0x53ff9a : isSkylord ? 0x9fd8ff : t >= 2 ? this.clsHex() : 0xffd98a; // 잔상색: 데드아이 초록발광 / 스카이로드 구름발광 / 2~3차 클래스색 / 그 외 골드
     const flashHex = isDeadeye ? 0x7dffb0 : isSkylord ? 0xc2ecff : t >= 2 ? this.clsHex() : 0xffe08a; // 머즐 플래시색
     const spread = 0.1 + 0.03 * t; // v3.0.16 — 부채꼴 확대 (1차 0.13°rad ~ 4차 0.22rad)
+    /* v3.0.24 — 1차 궁수 화살 과강렬 완화 (유저: "1차 궁수 화살이 너무 강해보임")
+     *  ① 크기 계층화: 1차 1.0 / 2차 1.15 / 3차 1.3 / 4차 1.5 (기존 전 차수 1.35+ 고정)
+     *  ② 비행 잔상·머즐 플래시는 2차+ 부만 (1차는 투박한 일반 화살) */
+    const arrowScale = t >= 4 ? 1.5 : t === 3 ? 1.3 : t === 2 ? 1.15 : 1.0;
+    const showTrail = t >= 2 || isDeadeye || isSkylord; // 4차 정체성 화살(초록/구름)은 유지
+    const showFlash = t >= 2 || isDeadeye || isSkylord;
 
     const fireOne = (i: number) => {
       const { dmg, crit } = this.rollDamage(0.95 + 0.04 * t + (i === 0 && empowered ? 0.5 : 0), i > 0);
@@ -458,17 +466,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         angle: angle0 + (shots > 1 ? (i - (shots - 1) / 2) * spread : 0),
         speed: 620 + Math.floor(Math.random() * 40) - 15, // 미세 속도 편차 — 화살비 유기적 느낌
         pierce, dmg, crit,
-        tint: arrowTint, knock: 180, scale: 1.35 + 0.06 * t, // v3.0.15 (#15) 화살 크기 상향
+        tint: arrowTint, knock: 180, scale: arrowScale, // v3.0.24 — 차수별 크기 계층 (1차 1.0)
         tex: arrowTex, blend: "normal", rot: true, // v3.0.16 — normal 블렌드: ADD는 밝은 배경에서 초록이 하얗게 씻김 (텍스처 자체가 에메랄드+발광 트레일)
-        trail: trailHex, // v3.0.16 — 비행 잔상 (ADD 발광)
+        trail: showTrail ? trailHex : undefined, // v3.0.24 — 1차는 잔상 없음
       });
-      this.scene.spawnBurstAt(this.x + dir.x * 16, this.y - 8, 3, flashHex); // 머즐 플래시
+      if (showFlash) this.scene.spawnBurstAt(this.x + dir.x * 16, this.y - 8, 3, flashHex); // 머즐 플래시 (2차+ / 4차 정체성)
     };
 
     this.scene.time.delayedCall(65, () => {
       if (this.state !== "attack") return;
       this.swingDone = true;
-      this.scene.sfxSwing();
+      this.scene.sfxSkill("arrow", 0.96 + Math.random() * 0.08); // v3.0.24 — 활발사음 (검 스윙음 → 활음)
       for (let i = 0; i < shots; i++) {
         if (i > 0) {
           this.scene.time.delayedCall(i * 60, () => { // v3.0.16 — 90→60ms 연사 (다다다닥 타격감)
@@ -508,7 +516,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(65, () => {
       if (this.state !== "attack") return;
       this.swingDone = true;
-      this.scene.sfxSwing();
+      this.scene.sfxSkill("cast", 0.98 + Math.random() * 0.06); // v3.0.24 — 마법사 지팡이 시전음 (검 스윙음 → 마법음)
       const angle = Math.atan2(dir.y, dir.x);
       for (let i = 0; i < shots; i++) {
         this.scene.time.delayedCall(i * 90, () => {
@@ -562,7 +570,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(65, () => {
       if (this.state !== "attack") return;
       this.swingDone = true;
-      this.scene.sfxSwing();
+      this.scene.sfxSkill("knife", 1.08 + Math.random() * 0.08); // v3.0.24 — 도적 표창 투척 (단검음 고자)
       const angle = Math.atan2(dir.y, dir.x);
       // v3.0.6 (지시 #3): 표창 발수 — 3차+ 2발 / 4차+ 3발 부채꼴
       const n = t >= 4 ? 3 : t >= 3 ? 2 : 1;
@@ -745,7 +753,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.tier; // 0(미전직)~4
     const dmgMul = 1.6 + 0.3 * t;
     const radius = 118 + 16 * t;
-    this.scene.sfxSpin();
+    /* v3.0.24 — 직업별 사운드: 전사=카타나 연속 베기(sfxSpin) / 버서커=대검 파괴음 */
+    if (bleed) this.scene.sfxSkill("bigsword", 0.85);
+    else this.scene.sfxSpin();
 
     // 회전 방향: 조준 측면 기준 (상하 조준 시 현재 플립 방향 따름)
     const aim = this.aimDir();
@@ -854,7 +864,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.tier;
     const hex = this.clsHex();
     this.play("hero-atk");
-    this.scene.sfxSpin();
+    this.scene.sfxSkill("arrow", 0.92); // v3.0.24 — 궁수 활발사 (회전베기음 → 활음 교체)
     const count = 3 + t;
     const fireVolley = (n: number, spread: number, dmgMul: number, delay0: number) => {
       for (let i = 0; i < n; i++) {
@@ -889,7 +899,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const aim = this.aimDirFree(); // v3.0 — 8방향 자유 조준
     const angle = Math.atan2(aim.y, aim.x);
     this.play("hero-atk");
-    this.scene.sfxSpin();
+    this.scene.sfxSkill("flame"); // v3.0.24 — 마법사 대관통 볼트 (화염 시전음)
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8); // v3.0.2 — 시전 이펙트
     const t = this.tier;
     if (t >= 4) this.scene.spawnPillar(this.x + aim.x * 14, this.y - 12 + aim.y * 8, 0xa5b9ff, 90); // 4차 강화 시전 이펙트
@@ -934,7 +944,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const count = 5 + (t >= 3 ? 2 : 0);
     const spread = 0.62; // 부채꼴 전체 각 (rad)
     this.play("hero-atk");
-    this.scene.sfxSwing();
+    this.scene.sfxSkill("knife", 1.05); // v3.0.24 — 도적 단검 다연발
     for (let i = 0; i < count; i++) {
       this.scene.time.delayedCall(60 + i * 55, () => {
         if (this.state === "dead") return;
@@ -966,7 +976,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.play(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0);
-    this.scene.sfxSpin();
+    this.scene.sfxSkill("quake"); // v3.0.24 — 가디언 성벽 강타 (지진음)
     this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 1.5, hex);
     // 방어 버프 — 성벽 정체성 (전장의 함성 공격 버프와 별개 축)
     this.selfDefBuff = { add: 8 + 2 * t, until: this.scene.time.now + 6000 };
@@ -1011,7 +1021,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const range = 560 + 40 * t;
     const halfW = t >= 4 ? 46 : 26;
     this.play("hero-atk");
-    this.scene.sfxCrit(); // 샤프 저격음 — 기본 화살 sfxSwing과 구분
+    this.scene.sfxSkill("arrowpierce"); // v3.0.24 — 스나이퍼 관통 저격음 (샤프 관통 화살)
     // 저격 라인 이펙트 — px 직선 (spawnSlash 대신 씬 그래픽 풀 활용: 라인 + 머즐 플래시)
     const ex = this.x + Math.cos(base) * range;
     const ey = this.y - 8 + Math.sin(base) * range;
@@ -1052,7 +1062,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.tier;
     const hex = this.clsHex();
     this.play("hero-atk");
-    this.scene.sfxSpin();
+    this.scene.sfxSkill("wind"); // v3.0.24 — 윈드러너 회오리 화살 (바람음)
     const shots = t >= 3 ? 2 : 1;
     for (let i = 0; i < shots; i++) {
       this.scene.time.delayedCall(i * 150, () => {
@@ -1080,7 +1090,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.tier;
     const hex = this.clsHex();
     this.play("hero-atk");
-    this.scene.sfxSpin();
+    this.scene.sfxSkill("electron"); // v3.0.24 — 아크메이지 아크 볼트 (전자음)
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8);
     const { dmg, crit } = this.rollDamage(2.4 + 0.3 * t, true);
     this.scene.fireExplodingBolt({
@@ -1101,7 +1111,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.tier;
     const hex = this.clsHex();
     this.play("hero-atk");
-    this.scene.sfxSpin();
+    this.scene.sfxSkill("cure"); // v3.0.24 — 세이지 정화의 파동 (성스러운 회복음)
     const wave = (delay: number) => {
       this.scene.time.delayedCall(delay, () => {
         if (this.state === "dead") return;
@@ -1148,6 +1158,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.tier;
     const hex = this.clsHex();
     this.play("hero-atk");
+    this.scene.sfxSkill("iainuki"); // v3.0.24 — 어세신 그림자 참수 (발도음)
     const targets = this.nearestTargets(t >= 3 ? 2 : 1, 260);
     if (targets.length === 0) {
       // 대상 없음 — 전방 참격으로 대체
@@ -1206,7 +1217,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hits = t >= 3 ? 7 : 5;
     this.play("hero-atk");
     this.setFlipX(dir.y === 0 && dir.x > 0);
-    this.scene.sfxSwing();
+    this.scene.sfxSkill("swift"); // v3.0.24 — 스와시버클러 연타 난무 (속공 베기)
     let total = 0;
     for (let i = 0; i < hits; i++) {
       this.scene.time.delayedCall(70 + i * 95, () => {
@@ -1221,7 +1232,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const heal = 4 * total;
           this.hp = Math.min(this.maxHp, this.hp + heal);
         }
-        this.scene.sfxSwing();
+        this.scene.sfxSkill("swift", i % 2 === 0 ? 0.98 : 1.07); // v3.0.24 — 타격마다 교차 피치
       });
     }
     this.scene.time.delayedCall(70 + hits * 95 + 180, () => {
@@ -1247,11 +1258,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.dashDir.copy(dir);
     this.hitSet.clear();
     this.setFlipX(dir.x > 0); // v3.0.10 — 시트 왼쪽 기준
-    this.scene.sfxDash();
 
     // v3.0.6 — 기동기(C) 12종 클래스 고유 파라미터 (겹침 0 — 지시 #4)
     //  3차/4차는 계열 체인에서 2차기 승계(강화판)
     const kind = resolveSkill2Of(this.cls) ?? "dash";
+    /* v3.0.24 — 기동기 직업별 사운드 (기존 전원 sfxDash 공용 → 클래스 정체성 분리)
+     *  전사=질주 / 마법사=점멸(worp) / 도적=암흑 / 궁수=질풍 / 버서커·가디언=중장 돌진 / 어세신=암습 */
+    const DASH_SND: Record<string, [string, number]> = {
+      dash: ["dash2", 1],
+      windstep: ["wind2", 1.05],
+      blink: ["worp", 1],
+      shadowveil: ["dark", 1.05],
+      savagerush: ["heavydash", 1],
+      bulwarkdash: ["heavydash", 0.82],
+      falconwind: ["wind", 1.15],
+      windslash: ["wind2", 1],
+      grandblink: ["worp", 0.78],
+      cycleblink: ["worp", 1.15],
+      ambushdash: ["ambush", 1],
+      flashydash: ["dash2", 1.12],
+    };
+    const ds = DASH_SND[kind] ?? DASH_SND.dash;
+    this.scene.sfxSkill(ds[0], ds[1]);
     const t = this.tier;
     const hex = this.clsHex();
     const DASH_CFG: Record<string, { time: number; speed: number }> = {
@@ -1535,6 +1563,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hitSet.clear();
     this.setVelocity(0, 0);
     const hex = this.clsHex();
+    /* v3.0.24 — 3차기 16종 직업별 사운드 (전원 공용 없음 — 클래스 정체성 배치) */
+    const SND3: Record<Skill3Kind, [string, number]> = {
+      warcry: ["warcry", 1], // 워로드 — 전장의 함성
+      sanctuary: ["holy", 1], // 팔라딘 — 성역
+      trueshot: ["arrowpierce", 1.22], // 이글아이 — 절사명중
+      tornado: ["wind", 0.8], // 템페스트 — 폭풍의 눈
+      thunder: ["thunder", 1], // 스톰브링어 — 낙뢰
+      timewarp: ["slowmo", 1], // 크로니클 — 시간 왜곡
+      shadowblad: ["dark", 0.88], // 나이트블레이드 — 그림자 칼날
+      flurry: ["swift", 1.1], // 듀얼리스트 — 연격 무도
+      bloodrage: ["rage", 0.9], // 워브링어 — 피의 격노
+      holynova: ["holy", 0.8], // 크루세이더 — 성흔 폭발
+      arrowrain: ["arrow", 0.75], // 데드아이 — 화살 폭우
+      cyclone: ["wind2", 0.72], // 스카이로드 — 폭풍 소용돌이
+      chainlight: ["chain", 1], // 아크로드 — 연쇄 번개
+      gravity: ["gravity", 1], // 이터널 — 중력 붕괴
+      shadowmine: ["dark", 1.2], // 섀도우로드 — 그림자 지뢰
+      swordaura: ["bigsword", 1], // 블레이드마스터 — 파동 검기
+    };
+    this.scene.sfxSkill(...SND3[kind]);
 
     switch (kind) {
       /* 워로드 — 전장의 함성: 광역 외침 + 공격력 버프 (v3.0.4 — 임팩트 대폭 상향) */
@@ -1954,6 +2002,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocity(0, 0);
     const hex = this.clsHex();
     const now = this.scene.time.now;
+    /* v3.0.24 — 4차기 8종 직업별 사운드 (필살기 임팩트 배치) */
+    const SND4: Record<Skill4Kind, [string, number]> = {
+      doomsday: ["superhit", 1], // 워브링어 — 종언의 일격
+      judgment: ["holy", 1.18], // 크루세이더 — 심판의 빛기둥
+      godarrow: ["arrow", 1.25], // 데드아이 — 신의 화살비
+      skystorm: ["skyflight", 1], // 스카이로드 — 천공의 폭풍
+      manaburst: ["manaburst", 1], // 아크로드 — 마나 붕괴
+      eternalloop: ["timestop", 1], // 이터널 — 영원의 고리 (시간 정지)
+      shadowclon: ["dark", 0.7], // 섀도우로드 — 그림자 군주
+      bladedance: ["swift", 1.2], // 블레이드마스터 — 검무
+    };
+    this.scene.sfxSkill(...SND4[kind]);
 
     switch (kind) {
       /* 워브링어 — 종언의 일격: 돌진 후 대폭발 — v3.0.4 임팩트 상향 */
@@ -2477,7 +2537,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const buff = this.hasBuff("buff_spd") || this.hasBuff("buff_king") ? 1.25 : 1;
     const sky = this.selfSpdBuff ? this.selfSpdBuff.mult : 1;
     const slow = this.dots.slow ? this.dots.slow.mult : 1;
-    this.speed = Math.round(Player.BASE_SPEED * (1 + this.clsBonus.speedPct / 100) * buff * sky * slow);
+    /* v3.0.24 — 이속 성장 연동: 기본 225 + 민첩 0.5%/점(최대 +60%) + 강화(무기+방어구 별 합계) 0.5%/성(최대 +15%)
+     *  "강화 및 스텟을 올려야 빨라진다" — 성장 재화의 가치 확대 */
+    const dexPct = Math.min(60, this.stats.dex * 0.5);
+    const starPct = Math.min(15, ((this.upgrades.weapon ?? 0) + (this.upgrades.armor ?? 0)) * 0.5);
+    this.speed = Math.round(Player.BASE_SPEED * (1 + (this.clsBonus.speedPct + dexPct + starPct) / 100) * buff * sky * slow);
   }
 
   /* ---------------- RPG 기본 요소 ---------------- */
@@ -2908,23 +2972,33 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return ok ? "ok" : "fail";
   }
 
-  /** 상점 구매 — 골드 차감/인벤토리 반영. 실패 시 false */
-  buy(key: ItemKey): boolean {
+  /** 상점 구매 — 골드 차감/인벤토리 반영. 실패 시 false
+   *  v3.0.24 (#수량) — 소모품/버프는 qty 지정 구매 지원 (장비·펫·치장은 1개 고정) */
+  buy(key: ItemKey, qty = 1): boolean {
     const item = ITEMS[key];
     // v3.0.6 (지시 #9) — 보스 전용 아이템은 상점 구매 불가 (유저 거래소 예정)
     // v3.0.6 (지시 #1) — BM 전용 아이템은 골드 상점 구매 불가
-    if (!item || this.gold < item.price || item.tradeLock || item.bmOnly) return false;
+    if (!item || item.tradeLock || item.bmOnly) return false;
+    const n = Math.max(1, Math.floor(qty));
     if (item.kind === "consumable") {
-      this.gold -= item.price;
-      if (key === "potion_hp") this.addPotion("hp");
-      else if (key === "potion_mp") this.addPotion("mp");
-      else this.owned.push(key); // v2.5 — 상급 물약/스크롤류는 소지품 기반
+      const cost = item.price * n;
+      if (this.gold < cost) return false;
+      this.gold -= cost;
+      if (key === "potion_hp") {
+        for (let i = 0; i < n; i++) this.addPotion("hp");
+      } else if (key === "potion_mp") {
+        for (let i = 0; i < n; i++) this.addPotion("mp");
+      } else {
+        for (let i = 0; i < n; i++) this.owned.push(key); // v2.5 — 상급 물약/스크롤류는 소지품 기반
+      }
       return true;
     }
     // BM (v1.9): 버프는 개수 누적, 펫/치장은 1회 구매
     if (item.kind === "buff") {
-      this.gold -= item.price;
-      this.addBuffItem(key as BuffKey);
+      const cost = item.price * n;
+      if (this.gold < cost) return false;
+      this.gold -= cost;
+      this.addBuffItem(key as BuffKey, n);
       return true;
     }
     if (item.kind === "pet") {
@@ -3028,14 +3102,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  /** BM 상점 구매 (지시 #1) — 에메랄드 전용 화폐 (골드 상점과 분리) */
-  buyBm(key: ItemKey): boolean {
+  /** BM 상점 구매 (지시 #1) — 에메랄드 전용 화폐 (골드 상점과 분리)
+   *  v3.0.24 (#버그/#수량) — ① 소모품(eert 큐브)이 owned 포함 판정에 걸려 1개만 구매되던 버그 수정
+   *   ② 소모품/버프는 qty 지정 구매 지원 (장비·펫·치장은 1개 고정) */
+  buyBm(key: ItemKey, qty = 1): boolean {
     const item = ITEMS[key];
     if (!item || item.bmPrice === undefined) return false;
-    if (this.emerald < item.bmPrice) return false;
+    const n = Math.max(1, Math.floor(qty));
     if (item.kind === "buff") {
-      this.emerald -= item.bmPrice;
-      this.addBuffItem(key as BuffKey);
+      const cost = item.bmPrice * n;
+      if (this.emerald < cost) return false;
+      this.emerald -= cost;
+      this.addBuffItem(key as BuffKey, n);
+      return true;
+    }
+    if (item.kind === "consumable") {
+      // 소모품은 누적 구매 (보유 여부 무관 — eert 큐브 여러 개 소지 가능)
+      const cost = item.bmPrice * n;
+      if (this.emerald < cost) return false;
+      this.emerald -= cost;
+      for (let i = 0; i < n; i++) this.owned.push(key);
       return true;
     }
     if (item.kind === "pet") {

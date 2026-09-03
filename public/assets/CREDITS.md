@@ -125,6 +125,19 @@
   파편 줍기(item_gem), 퀘스트 완료(item_gem), 레벨업/차원문(spell),
   보스 포효(roar), 몬스터 사망(creature_die), 보스 사망(monster)
 
+### 효과음연구소 (soundeffect-lab.info) — 스킬 효과음
+- License: 상업 이용 무료 / 크레딧 표기 불필요 / 원본 파일 재배포만 금지
+  (게임 빌드에 내장하는 형태는 허용 범위)
+- Source: https://soundeffect-lab.info/sound/battle/ (전투·마법 카테고리)
+- Download script: scripts/sfx-fetch/download_skills.sh
+- Used for: v3.0.24 직업별 스킬 전용 효과음 27종 (skl_*.ogg)
+  활발사(arrow-release/arrow-pierce) · 지팡이 시전(magic-stick) · 단검(knife-slash) ·
+  화염(magic-flame) · 전자/번개(magic-electron) · 바람(magic-wind) · 회복(magic-cure) ·
+  발도(iainuki) · 지진(magic-quake) · 암흑(magic-attack-darkness) · 신성(magic-attack-holy) ·
+  중력(magic-gravity) · 시간 왜곡(slow-motion) · 시간 정지(dimension-stop) ·
+  격노(transform-monster) · 포효(dragon-cry) · 대검(large-sword-slash) ·
+  필살기 타격(super-arts-hit) · 비행(wizard-flight) · 중장 돌진(armor-dash) · 암습(step-into)
+
 ### 50+ Monsters Pack 2D — isaiah658
 - License: CC0 1.0 (Public Domain)
 - Source: https://opengameart.org/content/50-monsters-pack-2d

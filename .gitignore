@@ -97,3 +97,4 @@ asset_work/
 *.nsis.7z
 /upload/
 tmp_design/
+download/*.apk

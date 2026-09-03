@@ -146,6 +146,42 @@ function shopState(rpg: RpgState, k: ItemKey): "equipped" | "owned" | "buyable" 
   return affordable ? "buyable" : "poor";
 }
 
+/** v3.0.24 — 수량 스테퍼 (−/n/+) — 소모품·버프 수량 지정 구매 (유저 지시 #5)
+ *  금액 부족 시 자동 클램프는 구매 실패 배너로 처리 — 여기선 1~99 범위만 보장 */
+function QtyStepper({
+  qty,
+  onChange,
+}: {
+  qty: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center overflow-hidden rounded-md border border-white/20 bg-black/40">
+      <button
+        aria-label="수량 감소"
+        onClick={(e) => {
+          e.stopPropagation();
+          onChange(Math.max(1, qty - 1));
+        }}
+        className="h-6 w-6 text-[13px] font-black text-white/80 hover:bg-white/10 active:scale-90"
+      >
+        −
+      </button>
+      <span className="w-7 text-center text-[11px] font-black text-white">{qty}</span>
+      <button
+        aria-label="수량 증가"
+        onClick={(e) => {
+          e.stopPropagation();
+          onChange(Math.min(99, qty + 1));
+        }}
+        className="h-6 w-6 text-[13px] font-black text-white/80 hover:bg-white/10 active:scale-90"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
 /** 강화 단계가 반영된 표시명 (v3.0.5 — 스타포스 ★ 표기) */
 function displayName(name: string, up: number): string {
   return up > 0 ? `${name} ★${up}` : name;
@@ -171,9 +207,15 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
     if (it.kind === "pet") return rpg.pets.includes(k) ? "owned" : rpg.emerald >= (it.bmPrice ?? 0) ? "buyable" : "poor";
     if (it.kind === "cosmetic") return rpg.cosmetics.includes(k) ? "owned" : rpg.emerald >= (it.bmPrice ?? 0) ? "buyable" : "poor";
     if (it.kind === "buff") return rpg.emerald >= (it.bmPrice ?? 0) ? "buyable" : "poor";
+    /* v3.0.24 (#버그) — 소모품(eert 큐브)은 누적 구매: owned 포함을 "보유함"으로 판정하던 버그 수정
+     *  (기존엔 1개 구매 후 영구히 "보유함" 비활성화 → 두 번 못 사던 버그) */
+    if (it.kind === "consumable") return rpg.emerald >= (it.bmPrice ?? 0) ? "buyable" : "poor";
     if (rpg.accessories.includes(k)) return "equipped";
     return rpg.owned.includes(k) ? "owned" : rpg.emerald >= (it.bmPrice ?? 0) ? "buyable" : "poor";
   };
+  /* v3.0.24 (#수량) — 소모품/버프 수량 지정 (아이템키별) */
+  const [qtyMap, setQtyMap] = useState<Record<string, number>>({});
+  const qtyOf = (k: string) => qtyMap[k] ?? 1;
   return (
     <div
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
@@ -203,19 +245,27 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
             const item = ITEMS[k as ItemKey];
             const st = bmState(k as ItemKey);
             const price = item.bmPrice ?? 0;
+            const stackable = item.kind === "consumable" || item.kind === "buff"; // v3.0.24 — 수량 지정 대상
+            const qty = qtyOf(k);
+            const showQty = stackable && st === "buyable";
+            const total = price * (stackable ? qty : 1);
             return (
               <div key={k} className="flex items-center gap-2.5 rounded-lg border border-cyan-300/20 bg-cyan-300/[0.05] px-2.5 py-2">
                 <ItemIcon icon={item.icon} tier={item.tier} />
                 <div className="min-w-0 flex-1">
                   <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
                     {item.name}
+                    {(item.kind === "consumable" && (rpg.owned.filter((o) => o === k).length > 0)) && (
+                      <span className="ml-1 text-white/60">×{rpg.owned.filter((o) => o === k).length}</span>
+                    )}
                     <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">{TIER_STYLE[item.tier].label}</span>
                   </p>
                   <p className="text-[11px] text-cyan-200/80">{item.kind === "pet" ? PET_DEFS[k as PetKey]?.desc : item.kind === "buff" ? BUFF_DEFS[k as BuffKey]?.desc : itemEffect(item)}</p>
                 </div>
+                {showQty && <QtyStepper qty={qty} onChange={(n) => setQtyMap((m) => ({ ...m, [k]: n }))} />}
                 <button
                   disabled={st === "owned" || st === "equipped" || st === "poor"}
-                  onClick={() => EventBus.emit("rpg:bmBuy", { key: k as ItemKey })}
+                  onClick={() => EventBus.emit("rpg:bmBuy", { key: k as ItemKey, qty: stackable ? qty : 1 })}
                   className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${
                     st === "equipped" ? "cursor-default bg-emerald-700/40 text-emerald-300"
                       : st === "owned" ? "cursor-default bg-slate-700/50 text-white/50"
@@ -223,7 +273,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                       : "cursor-not-allowed bg-slate-700/50 text-white/35"
                   }`}
                 >
-                  {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : `${price} 💎`}
+                  {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : showQty && qty > 1 ? `${total} 💎` : `${price} 💎`}
                 </button>
               </div>
             );
@@ -242,6 +292,9 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
   useEscClose(onClose);
   /* v3.0.5 — 스타포스 강화 결과 플래시 (성공 금빛 링 / 실패 붉은 흔들림) */
   const [flash, setFlash] = useState<{ slot: "weapon" | "armor"; result: "ok" | "fail"; seq: number } | null>(null);
+  /* v3.0.24 (#수량) — 소모품/버프 수량 지정 구매 (아이템키별) */
+  const [qtyMap, setQtyMap] = useState<Record<string, number>>({});
+  const qtyOf = (k: string) => qtyMap[k] ?? 1;
   useEffect(() => {
     let seq = 0;
     const on = (v: { slot: "weapon" | "armor"; result: "ok" | "fail" }) =>
@@ -323,6 +376,10 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                   const item = ITEMS[k as ItemKey];
                   const st = shopState(rpg, k as ItemKey);
                   const count = item.kind === "buff" ? (rpg.buffItems[k] ?? 0) : undefined;
+                  const stackable = item.kind === "consumable" || item.kind === "buff"; // v3.0.24
+                  const qty = qtyOf(k);
+                  const showQty = stackable && st === "buyable";
+                  const total = item.price * (stackable ? qty : 1);
                   return (
                     <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
                       <ItemIcon icon={item.icon} tier={item.tier} />
@@ -336,9 +393,10 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                         </p>
                         <p className="text-[11px] text-emerald-300/90">{itemEffect(item)}</p>
                       </div>
+                      {showQty && <QtyStepper qty={qty} onChange={(n) => setQtyMap((m) => ({ ...m, [k]: n }))} />}
                       <button
                         disabled={st !== "buyable"}
-                        onClick={() => EventBus.emit("rpg:buy", { key: k as ItemKey })}
+                        onClick={() => EventBus.emit("rpg:buy", { key: k as ItemKey, qty: stackable ? qty : 1 })}
                         className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${
                           st === "equipped"
                             ? "cursor-default bg-emerald-700/40 text-emerald-300"
@@ -349,7 +407,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                                 : "cursor-not-allowed bg-slate-700/50 text-white/35"
                         }`}
                       >
-                        {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : `${item.price} G`}
+                        {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : showQty && qty > 1 ? `${total} G` : `${item.price} G`}
                       </button>
                     </div>
                   );
@@ -1349,7 +1407,7 @@ export function GamePanels({
   if (panel === "gm") return <GmPanel onClose={onClose} />; // v3.0.3 — GM NPC
   if (panel === "stat") return <StatPanel rpg={rpg} hud={hud} onClose={onClose} />;
   if (panel === "collection") return <CollectionPanel rpg={rpg} onClose={onClose} />; // v3.0.16 — 몬스터 컬렉션
-  if (panel === "quest") return <QuestLogPanel questLog={questLog} onClose={onClose} />;
+  if (panel === "quest") return <QuestLogPanel questLog={questLog} rpg={rpg} onClose={onClose} />;
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
 }
@@ -1634,7 +1692,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
 
 const STAT_META: { key: "str" | "dex" | "int" | "luk"; label: string; effect: string; color: string }[] = [
   { key: "str", label: "힘 (STR)", effect: "공격력 +0.3/점", color: "#ff8a8a" },
-  { key: "dex", label: "민첩 (DEX)", effect: "크리티컬 +0.4%p/점", color: "#9af0c8" },
+  { key: "dex", label: "민첩 (DEX)", effect: "크리티컬 +0.4%p · 이동속도 +0.5%/점", color: "#9af0c8" },
   { key: "int", label: "지력 (INT)", effect: "최대 MP +4/점", color: "#8fb8ff" },
   { key: "luk", label: "행운 (LUK)", effect: "최대 HP +5/점", color: "#ffe86a" },
 ];
@@ -1704,7 +1762,7 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
           ))}
         </div>
         <p className="mb-2.5 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[10px] leading-relaxed text-white/45">
-          공격력 = 기본 + 무기/강화 + 힘 스탯 + 클래스 경로 보너스 (+ 버프) · 크리티컬 = 기본 + 장신구 + 민첩 + 클래스
+          공격력 = 기본 + 무기/강화 + 힘 스탯 + 클래스 경로 보너스 (+ 버프) · 크리티컬 = 기본 + 장신구 + 민첩 + 클래스 · v3.0.24 — 이동속도 = 기본(225) + 민첩 0.5%/점 + 강화 별 합계 0.5%/성 (강화·스텟에 투자하면 빨라진다)
         </p>
 
         {/* AP 배분 */}
@@ -1771,8 +1829,10 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
 
 /* ---------- 퀘스트 로그 (v1.9 — J키) ---------- */
 
-function QuestLogPanel({ questLog, onClose }: { questLog: QuestLogState; onClose: () => void }) {
+function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rpg?: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  /* v3.0.24 (#보스재도전) — 클리어한 챕터 보스 재림판 도전 (스토리판 HP×5 · ATK×2.2) */
+  const bossKills = rpg?.collection?.kills ?? {};
   return (
     <div
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
@@ -1795,6 +1855,44 @@ function QuestLogPanel({ questLog, onClose }: { questLog: QuestLogState; onClose
             ✕
           </button>
         </div>
+
+        {/* v3.0.24 (#보스재도전) — 클리어 챕터 보스 재림판 도전 진입점 */}
+        {rpg && (
+          <div className="mb-2.5 rounded-lg border border-rose-300/35 bg-rose-400/[0.06] p-2.5">
+            <p className="text-[12px] font-black text-rose-200">⚔ 보스 재도전 — 재림</p>
+            <p className="mt-0.5 text-[10px] leading-snug font-bold text-white/50">
+              정복한 챕터의 보스가 다시 태어났다. 스토리판보다 훨씬 강력하다 (HP ×5 · ATK ×2.2)
+              · 보상: 골드·경험치 ×3 + 에메랄드 +5
+            </p>
+            <div className="mt-1.5 grid grid-cols-3 gap-1">
+              {CHAPTERS.map((ch) => {
+                const bk = ch.boss;
+                if (!bk) return null;
+                const cleared = (bossKills[`boss_${bk}`] ?? 0) > 0;
+                return (
+                  <button
+                    key={ch.key}
+                    disabled={!cleared}
+                    title={cleared ? `${BOSS_DEFS[bk].name} 재림판에 도전` : "스토리를 먼저 완료하세요"}
+                    onClick={() => EventBus.emit("rpg:bossReplay", { ch: ch.key })}
+                    className={`rounded-md border px-1 py-1.5 text-left transition-colors ${
+                      cleared
+                        ? "border-rose-300/50 bg-rose-500/15 hover:bg-rose-500/30 active:scale-95"
+                        : "cursor-not-allowed border-white/10 bg-white/[0.03]"
+                    }`}
+                  >
+                    <p className={`truncate text-[10px] font-black ${cleared ? "text-rose-100" : "text-white/35"}`}>
+                      {ch.num}장 {ch.title}
+                    </p>
+                    <p className={`truncate text-[9px] font-bold ${cleared ? "text-rose-200/90" : "text-white/25"}`}>
+                      {cleared ? BOSS_DEFS[bk].name : "스토리 진행 필요"}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-1.5">
           {questLog.list.map((q, i) => {

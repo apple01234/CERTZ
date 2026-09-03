@@ -18,6 +18,15 @@ let bgmKey: string | null = null;
 let bgmStage: string | null = null;
 let muted = false;
 
+/* v3.0.24 — BGM 지연 로딩 (유저 지시: "용량 많은건 상관없음, 렉만 안걸리면 됨 + 퀄리티가 우선")
+ *  풀버전(q4·48kHz, ~5분) 40트랙을 부트에서 디코드하면 WebAudio PCM이 수 GB — 크래시/렉 원인.
+ *  → 부트 프리로드는 타이틀 1곡만, 구역 진입 시 그 구역 1곡만 fetch+decode 후 재생.
+ *  LRU 캡: 디코드된 트랙 최대 3개 유지(현 구역 + 최근 2곳), 초과분은 캐시에서 해제. */
+const BGM_DIR = "assets/audio";
+const MAX_DECODED_BGM = 3;
+const decodedLru: string[] = [];
+const bgmInflight = new Map<string, Promise<boolean>>();
+
 /* v3.0.6 (지시 #7 — 전체적인 사운드 밸런스 조정):
  *  ① 동일 SFX 최소 간격 스로틀 — 자동사냥 대량 처치 시 수십 개 사운드가 동시 겹쳐
  *     귀가 아프고 BGM이 묻히던 문제 해결 (같은 키 55ms 내 재생 억제)
@@ -73,8 +82,10 @@ export const BGM_PLAYLISTS: Record<BGMKind, string[]> = {
   abyss: ["bgm_abyss1", "bgm_abyss2", "bgm_abyss3", "bgm_abyss4", "bgm_abyss5"],
   boss: ["bgm_boss1", "bgm_boss2", "bgm_boss3", "bgm_boss4", "bgm_boss5"],
 };
-/** BootScene 로드 리스트 — 40트랙 전체 (모든 곡이 구역 배치에 사용됨) */
+/** 40트랙 전체 자산 목록 (모든 곡이 구역 배치에 사용됨 — v3.0.24부터 지연 로딩) */
 export const BGM_ALL_TRACKS: string[] = Object.values(BGM_PLAYLISTS).flat();
+/** v3.0.24 — BootScene 프리로드 BGM: 타이틀 1곡만 (나머지 39곡은 구역 진입 시 지연 로딩) */
+export const BGM_PRELOAD_TRACKS: string[] = ["bgm_title1"];
 
 /* ================= v3.0.23 — 구역별 고정 BGM 배치표 (40곡 전부 사용) =================
  *  원칙: ① 한 구역 = 고정 1곡 (이동해도 그 구역이면 항상 같은 곡 — 곡 교체 없음)
@@ -238,15 +249,79 @@ function fadeBgm(target: number, ms: number) {
   }, 60);
 }
 
-/** v3.0.23 — 고정 트랙 1곡 무한 루프 재생 (곡 교체/로테이션 없음).
- *  오디오 캐시 미완료(부트 프리로드 진행 중 진입)면 0.5초 간격 재시도 —
- *  "게임 시작 직후 음악이 안 나오는" 타이밍 버그 방지 (최대 30회/15초). */
-function startTrack(key: string, retried = 0) {
-  if (!game) return;
+/** v3.0.24 — BGM 트랙 지연 로딩: 캐시에 없으면 fetch + decodeAudioData로 등록.
+ *  LRU 초과분은 캐시에서 해제해 디코드 PCM(트랙당 ~80-120MB)이 누적되지 않게 한다. */
+function touchDecoded(key: string) {
+  const i = decodedLru.indexOf(key);
+  if (i >= 0) decodedLru.splice(i, 1);
+  decodedLru.push(key);
+}
+
+function ensureBgmDecoded(key: string): Promise<boolean> {
+  if (!game) return Promise.resolve(false);
+  if (game.cache.audio.exists(key)) {
+    touchDecoded(key);
+    return Promise.resolve(true);
+  }
+  const prev = bgmInflight.get(key);
+  if (prev) return prev;
+  const p = (async () => {
+    try {
+      const sm = game!.sound as Phaser.Sound.WebAudioSoundManager;
+      const ctx = sm?.context as AudioContext | null;
+      if (!ctx) return false;
+      const res = await fetch(`${BGM_DIR}/${key}.ogg`);
+      if (!res.ok) return false;
+      const buf = await res.arrayBuffer();
+      const audio = await ctx.decodeAudioData(buf);
+      if (!game) return false;
+      // LRU 캡 — 현재 트랙은 유지, 오래된 것부터 해제 (순환 방지)
+      let guard = 0;
+      while (decodedLru.length >= MAX_DECODED_BGM && guard++ < MAX_DECODED_BGM * 2) {
+        const old = decodedLru[0];
+        if (old === key || old === bgmKey) {
+          touchDecoded(old);
+          break;
+        }
+        decodedLru.shift();
+        try {
+          if (game.cache.audio.exists(old)) game.cache.audio.remove(old);
+        } catch {
+          /* noop */
+        }
+      }
+      if (!game.cache.audio.exists(key)) game.cache.audio.add(key, audio);
+      touchDecoded(key);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      bgmInflight.delete(key);
+    }
+  })();
+  bgmInflight.set(key, p);
+  return p;
+}
+
+/** v3.0.24 — 고정 트랙 1곡 무한 루프 재생 (지연 로딩 대응 비동기).
+ *  디코드 실패/미완료면 0.5초 간격 재시도 — "게임 시작 직후 음악이 안 나오는" 타이밍 버그 방지 (최대 30회/15초).
+ *  await 후 트랙이 바뀌었거나 음소거되면 stale로 무시해 이중 재생을 막는다. */
+async function startTrack(key: string, retried = 0) {
+  if (!game || muted) return;
+  const ok = await ensureBgmDecoded(key);
+  if (!ok) {
+    if (retried < 30 && bgmKey === key && !bgmSound && !muted && game) {
+      window.setTimeout(() => {
+        if (bgmKey === key && !bgmSound && !muted) startTrack(key, retried + 1);
+      }, 500);
+    }
+    return;
+  }
+  if (!game || muted || bgmKey !== key || bgmSound) return; // stale 가드
   try {
     const snd = game.sound.add(key, { loop: true, volume: 0 });
     if (!snd) {
-      if (retried < 30) {
+      if (retried < 30 && bgmKey === key && !bgmSound && !muted) {
         window.setTimeout(() => {
           if (bgmKey === key && !bgmSound && !muted) startTrack(key, retried + 1);
         }, 500);
@@ -300,6 +375,9 @@ export function bgmDebugState() {
     loop: true,
     stage: bgmStage,
     playlistCount: kind ? BGM_PLAYLISTS[kind].length : 0,
+    /* v3.0.24 — 지연 로딩 상태 (디코드 캐시 개수 / LRU 캡) */
+    decoded: decodedLru.length,
+    decodedMax: MAX_DECODED_BGM,
   };
 }
 /** 강제 재시작 (E2E 전용) — v3.0.23: 재시작 후에도 같은 트랙이 유지되는지 검증용 (교체 없음) */
@@ -326,6 +404,54 @@ export const SFX_VOLUMES: Record<string, number> = {
   sfx_roar: 0.56,
   sfx_die: 0.38,
   sfx_bossdie: 0.66,
+};
+
+/* ================= v3.0.24 — 직업별 스킬 전용 효과음 =================
+ *  유저 지시: "직업별로 스킬마다 효과음 매우 적절히 배치해!!"
+ *  출처: 효과음연구소 soundeffect-lab.info (상업 이용 무료 · scripts/sfx-fetch/download_skills.sh)
+ *  기존 sfxSpin/sfxSwing 공용이던 스킬 48종(기본공격 4계열 포함)에 각각 정체성 있는 소리 배치.
+ *  key → 파일 매핑 (skl_*.ogg 27종) + 볼륨 래더 + pitch 변주로 동일 스킬 반복 시 단조로움 완화 */
+const SKILL_SFX_FILES: Record<string, string> = {
+  arrow: "skl_arrow1", // 궁수 활 발사 (기본공격·volley)
+  cast: "skl_cast1", // 마법사 지팡이 시전 (기본공격 볼트)
+  knife: "skl_knife1", // 도적 단검 (기본공격·bladestorm)
+  flame: "skl_flame1", // 마법사 대관통 볼트
+  electron: "skl_electron1", // 아크메이지 아크 볼트
+  arrowpierce: "skl_arrowpierce1", // 스나이퍼 관통 저격
+  wind: "skl_wind1", // 윈드러너 회오리 화살 / 템페스트 폭풍의 눈
+  wind2: "skl_wind2", // 질풍 계열 (windstep·windslash·cyclone)
+  cure: "skl_cure2", // 세이지 정화의 파동
+  iainuki: "skl_iainuki1", // 어세신 그림자 참수 (발도)
+  swift: "skl_sword3", // 스워시버클러 연타 난무
+  quake: "skl_quake1", // 가디언 성벽 강타
+  dark: "skl_dark1", // 암흑 계열 (그림자 숨기·칼날·지뢰·군주)
+  heavydash: "skl_heavydash1", // 버서커/가디언 중장 돌진
+  ambush: "skl_ambush1", // 어세신 암습 돌진
+  holy: "skl_holy1", // 신성 계열 (성역·성흔·심판)
+  thunder: "skl_thunder2", // 스톰브링어 낙뢰
+  slowmo: "skl_slowmo1", // 크로니클 시간 왜곡
+  rage: "skl_rage1", // 워브링어 피의 격노
+  chain: "skl_chain4", // 아크로드 연쇄 번개
+  gravity: "skl_gravity1", // 이터널 중력 붕괴
+  bigsword: "skl_bigsword1", // 블레이드마스터 파동 검기
+  warcry: "skl_warcry1", // 워로드 전장의 함성
+  superhit: "skl_superhit1", // 워브링어 종언의 일격
+  timestop: "skl_timestop1", // 이터널 영원의 고리 (시간 정지)
+  manaburst: "skl_manaburst1", // 아크로드 마나 붕괴
+  skyflight: "skl_skyflight1", // 스카이로드 천공의 폭풍
+  /* 기존 파일 재사용 별칭 (피치/볼륨 변주로 클래스 차별화) */
+  dash2: "sfx_dash", // 전사/스워시버클러 돌진 (highspeed-movement1)
+  worp: "sfx_portal", // 마법사 점멸 계열 (magic-worp1)
+};
+/** BootScene 프리로드용 스킬 SFX 전체 목록 */
+export const SKILL_SFX_TRACKS: string[] = Object.values(SKILL_SFX_FILES);
+const SKILL_SFX_VOLUMES: Record<string, number> = {
+  arrow: 0.4, cast: 0.34, knife: 0.36, flame: 0.46, electron: 0.46,
+  arrowpierce: 0.5, wind: 0.44, wind2: 0.42, cure: 0.44, iainuki: 0.48,
+  swift: 0.44, quake: 0.54, dark: 0.46, heavydash: 0.48, ambush: 0.44,
+  holy: 0.52, thunder: 0.56, slowmo: 0.5, rage: 0.52, chain: 0.52,
+  gravity: 0.54, bigsword: 0.52, warcry: 0.56, superhit: 0.6, timestop: 0.56,
+  manaburst: 0.52, skyflight: 0.5, dash2: 0.34, worp: 0.46,
 };
 
 export const sfx = {
@@ -401,5 +527,13 @@ export const sfx = {
   /** 강화 실패 — hurt 저피치 (둔탁한 낙방음) */
   upgradeFail() {
     play("sfx_hurt", 0.42, 0.65);
+  },
+  /** v3.0.24 — 직업별 스킬 전용 효과음 (SKILL_SFX_FILES 매핑)
+   *  @param key 스킬 음향 키 (arrow/cast/knife/flame/wind/dark/holy/thunder 등)
+   *  @param rate 피치 배율 — 상위직 강화판은 0.75~1.2 변주로 원판과 구분 */
+  skill(key: string, rate = 1) {
+    const file = SKILL_SFX_FILES[key];
+    if (!file) return;
+    play(file, SKILL_SFX_VOLUMES[key] ?? 0.45, rate);
   },
 };

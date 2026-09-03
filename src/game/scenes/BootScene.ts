@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { buildAllAnims } from "../textures";
-import { BGM_ALL_TRACKS } from "../audio";
+import { BGM_PRELOAD_TRACKS, SKILL_SFX_TRACKS } from "../audio";
 
 /**
  * 외부 에셋 로드 (public/assets/)
@@ -166,11 +166,14 @@ const ASSET_LIST = [
 ] as const;
 
 const AUDIO_LIST: string[] = [
-  // v3.0.21 — 실사 BGM 40트랙 (테마당 5곡 × 8테마, audio.ts BGM_PLAYLISTS 자동 수집)
-  ...BGM_ALL_TRACKS,
+  /* v3.0.24 — BGM은 타이틀 1곡만 프리로드 (나머지 39트랙은 구역 진입 시 지연 로딩 —
+   *  풀버전 q4 재인코딩과 함께: 부트 디코드 시간 단축 + WebAudio PCM 수 GB 크래시 방지) */
+  ...BGM_PRELOAD_TRACKS,
   "sfx_swing", "sfx_hit", "sfx_spin", "sfx_dash", "sfx_hurt",
   "sfx_pickup", "sfx_quest", "sfx_levelup", "sfx_portal",
   "sfx_roar", "sfx_die", "sfx_bossdie",
+  /* v3.0.24 — 직업별 스킬 전용 효과음 27종 (효과음연구소) */
+  ...SKILL_SFX_TRACKS,
 ];
 
 /* 지형 전환 타일 세트/종류 (scripts/build_tile_transitions.py 생성) */
