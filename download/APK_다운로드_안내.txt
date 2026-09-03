@@ -1,0 +1,29 @@
+SERTZ v3.0.24 APK 다운로드 안내
+================================
+
+APK 용량이 140.9MB로 커져서 파일 하나가 목록에 안 보이는 경우가 있습니다.
+그래서 3개 파트로 나눠두었습니다. (각 49.3MB / 49.3MB / 42.3MB)
+
+■ 방법 1 — Windows (권장, 가장 쉬움)
+  1. 아래 4개 파일을 같은 폴더에 다운로드
+     - SERTZ-v3.0.24.apk.part1
+     - SERTZ-v3.0.24.apk.part2
+     - SERTZ-v3.0.24.apk.part3
+     - join_apk.bat
+  2. join_apk.bat 더블클릭 → SERTZ-v3.0.24.apk 생성됨
+  3. 생성된 APK를 폰으로 옮겨서(USB/카톡 나에게보내기 등) 설치
+
+■ 방법 2 — Mac / Linux
+  위 파트 3개 + join_apk.sh 를 같은 폴더에 받고
+  터미널에서:  sh join_apk.sh
+
+■ 방법 3 — 직접 합치기 (스크립트 없이)
+  Windows CMD:  copy /b SERTZ-v3.0.24.apk.part1+SERTZ-v3.0.24.apk.part2+SERTZ-v3.0.24.apk.part3 SERTZ-v3.0.24.apk
+  Mac/Linux:    cat SERTZ-v3.0.24.apk.part1 SERTZ-v3.0.24.apk.part2 SERTZ-v3.0.24.apk.part3 > SERTZ-v3.0.24.apk
+
+■ 검증 (선택)
+  완성된 파일이 원본과 동일한지 확인됨: sha256 f489ddac416e16ad... (무결성 OK)
+  aapt 확인: versionCode 38 / versionName 3.0.24 정상
+
+■ 설치
+  기존 SERTZ 위에 그냥 덮어 설치하면 됩니다 (데이터 유지, versionCode 38)
