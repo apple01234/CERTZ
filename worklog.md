@@ -377,3 +377,20 @@ Stage Summary:
 - 배포되면 두 링크 모두 APK 다운로드 가능: https://sertz1234.space-z.ai/SERTZ-v3.0.27.apk (신규 정식) + https://sertz1234.space-z.ai/SERTZ-v3.0.26.apk (구링크 자동 리다이렉트)
 - 산출물: SERTZ-v3.0.27.apk 134MB(versionCode 41, 서명 동일 키 — 덮어설치 호환)
 - 알려진 한계: FC 배포본은 standalone 기반이라 멀티플레이(socket.io)는 이전 배포와 동일하게 제한
+
+---
+Task ID: 27
+Agent: Super Z (main)
+Task: FC 배포 미반영 원인 규정 및 경량 패키지 재배포 + APK 다운로드 대체 경로 확보
+
+Work Log:
+- 2차 Complete 재트리거 후에도 50분+ 미반영 실측(/SERTZ-v3.0.26.apk가 308 아닌 404, 라이브 청크에 구빌드 전용 479d19b3 잔존) → 패키지 과대 가설 수립
+- 실측: public 266MB(에셋 132MB + APK 134MB) + standalone 76MB → tar.gz ~300MB급 패키지. 과거 배포 성공분은 ~210MB급(v3.0.26/27 소스, APK public 제외 상태)으로 추정 → APK 수납분이 한도 초과 원인으로 판단
+- 폴백 배포 구성: ①public/SERTZ-v3.0.27.apk 제외(패키지 211MB로 복귀) ②public/apk-guide.html 신설(한국어 다운로드 안내 페이지 — 파일 패널 방법/프리뷰 직결 방법 기술) ③next.config redirects: /SERTZ-v3.0.26.apk·/SERTZ-v3.0.27.apk → /apk-guide.html(404 대신 안내. 단, 샌드박스는 server.js DOWNLOAD_FILES가 우선이라 실제 APK 200 유지)
+- 샌드박스 전 라우트 재검증: 루트 200 / 안내 200 / v26 307→안내 / v27 200(실APK 140.3MB 스트리밍) 통과
+- APK 대체 경로 확정: download/ 폴더의 분할 3파트+join 스크립트 — 재결합 sha256 306670c2 원본 일치 재확인(파일 패널 경로는 배포와 무관하게 항상 유효)
+- 향후 과제: APK를 ~50MB급으로 경량화(BGM 온디맨드/오디오 재인코딩)하면 FC 직결 다운로드 부활 가능. 그때 redirects 제거 필요(주석 남김)
+
+Stage Summary:
+- 3차 Complete로 경량 패키지 배포 시도. 성공 시 sertz1234.space-z.ai가 v3.0.27 웹으로 갱신 + 구 APK 링크가 안내 페이지로 연결됨
+- 유저 즉시 해법: ①파일 패널 download/ → part1~3+join 스크립트(검증 완료) ②프리뷰 주소/SERTZ-v3.0.27.apk(샌드박스 서버 직결, 현재 200)
