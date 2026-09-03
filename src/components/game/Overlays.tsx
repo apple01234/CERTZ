@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
-import { EventBus, type EndState } from "./EventBus";
+import { EventBus, type EndState, type RewardPopupState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
 import { RotateCw, Play, Save, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles } from "lucide-react";
 
@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.15 · 21개 피드백: 오토 와리가리 수정·펫 없이 오토·N차=N발·eert 큐브·원소 데미지·챕터 세트 해금 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.16 · 메이플 컨텐츠: 세트 효과 · 몬스터 컬렉션 · 정예 몬스터 · 멀티킬 · 보상 팝업 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
@@ -328,6 +328,53 @@ export function InteractPrompt() {
       {st.label}
       <span className={`rounded px-1 text-[9px] font-black ${st.kind === "job" ? "bg-slate-900/85 text-amber-200" : "bg-slate-900/85 text-emerald-200"}`}>E</span>
     </button>
+  );
+}
+
+/* ---------- v3.0.16 — 퀘스트 보상 수령 팝업 (메이플식 보상 내역 창) ---------- */
+
+export function RewardPopup() {
+  const [st, setSt] = useState<RewardPopupState | null>(null);
+  useEffect(() => {
+    let timer: number | undefined;
+    const on = (v: RewardPopupState) => {
+      setSt(v);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setSt(null), 5200);
+    };
+    EventBus.on("reward:show", on);
+    return () => {
+      EventBus.off("reward:show", on);
+      window.clearTimeout(timer);
+    };
+  }, []);
+  if (!st) return null;
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-14 z-30 flex justify-center px-4">
+      <div className="w-[min(92vw,330px)] animate-[rewardPop_0.24s_ease-out] rounded-xl border-2 border-amber-200/70 bg-slate-950/95 p-3 shadow-2xl">
+        <div className="flex items-center justify-between gap-2">
+          <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-black text-amber-200">
+            <Sparkles size={14} className="shrink-0" />
+            <span className="truncate">{st.title}</span>
+          </p>
+          <button
+            onClick={() => setSt(null)}
+            aria-label="보상 팝업 닫기"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="mt-1.5 flex flex-col gap-0.5 rounded-lg bg-black/40 px-2.5 py-2">
+          {st.lines.map((l, i) => (
+            <p key={i} className="text-[12px] font-black" style={{ color: l.color ?? "#ffffff" }}>
+              {l.text}
+            </p>
+          ))}
+        </div>
+        <p className="mt-1 text-right text-[9px] font-bold text-white/40">보상이 인벤토리에 지급되었습니다</p>
+      </div>
+    </div>
   );
 }
 

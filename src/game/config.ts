@@ -128,6 +128,8 @@ export type SaveData = {
   /* #8 — 퀘스트 수락/추적 (스테이지 → 수락 인덱스, 추적 스테이지 키) */
   questAccepted?: Record<string, number>;
   questTracked?: string | null;
+  /* v3.0.16 — 몬스터 컬렉션 처치 기록 (id → 처치 수, 최초 처치 시 등록) */
+  monsterKills?: Record<string, number>;
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */
@@ -236,6 +238,8 @@ export function loadSave(): SaveData | null {
     if (!Array.isArray(d.unlockedSets)) d.unlockedSets = [];
     if (!d.questAccepted || typeof d.questAccepted !== "object") d.questAccepted = {};
     if (d.questTracked === undefined) d.questTracked = null;
+    // v3.0.16 — 몬스터 컬렉션 (구 세이브 호환)
+    if (!d.monsterKills || typeof d.monsterKills !== "object") d.monsterKills = {};
     return d;
   } catch {
     return null;

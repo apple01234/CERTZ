@@ -587,6 +587,73 @@ export const SET_GEAR: Record<string, { ch: string; num: number; title: string; 
   abyss: { ch: "abyss", num: 10, title: "종언 마룡 세트", w: "sfw_abyss", a: "sfa_abyss", r: "sfr_abyss" },
 };
 
+/* ================= v3.0.16 — 세트 아이템 효과 (메이플 "세트 아이템" 참고) =================
+ *  같은 챕터 테마 세트(무기+방어구+장신구 반지)를 모두 착용하면 세트 보너스 활성.
+ *  수치는 챕터 숫자에 비례해 상승 — 후반 세트일수록 프리미엄. */
+export type SetBonusDef = { atkPct: number; defAdd: number; maxHp: number; critAdd: number };
+export const SET_BONUS: Record<string, SetBonusDef> = {
+  forest: { atkPct: 3, defAdd: 1, maxHp: 40, critAdd: 0 },
+  kingdom: { atkPct: 4, defAdd: 2, maxHp: 60, critAdd: 0 },
+  alfheim: { atkPct: 5, defAdd: 2, maxHp: 80, critAdd: 1 },
+  muspelheim: { atkPct: 6, defAdd: 3, maxHp: 100, critAdd: 1 },
+  niflheim: { atkPct: 7, defAdd: 4, maxHp: 120, critAdd: 2 },
+  cave: { atkPct: 8, defAdd: 4, maxHp: 150, critAdd: 2 },
+  nidavellir: { atkPct: 9, defAdd: 5, maxHp: 180, critAdd: 2 },
+  hel: { atkPct: 10, defAdd: 6, maxHp: 220, critAdd: 3 },
+  abyss: { atkPct: 12, defAdd: 8, maxHp: 300, critAdd: 4 },
+};
+
+/** 아이템키 → 소속 세트 챕터키 (세트 장비 sfw_/sfa_/sfr_ 프리픽스 판정) */
+export function setOfItem(key: string): string | null {
+  if (!key.startsWith("sf")) return null;
+  const ch = key.slice(3);
+  return SET_GEAR[ch] ? ch : null;
+}
+
+/** 장착 상태에서 활성 세트 판정 — 무기+방어구+장신구 반지 3종 동일 챕터 */
+export function activeSetBonus(
+  weapon: string, armor: string, accessories: string[],
+): { ch: string; title: string; bonus: SetBonusDef } | null {
+  for (const [ch, def] of Object.entries(SET_GEAR)) {
+    if (weapon === def.w && armor === def.a && accessories.includes(def.r)) {
+      return { ch, title: def.title, bonus: SET_BONUS[ch] ?? { atkPct: 0, defAdd: 0, maxHp: 0, critAdd: 0 } };
+    }
+  }
+  return null;
+}
+
+/* ================= v3.0.16 — 몬스터 컬렉션 (메이플 "몬스터 컬렉션" 참고) =================
+ *  몬스터·보스 최초 처치 시 컬렉션 등록. 등록 종수가 마일스톤을 채울수록 계정 스탯 상승. */
+export type CollectionMilestone = { n: number; atkPct: number; critAdd: number; hpAdd: number; label: string };
+export const COLLECTION_MILESTONES: CollectionMilestone[] = [
+  { n: 5, atkPct: 1, critAdd: 0, hpAdd: 0, label: "공격력 +1%" },
+  { n: 10, atkPct: 0, critAdd: 0, hpAdd: 30, label: "최대 HP +30" },
+  { n: 15, atkPct: 2, critAdd: 0, hpAdd: 0, label: "공격력 +2%" },
+  { n: 20, atkPct: 0, critAdd: 0, hpAdd: 60, label: "최대 HP +60" },
+  { n: 25, atkPct: 0, critAdd: 2, hpAdd: 0, label: "크리티컬 +2%" },
+  { n: 30, atkPct: 3, critAdd: 0, hpAdd: 0, label: "공격력 +3%" },
+  { n: 35, atkPct: 0, critAdd: 0, hpAdd: 100, label: "최대 HP +100" },
+  { n: 40, atkPct: 5, critAdd: 3, hpAdd: 0, label: "공격력 +5% · 크리티컬 +3%" },
+];
+
+/** 등록 종수 → 누적 컬렉션 보너스 */
+export function collectionBonus(registered: number): { atkPct: number; critAdd: number; hpAdd: number } {
+  let out = { atkPct: 0, critAdd: 0, hpAdd: 0 };
+  for (const m of COLLECTION_MILESTONES) {
+    if (registered >= m.n) {
+      out.atkPct += m.atkPct;
+      out.critAdd += m.critAdd;
+      out.hpAdd += m.hpAdd;
+    }
+  }
+  return out;
+}
+
+/** 컬렉션 다음 마일스톤 안내 문구 (UI용) */
+export function nextCollectionGoal(registered: number): CollectionMilestone | null {
+  return COLLECTION_MILESTONES.find((m) => registered < m.n) ?? null;
+}
+
 export type DialogueDef = { speaker: string; lines: string[] };
 
 /* ================= 스토리 대사 (v3.0.10 본게임 세계관 확정판) =================

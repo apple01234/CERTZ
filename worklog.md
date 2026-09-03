@@ -33,3 +33,26 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.15.apk (17.5MB, versionCode 29, 덮어설치 호환)
 - 21개 피드백 전량 해소(19개 항목 직접 구현 + ⑲효율 순서 적용), 반복의뢰/오토/투사체는 E2E 실측으로 입증
 - 다음 후보: 원소 반응 연출 강화(원신식 과부하/융해 폭발), eert 잠재옵션 등급별 색 오라, 챕터 세트 착용 보너스(세트 효과), 퀘스트 보상 수령 UI
+
+---
+Task ID: 13
+Agent: Super Z (main)
+Task: 메이플스토리 컨텐츠 링크 기반 v3.0.16 "메이플 컨텐츠 패치" — 세트 효과/몬스터 컬렉션/정예 몬스터/멀티킬/보상 팝업/eert 등급 오라
+
+Work Log:
+- [세트 아이템 효과] SET_BONUS 9챕터(공격3~12%/방어1~8/HP40~300/크리0~4) + setOfItem/activeSetBonus 헬퍼 + Player.activeSet getter + atkTotal/defTotal/critRate/syncBonusHp(델타 HP) 반영 + 인벤 세트 카드(활성 골드/비활성 안내)
+- [몬스터 컬렉션] monsterKills 영구 세이브(config SAVE_DATA+로드 기본값) + 최초 처치 시 등록 텍스트/사운드/저장 + 보스 별도 등록(boss_*) + 43종(잡몹34+보스9) 도감 패널(M키/스탯창 진입 버튼) + 8단계 마일스톤(5/10/15/20/25/30/35/40종 → 공격+11%/HP+190/크리+5% 누적) + CollectionPanel 실루엣/미등록 ??? 처리
+- [멀티킬] 1.5초 윈도 multiKillCount — 더블킬/트리플킬/쿼드라킬/펜타킬 등급 텍스트(4색)+펜타킬 셰이크 (기존 연속킬 EXP 병존)
+- [필드 정예] 리스폰 4.5% 확률(마을/실내/보스전 제외, 동시 1마리) — HP3.2배/ATK1.45배/EXP4배/골드3배/스케일1.35/골드틴트 + "정예 {종명}" 이름 + 출현 배너/포효 + 처치 시 에메랄드 +1 확정
+- [퀘스트 보상 팝업] advanceQuest/completeRepeat → reward:show emit + RewardPopup(상단 카드, 보상 내역 색상 라인, 5.2초 자동소멸, 닫기 버튼) + rewardPop 키프레임
+- [eert 등급 오라] ItemIcon potGrade prop — 잠재 등급색 테두리+glow(레어 파랑/에픽 보라/유니크 골드/레전드 오렌지) 인벤 전 행 적용
+- 기타: keymap collection 액션(M) + PanelKind "collection" + 버전 배지 3.0.16
+- 검증: tsc 0오류·eslint 0·E2E scripts/verify_v316.js 17/17 PASS(pageerror 0) — 컬렉션 등록/세이브·멀티킬 count=3·정예 hpMul 3.2/에메랄드+1·세트 스탯 atk17→26 def0→5 hp118→178·보상팝업 와이어링·M키/스탯창 진입·도감 43종
+- 환경 복구: 워크스페이스 초기화로 소실된 JDK(/home/z/jdk/jdk-21.0.12.1+1 Temurin)·Android SDK(cmdline-tools 11076708+platform-tools+android-36+build-tools 36.0.0) 재설치 + local.properties 재생성
+- APK: scripts/build_apk.sh BUILD SUCCESSFUL(3m16s) → aapt versionCode 30·3.0.16·서명 cc774f34(기존 키 동일)·17.5MB·APK 내부 신규 코드(몬스터 컬렉션/세트 효과 활성/컬렉션 등록) 검출
+- 커밋 push, 구버전 v3.0.15.apk 제거, 웹 서버 production 재기동(포트 3000, GET / 200)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.16.apk (17.5MB, versionCode 30, 덮어설치 호환)
+- 메이플 컨텐츠(세트 아이템/몬스터 컬렉션/엘리트 몬스터/콤보킬-멀티킬/퀘스트 보상/큐브 등급) 6대 기능 구현, E2E 17/17 입증
+- 다음 후보: 컬렉션 지역별 세트 완성 보너스, 정예 몬스터 전용 드랍 테이블, 업적 시스템(메이플 업적), 세트 효과 등급별 시각 오라

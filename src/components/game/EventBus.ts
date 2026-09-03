@@ -90,9 +90,14 @@ export type RpgState = {
   eertCube?: number;
   /** #11 — 해금된 챕터 테마 세트 (챕터키 목록) */
   unlockedSets?: string[];
+  /* ----- v3.0.16 ----- */
+  /** 몬스터 컬렉션 — 등록 종수/전체 종수/처치 수 (컬렉션 패널) */
+  collection?: { registered: number; total: number; kills: Record<string, number> };
+  /** 활성 세트 효과 (인벤토리/스탯창 표시) */
+  activeSet?: { title: string; lines: string[] } | null;
 };
 
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | null;
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | null;
 
 export type QuestState = {
   title: string;
@@ -125,6 +130,12 @@ export type EndState = {
   playTime: number;
   kills: number;
   lv: number;
+};
+
+/* v3.0.16 — 퀘스트 보상 수령 팝업 (메이플식 보상 내역 창 — 지급 내역을 명확히 보여준다) */
+export type RewardPopupState = {
+  title: string;
+  lines: { text: string; color?: string }[];
 };
 
 /** 상호작용 프롬프트 상태 (NPC 대화/상점/전직 교관 — E키·모바일 버튼 공용) */

@@ -8,7 +8,8 @@ import {
   TRADE_PRICES, tradeValue, TRADE_STOCK, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
   CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue,
   POT_GRADE_META, potLineText, SET_GEAR, POT_STAT_LABEL,
-  type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey,
+  ENEMIES, BOSS_DEFS, collectionBonus, nextCollectionGoal, COLLECTION_MILESTONES,
+  type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey,
 } from "@/game/data";
 import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
@@ -58,12 +59,18 @@ function PotViewLines({ pot }: { pot?: { grade: number; lines: { k: string; v: n
   );
 }
 
-function ItemIcon({ icon, size = 34, tier, count }: { icon: string; size?: number; tier?: ItemTier; count?: number }) {
+function ItemIcon({ icon, size = 34, tier, count, potGrade }: { icon: string; size?: number; tier?: ItemTier; count?: number; potGrade?: number }) {
   const border = tier ? TIER_STYLE[tier].border : "border-white/10";
+  /* v3.0.16 — eert 잠재옵션 등급 오라 (레어 파랑/에픽 보라/유니크 골드/레전드 오렌지) */
+  const pot = potGrade !== undefined && potGrade >= 0 ? POT_GRADE_META[potGrade] : null;
   return (
     <div
       className={`relative shrink-0 rounded-md border-2 bg-black/40 ${border}`}
-      style={{ padding: 2, lineHeight: 0 }}
+      style={{
+        padding: 2,
+        lineHeight: 0,
+        ...(pot ? { borderColor: pot.color, boxShadow: `0 0 7px ${pot.color}88` } : {}),
+      }}
     >
       <img
         src={`/assets/${icon}.png`}
@@ -702,7 +709,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
             const up = item.kind === "weapon" ? rpg.upWea : rpg.upArm;
             return (
               <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
-                <ItemIcon icon={item.icon} size={26} tier={item.tier} count={count} />
+                <ItemIcon icon={item.icon} size={26} tier={item.tier} count={count} potGrade={rpg.potentials?.[k]?.grade} />
                 <div className="min-w-0 flex-1">
                   <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{displayName(item.name, up)}{count > 1 ? ` ×${count}` : ""}</p>
                   <p className="text-[10px] text-emerald-300/90">{itemEffect(item, up)}</p>
@@ -748,6 +755,28 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
             );
           })}
         </div>
+
+        {/* v3.0.16 — 세트 아이템 효과 (메이플 세트 아이템): 동일 챕터 세트 3종 착용 시 활성 */}
+        {(() => {
+          const as = rpg.activeSet;
+          return (
+            <div className={`mt-3 rounded-lg border p-2.5 ${as ? "border-amber-300/60 bg-amber-400/[0.08]" : "border-white/15 bg-white/[0.04]"}`}>
+              <div className="flex items-center justify-between">
+                <p className={`text-[12px] font-black ${as ? "text-amber-200" : "text-white/70"}`}>
+                  {as ? `세트 효과 활성 — ${as.title}` : "세트 효과"}
+                </p>
+                {as && <span className="rounded bg-amber-400/25 px-1.5 py-0.5 text-[9px] font-black text-amber-200">ON</span>}
+              </div>
+              {as ? (
+                <p className="mt-1 text-[11px] font-bold text-amber-100/90">{as.lines.join(" · ")}</p>
+              ) : (
+                <p className="mt-1 text-[10px] leading-snug text-white/45">
+                  같은 챕터 테마 장비 세트(무기 + 방어구 + 장신구 반지)를 모두 착용하면 세트 보너스가 활성화됩니다 — 마을 상점에서 챕터 세트 장비를 구매해보세요!
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* v3.0.15 (#6) — 자동 물약/버프 설정 (BM 상점에서 이동) */}
         <div className="mt-3 rounded-lg border border-white/15 bg-white/[0.04] p-2.5">
@@ -853,7 +882,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
             const accAffordable = rpg.gold >= accCost;
             return (
               <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
-                <ItemIcon icon={item.icon} size={26} tier={item.tier} />
+                <ItemIcon icon={item.icon} size={26} tier={item.tier} potGrade={rpg.potentials?.[k]?.grade} />
                 <div className="min-w-0 flex-1">
                   <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{displayName(item.name, up)}{ownedN > 1 ? ` ×${ownedN}` : ""}</p>
                   <p className="text-[10px] text-emerald-300/90">
@@ -1139,6 +1168,120 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+/* ================= v3.0.16 — 몬스터 컬렉션 (메이플 몬스터 컬렉션) =================
+ *  잡몹 32종 + 보스 9종 도감. 최초 처치 시 등록, 등록 종수가 마일스톤을 채우면 계정 스탯 상승. */
+function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const kills = rpg.collection?.kills ?? {};
+  const registered = rpg.collection?.registered ?? 0;
+  const total = rpg.collection?.total ?? Object.keys(ENEMIES).length + Object.keys(BOSS_DEFS).length;
+  const bonus = collectionBonus(registered);
+  const next = nextCollectionGoal(registered);
+  const bonusLines: string[] = [];
+  if (bonus.atkPct) bonusLines.push(`공격력 +${bonus.atkPct}%`);
+  if (bonus.critAdd) bonusLines.push(`크리티컬 +${bonus.critAdd}%`);
+  if (bonus.hpAdd) bonusLines.push(`최대 HP +${bonus.hpAdd}`);
+  const mobKeys = Object.keys(ENEMIES) as EnemyKey[];
+  const bossKeys = Object.keys(BOSS_DEFS) as BossKey[];
+  const card = (id: string, name: string, iconUrl: string) => {
+    const n = kills[id] ?? 0;
+    const got = n > 0;
+    return (
+      <div
+        key={id}
+        title={got ? `${name} — 처치 ×${n}` : "미등록 — 처치하면 등록!"}
+        className={`flex flex-col items-center gap-0.5 rounded-lg border px-1 py-1.5 ${
+          got ? "border-emerald-300/40 bg-emerald-400/[0.07]" : "border-white/10 bg-white/[0.02]"
+        }`}
+      >
+        <img
+          src={iconUrl}
+          alt={name}
+          draggable={false}
+          className={`h-9 w-9 ${got ? "" : "opacity-20 grayscale"}`}
+          style={{ imageRendering: "pixelated" }}
+        />
+        <p className={`w-full truncate text-center text-[8.5px] font-bold leading-tight ${got ? "text-white" : "text-white/30"}`}>
+          {got ? name : "???"}
+        </p>
+        <p className={`text-[8px] font-black ${got ? "text-emerald-300" : "text-white/25"}`}>{got ? `×${n}` : "미등록"}</p>
+      </div>
+    );
+  };
+  return (
+    <div
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+      onPointerDown={onClose}
+    >
+      <div
+        className="max-h-[min(88svh,620px)] w-[min(92vw,470px)] overflow-y-auto rounded-xl border-2 border-violet-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-black text-violet-200">몬스터 컬렉션</p>
+            <p className="text-[10px] text-white/50">몬스터를 처치하면 도감에 등록 — 등록 종수가 늘면 계정 스탯이 상승!</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-md bg-violet-500/25 px-2 py-1 text-[12px] font-black text-violet-200">
+              {registered} / {total}
+            </span>
+            <button
+              onClick={onClose}
+              aria-label="컬렉션 닫기"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* 보너스 요약 */}
+        <div className={`mb-2 rounded-lg border p-2.5 ${bonusLines.length > 0 ? "border-emerald-300/50 bg-emerald-400/[0.08]" : "border-white/15 bg-white/[0.04]"}`}>
+          <p className="text-[12px] font-black text-emerald-200">
+            {bonusLines.length > 0 ? `컬렉션 보너스 — ${bonusLines.join(" · ")}` : "아직 컬렉션 보너스가 없습니다"}
+          </p>
+          {next && (
+            <p className="mt-0.5 text-[10px] text-white/50">
+              다음 목표: <span className="font-bold text-white/80">{next.n}종 등록</span> → {next.label}
+            </p>
+          )}
+          {/* 마일스톤 칩 */}
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {COLLECTION_MILESTONES.map((m) => {
+              const on = registered >= m.n;
+              return (
+                <span
+                  key={m.n}
+                  className={`rounded px-1.5 py-0.5 text-[9px] font-black ${
+                    on ? "bg-emerald-500/25 text-emerald-200" : "bg-white/[0.05] text-white/35"
+                  }`}
+                >
+                  {on ? "✓" : m.n}종 {m.label}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 잡몹 도감 */}
+        <p className="mb-1 text-[11px] font-bold text-white/50">일반 몬스터 ({mobKeys.filter((k) => (kills[k] ?? 0) > 0).length}/{mobKeys.length})</p>
+        <div className="mb-3 grid grid-cols-5 gap-1.5 sm:grid-cols-6">
+          {mobKeys.map((k) => card(k, ENEMIES[k].name, `/assets/${k}_idle0.png`))}
+        </div>
+
+        {/* 보스 도감 */}
+        <p className="mb-1 text-[11px] font-bold text-white/50">보스 몬스터 ({bossKeys.filter((k) => (kills[`boss_${k}`] ?? 0) > 0).length}/{bossKeys.length})</p>
+        <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-6">
+          {bossKeys.map((k) => card(`boss_${k}`, BOSS_DEFS[k].name, `/assets/${BOSS_DEFS[k].tex}_idle0.png`))}
+        </div>
+
+        <p className="mt-2 text-center text-[10px] text-white/40">M키로 열기 · 등록 보너스는 모든 구역에서 항상 적용됩니다 · ESC로 닫기</p>
+      </div>
+    </div>
+  );
+}
+
 export function GamePanels({
   panel,
   rpg,
@@ -1160,6 +1303,7 @@ export function GamePanels({
   if (panel === "job") return <JobPanel rpg={rpg} onClose={onClose} />;
   if (panel === "gm") return <GmPanel onClose={onClose} />; // v3.0.3 — GM NPC
   if (panel === "stat") return <StatPanel rpg={rpg} hud={hud} onClose={onClose} />;
+  if (panel === "collection") return <CollectionPanel rpg={rpg} onClose={onClose} />; // v3.0.16 — 몬스터 컬렉션
   if (panel === "quest") return <QuestLogPanel questLog={questLog} onClose={onClose} />;
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
@@ -1478,6 +1622,17 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
             ✕
           </button>
         </div>
+
+        {/* v3.0.16 — 몬스터 컬렉션 진입 버튼 (M키 동일) */}
+        <button
+          onClick={() => EventBus.emit("ui:panel", { panel: "collection" })}
+          className="mb-2 flex w-full items-center justify-between rounded-lg border border-violet-300/40 bg-violet-500/15 px-2.5 py-2 text-left transition-colors hover:bg-violet-500/25 active:scale-[0.99]"
+        >
+          <span className="text-[12px] font-black text-violet-200">📖 몬스터 컬렉션</span>
+          <span className="text-[10px] font-bold text-white/60">
+            {(rpg.collection?.registered ?? 0)} / {(rpg.collection?.total ?? 43)}종 등록 · 보너스 보기 →
+          </span>
+        </button>
 
         {/* 기본 정보 */}
         <div className="mb-2 grid grid-cols-2 gap-1.5">

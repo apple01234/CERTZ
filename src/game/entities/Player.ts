@@ -4,7 +4,7 @@ import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_FALLBACK_FROM, upgradeCost, sellValue, type BuffKey as BuffKeyT,
   starWeaponBonus, starArmorBonus, STAR_MILESTONES,
   TRADE_PRICES, tradeValue, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
-  sumPotLines, FAMILY_ELEM, rollPotentials,
+  sumPotLines, FAMILY_ELEM, rollPotentials, activeSetBonus, collectionBonus,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
 } from "../data";
 import {
@@ -2449,7 +2449,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3 + potAtk;
     const buff = this.hasBuff("buff_atk") || this.hasBuff("buff_king") ? 1.25 : 1;
     const king = this.hasBuff("buff_king") ? 1.3 / 1.25 : 1; // v3.0.6 — 왕의 가호 공격 +30%
-    return Math.round(base * (1 + this.clsBonus.atkPct / 100) * buff * king);
+    /* v3.0.16 — 세트 아이템 효과 + 몬스터 컬렉션 공격 % 보너스 */
+    const setPct = this.activeSet?.bonus.atkPct ?? 0;
+    const colPct = collectionBonus(this.collectionRegistered).atkPct;
+    return Math.round(base * (1 + (this.clsBonus.atkPct + setPct + colPct) / 100) * buff * king);
+  }
+
+  /* ---------------- v3.0.16 — 세트 아이템 효과 (메이플 세트 아이템) ---------------- */
+  /** 활성 세트 — 무기+방어구+장신구 반지 3종이 같은 챕터 테마면 보너스 활성 */
+  get activeSet(): ReturnType<typeof activeSetBonus> {
+    return activeSetBonus(this.weapon, this.armor, this.accessories);
   }
 
   /** 장비+강화+클래스 경로 포함 실제 방어력 (v1.9: 수호 버프 +8)
@@ -2459,9 +2468,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const buff = this.hasBuff("buff_def") ? 8 : 0;
     /* v3.0.15 (#13) — 방어구 잠재옵션 방어력 합산 */
     const potDef = sumPotLines([this.potentials[this.armor]]).def;
+    /* v3.0.16 — 세트 방어력 보너스 */
+    const setDef = this.activeSet?.bonus.defAdd ?? 0;
     return ((
       (ITEMS[this.armor].def ?? 0) + this.upgrades.armor +
-      starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff + potDef
+      starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff + potDef + setDef
     )) + kingDef;
   }
 
@@ -2479,6 +2490,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.maxHp = Math.max(60, this.maxHp + delta);
     this.sfHpApplied = target;
     if (delta > 0) this.hp = Math.min(this.maxHp, this.hp + delta);
+  }
+
+  /* ---------------- v3.0.16 — 세트/컬렉션 보너스 HP 동기화 ----------------
+   *  세트 maxHp + 컬렉션 hpAdd를 하나의 델타로 추적 (syncStarHp/syncPotentialsHp 동일 패턴) */
+  private bonusHpApplied = 0;
+  get bonusHpAppliedVal() { return this.bonusHpApplied; }
+  /** 세이브 복원 — 가산 이력 선복원 */
+  restoreBonusHp(applied: number) { this.bonusHpApplied = applied || 0; }
+  /** 장착 세트 maxHp + 컬렉션 hpAdd를 maxHp에 동기화 (장착/해제/로드/컬렉션 등록 후 호출) */
+  syncBonusHp() {
+    const col = collectionBonus(this.collectionRegistered);
+    const target = (this.activeSet?.bonus.maxHp ?? 0) + col.hpAdd;
+    const delta = target - this.bonusHpApplied;
+    if (delta === 0) return;
+    this.maxHp = Math.max(60, this.maxHp + delta);
+    this.bonusHpApplied = target;
+    if (delta > 0) this.hp = Math.min(this.maxHp, this.hp + delta);
+    this.scene.emitHud();
+  }
+  /** 몬스터 컬렉션 등록 종수 — 씬에서 최초 처치/로드 시 갱신 */
+  collectionRegistered = 0;
+  /** 컬렉션 등록 수 갱신 — 마일스톤 도달로 HP 보너스가 변하면 동기화 */
+  setCollection(n: number) {
+    if (n === this.collectionRegistered) return;
+    this.collectionRegistered = n;
+    this.syncBonusHp();
   }
 
   /* ---------------- v3.0.15 (#13) — 잠재옵션 maxHp 동기화 ---------------- */
@@ -2529,6 +2566,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.potentials[this.weapon], this.potentials[this.armor],
       ...this.accessories.map((k) => this.potentials[k]),
     ]).crit;
+    /* v3.0.16 — 세트 치명 + 컬렉션 치명 보너스 */
+    acc += this.activeSet?.bonus.critAdd ?? 0;
+    acc += collectionBonus(this.collectionRegistered).critAdd;
     return Math.round((Player.BASE_CRIT + acc + this.clsBonus.critAdd + this.stats.dex * 0.4) * 10) / 10;
   }
 
@@ -2680,6 +2720,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       this.syncAccStarHp(); // v3.0.7 — 장신구 스타포스 HP 마일스톤 동기화
     } else return false;
+    this.syncBonusHp(); // v3.0.16 — 세트 효과 활성/해제 HP 동기화
     this.scene.sfxEquip();
     this.scene.spawnPickupText(this.x, this.y - 30, `${item.name} 장착!`, "#ffd76a");
     this.scene.emitHud();
@@ -2692,6 +2733,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (idx < 0) return false;
     this.removeAccessory(key);
     this.syncAccStarHp(); // v3.0.7 — 스타포스 HP 마일스톤 회수
+    this.syncBonusHp(); // v3.0.16 — 세트 해제 HP 회수
     this.scene.emitHud();
     return true;
   }

@@ -18,7 +18,8 @@ export type GameAction =
   | "job"
   | "stat"
   | "quest"
-  | "opt";
+  | "opt"
+  | "collection";
 
 export type KeyMap = Record<GameAction, string>; // 값은 Phaser KeyCode 문자열 (예: "X")
 
@@ -41,6 +42,7 @@ export const DEFAULT_KEYMAP: KeyMap = {
   stat: "T",
   quest: "J",
   opt: "O",
+  collection: "M",
 };
 
 /** 액션 한글 라벨 (설정 UI 표시) */
@@ -59,6 +61,7 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   stat: "스탯 창",
   quest: "퀘스트 로그",
   opt: "설정 (키 매핑)",
+  collection: "몬스터 컬렉션",
 };
 
 /** 설정 UI에서 쓸 수 있는 키 후보 — WASD 이동 보존을 위해 W/A/S/D 제외 */

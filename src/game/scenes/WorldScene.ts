@@ -6,7 +6,7 @@ import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
 import { Pet } from "../entities/Pet";
-import { EventBus, type QuestState, type InteractState, type QuestLogState } from "../../components/game/EventBus";
+import { EventBus, type QuestState, type InteractState, type QuestLogState, type RewardPopupState } from "../../components/game/EventBus";
 import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
 import { loadKeyMap, type KeyMap, type GameAction } from "../keymap";
 import {
@@ -103,6 +103,17 @@ export class WorldScene extends Phaser.Scene {
   private bossDef: BossDef | null = null;
   // 반복 토벌 의뢰 — 사이클별 목표 수 (완료할수록 +2)
   private repeatNeed = 0;
+
+  /* ----- v3.0.16 — 몬스터 컬렉션 (메이플 몬스터 컬렉션) ----- */
+  /** 영구 컬렉션 처치 기록 (id → 처치 수). 최초 처치 시 컬렉션 등록 + 마일스톤 스탯 상승 */
+  private monsterKills: Record<string, number> = {};
+  /* ----- v3.0.16 — 멀티킬 연출 (메이플 콤보킬/멀티킬) ----- */
+  /** 1.5초 윈도 내 연속 처치 수 — 2+부터 더블킬~펜타킬 등급 표시 */
+  private multiKillCount = 0;
+  private multiKillUntil = 0;
+  /* ----- v3.0.16 — 필드 정예 몬스터 (메이플 엘리트/챔피언) ----- */
+  /** 현재 살아있는 필드 정예 (동시 1마리 제한) */
+  private fieldEliteRef: Enemy | null = null;
 
   /* ----- v2.0: 복귀 차원문 (메이플식 자유 왕복 — 사용자 지시 #8) ----- */
   private returnPortal: Phaser.Physics.Arcade.Sprite | null = null;
@@ -361,6 +372,7 @@ export class WorldScene extends Phaser.Scene {
     this.returnBeacon = null;
     this.returnActive = false;
     this.eliteEnemy = null;
+    this.fieldEliteRef = null;
     this.agroHoldUntil = 0;
     this.huntBaseline = {};
     /* v2.2 실내/취침 */
@@ -552,8 +564,12 @@ export class WorldScene extends Phaser.Scene {
       this.player.restorePotHp(savedPlayer.potHpApplied ?? 0);
       this.player.syncPotentialsHp();
       this.unlockedSets = new Set(savedPlayer.unlockedSets ?? []);
+      /* v3.0.15 (#8) — 퀘스트 수락/추적 상태 복원 */
       this.acceptedQuests = { ...(savedPlayer.questAccepted ?? {}) };
       this.trackedStage = savedPlayer.questTracked ?? null;
+      /* v3.0.16 — 몬스터 컬렉션 복원 + 등록 수 스탯 반영 */
+      this.monsterKills = { ...(savedPlayer.monsterKills ?? {}) };
+      this.player.setCollection(Object.keys(this.monsterKills).length);
       this.player.recalcSpeedForLoad();
     }
     // v2.5 — 현재 구역 방문 기록 (실내 제외) — 지역 이동 부적 워프 대상
@@ -1970,6 +1986,14 @@ export class WorldScene extends Phaser.Scene {
     // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
     this.enemies = this.enemies.filter((e) => e.alive);
     if (this.eliteEnemy && !this.eliteEnemy.alive) this.eliteEnemy = null;
+    /* v3.0.16 — 필드 정예 처치 보상: 에메랄드 +1 확정 (메이플 엘리트 몬스터 컨셉) */
+    if (this.fieldEliteRef && !this.fieldEliteRef.alive) {
+      this.fieldEliteRef = null;
+      this.player.emerald += 1;
+      this.spawnPickupText(this.player.x, this.player.y - 74, "정예 처치! +1 에메랄드", "#7de8ff");
+      audio.sfx.questDone();
+      this.emitRpgState();
+    }
     this.totalKills++;
     this.registry.set("runKills", this.totalKills);
     /* v3.0.15 (#20) — 콤보킬 보너스 경험치: 5초 내 연속 킬 시 콤보×5% (최대 +50%).
@@ -1984,6 +2008,16 @@ export class WorldScene extends Phaser.Scene {
       this.spawnPickupText(this.player.x, this.player.y - 52 + (this.comboStreak % 2) * 12, `연속킬 x${this.comboStreak}! EXP +${pct}%`, "#ffd76a");
     }
     this.killTotals[key] = (this.killTotals[key] ?? 0) + 1;
+    /* v3.0.16 — 몬스터 컬렉션 등록 (최초 처치 시) */
+    this.registerCollection(key, ENEMIES[key].name);
+    /* v3.0.16 — 멀티킬 연출 (1.5초 내 다중 처치 등급 표시 — 메이플 멀티킬) */
+    this.multiKillCount = nowMs < this.multiKillUntil ? this.multiKillCount + 1 : 1;
+    this.multiKillUntil = nowMs + 1500;
+    if (this.multiKillCount >= 2) {
+      const mk = WorldScene.MULTI_KILL_META[Math.min(this.multiKillCount, 5) - 2];
+      this.spawnPickupText(this.player.x + 18, this.player.y - 66 + (this.multiKillCount % 2) * 10, mk.label, mk.color);
+      if (this.multiKillCount >= 5) this.cameras.main.shake(140, 0.004);
+    }
     // 리스폰 예약 — v2.3 단축: 9~13초 → 3.2~4.8초 (지시 #2 — 리젠이 너무 길어 사냥이 끊긴다)
     this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
       this.respawnEnemy(key, spawnX, spawnY, 0)
@@ -2044,6 +2078,15 @@ export class WorldScene extends Phaser.Scene {
     this.player.addGold(r.gold);
     this.player.gainExp(r.exp);
     this.spawnPickupText(this.player.x, this.player.y - 44, `토벌 완료 +${r.gold}G`, "#ffd76a");
+    /* v3.0.16 — 반복 의뢰 보상 수령 팝업 */
+    EventBus.emit("reward:show", {
+      title: "반복 토벌 의뢰 완료!",
+      lines: [
+        { text: `골드 +${r.gold} G`, color: "#ffd76a" },
+        { text: `경험치 +${r.exp} EXP`, color: "#8fe84a" },
+        { text: "에메랄드 +1", color: "#7de8ff" },
+      ],
+    } satisfies RewardPopupState);
     this.huntCount = 0;
     this.repeatNeed += 2;
     /* v3.0.6 — 반복 의뢰 사이클 완료 보너스 에메랄드 +1 */
@@ -2053,6 +2096,31 @@ export class WorldScene extends Phaser.Scene {
     this.emitRpgState();
     this.emitQuest();
     this.emitRpgState();
+  }
+
+  /** v3.0.16 — 멀티킬 등급 메타 (더블킬~펜타킬) */
+  static MULTI_KILL_META = [
+    { label: "더블킬!", color: "#7dd8ff" },
+    { label: "트리플킬!", color: "#c08aff" },
+    { label: "쿼드라킬!", color: "#ffd76a" },
+    { label: "펜타킬!!", color: "#ff8a5c" },
+  ];
+
+  /** v3.0.16 — 컬렉션 등록: 최초 처치 시 등록 연출 + 보너스 스탯 재계산 + 영구 세이브 */
+  private registerCollection(id: string, name: string) {
+    const before = Object.keys(this.monsterKills).length;
+    this.monsterKills[id] = (this.monsterKills[id] ?? 0) + 1;
+    const after = Object.keys(this.monsterKills).length;
+    if (after === before) return;
+    this.player.setCollection(after);
+    this.spawnPickupText(this.player.x - 6, this.player.y - 84, `컬렉션 등록! ${name}`, "#ffe86a");
+    audio.sfx.questDone();
+    this.emitRpgState();
+    this.save();
+  }
+  /** 컬렉션 전체 종수 (잡몹 전 종 + 보스 전 종) */
+  get collectionTotal(): number {
+    return Object.keys(ENEMIES).length + Object.keys(BOSS_DEFS).length;
   }
 
   /**
@@ -2078,7 +2146,21 @@ export class WorldScene extends Phaser.Scene {
       this.time.delayedCall(1200, () => this.respawnEnemy(key, x, y, tries + 1));
       return;
     }
-    const e = new Enemy(this, x, y, key);
+    /* v3.0.16 — 필드 정예 출현 (메이플 엘리트/챔피언): 전투 구역 4.5%, 동시 1마리, 보스 부재 시.
+     *  3.2배 HP / 1.45배 ATK / 4배 EXP / 3배 골드 + 처치 시 에메랄드 +1 확정 */
+    const eliteOk = !this.fieldEliteRef && !this.boss?.active && !this.stageDef.isVillage && !this.isInterior;
+    const spawnElite = eliteOk && Math.random() < 0.045;
+    const e = spawnElite
+      ? new Enemy(this, x, y, key, {
+          hp: 3.2, atk: 1.45, exp: 4, gold: 3, scale: 1.35, tint: 0xffd76a,
+          displayName: `정예 ${ENEMIES[key].name}`,
+        })
+      : new Enemy(this, x, y, key);
+    if (spawnElite) {
+      this.fieldEliteRef = e;
+      this.showBanner("정예 몬스터 출현!");
+      audio.sfx.roar();
+    }
     e.setAlpha(0);
     this.tweens.add({ targets: e, alpha: 1, duration: 420 });
     this.spawnBurstAt(x, y, 6, e.burstTint);
@@ -2281,6 +2363,8 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.6 (지시 #1) — 보스 처치 시 에메랄드 +2 (BM 상점 재화) */
     this.player.emerald += 2;
     this.spawnPickupText(this.player.x, this.player.y - 60, "+2 에메랄드", "#7de8ff");
+    /* v3.0.16 — 보스 컬렉션 등록 (최초 처치 시) */
+    this.registerCollection(`boss_${def?.key ?? "guardian"}`, def?.name ?? "보스");
     this.emitRpgState();
     /* v3.0.6 (지시 #9) — 보스 전용 드롭: 보스별 유니크 아이템 100% 드롭
      *  상점에서 살 수 없음(tradeLock) — 추후 유저 거래소에서 사고팔게 할 예정 */
@@ -2984,6 +3068,8 @@ export class WorldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("stat"))) EventBus.emit("ui:panel", { panel: "stat" });
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("quest"))) EventBus.emit("ui:panel", { panel: "quest" });
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("opt"))) EventBus.emit("ui:panel", { panel: "opt" });
+    /* v3.0.16 — 몬스터 컬렉션 패널 (M키) */
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
 
     // E키 상호작용 감지 — 가장 가까운 NPC/상점 프롬프트 갱신
     this.updateInteractPrompt();
@@ -5080,6 +5166,13 @@ export class WorldScene extends Phaser.Scene {
       this.player.gainExp(done.expReward);
       this.spawnPickupText(this.player.x, this.player.y - 62, `경험치 +${done.expReward}`, "#8fe84a");
     }
+    /* v3.0.16 — 퀘스트 보상 수령 팝업 (메이플식 보상 내역 창 — 지급 내역을 명확히 안내) */
+    if (done && (done.reward || done.expReward)) {
+      const lines: { text: string; color?: string }[] = [];
+      if (done.reward) lines.push({ text: `골드 +${done.reward} G`, color: "#ffd76a" });
+      if (done.expReward) lines.push({ text: `경험치 +${done.expReward} EXP`, color: "#8fe84a" });
+      EventBus.emit("reward:show", { title: `퀘스트 완료 — ${done.title}`, lines } satisfies RewardPopupState);
+    }
     this.emitQuest();
     this.emitRpgState();
   }
@@ -5293,6 +5386,23 @@ export class WorldScene extends Phaser.Scene {
       potentials: JSON.parse(JSON.stringify(this.player.potentials)),
       eertCube: this.player.owned.filter((k) => k === "eert_cube").length,
       unlockedSets: [...this.unlockedSets],
+      /* ----- v3.0.16 — 컬렉션 + 세트 효과 ----- */
+      collection: {
+        registered: Object.keys(this.monsterKills).length,
+        total: this.collectionTotal,
+        kills: { ...this.monsterKills },
+      },
+      activeSet: (() => {
+        const s = this.player.activeSet;
+        if (!s) return null;
+        const b = s.bonus;
+        const lines: string[] = [];
+        if (b.atkPct) lines.push(`공격력 +${b.atkPct}%`);
+        if (b.defAdd) lines.push(`방어력 +${b.defAdd}`);
+        if (b.maxHp) lines.push(`최대 HP +${b.maxHp}`);
+        if (b.critAdd) lines.push(`크리티컬 +${b.critAdd}%`);
+        return { title: s.title, lines };
+      })(),
     };
     const sig = JSON.stringify(st);
     if (sig === this.lastRpgSig) return;
@@ -5409,6 +5519,8 @@ export class WorldScene extends Phaser.Scene {
       unlockedSets: [...this.unlockedSets],
       questAccepted: { ...this.acceptedQuests },
       questTracked: this.trackedStage,
+      /* ----- v3.0.16 ----- */
+      monsterKills: { ...this.monsterKills },
     };
   }
 

@@ -6,7 +6,7 @@ import type Phaser from "phaser";
 import { HUD } from "./HUD";
 import { TouchControls } from "./TouchControls";
 import { DialogueBox } from "./DialogueBox";
-import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel } from "./Overlays";
+import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel, RewardPopup } from "./Overlays";
 import { ServerConnect } from "./ServerConnect";
 import { GamePanels } from "./Panels";
 import { ChatBox } from "./ChatBox";
@@ -120,6 +120,8 @@ export default function GameRoot() {
             )}
             {/* 상호작용 프롬프트 — NPC 대화/상점 (E키·모바일 버튼 공용)
                 v3.0.5 — TouchControls보다 위에 렌더링 (조이스틱 레이어가 칩을 덮는 문제 수정) */}
+            {/* v3.0.16 — 퀘스트 보상 수령 팝업 (메이플식 보상 내역 창) */}
+            <RewardPopup />
             <InteractPrompt />
             <Banner text={banner} />
             <BossBar boss={boss} />
