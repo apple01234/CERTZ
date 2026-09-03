@@ -1,0 +1,258 @@
+{
+ "title": [
+  {
+   "title": "Call to Adventure",
+   "filename": "Call to Adventure.mp3",
+   "dur": 247,
+   "feel": "Action, Bright, Bouncy, Humorous, Epic"
+  },
+  {
+   "title": "At Launch",
+   "filename": "At Launch.mp3",
+   "dur": 185,
+   "feel": "Epic, Intense, Suspenseful, Uplifting"
+  },
+  {
+   "title": "Noble Race",
+   "filename": "Noble Race.mp3",
+   "dur": 315,
+   "feel": "Intense, Action, Epic, Driving, Mysterious,"
+  },
+  {
+   "title": "Majestic Hills",
+   "filename": "Majestic Hills.mp3",
+   "dur": 199,
+   "feel": "Dark, Epic, Somber"
+  },
+  {
+   "title": "Mighty and Meek",
+   "filename": "Mighty and Meek.mp3",
+   "dur": 100,
+   "feel": "Action, Epic"
+  }
+ ],
+ "village": [
+  {
+   "title": "The Britons",
+   "filename": "The Britons.mp3",
+   "dur": 307,
+   "feel": "Ren Faire, Medieval"
+  },
+  {
+   "title": "Thatched Villagers",
+   "filename": "Thatched Villagers.mp3",
+   "dur": 244,
+   "feel": "Bouncy, Bright"
+  },
+  {
+   "title": "Village Consort",
+   "filename": "Village Consort.mp3",
+   "dur": 215,
+   "feel": "Bouncy, Bright, Relaxed"
+  },
+  {
+   "title": "Midnight Tale",
+   "filename": "Midnight Tale.mp3",
+   "dur": 162,
+   "feel": "Calm, Relaxed"
+  },
+  {
+   "title": "Folk Round",
+   "filename": "Folk Round.mp3",
+   "dur": 184,
+   "feel": "Dark, Eerie, Relaxed"
+  }
+ ],
+ "field": [
+  {
+   "title": "Overworld",
+   "filename": "Overworld.mp3",
+   "dur": 173,
+   "feel": "Eerie, Mysterious, Driving"
+  },
+  {
+   "title": "Crossing the Chasm",
+   "filename": "Crossing the Chasm.mp3",
+   "dur": 197,
+   "feel": "Action, Dark, Driving"
+  },
+  {
+   "title": "Fantasia Fantasia",
+   "filename": "Fantasia Fantasia.mp3",
+   "dur": 152,
+   "feel": "Bright, Grooving, Driving"
+  },
+  {
+   "title": "Journey To Ascend",
+   "filename": "Journey To Ascend.mp3",
+   "dur": 219,
+   "feel": "Driving, Grooving, Mystical"
+  },
+  {
+   "title": "Darkling",
+   "filename": "Darkling.mp3",
+   "dur": 170,
+   "feel": "Action, Driving, Dark"
+  }
+ ],
+ "alfheim": [
+  {
+   "title": "Equatorial Complex\r\n",
+   "filename": "Equatorial Complex.mp3",
+   "dur": 180,
+   "feel": "Bright, Mystical, Relaxed"
+  },
+  {
+   "title": "Dreamy Flashback",
+   "filename": "Dreamy Flashback.mp3",
+   "dur": 127,
+   "feel": "Bouncy, Bright, Mystical"
+  },
+  {
+   "title": "The Other Side of the Door",
+   "filename": "The Other Side of the Door.mp3",
+   "dur": 168,
+   "feel": "Driving, Mysterious, Mystical"
+  },
+  {
+   "title": "Magic Forest",
+   "filename": "Magic Forest.mp3",
+   "dur": 260,
+   "feel": "Mystical, Dark, Mysterious"
+  },
+  {
+   "title": "Soaring",
+   "filename": "Soaring.mp3",
+   "dur": 380,
+   "feel": "Mystical, Calming, Relaxed"
+  }
+ ],
+ "cave": [
+  {
+   "title": "Chee Zee Caves V2",
+   "filename": "Chee Zee Caves V2.mp3",
+   "dur": 232,
+   "feel": "Intense, Suspenseful"
+  },
+  {
+   "title": "SCP-x5x (Outer Thoughts)",
+   "filename": "SCP-x5x.mp3",
+   "dur": 216,
+   "feel": "Dark, Mysterious, Somber"
+  },
+  {
+   "title": "Night of Chaos",
+   "filename": "Night of Chaos.mp3",
+   "dur": 210,
+   "feel": "Dark, Eerie, Mysterious, Unnerving"
+  },
+  {
+   "title": "Scissors",
+   "filename": "Scissors.mp3",
+   "dur": 208,
+   "feel": "Intense, Mysterious, Suspenseful"
+  },
+  {
+   "title": "Secrets of the Schoolyard",
+   "filename": "Secrets of the Schoolyard.mp3",
+   "dur": 178,
+   "feel": "Dark, Mysterious"
+  }
+ ],
+ "snow": [
+  {
+   "title": "Frost Waltz",
+   "filename": "Frost Waltz.mp3",
+   "dur": 135,
+   "feel": "Calming, Mysterious, Mystical"
+  },
+  {
+   "title": "Frost Waltz (Alternate)",
+   "filename": "Frost Waltz (Alternate).mp3",
+   "dur": 136,
+   "feel": "Bouncy, Bright, Mystical"
+  },
+  {
+   "title": "Ice Demon",
+   "filename": "Ice Demon.mp3",
+   "dur": 265,
+   "feel": "Dark, Eerie, Mysterious, Unnerving"
+  },
+  {
+   "title": "Northern Glade",
+   "filename": "Magic Scout - Nothern Glade.mp3",
+   "dur": 315,
+   "feel": "Bright, Calming, Relaxed"
+  },
+  {
+   "title": "Night Vigil",
+   "filename": "Night Vigil.mp3",
+   "dur": 288,
+   "feel": "Mystical, Somber"
+  }
+ ],
+ "abyss": [
+  {
+   "title": "SCP-x1x (Gateway to Hell)",
+   "filename": "SCP-x1x.mp3",
+   "dur": 352,
+   "feel": "Dark, Eerie, Unnerving"
+  },
+  {
+   "title": "SCP-x2x (Unseen Presence)",
+   "filename": "SCP-x2x.mp3",
+   "dur": 293,
+   "feel": "Dark, Eerie, Unnerving"
+  },
+  {
+   "title": "River Fire",
+   "filename": "River Fire.mp3",
+   "dur": 400,
+   "feel": "Calming, Grooving, Mystical"
+  },
+  {
+   "title": "Shadowlands 3 - Machine",
+   "filename": "Shadowlands 3 - Machine.mp3",
+   "dur": 230,
+   "feel": "Eerie, Intense, Unnerving"
+  },
+  {
+   "title": "Welcome to HorrorLand",
+   "filename": "Welcome to HorrorLand.mp3",
+   "dur": 250,
+   "feel": "Dark, Eerie, Intense, Unnerving"
+  }
+ ],
+ "boss": [
+  {
+   "title": "Clash Defiant",
+   "filename": "Clash Defiant.mp3",
+   "dur": 376,
+   "feel": "Aggressive, Driving, Dark, Suspenseful"
+  },
+  {
+   "title": "Curse of the Scarab",
+   "filename": "Curse of the Scarab.mp3",
+   "dur": 327,
+   "feel": "Dark, Epic, Action, Driving"
+  },
+  {
+   "title": "Volatile Reaction",
+   "filename": "Volatile Reaction.mp3",
+   "dur": 163,
+   "feel": "Action, Aggressive, Dark, Intense"
+  },
+  {
+   "title": "Chase",
+   "filename": "Chase.mp3",
+   "dur": 133,
+   "feel": "Action, Driving, Eerie, Epic, Intense"
+  },
+  {
+   "title": "Clenched Teeth",
+   "filename": "Clenched Teeth.mp3",
+   "dur": 91,
+   "feel": "Action, Driving, Epic, Intense"
+  }
+ ]
+}

@@ -8,7 +8,7 @@ import { attachAudio } from "./audio";
 import * as classesMod from "./classes";
 import * as stagesMod from "./stages";
 import * as dataMod from "./data";
-import { SFX_THROTTLE_MS, SFX_MAX_CONCURRENT, BGM_VOLUME, SFX_VOLUMES } from "./audio";
+import { SFX_THROTTLE_MS, SFX_MAX_CONCURRENT, BGM_VOLUME, SFX_VOLUMES, playBGM, bgmDebugState, bgmAdvanceForTest, BGM_PLAYLISTS } from "./audio";
 
 const audioDebug = { throttle: SFX_THROTTLE_MS, cap: SFX_MAX_CONCURRENT, bgm: BGM_VOLUME, volumes: SFX_VOLUMES };
 
@@ -59,9 +59,11 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   // E2E 검증/디버그 훅
   (window as unknown as { __SERTZ__?: unknown }).__SERTZ__ = { game };
   // v3.0.6 — E2E 정적 검증용 모듈 노출 (클래스/사운드/스테이지/아이템 테이블)
+  // v3.0.21 — BGM 실시간 제어 훅 추가 (플레이리스트 로테이션 검증)
   (window as unknown as { __SERTZ_DEBUG__?: unknown }).__SERTZ_DEBUG__ = {
     classes: classesMod,
     audio: audioDebug,
+    bgm: { playBGM, bgmDebugState, bgmAdvanceForTest, playlists: BGM_PLAYLISTS },
     stages: stagesMod,
     items: dataMod.ITEMS,
     bossDrops: dataMod.BOSS_DROP_ITEMS,

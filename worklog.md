@@ -146,3 +146,29 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.20.apk (21.9MB, versionCode 34, 기존 키 동일 — 29~33 모두에서 덮어설치 가능)
 - 신규 10개 피드백 전량 해소 — 비주얼 4종(화살/타일/검기/마법탄)·시스템 5종(MP%·밀집선호·판매/엘릭서·스타포스·eert)·사운드 1종(BGM 로테이션), E2E 32/32 입증
 - 다음 후보: 원소 반응(과부하/융해) 시각화, eert 잠재옵션 등급별 연출 강화, BGM 볼륨 개별 설정, 퀘스트 보상 수령 UI
+
+---
+Task ID: 17
+Agent: Super Z (main)
+Task: BGM 전면 교체 — 생성 음원 폐기 → 실사 다운로드 40트랙 (v3.0.21, versionCode 35)
+
+Work Log:
+- 유저 피드백: "노래가 엉망진창 / 다운해서 사용해라고 만들지 말고 / 테마에 맞는 노래 / 적어도 1테마에 5개" — v3.0.20의 gen_bgm2 절차 합성 트랙 8종 + 구 칩튠 8종 전부 폐기 결정
+- 워크스페이스 리셋 복구: 로컬 HEAD가 v3.0.16으로 되돌아가 있었음 → git fetch origin 후 reset --hard origin/main(aff370e)로 v3.0.18~v3.0.20 전체 복구
+- 음원 조달: incompetech pieces.json 카탈로그(1442곡) 확보 → feel/description 스코어링 후 테마별 수동 선정
+  title 웅장(Call to Adventure 등 5) / village 중세 마을(The Britons·Village Consort 등 5) / field 모험(Overworld 등 5) / alfheim 신비(Equatorial Complex 등 5) / cave 던전(Chee Zee Caves V2 등 5) / snow 설원(Frost Waltz 등 5) / abyss 심연(Gateway to Hell 등 5) / boss 전투(Clash Defiant 등 5)
+- 스크립트: scripts/bgm_work/{pick_tracks,finalize,download_bgm}.py — 다운로드→ffprobe 검증→ffmpeg loudnorm(I=-18)+길이 130s 캡+페이드아웃→OGG q2 40곡 (총 ~52MB)
+- audio.ts 개편: BGM_PLAYLISTS(8테마×5)·BGM_ALL_TRACKS export, 셔플 백 로테이션(한 바퀴 전 반복 없음·리필 직후 직전곡 제외), loop:false + complete 이벤트 자연 순환, 기존 78s 타이머 크로스페이드 제거, bgmDebugState/bgmAdvanceForTest E2E 훅
+- BootScene: AUDIO_LIST를 ...BGM_ALL_TRACKS 자동 수집으로 교체, PhaserGame __SERTZ_DEBUG__.bgm 훅 추가
+- 파일 정리: 구 bgm_* 16종(무숫자 8종+생성 8종) 삭제, 신규 bgm_<theme>1~5.ogg 40종
+- CREDITS.md: Juhani 섹션 삭제 → Kevin MacLeod(incompetech, CC-BY 4.0) 40트랙 표 표기
+- 환경 복구: workspace 리셋으로 소실된 JDK/SDK 재설치(scripts/setup_env.sh 신규 — Temurin 21.0.12.1+1·cmdline-tools 11076708·build-tools 36.0.0·local.properties)
+- 검증: tsc 0 + eslint 0 + verify_v321.js 14/14 PASS(정적 9: 플레이리스트/흔적제거/셔플백/로드/훅/버전/40곡 무결성/구파일 제거/크레딧 + 런타임 5: 진입 자동재생(bgm_village4)/플레이리스트 소속/로테이션 교체(village4→village1)/보스 5회 순회 전곡 커버 중복 0/pageerror 0)
+- 회귀: verify_v318.js 14/15(기존 측정 분산 1건 — 이동 코드 미변경), verify_v320.js 29/32(실패 3건 전부 의도된 BGM 교체 항목 — S4 구로테이션·S8 구로드리스트·S9 구배지)
+- APK: BUILD SUCCESSFUL(3m5s) → aapt versionCode 35·3.0.21·apksigner cc774f34(기존 키 동일)·APK 내부 신규 40트랙/구형 0 검출·60.8MB(실사 음원 +39MB)
+- 커밋 push, 구버전 v3.0.20.apk 제거, 웹서버 production 재기동(포트 3000, GET 200·신규 BGM 200)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.21.apk (60.8MB, versionCode 35, 기존 키 동일 — 덮어설치 호환)
+- BGM이 "생성 음악"에서 "다운로드 실사 음악"으로 전면 교체 — 테마당 5곡 보장, 8테마 40트랙, 무한 로테이션
+- 다음 후보: BGM 볼륨 개별 슬라이더, 트랙명 표시 UI, 던전 보스 전용 트랙 추가

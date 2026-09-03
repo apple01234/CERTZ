@@ -2,10 +2,12 @@ import type Phaser from "phaser";
 
 /**
  * 외부 오디오 에셋 재생 (public/assets/audio/)
- *  - BGM: Retro Game Music Pack — Juhani Junkala (CC0) + OpenGameArt CC0/CC-BY 5트랙 (v1.2)
- *    title/field/boss + village/alfheim/cave/snow/abyss — 스테이지별 전용 테마 8종 (v2.0 전면 활성화)
+ *  - BGM: v3.0.21 전면 교체 — 실제 음원 40트랙 다운로드 (Kevin MacLeod, incompetech.com, CC-BY 4.0)
+ *    테마당 5곡 × 8테마(title/village/field/alfheim/cave/snow/abyss/boss),
+ *    한 곡이 끝나면 같은 테마의 다음 곡으로 자연 로테이션(셔플 백 — 한 바퀴 전엔 반복 없음)
+ *    ※ v3.0.20의 절차 합성 변주 트랙은 유저 피드백으로 전량 폐기 — 다운로드 음원만 사용
  *  - SFX: 80 CC0 RPG SFX / 80 CC0 creature SFX — Rubberduck (CC0)
- * 자체 합성(WebAudio 오실레이터)은 전면 제거 — Phaser SoundManager 사용.
+ * 출처/라이선스: public/assets/CREDITS.md
  */
 
 let game: Phaser.Game | null = null;
@@ -44,23 +46,44 @@ function play(key: string, vol: number, rate = 1) {
 
 export type BGMKind = "field" | "boss" | "title" | "village" | "alfheim" | "cave" | "snow" | "abyss";
 
-/* v3.0.20 (#10) — 분위기별 제2 변주 트랙 (scripts/gen_bgm2.py 절차 합성 — 전부 오리지널 생성)
- *  같은 분위기 안에서 곡이 로테이션되므로 같은 멜로디 반복에 질리지 않는다 */
-const BGM_VARIANTS: Record<BGMKind, [string, string]> = {
-  field: ["bgm_field", "bgm_field2"],
-  boss: ["bgm_boss", "bgm_boss2"],
-  title: ["bgm_title", "bgm_title2"],
-  village: ["bgm_village", "bgm_village2"],
-  alfheim: ["bgm_alfheim", "bgm_alfheim2"],
-  cave: ["bgm_cave", "bgm_cave2"],
-  snow: ["bgm_snow", "bgm_snow2"],
-  abyss: ["bgm_abyss", "bgm_abyss2"],
+/* v3.0.21 (#36) — 테마별 플레이리스트 40트랙 (다운로드 음원, scripts/bgm_work/manifest.json 참조)
+ *  title 웅장한 모험 / village 평화로운 마을 / field 모험 필드 / alfheim 신비 요정림
+ *  cave 어두운 던전 / snow 차가운 설원 / abyss 사악한 심연 / boss 긴장감 있는 전투 */
+export const BGM_PLAYLISTS: Record<BGMKind, string[]> = {
+  title: ["bgm_title1", "bgm_title2", "bgm_title3", "bgm_title4", "bgm_title5"],
+  village: ["bgm_village1", "bgm_village2", "bgm_village3", "bgm_village4", "bgm_village5"],
+  field: ["bgm_field1", "bgm_field2", "bgm_field3", "bgm_field4", "bgm_field5"],
+  alfheim: ["bgm_alfheim1", "bgm_alfheim2", "bgm_alfheim3", "bgm_alfheim4", "bgm_alfheim5"],
+  cave: ["bgm_cave1", "bgm_cave2", "bgm_cave3", "bgm_cave4", "bgm_cave5"],
+  snow: ["bgm_snow1", "bgm_snow2", "bgm_snow3", "bgm_snow4", "bgm_snow5"],
+  abyss: ["bgm_abyss1", "bgm_abyss2", "bgm_abyss3", "bgm_abyss4", "bgm_abyss5"],
+  boss: ["bgm_boss1", "bgm_boss2", "bgm_boss3", "bgm_boss4", "bgm_boss5"],
 };
-/** 변주 로테이션 주기 (ms) — 한 곡이 충분히 흐른 뒤 다음 변주로 크로스페이드 */
-const BGM_ROTATE_MS = 78000;
-let bgmLastVariant: Partial<Record<BGMKind, number>> = {};
-let bgmRotateTimer: ReturnType<typeof setTimeout> | null = null;
+/** BootScene 로드 리스트 — 플레이리스트 전체 자동 수집 */
+export const BGM_ALL_TRACKS: string[] = Object.values(BGM_PLAYLISTS).flat();
+
+/* 셔플 백 — 테마별 재생 대기열 (한 바퀴 돌기 전엔 같은 곡 반복 없음) */
+const bgmBags: Partial<Record<BGMKind, number[]>> = {};
+const bgmLastIdx: Partial<Record<BGMKind, number>> = {};
 let bgmFadeTimer: ReturnType<typeof setInterval> | null = null;
+
+function nextTrackOf(kind: BGMKind): string {
+  const pl = BGM_PLAYLISTS[kind];
+  let bag = bgmBags[kind];
+  if (!bag || bag.length === 0) {
+    bag = pl.map((_, i) => i);
+    for (let i = bag.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [bag[i], bag[j]] = [bag[j], bag[i]];
+    }
+    // 리필 직후 첫 곡이 직전 곡과 같으면 큐 맨 뒤로 — 연속 반복 방지
+    if (bag[0] === bgmLastIdx[kind] && bag.length > 1) bag.push(bag.shift()!);
+    bgmBags[kind] = bag;
+  }
+  const idx = bag.shift()!;
+  bgmLastIdx[kind] = idx;
+  return pl[idx];
+}
 
 /** 스테이지 → 전용 BGM 매핑 (v2.0 — 9챕터 × 10구역 키 지원) */
 export function stageBgm(stage: string): BGMKind {
@@ -169,7 +192,6 @@ export const SFX_VOLUMES: Record<string, number> = {
 };
 
 function destroyBgm() {
-  clearRotateTimer();
   clearFadeTimer();
   if (bgmSound) {
     bgmSound.stop();
@@ -182,13 +204,6 @@ function destroyBgm() {
 type VolumeSound = { volume: number; setVolume(v: number): void };
 function asVol(s: Phaser.Sound.BaseSound): VolumeSound | null {
   return s ? (s as unknown as VolumeSound) : null;
-}
-
-function clearRotateTimer() {
-  if (bgmRotateTimer) {
-    clearTimeout(bgmRotateTimer);
-    bgmRotateTimer = null;
-  }
 }
 
 function clearFadeTimer() {
@@ -225,25 +240,19 @@ function fadeBgm(target: number, ms: number, done?: () => void) {
 function startBgm(kind: BGMKind) {
   if (!game) return;
   try {
-    // v3.0.20 (#10) — 변주 로테이션: 같은 분위기면 직전 곡과 다른 변주를 랜덤 선택
-    const variants = BGM_VARIANTS[kind];
-    let idx = Math.floor(Math.random() * variants.length);
-    if (variants.length > 1 && idx === (bgmLastVariant[kind] ?? -1)) idx = (idx + 1) % variants.length;
-    bgmLastVariant[kind] = idx;
-    bgmSound = game.sound.add(variants[idx], { loop: true, volume: 0 });
+    // v3.0.21 — 셔플 백에서 다음 곡 선택, 루프 없이 재생 → 종료 시 같은 테마 다음 곡으로 자연 로테이션
+    const key = nextTrackOf(kind);
+    bgmSound = game.sound.add(key, { loop: false, volume: 0 });
     asVol(bgmSound)?.setVolume(0);
-    bgmSound.play();
-    fadeBgm(BGM_VOLUME, 1500);
-    clearRotateTimer();
-    bgmRotateTimer = setTimeout(() => {
-      // 한 곡이 흐른 뒤 같은 분위기의 다음 변주로 크로스페이드 (종류 변경 시 무시)
-      if (!muted && bgmKind === kind && bgmSound?.isPlaying) {
-        fadeBgm(0, 1300, () => {
-          destroyBgm();
-          if (!muted && bgmKind === kind) startBgm(kind);
-        });
+    const snd = bgmSound;
+    bgmSound.once("complete", () => {
+      if (!muted && bgmKind === kind && bgmSound === snd) {
+        destroyBgm();
+        startBgm(kind);
       }
-    }, BGM_ROTATE_MS);
+    });
+    bgmSound.play();
+    fadeBgm(BGM_VOLUME, 1200);
   } catch {
     // 브라우저 자동재생 정책(사용자 입력 전) — 첫 입력에서 initAudio 후 재개됨
     bgmSound = null;
@@ -260,6 +269,24 @@ export function playBGM(kind: BGMKind) {
 /** 씬 전환/사망 등 — 정지만 하고 kind는 유지(음소거 해제 시 재개용) */
 export function stopBGM() {
   destroyBgm();
+}
+
+/* ---------- E2E 검증 훅 ---------- */
+/** 현재 BGM 상태 스냅샷 (kind·재생 중 트랙 키) */
+export function bgmDebugState() {
+  return {
+    kind: bgmKind,
+    track: (bgmSound as unknown as { key?: string } | null)?.key ?? null,
+    playing: !!bgmSound?.isPlaying,
+    playlistCount: bgmKind ? BGM_PLAYLISTS[bgmKind].length : 0,
+  };
+}
+/** 로테이션 강제 진행 (곡 종료 동작 재현 — E2E 전용) */
+export function bgmAdvanceForTest() {
+  if (!muted && bgmKind && game) {
+    destroyBgm();
+    startBgm(bgmKind);
+  }
 }
 
 /* ---------- SFX (Rubberduck CC0 팩 매핑) ----------

@@ -1,0 +1,322 @@
+[
+ {
+  "key": "bgm_title1",
+  "theme": "title",
+  "title": "Call to Adventure",
+  "file": "Call to Adventure.mp3",
+  "srcDur": 247,
+  "oggKB": 1456
+ },
+ {
+  "key": "bgm_title2",
+  "theme": "title",
+  "title": "At Launch",
+  "file": "At Launch.mp3",
+  "srcDur": 185,
+  "oggKB": 1352
+ },
+ {
+  "key": "bgm_title3",
+  "theme": "title",
+  "title": "Noble Race",
+  "file": "Noble Race.mp3",
+  "srcDur": 316,
+  "oggKB": 1336
+ },
+ {
+  "key": "bgm_title4",
+  "theme": "title",
+  "title": "Majestic Hills",
+  "file": "Majestic Hills.mp3",
+  "srcDur": 199,
+  "oggKB": 1320
+ },
+ {
+  "key": "bgm_title5",
+  "theme": "title",
+  "title": "Mighty and Meek",
+  "file": "Mighty and Meek.mp3",
+  "srcDur": 100,
+  "oggKB": 1069
+ },
+ {
+  "key": "bgm_village1",
+  "theme": "village",
+  "title": "The Britons",
+  "file": "The Britons.mp3",
+  "srcDur": 307,
+  "oggKB": 1346
+ },
+ {
+  "key": "bgm_village2",
+  "theme": "village",
+  "title": "Thatched Villagers",
+  "file": "Thatched Villagers.mp3",
+  "srcDur": 245,
+  "oggKB": 1467
+ },
+ {
+  "key": "bgm_village3",
+  "theme": "village",
+  "title": "Village Consort",
+  "file": "Village Consort.mp3",
+  "srcDur": 215,
+  "oggKB": 1328
+ },
+ {
+  "key": "bgm_village4",
+  "theme": "village",
+  "title": "Midnight Tale",
+  "file": "Midnight Tale.mp3",
+  "srcDur": 162,
+  "oggKB": 1339
+ },
+ {
+  "key": "bgm_village5",
+  "theme": "village",
+  "title": "Folk Round",
+  "file": "Folk Round.mp3",
+  "srcDur": 184,
+  "oggKB": 1478
+ },
+ {
+  "key": "bgm_field1",
+  "theme": "field",
+  "title": "Overworld",
+  "file": "Overworld.mp3",
+  "srcDur": 173,
+  "oggKB": 1203
+ },
+ {
+  "key": "bgm_field2",
+  "theme": "field",
+  "title": "Crossing the Chasm",
+  "file": "Crossing the Chasm.mp3",
+  "srcDur": 197,
+  "oggKB": 1462
+ },
+ {
+  "key": "bgm_field3",
+  "theme": "field",
+  "title": "Fantasia Fantasia",
+  "file": "Fantasia Fantasia.mp3",
+  "srcDur": 152,
+  "oggKB": 1546
+ },
+ {
+  "key": "bgm_field4",
+  "theme": "field",
+  "title": "Journey To Ascend",
+  "file": "Journey To Ascend.mp3",
+  "srcDur": 219,
+  "oggKB": 1779
+ },
+ {
+  "key": "bgm_field5",
+  "theme": "field",
+  "title": "Darkling",
+  "file": "Darkling.mp3",
+  "srcDur": 170,
+  "oggKB": 1671
+ },
+ {
+  "key": "bgm_alfheim1",
+  "theme": "alfheim",
+  "title": "Equatorial Complex\r\n",
+  "file": "Equatorial Complex.mp3",
+  "srcDur": 240,
+  "oggKB": 1302
+ },
+ {
+  "key": "bgm_alfheim2",
+  "theme": "alfheim",
+  "title": "Dreamy Flashback",
+  "file": "Dreamy Flashback.mp3",
+  "srcDur": 127,
+  "oggKB": 1278
+ },
+ {
+  "key": "bgm_alfheim3",
+  "theme": "alfheim",
+  "title": "The Other Side of the Door",
+  "file": "The Other Side of the Door.mp3",
+  "srcDur": 168,
+  "oggKB": 1426
+ },
+ {
+  "key": "bgm_alfheim4",
+  "theme": "alfheim",
+  "title": "Magic Forest",
+  "file": "Magic Forest.mp3",
+  "srcDur": 260,
+  "oggKB": 1406
+ },
+ {
+  "key": "bgm_alfheim5",
+  "theme": "alfheim",
+  "title": "Soaring",
+  "file": "Soaring.mp3",
+  "srcDur": 380,
+  "oggKB": 1365
+ },
+ {
+  "key": "bgm_cave1",
+  "theme": "cave",
+  "title": "Chee Zee Caves V2",
+  "file": "Chee Zee Caves V2.mp3",
+  "srcDur": 232,
+  "oggKB": 1538
+ },
+ {
+  "key": "bgm_cave2",
+  "theme": "cave",
+  "title": "SCP-x5x (Outer Thoughts)",
+  "file": "SCP-x5x.mp3",
+  "srcDur": 216,
+  "oggKB": 1204
+ },
+ {
+  "key": "bgm_cave3",
+  "theme": "cave",
+  "title": "Night of Chaos",
+  "file": "Night of Chaos.mp3",
+  "srcDur": 210,
+  "oggKB": 1420
+ },
+ {
+  "key": "bgm_cave4",
+  "theme": "cave",
+  "title": "Scissors",
+  "file": "Scissors.mp3",
+  "srcDur": 208,
+  "oggKB": 1724
+ },
+ {
+  "key": "bgm_cave5",
+  "theme": "cave",
+  "title": "Secrets of the Schoolyard",
+  "file": "Secrets of the Schoolyard.mp3",
+  "srcDur": 178,
+  "oggKB": 1540
+ },
+ {
+  "key": "bgm_snow1",
+  "theme": "snow",
+  "title": "Frost Waltz",
+  "file": "Frost Waltz.mp3",
+  "srcDur": 135,
+  "oggKB": 1388
+ },
+ {
+  "key": "bgm_snow2",
+  "theme": "snow",
+  "title": "Frost Waltz (Alternate)",
+  "file": "Frost Waltz (Alternate).mp3",
+  "srcDur": 136,
+  "oggKB": 1395
+ },
+ {
+  "key": "bgm_snow3",
+  "theme": "snow",
+  "title": "Ice Demon",
+  "file": "Ice Demon.mp3",
+  "srcDur": 265,
+  "oggKB": 1154
+ },
+ {
+  "key": "bgm_snow4",
+  "theme": "snow",
+  "title": "Northern Glade",
+  "file": "Magic Scout - Nothern Glade.mp3",
+  "srcDur": 315,
+  "oggKB": 938
+ },
+ {
+  "key": "bgm_snow5",
+  "theme": "snow",
+  "title": "Night Vigil",
+  "file": "Night Vigil.mp3",
+  "srcDur": 288,
+  "oggKB": 1346
+ },
+ {
+  "key": "bgm_abyss1",
+  "theme": "abyss",
+  "title": "SCP-x1x (Gateway to Hell)",
+  "file": "SCP-x1x.mp3",
+  "srcDur": 352,
+  "oggKB": 1478
+ },
+ {
+  "key": "bgm_abyss2",
+  "theme": "abyss",
+  "title": "SCP-x2x (Unseen Presence)",
+  "file": "SCP-x2x.mp3",
+  "srcDur": 293,
+  "oggKB": 1378
+ },
+ {
+  "key": "bgm_abyss3",
+  "theme": "abyss",
+  "title": "River Fire",
+  "file": "River Fire.mp3",
+  "srcDur": 400,
+  "oggKB": 1535
+ },
+ {
+  "key": "bgm_abyss4",
+  "theme": "abyss",
+  "title": "Shadowlands 3 - Machine",
+  "file": "Shadowlands 3 - Machine.mp3",
+  "srcDur": 230,
+  "oggKB": 512
+ },
+ {
+  "key": "bgm_abyss5",
+  "theme": "abyss",
+  "title": "Welcome to HorrorLand",
+  "file": "Welcome to HorrorLand.mp3",
+  "srcDur": 250,
+  "oggKB": 1326
+ },
+ {
+  "key": "bgm_boss1",
+  "theme": "boss",
+  "title": "Clash Defiant",
+  "file": "Clash Defiant.mp3",
+  "srcDur": 376,
+  "oggKB": 1568
+ },
+ {
+  "key": "bgm_boss2",
+  "theme": "boss",
+  "title": "Curse of the Scarab",
+  "file": "Curse of the Scarab.mp3",
+  "srcDur": 327,
+  "oggKB": 387
+ },
+ {
+  "key": "bgm_boss3",
+  "theme": "boss",
+  "title": "Volatile Reaction",
+  "file": "Volatile Reaction.mp3",
+  "srcDur": 165,
+  "oggKB": 1466
+ },
+ {
+  "key": "bgm_boss4",
+  "theme": "boss",
+  "title": "Chase",
+  "file": "Chase.mp3",
+  "srcDur": 133,
+  "oggKB": 1413
+ },
+ {
+  "key": "bgm_boss5",
+  "theme": "boss",
+  "title": "Clenched Teeth",
+  "file": "Clenched Teeth.mp3",
+  "srcDur": 91,
+  "oggKB": 995
+ }
+]

@@ -55,10 +55,67 @@
 
 ## 오디오
 
-### Retro Game Music Pack — Juhani Junkala
-- License: CC0 1.0
-- Source: https://opengameart.org/content/5-chiptunes-action
-- Used for: BGM 3트랙 (타이틀 / 필드=Level 1 / 보스전=Level 3)
+### BGM 40트랙 — Kevin MacLeod (incompetech.com)
+- License: CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+- Source: https://incompetech.com/music/royalty-free/
+- Used for: v3.0.21 전체 BGM — 테마당 5곡 × 8테마 로테이션 (Music by Kevin MacLeod 표기)
+
+**타이틀/로비 (웅장한 모험)**
+- bgm_title1.ogg — 「Call to Adventure」 (원본 130초 캡+페이드아웃)
+- bgm_title2.ogg — 「At Launch」 (원본 130초 캡+페이드아웃)
+- bgm_title3.ogg — 「Noble Race」 (원본 130초 캡+페이드아웃)
+- bgm_title4.ogg — 「Majestic Hills」 (원본 130초 캡+페이드아웃)
+- bgm_title5.ogg — 「Mighty and Meek」 (원본 100초)
+
+**마을 (평화로운 중세 마을)**
+- bgm_village1.ogg — 「The Britons」 (원본 130초 캡+페이드아웃)
+- bgm_village2.ogg — 「Thatched Villagers」 (원본 130초 캡+페이드아웃)
+- bgm_village3.ogg — 「Village Consort」 (원본 130초 캡+페이드아웃)
+- bgm_village4.ogg — 「Midnight Tale」 (원본 130초 캡+페이드아웃)
+- bgm_village5.ogg — 「Folk Round」 (원본 130초 캡+페이드아웃)
+
+**필드/숲 (모험)**
+- bgm_field1.ogg — 「Overworld」 (원본 130초 캡+페이드아웃)
+- bgm_field2.ogg — 「Crossing the Chasm」 (원본 130초 캡+페이드아웃)
+- bgm_field3.ogg — 「Fantasia Fantasia」 (원본 130초 캡+페이드아웃)
+- bgm_field4.ogg — 「Journey To Ascend」 (원본 130초 캡+페이드아웃)
+- bgm_field5.ogg — 「Darkling」 (원본 130초 캡+페이드아웃)
+
+**알프헤임 (신비)**
+- bgm_alfheim1.ogg — 「Equatorial Complex
+」 (원본 130초 캡+페이드아웃)
+- bgm_alfheim2.ogg — 「Dreamy Flashback」 (원본 127초)
+- bgm_alfheim3.ogg — 「The Other Side of the Door」 (원본 130초 캡+페이드아웃)
+- bgm_alfheim4.ogg — 「Magic Forest」 (원본 130초 캡+페이드아웃)
+- bgm_alfheim5.ogg — 「Soaring」 (원본 130초 캡+페이드아웃)
+
+**동굴/니달벨리르 (어두운 던전)**
+- bgm_cave1.ogg — 「Chee Zee Caves V2」 (원본 130초 캡+페이드아웃)
+- bgm_cave2.ogg — 「SCP-x5x (Outer Thoughts)」 (원본 130초 캡+페이드아웃)
+- bgm_cave3.ogg — 「Night of Chaos」 (원본 130초 캡+페이드아웃)
+- bgm_cave4.ogg — 「Scissors」 (원본 130초 캡+페이드아웃)
+- bgm_cave5.ogg — 「Secrets of the Schoolyard」 (원본 130초 캡+페이드아웃)
+
+**니플헤임 (차가운 설원)**
+- bgm_snow1.ogg — 「Frost Waltz」 (원본 130초 캡+페이드아웃)
+- bgm_snow2.ogg — 「Frost Waltz (Alternate)」 (원본 130초 캡+페이드아웃)
+- bgm_snow3.ogg — 「Ice Demon」 (원본 130초 캡+페이드아웃)
+- bgm_snow4.ogg — 「Northern Glade」 (원본 130초 캡+페이드아웃)
+- bgm_snow5.ogg — 「Night Vigil」 (원본 130초 캡+페이드아웃)
+
+**무스펠하임/헬/심연 (사악함)**
+- bgm_abyss1.ogg — 「SCP-x1x (Gateway to Hell)」 (원본 130초 캡+페이드아웃)
+- bgm_abyss2.ogg — 「SCP-x2x (Unseen Presence)」 (원본 130초 캡+페이드아웃)
+- bgm_abyss3.ogg — 「River Fire」 (원본 130초 캡+페이드아웃)
+- bgm_abyss4.ogg — 「Shadowlands 3 - Machine」 (원본 130초 캡+페이드아웃)
+- bgm_abyss5.ogg — 「Welcome to HorrorLand」 (원본 130초 캡+페이드아웃)
+
+**보스전 (전투)**
+- bgm_boss1.ogg — 「Clash Defiant」 (원본 130초 캡+페이드아웃)
+- bgm_boss2.ogg — 「Curse of the Scarab」 (원본 130초 캡+페이드아웃)
+- bgm_boss3.ogg — 「Volatile Reaction」 (원본 130초 캡+페이드아웃)
+- bgm_boss4.ogg — 「Chase」 (원본 133초)
+- bgm_boss5.ogg — 「Clenched Teeth」 (원본 91초)
 
 ### 80 CC0 RPG SFX / 80 CC0 creature SFX — Rubberduck (SubspaceAudio)
 - License: CC0 1.0

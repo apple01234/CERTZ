@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { buildAllAnims } from "../textures";
+import { BGM_ALL_TRACKS } from "../audio";
 
 /**
  * 외부 에셋 로드 (public/assets/)
@@ -162,17 +163,13 @@ const ASSET_LIST = [
   "cl_mflower", "cl_eyeplant", "cl_jawsplant", "cl_manyeyes", "cl_pustules", "cl_rock", "cl_bones",
 ] as const;
 
-const AUDIO_LIST = [
-  "bgm_title", "bgm_field", "bgm_boss",
-  // 스테이지별 전용 BGM (v1.2 이관 — 사용자 지시 #7 BGM 다양화)
-  "bgm_village", "bgm_alfheim", "bgm_cave", "bgm_snow", "bgm_abyss",
-  // v3.0.20 (#10) — 제2 변주 트랙 8종 (gen_bgm2.py — 분위기별 로테이션)
-  "bgm_title2", "bgm_field2", "bgm_boss2", "bgm_village2",
-  "bgm_alfheim2", "bgm_cave2", "bgm_snow2", "bgm_abyss2",
+const AUDIO_LIST: string[] = [
+  // v3.0.21 — 실사 BGM 40트랙 (테마당 5곡 × 8테마, audio.ts BGM_PLAYLISTS 자동 수집)
+  ...BGM_ALL_TRACKS,
   "sfx_swing", "sfx_hit", "sfx_spin", "sfx_dash", "sfx_hurt",
   "sfx_pickup", "sfx_quest", "sfx_levelup", "sfx_portal",
   "sfx_roar", "sfx_die", "sfx_bossdie",
-] as const;
+];
 
 /* 지형 전환 타일 세트/종류 (scripts/build_tile_transitions.py 생성) */
 const TX_SETS = ["gp", "dp", "cp", "si", "ap"] as const;
