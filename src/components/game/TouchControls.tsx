@@ -5,7 +5,9 @@ import { EventBus } from "./EventBus";
 import { Swords, RefreshCw, Zap, Bot, Pause, Flame, Star } from "lucide-react";
 import type { Skills } from "./useGameUi";
 
-const JOY_RADIUS = 52;
+/* v3.0.18 — 52→64px: 스틱 반경 확대로 미세 조작 정밀도 향상 + 풀 기울임이 쉬워짐
+ *  (기존 52px는 손가락이 조금만 쉬어도 실질 60~85% 속도 — "이속이 느림" 체감의 주원인) */
+const JOY_RADIUS = 64;
 
 /**
  * F3 반응형 핵심: 멀티터치 가상 컨트롤러
@@ -42,9 +44,15 @@ export function TouchControls({
   canAutoHunt?: boolean;
   autoHunt?: boolean;
 }) {
-  const [joyOrigin, setJoyOrigin] = useState<{ x: number; y: number } | null>(null);
-  const [joyKnob, setJoyKnob] = useState({ x: 0, y: 0 });
+  /* v3.0.18 — 조이스틱 걸림 근원 제거: 기존엔 스틱 1px마다 setJoyKnob(setState) →
+   *  모바일 WebView에서 매 프레임 리렌더 → 입력/프레임 지연 = "움직일 때 뭔가 걸리는 느낌".
+   *  이제 베이스/노브를 ref 직접 DOM 조작으로 그린다 — 드래그 중 리렌더 0.
+   *  dragging 상태는 down/up 1회씩만 변경 (안내 패드 토글용). */
+  const [dragging, setDragging] = useState(false);
   const joyPointer = useRef<number | null>(null);
+  const joyBaseRef = useRef<HTMLDivElement | null>(null);
+  const joyKnobRef = useRef<HTMLDivElement | null>(null);
+  const joyOriginRef = useRef<{ x: number; y: number } | null>(null);
   /* v2.9 (사용자 지시 #2) — PC에서도 스킬 쿨타임/물약/자동사냥 버튼을 보여준다.
    *  isTouch = 조이스틱 표시 여부. PC(마우스 전용)면 버튼만, 터치면 조이스틱+버튼 */
   const [isTouch, setIsTouch] = useState(
@@ -76,32 +84,48 @@ export function TouchControls({
     if (joyPointer.current !== null) return;
     joyPointer.current = e.pointerId;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setJoyOrigin({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    setJoyKnob({ x: 0, y: 0 });
+    joyOriginRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    setDragging(true);
+    const base = joyBaseRef.current;
+    if (base) {
+      base.style.display = "block";
+      base.style.left = `${joyOriginRef.current.x - JOY_RADIUS}px`;
+      base.style.top = `${joyOriginRef.current.y - JOY_RADIUS}px`;
+    }
+    const knob = joyKnobRef.current;
+    if (knob) {
+      knob.style.display = "block";
+      knob.style.left = `${joyOriginRef.current.x - 26}px`;
+      knob.style.top = `${joyOriginRef.current.y - 26}px`;
+    }
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const onJoyMove = (e: React.PointerEvent) => {
-    if (joyPointer.current !== e.pointerId || !joyOrigin) return;
+    const origin = joyOriginRef.current;
+    if (joyPointer.current !== e.pointerId || !origin) return;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    let dx = e.clientX - rect.left - joyOrigin.x;
-    let dy = e.clientY - rect.top - joyOrigin.y;
+    let dx = e.clientX - rect.left - origin.x;
+    let dy = e.clientY - rect.top - origin.y;
     const len = Math.hypot(dx, dy);
     if (len > JOY_RADIUS) {
       dx = (dx / len) * JOY_RADIUS;
       dy = (dy / len) * JOY_RADIUS;
     }
-    setJoyKnob({ x: dx, y: dy });
-    /* v3.0.16 — 포화 커브: 스틱 55%만 밀어도 자동사냥과 "동일한" 최고 속도.
-     *  기존(sqrt 0.5)은 스틱 절반에서 71%라 수동 이동이 항상 느리게 느껴졌음.
-     *  14% 데드존 → 즉시 30% 속도, 30%에서 64%, 45%에서 87%, 55%+에서 100% */
-    const raw = Math.min(1, len / JOY_RADIUS);
-    let boosted = 0;
-    if (raw > 0.14) {
-      const t = Math.min(1, (raw - 0.14) / 0.41);
-      boosted = 0.3 + 0.7 * Math.pow(t, 0.75);
+    /* v3.0.18 — 노브 표시는 setState 없이 직접 DOM 이동 (리렌더 0 = 입력 지연 0) */
+    const knob = joyKnobRef.current;
+    if (knob) {
+      knob.style.left = `${origin.x + dx - 26}px`;
+      knob.style.top = `${origin.y + dy - 26}px`;
     }
-    if (boosted > 0) {
+    /* v3.0.18 — 무단속 연속 커브: 기존 14% 데드존 경계에서 속도 0→30% "계단 점프"가
+     *  미세 조작 시 뚝뚝 끊기는(걸리는) 체감의 물리적 원인. 신규 곡선은 계단 없이
+     *  8% 데드존(5px)부터 부드럽게 가속 — 42%(27px) 밀면 100% 최속 도달.
+     *  실측: raw=9%→13%, 15%→40%, 25%→67%, 35%→88%, 42%+→100% */
+    const raw = Math.min(1, len / JOY_RADIUS);
+    const t = Math.max(0, Math.min(1, (raw - 0.08) / 0.34));
+    const boosted = t <= 0 ? 0 : Math.pow(t, 0.58);
+    if (boosted > 0 && len > 0.001) {
       sendMove((dx / len) * boosted, (dy / len) * boosted);
     } else {
       sendMove(0, 0);
@@ -111,8 +135,10 @@ export function TouchControls({
   const onJoyUp = (e: React.PointerEvent) => {
     if (joyPointer.current !== e.pointerId) return;
     joyPointer.current = null;
-    setJoyOrigin(null);
-    setJoyKnob({ x: 0, y: 0 });
+    joyOriginRef.current = null;
+    setDragging(false);
+    if (joyBaseRef.current) joyBaseRef.current.style.display = "none";
+    if (joyKnobRef.current) joyKnobRef.current.style.display = "none";
     sendMove(0, 0);
   };
 
@@ -139,33 +165,23 @@ export function TouchControls({
         onPointerCancel={onJoyUp}
       >
         {/* 대기 중 안내 패드 — v3.0.15 (#10): 이동표시를 살짝 아래로 내림 (bottom-20→bottom-15) */}
-        {!joyOrigin && (
+        {!dragging && (
           <div className="pointer-events-none absolute bottom-15 left-6 flex h-[104px] w-[104px] items-center justify-center rounded-full border-2 border-dashed border-white/30 bg-black/25 sm:bottom-19 sm:left-10">
             <span className="text-[10px] font-black tracking-widest text-white/45">이동</span>
           </div>
         )}
-        {joyOrigin && (
-          <>
-            <div
-              className="pointer-events-none absolute rounded-full border-2 border-white/35 bg-white/10"
-              style={{
-                left: joyOrigin.x - JOY_RADIUS,
-                top: joyOrigin.y - JOY_RADIUS,
-                width: JOY_RADIUS * 2,
-                height: JOY_RADIUS * 2,
-              }}
-            />
-            <div
-              className="pointer-events-none absolute rounded-full border-2 border-white/70 bg-white/40 shadow-lg"
-              style={{
-                left: joyOrigin.x - 24 + joyKnob.x,
-                top: joyOrigin.y - 24 + joyKnob.y,
-                width: 48,
-                height: 48,
-              }}
-            />
-          </>
-        )}
+        {/* v3.0.18 — 항상 마운트 + ref 직접 스타일 갱신 (드래그 중 리렌더 0).
+         *  down 시 위치 지정, 평소엔 숨김 — JSX는 상태와 무관하게 고정 */}
+        <div
+          ref={joyBaseRef}
+          className="pointer-events-none absolute hidden rounded-full border-2 border-white/35 bg-white/10"
+          style={{ width: JOY_RADIUS * 2, height: JOY_RADIUS * 2 }}
+        />
+        <div
+          ref={joyKnobRef}
+          className="pointer-events-none absolute hidden rounded-full border-2 border-white/70 bg-white/40 shadow-lg"
+          style={{ width: 52, height: 52 }}
+        />
       </div>
       )}
 

@@ -34,8 +34,8 @@ async function enterWorld(page) {
   await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 90000 });
   await page.waitForSelector("text=새로운 모험", { timeout: 60000 });
   /* v3.0.16 — 버전 배지는 타이틀 화면이 떠 있는 동안에만 존재 */
-  const badge0 = await page.evaluate(() => document.body.innerText.includes("v3.0.17"));
-  ok("버전 배지 v3.0.17", badge0); // v3.0.17 — 병합 릴리스 버전
+  const badge0 = await page.evaluate(() => document.body.innerText.includes("v3.0.18"));
+  ok("버전 배지 v3.0.18", badge0); // v3.0.18 — 조이스틱-이속 수술 릴리스
   await page.click("text=새로운 모험");
   for (let i = 0; i < 40; i++) {
     const inWorld = await page.evaluate(() => !!(window.__SERTZ__?.game?.scene.getScene("world")?.player));

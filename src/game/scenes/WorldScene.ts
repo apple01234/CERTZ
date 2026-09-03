@@ -597,7 +597,9 @@ export class WorldScene extends Phaser.Scene {
       this.huntCount = 0;
     }
     this.playerRef = this.player;
-    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    /* v3.0.18 — 카메라 추적 lerp 0.12→0.18: 캐릭터가 카메라를 "끌고 가는" 둔감한
+     *  여운(걸리는 느낌의 시각적 원인) 축소. 0.2 이상은 화면 흔들림 유발 — 0.18 채택 */
+    this.cameras.main.startFollow(this.player, true, 0.18, 0.18);
     this.physics.add.collider(this.player, this.solidGroup);
     /* v2.6 — 육식 식물 접촉 데미지 등록 (플레이어 생성 후) */
     for (const plant of this.plantHazards)
@@ -982,9 +984,11 @@ export class WorldScene extends Phaser.Scene {
         const tex = rng.pick(treeSet);
         const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
         this.solidGroup.add(t);
-        // v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과)
-        //  v3.0.10 후속 — 신규 나무(bbox 2~62, 하단 밀착) 줄기 폭 실측 (중앙 x20~44)
-        (t.body as Phaser.Physics.Arcade.StaticBody).setSize(24, 20).setOffset(20, 74);
+        /* v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과)
+         *  v3.0.10 후속 — 신규 나무(bbox 2~62, 하단 밀착) 줄기 폭 실측 (중앙 x20~44)
+         *  v3.0.18 — 24x20→16x14: 줄기에 스치기만 해도 멈추는 "걸리는 느낌" 완화
+         *  (중앙 x24~40 / y78~92 — 시각적 줄기보다 살짝 작게, 막힘은 유지) */
+        (t.body as Phaser.Physics.Arcade.StaticBody).setSize(16, 14).setOffset(24, 78);
         t.setData("obstacle", true);
         break;
       }
@@ -998,7 +1002,9 @@ export class WorldScene extends Phaser.Scene {
         if (this.nearSolidObstacle(x, y, 48)) continue;
         const r = this.add.image(x, y, rockTex).setDepth(Math.floor(y / 10));
         this.solidGroup.add(r);
-        (r.body as Phaser.Physics.Arcade.StaticBody).setSize(44, 28).setOffset(8, 35); // v3.0.10 — 64x64 바위 하단 실측
+        /* v3.0.10 — 64x64 바위 하단 실측
+         *  v3.0.18 — 44x28→36x20: 바위 모서리 걸림 완화 (x14~50 / y39~59) */
+        (r.body as Phaser.Physics.Arcade.StaticBody).setSize(36, 20).setOffset(14, 39);
         r.setData("obstacle", true);
         break;
       }

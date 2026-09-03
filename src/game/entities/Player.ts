@@ -88,11 +88,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v3.0.6 (지시 #8) — 보스 공격 방어 관통률 (Boss.takeDamage 호출 시 true) */
   bossPierceHit = false;
 
-  speed = 265;
+  speed = 300;
   /** 이동 기본값 — 클래스 속도 보너스는 이 값에 배율 (recalcSpeed)
-   *  v3.0.16 — 230→265 (+15%): "기본 이동이 너무 느림" 피드백.
-   *  최속 적(서리/불꽃 늑대 150) 대비 여유 유지, 자동사냥과 체감 동일化 */
-  static readonly BASE_SPEED = 265;
+   *  v3.0.16 — 230→265 (+15%)
+   *  v3.0.18 — 265→300 (+13%): "이속이 ㅈㄴ 느림" 재피드백. 최속 적(150)의 2배로
+   *  카이팅 여유 확대 + 공격 중 감삭 0.8→0.92로 전투 중 체감 속도 동반 상향 */
+  static readonly BASE_SPEED = 300;
   facing: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0);
 
   state: "idle" | "attack" | "dash" | "dead" = "idle";
@@ -277,8 +278,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       // v2.2 — 공격 중 이동: 입력 방향 우선(80% 속도), 러지가 입력을 덮어쓰지 않음 → 뚝 끊기는 감삭 제거
       // v3.0.6 (지시 — "화살이 바라보는 방향에 맞게 안나감"): 공격 중 facing 고정.
       //  기존은 이동 입력이 facing을 덮어써 조준 방향이 흔들리고 다음 발 화살이 엉뚱한 방향으로 나갔다.
+      // v3.0.18 — 0.8→0.92: 공격 연타 중 이동이 크게 느려져 "걸리는" 체감 완화
       if (move.lengthSq() > 0.01) {
-        this.setVelocity(move.x * this.speed * 0.8, move.y * this.speed * 0.8);
+        this.setVelocity(move.x * this.speed * 0.92, move.y * this.speed * 0.92);
         // 스윙 판정(65ms) 이후엔 걷기 애니로 복귀 — 공격 포즈로 미끄러지는 얼음막기 감삭 제거
         if (this.swingDone) {
           const horiz = Math.abs(this.facing.x) >= Math.abs(this.facing.y);
