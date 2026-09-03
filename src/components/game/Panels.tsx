@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { EventBus, type PanelKind, type RpgState, type HudState, type QuestLogState } from "./EventBus";
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, upgradeCost, autoAllocPlan,
-  starWeaponBonus, starArmorBonus, starTier, STAR_TIER_CSS, UPGRADE_FALLBACK_FROM,
+  starWeaponBonus, starArmorBonus, starTier, STAR_TIER_CSS, UPGRADE_FALLBACK_FROM, starPerStarAtk, starPerStarDef,
   TRADE_PRICES, tradeValue, TRADE_STOCK, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
   CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue,
   POT_GRADE_META, potLineText, SET_GEAR, POT_STAT_LABEL,
@@ -112,17 +112,20 @@ function itemEffect(item: (typeof ITEMS)[ItemKey], up = 0): string {
   if (item.kind === "buff") return BUFF_DEFS[item.key as BuffKey]?.desc ?? "버프";
   if (item.kind === "pet") return PET_DEFS[item.key as PetKey]?.desc ?? "펫";
   if (item.kind === "cosmetic") return COSMETIC_DEFS[item.key as CosmeticKey]?.desc ?? "치장";
+  if (item.healFull) return "HP/MP 100% 회복"; // v3.0.20 (#7) — 엘릭서
   if (item.heal) return `HP +${item.heal}`;
   if (item.restore) return `MP +${item.restore}`;
   if (item.atk) {
     if (up <= 0) return `공격력 +${item.atk}`;
     const m = starWeaponBonus(up).atk;
-    return `공격력 ${item.atk}+${up * 2}${m > 0 ? `+${m}` : ""}`;
+    const ps = starPerStarAtk(item.atk) * up; // v3.0.20 (#8) — 본당 +2+8%
+    return `공격력 ${item.atk}+${ps}${m > 0 ? `+${m}` : ""}`;
   }
   if (item.def) {
     if (up <= 0) return `방어력 +${item.def}`;
     const m = starArmorBonus(up).def;
-    return `방어력 ${item.def}+${up}${m > 0 ? `+${m}` : ""}`;
+    const ps = starPerStarDef(item.def).def * up; // v3.0.20 (#8)
+    return `방어력 ${item.def}+${ps}${m > 0 ? `+${m}` : ""}`;
   }
   if (item.crit) return `크리티컬 +${item.crit}%`;
   if (item.maxHp) return `최대 HP +${item.maxHp}`;
@@ -154,7 +157,7 @@ function displayName(name: string, up: number): string {
  *  자동 물약(HP 임계값/MP)과 자동 버프(여러 개)를 여기서 설정한다. */
 export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
-  const auto = rpg.autoUse ?? { hpPct: 0, mpOn: false, buffs: [] };
+  const auto = rpg.autoUse ?? { hpPct: 0, mpPct: 0, mpOn: false, buffs: [] };
   const buffs: BuffKey[] = ["buff_atk", "buff_def", "buff_spd", "buff_exp", "buff_king"];
   const buffNames: Record<string, string> = {
     buff_atk: "분노 (공격+25%)",
@@ -369,11 +372,12 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
               </span>
             )}
           </div>
-          {/* 마일스톤 효과 안내 */}
+          {/* 마일스톤 효과 안내 — v3.0.20 (#8): 본당 즉시 상승 + 마일스톤 대폭 상향 */}
           <div className="mb-1.5 flex flex-wrap gap-x-2.5 gap-y-0.5 rounded-md bg-white/[0.04] px-2 py-1 text-[9px] leading-relaxed text-white/55">
-            <span className="text-[#6ff2d8]">★5 무기 공격+4·치명+2% / 방어구 HP+25</span>
-            <span className="text-[#d29dff]">★10 무기 공격+6·치명+3% / 방어구 방어+2·HP+50</span>
-            <span className="text-[#ffd76a]">★15 무기 공격+8·치명+5% / 방어구 방어+3·HP+80</span>
+            <span className="text-white/80">★1마다: 무기 공격+2+무기atk 8% / 방어구 방어+1+def 6%·HP+12</span>
+            <span className="text-[#6ff2d8]">★5 무기 공격+8·치명+3% / 방어구 방어+1·HP+80</span>
+            <span className="text-[#d29dff]">★10 무기 공격+14·치명+6% / 방어구 방어+3·HP+160</span>
+            <span className="text-[#ffd76a]">★15 무기 공격+24·치명+12% / 방어구 방어+6·HP+220</span>
           </div>
           <div className="flex flex-col gap-1.5">
             {(["weapon", "armor"] as const).map((slot) => {
@@ -393,8 +397,8 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
               /* 다음 성 스탯 미리보기 (now → next) */
               const statLine =
                 slot === "weapon"
-                  ? `${(item.atk ?? 0) + up * 2 + starWeaponBonus(up).atk} → ${maxed ? "-" : (item.atk ?? 0) + (up + 1) * 2 + starWeaponBonus(up + 1).atk} 공격력`
-                  : `${(item.def ?? 0) + up + starArmorBonus(up).def} → ${maxed ? "-" : (item.def ?? 0) + (up + 1) + starArmorBonus(up + 1).def} 방어력`;
+                  ? `${(item.atk ?? 0) + starPerStarAtk(item.atk ?? 0) * up + starWeaponBonus(up).atk} → ${maxed ? "-" : (item.atk ?? 0) + starPerStarAtk(item.atk ?? 0) * (up + 1) + starWeaponBonus(up + 1).atk} 공격력` // v3.0.20 (#8) 본당 +2+8%
+                  : `${(item.def ?? 0) + starPerStarDef(item.def ?? 0).def * up + starArmorBonus(up).def} → ${maxed ? "-" : (item.def ?? 0) + starPerStarDef(item.def ?? 0).def * (up + 1) + starArmorBonus(up + 1).def} 방어력`;
               return (
                 <div
                   key={slot}
@@ -564,7 +568,7 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
 export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
   /* v3.0.15 (#6) — 자동 사용 설정 (BM 상점에서 이동). HUD rpg.autoUse 사용 */
-  const auto = rpg.autoUse ?? { hpPct: 0, mpOn: false, buffs: [] as BuffKey[] };
+  const auto = rpg.autoUse ?? { hpPct: 0, mpPct: 0, mpOn: false, buffs: [] as BuffKey[] };
   const equips = rpg.owned.filter((k) => {
     const it = ITEMS[k as ItemKey];
     return it && it.kind !== "consumable" && it.kind !== "accessory";
@@ -602,6 +606,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               { k: "potion_mp", count: rpg.mpPot, use: () => EventBus.emit("rpg:use", { kind: "mp" }) },
               { k: "potion_hp2", count: rpg.owned.filter((x) => x === "potion_hp2").length, use: () => EventBus.emit("rpg:useItem", { key: "potion_hp2" }) },
               { k: "potion_mp2", count: rpg.owned.filter((x) => x === "potion_mp2").length, use: () => EventBus.emit("rpg:useItem", { key: "potion_mp2" }) },
+              { k: "potion_elixir", count: rpg.owned.filter((x) => x === "potion_elixir").length, use: () => EventBus.emit("rpg:useItem", { key: "potion_elixir" }) }, // v3.0.20 (#7)
             ];
             const qp = rpg.quickPots ?? { hp: "potion_hp", mp: "potion_mp" };
             return potRows.map(({ k, count, use }) => {
@@ -643,6 +648,16 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                     >
                       사용
                     </button>
+                    {/* v3.0.20 (#7) — 물약 판매 (상점가 40%) */}
+                    {count > 0 && sellValue(item) > 0 && (
+                      <button
+                        onClick={() => EventBus.emit("rpg:sellPotion", { key: k })}
+                        aria-label={`${item.name} 판매`}
+                        className="rounded-md border border-white/15 bg-white/[0.06] px-2 py-1.5 text-[10px] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95"
+                      >
+                        판매 {sellValue(item)}G
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -672,9 +687,10 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   const isStarScroll = k === "scroll_star";
                   const effect = k === "potion_hp2" ? `HP +${item.heal} 회복`
                     : k === "potion_mp2" ? `MP +${item.restore} 회복`
+                    : k === "potion_elixir" ? "HP/MP 한 번에 100% 회복"
                     : k === "scroll_return" ? "미드가르드 마을로 즉시 귀환"
                     : k === "scroll_star" ? `다음 강화 성공률 +${STAR_BLESS_RATE}%p (충전 최대 ${STAR_BLESS_MAX}장)`
-                    : k === "eert_cube" ? "장비 잠재옵션 재추첨 — 가방의 장비에서 사용"
+                    : k === "eert_cube" ? "장비 잠재옵션 재추첨 — 장비 행의 [eert] 버튼으로 사용 (1개 소모)"
                     : "방문한 적 있는 구역으로 이동";
                   return (
                     <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
@@ -683,14 +699,29 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{item.name} <span className="text-white/60">×{count}</span></p>
                         <p className="text-[10px] text-emerald-300/90">{effect}</p>
                       </div>
-                      <button
-                        onClick={() => (isStarScroll ? EventBus.emit("rpg:starScroll") : EventBus.emit("rpg:useItem", { key: k }))}
-                        className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black text-white active:scale-95 ${
-                          isStarScroll ? "bg-purple-500 hover:bg-purple-400" : "bg-sky-500 hover:bg-sky-400"
-                        }`}
-                      >
-                        {isStarScroll ? "충전" : isScroll ? "사용" : "마시기"}
-                      </button>
+                      {/* v3.0.20 (#9) — eert는 마시는 물약이 아니라 큐브: 장비 행에서 사용 */}
+                      {isEertCube ? (
+                        <span className="shrink-0 rounded-md border border-orange-300/50 bg-orange-500/15 px-2 py-1.5 text-[10px] font-black text-orange-200">장비에서 사용</span>
+                      ) : (
+                        <button
+                          onClick={() => (isStarScroll ? EventBus.emit("rpg:starScroll") : EventBus.emit("rpg:useItem", { key: k }))}
+                          className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black text-white active:scale-95 ${
+                            isStarScroll ? "bg-purple-500 hover:bg-purple-400" : "bg-sky-500 hover:bg-sky-400"
+                          }`}
+                        >
+                          {isStarScroll ? "충전" : isScroll ? "사용" : "마시기"}
+                        </button>
+                      )}
+                      {/* v3.0.20 (#7/#9) — 소모품 판매 (엘릭서·eert 5000G 등) */}
+                      {sellValue(item) > 0 && (
+                        <button
+                          onClick={() => EventBus.emit("rpg:sell", { key: k as ItemKey })}
+                          aria-label={`${item.name} 판매`}
+                          className="shrink-0 rounded-md border border-white/15 bg-white/[0.06] px-2 py-1.5 text-[10px] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95"
+                        >
+                          판매 {sellValue(item)}G
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -792,12 +823,13 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               </button>
             </div>
             <div className="flex items-center justify-between rounded-md bg-white/[0.04] px-2.5 py-1.5">
-              <p className="text-[12px] font-bold text-white/85">자동 MP 물약 (25% 이하)</p>
+              <p className="text-[12px] font-bold text-white/85">자동 MP 물약 — {(auto.mpPct ?? 0) === 0 ? (auto.mpOn ? "25% 이하 (기존 설정)" : "MP 버튼에 장착한 물약") : `${auto.mpPct}% 이하`}</p>
               <button
-                onClick={() => EventBus.emit("rpg:autoset", { mpOn: !auto.mpOn })}
-                className={`rounded-md px-2.5 py-1 text-[11px] font-black text-white active:scale-95 ${auto.mpOn ? "bg-emerald-500 hover:bg-emerald-400" : "bg-slate-600 hover:bg-slate-500"}`}
+                /* v3.0.20 (#3) — MP도 % 지정 (기존 켜기/끄기 대체) */
+                onClick={() => EventBus.emit("rpg:autoset", { mpPct: (auto.mpPct ?? 0) === 0 ? 30 : auto.mpPct === 30 ? 50 : auto.mpPct === 50 ? 70 : 0, mpOn: false })}
+                className="rounded-md bg-sky-500 px-2.5 py-1 text-[11px] font-black text-white hover:bg-sky-400 active:scale-95"
               >
-                {auto.mpOn ? "켜기" : "끄기"}
+                {(auto.mpPct ?? 0) === 0 ? (auto.mpOn ? "25% 이하" : "끄기") : `${auto.mpPct}% 이하`}
               </button>
             </div>
             <p className="mt-1 text-[10px] text-white/45">자동 버프 — 보유 중인 물약을 자동으로 사용 (중복 선택 가능)</p>

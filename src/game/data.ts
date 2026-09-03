@@ -56,6 +56,8 @@ export type ItemKey =
   | "potion_mp"
   | "potion_hp2"
   | "potion_mp2"
+  /* v3.0.20 (#7) — 엘릭서: HP/MP 한 번에 100% 회복 */
+  | "potion_elixir"
   | "weapon_1"
   | "weapon_2"
   | "weapon_3"
@@ -134,17 +136,28 @@ export const UPGRADE_FALLBACK_FROM = 9;
 /** 마일스톤 성 구간 */
 export const STAR_MILESTONES = [5, 10, 15] as const;
 
-/** 무기 마일스톤 보너스 (누적 — ★15 도달 시 공격+18·치명+10%) */
+/** v3.0.20 (#8) — 별 1개마다 즉시 능력치 상승 (기존엔 마일스톤 5성마다만 체감 상승)
+ *  무기: 공격 +2 + 무기 기본 공격력의 8% / 방어구: 방어 +1 + 기본 방어의 6% + HP 12
+ *  → 상위 무기일수록 본당 상승폭이 커진다 (스타포스 답밖 성장감) */
+export function starPerStarAtk(itemAtk: number): number {
+  return 2 + Math.round(itemAtk * 0.08);
+}
+export function starPerStarDef(itemDef: number): { def: number; hp: number } {
+  return { def: 1 + Math.round(itemDef * 0.06), hp: 12 };
+}
+
+/** v3.0.20 (#8) — 마일스톤(★5/★10/★15)은 "더쌘 추가능력치(무기 고유능력)"
+ *  누적 — ★15 도달 시 공격+46·치명+21% + 기본 공격력 8%×15성 (기존 18/10 대비 대폭 상향) */
 export const WEAPON_MILESTONES: Readonly<Record<number, { atk: number; crit: number }>> = {
-  5: { atk: 4, crit: 2 },
-  10: { atk: 6, crit: 3 },
-  15: { atk: 8, crit: 5 },
+  5: { atk: 8, crit: 3 },
+  10: { atk: 14, crit: 6 },
+  15: { atk: 24, crit: 12 },
 };
-/** 방어구 마일스톤 보너스 (누적 — ★15 도달 시 방어+5·최대HP+155) */
+/** 방어구 마일스톤 보너스 (누적 — ★15 도달 시 방어+10·최대HP+460) */
 export const ARMOR_MILESTONES: Readonly<Record<number, { def: number; hp: number }>> = {
-  5: { def: 0, hp: 25 },
-  10: { def: 2, hp: 50 },
-  15: { def: 3, hp: 80 },
+  5: { def: 1, hp: 80 },
+  10: { def: 3, hp: 160 },
+  15: { def: 6, hp: 220 },
 };
 
 /** 성수 up에서 누적된 무기 마일스톤 보너스 */
@@ -169,12 +182,22 @@ export const STAR_BLESS_RATE = 15;
 export const STAR_BLESS_MAX = 3;
 
 /** v3.0.7 — 장신구 스타포스 마일스톤 보너스 (crit 트랙: 반지 계열 / hp 트랙: 펜던트 계열)
- *  무기·방어구와 동일 ★5/★10/★15 구간. crit 스탯이 있으면 치명 트랙, maxHp가 있으면 HP 트랙 (둘 다 가능). */
+ *  v3.0.20 (#8) — 별 1개마다도 상승: 치명 +0.5%p/성, HP +8/성 (마일스톤은 기존보다 강하게) */
 export function starAccBonus(up: number, item: { crit?: number; maxHp?: number }): { crit: number; hp: number } {
   let crit = 0, hp = 0;
-  if (item.crit) crit = up >= 15 ? 12 : up >= 10 ? 6 : up >= 5 ? 2 : 0;
-  if (item.maxHp) hp = up >= 15 ? 110 : up >= 10 ? 55 : up >= 5 ? 20 : 0;
-  return { crit, hp };
+  if (item.crit) {
+    crit = up * 0.5; // 본당 +0.5%p
+    if (up >= 5) crit += 3;
+    if (up >= 10) crit += 4;
+    if (up >= 15) crit += 7; // ★15 누적 +21.5%p (기존 12 → 대폭 상향)
+  }
+  if (item.maxHp) {
+    hp = up * 8; // 본당 +8
+    if (up >= 5) hp += 20;
+    if (up >= 10) hp += 35;
+    if (up >= 15) hp += 55; // ★15 누적 +240 (기존 110 → 대폭 상향)
+  }
+  return { crit: Math.round(crit * 10) / 10, hp };
 }
 
 /** 성급 티어 (0=흰색 ★1~4 / 1=청록 ★5~9 / 2=보라 ★10~14 / 3=금색 ★15) */
@@ -194,6 +217,10 @@ export type ItemDef = {
   tier: ItemTier; // 등급 (UI 테두리/이름색)
   heal?: number; // HP 회복
   restore?: number; // MP 회복
+  /** v3.0.20 (#7) — 엘릭서: 사용 시 HP/MP 전부 100% 회복 */
+  healFull?: boolean;
+  /** v3.0.20 (#9) — 판매가 직접 지정 (eert 큐브 5000G 등 — 상점 구매가와 무관) */
+  sellPrice?: number;
   atk?: number; // 무기 공격력 보너스
   def?: number; // 방어구 방어력
   crit?: number; // 장신구 — 크리티컬 확률 증가 (%p)
@@ -214,6 +241,8 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   /* v2.5 — 상급 물약 (지시 #5 아이템 확장) */
   potion_hp2: { key: "potion_hp2", kind: "consumable", name: "상급 HP 물약", icon: "item_potion_hp2", price: 70, tier: "rare", heal: 130 },
   potion_mp2: { key: "potion_mp2", kind: "consumable", name: "상급 MP 물약", icon: "item_potion_mp2", price: 60, tier: "rare", restore: 80 },
+  /* v3.0.20 (#7) — 엘릭서: HP/MP 한 번에 100% 회복 (전투 지속력 최고급 소모품) */
+  potion_elixir: { key: "potion_elixir", kind: "consumable", name: "엘릭서", icon: "item_potion_elixir", price: 400, tier: "epic", healFull: true },
   /* v2.5 — 이동 소모품 (지시 #6 귀환서 / #7 지역 워프 부적) */
   scroll_return: { key: "scroll_return", kind: "consumable", name: "마을 귀환서", icon: "item_scroll_return", price: 40, tier: "common" },
   scroll_warp: { key: "scroll_warp", kind: "consumable", name: "지역 이동 부적", icon: "item_scroll_warp", price: 120, tier: "rare" },
@@ -268,9 +297,10 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   ring_bless: { key: "ring_bless", kind: "accessory", name: "가호의 반지", icon: "ring_bless", price: 0, bmPrice: 45, bmOnly: true, tier: "legend", crit: 15, maxHp: 100, slot: "ring" },
   buff_king: { key: "buff_king", kind: "buff", name: "왕의 가호", icon: "buff_king", price: 0, bmPrice: 15, bmOnly: true, tier: "legend" },
   cos_aurora: { key: "cos_aurora", kind: "cosmetic", name: "오로라 후광", icon: "cos_aurora", price: 0, bmPrice: 20, bmOnly: true, tier: "legend" },
-  /* ---- v3.0.15 (#13) — eert 큐브: 장비의 잠재옵션을 재추첨 (메이플 큐브 시스템) ----
-   *  eert = tree 거꾸로. 큐브 아이콘에도 거꾸로 나무가 그려진다. */
-  eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 1200, tier: "epic" },
+  /* ---- v3.0.20 (#9) — eert 큐브: "큐브는 마시는 게 아니다" ----
+   *  BM(에메랄드)로만 구매 가능 + 골드 판매가 5000G (아주 비싼 가격).
+   *  장비 행의 [eert] 버튼으로 사용하며 1회 사용마다 1개 소모. */
+  eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 0, bmPrice: 8, bmOnly: true, sellPrice: 5000, tier: "epic" },
   /* ---- v3.0.15 (#11) — 챕터 테마 세트 장비 (상점에서 챕터 해금 시 노출) ---- */
   sfw_forest: { key: "sfw_forest", kind: "weapon", name: "숲의 수호자 대검", icon: "item_weapon_2", price: 380, tier: "rare", atk: 9 },
   sfa_forest: { key: "sfa_forest", kind: "armor", name: "숲의 수호자 갑옷", icon: "item_armor_2", price: 340, tier: "rare", def: 4 },
@@ -375,11 +405,11 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
 
 /** 상점 판매 목록 (표시 순서 — BM 섹션은 kind로 분리 렌더) */
 export const SHOP_STOCK: ItemKey[] = [
-  "eert_cube", // v3.0.15 (#13) — 잠재옵션 리롤 큐브
   "potion_hp",
   "potion_mp",
   "potion_hp2",
   "potion_mp2",
+  "potion_elixir", // v3.0.20 (#7) — 엘릭서
   "scroll_star", // v3.0.7 — 강화 주문서
   "weapon_2",
   "armor_2",
@@ -425,6 +455,7 @@ export const SHOP_STOCK: ItemKey[] = [
  *  v3.0.7 — 보스 전용 드롭(tradeLock)은 골드 판매 불가 → 거래소 에메랄드 판매(tradeValue)로 이동 */
 export function sellValue(item: ItemDef): number {
   if (item.tradeLock) return 0;
+  if (item.sellPrice) return item.sellPrice; // v3.0.20 (#9) — 직접 지정 판매가 (eert 5000G)
   if (item.tier === "legend") return item.bmOnly ? 0 : 400;
   return Math.max(1, Math.floor(item.price * 0.4));
 }

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""v3.0.19 — 바닥 타일 재생성: 단색 사각형 → 시밀리스 픽셀아트 텍스처
-사용자 피드백: "타일맵이 전혀 잔디 같지가 않아"
+"""v3.0.20 #2 — 타일 선 제거: "타일의 선이 보여 자연스럽게 이어줘"
+
+v3.0.19 타일의 64px 그리드 베벨(경계 1px 음영/하이라이트)이 타일 선으로 보임
+→ ① grid_bevel 완전 제거 ② 서브타일 밝기 변화도 하드 셀 경계 → 연속 저주파 노이즈로 교체
+→ 256px 시밀리스 질감은 유지, 어디를 이어 붙여도 선 없이 자연스럽게 이어짐.
 
 생성 규칙 (전 타일 공통):
-- 256x256 시밀리스 (tileSprite 반복 이음새 0) — 내부에 64px 그리드 4x4 유지
-  → "정사각형 타일 규칙적 배열" (기존 지시 #17) + 잔디 질감 동시 충족
-- 서브타일(64px)마다 밝기 ±4% 미세 변화 — 벽지 반복감 제거
-- 그리드 경계 1px 음영 베벨 — 타일 칸이 규칙적으로 보이게
+- 256x256 시밀리스 (tileSprite 반복 이음새 0)
+- 밝기 변화는 연속 노이즈(셀 경계 없음) — 벽지 반복감 제거 + 선 없음
 - 잔디 계열: 톤 패치(3단) + 풀잎 스트로크(1x2/1x3, 어두운/밝은 톤) + 하이라이트 스펙
 - 테마별 디테일: 마그마 용암 균열/눈 반짝/동굴·슬레이트 균열/헬·심연 스펙
 - 전부 랩어라운드 드로잉 → 어느 방향으로 이어 붙여도 이음새 없음
@@ -75,40 +76,23 @@ def quantize(noise, stops):
 # ---------------- 톤 패치 베이스 ----------------
 
 def base_patches(rng, palette, seed):
-    """3톤 패치 배경 + 서브타일 밝기 변화. palette = (dark, mid, light)"""
+    """3톤 패치 배경 + 연속 밝기 노이즈. palette = (dark, mid, light)
+    v3.0.20 #2 — 하드 서브타일 셀 오프셋 → 연속 저주파 노이즈 (셀 경계선 제거)"""
     n1 = quantize(value_noise(seed, 5), palette)
     n2 = quantize(value_noise(seed + 7, 11), palette)  # 디테일 노이즈
+    n_cell = value_noise(seed + 31, 2, lo=-1.0, hi=1.0)  # 연속 대형 밝기 변화 (랩)
     img = Image.new("RGB", (T, T))
     px = img.load()
-    # 서브타일별 밝기 오프셋
-    cells = [[rng.uniform(-0.045, 0.045) for _ in range(T // CELL)] for _ in range(T // CELL)]
     for y in range(T):
-        cy = y // CELL
         for x in range(T):
-            cx = x // CELL
             i = n1[y][x] if rng.random() < 0.72 else n2[y][x]
             c = palette[i]
             if i == 1:  # mid 톤은 노이즈 혼합로 부드럽게
                 t = (n2[y][x] + 1) / 2
                 c = mix(palette[0], palette[2], 0.35 + t * 0.3)
-            k = cells[cy][cx]
-            px[x, y] = shade(c, k)
+            px[x, y] = shade(c, n_cell[y][x] * 0.05)
     return img, px
 
-def grid_bevel(px):
-    """64px 경계 1px 음영 베벨 — 규칙적 타일 칸 강조 (미세)"""
-    dark = (0, 0, 0)
-    for p in range(0, T, CELL):
-        for i in range(T):
-            x0, y0 = wrap(p), wrap(p)
-            px[x0, i] = shade(px[x0, i], -0.16)
-            px[i, y0] = shade(px[i, y0], -0.16)
-            px[wrap(p + 1), i] = shade(px[wrap(p + 1), i], 0.05)
-            px[i, wrap(p + 1)] = shade(px[i, wrap(p + 1)], 0.05)
-    # 코너는 어둡게 유지
-    for p in range(0, T, CELL):
-        for q in range(0, T, CELL):
-            px[p, q] = shade(dark, -0.0)
 
 def speckle(px, rng, n, colors, seed_off=0):
     """1px 스펙 (랩)"""
@@ -195,9 +179,9 @@ def gen_grass_like(name, seed, base, tuft_dk, tuft_lt):
     for _ in range(14):
         tuft(rng.randrange(T), rng.randrange(T), lt, hmax=3)
     speckle(px, rng, 30, [shade(lt, 0.3), shade(dk, -0.12)])
-    grid_bevel(px)
+    # v3.0.20 #2 — grid_bevel 제거: 선 없이 자연스럽게 이어지는 잔디
     img.save(f"{OUT}/{name}.png")
-    print(f"{name}: 256x256 grass v2 done")
+    print(f"{name}: 256x256 grass v3 (seamless, no grid) done")
 
 def gen_snow(name, seed, pal):
     rng = random.Random(seed)
@@ -211,7 +195,6 @@ def gen_snow(name, seed, pal):
         for k in range(ln):
             put(px, x + k, y, shade_c)
     speckle(px, rng, 90, [(255, 255, 255), shade(palette[2], 0.35)])
-    grid_bevel(px)
     img.save(f"{OUT}/{name}.png")
     print(f"{name}: snow done")
 
@@ -225,7 +208,6 @@ def gen_magma(name, seed, pal):
     for _ in range(16):
         x, y = rng.randrange(T), rng.randrange(T)
         put(px, x, y, hexc("#ffb060"))
-    grid_bevel(px)
     img.save(f"{OUT}/{name}.png")
     print(f"{name}: magma done")
 
@@ -235,7 +217,6 @@ def gen_rock(name, seed, pal, crack_cols, speck_n=130, h_bias=False):
     img, px = base_patches(rng, palette, seed)
     speckle(px, rng, speck_n, [shade(palette[0], -0.18), shade(palette[2], 0.14)])
     cracks(px, rng, 10, [hexc(c) for c in crack_cols], max_len=8, horizontal_bias=h_bias)
-    grid_bevel(px)
     img.save(f"{OUT}/{name}.png")
     print(f"{name}: rock done")
 
@@ -247,7 +228,6 @@ def gen_abyss(name, seed, pal):
     # 별같은 밝은 점 몇 개
     speckle(px, rng, 12, [hexc("#6a5a8a"), hexc("#7a4a52")])
     cracks(px, rng, 5, [hexc("#120f0e")], max_len=6)
-    grid_bevel(px)
     img.save(f"{OUT}/{name}.png")
     print(f"{name}: abyss done")
 

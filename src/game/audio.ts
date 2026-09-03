@@ -44,6 +44,24 @@ function play(key: string, vol: number, rate = 1) {
 
 export type BGMKind = "field" | "boss" | "title" | "village" | "alfheim" | "cave" | "snow" | "abyss";
 
+/* v3.0.20 (#10) — 분위기별 제2 변주 트랙 (scripts/gen_bgm2.py 절차 합성 — 전부 오리지널 생성)
+ *  같은 분위기 안에서 곡이 로테이션되므로 같은 멜로디 반복에 질리지 않는다 */
+const BGM_VARIANTS: Record<BGMKind, [string, string]> = {
+  field: ["bgm_field", "bgm_field2"],
+  boss: ["bgm_boss", "bgm_boss2"],
+  title: ["bgm_title", "bgm_title2"],
+  village: ["bgm_village", "bgm_village2"],
+  alfheim: ["bgm_alfheim", "bgm_alfheim2"],
+  cave: ["bgm_cave", "bgm_cave2"],
+  snow: ["bgm_snow", "bgm_snow2"],
+  abyss: ["bgm_abyss", "bgm_abyss2"],
+};
+/** 변주 로테이션 주기 (ms) — 한 곡이 충분히 흐른 뒤 다음 변주로 크로스페이드 */
+const BGM_ROTATE_MS = 78000;
+let bgmLastVariant: Partial<Record<BGMKind, number>> = {};
+let bgmRotateTimer: ReturnType<typeof setTimeout> | null = null;
+let bgmFadeTimer: ReturnType<typeof setInterval> | null = null;
+
 /** 스테이지 → 전용 BGM 매핑 (v2.0 — 9챕터 × 10구역 키 지원) */
 export function stageBgm(stage: string): BGMKind {
   /* v2.9 — 챕터 마을(Xv)은 해당 챕터 BGM을 따른다 */
@@ -151,6 +169,8 @@ export const SFX_VOLUMES: Record<string, number> = {
 };
 
 function destroyBgm() {
+  clearRotateTimer();
+  clearFadeTimer();
   if (bgmSound) {
     bgmSound.stop();
     bgmSound.destroy();
@@ -158,12 +178,72 @@ function destroyBgm() {
   }
 }
 
+/** BaseSound 볼륨 조작 (Phaser 타입이 구현체별로 분리돼 있어 최소 인터페이스 캐스팅) */
+type VolumeSound = { volume: number; setVolume(v: number): void };
+function asVol(s: Phaser.Sound.BaseSound): VolumeSound | null {
+  return s ? (s as unknown as VolumeSound) : null;
+}
+
+function clearRotateTimer() {
+  if (bgmRotateTimer) {
+    clearTimeout(bgmRotateTimer);
+    bgmRotateTimer = null;
+  }
+}
+
+function clearFadeTimer() {
+  if (bgmFadeTimer) {
+    clearInterval(bgmFadeTimer);
+    bgmFadeTimer = null;
+  }
+}
+
+/** BGM 볼륨 페이드 (변주 전환 크로스페이드용) */
+function fadeBgm(target: number, ms: number, done?: () => void) {
+  if (!bgmSound) return;
+  clearFadeTimer();
+  const snd = asVol(bgmSound);
+  if (!snd) return;
+  const from = snd.volume ?? BGM_VOLUME;
+  const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
+  bgmFadeTimer = setInterval(() => {
+    const cur = bgmSound ? asVol(bgmSound) : null;
+    if (!cur) {
+      clearFadeTimer();
+      return;
+    }
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const k = Math.min(1, (now - t0) / ms);
+    cur.setVolume(from + (target - from) * k);
+    if (k >= 1) {
+      clearFadeTimer();
+      done?.();
+    }
+  }, 60);
+}
+
 function startBgm(kind: BGMKind) {
   if (!game) return;
   try {
-    // v3.0.6 — BGM 0.42→0.34 (SFX 가독성 우선 밸런스)
-    bgmSound = game.sound.add(`bgm_${kind}`, { loop: true, volume: 0.34 });
+    // v3.0.20 (#10) — 변주 로테이션: 같은 분위기면 직전 곡과 다른 변주를 랜덤 선택
+    const variants = BGM_VARIANTS[kind];
+    let idx = Math.floor(Math.random() * variants.length);
+    if (variants.length > 1 && idx === (bgmLastVariant[kind] ?? -1)) idx = (idx + 1) % variants.length;
+    bgmLastVariant[kind] = idx;
+    bgmSound = game.sound.add(variants[idx], { loop: true, volume: 0 });
+    asVol(bgmSound)?.setVolume(0);
     bgmSound.play();
+    fadeBgm(BGM_VOLUME, 1500);
+    clearRotateTimer();
+    bgmRotateTimer = setTimeout(() => {
+      // 한 곡이 흐른 뒤 같은 분위기의 다음 변주로 크로스페이드 (종류 변경 시 무시)
+      if (!muted && bgmKind === kind && bgmSound?.isPlaying) {
+        fadeBgm(0, 1300, () => {
+          destroyBgm();
+          if (!muted && bgmKind === kind) startBgm(kind);
+        });
+      }
+    }, BGM_ROTATE_MS);
   } catch {
     // 브라우저 자동재생 정책(사용자 입력 전) — 첫 입력에서 initAudio 후 재개됨
     bgmSound = null;
@@ -177,7 +257,6 @@ export function playBGM(kind: BGMKind) {
   if (muted || !game) return;
   startBgm(kind);
 }
-
 /** 씬 전환/사망 등 — 정지만 하고 kind는 유지(음소거 해제 시 재개용) */
 export function stopBGM() {
   destroyBgm();

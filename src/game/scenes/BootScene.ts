@@ -130,6 +130,7 @@ const ASSET_LIST = [
   "item_ring_crit", "item_ring_guard",
   "item_scroll_return", "item_scroll_warp",
   "item_scroll_star", // v3.0.7 — 강화 주문서
+  "item_potion_elixir", // v3.0.20 (#7) — 엘릭서 (HP/MP 전부 회복)
   "item_weapon_1", "item_weapon_2", "item_weapon_3", "item_weapon_4",
   "item_armor_1", "item_armor_2", "item_armor_3", "item_armor_4",
   "npc_merchant",
@@ -165,6 +166,9 @@ const AUDIO_LIST = [
   "bgm_title", "bgm_field", "bgm_boss",
   // 스테이지별 전용 BGM (v1.2 이관 — 사용자 지시 #7 BGM 다양화)
   "bgm_village", "bgm_alfheim", "bgm_cave", "bgm_snow", "bgm_abyss",
+  // v3.0.20 (#10) — 제2 변주 트랙 8종 (gen_bgm2.py — 분위기별 로테이션)
+  "bgm_title2", "bgm_field2", "bgm_boss2", "bgm_village2",
+  "bgm_alfheim2", "bgm_cave2", "bgm_snow2", "bgm_abyss2",
   "sfx_swing", "sfx_hit", "sfx_spin", "sfx_dash", "sfx_hurt",
   "sfx_pickup", "sfx_quest", "sfx_levelup", "sfx_portal",
   "sfx_roar", "sfx_die", "sfx_bossdie",
@@ -206,7 +210,7 @@ export class BootScene extends Phaser.Scene {
       this.load.image(k, `${k}.png`);
     }
     for (const [k, w, h] of X2_SPELLS) this.load.spritesheet(k, `${k}.png`, { frameWidth: h, frameHeight: h });
-    for (const k of ["x2_arrow", "x2_arrow_green", "x2_bricks", "x2_bow"]) this.load.image(k, `${k}.png`); // v3.0.16 — 데드아이 초록 화살 추가
+    for (const k of ["x2_arrow", "x2_arrow_green", "x2_arrow_sky", "x2_bricks", "x2_bow"]) this.load.image(k, `${k}.png`); // v3.0.16 — 데드아이 초록 화살 · v3.0.20 — 스카이로드 구름색 화살
     // 마을 모닥불 (Serene Village 32x32 4프레임 — v1.5 이관)
     this.load.spritesheet("sv_campfire", "sv_campfire.png", { frameWidth: 32, frameHeight: 32 });
     /* v3.0.8 디자인 개편 — Warped Shooting Fx / Cartoon FX Remaster 신규 VFX 시트 */

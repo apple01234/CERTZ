@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_FALLBACK_FROM, upgradeCost, sellValue, type BuffKey as BuffKeyT,
-  starWeaponBonus, starArmorBonus, STAR_MILESTONES,
+  starWeaponBonus, starArmorBonus, STAR_MILESTONES, starPerStarAtk, starPerStarDef,
   TRADE_PRICES, tradeValue, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
   sumPotLines, FAMILY_ELEM, rollPotentials, activeSetBonus, collectionBonus,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
@@ -83,7 +83,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* v3.0.6 (지시 #4 — 그림자 숨기) — 다음 기본공격 강화 플래그 */
   nextAtkEmpowered = false;
   /* v3.0.6 (지시 #5) — 자동 물약/자동 버프 설정 (hpPct 0=끝, mpOn, 버프 키 목록) */
-  autoUse: { hpPct: number; mpOn: boolean; buffs: BuffKey[] } = { hpPct: 0, mpOn: false, buffs: [] };
+  autoUse: { hpPct: number; mpPct: number; mpOn: boolean; buffs: BuffKey[] } = { hpPct: 0, mpPct: 0, mpOn: false, buffs: [] };
   private autoBuffAcc = 0;
   /** v3.0.6 (지시 #8) — 보스 공격 방어 관통률 (Boss.takeDamage 호출 시 true) */
   bossPierceHit = false;
@@ -331,6 +331,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.atkSlash(dir);
   }
 
+  /** v3.0.20 (#6) — 근접 직업별 검기 색 ("검기 색깔이 다 같아" — 직업 정체성 분리)
+   *  미정의 키: 전사 계열 강철 은백, 그 외 원래 색(틴트 없음) */
+  private meleeSlashTint(): number | undefined {
+    const map: Partial<Record<ClassKey, number>> = {
+      warrior: 0xd6e6ff,      // 전사 — 강철 은백
+      berserker: 0xff5c4a,    // 버서커 — 광기의 혈색
+      guardian: 0x7cb8ff,     // 가디언 — 수호 강철푸른
+      warlord: 0xff9a3a,      // 워로드 — 전장의 활화
+      paladin: 0xffe29a,      // 팔라딘 — 성스러운 금
+      warbringer: 0xff3d2e,   // 워브링어 — 전쟁의 진홍
+      crusader: 0xfff3c2,     // 크루세이더 — 심판의 성광
+      thief: 0xc08aff,        // 도적 — 기존 보라 유지
+      assassin: 0x8a5cff,     // 어세신 — 암살 심보라
+      swashbuckler: 0x6ff2d8, // 스와시버클러 — 파도의 청록
+      nightblade: 0x7a4aff,   // 나이트블레이드 — 야경 보라
+      duelist: 0xff6ac8,      // 듀얼리스트 — 결투 로즈
+      shadowlord: 0xa86aff,   // 섀도우로드 — 그림자 보라
+      blademaster: 0xffaaff,  // 블레이드마스터 — 극검 살홍
+    };
+    return this.cls ? map[this.cls] : undefined;
+  }
+
   /** 참격 (미전직 + 전사 공용 뼈대) — 전사는 2연타·확대 판정·강화 배율
    *  v3.0.6 (지시 #3 — 전직마다 기본공격 강화): 2차+ 3연타 / 3차+ 마지막 타 검기 파동 / 4차+ 대형 파동+출혈 */
   private atkSlash(dir: Phaser.Math.Vector2) {
@@ -348,13 +370,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setFlipX(dir.y === 0 && dir.x > 0); // v3.0.10 — 측면 시트는 왼쪽 기준
     this.play(atkKey);
     // v3.0.2 — 도적(단검)은 참격 검기를 보라색으로 (무기 정체성)
-    const thiefTint = fam === "thief" ? 0xc08aff : undefined;
+    // v3.0.20 (#6) — 근접 직업 전원 검기 색 분리 (전원이 같은 색이었다)
+    const slashTint = this.meleeSlashTint();
 
     // 베기 타이밍: 65ms 후 판정+참격 스윕 (모션 2프레임 시점)
     this.scene.time.delayedCall(65, () => {
       if (this.state !== "attack") return;
       this.swingDone = true;
-      this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, warrior ? 1.15 : 1, thiefTint);
+      this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, warrior ? 1.15 : 1, slashTint);
       this.scene.sfxSwing();
       // 참격 판정 확대 — 전방 160px x 폭 116px (사용자 지시: 히트박스 크게)
       this.checkMeleeHit(dir, reach, 116, dmgMul, knock);
@@ -365,7 +388,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (t >= 1) {
       this.scene.time.delayedCall(195, () => {
         if (this.state !== "attack") return;
-        this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, 0.95, thiefTint);
+        this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, 0.95, slashTint);
         this.scene.sfxSwing();
         this.checkMeleeHit(dir, reach, 116, dmgMul * 0.8, knock * 0.8);
       });
@@ -373,7 +396,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (t >= 2) {
       this.scene.time.delayedCall(300, () => {
         if (this.state !== "attack") return;
-        this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 0.9, thiefTint);
+        this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 0.9, slashTint);
         this.scene.sfxSwing();
         this.checkMeleeHit(dir, reach, 116, dmgMul * 0.7, knock * 0.6);
         if (t >= 3) {
@@ -383,7 +406,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.firePlayerProj({
             x: this.x, y: this.y - 8,
             angle, speed: 520, pierce: t >= 4 ? 5 : 3, dmg, crit,
-            tint: fam === "thief" ? 0xc08aff : 0xffb08a, knock: 220,
+            tint: slashTint ?? 0xffb08a, knock: 220,
             scale: t >= 4 ? 1.5 : 1.0,
             tex: "x3_shuriken", blend: t >= 4 ? "add" : "normal", rot: true,
           });
@@ -419,11 +442,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.nextAtkEmpowered = false;
     const shots = Math.max(1, t); // v3.0.15 (#4): N차 = N발
     const pierce = 1 + (t >= 2 ? 1 : 0);
-    const deadeye = t >= 4;
-    const arrowTex = deadeye ? "x2_arrow_green" : "x2_arrow"; // v3.0.16 — 데드아이 초록 화살
+    const isDeadeye = this.cls === "deadeye";
+    const isSkylord = this.cls === "skylord"; // v3.0.20 (#1) — 스카이로드 계열은 구름색(하늘색) 화살
+    const arrowTex = isDeadeye ? "x2_arrow_green" : isSkylord ? "x2_arrow_sky" : "x2_arrow";
     const arrowTint = 0xffffff; // 텍스처 자체 색 사용 (초록 화살은 텍스처가 에메랄드)
-    const trailHex = deadeye ? 0x53ff9a : t >= 2 ? this.clsHex() : 0xffd98a; // 잔상색: 4차 초록발광 / 2~3차 클래스색 / 그 외 골드
-    const flashHex = deadeye ? 0x7dffb0 : t >= 2 ? this.clsHex() : 0xffe08a; // 머즐 플래시색
+    const trailHex = isDeadeye ? 0x53ff9a : isSkylord ? 0x9fd8ff : t >= 2 ? this.clsHex() : 0xffd98a; // 잔상색: 데드아이 초록발광 / 스카이로드 구름발광 / 2~3차 클래스색 / 그 외 골드
+    const flashHex = isDeadeye ? 0x7dffb0 : isSkylord ? 0xc2ecff : t >= 2 ? this.clsHex() : 0xffe08a; // 머즐 플래시색
     const spread = 0.1 + 0.03 * t; // v3.0.16 — 부채꼴 확대 (1차 0.13°rad ~ 4차 0.22rad)
 
     const fireOne = (i: number) => {
@@ -494,7 +518,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             x: this.x, y: this.y - 10,
             angle: angle + (shots > 1 ? (i - (shots - 1) / 2) * 0.09 : 0),
             speed: 540, pierce: 2, dmg, crit,
-            tint: 0xffffff, knock: 200, scale: 0.85 + 0.1 * t,
+            tint: this.cls === "eternal" ? 0xffdf6e : 0xffffff, knock: 200, scale: 0.85 + 0.1 * t, // v3.0.20 (#5) — 이터널 기본공격은 시간지기 노랑
             anim: "fx2-bolt", blend: "add", rot: true, // v3.0.12 — 방향성 텍스처: 비행 방향으로 회전 (v3.0.8 스킨 교체 시 누락됐던 것)
           });
         });
@@ -507,7 +531,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.firePlayerProj({
             x: this.x, y: this.y - 10,
             angle: angle + 0.14, speed: 600, pierce: 1, dmg: d2.dmg, crit: d2.crit,
-            tint: 0xffffff, knock: 150, scale: 0.85,
+            tint: this.cls === "eternal" ? 0xffc94a : 0xffffff, knock: 150, scale: 0.85, // v3.0.20 (#5) — 이터널 유도뢰도 노랑
             anim: "fx-darkbolt", blend: "normal", rot: true, // v3.0.12 — 다크볼트도 방향 회전
           });
         });
@@ -843,7 +867,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             angle: base + (i - (n - 1) / 2) * spread,
             speed: 580, pierce: 2 + t, dmg, crit,
             tint: t >= 2 ? hex : 0xffffff, knock: 250, scale: 1.0 + 0.08 * t,
-            tex: "x2_arrow", blend: t >= 4 ? "add" : "normal", rot: true,
+            tex: this.cls === "skylord" ? "x2_arrow_sky" : "x2_arrow", blend: t >= 4 ? "add" : "normal", rot: true, // v3.0.20 (#1) — 스카이로드 일제사격도 구름색 화살
             trail: t >= 2 ? hex : 0xffd98a, // v3.0.16 — 잔상
           });
           this.scene.spawnBurstAt(this.x + aim.x * 16, this.y - 8, 2, t >= 2 ? hex : 0xffe08a);
@@ -2463,8 +2487,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   get atkTotal(): number {
     /* v3.0.15 (#13) — 무기 잠재옵션 공격력 합산 */
     const potAtk = sumPotLines([this.potentials[this.weapon]]).atk;
+    /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +2 + 무기 기본 공격력의 8% (마일스톤은 별도) */
+    const perStar = starPerStarAtk(ITEMS[this.weapon].atk ?? 0) * this.upgrades.weapon;
     const base =
-      this.atk + (ITEMS[this.weapon].atk ?? 0) + this.upgrades.weapon * 2 +
+      this.atk + (ITEMS[this.weapon].atk ?? 0) + perStar +
       starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3 + potAtk;
     const buff = this.hasBuff("buff_atk") || this.hasBuff("buff_king") ? 1.25 : 1;
     const king = this.hasBuff("buff_king") ? 1.3 / 1.25 : 1; // v3.0.6 — 왕의 가호 공격 +30%
@@ -2489,8 +2515,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const potDef = sumPotLines([this.potentials[this.armor]]).def;
     /* v3.0.16 — 세트 방어력 보너스 */
     const setDef = this.activeSet?.bonus.defAdd ?? 0;
+    /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +1 + 기본 방어의 6% */
+    const perStar = starPerStarDef(ITEMS[this.armor].def ?? 0).def * this.upgrades.armor;
     return ((
-      (ITEMS[this.armor].def ?? 0) + this.upgrades.armor +
+      (ITEMS[this.armor].def ?? 0) + perStar +
       starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff + potDef + setDef
     )) + kingDef;
   }
@@ -2501,9 +2529,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   get starHpApplied() { return this.sfHpApplied; }
   /** 세이브 복원 — 가산 이력만 선복원 (syncStarHp가 델타만 반영하게) */
   restoreStarHp(applied: number) { this.sfHpApplied = applied || 0; }
-  /** 마일스톤 방어구 HP 보너스를 maxHp에 동기화 (로드/강화 후 호출) */
+  /** 마일스톤 방어구 HP 보너스를 maxHp에 동기화 (로드/강화 후 호출)
+   *  v3.0.20 (#8) — 본당 HP +12도 동기화 대상 */
   syncStarHp() {
-    const target = starArmorBonus(this.upgrades.armor).hp;
+    const target = starArmorBonus(this.upgrades.armor).hp + starPerStarDef(ITEMS[this.armor].def ?? 0).hp * this.upgrades.armor;
     const delta = target - this.sfHpApplied;
     if (delta === 0) return;
     this.maxHp = Math.max(60, this.maxHp + delta);
@@ -2642,15 +2671,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     else if (slotKey === "potion_mp") have = this.potions.mp > 0;
     else have = this.owned.includes(slotKey);
     if (!have) return false;
-    const used = isHp ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
+    /* v3.0.20 (#7) — 엘릭서(healFull)는 HP/MP 전부 100% 회복 */
+    const used = item.healFull ? this.restoreAll() : isHp ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
     if (!used) return false;
     if (slotKey === "potion_hp") this.potions.hp--;
     else if (slotKey === "potion_mp") this.potions.mp--;
     else this.consumeConsumable(slotKey);
     this.potCd = 800;
     this.scene.sfxPotion();
-    this.scene.spawnPickupText(this.x, this.y - 30, isHp ? `+${item.heal} HP` : `+${item.restore} MP`, "#7dffa8");
+    this.scene.spawnPickupText(
+      this.x, this.y - 30,
+      item.healFull ? "HP/MP 전부 회복!" : isHp ? `+${item.heal} HP` : `+${item.restore} MP`,
+      item.healFull ? "#ffd76a" : "#7dffa8",
+    );
     this.scene.emitHud();
+    return true;
+  }
+
+  /** v3.0.20 (#7) — HP/MP 동시 전체 회복 (엘릭서 전용 — 기존 healFull()과 이름 충돌 피함). 둘 다 만험이면 실패 */
+  private restoreAll(): boolean {
+    if (this.hp >= this.maxHp && this.mp >= this.maxMp) return false;
+    this.hp = this.maxHp;
+    this.mp = this.maxMp;
     return true;
   }
 
@@ -2692,20 +2734,42 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  /** 상급 물약 사용 — 즉시 효과 + 차감 */
-  useConsumablePotion(key: "potion_hp2" | "potion_mp2"): boolean {
+  /** 상급 물약/엘릭서 사용 — 즉시 효과 + 차감 (v3.0.20 — 엘릭서 추가) */
+  useConsumablePotion(key: "potion_hp2" | "potion_mp2" | "potion_elixir"): boolean {
     if (this.state === "dead") return false;
     const item = ITEMS[key];
     if (!item || !this.owned.includes(key)) return false;
-    const used = key === "potion_hp2" ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
+    const used = item.healFull ? this.restoreAll() : key === "potion_hp2" ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
     if (!used) return false;
     this.consumeConsumable(key);
     this.scene.sfxPotion();
     this.scene.spawnPickupText(
       this.x, this.y - 30,
-      key === "potion_hp2" ? `+${item.heal} HP` : `+${item.restore} MP`,
-      "#7dffa8"
+      item.healFull ? "HP/MP 전부 회복!" : key === "potion_hp2" ? `+${item.heal} HP` : `+${item.restore} MP`,
+      item.healFull ? "#ffd76a" : "#7dffa8"
     );
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** v3.0.20 (#7) — 물약 판매: 기본 물약은 카운터 차감, 상급/엘릭서는 owned 차감 (상점가 40%) */
+  sellPotion(key: "potion_hp" | "potion_mp" | "potion_hp2" | "potion_mp2" | "potion_elixir"): boolean {
+    const item = ITEMS[key];
+    if (!item) return false;
+    const value = sellValue(item);
+    if (value <= 0) return false;
+    if (key === "potion_hp") {
+      if (this.potions.hp <= 0) return false;
+      this.potions.hp--;
+    } else if (key === "potion_mp") {
+      if (this.potions.mp <= 0) return false;
+      this.potions.mp--;
+    } else {
+      if (!this.consumeConsumable(key)) return false;
+    }
+    this.gold += value;
+    audio.sfx.coin();
+    this.scene.spawnPickupText(this.x, this.y - 30, `${item.name} 판매 +${value}G`, "#ffd76a");
     this.scene.emitHud();
     return true;
   }
@@ -2979,9 +3043,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  /** 자동 사용 설정 변경 (지시 #5) */
-  setAutoUse(cfg: Partial<{ hpPct: number; mpOn: boolean; buffs: BuffKey[] }>) {
+  /** 자동 사용 설정 변경 (지시 #5) — v3.0.20 (#3) MP도 % 지정 가능 (mpOn 부울 대체) */
+  setAutoUse(cfg: Partial<{ hpPct: number; mpPct: number; mpOn: boolean; buffs: BuffKey[] }>) {
     if (cfg.hpPct !== undefined) this.autoUse.hpPct = cfg.hpPct;
+    if (cfg.mpPct !== undefined) this.autoUse.mpPct = cfg.mpPct;
     if (cfg.mpOn !== undefined) this.autoUse.mpOn = cfg.mpOn;
     if (cfg.buffs !== undefined) this.autoUse.buffs = [...cfg.buffs];
   }
@@ -2996,8 +3061,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const mpHave = mpKey === "potion_mp" ? this.potions.mp > 0 : this.owned.includes(mpKey);
     if (cfg.hpPct > 0 && this.hp <= this.maxHp * (cfg.hpPct / 100) && hpHave && this.potCd <= 0) {
       this.usePotion("hp");
-    } else if (cfg.mpOn && this.mp <= this.maxMp * 0.25 && mpHave && this.potCd <= 0) {
-      this.usePotion("mp");
+    } else {
+      /* v3.0.20 (#3) — MP 자동 사용도 % 지정 (기존 mpOn=true는 25% 고정 → 마이그레이션: mpPct 기본 25) */
+      const mpPct = cfg.mpPct > 0 ? cfg.mpPct : cfg.mpOn ? 25 : 0;
+      if (mpPct > 0 && this.mp <= this.maxMp * (mpPct / 100) && mpHave && this.potCd <= 0) {
+        this.usePotion("mp");
+      }
     }
     this.autoBuffAcc += 1;
     if (this.autoBuffAcc < 12) return; // ~0.2초마다 버프 체크 (저사율 기기 배려)

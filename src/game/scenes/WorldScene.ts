@@ -543,6 +543,7 @@ export class WorldScene extends Phaser.Scene {
       if (savedPlayer.autoUse) {
         this.player.autoUse = {
           hpPct: savedPlayer.autoUse.hpPct ?? 0,
+          mpPct: savedPlayer.autoUse.mpPct ?? (savedPlayer.autoUse.mpOn ? 25 : 0), // v3.0.20 (#3) 기존 mpOn 마이그레이션
           mpOn: savedPlayer.autoUse.mpOn ?? false,
           buffs: (savedPlayer.autoUse.buffs ?? []) as BuffKey[],
         };
@@ -2628,7 +2629,8 @@ export class WorldScene extends Phaser.Scene {
     const onUseItem = (v: { key: string }) => {
       if (!this.player || this.dialoguing || this.player.state === "dead") return;
       const key = v.key as ItemKey;
-      if (key === "potion_hp2" || key === "potion_mp2") {
+      if (key === "potion_hp2" || key === "potion_mp2" || key === "potion_elixir") {
+        // v3.0.20 (#7) — 엘릭서(HP/MP 100% 회복) 포함
         this.player.useConsumablePotion(key);
         this.emitRpgState();
         return;
@@ -2786,6 +2788,16 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: "판매 완료 — 상점가의 40%" });
       }
     };
+    /* v3.0.20 (#7) — 물약 판매 (기본은 카운터 차감, 상급/엘릭서는 owned) */
+    const onSellPotion = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const okSell = this.player.sellPotion(v.key as "potion_hp" | "potion_mp" | "potion_hp2" | "potion_mp2" | "potion_elixir");
+      if (okSell) {
+        this.save();
+        this.emitRpgState();
+        EventBus.emit("banner:show", { text: "물약 판매 완료 — 상점가의 40%" });
+      }
+    };
     /* v3.0.6 (지시 #1) — BM 상점 구매 (에메랄드) */
     const onBmBuy = (v: { key: string }) => {
       if (!this.player || this.dialoguing) return;
@@ -2804,10 +2816,11 @@ export class WorldScene extends Phaser.Scene {
       }
     };
     /* v3.0.6 (지시 #5) — 자동 물약/자동 버프 설정 */
-    const onAutoSet = (v: { hpPct?: number; mpOn?: boolean; buffs?: string[] }) => {
+    const onAutoSet = (v: { hpPct?: number; mpPct?: number; mpOn?: boolean; buffs?: string[] }) => {
       if (!this.player) return;
       this.player.setAutoUse({
         hpPct: v.hpPct,
+        mpPct: v.mpPct,
         mpOn: v.mpOn,
         buffs: v.buffs as BuffKey[] | undefined,
       });
@@ -2891,7 +2904,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       const pot = this.player.rerollPotentials(v.key as ItemKey);
       if (!pot) {
-        EventBus.emit("banner:show", { text: "eert 큐브가 없습니다 (상점 1200G)" });
+        EventBus.emit("banner:show", { text: "eert 큐브가 없습니다 (BM 상점 8💎)" });
         return;
       }
       const meta = POT_GRADE_META[pot.grade];
@@ -2938,6 +2951,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:starScroll", onStarScroll);
     EventBus.on("rpg:upgradeAcc", onUpgradeAcc);
     EventBus.on("rpg:sell", onSell);
+    EventBus.on("rpg:sellPotion", onSellPotion);
     EventBus.on("rpg:bmBuy", onBmBuy);
     /* v3.0.15 — 신규 패널 리스너 */
     EventBus.on("rpg:autoAlloc", onAutoAlloc);
@@ -2977,6 +2991,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:useItem", onUseItem);
       EventBus.off("rpg:warp", onWarp);
       EventBus.off("rpg:sell", onSell);
+      EventBus.off("rpg:sellPotion", onSellPotion);
       EventBus.off("rpg:bmBuy", onBmBuy);
       EventBus.off("rpg:autoset", onAutoSet);
       EventBus.off("rpg:autohunt", onAutoHunt);
@@ -3227,20 +3242,33 @@ export class WorldScene extends Phaser.Scene {
     const live = targets.filter((e) => e.active && !this.autoBlacklist.has(e));
     if (live.length === 0) return;
     let best: Enemy | Boss = live[0];
-    let bestD = Infinity;
+    let bestEff = Infinity;
+    /* v3.0.20 (#4) — 몬스터 밀집 지역 선호: 거리에 주변 밀집도 가중치 반영
+     *  주변(220px) 적 1마리당 유효 거리 12% 감소(최대 45%) → 자연스럽게 사냥터 한복판으로 이동 */
+    const densityEff = (e: Enemy | Boss, d: number): number => {
+      let near = 0;
+      for (const o of live) {
+        if (o === e) continue;
+        if (Phaser.Math.Distance.Between(e.x, e.y, o.x, o.y) <= 220) near++;
+      }
+      return d * (1 - Math.min(0.45, near * 0.12));
+    };
     for (const e of live) {
       const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
-      if (d < bestD) {
-        bestD = d;
+      const eff = densityEff(e, d);
+      if (eff < bestEff) {
+        bestEff = eff;
         best = e;
       }
     }
     const curT = this.autoTarget;
     if (curT && curT !== best && curT.active && !this.autoBlacklist.has(curT)) {
       const curD = Phaser.Math.Distance.Between(this.player.x, this.player.y, curT.x, curT.y);
-      if (curD <= bestD * 1.25 && curD < 420) best = curT; // 조금 더 가까워도 타겟 유지
+      const curEff = densityEff(curT, curD);
+      if (curEff <= bestEff * 1.25 && curD < 420) best = curT; // 밀집 보너스 반영한 히스테리시스
     }
     this.autoTarget = best;
+    const bestD = Phaser.Math.Distance.Between(this.player.x, this.player.y, best.x, best.y); // v3.0.20 (#4) — 실거리 기준 판정 유지
     const fam = familyOf(this.player.cls);
     const ranged = fam === "ranger" || fam === "mage";
     const atkRange = ranged ? 250 : 56;
