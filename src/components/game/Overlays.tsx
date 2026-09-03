@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.26 · "서쪽숲 없음" 문구 수정(동쪽 차원문→숲의 신전) + 일퀘(라고스 의뢰) 스토리 완료 후 해금 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.27 · 스킬 효과음 전면 교체(레트로 CC0 팩 — 27종) + 스킬 아이콘 로드 실패 자동 폴백 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 

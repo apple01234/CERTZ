@@ -337,3 +337,24 @@ Stage Summary:
 - 로컬 샌드박스 서버 완전 복구(게임+멀티+APK 라우트), FC 재배포는 Complete 트리거 예정 — 배포되면 https://sertz1234.space-z.ai/SERTZ-v3.0.26.apk 자동 복구
 - JDK/Android SDK가 /home/z/jdk·/home/z/android-sdk에 상주 — 향후 APK 재빌드는 bash scripts/build_apk.sh 한 줄
 - 알려진 한계: FC 배포본은 standalone 기반이라 멀티플레이(socket.io)는 샌드박스 서버에서만 동작(이전 배포와 동일 조건)
+
+---
+Task ID: 25
+Agent: Super Z (main)
+Task: v3.0.27 (versionCode 41) — 피드백 "1. 스킬 효과음 ㅈㄴ 짜침(다른 사이트/api로 교체, 이전 효과음이 낫겠다) 2. 스킬 아이콘 안불러와짐"
+
+Work Log:
+- [#1 효과음] 원인: v3.0.24의 27종 스킬 SFX가 효과음연구소(soundeffect-lab.info) 애니 계열 — 유저가 거부. 유저 선호는 기존 베이스 SFX(Rubberduck/Juhani Junkala 512 CC0) 톤
+- 교체 설계: asset-sources의 Junkala 512 팩 + Kenney RPG Audio(CC0, knifeSlice2)로 27키 전부 재매핑 — 파일명(skl_*.ogg) 유지로 audio.ts 매핑·BootScene 프리로드 무변경
+- 배리어 프리 설계: 자주 울리는 기본공격(arrow 0.12s/cast 0.35s/knife 0.57s)은 짧은 소스, 바람은 depressurizing을 구간 트림(-t 1.3 / -ss 2.2 + afade)으로 2종 변주, 시간계열은 mechanicalnoise 트림. 전 파일 loudnorm I=-15 통일
+- 매핑 예: arrow=singleshot17, cast=laser4, thunder=exp_long3, holy=bling, gravity=impact9, skyflight=grenadewhistle1, warcry=fanfare2, dark=error1
+- [#2 아이콘] 실측: 웹/APK 모두 82종 파일·HTTP 200 정상 — 유저 환경(구 APK/웹뷰 캐시) 국지 문제로 추정. 방어책으로 SkillButton에 onError 폴백 추가(로드 실패 시 기존 lucide 아이콘으로 자동 전환, 전직 시 리셋은 렌더 중 상태 조정 패턴 — set-state-in-effect 룰 회피)
+- [버전] build.gradle 41/3.0.27, Overlays 배지, server.js 라우트(/SERTZ-v3.0.27.apk), build_apk.sh, join 2종, 안내 txt 갱신. v3.0.26 산출물은 정책상 완전 대체(삭제)
+- [빌드 사고 재발·근치 수정] 첫 빌드 278MB — 원인: export 빌드(next build)가 public/의 APK를 .next-apk로 '복사한 뒤' cap sync 수납(기존 격리는 cap sync 직전에만 실행). 수정: 격리를 export '전'[0.5]으로 이동 + .next-apk/*.apk 이중 제거[1.3] → 재빌드 140.3MB 정상
+- 배포: 웹빌드(standalone) → APK(aapt 41/3.0.27 실측, 내부 .apk 0개) → 분할 50MB×3(재결합 sha256 306670c2 일치) → public/SERTZ-v3.0.27.apk 배치(FC 정적 서빙) → 서버 재기동
+- 검증: eslint 0(electron/server.js는 Node CommonJS라 ignores 추가) + 브라우저 실측 — 타이틀 v3.0.27 배지, 스킬 아이콘 ok:true, 신규 skl 27건 전부 200, 4xx/5xx 0건, 페이지/socket.io/APK 라우트 200
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.27.apk(140.3MB, versionCode 41) + part1~3 + join 스크립트 + 안내 txt · v3.0.26 APK+분할은 제거
+- 이펙트 소스 정리: BGM=Kevin MacLeod/Juhani Junkala 칩텐즈, 베이스+스킬 SFX=Junkala 512(+Kenney 1종) — 전부 CC0로 통일
+- 유저 피드백 대기: 새 효과음 호불호 · 스킬 아이콘 폴백이 유저 환경에서 해소되는지

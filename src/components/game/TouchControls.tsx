@@ -367,6 +367,15 @@ function SkillButton({
   onDown: () => void;
   icon?: string;
 }) {
+  /* v3.0.27 — 아이콘 로드 실패 시 lucide 폴백 (웹뷰 캐시 오류 등 어떤 환경에서도 버튼이 깨지지 않게)
+     전직 등으로 icon 경로가 바뀌면 렌더 중 상태 조정 패턴으로 에러 플래그 리셋 */
+  const [prevIcon, setPrevIcon] = useState(icon);
+  const [iconErr, setIconErr] = useState(false);
+  if (prevIcon !== icon) {
+    setPrevIcon(icon);
+    setIconErr(false);
+  }
+  const showIcon = !!icon && !iconErr;
   return (
     <button
       aria-label={label}
@@ -382,8 +391,14 @@ function SkillButton({
       }}
     >
       {/* v3.0.8 디자인 개편 — 클래스별 스킬 아이콘 (RPG Icons Pixel Art). 없으면 기존 lucide 폴백 */}
-      {icon ? (
-        <img src={icon} alt="" className="h-6 w-6 rounded-sm sm:h-7 sm:w-7" style={{ imageRendering: "pixelated" }} />
+      {showIcon ? (
+        <img
+          src={icon}
+          alt=""
+          onError={() => setIconErr(true)}
+          className="h-6 w-6 rounded-sm sm:h-7 sm:w-7"
+          style={{ imageRendering: "pixelated" }}
+        />
       ) : (
         children
       )}

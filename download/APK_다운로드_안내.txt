@@ -1,39 +1,36 @@
-SERTZ v3.0.26 APK 다운로드 안내
+SERTZ v3.0.27 APK 다운로드 안내
 ================================
 
-이번 버전 (v3.0.26, versionCode 40)
-- "1차 전직 퀘스트의 서쪽숲이 없는데??" 수정 — 퀘스트 제목·설명·대사·화살표 라벨을
-  실제 지역명으로 통일: 마을 [동쪽 차원문] → '숲의 신전'(2-1)
-- 일퀘(라고스 의뢰/반복 토벌 의뢰)를 전체 스토리 완료(최종 보스 클리어) 후에만 해금
-  — 스토리 진행 중엔 라고스가 그냥 상점으로만 응대, 퀘스트창에도 반복 의뢰 미노출
-- 이전 버전(v3.0.25) 포함: 조이스틱 풀당김 감속 수정 / 다음 퀘스트 자동 추적 /
-  대형 어시스트 화살표 / 자동사냥 개선 / 퀘스트창·보스재도전창 분리 /
-  엘릭서 보라 아이콘 / 대사 초상화 비율·깨짐 방지 / "(그루)" 제거
+이번 버전 (v3.0.27, versionCode 41)
+- 스킬 효과음 27종 전면 교체 — 기존 라이브러리 SFX → 게임 전체 톤과 맞는 레트로 CC0 사운드 팩
+  (기본 효과음과 같은 계열이라 자연스럽게 어울립니다. 귀여운 아나운스/애니 계열 전부 제거)
+- 스킬 아이콘 로드 실패 시 자동 폴백 — 어떤 환경(웹뷰 캐시 오류 등)에서도 스킬 버튼이 깨지지 않음
+- 이전 버전(v3.0.26) 포함: 서쪽숲 문구 수정 / 일퀘 스토리 완료 후 해금 / 조이스틱·자동사냥 개선
 
 APK 용량이 약 141MB라 파일 하나가 목록에 안 보일 수 있어 3분할로 제공합니다.
 
 ■ 방법 1 — 폰에서 바로 (제일 쉬움, 권장)
   게임 웹 주소 뒤에 파일명을 붙여 브라우저로 열기:
-  https://sertz1234.space-z.ai/SERTZ-v3.0.26.apk
+  https://sertz1234.space-z.ai/SERTZ-v3.0.27.apk
   → 즉시 다운로드 시작 (서버 직결)
 
 ■ 방법 2 — Windows (파일 패널에서 받기)
   1. 아래 4개 파일을 같은 폴더에 다운로드
-     - SERTZ-v3.0.26.apk.part1 / part2 / part3
+     - SERTZ-v3.0.27.apk.part1 / part2 / part3
      - join_apk.bat
-  2. join_apk.bat 더블클릭 → SERTZ-v3.0.26.apk 생성
+  2. join_apk.bat 더블클릭 → SERTZ-v3.0.27.apk 생성
   3. 폰으로 옮겨서 설치
 
 ■ 방법 3 — Mac / Linux
   파트 3개 + join_apk.sh 를 같은 폴더에 받고:  sh join_apk.sh
 
 ■ 직접 합치기
-  Windows CMD:  copy /b SERTZ-v3.0.26.apk.part1+SERTZ-v3.0.26.apk.part2+SERTZ-v3.0.26.apk.part3 SERTZ-v3.0.26.apk
-  Mac/Linux:    cat SERTZ-v3.0.26.apk.part1 SERTZ-v3.0.26.apk.part2 SERTZ-v3.0.26.apk.part3 > SERTZ-v3.0.26.apk
+  Windows CMD:  copy /b SERTZ-v3.0.27.apk.part1+SERTZ-v3.0.27.apk.part2+SERTZ-v3.0.27.apk.part3 SERTZ-v3.0.27.apk
+  Mac/Linux:    cat SERTZ-v3.0.27.apk.part1 SERTZ-v3.0.27.apk.part2 SERTZ-v3.0.27.apk.part3 > SERTZ-v3.0.27.apk
 
 ■ 검증 (선택)
-  aapt: versionCode 40 / versionName 3.0.26 정상
-  기존 세이브 그대로 이어서 플레이 가능
+  aapt: versionCode 41 / versionName 3.0.27 정상
+  기존 세이브 그대로 이어서 플레이 가능 (v3.0.26 위에 덮어 설치)
 
 ■ 멀티플레이 (APK ↔ PC)
   1. PC 브라우저: https://sertz1234.space-z.ai 열고 게임 시작
@@ -41,4 +38,4 @@ APK 용량이 약 141MB라 파일 하나가 목록에 안 보일 수 있어 3분
   3. 같은 주소로 접속한 기기끼리 같은 월드에서 만납니다 (채팅/파티/친구 지원)
 
 ■ 설치
-  기존 SERTZ 위에 덮어 설치하면 됩니다 (데이터 유지, versionCode 40)
+  기존 SERTZ 위에 덮어 설치하면 됩니다 (데이터 유지, versionCode 41)
