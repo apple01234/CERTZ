@@ -1080,7 +1080,8 @@ export class WorldScene extends Phaser.Scene {
         const ex3 = rng3.between(140, this.stageW - 140);
         const ey3 = rng3.between(90, this.stageH - 90);
         if (Math.abs(ey3 - this.stageH / 2) < 80) continue;
-        this.add.image(ex3, ey3, "tile_magma").setDepth(0).setScale(0.5).setTint(0xffb070);
+        /* v3.0.19 — tile_magma 64→256px 텍스처 전환: 0.5→0.125 스케일 (시각 32px 동일 유지) */
+        this.add.image(ex3, ey3, "tile_magma").setDepth(0).setScale(0.125).setTint(0xffb070);
         const g = this.add
           .image(ex3, ey3, "glow")
           .setDepth(0)
