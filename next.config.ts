@@ -18,6 +18,16 @@ const nextConfig: NextConfig = isApkExport
       output: "standalone",
       typescript: { ignoreBuildErrors: true },
       reactStrictMode: false,
+      // v3.0.26 → v3.0.27: 유저가 저장해둔 구버전 APK 링크도 새 버전으로 연결
+      async redirects() {
+        return [
+          {
+            source: "/SERTZ-v3.0.26.apk",
+            destination: "/SERTZ-v3.0.27.apk",
+            permanent: true,
+          },
+        ];
+      },
     };
 
 export default nextConfig;

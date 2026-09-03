@@ -358,3 +358,22 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.27.apk(140.3MB, versionCode 41) + part1~3 + join 스크립트 + 안내 txt · v3.0.26 APK+분할은 제거
 - 이펙트 소스 정리: BGM=Kevin MacLeod/Juhani Junkala 칩텐즈, 베이스+스킬 SFX=Junkala 512(+Kenney 1종) — 전부 CC0로 통일
 - 유저 피드백 대기: 새 효과음 호불호 · 스킬 아이콘 폴백이 유저 환경에서 해소되는지
+
+---
+Task ID: 26
+Agent: Super Z (main)
+Task: "404 — apk다운링크" 재접수 → FC 재배포 트리거 + 구버전 링크(v3.0.26) 자동 연결 확보
+
+Work Log:
+- 진단: 라이브 도메인(sertz1234.space-z.ai)이 여전히 구 스냅샷 구동(FC 재배포 미반영) — 샌드박스에는 v3.0.27 APK·서버·public 배치가 모두 준비된 상태(Task 25 완료분)임을 실측으로 확인(root 200·/SERTZ-v3.0.27.apk 200)
+- GitHub 저장소 재클론으로 백업 무결성 재확인 후, 871MB 중복 클론본 삭제(디스크 1.8G→2.6G 확보 — 배포 빌드 여유 확보 목적)
+- next.config.ts에 redirects 추가: /SERTZ-v3.0.26.apk → /SERTZ-v3.0.27.apk (permanent) — 유저가 저장해둔 구버전 링크도 새 APK로 자동 연결되도록 함(배포 빌드가 next.config를 그대로 반영하므로 재배포 시 즉시 유효)
+- bun run build 재빌드(standalone, BUILD_ID 갱신) → standalone/public에 SERTZ-v3.0.27.apk(134MB) 자동 수납 확인
+- 로컬 standalone(포트 3100) 실측: 루트 200 / 구링크 308→v3.0.27 / 신링크 206(application/vnd.android.package-archive) 3개 라우트 통과
+- 샌드박스 서버 종료 → dev.sh 감독 루프가 15s 내 자동 재기동(신빌드 적용, PID 7679) — 루트 200·v27 200 재확인
+- Complete 트리거로 FC 재배포 진행(배포 패키지 = standalone+static+public, public APK 정적 서빙 경로)
+
+Stage Summary:
+- 배포되면 두 링크 모두 APK 다운로드 가능: https://sertz1234.space-z.ai/SERTZ-v3.0.27.apk (신규 정식) + https://sertz1234.space-z.ai/SERTZ-v3.0.26.apk (구링크 자동 리다이렉트)
+- 산출물: SERTZ-v3.0.27.apk 134MB(versionCode 41, 서명 동일 키 — 덮어설치 호환)
+- 알려진 한계: FC 배포본은 standalone 기반이라 멀티플레이(socket.io)는 이전 배포와 동일하게 제한
