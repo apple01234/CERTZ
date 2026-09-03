@@ -47,6 +47,7 @@ export function ServerConnect() {
   const [url, setUrl] = useState(() => readUrl());
   const [saved] = useState(() => readUrl());
   const [online, setOnline] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   /* v2.9 — 서버 주소가 비어 있으면 기본 서버를 자동 저장해 즉시 연결 (멀티 첫 경험 개선).
    *  오프라인을 원하면 아래 ‘오프라인’ 버튼으로 해제 가능.
@@ -101,10 +102,34 @@ export function ServerConnect() {
               <X size={14} />
             </button>
           </div>
+          {/* v3.0.23 (#54) — APK↔PC 만남 안내: 현재 서버 주소 표시 + 복사 버튼.
+              PC 브라우저에서 같은 주소를 열면 두 기기가 같은 서버에서 만난다. */}
+          {saved && (
+            <div className="mb-2 flex items-center gap-1.5 rounded-lg border border-sky-300/25 bg-sky-950/40 px-2 py-1.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[8px] font-black text-sky-300/80">현재 서버</p>
+                <p className="truncate text-[10px] font-bold text-sky-100">{saved}</p>
+              </div>
+              <button
+                onClick={() => {
+                  try {
+                    void navigator.clipboard.writeText(saved);
+                    setCopied(true);
+                    window.setTimeout(() => setCopied(false), 1500);
+                  } catch {
+                    /* noop */
+                  }
+                }}
+                className="shrink-0 rounded-md border border-sky-300/40 bg-sky-500/20 px-2 py-1 text-[9px] font-black text-sky-100 active:scale-95"
+              >
+                {copied ? "복사됨" : "복사"}
+              </button>
+            </div>
+          )}
           <p className="mb-2 text-[10px] leading-relaxed text-white/50">
             {electron
               ? "EXE는 내장 로컬 서버로 실행됩니다(싱글/같은 PC 멀티). 웹 버전 서버 주소를 입력하면 그 서버의 플레이어와 함께 플레이할 수 있습니다."
-              : "웹 버전이 실행 중인 서버 주소(https://…)를 입력하면 그 서버의 플레이어와 함께 플레이합니다. 비우면 오프라인(싱글) 모드로 실행됩니다."}
+              : <>APK와 PC에서 만나기: 위 서버 주소를 PC 브라우저에서 열면 됩니다. 같은 주소로 접속한 기기끼리 같은 월드에서 플레이합니다.</>}
           </p>
           <input
             value={url}

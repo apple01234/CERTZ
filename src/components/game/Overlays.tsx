@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.22 · 자동사냥 맵 전체 밀집 이동 + 전직 퀘스트 게이트 + 세계수 결정 9종 + 멀티서버 복구 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.23 · 구역별 고정 BGM(곡 교체 없음·40곡 맵 배치) + 벽 텍스처 교체 + 알림창 수정 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
@@ -83,7 +83,7 @@ export function TitleScreen() {
         </p>
         <p className="max-w-[92%] text-[8px] leading-relaxed text-white/30 sm:text-[9px]">
           Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by
-          williamthompsonj (CC-BY) · Sotrak by gilgaphoenixignis (CC-BY) · Music: Juhani Junkala · SFX: Rubberduck (CC0)
+          williamthompsonj (CC-BY) · Sotrak by gilgaphoenixignis (CC-BY) · Music: Kevin MacLeod (incompetech.com, CC-BY 4.0) · SFX: Rubberduck (CC0)
         </p>
       </div>
     </div>
@@ -351,8 +351,10 @@ export function RewardPopup() {
   }, []);
   if (!st) return null;
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-14 z-30 flex justify-center px-4">
-      <div className="w-[min(92vw,330px)] animate-[rewardPop_0.24s_ease-out] rounded-xl border-2 border-amber-200/70 bg-slate-950/95 p-3 shadow-2xl">
+    <div className="pointer-events-none absolute inset-x-0 top-28 z-30 flex justify-center px-4 sm:top-20">
+      {/* v3.0.23 (#56) — ① 알림 표시를 더 아래로(top-14→top-28) ② 카드에 pointer-events-auto 부여 —
+          컨테이너가 pointer-events-none이라 X를 누를 수 없던 버그 수정 */}
+      <div className="pointer-events-auto w-[min(92vw,330px)] animate-[rewardPop_0.24s_ease-out] rounded-xl border-2 border-amber-200/70 bg-slate-950/95 p-3 shadow-2xl">
         <div className="flex items-center justify-between gap-2">
           <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-black text-amber-200">
             <Sparkles size={14} className="shrink-0" />
@@ -410,10 +412,10 @@ export function NamePanel() {
       <div className="w-full max-w-sm rounded-2xl border-2 border-amber-200/70 bg-slate-950/95 p-5 shadow-2xl">
         <div className="mb-1 flex items-center gap-2">
           <Sparkles size={18} className="text-amber-300" />
-          <span className="text-base font-black text-amber-300">이름을 정해 주자!</span>
+          <span className="text-base font-black text-amber-300">이름을 정해라</span>
         </div>
         <p className="mb-3 text-[12px] font-bold leading-relaxed text-white/70">
-          룬 정령 이그니: &quot;세계수가 기억할 이름을 지어 줘. 세계수가 선택한 모험가의 이름이야!&quot;
+          룬 정령 이그니: &quot;그 이름, 세계수에 새겨질 거야. 모험가의 이름을 지어 줘.&quot;
         </p>
         <input
           autoFocus

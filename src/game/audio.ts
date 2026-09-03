@@ -2,17 +2,20 @@ import type Phaser from "phaser";
 
 /**
  * 외부 오디오 에셋 재생 (public/assets/audio/)
- *  - BGM: v3.0.21 전면 교체 — 실제 음원 40트랙 다운로드 (Kevin MacLeod, incompetech.com, CC-BY 4.0)
- *    테마당 5곡 × 8테마(title/village/field/alfheim/cave/snow/abyss/boss),
- *    한 곡이 끝나면 같은 테마의 다음 곡으로 자연 로테이션(셔플 백 — 한 바퀴 전엔 반복 없음)
- *    ※ v3.0.20의 절차 합성 변주 트랙은 유저 피드백으로 전량 폐기 — 다운로드 음원만 사용
+ *  - BGM: v3.0.23 — 40트랙을 구역(맵)별로 고정 배치 (Kevin MacLeod, incompetech.com, CC-BY 4.0)
+ *    · 로테이션(곡 교체) 기능 완전 제거 — 한 구역은 항상 같은 곡 한 곡을 무한 루프
+ *    · 40곡 전부를 챕터 성격에 맞는 풀로 배치 (맵마다 적절히 — CHAPTER_TRACKS 참조)
+ *    · 보스 구역(10)은 전투곡, 챕터 마을(Xv)·실내는 마을곡, 타이틀은 title1
  *  - SFX: 80 CC0 RPG SFX / 80 CC0 creature SFX — Rubberduck (CC0)
  * 출처/라이선스: public/assets/CREDITS.md
  */
 
 let game: Phaser.Game | null = null;
 let bgmSound: Phaser.Sound.BaseSound | null = null;
-let bgmKind: BGMKind | null = null;
+/** 현재(또는 재개 예정) BGM 트랙 키 — 음소거/백그라운드 복원 기준 */
+let bgmKey: string | null = null;
+/** 마지막으로 요청된 스테이지 키 (E2E/디버그용) */
+let bgmStage: string | null = null;
 let muted = false;
 
 /* v3.0.6 (지시 #7 — 전체적인 사운드 밸런스 조정):
@@ -26,6 +29,7 @@ const SFX_MAX_CONCURRENT = 12;
 export const BGM_VOLUME = 0.38;
 const lastPlayed: Record<string, number> = {};
 let activeSounds = 0;
+let bgmFadeTimer: ReturnType<typeof setInterval> | null = null;
 
 export const SFX_THROTTLE_MS_V = SFX_THROTTLE_MS;
 export { SFX_THROTTLE_MS, SFX_MAX_CONCURRENT };
@@ -46,9 +50,19 @@ function play(key: string, vol: number, rate = 1) {
 
 export type BGMKind = "field" | "boss" | "title" | "village" | "alfheim" | "cave" | "snow" | "abyss";
 
-/* v3.0.21 (#36) — 테마별 플레이리스트 40트랙 (다운로드 음원, scripts/bgm_work/manifest.json 참조)
- *  title 웅장한 모험 / village 평화로운 마을 / field 모험 필드 / alfheim 신비 요정림
- *  cave 어두운 던전 / snow 차가운 설원 / abyss 사악한 심연 / boss 긴장감 있는 전투 */
+/* v3.0.23 — 테마 대표곡 (타이틀 화면 등 kind 기반 재생용. 필드는 stageTrack 사용) */
+const THEME_TRACKS: Record<BGMKind, string> = {
+  title: "bgm_title1",
+  village: "bgm_village1",
+  field: "bgm_field1",
+  alfheim: "bgm_alfheim1",
+  cave: "bgm_cave1",
+  snow: "bgm_snow1",
+  abyss: "bgm_abyss1",
+  boss: "bgm_boss1",
+};
+
+/* v3.0.21 플레이리스트 테이블 유지 — 40트랙 자산 목록 (BootScene 프리로드 + E2E 훅 참조) */
 export const BGM_PLAYLISTS: Record<BGMKind, string[]> = {
   title: ["bgm_title1", "bgm_title2", "bgm_title3", "bgm_title4", "bgm_title5"],
   village: ["bgm_village1", "bgm_village2", "bgm_village3", "bgm_village4", "bgm_village5"],
@@ -59,58 +73,62 @@ export const BGM_PLAYLISTS: Record<BGMKind, string[]> = {
   abyss: ["bgm_abyss1", "bgm_abyss2", "bgm_abyss3", "bgm_abyss4", "bgm_abyss5"],
   boss: ["bgm_boss1", "bgm_boss2", "bgm_boss3", "bgm_boss4", "bgm_boss5"],
 };
-/** BootScene 로드 리스트 — 플레이리스트 전체 자동 수집 */
+/** BootScene 로드 리스트 — 40트랙 전체 (모든 곡이 구역 배치에 사용됨) */
 export const BGM_ALL_TRACKS: string[] = Object.values(BGM_PLAYLISTS).flat();
 
-/* 셔플 백 — 테마별 재생 대기열 (한 바퀴 돌기 전엔 같은 곡 반복 없음) */
-const bgmBags: Partial<Record<BGMKind, number[]>> = {};
-const bgmLastIdx: Partial<Record<BGMKind, number>> = {};
-let bgmFadeTimer: ReturnType<typeof setInterval> | null = null;
+/* ================= v3.0.23 — 구역별 고정 BGM 배치표 (40곡 전부 사용) =================
+ *  원칙: ① 한 구역 = 고정 1곡 (이동해도 그 구역이면 항상 같은 곡 — 곡 교체 없음)
+ *        ② 챕터 성격에 맞는 풀 배치, 인접 구역은 다른 곡
+ *        ③ 보스 구역(10)은 전투곡, 챕터 마을(Xv)·실내는 마을곡, 타이틀은 title1
+ *  배치: 숲=필드 5 / 쿠소디아=웅장(title) 4 / 알프헤임=신비 5 / 무스펠헤임=화염·불길
+ *        니플헤임=설원 5 / 스바르트=동굴 5 / 니다벨리르=광산(동굴+잔여 보스곡)
+ *        헬·심연=어둠(abyss) + 잔여 보스곡 / 마을 10곳=village 5곡 순환 */
+const CHAPTER_ORDER = ["forest", "kingdom", "alfheim", "muspelheim", "niflheim", "cave", "nidavellir", "hel", "abyss"] as const;
 
-function nextTrackOf(kind: BGMKind): string {
-  const pl = BGM_PLAYLISTS[kind];
-  let bag = bgmBags[kind];
-  if (!bag || bag.length === 0) {
-    bag = pl.map((_, i) => i);
-    for (let i = bag.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [bag[i], bag[j]] = [bag[j], bag[i]];
-    }
-    // 리필 직후 첫 곡이 직전 곡과 같으면 큐 맨 뒤로 — 연속 반복 방지
-    if (bag[0] === bgmLastIdx[kind] && bag.length > 1) bag.push(bag.shift()!);
-    bgmBags[kind] = bag;
-  }
-  const idx = bag.shift()!;
-  bgmLastIdx[kind] = idx;
-  return pl[idx];
+const CHAPTER_TRACKS: Record<string, string[]> = {
+  forest: ["bgm_field1", "bgm_field2", "bgm_field3", "bgm_field4", "bgm_field5"],
+  kingdom: ["bgm_title2", "bgm_title3", "bgm_title4", "bgm_title5"],
+  alfheim: ["bgm_alfheim1", "bgm_alfheim2", "bgm_alfheim3", "bgm_alfheim4", "bgm_alfheim5"],
+  muspelheim: ["bgm_abyss3", "bgm_abyss4", "bgm_abyss5", "bgm_boss2", "bgm_boss3"],
+  niflheim: ["bgm_snow1", "bgm_snow2", "bgm_snow3", "bgm_snow4", "bgm_snow5"],
+  cave: ["bgm_cave1", "bgm_cave2", "bgm_cave3", "bgm_cave4", "bgm_cave5"],
+  nidavellir: ["bgm_cave1", "bgm_cave3", "bgm_cave5", "bgm_boss4", "bgm_boss5"],
+  hel: ["bgm_abyss1", "bgm_abyss2", "bgm_boss1", "bgm_boss2", "bgm_boss3"],
+  abyss: ["bgm_abyss1", "bgm_abyss2", "bgm_abyss4", "bgm_boss1", "bgm_boss5"],
+};
+const VILLAGE_TRACKS = ["bgm_village1", "bgm_village2", "bgm_village3", "bgm_village4", "bgm_village5"];
+const BOSS_TRACKS = ["bgm_boss1", "bgm_boss2", "bgm_boss3", "bgm_boss4", "bgm_boss5"];
+/** 챕터 일반 구역 폴백 (미지의 챕터 키) */
+const FALLBACK_TRACKS = CHAPTER_TRACKS.forest;
+
+/** 스테이지 키 파싱 — "forest3"→{ch:"forest",zone:3} / "forestv"·"village"→마을 */
+function splitStage(stage: string): { ch: string; zone: number; isVillageStage: boolean } {
+  if (stage === "village") return { ch: "village", zone: 0, isVillageStage: true };
+  if (stage.endsWith("v")) return { ch: stage.slice(0, -1), zone: 0, isVillageStage: true };
+  const m = stage.match(/^([a-z]+)(\d+)$/);
+  if (m) return { ch: m[1], zone: parseInt(m[2], 10), isVillageStage: false };
+  return { ch: stage, zone: 0, isVillageStage: false };
 }
 
-/** 스테이지 → 전용 BGM 매핑 (v2.0 — 9챕터 × 10구역 키 지원) */
-export function stageBgm(stage: string): BGMKind {
-  /* v2.9 — 챕터 마을(Xv)은 해당 챕터 BGM을 따른다 */
-  const ch = stage.endsWith("v") && stage !== "village" ? stage.slice(0, -1) : stage.replace(/([1-9]|10)$/, "");
-  switch (ch) {
-    case "village":
-      return "village";
-    case "kingdom":
-      return "village";
-    case "alfheim":
-      return "alfheim";
-    case "cave":
-    case "nidavellir":
-      return "cave";
-    case "niflheim":
-      return "snow";
-    case "muspelheim":
-    case "hel":
-      return "abyss";
-    case "abyss":
-      return "abyss";
-    case "forest":
-      return "field";
-    default:
-      return "field";
-  }
+function chIndexOf(ch: string): number {
+  const i = (CHAPTER_ORDER as readonly string[]).indexOf(ch);
+  return i < 0 ? 0 : i;
+}
+
+/** 실내/실외 관계없이 스테이지 → 고정 트랙 (v3.0.23 — stageBgm 대체) */
+export function stageTrack(stage: string): string {
+  if (stage === "interior_inn") return "bgm_village3";
+  if (stage === "interior_home") return "bgm_village4";
+  const { ch, zone } = splitStage(stage);
+  if (zone === 10) return BOSS_TRACKS[chIndexOf(ch) % BOSS_TRACKS.length]; // 보스 구역 — 전투곡 고정
+  if (zone <= 0) return VILLAGE_TRACKS[chIndexOf(ch) % VILLAGE_TRACKS.length]; // 마을/기본
+  const pool = CHAPTER_TRACKS[ch] ?? FALLBACK_TRACKS;
+  return pool[(zone - 1) % pool.length];
+}
+
+/** 보스 조우 중 오버라이드 트랙 (구역 일반곡과 별개 — 전투곡) */
+function bossTrackOf(stage: string): string {
+  return BOSS_TRACKS[chIndexOf(splitStage(stage).ch) % BOSS_TRACKS.length];
 }
 
 /** PhaserGame 생성 직후 1회 호출 */
@@ -132,7 +150,7 @@ function attachLifecycle(g: Phaser.Game) {
   lifecycleAttached = true;
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
-      // 숨김 — 전체 정지 (BGM kind는 유지해 복귀 시 재개)
+      // 숨김 — 전체 정지 (트랙 키는 유지해 복귀 시 재개)
       try {
         g.sound.pauseAll();
       } catch {
@@ -145,8 +163,8 @@ function attachLifecycle(g: Phaser.Game) {
       } catch {
         /* noop */
       }
-      // 복귀 — 음소거 아니고 BGM 지정이 있으면 재개
-      if (!muted && bgmKind && !bgmSound) startBgm(bgmKind);
+      // 복귀 — 음소거 아니고 트랙 지정이 있으면 재개
+      if (!muted && bgmKey && !bgmSound) startTrack(bgmKey);
     }
   });
 }
@@ -168,7 +186,7 @@ export function setMuted(m: boolean) {
     if (sm.masterMuteNode) sm.masterMuteNode.gain.value = m ? 0 : 1;
   }
   if (m) destroyBgm();
-  else if (bgmKind) startBgm(bgmKind);
+  else if (bgmKey) startTrack(bgmKey);
 }
 
 export function isMuted() {
@@ -199,8 +217,8 @@ function clearFadeTimer() {
   }
 }
 
-/** BGM 볼륨 페이드 (변주 전환 크로스페이드용) */
-function fadeBgm(target: number, ms: number, done?: () => void) {
+/** BGM 볼륨 페이드 (트랙 전환 페이드인용) */
+function fadeBgm(target: number, ms: number) {
   if (!bgmSound) return;
   clearFadeTimer();
   const snd = asVol(bgmSound);
@@ -216,27 +234,27 @@ function fadeBgm(target: number, ms: number, done?: () => void) {
     const now = typeof performance !== "undefined" ? performance.now() : Date.now();
     const k = Math.min(1, (now - t0) / ms);
     cur.setVolume(from + (target - from) * k);
-    if (k >= 1) {
-      clearFadeTimer();
-      done?.();
-    }
+    if (k >= 1) clearFadeTimer();
   }, 60);
 }
 
-function startBgm(kind: BGMKind) {
+/** v3.0.23 — 고정 트랙 1곡 무한 루프 재생 (곡 교체/로테이션 없음).
+ *  오디오 캐시 미완료(부트 프리로드 진행 중 진입)면 0.5초 간격 재시도 —
+ *  "게임 시작 직후 음악이 안 나오는" 타이밍 버그 방지 (최대 30회/15초). */
+function startTrack(key: string, retried = 0) {
   if (!game) return;
   try {
-    // v3.0.21 — 셔플 백에서 다음 곡 선택, 루프 없이 재생 → 종료 시 같은 테마 다음 곡으로 자연 로테이션
-    const key = nextTrackOf(kind);
-    bgmSound = game.sound.add(key, { loop: false, volume: 0 });
-    asVol(bgmSound)?.setVolume(0);
-    const snd = bgmSound;
-    bgmSound.once("complete", () => {
-      if (!muted && bgmKind === kind && bgmSound === snd) {
-        destroyBgm();
-        startBgm(kind);
+    const snd = game.sound.add(key, { loop: true, volume: 0 });
+    if (!snd) {
+      if (retried < 30) {
+        window.setTimeout(() => {
+          if (bgmKey === key && !bgmSound && !muted) startTrack(key, retried + 1);
+        }, 500);
       }
-    });
+      return;
+    }
+    bgmSound = snd;
+    asVol(bgmSound)?.setVolume(0);
     bgmSound.play();
     fadeBgm(BGM_VOLUME, 1200);
   } catch {
@@ -245,33 +263,50 @@ function startBgm(kind: BGMKind) {
   }
 }
 
-export function playBGM(kind: BGMKind) {
-  if (bgmKind === kind && bgmSound?.isPlaying) return;
+/** 스테이지(구역) 진입 — 그 구역의 고정 BGM 1곡을 루프. 같은 곡이면 무시(끊김 없음).
+ *  @param bossActive 보스 조우 중 → 해당 챕터 전투곡으로 오버라이드 */
+export function playStageBGM(stage: string, bossActive = false) {
+  const key = bossActive ? bossTrackOf(stage) : stageTrack(stage);
+  bgmStage = stage;
+  if (bgmKey === key && bgmSound?.isPlaying) return;
   destroyBgm();
-  bgmKind = kind;
+  bgmKey = key;
   if (muted || !game) return;
-  startBgm(kind);
+  startTrack(key);
 }
-/** 씬 전환/사망 등 — 정지만 하고 kind는 유지(음소거 해제 시 재개용) */
+
+/** kind 기반 재생 (타이틀 화면 전용 + E2E 훅) — 테마 대표곡 고정 루프 */
+export function playBGM(kind: BGMKind) {
+  const key = THEME_TRACKS[kind];
+  if (bgmKey === key && bgmSound?.isPlaying) return;
+  destroyBgm();
+  bgmKey = key;
+  if (muted || !game) return;
+  startTrack(key);
+}
+/** 씬 전환/사망 등 — 정지만 하고 트랙 키는 유지(음소거 해제 시 재개용) */
 export function stopBGM() {
   destroyBgm();
 }
 
 /* ---------- E2E 검증 훅 ---------- */
-/** 현재 BGM 상태 스냅샷 (kind·재생 중 트랙 키) */
+/** 현재 BGM 상태 스냅샷 (트랙 키·재생 여부·루프 고정 확인) */
 export function bgmDebugState() {
+  const kind = bgmKey ? ((bgmKey.replace(/^bgm_/, "").replace(/\d+$/, "") as BGMKind)) : null;
   return {
-    kind: bgmKind,
-    track: (bgmSound as unknown as { key?: string } | null)?.key ?? null,
+    kind,
+    track: bgmKey,
     playing: !!bgmSound?.isPlaying,
-    playlistCount: bgmKind ? BGM_PLAYLISTS[bgmKind].length : 0,
+    loop: true,
+    stage: bgmStage,
+    playlistCount: kind ? BGM_PLAYLISTS[kind].length : 0,
   };
 }
-/** 로테이션 강제 진행 (곡 종료 동작 재현 — E2E 전용) */
+/** 강제 재시작 (E2E 전용) — v3.0.23: 재시작 후에도 같은 트랙이 유지되는지 검증용 (교체 없음) */
 export function bgmAdvanceForTest() {
-  if (!muted && bgmKind && game) {
+  if (!muted && bgmKey && game) {
     destroyBgm();
-    startBgm(bgmKind);
+    startTrack(bgmKey);
   }
 }
 

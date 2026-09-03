@@ -54,6 +54,8 @@ const ASSET_LIST = [
   "tile_path_dark",
   // v2.0 아뜰란티스 확장 타일 (v1.5 이관)
   "tile_magma", "tile_magma_path", "tile_stone", "tile_hel",
+  // v3.0.23 (#55) — 던전 벽 석벽 텍스처 (구 x2_bricks "검은 카펫" 교체)
+  "wall_rock",
   // 장식
   "tree",
   "pine",

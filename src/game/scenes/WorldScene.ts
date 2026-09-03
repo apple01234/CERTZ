@@ -749,8 +749,8 @@ export class WorldScene extends Phaser.Scene {
     // E2E/디버그 훅 — 씬 인스턴스 실측용 (v2.4)
     (window as unknown as { __SERTZ_SCENE__?: unknown }).__SERTZ_SCENE__ = this;
 
-    /* ---------- 사운드/BGM (v2.0 — 챕터별 전용 테마 8트랙 / 실내는 마을 BGM) ---------- */
-    audio.playBGM(this.isInterior ? "village" : audio.stageBgm(stageKey));
+    /* ---------- 사운드/BGM (v3.0.23 — 구역별 고정 1곡 루프 / 로테이션·곡 교체 없음) ---------- */
+    audio.playStageBGM(stageKey);
 
     /* ---------- 오프닝 대사 (인트로 시퀀스 중이면 인트로가 인계 / 실내는 연출 생략) ----------
      *  v2.3 (지시 #1): 이미 본 대사는 재입장 시 재생하지 않는다 — 이전/다음 맵 왕복마다
@@ -817,25 +817,24 @@ export class WorldScene extends Phaser.Scene {
 
   /** 닫힌 셀을 챕터 분위기에 맞는 암벽 타일로 채워 벽(충돌)을 만든다 */
   private buildDungeonWalls(lay: RoomLayout, ch: string) {
-    /* v3.0.2 — 벽 텍스처 전부 벽돌(x2_bricks)로 통일해 바닥과 질감 자체를 다르게.
+    /* v3.0.23 (#55) — "빈 공간이 이상한 검은 카펫으로 채워짐" 수정:
+     *  구 어두운 벽돌 텍스처를 44~54% 명도로 틴트하면 카펫처럼 보였음.
+     *  → 밝은 석벽 텍스처(wall_rock)로 교체 + 베이스 명도 62~74%로 상향 — 암벽으로 읽힘.
      *  챕터 구분은 틴트 색으로 (숲=연두빛, 설원=하늘빛 등) */
-    const WALLS: Record<string, { tex: string; tint: number }> = {
-      forest: { tex: "x2_bricks", tint: 0x7a9a5a },
-      kingdom: { tex: "x2_bricks", tint: 0xa89878 },
-      alfheim: { tex: "x2_bricks", tint: 0x8a7ac8 },
-      muspelheim: { tex: "x2_bricks", tint: 0xa85a38 },
-      niflheim: { tex: "x2_bricks", tint: 0x8ab8d8 },
-      cave: { tex: "x2_bricks", tint: 0x9a7a58 },
-      nidavellir: { tex: "x2_bricks", tint: 0xb8a068 },
-      hel: { tex: "x2_bricks", tint: 0x8a5aaa },
-      abyss: { tex: "x2_bricks", tint: 0x6a5a9a },
+    const WALLS: Record<string, number> = {
+      forest: 0x7a9a5a,
+      kingdom: 0xa89878,
+      alfheim: 0x8a7ac8,
+      muspelheim: 0xa85a38,
+      niflheim: 0x8ab8d8,
+      cave: 0x9a7a58,
+      nidavellir: 0xb8a068,
+      hel: 0x8a5aaa,
+      abyss: 0x6a5a9a,
     };
-    const wall = WALLS[ch] ?? { tex: "x2_bricks", tint: 0xffffff };
+    const wallTex = "wall_rock";
+    const wallTint = WALLS[ch] ?? 0xffffff;
     const rng = new Phaser.Math.RandomDataGenerator([this.stageDef.key + "-walls"]);
-    /* v3.0.2 (지시 #2 — 벽과 길 구분 확실히):
-     *  ① 모든 벽을 벽돌 타일(x2_bricks)로 통일 — 바닥 타일과 질감 자체가 달라져 즉시 구분
-     *  ② 벽은 바닥보다 확실히 어둡게(45~55% 명도) — 통로가 밝게 파여 보임
-     *  ③ 벽-길 경계 앰비언트 셰이딩: 벽 모서리에 밝은 림, 길 쪽에 그림자 스트립 → 입체적 통로 */
     const openAt = (c: number, r: number) => c >= 0 && r >= 0 && c < lay.cols && r < lay.rows && lay.open[r * lay.cols + c];
     for (let r = 0; r < lay.rows; r++) {
       for (let c = 0; c < lay.cols; c++) {
@@ -843,12 +842,12 @@ export class WorldScene extends Phaser.Scene {
         if (lay.open[i]) continue;
         const x = c * lay.cellW;
         const y = r * lay.cellH;
-        // 셀마다 살짝 다른 명도 — 암벽 덩어리가 단조로운 격자로 보이지 않게
-        const v = 0.44 + rng.frac() * 0.1;
-        const tint = Phaser.Display.Color.IntegerToColor(wall.tint);
+        // 셀마다 살짝 다른 명도 — 암벽 덩어리가 단조로운 격자로 보이지 않게 (v3.0.23: 0.62~0.74 — 밝게)
+        const v = 0.62 + rng.frac() * 0.12;
+        const tint = Phaser.Display.Color.IntegerToColor(wallTint);
         const scaled = Phaser.Display.Color.GetColor(tint.red * v, tint.green * v, tint.blue * v);
         const ts = this.add
-          .tileSprite(x, y, lay.cellW + 1, lay.cellH + 1, wall.tex)
+          .tileSprite(x, y, lay.cellW + 1, lay.cellH + 1, wallTex)
           .setOrigin(0)
           .setDepth(2)
           .setTint(scaled);
@@ -2458,7 +2457,7 @@ export class WorldScene extends Phaser.Scene {
     // 파티 보스 토벌 공지 (v2.0 — 지시 #5)
     net.netAnnounceBoss(def.name, STAGE_SHORT[this.stageDef.key] ?? this.stageDef.key);
     // 보스전 전용 BGM (v2.0)
-    audio.playBGM("boss");
+    audio.playStageBGM(this.stageDef.key, true);
     // 등장 대사 — 이어하기 복구 경로는 생략 (오프닝 대사와 충돌 방지) / v2.3: 1회만 재생
     // v3.0.10 (메이플식 보스 조우 연출): 카메라가 보스에게 팬 → 보스 인트로 대사 → 카메라 복귀
     if (intro) this.bossIntroCinematic(bx, by, def.introDialogue);
@@ -2487,7 +2486,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.bossDie();
     // v2.0 수정 (지시 #7) — 보스전 종료 후 BGM이 멈추는 버그:
     // stopBGM 대신 1.4초 후 스테이지 테마 BGM으로 자연 전환
-    this.time.delayedCall(1400, () => audio.playBGM(audio.stageBgm(this.stageDef.key)));
+    this.time.delayedCall(1400, () => audio.playStageBGM(this.stageDef.key));
     this.cameras.main.shake(400, 0.01);
     this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
     this.player.gainExp(def?.exp ?? 220);
@@ -2559,7 +2558,7 @@ export class WorldScene extends Phaser.Scene {
       if (e.active && e.alive) e.resetHome();
     }
     this.player.revive(180, this.stageH / 2);
-    audio.playBGM(this.boss ? "boss" : audio.stageBgm(this.stageDef.key));
+    audio.playStageBGM(this.stageDef.key, !!this.boss);
   }
 
   /* ================= 입력 ================= */
