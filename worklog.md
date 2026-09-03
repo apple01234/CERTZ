@@ -225,3 +225,29 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.23.apk (72.5MB, versionCode 37, 덮어설치 호환)
 - BGM이 "로테이션(랜덤 교체)"에서 "구역별 고정 1곡 무한루프 + 40곡 전체 맵 배치"로 재설계됨 — 같은 맵은 항상 같은 곡
 - 다음 후보: BGM 볼륨 개별 슬라이더, 대형 트랙 재도입 시 지연 로딩(테마풀 단계 로드) 필요
+
+---
+Task ID: 20
+Agent: Super Z (main)
+Task: 피드백 8건 구현 (v3.0.24, versionCode 38) — BGM 풀버전 고품질·스킬 SFX·화살 완화·eert 버그·수량 구매·이속 nerf·보스 재도전·대사 초상화
+
+Work Log:
+- [#58 BGM 풀버전 고품질] 유저 "용량 많은건 상관없음, 렉만 안걸리면 됨 + 퀄리티가 우선" → 40트랙 전원 재인코딩(130s 캡 제거→원곡 전체, q2→q4, 192kHz→48kHz 정규화, 루프 페이드 유지, 총 128MB) + reencode_full_q4.sh(병렬 6작업)
+- [#58 지연 로딩] 풀버전 40트랙 동시 디코드 = PCM 수GB 크래시 재발 방지 → audio.ts 개편: 부트 프리로드는 bgm_title1 1곡만(BootScene BGM_PRELOAD_TRACKS), 구역 진입 시 fetch+decodeAudioData 후 cache.audio 등록, LRU 캡 3개(decodedLru), startTrack 비동기화 + stale 가드(이중 재생 방지) + 30회 재시도 유지
+- [#59 스킬 SFX] 효과음연구소(soundeffect-lab.info)에서 스킬 전용 27종 신규 확보(download_skills.sh/convert_skills.sh, CREDITS.md 갱신) → audio.ts SKILL_SFX_FILES 매핑 + sfx.skill(key, rate) + Player.ts 48종 배치: 기본공격 4계열 분리(궁수=활발사·마법사=지팡이·도적=단검/표창·전사=검 유지), 스킬1 11종 개별, 기동기 12종 DASH_SND(점멸=worp 피치변주), 3차기 SND3 16종, 4차기 SND4 8종(warcry/тimestop/skyflight 등), WorldScene.sfxSkill 래퍼
+- [#60 화살 완화] 1차 궁수 화살 과강렬 완화: 크기 계층 1차1.0/2차1.15/3차1.3/4차1.5(기존 전차수 1.35+), 비행 잔상·머즐 플래시 2차+만 (4차 정체성 초록/구름 화살은 유지)
+- [#61 eert 버그] BM 상점에서 1개만 구매되던 원인 = buyBm이 소모품을 owned 포함 판정으로 차단 → buyBm에 consumable 분기 신설(누적 구매), Panels bmState도 소모품은 항상 buyable 판정 (보유 ×N 표시 추가)
+- [#62 수량 구매] QtyStepper(−/n/+) 컴포넌트 → 골드 상점·BM 상점 소모품/버프 행에 적용, rpg:buy/rpg:bmBuy에 qty 전달, Player.buy/buyBm qty 파라미터(×N 비용 검증, addBuffItem n개), 구매 배너 합산 표시(이름 ×N, 총액)
+- [#63 이속 nerf] BASE_SPEED 300→225 + recalcSpeed에 민첩 0.5%/점(캡 60%)·강화(무기+방어구 별합) 0.5%/성(캡 15%) 연동 — "강화·스텟 올려야 빨라진다". 스탯창 민첩 설명·하단 공식 갱신
+- [#64 보스 재도전] QuestLogPanel에 "보스 재도전 — 재림" 9챕터 그리드(컬렉션 boss_<key> 킬로 클리어 판정, 미클리어 잠금) → rpg:bossReplay {ch} → 보스퀘스트 완료 게이트(savedQuestIdx 검증) → `${ch}10` 이동(init data replayBoss) → spawnReplayBoss: "재림한 <보스명>" HP×5·ATK×2.2·EXP/GOLD×3, 스토리 진행/포탈/클리어 판정 완전 분리(replayBossActive 플래그 → onBossDead 전용 보상 경로: 보상팝업+에메랄드+5). 실측: 재림한 심연의 수호자 HP 53,600(스토리판 10,720의 5배 정확)·ATK 94
+- [#65 대사 초상화] DialogueBox 좌측 초상 프레임: NPC_PORTRAITS 16종 매핑(이그니=pet_pixie·NPC·세계수·플레이어) + bossPortrait(BOSS_DEFS 이름→텍스처 자동 매칭) = 화자 24종 전원 커버, 픽셀 확대(imageRendering)·톤 보더·톤 마커·하단 음영
+- 검증: tsc 0 + lint(신규 파일 0) + verify_v324 40/40 PASS(정적 30 + 런타임 10: 부트 bgm 1곡·지연로딩 재생·LRU 캡 3·6구역 순회·교체 없음·배치 유지·pageerror 0) + 회귀 v318 11/15(이속 nerf 4건 의도 변경)·v322 22/23·v323 23/28(버전/130s/프리로드 의도 변경)
+- APK: BUILD SUCCESSFUL(39s) → aapt versionCode 38·3.0.24·skl 27종·bgm 40종(48kHz 풀버전 136s 확인)·140.9MB
+- 커밋 push(8053fa9) — APK 140MB가 GitHub 100MB 파일 한도 초과로 pre-receive 거부 → .gitignore(download/*.apk)로 추적 제외 후 push 성공(로컬 download/ 유지)
+- 웹빌드 재실행 후 커스텀 서버 재기동(page·skl·bgm 200·socket.io 핸드셰이크 OK·verify_v324 40/40 재확인)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.24.apk (140.9MB, versionCode 38, 덮어설치 호환 — ⚠ git 미추적, 100MB 한도)
+- BGM이 "130초 캡"에서 "원곡 풀버전 + 구역 1곡만 온디맨드 디코드"로 — 음질·길이 전부 상향, 메모리 안전
+- 스킬 48종 사운드 전원 개별 배치(기존 sfxSpin/sfxSwing 공용 해소)
+- 다음 후보: 이속 실측 밸런스 조정(225 느낌 피드백 대기), 재림 보스 보상 튜닝, 대사 초상화 전용 일러스트(현재 게임 스프라이트 확대)
