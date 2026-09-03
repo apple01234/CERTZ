@@ -98,3 +98,24 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.18.apk (17.5MB, versionCode 32, 기존 키 동일 — 29/30/31 모두에서 덮어설치 가능)
 - "걸리는 느낌" 3근원(리렌더 지연·계단 커브·히트박스) + "이속 느림" 3근원(반경·감삭·BASE) 전량 수술, E2E 실측 입증
 - 다음 후보: 이속 상향에 맞춘 몬스터 접근속도 재조정, 오토사냥 카이팅 거리 재튜닝, 조이스틱 진동 피드백(햅틱)
+
+---
+Task ID: 15
+Agent: Super Z (main)
+Task: "타일맵이 전혀 잔디 같지가 않아" — 바닥 타일 8종 단색 사각형 → 시밀리스 픽셀아트 재생성 (v3.0.19, versionCode 33)
+
+Work Log:
+- [진단] tile_grass.png 등 지면 타일 전부 64px 단색+가장자리 음영 사각형 — 잔디 질감 0. groundTint는 정의만 있고 미적용(PNG 색이 화면색). 전환 타일(tx_*)은 v3.0.13부터 미사용
+- [생성기] scripts/gen_floor_tiles.py (PIL, 시드 고정 재현 가능) — 256x256 시밀리스(랩 드로잉): ①저대비 모틀링(±7% 밝기 노이즈, 저주파+고주파 value noise) ②잔디=지터 그리드(16px 셀) 산포 풀잎 스트로크(1x2/1x3, 끝 기울임 25%) + 키 큰 다발 42개 + 하이라이트 ③64px 그리드 베벨 유지(사용자 지시 #17 "정사각형 타일 규칙적 배열" 충족) ④서브타일 밝기 ±4.5%
+- [8종 재생성] tile_grass(잔디 #79c865+풀잎 #4f9440/#9ee084)·tile_dark(알프헤임 푸른 잔디)·tile_magma(용암 균열 랜덤워크+엠버 코어)·tile_snow(눈결 대시+반짝)·tile_cave·tile_stone·tile_hel(균열+스펙)·tile_abyss(스펙+별점) — 챕터 색 정체성(기존 core 색) 유지
+- [코드 보정] WorldScene 용암 균열 장식 tile_magma setScale 0.5→0.125(256px 전환, 시각 32px 동일)
+- 버전: build.gradle 33/3.0.19, 타이틀 배지
+- 검증: tsc 0 + verify_v319.js 신규 4/4 PASS(텍스처 8종 256x256·잔디 톤분산 sd 9.1(구 단색 sd≈0)·이동 회귀 250px/s·pageerror 0) + 스크린샷 육안 검증(마을 잔디 질감 확인) — 숲1도 동일 tile_grass
+- 이슈: 서버 재기동 EADDRINUSE로 옛 프로세스가 잔존 → 500 응답 → 전면 pkill 후 재기동 해소
+- APK: BUILD SUCCESSFUL(31s) → versionCode 33·3.0.19·apksigner 서명 cc774f34(기존 키 동일·덮어설치 호환)·APK 내부 tile_grass 256x256 검출·17.8MB
+- 커밋 3a426bd push, 구버전 v3.0.18.apk 제거, 웹 서버 production 재기동(포트 3000, GET / 200)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.19.apk (17.8MB, versionCode 33)
+- 지면 8종 전부 "잔디/지형 질감 + 규칙 타일 그리드" 동시 충족 — 시밀리스라 이음새 0
+- 다음 후보: 챕터별 지형 소품 추가(풀송이·자갈·꽃 밀도 조정), tile_path 계열도 질감화, 물/용암 애니메이션 타일
