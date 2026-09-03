@@ -56,3 +56,24 @@ Stage Summary:
 - 산출물: download/SERTZ-v3.0.16.apk (17.5MB, versionCode 30, 덮어설치 호환)
 - 메이플 컨텐츠(세트 아이템/몬스터 컬렉션/엘리트 몬스터/콤보킬-멀티킬/퀘스트 보상/큐브 등급) 6대 기능 구현, E2E 17/17 입증
 - 다음 후보: 컬렉션 지역별 세트 완성 보너스, 정예 몬스터 전용 드랍 테이블, 업적 시스템(메이플 업적), 세트 효과 등급별 시각 오라
+
+---
+Task ID: 13
+Agent: Super Z (main)
+Task: 사용자 피드백 신규 4개 항목 구현 (v3.0.17) + 평행 세션 Maple 패치 병합 + APK 빌드 전달
+
+Work Log:
+- [① 기본 이동속도] 근원 2종 수정 — ①BASE_SPEED 230→265(+15%, 최속 적 150 대비 여유 유지) ②조이스틱 포화 커브: 기존 sqrt(스틱 절반=71%) → 14% 데드존/즉시 30%, 30%=64%, 55%=100% 포화(자동사냥과 체감 동일). E2E 실측 수동 이동 256~287px/s(기존 체감 ~150)
+- [② 퀘스트 팝업] HUD 우상단 트래커 mt-8(모바일만 32px 하단 이동), PC(sm:mt-1) 유지
+- [③ 데드아이 초록 화살] 신규 텍스처 x2_arrow_green(28×9 에메랄드, 채도 상향 2회 조정) + BootScene 로드 + atkBow 4차 전용 적용. ADD 블렌드가 밝은 배경에서 초록을 씻어내는 문제 → normal 블렌드(스크린샷으로 진한 초록 확인)
+- [④ 다중사격 재미 강화] firePlayerProj에 trail 옵션(50ms 간격 발광 잔상) + tickPlayerProjs 잔상 스폰. atkBow: 부채꼴 0.08→0.1+0.03t rad(4차 0.66rad=기존 2.75배), 연사 90→60ms, 머즐 플래시, 속도 편차 ±15, 3발+ 카메라 마이크로 셰이크. skill1Arrows: 부채꼴 0.09→0.125, 넉백 220→250, 트레일, 머즐 플래시
+- 병합: 리모트에 평행 세션 커밋 4f417c3(Maple 콘텐츠 패치, APK 30) 발견 → rebase 병합(충돌 3: APK/verify/배지 — 배지는 양측 내용 합성, Maple 검증기 verify_maple.js로 복원). 버전 충돌 방지 위해 versionCode 31/3.0.17로 상향
+- 검증: tsc 0오류 + verify_v316.js 15/15 PASS + verify_maple.js 17/17 PASS(배지 기대값 3.0.17 갱신) + pageerror 0 + 스크린샷 3종(초록 화살 시각 확인)
+- 환경 복구: 워크스페이스 초기화로 JDK/SDK 재소실 → Temurin 21(/home/z/jdk)·cmdline-tools+build-tools 36.0.0(/home/z/android-sdk) 재설치, local.properties 생성, build_apk.sh JAVA_HOME 기본값 수정
+- APK: BUILD SUCCESSFUL → aapt versionCode 31·3.0.17·서명 cc774f34(기존 키 동일)·APK 내부 양측 코드 동시 검출(x2_arrow_green + 몬스터 컬렉션)·1,119파일
+- 커밋 ed42ef2 push(4f417c3 위 리베이스), 구버전 APK 제거, 웹 서버 production 재기동(포트 3000, GET / 200)
+
+Stage Summary:
+- 산출물: download/SERTZ-v3.0.17.apk (17.5MB, versionCode 31, 덮어설치 호환 — 29/30 모두에서 업그레이드 가능)
+- 신규 4개 피드백 전량 해소 + 평행 세션 Maple 콘텐츠(세트 효과·컬렉션·정예·멀티킬·보상 팝업·eert 오라) 동시 포함
+- 다음 후보: 다중사격 4차 궁극기 연출(화살비 폭풍), 원소 반응 추가(과부하/융해), 콤보킬 티어별 FX 고도화
