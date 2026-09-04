@@ -1,7 +1,7 @@
-SERTZ v3.0.27 APK 다운로드 안내
+SERTZ v3.0.28 APK 다운로드 안내
 ================================
 
-이번 버전 (v3.0.27, versionCode 41)
+이번 버전 (v3.0.28, versionCode 41)
 - 스킬 효과음 27종 전면 교체 — 기존 라이브러리 SFX → 게임 전체 톤과 맞는 레트로 CC0 사운드 팩
   (기본 효과음과 같은 계열이라 자연스럽게 어울립니다. 귀여운 아나운스/애니 계열 전부 제거)
 - 스킬 아이콘 로드 실패 시 자동 폴백 — 어떤 환경(웹뷰 캐시 오류 등)에서도 스킬 버튼이 깨지지 않음
@@ -11,25 +11,25 @@ APK 용량이 약 141MB라 파일 하나가 목록에 안 보일 수 있어 3분
 
 ■ 방법 1 — 폰에서 바로 (제일 쉬움, 권장)
   게임 웹 주소 뒤에 파일명을 붙여 브라우저로 열기:
-  https://sertz1234.space-z.ai/SERTZ-v3.0.27.apk
+  https://sertz1234.space-z.ai/SERTZ-v3.0.28.apk
   → 즉시 다운로드 시작 (서버 직결)
 
 ■ 방법 2 — Windows (파일 패널에서 받기)
   1. 아래 4개 파일을 같은 폴더에 다운로드
-     - SERTZ-v3.0.27.apk.part1 / part2 / part3
+     - SERTZ-v3.0.28.apk.part1 / part2 / part3
      - join_apk.bat
-  2. join_apk.bat 더블클릭 → SERTZ-v3.0.27.apk 생성
+  2. join_apk.bat 더블클릭 → SERTZ-v3.0.28.apk 생성
   3. 폰으로 옮겨서 설치
 
 ■ 방법 3 — Mac / Linux
   파트 3개 + join_apk.sh 를 같은 폴더에 받고:  sh join_apk.sh
 
 ■ 직접 합치기
-  Windows CMD:  copy /b SERTZ-v3.0.27.apk.part1+SERTZ-v3.0.27.apk.part2+SERTZ-v3.0.27.apk.part3 SERTZ-v3.0.27.apk
-  Mac/Linux:    cat SERTZ-v3.0.27.apk.part1 SERTZ-v3.0.27.apk.part2 SERTZ-v3.0.27.apk.part3 > SERTZ-v3.0.27.apk
+  Windows CMD:  copy /b SERTZ-v3.0.28.apk.part1+SERTZ-v3.0.28.apk.part2+SERTZ-v3.0.28.apk.part3 SERTZ-v3.0.28.apk
+  Mac/Linux:    cat SERTZ-v3.0.28.apk.part1 SERTZ-v3.0.28.apk.part2 SERTZ-v3.0.28.apk.part3 > SERTZ-v3.0.28.apk
 
 ■ 검증 (선택)
-  aapt: versionCode 41 / versionName 3.0.27 정상
+  aapt: versionCode 41 / versionName 3.0.28 정상
   기존 세이브 그대로 이어서 플레이 가능 (v3.0.26 위에 덮어 설치)
 
 ■ 멀티플레이 (APK ↔ PC)

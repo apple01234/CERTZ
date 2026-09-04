@@ -67,6 +67,9 @@ export type QuestDef = {
   desc: string;
   need?: number;
   targetKey?: EnemyKey;
+  /** v3.0.28 (#퀘스트이름) — 다종 토벌 대상: 구역에 실제 스폰되는 몬스터 전체를 토벌 대상으로.
+   *  지정 시 카운트·판정이 targetKeys 합산 기준이 된다 (화면 몬스터와 퀘스트 이름 어긋남 해소). */
+  targetKeys?: EnemyKey[];
   targetLabel: string;
   reward?: number;
   expReward?: number;
@@ -76,6 +79,23 @@ export type QuestDef = {
 export type BossKey =
   | "guardian" | "behemoth" | "abysslord"
   | "nidhog" | "surt" | "fenrir" | "skoll" | "gram" | "abudditos";
+
+/* ================= v3.0.28 (#보스난이도) — 메이플식 보스 난이도 =================
+ *  이지 / 노말 / 하드 / 카오스 4단계. 스토리 보스·재림 보스 공통 적용.
+ *  hp/atk: 기준 수치 배율, reward: EXP/GOLD 배율, emerald: 재림판 격파 에메랄드 */
+export type BossDiffKey = "easy" | "normal" | "hard" | "chaos";
+
+export const BOSS_DIFFS: Record<
+  BossDiffKey,
+  { key: BossDiffKey; label: string; color: string; hp: number; atk: number; reward: number; emerald: number; desc: string }
+> = {
+  easy: { key: "easy", label: "이지", color: "#7de87d", hp: 0.65, atk: 0.8, reward: 0.6, emerald: 2, desc: "가볍게 클리어 — 보상 60%" },
+  normal: { key: "normal", label: "노말", color: "#7dc4ff", hp: 1.0, atk: 1.0, reward: 1.0, emerald: 5, desc: "기본 난이도 — 보상 100%" },
+  hard: { key: "hard", label: "하드", color: "#ffb05a", hp: 1.8, atk: 1.3, reward: 1.9, emerald: 9, desc: "도전자용 — 보상 190%" },
+  chaos: { key: "chaos", label: "카오스", color: "#ff6a7d", hp: 2.8, atk: 1.6, reward: 3.2, emerald: 15, desc: "극한 난이도 — 보상 320%" },
+};
+
+export const BOSS_DIFF_ORDER: BossDiffKey[] = ["easy", "normal", "hard", "chaos"];
 
 export type BossAttackKind = "slam" | "charge" | "volley" | "ring" | "zones" | "summon";
 
@@ -580,14 +600,26 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
     // 자동 토벌 퀘스트 — v2.3 밸런스 (지시 #4): 목표 수 상한 12 (기존 3+sub*2는 후반 21마리로 지루함)
     // 경험치는 살짝 더 많게 — 스토리 진행이 자연스럽게 이어지도록
     const n = Math.min(12, 4 + Math.floor(sub * 0.8));
+    /* v3.0.28 (#퀘스트이름) — 토벌 대상을 "이 구역에 실제 스폰되는 몬스터 전체"로 확장(targetKeys).
+     *  기존엔 구역 최다 종 1종만 대상이라 얼음좀비 구역에서 거미 사냥 퀘스트가 뜨는 등
+     *  화면 몬스터와 퀘스트 이름이 어긋나 체감됐다 → 무엇을 잡아도 카운트되며 혼란 제거.
+     *  buildStage의 편입 로직(스토리 beat 대상 + 반복 의뢰 대상 spec.main)을 미러링해
+     *  편입분 종까지 카운트 대상에 포함한다 (count 0 — 최다 판정에는 영향 없음). */
+    const mixKeys = [...new Set(zoneMix.map((g) => g.key))];
+    const beatHereQ = spec.beats.find((b) => b.sub === sub);
+    if (beatHereQ?.quest.type === "hunt" && beatHereQ.quest.targetKey && !mixKeys.includes(beatHereQ.quest.targetKey)) {
+      mixKeys.push(beatHereQ.quest.targetKey);
+    }
+    if (!mixKeys.includes(spec.main)) mixKeys.push(spec.main);
     quests.push({
       id: `${prefix}-auto-hunt`,
       type: "hunt",
       title: `${main} ${verbs[sub % verbs.length]}`,
-      desc: `${spec.title} ${spec.subtitle} — ${main} ${n}마리를 처치해라.`,
+      desc: `${spec.title} ${spec.subtitle} — 구역의 몬스터 ${n}마리를 처치해라.`,
       need: n,
-      targetKey: zoneMon, // v3.0.2 — 이 구역에서 실제 스폰되는 몬스터
-      targetLabel: main,
+      targetKey: zoneMon, // v3.0.2 — 하위 호환(어시스트·히스테리시스 참조): 구역 최다 종
+      targetKeys: mixKeys, // v3.0.28 — 카운트·판정은 구역 스폰 몬스터 전체 합산
+      targetLabel: `${main} 등 구역 몬스터`,
       reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G),
       expReward: Math.round((60 + sub * 14) * CH_EXP[spec.num - 2] * 0.9),
     });

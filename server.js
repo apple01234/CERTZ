@@ -17,12 +17,12 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   /* v3.0.24: 배포 APK 직접 다운로드 — 140MB 단일 파일이 파일 패널 한도 초과로 미표시되어
- *  게임 서버(http://<서버주소>/SERTZ-v3.0.27.apk)에서 브라우저 다운로드를 제공 */
+ *  게임 서버(http://<서버주소>/SERTZ-v3.0.28.apk)에서 브라우저 다운로드를 제공 */
 const { createReadStream, statSync } = require("node:fs");
 const path = require("node:path");
 const DOWNLOAD_FILES = {
-  "/SERTZ-v3.0.27.apk": {
-    file: "download/SERTZ-v3.0.27.apk",
+  "/SERTZ-v3.0.28.apk": {
+    file: "download/SERTZ-v3.0.28.apk",
     type: "application/vnd.android.package-archive",
     attach: true,
   },
@@ -33,7 +33,13 @@ const DOWNLOAD_FILES = {
   },
 };
 const httpServer = createServer((req, res) => {
-  const entry = DOWNLOAD_FILES[(req.url || "").split("?")[0]];
+  const url = (req.url || "").split("?")[0];
+  /* v3.0.28 — 구버전 APK 링크(v3.0.24~27)를 최신본으로 자동 연결 (404 방지) */
+  if (/^\/SERTZ-v3\.0\.(2[4-7])\.apk$/.test(url)) {
+    res.writeHead(307, { Location: "/SERTZ-v3.0.28.apk" }).end();
+    return;
+  }
+  const entry = DOWNLOAD_FILES[url];
   if (entry) {
     try {
       const fp = path.join(__dirname, entry.file);
@@ -42,7 +48,7 @@ const httpServer = createServer((req, res) => {
         "Content-Type": entry.type,
         "Content-Length": size,
         ...(entry.attach
-          ? { "Content-Disposition": 'attachment; filename="SERTZ-v3.0.27.apk"' }
+          ? { "Content-Disposition": 'attachment; filename="SERTZ-v3.0.28.apk"' }
           : {}),
       });
       createReadStream(fp).pipe(res);

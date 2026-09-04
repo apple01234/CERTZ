@@ -18,6 +18,9 @@ export {
   STAGE_THEME,
   ENEMIES,
   BOSS_DEFS,
+  /* v3.0.28 — 보스 난이도 (이지/노말/하드/카오스) */
+  BOSS_DIFFS,
+  BOSS_DIFF_ORDER,
   parseStage,
   chapterSpec,
   stageScale,
@@ -34,6 +37,8 @@ export type {
   BossKey,
   BossDef,
   BossAttackKind,
+  /* v3.0.28 — 보스 난이도 키 */
+  BossDiffKey,
   StageDef,
 } from "./stages";
 
@@ -1591,14 +1596,16 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
   muspelheim: {
     houseTint: 0xffa878,
     signColor: "#ffb080",
-    npcA: { name: "대장장이 브라키", tex: "npc_villager1", dlg: "vlgMuspelA" },
-    npcB: { name: "용암 광부 코일", tex: "npc_villager2", dlg: "vlgMuspelB" },
+    /* v3.0.28 (#NPC대화) — dlg 키가 VLG 등록 규칙(vlg{챕터명}A/B)과 어긋나 무스펠헤임부터
+     *  주민 대화가 표시되지 않던 버그 수정 (vlgMuspelA → vlgMuspelheimA) */
+    npcA: { name: "대장장이 브라키", tex: "npc_villager1", dlg: "vlgMuspelheimA" },
+    npcB: { name: "용암 광부 코일", tex: "npc_villager2", dlg: "vlgMuspelheimB" },
   },
   niflheim: {
     houseTint: 0x9cccff,
     signColor: "#a8e0ff",
-    npcA: { name: "얼음 낚시꾼 시그룬", tex: "npc_villager1", dlg: "vlgNiflA" },
-    npcB: { name: "눈보라 정찰병", tex: "npc_villager2", dlg: "vlgNiflB" },
+    npcA: { name: "얼음 낚시꾼 시그룬", tex: "npc_villager1", dlg: "vlgNiflheimA" },
+    npcB: { name: "눈보라 정찰병", tex: "npc_villager2", dlg: "vlgNiflheimB" },
   },
   cave: {
     houseTint: 0xb09ccc,
@@ -1609,8 +1616,8 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
   nidavellir: {
     houseTint: 0xe8c474,
     signColor: "#ffd76a",
-    npcA: { name: "룬 대장장이 두린", tex: "npc_villager1", dlg: "vlgNidavA" },
-    npcB: { name: "광산 감독관", tex: "npc_villager2", dlg: "vlgNidavB" },
+    npcA: { name: "룬 대장장이 두린", tex: "npc_villager1", dlg: "vlgNidavellirA" },
+    npcB: { name: "광산 감독관", tex: "npc_villager2", dlg: "vlgNidavellirB" },
   },
   hel: {
     houseTint: 0xc89ae8,

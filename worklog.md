@@ -394,3 +394,40 @@ Work Log:
 Stage Summary:
 - 3차 Complete로 경량 패키지 배포 시도. 성공 시 sertz1234.space-z.ai가 v3.0.27 웹으로 갱신 + 구 APK 링크가 안내 페이지로 연결됨
 - 유저 즉시 해법: ①파일 패널 download/ → part1~3+join 스크립트(검증 완료) ②프리뷰 주소/SERTZ-v3.0.27.apk(샌드박스 서버 직결, 현재 200)
+
+---
+Task ID: 31
+Agent: Super Z (main)
+Task: v3.0.28 (versionCode 42) — 피드백 6건: ①퀘스트 몬스터 이름 불일치(얼음좀비→거미) ②채팅창 무한 위로 ③무스펠헤임부터 NPC 대사 없음 ④보스 난이도(이지/노말/하드/카오스) + 이전 미착수 2건(자동전투 퀘스트 비종속 개편 / 이동 퀘스트 완료 불가)
+
+Work Log:
+- [#NPC대화] 원인: CHAPTER_VILLAGE_NPC의 dlg 키가 VLG 등록 규칙(vlg{챕터명}A/B)과 어긋남 — muspelheim(vlgMuspelA→vlgMuspelheimA), niflheim(vlgNiflA/B→vlgNiflheimA/B), nidavellir(vlgNidavA/B→vlgNidavellirA/B) 3챕터에서 showDialogue가 DIALOGUES[id] undefined로 조용히 무시 → 주민 E키 대화가 존재하지 않는 증상. dlg 키 3쌍 수정 + showDialogue에 챕터명 기반 폴백 재시도 추가(동일 유형 방어)
+- [#이동퀘스트] 원인: enterPortal에 reach 완료 처리 누락 — 포탈로 구역 이동 시 advance 없이 씬만 전환해 세이브 questIdx가 reach에 영구 잔존("숲의 신전으로"·"다음 해역으로" 완료 불가). enterPortal에서 currentQuest().type==="reach"면 advanceQuest 후 이동(다음 퀘스트 배치는 새 구역 복구 로직 708/711행이 처리)
+- [#자동전투개편] tickAutoHunt의 퀘스트 타겟 최우선 필터(v3.0.25 pref) 완전 제거 → autoThreatScore() 신설: 위협도(220px 내 적 ×0.45 우선 제거) > 보스(×0.5) > 밀집도 보정(v3.0.22 로직 유지). 근접 생존 추가: HP 30% 이하 + 포위(2+) 시 열린 후퇴로로 이탈(autoRetreatBlocked 코너 예외). 배너 문구 갱신
+- [#퀘스트이름] 자동 토벌 퀘스트를 단일 최다 종 → "구역 스폰 몬스터 전체" 합산 카운트로 개편: QuestDef.targetKeys 신설, buildQuests에서 zoneMix + beat 편입분 + 반복 의뢰 편입분(spec.main) 미러링, WorldScene huntProgressSum()으로 onEnemyKilled/tryCompleteHunt/afterAdvance/syncQuestBaseline 4개 경로 합산 판정 통일. targetLabel "{최다종} 등 구역 몬스터" — 무엇을 잡아도 카운트되어 이름 어긋남 체감 제거. 스토리 beat/반복 의뢰는 단일 대상 유지
+- [#채팅스크롤] 모바일 가상 키보드가 input focus로 window를 밀어올려 채팅창·화면이 위로 누적 이동하는 현상 방어: focus({preventScroll:true}) + closeChat()에서 blur+window.scrollTo(0,0) — 전송/ESC/바깥클릭 3경로 전부 적용
+- [#보스난이도] BOSS_DIFFS 신설(이지 0.65/0.8/0.6/에메2 · 노말 1.0/1.0/1.0/5 · 하드 1.8/1.3/1.9/9 · 카오스 2.8/1.6/3.2/15). ①스토리 보스: 보스 퀘스트 진입 시 ui:panel "bossdiff"로 난이도 선택 패널(questLog active 타이틀로 보스명 표시) → rpg:bossDifficulty 수신 후 스폰, spawnBoss 게이트(bossDiffPending) + 세이브(bossDiff) 복원, 보루 4초 노말 자가치유로 소프트락 차단, boss:show에 "[하드]" 라벨 ②재림판: BossReplayPanel에 난이도 칩 4종 추가 → rpg:bossReplay {ch, lv} → init replayDiff 전달, spawnReplayBoss가 재림 기준수치(HP×5/ATK×2.2/보상×3)에 난이도 배율 곱연산, 에메랄드 난이도별 지급
+- [버전] build.gradle 42/3.0.28, Overlays 배지, server.js 라우트(/SERTZ-v3.0.28.apk), build_apk.sh, join 2종, 안내 txt 갱신
+- [검증] scripts/verify_v3028.mjs 신설 — 32/32 PASS([A] NPC 키 9챕터 일치 + [B] reach 구조 9/9 + [C] 난이도 테이블·이벤트 연결 11건 + [D] targetKeys=구역 스폰 77/77 + [E] 자동전투 정적 6건). tsc 0에러, eslint 0, 웹빌드 성공
+- [환경 발견] worklog Task 28-30 기록 유실 + mini-services/socket 폴더·E2E 스크립트(test_socket_service.js) 유실 확인 — GitHub 클론(v3.0.27 시점) 복구본이라 이전 세션 분 미포함. server.js에 socket.io 완전 내장이라 라이브 멀티는 영향 없음(파티/채팅 핸들러 실측). netAtk 스킬 리플레이(RPC 전환 전제) 코드도 유실 — 별도 재작업 필요
+- [APK] build_apk.sh로 재빌드 후 download/ + temp.sh 업로드(사용자 승인 경로)
+
+Stage Summary:
+- 산출물: SERTZ-v3.0.28.apk (versionCode 42, 웹+APK 동일 적용)
+- 유저 6건 전부 착수 완료: NPC대사/이동퀘스트/자동전투/퀘스트이름/채팅스크롤/보스난이도
+- 미착수 잔여: 지역 이동 주문서·보스 재전투 검은 화면, 이그니 1차 전직 퀘스트 안내, 브금 그룹핑, 모바일 대사 스킵, 반응형, RPC 전환(netAtk 유실 복구 포함)
+
+---
+Task ID: 32
+Agent: Super Z (main)
+Task: Git 커밋 정리 — v3.0.28 작업분 커밋 상태 점검 및 원격 백업 시도
+
+Work Log:
+- git status: 작업 트리 클린 확인 — v3.0.28 전체 변경(17파일, +509/-105)이 최신 커밋 21716b0에 이미 포함됨
+- origin/main(GitHub apple01234/CERTZ) 대비 로컬 main 6커밋 초과(미푸시) 확인
+- git push origin main 시도 → "could not read Username for 'https://github.com'" 실패: 샌드박스에 GitHub 인증 수단(PAT/SSH/gh CLI) 부재
+- HEAD 커밋 메시지(UUID 자동커밋)를 v3.0.28 컨벤션 메시지로 amend (미푸시 커밋이라 안전)
+
+Stage Summary:
+- 로컬 커밋 완료 상태. 원격 푸시는 유저 측 인증(PAT/SSH) 필요 — 유저 보고 후 대기
+- 다음 예정: 100개 항목 모듈 설계서·핵심 코드 문서 작업(유저 지정 스택: uWebSockets.js/Kysely/Tiled 등)

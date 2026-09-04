@@ -134,6 +134,8 @@ export type SaveData = {
   fragmentsFound?: Record<string, number>;
   /* v3.0.22 (#50) — 세계수의 가호 (아홉 결정 전부 수집 시 영구 해방) */
   worldtreeBlessing?: boolean;
+  /* v3.0.28 (#보스난이도) — 진행 중 보스전의 난이도 (이지/노말/하드/카오스) — 재접속 복구용 */
+  bossDiff?: string;
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */

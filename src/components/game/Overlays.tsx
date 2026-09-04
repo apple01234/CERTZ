@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.27 · 스킬 효과음 전면 교체(레트로 CC0 팩 — 27종) + 스킬 아이콘 로드 실패 자동 폴백 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.0.28 · 자동전투 개편(퀘스트 비종속·생존/보스 최적화) + 이동 퀘스트 완료 수정 + 보스 난이도(이지/노말/하드/카오스) + 챕터 마을 NPC 대사 복구 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 

@@ -103,7 +103,8 @@ export type RpgState = {
   activeSet?: { title: string; lines: string[] } | null;
 };
 
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | null;
+/** v3.0.28 — "bossdiff" 추가: 보스전 난이도 선택 패널 (이지/노말/하드/카오스) */
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "bossdiff" | null;
 
 export type QuestState = {
   title: string;

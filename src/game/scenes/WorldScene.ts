@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -202,8 +202,19 @@ export class WorldScene extends Phaser.Scene {
   /* ----- v3.0.24 (#보스재도전) — 클리어한 챕터 보스 고능력치 재판 ----- */
   /** 이동 중인 재도전 대상 챕터 (init data로 전달 — scene.restart 후 create에서 소비) */
   private pendingReplayBoss: string | null = null;
+  /** v3.0.28 (#보스난이도) — 재도전 난이도 (init data로 전달) */
+  private pendingReplayBossDiff: BossDiffKey | null = null;
   /** 재도전 보스 진행 중 — onBossDead에서 일반 보스 보상/포탈 진행과 분기 */
   private replayBossActive = false;
+  /** v3.0.28 (#보스난이도) — 재림판 격파 에메랄드 (난이도별) */
+  private replayBossEmerald = 5;
+
+  /* ----- v3.0.28 (#보스난이도) — 메이플식 보스 난이도 (이지/노말/하드/카오스) ----- */
+  /** 현재(직전) 보스전 난이도 — 선택 후 세이브, 재접속 복구에도 유지 */
+  private bossDiff: BossDiffKey = "normal";
+  /** 보스 퀘스트 진입 후 난이도 선택 대기 중 — 선택 전 보스 스폰 금지(보루 4초 후 노말 자가치유) */
+  private bossDiffPending = false;
+  private bossDiffPendingSince = 0;
 
   /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
   private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit"; dlg?: string; npcId?: string; label: string }[] = [];
@@ -293,7 +304,7 @@ export class WorldScene extends Phaser.Scene {
     super("world");
   }
 
-  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string }) {
+  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string }) {
     this.questIdx = 0;
     this.huntCount = 0;
     this.totalKills = 0;
@@ -302,6 +313,11 @@ export class WorldScene extends Phaser.Scene {
     this.replayBossActive = false; // v3.0.24 — 재도전 플래그 리셋
     /* v3.0.24 — 보스 재도전: init data로 전달된 챕터키 보관 (create 후반 스폰) */
     this.pendingReplayBoss = typeof data.replayBoss === "string" ? data.replayBoss : null;
+    /* v3.0.28 (#보스난이도) — 재도전 난이도 전달 (scene.restart 후 create에서 소비) */
+    this.pendingReplayBossDiff =
+      typeof data.replayDiff === "string" && data.replayDiff in BOSS_DIFFS ? (data.replayDiff as BossDiffKey) : null;
+    this.bossDiffPending = false;
+    this.bossDiffPendingSince = 0;
     this.enemies = [];
     this.boss = null;
     this.fragment = null;
@@ -593,6 +609,10 @@ export class WorldScene extends Phaser.Scene {
       /* v3.0.22 (#43/#44/#50) — 결정 수집 기록 + 세계수의 가호 복원 */
       this.fragmentsFound = { ...(savedPlayer.fragmentsFound ?? {}) };
       this.player.setWorldtreeBlessing(!!savedPlayer.worldtreeBlessing);
+      /* v3.0.28 (#보스난이도) — 진행 중이던 보스전 난이도 복원 (재접속 시 이지 선택 후 노말로 나오는 문제 방지) */
+      if (savedPlayer.bossDiff && savedPlayer.bossDiff in BOSS_DIFFS) {
+        this.bossDiff = savedPlayer.bossDiff as BossDiffKey;
+      }
       this.player.recalcSpeedForLoad();
     }
     // v2.5 — 현재 구역 방문 기록 (실내 제외) — 지역 이동 부적 워프 대상
@@ -730,7 +750,17 @@ export class WorldScene extends Phaser.Scene {
         const q = this.currentQuest();
         /* 오브젝트 소실 보루 — 파편/보스가 없으면 퀘스트가 영구 안 풀려 포탈이 안 열린다 */
         if (q?.type === "collect" && !this.fragment) this.spawnFragmentForQuest();
-        if (q?.type === "boss" && !this.boss) this.spawnBoss(false);
+        if (q?.type === "boss" && !this.boss) {
+          /* v3.0.28 (#보스난이도) — 난이도 선택 패널을 4초 이상 닫아두면 노말로 자가치유
+           *  (패널을 닫고 방치해 보스가 영영 안 나오는 소프트락 방지) */
+          if (this.bossDiffPending) {
+            if (this.time.now - this.bossDiffPendingSince > 4000) {
+              this.bossDiffPending = false;
+              this.bossDiff = "normal";
+              this.spawnBoss(false);
+            }
+          } else this.spawnBoss(false);
+        }
         const chainDone = this.questIdx >= this.stageDef.quests.length;
         const shouldOpen = !q || q.type === "reach" || (chainDone && this.repeatOn);
         /* 보스 구역은 격파 전(boss 진행 중) 개방 금지 — 격파 후 reach는 개방 대상 */
@@ -1353,6 +1383,12 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.portal();
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.player.state = "idle";
+    /* v3.0.28 (#이동퀘스트) — 이동형(reach) 퀘스트 완료 판정 누락 수정:
+     *  포탈을 타고 구역을 떠날 때 현재 퀘스트가 reach면 완료(advance) 처리 후 이동.
+     *  기존엔 완료 처리 없이 씬만 전환해 세이브의 questIdx가 reach에 그대로 남아
+     *  "숲의 신전으로"/"다음 해역으로"가 이동해도 영영 미완료로 유지됐다.
+     *  (다음 퀘스트 배치는 새 구역 진입 복구 로직이 처리하므로 afterAdvance는 생략) */
+    if (this.currentQuest()?.type === "reach") this.advanceQuest();
     // 구역 체인 — 마을 → forest1..10 → kingdom1..10 → … → abyss10 순차 진행
     const next: StageKey | null = NEXT_STAGE[this.stageDef.key];
     if (!next) return;
@@ -2101,9 +2137,10 @@ export class WorldScene extends Phaser.Scene {
           if (this.huntCount >= this.repeatNeed) this.completeRepeat();
           else this.emitQuest();
         }
-      } else if (q.targetKey === key) {
-        // v2.0 수정 (지시 #17) — 퀘스트 대상 몬스터만 카운트 (엉뚱한 몬스터 오카운트 차단)
-        this.huntCount = Math.min((this.killTotals[key] ?? 0) - (this.huntBaseline[key] ?? 0), q.need ?? 0);
+      } else if (q.targetKeys ? q.targetKeys.includes(key) : q.targetKey === key) {
+        // v2.0 수정 (지시 #17) — 퀘스트 대상 몬스터만 카운트
+        // v3.0.28 (#퀘스트이름) — targetKeys 지정(자동 토벌) 시 구역 몬스터 전체 합산 카운트
+        this.huntCount = Math.min(this.huntProgressSum(q), q.need ?? 0);
         this.tryCompleteHunt(key);
       }
     }
@@ -2333,14 +2370,24 @@ export class WorldScene extends Phaser.Scene {
     return this.stageDef.enemies[0]?.key ?? null;
   }
 
+  /** v3.0.28 (#퀘스트이름) — 현재 hunt 퀘스트의 합산 진행량.
+   *  targetKeys(자동 토벌)면 구역 몬스터 전체, 단일 대상(스토리/반복)이면 해당 종만. */
+  private huntProgressSum(q: QuestDef): number {
+    const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+    let sum = 0;
+    for (const k of keys) sum += (this.killTotals[k] ?? 0) - (this.huntBaseline[k] ?? 0);
+    return sum;
+  }
+
   /**
    * 토벌 퀘스트 완료 시도.
    * v2.0 — 퀘스트 시작 이후의 킬만 카운트 (huntBaseline) → 이전 킬이 한꺼번에 채워지는 버그 차단.
+   * v3.0.28 — targetKeys(자동 토벌) 지정 시 구역 몬스터 전체 합산 판정.
    */
   private tryCompleteHunt(_key: EnemyKey) {
     const q = this.currentQuest();
     if (!q || q.type !== "hunt") return;
-    const progress = (this.killTotals[_key] ?? 0) - (this.huntBaseline[_key] ?? 0);
+    const progress = this.huntProgressSum(q);
     if (progress < (q.need ?? 0)) return;
     this.huntCount = Math.min(progress, q.need ?? 0);
     audio.sfx.questDone();
@@ -2349,11 +2396,15 @@ export class WorldScene extends Phaser.Scene {
     this.save();
   }
 
-  /** v3.0.15 (#8) — 현재 구역 활성 퀘스트의 토벌 기준선 재설정 (수락 시점 킬만 카운트) */
+  /** v3.0.15 (#8) — 현재 구역 활성 퀘스트의 토벌 기준선 재설정 (수락 시점 킬만 카운트)
+   *  v3.0.28 — targetKeys 지원: 자동 토벌은 구역 몬스터 전체의 기준선 설정 */
   private syncQuestBaseline() {
     const q = this.currentQuest();
-    if (q?.type === "hunt" && q.targetKey && !this.repeatActive()) {
-      this.huntBaseline[q.targetKey] = this.killTotals[q.targetKey] ?? 0;
+    if (q?.type === "hunt" && !this.repeatActive()) {
+      const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+      for (const k of keys) {
+        if (!(k in this.huntBaseline)) this.huntBaseline[k] = this.killTotals[k] ?? 0;
+      }
     }
   }
 
@@ -2383,9 +2434,13 @@ export class WorldScene extends Phaser.Scene {
       }
       return;
     }
-    if (q.type === "hunt" && q.targetKey && !(q.targetKey in this.huntBaseline)) {
-      // 토벌 퀘스트 시작 기준선 — 시작 이후 킬만 진행 (지시 #17)
-      this.huntBaseline[q.targetKey] = this.killTotals[q.targetKey] ?? 0;
+    if (q.type === "hunt" && !this.repeatActive()) {
+      /* 토벌 퀘스트 시작 기준선 — 시작 이후 킬만 진행 (지시 #17)
+       * v3.0.28 — targetKeys(자동 토벌)는 구역 몬스터 전체 기준선 */
+      const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+      for (const k of keys) {
+        if (!(k in this.huntBaseline)) this.huntBaseline[k] = this.killTotals[k] ?? 0;
+      }
     }
     if (q.type === "level") {
       // v2.4 — 이미 목표 레벨을 넘었으면 즉시 연쇄 완료 (소프트락 방지)
@@ -2419,10 +2474,17 @@ export class WorldScene extends Phaser.Scene {
     } else if (q.type === "collect") {
       if (!this.fragment) this.spawnFragmentForQuest();
     } else if (q.type === "boss") {
-      if (!this.boss) this.spawnBoss();
+      /* v3.0.28 (#보스난이도) — 보스 퀘스트 진입 시 난이도 선택 패널을 먼저 띄운다.
+       *  선택(rpg:bossDifficulty) 도착 전엔 보스 미스폰 — 보루가 4초 뒤 노말로 자가치유. */
+      if (!this.boss) {
+        if (this.bossDiffPending) return; // 이미 패널 표시 중
+        this.bossDiffPending = true;
+        this.bossDiffPendingSince = this.time.now;
+        EventBus.emit("ui:panel", { panel: "bossdiff" });
+      }
     } else if (q.type === "hunt") {
-      const k = q.targetKey;
-      if (k && (this.killTotals[k] ?? 0) >= (q.need ?? 0)) this.tryCompleteHunt(k);
+      /* v3.0.28 — targetKeys(자동 토벌) 합산 판정: 이미 조건 충족이면 즉시 연쇄 완료 (소프트락 방지) */
+      if (this.huntProgressSum(q) >= (q.need ?? 0) && q.targetKey) this.tryCompleteHunt(q.targetKey);
     }
   }
 
@@ -2458,20 +2520,25 @@ export class WorldScene extends Phaser.Scene {
   /* ================= 보스 ================= */
 
   private spawnBoss(intro = true) {
+    /* v3.0.28 (#보스난이도) — 난이도 선택 전엔 스폰 금지 (보루/복구 경로도 이 게이트로 통과 차단) */
+    if (this.bossDiffPending) return;
     const base = BOSS_DEFS[this.stageDef.bossKey ?? "guardian"];
     // v2.0 밸런스 — 챕터 보스는 구역 진행 배율만큼 강화 (지시 #6: 보스 체력 상향)
     // v3.0.6 (지시 #8 — "보스가 너무 약함"): HP ×1.35·ATK ×1.05로 대폭 상향 (기존 ×0.9 완화)
     // v3.0.22 (#50 — "챕터 지날수록 쎄져야"): 잡몹 곡선 강화에 맞춰 보스 가중치 HP ×1.6·ATK ×1.15로 재상향
     //  + Boss 내부 관통 50%·페이즈별 태진 단축·탄막 증가가 함께 적용된다
+    // v3.0.28 (#보스난이도) — 이지 0.65 / 노말 1.0 / 하드 1.8 / 카오스 2.8 배율 (보상은 reward 배율)
     const sc = stageScale(this.stageDef.key);
+    const dif = BOSS_DIFFS[this.bossDiff];
     const def: BossDef = {
       ...base,
-      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6)),
-      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15)),
-      exp: Math.round(base.exp * sc.exp),
-      gold: Math.round(base.gold * sc.gold),
+      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * dif.hp),
+      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15) * dif.atk),
+      exp: Math.round(base.exp * sc.exp * dif.reward),
+      gold: Math.round(base.gold * sc.gold * dif.reward),
     };
     this.bossDef = def;
+    this.bossDiffPending = false; // v3.0.28 — 스폰 시점에 선택 완료
     /* v3.0 (#7) — 보스는 최원거리 셀(포탈 방)에 배치 — 격파 후 포탈이 바로 그 자리에 열림 */
     const bx = this.portalHome.x;
     const by = this.portalHome.y - 10;
@@ -2480,7 +2547,7 @@ export class WorldScene extends Phaser.Scene {
     this.showBanner(`${def.name} 출현!`);
     this.boss = new Boss(this, bx, by, def);
     this.physics.add.collider(this.boss, this.solidGroup);
-    EventBus.emit("boss:show", { name: def.name, hp: this.boss.hp, maxHp: this.boss.maxHp });
+    EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
     // 파티 보스 토벌 공지 (v2.0 — 지시 #5)
     net.netAnnounceBoss(def.name, STAGE_SHORT[this.stageDef.key] ?? this.stageDef.key);
     // 보스전 전용 BGM (v2.0)
@@ -2501,16 +2568,21 @@ export class WorldScene extends Phaser.Scene {
     if (!spec?.boss) return;
     const base = BOSS_DEFS[spec.boss];
     const sc = stageScale(`${ch}10`);
+    /* v3.0.28 (#보스난이도) — 재림판 기준 수치(HP ×5.0 · ATK ×2.2 · 보상 ×3)에 난이도 배율 추가 적용 */
+    const lv = this.pendingReplayBossDiff ?? "normal";
+    const dif = BOSS_DIFFS[lv];
+    this.pendingReplayBossDiff = null;
     const def: BossDef = {
       ...base,
       name: `재림한 ${base.name}`,
-      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * 5.0),
-      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15) * 2.2),
-      exp: Math.round(base.exp * sc.exp * 3),
-      gold: Math.round(base.gold * sc.gold * 3),
+      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * 5.0 * dif.hp),
+      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15) * 2.2 * dif.atk),
+      exp: Math.round(base.exp * sc.exp * 3 * dif.reward),
+      gold: Math.round(base.gold * sc.gold * 3 * dif.reward),
     };
     this.bossDef = def;
     this.replayBossActive = true;
+    this.replayBossEmerald = dif.emerald; // v3.0.28 — 난이도별 에메랄드 (2/5/9/15)
     const bx = this.portalHome.x;
     const by = this.portalHome.y - 10;
     audio.sfx.roar();
@@ -2518,7 +2590,7 @@ export class WorldScene extends Phaser.Scene {
     this.showBanner(`재림한 ${base.name} 출현!`);
     this.boss = new Boss(this, bx, by, def);
     this.physics.add.collider(this.boss, this.solidGroup);
-    EventBus.emit("boss:show", { name: def.name, hp: this.boss.hp, maxHp: this.boss.maxHp });
+    EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
     // 재도전 전투곡 — 일반 보스전과 동일 오버라이드
     audio.playStageBGM(this.stageDef.key, true);
     // 조우 연출은 카메라 팬만 (인트로 대사는 이미 본 대사 — 재생 생략 로직이 자동 처리)
@@ -2556,17 +2628,18 @@ export class WorldScene extends Phaser.Scene {
       this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
       const exp = def?.exp ?? 220;
       const gold = def?.gold ?? 200;
+      const em = this.replayBossEmerald;
       this.player.gainExp(exp);
       this.player.addGold(gold);
-      this.player.emerald += 5;
-      this.spawnPickupText(this.player.x, this.player.y - 60, "+5 에메랄드", "#7de8ff");
+      this.player.emerald += em;
+      this.spawnPickupText(this.player.x, this.player.y - 60, `+${em} 에메랄드`, "#7de8ff");
       this.registerCollection(`boss_${def?.key ?? "guardian"}`, def?.name ?? "보스");
       EventBus.emit("reward:show", {
         title: `재도전 성공 — ${def?.name ?? "보스"}`,
         lines: [
           { text: `골드 +${gold} G`, color: "#ffd76a" },
           { text: `경험치 +${exp} EXP`, color: "#8fe84a" },
-          { text: "에메랄드 +5", color: "#7de8ff" },
+          { text: `에메랄드 +${em}`, color: "#7de8ff" },
         ] satisfies RewardPopupState["lines"],
       });
       this.emitRpgState();
@@ -2919,9 +2992,11 @@ export class WorldScene extends Phaser.Scene {
 
     /* v3.0.24 (#보스재도전) — 클리어한 챕터 보스 고능력치 재판:
      *  해당 챕터 보스 구역(`${ch}10`)으로 이동 후 "재림" 보스 스폰 (스토리판 HP ×5 · ATK ×2.2) */
-    const onBossReplay = (v: { ch: string }) => {
+    const onBossReplay = (v: { ch: string; lv?: string }) => {
       if (!this.player || this.dialoguing || this.player.state === "dead") return;
       const ch = String(v?.ch ?? "");
+      /* v3.0.28 (#보스난이도) — 재도전 난이도 (기본 노말) */
+      const lv = typeof v?.lv === "string" && v.lv in BOSS_DIFFS ? (v.lv as BossDiffKey) : "normal";
       const target = `${ch}10` as StageKey;
       const spec = chapterSpec(target);
       if (!spec || !spec.boss) return;
@@ -2935,14 +3010,23 @@ export class WorldScene extends Phaser.Scene {
       }
       audio.sfx.portal();
       EventBus.emit("ui:panel", { panel: null });
-      EventBus.emit("banner:show", { text: `재림 — ${BOSS_DEFS[spec.boss].name}의 재도전!` });
+      EventBus.emit("banner:show", { text: `재림 — ${BOSS_DEFS[spec.boss].name}의 재도전! [${BOSS_DIFFS[lv].label}]` });
       this.cameras.main.fadeOut(420, 0, 0, 0);
       this.player.state = "idle";
       this.time.delayedCall(440, () => {
         const carry = this.buildSave(target);
         writeSave(carry);
-        this.scene.restart({ stage: target, save: carry, replayBoss: ch });
+        this.scene.restart({ stage: target, save: carry, replayBoss: ch, replayDiff: lv });
       });
+    };
+    /* v3.0.28 (#보스난이도) — 스토리 보스 난이도 선택 수신: 저장 → 스폰 (세이브로 재접속 복구 대응) */
+    const onBossDiff = (v: { lv: string }) => {
+      if (!this.player) return;
+      const lv = typeof v?.lv === "string" && v.lv in BOSS_DIFFS ? (v.lv as BossDiffKey) : "normal";
+      this.bossDiff = lv;
+      this.bossDiffPending = false;
+      this.save();
+      if (this.currentQuest()?.type === "boss" && !this.boss) this.spawnBoss();
     };
 
     // v2.5 — 자동사냥 토글 (v3.0.15 #5: 펫 없이도 사용 가능)
@@ -2952,7 +3036,7 @@ export class WorldScene extends Phaser.Scene {
       this.autoHuntMove.set(0, 0);
       this.autoTarget = null;
       this.autoDirHoldUntil = 0;
-      EventBus.emit("banner:show", { text: this.autoHunt ? "자동사냥 ON — 가까운 몬스터를 추적합니다" : "자동사냥 OFF" });
+      EventBus.emit("banner:show", { text: this.autoHunt ? "자동사냥 ON — 위협 제거 우선 · 사냥/보스 최적화" : "자동사냥 OFF" });
       this.emitRpgState();
       this.save();
     };
@@ -3026,6 +3110,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:useItem", onUseItem);
     EventBus.on("rpg:warp", onWarp);
     EventBus.on("rpg:bossReplay", onBossReplay); // v3.0.24 — 보스 재도전
+    EventBus.on("rpg:bossDifficulty", onBossDiff); // v3.0.28 — 보스 난이도 선택
     /* v3.0.6 (지시 #4) — 아이템 판매 */
     const onSell = (v: { key: string }) => {
       if (!this.player || this.dialoguing) return;
@@ -3241,6 +3326,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:useItem", onUseItem);
       EventBus.off("rpg:warp", onWarp);
       EventBus.off("rpg:bossReplay", onBossReplay);
+      EventBus.off("rpg:bossDifficulty", onBossDiff); // v3.0.28 — 보스 난이도
       EventBus.off("rpg:sell", onSell);
       EventBus.off("rpg:sellPotion", onSellPotion);
       EventBus.off("rpg:bmBuy", onBmBuy);
@@ -3501,30 +3587,18 @@ export class WorldScene extends Phaser.Scene {
       this.autoWanderTick();
       return;
     }
-    /* v3.0.25 (#자동사냥개선) — 퀘스트 타겟 최우선: 추적/반복 토벌 대상 몬스터를 먼저 잡는다
-     *  (기존은 밀집도만 평가해 퀘스트와 무관한 몬스터에 시간 낭비) */
-    const cq = this.currentQuest();
-    const qKey = cq && cq.type === "hunt" ? cq.targetKey : null;
-    const pref = qKey ? live.filter((e) => (e as Enemy).def.key === qKey) : [];
-    const pool = pref.length > 0 ? pref : live;
+    /* v3.0.28 (#자동전투개편) — 퀘스트 비종속 사냥·보스 최적화:
+     *  ① 퀘스트 타겟 우선 필터(v3.0.25) 완전 제거 — 퀘스트 몬스터를 먼저 잡으려 몬스터 무리 한가운데로
+     *     돌진해 계속 맞던 원인. 이제 자동전투는 퀘스트에 전혀 영향을 받지 않는다.
+     *  ② 위협도 우선: 나에게 붙어있는/다가오는 몬스터를 먼저 제거해 피격 최소화 (생존 1순위)
+     *  ③ 보스 우선: 보스전 구역에선 보스를 최우선 타겟
+     *  ④ 밀집도 보정 유지(v3.0.22) — 무리를 따라가며 효율 사냥 */
+    const pool = live;
     let best: Enemy | Boss = pool[0];
     let bestEff = Infinity;
-    /* v3.0.22 (#37) — 맵 전체 최적 밀집 장소 선호 (기존 220px/45% → 260px/62% 강화):
-     *  모든 살아있는 적의 클러스터 점수(반경 260px 내 적 수)를 계산해
-     *  유효 거리 = 실거리 × (1 - min(0.62, cluster × 0.15)) — 가장 많은 무리가 모인 곳으로 이동.
-     *  무리가 정리되면(주변 적 감소) 자연히 다음 밀집 무리로 옮겨간다 — 한 곳 캠핑 없음.
-     *  화면 밖 무리 방향 = 노란 엣지 화살표 방향과 일치하므로 표시를 따라가는 것과 동일한 결과 */
-    const densityEff = (e: Enemy | Boss, d: number): number => {
-      let near = 0;
-      for (const o of live) {
-        if (o === e) continue;
-        if (Phaser.Math.Distance.Between(e.x, e.y, o.x, o.y) <= 260) near++;
-      }
-      return d * (1 - Math.min(0.62, near * 0.15));
-    };
     for (const e of pool) {
       const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
-      const eff = densityEff(e, d);
+      const eff = this.autoThreatScore(e, d, live);
       if (eff < bestEff) {
         bestEff = eff;
         best = e;
@@ -3533,10 +3607,10 @@ export class WorldScene extends Phaser.Scene {
     const curT = this.autoTarget;
     if (curT && curT !== best && curT.active && !this.autoBlacklist.has(curT) && pool.includes(curT)) {
       const curD = Phaser.Math.Distance.Between(this.player.x, this.player.y, curT.x, curT.y);
-      const curEff = densityEff(curT, curD);
+      const curEff = this.autoThreatScore(curT, curD, live);
       /* v3.0.22 (#41) — 히스테리시스 확대(1.25→1.3·420→700px): 먼 무리 이동 중 매 틱 타깃이
        *  바뀌며 제자리에서 방향만 흔들리던 떨림 제거 */
-      if (curEff <= bestEff * 1.3 && curD < 700) best = curT; // 밀집 보너스 반영한 히스테리시스
+      if (curEff <= bestEff * 1.3 && curD < 700) best = curT; // 위협도 반영한 히스테리시스
     }
     this.autoTarget = best;
     const bestD = Phaser.Math.Distance.Between(this.player.x, this.player.y, best.x, best.y); // v3.0.20 (#4) — 실거리 기준 판정 유지
@@ -3614,6 +3688,13 @@ export class WorldScene extends Phaser.Scene {
       }
     } else {
       // 근접 (전사/도적/미전직)
+      /* v3.0.28 (#자동전투개편) — 생존 우선: HP 30% 이하 + 포위(2+)면 물약 회복 텀을 벌리기 위해
+       *  열린 후퇴로로 잠깐 이탈 (코너에선 후퇴가 불가하므로 정면 반격 유지) */
+      if (p.hp <= p.maxHp * 0.3 && this.countTargetsNear(150) >= 2 && !this.autoRetreatBlocked()) {
+        this.autoHuntMove.copy(this.autoRetreatDir(best));
+        this.attackQueued = false;
+        return;
+      }
       if (bestD > atkRange) {
         // 돌진 갭클로저 — 240px 이내 + 직선 경로 개방 시 돌진기 접근 (2.1x 스윕 + 전사 충격파)
         if (bestD <= 240 && p.skill2Cd <= 0 && p.mp >= 20 && this.dashPathClear(best)) {
@@ -3640,6 +3721,25 @@ export class WorldScene extends Phaser.Scene {
         p.useSkill4();
       }
     }
+  }
+
+  /** v3.0.28 (#자동전투개편) — 자동전투 타겟 스코어링 (작을수록 우선).
+   *  위협도(나에게 붙은 몬스터) > 보스 > 밀집도 보정. 퀘스트 대상은 점수에 아예 개입하지 않는다. */
+  private autoThreatScore(e: Enemy | Boss, d: number, live: (Enemy | Boss)[]): number {
+    let eff = d;
+    /* 밀집도 보정 (v3.0.22 #37 로직 유지) — 무리가 모인 곳으로의 효율 사냥 */
+    let near = 0;
+    for (const o of live) {
+      if (o === e) continue;
+      if (Phaser.Math.Distance.Between(e.x, e.y, o.x, o.y) <= 260) near++;
+    }
+    eff *= 1 - Math.min(0.62, near * 0.15);
+    /* 위협도 우선 — 내 근접 위험대(220px) 몬스터를 먼저 제거해 피격 최소화 */
+    if (d <= 220) eff *= 0.45;
+    else if (d <= 340) eff *= 0.8;
+    /* 보스 우선 — 보스전에선 보스를 잡는 게 답 */
+    if (e instanceof Boss) eff *= 0.5;
+    return eff;
   }
 
   /** v3.0.25 (#자동사냥개선) — 적이 없을 때 구역 내 배회: 리스폰/남은 몬스터를 찾아 이동
@@ -5947,8 +6047,10 @@ export class WorldScene extends Phaser.Scene {
       /* v2.5 — 방문 구역 기록 + 자동사냥 토글 */
       visited: [...this.visited],
       autoHunt: this.autoHunt,
-      /* ----- v3.0.15 ----- */
+      /* v3.0.15 ----- */
       autoAlloc: this.autoAlloc,
+      /* v3.0.28 (#보스난이도) — 보스전 난이도 세이브 */
+      bossDiff: this.bossDiff,
       quickPots: { ...this.player.quickPots },
       potentials: JSON.parse(JSON.stringify(this.player.potentials)),
       potHpApplied: this.player.potHpAppliedVal,
@@ -6046,7 +6148,14 @@ export class WorldScene extends Phaser.Scene {
   }
 
   showDialogue(id: string, npcId: string | null = null) {
-    const d = DIALOGUES[id];
+    let d = DIALOGUES[id];
+    if (!d) {
+      /* v3.0.28 (#NPC대화) — 키 불일치 방어 폴백: dlg 키가 등록 규칙과 어긋나도
+       *  현재 챕터 마을 주민 대사(vlg{챕터명}A/B)로 재시도해 대화가 조용히 무시되는 일 방지 */
+      const ch = parseStage(this.stageDef.key).ch;
+      const cap = ch.charAt(0).toUpperCase() + ch.slice(1);
+      d = DIALOGUES[`vlg${cap}A`] ?? DIALOGUES[`vlg${cap}B`];
+    }
     if (!d) return;
     this.activeNpcId = npcId;
     this.dialoguing = true;

@@ -37,7 +37,12 @@ export function ChatBox() {
   // 포커스 상태를 씬에 알림 (게임 키 차단)
   useEffect(() => {
     EventBus.emit("chat:focus", { focus: open });
-    if (open) setTimeout(() => inputRef.current?.focus(), 0);
+    if (open) {
+      /* v3.0.28 (#채팅스크롤) — focus의 자동 스크롤 차단: 모바일 가상 키보드가 열릴 때
+       *  브라우저가 입력창을 화면 중앙으로 맞추려고 페이지를 밀어올려 채팅창·게임 화면이
+       *  위로 계속 밀리는(무한 올라감) 현상 차단 */
+      setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 0);
+    }
   }, [open]);
 
   // 입력창 밖 Enter로 열기 (다른 input에 타이핑 중일 땐 무시 — 인트로 이름 짓기 등)
@@ -64,6 +69,14 @@ export function ChatBox() {
     return () => window.removeEventListener("pointerdown", onPointer);
   }, [open]);
 
+  /* v3.0.28 (#채팅스크롤) — 닫힐 때 viewport 위치 복귀: 가상 키보드가 밀어올린
+   *  window 스크롤을 즉시 원위치해 채팅창이 화면 위쪽에 붙어 남는 현상 제거 */
+  const closeChat = () => {
+    setOpen(false);
+    inputRef.current?.blur();
+    window.scrollTo(0, 0);
+  };
+
   const send = () => {
     const t = text.trim().slice(0, 80);
     if (t) {
@@ -77,7 +90,7 @@ export function ChatBox() {
       }
     }
     setText("");
-    setOpen(false);
+    closeChat();
   };
 
   return (
@@ -104,7 +117,7 @@ export function ChatBox() {
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") send();
-              else if (e.key === "Escape") setOpen(false);
+              else if (e.key === "Escape") closeChat();
               e.stopPropagation();
             }}
             enterKeyHint="send"

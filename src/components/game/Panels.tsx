@@ -8,8 +8,8 @@ import {
   TRADE_PRICES, tradeValue, TRADE_STOCK, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
   CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue,
   POT_GRADE_META, potLineText, SET_GEAR, POT_STAT_LABEL,
-  ENEMIES, BOSS_DEFS, collectionBonus, nextCollectionGoal, COLLECTION_MILESTONES,
-  type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey,
+  ENEMIES, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, collectionBonus, nextCollectionGoal, COLLECTION_MILESTONES,
+  type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
 import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
@@ -1409,6 +1409,7 @@ export function GamePanels({
   if (panel === "collection") return <CollectionPanel rpg={rpg} onClose={onClose} />; // v3.0.16 — 몬스터 컬렉션
   if (panel === "quest") return <QuestLogPanel questLog={questLog} rpg={rpg} onClose={onClose} />;
   if (panel === "boss") return <BossReplayPanel rpg={rpg} onClose={onClose} />; // v3.0.25 — 보스 재도전 전용 창 (퀘스트창과 분리)
+  if (panel === "bossdiff") return <BossDifficultyPanel questLog={questLog} onClose={onClose} />; // v3.0.28 — 보스전 난이도 선택
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
 }
@@ -1969,10 +1970,41 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
 }
 
 /* ---------- v3.0.25 (#창분리) — 보스 재도전 전용 창 (퀘스트 로그에서 분리) ---------- */
+/* ---------- v3.0.28 (#보스난이도) — 메이플식 난이도(이지/노말/하드/카오스) 선택 도입 ---------- */
+
+/** 난이도 4버튼 — 재림판/스토리 보스 공용 스타일 */
+function BossDiffChips({ value, onPick }: { value: BossDiffKey; onPick: (lv: BossDiffKey) => void }) {
+  return (
+    <div className="mb-2 grid grid-cols-4 gap-1">
+      {BOSS_DIFF_ORDER.map((lv) => {
+        const d = BOSS_DIFFS[lv];
+        const on = value === lv;
+        return (
+          <button
+            key={lv}
+            onClick={() => onPick(lv)}
+            aria-pressed={on}
+            className={`rounded-md border px-1 py-1.5 text-center transition-colors active:scale-95 ${
+              on ? "border-white/40 bg-white/[0.12]" : "border-white/15 bg-white/[0.03] hover:bg-white/[0.07]"
+            }`}
+          >
+            <p className="text-[11px] font-black" style={{ color: d.color }}>
+              {d.label}
+            </p>
+            <p className="text-[8.5px] font-bold leading-tight text-white/45">HP ×{d.hp}</p>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  /* v3.0.28 — 난이도 선택 상태 (기본 노말) */
+  const [diff, setDiff] = useState<BossDiffKey>("normal");
   const bossKills = rpg?.collection?.kills ?? {};
+  const dif = BOSS_DIFFS[diff];
   return (
     <div
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
@@ -1995,11 +2027,15 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
             ✕
           </button>
         </div>
-        <p className="mb-2.5 rounded-lg border border-rose-300/25 bg-rose-400/[0.05] px-2.5 py-2 text-[10px] leading-snug font-bold text-white/60">
-          재림판은 스토리판보다 훨씬 강력하다 — <span className="text-rose-200">HP ×5 · ATK ×2.2</span>
+        <p className="mb-2 rounded-lg border border-rose-300/25 bg-rose-400/[0.05] px-2.5 py-2 text-[10px] leading-snug font-bold text-white/60">
+          재림판은 스토리판보다 훨씬 강력하다 — <span className="text-rose-200">HP ×5 · ATK ×2.2</span> 기준에
+          <span className="mx-0.5" style={{ color: dif.color }}>[{dif.label}]</span>가 곱해진다
           <br />
-          보상: 골드·경험치 ×3 + <span className="text-emerald-300">에메랄드 +5</span>
+          보상: 골드·경험치 ×3 <span style={{ color: dif.color }}>×{dif.reward}</span> +{" "}
+          <span className="text-emerald-300">에메랄드 +{dif.emerald}</span>
         </p>
+        {/* v3.0.28 — 난이도 선택 (메이플식) */}
+        <BossDiffChips value={diff} onPick={setDiff} />
         <div className="grid grid-cols-3 gap-1">
           {CHAPTERS.map((ch) => {
             const bk = ch.boss;
@@ -2010,7 +2046,7 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
                 key={ch.key}
                 disabled={!cleared}
                 title={cleared ? `${BOSS_DEFS[bk].name} 재림판에 도전` : "스토리를 먼저 완료하세요"}
-                onClick={() => EventBus.emit("rpg:bossReplay", { ch: ch.key })}
+                onClick={() => EventBus.emit("rpg:bossReplay", { ch: ch.key, lv: diff })}
                 className={`rounded-md border px-1 py-1.5 text-left transition-colors ${
                   cleared
                     ? "border-rose-300/50 bg-rose-500/15 hover:bg-rose-500/30 active:scale-95"
@@ -2028,6 +2064,71 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
           })}
         </div>
         <p className="mt-2.5 text-center text-[10px] text-white/40">스토리 클리어(토벌)한 챕터의 보스만 도전할 수 있습니다 · ESC로 닫기</p>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- v3.0.28 (#보스난이도) — 스토리 보스전 난이도 선택 패널 ---------- */
+/*  보스 퀘스트 진입 시 WorldScene이 "ui:panel" { panel: "bossdiff" }로 연다.
+ *  선택하면 rpg:bossDifficulty 이벤트로 씬에 전달 후 보스 스폰. 닫고 방치하면
+ *  씬 보루가 4초 뒤 노말로 자가치유한다 (소프트락 없음). */
+function BossDifficultyPanel({ questLog, onClose }: { questLog?: QuestLogState; onClose: () => void }) {
+  useEscClose(onClose);
+  const [diff, setDiff] = useState<BossDiffKey>("normal");
+  const active = questLog?.list.find((q) => q.state === "active");
+  const bossName = active?.title ?? "보스";
+  const dif = BOSS_DIFFS[diff];
+  return (
+    <div
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-[2px]"
+      onPointerDown={onClose}
+    >
+      <div
+        className="w-[min(92vw,390px)] rounded-xl border-2 border-amber-300/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <p className="text-sm font-black text-amber-200">⚔ 보스전 난이도 선택</p>
+        <p className="mt-0.5 text-[11px] font-bold text-white/70">{bossName}</p>
+        <p className="mb-2 mt-1.5 rounded-lg border border-amber-300/25 bg-amber-400/[0.06] px-2.5 py-2 text-[10px] leading-snug font-bold text-white/60">
+          난이도를 고르면 보스가 나타난다. 높은 난이도일수록 보상이 크다.
+        </p>
+        <div className="mb-2 flex flex-col gap-1">
+          {BOSS_DIFF_ORDER.map((lv) => {
+            const d = BOSS_DIFFS[lv];
+            const on = diff === lv;
+            return (
+              <button
+                key={lv}
+                onClick={() => setDiff(lv)}
+                aria-pressed={on}
+                className={`flex items-center justify-between rounded-lg border px-2.5 py-2 text-left transition-colors active:scale-[0.98] ${
+                  on ? "border-white/40 bg-white/[0.12]" : "border-white/15 bg-white/[0.03] hover:bg-white/[0.07]"
+                }`}
+              >
+                <span>
+                  <span className="text-[13px] font-black" style={{ color: d.color }}>
+                    {d.label}
+                  </span>
+                  <span className="ml-2 text-[10px] font-bold text-white/45">
+                    HP ×{d.hp} · ATK ×{d.atk} · 보상 ×{d.reward}
+                  </span>
+                </span>
+                {on && <span className="text-[10px] font-black text-white/60">선택됨</span>}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={() => {
+            EventBus.emit("rpg:bossDifficulty", { lv: diff });
+            onClose();
+          }}
+          className="w-full rounded-lg border border-amber-300/60 bg-amber-500/25 px-2 py-2 text-[12px] font-black text-amber-100 transition-colors hover:bg-amber-500/40 active:scale-[0.98]"
+        >
+          <span style={{ color: dif.color }}>[{dif.label}]</span>로 도전!
+        </button>
+        <p className="mt-2 text-center text-[10px] text-white/40">닫고 방치하면 잠시 후 노말로 등장합니다 · ESC로 닫기</p>
       </div>
     </div>
   );
