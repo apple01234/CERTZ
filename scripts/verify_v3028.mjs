@@ -53,8 +53,9 @@ console.log("[C] 보스 난이도 테이블");
 {
   const keys = BOSS_DIFF_ORDER;
   ok(JSON.stringify(keys) === JSON.stringify(["easy", "normal", "hard", "chaos"]), "4단계 순서 easy/normal/hard/chaos");
-  ok(BOSS_DIFFS.easy.hp < 1 && BOSS_DIFFS.normal.hp === 1 && BOSS_DIFFS.hard.hp > 1 && BOSS_DIFFS.chaos.hp > BOSS_DIFFS.hard.hp,
-    `HP 배율 단조 증가 ${BOSS_DIFFS.easy.hp}/${BOSS_DIFFS.normal.hp}/${BOSS_DIFFS.hard.hp}/${BOSS_DIFFS.chaos.hp}`);
+  /* v3.1.0 — 보스 밸런스 재조정: 노말 1.5/1.25 상향 (유저 지시 "보스 너무 약함") */
+  ok(BOSS_DIFFS.easy.hp < BOSS_DIFFS.normal.hp && BOSS_DIFFS.normal.hp >= 1.5 && BOSS_DIFFS.hard.hp > BOSS_DIFFS.normal.hp && BOSS_DIFFS.chaos.hp > BOSS_DIFFS.hard.hp,
+    `HP 배율 단조 증가 + 노말 상향 ${BOSS_DIFFS.easy.hp}/${BOSS_DIFFS.normal.hp}/${BOSS_DIFFS.hard.hp}/${BOSS_DIFFS.chaos.hp}`);
   ok(BOSS_DIFFS.easy.reward < 1 && BOSS_DIFFS.chaos.reward > 3,
     `보상 배율 이지 ${BOSS_DIFFS.easy.reward} < 노말 1 < 카오스 ${BOSS_DIFFS.chaos.reward}`);
   ok(BOSS_DIFFS.easy.emerald < BOSS_DIFFS.normal.emerald && BOSS_DIFFS.normal.emerald < BOSS_DIFFS.hard.emerald && BOSS_DIFFS.hard.emerald < BOSS_DIFFS.chaos.emerald,
@@ -62,13 +63,14 @@ console.log("[C] 보스 난이도 테이블");
   // 재림판 배율 적용식 — spawnReplayBoss 소스에서 dif.hp/dif.atk/dif.reward 사용 확인
   const ws = readFileSync(new URL("../src/game/scenes/WorldScene.ts", import.meta.url), "utf8");
   ok(/spawnReplayBoss[\s\S]{0,1200}dif\.hp[\s\S]{0,600}dif\.atk[\s\S]{0,600}dif\.reward/.test(ws), "재림판 수치에 난이도 배율 적용");
-  ok(/rpg:bossDifficulty/.test(ws) && /ui:panel[\s\S]{0,80}bossdiff/.test(ws), "스토리 보스 난이도 선택 이벤트 연결");
-  ok(/bossDiffPending\) return;/.test(ws), "난이도 선택 전 보스 스폰 게이트");
-  ok(/bossDiffPendingSince > 4000/.test(ws), "보루 4초 노말 자가치유");
+  /* v3.1.0 — 스토리 보스는 난이도 선택창 없이 전용 난이도(노말 고정)로 즉시 스폰 */
+  ok(!/rpg:bossDifficulty/.test(ws) && !/ui:panel[\s\S]{0,80}bossdiff/.test(ws), "스토리 보스 난이도 선택창 제거");
+  ok(/else if \(q\.type === "boss"\) \{[\s\S]{0,320}spawnBoss\(true\)/.test(ws), "스토리 보스 즉시 스폰 (전용 난이도)");
+  ok(/bossDiffPending\) return;/.test(ws), "난이도 선택 전 보스 스폰 게이트(안전망 유지)");
   ok(/bossDiff: this\.bossDiff/.test(ws), "세이브에 난이도 기록");
   const panels = readFileSync(new URL("../src/components/game/Panels.tsx", import.meta.url), "utf8");
   ok(/rpg:bossReplay[\s\S]{0,60}lv: diff/.test(panels), "재림 패널에서 난이도 전송");
-  ok(panels.includes("BossDifficultyPanel"), "난이도 선택 패널 존재");
+  ok(!panels.includes("BossDifficultyPanel"), "스토리 난이도 선택 패널 제거됨");
 }
 
 console.log("[D] 자동 토벌 퀘스트 targetKeys = 구역 스폰 조합");
@@ -105,6 +107,56 @@ console.log("[E] 자동전투 개편 (정적 검사)");
   ok(!/cq\.type === "hunt"|qKey = cq/.test(ws.split("autoThreatScore")[0].split("tickAutoHunt").pop() ?? ""), "tickAutoHunt에서 currentQuest() 타겟 필터 미사용");
   ok(/enterPortal\(\)[\s\S]{0,900}type === "reach"\) this\.advanceQuest\(\)/.test(ws), "enterPortal reach 완료 처리");
   ok(/vlg\$\{cap\}A/.test(ws), "showDialogue 챕터 폴백");
+}
+
+console.log("[F] v3.1.0 — 유저 지시 13건 정적 검사");
+{
+  const ws = readFileSync(new URL("../src/game/scenes/WorldScene.ts", import.meta.url), "utf8");
+  const data = readFileSync(new URL("../src/game/data.ts", import.meta.url), "utf8");
+  const stages = readFileSync(new URL("../src/game/stages.ts", import.meta.url), "utf8");
+  const panels = readFileSync(new URL("../src/components/game/Panels.tsx", import.meta.url), "utf8");
+  const audio = readFileSync(new URL("../src/game/audio.ts", import.meta.url), "utf8");
+  const hud = readFileSync(new URL("../src/components/game/HUD.tsx", import.meta.url), "utf8");
+  const player = readFileSync(new URL("../src/game/entities/Player.ts", import.meta.url), "utf8");
+
+  /* #3 — BGM/SFX 분리 볼륨 UI */
+  ok(/export function setBgmVolume/.test(audio) && /export function setSfxVolume/.test(audio), "audio.ts — BGM/SFX 볼륨 API");
+  ok(/VolumeSliders/.test(panels) && /setBgmVolume\(v \/ 100\)/.test(panels) && /setSfxVolume\(v \/ 100\)/.test(panels), "설정 창 — 볼륨 슬라이더 UI 연결");
+  ok(/SFX_VOLUME_DEFAULT = 0\.62/.test(audio), "효과음 기본 게인 하향 (0.62)");
+  ok(/audio\.loadVolumes\(\)/.test(readFileSync(new URL("../src/components/game/GameRoot.tsx", import.meta.url), import.meta.url ? "utf8" : "utf8")), "부팅 시 저장된 볼륨 복원");
+
+  /* #4 — 퀘스트 창 수동 접기만 (자동 접힘 없음) */
+  ok(!/sertz\.trackerOpen/.test(ws), "씬이 퀘스트 트래커 상태를 강제하지 않음");
+  ok(/sertz\.trackerOpen/.test(hud) && /toggleTracker/.test(hud), "트래커 토글은 HUD(사용자) 전용");
+
+  /* #5/#13 — 전직 스토리 선행 */
+  ok(/startJobStory\(fam: FamilyKey, tier: 1 \| 2 \| 3\)/.test(ws), "전직 시련 스토리 시작 API");
+  ok(/시련 완료 후 전직 적용/.test(ws) && /finTier === 1 && !this\.player\.cls && this\.pendingJobClass/.test(ws), "1차 전직은 시련 완료 후 적용");
+  ok(/chainOf\(this\.player\.cls\)\.length === 0\)[\s\S]{0,1200}startJobStory\(fam, 1\)/.test(ws), "미전직 계열 선택 → 시련 시작 (즉시 전직 아님)");
+  ok(/jobStoryDone\.includes\(\(tier \+ 1\) as 2 \| 3\)/.test(ws), "2/3차 승격 = 다음 차수 시련 완료 조건");
+
+  /* #6 — 판매 수량 + MAX */
+  ok(/function SellQtyBox/.test(panels) && /MAX/.test(panels), "판매 수량 입력 + MAX 버튼");
+  ok(/sell\(key: ItemKey, qty = 1\): number/.test(player), "Player.sell 수량 판매");
+  ok(/sellPotion\([\s\S]{0,200}qty = 1/.test(player), "Player.sellPotion 수량 판매");
+
+  /* #7 — 능대 명칭 */
+  ok(/name: "능대"/.test(stages), "ENEMIES — 늪 몬스터 '능대' 명칭");
+  ok(!/식인초/.test(stages.replace(/\/\*[\s\S]*?\*\//g, "").replace(/v2\.6[^\n]*\n/g, "")), "stages.ts — 식인초 잔여 표기 없음");
+  ok(!/식인초/.test(data), "data.ts — 대사 포함 식인초 잔여 없음");
+
+  /* #8 — 흑화 수정 */
+  ok(/private transitioning = false/.test(ws) && /gotoStage\(next: StageKey/.test(ws), "구역 전환 공통 게이트 (이중 restart 차단)");
+  ok(/fadeIn\(350, 0, 0, 0\)/.test(ws) && /fadeEffect\?\.isRunning\) cam\.fadeEffect\.stop\(\)/.test(ws), "구역 진입 fadeIn + 페이드 워치독");
+
+  /* #9 — 스토리 보스 전용 난이도 */
+  ok(/BOSS_DIFFS\.normal\.hp = 1\.5|normal: \{ key: "normal"[^\n]*hp: 1\.5/.test(stages), "스토리 보스 전용 기준 — 노말 상향치");
+
+  /* #10 — 시련 리스폰 차단 */
+  ok(/ref === this\.jobTrialEnemy\)[\s\S]{0,200}재소환 금지[\s\S]{0,60}\} else \{[\s\S]{0,200}respawnEnemy/.test(ws), "시험 상대 리스폰 차단");
+
+  /* #12 — 최적화 */
+  ok(/emitHud\(\) \{[\s\S]{0,240}lastHudEmit/.test(ws), "HUD 브로드캐스트 스로틀");
 }
 
 console.log(`\n결과: ${pass} PASS / ${fail} FAIL`);

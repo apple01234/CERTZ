@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
-import { familyOf, isClassKey, classLabel, SKILL_ICONS } from "../classes";
+import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
@@ -144,8 +144,18 @@ export class WorldScene extends Phaser.Scene {
   /* ----- v2.0: 방향키 입력 순서 (마지막 누른 키 우선 — 지시 #16) ----- */
   private dirOrder: { x: string[]; y: string[] } = { x: [], y: [] };
   /* ----- v2.0: 전직 스토리 진행 (지시 #13) ----- */
-  jobStory: { tier: 1 | 2 | 3; step: number; hunt: number } | null = null;
+  /* v3.1.0 (#전직스토리선행) — fam 추가: 미전직(cls null) 상태에서도 계열 스토리 진행 가능.
+   *  유저 지시 "전직은 전직 스토리(n차마다 다른 스토리/컷신) 완료 후에 실행" —
+   *  계열 선택 → 해당 계열 시련 스토리 → 완료 시 전직 적용 순서로 반영했다. */
+  jobStory: { tier: 1 | 2 | 3; step: number; hunt: number; fam: FamilyKey } | null = null;
   private jobStoryDone: number[] = []; // 완료한 티어 기록 [2, 3]
+  /** v3.1.0 (#전직스토리선행) — 미전직이 시련 스토리 중 선택해둔 1차 클래스 (완료 시 적용) */
+  private pendingJobClass: ClassKey | null = null;
+  /** v3.1.0 (#흑화) — 구역 전환 중 플래그: 중복 scene.restart로 인한 흑화 방지 */
+  private transitioning = false;
+  /** v3.1.0 (#최적화) — HUD 브로드캐스트 스로틀 (프레임당 다중 emit 억제) */
+  private lastHudEmit = -999;
+  private hudEmitPending = false;
   private jobEliteSummoned = false; // 시험 상대 소환 여부 (소환 전 완료 판정 방지)
   /* ----- v2.0: 여관/집 상호작용 쿨다운 ----- */
   private restCd = 0;
@@ -420,6 +430,8 @@ export class WorldScene extends Phaser.Scene {
     this.dirOrder = { x: [], y: [] };
     this.jobStory = null;
     this.jobStoryDone = [];
+    this.pendingJobClass = null; // v3.1.0 — 전직 시련 선택 클래스 리셋
+    this.transitioning = false; // v3.1.0 — 씬 재시작마다 전환 게이트 초기화
     this.restCd = 0;
     // 런 통계(처치/플레이타임) — 씬 재시작(스테이지 전환)과 무관하게 유지
     // fresh=true는 타이틀에서 새 시작/이어하기일 때만 (사망화면 정확한 통계)
@@ -563,11 +575,29 @@ export class WorldScene extends Phaser.Scene {
       this.player.pet = (savedPlayer.pet && savedPlayer.pet in PET_DEFS ? (savedPlayer.pet as PetKey) : null);
       this.player.cosmetics = (savedPlayer.cosmetics ?? []).filter((k) => k in COSMETIC_DEFS) as CosmeticKey[];
       this.player.cosmetic = (savedPlayer.cosmetic && savedPlayer.cosmetic in COSMETIC_DEFS ? (savedPlayer.cosmetic as CosmeticKey) : null);
-      // 전직 스토리 복원 (v2.0)
+      // 전직 스토리 복원 (v2.0 / v3.1.0 — fam 포함. 구 세이브는 cls 계열로 역산)
       if (savedPlayer.jobStory && typeof savedPlayer.jobStory.tier === "number") {
-        this.jobStory = { tier: savedPlayer.jobStory.tier, step: savedPlayer.jobStory.step, hunt: savedPlayer.jobStory.hunt };
+        const famSaved = (savedPlayer.jobStory as { fam?: string }).fam;
+        const famDerived = familyOf(savedPlayer.cls ?? "");
+        const jsFam: FamilyKey | undefined = (famSaved as FamilyKey | undefined) ?? famDerived ?? undefined;
+        if (jsFam) {
+          this.jobStory = {
+            tier: savedPlayer.jobStory.tier,
+            step: savedPlayer.jobStory.step,
+            hunt: savedPlayer.jobStory.hunt,
+            fam: jsFam,
+          };
+        }
       }
       this.jobStoryDone = [...(savedPlayer.jobStoryDone ?? [])];
+      // v3.1.0 — 시련 스토리 중 선택해둔 1차 클래스 복원
+      if (
+        !savedPlayer.cls &&
+        typeof (savedPlayer as { pendingJobClass?: string | null }).pendingJobClass === "string" &&
+        isClassKey((savedPlayer as { pendingJobClass?: string | null }).pendingJobClass as string)
+      ) {
+        this.pendingJobClass = (savedPlayer as { pendingJobClass?: string | null }).pendingJobClass as ClassKey;
+      }
       // v2.3 — 본 대사 기록 + 반복 의뢰 수주 해금 복원 (지시 #1/#4)
       this.seenSet = new Set(savedPlayer.seen ?? []);
       this.repeatOn = savedPlayer.repeatOn ?? false;
@@ -1378,6 +1408,22 @@ export class WorldScene extends Phaser.Scene {
     if (!silent) this.showBanner("차원문이 열렸다!");
   }
 
+  /**
+   * v3.1.0 (#흑화) — 구역 전환 공통 게이트. 유저 지시 "가끔 맵 이동 시 검은 화면":
+   *  포탈/부적/재림 등 여러 경로가 같은 프레임에 restart를 예약하거나 이중 호출되면
+   *  init 데이터가 유실되어 create()가 비정상 종료 → 화면이 검은 채로 멈춘다.
+   *  모든 전환을 단일 헬퍼로 모으고 transitioning 플래그로 1회만 실행되도록 막는다.
+   */
+  private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string }) {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    // ⚠️ 다음 스테이지에 현재 스탯/소지품을 그대로 넘긴다
+    //   (restart에 save를 안 넘기면 기본값 플레이어로 시작 — 골드/레벨/장비 소실 버그)
+    const carry = this.buildSave(next);
+    writeSave(carry);
+    this.scene.restart({ stage: next, save: carry, ...extra });
+  }
+
   private enterPortal() {
     this.portalActive = false;
     audio.sfx.portal();
@@ -1398,13 +1444,7 @@ export class WorldScene extends Phaser.Scene {
       this.trackedStage = next;
       this.emitQuestLog();
     }
-    this.time.delayedCall(520, () => {
-      // ⚠️ 다음 스테이지에 현재 스탯/소지품을 그대로 넘긴다
-      //   (restart에 save를 안 넘기면 기본값 플레이어로 시작 — 골드/레벨/장비 소실 버그)
-      const carry = this.buildSave(next);
-      writeSave(carry);
-      this.scene.restart({ stage: next, save: carry });
-    });
+    this.time.delayedCall(520, () => this.gotoStage(next));
   }
 
   /* ================= 복귀 차원문 (v2.0 — 메이플식 자유 왕복, 지시 #8) ================= */
@@ -1460,11 +1500,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.portal();
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.player.state = "idle";
-    this.time.delayedCall(520, () => {
-      const carry = this.buildSave(prev);
-      writeSave(carry);
-      this.scene.restart({ stage: prev, save: carry });
-    });
+    this.time.delayedCall(520, () => this.gotoStage(prev));
   }
 
   /* ================= 시작 마을 (인간들의 마을) ================= */
@@ -2123,9 +2159,15 @@ export class WorldScene extends Phaser.Scene {
       if (this.multiKillCount >= 5) this.cameras.main.shake(140, 0.004);
     }
     // 리스폰 예약 — v2.3 단축: 9~13초 → 3.2~4.8초 (지시 #2 — 리젠이 너무 길어 사냥이 끊긴다)
-    this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
-      this.respawnEnemy(key, spawnX, spawnY, 0)
-    );
+    // v3.1.0 (#전직시련) — 시험 상대는 리스폰하지 않는다. 기존엔 시련 상대(golem 기반)를
+    //  잡으면 일반 몬스터 리스폰 큐에 등록돼 "시련 후 약한 몬스터가 계속 소환"되었다.
+    if (ref && ref === this.jobTrialEnemy) {
+      /* 시련 상대 — 재소환 금지 (재도전은 카이엔에게 말 걸기) */
+    } else {
+      this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
+        this.respawnEnemy(key, spawnX, spawnY, 0)
+      );
+    }
     const q = this.currentQuest();
     if (q && q.type === "hunt") {
       if (!this.repeatActive() && !this.isQuestAccepted(this.stageDef.key, this.questIdx)) {
@@ -2183,8 +2225,10 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= v3.0.22 (#38) — 전직 퀘스트 게이트 =================
    *  "전직 퀘스트를 완료해야만 전직 시켜줘야지!!" — 레벨 조건만으로 전직되던 것을
-   *  퀘스트 완료까지 요구한다. 미전직 → 마을 체인 완료, 1→2차 · 2→3차 → 해당 차수의
-   *  [전직 스토리] 체인 완료. GM NPC 자유전직은 디버그 기능이므로 그대로 유지. */
+   *  퀘스트 완료까지 요구한다.
+   *  v3.1.0 (#전직스토리선행) — 순서 반영: 미전직 → 마을 체인 완료 후 계열 선택 시
+   *  1차 시련 스토리 시작(선택 즉시 전직 아님), 1→2차 · 2→3차 → 다음 차수의
+   *  [전직 시련] 스토리 완료가 승격 잠금 해제 조건. */
   private jobQuestCleared(): boolean {
     const tier = chainOf(this.player?.cls ?? "").length;
     if (tier >= 3) return true;
@@ -2192,7 +2236,8 @@ export class WorldScene extends Phaser.Scene {
       const vq = STAGES["village"].quests.length;
       return (this.savedQuestIdx["village"] ?? 0) >= vq;
     }
-    return this.jobStoryDone.includes(tier as 1 | 2 | 3);
+    // 1차 → 2차: 2차 시련 완료 / 2차 → 3차: 3차 시련 완료
+    return this.jobStoryDone.includes((tier + 1) as 2 | 3);
   }
 
   /** 전직 잠금 사유 문구 (패널 표기용 — null이면 퀘스트 조건 충족) */
@@ -2204,9 +2249,10 @@ export class WorldScene extends Phaser.Scene {
       if ((this.savedQuestIdx["village"] ?? 0) < vq) return "마을 퀘스트 체인 완료 (이그니와 함께)";
       return null;
     }
-    const names: Record<number, string> = { 1: "가호의 인연", 2: "가호의 증표" };
-    if (!this.jobStoryDone.includes(tier as 1 | 2 | 3)) {
-      return `[전직 스토리] ${names[tier] ?? "스토리"} 체인 완료 필요`;
+    if (!this.jobStoryDone.includes((tier + 1) as 2 | 3)) {
+      return tier === 1
+        ? "[전직 시련] 2차 스토리 완료 필요 (카이엔과 대화)"
+        : "[전직 시련] 3차 스토리 완료 필요 (카이엔과 대화)";
     }
     return null;
   }
@@ -2474,14 +2520,10 @@ export class WorldScene extends Phaser.Scene {
     } else if (q.type === "collect") {
       if (!this.fragment) this.spawnFragmentForQuest();
     } else if (q.type === "boss") {
-      /* v3.0.28 (#보스난이도) — 보스 퀘스트 진입 시 난이도 선택 패널을 먼저 띄운다.
-       *  선택(rpg:bossDifficulty) 도착 전엔 보스 미스폰 — 보루가 4초 뒤 노말로 자가치유. */
-      if (!this.boss) {
-        if (this.bossDiffPending) return; // 이미 패널 표시 중
-        this.bossDiffPending = true;
-        this.bossDiffPendingSince = this.time.now;
-        EventBus.emit("ui:panel", { panel: "bossdiff" });
-      }
+      /* v3.1.0 (#스토리보스난이도) — 유저 지시 "스토리 보스는 전용 난이도, 난이도 선택창은 띄우지 마라":
+       *  스토리 보스는 선택창 없이 전용 기준(노말 상향치 고정 — stages.ts BOSS_DIFFS.normal)으로 즉시 스폰.
+       *  난이도 선택은 재림(재도전) 보스판에서만 노출된다. */
+      if (!this.boss) this.spawnBoss(true);
     } else if (q.type === "hunt") {
       /* v3.0.28 — targetKeys(자동 토벌) 합산 판정: 이미 조건 충족이면 즉시 연쇄 완료 (소프트락 방지) */
       if (this.huntProgressSum(q) >= (q.need ?? 0) && q.targetKey) this.tryCompleteHunt(q.targetKey);
@@ -2836,6 +2878,9 @@ export class WorldScene extends Phaser.Scene {
     };
     const onChatSend = (v: { text: string }) => net.netSendChat(v.text);
     // 전직/승격 선택 (JobPanel → v1.8 다차원 트리)
+    /* v3.1.0 (#전직스토리선행) — 유저 지시 "전직은 전직 스토리(n차마다 다른 스토리·컷신)
+     *  완료 후에만": 미전직 계열 선택 → 1차 시련 시작 (전직은 시련 완료 시 자동 적용),
+     *  2차/3차 승격 → 다음 차수 시련 완료가 잠금 해제 조건 (scene-side 재검증). */
     const onJobSelect = (v: { key: string }) => {
       if (!this.player || this.player.state === "dead") return;
       if (this.dialoguing) {
@@ -2851,6 +2896,39 @@ export class WorldScene extends Phaser.Scene {
       }
       if (this.player.lv < need) {
         EventBus.emit("banner:show", { text: `전직은 Lv ${need}부터 가능합니다` });
+        return;
+      }
+      /* ---------- 미전직: 계열 선택 → 1차 시련 스토리 ---------- */
+      if (chainOf(this.player.cls).length === 0) {
+        const fam = familyOf(def.key);
+        if (!fam) return;
+        if (this.jobStory?.tier === 1 && !this.player.cls) {
+          if (this.jobStory.fam === fam) {
+            EventBus.emit("banner:show", { text: "이미 전직 시련 진행 중 — 스토리를 완료하면 전직한다!" });
+            return;
+          }
+          if (this.jobStory.step === 0) {
+            // 시작 직후라면 계열 변경 허용 — 시련 재시작
+            this.jobStory = null;
+            this.pendingJobClass = def.key;
+            this.startJobStory(fam, 1);
+            return;
+          }
+          EventBus.emit("banner:show", { text: "시련 도중에는 계열을 바꿀 수 없다" });
+          return;
+        }
+        if (this.jobStoryDone.includes(1)) {
+          // 1차 시련 완료 후 재선택 — 복구 경로 (즉시 적용)
+        } else {
+          this.pendingJobClass = def.key;
+          this.startJobStory(fam, 1);
+          return;
+        }
+      } else if (!this.jobQuestCleared()) {
+        // 2차/3차 승격 — 다음 차수 시련 완료 필수 (패널 우회 방지 scene-side 재검증)
+        EventBus.emit("banner:show", {
+          text: `📜 ${this.jobQuestLockText() ?? "전직 시련을 먼저 완료하세요"}`,
+        });
         return;
       }
       if (!this.player.applyClass(def.key)) return;
@@ -2871,12 +2949,8 @@ export class WorldScene extends Phaser.Scene {
       this.emitHud();
       this.emitRpgState();
       net.netAnnounceJob(def.key);
-      // v3.0.2 — 1차 전직 직후 스토리 즉시 시작 (트래커에 표시). 2차 이상은 전직관 시조 대화로 시작
-      if (chainOf(this.player.cls).length === 1) {
-        this.time.delayedCall(600, () => this.maybeStartJobStory());
-      } else {
-        this.time.delayedCall(1400, () => this.showBanner("전직관에서 카이엔과 대화하면 전직 스토리가 이어집니다"));
-      }
+      // v3.1.0 — 승격 직후 다음 차수 시련 자동 시작 (n차마다 다른 스토리)
+      this.time.delayedCall(900, () => this.maybeStartJobStory());
     };
 
     // 자유 전직 (v1.8 — 메이플 자유전직 재현: 같은 계열 내 반대 경로, 골드 소모)
@@ -2910,11 +2984,7 @@ export class WorldScene extends Phaser.Scene {
       if (!target || target === this.stageDef.key) return;
       this.cameras.main.fadeOut(420, 0, 0, 0);
       this.player.state = "idle";
-      this.time.delayedCall(440, () => {
-        const carry = this.buildSave(target);
-        writeSave(carry);
-        this.scene.restart({ stage: target, save: carry });
-      });
+      this.time.delayedCall(440, () => this.gotoStage(target));
     };
 
     // v2.5 — 소지품 사용 (상급 물약/마을 귀환서/지역 이동 부적 — 지시 #5/#6/#7)
@@ -2941,11 +3011,7 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: `마을 귀환서 사용! ${STAGES[vk]?.name ?? "마을"}로 이동합니다…` });
         this.cameras.main.fadeOut(420, 0, 0, 0);
         this.player.state = "idle";
-        this.time.delayedCall(440, () => {
-          const carry = this.buildSave(vk);
-          writeSave(carry);
-          this.scene.restart({ stage: vk, save: carry });
-        });
+        this.time.delayedCall(440, () => this.gotoStage(vk));
         return;
       }
       if (key === "scroll_warp") {
@@ -2983,11 +3049,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: `부적 사용! ${STAGE_SHORT[target] ?? target}(으)로 이동합니다…` });
       this.cameras.main.fadeOut(420, 0, 0, 0);
       this.player.state = "idle";
-      this.time.delayedCall(440, () => {
-        const carry = this.buildSave(target);
-        writeSave(carry);
-        this.scene.restart({ stage: target, save: carry });
-      });
+      this.time.delayedCall(440, () => this.gotoStage(target));
     };
 
     /* v3.0.24 (#보스재도전) — 클리어한 챕터 보스 고능력치 재판:
@@ -3013,21 +3075,11 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: `재림 — ${BOSS_DEFS[spec.boss].name}의 재도전! [${BOSS_DIFFS[lv].label}]` });
       this.cameras.main.fadeOut(420, 0, 0, 0);
       this.player.state = "idle";
-      this.time.delayedCall(440, () => {
-        const carry = this.buildSave(target);
-        writeSave(carry);
-        this.scene.restart({ stage: target, save: carry, replayBoss: ch, replayDiff: lv });
-      });
+      this.time.delayedCall(440, () => this.gotoStage(target, { replayBoss: ch, replayDiff: lv }));
     };
-    /* v3.0.28 (#보스난이도) — 스토리 보스 난이도 선택 수신: 저장 → 스폰 (세이브로 재접속 복구 대응) */
-    const onBossDiff = (v: { lv: string }) => {
-      if (!this.player) return;
-      const lv = typeof v?.lv === "string" && v.lv in BOSS_DIFFS ? (v.lv as BossDiffKey) : "normal";
-      this.bossDiff = lv;
-      this.bossDiffPending = false;
-      this.save();
-      if (this.currentQuest()?.type === "boss" && !this.boss) this.spawnBoss();
-    };
+    /* v3.0.28 (#보스난이도) — 스토리 보스 난이도 선택 수신은 v3.1.0에서 제거됐다:
+     *  스토리 보스는 전용 난이도(노말 상향 고정)로 즉시 스폰, 선택창 없음.
+     *  난이도 선택은 재림판(rpg:bossReplay · lv)에서만 받는다. */
 
     // v2.5 — 자동사냥 토글 (v3.0.15 #5: 펫 없이도 사용 가능)
     const onAutoHunt = () => {
@@ -3110,25 +3162,31 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:useItem", onUseItem);
     EventBus.on("rpg:warp", onWarp);
     EventBus.on("rpg:bossReplay", onBossReplay); // v3.0.24 — 보스 재도전
-    EventBus.on("rpg:bossDifficulty", onBossDiff); // v3.0.28 — 보스 난이도 선택
-    /* v3.0.6 (지시 #4) — 아이템 판매 */
-    const onSell = (v: { key: string }) => {
+    /* v3.1.0 — 스토리 보스 난이도 선택 이벤트는 제거됐다: 전용 난이도로 즉시 스폰 */
+    /* v3.0.6 (지시 #4) — 아이템 판매 · v3.1.0 (#판매포기) — 수량 지정 판매 (MAX = 전량) */
+    const onSell = (v: { key: string; qty?: number }) => {
       if (!this.player || this.dialoguing) return;
-      const okSell = this.player.sell(v.key as ItemKey);
-      if (okSell) {
+      const qty = Math.max(1, Math.min(999, Math.floor(v.qty ?? 1)));
+      const sold = this.player.sell(v.key as ItemKey, qty);
+      if (sold > 0) {
         this.save();
         this.emitRpgState();
-        EventBus.emit("banner:show", { text: "판매 완료 — 상점가의 40%" });
+        EventBus.emit("banner:show", {
+          text: sold > 1 ? `판매 완료 ×${sold} — 상점가의 40%` : "판매 완료 — 상점가의 40%",
+        });
       }
     };
-    /* v3.0.20 (#7) — 물약 판매 (기본은 카운터 차감, 상급/엘릭서는 owned) */
-    const onSellPotion = (v: { key: string }) => {
+    /* v3.0.20 (#7) — 물약 판매 (기본은 카운터 차감, 상급/엘릭서는 owned) · v3.1.0 — 수량 지정 */
+    const onSellPotion = (v: { key: string; qty?: number }) => {
       if (!this.player || this.dialoguing) return;
-      const okSell = this.player.sellPotion(v.key as "potion_hp" | "potion_mp" | "potion_hp2" | "potion_mp2" | "potion_elixir");
-      if (okSell) {
+      const qty = Math.max(1, Math.min(999, Math.floor(v.qty ?? 1)));
+      const sold = this.player.sellPotion(v.key as "potion_hp" | "potion_mp" | "potion_hp2" | "potion_mp2" | "potion_elixir", qty);
+      if (sold > 0) {
         this.save();
         this.emitRpgState();
-        EventBus.emit("banner:show", { text: "물약 판매 완료 — 상점가의 40%" });
+        EventBus.emit("banner:show", {
+          text: sold > 1 ? `물약 판매 완료 ×${sold} — 상점가의 40%` : "물약 판매 완료 — 상점가의 40%",
+        });
       }
     };
     /* v3.0.6 (지시 #1) — BM 상점 구매 (에메랄드) · v3.0.24 — 수량 지정 + 소모품 재구매 버그 수정 */
@@ -3326,7 +3384,6 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:useItem", onUseItem);
       EventBus.off("rpg:warp", onWarp);
       EventBus.off("rpg:bossReplay", onBossReplay);
-      EventBus.off("rpg:bossDifficulty", onBossDiff); // v3.0.28 — 보스 난이도
       EventBus.off("rpg:sell", onSell);
       EventBus.off("rpg:sellPotion", onSellPotion);
       EventBus.off("rpg:bmBuy", onBmBuy);
@@ -3337,6 +3394,20 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:tradeSell", onTradeSell);
       EventBus.off("rpg:starScroll", onStarScroll);
       EventBus.off("rpg:upgradeAcc", onUpgradeAcc);
+    });
+
+    /* ================= v3.1.0 (#흑화) — 구역 진입 카메라 자가치유 =================
+     *  유저 지시 "맵 이동할 때 가끔 검은 화면":
+     *  · 전환 직후 항상 fadeIn으로 화면을 확실히 밝힌다 (전환 연출 톤도 자연스러움)
+     *  · 워치독 — 1.2초 후에도 페이드 이펙트가 살아있면 강제 정지 (일부 WebView에서
+     *    fadeOut 완료 콜백 유실 시 화면이 검은 채로 남는 사례 방지) */
+    this.cameras.main.fadeIn(350, 0, 0, 0);
+    this.time.delayedCall(1200, () => {
+      if (!this.scene.isActive()) return;
+      const cam = this.cameras.main as unknown as {
+        fadeEffect?: { isRunning: boolean; stop(): void };
+      };
+      if (cam.fadeEffect?.isRunning) cam.fadeEffect.stop();
     });
   }
 
@@ -5062,31 +5133,43 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= 전직 스토리 (v2.0 — 지시 #13) ================= */
 
-  /** 현재 진행 가능한 전직 스토리 정의 (클래스 계열 기준) */
+  /** 현재 진행 가능한 전직 스토리 정의 (v3.1.0 — fam 우선: 미전직 시련도 지원) */
   jobStoryDef(): JobStoryDef | null {
-    const fam = familyOf(this.player.cls ?? "");
+    const fam = this.jobStory?.fam ?? familyOf(this.player?.cls ?? "");
     if (!fam) return null;
     return JOBSTORY[fam][this.jobStory?.tier ?? 1] ?? null;
   }
 
-  /** 전직 스토리 시작 — 카이엔 대화 후 (resumeFromDialogue에서 호출)
-   *  v3.0.2 — 1차(전직 직후)도 지원, 티어 연쇄 게이팅(t2는 t1 완료, t3는 t2 완료 필요) */
+  /**
+   * v3.1.0 (#전직스토리선행) — 전직 스토리(시련) 시작. 유저 지시:
+   *  "전직은 전직 스토리(n차마다 다른 스토리·컷신)를 완료한 후에 실행한다."
+   *  · 미전직: 전직관에서 계열 선택 시 tier-1 시련 시작 → 완료 시 전직 적용
+   *  · 1차/2차: 다음 차수(tier+1) 시련 시작 → 완료 시 다음 전직 잠금 해제
+   */
+  private startJobStory(fam: FamilyKey, tier: 1 | 2 | 3): boolean {
+    if (!this.player || this.jobStory) return false;
+    if (this.jobStoryDone.includes(tier)) return false;
+    // 이전 티어 시련을 먼저 완료해야 다음 티어 진행 (연쇄 게이팅 유지)
+    if (tier >= 2 && !this.jobStoryDone.includes((tier - 1) as 1 | 2)) return false;
+    this.jobStory = { tier, step: 0, hunt: 0, fam };
+    const story = JOBSTORY[fam][tier];
+    this.showDialogue(story.startDialogue);
+    this.showBanner(`전직 시련 시작 — ${story.title} (완료 후 전직!)`);
+    audio.sfx.questDone();
+    this.save();
+    this.emitQuest();
+    this.emitRpgState();
+    return true;
+  }
+
+  /** 전직관 카이엔 대화 후 — 미진행 다음 차수 시련 자동 시작 (v3.1.0 재정의) */
   private maybeStartJobStory() {
     if (!this.player) return;
     const fam = familyOf(this.player.cls ?? "");
     if (!fam) return;
-    const tier = chainOf(this.player.cls).length; // 0=미전직, 1=1차, 2=2차, 3=3차
-    if (tier < 1) return;
-    const t = tier as 1 | 2 | 3;
-    if (this.jobStoryDone.includes(t)) return;
-    if (this.jobStory && this.jobStory.tier === t) return;
-    // 이전 티어 스토리 먼저 완료해야 다음 티어 진행
-    if (t >= 2 && !this.jobStoryDone.includes((t - 1) as 1 | 2)) return;
-    this.jobStory = { tier: t, step: 0, hunt: 0 };
-    const story = JOBSTORY[fam][t];
-    this.showDialogue(story.startDialogue);
-    this.showBanner(`전직 스토리 시작 — ${story.title}`);
-    audio.sfx.questDone();
+    const len = chainOf(this.player.cls).length; // 1=1차, 2=2차, 3=3차
+    if (len < 1 || len >= 3) return;
+    this.startJobStory(fam, (len + 1) as 2 | 3);
   }
 
   /** 전직 스토리 단계 완료 — 보상 지급 + 다음 단계 대사 */
@@ -5107,10 +5190,34 @@ export class WorldScene extends Phaser.Scene {
       // 전체 완료 — 최종 보상
       this.player.addGold(story.reward.gold);
       this.player.ap += story.reward.ap;
-      this.jobStoryDone.push(this.jobStory.tier);
+      const finTier = this.jobStory.tier;
+      this.jobStoryDone.push(finTier);
       this.jobStory = null;
       this.showDialogue(story.doneDialogue);
-      this.showBanner(`전직 스토리 완료! AP +${story.reward.ap}`);
+      /* v3.1.0 (#전직스토리선행) — 시련 완료 후 전직 적용 (유저 지시 핵심):
+       *  미전직이 tier-1 시련을 끝냈으면 여기서 비로소 1차 전직이 이루어진다. */
+      if (finTier === 1 && !this.player.cls && this.pendingJobClass) {
+        const def = classDef(this.pendingJobClass);
+        this.pendingJobClass = null;
+        if (def && this.player.applyClass(def.key)) {
+          audio.sfx.levelup();
+          this.spawnLevelUpFx(this.player.x, this.player.y);
+          const jhex = def.hex;
+          this.spawnPillar(this.player.x, this.player.y, jhex, 200);
+          this.spawnBurstAt(this.player.x, this.player.y, 34, jhex);
+          this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
+          this.cameras.main.shake(200, 0.008);
+          this.spawnPickupText(this.player.x, this.player.y - 56, `${def.name} 각성! 스킬 강화`, `#${jhex.toString(16).padStart(6, "0")}`);
+          EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
+          this.refreshPlayerTag();
+          net.netAnnounceJob(def.key);
+          this.time.delayedCall(1400, () => this.showBanner("카이엔과 대화하면 2차 전직 시련이 이어집니다"));
+        }
+      } else if (finTier === 2) {
+        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 2차 전직이 해금되었다`);
+      } else if (finTier === 3) {
+        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 최종 승격이 해금되었다`);
+      }
       this.emitRpgState();
     } else {
       this.showDialogue(step.dialogue);
@@ -5847,8 +5954,26 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * v3.1.0 (#최적화) — HUD 브로드캐스트 스로틀.
+   *  피격·회복·자동사냥 등 한 프레임에 수 회 호출되면 React HUD가 매번 리렌더돼
+   *  모바일에서 프레임 드롭이 컸다. 90ms 내 중복 호출은 하나의 지연 emit으로 합친다
+   *  (trailing 보장 — 마지막 상태가 반드시 반영된다).
+   */
   emitHud() {
     if (!this.player) return;
+    const now = this.time.now;
+    if (now - this.lastHudEmit < 90) {
+      if (!this.hudEmitPending) {
+        this.hudEmitPending = true;
+        this.time.delayedCall(100, () => {
+          this.hudEmitPending = false;
+          this.emitHud();
+        });
+      }
+      return;
+    }
+    this.lastHudEmit = now;
     EventBus.emit("hud", {
       hp: Math.max(0, Math.round(this.player.hp)),
       maxHp: this.player.maxHp,
@@ -6032,6 +6157,7 @@ export class WorldScene extends Phaser.Scene {
       cosmetic: this.player.cosmetic,
       /* v2.0 — 전직 스토리 진행 */
       jobStory: this.jobStory ? { ...this.jobStory } : null,
+      pendingJobClass: this.pendingJobClass, // v3.1.0 — 시련 중 선택한 1차 클래스
       jobStoryDone: [...this.jobStoryDone],
       /* v2.3 — 반복 의뢰 수주 해금 + 본 스토리 대사 기록 */
       repeatOn: this.repeatOn,
@@ -6208,10 +6334,14 @@ export class WorldScene extends Phaser.Scene {
         const step = this.jobStory ? this.jobStoryDef()?.steps[this.jobStory.step] : null;
         if (step?.type === "elite") {
           this.summonJobElite();
-        } else if (familyOf(this.player?.cls ?? "") && chainOf(this.player?.cls ?? "").length >= 1 && !this.jobStory && !this.jobStoryDone.includes(chainOf(this.player?.cls ?? "").length as 1 | 2 | 3)) {
-          // 전직 후 미진행 스토리 → 스토리 시작 (패널 오픈보다 먼저)
+        } else if (
+          familyOf(this.player?.cls ?? "") &&
+          chainOf(this.player?.cls ?? "").length >= 1 &&
+          !this.jobStory
+        ) {
+          // v3.1.0 — 전직관 대화로 미진행 다음 차수 시련 시작 (완료 시 승격 해금)
           this.maybeStartJobStory();
-          // 스토리가 시작되지 않았으면 패널 오픈 (완료/조건 미달)
+          // 시련이 시작되지 않았으면(완료/조건) 패널 오픈
           if (!this.jobStory) {
             this.time.delayedCall(120, () => EventBus.emit("ui:panel", { panel: "job" }));
           }

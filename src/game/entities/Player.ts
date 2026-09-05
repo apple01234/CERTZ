@@ -2832,26 +2832,37 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  /** v3.0.20 (#7) — 물약 판매: 기본 물약은 카운터 차감, 상급/엘릭서는 owned 차감 (상점가 40%) */
-  sellPotion(key: "potion_hp" | "potion_mp" | "potion_hp2" | "potion_mp2" | "potion_elixir"): boolean {
+  /** v3.0.20 (#7) — 물약 판매: 기본 물약은 카운터 차감, 상급/엘릭서는 owned 차감 (상점가 40%)
+   *  v3.1.0 (#판매포기) — 수량 지정 판매 (qty·MAX). 실제 판매된 개수를 반환 (0 = 실패) */
+  sellPotion(
+    key: "potion_hp" | "potion_mp" | "potion_hp2" | "potion_mp2" | "potion_elixir",
+    qty = 1
+  ): number {
     const item = ITEMS[key];
-    if (!item) return false;
+    if (!item) return 0;
     const value = sellValue(item);
-    if (value <= 0) return false;
-    if (key === "potion_hp") {
-      if (this.potions.hp <= 0) return false;
-      this.potions.hp--;
-    } else if (key === "potion_mp") {
-      if (this.potions.mp <= 0) return false;
-      this.potions.mp--;
-    } else {
-      if (!this.consumeConsumable(key)) return false;
+    if (value <= 0) return 0;
+    let sold = 0;
+    let gold = 0;
+    for (let i = 0; i < qty; i++) {
+      if (key === "potion_hp") {
+        if (this.potions.hp <= 0) break;
+        this.potions.hp--;
+      } else if (key === "potion_mp") {
+        if (this.potions.mp <= 0) break;
+        this.potions.mp--;
+      } else {
+        if (!this.consumeConsumable(key)) break;
+      }
+      sold++;
+      gold += value;
     }
-    this.gold += value;
+    if (sold <= 0) return 0;
+    this.gold += gold;
     audio.sfx.coin();
-    this.scene.spawnPickupText(this.x, this.y - 30, `${item.name} 판매 +${value}G`, "#ffd76a");
+    this.scene.spawnPickupText(this.x, this.y - 30, sold > 1 ? `${item.name} 판매 ×${sold} +${gold}G` : `${item.name} 판매 +${value}G`, "#ffd76a");
     this.scene.emitHud();
-    return true;
+    return sold;
   }
 
   /** 장비/장신구 장착 (인벤토리에서) */
@@ -3027,27 +3038,41 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /* ---------------- v3.0.6 — 판매 / BM 구매 / 자동 사용 ---------------- */
 
-  /** 아이템 판매 (지시 #4) — 상점가 40% (보스 전용 고정가). 장착 중 무기/방어구는 판매 금지 */
-  sell(key: ItemKey): boolean {
+  /** 아이템 판매 (지시 #4) — 상점가 40% (보스 전용 고정가). 장착 중 무기/방어구는 판매 금지
+   *  v3.1.0 (#판매포기) — 수량 지정 판매 (qty·MAX). 실제 판매된 개수를 반환 (0 = 실패) */
+  sell(key: ItemKey, qty = 1): number {
     const item = ITEMS[key];
-    if (!item) return false;
-    if (item.kind === "weapon" && this.weapon === key) return false;
-    if (item.kind === "armor" && this.armor === key) return false;
-    const idx = this.owned.indexOf(key);
-    if (idx < 0) return false;
+    if (!item) return 0;
+    if (item.kind === "weapon" && this.weapon === key) return 0;
+    if (item.kind === "armor" && this.armor === key) return 0;
     const value = sellValue(item);
-    if (value <= 0) return false;
-    this.owned.splice(idx, 1);
+    if (value <= 0) return 0;
+    let sold = 0;
+    let gold = 0;
+    for (let i = 0; i < qty; i++) {
+      const idx = this.owned.indexOf(key);
+      if (idx < 0) break;
+      this.owned.splice(idx, 1);
+      sold++;
+      gold += value;
+    }
+    if (sold <= 0) return 0;
     // 장신구는 장착 슬롯에서도 제거 (v3.0.7 — 스타포스 HP 마일스톤 회수 포함)
     if (item.kind === "accessory") {
-      this.removeAccessory(key);
+      /* 초과 보유분을 남기고 전량 판매한 경우에도 장착분은 유지 — 보유 수만큼만 정리 */
+      const remain = this.owned.filter((k) => k === key).length;
+      let worn = this.accessories.filter((k) => k === key).length;
+      while (worn > remain) {
+        this.removeAccessory(key);
+        worn--;
+      }
       this.syncAccStarHp();
     }
-    this.gold += value;
+    this.gold += gold;
     audio.sfx.coin();
-    this.scene.spawnPickupText(this.x, this.y - 30, `${item.name} 판매 +${value}G`, "#ffd76a");
+    this.scene.spawnPickupText(this.x, this.y - 30, sold > 1 ? `${item.name} 판매 ×${sold} +${gold}G` : `${item.name} 판매 +${value}G`, "#ffd76a");
     this.scene.emitHud();
-    return true;
+    return sold;
   }
 
   /* ---------------- v3.0.7 — 유저 거래소 / 강화 주문서 ---------------- */

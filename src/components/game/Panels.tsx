@@ -14,6 +14,7 @@ import {
 import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
 import { getPlayerName, loadSave } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록
+import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
 
 /**
  * 2D MMORPG 기본 요소 UI — 상점 / 인벤토리 패널
@@ -39,6 +40,108 @@ function useEscClose(close: () => void) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [close]);
+}
+
+/* ================= v3.1.0 (#판매포기) — 수량 입력 + MAX 전량 판매 =================
+ *  유저 지시: "판매할 때 수량 입력하는 박스도 있었으면 좋겠어 + MAX 누르면 다 팔기" */
+function SellQtyBox({
+  count,
+  unitValue,
+  ev,
+  keyName,
+  compact,
+}: {
+  count: number;
+  unitValue: number;
+  ev: "rpg:sell" | "rpg:sellPotion";
+  keyName: string;
+  compact?: boolean;
+}) {
+  const [qty, setQty] = useState("1");
+  const parsed = parseInt(qty || "1", 10);
+  const n = Math.max(1, Math.min(Math.max(count, 1), Number.isNaN(parsed) ? 1 : parsed));
+  const disabled = count <= 0;
+  return (
+    <span className="flex shrink-0 items-center gap-1">
+      <input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={Math.max(count, 1)}
+        value={disabled ? "" : qty}
+        placeholder="0"
+        disabled={disabled}
+        onChange={(e) => setQty(e.target.value)}
+        onPointerDown={(e) => e.stopPropagation()}
+        aria-label="판매 수량"
+        className={`w-9 rounded border border-white/20 bg-black/50 px-0.5 py-1 text-center text-[10px] font-black text-white outline-none focus:border-rose-300/60 disabled:opacity-40 ${compact ? "h-6" : ""}`}
+      />
+      <button
+        disabled={disabled}
+        onClick={() => setQty(String(count))}
+        aria-label="전량 판매 수량 지정"
+        className={`rounded border border-amber-300/60 bg-amber-500/20 px-1.5 font-black text-amber-200 hover:bg-amber-500/40 active:scale-95 disabled:opacity-40 ${compact ? "py-0.5 text-[9px]" : "py-1 text-[9px]"}`}
+      >
+        MAX
+      </button>
+      <button
+        disabled={disabled}
+        onClick={() => EventBus.emit(ev, { key: keyName, qty: n })}
+        aria-label={`${count > 1 ? `${n}개` : ""} 판매`}
+        className={`rounded-md border border-white/15 bg-white/[0.06] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95 disabled:opacity-40 ${compact ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-1 text-[10px]"}`}
+      >
+        판매 {unitValue}G{n > 1 && count > 1 ? ` ×${n}` : ""}
+      </button>
+    </span>
+  );
+}
+
+/* ================= v3.1.0 (#볼륨UI) — BGM/효과음 개별 볼륨 슬라이더 =================
+ *  유저 지시: "BGM보다 효과음이 너무 큼 — BGM과 SFX를 각각 조절할 수 있는 UI".
+ *  audio.ts의 setBgmVolume/setSfxVolume에 연결되며 즉시 반영 + localStorage 저장. */
+function VolumeSliders() {
+  const [bgm, setBgm] = useState(() => Math.round(getBgmVolume() * 100));
+  const [sfx, setSfx] = useState(() => Math.round(getSfxVolume() * 100));
+  return (
+    <div className="mb-3 rounded-lg border border-sky-200/25 bg-sky-400/[0.06] px-2.5 py-2.5">
+      <p className="mb-2 text-[12px] font-black text-sky-200">사운드 볼륨</p>
+      <label className="mb-2 flex items-center gap-2">
+        <span className="w-12 shrink-0 text-[11px] font-bold text-white/75">BGM</span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={bgm}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setBgm(v);
+            setBgmVolume(v / 100);
+          }}
+          aria-label="BGM 볼륨"
+          className="h-1.5 flex-1 accent-sky-400"
+        />
+        <span className="w-9 text-right text-[10px] font-black text-white/60">{bgm}%</span>
+      </label>
+      <label className="flex items-center gap-2">
+        <span className="w-12 shrink-0 text-[11px] font-bold text-white/75">효과음</span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={sfx}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setSfx(v);
+            setSfxVolume(v / 100);
+          }}
+          aria-label="효과음 볼륨"
+          className="h-1.5 flex-1 accent-emerald-400"
+        />
+        <span className="w-9 text-right text-[10px] font-black text-white/60">{sfx}%</span>
+      </label>
+      <p className="mt-1.5 text-[10px] leading-snug text-white/40">설정은 자동 저장 — 효과음이 BGM보다 크게 느껴지면 슬라이더로 균형을 맞춰 보세요</p>
+    </div>
+  );
 }
 
 /** v3.0.3 (지시 #4) — 보유 아이템 키별 개수 집계 (모든 아이템 겹침) */
@@ -706,15 +809,9 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                     >
                       사용
                     </button>
-                    {/* v3.0.20 (#7) — 물약 판매 (상점가 40%) */}
+                    {/* v3.0.20 (#7) — 물약 판매 (상점가 40%) · v3.1.0 — 수량+MAX */}
                     {count > 0 && sellValue(item) > 0 && (
-                      <button
-                        onClick={() => EventBus.emit("rpg:sellPotion", { key: k })}
-                        aria-label={`${item.name} 판매`}
-                        className="rounded-md border border-white/15 bg-white/[0.06] px-2 py-1.5 text-[10px] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95"
-                      >
-                        판매 {sellValue(item)}G
-                      </button>
+                      <SellQtyBox compact count={count} unitValue={sellValue(item)} ev="rpg:sellPotion" keyName={k} />
                     )}
                   </div>
                 </div>
@@ -770,15 +867,9 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                           {isStarScroll ? "충전" : isScroll ? "사용" : "마시기"}
                         </button>
                       )}
-                      {/* v3.0.20 (#7/#9) — 소모품 판매 (엘릭서·eert 5000G 등) */}
+                      {/* v3.0.20 (#7/#9) — 소모품 판매 (엘릭서·eert 5000G 등) · v3.1.0 — 수량+MAX */}
                       {sellValue(item) > 0 && (
-                        <button
-                          onClick={() => EventBus.emit("rpg:sell", { key: k as ItemKey })}
-                          aria-label={`${item.name} 판매`}
-                          className="shrink-0 rounded-md border border-white/15 bg-white/[0.06] px-2 py-1.5 text-[10px] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95"
-                        >
-                          판매 {sellValue(item)}G
-                        </button>
+                        <SellQtyBox count={count} unitValue={sellValue(item)} ev="rpg:sell" keyName={k} />
                       )}
                     </div>
                   );
@@ -829,14 +920,9 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                     >
                       장착
                     </button>
-                    {/* v3.0.6 (지시 #4) — 아이템 판매 (상점가 40%) */}
+                    {/* v3.0.6 (지시 #4) — 아이템 판매 (상점가 40%) · v3.1.0 — 수량+MAX */}
                     {sellValue(item) > 0 && (
-                      <button
-                        onClick={() => EventBus.emit("rpg:sell", { key: k as ItemKey })}
-                        className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95"
-                      >
-                        판매 {sellValue(item)}G
-                      </button>
+                      <SellQtyBox compact count={count} unitValue={sellValue(item)} ev="rpg:sell" keyName={k} />
                     )}
                   </div>
                 )}
@@ -1033,12 +1119,8 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                       거래소 +{tradeValue(k as ItemKey)}
                     </button>
                   ) : sellValue(item) > 0 ? (
-                    <button
-                      onClick={() => EventBus.emit("rpg:sell", { key: k as ItemKey })}
-                      className="rounded-md border border-white/15 bg-white/[0.06] px-2 py-1 text-[10px] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95"
-                    >
-                      판매 {sellValue(item)}G
-                    </button>
+                    /* v3.1.0 — 장신구도 수량+MAX 판매 (보유분만큼) */
+                    <SellQtyBox compact count={ownedN} unitValue={sellValue(item)} ev="rpg:sell" keyName={k} />
                   ) : null}
                 </div>
               </div>
@@ -1409,7 +1491,6 @@ export function GamePanels({
   if (panel === "collection") return <CollectionPanel rpg={rpg} onClose={onClose} />; // v3.0.16 — 몬스터 컬렉션
   if (panel === "quest") return <QuestLogPanel questLog={questLog} rpg={rpg} onClose={onClose} />;
   if (panel === "boss") return <BossReplayPanel rpg={rpg} onClose={onClose} />; // v3.0.25 — 보스 재도전 전용 창 (퀘스트창과 분리)
-  if (panel === "bossdiff") return <BossDifficultyPanel questLog={questLog} onClose={onClose} />; // v3.0.28 — 보스전 난이도 선택
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
 }
@@ -1639,10 +1720,10 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
         ) : (
           <p className="mb-3 text-[11px] font-bold text-white/55">
             {chain.length === 0
-              ? "계열을 선택하세요 — 2차 전직 때 같은 계열의 세부 직업을 고릅니다."
+              ? "계열을 선택하세요 — 선택 즉시 1차 전직 시련(스토리)이 시작되고, 완료 후 전직됩니다."
               : chain.length === 1
-                ? "계열의 세부 직업을 고르세요 — 경로에 따라 3차가 갈립니다."
-                : "경로의 최종 클래스로 승격합니다."}
+                ? "계열의 세부 직업을 고르세요 — 경로에 따라 3차가 갈립니다. (2차 시련 완료 후)"
+                : "경로의 최종 클래스로 승격합니다. (3차 시련 완료 후)"}
           </p>
         )}
 
@@ -1653,7 +1734,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
               d={d}
               locked={locked}
               lockText={`Lv ${need} 필요`}
-              btnText={chain.length >= 2 ? "승격" : "전직"}
+              btnText={chain.length >= 2 ? "승격" : chain.length === 0 ? "시련 시작" : "전직"}
               onPick={() => {
                 EventBus.emit("job:select", { key: d.key });
                 onClose();
@@ -2069,70 +2150,10 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
   );
 }
 
-/* ---------- v3.0.28 (#보스난이도) — 스토리 보스전 난이도 선택 패널 ---------- */
-/*  보스 퀘스트 진입 시 WorldScene이 "ui:panel" { panel: "bossdiff" }로 연다.
- *  선택하면 rpg:bossDifficulty 이벤트로 씬에 전달 후 보스 스폰. 닫고 방치하면
- *  씬 보루가 4초 뒤 노말로 자가치유한다 (소프트락 없음). */
-function BossDifficultyPanel({ questLog, onClose }: { questLog?: QuestLogState; onClose: () => void }) {
-  useEscClose(onClose);
-  const [diff, setDiff] = useState<BossDiffKey>("normal");
-  const active = questLog?.list.find((q) => q.state === "active");
-  const bossName = active?.title ?? "보스";
-  const dif = BOSS_DIFFS[diff];
-  return (
-    <div
-      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-[2px]"
-      onPointerDown={onClose}
-    >
-      <div
-        className="w-[min(92vw,390px)] rounded-xl border-2 border-amber-300/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <p className="text-sm font-black text-amber-200">⚔ 보스전 난이도 선택</p>
-        <p className="mt-0.5 text-[11px] font-bold text-white/70">{bossName}</p>
-        <p className="mb-2 mt-1.5 rounded-lg border border-amber-300/25 bg-amber-400/[0.06] px-2.5 py-2 text-[10px] leading-snug font-bold text-white/60">
-          난이도를 고르면 보스가 나타난다. 높은 난이도일수록 보상이 크다.
-        </p>
-        <div className="mb-2 flex flex-col gap-1">
-          {BOSS_DIFF_ORDER.map((lv) => {
-            const d = BOSS_DIFFS[lv];
-            const on = diff === lv;
-            return (
-              <button
-                key={lv}
-                onClick={() => setDiff(lv)}
-                aria-pressed={on}
-                className={`flex items-center justify-between rounded-lg border px-2.5 py-2 text-left transition-colors active:scale-[0.98] ${
-                  on ? "border-white/40 bg-white/[0.12]" : "border-white/15 bg-white/[0.03] hover:bg-white/[0.07]"
-                }`}
-              >
-                <span>
-                  <span className="text-[13px] font-black" style={{ color: d.color }}>
-                    {d.label}
-                  </span>
-                  <span className="ml-2 text-[10px] font-bold text-white/45">
-                    HP ×{d.hp} · ATK ×{d.atk} · 보상 ×{d.reward}
-                  </span>
-                </span>
-                {on && <span className="text-[10px] font-black text-white/60">선택됨</span>}
-              </button>
-            );
-          })}
-        </div>
-        <button
-          onClick={() => {
-            EventBus.emit("rpg:bossDifficulty", { lv: diff });
-            onClose();
-          }}
-          className="w-full rounded-lg border border-amber-300/60 bg-amber-500/25 px-2 py-2 text-[12px] font-black text-amber-100 transition-colors hover:bg-amber-500/40 active:scale-[0.98]"
-        >
-          <span style={{ color: dif.color }}>[{dif.label}]</span>로 도전!
-        </button>
-        <p className="mt-2 text-center text-[10px] text-white/40">닫고 방치하면 잠시 후 노말로 등장합니다 · ESC로 닫기</p>
-      </div>
-    </div>
-  );
-}
+/* ---------- v3.1.0 — 스토리 보스전 난이도 선택 패널은 삭제됐다 ----------
+ *  유저 지시 "스토리 보스는 전용 난이도를 쓰고, 그 때만 난이도 선택 창이 안 뜨게":
+ *  스토리 보스는 노말 상향 고정 난이도로 즉시 스폰된다. 난이도 선택은
+ *  보스 재도전 창(BossReplayPanel · 재림판)에서만 노출된다. */
 
 /* ---------- 설정 / 키 매핑 (v1.9 — O키) ---------- */
 
@@ -2190,6 +2211,9 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
             ✕
           </button>
         </div>
+
+        {/* v3.1.0 (#볼륨UI) — BGM/효과음 개별 볼륨 슬라이더 */}
+        <VolumeSliders />
 
         {/* v2.4 — 이름 변경 (인트로를 놓친 경우에도 언제든 이름 지정/변경 가능) */}
         <div className="mb-2.5 mt-3 flex items-center gap-2.5 rounded-lg border border-amber-200/30 bg-amber-400/[0.07] px-2.5 py-2.5">

@@ -103,8 +103,8 @@ export type RpgState = {
   activeSet?: { title: string; lines: string[] } | null;
 };
 
-/** v3.0.28 — "bossdiff" 추가: 보스전 난이도 선택 패널 (이지/노말/하드/카오스) */
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "bossdiff" | null;
+/** v3.1.0 — "bossdiff" 제거: 스토리 보스는 전용 난이도 즉시 스폰 (선택은 보스 재도전 창 "boss") */
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | null;
 
 export type QuestState = {
   title: string;

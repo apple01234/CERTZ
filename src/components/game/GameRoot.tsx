@@ -28,8 +28,9 @@ export default function GameRoot() {
   const [muted, setMuted] = useState(() => loadMuted());
   const [portraitMobile, setPortraitMobile] = useState(false);
 
-  // 부팅 시 저장된 음소거를 오디오 시스템에 적용 (BGM 재생 전 무음 유지)
+  // 부팅 시 저장된 음소거/볼륨을 오디오 시스템에 적용 (v3.1.0 — BGM/SFX 개별 볼륨 복원)
   useEffect(() => {
+    audio.loadVolumes();
     audio.setMuted(loadMuted());
   }, []);
 

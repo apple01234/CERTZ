@@ -21,8 +21,8 @@ app.prepare().then(() => {
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
-    "/SERTZ-v3.0.29.apk": {
-      file: "download/SERTZ-v3.0.29.apk",
+    "/SERTZ-v3.1.0.apk": {
+      file: "download/SERTZ-v3.1.0.apk",
       type: "application/vnd.android.package-archive",
       attach: true,
     },
@@ -34,8 +34,8 @@ app.prepare().then(() => {
   };
   const httpServer = createServer((req, res) => {
     const url = (req.url || "").split("?")[0];
-    /* v3.0.29 — 구버전 APK 링크(v3.0.24~28)는 안내 페이지로 연결 (라이브/샌드박스 모두 유효) */
-    if (/^\/SERTZ-v3\.0\.(2[4-8])\.apk$/.test(url)) {
+    /* v3.1.0 — 구버전 APK 링크(v3.0.24~3.0.29)는 안내 페이지로 연결 (라이브/샌드박스 모두 유효) */
+    if (/^\/SERTZ-v3\.0\.\d+\.apk$/.test(url)) {
       res.writeHead(307, { Location: "/apk-guide.html" }).end();
       return;
     }
@@ -48,7 +48,7 @@ app.prepare().then(() => {
           "Content-Type": entry.type,
           "Content-Length": size,
           ...(entry.attach
-            ? { "Content-Disposition": 'attachment; filename="SERTZ-v3.0.29.apk"' }
+            ? { "Content-Disposition": 'attachment; filename="SERTZ-v3.1.0.apk"' }
             : {}),
         });
         createReadStream(fp).pipe(res);

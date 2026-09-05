@@ -471,3 +471,27 @@ Stage Summary:
 - 멀티 안됨 근본 해결: 배포 파이프라인 자체가 socket.io를 포함하게 됨 (이후 재배포에도 유지)
 - 산출물: SERTZ-v3.0.29.apk (versionCode 43) — gofile.io/d/1DhtfhUZ + 채팅 파일 패널 download/
 - 라이브 서버(sertz1234.space-z.ai)는 Complete 배포 트리거 후 소켓 정상화 예정 (부팅 시 .zscripts/dev.sh가 node server.js 기동 — socket.io 포함)
+
+---
+Task ID: 35
+Agent: Super Z (main)
+Task: v3.1.0 — 유저 피드백 13건 반영 (볼륨 UI / 전직 시련 선행 / 판매 수량+MAX / 능대 명칭 / 흑화 수정 / 스토리 보스 전용 난이도 / 시련 리스폰 차단 / 밸런스 / 최적화) + APK 빌드·배포 + 커밋·푸시
+
+Work Log:
+- audio.ts v3.1.0 API(setBgmVolume/setSfxVolume/loadVolumes, SFX 기본 0.62)를 설정창 VolumeSliders와 연결, GameRoot 부팅 시 복원
+- 전직 게이팅 재설계: 미전직 계열 선택 → 1차 시련 스토리 시작(pendingJobClass 세이브), 완료 시 전직 적용 / 2·3차는 다음 차수 시련 완료가 승격 조건 (jobStory에 fam 추가, jobStoryDef fam 우선)
+- 스토리 보스: afterAdvance boss 분기에서 난이도 선택창(bossdiff) 제거하고 전용 난이도(노말 상향 고정) 즉시 스폰 — BossDifficultyPanel·rpg:bossDifficulty 제거, 재림판(보스 재도전 창)만 난이도 선택 유지
+- 판매: Player.sell/sellPotion qty 지원(실제 판매 수 반환, 장신구 초과 장착 정리), UI SellQtyBox(수량 입력+MAX) 4곳 적용
+- 늪 몬스터 '능대' 명칭: data.ts 대사 3건 잔여 식인초 제거
+- 흑화 수정: gotoStage 공통 전환 게이트(transitioning 플래그, 8개 restart 경로 통합) + create() fadeIn(350) + 1.2초 페이드 워치독
+- 전직 시련: 시험 상대(jobTrialEnemy) 처치 시 리스폰 예약 차단 — 시련 후 잡몹 계속 소환 버그 수정
+- 최적화: emitHud 90ms 트레일링 스로틀(React 리렌더 억제)
+- 밸런스: BOSS_DIFFS 노말 1.5/1.25·하드 2.4/1.55·카오스 3.8/1.9 (stages.ts, 이전 커밋 유지)
+- 기본 멀티 서버 주소 sertz1234 → sertz4.space-z.ai 교체(ServerConnect)
+- 버전 3.1.0/versionCode 44: Overlays 뱃지, build.gradle, server.js 다운로드 맵, build_apk.sh, apk-guide.html, APK_다운로드_안내.txt
+- 검증: tsc 0 에러, eslint 0, next build + fc-postbuild 성공, verify_v3028.mjs [F] 섹션 신설 53/53 PASS, playwright 스모크(타이틀→마을→설정 볼륨 슬라이더→가방 수량+MAX UI) OK
+- APK: SERTZ-v3.1.0.apk 빌드 → https://sertz4.space-z.ai/SERTZ-v3.1.0.apk 다운로드 제공
+
+Stage Summary:
+- 산출물: SERTZ-v3.1.0.apk (versionCode 44) + v3.1.0 소스 커밋/푸시
+- 핵심 결정: 전직 순서 반전(스토리 선행), 스토리 보스 난이도 고정, 흑화는 이중 restart 경합+페이드 잔존으로 판명 → gotoStage 단일화로 해결
