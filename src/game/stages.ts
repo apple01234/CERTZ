@@ -82,17 +82,19 @@ export type BossKey =
 
 /* ================= v3.0.28 (#보스난이도) — 메이플식 보스 난이도 =================
  *  이지 / 노말 / 하드 / 카오스 4단계. 스토리 보스·재림 보스 공통 적용.
- *  hp/atk: 기준 수치 배율, reward: EXP/GOLD 배율, emerald: 재림판 격파 에메랄드 */
+ *  hp/atk: 기준 수치 배율, reward: EXP/GOLD 배율, emerald: 재림판 격파 에메랄드
+ *  v3.1.0 (#보스약함) — 유저 지시 "보스 ㅈㄴ 약함 (노말로 바로잡음)": 노말 기준치 대폭 상향
+ *  (노말 hp 1.0→1.5 · atk 1.0→1.25 — 스토리 보스도 이 노말 기준으로 고정 스폰된다) */
 export type BossDiffKey = "easy" | "normal" | "hard" | "chaos";
 
 export const BOSS_DIFFS: Record<
   BossDiffKey,
   { key: BossDiffKey; label: string; color: string; hp: number; atk: number; reward: number; emerald: number; desc: string }
 > = {
-  easy: { key: "easy", label: "이지", color: "#7de87d", hp: 0.65, atk: 0.8, reward: 0.6, emerald: 2, desc: "가볍게 클리어 — 보상 60%" },
-  normal: { key: "normal", label: "노말", color: "#7dc4ff", hp: 1.0, atk: 1.0, reward: 1.0, emerald: 5, desc: "기본 난이도 — 보상 100%" },
-  hard: { key: "hard", label: "하드", color: "#ffb05a", hp: 1.8, atk: 1.3, reward: 1.9, emerald: 9, desc: "도전자용 — 보상 190%" },
-  chaos: { key: "chaos", label: "카오스", color: "#ff6a7d", hp: 2.8, atk: 1.6, reward: 3.2, emerald: 15, desc: "극한 난이도 — 보상 320%" },
+  easy: { key: "easy", label: "이지", color: "#7de87d", hp: 0.75, atk: 0.85, reward: 0.6, emerald: 2, desc: "가볍게 클리어 — 보상 60%" },
+  normal: { key: "normal", label: "노말", color: "#7dc4ff", hp: 1.5, atk: 1.25, reward: 1.0, emerald: 5, desc: "기본 난이도 — 보상 100%" },
+  hard: { key: "hard", label: "하드", color: "#ffb05a", hp: 2.4, atk: 1.55, reward: 1.9, emerald: 9, desc: "도전자용 — 보상 190%" },
+  chaos: { key: "chaos", label: "카오스", color: "#ff6a7d", hp: 3.8, atk: 1.9, reward: 3.2, emerald: 15, desc: "극한 난이도 — 보상 320%" },
 };
 
 export const BOSS_DIFF_ORDER: BossDiffKey[] = ["easy", "normal", "hard", "chaos"];
@@ -198,12 +200,12 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "swampbeast", count: 5 }, { key: "wolf", count: 4 }, { key: "golem", count: 3 }, { key: "x2_rat", count: 2 }, { key: "x3_imp", count: 3 }, { key: "x3_goblin", count: 2 }],
     main: "swampbeast",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "k1", type: "collect", title: "능지 속 결정의 조각", desc: "식인초들이 품고 있던 결정의 조각을 되찾아라.", targetLabel: "결정의 흔적", reward: Math.round(80 * G), expReward: 70 } },
-      { sub: 3, dialogue: "", quest: { id: "k0", type: "hunt", title: "능지의 식인초 소탕", desc: "결정의 기운을 먹고 자란 늪의 식인초 6그루를 처치해라.", need: 6, targetKey: "swampbeast", targetLabel: "식인초", reward: Math.round(90 * G), expReward: 80 } },
-      { sub: 5, dialogue: "", quest: { id: "k2", type: "hunt", title: "왕국 신뢰 얻기", desc: "기사단을 도와 식인초 무리 8그루를 더 베어 내라!", need: 8, targetKey: "swampbeast", targetLabel: "식인초", reward: Math.round(140 * G), expReward: 130 } },
-      { sub: 7, dialogue: "swampDone", quest: { id: "k3", type: "hunt", title: "왕국의 위협 제거", desc: "능지의 어둠이 짙어진다 — 식인초 10그루를 처치해라!", need: 10, targetKey: "swampbeast", targetLabel: "식인초", reward: Math.round(170 * G), expReward: 160 } },
+      { sub: 2, dialogue: "", quest: { id: "k1", type: "collect", title: "능지 속 결정의 조각", desc: "능대들이 품고 있던 결정의 조각을 되찾아라.", targetLabel: "결정의 흔적", reward: Math.round(80 * G), expReward: 70 } },
+      { sub: 3, dialogue: "", quest: { id: "k0", type: "hunt", title: "능지의 능대 소탕", desc: "결정의 기운을 먹고 미쳐 버린 늪의 능대 6마리를 처치해라.", need: 6, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(90 * G), expReward: 80 } },
+      { sub: 5, dialogue: "", quest: { id: "k2", type: "hunt", title: "왕국 신뢰 얻기", desc: "기사단을 도와 능대 무리 8마리를 더 베어 내라!", need: 8, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(140 * G), expReward: 130 } },
+      { sub: 7, dialogue: "swampDone", quest: { id: "k3", type: "hunt", title: "왕국의 위협 제거", desc: "능지의 어둠이 짙어진다 — 능대 10마리를 처치해라!", need: 10, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(170 * G), expReward: 160 } },
     ],
-    repeat: { need: 10, gold: Math.round(100 * G), exp: 100, title: "[반복] 늪지 정화 의뢰", desc: "쿠소디아 기사단 의뢰 — 식인초를 계속 사냥해라." },
+    repeat: { need: 10, gold: Math.round(100 * G), exp: 100, title: "[반복] 늪지 정화 의뢰", desc: "쿠소디아 기사단 의뢰 — 능대를 계속 사냥해라." },
     lvGate: { enter: 8, mid: 10 },
   },
   {
@@ -329,7 +331,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
   frostwolf: { key: "frostwolf", name: "서리 늑대", hp: 112, atk: 25, speed: 146, aggro: 340, exp: 62, gold: [12, 18], dropHp: 0.3, dropMp: 0.22 },
   icegolem: { key: "icegolem", name: "얼음 골렘", hp: 170, atk: 29, speed: 74, aggro: 260, exp: 80, gold: [17, 23], dropHp: 0.34, dropMp: 0.26 },
   wraith: { key: "wraith", name: "심연 유령", hp: 130, atk: 28, speed: 100, aggro: 340, exp: 76, gold: [15, 22], dropHp: 0.32, dropMp: 0.26 },
-  swampbeast: { key: "swampbeast", name: "늪의 식인초", hp: 95, atk: 20, speed: 96, aggro: 300, exp: 55, gold: [10, 15], dropHp: 0.3, dropMp: 0.22 },
+  swampbeast: { key: "swampbeast", name: "능대", hp: 95, atk: 20, speed: 96, aggro: 300, exp: 55, gold: [10, 15], dropHp: 0.3, dropMp: 0.22 },
   emberwolf: { key: "emberwolf", name: "불꽃 늑대", hp: 150, atk: 31, speed: 150, aggro: 340, exp: 85, gold: [14, 21], dropHp: 0.3, dropMp: 0.22 },
   firespirit: { key: "firespirit", name: "화염 정령", hp: 175, atk: 34, speed: 92, aggro: 300, exp: 100, gold: [17, 24], dropHp: 0.34, dropMp: 0.26 },
   runegolem: { key: "runegolem", name: "룬 골렘", hp: 210, atk: 37, speed: 72, aggro: 260, exp: 115, gold: [19, 28], dropHp: 0.34, dropMp: 0.26 },
@@ -578,7 +580,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
   const labels: Record<EnemyKey, string> = {
     wolf: "늑대", minion: "심연 하수인", spider: "동굴 거미", golem: "수정 골렘",
     frostwolf: "서리 늑대", icegolem: "얼음 골렘", wraith: "심연 유령",
-    swampbeast: "식인초", emberwolf: "불꽃 늑대", firespirit: "화염 정령",
+    swampbeast: "능대", emberwolf: "불꽃 늑대", firespirit: "화염 정령",
     runegolem: "룬 골렘", helhound: "헬 하운드",
     x2_frog: "독개구리", x2_rat: "궁전 뒷쥐", x2_bat: "황혼 박쥐", x2_firebird: "잿불 새",
     x2_frostfly: "서리 날도요", x2_snail: "동굴 달팽이", x2_stonegolem: "장벽 돌골렘",

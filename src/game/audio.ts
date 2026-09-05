@@ -34,14 +34,63 @@ const bgmInflight = new Map<string, Promise<boolean>>();
  *  ③ 볼륨 래더 재조정 — 전투 기초음 하향/큰 순간 유지/BGM 0.42→0.34 (SFX 가독성 우선) */
 const SFX_THROTTLE_MS = 55;
 const SFX_MAX_CONCURRENT = 12;
-/** BGM 볼륨 — v3.0.22 밸런스: BGM 존재감 +0.04 (원곡이 묻히지 않게) */
+/** BGM 볼륨 — v3.0.22 밸런스: BGM 존재감 +0.04 (원곡이 묻히지 않게)
+ *  v3.1.0 — 유저 지시 "BGM과 SFX를 각각 조절할수 있는 UI": 런타임 조절 변수로 전환
+ *  (BGM_VOLUME 상수는 E2E 호환용 기본값 스냅샷으로 유지) */
 export const BGM_VOLUME = 0.38;
+const BGM_VOLUME_DEFAULT = 0.38;
+/** v3.1.0 — 효과음 마스터 게인 기본값 하향 (유저 지시 "BGM보다 효과음이 너무 큼"):
+ *  기존 SFX 래더가 그대로 1.0 배율이었던 것을 0.62로 스케일 — BGM 대비 체감 균형 잡기 */
+const SFX_VOLUME_DEFAULT = 0.62;
+let bgmVol = BGM_VOLUME_DEFAULT;
+let sfxVol = SFX_VOLUME_DEFAULT;
 const lastPlayed: Record<string, number> = {};
 let activeSounds = 0;
 let bgmFadeTimer: ReturnType<typeof setInterval> | null = null;
 
 export const SFX_THROTTLE_MS_V = SFX_THROTTLE_MS;
 export { SFX_THROTTLE_MS, SFX_MAX_CONCURRENT };
+
+/** 현재 볼륨 프리셋 조회 (설정 UI 초기값/E2E용) */
+export function getBgmVolume(): number {
+  return bgmVol;
+}
+export function getSfxVolume(): number {
+  return sfxVol;
+}
+
+/** BGM 볼륨 설정 (0~1) — 재생 중인 트랙에 즉시 반영 + localStorage 저장 */
+export function setBgmVolume(v: number) {
+  bgmVol = Math.min(1, Math.max(0, v));
+  try {
+    window.localStorage.setItem("sertz_bgm_vol", String(Math.round(bgmVol * 100)));
+  } catch {
+    /* 무시 */
+  }
+  if (bgmSound) asVol(bgmSound)?.setVolume(bgmVol);
+}
+
+/** 효과음 볼륨 설정 (0~1) — 이후 재생되는 모든 SFX에 배율 적용 + localStorage 저장 */
+export function setSfxVolume(v: number) {
+  sfxVol = Math.min(1, Math.max(0, v));
+  try {
+    window.localStorage.setItem("sertz_sfx_vol", String(Math.round(sfxVol * 100)));
+  } catch {
+    /* 무시 */
+  }
+}
+
+/** 저장된 볼륨 복원 (createGame 직후 1회 — GameRoot 음소거 복원과 함께) */
+export function loadVolumes() {
+  try {
+    const b = parseInt(window.localStorage.getItem("sertz_bgm_vol") ?? "", 10);
+    if (!Number.isNaN(b)) bgmVol = Math.min(1, Math.max(0, b / 100));
+    const s = parseInt(window.localStorage.getItem("sertz_sfx_vol") ?? "", 10);
+    if (!Number.isNaN(s)) sfxVol = Math.min(1, Math.max(0, s / 100));
+  } catch {
+    /* 무시 */
+  }
+}
 
 function play(key: string, vol: number, rate = 1) {
   if (!game || muted) return;
@@ -50,7 +99,8 @@ function play(key: string, vol: number, rate = 1) {
   if (activeSounds >= SFX_MAX_CONCURRENT) return;
   lastPlayed[key] = now;
   activeSounds++;
-  game.sound.play(key, { volume: vol, rate });
+  /* v3.1.0 — SFX 마스터 게인(sfxVol) 배율 적용 (설정 슬라이더 반영) */
+  game.sound.play(key, { volume: vol * sfxVol, rate });
   // 1.6초 후 예비 감소 — complete 이벤트 유실 대비 단일 감소 경로 (정확한 캡은 아니어도 밸런스 목적 충분)
   setTimeout(() => {
     activeSounds = Math.max(0, activeSounds - 1);
@@ -234,7 +284,7 @@ function fadeBgm(target: number, ms: number) {
   clearFadeTimer();
   const snd = asVol(bgmSound);
   if (!snd) return;
-  const from = snd.volume ?? BGM_VOLUME;
+  const from = snd.volume ?? bgmVol;
   const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
   bgmFadeTimer = setInterval(() => {
     const cur = bgmSound ? asVol(bgmSound) : null;
@@ -331,7 +381,7 @@ async function startTrack(key: string, retried = 0) {
     bgmSound = snd;
     asVol(bgmSound)?.setVolume(0);
     bgmSound.play();
-    fadeBgm(BGM_VOLUME, 1200);
+    fadeBgm(bgmVol, 1200);
   } catch {
     // 브라우저 자동재생 정책(사용자 입력 전) — 첫 입력에서 initAudio 후 재개됨
     bgmSound = null;
