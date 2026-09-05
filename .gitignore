@@ -107,3 +107,7 @@ upload/
 dev.log
 server.log
 *.log.tmp
+.android-sdk/
+.apk-hold/
+jdk17/
+.android-sdk/jdk21/

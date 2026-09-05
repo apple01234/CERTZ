@@ -509,3 +509,25 @@ Work Log:
 Stage Summary:
 - 다운로드: https://sertz4.space-z.ai/SERTZ-v3.1.0.apk (게임 서버 직결)
 - GitHub: main b49f305 푸시 완료 (v3.0.29 미푸시 커밋 4b175e8 포함)
+
+---
+Task ID: 36
+Agent: Super Z (main)
+Task: APK 다운로드 링크 404 복구 — gofile 미러 배포 + 사이트 라우트 복구 + 커밋/푸시
+
+Work Log:
+- 환경 리셋 확인: CERTZ 클론/download/APK 전부 소실 → 재클론(shallow 50)
+- 탐색에이전트 2개 병렬: 멀티/APK/다운로드 인프라 + 게임코드 13개 항목 매핑 → 13건 모두 v3.1.0(b49f305)에 이미 구현 완료 확인
+- 404 근본원인: 샌드박스 리셋으로 download/SERTZ-v3.1.0.apk 소실 + FC 패키지는 download/ 미포함
+- rsync --delete 실수로 소스 손상 → .git 생존 확인 후 루트=저장소 구조로 복구(checkout -f), CERTZ 중첩 해제
+- Android SDK 셀프 설치(cmdline-tools+build-tools;35.0.0+platforms;android-36) + Temurin JDK21(Capacitor 8 요구, JRE-only 환경)
+- APK 체인 실행: APK_EXPORT export 빌드 → cap sync → gradlew assembleRelease → BUILD SUCCESSFUL 140,302,916B (md5 ed1c4e9a)
+- gofile.io 업로드 성공 → https://gofile.io/d/Tcsl6sY2 (md5 무결성 일치)
+- 서버 기동 검증: 게임 200 / socket.io 핸드셰이크 OK / /SERTZ-v3.1.0.apk 200(140MB, application/vnd.android.package-archive) / apk-guide 200
+- build_apk.sh 체크아웃 위치 무관화 + 식인초 잔여 주석 2곳 교정 + 안내문서 gofile 반영 → 커밋 f5c7058 푸시 완료
+
+Stage Summary:
+- APK 다운로드(메인): https://gofile.io/d/Tcsl6sY2
+- APK 다운로드(사이트): https://sertz4.space-z.ai/SERTZ-v3.1.0.apk (node server.js 구동 시 정상)
+- 게임(멀티 포함): https://sertz4.space-z.ai — socket.io 서버 정상 기동 확인
+- GitHub: main f5c7058 푸시 완료
