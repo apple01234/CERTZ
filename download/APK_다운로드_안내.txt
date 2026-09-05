@@ -17,6 +17,10 @@ SERTZ v3.1.0 APK 다운로드 안내
   https://sertz4.space-z.ai/SERTZ-v3.1.0.apk
   → 접속하면 즉시 다운로드가 시작됩니다
 
+■ 다운로드 (gofile 미러 — 서버 직결이 안 될 때)
+  https://gofile.io/d/Tcsl6sY2
+  → 페이지에서 "Download" 버튼 클릭 (md5: ed1c4e9ae44599148deb4990709fbcb6)
+
 ■ 설치
   기존 SERTZ 위에 덮어 설치하면 됩니다 (세이브 유지, versionCode 44)
   "출처를 알 수 없는 앱" 설치 허용이 켜져 있어야 합니다.

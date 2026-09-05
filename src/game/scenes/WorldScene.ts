@@ -1219,7 +1219,8 @@ export class WorldScene extends Phaser.Scene {
     }
 
     // 쿠소디아/아뜰란티스 — 육한 식물·바위·뼈 (Cursed Land, CC0 — v1.5 배치1 이관)
-    /* v2.6 수정 — 식인초류(cl_jawsplant 등)는 장식이 아니라 '위험 오브젝트'.
+    /* v2.6 수정 — 육식 식물류(cl_jawsplant 등)는 장식이 아니라 '위험 오브젝트'.
+     *  (※ 능대 swampbeast는 몬스터명 — 이 오브젝트와는 별개)
      *  밟으면 챕터 배율에 비례한 접촉 데미지 + 씹기 연출 (버그: 닿아도 데미지 없음) */
     if (ch === "kingdom" || ch === "abyss") {
       const rng6 = new Phaser.Math.RandomDataGenerator(["cursed-plants"]);
@@ -1261,7 +1262,7 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** v2.6 — 육식 식물(식인초) 접촉 데미지. 피격 처리(무적시간·연출)는 Player.takeDamage 재사용 */
+  /** v2.6 — 육식 식물(jawsplant류) 접촉 데미지. 피격 처리(무적시간·연출)는 Player.takeDamage 재사용 */
   private hitPlantHazard(plant: Phaser.GameObjects.Image) {
     const p = this.player;
     if (p.state === "dead" || this.time.now < this.plantCd) return;
