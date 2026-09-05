@@ -495,3 +495,17 @@ Work Log:
 Stage Summary:
 - 산출물: SERTZ-v3.1.0.apk (versionCode 44) + v3.1.0 소스 커밋/푸시
 - 핵심 결정: 전직 순서 반전(스토리 선행), 스토리 보스 난이도 고정, 흑화는 이중 restart 경합+페이드 잔존으로 판명 → gotoStage 단일화로 해결
+
+---
+Task ID: 35 (후기록)
+Agent: Super Z (main)
+Task: v3.1.0 APK 빌드·검증·라이브 반영
+
+Work Log:
+- 환경 리셋으로 JDK/SDK 소실 → Temurin JDK21(/home/z/jdk) + Android SDK 36 재설치 후 Gradle assembleRelease 성공
+- aapt 검증: versionCode 44 / versionName 3.1.0 정상, md5 1e648ac8f5a8b0f118532903cdc19c52
+- 라이브 서버 재시작(node server.js) — /SERTZ-v3.1.0.apk 200, 구버전 링크 307→/apk-guide.html, 홈 200 확인
+
+Stage Summary:
+- 다운로드: https://sertz4.space-z.ai/SERTZ-v3.1.0.apk (게임 서버 직결)
+- GitHub: main b49f305 푸시 완료 (v3.0.29 미푸시 커밋 4b175e8 포함)
