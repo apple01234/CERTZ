@@ -433,3 +433,20 @@ Work Log:
 Stage Summary:
 - GitHub 원격 백업 완료 — 로컬/원격 완전 동기화 (HEAD 44a6291)
 - 다음 예정: 100개 항목 모듈 설계서·핵심 코드 문서 작업(유저 지정 스택: uWebSockets.js/Kysely/Tiled 등)
+
+---
+Task ID: 33
+Agent: Super Z (main)
+Task: 100개 항목 기술 아키텍처 설계서(docx) 생성 — 모듈 1~10(001~100), 유저 지정 스택(uWebSockets.js/Kysely/Tiled/Phaser 3/Fastify/Redis/OAuth2)
+
+Work Log:
+- docx 스킬 전체 참조 로드(create/design-system/common-rules/toc/report/advanced/postcheck) → R2 더블룰 프레임+CM-2 팔레트, 3섹션(표지 margin0/목차 로마자/본문 아라비아 1) 구조 확정
+- 항목 데이터 20파일(scripts/archdoc/data_ch*.mjs) 작성 — 항목당 역할 설명 2문단+실행 코드 1~2블록+팁 3~4개, DDL/Kysely/서버·클라 코드 포함
+- 데이터 마지막 코드블록 뒤 '}' 누락 패턴 일괄 수정(3건) → 100개 항목 파싱 검증 PASS
+- gen.mjs 생성기(9029 body children) → docx 0.26MB 생성, add_toc_placeholders(111 항목)+postfix(푸터 ROMAN/arabic 스위치+빈 pgNumType 제거)
+- postcheck 8/9 PASS, 0 에러 0 경고(font-fallback info만 존재 — 한글용 Malgun Gothic/Consolas 의도)
+- LibreOffice PDF 변환 236p 렌더 검증 — 표지/목차/본문 코드블록·표·불릿 정상
+
+Stage Summary:
+- 산출물: download/2D탑다운-MMORPG-기술아키텍처-설계서-001-100.docx(+.pdf 236p)
+- 생성 스크립트 보존: scripts/archdoc/(데이터 20파일+gen.mjs+postfix.py) — 항목 수정 후 재실행 가능
