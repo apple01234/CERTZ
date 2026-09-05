@@ -427,7 +427,9 @@ Work Log:
 - origin/main(GitHub apple01234/CERTZ) 대비 로컬 main 6커밋 초과(미푸시) 확인
 - git push origin main 시도 → "could not read Username for 'https://github.com'" 실패: 샌드박스에 GitHub 인증 수단(PAT/SSH/gh CLI) 부재
 - HEAD 커밋 메시지(UUID 자동커밋)를 v3.0.28 컨벤션 메시지로 amend (미푸시 커밋이라 안전)
+- 유저 제공 PAT로 1회성 푸시 성공: dc4c43c..44a6291 main->main (로컬 6커밋 전부 GitHub 반영, origin/main 동기화 확인 0초과). 토큰은 저장소 설정에 미저장(1회성 URL 사용)
+- 보안 권고: 대화에 노출된 PAT는 사용 후 GitHub에서 폐기(revoke) 권장
 
 Stage Summary:
-- 로컬 커밋 완료 상태. 원격 푸시는 유저 측 인증(PAT/SSH) 필요 — 유저 보고 후 대기
+- GitHub 원격 백업 완료 — 로컬/원격 완전 동기화 (HEAD 44a6291)
 - 다음 예정: 100개 항목 모듈 설계서·핵심 코드 문서 작업(유저 지정 스택: uWebSockets.js/Kysely/Tiled 등)
