@@ -450,3 +450,24 @@ Work Log:
 Stage Summary:
 - 산출물: download/2D탑다운-MMORPG-기술아키텍처-설계서-001-100.docx(+.pdf 236p)
 - 생성 스크립트 보존: scripts/archdoc/(데이터 20파일+gen.mjs+postfix.py) — 항목 수정 후 재실행 가능
+
+---
+Task ID: 34
+Agent: Super Z (main)
+Task: "멀티 안됨" 근본 수정 + APK 빌드(temp.sh류 링크 제공) + 커밋·푸시 (사용자 지시 3건)
+
+Work Log:
+- [진단] 라이브 서버(sertz1234.space-z.ai) 실측: 웹 200이지만 /socket.io 404 — FC 배포가 .next/standalone 자동생성 server.js로 구동되어 프로젝트 커스텀 server.js(socket.io 내장)가 아예 무시되고 있었음 → 웹·APK 멀티 전부 사망이 근본 원인
+- [구조조정] CERTZ 클론 → 워크스페이스 루트로 통합(.git 이력 보존, scaffold .git 대체) — FC 패키징(.zscripts/build.sh)과 부팅 트리(.zscripts/dev.sh)가 루트 프로젝트 기준이라 배포 가능 상태로 만들기 위함
+- [모듈화] server.js의 멀티플레이 본체(플레이어 동기화/채팅/파티/친구/하트비트)를 multiplayer/index.js 로 분리 — attachMultiplayer(httpServer) 단일 진입
+- [주입] scripts/fc-server/postbuild.js 신설: next build 후 ①static/public 복사 ②fc-entry.js를 Bun.build로 단일 CJS 번들(socket.io 313KB 인라인) ③자동생성 server.js→next-server.js 개명(래퍼 마커 멱등 판별) ④http.createServer 1회 가로채기 래퍼 server.js 작성 → FC 런타임(bun server.js) 코드 무수정으로 멀티 부착. package.json build 체인 연결
+- [실측] standalone 서버 2클라이언트 E2E: 핸드셰이크/players 동기화/state 전파/채팅/파티 생성·참여/AOI 스테이지 분리 9/9 PASS. tsc 0에러, eslint 0, verify_v3028 32/32 PASS
+- [사고기록] postbuild 재실행 시 래퍼가 next-server.js로 개명되는 순환 require → 서버가 에러 없이 즉시 종료(exit 0, 출력 0) 발생 — 마커 판별 멱등 로직으로 수정 후 클린 재빌드로 검증
+- [APK] JDK21(Temurin, JRE-only 환경이라 javac 확보) + Android SDK 36 설치 → build_apk.sh로 v3.0.29(versionCode 43) 빌드, aapt 검증(43/3.0.29), md5 4937fb5e 실측
+- [배포링크] temp.sh는 50MB는 성공, 134MB는 500(용량 한도) → 0x0.st 접속불가·litterbox 403·transfer.sh/bashupload 폐쇄 확인 후 gofile.io 채택: https://gofile.io/d/1DhtfhUZ (md5 일치 검증)
+- [문서] server.js 구버전 APK 링크(3.0.24~28) → /apk-guide.html 리다이렉트, apk-guide.html·APK_다운로드_안내.txt·Overlays 뱃지 v3.0.29 갱신, build_apk.sh 3.0.29 경로
+
+Stage Summary:
+- 멀티 안됨 근본 해결: 배포 파이프라인 자체가 socket.io를 포함하게 됨 (이후 재배포에도 유지)
+- 산출물: SERTZ-v3.0.29.apk (versionCode 43) — gofile.io/d/1DhtfhUZ + 채팅 파일 패널 download/
+- 라이브 서버(sertz1234.space-z.ai)는 Complete 배포 트리거 후 소켓 정상화 예정 (부팅 시 .zscripts/dev.sh가 node server.js 기동 — socket.io 포함)
