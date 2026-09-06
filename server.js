@@ -25,6 +25,8 @@ app.prepare().then(() => {
       file: "download/SERTZ-v3.1.0.apk",
       type: "application/vnd.android.package-archive",
       attach: true,
+      /* 파일 부재 시(배포 패키지 용량 한도 등) fallback — gofile 미러 페이지로 연결해 404 원천 차단 */
+      fallback: "https://gofile.io/d/Tcsl6sY2",
     },
     "/APK_download_guide.txt": {
       file: "download/APK_다운로드_안내.txt",
@@ -54,7 +56,8 @@ app.prepare().then(() => {
         createReadStream(fp).pipe(res);
         return;
       } catch (e) {
-        res.writeHead(404).end("not found");
+        /* v3.1.0b — 파일 부재 시 404 대신 fallback(goFile 미러)으로 리다이렉트 */
+        res.writeHead(307, { Location: entry.fallback || "/apk-guide.html" }).end();
         return;
       }
     }

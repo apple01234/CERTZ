@@ -32,6 +32,12 @@ const nextConfig: NextConfig = isApkExport
             destination: "/apk-guide.html",
             permanent: false,
           },
+          {
+            // v3.1.0b — APK 파일이 배포 패키지에 없을 때 404 대신 gofile 미러로 연결 (안전망)
+            source: "/SERTZ-v3.1.0.apk",
+            destination: "https://gofile.io/d/Tcsl6sY2",
+            permanent: false,
+          },
         ];
       },
     };
