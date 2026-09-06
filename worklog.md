@@ -679,3 +679,22 @@ Stage Summary:
 - 다운로드: https://github.com/apple01234/CERTZ/releases/download/v4.1.0/SERTZ-v4.1.0.apk (site /SERTZ-v*.apk 전부 307)
 - 광고 수익화: src/game/ads.ts의 ADMOB_REWARDED_ID를 본인 AdMob 단위 ID로 교체 + APK 재빌드 / 결제: Play Console에 sertz_gem_10/55/120/300 상품 등록 필요
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 42
+Agent: Super Z (메인)
+Task: "앱 안열림" — 샌드박스 리셋 후 퍼블릭 도메인 500(deploy failed) 복구
+
+Work Log:
+- 실측: https://sertz4.space-z.ai → HTTP 500 "Sorry, there was a problem deploying the code"(플랫폼 FC 배포 상태 페이지) / 로컬 81→3000 체인 정상
+- 원인: 세션 재시작으로 워크스페이스가 스캐폴드로 초기화됨(src·worklog·node_modules 전부 소실, git은 Initial commit만 남음) — FC 배포 부팅 트리도 유실되어 퍼블릭 배포 상태가 실패로 전환
+- 복구: origin 재등록(github.com/apple01234/CERTZ) → fetch → git reset --hard origin/main(dc45350, Task 41 v4.1.0 커밋) — 소스·worklog 681줄 전부 복원
+- bun install 1125패키지 재설치(11.5s) → db/custom.db 존재 확인(세션 리셋으로 파일 재생성, 용량 24KB — 유저 데이터 일부 초기화 가능성)
+- 로컬 서버 재기동(node server.js, GET / 200) — 단, 퍼블릭은 FC 배포 트리거 필요(과거 Task 25/28과 동일 패턴)
+- 프로덕션 빌드 검증: bun run build 성공 + fc-postbuild(standalone+static+public 복사, fc-multi.js 소켓 인라인 번들, 래퍼 server.js 작성) — 배포 패키지 정상 구성
+- standalone 스모크(포트 3005): 웹 200 + socket.io polling 200 실측
+
+Stage Summary:
+- 원인은 코드 문제가 아닌 샌드박스 리셋 → FC 배포 상태 상실. 코드는 GitHub v4.1.0(dc45350)에서 100% 복구 완료
+- Complete 트리거로 FC 재배포 진행 — 성공 시 https://sertz4.space-z.ai v4.1.0 자동 복구(소켓 인라인 포함)
+- APK는 GitHub Release v4.1.0에 그대로 유효(배포와 무관) — https://github.com/apple01234/CERTZ/releases/download/v4.1.0/SERTZ-v4.1.0.apk
