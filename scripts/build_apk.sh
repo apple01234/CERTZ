@@ -42,7 +42,7 @@ cd android
 ./gradlew assembleRelease --no-daemon
 
 echo "[4/5] APK 복사"
-VER="$(grep -o 'versionName "[0-9.]*"' android/app/build.gradle | head -1 | grep -o "[0-9.]*")"
+VER="$(grep -o 'versionName "[0-9.]*"' app/build.gradle | head -1 | grep -o "[0-9.]*")"
 cp -f app/build/outputs/apk/release/app-release.apk "$PROJECT_ROOT/download/SERTZ-v${VER}.apk"
 
 echo "[5/5] 완료 → $PROJECT_ROOT/download/SERTZ-v${VER}.apk"

@@ -701,3 +701,23 @@ Stage Summary:
 - [후 경과] 1차 Complete 후 70분+ 경과에도 엣지 500 지속(모든 경로 500 실측 — 엣지가 인스턴스로 라우팅조차 안 함) → Task 27 확립 패턴대로 2차 Complete 재트리거 완료
 - [전제 확인] FC 빌드 입력 = 현재 저장소 내용 = v4.1.0 배포 성공분과 100% 동일(git reset --hard dc45350)이므로 빌드 실패 요인 없음 · /home/sync/repo.tar 부재 — 배포 스냅샷은 세션 라이프사이클 연동으로 추정, 세션 턴 종료 후 플랫폼 주기에서 회복 예상
 - [현재 상태] 로컬 인스턴스 건강(node server.js 200·소켓 200·Caddy 81→200), standalone 빌드물 상시 준비, git 클린·푸시 완료(4c7a775) — 배포 사이클만 돌면 즉시 v4.1.0 복구
+
+---
+Task ID: 43
+Agent: Super Z (메인)
+Task: "이제 됨 apk 오류안나게 빌드" — 도메인 복구 확인 + APK 재빌드·Release 교체
+
+Work Log:
+- https://sertz4.space-z.ai HTTP 200 실측 — 배포 복구 확인(사용자 통보와 일치)
+- 도구 재구축: 세션 리셋으로 JDK/SDK 전부 소실 → Temurin JDK21(/home/z/jdk, javac 21.0.12.1) + cmdline-tools 11076708 → .android-sdk(cmdline-tools/latest) + platforms;android-36 + build-tools;35.0.0 설치
+- 1차 빌드 실패: "Gradle build daemon disappeared unexpectedly" — 램 3.9GB(게임 서버 917MB 공존) OOM. leftover gradle 데몬(583MB) kill + android/gradle.properties 튜닝(Xmx1024m·MaxMeta 384m·workers.max=1·parallel=false·kotlin in-process) 후 재빌드 → BUILD SUCCESSFUL 1m58s
+- [스크립트 버그 수정] build_apk.sh [4/5]가 cd android 이후 'android/app/build.gradle'을 참조(파일 없음) → set -e로 사망. 'app/build.gradle'로 수정 — Task 41에서 이 버그로 VER 추출이 실패했을 가능성(그때는 수동 복사로 우회했던 것으로 추정)
+- 산출: download/SERTZ-v4.1.0.apk 144,885,379B, aapt versionCode 47/versionName 4.1.0/minSdk 24 실측, md5 aad4007d5d9bd163d13b9dea69b04e17
+- GitHub Release v4.1.0(asset 547004415) 삭제 후 동일명 재업로드 → 재다운로드 md5 일치 검증(7초 내 145MB)
+- rm -rf .next 후 bun run build 클린 재빌드(standalone+fc-multi 래퍼 복구) — export 빌드 .next 오염 잔여 제거(과거 Task 37 교훈 적용)
+- 커밋: build_apk.sh 경로 수정 + gradle.properties 메모리 튜닝 + worklog
+
+Stage Summary:
+- APK 신규 빌드 v4.1.0(versionCode 47) GitHub Release 교체 완료 — https://github.com/apple01234/CERTZ/releases/download/v4.1.0/SERTZ-v4.1.0.apk (md5 aad4007d…)
+- 빌드 재현성 확보: bash scripts/build_apk.sh (JAVA_HOME=/home/z/jdk ANDROID_HOME=/home/z/my-project/.android-sdk 명시) — 메모리 튜닝으로 램 3.9GB 환경에서 게임 서버 공존 빌드 가능
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
