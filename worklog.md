@@ -698,3 +698,6 @@ Stage Summary:
 - 원인은 코드 문제가 아닌 샌드박스 리셋 → FC 배포 상태 상실. 코드는 GitHub v4.1.0(dc45350)에서 100% 복구 완료
 - Complete 트리거로 FC 재배포 진행 — 성공 시 https://sertz4.space-z.ai v4.1.0 자동 복구(소켓 인라인 포함)
 - APK는 GitHub Release v4.1.0에 그대로 유효(배포와 무관) — https://github.com/apple01234/CERTZ/releases/download/v4.1.0/SERTZ-v4.1.0.apk
+- [후 경과] 1차 Complete 후 70분+ 경과에도 엣지 500 지속(모든 경로 500 실측 — 엣지가 인스턴스로 라우팅조차 안 함) → Task 27 확립 패턴대로 2차 Complete 재트리거 완료
+- [전제 확인] FC 빌드 입력 = 현재 저장소 내용 = v4.1.0 배포 성공분과 100% 동일(git reset --hard dc45350)이므로 빌드 실패 요인 없음 · /home/sync/repo.tar 부재 — 배포 스냅샷은 세션 라이프사이클 연동으로 추정, 세션 턴 종료 후 플랫폼 주기에서 회복 예상
+- [현재 상태] 로컬 인스턴스 건강(node server.js 200·소켓 200·Caddy 81→200), standalone 빌드물 상시 준비, git 클린·푸시 완료(4c7a775) — 배포 사이클만 돌면 즉시 v4.1.0 복구
