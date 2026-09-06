@@ -842,6 +842,27 @@ PREV_STAGE.interior_home = "village";
 STAGE_SHORT.interior_inn = "여관";
 STAGE_SHORT.interior_home = "내 집";
 
+/* ================= v3.3.0 (지시 #6) — 무릉도장 (메이플 무릉도장 오마주 훈련 스테이지) =================
+ *  GM NPC를 통해 입장하는 특별 구역 — 90초 동안 훈련용 허수아비에게 누적 피해를 기록.
+ *  체인(NEXT/PREV)에서 완전히 분리 — 전진 포탈 없음, 복귀 포탈은 입장 전 구역으로. */
+STAGES.dojang = {
+  key: "dojang",
+  name: "무릉도장",
+  subtitle: "단련의 장 — 허수아비를 갈라라",
+  width: 1400,
+  height: 900,
+  groundTint: 0xffffff,
+  flowerCount: 0,
+  treeCount: 0,
+  rockCount: 0,
+  quests: [],
+  enemies: [],
+  boss: false,
+};
+NEXT_STAGE.dojang = null;
+PREV_STAGE.dojang = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 dojangFrom
+STAGE_SHORT.dojang = "무릉도장";
+
 /** 구 세이브 키 폴백 — v1.x 6스테이지 → 신규 체인 시작점 */
 export const LEGACY_STAGE_FALLBACK: Record<string, StageKey> = {
   forest: "forest1",

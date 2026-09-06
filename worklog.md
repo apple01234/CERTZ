@@ -594,3 +594,30 @@ Stage Summary:
 - gofile 백업: https://gofile.io/d/qUiPRRXl (첫 응답 ~1분 대기 필요)
 - commit 2a5ad6e push 완료 → 재배포 필요
 - 교훈: 토큰은 절대 파일에 하드코딩 금지(시크릿 푸시보호), GH_TOKEN 사용
+
+---
+Task ID: 39
+Agent: Super Z (메인)
+Task: v3.3.0 — 유저 요청 9건 (①5차 전스킬 강화 ②8종 고유 궁극기 ③GM 5차전직(임시) ④맵이동 흑화 잔여 수정 ⑤챕터4+ %데미지 ⑥무릉도장 ⑦멀티 버그 근본 수정 ⑧5차 스토리 ⑨이펙트 강화)
+
+Work Log:
+- 워크스페이스 리셋 복구: CERTZ 재클론 → 루트 재통합(cp -a, .git 보존) + bun install 1119 패키지 + 프로덕션 빌드 + server.js 기동(200/소켓 OK)
+- 탐색에이전트 3개 병렬: 직업/스킬 시스템 + 월드씬(맵이동/NPC/데미지/FX) + 멀티 서버/클라 전수 분석
+- ⑦멀티 근본 원인 특정: net.ts transports ["websocket","polling"](웹소켓 우선) + FC 게이트웨이 가짜 101(임의 경로 101 응답 후 프레임 0) → tryAllTransports 기본 false라 폴링 폴백 불가 → 무한 재시도. 폴링 우선+tryAllTransports:true로 수정(라이브 폴링 2인 E2E는 이전 세션에서 정상 실측)
+- ①5차 스킬 강화: Player.sTier(5차 각성 시 5) 도입 → 스킬1~4+기본공격 공식 사다리 +1칸 연장(16곳 this.tier→sTier), 스킬 피해 +12%(FIFTH_SKILL_MULT), 쿨타임 -15%(FIFTH_CD_MULT), 스킬명 "·극" 접미어
+- ②8종 고유 궁극기: SKILL5_INFO를 4계열+4차 8종=12키로 확장, resolveSkill5Of 승계 헬퍼, useSkill5 12분기 — warbringer 천멸극(9연참격+출혈)/crusader 성흔극(9빛기둥+완전회복)/deadeye 신시극(확정크리 32발+저격선3)/skylord 천풍극(회오리14+낙뢰+신속)/arclord 종막극(운석12+MP소비 3중폭발)/eternal 영겁극(시간정지+7중 잔상폭발)/shadowlord 심연극(참수10+분신3+뉴클리어)/blademaster 극의(검무14+쌍검 극의일격), rollDamage forceCrit 파라미터 추가
+- ③GM 5차전직(임시): Player.gmGrantFifth(on) + Player.fifth 필드, GmPanel "5차 전직 부여/해제" 버튼 + onGm fifth 타입, 부여 시 즉시 궁극기 해금+전스킬 강화+풀회복 의식 FX
+- ⑧5차 스토리: 카이엔 대화(Lv.200+미각성) → 각성 대사 4줄 → "각성—제5의 문" 챕터카드 → 각성의 수호자(레벨비례 정예) 소환 → 격파 시 completeFifthTrial 의식(기둥/균열/플래시/대사) → fifth=true 세이브
+- ⑤%데미지 게이트: Player.stageCh(씬이 chapterSpec num 설정) → takeDamage의 pctFloor를 챕터 4+(알프헤임) 이상에서만 발동, 1~3장은 순수 수치 데미지(초보 마을 느낌)
+- ⑥무릉도장: STAGES.dojang(1400x900, 체인 분리), 허수아비 6기(Enemy dummy 모드 — AI/사망/넉백 없음, 피해 누적, 플래시 후 원색 복원), 90초 타이머+누적 피해 UI, 종료 시 최고기록(localStorage)+신기록+훈련 보상(최대 3만G), GM 패널 입장 버튼, 복귀 포탈은 입장 전 구역
+- ④흑화 잔여 수정: init에서 bootRetried 리셋(재부팅 구제 세션 1회→부팅마다 1회), 카메라 자가치유 상시화(6초 한정 제거), 물리 월드 자가치유(대사/취침/사망 외 정지 시 즉시 복원), 보스 복구스폰/챕터카드/재도전 스폰 try/catch, 보스 시네마틱 try/catch, 대사 20초 붙임 강제 종료 워치독, enterInterior/leaveInterior transitioning 게이트 통일, 자동사냥 배회 좌표 리셋
+- ⑨이펙트 강화: 참격 글로우 링 추가, 타격 스파크 5→9, 데미지 텍스트 크리티컬 펀치 스케일+대형화, 빛기둥 백색 코어+착지 플래시
+- 세이브: fifth/fifthStoryDone 필드 추가(config.ts SaveData+buildSave+복원)
+- UI: GM NPC 라벨 갱신, 타이틀 배지 v3.3.0
+- 검증: tsc 0 에러 · Playwright 스모크 2종 실측 — 부팅/GM 5차부여(fifth=true sTier=5 skill5Unlocked)/궁극기 60초 쿨/무릉도장(허수아비6+타이머 UI+점수 누적 0→5000)/8종 고유 궁극기명 전부 실측/맵 왕복 4회 camAlpha=1·플레이어 정상/소켓 connected/유해 콘솔 에러 0
+
+Stage Summary:
+- 9건 전부 구현·실측 검증 완료 — v3.3.0
+- 멀티 버그는 서버가 아니라 클라 전송 순서 문제였음이 확정(가짜 101), 폴링 우선으로 근본 해결
+- 스크립트: scripts/smoke_v330.js, scripts/smoke_v330_b.js (재검증용 보존)
+- GitHub 토큰 노력 경고: 토큰은 환경변수로만 사용, 유저에게 재발급 권고 필요

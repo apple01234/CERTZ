@@ -138,6 +138,10 @@ export type SaveData = {
   worldtreeBlessing?: boolean;
   /* v3.0.28 (#보스난이도) — 진행 중 보스전의 난이도 (이지/노말/하드/카오스) — 재접속 복구용 */
   bossDiff?: string;
+  /* v3.3.0 (지시 #3/#8) — 5차 각성 상태 + 각성 시련 완료 여부
+   *  fifth=true면 레벨 무관하게 궁극기 해금 + 전 스킬 강화 적용 */
+  fifth?: boolean;
+  fifthStoryDone?: boolean;
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */

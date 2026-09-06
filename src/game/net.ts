@@ -71,7 +71,18 @@ export function netConnect(): Socket | null {
     if (!socket) {
       const url = resolveServerUrl();
       if (url === null) return null; // APK 오프라인 모드
-      socket = io(url, { path: "/socket.io", transports: ["websocket", "polling"] });
+      /* v3.3.0 (지시 #7 — "멀티 안되는 버그" 근본 수정):
+       *  기존 transports: ["websocket", "polling"] (웹소켓 우선)에서는 배포 환경의
+       *  FC/게이트웨이가 "가짜 101 업그레이드"(어떤 경로든 101 응답 후 프레임 전달 없음)를
+       *  반환해도 engine.io-client가 tryAllTransports 기본값(false)이라 폴링으로
+       *  절대 폴백하지 않고 무한 재시도 → 접속이 영원히 안 걸렸다.
+       *  → 폴링 우선으로 전환(폴링은 라이브 실측 2인 E2E 정상 — 플레이어 동기/채팅/파티/친구).
+       *    연결 안정화 후 엔진이 websocket으로 업그레이드를 시도하되 실패하면 폴링을 유지한다. */
+      socket = io(url, {
+        path: "/socket.io",
+        transports: ["polling", "websocket"],
+        tryAllTransports: true,
+      });
       // E2E/디버그 훅 — 소켓 상태 실측용
       (window as unknown as { __SERTZ_NET__?: unknown }).__SERTZ_NET__ = socket;
     }

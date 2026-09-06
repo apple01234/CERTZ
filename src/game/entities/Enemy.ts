@@ -127,6 +127,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** 화면 표시명 (정예/시험 상대 등 변형 개체 — null이면 종명 사용) */
   displayName: string | null = null;
 
+  /** v3.3.0 (지시 #6) — 무릉도장 훈련용 허수아비:
+   *  AI 없음(정지), 죽지 않음(HP 사실상 무한), 넉백 없음, 피해는 씬 기록에 누적 */
+  dummy = false;
+  /** 허수아비 원색 (히트 플래시 후 복원용) */
+  private dummyTint: number | null = null;
+
   /**
    * v2.0 — 챕터/구역 난이도 배율 opts 지원
    *   hp/atk/exp/gold: 기본 정의 대비 배율, scale: 스프라이트 확대, tint: 엘리트 틴트
@@ -136,12 +142,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     x: number,
     y: number,
     key: EnemyKey,
-    opts?: { hp?: number; atk?: number; exp?: number; gold?: number; scale?: number; tint?: number; displayName?: string }
+    opts?: { hp?: number; atk?: number; exp?: number; gold?: number; scale?: number; tint?: number; displayName?: string; dummy?: boolean }
   ) {
     super(scene, x, y, `${key}_idle0`);
     const base = ENEMIES[key];
     /* v3.0.15 (#16) — 챕터 테마 원소 부여 */
     this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "none";
+    /* v3.3.0 (지시 #6) — 허수아비 모드: AI/사망/넉백 전부 비활성 */
+    if (opts?.dummy) this.dummy = true;
     if (opts && (opts.hp !== undefined || opts.atk !== undefined || opts.exp !== undefined || opts.gold !== undefined)) {
       this.def = {
         ...base,
@@ -157,10 +165,17 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.def = base;
     }
     if (opts?.scale) this.setScale(opts.scale);
-    if (opts?.tint !== undefined) this.setTint(opts.tint);
+    if (opts?.tint !== undefined) {
+      this.setTint(opts.tint);
+      if (opts.dummy) this.dummyTint = opts.tint; // v3.3.0 — 플래시 후 원색 복원용
+    }
     if (opts?.displayName) this.displayName = opts.displayName;
     this.hp = this.def.hp;
     this.maxHp = this.def.hp;
+    if (this.dummy) {
+      this.hp = 9e15;
+      this.maxHp = 9e15;
+    }
     this.homeX = x;
     this.homeY = y;
 
@@ -341,6 +356,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** 씬에서 매 프레임 호출 */
   tick(dt: number, player: PlayerLike) {
     if (!this.alive) return;
+    /* v3.3.0 (지시 #6) — 허수아비: AI 전면 비활성 (제자리 정지, 애니도 idle 고정) */
+    if (this.dummy) {
+      this.setVelocity(0, 0);
+      this.hitFlash = Math.max(0, this.hitFlash - dt);
+      if (this.hitFlash <= 0 && this.tintTopLeft !== 0xffffff) {
+        if (this.dummyTint !== null) this.setTint(this.dummyTint);
+        else this.clearTint();
+      }
+      if (this.anims.currentAnim?.key !== `${this.def.key}-idle`) this.play(`${this.def.key}-idle`);
+      if (this.anims.isPaused) this.anims.resume();
+      return;
+    }
     this.modeTimer -= dt;
     this.hitFlash = Math.max(0, this.hitFlash - dt);
     if (this.hitFlash <= 0 && this.tintTopLeft !== 0xffffff) this.clearTint();
@@ -426,6 +453,23 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
+    /* v3.3.0 (지시 #6) — 허수아비: 피해 누적만 하고 절대 죽지 않는다 (넉백/HP바 없음) */
+    if (this.dummy) {
+      const atkElemD = this.scene.playerRef?.attackElem ?? "none";
+      const advD = elemAdvantage(atkElemD, this.elem);
+      const dealtD = advD === 1 ? dmg : Math.max(1, Math.round(dmg * advD));
+      this.scene.addDojangScore(dealtD);
+      this.hitFlash = 90;
+      this.setTintFill(0xffffff);
+      this.scene.spawnDamageText(this.x, this.y - 20, dealtD, crit);
+      this.scene.spawnHitSpark(this.x, this.y);
+      const sxD = this.scaleX;
+      const syD = this.scaleY;
+      this.scene.tweens.killTweensOf(this);
+      this.setScale(sxD * 1.12, syD * 0.9);
+      this.scene.tweens.add({ targets: this, scaleX: sxD, scaleY: syD, duration: 100, ease: "Back.out" });
+      return;
+    }
     /* v3.0.15 (#16) — 원소 상성: 플레이어 공격 원소 vs 이 적의 원소.
      *  유리 +25% (원소색 데미지 텍스트 "약점!") / 불리 -15% / 어둠끼리 서로 저항 */
     const atkElem = this.scene.playerRef?.attackElem ?? "none";

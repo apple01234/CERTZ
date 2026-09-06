@@ -10,7 +10,7 @@ import { EventBus, type QuestState, type InteractState, type QuestLogState, type
 import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
 import { loadKeyMap, type KeyMap, type GameAction } from "../keymap";
 import {
-  classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST, chainOf,
+  classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST, chainOf, FIFTH_LEVEL,
   type ClassKey,
 } from "../classes";
 import * as net from "../net";
@@ -156,6 +156,20 @@ export class WorldScene extends Phaser.Scene {
   /* v3.2.0 (#흑화 근본 수정) — 부팅 시각/재부팅 이력 (create 래퍼 + 카메라 자가치유용) */
   private bootAt = 0;
   private bootRetried = false;
+  /* v3.3.0 (지시 #8) — 5차 각성 시련 상태 */
+  private fifthTrialActive = false;
+  private fifthTrialEnemy: Enemy | null = null;
+  /** 각성 대사 종료 후 수호자 소환 예약 (resumeFromDialogue에서 소비) */
+  private pendingFifthSummon = false;
+  /** v3.3.0 (#흑화) — 현재 대사 시작 시각 (20초 붙임 자가치유용) */
+  private dialogueSince = 0;
+  /* v3.3.0 (지시 #6) — 무릉도장 (메이플 무릉도장 오마주 훈련 스테이지) */
+  dojangActive = false;
+  dojangScore = 0;
+  private dojangEndsAt = 0;
+  private dojangFrom: StageKey = "village";
+  private dojangText: Phaser.GameObjects.Text | null = null;
+  private dojangTextAcc = 0;
   /** v3.1.0 (#최적화) — HUD 브로드캐스트 스로틀 (프레임당 다중 emit 억제) */
   private lastHudEmit = -999;
   private hudEmitPending = false;
@@ -435,6 +449,23 @@ export class WorldScene extends Phaser.Scene {
     this.jobStoryDone = [];
     this.pendingJobClass = null; // v3.1.0 — 전직 시련 선택 클래스 리셋
     this.transitioning = false; // v3.1.0 — 씬 재시작마다 전환 게이트 초기화
+    /* v3.3.0 (#흑화) — 안전 재부팅 구제횟수 리셋: 기존엔 세션 내 1회 한정이라
+     *  두 번째 초기화 실패부터는 영구 검은 화면이었다. 매 부팅마다 1회씩 재부팅 기회 부여 */
+    this.bootRetried = false;
+    /* v3.3.0 — 자동사냥 배회 좌표 리셋 (이전 맵 좌표가 새 맵으로 유출되는 것 방지) */
+    this.autoWanderPoint = null;
+    this.autoWanderUntil = 0;
+    /* v3.3.0 — 5차 시련/무릉도장/대사 상태 리셋 */
+    this.fifthTrialActive = false;
+    this.fifthTrialEnemy = null;
+    this.pendingFifthSummon = false;
+    this.dialogueSince = 0;
+    this.dojangActive = false;
+    this.dojangScore = 0;
+    this.dojangEndsAt = 0;
+    this.dojangFrom = "village";
+    this.dojangText = null;
+    this.dojangTextAcc = 0;
     this.restCd = 0;
     // 런 통계(처치/플레이타임) — 씬 재시작(스테이지 전환)과 무관하게 유지
     // fresh=true는 타이틀에서 새 시작/이어하기일 때만 (사망화면 정확한 통계)
@@ -529,7 +560,8 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- v3.0 (사용자 지시 #7) — 개미굴식 구역 레이아웃 (필드 전용) ----------
      *  스테이지 키를 시드로 셀 그리드를 굴 형태로 개방하고 나머지는 벽으로 막는다.
      *  마을/실내는 개방형 유지. 포탈·스폰·파편·보스 모두 레이아웃을 따른다. */
-    if (!this.isInterior && !this.stageDef.isVillage) {
+    /* v3.3.0 (#흑화) — 굴 레이아웃 조건에서 무릉도장 제외: 개방된 도장(벽 없음)으로 생성 */
+    if (!this.isInterior && !this.stageDef.isVillage && stageKey !== "dojang") {
       const lay = generateRoomLayout(stageKey, this.stageW, this.stageH);
       this.layout = lay;
       const entryC = cellCenterOf(lay, lay.entry);
@@ -540,6 +572,11 @@ export class WorldScene extends Phaser.Scene {
     } else {
       this.portalHome.set(this.stageW - 130, this.stageH * 0.52);
       this.entryHome.set(180, this.stageH / 2);
+    }
+    /* v3.3.0 (지시 #6) — 무릉도장 중앙 입장/퇴장 위치 보정 */
+    if (stageKey === "dojang") {
+      this.entryHome.set(this.stageW / 2, this.stageH - 120);
+      this.portalHome.set(this.stageW / 2, 120);
     }
 
     // 반응형: 화면 밀도 유지용 카메라 줌 (RESIZE 캔버스 1:1 + 카메라 확대)
@@ -559,6 +596,8 @@ export class WorldScene extends Phaser.Scene {
       this.entryPos?.x ?? (this.isInterior ? this.stageW / 2 : this.entryHome.x),
       this.entryPos?.y ?? (this.isInterior ? this.stageH - 70 : this.entryHome.y)
     );
+    /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
+    this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
     if (savedPlayer) {
       this.player.lv = savedPlayer.lv;
       /* v3.0 (사용자 지시 #1) — 경험치 복원 누락 수정:
@@ -686,6 +725,9 @@ export class WorldScene extends Phaser.Scene {
         this.bossDiff = savedPlayer.bossDiff as BossDiffKey;
       }
       this.player.recalcSpeedForLoad();
+      /* v3.3.0 — 5차 각성/시련 완료 플래그 복원 */
+      this.player.fifth = savedPlayer.fifth ?? false;
+      this.player.fifthStoryDone = savedPlayer.fifthStoryDone ?? false;
     }
     // v2.5 — 현재 구역 방문 기록 (실내 제외) — 지역 이동 부적 워프 대상
     if (!this.isInterior) {
@@ -767,6 +809,9 @@ export class WorldScene extends Phaser.Scene {
       this.cameras.main.shake(240, 0.007);
     }
 
+    /* ---------- v3.3.0 (지시 #6) — 무릉도장: 허수아비 + 타이머/기록 UI ---------- */
+    if (stageKey === "dojang") this.buildDojang();
+
     /* ---------- 퀘스트 오브젝트 (v2.2 — 실내는 포탈/퀘스트 오브젝트 없음) ---------- */
     if (this.isInterior) {
       /* 실내 — 출구 문은 interactables로 처리 */
@@ -777,7 +822,7 @@ export class WorldScene extends Phaser.Scene {
       this.spawnPortal(this.stageW - 110, this.stageH * 0.52);
       this.activatePortal(true);
     } else {
-      if (!this.stageDef.boss) this.spawnPortal(this.portalHome.x, this.portalHome.y);
+      if (!this.stageDef.boss && stageKey !== "dojang") this.spawnPortal(this.portalHome.x, this.portalHome.y);
       // 수확(collect) 퀘스트 진행 중 — 파편 스폰 (이어하기 무결: ATK 중복 수령 방지)
       if (this.currentQuest()?.type === "collect") this.spawnFragmentForQuest();
     }
@@ -789,8 +834,16 @@ export class WorldScene extends Phaser.Scene {
     if (this.stageDef.boss) {
       if (this.currentQuest()?.type === "boss") {
         // 보스전 진행 중 세이브 — 입장 직후 보스 등장 (복구 경로는 등장 대사 생략)
+        /* v3.3.0 (#흑화) — 복구 경로 try/catch: 재입장 전용 경로가 죽으면 physics 정지가
+         *  누출돼 검은 화면·조작 불능이 됐다. 실패 시 물리/대사를 즉시 복원한다 */
         this.time.delayedCall(900, () => {
-          if (!this.boss) this.spawnBoss(false);
+          try {
+            if (!this.boss) this.spawnBoss(false);
+          } catch (e) {
+            console.error("[SERTZ] 보스 복구 스폰 실패 — 자가치유로 정리", e);
+            this.dialoguing = false;
+            this.physics.world.resume();
+          }
         });
       } else if (bossQuestIdx >= 0 && this.questIdx > bossQuestIdx && NEXT_STAGE[stageKey]) {
         // 보스 격파 후 세이브 — 차원문 개방 상태 복구 (구 v1.0 클리어 세이브도 이 경로로 계속)
@@ -818,6 +871,17 @@ export class WorldScene extends Phaser.Scene {
       delay: 1500,
       loop: true,
       callback: () => {
+        /* v3.3.0 (#흑화) — 대사 붙임 자가치유: 20초 이상 대사 상태가 지속되면 강제 종료
+         *  (대사 완료 콜백 유실 → dialoguing/physics 영구 정지 → 검은 화면·조작 불능 방지.
+         *  정상 대사는 이보다 훨씬 짧고, 클릭/스페이스로 언제든 넘길 수 있다) */
+        if (this.dialoguing && this.dialogueSince > 0 && this.time.now - this.dialogueSince > 20000) {
+          console.warn("[SERTZ] 대사 20초 붙임 감지 — 강제 종료(자가치유)");
+          this.dialoguing = false;
+          this.dialogueSince = 0;
+          this.queuedDialogue = null;
+          this.physics.world.resume();
+          EventBus.emit("dialogue:hide");
+        }
         if (this.portalActive || this.isInterior) return;
         const q = this.currentQuest();
         /* 오브젝트 소실 보루 — 파편/보스가 없으면 퀘스트가 영구 안 풀려 포탈이 안 열린다 */
@@ -862,7 +926,16 @@ export class WorldScene extends Phaser.Scene {
     if (this.pendingReplayBoss) {
       const ch = this.pendingReplayBoss;
       this.pendingReplayBoss = null;
-      this.time.delayedCall(350, () => this.spawnReplayBoss(ch));
+      /* v3.3.0 (#흑화) — 재도전 스폰도 try/catch (physics 정지 누출 방지) */
+      this.time.delayedCall(350, () => {
+        try {
+          this.spawnReplayBoss(ch);
+        } catch (e) {
+          console.error("[SERTZ] 재도전 보스 스폰 실패 — 자가치유로 정리", e);
+          this.dialoguing = false;
+          this.physics.world.resume();
+        }
+      });
     }
 
     /* ---------- 입력 ---------- */
@@ -878,7 +951,7 @@ export class WorldScene extends Phaser.Scene {
      *  v2.3 (지시 #1): 이미 본 대사는 재입장 시 재생하지 않는다 — 이전/다음 맵 왕복마다
      *  인트로·구역 안내 대사가 반복되던 버그 수정
      *  v3.0.10 (메이플식 챕터 연출): 챕터 1구역 최초 진입 시 타이틀 카드 컷신 후 인트로 대사 */
-    if (!this.isInterior) {
+    if (!this.isInterior && stageKey !== "dojang") {
       if (stageKey === "village" && !savedPlayer?.playerName) {
         // 신규 플레이어 — 책장 넘기기 대신 플레이형 인트로 (이동 → 우물 → 이름 짓기)
         this.startIntroSequence();
@@ -887,9 +960,17 @@ export class WorldScene extends Phaser.Scene {
         const introId = stageIntro(stageKey);
         if (spec && parseStage(stageKey).sub === 1 && !this.seenSet.has(introId)) {
           // 챕터 오프닝 컷신 — "제N장" 타이틀 카드 → 챕터 인트로 대사
-          this.time.delayedCall(350, () =>
-            this.showChapterCard(spec.num, spec.title, spec.subtitle, () => this.showDialogueOnce(introId))
-          );
+          /* v3.3.0 (#흑화) — 챕터 카드 연출도 try/catch (재입장 경로 예외 시 physics 정지 누출 방지) */
+          this.time.delayedCall(350, () => {
+            try {
+              this.showChapterCard(spec.num, spec.title, spec.subtitle, () => this.showDialogueOnce(introId));
+            } catch (e) {
+              console.error("[SERTZ] 챕터 카드 실패 — 대사로 폴백", e);
+              this.dialoguing = false;
+              this.physics.world.resume();
+              this.showDialogueOnce(introId);
+            }
+          });
         } else {
           this.time.delayedCall(400, () => {
             this.showDialogueOnce(introId);
@@ -1544,8 +1625,13 @@ export class WorldScene extends Phaser.Scene {
   /** 복귀 차원문 진입 — 이전 구역으로 (스탯/진행 캐리는 전진과 동일 경로) */
   private enterPrevStage() {
     if (!this.returnActive) return;
-    const prev = PREV_STAGE[this.stageDef.key];
+    /* v3.3.0 (지시 #6) — 무릉도장 복귀: 들어오기 전 구역으로 (기록 없으면 마을) */
+    const prev: StageKey | null = this.stageDef.key === "dojang"
+      ? (STAGES[this.dojangFrom] ? this.dojangFrom : "village")
+      : PREV_STAGE[this.stageDef.key];
     if (!prev) return;
+    /* v3.3.0 — 무릉도장 중간 퇴장 시 기록 확정 */
+    if (this.dojangActive) this.finishDojang(true);
     this.returnActive = false;
     audio.sfx.portal();
     this.cameras.main.fadeOut(500, 0, 0, 0);
@@ -1673,7 +1759,7 @@ export class WorldScene extends Phaser.Scene {
         stroke: "#000000", strokeThickness: 3,
       })
       .setOrigin(0.5).setDepth(21);
-    this.interactables.push({ x: gx, y: gy, kind: "gm", npcId: "gm", label: "GM — 자유전직·골드·레벨 지원" });
+    this.interactables.push({ x: gx, y: gy, kind: "gm", npcId: "gm", label: "GM — 자유전직·골드·레벨·5차전직·무릉도장" });
   }
 
   /** 건물 간판 — 목재 패널 스타일 텍스트 */
@@ -1781,7 +1867,8 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** v3.0.15 (#16) — color/prefix 지원: 원소 약점 시 원소색 + "약점" 접두 표시 */
+  /** v3.0.15 (#16) — color/prefix 지원: 원소 약점 시 원소색 + "약점" 접두 표시
+   *  v3.3.0 (지시 #9) — 크리티컬 펀치 스케일 + 큰 글씨 (타격감 강화) */
   spawnDamageText(x: number, y: number, val: number, crit = false, color?: string, prefix?: string) {
     const t = this.dmgPool.find((d) => d.scene && !d.active);
     if (!t) return; // 풀 소진 시 조용히 포기 (프레임 보호)
@@ -1793,20 +1880,22 @@ export class WorldScene extends Phaser.Scene {
       .setActive(true)
       .setVisible(true)
       .setAlpha(1)
-      .setScale(crit ? 1.45 : 1);
+      .setScale(crit ? 1.75 : 1.08);
     this.tweens.add({
       targets: t,
-      y: y - (crit ? 46 : 34),
+      y: y - (crit ? 52 : 36),
       alpha: 0,
-      duration: crit ? 700 : 550,
+      scale: crit ? 1.15 : 0.92, // 펀치 스케일 — 튀어오르다 살짝 수축
+      duration: crit ? 740 : 560,
       ease: "Quad.out",
       onComplete: () => t.setActive(false).setVisible(false),
     });
   }
 
   spawnHitSpark(x: number, y: number) {
+    /* v3.3.0 (지시 #9) — 타격 스파크 5→9개로 증량 (화면이 더 밝게 터진다) */
     this.hitEmitter.setParticleTint(0xfff0a0);
-    this.hitEmitter.explode(5, x, y);
+    this.hitEmitter.explode(9, x, y);
 
     /* v3.0.8 디자인 개편 — Warped Hits 플립북 오버레이 (3종 랜덤, ADD 블렌드) */
     const fx = this.hitFxPool.find((s) => s.scene && !s.active);
@@ -2140,6 +2229,22 @@ export class WorldScene extends Phaser.Scene {
     s.once("animationcomplete", () => {
       s.setActive(false).setVisible(false).clearTint();
     });
+    /* v3.3.0 (지시 #9) — 참격 글로우 링: 검기가 지나가는 자리에 확산 링이 겹쳐진다 */
+    const glowRing = this.add
+      .image(x + dir.x * 34, y - 6 + dir.y * 16, "shock_ring")
+      .setDepth(24)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(tint ?? 0xfff2c0)
+      .setScale(0.2 * scale)
+      .setAlpha(0.7);
+    this.tweens.add({
+      targets: glowRing,
+      scale: 0.62 * scale,
+      alpha: 0,
+      duration: 210,
+      ease: "Cubic.out",
+      onComplete: () => glowRing.destroy(),
+    });
   }
 
   /** v3.0.2 — 궁수 활 비주얼: 발사 순간 활 프레임 표시 (20x20, 각도 회전) */
@@ -2254,6 +2359,12 @@ export class WorldScene extends Phaser.Scene {
         }
       }
     }
+    /* v3.3.0 (지시 #8) — 5차 각성 시련: 각성의 수호자 격파 → 각성 완료 의식 */
+    if (ref && ref === this.fifthTrialEnemy) {
+      this.fifthTrialEnemy = null;
+      this.fifthTrialActive = false;
+      this.completeFifthTrial();
+    }
     this.emitQuest();
   }
 
@@ -2271,6 +2382,196 @@ export class WorldScene extends Phaser.Scene {
   private repeatUnlockable(): boolean {
     if (this.repeatOn || this.isInterior) return false;
     return this.cleared;
+  }
+
+  /* ================= v3.3.0 (지시 #6) — 무릉도장 (메이플 무릉도장 오마주) =================
+   *  GM NPC → 무릉도장 입장 → 90초 동안 허수아비를 자유롭게 공격해 누적 피해를 기록.
+   *  종료(시간 경과 or 중간 퇴장) 시 기록 + 최고 기록(localStorage) + 훈련 보상 지급. */
+
+  /** GM → 무릉도장 입장 (어느 구역에서든 — 복귀는 원 구역) */
+  enterDojang() {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "dojang") return;
+    this.dojangFrom = this.stageDef.key; // 퇴장 시 이 구역으로 복귀
+    this.showBanner("무릉도장으로 이동합니다 — 90초 동안 최대한 많은 피해를!");
+    this.gotoStage("dojang");
+  }
+
+  /** 무릉도장 빌드 — 허수아비 6기 + 중앙 문양 + 타이머/기록 UI */
+  private buildDojang() {
+    const cx = this.stageW / 2;
+    const cy = this.stageH / 2;
+    /* 도장 중앙 문양 (Add 링 2겹 + 중심 원) */
+    const emblem = this.add.circle(cx, cy, 150).setStrokeStyle(4, 0xc8a05a, 0.35).setDepth(1);
+    const emblem2 = this.add.circle(cx, cy, 110).setStrokeStyle(2, 0xc8a05a, 0.28).setDepth(1);
+    const emblemFill = this.add.circle(cx, cy, 56, 0xc8a05a, 0.12).setDepth(1);
+    void emblem2;
+    this.tweens.add({ targets: emblem, scale: 1.04, alpha: 0.7, duration: 1800, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    void emblemFill;
+    this.add
+      .text(cx, 66, "無 量 道 場", {
+        fontFamily: "sans-serif",
+        fontSize: "30px",
+        color: "#e8c88a",
+        stroke: "#1a1020",
+        strokeThickness: 6,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0)
+      .setAlpha(0.9);
+    /* 훈련용 허수아비 6기 — 2열 배치 (dummy = AI/사망 없음, 피해 누적만) */
+    for (let i = 0; i < 6; i++) {
+      const dx = cx - 260 + (i % 3) * 260;
+      const dy = cy - 80 + Math.floor(i / 3) * 170;
+      const e = new Enemy(this, dx, dy, "golem", {
+        hp: 1, atk: 0, exp: 0, gold: 0,
+        scale: 1.55, tint: 0xd8b06a,
+        displayName: "훈련용 허수아비",
+        dummy: true,
+      });
+      this.enemies.push(e);
+      this.physics.add.collider(e, this.solidGroup);
+    }
+    /* 타이머/기록 UI (화면 고정) */
+    this.dojangText = this.add
+      .text(cx, 108, "", {
+        fontFamily: "sans-serif",
+        fontSize: "17px",
+        color: "#ffe66a",
+        stroke: "#1a1020",
+        strokeThickness: 5,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    /* 도장 개시 */
+    this.dojangActive = true;
+    this.dojangScore = 0;
+    this.dojangEndsAt = this.time.now + 90000;
+    this.dojangTextAcc = 0;
+    this.showBanner("무릉도장 입장! 90초 동안 허수아비에게 최대 피해를 기록하라");
+  }
+
+  /** 허수아비 피해 누적 — Enemy.takeDamage(dummy)에서 호출 */
+  addDojangScore(v: number) {
+    if (this.dojangActive) this.dojangScore += v;
+  }
+
+  /** 무릉도장 진행 (update에서 매 프레임 — UI는 100ms 스로틀) */
+  private tickDojang(dt: number) {
+    this.dojangTextAcc += dt;
+    if (this.dojangTextAcc >= 100) {
+      this.dojangTextAcc = 0;
+      const remain = Math.max(0, this.dojangEndsAt - this.time.now);
+      this.dojangText?.setText(
+        `무릉도장  ${Math.ceil(remain / 1000)}초  |  기록: ${this.dojangScore.toLocaleString()}`
+      );
+    }
+    if (this.time.now >= this.dojangEndsAt) this.finishDojang(false);
+  }
+
+  /** 무릉도장 종료 — 기록/최고기록/보상 정산 (early=true면 중간 퇴장) */
+  finishDojang(early: boolean) {
+    if (!this.dojangActive) return;
+    this.dojangActive = false;
+    const score = this.dojangScore;
+    const KEY = "sertz.dojang.best";
+    let best = 0;
+    try { best = Number(localStorage.getItem(KEY) ?? "0") || 0; } catch { best = 0; }
+    const record = score > best && score > 0;
+    if (record) {
+      try { localStorage.setItem(KEY, String(score)); } catch { /* 저장 불가 환경 무시 */ }
+    }
+    const reward = Math.min(30000, Math.round(score / 250));
+    if (reward > 0) this.player.addGold(reward);
+    this.dojangText?.setText(
+      `무릉도장 ${early ? "중단" : "종료"} — 기록: ${score.toLocaleString()}${record ? " (신기록!)" : ""}`
+    );
+    EventBus.emit("reward:show", {
+      title: early ? "무릉도장 — 훈련 중단" : "무릉도장 — 훈련 종료!",
+      lines: [
+        { text: `누적 피해: ${score.toLocaleString()}`, color: "#ffe66a" },
+        { text: record ? "신기록 달성!" : `최고 기록: ${Math.max(best, score).toLocaleString()}`, color: record ? "#7dffa8" : "#a8ecff" },
+        { text: reward > 0 ? `훈련 보상 +${reward.toLocaleString()} G` : "보상 없음 — 더 세게 때려라!", color: "#ffd76a" },
+      ] satisfies RewardPopupState["lines"],
+    });
+    audio.sfx.questDone();
+    this.emitRpgState();
+  }
+
+  /* ================= v3.3.0 (지시 #8) — 5차 각성 스토리/시련 ================= */
+
+  /** 각성 챕터 카드 → 각성의 수호자 소환 (resumeFromDialogue에서 호출) */
+  private startFifthTrial() {
+    if (!this.player || this.fifthTrialActive) return;
+    this.fifthTrialActive = true;
+    audio.sfx.questDone();
+    /* 챕터 카드 규약 재사용 — "각성" 타이틀 카드 (physics 정지 + 자동 복귀 내장) */
+    this.showChapterCard(5, "각성 — 제5의 문", "모든 스킬이 극으로, 궁극기가 손에 쥐어진다", () => {
+      this.summonFifthGuardian();
+    });
+  }
+
+  /** 각성의 수호자 소환 — 카이엔 근처, 레벨 비례 강력한 정예 */
+  private summonFifthGuardian() {
+    if (!this.player) return;
+    if (this.fifthTrialEnemy && this.fifthTrialEnemy.alive) {
+      this.showBanner("이미 각성의 수호자가 있어!");
+      return;
+    }
+    const lv = Math.max(1, this.player.lv);
+    const e = new Enemy(this, this.player.x + 110, this.player.y - 30, "runegolem", {
+      hp: 10 + lv * 4,
+      atk: 1 + lv * 0.18,
+      exp: 6 * lv,
+      gold: 3 * lv,
+      scale: 1.8,
+      tint: 0xffd76a,
+      displayName: "각성의 수호자",
+    });
+    e.dmgPct = DMG_PCT.elite;
+    this.fifthTrialEnemy = e;
+    this.enemies.push(e);
+    this.physics.add.collider(e, this.solidGroup);
+    this.spawnPillar(e.x, e.y, 0xffd76a, 260);
+    this.spawnBurstAt(e.x, e.y, 40, 0xffd76a);
+    this.showBanner("각성의 수호자 출현! 쓰러트려 5차 각성을 증명하라");
+    audio.sfx.roar();
+    this.cameras.main.shake(280, 0.008);
+  }
+
+  /** 각성 완료 의식 — fifth 플래그 + 풀 의식 FX + 완료 대사 + 세이브 */
+  private completeFifthTrial() {
+    if (!this.player) return;
+    const p = this.player;
+    p.fifthStoryDone = true;
+    p.fifth = true;
+    p.healFull();
+    p.skill5Cd = 0;
+    audio.sfx.levelup();
+    this.spawnLevelUpFx(p.x, p.y);
+    this.spawnPillar(p.x, p.y, 0xffe66a, 300);
+    this.spawnBurstAt(p.x, p.y, 80, 0xffe66a);
+    this.spawnCrack(p.x, p.y);
+    this.cameras.main.flash(240, 255, 230, 120);
+    this.cameras.main.shake(460, 0.02);
+    EventBus.emit("banner:show", {
+      text: "5차 각성 완료! 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(N) 해금",
+    });
+    this.showDialogueRaw({
+      speaker: "카이엔",
+      lines: [
+        "...드디어 제5의 문이 열렸다. 그대는 이제 '극'의 경지에 섰다.",
+        "모든 스킬이 강화됐고 쿨타임도 짧아졌다. 그리고—",
+        "N 키 (모바일은 황금 버튼)로 그대만의 궁극기를 쏟아내라!",
+      ],
+    });
+    this.emitSkills();
+    this.emitRpgState();
+    this.save();
   }
 
   /* ================= v3.0.22 (#38) — 전직 퀘스트 게이트 =================
@@ -2312,6 +2613,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.player) return;
     this.activeNpcId = null;
     this.dialoguing = true;
+    this.dialogueSince = this.time.now; // v3.3.0 — 대사 붙임 자가치유 기준 시각
     this.player.setVelocity(0, 0);
     this.physics.world.pause();
     EventBus.emit("dialogue:show", d);
@@ -2689,22 +2991,30 @@ export class WorldScene extends Phaser.Scene {
     this.bossIntroCinematic(bx, by, def.introDialogue);
   }
 
-  /** v3.0.10 — 보스 조우 시네마틱: 물리 정지 + 카메라 팬(보스) + 인트로 대사 + 카메라 복귀 */
+  /** v3.0.10 — 보스 조우 시네마틱: 물리 정지 + 카메라 팬(보스) + 인트로 대사 + 카메라 복귀
+   *  v3.3.0 (#흑화) — 전체 try/catch: 시네마틱 도중 예외로 physics 정지가 누출되는 것 차단 */
   private bossIntroCinematic(bx: number, by: number, introId: string) {
-    const cam = this.cameras.main;
-    this.dialoguing = true;
-    this.player.setVelocity(0, 0);
-    this.physics.world.pause();
-    cam.pan(bx, by - 20, 780, "Sine.easeInOut", true);
-    this.time.delayedCall(820, () => {
-      if (!this.scene.isActive()) return;
-      cam.pan(this.player.x, this.player.y, 520, "Sine.easeInOut", true);
-      // 이미 본 대사면 연출만 종료, 아니면 인트로 대사 재생(resume은 resumeFromDialogue가 담당)
-      if (!this.showDialogueOnce(introId)) {
-        this.dialoguing = false;
-        this.physics.world.resume();
-      }
-    });
+    try {
+      const cam = this.cameras.main;
+      this.dialoguing = true;
+      this.dialogueSince = this.time.now; // v3.3.0 — 붙임 자가치유 기준
+      this.player.setVelocity(0, 0);
+      this.physics.world.pause();
+      cam.pan(bx, by - 20, 780, "Sine.easeInOut", true);
+      this.time.delayedCall(820, () => {
+        if (!this.scene.isActive()) return;
+        cam.pan(this.player.x, this.player.y, 520, "Sine.easeInOut", true);
+        // 이미 본 대사면 연출만 종료, 아니면 인트로 대사 재생(resume은 resumeFromDialogue가 담당)
+        if (!this.showDialogueOnce(introId)) {
+          this.dialoguing = false;
+          this.physics.world.resume();
+        }
+      });
+    } catch (err) {
+      console.error("[SERTZ] 보스 인트로 시네마틱 실패 — 즉시 복구", err);
+      this.dialoguing = false;
+      this.physics.world.resume();
+    }
   }
 
   onBossDead() {
@@ -3144,8 +3454,9 @@ export class WorldScene extends Phaser.Scene {
       this.save();
     };
 
-    /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구) */
-    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em"; value?: number | string }) => {
+    /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
+     *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가 */
+    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang"; value?: number | string }) => {
       if (!this.player) return;
       const p = this.player;
       if (v.type === "job" && typeof v.value === "string") {
@@ -3182,6 +3493,21 @@ export class WorldScene extends Phaser.Scene {
         p.emerald = Math.max(0, p.emerald + v.value);
         this.emitRpgState();
         EventBus.emit("banner:show", { text: `GM — 에메랄드 ${v.value >= 0 ? "+" : ""}${v.value}` });
+      } else if (v.type === "fifth") {
+        /* v3.3.0 (지시 #3) — GM 5차전직(임시): 부여/해제 토글 */
+        const on = v.value === 1 || v.value === "1";
+        p.gmGrantFifth(on);
+        EventBus.emit("banner:show", {
+          text: on
+            ? "GM 5차 전직 완료(임시)! 전 스킬 ·극 강화 + 고유 궁귁기(N) 해금"
+            : "5차 각성 해제 — 일반 상태로 복귀",
+        });
+        this.emitSkills();
+        this.emitRpgState();
+        this.save();
+      } else if (v.type === "dojang") {
+        /* v3.3.0 (지시 #6) — GM → 무릉도장 입장 */
+        this.enterDojang();
       }
     };
 
@@ -3461,15 +3787,26 @@ export class WorldScene extends Phaser.Scene {
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
 
-    /* v3.2.0 (#흑화) — 부팅 후 6초간 카메라 자가치유:
+    /* v3.2.0 (#흑화) — 카메라 자가치유 (v3.3.0: 상시화 — 6초 한정 제거):
      *  페이드 이펙트가 실행 중이 아닌데 알파가 1 미만으로 남아있으면(WebView에서
-     *  fadeOut 완료 콜백 유실 등) 매 프레임 강제로 밝힌다. 사망 페이드아웃은 보호. */
-    if (this.time.now - this.bootAt < 6000) {
+     *  fadeOut 완료 콜백 유실 등) 매 프레임 강제로 밝힌다. 사망 페이드아웃은 fadeEffect가
+     *  실행 중이라 미간섭 — 죽은 뒤 어두운 화면도 정상 유지된다. */
+    {
       const cam = this.cameras.main as unknown as {
         fadeEffect?: { isRunning: boolean }; alpha: number; setAlpha(a: number): void;
       };
       if (!cam.fadeEffect?.isRunning && cam.alpha < 1) cam.setAlpha(1);
     }
+    /* v3.3.0 (#흑화) — 물리 월드 자가치유: 대사/취침/사망도 아닌데 정지돼 있으면
+     *  (보스 시네마틱 도중 예외, 복구 경로 실패 등) 즉시 복원해 조작 불능을 막는다 */
+    if (
+      this.physics.world.isPaused && !this.dialoguing && !this.sleeping &&
+      this.player && this.player.state !== "dead"
+    ) {
+      this.physics.world.resume();
+    }
+    /* v3.3.0 (지시 #6) — 무릉도장 타이머/기록 UI 진행 */
+    if (this.dojangActive) this.tickDojang(dt);
 
     // 원격 플레이어 보간 — 대화/채팅/사망과 무관하게 항상 갱신 (v1.7 멀티플레이)
     const lerpK = Math.min(1, (dt / 1000) * 9);
@@ -4788,13 +5125,18 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: ring, scale: 0.9, alpha: 0, duration: 420, onComplete: () => ring.destroy() });
   }
 
-  /** 빛기둥 — 크루세이더 심판/낙뢰 공용 기둥 이펙트 */
+  /** 빛기둥 — 크루세이더 심판/낙뢰 공용 기둥 이펙트
+   *  v3.3.0 (지시 #9) — 백색 코어 기둥 + 착지 플래시 추가 (더 웅장하게) */
   spawnPillar(x: number, y: number, tint = 0xffe9a0, height = 120) {
     const pillar = this.add.rectangle(x, y - height / 2 + 14, 22, height, tint, 0.75).setDepth(25).setBlendMode(Phaser.BlendModes.ADD);
+    const core = this.add.rectangle(x, y - height / 2 + 14, 8, height * 0.92, 0xffffff, 0.9).setDepth(26).setBlendMode(Phaser.BlendModes.ADD);
     const glow = this.add.image(x, y, "glow").setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(1.2).setAlpha(0.8);
+    const flash = this.add.image(x, y, "glow").setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffffff).setScale(0.9).setAlpha(0.95);
     this.tweens.add({ targets: pillar, alpha: 0, scaleY: 0.2, duration: 320, ease: "Quad.in", onComplete: () => pillar.destroy() });
+    this.tweens.add({ targets: core, alpha: 0, scaleY: 0.12, duration: 260, ease: "Quad.in", onComplete: () => core.destroy() });
     this.tweens.add({ targets: glow, alpha: 0, scale: 0.4, duration: 380, onComplete: () => glow.destroy() });
-    this.spawnBurstAt(x, y, 12, tint);
+    this.tweens.add({ targets: flash, alpha: 0, scale: 1.7, duration: 180, onComplete: () => flash.destroy() });
+    this.spawnBurstAt(x, y, 14, tint);
   }
 
   /** 그림자 칼날 오비트 시작 — 나이트블레이드/섀도우로드 3차기 */
@@ -5002,7 +5344,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** 건물 E — 실내 맵으로 이동 (세이브 스테이지는 유지) */
   private enterInterior(key: "interior_inn" | "interior_home") {
-    if (this.restCd > 0) return;
+    if (this.restCd > 0 || this.transitioning) return;
     this.restCd = 1500;
     /* v2.9 — 어느 마을(챕터 마을 포함)에서 들어왔는지 기억 → 퇴장 시 그 마을로 복귀 */
     this.interiorFrom = this.stageDef.isVillage ? this.stageDef.key : "village";
@@ -5011,6 +5353,9 @@ export class WorldScene extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.cameras.main.fadeOut(420, 0, 0, 0);
     this.time.delayedCall(460, () => {
+      /* v3.3.0 (#흑화) — 실내 전환도 transitioning 게이트 통일: gotoStage와 이중 restart 경합 차단 */
+      if (this.transitioning) return;
+      this.transitioning = true;
       // 실내는 세이브에 기록하지 않음(종료 시 들어온 마을로 복귀)
       const carry = this.buildSave(this.interiorFrom);
       this.scene.restart({ stage: key, save: carry });
@@ -5019,13 +5364,16 @@ export class WorldScene extends Phaser.Scene {
 
   /** 실내 출구 문 E — 밖(건물 앞)으로 복귀 */
   private leaveInterior() {
-    if (this.restCd > 0 || this.sleeping) return;
+    if (this.restCd > 0 || this.sleeping || this.transitioning) return;
     this.restCd = 1500;
     audio.sfx.portal();
     this.player.state = "idle";
     this.player.setVelocity(0, 0);
     this.cameras.main.fadeOut(380, 0, 0, 0);
     this.time.delayedCall(420, () => {
+      /* v3.3.0 (#흑화) — 전환 게이트 통일 */
+      if (this.transitioning) return;
+      this.transitioning = true;
       /* v2.9 — 들어온 마을(챕터 마을 포함)로 복귀 */
       const vk = STAGES[this.interiorFrom] ? this.interiorFrom : "village";
       const carry = this.buildSave(vk);
@@ -6237,6 +6585,9 @@ export class WorldScene extends Phaser.Scene {
       autoAlloc: this.autoAlloc,
       /* v3.0.28 (#보스난이도) — 보스전 난이도 세이브 */
       bossDiff: this.bossDiff,
+      /* v3.3.0 — 5차 각성 상태 (GM 임시 전직 or 각성 시련 완료) */
+      fifth: this.player.fifth,
+      fifthStoryDone: this.player.fifthStoryDone,
       quickPots: { ...this.player.quickPots },
       potentials: JSON.parse(JSON.stringify(this.player.potentials)),
       potHpApplied: this.player.potHpAppliedVal,
@@ -6345,6 +6696,7 @@ export class WorldScene extends Phaser.Scene {
     if (!d) return;
     this.activeNpcId = npcId;
     this.dialoguing = true;
+    this.dialogueSince = this.time.now; // v3.3.0 — 대사 붙임 자가치유 기준 시각
     this.player.setVelocity(0, 0);
     this.physics.world.pause();
     EventBus.emit("dialogue:show", d);
@@ -6369,6 +6721,7 @@ export class WorldScene extends Phaser.Scene {
 
   resumeFromDialogue() {
     this.dialoguing = false;
+    this.dialogueSince = 0; // v3.3.0 — 붙임 시각 리셋
     this.portalHoldSince = 0; // v2.7 — 정상 종료면 강제개방 카운터도 리셋
     this.physics.world.resume();
     EventBus.emit("dialogue:hide");
@@ -6390,6 +6743,23 @@ export class WorldScene extends Phaser.Scene {
       const npc = this.activeNpcId;
       this.activeNpcId = null;
       if (npc === "jobmaster") {
+        /* v3.3.0 (지시 #8) — 5차 각성 스토리: Lv.200 도달 + 미각성 → 카이엔이 제5의 문을 연다 */
+        if (
+          !this.player.fifth && !this.player.fifthStoryDone &&
+          this.player.lv >= FIFTH_LEVEL && !this.fifthTrialActive
+        ) {
+          this.pendingFifthSummon = true;
+          this.showDialogueRaw({
+            speaker: "카이엔",
+            lines: [
+              "...제법 서늘한 눈이 되었군. 그 힘이 등 뒤에서 속삭이고 있어.",
+              "레벨 200 — 이그드라실의 정점에 선 자만이 '다섯 번째 문'을 볼 수 있다.",
+              "제5의 문이 열리면 모든 스킬이 '극'으로 재태어나고, 세부 직업마다 다른 궁극기가 손에 쥐어진다.",
+              "준비됐나? 각성의 수호자를 쓰러뜨려 스스로를 증명해라!",
+            ],
+          });
+          return; // 대사 종료 후 pendingFifthSummon 경로로 이어짐
+        }
         // 전직 스토리 elite 단계 — 시험 상대 소환 (지시 #13)
         const step = this.jobStory ? this.jobStoryDef()?.steps[this.jobStory.step] : null;
         if (step?.type === "elite") {
@@ -6429,6 +6799,12 @@ export class WorldScene extends Phaser.Scene {
       const next = this.queuedDialogue;
       this.queuedDialogue = null;
       this.time.delayedCall(60, () => this.showDialogue(next));
+      return;
+    }
+    /* v3.3.0 (지시 #8) — 각성 대사 종료 → "각성" 챕터 카드 + 수호자 소환 */
+    if (this.pendingFifthSummon) {
+      this.pendingFifthSummon = false;
+      this.time.delayedCall(120, () => this.startFifthTrial());
       return;
     }
     // 보스 격파 후 안내 대사 종료 시 차원문 개방 (플레이어가 포탈 위에 서 있어도

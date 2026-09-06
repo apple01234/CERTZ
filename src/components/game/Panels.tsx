@@ -1334,6 +1334,32 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
             에메랄드 +50
           </button>
         </div>
+
+        {/* v3.3.0 (지시 #3/#6) — 5차 전직(임시) + 무릉도장 입장 */}
+        <p className="mb-1 mt-3 text-[11px] font-bold text-white/50">5차 전직 (임시) · 훈련장</p>
+        <div className="grid grid-cols-3 gap-1.5">
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "fifth", value: 1 })}
+            className="rounded-lg border border-yellow-300/50 bg-gradient-to-br from-yellow-400/20 to-amber-500/10 px-2 py-2 text-[11px] font-black text-yellow-200 hover:from-yellow-400/30 active:scale-95"
+          >
+            ⭐ 5차 전직 부여
+          </button>
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "fifth", value: 0 })}
+            className="rounded-lg border border-white/25 bg-white/5 px-2 py-2 text-[11px] font-black text-white/70 hover:bg-white/10 active:scale-95"
+          >
+            5차 각성 해제
+          </button>
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "dojang" })}
+            className="rounded-lg border border-orange-300/45 bg-orange-400/10 px-2 py-2 text-[11px] font-black text-orange-200 hover:bg-orange-400/20 active:scale-95"
+          >
+            🥋 무릉도장 입장
+          </button>
+        </div>
+        <p className="mt-1.5 rounded-lg border border-yellow-300/20 bg-yellow-400/5 px-2.5 py-1.5 text-[10px] leading-relaxed text-yellow-200/70">
+          5차 전직 부여 시 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(N) 즉시 해금. 무릉도장은 90초 동안 허수아비에게 누적 피해를 기록하는 훈련장입니다 (최고 기록 저장).
+        </p>
         <p className="mt-2 text-center text-[10px] text-white/40">ESC로 닫기 · 변경 사항은 즉시 세이브에 반영</p>
       </div>
     </div>

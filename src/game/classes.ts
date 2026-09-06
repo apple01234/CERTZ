@@ -669,8 +669,16 @@ export const SKILL4_DESC: Record<Skill4Kind, string> = {
  *  · 해금: 레벨 200 (최종 레벨 캡) — 전직 티어 무관
  *  · 쿨타임: 60초 고정 (cdMult 미적용 — "쿨타임 1분" 그대로)
  *  · MP 100 소모, 계열(warrior/ranger/mage/thief)별 화려한 전용 연출 + 대미지 계수는
- *    4차 궁극기의 2배 이상 (롤 대미지 계수 합산 ~20배급) */
-export const SKILL5_INFO: Record<FamilyKey, { name: string; desc: string }> = {
+ *    4차 궁극기의 2배 이상 (롤 대미지 계수 합산 ~20배급)
+ * v3.3.0 (지시 #2 — "세부 직업별로 5차(궁극기)가 달라야지!!"):
+ *  · 4차 세부직업 8종 전부 "고유 궁극기"로 분리 (기존 계열 공용 → 겹침 0)
+ *  · 4차 미달 플레이어는 기존 계열 궁극기 그대로 폴백 (하위 호환) */
+export type Skill5Key =
+  | FamilyKey
+  | "warbringer" | "crusader" | "deadeye" | "skylord"
+  | "arclord" | "eternal" | "shadowlord" | "blademaster";
+export const SKILL5_INFO: Record<Skill5Key, { name: string; desc: string }> = {
+  /* ── 계열 폴백 (1~3차에서 5차 해금 시) ── */
   warrior: {
     name: "천멸 — 대붕괴 검격",
     desc: "하늘이 갈라지는 6연속 초거대 참격 후 대붕괴 종결 일격 — 광역 출혈 + 공격력 대버프",
@@ -687,7 +695,62 @@ export const SKILL5_INFO: Record<FamilyKey, { name: string; desc: string }> = {
     name: "심연 — 그림자 참수극",
     desc: "적 사이를 점멸하며 전원을 참수한 뒤 심연 뉴클리어 폭발 — 출혈 중첩",
   },
+  /* ── 4차 세부직업 8종 전용 궁극기 (v3.3.0) ── */
+  warbringer: {
+    name: "천멸극 — 종언의 대붕괴",
+    desc: "워브링어 전용. 참격 9연속이 전장을 갈라놓고, 분노의 대붕괴 일격이 지평선을 지운다 — 전투 중 출혈이 끊이지 않는다",
+  },
+  crusader: {
+    name: "성흔극 — 심판의 강림",
+    desc: "크루세이더 전용. 하늘에서 성스러운 빛기둥 9개가 떨어져 심판하고, 강림한 성검이 전원을 정화 — 자신은 완전 회복",
+  },
+  deadeye: {
+    name: "신시극 — 절사명중",
+    desc: "데드아이 전용. 빗나가지 않는 유도 화살 32연발(전부 확정 크리티컬) + 신의 저격선 3연사로 전장을 관통한다",
+  },
+  skylord: {
+    name: "천풍극 — 라스트 템페스트",
+    desc: "스카이로드 전용. 초대형 회오리 14기가 하늘을 뒤틀고 연쇄 낙뢰가 전장을 씻는다 — 신속 대버프",
+  },
+  arclord: {
+    name: "종막극 — 아르카나 오버로드",
+    desc: "아크로드 전용. 운석 12발 + 마나 붕괴 3중 폭발 — 잔여 MP를 전부 태워 피해량이 증가한다",
+  },
+  eternal: {
+    name: "영겁극 — 시간 붕괴",
+    desc: "이터널 전용. 시간을 정지시키고 7중 잔상 폭발로 시간 자체를 갈라놓는다 — 피해의 잔상이 두 번 울린다",
+  },
+  shadowlord: {
+    name: "심연극 — 그림자 군주 강림",
+    desc: "섀도우로드 전용. 그림자 군주로 강림해 10연속 참수 + 분신 3기가 전장을 지배 — 심연 뉴클리어로 마무리",
+  },
+  blademaster: {
+    name: "극의 — 무한 검무",
+    desc: "블레이드마스터 전용. 검무 14연타로 전장을 텔레포트하며 베고, 교차하는 쌍검 극의 일격으로 종결",
+  },
 };
+
+/** v3.3.0 — 5차 궁극기 종류 승계: 4차 세부직업이면 고유 궁극기, 아니면 계열 폴백 */
+const TIER4_ULTIMATES: readonly string[] = ["warbringer", "crusader", "deadeye", "skylord", "arclord", "eternal", "shadowlord", "blademaster"];
+export function resolveSkill5Of(key?: string | null): Skill5Key {
+  const chain = chainOf(key);
+  if (chain.length >= 4) {
+    const leaf = chain[chain.length - 1].key;
+    if (TIER4_ULTIMATES.includes(leaf)) return leaf as Skill5Key;
+  }
+  return familyOf(key) ?? "warrior";
+}
+
+/* v3.3.0 (지시 #1 — "5차에서도 스킬들 다 강화 되어야지!!"):
+ *  5차 각성 시 스킬 1~4 전체가 강화된다.
+ *  · 강화 수단: Player.sTier가 5를 반환 (기존 tier 0~4 배율 사다리가 +1칸 연장)
+ *    → 모든 스킬 공식의 계수/타수/반경이 5차 기준으로 상향
+ *  · 추가: 스킬 피해 +12% (FIFTH_SKILL_MULT), 쿨타임 -15% (FIFTH_CD_MULT)
+ *  · 스킬 이름 뒤에 "·극" 접미어 (Player 이름 getter에서 처리) */
+export const FIFTH_SKILL_MULT = 1.12;
+export const FIFTH_CD_MULT = 0.85;
+/** 5차 각성 요구 레벨 (궁극기 해금 레벨과 동일 — 최종 레벨 캡) */
+export const FIFTH_LEVEL = 200;
 
 /** HUD 표기용 — "전사 · 검사" / 2차 이상 "버서커" */
 export function classLabel(key?: string | null): string {
