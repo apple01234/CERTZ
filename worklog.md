@@ -621,3 +621,31 @@ Stage Summary:
 - 멀티 버그는 서버가 아니라 클라 전송 순서 문제였음이 확정(가짜 101), 폴링 우선으로 근본 해결
 - 스크립트: scripts/smoke_v330.js, scripts/smoke_v330_b.js (재검증용 보존)
 - GitHub 토큰 노력 경고: 토큰은 환경변수로만 사용, 유저에게 재발급 권고 필요
+
+---
+Task ID: 40
+Agent: Super Z (메인)
+Task: v4.0.0 "이세카이 업데이트" — ISEKAI GATE(어썸피스) 오마주 20종 시스템 적용 + APK v4.0.0 재빌드·릴리스 (워크스페이스 리셋 금지 준수)
+
+Work Log:
+- ISEKAI GATE 조사 (web-search/page_reader): 어썸피스 2026 인기작 — "옷장이 이세카이로 통하는 문", 3인 협동 웨이브 디펜스 RPG, 로그라이크 1~3성 카드, 피규어 가챠/배지/룬 합성/성좌, 옷장 던전(골드·경험치책), 쿠폰, 출석·퀘스트, 스킨 능력치 — 총 24종 적용 목록 도출
+- 탐색 에이전트: SaveData 마이그레이션/Player 스탯 훅(atkTotal:3179 등)/dojang 템플릿/패널 패턴 전수 매핑
+- src/game/isekai.ts 신설(데이터+순수헬퍼): FIGURES 12종(4등급)/BADGES 8종/룬 4속성×5티어/성좌 12×3/GATE_CARDS 15종(1~3성 가중치 드로우)/실버 상점 4종/쿠폰 3종/출석 14일/일일퀘 3종/업적 12종/역할·팀워크/오프라인 보상/조각 상점 6종
+- config.ts SaveData 20+ 필드 확장 + loadSave 기본값(구세이브 무중단 호환)
+- Player.ts: extBonus(runBuffs) 훅 — atkTotal/defTotal/critRate/recalcSpeed/rollDamage/syncBonusHp, 등급업 큐브(tierUpMult +12%/회), 경험치 책, applyRunCard/clearRunBuffs(런 HP 델타 회수)
+- WorldScene.ts: STAGES.gate(웨이브 디펜스 — 옷장 코어 HP/4면 스폰/5웨이브 보스/코어 접촉 자폭/원거리 코어 직진 AI보정), 카드 페이즈→gate:cards 오버레이, 실버 상점, 정산(골드·뽑기권·★1~3 최초보상·배지·랭킹 제출·복귀), 옷장 던전(60초/0.75초 스폰/경험치책 28%), 출석부 자동체크, 오프라인 보상(30분~12h), 일일퀘 카운트(토벌 훅), 티켓(게3/던2), GM 4종 신규 명령(gate/closet/freegacha/tickets), 세이브 게이트 중 저장=입장 전 구역 기록
+- UI: 이세카이 허브 패널(피규어/배지/룬/성좌/업적/랭킹 6탭), 혜택 패널(출석부 그리드/일일퀘 진행바/쿠폰 입력/티켓 현황), 게이트 카드+실버 상점 오버레이, 게이트 HUD(웨이브/코어HP/실버), HUD 혜택 버튼, GM 버튼 4개, 타이틀 배지 v4.0.0
+- 멀티: net.ts netRankSubmit/netRankTop/netOnRank/netLastParty, multiplayer/index.js 메모리 랭킹(모드별 50명·상위10 진입 전체방송)
+- data.ts: exp_book/tier_cube BM 추가, cos_isekai/cos_pixel 스킨, BM_STOCK 확장
+- 검증: tsc 0 에러 · bun run build 성공 · Playwright smoke_v400.js 27/27 통과(출석/티켓/게이트 스폰·카드·실버·정산/던전/가챠/쿠폰/룬/성좌/업적/패널/도장 무손상/소켓/에러0)
+- 커밋 650a447 푸시 → v4.0.0 웹 배포
+- APK 재빌드: 환경 리셋으로 SDK/JDK 소실 → cmdline-tools+build-tools;35+platforms;36 재설치(.android-sdk) + Temurin JDK21(/home/z/jdk) → build_apk.sh assembleRelease 성공(140,437,620B, aapt 실측 versionCode 46/versionName 4.0.0, md5 8ccb5b93)
+- GitHub Release v4.0.0 신설(id 383503552) + APK 업로드 → 다운로드 재검증 md5 일치
+- server.js/next.config/apk-guide/안내문 전부 v4.0.0 URL 동기화 + 커밋 7979c15 푸시, 로컬 서버 재기동(200/307 검증)
+
+Stage Summary:
+- v4.0.0 웹+APK 동시 배포 완료 — 이세카이 게이트 디펜스·수집형 성장(피규어/배지/룬/성좌/업적)·생활 재화(출석/일일퀘/쿠폰/오프라인)·랭킹 총 22종
+- 다운로드: https://github.com/apple01234/CERTZ/releases/download/v4.0.0/SERTZ-v4.0.0.apk (site /SERTZ-*.apk → 307)
+- 쿠폰: HELLOSERTZ / GATEOPEN / SERTZV4
+- 워크스페이스 리셋 없이 기존 프로젝트 위에서만 작업 (사용자 지시 준수)
+- GitHub 토큰 노출 지속 — 유저 재발급 권고 필수
