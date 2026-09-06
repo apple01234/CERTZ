@@ -18,6 +18,7 @@ import { sweptHitsTarget } from "../collision/sweep";
 import * as audio from "../audio";
 import type { Enemy } from "./Enemy";
 import type { Boss } from "./Boss";
+import { ZERO_EXT, expBookExp, type ExtBonus, type GateCard } from "../isekai";
 
 /**
  * 주인공 세르츠.
@@ -3166,10 +3167,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const sky = this.selfSpdBuff ? this.selfSpdBuff.mult : 1;
     const slow = this.dots.slow ? this.dots.slow.mult : 1;
     /* v3.0.24 — 이속 성장 연동: 기본 225 + 민첩 0.5%/점(최대 +60%) + 강화(무기+방어구 별 합계) 0.5%/성(최대 +15%)
-     *  "강화 및 스텟을 올려야 빨라진다" — 성장 재화의 가치 확대 */
+     *  "강화 및 스텟을 올려야 빨라진다" — 성장 재화의 가치 확대
+     *  v4.0.0 — 배지 이속 + 게이트 인런 카드 이속 */
     const dexPct = Math.min(60, this.stats.dex * 0.5);
     const starPct = Math.min(15, ((this.upgrades.weapon ?? 0) + (this.upgrades.armor ?? 0)) * 0.5);
-    this.speed = Math.round(Player.BASE_SPEED * (1 + (this.clsBonus.speedPct + dexPct + starPct) / 100) * buff * sky * slow);
+    this.speed = Math.round(Player.BASE_SPEED * (1 + (this.clsBonus.speedPct + dexPct + starPct + this.extBonus.speedPct + this.runBuffs.speedPct) / 100) * buff * sky * slow);
   }
 
   /* ---------------- RPG 기본 요소 ---------------- */
@@ -3181,18 +3183,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const potAtk = sumPotLines([this.potentials[this.weapon]]).atk;
     /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +2 + 무기 기본 공격력의 8% (마일스톤은 별도) */
     const perStar = starPerStarAtk(ITEMS[this.weapon].atk ?? 0) * this.upgrades.weapon;
+    /* v4.0.0 — 등급업 큐브 승급 배율 (무기 기본 스탯 강화) */
+    const tierMul = this.tierUpMult("weapon");
     const base =
-      this.atk + (ITEMS[this.weapon].atk ?? 0) + perStar +
-      starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3 + potAtk;
+      this.atk + (ITEMS[this.weapon].atk ?? 0) * tierMul + perStar +
+      starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3 + potAtk +
+      this.extBonus.atk; // v4.0.0 — 피규어/배지/룬 flat 공격
     const buff = this.hasBuff("buff_atk") || this.hasBuff("buff_king") ? 1.25 : 1;
     const king = this.hasBuff("buff_king") ? 1.3 / 1.25 : 1; // v3.0.6 — 왕의 가호 공격 +30%
     /* v3.0.16 — 세트 아이템 효과 + 몬스터 컬렉션 공격 % 보너스
-     *  v3.0.22 (#50) — 세계수의 가호: 평ATK +20·공격 +3% (결정 전부 수집 보너스) */
+     *  v3.0.22 (#50) — 세계수의 가호: 평ATK +20·공격 +3% (결정 전부 수집 보너스)
+     *  v4.0.0 — 피규어/성좌 atkPct + 게이트 인런 카드 atkPct */
     const setPct = this.activeSet?.bonus.atkPct ?? 0;
     const colPct = collectionBonus(this.collectionRegistered).atkPct;
     const blessFlat = this.worldtreeBlessing ? WORLDTREE_BLESSING.atk : 0;
     const blessPct = this.worldtreeBlessing ? WORLDTREE_BLESSING.atkPct : 0;
-    return Math.round((base + blessFlat) * (1 + (this.clsBonus.atkPct + setPct + colPct + blessPct) / 100) * buff * king);
+    return Math.round((base + blessFlat) * (1 + (this.clsBonus.atkPct + setPct + colPct + blessPct + this.extBonus.atkPct + this.runBuffs.atkPct) / 100) * buff * king);
   }
 
   /* ---------------- v3.0.16 — 세트 아이템 효과 (메이플 세트 아이템) ---------------- */
@@ -3212,16 +3218,99 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const setDef = this.activeSet?.bonus.defAdd ?? 0;
     /* v3.0.22 (#50) — 세계수의 가호 방어 +8 */
     const blessDef = this.worldtreeBlessing ? WORLDTREE_BLESSING.def : 0;
-    /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +1 + 기본 방어의 6% */
+    /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +1 + 기본 방어의 6%
+     *  v4.0.0 — 등급업 배율 + 피규어/배지/룬/성좌/스킨 flat 방어 */
     const perStar = starPerStarDef(ITEMS[this.armor].def ?? 0).def * this.upgrades.armor;
     return ((
-      (ITEMS[this.armor].def ?? 0) + perStar +
-      starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff + potDef + setDef + blessDef
+      (ITEMS[this.armor].def ?? 0) * this.tierUpMult("armor") + perStar +
+      starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff + potDef + setDef + blessDef +
+      this.extBonus.def
     )) + kingDef;
   }
 
   /** v3.0.5 — 방어구 스타포스 마일스톤 최대 HP 보너스 (실제 적용치 추적) */
   private sfHpApplied = 0;
+
+  /* ================= v4.0.0 — 이세카이 업데이트 외부 보너스 =================
+   *  피규어/배지/룬/성좌/스킨 보너스 — 씬에서 setExtBonus()로 주입, 즉시 반영.
+   *  HP는 syncBonusHp()의 target에 extBonus.hp가 합산된다 (델타 패턴 재사용). */
+  extBonus: ExtBonus = { ...ZERO_EXT };
+  /** 게이트 인런 전용 카드 버프 (런 종료 시 clearRunBuffs) */
+  runBuffs: { atkPct: number; skillPct: number; crit: number; lifesteal: number; silverPct: number; speedPct: number } = {
+    atkPct: 0, skillPct: 0, crit: 0, lifesteal: 0, silverPct: 0, speedPct: 0,
+  };
+  /** 인런 HP% 카드로 가산된 maxHp 총액 (런 종료 시 회수) */
+  runHpFlat = 0;
+
+  /** 외부 보너스 주입 — 피규어/배지/룬/성좌/스킨 변동 시 씬에서 호출 */
+  setExtBonus(b: ExtBonus) {
+    this.extBonus = b;
+    this.syncBonusHp();
+    this.recalcSpeed();
+  }
+
+  /** 게이트 인런 카드 버프 합산 적용 (선택 누적) */
+  applyRunCard(cards: GateCard[]) {
+    for (const c of cards) {
+      this.runBuffs.atkPct += c.stat.atkPct ?? 0;
+      this.runBuffs.skillPct += c.stat.skillPct ?? 0;
+      this.runBuffs.crit += c.stat.crit ?? 0;
+      this.runBuffs.lifesteal += c.stat.lifesteal ?? 0;
+      this.runBuffs.silverPct += c.stat.silverPct ?? 0;
+      this.runBuffs.speedPct += c.stat.speedPct ?? 0;
+      if (c.stat.hpPct) {
+        const flat = Math.round((this.maxHp - this.runHpFlat) * (c.stat.hpPct / 100));
+        if (flat > 0) {
+          this.runHpFlat += flat;
+          this.maxHp += flat;
+          this.hp = Math.min(this.maxHp, this.hp + flat);
+        }
+      }
+    }
+    this.recalcSpeed();
+  }
+
+  /** 게이트 런 종료 — 카드 버프/런 HP 회수 */
+  clearRunBuffs() {
+    this.runBuffs = { atkPct: 0, skillPct: 0, crit: 0, lifesteal: 0, silverPct: 0, speedPct: 0 };
+    if (this.runHpFlat > 0) {
+      this.maxHp = Math.max(60, this.maxHp - this.runHpFlat);
+      this.hp = Math.min(this.hp, this.maxHp);
+      this.runHpFlat = 0;
+    }
+    this.recalcSpeed();
+  }
+
+  /** v4.0.0 — 경험치 책 사용 (레벨 스케일 경험치 지급) */
+  useExpBook(): number {
+    if (!this.owned.includes("exp_book")) return 0;
+    this.consumeConsumable("exp_book");
+    const exp = expBookExp(this.lv);
+    this.gainExp(exp);
+    return exp;
+  }
+
+  /** v4.0.0 — 등급업 큐브: 장착 무기/방어구 티어 승급 (common→rare→epic→legend)
+   *  승급된 장비는 보유 목록에 유지되고, 아이템 자체의 atk/def가 등급 배율만큼 상승한다.
+   *  실제 티어 승급은 아이템 교체 대신 TIER_UP_BOOST 승수로 반영 (인스턴스 없는 구조 유지). */
+  tierUpBoost = 0; // 누적 승급 수 (무기+방어구 합계)
+  tierUpTargets: { weapon: number; armor: number } = { weapon: 0, armor: 0 }; // 개별 승급 수
+  upgradeTier(slot: "weapon" | "armor"): string | null {
+    const cur = ITEMS[slot === "weapon" ? this.weapon : this.armor].tier;
+    const ORDER: string[] = ["common", "rare", "epic", "legend"];
+    const idx = ORDER.indexOf(cur);
+    if (idx < 0 || idx >= ORDER.length - 1) return null; // 이미 전설
+    if (!this.owned.includes("tier_cube")) return null;
+    this.consumeConsumable("tier_cube");
+    this.tierUpTargets[slot] = (this.tierUpTargets[slot] ?? 0) + 1;
+    this.tierUpBoost = this.tierUpTargets.weapon + this.tierUpTargets.armor;
+    const nextTier = ORDER[idx + 1];
+    return nextTier;
+  }
+  /** 등급 승급 누적 배율 — 승급 1회당 해당 슬롯 기본 스탯 +12% */
+  tierUpMult(slot: "weapon" | "armor"): number {
+    return 1 + (this.tierUpTargets[slot] ?? 0) * 0.12;
+  }
   /** 이미 maxHp에 가산된 스타포스 HP 총액 (세이브용) */
   get starHpApplied() { return this.sfHpApplied; }
   /** 세이브 복원 — 가산 이력만 선복원 (syncStarHp가 델타만 반영하게) */
@@ -3247,7 +3336,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   syncBonusHp() {
     const col = collectionBonus(this.collectionRegistered);
     const target = (this.activeSet?.bonus.maxHp ?? 0) + col.hpAdd +
-      (this.worldtreeBlessing ? WORLDTREE_BLESSING.hpAdd : 0); // v3.0.22 (#50) 가호 HP +200
+      (this.worldtreeBlessing ? WORLDTREE_BLESSING.hpAdd : 0) + // v3.0.22 (#50) 가호 HP +200
+      this.extBonus.hp; // v4.0.0 — 피규어/배지/룬/성좌/스킨 maxHP
     const delta = target - this.bonusHpApplied;
     if (delta === 0) return;
     this.maxHp = Math.max(60, this.maxHp + delta);
@@ -3322,9 +3412,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.potentials[this.weapon], this.potentials[this.armor],
       ...this.accessories.map((k) => this.potentials[k]),
     ]).crit;
-    /* v3.0.16 — 세트 치명 + 컬렉션 치명 보너스 */
+    /* v3.0.16 — 세트 치명 + 컬렉션 치명 보너스
+     *  v4.0.0 — 피규어/배지/룬/성좌/스킨 치명 + 게이트 인런 카드 치명 */
     acc += this.activeSet?.bonus.critAdd ?? 0;
     acc += collectionBonus(this.collectionRegistered).critAdd;
+    acc += this.extBonus.crit + this.runBuffs.crit;
     return Math.round((Player.BASE_CRIT + acc + this.clsBonus.critAdd + this.stats.dex * 0.4) * 10) / 10;
   }
 
@@ -3351,9 +3443,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const chance = Math.min(this.critRate, 100); // 초과분은 확률에 불반영 — 크뎀으로 전환
     const crit = forceCrit || Math.random() * 100 < chance;
     const rage = this.selfAtkBuff ? this.selfAtkBuff.mult : 1;
-    /* v3.3.0 (지시 #1) — 5차 각성 시 스킬 피해 +12% (기본공격 제외 — 스킬 강화 컨셉) */
+    /* v3.3.0 (지시 #1) — 5차 각성 시 스킬 피해 +12% (기본공격 제외 — 스킬 강화 컨셉)
+     *  v4.0.0 — 게이트 인런 카드 스킬 피해 배율 */
     const fifth = isSkill && this.isFifth ? FIFTH_SKILL_MULT : 1;
-    const m = (isSkill ? mult * this.clsBonus.skillMult * fifth : mult) * rage;
+    const runSkl = isSkill && this.runBuffs.skillPct > 0 ? 1 + this.runBuffs.skillPct / 100 : 1;
+    const m = (isSkill ? mult * this.clsBonus.skillMult * fifth * runSkl : mult) * rage;
     return { dmg: Math.round(this.atkTotal * m * (crit ? this.critDmg : 1)), crit };
   }
 
@@ -3406,7 +3500,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  private heal(v: number): boolean {
+  /** v4.0.0 — public 승격 (게이트 흡혈 카드/실버 상점에서 회복 호출) */
+  heal(v: number): boolean {
     if (this.hp >= this.maxHp) return false;
     this.hp = Math.min(this.maxHp, this.hp + v);
     return true;

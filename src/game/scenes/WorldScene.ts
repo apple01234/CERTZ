@@ -14,6 +14,14 @@ import {
   type ClassKey,
 } from "../classes";
 import * as net from "../net";
+import {
+  computeExtBonus, drawGateCards, rollFigure, GATE_STAR_WAVES, GATE_STAR_REWARD, SILVER_SHOP,
+  COUPONS, ATTEND_REWARDS, ATTEND_CYCLE, DAILY_QUESTS, TICKETS_PER_DAY, ACHIEVEMENTS,
+  CONSTELLATIONS, CONSTEL_NODE_COST, SHARD_SHOP, BADGE_MAP, FIGURE_GRADE_META, FIGURE_MAP, FIGURES,
+  RUNE_KINDS, RUNE_META, RUNE_SYNTH_COST, RUNE_MAX_TIER, runeKey, parseRuneKey,
+  ROLE_OF, teamworkBuff, offlineReward, BADGE_SLOTS,
+  type GateCard, type RuneOwned, type RoleKind,
+} from "../isekai";
 import { viewZoom } from "../PhaserGame";
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import * as audio from "../audio";
@@ -170,6 +178,56 @@ export class WorldScene extends Phaser.Scene {
   private dojangFrom: StageKey = "village";
   private dojangText: Phaser.GameObjects.Text | null = null;
   private dojangTextAcc = 0;
+  /* ================= v4.0.0 — 이세카이 업데이트 상태 ================= */
+  /* 게이트 디펜스 (웨이브) */
+  private gateActive = false;
+  private gateWave = 0;
+  private gateSilver = 0;
+  private gateCoreHp = 0;
+  private gateCoreMax = 0;
+  private gateFrom: StageKey = "village";
+  private gateText: Phaser.GameObjects.Text | null = null;
+  private gatePhase: "fight" | "cards" | "break" = "fight";
+  private gateAlive = 0;
+  private gateCorePos = new Phaser.Math.Vector2(0, 0);
+  private gateCoreBar: Phaser.GameObjects.Rectangle | null = null;
+  private gateCoreBarBg: Phaser.GameObjects.Rectangle | null = null;
+  private gatePendingCards: GateCard[] = [];
+  private gateBreakUntil = 0;
+  private gateEnded = false;
+  /* 옷장 던전 */
+  private closetActive = false;
+  private closetEndsAt = 0;
+  private closetGold = 0;
+  private closetText: Phaser.GameObjects.Text | null = null;
+  private closetAcc = 0;
+  private closetFrom: StageKey = "village";
+  /* 세이브 상태 (피규어/배지/룬/성좌/혜택) */
+  private figures: string[] = [];
+  private shards = 0;
+  private gachaTickets = 1;
+  private badges: string[] = [];
+  private badgeSlots: (string | null)[] = [null, null, null];
+  private runes: RuneOwned = {};
+  private runeSlots: (string | null)[] = [null, null, null, null];
+  private constel: string[] = [];
+  private couponsUsed: string[] = [];
+  private attendLast = "";
+  private attendCount = 0;
+  private dailyDate = "";
+  private dailyHunts = 0;
+  private dailyGate = 0;
+  private dailyCloset = 0;
+  private dailyClaimed: string[] = [];
+  private ticketDate = "";
+  private ticketGate = 0;
+  private ticketCloset = 0;
+  private achClaimed: string[] = [];
+  private gateBest = 0;
+  private closetBest = 0;
+  private gateStars: boolean[] = [false, false, false];
+  private freeGachaAt = 0;
+  private lastSeenAt = 0;
   /** v3.1.0 (#최적화) — HUD 브로드캐스트 스로틀 (프레임당 다중 emit 억제) */
   private lastHudEmit = -999;
   private hudEmitPending = false;
@@ -466,6 +524,21 @@ export class WorldScene extends Phaser.Scene {
     this.dojangFrom = "village";
     this.dojangText = null;
     this.dojangTextAcc = 0;
+    /* v4.0.0 — 게이트/옷장 던전 상태 리셋 */
+    this.gateActive = false;
+    this.gateWave = 0;
+    this.gateSilver = 0;
+    this.gatePhase = "fight";
+    this.gateAlive = 0;
+    this.gateText = null;
+    this.gateCoreBar = null;
+    this.gateCoreBarBg = null;
+    this.gatePendingCards = [];
+    this.gateEnded = false;
+    this.closetActive = false;
+    this.closetGold = 0;
+    this.closetText = null;
+    this.closetAcc = 0;
     this.restCd = 0;
     // 런 통계(처치/플레이타임) — 씬 재시작(스테이지 전환)과 무관하게 유지
     // fresh=true는 타이틀에서 새 시작/이어하기일 때만 (사망화면 정확한 통계)
@@ -577,6 +650,11 @@ export class WorldScene extends Phaser.Scene {
     if (stageKey === "dojang") {
       this.entryHome.set(this.stageW / 2, this.stageH - 120);
       this.portalHome.set(this.stageW / 2, 120);
+    }
+    /* v4.0.0 — 게이트/옷장 던전 입장/퇴장 위치 보정 */
+    if (stageKey === "gate" || stageKey === "closet") {
+      this.entryHome.set(this.stageW / 2, this.stageH - 120);
+      this.portalHome.set(this.stageW / 2, 110);
     }
 
     // 반응형: 화면 밀도 유지용 카메라 줌 (RESIZE 캔버스 1:1 + 카메라 확대)
@@ -728,7 +806,43 @@ export class WorldScene extends Phaser.Scene {
       /* v3.3.0 — 5차 각성/시련 완료 플래그 복원 */
       this.player.fifth = savedPlayer.fifth ?? false;
       this.player.fifthStoryDone = savedPlayer.fifthStoryDone ?? false;
+      /* ----- v4.0.0 — 이세카이 업데이트 복원 ----- */
+      this.figures = (savedPlayer.figures ?? []).filter((k) => k in FIGURE_MAP);
+      this.shards = savedPlayer.shards ?? 0;
+      this.gachaTickets = savedPlayer.gachaTickets ?? 0;
+      this.badges = (savedPlayer.badges ?? []).filter((k) => k in BADGE_MAP);
+      this.badgeSlots = (savedPlayer.badgeSlots ?? [null, null, null]).slice(0, BADGE_SLOTS);
+      while (this.badgeSlots.length < BADGE_SLOTS) this.badgeSlots.push(null);
+      this.runes = { ...(savedPlayer.runes ?? {}) };
+      this.runeSlots = (savedPlayer.runeSlots ?? [null, null, null, null]).slice(0, 4);
+      while (this.runeSlots.length < 4) this.runeSlots.push(null);
+      this.constel = [...(savedPlayer.constel ?? [])];
+      this.couponsUsed = [...(savedPlayer.coupons ?? [])];
+      this.attendLast = savedPlayer.attend?.last ?? "";
+      this.attendCount = savedPlayer.attend?.count ?? 0;
+      this.dailyDate = savedPlayer.daily?.date ?? "";
+      this.dailyHunts = savedPlayer.daily?.hunts ?? 0;
+      this.dailyGate = savedPlayer.daily?.gate ?? 0;
+      this.dailyCloset = savedPlayer.daily?.closet ?? 0;
+      this.dailyClaimed = [...(savedPlayer.daily?.claimed ?? [])];
+      this.ticketDate = savedPlayer.tickets?.date ?? "";
+      this.ticketGate = savedPlayer.tickets?.gate ?? 0;
+      this.ticketCloset = savedPlayer.tickets?.closet ?? 0;
+      this.achClaimed = [...(savedPlayer.achClaimed ?? [])];
+      this.gateBest = savedPlayer.gateBest ?? 0;
+      this.closetBest = savedPlayer.closetBest ?? 0;
+      this.gateStars = [...(savedPlayer.gateStars ?? [false, false, false])];
+      while (this.gateStars.length < 3) this.gateStars.push(false);
+      this.freeGachaAt = savedPlayer.freeGachaAt ?? 0;
+      this.lastSeenAt = savedPlayer.lastSeen ?? 0;
+      this.player.tierUpTargets.weapon = savedPlayer.tierUpWea ?? 0;
+      this.player.tierUpTargets.armor = savedPlayer.tierUpArm ?? 0;
+      this.player.tierUpBoost = this.player.tierUpTargets.weapon + this.player.tierUpTargets.armor;
+      /* 외부 보너스(피규어/배지/룬/성좌/스킨) 주입 — HP 델타 동기화 포함 */
+      this.syncExtBonus();
     }
+    /* v4.0.0 — 이세카이 데일리 초기화 (출석부/일일 퀘스트/티켓/오프라인 보상) */
+    this.initIsekaiDaily();
     // v2.5 — 현재 구역 방문 기록 (실내 제외) — 지역 이동 부적 워프 대상
     if (!this.isInterior) {
       const before = this.visited.size;
@@ -811,6 +925,10 @@ export class WorldScene extends Phaser.Scene {
 
     /* ---------- v3.3.0 (지시 #6) — 무릉도장: 허수아비 + 타이머/기록 UI ---------- */
     if (stageKey === "dojang") this.buildDojang();
+
+    /* ---------- v4.0.0 — 이세카이 게이트 / 옷장 던전 빌드 ---------- */
+    if (stageKey === "gate") this.buildGate();
+    if (stageKey === "closet") this.buildCloset();
 
     /* ---------- 퀘스트 오브젝트 (v2.2 — 실내는 포탈/퀘스트 오브젝트 없음) ---------- */
     if (this.isInterior) {
@@ -1632,6 +1750,10 @@ export class WorldScene extends Phaser.Scene {
     if (!prev) return;
     /* v3.3.0 — 무릉도장 중간 퇴장 시 기록 확정 */
     if (this.dojangActive) this.finishDojang(true);
+    /* v4.0.0 — 게이트 중간 퇴장 시 보상 정산 후 복귀 (gotoStage는 finishGate가 처리) */
+    if (this.gateActive) { this.returnActive = false; this.finishGate("exit"); return; }
+    /* v4.0.0 — 옷장 던전 조기 퇴장 — 지금까지 획득한 골드 기준 정산 */
+    if (this.closetActive) { this.returnActive = false; this.finishCloset(); return; }
     this.returnActive = false;
     audio.sfx.portal();
     this.cameras.main.fadeOut(500, 0, 0, 0);
@@ -2043,7 +2165,8 @@ export class WorldScene extends Phaser.Scene {
   collectDrop(kind: DropKind, amount: number, x: number, y: number, viaPet = false) {
     if (kind === "gold") {
       // 펫 골드 보너스 (v1.9 BM — 슬라임 +10%, 핑크이 +20%)
-      const bonus = this.player.petGoldBonusPct;
+      // v4.0.0 — 피규어/배지/스킨 골드 획득 보너스 추가
+      const bonus = this.player.petGoldBonusPct + this.player.extBonus.goldPct;
       const gold = bonus > 0 ? Math.max(1, Math.round(amount * (1 + bonus / 100))) : amount;
       this.player.addGold(gold);
       audio.sfx.coin();
@@ -2291,6 +2414,31 @@ export class WorldScene extends Phaser.Scene {
     }
     this.totalKills++;
     this.registry.set("runKills", this.totalKills);
+    /* ---------- v4.0.0 — 게이트/옷장 던전/일일 퀘스트 훅 ---------- */
+    if (this.gateActive) {
+      this.gateAlive = Math.max(0, this.gateAlive - 1);
+      const silver = Math.round((3 + this.gateWave * 1.6) * (1 + this.player.runBuffs.silverPct / 100));
+      this.gateSilver += silver;
+      /* 흡혈 카드 — 처치 시 HP 회복 */
+      if (this.player.runBuffs.lifesteal > 0) {
+        const healV = Math.round(this.player.atkTotal * this.player.runBuffs.lifesteal / 100);
+        if (healV > 0 && this.player.heal(healV)) this.spawnPickupText(this.player.x, this.player.y - 46, `흡혈 +${healV}`, "#ff8a9c");
+      }
+      this.emitGateState();
+      if (this.gateAlive <= 0 && this.gatePhase === "fight") this.onGateWaveCleared();
+    } else if (this.closetActive) {
+      /* 옷장 던전 — 레벨 스케일 골드 지급 + 경험치책 확률 드롭 */
+      const g = Math.round((42 + this.player.lv * 6) * (1 + this.player.extBonus.goldPct / 100 + this.player.petGoldBonusPct / 100));
+      this.player.addGold(g);
+      this.closetGold += g;
+      if (Math.random() < 0.28) {
+        this.player.owned.push("exp_book");
+        this.spawnPickupText(this.player.x, this.player.y - 70, "경험치 책 드롭!", "#8fe84a");
+        this.emitRpgState();
+      }
+    }
+    /* 일일 퀘스트 — 토벌 카운트 (게이트/던전 처치 포함) */
+    this.addDailyHunt();
     /* v3.0.15 (#20) — 콤보킬 보너스 경험치: 5초 내 연속 킬 시 콤보×5% (최대 +50%).
      *  콤보 3 이상부터 "연속킬 xN" 플로팅 텍스트로 연출 */
     const nowMs = this.time.now;
@@ -2318,6 +2466,8 @@ export class WorldScene extends Phaser.Scene {
     //  잡으면 일반 몬스터 리스폰 큐에 등록돼 "시련 후 약한 몬스터가 계속 소환"되었다.
     if (ref && ref === this.jobTrialEnemy) {
       /* 시련 상대 — 재소환 금지 (재도전은 카이엔에게 말 걸기) */
+    } else if (this.gateActive || this.closetActive) {
+      /* v4.0.0 — 게이트/던전 몬스터는 웨이브 소환이다 — 필드 리스폰 금지 */
     } else {
       this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
         this.respawnEnemy(key, spawnX, spawnY, 0)
@@ -2500,6 +2650,747 @@ export class WorldScene extends Phaser.Scene {
     });
     audio.sfx.questDone();
     this.emitRpgState();
+    /* v4.0.0 — 도장 기록 서버 랭킹 제출 */
+    net.netRankSubmit("dojang", score, getPlayerName(), this.player.lv);
+  }
+
+  /* ================= v4.0.0 — 이세카이 업데이트: 게이트 디펜스/옷장 던전/혜택 시스템 ================= */
+
+  private today(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  /** 피규어/배지/룬/성좌/스킨 보너스 재계산 → Player 주입 */
+  private syncExtBonus() {
+    if (!this.player) return;
+    this.player.setExtBonus(computeExtBonus({
+      figures: this.figures,
+      badgeSlots: this.badgeSlots,
+      runes: this.runes,
+      runeSlots: this.runeSlots,
+      constel: this.constel,
+      cosmetic: this.player.cosmetic,
+    }));
+  }
+
+  /* ---------------- 데일리 (출석/일일 퀘스트/티켓/오프라인 보상) ---------------- */
+
+  private initIsekaiDaily() {
+    this.ensureDaily();
+    this.ensureTickets();
+    this.checkAttendance();
+    this.checkOfflineReward();
+    this.save();
+    this.emitRpgState();
+  }
+
+  private ensureDaily() {
+    const t = this.today();
+    if (this.dailyDate !== t) {
+      this.dailyDate = t;
+      this.dailyHunts = 0;
+      this.dailyGate = 0;
+      this.dailyCloset = 0;
+      this.dailyClaimed = [];
+    }
+  }
+
+  private ensureTickets() {
+    const t = this.today();
+    if (this.ticketDate !== t) {
+      this.ticketDate = t;
+      this.ticketGate = TICKETS_PER_DAY.gate;
+      this.ticketCloset = TICKETS_PER_DAY.closet;
+    }
+  }
+
+  private addDailyHunt() {
+    this.ensureDaily();
+    this.dailyHunts++;
+  }
+
+  private checkAttendance() {
+    const t = this.today();
+    if (this.attendLast === t) return;
+    this.attendLast = t;
+    this.attendCount++;
+    const rw = ATTEND_REWARDS[(this.attendCount - 1) % ATTEND_CYCLE];
+    const g = rw.grant;
+    if (g.gold) this.player.addGold(g.gold);
+    if (g.emerald) this.player.emerald += g.emerald;
+    if (g.tickets) this.gachaTickets += g.tickets;
+    if (g.shards) this.shards += g.shards;
+    EventBus.emit("reward:show", {
+      title: `출석 체크 — ${((this.attendCount - 1) % ATTEND_CYCLE) + 1}일차`,
+      lines: [
+        { text: rw.label, color: "#ffd76a" },
+        { text: `누적 출석 ${this.attendCount}일 · 14일 사이클`, color: "#a8ecff" },
+      ] satisfies RewardPopupState["lines"],
+    });
+    audio.sfx.questDone();
+  }
+
+  private checkOfflineReward() {
+    if (!this.lastSeenAt) return;
+    const elapsed = Date.now() - this.lastSeenAt;
+    if (elapsed < 30 * 60 * 1000) return;
+    const r = offlineReward(elapsed, this.player.lv);
+    if (r.gold <= 0) return;
+    this.player.addGold(r.gold);
+    this.player.gainExp(r.exp);
+    EventBus.emit("reward:show", {
+      title: "오프라인 사냥 보상",
+      lines: [
+        { text: `부재 시간: ${r.hours.toFixed(1)}시간 (최대 12시간)`, color: "#a8ecff" },
+        { text: `골드 +${r.gold.toLocaleString()} G`, color: "#ffd76a" },
+        { text: `경험치 +${r.exp.toLocaleString()} EXP`, color: "#8fe84a" },
+      ] satisfies RewardPopupState["lines"],
+    });
+    audio.sfx.questDone();
+  }
+
+  /** GM 무료 뽑기 — 광고 보상 대체 (10분 쿨) */
+  freeGacha() {
+    const remain = this.freeGachaAt + 600000 - Date.now();
+    if (remain > 0) {
+      EventBus.emit("banner:show", { text: `무료 뽑기 쿨타임 — ${Math.ceil(remain / 60000)}분 후 다시!` });
+      return;
+    }
+    this.freeGachaAt = Date.now();
+    this.gachaTickets += 1;
+    this.save();
+    this.emitRpgState();
+    EventBus.emit("banner:show", { text: "GM 방송 시청 완료! 뽑기권 +1 (10분마다 무료)" });
+    audio.sfx.coin();
+  }
+
+  /* ---------------- 이세카이 허브 커맨드 (Panels → EventBus) ---------------- */
+
+  handleIsekai(v: { action: string; key?: string; slot?: number | string; ck?: string; idx?: number; id?: string; code?: string }) {
+    if (!this.player) return;
+    const p = this.player;
+    switch (v.action) {
+      case "gacha": {
+        if (this.gachaTickets <= 0) { EventBus.emit("banner:show", { text: "뽑기권이 없습니다 — 출석/일일 퀘스트/게이트로 획득!" }); return; }
+        this.gachaTickets--;
+        const res = rollFigure(this.figures);
+        const def = FIGURE_MAP[res.key];
+        if (res.dup) {
+          const sh = FIGURE_GRADE_META[res.grade].shard;
+          this.shards += sh;
+          EventBus.emit("reward:show", {
+            title: "피규어 뽑기 — 중복!",
+            lines: [
+              { text: `${FIGURE_GRADE_META[res.grade].name} · ${def.name}`, color: FIGURE_GRADE_META[res.grade].color },
+              { text: `이미 보유 중 → 피규어 조각 +${sh}`, color: "#ffd76a" },
+            ] satisfies RewardPopupState["lines"],
+          });
+        } else {
+          this.figures.push(res.key);
+          EventBus.emit("reward:show", {
+            title: "피규어 뽑기 — 신규!",
+            lines: [
+              { text: `${FIGURE_GRADE_META[res.grade].name} · ${def.name}`, color: FIGURE_GRADE_META[res.grade].color },
+              { text: def.desc, color: "#a8ecff" },
+              { text: `도감 등록 ${this.figures.length}/${FIGURES.length}`, color: "#7dffa8" },
+            ] satisfies RewardPopupState["lines"],
+          });
+        }
+        audio.sfx.questDone();
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "badgeEquip": {
+        const slot = Math.max(0, Math.min(BADGE_SLOTS - 1, Number(v.slot ?? 0)));
+        if (!v.key || !this.badges.includes(v.key)) return;
+        this.badgeSlots[slot] = v.key;
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        break;
+      }
+      case "badgeUnequip": {
+        const slot = Math.max(0, Math.min(BADGE_SLOTS - 1, Number(v.slot ?? 0)));
+        this.badgeSlots[slot] = null;
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "runeSynth": {
+        const kind = RUNE_KINDS.find((k) => k === v.key);
+        if (!kind) return;
+        for (let t = 1; t < RUNE_MAX_TIER; t++) {
+          const k = runeKey(kind, t);
+          if ((this.runes[k] ?? 0) >= RUNE_SYNTH_COST) {
+            this.runes[k] = (this.runes[k] ?? 0) - RUNE_SYNTH_COST;
+            const up = runeKey(kind, t + 1);
+            this.runes[up] = (this.runes[up] ?? 0) + 1;
+            EventBus.emit("banner:show", { text: `룬 합성 성공! ${RUNE_META[kind].name} T${t} ×3 → T${t + 1} ×1` });
+            audio.sfx.equip();
+            this.syncExtBonus();
+            this.save();
+            this.emitRpgState();
+            return;
+          }
+        }
+        EventBus.emit("banner:show", { text: `같은 룬 ${RUNE_SYNTH_COST}개가 모이면 합성할 수 있어요` });
+        break;
+      }
+      case "runeEquip": {
+        const slot = Math.max(0, Math.min(3, Number(v.slot ?? 0)));
+        const parsed = v.key ? parseRuneKey(v.key) : null;
+        if (!parsed || !v.key) return;
+        const equippedSame = this.runeSlots.filter((s) => s === v.key).length;
+        if ((this.runes[v.key] ?? 0) <= equippedSame) return;
+        this.runeSlots[slot] = v.key;
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        break;
+      }
+      case "runeUnequip": {
+        const slot = Math.max(0, Math.min(3, Number(v.slot ?? 0)));
+        this.runeSlots[slot] = null;
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "constelUnlock": {
+        const c = CONSTELLATIONS.find((x) => x.key === v.ck);
+        const idx = v.idx ?? 0;
+        if (!c || idx < 0 || idx >= c.nodes.length) return;
+        const id = `${c.key}:${idx}`;
+        if (this.constel.includes(id)) return;
+        if (idx > 0 && !this.constel.includes(`${c.key}:${idx - 1}`)) { EventBus.emit("banner:show", { text: "이전 별부터 개방해야 합니다" }); return; }
+        const cost = CONSTEL_NODE_COST[idx] ?? 999;
+        if (this.shards < cost) { EventBus.emit("banner:show", { text: `피규어 조각 ${cost}개가 필요합니다` }); return; }
+        this.shards -= cost;
+        this.constel.push(id);
+        EventBus.emit("banner:show", { text: `성좌 개방 — ${c.name} 별${idx + 1}!` });
+        audio.sfx.equip();
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "achClaim": {
+        const ach = ACHIEVEMENTS.find((a) => a.id === v.id);
+        if (!ach || this.achClaimed.includes(ach.id)) return;
+        const snap = this.achSnapshot();
+        if (ach.prog(snap) < ach.goal) { EventBus.emit("banner:show", { text: "아직 달성하지 못했습니다" }); return; }
+        this.achClaimed.push(ach.id);
+        this.shards += ach.shards;
+        EventBus.emit("reward:show", {
+          title: `업적 달성 — ${ach.name}`,
+          lines: [
+            { text: ach.desc, color: "#a8ecff" },
+            { text: `피규어 조각 +${ach.shards}`, color: "#ffd76a" },
+          ] satisfies RewardPopupState["lines"],
+        });
+        audio.sfx.questDone();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "dailyClaim": {
+        this.ensureDaily();
+        const q = DAILY_QUESTS.find((d) => d.id === v.id);
+        if (!q || this.dailyClaimed.includes(q.id)) return;
+        const prog = q.id === "hunt" ? this.dailyHunts : q.id === "gate" ? this.dailyGate : this.dailyCloset;
+        if (prog < q.goal) { EventBus.emit("banner:show", { text: `진행도 부족 (${prog}/${q.goal})` }); return; }
+        this.dailyClaimed.push(q.id);
+        const g = q.reward;
+        if (g.gold) p.addGold(g.gold);
+        if (g.emerald) p.emerald += g.emerald;
+        if (g.tickets) this.gachaTickets += g.tickets;
+        EventBus.emit("banner:show", { text: `일일 퀘스트 완료 — ${g.label}!` });
+        audio.sfx.questDone();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "coupon": {
+        const code = (v.code ?? "").trim().toUpperCase();
+        const def = COUPONS.find((c) => c.code === code);
+        if (!def) { EventBus.emit("banner:show", { text: "잘못된 쿠폰 코드입니다" }); return; }
+        if (this.couponsUsed.includes(code)) { EventBus.emit("banner:show", { text: "이미 사용한 쿠폰입니다" }); return; }
+        this.couponsUsed.push(code);
+        const g = def.grant;
+        if (g.gold) p.addGold(g.gold);
+        if (g.emerald) p.emerald += g.emerald;
+        if (g.tickets) this.gachaTickets += g.tickets;
+        if (g.tierCube) p.owned.push("tier_cube");
+        EventBus.emit("reward:show", {
+          title: `쿠폰 사용 — ${def.name}`,
+          lines: [{ text: def.desc, color: "#ffd76a" }] satisfies RewardPopupState["lines"],
+        });
+        audio.sfx.questDone();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "shardBuy": {
+        const item = SHARD_SHOP.find((s) => s.id === v.id);
+        if (!item) return;
+        if (this.shards < item.cost) { EventBus.emit("banner:show", { text: `피규어 조각 ${item.cost}개가 필요합니다` }); return; }
+        this.shards -= item.cost;
+        if (item.grant === "ticket") {
+          this.gachaTickets += 1;
+        } else if (item.grant === "badge") {
+          const unowned = Object.keys(BADGE_MAP).filter((k) => !this.badges.includes(k));
+          if (unowned.length === 0) { this.shards += item.cost; EventBus.emit("banner:show", { text: "모든 배지를 보유 중입니다" }); return; }
+          const pick = unowned[Math.floor(Math.random() * unowned.length)];
+          this.badges.push(pick);
+          EventBus.emit("banner:show", { text: `배지 획득 — ${BADGE_MAP[pick].name}!` });
+        } else if (item.grant === "rune") {
+          const kind = RUNE_KINDS[Math.floor(Math.random() * RUNE_KINDS.length)];
+          const k = runeKey(kind, 1);
+          this.runes[k] = (this.runes[k] ?? 0) + 1;
+          EventBus.emit("banner:show", { text: `룬 획득 — ${RUNE_META[kind].name} T1!` });
+        } else if (item.grant === "tier_cube") {
+          p.owned.push("tier_cube");
+        } else {
+          /* 스킨 */
+          const key = item.grant;
+          if (!p.owned.includes(key as ItemKey)) p.owned.push(key as ItemKey);
+          if (!p.cosmetics.includes(key as CosmeticKey)) p.cosmetics.push(key as CosmeticKey);
+          EventBus.emit("banner:show", { text: `스킨 획득 — 인벤토리에서 착용!` });
+        }
+        audio.sfx.coin();
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "tierUp": {
+        const slot = v.slot === "armor" ? "armor" : "weapon";
+        const nextTier = p.upgradeTier(slot);
+        if (nextTier) {
+          EventBus.emit("banner:show", { text: `등급업 성공! ${slot === "weapon" ? "무기" : "방어구"} → ${nextTier.toUpperCase()} (스탯 +12%/회)` });
+          audio.sfx.equip();
+          this.save();
+          this.emitRpgState();
+          this.emitHud();
+        } else {
+          EventBus.emit("banner:show", { text: "등급업 큐브가 없거나 이미 최고 등급입니다" });
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  private achSnapshot() {
+    const killsSum = Object.values(this.monsterKills).reduce((a, b) => a + b, 0);
+    let dojangBest = 0;
+    try { dojangBest = Number(localStorage.getItem("sertz.dojang.best") ?? "0") || 0; } catch { dojangBest = 0; }
+    return {
+      totalKills: killsSum,
+      lv: this.player.lv,
+      gateBest: this.gateBest,
+      closetBest: this.closetBest,
+      upSum: this.player.upgrades.weapon + this.player.upgrades.armor,
+      collection: Object.keys(this.monsterKills).length,
+      figures: this.figures.length,
+      constelNodes: this.constel.length,
+      dojangBest,
+    };
+  }
+
+  /* ---------------- 이세카이 게이트 (웨이브 디펜스) ---------------- */
+
+  enterGate() {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "gate") return;
+    this.ensureTickets();
+    if (this.ticketGate <= 0) {
+      EventBus.emit("banner:show", { text: "오늘의 게이트 티켓 소진! (매일 3장 — 내일 다시 도전)" });
+      return;
+    }
+    this.ticketGate--;
+    this.ensureDaily();
+    this.dailyGate++;
+    this.gateFrom = this.stageDef.key;
+    /* 팀워크 버프 — 파티 2인 이상 (ISEKAI GATE 3인 협동 오마주) */
+    const party = net.netLastParty();
+    const roles = (party?.members ?? []).map((m) => ROLE_OF[m.cls ?? ""]).filter(Boolean) as RoleKind[];
+    const tw = teamworkBuff(party?.members.length ?? 1, roles);
+    if (tw.pct > 0 && tw.label) {
+      this.player.applyRunCard([{ id: "tw", tier: 2, name: "팀워크", desc: tw.label, stat: { atkPct: tw.pct, hpPct: tw.pct } }]);
+      EventBus.emit("banner:show", { text: tw.label });
+    } else {
+      this.showBanner("이세카이 게이트로 이동합니다 — 옷장 게이트를 지켜라!");
+    }
+    this.save();
+    this.emitRpgState();
+    this.gotoStage("gate");
+  }
+
+  private buildGate() {
+    const cx = this.stageW / 2;
+    const cy = this.stageH / 2 - 30;
+    this.gateCorePos.set(cx, cy);
+    /* 옷장 게이트 코어 — 갈색 옷장 + 발광 테두리 */
+    const door = this.add.rectangle(cx, cy, 84, 120, 0x6b4a2b).setStrokeStyle(4, 0x9d7aff, 0.9).setDepth(4);
+    const doorInner = this.add.rectangle(cx, cy - 8, 60, 88, 0x8a6238).setDepth(5);
+    const knob = this.add.circle(cx + 22, cy, 5, 0xffd76a).setDepth(6);
+    void knob; void doorInner;
+    const glow = this.add.circle(cx, cy, 86, 0x9d7aff, 0.08).setDepth(2);
+    void glow;
+    this.tweens.add({ targets: door, scale: 1.03, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.add
+      .text(cx, cy - 92, "옷장 게이트", { fontFamily: "sans-serif", fontSize: "20px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90);
+    /* 코어 HP 바 (월드 좌표) */
+    this.gateCoreBarBg = this.add.rectangle(cx, cy + 82, 120, 8, 0x22262e).setDepth(96);
+    this.gateCoreBar = this.add.rectangle(cx, cy + 82, 116, 5, 0x9d7aff).setDepth(97);
+    this.gateText = this.add
+      .text(cx, 96, "", { fontFamily: "sans-serif", fontSize: "17px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    this.gateCoreMax = 1200 + this.player.lv * 60 + this.player.maxHp * 0.5;
+    this.gateCoreHp = this.gateCoreMax;
+    this.gateWave = 0;
+    this.gateSilver = 0;
+    this.gateAlive = 0;
+    this.gateEnded = false;
+    this.gateActive = true;
+    this.gatePhase = "break";
+    this.gateBreakUntil = this.time.now + 2600;
+    this.emitGateState();
+    this.showBanner("옷장 게이트 방어전 시작! 문에 닿기 전에 몬스터를 처치하라");
+  }
+
+  private emitGateState() {
+    EventBus.emit("gate:state", {
+      active: this.gateActive,
+      wave: this.gateWave,
+      coreHp: Math.max(0, Math.round(this.gateCoreHp)),
+      coreMax: Math.round(this.gateCoreMax),
+      silver: this.gateSilver,
+      phase: this.gatePhase,
+      bossWave: this.gateWave > 0 && this.gateWave % 5 === 0,
+    });
+  }
+
+  private tickGate(dt: number) {
+    if (this.gateEnded) return;
+    /* 휴식 → 다음 웨이브 */
+    if (this.gatePhase === "break" && this.time.now >= this.gateBreakUntil) {
+      this.spawnGateWave();
+    }
+    /* 코어 접촉 몬스터 — 자폭 피해 */
+    const core = this.gateCorePos;
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      const dx = e.x - core.x;
+      const dy = e.y - core.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 78) {
+        const dmg = Math.round((e.def.atk ?? 10) * 2.2 + this.gateWave * 6);
+        this.gateCoreHp -= dmg;
+        this.spawnDamageText(core.x, core.y - 60, dmg, false);
+        this.cameras.main.shake(120, 0.006);
+        e.takeDamage(999999, new Phaser.Math.Vector2(0, -1), 0);
+        if (this.gateCoreHp <= 0) { this.finishGate("fail"); return; }
+      } else if (dist > 340) {
+        /* 플레이어가 멀면 코어를 향해 직진 (AI 보정 — 유인 불가 방지) */
+        const v = 52;
+        e.setVelocity(((core.x - e.x) / dist) * v, ((core.y - e.y) / dist) * v);
+      }
+    }
+    /* UI 100ms 스로틀 */
+    this.gateTextAcc2 += dt;
+    if (this.gateTextAcc2 >= 100) {
+      this.gateTextAcc2 = 0;
+      if (this.gatePhase === "break") {
+        const sec = Math.max(0, Math.ceil((this.gateBreakUntil - this.time.now) / 1000));
+        this.gateText?.setText(`이세카이 게이트  |  다음 웨이브 ${sec}초  |  웨이브 ${this.gateWave}  |  실버 ${this.gateSilver}`);
+      } else {
+        this.gateText?.setText(`이세카이 게이트  |  웨이브 ${this.gateWave} (${this.gateAlive}마리)  |  실버 ${this.gateSilver}`);
+      }
+      if (this.gateCoreBar && this.gateCoreBarBg) {
+        const pct = Math.max(0, this.gateCoreHp / this.gateCoreMax);
+        this.gateCoreBar.width = Math.max(1, 116 * pct);
+        this.gateCoreBar.x = this.gateCorePos.x - (116 - this.gateCoreBar.width) / 2;
+        this.gateCoreBar.fillColor = pct > 0.5 ? 0x7dffa8 : pct > 0.25 ? 0xffd76a : 0xe84a5a;
+      }
+    }
+  }
+  private gateTextAcc2 = 0;
+
+  private GATE_POOL_EASY = ["x3_goblin", "wolf", "x2_frog", "x2_rat"] as EnemyKey[];
+  private GATE_POOL_MID = ["minion", "spider", "frostwolf", "x2_bat", "x3_imp", "x3_tinyzombie"] as EnemyKey[];
+  private GATE_POOL_HARD = ["emberwolf", "helhound", "x3_orcwarrior", "x3_wogol", "x2_darkhound", "x3_necromancer"] as EnemyKey[];
+
+  private spawnGateWave() {
+    this.gateWave++;
+    this.gatePhase = "fight";
+    const lv = this.player.lv;
+    const hpMul = (1 + (this.gateWave - 1) * 0.26) * (1 + lv * 0.012);
+    const atkMul = (1 + (this.gateWave - 1) * 0.18) * (1 + lv * 0.008);
+    const pool = this.gateWave <= 3 ? this.GATE_POOL_EASY : this.gateWave <= 7 ? [...this.GATE_POOL_EASY, ...this.GATE_POOL_MID] : [...this.GATE_POOL_MID, ...this.GATE_POOL_HARD];
+    const boss = this.gateWave % 5 === 0;
+    let count = Math.min(24, 4 + Math.round(this.gateWave * 1.7));
+    if (boss) count = Math.min(14, Math.ceil(count * 0.55));
+    this.gateAlive = count;
+    for (let i = 0; i < count; i++) {
+      const side = i % 4;
+      const px = side === 0 ? Phaser.Math.Between(60, this.stageW - 60) : side === 2 ? Phaser.Math.Between(60, this.stageW - 60) : side === 1 ? this.stageW - 50 : 50;
+      const py = side === 1 ? Phaser.Math.Between(60, this.stageH - 60) : side === 3 ? Phaser.Math.Between(60, this.stageH - 60) : side === 0 ? 50 : this.stageH - 50;
+      const key = pool[Math.floor(Math.random() * pool.length)];
+      const isBossUnit = boss && i === 0;
+      const def = ENEMIES[key];
+      const e = new Enemy(this, px, py, key, {
+        hp: Math.round(def.hp * hpMul * (isBossUnit ? 7 : 1)),
+        atk: Math.round(def.atk * atkMul),
+        exp: Math.round(def.exp * 1.4),
+        gold: 0,
+        scale: isBossUnit ? 1.8 : 1,
+        tint: isBossUnit ? 0xc07aff : undefined,
+        displayName: isBossUnit ? `게이트 수호 마왕` : undefined,
+      });
+      this.enemies.push(e);
+      this.physics.add.collider(e, this.solidGroup);
+    }
+    this.showBanner(boss ? `제 ${this.gateWave} 웨이브 — 보스 출현! 게이트 수호 마왕을 막아라!` : `제 ${this.gateWave} 웨이브 — ${count}마리 접근!`);
+    if (boss) audio.sfx.roar();
+    this.emitGateState();
+  }
+
+  private onGateWaveCleared() {
+    if (this.gatePhase !== "fight" || this.gateEnded) return;
+    this.gatePhase = "cards";
+    this.gatePendingCards = drawGateCards(this.gateWave);
+    /* 웨이브 클리어 보너스 — 룬 드롭 (확률) */
+    const lines: { text: string; color?: string }[] = [
+      { text: `웨이브 ${this.gateWave} 방어 성공!`, color: "#7dffa8" },
+      { text: "카드를 선택해 강화하자 (실버 상점도 이용 가능)", color: "#a8ecff" },
+    ];
+    if (Math.random() < 0.4) {
+      const kind = RUNE_KINDS[Math.floor(Math.random() * RUNE_KINDS.length)];
+      const k = runeKey(kind, 1);
+      this.runes[k] = (this.runes[k] ?? 0) + 1;
+      lines.push({ text: `룬 드롭! ${RUNE_META[kind].name} T1 획득`, color: "#c08aff" });
+    }
+    EventBus.emit("reward:show", { title: "웨이브 방어 성공", lines: lines as RewardPopupState["lines"] });
+    this.emitGateState();
+    EventBus.emit("gate:cards", {
+      open: true,
+      wave: this.gateWave,
+      silver: this.gateSilver,
+      cards: this.gatePendingCards.map((c) => ({ id: c.id, tier: c.tier, name: c.name, desc: c.desc })),
+    });
+  }
+
+  pickGateCard(idx: number) {
+    if (!this.gateActive || this.gatePhase !== "cards") return;
+    const card = this.gatePendingCards[idx];
+    if (!card) return;
+    this.player.applyRunCard([card]);
+    this.gatePhase = "break";
+    this.gateBreakUntil = this.time.now + 3200;
+    this.gatePendingCards = [];
+    EventBus.emit("gate:cards", { open: false, wave: this.gateWave, silver: this.gateSilver, cards: [] });
+    EventBus.emit("banner:show", { text: `[${card.tier}성] ${card.name} — ${card.desc}` });
+    audio.sfx.equip();
+    this.emitGateState();
+  }
+
+  buySilverShop(id: string) {
+    if (!this.gateActive) return;
+    const item = SILVER_SHOP.find((s) => s.id === id);
+    if (!item) return;
+    if (this.gateSilver < item.cost) { EventBus.emit("banner:show", { text: `실버가 부족합니다 (${item.cost} 필요)` }); return; }
+    this.gateSilver -= item.cost;
+    const p = this.player;
+    if (id === "sh_heal") {
+      p.heal(Math.round(p.maxHp * 0.6));
+      EventBus.emit("banner:show", { text: "응급 키트 — HP 60% 회복!" });
+    } else if (id === "sh_bomb") {
+      const dmg = Math.round(p.atkTotal * 9);
+      for (const e of [...this.enemies]) {
+        if (e.alive) e.takeDamage(dmg, new Phaser.Math.Vector2(0, -1), 0);
+      }
+      this.cameras.main.flash(160, 255, 220, 140);
+      this.cameras.main.shake(200, 0.008);
+      EventBus.emit("banner:show", { text: "차원 폭탄! 전 적에게 대미지!" });
+    } else if (id === "sh_repair") {
+      this.gateCoreHp = Math.min(this.gateCoreMax, this.gateCoreHp + this.gateCoreMax * 0.3);
+      EventBus.emit("banner:show", { text: "게이트 수리 — HP 30% 복구!" });
+    } else if (id === "sh_mp") {
+      p.mp = Math.min(p.maxMp, p.mp + p.maxMp);
+      EventBus.emit("banner:show", { text: "정신 안정제 — MP 회복!" });
+    }
+    audio.sfx.coin();
+    this.emitGateState();
+  }
+
+  finishGate(mode: "fail" | "exit") {
+    if (!this.gateActive || this.gateEnded) return;
+    this.gateEnded = true;
+    this.gateActive = false;
+    this.gatePhase = "fight";
+    const waves = this.gateWave;
+    /* 잔여 적 정리 */
+    for (const e of this.enemies) {
+      if (e.alive) { e.alive = false; e.destroy(); }
+    }
+    this.enemies = [];
+    this.player.clearRunBuffs();
+    /* 보상 정산 */
+    const goldReward = Math.round(waves * 900 * (1 + this.player.extBonus.goldPct / 100));
+    const ticketReward = 1 + Math.floor(waves / 5);
+    this.player.addGold(goldReward);
+    this.gachaTickets += ticketReward;
+    const lines: { text: string; color?: string }[] = [
+      { text: `방어 웨이브: ${waves}`, color: "#a8ecff" },
+      { text: `골드 +${goldReward.toLocaleString()} G`, color: "#ffd76a" },
+      { text: `뽑기권 +${ticketReward}`, color: "#c08aff" },
+    ];
+    const record = waves > this.gateBest;
+    if (record) this.gateBest = waves;
+    if (record) lines.push({ text: `신기록! 최고 ${this.gateBest} 웨이브`, color: "#7dffa8" });
+    /* ★ 달성 보상 (최초 1회) */
+    for (let i = 0; i < GATE_STAR_WAVES.length; i++) {
+      if (waves >= GATE_STAR_WAVES[i] && !this.gateStars[i]) {
+        this.gateStars[i] = true;
+        this.player.emerald += GATE_STAR_REWARD[i];
+        lines.push({ text: `★${i + 1} 달성! 에메랄드 +${GATE_STAR_REWARD[i]}`, color: "#7de8ff" });
+        const badgeKey = ["bdg_gate1", "bdg_gate2", "bdg_gate3"][i];
+        if (!this.badges.includes(badgeKey)) {
+          this.badges.push(badgeKey);
+          lines.push({ text: `배지 획득 — ${BADGE_MAP[badgeKey].name}!`, color: "#ffd76a" });
+        }
+      }
+    }
+    if (mode === "fail") lines.push({ text: "게이트가 부서졌다… 다음엔 더 강하게!", color: "#ff8a9c" });
+    EventBus.emit("reward:show", {
+      title: mode === "fail" ? "이세카이 게이트 — 함락" : "이세카이 게이트 — 퇴장",
+      lines: lines as RewardPopupState["lines"],
+    });
+    audio.sfx.questDone();
+    this.emitGateState();
+    this.emitRpgState();
+    this.save();
+    /* 랭킹 제출 (멀티 서버 연결 시) */
+    net.netRankSubmit("gate", this.gateBest, getPlayerName(), this.player.lv);
+    this.time.delayedCall(1900, () => {
+      const back: StageKey = STAGES[this.gateFrom] ? this.gateFrom : "village";
+      this.gotoStage(back);
+    });
+  }
+
+  /* ---------------- 옷장 던전 (골드/경험치책 파밍) ---------------- */
+
+  enterCloset() {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "closet") return;
+    this.ensureTickets();
+    if (this.ticketCloset <= 0) {
+      EventBus.emit("banner:show", { text: "오늘의 옷장 던전 티켓 소진! (매일 2장)" });
+      return;
+    }
+    this.ticketCloset--;
+    this.ensureDaily();
+    this.dailyCloset++;
+    this.closetFrom = this.stageDef.key;
+    this.showBanner("옷장 던전으로 이동합니다 — 60초 파밍 타임!");
+    this.save();
+    this.emitRpgState();
+    this.gotoStage("closet");
+  }
+
+  private buildCloset() {
+    const cx = this.stageW / 2;
+    this.add
+      .text(cx, 66, "옷 장 던 전", { fontFamily: "sans-serif", fontSize: "30px", color: "#8fe84a", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0);
+    this.closetText = this.add
+      .text(cx, 108, "", { fontFamily: "sans-serif", fontSize: "17px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    this.closetGold = 0;
+    this.closetAcc = 0;
+    this.closetActive = true;
+    this.closetEndsAt = this.time.now + 60000;
+    this.showBanner("골드와 경험치 책이 쏟아진다! 60초 동안 최대한 사냥!");
+  }
+
+  private tickCloset(dt: number) {
+    /* 몬스터 지속 소환 — 0.75초마다 1~2마리 */
+    this.closetAcc += dt;
+    if (this.closetAcc >= 750) {
+      this.closetAcc = 0;
+      const n = Phaser.Math.Between(1, 2);
+      const lv = this.player.lv;
+      const pool: EnemyKey[] = ["x3_goblin", "x2_frog", "wolf", "x2_rat", "x2_bat"];
+      for (let i = 0; i < n; i++) {
+        const key = pool[Math.floor(Math.random() * pool.length)];
+        const def = ENEMIES[key];
+        const px = Phaser.Math.Between(80, this.stageW - 80);
+        const py = Phaser.Math.Between(80, this.stageH - 80);
+        const e = new Enemy(this, px, py, key, {
+          hp: Math.round(18 + lv * 2.4 + def.hp * 0.4),
+          atk: Math.round(4 + lv * 0.4),
+          exp: Math.round(22 + lv * 2.2),
+          gold: 0,
+        });
+        this.enemies.push(e);
+        this.physics.add.collider(e, this.solidGroup);
+      }
+    }
+    /* UI */
+    this.gateTextAcc2 += dt;
+    if (this.gateTextAcc2 >= 100) {
+      this.gateTextAcc2 = 0;
+      const remain = Math.max(0, this.closetEndsAt - this.time.now);
+      this.closetText?.setText(`남은 시간 ${Math.ceil(remain / 1000)}초  |  획득 골드 ${this.closetGold.toLocaleString()} G`);
+    }
+    if (this.time.now >= this.closetEndsAt) this.finishCloset();
+  }
+
+  private finishCloset() {
+    if (!this.closetActive) return;
+    this.closetActive = false;
+    for (const e of this.enemies) {
+      if (e.alive) { e.alive = false; e.destroy(); }
+    }
+    this.enemies = [];
+    const record = this.closetGold > this.closetBest;
+    if (record) this.closetBest = this.closetGold;
+    const badgeKey = "bdg_closet";
+    const gotBadge = this.closetBest >= 100000 && !this.badges.includes(badgeKey);
+    if (gotBadge) this.badges.push(badgeKey);
+    EventBus.emit("reward:show", {
+      title: "옷장 던전 — 파밍 종료!",
+      lines: [
+        { text: `획득 골드: ${this.closetGold.toLocaleString()} G`, color: "#ffd76a" },
+        { text: record ? "신기록 달성!" : `최고 기록: ${this.closetBest.toLocaleString()} G`, color: record ? "#7dffa8" : "#a8ecff" },
+        { text: gotBadge ? "배지 획득 — 옷장 탐험가!" : "경험치 책은 몬스터 처치 시 드롭", color: "#c08aff" },
+      ] satisfies RewardPopupState["lines"],
+    });
+    audio.sfx.questDone();
+    this.emitRpgState();
+    this.save();
+    net.netRankSubmit("closet", this.closetBest, getPlayerName(), this.player.lv);
+    this.time.delayedCall(1800, () => {
+      const back: StageKey = STAGES[this.closetFrom] ? this.closetFrom : "village";
+      this.gotoStage(back);
+    });
   }
 
   /* ================= v3.3.0 (지시 #8) — 5차 각성 스토리/시련 ================= */
@@ -3352,6 +4243,19 @@ export class WorldScene extends Phaser.Scene {
     const onUseItem = (v: { key: string }) => {
       if (!this.player || this.dialoguing || this.player.state === "dead") return;
       const key = v.key as ItemKey;
+      if (key === "exp_book") {
+        /* v4.0.0 — 경험치 책 사용 */
+        const exp = this.player.useExpBook();
+        if (exp > 0) {
+          EventBus.emit("banner:show", { text: `경험치 책 사용! EXP +${exp.toLocaleString()}` });
+          audio.sfx.questDone();
+          this.emitRpgState();
+          this.save();
+        } else {
+          EventBus.emit("banner:show", { text: "경험치 책이 없습니다" });
+        }
+        return;
+      }
       if (key === "potion_hp2" || key === "potion_mp2" || key === "potion_elixir") {
         // v3.0.20 (#7) — 엘릭서(HP/MP 100% 회복) 포함
         this.player.useConsumablePotion(key);
@@ -3455,8 +4359,9 @@ export class WorldScene extends Phaser.Scene {
     };
 
     /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
-     *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가 */
-    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang"; value?: number | string }) => {
+     *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가
+     *  v4.0.0 — 이세카이 게이트/옷장 던전 입장 + 무료 뽑기 + 티켓 충전 */
+    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets"; value?: number | string }) => {
       if (!this.player) return;
       const p = this.player;
       if (v.type === "job" && typeof v.value === "string") {
@@ -3508,8 +4413,37 @@ export class WorldScene extends Phaser.Scene {
       } else if (v.type === "dojang") {
         /* v3.3.0 (지시 #6) — GM → 무릉도장 입장 */
         this.enterDojang();
+      } else if (v.type === "gate") {
+        /* v4.0.0 — GM → 이세카이 게이트 입장 */
+        this.enterGate();
+      } else if (v.type === "closet") {
+        /* v4.0.0 — GM → 옷장 던전 입장 */
+        this.enterCloset();
+      } else if (v.type === "freegacha") {
+        /* v4.0.0 — GM 무료 뽑기 (10분 쿨 — 광고 보상 대체) */
+        this.freeGacha();
+      } else if (v.type === "tickets") {
+        /* v4.0.0 — GM 티켓 충전 (테스트/긴급 지원) */
+        this.ensureTickets();
+        this.ticketGate = TICKETS_PER_DAY.gate;
+        this.ticketCloset = TICKETS_PER_DAY.closet;
+        this.save();
+        this.emitRpgState();
+        EventBus.emit("banner:show", { text: "GM — 오늘 입장 티켓 전량 충전!" });
       }
     };
+
+    /* ================= v4.0.0 — 이세카이 시스템 커맨드 ================= */
+    const onIsekai = (v: { action: string; key?: string; slot?: number; ck?: string; idx?: number; id?: string; code?: string }) => {
+      if (!this.player) return;
+      this.handleIsekai(v);
+    };
+    /* 게이트 오버레이 (카드 선택/실버 상점/강제 종료) */
+    const onGatePick = (idx: number) => this.pickGateCard(idx);
+    const onGateShop = (id: string) => this.buySilverShop(id);
+    EventBus.on("rpg:isekai", onIsekai);
+    EventBus.on("rpg:gatePick", onGatePick);
+    EventBus.on("rpg:gateShop", onGateShop);
 
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
@@ -3773,6 +4707,9 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:tradeSell", onTradeSell);
       EventBus.off("rpg:starScroll", onStarScroll);
       EventBus.off("rpg:upgradeAcc", onUpgradeAcc);
+      EventBus.off("rpg:isekai", onIsekai);
+      EventBus.off("rpg:gatePick", onGatePick);
+      EventBus.off("rpg:gateShop", onGateShop);
     });
 
     /* ================= v3.1.0 (#흑화) — fadeIn/워치독은 create() 래퍼로 이동 (v3.2.0)
@@ -3807,6 +4744,9 @@ export class WorldScene extends Phaser.Scene {
     }
     /* v3.3.0 (지시 #6) — 무릉도장 타이머/기록 UI 진행 */
     if (this.dojangActive) this.tickDojang(dt);
+    /* v4.0.0 — 이세카이 게이트 웨이브 / 옷장 던전 진행 */
+    if (this.gateActive) this.tickGate(dt);
+    if (this.closetActive) this.tickCloset(dt);
 
     // 원격 플레이어 보간 — 대화/채팅/사망과 무관하게 항상 갱신 (v1.7 멀티플레이)
     const lerpK = Math.min(1, (dt / 1000) * 9);
@@ -6468,6 +7408,37 @@ export class WorldScene extends Phaser.Scene {
         if (b.critAdd) lines.push(`크리티컬 +${b.critAdd}%`);
         return { title: s.title, lines };
       })(),
+      /* ----- v4.0.0 — 이세카이 업데이트 상태 ----- */
+      isekai: {
+        figures: [...this.figures],
+        shards: this.shards,
+        gachaTickets: this.gachaTickets,
+        badges: [...this.badges],
+        badgeSlots: [...this.badgeSlots],
+        runes: { ...this.runes },
+        runeSlots: [...this.runeSlots],
+        constel: [...this.constel],
+        achClaimed: [...this.achClaimed],
+        gateBest: this.gateBest,
+        closetBest: this.closetBest,
+        gateStars: [...this.gateStars],
+        freeGachaIn: Math.max(0, 600000 - (Date.now() - this.freeGachaAt)),
+        attend: { last: this.attendLast, count: this.attendCount },
+        daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed] },
+        tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
+        extSummary: (() => {
+          const e = this.player.extBonus;
+          const lines: string[] = [];
+          if (e.atk) lines.push(`공격력 +${e.atk}`);
+          if (e.atkPct) lines.push(`공격력 +${e.atkPct}%`);
+          if (e.def) lines.push(`방어력 +${e.def}`);
+          if (e.hp) lines.push(`최대 HP +${e.hp}`);
+          if (e.crit) lines.push(`크리티컬 +${e.crit}%`);
+          if (e.speedPct) lines.push(`이동 속도 +${e.speedPct}%`);
+          if (e.goldPct) lines.push(`골드 획득 +${e.goldPct}%`);
+          return lines;
+        })(),
+      },
     };
     const sig = JSON.stringify(st);
     if (sig === this.lastRpgSig) return;
@@ -6525,7 +7496,12 @@ export class WorldScene extends Phaser.Scene {
   private save() {
     // v2.3 — 실내(여관/집)에서의 저장도 세이브 스테이지는 진행 구역 유지
     //  (설계 의도대로 실내가 세이브에 기록되지 않게 — 재접속 시 마을에서 계속)
-    writeSave(this.buildSave(this.isInterior ? "village" : undefined));
+    // v4.0.0 — 게이트/옷장 던전 진행 중 저장도 입장 전 구역으로 기록 (재접속 시 특별 구역 재부팅 방지)
+    let stageOverride: StageKey | undefined;
+    if (this.isInterior) stageOverride = "village";
+    else if (this.stageDef.key === "gate") stageOverride = STAGES[this.gateFrom] ? this.gateFrom : "village";
+    else if (this.stageDef.key === "closet") stageOverride = STAGES[this.closetFrom] ? this.closetFrom : "village";
+    writeSave(this.buildSave(stageOverride));
   }
 
   /** 세이브 페이로드 생성 — stageOverride는 스테이지 전환 캐리용 */
@@ -6588,6 +7564,27 @@ export class WorldScene extends Phaser.Scene {
       /* v3.3.0 — 5차 각성 상태 (GM 임시 전직 or 각성 시련 완료) */
       fifth: this.player.fifth,
       fifthStoryDone: this.player.fifthStoryDone,
+      /* ----- v4.0.0 — 이세카이 업데이트 ----- */
+      figures: [...this.figures],
+      shards: this.shards,
+      gachaTickets: this.gachaTickets,
+      badges: [...this.badges],
+      badgeSlots: [...this.badgeSlots],
+      runes: { ...this.runes },
+      runeSlots: [...this.runeSlots],
+      constel: [...this.constel],
+      coupons: [...this.couponsUsed],
+      attend: { last: this.attendLast, count: this.attendCount },
+      daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed] },
+      tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
+      achClaimed: [...this.achClaimed],
+      gateBest: this.gateBest,
+      closetBest: this.closetBest,
+      gateStars: [...this.gateStars],
+      freeGachaAt: this.freeGachaAt,
+      lastSeen: Date.now(),
+      tierUpWea: this.player.tierUpTargets.weapon,
+      tierUpArm: this.player.tierUpTargets.armor,
       quickPots: { ...this.player.quickPots },
       potentials: JSON.parse(JSON.stringify(this.player.potentials)),
       potHpApplied: this.player.potHpAppliedVal,

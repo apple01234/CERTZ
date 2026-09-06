@@ -77,6 +77,16 @@ function attachMultiplayer(httpServer) {
   let partySeq = 0;
   const PARTY_MAX = 4;
 
+  /* ---------- 랭킹 (v4.0.0 — 무릉도장/이세카이 게이트/옷장 던전 기록전) ----------
+   *  메모리 저장 (서버 재시작 시 초기화) — 모드별 상위 50명 보관 */
+  const RANK_MODES = new Set(["dojang", "gate", "closet"]);
+  const RANK_MAX = 50;
+  const rankings = { dojang: [], gate: [], closet: [] };
+
+  function rankTop(mode) {
+    return (rankings[mode] ?? []).slice(0, 20).map((e) => ({ name: e.name, score: e.score, lv: e.lv }));
+  }
+
   function partyPayload(p) {
     const members = [...p.members]
       .map((id) => players.get(id))
@@ -242,6 +252,38 @@ function attachMultiplayer(httpServer) {
         }
         break;
       }
+    });
+
+    /* ---------- v4.0.0 — 랭킹 (기록 제출/조회) ---------- */
+    sock.on("rank:submit", (r = {}) => {
+      const p = players.get(sock.id);
+      const mode = RANK_MODES.has(r.mode) ? r.mode : null;
+      const score = Math.max(0, Math.floor(Number(r.score) || 0));
+      if (!mode || score <= 0) return;
+      const name = String(r.name || (p ? p.name : "이름없음")).slice(0, 8);
+      const lv = Math.max(1, Math.floor(Number(r.lv) || (p ? p.lv : 1)));
+      const list = rankings[mode];
+      const existing = list.find((e) => e.name === name);
+      if (existing) {
+        if (score > existing.score) { existing.score = score; existing.lv = lv; existing.t = Date.now(); }
+      } else {
+        list.push({ name, score, lv, t: Date.now() });
+      }
+      list.sort((a, b) => b.score - a.score);
+      rankings[mode] = list.slice(0, RANK_MAX);
+      /* 제출자에게 최신 랭킹 즉시 회신 */
+      sock.emit("rank:top", mode, rankTop(mode));
+      /* 신기록 진입 시 전체 방송 (상위 10 진입만 — 도배 방지) */
+      const idx = rankings[mode].findIndex((e) => e.name === name);
+      if (idx >= 0 && idx < 10) {
+        sysChat(`[랭킹] ${name} 님이 ${mode === "dojang" ? "무릉도장" : mode === "gate" ? "이세카이 게이트" : "옷장 던전"} ${idx + 1}위 기록 달성!`);
+      }
+    });
+
+    sock.on("rank:top", (rawMode) => {
+      const mode = RANK_MODES.has(rawMode) ? rawMode : null;
+      if (!mode) return;
+      sock.emit("rank:top", mode, rankTop(mode));
     });
 
     sock.on("disconnect", () => {

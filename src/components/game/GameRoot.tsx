@@ -6,7 +6,7 @@ import type Phaser from "phaser";
 import { HUD } from "./HUD";
 import { TouchControls } from "./TouchControls";
 import { DialogueBox } from "./DialogueBox";
-import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel, RewardPopup } from "./Overlays";
+import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel, RewardPopup, GateCardOverlay, GateHud } from "./Overlays";
 import { ServerConnect } from "./ServerConnect";
 import { GamePanels } from "./Panels";
 import { ChatBox } from "./ChatBox";
@@ -109,6 +109,7 @@ export default function GameRoot() {
                 onOpenStat={() => setPanel(panel === "stat" ? null : "stat")}
                 onOpenQuest={() => setPanel(panel === "quest" ? null : "quest")}
                 onOpenBoss={() => setPanel(panel === "boss" ? null : "boss")}
+                onOpenBenefit={() => setPanel(panel === "benefit" ? null : "benefit")}
                 onOpenOpt={() => setPanel(panel === "opt" ? null : "opt")}
               />
             </div>
@@ -135,6 +136,9 @@ export default function GameRoot() {
                 v3.0.5 — TouchControls보다 위에 렌더링 (조이스틱 레이어가 칩을 덮는 문제 수정) */}
             {/* v3.0.16 — 퀘스트 보상 수령 팝업 (메이플식 보상 내역 창) */}
             <RewardPopup />
+            {/* v4.0.0 — 이세카이 게이트 오버레이 (카드 선택/실버 상점 + 상단 게이트 HUD) */}
+            <GateHud />
+            <GateCardOverlay />
             <InteractPrompt />
             <Banner text={banner} />
             <BossBar boss={boss} />

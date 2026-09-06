@@ -863,6 +863,47 @@ NEXT_STAGE.dojang = null;
 PREV_STAGE.dojang = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 dojangFrom
 STAGE_SHORT.dojang = "무릉도장";
 
+/* ================= v4.0.0 — 이세카이 게이트 (웨이브 디펜스 특별 구역) =================
+ *  ISEKAI GATE(이세카이 게이트) 오마주 — 옷장 게이트를 몰려오는 몬스터 웨이브에서 지킨다.
+ *  체인 분리 — 전진 포탈 없음, 복귀 포탈은 입장 전 구역. */
+STAGES.gate = {
+  key: "gate",
+  name: "이세카이 게이트",
+  subtitle: "우리 집 옷장이 차원의 문이 되었다 — 웨이브를 막아라!",
+  width: 1500,
+  height: 920,
+  groundTint: 0xffffff,
+  flowerCount: 0,
+  treeCount: 0,
+  rockCount: 0,
+  quests: [],
+  enemies: [],
+  boss: false,
+};
+NEXT_STAGE.gate = null;
+PREV_STAGE.gate = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 gateFrom
+STAGE_SHORT.gate = "이세카이 게이트";
+
+/* ================= v4.0.0 — 옷장 던전 (골드/경험치책 파밍 던전) =================
+ *  ISEKAI GATE의 옷장 던전 오마주 — 60초 동안 몬스터가 계속 쏟아지는 파밍 전용 구역. */
+STAGES.closet = {
+  key: "closet",
+  name: "옷장 던전",
+  subtitle: "골드와 경험치 책이 쏟아지는 파밍 천국",
+  width: 1200,
+  height: 800,
+  groundTint: 0xffffff,
+  flowerCount: 0,
+  treeCount: 0,
+  rockCount: 0,
+  quests: [],
+  enemies: [],
+  boss: false,
+};
+NEXT_STAGE.closet = null;
+PREV_STAGE.closet = "village";
+STAGE_SHORT.closet = "옷장 던전";
+
 /** 구 세이브 키 폴백 — v1.x 6스테이지 → 신규 체인 시작점 */
 export const LEGACY_STAGE_FALLBACK: Record<string, StageKey> = {
   forest: "forest1",

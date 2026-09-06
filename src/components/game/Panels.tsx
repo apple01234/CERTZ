@@ -1360,6 +1360,38 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
         <p className="mt-1.5 rounded-lg border border-yellow-300/20 bg-yellow-400/5 px-2.5 py-1.5 text-[10px] leading-relaxed text-yellow-200/70">
           5차 전직 부여 시 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(N) 즉시 해금. 무릉도장은 90초 동안 허수아비에게 누적 피해를 기록하는 훈련장입니다 (최고 기록 저장).
         </p>
+
+        {/* v4.0.0 — 이세카이 콘텐츠 입구 */}
+        <p className="mb-1 mt-3 text-[11px] font-bold text-white/50">이세카이 콘텐츠 (v4.0.0)</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "gate" })}
+            className="rounded-lg border border-violet-300/50 bg-gradient-to-br from-violet-400/20 to-fuchsia-500/10 px-2 py-2 text-[11px] font-black text-violet-100 hover:from-violet-400/30 active:scale-95"
+          >
+            🚪 이세카이 게이트 입장
+          </button>
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "closet" })}
+            className="rounded-lg border border-lime-300/50 bg-gradient-to-br from-lime-400/20 to-emerald-500/10 px-2 py-2 text-[11px] font-black text-lime-100 hover:from-lime-400/30 active:scale-95"
+          >
+            👕 옷장 던전 입장
+          </button>
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "freegacha" })}
+            className="rounded-lg border border-purple-300/50 bg-purple-400/10 px-2 py-2 text-[11px] font-black text-purple-100 hover:bg-purple-400/20 active:scale-95"
+          >
+            🎁 GM 무료 뽑기
+          </button>
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "tickets" })}
+            className="rounded-lg border border-sky-300/40 bg-sky-400/10 px-2 py-2 text-[11px] font-black text-sky-200 hover:bg-sky-400/20 active:scale-95"
+          >
+            🎟 티켓 전량 충전
+          </button>
+        </div>
+        <p className="mt-1.5 rounded-lg border border-violet-300/20 bg-violet-400/5 px-2.5 py-1.5 text-[10px] leading-relaxed text-violet-200/70">
+          이세카이 게이트 = 웨이브 디펜스 (매일 3회) · 옷장 던전 = 60초 파밍 (매일 2회). GM 무료 뽑기는 10분마다 1회. 혜택 패널에서 출석부·일일 퀘스트·쿠폰을 확인하세요.
+        </p>
         <p className="mt-2 text-center text-[10px] text-white/40">ESC로 닫기 · 변경 사항은 즉시 세이브에 반영</p>
       </div>
     </div>
@@ -1517,6 +1549,8 @@ export function GamePanels({
   if (panel === "collection") return <CollectionPanel rpg={rpg} onClose={onClose} />; // v3.0.16 — 몬스터 컬렉션
   if (panel === "quest") return <QuestLogPanel questLog={questLog} rpg={rpg} onClose={onClose} />;
   if (panel === "boss") return <BossReplayPanel rpg={rpg} onClose={onClose} />; // v3.0.25 — 보스 재도전 전용 창 (퀘스트창과 분리)
+  if (panel === "isekai") return <IsekaiPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 이세카이 허브 (피규어/배지/룬/성좌/업적/랭킹)
+  if (panel === "benefit") return <BenefitPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 혜택 (출석부/일일 퀘스트/쿠폰)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
 }
@@ -2290,6 +2324,373 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
           기본값으로 초기화
         </button>
         <p className="mt-2 text-center text-[10px] text-white/40">설정은 자동 저장 · ESC로 닫기</p>
+      </div>
+    </div>
+  );
+}
+
+/* ================= v4.0.0 — 이세카이 허브 (피규어/배지/룬/성좌/업적/랭킹) =================
+ *  ISEKAI GATE(이세카이 게이트) 오마주 수집형 성장 시스템 통합 패널 */
+import {
+  FIGURES, FIGURE_GRADE_META, BADGES, BADGE_MAP, RUNE_KINDS, RUNE_META, RUNE_SYNTH_COST, RUNE_MAX_TIER,
+  runeKey, parseRuneKey, CONSTELLATIONS, CONSTEL_NODE_COST, ACHIEVEMENTS, SHARD_SHOP, ROLE_OF,
+  figureBonus, badgeBonus, runeBonus, constellationBonus, cosmeticBonus,
+} from "@/game/isekai";
+import { netRankTop, netOnRank, type RankEntry, type RankMode } from "@/game/net";
+
+type TabKey = "figure" | "badge" | "rune" | "constel" | "ach" | "rank";
+
+function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const [tab, setTab] = useState<TabKey>("figure");
+  const ik = rpg.isekai;
+  const figures = ik?.figures ?? [];
+  const shards = ik?.shards ?? 0;
+  const tickets = ik?.gachaTickets ?? 0;
+  const fBonus = figureBonus(figures);
+  const bBonus = badgeBonus(ik?.badgeSlots ?? [null, null, null]);
+  const rBonus = runeBonus(ik?.runes ?? {}, ik?.runeSlots ?? [null, null, null, null]);
+  const cBonus = constellationBonus(ik?.constel ?? []);
+  const TABS: { key: TabKey; label: string }[] = [
+    { key: "figure", label: "피규어" },
+    { key: "badge", label: "배지" },
+    { key: "rune", label: "룬" },
+    { key: "constel", label: "성좌" },
+    { key: "ach", label: "업적" },
+    { key: "rank", label: "랭킹" },
+  ];
+  const gradeBadge = (g: 0 | 1 | 2 | 3) => (
+    <span className={`rounded px-1 py-0.5 text-[8px] font-black ${FIGURE_GRADE_META[g].css}`} style={{ border: `1px solid ${FIGURE_GRADE_META[g].color}66` }}>
+      {FIGURE_GRADE_META[g].name}
+    </span>
+  );
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
+      <div className="max-h-[min(88svh,640px)] w-[min(94vw,500px)] overflow-y-auto rounded-xl border-2 border-purple-300/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-sm font-black text-purple-200">이세카이 허브</p>
+          <div className="flex items-center gap-1.5">
+            <span className="rounded border border-amber-300/40 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-black text-amber-200">조각 {shards}</span>
+            <span className="rounded border border-sky-300/40 bg-sky-400/10 px-1.5 py-0.5 text-[10px] font-black text-sky-200">뽑기권 {tickets}</span>
+            <button onClick={onClose} aria-label="이세카이 허브 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+          </div>
+        </div>
+
+        {/* 탭 */}
+        <div className="mb-2.5 grid grid-cols-6 gap-1">
+          {TABS.map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key)} className={`rounded-lg border px-1 py-1.5 text-[10px] font-black transition-colors ${tab === t.key ? "border-purple-300/70 bg-purple-400/20 text-purple-100" : "border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.07]"}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 공용 보너스 요약 */}
+        <div className="mb-2.5 rounded-lg border border-purple-300/20 bg-purple-400/5 px-2.5 py-2 text-[10px] leading-relaxed text-white/70">
+          <p className="mb-0.5 font-black text-purple-200">수집 보너스 합계 (피규어 {figures.length}/{FIGURES.length} · 배지 {ik?.badgeSlots?.filter(Boolean).length ?? 0}/3 · 룬 {ik?.runeSlots?.filter(Boolean).length ?? 0}/4 · 성좌 {ik?.constel?.length ?? 0}개)</p>
+          <p>
+            {[
+              fBonus.atk + bBonus.atk + rBonus.atk > 0 && `공격 +${fBonus.atk + bBonus.atk + rBonus.atk}`,
+              fBonus.atkPct + cBonus.atkPct > 0 && `공격% +${fBonus.atkPct + cBonus.atkPct}`,
+              fBonus.def + bBonus.def + rBonus.def + cBonus.def > 0 && `방어 +${fBonus.def + bBonus.def + rBonus.def + cBonus.def}`,
+              fBonus.hp + bBonus.hp + rBonus.hp + cBonus.hp > 0 && `HP +${fBonus.hp + bBonus.hp + rBonus.hp + cBonus.hp}`,
+              fBonus.crit + bBonus.crit + rBonus.crit + cBonus.crit > 0 && `크리 +${fBonus.crit + bBonus.crit + rBonus.crit + cBonus.crit}%`,
+              bBonus.speedPct > 0 && `이속 +${bBonus.speedPct}%`,
+              bBonus.goldPct > 0 && `골드 +${bBonus.goldPct}%`,
+            ].filter(Boolean).join(" · ") || "보너스 없음 — 수집을 시작하라!"}
+          </p>
+        </div>
+
+        {/* 피규어 탭 */}
+        {tab === "figure" && (
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[11px] font-bold text-white/60">피규어 도감 — 보유만으로 항상 적용 (중복은 조각으로)</p>
+              <button
+                disabled={tickets <= 0}
+                onClick={() => EventBus.emit("rpg:isekai", { action: "gacha" })}
+                className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-black active:scale-95 ${tickets > 0 ? "border-purple-300/60 bg-purple-400/20 text-purple-100 hover:bg-purple-400/30" : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/30"}`}
+              >
+                뽑기 ×1 (보유 {tickets})
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {FIGURES.map((f) => {
+                const got = figures.includes(f.key);
+                const b = f.bonus;
+                const bonusText = [b.atk && `공+${b.atk}`, b.def && `방+${b.def}`, b.hp && `HP+${b.hp}`, b.crit && `크리+${b.crit}`, b.atkPct && `공%+${b.atkPct}`].filter(Boolean).join(" ");
+                return (
+                  <div key={f.key} title={got ? `${f.desc} — ${bonusText}` : "미보유"} className={`flex flex-col items-center gap-0.5 rounded-lg border px-1.5 py-2 text-center ${got ? "border-purple-300/40 bg-purple-400/[0.08]" : "border-white/10 bg-white/[0.02] opacity-50"}`}>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md border text-sm" style={{ borderColor: `${FIGURE_GRADE_META[f.grade].color}55`, background: `${FIGURE_GRADE_META[f.grade].color}18` }}>
+                      {got ? "🧸" : "?"}
+                    </div>
+                    <p className="w-full truncate text-[9px] font-bold text-white">{got ? f.name : "???"}</p>
+                    {gradeBadge(f.grade)}
+                    <p className="text-[8px] text-white/50">{got ? bonusText : `중복 시 조각 +${FIGURE_GRADE_META[f.grade].shard}`}</p>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[10px] text-white/40">뽑기권 획득: 출석부 · 일일 퀘스트 · 게이트 정산 · GM 무료 뽑기(10분)</p>
+          </div>
+        )}
+
+        {/* 배지 탭 */}
+        {tab === "badge" && (
+          <div>
+            <p className="mb-2 text-[11px] font-bold text-white/60">배지 슬롯 — 3개까지 장착 (클릭 해제)</p>
+            <div className="mb-2 grid grid-cols-3 gap-1.5">
+              {[0, 1, 2].map((s) => {
+                const k = ik?.badgeSlots?.[s] ?? null;
+                const b = k ? BADGE_MAP[k] : null;
+                return (
+                  <button key={s} disabled={!b} onClick={() => b && EventBus.emit("rpg:isekai", { action: "badgeUnequip", slot: s })} className={`rounded-lg border px-2 py-2.5 text-center text-[10px] font-bold ${b ? "border-amber-300/50 bg-amber-400/10 text-amber-100" : "border-dashed border-white/15 bg-white/[0.02] text-white/30"}`}>
+                    {b ? b.name : `슬롯 ${s + 1}`}
+                    {b && <span className="mt-0.5 block text-[8px] text-white/50">{[b.bonus.atk && `공+${b.bonus.atk}`, b.bonus.def && `방+${b.bonus.def}`, b.bonus.hp && `HP+${b.bonus.hp}`, b.bonus.crit && `크리+${b.bonus.crit}`, b.bonus.goldPct && `골드+${b.bonus.goldPct}%`, b.bonus.speedPct && `이속+${b.bonus.speedPct}%`].filter(Boolean).join(" ")}</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mb-1 text-[11px] font-bold text-white/60">보유 배지 — 클릭해 장착</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {BADGES.map((b) => {
+                const owned = (ik?.badges ?? []).includes(b.key);
+                const equipped = (ik?.badgeSlots ?? []).includes(b.key);
+                return (
+                  <button key={b.key} disabled={!owned || equipped} onClick={() => EventBus.emit("rpg:isekai", { action: "badgeEquip", key: b.key, slot: (ik?.badgeSlots ?? [null, null, null]).indexOf(null) })} className={`rounded-lg border px-2 py-1.5 text-left transition-colors ${equipped ? "border-emerald-300/40 bg-emerald-400/10" : owned ? "border-white/15 bg-white/[0.05] hover:border-amber-300/50" : "border-white/10 bg-white/[0.02] opacity-45"}`}>
+                    <p className="truncate text-[10px] font-black text-white">{equipped ? "✔ " : ""}{b.name}</p>
+                    <p className="truncate text-[8.5px] text-white/45">{owned ? b.desc : `획득: ${b.src}`}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 룬 탭 */}
+        {tab === "rune" && (
+          <div>
+            <p className="mb-2 text-[11px] font-bold text-white/60">룬 슬롯 4개 — 같은 룬 {RUNE_SYNTH_COST}개를 합성하면 상위 티어</p>
+            <div className="mb-2 grid grid-cols-4 gap-1.5">
+              {[0, 1, 2, 3].map((s) => {
+                const k = ik?.runeSlots?.[s] ?? null;
+                const p = k ? parseRuneKey(k) : null;
+                return (
+                  <button key={s} disabled={!p} onClick={() => p && EventBus.emit("rpg:isekai", { action: "runeUnequip", slot: s })} className={`rounded-lg border px-1 py-2 text-center ${p ? "border-white/25 bg-white/[0.06]" : "border-dashed border-white/15 bg-white/[0.02]"}`}>
+                    <p className="text-base">{p ? RUNE_META[p.kind].icon : "◇"}</p>
+                    <p className="text-[8.5px] font-bold" style={{ color: p ? RUNE_META[p.kind].color : "#ffffff44" }}>{p ? `T${p.tier}` : `슬롯 ${s + 1}`}</p>
+                  </button>
+                );
+              })}
+            </div>
+            {RUNE_KINDS.map((kind) => {
+              const owned = ik?.runes ?? {};
+              const tiers: { t: number; n: number }[] = [];
+              for (let t = 1; t <= RUNE_MAX_TIER; t++) {
+                const n = owned[runeKey(kind, t)] ?? 0;
+                if (n > 0) tiers.push({ t, n });
+              }
+              const canSynth = tiers.some((x) => x.n >= RUNE_SYNTH_COST && x.t < RUNE_MAX_TIER);
+              return (
+                <div key={kind} className="mb-1.5 flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5">
+                  <span className="text-base">{RUNE_META[kind].icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-black" style={{ color: RUNE_META[kind].color }}>{RUNE_META[kind].name} <span className="text-white/40">({RUNE_META[kind].stat === "atk" ? "공격" : RUNE_META[kind].stat === "def" ? "방어" : RUNE_META[kind].stat === "crit" ? "크리" : "HP"})</span></p>
+                    <p className="truncate text-[9px] text-white/45">{tiers.length ? tiers.map((x) => `T${x.t}×${x.n}`).join(" · ") : "보유 없음 — 게이트 웨이브 보상/조각 상점"}</p>
+                  </div>
+                  <button onClick={() => EventBus.emit("rpg:isekai", { action: "runeSynth", key: kind })} className={`rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${canSynth ? "border-purple-300/60 bg-purple-400/20 text-purple-100" : "border-white/10 bg-white/[0.03] text-white/35"}`}>합성</button>
+                  <button onClick={() => EventBus.emit("rpg:isekai", { action: "runeEquip", key: kind + "#" + (tiers.length ? Math.max(...tiers.filter((x) => x.n > 0).map((x) => x.t)) : 1), slot: (ik?.runeSlots ?? [null, null, null, null]).indexOf(null) >= 0 ? (ik?.runeSlots ?? []).indexOf(null) : 0 })} className="rounded-lg border border-white/15 bg-white/[0.05] px-2 py-1 text-[10px] font-black text-white/80 active:scale-95">장착</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 성좌 탭 */}
+        {tab === "constel" && (
+          <div>
+            <p className="mb-2 text-[11px] font-bold text-white/60">성좌 — 피규어 조각으로 별을 개방 (순차 해금)</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {CONSTELLATIONS.map((c) => (
+                <div key={c.key} className="rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5">
+                  <p className="mb-1 text-[10px] font-black text-sky-200">{c.name}</p>
+                  <div className="flex gap-1">
+                    {c.nodes.map((n, i) => {
+                      const id = `${c.key}:${i}`;
+                      const got = (ik?.constel ?? []).includes(id);
+                      const cost = CONSTEL_NODE_COST[i] ?? 999;
+                      const bonusText = [n.atk && `공+${n.atk}`, n.def && `방+${n.def}`, n.hp && `HP+${n.hp}`, n.crit && `크리+${n.crit}`, n.atkPct && `공%+${n.atkPct}`].filter(Boolean).join(" ");
+                      return (
+                        <button key={id} disabled={got} onClick={() => EventBus.emit("rpg:isekai", { action: "constelUnlock", ck: c.key, idx: i })} title={got ? `${bonusText} 개방됨` : `${bonusText} — 조각 ${cost}`} className={`flex-1 rounded-md border px-1 py-1 text-[9px] font-black active:scale-95 ${got ? "border-amber-300/60 bg-amber-400/20 text-amber-200" : "border-white/15 bg-white/[0.04] text-white/60 hover:border-sky-300/50"}`}>
+                          {got ? "★" : `✧${cost}`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 업적 탭 */}
+        {tab === "ach" && (
+          <div>
+            <p className="mb-2 text-[11px] font-bold text-white/60">업적 — 달성 시 피규어 조각 지급</p>
+            <div className="flex flex-col gap-1.5">
+              {ACHIEVEMENTS.map((a) => {
+                const claimed = (ik?.achClaimed ?? []).includes(a.id);
+                const done = claimed;
+                return (
+                  <div key={a.id} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${claimed ? "border-emerald-300/40 bg-emerald-400/[0.07]" : "border-white/10 bg-white/[0.03]"}`}>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[10px] font-black text-white">{a.name} <span className="font-normal text-white/40">— {a.desc}</span></p>
+                    </div>
+                    <button disabled={claimed} onClick={() => EventBus.emit("rpg:isekai", { action: "achClaim", id: a.id })} className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${claimed ? "border-emerald-300/40 text-emerald-200" : "border-amber-300/50 bg-amber-400/15 text-amber-200 hover:bg-amber-400/25"}`}>{claimed ? "수령 완료" : `조각 +${a.shards}`}</button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 랭킹 탭 */}
+        {tab === "rank" && <RankTab ik={ik} />}
+      </div>
+    </div>
+  );
+}
+
+function RankTab({ ik }: { ik: NonNullable<RpgState["isekai"]> | undefined }) {
+  const [mode, setMode] = useState<RankMode>("gate");
+  const [list, setList] = useState<RankEntry[]>([]);
+  useEffect(() => {
+    netRankTop(mode);
+    const off = netOnRank((m, l) => { if (m === mode) setList(l); });
+    const t = setInterval(() => netRankTop(mode), 8000);
+    return () => { off(); clearInterval(t); };
+  }, [mode]);
+  const localBest = mode === "gate" ? (ik?.gateBest ?? 0) : mode === "closet" ? (ik?.closetBest ?? 0) : (() => { try { return Number(localStorage.getItem("sertz.dojang.best") ?? "0") || 0; } catch { return 0; } })();
+  return (
+    <div>
+      <div className="mb-2 grid grid-cols-3 gap-1">
+        {([["gate", "이세카이 게이트"], ["closet", "옷장 던전"], ["dojang", "무릉도장"]] as [RankMode, string][]).map(([k, label]) => (
+          <button key={k} onClick={() => setMode(k)} className={`rounded-lg border px-1 py-1.5 text-[10px] font-black ${mode === k ? "border-sky-300/60 bg-sky-400/20 text-sky-100" : "border-white/10 bg-white/[0.03] text-white/50"}`}>{label}</button>
+        ))}
+      </div>
+      <p className="mb-1.5 rounded-lg border border-sky-300/20 bg-sky-400/5 px-2 py-1.5 text-[10px] text-white/60">내 최고 기록: <span className="font-black text-sky-200">{localBest.toLocaleString()}</span> {mode === "dojang" ? "(누적 피해)" : mode === "gate" ? "(웨이브)" : "(골드)"} · 기록은 멀티 서버에 자동 등록</p>
+      {list.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/40">아직 서버 랭킹이 없습니다 — 멀티 서버 접속 후 기록을 세워보자!</p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {list.map((e, i) => (
+            <div key={`${e.name}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${i < 3 ? "border-amber-300/40 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
+              <span className={`w-6 text-center text-[11px] font-black ${i < 3 ? "text-amber-300" : "text-white/40"}`}>{i + 1}</span>
+              <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white">{e.name}</span>
+              <span className="text-[10px] text-white/40">Lv{e.lv}</span>
+              <span className="text-[11px] font-black text-sky-200">{e.score.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ================= v4.0.0 — 혜택 패널 (출석부/일일 퀘스트/쿠폰/티켓) ================= */
+function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const ik = rpg.isekai;
+  const [code, setCode] = useState("");
+  const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
+  const attendCount = ik?.attend?.count ?? 0;
+  const attendToday = (ik?.attend?.last ?? "") === today;
+  const cycleDay = ((attendCount - 1) % 14 + 14) % 14;
+  const daily = ik?.daily;
+  const dailyToday = (daily?.date ?? "") === today;
+  const hunts = dailyToday ? daily?.hunts ?? 0 : 0;
+  const gateRuns = dailyToday ? daily?.gate ?? 0 : 0;
+  const closetRuns = dailyToday ? daily?.closet ?? 0 : 0;
+  const claimed = dailyToday ? daily?.claimed ?? [] : [];
+  const DAILY_GOALS: { id: string; name: string; desc: string; goal: number; prog: number; reward: string }[] = [
+    { id: "hunt", name: "오늘의 토벌", desc: "몬스터 50마리 처치", goal: 50, prog: hunts, reward: "골드 15,000" },
+    { id: "gate", name: "게이트 방어", desc: "이세카이 게이트 1회 입장", goal: 1, prog: gateRuns, reward: "뽑기권 1 + 골드 5,000" },
+    { id: "closet", name: "옷장 던전", desc: "옷장 던전 1회 입장", goal: 1, prog: closetRuns, reward: "뽑기권 1 + 에메랄드 2" },
+  ];
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
+      <div className="max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto rounded-xl border-2 border-emerald-300/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="text-sm font-black text-emerald-200">혜택 — 출석부 · 일일 퀘스트 · 쿠폰</p>
+          <button onClick={onClose} aria-label="혜택 패널 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+        </div>
+
+        {/* 출석부 */}
+        <p className="mb-1 text-[11px] font-bold text-white/60">출석부 (14일 사이클) — {attendToday ? "오늘 출석 완료!" : "접속만 하면 자동 출석!"}</p>
+        <div className="mb-2.5 grid grid-cols-7 gap-1">
+          {Array.from({ length: 14 }).map((_, i) => {
+            const filled = i < cycleDay || (attendToday && i === cycleDay);
+            const isToday = attendToday && i === cycleDay;
+            return (
+              <div key={i} className={`flex h-9 flex-col items-center justify-center rounded-md border text-center ${isToday ? "border-emerald-300 bg-emerald-400/25" : filled ? "border-emerald-300/40 bg-emerald-400/10" : "border-white/10 bg-white/[0.02]"}`}>
+                <span className="text-[8px] font-black text-white/50">{i + 1}</span>
+                <span className="text-[9px]">{filled ? "✔" : ""}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 일일 퀘스트 */}
+        <p className="mb-1 text-[11px] font-bold text-white/60">일일 퀘스트 — 매일 초기화</p>
+        <div className="mb-2.5 flex flex-col gap-1.5">
+          {DAILY_GOALS.map((q) => {
+            const done = claimed.includes(q.id);
+            const reach = q.prog >= q.goal;
+            return (
+              <div key={q.id} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${done ? "border-emerald-300/40 bg-emerald-400/[0.07]" : "border-white/10 bg-white/[0.03]"}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-black text-white">{q.name} <span className="ml-1 font-normal text-white/40">{q.desc}</span></p>
+                  <p className="text-[9px] text-white/50">진행 {Math.min(q.prog, q.goal)}/{q.goal} · 보상 {q.reward}</p>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full rounded-full bg-emerald-400/70" style={{ width: `${Math.min(100, (q.prog / q.goal) * 100)}%` }} />
+                  </div>
+                </div>
+                <button disabled={done || !reach} onClick={() => EventBus.emit("rpg:isekai", { action: "dailyClaim", id: q.id })} className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${done ? "border-emerald-300/40 text-emerald-200" : reach ? "border-amber-300/50 bg-amber-400/15 text-amber-200 hover:bg-amber-400/25" : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/30"}`}>{done ? "수령 완료" : "수령"}</button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 티켓 현황 + 콘텐츠 입구 */}
+        <div className="mb-2.5 grid grid-cols-2 gap-1.5">
+          <div className="rounded-lg border border-violet-300/30 bg-violet-400/10 px-2 py-1.5 text-center">
+            <p className="text-[9px] font-bold text-white/50">이세카이 게이트 티켓</p>
+            <p className="text-sm font-black text-violet-200">{ik?.tickets?.gate ?? 0}/3 남음</p>
+          </div>
+          <div className="rounded-lg border border-lime-300/30 bg-lime-400/10 px-2 py-1.5 text-center">
+            <p className="text-[9px] font-bold text-white/50">옷장 던전 티켓</p>
+            <p className="text-sm font-black text-lime-200">{ik?.tickets?.closet ?? 0}/2 남음</p>
+          </div>
+        </div>
+        <div className="mb-2.5 grid grid-cols-2 gap-1.5">
+          <button onClick={() => EventBus.emit("ui:panel", { panel: "isekai" })} className="rounded-lg border border-purple-300/50 bg-purple-400/15 px-2 py-2 text-[11px] font-black text-purple-100 hover:bg-purple-400/25 active:scale-95">이세카이 허브 열기</button>
+          <button onClick={() => EventBus.emit("ui:panel", { panel: "gm" })} className="rounded-lg border border-amber-300/50 bg-amber-400/10 px-2 py-2 text-[11px] font-black text-amber-100 hover:bg-amber-400/20 active:scale-95">GM 콘텐츠 입장</button>
+        </div>
+
+        {/* 쿠폰 */}
+        <p className="mb-1 text-[11px] font-bold text-white/60">쿠폰 코드 입력</p>
+        <div className="flex gap-1.5">
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="예: HELLOSERTZ"
+            maxLength={20}
+            className="min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-2.5 py-2 text-[11px] font-bold text-white placeholder:text-white/25 focus:border-emerald-300/50 focus:outline-none"
+          />
+          <button onClick={() => { if (code.trim()) { EventBus.emit("rpg:isekai", { action: "coupon", code: code.trim() }); setCode(""); } }} className="shrink-0 rounded-lg border border-emerald-300/60 bg-emerald-400/20 px-3 py-2 text-[11px] font-black text-emerald-100 hover:bg-emerald-400/30 active:scale-95">사용</button>
+        </div>
+        <p className="mt-1.5 text-[10px] text-white/40">힌트: HELLOSERTZ · GATEOPEN · SERTZV4</p>
+        <p className="mt-2 text-center text-[10px] text-white/40">ESC로 닫기 · 출석/수령은 즉시 세이브에 반영</p>
       </div>
     </div>
   );

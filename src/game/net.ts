@@ -40,6 +40,8 @@ export type NetChatMsg = {
 };
 
 let socket: Socket | null = null;
+/* v4.0.0 — 마지막 파티 스냅샷 (게이트 팀워크 버프 판정용) */
+let lastParty: NetParty | null = null;
 
 /**
  * 접속 대상 서버 URL 결정:
@@ -196,8 +198,41 @@ export function netPartyChat(text: string) {
 export function netOnParty(cb: (p: NetParty | null) => void): () => void {
   const s = netConnect();
   if (!s) return () => {};
-  s.on("party", cb);
-  return () => s.off("party", cb);
+  const wrapped = (p: NetParty | null) => {
+    lastParty = p; // v4.0.0 — 스냅샷 보관
+    cb(p);
+  };
+  s.on("party", wrapped);
+  return () => s.off("party", wrapped);
+}
+
+/** v4.0.0 — 마지막 파티 스냅샷 조회 (미파티 null) */
+export function netLastParty(): NetParty | null {
+  return lastParty;
+}
+
+/* ================= v4.0.0 — 랭킹 (무릉도장/게이트/옷장 던전 기록전) ================= */
+
+export type RankEntry = { name: string; score: number; lv: number };
+export type RankMode = "dojang" | "gate" | "closet";
+
+/** 기록 제출 — 서버 미연결 시 조용히 무시 (로컬 최고기록은 별도 localStorage 유지) */
+export function netRankSubmit(mode: RankMode, score: number, name: string, lv: number) {
+  if (!socket?.connected || score <= 0) return;
+  socket.emit("rank:submit", { mode, score, name: name.slice(0, 8), lv });
+}
+
+/** 랭킹 조회 요청 — 응답은 "rank:top" 이벤트로 */
+export function netRankTop(mode: RankMode) {
+  if (socket?.connected) socket.emit("rank:top", mode);
+}
+
+export function netOnRank(cb: (mode: RankMode, list: RankEntry[]) => void): () => void {
+  const s = netConnect();
+  if (!s) return () => {};
+  const wrapped = (m: string, list: RankEntry[]) => cb(m as RankMode, list);
+  s.on("rank:top", wrapped);
+  return () => s.off("rank:top", wrapped);
 }
 
 export function netAnnounceJob(cls: string) {

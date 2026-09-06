@@ -142,6 +142,43 @@ export type SaveData = {
    *  fifth=true면 레벨 무관하게 궁극기 해금 + 전 스킬 강화 적용 */
   fifth?: boolean;
   fifthStoryDone?: boolean;
+  /* ----- v4.0.0 이세카이 업데이트 (ISEKAI GATE 오마주) ----- */
+  /** 피규어 도감 (보유 키 목록 — 보유만으로 보너스) */
+  figures?: string[];
+  /** 피규어 조각 (중복 가챠/업적 보상 — 성좌·배지·스킨 교환 재화) */
+  shards?: number;
+  /** 뽑기권 (피규어 가챠 재화) */
+  gachaTickets?: number;
+  /** 배지 보유 + 장착 슬롯 3개 */
+  badges?: string[];
+  badgeSlots?: (string | null)[];
+  /** 룬 보유 ("rune_fire#1" → 개수) + 장착 슬롯 4개 */
+  runes?: Record<string, number>;
+  runeSlots?: (string | null)[];
+  /** 성좌 개방 노드 ("aries:0" 형식) */
+  constel?: string[];
+  /** 사용 완료 쿠폰 코드 */
+  coupons?: string[];
+  /** 출석부 { 마지막 출석일, 사이클 카운트 } */
+  attend?: { last: string; count: number };
+  /** 일일 퀘스트 { 날짜, 토벌, 게이트, 던전, 수령 완료 } */
+  daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[] };
+  /** 일일 입장 티켓 { 날짜, 게이트 잔여, 던전 잔여 } */
+  tickets?: { date: string; gate: number; closet: number };
+  /** 수령 완료 업적 */
+  achClaimed?: string[];
+  /** 게이트 최고 웨이브 / 옷장 던전 최고 골드 기록 */
+  gateBest?: number;
+  closetBest?: number;
+  /** GM 무료 뽑기 마지막 사용 시각 (10분 쿨) */
+  freeGachaAt?: number;
+  /** 오프라인 보상 계산용 마지막 접속 시각 */
+  lastSeen?: number;
+  /** 게이트 ★ 최초 달성 기록 ([false,false,false] → ★1/★2/★3) */
+  gateStars?: boolean[];
+  /** v4.0.0 — 등급업 큐브 누적 승급 수 (무기/방어구 개별) */
+  tierUpWea?: number;
+  tierUpArm?: number;
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */
@@ -255,6 +292,28 @@ export function loadSave(): SaveData | null {
     // v3.0.22 — 결정 수집/세계수 가호 (구 세이브 호환)
     if (!d.fragmentsFound || typeof d.fragmentsFound !== "object") d.fragmentsFound = {};
     if (typeof d.worldtreeBlessing !== "boolean") d.worldtreeBlessing = false;
+    // v4.0.0 — 이세카이 업데이트 (구 세이브 호환 기본값)
+    if (!Array.isArray(d.figures)) d.figures = [];
+    if (typeof d.shards !== "number") d.shards = 0;
+    if (typeof d.gachaTickets !== "number") d.gachaTickets = 1; // 첫 접속 환영 뽑기권 1장
+    if (!Array.isArray(d.badges)) d.badges = [];
+    if (!Array.isArray(d.badgeSlots) || d.badgeSlots.length !== 3) d.badgeSlots = [null, null, null];
+    if (!d.runes || typeof d.runes !== "object") d.runes = {};
+    if (!Array.isArray(d.runeSlots) || d.runeSlots.length !== 4) d.runeSlots = [null, null, null, null];
+    if (!Array.isArray(d.constel)) d.constel = [];
+    if (!Array.isArray(d.coupons)) d.coupons = [];
+    if (!d.attend || typeof d.attend !== "object" || typeof d.attend.count !== "number") d.attend = { last: "", count: 0 };
+    if (!d.daily || typeof d.daily !== "object") d.daily = { date: "", hunts: 0, gate: 0, closet: 0, claimed: [] };
+    if (!Array.isArray(d.daily.claimed)) d.daily.claimed = [];
+    if (!d.tickets || typeof d.tickets !== "object") d.tickets = { date: "", gate: 0, closet: 0 };
+    if (!Array.isArray(d.achClaimed)) d.achClaimed = [];
+    if (typeof d.gateBest !== "number") d.gateBest = 0;
+    if (typeof d.closetBest !== "number") d.closetBest = 0;
+    if (typeof d.freeGachaAt !== "number") d.freeGachaAt = 0;
+    if (typeof d.lastSeen !== "number") d.lastSeen = 0;
+    if (!Array.isArray(d.gateStars) || d.gateStars.length !== 3) d.gateStars = [false, false, false];
+    if (typeof d.tierUpWea !== "number") d.tierUpWea = 0;
+    if (typeof d.tierUpArm !== "number") d.tierUpArm = 0;
     return d;
   } catch {
     return null;

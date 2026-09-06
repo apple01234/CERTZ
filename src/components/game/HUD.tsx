@@ -5,7 +5,7 @@ import React from "react";
 import type { HudState, QuestState } from "./EventBus";
 import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift } from "lucide-react";
 import { EventBus } from "./EventBus";
 
 /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
@@ -78,6 +78,7 @@ export function HUD({
   onOpenStat,
   onOpenQuest,
   onOpenBoss,
+  onOpenBenefit,
   onOpenOpt,
 }: {
   hud: HudState;
@@ -99,6 +100,8 @@ export function HUD({
   onOpenQuest: () => void;
   /** v3.0.25 — 보스 재도전 전용 창 */
   onOpenBoss: () => void;
+  /** v4.0.0 — 혜택 (출석부/일일 퀘스트/쿠폰) */
+  onOpenBenefit: () => void;
   /** 설정/키 매핑 (O) */
   onOpenOpt: () => void;
 }) {
@@ -247,6 +250,15 @@ export function HUD({
           >
             <Crown size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-rose-300/80">보스</span>
+          </button>
+          {/* v4.0.0 — 혜택 버튼 (출석부/일일 퀘스트/쿠폰/이세카이 허브) */}
+          <button
+            onClick={onOpenBenefit}
+            aria-label="혜택 열기 (출석부/일일 퀘스트/쿠폰)"
+            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-300/40 bg-black/55 text-emerald-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+          >
+            <Gift size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/80">혜택</span>
           </button>
           <button
             onClick={onOpenOpt}

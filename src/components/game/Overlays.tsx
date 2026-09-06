@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.3.0 · 5차 각성 — 전 스킬 ·극 강화·8종 고유 궁극기·5차 스토리·무릉도장·멀티 수정 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.0.0 · 이세카이 업데이트 — 게이트 디펜스·피규어 가챠·배지·룬 합성·성좌·출석부·일일 퀘스트·쿠폰·오프라인 보상 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
@@ -449,6 +449,118 @@ export function NamePanel() {
         >
           이 이름으로 모험 시작!
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* ================= v4.0.0 — 이세카이 게이트 오버레이 =================
+ *  ISEKAI GATE 오마주: 웨이브 클리어마다 3성 카드 선택 + 실버 상점 + 상단 게이트 HUD */
+
+type GateCardState = {
+  open: boolean;
+  wave: number;
+  silver: number;
+  cards: { id: string; tier: 1 | 2 | 3; name: string; desc: string }[];
+};
+
+const GATE_SHOP_ITEMS = [
+  { id: "sh_heal", name: "응급 키트", desc: "HP 60% 회복", cost: 40, icon: "✚" },
+  { id: "sh_bomb", name: "차원 폭탄", desc: "전 적 대미지", cost: 90, icon: "☄" },
+  { id: "sh_repair", name: "게이트 수리", desc: "게이트 HP 30% 복구", cost: 120, icon: "⛨" },
+  { id: "sh_mp", name: "정신 안정제", desc: "MP 회복", cost: 35, icon: "◇" },
+];
+
+const TIER_META: Record<1 | 2 | 3, { label: string; color: string; glow: string }> = {
+  1: { label: "1성", color: "#6fb8ff", glow: "rgba(111,184,255,0.35)" },
+  2: { label: "2성", color: "#c08aff", glow: "rgba(192,138,255,0.4)" },
+  3: { label: "3성", color: "#ffd76a", glow: "rgba(255,215,106,0.5)" },
+};
+
+/** 웨이브 클리어 카드 선택 모달 — 게이트 진행 중에만 표시 */
+export function GateCardOverlay() {
+  const [st, setSt] = useState<GateCardState | null>(null);
+  useEffect(() => {
+    const onCards = (v: GateCardState) => setSt(v.open ? v : null);
+    EventBus.on("gate:cards", onCards);
+    return () => { EventBus.off("gate:cards", onCards); };
+  }, []);
+  if (!st || st.cards.length === 0) return null;
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[3px]">
+      <div className="w-[min(94vw,520px)] rounded-xl border-2 border-purple-300/60 bg-slate-950/95 p-4 shadow-2xl">
+        <p className="mb-1 text-center text-lg font-black text-purple-200">웨이브 {st.wave} 클리어! — 강화 카드 선택</p>
+        <p className="mb-3 text-center text-[11px] text-white/50">카드 버프는 이번 게이트 방어전에서만 유지됩니다 · 실버 {st.silver}</p>
+        <div className="mb-3 grid grid-cols-3 gap-2">
+          {st.cards.map((c, i) => {
+            const m = TIER_META[c.tier];
+            return (
+              <button
+                key={c.id}
+                onClick={() => EventBus.emit("rpg:gatePick", i)}
+                className="flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-4 transition-transform hover:scale-[1.04] active:scale-95"
+                style={{ borderColor: m.color, background: `linear-gradient(160deg, ${m.glow}, rgba(2,6,23,0.95))`, boxShadow: `0 0 18px ${m.glow}` }}
+              >
+                <span className="rounded px-1.5 py-0.5 text-[10px] font-black" style={{ border: `1px solid ${m.color}88`, color: m.color }}>{m.label}</span>
+                <span className="text-sm font-black text-white">{c.name}</span>
+                <span className="text-[11px] font-bold text-white/70">{c.desc}</span>
+              </button>
+            );
+          })}
+        </div>
+        {/* 실버 상점 — 웨이브 사이 구매 */}
+        <p className="mb-1.5 text-[11px] font-bold text-white/60">실버 상점 (실버 {st.silver})</p>
+        <div className="grid grid-cols-4 gap-1.5">
+          {GATE_SHOP_ITEMS.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => EventBus.emit("rpg:gateShop", s.id)}
+              className={`flex flex-col items-center gap-0.5 rounded-lg border px-1 py-2 text-center transition-colors active:scale-95 ${st.silver >= s.cost ? "border-amber-300/50 bg-amber-400/10 hover:bg-amber-400/20" : "border-white/10 bg-white/[0.02] opacity-40"}`}
+            >
+              <span className="text-base">{s.icon}</span>
+              <span className="text-[9px] font-black text-white">{s.name}</span>
+              <span className="text-[8px] text-white/50">{s.desc}</span>
+              <span className="text-[9px] font-black text-amber-300">{s.cost} 실버</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type GateState = {
+  active: boolean;
+  wave: number;
+  coreHp: number;
+  coreMax: number;
+  silver: number;
+  phase: string;
+  bossWave: boolean;
+};
+
+/** 게이트 진행 HUD — 상단 중앙 (게이트 구역에서만 표시) */
+export function GateHud() {
+  const [st, setSt] = useState<GateState | null>(null);
+  useEffect(() => {
+    const onState = (v: GateState) => setSt(v.active ? v : null);
+    EventBus.on("gate:state", onState);
+    return () => { EventBus.off("gate:state", onState); };
+  }, []);
+  if (!st) return null;
+  const pct = Math.max(0, Math.min(100, (st.coreHp / Math.max(1, st.coreMax)) * 100));
+  const barColor = pct > 50 ? "#7dffa8" : pct > 25 ? "#ffd76a" : "#e84a5a";
+  return (
+    <div className="pointer-events-none absolute left-1/2 top-1 z-40 w-[min(92vw,340px)] -translate-x-1/2 sm:top-2">
+      <div className="rounded-lg border border-purple-300/40 bg-black/60 px-2.5 py-1.5 backdrop-blur-sm">
+        <div className="flex items-center justify-between text-[10px] font-black">
+          <span className="text-purple-200">🚪 옷장 게이트 {st.bossWave ? "· 보스 웨이브!" : ""}</span>
+          <span className="text-white/70">웨이브 {st.wave} · 실버 {st.silver}</span>
+        </div>
+        <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
+        </div>
+        <p className="mt-0.5 text-center text-[9px] font-bold text-white/50">게이트 HP {Math.round(st.coreHp).toLocaleString()} / {st.coreMax.toLocaleString()} — 문에 닿기 전에 막아라!</p>
       </div>
     </div>
   );
