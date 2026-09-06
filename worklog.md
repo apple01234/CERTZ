@@ -721,3 +721,26 @@ Stage Summary:
 - APK 신규 빌드 v4.1.0(versionCode 47) GitHub Release 교체 완료 — https://github.com/apple01234/CERTZ/releases/download/v4.1.0/SERTZ-v4.1.0.apk (md5 aad4007d…)
 - 빌드 재현성 확보: bash scripts/build_apk.sh (JAVA_HOME=/home/z/jdk ANDROID_HOME=/home/z/my-project/.android-sdk 명시) — 메모리 튜닝으로 램 3.9GB 환경에서 게임 서버 공존 빌드 가능
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 44
+Agent: Super Z (메인)
+Task: "현질 기능 오류땜에 앱 안열림 — 기능/UI 유지하고 오류만 잡아서 v4.1.1 재빌드" (4.1.n 패치 버저닝 지시 반영)
+
+Work Log:
+- [근본 원인 확정] @capacitor-community/admob 네이티브 포함 상태에서 AndroidManifest에 com.google.android.gms.ads.APPLICATION_ID 메타데이터 누락 → Google Mobile Ads SDK가 ContentProvider 자동초기화 때 IllegalStateException FATAL → 웹뷰 렌더 전 앱 즉시 사망("앱 안열림"과 정확히 일치)
+- [수정 ①] 매니페스트에 테스트 앱 ID(ca-app-pub-3940256099942544~3347511713 — 구글 공식 테스트) 메타데이터 추가 + 주석으로 실제 수익화 전환 경로 명시. 기능·UI 전부 유지(ads.ts는 원래 try/catch 방어 완비 — showRewardedAd/purchaseGems 모두 클릭 핸들러 내 호출로 부팅 리스크 없음 확인)
+- [수정 ②] com.android.vending.BILLING 권한 정식 추가(@capgo/native-purchases 결제용 — 부팅 무영향)
+- [수정 ③] WorldScene 597행 카메라 캐스트 타입에 alpha/setAlpha 누락(tsc 2에러 — v4.1.0 잔여) 보완 → tsc 0 에러. 타입 전용 수정이라 APK JS 출력 불변
+- [버저닝] 4.1.n 패치 체계 적용: versionCode 48/versionName 4.1.1 + Overlays 타이틀 배지 v4.1.1
+- [배포 동기화] server.js APK_MIRROR·next.config.ts mirror → v4.1.1, apk-guide.html(부팅 크래시 수정 안내+신규 md5), download/APK_다운로드_안내.txt 전면 v4.1.1 갱신
+- [빌드] build_apk.sh BUILD SUCCESSFUL 53s(그레이들 캐시 웜) → aapt versionCode 48/versionName 4.1.1 실측, 매니페스트 APPLICATION_ID·BILLING xmltree 확인, 144,885,455B, md5 afc6b01dc8a91d6a52ef198da1117eab
+- [릴리스] GitHub Release v4.1.1 신설(id 383590414) + APK 업로드 → 재다운로드 md5 일치
+- [후처리] rm -rf .next 후 bun run build(standalone+fc-multi 복구) + 로컬 서버 재기동(200·81 200)
+
+Stage Summary:
+- v4.1.1 APK 배포: https://github.com/apple01234/CERTZ/releases/download/v4.1.1/SERTZ-v4.1.1.apk (md5 afc6b01d…, versionCode 48)
+- 앱 부팅 크래시 해소 — 현질(광고 보상·에메랄드 충전) 기능/UI는 유지되며 오류 시에도 배너 안내로만 흡수됨
+- 실제 수익화 전환: 매니페스트 앱 ID + ads.ts 단위 ID를 본인 AdMob 값으로 교체 후 재빌드
+- 버전 체계: 이후 패치는 4.1.2, 4.1.3… n씩 상승
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

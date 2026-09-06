@@ -590,6 +590,8 @@ export class WorldScene extends Phaser.Scene {
       if (!this.scene.isActive()) return;
       const cam = this.cameras.main as unknown as {
         fadeEffect?: { isRunning: boolean };
+        alpha: number;
+        setAlpha: (v: number) => void;
       };
       /* v4.1.0 — Phaser 3.90의 Fade에는 stop()이 없다(호출 시 런타임 에러).
        *  isRunning은 시간 경과로 자동 해제되므로, 여기선 남은 알파만 정리한다
