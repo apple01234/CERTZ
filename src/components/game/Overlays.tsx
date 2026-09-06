@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState, type RewardPopupState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
-import { RotateCw, Play, Save, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles } from "lucide-react";
+import { RotateCw, Play, Save, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles, Smartphone } from "lucide-react";
 
 /** 세이브 이어하기 라벨용 스테이지 표기명 (v2.0 — 구역 체인 대응) */
 const STAGE_LABEL: Record<string, string> = {
@@ -75,6 +75,16 @@ export function TitleScreen() {
             저장 데이터 삭제
           </button>
         )}
+        {/* v3.2.0 — 폰에서 놀고 싶은 유저를 위한 APK 다운로드 안내 (타이틀에서 바로 찾기) */}
+        <a
+          href="/apk-guide.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mx-auto mt-1 flex items-center gap-1.5 text-[11px] font-bold text-sky-300/70 underline underline-offset-2 transition-colors hover:text-sky-200"
+        >
+          <Smartphone size={13} />
+          폰용 APK 다운로드
+        </a>
       </div>
 
       <div className="absolute bottom-3 flex flex-col items-center gap-1 text-center">

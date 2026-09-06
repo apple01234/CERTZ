@@ -16,10 +16,10 @@ const app = next({ dev: process.env.NODE_ENV !== "production" });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-  /* v3.2.0 (유저 지시: "사이트 직결은 필요없음 gofile만 있음 됨") —
-   *  모든 APK 다운로드 요청(/SERTZ-*.apk)은 gofile 미러로 즉시 리다이렉트.
-   *  사이트 직결 서빙/404/fallback 로직 전부 제거 — 단일 경로로 단순화. */
-  const GOFILE = "https://gofile.io/d/Tcsl6sY2";
+  /* v3.2.0 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
+   *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
+   *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v3.1.0/SERTZ-v3.1.0.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -31,9 +31,9 @@ app.prepare().then(() => {
   };
   const httpServer = createServer((req, res) => {
     const url = (req.url || "").split("?")[0];
-    /* v3.2.0 — 어떤 버전의 APK 링크든 gofile 미러로 연결 (404 원천 차단) */
+    /* v3.2.0 — 어떤 버전의 APK 링크든 즉시 다운로드 경로로 연결 (404 원천 차단) */
     if (/^\/SERTZ-v[\d.]+\.apk$/i.test(url)) {
-      res.writeHead(307, { Location: GOFILE }).end();
+      res.writeHead(307, { Location: APK_MIRROR }).end();
       return;
     }
     const entry = DOWNLOAD_FILES[url];
