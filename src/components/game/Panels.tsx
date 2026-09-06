@@ -15,6 +15,8 @@ import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, free
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
 import { getPlayerName, loadSave } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록
 import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
+import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
+import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
 
 /**
  * 2D MMORPG 기본 요소 UI — 상점 / 인벤토리 패널
@@ -58,12 +60,15 @@ function SellQtyBox({
   compact?: boolean;
 }) {
   const [qty, setQty] = useState("1");
+  const gate = useKeyGate(); // v4.1.0
   const parsed = parseInt(qty || "1", 10);
   const n = Math.max(1, Math.min(Math.max(count, 1), Number.isNaN(parsed) ? 1 : parsed));
   const disabled = count <= 0;
   return (
     <span className="flex shrink-0 items-center gap-1">
       <input
+        ref={gate}
+        {...swallowKeys}
         type="number"
         inputMode="numeric"
         min={1}
@@ -384,6 +389,31 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
         </div>
 
         {/* v3.0.15 (#6) — 자동 사용 설정은 가방(인벤토리)으로 이동 */}
+
+        {/* v4.1.0 — 광고 보상 + 구글 플레이 충전 (유저 지시 #10 — BM 수익 연동) */}
+        <div className="mt-2.5 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] px-2.5 py-2">
+          <p className="text-[12px] font-black text-amber-200">에메랄드 충전소</p>
+          <button
+            onClick={() => EventBus.emit("rpg:adReward")}
+            className="mt-1.5 w-full rounded-lg border-2 border-amber-300/60 bg-amber-400/15 px-3 py-2 text-[12px] font-black text-amber-100 hover:bg-amber-400/25 active:scale-95"
+          >
+            광고 보고 보상 받기 — 에메랄드 +1 · 골드 +500 (일 5회)
+          </button>
+          <p className="mt-0.5 text-[10px] text-white/40">짧은 광고를 끝까지 보면 바로 지급 — 폰 버전(APK) 기준</p>
+          <div className="mt-2 grid grid-cols-4 gap-1.5">
+            {GEM_SKUS.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => EventBus.emit("rpg:buyGems", { sku: s.id })}
+                className="flex flex-col items-center rounded-lg border border-cyan-300/40 bg-cyan-400/10 px-1 py-1.5 text-center hover:bg-cyan-400/20 active:scale-95"
+              >
+                <span className="text-[13px] font-black text-cyan-200">{s.gems}</span>
+                <span className="text-[9px] font-bold text-white/55">{s.priceLabel}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-[10px] text-white/40">구글 플레이 결제 — Play Console 상품 등록 후 폰 버전에서 구매 가능</p>
+        </div>
 
         <p className="mt-2 text-center text-[10px] text-white/40">에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1 · ESC로 닫기</p>
       </div>
@@ -1361,20 +1391,20 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
           5차 전직 부여 시 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(N) 즉시 해금. 무릉도장은 90초 동안 허수아비에게 누적 피해를 기록하는 훈련장입니다 (최고 기록 저장).
         </p>
 
-        {/* v4.0.0 — 이세카이 콘텐츠 입구 */}
-        <p className="mb-1 mt-3 text-[11px] font-bold text-white/50">이세카이 콘텐츠 (v4.0.0)</p>
+        {/* v4.0.0 — 바르가 콘텐츠 입구 */}
+        <p className="mb-1 mt-3 text-[11px] font-bold text-white/50">바르가 콘텐츠 (v4.0.0)</p>
         <div className="grid grid-cols-2 gap-1.5">
           <button
             onClick={() => EventBus.emit("rpg:gm", { type: "gate" })}
             className="rounded-lg border border-violet-300/50 bg-gradient-to-br from-violet-400/20 to-fuchsia-500/10 px-2 py-2 text-[11px] font-black text-violet-100 hover:from-violet-400/30 active:scale-95"
           >
-            🚪 이세카이 게이트 입장
+            🚪 바르가 수비전 입장
           </button>
           <button
             onClick={() => EventBus.emit("rpg:gm", { type: "closet" })}
             className="rounded-lg border border-lime-300/50 bg-gradient-to-br from-lime-400/20 to-emerald-500/10 px-2 py-2 text-[11px] font-black text-lime-100 hover:from-lime-400/30 active:scale-95"
           >
-            👕 옷장 던전 입장
+            👕 균열 던전 입장
           </button>
           <button
             onClick={() => EventBus.emit("rpg:gm", { type: "freegacha" })}
@@ -1390,7 +1420,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <p className="mt-1.5 rounded-lg border border-violet-300/20 bg-violet-400/5 px-2.5 py-1.5 text-[10px] leading-relaxed text-violet-200/70">
-          이세카이 게이트 = 웨이브 디펜스 (매일 3회) · 옷장 던전 = 60초 파밍 (매일 2회). GM 무료 뽑기는 10분마다 1회. 혜택 패널에서 출석부·일일 퀘스트·쿠폰을 확인하세요.
+          바르가 수비전 = 웨이브 디펜스 (매일 3회) · 균열 던전 = 60초 파밍 (매일 2회). GM 무료 뽑기는 10분마다 1회. 혜택 패널에서 출석부·일일 퀘스트·쿠폰을 확인하세요.
         </p>
         <p className="mt-2 text-center text-[10px] text-white/40">ESC로 닫기 · 변경 사항은 즉시 세이브에 반영</p>
       </div>
@@ -1549,7 +1579,7 @@ export function GamePanels({
   if (panel === "collection") return <CollectionPanel rpg={rpg} onClose={onClose} />; // v3.0.16 — 몬스터 컬렉션
   if (panel === "quest") return <QuestLogPanel questLog={questLog} rpg={rpg} onClose={onClose} />;
   if (panel === "boss") return <BossReplayPanel rpg={rpg} onClose={onClose} />; // v3.0.25 — 보스 재도전 전용 창 (퀘스트창과 분리)
-  if (panel === "isekai") return <IsekaiPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 이세카이 허브 (피규어/배지/룬/성좌/업적/랭킹)
+  if (panel === "isekai") return <IsekaiPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 바르가 원정대 (피규어/배지/룬/성좌/업적/랭킹)
   if (panel === "benefit") return <BenefitPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 혜택 (출석부/일일 퀘스트/쿠폰)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
@@ -2317,6 +2347,25 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
             모바일은 터치 컨트롤을 사용하므로 영향을 받지 않아요.
           </p>
         </div>
+
+        {/* v4.1.0 — 긴급 귀환 (유저 지시 #3 — 설정창 배치) */}
+        <div className="mt-2.5 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] px-2.5 py-2">
+          <p className="text-[12px] font-black text-amber-200">긴급 귀환 장치</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/55">
+            막히거나 길을 잃었을 때 — 지금 위치에서 가장 가까운 마을로 즉시 이동한다.
+            이벤트 구역(도장/수비전/던전)에서는 도중 정산 후 나가진다.
+          </p>
+          <button
+            onClick={() => {
+              EventBus.emit("rpg:escapeHome");
+              onClose();
+            }}
+            className="mt-1.5 w-full rounded-lg border-2 border-amber-300/70 bg-gradient-to-b from-amber-400 to-amber-600 px-3 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform hover:scale-[1.01] active:scale-95"
+          >
+            가장 가까운 마을로 귀환 (8초 쿨)
+          </button>
+        </div>
+
         <button
           onClick={doReset}
           className="mt-2 w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-[11px] font-black text-white/70 hover:bg-white/10 active:scale-[0.98]"
@@ -2329,8 +2378,8 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-/* ================= v4.0.0 — 이세카이 허브 (피규어/배지/룬/성좌/업적/랭킹) =================
- *  ISEKAI GATE(이세카이 게이트) 오마주 수집형 성장 시스템 통합 패널 */
+/* ================= v4.0.0 — 바르가 원정대 (피규어/배지/룬/성좌/업적/랭킹) =================
+ *  바르가 수집형 성장 시스템 통합 패널 */
 import {
   FIGURES, FIGURE_GRADE_META, BADGES, BADGE_MAP, RUNE_KINDS, RUNE_META, RUNE_SYNTH_COST, RUNE_MAX_TIER,
   runeKey, parseRuneKey, CONSTELLATIONS, CONSTEL_NODE_COST, ACHIEVEMENTS, SHARD_SHOP, ROLE_OF,
@@ -2368,11 +2417,11 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
       <div className="max-h-[min(88svh,640px)] w-[min(94vw,500px)] overflow-y-auto rounded-xl border-2 border-purple-300/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-black text-purple-200">이세카이 허브</p>
+          <p className="text-sm font-black text-purple-200">바르가 원정대</p>
           <div className="flex items-center gap-1.5">
             <span className="rounded border border-amber-300/40 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-black text-amber-200">조각 {shards}</span>
             <span className="rounded border border-sky-300/40 bg-sky-400/10 px-1.5 py-0.5 text-[10px] font-black text-sky-200">뽑기권 {tickets}</span>
-            <button onClick={onClose} aria-label="이세카이 허브 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+            <button onClick={onClose} aria-label="바르가 원정대 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
           </div>
         </div>
 
@@ -2574,7 +2623,7 @@ function RankTab({ ik }: { ik: NonNullable<RpgState["isekai"]> | undefined }) {
   return (
     <div>
       <div className="mb-2 grid grid-cols-3 gap-1">
-        {([["gate", "이세카이 게이트"], ["closet", "옷장 던전"], ["dojang", "무릉도장"]] as [RankMode, string][]).map(([k, label]) => (
+        {([["gate", "바르가 수비전"], ["closet", "균열 던전"], ["dojang", "무릉도장"]] as [RankMode, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setMode(k)} className={`rounded-lg border px-1 py-1.5 text-[10px] font-black ${mode === k ? "border-sky-300/60 bg-sky-400/20 text-sky-100" : "border-white/10 bg-white/[0.03] text-white/50"}`}>{label}</button>
         ))}
       </div>
@@ -2602,6 +2651,7 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
   useEscClose(onClose);
   const ik = rpg.isekai;
   const [code, setCode] = useState("");
+  const gate = useKeyGate(); // v4.1.0 — 쿠폰 입력 중 게임 단축키 차단 (지시 #5)
   const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
   const attendCount = ik?.attend?.count ?? 0;
   const attendToday = (ik?.attend?.last ?? "") === today;
@@ -2614,8 +2664,8 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
   const claimed = dailyToday ? daily?.claimed ?? [] : [];
   const DAILY_GOALS: { id: string; name: string; desc: string; goal: number; prog: number; reward: string }[] = [
     { id: "hunt", name: "오늘의 토벌", desc: "몬스터 50마리 처치", goal: 50, prog: hunts, reward: "골드 15,000" },
-    { id: "gate", name: "게이트 방어", desc: "이세카이 게이트 1회 입장", goal: 1, prog: gateRuns, reward: "뽑기권 1 + 골드 5,000" },
-    { id: "closet", name: "옷장 던전", desc: "옷장 던전 1회 입장", goal: 1, prog: closetRuns, reward: "뽑기권 1 + 에메랄드 2" },
+    { id: "gate", name: "게이트 방어", desc: "바르가 수비전 1회 입장", goal: 1, prog: gateRuns, reward: "뽑기권 1 + 골드 5,000" },
+    { id: "closet", name: "균열 던전", desc: "균열 던전 1회 입장", goal: 1, prog: closetRuns, reward: "뽑기권 1 + 에메랄드 2" },
   ];
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
@@ -2664,23 +2714,25 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
         {/* 티켓 현황 + 콘텐츠 입구 */}
         <div className="mb-2.5 grid grid-cols-2 gap-1.5">
           <div className="rounded-lg border border-violet-300/30 bg-violet-400/10 px-2 py-1.5 text-center">
-            <p className="text-[9px] font-bold text-white/50">이세카이 게이트 티켓</p>
+            <p className="text-[9px] font-bold text-white/50">바르가 수비전 티켓</p>
             <p className="text-sm font-black text-violet-200">{ik?.tickets?.gate ?? 0}/3 남음</p>
           </div>
           <div className="rounded-lg border border-lime-300/30 bg-lime-400/10 px-2 py-1.5 text-center">
-            <p className="text-[9px] font-bold text-white/50">옷장 던전 티켓</p>
+            <p className="text-[9px] font-bold text-white/50">균열 던전 티켓</p>
             <p className="text-sm font-black text-lime-200">{ik?.tickets?.closet ?? 0}/2 남음</p>
           </div>
         </div>
         <div className="mb-2.5 grid grid-cols-2 gap-1.5">
-          <button onClick={() => EventBus.emit("ui:panel", { panel: "isekai" })} className="rounded-lg border border-purple-300/50 bg-purple-400/15 px-2 py-2 text-[11px] font-black text-purple-100 hover:bg-purple-400/25 active:scale-95">이세카이 허브 열기</button>
+          <button onClick={() => EventBus.emit("ui:panel", { panel: "isekai" })} className="rounded-lg border border-purple-300/50 bg-purple-400/15 px-2 py-2 text-[11px] font-black text-purple-100 hover:bg-purple-400/25 active:scale-95">바르가 원정대 열기</button>
           <button onClick={() => EventBus.emit("ui:panel", { panel: "gm" })} className="rounded-lg border border-amber-300/50 bg-amber-400/10 px-2 py-2 text-[11px] font-black text-amber-100 hover:bg-amber-400/20 active:scale-95">GM 콘텐츠 입장</button>
         </div>
 
-        {/* 쿠폰 */}
+        {/* 쿠폰 — v4.1.0: 입력 중 게임 단축키/패널 팝업 완전 차단 */}
         <p className="mb-1 text-[11px] font-bold text-white/60">쿠폰 코드 입력</p>
         <div className="flex gap-1.5">
           <input
+            ref={gate}
+            {...swallowKeys}
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="예: HELLOSERTZ"

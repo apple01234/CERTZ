@@ -101,7 +101,7 @@ export type RpgState = {
   collection?: { registered: number; total: number; kills: Record<string, number> };
   /** 활성 세트 효과 (인벤토리/스탯창 표시) */
   activeSet?: { title: string; lines: string[] } | null;
-  /* ----- v4.0.0 — 이세카이 업데이트 ----- */
+  /* ----- v4.0.0 — 바르가 업데이트 ----- */
   /** 이세카이 시스템 전체 상태 (피규어/배지/룬/성좌/업적/혜택/랭킹 패널 공용) */
   isekai?: {
     figures: string[];
@@ -127,7 +127,7 @@ export type RpgState = {
 /** v3.1.0 — "bossdiff" 제거: 스토리 보스는 전용 난이도 즉시 스폰 (선택은 보스 재도전 창 "boss") */
 export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "isekai" | "benefit" | null;
 
-/* ----- v4.0.0 — 이세카이 게이트 오버레이 ----- */
+/* ----- v4.0.0 — 바르가 수비전 오버레이 ----- */
 export type GateCardState = {
   open: boolean;
   wave: number;

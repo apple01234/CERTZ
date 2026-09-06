@@ -77,7 +77,7 @@ function attachMultiplayer(httpServer) {
   let partySeq = 0;
   const PARTY_MAX = 4;
 
-  /* ---------- 랭킹 (v4.0.0 — 무릉도장/이세카이 게이트/옷장 던전 기록전) ----------
+  /* ---------- 랭킹 (v4.0.0 — 무릉도장/바르가 수비전/균열 던전 기록전) ----------
    *  메모리 저장 (서버 재시작 시 초기화) — 모드별 상위 50명 보관 */
   const RANK_MODES = new Set(["dojang", "gate", "closet"]);
   const RANK_MAX = 50;
@@ -149,6 +149,27 @@ function attachMultiplayer(httpServer) {
       chatLog.push(msg);
       chatLog = chatLog.slice(-30);
       io.emit("chat", msg); // 새 메시지 1건만 브로드캐스트 (히스토리는 접속 시 1회)
+    });
+
+    /* v4.1.0 — 공격/스킬 코스메틱 릴레이 (파티원 공격 보임)
+     *  같은 구역(AOI) 플레이어에게만 전달, 보낸 사람 제외. 페이로드 화이트리스트로 위생 처리 */
+    const ACT_KINDS = new Set(["atk", "s1", "s2", "s3", "s4", "s5"]);
+    sock.on("act", (raw = {}) => {
+      const p = players.get(sock.id);
+      if (!p || !ACT_KINDS.has(raw.kind)) return;
+      const payload = {
+        id: sock.id,
+        kind: raw.kind,
+        x: Math.max(-9999, Math.min(99999, Number(raw.x) || 0)),
+        y: Math.max(-9999, Math.min(99999, Number(raw.y) || 0)),
+        flip: !!raw.flip,
+        cls: typeof raw.cls === "string" ? raw.cls.slice(0, 16) : null,
+      };
+      for (const [otherId, other] of io.of("/").sockets) {
+        if (otherId === sock.id) continue;
+        const op = players.get(otherId);
+        if (op && (op.stage || "village") === (p.stage || "village")) other.emit("act", payload);
+      }
     });
 
     sock.on("job", (cls) => {
@@ -276,7 +297,7 @@ function attachMultiplayer(httpServer) {
       /* 신기록 진입 시 전체 방송 (상위 10 진입만 — 도배 방지) */
       const idx = rankings[mode].findIndex((e) => e.name === name);
       if (idx >= 0 && idx < 10) {
-        sysChat(`[랭킹] ${name} 님이 ${mode === "dojang" ? "무릉도장" : mode === "gate" ? "이세카이 게이트" : "옷장 던전"} ${idx + 1}위 기록 달성!`);
+        sysChat(`[랭킹] ${name} 님이 ${mode === "dojang" ? "무릉도장" : mode === "gate" ? "바르가 수비전" : "균열 던전"} ${idx + 1}위 기록 달성!`);
       }
     });
 

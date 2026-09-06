@@ -23,6 +23,7 @@ import {
   type GateCard, type RuneOwned, type RoleKind,
 } from "../isekai";
 import { viewZoom } from "../PhaserGame";
+import { showRewardedAd, purchaseGems, GEM_SKUS } from "../ads"; // v4.1.0 — BM 수익 연동
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import * as audio from "../audio";
 import {
@@ -60,6 +61,8 @@ export class WorldScene extends Phaser.Scene {
   private plantCd = 0;
   private beacon: Phaser.GameObjects.Image | null = null;
   private portalBeacon: Phaser.GameObjects.Image | null = null;
+  /* v4.1.0 — 전진 차원문 위치 라벨 (지시 #14) */
+  private portalLabel: Phaser.GameObjects.Text | null = null;
   /* v3.0 (사용자 지시 #7) — 아이작/개미굴식 구역 레이아웃 (필드 전용, 마을·실내는 null) */
   private layout: RoomLayout | null = null;
   /** 전진 차원문/보스가 놓이는 최원거리 셀 중심 (포탈 보루 폴백 위치로도 사용) */
@@ -178,7 +181,7 @@ export class WorldScene extends Phaser.Scene {
   private dojangFrom: StageKey = "village";
   private dojangText: Phaser.GameObjects.Text | null = null;
   private dojangTextAcc = 0;
-  /* ================= v4.0.0 — 이세카이 업데이트 상태 ================= */
+  /* ================= v4.0.0 — 바르가 업데이트 상태 ================= */
   /* 게이트 디펜스 (웨이브) */
   private gateActive = false;
   private gateWave = 0;
@@ -195,7 +198,7 @@ export class WorldScene extends Phaser.Scene {
   private gatePendingCards: GateCard[] = [];
   private gateBreakUntil = 0;
   private gateEnded = false;
-  /* 옷장 던전 */
+  /* 균열 던전 */
   private closetActive = false;
   private closetEndsAt = 0;
   private closetGold = 0;
@@ -219,6 +222,7 @@ export class WorldScene extends Phaser.Scene {
   private dailyGate = 0;
   private dailyCloset = 0;
   private dailyClaimed: string[] = [];
+  private dailyAds = 0; // v4.1.0 — 오늘 본 광고 보상 횟수 (일 5회 제한)
   private ticketDate = "";
   private ticketGate = 0;
   private ticketCloset = 0;
@@ -524,7 +528,7 @@ export class WorldScene extends Phaser.Scene {
     this.dojangFrom = "village";
     this.dojangText = null;
     this.dojangTextAcc = 0;
-    /* v4.0.0 — 게이트/옷장 던전 상태 리셋 */
+    /* v4.0.0 — 게이트/균열 던전 상태 리셋 */
     this.gateActive = false;
     this.gateWave = 0;
     this.gateSilver = 0;
@@ -585,9 +589,12 @@ export class WorldScene extends Phaser.Scene {
     this.time.delayedCall(1200, () => {
       if (!this.scene.isActive()) return;
       const cam = this.cameras.main as unknown as {
-        fadeEffect?: { isRunning: boolean; stop(): void };
+        fadeEffect?: { isRunning: boolean };
       };
-      if (cam.fadeEffect?.isRunning) cam.fadeEffect.stop();
+      /* v4.1.0 — Phaser 3.90의 Fade에는 stop()이 없다(호출 시 런타임 에러).
+       *  isRunning은 시간 경과로 자동 해제되므로, 여기선 남은 알파만 정리한다
+       *  (update() 자가치유와 이중 안전망). */
+      if (cam.fadeEffect && !cam.fadeEffect.isRunning && cam.alpha < 1) cam.setAlpha(1);
     });
   }
 
@@ -651,7 +658,7 @@ export class WorldScene extends Phaser.Scene {
       this.entryHome.set(this.stageW / 2, this.stageH - 120);
       this.portalHome.set(this.stageW / 2, 120);
     }
-    /* v4.0.0 — 게이트/옷장 던전 입장/퇴장 위치 보정 */
+    /* v4.0.0 — 게이트/균열 던전 입장/퇴장 위치 보정 */
     if (stageKey === "gate" || stageKey === "closet") {
       this.entryHome.set(this.stageW / 2, this.stageH - 120);
       this.portalHome.set(this.stageW / 2, 110);
@@ -806,7 +813,7 @@ export class WorldScene extends Phaser.Scene {
       /* v3.3.0 — 5차 각성/시련 완료 플래그 복원 */
       this.player.fifth = savedPlayer.fifth ?? false;
       this.player.fifthStoryDone = savedPlayer.fifthStoryDone ?? false;
-      /* ----- v4.0.0 — 이세카이 업데이트 복원 ----- */
+      /* ----- v4.0.0 — 바르가 업데이트 복원 ----- */
       this.figures = (savedPlayer.figures ?? []).filter((k) => k in FIGURE_MAP);
       this.shards = savedPlayer.shards ?? 0;
       this.gachaTickets = savedPlayer.gachaTickets ?? 0;
@@ -825,6 +832,7 @@ export class WorldScene extends Phaser.Scene {
       this.dailyGate = savedPlayer.daily?.gate ?? 0;
       this.dailyCloset = savedPlayer.daily?.closet ?? 0;
       this.dailyClaimed = [...(savedPlayer.daily?.claimed ?? [])];
+      this.dailyAds = savedPlayer.daily?.ads ?? 0;
       this.ticketDate = savedPlayer.tickets?.date ?? "";
       this.ticketGate = savedPlayer.tickets?.gate ?? 0;
       this.ticketCloset = savedPlayer.tickets?.closet ?? 0;
@@ -841,7 +849,7 @@ export class WorldScene extends Phaser.Scene {
       /* 외부 보너스(피규어/배지/룬/성좌/스킨) 주입 — HP 델타 동기화 포함 */
       this.syncExtBonus();
     }
-    /* v4.0.0 — 이세카이 데일리 초기화 (출석부/일일 퀘스트/티켓/오프라인 보상) */
+    /* v4.0.0 — 바르가 데일리 초기화 (출석부/일일 퀘스트/티켓/오프라인 보상) */
     this.initIsekaiDaily();
     // v2.5 — 현재 구역 방문 기록 (실내 제외) — 지역 이동 부적 워프 대상
     if (!this.isInterior) {
@@ -926,7 +934,7 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- v3.3.0 (지시 #6) — 무릉도장: 허수아비 + 타이머/기록 UI ---------- */
     if (stageKey === "dojang") this.buildDojang();
 
-    /* ---------- v4.0.0 — 이세카이 게이트 / 옷장 던전 빌드 ---------- */
+    /* ---------- v4.0.0 — 바르가 수비전 / 균열 던전 빌드 ---------- */
     if (stageKey === "gate") this.buildGate();
     if (stageKey === "closet") this.buildCloset();
 
@@ -940,12 +948,15 @@ export class WorldScene extends Phaser.Scene {
       this.spawnPortal(this.stageW - 110, this.stageH * 0.52);
       this.activatePortal(true);
     } else {
-      if (!this.stageDef.boss && stageKey !== "dojang") this.spawnPortal(this.portalHome.x, this.portalHome.y);
+      /* v4.1.0 — 전진 포탈은 다음 구역이 존재할 때만 스폰 (이벤트 구역의 죽은 포탈 제거) */
+      if (!this.stageDef.boss && stageKey !== "dojang" && NEXT_STAGE[stageKey]) this.spawnPortal(this.portalHome.x, this.portalHome.y);
       // 수확(collect) 퀘스트 진행 중 — 파편 스폰 (이어하기 무결: ATK 중복 수령 방지)
       if (this.currentQuest()?.type === "collect") this.spawnFragmentForQuest();
     }
     /* ---------- 복귀 차원문 (v2.0 — 이전 구역 자유 왕복, 지시 #8 / 실내 제외) ---------- */
     if (!this.isInterior) this.spawnReturnPortal();
+    /* v4.1.0 — 포탈 화면 밖 방향 가이드 (지시 #14) */
+    this.createPortalGuides();
 
     /* ---------- 퀘스트 진행 복구 (이어하기 — 진행 상태 정합, 오브젝트 생성 후) ---------- */
     const bossQuestIdx = this.stageDef.quests.findIndex((q) => q.type === "boss");
@@ -1633,6 +1644,19 @@ export class WorldScene extends Phaser.Scene {
     this.portal.clearTint();
     this.portal.play("portal-spin");
     if (!silent) audio.sfx.portal();
+    /* v4.1.0 — 전진 차원문 위치 라벨 (복귀 차원문 라벨과 동일 규약 — 지시 #14) */
+    this.portalLabel?.destroy();
+    this.portalLabel = this.add
+      .text(this.portal.x, this.portal.y - 46, `→ ${STAGE_SHORT[NEXT_STAGE[this.stageDef.key] as StageKey] ?? "다음 지역"}`, {
+        fontFamily: "sans-serif",
+        fontSize: "11px",
+        color: "#d8b0ff",
+        stroke: "#0a2030",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(30);
     // F2: 차원문에도 작은 비컨
     this.portalBeacon = this.add
       .image(this.portal.x, this.portal.y - 120, "beam")
@@ -1686,7 +1710,15 @@ export class WorldScene extends Phaser.Scene {
     if (this.currentQuest()?.type === "reach") this.advanceQuest();
     // 구역 체인 — 마을 → forest1..10 → kingdom1..10 → … → abyss10 순차 진행
     const next: StageKey | null = NEXT_STAGE[this.stageDef.key];
-    if (!next) return;
+    if (!next) {
+      /* v4.1.0 — 이벤트 구역(무릉도장/바르가/균열)의 전진 포탈은 막힌 문.
+       *  기존엔 fadeOut만 하고 전환을 예약하지 않아 영구 검은 화면으로 빠졌다 (유저 지시 #2).
+       *  → 페이드를 되돌리고 안내 후 다시 활성화한다. */
+      this.cameras.main.fadeIn(320, 0, 0, 0);
+      this.portalActive = true;
+      this.showBanner("이 앞은 막혀 있다 — 돌아가는 차원문을 타자");
+      return;
+    }
     /* v3.0.25 (#다음퀘스트 자동추적) — 다음 구역으로 진행하면 추적도 자동으로 따라간다
      *  (기존은 이전 구역 추적이 유지돼 화살표가 뒤를 가리켰다) */
     if (this.trackedStage === this.stageDef.key) {
@@ -1743,16 +1775,20 @@ export class WorldScene extends Phaser.Scene {
   /** 복귀 차원문 진입 — 이전 구역으로 (스탯/진행 캐리는 전진과 동일 경로) */
   private enterPrevStage() {
     if (!this.returnActive) return;
-    /* v3.3.0 (지시 #6) — 무릉도장 복귀: 들어오기 전 구역으로 (기록 없으면 마을) */
-    const prev: StageKey | null = this.stageDef.key === "dojang"
-      ? (STAGES[this.dojangFrom] ? this.dojangFrom : "village")
-      : PREV_STAGE[this.stageDef.key];
+    /* v3.3.0 (지시 #6) — 무릉도장 복귀: 들어오기 전 구역으로 (기록 없으면 마을)
+     * v4.1.0 — 바르가/균열도 입장 전 구역으로 복귀 (village 폴백 고정이던 것 수정) */
+    const key = this.stageDef.key;
+    const prev: StageKey | null =
+      key === "dojang" ? (STAGES[this.dojangFrom] ? this.dojangFrom : "village")
+      : key === "gate" ? (STAGES[this.gateFrom] ? this.gateFrom : "village")
+      : key === "closet" ? (STAGES[this.closetFrom] ? this.closetFrom : "village")
+      : PREV_STAGE[key];
     if (!prev) return;
     /* v3.3.0 — 무릉도장 중간 퇴장 시 기록 확정 */
     if (this.dojangActive) this.finishDojang(true);
     /* v4.0.0 — 게이트 중간 퇴장 시 보상 정산 후 복귀 (gotoStage는 finishGate가 처리) */
     if (this.gateActive) { this.returnActive = false; this.finishGate("exit"); return; }
-    /* v4.0.0 — 옷장 던전 조기 퇴장 — 지금까지 획득한 골드 기준 정산 */
+    /* v4.0.0 — 균열 던전 조기 퇴장 — 지금까지 획득한 골드 기준 정산 */
     if (this.closetActive) { this.returnActive = false; this.finishCloset(); return; }
     this.returnActive = false;
     audio.sfx.portal();
@@ -2064,9 +2100,99 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /* ================= v4.1.0 — 적응형 품질 (유저 지시 #12 최적화) =================
+   *  평균 프레임이 2.5초 간격으로 42 미만이면 FX 양을 자동 축소, 56+ 유지 시 복원.
+   *  격발/파티클 과다 환경(저사양 폰·다수 원격)에서 프레임을 지킨다. */
+
+  private fxLevel: 0 | 1 = 1;
+  private fxSampleAt = 0;
+  private fxLowStreak = 0;
+  private fxHighStreak = 0;
+
+  get fxScale() {
+    return this.fxLevel === 0 ? 0.45 : 1;
+  }
+
+  private tickFxQuality(dt: number) {
+    this.fxSampleAt += dt;
+    if (this.fxSampleAt < 2500) return;
+    this.fxSampleAt = 0;
+    const fps = this.game.loop.actualFps;
+    if (fps < 42) {
+      this.fxLowStreak++;
+      this.fxHighStreak = 0;
+      if (this.fxLowStreak >= 2 && this.fxLevel === 1) {
+        this.fxLevel = 0;
+        console.info("[SERTZ] 적응형 품질 — FX 축소 모드", Math.round(fps));
+      }
+    } else {
+      this.fxLowStreak = 0;
+      if (fps > 56) {
+        this.fxHighStreak++;
+        if (this.fxHighStreak >= 6 && this.fxLevel === 0) {
+          this.fxLevel = 1;
+          this.fxHighStreak = 0;
+          console.info("[SERTZ] 적응형 품질 — FX 복원");
+        }
+      } else {
+        this.fxHighStreak = 0;
+      }
+    }
+  }
+
+  /* ================= v4.1.0 — 포탈 위치 가이드 (유저 지시 #14) =================
+   *  복귀 차원문이 화면 밖에 있으면 가장자리에 방향 화살표를 띄운다.
+   *  전진 차원문은 기존 퀘스트 어시스트 화살표(questTargetPos)가 이미 담당한다. */
+
+  private retGuide!: Phaser.GameObjects.Text;
+
+  private createPortalGuides() {
+    const style = {
+      fontFamily: "sans-serif",
+      fontSize: "18px",
+      fontStyle: "bold",
+      stroke: "#0a2030",
+      strokeThickness: 4,
+    } as const;
+    this.retGuide = this.add.text(0, 0, "◀", { ...style, color: "#8ae0ff" }).setOrigin(0.5).setDepth(95).setScrollFactor(0).setVisible(false);
+  }
+
+  private updatePortalGuides() {
+    const cam = this.cameras.main;
+    const view = cam.worldView;
+    const pairs: [Phaser.GameObjects.Sprite | null, Phaser.GameObjects.Text][] = [
+      [this.returnPortal && this.returnActive ? this.returnPortal : null, this.retGuide],
+    ];
+    const zoom = cam.zoom || 1;
+    const vw = cam.width;
+    const vh = cam.height;
+    for (const [t, g] of pairs) {
+      if (!g) continue;
+      if (!t || !t.active) {
+        if (g.visible) g.setVisible(false);
+        continue;
+      }
+      if (view.contains(t.x, t.y)) {
+        if (g.visible) g.setVisible(false);
+        continue;
+      }
+      const ang = Math.atan2(t.y - view.centerY, t.x - view.centerX);
+      /* 화면 가장자리(여백 8%) 지점 — sf0 + 줌 보정 좌표 */
+      const ex = vw / 2 + Math.cos(ang) * (vw * 0.44);
+      const ey = vh / 2 + Math.sin(ang) * (vh * 0.42);
+      g.setPosition((ex - vw / 2) / zoom + vw / 2, (ey - vh / 2) / zoom + vh / 2);
+      const deg = Phaser.Math.RadToDeg(ang);
+      const ch = deg > -45 && deg <= 45 ? "▶" : deg > 45 && deg <= 135 ? "▼" : deg > 135 || deg <= -135 ? "◀" : "▲";
+      if (g.text !== ch) g.setText(ch);
+      g.setVisible(true);
+    }
+  }
+
   spawnBurstAt(x: number, y: number, n: number, tint: number) {
+    /* v4.1.0 — 적응형 품질: FX 축소 모드에선 파티클 수를 줄인다 */
+    const count = Math.max(3, Math.round(n * this.fxScale));
     this.burstEmitter.setParticleTint(tint);
-    this.burstEmitter.explode(n, x, y);
+    this.burstEmitter.explode(count, x, y);
   }
 
   spawnDeathBurst(x: number, y: number) {
@@ -2414,7 +2540,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.totalKills++;
     this.registry.set("runKills", this.totalKills);
-    /* ---------- v4.0.0 — 게이트/옷장 던전/일일 퀘스트 훅 ---------- */
+    /* ---------- v4.0.0 — 게이트/균열 던전/일일 퀘스트 훅 ---------- */
     if (this.gateActive) {
       this.gateAlive = Math.max(0, this.gateAlive - 1);
       const silver = Math.round((3 + this.gateWave * 1.6) * (1 + this.player.runBuffs.silverPct / 100));
@@ -2427,7 +2553,7 @@ export class WorldScene extends Phaser.Scene {
       this.emitGateState();
       if (this.gateAlive <= 0 && this.gatePhase === "fight") this.onGateWaveCleared();
     } else if (this.closetActive) {
-      /* 옷장 던전 — 레벨 스케일 골드 지급 + 경험치책 확률 드롭 */
+      /* 균열 던전 — 레벨 스케일 골드 지급 + 경험치책 확률 드롭 */
       const g = Math.round((42 + this.player.lv * 6) * (1 + this.player.extBonus.goldPct / 100 + this.player.petGoldBonusPct / 100));
       this.player.addGold(g);
       this.closetGold += g;
@@ -2559,7 +2685,7 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: emblem, scale: 1.04, alpha: 0.7, duration: 1800, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     void emblemFill;
     this.add
-      .text(cx, 66, "無 量 道 場", {
+      .text(this.cameras.main.width / 2, 66, "無 量 道 場", {
         fontFamily: "sans-serif",
         fontSize: "30px",
         color: "#e8c88a",
@@ -2584,9 +2710,10 @@ export class WorldScene extends Phaser.Scene {
       this.enemies.push(e);
       this.physics.add.collider(e, this.solidGroup);
     }
-    /* 타이머/기록 UI (화면 고정) */
+    /* 타이머/기록 UI (화면 고정 — v4.1.0: 카메라 중앙 기준. 기존엔 스테이지 중앙 x를
+     *  그대로 써서 줌이 1보다 큰 폰에서 텍스트가 화면 밖으로 나가 타이머가 안 보였다) */
     this.dojangText = this.add
-      .text(cx, 108, "", {
+      .text(this.cameras.main.width / 2, 108, "", {
         fontFamily: "sans-serif",
         fontSize: "17px",
         color: "#ffe66a",
@@ -2612,6 +2739,8 @@ export class WorldScene extends Phaser.Scene {
 
   /** 무릉도장 진행 (update에서 매 프레임 — UI는 100ms 스로틀) */
   private tickDojang(dt: number) {
+    /* v4.1.0 — 화면 고정 UI는 카메라 뷰 기준 중앙 유지 (리사이즈/줌 대응) */
+    this.dojangText?.setX(this.cameras.main.width / 2);
     this.dojangTextAcc += dt;
     if (this.dojangTextAcc >= 100) {
       this.dojangTextAcc = 0;
@@ -2654,7 +2783,7 @@ export class WorldScene extends Phaser.Scene {
     net.netRankSubmit("dojang", score, getPlayerName(), this.player.lv);
   }
 
-  /* ================= v4.0.0 — 이세카이 업데이트: 게이트 디펜스/옷장 던전/혜택 시스템 ================= */
+  /* ================= v4.0.0 — 바르가 업데이트: 게이트 디펜스/균열 던전/혜택 시스템 ================= */
 
   private today(): string {
     const d = new Date();
@@ -2693,6 +2822,7 @@ export class WorldScene extends Phaser.Scene {
       this.dailyGate = 0;
       this.dailyCloset = 0;
       this.dailyClaimed = [];
+      this.dailyAds = 0;
     }
   }
 
@@ -2765,7 +2895,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.coin();
   }
 
-  /* ---------------- 이세카이 허브 커맨드 (Panels → EventBus) ---------------- */
+  /* ---------------- 바르가 원정대 커맨드 (Panels → EventBus) ---------------- */
 
   handleIsekai(v: { action: string; key?: string; slot?: number | string; ck?: string; idx?: number; id?: string; code?: string }) {
     if (!this.player) return;
@@ -3005,7 +3135,7 @@ export class WorldScene extends Phaser.Scene {
     };
   }
 
-  /* ---------------- 이세카이 게이트 (웨이브 디펜스) ---------------- */
+  /* ---------------- 바르가 수비전 (웨이브 디펜스) ---------------- */
 
   enterGate() {
     if (!this.player || this.transitioning) return;
@@ -3019,7 +3149,7 @@ export class WorldScene extends Phaser.Scene {
     this.ensureDaily();
     this.dailyGate++;
     this.gateFrom = this.stageDef.key;
-    /* 팀워크 버프 — 파티 2인 이상 (ISEKAI GATE 3인 협동 오마주) */
+    /* 팀워크 버프 — 파티 2인 이상 (협동 수비전 보너스) */
     const party = net.netLastParty();
     const roles = (party?.members ?? []).map((m) => ROLE_OF[m.cls ?? ""]).filter(Boolean) as RoleKind[];
     const tw = teamworkBuff(party?.members.length ?? 1, roles);
@@ -3027,7 +3157,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.applyRunCard([{ id: "tw", tier: 2, name: "팀워크", desc: tw.label, stat: { atkPct: tw.pct, hpPct: tw.pct } }]);
       EventBus.emit("banner:show", { text: tw.label });
     } else {
-      this.showBanner("이세카이 게이트로 이동합니다 — 옷장 게이트를 지켜라!");
+      this.showBanner("바르가 수비전으로 이동합니다 — 균열의 문을 지켜라!");
     }
     this.save();
     this.emitRpgState();
@@ -3038,23 +3168,23 @@ export class WorldScene extends Phaser.Scene {
     const cx = this.stageW / 2;
     const cy = this.stageH / 2 - 30;
     this.gateCorePos.set(cx, cy);
-    /* 옷장 게이트 코어 — 갈색 옷장 + 발광 테두리 */
-    const door = this.add.rectangle(cx, cy, 84, 120, 0x6b4a2b).setStrokeStyle(4, 0x9d7aff, 0.9).setDepth(4);
-    const doorInner = this.add.rectangle(cx, cy - 8, 60, 88, 0x8a6238).setDepth(5);
+    /* 바르가 균열의 문 코어 — 발광 균열 문 + 테두리 */
+    const door = this.add.rectangle(cx, cy, 84, 120, 0x4a3a6b).setStrokeStyle(4, 0x9d7aff, 0.9).setDepth(4);
+    const doorInner = this.add.rectangle(cx, cy - 8, 60, 88, 0x6b5a8a).setDepth(5);
     const knob = this.add.circle(cx + 22, cy, 5, 0xffd76a).setDepth(6);
     void knob; void doorInner;
     const glow = this.add.circle(cx, cy, 86, 0x9d7aff, 0.08).setDepth(2);
     void glow;
     this.tweens.add({ targets: door, scale: 1.03, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
-      .text(cx, cy - 92, "옷장 게이트", { fontFamily: "sans-serif", fontSize: "20px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(cx, cy - 92, "바르가 균열", { fontFamily: "sans-serif", fontSize: "20px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(90);
     /* 코어 HP 바 (월드 좌표) */
     this.gateCoreBarBg = this.add.rectangle(cx, cy + 82, 120, 8, 0x22262e).setDepth(96);
     this.gateCoreBar = this.add.rectangle(cx, cy + 82, 116, 5, 0x9d7aff).setDepth(97);
     this.gateText = this.add
-      .text(cx, 96, "", { fontFamily: "sans-serif", fontSize: "17px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 96, "", { fontFamily: "sans-serif", fontSize: "17px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(96)
       .setScrollFactor(0);
@@ -3068,7 +3198,7 @@ export class WorldScene extends Phaser.Scene {
     this.gatePhase = "break";
     this.gateBreakUntil = this.time.now + 2600;
     this.emitGateState();
-    this.showBanner("옷장 게이트 방어전 시작! 문에 닿기 전에 몬스터를 처치하라");
+    this.showBanner("바르가 수비전 시작! 균열에 닿기 전에 몬스터를 처치하라");
   }
 
   private emitGateState() {
@@ -3111,13 +3241,14 @@ export class WorldScene extends Phaser.Scene {
     }
     /* UI 100ms 스로틀 */
     this.gateTextAcc2 += dt;
+    this.gateText?.setX(this.cameras.main.width / 2);
     if (this.gateTextAcc2 >= 100) {
       this.gateTextAcc2 = 0;
       if (this.gatePhase === "break") {
         const sec = Math.max(0, Math.ceil((this.gateBreakUntil - this.time.now) / 1000));
-        this.gateText?.setText(`이세카이 게이트  |  다음 웨이브 ${sec}초  |  웨이브 ${this.gateWave}  |  실버 ${this.gateSilver}`);
+        this.gateText?.setText(`바르가 수비전  |  다음 웨이브 ${sec}초  |  웨이브 ${this.gateWave}  |  실버 ${this.gateSilver}`);
       } else {
-        this.gateText?.setText(`이세카이 게이트  |  웨이브 ${this.gateWave} (${this.gateAlive}마리)  |  실버 ${this.gateSilver}`);
+        this.gateText?.setText(`바르가 수비전  |  웨이브 ${this.gateWave} (${this.gateAlive}마리)  |  실버 ${this.gateSilver}`);
       }
       if (this.gateCoreBar && this.gateCoreBarBg) {
         const pct = Math.max(0, this.gateCoreHp / this.gateCoreMax);
@@ -3248,21 +3379,25 @@ export class WorldScene extends Phaser.Scene {
     }
     this.enemies = [];
     this.player.clearRunBuffs();
-    /* 보상 정산 */
-    const goldReward = Math.round(waves * 900 * (1 + this.player.extBonus.goldPct / 100));
-    const ticketReward = 1 + Math.floor(waves / 5);
+    /* v4.1.0 — 도중 철수 보상 축소 (유저 지시 #9 — 클리어 없이 나가도 풀보상이던 버그):
+     *  코어 파괴(정산 종료)만 풀보상. 포탈로 도중 철수 시 웨이브 3 미만 = 무보상,
+     *  3 이상 = 골드 30%만. 뽑기권/별/배지는 정상 종료에만. */
+    const early = mode === "exit";
+    const goldMul = early ? (waves >= 3 ? 0.3 : 0) : 1;
+    const goldReward = Math.round(waves * 900 * goldMul * (1 + this.player.extBonus.goldPct / 100));
+    const ticketReward = early ? 0 : 1 + Math.floor(waves / 5);
     this.player.addGold(goldReward);
     this.gachaTickets += ticketReward;
     const lines: { text: string; color?: string }[] = [
       { text: `방어 웨이브: ${waves}`, color: "#a8ecff" },
-      { text: `골드 +${goldReward.toLocaleString()} G`, color: "#ffd76a" },
-      { text: `뽑기권 +${ticketReward}`, color: "#c08aff" },
+      { text: goldReward > 0 ? `골드 +${goldReward.toLocaleString()} G` : "골드 0 G", color: "#ffd76a" },
     ];
-    const record = waves > this.gateBest;
+    if (!early) lines.push({ text: `뽑기권 +${ticketReward}`, color: "#c08aff" });
+    const record = waves > this.gateBest && !early;
     if (record) this.gateBest = waves;
     if (record) lines.push({ text: `신기록! 최고 ${this.gateBest} 웨이브`, color: "#7dffa8" });
-    /* ★ 달성 보상 (최초 1회) */
-    for (let i = 0; i < GATE_STAR_WAVES.length; i++) {
+    /* ★ 달성 보상 (최초 1회 — 정상 종료만) */
+    if (!early) for (let i = 0; i < GATE_STAR_WAVES.length; i++) {
       if (waves >= GATE_STAR_WAVES[i] && !this.gateStars[i]) {
         this.gateStars[i] = true;
         this.player.emerald += GATE_STAR_REWARD[i];
@@ -3274,9 +3409,11 @@ export class WorldScene extends Phaser.Scene {
         }
       }
     }
-    if (mode === "fail") lines.push({ text: "게이트가 부서졌다… 다음엔 더 강하게!", color: "#ff8a9c" });
+    if (mode === "fail") lines.push({ text: "균열이 부서졌다… 다음엔 더 강하게!", color: "#ff8a9c" });
+    else if (waves < 3) lines.push({ text: "바로 철수 — 보상이 없다. 제대로 싸우고 돌아오자!", color: "#ff8a9c" });
+    else lines.push({ text: "도중 철수 — 골드 30%만 정산 (별·뽑기권 없음)", color: "#ff8a9c" });
     EventBus.emit("reward:show", {
-      title: mode === "fail" ? "이세카이 게이트 — 함락" : "이세카이 게이트 — 퇴장",
+      title: mode === "fail" ? "바르가 수비전 — 균열 함락" : "바르가 수비전 — 철수",
       lines: lines as RewardPopupState["lines"],
     });
     audio.sfx.questDone();
@@ -3285,27 +3422,28 @@ export class WorldScene extends Phaser.Scene {
     this.save();
     /* 랭킹 제출 (멀티 서버 연결 시) */
     net.netRankSubmit("gate", this.gateBest, getPlayerName(), this.player.lv);
+    this.cameras.main.fadeOut(420, 0, 0, 0);
     this.time.delayedCall(1900, () => {
       const back: StageKey = STAGES[this.gateFrom] ? this.gateFrom : "village";
       this.gotoStage(back);
     });
   }
 
-  /* ---------------- 옷장 던전 (골드/경험치책 파밍) ---------------- */
+  /* ---------------- 균열 던전 (골드/경험치책 파밍) ---------------- */
 
   enterCloset() {
     if (!this.player || this.transitioning) return;
     if (this.stageDef.key === "closet") return;
     this.ensureTickets();
     if (this.ticketCloset <= 0) {
-      EventBus.emit("banner:show", { text: "오늘의 옷장 던전 티켓 소진! (매일 2장)" });
+      EventBus.emit("banner:show", { text: "오늘의 균열 던전 티켓 소진! (매일 2장)" });
       return;
     }
     this.ticketCloset--;
     this.ensureDaily();
     this.dailyCloset++;
     this.closetFrom = this.stageDef.key;
-    this.showBanner("옷장 던전으로 이동합니다 — 60초 파밍 타임!");
+    this.showBanner("균열 던전으로 이동합니다 — 60초 파밍 타임!");
     this.save();
     this.emitRpgState();
     this.gotoStage("closet");
@@ -3314,12 +3452,12 @@ export class WorldScene extends Phaser.Scene {
   private buildCloset() {
     const cx = this.stageW / 2;
     this.add
-      .text(cx, 66, "옷 장 던 전", { fontFamily: "sans-serif", fontSize: "30px", color: "#8fe84a", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 66, "균 열 던 전", { fontFamily: "sans-serif", fontSize: "30px", color: "#8fe84a", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(90)
       .setScrollFactor(0);
     this.closetText = this.add
-      .text(cx, 108, "", { fontFamily: "sans-serif", fontSize: "17px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 108, "", { fontFamily: "sans-serif", fontSize: "17px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(96)
       .setScrollFactor(0);
@@ -3327,7 +3465,7 @@ export class WorldScene extends Phaser.Scene {
     this.closetAcc = 0;
     this.closetActive = true;
     this.closetEndsAt = this.time.now + 60000;
-    this.showBanner("골드와 경험치 책이 쏟아진다! 60초 동안 최대한 사냥!");
+    this.showBanner("균열 던전 입장! 60초 동안 골드와 경험치 책을 모아라");
   }
 
   private tickCloset(dt: number) {
@@ -3355,6 +3493,7 @@ export class WorldScene extends Phaser.Scene {
     }
     /* UI */
     this.gateTextAcc2 += dt;
+    this.closetText?.setX(this.cameras.main.width / 2);
     if (this.gateTextAcc2 >= 100) {
       this.gateTextAcc2 = 0;
       const remain = Math.max(0, this.closetEndsAt - this.time.now);
@@ -3376,17 +3515,18 @@ export class WorldScene extends Phaser.Scene {
     const gotBadge = this.closetBest >= 100000 && !this.badges.includes(badgeKey);
     if (gotBadge) this.badges.push(badgeKey);
     EventBus.emit("reward:show", {
-      title: "옷장 던전 — 파밍 종료!",
+      title: "균열 던전 — 파밍 종료!",
       lines: [
         { text: `획득 골드: ${this.closetGold.toLocaleString()} G`, color: "#ffd76a" },
         { text: record ? "신기록 달성!" : `최고 기록: ${this.closetBest.toLocaleString()} G`, color: record ? "#7dffa8" : "#a8ecff" },
-        { text: gotBadge ? "배지 획득 — 옷장 탐험가!" : "경험치 책은 몬스터 처치 시 드롭", color: "#c08aff" },
+        { text: gotBadge ? "배지 획득 — 균열 탐험가!" : "경험치 책은 몬스터 처치 시 드롭", color: "#c08aff" },
       ] satisfies RewardPopupState["lines"],
     });
     audio.sfx.questDone();
     this.emitRpgState();
     this.save();
     net.netRankSubmit("closet", this.closetBest, getPlayerName(), this.player.lv);
+    this.cameras.main.fadeOut(420, 0, 0, 0);
     this.time.delayedCall(1800, () => {
       const back: StageKey = STAGES[this.closetFrom] ? this.closetFrom : "village";
       this.gotoStage(back);
@@ -4129,6 +4269,53 @@ export class WorldScene extends Phaser.Scene {
       if (v.focus) this.touchMove.set(0, 0);
     };
     const onChatSend = (v: { text: string }) => net.netSendChat(v.text);
+    /* v4.1.0 — 긴급 귀환 (설정창 버튼) */
+    const onEscapeHome = () => this.emergencyReturn();
+    /* v4.1.0 — 광고 보상/에메랄드 충전 (BM 수익 연동 — 유저 지시 #10) */
+    const onAdReward = async () => {
+      if (!this.player) return;
+      this.ensureDaily();
+      if (this.dailyAds >= 5) {
+        EventBus.emit("banner:show", { text: "오늘의 광고 보상은 끝났다 (일 5회) — 내일 다시" });
+        return;
+      }
+      EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
+      const r = await showRewardedAd();
+      if (!r.ok) {
+        EventBus.emit("banner:show", { text: r.reason === "web" ? "광고 보상은 폰 버전(APK)에서 볼 수 있어" : "광고를 못 봤다 — 다시 시도하자" });
+        return;
+      }
+      this.dailyAds++;
+      this.player.addGold(500);
+      this.player.emerald += 1;
+      this.save();
+      this.emitRpgState();
+      audio.sfx.questDone();
+      EventBus.emit("reward:show", {
+        title: "광고 보상 지급!",
+        lines: [
+          { text: "에메랄드 +1", color: "#7de8ff" },
+          { text: "골드 +500", color: "#ffd76a" },
+          { text: `오늘 ${this.dailyAds}/5회 시청`, color: "#a8ecff" },
+        ] satisfies RewardPopupState["lines"],
+      });
+    };
+    const onBuyGems = async (v: { sku: string }) => {
+      if (!this.player) return;
+      const sku = GEM_SKUS.find((s) => s.id === v.sku);
+      if (!sku) return;
+      EventBus.emit("banner:show", { text: "구글 플레이 결제창을 여는 중…" });
+      const r = await purchaseGems(sku.id);
+      if (!r.ok) {
+        EventBus.emit("banner:show", { text: r.reason === "web" ? "결제는 폰 버전(APK)에서만 가능하다 (Play Console 상품 등록 후)" : "결제가 취소됐다" });
+        return;
+      }
+      this.player.emerald += sku.gems;
+      this.save();
+      this.emitRpgState();
+      audio.sfx.questDone();
+      EventBus.emit("banner:show", { text: `에메랄드 +${sku.gems} 충전 완료!` });
+    };
     // 전직/승격 선택 (JobPanel → v1.8 다차원 트리)
     /* v3.1.0 (#전직스토리선행) — 유저 지시 "전직은 전직 스토리(n차마다 다른 스토리·컷신)
      *  완료 후에만": 미전직 계열 선택 → 1차 시련 시작 (전직은 시련 완료 시 자동 적용),
@@ -4360,7 +4547,7 @@ export class WorldScene extends Phaser.Scene {
 
     /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
      *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가
-     *  v4.0.0 — 이세카이 게이트/옷장 던전 입장 + 무료 뽑기 + 티켓 충전 */
+     *  v4.0.0 — 바르가 수비전/균열 던전 입장 + 무료 뽑기 + 티켓 충전 */
     const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets"; value?: number | string }) => {
       if (!this.player) return;
       const p = this.player;
@@ -4414,10 +4601,10 @@ export class WorldScene extends Phaser.Scene {
         /* v3.3.0 (지시 #6) — GM → 무릉도장 입장 */
         this.enterDojang();
       } else if (v.type === "gate") {
-        /* v4.0.0 — GM → 이세카이 게이트 입장 */
+        /* v4.0.0 — GM → 바르가 수비전 입장 */
         this.enterGate();
       } else if (v.type === "closet") {
-        /* v4.0.0 — GM → 옷장 던전 입장 */
+        /* v4.0.0 — GM → 균열 던전 입장 */
         this.enterCloset();
       } else if (v.type === "freegacha") {
         /* v4.0.0 — GM 무료 뽑기 (10분 쿨 — 광고 보상 대체) */
@@ -4433,7 +4620,7 @@ export class WorldScene extends Phaser.Scene {
       }
     };
 
-    /* ================= v4.0.0 — 이세카이 시스템 커맨드 ================= */
+    /* ================= v4.0.0 — 바르가 시스템 커맨드 ================= */
     const onIsekai = (v: { action: string; key?: string; slot?: number; ck?: string; idx?: number; id?: string; code?: string }) => {
       if (!this.player) return;
       this.handleIsekai(v);
@@ -4468,6 +4655,9 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("dialogue:done", onDialogueDone);
     EventBus.on("chat:focus", onChatFocus);
     EventBus.on("chat:send", onChatSend);
+    EventBus.on("rpg:escapeHome", onEscapeHome); // v4.1.0 — 설정창 긴급 귀환
+    EventBus.on("rpg:adReward", onAdReward); // v4.1.0 — 광고 보상
+    EventBus.on("rpg:buyGems", onBuyGems); // v4.1.0 — 구글 플레이 충전
     EventBus.on("job:select", onJobSelect);
     EventBus.on("job:switch", onJobSwitch);
     EventBus.on("friend:goto", onFriendGoto);
@@ -4691,6 +4881,9 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("dialogue:done", onDialogueDone);
       EventBus.off("chat:focus", onChatFocus);
       EventBus.off("chat:send", onChatSend);
+      EventBus.off("rpg:escapeHome", onEscapeHome); // v4.1.0
+      EventBus.off("rpg:adReward", onAdReward); // v4.1.0
+      EventBus.off("rpg:buyGems", onBuyGems); // v4.1.0
       EventBus.off("job:select", onJobSelect);
       EventBus.off("job:switch", onJobSwitch);
       EventBus.off("friend:goto", onFriendGoto);
@@ -4724,6 +4917,11 @@ export class WorldScene extends Phaser.Scene {
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
 
+    /* v4.1.0 — 적응형 품질/포탈 가이드/긴급귀환 쿨다운 */
+    this.tickFxQuality(dt);
+    this.updatePortalGuides();
+    this.escapeCd = Math.max(0, this.escapeCd - dt);
+
     /* v3.2.0 (#흑화) — 카메라 자가치유 (v3.3.0: 상시화 — 6초 한정 제거):
      *  페이드 이펙트가 실행 중이 아닌데 알파가 1 미만으로 남아있으면(WebView에서
      *  fadeOut 완료 콜백 유실 등) 매 프레임 강제로 밝힌다. 사망 페이드아웃은 fadeEffect가
@@ -4744,7 +4942,7 @@ export class WorldScene extends Phaser.Scene {
     }
     /* v3.3.0 (지시 #6) — 무릉도장 타이머/기록 UI 진행 */
     if (this.dojangActive) this.tickDojang(dt);
-    /* v4.0.0 — 이세카이 게이트 웨이브 / 옷장 던전 진행 */
+    /* v4.0.0 — 바르가 수비전 웨이브 / 균열 던전 진행 */
     if (this.gateActive) this.tickGate(dt);
     if (this.closetActive) this.tickCloset(dt);
 
@@ -5398,7 +5596,8 @@ export class WorldScene extends Phaser.Scene {
       const offPlayers = net.netOnPlayers((list) => this.syncRemotes(list));
       const offChat = net.netOnChat((m) => EventBus.emit("chat:msg", m));
       const offFriends = net.netOnFriends((list) => EventBus.emit("friends:online", list));
-      this.netOffs = [offPlayers, offChat, offFriends];
+      const offAct = net.netOnAction((a) => this.playRemoteAction(a)); // v4.1.0 — 파티원 공격/스킬 표시
+      this.netOffs = [offPlayers, offChat, offFriends, offAct];
       this.events.once("shutdown", () => this.shutdownNet());
       // 소켓 연결 안정화 후 입장 방송 (v2.0 — netJoin이 connect 전이면 대기열 후 자동 발송)
       this.time.delayedCall(650, () => {
@@ -5422,6 +5621,122 @@ export class WorldScene extends Phaser.Scene {
     for (const off of this.netOffs) off();
     this.netOffs = [];
     this.clearRemotes();
+  }
+
+  /* ================= v4.1.0 — 파티원 공격/스킬 표시 (유저 지시 #4) =================
+   *  로컬에서 쓴 공격/스킬이 같은 구역 원격 플레이어 화면에서도 보인다.
+   *  데미지 판정은 각 클라 자기 자신 — 여기선 보기용 연출만 재생 (경량). */
+
+  private lastRemoteActAt = 0;
+
+  private playRemoteAction(a: net.NetAction) {
+    if (!a || a.id === net.netId()) return;
+    /* 스로틀 — 다수 원격이 몰려있을 때 FX 도폭 방지 (최적화 #12) */
+    const now = this.time.now;
+    if (now - this.lastRemoteActAt < 80) return;
+    this.lastRemoteActAt = now;
+    const r = a.id ? this.remotes.get(a.id) : undefined;
+    const x = r ? r.sp.x : a.x;
+    const y = r ? r.sp.y : a.y;
+    const flip = r ? r.flip : a.flip;
+    const cls = r?.cls ?? a.cls;
+    const fam = familyOf(cls ?? undefined);
+    const hex = Number(classDef(cls ?? undefined)?.color?.replace("#", "0x") ?? 0xffffff) || 0xffe9b0;
+    const dir = new Phaser.Math.Vector2(flip ? 1 : -1, 0);
+    if (a.kind === "atk") {
+      /* 계열별 기본 공격 실루엣 — 근접 참격 / 궁수 활 / 마법 시전 */
+      if (fam === "ranger") {
+        this.spawnBow(x + dir.x * 10, y - 8, flip ? 0 : Math.PI);
+        this.fireRemoteProj(x, y, flip, 0x9adf6a, 1);
+      } else if (fam === "mage") {
+        this.spawnCast(x + dir.x * 12, y - 12);
+        this.fireRemoteProj(x, y, flip, 0x6fc8ff, 1);
+      } else {
+        this.spawnSlash(x, y, dir, false, 1, undefined);
+      }
+      return;
+    }
+    /* 스킬 — 클래스색 버스트 링 + 발사체 (등급이 클수록 크게) */
+    const scale = a.kind === "s5" ? 2.6 : a.kind === "s4" ? 2.0 : a.kind === "s3" ? 1.55 : 1.2;
+    const ring = this.add.circle(x, y, 26 * scale)
+      .setStrokeStyle(3, hex, 0.85)
+      .setDepth(12)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: ring, scale: 1.9, alpha: 0, duration: 460, ease: "Cubic.out", onComplete: () => ring.destroy() });
+    this.spawnBurstAt(x, y, a.kind === "s5" ? 14 : 8, hex);
+    const shots = a.kind === "s5" ? 5 : a.kind === "s4" ? 3 : 2;
+    for (let i = 0; i < shots; i++) {
+      this.time.delayedCall(i * 70, () => {
+        if (!r) return;
+        this.fireRemoteProj(r.sp.x, r.sp.y, flip, hex, scale);
+      });
+    }
+    if (a.kind === "s5") {
+      this.cameras.main.flash(120, 200, 170, 255);
+      this.cameras.main.shake(200, 0.004);
+    }
+  }
+
+  /** 원격 플레이어의 보기용 발사체 — 판정 없이 직진 후 소멸 */
+  private fireRemoteProj(x: number, y: number, flip: boolean, tint: number, scale: number) {
+    const img = this.add.image(x, y - 8, "x2_arrow")
+      .setDepth(11)
+      .setTint(tint)
+      .setScale(0.9 * scale)
+      .setFlipX(!flip);
+    const vx = (flip ? 1 : -1) * (360 + Math.random() * 60);
+    this.tweens.add({
+      targets: img,
+      x: img.x + vx * 0.5,
+      y: img.y + Phaser.Math.Between(-26, 26),
+      alpha: 0,
+      duration: 500,
+      ease: "Linear",
+      onComplete: () => img.destroy(),
+    });
+  }
+
+  /* ================= v4.1.0 — 긴급 귀환 (유저 지시 #3 — 설정창 배치) ================= */
+
+  private escapeCd = 0;
+
+  /** 설정창의 긴급 귀환 — 지금 위치에서 가장 가까운 마을로 즉시 이동 (막힘/굴속 탈출용) */
+  emergencyReturn() {
+    if (!this.player || this.transitioning) return;
+    if (this.escapeCd > 0) {
+      this.showBanner(`긴급 귀환 재사용 대기 ${Math.ceil(this.escapeCd / 1000)}초`);
+      return;
+    }
+    this.escapeCd = 8000;
+    /* 이벤트 구역 도중 이탈 정산 (보상 규칙은 각 finish*가 처리) */
+    if (this.dojangActive) this.finishDojang(true);
+    if (this.gateActive) { this.finishGate("exit"); return; }
+    if (this.closetActive) { this.finishCloset(); return; }
+    const target = this.nearestVillageKey();
+    audio.sfx.portal();
+    this.showBanner(`긴급 귀환 — ${STAGE_SHORT[target] ?? "마을"}`);
+    this.cameras.main.fadeOut(500, 0, 0, 0);
+    this.player.state = "idle";
+    this.time.delayedCall(520, () => this.gotoStage(target));
+  }
+
+  /** 현재 구역 기준 가장 가까운 마을 — 같은 챕터 마을 → 이전 챕터 → 시작 마을 */
+  private nearestVillageKey(): StageKey {
+    const cur = this.stageDef.key;
+    const curDef = STAGES[cur];
+    if (curDef?.isVillage) {
+      /* 이미 마을 — 체인의 이전 마을로 (시작 마을이면 그대로) */
+      const pv = PREV_STAGE[cur];
+      return (pv && STAGES[pv]?.isVillage ? pv : "village") as StageKey;
+    }
+    const fromKey = cur === "dojang" ? this.dojangFrom : cur === "gate" ? this.gateFrom : cur === "closet" ? this.closetFrom : cur;
+    if (STAGES[fromKey]?.isVillage) return fromKey;
+    const spec = chapterSpec(fromKey);
+    if (spec) {
+      const vk = (spec.num <= 1 ? "village" : `${spec.key}v`) as StageKey;
+      if (STAGES[vk]) return vk;
+    }
+    return "village";
   }
 
   /** 서버 브로드캐스트 → 원격 플레이어 스프라이트/이름표 동기화 */
@@ -7408,7 +7723,7 @@ export class WorldScene extends Phaser.Scene {
         if (b.critAdd) lines.push(`크리티컬 +${b.critAdd}%`);
         return { title: s.title, lines };
       })(),
-      /* ----- v4.0.0 — 이세카이 업데이트 상태 ----- */
+      /* ----- v4.0.0 — 바르가 업데이트 상태 ----- */
       isekai: {
         figures: [...this.figures],
         shards: this.shards,
@@ -7424,7 +7739,7 @@ export class WorldScene extends Phaser.Scene {
         gateStars: [...this.gateStars],
         freeGachaIn: Math.max(0, 600000 - (Date.now() - this.freeGachaAt)),
         attend: { last: this.attendLast, count: this.attendCount },
-        daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed] },
+        daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds },
         tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
         extSummary: (() => {
           const e = this.player.extBonus;
@@ -7496,7 +7811,7 @@ export class WorldScene extends Phaser.Scene {
   private save() {
     // v2.3 — 실내(여관/집)에서의 저장도 세이브 스테이지는 진행 구역 유지
     //  (설계 의도대로 실내가 세이브에 기록되지 않게 — 재접속 시 마을에서 계속)
-    // v4.0.0 — 게이트/옷장 던전 진행 중 저장도 입장 전 구역으로 기록 (재접속 시 특별 구역 재부팅 방지)
+    // v4.0.0 — 게이트/균열 던전 진행 중 저장도 입장 전 구역으로 기록 (재접속 시 특별 구역 재부팅 방지)
     let stageOverride: StageKey | undefined;
     if (this.isInterior) stageOverride = "village";
     else if (this.stageDef.key === "gate") stageOverride = STAGES[this.gateFrom] ? this.gateFrom : "village";
@@ -7564,7 +7879,7 @@ export class WorldScene extends Phaser.Scene {
       /* v3.3.0 — 5차 각성 상태 (GM 임시 전직 or 각성 시련 완료) */
       fifth: this.player.fifth,
       fifthStoryDone: this.player.fifthStoryDone,
-      /* ----- v4.0.0 — 이세카이 업데이트 ----- */
+      /* ----- v4.0.0 — 바르가 업데이트 ----- */
       figures: [...this.figures],
       shards: this.shards,
       gachaTickets: this.gachaTickets,
@@ -7575,7 +7890,7 @@ export class WorldScene extends Phaser.Scene {
       constel: [...this.constel],
       coupons: [...this.couponsUsed],
       attend: { last: this.attendLast, count: this.attendCount },
-      daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed] },
+      daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds },
       tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
       achClaimed: [...this.achClaimed],
       gateBest: this.gateBest,

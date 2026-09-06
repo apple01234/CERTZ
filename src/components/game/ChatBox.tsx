@@ -15,12 +15,30 @@ import { netChatReady } from "@/game/net";
  */
 type Msg = { id: string; name: string; text: string; sys?: boolean; party?: boolean; t: number };
 
+const COLLAPSE_KEY = "sertz.chat.collapsed";
+
 export function ChatBox() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
+  /* v4.1.0 — 채팅창 접기 (유저 지시 #11): 메시지 목록을 숨기고 상태를 저장한다 */
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
+    } catch {
+      /* 저장 불가 환경 무시 */
+    }
+  }, [collapsed]);
 
   useEffect(() => {
     // 서버는 접속 시 히스토리(배열), 이후 새 메시지(단건)를 보낸다 — 둘 다 처리
@@ -95,9 +113,10 @@ export function ChatBox() {
 
   return (
     <div ref={rootRef} className="absolute bottom-2 left-2 w-[300px] max-w-[52vw] sm:bottom-3 sm:left-3">
-      {/* 최근 메시지 (아래가 최신 — 최대 7개, 살짝 투명) */}
-      <div className="pointer-events-none mb-1 flex flex-col gap-0.5">
-        {msgs.slice(-7).map((m) => (
+      {/* 최근 메시지 (아래가 최신 — 최대 7개, 살짝 투명) — v4.1.0: 접기 상태면 숨김 */}
+      {!collapsed && (
+        <div className="pointer-events-none mb-1 flex flex-col gap-0.5">
+          {msgs.slice(-7).map((m) => (
           <p
             key={`${m.t}-${m.id}`}
             className={`w-fit max-w-full truncate rounded bg-black/45 px-1.5 py-0.5 text-[10px] leading-snug backdrop-blur-[2px] sm:text-[11px] ${
@@ -106,48 +125,63 @@ export function ChatBox() {
           >
             {m.sys ? m.text : <>{m.party && <span className="mr-1 rounded bg-emerald-400/25 px-1 text-[9px] text-emerald-100">[파티]</span>}<span className="font-black text-amber-200">{m.name}</span>: {m.text}</>}
           </p>
-        ))}
-      </div>
-
-      {open ? (
-        <div className="pointer-events-auto flex items-center gap-1.5">
-          <input
-            ref={inputRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") send();
-              else if (e.key === "Escape") closeChat();
-              e.stopPropagation();
-            }}
-            enterKeyHint="send"
-            placeholder="메시지 입력… (Enter 전송 · ESC 취소)"
-            maxLength={80}
-            aria-label="전체 채팅 입력"
-            className="min-w-0 flex-1 rounded-md border border-white/25 bg-black/75 px-2 py-1.5 text-xs font-bold text-white shadow-lg outline-none backdrop-blur-sm placeholder:text-white/35 focus:border-amber-300/60"
-          />
-          {/* v2.3 전송 버튼 — 모바일 가상 키보드에서 Enter 대신 누를 수 있게 */}
-          <button
-            onClick={send}
-            aria-label="채팅 전송"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-amber-300/50 bg-amber-500/30 text-amber-100 backdrop-blur-sm transition-colors hover:bg-amber-500/50 active:scale-95"
-          >
-            <SendHorizontal size={14} />
-          </button>
+          ))}
         </div>
-      ) : (
-        <button
-          onClick={() => {
-            setText("");
-            setOpen(true);
-          }}
-          aria-label="채팅 열기 (Enter)"
-          className="pointer-events-auto flex items-center gap-1.5 rounded-md border border-white/15 bg-black/55 px-2 py-1 text-[10px] font-black text-white/70 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
-        >
-          <MessageCircle size={12} />
-          채팅 <span className="rounded bg-white/10 px-1 text-[9px] font-black text-white/50">Enter</span>
-        </button>
       )}
+
+      <div className="flex items-end gap-1">
+        {open ? (
+          <div className="pointer-events-auto flex min-w-0 flex-1 items-center gap-1.5">
+            <input
+              ref={inputRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") send();
+                else if (e.key === "Escape") closeChat();
+                e.stopPropagation();
+              }}
+              onKeyUp={(e) => e.stopPropagation()}
+              enterKeyHint="send"
+              placeholder="메시지 입력… (Enter 전송 · ESC 취소)"
+              maxLength={80}
+              aria-label="전체 채팅 입력"
+              className="min-w-0 flex-1 rounded-md border border-white/25 bg-black/75 px-2 py-1.5 text-xs font-bold text-white shadow-lg outline-none backdrop-blur-sm placeholder:text-white/35 focus:border-amber-300/60"
+            />
+            {/* v2.3 전송 버튼 — 모바일 가상 키보드에서 Enter 대신 누를 수 있게 */}
+            <button
+              onClick={send}
+              aria-label="채팅 전송"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-amber-300/50 bg-amber-500/30 text-amber-100 backdrop-blur-sm transition-colors hover:bg-amber-500/50 active:scale-95"
+            >
+              <SendHorizontal size={14} />
+            </button>
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={() => {
+                setText("");
+                setOpen(true);
+              }}
+              aria-label="채팅 열기 (Enter)"
+              className="pointer-events-auto flex items-center gap-1.5 rounded-md border border-white/15 bg-black/55 px-2 py-1 text-[10px] font-black text-white/70 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            >
+              <MessageCircle size={12} />
+              채팅 <span className="rounded bg-white/10 px-1 text-[9px] font-black text-white/50">Enter</span>
+            </button>
+            {/* v4.1.0 — 채팅창 접기/펼치기 (지시 #11) */}
+            <button
+              onClick={() => setCollapsed((c) => !c)}
+              aria-label={collapsed ? "채팅 메시지 펼치기" : "채팅 메시지 접기"}
+              title={collapsed ? "메시지 펼치기" : "메시지 접기"}
+              className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-white/15 bg-black/55 text-[10px] font-black text-white/70 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            >
+              {collapsed ? "▸" : "▾"}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

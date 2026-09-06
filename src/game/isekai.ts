@@ -1,12 +1,12 @@
 /* =====================================================================
- * v4.0.0 "이세카이 업데이트" — ISEKAI GATE(이세카이 게이트) 오마주 시스템
- *  - 어썸피스의 인기 모바일 게임 "이세카이 게이트"(옷장이 이세카이로 통하는 문,
+ * v4.0.0 "바르가 업데이트" — 균열 수비전 + 수집형 성장 시스템
+ *  - 세계수 뿌리에서 열리는 균열(바르가)을 방어하는 웨이브 디펜스,
  *    3인 협동 몬스터 웨이브 디펜스 RPG)에서 착안해 SERTZ에 맞게 재해석한 콘텐츠.
  *  - 이 파일은 데이터 테이블 + 순수 계산 헬퍼만 담당 (Phaser 의존 없음).
  *  실제 상태는 SaveData(config.ts) + Player/WorldScene에 존재한다.
  * ===================================================================== */
 
-/* ================= 1. 피규어 수집 (ISEKAI GATE 피규어 뽑기) ================= */
+/* ================= 1. 피규어 수집 (바르가 피규어 뽑기) ================= */
 
 export type FigureGrade = 0 | 1 | 2 | 3; // 0=노말 1=레어 2=에픽 3=전설
 
@@ -72,7 +72,7 @@ export function figureBonus(owned: string[]): { atk: number; def: number; hp: nu
   return out;
 }
 
-/* ================= 2. 배지 (ISEKAI GATE 배지 세팅 — 3슬롯) ================= */
+/* ================= 2. 배지 (바르가 배지 세팅 — 3슬롯) ================= */
 
 export type BadgeDef = {
   key: string;
@@ -86,8 +86,8 @@ export type BadgeDef = {
 export const BADGES: BadgeDef[] = [
   { key: "bdg_gate1", name: "차원문의 문지기", desc: "게이트 첫 승리 기념", bonus: { hp: 100 }, src: "게이트 ★1 달성" },
   { key: "bdg_gate2", name: "웨이브 사냥꾼", desc: "20웨이브 방어의 증표", bonus: { atk: 8 }, src: "게이트 ★2 달성" },
-  { key: "bdg_gate3", name: "이세카이 수호자", desc: "30웨이브 방어의 전설", bonus: { atk: 12, hp: 150 }, src: "게이트 ★3 달성" },
-  { key: "bdg_closet", name: "옷장 탐험가", desc: "옷장 던전 파밍광", bonus: { goldPct: 5 }, src: "옷장 던전 누적 10만G" },
+  { key: "bdg_gate3", name: "바르가 수호자", desc: "30웨이브 방어의 전설", bonus: { atk: 12, hp: 150 }, src: "게이트 ★3 달성" },
+  { key: "bdg_closet", name: "균열 탐험가", desc: "균열 던전 파밍광", bonus: { goldPct: 5 }, src: "균열 던전 누적 10만G" },
   { key: "bdg_hunter", name: "토벌자 인장", desc: "1,000마리 사냛 증명", bonus: { atk: 5, def: 3 }, src: "업적 — 토벌 1000" },
   { key: "bdg_star", name: "별의 인장", desc: "성좌 6개 개방 기념", bonus: { crit: 3 }, src: "업적 — 성좌 수집가" },
   { key: "bdg_coins", name: "황금 돼지 배지", desc: "부자의 상징", bonus: { goldPct: 8 }, src: "조각 상점 교환" },
@@ -113,7 +113,7 @@ export function badgeBonus(slots: (string | null)[]): { atk: number; def: number
   return out;
 }
 
-/* ================= 3. 룬 합성 (ISEKAI GATE 룬 합성 — 4슬롯) ================= */
+/* ================= 3. 룬 합성 (바르가 룬 합성 — 4슬롯) ================= */
 
 export type RuneKind = "rune_fire" | "rune_ice" | "rune_light" | "rune_dark";
 
@@ -167,7 +167,7 @@ export function runeBonus(owned: RuneOwned, slots: (string | null)[]): { atk: nu
   return out;
 }
 
-/* ================= 4. 성좌 (ISEKAI GATE 성좌 — 12성좌 × 3노드) ================= */
+/* ================= 4. 성좌 (바르가 성좌 — 12성좌 × 3노드) ================= */
 
 export type ConstellationDef = { key: string; name: string; nodes: { atk?: number; def?: number; hp?: number; crit?: number; atkPct?: number }[] };
 
@@ -207,7 +207,7 @@ export function constellationBonus(unlocked: string[]): { atk: number; def: numb
   return out;
 }
 
-/* ================= 5. 스킨 능력치 (ISEKAI GATE 스킨 = 추가 능력치) ================= */
+/* ================= 5. 스킨 능력치 (바르가 스킨 = 추가 능력치) ================= */
 
 /** 치장 아이템 → 능력치 (기존 cos_* 포함, 보유 착용 시 적용) */
 export const COSMETIC_BONUS: Record<string, { atk?: number; def?: number; hp?: number; crit?: number; goldPct?: number }> = {
@@ -301,7 +301,7 @@ export const GATE_CARD_POOL: GateCard[] = [
   { id: "c_cri2", tier: 2, name: "약점 간파", desc: "크리티컬 +10%p", stat: { crit: 10 } },
   { id: "c_ls2", tier: 2, name: "흡혈 송곳니", desc: "처치 시 HP 흡수 5%", stat: { lifesteal: 5 } },
   /* 3성 */
-  { id: "c_atk3", tier: 3, name: "이세카이의 축복", desc: "공격력 +25%", stat: { atkPct: 25 } },
+  { id: "c_atk3", tier: 3, name: "바르가의 축복", desc: "공격력 +25%", stat: { atkPct: 25 } },
   { id: "c_skl3", tier: 3, name: "궁극의 마수렬", desc: "스킬 피해 +35%", stat: { skillPct: 35 } },
   { id: "c_hp3", tier: 3, name: "불굴의 각오", desc: "최대 HP +40%", stat: { hpPct: 40 } },
   { id: "c_cri3", tier: 3, name: "신의 시선", desc: "크리티컬 +18%p", stat: { crit: 18 } },
@@ -356,7 +356,7 @@ export const GATE_STAR_WAVES = [10, 20, 30]; // ★1/★2/★3
 /** 최초 달성 보상 (에메랄드) */
 export const GATE_STAR_REWARD = [3, 6, 10];
 
-/* ================= 10. 쿠폰 (ISEKAI GATE 쿠폰 코드 오마주) ================= */
+/* ================= 10. 쿠폰 (게임 고유 쿠폰 코드) ================= */
 
 export type CouponDef = {
   code: string;
@@ -403,8 +403,8 @@ export type DailyQuestDef = {
 
 export const DAILY_QUESTS: DailyQuestDef[] = [
   { id: "hunt", name: "오늘의 토벌", desc: "몬스터 50마리 처치", goal: 50, reward: { label: "골드 15,000", gold: 15000 } },
-  { id: "gate", name: "게이트 방어", desc: "이세카이 게이트 1회 입장", goal: 1, reward: { label: "뽑기권 1 + 골드 5,000", tickets: 1, gold: 5000 } },
-  { id: "closet", name: "옷장 던전", desc: "옷장 던전 1회 입장", goal: 1, reward: { label: "뽑기권 1 + 에메랄드 2", tickets: 1, emerald: 2 } },
+  { id: "gate", name: "게이트 방어", desc: "바르가 수비전 1회 입장", goal: 1, reward: { label: "뽑기권 1 + 골드 5,000", tickets: 1, gold: 5000 } },
+  { id: "closet", name: "균열 던전", desc: "균열 던전 1회 입장", goal: 1, reward: { label: "뽑기권 1 + 에메랄드 2", tickets: 1, emerald: 2 } },
 ];
 
 /* ================= 13. 티켓 (행동력 대체 — 일일 입장권) ================= */
@@ -442,7 +442,7 @@ export const ACHIEVEMENTS: AchDef[] = [
   { id: "ach_lv", name: "성장하는 자", desc: "레벨 100 달성", shards: 20, prog: (s) => s.lv, goal: 100 },
   { id: "ach_g1", name: "게이트 수호", desc: "게이트 10웨이브 방어", shards: 15, prog: (s) => s.gateBest, goal: 10 },
   { id: "ach_g2", name: "게이트의 전설", desc: "게이트 30웨이브 방어", shards: 60, prog: (s) => s.gateBest, goal: 30 },
-  { id: "ach_c1", name: "옷장 파밍꾼", desc: "옷장 던전 누적 10만G", shards: 15, prog: (s) => s.closetBest, goal: 100000 },
+  { id: "ach_c1", name: "균열 파밍꾼", desc: "균열 던전 누적 10만G", shards: 15, prog: (s) => s.closetBest, goal: 100000 },
   { id: "ach_u1", name: "강화 장인", desc: "장비 강화 합계 +20성", shards: 25, prog: (s) => s.upSum, goal: 20 },
   { id: "ach_col", name: "도감 수집가", desc: "몬스터 도감 20종 등록", shards: 20, prog: (s) => s.collection, goal: 20 },
   { id: "ach_fig", name: "피규어 대가", desc: "피규어 8종 수집", shards: 30, prog: (s) => s.figures, goal: 8 },
@@ -487,7 +487,7 @@ export type ShardShopItem = { id: string; name: string; desc: string; cost: numb
 export const SHARD_SHOP: ShardShopItem[] = [
   { id: "sh_ticket", name: "뽑기권", desc: "피규어 가챠 1회", cost: 30, grant: "ticket" },
   { id: "sh_badge", name: "무작위 배지", desc: "미보유 배지 1개 랜덤", cost: 60, grant: "badge" },
-  { id: "sh_skin", name: "이세카이 스킨", desc: "cos_isekai 치장 (공+10 HP+120)", cost: 90, grant: "cos_isekai" },
+  { id: "sh_skin", name: "차원 여행자 스킨", desc: "cos_isekai 치장 (공+10 HP+120)", cost: 90, grant: "cos_isekai" },
   { id: "sh_skin2", name: "픽셀 히어로 스킨", desc: "cos_pixel 치장 (공+6 크리+2)", cost: 90, grant: "cos_pixel" },
   { id: "sh_rune", name: "무작위 룬(T1)", desc: "4속성 중 랜덤 1성 룬", cost: 15, grant: "rune" },
   { id: "sh_tier", name: "등급업 큐브", desc: "장착 장비 티어 승급", cost: 120, grant: "tier_cube" },

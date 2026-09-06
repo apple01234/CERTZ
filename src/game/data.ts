@@ -111,7 +111,7 @@ export type ItemKey =
   | "buff_king"
   /* v3.0.15 (#13) — eert 큐브 (메이플 큐브 시스템 — 잠재옵션 리롤) */
   | "eert_cube"
-  /* v4.0.0 — 이세카이 업데이트 */
+  /* v4.0.0 — 바르가 업데이트 */
   | "exp_book"
   | "tier_cube"
   /* v3.0.15 (#11) — 챕터 테마 장비 세트 9종 (무기/방어구/반지 × 챕터) */
@@ -309,7 +309,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
    *  BM(에메랄드)로만 구매 가능 + 골드 판매가 5000G (아주 비싼 가격).
    *  장비 행의 [eert] 버튼으로 사용하며 1회 사용마다 1개 소모. */
   eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 0, bmPrice: 8, bmOnly: true, sellPrice: 5000, tier: "epic" },
-  /* v4.0.0 — 이세카이 업데이트 아이템 */
+  /* v4.0.0 — 바르가 업데이트 아이템 */
   exp_book: { key: "exp_book", kind: "consumable", name: "경험치 책", icon: "item_scroll_star", price: 0, bmPrice: 3, bmOnly: true, sellPrice: 800, tier: "rare" },
   tier_cube: { key: "tier_cube", kind: "consumable", name: "등급업 큐브", icon: "item_eert_cube", price: 0, bmPrice: 15, bmOnly: true, sellPrice: 12000, tier: "epic" },
   /* ---- v3.0.15 (#11) — 챕터 테마 세트 장비 (상점에서 챕터 해금 시 노출) ---- */
@@ -412,8 +412,8 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_abyss: { key: "cos_abyss", name: "심연 오라", icon: "cos_abyss", desc: "보라빛 후광", price: 260, tint: 0xa875ff },
   cos_wings: { key: "cos_wings", name: "요정 날개", icon: "cos_wings", desc: "반짝임 입자 트레일", price: 340, tint: 0xbaf3ff },
   cos_aurora: { key: "cos_aurora", name: "오로라 후광", icon: "cos_aurora", desc: "무지빛 오로라 후광", price: 0, tint: 0x9df0ff },
-  /* v4.0.0 — 이세카이 스킨 (스킨 = 추가 능력치, ISEKAI GATE 컨셉) */
-  cos_isekai: { key: "cos_isekai", name: "차원문 여행자", icon: "cos_aurora", desc: "이세카이 스킨 — 공격 +10 · HP +120", price: 0, tint: 0xc08aff },
+  /* v4.0.0 — 차원 여행자 스킨 (스킨 = 추가 능력치) */
+  cos_isekai: { key: "cos_isekai", name: "차원문 여행자", icon: "cos_aurora", desc: "차원 여행자 스킨 — 공격 +10 · HP +120", price: 0, tint: 0xc08aff },
   cos_pixel: { key: "cos_pixel", name: "픽셀 히어로", icon: "cos_gold", desc: "레트로 스킨 — 공격 +6 · 크리 +2", price: 0, tint: 0xffe86a },
 };
 

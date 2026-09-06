@@ -170,6 +170,36 @@ export function netSendChat(text: string) {
   if (socket?.connected) socket.emit("chat", text);
 }
 
+/* ================= v4.1.0 — 공격/스킬 동작 동기화 (파티원 공격 보임) =================
+ *  가벼운 코스메틱 이벤트만 전송 (좌표/종류/방향) — 데미지 판정은 각자 로컬 */
+
+export type NetAction = {
+  id?: string; // 서버가 채움 (보낸 사람 sock id)
+  kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5";
+  x: number;
+  y: number;
+  flip: boolean;
+  cls: string | null;
+};
+
+export function netAction(a: {
+  kind: NetAction["kind"];
+  x: number;
+  y: number;
+  flip: boolean;
+  cls: string | null;
+}) {
+  if (socket?.connected) socket.emit("act", a);
+}
+
+export function netOnAction(cb: (a: NetAction) => void): () => void {
+  const s = netConnect();
+  if (!s) return () => {};
+  const wrapped = (a: NetAction) => cb(a);
+  s.on("act", wrapped);
+  return () => s.off("act", wrapped);
+}
+
 /* ================= 파티 (v2.0 — 지시 #5 파티 & 보스 토벌) ================= */
 
 export type NetParty = {

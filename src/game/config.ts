@@ -142,7 +142,7 @@ export type SaveData = {
    *  fifth=true면 레벨 무관하게 궁극기 해금 + 전 스킬 강화 적용 */
   fifth?: boolean;
   fifthStoryDone?: boolean;
-  /* ----- v4.0.0 이세카이 업데이트 (ISEKAI GATE 오마주) ----- */
+  /* ----- v4.0.0 바르가 업데이트 (균열 수비전·수집형 성장) ----- */
   /** 피규어 도감 (보유 키 목록 — 보유만으로 보너스) */
   figures?: string[];
   /** 피규어 조각 (중복 가챠/업적 보상 — 성좌·배지·스킨 교환 재화) */
@@ -161,8 +161,8 @@ export type SaveData = {
   coupons?: string[];
   /** 출석부 { 마지막 출석일, 사이클 카운트 } */
   attend?: { last: string; count: number };
-  /** 일일 퀘스트 { 날짜, 토벌, 게이트, 던전, 수령 완료 } */
-  daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[] };
+  /** 일일 퀘스트 { 날짜, 토벌, 게이트, 던전, 수령 완료, 광고 시청 } */
+  daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number };
   /** 일일 입장 티켓 { 날짜, 게이트 잔여, 던전 잔여 } */
   tickets?: { date: string; gate: number; closet: number };
   /** 수령 완료 업적 */
@@ -305,6 +305,7 @@ export function loadSave(): SaveData | null {
     if (!d.attend || typeof d.attend !== "object" || typeof d.attend.count !== "number") d.attend = { last: "", count: 0 };
     if (!d.daily || typeof d.daily !== "object") d.daily = { date: "", hunts: 0, gate: 0, closet: 0, claimed: [] };
     if (!Array.isArray(d.daily.claimed)) d.daily.claimed = [];
+    if (typeof d.daily.ads !== "number") d.daily.ads = 0;
     if (!d.tickets || typeof d.tickets !== "object") d.tickets = { date: "", gate: 0, closet: 0 };
     if (!Array.isArray(d.achClaimed)) d.achClaimed = [];
     if (typeof d.gateBest !== "number") d.gateBest = 0;

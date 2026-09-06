@@ -5,6 +5,7 @@ import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState, type RewardPopupState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
 import { RotateCw, Play, Save, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles, Smartphone } from "lucide-react";
+import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0
 
 /** 세이브 이어하기 라벨용 스테이지 표기명 (v2.0 — 구역 체인 대응) */
 const STAGE_LABEL: Record<string, string> = {
@@ -40,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.0.0 · 이세카이 업데이트 — 게이트 디펜스·피규어 가챠·배지·룬 합성·성좌·출석부·일일 퀘스트·쿠폰·오프라인 보상 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.1.0 · 바르가 업데이트 — 균열 수비전·피규어 가챠·배지·룬 합성·성좌·출석부·일일 퀘스트·쿠폰·광고 보상·긴급 귀환 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
@@ -396,6 +397,7 @@ export function RewardPopup() {
 export function NamePanel() {
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState("");
+  const gate = useKeyGate(); // v4.1.0 — 이름 입력 중 게임 단축키 차단
 
   useEffect(() => {
     const ask = () => {
@@ -428,6 +430,8 @@ export function NamePanel() {
           룬 정령 이그니: &quot;그 이름, 세계수에 새겨질 거야. 모험가의 이름을 지어 줘.&quot;
         </p>
         <input
+          ref={gate}
+          {...swallowKeys}
           autoFocus
           value={val}
           maxLength={8}
@@ -454,8 +458,8 @@ export function NamePanel() {
   );
 }
 
-/* ================= v4.0.0 — 이세카이 게이트 오버레이 =================
- *  ISEKAI GATE 오마주: 웨이브 클리어마다 3성 카드 선택 + 실버 상점 + 상단 게이트 HUD */
+/* ================= v4.0.0 — 바르가 수비전 오버레이 =================
+ *  웨이브 클리어마다 3성 카드 선택 + 실버 상점 + 상단 수비전 HUD */
 
 type GateCardState = {
   open: boolean;
@@ -554,7 +558,7 @@ export function GateHud() {
     <div className="pointer-events-none absolute left-1/2 top-1 z-40 w-[min(92vw,340px)] -translate-x-1/2 sm:top-2">
       <div className="rounded-lg border border-purple-300/40 bg-black/60 px-2.5 py-1.5 backdrop-blur-sm">
         <div className="flex items-center justify-between text-[10px] font-black">
-          <span className="text-purple-200">🚪 옷장 게이트 {st.bossWave ? "· 보스 웨이브!" : ""}</span>
+          <span className="text-purple-200">🚪 균열 문 {st.bossWave ? "· 보스 웨이브!" : ""}</span>
           <span className="text-white/70">웨이브 {st.wave} · 실버 {st.silver}</span>
         </div>
         <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-white/10">

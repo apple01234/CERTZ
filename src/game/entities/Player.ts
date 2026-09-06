@@ -16,6 +16,7 @@ import {
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
 import * as audio from "../audio";
+import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
 import type { Enemy } from "./Enemy";
 import type { Boss } from "./Boss";
 import { ZERO_EXT, expBookExp, type ExtBonus, type GateCard } from "../isekai";
@@ -331,6 +332,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.swingDone = false;
     this.slashAlt = !this.slashAlt;
     this.hitSet.clear();
+    this.netEmitAction("atk"); // v4.1.0 — 기본 공격 동기화
 
     // 살짝 돌진 — 정지 상태에서 공격할 때만 (이동 중엔 입력 방향 유지 — 스터터 제거 v2.2)
     const dir = this.aimDir();
@@ -377,6 +379,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       blademaster: 0xffaaff,  // 블레이드마스터 — 극검 살홍
     };
     return this.cls ? map[this.cls] : undefined;
+  }
+
+  /** v4.1.0 — 내 공격/스킬을 같은 구역 플레이어에게 브로드캐스트 (코스메틱 전용) */
+  protected netEmitAction(kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5") {
+    try {
+      netAction({ kind, x: Math.round(this.x), y: Math.round(this.y), flip: this.flipX, cls: this.cls });
+    } catch {
+      /* 오프라인 — 무시 */
+    }
   }
 
   /** 참격 (미전직 + 전사 공용 뼈대) — 전사는 2연타·확대 판정·강화 배율
@@ -761,6 +772,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.state = "attack";
     this.hitSet.clear();
     this.setVelocity(0, 0);
+    this.netEmitAction("s1"); // v4.1.0
     const kind = resolveSkill1Of(this.cls) ?? "spin";
     /* v3.0.11 — 3차/4차 주력기 진화감: 상위직은 클래스색 오라 링이 터지며 시전
      *  (2차기 승계라 이름만 바뀌어 보이던 문제를 시각적으로도 "강화판"임을 드러냄) */
@@ -1301,6 +1313,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.dashDir.copy(dir);
     this.hitSet.clear();
     this.setFlipX(dir.x > 0); // v3.0.10 — 시트 왼쪽 기준
+    this.netEmitAction("s2"); // v4.1.0
 
     // v3.0.6 — 기동기(C) 12종 클래스 고유 파라미터 (겹침 0 — 지시 #4)
     //  3차/4차는 계열 체인에서 2차기 승계(강화판)
@@ -1605,6 +1618,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.state = "attack";
     this.hitSet.clear();
     this.setVelocity(0, 0);
+    this.netEmitAction("s3"); // v4.1.0
     const hex = this.clsHex();
     /* v3.0.24 — 3차기 16종 직업별 사운드 (전원 공용 없음 — 클래스 정체성 배치) */
     const SND3: Record<Skill3Kind, [string, number]> = {
@@ -2043,6 +2057,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.state = "attack";
     this.hitSet.clear();
     this.setVelocity(0, 0);
+    this.netEmitAction("s4"); // v4.1.0
     const hex = this.clsHex();
     const now = this.scene.time.now;
     /* v3.0.24 — 4차기 8종 직업별 사운드 (필살기 임팩트 배치) */
@@ -2336,6 +2351,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.state = "attack";
     this.hitSet.clear();
     this.setVelocity(0, 0);
+    this.netEmitAction("s5"); // v4.1.0
     const hex = this.clsHex();
     const key5 = resolveSkill5Of(this.cls);
     const info = SKILL5_INFO[key5];
