@@ -665,6 +665,30 @@ export const SKILL4_DESC: Record<Skill4Kind, string> = {
   bladedance: "적 사이를 점멸하는 검무",
 };
 
+/* v3.2.0 — 5차 궁극기 (지시: "5차스킬(200렙), 쿨타임 1분, ㅈㄴ 강력하고 화려한 궁극기")
+ *  · 해금: 레벨 200 (최종 레벨 캡) — 전직 티어 무관
+ *  · 쿨타임: 60초 고정 (cdMult 미적용 — "쿨타임 1분" 그대로)
+ *  · MP 100 소모, 계열(warrior/ranger/mage/thief)별 화려한 전용 연출 + 대미지 계수는
+ *    4차 궁극기의 2배 이상 (롤 대미지 계수 합산 ~20배급) */
+export const SKILL5_INFO: Record<FamilyKey, { name: string; desc: string }> = {
+  warrior: {
+    name: "천멸 — 대붕괴 검격",
+    desc: "하늘이 갈라지는 6연속 초거대 참격 후 대붕괴 종결 일격 — 광역 출혈 + 공격력 대버프",
+  },
+  ranger: {
+    name: "천강 — 무한 화살비",
+    desc: "하늘에서 유도 화살 26연발 + 관통 화우 12발 — 화염 필드로 전장을 태운다",
+  },
+  mage: {
+    name: "종막 — 아르카나 대폭발",
+    desc: "운석 8발 낙하 + 만물의 원소 종막 폭발 — 피해량이 가장 높은 광역 마법",
+  },
+  thief: {
+    name: "심연 — 그림자 참수극",
+    desc: "적 사이를 점멸하며 전원을 참수한 뒤 심연 뉴클리어 폭발 — 출혈 중첩",
+  },
+};
+
 /** HUD 표기용 — "전사 · 검사" / 2차 이상 "버서커" */
 export function classLabel(key?: string | null): string {
   const chain = chainOf(key);

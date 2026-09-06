@@ -18,22 +18,20 @@ const nextConfig: NextConfig = isApkExport
       output: "standalone",
       typescript: { ignoreBuildErrors: true },
       reactStrictMode: false,
-      // APK 직결 다운로드는 패키지 용량 한도로 FC 미포함 → 안내 페이지로 연결
-      // (※ 향후 APK를 public에 다시 넣어 배포할 때 이 redirects는 제거할 것)
+      // v3.2.0 — APK 링크는 전부 gofile 미러로 (유저 지시: 사이트 직결 제거, gofile만 사용)
       async redirects() {
         return [
           {
             source: "/SERTZ-v3.0.26.apk",
-            destination: "/apk-guide.html",
+            destination: "https://gofile.io/d/Tcsl6sY2",
             permanent: false,
           },
           {
             source: "/SERTZ-v3.0.27.apk",
-            destination: "/apk-guide.html",
+            destination: "https://gofile.io/d/Tcsl6sY2",
             permanent: false,
           },
           {
-            // v3.1.0b — APK 파일이 배포 패키지에 없을 때 404 대신 gofile 미러로 연결 (안전망)
             source: "/SERTZ-v3.1.0.apk",
             destination: "https://gofile.io/d/Tcsl6sY2",
             permanent: false,

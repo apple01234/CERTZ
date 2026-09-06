@@ -11,6 +11,7 @@ import {
   classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf,
   resolveSkill1Of, resolveSkill2Of,
   type ClassKey, type ClassBonus, SKILL_LABELS, SKILL3_KIND, SKILL4_KIND,
+  SKILL5_INFO,
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
@@ -108,6 +109,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* v3.0.3 — 3차기(V) / 4차기(B): 상위직 고유 메커니즘 스킬 */
   skill3Cd = 0;
   skill4Cd = 0;
+  /* v3.2.0 — 5차 궁극기 (Lv.200 · 쿨타임 60초 고정 — cdMult 미적용) */
+  skill5Cd = 0;
+  readonly skill5Max = 60000;
   readonly skill3Max = 9000;
   readonly skill4Max = 14000;
   get skill3MaxEff(): number {
@@ -123,6 +127,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** 4차기 해금 — 4차 각성부터 (스킬 4개) */
   get skill4Unlocked(): boolean {
     return this.tier >= 4 && !!SKILL4_KIND[this.cls ?? ""];
+  }
+  /** v3.2.0 — 5차 궁극기 해금 — Lv.200 도달 (전직 티어 무관) */
+  get skill5Unlocked(): boolean {
+    return this.lv >= 200;
   }
   /* v3.0.3 — 상태이상 (몬스터가 부여: 출혈/독/감속) */
   dots: {
@@ -190,6 +198,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.skill2Cd = Math.max(0, this.skill2Cd - ms);
     this.skill3Cd = Math.max(0, this.skill3Cd - ms);
     this.skill4Cd = Math.max(0, this.skill4Cd - ms);
+    this.skill5Cd = Math.max(0, this.skill5Cd - ms); // v3.2.0 — 5차 궁극기 쿨다운
     this.iframes = Math.max(0, this.iframes - ms);
     this.potCd = Math.max(0, this.potCd - ms);
     this.tickBuffs(ms);
@@ -707,6 +716,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (!this.skill4Unlocked) return "";
     const t = this.tierLabels();
     return t?.[4] || "";
+  }
+
+  /** v3.2.0 — 5차 궁극기 이름 — 계열별 (Lv.200 미해금 시 빈 문자열) */
+  get skill5Name(): string {
+    if (!this.skill5Unlocked) return "";
+    const fam = familyOf(this.cls);
+    return fam ? SKILL5_INFO[fam].name : SKILL5_INFO.warrior.name;
   }
 
   /** 주력기(Z) — v3.0.6: 클래스 고유 메커니즘 12종 (겹침 0 — 지시 #4)
@@ -2280,6 +2296,206 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.emitHud();
   }
 
+  /* ---------------- v3.2.0 — 5차 궁극기 (Lv.200 · 쿨타임 60초 고정 · MP 100) ----------------
+   *  유저 지시: "5차스킬(200렙), (쿨타임 1분) ㅈㄴ 강력하고 화려한 궁극기"
+   *  · 계열(warrior/ranger/mage/thief)별 전용 연출 — 4차 궁극기의 2배 이상 피해
+   *  · 시퀀스 전체에 화면 플래시/쉐이크/기둥/폭발/필드를 겹쳐 "궁극기"급 임팩트 */
+  useSkill5() {
+    if (this.state !== "idle" || !this.skill5Unlocked || this.skill5Cd > 0 || this.mp < 100) return;
+    this.mp -= 100;
+    this.skill5Cd = this.skill5Max; // 60초 고정 (cdMult 미적용)
+    this.state = "attack";
+    this.hitSet.clear();
+    this.setVelocity(0, 0);
+    const hex = this.clsHex();
+    const fam = familyOf(this.cls) ?? "warrior";
+    const info = SKILL5_INFO[fam];
+    const now = this.scene.time.now;
+
+    /* 공통 인트로 — 시간 정지 + 차원 균열 + 궁극기 발동 안내 */
+    this.scene.sfxSkill("timestop", 1.06);
+    this.scene.cameras.main.flash(140, 255, 255, 255);
+    this.scene.spawnPickupText(this.x, this.y - 58, `★ ${info.name} ★`, "#ffe66a");
+    const ring = this.scene.add.circle(this.x, this.y, 34)
+      .setStrokeStyle(3, hex, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
+    this.scene.tweens.add({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
+    this.scene.spawnBurstAt(this.x, this.y, 34, hex);
+
+    switch (fam) {
+      /* 전사 계열 — 천멸: 대붕괴 검격. 하늘에서 6연속 초거대 참격 + 종결 일격 */
+      case "warrior": {
+        for (let i = 0; i < 6; i++) {
+          this.scene.time.delayedCall(260 + i * 230, () => {
+            if (this.state === "dead") return;
+            const dir = this.aimDirFree().normalize();
+            const ox = this.x + dir.x * (i % 2 === 0 ? 46 : -46);
+            const oy = this.y + dir.y * (i % 2 === 0 ? 30 : -30);
+            this.scene.spawnSlash(ox, oy, dir, i % 2 === 0, 3.1 + i * 0.22, hex);
+            this.scene.spawnSpinSlash(ox, oy, 1);
+            this.scene.cameras.main.shake(110, 0.008 + i * 0.001);
+            this.scene.sfxSkill("bigsword", 0.9 + i * 0.05);
+            for (const e of this.getAllTargetsIn(400)) {
+              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const { dmg, crit } = this.rollDamage(2.4, true);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 420, crit);
+            }
+          });
+        }
+        /* 종결 일격 — 대붕괴 */
+        this.scene.time.delayedCall(260 + 6 * 230 + 120, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnCrack(this.x, this.y);
+          this.scene.spawnPillar(this.x, this.y, hex, 260);
+          this.scene.spawnBurstAt(this.x, this.y, 60, hex);
+          this.scene.cameras.main.shake(420, 0.02);
+          this.scene.cameras.main.flash(160, 255, 120, 60);
+          this.scene.sfxSkill("superhit", 0.86);
+          for (const e of this.getAllTargetsIn(560)) {
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = this.rollDamage(6.5, true);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 620, crit);
+          }
+        });
+        this.selfAtkBuff = { mult: 1.55, until: now + 12000 };
+        break;
+      }
+
+      /* 궁수 계열 — 천강: 무한 화살비. 유도 26연발 + 관통 12발 + 화염 필드 */
+      case "ranger": {
+        for (let i = 0; i < 26; i++) {
+          this.scene.time.delayedCall(240 + i * 85, () => {
+            if (this.state === "dead") return;
+            const t = this.nearestTargets(1, 760)[0];
+            if (!t) return;
+            const ang = Math.atan2(t.y - this.y, t.x - this.x) + (Math.random() - 0.5) * 0.7;
+            const { dmg, crit } = this.rollDamage(1.75, true);
+            if (crit) this.scene.sfxCrit();
+            this.scene.firePlayerProj({
+              x: this.x, y: this.y - 8, angle: ang, speed: 900, pierce: 3,
+              dmg, crit, tint: hex, knock: 260, scale: 1.8,
+              tex: "x2_arrow", blend: "add", rot: true, homing: true,
+              trail: hex,
+            });
+            if (i % 6 === 0) this.scene.sfxSkill("arrowpierce", 1.05);
+          });
+        }
+        /* 관통 화우 12발 */
+        this.scene.time.delayedCall(240 + 26 * 85 + 100, () => {
+          if (this.state === "dead") return;
+          const base = Math.atan2(this.aimDirFree().y, this.aimDirFree().x);
+          for (let i = 0; i < 12; i++) {
+            const { dmg, crit } = this.rollDamage(2.2, true);
+            this.scene.firePlayerProj({
+              x: this.x, y: this.y - 8, angle: base + (i - 5.5) * 0.24, speed: 1050, pierce: 99,
+              dmg, crit, tint: 0xffd76a, knock: 420, scale: 2.2,
+              tex: "x2_arrow", blend: "add", rot: true,
+            });
+          }
+          this.scene.spawnField({
+            x: this.x, y: this.y, radius: 210, dur: 8000,
+            dps: Math.max(14, Math.round(this.atkTotal * 1.3)),
+            kind: "fire", owner: "player",
+          });
+          this.scene.cameras.main.flash(130, 255, 220, 140);
+          this.scene.cameras.main.shake(240, 0.012);
+          this.scene.sfxSkill("arrowpierce", 0.82);
+          this.scene.sfxSkill("superhit", 0.94);
+        });
+        break;
+      }
+
+      /* 마법 계열 — 종막: 아르카나 대폭발. 운석 8발 + 종막 폭발 */
+      case "mage": {
+        for (let i = 0; i < 8; i++) {
+          this.scene.time.delayedCall(280 + i * 240, () => {
+            if (this.state === "dead") return;
+            const t = this.nearestTargets(3, 620)[i % 3];
+            const px = t ? t.x + (Math.random() - 0.5) * 60 : this.x + (Math.random() - 0.5) * 480;
+            const py = t ? t.y + (Math.random() - 0.5) * 60 : this.y + (Math.random() - 0.5) * 480;
+            this.scene.spawnPillar(px, py, hex, 240);
+            this.scene.spawnBurstAt(px, py, 30, hex);
+            this.scene.cameras.main.shake(130, 0.01);
+            this.scene.sfxSkill("thunder", 0.9 + (i % 3) * 0.08);
+            for (const e of this.getAllTargetsIn(300)) {
+              if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 190) continue;
+              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const { dmg, crit } = this.rollDamage(2.9, true);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 460, crit);
+            }
+          });
+        }
+        /* 종막 폭발 — 화면 전체급 */
+        this.scene.time.delayedCall(280 + 8 * 240 + 140, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnPillar(this.x, this.y, 0xffffff, 300);
+          this.scene.spawnBurstAt(this.x, this.y, 80, hex);
+          this.scene.spawnField({
+            x: this.x, y: this.y, radius: 240, dur: 6000,
+            dps: Math.max(18, Math.round(this.atkTotal * 1.6)),
+            kind: "light", owner: "player",
+          });
+          this.scene.cameras.main.flash(220, 255, 255, 255);
+          this.scene.cameras.main.shake(500, 0.022);
+          this.scene.sfxSkill("manaburst", 0.8);
+          this.scene.sfxSkill("superhit", 0.82);
+          for (const e of this.getAllTargetsIn(600)) {
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = this.rollDamage(7.5, true);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 640, crit);
+          }
+        });
+        break;
+      }
+
+      /* 도적 계열 — 심연: 그림자 참수극. 적 사이 점멸 참수 + 심연 폭발 */
+      default: {
+        const marks = this.nearestTargets(8, 720);
+        marks.forEach((t, i) => {
+          this.scene.time.delayedCall(260 + i * 180, () => {
+            if (this.state === "dead" || !t.active) return;
+            /* 점멸 참수 — 적 옆으로 순이동 */
+            const ang = Math.random() * Math.PI * 2;
+            this.setPosition(t.x - Math.cos(ang) * 26, t.y - Math.sin(ang) * 26);
+            this.scene.spawnSlash(t.x, t.y, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 2.6, 0x1a1030);
+            this.scene.spawnBurstAt(t.x, t.y, 16, 0x8a4aff);
+            this.scene.sfxSkill("iainuki", 0.92 + (i % 4) * 0.05);
+            const { dmg, crit } = this.rollDamage(3.3, true);
+            if (crit) this.scene.sfxCrit();
+            t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 300, crit);
+          });
+        });
+        /* 심연 종결 폭발 */
+        this.scene.time.delayedCall(260 + marks.length * 180 + 140, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnPillar(this.x, this.y, 0x8a4aff, 270);
+          this.scene.spawnBurstAt(this.x, this.y, 70, 0x8a4aff);
+          this.scene.spawnCrack(this.x, this.y);
+          this.scene.cameras.main.flash(180, 90, 40, 160);
+          this.scene.cameras.main.shake(480, 0.02);
+          this.scene.sfxSkill("dark", 0.72);
+          this.scene.sfxSkill("superhit", 0.84);
+          for (const e of this.getAllTargetsIn(540)) {
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = this.rollDamage(6.8, true);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 600, crit);
+          }
+        });
+        break;
+      }
+    }
+
+    /* 공통 마무리 — 시전 후 경직 해제 */
+    this.scene.time.delayedCall(300, () => {
+      if (this.state === "attack") this.state = "idle";
+    });
+    this.scene.emitHud();
+  }
+
   /* ---------------- v3.0.3 — GM 도구 (임시 운영자 NPC용) ---------------- */
 
   /** GM 자유전직 — 검증 없이 어떤 클래스로든 즉시 전직 (HP/MP 가산 재계산) */
@@ -2297,6 +2513,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.skill2Cd = 0;
     this.skill3Cd = 0;
     this.skill4Cd = 0;
+    this.skill5Cd = 0; // v3.2.0 — 궁극기 쿨 리셋
     this.recalcSpeed();
     this.scene.emitHud();
     return true;

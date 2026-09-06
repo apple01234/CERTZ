@@ -13,14 +13,10 @@ SERTZ v3.1.0 APK 다운로드 안내
 - HUD 브로드캐스트 스로틀 등 성능 최적화
 - 이전 버전(v3.0.29) 포함: 멀티플레이 서버 복구(채팅/파티/친구 정상)
 
-■ 다운로드 (gofile 미러 — 권장, 항상 접속 가능)
+■ 다운로드 (gofile — 단일 공식 경로)
   https://gofile.io/d/Tcsl6sY2
   → 페이지에서 "Download" 버튼 클릭 (md5: ed1c4e9ae44599148deb4990709fbcb6)
-
-■ 다운로드 (게임 서버 직결 — 서버 정상 시 가장 빠름)
-  https://sertz4.space-z.ai/SERTZ-v3.1.0.apk
-  → 접속하면 즉시 다운로드가 시작됩니다
-  ※ 서버에 파일이 없는 경우 gofile로 자동 연결됩니다 (404 없음)
+  ※ 사이트의 /SERTZ-vX.Y.Z.apk 링크도 gofile로 자동 연결됩니다 (404 없음)
 
 ■ 설치
   기존 SERTZ 위에 덮어 설치하면 됩니다 (세이브 유지, versionCode 44)

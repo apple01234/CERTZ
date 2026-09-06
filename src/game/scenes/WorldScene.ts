@@ -153,6 +153,9 @@ export class WorldScene extends Phaser.Scene {
   private pendingJobClass: ClassKey | null = null;
   /** v3.1.0 (#흑화) — 구역 전환 중 플래그: 중복 scene.restart로 인한 흑화 방지 */
   private transitioning = false;
+  /* v3.2.0 (#흑화 근본 수정) — 부팅 시각/재부팅 이력 (create 래퍼 + 카메라 자가치유용) */
+  private bootAt = 0;
+  private bootRetried = false;
   /** v3.1.0 (#최적화) — HUD 브로드캐스트 스로틀 (프레임당 다중 emit 억제) */
   private lastHudEmit = -999;
   private hudEmitPending = false;
@@ -445,7 +448,46 @@ export class WorldScene extends Phaser.Scene {
     this.registry.set("initData", data);
   }
 
+  /* v3.2.0 (#흑화 근본 수정) — create() 안전 래퍼.
+   *  "맵 이동 시 가끔 검은 화면 + 움직임 불능"의 잔존 원인은 씬 초기화(create) 중
+   *  예외로 fadeIn이 아예 실행되지 않는 케이스였다 (v3.1.0은 fadeIn 위치가 create
+   *  끝자락이라 초기화 중단 시 무효). 개선:
+   *  1) 초기화 예외를 잡아 최소 안전 부팅(배경 + fadeIn)을 보장
+   *  2) 실패 시 1회 한정 자동 재부팅 (세이브는 gotoStage마다 기록되어 있어 안전)
+   *  3) fadeIn + 워치독은 성공/실패 무관하게 "항상" 마지막에 실행 */
   create() {
+    this.bootAt = this.time.now;
+    try {
+      this.createInner();
+    } catch (err) {
+      console.error("[SERTZ] 씬 초기화 실패 — 안전 부팅으로 전환", err);
+      this.cameras.main.setBackgroundColor("#0a0e18");
+      this.cameras.main.fadeIn(320, 0, 0, 0);
+      if (!this.bootRetried) {
+        this.bootRetried = true;
+        this.time.delayedCall(650, () => {
+          /* 세이브에서 안전하게 다시 부팅 (스테이지 유지) */
+          try {
+            const d = this.registry.get("initData") as { stage?: StageKey; save?: SaveData } | undefined;
+            this.scene.restart({ stage: d?.stage, save: d?.save });
+          } catch (e2) {
+            console.error("[SERTZ] 자동 재부팅 실패", e2);
+          }
+        });
+      }
+    }
+    /* fadeIn + 자가치유 워치독 — v3.1.0에서 create 끝에 있던 것을 래퍼로 이동 (예외와 무관하게 항상 실행) */
+    this.cameras.main.fadeIn(350, 0, 0, 0);
+    this.time.delayedCall(1200, () => {
+      if (!this.scene.isActive()) return;
+      const cam = this.cameras.main as unknown as {
+        fadeEffect?: { isRunning: boolean; stop(): void };
+      };
+      if (cam.fadeEffect?.isRunning) cam.fadeEffect.stop();
+    });
+  }
+
+  private createInner() {
     this.impactFX = new ImpactFX(this);
     /* v3.0.3 — 씬 재시작 시 물리 월드 일시정지 상태가 이월되는 문제 방지:
      *  대사 중 씬 재시작(포탈/사망 등)이 일어나면 구 씬의 world.pause()가
@@ -1420,9 +1462,16 @@ export class WorldScene extends Phaser.Scene {
     this.transitioning = true;
     // ⚠️ 다음 스테이지에 현재 스탯/소지품을 그대로 넘긴다
     //   (restart에 save를 안 넘기면 기본값 플레이어로 시작 — 골드/레벨/장비 소실 버그)
-    const carry = this.buildSave(next);
-    writeSave(carry);
-    this.scene.restart({ stage: next, save: carry, ...extra });
+    // v3.2.0 (#흑화) — 세이브 직렬화/기록 실패가 씬 전환을 막아 검은 화면·멈춤으로
+    //   이어지던 것을 차단: 예외가 나도 restart는 반드시 진행한다.
+    let carry: SaveData | null = null;
+    try {
+      carry = this.buildSave(next);
+      if (carry) writeSave(carry);
+    } catch (e) {
+      console.error("[SERTZ] 전환 세이브 실패 — 무시하고 이동", e);
+    }
+    this.scene.restart({ stage: next, save: carry ?? undefined, ...extra });
   }
 
   private enterPortal() {
@@ -2789,6 +2838,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.4 (지시 #7) — 모바일 3/4차기 버튼이 발행하는 input:skill3/4 미수신으로 안 쓰이던 버그 수정 */
     const onS3 = () => this.player?.useSkill3();
     const onS4 = () => this.player?.useSkill4();
+    const onS5 = () => this.player?.useSkill5(); // v3.2.0 — 궁극기 (모바일 버튼 공용)
     const onRespawn = () => this.respawnPlayer();
     const onDialogueDone = () => this.resumeFromDialogue();
     const onInteract = () => this.tryInteract();
@@ -3141,6 +3191,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("input:skill2", onS2);
     EventBus.on("input:skill3", onS3);
     EventBus.on("input:skill4", onS4);
+    EventBus.on("input:skill5", onS5);
     EventBus.on("input:interact", onInteract);
     EventBus.on("name:set", onNameSet);
     EventBus.on("keymap:changed", onKeymapChanged);
@@ -3363,6 +3414,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("input:skill2", onS2);
       EventBus.off("input:skill3", onS3);
       EventBus.off("input:skill4", onS4);
+      EventBus.off("input:skill5", onS5);
       EventBus.off("input:interact", onInteract);
       EventBus.off("name:set", onNameSet);
       EventBus.off("keymap:changed", onKeymapChanged);
@@ -3397,19 +3449,8 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:upgradeAcc", onUpgradeAcc);
     });
 
-    /* ================= v3.1.0 (#흑화) — 구역 진입 카메라 자가치유 =================
-     *  유저 지시 "맵 이동할 때 가끔 검은 화면":
-     *  · 전환 직후 항상 fadeIn으로 화면을 확실히 밝힌다 (전환 연출 톤도 자연스러움)
-     *  · 워치독 — 1.2초 후에도 페이드 이펙트가 살아있면 강제 정지 (일부 WebView에서
-     *    fadeOut 완료 콜백 유실 시 화면이 검은 채로 남는 사례 방지) */
-    this.cameras.main.fadeIn(350, 0, 0, 0);
-    this.time.delayedCall(1200, () => {
-      if (!this.scene.isActive()) return;
-      const cam = this.cameras.main as unknown as {
-        fadeEffect?: { isRunning: boolean; stop(): void };
-      };
-      if (cam.fadeEffect?.isRunning) cam.fadeEffect.stop();
-    });
+    /* ================= v3.1.0 (#흑화) — fadeIn/워치독은 create() 래퍼로 이동 (v3.2.0)
+     *  초기화 중 예외가 나도 화면이 반드시 밝아지도록 보장하기 위함 */
   }
 
   /** 액션에 배정된 키 객체 (키 매핑 v1.9) */
@@ -3419,6 +3460,16 @@ export class WorldScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
+
+    /* v3.2.0 (#흑화) — 부팅 후 6초간 카메라 자가치유:
+     *  페이드 이펙트가 실행 중이 아닌데 알파가 1 미만으로 남아있으면(WebView에서
+     *  fadeOut 완료 콜백 유실 등) 매 프레임 강제로 밝힌다. 사망 페이드아웃은 보호. */
+    if (this.time.now - this.bootAt < 6000) {
+      const cam = this.cameras.main as unknown as {
+        fadeEffect?: { isRunning: boolean }; alpha: number; setAlpha(a: number): void;
+      };
+      if (!cam.fadeEffect?.isRunning && cam.alpha < 1) cam.setAlpha(1);
+    }
 
     // 원격 플레이어 보간 — 대화/채팅/사망과 무관하게 항상 갱신 (v1.7 멀티플레이)
     const lerpK = Math.min(1, (dt / 1000) * 9);
@@ -3480,6 +3531,8 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.3 — 3차기(V) / 4차기(B): 해금 티어 미달/쿨/MP 무시하고 호출하면 내부에서 무시된다 */
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill3"))) this.player.useSkill3();
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill4"))) this.player.useSkill4();
+    /* v3.2.0 — 5차 궁극기(N): Lv.200 해금, 쿨타임 60초 */
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5"))) this.player.useSkill5();
 
     // 수면 연출 중 — 입력 봉인 (v2.2)
     if (this.sleeping) {
@@ -5943,6 +5996,12 @@ export class WorldScene extends Phaser.Scene {
       s4Max: this.player.skill4MaxEff,
       s3Unlocked: this.player.skill3Unlocked,
       s4Unlocked: this.player.skill4Unlocked,
+      /* v3.2.0 — 5차 궁극기 (Lv.200) */
+      s5Cd: Math.round(this.player.skill5Cd),
+      s5Max: this.player.skill5Max,
+      s5Unlocked: this.player.skill5Unlocked,
+      s5Name: this.player.skill5Name,
+      s5Icon: "/assets/skillicon/ultimate_s5.png",
       /* v2.5 — 계열별 스킬 라벨 (기본공격 포함 3슬롯 교체 표기) */
       atkName: this.player.attackName,
       s1Name: this.player.skill1Name,

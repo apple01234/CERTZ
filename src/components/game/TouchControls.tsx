@@ -26,6 +26,7 @@ export function TouchControls({
   s2Name,
   s3Name,
   s4Name,
+  s5Name,
   canAutoHunt,
   autoHunt,
 }: {
@@ -41,6 +42,8 @@ export function TouchControls({
   /** v3.0.3 — 3차기/4차기 (미해금 시 빈 문자열 → 버튼 숨김) */
   s3Name?: string;
   s4Name?: string;
+  /** v3.2.0 — 5차 궁극기 (Lv.200 해금, 쿨타임 60초) */
+  s5Name?: string;
   canAutoHunt?: boolean;
   autoHunt?: boolean;
 }) {
@@ -156,6 +159,9 @@ export function TouchControls({
   const s4Ready = skills.s4Cd <= 0 && skills.mp >= 40;
   const s3Pct = skills.s3Cd > 0 ? (skills.s3Cd / Math.max(1, skills.s3Max)) * 100 : 0;
   const s4Pct = skills.s4Cd > 0 ? (skills.s4Cd / Math.max(1, skills.s4Max)) * 100 : 0;
+  /* v3.2.0 — 5차 궁극기 (MP 100, 쿨타임 60초) */
+  const s5Ready = (skills.s5Cd ?? 0) <= 0 && skills.mp >= 100;
+  const s5Pct = (skills.s5Cd ?? 0) > 0 ? ((skills.s5Cd ?? 0) / Math.max(1, skills.s5Max ?? 60000)) * 100 : 0;
 
   return (
     <>
@@ -234,6 +240,20 @@ export function TouchControls({
         </div>
         {/* v3.0.4 — 스킬 2×2 그리드 (4차까지 해금돼도 자리 부족하지 않게: 지시 #6) */}
         <div className="grid grid-cols-2 gap-1.5">
+          {/* v3.2.0 — 5차 궁극기: Lv.200 해금. 황금빛 전용 스타일 */}
+          {s5Name && (
+            <SkillButton
+              ready={s5Ready}
+              cdPct={s5Pct}
+              label={s5Name}
+              mp={100}
+              icon={skills.s5Icon}
+              ult
+              onDown={() => EventBus.emit("input:skill5")}
+            >
+              <Star size={18} />
+            </SkillButton>
+          )}
           {/* v3.0.3 — 4차기(B): 해금 시만 표시 */}
           {s4Name && (
             <SkillButton
@@ -358,6 +378,7 @@ function SkillButton({
   cdPct,
   onDown,
   icon,
+  ult,
 }: {
   children: React.ReactNode;
   label: string;
@@ -366,6 +387,8 @@ function SkillButton({
   cdPct: number;
   onDown: () => void;
   icon?: string;
+  /** v3.2.0 — 궁극기 전용 황금 스타일 */
+  ult?: boolean;
 }) {
   /* v3.0.27 — 아이콘 로드 실패 시 lucide 폴백 (웹뷰 캐시 오류 등 어떤 환경에서도 버튼이 깨지지 않게)
      전직 등으로 icon 경로가 바뀌면 렌더 중 상태 조정 패턴으로 에러 플래그 리셋 */
@@ -382,7 +405,9 @@ function SkillButton({
       disabled={!ready}
       className={`relative flex h-11 w-11 touch-none select-none flex-col items-center justify-center overflow-hidden rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 sm:h-14 sm:w-14 ${
         ready
-          ? "border-sky-200/70 bg-gradient-to-b from-sky-500 to-blue-800"
+          ? ult
+            ? "border-amber-100/90 bg-gradient-to-b from-amber-300 via-amber-500 to-orange-700 shadow-[0_0_14px_rgba(255,190,60,0.65)]"
+            : "border-sky-200/70 bg-gradient-to-b from-sky-500 to-blue-800"
           : "border-white/20 bg-slate-700/70 opacity-60"
       }`}
       onPointerDown={(e) => {
@@ -402,8 +427,8 @@ function SkillButton({
       ) : (
         children
       )}
-      <span className="max-w-[42px] truncate text-[7px] font-bold leading-tight sm:max-w-none sm:text-[8px]">{label}</span>
-      <span className="text-[7px] font-bold text-sky-200 sm:text-[8px]">{mp}MP</span>
+      <span className={`max-w-[42px] truncate text-[7px] font-bold leading-tight sm:max-w-none sm:text-[8px] ${ult ? "text-amber-100" : ""}`}>{label}</span>
+      <span className={`text-[7px] font-bold sm:text-[8px] ${ult ? "text-amber-200" : "text-sky-200"}`}>{mp}MP</span>
       {cdPct > 0 && (
         <div
           className="pointer-events-none absolute inset-0 bg-black/60"

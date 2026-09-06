@@ -104,6 +104,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   private modeTimer = 0;
+  /* v3.2.0 (#최적화) — 원거리 적 AI 스로틀 누적기 (tick 내 far 분기) */
+  private farAcc = 0;
   private wanderDir = new Phaser.Math.Vector2();
   private knockVec = new Phaser.Math.Vector2();
   private homeX: number;
@@ -379,6 +381,27 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     c.toPlayer.set(player.x - this.x, player.y - this.y).normalize();
     c.vx = 0;
     c.vy = 0;
+
+    /* v3.2.0 (#최적화) — 원거리 적 AI 스로틀:
+     *  플레이어에서 950px 밖(화면 밖)인 적은 FSM을 5Hz로만 갱신한다.
+     *  광역 맵에 적 40~80기가 60Hz FSM을 돌리는 게 모바일 프레임 드롭의 주범.
+     *  넉백 감쇠/속도 적용은 매 프레임 유지해 움직임이 끊기지 않는다. */
+    if (c.dist > 950) {
+      this.farAcc += dt;
+      if (this.farAcc >= 200) {
+        this.ai.update(this.farAcc);
+        this.farAcc = 0;
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        if (this.hpBar && this.hpBarBg) {
+          const show = this.hp < this.maxHp;
+          this.hpBarBg.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
+          this.hpBar.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
+        }
+        return;
+      }
+      this.setVelocity(this.knockVec.x, this.knockVec.y);
+      return;
+    }
 
     this.ai.update(dt);
 

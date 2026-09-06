@@ -10,8 +10,20 @@ const KEY = "sertz.server.url";
 /** v2.9 (사용자 지시 #10) — 기본 게임 서버. APK 첫 실행 시 이 주소로 바로 연결해
  *  “멀티 안됨” 문제를 해소한다. 주소가 바뀌면 이 상수만 고치면 된다.
  *  v3.0.25 — 만료된 구 프리뷰 주소를 실제 서비스 주소로 교체
- *  v3.1.0 — 신규 서비스 주소 sertz4.space-z.ai 로 교체 (유저 확인) */
+ *  v3.1.0 — 신규 서비스 주소 sertz4.space-z.ai 로 교체 (유저 확인)
+ *  v3.2.0 — 구 서버 목록 자동 이행 추가: 덮어쓰기 설치 시 localStorage에 남은
+ *           만료 주소 때문에 “APK에서 연동 안됨”이 재발하는 것을 근본 차단 */
 const DEFAULT_SERVER = "https://sertz4.space-z.ai";
+
+/* v3.2.0 — 서비스 종료/만료된 과거 기본 서버들 (자동 이행 대상) */
+const DEAD_SERVERS = [
+  "https://preview-6a94b1ab.space-z.ai",
+  "https://preview-6a95efa8.space-z.ai",
+  "https://sertz1234.space-z.ai",
+  "http://preview-6a94b1ab.space-z.ai",
+  "http://preview-6a95efa8.space-z.ai",
+  "http://sertz1234.space-z.ai",
+];
 
 function readUrl(): string {
   try {
@@ -50,13 +62,26 @@ export function ServerConnect() {
   const [saved] = useState(() => readUrl());
   const [online, setOnline] = useState(false);
   const [copied, setCopied] = useState(false);
+  /* v3.2.0 — 12초 내 미연결 시 “연결 실패” 표시 + 원탭 복구 제공 */
+  const [connFailed, setConnFailed] = useState(false);
 
   /* v2.9 — 서버 주소가 비어 있으면 기본 서버를 자동 저장해 즉시 연결 (멀티 첫 경험 개선).
    *  오프라인을 원하면 아래 ‘오프라인’ 버튼으로 해제 가능.
-   *  v3.0.8: EXE(Electron) 제외 — 내장 로컬 서버(same-origin)가 기본. */
+   *  v3.0.8: EXE(Electron) 제외 — 내장 로컬 서버(same-origin)가 기본.
+   *  v3.2.0: 죽은 구 서버 주소가 저장돼 있으면 새 기본값으로 자동 이행. */
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    if (readUrl()) return;
+    const cur = readUrl();
+    if (DEAD_SERVERS.includes(cur)) {
+      try {
+        window.localStorage.setItem(KEY, DEFAULT_SERVER);
+      } catch {
+        /* noop */
+      }
+      window.location.reload();
+      return;
+    }
+    if (cur) return;
     try {
       window.localStorage.setItem(KEY, DEFAULT_SERVER);
     } catch {
@@ -68,7 +93,12 @@ export function ServerConnect() {
   useEffect(() => {
     if (!native) return;
     netConnect(); // 타이틀에서 조기 접속 → 상태 실시간 표시 (EXE: 내장 로컬 서버 or 저장 주소)
-    const t = setInterval(() => setOnline(netJoined()), 1500);
+    const t0 = Date.now();
+    const t = setInterval(() => {
+      const ok = netJoined();
+      setOnline(ok);
+      if (!ok && Date.now() - t0 > 12000) setConnFailed(true);
+    }, 1500);
     return () => clearInterval(t);
   }, [native, saved]);
 
@@ -88,6 +118,16 @@ export function ServerConnect() {
   const goOffline = () => {
     try {
       window.localStorage.removeItem(KEY);
+    } catch {
+      /* noop */
+    }
+    window.location.reload();
+  };
+
+  /** v3.2.0 — 연결 실패 시 원탭 기본 서버 복구 */
+  const restoreDefault = () => {
+    try {
+      window.localStorage.setItem(KEY, DEFAULT_SERVER);
     } catch {
       /* noop */
     }
@@ -150,6 +190,14 @@ export function ServerConnect() {
             >
               저장 & 새로고침
             </button>
+            {connFailed && (
+              <button
+                onClick={restoreDefault}
+                className="rounded-lg border border-rose-300/40 bg-rose-500/20 px-2.5 py-2 text-[11px] font-black text-rose-100 active:scale-95"
+              >
+                기본 서버 복구
+              </button>
+            )}
             <button
               onClick={goOffline}
               className="rounded-lg border border-white/20 bg-white/5 px-2.5 py-2 text-[11px] font-bold text-white/70 active:scale-95"
@@ -159,21 +207,33 @@ export function ServerConnect() {
           </div>
         </div>
       ) : (
-        <button
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/50 px-3 py-1.5 text-[10px] font-bold text-white/70 backdrop-blur active:scale-95"
-        >
-          <Globe size={12} className="text-sky-300" />
-          {online ? (
-            <span className="text-emerald-300">서버 연결됨</span>
-          ) : saved ? (
-            <span className="text-amber-200/80">연결 중…</span>
-          ) : electron ? (
-            <span>로컬 모드</span>
-          ) : (
-            <span>오프라인 모드</span>
+        <div className="flex items-center gap-1.5">
+          {connFailed && (
+            <button
+              onClick={restoreDefault}
+              className="rounded-full border border-rose-300/50 bg-rose-500/25 px-3 py-1.5 text-[10px] font-black text-rose-100 backdrop-blur active:scale-95"
+            >
+              기본 서버로 복구
+            </button>
           )}
-        </button>
+          <button
+            onClick={() => setOpen(true)}
+            className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/50 px-3 py-1.5 text-[10px] font-bold text-white/70 backdrop-blur active:scale-95"
+          >
+            <Globe size={12} className="text-sky-300" />
+            {online ? (
+              <span className="text-emerald-300">서버 연결됨</span>
+            ) : connFailed ? (
+              <span className="text-rose-300">연결 실패</span>
+            ) : saved ? (
+              <span className="text-amber-200/80">연결 중…</span>
+            ) : electron ? (
+              <span>로컬 모드</span>
+            ) : (
+              <span>오프라인 모드</span>
+            )}
+          </button>
+        </div>
       )}
     </div>
   );

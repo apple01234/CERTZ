@@ -36,6 +36,9 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     backgroundColor: "#05070d",
     pixelArt: true,
     roundPixels: true,
+    /* v3.2.0 (#최적화) — GPU 전원 우선순위 상향 + 프레임 관리 명시 */
+    render: { powerPreference: "high-performance", antialias: false },
+    fps: { target: 60, min: 30 },
     physics: {
       default: "arcade",
       arcade: {
@@ -52,6 +55,28 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     },
     scene: [BootScene, TitleScene, WorldScene],
   });
+
+  /* v3.2.0 (#흑화) — WebGL 컨텍스트 손실 자가복구.
+   *  모바일 WebView/구형 GPU에서 긴 세션 중 컨텍스트가 유실되면 캔버스가 검은 채로
+   *  멈춘다(입력도 죽음). lost에서 복구 대기, 4초 내 미복구 시 세이브가 살아있으므로
+   *  안전하게 새로고침해 부팅한다. */
+  let ctxLostAt = 0;
+  const canvas = game.canvas;
+  canvas.addEventListener("webglcontextlost", (e) => {
+    e.preventDefault();
+    ctxLostAt = Date.now();
+    console.error("[SERTZ] WebGL 컨텍스트 손실 — 복구 대기");
+  });
+  canvas.addEventListener("webglcontextrestored", () => {
+    ctxLostAt = 0;
+    console.log("[SERTZ] WebGL 컨텍스트 복구됨");
+  });
+  window.setInterval(() => {
+    if (ctxLostAt > 0 && Date.now() - ctxLostAt > 4000) {
+      console.error("[SERTZ] 컨텍스트 미복구 — 안전 새로고침");
+      window.location.reload();
+    }
+  }, 1000);
 
   // 오디오 모듈에 게임 인스턴스 연결 (Phaser SoundManager 사용)
   attachAudio(game);

@@ -552,3 +552,21 @@ Stage Summary:
 - gofile 미러(다운로드 페이지): https://gofile.io/d/Tcsl6sY2 — md5 ed1c4e9a 일치
 - 13개 수정항목은 모두 v3.1.0(828d05b)에 이미 반영·검증된 상태, 이번 커밋은 복구+안전망
 - 서버 재배포는 커밋/푸시 후 Complete 트리거로 수행 예정
+
+---
+Task ID: 38
+Agent: Super Z (메인)
+Task: v3.2.0 — 유저 요청 5건 (①gofile 전용 ②흑화 근본 수정 ③APK 멀티 연동 ④최적화 ⑤5차 궁극기)
+
+Work Log:
+- ① APk 다운로드 gofile 단일화: server.js DOWNLOAD_FILES에서 APK 서빙 제거 → /SERTZ-v[\d.]+.apk 전부 gofile.io/d/Tcsl6sY2 307 리다이렉트, next.config redirects 3버전 전부 gofile 지정, apk-guide.html/안내txt 단일 경로로 정리 (실측: /SERTZ-v3.1.0.apk → 307 gofile)
+- ② 흑화 근본 수정: WorldScene create()를 안전 래퍼로 개편 — createInner() try/catch, 초기화 예외 시에도 fadeIn 보장 + 1회 한정 자동 재부팅, fadeIn/워치독을 래퍼 꼬리로 이동(예외와 무관 항상 실행), update()에 부팅 후 6초 카메라 알파 자가치유, gotoStage 세이브 실패 시에도 restart 진행(try/catch), PhaserGame에 webglcontextlost/restored 핸들링 + 4초 미복구 시 안전 새로고침
+- ③ APK 멀티 연동: 실측으로 라이브 서버 정상 확인(핸드셰이크 200/웹소켓 101/CORC origin * 허용) → 원인은 덮어쓰기 설치 localStorage의 죽은 구 서버 주소(sertz1234/구 프리뷰). ServerConnect에 DEAD_SERVERS 자동 이행(새 기본값 저장+reload) + 12초 미연결 시 "연결 실패" 표시 + "기본 서버로 복구" 원탭 버튼 추가 (신규 APK 빌드 시 적용, 현 v3.1.0 APK는 🌐 버튼에서 주소 재입력으로 수동 해결 가능)
+- ④ 최적화: Enemy.tick 원거리(>950px) 적 FSM 60Hz→5Hz 스로틀(맵당 40~80기 적 AI 부담 대폭 절감), PhaserGame render.powerPreference high-performance + fps 명시 (기존: HUD emit 90ms 스로틀 유지)
+- ⑤ 5차 궁극기 신설: keymap skill5(기본 N, 라벨 "스킬 5 (궁극기 · Lv.200)"), classes.ts SKILL5_INFO 4계열(전사 천멸—대붕괴 검격/궁수 천강—무한 화살비/마법 종막—아르카나 대폭발/도적 심연—그림자 참수극), Player.skill5Cd(60초 고정·cdMult 미적용)/skill5Unlocked(lv>=200)/useSkill5 구현(계열별 연출: 6연 초거대 참격+종결일격 / 유도화살 26연발+관통 12발+화염필드 / 운석 8발+종막폭발 / 8인 점멸 참수+심연폭발), WorldScene 키/EventBus/emitSkills(s5Cd/s5Max/s5Unlocked/s5Name/s5Icon) 연결, TouchControls 황금 스타일 궁극기 버튼(MP 100), 궁극기 아이콘 ultimate_s5.png 생성(z-ai image + 후처리 256px)
+- 검증: tsc 0 · eslint 0 · 부팅 스모크(루트 200/APK 307→gofile/socket.io 핸드셰이크 OK) · Playwright 런타임(게임 부팅/ SKILL5_INFO 노출/페이지 에러 0)
+
+Stage Summary:
+- 웹(라이브)에는 v3.2.0 전체 반영 — 5차 궁극기(Lv.200)/흑화 근본 수정/최적화 즉시 적용
+- APK 다운로드는 gofile 단일 경로(https://gofile.io/d/Tcsl6sY2)로 완전 고정
+- 현재 배포 v3.1.0 APK에 신규 코드(자동 이행 등)는 미포함 — 차기 APK 빌드 시 반영(유저가 JDK 빌드 금지 지시로 이번엔 재빌드 안 함)
