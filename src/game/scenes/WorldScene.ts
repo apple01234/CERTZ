@@ -164,6 +164,10 @@ export class WorldScene extends Phaser.Scene {
   private pendingJobClass: ClassKey | null = null;
   /** v3.1.0 (#흑화) — 구역 전환 중 플래그: 중복 scene.restart로 인한 흑화 방지 */
   private transitioning = false;
+  /** v4.1.2 — 전환 워치독 재시작용 마지막 캐리 스냅샷 (restart 유실 대비) */
+  private lastCarry?: SaveData;
+  /** v4.1.2 — 페이드 스타크 감지 누적 (update 자가치유) */
+  private fadeDarkMs = 0;
   /* v3.2.0 (#흑화 근본 수정) — 부팅 시각/재부팅 이력 (create 래퍼 + 카메라 자가치유용) */
   private bootAt = 0;
   private bootRetried = false;
@@ -592,11 +596,21 @@ export class WorldScene extends Phaser.Scene {
         fadeEffect?: { isRunning: boolean };
         alpha: number;
         setAlpha: (v: number) => void;
+        resetFX?: () => void;
       };
       /* v4.1.0 — Phaser 3.90의 Fade에는 stop()이 없다(호출 시 런타임 에러).
        *  isRunning은 시간 경과로 자동 해제되므로, 여기선 남은 알파만 정리한다
        *  (update() 자가치유와 이중 안전망). */
-      if (cam.fadeEffect && !cam.fadeEffect.isRunning && cam.alpha < 1) cam.setAlpha(1);
+      if (cam.fadeEffect && !cam.fadeEffect.isRunning) {
+        /* v4.1.2 — create의 fadeIn이 이미 끝났는데(또는 유실돼) 어둡게 남은 경우
+         *  postFX 리셋으로 강제 복구 (완료된 fadeOut 잔상 — postFX 방식은 alpha로 안 보인다) */
+        const fx = cam.fadeEffect as unknown as { progress?: number; direction?: boolean };
+        const stuckDark = fx.direction === true && (fx.progress ?? 0) >= 0.99;
+        if (cam.alpha < 1 || stuckDark) {
+          try { cam.resetFX?.(); } catch { /* 미지원 환경 무시 */ }
+          cam.setAlpha(1);
+        }
+      }
     });
   }
 
@@ -1682,27 +1696,73 @@ export class WorldScene extends Phaser.Scene {
    *  init 데이터가 유실되어 create()가 비정상 종료 → 화면이 검은 채로 멈춘다.
    *  모든 전환을 단일 헬퍼로 모으고 transitioning 플래그로 1회만 실행되도록 막는다.
    */
-  private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string }) {
-    if (this.transitioning) return;
+  private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; save?: SaveData }, force = false) {
+    if (this.transitioning && !force) return;
     this.transitioning = true;
     // ⚠️ 다음 스테이지에 현재 스탯/소지품을 그대로 넘긴다
     //   (restart에 save를 안 넘기면 기본값 플레이어로 시작 — 골드/레벨/장비 소실 버그)
     // v3.2.0 (#흑화) — 세이브 직렬화/기록 실패가 씬 전환을 막아 검은 화면·멈춤으로
     //   이어지던 것을 차단: 예외가 나도 restart는 반드시 진행한다.
-    let carry: SaveData | null = null;
-    try {
-      carry = this.buildSave(next);
-      if (carry) writeSave(carry);
-    } catch (e) {
-      console.error("[SERTZ] 전환 세이브 실패 — 무시하고 이동", e);
+    // v4.1.2 — save 지정 시(실내 전환 등) buildSave를 건너뛰고 그대로 사용
+    let carry: SaveData | null = extra?.save ?? null;
+    if (!carry) {
+      try {
+        carry = this.buildSave(next);
+        if (carry) writeSave(carry);
+      } catch (e) {
+        console.error("[SERTZ] 전환 세이브 실패 — 무시하고 이동", e);
+      }
     }
-    this.scene.restart({ stage: next, save: carry ?? undefined, ...extra });
+    this.lastCarry = carry ?? undefined;
+    const { save: _save, ...rest } = extra ?? {};
+    this.scene.restart({ stage: next, save: carry ?? undefined, ...rest });
+  }
+
+  /* ================= v4.1.2 — 전환 단일 통로 (흑화·멈춤 근본 수정) =================
+   *  기존엔 fadeOut 후 gotoStage까지의 블랙아웃 창(0.4~1.9초) 동안 transitioning이
+   *  열려 있었다. 그 창에 경합 전환(관성으로 다른 포탈 겹침·이중 탭·UI 중복 클릭)이
+   *  들어오면 scene.restart가 2번 경합 → fadeIn 유실 → 영구 검은 화면·멈춤.
+   *  "이전 맵으로 돌아갈 때" 특히 잦았던 건 수비전 퇴장(1.9초)·균열 퇴장(1.8초)의
+   *  긴 블랙아웃 창이 원인. 이제 즉시 게이트를 닫고 포탈 오버랩을 전부 끊는다. */
+  private startTransition(
+    target: StageKey,
+    opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; save?: SaveData }
+  ) {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    this.portalActive = false;
+    this.returnActive = false;
+    if (this.player) {
+      this.player.setVelocity(0, 0); // 관성 드리프트로 다른 포탈에 겹치는 것 차단
+      this.player.state = "idle";
+    }
+    this.cameras.main.fadeOut(500, 0, 0, 0);
+    this.time.delayedCall(opts?.delay ?? 520, () => this.gotoStage(target, opts, true));
+    /* 4초 하드 워치독 — restart가 유실된 채 전환 플래그만 남은 경우 최후 복구.
+     *  같은 키 씬은 인스턴스 재사용이라 this.scene/cameras 접근이 유효하다. */
+    window.setTimeout(() => {
+      try {
+        if (!this.scene.isActive()) {
+          this.scene.restart({ stage: target, save: this.lastCarry, ...(opts?.entry ? { entry: opts.entry } : {}) });
+        } else if (this.transitioning) {
+          this.transitioning = false;
+          /* v4.1.2 — 완료된 fadeOut이 검게 남은 채 씬이 머문 경우 postFX 강제 복구.
+           *  create의 fadeIn이 아직 실행 중이면(isRunning) 건드리지 않는다. */
+          const cam = this.cameras?.main as unknown as
+            | { fadeEffect?: { isRunning: boolean }; resetFX?(): void }
+            | undefined;
+          if (cam?.fadeEffect && !cam.fadeEffect.isRunning) {
+            try { cam.resetFX?.(); } catch { /* 미지원 환경 무시 */ }
+          }
+        }
+      } catch { /* 실패 시 update() 자가치유가 알파를 회복한다 */ }
+    }, 4000);
   }
 
   private enterPortal() {
     this.portalActive = false;
     audio.sfx.portal();
-    this.cameras.main.fadeOut(500, 0, 0, 0);
+    this.player.setVelocity(0, 0);
     this.player.state = "idle";
     /* v3.0.28 (#이동퀘스트) — 이동형(reach) 퀘스트 완료 판정 누락 수정:
      *  포탈을 타고 구역을 떠날 때 현재 퀘스트가 reach면 완료(advance) 처리 후 이동.
@@ -1714,9 +1774,9 @@ export class WorldScene extends Phaser.Scene {
     const next: StageKey | null = NEXT_STAGE[this.stageDef.key];
     if (!next) {
       /* v4.1.0 — 이벤트 구역(무릉도장/바르가/균열)의 전진 포탈은 막힌 문.
-       *  기존엔 fadeOut만 하고 전환을 예약하지 않아 영구 검은 화면으로 빠졌다 (유저 지시 #2).
-       *  → 페이드를 되돌리고 안내 후 다시 활성화한다. */
-      this.cameras.main.fadeIn(320, 0, 0, 0);
+       *  fadeOut만 하고 전환을 예약하지 않으면 영구 검은 화면이 된다 (유저 지시 #2).
+       *  v4.1.2 — fadeOut을 startTransition으로 옮겼으므로 여기선 어둡지도 않았다:
+       *  안내만 하고 포탈을 다시 활성화한다. */
       this.portalActive = true;
       this.showBanner("이 앞은 막혀 있다 — 돌아가는 차원문을 타자");
       return;
@@ -1727,7 +1787,7 @@ export class WorldScene extends Phaser.Scene {
       this.trackedStage = next;
       this.emitQuestLog();
     }
-    this.time.delayedCall(520, () => this.gotoStage(next));
+    this.startTransition(next, { delay: 520 });
   }
 
   /* ================= 복귀 차원문 (v2.0 — 메이플식 자유 왕복, 지시 #8) ================= */
@@ -1794,9 +1854,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.closetActive) { this.returnActive = false; this.finishCloset(); return; }
     this.returnActive = false;
     audio.sfx.portal();
-    this.cameras.main.fadeOut(500, 0, 0, 0);
-    this.player.state = "idle";
-    this.time.delayedCall(520, () => this.gotoStage(prev));
+    this.startTransition(prev, { delay: 520 });
   }
 
   /* ================= 시작 마을 (인간들의 마을) ================= */
@@ -3424,11 +3482,8 @@ export class WorldScene extends Phaser.Scene {
     this.save();
     /* 랭킹 제출 (멀티 서버 연결 시) */
     net.netRankSubmit("gate", this.gateBest, getPlayerName(), this.player.lv);
-    this.cameras.main.fadeOut(420, 0, 0, 0);
-    this.time.delayedCall(1900, () => {
-      const back: StageKey = STAGES[this.gateFrom] ? this.gateFrom : "village";
-      this.gotoStage(back);
-    });
+    const back: StageKey = STAGES[this.gateFrom] ? this.gateFrom : "village";
+    this.startTransition(back, { delay: 1900 });
   }
 
   /* ---------------- 균열 던전 (골드/경험치책 파밍) ---------------- */
@@ -3528,11 +3583,8 @@ export class WorldScene extends Phaser.Scene {
     this.emitRpgState();
     this.save();
     net.netRankSubmit("closet", this.closetBest, getPlayerName(), this.player.lv);
-    this.cameras.main.fadeOut(420, 0, 0, 0);
-    this.time.delayedCall(1800, () => {
-      const back: StageKey = STAGES[this.closetFrom] ? this.closetFrom : "village";
-      this.gotoStage(back);
-    });
+    const back: StageKey = STAGES[this.closetFrom] ? this.closetFrom : "village";
+    this.startTransition(back, { delay: 1800 });
   }
 
   /* ================= v3.3.0 (지시 #8) — 5차 각성 스토리/시련 ================= */
@@ -4423,9 +4475,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.player.state === "dead") return;
       const target = resolveStage(String(v?.stage || ""));
       if (!target || target === this.stageDef.key) return;
-      this.cameras.main.fadeOut(420, 0, 0, 0);
-      this.player.state = "idle";
-      this.time.delayedCall(440, () => this.gotoStage(target));
+      this.startTransition(target, { delay: 440 });
     };
 
     // v2.5 — 소지품 사용 (상급 물약/마을 귀환서/지역 이동 부적 — 지시 #5/#6/#7)
@@ -4463,9 +4513,7 @@ export class WorldScene extends Phaser.Scene {
         const { ch } = parseStage(this.stageDef.key);
         const vk: StageKey = ch === "village" ? "village" : `${ch}v`;
         EventBus.emit("banner:show", { text: `마을 귀환서 사용! ${STAGES[vk]?.name ?? "마을"}로 이동합니다…` });
-        this.cameras.main.fadeOut(420, 0, 0, 0);
-        this.player.state = "idle";
-        this.time.delayedCall(440, () => this.gotoStage(vk));
+        this.startTransition(vk, { delay: 440 });
         return;
       }
       if (key === "scroll_warp") {
@@ -4501,9 +4549,7 @@ export class WorldScene extends Phaser.Scene {
       audio.sfx.portal();
       EventBus.emit("ui:panel", { panel: null });
       EventBus.emit("banner:show", { text: `부적 사용! ${STAGE_SHORT[target] ?? target}(으)로 이동합니다…` });
-      this.cameras.main.fadeOut(420, 0, 0, 0);
-      this.player.state = "idle";
-      this.time.delayedCall(440, () => this.gotoStage(target));
+      this.startTransition(target, { delay: 440 });
     };
 
     /* v3.0.24 (#보스재도전) — 클리어한 챕터 보스 고능력치 재판:
@@ -4527,9 +4573,7 @@ export class WorldScene extends Phaser.Scene {
       audio.sfx.portal();
       EventBus.emit("ui:panel", { panel: null });
       EventBus.emit("banner:show", { text: `재림 — ${BOSS_DEFS[spec.boss].name}의 재도전! [${BOSS_DIFFS[lv].label}]` });
-      this.cameras.main.fadeOut(420, 0, 0, 0);
-      this.player.state = "idle";
-      this.time.delayedCall(440, () => this.gotoStage(target, { replayBoss: ch, replayDiff: lv }));
+      this.startTransition(target, { delay: 440, replayBoss: ch, replayDiff: lv });
     };
     /* v3.0.28 (#보스난이도) — 스토리 보스 난이도 선택 수신은 v3.1.0에서 제거됐다:
      *  스토리 보스는 전용 난이도(노말 상향 고정)로 즉시 스폰, 선택창 없음.
@@ -4930,9 +4974,31 @@ export class WorldScene extends Phaser.Scene {
      *  실행 중이라 미간섭 — 죽은 뒤 어두운 화면도 정상 유지된다. */
     {
       const cam = this.cameras.main as unknown as {
-        fadeEffect?: { isRunning: boolean }; alpha: number; setAlpha(a: number): void;
+        fadeEffect?: { isRunning: boolean; progress: number; direction: boolean };
+        alpha: number; setAlpha(a: number): void; resetFX?(): void;
       };
       if (!cam.fadeEffect?.isRunning && cam.alpha < 1) cam.setAlpha(1);
+      /* v4.1.2 — 페이드 스타크 자가치유: Phaser 3.60+ 페이드는 postFX 방식(카메라 alpha 불변)이라
+       *  완료된 fadeOut이 검은 화면으로 남아도 위 알파 치유가 못 본다. 전환·사망·취침·대사가
+       *  아닌데 어둡게 머물면(실행 중 3.5초+ 또는 완료된 fadeOut 1.2초+) resetFX로 강제 복구 —
+       *  "검은 화면이 화면을 가리고 멈춤"의 마지막 방어선. */
+      const fx = cam.fadeEffect;
+      const protectedDark = this.transitioning || this.player?.state === "dead" || this.sleeping || this.dialoguing;
+      if (fx && !protectedDark) {
+        const stuckCompleted = fx.direction === true && fx.progress >= 0.99 && !fx.isRunning;
+        if (fx.isRunning || stuckCompleted) {
+          this.fadeDarkMs += dt;
+          if (this.fadeDarkMs > (stuckCompleted ? 1200 : 3500)) {
+            try { cam.resetFX?.(); } catch { /* 미지원 환경 무시 */ }
+            cam.setAlpha(1);
+            this.fadeDarkMs = 0;
+          }
+        } else {
+          this.fadeDarkMs = 0;
+        }
+      } else if (!fx) {
+        this.fadeDarkMs = 0;
+      }
     }
     /* v3.3.0 (#흑화) — 물리 월드 자가치유: 대사/취침/사망도 아닌데 정지돼 있으면
      *  (보스 시네마틱 도중 예외, 복구 경로 실패 등) 즉시 복원해 조작 불능을 막는다 */
@@ -5717,9 +5783,7 @@ export class WorldScene extends Phaser.Scene {
     const target = this.nearestVillageKey();
     audio.sfx.portal();
     this.showBanner(`긴급 귀환 — ${STAGE_SHORT[target] ?? "마을"}`);
-    this.cameras.main.fadeOut(500, 0, 0, 0);
-    this.player.state = "idle";
-    this.time.delayedCall(520, () => this.gotoStage(target));
+    this.startTransition(target, { delay: 520 });
   }
 
   /** 현재 구역 기준 가장 가까운 마을 — 같은 챕터 마을 → 이전 챕터 → 시작 마을 */
@@ -6606,17 +6670,9 @@ export class WorldScene extends Phaser.Scene {
     /* v2.9 — 어느 마을(챕터 마을 포함)에서 들어왔는지 기억 → 퇴장 시 그 마을로 복귀 */
     this.interiorFrom = this.stageDef.isVillage ? this.stageDef.key : "village";
     audio.sfx.portal();
-    this.player.state = "idle";
-    this.player.setVelocity(0, 0);
-    this.cameras.main.fadeOut(420, 0, 0, 0);
-    this.time.delayedCall(460, () => {
-      /* v3.3.0 (#흑화) — 실내 전환도 transitioning 게이트 통일: gotoStage와 이중 restart 경합 차단 */
-      if (this.transitioning) return;
-      this.transitioning = true;
-      // 실내는 세이브에 기록하지 않음(종료 시 들어온 마을로 복귀)
-      const carry = this.buildSave(this.interiorFrom);
-      this.scene.restart({ stage: key, save: carry });
-    });
+    // 실내는 세이브에 기록하지 않음(종료 시 들어온 마을로 복귀) — save 옵션으로 전달
+    const carry = this.buildSave(this.interiorFrom);
+    this.startTransition(key, { delay: 460, save: carry ?? undefined });
   }
 
   /** 실내 출구 문 E — 밖(건물 앞)으로 복귀 */
@@ -6624,25 +6680,17 @@ export class WorldScene extends Phaser.Scene {
     if (this.restCd > 0 || this.sleeping || this.transitioning) return;
     this.restCd = 1500;
     audio.sfx.portal();
-    this.player.state = "idle";
-    this.player.setVelocity(0, 0);
-    this.cameras.main.fadeOut(380, 0, 0, 0);
-    this.time.delayedCall(420, () => {
-      /* v3.3.0 (#흑화) — 전환 게이트 통일 */
-      if (this.transitioning) return;
-      this.transitioning = true;
-      /* v2.9 — 들어온 마을(챕터 마을 포함)로 복귀 */
-      const vk = STAGES[this.interiorFrom] ? this.interiorFrom : "village";
-      const carry = this.buildSave(vk);
-      writeSave(carry);
-      const def = STAGES[vk];
-      const cx = def.width / 2;
-      const cy = def.height / 2;
-      const entry = this.stageDef.key === "interior_inn"
-        ? { x: cx - 400, y: cy - 60 } // 여관 문 앞
-        : { x: cx - 190, y: cy + 330 }; // 내 집 문 앞
-      this.scene.restart({ stage: vk, save: carry, entry });
-    });
+    /* v2.9 — 들어온 마을(챕터 마을 포함)로 복귀 */
+    const vk = STAGES[this.interiorFrom] ? this.interiorFrom : "village";
+    const carry = this.buildSave(vk);
+    writeSave(carry);
+    const def = STAGES[vk];
+    const cx = def.width / 2;
+    const cy = def.height / 2;
+    const entry = this.stageDef.key === "interior_inn"
+      ? { x: cx - 400, y: cy - 60 } // 여관 문 앞
+      : { x: cx - 190, y: cy + 330 }; // 내 집 문 앞
+    this.startTransition(vk, { delay: 420, save: carry, entry });
   }
 
   /** 취침 — 여관(20G)/내 집(무료): 암막 + Zzz 연출 → 풀회복 + 버프 + 저장 */

@@ -744,3 +744,26 @@ Stage Summary:
 - 실제 수익화 전환: 매니페스트 앱 ID + ads.ts 단위 ID를 본인 AdMob 값으로 교체 후 재빌드
 - 버전 체계: 이후 패치는 4.1.2, 4.1.3… n씩 상승
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 45
+Agent: Super Z (메인)
+Task: "화면 전환시 검은 화면이 가끔 화면을 가리고 멈춤 — 특히 이전 맵으로 돌아갈때" 근본 수정 → v4.1.2 (4.1.n 패치 체계)
+
+Work Log:
+- [원인 규명] 모든 전환 지점(포탈 전진/복귀·수비전 퇴장 1.9초·균열 퇴장 1.8초·긴급귀환·부적·친구이동·재림·실내)이 "fadeOut → delayedCall → gotoStage" 패턴인데 페이드 창(0.4~1.9초) 동안 transitioning 게이트가 열려 있었다. 그 창에 경합 전환(관성 드리프트로 다른 포탈 overlap·이중 탭·UI 중복 클릭)이 들어오면 scene.restart 2회 경합 → fadeIn 유실 → 검은 화면·멈춤. "이전 맵 복귀"에서 잦았던 건 수비전/균열 퇴장의 1.8~1.9초 긴 블랙아웃 창이 원인
+- [발견 2] Phaser 3.60+ 카메라 페이드는 postFX 방식 — camera.alpha를 건드리지 않음(dbg_fade 실측: fadeEffect.isRunning=true인데 alpha=1 유지). 기존 alpha 기반 자가치유로는 완료된 fadeOut의 검은 잔상을 못 고친다
+- [수정 ①] startTransition 단일 통로 신설: 즉시 transitioning=true(경합 창 원천 차단) + portalActive/returnActive=false + player.setVelocity(0,0) + fadeOut + delayedCall → gotoStage(force) + 4초 하드 워치독(씬 비활성 시 lastCarry로 강제 재시작, 활성·플래그 잔존 시 해제+resetFX)
+- [수정 ②] gotoStage에 save 옵션(실내 전환 buildSave 재사용) + force 파라미터 + lastCarry 스냅샷
+- [수정 ③] 11개 전환 지점 전부 startTransition으로 교체 (enterPortal/enterPrevStage/finishGate/finishCloset/onFriendGoto/scroll_return/onWarp/onBossReplay/emergencyReturn/enterInterior/leaveInterior) — enterPortal의 막힌 문 분기는 fadeOut 제거로 fadeIn 플래시도 제거
+- [수정 ④] 3중 자가치유: (a) update 루프 — 전환/사망/취침/대사가 아닌데 페이드 실행 3.5초+ 또는 완료된 fadeOut 잔상 1.2초+ → camera.resetFX() 강제 복구 (b) create 워치독 — fadeIn 끝난 뒤 잔상 → resetFX (c) 4초 하드 워치독 — restart 유실 시 강제 재시작
+- [검증] tsc 0 에러 · Playwright smoke_v412_transition 13/15 PASS — 페이드 중 즉시 게이트 닫힘/경합 3종 전부 무시/도장→마을 복귀/수비전 퇴장(1.9초 창)→마을/왕복 3사이클/자가치유 발동 신호 포착(누적 1100ms→리셋 150ms=resetFX 발동)/페이지 에러 0. 미통과 2건은 타이틀 배지(빌드 전)와 가상시간 잔존 지표뿐
+- [환경 실측] 헤드리스 swiftshader는 postFX 페이드 미렌더 + 가상시간 ~100배 늘어짐(dbg_transition/dbg_fade/dbg_pixel/dbg_gate/dbg_heal/dbg_shot 6종 진단 스크립트) — 실기기 60fps에선 임계 1.2초 그대로 적용
+- [릴리스] versionCode 49/versionName 4.1.2, Overlays 배지, server.js·next.config 미러, apk-guide·안내 txt 갱신 → APK 빌드 56s → aapt 49/4.1.2 실측, 144,885,751B, md5 b7d25f76768bcbe7543f2c372b545316 → GitHub Release v4.1.2(id 383612220) 업로드 → 재다운로드 md5 일치
+- [후처리] rm -rf .next + bun run build(standalone+fc-multi 복구) + 로컬 서버 재기동 200 / 퍼블릭 200
+
+Stage Summary:
+- v4.1.2 배포: https://github.com/apple01234/CERTZ/releases/download/v4.1.2/SERTZ-v4.1.2.apk (md5 b7d25f76…)
+- 전환 검은 화면 3중 방어 완비 — 경합 자체가 불가능해졌고, 만약의 잔상도 1~3초 내 자동 복구
+- 진단 스크립트 보존: scripts/dbg_transition·dbg_fade·dbg_fade2·dbg_pixel·dbg_gate·dbg_heal·dbg_shot·smoke_v412_transition
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

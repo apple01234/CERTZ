@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.1.1 · 바르가 업데이트 — 균열 수비전·피규어 가챠·배지·룬 합성·성좌·출석부·일일 퀘스트·쿠폰·광고 보상·긴급 귀환 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.1.2 · 바르가 업데이트 — 균열 수비전·피규어 가챠·배지·룬 합성·성좌·출석부·일일 퀘스트·쿠폰·광고 보상·긴급 귀환 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
