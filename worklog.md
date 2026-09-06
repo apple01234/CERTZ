@@ -570,3 +570,27 @@ Stage Summary:
 - 웹(라이브)에는 v3.2.0 전체 반영 — 5차 궁극기(Lv.200)/흑화 근본 수정/최적화 즉시 적용
 - APK 다운로드는 gofile 단일 경로(https://gofile.io/d/Tcsl6sY2)로 완전 고정
 - 현재 배포 v3.1.0 APK에 신규 코드(자동 이행 등)는 미포함 — 차기 APK 빌드 시 반영(유저가 JDK 빌드 금지 지시로 이번엔 재빌드 안 함)
+
+---
+Task ID: 38
+Agent: main (Super Z)
+Task: "Gofile 없는데?" — gofile 링크 문제 진단 및 다운로드 경로 재정비
+
+Work Log:
+- gofile Tcsl6sY2 진단: 파일 생존 확인(canAccess, md5 일치) — 단, 콜드스토리지(cold-na-phx-2)라 첫 바이트까지 55~56초 무반응(3회 측정 동일) → 유저가 "없다"고 느낀 원인
+- 홈페이지/타이틀 화면에 APK 링크 전무 → 찾기 어려운 문제 추가 확인
+- gofile 재업로드(qUiPRRXl) 시도 → 신규 파일도 즉시 콜드 배정, 53~55초 지열 반복 → gofile 정책 한계 확정
+- 대안: catbox(412 IP차단), 0x0.st(연결실패), pixeldrain(API키 필요) 실패 → GitHub Releases 채택
+- GitHub Release v3.1.0 생성(id 383451085) + APK 140MB 업로드 → 다운로드 검증: HTTP 200, 19.7초/140MB(7MB/s), md5 ed1c4e9a 일치
+- apk-guide.html: 방법1=GitHub 바로다운로드 버튼(권장), 방법2=gofile(1분 대기 안내)
+- APK_다운로드_안내.txt 동일 갱신
+- server.js/next.config.ts: /SERTZ-*.apk 리다이렉트 → GitHub 릴리스 직접링크
+- Overlays.tsx TitleScreen: "폰용 APK 다운로드" 링크 추가(Smartphone 아이콘, apk-guide.html 새탭)
+- 푸시 1차 거부(GitHub 시크릿 푸시보호: 스크립트 내 하드코딩 토큰 감지) → 토큰 제거·GH_TOKEN 환경변수화 후 amend 재푸시 성공(2a5ad6e)
+- tsc --noEmit 통과
+
+Stage Summary:
+- 확정 다운로드: https://github.com/apple01234/CERTZ/releases/download/v3.1.0/SERTZ-v3.1.0.apk (즉시)
+- gofile 백업: https://gofile.io/d/qUiPRRXl (첫 응답 ~1분 대기 필요)
+- commit 2a5ad6e push 완료 → 재배포 필요
+- 교훈: 토큰은 절대 파일에 하드코딩 금지(시크릿 푸시보호), GH_TOKEN 사용
