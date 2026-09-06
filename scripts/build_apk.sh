@@ -42,7 +42,7 @@ cd android
 ./gradlew assembleRelease --no-daemon
 
 echo "[4/5] APK 복사"
-cp -f app/build/outputs/apk/release/app-release.apk "$PROJECT_ROOT/download/SERTZ-v3.1.0.apk"
+cp -f app/build/outputs/apk/release/app-release.apk "$PROJECT_ROOT/download/SERTZ-v3.2.0.apk"
 
-echo "[5/5] 완료 → $PROJECT_ROOT/download/SERTZ-v3.1.0.apk"
-ls -la "$PROJECT_ROOT/download/SERTZ-v3.1.0.apk"
+echo "[5/5] 완료 → $PROJECT_ROOT/download/SERTZ-v3.2.0.apk"
+ls -la "$PROJECT_ROOT/download/SERTZ-v3.2.0.apk"

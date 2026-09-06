@@ -40,7 +40,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.1.0 · 볼륨 UI·전직 시련 개편·보스 밸런스·흑화 수정 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v3.2.0 · 5차 궁극기(Lv.200)·흑화 근본 수정·APK 연동 자동 복구·최적화 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
