@@ -1,7 +1,7 @@
-SERTZ v3.2.0 APK 다운로드 안내
+SERTZ v4.0.0 APK 다운로드 안내
 ================================
 
-이번 버전 (v3.2.0, versionCode 45)
+이번 버전 (v4.0.0 이세카이 업데이트, versionCode 46)
 - 5차 궁극기 신설: Lv.200 해금 · 쿨타임 60초 · 계열별 전용 화려한 연출
 - 맵 이동 시 검은 화면(흑화) 근본 수정 — 카메라 알파 자가치유 + WebGL 컨텍스트 손실 복구
 - APK 멀티 연동 자동 복구 — 죽은 구 서버 주소 자동 이행 + 연결 실패 원탭 복구 UI
@@ -17,7 +17,7 @@ SERTZ v3.2.0 APK 다운로드 안내
 - HUD 브로드캐스트 스로틀 등 성능 최적화
 
 ■ 다운로드 방법 1 — GitHub 릴리스 (권장, 즉시 시작)
-  https://github.com/apple01234/CERTZ/releases/download/v3.2.0/SERTZ-v3.2.0.apk
+  https://github.com/apple01234/CERTZ/releases/download/v4.0.0/SERTZ-v4.0.0.apk
   → 누르는 즉시 다운로드 시작 (대기 없음, 약 20초)
   md5: 13ea3c2e2d759b82b41757eab3d78ceb
   릴리스 페이지: https://github.com/apple01234/CERTZ/releases
@@ -36,5 +36,5 @@ SERTZ v3.2.0 APK 다운로드 안내
   1. PC 브라우저: https://sertz4.space-z.ai 열고 게임 시작
   2. 폰 APK: 타이틀 우하단 🌐 버튼 → 서버 주소 https://sertz4.space-z.ai (기본값) → 저장
   3. 같은 주소로 접속한 기기끼리 같은 월드에서 만납니다 (채팅/파티/친구 지원)
-  ※ v3.2.0부터는 서버 주소가 바뀌어도 자동 이행 + 원탭 재접속 지원
+  ※ v4.0.0 내용: 게이트 디펜스·피규어 가챠·배지·룬·성좌·출석부·일일퀘·쿠폰·오프라인 보상·랭킹 (md5 8ccb5b9390c5246976ad6a8dc8971fd7)
   ※ 기존에 "오프라인 모드"로 저장해 둔 경우: 🌐 버튼 → 주소 다시 입력 → 저장 & 새로고침
