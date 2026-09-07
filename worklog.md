@@ -941,3 +941,24 @@ Stage Summary:
 - Sci-Fi Frames 80종은 픽셀 아이덴티티 충돌로 미채택(필요 시 별도 UI 스킨으로 검토 가능)
 - 게임 로직/맵/보스/세이브 구조 무변경 — 기존 틀 유지
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 53
+Agent: Super Z (메인)
+Task: v4.1.9 품질 폴리싱 — NPC 파츠 배치 수정 적용 + 사망 연기 소형화 + 전사 전용 참격음 + APK 빌드·릴리스
+
+Work Log:
+- 세션 재개 시 v4.1.9 작업이 중단된 상태 확인 — spum_compose.py compose2(피벗 정렬·틴트 알파 보존·피벗 기준 회전) 수정본이 커밋돼 있고 재조합 48종 + 컨택트시트가 생성돼 있었음(미적용 상태)
+- [SPUM 적용] 컨택트시트 육안 검증(얼굴/투구/활/팔츠 정상 배치 확인) → premium_assets.py 재실행으로 spum_*.webp 14종 + cfxr 5종 재생성 → 2x2 시트(기사/마법사/엘프/대장장이) 육안 재검증 통과. DialogueBox 초상화 28참조가 동일 키를 공유하므로 자동 개선
+- [전사 참격음] 원인: 전사·미전직 기본공격이 구형 sfx_swing(유료 팩 Weapon 1-2 — UI 계열 얇은 소리) 공용. 효과음연구소 sword-slash1/2.mp3 신규 다운로드(referer 필요 실측 — 429B 에러페이지 → battle1.html referer로 200) → skl_sword1/2.ogg 변환(mono 44.1k q4, 17KB/14KB) → audio.ts SKILL_SFX_FILES sword/sword2 키 + 볼륨 0.42/0.40 추가(SKILL_SFX_TRACKS 자동 프리로드) → Player.ts atkSlash 3곳 교체(1타 sword 피치 0.96~1.04 / 연타 2·3타 sword2 0.94~1.12 변주)
+- [사망 연기] 원인: cfxr_smoke(512px 구름 4장 시트)를 scale 0.3→0.85로 확대 — 구름 4장이 최대 435px로 동시 렌더("크고 짜침" 정체). scripts/make_death_puff.py로 좌상단 구름 1개 크롭 cfxr_puff.webp(240px, 3KB) 신설 → smokeEmitter 텍스처 교체 + scale 0.12→0.3(29~72px)·alpha 0.42·explode 5→4 재조정 → BootScene 로드 목록 cfxr_smoke→cfxr_puff 교체(디스크 파일은 유지)
+- [검증] tsc --noEmit 0 에러
+- [버저닝] versionCode 56 / 4.1.9 — build.gradle·server.js 미러·next.config 미러·apk-guide.html(변경점+md5)·APK_다운로드_안내.txt·Overlays 배지 "v4.1.9 · 품질 폴리싱"
+- [빌드/릴리스] 1차 시도 실패 — Gradle이 시스템 JRE(/usr/lib/jvm, javac 없음)를 집음 → JAVA_HOME=/home/z/jdk 명시로 해결. APK BUILD SUCCESSFUL 45s → 104,684,034B(100MB) · aapt 실측 versionCode 56/4.1.9 · md5 3d7079deadd807beb8807adc0e6d12c6 → GitHub Release v4.1.9(id 384085762) 업로드 → 재다운로드 md5 일치
+- [후처리] 커밋 db101df → rm -rf .next && bun run build(fc-postbuild 래퍼 정상) → 서버 재기동(setsid -f) → /·apk-guide·spum_knight·cfxr_puff·skl_sword1 전부 200 → push 059fbef..db101df
+
+Stage Summary:
+- v4.1.9 배포: https://github.com/apple01234/CERTZ/releases/download/v4.1.9/SERTZ-v4.1.9.apk (md5 3d7079de…, versionCode 56, 100MB)
+- 유저 품질 피드백 4종 중 ①사망 이펙트(연기 소형화)·③NPC 파츠 배치(피벗/알파)·④전사 공격음(전용 참격음) 해결 — ②효과음 배치는 v4.1.7(스킬 27종)+본건(전사 보강)으로 완결
+- 교훈: 대형 파티클 텍스처는 시트 통째 스케일 업이 아니라 사용 분 크롭 + 소형 scale이 정답 / soundeffect-lab 재다운로드 시 referer 헤더 필수
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
