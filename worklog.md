@@ -861,3 +861,27 @@ Stage Summary:
 - 게임 아이덴티티 전환: 갈무리 픽셀 폰트 + 암전 챕터 조명 연출 + 보스전 블룸/카오스 연출 강화
 - 교훈: npm 폰트 패키지는 woff2+ttf 이중 참조로 번들이 커짐 — 필요 종류만 셀프호스팅이 정답
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 50
+Agent: Super Z (메인)
+Task: 웹 성능 최적화 감사 보고서 (10개 항목, 실측 기반) → docx 산출물
+
+Work Log:
+- 사용자 "웹 성능 최적화 전문가 프롬프트"(10항목)를 SERTZ 프로젝트에 적용한 감사 보고서 작성 요청 처리
+- [실측] public 136MB 중 오디오(OGG) 129MB/79개(평균 1.63MB, 최대 bgm_abyss3.ogg 5.9MB)·PNG 3.6MB·웹폰트 woff2 4종 1.6MB
+- [실측] .next/static/chunks 2.7MB — Phaser 단일 청크 4512ba7a(1,827KB, 68%), CSS 195KB, Turbopack 빌드 확인
+- [병목 확정] BootScene.ts 243행 AUDIO_LIST 순회 = 오디오 전량 사전 로드 / next.config headers() 부재로 public/assets max-age=0(재방문 재검증 폭탄) / server.js 압축 미들웨어 부재 / page.tsx는 next/dynamic ssr:false 이미 적용(양호)
+- [도구 확인] ffmpeg 7.1.5·sharp 설치 확인(재인코딩/WebP 즉시 실행 가능), 한글 폰트 WenQuanYi Zen Hei(fc-list :lang=ko)
+- [차트] scripts/gen_perf_chart.py — 그림 1(자산 용량 구성, 로그 스케일)·그림 2(오디오 재인코딩 예상 절감) PNG 2종, DM-1 팔레트 파생 색상
+- [보고서] scripts/perf_content_a.js·perf_content_b.js(콘텐츠 블록) + scripts/gen_perf_report.js(엔진) — docx 스킬 R1 표지(DM-1)+calcTitleLayout/calcCoverSpacing+3섹션 페이지 번호(표지 없음→목차 로만→본문 아라비아)+TOC 필드+표 3개+코드 스니펫 5개
+- [후처리] add_toc_placeholders.py --auto(20개 헤딩, exit 0) → patch_perf_docx.py(빈 pgNumType 제거, footer1 ROMAN/footer2 arabic 스위치 패치)
+- [검증] postcheck.py 0 오류(경고 2건: 행간 264=코드/표 의도, Malgun Gothic/Consolas=한글 표준 폰트) + LibreOffice PDF 변환 14페이지 렌더링 육안 검증(표지/목차/본문/표/그림 정상)
+- [산출물] download/SERTZ_웹성능_최적화_감사보고서.docx (117KB, 본문 12p)
+
+Stage Summary:
+- 감사 결론 3대 병목: ①오디오 129MB 전량 사전 로드(재인코딩 시 -50%, 코어 로딩 전략으로 첫 선행 다운로드 3~8MB) ②public/assets 캐시 정책 부재(헤더 상향 시 재방문 134MB→0 수렴) ③압축 부재(JS/CSS -70~82%)
+- 로드맵: Phase 1(당일~1일: 코어 로딩+캐시 헤더+압축) → Phase 2(1~2일: 재인코딩·WebP·폰트·프리패치) → Phase 3(선택: h2/CDN/AOI·델타/크리티컬 CSS/Phaser 커스텀 빌드)
+- 서버 변경 시 커스텀 server.js와 standalone 주입(postbuild.js) 양쪽 동시 적용 필요 — 배포 누수 방지
+- 재생성 방법: python3 scripts/gen_perf_chart.py && node scripts/gen_perf_report.js && 후처리 2종
+- 게임 코드 무변경(보고서 과제) — 버전 버프 없음, 다음 성능 구현 시 4.1.6 사용
