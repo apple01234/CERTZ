@@ -885,3 +885,29 @@ Stage Summary:
 - 서버 변경 시 커스텀 server.js와 standalone 주입(postbuild.js) 양쪽 동시 적용 필요 — 배포 누수 방지
 - 재생성 방법: python3 scripts/gen_perf_chart.py && node scripts/gen_perf_report.js && 후처리 2종
 - 게임 코드 무변경(보고서 과제) — 버전 버프 없음, 다음 성능 구현 시 4.1.6 사용
+
+---
+Task ID: 51
+Agent: Super Z (메인)
+Task: 3-Phase 웹 성능 최적화 전항목 구현 → v4.1.6 (기존 틀/내용 유지 조건)
+
+Work Log:
+- [Phase 1 압축] next.config compress:true 명시 + headers() 신설 — /assets 7일+SWR 30일(immutable 지양→리소스 교체 시 자가 수렴), /fonts 30일+SWR 1년, /_next/static은 Next 기본 immutable 유지. 실측: HTML gzip 2.50KB, JS 청크 gzip+immutable 1년 확인
+- [Phase 1 코어 로딩] 조사 결과 BGM 지연로딩은 v3.0.24에 이미 구현돼 있었음(부트 프리로드=타이틀 1곡+SFX 39종 628KB) — 감사 보고서의 "오디오 전량 사전 로드" 병목은 오판, 추가 변경 불필요 판정(기존 틀 유지)
+- [Phase 2 오디오] scripts/optimize_audio.py — BGM 40트랙 libvorbis -q:a 2(보고서 권장 96kbps), SFX 12종 모노 q3, skl 27종 유지(이미 모노 89k). 128.2MB→88.7MB(-31%), ffprobe 길이검증 52/52 통과 후 원자적 교체
+  · 기술 이슈: 소스 OGG(iTunes 인코딩)의 비정상 DTS로 ffmpeg muxer 큐 무한 누적→SIGKILL(OOM) 실측 — 2-step WAV 경유 인코딩으로 회피
+- [Phase 2 WebP] scripts/optimize_webp.js — public/assets PNG 659장 전량 변환(무손실 우선→lossy q95 폴백), 3.58MB→2.33MB(-35%), 원본 삭제. BootScene 로더 11곳+classes.ts 30곳+HUD/TouchControls/Panels/DialogueBox/globals.css 참조 전량 .webp 치환, 82종 skillicon 실존 검증 0누락
+  · 사고: 1차 적용 스크립트 rmSync 경로 버그로 PNG만 삭제(원본 659장 유실) — scripts/_webp 백업본에서 apply_webp.js로 전량 복구, sharp 메타데이터 무결성 검증 통과. 교훈: 파괴적 배치는 즉시 삭제 대신 manifest 검증 후 삭제
+- [Phase 2 폰트] layout.tsx Galmuri woff2 4종 rel=preload(React 19 호이스팅) — 보고서의 "폰트 2종 축소"는 4.1.5 콘텐츠 정체성 변경이므로 기각(내용 유지), preload로 FOUT 제거만 채택
+- [Phase 3] 초기 페이로드 2.5KB(≤14KB 목표 대비 82% 절감)·JS 청크 캐시 실측 완료. h2/h3·TLS는 플랫폼 엣지 종단(로컬 Caddy :81은 프레인 HTTP 프록시)으로 기존 정상 — 저장소 변경 불필요. Phaser 커스텀 빌드는 회귀 리스크 대비 이득 미미로 미적용(문서화)
+- [버저닝] versionCode 53 / 4.1.6 — build.gradle·server.js 미러·next.config 미러·apk-guide.html(v4.1.6 변경점+md5)·APK_다운로드_안내.txt·Overlays 배지 "v4.1.6 · 성능 최적화"
+- [빌드] tsc 0 에러 → bun build 성공 → APK BUILD SUCCESSFUL 55s → 105,803,201B(-29%: 141→101MB) · aapt 실측 versionCode 53/4.1.6 · md5 73cdddb1c9486213cbf39dc3cd32088c
+- [릴리스] GitHub Release v4.1.6(id 383954270) 업로드 → 재다운로드 md5 일치
+- [환경 교훈] 백그라운드 프로세스: `setsid nohup X &`는 &가 그룹리더화해 setsid EPERM 실패→툴콜 정리 때 회수됨. `setsid -f` 포크 모드로 완전 분리 필요(서버 생존 실측). /tmp 쓰기 차단 환경 — 임시파일은 프로젝트 내로
+- [후처리] rm -rf .next && bun run build → NODE_ENV=production node server.js(setsid -f) → GET /·apk-guide·webp·안내 200, /SERTZ-v4.1.6.apk 307 확인
+
+Stage Summary:
+- v4.1.6 배포: https://github.com/apple01234/CERTZ/releases/download/v4.1.6/SERTZ-v4.1.6.apk (md5 73cdddb1…, versionCode 53, 101MB)
+- 정적 자산 총량 136MB→91MB(-33%), APK 141MB→101MB(-29%), 재방문 /assets 재검증 폭탄(max-age=0) 제거, HTML 2.5KB gzip
+- 감사 보고서 로드맵 Phase 1·2·3 전항목 중 구현 가능한 전부 적용 완료 — 게임 로직/맵/보스/세이브 구조 무변경
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
