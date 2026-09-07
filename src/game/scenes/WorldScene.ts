@@ -1,11 +1,11 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, type BmGrant, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
-import { Lighting } from "../fx/Lighting";
+import { Lighting, ambientFor } from "../fx/Lighting";
 import { Pet } from "../entities/Pet";
 import { EventBus, type QuestState, type InteractState, type QuestLogState, type RewardPopupState } from "../../components/game/EventBus";
 import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
@@ -1576,6 +1576,22 @@ export class WorldScene extends Phaser.Scene {
         .setScale(0.9)
         .setAlpha(0.2);
     }
+
+    /* v4.3.0 — 암전 챕터 환경 불빛 (유저 지시 "어두운 분위기의 챕터만 맵 어둡게 + 불빛 있게"):
+     *  열린 셀 중심에 정적 횃불 글로우 5개 — 니플헤임은 한파(청색), 그 외 따뜻한 횃불색.
+     *  충돌/파티클 없는 저비용 ADD 글로우+플리커 (이펙트 절제 원칙 유지) */
+    if (ambientFor(parseStage(stageKey).ch)) {
+      const lay1 = this.layout;
+      if (lay1) {
+        const opens: number[] = [];
+        for (let i = 0; i < lay1.open.length; i++) if (lay1.open[i]) opens.push(i);
+        const tint = parseStage(stageKey).ch === "niflheim" ? 0x8ad4ff : 0xffa050;
+        for (let n = 0; n < 5 && opens.length > 0; n++) {
+          const c = cellCenterOf(lay1, opens[Math.floor(Math.random() * opens.length)]);
+          this.lighting.addLight(c.x, c.y - 6, { tint, scale: 0.7, alpha: 0.26, flicker: 0.09 });
+        }
+      }
+    }
   }
 
   /** v2.6 — 육식 식물(jawsplant류) 접촉 데미지. 피격 처리(무적시간·연출)는 Player.takeDamage 재사용 */
@@ -1712,10 +1728,11 @@ export class WorldScene extends Phaser.Scene {
     (this.portal.body as Phaser.Physics.Arcade.Body).setSize(34, 44).setOffset(15, 10);
     this.physics.add.overlap(this.player, this.portal, () => {
       if (!this.portalActive || !this.portal?.active) return;
-      /* v4.1.3 (#자동사냥포탈) — 자동사냥 중엔 전진 차원문을 타지 않는다.
-       *  자동 배회/카이팅 이동이 포탈 위로 지나가며 의도치 않은 맵 전환(→ 검은 화면 체감)
-       *  이 일어났다. 자동사냥이 켜져 있으면 겹침을 무시하고 5초 스로틀 안내만 띄운다. */
-      if (this.autoHunt) { this.warnAutoPortal(); return; }
+      /* v4.3.0 — 자동사냥 중에도 전진 차원문 탑승 허용 (유저 지시 "자동전투 시에도 포탈 탈수있게").
+       *  검은 화면 재발 방지 안전 가드: 주변 260px에 생존 적이 있으면(전투 중 관성 겹침) 무시,
+       *  비어 있을 때만 진입 — 전환은 startTransition 단일 통로(1회 게이트+4초 워치독)로 처리.
+       *  복귀 차원문은 자동 무한 루프 방지를 위해 기존 게이트 유지. */
+      if (this.autoHunt && this.liveEnemiesNear(260)) return;
       this.enterPortal();
     });
   }
@@ -1825,12 +1842,22 @@ export class WorldScene extends Phaser.Scene {
     }, 4000);
   }
 
-  /** v4.1.3 (#자동사냥포탈) — 자동사냥 중 차원문 접근 안내 (5초 스로틀 — 스팸 방지) */
+  /** v4.1.3 (#자동사냥포탈) — 자동사냥 중 차원문 접근 안내 (5초 스로틀 — 스팸 방지)
+   *  v4.3.0 — 전진 차원문은 자동 탑승 허용으로 변경돼 복귀 차원문 전용 안내로 남음 */
   private autoPortalWarnUntil = 0;
   private warnAutoPortal() {
     if (this.time.now < this.autoPortalWarnUntil) return;
     this.autoPortalWarnUntil = this.time.now + 5000;
-    this.showBanner("자동사냥 중에는 차원문을 타지 않는다 — 끄고 이용하자");
+    this.showBanner("자동사냥 중에는 복귀 차원문을 타지 않는다 — 끄고 이용하자");
+  }
+
+  /** v4.3.0 — 반경 r 내 생존 적 존재 여부 (자동 포탈 진입 안전 가드) */
+  private liveEnemiesNear(r: number): boolean {
+    if (!this.player) return true;
+    for (const e of this.enemies) {
+      if (e.active && e.alive && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < r) return true;
+    }
+    return false;
   }
 
   private enterPortal() {
@@ -2500,7 +2527,7 @@ export class WorldScene extends Phaser.Scene {
     const base = Phaser.Math.Between(def.gold[0], def.gold[1]);
     const total = Math.max(1, Math.round(base * GOLD_DROP_SCALE));
     this.dropLootGold(x, y, total);
-    const r = Math.random();
+    const r = Math.random() / (this.player?.hasBuff("buff_luck") ? 1.35 : 1); // v4.3.0 — 행운의 물약: 물약 드롭률 +35%
     if (r < (def.dropHp ?? 0)) this.dropLootItem(x, y, "potion_hp");
     else if (r < (def.dropHp ?? 0) + (def.dropMp ?? 0)) this.dropLootItem(x, y, "potion_mp");
   }
@@ -5036,15 +5063,41 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.6 (지시 #1) — BM 상점 구매 (에메랄드) · v3.0.24 — 수량 지정 + 소모품 재구매 버그 수정 */
     const onBmBuy = (v: { key: string; qty?: number }) => {
       if (!this.player || this.dialoguing) return;
-      const qty = Math.max(1, Math.min(99, Math.floor(v.qty ?? 1)));
       const it = ITEMS[v.key as ItemKey];
-      const cost = (it?.bmPrice ?? 0) * (it?.kind === "consumable" || it?.kind === "buff" ? qty : 1);
-      const okBuy = this.player.buyBm(v.key as ItemKey, qty);
+      if (!it) return;
+      /* v4.3.0 — 가챠 상자/패키지: 구매 즉시 개봉·지급 (도파민 즉시성 — 창고 경유 없음).
+       *  상자는 CHEST_TABLES 가중치 롤, 패키지는 PACK_CONTENTS 전부 지급. */
+      if (v.key.startsWith("chest_") || v.key.startsWith("pack_")) {
+        const n = Math.max(1, Math.min(10, Math.floor(v.qty ?? 1)));
+        const cost = (it.bmPrice ?? 0) * n;
+        if (this.player.emerald < cost) {
+          EventBus.emit("banner:show", { text: "에메랄드가 부족합니다" });
+          return;
+        }
+        this.player.emerald -= cost;
+        const grants: BmGrant[] = [];
+        for (let i = 0; i < n; i++) {
+          if (CHEST_TABLES[v.key]) grants.push(this.rollChest(v.key));
+          else for (const g of PACK_CONTENTS[v.key] ?? []) grants.push(g);
+        }
+        audio.sfx.questDone();
+        this.grantBmGrants(`${it.name}${n > 1 ? ` ×${n}` : ""} 개봉!`, grants);
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        return;
+      }
+      /* v4.3.0 — 일일 특가: 오늘의 3종은 30% 할인가 (buyBm에 단가 오버라이드) */
+      const deal = dailyDeals(this.today()).includes(v.key as ItemKey);
+      const unitPay = deal && it.bmPrice ? Math.max(1, Math.round(it.bmPrice * (1 - DAILY_DEAL_OFF))) : undefined;
+      const qty = Math.max(1, Math.min(99, Math.floor(v.qty ?? 1)));
+      const cost = (unitPay ?? it.bmPrice ?? 0) * (it.kind === "consumable" || it.kind === "buff" ? qty : 1);
+      const okBuy = this.player.buyBm(v.key as ItemKey, qty, unitPay);
       if (okBuy) {
         this.save();
         this.emitRpgState();
         this.emitHud();
-        EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost} 에메랄드)` });
+        EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost} 에메랄드${deal ? " · 일일특가 30%↓" : ""})` });
         if (it?.kind === "pet") this.onPetChanged();
         if (it?.kind === "cosmetic") this.onCosmeticChanged();
         audio.sfx.equip();
@@ -5540,6 +5593,13 @@ export class WorldScene extends Phaser.Scene {
      *  (기존 #47 자동 여행은 포탈 앞 정지·장거리 왕복 체감이 나빠 삭제 — #1 요청 반영) */
     const targets = this.getAllTargets();
     if (targets.length === 0) {
+      /* v4.3.0 — 적 전멸 + 전진 차원문 활성 → 자동 탑승 (유저 지시 "자동전투 시에도 포탈 탈수있게").
+       *  접근은 autoApproach(BFS 경로) — 실제 전환은 overlap 가드 + startTransition 단일 통로라
+       *  검은 화면 경합이 재발하지 않는다. */
+      if (this.portalActive && this.portal?.active) {
+        this.autoApproach({ x: this.portal.x, y: this.portal.y });
+        return;
+      }
       this.autoWanderTick(); // v3.0.25 — 적 없음: 제자리 대신 구역 내 배회 (리스폰 탐색)
       return;
     }
@@ -7423,6 +7483,58 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /* ================= BM (v1.9 — 펫/치장/강화 오라) ================= */
+
+  /** v4.3.0 — 가챠 상자 가중치 롤 (chest_* 전용 — CHEST_TABLES) */
+  private rollChest(key: string): BmGrant {
+    const table = CHEST_TABLES[key] ?? CHEST_TABLES.chest_iron;
+    const total = table.reduce((s, e) => s + e.w, 0);
+    let r = Math.random() * total;
+    for (const e of table) {
+      r -= e.w;
+      if (r <= 0) return e.g;
+    }
+    return table[table.length - 1].g;
+  }
+
+  /** v4.3.0 — BmGrant 목록 지급 + reward:show 팝업 (가챠/패키지 공용)
+   *  ponytail: 이미 보유 펫/치장이 뽑히면 스킵(라벨 유지) — 중복 보상 환수 처리는 확장 시 */
+  private grantBmGrants(title: string, grants: BmGrant[]) {
+    const p = this.player;
+    if (!p) return;
+    const lines: RewardPopupState["lines"] = [];
+    for (const g of grants) {
+      if (g.gold) {
+        p.addGold(g.gold);
+        lines.push({ text: g.label, color: "#ffd76a" });
+      } else if (g.emerald) {
+        p.emerald += g.emerald;
+        lines.push({ text: g.label, color: "#7de8ff" });
+      } else if (g.buff) {
+        p.addBuffItem(g.buff, g.n ?? 1);
+        lines.push({ text: g.label, color: "#ffb0e8" });
+      } else if (g.item) {
+        const it = ITEMS[g.item];
+        if (it.kind === "pet") {
+          if (!p.pets.includes(g.item as PetKey)) {
+            p.pets.push(g.item as PetKey);
+            p.pet = g.item as PetKey;
+            this.onPetChanged();
+          }
+        } else if (it.kind === "cosmetic") {
+          if (!p.cosmetics.includes(g.item as CosmeticKey)) {
+            p.cosmetics.push(g.item as CosmeticKey);
+            this.onCosmeticChanged();
+          }
+        } else if (it.kind === "buff") {
+          p.addBuffItem(g.item as BuffKey, g.n ?? 1);
+        } else {
+          for (let i = 0; i < (g.n ?? 1); i++) p.owned.push(g.item);
+        }
+        lines.push({ text: g.label, color: "#e8ecf2" });
+      }
+    }
+    EventBus.emit("reward:show", { title, lines } satisfies RewardPopupState);
+  }
 
   /** 펫 기준 가장 가까운 활성 드롭 (Pet.tick 목표 탐색) */
   nearestDrop(x: number, y: number, range: number): Drop | null {

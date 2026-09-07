@@ -15,6 +15,7 @@ export class Pet extends Phaser.GameObjects.Image {
 
   constructor(scene: WorldScene, key: PetKey, x: number, y: number) {
     super(scene, x, y, PET_DEFS[key].icon);
+    if (PET_DEFS[key].tint) this.setTint(PET_DEFS[key].tint); // v4.3.0 — 신규 펫 텍스처 재활용 + 틴트 변주
     this.key = key;
     scene.add.existing(this);
     this.setDepth(11).setScale(1.1);

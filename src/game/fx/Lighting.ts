@@ -18,15 +18,16 @@ import Phaser from "phaser";
  *              < 어둠(55) < 광원(56) < 미니맵/HUD(95+)
  */
 
-/** 챕터별 암전 프로필 — alpha 0 = 암전 없음 */
+/** 챕터별 암전 프로필 — alpha 0 = 암전 없음
+ *  v4.3.0 — 유저 지시 "니플헤임, 요툰헤임, 스바르트알프헤임 등 어두운 분위기의 챕터만 맵 어둡게 + 불빛":
+ *  화산(무스펠헤임)·빛의 성전(알프헤임)은 밝은 분위기라 암전 목록에서 제외하고,
+ *  극지/동굴/광산/저승/심연 계열 5챕터만 암전 + 횃불 광원을 유지한다. */
 const CHAPTER_AMBIENT: Record<string, { color: number; alpha: number }> = {
-  cave: { color: 0x0a0818, alpha: 0.58 },
-  nidavellir: { color: 0x0a0818, alpha: 0.58 },
-  hel: { color: 0x120a10, alpha: 0.54 },
-  abyss: { color: 0x080614, alpha: 0.55 },
-  muspelheim: { color: 0x180704, alpha: 0.44 },
-  niflheim: { color: 0x060c16, alpha: 0.48 },
-  alfheim: { color: 0x06100a, alpha: 0.34 },
+  cave: { color: 0x0a0818, alpha: 0.58 },       // 7장 스바르트알프헤임 — 어둠 요정의 수정 광맥
+  nidavellir: { color: 0x0a0818, alpha: 0.58 }, // 8장 니다벨리르 — 룬 광산
+  hel: { color: 0x120a10, alpha: 0.54 },        // 9장 헬
+  abyss: { color: 0x080614, alpha: 0.55 },      // 10장 세계수의 뿌리 — 심연
+  niflheim: { color: 0x060c16, alpha: 0.48 },   // 6장 니플헤임 — 얼음의 성전
 };
 
 export type AmbientProfile = { color: number; alpha: number } | null;

@@ -489,6 +489,7 @@ export const SFX_VOLUMES: Record<string, number> = {
 const SKILL_SFX_FILES: Record<string, string> = {
   sword: "skl_sword1", // v4.1.9 — 전사 계열 기본공격 참격 (구형 swing 공용 → 전용 검기음)
   sword2: "skl_sword2", // v4.1.9 — 전사 연타 2·3타 (sword1과 교대로 단조로움 완화)
+  spin: "sfx_spin", // v4.3.0 — 기본공격음 (회전베기와 스왑: 유저 지시 "회전베기 소리를 기본공격 소리랑 바꿔")
   arrow: "skl_arrow1", // 궁수 활 발사 (기본공격·volley)
   cast: "skl_cast1", // 마법사 지팡이 시전 (기본공격 볼트)
   knife: "skl_knife1", // 도적 단검 (기본공격·bladestorm)
@@ -524,6 +525,7 @@ const SKILL_SFX_FILES: Record<string, string> = {
 export const SKILL_SFX_TRACKS: string[] = Object.values(SKILL_SFX_FILES);
 const SKILL_SFX_VOLUMES: Record<string, number> = {
   sword: 0.42, sword2: 0.4, // v4.1.9 — 전사 기본공격 (타격감 우선)
+  spin: 0.4, // v4.3.0 — 기본공격음 (회전베기 스왑)
   arrow: 0.4, cast: 0.34, knife: 0.36, flame: 0.46, electron: 0.46,
   arrowpierce: 0.5, wind: 0.44, wind2: 0.42, cure: 0.44, iainuki: 0.48,
   swift: 0.44, quake: 0.54, dark: 0.46, heavydash: 0.48, ambush: 0.44,

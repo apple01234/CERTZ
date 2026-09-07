@@ -6,7 +6,7 @@ import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, upgradeCost, autoAllocPlan,
   starWeaponBonus, starArmorBonus, starTier, STAR_TIER_CSS, UPGRADE_FALLBACK_FROM, starPerStarAtk, starPerStarDef,
   TRADE_PRICES, tradeValue, TRADE_STOCK, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
-  CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue,
+  CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue, dailyDeals, DAILY_DEAL_OFF,
   POT_GRADE_META, potLineText, SET_GEAR, POT_STAT_LABEL,
   ENEMIES, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, collectionBonus, nextCollectionGoal, COLLECTION_MILESTONES,
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
@@ -302,9 +302,12 @@ function displayName(name: string, up: number): string {
 export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
   const auto = rpg.autoUse ?? { hpPct: 0, mpPct: 0, mpOn: false, buffs: [] };
-  const buffs: BuffKey[] = ["buff_atk", "buff_def", "buff_spd", "buff_exp", "buff_king"];
+  const buffs: BuffKey[] = ["buff_atk", "buff_def", "buff_spd", "buff_exp", "buff_king", "buff_crit", "buff_gold", "buff_luck"]; // v4.3.0 — 신규 3종 포함
   const buffNames: Record<string, string> = {
     buff_atk: "분노 (공격+25%)",
+    buff_crit: "질풍 (치명+12%)",
+    buff_gold: "탐욕 (골드+40%)",
+    buff_luck: "행운 (드롭+35%)",
     buff_def: "수호 (방어+8)",
     buff_spd: "신속 (이동+25%)",
     buff_exp: "지혜 (경험치+50%)",
@@ -324,6 +327,22 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
   /* v3.0.24 (#수량) — 소모품/버프 수량 지정 (아이템키별) */
   const [qtyMap, setQtyMap] = useState<Record<string, number>>({});
   const qtyOf = (k: string) => qtyMap[k] ?? 1;
+  /* v4.3.0 — 일일 특가 (날짜 로테이션 3종 · 30%↓) + 카테고리 탭. WorldScene today()와 동일 로컬 날짜 포맷 */
+  const _d = new Date();
+  const dayKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
+  const DEALS = dailyDeals(dayKey);
+  const [cat, setCat] = useState("all");
+  const catOf = (k: ItemKey) => (k.startsWith("chest_") || k.startsWith("pack_") ? "gacha" : ITEMS[k].kind);
+  const stock = BM_STOCK.filter((k) => cat === "all" || catOf(k) === cat);
+  const CATS: { id: string; label: string }[] = [
+    { id: "all", label: "전체" },
+    { id: "gacha", label: "가챠·패키지" },
+    { id: "buff", label: "버프" },
+    { id: "consumable", label: "소모품" },
+    { id: "accessory", label: "장신구" },
+    { id: "pet", label: "펫" },
+    { id: "cosmetic", label: "치장" },
+  ];
   return (
     <div
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
@@ -338,7 +357,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
             <img src="/assets/cos_aurora.webp" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
             <div>
               <p className="text-sm font-black text-cyan-200">BM 상점</p>
-              <p className="text-[10px] text-white/60">에메랄드 전용 — 보스·정예·반복 의뢰에서 획득</p>
+              <p className="text-[10px] text-white/60">카탈로그 {BM_STOCK.length}종 · v4.3.0 신규 53종 — 상자/패키지/버프/펫/치장</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -347,9 +366,44 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
           </div>
         </div>
 
+        {/* v4.3.0 — 일일 특가 스트립 (자정 리셋 — FOMO 루프) */}
+        <div className="mb-1.5 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] px-2.5 py-2">
+          <p className="text-[12px] font-black text-amber-200">⚡ 오늘의 특가 — 30%↓ <span className="ml-1 font-normal text-white/40">매일 자정 교체</span></p>
+          <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+            {DEALS.map((k) => {
+              const it = ITEMS[k];
+              const dp = Math.max(1, Math.round((it.bmPrice ?? 0) * (1 - DAILY_DEAL_OFF)));
+              return (
+                <button
+                  key={k}
+                  onClick={() => EventBus.emit("rpg:bmBuy", { key: k })}
+                  className="flex flex-col items-center gap-1 rounded-lg border border-amber-300/40 bg-amber-400/10 px-1 py-1.5 hover:bg-amber-400/20 active:scale-95"
+                >
+                  <ItemIcon icon={it.icon} tier={it.tier} size={26} />
+                  <span className="w-full truncate text-center text-[10px] font-bold text-white/85">{it.name}</span>
+                  <span className="text-[10px] font-black text-amber-200">{dp} 💎 <s className="font-normal text-white/35">{it.bmPrice}</s></span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* v4.3.0 — 카테고리 탭 (BM 카탈로그 {BM_STOCK.length}종) */}
+        <div className="mb-1.5 flex flex-wrap gap-1">
+          {CATS.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setCat(c.id)}
+              className={`rounded-md px-2 py-1 text-[11px] font-black transition-colors ${cat === c.id ? "bg-cyan-400 text-slate-900" : "border border-white/15 bg-black/40 text-white/65 hover:bg-black/60"}`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
         {/* BM 아이템 */}
         <div className="flex flex-col gap-1.5">
-          {BM_STOCK.map((k) => {
+          {stock.map((k) => {
             const item = ITEMS[k as ItemKey];
             const st = bmState(k as ItemKey);
             const price = item.bmPrice ?? 0;
@@ -1008,7 +1062,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
             </div>
             <p className="mt-1 text-[10px] text-white/45">자동 버프 — 보유 중인 물약을 자동으로 사용 (중복 선택 가능)</p>
             <div className="grid grid-cols-2 gap-1.5">
-              {(["buff_atk", "buff_def", "buff_spd", "buff_exp", "buff_king"] as BuffKey[]).map((b) => {
+              {(["buff_atk", "buff_def", "buff_spd", "buff_exp", "buff_king", "buff_crit", "buff_gold", "buff_luck"] as BuffKey[]).map((b) => {
                 const on = (auto.buffs ?? []).includes(b);
                 const have = (rpg.buffItems[b] ?? 0) > 0;
                 const buffNames: Record<string, string> = {

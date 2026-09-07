@@ -430,10 +430,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.swingDone = true;
       this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, warrior ? 1.15 : 1, slashTint);
       /* v3.0.24 — 도적(단검)=나이프음
-       * v4.2.0 — 전사·미전직=5차 궁극기(천멸) 참격음로 승격 (유저 지시: 기본공격음을 5차 효과음으로)
-       *  매번 피치 변주 — 대형 검 참격임에도 반복 단조로움 방지 */
+       * v4.3.0 — 전사·미전직 기본공격음 = 회전베기음(카타나 연속 베기) 스왑 적용 (유저 지시:
+       *  "전사 회전베기 소리를 기본공격 소리랑 바꿔") — 매번 피치 변주 유지 */
       if (fam === "thief") this.scene.sfxSkill("knife", 0.98 + Math.random() * 0.06);
-      else this.scene.sfxSkill("bigsword", 0.9 + Math.random() * 0.08);
+      else this.scene.sfxSkill("spin", 0.92 + Math.random() * 0.1);
       // 참격 판정 확대 — 전방 160px x 폭 116px (사용자 지시: 히트박스 크게)
       this.checkMeleeHit(dir, reach, 116, dmgMul, knock);
     });
@@ -444,7 +444,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.time.delayedCall(195, () => {
         if (this.state !== "attack") return;
         this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, 0.95, slashTint);
-        this.scene.sfxSkill("bigsword", 1.06 + Math.random() * 0.08); // v4.2.0 — 연타 2타 (고피치 변주)
+        this.scene.sfxSkill("spin", 1.02 + Math.random() * 0.08); // v4.3.0 — 연타 2타 (고피치 변주)
         this.checkMeleeHit(dir, reach, 116, dmgMul * 0.8, knock * 0.8);
       });
     }
@@ -452,7 +452,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.time.delayedCall(300, () => {
         if (this.state !== "attack") return;
         this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 0.9, slashTint);
-        this.scene.sfxSkill("bigsword", 1.14 + Math.random() * 0.08); // v4.2.0 — 연타 3타 (최고피치 변주)
+        this.scene.sfxSkill("spin", 1.1 + Math.random() * 0.08); // v4.3.0 — 연타 3타 (최고피치 변주)
         this.checkMeleeHit(dir, reach, 116, dmgMul * 0.7, knock * 0.6);
         if (t >= 3) {
           // 검기 파동 — 관통 투사체 (3차: 관통 3 / 4차: 대형+관통 5)
@@ -827,9 +827,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  2차+(t>=2)는 기존 곡선 유지. bleed(버서커 판)도 영향 없음 */
     const dmgMul = 1.6 + 0.3 * t + (t === 1 ? 0.25 : 0);
     const radius = 118 + 16 * t;
-    /* v3.0.24 — 직업별 사운드: 전사=카타나 연속 베기(sfxSpin) / 버서커=대검 파괴음 */
+    /* v4.3.0 — 직업별 사운드: 전사 회전베기=대검 참격음(bigsword) — 기본공격음과 스왑 (유저 지시)
+     *  버서커(bleed)=bigsword 저피치 유지 */
     if (bleed) this.scene.sfxSkill("bigsword", 0.85);
-    else this.scene.sfxSpin();
+    else this.scene.sfxSkill("bigsword", 0.9 + Math.random() * 0.1);
 
     // 회전 방향: 조준 측면 기준 (상하 조준 시 현재 플립 방향 따름)
     const aim = this.aimDir();
@@ -3466,6 +3467,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     acc += this.activeSet?.bonus.critAdd ?? 0;
     acc += collectionBonus(this.collectionRegistered).critAdd;
     acc += this.extBonus.crit + this.runBuffs.crit;
+    /* v4.3.0 — 질풍의 물약 (BM 버프): 치명 +12%p */
+    if (this.hasBuff("buff_crit")) acc += 12;
     return Math.round((Player.BASE_CRIT + acc + this.clsBonus.critAdd + this.stats.dex * 0.4) * 10) / 10;
   }
 
@@ -3563,6 +3566,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   addGold(v: number) {
+    /* v4.3.0 — 탐욕의 물약 (BM 버프): 골드 획득 +40% */
+    if (this.hasBuff("buff_gold")) v = Math.round(v * 1.4);
     this.gold = Math.max(0, this.gold + v);
     this.scene.emitHud();
   }
@@ -3904,12 +3909,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** BM 상점 구매 (지시 #1) — 에메랄드 전용 화폐 (골드 상점과 분리)
    *  v3.0.24 (#버그/#수량) — ① 소모품(eert 큐브)이 owned 포함 판정에 걸려 1개만 구매되던 버그 수정
    *   ② 소모품/버프는 qty 지정 구매 지원 (장비·펫·치장은 1개 고정) */
-  buyBm(key: ItemKey, qty = 1): boolean {
+  buyBm(key: ItemKey, qty = 1, unitPay?: number): boolean {
     const item = ITEMS[key];
     if (!item || item.bmPrice === undefined) return false;
+    /* v4.3.0 — 일일 특가 할인가 오버라이드 (WorldScene onBmBuy에서 전달) */
+    const unit = unitPay ?? item.bmPrice;
     const n = Math.max(1, Math.floor(qty));
     if (item.kind === "buff") {
-      const cost = item.bmPrice * n;
+      const cost = unit * n;
       if (this.emerald < cost) return false;
       this.emerald -= cost;
       this.addBuffItem(key as BuffKey, n);
@@ -3917,7 +3924,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     if (item.kind === "consumable") {
       // 소모품은 누적 구매 (보유 여부 무관 — eert 큐브 여러 개 소지 가능)
-      const cost = item.bmPrice * n;
+      const cost = unit * n;
       if (this.emerald < cost) return false;
       this.emerald -= cost;
       for (let i = 0; i < n; i++) this.owned.push(key);
@@ -3925,20 +3932,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     if (item.kind === "pet") {
       if (this.pets.includes(key as PetKey)) return false;
-      this.emerald -= item.bmPrice;
+      this.emerald -= unit;
       this.pets.push(key as PetKey);
       this.pet = key as PetKey;
       return true;
     }
     if (item.kind === "cosmetic") {
       if (this.cosmetics.includes(key as CosmeticKey)) return false;
-      this.emerald -= item.bmPrice;
+      this.emerald -= unit;
       this.cosmetics.push(key as CosmeticKey);
       this.cosmetic = key as CosmeticKey;
       return true;
     }
     if (this.owned.includes(key)) return false;
-    this.emerald -= item.bmPrice;
+    this.emerald -= unit;
     this.owned.push(key);
     if (item.kind === "accessory") this.equip(key);
     return true;
