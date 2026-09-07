@@ -962,3 +962,28 @@ Stage Summary:
 - 유저 품질 피드백 4종 중 ①사망 이펙트(연기 소형화)·③NPC 파츠 배치(피벗/알파)·④전사 공격음(전용 참격음) 해결 — ②효과음 배치는 v4.1.7(스킬 27종)+본건(전사 보강)으로 완결
 - 교훈: 대형 파티클 텍스처는 시트 통째 스케일 업이 아니라 사용 분 크롭 + 소형 scale이 정답 / soundeffect-lab 재다운로드 시 referer 헤더 필수
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 54
+Agent: Super Z (메인)
+Task: v4.2.0 밸런스 & 난이도 — 유저 7항목 피드백 반영 + APK 빌드·릴리스
+
+Work Log:
+- [① 사운드 스왑] 전사·미전직 기본공격음을 5차 궁극기(천멸) 참격음 bigsword로 승격(피치 0.9~1.22 변주 — 1타 저/연타 2·3타 고), 1차 돌진기(DASH_SND.dash)는 기존 기본공격음 sword 승계. sword2 키는 매핑 유지(미사용)
+- [② 이펙트 절제] spawnSlash 스케일 1.35→1.05·글로우 링 알파 0.7→0.32/종단 0.62→0.42, 사망 파편 10→6·연기 4→3 — 스킬 배율분(1.5 등)은 그대로 화려함 유지
+- [③ 피로도 완화] 전역 EXP ×1.35(onEnemyKilled), GOLD_DROP_SCALE 0.62→0.75(+21%), 리젠 상한 대기 2400→1400ms, 기본 이속 225→240(+7% — v3.0.24 유저 요구 300→225 회귀 이력 있어 보수적 증폭)
+- [④ SPUM 예제 참조] 세션 리셋으로 asset_work 유실 → upload/SPUM.7z에서 SPUM 트리 재추출(py7zr venv 설치 필요 실측) + asset_work/spum 심링크 복구. 공식 예제 SamplePlayer.prefab은 런타임 스폰 래퍼(SpriteRenderer 0개)라 정적 비교 불가 판정 — 적용분 14종은 프리팹 계층 파싱산(v4.1.9 육안 검증済)으로 최신
+- [⑤ 어둠 메커니즘] Lighting.setTorchStage(sub) 신설 — 구역마다 ×0.93, 하한 40% + 알파 0.7+0.3m 감쇠. WorldScene 스테이지 setup에서 parseStage(stageKey).sub 주입 → 보스 구역에서 시야 40%로 투사체 회피 난이도 상승(암전 챕터만 체감)
+- [⑥ 보스바 확대] 모바일 compact 44%/280px→64%/400px + 바 높이 1.5→2.5 + 폰트 9→11px, 데스크탑 46%/xl→52%/2xl + sm:h-3.5→sm:h-4
+- [⑦ 식인초] takeDamage 5번째 인자 trueDmg 신설(방어/하한 무시) + hitPlantHazard가 maxHp × DMG_PCT.plant(0.05→0.10) 고정 피해로 변경
+- [검증] tsc 0 에러
+- [버저닝] versionCode 57 / 4.2.0 — build.gradle·server.js·next.config·apk-guide.html·APK_다운로드_안내.txt·Overlays 배지
+- [툴체인 재구축] 세션 리셋으로 /home/z/jdk·.android-sdk 동시 소실 — Temurin 21.0.12(207MB) + cmdline-tools 11076708 + platforms;android-36 + build-tools;35.0.0 + platform-tools 재설치, android/local.properties 신설, chmod +x sdkmanager 필요 실측
+- [빌드/릴리스] APK BUILD SUCCESSFUL 3m52s → 104,684,410B · aapt versionCode 57/4.2.0 · md5 0db70c31b3f389a5eb84b1e392e86322 → GitHub Release v4.2.0(id 384178216) 업로드 → 재다운로드 md5 일치
+- [후처리] rm -rf .next && bun run build → 서버 재기동 → /·apk-guide·spum·skl_sword1 200 → push db101df..fa2399e
+
+Stage Summary:
+- v4.2.0 배포: https://github.com/apple01234/CERTZ/releases/download/v4.2.0/SERTZ-v4.2.0.apk (md5 0db70c31…, versionCode 57, 100MB)
+- 유저 7항목: ①사운드 스왑 ②이펙트 절제 ③피로도 완화 ④SPUM 예제(런타임 래퍼로 정적 비교 불가 — 프리팹 파싱산 유지, 추가 지정 시 스크린샷 요망) ⑤어둠 광원 축소 ⑥보스바 확대 ⑦식인초 10% 고정 — 전부 반영
+- 교훈: 세션 리셋은 /home/z/jdk·.android-sdk·~/.gradle 프로젝트 외부 캐시를 전부 소실시킨다 — 빌드 전 툴체인 존재 확인이 최우선
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
