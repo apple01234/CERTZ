@@ -794,3 +794,21 @@ Stage Summary:
 - 자동사냥 중 포탈 전환 트리거 원천 차단(검은 화면 재발 경로 제거) + 8개 UX/고증 개선
 - 백그라운드 프로세스는 툴콜 종료 시 사망함 — 장기 빌드는 단일 콜 안에서 실행할 것(교훈)
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 47
+Agent: Super Z (메인)
+Task: AdMob API key(AIza…) 전달 수신 → 실측 검증 + OAuth2 수익 리포트 기반 구축(scripts/admob_report.py)
+
+Work Log:
+- API key로 AdMob API v1(ListPublisherAccounts) 실측 → Google 공식 401: "API keys are not supported by this API. Expected OAuth2 access token" (CREDENTIALS_MISSING) — API key 단독 사용 불가 공식 확인
+- .gitignore에 .secrets/ 추가(로컬 시크릿 영구 제외) — 검증: git check-ignore 통과
+- 수신된 API key는 .secrets/admob-api-key.txt 에만 보관(커밋 안 됨) — AdMob API에는 용도 없음, GCP 콘솔 키 제한/삭제 권장
+- scripts/admob_report.py 신설: 서비스 계정 JSON → JWT RS256(openssl 서명, 제로 의존성) → OAuth2 토큰 → accounts.list → reports:generate 수익 리포트(기간 합계/날짜별 --by-date/광고 단위 --adunits), 무키 시 한국어 세팅 가이드 출력, --days/--publisher 옵션
+- 실행 테스트: 무키 상태에서 가이드 출력 정상(EXIT 0)
+
+Stage Summary:
+- 사용자가 넣어야 할 것: (1) GCP에서 AdMob API 사용 설정 + 서비스 계정 JSON 키 → .secrets/admob-service-account.json (2) AdMob 콘솔 > 설정 > 사용자 관리에 서비스 계정 이메일 추가(읽기 권한)
+- 완료 후: python3 scripts/admob_report.py --days 7 로 수익 조회 즉시 가능
+- API key(AIza…)는 AdMob API에 불가 — 이번 스크립트는 OAuth2 전용
+- v4.1.3 이후 게임 코드 변경 없음(앱/웹 재배포 불필요)
