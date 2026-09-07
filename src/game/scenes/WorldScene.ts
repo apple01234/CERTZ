@@ -231,6 +231,12 @@ export class WorldScene extends Phaser.Scene {
   private ticketGate = 0;
   private ticketCloset = 0;
   private achClaimed: string[] = [];
+  /* v4.1.4 — 보스/카오스/침공 처치 누적 (도전과제 지표) + 침공 보스 참조 */
+  private bossKillCount = 0;
+  private chaosKillCount = 0;
+  private invasionKillCount = 0;
+  private invasionBoss: Enemy | null = null;
+  private invasionTimer: Phaser.Time.TimerEvent | null = null;
   private gateBest = 0;
   private closetBest = 0;
   private gateStars: boolean[] = [false, false, false];
@@ -853,6 +859,10 @@ export class WorldScene extends Phaser.Scene {
       this.ticketGate = savedPlayer.tickets?.gate ?? 0;
       this.ticketCloset = savedPlayer.tickets?.closet ?? 0;
       this.achClaimed = [...(savedPlayer.achClaimed ?? [])];
+      /* v4.1.4 — 보스/카오스/침공 처치 누적 복원 */
+      this.bossKillCount = savedPlayer.bossKills ?? 0;
+      this.chaosKillCount = savedPlayer.chaosKills ?? 0;
+      this.invasionKillCount = savedPlayer.invasionKills ?? 0;
       this.gateBest = savedPlayer.gateBest ?? 0;
       this.closetBest = savedPlayer.closetBest ?? 0;
       this.gateStars = [...(savedPlayer.gateStars ?? [false, false, false])];
@@ -1149,6 +1159,9 @@ export class WorldScene extends Phaser.Scene {
     });
 
     this.events.once("shutdown", () => this.cleanup());
+
+    /* v4.1.4 — 침공 보스 이벤트 타이머 (월드 보스 이벤트) */
+    this.startInvasionTimer();
   }
 
   private solidGroup!: Phaser.Physics.Arcade.StaticGroup;
@@ -2605,6 +2618,16 @@ export class WorldScene extends Phaser.Scene {
     // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
     this.enemies = this.enemies.filter((e) => e.alive);
     if (this.eliteEnemy && !this.eliteEnemy.alive) this.eliteEnemy = null;
+    /* v4.1.4 — 침공 보스 격퇴 보상: 에메랄드 +2 확정 + 도전과제 카운트 */
+    if (this.invasionBoss && ref === this.invasionBoss) {
+      this.invasionBoss = null;
+      this.invasionKillCount++;
+      this.player.emerald += 2;
+      this.spawnPickupText(this.player.x, this.player.y - 74, "침공 격퇴! +2 에메랄드", "#ff9a7a");
+      this.showBanner("침공을 격퇴했다! (+2 에메랄드)");
+      audio.sfx.questDone();
+      this.emitRpgState();
+    }
     /* v3.0.16 — 필드 정예 처치 보상: 에메랄드 +1 확정 (메이플 엘리트 몬스터 컨셉) */
     if (this.fieldEliteRef && !this.fieldEliteRef.alive) {
       this.fieldEliteRef = null;
@@ -3207,6 +3230,10 @@ export class WorldScene extends Phaser.Scene {
       figures: this.figures.length,
       constelNodes: this.constel.length,
       dojangBest,
+      /* v4.1.4 — 보스 개편 연계 지표 */
+      bossKills: this.bossKillCount,
+      chaosKills: this.chaosKillCount,
+      invasionKills: this.invasionKillCount,
     };
   }
 
@@ -3820,6 +3847,52 @@ export class WorldScene extends Phaser.Scene {
    * 몬스터 리스폰 — 원래 스폰 지점에서 페이드 인.
    * 플레이어가 스폰 지점 근처(140px)에 서 있으면 얼굴에 팝업하는 걸 막기 위해 2.5초씩 재시도.
    */
+  /* ================= v4.1.4 — 침공 보스 (월드 보스 이벤트) =================
+   * MMORPG식 필드 침공 이벤트 — 6~9분마다 현재 전투 구역에 붉은 침공 몬스터 스폰.
+   *  ×6.0 HP / ×1.8 ATK / ×8 EXP / ×6 GOLD + 처치 시 에메랄드 +2 확정. */
+  private startInvasionTimer() {
+    this.invasionTimer?.remove();
+    this.invasionTimer = this.time.addEvent({
+      delay: Phaser.Math.Between(360000, 540000),
+      loop: true,
+      callback: () => this.trySpawnInvasionBoss(),
+    });
+  }
+
+  private trySpawnInvasionBoss(tries = 0) {
+    /* 스폰 조건: 전투 구역 + 보스/침공 부재 + 전투 중 특별 모드 아님 */
+    if (
+      !this.scene.isActive() || !this.player || this.player.state === "dead" ||
+      this.stageDef.isVillage || this.isInterior || this.transitioning ||
+      this.gateActive || this.closetActive || this.boss?.active ||
+      this.invasionBoss?.active || this.fieldEliteRef?.active
+    ) return;
+    const alive = this.enemies.filter((e) => e.active && e.alive);
+    if (alive.length === 0) return; // 현재 구역 몬스터 종으로 스폰
+    const base = Phaser.Utils.Array.GetRandom(alive);
+    const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    const d = Phaser.Math.Between(480, 680);
+    const x = Phaser.Math.Clamp(this.player.x + Math.cos(ang) * d, 60, this.stageW - 60);
+    const y = Phaser.Math.Clamp(this.player.y + Math.sin(ang) * d, 60, this.stageH - 60);
+    if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 220 && tries < 8) {
+      this.time.delayedCall(1500, () => this.trySpawnInvasionBoss(tries + 1));
+      return;
+    }
+    const e = new Enemy(this, x, y, base.def.key, {
+      hp: 6.0, atk: 1.8, exp: 8, gold: 6, scale: 1.55, tint: 0xff6a7a,
+      displayName: `침공 ${ENEMIES[base.def.key].name}`,
+    });
+    this.invasionBoss = e;
+    e.setAlpha(0);
+    this.tweens.add({ targets: e, alpha: 1, duration: 420 });
+    this.enemies.push(e);
+    this.physics.add.collider(e, this.solidGroup);
+    this.showBanner(`⚠ 침공! ${e.displayName} 등장 — 근처에서 흉조가 느껴진다!`);
+    audio.sfx.roar();
+    this.cameras.main.shake(240, 0.006);
+    this.spawnBurstAt(x, y, 20, 0xff6a7a);
+  }
+
   private respawnEnemy(key: EnemyKey, x: number, y: number, tries: number) {
     if (!this.scene.isActive() || this.player.state === "dead") {
       return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
@@ -4039,7 +4112,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.roar();
     this.cameras.main.shake(260, 0.008);
     this.showBanner(`${def.name} 출현!`);
-    this.boss = new Boss(this, bx, by, def);
+    this.boss = new Boss(this, bx, by, def, "normal");
     this.physics.add.collider(this.boss, this.solidGroup);
     EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
     // 파티 보스 토벌 공지 (v2.0 — 지시 #5)
@@ -4071,18 +4144,20 @@ export class WorldScene extends Phaser.Scene {
       name: `재림한 ${base.name}`,
       hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * 5.0 * dif.hp),
       atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15) * 2.2 * dif.atk),
+      speed: Math.round(base.speed * dif.spd), // v4.1.4 — 난이도별 추격 속도
       exp: Math.round(base.exp * sc.exp * 3 * dif.reward),
       gold: Math.round(base.gold * sc.gold * 3 * dif.reward),
     };
     this.bossDef = def;
     this.replayBossActive = true;
-    this.replayBossEmerald = dif.emerald; // v3.0.28 — 난이도별 에메랄드 (2/5/9/15)
+    this.replayBossEmerald = dif.emerald; // v3.0.28 — 난이도별 에메랄드 (2/5/9/30)
     const bx = this.portalHome.x;
     const by = this.portalHome.y - 10;
     audio.sfx.roar();
-    this.cameras.main.shake(340, 0.01);
-    this.showBanner(`재림한 ${base.name} 출현!`);
-    this.boss = new Boss(this, bx, by, def);
+    this.cameras.main.shake(340, lv === "chaos" ? 0.016 : 0.01);
+    /* v4.1.4 — 카오스 등장 강조 배너 */
+    this.showBanner(lv === "chaos" ? `카오스 재림 — ${base.name}!! (전용 패턴 개방)` : `재림한 ${base.name} 출현!`);
+    this.boss = new Boss(this, bx, by, def, lv);
     this.physics.add.collider(this.boss, this.solidGroup);
     EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
     // 재도전 전투곡 — 일반 보스전과 동일 오버라이드
@@ -4126,6 +4201,9 @@ export class WorldScene extends Phaser.Scene {
       this.replayBossActive = false;
       this.totalKills++;
       this.registry.set("runKills", this.totalKills);
+      /* v4.1.4 — 보스/카오스 처치 누적 (도전과제 지표) */
+      this.bossKillCount++;
+      if (this.boss?.chaos) this.chaosKillCount++;
       this.cameras.main.shake(400, 0.01);
       this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
       const exp = def?.exp ?? 220;
@@ -4158,6 +4236,9 @@ export class WorldScene extends Phaser.Scene {
     this.player.gainExp(def?.exp ?? 220);
     this.totalKills++;
     this.registry.set("runKills", this.totalKills);
+    /* v4.1.4 — 보스/카오스 처치 누적 (도전과제 지표) */
+    this.bossKillCount++;
+    if (this.boss?.chaos) this.chaosKillCount++;
     /* v3.0.6 (지시 #1) — 보스 처치 시 에메랄드 +2 (BM 상점 재화) */
     this.player.emerald += 2;
     this.spawnPickupText(this.player.x, this.player.y - 60, "+2 에메랄드", "#7de8ff");
@@ -7825,6 +7906,10 @@ export class WorldScene extends Phaser.Scene {
         runeSlots: [...this.runeSlots],
         constel: [...this.constel],
         achClaimed: [...this.achClaimed],
+        /* v4.1.4 — 보스/카오스/침공 처치 누적 */
+        bossKills: this.bossKillCount,
+        chaosKills: this.chaosKillCount,
+        invasionKills: this.invasionKillCount,
         gateBest: this.gateBest,
         closetBest: this.closetBest,
         gateStars: [...this.gateStars],
@@ -7984,6 +8069,10 @@ export class WorldScene extends Phaser.Scene {
       daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds },
       tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
       achClaimed: [...this.achClaimed],
+      /* v4.1.4 — 보스/카오스/침공 처치 누적 */
+      bossKills: this.bossKillCount,
+      chaosKills: this.chaosKillCount,
+      invasionKills: this.invasionKillCount,
       gateBest: this.gateBest,
       closetBest: this.closetBest,
       gateStars: [...this.gateStars],

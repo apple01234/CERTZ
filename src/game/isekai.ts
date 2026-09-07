@@ -433,6 +433,10 @@ export type AchSnapshot = {
   figures: number;
   constelNodes: number;
   dojangBest: number;
+  /* v4.1.4 — 보스 개편 연계 지표 */
+  bossKills: number;
+  chaosKills: number;
+  invasionKills: number;
 };
 
 export const ACHIEVEMENTS: AchDef[] = [
@@ -448,6 +452,11 @@ export const ACHIEVEMENTS: AchDef[] = [
   { id: "ach_fig", name: "피규어 대가", desc: "피규어 8종 수집", shards: 30, prog: (s) => s.figures, goal: 8 },
   { id: "ach_con", name: "성좌 수집가", desc: "성좌 노드 10개 개방", shards: 30, prog: (s) => s.constelNodes, goal: 10 },
   { id: "ach_doj", name: "도장 돌파자", desc: "무릉도장 누적 30만 피해", shards: 25, prog: (s) => s.dojangBest, goal: 300000 },
+  /* v4.1.4 — 보스 개성 패턴/카오스/침공 보스 연계 업적 */
+  { id: "ach_b1", name: "보스 사냥꾼", desc: "보스 10회 처치 (재림판 포함)", shards: 20, prog: (s) => s.bossKills, goal: 10 },
+  { id: "ach_ch1", name: "카오스 첫 발걸음", desc: "카오스 난이도 보스 1회 처치", shards: 40, prog: (s) => s.chaosKills, goal: 1 },
+  { id: "ach_ch2", name: "카오스의 정복자", desc: "카오스 난이도 보스 10회 처치", shards: 100, prog: (s) => s.chaosKills, goal: 10 },
+  { id: "ach_inv", name: "침공 차단자", desc: "침공 보스 5회 격퇴", shards: 35, prog: (s) => s.invasionKills, goal: 5 },
 ];
 
 /* ================= 15. 역할 시스템 (탱커/딜러/서포터 — 3인 협동 오마주) ================= */

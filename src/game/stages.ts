@@ -89,17 +89,26 @@ export type BossDiffKey = "easy" | "normal" | "hard" | "chaos";
 
 export const BOSS_DIFFS: Record<
   BossDiffKey,
-  { key: BossDiffKey; label: string; color: string; hp: number; atk: number; reward: number; emerald: number; desc: string }
+  { key: BossDiffKey; label: string; color: string; hp: number; atk: number; reward: number; emerald: number; desc: string; spd: number }
 > = {
-  easy: { key: "easy", label: "이지", color: "#7de87d", hp: 0.75, atk: 0.85, reward: 0.6, emerald: 2, desc: "가볍게 클리어 — 보상 60%" },
-  normal: { key: "normal", label: "노말", color: "#7dc4ff", hp: 1.5, atk: 1.25, reward: 1.0, emerald: 5, desc: "기본 난이도 — 보상 100%" },
-  hard: { key: "hard", label: "하드", color: "#ffb05a", hp: 2.4, atk: 1.55, reward: 1.9, emerald: 9, desc: "도전자용 — 보상 190%" },
-  chaos: { key: "chaos", label: "카오스", color: "#ff6a7d", hp: 3.8, atk: 1.9, reward: 3.2, emerald: 15, desc: "극한 난이도 — 보상 320%" },
+  easy: { key: "easy", label: "이지", color: "#7de87d", hp: 0.75, atk: 0.85, reward: 0.6, emerald: 2, spd: 1, desc: "가볍게 클리어 — 보상 60%" },
+  normal: { key: "normal", label: "노말", color: "#7dc4ff", hp: 1.5, atk: 1.25, reward: 1.0, emerald: 5, spd: 1, desc: "기본 난이도 — 보상 100%" },
+  hard: { key: "hard", label: "하드", color: "#ffb05a", hp: 2.4, atk: 1.55, reward: 1.9, emerald: 9, spd: 1.06, desc: "도전자용 — 보상 190%" },
+  /* v4.1.4 (#카오스강화) — 유저 지시 "카오스 훨씬 더 어렵게": 수치 대폭 상향 + 전용 메커니즘(패턴 풀 조기 개방·
+   *  쿨타임 25% 단축·탄속 +22%·돌진 연쇄 +1·카운터 창 단축·페이즈3 권속 지원군)은 Boss.ts의 chaos 플래그가 담당.
+   *  노말 대비 HP 4.1배·ATK 2.0배 체감 — 보상도 460%로 재조정해 도전 가치 유지. */
+  chaos: { key: "chaos", label: "카오스", color: "#ff6a7d", hp: 6.2, atk: 2.55, reward: 4.6, emerald: 30, spd: 1.14, desc: "극한 난이도 — 전용 패턴·보상 460%" },
 };
 
 export const BOSS_DIFF_ORDER: BossDiffKey[] = ["easy", "normal", "hard", "chaos"];
 
-export type BossAttackKind = "slam" | "charge" | "volley" | "ring" | "zones" | "summon";
+/* v4.1.4 (#보스개성) — 6종 공용 패턴에서 탈피: 보스별 시그니처 패턴 5종 추가.
+ *  spiral: 나선 탄막(눈보라/심연) · beam: 회전 스윕 빔(용 브레스/화염) · blink: 그림자 급습(늑대계)
+ *  quake: 연속 낙뢰(거인계) · counter: 반격 카운터(로스트아크식 — 창이 노란 링, 공격 1회 이상 시 기절,
+ *  방관하면 대폭발) */
+export type BossAttackKind =
+  | "slam" | "charge" | "volley" | "ring" | "zones" | "summon"
+  | "spiral" | "beam" | "blink" | "quake" | "counter";
 
 export type BossDef = {
   key: BossKey;
@@ -114,6 +123,8 @@ export type BossDef = {
   introDialogue: string;
   patterns: { p1: BossAttackKind[]; p2: BossAttackKind[]; p3: BossAttackKind[] };
   summonKey?: EnemyKey;
+  /** v4.1.4 — 돌진 연속 횟수(기본 1). 펜리르 2 / 스콜&하티 3 — 쌍랑·늑대의 정체성 */
+  chargeChain?: number;
 };
 
 export type StageDef = {
@@ -370,30 +381,33 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "guardian", name: "심연의 수호자",
     hp: 3200, atk: 24, speed: 92, exp: 320, gold: 220,
     tex: "boss", orbTint: 0x9d7aff, introDialogue: "bossIntroGuardian",
+    /* 수호자 = 지진 — 마지막 페이즈에서 연속 낙뢰(심연 지진) 개방 */
     patterns: {
       p1: ["slam", "charge", "volley"],
-      p2: ["slam", "charge", "volley", "ring"],
-      p3: ["slam", "charge", "volley", "ring", "zones"],
+      p2: ["slam", "charge", "volley", "ring", "zones"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "quake"],
     },
   },
   behemoth: {
     key: "behemoth", name: "눈보라의 거수",
     hp: 5200, atk: 31, speed: 84, exp: 500, gold: 300,
     tex: "boss2", orbTint: 0x8ad4ff, introDialogue: "bossIntroBehemoth",
+    /* 눈보라의 화신 — 나선 탄막(블리자드 스톰) 시그니처 */
     patterns: {
       p1: ["slam", "volley", "zones"],
-      p2: ["slam", "charge", "volley", "zones", "ring"],
-      p3: ["slam", "charge", "volley", "zones", "ring"],
+      p2: ["slam", "charge", "volley", "zones", "spiral"],
+      p3: ["slam", "charge", "volley", "zones", "ring", "spiral", "quake"],
     },
   },
   abysslord: {
     key: "abysslord", name: "심연의 군주",
     hp: 8500, atk: 38, speed: 98, exp: 800, gold: 420,
     tex: "boss3", orbTint: 0xff5a7a, introDialogue: "bossIntroLord",
+    /* 심연의 전술가 — 나선 탄막 + 최초의 반격 카운터 개방(2페이즈) */
     patterns: {
       p1: ["volley", "charge", "slam"],
-      p2: ["volley", "charge", "ring", "zones"],
-      p3: ["volley", "charge", "ring", "zones", "summon"],
+      p2: ["volley", "charge", "ring", "zones", "spiral", "counter"],
+      p3: ["volley", "charge", "ring", "zones", "summon", "spiral", "counter"],
     },
     summonKey: "wraith",
   },
@@ -401,10 +415,11 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "nidhog", name: "탐식의 드래곤 니드호그",
     hp: 3600, atk: 26, speed: 90, exp: 380, gold: 260,
     tex: "boss_nidhog", orbTint: 0x7dff9a, introDialogue: "bossIntroNidhog",
+    /* 드래곤 — 독 브레스 스윕 빔 시그니처(2페이즈부터) */
     patterns: {
       p1: ["slam", "charge", "volley"],
-      p2: ["slam", "charge", "volley", "ring"],
-      p3: ["slam", "charge", "volley", "ring", "zones"],
+      p2: ["slam", "charge", "volley", "ring", "beam"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "beam", "summon"],
     },
     summonKey: "swampbeast",
   },
@@ -412,30 +427,35 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "surt", name: "화염의 거인 수르트",
     hp: 5400, atk: 33, speed: 88, exp: 560, gold: 340,
     tex: "boss_surt", orbTint: 0xffa05a, introDialogue: "bossIntroSurt",
+    /* 라그나로스 — 화염 스윕 빔 + 최후 연속 낙뢰(용암 분출) */
     patterns: {
       p1: ["slam", "volley", "zones"],
-      p2: ["slam", "charge", "volley", "zones", "ring"],
-      p3: ["slam", "charge", "volley", "zones", "ring"],
+      p2: ["slam", "charge", "volley", "zones", "beam"],
+      p3: ["slam", "charge", "volley", "zones", "ring", "beam", "quake"],
     },
   },
   fenrir: {
     key: "fenrir", name: "탐욕의 늑대 펜리르",
     hp: 7400, atk: 36, speed: 96, exp: 640, gold: 380,
     tex: "boss_fenrir", orbTint: 0xc08aff, introDialogue: "bossIntroFenrir",
+    /* 사슬이 묶인 늑대 — 2연속 돌진 + 그림자 급습(순간이동 강타) */
+    chargeChain: 2,
     patterns: {
       p1: ["charge", "volley", "ring"],
-      p2: ["slam", "charge", "volley", "zones"],
-      p3: ["slam", "charge", "volley", "zones", "ring"],
+      p2: ["slam", "charge", "volley", "zones", "blink"],
+      p3: ["slam", "charge", "volley", "zones", "ring", "blink"],
     },
   },
   skoll: {
     key: "skoll", name: "교만의 쌍랑 스콜&하티",
     hp: 8600, atk: 39, speed: 100, exp: 720, gold: 420,
     tex: "boss_skoll", orbTint: 0xffd97a, introDialogue: "bossIntroSkoll",
+    /* 태양을 쫓는 쌍랑 — 3연속 교차 돌진(최종 페이즈 3회) + 스윕 빔 */
+    chargeChain: 2,
     patterns: {
       p1: ["volley", "charge", "slam"],
-      p2: ["volley", "charge", "ring", "zones"],
-      p3: ["volley", "charge", "ring", "zones", "summon"],
+      p2: ["volley", "charge", "ring", "zones", "beam", "blink"],
+      p3: ["volley", "charge", "ring", "zones", "summon", "beam", "blink"],
     },
     summonKey: "runegolem",
   },
@@ -443,10 +463,11 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "gram", name: "혈안의 문지기 가름", /* v4.1.3 (#신화고증) — 구 표기 "대지의 괴물 그람": 그람(Gram)은 시구르드의 검이다. 헬의 대문을 지키는 존재는 사냥개 가름(Garmr) */
     hp: 10600, atk: 42, speed: 86, exp: 860, gold: 480,
     tex: "boss_gram", orbTint: 0x8affc0, introDialogue: "bossIntroGram",
+    /* 헬의 문지기 — 반격 카운터(창을 놓치면 문이 닫힌다) + 그림자 급습 */
     patterns: {
       p1: ["slam", "charge", "volley", "zones"],
-      p2: ["slam", "charge", "volley", "ring", "zones"],
-      p3: ["slam", "charge", "volley", "ring", "zones", "summon"],
+      p2: ["slam", "charge", "volley", "ring", "zones", "counter", "blink"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "counter", "blink", "quake"],
     },
     summonKey: "helhound",
   },
@@ -454,10 +475,12 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "abudditos", name: "종언의 마룡 아부디토스", /* v4.1.3 (#신화고증) — 구 표기 "니드그림"을 세계관 근원인 아부디토스로 통일 */
     hp: 14500, atk: 46, speed: 100, exp: 1200, gold: 650,
     tex: "boss_abudditos", orbTint: 0xff3a6a, introDialogue: "bossIntroAbudditos",
+    /* 종언의 마룡 — 모든 시그니처 패턴의 종합 세트(마룡의 전례 없는 재앙) */
+    chargeChain: 2,
     patterns: {
-      p1: ["volley", "charge", "ring"],
-      p2: ["volley", "charge", "ring", "zones", "summon"],
-      p3: ["slam", "charge", "volley", "ring", "zones", "summon"],
+      p1: ["volley", "charge", "ring", "beam"],
+      p2: ["volley", "charge", "ring", "zones", "summon", "beam", "spiral", "blink"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "blink", "quake", "counter"],
     },
     summonKey: "helhound",
   },

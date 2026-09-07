@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
-import type { BossDef, BossAttackKind } from "../data";
+import type { BossDef, BossAttackKind, BossDiffKey } from "../data";
 import { elemAdvantage, ELEMENT_META, type ElemKey, CHAPTER_ELEM } from "../data";
 import { parseStage } from "../stages";
 import { EventBus } from "../../components/game/EventBus";
@@ -22,7 +22,14 @@ type BossMode =
   | "ringTele"
   | "zonesTele"
   | "summonTele"
-  | "dead";
+  | "dead"
+  // v4.1.4 — 보스 개성 패턴
+  | "beamTele" // 스윕 빔 예고
+  | "beaming" // 스윕 빔 발사중
+  | "blinkTele" // 그림자 급습(순간이동 준비)
+  | "counterTele" // 반격 카운터 창(로스트아크식)
+  | "staggered" // 카운터 성공 → 기절/취약
+  | "quakeCast"; // 연속 낙뢰 시전
 
 export class Boss extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
@@ -56,13 +63,31 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /** 직전 공격 종류 — 같은 패턴 연속 반복 방지 */
   private lastAttack: BossAttackKind | null = null;
 
+  /* ---- v4.1.4 — 난이도/신규 패턴 상태 ---- */
+  /** 카오스 난이도 전용 메커니즘 활성화 (재림판에서만 선택 가능) */
+  chaos = false;
+  /** 돌진 연쇄 잔여 횟수 (fenrir 2연속 / skoll 3연속, 카오스 +1) */
+  private chargeChainLeft = 0;
+  private spiralAngle = 0;
+  private spiralTimer: Phaser.Time.TimerEvent | null = null;
+  private beamTimer: Phaser.Time.TimerEvent | null = null;
+  private beamAngle = 0;
+  private beamDir = 1;
+  private quakeTimer: Phaser.Time.TimerEvent | null = null;
+  /** 페이즈 3 카오스 지원군 타이머 */
+  private supportTimer: Phaser.Time.TimerEvent | null = null;
+  /** 카운터 창 텔레그래프 링 */
+  private counterRing: Phaser.GameObjects.Image | null = null;
+  private counterHintShown = 0;
+
   // F4: 투사체 고정 풀
   private orbPool: Phaser.Physics.Arcade.Image[] = [];
   private orbIdx = 0;
 
-  constructor(scene: WorldScene, x: number, y: number, def: BossDef) {
+  constructor(scene: WorldScene, x: number, y: number, def: BossDef, diffKey: BossDiffKey = "normal") {
     super(scene, x, y, `${def.tex}_idle0`);
     this.def = def;
+    this.chaos = diffKey === "chaos"; // v4.1.4 — 카오스 전용 메커니즘 플래그
     this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "dark"; // v3.0.15 (#16) 챕터 테마 원소
     this.hp = def.hp;
     this.maxHp = def.hp;
@@ -88,6 +113,17 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       orb.setData("dmg", def.atk);
       (orb.body as Phaser.Physics.Arcade.Body).setCircle(7);
       this.orbPool.push(orb);
+    }
+
+    // v4.1.4 — 카오스 등장 연출: 붉은 오라 펄스 (위협감 표시)
+    if (this.chaos) {
+      this.scene.tweens.add({
+        targets: this,
+        alpha: { from: 1, to: 0.86 },
+        duration: 420,
+        yoyo: true,
+        repeat: -1,
+      });
     }
   }
 
@@ -162,7 +198,15 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           this.chargeHitDone = true;
           player.takeDamage(Math.round(this.def.atk * 1.1), this.chargeDir.clone(), 0.5, 0.10); // v3.0.6 — 관통 + maxHP % 하한
         }
-        if (this.modeTimer <= 0) this.endAttack(1400);
+        if (this.modeTimer <= 0) {
+          // v4.1.4 — 돌진 연쇄 (fenrir/skoll 고유성, 카오스 +1): 끝나면 짧은 예고 뒤 재돌진
+          if (this.chargeChainLeft > 0 && player.hp > 0) {
+            this.chargeChainLeft--;
+            this.setMode("chargeTele", this.chaos ? 240 : 320);
+          } else {
+            this.endAttack(1400);
+          }
+        }
         break;
       }
       case "ringTele": {
@@ -178,6 +222,39 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       case "summonTele": {
         this.setVelocity(this.knockVec.x, this.knockVec.y);
         if (this.modeTimer <= 0) this.doSummon();
+        break;
+      }
+      /* ---- v4.1.4 — 신규 개성 패턴 상태 ---- */
+      case "beamTele": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        if (this.modeTimer <= 0) this.doBeam();
+        break;
+      }
+      case "beaming": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        break;
+      }
+      case "blinkTele": {
+        this.setVelocity(0, 0);
+        if (this.modeTimer <= 0) this.doBlink(player);
+        break;
+      }
+      case "counterTele": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        if (this.modeTimer <= 0) this.doCounterPunish(player);
+        break;
+      }
+      case "staggered": {
+        this.setVelocity(0, 0);
+        if (this.modeTimer <= 0) {
+          this.clearTint();
+          this.endAttack(700);
+        }
+        break;
+      }
+      case "quakeCast": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        if (this.modeTimer <= 0) this.mode = "idle"; // 낙뢰 자체는 delayedCall로 계속
         break;
       }
       case "volley": {
@@ -209,7 +286,21 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.clearTint();
     this.mode = "idle";
     this.nextAttackCd = 900;
-    if (this.phase === 3) this.enraged = true;
+    if (this.phase === 3) {
+      this.enraged = true;
+      // v4.1.4 — 카오스 페이즈 3: 권속 지원군 (summonKey가 있는 보스 한정, 12초마다 1마리)
+      if (this.chaos && this.def.summonKey && !this.supportTimer) {
+        this.supportTimer = this.scene.time.addEvent({
+          delay: 12000,
+          loop: true,
+          callback: () => {
+            if (!this.alive || this.scene.enemies.length >= 9) return;
+            this.scene.requestSummon(this.def.summonKey!, 1, this.x, this.y);
+            this.scene.spawnBurstAt(this.x, this.y, 10, 0xff6a7d);
+          },
+        });
+      }
+    }
     this.scene.sfxRoar();
     this.scene.cameras.main.shake(220, this.phase === 3 ? 0.01 : 0.007);
     this.scene.spawnBurstAt(this.x, this.y, 20, this.def.orbTint);
@@ -249,6 +340,22 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         break;
       case "summon":
         this.startSummon();
+        break;
+      /* ---- v4.1.4 — 보스별 시그니처 패턴 ---- */
+      case "spiral":
+        this.startSpiral();
+        break;
+      case "beam":
+        this.startBeam(player);
+        break;
+      case "blink":
+        this.startBlink();
+        break;
+      case "quake":
+        this.startQuake();
+        break;
+      case "counter":
+        this.startCounter();
         break;
     }
   }
@@ -305,6 +412,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   private startCharge(player: PlayerLike2) {
     void player;
+    // v4.1.4 — 돌진 연쇄: def.chargeChain(fenrir 2 / skoll 2+blink, 카오스 +1, 상한 3)
+    this.chargeChainLeft = Math.min(3, (this.def.chargeChain ?? 1) - 1 + (this.chaos ? 1 : 0));
     this.setMode("chargeTele", 550);
   }
 
@@ -429,11 +538,255 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.endAttack(1700);
   }
 
+  /* ================= v4.1.4 — 보스별 시그니처 패턴 ================= */
+
+  /* ---------- 나선 탄막 (behemoth 눈보라 / abysslord 심연 / abudditos 종언) ----------
+   * 보스를 중심으로 회전하는 다중 나선 탄막 — 틈을 읽고 돌파하는 탄막 게임식 패턴 */
+  private startSpiral() {
+    this.setMode("volley", 10); // 대기 전용 모드 재사용 (volleyTimer와 무관 — spiralTimer 별도)
+    this.setTint(0x9ad0ff);
+    this.spiralAngle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    const arms = this.chaos ? 3 : 2; // 카오스는 3갈래 나선
+    const ticks = this.chaos ? 21 : 17;
+    let done = 0;
+    this.spiralTimer?.remove();
+    this.spiralTimer = this.scene.time.addEvent({
+      delay: 75,
+      repeat: ticks - 1,
+      callback: () => {
+        if (!this.alive) return;
+        this.spiralAngle += 0.52;
+        for (let a = 0; a < arms; a++) {
+          this.fireOrb(this.spiralAngle + (Math.PI * 2 * a) / arms, 195, Math.round(this.def.atk * 0.5));
+        }
+        if (done % 4 === 0) this.scene.sfxSwing();
+        if (++done >= ticks) {
+          this.clearTint();
+          this.endAttack(1500);
+        }
+      },
+    });
+  }
+
+  /* ---------- 회전 스윕 빔 (nidhog 독 브레스 / surt 화염 / skoll & abudditos) ----------
+   * 예고 링 3개 후, 보스에서 뻗어나오는 회전하는 광선(구슬 벽)을 130° 회전 스윕 */
+  private startBeam(player: PlayerLike2) {
+    this.setMode("beamTele", 780);
+    this.setTint(0xffd0a0);
+    this.beamAngle = Math.atan2(player.y - this.y, player.x - this.x);
+    this.beamDir = Math.random() < 0.5 ? 1 : -1;
+    // 예고: 시전 방향 직선상 3개 링 (스윕 궤적 암시)
+    for (let d = 100; d <= 300; d += 100) {
+      const rx = Phaser.Math.Clamp(this.x + Math.cos(this.beamAngle) * d, 40, this.scene.stageW - 40);
+      const ry = Phaser.Math.Clamp(this.y + Math.sin(this.beamAngle) * d, 40, this.scene.stageH - 40);
+      const ring = this.scene.add
+        .image(rx, ry, "ring")
+        .setDepth(5)
+        .setTint(0xffc46a)
+        .setAlpha(0.28)
+        .setScale(0.32);
+      this.teleRings.push(ring);
+      this.scene.tweens.add({ targets: ring, alpha: 0.75, duration: 700 });
+      this.scene.time.delayedCall(760, () => {
+        if (ring.active) {
+          this.scene.tweens.add({ targets: ring, alpha: 0, duration: 140, onComplete: () => ring.destroy() });
+          this.teleRings = this.teleRings.filter((r) => r !== ring);
+        }
+      });
+    }
+  }
+
+  private doBeam() {
+    this.clearTint();
+    this.setMode("beaming", 10);
+    const step = this.chaos ? 0.042 : 0.032; // 카오스는 더 빠른 회전
+    const speed = this.chaos ? 250 : 235;
+    let done = 0;
+    const ticks = 26;
+    this.beamTimer?.remove();
+    this.beamTimer = this.scene.time.addEvent({
+      delay: 60,
+      repeat: ticks - 1,
+      callback: () => {
+        if (!this.alive) return;
+        this.beamAngle += this.beamDir * step;
+        this.fireOrb(this.beamAngle, speed, Math.round(this.def.atk * 0.55));
+        this.fireOrb(this.beamAngle + 0.14, speed, Math.round(this.def.atk * 0.55));
+        if (this.chaos) this.fireOrb(this.beamAngle - 0.14, speed, Math.round(this.def.atk * 0.55));
+        if (done % 4 === 0) this.scene.sfxSwing();
+        if (++done >= ticks) this.endAttack(1600);
+      },
+    });
+  }
+
+  /* ---------- 그림자 급습 (fenrir / skoll / gram / abudditos) ----------
+   * 모습을 숨긴 뒤 플레이어 근처로 순간이동 → 짧은 강타 텔레그래프 */
+  private startBlink() {
+    this.setMode("blinkTele", 320);
+    this.setAlpha(0.25);
+    this.scene.spawnBurstAt(this.x, this.y, 14, 0x8040c0);
+    this.scene.sfxDash();
+  }
+
+  private doBlink(player: PlayerLike2) {
+    this.setAlpha(1);
+    const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    const d = Phaser.Math.Between(140, 190);
+    this.setPosition(
+      Phaser.Math.Clamp(player.x + Math.cos(ang) * d, 60, this.scene.stageW - 60),
+      Phaser.Math.Clamp(player.y + Math.sin(ang) * d, 60, this.scene.stageH - 60)
+    );
+    this.scene.spawnBurstAt(this.x, this.y, 14, 0xb06aff);
+    // 짧은 강타 — 보라색 링(일반 강타와 구분)
+    this.startShadowSlam(player);
+  }
+
+  /** blink 직속 강타 — 일반 강타보다 텔레그래프가 짧고(500ms) 보라색 */
+  private startShadowSlam(player: PlayerLike2) {
+    this.setMode("slamTele", this.chaos ? 380 : 500);
+    const ring = this.scene.add
+      .image(player.x, player.y, "ring")
+      .setDepth(5)
+      .setTint(0xb06aff)
+      .setAlpha(0.4)
+      .setScale(0.2);
+    this.teleRings.push(ring);
+    this.teleRing = ring;
+    this.scene.tweens.add({ targets: ring, scale: 1, alpha: 0.9, duration: (this.chaos ? 380 : 500) - 30 });
+    this.setTint(0xb06aff);
+    this.scene.time.delayedCall(this.chaos ? 380 : 500, () => this.alive && this.clearTint());
+  }
+
+  /* ---------- 연속 낙뢰 (guardian 심연 지진 / surt 용암 분출 / behemoth 눈보라 폭풍) ----------
+   * 플레이어를 쫓는 연속 낙뢰 장판 — 6~8회 연속으로 이동기 강제 */
+  private startQuake() {
+    this.setMode("quakeCast", 80);
+    this.setTint(0xffb05a);
+    const shots = this.chaos ? 8 : 6;
+    this.quakeTimer?.remove();
+    let done = 0;
+    this.quakeTimer = this.scene.time.addEvent({
+      delay: 340,
+      repeat: shots - 1,
+      callback: () => {
+        if (!this.alive) return;
+        const p0 = this.scene.playerRef;
+        if (!p0) return;
+        // 70% 확률 플레이어 현재 위치, 30%는 예측 차단용 근처 무작위
+        const tx =
+          Math.random() < 0.7
+            ? p0.x
+            : Phaser.Math.Clamp(p0.x + Phaser.Math.Between(-240, 240), 60, this.scene.stageW - 60);
+        const ty =
+          Math.random() < 0.7
+            ? p0.y
+            : Phaser.Math.Clamp(p0.y + Phaser.Math.Between(-200, 200), 60, this.scene.stageH - 60);
+        const ring = this.scene.add
+          .image(tx, ty, "ring")
+          .setDepth(5)
+          .setTint(0xffa040)
+          .setAlpha(0.35)
+          .setScale(0.18);
+        this.zoneRings.push(ring);
+        this.scene.tweens.add({ targets: ring, scale: 0.8, alpha: 0.9, duration: 580 });
+        this.scene.time.delayedCall(600, () => {
+          if (!ring.active) return;
+          this.scene.spawnSlamBurst(ring.x, ring.y);
+          this.scene.cameras.main.shake(80, 0.004);
+          const p = this.scene.playerRef;
+          if (p && Phaser.Math.Distance.Between(ring.x, ring.y, p.x, p.y) < 88) {
+            const dir = new Phaser.Math.Vector2(p.x - ring.x, p.y - ring.y).normalize();
+            p.takeDamage(Math.round(this.def.atk * 0.8), dir);
+          }
+          this.scene.tweens.add({ targets: ring, alpha: 0, duration: 140, onComplete: () => ring.destroy() });
+          this.zoneRings = this.zoneRings.filter((r) => r !== ring);
+        });
+        if (done % 2 === 0) this.scene.sfxSwing();
+        if (++done >= shots) {
+          this.clearTint();
+          this.endAttack(shots * 340 + 260);
+        }
+      },
+    });
+  }
+
+  /* ---------- 반격 카운터 (abysslord / gram / abudditos — 로스트아크식) ----------
+   * 노란 링 = 반격의 창. 창 안에 1회라도 맞추면 보스가 기절+취약(받는 피해 ×1.6),
+   * 방관하면 즉시 대폭발(링 2파동 + 장판)으로 응수 */
+  private startCounter() {
+    this.setMode("counterTele", this.chaos ? 1050 : 1400);
+    this.setTint(0xffe95a);
+    this.counterRing = this.scene.add
+      .image(this.x, this.y, "ring")
+      .setDepth(5)
+      .setTint(0xffe95a)
+      .setAlpha(0.5)
+      .setScale(1.15);
+    this.teleRings.push(this.counterRing);
+    this.scene.tweens.add({ targets: this.counterRing, scale: 0.9, alpha: 0.95, duration: 300, yoyo: true, repeat: -1 });
+    if (this.counterHintShown < 2) {
+      this.counterHintShown++;
+      this.scene.showBanner("노란 원 — 지금 공격해 균형을 무너뜨려라!");
+    }
+    this.scene.sfxRoar();
+  }
+
+  /** 카운터 창 방관 — 응징 폭발 */
+  private doCounterPunish(player: PlayerLike2) {
+    this.clearTint();
+    this.destroyCounterRing();
+    this.scene.cameras.main.shake(200, 0.009);
+    this.scene.showBanner("반격 실패!");
+    this.setTint(0xff7a5a);
+    // 즉시 링 2파동 (틀어진 각도)
+    for (let w = 0; w < 2; w++) {
+      this.scene.time.delayedCall(w * 320, () => {
+        if (!this.alive) return;
+        const count = 20;
+        for (let i = 0; i < count; i++) {
+          this.fireOrb(w * 0.19 + (Math.PI * 2 * i) / count, 175 + w * 25, Math.round(this.def.atk * 0.55));
+        }
+      });
+    }
+    // 근거리 장판 2개
+    const spots: [number, number][] = [
+      [player.x, player.y],
+      [this.x, this.y],
+    ];
+    for (const [zx, zy] of spots) {
+      const ring = this.scene.add.image(zx, zy, "ring").setDepth(5).setTint(0xff8848).setAlpha(0.35).setScale(0.2);
+      this.zoneRings.push(ring);
+      this.scene.tweens.add({ targets: ring, scale: 0.82, alpha: 0.9, duration: 800 });
+      this.scene.time.delayedCall(830, () => {
+        if (!ring.active) return;
+        this.scene.spawnSlamBurst(ring.x, ring.y);
+        if (Phaser.Math.Distance.Between(ring.x, ring.y, player.x, player.y) < 95) {
+          const dir = new Phaser.Math.Vector2(player.x - ring.x, player.y - ring.y).normalize();
+          player.takeDamage(Math.round(this.def.atk * 0.9), dir);
+        }
+        this.scene.tweens.add({ targets: ring, alpha: 0, duration: 150, onComplete: () => ring.destroy() });
+        this.zoneRings = this.zoneRings.filter((r) => r !== ring);
+      });
+    }
+    this.scene.time.delayedCall(900, () => this.alive && this.clearTint());
+    this.endAttack(1900);
+  }
+
+  private destroyCounterRing() {
+    if (this.counterRing && this.counterRing.active) {
+      this.scene.tweens.killTweensOf(this.counterRing);
+      this.counterRing.destroy();
+    }
+    this.teleRings = this.teleRings.filter((r) => r !== this.counterRing);
+    this.counterRing = null;
+  }
+
   private fireOrb(angle: number, speed: number, dmgOverride?: number) {
     const orb = this.orbPool[this.orbIdx];
     this.orbIdx = (this.orbIdx + 1) % this.orbPool.length;
     orb.enableBody(true, this.x, this.y - 20, true, true);
-    this.scene.physics.velocityFromRotation(angle, speed, orb.body!.velocity);
+    // v4.1.4 — 카오스는 탄속 +22% (회피 난이도 상향)
+    this.scene.physics.velocityFromRotation(angle, this.chaos ? speed * 1.22 : speed, orb.body!.velocity);
     orb.setScale(this.enraged ? 1.2 : 1);
     orb.setData(
       "dmg",
@@ -448,10 +801,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     orb.disableBody(true, true);
   }
 
-  /** 공격 종료 — 다음 공격까지 대기. v3.0.6: 페이즈별 태진 단축 (p1 0.85 / p2 0.7 / 격노 0.5) */
+  /** 공격 종료 — 다음 공격까지 대기. v3.0.6: 페이즈별 태진 단축 (p1 0.85 / p2 0.7 / 격노 0.5)
+   *  v4.1.4 — 카오스는 쿨타임 25% 추가 단축 (패턴 밀도 대폭 상향) */
   private endAttack(cd: number) {
     this.mode = "idle";
-    this.nextAttackCd = this.enraged ? cd * 0.5 : this.phase === 2 ? cd * 0.7 : cd * 0.85;
+    let m = this.enraged ? 0.5 : this.phase === 2 ? 0.7 : 0.85;
+    if (this.chaos) m *= 0.75;
+    this.nextAttackCd = cd * m;
   }
 
   /* ---------- 피격/사망 ---------- */
@@ -462,13 +818,31 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const atkElem = this.scene.playerRef?.attackElem ?? "none";
     const adv = elemAdvantage(atkElem, this.elem);
     const weak = adv > 1;
-    const dealt = adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
+    let dealt = adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
+
+    // v4.1.4 — 반격 카운터: 창(노란 링) 안에 한 대라도 맞추면 카운터 성공 → 기절 + 취약
+    if (this.mode === "counterTele") {
+      this.clearTint();
+      this.destroyCounterRing();
+      this.mode = "staggered";
+      this.modeTimer = 2800;
+      this.setTint(0x8a7aff);
+      this.scene.showBanner("반격 성공 — " + this.def.name + " 대굴! (피해 ×1.6)");
+      this.scene.cameras.main.shake(160, 0.008);
+      this.scene.spawnBurstAt(this.x, this.y, 22, 0xffe95a);
+      EventBus.emit("boss:update", { hp: Math.max(0, this.hp), maxHp: this.maxHp });
+      return; // 이 한 대는 그대로 반영 — 이후 타격부터 ×1.6
+    }
+    if (this.mode === "staggered") dealt = Math.max(1, Math.round(dealt * 1.6)); // 취약 상태
+
     this.hp -= dealt;
     this.knockVec.set(dir.x * knock * 0.12, dir.y * knock * 0.12); // 보스는 넉백 거의 안 됨
-    // 타격감: 화이트 플래시
+    // 타격감: 화이트 플래시 — 카운터/기절 상태의 틴트는 유지
     this.setTintFill(0xffffff);
     this.scene.time.delayedCall(60, () => {
-      if (this.alive && this.active) this.clearTint();
+      if (!this.alive || !this.active) return;
+      if (this.mode === "staggered") this.setTint(0x8a7aff);
+      else if (this.mode !== "counterTele") this.clearTint();
     });
     this.scene.spawnDamageText(
       this.x + Phaser.Math.Between(-14, 14), this.y - 44, dealt, crit || weak,
@@ -482,6 +856,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.alive = false;
       this.mode = "dead";
       this.volleyTimer?.remove();
+      this.spiralTimer?.remove();
+      this.beamTimer?.remove();
+      this.quakeTimer?.remove();
+      this.supportTimer?.remove();
+      this.scene.tweens.killTweensOf(this); // v4.1.4 — 카오스 오라 펄스 정지
+      this.setAlpha(1);
       for (const orb of this.orbPool) this.killOrb(orb);
       for (const r of this.teleRings) r.destroy();
       this.teleRings = [];
@@ -500,12 +880,17 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   destroyPool() {
     this.volleyTimer?.remove();
+    this.spiralTimer?.remove();
+    this.beamTimer?.remove();
+    this.quakeTimer?.remove();
+    this.supportTimer?.remove();
     for (const orb of this.orbPool) orb.destroy();
     for (const r of this.teleRings) r.destroy();
     for (const r of this.zoneRings) r.destroy();
     this.orbPool = [];
     this.teleRings = [];
     this.zoneRings = [];
+    this.counterRing = null;
   }
 }
 
