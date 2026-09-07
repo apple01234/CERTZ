@@ -812,3 +812,27 @@ Stage Summary:
 - 완료 후: python3 scripts/admob_report.py --days 7 로 수익 조회 즉시 가능
 - API key(AIza…)는 AdMob API에 불가 — 이번 스크립트는 OAuth2 전용
 - v4.1.3 이후 게임 코드 변경 없음(앱/웹 재배포 불필요)
+
+---
+Task ID: 48
+Agent: Super Z (메인)
+Task: 나무위키 MMORPG 참고 기능/디자인 추가 + 보스 디자인·패턴 개선 + 카오스 훨씬 더 어렵게 → v4.1.4
+
+Work Log:
+- [조사] namu.wiki/w/MMORPG 페이지 리더 수집(클라우드플레어 우회 성공) + 코드베이스 정밀 조사 — 보스 9종이 동일 6종 패턴 풀 공유, 카오스는 재림판 전용 숫자강화만 존재 확인
+- [보스 고유 패턴] BossAttackKind 6→11종 확장: spiral(나선 탄막 — 베헤모스/심연군주/아부디토스) · beam(회전 스윕 빔 — 니드호그 브레스/수르트/스콜) · blink(그림자 급습 — 펜리르/스콜/가름/아부디토스) · quake(연속 낙뢰 — 수호자/수르트/베헤모스) · chargeChain(연속 돌진 — 펜리르2/스콜2, BossDef 필드 신설)
+- [반격 카운터] 로스트아크식 — 노란 링 창 내 타격 1회 시 보스 기절 2.8초+받는 피해 ×1.6(보라 틴트), 방관 시 링 2파동+장판 2개 응징폭발. 첫 2회만 힌트 배너. 심연군주/가름/아부디토스에 배치
+- [카오스 강화] BOSS_DIFFS.chaos hp 3.8→6.2·atk 1.9→2.55·reward 3.2→4.6·emerald 15→30 + spd 1.14 신설 필드. Boss에 chaos 플래그(dif 전달): 쿨타임 ×0.75, 탄속 ×1.22, 돌진연쇄+1, 카운터창 1050ms, p3 권속 지원군(12초 주기), 붉은 오라 펄스, 등장 배너/셰이크 강화
+- [침공 보스] startInvasionTimer — 6~9분 주기 전투 구역에 붉은 침공 몬스터(×6HP/×1.8ATK/×8EXP/×6GOLD/scale1.55). 조건: 마을·실내·보스·정예·게이트·던전 부재. 격퇴 시 에메랄드 +2 확정
+- [도전과제 4종] AchSnapshot에 bossKills/chaosKills/invasionKills 추가 + ach_b1(보스 10회)·ach_ch1(카오스 1회)·ach_ch2(카오스 10회)·ach_inv(침공 5회) — 기존 바르가 업적 탭 시스템 확장(중복 구현 회피). SaveData 필드 3종 + 로드/세이브 양쪽 반영
+- [버저닝] versionCode 51 / 4.1.4 — build.gradle·server.js·next.config 미러·apk-guide.html(변경점+md5)·Overlays 배지 "v4.1.4 · 보스 재앙 업데이트"
+- [빌드] tsc 0 에러 → bun build 성공 → APK BUILD SUCCESSFUL 50s(웜) 144,889,471B
+- [릴리스] GitHub Release v4.1.4(id 383808989) 업로드 → 재다운로드 md5 일치(f56e413e3ef526f5e84786adec21e612)
+- [.next 오염 복구] rm -rf .next && bun run build → 서버 재시작 → GET / 200 확인
+
+Stage Summary:
+- v4.1.4 배포: https://github.com/apple01234/CERTZ/releases/download/v4.1.4/SERTZ-v4.1.4.apk (md5 f56e413e…, versionCode 51)
+- 보스전이 "모든 보스가 같은 6패턴"에서 9마리 각자의 시그니처 + 반격 카운터 게임으로 개편
+- 카오스는 숫자+질적 메커니즘 모두 상향 — 도전 가치(보상 460%·에메랄드 30) 유지
+- OAuth 클라이언트 ID 수신분(.secrets/admob-oauth-client-id.txt 보관) — 서비스 계정 JSON 키(private_key) 없으면 AdMob API 호출 불가, JSON 키 파일 대기 중
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
