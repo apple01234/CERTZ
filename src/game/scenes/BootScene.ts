@@ -137,10 +137,9 @@ const ASSET_LIST = [
   "item_weapon_1", "item_weapon_2", "item_weapon_3", "item_weapon_4",
   "item_armor_1", "item_armor_2", "item_armor_3", "item_armor_4",
   "npc_merchant",
-  // 시작 마을 (인간들의 마을)
-  "npc_villager1", "npc_villager2",
+  /* 시작 마을 (인간들의 마을) — v4.1.8: 무료 플레이스홀더 npc_villager1/2·npc_jobmaster 제거,
+   *  Unity 에셋스토어 유료 SPUM 캐릭터(spum_*)로 전면 교체 (아래 목록 참조) */
   "house_a", "house_b", "well",
-  "npc_jobmaster", // 전직 관리관 (v1.5 이관)
   // 펫 (v1.9 BM)
   "pet_slime", "pet_pixie",
   // v3.0.6 — BM 상점 신규 아이콘 (에메랄드 전용)
@@ -163,22 +162,22 @@ const ASSET_LIST = [
   "ud_deadtree1", "ud_deadtree2", "ud_deadtree3", "ud_brokentree",
   "ud_grave1", "ud_grave2", "ud_grave3", "ud_skulls", "ud_bones",
   "cl_mflower", "cl_eyeplant", "cl_jawsplant", "cl_manyeyes", "cl_pustules", "cl_rock", "cl_bones",
-  /* v4.1.5 — Kenney Particle Pack (CC0) 선별 27종: 조명 마스크/연기/별/마법/화염/스파크/원/버스트/먼지
-   *  → 동적 조명(Lighting.ts) + 신규 이미터(레벨업 별·사망 연기·보스 잉걸불·포탈 마법) */
-  "pk_light_01", "pk_light_02", "pk_light_03",
-  "pk_smoke_01", "pk_smoke_04", "pk_smoke_06", "pk_smoke_08",
-  "pk_star_01", "pk_star_02", "pk_star_03",
-  "pk_magic_01", "pk_magic_02", "pk_magic_03", "pk_magic_05",
-  "pk_fire_01", "pk_fire_02", "pk_flame_02", "pk_flame_04",
-  "pk_spark_02", "pk_spark_04", "pk_spark_06",
-  "pk_circle_02", "pk_circle_04",
-  "pk_muzzle_02", "pk_muzzle_04",
-  "pk_dirt_01", "pk_dirt_02",
+  /* v4.1.5 — Kenney Particle Pack (CC0) — v4.1.8: 조명 마스크(pk_light_01)만 유지,
+   *  이펙트용 26종은 Unity 에셋스토어 유료 CFXR 텍스처로 전면 교체 (저품질 무료 이펙트 제거) */
+  "pk_light_01",
   /* v4.1.7 — Unity Asset Store 유료 에셋 (유저 구매): Cartoon FX Remaster(JMO) + FireworksEffect2D
    *  레벨업 불꽃놀이·보스 룬 마법진/오라·타격 임팩트 등 프리미엄 VFX 텍스처 */
   "pfx_hit", "pfx_magic", "pfx_star", "pfx_runic", "pfx_aura",
   "pfx_ring", "pfx_elec", "pfx_skull", "pfx_fw_b", "pfx_fw_y",
   "pfx_heart", "pfx_spark_y",
+  /* v4.1.8 — 유료 CFXR 애니메이션급 파티클 텍스처: 타격 임팩트/레벨업 별/사망 연기/
+   *  포탈·수집 마법 별/카오스 잉걸불 화염 — Kenney 무료 이펙트 완전 대체 */
+  "cfxr_impact", "cfxr_star", "cfxr_smoke", "cfxr_mstar", "cfxr_flamme",
+  /* v4.1.8 — Unity 에셋스토어 유료 SPUM 캐릭터: Unity 프리팹을 정밀 파싱해 조합한
+   *  프리미엄 픽셀 NPC 14종 — 챕터 마을 주민/상점/직업교관 비주얼 전면 업그레이드 */
+  "spum_villager_m", "spum_villager_f", "spum_knight", "spum_elf", "spum_mage",
+  "spum_skel", "spum_devil", "spum_smith", "spum_miner", "spum_fisher",
+  "spum_forager", "spum_scout", "spum_mystic", "spum_butler",
 ] as const;
 
 const AUDIO_LIST: string[] = [

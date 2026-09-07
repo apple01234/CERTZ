@@ -12,22 +12,43 @@ import { BOSS_DEFS } from "@/game/data";
  *  게임 내 실제 스프라이트(NPC/보스/펫/주인공)를 픽셀 확대해 초상화로 사용 — 아트 스타일 일관성.
  */
 
-/** 화자 → 초상화 스프라이트 매핑 (public/assets/<키>.png) */
+/** 화자 → 초상화 스프라이트 매핑 (public/assets/<키>.webp)
+ *  v4.1.8 — 무료 플레이스홀더 npc_* 초상화 → 유료 SPUM 캐릭터 전면 교체 +
+ *  챕터 마을 주민 17종 초상화 신설 (게임 내 NPC와 동일한 SPUM 스프라이트) */
 const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "룬 정령 이그니": { tex: "pet_pixie", tone: "#67e8f9" }, // 시안 — 룬 정령
-  "여관 주인 로안": { tex: "npc_villager1", tone: "#fcd34d" },
-  "마을 주민": { tex: "npc_villager1", tone: "#fcd34d" },
-  "마을 아이": { tex: "npc_villager2", tone: "#fcd34d" },
-  "호족 소녀 엘렌": { tex: "npc_villager2", tone: "#fcd34d" },
+  "여관 주인 로안": { tex: "spum_mage", tone: "#fcd34d" },
+  "마을 주민": { tex: "spum_villager_m", tone: "#fcd34d" },
+  "마을 아이": { tex: "spum_villager_f", tone: "#fcd34d" },
+  "호족 소녀 엘렌": { tex: "spum_villager_f", tone: "#fcd34d" },
   "상인 라고스": { tex: "npc_merchant", tone: "#fcd34d" },
-  "직업 교관 카이엔": { tex: "npc_jobmaster", tone: "#fbbf24" },
-  "쿠소디아 기사단장": { tex: "npc_jobmaster", tone: "#fbbf24" },
-  "라이언 드 쿠소디아 국왕": { tex: "npc_villager1", tone: "#fbbf24" },
-  "알프헤임의 여왕 요정": { tex: "npc_villager2", tone: "#a7f3d0" },
-  "땅의 요정 여왕": { tex: "npc_villager2", tone: "#a7f3d0" },
-  "난쟁이 광산 조합장": { tex: "npc_merchant", tone: "#fcd34d" },
+  "직업 교관 카이엔": { tex: "spum_knight", tone: "#fbbf24" },
+  "쿠소디아 기사단장": { tex: "spum_knight", tone: "#fbbf24" },
+  "라이언 드 쿠소디아 국왕": { tex: "spum_knight", tone: "#fbbf24" },
+  "알프헤임의 여왕 요정": { tex: "spum_elf", tone: "#a7f3d0" },
+  "땅의 요정 여왕": { tex: "spum_elf", tone: "#a7f3d0" },
+  "난쟁이 광산 조합장": { tex: "spum_miner", tone: "#fcd34d" },
   "마법사 흐레스": { tex: "npc_gm", tone: "#c4b5fd" },
   "세계수 이그드라실": { tex: "tree", tone: "#7dd3fc" },
+  // v4.1.8 — 챕터 마을 주민 (게임 내 SPUM NPC와 동일 비주얼)
+  "허브 채집가 베르": { tex: "spum_forager", tone: "#b8f0a0" },
+  "신전 관리인 노아": { tex: "spum_mage", tone: "#b8f0a0" },
+  "선원 롤프": { tex: "spum_villager_m", tone: "#ffe9b0" },
+  "늪지 어부 팰": { tex: "spum_fisher", tone: "#ffe9b0" },
+  "요정 사절 리안": { tex: "spum_elf", tone: "#d8c8ff" },
+  "성전 견습 기사": { tex: "spum_knight", tone: "#d8c8ff" },
+  "대장장이 브라키": { tex: "spum_smith", tone: "#ffb080" },
+  "용암 광부 코일": { tex: "spum_miner", tone: "#ffb080" },
+  "얼음 낚시꾼 시그룬": { tex: "spum_villager_f", tone: "#a8e0ff" },
+  "눈보라 정찰병": { tex: "spum_scout", tone: "#a8e0ff" },
+  "수정 채굴자 그밀": { tex: "spum_mystic", tone: "#c9a0ff" },
+  "어둠 요정 피난민": { tex: "spum_devil", tone: "#c9a0ff" },
+  "룬 대장장이 두린": { tex: "spum_smith", tone: "#ffd76a" },
+  "광산 감독관": { tex: "spum_knight", tone: "#ffd76a" },
+  "전쟁 유령 아르벨": { tex: "spum_skel", tone: "#d0a8ff" },
+  "저택 집사 무르": { tex: "spum_butler", tone: "#d0a8ff" },
+  "폐허 학자 테일": { tex: "spum_mage", tone: "#b09aff" },
+  "마지막 항해사": { tex: "spum_fisher", tone: "#b09aff" },
   "종언의 마룡 아부디토스": { tex: "boss_nidhog_idle0", tone: "#fda4af" }, // v4.1.3 고증 표기 통일 — 없는 파일(boss_nidhog) 대신 실제 프레임 파일명
   "{name}": { tex: "hero_idle0", tone: "#86efac" }, // 플레이어
 };

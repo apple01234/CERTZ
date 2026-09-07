@@ -911,3 +911,33 @@ Stage Summary:
 - 정적 자산 총량 136MB→91MB(-33%), APK 141MB→101MB(-29%), 재방문 /assets 재검증 폭탄(max-age=0) 제거, HTML 2.5KB gzip
 - 감사 보고서 로드맵 Phase 1·2·3 전항목 중 구현 가능한 전부 적용 완료 — 게임 로직/맵/보스/세이브 구조 무변경
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 52
+Agent: Super Z (메인)
+Task: 신규 업로드 유료 에셋(CartoonVFX9X.zip + SPUM.7z) 통합 → v4.1.8 + APK 빌드
+
+Work Log:
+- 세션 리셋 복구: worktree 초기화 → origin/main 얕은 클론으로 루트 복구(v4.1.7 = bffea14), bun install 재설치
+- [업로드 분석] SPUM.7z = 번들 팩(CFXR 1025파일 + SPUM 캐릭터 시스템 + Fantasy UI SFX + FireworksEffect2D) / CartoonVFX9X.zip = FireworksEffect2D + Sci-Fi Frames 80종(대형 UI 프레임 — 픽셀 아이덴티티 충돌로 미채택 문서화)
+- [v4.1.7 미반영분 확정] SPUM 모듈 캐릭터 + CFXR 정밀 텍스처 141종 중 12종만 사용 중
+- [SPUM 파서] scripts/spum_compose.py — Unity YAML 프리팹(198 GameObject) 파싱: GUID→PNG meta spriteSheet rect 매핑, Transform 계층 누적 이동/스케일/쿼터니언 Z회전, PPU=32 Y반전, SpriteRenderer 트리 순회 z-order, 픽셀별 틴트 곱셈(ImageChops.multiply — 내부 음영 보존), Shadow GO 제외, iid 21300000 단일 스프라이트 폴백
+- [조합] BasicPack 프리팹 48종(Human/Elf/Skelton/Devil) 전량 조합 성공 → 컨택트시트 육안 검증(Read 툴) → 블랙박스 결함 4종 제외 선별 14종
+- [에셋 파이프라인] scripts/premium_assets.py — CFXR 5종(cfxr_impact 128px/star·smoke·mstar 512px/flamme 256x512, 무손실 webp) + SPUM 14종(96x96 바닥 앵커 캔버스 webp) → public/assets
+- [CFXR 이펙트 교체 7곳] hitEmitter·burstEmitter(spark 16px→cfxr_impact, 스케일 0.22/0.30 보정)·starEmitter(pk_star_02→cfxr_star)·smokeEmitter(→cfxr_smoke)·magicEmitter+portalMagicA/B(pk_magic→cfxr_mstar)·bossEmber(pk_fire_01→cfxr_flamme 종화염) — 512px 드롭인이라 설정 무변경, 전부 ADD 블렌딩 호환 실측
+- [SPUM NPC 교체] 챕터 주민 18명(9챕터×2, data.ts CHAPTER_VILLAGE_NPC tex 18곳)·본마을 주민/아이·직업 교관 카이엔(spum_knight, 금색 틴트 제거)·여관주인 로안(spum_mage) — 스케일 보정 1.6/1.7→0.62/0.66(96px 캔버스), keeper 1.0→0.38
+- [초상화 신설] DialogueBox.tsx NPC_PORTRAITS — npc_* 무료 초상화 → spum_* 교체 + 챕터 주민 17종 초상화 신설(기존엔 초상화 미표시)
+- [무료 저품질 제거] Kenney 이펙트 26종(pk_light_01 조명만 유지) + npc_villager1/2·npc_jobmaster 삭제(BootScene 목록+디스크, 총 29파일)
+- [크레딧] Overlays 타이틀 화면 Art 크레딧에 SPUM·CFXR·Fantasy UI SFX(Unity Asset Store 유료 라이선스) 추가
+- [버저닝] versionCode 55 / 4.1.8 — build.gradle·server.js 미러·next.config 미러·apk-guide.html(v4.1.8 변경점+md5)·APK_다운로드_안내.txt·Overlays 배지 "v4.1.8 · 프리미엄 에셋 II"
+- [툴체인 재구축] 세션 리셋으로 JDK/SDK 소실 → 시스템 Java는 JRE/javac 없음 확인 → Temurin 21.0.12(/home/z/jdk) + cmdline-tools 11076708 + platforms;android-36 + build-tools;35.0.0 재설치
+- [빌드/릴리스] tsc 0 에러 → bun build 성공 → APK BUILD SUCCESSFUL 3m35s → 104,648,559B(100MB) · aapt 실측 versionCode 55/4.1.8 · md5 7935883abc5f0febaa40a0f35a6b049a → GitHub Release v4.1.8(id 384039224) 업로드 → 재다운로드 md5 일치
+- [후처리] rm -rf .next && bun run build → NODE_ENV=production node server.js(setsid -f) → GET /·apk-guide·spum_knight.webp·cfxr_impact.webp·APK_download_guide.txt 200 확인
+
+Stage Summary:
+- v4.1.8 배포: https://github.com/apple01234/CERTZ/releases/download/v4.1.8/SERTZ-v4.1.8.apk (md5 7935883a…, versionCode 55, 100MB)
+- 유저가 구매한 Unity 에셋스토어 유료 팩의 미반영분(SPUM 캐릭터·CFXR 정밀 텍스처) 전량 통합 완료 — SFX는 v4.1.7에서 이미 17종 적용
+- NPC가 "모든 챕터 동일 무료 플레이스홀더"에서 종족/직업별 유료 캐릭터 14종 + 전용 대화 초상화로 전면 개편
+- Sci-Fi Frames 80종은 픽셀 아이덴티티 충돌로 미채택(필요 시 별도 UI 스킨으로 검토 가능)
+- 게임 로직/맵/보스/세이브 구조 무변경 — 기존 틀 유지
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

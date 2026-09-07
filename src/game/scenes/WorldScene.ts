@@ -1693,8 +1693,8 @@ export class WorldScene extends Phaser.Scene {
   private spawnPortal(x: number, y: number) {
     // 외부 에셋 차원문(varkalandar CC-BY, 8프레임 소용돌이) — 비활성 시 회색 틴트
     this.portal = this.physics.add.sprite(x, y, "portal0").setDepth(3).setTint(0x777777);
-    /* v4.1.5 — 차원문 주변 신비한 마법 입자 + 광원 (Kenney Particle Pack) */
-    this.portalMagicA = this.add.particles(x, y - 4, "pk_magic_01", {
+    /* v4.1.8 — 차원문 마법 입자: 유료 CFXR 마법 별 (Kenney pk_magic_01 대체) */
+    this.portalMagicA = this.add.particles(x, y - 4, "cfxr_mstar", {
       lifespan: 900,
       frequency: 420,
       quantity: 1,
@@ -1872,7 +1872,7 @@ export class WorldScene extends Phaser.Scene {
     const ry = this.layout ? this.entryHome.y : this.stageH * 0.52;
     this.returnPortal = this.physics.add.sprite(rx, ry, "portal0").setDepth(3).setTint(0x54c8ff).setScale(0.92);
     /* v4.1.5 — 복귀 차원문 마법 입자 + 광원 */
-    this.portalMagicB = this.add.particles(rx, ry - 4, "pk_magic_01", {
+    this.portalMagicB = this.add.particles(rx, ry - 4, "cfxr_mstar", {
       lifespan: 900,
       frequency: 420,
       quantity: 1,
@@ -2005,11 +2005,12 @@ export class WorldScene extends Phaser.Scene {
           { x: cx - 90, y: cy - 90, tex: vSpec.npcB.tex, name: vSpec.npcB.name, dlg: vSpec.npcB.dlg },
         ]
       : [
-          { x: cx + 210, y: cy + 120, tex: "npc_villager1", name: "주민", dlg: "villager1" },
-          { x: cx - 90, y: cy - 90, tex: "npc_villager2", name: "마을 아이", dlg: "villager2" },
+          { x: cx + 210, y: cy + 120, tex: "spum_villager_m", name: "주민", dlg: "villager1" },
+          { x: cx - 90, y: cy - 90, tex: "spum_villager_f", name: "마을 아이", dlg: "villager2" },
         ];
     for (const v of villagers) {
-      const img = this.add.image(v.x, v.y, v.tex).setDepth(Math.floor(v.y / 10)).setScale(1.6);
+      /* v4.1.8 — 유료 SPUM 캐릭터(96px 캔버스) 배율 보정: 32px 무료 NPC × 1.6과 동일 화면 크기 */
+      const img = this.add.image(v.x, v.y, v.tex).setDepth(Math.floor(v.y / 10)).setScale(0.62);
       this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       this.add
         .text(v.x, v.y - 34, v.name, {
@@ -2029,7 +2030,8 @@ export class WorldScene extends Phaser.Scene {
     const jy = cy - 120;
     const jglow = this.add.image(jx, jy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.8).setAlpha(0.22);
     this.tweens.add({ targets: jglow, alpha: 0.4, scale: 1.05, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-    this.jobNpc = this.add.image(jx, jy, "npc_villager1").setDepth(Math.floor(jy / 10)).setScale(1.7).setTint(0xffd76a);
+    /* v4.1.8 — 카이엔: 유료 SPUM 기사 캐릭터 (무료 villager 금색 틴트 대체 — 갑옷 자체가 황금색) */
+    this.jobNpc = this.add.image(jx, jy, "spum_knight").setDepth(Math.floor(jy / 10)).setScale(0.66);
     this.tweens.add({ targets: this.jobNpc, y: jy - 3, duration: 1000, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(jx, jy - 38, "직업 교관 카이엔", {
@@ -2105,25 +2107,26 @@ export class WorldScene extends Phaser.Scene {
     for (const s of this.hitFxPool) s.destroy();
     this.hitFxPool = [];
 
-    // 공유 파티클 이미터 2종
-    this.hitEmitter = this.add.particles(0, 0, "spark", {
+    /* v4.1.8 — 유료 CFXR 임팩트 텍스처로 교체 (기존 16px 무료 spark → 128px 카툰 임팩트)
+     *  스케일 보정: 128px 텍스처 × 0.22/0.30 ≈ 기존 16px × 1.0/1.4 시각 크기의 ~1.8배 쥬스 업 */
+    this.hitEmitter = this.add.particles(0, 0, "cfxr_impact", {
       lifespan: 260,
       speed: { min: 60, max: 190 },
-      scale: { start: 1, end: 0 },
+      scale: { start: 0.22, end: 0 },
       emitting: false,
       blendMode: Phaser.BlendModes.ADD,
     }).setDepth(30);
-    this.burstEmitter = this.add.particles(0, 0, "spark", {
+    this.burstEmitter = this.add.particles(0, 0, "cfxr_impact", {
       lifespan: 480,
       speed: { min: 90, max: 300 },
-      scale: { start: 1.4, end: 0 },
+      scale: { start: 0.3, end: 0 },
       emitting: false,
       blendMode: Phaser.BlendModes.ADD,
     }).setDepth(30);
 
-    /* v4.1.5 — Kenney Particle Pack 신규 이미터 3종
-     *  star: 레벨업 황금 별 폭발 / smoke: 몬스터 사망 연기 / magic: 승리·수집 반짝임 */
-    this.starEmitter = this.add.particles(0, 0, "pk_star_02", {
+    /* v4.1.5 — 신규 이미터 3종: star: 레벨업 황금 별 폭발 / smoke: 몬스터 사망 연기 / magic: 승리·수집 반짝임
+     *  v4.1.8 — Kenney 무료 텍스처 → Unity 에셋스토어 유료 CFXR (별/연기/마법 별) — 설정 무변경 드롭인 */
+    this.starEmitter = this.add.particles(0, 0, "cfxr_star", {
       lifespan: { min: 520, max: 900 },
       speed: { min: 60, max: 220 },
       scale: { start: 0.38, end: 0 },
@@ -2132,7 +2135,7 @@ export class WorldScene extends Phaser.Scene {
       emitting: false,
       blendMode: Phaser.BlendModes.ADD,
     }).setDepth(31);
-    this.smokeEmitter = this.add.particles(0, 0, "pk_smoke_01", {
+    this.smokeEmitter = this.add.particles(0, 0, "cfxr_smoke", {
       lifespan: { min: 600, max: 950 },
       speed: { min: 14, max: 52 },
       scale: { start: 0.3, end: 0.85 },
@@ -2140,7 +2143,7 @@ export class WorldScene extends Phaser.Scene {
       angle: { min: 220, max: 320 },
       emitting: false,
     }).setDepth(31);
-    this.magicEmitter = this.add.particles(0, 0, "pk_magic_02", {
+    this.magicEmitter = this.add.particles(0, 0, "cfxr_mstar", {
       lifespan: 800,
       speed: { min: 30, max: 120 },
       scale: { start: 0.3, end: 0 },
@@ -4343,7 +4346,8 @@ export class WorldScene extends Phaser.Scene {
         if (chaos) this.bossVignetteFX = cam.postFX.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.62, 0.4);
       }
       if (chaos && this.boss?.active) {
-        this.bossEmber = this.add.particles(0, 0, "pk_fire_01", {
+        /* v4.1.8 — 카오스 잉걸불: 유료 CFXR 종 화염 (256x512, 설정 무변경) */
+        this.bossEmber = this.add.particles(0, 0, "cfxr_flamme", {
           follow: this.boss,
           lifespan: 780,
           frequency: 130,
@@ -7109,7 +7113,7 @@ export class WorldScene extends Phaser.Scene {
       // 카운터 + 여관주인 로안 (상단 중앙)
       this.add.rectangle(W / 2 - 75, 148, 150, 18, 0x6b4423).setOrigin(0).setDepth(3);
       this.add.rectangle(W / 2 - 75, 130, 150, 10, 0x8a5a2e).setOrigin(0).setDepth(3);
-      const keeper = this.add.image(W / 2, 116, "npc_villager1").setDepth(4);
+      const keeper = this.add.image(W / 2, 116, "spum_mage").setDepth(4).setScale(0.38);
       this.add
         .text(keeper.x, keeper.y - 34, "로안", {
           fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#ffe9b0",
