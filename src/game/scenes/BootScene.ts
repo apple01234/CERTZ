@@ -110,7 +110,7 @@ const ASSET_LIST = [
   "boss_idle0", "boss_idle1",
   "boss2_idle0", "boss2_idle1",
   "boss3_idle0", "boss3_idle1",
-  // v2.0 아뜰란티스 신규 보스 (니드호그/수르트/펜리르/스콜&하티/그람/아부디토스)
+  // v2.0 아뜰란티스 신규 보스 (니드호그/수르트/펜리르/스콜&하티/가름[구 그람]/아부디토스)
   "boss_nidhog_idle0", "boss_nidhog_idle1",
   "boss_surt_idle0", "boss_surt_idle1",
   "boss_fenrir_idle0", "boss_fenrir_idle1",

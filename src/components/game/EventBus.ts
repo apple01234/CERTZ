@@ -151,8 +151,19 @@ export type QuestState = {
   target: number;
   /** 목표물까지의 거리 (m 단위 환산용 px 값) */
   distance: number | null;
-  /** v3.0.2 — 진행 중인 전직 스토리 (트래커 병기) */
-  jobStory?: { title: string; step: number; total: number; stepTitle: string };
+  /** v3.0.2 — 진행 중인 전직 스토리 (트래커 병기)
+   *  v4.1.3 (#전직조건표시) — 단계별 수행 방법·진행도 추가 (지시 #6:
+   *  "완료 조건이 안 보인다 — 뭘 해야 1/4가 되는지 모르겠다" 해소) */
+  jobStory?: {
+    title: string; step: number; total: number; stepTitle: string;
+    /** 이 단계에서 뭘 해야 하는지 (몬스터 N마리 처치 / 흔적 회수 / 시험 상대 처치) */
+    stepDesc: string;
+    /** 진행도 — hunt는 처치 수, collect·elite는 0/1 */
+    current: number;
+    need: number;
+    /** 행동 힌트 (elite: 카이엔에게 말 걸기 등) */
+    hint: string;
+  };
   /** v3.0.15 (#8) — 퀘스트 미수락 (수락 대기 배지) */
   pending?: boolean;
 };

@@ -137,13 +137,13 @@ export const BGM_ALL_TRACKS: string[] = Object.values(BGM_PLAYLISTS).flat();
 /** v3.0.24 — BootScene 프리로드 BGM: 타이틀 1곡만 (나머지 39곡은 구역 진입 시 지연 로딩) */
 export const BGM_PRELOAD_TRACKS: string[] = ["bgm_title1"];
 
-/* ================= v3.0.23 — 구역별 고정 BGM 배치표 (40곡 전부 사용) =================
- *  원칙: ① 한 구역 = 고정 1곡 (이동해도 그 구역이면 항상 같은 곡 — 곡 교체 없음)
- *        ② 챕터 성격에 맞는 풀 배치, 인접 구역은 다른 곡
- *        ③ 보스 구역(10)은 전투곡, 챕터 마을(Xv)·실내는 마을곡, 타이틀은 title1
- *  배치: 숲=필드 5 / 쿠소디아=웅장(title) 4 / 알프헤임=신비 5 / 무스펠헤임=화염·불길
- *        니플헤임=설원 5 / 스바르트=동굴 5 / 니다벨리르=광산(동굴+잔여 보스곡)
- *        헬·심연=어둠(abyss) + 잔여 보스곡 / 마을 10곳=village 5곡 순환 */
+/* ================= v3.0.23 — 구역별 고정 BGM 배치표 =================
+ * v4.1.3 (#브금빈도) — 유저 지시 "브금 너무 자주 바꾸지 마 (챕터의 테마마다 바꿔)":
+ *  기존엔 구역(1~9)마다 챕터 풀의 다른 곡이 순환돼 챕터 안에서 최대 5곡이 갈아엎어졌다.
+ *  이제 한 챕터 = 대표 테마곡 1곡 고정. 구역을 이동해도 같은 챕터면 같은 곡이 흐른다.
+ *  마을(Xv)·보스 구역(10)·보스 조우 오버라이드는 장소 정체성 곡으로 유지 —
+ *  챕터당 전환은 "필드→마을→보스" 2회 수준으로 감소.
+ *  풀 배열은 자산 목록(E2E 훅) 참조용으로 유지. */
 const CHAPTER_ORDER = ["forest", "kingdom", "alfheim", "muspelheim", "niflheim", "cave", "nidavellir", "hel", "abyss"] as const;
 
 const CHAPTER_TRACKS: Record<string, string[]> = {
@@ -156,6 +156,18 @@ const CHAPTER_TRACKS: Record<string, string[]> = {
   nidavellir: ["bgm_cave1", "bgm_cave3", "bgm_cave5", "bgm_boss4", "bgm_boss5"],
   hel: ["bgm_abyss1", "bgm_abyss2", "bgm_boss1", "bgm_boss2", "bgm_boss3"],
   abyss: ["bgm_abyss1", "bgm_abyss2", "bgm_abyss4", "bgm_boss1", "bgm_boss5"],
+};
+/** v4.1.3 — 챕터 대표 테마곡 (필드 구역 1~9 전부 이 한 곡) — 인접 챕터끼리 곡이 겹치지 않게 선정 */
+const CHAPTER_THEME: Record<string, string> = {
+  forest: "bgm_field1",
+  kingdom: "bgm_title2",
+  alfheim: "bgm_alfheim1",
+  muspelheim: "bgm_abyss3",
+  niflheim: "bgm_snow1",
+  cave: "bgm_cave1",
+  nidavellir: "bgm_cave3",
+  hel: "bgm_abyss1",
+  abyss: "bgm_abyss4",
 };
 const VILLAGE_TRACKS = ["bgm_village1", "bgm_village2", "bgm_village3", "bgm_village4", "bgm_village5"];
 const BOSS_TRACKS = ["bgm_boss1", "bgm_boss2", "bgm_boss3", "bgm_boss4", "bgm_boss5"];
@@ -176,15 +188,15 @@ function chIndexOf(ch: string): number {
   return i < 0 ? 0 : i;
 }
 
-/** 실내/실외 관계없이 스테이지 → 고정 트랙 (v3.0.23 — stageBgm 대체) */
+/** 실내/실외 관계없이 스테이지 → 고정 트랙 (v3.0.23 — stageBgm 대체)
+ *  v4.1.3 (#브금빈도) — 필드 구역 1~9는 챕터 대표 테마곡 1곡 고정 (구역 순환 제거) */
 export function stageTrack(stage: string): string {
   if (stage === "interior_inn") return "bgm_village3";
   if (stage === "interior_home") return "bgm_village4";
   const { ch, zone } = splitStage(stage);
   if (zone === 10) return BOSS_TRACKS[chIndexOf(ch) % BOSS_TRACKS.length]; // 보스 구역 — 전투곡 고정
   if (zone <= 0) return VILLAGE_TRACKS[chIndexOf(ch) % VILLAGE_TRACKS.length]; // 마을/기본
-  const pool = CHAPTER_TRACKS[ch] ?? FALLBACK_TRACKS;
-  return pool[(zone - 1) % pool.length];
+  return CHAPTER_THEME[ch] ?? FALLBACK_TRACKS[0]; // v4.1.3 — 챕터 테마 1곡
 }
 
 /** 보스 조우 중 오버라이드 트랙 (구역 일반곡과 별개 — 전투곡) */

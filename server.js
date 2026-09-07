@@ -19,7 +19,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v4.1.2/SERTZ-v4.1.2.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v4.1.3/SERTZ-v4.1.3.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {

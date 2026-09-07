@@ -1,7 +1,12 @@
 /**
  * SERTZ 게임 데이터 (v2.0)
  *  - 스테이지/몬스터/보스 정의는 stages.ts (9챕터 × 10구역 생성기)에서 재수출
- *  - v3.0.10 본게임 세계관 확정판 스토리 (이그드라실 9왕국 · 이그니 · 니드그림)
+ *  - v3.0.10 본게임 세계관 확정판 스토리 (이그드라실 9왕국 · 이그니 · 아부디토스)
+ *  - v4.1.3 (#신화고증) — 보스 표기 고증 정리 (지시 #8):
+ *    · 최종 보스 표기 니드그림 → 아부디토스 (키/세계관 근원인 아뜰란티스의 종언 존재)
+ *    · 수르트: 정령 → 화염의 거인 (무스펠헤임을 다스리는 불의 거인 — 라그나로크 고증)
+ *    · 스콜&하티: 쌍두 → 쌍랑 (해와 달을 쫓는 쌍둥이 늑대 — 두 머리가 아님)
+ *    · 헬 보스 그람 → 가름 (Garmr — 헬의 대문을 지키는 사냥개. 그람은 시구르드의 검이다)
  *  - v1.9 아이템/BM(버프·펫·치장) 유지 + 강화 12단계 확장 (메이플 스타포스식)
  */
 import { CHAPTERS, ENEMIES, type ChapterKey } from "./stages";
@@ -296,10 +301,10 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "item_ring_power", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "니드호그 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_surt: { key: "bd_surt", kind: "accessory", name: "화염 정령의 인장", icon: "item_ring_power", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "수르트 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_fenrir: { key: "bd_fenrir", kind: "accessory", name: "탐욕의 속니", icon: "item_ring_crit", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "펜리르 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_skoll: { key: "bd_skoll", kind: "accessory", name: "교만의 쌍두 귀걸이", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "스콜&하티 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "item_ring_guard", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "그람 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_skoll: { key: "bd_skoll", kind: "accessory", name: "교만의 쌍랑 귀걸이", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "스콜&하티 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "item_ring_guard", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "가름 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_abysslord: { key: "bd_abysslord", kind: "accessory", name: "심연의 군주의 관", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 14, maxHp: 100, slot: "pendant", tradeLock: true, bossDrop: "심연의 군주 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "니드그림 드롭 — 최고 보스 전리품 · 거래소 예정" },
+  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "아부디토스 드롭 — 최고 보스 전리품 · 거래소 예정" },
   /* ---- v3.0.6 — BM 상점 (에메랄드 전용 — 골드 상점과 분리, 지시 #1) ---- */
   pet_atlas: { key: "pet_atlas", kind: "pet", name: "별의 정령 아틀라스", icon: "pet_atlas", price: 0, bmPrice: 30, bmOnly: true, tier: "legend" },
   ring_bless: { key: "ring_bless", kind: "accessory", name: "가호의 반지", icon: "ring_bless", price: 0, bmPrice: 45, bmOnly: true, tier: "legend", crit: 15, maxHp: 100, slot: "ring" },
@@ -484,9 +489,9 @@ export const TRADE_PRICES: Record<string, number> = {
   bd_surt: 14,      // 수르트
   bd_fenrir: 16,    // 펜리르
   bd_skoll: 18,     // 스콜&하티
-  bd_gram: 20,      // 그람
+  bd_gram: 20,      // 가름 (구 그람 — 신화 고증: 헬의 문지기 Garmr)
   bd_abysslord: 24, // 심연의 군주
-  bd_abudditos: 30, // 니드그림 (최종 보스 — 텍스처 키 bd_abudditos 유지)
+  bd_abudditos: 30, // 아부디토스 (최종 보스 — 텍스처 키 bd_abudditos 유지)
 };
 
 /** 거래소 판매가 (에메랄드) — 구매가의 60%, 최소 1 */
@@ -725,7 +730,7 @@ export type DialogueDef = { speaker: string; lines: string[] };
 /* ================= 스토리 대사 (v3.0.10 본게임 세계관 확정판) =================
  *  잠뜰 아뜰란티스 라인을 본게임 고유 세계관으로 통합·증축:
  *  세계수 이그드라실과 아홉 왕국 — 세계수의 가지로 빚은 룬 펜던트 속 정령 이그니,
- *  뿌리에서 깨어난 종언의 마룡 니드그림, 흩어진 일곱 세계의 결정. */
+ *  뿌리에서 깨어난 종언의 마룡 아부디토스, 흩어진 일곱 세계의 결정. */
 
 export const DIALOGUES: Record<string, DialogueDef> = {
   /* ================= 공통 / 인트로 ================= */
@@ -908,7 +913,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     lines: [
       "알프헤임에 도착했어… 하지만 공기가 무거워.",
       "니드호그 — 원래 알프헤임의 숲을 지키던 드래곤이었지. 지금은 탐식에 물들어 성전을 삼켰어.",
-      "니드호그는 뿌리에서 깨어난 니드그림의 권속. 놈들의 의식이 결정을 부르고 있어.",
+      "니드호그는 뿌리에서 깨어난 아부디토스의 권속. 놈들의 의식이 결정을 부르고 있어.",
       "여왕 요정에게 룬 유물을 받을 수 있도록, 먼저 하수인들을 정리하자, {name}!",
     ],
   },
@@ -955,7 +960,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   bossIntroSurt: {
-    speaker: "분노의 정령 수르트",
+    speaker: "화염의 거인 수르트",
     lines: [
       "작은 것… 내 영역을 침범했느냐!",
       "오늘의 태양은 내 것이다. 불의 정령이 막강해지는 날 — 네가 온 날이 바로 그날!",
@@ -992,7 +997,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   bossIntroFenrir: {
     speaker: "탐욕의 늑대 펜리르",
     lines: [
-      "이것이… 네가 말한 운명이라는 것인가, 니드그림…!",
+      "이것이… 네가 말한 운명이라는 것인가, 아부디토스…!",
       "결정 두 개의 힘을 지닌 나에게 — 인간이 무엇을 할 수 있겠느냐!",
       "네 펜던트까지 삼켜 주마, 선택받은 자여!!",
     ],
@@ -1036,7 +1041,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     speaker: "룬 정령 이그니",
     lines: [
       "이다벨리르… 아니, 니다벨리르 — 난쟁이들의 왕국이야. 룬 광산이 유명하지.",
-      "…하늘이 어두워. 해와 달의 기운이 사라졌어. 스콜과 하티 — 교만의 쌍두 늑대가 깨어난 거야!",
+      "…하늘이 어두워. 해와 달의 기운이 사라졌어. 스콜과 하티 — 교만의 쌍랑 늑대가 깨어난 거야!",
       "광산 곳곳에 룬 골렘이 폭주하고 있어. 마을을 구하고, 유물 '룬의 지팡이'를 찾자!",
     ],
   },
@@ -1049,7 +1054,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   bossIntroSkoll: {
-    speaker: "교만의 쌍두 스콜&하티",
+    speaker: "교만의 쌍랑 스콜&하티",
     lines: [
       "해는 내 것이고, 달도 내 것이다!",
       "하늘을 삼킨 우리가 — 작은 인간 따위에게 굴복하겠느냐!",
@@ -1059,7 +1064,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   skollDone: {
     speaker: "룬 정령 이그니",
     lines: [
-      "쌍두가 소멸했어! …{name}, 봐! 하늘에 해와 달이 돌아왔어!",
+      "스콜과 하티가 소멸했어! …{name}, 봐! 하늘에 해와 달이 돌아왔어!",
       "저기 빛나는 것 — '천공의 결정'이야. 이제 여섯 개!",
       "마지막 단서는 헬. …{name}, 이그니로서 네게 부탁할 게 있어. 무슨 일이 있어도… 나를 믿어 줘.",
     ],
@@ -1077,26 +1082,26 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     speaker: "룬 정령 이그니",
     lines: [
       "절벽이 비었어! 저기 무르의 저택… 힐다 할머니의 조사 일지가 있어.",
-      "『…세계수의 뿌리에서 깨어난 그 존재의 이름은 니드그림. 일곱 결정이 모이면 뿌리의 심연으로 가는 문이 열린다. 마지막 결정은… 룬 펜던트 속에…』",
-      "{name}, 듣자니 — 마지막 '세계수의 결정'은 네 펜던트 안에서 잠들어 있대. 니드그림이 진짜 노린 건 그거야.",
-      "그리고 저기 — 대지의 결정. '대지의 방패'와 함께 절벽의 수호자 그람이 기다리고 있어.",
+      "『…세계수의 뿌리에서 깨어난 그 존재의 이름은 아부디토스. 일곱 결정이 모이면 뿌리의 심연으로 가는 문이 열린다. 마지막 결정은… 룬 펜던트 속에…』",
+      "{name}, 듣자니 — 마지막 '세계수의 결정'은 네 펜던트 안에서 잠들어 있대. 아부디토스가 진짜 노린 건 그거야.",
+      "그리고 저기 — 대지의 결정. '대지의 방패'와 함께 헬의 문지기 가름이 기다리고 있어.",
     ],
   },
   bossIntroGram: {
-    speaker: "대지의 수호자 그람",
+    speaker: "헬의 문지기 가름",
     lines: [
       "…룬 펜던트. 세계수의 냄새다.",
-      "나는 그람. 비탄이 만든 쌍두의 용. 이 절벽을 지키는 자.",
+      "나는 가름. 피에 물든 문지기 — 헬의 대문 앞에 묶인 가장 큰 사냥개다.",
       "…가라. 하지 않겠다면 — 갈라 놓겠다.",
     ],
   },
   gramDone: {
     speaker: "룬 정령 이그니",
     lines: [
-      "그람까지 쓰러뜨렸어! '대지의 결정' — 일곱 개를 전부 모았어, {name}!",
+      "가름까지 쓰러뜨렸어! '대지의 결정' — 일곱 개를 전부 모았어, {name}!",
       "…그리고 이제, 진실을 말할 시간이야.",
-      "나는 그냥 소정령이 아니야. 세계수의 심장에서 태어난 룬 정령 — 니드그림이 깨어나지 못하도록 나 일곱 결정과 함께 잠들어 있었지!",
-      "『마지막 결정 — 펜던트를 든 자여, 뿌리로 오라.』 …니드그림이 너를 부르고 있어. 힐다 할머니도 분명 뿌리 아래에 있을 거야!",
+      "나는 그냥 소정령이 아니야. 세계수의 심장에서 태어난 룬 정령 — 아부디토스가 깨어나지 못하도록 나 일곱 결정과 함께 잠들어 있었지!",
+      "『마지막 결정 — 펜던트를 든 자여, 뿌리로 오라.』 …아부디토스가 너를 부르고 있어. 힐다 할머니도 분명 뿌리 아래에 있을 거야!",
       "{name}, 이건… 나도 다 알고 있었던 게 아니야. 세계수의 뜻이 우리를 여기까지 이끈 거야. …가자, 마지막이야!",
     ],
   },
@@ -1120,7 +1125,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   bossIntroAbudditos: {
-    speaker: "종언의 마룡 니드그림",
+    speaker: "종언의 마룡 아부디토스",
     lines: [
       "『후후… 왔구나, 세계수의 아이여. 나의 일곱 힘이 모두 돌아왔다.』",
       "『룬 정령? 이그니? 그래, 그게 내 전부를 봉인하던 열쇠였지. 세계수의 심장이란 이름이지.』",
@@ -1131,7 +1136,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   victory: {
     speaker: "세계수 이그드라실",
     lines: [
-      "『…끝났다. 종언의 마룡 니드그림의 어둠이 소멸했다.』",
+      "『…끝났다. 종언의 마룡 아부디토스의 어둠이 소멸했다.』",
       "『선택받은 자여. 일곱 결정의 빛이 하나가 되어, 마물들은 힘을 잃고 잠들 것이다.』",
       "『아홉 왕국은 다시 교류를 시작하리라. 이 세계의 이름은 — 이그드라실로 불리게 되리라.』",
       "『…이그니는 이제 내 심장으로 돌아간다. 아쉽냐? — 아니겠지. 새로운 모험이 시작됐으니.』",
@@ -1258,7 +1263,7 @@ const WALK_AMBIENT: Record<ChapterKey, string[]> = {
   ],
   abyss: [
     "뿌리의 심연 폐허… 세계수가 흘린 피가 결정이 되어 바닥마다 빛나.",
-    "왕좌의 불빛이 점점 커진다. 니드그림의 기운이… 숨을 쉬고 있어.",
+    "왕좌의 불빛이 점점 커진다. 아부디토스의 기운이… 숨을 쉬고 있어.",
     "뿌리의 울림이 땅을 타고 와. 마지막이야, {name}.",
   ],
 };
@@ -1744,7 +1749,7 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
     abyss: {
       a: { sp: "폐허 학자 테일", lines: [
         "세계수의 뿌리 — 여긴 아홉 왕국의 근원이자 종막이지, {name}.",
-        "왕좌의 불빛이 커지고 있어. 종언의 마룡 니드그림… 룬 정령과 같은 시대의 존재라니.",
+        "왕좌의 불빛이 커지고 있어. 종언의 마룡 아부디토스… 룬 정령과 같은 시대의 존재라니.",
         "기록에 따르면 '세계수의 심장'은 둘일 수 없대. 그럼 펜던트 속 정령은…",
       ] },
       b: { sp: "마지막 항해사", lines: [

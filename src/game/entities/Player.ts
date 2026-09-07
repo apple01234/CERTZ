@@ -249,6 +249,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.dashTime <= 0) {
         this.state = "idle";
         this.setVelocity(0, 0);
+        /* v4.1.3 (#1차전사차별화) — 전사 계열 1차+ 돌진 종착 은백 충격 링 (지시 #9:
+         *  "1차 전사는 기본캐릭이랑 달라지는 게 없다" — 미전직과 같은 회전베기+돌진 조합이라
+         *  육안 구분이 안 됐다. 이제 전사는 돌진이 끝나며 강철 은백 참격 파동이 터진다.
+         *  미전직은 파동 없음 — 코스메틱 전용이라 밸런스 영향 없음) */
+        if (familyOf(this.cls) === "warrior") {
+          const wx = this.x + this.dashDir.x * 26;
+          const wy = this.y + this.dashDir.y * 26;
+          const ring = this.scene.add.circle(wx, wy, 20)
+            .setStrokeStyle(3, 0xd6e6ff, 0.85)
+            .setDepth(12)
+            .setBlendMode(Phaser.BlendModes.ADD);
+          this.scene.tweens.add({ targets: ring, scale: 2.3, alpha: 0, duration: 320, ease: "Cubic.out", onComplete: () => ring.destroy() });
+          this.scene.spawnBurstAt(wx, wy, 8, 0xd6e6ff);
+        }
       }
       return;
     }
@@ -806,7 +820,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  (기존엔 전사 원판과 동일 비주얼이라 "이름만 바뀐다"는 피드백을 받은 대표 사례) */
   private skill1Spin(bleed = false) {
     const t = this.sTier; // 0(미전직)~4
-    const dmgMul = 1.6 + 0.3 * t;
+    /* v4.1.3 (#1차전사차별화) — 1차(t=1) 전사 대미지 보정 +0.25 (1.9→2.15, 미전직 1.6 대비 +34%).
+     *  지시 #9 "1차 전사가 기본캐릭이랑 같아 보인다" — 수치 체감 + 전용 연출(하단)으로 분리.
+     *  2차+(t>=2)는 기존 곡선 유지. bleed(버서커 판)도 영향 없음 */
+    const dmgMul = 1.6 + 0.3 * t + (t === 1 ? 0.25 : 0);
     const radius = 118 + 16 * t;
     /* v3.0.24 — 직업별 사운드: 전사=카타나 연속 베기(sfxSpin) / 버서커=대검 파괴음 */
     if (bleed) this.scene.sfxSkill("bigsword", 0.85);
@@ -844,7 +861,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       // 전사 원판 — 360° 궤도 반달 + 충격파 + 스파크 — 티어 2 이상에서 충격 링 추가
       this.scene.spawnSpinSlash(this.x, this.y, spin);
-      if (t >= 2) this.scene.spawnBurstAt(this.x, this.y, 10 + 3 * t, famHex);
+      /* v4.1.3 (#1차전사차별화) — 전사는 1차(t=1)부터 은백 버스트+충격 링 (기존 t>=2만).
+       *  미전직엔 없는 전용 연출 — 1차 전직의 "같아 보임" 해소 (지시 #9).
+       *  t>=2 연출/색(famHex)은 기존 그대로 유지 */
+      const warr = familyOf(this.cls) === "warrior";
+      if (t >= 2 || (warr && t >= 1)) {
+        this.scene.spawnBurstAt(this.x, this.y, 10 + 3 * t + (warr && t === 1 ? 4 : 0), warr && t === 1 ? 0xd6e6ff : famHex);
+        if (warr && t === 1) {
+          const ring = this.scene.add.circle(this.x, this.y, 24)
+            .setStrokeStyle(3, 0xd6e6ff, 0.8)
+            .setDepth(12)
+            .setBlendMode(Phaser.BlendModes.ADD);
+          this.scene.tweens.add({ targets: ring, scale: 2.1, alpha: 0, duration: 380, ease: "Cubic.out", onComplete: () => ring.destroy() });
+        }
+      }
       if (t >= 3) this.scene.spawnSpinSlash(this.x, this.y, -spin); // 이중 회전 잔상 (3차 강화)
     }
 

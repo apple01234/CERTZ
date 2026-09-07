@@ -313,7 +313,7 @@ export const CHAPTERS: ChapterSpec[] = [
     main: "wraith",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "y0", type: "hunt", title: "뿌리의 유령 소탕", desc: "왕좌를 지키는 심연 유령 10마리를 처치해라.", need: 10, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(150 * G), expReward: 140 } },
-      { sub: 4, dialogue: "", quest: { id: "y1", type: "collect", title: "빼앗긴 빛의 흔적", desc: "니드그림이 삼키지 못한 결정의 흔적을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(120 * G), expReward: 110 } },
+      { sub: 4, dialogue: "", quest: { id: "y1", type: "collect", title: "빼앗긴 빛의 흔적", desc: "아부디토스가 삼키지 못한 결정의 흔적을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(120 * G), expReward: 110 } },
       { sub: 6, dialogue: "wraithDone", quest: { id: "y2", type: "hunt", title: "왕좌 앞길 열기", desc: "심연 유령 25마리를 처치해 왕좌의 문을 열어라!", need: 25, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(240 * G), expReward: 220 } },
     ],
     repeat: { need: 24, gold: Math.round(165 * G), exp: 165, title: "[반복] 뿌리 정찰 의뢰", desc: "뿌리의 기운이 강해지고 있다 — 유령을 계속 처치해라." },
@@ -409,7 +409,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "swampbeast",
   },
   surt: {
-    key: "surt", name: "분노의 정령 수르트",
+    key: "surt", name: "화염의 거인 수르트",
     hp: 5400, atk: 33, speed: 88, exp: 560, gold: 340,
     tex: "boss_surt", orbTint: 0xffa05a, introDialogue: "bossIntroSurt",
     patterns: {
@@ -429,7 +429,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
   },
   skoll: {
-    key: "skoll", name: "교만의 쌍두 스콜&하티",
+    key: "skoll", name: "교만의 쌍랑 스콜&하티",
     hp: 8600, atk: 39, speed: 100, exp: 720, gold: 420,
     tex: "boss_skoll", orbTint: 0xffd97a, introDialogue: "bossIntroSkoll",
     patterns: {
@@ -440,7 +440,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "runegolem",
   },
   gram: {
-    key: "gram", name: "대지의 괴물 그람",
+    key: "gram", name: "혈안의 문지기 가름", /* v4.1.3 (#신화고증) — 구 표기 "대지의 괴물 그람": 그람(Gram)은 시구르드의 검이다. 헬의 대문을 지키는 존재는 사냥개 가름(Garmr) */
     hp: 10600, atk: 42, speed: 86, exp: 860, gold: 480,
     tex: "boss_gram", orbTint: 0x8affc0, introDialogue: "bossIntroGram",
     patterns: {
@@ -451,7 +451,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "helhound",
   },
   abudditos: {
-    key: "abudditos", name: "종언의 마룡 니드그림",
+    key: "abudditos", name: "종언의 마룡 아부디토스", /* v4.1.3 (#신화고증) — 구 표기 "니드그림"을 세계관 근원인 아부디토스로 통일 */
     hp: 14500, atk: 46, speed: 100, exp: 1200, gold: 650,
     tex: "boss_abudditos", orbTint: 0xff3a6a, introDialogue: "bossIntroAbudditos",
     patterns: {
@@ -617,7 +617,10 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       id: `${prefix}-auto-hunt`,
       type: "hunt",
       title: `${main} ${verbs[sub % verbs.length]}`,
-      desc: `${spec.title} ${spec.subtitle} — 구역의 몬스터 ${n}마리를 처치해라.`,
+      /* v4.1.3 (#퀘스트카운트) — "요구 몬스터 ≠ 카운트 몬스터" 혼란 해소 (지시 #4):
+       *  이 퀘스트는 구역 스폰 몬스터 전체(targetKeys)를 합산 카운트한다. 그 사실을
+       *  설명에 명시해 "고블린 소탕인데 개구리를 잡았더니 카운트된다?"를 사전에 제거. */
+      desc: `${spec.title} 구역의 몬스터 ${n}마리를 처치해라. — 무엇을 잡아도 카운트된다 (${mixKeys.map((k) => labels[k]).join(" · ")})`,
       need: n,
       targetKey: zoneMon, // v3.0.2 — 하위 호환(어시스트·히스테리시스 참조): 구역 최다 종
       targetKeys: mixKeys, // v3.0.28 — 카운트·판정은 구역 스폰 몬스터 전체 합산

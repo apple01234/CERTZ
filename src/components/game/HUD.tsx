@@ -312,9 +312,26 @@ export function HUD({
                 )}
               </div>
               {quest.jobStory && (
-                <p className="mt-1 truncate rounded bg-violet-500/15 px-1.5 py-0.5 text-[9px] font-bold text-violet-200 sm:text-[10px]">
-                  ✦ 전직 스토리 {quest.jobStory.step}/{quest.jobStory.total} — {quest.jobStory.stepTitle}
-                </p>
+                /* v4.1.3 (#전직조건표시) — 단계 수행 방법·진행도·힌트를 전부 노출 (지시 #6):
+                 *  기존 한 줄 배지("1/3 — 첫 수련")만으로는 완료 조건을 알 수 없었다 */
+                <div className="mt-1 rounded bg-violet-500/15 px-1.5 py-1">
+                  <p className="truncate text-[9px] font-bold text-violet-200 sm:text-[10px]">
+                    ✦ 전직 스토리 {quest.jobStory.step}/{quest.jobStory.total} — {quest.jobStory.stepTitle}
+                    {quest.jobStory.need > 1 && (
+                      <span className="ml-1 text-amber-300">
+                        [{quest.jobStory.current}/{quest.jobStory.need}]
+                      </span>
+                    )}
+                  </p>
+                  {quest.jobStory.stepDesc && (
+                    <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-violet-100/85 sm:text-[10px]">
+                      {quest.jobStory.stepDesc}
+                    </p>
+                  )}
+                  {quest.jobStory.hint && (
+                    <p className="mt-0.5 text-[9px] font-bold text-amber-300/95 sm:text-[10px]">→ {quest.jobStory.hint}</p>
+                  )}
+                </div>
               )}
             </>
           )}

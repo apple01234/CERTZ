@@ -1650,6 +1650,10 @@ export class WorldScene extends Phaser.Scene {
     (this.portal.body as Phaser.Physics.Arcade.Body).setSize(34, 44).setOffset(15, 10);
     this.physics.add.overlap(this.player, this.portal, () => {
       if (!this.portalActive || !this.portal?.active) return;
+      /* v4.1.3 (#자동사냥포탈) — 자동사냥 중엔 전진 차원문을 타지 않는다.
+       *  자동 배회/카이팅 이동이 포탈 위로 지나가며 의도치 않은 맵 전환(→ 검은 화면 체감)
+       *  이 일어났다. 자동사냥이 켜져 있으면 겹침을 무시하고 5초 스로틀 안내만 띄운다. */
+      if (this.autoHunt) { this.warnAutoPortal(); return; }
       this.enterPortal();
     });
   }
@@ -1759,6 +1763,14 @@ export class WorldScene extends Phaser.Scene {
     }, 4000);
   }
 
+  /** v4.1.3 (#자동사냥포탈) — 자동사냥 중 차원문 접근 안내 (5초 스로틀 — 스팸 방지) */
+  private autoPortalWarnUntil = 0;
+  private warnAutoPortal() {
+    if (this.time.now < this.autoPortalWarnUntil) return;
+    this.autoPortalWarnUntil = this.time.now + 5000;
+    this.showBanner("자동사냥 중에는 차원문을 타지 않는다 — 끄고 이용하자");
+  }
+
   private enterPortal() {
     this.portalActive = false;
     audio.sfx.portal();
@@ -1804,6 +1816,9 @@ export class WorldScene extends Phaser.Scene {
     this.returnPortal.play("portal-spin");
     this.physics.add.overlap(this.player, this.returnPortal, () => {
       if (!this.returnActive || !this.returnPortal?.active) return;
+      /* v4.1.3 (#자동사냥포탈) — 복귀 차원문도 동일 게이트 (특히 입구 쪽에 스폰돼
+       *  자동 배회 시작점과 겹치기 쉽다 — "이전 맵으로 돌아갈 때 자주 발생"의 주범) */
+      if (this.autoHunt) { this.warnAutoPortal(); return; }
       this.enterPrevStage();
     });
     // 청록 비컨 — 전진 포탈(보라)과 시각 구분
@@ -5434,7 +5449,14 @@ export class WorldScene extends Phaser.Scene {
     for (let i = 0; i < this.layout.open.length; i++) {
       if (!this.layout.open[i]) continue;
       const c = cellCenterOf(this.layout, i);
-      if (Phaser.Math.Distance.Between(pcc.x, pcc.y, c.x, c.y) <= radius) cand.push(i);
+      if (Phaser.Math.Distance.Between(pcc.x, pcc.y, c.x, c.y) <= radius) {
+        /* v4.1.3 (#자동사냥포탈) — 차원문(전진/복귀) 주변 130px는 배회 목표에서 제외.
+         *  적이 없을 때 포탈 쪽으로 걸어가 서 있던 행동 자체를 차단 (1차 방어선은
+         *  overlap 게이트 — 이 필터는 "포탈 앞에서 멍하니 서 있음" 체감 제거용) */
+        if (this.portal?.active && Phaser.Math.Distance.Between(c.x, c.y, this.portal.x, this.portal.y) < 130) continue;
+        if (this.returnPortal?.active && Phaser.Math.Distance.Between(c.x, c.y, this.returnPortal.x, this.returnPortal.y) < 130) continue;
+        cand.push(i);
+      }
     }
     if (cand.length === 0) return null;
     const c = cellCenterOf(this.layout, cand[Phaser.Math.Between(0, cand.length - 1)]);
@@ -6931,6 +6953,7 @@ export class WorldScene extends Phaser.Scene {
       const next = story.steps[this.jobStory.step];
       if (next?.type === "elite") this.showBanner("카이엔에게 말 걸어 시험 상대 소환");
     }
+    this.emitQuest(); // v4.1.3 (#전직조건표시) — 단계 완료 즉시 트래커 갱신 ([1/3]→[2/3])
     this.save();
     this.emitRpgState();
   }
@@ -7330,10 +7353,16 @@ export class WorldScene extends Phaser.Scene {
       case "collect":
         return this.fragment && this.fragment.active ? new Phaser.Math.Vector2(this.fragment.x, this.fragment.y) : null;
       case "hunt": {
+        /* v4.1.3 (#어시스트일치) — 퀘스트 대상 종만 가리킨다.
+         *  기존엔 종 필터 없이 "가장 가까운 아무 몬스터"를 가려 라벨("▶ 고블린 약탈자
+         *  등 구역 몬스터")과 실제 가리키는 개체(독개구리 등)가 어긋났다 — 지시 #3.
+         *  대상 종 = targetKeys(자동 토벌) 또는 targetKey(스토리/반복). */
+        const want = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
         let best: Enemy | null = null;
         let bd = Infinity;
         for (const e of this.enemies) {
           if (!e.active || !e.alive) continue;
+          if (want.length > 0 && !want.includes(e.def.key)) continue;
           const d = Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y);
           if (d < bd) {
             bd = d;
@@ -7516,17 +7545,29 @@ export class WorldScene extends Phaser.Scene {
     this.emitRpgState();
   }
 
-  /** v3.0.2 — 모든 퀘스트 emit에 진행 중인 전직 스토리 정보 병기 (트래커 발견성) */
+  /** v3.0.2 — 모든 퀘스트 emit에 진행 중인 전직 스토리 정보 병기 (트래커 발견성)
+   *  v4.1.3 (#전직조건표시) — 단계 수행 방법(stepDesc)·진행도(current/need)·행동 힌트(hint) 추가.
+   *  기존은 "1/3 — 첫 수련"만 표시돼 뭘 해야 다음 단계가 되는지 알 수 없었다 (지시 #6). */
   private emitQuestState(st: QuestState) {
     if (this.jobStory) {
       const story = this.jobStoryDef();
       const step = story?.steps[this.jobStory.step];
       if (story && step) {
+        const isHunt = step.type === "hunt";
         st.jobStory = {
           title: story.title,
           step: this.jobStory.step + 1,
           total: story.steps.length,
           stepTitle: step.title.replace("[전직 스토리] ", ""),
+          stepDesc: step.desc,
+          current: isHunt ? Math.min(this.jobStory.hunt, step.need ?? 0) : 0,
+          need: step.need ?? 1,
+          hint:
+            step.type === "elite"
+              ? "전직관의 카이엔에게 말 걸기 → 시험 상대 처치"
+              : step.type === "collect"
+                ? "해역의 빛나는 흔적을 회수"
+                : "",
         };
       }
     }

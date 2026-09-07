@@ -28,7 +28,7 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "난쟁이 광산 조합장": { tex: "npc_merchant", tone: "#fcd34d" },
   "마법사 흐레스": { tex: "npc_gm", tone: "#c4b5fd" },
   "세계수 이그드라실": { tex: "tree", tone: "#7dd3fc" },
-  "종언의 마룡 니드그림": { tex: "boss_nidhog_idle0", tone: "#fda4af" }, // v3.0.25 — 없는 파일(boss_nidhog) 수정: 실제 프레임 파일명
+  "종언의 마룡 아부디토스": { tex: "boss_nidhog_idle0", tone: "#fda4af" }, // v4.1.3 고증 표기 통일 — 없는 파일(boss_nidhog) 대신 실제 프레임 파일명
   "{name}": { tex: "hero_idle0", tone: "#86efac" }, // 플레이어
 };
 

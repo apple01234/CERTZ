@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.1.2 · 바르가 업데이트 — 균열 수비전·피규어 가챠·배지·룬 합성·성좌·출석부·일일 퀘스트·쿠폰·광고 보상·긴급 귀환 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.1.3 · 바르가 업데이트 — 균열 수비전·피규어 가챠·배지·룬 합성·성좌·출석부·일일 퀘스트·쿠폰·광고 보상·긴급 귀환 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
@@ -119,19 +119,44 @@ export function Banner({ text }: { text: string | null }) {
 /* ---------- 보스 HP바 ---------- */
 
 export function BossBar({ boss }: { boss: { name: string; hp: number; maxHp: number } | null }) {
+  /* v4.1.3 (#보스바모바일) — 가로 모바일 축소 (지시 #7 "모바일 기준 보스 hp바가 너무 커서 화면을 가림").
+   *  기존 sm: 분기는 "폭 640px+" 기준이라 가로 폰(보통 640~930px)에서 데스크톱 크기(폭 72%·두꺼운 바)
+   *  이 적용됐다. 게임이 가로 모드 필수라 모바일 유저가 항상 큰 바를 보던 문제.
+   *  → 터치 포인터 + 낮은 뷰포트 높이(가로 폰 실측 320~460px)면 컴팩트 판 적용, 데스크톱은 현행 유지. */
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse) and (max-height: 560px)");
+    const apply = () => setCompact(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
   if (!boss) return null;
   const pct = Math.max(0, (boss.hp / boss.maxHp) * 100);
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-2 z-30 flex justify-center sm:top-3">
-      {/* v3.0.22 (#49) — 모바일에서 너무 컸던 보스 체력바 축소 (모바일 46%/얇은 바, 데스크톱 기존 유지) */}
-      <div className="w-[46%] max-w-[400px] rounded-md border border-purple-300/50 bg-black/70 px-2 py-1.5 shadow-xl backdrop-blur-sm sm:w-[72%] sm:max-w-xl sm:rounded-lg sm:px-3 sm:py-2">
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-[10px] font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000] sm:text-sm">
+    <div className="pointer-events-none absolute inset-x-0 top-1.5 z-30 flex justify-center sm:top-3">
+      <div
+        className={
+          compact
+            ? "w-[44%] max-w-[280px] rounded-md border border-purple-300/50 bg-black/65 px-1.5 py-0.5 shadow-lg backdrop-blur-sm"
+            : "w-[46%] max-w-[400px] rounded-md border border-purple-300/50 bg-black/70 px-2 py-1.5 shadow-xl backdrop-blur-sm sm:w-[72%] sm:max-w-xl sm:rounded-lg sm:px-3 sm:py-2"
+        }
+      >
+        <div className={compact ? "mb-0.5 flex items-center justify-between" : "mb-1 flex items-center justify-between"}>
+          <span
+            className={
+              compact
+                ? "max-w-[70%] truncate text-[9px] font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000]"
+                : "truncate text-[10px] font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000] sm:text-sm"
+            }
+          >
             {boss.name}
           </span>
-          <span className="text-[9px] font-bold text-white/70 sm:text-[10px]">{Math.ceil(pct)}%</span>
+          <span className={compact ? "text-[8px] font-bold text-white/70" : "text-[9px] font-bold text-white/70 sm:text-[10px]"}>
+            {Math.ceil(pct)}%
+          </span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full border border-black/70 bg-black/70 sm:h-3.5">
+        <div className={compact ? "h-1.5 overflow-hidden rounded-full border border-black/70 bg-black/70" : "h-2 overflow-hidden rounded-full border border-black/70 bg-black/70 sm:h-3.5"}>
           <div
             className="h-full bg-gradient-to-b from-fuchsia-400 to-purple-800 transition-[width] duration-200"
             style={{ width: `${pct}%` }}
