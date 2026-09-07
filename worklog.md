@@ -836,3 +836,28 @@ Stage Summary:
 - 카오스는 숫자+질적 메커니즘 모두 상향 — 도전 가치(보상 460%·에메랄드 30) 유지
 - OAuth 클라이언트 ID 수신분(.secrets/admob-oauth-client-id.txt 보관) — 서비스 계정 JSON 키(private_key) 없으면 AdMob API 호출 불가, JSON 키 파일 대기 중
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 49
+Agent: Super Z (메인)
+Task: 쓸만한 프레임워크 및 에셋 추가 → v4.1.5
+
+Work Log:
+- 세션 리셋으로 워크스페이스 초기화 → origin/main 리셋 복구(v4.1.4 상태, c9a6929). bun install 재설치
+- [프레임워크① 폰트] npm galmuri(한글 픽셀 폰트, SIL OFL 1.1) — 패키지 CSS는 woff2+ttf 이중 참조로 APK +11MB/폰트 40MB 불어나서 필요 woff2 4종(Galmuri9/11/11-Bold/14)만 public/fonts 셀프호스팅(1.6MB) + src/app/fonts.css 직접 작성, 패키지는 제거
+- [폰트 적용] layout.tsx import + globals.css html,body 규칙(React HUD 전체) + BootScene create() async 전환 — document.fonts.load 4종 대기(2.5초 폴백) 후 씬 시작(캔버스 텍스트가 Galmuri로 렌더 보장) + WorldScene 캔버스 텍스트 27곳 fontFamily 전면 치환("sans-serif"→"Galmuri11", "Roboto"→"Galmuri14") + 데미지 텍스트 17px→22px(11px 그리드 크롭)+depth 40→56
+- [프레임워크② 조명] src/game/fx/Lighting.ts 신설 — 챕터별 암전 오버레이(cave/nidavellir .58, hel .54, abyss .55, muspelheim .44, niflheim .48, alfheim .34) + ADD 광원 스프라이트(pk_light_01) + 플레이어 추종 횃불 광원(보간 추적+이중 사인 플리커) + addLight API(플리커 트윈). Light2D 파이프라인 대비 모바일 안전(오버레이 1매+ADD N장)
+- [조명 통합] create() 최상단 초기화(spawnPortal이 lighting보다 앞서 호출되는 순서 버그 잡고 이동) — alfheim/cave/abyss/muspel 기존 glow 4곳 depth 1→56(암전 위 렌더) + 마을 모닥불/전진·복귀 포탈 광원 신규 등록 + update()에서 lighting.update/bossLight 추적 + shutdown 정리
+- [프레임워크③ postFX] applyBossPostFX(chaos) — 카메라 블룸(일반 .46/카오스 .68) + 카오스 비네트(0.4) + 잉걸불 오라 emitter(follow 보스) + 붉은 광원, WebGL 가드+try/catch, onBossDead에서 clearBossPostFX. 타입 실측: addBloom/addVignette 반환 Phaser.FX.Bloom/Vignette(Controller 상속)
+- [에셋] Kenney Particle Pack 1.1(CC0) 27종 선별 → public/assets/pk_* (2MB) — 신규 이미터 3종(star 레벨업 별폭발/smoke 사망 연기/magic 포탈·수집 반짝임) + 포탈 상시 마법 입자 2종 + 카오스 잉걸불 오라
+- [CREDITS] Galmuri(quiple, OFL) + Kenney Particle Pack(CC0) 기록
+- [버저닝] versionCode 52 / 4.1.5 — build.gradle·server.js·next.config 미러·Overlays 배지("프레임워크 & 에셋 업그레이드")·apk-guide.html(변경점+md5)·APK_다운로드_안내.txt
+- [툴체인 재구축] 세션 리셋으로 JDK/SDK 소실 → Temurin 21.0.5(/home/z/jdk) + cmdline-tools 11076708 + platforms;android-36 + build-tools;35.0.0 재설치
+- [빌드/릴리스] tsc 0 에러 → APK BUILD SUCCESSFUL 5m(콜드) → 1차 156MB(galmuri TTF 이중포함) → woff2 전용 전환 후 재빌드 148,474,938B — aapt versionCode 52/4.1.5 실측, md5 1a9d825a3a99d30b54bd06bd7e514902 → GitHub Release v4.1.5(id 383871830) 업로드 → 재다운로드 md5 일치
+- [후처리] rm -rf .next + bun run build → 서버 재기동 GET / 200 · apk-guide 200 · 퍼블릭 200
+
+Stage Summary:
+- v4.1.5 배포: https://github.com/apple01234/CERTZ/releases/download/v4.1.5/SERTZ-v4.1.5.apk (md5 1a9d825a…, versionCode 52)
+- 게임 아이덴티티 전환: 갈무리 픽셀 폰트 + 암전 챕터 조명 연출 + 보스전 블룸/카오스 연출 강화
+- 교훈: npm 폰트 패키지는 woff2+ttf 이중 참조로 번들이 커짐 — 필요 종류만 셀프호스팅이 정답
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
