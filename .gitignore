@@ -111,3 +111,6 @@ server.log
 .apk-hold/
 jdk17/
 .android-sdk/jdk21/
+
+# local secrets (NEVER commit) — AdMob OAuth service account / API keys
+.secrets/
