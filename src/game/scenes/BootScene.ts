@@ -201,7 +201,7 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     this.load.setPath("assets");
-    for (const key of ASSET_LIST) this.load.image(key, `${key}.png`);
+    for (const key of ASSET_LIST) this.load.image(key, `${key}.webp`);
     /* v3.0.2 — 외부 신규 에셋 (전부 CC0, CREDITS.md 참조)
      *  50 Monsters Pack (isaiah658): 신규 몬스터 9종 × idle2/run4/atk1 프레임
      *  Pixelart Spells (Anokolisa?): 마법 투사체 6프레임 시트
@@ -209,23 +209,23 @@ export class BootScene extends Phaser.Scene {
      *  Bow 20x20 (CoolNav.js): 궁수 활 */
     for (const k of X2_MONSTERS) {
       for (const f of ["idle0", "idle1", "run0", "run1", "run2", "run3", "atk0"]) {
-        this.load.image(`${k}_${f}`, `${k}_${f}.png`);
+        this.load.image(`${k}_${f}`, `${k}_${f}.webp`);
       }
     }
     /* v3.0.3 — 0x72 DungeonTileset II (itch.io, CC0): 신규 몬스터 7종 idle4/run4/atk1
      *  + 무기 스프라이트 (활/지팡이/단검/표창) + GM NPC */
     for (const k of X3_MONSTERS) {
       for (const f of ["idle0", "idle1", "idle2", "idle3", "run0", "run1", "run2", "run3", "atk0"]) {
-        this.load.image(`${k}_${f}`, `${k}_${f}.png`);
+        this.load.image(`${k}_${f}`, `${k}_${f}.webp`);
       }
     }
     for (const k of ["x3_bow", "x3_staff", "x3_dagger", "x3_shuriken", "npc_gm"]) {
-      this.load.image(k, `${k}.png`);
+      this.load.image(k, `${k}.webp`);
     }
-    for (const [k, w, h] of X2_SPELLS) this.load.spritesheet(k, `${k}.png`, { frameWidth: h, frameHeight: h });
-    for (const k of ["x2_arrow", "x2_arrow_green", "x2_arrow_sky", "x2_bricks", "x2_bow"]) this.load.image(k, `${k}.png`); // v3.0.16 — 데드아이 초록 화살 · v3.0.20 — 스카이로드 구름색 화살
+    for (const [k, w, h] of X2_SPELLS) this.load.spritesheet(k, `${k}.webp`, { frameWidth: h, frameHeight: h });
+    for (const k of ["x2_arrow", "x2_arrow_green", "x2_arrow_sky", "x2_bricks", "x2_bow"]) this.load.image(k, `${k}.webp`); // v3.0.16 — 데드아이 초록 화살 · v3.0.20 — 스카이로드 구름색 화살
     // 마을 모닥불 (Serene Village 32x32 4프레임 — v1.5 이관)
-    this.load.spritesheet("sv_campfire", "sv_campfire.png", { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet("sv_campfire", "sv_campfire.webp", { frameWidth: 32, frameHeight: 32 });
     /* v3.0.8 디자인 개편 — Warped Shooting Fx / Cartoon FX Remaster 신규 VFX 시트 */
     const VFX2: [string, number, number][] = [
       ["vfx2_bolt", 48, 32], ["vfx2_charged", 63, 48],
@@ -233,12 +233,12 @@ export class BootScene extends Phaser.Scene {
       ["vfx2_pulse", 64, 32], ["vfx2_wspark", 64, 32],
       ["vfx2_elec", 128, 128], ["vfx2_tri", 128, 128], ["vfx2_cfx1", 128, 128],
     ];
-    for (const [k, w, h] of VFX2) this.load.spritesheet(k, `${k}.png`, { frameWidth: w, frameHeight: h });
-    for (const k of ["vfx2_boom", "vfx2_blood"]) this.load.image(k, `${k}.png`);
+    for (const [k, w, h] of VFX2) this.load.spritesheet(k, `${k}.webp`, { frameWidth: w, frameHeight: h });
+    for (const k of ["vfx2_boom", "vfx2_blood"]) this.load.image(k, `${k}.webp`);
     /* v3.0.11 — 토네이도 전용 스프라이트 (gen_tornado_fx.py — 스카이로드 폭풍 소용돌이/천공의 폭풍) */
-    this.load.spritesheet("fx_tornado", "fx_tornado.png", { frameWidth: 64, frameHeight: 64 });
+    this.load.spritesheet("fx_tornado", "fx_tornado.webp", { frameWidth: 64, frameHeight: 64 });
     // 지형 전환 타일 5세트 x 9종 (build_tile_transitions.py — 타일맵 경계 부자연 개선)
-    for (const s of TX_SETS) for (const k of TX_KINDS) this.load.image(`tx_${s}_${k}`, `tx_${s}_${k}.png`);
+    for (const s of TX_SETS) for (const k of TX_KINDS) this.load.image(`tx_${s}_${k}`, `tx_${s}_${k}.webp`);
     this.load.setPath("assets/audio");
     for (const key of AUDIO_LIST) this.load.audio(key, `${key}.ogg`);
   }

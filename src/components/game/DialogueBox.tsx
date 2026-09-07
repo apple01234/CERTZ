@@ -169,7 +169,7 @@ export function DialogueBox({
                 프레임을 채우고(살짝 크롭 허용), 머리는 상단 고정 — 기존 강제 정사각형 스트레치 제거 */}
             <img
               key={portrait.tex}
-              src={`/assets/${portrait.tex}.png`}
+              src={`/assets/${portrait.tex}.webp`}
               alt=""
               draggable={false}
               onLoad={() => setPortraitOk(true)}

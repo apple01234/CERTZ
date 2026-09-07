@@ -1,7 +1,15 @@
-SERTZ v4.1.5 APK 다운로드 안내
+SERTZ v4.1.6 APK 다운로드 안내
 ================================
 
-이번 버전 (v4.1.5, versionCode 52) — 프레임워크 & 에셋 업그레이드
+이번 버전 (v4.1.6, versionCode 53) — 성능 최적화
+- 오디오 재인코딩: 전체 사운드 128MB → 89MB (-31%, VBR 96kbps 상당 — 품질 유지)
+- 이미지 WebP 전환: 659장 전부 무손실급 전환 (-35%, 그래픽 동일)
+- gzip 압축 + 정적 에셋 장기 캐시: 웹 재방문 로딩 대폭 단축
+- 폰트 프리로드: 첫 실행 텍스트 깜빡임 제거
+- 게임 내용/맵/보스/세이브 전부 동일 유지
+- 세이브 그대로 유지 · 덮어설치 가능
+
+이전 버전 (v4.1.5, versionCode 52) — 프레임워크 & 에셋 업그레이드
 - 갈무리(Galmuri) 한글 픽셀 폰트 전면 적용 (SIL OFL 1.1, npm galmuri)
   → React HUD + 게임 내 데미지 숫자/월드 라벨/챕터 타이틀 전부 픽셀 아이덴티티로
 - 동적 조명 시스템 신설 (fx/Lighting.ts)
@@ -12,7 +20,6 @@ SERTZ v4.1.5 APK 다운로드 안내
   → 일반 보스: 블룸 / 카오스 보스: 블룸 + 비네트 + 잉걸불 오라 + 붉은 광원
 - Kenney Particle Pack (CC0) 27종 추가
   → 레벨업 황금 별 폭발 · 몬스터 사망 연기 · 차원문 마법 입자 · 카오스 잉걸불
-- 세이브 그대로 유지 · 덮어설치 가능
 
 이전 버전 (v4.1.4, versionCode 51) — 보스 재앙 업데이트
 - 보스 9종 고유 패턴(나선 탄막/스윕 빔/그림자 급습/연속 낙뢰/연속 돌진)
@@ -28,11 +35,11 @@ SERTZ v4.1.5 APK 다운로드 안내
 이전 버전 (v4.1.1, versionCode 48) — 앱 부팅 크래시 수정 + BILLING 권한
 
 ■ 다운로드 방법 — GitHub 릴리스 (권장, 즉시 시작)
-  https://github.com/apple01234/CERTZ/releases/download/v4.1.5/SERTZ-v4.1.5.apk
+  https://github.com/apple01234/CERTZ/releases/download/v4.1.6/SERTZ-v4.1.6.apk
   → 누르는 즉시 다운로드 시작 (대기 없음, 약 20초)
-  무결성 확인용 md5: 1a9d825a3a99d30b54bd06bd7e514902
+  무결성 확인용 md5: 73cdddb1c9486213cbf39dc3cd32088c
   릴리스 페이지: https://github.com/apple01234/CERTZ/releases
 
 ■ 설치
-  기존 SERTZ 위에 덮어 설치하면 됩니다 (세이브 유지, versionCode 52)
+  기존 SERTZ 위에 덮어 설치하면 됩니다 (세이브 유지, versionCode 53)
   "출처를 알 수 없는 앱" 설치 허용이 켜져 있어야 합니다.

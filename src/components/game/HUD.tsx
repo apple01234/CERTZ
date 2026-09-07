@@ -16,7 +16,7 @@ function BuffChip({ buff }: { buff: HudState["buffs"][number] }) {
   const sec = Math.ceil(buff.remain / 1000);
   return (
     <div className="relative h-8 w-8 overflow-hidden rounded-md border border-white/25 bg-black/60">
-      <img src={`/assets/${def.icon}.png`} alt={def.name} className="h-full w-full" style={{ imageRendering: "pixelated" }} />
+      <img src={`/assets/${def.icon}.webp`} alt={def.name} className="h-full w-full" style={{ imageRendering: "pixelated" }} />
       <div className="absolute inset-x-0 bottom-0 h-[3px] bg-black/70">
         <div className="h-full" style={{ width: `${pct}%`, background: def.color }} />
       </div>
@@ -158,7 +158,7 @@ export function HUD({
           <div className="mt-0.5 flex items-center gap-1">
             <span className="flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-amber-300 backdrop-blur-sm">
               { }
-              <img src="/assets/item_coin.png" alt="" className="h-3.5 w-3.5" style={{ imageRendering: "pixelated" }} />
+              <img src="/assets/item_coin.webp" alt="" className="h-3.5 w-3.5" style={{ imageRendering: "pixelated" }} />
               {hud.gold}
             </span>
             <span className="rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-rose-300 backdrop-blur-sm">

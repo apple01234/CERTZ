@@ -26,7 +26,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className="bg-[#05070d] text-white antialiased">{children}</body>
+      <body className="bg-[#05070d] text-white antialiased">
+        {/* v4.1.6 성능 최적화 — Galmuri woff2 4종 선도 다운로드 (React 19 head 호이스팅).
+         *  BootScene의 document.fonts 대기 시간 단축 + 캔버스 텍스트 FOUT 제거. */}
+        <link rel="preload" href="/fonts/Galmuri11.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/Galmuri11-Bold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/Galmuri9.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/Galmuri14.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        {children}
+      </body>
     </html>
   );
 }

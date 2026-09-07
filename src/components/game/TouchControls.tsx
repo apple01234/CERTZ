@@ -338,8 +338,8 @@ function PotionButton({
   const shown = itemCount ?? count;
   const iconSrc =
     itemKey && itemKey !== "potion_hp" && itemKey !== "potion_mp"
-      ? `/assets/item_${itemKey}.png`
-      : `/assets/item_potion_${kind}.png`;
+      ? `/assets/item_${itemKey}.webp`
+      : `/assets/item_potion_${kind}.webp`;
   return (
     <button
       aria-label={kind === "hp" ? "HP 물약" : "MP 물약"}

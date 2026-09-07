@@ -7923,7 +7923,7 @@ export class WorldScene extends Phaser.Scene {
       s5Max: this.player.skill5Max,
       s5Unlocked: this.player.skill5Unlocked,
       s5Name: this.player.skill5Name,
-      s5Icon: "/assets/skillicon/ultimate_s5.png",
+      s5Icon: "/assets/skillicon/ultimate_s5.webp",
       /* v2.5 — 계열별 스킬 라벨 (기본공격 포함 3슬롯 교체 표기) */
       atkName: this.player.attackName,
       s1Name: this.player.skill1Name,

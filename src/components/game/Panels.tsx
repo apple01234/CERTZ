@@ -181,7 +181,7 @@ function ItemIcon({ icon, size = 34, tier, count, potGrade }: { icon: string; si
       }}
     >
       <img
-        src={`/assets/${icon}.png`}
+        src={`/assets/${icon}.webp`}
         alt=""
         draggable={false}
         style={{ width: size, height: size, imageRendering: "pixelated" }}
@@ -200,7 +200,7 @@ function GoldChip({ gold }: { gold: number }) {
   return (
     <span className="flex items-center gap-1 rounded-md bg-black/50 px-2 py-1 text-[12px] font-black text-amber-300">
       { }
-      <img src="/assets/item_coin.png" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
+      <img src="/assets/item_coin.webp" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
       {gold} G
     </span>
   );
@@ -210,7 +210,7 @@ function GoldChip({ gold }: { gold: number }) {
 function EmeraldChip({ emerald }: { emerald: number }) {
   return (
     <span className="flex items-center gap-1 rounded-md bg-black/50 px-2 py-1 text-[12px] font-black text-emerald-300">
-      <img src="/assets/item_pendant_arcane.png" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
+      <img src="/assets/item_pendant_arcane.webp" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
       {emerald}
     </span>
   );
@@ -335,7 +335,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
       >
         <div className="mb-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/assets/cos_aurora.png" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
+            <img src="/assets/cos_aurora.webp" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
             <div>
               <p className="text-sm font-black text-cyan-200">BM 상점</p>
               <p className="text-[10px] text-white/60">에메랄드 전용 — 보스·정예·반복 의뢰에서 획득</p>
@@ -449,7 +449,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
         <div className="mb-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             { }
-            <img src="/assets/npc_merchant.png" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
+            <img src="/assets/npc_merchant.webp" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
             <div>
               <p className="text-sm font-black text-amber-200">상인 라고스</p>
               <p className="text-[10px] text-white/60">필요한 걸 골라 보게나~</p>
@@ -553,7 +553,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
         {/* v3.0.5 — 스타포스 강화 (★15 확장 · 마일스톤 보너스 · 결과 연출) */}
         <div className="mt-2 rounded-lg border border-amber-200/25 bg-amber-300/[0.05] p-2">
           <div className="mb-1.5 flex items-center gap-1.5">
-            <img src="/assets/icon_hammer.png" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
+            <img src="/assets/icon_hammer.webp" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
             <p className="text-[12px] font-black text-amber-200">스타포스 강화</p>
             <p className="text-[10px] text-white/45">최대 ★{UPGRADE_MAX} · ★{UPGRADE_FALLBACK_FROM} 이상 실패 시 1성 하락</p>
             {/* v3.0.7 — 강화 주문서 충전 현황 */}
@@ -662,7 +662,7 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
       >
         <div className="mb-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/assets/item_ring_guard.png" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
+            <img src="/assets/item_ring_guard.webp" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
             <div>
               <p className="text-sm font-black text-teal-200">유저 거래소</p>
               <p className="text-[10px] text-white/60">보스 전용 드롭은 여기서만 사고팔 수 있어요</p>
@@ -1540,13 +1540,13 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
         {/* 잡몹 도감 */}
         <p className="mb-1 text-[11px] font-bold text-white/50">일반 몬스터 ({mobKeys.filter((k) => (kills[k] ?? 0) > 0).length}/{mobKeys.length})</p>
         <div className="mb-3 grid grid-cols-5 gap-1.5 sm:grid-cols-6">
-          {mobKeys.map((k) => card(k, ENEMIES[k].name, `/assets/${k}_idle0.png`))}
+          {mobKeys.map((k) => card(k, ENEMIES[k].name, `/assets/${k}_idle0.webp`))}
         </div>
 
         {/* 보스 도감 */}
         <p className="mb-1 text-[11px] font-bold text-white/50">보스 몬스터 ({bossKeys.filter((k) => (kills[`boss_${k}`] ?? 0) > 0).length}/{bossKeys.length})</p>
         <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-6">
-          {bossKeys.map((k) => card(`boss_${k}`, BOSS_DEFS[k].name, `/assets/${BOSS_DEFS[k].tex}_idle0.png`))}
+          {bossKeys.map((k) => card(`boss_${k}`, BOSS_DEFS[k].name, `/assets/${BOSS_DEFS[k].tex}_idle0.webp`))}
         </div>
 
         <p className="mt-2 text-center text-[10px] text-white/40">M키로 열기 · 등록 보너스는 모든 구역에서 항상 적용됩니다 · ESC로 닫기</p>

@@ -114,3 +114,12 @@ jdk17/
 
 # local secrets (NEVER commit) — AdMob OAuth service account / API keys
 .secrets/
+
+# v4.1.6 — 성능 최적화 중간 산출물
+/scripts/_a2b/
+/scripts/_webp/
+/scripts/_*.log
+/scripts/_ff*.txt
+/scripts/_enc_test.ogg
+/scripts/_seg_*.ogg
+/scripts/_mid.wav
