@@ -5,6 +5,7 @@ import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
+import { Lighting } from "../fx/Lighting";
 import { Pet } from "../entities/Pet";
 import { EventBus, type QuestState, type InteractState, type QuestLogState, type RewardPopupState } from "../../components/game/EventBus";
 import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
@@ -338,6 +339,18 @@ export class WorldScene extends Phaser.Scene {
   private minimap: Phaser.GameObjects.Graphics | null = null;
   private lastRpgSig = "";
 
+  /* ----- v4.1.5 — 동적 조명 + 보스 포스트FX + 신규 파티클 ----- */
+  private lighting!: Lighting;
+  private bossBloomFX: Phaser.FX.Controller | null = null;
+  private bossVignetteFX: Phaser.FX.Controller | null = null;
+  private bossEmber: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private bossLight: Phaser.GameObjects.Image | null = null;
+  private portalMagicA: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private portalMagicB: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private starEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private smokeEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private magicEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+
   /* ----- 멀티플레이 (v1.7 — socket.io 동일 서버 접속자 동기화) ----- */
   private remotes = new Map<
     string,
@@ -444,6 +457,14 @@ export class WorldScene extends Phaser.Scene {
     this.merchantLabel = null;
     this.nearShop = false;
     this.minimap = null;
+    /* v4.1.5 — 조명/보스 포스트FX/신규 이미터 정리 */
+    this.lighting?.destroy();
+    this.bossBloomFX = null;
+    this.bossVignetteFX = null;
+    this.bossEmber = null;
+    this.bossLight = null;
+    this.portalMagicA = null;
+    this.portalMagicB = null;
     this.lastRpgSig = "";
     this.remotes.clear();
     this.netOffs = [];
@@ -639,6 +660,13 @@ export class WorldScene extends Phaser.Scene {
     this.stageDef = STAGES[stageKey];
     this.stageW = this.stageDef.width;
     this.stageH = this.stageDef.height;
+
+    /* v4.1.5 — 동적 조명: 챕터별 암전 + 플레이어 횃불 광원 (fx/Lighting.ts).
+     *  create() 최상단에서 초기화 — 이후 포탈/모닥불 등 장식 배치 경로가 광원을 등록한다.
+     *  암전 챕터(동굴/헬/심연 등)에서는 어둠이 깔리고 광원이 시야를 만든다.
+     *  마을/실내/야외 밝은 챕터는 오버레이 없음(광원만 가능). */
+    this.lighting = new Lighting(this);
+    this.lighting.setupAmbient(parseStage(stageKey).ch, true);
 
     /* ---------- 바닥 (v2.0 — 10챕터 테마 테이블 / v2.2 실내 분기) ---------- */
     const theme = STAGE_THEME[stageKey] ?? STAGE_THEME.village;
@@ -1391,6 +1419,7 @@ export class WorldScene extends Phaser.Scene {
     }
 
     // 심연 구역(알프헤임) 횃불 — 실제 Kenney 횃불 + 온기 글로우
+    //  v4.1.5 — 글로우 depth 1→56 (암전 오버레이 위로 올려 어둠 속에서도 빛나게)
     if (ch === "alfheim") {
       for (let i = 0; i < 6; i++) {
         const tx = 200 + (i * (this.stageW - 400)) / 5;
@@ -1398,7 +1427,7 @@ export class WorldScene extends Phaser.Scene {
         this.add.image(tx, ty, "torch").setDepth(2);
         const g = this.add
           .image(tx, ty, "glow")
-          .setDepth(1)
+          .setDepth(56)
           .setBlendMode(Phaser.BlendModes.ADD)
           .setTint(0xffa040)
           .setScale(1.1)
@@ -1416,7 +1445,7 @@ export class WorldScene extends Phaser.Scene {
         const c = this.add.image(cx2, cy2, "fragment").setDepth(1).setTint(0xc77aff).setScale(rng2.realInRange(0.7, 1.2));
         const g = this.add
           .image(cx2, cy2, "glow")
-          .setDepth(0)
+          .setDepth(56) /* v4.1.5 — 암전 위 렌더 */
           .setBlendMode(Phaser.BlendModes.ADD)
           .setTint(0x9d5aff)
           .setScale(1.2)
@@ -1434,7 +1463,7 @@ export class WorldScene extends Phaser.Scene {
         this.add.image(tx, ty, "torch").setDepth(2).setTint(0xb08aff);
         const g = this.add
           .image(tx, ty, "glow")
-          .setDepth(1)
+          .setDepth(56) /* v4.1.5 — 암전 위 렌더 */
           .setBlendMode(Phaser.BlendModes.ADD)
           .setTint(0x8a5aff)
           .setScale(1.2)
@@ -1454,7 +1483,7 @@ export class WorldScene extends Phaser.Scene {
         this.add.image(ex3, ey3, "tile_magma").setDepth(0).setScale(0.125).setTint(0xffb070);
         const g = this.add
           .image(ex3, ey3, "glow")
-          .setDepth(0)
+          .setDepth(56) /* v4.1.5 — 암전 위 렌더 */
           .setBlendMode(Phaser.BlendModes.ADD)
           .setTint(0xff8a4a)
           .setScale(1.0)
@@ -1531,6 +1560,7 @@ export class WorldScene extends Phaser.Scene {
       const fx7 = this.stageW / 2 - 250;
       const fy7 = this.stageH / 2 + 150;
       const fire = this.add.sprite(fx7, fy7, "sv_campfire").setDepth(Math.floor(fy7 / 10)).play("sv-campfire");
+      this.lighting.addLight(fx7, fy7 - 8, { tint: 0xff9a40, scale: 0.8, alpha: 0.3, flicker: 0.1 }); // v4.1.5 동적 광원
       this.solidGroup.add(fire);
       (fire.body as Phaser.Physics.Arcade.StaticBody).setSize(24, 14).setOffset(4, 18);
       this.add
@@ -1660,6 +1690,19 @@ export class WorldScene extends Phaser.Scene {
   private spawnPortal(x: number, y: number) {
     // 외부 에셋 차원문(varkalandar CC-BY, 8프레임 소용돌이) — 비활성 시 회색 틴트
     this.portal = this.physics.add.sprite(x, y, "portal0").setDepth(3).setTint(0x777777);
+    /* v4.1.5 — 차원문 주변 신비한 마법 입자 + 광원 (Kenney Particle Pack) */
+    this.portalMagicA = this.add.particles(x, y - 4, "pk_magic_01", {
+      lifespan: 900,
+      frequency: 420,
+      quantity: 1,
+      angle: { min: 200, max: 340 },
+      speed: { min: 12, max: 38 },
+      scale: { start: 0.22, end: 0 },
+      alpha: { start: 0.75, end: 0 },
+      tint: 0x8ad8ff,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(57);
+    this.lighting.addLight(x, y, { tint: 0x6ab8ff, scale: 0.75, alpha: 0.2, flicker: 0.05 });
     (this.portal.body as Phaser.Physics.Arcade.Body).setSize(34, 44).setOffset(15, 10);
     this.physics.add.overlap(this.player, this.portal, () => {
       if (!this.portalActive || !this.portal?.active) return;
@@ -1681,7 +1724,7 @@ export class WorldScene extends Phaser.Scene {
     this.portalLabel?.destroy();
     this.portalLabel = this.add
       .text(this.portal.x, this.portal.y - 46, `→ ${STAGE_SHORT[NEXT_STAGE[this.stageDef.key] as StageKey] ?? "다음 지역"}`, {
-        fontFamily: "sans-serif",
+        fontFamily: "Galmuri11, sans-serif",
         fontSize: "11px",
         color: "#d8b0ff",
         stroke: "#0a2030",
@@ -1825,6 +1868,19 @@ export class WorldScene extends Phaser.Scene {
     const rx = this.layout ? this.entryHome.x - 80 : 110;
     const ry = this.layout ? this.entryHome.y : this.stageH * 0.52;
     this.returnPortal = this.physics.add.sprite(rx, ry, "portal0").setDepth(3).setTint(0x54c8ff).setScale(0.92);
+    /* v4.1.5 — 복귀 차원문 마법 입자 + 광원 */
+    this.portalMagicB = this.add.particles(rx, ry - 4, "pk_magic_01", {
+      lifespan: 900,
+      frequency: 420,
+      quantity: 1,
+      angle: { min: 200, max: 340 },
+      speed: { min: 12, max: 38 },
+      scale: { start: 0.2, end: 0 },
+      alpha: { start: 0.7, end: 0 },
+      tint: 0x54c8ff,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(57);
+    this.lighting.addLight(rx, ry, { tint: 0x54c8ff, scale: 0.7, alpha: 0.2, flicker: 0.05 });
     (this.returnPortal.body as Phaser.Physics.Arcade.Body).setSize(30, 40).setOffset(17, 12);
     this.returnPortal.play("portal-spin");
     this.physics.add.overlap(this.player, this.returnPortal, () => {
@@ -1850,7 +1906,7 @@ export class WorldScene extends Phaser.Scene {
     });
     this.add
       .text(rx, ry - 46, `← ${STAGE_SHORT[prev] ?? "이전 지역"}`, {
-        fontFamily: "sans-serif",
+        fontFamily: "Galmuri11, sans-serif",
         fontSize: "11px",
         color: "#a8ecff",
         stroke: "#0a2030",
@@ -1898,7 +1954,7 @@ export class WorldScene extends Phaser.Scene {
     this.wellPos = new Phaser.Math.Vector2(cx, cy);
     this.add
       .text(cx, cy - 44, "샘물 우물", {
-        fontFamily: "sans-serif",
+        fontFamily: "Galmuri11, sans-serif",
         fontSize: "11px",
         color: "#bfe8ff",
         stroke: "#000000",
@@ -1954,7 +2010,7 @@ export class WorldScene extends Phaser.Scene {
       this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       this.add
         .text(v.x, v.y - 34, v.name, {
-          fontFamily: "sans-serif",
+          fontFamily: "Galmuri11, sans-serif",
           fontSize: "11px",
           color: "#ffe9b0",
           stroke: "#000000",
@@ -1974,7 +2030,7 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: this.jobNpc, y: jy - 3, duration: 1000, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(jx, jy - 38, "직업 교관 카이엔", {
-        fontFamily: "sans-serif",
+        fontFamily: "Galmuri11, sans-serif",
         fontSize: "12px",
         color: "#ffd76a",
         stroke: "#1a1020",
@@ -1995,13 +2051,13 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: gmNpc, y: gy - 3, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(gx, gy - 46, "GM", {
-        fontFamily: "sans-serif", fontSize: "12px", color: "#ffd76a",
+        fontFamily: "Galmuri11, sans-serif", fontSize: "12px", color: "#ffd76a",
         stroke: "#1a1020", strokeThickness: 4, fontStyle: "bold",
       })
       .setOrigin(0.5).setDepth(21);
     this.add
       .text(gx, gy - 34, "운영자 지원", {
-        fontFamily: "sans-serif", fontSize: "10px", color: "#ffe9b0",
+        fontFamily: "Galmuri11, sans-serif", fontSize: "10px", color: "#ffe9b0",
         stroke: "#000000", strokeThickness: 3,
       })
       .setOrigin(0.5).setDepth(21);
@@ -2013,7 +2069,7 @@ export class WorldScene extends Phaser.Scene {
     const pad = 5;
     const t = this.add
       .text(x, y, label, {
-        fontFamily: "sans-serif",
+        fontFamily: "Galmuri11, sans-serif",
         fontSize: "11px",
         color,
         stroke: "#0a1020",
@@ -2062,18 +2118,46 @@ export class WorldScene extends Phaser.Scene {
       blendMode: Phaser.BlendModes.ADD,
     }).setDepth(30);
 
+    /* v4.1.5 — Kenney Particle Pack 신규 이미터 3종
+     *  star: 레벨업 황금 별 폭발 / smoke: 몬스터 사망 연기 / magic: 승리·수집 반짝임 */
+    this.starEmitter = this.add.particles(0, 0, "pk_star_02", {
+      lifespan: { min: 520, max: 900 },
+      speed: { min: 60, max: 220 },
+      scale: { start: 0.38, end: 0 },
+      rotate: { min: 0, max: 360 },
+      alpha: { start: 0.95, end: 0 },
+      emitting: false,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(31);
+    this.smokeEmitter = this.add.particles(0, 0, "pk_smoke_01", {
+      lifespan: { min: 600, max: 950 },
+      speed: { min: 14, max: 52 },
+      scale: { start: 0.3, end: 0.85 },
+      alpha: { start: 0.5, end: 0 },
+      angle: { min: 220, max: 320 },
+      emitting: false,
+    }).setDepth(31);
+    this.magicEmitter = this.add.particles(0, 0, "pk_magic_02", {
+      lifespan: 800,
+      speed: { min: 30, max: 120 },
+      scale: { start: 0.3, end: 0 },
+      alpha: { start: 0.9, end: 0 },
+      emitting: false,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(31);
+
     // 데미지 텍스트 12장 고정 풀
     for (let i = 0; i < 12; i++) {
       const t = this.add
         .text(0, 0, "", {
-          fontFamily: "sans-serif",
-          fontSize: "17px",
+          fontFamily: "Galmuri11, sans-serif",
+          fontSize: "22px",
           color: "#ffffff",
           stroke: "#1a1020",
           strokeThickness: 4,
           fontStyle: "bold",
         })
-        .setDepth(40)
+        .setDepth(56) /* v4.1.5 — 어둠 오버레이 위(가독성) + Galmuri 픽셀 숫자 */
         .setActive(false)
         .setVisible(false);
       this.dmgPool.push(t);
@@ -2236,7 +2320,7 @@ export class WorldScene extends Phaser.Scene {
 
   private createPortalGuides() {
     const style = {
-      fontFamily: "sans-serif",
+      fontFamily: "Galmuri11, sans-serif",
       fontSize: "18px",
       fontStyle: "bold",
       stroke: "#0a2030",
@@ -2285,6 +2369,9 @@ export class WorldScene extends Phaser.Scene {
 
   spawnDeathBurst(x: number, y: number) {
     this.spawnBurstAt(x, y, 10, 0xff9a8a);
+    /* v4.1.5 — 사망 연기 퍼프 (Kenney smoke — 잡몹 사망 후연출 강화) */
+    this.smokeEmitter?.setParticleTint(0xd8d0e8);
+    this.smokeEmitter?.explode(5, x, y - 6);
   }
 
   spawnSlamBurst(x: number, y: number) {
@@ -2304,6 +2391,11 @@ export class WorldScene extends Phaser.Scene {
       duration: 500,
       onComplete: () => ring.destroy(),
     });
+    /* v4.1.5 — 레벨업 황금 별 폭발 + 마법 반짝임 (Kenney star/magic) */
+    this.starEmitter?.setParticleTint(0xffe66a);
+    this.starEmitter?.explode(16, x, y - 8);
+    this.magicEmitter?.setParticleTint(0xfff0b0);
+    this.magicEmitter?.explode(8, x, y - 10);
   }
 
   spawnCrack(x: number, y: number) {
@@ -2325,7 +2417,7 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: this.merchant, y: my - 3, duration: 1200, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.merchantLabel = this.add
       .text(mx, my - 36, "상인 라고스", {
-        fontFamily: "sans-serif",
+        fontFamily: "Galmuri11, sans-serif",
         fontSize: "13px",
         color: "#ffd76a",
         stroke: "#1a1020",
@@ -2784,7 +2876,7 @@ export class WorldScene extends Phaser.Scene {
     void emblemFill;
     this.add
       .text(this.cameras.main.width / 2, 66, "無 量 道 場", {
-        fontFamily: "sans-serif",
+        fontFamily: "Galmuri11, sans-serif",
         fontSize: "30px",
         color: "#e8c88a",
         stroke: "#1a1020",
@@ -2812,7 +2904,7 @@ export class WorldScene extends Phaser.Scene {
      *  그대로 써서 줌이 1보다 큰 폰에서 텍스트가 화면 밖으로 나가 타이머가 안 보였다) */
     this.dojangText = this.add
       .text(this.cameras.main.width / 2, 108, "", {
-        fontFamily: "sans-serif",
+        fontFamily: "Galmuri11, sans-serif",
         fontSize: "17px",
         color: "#ffe66a",
         stroke: "#1a1020",
@@ -3279,14 +3371,14 @@ export class WorldScene extends Phaser.Scene {
     void glow;
     this.tweens.add({ targets: door, scale: 1.03, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
-      .text(cx, cy - 92, "바르가 균열", { fontFamily: "sans-serif", fontSize: "20px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(cx, cy - 92, "바르가 균열", { fontFamily: "Galmuri11, sans-serif", fontSize: "20px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(90);
     /* 코어 HP 바 (월드 좌표) */
     this.gateCoreBarBg = this.add.rectangle(cx, cy + 82, 120, 8, 0x22262e).setDepth(96);
     this.gateCoreBar = this.add.rectangle(cx, cy + 82, 116, 5, 0x9d7aff).setDepth(97);
     this.gateText = this.add
-      .text(this.cameras.main.width / 2, 96, "", { fontFamily: "sans-serif", fontSize: "17px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 96, "", { fontFamily: "Galmuri11, sans-serif", fontSize: "17px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(96)
       .setScrollFactor(0);
@@ -3551,12 +3643,12 @@ export class WorldScene extends Phaser.Scene {
   private buildCloset() {
     const cx = this.stageW / 2;
     this.add
-      .text(this.cameras.main.width / 2, 66, "균 열 던 전", { fontFamily: "sans-serif", fontSize: "30px", color: "#8fe84a", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 66, "균 열 던 전", { fontFamily: "Galmuri11, sans-serif", fontSize: "30px", color: "#8fe84a", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(90)
       .setScrollFactor(0);
     this.closetText = this.add
-      .text(this.cameras.main.width / 2, 108, "", { fontFamily: "sans-serif", fontSize: "17px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 108, "", { fontFamily: "Galmuri11, sans-serif", fontSize: "17px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(96)
       .setScrollFactor(0);
@@ -4113,6 +4205,7 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.shake(260, 0.008);
     this.showBanner(`${def.name} 출현!`);
     this.boss = new Boss(this, bx, by, def, "normal");
+    this.applyBossPostFX(false); /* v4.1.5 — 보스전 블룸 */
     this.physics.add.collider(this.boss, this.solidGroup);
     EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
     // 파티 보스 토벌 공지 (v2.0 — 지시 #5)
@@ -4158,6 +4251,7 @@ export class WorldScene extends Phaser.Scene {
     /* v4.1.4 — 카오스 등장 강조 배너 */
     this.showBanner(lv === "chaos" ? `카오스 재림 — ${base.name}!! (전용 패턴 개방)` : `재림한 ${base.name} 출현!`);
     this.boss = new Boss(this, bx, by, def, lv);
+    this.applyBossPostFX(lv === "chaos"); /* v4.1.5 — 카오스: 블룸+비네트+잉걸불 오라 */
     this.physics.add.collider(this.boss, this.solidGroup);
     EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
     // 재도전 전투곡 — 일반 보스전과 동일 오버라이드
@@ -4192,7 +4286,54 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /* v4.1.5 — 보스전 포스트FX: 블룸(전투) + 카오스 비네트·잉걸불 오라·붉은 광원.
+   *  WebGL 전용(캔버스 렌더러 폴백 무시) — 재림판 카오스는 강도 상향. */
+  private applyBossPostFX(chaos: boolean) {
+    try {
+      const cam = this.cameras.main;
+      if (this.game.renderer.type === Phaser.WEBGL && cam.postFX) {
+        this.bossBloomFX = cam.postFX.addBloom(0xffffff, 1, 1, 1, chaos ? 0.68 : 0.46, 4);
+        if (chaos) this.bossVignetteFX = cam.postFX.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.62, 0.4);
+      }
+      if (chaos && this.boss?.active) {
+        this.bossEmber = this.add.particles(0, 0, "pk_fire_01", {
+          follow: this.boss,
+          lifespan: 780,
+          frequency: 130,
+          quantity: 1,
+          angle: { min: 200, max: 340 },
+          speed: { min: 18, max: 62 },
+          scale: { start: 0.34, end: 0 },
+          alpha: { start: 0.85, end: 0 },
+          tint: [0xff5838, 0xffa040, 0xffd070],
+          blendMode: Phaser.BlendModes.ADD,
+        }).setDepth(57);
+        this.bossLight = this.add.image(this.boss.x, this.boss.y - 6, "pk_light_01")
+          .setDepth(56)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0xff4830)
+          .setScale(1.5)
+          .setAlpha(0.3);
+      }
+    } catch {
+      /* postFX 미지원 환경 무시 */
+    }
+  }
+
+  /* v4.1.5 — 보스전 포스트FX/오라 해제 (사망·씬 전환 공통) */
+  private clearBossPostFX() {
+    this.bossBloomFX?.destroy();
+    this.bossBloomFX = null;
+    this.bossVignetteFX?.destroy();
+    this.bossVignetteFX = null;
+    this.bossEmber?.destroy();
+    this.bossEmber = null;
+    this.bossLight?.destroy();
+    this.bossLight = null;
+  }
+
   onBossDead() {
+    this.clearBossPostFX(); /* v4.1.5 — 보스전 포스트FX/오라 해제 */
     const def = this.bossDef;
     audio.sfx.bossDie();
     /* v3.0.24 (#보스재도전) — 재림 보스 격파: 스토리 진행과 분리된 전용 보상 경로
@@ -5059,6 +5200,12 @@ export class WorldScene extends Phaser.Scene {
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
 
+    /* v4.1.5 — 동적 조명: 플레이어 횃불 광원 추적 + 플리커 */
+    if (this.lighting) this.lighting.update(this.player.x, this.player.y, dt);
+    if (this.bossLight?.scene && this.boss?.active) {
+      this.bossLight.setPosition(this.boss.x, this.boss.y - 6);
+    }
+
     /* v4.1.0 — 적응형 품질/포탈 가이드/긴급귀환 쿨다운 */
     this.tickFxQuality(dt);
     this.updatePortalGuides();
@@ -5922,7 +6069,7 @@ export class WorldScene extends Phaser.Scene {
         const d = classDef(p.cls);
         const tag = this.add
           .text(p.x, p.y - 52, `${p.name} Lv.${p.lv}`, {
-            fontFamily: "sans-serif",
+            fontFamily: "Galmuri11, sans-serif",
             fontSize: "11px",
             color: d ? d.color : "#ffe9b0",
             stroke: "#0a2030",
@@ -5976,7 +6123,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.playerNameTag || !this.player) return;
     this.playerNameTag = this.add
       .text(this.player.x, this.player.y - 48, getPlayerName(), {
-        fontFamily: "sans-serif",
+        fontFamily: "Galmuri11, sans-serif",
         fontSize: "12px",
         color: "#baf3ff",
         stroke: "#0a2030",
@@ -6714,7 +6861,7 @@ export class WorldScene extends Phaser.Scene {
       this.eBubble = this.add.circle(0, 0, 11, 0x0f2233).setStrokeStyle(2, 0x7de8ff, 0.95).setDepth(61);
       this.eBubbleText = this.add
         .text(0, 0, "E", {
-          fontFamily: "sans-serif",
+          fontFamily: "Galmuri11, sans-serif",
           fontSize: "12px",
           color: "#7de8ff",
           fontStyle: "bold",
@@ -6818,14 +6965,14 @@ export class WorldScene extends Phaser.Scene {
       this.tweens.add({ targets: veil, alpha: 1, duration: 380 });
       const zzz = this.add
         .text(vw / 2, vh / 2 - 24, "Zzz…", {
-          fontFamily: "sans-serif", fontSize: "44px", color: "#ffe9b0", fontStyle: "bold",
+          fontFamily: "Galmuri11, sans-serif", fontSize: "44px", color: "#ffe9b0", fontStyle: "bold",
           stroke: "#000000", strokeThickness: 6,
         })
         .setOrigin(0.5).setScrollFactor(0).setDepth(301).setAlpha(0);
       this.tweens.add({ targets: zzz, alpha: 1, y: "-=14", duration: 950, yoyo: true, repeat: 1, ease: "Sine.inOut" });
       const sub = this.add
         .text(vw / 2, vh / 2 + 40, paid ? "20G를 내고 푹 잤다…" : "내 침대에서 푹 잤다…", {
-          fontFamily: "sans-serif", fontSize: "14px", color: "#ffffffcc", fontStyle: "bold",
+          fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: "#ffffffcc", fontStyle: "bold",
         })
         .setOrigin(0.5).setScrollFactor(0).setDepth(301).setAlpha(0);
       this.tweens.add({ targets: sub, alpha: 1, duration: 600, delay: 300 });
@@ -6918,7 +7065,7 @@ export class WorldScene extends Phaser.Scene {
       const keeper = this.add.image(W / 2, 116, "npc_villager1").setDepth(4);
       this.add
         .text(keeper.x, keeper.y - 34, "로안", {
-          fontFamily: "sans-serif", fontSize: "11px", color: "#ffe9b0",
+          fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#ffe9b0",
           stroke: "#0a2030", strokeThickness: 4, fontStyle: "bold",
         })
         .setOrigin(0.5).setDepth(60);
@@ -7541,7 +7688,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.edgeLabel)
         this.edgeLabel = this.add
           .text(0, 0, "", {
-            fontFamily: "sans-serif",
+            fontFamily: "Galmuri11, sans-serif",
             fontSize: "13px",
             fontStyle: "900",
             color: "#ffe9a8",
@@ -8127,7 +8274,7 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(depth + 1);
     const tCh = this.add
       .text(vw / 2, vh / 2 - 34, `제${chNum}장`, {
-        fontFamily: "Roboto, sans-serif",
+        fontFamily: "Galmuri14, sans-serif",
         fontSize: "26px",
         color: "#ffd76a",
         fontStyle: "bold",
@@ -8138,7 +8285,7 @@ export class WorldScene extends Phaser.Scene {
       .setAlpha(0);
     const tTitle = this.add
       .text(vw / 2, vh / 2 + 2, title, {
-        fontFamily: "Roboto, sans-serif",
+        fontFamily: "Galmuri14, sans-serif",
         fontSize: "40px",
         color: "#ffffff",
         fontStyle: "bold",
@@ -8149,7 +8296,7 @@ export class WorldScene extends Phaser.Scene {
       .setAlpha(0);
     const tSub = this.add
       .text(vw / 2, vh / 2 + 46, subtitle, {
-        fontFamily: "Roboto, sans-serif",
+        fontFamily: "Galmuri14, sans-serif",
         fontSize: "15px",
         color: "#cfe3ff",
       })

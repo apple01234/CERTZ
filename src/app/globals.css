@@ -229,3 +229,8 @@ body {
 /* 리스트 행 (인벤/상점 슬롯 행) */
 .sertz-listrow { background-image: url("/assets/ui2/list.png"); background-size: 100% 100%; }
 .sertz-listrow-sel { background-image: url("/assets/ui2/list_sel.png"); background-size: 100% 100%; }
+
+/* v4.1.5 — Galmuri 한글 픽셀 폰트 (npm galmuri, SIL OFL 1.1) — 게임 UI 전체 아이덴티티 */
+html, body {
+  font-family: Galmuri11, "Noto Sans KR", sans-serif;
+}

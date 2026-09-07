@@ -1,0 +1,8 @@
+{
+  "tag_name": "v4.1.5",
+  "target_commitish": "main",
+  "name": "SERTZ v4.1.5 — 프레임워크 & 에셋 업그레이드",
+  "body": "## v4.1.5 (versionCode 52) — 프레임워크 & 에셋 업그레이드\n\n### 신규 프레임워크\n- **갈무리(Galmuri) 한글 픽셀 폰트** — React HUD + 게임 내 텍스트 전체(데미지 숫자·월드 라벨·챕터 타이틀) 픽셀 아이덴티티 적용 (SIL OFL 1.1)\n- **동적 조명 시스템 (fx/Lighting.ts)** — 동굴/니다벨리르/헬/심연/무스펠헤임/니플헤임/알프헤임 챕터 암전 + 플레이어 추종 횃불 광원(플리커)\n- **보스전 포스트FX** — 일반 보스 블룸 / 카오스: 블룸+비네트+잉걸불 오라+붉은 광원 (WebGL)\n\n### 신규 에셋 (Kenney Particle Pack, CC0 27종)\n- 레벨업 황금 별 폭발\n- 몬스터 사망 연기 퍼프\n- 차원문 마법 입자 (전진/복귀)\n- 카오스 보스 잉걸불 오라\n\n### 파일\n- SERTZ-v4.1.5.apk (md5: 1a9d825a3a99d30b54bd06bd7e514902)\n- 덮어설치 가능 · 세이브 유지",
+  "draft": false,
+  "prerelease": false
+}

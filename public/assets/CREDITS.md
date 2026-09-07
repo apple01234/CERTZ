@@ -194,3 +194,12 @@
   (frost/ember/hel/dark/rune/ice/gold/surt/fenrir/gram/abyss/nidhog)
   ⚠ 라이선스: 영리/비영리 사용 가능(단 NFT·블록체인·AI/ML 프로젝트 제외),
   수정 가능, 재판매/재배포 금지 — 원문: upload/extracted/32rogues-0.5.0/32rogues/LICENSE.txt
+
+## v4.1.5 — 프레임워크 & 에셋 업그레이드
+- Galmuri 한글 픽셀 폰트 (quiple/Lee Minseo, SIL OFL 1.1) — npm `galmuri` 패키지
+  게임 UI 전체(React HUD + Phaser 캔버스 텍스트: 데미지 숫자/월드 라벨/챕터 타이틀)
+  Galmuri9/11(400·700)/14 — https://github.com/quiple/galmuri
+- Kenney Particle Pack 1.1 (Kenney Vleugels, CC0) — 파티클 27종 선별: /assets/pk_*
+  조명 마스크(light)·연기(smoke)·별(star)·마법(magic)·화염(fire/flame)·스파크(spark)·
+  원(circle)·버스트(muzzle)·먼지(dirt) — https://kenney.nl/assets/particle-pack
+  (동일 팩은 기존 v1 glow/ring/orb/spark에도 사용됨)

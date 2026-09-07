@@ -163,6 +163,17 @@ const ASSET_LIST = [
   "ud_deadtree1", "ud_deadtree2", "ud_deadtree3", "ud_brokentree",
   "ud_grave1", "ud_grave2", "ud_grave3", "ud_skulls", "ud_bones",
   "cl_mflower", "cl_eyeplant", "cl_jawsplant", "cl_manyeyes", "cl_pustules", "cl_rock", "cl_bones",
+  /* v4.1.5 — Kenney Particle Pack (CC0) 선별 27종: 조명 마스크/연기/별/마법/화염/스파크/원/버스트/먼지
+   *  → 동적 조명(Lighting.ts) + 신규 이미터(레벨업 별·사망 연기·보스 잉걸불·포탈 마법) */
+  "pk_light_01", "pk_light_02", "pk_light_03",
+  "pk_smoke_01", "pk_smoke_04", "pk_smoke_06", "pk_smoke_08",
+  "pk_star_01", "pk_star_02", "pk_star_03",
+  "pk_magic_01", "pk_magic_02", "pk_magic_03", "pk_magic_05",
+  "pk_fire_01", "pk_fire_02", "pk_flame_02", "pk_flame_04",
+  "pk_spark_02", "pk_spark_04", "pk_spark_06",
+  "pk_circle_02", "pk_circle_04",
+  "pk_muzzle_02", "pk_muzzle_04",
+  "pk_dirt_01", "pk_dirt_02",
 ] as const;
 
 const AUDIO_LIST: string[] = [
@@ -232,8 +243,26 @@ export class BootScene extends Phaser.Scene {
     for (const key of AUDIO_LIST) this.load.audio(key, `${key}.ogg`);
   }
 
-  create() {
+  async create() {
     buildAllAnims(this);
+    /* v4.1.5 — Galmuri 픽셀 폰트 로딩 대기 (최대 2.5초 폴백).
+     *  Phaser 캔버스 텍스트(데미지 숫자/배너/월드 라벨)가 Galmuri로 렌더되려면
+     *  씬 시작 전 document.fonts 로드 완료가 필요하다. 실패해도 sans-serif 폴백. */
+    try {
+      if (typeof document !== "undefined" && document.fonts) {
+        await Promise.race([
+          Promise.all([
+            document.fonts.load('400 22px Galmuri11'),
+            document.fonts.load('700 22px Galmuri11'),
+            document.fonts.load('400 18px Galmuri9'),
+            document.fonts.load('400 30px Galmuri14'),
+          ]),
+          new Promise((r) => setTimeout(r, 2500)),
+        ]);
+      }
+    } catch {
+      /* 폰트 로드 실패 — 기본 폰트로 계속 */
+    }
     this.scene.start("title");
   }
 }
