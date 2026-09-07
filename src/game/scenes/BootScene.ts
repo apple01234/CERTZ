@@ -172,7 +172,8 @@ const ASSET_LIST = [
   "pfx_heart", "pfx_spark_y",
   /* v4.1.8 — 유료 CFXR 애니메이션급 파티클 텍스처: 타격 임팩트/레벨업 별/사망 연기/
    *  포탈·수집 마법 별/카오스 잉걸불 화염 — Kenney 무료 이펙트 완전 대체 */
-  "cfxr_impact", "cfxr_star", "cfxr_smoke", "cfxr_mstar", "cfxr_flamme",
+  "cfxr_impact", "cfxr_star", "cfxr_mstar", "cfxr_flamme",
+  "cfxr_puff", /* v4.1.9 — 사망 연기 단일 패프 (구름 4장 시트 소형화, smoke 시트 대체) */
   /* v4.1.8 — Unity 에셋스토어 유료 SPUM 캐릭터: Unity 프리팹을 정밀 파싱해 조합한
    *  프리미엄 픽셀 NPC 14종 — 챕터 마을 주민/상점/직업교관 비주얼 전면 업그레이드 */
   "spum_villager_m", "spum_villager_f", "spum_knight", "spum_elf", "spum_mage",

@@ -429,9 +429,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.state !== "attack") return;
       this.swingDone = true;
       this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, warrior ? 1.15 : 1, slashTint);
-      /* v3.0.24 — 도적(단검)=나이프음 / 전사·미전직=검 스윙 */
+      /* v3.0.24 — 도적(단검)=나이프음
+       * v4.1.9 — 전사·미전직=전용 검 참격음 (구형 swing 공용 → sword-slash, 매번 피치 변주) */
       if (fam === "thief") this.scene.sfxSkill("knife", 0.98 + Math.random() * 0.06);
-      else this.scene.sfxSwing();
+      else this.scene.sfxSkill("sword", 0.96 + Math.random() * 0.08);
       // 참격 판정 확대 — 전방 160px x 폭 116px (사용자 지시: 히트박스 크게)
       this.checkMeleeHit(dir, reach, 116, dmgMul, knock);
     });
@@ -442,7 +443,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.time.delayedCall(195, () => {
         if (this.state !== "attack") return;
         this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, 0.95, slashTint);
-        this.scene.sfxSwing();
+        this.scene.sfxSkill("sword2", 0.94 + Math.random() * 0.08); // v4.1.9 — 연타 2타 (sword 교대)
         this.checkMeleeHit(dir, reach, 116, dmgMul * 0.8, knock * 0.8);
       });
     }
@@ -450,7 +451,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.time.delayedCall(300, () => {
         if (this.state !== "attack") return;
         this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 0.9, slashTint);
-        this.scene.sfxSwing();
+        this.scene.sfxSkill("sword2", 1.04 + Math.random() * 0.08); // v4.1.9 — 연타 3타 (고피치 변주)
         this.checkMeleeHit(dir, reach, 116, dmgMul * 0.7, knock * 0.6);
         if (t >= 3) {
           // 검기 파동 — 관통 투사체 (3차: 관통 3 / 4차: 대형+관통 5)

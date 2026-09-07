@@ -2135,11 +2135,13 @@ export class WorldScene extends Phaser.Scene {
       emitting: false,
       blendMode: Phaser.BlendModes.ADD,
     }).setDepth(31);
-    this.smokeEmitter = this.add.particles(0, 0, "cfxr_smoke", {
-      lifespan: { min: 600, max: 950 },
-      speed: { min: 14, max: 52 },
-      scale: { start: 0.3, end: 0.85 },
-      alpha: { start: 0.5, end: 0 },
+    /* v4.1.9 — 사망 연기 재조정: 구름 4장 시트(512px) 통째 렌더 → 단일 패프(240px) 소형화
+     *  scale 0.3→0.85 (최대 435px 화면 덮음) → 0.12→0.3 (29~72px, 은은한 품질 연기) */
+    this.smokeEmitter = this.add.particles(0, 0, "cfxr_puff", {
+      lifespan: { min: 550, max: 850 },
+      speed: { min: 10, max: 38 },
+      scale: { start: 0.12, end: 0.3 },
+      alpha: { start: 0.42, end: 0 },
       angle: { min: 220, max: 320 },
       emitting: false,
     }).setDepth(31);
@@ -2397,9 +2399,9 @@ export class WorldScene extends Phaser.Scene {
 
   spawnDeathBurst(x: number, y: number) {
     this.spawnBurstAt(x, y, 10, 0xff9a8a);
-    /* v4.1.5 — 사망 연기 퍼프 (Kenney smoke — 잡몹 사망 후연출 강화) */
+    /* v4.1.9 — 사망 연기 퍼프 (단일 패프 소형화 — 화면 덮는 대형 연기 수정) */
     this.smokeEmitter?.setParticleTint(0xd8d0e8);
-    this.smokeEmitter?.explode(5, x, y - 6);
+    this.smokeEmitter?.explode(4, x, y - 6);
   }
 
   spawnSlamBurst(x: number, y: number) {

@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.1.8 · 프리미엄 에셋 II — 유료 SPUM 캐릭터 14종(NPC 전면 교체+주민 초상화 17종 신설)·유료 CFXR 이펙트 5종(타격/별/연기/마법/화염) — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.1.9 · 품질 폴리싱 — NPC 파츠 배치 정밀 수정(피벗/틴트 알파)·사망 연기 소형화·전사 전용 참격음 신설 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
