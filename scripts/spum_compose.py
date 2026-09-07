@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 """SPUM 프리팹 파서/조합기 — Unity YAML 프리팹을 PIL 레이어 합성으로 완성 캐릭터 PNG 변환
 - GUID→텍스처 매핑 (SPUM/Resources/**/*.meta)
-- 스프라이트 시트 rect (spriteSheet.sprites internalID)
+- 스프라이트 시트 rect + 커스텀 피벗 (spriteSheet.sprites internalID)
 - Transform 계층 누적 이동/스케일/회전 + SpriteRenderer z-order
 - PPU=32 (meta spritePixelsToUnits), Y축 반전(Unity up → canvas down)
+
+v4.1.9 수정 (유저 지적 "얼굴/파츠 배치 이상함"):
+1) 스프라이트 피벗 처리 — 기존엔 모든 파츠를 중앙 정렬로 붙여 관절(목/어깨/골반)이 어긋났다.
+   시트 항목의 pivot + 단일 스프라이트 meta 최상위 spritePivot을 반영해 피벗점을 트랜스폼 위치에 정렬.
+2) 틴트 알파 보존 — 기존 convert("RGB")로 알파가 유실돼 틴트 파츠가 불투명 사각형(파란 박스)으로 렌더됐다.
+   채널 분리 multiply로 RGB만 틴트하고 알파 유지.
+3) 회전을 피벗점 기준으로 (패딩 홀더 후 중앙 회전) + flipx 시 피벗 X 반전.
 """
 import os, re, sys, glob, math, json
 from PIL import Image
@@ -14,7 +21,8 @@ PPU = 32.0
 
 # ---------- 1) 메타 파싱: guid → {texPath, sprites{internalID: rect}} ----------
 def parse_meta_sprites(meta_path):
-    """meta 파일에서 guid + spriteSheet.sprites rect 목록 추출"""
+    """meta 파일에서 guid + spriteSheet.sprites rect/피벗 추출 + 최상위 spritePivot(단일 스프라이트용)
+    v4.1.9 — 피벗 미처리가 파츠 배치 붕괴의 원인 1: 시트 항목 pivot, 단일 스프라이트 spritePivot 모두 반영"""
     try:
         with open(meta_path, "r", encoding="utf-8", errors="ignore") as f:
             txt = f.read()
@@ -25,28 +33,46 @@ def parse_meta_sprites(meta_path):
         return None
     guid = m.group(1)
     tex = meta_path[:-5]  # .meta 제거 → 실제 경로
+    # 단일 스프라이트(21300000)용 최상위 피벗 (alignment 9=custom, 기본 중앙)
+    pm = re.search(r"^  alignment:\s*(\d+)", txt, re.M)
+    pv = re.search(r"^  spritePivot: \{x:\s*([\d.eE+-]+),\s*y:\s*([\d.eE+-]+)\}", txt, re.M)
+    if pv:
+        root_pivot = (float(pv.group(1)), float(pv.group(2)))
+    elif pm and pm.group(1) == "0":
+        root_pivot = (0.5, 0.5)  # alignment 0 = Center
+    else:
+        root_pivot = (0.5, 0.5)
     sprites = {}
     # spriteSheet: 섹션의 sprites 목록만 추출 (spriteSheet: 이후 indent 유지 블록)
     sm = re.search(r"\n  spriteSheet:\n(.*?)(?=\n  \w|\Z)", txt, re.S)
     block = sm.group(1) if sm else ""
-    for sm2 in re.finditer(
-        r"- serializedVersion: 2\n      name: (\S[^\n]*?)\n      rect:\n        serializedVersion: 2\n        x: (-?[\d.]+)\n        y: (-?[\d.]+)\n        width: (-?[\d.]+)\n        height: (-?[\d.]+)\n(?:.*?)(?:      spriteID: \S+\n)?      internalID: (-?\d+)",
-        block, re.S):
-        name, x, y, w, h, iid = sm2.group(1), float(sm2.group(2)), float(sm2.group(3)), float(sm2.group(4)), float(sm2.group(5)), sm2.group(6)
-        sprites[iid] = {"name": name, "rect": (x, y, w, h)}
-    return guid, tex, sprites
+    # 항목 단위 분할 — name/rect/pivot/internalID를 항목별로 파싱 (피벗 누락 방지)
+    for entry in re.split(r"(?=    - serializedVersion: 2\n)", block):
+        nm = re.search(r"      name: (\S[^\n]*?)\n", entry)
+        rc = re.search(r"      rect:\n        serializedVersion: 2\n        x: (-?[\d.]+)\n        y: (-?[\d.]+)\n        width: (-?[\d.]+)\n        height: (-?[\d.]+)", entry)
+        iidm = re.search(r"      internalID: (-?\d+)", entry)
+        if not (nm and rc and iidm):
+            continue
+        pvm = re.search(r"      pivot: \{x:\s*([\d.eE+-]+),\s*y:\s*([\d.eE+-]+)\}", entry)
+        pivot = (float(pvm.group(1)), float(pvm.group(2))) if pvm else (0.5, 0.5)
+        sprites[iidm.group(1)] = {
+            "name": nm.group(1),
+            "rect": (float(rc.group(1)), float(rc.group(2)), float(rc.group(3)), float(rc.group(4))),
+            "pivot": pivot,
+        }
+    return guid, tex, sprites, root_pivot
 
 def build_db():
-    texdb = {}   # guid -> {path, sprites{iid: rect}}
+    texdb = {}   # guid -> {path, sprites{iid: {rect,pivot}}, root_pivot}
     metas = glob.glob(os.path.join(ROOT, "**", "*.png.meta"), recursive=True)
     for mp in metas:
         r = parse_meta_sprites(mp)
         if not r:
             continue
-        guid, tex, sprites = r
+        guid, tex, sprites, root_pivot = r
         if not os.path.exists(tex):
             continue
-        texdb[guid] = {"path": tex, "sprites": sprites}
+        texdb[guid] = {"path": tex, "sprites": sprites, "root_pivot": root_pivot}
     return texdb
 
 # ---------- 2) 프리팹 파싱 ----------
@@ -202,6 +228,7 @@ def compose(prefab_path, texdb, out_png, upscale=3, verbose=False):
     return items, canvas, (minx, miny), get_tex
 
 def compose2(prefab_path, texdb, out_png, upscale=3, verbose=False):
+    """v4.1.9 — 피벗 정렬 + 알파 보존 틴트 + 피벗 기준 회전 (파츠 배치 붕괴 수정)"""
     docs = parse_prefab(prefab_path)
     gos, transforms, srs = get_component_docs(docs)
     if not transforms:
@@ -225,13 +252,14 @@ def compose2(prefab_path, texdb, out_png, upscale=3, verbose=False):
         if go in go_sr and "shadow" not in gname.lower():
             sr = srs[go_sr[go]]
             if sr["guid"] in texdb:
-                sps = texdb[sr["guid"]]["sprites"]
+                td = texdb[sr["guid"]]
+                sps = td["sprites"]
                 if sr["iid"] in sps:
                     sp = sps[sr["iid"]]
                 else:
-                    # 단일 스프라이트(21300000) — 텍스처 전체 사용
+                    # 단일 스프라이트(21300000) — 텍스처 전체 + meta 최상위 피벗
                     w0, h0 = tex_size(texdb, sr["guid"])
-                    sp = {"name": "_full", "rect": (0, 0, w0, h0)}
+                    sp = {"name": "_full", "rect": (0, 0, w0, h0), "pivot": td["root_pivot"]}
                 zc[0] += 1
                 items.append((zc[0], x, y, ang, sp, sr["color"], sr["flipx"], sx, sy, sr["guid"]))
         for ch in tf["children"]:
@@ -249,17 +277,23 @@ def compose2(prefab_path, texdb, out_png, upscale=3, verbose=False):
             img_cache[guid] = Image.open(texdb[guid]["path"]).convert("RGBA")
         return img_cache[guid]
 
+    # bounds — 피벗 반영 (피벗 기준 좌우/상하 비대칭 폭) + 회전 여유
     minx = miny = 10**9
     maxx = maxy = -10**9
     for z, x, y, ang, sp, col, flipx, sx, sy, guid in items:
         gx, gy, gw, gh = sp["rect"]
-        hw, hh = gw * sx / 2, gh * sy / 2
+        pvx, pvy = sp.get("pivot", (0.5, 0.5))
+        if flipx:
+            pvx = 1.0 - pvx
+        hw = max(pvx, 1.0 - pvx) * gw * abs(sx) + abs(gw * sx) * 0.15  # 회전 여유 15%
+        hh = max(pvy, 1.0 - pvy) * gh * abs(sy) + abs(gh * sy) * 0.15
         minx, miny = min(minx, x - hw), min(miny, y - hh)
         maxx, maxy = max(maxx, x + hw), max(maxy, y + hh)
     W = int(math.ceil(maxx - minx)) + 4
     H = int(math.ceil(maxy - miny)) + 4
     canvas = Image.new("RGBA", (max(W, 8), max(H, 8)), (0, 0, 0, 0))
 
+    from PIL import ImageChops
     for z, x, y, ang, sp, col, flipx, sx, sy, guid in items:
         gx, gy, gw, gh = sp["rect"]
         gx, gy, gw, gh = int(gx), int(gy), int(gw), int(gh)
@@ -267,25 +301,40 @@ def compose2(prefab_path, texdb, out_png, upscale=3, verbose=False):
         tw, th = max(1, int(round(gw * sx))), max(1, int(round(gh * sy)))
         if (tw, th) != crop.size:
             crop = crop.resize((tw, th), Image.NEAREST)
+        # 피벗 (캔버스 기준 좌상단 원점 오프셋) — flipx 시 X 반전
+        pvx, pvy = sp.get("pivot", (0.5, 0.5))
         if flipx:
             crop = crop.transpose(Image.FLIP_LEFT_RIGHT)
-        if abs(ang) > 0.5:
-            crop = crop.rotate(ang, expand=True, resample=Image.NEAREST)
+            pvx = 1.0 - pvx
+        ox = pvx * crop.width
+        oy = (1.0 - pvy) * crop.height  # Unity 피벗 y는 좌하단 원점 → 캔버스는 우하단 반전
         r, g, b, a = col
+        # v4.1.9 — 틴트: 채널 분리 multiply (알파 보존 — 기존 convert("RGB")가
+        # 알파를 255로 채워 틴트 파츠가 불투명 사각형으로 렌더되던 버그 수정)
         if (r, g, b, a) != (1, 1, 1, 1):
-            if a < 1:
-                al = crop.getchannel("A").point(lambda v: int(v * a))
-                crop.putalpha(al)
+            rr, gg, bb, aa = crop.split()
             if (r, g, b) != (1, 1, 1):
-                # 틴트 = 픽셀별 곱셈 (내부 음영 보존)
-                from PIL import ImageChops
                 solid = Image.new("RGBA", crop.size, (int(r * 255), int(g * 255), int(b * 255), 255))
-                rgb = ImageChops.multiply(crop.convert("RGB"), solid.convert("RGB"))
-                crop = rgb.convert("RGBA")
-                crop.putalpha(crop.getchannel("A") if a >= 1 else al)
-        px = int(round(x - minx - crop.width / 2))
-        py = int(round(y - miny - crop.height / 2))
-        canvas.alpha_composite(crop, (px, py))
+                sr2, sg2, sb2, _ = solid.split()
+                rr = ImageChops.multiply(rr, sr2)
+                gg = ImageChops.multiply(gg, sg2)
+                bb = ImageChops.multiply(bb, sb2)
+            if a < 1:
+                aa = aa.point(lambda v: int(v * a))
+            crop = Image.merge("RGBA", (rr, gg, bb, aa))
+        # 회전 — 피벗점을 중심에 놓은 홀더에서 회전 (피벗 위치 유지)
+        if abs(ang) > 0.5:
+            R = int(math.ceil(math.hypot(crop.width, crop.height))) + 2
+            holder = Image.new("RGBA", (R, R), (0, 0, 0, 0))
+            holder.paste(crop, (int(R // 2 - ox), int(R // 2 - oy)), crop)
+            holder = holder.rotate(ang, resample=Image.NEAREST)  # PIL CCW = Unity CCW 표시 방향 동일
+            px = int(round(x - minx - holder.width / 2))
+            py = int(round(y - miny - holder.height / 2))
+            canvas.alpha_composite(holder, (px, py))
+        else:
+            px = int(round(x - minx - ox))
+            py = int(round(y - miny - oy))
+            canvas.alpha_composite(crop, (px, py))
 
     if upscale != 1:
         canvas = canvas.resize((canvas.width * upscale, canvas.height * upscale), Image.NEAREST)
