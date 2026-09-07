@@ -203,3 +203,19 @@
   조명 마스크(light)·연기(smoke)·별(star)·마법(magic)·화염(fire/flame)·스파크(spark)·
   원(circle)·버스트(muzzle)·먼지(dirt) — https://kenney.nl/assets/particle-pack
   (동일 팩은 기존 v1 glow/ring/orb/spark에도 사용됨)
+
+## v4.1.7 — Unity Asset Store 유료 에셋 (유저 구매)
+- Fantasy UI SFX — Lite Edition (유료 구매) — 효과음 17종:
+  · 기존 교체(drop-in): sfx_swing←Weapon, sfx_hit←Wood Impact, sfx_spin←Weapon,
+    sfx_dash←Arrow & Bow, sfx_hurt←Armor, sfx_pickup←Coins, sfx_quest←Magical Interface,
+    sfx_levelup←Magical Texture Chimes, sfx_portal←Magical Interface
+  · 신규 전용음: sfx_coin←Coins, sfx_potion←Potion Item, sfx_equip←Armor,
+    sfx_upgrade←Blacksmithing, sfx_click←Interface, sfx_open/close←Bag Handle,
+    sfx_ach←Special Interface (WAV→OGG mono q4 변환)
+- Cartoon FX Remaster — JMO Assets (유료 구매) — VFX 텍스처: /assets/pfx_*
+  · 레벨업 중앙 스타 플래시(pfx_star), 보스 등장 룬 마법진(pfx_runic)/오라 광선(pfx_aura)
+- FireworksEffect2D (유료 구매) — 네온 불꽃놀이 텍스처: /assets/pfx_fw_b·pfx_fw_y
+  · 레벨업 2색 불꽃놀이 폭발 (중력 낙하 궤적)
+- 미사용 보관: SPUM(캐릭터 제작은 Unity 에디터 필요 — 웹/Phaser 직접 사용 불가),
+  Sci-Fi Irregular Frames(스타일 불일치), CFXR 잉걸불/해골 등 예비 텍스처
+  (upload/ 원본 보존 — 추출 경로: scripts/_unity_extract/)

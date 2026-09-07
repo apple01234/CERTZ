@@ -7,6 +7,10 @@ import type Phaser from "phaser";
  *    · 40곡 전부를 챕터 성격에 맞는 풀로 배치 (맵마다 적절히 — CHAPTER_TRACKS 참조)
  *    · 보스 구역(10)은 전투곡, 챕터 마을(Xv)·실내는 마을곡, 타이틀은 title1
  *  - SFX: 80 CC0 RPG SFX / 80 CC0 creature SFX — Rubberduck (CC0)
+ *    v4.1.7 — Unity Asset Store 유료 에셋(Fantasy UI SFX)으로 주요 UI/아이템음 교체·신규 추가:
+ *    · 교체(동일 키 drop-in): swing/hit/spin/dash/hurt/pickup/quest/levelup/portal
+ *    · 신규 전용음: coin/potion/equip/upgrade/click/open/close/ach
+ *    · 유지(Rubberduck): roar/die/bossdie — 팩에 몬스터 포효/사망음이 없음
  * 출처/라이선스: public/assets/CREDITS.md
  */
 
@@ -466,6 +470,15 @@ export const SFX_VOLUMES: Record<string, number> = {
   sfx_roar: 0.56,
   sfx_die: 0.38,
   sfx_bossdie: 0.66,
+  /* v4.1.7 — 유료 팩 신규 전용음 볼륨 래더 (게임플레이 4종 + UI 4종) */
+  sfx_coin: 0.4,
+  sfx_potion: 0.42,
+  sfx_equip: 0.46,
+  sfx_upgrade: 0.52,
+  sfx_click: 0.3,
+  sfx_open: 0.34,
+  sfx_close: 0.3,
+  sfx_ach: 0.56,
 };
 
 /* ================= v3.0.24 — 직업별 스킬 전용 효과음 =================
@@ -566,29 +579,43 @@ export const sfx = {
     play("sfx_bossdie", SFX_VOLUMES.sfx_bossdie);
     play("sfx_roar", 0.44, 0.75);
   },
-  /** 골드 픽업 — item_gem_01 고피치 변주 (동일 CC0 파일 재사용 · v3.0.22 볼륨 하향) */
+  /** 골드 픽업 — v4.1.7 유료 팩 전용 코인음 (피치 변주 — 매번 같은 소리 방지) */
   coin() {
-    play("sfx_pickup", 0.32, 1.25 + Math.random() * 0.25);
+    play("sfx_coin", SFX_VOLUMES.sfx_coin, 0.94 + Math.random() * 0.12);
   },
-  /** 물약 마심 — spell_01 저피치 단발 */
+  /** 물약 마심 — v4.1.7 유료 팩 전용 물약음 */
   potion() {
-    play("sfx_levelup", 0.32, 1.25);
+    play("sfx_potion", SFX_VOLUMES.sfx_potion);
   },
-  /** 장비 장착 — item_gem_04 저피치 (차임) */
+  /** 장비 장착 — v4.1.7 유료 팩 전용 갑옷 장착음 (퀘스트 차임 대용 해제) */
   equip() {
-    play("sfx_quest", 0.42, 0.85);
+    play("sfx_equip", SFX_VOLUMES.sfx_equip);
   },
   /** 크리티컬 명중 — metal_02 고피치 샤프 음 (타격감 강조) */
   crit() {
     play("sfx_hit", 0.42, 1.55 + Math.random() * 0.15);
   },
-  /** 강화 성공 — 퀘스트 차임 저피치 (무게감 있는 성공음) */
+  /** 강화 성공 — v4.1.7 유료 팩 대장장이 모루음 (무게감 있는 성공음) */
   upgradeOk() {
-    play("sfx_quest", 0.5, 0.7);
+    play("sfx_upgrade", SFX_VOLUMES.sfx_upgrade);
   },
   /** 강화 실패 — hurt 저피치 (둔탁한 낙방음) */
   upgradeFail() {
     play("sfx_hurt", 0.42, 0.65);
+  },
+  /** v4.1.7 — 업적 수령 팡파레 (Special Interface) */
+  ach() {
+    play("sfx_ach", SFX_VOLUMES.sfx_ach);
+  },
+  /* v4.1.7 — React HUD 패널 개폐 UI음 (유료 팩 Interface/Bag Handle) */
+  uiClick() {
+    play("sfx_click", SFX_VOLUMES.sfx_click, 1 + Math.random() * 0.06);
+  },
+  uiOpen() {
+    play("sfx_open", SFX_VOLUMES.sfx_open);
+  },
+  uiClose() {
+    play("sfx_close", SFX_VOLUMES.sfx_close);
   },
   /** v3.0.24 — 직업별 스킬 전용 효과음 (SKILL_SFX_FILES 매핑)
    *  @param key 스킬 음향 키 (arrow/cast/knife/flame/wind/dark/holy/thunder 등)

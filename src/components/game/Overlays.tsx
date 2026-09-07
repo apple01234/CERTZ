@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.1.6 · 성능 최적화 — 오디오 재인코딩(-31%)·WebP 전환(-35%)·gzip 압축·정적 에셋 장기 캐시·폰트 프리로드 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.1.7 · 프리미엄 에셋 — Unity 에셋스토어 유료 SFX 17종(효과음 전면 교체+신규)·불꽃놀이 레벨업·보스 룬 마법진·패널 개폐 UI음 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 

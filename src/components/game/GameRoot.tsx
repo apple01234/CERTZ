@@ -24,6 +24,13 @@ export default function GameRoot() {
   const parentRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const { state, hud, quest, questLog, skills, dialogue, boss, banner, end, rpg, panel, setPanel } = useGameUi();
+  /* v4.1.7 — 패널 개폐 UI음 (유니티 에셋스토어 유료 SFX): HUD 버튼 토글 클릭음 + 열림 사운드 */
+  const togglePanelSfx = (key: "inv" | "job" | "stat" | "quest" | "boss" | "benefit" | "opt") => {
+    audio.sfx.uiClick();
+    const opening = panel !== key;
+    setPanel(opening ? key : null);
+    if (opening) audio.sfx.uiOpen();
+  };
   // 클라이언트 전용 컴포넌트(ssr:false)라 localStorage 지연 초기화 안전 — 음소거 설정 복원
   const [muted, setMuted] = useState(() => loadMuted());
   const [portraitMobile, setPortraitMobile] = useState(false);
@@ -104,13 +111,13 @@ export default function GameRoot() {
                   audio.setMuted(next);
                   writeMuted(next); // 설정 저장 — 새로고침/APK 재실행 후에도 유지
                 }}
-                onOpenInv={() => setPanel(panel === "inv" ? null : "inv")}
-                onOpenJob={() => setPanel(panel === "job" ? null : "job")}
-                onOpenStat={() => setPanel(panel === "stat" ? null : "stat")}
-                onOpenQuest={() => setPanel(panel === "quest" ? null : "quest")}
-                onOpenBoss={() => setPanel(panel === "boss" ? null : "boss")}
-                onOpenBenefit={() => setPanel(panel === "benefit" ? null : "benefit")}
-                onOpenOpt={() => setPanel(panel === "opt" ? null : "opt")}
+                onOpenInv={() => togglePanelSfx("inv")}
+                onOpenJob={() => togglePanelSfx("job")}
+                onOpenStat={() => togglePanelSfx("stat")}
+                onOpenQuest={() => togglePanelSfx("quest")}
+                onOpenBoss={() => togglePanelSfx("boss")}
+                onOpenBenefit={() => togglePanelSfx("benefit")}
+                onOpenOpt={() => togglePanelSfx("opt")}
               />
             </div>
             {!panel && (
@@ -174,7 +181,7 @@ export default function GameRoot() {
         {/* 인트로 이름 짓기 패널 */}
         <NamePanel />
 
-        <GamePanels panel={panel} rpg={rpg} hud={hud} questLog={questLog} onClose={() => setPanel(null)} />
+        <GamePanels panel={panel} rpg={rpg} hud={hud} questLog={questLog} onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />
 
         <RotatePrompt active={portraitMobile} />
       </div>

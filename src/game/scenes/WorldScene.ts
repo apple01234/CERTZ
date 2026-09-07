@@ -350,6 +350,9 @@ export class WorldScene extends Phaser.Scene {
   private starEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private smokeEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private magicEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  /* v4.1.7 — 유료 팩(FireworksEffect2D) 네온 별 불꽃놀이 이미터 (레벨업 전용) */
+  private fwEmitterB!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private fwEmitterY!: Phaser.GameObjects.Particles.ParticleEmitter;
 
   /* ----- 멀티플레이 (v1.7 — socket.io 동일 서버 접속자 동기화) ----- */
   private remotes = new Map<
@@ -2145,6 +2148,28 @@ export class WorldScene extends Phaser.Scene {
       emitting: false,
       blendMode: Phaser.BlendModes.ADD,
     }).setDepth(31);
+    /* v4.1.7 — 유료 팩 불꽃놀이 네온 별 2색 (파랑/노랑) — 중력 낙하 곡선으로
+     *  진짜 불꽃놀이 궤적. 레벨업 스폰레벨업FX에서 폭발 */
+    this.fwEmitterB = this.add.particles(0, 0, "pfx_fw_b", {
+      lifespan: { min: 700, max: 1150 },
+      speed: { min: 120, max: 300 },
+      gravityY: 240,
+      scale: { start: 0.34, end: 0 },
+      alpha: { start: 1, end: 0 },
+      rotate: { min: 0, max: 360 },
+      emitting: false,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(31);
+    this.fwEmitterY = this.add.particles(0, 0, "pfx_fw_y", {
+      lifespan: { min: 700, max: 1150 },
+      speed: { min: 120, max: 300 },
+      gravityY: 240,
+      scale: { start: 0.34, end: 0 },
+      alpha: { start: 1, end: 0 },
+      rotate: { min: 0, max: 360 },
+      emitting: false,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(31);
 
     // 데미지 텍스트 12장 고정 풀
     for (let i = 0; i < 12; i++) {
@@ -2396,6 +2421,26 @@ export class WorldScene extends Phaser.Scene {
     this.starEmitter?.explode(16, x, y - 8);
     this.magicEmitter?.setParticleTint(0xfff0b0);
     this.magicEmitter?.explode(8, x, y - 10);
+    /* v4.1.7 — 유료 팩(FireworksEffect2D) 네온 별 불꽃놀이 2색 동시 폭발
+     *  + 중앙 백색 스타 플래시 (CFR star) */
+    this.fwEmitterB?.explode(14, x, y - 10);
+    this.fwEmitterY?.explode(14, x, y - 10);
+    const star = this.add.image(x, y - 14, "pfx_star").setDepth(32).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0);
+    this.tweens.add({ targets: star, scale: 1.5, alpha: 1, duration: 180, yoyo: true, hold: 90, onComplete: () => star.destroy() });
+  }
+
+  /** v4.1.7 — 보스 등장 룬 마법진 + 오라 광선 플래시
+   *  유니티 에셋스토어 유료 (Cartoon FX Remaster — cfxr aura runic/rays)
+   *  일반 보스는 황금룬, 카오스는 붉은룬. 지면 마법진 회전 확대 → 페이드아웃 */
+  spawnBossRunic(x: number, y: number, chaos: boolean) {
+    const tint = chaos ? 0xff5a4a : 0xffd76a;
+    const runic = this.add.image(x, y + 14, "pfx_runic").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.1).setAlpha(0);
+    this.tweens.add({ targets: runic, alpha: 0.9, scale: 1.6, duration: 620, ease: "Cubic.out" });
+    this.tweens.add({ targets: runic, angle: 120, duration: 2300 });
+    this.tweens.add({ targets: runic, alpha: 0, delay: 1500, duration: 800, onComplete: () => runic.destroy() });
+    const aura = this.add.image(x, y - 20, "pfx_aura").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.2).setAlpha(0);
+    this.tweens.add({ targets: aura, alpha: 0.75, scale: 1.35, duration: 420, yoyo: true, hold: 120, onComplete: () => aura.destroy() });
+    this.tweens.add({ targets: aura, angle: 45, duration: 1100 });
   }
 
   spawnCrack(x: number, y: number) {
@@ -3214,7 +3259,7 @@ export class WorldScene extends Phaser.Scene {
             { text: `피규어 조각 +${ach.shards}`, color: "#ffd76a" },
           ] satisfies RewardPopupState["lines"],
         });
-        audio.sfx.questDone();
+        audio.sfx.ach(); /* v4.1.7 — 업적 전용 팡파레 (유료 팩) */
         this.save();
         this.emitRpgState();
         break;
@@ -4205,6 +4250,7 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.shake(260, 0.008);
     this.showBanner(`${def.name} 출현!`);
     this.boss = new Boss(this, bx, by, def, "normal");
+    this.spawnBossRunic(bx, by, false); /* v4.1.7 — 유료 팩 룬 마법진 */
     this.applyBossPostFX(false); /* v4.1.5 — 보스전 블룸 */
     this.physics.add.collider(this.boss, this.solidGroup);
     EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
@@ -4251,6 +4297,7 @@ export class WorldScene extends Phaser.Scene {
     /* v4.1.4 — 카오스 등장 강조 배너 */
     this.showBanner(lv === "chaos" ? `카오스 재림 — ${base.name}!! (전용 패턴 개방)` : `재림한 ${base.name} 출현!`);
     this.boss = new Boss(this, bx, by, def, lv);
+    this.spawnBossRunic(bx, by, lv === "chaos"); /* v4.1.7 — 룬 마법진 (카오스는 붉은룬) */
     this.applyBossPostFX(lv === "chaos"); /* v4.1.5 — 카오스: 블룸+비네트+잉걸불 오라 */
     this.physics.add.collider(this.boss, this.solidGroup);
     EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });

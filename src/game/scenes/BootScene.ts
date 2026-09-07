@@ -174,6 +174,11 @@ const ASSET_LIST = [
   "pk_circle_02", "pk_circle_04",
   "pk_muzzle_02", "pk_muzzle_04",
   "pk_dirt_01", "pk_dirt_02",
+  /* v4.1.7 — Unity Asset Store 유료 에셋 (유저 구매): Cartoon FX Remaster(JMO) + FireworksEffect2D
+   *  레벨업 불꽃놀이·보스 룬 마법진/오라·타격 임팩트 등 프리미엄 VFX 텍스처 */
+  "pfx_hit", "pfx_magic", "pfx_star", "pfx_runic", "pfx_aura",
+  "pfx_ring", "pfx_elec", "pfx_skull", "pfx_fw_b", "pfx_fw_y",
+  "pfx_heart", "pfx_spark_y",
 ] as const;
 
 const AUDIO_LIST: string[] = [
@@ -183,6 +188,10 @@ const AUDIO_LIST: string[] = [
   "sfx_swing", "sfx_hit", "sfx_spin", "sfx_dash", "sfx_hurt",
   "sfx_pickup", "sfx_quest", "sfx_levelup", "sfx_portal",
   "sfx_roar", "sfx_die", "sfx_bossdie",
+  /* v4.1.7 — Unity Asset Store 유료 SFX (Fantasy UI SFX) 전용음 8종:
+   *  코인/물약/장착/강화는 타 음원 피치변주 대용 → 실제 정체성 음원으로 승격 */
+  "sfx_coin", "sfx_potion", "sfx_equip", "sfx_upgrade",
+  "sfx_click", "sfx_open", "sfx_close", "sfx_ach",
   /* v3.0.24 — 직업별 스킬 전용 효과음 27종 (효과음연구소) */
   ...SKILL_SFX_TRACKS,
 ];
