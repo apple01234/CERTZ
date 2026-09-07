@@ -767,3 +767,30 @@ Stage Summary:
 - 전환 검은 화면 3중 방어 완비 — 경합 자체가 불가능해졌고, 만약의 잔상도 1~3초 내 자동 복구
 - 진단 스크립트 보존: scripts/dbg_transition·dbg_fade·dbg_fade2·dbg_pixel·dbg_gate·dbg_heal·dbg_shot·smoke_v412_transition
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 46
+Agent: Super Z (메인)
+Task: 유저 리포트 9건(자동전투 포탈 검은화면/브금빈도/어시스트 불일치/퀘스트 카운트 불일치/자동사냥 포탈 차단/전직 조건 미표시/보스바 모바일/신화 고증/1차 전사 차별화) → v4.1.3
+
+Work Log:
+- 세션 리셋으로 워크스페이스 초기화 → origin/main 리셋 복구(v4.1.2 상태, 4f3b2db). bun install 재설치
+- ①자동사냥 포탈(#1·#5): 전진/복귀 포탈 overlap에 autoHunt 게이트(5초 스로틀 배너 "자동사냥 중에는 차원문을 타지 않는다") + randomOpenPointNear가 포탈 주변 130px 배회 목표 제외 — 자동전투가 포탈을 타서 전환되는 트리거 자체 제거
+- ②BGM(#2): audio.ts CHAPTER_THEME 신설 — 챕터당 대표곡 1곡 고정(구역 1~9 순환 제거). 마을(Xv)/보스 구역(10)/보스 조우 오버라이드 유지
+- ③어시스트(#3): questTargetPos hunt 케이스가 무종별 최근접 몬스터를 가리키던 것 → 퀘스트 대상 종(targetKeys/targetKey)만 필터(e.def.key)
+- ④퀘스트 카운트(#4): 자동 토벌 퀘스트 desc에 "무엇을 잡아도 카운트된다 (종 목록)" 명시 — targetKeys 합산과 표기 정합
+- ⑤전직 조건(#6): QuestState.jobStory 확장(stepDesc/current/need/hint) + HUD 블록 렌더링 — "1/3 — 첫 수련 [3/8]" + 수행 방법 + 힌트(카이엔 말 걸기 등). completeJobStoryStep에 emitQuest 추가
+- ⑥보스바(#7): Overlays BossBar에 (pointer:coarse)+(max-height:560px) 감지 컴팩트 판 — 가로 폰에서 sm: 데스크톱 크기(72%)가 적용되던 것이 원인. 폭 44%/280px, 바 h-1.5
+- ⑦신화 고증(#8, 링크=잠뜰 아뜰란티스): 최종보스 표기 니드그림→아부디토스 전면 통일(BOSS_DEFS/대사 8곳/아이템/퀘스트/DialogueBox 초상), 수르트 "화염의 거인", 스콜&하티 "쌍랑", 헬 보스 그람→가름(Garmr — 헬의 문지기 사냥개, 그람은 시구르드의 검)
+- ⑧1차 전사(#9): skill1Spin t=1 위력 +0.25(1.9→2.15, 미전직 1.6) + 은백 버스트/충격 링 t=1 전용 연출 + 돌진 종착 은백 파동(Player.dash 종료) — 미전직과 확실히 구분(2차+ 곡선 불변)
+- [툴체인 재구축] 세션 리셋으로 JDK/SDK 소실 → Temurin 21.0.5(/home/z/jdk) + cmdline-tools 11076708 + platforms;android-36 + build-tools;35.0.0
+- [빌드 트러블] 백그라운드 nohup 빌드가 툴콜 종료와 함께 사망(로그 정지) → gradle 단계를 단일 10분 콜로 직접 실행(BUILD SUCCESSFUL 7m47s, 콜드 캐시) → build_apk.sh 재실행 42s(웜) 성공
+- [검증] tsc 0 에러(Enemy 종 키는 def.key 접근) · aapt versionCode 50/4.1.3 · BILLING/AdMob APPLICATION_ID xmltree 확인 · 144,886,471B · md5 d9f4cd3786efe6808a07df0aad510614
+- [릴리스] GitHub Release v4.1.3(id 383761699) 업로드 → 재다운로드 md5 일치
+- [버저닝/문서] versionCode 50/4.1.3, Overlays 배지, server.js·next.config 미러, apk-guide.html·APK_다운로드_안내.txt 전면 v4.1.3
+
+Stage Summary:
+- v4.1.3 배포: https://github.com/apple01234/CERTZ/releases/download/v4.1.3/SERTZ-v4.1.3.apk (md5 d9f4cd37…, versionCode 50)
+- 자동사냥 중 포탈 전환 트리거 원천 차단(검은 화면 재발 경로 제거) + 8개 UX/고증 개선
+- 백그라운드 프로세스는 툴콜 종료 시 사망함 — 장기 빌드는 단일 콜 안에서 실행할 것(교훈)
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
