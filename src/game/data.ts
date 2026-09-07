@@ -48,7 +48,7 @@ export type {
 } from "./stages";
 
 /** 몬스터 골드 드롭 조정 계수 (사용자 지시 #6 — 골드 과다 수정) */
-export const GOLD_DROP_SCALE = 0.62;
+export const GOLD_DROP_SCALE = 0.75; // v4.2.0 — 0.62→0.75 (+21% 골드, 피로도 완화)
 
 /** 강화 비용 — 단계별 눈덩이 곡선 (높은 단계일수록 골드 소모 급증 → 골드 싱크)
  *  v3.0.5 — ★12부터 추가 계수 1.6^(성-11) 가산 (스타포스 후반부 급증 구간) */
@@ -355,7 +355,7 @@ export const DMG_PCT = {
   elite: 0.06,       // 정예/시험 상대
   boss: 0.09,        // 보스 탄막·돌진
   bossSlam: 0.12,    // 보스 강타
-  plant: 0.05,       // 육식 식물
+  plant: 0.1,        // v4.2.0 — 육식 식물: 최대체력 10% 고정데미지 (hitPlantHazard에서 trueDmg로 적용)
 } as const;
 
 /** 강화 1단계당 보너스 */

@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.1.9 · 품질 폴리싱 — NPC 파츠 배치 정밀 수정(피벗/틴트 알파)·사망 연기 소형화·전사 전용 참격음 신설 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.2.0 · 밸런스 & 난이도 — 전사 5차 참격음·이펙트 절제·피로도 완화(EXP/골드/리젠)·어둠 스테이지 광원 축소·보스바 확대·식인초 10% 고정데미지 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
@@ -138,16 +138,16 @@ export function BossBar({ boss }: { boss: { name: string; hp: number; maxHp: num
       <div
         className={
           compact
-            ? "w-[44%] max-w-[280px] rounded-md border border-purple-300/50 bg-black/65 px-1.5 py-0.5 shadow-lg backdrop-blur-sm"
-            : "w-[46%] max-w-[400px] rounded-md border border-purple-300/50 bg-black/70 px-2 py-1.5 shadow-xl backdrop-blur-sm sm:w-[72%] sm:max-w-xl sm:rounded-lg sm:px-3 sm:py-2"
+            ? "w-[64%] max-w-[400px] rounded-md border border-purple-300/50 bg-black/65 px-2 py-1 shadow-lg backdrop-blur-sm" /* v4.2.0 — 44%/280px → 64%/400px 확대 (유저: 보스바가 조금 작음) */
+            : "w-[52%] max-w-[480px] rounded-md border border-purple-300/50 bg-black/70 px-2 py-1.5 shadow-xl backdrop-blur-sm sm:w-[78%] sm:max-w-2xl sm:rounded-lg sm:px-3 sm:py-2"
         }
       >
         <div className={compact ? "mb-0.5 flex items-center justify-between" : "mb-1 flex items-center justify-between"}>
           <span
             className={
               compact
-                ? "max-w-[70%] truncate text-[9px] font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000]"
-                : "truncate text-[10px] font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000] sm:text-sm"
+                ? "max-w-[70%] truncate text-[11px] font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000]"
+                : "truncate text-[11px] font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000] sm:text-sm"
             }
           >
             {boss.name}
@@ -156,7 +156,7 @@ export function BossBar({ boss }: { boss: { name: string; hp: number; maxHp: num
             {Math.ceil(pct)}%
           </span>
         </div>
-        <div className={compact ? "h-1.5 overflow-hidden rounded-full border border-black/70 bg-black/70" : "h-2 overflow-hidden rounded-full border border-black/70 bg-black/70 sm:h-3.5"}>
+        <div className={compact ? "h-2.5 overflow-hidden rounded-full border border-black/70 bg-black/70" : "h-2.5 overflow-hidden rounded-full border border-black/70 bg-black/70 sm:h-4"}>
           <div
             className="h-full bg-gradient-to-b from-fuchsia-400 to-purple-800 transition-[width] duration-200"
             style={{ width: `${pct}%` }}

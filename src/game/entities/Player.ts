@@ -98,7 +98,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v3.0.6 (지시 #8) — 보스 공격 방어 관통률 (Boss.takeDamage 호출 시 true) */
   bossPierceHit = false;
 
-  speed = 225;
+  speed = 240; // v4.2.0 — 225→240 (피로도 완화: 사냥 회전률 +7%)
   /** 이동 기본값 — 클래스 속도 보너스는 이 값에 배율 (recalcSpeed)
    *  v3.0.16 — 230→265 (+15%) / v3.0.18 — 265→300 (+13%)
    *  v3.0.24 — 300→225 되돌림 (유저: "기본 이속이 너무 빠름 — 강화 및 스텟을 올려야지 빠르게 해야지!!")
@@ -430,9 +430,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.swingDone = true;
       this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, warrior ? 1.15 : 1, slashTint);
       /* v3.0.24 — 도적(단검)=나이프음
-       * v4.1.9 — 전사·미전직=전용 검 참격음 (구형 swing 공용 → sword-slash, 매번 피치 변주) */
+       * v4.2.0 — 전사·미전직=5차 궁극기(천멸) 참격음로 승격 (유저 지시: 기본공격음을 5차 효과음으로)
+       *  매번 피치 변주 — 대형 검 참격임에도 반복 단조로움 방지 */
       if (fam === "thief") this.scene.sfxSkill("knife", 0.98 + Math.random() * 0.06);
-      else this.scene.sfxSkill("sword", 0.96 + Math.random() * 0.08);
+      else this.scene.sfxSkill("bigsword", 0.9 + Math.random() * 0.08);
       // 참격 판정 확대 — 전방 160px x 폭 116px (사용자 지시: 히트박스 크게)
       this.checkMeleeHit(dir, reach, 116, dmgMul, knock);
     });
@@ -443,7 +444,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.time.delayedCall(195, () => {
         if (this.state !== "attack") return;
         this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, 0.95, slashTint);
-        this.scene.sfxSkill("sword2", 0.94 + Math.random() * 0.08); // v4.1.9 — 연타 2타 (sword 교대)
+        this.scene.sfxSkill("bigsword", 1.06 + Math.random() * 0.08); // v4.2.0 — 연타 2타 (고피치 변주)
         this.checkMeleeHit(dir, reach, 116, dmgMul * 0.8, knock * 0.8);
       });
     }
@@ -451,7 +452,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.time.delayedCall(300, () => {
         if (this.state !== "attack") return;
         this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 0.9, slashTint);
-        this.scene.sfxSkill("sword2", 1.04 + Math.random() * 0.08); // v4.1.9 — 연타 3타 (고피치 변주)
+        this.scene.sfxSkill("bigsword", 1.14 + Math.random() * 0.08); // v4.2.0 — 연타 3타 (최고피치 변주)
         this.checkMeleeHit(dir, reach, 116, dmgMul * 0.7, knock * 0.6);
         if (t >= 3) {
           // 검기 파동 — 관통 투사체 (3차: 관통 3 / 4차: 대형+관통 5)
@@ -1352,7 +1353,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* v3.0.24 — 기동기 직업별 사운드 (기존 전원 sfxDash 공용 → 클래스 정체성 분리)
      *  전사=질주 / 마법사=점멸(worp) / 도적=암흑 / 궁수=질풍 / 버서커·가디언=중장 돌진 / 어세신=암습 */
     const DASH_SND: Record<string, [string, number]> = {
-      dash: ["dash2", 1],
+      dash: ["sword", 0.92], // v4.2.0 — 1차 돌진기는 기존 기본공격 참격음 승계 (유저 지시)
       windstep: ["wind2", 1.05],
       blink: ["worp", 1],
       shadowveil: ["dark", 1.05],
@@ -3004,10 +3005,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v3.0.6 — hpPct(0~1): maxHP % 고정 피해 하한 (몬스터/보스 전용 — 후반 탱킹 방지)
    *  v3.3.0 (지시 #5) — 챕터 4(알프헤임)부터 % 고정 피해 적용, 그 전은 순수 수치 피해만
    *  (초보 마을 느낌: 초반 맵은 방어/레벨로 데미지를 0까지 깎을 수 있고, 후반은 %로 고정 방어 무시) */
-  takeDamage(dmg: number, fromDir: Phaser.Math.Vector2, pierce = 0, hpPct = 0) {
+  takeDamage(dmg: number, fromDir: Phaser.Math.Vector2, pierce = 0, hpPct = 0, trueDmg = false) {
     if (this.iframes > 0 || this.state === "dead") return;
-    const pctFloor = hpPct > 0 && this.stageCh >= 4 ? Math.round(this.maxHp * hpPct) : 0;
-    const final = Math.max(this.applyDefense(dmg, pierce), pctFloor);
+    /* v4.2.0 — trueDmg: 방어력/피해 하한 무시 고정 피해 (식인초 최대체력 10% 고정데미지 전용) */
+    const pctFloor = trueDmg ? 0 : hpPct > 0 && this.stageCh >= 4 ? Math.round(this.maxHp * hpPct) : 0;
+    const final = trueDmg ? dmg : Math.max(this.applyDefense(dmg, pierce), pctFloor);
     this.hp -= final;
     this.iframes = 600;
     this.scene.sfxHurt();

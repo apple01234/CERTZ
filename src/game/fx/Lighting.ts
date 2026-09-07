@@ -57,6 +57,8 @@ export class Lighting {
   private baseAlpha = 0;
   private flickerAmt = 0;
   private phase = Math.random() * Math.PI * 2;
+  /** v4.2.0 — 구역 진행에 따른 횃불 축소 배율 (1 = 기본, 구역마다 ×0.93, 최소 0.4) */
+  private torchMul = 1;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -86,6 +88,17 @@ export class Lighting {
       this.baseScale = 1.35;
       this.baseAlpha = 0.5;
       this.flickerAmt = 0.05;
+    }
+  }
+
+  /** v4.2.0 — 구역(sub) 진행률에 따른 횃불 광원 축소 (유저 지시: 스테이지를 지날때마다 줄어들게 —
+   *  보스 구역에서 시야가 좁아져 투사체 회피 난이도 상승). sub 1 = 100%, 이후 구역마다 ×0.93, 하한 40%.
+   *  밝은 챕터(오버레이 없음)는 효과가 체감되지 않는다 (암전 챕터에서만 의미 있음). */
+  setTorchStage(sub: number) {
+    this.torchMul = Math.max(0.4, 1 - Math.max(0, sub - 1) * 0.07);
+    if (this.playerLight) {
+      this.playerLight.setScale(this.baseScale * this.torchMul);
+      this.playerLight.setAlpha(this.baseAlpha * (0.7 + 0.3 * this.torchMul));
     }
   }
 
@@ -125,8 +138,9 @@ export class Lighting {
       this.playerLight.y += (py - this.playerLight.y) * k;
       this.phase += dt * 0.006;
       const f = 1 + Math.sin(this.phase) * this.flickerAmt + Math.sin(this.phase * 2.7) * this.flickerAmt * 0.5;
-      this.playerLight.setAlpha(this.baseAlpha * f);
-      this.playerLight.setScale(this.baseScale * (1 + (f - 1) * 0.35));
+      /* v4.2.0 — torchMul 반영: 구역 진행할수록 작아지고 어두워지는 횃불 */
+      this.playerLight.setAlpha(this.baseAlpha * f * (0.7 + 0.3 * this.torchMul));
+      this.playerLight.setScale(this.baseScale * this.torchMul * (1 + (f - 1) * 0.35));
     }
   }
 

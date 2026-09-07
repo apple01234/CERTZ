@@ -670,6 +670,8 @@ export class WorldScene extends Phaser.Scene {
      *  마을/실내/야외 밝은 챕터는 오버레이 없음(광원만 가능). */
     this.lighting = new Lighting(this);
     this.lighting.setupAmbient(parseStage(stageKey).ch, true);
+    /* v4.2.0 — 구역을 지날수록 횃불 광원 축소 (유저 지시: 스테이지마다 줄어들어 보스전 회피 난이도 상승) */
+    this.lighting.setTorchStage(parseStage(stageKey).sub);
 
     /* ---------- 바닥 (v2.0 — 10챕터 테마 테이블 / v2.2 실내 분기) ---------- */
     const theme = STAGE_THEME[stageKey] ?? STAGE_THEME.village;
@@ -1583,7 +1585,8 @@ export class WorldScene extends Phaser.Scene {
     this.plantCd = this.time.now + 700;
     const dir = new Phaser.Math.Vector2(p.x - plant.x, p.y - plant.y);
     if (dir.length() < 1) dir.set(1, 0);
-    p.takeDamage(Math.round(16 * stageScale(this.stageDef.key).atk), dir.normalize(), 0, DMG_PCT.plant);
+    /* v4.2.0 — 최대체력 10% 고정데미지 (유저 지시): 방어력·챕터 하한 무시 trueDmg */
+    p.takeDamage(Math.round(p.maxHp * DMG_PCT.plant), dir.normalize(), 0, 0, true);
     this.tweens.add({ targets: plant, angle: { from: -9, to: 9 }, yoyo: true, duration: 70, repeat: 1, onComplete: () => plant.setAngle(0) });
     plant.setTint(0xff9a8a);
     this.time.delayedCall(220, () => plant.clearTint());
@@ -2398,10 +2401,11 @@ export class WorldScene extends Phaser.Scene {
   }
 
   spawnDeathBurst(x: number, y: number) {
-    this.spawnBurstAt(x, y, 10, 0xff9a8a);
+    /* v4.2.0 — 절제: 10→6 파편·연기 4→3 (유저 지시: 적 처치는 잦은 호출이라 과하지 않게) */
+    this.spawnBurstAt(x, y, 6, 0xff9a8a);
     /* v4.1.9 — 사망 연기 퍼프 (단일 패프 소형화 — 화면 덮는 대형 연기 수정) */
     this.smokeEmitter?.setParticleTint(0xd8d0e8);
-    this.smokeEmitter?.explode(4, x, y - 6);
+    this.smokeEmitter?.explode(3, x, y - 6);
   }
 
   spawnSlamBurst(x: number, y: number) {
@@ -2703,7 +2707,7 @@ export class WorldScene extends Phaser.Scene {
       .setActive(true)
       .setVisible(true)
       .setAlpha(1)
-      .setScale(1.35 * scale) // 사용자 지시: 검 이펙트 크게 (원본 64x76 → 실제 표시 ~86x103)
+      .setScale(1.05 * scale) // v4.2.0 — 1.35→1.05 절제 (유저 지시: 자주 호출되는 기본공격 이펙트 과하지 않게 — 스킬 배율분은 유지)
       .play("fx-slash");
     s.once("animationcomplete", () => {
       s.setActive(false).setVisible(false).clearTint();
@@ -2715,10 +2719,10 @@ export class WorldScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.ADD)
       .setTint(tint ?? 0xfff2c0)
       .setScale(0.2 * scale)
-      .setAlpha(0.7);
+      .setAlpha(0.32); // v4.2.0 — 0.7→0.32 절제 (기본공격마다 도는 글로우 링 톤다운)
     this.tweens.add({
       targets: glowRing,
-      scale: 0.62 * scale,
+      scale: 0.42 * scale,
       alpha: 0,
       duration: 210,
       ease: "Cubic.out",
@@ -2811,7 +2815,8 @@ export class WorldScene extends Phaser.Scene {
     this.comboStreak = nowMs < this.comboUntil ? this.comboStreak + 1 : 1;
     this.comboUntil = nowMs + 5000;
     const comboMul = 1 + Math.min(0.5, (this.comboStreak - 1) * 0.05);
-    this.player.gainExp(Math.round(exp * comboMul));
+    /* v4.2.0 — 전역 EXP ×1.35 (피로도 완화: 레벨링 페이스업 — 콤보 보너스와 곱산) */
+    this.player.gainExp(Math.round(exp * 1.35 * comboMul));
     if (this.comboStreak >= 3) {
       const pct = Math.round((comboMul - 1) * 100);
       this.spawnPickupText(this.player.x, this.player.y - 52 + (this.comboStreak % 2) * 12, `연속킬 x${this.comboStreak}! EXP +${pct}%`, "#ffd76a");
@@ -4045,7 +4050,8 @@ export class WorldScene extends Phaser.Scene {
     const eliteAlive = this.eliteEnemy?.active && this.eliteEnemy.alive ? 1 : 0;
     const bossAlive = this.boss?.active && this.boss.alive ? 1 : 0;
     if (aliveMobs + eliteAlive + bossAlive >= 20) {
-      this.time.delayedCall(2400, () => this.respawnEnemy(key, x, y, tries));
+      /* v4.2.0 — 2400→1400ms (피로도 완화: 리젠 대기 단축) */
+      this.time.delayedCall(1400, () => this.respawnEnemy(key, x, y, tries));
       return;
     }
     const nearPlayer = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 140;
