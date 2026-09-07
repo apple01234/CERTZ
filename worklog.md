@@ -987,3 +987,27 @@ Stage Summary:
 - 유저 7항목: ①사운드 스왑 ②이펙트 절제 ③피로도 완화 ④SPUM 예제(런타임 래퍼로 정적 비교 불가 — 프리팹 파싱산 유지, 추가 지정 시 스크린샷 요망) ⑤어둠 광원 축소 ⑥보스바 확대 ⑦식인초 10% 고정 — 전부 반영
 - 교훈: 세션 리셋은 /home/z/jdk·.android-sdk·~/.gradle 프로젝트 외부 캐시를 전부 소실시킨다 — 빌드 전 툴체인 존재 확인이 최우선
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 55
+Agent: Super Z (메인)
+Task: v4.3.0 BM 대확장 & 도파민 — ponytail 플러그인 적용 + 전사 사운드 스왑 + 자동전투 포탈 + 다크 챕터 게이팅 + BM 100+ 기획/제작 + APK 빌드·릴리스
+
+Work Log:
+- [ponytail] 유저 지시 repo(DietrichGebert/ponytail) 클론 분석 — 게임 플러그인이 아닌 AI 에이전트 "게으른 시니어 개발자" 스킬(코드 -54% 디스플린)로 판명 → skills/ponytail 복사 + 프로젝트 루트 AGENTS.md 신설(사다리 7단계 + SERTZ 철칙: 기존 틀 유지/이펙트 절제/startTransition 단일통로/버전 싱크 6곳 등) — 이후 모든 작업에 규칙 적용
+- [사운드 스왑] 유저 지시 "전사 회전베기 소리를 기본공격 소리랑 바꿔": audio.ts SKILL_SFX_FILES에 spin:"sfx_spin" 별칭(볼륨 0.4) → Player.ts 기본공격 3타 모두 bigsword→spin(피치 0.92~1.18 래더 유지), skill1Spin 회전베기→bigsword(0.9~1.0). 버서커 판(bigsword 0.85) 유지
+- [자동 포탈] 유저 지시 "자동전투 시에도 포탈 탈수있게(검은 화면 절대 금지)": ①전진 포탈 overlap 게이트 변경 — autoHunt 중에도 주변 260px 생존 적 0이면 진입 허용(liveEnemiesNear 신설), 있으면 무시 ②tickAutoHunt에 적 전멸+portalActive 시 autoApproach(BFS)로 포탈 자동 접근 ③복귀 포탈은 자동 무한루프 방지로 기존 게이트 유지(안내 문구 "복귀 차원문"으로 수정) — 전환은 startTransition 단일 통로(1회 게이트+4초 워치독) 그대로라 검은 화면 경합 재발 없음
+- [다크 챕터] 유저 지시 "니플헤임·요툰헤임·스바르트알프헤임 등 어두운 챕터만": Lighting.CHAPTER_AMBIENT에서 muspelheim(화산)·alfheim(빛의 성전) 제거 — 5챕터(niflheim/cave=스바르트알프헤임/nidavellir/hel/abyss)만 암전 유지 + 암전 챕터 열린 셀에 정적 횃불 글로우 5개 신설(니플헤임 청색 0x8ad4ff, 그 외 주황 — 충돌/파티클 없는 저비용, 이펙트 절제 유지)
+- [BM 대확장] data.ts: ItemKey +61종(물약16·장신구12·상자4·패키지6·펫6·치장6·버프3), ITEMS/PET_DEFS(+tint)/COSMETIC_DEFS/BUFF_DEFS 확장, BM_STOCK 7종→90종 카테고리 정렬, SHOP_STOCK에 골드용 신규 16종, CHEST_TABLES 4테이블(가중치 롤)/PACK_CONTENTS 6종/dailyDeals(날짜 시드 3종 로테이션)/DAILY_DEAL_OFF=0.3 신설 — 아이콘 전부 기존 텍스처 재활용(신규 에셋 0)
+- [BM 배선] Player.buyBm에 unitPay 오버라이드(일일 특가 30%↓), Player 효과 배선 3곳(critRate+12/addGold×1.4/드롭률÷1.35), Pet 틴트 지원, WorldScene onBmBuy에 chest/pack 인터셉트(구매 즉시 개봉)+rollChest/grantBmGrants(reward:show 팝업) 신설 — 출석·일일퀘스트·업적은 isekai.ts 기존 시스템 존재 확인 후 중복 제거(ponytail 재사용 원칙)
+- [BM UI] BmShopPanel: 일일 특가 스트립(30%↓·자정 교체)+카테고리 탭 7종+카탈로그 카운터, 자동 버프 목록에 신규 3종 추가
+- [검증] tsc --noEmit 0 에러(3회 반복 수정: ItemKey 유니온 누락 보완)
+- [버저닝] versionCode 58 / 4.3.0 — build.gradle·server.js·next.config·apk-guide.html(변경점+md5)·APK_다운로드_안내.txt·Overlays 배지
+- [빌드/릴리스] 1차 백그라운드 빌드가 setsid 누락으로 조기 종료(로그 정체 실측) → setsid -f 재실행 → APK BUILD SUCCESSFUL 49s → 104,688,910B · aapt 실측 versionCode 58/4.3.0 · md5 ed6adc5c92d6a81263bbd37ee0a41dc0 → GitHub Release v4.3.0(id 384218771) 업로드 → 재다운로드 md5 일치
+- [후처리] rm -rf .next && bun run build(md5 반영) → 서버 재기동 → /·apk-guide·guide.txt 200 + 페이지 내 md5 확인 → 커밋 85d1ce1 push(fa2399e..85d1ce1)
+
+Stage Summary:
+- v4.3.0 배포: https://github.com/apple01234/CERTZ/releases/download/v4.3.0/SERTZ-v4.3.0.apk (md5 ed6adc5c…, versionCode 58, 100MB)
+- 유저 5항목: ①ponytail 적용(AGENTS.md+skills — 이후 세션 전부 규칙 적용) ②회전베기↔기본공격 사운드 스왑 ③자동전투 포탈 탑승(안전 가드) ④다크 챕터 5종만 어둠+불빛 ⑤BM 100+(신규 아이템 53종 + 가챠/패키지/일일특가 + 기존 출석·일일퀘스트·업적·거래소·스타포스 등 — 아이템 총 130종+/기능 15종+) 전부 반영
+- 교훈: nohup &만으로는 IM 게이트웨이 명령 종료 시 프로세스가 죽는다 — 장시간 빌드는 반드시 setsid -f
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
