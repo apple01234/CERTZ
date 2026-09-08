@@ -39,9 +39,11 @@ export function TitleScreen() {
         <h1 className="text-5xl font-black tracking-[0.18em] text-amber-300 [text-shadow:0_3px_0_#7a3c00,0_6px_18px_rgba(0,0,0,0.9)] sm:text-7xl">
           SERTZ
         </h1>
-        <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
+        <p className="mx-auto mt-1 max-w-[min(94vw,560px)] text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v1.0.2 · 통합 안정화 — 보스컷씬 카메라·허수아비·큐브·0르쯔 제거·중복 아이콘 해소·니플헤임 밝기·툰 림라이트·치장 외형·자동 강화·패스 한번에 받기·업적 UI·GM 서버 검증·보안 강화</span>
+          {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
+           *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
+          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.3 — 유저 버그 픽스 8종: 거래소 크래시 · 캐시상점 정리(0르쯔 제거) · 반지 중첩 방지 · 등급업 큐브 · GM 로그인 안내 · 펫 이름 일치 · 버프 분류 · UI 짤림</span>
         </p>
       </div>
 
@@ -88,11 +90,14 @@ export function TitleScreen() {
         </a>
       </div>
 
-      <div className="absolute bottom-3 flex flex-col items-center gap-1 text-center">
-        <p className="text-[10px] font-bold text-white/45 sm:text-[11px]">
+      {/* v1.0.3 (#글자짤림) — inset-x-0 추가: absolute 컨테이너가 내용 폭만큼 늘어나
+       *  max-w-[92%]가 무효가 되고 크레딧이 화면 밖으로 잘리던 버그 */}
+      <div className="absolute inset-x-0 bottom-3 flex flex-col items-center gap-1 px-3 text-center">
+        {/* v1.0.3 — 저높이(가로 폰)에서는 키 안내줄이 APK 링크와 겹치므로 숨김 (터치 유저에게 불필요) */}
+        <p className="text-[10px] font-bold text-white/45 sm:text-[11px] [@media(max-height:540px)]:hidden">
           이동: 방향키 / 왼쪽 화면 드래그 · 공격: X · 스킬: Z, C · 물약: Q, E
         </p>
-        <p className="max-w-[92%] text-[8px] leading-relaxed text-white/30 sm:text-[9px]">
+        <p className="max-w-[min(94vw,760px)] text-[8px] leading-relaxed text-white/30 sm:text-[9px]">
           Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by
           williamthompsonj (CC-BY) · Sotrak by gilgaphoenixignis (CC-BY) · SPUM · Cartoon FX Remaster & Fantasy UI SFX (Unity Asset Store 유료 라이선스) · Music: Kevin MacLeod (incompetech.com, CC-BY 4.0) · SFX: Rubberduck (CC0)
         </p>
@@ -387,7 +392,9 @@ export function RewardPopup() {
   }, []);
   if (!st) return null;
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-28 z-30 flex justify-center px-4 sm:top-20">
+    /* v1.0.3 (#랜덤박스UI) — z-30 → z-[70]: 인벤토리(z-40) 아래에 가려져 상자 개봉 보상이 안 보이던 버그.
+     *  가방에서 [열기]를 누르면 보상 팝업이 인벤토리 위에 뜬다. */
+    <div className="pointer-events-none absolute inset-x-0 top-28 z-[70] flex justify-center px-4 sm:top-20">
       {/* v3.0.23 (#56) — ① 알림 표시를 더 아래로(top-14→top-28) ② 카드에 pointer-events-auto 부여 —
           컨테이너가 pointer-events-none이라 X를 누를 수 없던 버그 수정 */}
       <div className="pointer-events-auto w-[min(92vw,330px)] animate-[rewardPop_0.24s_ease-out] rounded-xl border-2 border-amber-200/70 bg-slate-950/95 p-3 shadow-2xl">

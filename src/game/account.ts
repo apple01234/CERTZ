@@ -4,14 +4,34 @@
  * v4.9.0 — 계정 클라이언트 (유저 지시 #4: 자체 회원가입/로그인 + SNS 연동 + 클라우드 세이브)
  *  서버: accounts/index.js (같은 오리진 /api/auth/*) — 쿠키 세션이라 credentials 필수는 아님
  *  (same-origin fetch는 기본으로 쿠키 전송) — APK 웹뷰/웹 공통.
+ * v1.0.3 (#거래소크래시) — APK/EXE 네이티브에서는 same-origin(웹뷰 내장 서버)에 /api 서버가 없어
+ *  인증·거래소·클라우드 세이브가 전부 실패(또는 HTML 폴백 → JSON 파싱 실패)했다.
+ *  → 멀티플레이 서버 주소(localStorage sertz.server.url, net.ts와 동일 출처)를 API base로 사용.
+ *  웹은 기존대로 same-origin. 모든 fetch 경로에 apiBase()를 접두한다.
  */
+
+import { Capacitor } from "@capacitor/core";
+
+/** 계정/거래소 API 베이스 URL — 웹 ""(same-origin) · APK/EXE 설정된 게임 서버 주소 */
+function apiBase(): string {
+  try {
+    if (Capacitor.isNativePlatform() || /electron/i.test(navigator.userAgent)) {
+      const raw = window.localStorage.getItem("sertz.server.url");
+      const u = raw?.trim();
+      if (u && /^https?:\/\//i.test(u)) return u.replace(/\/$/, "");
+    }
+  } catch {
+    /* localStorage 접근 불가 — same-origin 폴백 */
+  }
+  return "";
+}
 
 export type AuthUser = { id: string; name: string; provider: string; createdAt?: number; /** v1.0.2 — 서버 검증 롤 (admin만 GM 진입) */ role?: string };
 export type SnsProviders = Record<string, { name: string; configured: boolean }>;
 
 async function post(path: string, body?: unknown): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
   try {
-    const r = await fetch(path, {
+    const r = await fetch(`${apiBase()}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body ?? {}),
@@ -25,7 +45,7 @@ async function post(path: string, body?: unknown): Promise<{ ok: boolean; status
 
 async function get(path: string): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
   try {
-    const r = await fetch(path, { cache: "no-store" });
+    const r = await fetch(`${apiBase()}${path}`, { cache: "no-store" });
     const data = (await r.json().catch(() => ({}))) as Record<string, unknown>;
     return { ok: r.ok, status: r.status, data };
   } catch {
@@ -85,7 +105,11 @@ export type MarketState = {
 export async function marketGet(): Promise<{ ok: boolean; error?: string; state?: MarketState }> {
   const r = await get("/api/market");
   if (!r.ok) return { ok: false, error: String(r.data.error ?? "거래판 조회 실패") };
-  return { ok: true, state: r.data as unknown as MarketState };
+  /* v1.0.3 (#거래소크래시) — listings 배열이 없는 응답(HTML 폴백·구버전 서버)은 state로 취급하지 않는다.
+   *  기존엔 빈 객체가 그대로 state가 돼 mk.listings.filter에서 앱 크래시로 이어졌다. */
+  const d = r.data as Partial<MarketState> | null;
+  if (!d || !Array.isArray(d.listings)) return { ok: false, error: "거래판 응답이 올바르지 않아요" };
+  return { ok: true, state: d as MarketState };
 }
 
 export async function marketList(itemKey: string, up: number, price: number) {

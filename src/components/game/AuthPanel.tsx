@@ -182,6 +182,12 @@ export function AuthPanel() {
                     <CloudDownload size={14} /> 세이브 복원
                   </button>
                 </div>
+                {/* v1.0.3 (#GM안내) — 관리자 계정 상태 표시: GM 로그인 방법을 패널에서 바로 알려준다 */}
+                {user.role === "admin" && (
+                  <p className="mt-2 rounded-lg border border-amber-300/40 bg-amber-400/10 px-2.5 py-2 text-[10px] font-black text-amber-200">
+                    ✨ 관리자 계정 — 마을 우물 오른쪽의 GM NPC와 대화하면 운영자 패널이 열려요
+                  </p>
+                )}
                 <p className="mt-2 text-[10px] font-bold leading-relaxed text-white/40">
                   백업은 3분마다 자동 실행돼요 · 복원하면 이 기기의 세이브가 클라우드 버전으로 교체돼요
                 </p>
@@ -224,6 +230,10 @@ export function AuthPanel() {
                 <button onClick={submit} disabled={busy || !id || !pw} className="mt-2 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-3 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:opacity-40">
                   {mode === "login" ? "로그인" : "이 정보로 가입!"}
                 </button>
+                {/* v1.0.3 (#GM안내) — "GM 로그인 어케함?" 해결: 방법을 로그인 화면에 직접 표기 */}
+                <p className="mt-2 rounded-lg border border-amber-300/30 bg-amber-400/[0.08] px-2.5 py-2 text-[10px] font-bold leading-relaxed text-amber-200/85">
+                  🛠 GM(운영자) 로그인: <b className="text-amber-100">admin</b> 또는 <b className="text-amber-100">apple01234</b> 아이디로 회원가입/로그인하면 자동으로 관리자 인정돼요 — 로그인 후 마을에 GM NPC가 나타납니다.
+                </p>
               </>
             )}
 

@@ -343,7 +343,8 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
   const [cat, setCat] = useState("all");
   const [odds, setOdds] = useState(false); // v4.5.0 — 확률 공시 펼침
   const catOf = (k: ItemKey) => (k.startsWith("chest_") || k.startsWith("pack_") ? "gacha" : ITEMS[k].kind);
-  const stock = BM_STOCK.filter((k) => cat === "all" || catOf(k) === cat);
+  /* v1.0.3 (#0르쯔) — 이중 방어: bmPrice(에메랄드 가격)가 없는 아이템은 데이터에 남아있어도 진열하지 않는다 */
+  const stock = BM_STOCK.filter((k) => (ITEMS[k]?.bmPrice ?? 0) > 0 && (cat === "all" || catOf(k) === cat));
   const CATS: { id: string; label: string }[] = [
     { id: "all", label: "전체" },
     { id: "gacha", label: "가챠·패키지" },
@@ -366,13 +367,13 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
           <div className="flex items-center gap-2">
             <img src="/assets/cos_aurora.webp" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
             <div>
-              <p className="text-sm font-black text-cyan-200">BM 상점</p>
-              <p className="text-[10px] text-white/60">카탈로그 {BM_STOCK.length}종 · v4.3.0 신규 53종 — 상자/패키지/버프/펫/치장</p>
+              <p className="text-sm font-black text-cyan-200">캐시상점</p>
+              <p className="text-[10px] text-white/60">카탈로그 {stock.length}종 — 상자/패키지/큐브/에픽·전설 장신구/펫/치장</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <EmeraldChip emerald={rpg.emerald} />
-            <button onClick={onClose} aria-label="BM 상점 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+            <button onClick={onClose} aria-label="캐시상점 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
           </div>
         </div>
 
@@ -628,12 +629,12 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
             >
               거래소
             </button>
-            {/* v3.0.6 (지시 #1) — BM 상점 진입 (에메랄드 전용 · 상점과 분리) */}
+            {/* v3.0.6 (지시 #1) — 캐시상점 진입 (에메랄드 전용 · 상점과 분리) · v1.0.3 명칭 변경 */}
             <button
               onClick={() => EventBus.emit("ui:panel", { panel: "bmshop" })}
               className="rounded-md border border-cyan-300/60 bg-cyan-400/15 px-2 py-1 text-[10px] font-black text-cyan-200 hover:bg-cyan-400/30"
             >
-              BM 상점
+              캐시상점
             </button>
             <button
               onClick={onClose}
@@ -948,7 +949,21 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
 
 /* ================= v1.0.1 — 유저 거래판 (계정 연계 실거래 보드) =================
  *  서버 /api/market — 로그인 필수 · 동시 등록 3칸 · 판매 정산 시 10% 수수료.
- *  서버 처리 성공 → EventBus로 WorldScene이 세이브(골드/보유) 반영 → 응답 스냅샷으로 갱신. */
+ *  서버 처리 성공 → EventBus로 WorldScene이 세이브(골드/보유) 반영 → 응답 스냅샷으로 갱신.
+ * v1.0.3 (#거래소크래시) — 응답이 JSON이 아니거나(404 HTML/WebView 내부 서버) listings 누락 시
+ *  mk.listings.filter에서 앱 전체 크래시(Application error)가 났다 → 스냅샷 검증 헬퍼로 원천 차단. */
+/** 서버 응답을 안전하게 MarketState로 변환 — listings 배열 없으면 null (크래시 대신 재조회 안내) */
+function takeMarketSnapshot(data: unknown): MarketState | null {
+  const d = data as Partial<MarketState> | null;
+  if (!d || !Array.isArray(d.listings)) return null;
+  return {
+    listings: d.listings,
+    pending: { gold: Number(d.pending?.gold ?? 0), count: Number(d.pending?.count ?? 0) },
+    feePct: Number(d.feePct ?? 10),
+    maxListings: Number(d.maxListings ?? 3),
+    guest: !!d.guest,
+  };
+}
 function MarketBoard({ rpg }: { rpg: RpgState }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -960,19 +975,21 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
   const refresh = async () => {
     const [me, st] = await Promise.all([authMe(), marketGet()]);
     setUser(me);
-    setMk(st.state ?? null);
+    const snap = takeMarketSnapshot(st.state);
+    setMk(snap);
     setLoaded(true);
-    if (st.error) setMsg(st.error);
+    if (st.error || !snap) setMsg(snap ? st.error ?? "" : "거래판 서버에 연결할 수 없어요 (멀티 서버 설정 확인)");
   };
   useEffect(() => {
     const t = setTimeout(() => { void refresh(); }, 0); // eslint 규칙 대응 — 비동기 조회는 태스크로 분리
     return () => clearTimeout(t);
   }, []);
 
-  /* 등록 가능: 보유 전설 중 미등록·미장착 */
-  const mineKeys = mk ? mk.listings.filter((l) => l.mine).map((l) => l.itemKey) : [];
+  /* 등록 가능: 보유 전설 중 미등록·미장착 — v1.0.3 mk/listings 전 접근을 ?./?? 로 방어 */
+  const listings = mk?.listings ?? [];
+  const mineKeys = listings.filter((l) => l.mine).map((l) => l.itemKey);
   const listable = TRADE_STOCK.filter((k) => rpg.owned.includes(k) && !mineKeys.includes(k) && !rpg.accessories.includes(k));
-  const slotsLeft = mk ? mk.maxListings - mineKeys.length : 0;
+  const slotsLeft = (mk?.maxListings ?? 3) - mineKeys.length;
 
   const doList = async (key: string, up: number) => {
     const p = parseInt(prices[key] ?? "", 10);
@@ -982,7 +999,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
     setBusy(false);
     if (!r.ok) { setMsg(String(r.data.error ?? "등록 실패")); return; }
     EventBus.emit("rpg:marketList", { key, up });
-    setMk(r.data as unknown as MarketState);
+    setMk(takeMarketSnapshot(r.data));
     setPrices((s) => ({ ...s, [key]: "" }));
     setMsg("");
   };
@@ -992,7 +1009,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
     setBusy(false);
     if (!r.ok) { setMsg(String(r.data.error ?? "취소 실패")); return; }
     EventBus.emit("rpg:marketCancel", { itemKey, up });
-    setMk(r.data as unknown as MarketState);
+    setMk(takeMarketSnapshot(r.data));
     setMsg("");
   };
   const doBuy = async (l: { id: string; itemKey: string; up: number; price: number }) => {
@@ -1002,7 +1019,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
     setBusy(false);
     if (!r.ok) { setMsg(String(r.data.error ?? "구매 실패")); return; }
     EventBus.emit("rpg:marketBuy", { itemKey: l.itemKey, up: l.up, price: l.price });
-    setMk(r.data as unknown as MarketState);
+    setMk(takeMarketSnapshot(r.data));
     setMsg("");
   };
   const doCollect = async () => {
@@ -1011,7 +1028,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
     setBusy(false);
     if (!r.ok) { setMsg(String(r.data.error ?? "수령 실패")); return; }
     EventBus.emit("rpg:marketCollect", { gold: Number(r.data.gold ?? 0) });
-    setMk(r.data as unknown as MarketState);
+    setMk(takeMarketSnapshot(r.data));
     setMsg("");
   };
 
@@ -1034,7 +1051,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
       {/* 정산금 바 */}
       <div className="flex items-center justify-between rounded-lg border border-amber-300/40 bg-amber-400/[0.08] px-2.5 py-2">
         <div>
-          <p className="text-[11px] font-black text-amber-200">💰 판매 정산금 — {mk?.pending.gold.toLocaleString() ?? 0} G</p>
+          <p className="text-[11px] font-black text-amber-200">💰 판매 정산금 — {(mk?.pending.gold ?? 0).toLocaleString()} G</p>
           <p className="text-[9px] text-white/50">판매 성공 시 10% 수수료를 제외한 90%가 적립됩니다</p>
         </div>
         <button
@@ -1088,12 +1105,12 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
       )}
 
       {/* 판매 목록 */}
-      <p className="text-[11px] font-bold text-white/50">판매 등록물 {(mk?.listings.length ?? 0)}건</p>
-      {(mk?.listings.length ?? 0) === 0 ? (
+      <p className="text-[11px] font-bold text-white/50">판매 등록물 {listings.length}건</p>
+      {listings.length === 0 ? (
         <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/40">아직 등록물이 없어요 — 첫 판매자가 되어보세요!</p>
       ) : (
         <div className="flex max-h-[30vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
-          {mk!.listings.map((l) => {
+          {listings.map((l) => {
             const item = ITEMS[l.itemKey as ItemKey];
             if (!item) return null;
             const seller = l.mine ? "나" : (l.seller ?? "모험가");
@@ -1290,10 +1307,14 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
     });
   })();
 
-  /* ----- 캐시 탭 슬롯 (버프/펫/치장 — BM 재화 아이템) ----- */
+  /* ----- 캐시 탭 슬롯 (캐시 전용 버프 + 펫/치장 — 에메랄드 재화 아이템만) -----
+   * v1.0.3 (#캐시템분리) — 유저 지시 "일반상점에서 살 수 있는 버프는 캐시템이 아니다":
+   *  골드 버프(buff_atk/def/spd/exp/crit/gold/luck)는 기타 탭으로 이동, 캐시 탭에는
+   *  캐시 전용 버프(buff_king)만 남긴다. */
+  const CASH_BUFFS: BuffKey[] = ["buff_king"];
   const buffSlots: InvSlot[] = (Object.keys(BUFF_DEFS) as BuffKey[])
-    .filter((bk) => (rpg.buffItems[bk] ?? 0) > 0)
-    .map((bk) => ({ uk: `buff:${bk}`, t: "buff" as const, k: bk, icon: BUFF_DEFS[bk].icon, tier: "rare" as ItemTier, count: rpg.buffItems[bk] ?? 0 }));
+    .filter((bk) => CASH_BUFFS.includes(bk) && (rpg.buffItems[bk] ?? 0) > 0)
+    .map((bk) => ({ uk: `buff:${bk}`, t: "buff" as const, k: bk, icon: BUFF_DEFS[bk].icon, tier: "legend" as ItemTier, count: rpg.buffItems[bk] ?? 0 }));
   const petSlots: InvSlot[] = rpg.pets.map((pk) => ({
     uk: `pet:${pk}`,
     t: "pet" as const,
@@ -1331,6 +1352,10 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
         const it = ITEMS[k as ItemKey];
         return { uk: `item:${k}`, t: "item" as const, k, icon: it.icon, tier: it.tier, count, quick: quickTag(k), dim: count <= 0 };
       }),
+    /* v1.0.3 (#캐시템분리) — 골드 버프는 캐시가 아니라 기타 소모품: 기타 탭에서 사용(useBuff) */
+    ...(Object.keys(BUFF_DEFS) as BuffKey[])
+      .filter((bk) => bk !== "buff_king" && (rpg.buffItems[bk] ?? 0) > 0)
+      .map((bk) => ({ uk: `buff:${bk}`, t: "buff" as const, k: bk, icon: BUFF_DEFS[bk].icon, tier: "rare" as ItemTier, count: rpg.buffItems[bk] ?? 0 })),
   ];
 
   /* 선택 슬롯 해석 — 사용/판매 등으로 사라지면 자동으로 선택 해제 */
@@ -1445,11 +1470,11 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 onClick={() => EventBus.emit("ui:panel", { panel: "bmshop" })}
                 className="mb-2 w-full rounded-lg border-2 border-cyan-300/50 bg-gradient-to-b from-cyan-400/20 to-sky-500/15 px-3 py-2 text-[12px] font-black text-cyan-100 hover:from-cyan-400/30 active:translate-y-[1px]"
               >
-                💎 BM 상점 열기 <span className="font-bold text-white/40">— 에메랄드 상점</span>
+                💎 캐시상점 열기 <span className="font-bold text-white/40">— 에메랄드 상점</span>
               </button>
               {buffSlots.length + petSlots.length + cosSlots.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-6 text-center text-[11px] text-white/35">
-                  캐시 아이템이 없습니다 — BM 상점에서 버프/펫/치장을 구매해보세요
+                  캐시 아이템이 없습니다 — 캐시상점에서 큐브/펫/치장을 구매해보세요
                 </p>
               ) : (
                 <>
@@ -1785,10 +1810,15 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         </div>
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        {wornN < ownedN ? (
+                        {/* v1.0.3 (#반지중첩) — 같은 장신구 중복 장착 금지: 보유 2개여도 효과는 1벌만 적용.
+                         *  기존엔 보유 수만큼 슬롯에 중복 장착돼 스탯이 2배로 쌓이는 버그 (고대왕의 반지 2개 중첩). */}
+                        {wornN < 1 ? (
                           <InvBtn onClick={() => EventBus.emit("rpg:equip", { key: it.key })}>장착</InvBtn>
                         ) : (
                           <span className="rounded-md bg-emerald-700/50 px-2.5 py-1.5 text-[11px] font-black text-emerald-200">장착 중</span>
+                        )}
+                        {wornN >= 1 && ownedN > wornN && (
+                          <span className="rounded-md bg-white/[0.06] px-2 py-1.5 text-[10px] font-bold text-white/40">중복 장착 불가 (같은 반지 1개만)</span>
                         )}
                         {!accMaxed && (
                           <InvBtn tone="amber" disabled={rpg.gold < accCost} onClick={() => EventBus.emit("rpg:upgradeAcc", { key: it.key })}>

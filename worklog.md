@@ -1253,3 +1253,27 @@ Stage Summary:
 - 출시 빌드: SERTZ-v1.0.2.apk(940ea24448f26ea555bb0f8840197b44) · SERTZ-v1.0.2.aab(48fda370ad90a188b33e8ff7ab19d665) — Play Console 업로드 가능 상태
 - 테스트 계정: sertzadmin(관리자, SERTZ_ADMIN_USERS env 필요) / db 테스트 유저 정리
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 66
+Agent: Super Z (메인)
+Task: v1.0.3 — 유저 13항목 버그 픽스 (거래소 크래시·캐시상점·반지 중첩·GM 안내·펫 이름·버프 분류·보상 UI·글자 짤림) + APK 빌드
+
+Work Log:
+- [워크스페이스 복구] 세션 리셋으로 로컬이 v4.5.0(071c339)으로 롤백 → origin/main(v1.0.2, 234e3b8)으로 hard reset. 리모트에는 요약 이후 커밋(v1.0.2 통합 안정화)이 이미 존재 확인
+- [④ 거래소 크래시 원인 특정] 2중 원인: (a) APK 네이티브에서 account.ts가 same-origin(/api) fetch → 웹뷰 내장 서버는 /api 없음 → 404 HTML 폴백 → r.json() 실패 시 빈 객체가 state로 → mk.listings.filter에서 앱 크래시 (b) 서버 응답 검증 부재
+  · 수정1 account.ts apiBase() — 네이티브/Electron은 localStorage sertz.server.url(멀티 서버 주소)을 API base로 사용(웹은 same-origin 유지) → 계정/거래소/클라우드 세이브가 APK에서 실제 서버로 연결
+  · 수정2 marketGet() — listings 배열 없는 응답은 state 취급 안 함
+  · 수정3 MarketBoard takeMarketSnapshot() 헬퍼 — 전 setMk 경로 검증 + listings/pending/maxListings 전 접근 ?./?? 방어
+- [② 관리자 UI 잔존] GM NPC는 비관리자에게 setVisible(false)였지만 interactables에는 남아 가까이 가면 "GM — 자유전직…" 접속 칩이 떴다 → updateInteractPrompt에서 kind==="gm" && adminRole!=="admin" 탐색 단계 제외
+- [③ GM 로그인 안내] accounts/index.js ADMIN_USERS env 미설정 시 기본값 "admin,apple01234" (기존엔 env가 비면 admin이 될 방법 자체가 없었다) + supervisor.sh에 SERTZ_ADMIN_USERS 기본 주입 + AuthPanel 로그인 화면에 "GM 로그인: admin/apple01234 아이디로 가입·로그인 → 마을에 GM NPC 등장" 안내 추가 + 로그인 후 role=admin이면 "관리자 계정" 배지 표시
+- [⑤⑥ 캐시상점] "BM 상점"→"캐시상점" 전면 명칭 변경(패널 제목·상점 진입 버튼·인벤 캐시 탭·aria) · BM_STOCK에서 bmPrice 없는 골드상점 아이템 21종 제거(무료 버프 7·하위 물약 6티어 6종·ring_might/swift·pendant_ward/blood·pet_slime/pixie·cos_dawn/gold) — "0 르쯔" 진열 원천 제거 · DAILY_DEAL_POOL도 캐시 전용 16종으로 재구성(scroll_star 등 0르쯔 특가 제거) · BmShopPanel에 bmPrice>0 이중 방어 필터 · ring_bless(bmOnly 전용 미진열 아이템) 캐시상점 신규 진열 · 카탈로그 69→49종
+- [⑧ 반지 중첩] 고대왕의 반지 2개 구매 시 두 슬롯에 중복 장착되어 스탯 2배 → Player.equip()에서 동일 키 wornCount>=1 금지 + 인벤 UI 장착 버튼 조건 변경(wornN<1) + "중복 장착 불가 (같은 반지 1개만)" 칩 + onEquip 실패 시 배너 안내. 실측: equip 2회 시도 → worn 1 유지
+- [⑩ 버프 분류] 인벤 캐시 탭에 전 버프가 뜨던 것 → 캐시 전용(buff_king)만 캐시 탭, 골드 버프 7종은 기타 탭 소모품으로 이동(사용 버튼 동일 rpg:useBuff). 실측: 캐시 탭 buff 셀 = buff_king만
+- [⑪ 랜덤박스 보상] RewardPopup z-30 → z-[70] — 인벤(z-40) 아래에 가려져 보상이 안 보였던 것 → 가방 [열기] 시 보상 팝업이 인벤 위에 표시. 실측 스크린샷 확인
+- [① 글자 짤림] 타이틀 버전 배지가 부모 폭 제한 없이 늘어 화면 밖으로 잘림 → 배지 별도 블록+max-w+line-clamp-2 · 크레딧 컨테이너 inset-x-0+px-3 (absolute shrink-to-fit이라 max-w-[92%] 무효였던 것) · 저높이(≤540px)에서 키 안내줄 숨김(APK 링크와 겹침 해소)
+- [⑦ 펫 이름] 스프라이트 재활용 펫 6종 이름=디자인 불일치(새/유니콘/골렘 이름에 요정/슬라임 스프라이트) → 잿불 새 엠버→불꽃 요정 엠버, 빛의 유니콘→빛의 요정 유니, 골렘 조각상→철석 슬라임, 정령의 불꽃 위스프→물빛 요정 위스프, 심연의 사자→심연의 별 정령 리퍼 (키 유지 — 세이브 호환, ITEMS+PET_DEFS 동시 싱크)
+- [⑨ 등급업 큐브] v1.0.2에서 이미 신설된 사용 버튼(인벤 장비 탭 상세) 확인 + 실측(tier_cube 지급 시 "등급업 ×N" 버튼 렌더) — 유저가 본 v1.0.1 APK엔 버튼이 없었던 것
+- [⑫ 3D 에셋] research/ 원본은 세션 리셋으로 디스크에서 유실(git 무시 폴더라 GitHub에도 없음). 게임 사용분은 전부 public/ 추출물로 반영돼 게임 자체는 영향 없음 — 유실 사실만 보고
+- [검증] tsc — 신규 에러 0(Phaser4 선언 누락분은 기존 ignoreBuildErrors 유지) · bun run build 성공 · 서버 재기동 후 /api/market /api/auth/sns 정상 JSON · agent-browser 실측: 타이틀 짤림 해소 → 월드 → 거래소 2탭 크래시 0 → 캐시상점(명칭·0르쯔 0건·무쇠상자 유·분노 물약 무) → 인벤(반지 1/2 장착 후 재장착 차단·캐시/기타 버프 분리·상자 개봉 보상 팝업 인벤 위) → GM e2e(admin 등록→role=admin→GM NPC 4오브젝트 표시, 비관리자 tester01→전부 숨김) → 등급업 버튼 렌더 — 전부 통과
+- [버저닝] versionCode 68 / 1.0.3 — build.gradle·server.js APK_MIRROR·next.config.ts APK_DL·apk-guide.html·APK_다운로드_안내.txt·Overlays 배지 6곳 싱크

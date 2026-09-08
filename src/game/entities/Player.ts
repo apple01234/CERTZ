@@ -3691,14 +3691,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else if (item.kind === "armor") {
       this.armor = key;
     } else if (item.kind === "accessory") {
-      /* v2.9 (#8) — 중복 장착: 반지 4개/펜던트 2개 슬롯. 같은 아이템도 보유 수만큼 장착 가능 */
+      /* v2.9 (#8) — 중복 장착: 반지 4개/펜던트 2개 슬롯.
+       * v1.0.3 (#반지중첩) — 유저 지시 "고대왕의 반지 2개 사니까 효과가 2배로 중첩되는 버그":
+       *  같은 아이템 키는 1개만 장착 가능(보유 수와 무관). 서로 다른 반지는 기존대로 4+2 슬롯 자유 조합. */
       const slot = item.slot ?? "ring";
       const cap = slot === "ring" ? Player.RING_SLOTS : Player.PENDANT_SLOTS;
       const same = (k: ItemKey) => (ITEMS[k].slot ?? "ring") === slot;
       const wornSame = this.accessories.filter(same);
-      const ownedCount = this.owned.filter((k) => k === key).length;
       const wornCount = wornSame.filter((k) => k === key).length;
-      if (wornCount >= ownedCount) return false; // 보유량 초과 중복 장착 금지
+      if (wornCount >= 1) return false; // 같은 장신구 중복 장착 금지 (스탯 중첩 방지)
       if (wornSame.length >= cap) {
         // 슬롯이 꽉 참 — 같은 슬롯 종류의 첫 번째를 교체
         const victim = wornSame[0];

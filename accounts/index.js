@@ -25,7 +25,10 @@ const COOKIE = "sertz_auth";
  *  · 관리자 롤: SERTZ_ADMIN_USERS(env, 쉼표 구분)에 있는 아이디만 role="admin" — 클라 flag로 판단하지 않음
  *  · Rate Limit: IP+버킷 인메모리 카운터 (정상 플레이에는 영향 없는 수준)
  *  · Audit Log: db/audit.log JSONL — 가입/로그인/거래/관리자 조회 추적 */
-const ADMIN_USERS = (process.env.SERTZ_ADMIN_USERS || "")
+/* v1.0.3 (#GM안내) — 관리자 아이디 목록. env 미설정 시 기본값 admin, apple01234 사용:
+ *  이 아이디로 회원가입/로그인하면 role=admin → 마을에 GM NPC가 나타나고 인터랙션으로 GM 패널 진입.
+ *  (기존엔 env가 비면 아무도 admin이 되는 방법이 없어 "GM 로그인 어케함?" 상태가 됐다) */
+const ADMIN_USERS = (process.env.SERTZ_ADMIN_USERS || "admin,apple01234")
   .split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
 const rateBuckets = new Map(); // key -> { n, resetAt }
 function clientIp(req) {

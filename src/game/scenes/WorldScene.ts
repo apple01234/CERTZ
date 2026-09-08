@@ -5059,7 +5059,13 @@ export class WorldScene extends Phaser.Scene {
     };
     const onEquip = (v: { key: ItemKey }) => {
       if (!this.player || this.dialoguing) return;
-      this.player.equip(v.key);
+      /* v1.0.3 (#반지중첩) — 장착 실패 안내: 같은 장신구 중복 장착 시도 등에 조용히 무시되지 않게 */
+      if (!this.player.equip(v.key)) {
+        const it = ITEMS[v.key];
+        const dup = it?.kind === "accessory" && this.player.accessories.includes(v.key);
+        EventBus.emit("banner:show", { text: dup ? "같은 장신구는 1개만 장착할 수 있어요" : "장착할 수 없어요" });
+        return;
+      }
       this.emitRpgState();
       this.save();
     };
@@ -7827,11 +7833,15 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= E키 상호작용 ================= */
 
-  /** 가장 가까운 상호작용 대상 탐색 → React 프롬프트 갱신 (변경 시만 emit) */
+  /** 가장 가까운 상호작용 대상 탐색 → React 프롬프트 갱신 (변경 시만 emit)
+   *  v1.0.3 (#GM잔존UI) — GM 인터랙터는 관리자(서버 롤 admin)에게만 노출:
+   *  비관리자에게는 NPC 스프라이트만 숨기고 인터랙터가 남아 "GM — 자유전직…" 접속 칩이
+   *  마을에 계속 떠 있던 버그. 프롬프트 탐색 단계에서 자체를 걸러낸다. */
   private updateInteractPrompt() {
     let best: (typeof this.interactables)[number] | null = null;
     let bd = 130;
     for (const it of this.interactables) {
+      if (it.kind === "gm" && this.adminRole !== "admin") continue; // 비관리자에게 GM 접속 UI는 존재하지 않는다
       const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, it.x, it.y);
       if (d < bd) {
         bd = d;

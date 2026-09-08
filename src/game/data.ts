@@ -376,12 +376,13 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   pendant_star: { key: "pendant_star", kind: "accessory", name: "별의 부적", icon: "i_pendant_star", price: 110000, bmPrice: 45, bmOnly: true, tier: "legend", atk: 20, crit: 6, maxHp: 100, slot: "pendant" },
   chest_iron: { key: "chest_iron", kind: "consumable", name: "무쇠 상자", icon: "i_chest_iron", price: 8000, bmPrice: 5, bmOnly: true, sellPrice: 400, tier: "rare" },
   /* v4.3.0 — 신규 펫 6종 (ITEMS 등록: BM 구매 경로 — PetDef 본체는 위 PET_DEFS) */
-  pet_wisp: { key: "pet_wisp", kind: "pet", name: "정령의 불꽃 위스프", icon: "i_pet_wisp", price: 45000, bmPrice: 18, bmOnly: true, tier: "epic" },
-  pet_ember: { key: "pet_ember", kind: "pet", name: "잿불 새 엠버", icon: "i_pet_ember", price: 55000, bmPrice: 22, bmOnly: true, tier: "epic" },
+  /* v1.0.3 (#펫이름) — PET_DEFS 표기명과 동일하게 싱크 (상점/인벤은 ITEMS명, 펫 출석은 PET_DEFS명) */
+  pet_wisp: { key: "pet_wisp", kind: "pet", name: "물빛 요정 위스프", icon: "i_pet_wisp", price: 45000, bmPrice: 18, bmOnly: true, tier: "epic" },
+  pet_ember: { key: "pet_ember", kind: "pet", name: "불꽃 요정 엠버", icon: "i_pet_ember", price: 55000, bmPrice: 22, bmOnly: true, tier: "epic" },
   pet_frost: { key: "pet_frost", kind: "pet", name: "서리 슬라임", icon: "i_pet_frost", price: 65000, bmPrice: 26, bmOnly: true, tier: "epic" },
-  pet_golem: { key: "pet_golem", kind: "pet", name: "골렘 조각상", icon: "i_pet_golem", price: 80000, bmPrice: 32, bmOnly: true, tier: "epic" },
-  pet_unicorn: { key: "pet_unicorn", kind: "pet", name: "빛의 유니콘", icon: "i_pet_unicorn", price: 100000, bmPrice: 40, bmOnly: true, tier: "legend" },
-  pet_reaper: { key: "pet_reaper", kind: "pet", name: "심연의 사자", icon: "i_pet_reaper", price: 140000, bmPrice: 55, bmOnly: true, tier: "legend" },
+  pet_golem: { key: "pet_golem", kind: "pet", name: "철석 슬라임", icon: "i_pet_golem", price: 80000, bmPrice: 32, bmOnly: true, tier: "epic" },
+  pet_unicorn: { key: "pet_unicorn", kind: "pet", name: "빛의 요정 유니", icon: "i_pet_unicorn", price: 100000, bmPrice: 40, bmOnly: true, tier: "legend" },
+  pet_reaper: { key: "pet_reaper", kind: "pet", name: "심연의 별 정령 리퍼", icon: "i_pet_reaper", price: 140000, bmPrice: 55, bmOnly: true, tier: "legend" },
   /* v4.3.0 — 신규 치장 6종 (ITEMS 등록: BM 구매 경로 — CosmeticDef 본체는 위 COSMETIC_DEFS) */
   cos_frost: { key: "cos_frost", kind: "cosmetic", name: "서리 오라", icon: "i_cos_frost", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
   cos_flame: { key: "cos_flame", kind: "cosmetic", name: "화염 오라", icon: "i_cos_flame", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
@@ -490,12 +491,15 @@ export const PET_DEFS: Record<PetKey, PetDef> = {
   /* v3.0.6 — 3번째 펫: 맵 전체 드롭을 즉시 끌어오는 자석 정령 (BM 전용, 지시 #5) */
   pet_atlas: { key: "pet_atlas", name: "별의 정령 아틀라스", icon: "pet_atlas", desc: "맵 전체 드롭 즉시 흡수 · 골드 +30%", bonusGoldPct: 30, price: 0 },
   /* v4.3.0 — 신규 펫 6종 (텍스처 재활용 + 틴트 — 골드 보너스 레더로 BM 파는) */
-  pet_wisp: { key: "pet_wisp", name: "정령의 불꽃 위스프", icon: "pet_pixie", tint: 0x8ad4ff, desc: "드롭 자동 줍기 · 골드 +35%", bonusGoldPct: 35, price: 0 },
-  pet_ember: { key: "pet_ember", name: "잿불 새 엠버", icon: "pet_pixie", tint: 0xff9a50, desc: "드롭 자동 줍기 · 골드 +40%", bonusGoldPct: 40, price: 0 },
+  /* v1.0.3 (#펫이름) — 이름=디자인 일치: 위스프/엠버/유니는 요정 스프라이트(pet_pixie 틴트),
+   *  프로스트/골렘은 슬라임 스프라이트(pet_slime 틴트), 리퍼는 별 정령 스프라이트(pet_atlas 틴트).
+   *  "새/유니콘/골렘 조각상"처럼 스프라이트에 없는 사물형 이름은 전부 실제 생김새로 교체(키 유지 — 세이브 호환). */
+  pet_wisp: { key: "pet_wisp", name: "물빛 요정 위스프", icon: "pet_pixie", tint: 0x8ad4ff, desc: "드롭 자동 줍기 · 골드 +35%", bonusGoldPct: 35, price: 0 },
+  pet_ember: { key: "pet_ember", name: "불꽃 요정 엠버", icon: "pet_pixie", tint: 0xff9a50, desc: "드롭 자동 줍기 · 골드 +40%", bonusGoldPct: 40, price: 0 },
   pet_frost: { key: "pet_frost", name: "서리 슬라임", icon: "pet_slime", tint: 0x9adfff, desc: "드롭 자동 줍기 · 골드 +45%", bonusGoldPct: 45, price: 0 },
-  pet_golem: { key: "pet_golem", name: "골렘 조각상", icon: "pet_slime", tint: 0xb8b8c8, desc: "드롭 자동 줍기 · 골드 +50%", bonusGoldPct: 50, price: 0 },
-  pet_unicorn: { key: "pet_unicorn", name: "빛의 유니콘", icon: "pet_pixie", tint: 0xffe8ff, desc: "드롭 자동 줍기 · 골드 +55%", bonusGoldPct: 55, price: 0 },
-  pet_reaper: { key: "pet_reaper", name: "심연의 사자", icon: "pet_atlas", tint: 0xb070ff, desc: "맵 전체 드롭 즉시 흡수 · 골드 +65%", bonusGoldPct: 65, price: 0 },
+  pet_golem: { key: "pet_golem", name: "철석 슬라임", icon: "pet_slime", tint: 0xb8b8c8, desc: "드롭 자동 줍기 · 골드 +50%", bonusGoldPct: 50, price: 0 },
+  pet_unicorn: { key: "pet_unicorn", name: "빛의 요정 유니", icon: "pet_pixie", tint: 0xffe8ff, desc: "드롭 자동 줍기 · 골드 +55%", bonusGoldPct: 55, price: 0 },
+  pet_reaper: { key: "pet_reaper", name: "심연의 별 정령 리퍼", icon: "pet_atlas", tint: 0xb070ff, desc: "맵 전체 드롭 즉시 흡수 · 골드 +65%", bonusGoldPct: 65, price: 0 },
 };
 
 /** 치장 아이템 — 플레이어 뒤에 따라붙는 오라 연출 (전투 능력 없음, 순수 치장) */
@@ -668,19 +672,25 @@ export function closetThemeOf(date = new Date()): ClosetTheme {
 
 /** v3.0.6 (지시 #1) — BM 상점 판매 목록 (에메랄드 전용 — 골드 상점과 분리) */
 /* v4.3.0 — BM 스톡 전면 개편: 카테고리 순 정렬 + 신규 61종 포함 (BmShopPanel 탭 필터용 kind/prefix)
- *  표시 순서: 가챠 상자 → 패키지 → 버프 → 소모품(물약/큐브) → 장신구 → 펫 → 치장 */
+ *  표시 순서: 가챠 상자 → 패키지 → 버프 → 소모품(물약/큐브) → 장신구 → 펫 → 치장
+ * v1.0.3 (#0르쯔) — 유저 지시 "기본상점 아이템은 캐시상점에서 안 판다, 팔아도 에픽/전설만":
+ *  일반상점(SHOP_STOCK·골드)에서 파는 아이템(무료 버프 7종·하위 물약 6티어·ring_might/swift·
+ *  pendant_ward/blood·pet_slime/pixie·cos_dawn/gold)을 전부 캐시상점 목록에서 제외.
+ *  캐시상점에는 bmPrice가 매겨진 캐시 전용 아이템만 남는다(0르쯔 표시 원천 차단). */
 export const BM_STOCK: ItemKey[] = [
   "chest_iron", "chest_silver", "chest_gold", "chest_legend",
   "pack_daily", "pack_weekly", "pack_starter", "pack_growth", "pack_premium", "pack_ultimate",
-  "buff_king", "buff_crit", "buff_gold", "buff_luck", "buff_atk", "buff_def", "buff_spd", "buff_exp",
-  "potion_hp3", "potion_hp4", "potion_hp5", "potion_hp6", "potion_hp7", "potion_hp8", "potion_hp9", "potion_hp10",
-  "potion_mp3", "potion_mp4", "potion_mp5", "potion_mp6", "potion_mp7", "potion_mp8", "potion_mp9", "potion_mp10",
+  "buff_king",
   "potion_elixir", "exp_book", "eert_cube", "tier_cube",
-  "ring_fortune", "ring_might", "ring_swift", "ring_titan", "pendant_ward", "pendant_blood", "pendant_moon", "pendant_sage",
-  "ring_dragon", "ring_phantom", "pendant_star", "ring_ancient",
-  "pet_slime", "pet_pixie", "pet_wisp", "pet_ember", "pet_frost", "pet_golem", "pet_unicorn", "pet_reaper", "pet_atlas",
-  "cos_dawn", "cos_gold", "cos_frost", "cos_flame", "cos_shadow", "cos_holy", "cos_storm", "cos_rainbow", "cos_wings", "cos_aurora",
+  "ring_fortune", "ring_titan", "pendant_moon", "pendant_sage",
+  "ring_dragon", "ring_phantom", "pendant_star", "ring_ancient", "ring_bless",
+  "pet_wisp", "pet_ember", "pet_frost", "pet_golem", "pet_unicorn", "pet_reaper", "pet_atlas",
+  "cos_frost", "cos_flame", "cos_shadow", "cos_holy", "cos_storm", "cos_rainbow", "cos_wings", "cos_aurora",
 ];
+/** v1.0.3 (#0르쯔) — 캐시상점 진열 자격: bmPrice(에메랄드 가격)가 1 이상인 아이템만 (BmShopPanel 방어 필터용) */
+export function isCashStock(k: ItemKey): boolean {
+  return (ITEMS[k]?.bmPrice ?? 0) > 0 && BM_STOCK.includes(k);
+}
 
 /* ================= v4.3.0 — 도파민 시스템 (가챠 상자/패키지/일일 특가/출석 보상) =================
  *  유저 지시 "BM 수익 구조 및 dopamine driven development 100+ 기획+제작":
@@ -804,11 +814,14 @@ export const PACK_CONTENTS: Record<string, BmGrant[]> = {
   ],
 };
 
-/** 일일 특가 — 날짜 시드 로테이션 3종 · 30% 할인 (패널 표시/구매 처리 양쪽에서 호출) */
+/** 일일 특가 — 날짜 시드 로테이션 3종 · 30% 할인 (패널 표시/구매 처리 양쪽에서 호출)
+ *  v1.0.3 (#0르쯔) — 캐시상점에서 팔리지 않는 아이템(scroll_star·고티어 물약 등 골드상점 아이템) 제외:
+ *  특가가 0르쯔로 표시되던 원인 제거 — 전부 캐시 전용(bmPrice ≥ 1) 아이템 */
 export const DAILY_DEAL_POOL: ItemKey[] = [
-  "chest_silver", "chest_gold", "buff_king", "potion_hp6", "potion_hp7", "potion_mp7",
-  "ring_fortune", "pendant_moon", "ring_titan", "pendant_sage", "exp_book", "tier_cube",
-  "pet_wisp", "cos_frost", "cos_flame", "potion_hp8", "scroll_star", "eert_cube",
+  "chest_silver", "chest_gold", "chest_legend", "buff_king",
+  "ring_fortune", "ring_titan", "ring_dragon", "pendant_moon", "pendant_sage",
+  "exp_book", "tier_cube", "eert_cube",
+  "pet_wisp", "cos_frost", "cos_flame", "cos_rainbow",
 ];
 export const DAILY_DEAL_OFF = 0.3;
 export function dailyDeals(today: string): ItemKey[] {
