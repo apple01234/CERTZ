@@ -1011,3 +1011,29 @@ Stage Summary:
 - 유저 5항목: ①ponytail 적용(AGENTS.md+skills — 이후 세션 전부 규칙 적용) ②회전베기↔기본공격 사운드 스왑 ③자동전투 포탈 탑승(안전 가드) ④다크 챕터 5종만 어둠+불빛 ⑤BM 100+(신규 아이템 53종 + 가챠/패키지/일일특가 + 기존 출석·일일퀘스트·업적·거래소·스타포스 등 — 아이템 총 130종+/기능 15종+) 전부 반영
 - 교훈: nohup &만으로는 IM 게이트웨이 명령 종료 시 프로세스가 죽는다 — 장시간 빌드는 반드시 setsid -f
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 56
+Agent: Super Z (메인)
+Task: v4.4.0 메이플 스타일 인벤토리 대개편 — 장비/캐시/기타/AD 4탭 그리드 UI (유저 컨셉 이미지) + 물약 사용 경로 수정 + APK 빌드·릴리스
+
+Work Log:
+- [컨셉] 유저 업로드 이미지(메이플스토리 인벤토리 — 장비/캐시/기타/AD 탭 + 5열 그리드 + 수량 배지)를 그대로 옮김. Explore 에이전트로 기존 InventoryPanel(Panels.tsx 813–1306, 495줄) 전 기능 목록화 — 전부 보존 조건으로 재설계
+- [신규 UI] Panels.tsx InventoryPanel 전면 교체(495→695줄): 메이플 윈도우 크롬(다크 브라운 타이틀바 "인벤토리 EQUIPMENT/INVENTORY" + ✕) · 탭별 고유색(장비=주황/캐시=청록/기타=보라/AD=장미, active 그라디언트) · InvGrid 5열 고정 + 빈 칸 채움(최소 30칸) · 수량 배지 우하단(검정칩 흰 글씨) · 장착/소환/착용 코너 배지 · 등급 테두리색(TIER_HEX) + eert 잠재 오라 · H/M 퀵슬롯 배지 · 선택 슬롯 앰버 하이라이트 → 상세 푸터(하단 고정: 아이콘/이름+등급칩/효과/잠재/스타포스★/액션 버튼) · 하단 바(골드+에메랄드+ESC힌트+[정리])
+- [기능 보존 검증] 장착 슬롯 6(반지4·펜던트2 탭해제) · 장비 장착/eert/판매(수량+MAX) · 장신구 강화(골드·확률)/거래소 · 물약 마시기+H/M 지정 · scroll_star 충전 · exp_book · 버프 사용 · 펫 소환/해제 · 치장 착용/해제 · 세트 효과 박스 · 자동 HP/MP %설정 + 자동 버프 8종 — 전부 새 UI에 배선됨 (EventBus 명령어 무변경)
+- [AD 탭] 광고 보상(기존 rpg:adReward — 일 5회·💎+1·G+500) + GEM_SKUS 4종 충전(rpg:buyGems) + 에메랄드 획득처 안내 + BM 상점 바로가기 집약. "오늘 n/5"는 기존 emitRpgState의 isekai.daily.ads 사용 — EventBus 타입에 ads?: number 추가(런타임엔 이미 존재)
+- [정리 버튼] rpg:sortInv 신설 — WorldScene에서 owned 멀티셋을 kind→이름순 정렬(로직 영향 0, UI 표시순만) + 세이브 + 배너. 등록/해제 쌍으로 추가
+- [버그 수정] v4.3.0 신규 물약 16종(hp3~10/mp3~10)이 가방에서 사용 불가였던 경로 누락 수정: onUseItem의 hp2/mp2/elixir 하드코딩 → key.startsWith("potion_") 라우팅 + Player.useConsumablePotion 시그니처 ItemKey 전체 확장(heal/healFull/restore 제네릭)
+- [검증] tsc --noEmit 0 에러 · bun run build 성공 · agent-browser 실전 테스트(480x900): 타이틀→월드→가방 버튼→장비 탭(장착 배지 2슬롯+그리드)→아이템 선택(상세+장착 중/eert/판매수량MAX)→기타 탭(물약 H/M 배지·개수 2)→AD 탭(광고 0/5·SKU 4종)→정리 버튼(배너 "가방을 정리했다" DOM 확인) — 전부 통과, 페이지 에러 0
+- [툴체인 재구축] 세션 리셋으로 JDK+SDK 동시 소실 → scripts/rebuild_toolchain.sh 신설(Temurin 21.0.12 + cmdline-tools 11076708 + android-36 + build-tools 35.0.0 + local.properties)
+- [빌드/릴리스] 1차 실패 — cap sync 미생성물(cordova.variables.gradle) 소실 → 공식 scripts/build_apk.sh 사용(ANDROID_HOME=/home/z/.android-sdk env 필수 — 스크립트 후보 경로에 없음) → BUILD SUCCESSFUL 4m1s → 104,692,094B · aapt 실측 versionCode 59/4.4.0 · md5 883deb06be80bb0dea96e84e96203c32 → GitHub Release v4.4.0(id 384414546) 업로드 → 재다운로드 md5 일치
+- [버저닝] versionCode 59 / 4.4.0 — build.gradle·server.js·next.config·apk-guide.html(변경점+md5)·APK_다운로드_안내.txt·Overlays 배지 6곳 싱크
+- [후처리] rm -rf .next && bun run build → 서버 재기동 → /·apk-guide(md5 확인)·APK_download_guide.txt 200
+- [push 트러블슈팅] 1차 push 거부(GitHub secret push protection) — scripts/make_release.sh에 하드코딩된 토큰이 원인 → GH_TOKEN env 방식으로 수정 + ui_check_*.png 8장 커밋 누출 제거(앰멘드+gitignore) → 재push 성공 85d1ce1..3e5bc7c
+
+Stage Summary:
+- v4.4.0 배포: https://github.com/apple01234/CERTZ/releases/download/v4.4.0/SERTZ-v4.4.0.apk (md5 883deb06…, versionCode 59, 100MB)
+- 인벤토리가 메이플 컨셉 이미지 그대로 개편 — 탭 4종·그리드·수량 배지·상세 하단 고정·[정리]. 기존 기능 100% 유지, 세이브 구조 무변경
+- 부수 효과: v4.3.0 물약 16종 사용 불가 버그 수정(실질 BM 개선) + 광고/충전 진입점 강화(AD 탭)
+- 교훈: ①GitHub push protection은 커밋 내 ghp_ 토큰을 차단한다 — 토큰은 반드시 env로 ②cap sync 생성물은 세션 리셋 시 소실 — APK 빌드는 반드시 scripts/build_apk.sh 경유 ③브라우저 실측에서 배너는 센터 패널 뒤에 가려진다 — DOM eval로 검증
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
