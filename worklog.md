@@ -1107,3 +1107,21 @@ Stage Summary:
 - [릴리스 완료] GitHub Release v4.7.0(id 384573827) — APK 104,951,932B + AAB 103,852,401B 업로드 → 재다운로드 md5 검증 일치(APK f3f38028…/AAB 9fdbded8…) · commit push da61a82..0c22b32(86fd876 본체+0c22b32 물료)
 - [발견] 구버전 에셋 DELETE가 전 버전에서 404(토큰 삭제 권한 추정) — 과거 worklog의 "에셋 정리 성공" 기록과 달리 v4.3.0~v4.6.0 에셋 전부 존재. 기능상 무해(구버전 링크 생존) — 필요 시 GitHub 웹 UI에서 수동 삭제 권고
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 60
+Agent: Super Z (메인)
+Task: v4.8.0 — 타격감 강화 & 3D 느낌 VFX 2단계: 충격파 링 GLSL 셰이더(크리티컬·약점·보스 격파) (versionCode 63)
+
+Work Log:
+- [설계] 전투 VFX 현황 조사 — 피격 화이트 플래시·스쿼시·히트스톱·셰이크·데미지텍스트는 이미 존재, 부족한 것은 "강한 순간"의 공간적 강조 → Phaser 4 Shader 기반 확장 링 설계. Shader GameObject가 오브젝트마다 독자 renderNode/programManager 할당을 소스에서 확인(Shader.js:151) → 유니폼 독립 → 풀링 안전 판정
+- [구현] fx/ShockwaveFX.ts 신설 — GLSL 확장 링(반경 falloff 매끈한 ring + 초반 래디얼 플래시), 프리멀티플라이드 알파 대응(RGB 선곱), 풀 3장(슬롯별 shaderName 분리로 프로그램 캐시 충돌 방지), 고갈 시 조용히 생략(남발 시 프레임 예산 3쿼드 상한), WEBGL 가드·try/catch 폴백, depth 39(엔티티 30 위 데미지텍스트 40 아래)
+- [배선] WorldScene — shockFX 필드+createInner 초기화+cleanup destroy+spawnShockwave 공개 메서드 · 훅 4곳: ①Enemy.takeDamage 크리티컬 금색 링/약점 원소색 링 ②도장 허수아비 크리티컬 링(연습 피드백) ③Boss.takeDamage 크리티컬 대형 링(1.3배) ④onBossDead 보스 오브 색 대형 링(2.4배·520ms — 스토리/재림/GM 경로 공통)
+- [실측] tsc 0 에러 · 웹 빌드 → 서버 재기동 200 · agent-browser: 풀 3장 생성(depth 39×3) 확인 → spawnShockwave eval 발사 → 금색 확장 링 렌더 육안 확인(shot_v480_shock2.png — 어둠 챕터에서 링 falloff 선명) → 오버플로우 테스트(6요청→3활성, 종료 후 자동 비활성) → pageerror 0
+- [버저닝] versionCode 63 / 4.8.0 — build.gradle·server.js·next.config·apk-guide.html(변경점+md5 플레이스홀더)·APK_다운로드_안내.txt(v4.8.0 섹션)·Overlays 배지 6곳 싱크
+
+Stage Summary:
+- v4.8.0 (versionCode 63): 타격감 강화 VFX — 기존 틀 유지(맵/보스/세이브 무변경, 신규 링은 보강 레이어+가드)
+- 유저 방침: "한동안 게임 강화 먼저, 플레이스토어 빌드는 나중" — 이후 세션도 게임 강화 배치 지속 예정
+- 다음 강화 후보: 스킬별 전용 셰이더(회전베기 참격 궤적·돌진 잔상), 포탈 외 3D 느낌 이펙트(스폰 게이트), 데미지텍스트 크리티컬 폰트 이펙트
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

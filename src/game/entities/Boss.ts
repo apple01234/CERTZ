@@ -849,6 +849,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       weak ? ELEMENT_META[this.elem].color : undefined, weak ? "약점" : undefined
     );
     this.scene.spawnHitSpark(this.x, this.y - 30);
+    /* v4.8.0 — 보스에게 먹힌 크리티컬은 더 큰 충격파로 (격판 강조, WebGL 전용) */
+    if (crit) this.scene.spawnShockwave(this.x, this.y - 24, 0xffd76a, 1.3, 400);
     EventBus.emit("boss:update", { hp: Math.max(0, this.hp), maxHp: this.maxHp });
 
     if (this.hp <= 0) {

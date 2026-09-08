@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.7.0 · Phaser 4 전환 — 최신 엔진 렌더러 + 차원문 GLSL 소용돌이 셰이더(3D 느낌 VFX 1단계) + 보스 블룸 신 렌더러 이식 + Cainos 상자 개봉 애니 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.8.0 · 타격감 강화 — 충격파 링 셰이더(크리티컬·약점·보스 격파) + GLSL 확장 링 3D 느낌 VFX 2단계 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 

@@ -28,6 +28,7 @@ import { viewZoom } from "../PhaserGame";
 import { showRewardedAd, purchaseGems, GEM_SKUS } from "../ads"; // v4.1.0 — BM 수익 연동
 import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft } from "../pass"; // v4.5.0 — 시즌 패스/구독
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
+import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import * as audio from "../audio";
 import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
@@ -103,6 +104,8 @@ export class WorldScene extends Phaser.Scene {
   private questTimer: Phaser.Time.TimerEvent | null = null;
   /** 히트스톱/카메라 셰이크 등급 프로파일 (기본공격 절제 / 크리·스킬 강조) */
   impactFX!: ImpactFX;
+  /* v4.8.0 — 충격파 링 셰이더 풀 (크리티컬/약점/보스 격파 강한 순간) */
+  private shockFX!: ShockwaveFX;
   // 스테이지별 누적 킬 (퀘스트 순서와 무관하게 토벌 진행 유지 — 소프트락 방지)
   private killTotals: Record<string, number> = {};
   // 리스폰: 원래 스폰 지점 기록 (파밍 루프 — 사냥→골드→상점 순환이 적 소진으로 끊기지 않게)
@@ -669,6 +672,8 @@ export class WorldScene extends Phaser.Scene {
 
   private createInner() {
     this.impactFX = new ImpactFX(this);
+    /* v4.8.0 — 충격파 링 풀 (WebGL 전용 — Canvas 폴백은 풀이 비어 no-op) */
+    this.shockFX = new ShockwaveFX(this);
     /* v3.0.3 — 씬 재시작 시 물리 월드 일시정지 상태가 이월되는 문제 방지:
      *  대사 중 씬 재시작(포탈/사망 등)이 일어나면 구 씬의 world.pause()가
      *  새 씬에서도 유지되어 캐릭터·몬스터가 완전히 멈춘다. 재시작마다 강제 resume. */
@@ -2846,6 +2851,12 @@ export class WorldScene extends Phaser.Scene {
     this.impactFX.trigger(profile);
   }
 
+  /** v4.8.0 — 충격파 링 (강한 순간 강조 — 크리티컬/약점/보스 격파).
+   *  WebGL 전용(풀 비어 있으면 no-op) — Canvas 폴백/저사양에서 기존 이펙트만 동작. */
+  spawnShockwave(x: number, y: number, tint = 0xffd76a, scale = 1, duration = 360) {
+    this.shockFX?.spawn(x, y, tint, scale, duration);
+  }
+
   onEnemyKilled(key: EnemyKey, exp: number, spawnX: number, spawnY: number, ref?: Enemy | Boss) {
     // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
     this.enemies = this.enemies.filter((e) => e.alive);
@@ -4564,6 +4575,8 @@ export class WorldScene extends Phaser.Scene {
     this.clearBossPostFX(); /* v4.1.5 — 보스전 포스트FX/오라 해제 */
     const def = this.bossDef;
     audio.sfx.bossDie();
+    /* v4.8.0 — 보스 격파 대형 충격파 (오브 색상 — 스토리/재림/GM 경로 공통, WebGL 전용) */
+    if (this.boss?.active) this.spawnShockwave(this.boss.x, this.boss.y, def?.orbTint ?? 0x9d7aff, 2.4, 520);
     /* v3.0.24 (#보스재도전) — 재림 보스 격파: 스토리 진행과 분리된 전용 보상 경로
      *  퀘스트 진행/포탈 개방/클리어 판정 없음 → 골드·경험치·에메랄드 즉시 지급 후 구역 BGM 복귀 */
     if (this.replayBossActive) {
@@ -9057,6 +9070,7 @@ export class WorldScene extends Phaser.Scene {
   private cleanup() {
     this.questTimer?.remove();
     this.scale.off("resize", this.applyCameraZoom, this);
+    this.shockFX?.destroy(); // v4.8.0 — 셰이더 링 풀 정리
     EventBus.emit("dialogue:hide");
   }
 }

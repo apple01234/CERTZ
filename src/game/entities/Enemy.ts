@@ -463,6 +463,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
       this.scene.spawnDamageText(this.x, this.y - 20, dealtD, crit);
       this.scene.spawnHitSpark(this.x, this.y);
+      /* v4.8.0 — 도장 연습도 크리티컬은 충격파로 (연습 피드백 강화) */
+      if (crit) this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.05);
       const sxD = this.scaleX;
       const syD = this.scaleY;
       this.scene.tweens.killTweensOf(this);
@@ -487,6 +489,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       weak ? "약점" : undefined
     );
     this.scene.spawnHitSpark(this.x, this.y);
+    /* v4.8.0 — 강한 순간 충격파 링: 크리티컬 금색 / 약점 원소색 (WebGL 전용, Canvas 무시) */
+    if (crit) this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.1);
+    else if (weak) this.scene.spawnShockwave(this.x, this.y, ELEMENT_META[this.elem].hex, 0.85);
     // v2.2 타격감 — 스쿼시(눌림) 반동: 맞은 순간 납작해졌다 복귀
     const sx = this.scaleX;
     const sy = this.scaleY;
