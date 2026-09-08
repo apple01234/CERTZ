@@ -460,7 +460,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       const dealtD = advD === 1 ? dmg : Math.max(1, Math.round(dmg * advD));
       this.scene.addDojangScore(dealtD);
       this.hitFlash = 90;
-      this.setTintFill(0xffffff);
+      this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
       this.scene.spawnDamageText(this.x, this.y - 20, dealtD, crit);
       this.scene.spawnHitSpark(this.x, this.y);
       const sxD = this.scaleX;
@@ -479,7 +479,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.hp -= dealt;
     this.hitFlash = 90;
     // 타격감: 화이트 플래시 (기존 빨간 틴트보다 명확한 피격 피드백)
-    this.setTintFill(0xffffff);
+    this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
     this.knockVec.set(dir.x * knock, dir.y * knock);
     this.scene.spawnDamageText(
       this.x, this.y - 20, dealt, crit || weak,

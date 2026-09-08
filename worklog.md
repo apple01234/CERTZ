@@ -1087,3 +1087,21 @@ Stage Summary:
 - 유저 5항목 전부 해결: ①자동 물약/버프는 사라진 게 아니라 위치 문제 — 최상단 이동으로 해소 ②상자 가방 개봉 ③르쯔 음수/무료 구매 원인 = buyBm 3분기 잔액 검사 누락 — 전 분기 검사 + 세이브 자동 복구 ④스타포스 가방 강화 ⑤GM 9보스 체험 + ⑥아이콘/AAB 출시 물료
 - 기존 틀 유지: 맵/보스/퀘스트/세이브 구조 무변경 — 상자 개봉은 구매 개봉과 동일 롤 경로, GM 체험은 재림 분리 경로 재사용
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 59
+Agent: Super Z (메인)
+Task: v4.7.0 — Phaser 4 (4.2.1) 엔진 전환 + 3D 느낌 VFX 1단계 (차원문 GLSL 셰이더·보스 블룸 이식·Cainos 상자 애니) + APK/AAB 릴리스 (versionCode 62)
+
+Work Log:
+- [세션 크래시 복귀] 직전 세션이 SSE 스트림 파손으로 중단 — 재개 후 미푸시 자동 커밋 3건(6dad297·746c246·59b28a7) 분석으로 이전 진행상황 복기: ①유저 제공 구글드라이브 2종 다운로드 완료(research/Cainos.7z 61MB = 탑다운 픽셀 캐릭터·프롭 팩 CC0 / Vefects.7z 190MB = Unity VFX 팩 — 압축해제까지 완료) ②Phaser 3.90.0→4.2.1 전환(package.json·bun.lock) ③fx/PortalFX.ts 신규 ④보스 블룸 AddEffectBloom 이식 ⑤Cainos 상자 개봉 애니(chest_anim.webp) ⑥포탈 스윌 튜닝 스크린샷 8장
+- [런타임 실측] agent-browser 480x900: 타이틀→이어하기(LV61·10-10)→world 씬 active·isBooted·running 확인 → 렌더러 WEBGL → Phaser 4 Shader GameObject API 런타임 직접 검증(scene.add.shader 생성·렌더·destory 성공) → pageerror 0
+- [Phaser 4 이식 확인] ①fx/PortalFX.ts — scene.add.shader 신 config API(name/shaderName/fragmentSource/setupUniforms/initialUniforms) + 극좌표 소용돌이 GLSL(3갈래 팔+코어 글로우) + 프리멀티플라이드 알파(NORMAL 블렌드 funcSrc=ONE 대응 RGB 선곱) + WEBGL 가드·try/catch 폴백 ②applyBossPostFX — v3 postFX.addBloom→Phaser.Actions.AddEffectBloom(threshold 0.6/blurRadius 1/steps 4, blend 0.46/카오스 0.68 체감 동일) + cam.filters 가드 ③textures.ts — a.get()→scene.textures.exists() API 수정 ④Cainos 상자 4행(목재/철/은/금) 개봉 애니
+- [버저닝] versionCode 62 / 4.7.0 — build.gradle(62/4.7.0)·server.js·next.config(APK URL)·apk-guide.html(변경점+md5 플레이스홀더)·APK_다운로드_안내.txt(v4.7.0 섹션 신설+이력 재정렬)·Overlays 배지 6곳 싱크
+- [git 정리] research/ 5,258파일 1.1GB가 커밋에 포함 — Vefects.7z 190MB는 GitHub 100MB 파일 한도 초과로 푸시 불가 예측 → .gitignore(research/·*.7z) 추가 + 미푸시 3커밋 soft reset 후 research/ 제외 단일 클린 커밋으로 재구성(디스크 파일은 보존)
+- [검증] tsc --noEmit 0 에러
+
+Stage Summary:
+- v4.7.0 (versionCode 62): Phaser 4.2.1 전환 + 3D 느낌 VFX 1단계 완료 — 기존 틀 유지(맵/보스/퀘스트/세이브 무변경, VFX는 전부 보강 레이어·가드 방식)
+- 이후 세션 참고: research/cainos·vefects 에셋은 git 제외 상태(디스크 보존) — 추가 VFX 소재로 활용 가능 / 다음 VFX 후보: 스킬 히트 셰이더·포탈 외 3D 느낌 이펙트
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

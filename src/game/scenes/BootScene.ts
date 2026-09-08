@@ -246,6 +246,8 @@ export class BootScene extends Phaser.Scene {
     for (const k of ["vfx2_boom", "vfx2_blood"]) this.load.image(k, `${k}.webp`);
     /* v3.0.11 — 토네이도 전용 스프라이트 (gen_tornado_fx.py — 스카이로드 폭풍 소용돌이/천공의 폭풍) */
     this.load.spritesheet("fx_tornado", "fx_tornado.webp", { frameWidth: 64, frameHeight: 64 });
+    /* v4.7.0 — Cainos 상자 개봉 애니 (가방 개봉/BM 구매/광고 상자 공용 연출) */
+    this.load.spritesheet("chest_anim", "chest_anim.webp", { frameWidth: 64, frameHeight: 64 });
     // 지형 전환 타일 5세트 x 9종 (build_tile_transitions.py — 타일맵 경계 부자연 개선)
     for (const s of TX_SETS) for (const k of TX_KINDS) this.load.image(`tx_${s}_${k}`, `tx_${s}_${k}.webp`);
     this.load.setPath("assets/audio");

@@ -310,7 +310,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         : `${this.def.name} — 2 페이즈!`
     );
     // 페이즈 전환 플래시
-    this.setTintFill(0xffffff);
+    this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
     this.scene.time.delayedCall(120, () => this.alive && this.clearTint());
   }
 
@@ -838,7 +838,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.hp -= dealt;
     this.knockVec.set(dir.x * knock * 0.12, dir.y * knock * 0.12); // 보스는 넉백 거의 안 됨
     // 타격감: 화이트 플래시 — 카운터/기절 상태의 틴트는 유지
-    this.setTintFill(0xffffff);
+    this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
     this.scene.time.delayedCall(60, () => {
       if (!this.alive || !this.active) return;
       if (this.mode === "staggered") this.setTint(0x8a7aff);

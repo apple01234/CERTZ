@@ -111,6 +111,18 @@ export function buildAllAnims(scene: Phaser.Scene) {
   // VFX — 참격 초승달 스윕(외부 애니), 차원문 소용돌이
   a.create({ key: "fx-slash", ...fr("slash", 6, 30, 0) });
   a.create({ key: "portal-spin", ...fr("portal", 8, 10, -1) });
+  /* v4.7.0 — Cainos 상자 개봉 애니 (Village Props, CC0 — public/assets/chest_anim.webp)
+   *  64px 8열 시트 · 행별 7프레임 개봉 시퀀스. 행0 목재(패키지) / 행1 철(무쇠) / 행2 은(실버) / 행3 금(골드·전설) */
+  if (scene.textures.exists("chest_anim")) {
+    for (let r = 0; r < 4; r++) {
+      a.create({
+        key: `chest-open-${r}`,
+        frames: a.generateFrameNumbers("chest_anim", { start: r * 8, end: r * 8 + 6 }),
+        frameRate: 14,
+        repeat: 0,
+      });
+    }
+  }
   // 장식 이펙트
   a.create({ key: "flame-burn", ...fr("flame", 4, 8, -1) });
   a.create({ key: "sparkle", ...fr("sparkle", 2, 3, -1) });

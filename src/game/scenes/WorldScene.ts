@@ -6,6 +6,7 @@ import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
 import { Lighting, ambientFor } from "../fx/Lighting";
+import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
 import { Pet } from "../entities/Pet";
 import { EventBus, type QuestState, type InteractState, type QuestLogState, type RewardPopupState } from "../../components/game/EventBus";
 import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
@@ -57,6 +58,8 @@ export class WorldScene extends Phaser.Scene {
 
   private fragment: Phaser.Physics.Arcade.Sprite | null = null;
   private portal: Phaser.Physics.Arcade.Sprite | null = null;
+  /* v4.7.0 — 차원문 GLSL 소용돌이 오라 (Phaser 4 Shader — WebGL 전용) */
+  private portalSwirl: PortalSwirl | null = null;
   private portalActive = false;
   /* v2.6 — 육식 식물 위험 오브젝트 (오버랩은 플레이어 생성 후 등록) */
   private plantHazards: Phaser.GameObjects.Image[] = [];
@@ -358,8 +361,8 @@ export class WorldScene extends Phaser.Scene {
 
   /* ----- v4.1.5 — 동적 조명 + 보스 포스트FX + 신규 파티클 ----- */
   private lighting!: Lighting;
-  private bossBloomFX: Phaser.FX.Controller | null = null;
-  private bossVignetteFX: Phaser.FX.Controller | null = null;
+  /* v4.7.0 — Phaser 4 filters 전환 (v3 postFX → filters.external) */
+  private bossFilters: Phaser.Filters.Controller[] = [];
   private bossEmber: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private bossLight: Phaser.GameObjects.Image | null = null;
   private portalMagicA: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
@@ -457,6 +460,7 @@ export class WorldScene extends Phaser.Scene {
     this.boss = null;
     this.fragment = null;
     this.portal = null;
+    this.portalSwirl = null; // v4.7.0 — 씬 재시작 시 파괴된 셰이더 참조 정리
     /* v2.7 — 씬 재시작 같은 인스턴스 재사용: 이전 구역 개방 상태가 유출되면
      *  다음 구역에서 시작부터 포탈이 열려 퀘스트를 건너뛰고, 보루도 early-return으로 죽는다 */
     this.portalActive = false;
@@ -482,8 +486,7 @@ export class WorldScene extends Phaser.Scene {
     this.minimap = null;
     /* v4.1.5 — 조명/보스 포스트FX/신규 이미터 정리 */
     this.lighting?.destroy();
-    this.bossBloomFX = null;
-    this.bossVignetteFX = null;
+    this.bossFilters = [];
     this.bossEmber = null;
     this.bossLight = null;
     this.portalMagicA = null;
@@ -1371,7 +1374,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** v3.0.14 — 배치 겹침 방지: 지점이 기존 충돌 오브제(나무/바위) 중심에 너무 가까운지 */
   private nearSolidObstacle(x: number, y: number, minDist: number): boolean {
-    for (const go of this.solidGroup.children.entries) {
+    for (const go of this.solidGroup.getChildren()) {
       if (!go.active || !go.getData("obstacle")) continue;
       const s = go as Phaser.Physics.Arcade.Sprite;
       if (Phaser.Math.Distance.Between(x, y, s.x, s.y) < minDist) return true;
@@ -1764,6 +1767,10 @@ export class WorldScene extends Phaser.Scene {
   private spawnPortal(x: number, y: number) {
     // 외부 에셋 차원문(varkalandar CC-BY, 8프레임 소용돌이) — 비활성 시 회색 틴트
     this.portal = this.physics.add.sprite(x, y, "portal0").setDepth(3).setTint(0x777777);
+    /* v4.7.0 — Phaser 4 GLSL 소용돌이 오라 (셰이더 기반 3D 느낌 VFX 첫 단계 — 기존 스프라이트/입자 유지,
+     *  실패 시 null로 기존 포탈만 동작) */
+    this.portalSwirl?.destroy();
+    this.portalSwirl = addPortalSwirl(this, x, y, 0xd8f4ff, 0x7e9bff, 0.5);
     /* v4.1.8 — 차원문 마법 입자: 유료 CFXR 마법 별 (Kenney pk_magic_01 대체) */
     this.portalMagicA = this.add.particles(x, y - 4, "cfxr_mstar", {
       lifespan: 900,
@@ -4502,9 +4509,17 @@ export class WorldScene extends Phaser.Scene {
   private applyBossPostFX(chaos: boolean) {
     try {
       const cam = this.cameras.main;
-      if (this.game.renderer.type === Phaser.WEBGL && cam.postFX) {
-        this.bossBloomFX = cam.postFX.addBloom(0xffffff, 1, 1, 1, chaos ? 0.68 : 0.46, 4);
-        if (chaos) this.bossVignetteFX = cam.postFX.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.62, 0.4);
+      if (this.game.renderer.type === Phaser.WEBGL && cam.filters) {
+        /* v4.7.0 — Phaser 4: v3 postFX.addBloom 대신 AddEffectBloom(Threshold+Blur+ParallelFilters 합성).
+         *  v3 강도(strength 0.68/0.46, steps 4)를 config로 이식 — 보스전 블룸 체감 동일 유지 */
+        const bloom = Phaser.Actions.AddEffectBloom(cam, {
+          threshold: 0.6,
+          blurRadius: 1,
+          blurSteps: 4,
+          blendAmount: chaos ? 0.68 : 0.46,
+        });
+        if (bloom[0]) this.bossFilters.push(bloom[0].threshold, bloom[0].blur, bloom[0].parallelFilters);
+        if (chaos) this.bossFilters.push(cam.filters.external.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.62, 0.4));
       }
       if (chaos && this.boss?.active) {
         /* v4.1.8 — 카오스 잉걸불: 유료 CFXR 종 화염 (256x512, 설정 무변경) */
@@ -4534,10 +4549,11 @@ export class WorldScene extends Phaser.Scene {
 
   /* v4.1.5 — 보스전 포스트FX/오라 해제 (사망·씬 전환 공통) */
   private clearBossPostFX() {
-    this.bossBloomFX?.destroy();
-    this.bossBloomFX = null;
-    this.bossVignetteFX?.destroy();
-    this.bossVignetteFX = null;
+    /* v4.7.0 — Phaser 4: FilterList.remove()가 destroy까지 처리 */
+    for (const f of this.bossFilters) {
+      try { this.cameras.main.filters.external.remove(f); } catch { /* 이미 해제된 필터 무시 */ }
+    }
+    this.bossFilters = [];
     this.bossEmber?.destroy();
     this.bossEmber = null;
     this.bossLight?.destroy();
@@ -4904,6 +4920,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.dailyAdChest++;
       audio.sfx.questDone();
+      if (this.player) this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor("chest_iron")); // v4.7.0
       this.grantBmGrants(`광고 무료 상자 개봉! (${this.dailyAdChest}/${AD_CHEST_PER_DAY})`, [this.rollChest("chest_iron")]);
       this.save();
       this.emitRpgState();
@@ -5338,6 +5355,7 @@ export class WorldScene extends Phaser.Scene {
           else for (const g of PACK_CONTENTS[v.key] ?? []) grants.push(g);
         }
         audio.sfx.questDone();
+        if (this.player) this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor(v.key)); // v4.7.0
         this.grantBmGrants(`${it.name}${n > 1 ? ` ×${n}` : ""} 개봉!`, grants);
         if (v.key === "pack_starter") this.starterPackBought = true; // v4.5.0 — 스타터팩 하이라이트 해제
         this.save();
@@ -5380,6 +5398,7 @@ export class WorldScene extends Phaser.Scene {
       else for (const g of PACK_CONTENTS[key] ?? []) grants.push(g);
       if (grants.length === 0) return;
       audio.sfx.questDone();
+      this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor(key)); // v4.7.0
       this.grantBmGrants(`${it.name} 개봉!`, grants);
       this.save();
       this.emitRpgState();
@@ -6143,7 +6162,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** v3.0.14 — 지점이 장애물(나무/바위) 충돌 박스와 겹치는지 (플레이어 반경 여유 포함) */
   private blockedByObstacle(x: number, y: number): boolean {
-    for (const go of this.solidGroup.children.entries) {
+    for (const go of this.solidGroup.getChildren()) {
       if (!go.active || !go.getData("obstacle")) continue;
       const b = (go as Phaser.Physics.Arcade.Image).body as Phaser.Physics.Arcade.StaticBody | null;
       if (!b) continue;
@@ -7787,6 +7806,29 @@ export class WorldScene extends Phaser.Scene {
   /* ================= BM (v1.9 — 펫/치장/강화 오라) ================= */
 
   /** v4.3.0 — 가챠 상자 가중치 롤 (chest_* 전용 — CHEST_TABLES) */
+  /* v4.7.0 — 상자 개봉 연출: Cainos 개봉 애니(행별 7프레임) + 절제된 스파클 1회.
+   *  고빈도 절제 원칙 — 상자 개봉(BM 도파민 지점)에만 사용, 일반 전투에는 미적용 */
+  private chestRowFor(key: string): number {
+    if (key === "chest_gold" || key === "chest_legend") return 3;
+    if (key === "chest_silver") return 2;
+    if (key === "chest_iron") return 1;
+    return 0; // pack_* 등 → 목재 상자
+  }
+
+  private playChestOpenAnim(x: number, y: number, row: number) {
+    try {
+      if (!this.anims.exists(`chest-open-${row}`) || !this.textures.exists("chest_anim")) return;
+      const chest = this.add.sprite(x, y, "chest_anim", row * 8).setDepth(31);
+      chest.play(`chest-open-${row}`);
+      chest.once("animationcomplete", () => {
+        if (!chest.active) return;
+        const fx = this.add.sprite(chest.x, chest.y - 8, "cfxr_star", 0).setDepth(32).setScale(0.5).setAlpha(0.9);
+        this.tweens.add({ targets: fx, scale: 1.1, alpha: 0, duration: 300, ease: "Cubic.out", onComplete: () => fx.destroy() });
+        chest.destroy();
+      });
+    } catch { /* 연출 실패 — 지급은 정상 진행 */ }
+  }
+
   private rollChest(key: string): BmGrant {
     const table = CHEST_TABLES[key] ?? CHEST_TABLES.chest_iron;
     const total = table.reduce((s, e) => s + e.w, 0);
