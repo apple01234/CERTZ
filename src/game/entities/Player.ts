@@ -3594,17 +3594,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** 상급 물약/엘릭서 사용 — 즉시 효과 + 차감 (v3.0.20 — 엘릭서 추가) */
-  useConsumablePotion(key: "potion_hp2" | "potion_mp2" | "potion_elixir"): boolean {
+  /* v4.4.0 — 전 티어 물약 사용 (hp3~10·mp3~10 포함 — v4.3.0 물약 확장분의 사용 경로 누락 수정) */
+  useConsumablePotion(key: ItemKey): boolean {
     if (this.state === "dead") return false;
     const item = ITEMS[key];
-    if (!item || !this.owned.includes(key)) return false;
-    const used = item.healFull ? this.restoreAll() : key === "potion_hp2" ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
+    if (!item || item.kind !== "consumable" || !this.owned.includes(key)) return false;
+    if (!item.healFull && !item.heal && !item.restore) return false;
+    const used = item.healFull ? this.restoreAll() : item.heal ? this.heal(item.heal) : this.restore(item.restore ?? 0);
     if (!used) return false;
     this.consumeConsumable(key);
     this.scene.sfxPotion();
     this.scene.spawnPickupText(
       this.x, this.y - 30,
-      item.healFull ? "HP/MP 전부 회복!" : key === "potion_hp2" ? `+${item.heal} HP` : `+${item.restore} MP`,
+      item.healFull ? "HP/MP 전부 회복!" : item.heal ? `+${item.heal} HP` : `+${item.restore} MP`,
       item.healFull ? "#ffd76a" : "#7dffa8"
     );
     this.scene.emitHud();

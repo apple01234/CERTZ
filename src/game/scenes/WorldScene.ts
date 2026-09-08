@@ -4818,8 +4818,8 @@ export class WorldScene extends Phaser.Scene {
         }
         return;
       }
-      if (key === "potion_hp2" || key === "potion_mp2" || key === "potion_elixir") {
-        // v3.0.20 (#7) — 엘릭서(HP/MP 100% 회복) 포함
+      if (key.startsWith("potion_")) {
+        // v4.4.0 — 전 티어 물약 사용 경로 통합 (hp3~10·mp3~10은 v4.3.0에서 사용 경로가 누락돼 있었다)
         this.player.useConsumablePotion(key);
         this.emitRpgState();
         return;
@@ -5105,6 +5105,19 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
       }
     };
+    /* v4.4.0 — 메이플식 인벤토리 [정리] 버튼: owned 멀티셋을 종류→이름순 정렬 (로직 영향 없음 — UI 표시순만) */
+    const onSortInv = () => {
+      if (!this.player) return;
+      const rank = (k: string) => {
+        const it = ITEMS[k as ItemKey];
+        const kindOrder: Record<string, number> = { consumable: 0, buff: 1, accessory: 2, weapon: 3, armor: 4, pet: 5, cosmetic: 6 };
+        return `${String(kindOrder[it?.kind ?? "z"] ?? 9).padStart(2, "0")}:${it?.name ?? k}`;
+      };
+      this.player.owned.sort((a, b) => rank(a).localeCompare(rank(b), "ko"));
+      this.save();
+      this.emitRpgState();
+      EventBus.emit("banner:show", { text: "가방을 정리했다 — 깔끔하네" });
+    };
     /* v3.0.6 (지시 #5) — 자동 물약/자동 버프 설정 */
     const onAutoSet = (v: { hpPct?: number; mpPct?: number; mpOn?: boolean; buffs?: string[] }) => {
       if (!this.player) return;
@@ -5247,6 +5260,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:autoAlloc", onAutoAlloc);
     EventBus.on("rpg:quickpot", onQuickPot);
     EventBus.on("rpg:eert", onEert);
+    EventBus.on("rpg:sortInv", onSortInv); // v4.4.0 — 메이플식 [정리]
     EventBus.on("rpg:questAccept", onQuestAccept);
     EventBus.on("rpg:questTrack", onQuestTrack);
     EventBus.on("rpg:autoset", onAutoSet);
@@ -5288,6 +5302,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:sell", onSell);
       EventBus.off("rpg:sellPotion", onSellPotion);
       EventBus.off("rpg:bmBuy", onBmBuy);
+      EventBus.off("rpg:sortInv", onSortInv); // v4.4.0
       EventBus.off("rpg:autoset", onAutoSet);
       EventBus.off("rpg:autohunt", onAutoHunt);
       EventBus.off("rpg:gm", onGm);

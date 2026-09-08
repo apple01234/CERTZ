@@ -118,7 +118,7 @@ export type RpgState = {
     gateStars: boolean[];
     freeGachaIn: number;
     attend: { last: string; count: number };
-    daily: { date: string; hunts: number; gate: number; closet: number; claimed: string[] };
+    daily: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number };
     tickets: { date: string; gate: number; closet: number };
     extSummary: string[];
   };

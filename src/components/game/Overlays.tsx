@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.3.0 · BM 대확장 — 가챠 상자 4종·패키지 6종·일일 특가 30%↓·신규 아이템 53종(물약 16·장신구 12·펫 6·치장 6·버프 3)·자동전투 포탈 탑승·다크 챕터만 어둠+불빛·전사 사운드 스왑 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.4.0 · 메이플 인벤토리 — 장비/캐시/기타/AD 탭 그리드 개편 · 물약 전 티어 사용 수정 · [정리] 버튼 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
