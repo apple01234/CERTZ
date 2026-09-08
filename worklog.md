@@ -1155,3 +1155,19 @@ Stage Summary:
 - 워치독 오탐 교훈: 헤드리스 rAF 서스펜션 — 프리즈 판정은 6초+무변화 기준으로
 - SNS OAuth 실사용화 TODO: 구글/카카오/네이버 개발자 콘솔 앱 등록 → 콜백 URL https://<도메인>/api/auth/sns/<provider>/callback 등록 → SERTZ_GOOGLE_ID/SECRET 등 env 주입
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 62
+Agent: Super Z (메인)
+Task: 버전 체계 전환 — v4.9.0 → v1.0.0 리셋 (유저 지시: "이제부터 1.0.n 씩 올라갈꺼야")
+
+Work Log:
+- [버전 갱신 3곳] android/app/build.gradle(versionName "1.0.0" + versionCode 65), Overlays.tsx 타이틀 배지(v1.0.0), package.json(2.3.0→1.0.0)
+- [versionCode 단조 유지 결정] 스토어 미업로드라 리셋도 가능하지만, 향후 Play Store 업로드 시 "versionCode는 이전 업로드보다 커야 함" 규칙 대비해 65로 계속 올린다 — versionName(유저 노출)만 1.0.n 체계
+- [APK 물료 유지] server.js APK_MIRROR·next.config.ts·apk-guide.html·APK_다운로드_안내.txt는 현재 배포 APK(v4.8.0)를 가리키는 그대로 — 다음 릴리스(=v1.0.0 빌드) 시 일괄 갱신 + md5 기입
+- [실측] 타이틀 v1.0.0 배지 노출 확인 · 서버 200 · tsc 0 에러
+
+Stage Summary:
+- 공식 버전 체계: **1.0.0 확정, 이후 1.0.n 증가** (versionCode는 내부 단조 카운터로 병행)
+- 다음 릴리스 물료: SERTZ-v1.0.0.apk / .aab — 빌드 시점에 apk-guide·guide.txt·mirror URL 6곳 갱신
+- ③전투 외 강화(일일 던전 확장·거래소 BM·시즌 미션) 후보 확정 대기 중 / SNS OAuth는 키 등록만 남음

@@ -7,8 +7,8 @@ android {
         applicationId "com.sertz.yggdrasil"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 64
-        versionName "4.9.0"
+        versionCode 65
+        versionName "1.0.0" /* v1.0.0 체계 전환 (유저 지시 — 이후 1.0.n 증가). versionCode는 스토어 단조 규칙용으로 계속 올라간다 */
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
