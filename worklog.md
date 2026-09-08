@@ -1171,3 +1171,30 @@ Stage Summary:
 - 공식 버전 체계: **1.0.0 확정, 이후 1.0.n 증가** (versionCode는 내부 단조 카운터로 병행)
 - 다음 릴리스 물료: SERTZ-v1.0.0.apk / .aab — 빌드 시점에 apk-guide·guide.txt·mirror URL 6곳 갱신
 - ③전투 외 강화(일일 던전 확장·거래소 BM·시즌 미션) 후보 확정 대기 중 / SNS OAuth는 키 등록만 남음
+
+---
+Task ID: 63
+Agent: Super Z (메인)
+Task: v1.0.1 — 전투 외 강화 3종: ①일일 던전 확장(요일별 균열 테마+티켓 재충전 BM) ②거래소 BM(계정연계 유저 거래판) ③시즌 미션(리텐션) (versionCode 66 — APK 빌드는 유저 방침상 보류)
+
+Work Log:
+- [일일 던전 확장] data.ts에 CLOSET_THEMES 7종 신설(일 만능/월 골드러시 1.6배/화 지혜 책2배·2권/수 강화주문서 12%/목 약초 물약/금 전설의 문 에메랄드 8%/토 무한 소환 1.4배) + closetThemeOf(KST 기준 요일 판정). WorldScene: closetTheme 필드, enterCloset 테마 배너+미션 훅, buildCloset 테마 배지 텍스트, tickCloset 소환 간격 spawnMul 가속, 킬 루프에 골드배율·책 bookMul/bookN·extra 확률 드롭·에메랄드 드롭 적용, finishCloset 팝업에 테마명+내일 테마 예고
+- [티켓 재충전 BM] rpg:ticketRefill 리스너 — 에메랄드 3💎로 게이트/균열 티켓 +1, 일 3회 한정(ticketRefills, tickets.refills 세이브). BenefitPanel 티켓 카드에 재충전 버튼 + 오늘의 테마/요일 로테이션 UI
+- [거래소 BM] accounts/index.js에 /api/market 5엔드포인트 신설(GET 목록/POST list·cancel·buy·collect) — db.market(등록물)+db.payouts(정산 ledger) 신설, 구 DB 호험. 등록 로그인 필수·동시 3칸·같은 아이템 중복 금지·가격 1G~10M. 구매 시 본인물건 차단+판매자에게 90% 적립(수수료 10%=BM 수익), 정산 수령 시 ledger 소진. attachAccountsBefore에 /api/market 가로채기 추가 + fc-entry.js에 handleMarketRequest 주입
+- [거래판 UI] TradePanel 2탭 개편(시세판[기존 NPC 에메랄드 시세 유지]/유저 거래판[골드 실거래]) + MarketBoard 신설 컴포넌트 — authMe+marketGet 마운트 조회, 미로그인 시 계정 연계 안내 박스, 정산금 바+수령, 내 전설 등록(가격 입력·권장가=시세×5000), 등록물 목록(내 것=취소/타인=구매). server.js 응답 스냅샷으로 즉시 갱신
+- [거래판 훅] WorldScene rpg:marketList/Buy/Cancel/Collect 4종 — 등록 시 owned 제거+accUp 이전, 취소 시 복구, 구매 시 골드 직접 차감(buff_gold 배율 왜곡 방지)+아이템 지급+강화 수치 이전, 수령 시 정산금 지급. 양쪽 모두 trackMission("market") 훅
+- [시즌 미션] pass.ts에 SEASON_DAILY_MISSIONS 4종(토벌50/보스3/균열1/게이트2파)+SEASON_WEEKLY_MISSIONS 5종(토벌400/보스15/균열4/일일퀘4일/거래소1회) — 보상은 패스 XP(30~200)로 지급=미션→패스→보상 3단 루프. weekKey(ISO 주차)·missionsByHook 헬퍼
+- [미션 저장/트래킹] config.ts SaveData.missions{day,week,d,w,cd,cw}+sanitize. WorldScene: missionDay/Week/D/W/Cd/Cw 필드+로드/세이브, ensureMissions(일/주 리셋), trackMission(hook) 6곳 배선(킬/보스×2/균열입장/게이트웨이브클리어/일일퀘수령/거래이용), 완료 순간 배너+sfx, claimMission(rpg:missionClaim) 수령→addPassXp
+- [미션 UI] RpgState.pass.missions 확장, PassPanel에 시즌 미션 섹션(일일/주간 태그·진행바·+XP·수령 버튼, 완료=금색/수령완료=초록)
+- [버저닝] v1.0.1(1.0.n 증분 체계 첫 패치) — build.gradle 66, package.json 1.0.1, 타이틀 배지
+- [검증 — curl] 마켓 전 플로우: A가입→등록(bd_gram up3 50k)→B가입→구매→A 정산 수령 45,000G(90%) ✓ / 자기구매 차단 ✓ / 취소 복구 ✓ / 게스트 조회(guest:true) ✓ / 비로그인 등록 401 ✓
+- [검증 — 라이브] 타이틀 v1.0.1 배지 ✓ / 균열 입장(티켓2→1)+테마 배너+테마 배지 렌더 ✓ / 3킬 시 골드 1,230(=lv61 기본 410×3, 수요일 배율 없음 정상)+책 2드롭×2권 ✓ / 미션 카운트 d_closet·w_closet·d_hunt·w_hunt ✓ / 종료 팝업 테마명+내일 예고 ✓ / 티켓 재충전 2회(에메랄드 −6, 게이트+1 균열+1) ✓ / 패스 패널 미션 섹션+수령(d_closet→패스XP 363→403) ✓ / 거래판: bd_guardian 등록(owned에서 제거)→취소(복구) ✓ / A계정 bd_surt up2 20k 구매(골드 24,161→4,161, 수르트+성수2 지급) ✓ / w_market 미션 트리거 ✓ / 판매자 pending 18,000 ✓
+- [검증 — 영속성] 재접속 후 미션 카운트·수령 기록·티켓 재충전 카운트·구매 아이템(성수2) 전부 복원 ✓
+- [정리] tsc 0에러 · eslint 0에러(마운트 fetch는 setTimeout 분리로 set-state-in-effect 대응) · 웹 빌드+서버 200 · 테스트 계정(mktest_*) DB에서 정리
+
+Stage Summary:
+- v1.0.1: 유저 요청 3후보(일일 던전 확장/거래소 BM/시즌 미션) 전부 구현 — 기존 틀 유지(균열 던전 60초 구조/시세판/시즌 패스 그대로, 확장은 보강 레이어)
+- 거래소 BM 구조: 서버는 ledger만(등록물+정산), 클라이언트 세이브는 EventBus 훅이 조작 — 서버 응답 성공 후 반영 순서로 불일치 방지. 수수료 10%가 첫 실질 BM 수익 경로(계정 로그인과 직결)
+- 미션→패스 XP→트랙 보상 루프로 리텐션 강화. 요일 테마로 매일 균열 던전 재방문 동기 부여
+- 다음 릴리스 물료: SERTZ-v1.0.1.apk/.aab — 빌드 시 6곳 URL 갱신 필요
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
