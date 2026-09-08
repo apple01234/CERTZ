@@ -1064,3 +1064,26 @@ Stage Summary:
 - 기존 틀 유지 확인: 맵/보스/퀘스트/세이브 구조 무변경 — 신규 필드는 전부 optional(구버전 세이브 호환), 패널은 EventBus 명령 추가 방식
 - 다음 후보: 웹샵 실결제(토스 PG +10% 보너스) · AdMob 실제 단위 ID+미디에이션 · 부활 광고 · 시즌 패스 챌린저 트랙 · 국가별 루트박스 규제 매트릭스
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 58
+Agent: Super Z (메인)
+Task: v4.6.0 출시 준비 & 유저 피드백 5종 — BM 구매 음수 버그 + 가방 상자 개봉 + 가방 스타포스 + 자동물약 UI 복구 + GM 전 보스 체험 + 정식 아이콘/AAB (versionCode 61)
+
+Work Log:
+- [세션 복귀] 컨텍스트 초과 중단 직후 재개 — 미커밋 v4.6.0 코드(Panels/Player/WorldScene + 아이콘 18파일)가 작업트리에 남아있음을 확인, 의존성 검증부터 재개
+- [르쯔 구매 버그] buyBm 펫/치장/장비 3분기에 잔액 검사 추가(버프/소모품은 기존 검사 존재) + 로드 시 Math.max(0, emerald) 음수 세이브 자동 복구. 실측: 에메랄드 0에서 pet_wisp 구매 시도 → "에메랄드가 부족하거나 이미 보유 중입니다" 배너 + 잔액 0 유지 + 펫 미지급 확인
+- [가방 상자 개봉] WorldScene onOpenChest(rpg:openChest) 신설 — 보유 소모 후 CHEST_TABLES 가중치 롤/PACK_CONTENTS 고정 지급(구매 개봉과 동일 경로) + 인벤토리 기타 탭 상자/패키지 상세에 [열기] 버튼. 실측: 무쇠 상자 개봉 → "무쇠 상자 개봉!" 보상 팝업 확인
+- [가방 스타포스] 인벤토리 장비 탭 — 장착 중 무기/방어구 상세에 [강화 N G · N%] 버튼(상점과 동일 rpg:upgrade 이벤트·비용·주문서 가산) + rpg:upgradeResult 구독해 성공/실패 플래시 2.5초 표시. 실측: 강화 45G·100% 클릭 → "강화 성공!" + ★1 + 5030→4985G 차감 확인
+- [자동 물약 UI] "자동 물약/버프 어디감?" — 기능은 존재했으나 기타 탭 그리드 아래 깊숙이 위치 → 그리드 위 최상단으로 이동 + 제목 "⚙️ 자동 물약 · 버프 — 전투 중 자동으로 사용 (여기 있습니다!)" 명시. 실측: 자동 UI가 소모품 그리드보다 위 렌더 확인
+- [GM 전 보스 체험] spawnGmBoss 신설(스토리 스펙 산식 — 재림 ×5/×2.2 미적용) + init/gmBoss 전달 + gotoStage/startTransition 시그니처 확장 + gmTrial 플래그로 보루 중복 스폰 차단 + 격파 처리는 재림 분리 경로 재사용(스토리 진행 영향 0) + GmPanel에 9보스 그리드(HP/ATK 표시). bun 정적 검증: BOSS_DEFS 9종 전부 CHAPTERS.boss 매핑 존재. 실측: 아부디토스 체험 클릭 → 해당 챕터 이동 + 보스바 "아부디토스" 표시
+- [출시 준비] 정식 아이콘 512px(골드 스타 다크) → mipmap 전 해상도 교체(mdpi~xxxhdpi launcher/foreground/round 18파일) + AAB 최초 빌드: 툴체인 재구축(rebuild_toolchain.sh) → build_apk.sh(APK 104,898,730B) → gradlew bundleRelease → SERTZ-v4.6.0.aab(103,799,358B) 생성. aapt 실측 versionCode 61/4.6.0 · md5 APK 9edf7857…/AAB d7780bbf…
+- [버저닝] versionCode 61 / 4.6.0 — build.gradle(61/4.6.0)·server.js·next.config(APK URL)·apk-guide.html(변경점+md5+AAB 안내)·APK_다운로드_안내.txt·Overlays 배지 6곳 싱크
+- [검증] tsc --noEmit 0 에러 · bun run build 성공 · 서버 재기동(setsid -f) → GET / 200 + apk-guide 신규 md5 확인 · agent-browser 480x900 전수 실측(타이틀 v4.6.0 배지 → 월드 → GM 패널 9보스 → 보스 체험 → 가방 강화 → 자동물약 UI → 상자 개봉 → BM 차단) — pageerror 0
+- [릴리스] scripts/make_release_v460.sh 신설(APK+AAB 업로드 + 재다운로드 md5 검증 + 구버전 v4.5.0 에셋 정리) — GH_TOKEN env 방식(Task 56 교훈 유지)
+
+Stage Summary:
+- v4.6.0 배포: APK https://github.com/apple01234/CERTZ/releases/download/v4.6.0/SERTZ-v4.6.0.apk (md5 9edf7857…, versionCode 61, 100MB) + AAB SERTZ-v4.6.0.aab (md5 d7780bbf…, 99MB) — 플레이 스토어 업로드 준비 완료
+- 유저 5항목 전부 해결: ①자동 물약/버프는 사라진 게 아니라 위치 문제 — 최상단 이동으로 해소 ②상자 가방 개봉 ③르쯔 음수/무료 구매 원인 = buyBm 3분기 잔액 검사 누락 — 전 분기 검사 + 세이브 자동 복구 ④스타포스 가방 강화 ⑤GM 9보스 체험 + ⑥아이콘/AAB 출시 물료
+- 기존 틀 유지: 맵/보스/퀘스트/세이브 구조 무변경 — 상자 개봉은 구매 개봉과 동일 롤 경로, GM 체험은 재림 분리 경로 재사용
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

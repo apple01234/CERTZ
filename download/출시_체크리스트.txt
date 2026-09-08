@@ -1,0 +1,46 @@
+SERTZ 구글 플레이 스토어 출시 체크리스트 (v4.6.0 기준)
+========================================================
+
+■ 완료된 항목 (이번 버전에서 준비됨)
+1. 앱 아이콘 — 정식 스타포스 엠블럼 아이콘 전 밀도 적용
+   - 레거시/원형/적응형(adaptive) 전부 생성 (mdpi~xxxhdpi)
+   - 플레이 스토어 등록용 512×512: download/SERTZ_icon_512.png
+2. AAB(Android App Bundle) — download/SERTZ-v4.6.0.aab
+   - release 서명 키(sertz-release.keystore)로 서명됨
+   - 플레이 콘솔 업로드용 (APK가 아닌 AAB 필수)
+3. versionCode 61 / versionName 4.6.0
+4. 타겟 SDK 36 (플레이 콘솔 최신 요구 충족)
+5. 권한 최소화 — INTERNET + BILLING (결제) 만 사용
+6. AdMob 테스트 앱 ID 적용 (부팅 크래시 없음)
+
+■ 개발자가 직접 해야 할 항목 (플레이 콘솔)
+1. 플레이 콘솔 (play.google.com/console) 개발자 계정 $25 등록
+2. 앱 생성 → 업로드 키 관리
+   - 이번 AAB는 기존 keystore(sertz-release.keystore / 비밀번호 sertz2020)로 서명됨
+   - 플레이 앱 서명 사용 시: 콘솔 안내에 따라 keystore 내보내기(PEPK) 후 업로드
+   - ⚠ keystore 분실 시 업데이트 불가 — 안전 보관 필수
+3. 스토어 등록 정보
+   - 앱 이름: SERTZ (30자 이내)
+   - 아이콘 512×512: download/SERTZ_icon_512.png
+   - 기능 그래픽 1024×500, 휴대전화 스크린샷 최소 2장 (게임 플레이 캡처)
+   - 짧은 설명 80자 / 전체 설명 4000자
+4. 앱 콘텐츠 선언
+   - 콘텐츠 등급 설문 (폭력 표현 — 몬스터 전투 수준으로 기재)
+   - 타겟 연령: 12세 이상 권장 (전투/과금 요소)
+   - 개인정보처리방침 URL 필수 (광고 SDK 사용 — 예: 게임 내 설정창 URL 또는 별도 페이지)
+   - 광고 포함 여부: "광고 포함" 선언 (보상형 광고 사용)
+5. 인앱 결제 상품 등록 (BM 충전)
+   - GEM_SKUS 4종 (ads.ts 참고): 소/중/대/특 에메랄드 패키지
+   - 상품 ID가 코드와 동일해야 결제 연동됨
+6. AdMob 실제 단위 ID 교체 (수익화 시)
+   - 현재 구글 테스트 ID (ca-app-pub-3940256099942544~3347511713)
+   - AdMob 콘솔 → 앱 등록 → 실제 앱 ID로 AndroidManifest 교체
+   - 보상형 광고 단위 ID도 ads.ts에서 교체
+7. 내부 테스트 → 비공개 테스트 → 프로덕션 순서로 트랙 업로드
+
+■ 참고
+- AAB 업로드 후 콘솔이 기기별 APK/split을 자동 생성 (다운로드 용량 최적화)
+- 기존 유저는 APK(사이드로드) → 스토어 버전으로 이전 시 같은 서명 키여야 설치 유지됨
+  (현재 keystore 그대로 사용 — 동일 키라 덮어설치/데이터 보존 가능)
+- 버전 6곳 싱크: build.gradle · server.js · next.config.ts · apk-guide.html ·
+  APK_다운로드_안내.txt · Overlays 배지

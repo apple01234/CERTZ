@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, type BmGrant, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, type BmGrant, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -327,6 +327,12 @@ export class WorldScene extends Phaser.Scene {
   private bossDiffPending = false;
   private bossDiffPendingSince = 0;
 
+  /* ----- v4.6.0 — GM 전 보스 체험 (재림 경로 재사용 — 스토리 진행 영향 0) ----- */
+  /** 이동 중인 GM 체험 보스키 (init data로 전달 — scene.restart 후 create에서 소비) */
+  private pendingGmBoss: string | null = null;
+  /** GM 체험 구역 방문 중 — 보루가 스토리 보스를 추가 스폰하는 것 방지 */
+  private gmTrial = false;
+
   /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
   private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
@@ -430,7 +436,7 @@ export class WorldScene extends Phaser.Scene {
     super("world");
   }
 
-  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string }) {
+  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string }) {
     this.questIdx = 0;
     this.huntCount = 0;
     this.totalKills = 0;
@@ -439,6 +445,9 @@ export class WorldScene extends Phaser.Scene {
     this.replayBossActive = false; // v3.0.24 — 재도전 플래그 리셋
     /* v3.0.24 — 보스 재도전: init data로 전달된 챕터키 보관 (create 후반 스폰) */
     this.pendingReplayBoss = typeof data.replayBoss === "string" ? data.replayBoss : null;
+    /* v4.6.0 — GM 전 보스 체험: init data로 전달된 보스키 보관 (create에서 소비) */
+    this.pendingGmBoss = typeof data.gmBoss === "string" ? data.gmBoss : null;
+    this.gmTrial = false;
     /* v3.0.28 (#보스난이도) — 재도전 난이도 전달 (scene.restart 후 create에서 소비) */
     this.pendingReplayBossDiff =
       typeof data.replayDiff === "string" && data.replayDiff in BOSS_DIFFS ? (data.replayDiff as BossDiffKey) : null;
@@ -783,7 +792,8 @@ export class WorldScene extends Phaser.Scene {
       this.player.starBless = savedPlayer.starBless ?? 0;
       this.player.restoreAccHp(savedPlayer.accHp ?? 0);
       this.player.syncAccStarHp();
-      this.player.emerald = savedPlayer.emerald ?? 0;
+      /* v4.6.0 — 음수 잔액 자동 복구: v4.5.0까지 구매 버그로 에메랄드가 음수인 세이브를 0으로 보정 */
+      this.player.emerald = Math.max(0, savedPlayer.emerald ?? 0);
       // 퀘스트 진행 복원 (이어하기 — 파편/보상 중복 수령 방지)
       this.savedQuestIdx = { ...(savedPlayer.questIdx ?? {}) };
       this.questIdx = Phaser.Math.Clamp(this.savedQuestIdx[stageKey] ?? 0, 0, this.stageDef.quests.length);
@@ -1100,7 +1110,8 @@ export class WorldScene extends Phaser.Scene {
         const q = this.currentQuest();
         /* 오브젝트 소실 보루 — 파편/보스가 없으면 퀘스트가 영구 안 풀려 포탈이 안 열린다 */
         if (q?.type === "collect" && !this.fragment) this.spawnFragmentForQuest();
-        if (q?.type === "boss" && !this.boss) {
+        /* v4.6.0 — gmTrial 중엔 보루가 스토리 보스를 스폰하지 않는다 (GM 체험 보스와 중복 방지) */
+        if (q?.type === "boss" && !this.boss && !this.gmTrial) {
           /* v3.0.28 (#보스난이도) — 난이도 선택 패널을 4초 이상 닫아두면 노말로 자가치유
            *  (패널을 닫고 방치해 보스가 영영 안 나오는 소프트락 방지) */
           if (this.bossDiffPending) {
@@ -1146,6 +1157,21 @@ export class WorldScene extends Phaser.Scene {
           this.spawnReplayBoss(ch);
         } catch (e) {
           console.error("[SERTZ] 재도전 보스 스폰 실패 — 자가치유로 정리", e);
+          this.dialoguing = false;
+          this.physics.world.resume();
+        }
+      });
+    }
+
+    /* v4.6.0 — GM 전 보스 체험: 보스 구역 도착 직후 GM 보스 스폰 (재림 경로와 동일 안전 패턴) */
+    if (this.pendingGmBoss) {
+      const bk = this.pendingGmBoss;
+      this.pendingGmBoss = null;
+      this.time.delayedCall(350, () => {
+        try {
+          this.spawnGmBoss(bk);
+        } catch (e) {
+          console.error("[SERTZ] GM 보스 체험 스폰 실패 — 자가치유로 정리", e);
           this.dialoguing = false;
           this.physics.world.resume();
         }
@@ -1805,7 +1831,7 @@ export class WorldScene extends Phaser.Scene {
    *  init 데이터가 유실되어 create()가 비정상 종료 → 화면이 검은 채로 멈춘다.
    *  모든 전환을 단일 헬퍼로 모으고 transitioning 플래그로 1회만 실행되도록 막는다.
    */
-  private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; save?: SaveData }, force = false) {
+  private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }, force = false) {
     if (this.transitioning && !force) return;
     this.transitioning = true;
     // ⚠️ 다음 스테이지에 현재 스탯/소지품을 그대로 넘긴다
@@ -1835,7 +1861,7 @@ export class WorldScene extends Phaser.Scene {
    *  긴 블랙아웃 창이 원인. 이제 즉시 게이트를 닫고 포탈 오버랩을 전부 끊는다. */
   private startTransition(
     target: StageKey,
-    opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; save?: SaveData }
+    opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }
   ) {
     if (this.transitioning) return;
     this.transitioning = true;
@@ -4410,6 +4436,41 @@ export class WorldScene extends Phaser.Scene {
     this.bossIntroCinematic(bx, by, def.introDialogue);
   }
 
+  /** v4.6.0 — GM 전 보스 체험: 스토리 스펙 보스를 퀘스트/포탈 판정과 분리해 즉시 스폰.
+   *  스탯 산식은 스토리판(spawnBoss)과 동일 — 체험 목적에 맞게 재림판(×5/×2.2) 미적용.
+   *  격파 처리는 재림 경로(replayBossActive)를 재사용 — 스토리 진행/포탈 개방 영향 0. */
+  private spawnGmBoss(bossKey: string) {
+    if (!this.player || this.boss || this.isInterior) return;
+    const base = BOSS_DEFS[bossKey as BossKey];
+    if (!base) return;
+    const sc = stageScale(this.stageDef.key);
+    const dif = BOSS_DIFFS[this.bossDiff]; // GM 체험은 현재 선택 난이도(기본 노말) 배율
+    const def: BossDef = {
+      ...base,
+      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * dif.hp),
+      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15) * dif.atk),
+      speed: Math.round(base.speed * dif.spd),
+      exp: Math.round(base.exp * sc.exp * dif.reward),
+      gold: Math.round(base.gold * sc.gold * dif.reward),
+    };
+    this.bossDef = def;
+    this.gmTrial = true; // 이 구역 방문 동안 보루가 스토리 보스를 추가 스폰하지 않게 차단
+    this.replayBossActive = true; // onBossDead 분리 보상 경로 재사용
+    this.replayBossEmerald = 2;
+    const bx = this.portalHome.x;
+    const by = this.portalHome.y - 10;
+    audio.sfx.roar();
+    this.cameras.main.shake(260, 0.008);
+    this.showBanner(`GM 체험 — ${def.name} 출현!`);
+    this.boss = new Boss(this, bx, by, def, "normal");
+    this.spawnBossRunic(bx, by, false);
+    this.applyBossPostFX(false);
+    this.physics.add.collider(this.boss, this.solidGroup);
+    EventBus.emit("boss:show", { name: `[GM] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
+    audio.playStageBGM(this.stageDef.key, true);
+    this.bossIntroCinematic(bx, by, def.introDialogue);
+  }
+
   /** v3.0.10 — 보스 조우 시네마틱: 물리 정지 + 카메라 팬(보스) + 인트로 대사 + 카메라 복귀
    *  v3.3.0 (#흑화) — 전체 try/catch: 시네마틱 도중 예외로 physics 정지가 누출되는 것 차단 */
   private bossIntroCinematic(bx: number, by: number, introId: string) {
@@ -4508,7 +4569,7 @@ export class WorldScene extends Phaser.Scene {
       this.spawnPickupText(this.player.x, this.player.y - 60, `+${em} 에메랄드`, "#7de8ff");
       this.registerCollection(`boss_${def?.key ?? "guardian"}`, def?.name ?? "보스");
       EventBus.emit("reward:show", {
-        title: `재도전 성공 — ${def?.name ?? "보스"}`,
+        title: this.gmTrial ? `GM 보스 체험 격파! — ${def?.name ?? "보스"}` : `재도전 성공 — ${def?.name ?? "보스"}`,
         lines: [
           { text: `골드 +${gold} G`, color: "#ffd76a" },
           { text: `경험치 +${exp} EXP`, color: "#8fe84a" },
@@ -5100,7 +5161,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
      *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가
      *  v4.0.0 — 바르가 수비전/균열 던전 입장 + 무료 뽑기 + 티켓 충전 */
-    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets"; value?: number | string }) => {
+    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss"; value?: number | string }) => {
       if (!this.player) return;
       const p = this.player;
       if (v.type === "job" && typeof v.value === "string") {
@@ -5169,6 +5230,14 @@ export class WorldScene extends Phaser.Scene {
         this.save();
         this.emitRpgState();
         EventBus.emit("banner:show", { text: "GM — 오늘 입장 티켓 전량 충전!" });
+      } else if (v.type === "boss" && typeof v.value === "string") {
+        /* v4.6.0 — GM 전 보스 체험: 해당 보스 구역으로 이동 후 스토리 스펙 보스 즉시 스폰.
+         *  처치 처리는 재림 분리 경로 — 스토리 퀘스트/포탈 진행 영향 0 */
+        const bk = BOSS_DEFS[v.value as BossKey];
+        const ch = CHAPTERS.find((c) => c.boss === (v.value as BossKey));
+        if (!bk || !ch) return;
+        EventBus.emit("banner:show", { text: `GM 보스 체험 — ${bk.name} (${STAGE_SHORT[`${ch.key}10` as StageKey] ?? ch.title})` });
+        this.startTransition(`${ch.key}10` as StageKey, { gmBoss: v.value });
       }
     };
 
@@ -5293,6 +5362,28 @@ export class WorldScene extends Phaser.Scene {
       } else {
         EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
       }
+    };
+    /* v4.6.0 — 인벤토리에서 상자/패키지 개봉: 보유 소모 후 구매 개봉과 동일한 가중치 롤 지급.
+     *  시즌 패스·GM 뽑기 등으로 가방에 쌓인 상자를 UI에서 직접 열 수 있게 한다 (구매 개봉 경로 유지) */
+    const onOpenChest = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const key = v.key;
+      const it = ITEMS[key as ItemKey];
+      if (!it || !(key.startsWith("chest_") || key.startsWith("pack_"))) return;
+      if (!this.player.hasConsumable(key as ItemKey)) {
+        EventBus.emit("banner:show", { text: "개봉할 상자가 없습니다" });
+        return;
+      }
+      this.player.consumeConsumable(key as ItemKey);
+      const grants: BmGrant[] = [];
+      if (CHEST_TABLES[key]) grants.push(this.rollChest(key));
+      else for (const g of PACK_CONTENTS[key] ?? []) grants.push(g);
+      if (grants.length === 0) return;
+      audio.sfx.questDone();
+      this.grantBmGrants(`${it.name} 개봉!`, grants);
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
     };
     /* v4.4.0 — 메이플식 인벤토리 [정리] 버튼: owned 멀티셋을 종류→이름순 정렬 (로직 영향 없음 — UI 표시순만) */
     const onSortInv = () => {
@@ -5445,6 +5536,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:sell", onSell);
     EventBus.on("rpg:sellPotion", onSellPotion);
     EventBus.on("rpg:bmBuy", onBmBuy);
+    EventBus.on("rpg:openChest", onOpenChest); // v4.6.0 — 인벤토리 상자 개봉
     /* v3.0.15 — 신규 패널 리스너 */
     EventBus.on("rpg:autoAlloc", onAutoAlloc);
     EventBus.on("rpg:quickpot", onQuickPot);
@@ -5496,6 +5588,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:sell", onSell);
       EventBus.off("rpg:sellPotion", onSellPotion);
       EventBus.off("rpg:bmBuy", onBmBuy);
+      EventBus.off("rpg:openChest", onOpenChest); // v4.6.0
       EventBus.off("rpg:sortInv", onSortInv); // v4.4.0
       EventBus.off("rpg:autoset", onAutoSet);
       EventBus.off("rpg:autohunt", onAutoHunt);

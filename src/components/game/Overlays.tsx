@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.5.0 · BM 표준화 — 시즌 패스(30레벨 듀얼 트랙) + 구독 특전 + 확률 공시(법정) + 광고 확장(무료상자/버프) — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.6.0 · 출시 준비 — BM 구매 음수 버그 수정 + 가방 상자 개봉 + 가방 스타포스 강화 + 자동물약 UI 복구 + GM 전 보스 체험 + 정식 아이콘/AAB — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 

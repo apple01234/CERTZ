@@ -989,6 +989,22 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
   useEscClose(onClose);
   const [tab, setTab] = useState<InvTab>("equip");
   const [sel, setSel] = useState<InvSel | null>(null);
+  /* v4.6.0 — 가방 스타포스 강화 결과 플래시 (상점 강화와 동일 이벤트 재사용, 2.5초 후 자동 소멸) */
+  const [flash, setFlash] = useState<{ slot: "weapon" | "armor"; result: "ok" | "fail"; seq: number } | null>(null);
+  useEffect(() => {
+    let seq = 0;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const on = (v: { slot: "weapon" | "armor"; result: "ok" | "fail" }) => {
+      setFlash({ slot: v.slot, result: v.result, seq: ++seq });
+      if (t) clearTimeout(t);
+      t = setTimeout(() => setFlash(null), 2500);
+    };
+    EventBus.on("rpg:upgradeResult", on);
+    return () => {
+      EventBus.off("rpg:upgradeResult", on);
+      if (t) clearTimeout(t);
+    };
+  }, []);
   const auto = rpg.autoUse ?? { hpPct: 0, mpPct: 0, mpOn: false, buffs: [] as BuffKey[] };
   const qp = rpg.quickPots ?? { hp: "potion_hp", mp: "potion_mp" };
   const eertN = rpg.eertCube ?? 0;
@@ -1222,15 +1238,11 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
 
           {tab === "etc" && (
             <>
-              <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-violet-100/50">
-                소모품 <span className="font-bold text-white/30">물약은 [H]/[M] 버튼에 장착 가능</span>
-              </p>
-              <InvGrid slots={etcSlots} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} />
-
-              {/* 자동 사용 설정 (v3.0.15 — 유지, 기타 탭으로 이동) */}
-              <div className="mt-2 rounded-lg border-2 border-[#211c17] bg-[#2a241e] p-2.5">
+              {/* v4.6.0 — 자동 사용 설정을 기타 탭 최상단(그리드 위)으로 이동:
+                  기존엔 소모품 그리드 아래 깊숙이 있어 "자동 물약·버프 어디감?" 제기 → 열자마자 보이는 자리로 */}
+              <div className="mb-2 rounded-lg border-2 border-[#211c17] bg-[#2a241e] p-2.5">
                 <p className="mb-1.5 text-[11px] font-black text-amber-100/80">
-                  자동 사용 설정 <span className="font-bold text-white/35">— 전투 중 자동으로 사용</span>
+                  ⚙️ 자동 물약 · 버프 <span className="font-bold text-white/35">— 전투 중 자동으로 사용 (여기 있습니다!)</span>
                 </p>
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between rounded-md bg-white/[0.04] px-2.5 py-1.5">
@@ -1282,6 +1294,11 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   </div>
                 </div>
               </div>
+
+              <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-violet-100/50">
+                소모품 <span className="font-bold text-white/30">물약은 [H]/[M] 버튼에 장착 가능</span>
+              </p>
+              <InvGrid slots={etcSlots} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} />
             </>
           )}
 
@@ -1414,6 +1431,12 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 if (it.kind === "weapon" || it.kind === "armor") {
                   const equipped = rpg.weapon === s.k || rpg.armor === s.k;
                   const up = it.kind === "weapon" ? rpg.upWea : rpg.upArm;
+                  /* v4.6.0 — 모든 스타포스 강화를 가방에서: 상점 강화와 동일 이벤트(rpg:upgrade)·비용·성공률(주문서 가산 포함) */
+                  const eqSlot: "weapon" | "armor" = it.kind === "weapon" ? "weapon" : "armor";
+                  const eqCost = upgradeCost(eqSlot, up);
+                  const eqRate = (UPGRADE_RATES[up] ?? 0) + Math.min(rpg.starBless ?? 0, STAR_BLESS_MAX) * STAR_BLESS_RATE;
+                  const eqMaxed = up >= UPGRADE_MAX;
+                  const eqFlash = flash && flash.slot === eqSlot ? flash.result : null;
                   return (
                     <>
                       <div className="flex items-start gap-2.5">
@@ -1431,6 +1454,20 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                           <span className="rounded-md bg-emerald-700/50 px-2.5 py-1.5 text-[11px] font-black text-emerald-200">장착 중</span>
                         ) : (
                           <InvBtn onClick={() => EventBus.emit("rpg:equip", { key: it.key })}>장착</InvBtn>
+                        )}
+                        {equipped && !eqMaxed && (
+                          <InvBtn tone="amber" disabled={rpg.gold < eqCost} onClick={() => EventBus.emit("rpg:upgrade", { slot: eqSlot })}>
+                            강화 {eqCost}G · {eqRate}%
+                          </InvBtn>
+                        )}
+                        {equipped && eqMaxed && (
+                          <span className="rounded-md bg-amber-400/15 px-2.5 py-1.5 text-[10px] font-black text-amber-200">★{UPGRADE_MAX} 완료</span>
+                        )}
+                        {!equipped && <span className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[10px] font-bold text-white/40">장착 후 가방에서 강화</span>}
+                        {eqFlash && (
+                          <span className={`text-[11px] font-black ${eqFlash === "ok" ? "text-amber-300" : "text-rose-300"}`}>
+                            {eqFlash === "ok" ? "강화 성공!" : "강화 실패…"}
+                          </span>
                         )}
                         <InvBtn tone="gray" disabled={eertN <= 0} onClick={() => EventBus.emit("rpg:eert", { key: it.key })}>
                           eert {eertN > 0 ? `×${eertN}` : ""}
@@ -1547,7 +1584,12 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                           </InvBtn>
                         </>
                       )}
-                      {chestLike && <span className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[10px] font-bold text-white/45">구매 시 자동 개봉</span>}
+                      {/* v4.6.0 — 상자/패키지를 가방에서 직접 개봉 (구매 개봉과 동일 가중치 롤) */}
+                      {chestLike && (
+                        <InvBtn tone="violet" disabled={s.count <= 0} onClick={() => EventBus.emit("rpg:openChest", { key: s.k })}>
+                          열기 {s.count > 1 ? `(보유 ${s.count})` : ""}
+                        </InvBtn>
+                      )}
                       {eertCubeIt && <span className="rounded-md bg-orange-500/15 px-2.5 py-1.5 text-[10px] font-black text-orange-200">장비 탭에서 사용</span>}
                       {sellValue(it) > 0 && (
                         <SellQtyBox
@@ -1759,6 +1801,27 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
         </div>
         <p className="mt-1.5 rounded-lg border border-violet-300/20 bg-violet-400/5 px-2.5 py-1.5 text-[10px] leading-relaxed text-violet-200/70">
           바르가 수비전 = 웨이브 디펜스 (매일 3회) · 균열 던전 = 60초 파밍 (매일 2회). GM 무료 뽑기는 10분마다 1회. 혜택 패널에서 출석부·일일 퀘스트·쿠폰을 확인하세요.
+        </p>
+
+        {/* v4.6.0 — 전 보스 체험: 9챕터 보스를 스토리 스펙 그대로 즉시 체험 */}
+        <p className="mb-1 mt-3 text-[11px] font-bold text-white/50">전 보스 체험 (v4.6.0)</p>
+        <div className="mb-1 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+          {(Object.keys(BOSS_DEFS) as BossKey[]).map((bk) => {
+            const d = BOSS_DEFS[bk];
+            return (
+              <button
+                key={bk}
+                onClick={() => EventBus.emit("rpg:gm", { type: "boss", value: bk })}
+                className="flex flex-col items-start rounded-lg border border-rose-300/35 bg-gradient-to-br from-rose-400/15 to-slate-900/40 px-2 py-1.5 text-left transition-transform active:scale-95 hover:border-rose-300/60"
+              >
+                <span className="w-full truncate text-[10px] font-black text-rose-100">⚔ {d.name}</span>
+                <span className="text-[9px] font-bold text-white/40">HP {d.hp.toLocaleString()} · ATK {d.atk}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 rounded-lg border border-rose-300/20 bg-rose-400/5 px-2.5 py-1.5 text-[10px] leading-relaxed text-rose-200/70">
+          보스 구역으로 이동해 스토리 스펙 그대로 즉시 전투합니다. 처치 시 보상 지급 — 스토리 진행/포탈 판정에는 영향이 없습니다.
         </p>
         <p className="mt-2 text-center text-[10px] text-white/40">ESC로 닫기 · 변경 사항은 즉시 세이브에 반영</p>
       </div>

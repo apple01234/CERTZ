@@ -3910,7 +3910,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** BM 상점 구매 (지시 #1) — 에메랄드 전용 화폐 (골드 상점과 분리)
    *  v3.0.24 (#버그/#수량) — ① 소모품(eert 큐브)이 owned 포함 판정에 걸려 1개만 구매되던 버그 수정
-   *   ② 소모품/버프는 qty 지정 구매 지원 (장비·펫·치장은 1개 고정) */
+   *   ② 소모품/버프는 qty 지정 구매 지원 (장비·펫·치장은 1개 고정)
+   *  v4.6.0 (#버그) — 펫/치장/장비 분기에 잔액 검사가 없어 에메랄드가 음수가 되고
+   *   무료로 구매되던 버그 수정 — 전 분기에서 반드시 잔액 ≥ 비용 검사 후 차감 */
   buyBm(key: ItemKey, qty = 1, unitPay?: number): boolean {
     const item = ITEMS[key];
     if (!item || item.bmPrice === undefined) return false;
@@ -3934,6 +3936,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     if (item.kind === "pet") {
       if (this.pets.includes(key as PetKey)) return false;
+      if (this.emerald < unit) return false; // v4.6.0 — 잔액 검사 누락 (음수 구매 버그)
       this.emerald -= unit;
       this.pets.push(key as PetKey);
       this.pet = key as PetKey;
@@ -3941,12 +3944,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     if (item.kind === "cosmetic") {
       if (this.cosmetics.includes(key as CosmeticKey)) return false;
+      if (this.emerald < unit) return false; // v4.6.0 — 잔액 검사 누락 (음수 구매 버그)
       this.emerald -= unit;
       this.cosmetics.push(key as CosmeticKey);
       this.cosmetic = key as CosmeticKey;
       return true;
     }
     if (this.owned.includes(key)) return false;
+    if (this.emerald < unit) return false; // v4.6.0 — 잔액 검사 누락 (음수 구매 버그)
     this.emerald -= unit;
     this.owned.push(key);
     if (item.kind === "accessory") this.equip(key);
