@@ -1054,3 +1054,13 @@ Work Log:
 - [기획서] docs/BM_PLAN.md 신설 — 시장 포지셔닝/퍼널 설계/4대 모델 매핑표/카탈로그 130종+ 인벤토리/KPI 목표/LTV-CAC 시뮬/규제 체크리스트/도파민 6원칙/로드맵(웹샵·미디에이션·부활 광고)
 - [버저닝] versionCode 60 / 4.5.0 — build.gradle·server.js·next.config·apk-guide.html(변경점)·APK_다운로드_안내.txt·Overlays 배지 6곳 싱크
 - [검증] tsc --noEmit 0 에러 · eslint 0 (수정 2회: FIGURE_GRADE_META 중복 import, import 줄 병합 사고 복구)
+- [빌드/릴리스] bun run build 성공 → APK BUILD SUCCESSFUL 53s → 104,697,986B · aapt 실측 versionCode 60/4.5.0 · md5 1d229f25509dbf3fa158bef25dc0eebb → GitHub Release v4.5.0(id 384427481) 업로드 → 재다운로드 md5 일치 → 구버전 v4.4.0.apk 제거
+- [브라우저 실측] agent-browser 480x900: 타이틀→월드 진입 pageerror 0 → BM상점(시즌 패스 배너/확률 공시 버튼/광고 무료상자 버튼 DOM 확인) → 확률 공시 전개(무쇠 상자 라인별 % + 피규어 62% 동적 계산 렌더) → PassPanel(시즌 2026-09·Lv.0/30·프리미엄 해금 박스·30열 듀얼 트랙 아이콘 렌더 — 스크린샷 scripts/shot_v450_pass.png) → passClaim 미도달 게이트 → BenefitPanel(SERTZ 패스 구독 박스+구독 버튼+시즌 패스 진입 버튼) → subBuy 부족 게이트 — 전부 통과
+- [후처리] rm -rf .next && bun run build(md5 반영) → 서버 재기동(setsid -f) → GET / 200 · apk-guide 200 · 페이지 내 신규 md5 확인 → 커밋 c46e840 push(3e5bc7c..c46e840)
+
+Stage Summary:
+- v4.5.0 배포: https://github.com/apple01234/CERTZ/releases/download/v4.5.0/SERTZ-v4.5.0.apk (md5 1d229f25…, versionCode 60, 100MB)
+- 유저 BM 리서치 문서 표준 4종 신설: ①시즌 패스(월 단위 30레벨 듀얼 트랙 — 리텐션+수익 듀얼 장치) ②SERTZ 패스 구독(월정액 LTV) ③확률 공시(게임산업법 법정 의무 — 단일 출처 동적 계산) ④광고 포인트 3종 확장 + 스타터팩 D0 노출 + 웹샵 로드맵 + BM 기획서 문서화
+- 기존 틀 유지 확인: 맵/보스/퀘스트/세이브 구조 무변경 — 신규 필드는 전부 optional(구버전 세이브 호환), 패널은 EventBus 명령 추가 방식
+- 다음 후보: 웹샵 실결제(토스 PG +10% 보너스) · AdMob 실제 단위 ID+미디에이션 · 부활 광고 · 시즌 패스 챌린저 트랙 · 국가별 루트박스 규제 매트릭스
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
