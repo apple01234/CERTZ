@@ -1,5 +1,6 @@
 /**
  * SERTZ 계정 서버 (v4.9.0 — 유저 지시 #4 "SNS 연동 회원가입 + 자체 회원가입/로그인")
+ *  v1.0.1 — 유저 거래판(마켓) 추가: 계정 연계 아이템 거래 + 10% 정산 수수료(BM 수익)
  *
  *  - server.js의 httpServer 요청을 Next handle 이전에 가로채 JSON API를 같은 포트에서 처리
  *    (multiplayer/index.js와 동일한 부착 패턴 — FC standalone 주입 경로도 동일)
@@ -22,7 +23,7 @@ const TOKEN_TTL_MS = 30 * 24 * 3600 * 1000; // 30일
 const COOKIE = "sertz_auth";
 
 /* ---------------- 파일 DB (디바운드 저장) ---------------- */
-let db = { users: {}, tokens: {}, saves: {} };
+let db = { users: {}, tokens: {}, saves: {}, market: { nextId: 1, listings: {} }, payouts: {} };
 let saveTimer = null;
 function loadDb() {
   try {
@@ -30,6 +31,9 @@ function loadDb() {
     db.users ||= {};
     db.tokens ||= {};
     db.saves ||= {};
+    db.market ||= { nextId: 1, listings: {} }; // v1.0.1 — 유저 거래판 (구 DB 호환)
+    db.market.listings ||= {};
+    db.payouts ||= {}; // v1.0.1 — 판매 정산금 ledger
   } catch (e) {
     console.error("[SERTZ-accounts] DB 로드 실패 — 신규 생성", e);
   }
@@ -167,6 +171,99 @@ async function exchangeCode(providerKey, code, redirect) {
   const ur = await fetch(cfg.userinfo, { headers: { Authorization: `Bearer ${tok.access_token}` } });
   const info = await ur.json();
   return cfg.pick(info);
+}
+
+/* ---------------- v1.0.1 — 유저 거래판 (마켓) ----------------
+ *  계정 시스템과 직결된 BM: 판매 정산 시 10% 수수료 절단 (서버 수익).
+ *  - 등록: 로그인 유저만 · 동시 3칸 · 가격 1G~10,000,000G
+ *  - 구매: 로그인 유저만 · 본인 물건 구매 금지 · 구매자 클라이언트가 골드 차감+아이템 지급
+ *  - 정산: 판매자 pendingGold에 90% 적립 → 로그인해 수령 (수수료 10%는 서버 수익) */
+const MARKET_FEE_PCT = 10;
+const MARKET_MAX_LISTINGS = 3;
+
+function marketSnapshot(uid) {
+  const all = Object.values(db.market.listings).sort((a, b) => a.ts - b.ts);
+  const pay = db.payouts[uid] || { gold: 0, count: 0 };
+  return {
+    listings: all.map((l) => ({ id: l.id, seller: l.seller === uid ? null : l.sellerName, mine: l.seller === uid, itemKey: l.itemKey, up: l.up ?? 0, price: l.price, ts: l.ts })),
+    pending: { gold: pay.gold || 0, count: pay.count || 0 },
+    feePct: MARKET_FEE_PCT,
+    maxListings: MARKET_MAX_LISTINGS,
+  };
+}
+
+async function handleMarket(req, res, url, method) {
+  /* 조회 — 비로그인도 목록은 공개 (판매자명 익명) */
+  if (url === "/api/market" && method === "GET") {
+    const user = currentUser(req);
+    if (!user) {
+      const all = Object.values(db.market.listings).sort((a, b) => a.ts - b.ts);
+      return sendJson(res, 200, {
+        listings: all.map((l) => ({ id: l.id, seller: l.sellerName, mine: false, itemKey: l.itemKey, up: l.up ?? 0, price: l.price, ts: l.ts })),
+        pending: { gold: 0, count: 0 }, feePct: MARKET_FEE_PCT, maxListings: MARKET_MAX_LISTINGS, guest: true,
+      });
+    }
+    return sendJson(res, 200, marketSnapshot(user.id));
+  }
+
+  const user = currentUser(req);
+  if (!user) return sendJson(res, 401, { error: "거래판은 로그인이 필요해요" });
+
+  /* 등록 */
+  if (url === "/api/market/list" && method === "POST") {
+    const b = await readBody(req);
+    const itemKey = String(b.itemKey || "").slice(0, 40);
+    const up = Math.max(0, Math.min(15, parseInt(b.up, 10) || 0));
+    const price = parseInt(b.price, 10);
+    if (!itemKey) return sendJson(res, 400, { error: "아이템 정보가 올바르지 않아요" });
+    if (!Number.isFinite(price) || price < 1 || price > 10000000) return sendJson(res, 400, { error: "가격은 1G ~ 10,000,000G 사이" });
+    const mine = Object.values(db.market.listings).filter((l) => l.seller === user.id);
+    if (mine.length >= MARKET_MAX_LISTINGS) return sendJson(res, 409, { error: `등록 칸이 가득 찼어요 (최대 ${MARKET_MAX_LISTINGS}칸)` });
+    if (mine.some((l) => l.itemKey === itemKey)) return sendJson(res, 409, { error: "같은 아이템을 동시에 여러 칸에 등록할 수 없어요" });
+    const id = `m${db.market.nextId++}`;
+    db.market.listings[id] = { id, seller: user.id, sellerName: user.name, itemKey, up, price, ts: Date.now() };
+    persistDb();
+    return sendJson(res, 200, { ok: true, id, ...marketSnapshot(user.id) });
+  }
+
+  /* 취소 — 본인 등록만 */
+  if (url === "/api/market/cancel" && method === "POST") {
+    const b = await readBody(req);
+    const l = db.market.listings[String(b.id || "")];
+    if (!l) return sendJson(res, 404, { error: "이미 판매된 등록이에요" });
+    if (l.seller !== user.id) return sendJson(res, 403, { error: "본인 등록만 취소할 수 있어요" });
+    const item = { itemKey: l.itemKey, up: l.up ?? 0 };
+    delete db.market.listings[l.id];
+    persistDb();
+    return sendJson(res, 200, { ok: true, item, ...marketSnapshot(user.id) });
+  }
+
+  /* 구매 — 본인 물건 금지, 판매자 정산 90% */
+  if (url === "/api/market/buy" && method === "POST") {
+    const b = await readBody(req);
+    const l = db.market.listings[String(b.id || "")];
+    if (!l) return sendJson(res, 404, { error: "이미 판매된 등록이에요 — 새로고침해 주세요" });
+    if (l.seller === user.id) return sendJson(res, 403, { error: "내 등록은 구매할 수 없어요" });
+    const item = { itemKey: l.itemKey, up: l.up ?? 0, price: l.price, sellerName: l.sellerName };
+    delete db.market.listings[l.id];
+    db.payouts[l.seller] ||= { gold: 0, count: 0 };
+    db.payouts[l.seller].gold += Math.floor((l.price * (100 - MARKET_FEE_PCT)) / 100);
+    db.payouts[l.seller].count += 1;
+    persistDb();
+    return sendJson(res, 200, { ok: true, item, ...marketSnapshot(user.id) });
+  }
+
+  /* 정산 수령 — pendingGold 반환 후 0으로 */
+  if (url === "/api/market/collect" && method === "POST") {
+    const pay = db.payouts[user.id];
+    const gold = pay?.gold || 0;
+    if (gold <= 0) return sendJson(res, 400, { error: "수령할 정산금이 없어요" });
+    db.payouts[user.id] = { gold: 0, count: 0 };
+    persistDb();
+    return sendJson(res, 200, { ok: true, gold, ...marketSnapshot(user.id) });
+  }
+
+  return sendJson(res, 404, { error: "알 수 없는 마켓 요청" });
 }
 
 /* ---------------- 요청 처리 (true 반환 = 이 모듈이 응답 완료) ---------------- */
@@ -312,13 +409,23 @@ async function handle(req, res) {
   return false;
 }
 
-/** server.js에서 호출 — Next handle을 감싸 /api/auth/* 를 계정 모듈이 먼저 처리한다 */
+/** server.js에서 호출 — Next handle을 감싸 /api/auth/*, /api/market/* 를 계정 모듈이 먼저 처리한다 */
 function attachAccountsBefore(handleNext) {
   return (req, res) => {
-    if ((req.url || "").startsWith("/api/auth/")) {
+    const u = req.url || "";
+    if (u.startsWith("/api/auth/")) {
       handle(req, res).catch((e) => {
         console.error("[SERTZ-accounts] 가로채기 실패 — Next로 전달", e);
         handleNext(req, res);
+      });
+      return;
+    }
+    if (u.startsWith("/api/market")) {
+      const url = u.split("?")[0];
+      const method = (req.method || "GET").toUpperCase();
+      handleMarket(req, res, url, method).catch((e) => {
+        console.error("[SERTZ-market] 요청 처리 실패", e);
+        try { sendJson(res, 500, { error: "서버 오류" }); } catch { /* 무시 */ }
       });
       return;
     }
@@ -326,4 +433,9 @@ function attachAccountsBefore(handleNext) {
   };
 }
 
-module.exports = { attachAccountsBefore, handleAccountRequest: handle };
+/** FC standalone용 — 마켓 요청 직접 처리 (반환값 무시, 응답은 이 모듈이 완료) */
+function handleMarketRequest(req, res, url, method) {
+  return handleMarket(req, res, url, method);
+}
+
+module.exports = { attachAccountsBefore, handleAccountRequest: handle, handleMarketRequest };

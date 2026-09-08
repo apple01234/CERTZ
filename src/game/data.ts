@@ -612,6 +612,39 @@ export const TRADE_STOCK: ItemKey[] = [
   "bd_skoll", "bd_gram", "bd_abysslord", "bd_abudditos",
 ];
 
+/* ================= v1.0.1 — 일일 던전 확장: 요일별 균열 테마 =================
+ *  기존 60초 균열 던전 틀 유지 + 요일마다 다른 보너스로 "오늘 입장할 이유"를 만든다(리텐션).
+ *  mul: 킬당 골드 배율 · bookMul: 경험치책 드롭 확률 배율 · spawnMul: 몬스터 소환 속도 배율
+ *  extra: 킬 시 추가 드롭 { item, chance } (chance는 킬당 확률) */
+export type ClosetTheme = {
+  dow: number;            // 0=일요일
+  name: string;           // 테마명
+  desc: string;           // 배너/패널 설명
+  color: string;          // 테마 대표색
+  mul?: number;           // 골드 배율 (기본 1)
+  bookMul?: number;       // 경험치책 드롭 확률 배율 (기본 1)
+  bookN?: number;         // 경험치책 드롭 수량 (기본 1)
+  spawnMul?: number;      // 몬스터 소환 속도 배율 (기본 1)
+  emeraldChance?: number; // 에메랄드 킬당 드롭 확률 (기본 0)
+  extra?: { item: ItemKey; chance: number }[]; // 킬당 확률 아이템 드롭
+};
+
+export const CLOSET_THEMES: ClosetTheme[] = [
+  { dow: 0, name: "만능의 균열", desc: "모든 보너스가 조금씩 — 골드 +20% · 책 +20% · 소환 +10%", color: "#ffffff", mul: 1.2, bookMul: 1.2, spawnMul: 1.1 },
+  { dow: 1, name: "골드 러시", desc: "킬당 골드 1.6배 — 파밍의 요일", color: "#ffd76a", mul: 1.6 },
+  { dow: 2, name: "지혜의 균열", desc: "경험치 책 드롭 확률 2배 + 2권 드롭", color: "#8fe84a", bookMul: 2, bookN: 2 },
+  { dow: 3, name: "강화의 균열", desc: "킬마다 12% 확률로 강화 주문서 드롭", color: "#b57de8", extra: [{ item: "scroll_star", chance: 0.12 }] },
+  { dow: 4, name: "약초의 균열", desc: "킬마다 10% 확률로 상급 물약 드롭", color: "#ff8a9c", extra: [{ item: "potion_hp2", chance: 0.1 }, { item: "potion_mp2", chance: 0.1 }] },
+  { dow: 5, name: "전설의 문", desc: "골드 1.3배 + 킬마다 8% 확률로 에메랄드 +1", color: "#7dffa8", mul: 1.3, emeraldChance: 0.08 },
+  { dow: 6, name: "무한의 균열", desc: "몬스터 소환 속도 1.4배 — 웨이브 지옥", color: "#a8ecff", spawnMul: 1.4, mul: 1.1 },
+];
+
+/** 오늘 요일의 균열 테마 (KST 기준 — 서버/클라 통일) */
+export function closetThemeOf(date = new Date()): ClosetTheme {
+  const kst = new Date(date.getTime() + (9 * 60 + date.getTimezoneOffset()) * 60000);
+  return CLOSET_THEMES[kst.getDay()] ?? CLOSET_THEMES[0];
+}
+
 /** v3.0.6 (지시 #1) — BM 상점 판매 목록 (에메랄드 전용 — 골드 상점과 분리) */
 /* v4.3.0 — BM 스톡 전면 개편: 카테고리 순 정렬 + 신규 61종 포함 (BmShopPanel 탭 필터용 kind/prefix)
  *  표시 순서: 가챠 상자 → 패키지 → 버프 → 소모품(물약/큐브) → 장신구 → 펫 → 치장 */

@@ -9,6 +9,7 @@ import {
   CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue, dailyDeals, DAILY_DEAL_OFF,
   POT_GRADE_META, potLineText, SET_GEAR, POT_STAT_LABEL,
   ENEMIES, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, collectionBonus, nextCollectionGoal, COLLECTION_MILESTONES,
+  closetThemeOf, CLOSET_THEMES,
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
 import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
@@ -17,7 +18,8 @@ import { getPlayerName, loadSave } from "@/game/config"; // v2.4 — 이름 변�
 import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
 import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
-import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP } from "@/game/pass"; // v4.5.0 — 시즌 패스
+import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS } from "@/game/pass"; // v4.5.0 — 시즌 패스 + v1.0.1 시즌 미션
+import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, type MarketState, type AuthUser } from "@/game/account"; // v1.0.1 — 유저 거래판
 import { chestOdds } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법)
 import type { BmGrant } from "@/game/data";
 
@@ -784,10 +786,11 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
 }
 
 /* ================= v3.0.7 — 유저 거래소 (보스 드롭 9종 전용 사고팔기) =================
- *  보스 드롭은 상점에서 살 수 없다(tradeLock) → 여기서만 에메랄드로 거래.
- *  판매가는 구매가의 60% (수수료). 에메랄드 수급처: 보스 처치 +2 / 정예 +1 / 반복 의뢰 사이클 +1. */
+ *  v1.0.1 — 2탭 개편: ①시세판(기존 NPC 에메랄드 시세 유지) ②유저 거래판(계정 연계 실거래 —
+ *  서버 /api/market ledger, 판매 정산 시 10% 수수료 = BM 수익, 로그인 유저만 이용) */
 export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  const [tab, setTab] = useState<"npc" | "user">("npc");
   const ownedBd = TRADE_STOCK.filter((k) => rpg.owned.includes(k));
   return (
     <div
@@ -798,7 +801,7 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
         className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-teal-200/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="mb-2.5 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src="/assets/item_ring_guard.webp" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
             <div>
@@ -818,78 +821,292 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
           </div>
         </div>
 
-        {/* 내 보유 전설 — 판매 */}
-        {ownedBd.length > 0 && (
+        {/* v1.0.1 — 탭 스위처 */}
+        <div className="mb-2.5 grid grid-cols-2 gap-1">
+          <button
+            onClick={() => setTab("npc")}
+            className={`rounded-lg px-2 py-1.5 text-[11px] font-black active:scale-95 ${tab === "npc" ? "bg-teal-400 text-slate-900" : "border border-white/10 bg-white/[0.04] text-white/55"}`}
+          >
+            시세판 (에메랄드)
+          </button>
+          <button
+            onClick={() => setTab("user")}
+            className={`rounded-lg px-2 py-1.5 text-[11px] font-black active:scale-95 ${tab === "user" ? "bg-amber-400 text-slate-900" : "border border-white/10 bg-white/[0.04] text-white/55"}`}
+          >
+            유저 거래판 (골드) NEW
+          </button>
+        </div>
+
+        {tab === "npc" ? (
           <>
-            <p className="mb-1 text-[11px] font-bold text-white/50">보유 전설 — 판매</p>
-            <div className="mb-3 flex flex-col gap-1.5">
-              {ownedBd.map((k) => {
+            {/* 내 보유 전설 — 판매 */}
+            {ownedBd.length > 0 && (
+              <>
+                <p className="mb-1 text-[11px] font-bold text-white/50">보유 전설 — 판매</p>
+                <div className="mb-3 flex flex-col gap-1.5">
+                  {ownedBd.map((k) => {
+                    const item = ITEMS[k];
+                    const up = rpg.accUp?.[k] ?? 0;
+                    const worn = rpg.accessories.includes(k);
+                    return (
+                      <div key={k} className="flex items-center gap-2.5 rounded-lg border border-amber-300/30 bg-amber-300/[0.06] px-2.5 py-2">
+                        <ItemIcon icon={item.icon} tier={item.tier} />
+                        <div className="min-w-0 flex-1">
+                          <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
+                            {displayName(item.name, up)}
+                            <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">전설</span>
+                          </p>
+                          <p className="text-[11px] text-emerald-300/90">{itemEffect(item, up)}{worn ? " · 장착 중" : ""}</p>
+                        </div>
+                        <button
+                          onClick={() => EventBus.emit("rpg:tradeSell", { key: k })}
+                          className="shrink-0 rounded-md bg-teal-400 px-2.5 py-1.5 text-[11px] font-black text-slate-900 hover:bg-teal-300 active:scale-95"
+                        >
+                          판매 +{tradeValue(k)}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* 구매 목록 — 9종 전체 */}
+            <p className="mb-1 text-[11px] font-bold text-white/50">판매 목록 (에메랄드)</p>
+            <div className="flex max-h-[38vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
+              {TRADE_STOCK.map((k) => {
                 const item = ITEMS[k];
-                const up = rpg.accUp?.[k] ?? 0;
-                const worn = rpg.accessories.includes(k);
+                const price = TRADE_PRICES[k] ?? 0;
+                const owned = rpg.owned.includes(k);
+                const affordable = rpg.emerald >= price && !owned;
                 return (
-                  <div key={k} className="flex items-center gap-2.5 rounded-lg border border-amber-300/30 bg-amber-300/[0.06] px-2.5 py-2">
+                  <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
                     <ItemIcon icon={item.icon} tier={item.tier} />
                     <div className="min-w-0 flex-1">
                       <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
-                        {displayName(item.name, up)}
+                        {item.name}
                         <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">전설</span>
                       </p>
-                      <p className="text-[11px] text-emerald-300/90">{itemEffect(item, up)}{worn ? " · 장착 중" : ""}</p>
+                      <p className="text-[11px] text-emerald-300/90">{itemEffect(item)}</p>
                     </div>
                     <button
-                      onClick={() => EventBus.emit("rpg:tradeSell", { key: k })}
-                      className="shrink-0 rounded-md bg-teal-400 px-2.5 py-1.5 text-[11px] font-black text-slate-900 hover:bg-teal-300 active:scale-95"
+                      disabled={!affordable}
+                      onClick={() => EventBus.emit("rpg:tradeBuy", { key: k })}
+                      className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${
+                        owned
+                          ? "cursor-default bg-emerald-700/40 text-emerald-300"
+                          : affordable
+                            ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
+                            : "cursor-not-allowed bg-slate-700/50 text-white/35"
+                      }`}
                     >
-                      판매 +{tradeValue(k)}
+                      {owned ? "보유함" : `${price} 에메랄드`}
                     </button>
                   </div>
                 );
               })}
             </div>
-          </>
-        )}
 
-        {/* 구매 목록 — 9종 전체 */}
-        <p className="mb-1 text-[11px] font-bold text-white/50">판매 목록 (에메랄드)</p>
-        <div className="flex max-h-[38vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
-          {TRADE_STOCK.map((k) => {
+            <p className="mt-2 text-center text-[10px] text-white/40">
+              판매가는 구매가의 60%입니다 · 에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1
+            </p>
+          </>
+        ) : (
+          <MarketBoard rpg={rpg} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ================= v1.0.1 — 유저 거래판 (계정 연계 실거래 보드) =================
+ *  서버 /api/market — 로그인 필수 · 동시 등록 3칸 · 판매 정산 시 10% 수수료.
+ *  서버 처리 성공 → EventBus로 WorldScene이 세이브(골드/보유) 반영 → 응답 스냅샷으로 갱신. */
+function MarketBoard({ rpg }: { rpg: RpgState }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [mk, setMk] = useState<MarketState | null>(null);
+  const [msg, setMsg] = useState("");
+  const [prices, setPrices] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+
+  const refresh = async () => {
+    const [me, st] = await Promise.all([authMe(), marketGet()]);
+    setUser(me);
+    setMk(st.state ?? null);
+    setLoaded(true);
+    if (st.error) setMsg(st.error);
+  };
+  useEffect(() => {
+    const t = setTimeout(() => { void refresh(); }, 0); // eslint 규칙 대응 — 비동기 조회는 태스크로 분리
+    return () => clearTimeout(t);
+  }, []);
+
+  /* 등록 가능: 보유 전설 중 미등록·미장착 */
+  const mineKeys = mk ? mk.listings.filter((l) => l.mine).map((l) => l.itemKey) : [];
+  const listable = TRADE_STOCK.filter((k) => rpg.owned.includes(k) && !mineKeys.includes(k) && !rpg.accessories.includes(k));
+  const slotsLeft = mk ? mk.maxListings - mineKeys.length : 0;
+
+  const doList = async (key: string, up: number) => {
+    const p = parseInt(prices[key] ?? "", 10);
+    if (!Number.isFinite(p) || p < 1) { setMsg("가격을 1G 이상 입력하세요"); return; }
+    setBusy(true);
+    const r = await marketList(key, up, p);
+    setBusy(false);
+    if (!r.ok) { setMsg(String(r.data.error ?? "등록 실패")); return; }
+    EventBus.emit("rpg:marketList", { key, up });
+    setMk(r.data as unknown as MarketState);
+    setPrices((s) => ({ ...s, [key]: "" }));
+    setMsg("");
+  };
+  const doCancel = async (id: string, itemKey: string, up: number) => {
+    setBusy(true);
+    const r = await marketCancel(id);
+    setBusy(false);
+    if (!r.ok) { setMsg(String(r.data.error ?? "취소 실패")); return; }
+    EventBus.emit("rpg:marketCancel", { itemKey, up });
+    setMk(r.data as unknown as MarketState);
+    setMsg("");
+  };
+  const doBuy = async (l: { id: string; itemKey: string; up: number; price: number }) => {
+    if (rpg.gold < l.price) { setMsg("골드가 부족해요"); return; }
+    setBusy(true);
+    const r = await marketBuy(l.id);
+    setBusy(false);
+    if (!r.ok) { setMsg(String(r.data.error ?? "구매 실패")); return; }
+    EventBus.emit("rpg:marketBuy", { itemKey: l.itemKey, up: l.up, price: l.price });
+    setMk(r.data as unknown as MarketState);
+    setMsg("");
+  };
+  const doCollect = async () => {
+    setBusy(true);
+    const r = await marketCollect();
+    setBusy(false);
+    if (!r.ok) { setMsg(String(r.data.error ?? "수령 실패")); return; }
+    EventBus.emit("rpg:marketCollect", { gold: Number(r.data.gold ?? 0) });
+    setMk(r.data as unknown as MarketState);
+    setMsg("");
+  };
+
+  if (!loaded) {
+    return <p className="py-6 text-center text-[11px] text-white/50">거래판을 불러오는 중…</p>;
+  }
+  if (!user) {
+    return (
+      <div className="rounded-lg border border-amber-300/40 bg-amber-400/[0.08] px-3 py-4 text-center">
+        <p className="text-[12px] font-black text-amber-200">🔐 계정 로그인이 필요한 서비스</p>
+        <p className="mt-1 text-[10px] leading-relaxed text-white/60">
+          유저 거래판은 계정 시스템과 연동돼요 — 사기 방지와 정산 보호를 위해<br />로그인한 모험가만 이용할 수 있어요.
+        </p>
+        <p className="mt-1.5 text-[10px] text-white/45">우측 위 계정 패널에서 회원가입/로그인 (구글·카카오·네이버 지원)</p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      {/* 정산금 바 */}
+      <div className="flex items-center justify-between rounded-lg border border-amber-300/40 bg-amber-400/[0.08] px-2.5 py-2">
+        <div>
+          <p className="text-[11px] font-black text-amber-200">💰 판매 정산금 — {mk?.pending.gold.toLocaleString() ?? 0} G</p>
+          <p className="text-[9px] text-white/50">판매 성공 시 10% 수수료를 제외한 90%가 적립됩니다</p>
+        </div>
+        <button
+          disabled={busy || (mk?.pending.gold ?? 0) <= 0}
+          onClick={doCollect}
+          className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black active:scale-95 ${(mk?.pending.gold ?? 0) > 0 ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-white/[0.06] text-white/30"}`}
+        >
+          수령
+        </button>
+      </div>
+
+      {/* 등록 섹션 */}
+      <p className="text-[11px] font-bold text-white/50">내 전설 등록 — 판매 ({slotsLeft}칸 남음 · 최대 {mk?.maxListings ?? 3})</p>
+      {listable.length === 0 ? (
+        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/40">
+          등록 가능한 전설이 없어요 — 보스 전용 드롭을 획득하거나, 장착 중인 장비는 해제하세요
+        </p>
+      ) : slotsLeft <= 0 ? (
+        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/40">등록 칸이 가득 찼어요 — 판매/취소 후 다시 등록하세요</p>
+      ) : (
+        <div className="flex max-h-[22vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
+          {listable.map((k) => {
             const item = ITEMS[k];
-            const price = TRADE_PRICES[k] ?? 0;
-            const owned = rpg.owned.includes(k);
-            const affordable = rpg.emerald >= price && !owned;
+            const up = rpg.accUp?.[k] ?? 0;
+            const defPrice = (TRADE_PRICES[k] ?? 8) * 5000;
             return (
-              <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
+              <div key={k} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
                 <ItemIcon icon={item.icon} tier={item.tier} />
                 <div className="min-w-0 flex-1">
-                  <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
-                    {item.name}
-                    <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">전설</span>
-                  </p>
-                  <p className="text-[11px] text-emerald-300/90">{itemEffect(item)}</p>
+                  <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{displayName(item.name, up)}</p>
+                  <input
+                    {...swallowKeys}
+                    inputMode="numeric"
+                    value={prices[k] ?? ""}
+                    onChange={(e) => setPrices((s) => ({ ...s, [k]: e.target.value.replace(/[^0-9]/g, "").slice(0, 8) }))}
+                    placeholder={`${defPrice.toLocaleString()}G 권장`}
+                    className="mt-0.5 w-full rounded border border-white/15 bg-black/40 px-1.5 py-1 text-[10px] font-bold text-white placeholder:text-white/25 focus:border-amber-300/60 focus:outline-none"
+                  />
                 </div>
                 <button
-                  disabled={!affordable}
-                  onClick={() => EventBus.emit("rpg:tradeBuy", { key: k })}
-                  className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${
-                    owned
-                      ? "cursor-default bg-emerald-700/40 text-emerald-300"
-                      : affordable
-                        ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
-                        : "cursor-not-allowed bg-slate-700/50 text-white/35"
-                  }`}
+                  disabled={busy || !(parseInt(prices[k] ?? "", 10) >= 1)}
+                  onClick={() => doList(k, up)}
+                  className={`shrink-0 rounded-md px-2 py-1.5 text-[11px] font-black active:scale-95 ${parseInt(prices[k] ?? "", 10) >= 1 ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-white/[0.06] text-white/30"}`}
                 >
-                  {owned ? "보유함" : `${price} 에메랄드`}
+                  등록
                 </button>
               </div>
             );
           })}
         </div>
+      )}
 
-        <p className="mt-2 text-center text-[10px] text-white/40">
-          판매가는 구매가의 60%입니다 · 에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1
-        </p>
-      </div>
+      {/* 판매 목록 */}
+      <p className="text-[11px] font-bold text-white/50">판매 등록물 {(mk?.listings.length ?? 0)}건</p>
+      {(mk?.listings.length ?? 0) === 0 ? (
+        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/40">아직 등록물이 없어요 — 첫 판매자가 되어보세요!</p>
+      ) : (
+        <div className="flex max-h-[30vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
+          {mk!.listings.map((l) => {
+            const item = ITEMS[l.itemKey as ItemKey];
+            if (!item) return null;
+            const seller = l.mine ? "나" : (l.seller ?? "모험가");
+            return (
+              <div key={l.id} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
+                <ItemIcon icon={item.icon} tier={item.tier} />
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>
+                    {displayName(item.name, l.up)}
+                    <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">{seller}</span>
+                  </p>
+                  <p className="text-[10px] text-white/50">{itemEffect(item, l.up)}</p>
+                </div>
+                {l.mine ? (
+                  <button
+                    disabled={busy}
+                    onClick={() => doCancel(l.id, l.itemKey, l.up)}
+                    className="shrink-0 rounded-md bg-white/15 px-2 py-1.5 text-[11px] font-black text-white/75 hover:bg-white/25 active:scale-95"
+                  >
+                    취소
+                  </button>
+                ) : (
+                  <button
+                    disabled={busy || rpg.gold < l.price}
+                    onClick={() => doBuy(l)}
+                    className={`shrink-0 rounded-md px-2 py-1.5 text-[11px] font-black active:scale-95 ${rpg.gold >= l.price ? "bg-teal-400 text-slate-900 hover:bg-teal-300" : "cursor-not-allowed bg-slate-700/50 text-white/35"}`}
+                  >
+                    {l.price.toLocaleString()}G
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {msg && <p className="rounded-md border border-rose-300/40 bg-rose-400/10 px-2 py-1.5 text-center text-[10px] font-bold text-rose-200">{msg}</p>}
+      <p className="text-center text-[10px] text-white/40">
+        등록 즉시 보유 목록에서 빠지고, 취소하면 돌아와요 · 수수료 10%는 거래판 운영비입니다
+      </p>
     </div>
   );
 }
@@ -2035,8 +2252,47 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-black/50">
             <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-200 transition-[width]" style={{ width: `${Math.min(100, (p.lvXp / PASS_LV_XP) * 100)}%` }} />
           </div>
-          <p className="mt-1 text-[9px] text-white/40">XP 획득: 토벌 +1 · 보스 +30 · 일일 퀘스트 수령 +40 · 게이트 웨이브×2</p>
+          <p className="mt-1 text-[9px] text-white/40">XP 획득: 토벌 +1 · 보스 +30 · 일일 퀘스트 수령 +40 · 게이트 웨이브×2 · 시즌 미션 수령</p>
         </div>
+
+        {/* v1.0.1 — 시즌 미션 (일일/주간 리텐션 보드 — 수령 시 패스 XP) */}
+        {p.missions && (
+          <div className="mb-2 rounded-lg border border-sky-300/25 bg-sky-400/[0.06] px-2.5 py-2">
+            <p className="mb-1 text-[11px] font-black text-sky-200">🎯 시즌 미션 — 완료하면 패스 XP 지급</p>
+            <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+              {[
+                ...SEASON_DAILY_MISSIONS.map((m) => ({ m, prog: p.missions!.d[m.id] ?? 0, claimed: p.missions!.cd.includes(m.id), tag: "일일" })),
+                ...SEASON_WEEKLY_MISSIONS.map((m) => ({ m, prog: p.missions!.w[m.id] ?? 0, claimed: p.missions!.cw.includes(m.id), tag: "주간" })),
+              ].map(({ m, prog, claimed, tag }) => {
+                const reach = prog >= m.target;
+                return (
+                  <div key={m.id} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${claimed ? "border-emerald-300/40 bg-emerald-400/[0.07]" : reach ? "border-amber-300/50 bg-amber-400/[0.09]" : "border-white/10 bg-white/[0.03]"}`}>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-black text-white">
+                        <span className={`mr-1 rounded px-1 py-px text-[8px] ${tag === "일일" ? "bg-sky-500/40 text-sky-100" : "bg-violet-500/40 text-violet-100"}`}>{tag}</span>
+                        {m.name}
+                      </p>
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+                          <div className={`h-full rounded-full ${reach ? "bg-amber-400" : "bg-sky-400/70"}`} style={{ width: `${Math.min(100, (prog / m.target) * 100)}%` }} />
+                        </div>
+                        <span className="text-[8px] font-bold text-white/45">{Math.min(prog, m.target)}/{m.target} · +{m.xp}XP</span>
+                      </div>
+                    </div>
+                    <button
+                      disabled={claimed || !reach}
+                      onClick={() => EventBus.emit("rpg:missionClaim", { kind: tag === "일일" ? "daily" : "weekly", id: m.id })}
+                      className={`shrink-0 rounded-md px-1.5 py-1 text-[9px] font-black active:scale-95 ${claimed ? "text-emerald-200" : reach ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-white/[0.06] text-white/30"}`}
+                    >
+                      {claimed ? "수령 완료" : "수령"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-1 text-[9px] text-white/35">일일 미션은 매일 00시 · 주간 미션은 월요일 00시 초기화</p>
+          </div>
+        )}
 
         {/* 프리미엄 박스 */}
         {p.prem ? (
@@ -3275,15 +3531,46 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
           })}
         </div>
 
-        {/* 티켓 현황 + 콘텐츠 입구 */}
+        {/* 티켓 현황 + 콘텐츠 입구 — v1.0.1 재충전 버튼 추가 */}
         <div className="mb-2.5 grid grid-cols-2 gap-1.5">
           <div className="rounded-lg border border-violet-300/30 bg-violet-400/10 px-2 py-1.5 text-center">
             <p className="text-[9px] font-bold text-white/50">바르가 수비전 티켓</p>
             <p className="text-sm font-black text-violet-200">{ik?.tickets?.gate ?? 0}/3 남음</p>
+            <button
+              disabled={(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3}
+              onClick={() => EventBus.emit("rpg:ticketRefill", { kind: "gate" })}
+              className={`mt-1 w-full rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-violet-400 text-slate-900 hover:bg-violet-300"}`}
+            >
+              재충전 +1 (3💎 · {(rpg.ticketRefillsLeft ?? 0)}회)
+            </button>
           </div>
           <div className="rounded-lg border border-lime-300/30 bg-lime-400/10 px-2 py-1.5 text-center">
             <p className="text-[9px] font-bold text-white/50">균열 던전 티켓</p>
             <p className="text-sm font-black text-lime-200">{ik?.tickets?.closet ?? 0}/2 남음</p>
+            <button
+              disabled={(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3}
+              onClick={() => EventBus.emit("rpg:ticketRefill", { kind: "closet" })}
+              className={`mt-1 w-full rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-lime-400 text-slate-900 hover:bg-lime-300"}`}
+            >
+              재충전 +1 (3💎 · {(rpg.ticketRefillsLeft ?? 0)}회)
+            </button>
+          </div>
+        </div>
+
+        {/* v1.0.1 — 오늘의 균열 테마 + 요일 로테이션 */}
+        <div className="mb-2.5 rounded-lg border border-lime-300/30 bg-lime-400/[0.07] px-2.5 py-2">
+          <p className="text-[11px] font-black text-lime-200">오늘의 균열 테마 — {closetThemeOf().name}</p>
+          <p className="text-[10px] text-white/60">{closetThemeOf().desc}</p>
+          <div className="mt-1 flex gap-1 overflow-x-auto">
+            {CLOSET_THEMES.map((t) => (
+              <span
+                key={t.dow}
+                className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-black ${t.dow === closetThemeOf().dow ? "bg-white/20 text-white" : "bg-white/[0.06] text-white/45"}`}
+                style={{ color: t.dow === closetThemeOf().dow ? t.color : undefined }}
+              >
+                {"일월화수목금토"[t.dow]} {t.name}
+              </span>
+            ))}
           </div>
         </div>
         <div className="mb-2.5 grid grid-cols-3 gap-1.5">

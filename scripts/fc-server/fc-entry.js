@@ -5,6 +5,7 @@
  *  - standalone 래퍼 server.js 가 캡처한 http.Server 에 멀티플레이를 부착한다
  *  - v4.9.0 — 계정 API(/api/auth/*: 자체 가입/로그인 + SNS OAuth + 클라우드 세이브)도
  *    여기서 가로챈다. request 리스너를 통째로 감싸 계정 요청만 먼저 처리한다.
+ *  - v1.0.1 — 유저 거래판 API(/api/market)도 동일 경로로 가로챈다
  */
 module.exports = function attachFcMultiplayer(httpServer) {
   const { attachMultiplayer } = require("../../multiplayer");
@@ -16,11 +17,12 @@ module.exports = function attachFcMultiplayer(httpServer) {
 
   /* v4.9.0 — 계정 API 가로채기: 기존 request 리스너를 보존한 뒤 위에 얹는다 */
   try {
-    const { handleAccountRequest } = require("../../accounts");
+    const { handleAccountRequest, handleMarketRequest } = require("../../accounts");
     const orig = httpServer.listeners("request").slice();
     httpServer.removeAllListeners("request");
     httpServer.addListener("request", (req, res) => {
-      if ((req.url || "").startsWith("/api/auth/")) {
+      const u = req.url || "";
+      if (u.startsWith("/api/auth/")) {
         Promise.resolve(handleAccountRequest(req, res)).then((handled) => {
           if (!handled) orig.forEach((l) => l.call(httpServer, req, res));
         }).catch((e) => {
@@ -29,9 +31,17 @@ module.exports = function attachFcMultiplayer(httpServer) {
         });
         return;
       }
+      if (u.startsWith("/api/market")) {
+        const url = u.split("?")[0];
+        const method = (req.method || "GET").toUpperCase();
+        Promise.resolve(handleMarketRequest(req, res, url, method)).catch((e) => {
+          console.error("[SERTZ-FC] 마켓 API 실패", e);
+        });
+        return;
+      }
       orig.forEach((l) => l.call(httpServer, req, res));
     });
-    console.log("> [SERTZ-FC] 계정 서버 부착 완료 (/api/auth/*)");
+    console.log("> [SERTZ-FC] 계정 서버 부착 완료 (/api/auth/*, /api/market)");
   } catch (e) {
     console.error("[SERTZ-FC] 계정 모듈 부착 실패 — 계정 기능 없이 계속", e);
   }

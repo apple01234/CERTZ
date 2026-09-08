@@ -68,3 +68,38 @@ export async function cloudSaveDownload(): Promise<{ ok: boolean; data: unknown;
   if (!r.ok) return { ok: false, data: null, error: String(r.data.error ?? "복원 실패") };
   return { ok: true, data: r.data.data ?? null };
 }
+
+/* ================= v1.0.1 — 유저 거래판 (마켓) 클라이언트 =================
+ *  서버: /api/market (accounts/index.js) — 로그인 쿠키 세션 기반.
+ *  등록/구매/취소/수령 성공 시 클라이언트가 세이브(골드/보유)를 조작한다 — 서버는 ledger만. */
+
+export type MarketListing = { id: string; seller: string | null; mine: boolean; itemKey: string; up: number; price: number; ts: number };
+export type MarketState = {
+  listings: MarketListing[];
+  pending: { gold: number; count: number };
+  feePct: number;
+  maxListings: number;
+  guest?: boolean;
+};
+
+export async function marketGet(): Promise<{ ok: boolean; error?: string; state?: MarketState }> {
+  const r = await get("/api/market");
+  if (!r.ok) return { ok: false, error: String(r.data.error ?? "거래판 조회 실패") };
+  return { ok: true, state: r.data as unknown as MarketState };
+}
+
+export async function marketList(itemKey: string, up: number, price: number) {
+  return post("/api/market/list", { itemKey, up, price });
+}
+
+export async function marketCancel(id: string) {
+  return post("/api/market/cancel", { id });
+}
+
+export async function marketBuy(id: string) {
+  return post("/api/market/buy", { id });
+}
+
+export async function marketCollect() {
+  return post("/api/market/collect", {});
+}

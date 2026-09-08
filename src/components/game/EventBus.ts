@@ -133,11 +133,15 @@ export type RpgState = {
     prem: boolean;
     claimedF: number[];
     claimedP: number[];
+    /** v1.0.1 — 시즌 미션 (일일/주간 진행 + 수령 기록) */
+    missions?: { day: string; week: string; d: Record<string, number>; w: Record<string, number>; cd: string[]; cw: string[] };
   };
   /** 구독(SERTZ 패스) 상태 */
   sub?: { until: number; left: number; active: boolean };
   /** 스타터팩 구매 완료 (BM상점 하이라이트 표시용) */
   starterPackBought?: boolean;
+  /** v1.0.1 — 오늘 남은 티켓 재충전 횟수 (혜택 패널 — 3까지) */
+  ticketRefillsLeft?: number;
 };
 
 /** v3.1.0 — "bossdiff" 제거: 스토리 보스는 전용 난이도 즉시 스폰 (선택은 보스 재도전 창 "boss") */

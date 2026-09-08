@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, type BmGrant, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -26,7 +26,7 @@ import {
 } from "../isekai";
 import { viewZoom } from "../PhaserGame";
 import { showRewardedAd, purchaseGems, GEM_SKUS } from "../ads"; // v4.1.0 — BM 수익 연동
-import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft } from "../pass"; // v4.5.0 — 시즌 패스/구독
+import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft, weekKey, missionsByHook, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS, type MissionHook } from "../pass"; // v4.5.0 — 시즌 패스/구독 + v1.0.1 시즌 미션
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
@@ -219,6 +219,7 @@ export class WorldScene extends Phaser.Scene {
   private closetText: Phaser.GameObjects.Text | null = null;
   private closetAcc = 0;
   private closetFrom: StageKey = "village";
+  private closetTheme: ClosetTheme = closetThemeOf(); // v1.0.1 — 오늘의 요일 테마
   /* 세이브 상태 (피규어/배지/룬/성좌/혜택) */
   private figures: string[] = [];
   private shards = 0;
@@ -250,6 +251,14 @@ export class WorldScene extends Phaser.Scene {
   private ticketDate = "";
   private ticketGate = 0;
   private ticketCloset = 0;
+  private ticketRefills = 0; // v1.0.1 — 오늘 티켓 재충전 횟수 (일 3회 한정 — BM)
+  /* v1.0.1 — 시즌 미션 (일일/주간 리텐션 보드 — pass.ts SEASON_MISSIONS) */
+  private missionDay = "";
+  private missionWeek = "";
+  private missionD: Record<string, number> = {};
+  private missionW: Record<string, number> = {};
+  private missionCd: string[] = [];
+  private missionCw: string[] = [];
   private achClaimed: string[] = [];
   /* v4.1.4 — 보스/카오스/침공 처치 누적 (도전과제 지표) + 침공 보스 참조 */
   private bossKillCount = 0;
@@ -948,6 +957,14 @@ export class WorldScene extends Phaser.Scene {
       this.ticketDate = savedPlayer.tickets?.date ?? "";
       this.ticketGate = savedPlayer.tickets?.gate ?? 0;
       this.ticketCloset = savedPlayer.tickets?.closet ?? 0;
+      this.ticketRefills = savedPlayer.tickets?.refills ?? 0; // v1.0.1 — 재충전 카운트 복원
+      /* v1.0.1 — 시즌 미션 복원 (ensureMissions가 day/week 검증) */
+      this.missionDay = savedPlayer.missions?.day ?? "";
+      this.missionWeek = savedPlayer.missions?.week ?? "";
+      this.missionD = { ...(savedPlayer.missions?.d ?? {}) };
+      this.missionW = { ...(savedPlayer.missions?.w ?? {}) };
+      this.missionCd = [...(savedPlayer.missions?.cd ?? [])];
+      this.missionCw = [...(savedPlayer.missions?.cw ?? [])];
       this.achClaimed = [...(savedPlayer.achClaimed ?? [])];
       /* v4.1.4 — 보스/카오스/침공 처치 누적 복원 */
       this.bossKillCount = savedPlayer.bossKills ?? 0;
@@ -2993,13 +3010,28 @@ export class WorldScene extends Phaser.Scene {
       this.emitGateState();
       if (this.gateAlive <= 0 && this.gatePhase === "fight") this.onGateWaveCleared();
     } else if (this.closetActive) {
-      /* 균열 던전 — 레벨 스케일 골드 지급 + 경험치책 확률 드롭 */
-      const g = Math.round((42 + this.player.lv * 6) * (1 + this.player.extBonus.goldPct / 100 + this.player.petGoldBonusPct / 100));
+      /* 균열 던전 — 레벨 스케일 골드 지급 + 경험치책 확률 드롭 (v1.0.1 — 요일 테마 배율 적용) */
+      const th = this.closetTheme;
+      const g = Math.round((42 + this.player.lv * 6) * (1 + this.player.extBonus.goldPct / 100 + this.player.petGoldBonusPct / 100) * (th.mul ?? 1));
       this.player.addGold(g);
       this.closetGold += g;
-      if (Math.random() < 0.28) {
-        this.player.owned.push("exp_book");
-        this.spawnPickupText(this.player.x, this.player.y - 70, "경험치 책 드롭!", "#8fe84a");
+      if (Math.random() < 0.28 * (th.bookMul ?? 1)) {
+        const books = th.bookN ?? 1; // 지혜의 균열 2권
+        for (let i = 0; i < books; i++) this.player.owned.push("exp_book");
+        this.spawnPickupText(this.player.x, this.player.y - 70, `경험치 책 드롭${books > 1 ? ` ×${books}` : ""}!`, "#8fe84a");
+        this.emitRpgState();
+      }
+      /* v1.0.1 — 테마 확률 드롭 (강화 주문서/상급 물약/에메랄드) */
+      for (const ex of th.extra ?? []) {
+        if (Math.random() < ex.chance) {
+          this.player.owned.push(ex.item);
+          this.spawnPickupText(this.player.x, this.player.y - 88, `${ITEMS[ex.item]?.name ?? "아이템"} 드롭!`, th.color);
+          this.emitRpgState();
+        }
+      }
+      if (th.emeraldChance && Math.random() < th.emeraldChance) {
+        this.player.emerald += 1;
+        this.spawnPickupText(this.player.x, this.player.y - 88, "+1 에메랄드", "#7de8ff");
         this.emitRpgState();
       }
     }
@@ -3007,6 +3039,8 @@ export class WorldScene extends Phaser.Scene {
     this.addDailyHunt();
     /* v4.5.0 — 시즌 패스 XP (토벌 +1 — 사냥 자체가 패스 진행으로 이어진다) */
     this.addPassXp(PASS_XP_RULES.hunt);
+    /* v1.0.1 — 시즌 미션 토벌 카운트 */
+    this.trackMission("hunt");
     /* v3.0.15 (#20) — 콤보킬 보너스 경험치: 5초 내 연속 킬 시 콤보×5% (최대 +50%).
      *  콤보 3 이상부터 "연속킬 xN" 플로팅 텍스트로 연출 */
     const nowMs = this.time.now;
@@ -3251,6 +3285,7 @@ export class WorldScene extends Phaser.Scene {
   private initIsekaiDaily() {
     this.ensureDaily();
     this.ensureTickets();
+    this.ensureMissions(); // v1.0.1 — 시즌 미션 일/주 리셋 검증
     this.ensurePassSeason(); // v4.5.0 — 시즌 키 검증 (월이 바뀌면 새 시즌 개시)
     this.checkAttendance();
     this.checkOfflineReward();
@@ -3278,6 +3313,7 @@ export class WorldScene extends Phaser.Scene {
       this.ticketDate = t;
       this.ticketGate = TICKETS_PER_DAY.gate;
       this.ticketCloset = TICKETS_PER_DAY.closet;
+      this.ticketRefills = 0; // v1.0.1 — 재충전 횟수 일일 리셋
     }
   }
 
@@ -3310,6 +3346,71 @@ export class WorldScene extends Phaser.Scene {
   private addDailyHunt() {
     this.ensureDaily();
     this.dailyHunts++;
+  }
+
+  /* ================= v1.0.1 — 시즌 미션 (일일/주간 리텐션 보드) ================= */
+
+  /** 일자/주차 검증 — 바뀌었으면 해당 그룹 카운트·수령 기록 리셋 */
+  private ensureMissions() {
+    const d = this.today();
+    const w = weekKey();
+    if (this.missionDay !== d) {
+      this.missionDay = d;
+      this.missionD = {};
+      this.missionCd = [];
+    }
+    if (this.missionWeek !== w) {
+      this.missionWeek = w;
+      this.missionW = {};
+      this.missionCw = [];
+    }
+  }
+
+  /** 미션 진행 훅 — hunt/boss/closet/gate/dailyClaim/market (n은 진행량) */
+  private trackMission(hook: MissionHook, n = 1) {
+    this.ensureMissions();
+    const { daily, weekly } = missionsByHook(hook);
+    let completed = "";
+    for (const m of daily) {
+      if (this.missionCd.includes(m.id)) continue;
+      const before = this.missionD[m.id] ?? 0;
+      this.missionD[m.id] = Math.min(m.target, before + n);
+      if (before < m.target && this.missionD[m.id] >= m.target) completed = m.name;
+    }
+    for (const m of weekly) {
+      if (this.missionCw.includes(m.id)) continue;
+      const before = this.missionW[m.id] ?? 0;
+      this.missionW[m.id] = Math.min(m.target, before + n);
+      if (before < m.target && this.missionW[m.id] >= m.target) completed = m.name;
+    }
+    /* 완료 순간 도파민 배너 (수령은 패스 패널에서) */
+    if (completed) {
+      audio.sfx.questDone();
+      EventBus.emit("banner:show", { text: `시즌 미션 완료 — ${completed}! 패스 패널에서 수령하세요` });
+    }
+  }
+
+  /** 미션 보상 수령 — 패스 XP 지급 (rpg:missionClaim) */
+  private claimMission(v: { kind: "daily" | "weekly"; id: string }) {
+    if (!this.player || this.dialoguing) return;
+    this.ensureMissions();
+    const m = v.kind === "daily"
+      ? SEASON_DAILY_MISSIONS.find((x) => x.id === v.id)
+      : SEASON_WEEKLY_MISSIONS.find((x) => x.id === v.id);
+    if (!m) return;
+    const claimed = v.kind === "daily" ? this.missionCd : this.missionCw;
+    if (claimed.includes(m.id)) return;
+    const prog = (v.kind === "daily" ? this.missionD[m.id] : this.missionW[m.id]) ?? 0;
+    if (prog < m.target) {
+      EventBus.emit("banner:show", { text: "아직 완료되지 않은 미션이다" });
+      return;
+    }
+    claimed.push(m.id);
+    this.addPassXp(m.xp);
+    EventBus.emit("banner:show", { text: `미션 수령 — ${m.name} (+패스 XP ${m.xp})` });
+    audio.sfx.questDone();
+    this.save();
+    this.emitRpgState();
   }
 
   private checkAttendance() {
@@ -3519,6 +3620,7 @@ export class WorldScene extends Phaser.Scene {
         if (g.emerald) p.emerald += g.emerald;
         if (g.tickets) this.gachaTickets += g.tickets;
         this.addPassXp(PASS_XP_RULES.daily); // v4.5.0 — 일일 퀘스트 수령 시 패스 XP +40
+        this.trackMission("dailyClaim"); // v1.0.1 — 주간 미션 "일일 퀘스트 수령" 카운트
         EventBus.emit("banner:show", { text: `일일 퀘스트 완료 — ${g.label}!` });
         audio.sfx.questDone();
         this.save();
@@ -3784,6 +3886,7 @@ export class WorldScene extends Phaser.Scene {
 
   private onGateWaveCleared() {
     if (this.gatePhase !== "fight" || this.gateEnded) return;
+    this.trackMission("gate"); // v1.0.1 — 시즌 미션 게이트 웨이브 카운트
     this.gatePhase = "cards";
     this.gatePendingCards = drawGateCards(this.gateWave);
     /* 웨이브 클리어 보너스 — 룬 드롭 (확률) */
@@ -3917,14 +4020,17 @@ export class WorldScene extends Phaser.Scene {
     if (this.stageDef.key === "closet") return;
     this.ensureTickets();
     if (this.ticketCloset <= 0) {
-      EventBus.emit("banner:show", { text: "오늘의 균열 던전 티켓 소진! (매일 2장)" });
+      const left = Math.max(0, 3 - this.ticketRefills);
+      EventBus.emit("banner:show", { text: left > 0 ? `오늘의 균열 던전 티켓 소진! (혜택 패널에서 재충전 ${left}회 가능 — 3💎)` : "오늘의 균열 던전 티켓 소진! (재충전 한도 초과)" });
       return;
     }
     this.ticketCloset--;
     this.ensureDaily();
     this.dailyCloset++;
     this.closetFrom = this.stageDef.key;
-    this.showBanner("균열 던전으로 이동합니다 — 60초 파밍 타임!");
+    this.closetTheme = closetThemeOf(); // v1.0.1 — 오늘의 요일 테마
+    this.trackMission("closet"); // v1.0.1 — 시즌 미션 균열 입장 카운트
+    this.showBanner(`오늘의 테마 「${this.closetTheme.name}」 — ${this.closetTheme.desc}`);
     this.save();
     this.emitRpgState();
     this.gotoStage("closet");
@@ -3932,13 +4038,20 @@ export class WorldScene extends Phaser.Scene {
 
   private buildCloset() {
     const cx = this.stageW / 2;
+    const th = this.closetTheme;
     this.add
       .text(this.cameras.main.width / 2, 66, "균 열 던 전", { fontFamily: "Galmuri11, sans-serif", fontSize: "30px", color: "#8fe84a", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(90)
       .setScrollFactor(0);
+    /* v1.0.1 — 요일 테마 배지 */
+    this.add
+      .text(this.cameras.main.width / 2, 96, `오늘의 테마 — ${th.name}`, { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: th.color, stroke: "#1a1020", strokeThickness: 4, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0);
     this.closetText = this.add
-      .text(this.cameras.main.width / 2, 108, "", { fontFamily: "Galmuri11, sans-serif", fontSize: "17px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 120, "", { fontFamily: "Galmuri11, sans-serif", fontSize: "17px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(96)
       .setScrollFactor(0);
@@ -3946,13 +4059,14 @@ export class WorldScene extends Phaser.Scene {
     this.closetAcc = 0;
     this.closetActive = true;
     this.closetEndsAt = this.time.now + 60000;
-    this.showBanner("균열 던전 입장! 60초 동안 골드와 경험치 책을 모아라");
+    this.showBanner(`「${th.name}」 입장! 60초 동안 ${th.mul ? "골드" : "보물"}을 모아라`);
   }
 
   private tickCloset(dt: number) {
-    /* 몬스터 지속 소환 — 0.75초마다 1~2마리 */
+    /* 몬스터 지속 소환 — 0.75초마다 1~2마리 (테마 spawnMul로 가속) */
+    const spawnMs = 750 / (this.closetTheme.spawnMul ?? 1); // v1.0.1 — 무한의 균열 1.4배 가속
     this.closetAcc += dt;
-    if (this.closetAcc >= 750) {
+    if (this.closetAcc >= spawnMs) {
       this.closetAcc = 0;
       const n = Phaser.Math.Between(1, 2);
       const lv = this.player.lv;
@@ -3995,12 +4109,13 @@ export class WorldScene extends Phaser.Scene {
     const badgeKey = "bdg_closet";
     const gotBadge = this.closetBest >= 100000 && !this.badges.includes(badgeKey);
     if (gotBadge) this.badges.push(badgeKey);
+    const th = this.closetTheme;
     EventBus.emit("reward:show", {
-      title: "균열 던전 — 파밍 종료!",
+      title: `균열 던전 「${th.name}」 — 파밍 종료!`,
       lines: [
         { text: `획득 골드: ${this.closetGold.toLocaleString()} G`, color: "#ffd76a" },
         { text: record ? "신기록 달성!" : `최고 기록: ${this.closetBest.toLocaleString()} G`, color: record ? "#7dffa8" : "#a8ecff" },
-        { text: gotBadge ? "배지 획득 — 균열 탐험가!" : "경험치 책은 몬스터 처치 시 드롭", color: "#c08aff" },
+        { text: gotBadge ? "배지 획득 — 균열 탐험가!" : `내일 테마: 「${CLOSET_THEMES[(th.dow + 1) % 7].name}」`, color: gotBadge ? "#c08aff" : "#c08aff" },
       ] satisfies RewardPopupState["lines"],
     });
     audio.sfx.questDone();
@@ -4691,6 +4806,7 @@ export class WorldScene extends Phaser.Scene {
       /* v4.1.4 — 보스/카오스 처치 누적 (도전과제 지표) */
       this.bossKillCount++;
       this.addPassXp(PASS_XP_RULES.boss); // v4.5.0 — 재림 보스도 패스 XP +30
+      this.trackMission("boss"); // v1.0.1 — 시즌 미션 보스 카운트
       if (this.boss?.chaos) this.chaosKillCount++;
       this.cameras.main.shake(400, 0.01);
       this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
@@ -4727,6 +4843,7 @@ export class WorldScene extends Phaser.Scene {
     /* v4.1.4 — 보스/카오스 처치 누적 (도전과제 지표) */
     this.bossKillCount++;
     this.addPassXp(PASS_XP_RULES.boss); // v4.5.0 — 스토리 보스 패스 XP +30
+    this.trackMission("boss"); // v1.0.1 — 시즌 미션 보스 카운트
     if (this.boss?.chaos) this.chaosKillCount++;
     /* v3.0.6 (지시 #1) — 보스 처치 시 에메랄드 +2 (BM 상점 재화) */
     this.player.emerald += 2;
@@ -5678,8 +5795,88 @@ export class WorldScene extends Phaser.Scene {
       this.emitQuestLog();
     };
 
+    /* v1.0.1 — 시즌 미션 보상 수령 (패스 패널) */
+    const onMissionClaim = (v: { kind: "daily" | "weekly"; id: string }) => this.claimMission(v);
+    /* v1.0.1 — 유저 거래판: 서버 처리 성공 후 세이브 반영 (TradePanel이 서버 응답 검증 후 emit) */
+    const onMarketList = (v: { key: string; up: number }) => {
+      if (!this.player || this.dialoguing) return;
+      const idx = this.player.owned.indexOf(v.key as ItemKey);
+      if (idx < 0) return;
+      this.player.owned.splice(idx, 1);
+      if (v.up > 0) delete this.player.accUp?.[v.key]; // 강화 수치는 서버 등록분으로 이전
+      this.trackMission("market"); // 주간 미션 "거래소 이용"
+      this.save();
+      this.emitRpgState();
+    };
+    const onMarketBuy = (v: { itemKey: string; up: number; price: number }) => {
+      if (!this.player || this.dialoguing) return;
+      if (this.player.gold < v.price) {
+        EventBus.emit("banner:show", { text: "골드가 부족하다" });
+        return;
+      }
+      this.player.gold -= v.price; // 시세 왜곡 방지 — buff_gold 배율 미적용 (직접 차감)
+      this.player.owned.push(v.itemKey as ItemKey);
+      if (v.up > 0) {
+        if (!this.player.accUp) this.player.accUp = {};
+        this.player.accUp[v.itemKey] = v.up;
+      }
+      this.trackMission("market"); // 주간 미션 "거래소 이용"
+      EventBus.emit("banner:show", { text: `유저 거래판 구매 완료! (-${v.price.toLocaleString()} G)` });
+      audio.sfx.coin();
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    const onMarketCancel = (v: { itemKey: string; up: number }) => {
+      if (!this.player) return;
+      this.player.owned.push(v.itemKey as ItemKey);
+      if (v.up > 0) {
+        if (!this.player.accUp) this.player.accUp = {};
+        this.player.accUp[v.itemKey] = v.up;
+      }
+      this.save();
+      this.emitRpgState();
+    };
+    const onMarketCollect = (v: { gold: number }) => {
+      if (!this.player || v.gold <= 0) return;
+      this.player.gold += v.gold; // 정산금 — 버프 배율 미적용
+      EventBus.emit("banner:show", { text: `정산금 수령 — +${v.gold.toLocaleString()} G (수수료 10% 제외)` });
+      audio.sfx.coin();
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    /* v1.0.1 — 입장 티켓 재충전 (혜택 패널 — 에메랄드 3개 → 티켓 +1, 일 3회) */
+    const onTicketRefill = (v: { kind: "gate" | "closet" }) => {
+      if (!this.player || this.dialoguing) return;
+      this.ensureTickets();
+      if (this.ticketRefills >= 3) {
+        EventBus.emit("banner:show", { text: "오늘의 재충전 한도 초과 — 내일 다시!" });
+        return;
+      }
+      const cost = 3;
+      if (this.player.emerald < cost) {
+        EventBus.emit("banner:show", { text: "에메랄드가 부족하다 (3💎 필요)" });
+        return;
+      }
+      this.player.emerald -= cost;
+      this.ticketRefills++;
+      if (v.kind === "gate") this.ticketGate++;
+      else this.ticketCloset++;
+      EventBus.emit("banner:show", { text: `${v.kind === "gate" ? "바르가 수비전" : "균열 던전"} 티켓 +1 재충전! (-3💎)` });
+      audio.sfx.coin();
+      this.save();
+      this.emitRpgState();
+    };
+
     EventBus.on("rpg:tradeBuy", onTradeBuy);
     EventBus.on("rpg:tradeSell", onTradeSell);
+    EventBus.on("rpg:missionClaim", onMissionClaim);
+    EventBus.on("rpg:ticketRefill", onTicketRefill);
+    EventBus.on("rpg:marketList", onMarketList);
+    EventBus.on("rpg:marketBuy", onMarketBuy);
+    EventBus.on("rpg:marketCancel", onMarketCancel);
+    EventBus.on("rpg:marketCollect", onMarketCollect);
     EventBus.on("rpg:starScroll", onStarScroll);
     EventBus.on("rpg:upgradeAcc", onUpgradeAcc);
     EventBus.on("rpg:sell", onSell);
@@ -5744,6 +5941,12 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:gm", onGm);
       EventBus.off("rpg:tradeBuy", onTradeBuy);
       EventBus.off("rpg:tradeSell", onTradeSell);
+      EventBus.off("rpg:missionClaim", onMissionClaim);
+      EventBus.off("rpg:ticketRefill", onTicketRefill);
+      EventBus.off("rpg:marketList", onMarketList);
+      EventBus.off("rpg:marketBuy", onMarketBuy);
+      EventBus.off("rpg:marketCancel", onMarketCancel);
+      EventBus.off("rpg:marketCollect", onMarketCollect);
       EventBus.off("rpg:starScroll", onStarScroll);
       EventBus.off("rpg:upgradeAcc", onUpgradeAcc);
       EventBus.off("rpg:isekai", onIsekai);
@@ -8764,9 +8967,20 @@ export class WorldScene extends Phaser.Scene {
         prem: this.passPrem,
         claimedF: [...this.passClaimedF],
         claimedP: [...this.passClaimedP],
+        /* v1.0.1 — 시즌 미션 (일일/주간 진행 + 수령 기록) */
+        missions: {
+          day: this.missionDay,
+          week: this.missionWeek,
+          d: { ...this.missionD },
+          w: { ...this.missionW },
+          cd: [...this.missionCd],
+          cw: [...this.missionCw],
+        },
       },
       sub: { until: this.subUntil, left: subDaysLeft(this.subUntil), active: subActive(this.subUntil) },
       starterPackBought: this.starterPackBought,
+      /* v1.0.1 — 티켓 재충전 잔여 횟수 (혜택 패널) */
+      ticketRefillsLeft: Math.max(0, 3 - this.ticketRefills),
     };
     const sig = JSON.stringify(st);
     if (sig === this.lastRpgSig) return;
@@ -8904,10 +9118,12 @@ export class WorldScene extends Phaser.Scene {
       coupons: [...this.couponsUsed],
       attend: { last: this.attendLast, count: this.attendCount },
       daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop },
-      tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
+      tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset, refills: this.ticketRefills },
       achClaimed: [...this.achClaimed],
       /* v4.5.0 — 시즌 패스 + 구독 + 스타터팩 */
       pass: { season: this.passSeason, xp: this.passXp, prem: this.passPrem, claimedF: [...this.passClaimedF], claimedP: [...this.passClaimedP] },
+      /* v1.0.1 — 시즌 미션 */
+      missions: { day: this.missionDay, week: this.missionWeek, d: { ...this.missionD }, w: { ...this.missionW }, cd: [...this.missionCd], cw: [...this.missionCw] },
       sub: { until: this.subUntil },
       starterPackBought: this.starterPackBought,
       /* v4.1.4 — 보스/카오스/침공 처치 누적 */

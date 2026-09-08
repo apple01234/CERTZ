@@ -102,3 +102,45 @@ export function subDaysLeft(until: number | undefined): number {
   if (!subActive(until)) return 0;
   return Math.max(1, Math.ceil(((until as number) - Date.now()) / 86400000));
 }
+
+/* ================= 3. 시즌 미션 (v1.0.1 — 리텐션 미션 보드) =================
+ *  BM 문서: "미션은 매일 로그인할 이유" — 일일 미션(당일 리셋) + 주간 미션(월요일 리셋).
+ *  보상은 패스 XP로 지급 → 시즌 패스 트랙 보상과 직결 = 미션→패스→보상 3단 도파민 루프.
+ *  진행 카운트는 WorldScene 훅(trackMission)이, 수령은 PassPanel(rpg:missionClaim)이 담당. */
+export type SeasonMission = { id: string; name: string; target: number; xp: number; hook: MissionHook };
+export type MissionHook = "hunt" | "boss" | "closet" | "gate" | "dailyClaim" | "market";
+
+/** 일일 미션 — 매일 00시 리셋 (쿼타는 하루 플레이 30분~1시간 기준) */
+export const SEASON_DAILY_MISSIONS: SeasonMission[] = [
+  { id: "d_hunt", name: "토벌 50마리", target: 50, xp: 30, hook: "hunt" },
+  { id: "d_boss", name: "보스 처치 3마리", target: 3, xp: 50, hook: "boss" },
+  { id: "d_closet", name: "균열 던전 입장 1회", target: 1, xp: 40, hook: "closet" },
+  { id: "d_gate", name: "게이트 웨이브 2돌파", target: 2, xp: 40, hook: "gate" },
+];
+
+/** 주간 미션 — 월요일 00시 리셋 (일일의 약 4~5배 쿼타) */
+export const SEASON_WEEKLY_MISSIONS: SeasonMission[] = [
+  { id: "w_hunt", name: "토벌 400마리", target: 400, xp: 150, hook: "hunt" },
+  { id: "w_boss", name: "보스 처치 15마리", target: 15, xp: 200, hook: "boss" },
+  { id: "w_closet", name: "균열 던전 입장 4회", target: 4, xp: 120, hook: "closet" },
+  { id: "w_daily", name: "일일 퀘스트 수령 4일", target: 4, xp: 180, hook: "dailyClaim" },
+  { id: "w_market", name: "거래소 이용 1회", target: 1, xp: 100, hook: "market" },
+];
+
+/** 주차 키 (ISO 주차 — 월요일 기준 리셋) — "2026-W37" 형식 */
+export function weekKey(d = new Date()): string {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7; // 일=0 → 7
+  t.setUTCDate(t.getUTCDate() + 4 - day); // 해당 주 목요일
+  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((t.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${t.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+/** 훅 이름으로 미션 그룹 조회 (WorldScene.trackMission용) */
+export function missionsByHook(hook: MissionHook): { daily: SeasonMission[]; weekly: SeasonMission[] } {
+  return {
+    daily: SEASON_DAILY_MISSIONS.filter((m) => m.hook === hook),
+    weekly: SEASON_WEEKLY_MISSIONS.filter((m) => m.hook === hook),
+  };
+}

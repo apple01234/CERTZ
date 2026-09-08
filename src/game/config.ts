@@ -167,8 +167,8 @@ export type SaveData = {
   attend?: { last: string; count: number };
   /** 일일 퀘스트 { 날짜, 토벌, 게이트, 던전, 수령 완료, 광고 시청 } */
   daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number; adsChest?: number; adsDrop?: number };
-  /** 일일 입장 티켓 { 날짜, 게이트 잔여, 던전 잔여 } */
-  tickets?: { date: string; gate: number; closet: number };
+  /** 일일 입장 티켓 { 날짜, 게이트 잔여, 던전 잔여, 재충전 횟수 } */
+  tickets?: { date: string; gate: number; closet: number; refills?: number };
   /** 수령 완료 업적 */
   achClaimed?: string[];
   /** 게이트 최고 웨이브 / 옷장 던전 최고 골드 기록 */
@@ -186,6 +186,8 @@ export type SaveData = {
   /* ----- v4.5.0 — 시즌 패스 + 구독 (BM 표준화) ----- */
   /** 시즌 패스 { 시즌키, XP, 프리미엄 여부, 수령한 무료/프리미엄 레벨 목록 } — 시즌이 바뀌면 리셋 */
   pass?: { season: string; xp: number; prem: boolean; claimedF: number[]; claimedP: number[] };
+  /** v1.0.1 — 시즌 미션 진행 { 일자, 주차, 일일 카운트, 주간 카운트, 수령 완료 } — day/week이 바뀌면 해당 그룹 리셋 */
+  missions?: { day: string; week: string; d: Record<string, number>; w: Record<string, number>; cd: string[]; cw: string[] };
   /** 구독(SERTZ 패스) 만료 시각 (ms) — 0 = 미구독 */
   sub?: { until: number };
   /** 스타터팩 구매 완료 (BM상점 하이라이트 표시용) */
@@ -326,6 +328,12 @@ export function loadSave(): SaveData | null {
     if (!Array.isArray(d.gateStars) || d.gateStars.length !== 3) d.gateStars = [false, false, false];
     if (typeof d.tierUpWea !== "number") d.tierUpWea = 0;
     if (typeof d.tierUpArm !== "number") d.tierUpArm = 0;
+    // v1.0.1 — 시즌 미션 (구 세이브 호환)
+    if (!d.missions || typeof d.missions !== "object") d.missions = { day: "", week: "", d: {}, w: {}, cd: [], cw: [] };
+    if (!d.missions.d || typeof d.missions.d !== "object") d.missions.d = {};
+    if (!d.missions.w || typeof d.missions.w !== "object") d.missions.w = {};
+    if (!Array.isArray(d.missions.cd)) d.missions.cd = [];
+    if (!Array.isArray(d.missions.cw)) d.missions.cw = [];
     return d;
   } catch {
     return null;
