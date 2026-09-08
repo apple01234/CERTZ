@@ -1104,4 +1104,6 @@ Work Log:
 Stage Summary:
 - v4.7.0 (versionCode 62): Phaser 4.2.1 전환 + 3D 느낌 VFX 1단계 완료 — 기존 틀 유지(맵/보스/퀘스트/세이브 무변경, VFX는 전부 보강 레이어·가드 방식)
 - 이후 세션 참고: research/cainos·vefects 에셋은 git 제외 상태(디스크 보존) — 추가 VFX 소재로 활용 가능 / 다음 VFX 후보: 스킬 히트 셰이더·포탈 외 3D 느낌 이펙트
+- [릴리스 완료] GitHub Release v4.7.0(id 384573827) — APK 104,951,932B + AAB 103,852,401B 업로드 → 재다운로드 md5 검증 일치(APK f3f38028…/AAB 9fdbded8…) · commit push da61a82..0c22b32(86fd876 본체+0c22b32 물료)
+- [발견] 구버전 에셋 DELETE가 전 버전에서 404(토큰 삭제 권한 추정) — 과거 worklog의 "에셋 정리 성공" 기록과 달리 v4.3.0~v4.6.0 에셋 전부 존재. 기능상 무해(구버전 링크 생존) — 필요 시 GitHub 웹 UI에서 수동 삭제 권고
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
