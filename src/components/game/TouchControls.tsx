@@ -198,7 +198,7 @@ export function TouchControls({
 
       {/* 버튼: 우하단 — 터치/PC 공용 (사용자 지시 #2) — v3.0.4: 모바일에서 스킬 버튼 축소+2×2 그리드 (지시 #6) */
       }
-      <div className="absolute bottom-3 right-2 flex items-end gap-1.5 sm:bottom-6 sm:right-5 sm:gap-3">
+      <div className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.5rem,env(safe-area-inset-right))] flex items-end gap-1.5 sm:bottom-6 sm:right-5 sm:gap-3">
         <div className="flex flex-col gap-1.5">
           {/* v2.5 — 자동사냥 토글 (펫 보유 시) */}
           {canAutoHunt && (

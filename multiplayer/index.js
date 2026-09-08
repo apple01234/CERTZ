@@ -15,7 +15,8 @@ const { Server } = require("socket.io");
 function attachMultiplayer(httpServer) {
   const io = new Server(httpServer, {
     path: "/socket.io",
-    cors: { origin: "*" },
+    /* v1.0.2 (#보안) — SERTZ_ORIGIN env 설정 시 해당 origin만 허용 (미설정 시 기존 동작 유지) */
+    cors: { origin: process.env.SERTZ_ORIGIN || "*" },
   });
 
   /* ---------- 멀티플레이 방 상태 ---------- */
@@ -135,13 +136,18 @@ function attachMultiplayer(httpServer) {
       if (Number.isFinite(s.y)) p.y = Number(s.y);
       p.flip = !!s.flip;
       p.moving = !!s.moving;
-      if (Number.isFinite(s.lv)) p.lv = Math.max(1, Number(s.lv));
+      if (Number.isFinite(s.lv)) p.lv = Math.max(1, Math.min(999, Number(s.lv))); // v1.0.2 — 비정상 레벨 표시 차단
       if (s.cls === null || typeof s.cls === "string") p.cls = s.cls;
       if (typeof s.stage === "string") p.stage = s.stage.slice(0, 24);
       broadcastPlayers();
     });
 
+    /* v1.0.2 (#보안) — 채팅 도배 레이트리밋 (소켓별 8통/5초) */
+    let chatWin = 0, chatN = 0;
     sock.on("chat", (raw) => {
+      const now = Date.now();
+      if (now - chatWin > 5000) { chatWin = now; chatN = 0; }
+      if (++chatN > 8) return;
       const p = players.get(sock.id);
       const text = String(raw ?? "").trim().slice(0, 80);
       if (!p || !text) return;
@@ -281,6 +287,9 @@ function attachMultiplayer(httpServer) {
       const mode = RANK_MODES.has(r.mode) ? r.mode : null;
       const score = Math.max(0, Math.floor(Number(r.score) || 0));
       if (!mode || score <= 0) return;
+      /* v1.0.2 (#보안) — 모드별 물리 상한 (현실 도달 불가능한 변조 점수 슬라이스) */
+      const RANK_SCORE_CAP = { dojang: 5000000, gate: 200, closet: 100000 };
+      if (score > RANK_SCORE_CAP[mode]) return;
       const name = String(r.name || (p ? p.name : "이름없음")).slice(0, 8);
       const lv = Math.max(1, Math.floor(Number(r.lv) || (p ? p.lv : 1)));
       const list = rankings[mode];

@@ -130,6 +130,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** v3.3.0 (지시 #6) — 무릉도장 훈련용 허수아비:
    *  AI 없음(정지), 죽지 않음(HP 사실상 무한), 넉백 없음, 피해는 씬 기록에 누적 */
   dummy = false;
+  /** v1.0.2 (#허수아비) — 스쿼시 복귀 기준 스케일 (생성 시점 고정 — 누적 왜곡 차단) */
+  private baseSX = 1;
+  private baseSY = 1;
   /** 허수아비 원색 (히트 플래시 후 복원용) */
   private dummyTint: number | null = null;
 
@@ -165,6 +168,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.def = base;
     }
     if (opts?.scale) this.setScale(opts.scale);
+    /* v1.0.2 (#허수아비) — 스쿼시 기준 스케일 고정 캡처. 기존엔 맞을 때마다 '현재' 스케일을 기준으로
+     * 잡아서, 연타로 복귀 트윈이 중단되면 중간 스케일이 새 기준이 돼 누적 부풀음/납작해짐 발생
+     * (무릉도장 허수아비가 한도 없이 납작해지던 근본 원인). 기준은 생성 시점 1회만 캡처한다 */
+    this.baseSX = this.scaleX;
+    this.baseSY = this.scaleY;
     if (opts?.tint !== undefined) {
       this.setTint(opts.tint);
       if (opts.dummy) this.dummyTint = opts.tint; // v3.3.0 — 플래시 후 원색 복원용
@@ -465,8 +473,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.scene.spawnHitSpark(this.x, this.y);
       /* v4.8.0 — 도장 연습도 크리티컬은 충격파로 (연습 피드백 강화) */
       if (crit) this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.05);
-      const sxD = this.scaleX;
-      const syD = this.scaleY;
+      /* v1.0.2 (#허수아비) — 고정 기준(baseSX/SY) 기준으로만 스쿼시: 아무리 연타해도 기준선 불변 */
+      const sxD = this.baseSX;
+      const syD = this.baseSY;
       this.scene.tweens.killTweensOf(this);
       this.setScale(sxD * 1.12, syD * 0.9);
       this.scene.tweens.add({ targets: this, scaleX: sxD, scaleY: syD, duration: 100, ease: "Back.out" });
@@ -493,8 +502,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (crit) this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.1);
     else if (weak) this.scene.spawnShockwave(this.x, this.y, ELEMENT_META[this.elem].hex, 0.85);
     // v2.2 타격감 — 스쿼시(눌림) 반동: 맞은 순간 납작해졌다 복귀
-    const sx = this.scaleX;
-    const sy = this.scaleY;
+    /* v1.0.2 (#허수아비) — 일반 몹도 동일 근본 수정: 고정 기준 스케일로 복귀 (누적 왜곡 차단) */
+    const sx = this.baseSX;
+    const sy = this.baseSY;
     this.scene.tweens.killTweensOf(this);
     this.setScale(sx * 1.16, sy * 0.84);
     this.scene.tweens.add({ targets: this, scaleX: sx, scaleY: sy, duration: 110, ease: "Back.out" });

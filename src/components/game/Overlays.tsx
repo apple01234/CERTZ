@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v1.0.1 · 요일별 균열 테마 던전 + 유저 거래판(계정연계 거래) + 시즌 미션 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v1.0.2 · 통합 안정화 — 보스컷씬 카메라·허수아비·큐브·0르쯔 제거·중복 아이콘 해소·니플헤임 밝기·툰 림라이트·치장 외형·자동 강화·패스 한번에 받기·업적 UI·GM 서버 검증·보안 강화</span>
         </p>
       </div>
 

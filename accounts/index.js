@@ -21,6 +21,45 @@ const DB_DIR = path.join(process.cwd(), "db");
 const DB_FILE = path.join(DB_DIR, "accounts.json");
 const TOKEN_TTL_MS = 30 * 24 * 3600 * 1000; // 30일
 const COOKIE = "sertz_auth";
+/* ---------------- v1.0.2 보안 계층 (유저 지시 Phase 12/29) ----------------
+ *  · 관리자 롤: SERTZ_ADMIN_USERS(env, 쉼표 구분)에 있는 아이디만 role="admin" — 클라 flag로 판단하지 않음
+ *  · Rate Limit: IP+버킷 인메모리 카운터 (정상 플레이에는 영향 없는 수준)
+ *  · Audit Log: db/audit.log JSONL — 가입/로그인/거래/관리자 조회 추적 */
+const ADMIN_USERS = (process.env.SERTZ_ADMIN_USERS || "")
+  .split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
+const rateBuckets = new Map(); // key -> { n, resetAt }
+function clientIp(req) {
+  return (
+    String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
+    req.socket?.remoteAddress || "?"
+  );
+}
+function rateLimit(req, res, bucket, max, windowMs) {
+  const key = `${clientIp(req)}:${bucket}`;
+  const now = Date.now();
+  let b = rateBuckets.get(key);
+  if (!b || b.resetAt < now) { b = { n: 0, resetAt: now + windowMs }; rateBuckets.set(key, b); }
+  b.n++;
+  if (rateBuckets.size > 5000) {
+    for (const [k, v] of rateBuckets) if (v.resetAt < now) rateBuckets.delete(k);
+  }
+  if (b.n > max) {
+    sendJson(res, 429, { error: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요." }, { "Retry-After": String(Math.ceil((b.resetAt - now) / 1000)) });
+    return false;
+  }
+  return true;
+}
+const AUDIT_FILE = path.join(DB_DIR, "audit.log");
+function audit(event, detail = {}) {
+  try {
+    mkdirSync(DB_DIR, { recursive: true });
+    const line = JSON.stringify({ ts: Date.now(), event, ...detail });
+    require("node:fs").appendFileSync(AUDIT_FILE, line + "\n");
+  } catch { /* 감사 로그 실패가 서비스를 막지 않게 */ }
+}
+function isAdminUser(u) {
+  return !!u && (u.role === "admin" || ADMIN_USERS.includes(String(u.name || "").toLowerCase()));
+}
 
 /* ---------------- 파일 DB (디바운드 저장) ---------------- */
 let db = { users: {}, tokens: {}, saves: {}, market: { nextId: 1, listings: {} }, payouts: {} };
@@ -34,6 +73,13 @@ function loadDb() {
     db.market ||= { nextId: 1, listings: {} }; // v1.0.1 — 유저 거래판 (구 DB 호환)
     db.market.listings ||= {};
     db.payouts ||= {}; // v1.0.1 — 판매 정산금 ledger
+    // v1.0.2 — env 관리자 목록 동기화 (이미 가입된 계정도 롤 자동 승격/회수)
+    for (const [uid, u] of Object.entries(db.users)) {
+      /* env 매칭은 아이디 + 닉네임 둘 다 허용 (가입 시 role 부여는 아이디 기준과 동일 유지) */
+      const shouldAdmin = ADMIN_USERS.includes(String(uid || "").toLowerCase()) || ADMIN_USERS.includes(String(u.name || "").toLowerCase());
+      if (shouldAdmin && u.role !== "admin") u.role = "admin";
+      else if (!shouldAdmin && u.role === "admin") u.role = "user";
+    }
   } catch (e) {
     console.error("[SERTZ-accounts] DB 로드 실패 — 신규 생성", e);
   }
@@ -57,7 +103,8 @@ function hashPw(pw, salt) {
   return scryptSync(String(pw), salt, 64).toString("hex");
 }
 function publicUser(u) {
-  return u ? { id: u.id, name: u.name, provider: u.provider, createdAt: u.createdAt } : null;
+  // v1.0.2 — role 노출 (클라는 이 값으로 GM 진입 여부만 판단, 권한 자체는 서버가 보유)
+  return u ? { id: u.id, name: u.name, provider: u.provider, createdAt: u.createdAt, role: u.role === "admin" ? "admin" : "user" } : null;
 }
 function parseCookies(req) {
   const out = {};
@@ -208,6 +255,8 @@ async function handleMarket(req, res, url, method) {
 
   const user = currentUser(req);
   if (!user) return sendJson(res, 401, { error: "거래판은 로그인이 필요해요" });
+  /* v1.0.2 — 거래 쓰기 공통 레이트리밋 (30회/분) */
+  if (method !== "GET" && !rateLimit(req, res, "market", 30, 60 * 1000)) return true;
 
   /* 등록 */
   if (url === "/api/market/list" && method === "POST") {
@@ -223,6 +272,7 @@ async function handleMarket(req, res, url, method) {
     const id = `m${db.market.nextId++}`;
     db.market.listings[id] = { id, seller: user.id, sellerName: user.name, itemKey, up, price, ts: Date.now() };
     persistDb();
+    audit("market_list", { ip: clientIp(req), uid: user.id, itemKey, price }); // v1.0.2
     return sendJson(res, 200, { ok: true, id, ...marketSnapshot(user.id) });
   }
 
@@ -232,6 +282,7 @@ async function handleMarket(req, res, url, method) {
     const l = db.market.listings[String(b.id || "")];
     if (!l) return sendJson(res, 404, { error: "이미 판매된 등록이에요" });
     if (l.seller !== user.id) return sendJson(res, 403, { error: "본인 등록만 취소할 수 있어요" });
+    audit("market_cancel", { ip: clientIp(req), uid: user.id, listingId: l.id }); // v1.0.2
     const item = { itemKey: l.itemKey, up: l.up ?? 0 };
     delete db.market.listings[l.id];
     persistDb();
@@ -250,6 +301,7 @@ async function handleMarket(req, res, url, method) {
     db.payouts[l.seller].gold += Math.floor((l.price * (100 - MARKET_FEE_PCT)) / 100);
     db.payouts[l.seller].count += 1;
     persistDb();
+    audit("market_buy", { ip: clientIp(req), uid: user.id, listingId: l.id, itemKey: l.itemKey, price: l.price, seller: l.seller }); // v1.0.2
     return sendJson(res, 200, { ok: true, item, ...marketSnapshot(user.id) });
   }
 
@@ -260,6 +312,7 @@ async function handleMarket(req, res, url, method) {
     if (gold <= 0) return sendJson(res, 400, { error: "수령할 정산금이 없어요" });
     db.payouts[user.id] = { gold: 0, count: 0 };
     persistDb();
+    audit("market_collect", { ip: clientIp(req), uid: user.id, gold }); // v1.0.2
     return sendJson(res, 200, { ok: true, gold, ...marketSnapshot(user.id) });
   }
 
@@ -339,6 +392,7 @@ async function handle(req, res) {
 
     /* 자체 회원가입 */
     if (url === "/api/auth/register" && method === "POST") {
+      if (!rateLimit(req, res, "register", 10, 5 * 60 * 1000)) return true; // v1.0.2 — 무차별 가입 차단
       const b = await readBody(req);
       const id = String(b.id || "").trim().toLowerCase();
       const pw = String(b.pw || "");
@@ -347,25 +401,56 @@ async function handle(req, res) {
       if (pw.length < 6) return sendJson(res, 400, { error: "비밀번호는 6자 이상" });
       if (db.users[id]) return sendJson(res, 409, { error: "이미 존재하는 아이디예요" });
       const salt = randomBytes(16).toString("hex");
-      const user = { id, name, provider: "local", salt, hash: hashPw(pw, salt), createdAt: Date.now() };
+      /* v1.0.2 — 관리자 목록(env)에 있으면 role=admin (서버가 유일한 권한 발급처) */
+      const role = ADMIN_USERS.includes(id) ? "admin" : "user";
+      const user = { id, name, provider: "local", salt, hash: hashPw(pw, salt), createdAt: Date.now(), role };
       db.users[id] = user;
       persistDb();
+      audit("register", { ip: clientIp(req), uid: id, role });
       sendJson(res, 200, { user: publicUser(user) }, issueToken(res, user));
       return true;
     }
 
     /* 로그인 */
     if (url === "/api/auth/login" && method === "POST") {
+      if (!rateLimit(req, res, "login", 15, 5 * 60 * 1000)) return true; // v1.0.2 — 무차별 대입 차단
       const b = await readBody(req);
       const id = String(b.id || "").trim().toLowerCase();
       const user = db.users[id];
-      if (!user || user.provider !== "local") return sendJson(res, 401, { error: "아이디 또는 비밀번호가 틀렸어요" });
+      if (!user || user.provider !== "local") {
+        audit("login_fail", { ip: clientIp(req), uid: id }); // v1.0.2
+        return sendJson(res, 401, { error: "아이디 또는 비밀번호가 틀렸어요" });
+      }
       const hash = Buffer.from(hashPw(String(b.pw || ""), user.salt), "hex");
       const stored = Buffer.from(user.hash, "hex");
-      if (hash.length !== stored.length || !timingSafeEqual(hash, stored))
+      if (hash.length !== stored.length || !timingSafeEqual(hash, stored)) {
+        audit("login_fail", { ip: clientIp(req), uid: id }); // v1.0.2
         return sendJson(res, 401, { error: "아이디 또는 비밀번호가 틀렸어요" });
+      }
+      audit("login", { ip: clientIp(req), uid: id, role: user.role === "admin" ? "admin" : "user" }); // v1.0.2
       sendJson(res, 200, { user: publicUser(user) }, issueToken(res, user));
       return true;
+    }
+
+    /* v1.0.2 — 관리자 요약 API (서버 롤 검증 — 일반 유저/미인증 403) */
+    if (url === "/api/admin/summary" && method === "GET") {
+      const me = currentUser(req);
+      if (!isAdminUser(me)) {
+        audit("admin_denied", { ip: clientIp(req), uid: me?.id ?? null });
+        return sendJson(res, 403, { error: "관리자 권한이 필요해요" });
+      }
+      audit("admin_summary", { ip: clientIp(req), uid: me.id });
+      let recentAudit = [];
+      try {
+        recentAudit = readFileSync(AUDIT_FILE, "utf8").trim().split("\n").slice(-50)
+          .map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+      } catch { recentAudit = []; }
+      return sendJson(res, 200, {
+        users: Object.keys(db.users).length,
+        listings: Object.keys(db.market.listings).length,
+        payoutGold: Object.values(db.payouts).reduce((a, b) => a + (b.gold || 0), 0),
+        recentAudit,
+      });
     }
 
     /* 로그아웃 */
@@ -413,7 +498,7 @@ async function handle(req, res) {
 function attachAccountsBefore(handleNext) {
   return (req, res) => {
     const u = req.url || "";
-    if (u.startsWith("/api/auth/")) {
+    if (u.startsWith("/api/auth/") || u.startsWith("/api/admin/")) {
       handle(req, res).catch((e) => {
         console.error("[SERTZ-accounts] 가로채기 실패 — Next로 전달", e);
         handleNext(req, res);

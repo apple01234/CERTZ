@@ -112,6 +112,7 @@ export type ItemKey =
   | "bd_gram"
   | "bd_abysslord"
   | "bd_abudditos"
+  | "gm_sword" | "gm_armor" | "gm_ring" | "gm_elixir" // v1.0.2 — GM 전용
   /* v3.0.6 — BM 상점 (에메랄드 전용 — 상점과 분리) */
   | "pet_atlas"
   | "cos_aurora"
@@ -259,6 +260,8 @@ export type ItemDef = {
   bmOnly?: boolean;
   /** v3.0.6 — 보스 드롭 설명 (인벤토리 툴팁용) */
   bossDrop?: string;
+  /** v1.0.2 (#GM아이템) — GM 전용 아이템: 상점/드롭/거래판 어디에도 존재하지 않음 */
+  gmOnly?: boolean;
 };
 
 export const ITEMS: Record<ItemKey, ItemDef> = {
@@ -274,14 +277,14 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   scroll_warp: { key: "scroll_warp", kind: "consumable", name: "지역 이동 부적", icon: "item_scroll_warp", price: 120, tier: "rare" },
   /* v3.0.7 — 강화 주문서: 사용 시 다음 강화 시도 1회 성공률 +15%p (최대 3중첩) */
   scroll_star: { key: "scroll_star", kind: "consumable", name: "강화 주문서", icon: "item_scroll_star", price: 150, tier: "rare" },
-  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 0, tier: "common", atk: 0 },
+  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 10, tier: "common", atk: 0 },
   weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 240, tier: "rare", atk: 6 },
   weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 640, tier: "epic", atk: 14 },
   weapon_4: { key: "weapon_4", kind: "weapon", name: "심연의 대검", icon: "item_weapon_4", price: 1400, tier: "epic", atk: 20 },
   /* v2.5 — 상위 장비 티어 (지시 #5 아이템 확장) */
   weapon_5: { key: "weapon_5", kind: "weapon", name: "용인의 마검", icon: "item_weapon_5", price: 2800, tier: "epic", atk: 28 },
   weapon_6: { key: "weapon_6", kind: "weapon", name: "심연룡의 절세검", icon: "item_weapon_6", price: 5600, tier: "epic", atk: 38 },
-  armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 0, tier: "common", def: 0 },
+  armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 8, tier: "common", def: 0 },
   armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 210, tier: "rare", def: 3 },
   armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 580, tier: "epic", def: 7 },
   armor_4: { key: "armor_4", kind: "armor", name: "수호자의 갑옷", icon: "item_armor_4", price: 1250, tier: "epic", def: 10 },
@@ -309,113 +312,120 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   /* ---- v3.0.6 (지시 #9) — 보스 전용 드롭 아이템 (전설 등급) ----
    *  상점에서 살 수 없음(tradeLock) — 추후 유저 거래소에서 사고팔게 할 예정.
    *  보스별 1종, 100% 드롭. 상점 에픽 대비 확실히 강한 수치. */
-  bd_guardian: { key: "bd_guardian", kind: "accessory", name: "수호자의 문장", icon: "item_ring_guard", price: 0, tier: "legend", maxHp: 90, crit: 5, slot: "ring", tradeLock: true, bossDrop: "심연의 수호자 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_behemoth: { key: "bd_behemoth", kind: "accessory", name: "눈보라의 심장", icon: "item_ring_vital", price: 0, tier: "legend", maxHp: 120, def: 2, slot: "pendant", tradeLock: true, bossDrop: "눈보라의 거수 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "item_ring_power", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "니드호그 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_surt: { key: "bd_surt", kind: "accessory", name: "화염 정령의 인장", icon: "item_ring_power", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "수르트 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_fenrir: { key: "bd_fenrir", kind: "accessory", name: "탐욕의 속니", icon: "item_ring_crit", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "펜리르 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_skoll: { key: "bd_skoll", kind: "accessory", name: "교만의 쌍랑 귀걸이", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "스콜&하티 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "item_ring_guard", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "가름 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_abysslord: { key: "bd_abysslord", kind: "accessory", name: "심연의 군주의 관", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 14, maxHp: 100, slot: "pendant", tradeLock: true, bossDrop: "심연의 군주 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "item_pendant_arcane", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "아부디토스 드롭 — 최고 보스 전리품 · 거래소 예정" },
+  bd_guardian: { key: "bd_guardian", kind: "accessory", name: "수호자의 문장", icon: "i_bd_guardian", price: 0, tier: "legend", maxHp: 90, crit: 5, slot: "ring", tradeLock: true, bossDrop: "심연의 수호자 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_behemoth: { key: "bd_behemoth", kind: "accessory", name: "눈보라의 심장", icon: "i_bd_behemoth", price: 0, tier: "legend", maxHp: 120, def: 2, slot: "pendant", tradeLock: true, bossDrop: "눈보라의 거수 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "니드호그 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_surt: { key: "bd_surt", kind: "accessory", name: "화염 정령의 인장", icon: "i_bd_surt", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "수르트 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_fenrir: { key: "bd_fenrir", kind: "accessory", name: "탐욕의 속니", icon: "i_bd_fenrir", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "펜리르 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_skoll: { key: "bd_skoll", kind: "accessory", name: "교만의 쌍랑 귀걸이", icon: "i_bd_skoll", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "스콜&하티 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "i_bd_gram", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "가름 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_abysslord: { key: "bd_abysslord", kind: "accessory", name: "심연의 군주의 관", icon: "i_bd_abysslord", price: 0, tier: "legend", crit: 14, maxHp: 100, slot: "pendant", tradeLock: true, bossDrop: "심연의 군주 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "아부디토스 드롭 — 최고 보스 전리품 · 거래소 예정" },
+  /* ================= v1.0.2 (#GM아이템) — 관리자 전용 테스트 장비 =================
+   *  일반 유저는 어떤 경로로도 획득 불가 (상품 목록/드롭 테이블 미포함 + gmOnly 거래 차단).
+   *  지급은 GM 패널(서버 롤 검증 통과자)에서만. tradeLock으로 골드 판매도 차단. */
+  gm_sword: { key: "gm_sword", kind: "weapon", name: "[GM] 세계수의 대검", icon: "i_gm_sword", price: 0, tier: "legend", atk: 420, tradeLock: true, gmOnly: true },
+  gm_armor: { key: "gm_armor", kind: "armor", name: "[GM] 세계수의 갑주", icon: "i_gm_armor", price: 0, tier: "legend", def: 120, tradeLock: true, gmOnly: true },
+  gm_ring: { key: "gm_ring", kind: "accessory", name: "[GM] 운명의 반지", icon: "i_gm_ring", price: 0, tier: "legend", crit: 25, maxHp: 500, slot: "ring", tradeLock: true, gmOnly: true },
+  gm_elixir: { key: "gm_elixir", kind: "consumable", name: "[GM] 완전 엘릭서", icon: "i_gm_elixir", price: 0, tier: "legend", healFull: true, sellPrice: 1, tradeLock: true, gmOnly: true },
   /* ---- v3.0.6 — BM 상점 (에메랄드 전용 — 골드 상점과 분리, 지시 #1) ---- */
-  pet_atlas: { key: "pet_atlas", kind: "pet", name: "별의 정령 아틀라스", icon: "pet_atlas", price: 0, bmPrice: 30, bmOnly: true, tier: "legend" },
-  ring_bless: { key: "ring_bless", kind: "accessory", name: "가호의 반지", icon: "ring_bless", price: 0, bmPrice: 45, bmOnly: true, tier: "legend", crit: 15, maxHp: 100, slot: "ring" },
-  buff_king: { key: "buff_king", kind: "buff", name: "왕의 가호", icon: "buff_king", price: 0, bmPrice: 15, bmOnly: true, tier: "legend" },
-  buff_crit: { key: "buff_crit", kind: "buff", name: "질풍의 물약", icon: "item_buff_atk", price: 130, tier: "rare", sellPrice: 45 },
+  pet_atlas: { key: "pet_atlas", kind: "pet", name: "별의 정령 아틀라스", icon: "pet_atlas", price: 45000, bmPrice: 30, bmOnly: true, tier: "legend" },
+  ring_bless: { key: "ring_bless", kind: "accessory", name: "가호의 반지", icon: "ring_bless", price: 60000, bmPrice: 45, bmOnly: true, tier: "legend", crit: 15, maxHp: 100, slot: "ring" },
+  buff_king: { key: "buff_king", kind: "buff", name: "왕의 가호", icon: "buff_king", price: 15000, bmPrice: 15, bmOnly: true, tier: "legend" },
+  buff_crit: { key: "buff_crit", kind: "buff", name: "질풍의 물약", icon: "i_buff_crit", price: 130, tier: "rare", sellPrice: 45 },
   buff_gold: { key: "buff_gold", kind: "buff", name: "탐욕의 물약", icon: "item_coin", price: 120, tier: "rare", sellPrice: 40 },
-  buff_luck: { key: "buff_luck", kind: "buff", name: "행운의 물약", icon: "item_scroll_star", price: 110, tier: "rare", sellPrice: 38 },
-  cos_aurora: { key: "cos_aurora", kind: "cosmetic", name: "오로라 후광", icon: "cos_aurora", price: 0, bmPrice: 20, bmOnly: true, tier: "legend" },
+  buff_luck: { key: "buff_luck", kind: "buff", name: "행운의 물약", icon: "i_buff_luck", price: 110, tier: "rare", sellPrice: 38 },
+  cos_aurora: { key: "cos_aurora", kind: "cosmetic", name: "오로라 후광", icon: "cos_aurora", price: 30000, bmPrice: 20, bmOnly: true, tier: "legend" },
   /* ---- v3.0.20 (#9) — eert 큐브: "큐브는 마시는 게 아니다" ----
    *  BM(에메랄드)로만 구매 가능 + 골드 판매가 5000G (아주 비싼 가격).
    *  장비 행의 [eert] 버튼으로 사용하며 1회 사용마다 1개 소모. */
-  eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 0, bmPrice: 8, bmOnly: true, sellPrice: 5000, tier: "epic" },
+  eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 12000, bmPrice: 8, bmOnly: true, sellPrice: 5000, tier: "epic" },
   /* v4.0.0 — 바르가 업데이트 아이템 */
-  exp_book: { key: "exp_book", kind: "consumable", name: "경험치 책", icon: "item_scroll_star", price: 0, bmPrice: 3, bmOnly: true, sellPrice: 800, tier: "rare" },
-  tier_cube: { key: "tier_cube", kind: "consumable", name: "등급업 큐브", icon: "item_eert_cube", price: 0, bmPrice: 15, bmOnly: true, sellPrice: 12000, tier: "epic" },
+  exp_book: { key: "exp_book", kind: "consumable", name: "경험치 책", icon: "i_exp_book", price: 5000, bmPrice: 3, bmOnly: true, sellPrice: 800, tier: "rare" },
+  tier_cube: { key: "tier_cube", kind: "consumable", name: "등급업 큐브", icon: "i_tier_cube", price: 22000, bmPrice: 15, bmOnly: true, sellPrice: 12000, tier: "epic" },
   /* ================= v4.3.0 — BM 대확장 (물약 8티어×2 · 장신구 12 · 상자 4 · 패키지 6) =================
    *  아이콘은 기존 텍스처 재활용 — 신규 에셋 0. 물약 3~5티어는 골드 상점 판매(골드 싱크),
    *  6티어 이상은 BM/가챠 전용 수급. */
-  potion_hp3: { key: "potion_hp3", kind: "consumable", name: "고급 HP 물약", icon: "item_potion_hp2", price: 150, tier: "rare", heal: 260, sellPrice: 60 },
-  potion_hp4: { key: "potion_hp4", kind: "consumable", name: "최고급 HP 물약", icon: "item_potion_hp2", price: 280, tier: "rare", heal: 450, sellPrice: 110 },
-  potion_hp5: { key: "potion_hp5", kind: "consumable", name: "왕실 HP 물약", icon: "item_potion_hp2", price: 520, tier: "epic", heal: 700, sellPrice: 200 },
-  potion_hp6: { key: "potion_hp6", kind: "consumable", name: "용의 HP 물약", icon: "item_potion_hp2", price: 0, bmPrice: 6, bmOnly: true, sellPrice: 380, tier: "epic", heal: 1100 },
-  potion_hp7: { key: "potion_hp7", kind: "consumable", name: "성스러운 HP 물약", icon: "item_potion_elixir", price: 0, bmPrice: 10, bmOnly: true, sellPrice: 620, tier: "epic", heal: 1700 },
-  potion_hp8: { key: "potion_hp8", kind: "consumable", name: "심연 HP 물약", icon: "item_potion_elixir", price: 0, bmPrice: 15, bmOnly: true, sellPrice: 950, tier: "legend", heal: 2600 },
-  potion_hp9: { key: "potion_hp9", kind: "consumable", name: "세계수 HP 물약", icon: "item_potion_elixir", price: 0, bmPrice: 22, bmOnly: true, sellPrice: 1400, tier: "legend", heal: 4000 },
-  potion_hp10: { key: "potion_hp10", kind: "consumable", name: "천멸 HP 물약", icon: "item_potion_elixir", price: 0, bmPrice: 32, bmOnly: true, sellPrice: 2000, tier: "legend", heal: 6000 },
-  potion_mp3: { key: "potion_mp3", kind: "consumable", name: "고급 MP 물약", icon: "item_potion_mp2", price: 130, tier: "rare", restore: 160, sellPrice: 50 },
-  potion_mp4: { key: "potion_mp4", kind: "consumable", name: "최고급 MP 물약", icon: "item_potion_mp2", price: 240, tier: "rare", restore: 280, sellPrice: 95 },
-  potion_mp5: { key: "potion_mp5", kind: "consumable", name: "왕실 MP 물약", icon: "item_potion_mp2", price: 450, tier: "epic", restore: 450, sellPrice: 170 },
-  potion_mp6: { key: "potion_mp6", kind: "consumable", name: "용의 MP 물약", icon: "item_potion_mp2", price: 0, bmPrice: 5, bmOnly: true, sellPrice: 320, tier: "epic", restore: 700 },
-  potion_mp7: { key: "potion_mp7", kind: "consumable", name: "성스러운 MP 물약", icon: "item_potion_elixir", price: 0, bmPrice: 8, bmOnly: true, sellPrice: 520, tier: "epic", restore: 1050 },
-  potion_mp8: { key: "potion_mp8", kind: "consumable", name: "심연 MP 물약", icon: "item_potion_elixir", price: 0, bmPrice: 12, bmOnly: true, sellPrice: 800, tier: "legend", restore: 1600 },
-  potion_mp9: { key: "potion_mp9", kind: "consumable", name: "세계수 MP 물약", icon: "item_potion_elixir", price: 0, bmPrice: 18, bmOnly: true, sellPrice: 1200, tier: "legend", restore: 2400 },
-  potion_mp10: { key: "potion_mp10", kind: "consumable", name: "천멸 MP 물약", icon: "item_potion_elixir", price: 0, bmPrice: 26, bmOnly: true, sellPrice: 1700, tier: "legend", restore: 3600 },
-  ring_might: { key: "ring_might", kind: "accessory", name: "무력의 반지", icon: "item_ring_power", price: 900, tier: "epic", atk: 18, slot: "ring", sellPrice: 320 },
-  ring_swift: { key: "ring_swift", kind: "accessory", name: "질풍의 반지", icon: "item_ring_crit", price: 1100, tier: "epic", atk: 12, crit: 6, slot: "ring", sellPrice: 400 },
-  ring_fortune: { key: "ring_fortune", kind: "accessory", name: "행운의 반지", icon: "item_ring_crit", price: 0, bmPrice: 12, bmOnly: true, tier: "epic", crit: 10, maxHp: 60, slot: "ring" },
-  ring_dragon: { key: "ring_dragon", kind: "accessory", name: "용심의 반지", icon: "ring_bless", price: 0, bmPrice: 26, bmOnly: true, tier: "legend", atk: 26, maxHp: 120, slot: "ring" },
-  ring_titan: { key: "ring_titan", kind: "accessory", name: "거인의 반지", icon: "item_ring_guard", price: 0, bmPrice: 20, bmOnly: true, tier: "epic", def: 6, maxHp: 260, slot: "ring" },
-  ring_phantom: { key: "ring_phantom", kind: "accessory", name: "유령의 반지", icon: "item_ring_crit", price: 0, bmPrice: 30, bmOnly: true, tier: "legend", atk: 8, crit: 14, slot: "ring" },
-  ring_ancient: { key: "ring_ancient", kind: "accessory", name: "고대 왕의 반지", icon: "ring_bless", price: 0, bmPrice: 55, bmOnly: true, tier: "legend", atk: 30, crit: 8, maxHp: 150, slot: "ring" },
-  pendant_ward: { key: "pendant_ward", kind: "accessory", name: "수호의 부적", icon: "item_pendant_vital", price: 850, tier: "rare", def: 8, slot: "pendant", sellPrice: 300 },
-  pendant_blood: { key: "pendant_blood", kind: "accessory", name: "피의 부적", icon: "item_pendant_vital", price: 1500, tier: "epic", atk: 14, maxHp: 90, slot: "pendant", sellPrice: 520 },
-  pendant_moon: { key: "pendant_moon", kind: "accessory", name: "달빛 부적", icon: "item_pendant_arcane", price: 0, bmPrice: 16, bmOnly: true, tier: "epic", crit: 8, def: 4, slot: "pendant" },
-  pendant_sage: { key: "pendant_sage", kind: "accessory", name: "현자의 부적", icon: "item_pendant_arcane", price: 0, bmPrice: 22, bmOnly: true, tier: "epic", def: 5, maxHp: 200, slot: "pendant" },
-  pendant_star: { key: "pendant_star", kind: "accessory", name: "별의 부적", icon: "item_pendant_arcane", price: 0, bmPrice: 45, bmOnly: true, tier: "legend", atk: 20, crit: 6, maxHp: 100, slot: "pendant" },
-  chest_iron: { key: "chest_iron", kind: "consumable", name: "무쇠 상자", icon: "item_eert_cube", price: 0, bmPrice: 5, bmOnly: true, sellPrice: 400, tier: "rare" },
+  potion_hp3: { key: "potion_hp3", kind: "consumable", name: "고급 HP 물약", icon: "i_potion_hp3", price: 150, tier: "rare", heal: 260, sellPrice: 60 },
+  potion_hp4: { key: "potion_hp4", kind: "consumable", name: "최고급 HP 물약", icon: "i_potion_hp4", price: 280, tier: "rare", heal: 450, sellPrice: 110 },
+  potion_hp5: { key: "potion_hp5", kind: "consumable", name: "왕실 HP 물약", icon: "i_potion_hp5", price: 520, tier: "epic", heal: 700, sellPrice: 200 },
+  potion_hp6: { key: "potion_hp6", kind: "consumable", name: "용의 HP 물약", icon: "i_potion_hp6", price: 950, bmPrice: 6, bmOnly: true, sellPrice: 380, tier: "epic", heal: 1100 },
+  potion_hp7: { key: "potion_hp7", kind: "consumable", name: "성스러운 HP 물약", icon: "i_potion_hp7", price: 2100, bmPrice: 10, bmOnly: true, sellPrice: 620, tier: "epic", heal: 1700 },
+  potion_hp8: { key: "potion_hp8", kind: "consumable", name: "심연 HP 물약", icon: "i_potion_hp8", price: 4600, bmPrice: 15, bmOnly: true, sellPrice: 950, tier: "legend", heal: 2600 },
+  potion_hp9: { key: "potion_hp9", kind: "consumable", name: "세계수 HP 물약", icon: "i_potion_hp9", price: 10000, bmPrice: 22, bmOnly: true, sellPrice: 1400, tier: "legend", heal: 4000 },
+  potion_hp10: { key: "potion_hp10", kind: "consumable", name: "천멸 HP 물약", icon: "i_potion_hp10", price: 22000, bmPrice: 32, bmOnly: true, sellPrice: 2000, tier: "legend", heal: 6000 },
+  potion_mp3: { key: "potion_mp3", kind: "consumable", name: "고급 MP 물약", icon: "i_potion_mp3", price: 130, tier: "rare", restore: 160, sellPrice: 50 },
+  potion_mp4: { key: "potion_mp4", kind: "consumable", name: "최고급 MP 물약", icon: "i_potion_mp4", price: 240, tier: "rare", restore: 280, sellPrice: 95 },
+  potion_mp5: { key: "potion_mp5", kind: "consumable", name: "왕실 MP 물약", icon: "i_potion_mp5", price: 450, tier: "epic", restore: 450, sellPrice: 170 },
+  potion_mp6: { key: "potion_mp6", kind: "consumable", name: "용의 MP 물약", icon: "i_potion_mp6", price: 800, bmPrice: 5, bmOnly: true, sellPrice: 320, tier: "epic", restore: 700 },
+  potion_mp7: { key: "potion_mp7", kind: "consumable", name: "성스러운 MP 물약", icon: "i_potion_mp7", price: 1800, bmPrice: 8, bmOnly: true, sellPrice: 520, tier: "epic", restore: 1050 },
+  potion_mp8: { key: "potion_mp8", kind: "consumable", name: "심연 MP 물약", icon: "i_potion_mp8", price: 3900, bmPrice: 12, bmOnly: true, sellPrice: 800, tier: "legend", restore: 1600 },
+  potion_mp9: { key: "potion_mp9", kind: "consumable", name: "세계수 MP 물약", icon: "i_potion_mp9", price: 8500, bmPrice: 18, bmOnly: true, sellPrice: 1200, tier: "legend", restore: 2400 },
+  potion_mp10: { key: "potion_mp10", kind: "consumable", name: "천멸 MP 물약", icon: "i_potion_mp10", price: 19000, bmPrice: 26, bmOnly: true, sellPrice: 1700, tier: "legend", restore: 3600 },
+  ring_might: { key: "ring_might", kind: "accessory", name: "무력의 반지", icon: "i_ring_might", price: 900, tier: "epic", atk: 18, slot: "ring", sellPrice: 320 },
+  ring_swift: { key: "ring_swift", kind: "accessory", name: "질풍의 반지", icon: "i_ring_swift", price: 1100, tier: "epic", atk: 12, crit: 6, slot: "ring", sellPrice: 400 },
+  ring_fortune: { key: "ring_fortune", kind: "accessory", name: "행운의 반지", icon: "i_ring_fortune", price: 30000, bmPrice: 12, bmOnly: true, tier: "epic", crit: 10, maxHp: 60, slot: "ring" },
+  ring_dragon: { key: "ring_dragon", kind: "accessory", name: "용심의 반지", icon: "i_ring_dragon", price: 65000, bmPrice: 26, bmOnly: true, tier: "legend", atk: 26, maxHp: 120, slot: "ring" },
+  ring_titan: { key: "ring_titan", kind: "accessory", name: "거인의 반지", icon: "i_ring_titan", price: 50000, bmPrice: 20, bmOnly: true, tier: "epic", def: 6, maxHp: 260, slot: "ring" },
+  ring_phantom: { key: "ring_phantom", kind: "accessory", name: "유령의 반지", icon: "i_ring_phantom", price: 75000, bmPrice: 30, bmOnly: true, tier: "legend", atk: 8, crit: 14, slot: "ring" },
+  ring_ancient: { key: "ring_ancient", kind: "accessory", name: "고대 왕의 반지", icon: "i_ring_ancient", price: 140000, bmPrice: 55, bmOnly: true, tier: "legend", atk: 30, crit: 8, maxHp: 150, slot: "ring" },
+  pendant_ward: { key: "pendant_ward", kind: "accessory", name: "수호의 부적", icon: "i_pendant_ward", price: 850, tier: "rare", def: 8, slot: "pendant", sellPrice: 300 },
+  pendant_blood: { key: "pendant_blood", kind: "accessory", name: "피의 부적", icon: "i_pendant_blood", price: 1500, tier: "epic", atk: 14, maxHp: 90, slot: "pendant", sellPrice: 520 },
+  pendant_moon: { key: "pendant_moon", kind: "accessory", name: "달빛 부적", icon: "i_pendant_moon", price: 40000, bmPrice: 16, bmOnly: true, tier: "epic", crit: 8, def: 4, slot: "pendant" },
+  pendant_sage: { key: "pendant_sage", kind: "accessory", name: "현자의 부적", icon: "i_pendant_sage", price: 55000, bmPrice: 22, bmOnly: true, tier: "epic", def: 5, maxHp: 200, slot: "pendant" },
+  pendant_star: { key: "pendant_star", kind: "accessory", name: "별의 부적", icon: "i_pendant_star", price: 110000, bmPrice: 45, bmOnly: true, tier: "legend", atk: 20, crit: 6, maxHp: 100, slot: "pendant" },
+  chest_iron: { key: "chest_iron", kind: "consumable", name: "무쇠 상자", icon: "i_chest_iron", price: 8000, bmPrice: 5, bmOnly: true, sellPrice: 400, tier: "rare" },
   /* v4.3.0 — 신규 펫 6종 (ITEMS 등록: BM 구매 경로 — PetDef 본체는 위 PET_DEFS) */
-  pet_wisp: { key: "pet_wisp", kind: "pet", name: "정령의 불꽃 위스프", icon: "pet_pixie", price: 0, bmPrice: 18, bmOnly: true, tier: "epic" },
-  pet_ember: { key: "pet_ember", kind: "pet", name: "잿불 새 엠버", icon: "pet_pixie", price: 0, bmPrice: 22, bmOnly: true, tier: "epic" },
-  pet_frost: { key: "pet_frost", kind: "pet", name: "서리 슬라임", icon: "pet_slime", price: 0, bmPrice: 26, bmOnly: true, tier: "epic" },
-  pet_golem: { key: "pet_golem", kind: "pet", name: "골렘 조각상", icon: "pet_slime", price: 0, bmPrice: 32, bmOnly: true, tier: "epic" },
-  pet_unicorn: { key: "pet_unicorn", kind: "pet", name: "빛의 유니콘", icon: "pet_pixie", price: 0, bmPrice: 40, bmOnly: true, tier: "legend" },
-  pet_reaper: { key: "pet_reaper", kind: "pet", name: "심연의 사자", icon: "pet_atlas", price: 0, bmPrice: 55, bmOnly: true, tier: "legend" },
+  pet_wisp: { key: "pet_wisp", kind: "pet", name: "정령의 불꽃 위스프", icon: "i_pet_wisp", price: 45000, bmPrice: 18, bmOnly: true, tier: "epic" },
+  pet_ember: { key: "pet_ember", kind: "pet", name: "잿불 새 엠버", icon: "i_pet_ember", price: 55000, bmPrice: 22, bmOnly: true, tier: "epic" },
+  pet_frost: { key: "pet_frost", kind: "pet", name: "서리 슬라임", icon: "i_pet_frost", price: 65000, bmPrice: 26, bmOnly: true, tier: "epic" },
+  pet_golem: { key: "pet_golem", kind: "pet", name: "골렘 조각상", icon: "i_pet_golem", price: 80000, bmPrice: 32, bmOnly: true, tier: "epic" },
+  pet_unicorn: { key: "pet_unicorn", kind: "pet", name: "빛의 유니콘", icon: "i_pet_unicorn", price: 100000, bmPrice: 40, bmOnly: true, tier: "legend" },
+  pet_reaper: { key: "pet_reaper", kind: "pet", name: "심연의 사자", icon: "i_pet_reaper", price: 140000, bmPrice: 55, bmOnly: true, tier: "legend" },
   /* v4.3.0 — 신규 치장 6종 (ITEMS 등록: BM 구매 경로 — CosmeticDef 본체는 위 COSMETIC_DEFS) */
-  cos_frost: { key: "cos_frost", kind: "cosmetic", name: "서리 오라", icon: "cos_aurora", price: 0, bmPrice: 18, bmOnly: true, tier: "rare" },
-  cos_flame: { key: "cos_flame", kind: "cosmetic", name: "화염 오라", icon: "cos_gold", price: 0, bmPrice: 18, bmOnly: true, tier: "rare" },
-  cos_shadow: { key: "cos_shadow", kind: "cosmetic", name: "그림자 오라", icon: "cos_abyss", price: 0, bmPrice: 22, bmOnly: true, tier: "epic" },
-  cos_holy: { key: "cos_holy", kind: "cosmetic", name: "성스러운 오라", icon: "cos_dawn", price: 0, bmPrice: 22, bmOnly: true, tier: "epic" },
-  cos_storm: { key: "cos_storm", kind: "cosmetic", name: "폭풍 오라", icon: "cos_aurora", price: 0, bmPrice: 26, bmOnly: true, tier: "epic" },
-  cos_rainbow: { key: "cos_rainbow", kind: "cosmetic", name: "무지개 오라", icon: "cos_wings", price: 0, bmPrice: 30, bmOnly: true, tier: "legend" },
-  chest_silver: { key: "chest_silver", kind: "consumable", name: "은 상자", icon: "item_eert_cube", price: 0, bmPrice: 12, bmOnly: true, sellPrice: 1200, tier: "epic" },
-  chest_gold: { key: "chest_gold", kind: "consumable", name: "금 상자", icon: "item_eert_cube", price: 0, bmPrice: 25, bmOnly: true, sellPrice: 3000, tier: "epic" },
-  chest_legend: { key: "chest_legend", kind: "consumable", name: "전설 상자", icon: "item_eert_cube", price: 0, bmPrice: 48, bmOnly: true, sellPrice: 6000, tier: "legend" },
-  pack_starter: { key: "pack_starter", kind: "consumable", name: "시작의 패키지", icon: "item_coin", price: 0, bmPrice: 9, bmOnly: true, sellPrice: 800, tier: "rare" },
-  pack_growth: { key: "pack_growth", kind: "consumable", name: "성장 패키지", icon: "item_coin", price: 0, bmPrice: 19, bmOnly: true, sellPrice: 2000, tier: "epic" },
-  pack_premium: { key: "pack_premium", kind: "consumable", name: "프리미엄 패키지", icon: "item_coin", price: 0, bmPrice: 39, bmOnly: true, sellPrice: 4500, tier: "epic" },
-  pack_ultimate: { key: "pack_ultimate", kind: "consumable", name: "궁극 패키지", icon: "item_coin", price: 0, bmPrice: 79, bmOnly: true, sellPrice: 9000, tier: "legend" },
-  pack_daily: { key: "pack_daily", kind: "consumable", name: "일일 한정 상자", icon: "item_coin", price: 0, bmPrice: 6, bmOnly: true, sellPrice: 700, tier: "rare" },
-  pack_weekly: { key: "pack_weekly", kind: "consumable", name: "주간 한정 패키지", icon: "item_coin", price: 0, bmPrice: 29, bmOnly: true, sellPrice: 3200, tier: "epic" },
+  cos_frost: { key: "cos_frost", kind: "cosmetic", name: "서리 오라", icon: "i_cos_frost", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
+  cos_flame: { key: "cos_flame", kind: "cosmetic", name: "화염 오라", icon: "i_cos_flame", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
+  cos_shadow: { key: "cos_shadow", kind: "cosmetic", name: "그림자 오라", icon: "i_cos_shadow", price: 38000, bmPrice: 22, bmOnly: true, tier: "epic" },
+  cos_holy: { key: "cos_holy", kind: "cosmetic", name: "성스러운 오라", icon: "i_cos_holy", price: 38000, bmPrice: 22, bmOnly: true, tier: "epic" },
+  cos_storm: { key: "cos_storm", kind: "cosmetic", name: "폭풍 오라", icon: "i_cos_storm", price: 45000, bmPrice: 26, bmOnly: true, tier: "epic" },
+  cos_rainbow: { key: "cos_rainbow", kind: "cosmetic", name: "무지개 오라", icon: "i_cos_rainbow", price: 60000, bmPrice: 30, bmOnly: true, tier: "legend" },
+  chest_silver: { key: "chest_silver", kind: "consumable", name: "은 상자", icon: "i_chest_silver", price: 20000, bmPrice: 12, bmOnly: true, sellPrice: 1200, tier: "epic" },
+  chest_gold: { key: "chest_gold", kind: "consumable", name: "금 상자", icon: "i_chest_gold", price: 42000, bmPrice: 25, bmOnly: true, sellPrice: 3000, tier: "epic" },
+  chest_legend: { key: "chest_legend", kind: "consumable", name: "전설 상자", icon: "i_chest_legend", price: 80000, bmPrice: 48, bmOnly: true, sellPrice: 6000, tier: "legend" },
+  pack_starter: { key: "pack_starter", kind: "consumable", name: "시작의 패키지", icon: "i_pack_starter", price: 14000, bmPrice: 9, bmOnly: true, sellPrice: 800, tier: "rare" },
+  pack_growth: { key: "pack_growth", kind: "consumable", name: "성장 패키지", icon: "i_pack_growth", price: 30000, bmPrice: 19, bmOnly: true, sellPrice: 2000, tier: "epic" },
+  pack_premium: { key: "pack_premium", kind: "consumable", name: "프리미엄 패키지", icon: "i_pack_premium", price: 60000, bmPrice: 39, bmOnly: true, sellPrice: 4500, tier: "epic" },
+  pack_ultimate: { key: "pack_ultimate", kind: "consumable", name: "궁극 패키지", icon: "i_pack_ultimate", price: 120000, bmPrice: 79, bmOnly: true, sellPrice: 9000, tier: "legend" },
+  pack_daily: { key: "pack_daily", kind: "consumable", name: "일일 한정 상자", icon: "i_pack_daily", price: 9000, bmPrice: 6, bmOnly: true, sellPrice: 700, tier: "rare" },
+  pack_weekly: { key: "pack_weekly", kind: "consumable", name: "주간 한정 패키지", icon: "i_pack_weekly", price: 46000, bmPrice: 29, bmOnly: true, sellPrice: 3200, tier: "epic" },
   /* ---- v3.0.15 (#11) — 챕터 테마 세트 장비 (상점에서 챕터 해금 시 노출) ---- */
-  sfw_forest: { key: "sfw_forest", kind: "weapon", name: "숲의 수호자 대검", icon: "item_weapon_2", price: 380, tier: "rare", atk: 9 },
-  sfa_forest: { key: "sfa_forest", kind: "armor", name: "숲의 수호자 갑옷", icon: "item_armor_2", price: 340, tier: "rare", def: 4 },
-  sfr_forest: { key: "sfr_forest", kind: "accessory", name: "숲의 수호자 반지", icon: "item_ring_vital", price: 360, tier: "rare", crit: 5, maxHp: 20, slot: "ring" },
-  sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "쿠소디아 기사검", icon: "item_weapon_3", price: 820, tier: "rare", atk: 15 },
-  sfa_kingdom: { key: "sfa_kingdom", kind: "armor", name: "쿠소디아 기사 갑옷", icon: "item_armor_3", price: 720, tier: "rare", def: 7 },
-  sfr_kingdom: { key: "sfr_kingdom", kind: "accessory", name: "쿠소디아 기사 반지", icon: "item_ring_power", price: 760, tier: "rare", crit: 7, maxHp: 30, slot: "ring" },
-  sfw_alfheim: { key: "sfw_alfheim", kind: "weapon", name: "정령왕의 마검", icon: "item_weapon_3", price: 1600, tier: "epic", atk: 21 },
-  sfa_alfheim: { key: "sfa_alfheim", kind: "armor", name: "정령왕의 갑주", icon: "item_armor_3", price: 1400, tier: "epic", def: 10 },
-  sfr_alfheim: { key: "sfr_alfheim", kind: "accessory", name: "정령왕의 반지", icon: "item_ring_crit", price: 1500, tier: "epic", crit: 9, maxHp: 40, slot: "ring" },
-  sfw_muspelheim: { key: "sfw_muspelheim", kind: "weapon", name: "화염의 군주 대검", icon: "item_weapon_4", price: 2700, tier: "epic", atk: 28 },
-  sfa_muspelheim: { key: "sfa_muspelheim", kind: "armor", name: "화염의 군주 갑주", icon: "item_armor_4", price: 2300, tier: "epic", def: 13 },
-  sfr_muspelheim: { key: "sfr_muspelheim", kind: "accessory", name: "화염의 군주 반지", icon: "item_ring_power", price: 2500, tier: "epic", crit: 11, maxHp: 55, slot: "ring" },
-  sfw_niflheim: { key: "sfw_niflheim", kind: "weapon", name: "서리바다의 검", icon: "item_weapon_4", price: 4300, tier: "epic", atk: 36 },
-  sfa_niflheim: { key: "sfa_niflheim", kind: "armor", name: "서리바다의 갑주", icon: "item_armor_4", price: 3700, tier: "epic", def: 16 },
-  sfr_niflheim: { key: "sfr_niflheim", kind: "accessory", name: "서리바다의 반지", icon: "item_ring_guard", price: 4000, tier: "epic", crit: 13, maxHp: 70, slot: "ring" },
-  sfw_cave: { key: "sfw_cave", kind: "weapon", name: "심연광의 대검", icon: "item_weapon_5", price: 7000, tier: "epic", atk: 45 },
-  sfa_cave: { key: "sfa_cave", kind: "armor", name: "심연광의 갑주", icon: "item_armor_5", price: 6000, tier: "epic", def: 20 },
-  sfr_cave: { key: "sfr_cave", kind: "accessory", name: "심연광의 반지", icon: "item_ring_crit", price: 6400, tier: "epic", crit: 15, maxHp: 90, slot: "ring" },
-  sfw_nidavellir: { key: "sfw_nidavellir", kind: "weapon", name: "드워프 장인의 검", icon: "item_weapon_5", price: 10800, tier: "epic", atk: 56 },
-  sfa_nidavellir: { key: "sfa_nidavellir", kind: "armor", name: "드워프 장인의 갑주", icon: "item_armor_5", price: 9200, tier: "epic", def: 24 },
-  sfr_nidavellir: { key: "sfr_nidavellir", kind: "accessory", name: "드워프 장인의 반지", icon: "item_ring_guard", price: 9800, tier: "epic", crit: 17, maxHp: 115, slot: "ring" },
-  sfw_hel: { key: "sfw_hel", kind: "weapon", name: "저승 파수꾼의 검", icon: "item_weapon_6", price: 16200, tier: "epic", atk: 68 },
-  sfa_hel: { key: "sfa_hel", kind: "armor", name: "저승 파수꾼의 갑주", icon: "item_armor_6", price: 13800, tier: "epic", def: 28 },
-  sfr_hel: { key: "sfr_hel", kind: "accessory", name: "저승 파수꾼의 반지", icon: "item_ring_power", price: 14700, tier: "epic", crit: 19, maxHp: 140, slot: "ring" },
-  sfw_abyss: { key: "sfw_abyss", kind: "weapon", name: "종언 마룡의 검", icon: "item_weapon_6", price: 24000, tier: "epic", atk: 82 },
-  sfa_abyss: { key: "sfa_abyss", kind: "armor", name: "종언 마룡의 갑주", icon: "item_armor_6", price: 20500, tier: "epic", def: 33 },
-  sfr_abyss: { key: "sfr_abyss", kind: "accessory", name: "종언 마룡의 반지", icon: "item_ring_crit", price: 22000, tier: "epic", crit: 23, maxHp: 180, slot: "ring" },
+  sfw_forest: { key: "sfw_forest", kind: "weapon", name: "숲의 수호자 대검", icon: "i_sfw_forest", price: 380, tier: "rare", atk: 9 },
+  sfa_forest: { key: "sfa_forest", kind: "armor", name: "숲의 수호자 갑옷", icon: "i_sfa_forest", price: 340, tier: "rare", def: 4 },
+  sfr_forest: { key: "sfr_forest", kind: "accessory", name: "숲의 수호자 반지", icon: "i_sfr_forest", price: 360, tier: "rare", crit: 5, maxHp: 20, slot: "ring" },
+  sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "쿠소디아 기사검", icon: "i_sfw_kingdom", price: 820, tier: "rare", atk: 15 },
+  sfa_kingdom: { key: "sfa_kingdom", kind: "armor", name: "쿠소디아 기사 갑옷", icon: "i_sfa_kingdom", price: 720, tier: "rare", def: 7 },
+  sfr_kingdom: { key: "sfr_kingdom", kind: "accessory", name: "쿠소디아 기사 반지", icon: "i_sfr_kingdom", price: 760, tier: "rare", crit: 7, maxHp: 30, slot: "ring" },
+  sfw_alfheim: { key: "sfw_alfheim", kind: "weapon", name: "정령왕의 마검", icon: "i_sfw_alfheim", price: 1600, tier: "epic", atk: 21 },
+  sfa_alfheim: { key: "sfa_alfheim", kind: "armor", name: "정령왕의 갑주", icon: "i_sfa_alfheim", price: 1400, tier: "epic", def: 10 },
+  sfr_alfheim: { key: "sfr_alfheim", kind: "accessory", name: "정령왕의 반지", icon: "i_sfr_alfheim", price: 1500, tier: "epic", crit: 9, maxHp: 40, slot: "ring" },
+  sfw_muspelheim: { key: "sfw_muspelheim", kind: "weapon", name: "화염의 군주 대검", icon: "i_sfw_muspelheim", price: 2700, tier: "epic", atk: 28 },
+  sfa_muspelheim: { key: "sfa_muspelheim", kind: "armor", name: "화염의 군주 갑주", icon: "i_sfa_muspelheim", price: 2300, tier: "epic", def: 13 },
+  sfr_muspelheim: { key: "sfr_muspelheim", kind: "accessory", name: "화염의 군주 반지", icon: "i_sfr_muspelheim", price: 2500, tier: "epic", crit: 11, maxHp: 55, slot: "ring" },
+  sfw_niflheim: { key: "sfw_niflheim", kind: "weapon", name: "서리바다의 검", icon: "i_sfw_niflheim", price: 4300, tier: "epic", atk: 36 },
+  sfa_niflheim: { key: "sfa_niflheim", kind: "armor", name: "서리바다의 갑주", icon: "i_sfa_niflheim", price: 3700, tier: "epic", def: 16 },
+  sfr_niflheim: { key: "sfr_niflheim", kind: "accessory", name: "서리바다의 반지", icon: "i_sfr_niflheim", price: 4000, tier: "epic", crit: 13, maxHp: 70, slot: "ring" },
+  sfw_cave: { key: "sfw_cave", kind: "weapon", name: "심연광의 대검", icon: "i_sfw_cave", price: 7000, tier: "epic", atk: 45 },
+  sfa_cave: { key: "sfa_cave", kind: "armor", name: "심연광의 갑주", icon: "i_sfa_cave", price: 6000, tier: "epic", def: 20 },
+  sfr_cave: { key: "sfr_cave", kind: "accessory", name: "심연광의 반지", icon: "i_sfr_cave", price: 6400, tier: "epic", crit: 15, maxHp: 90, slot: "ring" },
+  sfw_nidavellir: { key: "sfw_nidavellir", kind: "weapon", name: "드워프 장인의 검", icon: "i_sfw_nidavellir", price: 10800, tier: "epic", atk: 56 },
+  sfa_nidavellir: { key: "sfa_nidavellir", kind: "armor", name: "드워프 장인의 갑주", icon: "i_sfa_nidavellir", price: 9200, tier: "epic", def: 24 },
+  sfr_nidavellir: { key: "sfr_nidavellir", kind: "accessory", name: "드워프 장인의 반지", icon: "i_sfr_nidavellir", price: 9800, tier: "epic", crit: 17, maxHp: 115, slot: "ring" },
+  sfw_hel: { key: "sfw_hel", kind: "weapon", name: "저승 파수꾼의 검", icon: "i_sfw_hel", price: 16200, tier: "epic", atk: 68 },
+  sfa_hel: { key: "sfa_hel", kind: "armor", name: "저승 파수꾼의 갑주", icon: "i_sfa_hel", price: 13800, tier: "epic", def: 28 },
+  sfr_hel: { key: "sfr_hel", kind: "accessory", name: "저승 파수꾼의 반지", icon: "i_sfr_hel", price: 14700, tier: "epic", crit: 19, maxHp: 140, slot: "ring" },
+  sfw_abyss: { key: "sfw_abyss", kind: "weapon", name: "종언 마룡의 검", icon: "i_sfw_abyss", price: 24000, tier: "epic", atk: 82 },
+  sfa_abyss: { key: "sfa_abyss", kind: "armor", name: "종언 마룡의 갑주", icon: "i_sfa_abyss", price: 20500, tier: "epic", def: 33 },
+  sfr_abyss: { key: "sfr_abyss", kind: "accessory", name: "종언 마룡의 반지", icon: "i_sfr_abyss", price: 22000, tier: "epic", crit: 23, maxHp: 180, slot: "ring" },
 };
 
 /* v3.0.6 (지시 — "나중가면 플레이어가 너무 쌔닌까 보스 및 몬스터가 체력% 고정 데미지를 주게해"):
@@ -527,7 +537,17 @@ export const SHOP_STOCK: ItemKey[] = [
   "potion_mp4",
   "potion_hp5",
   "potion_mp5",
-  "potion_elixir", // v3.0.20 (#7) — 엘릭서
+  /* v1.0.2 (#물약상점) — 일반 물약 전 티어 일반 상점 판매 (엘릭서는 특수 소모품으로 BM 전용 유지) */
+  "potion_hp6",
+  "potion_mp6",
+  "potion_hp7",
+  "potion_mp7",
+  "potion_hp8",
+  "potion_mp8",
+  "potion_hp9",
+  "potion_mp9",
+  "potion_hp10",
+  "potion_mp10",
   "scroll_star", // v3.0.7 — 강화 주문서
   "weapon_2",
   "armor_2",
@@ -581,7 +601,8 @@ export const SHOP_STOCK: ItemKey[] = [
 export function sellValue(item: ItemDef): number {
   if (item.tradeLock) return 0;
   if (item.sellPrice) return item.sellPrice; // v3.0.20 (#9) — 직접 지정 판매가 (eert 5000G)
-  if (item.tier === "legend") return item.bmOnly ? 0 : 400;
+  if (item.tier === "legend" && !item.bmOnly) return 400;
+  /* v1.0.2 (#0르쯔) — BM 아이템에도 price 기준가 부여: 판매가 0 표시 원천 제거 */
   return Math.max(1, Math.floor(item.price * 0.4));
 }
 
@@ -668,6 +689,31 @@ export const BM_STOCK: ItemKey[] = [
 /** BM 지급 단위 — 상자 개봉/패키지/출석/시즌 패스 보상 공용 (reward:show 팝업 라인으로 변환)
  *  v4.5.0 — ticket(뽑기권)/shard(피규어 조각) 추가 (시즌 패스 트랙 지급용) */
 export type BmGrant = { gold?: number; emerald?: number; item?: ItemKey; n?: number; buff?: BuffKey; ticket?: number; shard?: number; label: string };
+
+/** v1.0.2 (#현금패키지) — 현금 패키지 구매 성공 시 지급 내용 (스토어 상품 ID 매핑).
+ *  에메랄드 무지급 원칙 — 현금 패키지는 아이템 구성만 (충전은 GEM_SKUS 이용) */
+export const STORE_PACK_CONTENTS: Record<string, BmGrant[]> = {
+  sertz_pack_growth_19800: [
+    { label: "왕실 HP 물약 ×10", item: "potion_hp5", n: 10 },
+    { label: "왕실 MP 물약 ×10", item: "potion_mp5", n: 10 },
+    { label: "강화 주문서 ×3", item: "scroll_star", n: 3 },
+    { label: "골드 100,000G", gold: 100000 },
+    { label: "경험치 책 ×3", item: "exp_book", n: 3 },
+  ],
+  sertz_pack_growth_cos_29900: [
+    { label: "왕실 HP 물약 ×10", item: "potion_hp5", n: 10 },
+    { label: "강화 주문서 ×5", item: "scroll_star", n: 5 },
+    { label: "골드 200,000G", gold: 200000 },
+    { label: "무지개 오라 (전용)", item: "cos_rainbow", n: 1 },
+    { label: "eert 큐브 ×5", item: "eert_cube", n: 5 },
+  ],
+  sertz_pack_season_15900: [
+    { label: "에메랄드 30💎", emerald: 30 },
+    { label: "성스러운 오라 (시즌)", item: "cos_holy", n: 1 },
+    { label: "전설 상자 ×1", item: "chest_legend", n: 1 },
+    { label: "골드 150,000G", gold: 150000 },
+  ],
+};
 
 /** v4.5.0 — 확률 공시 (게임산업법 확률형 아이템 정보 공시 의무)
  *  CHEST_TABLES 가중치를 그대로 소스 오브 트루스로 % 환산 — UI와 로직의 이중 관리 방지 */
@@ -998,7 +1044,7 @@ export const WORLDTREE_BLESSING = { atk: 20, def: 8, hpAdd: 200, atkPct: 3 };
 /** 결정 수집 완료 판정에 필요한 챕터 수 = FRAGMENT_META 키 수 */
 export const FRAGMENT_CHAPTERS = Object.keys(FRAGMENT_META);
 
-export type DialogueDef = { speaker: string; lines: string[] };
+export type DialogueDef = { speaker: string; /** v1.0.2 (#초상화) — portraitId 명시 지정(선택). 미지정 시 화자명→NPC_PORTRAITS→보스 토큰 매칭 자동 해석 */ portrait?: string; lines: string[] };
 
 /* ================= 스토리 대사 (v3.0.10 본게임 세계관 확정판) =================
  *  잠뜰 아뜰란티스 라인을 본게임 고유 세계관으로 통합·증축:

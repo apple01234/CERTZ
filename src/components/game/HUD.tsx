@@ -117,7 +117,7 @@ export function HUD({
   return (
     <>
       {/* 좌상단: 상태 */}
-      <div className="pointer-events-none absolute left-2 top-2 flex items-start gap-2 sm:left-3 sm:top-3">
+      <div className="pointer-events-none absolute left-[max(0.5rem,env(safe-area-inset-left))] top-[max(0.5rem,env(safe-area-inset-top))] flex items-start gap-2 sm:left-3 sm:top-3">
         <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-amber-300/90 bg-gradient-to-b from-slate-800 to-slate-900 shadow-lg sm:h-12 sm:w-12">
           <span className="text-[8px] font-bold leading-none text-amber-200">LV</span>
           <span className="text-base font-black leading-none text-white [text-shadow:0_1px_2px_#000] sm:text-lg">
@@ -175,7 +175,7 @@ export function HUD({
       </div>
 
       {/* 우상단: 사운드/가방 + 퀘스트 */}
-      <div className="absolute right-2 top-2 flex max-w-[46%] flex-col items-end gap-1.5 sm:right-3 sm:top-3">
+      <div className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-3 sm:top-3">
         <div className="flex items-center gap-1.5">
           {/* v2.5 — 자동사냥 토글 (펫 보유 시만 표시) */}
           {canAutoHunt && (

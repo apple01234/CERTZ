@@ -73,3 +73,26 @@ export async function purchaseGems(skuId: string): Promise<{ ok: boolean; reason
     return { ok: false, reason: "error" };
   }
 }
+
+/** v1.0.2 (#현금패키지) — 실제 결제(스토어 인앱) 패키지 상품.
+ *  가격/판매 여부는 Play Console 상품 등록 기준 — 클라이언트에 금액을 하드코딩하지 않는다.
+ *  구매 성공 시 WorldScene이 STORE_PACK_CONTENTS[id] 내용을 지급한다. */
+export const STORE_PACKS: { id: string; label: string; desc: string }[] = [
+  { id: "sertz_pack_growth_19800", label: "성장 패키지", desc: "성장 재화 · 강화 재료 · 경험치 아이템" },
+  { id: "sertz_pack_growth_cos_29900", label: "성장+치장 패키지", desc: "성장 재화 · 전용 코스튬 · 전용 이펙트" },
+  { id: "sertz_pack_season_15900", label: "시즌 패키지", desc: "시즌 코스튬 · 시즌 아이템 · 에메랄드" },
+];
+
+/** 현금 패키지 구매 (스토어 상품 ID로 결제 위임). 웹/미등록 상품은 실패 */
+export async function purchaseStorePack(productId: string): Promise<{ ok: boolean; reason?: string }> {
+  if (!isNativeApp()) return { ok: false, reason: "web" };
+  if (!STORE_PACKS.some((x) => x.id === productId)) return { ok: false, reason: "unknown-product" };
+  try {
+    const { NativePurchases } = await import("@capgo/native-purchases");
+    await NativePurchases.purchaseProduct({ productIdentifier: productId, productType: "inapp" as never });
+    return { ok: true };
+  } catch (e) {
+    console.warn("[SERTZ] 패키지 결제 실패", e);
+    return { ok: false, reason: "error" };
+  }
+}

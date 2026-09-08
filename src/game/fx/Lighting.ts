@@ -21,16 +21,18 @@ import Phaser from "phaser";
 /** 챕터별 암전 프로필 — alpha 0 = 암전 없음
  *  v4.3.0 — 유저 지시 "니플헤임, 요툰헤임, 스바르트알프헤임 등 어두운 분위기의 챕터만 맵 어둡게 + 불빛":
  *  화산(무스펠헤임)·빛의 성전(알프헤임)은 밝은 분위기라 암전 목록에서 제외하고,
- *  극지/동굴/광산/저승/심연 계열 5챕터만 암전 + 횃불 광원을 유지한다. */
-const CHAPTER_AMBIENT: Record<string, { color: number; alpha: number }> = {
-  cave: { color: 0x0a0818, alpha: 0.58 },       // 7장 스바르트알프헤임 — 어둠 요정의 수정 광맥
-  nidavellir: { color: 0x0a0818, alpha: 0.58 }, // 8장 니다벨리르 — 룬 광산
-  hel: { color: 0x120a10, alpha: 0.54 },        // 9장 헬
-  abyss: { color: 0x080614, alpha: 0.55 },      // 10장 세계수의 뿌리 — 심연
-  niflheim: { color: 0x060c16, alpha: 0.48 },   // 6장 니플헤임 — 얼음의 성전
+ *  극지/동굴/광산/저승/심연 계열 5챕터만 암전 + 횃불 광원을 유지한다.
+ *  v1.0.2 (#니플헤임) — 유저 피드백 "지나치게 어둡다": 암전 알파 완화 + 챕터별 횃불 광원 프로필(light) 신설.
+ *  분위기(한기/어둠)는 유지하되 플레이어·NPC·적·아이템·지형이 명확히 보이도록 조정 */
+const CHAPTER_AMBIENT: Record<string, { color: number; alpha: number; light?: { scale: number; alpha: number } }> = {
+  cave: { color: 0x0d0b1e, alpha: 0.46, light: { scale: 1.55, alpha: 0.58 } },       // 7장 스바르트알프헤임 — 어둠 요정의 수정 광맥
+  nidavellir: { color: 0x0d0b1e, alpha: 0.48, light: { scale: 1.55, alpha: 0.58 } }, // 8장 니다벨리르 — 룬 광산
+  hel: { color: 0x161016, alpha: 0.42, light: { scale: 1.6, alpha: 0.6 } },        // 9장 헬
+  abyss: { color: 0x0b0918, alpha: 0.44, light: { scale: 1.6, alpha: 0.6 } },      // 10장 세계수의 뿌리 — 심연
+  niflheim: { color: 0x0c1626, alpha: 0.28, light: { scale: 1.75, alpha: 0.66 } },   // 6장 니플헤임 — 얼음의 성전 (v1.0.2 밝기 상향)
 };
 
-export type AmbientProfile = { color: number; alpha: number } | null;
+export type AmbientProfile = { color: number; alpha: number; light?: { scale: number; alpha: number } } | null;
 
 /** 챕터 키로 암전 프로필 조회 (비암전 챕터는 null) */
 export function ambientFor(chapter: string): AmbientProfile {
@@ -79,15 +81,17 @@ export class Lighting {
       .setDepth(55);
     // 플레이어 추종 광원 — 암전 챕터에서 시야 확보 (횃불을 든 사냥꾼)
     if (hasPlayer) {
+      /* v1.0.2 (#니플헤임) — 챕터별 횃불 프로필: 어두운 챕터일수록 넉넉한 기본 광원 */
+      const lp = prof.light ?? { scale: 1.35, alpha: 0.5 };
       this.playerLight = this.scene.add
         .image(0, 0, "pk_light_01")
         .setDepth(56)
         .setBlendMode(Phaser.BlendModes.ADD)
         .setTint(0xffc890)
-        .setScale(1.35)
-        .setAlpha(0.5);
-      this.baseScale = 1.35;
-      this.baseAlpha = 0.5;
+        .setScale(lp.scale)
+        .setAlpha(lp.alpha);
+      this.baseScale = lp.scale;
+      this.baseAlpha = lp.alpha;
       this.flickerAmt = 0.05;
     }
   }
@@ -96,7 +100,8 @@ export class Lighting {
    *  보스 구역에서 시야가 좁아져 투사체 회피 난이도 상승). sub 1 = 100%, 이후 구역마다 ×0.93, 하한 40%.
    *  밝은 챕터(오버레이 없음)는 효과가 체감되지 않는다 (암전 챕터에서만 의미 있음). */
   setTorchStage(sub: number) {
-    this.torchMul = Math.max(0.4, 1 - Math.max(0, sub - 1) * 0.07);
+    /* v1.0.2 (#니플헤임) — 축소 하한 40%→55%: 보스 구역에서도 전투 가독성 유지 */
+    this.torchMul = Math.max(0.55, 1 - Math.max(0, sub - 1) * 0.07);
     if (this.playerLight) {
       this.playerLight.setScale(this.baseScale * this.torchMul);
       this.playerLight.setAlpha(this.baseAlpha * (0.7 + 0.3 * this.torchMul));

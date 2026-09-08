@@ -174,6 +174,20 @@ const CHAPTER_THEME: Record<string, string> = {
   abyss: "bgm_abyss4",
 };
 const VILLAGE_TRACKS = ["bgm_village1", "bgm_village2", "bgm_village3", "bgm_village4", "bgm_village5"];
+/* v1.0.2 (#BGM다양화) — 챕터 마을 전용 트랙 표. 기존 chIdx%5 순환은 본마을=cave마을(마을1),
+ * kingdom=nidavellir(마을2), alfheim=hel(마을3) 처럼 멀리 떨어진 마을까지 같은 곡이 돌았다.
+ * 9챕터 전부 서로 다른 곡 + 각 지역 정체성(설원/동굴/심연 계열 트랙 활용)으로 배치 */
+const VILLAGE_OF: Record<string, string> = {
+  forest: "bgm_village1",     // 본마을 — 익숙한 주제곡
+  kingdom: "bgm_village2",    // 쿠소디아 왕국
+  alfheim: "bgm_village3",    // 알프헤임 성전 마을
+  muspelheim: "bgm_abyss2",   // 화산 촌락 — 무겁고 뜨거운 분위기
+  niflheim: "bgm_snow2",      // 설원 마을 — 필드(snow1)와 다른 설원 트랙
+  cave: "bgm_cave2",          // 동굴 마을 (필드 cave1과 구분)
+  nidavellir: "bgm_cave4",    // 룬 광산 마을 (필드 cave3과 구분)
+  hel: "bgm_abyss5",          // 저승 마을
+  abyss: "bgm_village5",      // 세계수 뿌리 마지막 마을
+};
 const BOSS_TRACKS = ["bgm_boss1", "bgm_boss2", "bgm_boss3", "bgm_boss4", "bgm_boss5"];
 /** 챕터 일반 구역 폴백 (미지의 챕터 키) */
 const FALLBACK_TRACKS = CHAPTER_TRACKS.forest;
@@ -195,11 +209,12 @@ function chIndexOf(ch: string): number {
 /** 실내/실외 관계없이 스테이지 → 고정 트랙 (v3.0.23 — stageBgm 대체)
  *  v4.1.3 (#브금빈도) — 필드 구역 1~9는 챕터 대표 테마곡 1곡 고정 (구역 순환 제거) */
 export function stageTrack(stage: string): string {
-  if (stage === "interior_inn") return "bgm_village3";
-  if (stage === "interior_home") return "bgm_village4";
+  /* v1.0.2 (#BGM다양화) — 실내는 전용 트랙(타이틀 앨범의 잔잔한 곡 재활용) — 마을 곡과 완전 분리 */
+  if (stage === "interior_inn") return "bgm_title3";
+  if (stage === "interior_home") return "bgm_title4";
   const { ch, zone } = splitStage(stage);
   if (zone === 10) return BOSS_TRACKS[chIndexOf(ch) % BOSS_TRACKS.length]; // 보스 구역 — 전투곡 고정
-  if (zone <= 0) return VILLAGE_TRACKS[chIndexOf(ch) % VILLAGE_TRACKS.length]; // 마을/기본
+  if (zone <= 0) return VILLAGE_OF[ch] ?? VILLAGE_TRACKS[chIndexOf(ch) % VILLAGE_TRACKS.length]; // v1.0.2 — 챕터별 고정 마을 트랙
   return CHAPTER_THEME[ch] ?? FALLBACK_TRACKS[0]; // v4.1.3 — 챕터 테마 1곡
 }
 

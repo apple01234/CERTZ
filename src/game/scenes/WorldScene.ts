@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -25,11 +25,14 @@ import {
   type GateCard, type RuneOwned, type RoleKind,
 } from "../isekai";
 import { viewZoom } from "../PhaserGame";
+import { authMe } from "../account"; // v1.0.2 — GM 진입 서버 롤 검증
+import { purchaseStorePack } from "../ads"; // v1.0.2 — 현금 패키지 결제
 import { showRewardedAd, purchaseGems, GEM_SKUS } from "../ads"; // v4.1.0 — BM 수익 연동
 import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft, weekKey, missionsByHook, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS, type MissionHook } from "../pass"; // v4.5.0 — 시즌 패스/구독 + v1.0.1 시즌 미션
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
+import { applyToonStyle, clearToonStyle } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일)
 import * as audio from "../audio";
 import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
@@ -184,10 +187,27 @@ export class WorldScene extends Phaser.Scene {
   /* v3.3.0 (지시 #8) — 5차 각성 시련 상태 */
   private fifthTrialActive = false;
   private fifthTrialEnemy: Enemy | null = null;
+  /** v1.0.2 (#큐브연타) — eert 큐브 처리 잠금 시각 (260ms 내 재요청 무시) */
+  private eertBusyUntil = 0;
+  /** v1.0.2 (#GM서버검증) — 서버가 알려준 관리자 롤 (authMe 결과 캐시) */
+  private adminRole: string | null = null;
+  private gmCheckBusy = false;
+  /** GM NPC 비주얼 — 관리자 확인 시에만 표시 */
+  private gmNpcVisuals: (Phaser.GameObjects.Image | Phaser.GameObjects.Text)[] = [];
+  /** v1.0.2 (#툰셰이더) — 플레이어/보스 툰 필터 컨트롤러 (fxLevel 복원/해제 관리) */
+  private playerToon: unknown[] | null = null;
+  private bossToon: unknown[] | null = null;
+  /** v1.0.2 (#자동강화) — 목표 강화 자동 루프 상태 (1틱=1강화, 목표 도달/재화 부족/최고치에서 종료) */
+  private autoUpSlot: "weapon" | "armor" | null = null;
+  private autoUpTarget = 0;
+  private autoUpTimer: Phaser.Time.TimerEvent | null = null;
   /** 각성 대사 종료 후 수호자 소환 예약 (resumeFromDialogue에서 소비) */
   private pendingFifthSummon = false;
   /** v3.3.0 (#흑화) — 현재 대사 시작 시각 (20초 붙임 자가치유용) */
   private dialogueSince = 0;
+  /** v1.0.2 (#보스컷씬) — 인트로 중 카메라 보스 고정 플래그. 대사 종료(resumeFromDialogue)에서만 해제되어
+   *  플레이어 시점으로 보간 복귀한다. 기존엔 820ms 고정 타이머가 대사와 무관하게 먼저 복귀시켰다 */
+  private bossIntroPending = false;
   /* v3.3.0 (지시 #6) — 무릉도장 (메이플 무릉도장 오마주 훈련 스테이지) */
   dojangActive = false;
   dojangScore = 0;
@@ -441,6 +461,8 @@ export class WorldScene extends Phaser.Scene {
   /** 플레이어 추적 오브젝트 (치장 오라/강화 오라/날개 입자) */
   private cosmeticAura: Phaser.GameObjects.Image | null = null;
   private cosmeticEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  /** v1.0.2 (#치장외형) — 캐릭터 본체 치장색 오버레이 (Base/Cosmetic 장비 분리 — 능력치 무관, 외형만) */
+  private cosmeticOverlay: Phaser.GameObjects.Image | null = null;
   private upgradeGlow: Phaser.GameObjects.Image | null = null;
   /** v3.0.5 — 스타포스 궤도성(★15)/주변 스파클(★8+)/티어 추적 */
   private sfOrbits: Phaser.GameObjects.Image[] = [];
@@ -544,6 +566,7 @@ export class WorldScene extends Phaser.Scene {
     this.pet = null;
     this.cosmeticAura = null;
     this.cosmeticEmitter = null;
+    this.cosmeticOverlay = null; // v1.0.2 — 오버레이 정리(destroy는 destroyAll에서)
     this.upgradeGlow = null;
     this.sfOrbits = [];
     this.sfOrbitAng = 0;
@@ -786,6 +809,12 @@ export class WorldScene extends Phaser.Scene {
       this.entryPos?.x ?? (this.isInterior ? this.stageW / 2 : this.entryHome.x),
       this.entryPos?.y ?? (this.isInterior ? this.stageH - 70 : this.entryHome.y)
     );
+    /* v1.0.2 (#툰셰이더) — 플레이어 툰 림라이트 (WebGL+fxLevel 게이트, 실패 시 무시) */
+    if (this.game.renderer.type === Phaser.WEBGL && this.fxLevel >= 1) {
+      this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
+        rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
+      });
+    }
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
     this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
     if (savedPlayer) {
@@ -794,9 +823,13 @@ export class WorldScene extends Phaser.Scene {
        *  buildSave는 exp를 저장하면서 복원 경로엔 없어 포탈 이동(씬 재시작)마다
        *  경험치가 0으로 초기화되는 버그. lv 복원 직후 함께 복원한다. */
       this.player.exp = savedPlayer.exp ?? 0;
-      this.player.atk = savedPlayer.atk;
-      this.player.maxHp = savedPlayer.maxHp;
-      this.player.hp = this.player.maxHp;
+      /* v1.0.2 (#무결성) — atk/maxHp 무가드 대입은 손상/불완전 세이브에서
+       *  undefined → HP "NaN/NaN"·공격 NaN으로 HUD가 깨졌다. 숫자 검증 후에만 복원한다. */
+      if (typeof savedPlayer.atk === "number" && savedPlayer.atk > 0) this.player.atk = savedPlayer.atk;
+      if (typeof savedPlayer.maxHp === "number" && savedPlayer.maxHp > 0) {
+        this.player.maxHp = savedPlayer.maxHp;
+        this.player.hp = this.player.maxHp;
+      }
       // 레벨업 MP 성장 복원 (v1.9 — 구 세이브는 60 유지)
       if (typeof savedPlayer.maxMp === "number") {
         this.player.maxMp = Math.max(60, savedPlayer.maxMp);
@@ -1077,6 +1110,13 @@ export class WorldScene extends Phaser.Scene {
     } else if (this.stageDef.isVillage) {
       /* v2.9 — 본마을 + 챕터 마을 공용 마을 빌드 (우물/여관/전직관/주민) */
       this.buildVillage();
+      /* v1.0.2 (#GM서버검증) — 부팅 시 서버 롤 조회 → 관리자만 GM NPC 표시 (일반 유저에겐 부재) */
+      authMe()
+        .then((u) => {
+          this.adminRole = u?.role ?? null;
+          if (this.adminRole === "admin") for (const g of this.gmNpcVisuals) g.setVisible(true);
+        })
+        .catch(() => {});
       // 마을 차원문은 항상 열려 있음 (다음 구역으로 출발)
       this.spawnPortal(this.stageW - 110, this.stageH * 0.52);
       this.activatePortal(true);
@@ -1138,6 +1178,7 @@ export class WorldScene extends Phaser.Scene {
          *  정상 대사는 이보다 훨씬 짧고, 클릭/스페이스로 언제든 넘길 수 있다) */
         if (this.dialoguing && this.dialogueSince > 0 && this.time.now - this.dialogueSince > 20000) {
           console.warn("[SERTZ] 대사 20초 붙임 감지 — 강제 종료(자가치유)");
+          this.restoreBossIntroCam(); // v1.0.2 (#보스컷씬) — 강제 종료 경로에서도 카메라 복귀
           this.dialoguing = false;
           this.dialogueSince = 0;
           this.queuedDialogue = null;
@@ -2121,9 +2162,9 @@ export class WorldScene extends Phaser.Scene {
       this.addBuildingSign(cx, cy - 320, `${chSpec.title} 마을`, vSpec.signColor);
     }
     // 건물 간판 + 기능 상호작용 — 여관(회복+저장), 내 집(무료 휴식), 전직관(카이엔 앞)
-    this.addBuildingSign(cx - 400, cy - 236, "여관 — 20G 회복+저장", "#7de8ff");
+    this.addBuildingSign(cx - 400, cy - 236, "여관 — 20G 회복+버프", "#7de8ff"); // v1.0.2 밸런스 분리
     this.addBuildingSign(cx + 90, cy - 266, "전직관", "#ffd76a");
-    this.addBuildingSign(cx - 190, cy + 149, "내 집 — 무료 휴식", "#9af0c8");
+    this.addBuildingSign(cx - 190, cy + 149, "내 집 — 무료 회복", "#9af0c8"); // v1.0.2 밸런스 분리
     this.interactables.push({ x: cx - 400, y: cy - 140, kind: "inn", label: "여관 — 들어가기" });
     this.interactables.push({ x: cx - 190, y: cy + 289, kind: "house", label: "내 집 — 들어가기" });
 
@@ -2176,26 +2217,29 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(21);
     this.interactables.push({ x: jx, y: jy, kind: "job", npcId: "jobmaster", label: "카이엔 교관 — 전직 상담" });
 
-    /* v3.0.3 (사용자 지시 #2) — 임시 GM NPC: 자유전직/골드/레벨 지원
-     *  마을 전직관 옆에 배치. E키 → GM 패널 (전직 무제한/골드/레벨 조정) */
+    /* v3.0.3 (사용자 지시 #2) — GM NPC: 자유전직/골드/레벨 지원
+     *  v1.0.2 (#GM서버검증) — GM은 NPC가 아닌 관리자 도구로 분리.
+     *  · 마을 NPC는 관리자 계정(서버 롤) 확인 전까지 렌더 숨김 → 일반 유저에게는 존재하지 않음
+     *  · 인터랙션 시 authMe()로 서버 롤 재확인 — 클라 플래그(isGM=true)만으론 절대 열리지 않음 */
     const gx = jx + 70;
     const gy = jy + 6;
-    const gglow = this.add.image(gx, gy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe9a0).setScale(0.75).setAlpha(0.3);
+    const gglow = this.add.image(gx, gy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe9a0).setScale(0.75).setAlpha(0.3).setVisible(false);
     this.tweens.add({ targets: gglow, alpha: 0.5, scale: 0.95, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-    const gmNpc = this.add.image(gx, gy, "npc_gm").setDepth(Math.floor(gy / 10)).setScale(1.15);
+    const gmNpc = this.add.image(gx, gy, "npc_gm").setDepth(Math.floor(gy / 10)).setScale(1.15).setVisible(false);
     this.tweens.add({ targets: gmNpc, y: gy - 3, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-    this.add
+    const gmLbl1 = this.add
       .text(gx, gy - 46, "GM", {
         fontFamily: "Galmuri11, sans-serif", fontSize: "12px", color: "#ffd76a",
         stroke: "#1a1020", strokeThickness: 4, fontStyle: "bold",
       })
-      .setOrigin(0.5).setDepth(21);
-    this.add
+      .setOrigin(0.5).setDepth(21).setVisible(false);
+    const gmLbl2 = this.add
       .text(gx, gy - 34, "운영자 지원", {
         fontFamily: "Galmuri11, sans-serif", fontSize: "10px", color: "#ffe9b0",
         stroke: "#000000", strokeThickness: 3,
       })
-      .setOrigin(0.5).setDepth(21);
+      .setOrigin(0.5).setDepth(21).setVisible(false);
+    this.gmNpcVisuals = [gglow, gmNpc, gmLbl1, gmLbl2];
     this.interactables.push({ x: gx, y: gy, kind: "gm", npcId: "gm", label: "GM — 자유전직·골드·레벨·5차전직·무릉도장" });
   }
 
@@ -2459,6 +2503,11 @@ export class WorldScene extends Phaser.Scene {
         console.info("[SERTZ] 적응형 품질 — FX 축소 모드", Math.round(fps));
         /* v4.9.0 — 축소 모드 진입: 보스 블룸 즉시 해제 (프레임버퍼 다중 패스 = 모바일 최대 부하원) */
         if (this.bossFilters.length > 0) this.clearBossPostFX();
+        /* v1.0.2 (#툰셰이더) — 저사양 모드에선 플레이어/보스 툰 필터도 해제 */
+        if (this.playerToon) {
+          clearToonStyle(this.player as unknown as Parameters<typeof clearToonStyle>[0]);
+          this.playerToon = null;
+        }
       }
     } else {
       this.fxLowStreak = 0;
@@ -2470,6 +2519,12 @@ export class WorldScene extends Phaser.Scene {
           console.info("[SERTZ] 적응형 품질 — FX 복원");
           /* v4.9.0 — 복원: 보스전이면 블룸 재적용 */
           if (this.boss?.active && this.bossFilters.length === 0) this.applyBossPostFX(this.bossChaos);
+          /* v1.0.2 (#툰셰이더) — 복원 시 플레이어 툰 림라이트 재부착 */
+          if (this.player && !this.playerToon) {
+            this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
+              rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
+            });
+          }
         }
       } else {
         this.fxHighStreak = 0;
@@ -4712,20 +4767,41 @@ export class WorldScene extends Phaser.Scene {
       this.dialogueSince = this.time.now; // v3.3.0 — 붙임 자가치유 기준
       this.player.setVelocity(0, 0);
       this.physics.world.pause();
-      cam.pan(bx, by - 20, 780, "Sine.easeInOut", true);
-      this.time.delayedCall(820, () => {
+      /* v1.0.2 (#보스컷씬) — ① 보스 정확히 바라보기(중앙 고정 팬) ② 대사가 끝날 때까지 카메라 보스 유지.
+       *  기존: 820ms 후 플레이어 복귀 팬 → 대사 도중 시점 복귀 + 대사 종료 전 컷씬 종료 느낌.
+       *  복귀는 resumeFromDialogue(대사 완료 이벤트)에서 restoreBossIntroCam()으로 보간 처리 */
+      this.bossIntroPending = true;
+      cam.pan(bx, by - 20, 900, "Sine.easeInOut", true);
+      this.time.delayedCall(960, () => {
         if (!this.scene.isActive()) return;
-        cam.pan(this.player.x, this.player.y, 520, "Sine.easeInOut", true);
-        // 이미 본 대사면 연출만 종료, 아니면 인트로 대사 재생(resume은 resumeFromDialogue가 담당)
+        // 이미 본 대사면 보스 연출을 잠깐 유지한 뒤 복귀, 아니면 인트로 대사 재생(복귀는 resumeFromDialogue 담당)
         if (!this.showDialogueOnce(introId)) {
-          this.dialoguing = false;
-          this.physics.world.resume();
+          this.time.delayedCall(1100, () => {
+            this.restoreBossIntroCam();
+            // 이미 본 대사 경로 — 대사 없이 바로 연출 종료이므로 입력/물리도 여기서 복구
+            this.dialoguing = false;
+            this.physics.world.resume();
+          });
         }
       });
     } catch (err) {
       console.error("[SERTZ] 보스 인트로 시네마틱 실패 — 즉시 복구", err);
+      this.bossIntroPending = false;
       this.dialoguing = false;
       this.physics.world.resume();
+    }
+  }
+
+  /** v1.0.2 (#보스컷씬) — 인트로 종료 후 플레이어 시점 복귀(순간이동 아닌 보간 팬).
+   *  대사 종료·20초 자가치유·이미 본 대사 홀드 종료 3경로에서 모두 호출되어 상태 정합 보장 */
+  private restoreBossIntroCam() {
+    if (!this.bossIntroPending) return;
+    this.bossIntroPending = false;
+    try {
+      const cam = this.cameras.main;
+      if (this.player?.active) cam.pan(this.player.x, this.player.y, 620, "Sine.easeInOut", true);
+    } catch (err) {
+      console.warn("[SERTZ] 보스 인트로 카메라 복귀 실패 — 무시", err);
     }
   }
 
@@ -4733,6 +4809,14 @@ export class WorldScene extends Phaser.Scene {
    *  WebGL 전용(캔버스 렌더러 폴백 무시) — 재림판 카오스는 강도 상향. */
   private applyBossPostFX(chaos: boolean) {
     this.bossChaos = chaos; // v4.9.0 — 적응형 품질 복원 시 재적용용
+    /* v1.0.2 (#툰셰이더) — 보스 툰 림라이트: 카오스는 붉은 림으로 위협 강조, 일반은 오브색 계열.
+     *  카메라 블룸(전체 프레임버퍼)과 달리 스프라이트 단일 필터라 모바일 비용이 작다 */
+    if (this.fxLevel >= 1 && this.game.renderer.type === Phaser.WEBGL && this.boss?.active) {
+      clearToonStyle(this.boss as unknown as Parameters<typeof clearToonStyle>[0]);
+      this.bossToon = applyToonStyle(this.boss as unknown as Parameters<typeof applyToonStyle>[0], {
+        rim: chaos ? 0xff7a7a : 0xbfd8ff, rimStrength: 2.6, contrast: 1.07, saturate: 1.2,
+      });
+    }
     try {
       const cam = this.cameras.main;
       /* v4.9.0 — FX 축소 모드(fxLevel 0)에선 블룸 자체를 생략 (모바일 GPU 최대 부하원) */
@@ -4785,6 +4869,9 @@ export class WorldScene extends Phaser.Scene {
       try { this.cameras.main.filters.external.remove(f); } catch { /* 이미 해제된 필터 무시 */ }
     }
     this.bossFilters = [];
+    /* v1.0.2 (#툰셰이더) — 보스 스프라이트 툰 필터도 함께 해제 */
+    if (this.boss) clearToonStyle(this.boss as unknown as Parameters<typeof clearToonStyle>[0]);
+    this.bossToon = null;
     this.bossEmber?.destroy();
     this.bossEmber = null;
     this.bossLight?.destroy();
@@ -5019,6 +5106,52 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
       this.emitHud();
     };
+    /* v1.0.2 (#자동강화) — 목표 강화까지 자동 반복.
+     *  · 정지 조건: 목표 도달 / 골드 부족("poor") / 이미 목표 이상 / 최고 강화("max") / 패널 취소 / 씬 종료
+     *  · 강화 실패(+9 이상 하락)는 계속 재시도 (하락도 정상 경로 — 재료/골드가 지속 검증됨)
+     *  · 1틱 330ms 간격으로 저장·UI 갱신 — 즉발 반복으로 재화가 순간 유실되지 않게 단계 검증 */
+    const stopAutoUpgrade = (msg?: string) => {
+      if (this.autoUpTimer) { this.autoUpTimer.remove(); this.autoUpTimer = null; }
+      const was = this.autoUpSlot !== null;
+      this.autoUpSlot = null;
+      if (was) {
+        this.save();
+        this.emitRpgState();
+        if (msg) EventBus.emit("banner:show", { text: msg });
+      }
+    };
+    const autoUpTick = () => {
+      if (!this.player || !this.autoUpSlot) return stopAutoUpgrade();
+      const slot = this.autoUpSlot;
+      const cur = this.player.upgrades[slot];
+      if (cur >= this.autoUpTarget) return stopAutoUpgrade(`자동 강화 완료! ${slot === "weapon" ? "무기" : "방어구"} ★${cur}`);
+      if (cur >= this.player.upMax) return stopAutoUpgrade(`최고 강화 도달 — 자동 강화 종료 (★${cur})`);
+      const r = this.player.tryUpgrade(slot);
+      this.syncUpgradeGlow();
+      if (r === "poor") return stopAutoUpgrade("골드가 부족해 자동 강화를 멈췄다");
+      if (r === "max") return stopAutoUpgrade(`최고 강화 도달 — 자동 강화 종료`);
+      if (r === "ok" || r === "fail")
+        EventBus.emit("rpg:upgradeResult", { slot, result: r, up: this.player.upgrades[slot] });
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    const onAutoUpgrade = (v: { slot: "weapon" | "armor"; target: number }) => {
+      if (!this.player || this.dialoguing) return;
+      if (this.autoUpTimer) return EventBus.emit("banner:show", { text: "자동 강화가 이미 진행 중이다" });
+      const target = Math.max(1, Math.min(15, Math.floor(v.target || 0)));
+      const cur = this.player.upgrades[v.slot];
+      if (target <= cur) {
+        EventBus.emit("banner:show", { text: `목표가 현재 강화(★${cur})보다 높아야 한다` });
+        return;
+      }
+      this.autoUpSlot = v.slot;
+      this.autoUpTarget = target;
+      EventBus.emit("banner:show", { text: `자동 강화 시작 — ★${cur} → ★${target}` });
+      this.autoUpTimer = this.time.addEvent({ delay: 330, loop: true, callback: autoUpTick });
+    };
+    EventBus.on("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 목표 자동 강화
+    EventBus.on("rpg:autoUpgradeStop", () => stopAutoUpgrade("자동 강화를 취소했다"));
     // 채팅 입력 포커스 — 게임 키 입력 완전 차단 (v1.7 멀티플레이 채팅)
     const onChatFocus = (v: { focus: boolean }) => {
       this.chatFocused = v.focus;
@@ -5088,6 +5221,24 @@ export class WorldScene extends Phaser.Scene {
       audio.sfx.questDone();
       EventBus.emit("banner:show", { text: `에메랄드 +${sku.gems} 충전 완료!` });
     };
+    /* v1.0.2 (#현금패키지) — 스토어 결제 패키지 구매: 결제 성공 후 정의된 구성 지급 */
+    const onBuyStorePack = async (v: { id: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const grants = STORE_PACK_CONTENTS[v.id];
+      if (!grants) {
+        EventBus.emit("banner:show", { text: "아직 등록되지 않은 상품이다" });
+        return;
+      }
+      const r = await purchaseStorePack(v.id);
+      if (!r.ok) {
+        EventBus.emit("banner:show", { text: r.reason === "web" ? "패키지는 앱(스토어 빌드)에서 구매할 수 있다" : "결제에 실패했다" });
+        return;
+      }
+      this.grantBmGrants("패키지 구매 감사합니다!", grants);
+      audio.sfx.coin();
+      this.save();
+      this.emitRpgState();
+    };
     /* ================= v4.5.0 — 시즌 패스/구독/광고 확장 (BM 표준화) ================= */
     const onPassBuy = () => {
       if (!this.player || this.dialoguing) return;
@@ -5126,6 +5277,38 @@ export class WorldScene extends Phaser.Scene {
       if (!g) return;
       list.push(lv);
       this.grantBmGrants(`시즌 패스 Lv.${lv} — ${v.track === "free" ? "무료" : "프리미엄"} 보상`, [g]);
+      audio.sfx.questDone();
+      this.save();
+      this.emitRpgState();
+    };
+    /* v1.0.2 (#패스일괄수령) — 수령 가능한 패스 보상 전부 지급.
+     *  · 도달 레벨 && 미수령만 지급 (중복/조건 미달 원천 차단 — 개별 수령과 동일 검증 재사용)
+     *  · 프리미엄 미해금이면 프리미엄 트랙 제외 · 지급 실패 아이템 없음(owned 배열 캡 없음 — 롤백 불요)
+     *  · 지급 완료 후 1회 save/emit으로 UI 갱신 */
+    const onPassClaimAll = () => {
+      if (!this.player) return;
+      this.ensurePassSeason();
+      const lv = passLevel(this.passXp);
+      const grants: BmGrant[] = [];
+      for (let i = 1; i <= lv; i++) {
+        const gF = PASS_TRACKS[i - 1].free;
+        if (gF && !this.passClaimedF.includes(i)) {
+          this.passClaimedF.push(i);
+          grants.push(gF);
+        }
+        if (this.passPrem) {
+          const gP = PASS_TRACKS[i - 1].prem;
+          if (gP && !this.passClaimedP.includes(i)) {
+            this.passClaimedP.push(i);
+            grants.push(gP);
+          }
+        }
+      }
+      if (!grants.length) {
+        EventBus.emit("banner:show", { text: "지금 수령 가능한 보상이 없다 (레벨이 오르면 다시 시도)" });
+        return;
+      }
+      this.grantBmGrants(`시즌 패스 — 한번에 받기 (${grants.length}건)`, grants);
       audio.sfx.questDone();
       this.save();
       this.emitRpgState();
@@ -5425,7 +5608,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
      *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가
      *  v4.0.0 — 바르가 수비전/균열 던전 입장 + 무료 뽑기 + 티켓 충전 */
-    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss"; value?: number | string }) => {
+    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss" | "gmitems"; value?: number | string }) => {
       if (!this.player) return;
       const p = this.player;
       if (v.type === "job" && typeof v.value === "string") {
@@ -5457,6 +5640,15 @@ export class WorldScene extends Phaser.Scene {
         p.ap += v.value;
         this.emitHud();
         EventBus.emit("banner:show", { text: `GM — AP +${v.value}` });
+      } else if (v.type === "gmitems") {
+        /* v1.0.2 (#GM아이템) — GM 전용 장비 4종 지급 (gmOnly — 상점/드롭/거래 불가, 관리자 테스트용) */
+        for (const k of ["gm_sword", "gm_armor", "gm_ring", "gm_elixir"]) {
+          if (!p.owned.includes(k as ItemKey)) p.owned.push(k as ItemKey);
+        }
+        this.spawnPillar(p.x, p.y, 0xffd76a, 240);
+        EventBus.emit("banner:show", { text: "GM 장비 지급 완료 — [GM] 대검·갑주·반지·엘릭서" });
+        this.emitRpgState();
+        this.save();
       } else if (v.type === "em" && typeof v.value === "number") {
         /* v3.0.6 — GM 에메랄드 지급 (BM 상점 테스트용) */
         p.emerald = Math.max(0, p.emerald + v.value);
@@ -5543,8 +5735,10 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:escapeHome", onEscapeHome); // v4.1.0 — 설정창 긴급 귀환
     EventBus.on("rpg:adReward", onAdReward); // v4.1.0 — 광고 보상
     EventBus.on("rpg:buyGems", onBuyGems); // v4.1.0 — 구글 플레이 충전
+    EventBus.on("rpg:buyStorePack", onBuyStorePack); // v1.0.2 — 현금 패키지
     EventBus.on("rpg:passBuy", onPassBuy); // v4.5.0 — 프리미엄 패스 해금
     EventBus.on("rpg:passClaim", onPassClaim); // v4.5.0 — 패스 보상 수령
+    EventBus.on("rpg:passClaimAll", onPassClaimAll); // v1.0.2 — 패스 보상 한번에 받기
     EventBus.on("rpg:subBuy", onSubBuy); // v4.5.0 — SERTZ 패스 구독
     EventBus.on("rpg:adChest", onAdChest); // v4.5.0 — 광고 무료 상자
     EventBus.on("rpg:adDrop", onAdDrop); // v4.5.0 — 광고 버프 물약
@@ -5751,6 +5945,11 @@ export class WorldScene extends Phaser.Scene {
     /* #13 — eert 큐브 리롤 */
     const onEert = (v: { key: string }) => {
       if (!this.player || this.dialoguing) return;
+      /* v1.0.2 (#큐브연타) — 처리 잠금: 260ms 내 재요청 무시. 기존엔 연타마다 이벤트가 큐잉돼
+       * 큐브가 연속 소모됐고, UI 카운트는 emitRpgState 이후에야 갱신돼 "한 번 눌렀는데 전부 사라짐"으로 보였다.
+       * 로직 자체는 1클릭=1소모(consumeConsumable)가 맞으므로 잠금만으로 근본 해결 */
+      if (this.time.now < this.eertBusyUntil) return;
+      this.eertBusyUntil = this.time.now + 260;
       const pot = this.player.rerollPotentials(v.key as ItemKey);
       if (!pot) {
         EventBus.emit("banner:show", { text: "eert 큐브가 없습니다 (BM 상점 8💎)" });
@@ -5800,6 +5999,11 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.1 — 유저 거래판: 서버 처리 성공 후 세이브 반영 (TradePanel이 서버 응답 검증 후 emit) */
     const onMarketList = (v: { key: string; up: number }) => {
       if (!this.player || this.dialoguing) return;
+      /* v1.0.2 (#GM아이템) — GM 전용 아이템은 거래판 등록 불가 */
+      if (ITEMS[v.key as ItemKey]?.gmOnly) {
+        EventBus.emit("banner:show", { text: "GM 전용 아이템은 거래할 수 없다" });
+        return;
+      }
       const idx = this.player.owned.indexOf(v.key as ItemKey);
       if (idx < 0) return;
       this.player.owned.splice(idx, 1);
@@ -5922,6 +6126,11 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:buyGems", onBuyGems); // v4.1.0
       EventBus.off("rpg:passBuy", onPassBuy); // v4.5.0
       EventBus.off("rpg:passClaim", onPassClaim); // v4.5.0
+      EventBus.off("rpg:passClaimAll", onPassClaimAll); // v1.0.2 — 한번에 받기
+      EventBus.off("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 자동 강화
+      EventBus.off("rpg:autoUpgradeStop", () => stopAutoUpgrade("자동 강화를 취소했다")); // v1.0.2
+      EventBus.off("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 자동 강화
+      EventBus.off("rpg:autoUpgradeStop", () => stopAutoUpgrade("자동 강화를 취소했다")); // v1.0.2
       EventBus.off("rpg:subBuy", onSubBuy); // v4.5.0
       EventBus.off("rpg:adChest", onAdChest); // v4.5.0
       EventBus.off("rpg:adDrop", onAdDrop); // v4.5.0
@@ -6137,6 +6346,15 @@ export class WorldScene extends Phaser.Scene {
 
     // 추적 오브젝트 (치장 오라/강화 오라) 위치 갱신
     if (this.cosmeticAura) this.cosmeticAura.setPosition(this.player.x, this.player.y - 8);
+    /* v1.0.2 (#치장외형) — 치장 오버레이가 플레이어와 완전 동기화(위치·텍스처·좌우반전·스케일·depth) */
+    if (this.cosmeticOverlay && this.player) {
+      const ov = this.cosmeticOverlay;
+      ov.setPosition(this.player.x, this.player.y);
+      if (ov.texture.key !== this.player.texture.key) ov.setTexture(this.player.texture.key);
+      ov.setFlipX(this.player.flipX);
+      ov.setScale(this.player.scaleX, this.player.scaleY);
+      ov.setDepth(this.player.depth + 0.2);
+    }
     if (this.upgradeGlow) this.upgradeGlow.setPosition(this.player.x, this.player.y - 10);
     /* v3.0.5 — 스타포스: 궤도성 회전(★15) + 주변 스파클(★8+) */
     if (this.sfOrbits.length && this.player) {
@@ -7679,8 +7897,20 @@ export class WorldScene extends Phaser.Scene {
       // 전직 교관 — 상담 대사 후 전직 패널 자동 오픈 (v1.9)
       this.showDialogue("jobMaster", "jobmaster");
     } else if (it.kind === "gm") {
-      /* v3.0.3 — GM NPC: 전직 상담 없이 즉시 GM 패널 오픈 */
-      EventBus.emit("ui:panel", { panel: "gm" });
+      /* v1.0.2 (#GM서버검증) — GM 패널 진입은 서버 롤 재확인 후 허용 (매 상호작용 시 신선한 검증) */
+      if (this.gmCheckBusy) return;
+      this.gmCheckBusy = true;
+      authMe()
+        .then((u) => {
+          this.adminRole = u?.role ?? null;
+          if (this.adminRole === "admin") {
+            EventBus.emit("ui:panel", { panel: "gm" });
+          } else {
+            EventBus.emit("banner:show", { text: "GM 기능은 관리자 계정 전용입니다" });
+          }
+        })
+        .catch(() => EventBus.emit("banner:show", { text: "권한 확인에 실패했다 (관리자 전용)" }))
+        .finally(() => { this.gmCheckBusy = false; });
     } else if (it.kind === "inn") {
       this.enterInterior("interior_inn");
     } else if (it.kind === "house") {
@@ -7768,16 +7998,21 @@ export class WorldScene extends Phaser.Scene {
         zzz.destroy();
         sub.destroy();
         this.player.healFull();
-        // 숙면 보상 — 공격력·방어력 버프 (인벤토리 지급 후 즉시 사용)
-        this.player.addBuffItem("buff_atk");
-        this.player.useBuffItem("buff_atk");
-        this.player.addBuffItem("buff_def");
-        this.player.useBuffItem("buff_def");
+        /* v1.0.2 (#집여관밸런스) — 목적 분리:
+         *  · 여관(유료 20G) = 단기 전투 버프 패키지: 풀회복 + 공/방 버프 60초
+         *  · 집(무료) = 생활 콘텐츠: 풀회복만 (기존엔 무료인 집이 여관의 상위호환이었음)
+         *  여관이 필수가 되지 않게 버프 강도는 기존 그대로 유지 — 유료의 가치는 "버프 포함" */
+        if (paid) {
+          this.player.addBuffItem("buff_atk");
+          this.player.useBuffItem("buff_atk");
+          this.player.addBuffItem("buff_def");
+          this.player.useBuffItem("buff_def");
+        }
         this.save();
         this.restCd = 1500;
         this.sleeping = false;
         this.cameras.main.fadeIn(500, 0, 0, 0);
-        this.showBanner("푹 잤다! HP/MP 완전 회복 + 공격력·방어력 버프 (60초)");
+        this.showBanner(paid ? "푹 잤다! HP/MP 완전 회복 + 공격력·방어력 버프 (60초)" : "푹 잤다! HP/MP 완전 회복");
         this.spawnBurstAt(this.player.x, this.player.y, 12, 0xffe9b0);
         this.emitHud();
         this.emitRpgState();
@@ -8287,8 +8522,22 @@ export class WorldScene extends Phaser.Scene {
     this.cosmeticAura = null;
     this.cosmeticEmitter?.destroy();
     this.cosmeticEmitter = null;
+    /* v1.0.2 (#치장외형) — 치장 해제 시 본체 오버레이도 제거 */
+    this.cosmeticOverlay?.destroy();
+    this.cosmeticOverlay = null;
     const key = this.player?.cosmetic;
     if (!key) return;
+    /* v1.0.2 (#치장외형) — 본체 오버레이: 같은 텍스처를 치장색 ADD 블렌드로 얹어
+     *  캐릭터 실루엣 자체가 치장색으로 물든다 (기존엔 배경 후광만 있어 "착용해도 외형 변화가 없다"는 지적).
+     *  능력치(COSMETIC_BONUS)와 완전 분리된 순수 외형 레이어 — wings 등 특수 이펙트와 병행 적용 */
+    if (this.player) {
+      this.cosmeticOverlay = this.add
+        .image(this.player.x, this.player.y, this.player.texture.key)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(COSMETIC_DEFS[key].tint)
+        .setAlpha(0.34)
+        .setDepth(this.player.depth + 0.2);
+    }
     if (key === "cos_wings") {
       // 요정 날개 — 플레이어 주위 반짝임 입자 트레일
       this.cosmeticEmitter = this.add.particles(0, 0, "sparkle0", {
@@ -8904,6 +9153,7 @@ export class WorldScene extends Phaser.Scene {
       quickPots: { ...this.player.quickPots },
       potentials: JSON.parse(JSON.stringify(this.player.potentials)),
       eertCube: this.player.owned.filter((k) => k === "eert_cube").length,
+      tierCube: this.player.owned.filter((k) => k === "tier_cube").length, // v1.0.2 (#등급업큐브)
       unlockedSets: [...this.unlockedSets],
       /* ----- v3.0.16 — 컬렉션 + 세트 효과 ----- */
       collection: {
@@ -8933,6 +9183,11 @@ export class WorldScene extends Phaser.Scene {
         runeSlots: [...this.runeSlots],
         constel: [...this.constel],
         achClaimed: [...this.achClaimed],
+        /* v1.0.2 (#업적UI) — 업적별 진행도 (수령 가능 여부를 UI가 직접 판정할 수 있게) */
+        achProg: (() => {
+          const snap = this.achSnapshot();
+          return ACHIEVEMENTS.map((a) => ({ id: a.id, prog: Math.min(a.goal, a.prog(snap)), goal: a.goal }));
+        })(),
         /* v4.1.4 — 보스/카오스/침공 처치 누적 */
         bossKills: this.bossKillCount,
         chaosKills: this.chaosKillCount,
@@ -9269,6 +9524,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   resumeFromDialogue() {
+    this.restoreBossIntroCam(); // v1.0.2 (#보스컷씬) — 대사 종료 후에만 플레이어 시점 복귀
     this.dialoguing = false;
     this.dialogueSince = 0; // v3.3.0 — 붙임 시각 리셋
     this.portalHoldSince = 0; // v2.7 — 정상 종료면 강제개방 카운터도 리셋

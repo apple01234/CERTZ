@@ -94,6 +94,8 @@ export type RpgState = {
   potentials?: Record<string, { grade: number; lines: { k: string; v: number }[] }>;
   /** #13 — eert 큐브 보유 수 */
   eertCube?: number;
+  /** v1.0.2 (#등급업큐브) — 등급업 큐브 보유 수 (장비 탭 등급업 버튼) */
+  tierCube?: number;
   /** #11 — 해금된 챕터 테마 세트 (챕터키 목록) */
   unlockedSets?: string[];
   /* ----- v3.0.16 ----- */
@@ -113,6 +115,8 @@ export type RpgState = {
     runeSlots: (string | null)[];
     constel: string[];
     achClaimed: string[];
+    /** v1.0.2 (#업적UI) — 업적별 진행도 (수령가능/진행중 표시) */
+    achProg?: { id: string; prog: number; goal: number }[];
     gateBest: number;
     closetBest: number;
     gateStars: boolean[];

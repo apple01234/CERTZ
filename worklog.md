@@ -1198,3 +1198,58 @@ Stage Summary:
 - 미션→패스 XP→트랙 보상 루프로 리텐션 강화. 요일 테마로 매일 균열 던전 재방문 동기 부여
 - 다음 릴리스 물료: SERTZ-v1.0.1.apk/.aab — 빌드 시 6곳 URL 갱신 필요
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 65 (인시던트 기록)
+Agent: Super Z (메인)
+Task: 워크스페이스 롤백 사고 복구
+
+Work Log:
+- 증상: 신규 작업 시작 시 워크스페이스가 v4.5.0(commit 071c339, versionCode 60)으로 롤백됨 — accounts/index.js·AuthPanel·MarketBoard·CLOSET_THEMES 등 Task 58~64 산출물 전부 소실, 컨테이너 ID 변경(c-6a9f8f64→c-6aa030a6), 디스크 7.3GB 여유(구컨테이너 1.2GB)
+- 원인: 환경 컨테이너가 구 스냅샷으로 교체된 것으로 추정 (로컬 git에 fetch/reset 흔적 없음, reflog가 v4.5.0 시점에서 시작)
+- 복구: git fetch origin → origin/main에 전체 이력 보존 확인(92899bd = Task 64 v1.0.1 APK 배포) → git reset --hard origin/main → bun install(phaser@4.2.1 재설치) → 서버 기동
+- 검증: build.gradle 66/1.0.1 ✓ · accounts/index.js·account.ts·AuthPanel.tsx·build_aab.sh 존재 ✓ · 사이트 200 ✓ · /api/auth/me {"user":null} ✓ · /api/market guest 응답 ✓ · tsc 0 에러 ✓
+- 손실: db/는 gitignore라 구컨테이너의 테스트 계정(mktest_*·uiguy01) 소실 — 런타임 데이터로서 허용
+- 교훈: 세션 시작 시 반드시 `git log -1` + 핵심 파일 존재 확인으로 롤백 여부 선검증. 에이전트 탐색 보고는 수행 시점 트리 기준이므로 롤백 발견 후 라인 번호 재확인 필수
+
+Stage Summary:
+- v1.0.1(92899bd) 완전 복구 — 통합 안정화 작업(유저 36 Phase 지시)은 복구된 트리 기준으로 진행
+
+---
+Task ID: 66
+Agent: Super Z (메인)
+Task: v1.0.2 — 게임 프로젝트 최종 안정화 통합 작업 (유저 36 Phase 지시: 버그/콘텐츠/밸런스/보안/QA/출시 빌드)
+
+Work Log:
+- [Phase 30 무결성 스크립트] scripts/validate_data.ts 신설(bun 직접 TS 임포트) — 중복 아이콘/0가격/누락 파일/참조 유효성/초상화 매핑/BGM/보스-챕터 전수 검사. 최종: 치명 이슈 0
+- [Phase 3 중복 아이콘] 32그룹 122종(엘릭서 아이콘이 HP/MP 7~10 공유 등) → gen_unique_icons.py로 고유 아이콘 90종+GM 4종 생성(hue shift+티어 젬 배지), apply_icons.py로 data.ts 일괄 갱신 → 0그룹 달성
+- [Phase 4 0 르쯔] BM 47종+weapon_1/armor_1 가격 부여(apply_prices.py+물약 상점 사다리 950~22000G), sellValue bmOnly 0 처리 제거
+- [Phase 2 보스 컷씬] 820ms 고정 타이머 선(先)복귀 제거 → bossIntroPending 플래그 + restoreBossIntroCam() — 대사 종료(resumeFromDialogue)/20초 자가치유/이미 본 대사 3경로 모두 보간 복귀+상태 정합
+- [Phase 14 허수아비] Enemy 스쿼시가 매 타격 '현재 스케일'을 기준 캡처해 연타 시 누적 왜곡 → baseSX/baseSY 생성시 1회 캡처로 근본 수정(일반 몹 포함)
+- [Phase 23 eert] onEert 260ms 처리 잠금(연타 이벤트 큐잉 차단). [Phase 22 등급업] 죽은 기능(case tierUp UI 부재) → 인벤 장비 탭 [등급업 ×N] 버튼 신설 + RpgState.tierCube 노출
+- [Phase 5 물약] 일반 물약 6~10티어 일반 상점 판매(엘릭서는 BM 전용 유지), 상점 카테고리 6분할(회복/기타 소모품/장비/버프/펫/치장)
+- [Phase 6 BGM] 챕터 마을 9종 전부 상이한 고정 트랙 표(VILLAGE_OF) + 실내 전용 트랙(title3/4) — 기존 chIdx%5 중복 해소
+- [Phase 7 초상화] 보스명 토큰 매칭 자동화("헬의 문지기 가름"→boss_gram) + 시조 4계열 명시 매핑 + DialogueDef.portraitId 옵션(명시 우선)
+- [Phase 8 니플헤임] 암전 0.48→0.28 + 챕터별 횃불 프로필(니플헤임 1.75배/알파 0.66) + 축소 하한 40%→55%
+- [Phase 9 툰셰이더] fx/ToonFX.ts 신설 — Phaser 4 Filters(addColorMatrix 대비/채도 + addGlow 림라이트)를 플레이어/보스 스프라이트에만 부착(모바일 저예산), fxLevel 0 자동 해제/복원
+- [Phase 13 패스일괄수령] onPassClaimAll — 도달 레벨 미수령만 지급(개별 검증 재사용), PassPanel [한번에 받기 (N건)] 버튼. 실측: Lv6 6건 지급→버튼 소멸
+- [Phase 15 업적UI] achProg 상태 배선 + 진행바(70/100)+수령가능 금색 강조+필터 4탭
+- [Phase 16 퀘스트] 코드 검증: 완료 판정이 맵 ID 종속 없음(스테이지 체인 조건 기반) — 구조상 이미 지시 충족
+- [Phase 12 GM] accounts 서버 role 필드+SERTZ_ADMIN_USERS env 매칭(가입/로드 스윕), /api/admin/summary(403 게이트), GM NPC 비관리자 미표시+인터랙션마다 authMe 재확인, GM 전용 아이템 4종(gmOnly 거래 차단)
+- [Phase 29 보안] 레이트리밋(IP 버킷: 가입10/5분·로그인15/5분·거래30/분), audit.log JSONL, 멀티플레이 CORS env/랭킹 상한/채팅 8통5초/lv999 클램프, allowBackup=false
+- [Phase 26 집/여관] 집=무료 풀회복, 여관=20G 풀회복+공/방버프 60초 분리(간판 문구 갱신)
+- [Phase 24 자동강화] rpg:autoUpgrade/Stop + 330ms 틱 루프(목표도달/골드부족/최고강화 자동 종료, 실패 하락 재시도) + UI(목표 셀렉트/자동강화/정지). 실측: ★7→★10 도달 종료
+- [Phase 17/19 분류/현금] STORE_PACKS 3종(스토어 상품 ID 기준, 클라 가격 하드코딩 없음)+STORE_PACK_CONTENTS+BM 현금 패키지 UI+구매 플로우
+- [Phase 20/21 UI] 2340×1080 오버플로우 0건 실측 + HUD/터치컨트롤 safe-area env() 적용
+- [Phase 10/11/25/28] 외부 링크 Cloudflare 403(접근 불가 — 내부 일관성은 검증 통과), 보스 페이즈는 기존 구현 확인(p1~p3+시그니처), research/ 에셋은 컨테이너 교체로 소실(게임 통합분은 git 보존), 이펙트는 기존 풀링/adaptive 유지+툰림 보강
+- [버그 발견+수정] 세이브 복원 atk/maxHp 무가드 대입 → 불완전 세이브에서 HP NaN — 숫자 가드 추가(실측: 공격 42·HP 9999/9999 복원)
+- [Phase 31~33 QA] agent-browser: 이어하기→마을→가방(등급업/자동강화/eert)→혜택→패스(한번에받기)→원정대→업적 필터→GM hidden→초상화 렌더→2340×1080 오버플로우 0 / curl: 관리자 롤·403·429·audit 전부 통과
+- [Phase 34 빌드] 툴체인 재구축(rebuild_toolchain.sh — JDK21/SDK35), 메모리 OOM으로 gradle 단독 재실행(-Xmx1200m) → APK 105MB(67/1.0.2, md5 940ea244…) + AAB 104MB(48fda370…) BUILD SUCCESSFUL
+- [릴리스] GitHub Release v1.0.2 업로드(APK+AAB, 재다운로드 md5 원격 일치) + 물료 4곳 갱신(server.js/next.config/apk-guide/안내.txt) + 6곳 버전 싱크(67/1.0.2)
+- [문서] release_docs/ CHANGELOG·TEST_REPORT·BUILD_INFO·KNOWN_ISSUES 4종 작성
+
+Stage Summary:
+- v1.0.2 통합 안정화 완료 — 36 Phase 중 실구현 24 / 기존 구현 확인 2(페이즈·퀘스트 맵독립) / 프레임워크 구현 후 스토어 의존 1(현금패키지) / 환경 사고로 보류 1(원본 에셋 재제공 필요)
+- 출시 빌드: SERTZ-v1.0.2.apk(940ea24448f26ea555bb0f8840197b44) · SERTZ-v1.0.2.aab(48fda370ad90a188b33e8ff7ab19d665) — Play Console 업로드 가능 상태
+- 테스트 계정: sertzadmin(관리자, SERTZ_ADMIN_USERS env 필요) / db 테스트 유저 정리
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

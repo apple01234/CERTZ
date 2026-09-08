@@ -6,7 +6,7 @@
  *  (same-origin fetch는 기본으로 쿠키 전송) — APK 웹뷰/웹 공통.
  */
 
-export type AuthUser = { id: string; name: string; provider: string; createdAt?: number };
+export type AuthUser = { id: string; name: string; provider: string; createdAt?: number; /** v1.0.2 — 서버 검증 롤 (admin만 GM 진입) */ role?: string };
 export type SnsProviders = Record<string, { name: string; configured: boolean }>;
 
 async function post(path: string, body?: unknown): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {

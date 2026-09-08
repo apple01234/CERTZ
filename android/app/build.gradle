@@ -7,8 +7,8 @@ android {
         applicationId "com.sertz.yggdrasil"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 66
-        versionName "1.0.1" /* v1.0.1 — 일일 던전 확장(요일 테마)·거래소 BM(유저 거래판)·시즌 미션. versionCode는 스토어 단조 규칙용으로 계속 올라간다 */
+        versionCode 67
+        versionName "1.0.2" /* v1.0.2 — 통합 안정화: 보스컷씬 카메라·허수아비·큐브·0르쯔·중복아이콘 90종·초상화·니플헤임 밝기·툰 림·치장 외형·자동강화·패스 일괄수령·업적UI·GM서버검증·보안 강화 (versionCode는 단조 유지)*/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

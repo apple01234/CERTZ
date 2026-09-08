@@ -20,6 +20,7 @@ import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 �
 import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
 import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS } from "@/game/pass"; // v4.5.0 — 시즌 패스 + v1.0.1 시즌 미션
 import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, type MarketState, type AuthUser } from "@/game/account"; // v1.0.1 — 유저 거래판
+import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
 import { chestOdds } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법)
 import type { BmGrant } from "@/game/data";
 
@@ -105,6 +106,9 @@ function SellQtyBox({
     </span>
   );
 }
+
+/** v1.0.2 (#자동강화) — 슬롯별 목표 강화 수치 임시 저장 (패널 재렌더에도 유지) */
+const autoTargetMap: { current: Record<string, number> } = { current: {} };
 
 /* ================= v3.1.0 (#볼륨UI) — BGM/효과음 개별 볼륨 슬라이더 =================
  *  유저 지시: "BGM보다 효과음이 너무 큼 — BGM과 SFX를 각각 조절할 수 있는 UI".
@@ -514,6 +518,25 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
           </div>
         )}
 
+        {/* v1.0.2 (#현금패키지) — 스토어 결제 패키지 (가격은 Play Console 상품 기준 — 클라 하드코딩 없음) */}
+        {STORE_PACKS.length > 0 && (
+          <div className="mt-2.5 rounded-lg border border-rose-300/30 bg-rose-400/[0.06] px-2.5 py-2">
+            <p className="text-[12px] font-black text-rose-200">현금 패키지 (스토어 결제)</p>
+            <div className="mt-1.5 flex flex-col gap-1">
+              {STORE_PACKS.map((pk) => (
+                <button
+                  key={pk.id}
+                  onClick={() => EventBus.emit("rpg:buyStorePack", { id: pk.id })}
+                  className="rounded-lg border border-rose-300/40 bg-gradient-to-b from-rose-400/15 to-rose-500/5 px-2.5 py-1.5 text-left hover:from-rose-400/25 active:scale-[0.98]"
+                >
+                  <p className="text-[11px] font-black text-rose-100">{pk.label}</p>
+                  <p className="text-[9px] leading-snug text-white/55">{pk.desc} · 스토어에서 가격 확인</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* v4.1.0 — 광고 보상 + 구글 플레이 충전 (유저 지시 #10 — BM 수익 연동) */}
         <div className="mt-2.5 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] px-2.5 py-2">
           <p className="text-[12px] font-black text-amber-200">에메랄드 충전소</p>
@@ -625,7 +648,11 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
         {/* 상점 섹션 — 물약·장비 / 버프 / 펫 / 치장 (v1.9 BM) */}
         <div className="flex max-h-[52vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
           {([
-            { label: "물약 · 장비", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "consumable" || it.kind === "weapon" || it.kind === "armor" || it.kind === "accessory" },
+            /* v1.0.2 (#물약상점) — 카테고리 세분화: 회복 물약이 15종으로 늘어 "물약·장비" 한 섹션에
+             * 섞이면 스크롤 탐색이 어려워져 회복/기타/장비로 분리 (유저 지시 — 이해하기 쉬운 분류) */
+            { label: "회복 물약", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "consumable" && !!(it.heal || it.restore || it.healFull) },
+            { label: "기타 소모품", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "consumable" && !(it.heal || it.restore || it.healFull) },
+            { label: "장비", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "weapon" || it.kind === "armor" || it.kind === "accessory" },
             { label: "버프 물약", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "buff" },
             { label: "펫", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "pet" },
             { label: "치장", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "cosmetic" },
@@ -1677,8 +1704,39 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                             강화 {eqCost}G · {eqRate}%
                           </InvBtn>
                         )}
+                        {/* v1.0.2 (#자동강화) — 목표 강화까지 자동 반복 (골드 부족/최고치/목표 도달 시 자동 종료) */}
+                        {equipped && !eqMaxed && (
+                          <span className="inline-flex items-center gap-1">
+                            <select
+                              aria-label="목표 강화 수치"
+                              defaultValue={Math.min(UPGRADE_MAX, up + 3)}
+                              onChange={(e) => { autoTargetMap.current[eqSlot] = Number(e.target.value); }}
+                              className="rounded-md border border-white/15 bg-black/40 px-1 py-1 text-[10px] font-black text-white/80"
+                            >
+                              {Array.from({ length: UPGRADE_MAX - up }, (_, i) => up + i + 1).map((n) => (
+                                <option key={n} value={n}>★{n}</option>
+                              ))}
+                            </select>
+                            <InvBtn
+                              tone="sky"
+                              onClick={() => EventBus.emit("rpg:autoUpgrade", { slot: eqSlot, target: autoTargetMap.current[eqSlot] ?? Math.min(UPGRADE_MAX, up + 3) })}
+                            >
+                              자동 강화 ▶
+                            </InvBtn>
+                            <InvBtn tone="gray" onClick={() => EventBus.emit("rpg:autoUpgradeStop")}>정지</InvBtn>
+                          </span>
+                        )}
                         {equipped && eqMaxed && (
                           <span className="rounded-md bg-amber-400/15 px-2.5 py-1.5 text-[10px] font-black text-amber-200">★{UPGRADE_MAX} 완료</span>
+                        )}
+                        {/* v1.0.2 (#등급업큐브) — 등급업 큐브 사용 버튼 신설 (기존 로직은 있었으나 진입 UI 부재로 죽은 기능이었다) */}
+                        {equipped && it.tier !== "legend" && (rpg.tierCube ?? 0) > 0 && (
+                          <InvBtn tone="violet" onClick={() => EventBus.emit("rpg:isekai", { action: "tierUp", slot: eqSlot })}>
+                            등급업 ×{(rpg.tierCube ?? 0)}
+                          </InvBtn>
+                        )}
+                        {equipped && it.tier !== "legend" && (rpg.tierCube ?? 0) <= 0 && (
+                          <span className="rounded-md bg-violet-400/10 px-2.5 py-1.5 text-[10px] font-bold text-violet-200/60">등급업 큐브 없음</span>
                         )}
                         {!equipped && <span className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[10px] font-bold text-white/40">장착 후 가방에서 강화</span>}
                         {eqFlash && (
@@ -1959,6 +2017,13 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
             className="rounded-lg border border-cyan-300/40 bg-cyan-400/10 px-2 py-2 text-[11px] font-black text-cyan-200 hover:bg-cyan-400/20 active:scale-95"
           >
             에메랄드 +50
+          </button>
+          {/* v1.0.2 (#GM아이템) — GM 전용 장비 지급 (일반 유저 획득 경로 전무) */}
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "gmitems" })}
+            className="rounded-lg border border-rose-300/40 bg-rose-400/10 px-2 py-2 text-[11px] font-black text-rose-200 hover:bg-rose-400/20 active:scale-95"
+          >
+            [GM] 장비 지급
           </button>
         </div>
 
@@ -2249,6 +2314,25 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
             <p className="text-[13px] font-black text-amber-100">현재 Lv.{lvNow}<span className="ml-1 text-[10px] font-normal text-white/45">/{PASS_MAX_LV}</span></p>
             <p className="text-[10px] text-white/50">{lvNow >= PASS_MAX_LV ? "시즌 만렙!" : `다음 레벨까지 ${PASS_LV_XP - p.lvXp} XP`}</p>
           </div>
+          {/* v1.0.2 (#패스일괄수령) — 도달 레벨의 미수령 보상 전부 지급 (프리미엄은 해금 시에만) */}
+          {(() => {
+            const claimableN = PASS_TRACKS.reduce((n, tr, i) => {
+              const lv = i + 1;
+              if (lv > lvNow) return n;
+              if (tr.free && !p.claimedF.includes(lv)) n++;
+              if (p.prem && tr.prem && !p.claimedP.includes(lv)) n++;
+              return n;
+            }, 0);
+            if (claimableN <= 0) return null;
+            return (
+              <button
+                onClick={() => EventBus.emit("rpg:passClaimAll")}
+                className="mt-1.5 w-full rounded-lg bg-gradient-to-b from-amber-300 to-amber-500 px-2 py-1.5 text-[11px] font-black text-slate-900 shadow-[0_2px_0_#92400e] active:translate-y-[2px] active:shadow-none"
+              >
+                한번에 받기 ({claimableN}건)
+              </button>
+            );
+          })()}
           <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-black/50">
             <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-200 transition-[width]" style={{ width: `${Math.min(100, (p.lvXp / PASS_LV_XP) * 100)}%` }} />
           </div>
@@ -3182,6 +3266,8 @@ type TabKey = "figure" | "badge" | "rune" | "constel" | "ach" | "rank";
 function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
   const [tab, setTab] = useState<TabKey>("figure");
+  /* v1.0.2 (#업적UI) — 업적 필터 (수령 가능한 업적을 한눈에) */
+  const [achFilter, setAchFilter] = useState<"all" | "claimable" | "progress" | "done">("all");
   const ik = rpg.isekai;
   const figures = ik?.figures ?? [];
   const shards = ik?.shards ?? 0;
@@ -3375,17 +3461,59 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
         {/* 업적 탭 */}
         {tab === "ach" && (
           <div>
-            <p className="mb-2 text-[11px] font-bold text-white/60">업적 — 달성 시 피규어 조각 지급</p>
+            <p className="mb-1.5 text-[11px] font-bold text-white/60">업적 — 달성 시 피규어 조각 지급</p>
+            {/* v1.0.2 (#업적UI) — 상태 필터: 수령 가능한 업적이 묻히지 않게 탭으로 분리 */}
+            <div className="mb-2 flex flex-wrap gap-1">
+              {([
+                ["all", "전체"],
+                ["claimable", "수령 가능"],
+                ["progress", "진행 중"],
+                ["done", "수령 완료"],
+              ] as const).map(([k, label]) => {
+                const n = ACHIEVEMENTS.filter((a) => {
+                  const cl = (ik?.achClaimed ?? []).includes(a.id);
+                  const pr = ik?.achProg?.find((x) => x.id === a.id)?.prog ?? 0;
+                  return k === "all" ? true : k === "done" ? cl : k === "claimable" ? !cl && pr >= a.goal : !cl && pr < a.goal;
+                }).length;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => setAchFilter(k)}
+                    className={`rounded-md border px-2 py-1 text-[10px] font-black active:scale-95 ${achFilter === k ? "border-amber-300/70 bg-amber-400/20 text-amber-100" : "border-white/10 bg-white/[0.04] text-white/50 hover:bg-white/[0.08]"}`}
+                  >
+                    {label} {n > 0 && <span className={k === "claimable" ? "text-amber-300" : "opacity-60"}>{n}</span>}
+                  </button>
+                );
+              })}
+            </div>
             <div className="flex flex-col gap-1.5">
               {ACHIEVEMENTS.map((a) => {
                 const claimed = (ik?.achClaimed ?? []).includes(a.id);
-                const done = claimed;
+                /* v1.0.2 (#업적UI) — 서버 아닌 상태 페이로드의 진행도(achProg)로 수령 가능 판정 */
+                const prog = ik?.achProg?.find((x) => x.id === a.id)?.prog ?? 0;
+                const claimable = !claimed && prog >= a.goal;
+                const pct = Math.min(100, Math.floor((prog / a.goal) * 100));
+                if (achFilter === "claimable" && !claimable) return null;
+                if (achFilter === "done" && !claimed) return null;
+                if (achFilter === "progress" && (claimed || prog >= a.goal)) return null;
                 return (
-                  <div key={a.id} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${claimed ? "border-emerald-300/40 bg-emerald-400/[0.07]" : "border-white/10 bg-white/[0.03]"}`}>
+                  <div key={a.id} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${claimed ? "border-emerald-300/40 bg-emerald-400/[0.07]" : claimable ? "border-amber-300/70 bg-amber-400/[0.10] shadow-[0_0_8px_rgba(252,211,77,0.25)]" : "border-white/10 bg-white/[0.03]"}`}>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[10px] font-black text-white">{a.name} <span className="font-normal text-white/40">— {a.desc}</span></p>
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/50">
+                          <div className={`h-full rounded-full ${claimed ? "bg-emerald-400" : claimable ? "bg-gradient-to-r from-amber-400 to-amber-200" : "bg-sky-400/70"}`} style={{ width: `${claimed ? 100 : pct}%` }} />
+                        </div>
+                        <span className={`shrink-0 text-[9px] font-black ${claimable ? "text-amber-200" : "text-white/50"}`}>{claimed ? "✓ 완료" : `${prog}/${a.goal}`}</span>
+                      </div>
                     </div>
-                    <button disabled={claimed} onClick={() => EventBus.emit("rpg:isekai", { action: "achClaim", id: a.id })} className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${claimed ? "border-emerald-300/40 text-emerald-200" : "border-amber-300/50 bg-amber-400/15 text-amber-200 hover:bg-amber-400/25"}`}>{claimed ? "수령 완료" : `조각 +${a.shards}`}</button>
+                    <button
+                      disabled={claimed}
+                      onClick={() => EventBus.emit("rpg:isekai", { action: "achClaim", id: a.id })}
+                      className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${claimed ? "border-emerald-300/40 text-emerald-200" : claimable ? "border-amber-300 bg-amber-400 text-slate-900 hover:bg-amber-300" : "border-white/15 bg-white/[0.05] text-white/45"}`}
+                    >
+                      {claimed ? "수령 완료" : claimable ? `보상 받기 +${a.shards}` : `조각 +${a.shards}`}
+                    </button>
                   </div>
                 );
               })}

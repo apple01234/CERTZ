@@ -51,19 +51,34 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "마지막 항해사": { tex: "spum_fisher", tone: "#b09aff" },
   "종언의 마룡 아부디토스": { tex: "boss_nidhog_idle0", tone: "#fda4af" }, // v4.1.3 고증 표기 통일 — 없는 파일(boss_nidhog) 대신 실제 프레임 파일명
   "{name}": { tex: "hero_idle0", tone: "#86efac" }, // 플레이어
+  // v1.0.2 (#초상화) — 매핑 누락 화자 보강 (가름은 bossPortrait 토큰 매칭으로도 자동 해결, 여기선 명시 우선)
+  "헬의 문지기 가름": { tex: "boss_gram_idle0", tone: "#8affc0" },
+  "전사 계열의 시조 '강철의 마르테'": { tex: "spum_knight", tone: "#fbbf24" },
+  "궁수 계열의 시조 '바람의 세이렌'": { tex: "spum_elf", tone: "#a7f3d0" },
+  "마법사 계열의 시조 '만개한 세이렌'": { tex: "spum_mage", tone: "#c4b5fd" },
+  "도적 계열의 시조 '그림자의 로크'": { tex: "spum_devil", tone: "#94a3b8" },
 };
 
 /** 보스 대사 — BOSS_DEFS의 보스 이름과 일치하면 해당 보스 스프라이트 사용
  *  v3.0.25 (#이미지 안불러와짐) — 보스 텍스처는 idle 프레임 분할 파일(boss_*_idle0.png)이므로
  *  기본명(boss_nidhog.png 등)은 404 → 전원 이미지가 깨졌다. 첫 idle 프레임을 초상화로 사용 */
 function bossPortrait(speaker: string): { tex: string; tone: string } | null {
+  /* v1.0.2 (#초상화) — 토큰 매칭 추가: "헬의 문지기 가름"처럼 수식어가 다른 화자도
+   *  마지막 고유명사(가름) 일치로 보스 스프라이트 자동 매핑 (speakerId 자동 매핑) */
+  const tok = (speaker.replace(/[‘’'"』]/g, "").split(/\s+/).pop() ?? "").trim();
   for (const def of Object.values(BOSS_DEFS)) {
     if (def.name === speaker) return { tex: `${def.tex}_idle0`, tone: "#fda4af" };
+    if (tok.length >= 2 && def.name.endsWith(tok)) return { tex: `${def.tex}_idle0`, tone: "#fda4af" };
   }
   return null;
 }
 
-function portraitOf(speaker: string): { tex: string; tone: string } | null {
+function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: string } | null {
+  /* v1.0.2 (#초상화) — portraitId 명시 > 화자명 직접 매핑 > 보스 토큰 자동 매칭 순 */
+  if (portraitId) {
+    if (NPC_PORTRAITS[portraitId]) return NPC_PORTRAITS[portraitId];
+    return { tex: portraitId, tone: "#e2e8f0" };
+  }
   if (NPC_PORTRAITS[speaker]) return NPC_PORTRAITS[speaker];
   return bossPortrait(speaker);
 }
@@ -83,7 +98,7 @@ export function DialogueBox({
   // {name} 치환 — 플레이어가 지은 이름이 대사에 반영됨
   const line = (dialogue?.lines[idx] ?? "").replaceAll("{name}", name);
   const speakerName = (dialogue?.speaker ?? "").replaceAll("{name}", name);
-  const portrait = dialogue ? portraitOf(dialogue.speaker ?? "") : null;
+  const portrait = dialogue ? portraitOf(dialogue.speaker ?? "", (dialogue as { portrait?: string }).portrait) : null;
   /* v3.0.25 (#이미지 안불러와짐) — 초상화 로드 상태 추적: 404 등 실패 시 깨진 이미지 대신
    *  프레임만 표시하고, 로드 완료 시에야 이미지를 보여준다 (깜빡임·깨짐 제거) */
   const [portraitOk, setPortraitOk] = useState(true);
