@@ -1126,3 +1126,32 @@ Stage Summary:
 - 다음 강화 후보: 스킬별 전용 셰이더(회전베기 참격 궤적·돌진 잔상), 포탈 외 3D 느낌 이펙트(스폰 게이트), 데미지텍스트 크리티컬 폰트 이펙트
 - [릴리스 완료] GitHub Release v4.8.0(id 384597615) — APK 104,952,712B + AAB 103,853,174B 업로드 → 재다운로드 md5 검증 일치(APK 8e1e83e8…/AAB 36cffb6b…) · commit push 28bf428..be7899b · 웹 최종 빌드(md5 반영)+서버 200+배지/월드/셰이더풀 실측 통과
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 61
+Agent: Super Z (메인)
+Task: v4.9.0 — 유저 피드백 10종 일괄 처리: 입력 버그 2종 근본 수정(이름 소문자·우물 자동이동) + 검은화면 3중 방어(GM 보스 이동·긴급귀환) + 렉 개선 + 3D 에셋 통합 + 스킬 전용 셰이더(회전베기 궤적·돌진 잔상) + 보스 등장 룬 마법진 + 자체/SNS 계정·클라우드 세이브 (versionCode 64 — APK 빌드는 유저 방침상 보류)
+
+Work Log:
+- [버그5 원인 확정 — 실측] Phaser 4 KeyboardManager가 window에서 A~Z 전 키캡처 + 수정키 없는(소문자) 키만 preventDefault(node_modules KeyboardManager.js:200 실측) → 포커스 경로에 따라 인풋 글자 유실. 데스크톱 정상 패스는 React swallowKeys(stopPropagation) 덕 — 모바일/포커스 타이밍에서 노출
+- [버그6 원인 확정 — 재현] keydown은 Phaser가 받고 keyup이 인풋 swallow로 유실되면 Key.isDown 영구 true → resolveDirVec가 마지막 방향을 영구 유지 = "우물 이름 짓고 한방향 자동이동". 커스텀 keyCode 이벤트로 재현 성공(isDownD stuck true 실측)
+- [게이트 버그 추가 발견] useKeyGate의 useEffect가 패널 닫힘 첫 렌더(ref null)에 1회 실행 후 재실행 없음 → NamePanel처럼 나중 마운트되는 인풋엔 리스너 자체가 안 붙음(채팅은 자체 구현이라 정상이었던 이유). 콜백 ref로 재작성 + 부착 시점 이미 포커스면 즉시 가동
+- [수정] inputGate.ts 콜백 ref 전환 / WorldScene onChatFocus에서 input.keyboard.manager.enabled 토글 + resetInputState 신설(키 리셋·dirOrder 클리어·touchMove 0·attackQueued 0) / 호출점 4곳(게이트 경계·인트로 2단 진입·finishIntro·resumeFromDialogue) / NamePanel autoCapitalize=none 등 모바일 속성
+- [재검증 실측] 인풋 포커스 → isDownD false·chatFocused true·mgrEnabled false·dirX [] 전부 정상, 이름 확정 후 게이트 해제+관리자 복원+고착 0 확인
+- [검은화면 3중 방어(7,8)] ①startTransition 진입 시 clearBossPostFX로 카메라 필터(프레임버퍼 경로) 먼저 해체 + fadeDarkMs 리셋 ②init에 escapeCd/fadeDarkMs/bossChaos 리셋 ③PhaserGame 신규 프리즈 워치독(표시 상태 + 프레임 카운터 연속 3샘플≥6초 무변화 → 안전 새로고침, 부팅 12초 유예) — 실측 중 헤드리스 rAF 서스펜션 오탐 발견 → 2샘플→3샘플+유예로 강도 조정
+- [GM 보스 이동 실측] abyss10→hel10 이동 후 scene active·fadeAlpha 0·camAlpha 1·보스 스폰 확인 — 검은화면 없음. 긴급귀환 hel10→helv 마을 복귀 + 페이드 진행 확인
+- [렉 개선(10)] 적응형 품질 fxLevel 0 진입 시 보스 블룸 즉시 해제(프레임버퍼 다중 패스=모바일 최대 부하원), 복원 시 재적용(bossChaos 추적) — 실측: 헤드리스 19fps에서 자동 강등→신규 VFX까지 자동 생략 확인(가드 의도대로 동작)
+- [3D 에셋(9) 답변+통합] 소실 아님 — 유저 제공 팩(research/ cainos·vefects 1.1GB)은 디스크 보존·git 제외(GitHub 100MB 한도) 상태이며 cfxr 계열은 v4.1.8부터 사용 중. 이번에 Hovl Studio MagicCircle2(512px webp화)·Slash를 rune_circle/slash_arc로 신규 채택해 실전 투입
+- [스킬 셰이더(1)] fx/SlashArcFX.ts 신설 — GLSL 참격 궤적(리딩 엣지+잔꼬리 스윕, 반경 밴드 falloff, 프리멀티플라이드 알파, 풀 2슬롯·shaderName 분리). skill1Spin 3분기 배선(원판=계열색/버서커=붉은 2궤적/3차 역방향), 스킬 반경 연동 스케일. 돌진 잔상 = WorldScene 고스트 풀 6장(현 프레임 캡처 ADD 블렌드, 42ms 간격, 클래스색 틴트) + Player 대시 루프 배선 — 실측: 라이브 슬롯·고스트 2장 생성 확인
+- [보스 등장(2)] spawnBossRunic 강화 — rune_circle 마법진(보라/카오스 적색) 확대 회전 + 빛 기둥 + 셰이더 링 2연격(spawnShockwave alpha 파라미터 추가) + 스파클 버스트. 실측: runeCircle 1장·링 2라이브·스크린샷 육안 확인(shot_v490_runic)
+- [계정 시스템(4)] accounts/index.js 신설 — 자체 가입/로그인(scrypt 솔트 해시·HttpOnly 쿠키 30일)·로그아웃·me·SNS OAuth 스캐폴딩(구글/카카오/네이버 authorization-code 플로우 전 구현, SERTZ_*_ID/SECRET env 게이트 — 키 등록 시 무코드 활성화)·클라우드 세이브 백업/복원(db/accounts.json 파일 DB). server.js 부착(Next handle 이전 가로채기) + fc-entry.js standalone 주입(request 리스너 래핑) + db/ gitignore
+- [계정 UI] AuthPanel.tsx 신설(우측 위젯 스택 3번째) — 로그인/회원가입 탭·SNS 3버튼(미설정 표시)·로그인 시 클라우드 백업/복원+3분 자동 백업. curl 전 플로우 실측(가입→me→백업→복원→로그아웃→재로그인 7단계) + UI 실측(uiguy01 가입→LV61 세이브 2.3KB 서버 저장 확인)
+- [버저닝] versionCode 64 / 4.9.0 — build.gradle 선반영 + 타이틀 배지. APK 물료(apk-guide·guide.txt·server.js URL·next.config)는 v4.8.0 유지 — 유저 방침 "플레이스토어 빌드는 나중"에 따라 릴리스 시 일괄 갱신
+- [검증] tsc 0 에러 · eslint 0 에러(multiplayer/accounts 서버 CJS를 ignores 추가로 정리) · 서버 200 · dev.log 에러 없음
+
+Stage Summary:
+- 유저 10항목 중 5·6·7·8·9·10(버그/조사/성능) 전부 해결 + 1·2(VFX)·4(계정) 신규 구현. 3(전투 외 강화)은 이번 계정/클라우드가 유저 식별·BM 기반 역할, 추가 콘텐츠는 다음 사이클 후보(일일 던전 확장·펫 콘텐츠·거래소 BM·시즌 미션)
+- 기존 틀 유지: 맵/보스/퀘스트/세이브 구조 무변경 — 계정은 선택적(비로그인 플레이 그대로), VFX는 전부 보강 레이어+가드(fxLevel/WEBGL/텍스처 존재)
+- 워치독 오탐 교훈: 헤드리스 rAF 서스펜션 — 프리즈 판정은 6초+무변화 기준으로
+- SNS OAuth 실사용화 TODO: 구글/카카오/네이버 개발자 콘솔 앱 등록 → 콜백 URL https://<도메인>/api/auth/sns/<provider>/callback 등록 → SERTZ_GOOGLE_ID/SECRET 등 env 주입
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

@@ -78,6 +78,33 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     }
   }, 1000);
 
+  /* v4.9.0 — 렌더 프리즈 최후 워치독 (유저 지시: GM 보스 이동·긴급귀환 후 검은 화면이 안 사라짐).
+   *  컨텍스트 유실 외에도 약한 GPU에서 필터/셰이더 경합으로 게임 루프 자체가 멈추면
+   *  캔버스가 검은 채로 얼어붙는다(씬 내 자가치유는 update가 살아 있어야 동작).
+   *  화면이 보이는 상태에서 2초 간격 샘플로 프레임 카운터가 연속 3회(≥6초) 무변화면
+   *  진짜 프리즈다(배터리 세이버도 0fps까지는 안 끊는다). 세이브가 살아있으므로
+   *  안전하게 새로고침해 부팅한다. 부팅 직후 12초는 유예(느린 기기 초기 로딩 보호). */
+  const freezeBootAt = Date.now();
+  let freezeSamples = 0;
+  let lastFrame = -1;
+  window.setInterval(() => {
+    try {
+      if (document.hidden) return;
+      if (Date.now() - freezeBootAt < 12000) return;
+      const f = game.loop.frame;
+      if (f === lastFrame) {
+        freezeSamples++;
+        if (freezeSamples >= 3) {
+          console.error("[SERTZ] 렌더 루프 정지 감지 — 안전 새로고침");
+          window.location.reload();
+        }
+      } else {
+        freezeSamples = 0;
+        lastFrame = f;
+      }
+    } catch { /* 게임 미부팅 단계 무시 */ }
+  }, 2000);
+
   // 오디오 모듈에 게임 인스턴스 연결 (Phaser SoundManager 사용)
   attachAudio(game);
 

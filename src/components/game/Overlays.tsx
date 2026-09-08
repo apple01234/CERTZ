@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.8.0 · 타격감 강화 — 충격파 링 셰이더(크리티컬·약점·보스 격파) + GLSL 확장 링 3D 느낌 VFX 2단계 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.9.0 · 입력 버그 수정(이름 소문자·자동이동·검은화면 방어) + 스킬 전용 셰이더(회전베기 궤적·돌진 잔상) + 보스 등장 룬 마법진 + 계정/클라우드 세이브 — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 
@@ -460,6 +460,12 @@ export function NamePanel() {
           autoFocus
           value={val}
           maxLength={8}
+          /* v4.9.0 — 모바일 소프트키보드 자동 대문화/자동수정 방지 (소문자 입력 보장) */
+          type="text"
+          inputMode="text"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           onChange={(e) => setVal(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {

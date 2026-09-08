@@ -179,6 +179,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private iframes = 0;
   private dashTime = 0;
+  private dashGhostAcc = 0; // v4.9.0 — 돌진 잔상 스폰 간격 누적
   private dashDir = new Phaser.Math.Vector2();
   /** v3.0.6 — 현재 기동기 종류 (종착 효과 분기용) */
   private dashKind: string = "dash";
@@ -245,6 +246,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const key = horiz ? "hero-walk-side" : this.dashDir.y > 0 ? "hero-walk" : "hero-walk-up";
         if (horiz) this.setFlipX(this.dashDir.x > 0); // v3.0.10 — 시트 왼쪽 기준
         if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) this.play(key);
+      }
+      /* v4.9.0 — 돌진 잔상 (스킬 전용 셰이더 #1의 짝 — 유저 지시 #1 "돌진 잔상").
+       *  현재 프레임 그대로의 고스트를 42ms 간격으로 흘려 궤적을 남긴다.
+       *  계열별 색: 전사=은백 / 마법사=룬 청보라 / 도적=암흑보라 / 궁수=질풍 청록.
+       *  적응형 축소 모드(fxLevel 0)에선 생략 — 기존 연출(먼지/바람꼬리 등)은 유지. */
+      this.dashGhostAcc += ms;
+      if (this.dashGhostAcc >= 42 && this.scene.fxLevel === 1) {
+        this.dashGhostAcc = 0;
+        this.scene.spawnDashGhost(
+          this.x,
+          this.y,
+          this.texture.key,
+          this.frame?.name,
+          this.flipX,
+          this.clsHex(),
+          this.scaleX
+        );
       }
       if (this.dashTime <= 0) {
         this.state = "idle";
@@ -844,6 +862,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const dir = aim.lengthSq() > 0.01 ? aim.clone().normalize() : new Phaser.Math.Vector2(this.flipX ? -1 : 1, 0);
       this.scene.spawnSpinSlash(this.x, this.y, spin);
       this.scene.spawnSpinSlash(this.x + dir.x * 52, this.y + dir.y * 52, -spin); // 전방 이중 참격판
+      /* v4.9.0 — 회전베기 참격 궤적 셰이더: 붉은 광기 2궤적 (이중 참격판 대응, 시작각 엇갈림) */
+      this.scene.spawnSlashArc(this.x, this.y, spin, 0xff5c3c, radius / 46, 300, 0.95);
+      this.scene.spawnSlashArc(this.x + dir.x * 52, this.y + dir.y * 52, -spin, 0xff8a5c, (radius * 0.85) / 46, 280, 0.8, spin > 0 ? 2.2 : -2.2);
       this.scene.spawnBurstAt(this.x, this.y, 16, 0xff3c1c);
       // 분노 오라 — 붉은 링 3겹이 터져나감
       for (let i = 0; i < 3; i++) {
@@ -864,6 +885,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       // 전사 원판 — 360° 궤도 반달 + 충격파 + 스파크 — 티어 2 이상에서 충격 링 추가
       this.scene.spawnSpinSlash(this.x, this.y, spin);
+      /* v4.9.0 — 회전베기 참격 궤적 셰이더: 스킬 반경에 맞춘 광륜 스윕 (전사=은백, 그 외=계열색) */
+      const warr0 = familyOf(this.cls) === "warrior";
+      this.scene.spawnSlashArc(
+        this.x,
+        this.y,
+        spin,
+        warr0 && t >= 1 ? 0xd6e6ff : famHex,
+        radius / 46,
+        290 + t * 15,
+        0.88
+      );
       /* v4.1.3 (#1차전사차별화) — 전사는 1차(t=1)부터 은백 버스트+충격 링 (기존 t>=2만).
        *  미전직엔 없는 전용 연출 — 1차 전직의 "같아 보임" 해소 (지시 #9).
        *  t>=2 연출/색(famHex)은 기존 그대로 유지 */
@@ -878,7 +910,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.tweens.add({ targets: ring, scale: 2.1, alpha: 0, duration: 380, ease: "Cubic.out", onComplete: () => ring.destroy() });
         }
       }
-      if (t >= 3) this.scene.spawnSpinSlash(this.x, this.y, -spin); // 이중 회전 잔상 (3차 강화)
+      if (t >= 3) {
+        this.scene.spawnSpinSlash(this.x, this.y, -spin); // 이중 회전 잔상 (3차 강화)
+        /* v4.9.0 — 역방향 참격 궤적 (이중 회전 잔상과 동기화) */
+        this.scene.spawnSlashArc(this.x, this.y, -spin, warr0 ? 0xd6e6ff : famHex, (radius * 0.86) / 46, 260, 0.7, spin > 0 ? 2.6 : -2.6);
+      }
     }
 
     // 몸통(스프라이트) 360° 회전 — 검 뻗은 공격 프레임을 돌려 휘두르는 동작

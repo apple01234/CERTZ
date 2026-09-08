@@ -9,6 +9,7 @@
 const { createServer } = require("node:http");
 const next = require("next");
 const { attachMultiplayer } = require("./multiplayer");
+const { attachAccountsBefore } = require("./accounts"); // v4.9.0 — 자체/SNS 계정 + 클라우드 세이브
 
 const port = parseInt(process.env.PORT || "3000", 10);
 
@@ -29,6 +30,9 @@ app.prepare().then(() => {
       attach: false,
     },
   };
+  /* v4.9.0 — 자체 회원가입/로그인 + SNS OAuth + 클라우드 세이브 (accounts/index.js)
+   *  /api/auth/* 만 계정 모듈이 먼저 처리하고 나머지는 Next handle로 */
+  const handlerWithAccounts = attachAccountsBefore(handle);
   const httpServer = createServer((req, res) => {
     const url = (req.url || "").split("?")[0];
     /* v4.0.0 — 어떤 버전의 APK 링크든 즉시 다운로드 경로로 연결 (404 원천 차단) */
@@ -52,7 +56,8 @@ app.prepare().then(() => {
         return;
       }
     }
-    handle(req, res);
+    /* v4.9.0 — 계정 API(/api/auth/*) 우선 처리 래퍼 */
+    handlerWithAccounts(req, res);
   });
 
   /* 멀티플레이 (socket.io) — multiplayer/index.js 공용 모듈 */

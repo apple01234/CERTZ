@@ -29,6 +29,7 @@ import { showRewardedAd, purchaseGems, GEM_SKUS } from "../ads"; // v4.1.0 — B
 import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft } from "../pass"; // v4.5.0 — 시즌 패스/구독
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
+import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
 import * as audio from "../audio";
 import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
@@ -106,6 +107,7 @@ export class WorldScene extends Phaser.Scene {
   impactFX!: ImpactFX;
   /* v4.8.0 — 충격파 링 셰이더 풀 (크리티컬/약점/보스 격파 강한 순간) */
   private shockFX!: ShockwaveFX;
+  private slashArcFx!: SlashArcFX; // v4.9.0 — 회전베기 참격 궤적
   // 스테이지별 누적 킬 (퀘스트 순서와 무관하게 토벌 진행 유지 — 소프트락 방지)
   private killTotals: Record<string, number> = {};
   // 리스폰: 원래 스폰 지점 기록 (파밍 루프 — 사냥→골드→상점 순환이 적 소진으로 끊기지 않게)
@@ -490,6 +492,7 @@ export class WorldScene extends Phaser.Scene {
     /* v4.1.5 — 조명/보스 포스트FX/신규 이미터 정리 */
     this.lighting?.destroy();
     this.bossFilters = [];
+    this.bossChaos = false; // v4.9.0 — 적응형 품질 상태 리셋
     this.bossEmber = null;
     this.bossLight = null;
     this.portalMagicA = null;
@@ -501,6 +504,8 @@ export class WorldScene extends Phaser.Scene {
     this.netAcc = 0;
     this.pProjPool = []; // 씬 소유 오브젝트는 씬 종료와 함께 정리 — 인덱스만 초기화
     this.pProjIdx = 0;
+    this.ghostPool = []; // v4.9.0 — 돌진 잔상 풀도 씬 재시작마다 재생성 (파괴된 이미지 참조 방지)
+    this.ghostIdx = 0;
     /* v3.0.3 — 신규 씬 소유 리소스 리셋 (씬 재시작 후 파괴된 구 객체 참조 방지) */
     this.eProjPool = [];
     this.eProjIdx = 0;
@@ -604,6 +609,8 @@ export class WorldScene extends Phaser.Scene {
     this.closetText = null;
     this.closetAcc = 0;
     this.restCd = 0;
+    this.escapeCd = 0; // v4.9.0 — 씬 재시작마다 긴급귀환 쿨다운 초기화
+    this.fadeDarkMs = 0; // v4.9.0 — 페이드 자가치유 타이머 초기화
     // 런 통계(처치/플레이타임) — 씬 재시작(스테이지 전환)과 무관하게 유지
     // fresh=true는 타이틀에서 새 시작/이어하기일 때만 (사망화면 정확한 통계)
     if (data.fresh) {
@@ -674,6 +681,12 @@ export class WorldScene extends Phaser.Scene {
     this.impactFX = new ImpactFX(this);
     /* v4.8.0 — 충격파 링 풀 (WebGL 전용 — Canvas 폴백은 풀이 비어 no-op) */
     this.shockFX = new ShockwaveFX(this);
+    this.slashArcFx = new SlashArcFX(this); // v4.9.0
+    /* v4.9.0 — 돌진 잔상 고스트 풀 6장 (플레이어 depth 10 아래, 엔티티 뒤 궤적) */
+    for (let i = 0; i < 6; i++) {
+      const g = this.add.image(0, -9999, "hero_idle0").setDepth(9).setBlendMode(Phaser.BlendModes.ADD).setActive(false).setVisible(false);
+      this.ghostPool.push(g);
+    }
     /* v3.0.3 — 씬 재시작 시 물리 월드 일시정지 상태가 이월되는 문제 방지:
      *  대사 중 씬 재시작(포탈/사망 등)이 일어나면 구 씬의 world.pause()가
      *  새 씬에서도 유지되어 캐릭터·몬스터가 완전히 멈춘다. 재시작마다 강제 resume. */
@@ -1879,6 +1892,12 @@ export class WorldScene extends Phaser.Scene {
     this.transitioning = true;
     this.portalActive = false;
     this.returnActive = false;
+    /* v4.9.0 — 전환 시작 시 카메라 필터(보스 블룸/비네트)를 먼저 해체.
+     *  필터가 켜진 카메라는 프레임버퍼 경로로 렌더링되는데, 약한 모바일 GPU에서
+     *  fadeOut(전체 화면 검정 쿼드)과 겹치면 GM 보스 이동·긴급귀환 직후 검은 화면이
+     *  남는 사례가 보고됐다. 필터는 새 구역에서 재적용되므로 미리 제거해도 무해. */
+    this.clearBossPostFX();
+    this.fadeDarkMs = 0;
     if (this.player) {
       this.player.setVelocity(0, 0); // 관성 드리프트로 다른 포탈에 겹치는 것 차단
       this.player.state = "idle";
@@ -2400,7 +2419,8 @@ export class WorldScene extends Phaser.Scene {
    *  평균 프레임이 2.5초 간격으로 42 미만이면 FX 양을 자동 축소, 56+ 유지 시 복원.
    *  격발/파티클 과다 환경(저사양 폰·다수 원격)에서 프레임을 지킨다. */
 
-  private fxLevel: 0 | 1 = 1;
+  /* v4.9.0 — fxLevel을 public으로 (Player 돌진 잔상 게이트에서 직접 조회) */
+  fxLevel: 0 | 1 = 1;
   private fxSampleAt = 0;
   private fxLowStreak = 0;
   private fxHighStreak = 0;
@@ -2420,6 +2440,8 @@ export class WorldScene extends Phaser.Scene {
       if (this.fxLowStreak >= 2 && this.fxLevel === 1) {
         this.fxLevel = 0;
         console.info("[SERTZ] 적응형 품질 — FX 축소 모드", Math.round(fps));
+        /* v4.9.0 — 축소 모드 진입: 보스 블룸 즉시 해제 (프레임버퍼 다중 패스 = 모바일 최대 부하원) */
+        if (this.bossFilters.length > 0) this.clearBossPostFX();
       }
     } else {
       this.fxLowStreak = 0;
@@ -2429,6 +2451,8 @@ export class WorldScene extends Phaser.Scene {
           this.fxLevel = 1;
           this.fxHighStreak = 0;
           console.info("[SERTZ] 적응형 품질 — FX 복원");
+          /* v4.9.0 — 복원: 보스전이면 블룸 재적용 */
+          if (this.boss?.active && this.bossFilters.length === 0) this.applyBossPostFX(this.bossChaos);
         }
       } else {
         this.fxHighStreak = 0;
@@ -2541,6 +2565,38 @@ export class WorldScene extends Phaser.Scene {
     const aura = this.add.image(x, y - 20, "pfx_aura").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.2).setAlpha(0);
     this.tweens.add({ targets: aura, alpha: 0.75, scale: 1.35, duration: 420, yoyo: true, hold: 120, onComplete: () => aura.destroy() });
     this.tweens.add({ targets: aura, angle: 45, duration: 1100 });
+    /* v4.9.0 — 보스 등장 연출 강화 (유저 지시 #2 "룬 마법진 위 셰이더 링"):
+     *  유저 제공 VFX 팩(Hovl Studio Magic effects)의 MagicCircle2를 깔고,
+     *  그 위에 충격파 링 셰이더(ShockwaveFX) 2연격 + 빛 기둥 + 마법 별 파편.
+     *  지형 아래 깔리는 마법진( depth 1 ) + 링은 엔티티 위( depth 39 ) — 입체감 구성 */
+    if (this.textures.exists("rune_circle")) {
+      const circle = this.add.image(x, y + 14, "rune_circle")
+        .setDepth(1)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(chaos ? 0xff6a5a : 0xb07dff)
+        .setScale(0.12)
+        .setAlpha(0);
+      this.tweens.add({ targets: circle, alpha: 0.85, scale: 2.35, duration: 560, ease: "Cubic.out" });
+      this.tweens.add({ targets: circle, angle: chaos ? -190 : 155, duration: 2400 });
+      this.tweens.add({ targets: circle, alpha: 0, delay: 1600, duration: 900, onComplete: () => circle.destroy() });
+      // 빛 기둥 — 마법진에서 솟아오르는 기둥 (보스 등장의 수직 성대)
+      if (this.textures.exists("beam")) {
+        const pillar = this.add.image(x, y - 60, "beam")
+          .setDepth(24)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(chaos ? 0xff8870 : 0x9df0ff)
+          .setScale(0.7, 0.4)
+          .setAlpha(0);
+        this.tweens.add({ targets: pillar, alpha: 0.55, scaleY: 1.5, duration: 300, ease: "Cubic.out" });
+        this.tweens.add({ targets: pillar, alpha: 0, delay: 420, duration: 500, onComplete: () => pillar.destroy() });
+      }
+      // 셰이더 링 2연격 — 마법진 가장자리에서 파동 확산 (지연 스태거)
+      this.spawnShockwave(x, y + 14, chaos ? 0xff5a4a : 0xb07dff, 2.6, 480, 0.9);
+      this.time.delayedCall(190, () => this.spawnShockwave(x, y + 14, tint, 2.0, 420, 0.8));
+      // 마법 별 파편 — 마법진 위로 솟구치는 스파클
+      this.burstEmitter?.setParticleTint(chaos ? 0xff7a5a : 0xc9a6ff);
+      this.burstEmitter?.explode(14, x, y);
+    }
   }
 
   spawnCrack(x: number, y: number) {
@@ -2852,9 +2908,52 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** v4.8.0 — 충격파 링 (강한 순간 강조 — 크리티컬/약점/보스 격파).
-   *  WebGL 전용(풀 비어 있으면 no-op) — Canvas 폴백/저사양에서 기존 이펙트만 동작. */
-  spawnShockwave(x: number, y: number, tint = 0xffd76a, scale = 1, duration = 360) {
-    this.shockFX?.spawn(x, y, tint, scale, duration);
+   *  WebGL 전용(풀 비어 있으면 no-op) — Canvas 폴백/저사양에서 기존 이펙트만 동작.
+   *  v4.9.0 — alpha 파라미터 추가 (보스 등장 마법진 링 강도 조절용). */
+  spawnShockwave(x: number, y: number, tint = 0xffd76a, scale = 1, duration = 360, alpha = 0.85) {
+    this.shockFX?.spawn(x, y, tint, scale, duration, alpha);
+  }
+
+  /** v4.9.0 — 회전베기 참격 궤적 (스킬 전용 셰이더 #1).
+   *  fxLevel 0(적응형 축소 모드)에선 생략 — 기존 fx-slash 스프라이트가 담당. */
+  spawnSlashArc(x: number, y: number, spin: number, tint = 0xffb090, scale = 1, duration = 300, alpha = 0.9, start = -0.9) {
+    if (this.fxLevel === 0) return;
+    this.slashArcFx?.spawn(x, y, spin, tint, scale, duration, alpha, start);
+  }
+
+  /* v4.9.0 — 돌진 잔상 고스트 풀 (스킬 전용 이펙트 #1 — 유저 지시 #1 "돌진 잔상")
+   *  현재 애니 프레임을 그대로 찍은 ADD 블렌드 고스트가 등 뒤에 흩어지며
+   *  속도감 있는 궤적을 만든다. 풀 6장 상한 — 남발돼도 드로우콜 6장. */
+  private ghostPool: Phaser.GameObjects.Image[] = [];
+  private ghostIdx = 0;
+
+  spawnDashGhost(x: number, y: number, texKey: string, frameName: string | undefined, flipX: boolean, tint: number, scale: number) {
+    if (this.fxLevel === 0 || this.ghostPool.length === 0) return;
+    const g = this.ghostPool[this.ghostIdx];
+    this.ghostIdx = (this.ghostIdx + 1) % this.ghostPool.length;
+    if (!g || !g.scene) return;
+    const tex = this.textures.get(texKey);
+    if (!tex || (!frameName && tex.key !== "hero_idle0")) return;
+    if (frameName && !tex.has(frameName)) return;
+    this.tweens.killTweensOf(g);
+    if (frameName) g.setTexture(texKey, frameName);
+    else g.setTexture("hero_idle0");
+    g.setPosition(x, y)
+      .setFlipX(flipX)
+      .setScale(scale)
+      .setTint(tint)
+      .setAlpha(0.38)
+      .setActive(true)
+      .setVisible(true);
+    this.tweens.add({
+      targets: g,
+      alpha: 0,
+      scaleX: scale * 0.86,
+      scaleY: scale * 0.86,
+      duration: 240,
+      ease: "Quad.out",
+      onComplete: () => g.setActive(false).setVisible(false),
+    });
   }
 
   onEnemyKilled(key: EnemyKey, exp: number, spawnX: number, spawnY: number, ref?: Enemy | Boss) {
@@ -4518,8 +4617,11 @@ export class WorldScene extends Phaser.Scene {
   /* v4.1.5 — 보스전 포스트FX: 블룸(전투) + 카오스 비네트·잉걸불 오라·붉은 광원.
    *  WebGL 전용(캔버스 렌더러 폴백 무시) — 재림판 카오스는 강도 상향. */
   private applyBossPostFX(chaos: boolean) {
+    this.bossChaos = chaos; // v4.9.0 — 적응형 품질 복원 시 재적용용
     try {
       const cam = this.cameras.main;
+      /* v4.9.0 — FX 축소 모드(fxLevel 0)에선 블룸 자체를 생략 (모바일 GPU 최대 부하원) */
+      if (this.fxLevel === 0) return;
       if (this.game.renderer.type === Phaser.WEBGL && cam.filters) {
         /* v4.7.0 — Phaser 4: v3 postFX.addBloom 대신 AddEffectBloom(Threshold+Blur+ParallelFilters 합성).
          *  v3 강도(strength 0.68/0.46, steps 4)를 config로 이식 — 보스전 블룸 체감 동일 유지 */
@@ -4557,6 +4659,9 @@ export class WorldScene extends Phaser.Scene {
       /* postFX 미지원 환경 무시 */
     }
   }
+
+  /* v4.9.0 — 적응형 품질 ↔ 보스 블룸 연동용 상태 */
+  private bossChaos = false;
 
   /* v4.1.5 — 보스전 포스트FX/오라 해제 (사망·씬 전환 공통) */
   private clearBossPostFX() {
@@ -4801,6 +4906,18 @@ export class WorldScene extends Phaser.Scene {
     const onChatFocus = (v: { focus: boolean }) => {
       this.chatFocused = v.focus;
       if (v.focus) this.touchMove.set(0, 0);
+      /* v4.9.0 — DOM 텍스트 입력 중 Phaser 키보드 관리자 자체를 차단 (이름 소문자·자동이동 버그 근본 수정)
+       *  ①캡처 preventDefault: Phaser는 window에서 A~Z 키캡처를 하고 수정키 없는 소문자만
+       *    preventDefault한다 → 포커스 경로에 따라 인풋 글자가 유실됐다 (모바일 WebView 특히).
+       *  ②keyup 유실 고착: keydown은 Phaser가 받고 keyup은 인풋 swallow로 유실되면
+       *    Key.isDown이 영구 true → 대사 종료 후 한방향 자동이동.
+       *  → 입력 중엔 관리자를 꺼 어떤 키 이벤트도 게임에 도달하지 않게 하고, 경계마다
+       *    입력 상태를 완전 리셋한다. */
+      try {
+        const km = this.input.keyboard;
+        if (km?.manager) km.manager.enabled = !v.focus;
+      } catch { /* 키보드 미지원 환경 무시 */ }
+      this.resetInputState();
     };
     const onChatSend = (v: { text: string }) => net.netSendChat(v.text);
     /* v4.1.0 — 긴급 귀환 (설정창 버튼) */
@@ -5880,6 +5997,20 @@ export class WorldScene extends Phaser.Scene {
         stage: this.stageDef.key,
       });
     }
+  }
+
+  /** v4.9.0 — 입력 상태 완전 리셋 (키 고착 → 한방향 자동이동 버그 근본 차단)
+   *  호출 시점: 텍스트 입력 게이트 경계(채팅/이름 패널 열·닫), 인트로 이름 입력 시작/종료,
+   *  대사 종료. keydown은 도달했는데 keyup이 DOM 인풋 swallow로 유실돼 Key.isDown이
+   *  true로 남는(=resolveDirVec가 마지막 방향을 영구 유지하는) 상태를 즉시 청소한다. */
+  private resetInputState() {
+    this.touchMove.set(0, 0);
+    this.attackQueued = false;
+    this.dirOrder.x.length = 0;
+    this.dirOrder.y.length = 0;
+    try {
+      for (const k of Object.values(this.keys)) k?.reset?.();
+    } catch { /* 키맵 미초기화 단계 무시 */ }
   }
 
   /** 방향키 우선순위 결정 — 같은 축에서 마지막으로 누른 키가 이김 (지시 #16)
@@ -7764,6 +7895,7 @@ export class WorldScene extends Phaser.Scene {
         // 이름 입력 중 게임 일시 정지 (업데이트 루프 차단)
         this.dialoguing = true;
         this.player.setVelocity(0, 0);
+        this.resetInputState(); // v4.9.0 — 이동 키 고착이 이름 입력 후 자동이동으로 이어지지 않게
         EventBus.emit("name:ask");
       }
     }
@@ -7773,6 +7905,7 @@ export class WorldScene extends Phaser.Scene {
   private finishIntro(name: string) {
     this.introStep = 3;
     this.dialoguing = false;
+    this.resetInputState(); // v4.9.0 — 우물 이름 짓고 한방향 자동이동 버그 차단 (keyup 유실 고착 청소)
     setPlayerName(name);
     // 플레이어 이름표 (머리 위) — v2.4: 이어하기 경로와 공용 생성기 사용
     this.ensurePlayerTag();
@@ -8924,6 +9057,7 @@ export class WorldScene extends Phaser.Scene {
     this.dialogueSince = 0; // v3.3.0 — 붙임 시각 리셋
     this.portalHoldSince = 0; // v2.7 — 정상 종료면 강제개방 카운터도 리셋
     this.physics.world.resume();
+    this.resetInputState(); // v4.9.0 — 대사 중 유실된 keyup 고착 청소 (자동이동 예방)
     EventBus.emit("dialogue:hide");
     // 대화 닫기 키의 잔여 justDown 소비 — 스페이스로 대화 넘긴 직후 공격이 새어나가는 것 방지
     if (this.keys) {
@@ -9071,6 +9205,7 @@ export class WorldScene extends Phaser.Scene {
     this.questTimer?.remove();
     this.scale.off("resize", this.applyCameraZoom, this);
     this.shockFX?.destroy(); // v4.8.0 — 셰이더 링 풀 정리
+    this.slashArcFx?.destroy(); // v4.9.0 — 참격 궤적 풀 정리
     EventBus.emit("dialogue:hide");
   }
 }

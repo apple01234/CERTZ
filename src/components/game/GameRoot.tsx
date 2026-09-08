@@ -12,6 +12,7 @@ import { GamePanels } from "./Panels";
 import { ChatBox } from "./ChatBox";
 import { PartyWidget } from "./PartyWidget";
 import { FriendsWidget } from "./FriendsWidget";
+import { AuthPanel } from "./AuthPanel"; // v4.9.0 — 자체/SNS 계정 + 클라우드 세이브
 import * as audio from "@/game/audio";
 import { useGameUi } from "./useGameUi";
 import { loadMuted, writeMuted } from "@/game/config";
@@ -155,6 +156,8 @@ export default function GameRoot() {
             <PartyWidget />
             {/* 친구 위젯 (v2.1 — 친구코드·고유번호) */}
             <FriendsWidget />
+            {/* 계정 위젯 (v4.9.0 — 자체 회원가입/로그인 + SNS 연동 + 클라우드 세이브) */}
+            <AuthPanel />
           </>
         )}
 

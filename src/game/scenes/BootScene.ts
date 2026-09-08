@@ -174,6 +174,9 @@ const ASSET_LIST = [
    *  포탈·수집 마법 별/카오스 잉걸불 화염 — Kenney 무료 이펙트 완전 대체 */
   "cfxr_impact", "cfxr_star", "cfxr_mstar", "cfxr_flamme",
   "cfxr_puff", /* v4.1.9 — 사망 연기 단일 패프 (구름 4장 시트 소형화, smoke 시트 대체) */
+  /* v4.9.0 — 유저 제공 VFX 팩(Hovl Studio Magic effects) 신규 채택:
+   *  rune_circle = 보스 등장 룬 마법진 / slash_arc = 회전베기 참격 궤적 오버레이 */
+  "rune_circle", "slash_arc",
   /* v4.1.8 — Unity 에셋스토어 유료 SPUM 캐릭터: Unity 프리팹을 정밀 파싱해 조합한
    *  프리미엄 픽셀 NPC 14종 — 챕터 마을 주민/상점/직업교관 비주얼 전면 업그레이드 */
   "spum_villager_m", "spum_villager_f", "spum_knight", "spum_elf", "spum_mage",
