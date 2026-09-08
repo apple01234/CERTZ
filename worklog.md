@@ -1277,3 +1277,10 @@ Work Log:
 - [⑫ 3D 에셋] research/ 원본은 세션 리셋으로 디스크에서 유실(git 무시 폴더라 GitHub에도 없음). 게임 사용분은 전부 public/ 추출물로 반영돼 게임 자체는 영향 없음 — 유실 사실만 보고
 - [검증] tsc — 신규 에러 0(Phaser4 선언 누락분은 기존 ignoreBuildErrors 유지) · bun run build 성공 · 서버 재기동 후 /api/market /api/auth/sns 정상 JSON · agent-browser 실측: 타이틀 짤림 해소 → 월드 → 거래소 2탭 크래시 0 → 캐시상점(명칭·0르쯔 0건·무쇠상자 유·분노 물약 무) → 인벤(반지 1/2 장착 후 재장착 차단·캐시/기타 버프 분리·상자 개봉 보상 팝업 인벤 위) → GM e2e(admin 등록→role=admin→GM NPC 4오브젝트 표시, 비관리자 tester01→전부 숨김) → 등급업 버튼 렌더 — 전부 통과
 - [버저닝] versionCode 68 / 1.0.3 — build.gradle·server.js APK_MIRROR·next.config.ts APK_DL·apk-guide.html·APK_다운로드_안내.txt·Overlays 배지 6곳 싱크
+- [빌드/릴리스] 툴체인 재구축(세션 리셋 소실 — Temurin 21.0.12 + cmdline-tools + android-36 + build-tools 35.0.0) → scripts/build_apk.sh(JAVA_HOME/ANDROID_HOME env 명시) → BUILD SUCCESSFUL 9m22s → download/SERTZ-v1.0.3.apk 105,121,298B · aapt 실측 versionCode 68/1.0.3 · md5 1bdce61a3eef95b9d32c4f2ff20bcefd → GitHub Release v1.0.3(id 385127557) 업로드 → 재다운로드 md5 일치 → 구버전 에셋 정리(v4.2.0~v4.8.0·v1.0.1 APK/AAB 삭제 — v1.0.2는 AAB 포함 롤백용 유지)
+- [릴리스 스크립트 트러블슈팅] remote URL 토큰이 "x-access-token:ghp_…" 형태라 접두사 미제거 시 Bad credentials — sed로 접두사 제거 후 정상(make_release_v103.sh 반영)
+- [서버 운영] node server.js 재기동(구프로세스는 v4.5.0 server.js라 /api 미들웨어 부재 상태였음 — 유수재현과 동일 조건) + SERTZ_ADMIN_USERS=admin,apple01234 주입 · supervisor.sh에도 기본값 반영
+
+Stage Summary:
+- v1.0.3 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.3/SERTZ-v1.0.3.apk (md5 1bdce61a…, versionCode 68, 105MB)
+- 유저 13항목 처리: ①UI/글자짤림(타이틀 배지·크레딧·저높이 안내줄) ②마을 관리자 UI 잔존(GM 인터랙터 비관리자 탐색 제외) ③GM 로그인=계정패널 안내+admin/apple01234 기본 등록(실측: admin 가입→role=admin→GM NPC 표시, 일반유저→완전 숨김) ④거래소 크래시 근본 수정(APK API base+응답검증 — 2탭 실측 크래시 0) ⑤캐시상점 명칭 ⑥0르쯔 제거(골드상점 아이템 21종 캐시목록 제외+특가풀 정리) ⑦펫 이름 6종 실제 디자인과 일치 ⑧반지 중복 장착 금지(UI+로직 실측) ⑨등급업 큐브 v1.0.2 버튼 실측 확인 ⑩일반 버프 기타 탭 이동(캐시 탭=왕의 가호만) ⑪상자 개봉 보상 팝업 인벤 위(z-[70]) ⑫3D 원본 에셋은 세션 리셋으로 유실 — 게임 반영분은 public/에 전부 존재, 보고만 ⑬APK v1.0.3 빌드+릴리스 완료
