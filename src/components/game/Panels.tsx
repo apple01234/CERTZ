@@ -17,6 +17,9 @@ import { getPlayerName, loadSave } from "@/game/config"; // v2.4 — 이름 변�
 import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
 import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
+import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP } from "@/game/pass"; // v4.5.0 — 시즌 패스
+import { chestOdds } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법)
+import type { BmGrant } from "@/game/data";
 
 /**
  * 2D MMORPG 기본 요소 UI — 상점 / 인벤토리 패널
@@ -332,6 +335,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
   const dayKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
   const DEALS = dailyDeals(dayKey);
   const [cat, setCat] = useState("all");
+  const [odds, setOdds] = useState(false); // v4.5.0 — 확률 공시 펼침
   const catOf = (k: ItemKey) => (k.startsWith("chest_") || k.startsWith("pack_") ? "gacha" : ITEMS[k].kind);
   const stock = BM_STOCK.filter((k) => cat === "all" || catOf(k) === cat);
   const CATS: { id: string; label: string }[] = [
@@ -365,6 +369,35 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
             <button onClick={onClose} aria-label="BM 상점 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
           </div>
         </div>
+
+        {/* v4.5.0 — 시즌 패스 배너 (배틀패스 = 리텐션+수익 듀얼 장치 — BM 문서 표준) */}
+        {rpg.pass && (
+          <button
+            onClick={() => EventBus.emit("ui:panel", { panel: "pass" })}
+            className="mb-1.5 flex w-full items-center gap-2 rounded-lg border border-amber-300/40 bg-gradient-to-r from-amber-400/20 to-transparent px-2.5 py-2 text-left hover:from-amber-400/30 active:scale-[0.99]"
+          >
+            <span className="text-lg leading-none">🎫</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[12px] font-black text-amber-200">시즌 패스 — {rpg.pass.season} · 남은 {rpg.pass.daysLeft}일</span>
+              <span className="block truncate text-[10px] text-white/50">현재 Lv.{rpg.pass.lv}/30 · {rpg.pass.prem ? "프리미엄 보유 중" : `프리미엄 해금 ${30}💎 — 도달분 소급 수령`}</span>
+            </span>
+            <span className="text-white/40">›</span>
+          </button>
+        )}
+
+        {/* v4.5.0 — 스타터팩 하이라이트 (미구매 시 — 첫 결제 D0~D3 유도, BM 문서 표준) */}
+        {!rpg.starterPackBought && (
+          <div className="mb-1.5 rounded-lg border-2 border-amber-300/60 bg-amber-400/10 px-2.5 py-2">
+            <p className="text-[12px] font-black text-amber-200">🎒 신규 용사 추천 — 스타터팩</p>
+            <p className="mt-0.5 text-[10px] text-white/55">HP 물약 ×5 + 상급 HP ×3 + 엘릭서 ×1 + 골드 2,000G — 첫 성장 한세트</p>
+            <button
+              onClick={() => EventBus.emit("rpg:bmBuy", { key: "pack_starter" })}
+              className="mt-1.5 w-full rounded-lg bg-amber-400 px-3 py-1.5 text-[12px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
+            >
+              스타터팩 열기 — {ITEMS.pack_starter.bmPrice ?? 12}💎
+            </button>
+          </div>
+        )}
 
         {/* v4.3.0 — 일일 특가 스트립 (자정 리셋 — FOMO 루프) */}
         <div className="mb-1.5 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] px-2.5 py-2">
@@ -444,6 +477,41 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
 
         {/* v3.0.15 (#6) — 자동 사용 설정은 가방(인벤토리)으로 이동 */}
 
+        {/* v4.5.0 — 확률 공시 (게임산업법 확률형 아이템 정보 공시 — CHEST_TABLES/가챠 가중치 단일 출처) */}
+        <button
+          onClick={() => setOdds((v) => !v)}
+          className="mt-1.5 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-[11px] font-black text-white/70 hover:bg-black/60 active:scale-[0.99]"
+        >
+          {odds ? "▲" : "▼"} 확률형 아이템 확률 정보 (법정 공시)
+        </button>
+        {odds && (
+          <div className="mt-1.5 rounded-lg border border-white/15 bg-black/50 p-2.5">
+            <p className="text-[11px] font-black text-cyan-200">확률 정보 — 게임산업법 공시 (2024.3.28 시행)</p>
+            <p className="mt-0.5 text-[9px] leading-relaxed text-white/40">아래 확률은 게임 로직과 동일한 테이블에서 실시간 계산됩니다. 일일 특가는 표시 가격의 30% 할인이며 확률에는 영향을 주지 않습니다.</p>
+            {["chest_iron", "chest_silver", "chest_gold", "chest_legend"].map((k) => (
+              <div key={k} className="mt-2 rounded-md bg-white/[0.03] px-2 py-1.5">
+                <p className="text-[10px] font-black text-white/75">{ITEMS[k as ItemKey].name}</p>
+                {chestOdds(k).map((o) => (
+                  <p key={o.label} className="flex justify-between text-[9px] leading-snug text-white/55">
+                    <span className="pr-2">{o.label}</span>
+                    <span className="shrink-0 font-bold text-white/75">{o.pct}%</span>
+                  </p>
+                ))}
+              </div>
+            ))}
+            <div className="mt-2 rounded-md bg-white/[0.03] px-2 py-1.5">
+              <p className="text-[10px] font-black text-white/75">피규어 가챠 (혜택 — 바르가 원정대)</p>
+              {([0, 1, 2, 3] as const).map((g) => (
+                <p key={g} className="flex justify-between text-[9px] leading-snug text-white/55">
+                  <span>{FIGURE_GRADE_META[g].name}</span>
+                  <span className="font-bold text-white/75">{FIGURE_GRADE_META[g].weight}%</span>
+                </p>
+              ))}
+              <p className="mt-1 text-[8px] text-white/35">중복 피규어는 피규어 조각으로 변환됩니다 (노말 5 / 레어 15 / 에픽 40 / 전설 100)</p>
+            </div>
+          </div>
+        )}
+
         {/* v4.1.0 — 광고 보상 + 구글 플레이 충전 (유저 지시 #10 — BM 수익 연동) */}
         <div className="mt-2.5 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] px-2.5 py-2">
           <p className="text-[12px] font-black text-amber-200">에메랄드 충전소</p>
@@ -453,7 +521,22 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
           >
             광고 보고 보상 받기 — 에메랄드 +1 · 골드 +500 (일 5회)
           </button>
-          <p className="mt-0.5 text-[10px] text-white/40">짧은 광고를 끝까지 보면 바로 지급 — 폰 버전(APK) 기준</p>
+          {/* v4.5.0 — 보상형 광고 확장 (무료 상자/버프 물약 — 광고 포인트 3종) */}
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <button
+              onClick={() => EventBus.emit("rpg:adChest")}
+              className="rounded-lg border border-amber-300/40 bg-amber-400/10 px-2 py-1.5 text-[10px] font-black text-amber-100 hover:bg-amber-400/20 active:scale-95"
+            >
+              광고 보고 무료 상자 ({rpg.isekai?.daily?.adsChest ?? 0}/3)
+            </button>
+            <button
+              onClick={() => EventBus.emit("rpg:adDrop")}
+              className="rounded-lg border border-purple-300/40 bg-purple-400/10 px-2 py-1.5 text-[10px] font-black text-purple-100 hover:bg-purple-400/20 active:scale-95"
+            >
+              광고 보고 버프 물약 ({rpg.isekai?.daily?.adsDrop ?? 0}/2)
+            </button>
+          </div>
+          <p className="mt-0.5 text-[10px] text-white/40">짧은 광고를 끝까지 보면 바로 지급 — 폰 버전(APK) 기준 · 구독자는 보상 2배+8회</p>
           <div className="mt-2 grid grid-cols-4 gap-1.5">
             {GEM_SKUS.map((s) => (
               <button
@@ -467,6 +550,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
             ))}
           </div>
           <p className="mt-1 text-[10px] text-white/40">구글 플레이 결제 — Play Console 상품 등록 후 폰 버전에서 구매 가능</p>
+          <p className="mt-0.5 text-[10px] text-white/40">웹샵(자체 결제) 오픈 예정 — 웹 결제 시 에메랄드 +10% 보너스</p>
         </div>
 
         <p className="mt-2 text-center text-[10px] text-white/40">에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1 · ESC로 닫기</p>
@@ -1809,6 +1893,138 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
   );
 }
 
+/* ================= v4.5.0 — 시즌 패스 패널 (배틀패스 — BM 문서 표준) =================
+ *  "배틀패스의 핵심 가치는 수익보다 리텐션" — 무료/프리미엄 듀얼 트랙 30레벨,
+ *  가로 스크롤 트랙 + 수령 가능 보상 앰버 발광 (도파민: 시각적 진행+미수령 가시화). */
+
+/** BmGrant → 트랙 셀 아이콘 (아이템/버프는 실제 아이콘, 재화는 전용 이미지) */
+function grantIcon(g: BmGrant, size = 22) {
+  if (g.item && ITEMS[g.item]) return <ItemIcon icon={ITEMS[g.item].icon} tier={ITEMS[g.item].tier} size={size} />;
+  if (g.buff && ITEMS[g.buff]) return <ItemIcon icon={ITEMS[g.buff].icon} tier={ITEMS[g.buff].tier} size={size} />;
+  if (g.emerald) return <img src="/assets/item_pendant_arcane.webp" alt="" style={{ width: size, height: size, imageRendering: "pixelated" }} />;
+  if (g.gold) return <img src="/assets/item_coin.webp" alt="" style={{ width: size, height: size, imageRendering: "pixelated" }} />;
+  if (g.ticket) return <span className="text-[15px] leading-none">🎟</span>;
+  if (g.shard) return <span className="text-[15px] leading-none text-cyan-200">◈</span>;
+  return <span className="text-[13px]">?</span>;
+}
+
+type PassCellState = "claimed" | "claimable" | "locked" | "needprem";
+
+function PassCell({ g, state, onClick, goldRow }: { g: BmGrant; state: PassCellState; onClick: () => void; goldRow?: boolean }) {
+  const base = "relative flex h-11 w-11 flex-col items-center justify-center rounded-lg border-2 transition-colors";
+  const style = state === "claimed"
+    ? "border-emerald-400/60 bg-emerald-400/15"
+    : state === "claimable"
+      ? goldRow
+        ? "border-amber-300 bg-amber-400/25 shadow-[0_0_10px_rgba(252,211,77,0.5)] animate-pulse"
+        : "border-amber-300/80 bg-amber-400/15 shadow-[0_0_8px_rgba(252,211,77,0.35)]"
+      : state === "needprem"
+        ? "border-amber-300/25 bg-amber-400/[0.04]"
+        : "border-white/10 bg-white/[0.03] opacity-45";
+  return (
+    <button
+      onClick={onClick}
+      disabled={state !== "claimable"}
+      title={g.label}
+      className={`${base} ${style} ${state === "claimable" ? "active:scale-90" : "cursor-default"}`}
+    >
+      {grantIcon(g)}
+      {state === "claimed" && <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-emerald-900/45 text-[15px] font-black text-emerald-200">✓</span>}
+      {state === "needprem" && <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/45 text-[13px]">🔒</span>}
+    </button>
+  );
+}
+
+export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const p = rpg.pass;
+  if (!p) {
+    return (
+      <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50" onPointerDown={onClose}>
+        <div className="rounded-xl border-2 border-amber-300/60 sertz-panel bg-slate-950/95 p-4 text-center text-[12px] text-white/70" onPointerDown={(e) => e.stopPropagation()}>
+          월드 진입 후 이용할 수 있다
+          <button onClick={onClose} className="mt-2 block w-full rounded-lg bg-amber-400 px-3 py-1.5 text-[12px] font-black text-slate-900">닫기</button>
+        </div>
+      </div>
+    );
+  }
+  const lvNow = p.lv;
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
+      <div className="max-h-[min(88svh,660px)] w-[min(94vw,520px)] overflow-y-auto rounded-xl border-2 border-amber-300/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="mb-2 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-black text-amber-200">🎫 시즌 패스 — {p.season}</p>
+            <p className="text-[10px] text-white/50">남은 {p.daysLeft}일 · 매월 1일 새 시즌 개시</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <EmeraldChip emerald={rpg.emerald} />
+            <button onClick={onClose} aria-label="시즌 패스 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+          </div>
+        </div>
+
+        {/* 진행 카드 */}
+        <div className="mb-2 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] px-2.5 py-2">
+          <div className="flex items-baseline justify-between">
+            <p className="text-[13px] font-black text-amber-100">현재 Lv.{lvNow}<span className="ml-1 text-[10px] font-normal text-white/45">/{PASS_MAX_LV}</span></p>
+            <p className="text-[10px] text-white/50">{lvNow >= PASS_MAX_LV ? "시즌 만렙!" : `다음 레벨까지 ${PASS_LV_XP - p.lvXp} XP`}</p>
+          </div>
+          <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-black/50">
+            <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-200 transition-[width]" style={{ width: `${Math.min(100, (p.lvXp / PASS_LV_XP) * 100)}%` }} />
+          </div>
+          <p className="mt-1 text-[9px] text-white/40">XP 획득: 토벌 +1 · 보스 +30 · 일일 퀘스트 수령 +40 · 게이트 웨이브×2</p>
+        </div>
+
+        {/* 프리미엄 박스 */}
+        {p.prem ? (
+          <div className="mb-2 rounded-lg border border-amber-300/50 bg-amber-400/10 px-2.5 py-1.5 text-[11px] font-black text-amber-200">✦ 프리미엄 트랙 해금 중 — 아래 금색 줄 보상을 수령하세요</div>
+        ) : (
+          <div className="mb-2 rounded-lg border-2 border-amber-300/60 bg-amber-400/10 px-2.5 py-2">
+            <p className="text-[12px] font-black text-amber-200">프리미엄 트랙 해금 — {PASS_PREMIUM_PRICE}💎</p>
+            <p className="mt-0.5 text-[10px] text-white/55">에메랄드·시즌 한정 펫·치장·전설 상자 트랙 + 구매 즉시 도달분 소급 수령</p>
+            <button onClick={() => EventBus.emit("rpg:passBuy")} className="mt-1.5 w-full rounded-lg bg-amber-400 px-3 py-1.5 text-[12px] font-black text-slate-900 hover:bg-amber-300 active:scale-95">프리미엄 해금하기</button>
+          </div>
+        )}
+
+        {/* 트랙 — 30레벨 × 무료/프리미엄 2줄 (가로 스크롤) */}
+        <div className="overflow-x-auto rounded-lg border border-white/10 bg-black/30 p-2">
+          <div className="flex min-w-max gap-1.5">
+            {PASS_TRACKS.map((t, i) => {
+              const lv = i + 1;
+              const reached = lv <= lvNow;
+              return (
+                <div key={lv} className="flex w-12 shrink-0 flex-col items-center gap-1">
+                  <span className={`text-[9px] font-black ${reached ? "text-amber-200" : "text-white/35"}`}>{lv}</span>
+                  {t.free && (
+                    <PassCell
+                      g={t.free}
+                      state={p.claimedF.includes(lv) ? "claimed" : reached ? "claimable" : "locked"}
+                      onClick={() => EventBus.emit("rpg:passClaim", { lv, track: "free" })}
+                    />
+                  )}
+                  {t.prem && (
+                    <PassCell
+                      g={t.prem}
+                      goldRow
+                      state={p.claimedP.includes(lv) ? "claimed" : reached && p.prem ? "claimable" : reached ? "needprem" : "locked"}
+                      onClick={() => EventBus.emit("rpg:passClaim", { lv, track: "prem" })}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="mt-1.5 flex items-center justify-between text-[9px] text-white/40">
+          <span>위: 무료 트랙 · 아래: 프리미엄 트랙 (금색)</span>
+          <span>탭하면 즉시 수령</span>
+        </div>
+        <p className="mt-2 text-center text-[10px] text-white/40">시즌 종료 시 미수령 보상은 소멸된다 — 매월 1일 리셋 · ESC로 닫기</p>
+      </div>
+    </div>
+  );
+}
+
 export function GamePanels({
   panel,
   rpg,
@@ -1835,6 +2051,7 @@ export function GamePanels({
   if (panel === "boss") return <BossReplayPanel rpg={rpg} onClose={onClose} />; // v3.0.25 — 보스 재도전 전용 창 (퀘스트창과 분리)
   if (panel === "isekai") return <IsekaiPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 바르가 원정대 (피규어/배지/룬/성좌/업적/랭킹)
   if (panel === "benefit") return <BenefitPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 혜택 (출석부/일일 퀘스트/쿠폰)
+  if (panel === "pass") return <PassPanel rpg={rpg} onClose={onClose} />; // v4.5.0 — 시즌 패스 (배틀패스)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
 }
@@ -2944,6 +3161,36 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
           })}
         </div>
 
+        {/* v4.5.0 — SERTZ 패스 (구독 특전 — 월정액 LTV 루프, BM 문서 표준) */}
+        <div className="mb-2.5 rounded-lg border border-violet-300/40 bg-violet-400/10 px-2.5 py-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[12px] font-black text-violet-200">SERTZ 패스 (구독 특전)</p>
+            {rpg.sub?.active ? (
+              <span className="rounded bg-violet-400/30 px-1.5 py-0.5 text-[9px] font-black text-violet-100">구독 중 · 잔여 {rpg.sub.left}일</span>
+            ) : null}
+          </div>
+          {rpg.sub?.active ? (
+            <ul className="mt-1 text-[10px] leading-relaxed text-white/60">
+              <li>· 출석 시 에메랄드 +3 (출석 보상에 자동 합산)</li>
+              <li>· 광고 보상 2배 (💎+2 · 골드+1,000)</li>
+              <li>· 광고 일일 한도 5 → 8회</li>
+            </ul>
+          ) : (
+            <>
+              <ul className="mt-1 text-[10px] leading-relaxed text-white/60">
+                <li>· 매일 출석 시 에메랄드 +3 (30일간 총 +90💎)</li>
+                <li>· 광고 보상 2배 + 광고 한도 8회</li>
+              </ul>
+              <button
+                onClick={() => EventBus.emit("rpg:subBuy")}
+                className="mt-1.5 w-full rounded-lg bg-violet-400 px-3 py-1.5 text-[12px] font-black text-slate-900 hover:bg-violet-300 active:scale-95"
+              >
+                구독하기 — 50💎 / 30일
+              </button>
+            </>
+          )}
+        </div>
+
         {/* 일일 퀘스트 */}
         <p className="mb-1 text-[11px] font-bold text-white/60">일일 퀘스트 — 매일 초기화</p>
         <div className="mb-2.5 flex flex-col gap-1.5">
@@ -2976,9 +3223,10 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
             <p className="text-sm font-black text-lime-200">{ik?.tickets?.closet ?? 0}/2 남음</p>
           </div>
         </div>
-        <div className="mb-2.5 grid grid-cols-2 gap-1.5">
+        <div className="mb-2.5 grid grid-cols-3 gap-1.5">
           <button onClick={() => EventBus.emit("ui:panel", { panel: "isekai" })} className="rounded-lg border border-purple-300/50 bg-purple-400/15 px-2 py-2 text-[11px] font-black text-purple-100 hover:bg-purple-400/25 active:scale-95">바르가 원정대 열기</button>
           <button onClick={() => EventBus.emit("ui:panel", { panel: "gm" })} className="rounded-lg border border-amber-300/50 bg-amber-400/10 px-2 py-2 text-[11px] font-black text-amber-100 hover:bg-amber-400/20 active:scale-95">GM 콘텐츠 입장</button>
+          <button onClick={() => EventBus.emit("ui:panel", { panel: "pass" })} className="rounded-lg border border-amber-300/50 bg-amber-400/15 px-2 py-2 text-[11px] font-black text-amber-100 hover:bg-amber-400/25 active:scale-95">시즌 패스 🎫</button>
         </div>
 
         {/* 쿠폰 — v4.1.0: 입력 중 게임 단축키/패널 팝업 완전 차단 */}

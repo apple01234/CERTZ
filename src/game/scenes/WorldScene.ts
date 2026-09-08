@@ -25,6 +25,7 @@ import {
 } from "../isekai";
 import { viewZoom } from "../PhaserGame";
 import { showRewardedAd, purchaseGems, GEM_SKUS } from "../ads"; // v4.1.0 — BM 수익 연동
+import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft } from "../pass"; // v4.5.0 — 시즌 패스/구독
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import * as audio from "../audio";
 import {
@@ -228,6 +229,16 @@ export class WorldScene extends Phaser.Scene {
   private dailyCloset = 0;
   private dailyClaimed: string[] = [];
   private dailyAds = 0; // v4.1.0 — 오늘 본 광고 보상 횟수 (일 5회 제한)
+  /* v4.5.0 — 시즌 패스 + 구독 + 광고 확장 카운터 (BM 표준화) */
+  private passSeason = "";
+  private passXp = 0;
+  private passPrem = false;
+  private passClaimedF: number[] = [];
+  private passClaimedP: number[] = [];
+  private subUntil = 0;
+  private dailyAdChest = 0;
+  private dailyAdDrop = 0;
+  private starterPackBought = false;
   private ticketDate = "";
   private ticketGate = 0;
   private ticketCloset = 0;
@@ -888,6 +899,21 @@ export class WorldScene extends Phaser.Scene {
       this.dailyCloset = savedPlayer.daily?.closet ?? 0;
       this.dailyClaimed = [...(savedPlayer.daily?.claimed ?? [])];
       this.dailyAds = savedPlayer.daily?.ads ?? 0;
+      this.dailyAdChest = savedPlayer.daily?.adsChest ?? 0;
+      this.dailyAdDrop = savedPlayer.daily?.adsDrop ?? 0;
+      /* v4.5.0 — 시즌 패스/구독 복원 (시즌 키가 다르면 신규 시즌 — XP/수령 기록 리셋) */
+      const sp = savedPlayer.pass;
+      if (sp && sp.season === seasonKey()) {
+        this.passSeason = sp.season;
+        this.passXp = sp.xp ?? 0;
+        this.passPrem = !!sp.prem;
+        this.passClaimedF = [...(sp.claimedF ?? [])];
+        this.passClaimedP = [...(sp.claimedP ?? [])];
+      } else {
+        this.passSeason = seasonKey();
+      }
+      this.subUntil = savedPlayer.sub?.until ?? 0;
+      this.starterPackBought = !!savedPlayer.starterPackBought;
       this.ticketDate = savedPlayer.tickets?.date ?? "";
       this.ticketGate = savedPlayer.tickets?.gate ?? 0;
       this.ticketCloset = savedPlayer.tickets?.closet ?? 0;
@@ -2836,6 +2862,8 @@ export class WorldScene extends Phaser.Scene {
     }
     /* 일일 퀘스트 — 토벌 카운트 (게이트/던전 처치 포함) */
     this.addDailyHunt();
+    /* v4.5.0 — 시즌 패스 XP (토벌 +1 — 사냥 자체가 패스 진행으로 이어진다) */
+    this.addPassXp(PASS_XP_RULES.hunt);
     /* v3.0.15 (#20) — 콤보킬 보너스 경험치: 5초 내 연속 킬 시 콤보×5% (최대 +50%).
      *  콤보 3 이상부터 "연속킬 xN" 플로팅 텍스트로 연출 */
     const nowMs = this.time.now;
@@ -3080,6 +3108,7 @@ export class WorldScene extends Phaser.Scene {
   private initIsekaiDaily() {
     this.ensureDaily();
     this.ensureTickets();
+    this.ensurePassSeason(); // v4.5.0 — 시즌 키 검증 (월이 바뀌면 새 시즌 개시)
     this.checkAttendance();
     this.checkOfflineReward();
     this.save();
@@ -3095,6 +3124,8 @@ export class WorldScene extends Phaser.Scene {
       this.dailyCloset = 0;
       this.dailyClaimed = [];
       this.dailyAds = 0;
+      this.dailyAdChest = 0; // v4.5.0 — 광고 무료 상자/버프 카운터 리셋
+      this.dailyAdDrop = 0;
     }
   }
 
@@ -3104,6 +3135,32 @@ export class WorldScene extends Phaser.Scene {
       this.ticketDate = t;
       this.ticketGate = TICKETS_PER_DAY.gate;
       this.ticketCloset = TICKETS_PER_DAY.closet;
+    }
+  }
+
+  /* ================= v4.5.0 — 시즌 패스 + 구독 (BM 표준화) ================= */
+
+  /** 시즌 키 검증 — 월이 바뀌면 XP/수령 기록 리셋 (새 시즌 자동 개시) */
+  private ensurePassSeason() {
+    const sk = seasonKey();
+    if (this.passSeason !== sk) {
+      this.passSeason = sk;
+      this.passXp = 0;
+      this.passPrem = false;
+      this.passClaimedF = [];
+      this.passClaimedP = [];
+    }
+  }
+
+  /** 시즌 패스 XP 부여 — 레벨업 시 배너 (도파민: 진행 가시화) */
+  private addPassXp(n: number) {
+    this.ensurePassSeason();
+    const before = passLevel(this.passXp);
+    this.passXp += n;
+    const after = passLevel(this.passXp);
+    if (after > before) {
+      audio.sfx.questDone();
+      EventBus.emit("banner:show", { text: `시즌 패스 Lv.${after} 달성! — 패스 보상을 수령하세요` });
     }
   }
 
@@ -3123,12 +3180,18 @@ export class WorldScene extends Phaser.Scene {
     if (g.emerald) this.player.emerald += g.emerald;
     if (g.tickets) this.gachaTickets += g.tickets;
     if (g.shards) this.shards += g.shards;
+    const lines: RewardPopupState["lines"] = [
+      { text: rw.label, color: "#ffd76a" },
+      { text: `누적 출석 ${this.attendCount}일 · 14일 사이클`, color: "#a8ecff" },
+    ];
+    /* v4.5.0 — SERTZ 패스(구독) 특전: 출석 시 에메랄드 +3 (월정액 LTV 루프) */
+    if (subActive(this.subUntil)) {
+      this.player.emerald += SUB_DAILY_EMERALD;
+      lines.push({ text: `구독 특전 — 에메랄드 +${SUB_DAILY_EMERALD}`, color: "#c08aff" });
+    }
     EventBus.emit("reward:show", {
       title: `출석 체크 — ${((this.attendCount - 1) % ATTEND_CYCLE) + 1}일차`,
-      lines: [
-        { text: rw.label, color: "#ffd76a" },
-        { text: `누적 출석 ${this.attendCount}일 · 14일 사이클`, color: "#a8ecff" },
-      ] satisfies RewardPopupState["lines"],
+      lines,
     });
     audio.sfx.questDone();
   }
@@ -3312,6 +3375,7 @@ export class WorldScene extends Phaser.Scene {
         if (g.gold) p.addGold(g.gold);
         if (g.emerald) p.emerald += g.emerald;
         if (g.tickets) this.gachaTickets += g.tickets;
+        this.addPassXp(PASS_XP_RULES.daily); // v4.5.0 — 일일 퀘스트 수령 시 패스 XP +40
         EventBus.emit("banner:show", { text: `일일 퀘스트 완료 — ${g.label}!` });
         audio.sfx.questDone();
         this.save();
@@ -3671,6 +3735,7 @@ export class WorldScene extends Phaser.Scene {
     if (!early) lines.push({ text: `뽑기권 +${ticketReward}`, color: "#c08aff" });
     const record = waves > this.gateBest && !early;
     if (record) this.gateBest = waves;
+    if (!early) this.addPassXp(waves * PASS_XP_RULES.gateWave); // v4.5.0 — 정상 종료 시 웨이브×2 패스 XP
     if (record) lines.push({ text: `신기록! 최고 ${this.gateBest} 웨이브`, color: "#7dffa8" });
     /* ★ 달성 보상 (최초 1회 — 정상 종료만) */
     if (!early) for (let i = 0; i < GATE_STAR_WAVES.length; i++) {
@@ -4430,6 +4495,7 @@ export class WorldScene extends Phaser.Scene {
       this.registry.set("runKills", this.totalKills);
       /* v4.1.4 — 보스/카오스 처치 누적 (도전과제 지표) */
       this.bossKillCount++;
+      this.addPassXp(PASS_XP_RULES.boss); // v4.5.0 — 재림 보스도 패스 XP +30
       if (this.boss?.chaos) this.chaosKillCount++;
       this.cameras.main.shake(400, 0.01);
       this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
@@ -4465,6 +4531,7 @@ export class WorldScene extends Phaser.Scene {
     this.registry.set("runKills", this.totalKills);
     /* v4.1.4 — 보스/카오스 처치 누적 (도전과제 지표) */
     this.bossKillCount++;
+    this.addPassXp(PASS_XP_RULES.boss); // v4.5.0 — 스토리 보스 패스 XP +30
     if (this.boss?.chaos) this.chaosKillCount++;
     /* v3.0.6 (지시 #1) — 보스 처치 시 에메랄드 +2 (BM 상점 재화) */
     this.player.emerald += 2;
@@ -4652,8 +4719,10 @@ export class WorldScene extends Phaser.Scene {
     const onAdReward = async () => {
       if (!this.player) return;
       this.ensureDaily();
-      if (this.dailyAds >= 5) {
-        EventBus.emit("banner:show", { text: "오늘의 광고 보상은 끝났다 (일 5회) — 내일 다시" });
+      /* v4.5.0 — 구독자 광고 한도 5→8회 (SERTZ 패스 특전) */
+      const adLimit = subActive(this.subUntil) ? SUB_AD_LIMIT : 5;
+      if (this.dailyAds >= adLimit) {
+        EventBus.emit("banner:show", { text: `오늘의 광고 보상은 끝났다 (일 ${adLimit}회${adLimit > 5 ? " · 구독 특전" : ""}) — 내일 다시` });
         return;
       }
       EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
@@ -4662,18 +4731,20 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: r.reason === "web" ? "광고 보상은 폰 버전(APK)에서 볼 수 있어" : "광고를 못 봤다 — 다시 시도하자" });
         return;
       }
+      /* v4.5.0 — 구독자 광고 보상 2배 (💎+2 · 골드+1,000) */
+      const adMul = subActive(this.subUntil) ? SUB_AD_MUL : 1;
       this.dailyAds++;
-      this.player.addGold(500);
-      this.player.emerald += 1;
+      this.player.addGold(500 * adMul);
+      this.player.emerald += 1 * adMul;
       this.save();
       this.emitRpgState();
       audio.sfx.questDone();
       EventBus.emit("reward:show", {
         title: "광고 보상 지급!",
         lines: [
-          { text: "에메랄드 +1", color: "#7de8ff" },
-          { text: "골드 +500", color: "#ffd76a" },
-          { text: `오늘 ${this.dailyAds}/5회 시청`, color: "#a8ecff" },
+          { text: `에메랄드 +${1 * adMul}`, color: "#7de8ff" },
+          { text: `골드 +${500 * adMul}`, color: "#ffd76a" },
+          { text: `오늘 ${this.dailyAds}/${adLimit}회 시청${adMul > 1 ? " · 구독 2배" : ""}`, color: "#a8ecff" },
         ] satisfies RewardPopupState["lines"],
       });
     };
@@ -4692,6 +4763,118 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
       audio.sfx.questDone();
       EventBus.emit("banner:show", { text: `에메랄드 +${sku.gems} 충전 완료!` });
+    };
+    /* ================= v4.5.0 — 시즌 패스/구독/광고 확장 (BM 표준화) ================= */
+    const onPassBuy = () => {
+      if (!this.player || this.dialoguing) return;
+      this.ensurePassSeason();
+      if (this.passPrem) {
+        EventBus.emit("banner:show", { text: "이미 프리미엄 패스 보유 중이다" });
+        return;
+      }
+      if (this.player.emerald < PASS_PREMIUM_PRICE) {
+        EventBus.emit("banner:show", { text: `에메랄드가 부족하다 (프리미엄 패스 ${PASS_PREMIUM_PRICE}💎 — 충전소 이용)` });
+        return;
+      }
+      this.player.emerald -= PASS_PREMIUM_PRICE;
+      this.passPrem = true;
+      audio.sfx.questDone();
+      EventBus.emit("banner:show", { text: "프리미엄 패스 해금! 지금까지 도달한 레벨의 프리미엄 보상 전부 수령 가능" });
+      this.save();
+      this.emitRpgState();
+    };
+    const onPassClaim = (v: { lv: number; track: "free" | "prem" }) => {
+      if (!this.player) return;
+      this.ensurePassSeason();
+      const lv = Math.floor(v.lv);
+      if (lv < 1 || lv > PASS_MAX_LV) return;
+      if (lv > passLevel(this.passXp)) {
+        EventBus.emit("banner:show", { text: `아직 도달하지 않은 레벨이다 (현재 Lv.${passLevel(this.passXp)})` });
+        return;
+      }
+      if (v.track === "prem" && !this.passPrem) {
+        EventBus.emit("banner:show", { text: "프리미엄 트랙은 해금이 필요하다 (30💎)" });
+        return;
+      }
+      const list = v.track === "free" ? this.passClaimedF : this.passClaimedP;
+      if (list.includes(lv)) return;
+      const g = PASS_TRACKS[lv - 1][v.track];
+      if (!g) return;
+      list.push(lv);
+      this.grantBmGrants(`시즌 패스 Lv.${lv} — ${v.track === "free" ? "무료" : "프리미엄"} 보상`, [g]);
+      audio.sfx.questDone();
+      this.save();
+      this.emitRpgState();
+    };
+    const onSubBuy = () => {
+      if (!this.player || this.dialoguing) return;
+      if (this.player.emerald < SUB_PRICE) {
+        EventBus.emit("banner:show", { text: `에메랄드가 부족하다 (SERTZ 패스 ${SUB_PRICE}💎 — 충전소 이용)` });
+        return;
+      }
+      this.player.emerald -= SUB_PRICE;
+      const base = this.subUntil > Date.now() ? this.subUntil : Date.now(); // 잔여기간 이어받기
+      this.subUntil = base + SUB_DAYS * 86400000;
+      audio.sfx.questDone();
+      EventBus.emit("reward:show", {
+        title: "SERTZ 패스 구독 완료!",
+        lines: [
+          { text: `구독 ${SUB_DAYS}일 — 잔여 ${subDaysLeft(this.subUntil)}일`, color: "#c08aff" },
+          { text: `매일 출석 시 에메랄드 +${SUB_DAILY_EMERALD}`, color: "#7de8ff" },
+          { text: "광고 보상 2배 · 광고 한도 5→8회", color: "#ffd76a" },
+        ] satisfies RewardPopupState["lines"],
+      });
+      this.save();
+      this.emitRpgState();
+    };
+    /* 광고 확장 1 — 무료 상자 (일 3회, 철 상자 즉시 개봉) */
+    const onAdChest = async () => {
+      if (!this.player) return;
+      this.ensureDaily();
+      if (this.dailyAdChest >= AD_CHEST_PER_DAY) {
+        EventBus.emit("banner:show", { text: `오늘의 무료 상자는 끝났다 (일 ${AD_CHEST_PER_DAY}회) — 내일 다시` });
+        return;
+      }
+      EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
+      const r = await showRewardedAd();
+      if (!r.ok) {
+        EventBus.emit("banner:show", { text: r.reason === "web" ? "광고 보상은 폰 버전(APK)에서 볼 수 있어" : "광고를 못 봤다 — 다시 시도하자" });
+        return;
+      }
+      this.dailyAdChest++;
+      audio.sfx.questDone();
+      this.grantBmGrants(`광고 무료 상자 개봉! (${this.dailyAdChest}/${AD_CHEST_PER_DAY})`, [this.rollChest("chest_iron")]);
+      this.save();
+      this.emitRpgState();
+    };
+    /* 광고 확장 2 — 버프 물약 세트 (일 2회: 탐욕+행운) */
+    const onAdDrop = async () => {
+      if (!this.player) return;
+      this.ensureDaily();
+      if (this.dailyAdDrop >= AD_DROP_PER_DAY) {
+        EventBus.emit("banner:show", { text: `오늘의 광고 버프는 끝났다 (일 ${AD_DROP_PER_DAY}회) — 내일 다시` });
+        return;
+      }
+      EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
+      const r = await showRewardedAd();
+      if (!r.ok) {
+        EventBus.emit("banner:show", { text: r.reason === "web" ? "광고 보상은 폰 버전(APK)에서 볼 수 있어" : "광고를 못 봤다 — 다시 시도하자" });
+        return;
+      }
+      this.dailyAdDrop++;
+      this.player.addBuffItem("buff_gold", 1);
+      this.player.addBuffItem("buff_luck", 1);
+      audio.sfx.questDone();
+      EventBus.emit("reward:show", {
+        title: `광고 버프 지급! (${this.dailyAdDrop}/${AD_DROP_PER_DAY})`,
+        lines: [
+          { text: "탐욕의 물약 (골드 +40%) ×1", color: "#ffd76a" },
+          { text: "행운의 물약 (드롭 +35%) ×1", color: "#c08aff" },
+          { text: "가방의 자동 버프 또는 인벤에서 사용", color: "#a8ecff" },
+        ] satisfies RewardPopupState["lines"],
+      });
+      this.save();
+      this.emitRpgState();
     };
     // 전직/승격 선택 (JobPanel → v1.8 다차원 트리)
     /* v3.1.0 (#전직스토리선행) — 유저 지시 "전직은 전직 스토리(n차마다 다른 스토리·컷신)
@@ -5027,6 +5210,11 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:escapeHome", onEscapeHome); // v4.1.0 — 설정창 긴급 귀환
     EventBus.on("rpg:adReward", onAdReward); // v4.1.0 — 광고 보상
     EventBus.on("rpg:buyGems", onBuyGems); // v4.1.0 — 구글 플레이 충전
+    EventBus.on("rpg:passBuy", onPassBuy); // v4.5.0 — 프리미엄 패스 해금
+    EventBus.on("rpg:passClaim", onPassClaim); // v4.5.0 — 패스 보상 수령
+    EventBus.on("rpg:subBuy", onSubBuy); // v4.5.0 — SERTZ 패스 구독
+    EventBus.on("rpg:adChest", onAdChest); // v4.5.0 — 광고 무료 상자
+    EventBus.on("rpg:adDrop", onAdDrop); // v4.5.0 — 광고 버프 물약
     EventBus.on("job:select", onJobSelect);
     EventBus.on("job:switch", onJobSwitch);
     EventBus.on("friend:goto", onFriendGoto);
@@ -5082,6 +5270,7 @@ export class WorldScene extends Phaser.Scene {
         }
         audio.sfx.questDone();
         this.grantBmGrants(`${it.name}${n > 1 ? ` ×${n}` : ""} 개봉!`, grants);
+        if (v.key === "pack_starter") this.starterPackBought = true; // v4.5.0 — 스타터팩 하이라이트 해제
         this.save();
         this.emitRpgState();
         this.emitHud();
@@ -5293,6 +5482,11 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:escapeHome", onEscapeHome); // v4.1.0
       EventBus.off("rpg:adReward", onAdReward); // v4.1.0
       EventBus.off("rpg:buyGems", onBuyGems); // v4.1.0
+      EventBus.off("rpg:passBuy", onPassBuy); // v4.5.0
+      EventBus.off("rpg:passClaim", onPassClaim); // v4.5.0
+      EventBus.off("rpg:subBuy", onSubBuy); // v4.5.0
+      EventBus.off("rpg:adChest", onAdChest); // v4.5.0
+      EventBus.off("rpg:adDrop", onAdDrop); // v4.5.0
       EventBus.off("job:select", onJobSelect);
       EventBus.off("job:switch", onJobSwitch);
       EventBus.off("friend:goto", onFriendGoto);
@@ -7511,22 +7705,28 @@ export class WorldScene extends Phaser.Scene {
     return table[table.length - 1].g;
   }
 
-  /** v4.3.0 — BmGrant 목록 지급 + reward:show 팝업 (가챠/패키지 공용)
-   *  ponytail: 이미 보유 펫/치장이 뽑히면 스킵(라벨 유지) — 중복 보상 환수 처리는 확장 시 */
+  /** v4.3.0 — BmGrant 목록 지급 + reward:show 팝업 (가챠/패키지/시즌 패스 공용)
+   *  ponytail: 이미 보유 펫/치장이 뽑히면 스킵(라벨 유지) — 중복 보상 환수 처리는 확장 시
+   *  v4.5.0 — ticket(뽑기권)/shard(조각) 분기 추가. 라벨 중복 방지: 메인 지급이 있으면
+   *  메인 라벨이 전체 내용을 표시하고(예: "전설 상자 + 뽑기권 ×10"), 단독 지급일 때만 라벨을 직접 표시 */
   private grantBmGrants(title: string, grants: BmGrant[]) {
     const p = this.player;
     if (!p) return;
     const lines: RewardPopupState["lines"] = [];
     for (const g of grants) {
+      let mainHandled = false;
       if (g.gold) {
         p.addGold(g.gold);
         lines.push({ text: g.label, color: "#ffd76a" });
+        mainHandled = true;
       } else if (g.emerald) {
         p.emerald += g.emerald;
         lines.push({ text: g.label, color: "#7de8ff" });
+        mainHandled = true;
       } else if (g.buff) {
         p.addBuffItem(g.buff, g.n ?? 1);
         lines.push({ text: g.label, color: "#ffb0e8" });
+        mainHandled = true;
       } else if (g.item) {
         const it = ITEMS[g.item];
         if (it.kind === "pet") {
@@ -7546,6 +7746,16 @@ export class WorldScene extends Phaser.Scene {
           for (let i = 0; i < (g.n ?? 1); i++) p.owned.push(g.item);
         }
         lines.push({ text: g.label, color: "#e8ecf2" });
+        mainHandled = true;
+      }
+      if (g.ticket) {
+        this.gachaTickets += g.ticket;
+        if (!mainHandled) lines.push({ text: g.label, color: "#c08aff" });
+        mainHandled = true;
+      }
+      if (g.shard) {
+        this.shards += g.shard;
+        if (!mainHandled) lines.push({ text: g.label, color: "#a8ecff" });
       }
     }
     EventBus.emit("reward:show", { title, lines } satisfies RewardPopupState);
@@ -8248,7 +8458,7 @@ export class WorldScene extends Phaser.Scene {
         gateStars: [...this.gateStars],
         freeGachaIn: Math.max(0, 600000 - (Date.now() - this.freeGachaAt)),
         attend: { last: this.attendLast, count: this.attendCount },
-        daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds },
+        daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop },
         tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
         extSummary: (() => {
           const e = this.player.extBonus;
@@ -8263,6 +8473,19 @@ export class WorldScene extends Phaser.Scene {
           return lines;
         })(),
       },
+      /* ----- v4.5.0 — 시즌 패스 + 구독 ----- */
+      pass: {
+        season: this.passSeason,
+        daysLeft: seasonDaysLeft(),
+        xp: this.passXp,
+        lv: passLevel(this.passXp),
+        lvXp: passXpInLv(this.passXp),
+        prem: this.passPrem,
+        claimedF: [...this.passClaimedF],
+        claimedP: [...this.passClaimedP],
+      },
+      sub: { until: this.subUntil, left: subDaysLeft(this.subUntil), active: subActive(this.subUntil) },
+      starterPackBought: this.starterPackBought,
     };
     const sig = JSON.stringify(st);
     if (sig === this.lastRpgSig) return;
@@ -8399,9 +8622,13 @@ export class WorldScene extends Phaser.Scene {
       constel: [...this.constel],
       coupons: [...this.couponsUsed],
       attend: { last: this.attendLast, count: this.attendCount },
-      daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds },
+      daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop },
       tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
       achClaimed: [...this.achClaimed],
+      /* v4.5.0 — 시즌 패스 + 구독 + 스타터팩 */
+      pass: { season: this.passSeason, xp: this.passXp, prem: this.passPrem, claimedF: [...this.passClaimedF], claimedP: [...this.passClaimedP] },
+      sub: { until: this.subUntil },
+      starterPackBought: this.starterPackBought,
       /* v4.1.4 — 보스/카오스/침공 처치 누적 */
       bossKills: this.bossKillCount,
       chaosKills: this.chaosKillCount,

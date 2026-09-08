@@ -166,7 +166,7 @@ export type SaveData = {
   /** 출석부 { 마지막 출석일, 사이클 카운트 } */
   attend?: { last: string; count: number };
   /** 일일 퀘스트 { 날짜, 토벌, 게이트, 던전, 수령 완료, 광고 시청 } */
-  daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number };
+  daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number; adsChest?: number; adsDrop?: number };
   /** 일일 입장 티켓 { 날짜, 게이트 잔여, 던전 잔여 } */
   tickets?: { date: string; gate: number; closet: number };
   /** 수령 완료 업적 */
@@ -183,6 +183,13 @@ export type SaveData = {
   /** v4.0.0 — 등급업 큐브 누적 승급 수 (무기/방어구 개별) */
   tierUpWea?: number;
   tierUpArm?: number;
+  /* ----- v4.5.0 — 시즌 패스 + 구독 (BM 표준화) ----- */
+  /** 시즌 패스 { 시즌키, XP, 프리미엄 여부, 수령한 무료/프리미엄 레벨 목록 } — 시즌이 바뀌면 리셋 */
+  pass?: { season: string; xp: number; prem: boolean; claimedF: number[]; claimedP: number[] };
+  /** 구독(SERTZ 패스) 만료 시각 (ms) — 0 = 미구독 */
+  sub?: { until: number };
+  /** 스타터팩 구매 완료 (BM상점 하이라이트 표시용) */
+  starterPackBought?: boolean;
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */

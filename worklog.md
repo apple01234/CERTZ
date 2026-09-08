@@ -1037,3 +1037,20 @@ Stage Summary:
 - 부수 효과: v4.3.0 물약 16종 사용 불가 버그 수정(실질 BM 개선) + 광고/충전 진입점 강화(AD 탭)
 - 교훈: ①GitHub push protection은 커밋 내 ghp_ 토큰을 차단한다 — 토큰은 반드시 env로 ②cap sync 생성물은 세션 리셋 시 소실 — APK 빌드는 반드시 scripts/build_apk.sh 경유 ③브라우저 실측에서 배너는 센터 패널 뒤에 가려진다 — DOM eval로 검증
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 57
+Agent: Super Z (메인)
+Task: v4.5.0 BM 표준화 & 도파민 시즌제 — 유저 BM 리서치 문서 적용 (시즌 패스+구독+확률 공시+광고 확장) + APK 빌드·릴리스
+
+Work Log:
+- [갭 분석] 유저 제공 BM 문서(시장 스냅샷·4대 수익모델·장르 매칭·KPI·규제) 기준 기존 구현(v4.3.0 가챠/패키지/일일특가, v4.1.0 광고/GEM_SKUS) 대조 → 미구현 4종 확인: 배틀패스·월정액 구독·확률 공시(법정 의무)·광고 포인트 확장
+- [시즌 패스] src/game/pass.ts 신설 — 월 단위 시즌(seasonKey), 30레벨 무료/프리미엄 듀얼 트랙(PASS_TRACKS 60보상 라인), 프리미엄 30💎, PASS_LV_XP=100, XP 규칙(토벌1/보스30/일일퀘수령40/게이트 웨이브×2), 5레벨 상자 마일스톤+10/20/30 시즌한정 펫·치장(위스프/서리/무지개 오라)
+- [구독] SERTZ 패스 50💎/30일 — 매일 출석 에메랄드+3, 광고 보상 2배, 광고 한도 5→8회, 잔여기간 이어받기(중복 구매 시)
+- [확률 공시] data.ts chestOdds() — CHEST_TABLES 가중치에서 % 동적 계산(로직·표시 단일 출처) + BmShopPanel "확률형 아이템 확률 정보(법정 공시)" 펼침 패널: 상자 4종 라인별 확률 + 피규어 가챠 등급 62/27/9/2% + 중복 조각 변환 안내
+- [광고 확장] rpg:adChest(무료 철 상자 일 3회 즉시 개봉) + rpg:adDrop(탐욕+행운 버프 물약 세트 일 2회) 신설 — onAdReward는 구독자 2배(💎+2·G+1000)+한도 8회로 확장
+- [배선] config.ts SaveData pass/sub/starterPackBought + daily.adsChest/adsDrop · EventBus RpgState pass/sub + PanelKind "pass" · BmGrant ticket/shard 확장 + grantBmGrants 라벨 중복 방지 로직 · WorldScene 필드/복원/세이브/emit + ensurePassSeason(월경계 자동 리셋) + addPassXp(레벨업 배너) + 훅 4곳(onEnemyKilled/보스 2곳/dailyClaim/게이트 정산) + 구독 출석 특전(checkAttendance 합산)
+- [UI] PassPanel 신설(가로 스크롤 30열 트랙 — 수령가능 앰버 발광·프리미엄 금색 행·수령 완료 ✓·미도달 dim·needprem 🔒) + BmShopPanel(시즌 패스 배너/스타터팩 하이라이트 미구매 시 고정/광고 버튼 2종/웹샵 +10% 안내) + BenefitPanel(SERTZ 패스 구독 박스 + 시즌 패스 진입 버튼 3열 그리드)
+- [기획서] docs/BM_PLAN.md 신설 — 시장 포지셔닝/퍼널 설계/4대 모델 매핑표/카탈로그 130종+ 인벤토리/KPI 목표/LTV-CAC 시뮬/규제 체크리스트/도파민 6원칙/로드맵(웹샵·미디에이션·부활 광고)
+- [버저닝] versionCode 60 / 4.5.0 — build.gradle·server.js·next.config·apk-guide.html(변경점)·APK_다운로드_안내.txt·Overlays 배지 6곳 싱크
+- [검증] tsc --noEmit 0 에러 · eslint 0 (수정 2회: FIGURE_GRADE_META 중복 import, import 줄 병합 사고 복구)

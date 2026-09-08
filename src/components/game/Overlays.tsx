@@ -41,7 +41,7 @@ export function TitleScreen() {
         </h1>
         <p className="mt-1 text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
           이그드라실 : 아홉 왕국
-          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.4.0 · 메이플 인벤토리 — 장비/캐시/기타/AD 탭 그리드 개편 · 물약 전 티어 사용 수정 · [정리] 버튼 — 게임 1개 · 10장 90구역</span>
+          <span className="ml-2 rounded border border-white/15 bg-white/10 px-1.5 py-0.5 align-middle text-[9px] font-black tracking-normal text-white/65">v4.5.0 · BM 표준화 — 시즌 패스(30레벨 듀얼 트랙) + 구독 특전 + 확률 공시(법정) + 광고 확장(무료상자/버프) — 게임 1개 · 10장 90구역</span>
         </p>
       </div>
 

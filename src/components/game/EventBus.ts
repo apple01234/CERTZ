@@ -118,14 +118,30 @@ export type RpgState = {
     gateStars: boolean[];
     freeGachaIn: number;
     attend: { last: string; count: number };
-    daily: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number };
+    daily: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number; adsChest?: number; adsDrop?: number };
     tickets: { date: string; gate: number; closet: number };
     extSummary: string[];
   };
+  /* ----- v4.5.0 — 시즌 패스 + 구독 (BM 표준화) ----- */
+  /** 시즌 패스 상태 (PassPanel) */
+  pass?: {
+    season: string;
+    daysLeft: number;
+    xp: number;
+    lv: number;
+    lvXp: number;
+    prem: boolean;
+    claimedF: number[];
+    claimedP: number[];
+  };
+  /** 구독(SERTZ 패스) 상태 */
+  sub?: { until: number; left: number; active: boolean };
+  /** 스타터팩 구매 완료 (BM상점 하이라이트 표시용) */
+  starterPackBought?: boolean;
 };
 
 /** v3.1.0 — "bossdiff" 제거: 스토리 보스는 전용 난이도 즉시 스폰 (선택은 보스 재도전 창 "boss") */
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "isekai" | "benefit" | null;
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "isekai" | "benefit" | "pass" | null;
 
 /* ----- v4.0.0 — 바르가 수비전 오버레이 ----- */
 export type GateCardState = {

@@ -632,8 +632,18 @@ export const BM_STOCK: ItemKey[] = [
  *  유저 지시 "BM 수익 구조 및 dopamine driven development 100+ 기획+제작":
  *  가챠(변동 보상+등급 연출)·패키지(묶음 가치)·일일 특가(날짜 로테이션 FOMO)·출석(연속 보상) 루프. */
 
-/** BM 지급 단위 — 상자 개봉/패키지/출석 보상 공용 (reward:show 팝업 라인으로 변환) */
-export type BmGrant = { gold?: number; emerald?: number; item?: ItemKey; n?: number; buff?: BuffKey; label: string };
+/** BM 지급 단위 — 상자 개봉/패키지/출석/시즌 패스 보상 공용 (reward:show 팝업 라인으로 변환)
+ *  v4.5.0 — ticket(뽑기권)/shard(피규어 조각) 추가 (시즌 패스 트랙 지급용) */
+export type BmGrant = { gold?: number; emerald?: number; item?: ItemKey; n?: number; buff?: BuffKey; ticket?: number; shard?: number; label: string };
+
+/** v4.5.0 — 확률 공시 (게임산업법 확률형 아이템 정보 공시 의무)
+ *  CHEST_TABLES 가중치를 그대로 소스 오브 트루스로 % 환산 — UI와 로직의 이중 관리 방지 */
+export function chestOdds(key: string): { label: string; pct: number }[] {
+  const table = CHEST_TABLES[key];
+  if (!table) return [];
+  const total = table.reduce((s, e) => s + e.w, 0);
+  return table.map((e) => ({ label: e.g.label, pct: Math.round((e.w / total) * 1000) / 10 }));
+}
 
 /** 가챠 상자 롤 테이블 — w=가중치. 구매 즉시 개봉(보유 관리 없음 — 도파민 즉시성) */
 export const CHEST_TABLES: Record<string, { w: number; g: BmGrant }[]> = {
@@ -736,7 +746,7 @@ export function dailyDeals(today: string): ItemKey[] {
   return out;
 }
 
-/** 출석 보상 — 7일 순환 (연속 출석 일수 인덱스)
+/** 출석 보상 — 14일 순환 (연속 출석 일수 인덱스)
  *  ponytail: 제거 — 이미 isekai.ts ATTEND_REWARDS(14일 순환)가 WorldScene 3120에서 동작 중. 중복 제거 */
 
 /** v3.0.6 (지시 #9) — 보스 → 전용 드롭 아이템 매핑 (100% 드롭, 상점 구매 불가) */
