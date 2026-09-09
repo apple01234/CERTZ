@@ -21,6 +21,7 @@ import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상
 import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS } from "@/game/pass"; // v4.5.0 — 시즌 패스 + v1.0.1 시즌 미션
 import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, type MarketState, type AuthUser } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
+import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
 import { chestOdds } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법)
 import type { BmGrant } from "@/game/data";
 
@@ -519,22 +520,57 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
           </div>
         )}
 
-        {/* v1.0.2 (#현금패키지) — 스토어 결제 패키지 (가격은 Play Console 상품 기준 — 클라 하드코딩 없음) */}
+        {/* v1.0.7 — 성장 패키지 UI 개편: 프리미엄 카드 그리드 (구성 아이콘 칩·등급 배지·CTA 버튼).
+            기존 단순 텍스트 버튼 목록을 폐기하고 패키지별 아이덴티티 그라디언트+구성 미리보기로 대폭 상향.
+            가격은 여전히 Play Console 상품 기준 — 클라 하드코딩 없음 (결제 위임 구조 유지) */}
         {STORE_PACKS.length > 0 && (
-          <div className="mt-2.5 rounded-lg border border-rose-300/30 bg-rose-400/[0.06] px-2.5 py-2">
-            <p className="text-[12px] font-black text-rose-200">현금 패키지 (스토어 결제)</p>
-            <div className="mt-1.5 flex flex-col gap-1">
-              {STORE_PACKS.map((pk) => (
-                <button
-                  key={pk.id}
-                  onClick={() => EventBus.emit("rpg:buyStorePack", { id: pk.id })}
-                  className="rounded-lg border border-rose-300/40 bg-gradient-to-b from-rose-400/15 to-rose-500/5 px-2.5 py-1.5 text-left hover:from-rose-400/25 active:scale-[0.98]"
-                >
-                  <p className="text-[11px] font-black text-rose-100">{pk.label}</p>
-                  <p className="text-[9px] leading-snug text-white/55">{pk.desc} · 스토어에서 가격 확인</p>
-                </button>
-              ))}
+          <div className="mt-2.5 rounded-xl border border-rose-300/25 bg-gradient-to-b from-rose-500/[0.10] to-fuchsia-500/[0.05] p-2">
+            <p className="flex items-center gap-1.5 px-0.5 text-[12px] font-black text-rose-100">
+              <span className="rounded bg-rose-400/25 px-1.5 py-0.5 text-[9px] font-black tracking-widest text-rose-200">PACKAGE</span>
+              현금 패키지 (스토어 결제)
+            </p>
+            <div className="mt-1.5 flex flex-col gap-1.5">
+              {STORE_PACKS.map((pk, i) => {
+                const contents = STORE_PACK_CONTENTS[pk.id] ?? [];
+                /* 패키지별 아이덴티티 — 성장=황금 / 성장+치장=로즈(BEST) / 시즌=청록 */
+                const theme = i === 0
+                  ? { ring: "border-amber-300/50", bg: "from-amber-400/15 to-amber-500/[0.04]", chip: "bg-amber-400/15 text-amber-100", cta: "from-amber-300 to-amber-500 text-amber-950", badge: "황금 성장" }
+                  : i === 1
+                    ? { ring: "border-fuchsia-300/50", bg: "from-fuchsia-400/15 to-purple-500/[0.04]", chip: "bg-fuchsia-400/15 text-fuchsia-100", cta: "from-fuchsia-300 to-fuchsia-500 text-fuchsia-950", badge: "BEST" }
+                    : { ring: "border-cyan-300/50", bg: "from-cyan-400/15 to-sky-500/[0.04]", chip: "bg-cyan-400/15 text-cyan-100", cta: "from-cyan-300 to-cyan-500 text-cyan-950", badge: "시즌 한정" };
+                return (
+                  <div key={pk.id} className={`rounded-lg border ${theme.ring} bg-gradient-to-b ${theme.bg} p-2`}>
+                    <div className="flex items-center gap-1.5">
+                      <p className="min-w-0 flex-1 truncate text-[12px] font-black text-white">{pk.label}</p>
+                      <span className={`shrink-0 rounded px-1 py-px text-[8px] font-black tracking-wide ${theme.chip}`}>{theme.badge}</span>
+                    </div>
+                    <p className="mt-0.5 truncate text-[9px] font-bold text-white/50">{pk.desc}</p>
+                    {/* 구성 미리보기 — 아이템 칩 (최대 4개, 아이콘+수량) */}
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {contents.slice(0, 4).map((g, gi) => {
+                        const ic = g.item ? ITEMS[g.item]?.icon : undefined;
+                        return (
+                          <span key={gi} className={`flex items-center gap-0.5 rounded px-1 py-0.5 text-[9px] font-black ${theme.chip}`}>
+                            {ic ? <img src={`/assets/${ic}.webp`} alt="" className="h-3 w-3" style={{ imageRendering: "pixelated" }} /> : null}
+                            {g.label}
+                          </span>
+                        );
+                      })}
+                      {contents.length > 4 && (
+                        <span className={`rounded px-1 py-0.5 text-[9px] font-black ${theme.chip}`}>+{contents.length - 4}개</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => EventBus.emit("rpg:buyStorePack", { id: pk.id })}
+                      className={`mt-1.5 w-full rounded-lg bg-gradient-to-b ${theme.cta} px-2.5 py-1.5 text-[11px] font-black shadow-sm active:scale-[0.98]`}
+                    >
+                      스토어에서 구매 — 가격 확인
+                    </button>
+                  </div>
+                );
+              })}
             </div>
+            <p className="mt-1 px-0.5 text-[9px] font-bold leading-snug text-white/40">결제는 Google Play 결제로 진행됩니다 (웹에서는 스토어 연동 전까지 미지원)</p>
           </div>
         )}
 
@@ -1340,7 +1376,11 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
     icon: COSMETIC_DEFS[ck as CosmeticKey]?.icon ?? "item_coin",
     tier: "epic" as ItemTier,
     count: 1,
-    wornLabel: rpg.cosmetic === ck ? "착용" : undefined,
+    /* v1.0.7 — 슬롯별 착용 표기 (오라/코스튬/헤어 독립 슬롯) */
+    wornLabel:
+      COSMETIC_DEFS[ck as CosmeticKey]?.slot === "outfit" ? (rpg.outfit === ck ? "착용" : undefined)
+      : COSMETIC_DEFS[ck as CosmeticKey]?.slot === "hair" ? (rpg.hair === ck ? "착용" : undefined)
+      : (rpg.cosmetic === ck ? "착용" : undefined),
   }));
 
   /* ----- 기타 탭 슬롯 (물약 전 티어 + 스크롤/큐브/책/상자 — 기본 물약은 카운터 가상 슬롯) ----- */
@@ -1683,7 +1723,10 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 }
                 if (s.t === "cos") {
                   const def = COSMETIC_DEFS[s.k as CosmeticKey];
-                  const active = rpg.cosmetic === s.k;
+                  /* v1.0.7 — 슬롯별 착용 판정 (emit은 기존 rpg:cosmetic 경로 재사용 — Player.setCosmetic이 슬롯 분기) */
+                  const slot = def?.slot ?? "aura";
+                  const active = slot === "outfit" ? rpg.outfit === s.k : slot === "hair" ? rpg.hair === s.k : rpg.cosmetic === s.k;
+                  const slotLabel = slot === "outfit" ? "코스튬" : slot === "hair" ? "헤어" : "오라";
                   return (
                     <>
                       <div className="flex items-start gap-2.5">
@@ -1691,6 +1734,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[13px] font-black text-white">{def?.name ?? s.k}</p>
                           <p className="truncate text-[11px] font-bold text-emerald-300/90">{def?.desc}</p>
+                          <span className="mt-0.5 inline-block rounded bg-sky-400/15 px-1 py-px text-[9px] font-black text-sky-200/90">{slotLabel}</span>
                         </div>
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -3618,9 +3662,14 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
   const hunts = dailyToday ? daily?.hunts ?? 0 : 0;
   const gateRuns = dailyToday ? daily?.gate ?? 0 : 0;
   const closetRuns = dailyToday ? daily?.closet ?? 0 : 0;
+  const farms = dailyToday ? daily?.farms ?? 0 : 0; // v1.0.7 — 오늘의 파밍
+  const bosses = dailyToday ? daily?.bosses ?? 0 : 0; // v1.0.7 — 보스 사냥
   const claimed = dailyToday ? daily?.claimed ?? [] : [];
   const DAILY_GOALS: { id: string; name: string; desc: string; goal: number; prog: number; reward: string }[] = [
     { id: "hunt", name: "오늘의 토벌", desc: "몬스터 50마리 처치", goal: 50, prog: hunts, reward: "골드 15,000" },
+    /* v1.0.7 — 파밍/보스 일일 퀘스트 2종 확장 (3종 → 5종) */
+    { id: "farm", name: "오늘의 파밍", desc: "필드 아이템 드롭 40개 수집", goal: 40, prog: farms, reward: "뽑기권 1 + 골드 8,000" },
+    { id: "boss", name: "보스 사냥", desc: "보스 1마리 처치 (재림/카오스 포함)", goal: 1, prog: bosses, reward: "골드 20,000 + 에메랄드 3" },
     { id: "gate", name: "게이트 방어", desc: "바르가 수비전 1회 입장", goal: 1, prog: gateRuns, reward: "뽑기권 1 + 골드 5,000" },
     { id: "closet", name: "균열 던전", desc: "균열 던전 1회 입장", goal: 1, prog: closetRuns, reward: "뽑기권 1 + 에메랄드 2" },
   ];

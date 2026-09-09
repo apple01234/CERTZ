@@ -100,6 +100,9 @@ export type SaveData = {
   pendingJobClass?: string | null;
   cosmetics?: string[];
   cosmetic?: string | null;
+  /* v1.0.7 — 슬롯형 치장 (코스튬/헤어 — 구 세이브는 undefined) */
+  outfit?: string | null;
+  hair?: string | null;
   /* ↓ 친구 시스템 (v2.1 — 구 세이브 호환: 로드 시 자동 발급/기본값) */
   fcode?: string;
   friends?: { code: string; name: string }[];
@@ -166,7 +169,7 @@ export type SaveData = {
   /** 출석부 { 마지막 출석일, 사이클 카운트 } */
   attend?: { last: string; count: number };
   /** 일일 퀘스트 { 날짜, 토벌, 게이트, 던전, 수령 완료, 광고 시청 } */
-  daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number; adsChest?: number; adsDrop?: number };
+  daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number; adsChest?: number; adsDrop?: number; farms?: number; bosses?: number };
   /** 일일 입장 티켓 { 날짜, 게이트 잔여, 던전 잔여, 재충전 횟수 } */
   tickets?: { date: string; gate: number; closet: number; refills?: number };
   /** 수령 완료 업적 */
@@ -277,6 +280,8 @@ export function loadSave(): SaveData | null {
     if (d.pet === undefined) d.pet = null;
     if (!Array.isArray(d.cosmetics)) d.cosmetics = [];
     if (d.cosmetic === undefined) d.cosmetic = null;
+    if (d.outfit === undefined) d.outfit = null; // v1.0.7 — 구 세이브 호환
+    if (d.hair === undefined) d.hair = null;
     // 전직 스토리 (v2.0 — 구 세이브 호환)
     if (d.jobStory === undefined) d.jobStory = null;
     if (!Array.isArray(d.jobStoryDone)) d.jobStoryDone = [];

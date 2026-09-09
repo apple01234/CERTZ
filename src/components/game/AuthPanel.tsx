@@ -10,6 +10,7 @@ import {
   authRegister,
   authLogout,
   fetchSnsProviders,
+  consumeAuthTokenFromHash, // v1.0.7 — SNS 콜백 해시 토큰 저장
   cloudSaveUpload,
   cloudSaveDownload,
   type AuthUser,
@@ -45,6 +46,7 @@ export function AuthPanel() {
   const gate = useKeyGate();
 
   useEffect(() => {
+    consumeAuthTokenFromHash(); // v1.0.7 — SNS 콜백 토큰을 저장 후 /me 가 즉시 인식
     authMe().then(setUser).catch(() => {});
     fetchSnsProviders().then(setProviders).catch(() => {});
   }, []);

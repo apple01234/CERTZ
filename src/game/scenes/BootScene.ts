@@ -214,6 +214,21 @@ export class BootScene extends Phaser.Scene {
   preload() {
     this.load.setPath("assets");
     for (const key of ASSET_LIST) this.load.image(key, `${key}.webp`);
+    /* v1.0.7 — SPUM식 코스튬 프레임 4종×28 + 포니테일 (scripts/gen_outfits.py 생성 —
+     *  hero_* 프레임의 의상 픽셀만 재색상화, 피부/머리카락/외곽선 보호 — 총 31KB) */
+    for (const key of ASSET_LIST) {
+      if (!key.startsWith("hero_")) continue;
+      const f = key.slice(5);
+      for (const s of ["royal", "shadow", "spring", "navy"]) {
+        this.load.image(`outfit_${s}_${f}`, `outfit_${s}_${f}.webp`);
+      }
+    }
+    this.load.image("hair_ponytail", "hair_ponytail.webp");
+    /* v1.0.7 — 프리렌더 3D VFX 추가 (Hovl Studio Magic effects · UNI VFX — 연구용 원본 재확보분,
+     *  유니티 3D 파이프라인 프리렌더 텍스처 → 2D 스프라이트. 보스 격파/각성 의식 등 희소 고급스 순간 전용) */
+    this.load.image("hv_slash", "hv_slash.webp");
+    this.load.image("hv_flash", "hv_flash.webp");
+    this.load.image("uni_boom", "uni_boom.webp");
     /* v3.0.2 — 외부 신규 에셋 (전부 CC0, CREDITS.md 참조)
      *  50 Monsters Pack (isaiah658): 신규 몬스터 9종 × idle2/run4/atk1 프레임
      *  Pixelart Spells (Anokolisa?): 마법 투사체 6프레임 시트

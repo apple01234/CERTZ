@@ -79,6 +79,9 @@ export type RpgState = {
   /** 보유 치장 / 착용 중 치장 */
   cosmetics: string[];
   cosmetic: string | null;
+  /* v1.0.7 — 슬롯형 치장 (코스튬/헤어 — 구 세이브 호환 옵셔널) */
+  outfit?: string | null;
+  hair?: string | null;
   /** AP 스탯 */
   stats: { str: number; dex: number; int: number; luk: number };
   ap: number;
@@ -124,7 +127,7 @@ export type RpgState = {
     gateStars: boolean[];
     freeGachaIn: number;
     attend: { last: string; count: number };
-    daily: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number; adsChest?: number; adsDrop?: number };
+    daily: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number; adsChest?: number; adsDrop?: number; farms?: number; bosses?: number };
     tickets: { date: string; gate: number; closet: number };
     extSummary: string[];
   };

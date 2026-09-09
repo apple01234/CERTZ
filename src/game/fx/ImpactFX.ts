@@ -13,8 +13,9 @@ export const IMPACT_PROFILES = {
   /** 기본 공격 — 히트스톱으로 타격감 유지, 셰이크는 최소로 절제 (기존 0.006 → 과다 피드백 반영)
    *  v2.2: 65→55ms — 이동 중 공격 시 세계 정지 체감을 줄여 스터터 완화 */
   basic: { hitStopMs: 55, shakeMs: 45, shakeInt: 0.0018 },
-  /** 크리티컬 — 기본보다 확실히 강조 (히트스톱 연장 + 더 큰 흔들림) */
-  crit: { hitStopMs: 90, shakeMs: 110, shakeInt: 0.0035 },
+  /** 크리티컬 — 기본보다 확실히 강조 (히트스톱 연장 + 더 큰 흔들림)
+   *  v1.0.7 — 셰이크 0.0035/110ms → 0.0027/90ms (유저 지시: 이펙트 가림 축소 — 타격감은 히트스톱이 담당) */
+  crit: { hitStopMs: 90, shakeMs: 90, shakeInt: 0.0027 },
   /** 스킬(회전베기/돌진베기) — 중간 강도 */
   skill: { hitStopMs: 70, shakeMs: 110, shakeInt: 0.003 },
 } as const;

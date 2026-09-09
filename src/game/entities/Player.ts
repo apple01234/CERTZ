@@ -79,6 +79,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   pet: PetKey | null = null;
   cosmetics: CosmeticKey[] = [];
   cosmetic: CosmeticKey | null = null;
+  /* v1.0.7 — 슬롯형 치장: 코스튬(스프라이트 착장)·헤어(포니테일 등) — 오라(cosmetic)와 독립 착용 */
+  outfit: CosmeticKey | null = null;
+  hair: CosmeticKey | null = null;
 
   /** 기본 크리티컬 확률 (%) — 장신구로 증가 */
   private static readonly BASE_CRIT = 8;
@@ -3841,7 +3844,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.cosmetics.includes(key as CosmeticKey)) return false;
       this.gold -= item.price;
       this.cosmetics.push(key as CosmeticKey);
-      this.cosmetic = key as CosmeticKey; // 구매 즉시 착용
+      /* v1.0.7 — 슬롯별 즉시 착용 (코스튬/헤어는 오라 슬롯을 침범하지 않는다) */
+      const slot = COSMETIC_DEFS[key as CosmeticKey]?.slot ?? "aura";
+      if (slot === "outfit") this.outfit = key as CosmeticKey;
+      else if (slot === "hair") this.hair = key as CosmeticKey;
+      else this.cosmetic = key as CosmeticKey;
       return true;
     }
     if (this.owned.includes(key)) return false; // 이미 보유한 장비
@@ -3984,7 +3991,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.emerald < unit) return false; // v4.6.0 — 잔액 검사 누락 (음수 구매 버그)
       this.emerald -= unit;
       this.cosmetics.push(key as CosmeticKey);
-      this.cosmetic = key as CosmeticKey;
+      /* v1.0.7 — 슬롯별 즉시 착용 */
+      const slot = COSMETIC_DEFS[key as CosmeticKey]?.slot ?? "aura";
+      if (slot === "outfit") this.outfit = key as CosmeticKey;
+      else if (slot === "hair") this.hair = key as CosmeticKey;
+      else this.cosmetic = key as CosmeticKey;
       return true;
     }
     if (this.owned.includes(key)) return false;
@@ -4042,13 +4053,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  /** 치장 착용/해제 (가방에서) — 오라 연출만, 전투 능력 없음 */
+  /** 치장 착용/해제 (가방에서) — 오라 연출만, 전투 능력 없음
+   *  v1.0.7 — 슬롯 분기: 코스튬/헤어 키가 오면 대응 슬롯에 착용 (기존 emit 경로 재사용) */
   setCosmetic(key: CosmeticKey | null): boolean {
     if (key && !this.cosmetics.includes(key)) return false;
+    const slot = key ? COSMETIC_DEFS[key]?.slot ?? "aura" : "aura";
+    if (slot === "outfit") return this.setOutfit(key);
+    if (slot === "hair") return this.setHair(key);
     if (this.cosmetic === key) return false;
     this.cosmetic = key;
     this.scene.onCosmeticChanged();
     this.scene.emitHud();
+    return true;
+  }
+
+  /* v1.0.7 — 코스튬(의상) 착용/해제 — 스프라이트 직접 착장 (WorldScene 오버레이 동기화) */
+  setOutfit(key: CosmeticKey | null): boolean {
+    if (key && !this.cosmetics.includes(key)) return false;
+    if (this.outfit === key) return false;
+    this.outfit = key;
+    this.scene.onCosmeticChanged();
+    return true;
+  }
+
+  /* v1.0.7 — 헤어 착용/해제 (포니테일 등 — WorldScene 레이어 동기화) */
+  setHair(key: CosmeticKey | null): boolean {
+    if (key && !this.cosmetics.includes(key)) return false;
+    if (this.hair === key) return false;
+    this.hair = key;
+    this.scene.onCosmeticChanged();
     return true;
   }
 

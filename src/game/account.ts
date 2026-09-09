@@ -8,9 +8,36 @@
  *  인증·거래소·클라우드 세이브가 전부 실패(또는 HTML 폴백 → JSON 파싱 실패)했다.
  *  → 멀티플레이 서버 주소(localStorage sertz.server.url, net.ts와 동일 출처)를 API base로 사용.
  *  웹은 기존대로 same-origin. 모든 fetch 경로에 apiBase()를 접두한다.
+ * v1.0.7 (#APK로그인) — APK 웹뷰(https://localhost)에선 크로스오리진이라 ① POST+JSON 프리플라이트가
+ *  서버 무CORS로 전부 실패하고 ② SameSite=Lax 쿠키가 저장/전송되지 않아 로그인 세션이 유지되지 않았다.
+ *  → 서버가 CORS+OPTIONS를 응답하고 로그인/가입 응답 본문에 token을 동봉한다.
+ *    클라는 token을 localStorage에 저장해 Authorization: Bearer 로 전송한다 (웹은 쿠키 병행, 기존 동작 유지).
  */
 
 import { Capacitor } from "@capacitor/core";
+
+/* v1.0.7 — Bearer 세션 토큰 저장소 (APK 웹뷰 쿠키 불가 대응; 웹은 쿠키가 우선이라 없어도 됨) */
+const TOKEN_KEY = "sertz.auth.token";
+function getToken(): string {
+  try { return window.localStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
+}
+function setToken(t: string) {
+  try {
+    if (t) window.localStorage.setItem(TOKEN_KEY, t);
+    else window.localStorage.removeItem(TOKEN_KEY);
+  } catch { /* 무시 */ }
+}
+/** SNS 콜백 리다이렉트(/?sns=ok#auth_token=…)의 토큰을 저장하고 해시를 제거 — 패널 마운트 시 1회 호출 */
+export function consumeAuthTokenFromHash(): void {
+  try {
+    const h = window.location.hash || "";
+    const m = h.match(/auth_token=([A-Za-z0-9]+)/);
+    if (m) {
+      setToken(m[1]);
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  } catch { /* 무시 */ }
+}
 
 /** 계정/거래소 API 베이스 URL — 웹 ""(same-origin) · APK/EXE 설정된 게임 서버 주소 */
 function apiBase(): string {
@@ -31,12 +58,14 @@ export type SnsProviders = Record<string, { name: string; configured: boolean }>
 
 async function post(path: string, body?: unknown): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
   try {
+    const tok = getToken(); // v1.0.7 — Bearer 세션 (쿠키 불가 환경: APK 웹뷰)
     const r = await fetch(`${apiBase()}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) },
       body: JSON.stringify(body ?? {}),
     });
     const data = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+    if (r.status === 401) setToken(""); // 만료/무효 토큰 정리
     return { ok: r.ok, status: r.status, data };
   } catch {
     return { ok: false, status: 0, data: { error: "서버에 연결할 수 없어요" } };
@@ -45,8 +74,13 @@ async function post(path: string, body?: unknown): Promise<{ ok: boolean; status
 
 async function get(path: string): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
   try {
-    const r = await fetch(`${apiBase()}${path}`, { cache: "no-store" });
+    const tok = getToken(); // v1.0.7 — Bearer 세션
+    const r = await fetch(`${apiBase()}${path}`, {
+      cache: "no-store",
+      ...(tok ? { headers: { Authorization: `Bearer ${tok}` } } : {}),
+    });
     const data = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+    if (r.status === 401) setToken("");
     return { ok: r.ok, status: r.status, data };
   } catch {
     return { ok: false, status: 0, data: { error: "서버에 연결할 수 없어요" } };
@@ -59,15 +93,21 @@ export async function authMe(): Promise<AuthUser | null> {
 }
 
 export async function authRegister(id: string, pw: string, name: string) {
-  return post("/api/auth/register", { id, pw, name });
+  const r = await post("/api/auth/register", { id, pw, name });
+  if (r.ok && typeof r.data.token === "string") setToken(r.data.token); // v1.0.7 — Bearer 세션 저장
+  return r;
 }
 
 export async function authLogin(id: string, pw: string) {
-  return post("/api/auth/login", { id, pw });
+  const r = await post("/api/auth/login", { id, pw });
+  if (r.ok && typeof r.data.token === "string") setToken(r.data.token); // v1.0.7 — Bearer 세션 저장
+  return r;
 }
 
 export async function authLogout() {
-  return post("/api/auth/logout");
+  const r = await post("/api/auth/logout");
+  setToken(""); // v1.0.7 — 로컬 토큰 정리 (성공 여부 무관)
+  return r;
 }
 
 export async function fetchSnsProviders(): Promise<SnsProviders> {

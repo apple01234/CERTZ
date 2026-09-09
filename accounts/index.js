@@ -118,8 +118,22 @@ function parseCookies(req) {
   }
   return out;
 }
+/* v1.0.7 — APK 웹뷰(https://localhost 오리진)에서 쿠키 세션이 유지되지 않아 로그인이 실패했다.
+ *  ① 모든 /api 응답에 CORS 헤더(POST+JSON은 프리플라이트 OPTIONS 필요 — 기존엔 무응답)
+ *  ② 세션 토큰을 본문+Bearer 헤더로도 전달 (쿠키는 웹 same-origin 호환용으로 유지) */
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Max-Age": "86400",
+};
+
 function currentUser(req) {
-  const token = parseCookies(req)[COOKIE];
+  /* v1.0.7 — Authorization: Bearer 우선, 없으면 기존 쿠키 */
+  let token = "";
+  const auth = String(req.headers.authorization || "");
+  if (auth.startsWith("Bearer ")) token = auth.slice(7).trim();
+  if (!token) token = parseCookies(req)[COOKIE] || "";
   if (!token) return null;
   const t = db.tokens[token];
   if (!t || t.expiresAt < Date.now()) {
@@ -146,7 +160,8 @@ function readBody(req, limit = 6 * 1024 * 1024) {
 }
 function sendJson(res, code, obj, headers = {}) {
   const body = JSON.stringify(obj);
-  res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers });
+  /* v1.0.7 — CORS 헤더 전역 부착 (APK 웹뷰 크로스오리진 fetch 허용) */
+  res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...CORS_HEADERS, ...headers });
   res.end(body);
 }
 function sessionCookie(token) {
@@ -164,7 +179,8 @@ function issueToken(res, user) {
     for (const k of Object.keys(db.tokens)) if (db.tokens[k].expiresAt < now) delete db.tokens[k];
   }
   persistDb();
-  return { "Set-Cookie": sessionCookie(token) };
+  /* v1.0.7 — 토큰을 함께 반환: 클라가 Bearer로 재사용 (APK 웹뷰 쿠키 불가 대응) */
+  return { token, headers: { "Set-Cookie": sessionCookie(token) } };
 }
 
 /* ---------------- SNS OAuth 설정 (환경변수 게이트) ---------------- */
@@ -403,8 +419,9 @@ async function handle(req, res) {
           db.users[pick.key] = user;
         }
         persistDb();
-        const headers = issueToken(res, user);
-        res.writeHead(307, { Location: "/?sns=ok", ...headers });
+        const { token, headers } = issueToken(res, user);
+        /* v1.0.7 — 해시(#)로 토큰 전달: 서버 로그에 안 남고 클라가 저장 후 제거. 웹 쿠키는 그대로 병행 */
+        res.writeHead(307, { Location: `/?sns=ok#auth_token=${token}`, ...headers });
         res.end();
       } catch (e) {
         console.error("[SERTZ-accounts] SNS 콜백 실패", e);
@@ -430,7 +447,8 @@ async function handle(req, res) {
       db.users[id] = user;
       persistDb();
       audit("register", { ip: clientIp(req), uid: id, role });
-      sendJson(res, 200, { user: publicUser(user) }, issueToken(res, user));
+      const reg = issueToken(res, user); // v1.0.7 — 토큰 본문 동봉 (APK Bearer 세션)
+      sendJson(res, 200, { user: publicUser(user), token: reg.token }, reg.headers);
       return true;
     }
 
@@ -451,7 +469,8 @@ async function handle(req, res) {
         return sendJson(res, 401, { error: "아이디 또는 비밀번호가 틀렸어요" });
       }
       audit("login", { ip: clientIp(req), uid: id, role: user.role === "admin" ? "admin" : "user" }); // v1.0.2
-      sendJson(res, 200, { user: publicUser(user) }, issueToken(res, user));
+      const ses = issueToken(res, user); // v1.0.7 — 토큰 본문 동봉 (APK Bearer 세션)
+      sendJson(res, 200, { user: publicUser(user), token: ses.token }, ses.headers);
       return true;
     }
 
@@ -478,7 +497,11 @@ async function handle(req, res) {
 
     /* 로그아웃 */
     if (url === "/api/auth/logout" && method === "POST") {
-      const token = parseCookies(req)[COOKIE];
+      /* v1.0.7 — Bearer 토큰도 함께 해제 */
+      let token = "";
+      const auth = String(req.headers.authorization || "");
+      if (auth.startsWith("Bearer ")) token = auth.slice(7).trim();
+      if (!token) token = parseCookies(req)[COOKIE] || "";
       if (token) { delete db.tokens[token]; persistDb(); }
       sendJson(res, 200, { ok: true }, { "Set-Cookie": clearCookie() });
       return true;
@@ -521,6 +544,12 @@ async function handle(req, res) {
 function attachAccountsBefore(handleNext) {
   return (req, res) => {
     const u = req.url || "";
+    /* v1.0.7 — 프리플라이트 OPTIONS: 기존엔 Next로 떨어져 404/405 → APK에서 POST+JSON fetch가 전부 실패 */
+    if ((req.method || "GET").toUpperCase() === "OPTIONS" &&
+        (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") || u.startsWith("/api/market"))) {
+      res.writeHead(204, CORS_HEADERS).end();
+      return;
+    }
     if (u.startsWith("/api/auth/") || u.startsWith("/api/admin/")) {
       handle(req, res).catch((e) => {
         console.error("[SERTZ-accounts] 가로채기 실패 — Next로 전달", e);
@@ -531,6 +560,7 @@ function attachAccountsBefore(handleNext) {
     if (u.startsWith("/api/market")) {
       const url = u.split("?")[0];
       const method = (req.method || "GET").toUpperCase();
+      /* v1.0.7 — 마켓도 Bearer 헤더 인증 지원 (handleMarket 내부 currentUser 공용) */
       handleMarket(req, res, url, method).catch((e) => {
         console.error("[SERTZ-market] 요청 처리 실패", e);
         try { sendJson(res, 500, { error: "서버 오류" }); } catch { /* 무시 */ }

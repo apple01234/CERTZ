@@ -43,7 +43,7 @@ export function TitleScreen() {
           이그드라실 : 아홉 왕국
           {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
            *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.6 — GM NPC 실시간 갱신(로그인 즉시) · 거래소 등록 서버 소유 검증(복제 차단)</span>
+          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.7 — APK 로그인 오류 수정(CORS+Bearer) · 코스튬/포니테일 착장 · 일일 퀘스트 5종 · 패키지 UI 개편</span>
         </p>
       </div>
 

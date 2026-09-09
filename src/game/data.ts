@@ -116,6 +116,9 @@ export type ItemKey =
   /* v3.0.6 — BM 상점 (에메랄드 전용 — 상점과 분리) */
   | "pet_atlas"
   | "cos_aurora"
+  /* v1.0.7 — SPUM식 코스튬 4종 + 포니테일 헤어 (입고/벗기 슬롯형 치장 — gen_outfits.py 생성 프레임) */
+  | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy"
+  | "hair_ponytail"
   | "ring_bless"
   | "buff_king"
   /* v3.0.15 (#13) — eert 큐브 (메이플 큐브 시스템 — 잠재옵션 리롤) */
@@ -386,6 +389,12 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   /* v4.3.0 — 신규 치장 6종 (ITEMS 등록: BM 구매 경로 — CosmeticDef 본체는 위 COSMETIC_DEFS) */
   cos_frost: { key: "cos_frost", kind: "cosmetic", name: "서리 오라", icon: "i_cos_frost", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
   cos_flame: { key: "cos_flame", kind: "cosmetic", name: "화염 오라", icon: "i_cos_flame", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
+  /* v1.0.7 — 코스튬/헤어 (BM 에메랄드 구매 — 착용 슬롯형 치장) */
+  outfit_royal: { key: "outfit_royal", kind: "cosmetic", name: "왕실 황금 갑옷", icon: "outfit_royal_idle0", price: 30000, bmPrice: 32, bmOnly: true, tier: "legend" },
+  outfit_shadow: { key: "outfit_shadow", kind: "cosmetic", name: "암살자의 그림자의상", icon: "outfit_shadow_idle0", price: 30000, bmPrice: 28, bmOnly: true, tier: "epic" },
+  outfit_spring: { key: "outfit_spring", kind: "cosmetic", name: "봄맞이 새싹 의상", icon: "outfit_spring_idle0", price: 30000, bmPrice: 24, bmOnly: true, tier: "epic" },
+  outfit_navy: { key: "outfit_navy", kind: "cosmetic", name: "해군 사관 제복", icon: "outfit_navy_idle0", price: 30000, bmPrice: 24, bmOnly: true, tier: "epic" },
+  hair_ponytail: { key: "hair_ponytail", kind: "cosmetic", name: "포니테일 헤어", icon: "hair_ponytail", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
   cos_shadow: { key: "cos_shadow", kind: "cosmetic", name: "그림자 오라", icon: "i_cos_shadow", price: 38000, bmPrice: 22, bmOnly: true, tier: "epic" },
   cos_holy: { key: "cos_holy", kind: "cosmetic", name: "성스러운 오라", icon: "i_cos_holy", price: 38000, bmPrice: 22, bmOnly: true, tier: "epic" },
   cos_storm: { key: "cos_storm", kind: "cosmetic", name: "폭풍 오라", icon: "i_cos_storm", price: 45000, bmPrice: 26, bmOnly: true, tier: "epic" },
@@ -450,7 +459,8 @@ export type BuffKey = "buff_atk" | "buff_def" | "buff_spd" | "buff_exp" | "buff_
 export type PetKey = "pet_slime" | "pet_pixie" | "pet_atlas"
   | "pet_wisp" | "pet_ember" | "pet_frost" | "pet_golem" | "pet_unicorn" | "pet_reaper"; // v4.3.0 — +6
 export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | "cos_aurora" | "cos_isekai" | "cos_pixel"
-  | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow"; // v4.3.0 — +6
+  | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow" // v4.3.0 — +6
+  | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy" | "hair_ponytail"; // v1.0.7 — 코스튬/헤어
 
 /** 버프 물약 효과 — 사용 시 지속시간 동안 적용 (같은 버프 재사용 시 시간 갱신) */
 export type BuffDef = {
@@ -510,6 +520,9 @@ export type CosmeticDef = {
   desc: string;
   price: number;
   tint: number;
+  /* v1.0.7 — 착용 슬롯: aura(후광·기존) / outfit(코스튬 스프라이트 교체) / hair(머리카락 레이어)
+   *  슬롯별 독립 착용 — 오라+코스튬+헤어 동시 착용 가능 */
+  slot?: "aura" | "outfit" | "hair";
 };
 export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_dawn: { key: "cos_dawn", name: "새벽빛 오라", icon: "cos_dawn", desc: "하늘빛 후광", price: 200, tint: 0x7dc0ff },
@@ -527,6 +540,12 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_holy: { key: "cos_holy", name: "성스러운 오라", icon: "cos_dawn", desc: "신성한 황금 후광", price: 0, tint: 0xfff0b0 },
   cos_storm: { key: "cos_storm", name: "폭풍 오라", icon: "cos_aurora", desc: "벼락치는 청백 후광", price: 0, tint: 0x90e8ff },
   cos_rainbow: { key: "cos_rainbow", name: "무지개 오라", icon: "cos_wings", desc: "일곱 빛깔 무지개 후광", price: 0, tint: 0xff9adf },
+  /* v1.0.7 — SPUM식 코스튬 4종 (스프라이트 직접 착장 — hero 28프레임 의상 재색상 세트) + 포니테일 헤어 */
+  outfit_royal: { key: "outfit_royal", name: "왕실 황금 갑옷", icon: "outfit_royal_idle0", desc: "황금빛 왕실 정장 코스튬 — 스프라이트에 직접 착장", price: 0, tint: 0xffd76a, slot: "outfit" },
+  outfit_shadow: { key: "outfit_shadow", name: "암살자의 그림자의상", icon: "outfit_shadow_idle0", desc: "어둠에 스먹든 보라 의상 코스튬", price: 0, tint: 0x9a6aff, slot: "outfit" },
+  outfit_spring: { key: "outfit_spring", name: "봄맞이 새싹 의상", icon: "outfit_spring_idle0", desc: "포근한 봄날의 핑크 의상 코스튬", price: 0, tint: 0xff9ad2, slot: "outfit" },
+  outfit_navy: { key: "outfit_navy", name: "해군 사관 제복", icon: "outfit_navy_idle0", desc: "단정한 딥 네이비 제복 코스튬", price: 0, tint: 0x5ac8e8, slot: "outfit" },
+  hair_ponytail: { key: "hair_ponytail", name: "포니테일 헤어", icon: "hair_ponytail", desc: "뒤로 넘긴 갈색 포니테일 — 걷는 바람에 살랑", price: 0, tint: 0x8a5c34, slot: "hair" },
 };
 
 /** 상점 판매 목록 (표시 순서 — BM 섹션은 kind로 분리 렌더) */
@@ -686,6 +705,8 @@ export const BM_STOCK: ItemKey[] = [
   "ring_dragon", "ring_phantom", "pendant_star", "ring_ancient", "ring_bless",
   "pet_wisp", "pet_ember", "pet_frost", "pet_golem", "pet_unicorn", "pet_reaper", "pet_atlas",
   "cos_frost", "cos_flame", "cos_shadow", "cos_holy", "cos_storm", "cos_rainbow", "cos_wings", "cos_aurora",
+  /* v1.0.7 — 코스튬/헤어 (캐시상점 신규 착장 치장) */
+  "outfit_royal", "outfit_shadow", "outfit_spring", "outfit_navy", "hair_ponytail",
 ];
 /** v1.0.3 (#0르쯔) — 캐시상점 진열 자격: bmPrice(에메랄드 가격)가 1 이상인 아이템만 (BmShopPanel 방어 필터용) */
 export function isCashStock(k: ItemKey): boolean {

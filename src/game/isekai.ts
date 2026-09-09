@@ -403,6 +403,9 @@ export type DailyQuestDef = {
 
 export const DAILY_QUESTS: DailyQuestDef[] = [
   { id: "hunt", name: "오늘의 토벌", desc: "몬스터 50마리 처치", goal: 50, reward: { label: "골드 15,000", gold: 15000 } },
+  /* v1.0.7 — 파밍/보스 일일 퀘스트 2종 확장 (리텐션 루프 강화 — 3종 → 5종) */
+  { id: "farm", name: "오늘의 파밍", desc: "필드 아이템 드롭 40개 수집", goal: 40, reward: { label: "뽑기권 1 + 골드 8,000", tickets: 1, gold: 8000 } },
+  { id: "boss", name: "보스 사냥", desc: "보스 1마리 처치 (재림/카오스 포함)", goal: 1, reward: { label: "골드 20,000 + 에메랄드 3", gold: 20000, emerald: 3 } },
   { id: "gate", name: "게이트 방어", desc: "바르가 수비전 1회 입장", goal: 1, reward: { label: "뽑기권 1 + 골드 5,000", tickets: 1, gold: 5000 } },
   { id: "closet", name: "균열 던전", desc: "균열 던전 1회 입장", goal: 1, reward: { label: "뽑기권 1 + 에메랄드 2", tickets: 1, emerald: 2 } },
 ];

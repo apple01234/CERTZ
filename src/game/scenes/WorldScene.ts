@@ -256,6 +256,9 @@ export class WorldScene extends Phaser.Scene {
   private dailyHunts = 0;
   private dailyGate = 0;
   private dailyCloset = 0;
+  /* v1.0.7 — 일일 파밍/보스 카운터 (일일 퀘스트 5종 확장) */
+  private dailyFarms = 0;
+  private dailyBosses = 0;
   private dailyClaimed: string[] = [];
   private dailyAds = 0; // v4.1.0 — 오늘 본 광고 보상 횟수 (일 5회 제한)
   /* v4.5.0 — 시즌 패스 + 구독 + 광고 확장 카운터 (BM 표준화) */
@@ -463,6 +466,9 @@ export class WorldScene extends Phaser.Scene {
   private cosmeticEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   /** v1.0.2 (#치장외형) — 캐릭터 본체 치장색 오버레이 (Base/Cosmetic 장비 분리 — 능력치 무관, 외형만) */
   private cosmeticOverlay: Phaser.GameObjects.Image | null = null;
+  /* v1.0.7 — 코스튬(착장)·헤어(포니테일) 오버레이 — 슬롯형 치장 (오라와 독립 착용) */
+  private outfitOverlay: Phaser.GameObjects.Image | null = null;
+  private hairOverlay: Phaser.GameObjects.Image | null = null;
   private upgradeGlow: Phaser.GameObjects.Image | null = null;
   /** v3.0.5 — 스타포스 궤도성(★15)/주변 스파클(★8+)/티어 추적 */
   private sfOrbits: Phaser.GameObjects.Image[] = [];
@@ -567,6 +573,8 @@ export class WorldScene extends Phaser.Scene {
     this.cosmeticAura = null;
     this.cosmeticEmitter = null;
     this.cosmeticOverlay = null; // v1.0.2 — 오버레이 정리(destroy는 destroyAll에서)
+    this.outfitOverlay = null; // v1.0.7 — 코스튬/헤어 오버레이 참조 정리
+    this.hairOverlay = null;
     this.upgradeGlow = null;
     this.sfOrbits = [];
     this.sfOrbitAng = 0;
@@ -880,6 +888,9 @@ export class WorldScene extends Phaser.Scene {
       this.player.pet = (savedPlayer.pet && savedPlayer.pet in PET_DEFS ? (savedPlayer.pet as PetKey) : null);
       this.player.cosmetics = (savedPlayer.cosmetics ?? []).filter((k) => k in COSMETIC_DEFS) as CosmeticKey[];
       this.player.cosmetic = (savedPlayer.cosmetic && savedPlayer.cosmetic in COSMETIC_DEFS ? (savedPlayer.cosmetic as CosmeticKey) : null);
+      /* v1.0.7 — 코스튬/헤어 슬롯 복원 (구 세이브는 undefined → null) */
+      this.player.outfit = (savedPlayer.outfit && savedPlayer.outfit in COSMETIC_DEFS ? (savedPlayer.outfit as CosmeticKey) : null);
+      this.player.hair = (savedPlayer.hair && savedPlayer.hair in COSMETIC_DEFS ? (savedPlayer.hair as CosmeticKey) : null);
       // 전직 스토리 복원 (v2.0 / v3.1.0 — fam 포함. 구 세이브는 cls 계열로 역산)
       if (savedPlayer.jobStory && typeof savedPlayer.jobStory.tier === "number") {
         const famSaved = (savedPlayer.jobStory as { fam?: string }).fam;
@@ -970,6 +981,8 @@ export class WorldScene extends Phaser.Scene {
       this.dailyHunts = savedPlayer.daily?.hunts ?? 0;
       this.dailyGate = savedPlayer.daily?.gate ?? 0;
       this.dailyCloset = savedPlayer.daily?.closet ?? 0;
+      this.dailyFarms = savedPlayer.daily?.farms ?? 0; // v1.0.7
+      this.dailyBosses = savedPlayer.daily?.bosses ?? 0; // v1.0.7
       this.dailyClaimed = [...(savedPlayer.daily?.claimed ?? [])];
       this.dailyAds = savedPlayer.daily?.ads ?? 0;
       this.dailyAdChest = savedPlayer.daily?.adsChest ?? 0;
@@ -2285,16 +2298,16 @@ export class WorldScene extends Phaser.Scene {
     /* v4.1.8 — 유료 CFXR 임팩트 텍스처로 교체 (기존 16px 무료 spark → 128px 카툰 임팩트)
      *  스케일 보정: 128px 텍스처 × 0.22/0.30 ≈ 기존 16px × 1.0/1.4 시각 크기의 ~1.8배 쥬스 업 */
     this.hitEmitter = this.add.particles(0, 0, "cfxr_impact", {
-      lifespan: 260,
-      speed: { min: 60, max: 190 },
-      scale: { start: 0.22, end: 0 },
+      lifespan: 240,
+      speed: { min: 60, max: 170 },
+      scale: { start: 0.18, end: 0 },
       emitting: false,
       blendMode: Phaser.BlendModes.ADD,
     }).setDepth(30);
     this.burstEmitter = this.add.particles(0, 0, "cfxr_impact", {
-      lifespan: 480,
-      speed: { min: 90, max: 300 },
-      scale: { start: 0.3, end: 0 },
+      lifespan: 420,
+      speed: { min: 90, max: 260 },
+      scale: { start: 0.24, end: 0 },
       emitting: false,
       blendMode: Phaser.BlendModes.ADD,
     }).setDepth(30);
@@ -2408,6 +2421,7 @@ export class WorldScene extends Phaser.Scene {
     const t = this.dmgPool.find((d) => d.scene && !d.active);
     if (!t) return; // 풀 소진 시 조용히 포기 (프레임 보호)
     // 크리티컬: 금색 큰 글씨 + 느낌표 (타격감 강조) · 약점: 원소색
+    // v1.0.7 — 크리티컬 가시성 확보: 스케일 1.75→1.42 · 지속 740→600ms (유저 지시)
     const c = color ?? (crit ? "#ffd76a" : "#ffffff");
     const label = `${prefix ? prefix + " " : ""}${val}${crit ? "!" : ""}`;
     t.setText(label).setColor(c);
@@ -2415,43 +2429,45 @@ export class WorldScene extends Phaser.Scene {
       .setActive(true)
       .setVisible(true)
       .setAlpha(1)
-      .setScale(crit ? 1.75 : 1.08);
+      .setScale(crit ? 1.42 : 1.08);
     this.tweens.add({
       targets: t,
-      y: y - (crit ? 52 : 36),
+      y: y - (crit ? 46 : 36),
       alpha: 0,
-      scale: crit ? 1.15 : 0.92, // 펀치 스케일 — 튀어오르다 살짝 수축
-      duration: crit ? 740 : 560,
+      scale: crit ? 1.0 : 0.92, // 펀치 스케일 — 튀어오르다 살짝 수축
+      duration: crit ? 600 : 560,
       ease: "Quad.out",
       onComplete: () => t.setActive(false).setVisible(false),
     });
   }
 
   spawnHitSpark(x: number, y: number) {
-    /* v3.3.0 (지시 #9) — 타격 스파크 5→9개로 증량 (화면이 더 밝게 터진다) */
+    /* v3.3.0 (지시 #9) — 타격 스파크 5→9개로 증량 (화면이 더 밝게 터진다)
+     *  v1.0.7 — 가림 축소: 9→6개 (유저 지시 — 타격감은 히트스톱+사운드가 담당) */
     this.hitEmitter.setParticleTint(0xfff0a0);
-    this.hitEmitter.explode(9, x, y);
+    this.hitEmitter.explode(6, x, y);
 
     /* v3.0.8 디자인 개편 — Warped Hits 플립북 오버레이 (3종 랜덤, ADD 블렌드) */
     const fx = this.hitFxPool.find((s) => s.scene && !s.active);
     if (fx) {
       const anim = Phaser.Utils.Array.GetRandom(["fx2-hit1", "fx2-hit3", "fx2-hit5"]);
       fx.setPosition(x, y - 4)
-        .setScale(0.55)
+        .setScale(0.48) // v1.0.7 — 0.55→0.48 가림 축소
         .setActive(true)
         .setVisible(true)
-        .setAlpha(0.95)
+        .setAlpha(0.8) // v1.0.7 — 0.95→0.8
         .play(anim);
       fx.once("animationcomplete", () => fx.setActive(false).setVisible(false));
     }
 
     // v2.2 타격감 — 충격 링 (shock_ring 확산)
-    const ring = this.add.image(x, y, "shock_ring").setDepth(19).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0.85).setTint(0xfff2c0);
+    // v1.0.7 — 알파 0.85→0.55 · 확산 0.85→0.7 (유저 지시: 이펙트 가림 축소)
+    const ring = this.add.image(x, y, "shock_ring").setDepth(19).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0.55).setTint(0xfff2c0);
     this.tweens.add({
       targets: ring,
-      scale: 0.85,
+      scale: 0.7,
       alpha: 0,
-      duration: 170,
+      duration: 150,
       ease: "Cubic.out",
       onComplete: () => ring.destroy(),
     });
@@ -2664,8 +2680,8 @@ export class WorldScene extends Phaser.Scene {
         this.tweens.add({ targets: pillar, alpha: 0, delay: 420, duration: 500, onComplete: () => pillar.destroy() });
       }
       // 셰이더 링 2연격 — 마법진 가장자리에서 파동 확산 (지연 스태거)
-      this.spawnShockwave(x, y + 14, chaos ? 0xff5a4a : 0xb07dff, 2.6, 480, 0.9);
-      this.time.delayedCall(190, () => this.spawnShockwave(x, y + 14, tint, 2.0, 420, 0.8));
+      this.spawnShockwave(x, y + 14, chaos ? 0xff5a4a : 0xb07dff, 2.2, 400, 0.6); // v1.0.7 — 2.6/480/0.9 → 축소
+      this.time.delayedCall(190, () => this.spawnShockwave(x, y + 14, tint, 1.8, 360, 0.5));
       // 마법 별 파편 — 마법진 위로 솟구치는 스파클
       this.burstEmitter?.setParticleTint(chaos ? 0xff7a5a : 0xc9a6ff);
       this.burstEmitter?.explode(14, x, y);
@@ -2743,6 +2759,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** 픽업 처리 (Drop가 접촉 시 호출 — viaPet은 펫 자동 줍기) */
   collectDrop(kind: DropKind, amount: number, x: number, y: number, viaPet = false) {
+    if (kind !== "gold") this.dailyFarms++; // v1.0.7 — 오늘의 파밍 (아이템 드롭 수집 카운트)
     if (kind === "gold") {
       // 펫 골드 보너스 (v1.9 BM — 슬라임 +10%, 핑크이 +20%)
       // v4.0.0 — 피규어/배지/스킨 골드 획득 보너스 추가
@@ -2963,11 +2980,22 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** v3.0.2 — 마법사 시전 이펙트: 손 앞 마나 불꽃 (Pixelart Spells 6프레임 1회) */
+  /** v3.0.2 — 마법사 시전 이펙트: 손 앞 마나 불꽃 (Pixelart Spells 6프레임 1회)
+   *  v1.0.7 — 프리렌더 슬래시(Hovl Slash) 추가 — 시전 손짓에 참격 궤적 겹침 */
   spawnCast(x: number, y: number) {
     const fx = this.add.sprite(x, y, "x2_sp_sparks").setDepth(11).setScale(1.2);
     fx.play("fx-sparks");
     fx.once("animationcomplete", () => fx.destroy());
+    if (this.textures.exists("hv_slash")) {
+      const sl = this.add.image(x, y - 6, "hv_slash")
+        .setDepth(11)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(0x9db4ff)
+        .setScale(0.22)
+        .setAlpha(0.4)
+        .setRotation(Phaser.Math.FloatBetween(-0.5, 0.2));
+      this.tweens.add({ targets: sl, alpha: 0, scale: 0.34, duration: 260, onComplete: () => sl.destroy() });
+    }
   }
 
   /* ================= 히트스톱 / 타격감 ================= */
@@ -3356,6 +3384,8 @@ export class WorldScene extends Phaser.Scene {
       this.dailyHunts = 0;
       this.dailyGate = 0;
       this.dailyCloset = 0;
+      this.dailyFarms = 0; // v1.0.7
+      this.dailyBosses = 0; // v1.0.7
       this.dailyClaimed = [];
       this.dailyAds = 0;
       this.dailyAdChest = 0; // v4.5.0 — 광고 무료 상자/버프 카운터 리셋
@@ -3668,7 +3698,7 @@ export class WorldScene extends Phaser.Scene {
         this.ensureDaily();
         const q = DAILY_QUESTS.find((d) => d.id === v.id);
         if (!q || this.dailyClaimed.includes(q.id)) return;
-        const prog = q.id === "hunt" ? this.dailyHunts : q.id === "gate" ? this.dailyGate : this.dailyCloset;
+        const prog = q.id === "hunt" ? this.dailyHunts : q.id === "farm" ? this.dailyFarms : q.id === "boss" ? this.dailyBosses : q.id === "gate" ? this.dailyGate : this.dailyCloset;
         if (prog < q.goal) { EventBus.emit("banner:show", { text: `진행도 부족 (${prog}/${q.goal})` }); return; }
         this.dailyClaimed.push(q.id);
         const g = q.reward;
@@ -4236,6 +4266,12 @@ export class WorldScene extends Phaser.Scene {
     this.spawnPillar(p.x, p.y, 0xffe66a, 300);
     this.spawnBurstAt(p.x, p.y, 80, 0xffe66a);
     this.spawnCrack(p.x, p.y);
+    /* v1.0.7 — 각성 의식 프리렌더 3D 플래시 (Hovl FlashFree2 — 희소 의식 순간 전용 연출) */
+    if (this.textures.exists("hv_flash")) {
+      const awFlash = this.add.image(p.x, p.y - 12, "hv_flash").setDepth(28).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe66a).setScale(0.25).setAlpha(0);
+      this.tweens.add({ targets: awFlash, alpha: 1, scale: 1.6, duration: 220, ease: "Cubic.out" });
+      this.tweens.add({ targets: awFlash, alpha: 0, scale: 2.3, delay: 260, duration: 520, onComplete: () => awFlash.destroy() });
+    }
     this.cameras.main.flash(240, 255, 230, 120);
     this.cameras.main.shake(460, 0.02);
     EventBus.emit("banner:show", {
@@ -4883,8 +4919,23 @@ export class WorldScene extends Phaser.Scene {
     this.clearBossPostFX(); /* v4.1.5 — 보스전 포스트FX/오라 해제 */
     const def = this.bossDef;
     audio.sfx.bossDie();
+    this.ensureDaily();
+    this.dailyBosses++; // v1.0.7 — 보스 사냥 일일 퀘스트 카운트 (재림/카오스/GM 전 경로 공통)
     /* v4.8.0 — 보스 격파 대형 충격파 (오브 색상 — 스토리/재림/GM 경로 공통, WebGL 전용) */
-    if (this.boss?.active) this.spawnShockwave(this.boss.x, this.boss.y, def?.orbTint ?? 0x9d7aff, 2.4, 520);
+    if (this.boss?.active) {
+      this.spawnShockwave(this.boss.x, this.boss.y, def?.orbTint ?? 0x9d7aff, 2.4, 520, 0.6); // v1.0.7 — 알파 명시 축소
+      /* v1.0.7 — 프리렌더 3D VFX (UNI 폭발 충격파 + Hovl 플래시) — 보스 격파의 결정적 순간 연출 */
+      if (this.textures.exists("uni_boom")) {
+        const boom = this.add.image(this.boss.x, this.boss.y + 8, "uni_boom").setDepth(27).setBlendMode(Phaser.BlendModes.ADD).setTint(def?.orbTint ?? 0x9d7aff).setScale(0.15).setAlpha(0);
+        this.tweens.add({ targets: boom, alpha: 0.85, scale: 1.5, duration: 340, ease: "Cubic.out" });
+        this.tweens.add({ targets: boom, alpha: 0, delay: 380, duration: 520, onComplete: () => boom.destroy() });
+      }
+      if (this.textures.exists("hv_flash")) {
+        const flash = this.add.image(this.boss.x, this.boss.y - 10, "hv_flash").setDepth(28).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0);
+        this.tweens.add({ targets: flash, alpha: 0.95, scale: 1.1, duration: 160, ease: "Cubic.out" });
+        this.tweens.add({ targets: flash, alpha: 0, scale: 1.5, delay: 180, duration: 420, onComplete: () => flash.destroy() });
+      }
+    }
     /* v3.0.24 (#보스재도전) — 재림 보스 격파: 스토리 진행과 분리된 전용 보상 경로
      *  퀘스트 진행/포탈 개방/클리어 판정 없음 → 골드·경험치·에메랄드 즉시 지급 후 구역 BGM 복귀 */
     if (this.replayBossActive) {
@@ -6381,6 +6432,27 @@ export class WorldScene extends Phaser.Scene {
       ov.setFlipX(this.player.flipX);
       ov.setScale(this.player.scaleX, this.player.scaleY);
       ov.setDepth(this.player.depth + 0.2);
+    }
+    /* v1.0.7 — 코스튬 오버레이: 프레임·위치·반전 본체 완전 동기화 (옷이 몸을 따라 움직인다) */
+    if (this.outfitOverlay && this.player) {
+      const ov = this.outfitOverlay;
+      ov.setPosition(this.player.x, this.player.y);
+      const want = this.outfitTex(this.player.texture.key, this.player.outfit ?? "");
+      if (ov.texture.key !== want) ov.setTexture(want);
+      ov.setFlipX(this.player.flipX);
+      ov.setScale(this.player.scaleX, this.player.scaleY);
+      ov.setDepth(this.player.depth + 0.15);
+    }
+    /* v1.0.7 — 포니테일: 등 뒤 위치 동기화 + 방향별 오프셋 (측면일 때 뒤편으로 흐르게) */
+    if (this.hairOverlay && this.player) {
+      const hv = this.hairOverlay;
+      const animKey = this.player.anims?.currentAnim?.key ?? "";
+      const trailX = this.player.flipX ? 5 : -5;
+      const dx = animKey.includes("up") ? 0 : animKey.includes("side") ? trailX : trailX * 0.4;
+      hv.setPosition(this.player.x + dx, this.player.y + 1);
+      hv.setFlipX(this.player.flipX);
+      hv.setScale(this.player.scaleX, this.player.scaleY);
+      hv.setDepth(this.player.depth - 0.1);
     }
     if (this.upgradeGlow) this.upgradeGlow.setPosition(this.player.x, this.player.y - 10);
     /* v3.0.5 — 스타포스: 궤도성 회전(★15) + 주변 스파클(★8+) */
@@ -8556,6 +8628,33 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.2 (#치장외형) — 치장 해제 시 본체 오버레이도 제거 */
     this.cosmeticOverlay?.destroy();
     this.cosmeticOverlay = null;
+    /* v1.0.7 — 코스튬(착장)·헤어(포니테일) 오버레이 재생성 — 슬롯형 치장
+     *  코스튬: hero 프레임과 동일 캔버스의 재색상 프레임을 본체 위에 얹어 '옷을 입힌다'
+     *  헤어: 머리 묶음 위치에 앵커한 포니테일을 몸 뒤에 두고 미세하게 흔들린다 */
+    this.outfitOverlay?.destroy();
+    this.outfitOverlay = null;
+    if (this.hairOverlay) this.tweens.killTweensOf(this.hairOverlay); // 흔들림 tween 먼저 정리
+    this.hairOverlay?.destroy();
+    this.hairOverlay = null;
+    if (this.player?.outfit) {
+      const want = this.outfitTex(this.player.texture.key, this.player.outfit);
+      this.outfitOverlay = this.add.image(this.player.x, this.player.y, want).setDepth(this.player.depth + 0.15);
+    }
+    if (this.player?.hair === "hair_ponytail") {
+      /* 오리진을 꼬리 묶음(캔버스 44,19)에 — 흔들림 회전 축이 자연스럽다 */
+      this.hairOverlay = this.add
+        .image(this.player.x, this.player.y, "hair_ponytail")
+        .setOrigin(44 / 96, 19 / 64)
+        .setDepth(this.player.depth - 0.1);
+      this.tweens.add({
+        targets: this.hairOverlay,
+        angle: { from: -2.2, to: 2.2 },
+        duration: 980,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+    }
     const key = this.player?.cosmetic;
     if (!key) return;
     /* v1.0.2 (#치장외형) — 본체 오버레이: 같은 텍스처를 치장색 ADD 블렌드로 얹어
@@ -8610,6 +8709,15 @@ export class WorldScene extends Phaser.Scene {
    *  ★15   금색 글로우 + 궤도성 2기 + 최밀 스파클
    * 티어 변경 시 오라 재생성. ★4 미만은 소멸.
    */
+  /** v1.0.7 — hero 프레임 키 → 코스튬 프레임 키 매핑 (hero_idle0 → outfit_royal_idle0).
+   *  비-hero 텍스처(변신/오브 등)는 그대로 반환 — 코스튬 미적용 프레임은 본체가 그대로 보인다. */
+  private outfitTex(playerTexKey: string, outfitKey: string): string {
+    if (!outfitKey || !playerTexKey.startsWith("hero_")) return playerTexKey;
+    const style = outfitKey.replace("outfit_", "");
+    const cand = `outfit_${style}_${playerTexKey.slice(5)}`;
+    return this.textures.exists(cand) ? cand : playerTexKey;
+  }
+
   private syncUpgradeGlow() {
     const up = this.player?.upgrades.weapon ?? 0;
     const tier = starTier(up);
@@ -9176,6 +9284,9 @@ export class WorldScene extends Phaser.Scene {
       pet: this.player.pet,
       cosmetics: [...this.player.cosmetics],
       cosmetic: this.player.cosmetic,
+      /* v1.0.7 — 슬롯형 치장 (코스튬/헤어) */
+      outfit: this.player.outfit,
+      hair: this.player.hair,
       stats: { ...this.player.stats },
       ap: this.player.ap,
       /* v2.5 — 자동사냥 상태 (v3.0.15 #5: 펫 조건 제거) */
@@ -9230,7 +9341,7 @@ export class WorldScene extends Phaser.Scene {
         gateStars: [...this.gateStars],
         freeGachaIn: Math.max(0, 600000 - (Date.now() - this.freeGachaAt)),
         attend: { last: this.attendLast, count: this.attendCount },
-        daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop },
+        daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop, farms: this.dailyFarms, bosses: this.dailyBosses },
         tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
         extSummary: (() => {
           const e = this.player.extBonus;
@@ -9369,6 +9480,8 @@ export class WorldScene extends Phaser.Scene {
       pet: this.player.pet,
       cosmetics: [...this.player.cosmetics],
       cosmetic: this.player.cosmetic,
+      outfit: this.player.outfit, // v1.0.7 — 코스튬 슬롯
+      hair: this.player.hair, // v1.0.7 — 헤어 슬롯
       /* v2.0 — 전직 스토리 진행 */
       jobStory: this.jobStory ? { ...this.jobStory } : null,
       pendingJobClass: this.pendingJobClass, // v3.1.0 — 시련 중 선택한 1차 클래스
@@ -9405,7 +9518,7 @@ export class WorldScene extends Phaser.Scene {
       constel: [...this.constel],
       coupons: [...this.couponsUsed],
       attend: { last: this.attendLast, count: this.attendCount },
-      daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop },
+      daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop, farms: this.dailyFarms, bosses: this.dailyBosses },
       tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset, refills: this.ticketRefills },
       achClaimed: [...this.achClaimed],
       /* v4.5.0 — 시즌 패스 + 구독 + 스타터팩 */
