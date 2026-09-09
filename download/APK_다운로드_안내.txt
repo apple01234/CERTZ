@@ -249,7 +249,7 @@ SERTZ v1.0.5 APK 다운로드 안내
 ■ 다운로드 방법 — GitHub 릴리스 (권장, 즉시 시작)
   https://github.com/apple01234/CERTZ/releases/download/v1.0.5/SERTZ-v1.0.5.apk
   → 누르는 즉시 다운로드 시작 (대기 없음, 약 20초)
-  무결성 확인용 md5: MD5_PLACEHOLDER_V105
+  무결성 확인용 md5: 43bc2654fff7e9a6967da16886f12ce5
   릴리스 페이지: https://github.com/apple01234/CERTZ/releases
 
 ■ 설치
