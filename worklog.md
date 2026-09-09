@@ -1382,3 +1382,26 @@ Stage Summary:
 - 유저 지시서 4섹션 처리율: ①모바일/스케일=기존 RESIZE 체계 확인+1600×720 실측 통과(참고: 첨부 레퍼런스 이미지는 수신되지 않아 자체 프리미엄 디자인 적용) ②SPUM 코스튬+포니테일+프리렌더 3D+크리틱 축소=전부 구현 ③로그인 수정+콘텐츠(일일 5종)+BM(코스튬 판매·패키지 UI)=구현 ④용량 무관 고샘플+기존 풀링/컬링/fxLevel 적응형 유지
 - 다음 회차 제안: 신규 파밍 던전 맵 추가(스테이지 파이프라인 확장)·SNS OAuth 실키 등록·Play Console 결제 연동(STORE_PACKS 상품 등록 후)
 - GitHub 토큰 노출 지속 — 재발급 권고 필수 / download/*.zip .gitignore 추가(대형 파일 리포트 블로트 방지)
+
+---
+Task ID: 71
+Agent: Super Z (메인)
+Task: 유저 4건 — ①"메이플 확률 주작까지 따라함??" ②"쉐이더 어디감??" ③하던거 마무리 ④APK 빌드 — v1.0.8 확정·릴리스 (versionCode 73)
+
+Work Log:
+- [인수] 평행 세션의 v1.0.8 코어(무한 콘텐츠 10종 infinite.ts·AuthPanel 컴팩트+스크롤·2-6 능대 타깃 교정·로그인 오토시드)가 커밋 ee93409에 이미 반영된 트리에서 시작 — 본 회차는 유저 신규 4건 처리 + 검증 + 릴리스
+- [①확률 감사] 전 확률 시스템 정적 감사: 스타포스 강화(UPGRADE_RATES 단일 Math.random 롤·버튼에 성공률 표기 이미 존재)·가챠 상자(가중치 롤+chestOdds 법정 공시 기존 존재)·등급업 큐브(100%)·드롭(고정 확률) — 조작 코드 전무 확인. 공백: eert 큐브 잠재 등급 확률 무공시 + 상위 강화 체감 과중
+- [①투명화 구현] data.ts eertOdds() 공시 헬퍼 + POT_PITY_MAX=10·STAR_PITY_STEP=5/MAX=15/FROM=10 상수 · 캐시상점 법정 공시 섹션에 eert 큐브 등급 확률(60/28/10/2%)+천장 규칙 추가 · 인벤 장비/장신구 eert 버튼 옆 확률+확정 카운트 칩 · 강화 실패 가산 천장(★10+ 실패 연속 +5%p, 최대 +15%p, 성공 리셋 — shop/인벤 표시 성공률에 실시간 반영) · 잠재 유니크+ 확정 천장(미달 9회 후 10회째 롤 확정) · 천장 카운터 세이브/클라우드/emitRpgState 5곳 저장·복원(config.ts 정규화 포함)
+- [②셰이더 근본] 유저 리포트 재현: headless 14fps → 적응형 축소 진입 확인(원인 1: 무음 축소). 추가 정적 분석으로 원인 2 발견 — Phaser 4 오브젝트 필터는 opt-in: enableFilters() 호출 전 filters 게터가 null 반환 → applyToonStyle이 조용히 null 반환, 툰 셰이더가 플레이어/보스에 "한 번도" 부착된 적 없음(v1.0.2 도입 이후). ToonFX.applyToonStyle에 enableFilters() 선행 호출 패치 → playerToon 2필터(ColorMatrix+Glow) 부착 실측 + 스크린샷 림라이트 시각 확인
+- [②셰이더 모드] fxMode(auto/high/low) 신설 — localStorage sertz_fx_mode, 설정 패널 3버튼 세그먼트(항상 높음=적응형 우회·셰이더 강제/자동/절전), EventBus fx:mode 실시간 전환+applyFxMode(툰/블룸 즉시 부착·해제), 자동 축소 진입 시 배너 공지("프레임 안정화 — 셰이더·이펙트 축소 (설정→그래픽 효과: 항상 높음)"), 복원 대기 15s→7.5s 단축. 실측: high 선택→localStorage=high·fxLevel 1 복원·배너·콘솔 로그
+- [③2-6 밀도] 근원 분석: subEnemyMix는 구역별 하드코딩(2-6=능대 15+고블린 5) — 반복의뢰(spec.main=wolf) 편입이 donor=enemies[0](=능대)를 15→12로 깎아 늑대 3마리 편입(퀘스트 대상을 자가 깎는 모순). buildStage 패치: 편입 차감을 비대상 최대 그룹에서 + 토벌 beat 구역 대상종 15마리 밀도 보장 부스트(각종 최소 2 유지). 라이브 실측: forest6 능대 15마리(12→15, +25%)·고블린 2·늑대 3=총량 20 유지
+- [③마무리 검증] 1280×720 전수: 타이틀 v1.0.8 배지·설정 그래픽 효과 UI·캐시상점 공시(eert 등급 확률+천장 규칙)·인벤 확률 칩("레어 60% · 에픽 28% · 유니크 10% · 레전드 2% · 확정까지 9")·계정 패널 340×364 컴팩트(하단 잘림 0)·콘텐츠 패널·AUTH API(OPTIONS 204·로그인 토큰)·pageerror 0
+- [④빌드 트러블슈팅] 세션 교체로 /home/z/jdk 소실 → rebuild_toolchain.sh 재구축(JDK 21.0.12+SDK36) → gradle 단독 빌드 시 산출물에 스테일 .next-apk(병행 세션 빌드분) 서빙 발견 — 신규 코드 검출 0 → **build_apk.sh 전체 파이프라인(APK_EXPORT=1 next build → cap sync → gradle) 경유 필수 확인**, gradle 단독 실행은 스테일 에셋 위험. 재빌드 후 APK 내부 신규 코드 검출: fx-mode 5·확정까지 2·eertOdds 2·potPity 16·starPity 15·그래픽효과 6
+- [릴리스] 커밋 992df07+f33f1d4 푸시(원격 7a04bb2=worklog 중복 커밋과 분기 → ours 전략 병합, v1.0.8 트리 보존) → GitHub Release v1.0.8(id 385706758) 업로드 → 원격 md5 재다운로드 일치 ✓(1차 스크립트 검증 다운로드는 전송 중단편이었음 — 재검증으로 해소) → apk-guide/안내.txt md5 기입·서빙 실측(307→v1.0.8·guide md5·txt 마커)
+- [버저닝] build.gradle 73/1.0.8 · package.json 1.0.8 · Overlays 배지(확률 공시+천장·셰이더 모드 추가) · server.js APK_MIRROR · next.config.ts APK_DL · apk-guide.html · 안내.txt — 7곳 동기화
+
+Stage Summary:
+- v1.0.8 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.8/SERTZ-v1.0.8.apk (versionCode 73, 105,309,370B, md5 d3da0cbe9c561a0552f190b07f8beed0)
+- ①확률: 감사 결과 롤 로직 정직 확인 — 주작 없음을 전제로 eert 공시+이중 천장(강화 실패 가산·잠재 확정)으로 신뢰 구조 확립 ②셰이더: enableFilters opt-in 근본 버그 수정(도입 후 처음으로 정상 부착) + 그래픽 효과 3모드 설정으로 유저 제어 가능 ③v1.0.8 전체 마무리 검증 완료 ④APK 릴리스 완료
+- 운영 교훈: APK 빌드는 반드시 scripts/build_apk.sh (cap sync 포함) — gradle 단독 실행 시 스테일 .next-apk 서빙됨 / GitHub 원격에 병행 세션의 동명 커밋 분기 상주 — 푸시 전 fetch 필수
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
