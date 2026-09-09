@@ -1284,3 +1284,28 @@ Work Log:
 Stage Summary:
 - v1.0.3 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.3/SERTZ-v1.0.3.apk (md5 1bdce61a…, versionCode 68, 105MB)
 - 유저 13항목 처리: ①UI/글자짤림(타이틀 배지·크레딧·저높이 안내줄) ②마을 관리자 UI 잔존(GM 인터랙터 비관리자 탐색 제외) ③GM 로그인=계정패널 안내+admin/apple01234 기본 등록(실측: admin 가입→role=admin→GM NPC 표시, 일반유저→완전 숨김) ④거래소 크래시 근본 수정(APK API base+응답검증 — 2탭 실측 크래시 0) ⑤캐시상점 명칭 ⑥0르쯔 제거(골드상점 아이템 21종 캐시목록 제외+특가풀 정리) ⑦펫 이름 6종 실제 디자인과 일치 ⑧반지 중복 장착 금지(UI+로직 실측) ⑨등급업 큐브 v1.0.2 버튼 실측 확인 ⑩일반 버프 기타 탭 이동(캐시 탭=왕의 가호만) ⑪상자 개봉 보상 팝업 인벤 위(z-[70]) ⑫3D 원본 에셋은 세션 리셋으로 유실 — 게임 반영분은 public/에 전부 존재, 보고만 ⑬APK v1.0.3 빌드+릴리스 완료
+
+---
+Task ID: 67
+Agent: Super Z (메인)
+Task: v1.0.4 — 유저 3건 (①로그인 입력창 단축키 눌림 ②이동 방향키 전용+스킬 ZXC/ASDF 개편 ③ponytail 질문) + APK 빌드·릴리스
+
+Work Log:
+- [ponytail] 유저가 "ponytail 적용된거 맞음???" 재요청 → Skill(command=ponytail) 활성화. 이번 라운드는 전부 최소 diff·뿌리 수정 원칙으로 수행
+- [①원인 2중] (a) AuthPanel 비밀번호 인풋: JSX {...swallowKeys} 뒤에 explicit onKeyDown을 다시 써서 stopPropagation이 덮어씌워져 소실 → Phaser window 리스너로 키 유출. 수정: swallow onKeyDown에 e.stopPropagation() 복구 (b) 공용 방어선: WorldScene.update에 activeElement 타이핑 가드 신설 — INPUT/TEXTAREA/contentEditable 포커스 중엔 게임 키 전면 차단 + 매 프레임 resetInputState(keyup 유실 고착 동시 청소). 앞으로 추가되는 모든 인풋에 자동 적용
+- [②이동] WorldScene.resolveDirVec에서 A/W/S/D track 제거 → LEFT/RIGHT/UP/DOWN만. 마을 배너 "방향키/WASD"→"방향키"
+- [②키맵] keymap.ts DEFAULT_KEYMAP 재배치: attack=X·skill1=Z·skill2=C·skill3=V 기존 유지, skill4 B→A, skill5 N→S, potHp Q→D, potMp R→F, shop F→G. KEYMAP_STORAGE v1→v2(기존 유저도 신규 배치 적용). ASSIGNABLE_KEYS 알파벳 전체 확장(WASD 보호 해제 — 화살표는 정규식으로 자동 차단)
+- [②충돌 정리] FriendsWidget F→B(MP물약 충돌), TouchControls 물약 키 힌트 Q/R 하드코딩→loadKeyMap(), 타이틀 키 안내줄(Overlays) 신규 클러스터 표기, 설정 패널 도움말 갱신
+- [리팩터] resumeFromDialogue 잔여 justDown 소비를 하드코딩 [SPACE,X,Z,C,E] → keyObjs 전체 소비로 변경(키맵 무관 동작)
+- [실측 — 웹] 신규 키맵 로드(kmap=Z/C/V/A/S/D/F/G) ✓ · ArrowRight 홀드 1초 x 180→202 이동 ✓ · A/W 홀드 1초 좌표 불변 ✓ · 비밀번호창에 "wasdi" 타이핑: 캐릭터 정지+창 개방 0건(dialogs=0) ✓ · 인풋 블러 후 i/o 키 정상 동작(인벤/설정 열림) ✓ · 친구 버튼 "친구 열기 (B)" 표기 ✓ · 타이틀 v1.0.4 배지 ✓
+- [툴체인] 세션 컨테이너 교체로 /home/z/jdk 소실 → rebuild_toolchain.sh 재실행(Temurin 21.0.12+SDK36+BT35). 이전 ls 검증이 .android-sdk만 보고 TOOLCHAIN_OK 오판 — javac 존재 확인으로 보강 필요
+- [빌드] 1차 gradle 실패(JAVA_COMPILER 부재=JRE 폴백) → 툴체인 재구축 후 재시도 → "Gradle daemon disappeared"(OOM, Task 66 재발) → ./gradlew assembleRelease --no-daemon 단독 실행으로 BUILD SUCCESSFUL
+- [산출] download/SERTZ-v1.0.4.apk 105,159,510B · aapt: versionCode 69 / versionName 1.0.4 · md5 c5bf6a24aecdffd378636e4ed9d79b39
+- [릴리스] GitHub Release v1.0.4(id 385209035) 업로드 → 재다운로드 md5 원격 일치 ✓ · server.js APK_MIRROR 307 → v1.0.4 실측 ✓ · apk-guide.html+안내.txt md5 기입(서빙 본=public 실측 동일 md5)
+- [버저닝] 7곳 싱크: build.gradle 69/1.0.4 · package.json 1.0.4 · server.js · next.config.ts · apk-guide.html · APK_다운로드_안내.txt · Overlays 배지
+
+Stage Summary:
+- v1.0.4 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.4/SERTZ-v1.0.4.apk (versionCode 69, 105MB)
+- ①로그인 입력창: 인풋 포커스 중 게임 키 전면 차단(공용 가드+swallowKeys 복구) ②이동=화살표 전용, 전투 키=Z X C V + A S D F 클러스터(기존 Z/X/C/V 유지로 프레임 보존) ③ponytail: 본 라운드부터 활성 — 최소 diff로 3건 처리
+- 실측 노트: agent-browser CDP 키 이벤트는 keyCode=0이라 Phaser가 무시 — 키 입력 실측은 실제 키코드를 넣은 synthetic KeyboardEvent로 수행할 것
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
