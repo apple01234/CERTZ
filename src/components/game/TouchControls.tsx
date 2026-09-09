@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
 import { Swords, RefreshCw, Zap, Bot, Pause, Flame, Star } from "lucide-react";
 import type { Skills } from "./useGameUi";
+import { loadKeyMap } from "@/game/keymap"; // v1.0.4 — 물약 키 힌트를 키맵 따라 표시
 
 /* v3.0.18 — 52→64px: 스틱 반경 확대로 미세 조작 정밀도 향상 + 풀 기울임이 쉬워짐
  *  (기존 52px는 손가락이 조금만 쉬어도 실질 60~85% 속도 — "이속이 느림" 체감의 주원인) */
@@ -336,6 +337,8 @@ function PotionButton({
   onDown: () => void;
 }) {
   const shown = itemCount ?? count;
+  /* v1.0.4 — PC 키 힌트 하드코딩(Q/R) 제거: 키맵 기본값(D/F)·재배치를 따라감 */
+  const kmHint = loadKeyMap();
   const iconSrc =
     itemKey && itemKey !== "potion_hp" && itemKey !== "potion_mp"
       ? `/assets/item_${itemKey}.webp`
@@ -364,7 +367,7 @@ function PotionButton({
         {shown}
       </span>
       <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/70">
-        {kind === "hp" ? "Q" : "R"}
+        {kind === "hp" ? kmHint.potHp : kmHint.potMp}
       </span>
     </button>
   );

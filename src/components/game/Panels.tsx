@@ -3246,7 +3246,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
 
         <div className="mt-2.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
           <p className="text-[10px] leading-relaxed text-white/50">
-            이동은 WASD / 방향키 고정 · SPACE는 항상 공격 · ESC는 창 닫기 고정입니다.
+            이동은 방향키 고정 · SPACE는 항상 공격 · ESC는 창 닫기 고정입니다. (v1.0.4 — WASD 이동 제거, 전투 키는 Z X C V + A S D F)
             <br />
             모바일은 터치 컨트롤을 사용하므로 영향을 받지 않아요.
           </p>

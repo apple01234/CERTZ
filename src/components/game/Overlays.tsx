@@ -43,7 +43,7 @@ export function TitleScreen() {
           이그드라실 : 아홉 왕국
           {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
            *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.3 — 유저 버그 픽스 8종: 거래소 크래시 · 캐시상점 정리(0르쯔 제거) · 반지 중첩 방지 · 등급업 큐브 · GM 로그인 안내 · 펫 이름 일치 · 버프 분류 · UI 짤림</span>
+          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.4 — 조작 개편: 이동 화살표 전용 · 스킬 Z X C V + A S D F · 로그인 입력창 단축키 눌림 차단</span>
         </p>
       </div>
 
@@ -95,7 +95,7 @@ export function TitleScreen() {
       <div className="absolute inset-x-0 bottom-3 flex flex-col items-center gap-1 px-3 text-center">
         {/* v1.0.3 — 저높이(가로 폰)에서는 키 안내줄이 APK 링크와 겹치므로 숨김 (터치 유저에게 불필요) */}
         <p className="text-[10px] font-bold text-white/45 sm:text-[11px] [@media(max-height:540px)]:hidden">
-          이동: 방향키 / 왼쪽 화면 드래그 · 공격: X · 스킬: Z, C · 물약: Q, E
+          이동: 방향키 / 왼쪽 화면 드래그 · 공격: X · 스킬: Z, C, V, A, S · 물약: D, F
         </p>
         <p className="max-w-[min(94vw,760px)] text-[8px] leading-relaxed text-white/30 sm:text-[9px]">
           Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by

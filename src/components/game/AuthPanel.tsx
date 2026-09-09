@@ -225,7 +225,7 @@ export function AuthPanel() {
                   {mode === "signup" && (
                     <input {...swallowKeys} value={nick} onChange={(e) => setNick(e.target.value)} placeholder="게임 내 이름 (1~8자, 선택)" className={inputCls} maxLength={8} />
                   )}
-                  <input {...swallowKeys} type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="비밀번호 (6자 이상)" className={inputCls} maxLength={40} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } }} />
+                  <input {...swallowKeys} type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="비밀번호 (6자 이상)" className={inputCls} maxLength={40} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); submit(); } }} />
                 </div>
                 <button onClick={submit} disabled={busy || !id || !pw} className="mt-2 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-3 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:opacity-40">
                   {mode === "login" ? "로그인" : "이 정보로 가입!"}

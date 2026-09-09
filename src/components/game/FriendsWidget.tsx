@@ -49,7 +49,7 @@ export function FriendsWidget() {
       const el = document.activeElement;
       const typing = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
       if (typing) return;
-      if (e.key.toLowerCase() === "f") setOpen((v) => !v);
+      if (e.key.toLowerCase() === "b") setOpen((v) => !v); // v1.0.4 — F는 MP물약과 충돌 → B(buddy)
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -105,11 +105,11 @@ export function FriendsWidget() {
     <div className="absolute right-2 top-[168px] sm:right-3 sm:top-[190px] flex flex-col items-end gap-1.5">
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label="친구 열기 (F)"
+        aria-label="친구 열기 (B)"
         className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-emerald-200/30 bg-black/60 px-2.5 py-1.5 text-[11px] font-black text-emerald-200 backdrop-blur-sm transition-transform hover:bg-black/80 active:scale-95"
       >
         <UserRound size={13} />
-        친구 <span className="rounded bg-white/10 px-1 text-[9px] text-white/50">F</span>
+        친구 <span className="rounded bg-white/10 px-1 text-[9px] text-white/50">B</span>
         {friends.length > 0 && (
           <span className="rounded bg-emerald-400/25 px-1 text-[9px] text-emerald-100">{friends.length}</span>
         )}

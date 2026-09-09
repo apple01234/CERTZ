@@ -6258,8 +6258,13 @@ export class WorldScene extends Phaser.Scene {
     if (this.player && this.player.state !== "dead") this.syncWeaponSprite();
     else if (this.weaponImg) { this.weaponImg.setVisible(false); }
 
-    // 채팅 입력 중 — 게임 키/이동 완전 차단 (원격 보간은 위에서 계속)
-    if (this.chatFocused || this.dialoguing || !this.player) return;
+    /* v1.0.4 — 어떤 DOM 입력(로그인/수량/이름 등)이든 포커스 중이면 게임 키 전면 차단.
+     *  비게이트 인풋(비밀번호 등)에서 단축키가 발동하던 문제의 공용 방어선 —
+     *  입력 중엔 매 프레임 입력 상태를 리셋해 keyup 유실 고착도 동시 청소 */
+    const ae = document.activeElement as HTMLElement | null;
+    const typing = !!ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable);
+    if (typing) this.resetInputState();
+    if (this.chatFocused || this.dialoguing || typing || !this.player) return;
     if (this.player.state === "dead") return;
 
     this.wellCd = Math.max(0, this.wellCd - dt);
@@ -6290,7 +6295,7 @@ export class WorldScene extends Phaser.Scene {
     let move = useTouch ? this.touchMove : mv;
     if (this.autoHunt && !useTouch) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
 
-    // 키보드 공격/스킬 — 이동은 WASD+화살표 고정, 액션 키는 키 매핑 따름 (v1.9)
+    // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
       this.attackQueued = true;
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
@@ -6458,14 +6463,14 @@ export class WorldScene extends Phaser.Scene {
       }
       void dir;
     };
-    track("A", "x", -1); track("LEFT", "x", -1); track("D", "x", 1); track("RIGHT", "x", 1);
-    track("W", "y", -1); track("UP", "y", -1); track("S", "y", 1); track("DOWN", "y", 1);
+    track("LEFT", "x", -1); track("RIGHT", "x", 1); // v1.0.4 — 이동은 화살표 전용 (WASD 이동 제거)
+    track("UP", "y", -1); track("DOWN", "y", 1);
     const lastX = this.dirOrder.x[this.dirOrder.x.length - 1];
     const lastY = this.dirOrder.y[this.dirOrder.y.length - 1];
-    if (lastX === "A" || lastX === "LEFT") mv.x = -1;
-    else if (lastX === "D" || lastX === "RIGHT") mv.x = 1;
-    if (lastY === "W" || lastY === "UP") mv.y = -1;
-    else if (lastY === "S" || lastY === "DOWN") mv.y = 1;
+    if (lastX === "LEFT") mv.x = -1;
+    else if (lastX === "RIGHT") mv.x = 1;
+    if (lastY === "UP") mv.y = -1;
+    else if (lastY === "DOWN") mv.y = 1;
     return mv;
   }
 
@@ -8305,7 +8310,7 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(51)
       .setBlendMode(Phaser.BlendModes.ADD)
       .play("sparkle");
-    this.showBanner("방향키/WASD 또는 조이스틱으로 이동해 보자!");
+    this.showBanner("방향키 또는 조이스틱으로 이동해 보자!");
   }
 
   private tickIntro(dt: number, move: Phaser.Math.Vector2) {
@@ -9542,10 +9547,10 @@ export class WorldScene extends Phaser.Scene {
     this.resetInputState(); // v4.9.0 — 대사 중 유실된 keyup 고착 청소 (자동이동 예방)
     EventBus.emit("dialogue:hide");
     // 대화 닫기 키의 잔여 justDown 소비 — 스페이스로 대화 넘긴 직후 공격이 새어나가는 것 방지
+    // (v1.0.4 — 하드코딩 X/Z/C/E 대신 등록된 전 행동 키를 소비해 키맵과 무관하게 동작)
     if (this.keys) {
-      for (const k of [this.keys.SPACE, this.keys.X, this.keys.Z, this.keys.C, this.keys.E]) {
-        Phaser.Input.Keyboard.JustDown(k);
-      }
+      Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
+      for (const k of Object.values(this.keyObjs)) Phaser.Input.Keyboard.JustDown(k);
     }
     // v2.2 — 여관주인 대사 종료 → 취침 연출로 자연스럽게 이어짐
     if (this.sleepPending) {
