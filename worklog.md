@@ -1309,3 +1309,34 @@ Stage Summary:
 - ①로그인 입력창: 인풋 포커스 중 게임 키 전면 차단(공용 가드+swallowKeys 복구) ②이동=화살표 전용, 전투 키=Z X C V + A S D F 클러스터(기존 Z/X/C/V 유지로 프레임 보존) ③ponytail: 본 라운드부터 활성 — 최소 diff로 3건 처리
 - 실측 노트: agent-browser CDP 키 이벤트는 keyCode=0이라 Phaser가 무시 — 키 입력 실측은 실제 키코드를 넣은 synthetic KeyboardEvent로 수행할 것
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 68
+Agent: Super Z (메인)
+Task: "버그 너가 찾아서 수정해" — 자체 버그 헌팅 (E2E 실측+정적 분석) 8종 발견·수정 + v1.0.5 APK 빌드·릴리스 (versionCode 70)
+
+Work Log:
+- [상태 확인] 로컬이 v1.0.4(eb1fb62, versionCode 69) 최신 — 평행 세션의 v1.0.2(13항목)·v1.0.4(3항목) 이미 완료된 트리. 서버 200·툴체인 정상(javac 21/SDK35)·디스크 3.6GB 여유
+- [정적 검사] tsc 0 에러 · eslint 0 에러 · validate_data.ts 치명 0 — 기존 경고(fallback 매칭 9종·보스 텍스처 재사용 9종)는 기존 상태 유지
+- [E2E 버그 헌팅] agent-browser 실측: 타이틀→새 게임→인트로→마을→숲→전투(자동사냥 2킬·레벨업·대시)→사망/부활 2회→상점 구매(HP물약 −30G·+1 정산)→거래소 2탭(크래시 0·API 200)→혜택/설정/스탯/보스/컬렉션/파티/친구/계정 패널 전수 → 저해상도(740×360) 3패널 오버플로우 0
+- [실측 방법론] Phaser 키는 keyCode 포함 synthetic KeyboardEvent로 주입(JustDown 프레임 소비 감안) · UI 칩은 pointerdown 필요(onClick 아님) · 패널 키는 사망/대사 중 게이트(정상 동작) · 시작 골드 5,030G는 출석 1일차 보상 5,000G+기본 30G(버그 아님) 검증
+- [발견→수정 8종]
+  ① 캐시상점 명칭 잔존 2곳 — 인벤 AD탭 "💎 BM 상점에서…" → "캐시상점에서…"(Panels 1617) · eert 큐브 배너 "(BM 상점 8💎)" → "(캐시상점 8💎)"(WorldScene 5961)
+  ② 혜택 패널 "GM 콘텐츠 입장" 비관리자 노출 — RpgState.admin 플래그 신설(EventBus) + emitRpgState admin 설정 + 마을 authMe 롤 조회 후 emitRpgState 즉시 호출 + BenefitPanel {rpg.admin && …} 게이트 (마을 GM NPC와 동일 서버 롤 기준)
+  ③ 보스 재도전 보상 문구 "골드·경험치 ×3 ×1" 혼란 → "×3 기준 · 난이도 배율 ×{reward}" 정리
+  ④ 인벤 물약 퀵슬롯 표기 H/M→HP/MP 버튼(툴팁 포함) + quickTag 배지 HP/MP + 힌트 "HP/MP 슬롯 버튼에 장착 — 터치 버튼·{potHp}/{potMp} 키로 사용"(QuickKeyHint 신설 — loadKeyMap 연동)
+  ⑤ HUD 키 배지 하드코딩(I/T/J/K/O) → loadKeyMap 연동(aria+배지) — 재배치 bag→P·stat→R 실측에서 HUD 표기 실시간 갱신 확인
+  ⑥ 옛 키 표기 궁극기(N) → (S) 3곳(5차 각성 배너·GM 5차 배너·전직 안내)
+  ⑦ 자동 물약 섹션 "(여기 있습니다!)" 잔존 문구 → "전투 중 자동으로 사용됩니다"
+  ⑧ InvBtn title prop 지원(퀵슬롯 툴팁)
+- [검증] tsc 0 · eslint 0 · 라이브 재실측: AD탭 캐시상점 문구 ✓ · 비관리자 GM 버튼 미노출(원정대/패스는 정상) ✓ · HP/MP 배지+D/F 힌트 ✓ · 자동물약 문구 ✓ · 보스 보상 문구 ✓ · 키맵 재배치→HUD 갱신 ✓ · 회귀(방향키 이동 −23px·X 공격·패널 키) 0 · pageerror 0
+- [버저닝] 7곳 싱크: build.gradle 70/1.0.5 · package.json 1.0.5 · Overlays 배지 v1.0.5 · server.js APK_MIRROR · next.config.ts APK_DL · apk-guide.html(v1.0.5 섹션+변경점) · APK_다운로드_안내.txt(v1.0.5 섹션)
+- [빌드] 웹 production 빌드(setsid 백그라운드 — 단순 & 은 셸 종료로 사맩하므로 setsid 필수 재확인) + 서버 재기동(SERTZ_ADMIN_USERS 유지) → 200
+- [APK] scripts/build_apk.sh BUILD SUCCESSFUL → download/SERTZ-v1.0.5.apk 105,160,010B · aapt: versionCode 70 / versionName 1.0.5 · md5 43bc2654fff7e9a6967da16886f12ce5 · APK 내부 신규 코드 검출(rpg.admin 게이트·캐시상점 문구·슬롯 버튼에 장착·난이도 배율)
+- [릴리스] 커밋 a4ae92d push → GitHub Release v1.0.5(id 385247493) 업로드 → 재다운로드 md5 원격 일치 ✓ → apk-guide/안내.txt에 실측 md5 기입 → 서빙본 실측(apk-guide v1.0.5+md5·APK 리다이렉트 307→v1.0.5·안내 txt v1.0.5) ✓
+
+Stage Summary:
+- v1.0.5 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.5/SERTZ-v1.0.5.apk (versionCode 70, 105MB, md5 43bc2654…)
+- 유저 지시 "버그 너가 찾아서 수정해" — 유저 리포트 없이 자체 헌팅만으로 8종 발견·수정·배포 완료 (E2E 실측 기반, 전 항목 라이브 재검증)
+- 시스템 개선: RpgState.admin(서버 롤→UI 게이트 패턴) 신설 — 향후 관리자 전용 UI 추가 시 재사용 / HUD·퀵슬롯 키 표기가 전부 키맵 연동으로 전환되어 재배치 시 유실 없음
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
