@@ -7,8 +7,8 @@ android {
         applicationId "com.sertz.yggdrasil"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 69
-        versionName "1.0.4" /* v1.0.3 — 유저 버그 픽스: 거래소 크래시·캐시상점 정리(0르쯔)·반지 중첩 방지·등급업 큐브·GM 안내·펫 이름·버프 분류·UI 짤림 (versionCode는 단조 유지)*/
+        versionCode 70
+        versionName "1.0.5" /* v1.0.5 — 자체 버그 헌팅 8종: 캐시상점 명칭 잔존 제거·GM 입장 버튼 관리자 전용·보스 보상 문구 정리·인벤 물약 퀵슬롯 HP/MP 표기·HUD 키 배지 키맵 연동·옛 키 표기(N→S)·자동물약 문구 (versionCode는 단조 유지)*/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

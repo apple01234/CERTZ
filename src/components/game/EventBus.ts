@@ -55,6 +55,8 @@ export type RpgState = {
   accHp?: number;
   nearShop: boolean;
   shopStock: string[];
+  /** v1.0.5 — 서버 롤 기반 관리자 여부 (GM 콘텐츠 입장 버튼 게이트 — 비관리자 노출 방지) */
+  admin?: boolean;
   /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 */
   bmStock?: string[];
   autoUse?: { hpPct: number; mpPct?: number; mpOn: boolean; buffs: string[] };

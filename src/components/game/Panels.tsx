@@ -1228,7 +1228,12 @@ function InvGrid({ slots, sel, onPick, min = 30 }: { slots: InvSlot[]; sel: InvS
 }
 
 /** 메이플 통통한 액션 버튼 */
-function InvBtn({ children, onClick, disabled, tone = "amber" }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; tone?: "amber" | "sky" | "violet" | "gray" }) {
+/** v1.0.5 — 키맵을 따라가는 물약 사용 키 힌트 (v1.0.4 키 개편 후 H/M 표기가 실제 사용 키와 어긋난 것 해소) */
+function QuickKeyHint({ slot }: { slot: "potHp" | "potMp" }) {
+  return <>{loadKeyMap()[slot]}</>;
+}
+
+function InvBtn({ children, onClick, disabled, tone = "amber", title }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; tone?: "amber" | "sky" | "violet" | "gray"; /** v1.0.5 — 퀵슬롯 장착 버튼 툴팁 */ title?: string }) {
   const tones: Record<string, string> = {
     amber: "bg-gradient-to-b from-amber-300 to-amber-500 text-slate-900 shadow-[0_2px_0_#92400e]",
     sky: "bg-gradient-to-b from-sky-300 to-sky-500 text-slate-900 shadow-[0_2px_0_#075985]",
@@ -1239,6 +1244,7 @@ function InvBtn({ children, onClick, disabled, tone = "amber" }: { children: Rea
     <button
       disabled={disabled}
       onClick={onClick}
+      title={title}
       className={`rounded-md px-2.5 py-1.5 text-[11px] font-black transition-transform active:translate-y-[2px] active:shadow-none disabled:opacity-40 disabled:active:translate-y-0 ${tones[tone]}`}
     >
       {children}
@@ -1274,7 +1280,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
     setTab(t);
     setSel(null);
   };
-  const quickTag = (k: string) => [qp.hp === k ? "H" : "", qp.mp === k ? "M" : ""].filter(Boolean).join("·") || undefined;
+  const quickTag = (k: string) => [qp.hp === k ? "HP" : "", qp.mp === k ? "MP" : ""].filter(Boolean).join("·") || undefined; // v1.0.5 — H/M→HP/MP (사용 키는 키맵 D/F)
 
   /* ----- 장비 탭 슬롯 (무기/방어구/장신구 — 장착분 포함, owned 멀티셋 집계) ----- */
   const equipSlots: InvSlot[] = stackEquips(
@@ -1511,7 +1517,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   기존엔 소모품 그리드 아래 깊숙이 있어 "자동 물약·버프 어디감?" 제기 → 열자마자 보이는 자리로 */}
               <div className="mb-2 rounded-lg border-2 border-[#211c17] bg-[#2a241e] p-2.5">
                 <p className="mb-1.5 text-[11px] font-black text-amber-100/80">
-                  ⚙️ 자동 물약 · 버프 <span className="font-bold text-white/35">— 전투 중 자동으로 사용 (여기 있습니다!)</span>
+                  ⚙️ 자동 물약 · 버프 <span className="font-bold text-white/35">— 전투 중 자동으로 사용됩니다</span>
                 </p>
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between rounded-md bg-white/[0.04] px-2.5 py-1.5">
@@ -1565,7 +1571,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               </div>
 
               <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-violet-100/50">
-                소모품 <span className="font-bold text-white/30">물약은 [H]/[M] 버튼에 장착 가능</span>
+                소모품 <span className="font-bold text-white/30">물약은 HP/MP 슬롯 버튼에 장착 — 터치 버튼·<QuickKeyHint slot="potHp"/>/<QuickKeyHint slot="potMp"/> 키로 사용</span>
               </p>
               <InvGrid slots={etcSlots} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} />
             </>
@@ -1614,7 +1620,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   onClick={() => EventBus.emit("ui:panel", { panel: "bmshop" })}
                   className="mt-1.5 w-full rounded-lg border-2 border-cyan-300/50 bg-cyan-400/10 px-3 py-2 text-[12px] font-black text-cyan-100 hover:bg-cyan-400/20 active:scale-[0.98]"
                 >
-                  💎 BM 상점에서 에메랄드 아이템 보기
+                  💎 캐시상점에서 에메랄드 아이템 보기
                 </button>
               </div>
             </>
@@ -1881,11 +1887,11 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                       )}
                       {isPot && (
                         <>
-                          <InvBtn tone={qp.hp === s.k ? "amber" : "gray"} onClick={() => EventBus.emit("rpg:quickpot", { slot: "hp", key: s.k })}>
-                            H
+                          <InvBtn tone={qp.hp === s.k ? "amber" : "gray"} onClick={() => EventBus.emit("rpg:quickpot", { slot: "hp", key: s.k })} title="HP 물약 퀵슬롯에 장착">
+                            HP
                           </InvBtn>
-                          <InvBtn tone={qp.mp === s.k ? "amber" : "gray"} onClick={() => EventBus.emit("rpg:quickpot", { slot: "mp", key: s.k })}>
-                            M
+                          <InvBtn tone={qp.mp === s.k ? "amber" : "gray"} onClick={() => EventBus.emit("rpg:quickpot", { slot: "mp", key: s.k })} title="MP 물약 퀵슬롯에 장착">
+                            MP
                           </InvBtn>
                         </>
                       )}
@@ -2080,7 +2086,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <p className="mt-1.5 rounded-lg border border-yellow-300/20 bg-yellow-400/5 px-2.5 py-1.5 text-[10px] leading-relaxed text-yellow-200/70">
-          5차 전직 부여 시 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(N) 즉시 해금. 무릉도장은 90초 동안 허수아비에게 누적 피해를 기록하는 훈련장입니다 (최고 기록 저장).
+          5차 전직 부여 시 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(S) 즉시 해금. 무릉도장은 90초 동안 허수아비에게 누적 피해를 기록하는 훈련장입니다 (최고 기록 저장).
         </p>
 
         {/* v4.0.0 — 바르가 콘텐츠 입구 */}
@@ -3106,7 +3112,7 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
           재림판은 스토리판보다 훨씬 강력하다 — <span className="text-rose-200">HP ×5 · ATK ×2.2</span> 기준에
           <span className="mx-0.5" style={{ color: dif.color }}>[{dif.label}]</span>가 곱해진다
           <br />
-          보상: 골드·경험치 ×3 <span style={{ color: dif.color }}>×{dif.reward}</span> +{" "}
+          보상: 골드·경험치 ×3 기준 <span style={{ color: dif.color }}>· 난이도 배율 ×{dif.reward}</span> +{" "}
           <span className="text-emerald-300">에메랄드 +{dif.emerald}</span>
         </p>
         {/* v3.0.28 — 난이도 선택 (메이플식) */}
@@ -3733,7 +3739,8 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
         </div>
         <div className="mb-2.5 grid grid-cols-3 gap-1.5">
           <button onClick={() => EventBus.emit("ui:panel", { panel: "isekai" })} className="rounded-lg border border-purple-300/50 bg-purple-400/15 px-2 py-2 text-[11px] font-black text-purple-100 hover:bg-purple-400/25 active:scale-95">바르가 원정대 열기</button>
-          <button onClick={() => EventBus.emit("ui:panel", { panel: "gm" })} className="rounded-lg border border-amber-300/50 bg-amber-400/10 px-2 py-2 text-[11px] font-black text-amber-100 hover:bg-amber-400/20 active:scale-95">GM 콘텐츠 입장</button>
+          {/* v1.0.5 — GM 콘텐츠 입장은 관리자 계정에만 노출 (비관리자 유출 — 마을 GM NPC와 동일 기준) */}
+          {rpg.admin && <button onClick={() => EventBus.emit("ui:panel", { panel: "gm" })} className="rounded-lg border border-amber-300/50 bg-amber-400/10 px-2 py-2 text-[11px] font-black text-amber-100 hover:bg-amber-400/20 active:scale-95">GM 콘텐츠 입장</button>}
           <button onClick={() => EventBus.emit("ui:panel", { panel: "pass" })} className="rounded-lg border border-amber-300/50 bg-amber-400/15 px-2 py-2 text-[11px] font-black text-amber-100 hover:bg-amber-400/25 active:scale-95">시즌 패스 🎫</button>
         </div>
 

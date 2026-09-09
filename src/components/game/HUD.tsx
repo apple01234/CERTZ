@@ -5,6 +5,7 @@ import React from "react";
 import type { HudState, QuestState } from "./EventBus";
 import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
+import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
 import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift } from "lucide-react";
 import { EventBus } from "./EventBus";
 
@@ -105,6 +106,8 @@ export function HUD({
   /** 설정/키 매핑 (O) */
   onOpenOpt: () => void;
 }) {
+  /* v1.0.5 — 키맵 재배치 시 HUD 키 배지·aria도 함께 갱신 (I/T/J/K/O 하드코딩 제거) */
+  const km = loadKeyMap();
   const expPct = Math.min(100, (hud.exp / Math.max(1, hud.expNext)) * 100);
   /* v3.0.2 (지시 #4/#5) — 퀘스트 트래커 축소/펼침 토글 (모바일에서 너무 큰 문제) */
   const [trackerOpen, setTrackerOpen] = React.useState(() => localStorage.getItem("sertz.trackerOpen") !== "0");
@@ -201,16 +204,16 @@ export function HUD({
           </button>
           <button
             onClick={onOpenInv}
-            aria-label="가방 열기 (I)"
+            aria-label={`가방 열기 (${km.bag})`}
             className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-sky-200/40 bg-black/55 text-sky-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
           >
             <Backpack size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">I</span>
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">{km.bag}</span>
           </button>
           {jobAvail && (
             <button
               onClick={onOpenJob}
-              aria-label="전직 열기 (K)"
+              aria-label={`전직 열기 (${km.job})`}
               className={`pointer-events-auto relative flex h-9 items-center justify-center rounded-lg border backdrop-blur-sm transition-transform active:scale-95 ${
                 canJob
                   ? "animate-pulse border-amber-300/70 bg-gradient-to-b from-amber-500/80 to-amber-700/80 text-amber-100 hover:from-amber-400/90"
@@ -221,10 +224,10 @@ export function HUD({
               <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${canJob ? "text-amber-200" : "text-white/50"}`}>전직</span>
             </button>
           )}
-          {/* v1.9: 스탯(T) / 퀘스트 로그(J) / 설정·키 매핑(O) */}
+          {/* v1.9: 스탯/퀘스트 로그/설정 — v1.0.5 키맵 연동 배지 */}
           <button
             onClick={onOpenStat}
-            aria-label="스탯 창 열기 (T)"
+            aria-label={`스탯 창 열기 (${km.stat})`}
             className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-sm transition-colors active:scale-95 ${
               hud.ap > 0
                 ? "animate-pulse border-lime-300/70 bg-gradient-to-b from-lime-500/80 to-emerald-700/80 text-lime-100"
@@ -232,15 +235,15 @@ export function HUD({
             }`}
           >
             <Gauge size={17} />
-            <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>T</span>
+            <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>{km.stat}</span>
           </button>
           <button
             onClick={onOpenQuest}
-            aria-label="퀘스트 로그 열기 (J)"
+            aria-label={`퀘스트 로그 열기 (${km.quest})`}
             className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-black/55 text-white/70 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
           >
             <ListChecks size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">J</span>
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.quest}</span>
           </button>
           {/* v3.0.25 — 보스 재도전 전용 창 버튼 (퀘스트창과 분리) */}
           <button
@@ -262,11 +265,11 @@ export function HUD({
           </button>
           <button
             onClick={onOpenOpt}
-            aria-label="설정/키 매핑 열기 (O)"
+            aria-label={`설정/키 매핑 열기 (${km.opt})`}
             className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-black/55 text-white/70 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
           >
             <Settings size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">O</span>
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.opt}</span>
           </button>
         </div>
         {/* v3.0.23 (#56) — 퀘스트 알림을 더 아래로: 모바일 간격 mt-8→mt-20 (상단 버튼행·보스바와 겹침 방지), PC는 mt-1 유지 */}

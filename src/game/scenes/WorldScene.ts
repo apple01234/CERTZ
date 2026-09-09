@@ -1115,6 +1115,7 @@ export class WorldScene extends Phaser.Scene {
         .then((u) => {
           this.adminRole = u?.role ?? null;
           if (this.adminRole === "admin") for (const g of this.gmNpcVisuals) g.setVisible(true);
+          this.emitRpgState(); // v1.0.5 — admin 플래그를 React에 즉시 반영
         })
         .catch(() => {});
       // 마을 차원문은 항상 열려 있음 (다음 구역으로 출발)
@@ -4238,7 +4239,7 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.flash(240, 255, 230, 120);
     this.cameras.main.shake(460, 0.02);
     EventBus.emit("banner:show", {
-      text: "5차 각성 완료! 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(N) 해금",
+      text: "5차 각성 완료! 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(S) 해금", // v1.0.5 — 스킬5 기본키 N→S 반영
     });
     this.showDialogueRaw({
       speaker: "카이엔",
@@ -5666,7 +5667,7 @@ export class WorldScene extends Phaser.Scene {
         p.gmGrantFifth(on);
         EventBus.emit("banner:show", {
           text: on
-            ? "GM 5차 전직 완료(임시)! 전 스킬 ·극 강화 + 고유 궁귁기(N) 해금"
+            ? "GM 5차 전직 완료(임시)! 전 스킬 ·극 강화 + 고유 궁귁기(S) 해금" // v1.0.5 — 스킬5 기본키 반영
             : "5차 각성 해제 — 일반 상태로 복귀",
         });
         this.emitSkills();
@@ -5958,7 +5959,7 @@ export class WorldScene extends Phaser.Scene {
       this.eertBusyUntil = this.time.now + 260;
       const pot = this.player.rerollPotentials(v.key as ItemKey);
       if (!pot) {
-        EventBus.emit("banner:show", { text: "eert 큐브가 없습니다 (BM 상점 8💎)" });
+        EventBus.emit("banner:show", { text: "eert 큐브가 없습니다 (캐시상점 8💎)" }); // v1.0.5 — 캐시상점 명칭 통일
         return;
       }
       const meta = POT_GRADE_META[pot.grade];
@@ -9141,6 +9142,8 @@ export class WorldScene extends Phaser.Scene {
       accHp: this.player.accHpAppliedVal,
       nearShop: this.nearShop,
       shopStock: [...SHOP_STOCK],
+      /* v1.0.5 — 서버 롤 기반 관리자 플래그 (혜택 패널 "GM 콘텐츠 입장" 게이트) */
+      admin: this.adminRole === "admin",
       /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 (지시 #1/#5) */
       bmStock: [...BM_STOCK],
       autoUse: { ...this.player.autoUse },
