@@ -87,12 +87,14 @@ export function AuthPanel() {
     setMsg("");
     setPw("");
     EventBus.emit("banner:show", { text: `${(r.data.user as AuthUser)?.name ?? ""} 계정 로그인! — 클라우드 세이브 사용 가능` });
+    EventBus.emit("auth:changed"); // v1.0.6 — 씬이 로드된 뒤 로그인해도 GM NPC/관리자 UI가 즉시 갱신되도록
   };
 
   const doLogout = async () => {
     await authLogout();
     setUser(null);
     setMsg("");
+    EventBus.emit("auth:changed"); // v1.0.6 — 로그아웃 시 관리자 UI 즉시 해제
   };
 
   const doBackup = async () => {

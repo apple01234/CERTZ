@@ -6104,7 +6104,22 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:autoset", onAutoSet);
     EventBus.on("rpg:autohunt", onAutoHunt);
     EventBus.on("rpg:gm", onGm);
+    /* v1.0.6 — 세션 중 로그인/로그아웃 시 GM NPC·관리자 플래그 즉시 갱신
+     *  (기존엔 마을 빌드 시 1회만 조회라, 마을 로드 뒤 admin으로 가입/로그인하면
+     *   재입장 전까지 GM NPC가 안 떴다 — 유저 "GM 로그인 어케함?"의 실질 원인) */
+    const onAuthChanged = () => {
+      authMe()
+        .then((u) => {
+          this.adminRole = u?.role ?? null;
+          const show = this.adminRole === "admin";
+          for (const g of this.gmNpcVisuals) g.setVisible(show);
+          this.emitRpgState();
+        })
+        .catch(() => { /* 오프라인 — 기존 롤 유지 */ });
+    };
+    EventBus.on("auth:changed", onAuthChanged);
     this.events.once("shutdown", () => {
+      EventBus.off("auth:changed", onAuthChanged);
       EventBus.off("input:move", onMove);
       EventBus.off("input:attack", onAtk);
       EventBus.off("input:skill1", onS1);

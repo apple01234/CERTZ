@@ -7,8 +7,8 @@ android {
         applicationId "com.sertz.yggdrasil"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 70
-        versionName "1.0.5" /* v1.0.5 — 자체 버그 헌팅 8종: 캐시상점 명칭 잔존 제거·GM 입장 버튼 관리자 전용·보스 보상 문구 정리·인벤 물약 퀵슬롯 HP/MP 표기·HUD 키 배지 키맵 연동·옛 키 표기(N→S)·자동물약 문구 (versionCode는 단조 유지)*/
+        versionCode 71
+        versionName "1.0.6" /* v1.0.6 — 자체 버그 헌팅 2종: 세션 중 로그인 시 GM NPC 즉시 갱신(auth:changed)·유저 거래소 등록 서버 소유 검증(전설 복제 익스플로잇 차단) (versionCode는 단조 유지)*/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

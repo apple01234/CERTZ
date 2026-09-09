@@ -230,6 +230,24 @@ async function exchangeCode(providerKey, code, redirect) {
  *  - 정산: 판매자 pendingGold에 90% 적립 → 로그인해 수령 (수수료 10%는 서버 수익) */
 const MARKET_FEE_PCT = 10;
 const MARKET_MAX_LISTINGS = 3;
+/* v1.0.6 — 등록 가능 아이템 화이트리스트 (보스 전용 드롭 = 클라 TRADE_STOCK과 동일 목록).
+ *  미검증 시 미보유 아이템 등록 → 2번 계정 구매 → 전설 복제 익스플로잇이 가능했다. */
+const MARKET_LISTABLE = new Set([
+  "bd_guardian", "bd_behemoth", "bd_nidhog", "bd_surt", "bd_fenrir",
+  "bd_skoll", "bd_gram", "bd_abysslord", "bd_abudditos",
+]);
+/* v1.0.6 — 등록자가 실제로 그 아이템을 보유 중인지 클라우드 세이브로 검증.
+ *  세이브 data 최상위 owned: ItemKey[], accessories: 장착 중 장신구[] (장착분은 등록 불가) */
+function ownsListableItem(uid, itemKey) {
+  if (!MARKET_LISTABLE.has(itemKey)) return { ok: false, error: "보스 전용 드롭(전설)만 등록할 수 있어요" };
+  const save = db.saves[uid]?.data;
+  if (!save || typeof save !== "object") return { ok: false, error: "클라우드 세이브 동기화 후 등록할 수 있어요 — 로그인 상태로 잠시 플레이하거나 계정 패널에서 백업해 주세요" };
+  const owned = Array.isArray(save.owned) ? save.owned : [];
+  if (!owned.includes(itemKey)) return { ok: false, error: "보유하지 않은 아이템은 등록할 수 없어요" };
+  const acc = Array.isArray(save.accessories) ? save.accessories : [];
+  if (acc.includes(itemKey)) return { ok: false, error: "장착 중인 장비는 해제한 뒤 등록하세요" };
+  return { ok: true };
+}
 
 function marketSnapshot(uid) {
   const all = Object.values(db.market.listings).sort((a, b) => a.ts - b.ts);
@@ -269,6 +287,8 @@ async function handleMarket(req, res, url, method) {
     const price = parseInt(b.price, 10);
     if (!itemKey) return sendJson(res, 400, { error: "아이템 정보가 올바르지 않아요" });
     if (!Number.isFinite(price) || price < 1 || price > 10000000) return sendJson(res, 400, { error: "가격은 1G ~ 10,000,000G 사이" });
+    const own = ownsListableItem(user.id, itemKey); // v1.0.6 — 화이트리스트 + 실보유(클라우드 세이브) 검증
+    if (!own.ok) return sendJson(res, 403, { error: own.error });
     const mine = Object.values(db.market.listings).filter((l) => l.seller === user.id);
     if (mine.length >= MARKET_MAX_LISTINGS) return sendJson(res, 409, { error: `등록 칸이 가득 찼어요 (최대 ${MARKET_MAX_LISTINGS}칸)` });
     if (mine.some((l) => l.itemKey === itemKey)) return sendJson(res, 409, { error: "같은 아이템을 동시에 여러 칸에 등록할 수 없어요" });

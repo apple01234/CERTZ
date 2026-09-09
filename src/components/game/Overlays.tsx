@@ -43,7 +43,7 @@ export function TitleScreen() {
           이그드라실 : 아홉 왕국
           {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
            *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.5 — 버그 수정 8종: GM 입장 관리자 전용 · 캐시상점 명칭 잔존 제거 · HUD 키 배지 키맵 연동 · 물약 슬롯 HP/MP 표기 · 보스 보상 문구 정리</span>
+          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.6 — GM NPC 실시간 갱신(로그인 즉시) · 거래소 등록 서버 소유 검증(복제 차단)</span>
         </p>
       </div>
 

@@ -19,7 +19,7 @@ import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/a
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
 import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
 import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS } from "@/game/pass"; // v4.5.0 — 시즌 패스 + v1.0.1 시즌 미션
-import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, type MarketState, type AuthUser } from "@/game/account"; // v1.0.1 — 유저 거래판
+import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, type MarketState, type AuthUser } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
 import { chestOdds } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법)
 import type { BmGrant } from "@/game/data";
@@ -995,6 +995,9 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
     const p = parseInt(prices[key] ?? "", 10);
     if (!Number.isFinite(p) || p < 1) { setMsg("가격을 1G 이상 입력하세요"); return; }
     setBusy(true);
+    /* v1.0.6 — 서버가 클라우드 세이브로 실보유를 검증하므로, 등록 직전 최신 세이브를 선업로드
+     *  (방금 획득한 보스 드롭도 3분 주기 백업을 기다리지 않고 즉시 등록 가능). 실패해도 계속 진행. */
+    try { const save = loadSave(); if (save) await cloudSaveUpload(save); } catch { /* 선동기화 실패 무시 */ }
     const r = await marketList(key, up, p);
     setBusy(false);
     if (!r.ok) { setMsg(String(r.data.error ?? "등록 실패")); return; }
