@@ -195,6 +195,9 @@ export type SaveData = {
   sub?: { until: number };
   /** 스타터팩 구매 완료 (BM상점 하이라이트 표시용) */
   starterPackBought?: boolean;
+  /* ----- v1.0.8 무한 콘텐츠 (탑/티어균열/시련/환생/제작/펫육성/심연상점) ----- */
+  /** 무한 콘텐츠 상태 스냅샷 — 구조는 infinite.ts InfSave (infMerge로 안전 병합) */
+  inf?: import("./infinite").InfSave;
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */

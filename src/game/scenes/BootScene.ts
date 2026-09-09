@@ -134,6 +134,8 @@ const ASSET_LIST = [
   "item_scroll_return", "item_scroll_warp",
   "item_scroll_star", // v3.0.7 — 강화 주문서
   "item_potion_elixir", // v3.0.20 (#7) — 엘릭서 (HP/MP 전부 회복)
+  /* v1.0.8 무한 콘텐츠 — 제작 재료 아이콘 3종 (scripts/gen_mat_icons.py 픽셀아트) */
+  "item_mat_mana", "item_mat_heart", "item_mat_mithril",
   "item_weapon_1", "item_weapon_2", "item_weapon_3", "item_weapon_4",
   "item_armor_1", "item_armor_2", "item_armor_3", "item_armor_4",
   "npc_merchant",

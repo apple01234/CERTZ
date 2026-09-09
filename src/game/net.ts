@@ -244,7 +244,7 @@ export function netLastParty(): NetParty | null {
 /* ================= v4.0.0 — 랭킹 (무릉도장/게이트/옷장 던전 기록전) ================= */
 
 export type RankEntry = { name: string; score: number; lv: number };
-export type RankMode = "dojang" | "gate" | "closet";
+export type RankMode = "dojang" | "gate" | "closet" | "tower"; // v1.0.8 — 심연의 탑 랭킹 추가
 
 /** 기록 제출 — 서버 미연결 시 조용히 무시 (로컬 최고기록은 별도 localStorage 유지) */
 export function netRankSubmit(mode: RankMode, score: number, name: string, lv: number) {

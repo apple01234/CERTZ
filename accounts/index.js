@@ -65,7 +65,7 @@ function isAdminUser(u) {
 }
 
 /* ---------------- 파일 DB (디바운드 저장) ---------------- */
-let db = { users: {}, tokens: {}, saves: {}, market: { nextId: 1, listings: {} }, payouts: {} };
+let db = { users: {}, tokens: {}, saves: {}, market: { nextId: 1, listings: {} }, payouts: {}, rank: {} };
 let saveTimer = null;
 function loadDb() {
   try {
@@ -76,6 +76,7 @@ function loadDb() {
     db.market ||= { nextId: 1, listings: {} }; // v1.0.1 — 유저 거래판 (구 DB 호환)
     db.market.listings ||= {};
     db.payouts ||= {}; // v1.0.1 — 판매 정산금 ledger
+    db.rank ||= {}; // v1.0.8 — 랭킹 보드 (레벨/전투력/무한의 탑 기록)
     // v1.0.2 — env 관리자 목록 동기화 (이미 가입된 계정도 롤 자동 승격/회수)
     for (const [uid, u] of Object.entries(db.users)) {
       /* env 매칭은 아이디 + 닉네임 둘 다 허용 (가입 시 role 부여는 아이디 기준과 동일 유지) */
@@ -83,6 +84,22 @@ function loadDb() {
       if (shouldAdmin && u.role !== "admin") u.role = "admin";
       else if (!shouldAdmin && u.role === "admin") u.role = "user";
     }
+    /* v1.0.8 — 관리자 계정 자가 복구(오토시드): 워크스페이스 재구성 등으로 db/accounts.json이
+     *  소실되면 "모든 로그인 401" 사태가 재발했다. 부팅 시 관리자 아이디가 없으면 기본 비밀번호로
+     *  즉시 재배치해 서버가 스스로 회복하게 한다. (SERTZ_ADMIN_PASSWORD로 변경 가능, 기본 admin123) */
+    for (const aid of ADMIN_USERS) {
+      if (!db.users[aid]) {
+        const salt = randomBytes(16).toString("hex");
+        db.users[aid] = {
+          id: aid, name: aid.slice(0, 8), provider: "local", salt,
+          hash: hashPw(process.env.SERTZ_ADMIN_PASSWORD || "admin123", salt),
+          createdAt: Date.now(), role: "admin",
+        };
+        console.log(`[SERTZ-accounts] 관리자 계정 없음 → 오토시드: ${aid}`);
+        audit("admin_autoseed", { uid: aid });
+      }
+    }
+    persistDb();
   } catch (e) {
     console.error("[SERTZ-accounts] DB 로드 실패 — 신규 생성", e);
   }
@@ -458,15 +475,16 @@ async function handle(req, res) {
       const b = await readBody(req);
       const id = String(b.id || "").trim().toLowerCase();
       const user = db.users[id];
+      /* v1.0.8 — 실패 원인 분리: DB 소실 후 재가입 필요한 상황을 유저가 알 수 있게 개선 */
       if (!user || user.provider !== "local") {
         audit("login_fail", { ip: clientIp(req), uid: id }); // v1.0.2
-        return sendJson(res, 401, { error: "아이디 또는 비밀번호가 틀렸어요" });
+        return sendJson(res, 401, { error: "존재하지 않는 아이디예요 — 회원가입 탭에서 새로 가입해 주세요" });
       }
       const hash = Buffer.from(hashPw(String(b.pw || ""), user.salt), "hex");
       const stored = Buffer.from(user.hash, "hex");
       if (hash.length !== stored.length || !timingSafeEqual(hash, stored)) {
         audit("login_fail", { ip: clientIp(req), uid: id }); // v1.0.2
-        return sendJson(res, 401, { error: "아이디 또는 비밀번호가 틀렸어요" });
+        return sendJson(res, 401, { error: "비밀번호가 틀렸어요 — 다시 입력해 주세요" });
       }
       audit("login", { ip: clientIp(req), uid: id, role: user.role === "admin" ? "admin" : "user" }); // v1.0.2
       const ses = issueToken(res, user); // v1.0.7 — 토큰 본문 동봉 (APK Bearer 세션)

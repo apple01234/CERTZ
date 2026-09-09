@@ -80,9 +80,9 @@ function attachMultiplayer(httpServer) {
 
   /* ---------- 랭킹 (v4.0.0 — 무릉도장/바르가 수비전/균열 던전 기록전) ----------
    *  메모리 저장 (서버 재시작 시 초기화) — 모드별 상위 50명 보관 */
-  const RANK_MODES = new Set(["dojang", "gate", "closet"]);
+  const RANK_MODES = new Set(["dojang", "gate", "closet", "tower"]); // v1.0.8 — 심연의 탑
   const RANK_MAX = 50;
-  const rankings = { dojang: [], gate: [], closet: [] };
+  const rankings = { dojang: [], gate: [], closet: [], tower: [] };
 
   function rankTop(mode) {
     return (rankings[mode] ?? []).slice(0, 20).map((e) => ({ name: e.name, score: e.score, lv: e.lv }));
@@ -288,7 +288,7 @@ function attachMultiplayer(httpServer) {
       const score = Math.max(0, Math.floor(Number(r.score) || 0));
       if (!mode || score <= 0) return;
       /* v1.0.2 (#보안) — 모드별 물리 상한 (현실 도달 불가능한 변조 점수 슬라이스) */
-      const RANK_SCORE_CAP = { dojang: 5000000, gate: 200, closet: 100000 };
+      const RANK_SCORE_CAP = { dojang: 5000000, gate: 200, closet: 100000, tower: 100000 };
       if (score > RANK_SCORE_CAP[mode]) return;
       const name = String(r.name || (p ? p.name : "이름없음")).slice(0, 8);
       const lv = Math.max(1, Math.floor(Number(r.lv) || (p ? p.lv : 1)));
@@ -306,7 +306,7 @@ function attachMultiplayer(httpServer) {
       /* 신기록 진입 시 전체 방송 (상위 10 진입만 — 도배 방지) */
       const idx = rankings[mode].findIndex((e) => e.name === name);
       if (idx >= 0 && idx < 10) {
-        sysChat(`[랭킹] ${name} 님이 ${mode === "dojang" ? "무릉도장" : mode === "gate" ? "바르가 수비전" : "균열 던전"} ${idx + 1}위 기록 달성!`);
+        sysChat(`[랭킹] ${name} 님이 ${mode === "dojang" ? "무릉도장" : mode === "gate" ? "바르가 수비전" : mode === "tower" ? "심연의 탑" : "균열 던전"} ${idx + 1}위 기록 달성!`);
       }
     });
 

@@ -7,8 +7,8 @@ android {
         applicationId "com.sertz.yggdrasil"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 72
-        versionName "1.0.7" /* v1.0.7 — APK 로그인 오류 근본 수정(CORS+Bearer 세션) · SPUM식 코스튬 4종+포니테일 착장 시스템 · 프리렌더 3D VFX · 크리티컬 이펙트 가림 축소 · 성장 패키지 UI 개편 · 일일 퀘스트 5종 확장 (versionCode는 단조 유지)*/
+        versionCode 73
+        versionName "1.0.8" /* v1.0.8 — 로그인 DB 자가복구(오토시드)·로그인 창 컴팩트+스크롤·2-6 능대 퀘스트 수정·무한 콘텐츠 10종(심연의 탑/심층 균열/일일 시련/제작/펫 육성/황금몬스터/심연 상점/환생/주간 레이드/탑 랭킹) (versionCode는 단조 유지)*/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

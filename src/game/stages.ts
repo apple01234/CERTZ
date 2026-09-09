@@ -192,12 +192,12 @@ export const CHAPTERS: ChapterSpec[] = [
     width: 2400, height: 1350, groundTint: 0x9adf6a, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0a1408",
     flowers: 10, trees: 14, rocks: 8,
     /* v2.9 (지시 #1) — 챕터 몬스터 풀 3종: 2구역마다 1종 로테이션(1~6) → 2종(7~8) → 3종(9) → 보스+3종(10) */
-    enemies: [{ key: "wolf", count: 4 }, { key: "spider", count: 4 }, { key: "swampbeast", count: 3 }, { key: "x2_frog", count: 3 }, { key: "x3_swampy", count: 3 }, { key: "x3_goblin", count: 3 }],
+    enemies: [{ key: "wolf", count: 4 }, { key: "spider", count: 4 }, { key: "swampbeast", count: 4 }, { key: "x2_frog", count: 3 }, { key: "x3_swampy", count: 3 }, { key: "x3_goblin", count: 3 }],
     main: "wolf",
     beats: [
       { sub: 2, dialogue: "fragment", quest: { id: "f0", type: "collect", title: "결정의 흔적 찾기", desc: "숲 어딘가 빛을 내는 결정의 흔적을 찾아 주워라. 이그니가 기다린다.", targetLabel: "결정의 흔적", reward: Math.round(40 * G), expReward: 35 } },
       { sub: 3, dialogue: "", quest: { id: "f1", type: "hunt", title: "숲의 거미 소탕", desc: "신전으로 가는 길을 막는 숲의 거미 13마리를 처치해라.", need: 13, targetKey: "spider", targetLabel: "숲의 거미", reward: Math.round(60 * G), expReward: 40 } },
-      { sub: 6, dialogue: "wolfRoutDone", quest: { id: "f2", type: "hunt", title: "능대 무리 소멸", desc: "어둠에 미친 늑대 무리 25마리를 더 처치해라!", need: 25, targetKey: "wolf", targetLabel: "늑대", reward: Math.round(110 * G), expReward: 90 } },
+      { sub: 6, dialogue: "wolfRoutDone", quest: { id: "f2", type: "hunt", title: "능대 무리 소멸", desc: "어둠에 미친 능대 무리 25마리를 더 처치해라!", need: 25, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(110 * G), expReward: 90 } },
       { sub: 8, dialogue: "", quest: { id: "f3", type: "collect", title: "능대들이 지키던 결정", desc: "능대들이 지키던 곳에서 또 하나의 빛이 느껴진다.", targetLabel: "결정의 흔적", reward: Math.round(60 * G), expReward: 45 } },
     ],
     repeat: { need: 16, gold: Math.round(70 * G), exp: 70, title: "[반복] 늑대 토벌 의뢰", desc: "마을 토벌 의뢰 — 늑대를 계속 사냥해 골드와 경험치를 얻자." },
@@ -929,6 +929,27 @@ STAGES.closet = {
 NEXT_STAGE.closet = null;
 PREV_STAGE.closet = "village";
 STAGE_SHORT.closet = "균열 던전";
+
+/* ================= v1.0.8 — 심연의 탑 (무한 층수 탑등반 — 무한 콘텐츠 ①) =================
+ *  콘텐츠 패널에서 입장 — 층을 오를수록 강해지는 적, 5층마다 보스, 층 클리어 보상.
+ *  체인 분리 — 전진 포탈 없음, 복귀 포탈은 입장 전 구역. */
+STAGES.tower = {
+  key: "tower",
+  name: "심연의 탑",
+  subtitle: "무한히 이어지는 탑 — 최고층에 도전해라",
+  width: 1300,
+  height: 860,
+  groundTint: 0xffffff,
+  flowerCount: 0,
+  treeCount: 0,
+  rockCount: 0,
+  quests: [],
+  enemies: [],
+  boss: false,
+};
+NEXT_STAGE.tower = null;
+PREV_STAGE.tower = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 towerFrom
+STAGE_SHORT.tower = "심연의 탑";
 
 /** 구 세이브 키 폴백 — v1.x 6스테이지 → 신규 체인 시작점 */
 export const LEGACY_STAGE_FALLBACK: Record<string, StageKey> = {

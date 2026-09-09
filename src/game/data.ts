@@ -145,7 +145,9 @@ export type ItemKey =
   | "chest_iron" | "chest_silver" | "chest_gold" | "chest_legend"
   | "pack_starter" | "pack_growth" | "pack_premium" | "pack_ultimate" | "pack_daily" | "pack_weekly"
   | "pet_wisp" | "pet_ember" | "pet_frost" | "pet_golem" | "pet_unicorn" | "pet_reaper"
-  | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow";
+  | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow"
+  /* v1.0.8 무한 콘텐츠 — 연금 제작대 재료 3종 (필드/던전 적 처치 시 확률 드롭) */
+  | "mat_mana" | "mat_heart" | "mat_mithril";
 
 /** 아이템 등급 (클래식 MMORPG 관례 — 테두리/이름색 구분)
  *  v3.0.6 — "legend" 추가 (보스 전용 드롭 전용 등급) */
@@ -240,7 +242,7 @@ export const STAR_TIER_CSS = ["#e8ecf2", "#6ff2d8", "#d29dff", "#ffd76a"] as con
 
 export type ItemDef = {
   key: ItemKey;
-  kind: "consumable" | "weapon" | "armor" | "accessory" | "buff" | "pet" | "cosmetic";
+  kind: "consumable" | "weapon" | "armor" | "accessory" | "buff" | "pet" | "cosmetic" | "material";
   name: string;
   icon: string; // 텍스처 키
   price: number; // 상점 구매가 (0 = 판매 안 함/기본 지급)
@@ -345,6 +347,10 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 12000, bmPrice: 8, bmOnly: true, sellPrice: 5000, tier: "epic" },
   /* v4.0.0 — 바르가 업데이트 아이템 */
   exp_book: { key: "exp_book", kind: "consumable", name: "경험치 책", icon: "i_exp_book", price: 5000, bmPrice: 3, bmOnly: true, sellPrice: 800, tier: "rare" },
+  /* v1.0.8 무한 콘텐츠 — 제작 재료 3종 (연금 제작대 전용 — 상점 판매 없음, 적 처치 드롭) */
+  mat_mana: { key: "mat_mana", kind: "material", name: "마나 결정", icon: "item_mat_mana", price: 36, tier: "common", sellPrice: 18 },
+  mat_heart: { key: "mat_heart", kind: "material", name: "몬스터 심장", icon: "item_mat_heart", price: 60, tier: "rare", sellPrice: 30 },
+  mat_mithril: { key: "mat_mithril", kind: "material", name: "미스릴 가루", icon: "item_mat_mithril", price: 120, tier: "epic", sellPrice: 60 },
   tier_cube: { key: "tier_cube", kind: "consumable", name: "등급업 큐브", icon: "i_tier_cube", price: 22000, bmPrice: 15, bmOnly: true, sellPrice: 12000, tier: "epic" },
   /* ================= v4.3.0 — BM 대확장 (물약 8티어×2 · 장신구 12 · 상자 4 · 패키지 6) =================
    *  아이콘은 기존 텍스처 재활용 — 신규 에셋 0. 물약 3~5티어는 골드 상점 판매(골드 싱크),

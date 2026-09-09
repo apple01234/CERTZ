@@ -29,6 +29,12 @@ import { authMe } from "../account"; // v1.0.2 — GM 진입 서버 롤 검증
 import { purchaseStorePack } from "../ads"; // v1.0.2 — 현금 패키지 결제
 import { showRewardedAd, purchaseGems, GEM_SKUS } from "../ads"; // v4.1.0 — BM 수익 연동
 import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft, weekKey, missionsByHook, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS, type MissionHook } from "../pass"; // v4.5.0 — 시즌 패스/구독 + v1.0.1 시즌 미션
+import {
+  infMerge, towerFloorScale, isTowerBossFloor, towerFloorReward, towerPool, TOWER, closetTierScale, closetTierAbyss,
+  todayTrial, trialReward, rebirthReqLv, rebirthBonus, REBIRTH_ABYSS, MAT_CHANCES, CRAFT_RECIPES, canCraft,
+  PET, petEvoStage, petBonus, PET_EVO_NAMES, GOLDEN, ABYSS_SHOP, orbBonus, weeklyRaidBoss, infBonus, todayKey,
+  type InfSave, type TrialMod,
+} from "../infinite"; // v1.0.8 — 무한 콘텐츠 10종
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
@@ -294,6 +300,23 @@ export class WorldScene extends Phaser.Scene {
   private gateStars: boolean[] = [false, false, false];
   private freeGachaAt = 0;
   private lastSeenAt = 0;
+
+  /* ================= v1.0.8 — 무한 콘텐츠 10종 상태 ================= */
+  /** 무한 콘텐츠 저장 스냅샷 (탑/티어균열/시련/환생/제작/펫/심연) */
+  inf: InfSave = infMerge();
+  /** ① 심연의 탑 진행 상태 */
+  private towerActive = false;
+  private towerFloor = 0;
+  private towerFrom: StageKey = "village";
+  private towerText: Phaser.GameObjects.Text | null = null;
+  private towerBossRef: Boss | null = null;
+  /** ② 심층 균열 — 이번 입장 티어 (0=기본) */
+  private closetTierNow = 0;
+  /** ③ 일일 시련 — 진행 중 수정자 (null=일반 균열) */
+  private trialMod: TrialMod | null = null;
+  /** ⑦ 황금 몬스터 — 필드 스폰 타이머/참조 */
+  private goldenRef: Enemy | null = null;
+  private goldenAcc = 0;
   /** v3.1.0 (#최적화) — HUD 브로드캐스트 스로틀 (프레임당 다중 emit 억제) */
   private lastHudEmit = -999;
   private hudEmitPending = false;
@@ -648,6 +671,14 @@ export class WorldScene extends Phaser.Scene {
     this.closetGold = 0;
     this.closetText = null;
     this.closetAcc = 0;
+    /* v1.0.8 — 무한 콘텐츠 진행 상태 리셋 (towerFloor는 enterTower→buildTower 전달값으로 유지) */
+    this.towerActive = false;
+    this.towerBossRef = null;
+    this.towerText = null;
+    this.closetTierNow = 0;
+    this.trialMod = null;
+    this.goldenRef = null;
+    this.goldenAcc = 0;
     this.restCd = 0;
     this.escapeCd = 0; // v4.9.0 — 씬 재시작마다 긴급귀환 쿨다운 초기화
     this.fadeDarkMs = 0; // v4.9.0 — 페이드 자가치유 타이머 초기화
@@ -1022,6 +1053,9 @@ export class WorldScene extends Phaser.Scene {
       while (this.gateStars.length < 3) this.gateStars.push(false);
       this.freeGachaAt = savedPlayer.freeGachaAt ?? 0;
       this.lastSeenAt = savedPlayer.lastSeen ?? 0;
+      /* v1.0.8 — 무한 콘텐츠 상태 복원 (구 세이브는 infMerge 기본값) */
+      this.inf = infMerge(savedPlayer.inf);
+      this.syncExtBonus(); // 부여아/환생/펫 보너스 즉시 반영 (아래에서 다시 호출되지만 조기 반영)
       this.player.tierUpTargets.weapon = savedPlayer.tierUpWea ?? 0;
       this.player.tierUpTargets.armor = savedPlayer.tierUpArm ?? 0;
       this.player.tierUpBoost = this.player.tierUpTargets.weapon + this.player.tierUpTargets.armor;
@@ -1116,6 +1150,8 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- v4.0.0 — 바르가 수비전 / 균열 던전 빌드 ---------- */
     if (stageKey === "gate") this.buildGate();
     if (stageKey === "closet") this.buildCloset();
+    /* ---------- v1.0.8 — 심연의 탑 빌드 (무한 층수) ---------- */
+    if (stageKey === "tower") this.buildTower();
 
     /* ---------- 퀘스트 오브젝트 (v2.2 — 실내는 포탈/퀘스트 오브젝트 없음) ---------- */
     if (this.isInterior) {
@@ -2116,6 +2152,7 @@ export class WorldScene extends Phaser.Scene {
       key === "dojang" ? (STAGES[this.dojangFrom] ? this.dojangFrom : "village")
       : key === "gate" ? (STAGES[this.gateFrom] ? this.gateFrom : "village")
       : key === "closet" ? (STAGES[this.closetFrom] ? this.closetFrom : "village")
+      : key === "tower" ? (STAGES[this.towerFrom] ? this.towerFrom : "village")
       : PREV_STAGE[key];
     if (!prev) return;
     /* v3.3.0 — 무릉도장 중간 퇴장 시 기록 확정 */
@@ -2124,6 +2161,8 @@ export class WorldScene extends Phaser.Scene {
     if (this.gateActive) { this.returnActive = false; this.finishGate("exit"); return; }
     /* v4.0.0 — 균열 던전 조기 퇴장 — 지금까지 획득한 골드 기준 정산 */
     if (this.closetActive) { this.returnActive = false; this.finishCloset(); return; }
+    /* v1.0.8 — 탑 조기 퇴장 — 기록 확정 후 복귀 */
+    if (this.towerActive) { this.exitTower(); this.showBanner(`탑 탈출 — 최고 기록 ${this.inf.towerBest}층`); }
     this.returnActive = false;
     audio.sfx.portal();
     this.startTransition(prev, { delay: 520 });
@@ -3119,6 +3158,55 @@ export class WorldScene extends Phaser.Scene {
         this.emitRpgState();
       }
     }
+    /* ---------- v1.0.8 — 무한 콘텐츠 훅 ---------- */
+    if (this.towerActive) {
+      /* ① 심연의 탑 — 남은 적 갱신, 전멸 시 다음 층 */
+      if (this.towerBossRef && ref === this.towerBossRef) this.towerBossRef = null;
+      this.updateTowerText();
+      if (this.enemies.filter((e) => e.alive).length === 0 && !this.towerBossRef) this.towerFloorCleared();
+    } else if (this.closetActive && this.trialMod) {
+      /* ③ 일일 시련 — titan 수정자: 처치 시 심연 코인 추가 */
+      const am = this.trialMod.abyssMul ?? 0;
+      if (am > 0) this.inf.abyss += am;
+    }
+    /* ⑤ 제작 재료 드롭 (탑/균열 1.6배 — 무한 파밍 싱크) */
+    {
+      const matBoost = this.towerActive || this.closetActive ? 1.6 : 1;
+      for (const m of MAT_CHANCES) {
+        if (Math.random() < m.chance * matBoost) {
+          this.inf.mats[m.key] = (this.inf.mats[m.key] ?? 0) + 1;
+          this.spawnPickupText(this.player.x, this.player.y - 88, `${m.name} +1`, "#a8ecff");
+          this.emitRpgState();
+        }
+      }
+    }
+    /* ⑥ 펫 육성 — 소환 중 펫이 사냥 경험치를 얻는다 (진화 3단계) */
+    if (this.player.pet) {
+      const before = petEvoStage(this.inf.petLv);
+      this.inf.petExp += Math.max(1, Math.round(exp * PET.expShare));
+      while (this.inf.petExp >= PET.expPerLv(this.inf.petLv) && this.inf.petLv < 50) {
+        this.inf.petExp -= PET.expPerLv(this.inf.petLv);
+        this.inf.petLv++;
+        this.syncExtBonus(); // 펫 스탯 보너스 반영
+        this.spawnPickupText(this.player.x, this.player.y - 108, `펫 Lv${this.inf.petLv}! (공격 +${petBonus(this.inf.petLv).atkPct.toFixed(1)}%)`, "#7de8ff");
+        const after = petEvoStage(this.inf.petLv);
+        if (after > before) {
+          this.showBanner(`펫이 ${PET_EVO_NAMES[after]}으로 진화했다! 보너스 효과 증가`);
+          audio.sfx.levelup();
+        }
+      }
+    }
+    /* ⑦ 황금 몬스터 처치 — 대량 골드 + 심연 코인 */
+    if (this.goldenRef && ref === this.goldenRef) {
+      this.goldenRef = null;
+      const g = Math.round((60 + this.player.lv * 10) * GOLDEN.goldMul);
+      this.player.addGold(g);
+      this.inf.abyss += GOLDEN.abyss;
+      this.spawnPickupText(this.player.x, this.player.y - 84, `황금 사냥 성공! +${g.toLocaleString()} G · 심연 +${GOLDEN.abyss}`, "#ffd76a");
+      this.showBanner("황금 몬스터를 잡았다! 대량의 골드가 쏟아진다!");
+      audio.sfx.questDone();
+      this.emitRpgState();
+    }
     /* 일일 퀘스트 — 토벌 카운트 (게이트/던전 처치 포함) */
     this.addDailyHunt();
     /* v4.5.0 — 시즌 패스 XP (토벌 +1 — 사냥 자체가 패스 진행으로 이어진다) */
@@ -3351,17 +3439,28 @@ export class WorldScene extends Phaser.Scene {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
 
-  /** 피규어/배지/룬/성좌/스킨 보너스 재계산 → Player 주입 */
+  /** 피규어/배지/룬/성좌/스킨 + 무한 콘텐츠(부여아/환생/펫/도감) 보너스 재계산 → Player 주입 */
   private syncExtBonus() {
     if (!this.player) return;
-    this.player.setExtBonus(computeExtBonus({
+    const base = computeExtBonus({
       figures: this.figures,
       badgeSlots: this.badgeSlots,
       runes: this.runes,
       runeSlots: this.runeSlots,
       constel: this.constel,
       cosmetic: this.player.cosmetic,
-    }));
+    });
+    /* v1.0.8 — 무한 콘텐츠 보너스 병합 (심연 부여아 flat + 환생/펫/도감 %) */
+    const ib = infBonus(this.inf, Object.keys(this.monsterKills ?? {}).length, !!this.player.pet);
+    this.player.setExtBonus({
+      atk: base.atk + ib.atk,
+      hp: base.hp + ib.hp,
+      def: base.def + ib.def,
+      crit: base.crit + ib.crit,
+      atkPct: base.atkPct + ib.atkPct,
+      speedPct: base.speedPct,
+      goldPct: base.goldPct + ib.goldPct,
+    });
   }
 
   /* ---------------- 데일리 (출석/일일 퀘스트/티켓/오프라인 보상) ---------------- */
@@ -4101,7 +4200,7 @@ export class WorldScene extends Phaser.Scene {
 
   /* ---------------- 균열 던전 (골드/경험치책 파밍) ---------------- */
 
-  enterCloset() {
+  enterCloset(tier = 0) {
     if (!this.player || this.transitioning) return;
     if (this.stageDef.key === "closet") return;
     this.ensureTickets();
@@ -4110,29 +4209,64 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: left > 0 ? `오늘의 균열 던전 티켓 소진! (혜택 패널에서 재충전 ${left}회 가능 — 3💎)` : "오늘의 균열 던전 티켓 소진! (재충전 한도 초과)" });
       return;
     }
+    /* v1.0.8 — 심층 균열: 티어 잠금 검증 (클리어한 티어+1까지 입장 가능) */
+    const maxTier = Math.min(99, this.inf.closetTier);
+    const t = Math.max(0, Math.min(maxTier, Math.floor(tier)));
     this.ticketCloset--;
     this.ensureDaily();
     this.dailyCloset++;
     this.closetFrom = this.stageDef.key;
     this.closetTheme = closetThemeOf(); // v1.0.1 — 오늘의 요일 테마
+    this.closetTierNow = t; // v1.0.8 — 심층 균열 티어
+    this.trialMod = null;
     this.trackMission("closet"); // v1.0.1 — 시즌 미션 균열 입장 카운트
-    this.showBanner(`오늘의 테마 「${this.closetTheme.name}」 — ${this.closetTheme.desc}`);
+    this.showBanner(t > 0 ? `심층 균열 T${t} 입장! — 적 ×${closetTierScale(t).hpMul.toFixed(1)} · 보상 ×${closetTierScale(t).goldMul.toFixed(1)}` : `오늘의 테마 「${this.closetTheme.name}」 — ${this.closetTheme.desc}`);
     this.save();
     this.emitRpgState();
     this.gotoStage("closet");
   }
 
+  /* v1.0.8 — 일일 시련: 티켓 소모 없음, 1일 1회 클리어 보상 (입장 자체는 무제한 — 훈련 겸 파밍) */
+  enterTrial() {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "closet") return;
+    const mod = todayTrial();
+    this.trialMod = mod;
+    this.closetTierNow = 0;
+    this.closetFrom = this.stageDef.key;
+    this.closetTheme = closetThemeOf();
+    this.trackMission("closet");
+    this.showBanner(`일일 시련 「${mod.name}」 — ${mod.desc}`);
+    this.save();
+    this.emitRpgState();
+    this.gotoStage("closet");
+  }
+
+  /* v1.0.8 — ① 심연의 탑: 무한 층수 탑등반 (입장 무료 — 층 보상은 심연 코인 중심) */
+  enterTower() {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "tower") return;
+    this.towerFrom = this.stageDef.key;
+    this.towerActive = true;
+    this.towerFloor = 1;
+    this.showBanner("심연의 탑 입장 — 층을 오를수록 강해진다. 5층마다 보스가 기다린다!");
+    this.save();
+    this.gotoStage("tower");
+  }
+
   private buildCloset() {
     const cx = this.stageW / 2;
     const th = this.closetTheme;
+    const trial = this.trialMod;
+    const tier = this.closetTierNow;
     this.add
-      .text(this.cameras.main.width / 2, 66, "균 열 던 전", { fontFamily: "Galmuri11, sans-serif", fontSize: "30px", color: "#8fe84a", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 66, trial ? "일 일 시 련" : tier > 0 ? "심 층 균 열" : "균 열 던 전", { fontFamily: "Galmuri11, sans-serif", fontSize: "30px", color: trial ? trial.color : "#8fe84a", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(90)
       .setScrollFactor(0);
-    /* v1.0.1 — 요일 테마 배지 */
+    /* v1.0.8 — 시련 수정자/티어 배지 (기존 요일 테마 배지 대체) */
     this.add
-      .text(this.cameras.main.width / 2, 96, `오늘의 테마 — ${th.name}`, { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: th.color, stroke: "#1a1020", strokeThickness: 4, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 96, trial ? `${trial.name} — ${trial.desc}` : tier > 0 ? `심층 T${tier} — 적 HP ×${closetTierScale(tier).hpMul.toFixed(1)} · 골드 ×${closetTierScale(tier).goldMul.toFixed(1)}` : `오늘의 테마 — ${th.name}`, { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: trial ? trial.color : tier > 0 ? "#c08aff" : th.color, stroke: "#1a1020", strokeThickness: 4, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(90)
       .setScrollFactor(0);
@@ -4145,16 +4279,132 @@ export class WorldScene extends Phaser.Scene {
     this.closetAcc = 0;
     this.closetActive = true;
     this.closetEndsAt = this.time.now + 60000;
-    this.showBanner(`「${th.name}」 입장! 60초 동안 ${th.mul ? "골드" : "보물"}을 모아라`);
+    if (!trial) this.showBanner(tier > 0 ? `심층 균열 T${tier} — 60초 파밍!` : `「${th.name}」 입장! 60초 동안 ${th.mul ? "골드" : "보물"}을 모아라`);
+  }
+
+  /* ================= v1.0.8 — ① 심연의 탑 (무한 층수) ================= */
+
+  private buildTower() {
+    this.towerActive = true; // 리셋 블록 이후 빌드 — 여기서 활성화 (closet/gate 패턴)
+    if (this.towerFloor < 1) this.towerFloor = 1;
+    this.add
+      .text(this.cameras.main.width / 2, 66, "심 연 의 탑", { fontFamily: "Galmuri11, sans-serif", fontSize: "30px", color: "#c08aff", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0);
+    this.towerText = this.add
+      .text(this.cameras.main.width / 2, 96, "", { fontFamily: "Galmuri11, sans-serif", fontSize: "16px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    this.spawnTowerFloor();
+  }
+
+  /** 현재 층 스폰 — 층 스케일 적용, 보스층은 보스 1기 + 잡몹 소수 */
+  private spawnTowerFloor() {
+    const f = this.towerFloor;
+    const lv = this.player.lv;
+    const sc = towerFloorScale(f);
+    const bossFloor = isTowerBossFloor(f);
+    const pool = towerPool(f);
+    const n = bossFloor ? 4 : Phaser.Math.Clamp(5 + Math.floor(f / 3), 5, 14);
+    for (let i = 0; i < n; i++) {
+      const key = pool[Math.floor(Math.random() * pool.length)];
+      const def = ENEMIES[key];
+      const px = Phaser.Math.Between(80, this.stageW - 80);
+      const py = Phaser.Math.Between(80, this.stageH - 80);
+      const e = new Enemy(this, px, py, key, {
+        hp: Math.round((22 + lv * 2.8 + def.hp * 0.5) * sc),
+        atk: Math.round((5 + lv * 0.45) * (1 + (f - 1) * TOWER.atkPerFloor)),
+        exp: Math.round((20 + lv * 2) * (1 + (f - 1) * TOWER.expPerFloor)),
+        gold: 0,
+      });
+      this.enemies.push(e);
+      this.physics.add.collider(e, this.solidGroup);
+    }
+    if (bossFloor) {
+      /* 보스층 — 전 챕터 보스 로테이션 (5층 간격으로 순환), 층 스케일 적용 */
+      const rot: BossKey[] = ["guardian", "behemoth", "nidhog", "surt", "fenrir", "skoll", "gram", "abysslord", "abudditos"];
+      const bkey = rot[(Math.floor(f / TOWER.bossEvery) - 1) % rot.length];
+      const base = BOSS_DEFS[bkey];
+      const def: BossDef = {
+        ...base,
+        name: `${base.name} T${f}`,
+        hp: Math.round(base.hp * sc * 0.9),
+        atk: Math.round(base.atk * (1 + (f - 1) * TOWER.atkPerFloor)),
+        exp: Math.round(base.exp * (1 + (f - 1) * TOWER.expPerFloor)),
+        gold: 0,
+      };
+      const b = new Boss(this, this.stageW / 2, 200, def, "normal");
+      this.boss = b;
+      this.bossDef = def;
+      this.towerBossRef = b;
+      this.physics.add.collider(b, this.solidGroup);
+      audio.sfx.roar();
+      EventBus.emit("boss:show", { name: `[탑 ${f}층] ${def.name}`, hp: b.hp, maxHp: b.maxHp });
+    }
+    this.updateTowerText();
+  }
+
+  private updateTowerText() {
+    const f = this.towerFloor;
+    const alive = this.enemies.filter((e) => e.alive).length;
+    const bossAlive = this.towerBossRef ? 1 : 0;
+    const bossTag = isTowerBossFloor(f) ? " [BOSS]" : "";
+    this.towerText?.setText(`${f}층${bossTag}  |  남은 적 ${alive + bossAlive}  |  최고 기록 ${this.inf.towerBest}층`);
+    this.towerText?.setX(this.cameras.main.width / 2);
+  }
+
+  /** 층 전멸 시 호출 — 보상 지급 후 다음 층 스폰 */
+  private towerFloorCleared() {
+    const f = this.towerFloor;
+    const rw = towerFloorReward(f, this.player.lv);
+    this.player.addGold(rw.gold);
+    this.player.gainExp(rw.exp);
+    this.inf.abyss += rw.abyss;
+    /* 기록 갱신 */
+    const record = f > this.inf.towerBest;
+    if (record) this.inf.towerBest = f;
+    this.spawnPickupText(this.player.x, this.player.y - 74, `${f}층 클리어! +${rw.abyss} 심연 코인${record ? " — 신기록!" : ""}`, "#c08aff");
+    audio.sfx.questDone();
+    if (f % 10 === 0) {
+      /* 10층마다 에메랄드 보너스 — 장기 목표 */
+      this.player.emerald += 3;
+      this.spawnPickupText(this.player.x, this.player.y - 96, "+3 에메랄드 (10층 돌파)", "#7de8ff");
+    }
+    this.towerFloor++;
+    this.emitRpgState();
+    this.save();
+    this.time.delayedCall(650, () => {
+      if (this.towerActive && this.scene.isActive()) {
+        this.showBanner(`${this.towerFloor}층 — 더 깊이 내려간다…`);
+        this.spawnTowerFloor();
+      }
+    });
+  }
+
+  /** 탑 중간 퇴장 (복귀 포탈/사망) — 기록 확정 */
+  private exitTower() {
+    if (!this.towerActive) return;
+    this.towerActive = false;
+    this.towerBossRef = null;
+    this.towerText?.destroy();
+    this.towerText = null;
+    /* 탑 랭킹 등록 (멀티 서버 — ⑩) */
+    try { net.netRankSubmit("tower", this.inf.towerBest, getPlayerName(), this.player.lv); } catch { /* 미접속 무시 */ }
+    this.save();
+    this.emitRpgState();
   }
 
   private tickCloset(dt: number) {
-    /* 몬스터 지속 소환 — 0.75초마다 1~2마리 (테마 spawnMul로 가속) */
-    const spawnMs = 750 / (this.closetTheme.spawnMul ?? 1); // v1.0.1 — 무한의 균열 1.4배 가속
+    const trial = this.trialMod;
+    const tier = closetTierScale(this.closetTierNow);
+    /* 몬스터 지속 소환 — 0.75초마다 1~2마리 (테마 spawnMul·시련 spawnMul 가속) */
+    const spawnMs = 750 / ((this.closetTheme.spawnMul ?? 1) * (trial?.spawnMul ?? 1));
     this.closetAcc += dt;
     if (this.closetAcc >= spawnMs) {
       this.closetAcc = 0;
-      const n = Phaser.Math.Between(1, 2);
+      const n = Phaser.Math.Between(1, 2) * (trial?.spawnMul ? 2 : 1);
       const lv = this.player.lv;
       const pool: EnemyKey[] = ["x3_goblin", "x2_frog", "wolf", "x2_rat", "x2_bat"];
       for (let i = 0; i < n; i++) {
@@ -4163,9 +4413,9 @@ export class WorldScene extends Phaser.Scene {
         const px = Phaser.Math.Between(80, this.stageW - 80);
         const py = Phaser.Math.Between(80, this.stageH - 80);
         const e = new Enemy(this, px, py, key, {
-          hp: Math.round(18 + lv * 2.4 + def.hp * 0.4),
-          atk: Math.round(4 + lv * 0.4),
-          exp: Math.round(22 + lv * 2.2),
+          hp: Math.round((18 + lv * 2.4 + def.hp * 0.4) * tier.hpMul * (trial?.hpMul ?? 1)),
+          atk: Math.round((4 + lv * 0.4) * tier.atkMul * (trial?.atkMul ?? 1)),
+          exp: Math.round((22 + lv * 2.2) * (trial?.expMul ?? 1)),
           gold: 0,
         });
         this.enemies.push(e);
@@ -4178,7 +4428,8 @@ export class WorldScene extends Phaser.Scene {
     if (this.gateTextAcc2 >= 100) {
       this.gateTextAcc2 = 0;
       const remain = Math.max(0, this.closetEndsAt - this.time.now);
-      this.closetText?.setText(`남은 시간 ${Math.ceil(remain / 1000)}초  |  획득 골드 ${this.closetGold.toLocaleString()} G`);
+      const tag = this.trialMod ? "시련" : this.closetTierNow > 0 ? `T${this.closetTierNow}` : "파밍";
+      this.closetText?.setText(`${tag} · 남은 시간 ${Math.ceil(remain / 1000)}초  |  획득 골드 ${this.closetGold.toLocaleString()} G`);
     }
     if (this.time.now >= this.closetEndsAt) this.finishCloset();
   }
@@ -4190,18 +4441,58 @@ export class WorldScene extends Phaser.Scene {
       if (e.alive) { e.alive = false; e.destroy(); }
     }
     this.enemies = [];
+    const th = this.closetTheme;
+    const trial = this.trialMod;
+    const tier = this.closetTierNow;
+    /* v1.0.8 — 일일 시련 종료: 1일 1회 보상 (심연 코인 + 골드) */
+    if (trial) {
+      const today = todayKey();
+      const first = this.inf.trialDone !== today;
+      if (first) this.inf.trialDone = today;
+      const rw = trialReward(this.player.lv, trial);
+      if (first) this.inf.abyss += rw.abyss;
+      this.player.addGold(rw.gold);
+      EventBus.emit("reward:show", {
+        title: `일일 시련 「${trial.name}」 — 생존 완료!`,
+        lines: [
+          { text: `획득 골드: ${rw.gold.toLocaleString()} G`, color: "#ffd76a" },
+          { text: first ? `일일 보상 — 심연 코인 +${rw.abyss}` : "일일 보상은 이미 수령했다 (내일 다시!)", color: first ? "#c08aff" : "#8a93a5" },
+          { text: `내일의 시련: 「${todayTrial(new Date(Date.now() + 86400000)).name}」`, color: "#a8ecff" },
+        ] satisfies RewardPopupState["lines"],
+      });
+      audio.sfx.questDone();
+      this.trialMod = null;
+      this.emitRpgState();
+      this.save();
+      const backT: StageKey = STAGES[this.closetFrom] ? this.closetFrom : "village";
+      this.startTransition(backT, { delay: 1800 });
+      return;
+    }
+    /* v1.0.8 — 심층 균열 티어 클리어 판정: 획득 골드가 이전 티어 기준선을 넘으면 해금
+     *  기준선 = 기본 균열 평균 수익 × 티어 배율 (T1 클리어 시 T2 해금 — 무한 상승) */
+    if (tier > 0 && this.closetGold >= 2600 * closetTierScale(tier).goldMul * 0.55) {
+      if (this.inf.closetTier <= tier) {
+        this.inf.closetTier = tier + 1;
+        this.inf.abyss += closetTierAbyss(tier);
+        EventBus.emit("banner:show", { text: `심층 균열 T${this.inf.closetTier} 해금! (심연 코인 +${closetTierAbyss(tier)})` });
+      }
+    } else if (tier === 0 && this.closetGold >= 2600 && this.inf.closetTier < 1) {
+      /* 첫 심층 진입 해금 — 기본 균열에서 2,600G 이상 */
+      this.inf.closetTier = 1;
+      this.inf.abyss += closetTierAbyss(0);
+      EventBus.emit("banner:show", { text: "심층 균열 T1 해금! — 콘텐츠 패널에서 도전!" });
+    }
     const record = this.closetGold > this.closetBest;
     if (record) this.closetBest = this.closetGold;
     const badgeKey = "bdg_closet";
     const gotBadge = this.closetBest >= 100000 && !this.badges.includes(badgeKey);
     if (gotBadge) this.badges.push(badgeKey);
-    const th = this.closetTheme;
     EventBus.emit("reward:show", {
-      title: `균열 던전 「${th.name}」 — 파밍 종료!`,
+      title: tier > 0 ? `심층 균열 T${tier} — 파밍 종료!` : `균열 던전 「${th.name}」 — 파밍 종료!`,
       lines: [
         { text: `획득 골드: ${this.closetGold.toLocaleString()} G`, color: "#ffd76a" },
         { text: record ? "신기록 달성!" : `최고 기록: ${this.closetBest.toLocaleString()} G`, color: record ? "#7dffa8" : "#a8ecff" },
-        { text: gotBadge ? "배지 획득 — 균열 탐험가!" : `내일 테마: 「${CLOSET_THEMES[(th.dow + 1) % 7].name}」`, color: gotBadge ? "#c08aff" : "#c08aff" },
+        { text: this.inf.closetTier > tier ? `심층 균열 T${this.inf.closetTier} 해금!` : `다음 도전 — 심층 균열 T${this.inf.closetTier}`, color: "#c08aff" },
       ] satisfies RewardPopupState["lines"],
     });
     audio.sfx.questDone();
@@ -4210,6 +4501,150 @@ export class WorldScene extends Phaser.Scene {
     net.netRankSubmit("closet", this.closetBest, getPlayerName(), this.player.lv);
     const back: StageKey = STAGES[this.closetFrom] ? this.closetFrom : "village";
     this.startTransition(back, { delay: 1800 });
+  }
+
+  /* ================= v1.0.8 — ⑦ 황금 몬스터 러시 ================= */
+
+  /** 필드 전용 랜덤 이벤트 — 마을/실내/이벤트 구역 제외, 평균 60~100초에 1마리 */
+  private tickGolden(dt: number) {
+    if (this.goldenRef) return; // 이미 활동 중
+    if (!this.stageDef || this.stageDef.isVillage || this.isInterior) return;
+    if (this.stageDef.key === "gate" || this.stageDef.key === "closet" || this.stageDef.key === "tower" || this.stageDef.key === "dojang") return;
+    if (this.stageDef.enemies.length === 0 || this.transitioning || !this.player) return;
+    this.goldenAcc += dt;
+    if (this.goldenAcc < GOLDEN.intervalMs) return;
+    this.goldenAcc = 0;
+    if (Math.random() >= GOLDEN.chance) return;
+    this.spawnGolden();
+  }
+
+  private spawnGolden() {
+    if (!this.player) return;
+    const mix = this.stageDef.enemies;
+    if (!mix || mix.length === 0) return; // 마을 등 무적 구역 가드
+    const key = mix[Math.floor(Math.random() * mix.length)].key;
+    const def = ENEMIES[key];
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 190;
+    const px = Phaser.Math.Clamp(this.player.x + Math.cos(ang) * dist, 60, this.stageW - 60);
+    const py = Phaser.Math.Clamp(this.player.y + Math.sin(ang) * dist, 60, this.stageH - 60);
+    const e = new Enemy(this, px, py, key, {
+      hp: Math.round((18 + this.player.lv * 2.4 + def.hp * 0.4) * GOLDEN.hpMul),
+      atk: Math.round((4 + this.player.lv * 0.4) * GOLDEN.atkMul),
+      exp: Math.round((20 + this.player.lv * 2) * GOLDEN.expMul),
+      gold: 0,
+    });
+    /* 황금 변이 연출 — 황금 틴트 + 확대 + 반짝임 */
+    e.setTint(0xffd76a);
+    e.setScale(1.28);
+    const glow = this.add.image(e.x, e.y - 4, "glow").setDepth(9).setScale(1.4).setAlpha(0.5).setTint(0xffd76a).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: glow, alpha: 0.18, scale: 1.8, yoyo: true, repeat: -1, duration: 640 });
+    e.once("destroy", () => glow.destroy());
+    this.goldenRef = e;
+    this.enemies.push(e);
+    this.physics.add.collider(e, this.solidGroup);
+    this.showBanner("✨ 황금 몬스터 출현! 잡으면 대량의 골드!");
+    audio.sfx.roar();
+  }
+
+  /* ================= v1.0.8 — ④ 환생 / ⑤ 제작 / ⑧ 심연 상점 ================= */
+
+  /** 환생 — 요구 레벨 달성 시 레벨/경험치/AP를 초기화하고 영구 스탯 +1스택 획득 */
+  private doRebirth() {
+    if (!this.player) return;
+    const req = rebirthReqLv(this.inf.rebirthEss);
+    if (this.player.lv < req) {
+      EventBus.emit("banner:show", { text: `환생하려면 Lv ${req}이 필요하다 (현재 Lv ${this.player.lv})` });
+      return;
+    }
+    if (!window.confirm(`환생하시겠습니까?\n\n· 레벨이 1로, 경험치/AP가 초기화됩니다 (스탯 재배분 필요)\n· 골드/아이템/장비/강화/심연코인은 유지됩니다\n· 보상: 영구 공격 +8% · HP +60 · 골드 +2% (누적) + 심연 코인 ${REBIRTH_ABYSS}`)) return;
+    this.inf.rebirths++;
+    this.inf.abyss += REBIRTH_ABYSS;
+    /* 레벨/경험치/AP 초기화 — 자동배분이 켜져 있으면 레벨업마다 자동 재분배 */
+    this.player.lv = 1;
+    this.player.exp = 0;
+    this.player.ap = 0;
+    this.player.stats = { str: 0, dex: 0, int: 0, luk: 0 };
+    this.player.hp = this.player.maxHp; // 풀피 부활
+    this.syncExtBonus();
+    this.save();
+    this.emitRpgState();
+    this.emitHud();
+    audio.sfx.levelup();
+    this.showBanner(`환생 ${this.inf.rebirths}회 달성! 영구 스탯이 영원히 남는다 — 심연 코인 +${REBIRTH_ABYSS}`);
+    EventBus.emit("reward:show", {
+      title: `환생 ${this.inf.rebirths}회 — 새로운 시작!`,
+      lines: [
+        { text: `영구 보너스 누적: 공격 +${rebirthBonus(this.inf.rebirths).atkPct}% · HP +${rebirthBonus(this.inf.rebirths).hp} · 골드 +${rebirthBonus(this.inf.rebirths).goldPct}%`, color: "#ffd76a" },
+        { text: `심연 코인 +${REBIRTH_ABYSS}`, color: "#c08aff" },
+        { text: "AP가 초기화됐다 — 스탯창에서 재배분하자!", color: "#a8ecff" },
+      ] satisfies RewardPopupState["lines"],
+    });
+  }
+
+  /** 연금 제작대 — 재료 소모 → 아이템 생산 (rpg:infCraft) */
+  private craftRecipe(id: string) {
+    if (!this.player) return;
+    const r = CRAFT_RECIPES.find((x) => x.id === id);
+    if (!r) return;
+    if (!canCraft(r, this.inf.mats)) {
+      EventBus.emit("banner:show", { text: "재료가 부족하다 — 사냥으로 재료를 모아보자!" });
+      audio.sfx.bossDie();
+      return;
+    }
+    for (const [k, n] of Object.entries(r.mats)) this.inf.mats[k] -= n;
+    if (r.out.item === "__abyss15") {
+      this.inf.abyss += 15;
+      EventBus.emit("banner:show", { text: "제작 완료! 심연 코인 +15" });
+    } else {
+      for (let i = 0; i < r.out.n; i++) this.player.owned.push(r.out.item as ItemKey);
+      EventBus.emit("banner:show", { text: `제작 완료! ${ITEMS[r.out.item as ItemKey]?.name ?? r.out.item} ×${r.out.n}` });
+    }
+    audio.sfx.coin();
+    this.save();
+    this.emitRpgState();
+  }
+
+  /** 심연 상점 — 심연 코인 소모 (rpg:infAbyss) */
+  private abyssBuy(id: string) {
+    if (!this.player) return;
+    const item = ABYSS_SHOP.find((x) => x.id === id);
+    if (!item) return;
+    if (this.inf.abyss < item.cost) {
+      EventBus.emit("banner:show", { text: `심연 코인이 부족하다 (${item.cost} 필요 · 보유 ${this.inf.abyss})` });
+      audio.sfx.bossDie();
+      return;
+    }
+    if (id === "rebirth_ess") {
+      this.inf.abyss -= item.cost;
+      this.inf.rebirthEss++;
+      EventBus.emit("banner:show", { text: `환생의 정수 구매! — 환생 요구 레벨 ${rebirthReqLv(this.inf.rebirthEss)}` });
+    } else if (id === "cos_box") {
+      /* 미보유 치장 1종 랜덤 — 전부 보유 시 에메랄드 5 환불 보상 */
+      const pool = (Object.keys(COSMETIC_DEFS) as CosmeticKey[]).filter((k) => !(this.player.cosmetics as string[]).includes(k));
+      this.inf.abyss -= item.cost;
+      if (pool.length === 0) {
+        this.player.emerald += 5;
+        EventBus.emit("banner:show", { text: "치장 콜렉션 완성! 대신 에메랄드 +5" });
+      } else {
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        this.player.cosmetics.push(pick as CosmeticKey);
+        EventBus.emit("banner:show", { text: `치장 상자 개봉! ${COSMETIC_DEFS[pick as CosmeticKey]?.name ?? pick} 획득!` });
+      }
+    } else if (id === "legend_chest") {
+      this.inf.abyss -= item.cost;
+      this.player.owned.push("chest_legend");
+      EventBus.emit("banner:show", { text: "전설 상자 획득! — 인벤토리에서 개봉" });
+    } else {
+      /* 부여아 — 영구 스탯 (중복 구매) */
+      this.inf.abyss -= item.cost;
+      this.inf.orbs[id] = (this.inf.orbs[id] ?? 0) + 1;
+      this.syncExtBonus();
+      EventBus.emit("banner:show", { text: `${item.name} 각인! (누적 ×${this.inf.orbs[id]}) — ${item.desc}` });
+    }
+    audio.sfx.coin();
+    this.save();
+    this.emitRpgState();
   }
 
   /* ================= v3.3.0 (지시 #8) — 5차 각성 스토리/시련 ================= */
@@ -4919,6 +5354,28 @@ export class WorldScene extends Phaser.Scene {
     this.clearBossPostFX(); /* v4.1.5 — 보스전 포스트FX/오라 해제 */
     const def = this.bossDef;
     audio.sfx.bossDie();
+    /* v1.0.8 — ① 탑 보스층 격파: 스토리/재림 경로와 완전 분리 (층 클리어 처리만) */
+    if (this.towerActive) {
+      this.towerBossRef = null;
+      this.boss = null;
+      this.ensureDaily();
+      this.dailyBosses++;
+      this.bossKillCount++;
+      this.addPassXp(PASS_XP_RULES.boss);
+      this.trackMission("boss");
+      this.cameras.main.shake(300, 0.008);
+      this.updateTowerText();
+      if (this.enemies.filter((e) => e.alive).length === 0) this.towerFloorCleared();
+      return;
+    }
+    /* v1.0.8 — ⑨ 주간 보스 레이드: 요일 보스 처치 시 심연 코인 +3 (드롭 2배는 스토리 경로 하단) */
+    const raidToday = weeklyRaidBoss();
+    const isRaidBoss = def?.key === raidToday;
+    if (isRaidBoss) {
+      this.inf.abyss += 3;
+      this.showBanner(`주간 레이드 보스 격파! (${def?.name}) — 심연 코인 +3`);
+      this.emitRpgState();
+    }
     this.ensureDaily();
     this.dailyBosses++; // v1.0.7 — 보스 사냥 일일 퀘스트 카운트 (재림/카오스/GM 전 경로 공통)
     /* v4.8.0 — 보스 격파 대형 충격파 (오브 색상 — 스토리/재림/GM 경로 공통, WebGL 전용) */
@@ -4996,10 +5453,13 @@ export class WorldScene extends Phaser.Scene {
     if (dropKey && this.boss) {
       const bx = this.boss.x;
       const by = this.boss.y;
+      const dropN = isRaidBoss ? 2 : 1; // v1.0.8 — 주간 레이드 보스 드롭 2배
       this.time.delayedCall(420, () => {
         if (!this.scene.isActive()) return;
-        const d = this.acquireDrop();
-        if (d) d.spawnItem(dropKey, bx + Phaser.Math.Between(-14, 14), by + Phaser.Math.Between(-10, 6));
+        for (let i = 0; i < dropN; i++) {
+          const d = this.acquireDrop();
+          if (d) d.spawnItem(dropKey, bx + Phaser.Math.Between(-20, 20), by + Phaser.Math.Between(-12, 8));
+        }
         audio.sfx.roar();
       });
     }
@@ -6135,6 +6595,21 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:tradeSell", onTradeSell);
     EventBus.on("rpg:missionClaim", onMissionClaim);
     EventBus.on("rpg:ticketRefill", onTicketRefill);
+    /* v1.0.8 — 무한 콘텐츠 허브 리스너 (탑/시련/티어균열/제작/심연상점/환생) */
+    const onInfTower = () => this.enterTower();
+    const onInfTrial = () => this.enterTrial();
+    const onInfClosetTier = (v: { tier: number }) => this.enterCloset(v?.tier ?? 0);
+    const onInfClosetBasic = () => this.enterCloset(0);
+    const onInfCraft = (v: { id: string }) => this.craftRecipe(v?.id ?? "");
+    const onInfAbyss = (v: { id: string }) => this.abyssBuy(v?.id ?? "");
+    const onInfRebirth = () => this.doRebirth();
+    EventBus.on("rpg:infTower", onInfTower);
+    EventBus.on("rpg:infTrial", onInfTrial);
+    EventBus.on("rpg:infClosetTier", onInfClosetTier);
+    EventBus.on("rpg:infClosetBasic", onInfClosetBasic);
+    EventBus.on("rpg:infCraft", onInfCraft);
+    EventBus.on("rpg:infAbyss", onInfAbyss);
+    EventBus.on("rpg:infRebirth", onInfRebirth);
     EventBus.on("rpg:marketList", onMarketList);
     EventBus.on("rpg:marketBuy", onMarketBuy);
     EventBus.on("rpg:marketCancel", onMarketCancel);
@@ -6225,6 +6700,13 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:tradeSell", onTradeSell);
       EventBus.off("rpg:missionClaim", onMissionClaim);
       EventBus.off("rpg:ticketRefill", onTicketRefill);
+      EventBus.off("rpg:infTower", onInfTower); // v1.0.8
+      EventBus.off("rpg:infTrial", onInfTrial);
+      EventBus.off("rpg:infClosetTier", onInfClosetTier);
+      EventBus.off("rpg:infClosetBasic", onInfClosetBasic);
+      EventBus.off("rpg:infCraft", onInfCraft);
+      EventBus.off("rpg:infAbyss", onInfAbyss);
+      EventBus.off("rpg:infRebirth", onInfRebirth);
       EventBus.off("rpg:marketList", onMarketList);
       EventBus.off("rpg:marketBuy", onMarketBuy);
       EventBus.off("rpg:marketCancel", onMarketCancel);
@@ -6304,6 +6786,8 @@ export class WorldScene extends Phaser.Scene {
     /* v4.0.0 — 바르가 수비전 웨이브 / 균열 던전 진행 */
     if (this.gateActive) this.tickGate(dt);
     if (this.closetActive) this.tickCloset(dt);
+    /* v1.0.8 — ⑦ 황금 몬스터 러시: 일반 필드 구역에서만 랜덤 스폰 (평균 60~100초) */
+    this.tickGolden(dt);
 
     // 원격 플레이어 보간 — 대화/채팅/사망과 무관하게 항상 갱신 (v1.7 멀티플레이)
     const lerpK = Math.min(1, (dt / 1000) * 9);
@@ -9380,6 +9864,22 @@ export class WorldScene extends Phaser.Scene {
       starterPackBought: this.starterPackBought,
       /* v1.0.1 — 티켓 재충전 잔여 횟수 (혜택 패널) */
       ticketRefillsLeft: Math.max(0, 3 - this.ticketRefills),
+      /* v1.0.8 — 무한 콘텐츠 허브 스냅샷 */
+      inf: {
+        towerBest: this.inf.towerBest,
+        closetTier: this.inf.closetTier,
+        trialDone: this.inf.trialDone,
+        rebirths: this.inf.rebirths,
+        mats: { ...this.inf.mats },
+        petLv: this.inf.petLv,
+        petExp: this.inf.petExp,
+        petExpNeed: PET.expPerLv(this.inf.petLv),
+        abyss: this.inf.abyss,
+        orbs: { ...this.inf.orbs },
+        rebirthEss: this.inf.rebirthEss,
+      },
+      trialToday: (() => { const m = todayTrial(); return { id: m.id, name: m.name, desc: m.desc, color: m.color }; })(),
+      raidBossToday: BOSS_DEFS[weeklyRaidBoss() as BossKey]?.name ?? null,
     };
     const sig = JSON.stringify(st);
     if (sig === this.lastRpgSig) return;
@@ -9442,6 +9942,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.isInterior) stageOverride = "village";
     else if (this.stageDef.key === "gate") stageOverride = STAGES[this.gateFrom] ? this.gateFrom : "village";
     else if (this.stageDef.key === "closet") stageOverride = STAGES[this.closetFrom] ? this.closetFrom : "village";
+    else if (this.stageDef.key === "tower") stageOverride = STAGES[this.towerFrom] ? this.towerFrom : "village"; // v1.0.8 — 탑은 세이브 구역 아님
     writeSave(this.buildSave(stageOverride));
   }
 
@@ -9527,6 +10028,8 @@ export class WorldScene extends Phaser.Scene {
       missions: { day: this.missionDay, week: this.missionWeek, d: { ...this.missionD }, w: { ...this.missionW }, cd: [...this.missionCd], cw: [...this.missionCw] },
       sub: { until: this.subUntil },
       starterPackBought: this.starterPackBought,
+      /* v1.0.8 — 무한 콘텐츠 상태 */
+      inf: JSON.parse(JSON.stringify(this.inf)),
       /* v4.1.4 — 보스/카오스/침공 처치 누적 */
       bossKills: this.bossKillCount,
       chaosKills: this.chaosKillCount,

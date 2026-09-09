@@ -128,3 +128,4 @@ ui_check_*.png
 research/
 *.7z
 db/
+download/*.zip

@@ -1360,4 +1360,25 @@ Stage Summary:
 - v1.0.6 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.0.6/SERTZ-v1.0.6.apk (versionCode 71, 105MB, md5 35271f43…)
 - 세션 중 로그인/로그아웃 시 GM NPC 즉시 갱신 — 유저 질문 "GM 로그인 어케함?"의 근본 해소(이제 reload 불필요: 마을 진입 후 admin 로그인만 하면 즉시 등장)
 - 운영 팁: 이 컨테이너는 백그라운드 장시간 빌드가 사일런트 사망할 수 있음 — gradle은 포그라운드 + 로그 리다이렉트로 실행할 것 (scripts/build_apk_v106_wrapper.sh 참고)
-- GitHub 토큰 노출 지속 — 재발급 권고 필수
+- GitHub 토큰 노출 지속 — 재발급 권고 필수---
+Task ID: 70
+Agent: Super Z (메인)
+Task: 게임 개발 수정·고도화 지시서 (Phaser 4) 4개 섹션 + 잔여 36 Phase — v1.0.7 구현·빌드·릴리스 (versionCode 72)
+
+Work Log:
+- [① 로그인 오류 근본 수정] 유저 리포트 "서버 로그인 통신 실패" 재현·원인 확정: 인증이 쿠키 전용(SameSite=Lax) + 서버에 CORS 헤더 0건 → APK 웹뷰(https://localhost)에서 POST+JSON 프리플라이트 OPTIONS가 Next로 떨어져 실패 + 크로스오리진 쿠키 미저장. 수정: accounts/index.js — CORS_HEADERS 전역 부착(sendJson) + /api OPTIONS 204 라우트 + currentUser/로그아웃 Bearer 헤더 지원 + login/register 응답 본문 token 동봉 + SNS 콜백 #auth_token 해시 전달 / account.ts — localStorage 토큰 저장·401 정리·Authorization 헤더 / AuthPanel — consumeAuthTokenFromHash(). 실측: OPTIONS 204·로그인 토큰·/me Bearer={"user":admin}·마켓 Bearer 200
+- [② SPUM식 코스튬] gen_outfits.py — hero 28프레임 의상 픽셀만 재색상(피부 hue15-45 밝/저채도·머리 갈색·외곽선 보호) 4종×28=112프레임 31KB 생성 + 프리뷰 검수. data.ts 슬롯형 치장(CosmeticDef.slot aura/outfit/hair) + ITEMS/BM_STOCK 5종(32/28/24/24/18💎). Player outfit/hair 필드+setOutfit/setHair+구매 즉시 착용 라우팅. WorldScene outfitOverlay(프레임·위치·반전·스케일 완전 동기화)·hairOverlay(포니테일, 오리진=묶음 앵커, 스웨이 tween, 방향별 트레일 오프셋)·outfitTex 매핑·세이브 5곳(필드/로드/emitRpgState/saveData/기본값). Panels 치장 탭 슬롯 배지(코스튬/헤어/오라)+착용 판정 분리. 실측: 구매(200→150💎)→자동 착용→황금 갑옷+포니테일 렌더→리로드 복원(outfit/hair/emerald 150)
+- [③ 프리렌더 3D VFX] research/ 복구분(Hovl Studio Magic effects·UNI VFX)에서 Slash/FlashFree2/uni_shockwave_fiery 변환(hv_slash 15KB·hv_flash 11KB·uni_boom 56KB) → 보스 격파(UNI 폭발+Hovl 플래시)·5차 각성 의식 골드 플래시·마법사 시전 참격 적용 (기존 rune_circle/MagicCircle2 반영분 유지)
+- [④ 크리티컬 이펙트 축소] 데미지 텍스트 1.75→1.42·740→600ms · 히트 스파크 9→6 · Warped 히트 0.55/0.95→0.48/0.8 · shock_ring 0.85→0.55/170→150ms · hit/burst 이미터 스케일·수명 축소 · crit 셰이크 0.0035/110→0.0027/90 · 스킬 충격파 2.6/0.9→2.2/0.6 (히트스톱 90ms 유지로 타격감 보존)
+- [⑤ 성장 패키지 UI 개편] 단순 텍스트 버튼 폐기 → 프리미엄 카드 그리드(패키지별 그라디언트 아이덴티티·황금 성장/BEST/시즌 한정 배지·STORE_PACK_CONTENTS 기반 구성 아이콘 칩+수량·스토어 CTA·결제 안내). 결제 위임 구조(STORE_PACKS 상품 ID) 유지
+- [⑥ 콘텐츠 확장] 일일 퀘스트 3종→5종: "오늘의 파밍"(아이템 드롭 40개 — collectDrop 훅) + "보스 사냥"(보스 1마리 — onBossDead 전 경로 공통 훅). dailyFarms/dailyBosses 카운터+세이브/리셋/직렬화 5곳. 실측: 혜택 패널 5종 표시·진행바
+- [⑦ 1600×720] Scale.RESIZE+높이 기반 줌(720→1.25) 확인 — 캔버스 1600×720 실측·UI 오버플로우 0 (가로 스크린샷 검증 원칙 준수)
+- [⑧ 잔여 36 Phase] v1.0.2 때 보류 2종 해소: 원본 에셋(=v1.0.6 Drive 복구 완료)·현금패키지 UI(=본 패키지 개편). 물료 보강: SERTZ-v1.0.7.aab 104MB(md5 d64cbe17…) + 웹 ZIP 97MB(md5 5cf2c8c3…) 신규 생산·릴리스 업로드 — 3종(AAP/AAB/ZIP) 완비
+- [⑨ 빌드·릴리스] 포그라운드 폴링 방식으로 빌드 안정화(Turbopack 캐시 60초·gradle 증분) → SERTZ-v1.0.7.apk 105,297,675B · aapt versionCode 72/1.0.7 · md5 17ec0f13be59f25ca43d781c841e30cd · APK 내부 신규 에셋 4종+코드 검출 → GitHub Release v1.0.7(id 385442144) APK+AAB+ZIP 업로드 → 재다운로드 md5 원격 일치 ✓ · 버저닝 7곳 동기화 · md5 기입+서빙 3곳 실측(307→v1.0.7·guide md5·txt md5) · 커밋 38b2875 푸시
+- [트러블슈팅] 서버 EADDRINUSE 잔존 프로세스 → pkill -9 후 단일 기동 재확인. MultiEdit 부분 적용 이슈로 Player.ts 필드 중복 선언 → 즉시 정리. 백그라운드 빌드 사망 회피를 위해 폴링 루프 상시화
+
+Stage Summary:
+- v1.0.7 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.7/SERTZ-v1.0.7.apk (versionCode 72, 105MB, md5 17ec0f13…) + AAB + 웹 ZIP
+- 유저 지시서 4섹션 처리율: ①모바일/스케일=기존 RESIZE 체계 확인+1600×720 실측 통과(참고: 첨부 레퍼런스 이미지는 수신되지 않아 자체 프리미엄 디자인 적용) ②SPUM 코스튬+포니테일+프리렌더 3D+크리틱 축소=전부 구현 ③로그인 수정+콘텐츠(일일 5종)+BM(코스튬 판매·패키지 UI)=구현 ④용량 무관 고샘플+기존 풀링/컬링/fxLevel 적응형 유지
+- 다음 회차 제안: 신규 파밍 던전 맵 추가(스테이지 파이프라인 확장)·SNS OAuth 실키 등록·Play Console 결제 연동(STORE_PACKS 상품 등록 후)
+- GitHub 토큰 노출 지속 — 재발급 권고 필수 / download/*.zip .gitignore 추가(대형 파일 리포트 블로트 방지)

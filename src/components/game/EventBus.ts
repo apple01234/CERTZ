@@ -151,10 +151,29 @@ export type RpgState = {
   starterPackBought?: boolean;
   /** v1.0.1 — 오늘 남은 티켓 재충전 횟수 (혜택 패널 — 3까지) */
   ticketRefillsLeft?: number;
+  /* ----- v1.0.8 무한 콘텐츠 허브 (ContentPanel) ----- */
+  /** 무한 콘텐츠 스냅샷 — infinite.ts InfSave + 파생 표기 */
+  inf?: {
+    towerBest: number;
+    closetTier: number;
+    trialDone: string;
+    rebirths: number;
+    mats: Record<string, number>;
+    petLv: number;
+    petExp: number;
+    petExpNeed: number;
+    abyss: number;
+    orbs: Record<string, number>;
+    rebirthEss: number;
+  };
+  /** 오늘의 시련 수정자 (id/name/desc/color — 미표기 null) */
+  trialToday?: { id: string; name: string; desc: string; color: string } | null;
+  /** 오늘의 레이드 보스 (이름) */
+  raidBossToday?: string | null;
 };
 
 /** v3.1.0 — "bossdiff" 제거: 스토리 보스는 전용 난이도 즉시 스폰 (선택은 보스 재도전 창 "boss") */
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "isekai" | "benefit" | "pass" | null;
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "isekai" | "benefit" | "pass" | "content" | null;
 
 /* ----- v4.0.0 — 바르가 수비전 오버레이 ----- */
 export type GateCardState = {

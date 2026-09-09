@@ -6,7 +6,7 @@ import type { HudState, QuestState } from "./EventBus";
 import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords } from "lucide-react";
 import { EventBus } from "./EventBus";
 
 /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
@@ -80,6 +80,7 @@ export function HUD({
   onOpenQuest,
   onOpenBoss,
   onOpenBenefit,
+  onOpenContent,
   onOpenOpt,
 }: {
   hud: HudState;
@@ -103,6 +104,8 @@ export function HUD({
   onOpenBoss: () => void;
   /** v4.0.0 — 혜택 (출석부/일일 퀘스트/쿠폰) */
   onOpenBenefit: () => void;
+  /** v1.0.8 — 무한 콘텐츠 허브 (탑/시련/제작/심연상점/환생) */
+  onOpenContent: () => void;
   /** 설정/키 매핑 (O) */
   onOpenOpt: () => void;
 }) {
@@ -262,6 +265,15 @@ export function HUD({
           >
             <Gift size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/80">혜택</span>
+          </button>
+          {/* v1.0.8 — 무한 콘텐츠 허브 버튼 (탑/시련/제작/심연상점/환생) */}
+          <button
+            onClick={onOpenContent}
+            aria-label="콘텐츠 열기 (심연의 탑/일일 시련/제작/심연 상점/환생)"
+            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-purple-300/40 bg-black/55 text-purple-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+          >
+            <Swords size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-purple-300/80">콘텐츠</span>
           </button>
           <button
             onClick={onOpenOpt}

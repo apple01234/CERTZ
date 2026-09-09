@@ -140,7 +140,7 @@ export function AuthPanel() {
   };
 
   const inputCls =
-    "w-full rounded-lg border border-white/20 bg-slate-900/90 px-3 py-2.5 text-[13px] font-bold text-white outline-none placeholder:text-white/30 focus:border-amber-300/70";
+    "w-full rounded-lg border border-white/20 bg-slate-900/90 px-3 py-2 text-[13px] font-bold text-white outline-none placeholder:text-white/30 focus:border-amber-300/70";
 
   return (
     <>
@@ -158,12 +158,14 @@ export function AuthPanel() {
       </div>
 
       {open && (
-        <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/60 px-4" onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
-          <div className="w-full max-w-sm rounded-2xl border-2 border-sky-200/50 bg-slate-950/95 p-5 shadow-2xl">
-            <div className="mb-3 flex items-center justify-between">
+        /* v1.0.8 — 모바일 가화면(세로 360px급)에서 로그인 버튼이 하단에 잘리는 문제 수정:
+         *  패널을 컴팩트하게 줄이고 + max-height 초과 시 내부 스크롤 허용 */
+        <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/60 px-3 py-3" onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+          <div className="sertz-scroll w-full max-w-[340px] max-h-[calc(100dvh-24px)] overflow-y-auto rounded-2xl border-2 border-sky-200/50 bg-slate-950/95 p-4 shadow-2xl">
+            <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <KeyRound size={17} className="text-sky-300" />
-                <span className="text-base font-black text-sky-200">계정</span>
+                <KeyRound size={16} className="text-sky-300" />
+                <span className="text-sm font-black text-sky-200">계정</span>
               </div>
               <button aria-label="계정 창 닫기" onClick={() => setOpen(false)} className="flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
                 <X size={13} />
@@ -178,11 +180,11 @@ export function AuthPanel() {
                     {user.id} · {user.provider === "local" ? "자체 가입" : `${SNS_META[user.provider]?.label ?? user.provider} 연동`}
                   </p>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button onClick={doBackup} disabled={busy} className="flex items-center justify-center gap-1.5 rounded-xl border-2 border-sky-200/60 bg-sky-500/25 px-3 py-3 text-[12px] font-black text-sky-100 transition-transform hover:bg-sky-500/40 active:scale-95 disabled:opacity-40">
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button onClick={doBackup} disabled={busy} className="flex items-center justify-center gap-1.5 rounded-xl border-2 border-sky-200/60 bg-sky-500/25 px-3 py-2.5 text-[12px] font-black text-sky-100 transition-transform hover:bg-sky-500/40 active:scale-95 disabled:opacity-40">
                     <CloudUpload size={14} /> 세이브 백업
                   </button>
-                  <button onClick={doRestore} disabled={busy} className="flex items-center justify-center gap-1.5 rounded-xl border-2 border-violet-200/50 bg-violet-500/20 px-3 py-3 text-[12px] font-black text-violet-100 transition-transform hover:bg-violet-500/35 active:scale-95 disabled:opacity-40">
+                  <button onClick={doRestore} disabled={busy} className="flex items-center justify-center gap-1.5 rounded-xl border-2 border-violet-200/50 bg-violet-500/20 px-3 py-2.5 text-[12px] font-black text-violet-100 transition-transform hover:bg-violet-500/35 active:scale-95 disabled:opacity-40">
                     <CloudDownload size={14} /> 세이브 복원
                   </button>
                 </div>
@@ -192,52 +194,55 @@ export function AuthPanel() {
                     ✨ 관리자 계정 — 마을 우물 오른쪽의 GM NPC와 대화하면 운영자 패널이 열려요
                   </p>
                 )}
-                <p className="mt-2 text-[10px] font-bold leading-relaxed text-white/40">
-                  백업은 3분마다 자동 실행돼요 · 복원하면 이 기기의 세이브가 클라우드 버전으로 교체돼요
+                <p className="mt-2 text-[9px] font-bold leading-relaxed text-white/40">
+                  백업은 3분마다 자동 실행돼요 · 복원하면 이 기기의 세이브가 교체돼요
                 </p>
-                <button onClick={doLogout} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-[12px] font-black text-white/70 hover:bg-white/10 active:scale-95">
+                <button onClick={doLogout} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-[12px] font-black text-white/70 hover:bg-white/10 active:scale-95">
                   <LogOut size={13} /> 로그아웃
                 </button>
               </>
             ) : (
               <>
                 {/* SNS 연동 로그인 */}
-                <p className="mb-1.5 text-[11px] font-black text-white/55">SNS로 시작하기 (계정 자동 연동)</p>
+                <p className="mb-1 text-[10px] font-black text-white/55">SNS로 시작하기 (계정 자동 연동)</p>
                 <div className="grid grid-cols-3 gap-1.5">
                   {SNS_ORDER.map((k) => (
-                    <button key={k} onClick={() => snsStart(k)} className={`rounded-xl border-2 px-2 py-2.5 text-[12px] font-black transition-transform active:scale-95 ${SNS_META[k].cls}`}>
+                    <button key={k} onClick={() => snsStart(k)} className={`rounded-xl border-2 px-2 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${SNS_META[k].cls}`}>
                       {SNS_META[k].label}
                       {providers[k] && !providers[k].configured && <span className="block text-[8px] opacity-60">미설정</span>}
                     </button>
                   ))}
                 </div>
 
-                <div className="my-3 flex items-center gap-2 text-[9px] font-black text-white/30">
+                <div className="my-2 flex items-center gap-2 text-[9px] font-black text-white/30">
                   <span className="h-px flex-1 bg-white/15" /> 또는 자체 계정 <span className="h-px flex-1 bg-white/15" />
                 </div>
 
-                <div className="mb-2 grid grid-cols-2 gap-1.5">
-                  <button onClick={() => { setMode("login"); setMsg(""); }} className={`rounded-lg py-2 text-[12px] font-black ${mode === "login" ? "bg-amber-400 text-slate-900" : "border border-white/15 bg-white/5 text-white/60"}`}>
+                <div className="mb-1.5 grid grid-cols-2 gap-1.5">
+                  <button onClick={() => { setMode("login"); setMsg(""); }} className={`rounded-lg py-1.5 text-[12px] font-black ${mode === "login" ? "bg-amber-400 text-slate-900" : "border border-white/15 bg-white/5 text-white/60"}`}>
                     로그인
                   </button>
-                  <button onClick={() => { setMode("signup"); setMsg(""); }} className={`rounded-lg py-2 text-[12px] font-black ${mode === "signup" ? "bg-amber-400 text-slate-900" : "border border-white/15 bg-white/5 text-white/60"}`}>
+                  <button onClick={() => { setMode("signup"); setMsg(""); }} className={`rounded-lg py-1.5 text-[12px] font-black ${mode === "signup" ? "bg-amber-400 text-slate-900" : "border border-white/15 bg-white/5 text-white/60"}`}>
                     회원가입
                   </button>
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <input ref={gate} {...swallowKeys} value={id} onChange={(e) => setId(e.target.value)} placeholder="아이디 (영문 소문자/숫자 3~20자)" className={inputCls} maxLength={20} autoCapitalize="none" autoCorrect="off" spellCheck={false} />
                   {mode === "signup" && (
                     <input {...swallowKeys} value={nick} onChange={(e) => setNick(e.target.value)} placeholder="게임 내 이름 (1~8자, 선택)" className={inputCls} maxLength={8} />
                   )}
                   <input {...swallowKeys} type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="비밀번호 (6자 이상)" className={inputCls} maxLength={40} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); submit(); } }} />
                 </div>
-                <button onClick={submit} disabled={busy || !id || !pw} className="mt-2 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-3 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:opacity-40">
+                <button onClick={submit} disabled={busy || !id || !pw} className="mt-1.5 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:opacity-40">
                   {mode === "login" ? "로그인" : "이 정보로 가입!"}
                 </button>
-                {/* v1.0.3 (#GM안내) — "GM 로그인 어케함?" 해결: 방법을 로그인 화면에 직접 표기 */}
-                <p className="mt-2 rounded-lg border border-amber-300/30 bg-amber-400/[0.08] px-2.5 py-2 text-[10px] font-bold leading-relaxed text-amber-200/85">
-                  🛠 GM(운영자) 로그인: <b className="text-amber-100">admin</b> 또는 <b className="text-amber-100">apple01234</b> 아이디로 회원가입/로그인하면 자동으로 관리자 인정돼요 — 로그인 후 마을에 GM NPC가 나타납니다.
-                </p>
+                {/* v1.0.8 — GM 안내를 접이식(details)로 전환: 패널 높이를 줄여 하단 잘림 방지 */}
+                <details className="mt-1.5 rounded-lg border border-amber-300/30 bg-amber-400/[0.08] px-2.5 py-1.5 text-[9px] font-bold leading-relaxed text-amber-200/85">
+                  <summary className="cursor-pointer text-[10px] text-amber-200/90">🛠 GM(운영자) 로그인 방법</summary>
+                  <p className="mt-1">
+                    <b className="text-amber-100">admin</b> 또는 <b className="text-amber-100">apple01234</b> 아이디로 회원가입/로그인하면 자동으로 관리자 인정 — 로그인 후 마을에 GM NPC가 나타납니다.
+                  </p>
+                </details>
               </>
             )}
 

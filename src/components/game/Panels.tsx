@@ -24,6 +24,10 @@ import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
 import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
 import { chestOdds } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법)
 import type { BmGrant } from "@/game/data";
+import {
+  CRAFT_RECIPES, canCraft, ABYSS_SHOP,
+  todayTrial, rebirthReqLv, rebirthBonus, REBIRTH_ABYSS, MAT_CHANCES, petEvoStage, petBonus, PET_EVO_NAMES,
+} from "@/game/infinite"; // v1.0.8 — 무한 콘텐츠 허브
 
 /**
  * 2D MMORPG 기본 요소 UI — 상점 / 인벤토리 패널
@@ -2538,8 +2542,191 @@ export function GamePanels({
   if (panel === "isekai") return <IsekaiPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 바르가 원정대 (피규어/배지/룬/성좌/업적/랭킹)
   if (panel === "benefit") return <BenefitPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 혜택 (출석부/일일 퀘스트/쿠폰)
   if (panel === "pass") return <PassPanel rpg={rpg} onClose={onClose} />; // v4.5.0 — 시즌 패스 (배틀패스)
+  if (panel === "content") return <ContentPanel rpg={rpg} onClose={onClose} />; // v1.0.8 — 무한 콘텐츠 허브
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
+}
+
+/* =====================================================================
+ * v1.0.8 — 무한 콘텐츠 허브 (5탭)
+ *  ① 심연의 탑 (무한 층수) · ② 심층 균열 (무한 티어) · ③ 일일 시련 (수정자 던전)
+ *  ④ 연금 제작대 · ⑤ 심연 상점 · ⑥ 환생 + 펫 육성 — 총 10종 신규 무한 콘텐츠의 진입 허브
+ * ===================================================================== */
+type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth";
+
+export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const inf = rpg.inf;
+  const [tab, setTab] = useState<ContentTab>("tower");
+  const [tierPick, setTierPick] = useState(0);
+  if (!inf) {
+    return (
+      <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50" onPointerDown={onClose}>
+        <div className="rounded-xl border-2 border-purple-300/50 sertz-panel bg-slate-950/95 p-4 text-[12px] font-bold text-white/70">게임 시작 후 이용할 수 있어요</div>
+      </div>
+    );
+  }
+  const trial = todayTrial();
+  const trialCleared = inf.trialDone === (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
+  const TABS: { id: ContentTab; label: string; on: string }[] = [
+    { id: "tower", label: "심연의 탑", on: "bg-purple-400 text-slate-900" },
+    { id: "trial", label: "시련·균열", on: "bg-rose-400 text-slate-900" },
+    { id: "craft", label: "제작대", on: "bg-sky-400 text-slate-900" },
+    { id: "abyss", label: "심연 상점", on: "bg-violet-400 text-slate-900" },
+    { id: "rebirth", label: "환생·펫", on: "bg-amber-400 text-slate-900" },
+  ];
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
+      <div className="sertz-scroll max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto rounded-xl border-2 border-purple-300/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-sm font-black text-purple-200">콘텐츠 허브 — 무한 도전</p>
+          <button onClick={onClose} aria-label="콘텐츠 패널 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+        </div>
+
+        {/* 탭 행 */}
+        <div className="mb-2.5 grid grid-cols-5 gap-1">
+          {TABS.map((tb) => (
+            <button key={tb.id} onClick={() => setTab(tb.id)} className={`rounded-lg px-1 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${tab === tb.id ? tb.on : "border border-white/10 bg-white/[0.04] text-white/55"}`}>{tb.label}</button>
+          ))}
+        </div>
+
+        {tab === "tower" && (
+          <div>
+            <div className="mb-2 rounded-lg border border-purple-300/40 bg-purple-400/10 px-2.5 py-2">
+              <p className="text-[11px] font-black text-purple-100">심연의 탑 — 무한 층수 등반</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">층을 오를수록 적이 강해지고 보상도 커진다. 5층마다 보스가 막고, 10층마다 에메랄드 +3. 층 클리어마다 심연 코인 획득!</p>
+            </div>
+            <div className="mb-2 grid grid-cols-2 gap-1.5 text-center">
+              <div className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2">
+                <p className="text-[9px] font-bold text-white/45">최고 기록</p>
+                <p className="text-base font-black text-purple-200">{inf.towerBest}층</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2">
+                <p className="text-[9px] font-bold text-white/45">보유 심연 코인</p>
+                <p className="text-base font-black text-violet-200">{inf.abyss.toLocaleString()}</p>
+              </div>
+            </div>
+            <button onClick={() => EventBus.emit("rpg:infTower")} className="w-full rounded-xl border-2 border-purple-200/70 bg-gradient-to-b from-purple-400 to-purple-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">탑 입장 (무료 · 언제든)</button>
+            <p className="mt-1.5 text-[9px] text-white/35">복귀 포탈로 중간 퇴장 가능 · 기록은 자동 저장되고 랭킹에 등록된다 (원정대 → 랭킹 탭)</p>
+          </div>
+        )}
+
+        {tab === "trial" && (
+          <div>
+            {/* 일일 시련 */}
+            <div className="mb-1.5 rounded-lg border px-2.5 py-2" style={{ borderColor: `${trial.color}66`, background: `${trial.color}14` }}>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-black" style={{ color: trial.color }}>오늘의 시련 — {trial.name}</p>
+                {trialCleared && <span className="rounded bg-emerald-400/25 px-1.5 py-0.5 text-[8px] font-black text-emerald-100">보상 수령 완료</span>}
+              </div>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-white/65">{trial.desc}</p>
+              <p className="mt-1 text-[9px] text-white/40">60초 생존 — 1일 1회 심연 코인 보상 (재도전 무료, 보상은 내일)</p>
+            </div>
+            <button onClick={() => EventBus.emit("rpg:infTrial")} className="mb-3 w-full rounded-xl border-2 px-4 py-2 text-[12px] font-black text-slate-900 transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95" style={{ borderColor: `${trial.color}aa`, background: trial.color }}>일일 시련 입장</button>
+
+            {/* 심층 균열 — 무한 티어 */}
+            <div className="mb-1.5 rounded-lg border border-violet-300/40 bg-violet-400/10 px-2.5 py-2">
+              <p className="text-[11px] font-black text-violet-100">심층 균열 — 무한 티어</p>
+              <p className="mt-0.5 text-[10px] text-white/60">티어가 오를수록 적이 강해지고 골드도 무한히 증가한다. 클리어 시 다음 티어 해금! (균열 티켓 소모)</p>
+            </div>
+            <div className="mb-1.5 flex flex-wrap items-center gap-1">
+              {Array.from({ length: Math.min(10, Math.max(1, inf.closetTier)) }).map((_, i) => (
+                <button key={i} onClick={() => setTierPick(i)} className={`h-8 w-10 rounded-md border text-[10px] font-black ${tierPick === i ? "border-violet-300 bg-violet-400/30 text-violet-100" : "border-white/10 bg-white/[0.04] text-white/55"}`}>T{i + 1}</button>
+              ))}
+              {inf.closetTier >= 10 && <span className="text-[9px] font-bold text-violet-300">T{inf.closetTier}+ 해금!</span>}
+            </div>
+            <button onClick={() => EventBus.emit("rpg:infClosetTier", { tier: tierPick + 1 })} className="w-full rounded-xl border-2 border-violet-200/70 bg-gradient-to-b from-violet-400 to-violet-600 px-4 py-2.5 text-[13px] font-black text-slate-900 transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">심층 균열 T{tierPick + 1} 입장 (티켓 1장)</button>
+            <p className="mt-1.5 text-[9px] text-white/35">현재 해금: T{inf.closetTier}까지 · 기본 균열에서 2,600G 이상 획득 시 T1 해금</p>
+          </div>
+        )}
+
+        {tab === "craft" && (
+          <div>
+            {/* 재료 보유 */}
+            <div className="mb-2 grid grid-cols-3 gap-1.5">
+              {MAT_CHANCES.map((m) => (
+                <div key={m.key} className="rounded-lg border border-sky-300/25 bg-sky-400/[0.07] px-2 py-1.5 text-center">
+                  <p className="text-[9px] font-bold text-white/55">{m.name}</p>
+                  <p className="text-sm font-black text-sky-200">{inf.mats[m.key] ?? 0}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mb-2 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-[9px] leading-relaxed text-white/50">몬스터를 잡으면 확률로 재료가 드롭된다 (탑·균열에서는 1.6배). 제작한 아이템은 인벤토리에 지급된다.</p>
+            <div className="flex flex-col gap-1.5">
+              {CRAFT_RECIPES.map((r) => {
+                const ok = canCraft(r, inf.mats);
+                return (
+                  <div key={r.id} className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 ${ok ? "border-sky-300/40 bg-sky-400/10" : "border-white/10 bg-white/[0.02]"}`}>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-[11px] font-black ${ok ? "text-sky-100" : "text-white/55"}`}>{r.name}</p>
+                      <p className="truncate text-[9px] text-white/45">{r.desc}</p>
+                    </div>
+                    <button onClick={() => EventBus.emit("rpg:infCraft", { id: r.id })} disabled={!ok} className={`shrink-0 rounded-lg px-3 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${ok ? "bg-sky-400 text-slate-900" : "bg-white/10 text-white/35"}`}>제작</button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {tab === "abyss" && (
+          <div>
+            <div className="mb-2 flex items-center justify-between rounded-lg border border-violet-300/40 bg-violet-400/10 px-2.5 py-2">
+              <p className="text-[11px] font-black text-violet-100">심연 상점</p>
+              <p className="text-[11px] font-black text-violet-200">심연 코인 {inf.abyss.toLocaleString()}</p>
+            </div>
+            <p className="mb-2 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-[9px] leading-relaxed text-white/50">심연 코인은 탑·일일 시련·황금 몬스터·주간 레이드 보스에서 획득. 부여아는 구매할 때마다 영구으로 쌓인다 (제한 없음).</p>
+            <div className="flex flex-col gap-1.5">
+              {ABYSS_SHOP.map((it) => {
+                const cnt = it.id === "rebirth_ess" ? inf.rebirthEss : inf.orbs[it.id] ?? 0;
+                return (
+                  <div key={it.id} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-black text-violet-100">{it.name}{cnt > 0 && <span className="ml-1 rounded bg-violet-400/25 px-1 text-[8px] text-violet-100">×{cnt}</span>}</p>
+                      <p className="truncate text-[9px] text-white/45">{it.desc}</p>
+                    </div>
+                    <button onClick={() => EventBus.emit("rpg:infAbyss", { id: it.id })} disabled={inf.abyss < it.cost} className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${inf.abyss >= it.cost ? "bg-violet-400 text-slate-900" : "bg-white/10 text-white/35"}`}>{it.cost} 코인</button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {tab === "rebirth" && (
+          <div>
+            {/* 환생 */}
+            <div className="mb-2 rounded-lg border border-amber-300/40 bg-amber-400/10 px-2.5 py-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-black text-amber-100">환생 — 무한 성장 루프</p>
+                <span className="rounded bg-amber-400/25 px-1.5 py-0.5 text-[8px] font-black text-amber-100">{inf.rebirths}회 달성</span>
+              </div>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">Lv {rebirthReqLv(inf.rebirthEss)} 달성 시 환생 가능. 레벨/AP는 초기화되지만 영구 보너스가 쌓인다: 스택당 공격 +8% · HP +60 · 골드 +2% + 심연 코인 {REBIRTH_ABYSS}</p>
+              {inf.rebirths > 0 && (
+                <p className="mt-1 text-[10px] font-black text-amber-200">현재 영구 보너스: 공격 +{rebirthBonus(inf.rebirths).atkPct}% · HP +{rebirthBonus(inf.rebirths).hp} · 골드 +{rebirthBonus(inf.rebirths).goldPct}%</p>
+              )}
+              {inf.rebirthEss > 0 && <p className="mt-0.5 text-[9px] text-white/45">환생의 정수 ×{inf.rebirthEss} — 요구 레벨 −5씩 감소 (현재 Lv {rebirthReqLv(inf.rebirthEss)})</p>}
+            </div>
+            <button onClick={() => EventBus.emit("rpg:infRebirth")} className="mb-3 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">환생하기 (요구 Lv {rebirthReqLv(inf.rebirthEss)})</button>
+
+            {/* 펫 육성 */}
+            <div className="mb-1.5 rounded-lg border border-sky-300/40 bg-sky-400/10 px-2.5 py-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-black text-sky-100">펫 육성 — {PET_EVO_NAMES[petEvoStage(inf.petLv)]}{petEvoStage(inf.petLv) > 0 ? " (진화 완료)" : ""}</p>
+                <span className="rounded bg-sky-400/25 px-1.5 py-0.5 text-[8px] font-black text-sky-100">Lv {inf.petLv}</span>
+              </div>
+              <p className="mt-0.5 text-[10px] text-white/60">펫을 소환한 상태로 사냥하면 펫이 경험치를 얻는다. 레벨당 내 공격 +0.4% · HP +8 (진화하면 배율 증가, Lv10/20/30 진화)</p>
+              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/50">
+                <div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-300" style={{ width: `${Math.min(100, (inf.petExp / Math.max(1, inf.petExpNeed)) * 100)}%` }} />
+              </div>
+              <p className="mt-0.5 text-right text-[9px] text-white/40">EXP {inf.petExp}/{inf.petExpNeed} · 현재 보너스 공격 +{petBonus(inf.petLv).atkPct.toFixed(1)}% · HP +{petBonus(inf.petLv).hp}</p>
+            </div>
+            <p className="text-[9px] text-white/35">심연 상점의 치장 상자·전설 상자도 함께 노려보자 — 주간 레이드 보스(오늘: {rpg.raidBossToday ?? "—"}) 처치 시 보스 드롭 2배!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 /* ---------- 지역 이동 패널 (v2.5 — 지시 #7: 방문한 적 있는 구역으로 워프, 부적 1장 소모) ---------- */
@@ -3620,11 +3807,11 @@ function RankTab({ ik }: { ik: NonNullable<RpgState["isekai"]> | undefined }) {
     const t = setInterval(() => netRankTop(mode), 8000);
     return () => { off(); clearInterval(t); };
   }, [mode]);
-  const localBest = mode === "gate" ? (ik?.gateBest ?? 0) : mode === "closet" ? (ik?.closetBest ?? 0) : (() => { try { return Number(localStorage.getItem("sertz.dojang.best") ?? "0") || 0; } catch { return 0; } })();
+  const localBest = mode === "gate" ? (ik?.gateBest ?? 0) : mode === "closet" ? (ik?.closetBest ?? 0) : mode === "tower" ? (ik ? (JSON.parse(JSON.stringify(ik)) as { towerBest?: number }).towerBest ?? 0 : 0) : (() => { try { return Number(localStorage.getItem("sertz.dojang.best") ?? "0") || 0; } catch { return 0; } })();
   return (
     <div>
       <div className="mb-2 grid grid-cols-3 gap-1">
-        {([["gate", "바르가 수비전"], ["closet", "균열 던전"], ["dojang", "무릉도장"]] as [RankMode, string][]).map(([k, label]) => (
+        {([["gate", "바르가 수비전"], ["closet", "균열 던전"], ["dojang", "무릉도장"], ["tower", "심연의 탑"]] as [RankMode, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setMode(k)} className={`rounded-lg border px-1 py-1.5 text-[10px] font-black ${mode === k ? "border-sky-300/60 bg-sky-400/20 text-sky-100" : "border-white/10 bg-white/[0.03] text-white/50"}`}>{label}</button>
         ))}
       </div>
