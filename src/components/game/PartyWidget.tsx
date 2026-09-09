@@ -70,7 +70,7 @@ export function PartyWidget() {
       </button>
 
       {open && (
-        <div className="pointer-events-auto w-56 rounded-xl border border-sky-200/25 bg-slate-950/95 p-2.5 shadow-2xl backdrop-blur">
+        <div className="pointer-events-auto max-h-[calc(100svh-192px)] w-56 overflow-y-auto rounded-xl border border-sky-200/25 bg-slate-950/95 p-2.5 shadow-2xl backdrop-blur">
           <p className="mb-1.5 flex items-center gap-1 text-[11px] font-black text-sky-200">
             <Users size={12} /> 파티 (최대 4인)
           </p>

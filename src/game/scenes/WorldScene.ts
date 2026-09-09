@@ -6301,10 +6301,10 @@ export class WorldScene extends Phaser.Scene {
       this.attackQueued = true;
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
-    /* v3.0.3 — 3차기(V) / 4차기(B): 해금 티어 미달/쿨/MP 무시하고 호출하면 내부에서 무시된다 */
+    /* v3.0.3 — 3차기(V) / 4차기(A): 해금 티어 미달/쿨/MP 무시하고 호출하면 내부에서 무시된다 (v1.0.4 키맵 B→A) */
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill3"))) this.player.useSkill3();
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill4"))) this.player.useSkill4();
-    /* v3.2.0 — 5차 궁극기(N): Lv.200 해금, 쿨타임 60초 */
+    /* v3.2.0 — 5차 궁극기(S): Lv.200 해금, 쿨타임 60초 (v1.0.4 키맵 N→S) */
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5"))) this.player.useSkill5();
 
     // 수면 연출 중 — 입력 봉인 (v2.2)
@@ -9056,7 +9056,7 @@ export class WorldScene extends Phaser.Scene {
       s1Max: this.player.skill1MaxEff,
       s2Cd: Math.round(this.player.skill2Cd),
       s2Max: this.player.skill2MaxEff,
-      /* v3.0.3 — 3차기(V)/4차기(B) 쿨다운 + 해금 */
+      /* v3.0.3 — 3차기(V)/4차기(A) 쿨다운 + 해금 (v1.0.4 키맵 B→A) */
       s3Cd: Math.round(this.player.skill3Cd),
       s3Max: this.player.skill3MaxEff,
       s4Cd: Math.round(this.player.skill4Cd),

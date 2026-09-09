@@ -116,7 +116,7 @@ export function FriendsWidget() {
       </button>
 
       {open && (
-        <div className="pointer-events-auto w-60 rounded-xl border border-emerald-200/25 bg-slate-950/95 p-2.5 shadow-2xl backdrop-blur">
+        <div className="pointer-events-auto max-h-[calc(100svh-232px)] w-60 overflow-y-auto rounded-xl border border-emerald-200/25 bg-slate-950/95 p-2.5 shadow-2xl backdrop-blur">
           <div className="mb-1.5 flex items-center justify-between">
             <p className="flex items-center gap-1 text-[11px] font-black text-emerald-200">
               <UserRound size={12} /> 친구
