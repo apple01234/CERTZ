@@ -939,6 +939,23 @@ export const POT_STAT_LABEL: Record<PotStatKey, string> = {
   atk: "공격력", def: "방어력", crit: "크리티컬", maxHp: "최대 HP",
 };
 
+/* v1.0.8 — 확률 투명화 (유저 지시 "메이플 확률 주작까지 따라함??" 대응)
+ *  모든 확률은 UI에 공시 + 천장(보장) 시스템으로 연속 미달 뽀짝 방지.
+ *  실제 롤은 단일 Math.random 가중치 — 조작 코드 전무 (감사 완료). */
+/** eert 큐브 잠재 등급 천장 — 유니크(grade 2) 미달 연속 N회 도달 시 유니크+ 확정 */
+export const POT_PITY_MAX = 10;
+/** 강화 실패 가산 — ★10 이상 실패 연속 1회당 다음 성공률 +5%p (최대 +15%p, 성공 시 리셋) */
+export const STAR_PITY_STEP = 5;
+export const STAR_PITY_MAX = 15;
+/** 강화 실패 가산 시작 성 (★10 이상부터 — 최악 구간 완화) */
+export const STAR_PITY_FROM = 10;
+
+/** eert 큐브 잠재 등급 확률 공시 (% 환산 — POT_GRADE_META 가중치 단일 출처) */
+export function eertOdds(): { name: string; color: string; pct: number }[] {
+  const total = POT_GRADE_META.reduce((s, e) => s + e.weight, 0);
+  return POT_GRADE_META.map((e) => ({ name: e.name, color: e.color, pct: Math.round((e.weight / total) * 1000) / 10 }));
+}
+
 /** 잠재옵션 1줄 표시 문자열 */
 export function potLineText(l: PotLine): string {
   if (l.k === "crit") return `크리티컬 +${l.v}%`;
@@ -946,7 +963,7 @@ export function potLineText(l: PotLine): string {
   return `${POT_STAT_LABEL[l.k]} +${l.v}`;
 }
 
-export function rollPotentials(): Potentials {
+export function rollPotentials(pity = 0): Potentials {
   const r = Math.random() * 100;
   let grade = 0;
   let acc = 0;
@@ -954,6 +971,9 @@ export function rollPotentials(): Potentials {
     acc += POT_GRADE_META[i].weight;
     if (r < acc) { grade = i; break; }
   }
+  /* v1.0.8 — 잠재 천장: 유니크 미달 연속 POT_PITY_MAX-1회 후 이번 롤은 유니크+ 확정
+   *  (확률 왜곡 아님 — 공시된 확률 외 보장 시스템. 메이플 큐브 논란 대응) */
+  if (grade < 2 && pity >= POT_PITY_MAX - 1) grade = 2;
   const strong = grade >= 2;
   const kinds: PotStatKey[] = ["atk", "def", "crit", "maxHp"];
   // 셔플 후 앞에서 n개

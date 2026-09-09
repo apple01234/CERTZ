@@ -22,7 +22,7 @@ import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_
 import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, type MarketState, type AuthUser } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
 import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
-import { chestOdds } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법)
+import { chestOdds, eertOdds, POT_PITY_MAX, STAR_PITY_FROM, STAR_PITY_STEP, STAR_PITY_MAX } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법) · v1.0.8 천장 공시
 import type { BmGrant } from "@/game/data";
 import {
   CRAFT_RECIPES, canCraft, ABYSS_SHOP,
@@ -521,6 +521,20 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
               ))}
               <p className="mt-1 text-[8px] text-white/35">중복 피규어는 피규어 조각으로 변환됩니다 (노말 5 / 레어 15 / 에픽 40 / 전설 100)</p>
             </div>
+            {/* v1.0.8 — eert 큐브 잠재옵션 확률 공시 (메이플 큐브 논란 대응 — 가중치 단일 출처) */}
+            <div className="mt-2 rounded-md bg-white/[0.03] px-2 py-1.5">
+              <p className="text-[10px] font-black text-white/75">eert 큐브 — 잠재옵션 등급 (장비 1개 기준)</p>
+              {eertOdds().map((o) => (
+                <p key={o.name} className="flex justify-between text-[9px] leading-snug text-white/55">
+                  <span style={{ color: o.color }}>{o.name}</span>
+                  <span className="shrink-0 font-bold text-white/75">{o.pct}%</span>
+                </p>
+              ))}
+              <p className="mt-1 text-[8px] leading-snug text-white/35">
+                유니크 미달 연속 {POT_PITY_MAX - 1}회 도달 시 다음 추첨은 유니크 이상 확정 (천장).
+                강화는 ★{STAR_PITY_FROM} 이상 실패 시 다음 시도 +{STAR_PITY_STEP}%p씩 가산 (최대 +{STAR_PITY_MAX}%p, 성공 시 초기화).
+              </p>
+            </div>
           </div>
         )}
 
@@ -786,9 +800,10 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
               const up = slot === "weapon" ? rpg.upWea : rpg.upArm;
               const maxed = up >= UPGRADE_MAX;
               const cost = upgradeCost(slot, up);
-              /* v3.0.7 — 강화 주문서 충전분 성공률 가산 표기 */
+              /* v3.0.7 — 강화 주문서 충전분 성공률 가산 표기 · v1.0.8 실패 가산(천장) 반영 */
               const bless = Math.min(rpg.starBless ?? 0, STAR_BLESS_MAX);
-              const rate = (UPGRADE_RATES[up] ?? 0) + bless * STAR_BLESS_RATE;
+              const starPity = Math.min(rpg.starPity ?? 0, STAR_PITY_MAX);
+              const rate = (UPGRADE_RATES[up] ?? 0) + bless * STAR_BLESS_RATE + starPity;
               const affordable = rpg.gold >= cost;
               const tier = starTier(up);
               const tierCss = STAR_TIER_CSS[tier];
@@ -1760,7 +1775,8 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   /* v4.6.0 — 모든 스타포스 강화를 가방에서: 상점 강화와 동일 이벤트(rpg:upgrade)·비용·성공률(주문서 가산 포함) */
                   const eqSlot: "weapon" | "armor" = it.kind === "weapon" ? "weapon" : "armor";
                   const eqCost = upgradeCost(eqSlot, up);
-                  const eqRate = (UPGRADE_RATES[up] ?? 0) + Math.min(rpg.starBless ?? 0, STAR_BLESS_MAX) * STAR_BLESS_RATE;
+                  /* v1.0.8 — 실패 가산(천장) 포함 실제 성공률 표기 */
+                  const eqRate = (UPGRADE_RATES[up] ?? 0) + Math.min(rpg.starBless ?? 0, STAR_BLESS_MAX) * STAR_BLESS_RATE + Math.min(rpg.starPity ?? 0, STAR_PITY_MAX);
                   const eqMaxed = up >= UPGRADE_MAX;
                   const eqFlash = flash && flash.slot === eqSlot ? flash.result : null;
                   return (
@@ -1830,6 +1846,12 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                           eert {eertN > 0 ? `×${eertN}` : ""}
                         </InvBtn>
                         {sellValue(it) > 0 && <SellQtyBox compact count={s.count} unitValue={sellValue(it)} ev="rpg:sell" keyName={s.k} />}
+                          <span
+                            className="rounded-md bg-white/[0.06] px-1.5 py-1.5 text-[9px] font-bold text-amber-200/80"
+                            title={`잠재 확률 — ${eertOdds().map((o) => `${o.name} ${o.pct}%`).join(" / ")} · 유니크 미달 연속 ${POT_PITY_MAX - 1}회 시 유니크+ 확정 (현재 ${rpg.potPity ?? 0}회)`}
+                          >
+                            {POT_GRADE_META[0].name} {eertOdds()[0].pct}% · {POT_GRADE_META[1].name} {eertOdds()[1].pct}% · {POT_GRADE_META[2].name} {eertOdds()[2].pct}% · {POT_GRADE_META[3].name} {eertOdds()[3].pct}%{` · 확정까지 ${Math.max(0, POT_PITY_MAX - 1 - (rpg.potPity ?? 0))}`}
+                          </span>
                       </div>
                     </>
                   );
@@ -1885,6 +1907,12 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         <InvBtn tone="gray" disabled={eertN <= 0} onClick={() => EventBus.emit("rpg:eert", { key: it.key })}>
                           eert {eertN > 0 ? `×${eertN}` : ""}
                         </InvBtn>
+                          <span
+                            className="rounded-md bg-white/[0.06] px-1.5 py-1.5 text-[9px] font-bold text-amber-200/80"
+                            title={`잠재 확률 — ${eertOdds().map((o) => `${o.name} ${o.pct}%`).join(" / ")} · 유니크 미달 연속 ${POT_PITY_MAX - 1}회 시 유니크+ 확정 (현재 ${rpg.potPity ?? 0}회)`}
+                          >
+                            {POT_GRADE_META[0].name} {eertOdds()[0].pct}% · {POT_GRADE_META[1].name} {eertOdds()[1].pct}% · {POT_GRADE_META[2].name} {eertOdds()[2].pct}% · {POT_GRADE_META[3].name} {eertOdds()[3].pct}%{` · 확정까지 ${Math.max(0, POT_PITY_MAX - 1 - (rpg.potPity ?? 0))}`}
+                          </span>
                         {tradeValue(it.key) > 0 ? (
                           <InvBtn tone="sky" onClick={() => EventBus.emit("ui:panel", { panel: "trade" })}>
                             거래소 +{tradeValue(it.key)}
@@ -3448,6 +3476,36 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
 
         {/* v3.1.0 (#볼륨UI) — BGM/효과음 개별 볼륨 슬라이더 */}
         <VolumeSliders />
+
+        {/* v1.0.8 — 그래픽 효과 모드 (유저 지시 "쉐이더 어디감??" — 셰이더 가시성 제어) */}
+        <div className="mt-3 rounded-lg border border-sky-300/25 bg-sky-400/[0.06] px-2.5 py-2.5">
+          <p className="text-[12px] font-black text-sky-200">그래픽 효과 (셰이더)</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/50">
+            툰 셰이더·블룸·조명·충격파 셰이더 적용 범위. "자동"은 프레임이 떨어지면 잠시 줄어들 수 있어요.
+          </p>
+          <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+            {([
+              { m: "high", label: "항상 높음", css: "border-emerald-300/70 bg-emerald-500/20 text-emerald-200" },
+              { m: "auto", label: "자동 (기본)", css: "border-sky-300/70 bg-sky-500/20 text-sky-200" },
+              { m: "low", label: "절전", css: "border-amber-300/70 bg-amber-500/20 text-amber-200" },
+            ] as const).map((o) => {
+              const cur = (() => { try { return window.localStorage.getItem("sertz_fx_mode") === "high" || window.localStorage.getItem("sertz_fx_mode") === "low" ? window.localStorage.getItem("sertz_fx_mode") : "auto"; } catch { return "auto"; } })();
+              const active = cur === o.m;
+              return (
+                <button
+                  key={o.m}
+                  onClick={() => EventBus.emit("fx:mode", o.m)}
+                  className={`rounded-md border-2 px-1 py-1.5 text-[11px] font-black transition ${active ? o.css : "border-white/15 bg-black/40 text-white/55 hover:border-white/40"}`}
+                >
+                  {o.label}{active ? " ✓" : ""}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-[9px] leading-snug text-white/35">
+            셰이더가 사라졌다면 → "항상 높음" 선택. 프레임 보호용 자동 축소가 켜진 것입니다.
+          </p>
+        </div>
 
         {/* v2.4 — 이름 변경 (인트로를 놓친 경우에도 언제든 이름 지정/변경 가능) */}
         <div className="mb-2.5 mt-3 flex items-center gap-2.5 rounded-lg border border-amber-200/30 bg-amber-400/[0.07] px-2.5 py-2.5">

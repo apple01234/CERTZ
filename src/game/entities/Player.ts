@@ -5,6 +5,7 @@ import {
   starWeaponBonus, starArmorBonus, STAR_MILESTONES, starPerStarAtk, starPerStarDef,
   TRADE_PRICES, tradeValue, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
   sumPotLines, FAMILY_ELEM, rollPotentials, activeSetBonus, collectionBonus, WORLDTREE_BLESSING,
+  POT_PITY_MAX, STAR_PITY_STEP, STAR_PITY_MAX, STAR_PITY_FROM,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
 } from "../data";
 import {
@@ -61,6 +62,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   accUp: Record<string, number> = {};
   /** v3.0.7 — 강화 주문서 충전 수 (다음 강화 성공률 +15%p/장, 최대 3) */
   starBless = 0;
+  /** v1.0.8 — 강화 실패 가산 (★10+ 실패 연속 1회당 +5%p, 최대 +15%p, 성공 시 리셋 — 천장) */
+  starPity = 0;
+  /** v1.0.8 — eert 큐브 잠재 천장 카운터 (유니크 미달 연속 횟수, 10회 도달 시 유니크+ 확정) */
+  potPity = 0;
   /** 전직 클래스 (v1.8 다차원 트리 — 1차/2차/3차 키, 미전직 null) */
   cls: ClassKey | null = null;
   /** 경로 누적 보너스 캐시 — cls 변경 시에만 갱신 (getter 프레임 호출 부담 제거) */
@@ -3481,7 +3486,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (!this.owned.includes(key) && this.weapon !== key && this.armor !== key && !this.accessories.includes(key)) return null;
     if (!this.owned.includes("eert_cube")) return null;
     this.consumeConsumable("eert_cube");
-    const pot = rollPotentials();
+    /* v1.0.8 — 잠재 천장: 유니크 미달 연속 카운터 (10회째 롤은 유니크+ 확정 — UI 공시) */
+    const pot = rollPotentials(this.potPity);
+    this.potPity = pot.grade >= 2 ? 0 : Math.min(POT_PITY_MAX - 1, this.potPity + 1);
     this.potentials[key] = pot;
     this.syncPotentialsHp();
     return pot;
@@ -4110,10 +4117,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // v3.0.7 — 강화 주문서 충전분 성공률 가산 후 1회 소모 (성공/실패 무관)
     const bless = Math.min(this.starBless, STAR_BLESS_MAX);
     if (bless > 0) this.starBless -= 1;
-    const rate = (UPGRADE_RATES[cur] ?? 0) + bless * STAR_BLESS_RATE;
+    /* v1.0.8 — 강화 실패 가산(천장): ★10+ 실패 연적만큼 +5%p (최대 +15%p)
+     *  공시된 곡선 외 보장 — "주작"이 아닌 완화 시스템. 성공 시 리셋 */
+    const pity = Math.min(this.starPity, STAR_PITY_MAX);
+    const rate = (UPGRADE_RATES[cur] ?? 0) + bless * STAR_BLESS_RATE + pity;
     const ok = Math.random() * 100 < rate;
+    if (ok) this.starPity = 0;
+    else if (cur >= STAR_PITY_FROM) this.starPity = Math.min(STAR_PITY_MAX, this.starPity + STAR_PITY_STEP);
     const slotName = slot === "weapon" ? "무기" : "방어구";
     const blessTag = bless > 0 ? ` · 주문서 +${bless * STAR_BLESS_RATE}%p` : "";
+    const pityTag = pity > 0 ? ` · 실패가산 +${pity}%p` : "";
     if (ok) {
       this.upgrades[slot] = cur + 1;
       const next = cur + 1;
@@ -4121,10 +4134,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.sfxUpgradeOk();
       if (milestone) {
         this.scene.spawnStarForceBreakthrough(this.x, this.y, slot, next);
-        this.scene.spawnPickupText(this.x, this.y - 58, `${slotName} ★${next} 돌파!${blessTag}`, "#ffd76a");
+        this.scene.spawnPickupText(this.x, this.y - 58, `${slotName} ★${next} 돌파!${blessTag}${pityTag}`, "#ffd76a");
       } else {
         this.scene.spawnStarForceBurst(this.x, this.y, this.upgrades[slot], true);
-        this.scene.spawnPickupText(this.x, this.y - 44, `강화 성공! ★${next}${blessTag}`, "#ffd76a");
+        this.scene.spawnPickupText(this.x, this.y - 44, `강화 성공! ★${next}${blessTag}${pityTag}`, "#ffd76a");
       }
       if (slot === "armor") this.syncStarHp();
     } else if (cur >= UPGRADE_FALLBACK_FROM) {
@@ -4132,12 +4145,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.upgrades[slot] = cur - 1;
       this.scene.sfxUpgradeFail();
       this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
-      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… ★${cur - 1} 하락${blessTag}`, "#ff9a9a");
+      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… ★${cur - 1} 하락${blessTag}${pityTag}`, "#ff9a9a");
       if (slot === "armor") this.syncStarHp();
     } else {
       this.scene.sfxUpgradeFail();
       this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
-      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패…${blessTag}`, "#ff9a9a");
+      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패…${blessTag}${pityTag}`, "#ff9a9a");
     }
     this.scene.emitHud();
     return ok ? "ok" : "fail";

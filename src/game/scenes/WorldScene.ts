@@ -892,6 +892,9 @@ export class WorldScene extends Phaser.Scene {
       /* v3.0.7 — 장신구 스타포스 복원 (성 + HP 가산 이력) */
       this.player.accUp = { ...(savedPlayer.accUp ?? {}) };
       this.player.starBless = savedPlayer.starBless ?? 0;
+      /* v1.0.8 — 확률 천장 카운터 복원 (강화 실패 가산 / 잠재 확정 카운트) */
+      this.player.starPity = savedPlayer.starPity ?? 0;
+      this.player.potPity = savedPlayer.potPity ?? 0;
       this.player.restoreAccHp(savedPlayer.accHp ?? 0);
       this.player.syncAccStarHp();
       /* v4.6.0 — 음수 잔액 자동 복구: v4.5.0까지 구매 버그로 에메랄드가 음수인 세이브를 0으로 보정 */
@@ -2541,12 +2544,53 @@ export class WorldScene extends Phaser.Scene {
   private fxSampleAt = 0;
   private fxLowStreak = 0;
   private fxHighStreak = 0;
+  /* v1.0.8 — 그래픽 효과 모드 (유저 지시 "쉐이더 어디감??" 대응):
+   *  auto=적응형(기존 동작) / high=항상 켜짐(셰이더 강제 — 적응형 축소 비활성) / low=절전.
+   *  설정 패널 → localStorage sertz_fx_mode → EventBus "fx:mode"로 실시간 전환 */
+  fxMode: "auto" | "high" | "low" = (() => {
+    try {
+      const m = window.localStorage.getItem("sertz_fx_mode");
+      return m === "high" || m === "low" ? m : "auto";
+    } catch { return "auto"; }
+  })();
 
   get fxScale() {
     return this.fxLevel === 0 ? 0.45 : 1;
   }
 
+  /* v1.0.8 — 그래픽 효과 모드 실제 적용: toon 림라이트 + 보스 블룸 부착(level 1) / 해제(level 0) */
+  private applyFxMode(level: 0 | 1) {
+    try {
+      if (level === 0) {
+        if (this.bossFilters.length > 0) this.clearBossPostFX();
+        if (this.playerToon && this.player) {
+          clearToonStyle(this.player as unknown as Parameters<typeof clearToonStyle>[0]);
+          this.playerToon = null;
+        }
+      } else {
+        if (this.player && !this.playerToon && this.game.renderer.type === Phaser.WEBGL) {
+          this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
+            rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
+          });
+        }
+        if (this.boss?.active && this.bossFilters.length === 0) this.applyBossPostFX(this.bossChaos);
+      }
+    } catch { /* 필터 미지원 환경 무시 */ }
+    console.info("[SERTZ] 그래픽 효과 모드 적용:", level === 1 ? "높음(셰이더 ON)" : "절전(셰이더 OFF)");
+  }
+
   private tickFxQuality(dt: number) {
+    /* v1.0.8 — 모드 강제: high는 항상 복원, low는 항상 축소 (적응형 판정 생략) */
+    if (this.fxMode === "high") {
+      this.fxSampleAt = 0;
+      if (this.fxLevel === 0) this.applyFxMode(this.fxLevel = 1);
+      return;
+    }
+    if (this.fxMode === "low") {
+      this.fxSampleAt = 0;
+      if (this.fxLevel === 1) this.applyFxMode(this.fxLevel = 0);
+      return;
+    }
     this.fxSampleAt += dt;
     if (this.fxSampleAt < 2500) return;
     this.fxSampleAt = 0;
@@ -2557,6 +2601,10 @@ export class WorldScene extends Phaser.Scene {
       if (this.fxLowStreak >= 2 && this.fxLevel === 1) {
         this.fxLevel = 0;
         console.info("[SERTZ] 적응형 품질 — FX 축소 모드", Math.round(fps));
+        /* v1.0.8 — 축소 진입 공지: "쉐이더 어디감?" 방지 — 이유와 해제 경로를 안내 */
+        try {
+          EventBus.emit("banner:show", { text: "프레임 안정화 — 셰이더·이펙트 축소 (설정 → 그래픽 효과: 항상 높음)" });
+        } catch { /* 배너 실패 무시 */ }
         /* v4.9.0 — 축소 모드 진입: 보스 블룸 즉시 해제 (프레임버퍼 다중 패스 = 모바일 최대 부하원) */
         if (this.bossFilters.length > 0) this.clearBossPostFX();
         /* v1.0.2 (#툰셰이더) — 저사양 모드에선 플레이어/보스 툰 필터도 해제 */
@@ -2569,7 +2617,8 @@ export class WorldScene extends Phaser.Scene {
       this.fxLowStreak = 0;
       if (fps > 56) {
         this.fxHighStreak++;
-        if (this.fxHighStreak >= 6 && this.fxLevel === 0) {
+        /* v1.0.8 — 복원 대기 6회(15s) → 3회(7.5s): 셰이더 복귀 단축 */
+        if (this.fxHighStreak >= 3 && this.fxLevel === 0) {
           this.fxLevel = 1;
           this.fxHighStreak = 0;
           console.info("[SERTZ] 적응형 품질 — FX 복원");
@@ -6595,6 +6644,19 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:tradeSell", onTradeSell);
     EventBus.on("rpg:missionClaim", onMissionClaim);
     EventBus.on("rpg:ticketRefill", onTicketRefill);
+    /* v1.0.8 — 그래픽 효과 모드 실시간 전환 (설정 패널 → 셰이더 즉시 부착/해제) */
+    const onFxMode = (m: "auto" | "high" | "low") => {
+      this.fxMode = m === "high" || m === "low" ? m : "auto";
+      try { window.localStorage.setItem("sertz_fx_mode", this.fxMode); } catch { /* 저장 실패 무시 */ }
+      const forced: 0 | 1 = this.fxMode === "high" ? 1 : this.fxMode === "low" ? 0 : this.fxLevel;
+      if (this.fxLevel !== forced) this.applyFxMode(this.fxLevel = forced);
+      EventBus.emit("banner:show", {
+        text: this.fxMode === "high" ? "그래픽 효과: 항상 높음 — 셰이더·블룸 항상 적용"
+          : this.fxMode === "low" ? "그래픽 효과: 절전 — 셰이더 비활성"
+          : "그래픽 효과: 자동 — 프레임에 따라 조정",
+      });
+    };
+    EventBus.on("fx:mode", onFxMode);
     /* v1.0.8 — 무한 콘텐츠 허브 리스너 (탑/시련/티어균열/제작/심연상점/환생) */
     const onInfTower = () => this.enterTower();
     const onInfTrial = () => this.enterTrial();
@@ -6700,6 +6762,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:tradeSell", onTradeSell);
       EventBus.off("rpg:missionClaim", onMissionClaim);
       EventBus.off("rpg:ticketRefill", onTicketRefill);
+      EventBus.off("fx:mode", onFxMode); // v1.0.8
       EventBus.off("rpg:infTower", onInfTower); // v1.0.8
       EventBus.off("rpg:infTrial", onInfTrial);
       EventBus.off("rpg:infClosetTier", onInfClosetTier);
@@ -9747,6 +9810,9 @@ export class WorldScene extends Phaser.Scene {
       accUp: { ...this.player.accUp },
       starBless: this.player.starBless,
       accHp: this.player.accHpAppliedVal,
+      /* v1.0.8 — 확률 천장 카운터 (강화 실패 가산 / 잠재 확정 카운트) */
+      starPity: this.player.starPity,
+      potPity: this.player.potPity,
       nearShop: this.nearShop,
       shopStock: [...SHOP_STOCK],
       /* v1.0.5 — 서버 롤 기반 관리자 플래그 (혜택 패널 "GM 콘텐츠 입장" 게이트) */
@@ -9967,6 +10033,9 @@ export class WorldScene extends Phaser.Scene {
       accUp: { ...this.player.accUp },
       starBless: this.player.starBless,
       accHp: this.player.accHpAppliedVal,
+      /* v1.0.8 — 확률 천장 카운터 (강화 실패 가산 / 잠재 확정 카운트) */
+      starPity: this.player.starPity,
+      potPity: this.player.potPity,
       accessories: [...this.player.accessories],
       emerald: this.player.emerald,
       questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },

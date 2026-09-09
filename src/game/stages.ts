@@ -700,7 +700,10 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
    *  최다 그룹에서 3마리를 덜어 편입 — 총량 20 유지 (정예/보스 포함) */
   const beatHere = spec.beats.find((b) => b.sub === sub);
   if (beatHere && beatHere.quest.type === "hunt" && beatHere.quest.targetKey && !enemies.some((g) => g.key === beatHere.quest.targetKey)) {
-    const donor = enemies[0];
+    /* v1.0.8 — 편입 차감 대상을 퀘스트 대상 종이 아닌 최대 그룹에서: 토벌 대상을 깎아 편입하던
+     *  기존 방식은 2-6 능대처럼 대상 밀도를 스스로 깎는 모순 (donor=enemies[0] == 대상종) */
+    const drainPool = enemies.filter((g) => g.key !== beatHere.quest.targetKey);
+    const donor = (drainPool.length ? drainPool : enemies).reduce((m, g) => (g.count > m.count ? g : m), (drainPool.length ? drainPool : enemies)[0]);
     donor.count = Math.max(1, donor.count - 3);
     const sum = enemies.reduce((t, g) => t + g.count, 0);
     enemies.push({ key: beatHere.quest.targetKey, count: Math.max(1, Math.min(3, 20 - sum)) });
@@ -709,10 +712,32 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
    *  구역별 단일종 로테이션(1~6구역은 풀 1종만 스폰) 때문에 반복 의뢰 대상 몬스터가 맵에 아예 없어
    *  사냥해도 카운트가 전혀 오르지 않던 근본 원인 제거 (스토리 beat 편입과 동일 패턴) */
   if (!enemies.some((g) => g.key === spec.main)) {
-    const donor = enemies[0];
-    donor.count = Math.max(1, donor.count - 3);
+    /* v1.0.8 — 반복 의뢰 편입도 퀘스트 토벌 대상 종은 보호: 비대상 최대 그룹에서 차감 */
+    const beatTarget = beatHere && beatHere.quest.type === "hunt" ? beatHere.quest.targetKey : undefined;
+    const drainPool2 = enemies.filter((g) => g.key !== beatTarget);
+    const donor2 = (drainPool2.length ? drainPool2 : enemies).reduce((m, g) => (g.count > m.count ? g : m), (drainPool2.length ? drainPool2 : enemies)[0]);
+    donor2.count = Math.max(1, donor2.count - 3);
     const sum = enemies.reduce((t, g) => t + g.count, 0);
     enemies.push({ key: spec.main, count: Math.max(1, Math.min(3, 20 - sum)) });
+  }
+  /* v1.0.8 — 토벌 퀘스트 구역 밀도 보장 (유저 지시 "2-6 능대 25마리가 너무 오래 걸림"):
+   *  스토리 토벌 대상 종이 이 구역에 최소 15마리 스폰되도록 부스트 — 다른 종에서 차감 (각 종 최소 2 유지).
+   *  2-6: 능대 12 → 15마리 (반복의뢰 늑대 편입이 능대를 깎던 모순 제거 + 밀도 부스트) */
+  {
+    const beatHunt = spec.beats.find((b) => b.sub === sub && b.quest.type === "hunt" && b.quest.targetKey);
+    if (beatHunt) {
+      const target = enemies.find((g) => g.key === beatHunt.quest.targetKey);
+      if (target && target.count < 15) {
+        const donors = enemies.filter((g) => g !== target);
+        let need = 15 - target.count;
+        let guard = 24;
+        while (need > 0 && guard-- > 0) {
+          const d = donors.reduce((m, g) => (g.count > m.count ? g : m), donors[0]);
+          if (!d || d.count <= 2) break;
+          d.count -= 1; target.count += 1; need -= 1;
+        }
+      }
+    }
   }
   const def: StageDef = {
     key,

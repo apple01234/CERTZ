@@ -27,11 +27,18 @@ export type ToonOpts = {
   saturate?: number;
 };
 
-type Filterable = { filters?: { external?: FilteredList } } | null;
+type Filterable = { filters?: { external?: FilteredList } | null; enableFilters?: () => unknown } | null;
 
-/** 스프라이트에 툰 스타일 부착 — 실패/미지원 시 null (기존 렌더 유지) */
+/** 스프라이트에 툰 스타일 부착 — 실패/미지원 시 null (기존 렌더 유지)
+ *  v1.0.8 버그 수정: Phaser 4의 오브젝트 필터는 opt-in — enableFilters()를 호출해야
+ *  filters 게터가 null에서 FilterList로 전환된다. 미호출 시 본 함수가 조용히 null을 반환해
+ *  툰 셰이더가 플레이어/보스에 "한 번도" 붙지 않았다 (유저 리포트 "쉐이더 어디감??"의 정체). */
 export function applyToonStyle(obj: Filterable, opts: ToonOpts = {}): unknown[] | null {
-  const list = (obj as Filterable | undefined)?.filters?.external;
+  const o = obj as { filters?: { external?: FilteredList } | null; enableFilters?: () => unknown } | null;
+  if (o && !o.filters && typeof o.enableFilters === "function") {
+    try { o.enableFilters(); } catch { /* WebGL 미지원/파괴됨 — 스킵 */ }
+  }
+  const list = o?.filters?.external;
   if (!list?.addColorMatrix || !list.addGlow) return null;
   const created: unknown[] = [];
   try {

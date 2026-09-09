@@ -53,6 +53,9 @@ export type RpgState = {
   accUp?: Record<string, number>;
   starBless?: number;
   accHp?: number;
+  /** v1.0.8 — 확률 천장 카운터 (강화 실패 가산 %p / 잠재 유니크+ 확정까지 남은 횟수) */
+  starPity?: number;
+  potPity?: number;
   nearShop: boolean;
   shopStock: string[];
   /** v1.0.5 — 서버 롤 기반 관리자 여부 (GM 콘텐츠 입장 버튼 게이트 — 비관리자 노출 방지) */
