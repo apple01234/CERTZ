@@ -1340,3 +1340,24 @@ Stage Summary:
 - 유저 지시 "버그 너가 찾아서 수정해" — 유저 리포트 없이 자체 헌팅만으로 8종 발견·수정·배포 완료 (E2E 실측 기반, 전 항목 라이브 재검증)
 - 시스템 개선: RpgState.admin(서버 롤→UI 게이트 패턴) 신설 — 향후 관리자 전용 UI 추가 시 재사용 / HUD·퀵슬롯 키 표기가 전부 키맵 연동으로 전환되어 재배치 시 유실 없음
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 69
+Agent: Super Z (메인)
+Task: v1.0.6 마무리 — Drive 원본 에셋 확인 · auth:changed 실측 · APK 빌드·릴리스 (versionCode 71)
+
+Work Log:
+- [상태 인수] 평행 세션 산출물 확인: v1.0.6 커밋 a695267 푸시 완료 — auth:changed 이벤트(AuthPanel→WorldScene, GM NPC/관리자 배지 즉시 갱신) · 거래소 등록 서버 소유 검증(accounts/index.js ownsListableItem — 보스 드롭 화이트리스트+클라우드 세이브 실보유, 전설 복제 익스플로잇 차단) · 버저닝 7곳 · 웹 빌드 E0g5KEZQ · bh2 스크린샷 37장 포함
+- [Drive 에셋] 유저 구글드라이브 2건 다운로드(gdown): Cainos.7z 61.8MB(1,009파일) · Vefects.7z 191MB(3,116파일) → research/ 복구분과 구조 일치 확인 — 커밋 "원본 에셋 복구 7팩"과 동일 작업物, 원본 보관 scripts/drive/
+- [서버 재기동] 기존 노드가 스테일 빌드(08:01 기동 < 08:07 빌드) 서빙 중 — kill 후 setsid 재기동(SERTZ_ADMIN_USERS=admin,apple01234 유지) → 200 · apk-guide v1.0.6 마커 6건 서빙 확인
+- [auth:changed 라이브 실측] 가로 1280×720: 사전조건 adminRole=null·GM 4종 전부 hidden → 계정 패널에서 admin/admin123 로그인(무리로드, navigation=1) → adminRole="admin"·GM NPC 4종 즉시 visible + "관리자 계정" 배지·계정 ON · 로그아웃 → 즉시 null+전부 hidden 재확인 (v106_01~09)
+- [빌드 트러블슈팅] 백그라운드 빌드 3회 사일런트 사망(로그 없음, dmesg 신규 OOM 없음, cgroup 4GB 한도 확인) → 포그라운드 단일 호출 전환 + 로그 파일 병행 → 해결. Turbopack 캐시로 next 빌드 9.1초 · gradle 증분 90초(76 executed/130 up-to-date)
+- [APK] SERTZ-v1.0.6.apk 105,160,270B · aapt versionCode 71/versionName 1.0.6 · md5 35271f4351ecd6f18f7b6e0673e4cf31 · APK 내부 auth:changed 코드 검출(cfedd9593c6cacb4.js)
+- [릴리스] GitHub Release v1.0.6(id 385404108) 업로드 state=uploaded → 재다운로드 md5 원격 일치 ✓
+- [md5 기입+서빙 실측] apk-guide.html "(v1.0.6 빌드 후 기입)"→md5 · 안내.txt 다운로드 URL v1.0.6+md5+versionCode 71 · 서빙 3곳 실측(/SERTZ-v1.0.6.apk 307→GitHub · /apk-guide.html 200 md5 포함 · /APK_download_guide.txt v1.0.6) · 커밋 fe83949 푸시
+
+Stage Summary:
+- v1.0.6 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.0.6/SERTZ-v1.0.6.apk (versionCode 71, 105MB, md5 35271f43…)
+- 세션 중 로그인/로그아웃 시 GM NPC 즉시 갱신 — 유저 질문 "GM 로그인 어케함?"의 근본 해소(이제 reload 불필요: 마을 진입 후 admin 로그인만 하면 즉시 등장)
+- 운영 팁: 이 컨테이너는 백그라운드 장시간 빌드가 사일런트 사망할 수 있음 — gradle은 포그라운드 + 로그 리다이렉트로 실행할 것 (scripts/build_apk_v106_wrapper.sh 참고)
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
