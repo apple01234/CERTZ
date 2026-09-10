@@ -98,7 +98,7 @@ export type SaveData = {
   pets?: string[];
   pet?: string | null;
   /* ↓ 전직 스토리 진행 (v2.0 — 구 세이브 호환 기본값 / v3.1.0 — fam: 미전직 시련 계열) */
-  jobStory?: { tier: 1 | 2 | 3; step: number; hunt: number; fam?: string } | null;
+  jobStory?: { tier: 1 | 2 | 3 | 4; step: number; hunt: number; fam?: string } | null;
   jobStoryDone?: number[];
   /* v3.1.0 (#전직스토리선행) — 시련 스토리 중 선택해둔 1차 클래스 (스토리 완료 시 적용) */
   pendingJobClass?: string | null;

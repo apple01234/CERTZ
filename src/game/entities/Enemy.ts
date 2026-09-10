@@ -471,8 +471,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
       this.scene.spawnDamageText(this.x, this.y - 20, dealtD, crit);
       this.scene.spawnHitSpark(this.x, this.y);
-      /* v4.8.0 — 도장 연습도 크리티컬은 충격파로 (연습 피드백 강화) */
-      if (crit) this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.05);
+      if (crit) { this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.05); this.scene.spawnCritSplat(this.x, this.y); }
       /* v1.0.2 (#허수아비) — 고정 기준(baseSX/SY) 기준으로만 스쿼시: 아무리 연타해도 기준선 불변 */
       const sxD = this.baseSX;
       const syD = this.baseSY;
@@ -499,7 +498,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     );
     this.scene.spawnHitSpark(this.x, this.y);
     /* v4.8.0 — 강한 순간 충격파 링: 크리티컬 금색 / 약점 원소색 (WebGL 전용, Canvas 무시) */
-    if (crit) this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.1);
+    if (crit) { this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.1); this.scene.spawnCritSplat(this.x, this.y); }
     else if (weak) this.scene.spawnShockwave(this.x, this.y, ELEMENT_META[this.elem].hex, 0.85);
     // v2.2 타격감 — 스쿼시(눌림) 반동: 맞은 순간 납작해졌다 복귀
     /* v1.0.2 (#허수아비) — 일반 몹도 동일 근본 수정: 고정 기준 스케일로 복귀 (누적 왜곡 차단) */

@@ -54,6 +54,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private chargeDir = new Phaser.Math.Vector2();
   private teleRing: Phaser.GameObjects.Image | null = null;
   private teleRings: Phaser.GameObjects.Image[] = [];
+  /** v1.0.12 — 스콜&하티 쌍랑 표현 ("스콜밖에 안보임" 리포트): 하티(달을 쫓는 늑대)
+   *  쌍둥이 유령 스프라이트 — 판정 없는 비주얼 동반자(뒤 오프셋·플립 미러·달빛 틴트). */
+  private twin: Phaser.GameObjects.Sprite | null = null;
   /** 장판 패턴(존스)용 예고 링들 */
   private zoneRings: Phaser.GameObjects.Image[] = [];
   private chargeTarget = new Phaser.Math.Vector2();
@@ -105,6 +108,17 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     this.play(`${def.tex}-idle`);
 
+    /* v1.0.12 — 하티 스폰: 스콜(금양 — orbTint 0xffd97a) 옆에 달빛 실버 늑대가 나란히 달린다.
+     *  히트박스/판정은 보스 본체 그대로(밸런스 불변) — 순수 비주얼 쌍두 표현. */
+    if (def.key === "skoll") {
+      this.twin = scene.add.sprite(this.x, this.y, this.texture.key)
+        .setDepth(this.depth - 1)
+        .setTint(0x9fb8ff)
+        .setAlpha(0.95);
+      this.twin.play(`${def.tex}-idle`);
+      this.twin.setFlipX(true);
+    }
+
     for (let i = 0; i < 44; i++) {
       const orb = scene.physics.add.image(0, 0, "orb");
       // 외부 에셋 구슬(Kenney circle_05) — 보스별 테마색 발광 에너지탄
@@ -124,6 +138,16 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         yoyo: true,
         repeat: -1,
       });
+    }
+  }
+
+  /** v1.0.12 — 하티 동기화: 프레임마다 보스 뒤 오프셋에 붙어 같이 달린다 (tick 흐름과 무관) */
+  preUpdate(time: number, delta: number) {
+    super.preUpdate(time, delta);
+    if (this.twin?.active) {
+      this.twin.setPosition(this.x + (this.flipX ? -52 : 52), this.y + 2);
+      this.twin.setFlipX(!this.flipX);
+      this.twin.setDepth(this.depth - 1);
     }
   }
 
@@ -850,7 +874,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     );
     this.scene.spawnHitSpark(this.x, this.y - 30);
     /* v4.8.0 — 보스에게 먹힌 크리티컬은 더 큰 충격파로 (격판 강조, WebGL 전용) */
-    if (crit) this.scene.spawnShockwave(this.x, this.y - 24, 0xffd76a, 1.3, 400);
+    if (crit) { this.scene.spawnShockwave(this.x, this.y - 24, 0xffd76a, 1.3, 400); this.scene.spawnCritSplat(this.x, this.y - 20, 0xffd76a); }
     EventBus.emit("boss:update", { hp: Math.max(0, this.hp), maxHp: this.maxHp });
 
     if (this.hp <= 0) {
@@ -869,6 +893,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.teleRings = [];
       for (const r of this.zoneRings) r.destroy();
       this.zoneRings = [];
+      this.twin?.destroy(); this.twin = null; // v1.0.12 — 하티 동반 소멸
       this.setVelocity(0, 0);
       // 보스 격파 보상 — 대량 골드 + HP 물약 2개 (2D MMORPG 기본 요소)
       this.scene.dropLootGold(this.x, this.y, this.def.gold);
@@ -886,6 +911,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.beamTimer?.remove();
     this.quakeTimer?.remove();
     this.supportTimer?.remove();
+    this.twin?.destroy(); this.twin = null; // v1.0.12 — 씬 정리 시 하티 제거
     for (const orb of this.orbPool) orb.destroy();
     for (const r of this.teleRings) r.destroy();
     for (const r of this.zoneRings) r.destroy();

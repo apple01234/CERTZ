@@ -1,5 +1,5 @@
 ════════════════════════════════════════════
- v1.0.11 (최신) — Gameworks 팩 25종 · 기존 스킬 전부 강화 · 튜토리얼
+ v1.0.12 (최신) — Gameworks 팩 25종 · 기존 스킬 전부 강화 · 튜토리얼
 ════════════════════════════════════════════
 · 유저 업로드 Gameworks 유니티 팩 프리렌더 25종 신규 투입
   (Hovl Studio Magic Effects · Matthew Guz Slash Effects · Petal Particles 벚꽃)
@@ -10,8 +10,8 @@
   (주민 대화 → 차원문 이동 → 첫 전투 → 전리품 줍기 → 스킬 → 물약)
   · 완료 보상: 골드 +500 · HP/MP 물약 ×3 · 뽑기권 +1 + 벚꽃 소나기 축하 연출
   · 진행 중 세이브는 구역 이동 후에도 이어서 재개 · 스킵 버튼 지원
-· 다운로드: https://github.com/apple01234/CERTZ/releases/download/v1.0.11/SERTZ-v1.0.11.apk
-· md5: (빌드 후 기입)
+· 다운로드: https://github.com/apple01234/CERTZ/releases/download/v1.0.12/SERTZ-v1.0.12.apk
+· md5: 4f03b680504d856be1040417f8fe8c11
 · versionCode: 76
 
 ════════════════════════════════════════════
@@ -22,7 +22,7 @@
 · 보스 카메라 버그 근본 수정 — 재조우 보스는 카메라 우회 없이 즉시 전투
 · 4차 스킬 8종 · 5차 궁극기 8종 + 마법진 인트로 · 5차 각성 의식 연출 강화
 · 다운로드: https://github.com/apple01234/CERTZ/releases/download/v1.0.10/SERTZ-v1.0.10.apk
-· md5: 1c1b04cfaab1bac4a24ab9662220b04e
+· md5: 4f03b680504d856be1040417f8fe8c11
 · versionCode: 75
 
 SERTZ v1.0.7 APK 다운로드 안내

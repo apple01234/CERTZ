@@ -1501,3 +1501,30 @@ Stage Summary:
 - skill-creator v2 강화: 4/9→9/9(개선 +5), 본문 279줄(500 한도), references 5종·evals·tutorials 완비, 회귀 PASS×3 — N차 강화 루프 2회차 종결
 - 운영 교훈: ①build_apk.sh는 JAVA_HOME/ANDROID_HOME 미설정 시 시스템 JRE 오탐 가능 — 재발 시 env 명시 ②bun 글로벌 node 경로는 리셋마다 소실 — /usr/bin/node 사용 ③검증기도 실실행해야 버그가 드러난다(G8 오프바이원은 랩 실행 덕에 발견)
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 76
+Agent: Super Z (메인)
+Task: 유저 리포트 11건 — ①투사체 스킬 좌우반전 ②로그인/서버 접속 불가 ③3D 고급 에셋(Drive=Toon Shaders Pro) ④4차 전직 퀘스트 부재 ⑤긴급탈출 검은화면 ⑥스콜&하티 ⑦어두운 챕터 횃불 ⑧마을 BGM ⑨스토리 분량 ⑩AI톤 문구 청소 — v1.0.12 확정·릴리스 (versionCode 77)
+
+Work Log:
+- [재난 복구] 세션 도중 샌드박스 리셋 재발 — 로컬 HEAD가 v1.0.8 시절로 롤백(작업분 소실) → 원격 origin/main(02c1bc2, v1.0.11) 기준 git reset --hard 복구 + 툴체인 재구축(rebuild_toolchain.sh) + 서버 재기동. push된 원격이 진실원천이었음 — 커밋 전 push 습관의 가치 재확인
+- [① 좌우반전 근본 원인] hero_atk 시트는 우향 네이티브 / hero_walkside는 좌향 네이티브(시트 간 플립 의미 반대) — 발사 코드가 걷기 기준 setFlipX(dir.x>0)를 공격에 재사용해 오른쪽 발사 시 캐릭터는 왼쪽을 보고 화살은 오른쪽으로. 픽셀 밀도 분석+8배 확대로 시트 방향 실측 확정. 수정: faceAtk() 헬퍼 신설(좌향 조준 시만 flip) — 기본공격 4종(atkBow/Bolt/Shuriken/Slash) 조건 반전 6곳 + 스킬 play 10곳 정면화 + 점멸 참수 flip 1곳 + 공격 중 회복 걷기 플립 갱신. 원거리 전 직업 전 스킬 적용
+- [② 서버 접속 불가 — 대反전] 외부 실측(샌드박스 외부 실행 page_reader) 결과: sertz.z.ai = DNS 미존재("Domain could not be resolved") — v1.0.9가 localhost로만 검증하고 기본값을 죽은 도메인으로 바꾼 것이 근본 원인. sertz4.space-z.ai = 생존(외부 200, 유저 계정 DB 보유). 현재 샌드박스 preview 후보 3종 전부 무관(504/빈페이지/로컬 도달 0). 수정: DEFAULT_SERVER → sertz4 복원 + sertz.z.ai를 DEAD_SERVERS 등록(v1.0.9~11 설치분 자동 복귀). 교훈: 서버 주소 변경은 반드시 샌드박스 '외부'에서 실험
+- [③ 3D 에셋 정체 확정] 유저 Drive 파일(68.9MB 7z) 해독 = Toon Shaders Pro + Hovl Studio Magic effects + Matthew Guz Slash + Cherry Petals Unity 팩 — Task 73의 "Game Studio 플러그인" 미스터리 최종 해소(gw_* 25종의 원천이 바로 이 팩). 2차 투입: wx_snowflake/petal/splat/crater/crack/smoke/spark5 7종 webp 변환 → ①니플헤임 눈보라(카메라 추적 emitter) ②마을 벚꽃 날림 ③크리티컬 스플랫(Enemy 2곳+Boss 1곳). FBX 3D 모델 7종은 2D 런타임 렌더 불가 — 프리렌더 파이프라인 과제로 기록
+- [④ 4차 전직 퀘스트] JOBSTORY가 1~3차만 정의되어 4차는 퀘스트 없이 즉시 승격되던 구조. 확장: JobStoryDef.tier 4차 추가 + jobStory(t4: 18마리/25마리/인장수집/시조의 초월 6단계) + T4_LINES 4계열 "초월" 테마 대사 전문 집필 + DIALOGUES 등록 + WorldScene 게이트 확장(jobQuestCleared 3차→4차 시련 필수, startJobStory/maybeStartJobStory 4차 허용, 완료 배너, SaveData tier 4)
+- [⑤ 긴급귀환 검은화면] startTransition이 보스 블룸만 해체하고 v1.0.10 신설 상시 앰비언트 블룸을 남긴 채 fadeOut — v4.9.0 문서화된 "필터+페이드=검은화면" 패턴 재현. 앰비언트 해체 추가(신규 구역 create 재부착)
+- [⑥ 스콜&하티] 쌍랑인데 스프라이트 1마리. Boss.ts에 하티 쌍둥이 스프라이트 신설 — preUpdate로 보스 뒤 오프셋 동기화·플립 미러·달빛 실버 틴트, 판정 없는 순수 비주얼(밸런스 불변), 사망/destroyPool 동반 소멸
+- [⑦ 횃불 장치] 암전 챕터에 꺼진 횃불 8개 균등 배치 — 96px 근접 시 5초 점등(점화 훅음+애니 재개) → 종료 0.8초 전 소등 페이드 → 재접근 재점화. Lighting.addLight alpha 0 활용
+- [⑧ 마을 BGM] splitStage("village")의 ch="village"가 VILLAGE_OF 미등록 → VILLAGE_TRACKS[-1%5]=undefined → 본마을 BGM 깨짐(나머지 8마을은 정상 — 유저 체감 "전부 같다"). village 키 추가 + 음수 인덱스 가드
+- [⑨ 스토리 분량] 4차 시련 6단계×4계열 신설로 엔드게임 +30~40분. 챕터 대폭 확장은 다음 회차 과제로 기록
+- [⑩ 문구 청소] 전직 스토리 제목 "(약 N분)" 제거 · "확률형 아이템 확률 정보(법정 공시)"→"뽑기 확률 표 열람" · "게임산업법 공시(2024.3.28 시행)"→"겉치레 없이 그대로 보여준다" · 타이틀 배지 개발노트 톤→세계관 톤
+- [빌드·검증] tsc 0에러 · build_apk.sh 전체 파이프라인(5m43s) → SERTZ-v1.0.12.apk 106,118,818B · aapt 77/1.0.12 · md5 4f03b680504d856be1040417f8fe8c11 · APK 내부 검출(faceAtk 10·wx_ 7종·spawnCritSplat 4·sertz4·"4차 전직이 해금") · 웹 E2E 1280×720: 타이틀 v1.0.12 배지·마을 진입·튜토리얼 HUD·pageerror 0 — 중간에 .next 스테일로 로딩 정체 발생 → 웹 빌드 별도 실행+서버 재기동으로 해소(APK 빌드는 .next-apk만 갱신, 웹 서빙은 .next 별도 — 다시 겪지 않으려면 배포 전 웹빌드 습관)
+- [릴리스] GitHub Release v1.0.12(id 386297742) 업로드 → 재다운로드 md5 원격 일치 ✓ · md5 안내 2곳 기입 · 서버 재기동(307→v1.0.12·guide 1.0.12 서빙)
+
+Stage Summary:
+- v1.0.12 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.12/SERTZ-v1.0.12.apk (versionCode 77, 106,118,818B, md5 4f03b680…)
+- 유저 11건 중 9건 완료(①~⑧·⑩), ⑨는 4차 시련으로 부분 충족(챕터 확장은 다음 회차)
+- "Game Studio 플러그인" 정체 최종 확정 = 유저 업로드 Unity 팩(Toon Shaders Pro 등) — 2D 프리렌더 방식으로 텍스처 32종 투입 완료
+- 운영 교훈: ①서버 주소는 외부 실험 필지 ②샌드박스 리셋 대비 push 우선 ③MultiEdit 실패 시 부분 적용 잔존 가능 — 실패 후 grep 재검증 의무 ④APK 빌드 후 웹 서빙용 .next 별도 빌드
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

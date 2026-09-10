@@ -1691,7 +1691,7 @@ export type JobStoryStep = {
 
 export type JobStoryDef = {
   family: FamilyKey;
-  tier: 1 | 2 | 3;
+  tier: 1 | 2 | 3 | 4;
   title: string;
   startDialogue: string;
   doneDialogue: string;
@@ -1707,23 +1707,25 @@ const JOB_SPKR: Record<FamilyKey, string> = {
 };
 
 /* v3.0.2 (지시 #12 — "전직 스토리 퀘스트 어디감, 1차 10분 2차 20분 3차 30분 이런식으로"):
- *  전 계열 × 전 티어(1~3차) 스토리 체인 — 단계 수가 티어마다 늘어난다 (t1 3단계/약10분, t2 4단계/약20분, t3 5단계/약30분) */
-function jobStory(family: FamilyKey, tier: 1 | 2 | 3): JobStoryDef {
+ *  전 계열 × 전 티어(1~4차) 스토리 체인 — 단계 수가 티어마다 늘어난다 (t1 3단계, t2 4단계, t3 5단계, t4 6단계)
+ *  v1.0.12 (#4차전직퀘) — 4차도 시련 스토리를 거치도록 확장 (기존엔 3차까지만 있어 4차는 퀘스트 없이 바로 전직됐다)
+ *  v1.0.12 (#문구청소) — 제목의 "(약 N분)" 개발 주석성 문구 제거 */
+function jobStory(family: FamilyKey, tier: 1 | 2 | 3 | 4): JobStoryDef {
   const nameOf: Record<FamilyKey, string> = { warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적" };
-  const stepBase = tier === 1 ? 8 : tier === 2 ? 10 : 14;
-  const huntMid = tier === 1 ? 0 : tier === 2 ? 15 : 20;
-  const titles: Record<FamilyKey, Record<1 | 2 | 3, string>> = {
-    warrior: { 1: "강철의 싹", 2: "강철의 각오", 3: "전장의 정점" },
-    ranger: { 1: "바람의 씨앗", 2: "바람의 재능", 3: "천공의 사수" },
-    thief: { 1: "그림자의 태동", 2: "그림자의 맹세", 3: "검의 그림자" },
-    mage: { 1: "마나의 눈뜸", 2: "마나의 문", 3: "심연의 지혜" },
+  const stepBase = tier === 1 ? 8 : tier === 2 ? 10 : tier === 3 ? 14 : 18;
+  const huntMid = tier === 1 ? 0 : tier === 2 ? 15 : tier === 3 ? 20 : 25;
+  const titles: Record<FamilyKey, Record<1 | 2 | 3 | 4, string>> = {
+    warrior: { 1: "강철의 싹", 2: "강철의 각오", 3: "전장의 정점", 4: "전장을 삼킨 자" },
+    ranger: { 1: "바람의 씨앗", 2: "바람의 재능", 3: "천공의 사수", 4: "천을 꿰뚫는 화살" },
+    thief: { 1: "그림자의 태동", 2: "그림자의 맹세", 3: "검의 그림자", 4: "그림자의 왕좌" },
+    mage: { 1: "마나의 눈뜸", 2: "마나의 문", 3: "심연의 지혜", 4: "세계의 법칙" },
   };
   const title = titles[family][tier];
   const steps: JobStoryDef["steps"] = [
     {
       id: "s1",
       type: "hunt",
-      title: tier === 1 ? "[전직 스토리] 첫 수련" : tier === 2 ? "[전직 스토리] 무장 훈련" : "[전직 스토리] 정예 사냥",
+      title: tier === 1 ? "[전직 스토리] 첫 수련" : tier === 2 ? "[전직 스토리] 무장 훈련" : tier === 3 ? "[전직 스토리] 정예 사냥" : "[전직 스토리] 초월의 수련",
       desc: `지금 머무는 해역의 몬스터 ${stepBase}마리를 처치하고 실전 감각을 되찾자.`,
       need: stepBase,
       targetLabel: "지금 해역의 몬스터",
@@ -1734,7 +1736,7 @@ function jobStory(family: FamilyKey, tier: 1 | 2 | 3): JobStoryDef {
     {
       id: "s2",
       type: "collect",
-      title: tier === 1 ? "[전직 스토리] 가호의 인연" : tier === 2 ? "[전직 스토리] 가호의 증표" : "[전직 스토리] 유산의 조각",
+      title: tier === 1 ? "[전직 스토리] 가호의 인연" : tier === 2 ? "[전직 스토리] 가호의 증표" : tier === 3 ? "[전직 스토리] 유산의 조각" : "[전직 스토리] 계승의 인장",
       desc: "보석의 흔적 1개를 회수해 계열의 시조에게 바치자. (해역 어디든 빛나는 흔적)",
       targetLabel: "보석의 흔적",
       dialogue: `js${family}${tier}Step2`,
@@ -1746,7 +1748,7 @@ function jobStory(family: FamilyKey, tier: 1 | 2 | 3): JobStoryDef {
     steps.push({
       id: "s3",
       type: "hunt",
-      title: "[전직 스토리] 전장 적응",
+      title: tier >= 4 ? "[전직 스토리] 초월 적응" : "[전직 스토리] 전장 적응",
       desc: `더 강해진 몸을 확인하자 — 몬스터 ${huntMid}마리를 처치하자.`,
       need: huntMid,
       targetLabel: "지금 해역의 몬스터",
@@ -1770,33 +1772,33 @@ function jobStory(family: FamilyKey, tier: 1 | 2 | 3): JobStoryDef {
   steps.push({
     id: `s${steps.length + 1}`,
     type: "elite",
-    title: tier === 1 ? "[전직 스토리] 시조의 인정" : tier === 2 ? "[전직 스토리] 시조의 시험" : "[전직 스토리] 심연의 정예",
+    title: tier === 1 ? "[전직 스토리] 시조의 인정" : tier === 2 ? "[전직 스토리] 시조의 시험" : tier === 3 ? "[전직 스토리] 심연의 정예" : "[전직 스토리] 시조의 초월",
     desc: "전직관에서 시조가 소환한 시험 상대를 쓰러뜨리자. (카이엔에게 말 걸기)",
     targetLabel: "시험 상대",
     dialogue: `js${family}${tier}Step3`,
-    reward: tier === 1 ? 260 : tier === 2 ? 250 : 800,
-    expReward: tier === 1 ? 380 : tier === 2 ? 400 : 1400,
+    reward: tier === 1 ? 260 : tier === 2 ? 250 : tier === 3 ? 800 : 1200,
+    expReward: tier === 1 ? 380 : tier === 2 ? 400 : tier === 3 ? 1400 : 2200,
   });
   return {
     family,
     tier,
-    title: `${nameOf[family]} 계열 ${tier}차 전직 스토리 — ${title} (약 ${tier * 10}분)`,
+    title: `${nameOf[family]} 계열 ${tier}차 전직 스토리 — ${title}`,
     startDialogue: `js${family}${tier}Start`,
     doneDialogue: `js${family}${tier}Done`,
     reward: {
-      gold: tier === 1 ? 260 : tier === 2 ? 400 : 1200,
-      ap: tier === 1 ? 3 : tier === 2 ? 5 : 10,
-      buffKey: tier === 3 ? "buff_exp" : "buff_atk",
+      gold: tier === 1 ? 260 : tier === 2 ? 400 : tier === 3 ? 1200 : 2000,
+      ap: tier === 1 ? 3 : tier === 2 ? 5 : tier === 3 ? 10 : 14,
+      buffKey: tier >= 3 ? "buff_exp" : "buff_atk",
     },
     steps,
   };
 }
 
-export const JOBSTORY: Record<FamilyKey, Record<1 | 2 | 3, JobStoryDef>> = {
-  warrior: { 1: jobStory("warrior", 1), 2: jobStory("warrior", 2), 3: jobStory("warrior", 3) },
-  ranger: { 1: jobStory("ranger", 1), 2: jobStory("ranger", 2), 3: jobStory("ranger", 3) },
-  mage: { 1: jobStory("mage", 1), 2: jobStory("mage", 2), 3: jobStory("mage", 3) },
-  thief: { 1: jobStory("thief", 1), 2: jobStory("thief", 2), 3: jobStory("thief", 3) },
+export const JOBSTORY: Record<FamilyKey, Record<1 | 2 | 3 | 4, JobStoryDef>> = {
+  warrior: { 1: jobStory("warrior", 1), 2: jobStory("warrior", 2), 3: jobStory("warrior", 3), 4: jobStory("warrior", 4) },
+  ranger: { 1: jobStory("ranger", 1), 2: jobStory("ranger", 2), 3: jobStory("ranger", 3), 4: jobStory("ranger", 4) },
+  mage: { 1: jobStory("mage", 1), 2: jobStory("mage", 2), 3: jobStory("mage", 3), 4: jobStory("mage", 4) },
+  thief: { 1: jobStory("thief", 1), 2: jobStory("thief", 2), 3: jobStory("thief", 3), 4: jobStory("thief", 4) },
 };
 
 /* 전직 스토리 대사 (계열 × 차수 × 단계) */
@@ -1828,6 +1830,38 @@ const T1_LINES: Record<FamilyKey, { start: string[]; s1: string[]; s2: string[];
     s2: ["『그 흔적 — 어둠이 너를 알아보는 증표다.』"],
     s3: ["『인정한다. 마지막으로 시험 상대를 뒤에서 놀려라!』"],
     done: ["『오늘부로 너는 도적이다. 그림자의 태동을 잊지 마라.』"],
+  },
+};
+
+/* v1.0.12 (#4차전직퀘) — 4차 시련 대사: "초월" 테마 — 시조가 후예를 넘어서는 단계 */
+const T4_LINES: Record<FamilyKey, { start: string[]; s1: string[]; s2: string[]; s3: string[]; done: string[] }> = {
+  warrior: {
+    start: ["『…드디어 이 자리에 왔군, 전사여. 지금부턴 시조인 내가 시험대가 아니다.』", "『네가 넘어야 할 산은 '전장 그 자체' — 세계가 다른 계층에서 너를 부른다!』"],
+    s1: ["『전장의 무게가 몸에 익기 시작했군.』", "『좋다. 강철은 두들겨질수록 단단해진다!』"],
+    s2: ["『…계승의 인장이 검에 새겨졌군.』", "『그 검이 더는 흔들리지 않는다면 — 통과다!』"],
+    s3: ["『초월의 문 앞에서도 검이 무뎌지지 않았군.』", "『이제 마지막이다. 시조의 이름을 걸고 시험 상대를 베어라!』"],
+    done: ["『인정한다. 오늘부로 너는 전장 그 자체다.』", "『서라, 워로드(팔라딘). 너의 전장이 곧 세계다!』"],
+  },
+  ranger: {
+    start: ["『…화살이 하늘에 닿았구나. 나는 바람의 세이렌 — 마지막 시험을 열겠다.』", "『천은 아직 네가 닿지 않는 곳. 이제 '천을 꿰뚫는' 화살을 배울 때다!』"],
+    s1: ["『바람의 꼬리까지 읽기 시작했군.』", "『화살이 빛보다 먼저 닿는다 — 그 속도를 몸에 새겨라!』"],
+    s2: ["『…인장이 활에 박혔다. 활이 너를 알아본다.』", "『이제 활은 네 의지 그대로 날아간다!』"],
+    s3: ["『천의 문 앞에서도 조준이 흐트러지지 않았군.』", "『마지막이다 — 시험 상대의 심장을 겨눠라!』"],
+    done: ["『인정한다. 오늘부로 너의 화살은 하늘 아래 없는 것이니.』", "『날아라, 데드아이(스카이로드)! 천을 꿰뚫어라!』"],
+  },
+  mage: {
+    start: ["『…마나가 세계의 법칙에 닿았군. 나는 만개한 세이렌 — 마지막 문을 열겠다.』", "『이번 시험은 마법이 아니다. '세계 그 자체'와 문답해라!』"],
+    s1: ["『세계의 파동을 마나로 읽기 시작했군.』", "『법칙은 무겁다. 그 무게를 견디며 더 외워라!』"],
+    s2: ["『…인장이 지팡이에 새겨졌군. 마나가 주문보다 먼저 움직인다.』", "『이제 주문이 아니라 네가 법칙을 고른다!』"],
+    s3: ["『세계의 문 앞에서도 집중이 깨지지 않았군.』", "『마지막이다 — 시험 상대를 법칙으로 제압해라!』"],
+    done: ["『인정한다. 오늘부로 너의 말이 곧 법칙이다.』", "『일어나라, 아크메이지(세이지)! 세계가 너를 다시 쓴다!』"],
+  },
+  thief: {
+    start: ["『…이제 네 발소리는 세계에서도 사라졌군. 나는 그림자의 로크 — 왕좌를 열겠다.』", "『그림자의 왕좌는 무덤이다. 거기서 살아남아라!』"],
+    s1: ["『어둠의 결을 타고 움직이기 시작했군.』", "『좋다. 왕좌로 가는 길은 살아있는 자의 것이 아니다 — 조용히 가라!』"],
+    s2: ["『…인장을 훔쳐왔군. 아니, '받아냈'다.』", "『그림자가 너를 왕으로 인정하기 시작했다!』"],
+    s3: ["『왕좌의 문 앞에서도 숨결이 들리지 않았군.』", "『마지막이다 — 시험 상대를 무덤으로 보내라!』"],
+    done: ["『인정한다. 오늘부로 너가 그림자이자 왕이다.』", "『앉아라, 어세신(스와시버클러). 그림자의 왕좌에!』"],
   },
 };
 
@@ -1904,6 +1938,13 @@ const JS_LINES: Record<FamilyKey, Record<1 | 2 | 3, { start: string[]; s1: strin
 };
 
 for (const fam of ["warrior", "ranger", "mage", "thief"] as FamilyKey[]) {
+  /* v1.0.12 — 4차 시련 대사 등록 (js{fam}4Start/Step1/Step2/Step3/Done) */
+  const L4 = T4_LINES[fam];
+  DIALOGUES[`js${fam}4Start`] = { speaker: JOB_SPKR[fam], lines: L4.start };
+  DIALOGUES[`js${fam}4Step1`] = { speaker: JOB_SPKR[fam], lines: L4.s1 };
+  DIALOGUES[`js${fam}4Step2`] = { speaker: JOB_SPKR[fam], lines: L4.s2 };
+  DIALOGUES[`js${fam}4Step3`] = { speaker: JOB_SPKR[fam], lines: L4.s3 };
+  DIALOGUES[`js${fam}4Done`] = { speaker: JOB_SPKR[fam], lines: L4.done };
   for (const tier of [2, 3] as const) {
     const L = JS_LINES[fam][tier];
     const base = `js${fam}${tier}`;

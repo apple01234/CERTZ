@@ -494,12 +494,12 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
           onClick={() => setOdds((v) => !v)}
           className="mt-1.5 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-[11px] font-black text-white/70 hover:bg-black/60 active:scale-[0.99]"
         >
-          {odds ? "▲" : "▼"} 확률형 아이템 확률 정보 (법정 공시)
+          {odds ? "▲" : "▼"} 뽑기 확률 표 열람
         </button>
         {odds && (
           <div className="mt-1.5 rounded-lg border border-white/15 bg-black/50 p-2.5">
-            <p className="text-[11px] font-black text-cyan-200">확률 정보 — 게임산업법 공시 (2024.3.28 시행)</p>
-            <p className="mt-0.5 text-[9px] leading-relaxed text-white/40">아래 확률은 게임 로직과 동일한 테이블에서 실시간 계산됩니다. 일일 특가는 표시 가격의 30% 할인이며 확률에는 영향을 주지 않습니다.</p>
+            <p className="text-[11px] font-black text-cyan-200">뽑기 확률 — 겉치레 없이 그대로 보여준다</p>
+            <p className="mt-0.5 text-[9px] leading-relaxed text-white/40">아래 표가 곧 게임 속 확률입니다. 일일 특가는 가격만 할인되고 확률은 변하지 않습니다.</p>
             {["chest_iron", "chest_silver", "chest_gold", "chest_legend"].map((k) => (
               <div key={k} className="mt-2 rounded-md bg-white/[0.03] px-2 py-1.5">
                 <p className="text-[10px] font-black text-white/75">{ITEMS[k as ItemKey].name}</p>

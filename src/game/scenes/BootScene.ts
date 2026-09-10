@@ -248,6 +248,8 @@ export class BootScene extends Phaser.Scene {
       "gw_arc", "gw_crack", "gw_trail", "gw_arrow", "gw_proj", "gw_crystal", "gw_crater",
       "gw_slash_a", "gw_slash_b", "gw_slash_c", "gw_dash", "gw_shock", "gw_boom",
       "gw_spark", "gw_crit", "gw_fire", "gw_dot", "gw_petal",
+      /* v1.0.12 — Toon Shaders Pro 팩(유저 Drive 업로드) 2차 투입: 눈보라·벚꽃 날씨 + 크리티컬 스플랫 */
+      "wx_snowflake", "wx_petal", "wx_splat", "wx_crater", "wx_crack", "wx_smoke", "wx_spark5",
     ]) this.load.image(t, `${t}.webp`);
     /* v3.0.2 — 외부 신규 에셋 (전부 CC0, CREDITS.md 참조)
      *  50 Monsters Pack (isaiah658): 신규 몬스터 9종 × idle2/run4/atk1 프레임

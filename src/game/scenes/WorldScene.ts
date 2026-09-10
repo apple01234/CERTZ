@@ -69,6 +69,11 @@ export class WorldScene extends Phaser.Scene {
   private tutStep = -1; // -1=미시작/완료, 0..5=진행 중 (세이브 유지 — 마을→사냥터 씬 전환 재개)
   private tutPendingStart = false; // 인트로(이름짓기) 종료 후 시작 예약
   private tutRetryMs = 0; // update 루프 재시도 누적 (타이머 이벤트가 유실되는 레이스 차단용)
+  /* v1.0.12 (#횃불장치) — 암전 챕터 근접 점등 횃불 (가까이 가면 5초간 점등) */
+  private torches: { prop: Phaser.GameObjects.Sprite; glow: Phaser.GameObjects.Image; x: number; y: number; litUntil: number; cdUntil: number }[] = [];
+  /* v1.0.12 (#3D팩 2차 투입) — 날씨 파티클 (니플헤임 눈보라 / 마을 벚꽃) */
+  private weatherSnow: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private weatherPetal: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
 
   questIdx = 0;
   huntCount = 0;
@@ -186,7 +191,7 @@ export class WorldScene extends Phaser.Scene {
   /* v3.1.0 (#전직스토리선행) — fam 추가: 미전직(cls null) 상태에서도 계열 스토리 진행 가능.
    *  유저 지시 "전직은 전직 스토리(n차마다 다른 스토리/컷신) 완료 후에 실행" —
    *  계열 선택 → 해당 계열 시련 스토리 → 완료 시 전직 적용 순서로 반영했다. */
-  jobStory: { tier: 1 | 2 | 3; step: number; hunt: number; fam: FamilyKey } | null = null;
+  jobStory: { tier: 1 | 2 | 3 | 4; step: number; hunt: number; fam: FamilyKey } | null = null;
   private jobStoryDone: number[] = []; // 완료한 티어 기록 [2, 3]
   /** v3.1.0 (#전직스토리선행) — 미전직이 시련 스토리 중 선택해둔 1차 클래스 (완료 시 적용) */
   private pendingJobClass: ClassKey | null = null;
@@ -537,6 +542,9 @@ export class WorldScene extends Phaser.Scene {
     this.tut = null; // v1.0.11 — 씬 재시작 시 이전 인스턴스 참조 정리 (tutStep은 create에서 세이브로 재개)
     this.tutPendingStart = false;
     this.tutRetryMs = 0;
+    this.torches = []; // v1.0.12 — 횃불 장치 배열 리셋 (스프라이트는 씬 재시작이 정리)
+    this.weatherSnow = null; // v1.0.12 — 날씨 emitter 참조 리셋
+    this.weatherPetal = null;
     this.portalSwirl = null; // v4.7.0 — 씬 재시작 시 파괴된 셰이더 참조 정리
     /* v2.7 — 씬 재시작 같은 인스턴스 재사용: 이전 구역 개방 상태가 유출되면
      *  다음 구역에서 시작부터 포탈이 열려 퀘스트를 건너뛰고, 보루도 early-return으로 죽는다 */
@@ -1817,6 +1825,59 @@ export class WorldScene extends Phaser.Scene {
           this.lighting.addLight(c.x, c.y - 6, { tint, scale: 0.7, alpha: 0.26, flicker: 0.09 });
         }
       }
+      /* v1.0.12 (#횃불장치) — 근접 점등 횃불 장치: 맵 곳곳에 꺼진 횃불이 서 있고,
+       *  가까이(96px) 가면 5초간 불이 켜졌다가 스러진다 (재접근 재점화). 탐험 재미 + 시야 확보. */
+      const lay2 = this.layout;
+      if (lay2) {
+        const opens2: number[] = [];
+        for (let i = 0; i < lay2.open.length; i++) if (lay2.open[i]) opens2.push(i);
+        const want2 = Math.min(8, opens2.length);
+        const step2 = Math.max(1, Math.floor(opens2.length / Math.max(1, want2)));
+        const torchTint2 = parseStage(stageKey).ch === "niflheim" ? 0x8ad4ff : 0xffa050;
+        for (let n = 0; n < opens2.length && this.torches.length < want2; n += step2) {
+          const c = cellCenterOf(lay2, opens2[n]);
+          if (Math.abs(c.y - this.stageH / 2) < 80) continue; // 중앙 통로 회피
+          const prop = this.add.sprite(c.x, c.y, "sv_campfire").setDepth(2).setTint(0x50505e);
+          try { prop.play("sv-campfire"); prop.anims.pause(); } catch { /* 애니 부재 환경 무시 */ }
+          const glow = this.lighting.addLight(c.x, c.y - 6, { tint: torchTint2, scale: 0.95, alpha: 0, flicker: 0 });
+          this.torches.push({ prop, glow, x: c.x, y: c.y, litUntil: 0, cdUntil: 0 });
+        }
+      }
+    }
+
+    /* v1.0.12 (#3D팩 2차 투입 — "내가 준 고급 에셋") — Toon Shaders Pro/Hovl 팩 텍스처로
+     *  날씨 레이어 구축: ①니플헤임 계열 = 눈보라(wx_snowflake) ②마을 = 벚꽃 날림(wx_petal).
+     *  카메라 상단 폭 emitZone — 파티클은 월드 좌표에 떨어져 스크롤과 자연스럽게 어긋난다. */
+    {
+      const chNow = parseStage(stageKey).ch;
+      if (chNow === "niflheim") {
+        this.weatherSnow = this.add.particles(0, 0, "wx_snowflake", {
+          x: { min: -80, max: 1400 },
+          y: 0,
+          lifespan: 11000,
+          speedY: { min: 26, max: 60 },
+          speedX: { min: -26, max: 6 },
+          scale: { min: 0.05, max: 0.14 },
+          alpha: { start: 0.8, end: 0.3 },
+          rotate: { min: 0, max: 360 },
+          quantity: 1,
+          frequency: 130,
+        }).setDepth(54);
+      } else if (STAGES[stageKey]?.isVillage && chNow !== "abyss" && chNow !== "hel") {
+        this.weatherPetal = this.add.particles(0, 0, "wx_petal", {
+          x: { min: -80, max: 1400 },
+          y: 0,
+          lifespan: 12000,
+          speedY: { min: 18, max: 40 },
+          speedX: { min: -14, max: 26 },
+          scale: { min: 0.05, max: 0.11 },
+          alpha: { start: 0.85, end: 0.35 },
+          rotate: { min: 0, max: 360 },
+          quantity: 1,
+          frequency: 620,
+          tint: [0xffc4d6, 0xffd9e4, 0xffb0c8],
+        }).setDepth(54);
+      }
     }
   }
 
@@ -2050,6 +2111,10 @@ export class WorldScene extends Phaser.Scene {
      *  fadeOut(전체 화면 검정 쿼드)과 겹치면 GM 보스 이동·긴급귀환 직후 검은 화면이
      *  남는 사례가 보고됐다. 필터는 새 구역에서 재적용되므로 미리 제거해도 무해. */
     this.clearBossPostFX();
+    /* v1.0.12 — 긴급귀환 검은화면 수정: v1.0.10부터 카메라에 상시 부착된 앰비언트 블룸이
+     *  fadeOut과 겹치면 v4.9.0 때 보고됐던 "필터+페이드 = 검은 화면 잔존" 패턴이 재현된다.
+     *  보스 블룸만 해체하던 기존 복구 경로에 앰비언트 해체를 추가 — 새 구역 create가 재부착한다. */
+    if (this.ambientFilters.length > 0) detachAmbientBloom(this.cameras.main, this.ambientFilters);
     this.fadeDarkMs = 0;
     if (this.player) {
       this.player.setVelocity(0, 0); // 관성 드리프트로 다른 포탈에 겹치는 것 차단
@@ -4844,28 +4909,31 @@ export class WorldScene extends Phaser.Scene {
    *  [전직 시련] 스토리 완료가 승격 잠금 해제 조건. */
   private jobQuestCleared(): boolean {
     const tier = chainOf(this.player?.cls ?? "").length;
-    if (tier >= 3) return true;
+    /* v1.0.12 (#4차전직퀘) — 4차도 시련 스토리 완료를 게이트로 (기존엔 3차부터 무조건 허용) */
+    if (tier >= 4) return true;
     if (tier === 0) {
       const vq = STAGES["village"].quests.length;
       return (this.savedQuestIdx["village"] ?? 0) >= vq;
     }
-    // 1차 → 2차: 2차 시련 완료 / 2차 → 3차: 3차 시련 완료
-    return this.jobStoryDone.includes((tier + 1) as 2 | 3);
+    // 1차→2차: 2차 시련 / 2차→3차: 3차 시련 / 3차→4차: 4차 시련 완료
+    return this.jobStoryDone.includes((tier + 1) as 2 | 3 | 4);
   }
 
   /** 전직 잠금 사유 문구 (패널 표기용 — null이면 퀘스트 조건 충족) */
   private jobQuestLockText(): string | null {
     const tier = chainOf(this.player?.cls ?? "").length;
-    if (tier >= 3) return null;
+    if (tier >= 4) return null;
     if (tier === 0) {
       const vq = STAGES["village"].quests.length;
       if ((this.savedQuestIdx["village"] ?? 0) < vq) return "마을 퀘스트 체인 완료 (이그니와 함께)";
       return null;
     }
-    if (!this.jobStoryDone.includes((tier + 1) as 2 | 3)) {
+    if (!this.jobStoryDone.includes((tier + 1) as 2 | 3 | 4)) {
       return tier === 1
         ? "[전직 시련] 2차 스토리 완료 필요 (카이엔과 대화)"
-        : "[전직 시련] 3차 스토리 완료 필요 (카이엔과 대화)";
+        : tier === 2
+          ? "[전직 시련] 3차 스토리 완료 필요 (카이엔과 대화)"
+          : "[전직 시련] 4차 스토리 완료 필요 (카이엔과 대화)";
     }
     return null;
   }
@@ -7036,6 +7104,38 @@ export class WorldScene extends Phaser.Scene {
 
     this.tut?.update(); // v1.0.11 — 튜토리얼 마커 추적
 
+    /* v1.0.12 — 날씨 emitter 카메라 추적 (emit 구간을 화면 상단에 유지) */
+    if (this.weatherSnow) this.weatherSnow.setPosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
+    if (this.weatherPetal) this.weatherPetal.setPosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
+
+    /* v1.0.12 (#횃불장치) — 근접 점등 판정: 96px 진입 시 5초 점등 → 종료 0.8초 전 소등 예고 페이드.
+     *  프레임당 거리 제곱 비교 8개 — 저비용. 꺼진 횃불은 재접근 시 다시 타오른다. */
+    if (this.torches.length > 0 && this.player) {
+      const nowMs = this.time.now;
+      const px = this.player.x, py = this.player.y;
+      for (const t of this.torches) {
+        if (t.litUntil > nowMs) {
+          if (t.litUntil - nowMs < 800 && !t.prop.getData("fading")) {
+            t.prop.setData("fading", true);
+            this.tweens.add({ targets: t.glow, alpha: 0, duration: 700, onComplete: () => t.prop.setData("fading", false) });
+          }
+          continue;
+        }
+        if (nowMs < t.cdUntil) continue;
+        const dx = px - t.x, dy = py - t.y;
+        if (dx * dx + dy * dy < 96 * 96) {
+          t.litUntil = nowMs + 5000;
+          t.cdUntil = t.litUntil + 1200;
+          this.tweens.killTweensOf(t.glow);
+          t.glow.setAlpha(0).setScale(0.5);
+          this.tweens.add({ targets: t.glow, alpha: 0.55, scale: 0.95, duration: 260, ease: "Cubic.out" });
+          t.prop.clearTint();
+          if (t.prop.anims.isPaused) t.prop.anims.resume();
+          audio.sfx.portal(); // 점화 훅 — 포탈 개방음을 낮은 볼륨의 불꽃 소리로 재활용
+        }
+      }
+    }
+
     /* v1.0.11 — 튜토리얼 지연 시작 재시도 (update 루프 — 컷신/대사 레이스에도 확실하게 착화).
      *  tutRetryMs>0이면 미시작 상태 — 1.5초마다 대화·실내가 아닐 때 시도, 시작되면 0으로 해제 */
     if (this.tutRetryMs > 0 && !this.tut && !this.tutorialDone) {
@@ -8872,11 +8972,11 @@ export class WorldScene extends Phaser.Scene {
    *  · 미전직: 전직관에서 계열 선택 시 tier-1 시련 시작 → 완료 시 전직 적용
    *  · 1차/2차: 다음 차수(tier+1) 시련 시작 → 완료 시 다음 전직 잠금 해제
    */
-  private startJobStory(fam: FamilyKey, tier: 1 | 2 | 3): boolean {
+  private startJobStory(fam: FamilyKey, tier: 1 | 2 | 3 | 4): boolean {
     if (!this.player || this.jobStory) return false;
     if (this.jobStoryDone.includes(tier)) return false;
     // 이전 티어 시련을 먼저 완료해야 다음 티어 진행 (연쇄 게이팅 유지)
-    if (tier >= 2 && !this.jobStoryDone.includes((tier - 1) as 1 | 2)) return false;
+    if (tier >= 2 && !this.jobStoryDone.includes((tier - 1) as 1 | 2 | 3)) return false;
     this.jobStory = { tier, step: 0, hunt: 0, fam };
     const story = JOBSTORY[fam][tier];
     this.showDialogue(story.startDialogue);
@@ -8888,14 +8988,14 @@ export class WorldScene extends Phaser.Scene {
     return true;
   }
 
-  /** 전직관 카이엔 대화 후 — 미진행 다음 차수 시련 자동 시작 (v3.1.0 재정의) */
+  /** 전직관 카이엔 대화 후 — 미진행 다음 차수 시련 자동 시작 (v3.1.0 재정의, v1.0.12 4차 확장) */
   private maybeStartJobStory() {
     if (!this.player) return;
     const fam = familyOf(this.player.cls ?? "");
     if (!fam) return;
-    const len = chainOf(this.player.cls).length; // 1=1차, 2=2차, 3=3차
-    if (len < 1 || len >= 3) return;
-    this.startJobStory(fam, (len + 1) as 2 | 3);
+    const len = chainOf(this.player.cls).length; // 1=1차 … 4=4차 (4차 시련 완료 후엔 종료)
+    if (len < 1 || len >= 4) return;
+    this.startJobStory(fam, (len + 1) as 2 | 3 | 4);
   }
 
   /** 전직 스토리 단계 완료 — 보상 지급 + 다음 단계 대사 */
@@ -8942,7 +9042,10 @@ export class WorldScene extends Phaser.Scene {
       } else if (finTier === 2) {
         this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 2차 전직이 해금되었다`);
       } else if (finTier === 3) {
-        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 최종 승격이 해금되었다`);
+        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 3차 전직이 해금되었다`);
+      } else if (finTier === 4) {
+        /* v1.0.12 (#4차전직퀘) — 4차 시련 완료 배너 (기존엔 4차 스토리 자체가 없었다) */
+        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 4차 전직이 해금되었다`);
       }
       this.emitRpgState();
     } else {
@@ -10538,6 +10641,20 @@ export class WorldScene extends Phaser.Scene {
   /** 크리티컬 명중 — metal_02 고피치 샤프 음 */
   sfxCrit() {
     audio.sfx.crit();
+  }
+
+  /** v1.0.12 — 크리티컬 스플랫 (Toon Shaders Pro 팩 — 유저 Drive 업로드 "고급 에셋"):
+   *  충격파 링 위에 터지는 방사형 스플랫 데칼 — 타격감 3중 구성(링+플래시+스플랫)의 마무리 */
+  spawnCritSplat(x: number, y: number, hex = 0xffd76a) {
+    if (!this.textures.exists("wx_splat")) return;
+    const im = this.add.image(x, y - 6, "wx_splat")
+      .setDepth(22)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(hex)
+      .setScale(0.38)
+      .setRotation(Math.random() * Math.PI * 2)
+      .setAlpha(0.85);
+    this.tweens.add({ targets: im, scale: 1.0, alpha: 0, duration: 300, ease: "Cubic.out", onComplete: () => im.destroy() });
   }
   /** 강화 성공 — 퀘스트 차임 저피치 (무게감) */
   sfxUpgradeOk() {

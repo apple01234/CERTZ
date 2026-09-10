@@ -354,6 +354,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const horiz = Math.abs(this.facing.x) >= Math.abs(this.facing.y);
           const key = horiz ? "hero-walk-side" : this.facing.y > 0 ? "hero-walk" : "hero-walk-up";
           if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) this.play(key); // v3.0.2 — 동일 버그
+          if (horiz) this.setFlipX(move.x > 0); // v1.0.12 — 회복 구간 걷기는 걷기 시트(좌향) 기준 — 공격 플립(우향)과 의미가 달라 직접 갱신
         }
       } else if (this.swingDone) {
         this.setVelocity(0, 0);
@@ -445,7 +446,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x > 0); // v3.0.10 — 측면 시트는 왼쪽 기준
+    this.setFlipX(dir.y === 0 && dir.x < 0); // v1.0.12 — 공격 시트는 우향 네이티브 (걷기와 플립 의미 반대)
     this.play(atkKey);
     // v3.0.2 — 도적(단검)은 참격 검기를 보라색으로 (무기 정체성)
     // v3.0.20 (#6) — 근접 직업 전원 검기 색 분리 (전원이 같은 색이었다)
@@ -514,7 +515,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *    비행 잔상(트레일) · 3발+ 동시 타격감 카메라 마이크로 셰이크 */
   private atkBow(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.setFlipX(dir.y === 0 && dir.x < 0);
     this.play(atkKey);
     const angle0 = Math.atan2(dir.y, dir.x);
     this.scene.spawnBow(this.x + dir.x * 10, this.y - 8, angle0);
@@ -584,7 +585,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  v3.0.15 (#4) — "N차마다 N개" 공식 적용 (1차 1발 ~ 4차 4발) */
   private atkBolt(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.setFlipX(dir.y === 0 && dir.x < 0);
     this.play(atkKey);
     this.scene.spawnCast(this.x + dir.x * 12, this.y - 12);
 
@@ -642,7 +643,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   private atkShuriken(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.setFlipX(dir.y === 0 && dir.x < 0);
     this.play(atkKey);
     const t = this.sTier;
     const empowered = this.nextAtkEmpowered;
@@ -672,6 +673,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocity(0, 0);
       }
     });
+  }
+
+  /** v1.0.12 — 공격 시트(hero_atk·hero_walkside와 다른 시트)는 우향 네이티브:
+   *  수평 성분이 우세할 때 왼쪽 조준이면 flip한다. 걷기/idle 시트는 좌향 네이티브라
+   *  플립 의미가 반대 — 걷기 flipX를 공격에 재사용하면 캐릭터와 투사체가 서로
+   *  반대방향을 보는 "투사체 스킬 좌우반전" 리포트의 근원 (데드아이 등 원거리 직업). */
+  private faceAtk(aim: Phaser.Math.Vector2) {
+    if (Math.abs(aim.x) >= Math.abs(aim.y)) this.setFlipX(aim.x < 0);
   }
 
   /** 조준 방향: 마지막 이동 방향(4방향 스냅 — 근접 애니메이션은 4방향 시트 기준) */
@@ -946,6 +955,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // 몸통(스프라이트) 360° 회전 — 검 뻗은 공격 프레임을 돌려 휘두르는 동작
+    this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.play("hero-atk");
     this.scene.tweens.add({
       targets: this,
@@ -1015,6 +1025,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const base = Math.atan2(aim.y, aim.x);
     const t = this.sTier;
     const hex = this.clsHex();
+    this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.play("hero-atk");
     this.scene.sfxSkill("arrow", 0.92); // v3.0.24 — 궁수 활발사 (회전베기음 → 활음 교체)
     const count = 3 + t;
@@ -1050,6 +1061,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private skill1Bolt() {
     const aim = this.aimDirFree(); // v3.0 — 8방향 자유 조준
     const angle = Math.atan2(aim.y, aim.x);
+    this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.play("hero-atk");
     this.scene.sfxSkill("flame"); // v3.0.24 — 마법사 대관통 볼트 (화염 시전음)
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8); // v3.0.2 — 시전 이펙트
@@ -1095,6 +1107,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const count = 5 + (t >= 3 ? 2 : 0);
     const spread = 0.62; // 부채꼴 전체 각 (rad)
+    this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.play("hero-atk");
     this.scene.sfxSkill("knife", 1.05); // v3.0.24 — 도적 단검 다연발
     for (let i = 0; i < count; i++) {
@@ -1127,7 +1140,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hex = this.clsHex();
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.play(atkKey);
-    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.setFlipX(dir.y === 0 && dir.x < 0);
     this.scene.sfxSkill("quake"); // v3.0.24 — 가디언 성벽 강타 (지진음)
     this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 1.5, hex);
     // 방어 버프 — 성벽 정체성 (전장의 함성 공격 버프와 별개 축)
@@ -1172,6 +1185,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const range = 560 + 40 * t;
     const halfW = t >= 4 ? 46 : 26;
+    this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.play("hero-atk");
     this.scene.sfxSkill("arrowpierce"); // v3.0.24 — 스나이퍼 관통 저격음 (샤프 관통 화살)
     // 저격 라인 이펙트 — px 직선 (spawnSlash 대신 씬 그래픽 풀 활용: 라인 + 머즐 플래시)
@@ -1213,6 +1227,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const base = Math.atan2(aim.y, aim.x);
     const t = this.sTier;
     const hex = this.clsHex();
+    this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.play("hero-atk");
     this.scene.sfxSkill("wind"); // v3.0.24 — 윈드러너 회오리 화살 (바람음)
     const shots = t >= 3 ? 2 : 1;
@@ -1241,6 +1256,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const angle = Math.atan2(aim.y, aim.x);
     const t = this.sTier;
     const hex = this.clsHex();
+    this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.play("hero-atk");
     this.scene.sfxSkill("electron"); // v3.0.24 — 아크메이지 아크 볼트 (전자음)
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8);
@@ -1262,6 +1278,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private skill1Purify() {
     const t = this.sTier;
     const hex = this.clsHex();
+    this.faceAtk(this.aimDir()); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.play("hero-atk");
     this.scene.sfxSkill("cure"); // v3.0.24 — 세이지 정화의 파동 (성스러운 회복음)
     const wave = (delay: number) => {
@@ -1309,6 +1326,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private skill1ShadowExec() {
     const t = this.sTier;
     const hex = this.clsHex();
+    this.faceAtk(this.aimDir()); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.play("hero-atk");
     this.scene.sfxSkill("iainuki"); // v3.0.24 — 어세신 그림자 참수 (발도음)
     const targets = this.nearestTargets(t >= 3 ? 2 : 1, 260);
@@ -1338,7 +1356,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           (this.body as Phaser.Physics.Arcade.Body).reset(nx, ny);
           this.scene.spawnBurstAt(nx, ny, 8, hex);
         }
-        this.setFlipX(lastDir.x > 0); // v3.0.10 — 시트 왼쪽 기준
+        this.setFlipX(lastDir.x < 0); // v1.0.12 — 공격 시트 우향 네이티브 (점멸 직후 참격 정면화)
         this.scene.spawnSlash(this.x, this.y, lastDir, i % 2 === 0, 1.2, hex);
         const { dmg, crit } = this.rollDamage(3.0 + 0.25 * t, true);
         if (crit) this.scene.sfxCrit();
@@ -1368,7 +1386,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hex = this.clsHex();
     const hits = t >= 3 ? 7 : 5;
     this.play("hero-atk");
-    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.setFlipX(dir.y === 0 && dir.x < 0);
     this.scene.sfxSkill("swift"); // v3.0.24 — 스와시버클러 연타 난무 (속공 베기)
     let total = 0;
     for (let i = 0; i < hits; i++) {

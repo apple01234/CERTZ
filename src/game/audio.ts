@@ -178,6 +178,10 @@ const VILLAGE_TRACKS = ["bgm_village1", "bgm_village2", "bgm_village3", "bgm_vil
  * kingdom=nidavellir(마을2), alfheim=hel(마을3) 처럼 멀리 떨어진 마을까지 같은 곡이 돌았다.
  * 9챕터 전부 서로 다른 곡 + 각 지역 정체성(설원/동굴/심연 계열 트랙 활용)으로 배치 */
 const VILLAGE_OF: Record<string, string> = {
+  /* v1.0.12 (#마을BGM) — 시작 마을 키 "village" 누락 수정: splitStage("village")는 ch="village"를
+   *  반환하는데 표에 없어 VILLAGE_TRACKS[-1 % 5] = undefined가 나와 본마을 BGM이 깨졌다
+   *  (침묵 또는 이전 트랙 잔존 → "마을마다 브금이 같다"로 느껴진 원인). */
+  village: "bgm_village1",    // 본마을 — 익숙한 주제곡 (시작 마을)
   forest: "bgm_village1",     // 본마을 — 익숙한 주제곡
   kingdom: "bgm_village2",    // 쿠소디아 왕국
   alfheim: "bgm_village3",    // 알프헤임 성전 마을
@@ -214,7 +218,7 @@ export function stageTrack(stage: string): string {
   if (stage === "interior_home") return "bgm_title4";
   const { ch, zone } = splitStage(stage);
   if (zone === 10) return BOSS_TRACKS[chIndexOf(ch) % BOSS_TRACKS.length]; // 보스 구역 — 전투곡 고정
-  if (zone <= 0) return VILLAGE_OF[ch] ?? VILLAGE_TRACKS[chIndexOf(ch) % VILLAGE_TRACKS.length]; // v1.0.2 — 챕터별 고정 마을 트랙
+  if (zone <= 0) return VILLAGE_OF[ch] ?? VILLAGE_TRACKS[Math.max(0, chIndexOf(ch)) % VILLAGE_TRACKS.length]; // v1.0.12 — 음수 인덱스 가드 (미지의 챕터 마을 폴백)
   return CHAPTER_THEME[ch] ?? FALLBACK_TRACKS[0]; // v4.1.3 — 챕터 테마 1곡
 }
 
