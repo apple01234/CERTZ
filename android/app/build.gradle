@@ -7,8 +7,8 @@ android {
         applicationId "com.sertz.yggdrasil"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 73
-        versionName "1.0.8" /* v1.0.8 — 로그인 DB 자가복구(오토시드)·로그인 창 컴팩트+스크롤·2-6 능대 퀘스트 수정·무한 콘텐츠 10종(심연의 탑/심층 균열/일일 시련/제작/펫 육성/황금몬스터/심연 상점/환생/주간 레이드/탑 랭킹) (versionCode는 단조 유지)*/
+        versionCode 75
+        versionName "1.0.10" /* v1.0.10 — GameStudio FX(앰비언트 블룸 상시+3D 프리렌더 VFX 25종)·보스 카메라 우회 근본 수정(재조우 시네마틱 생략+팬-팔로우 충돌 제거)·4차/5차 스킬 이펙트 전면 강화 (versionCode는 단조 유지)*/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

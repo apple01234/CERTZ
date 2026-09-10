@@ -1407,7 +1407,50 @@ Stage Summary:
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
 
 ---
+Task ID: 72
+Agent: Super Z (메인)
+Task: 유저 리포트 "GM 로그인 안됨" — 근본 원인 분석·수정·v1.0.9 빌드·릴리스 (versionCode 74)
+
+Work Log:
+- [진단] 서버 측 로그인 정상 실측(admin/admin123·apple01234/admin123 → role=admin, /api/auth/me Bearer 정상) — 서버 문제 아님
+- [핵심 단서] db/audit.log에 유저 로그인 시도 0건(오토시드 2건뿐) + 서버 재기동(02:54 샌드박스 리셋, PID 15833→1179) → 유저 트래픽이 이 서버에 도달하지 않는다고 확정
+- [근본 원인] ServerConnect.tsx DEFAULT_SERVER="https://sertz4.space-z.ai" (v3.1.0 유저확인 당시 주소)가 만료된 상태 그대로 APK에 고정 — 로그인(account.ts apiBase)·거래소·멀티 소켓(net.ts) 전부 같은 localStorage 키(sertz.server.url) 공유 → 전부 실패. DEAD_SERVERS 자동 이행 목록에 sertz4 누락이 재발의 근본 원인
+- [부대 원인 기록] 02:54 샌드박스 재시작으로 gitignored db/accounts.json 소실 → 오토시드(v1.0.8)가 admin/apple01234를 admin123으로 자동 재배치 — 서버 다운 타임 중 시도분은 연결 실패였을 것
+- [수정] ServerConnect.tsx: DEFAULT_SERVER → "https://sertz.z.ai" + DEAD_SERVERS에 sertz4(http/https) 추가(기존 설치도 첫 기동 자동 재작성+reload) + 주석에 원인 기록
+- [웹 E2E 실측 1280×720 가로] 타이틀→새로운 모험→계정 패널→admin 로그인 → "관리자 계정" 배지+GM NPC 4종 visible [true×4] · adminRole="admin" (v109_01~04)
+- [버저닝 7곳] build.gradle 74/1.0.9 · package.json · Overlays 배지 · server.js APK_MIRROR · next.config.ts APK_DL · apk-guide.html(제목/h1/notice 본문 교체+변경점/footer) · APK_다운로드_안내.txt — apk-guide에 "구버전 즉시 해결법(🌐 버튼→sertz.z.ai 수동 입력)" 안내 추가
+- [툴체인] 02:54 리셋으로 /home/z/jdk·android-sdk 소실 → rebuild_toolchain.sh 재구축(JDK21+SDK36) 후 빌드
+- [빌드] build_apk.sh 전체 파이프라인(APK_EXPORT next build → cap sync → gradle 5m33s) → SERTZ-v1.0.9.apk 105,309,330B · aapt versionCode 74/1.0.9 · md5 d95048aff3d13b90632d65674cd668b5 · APK 내부 검증: "sertz.z.ai" 4곳 검출, sertz4는 DEAD_SERVERS 배열에만 존재 확인
+- [릴리스] GitHub Release v1.0.9(id 385985773) 업로드 state=uploaded → 재다운로드 md5 원격 일치 ✓ · 서버 재기동(PID 3591, SERTZ_ADMIN_USERS 유지) → /apk-guide.html v1.0.9 서빙 + /SERTZ-v1.0.9.apk 307→GitHub 실측 · 타이틀 v1.0.9 배지 스크린샷(v109_06)
+
+Stage Summary:
+- v1.0.9 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.9/SERTZ-v1.0.9.apk (versionCode 74, 105MB, md5 d95048af…)
+- "GM 로그인 안됨" 결론: 서버·계정·GM 롤 로직 전부 정상(실측) — APK가 만료된 구 주소에 붙어 있었던 것. 구버전 즉시 우회: 우하단 🌐 → https://sertz.z.ai 입력 · v1.0.9 덮어설치 시 자동 이행
+- 운영 교훈: 서비스 주소 변경 시 (1) DEFAULT_SERVER (2) DEAD_SERVERS 등록 (3) 7곳 버저닝 3세트가 한 묶음 / 샌드박스 리셋마다 툴체인+db 소실 — rebuild_toolchain.sh·오토시드가 자가 복구
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
 Task ID: 73
+Agent: Super Z (메인)
+Task: 유저 4건 — ①"Game Studio 플러그인 적용" ②"3D 에셋 왜 적용 안함??" ③보스 등장 카메라 버그+평시 쉐이더 미적용 ④4차·5차 스킬 밋밋 — v1.0.10 확정·릴리스 (versionCode 75)
+
+Work Log:
+- [재난 복구] 02:54 샌드박스 리셋으로 research/(784MB 7팩) 재소실 확인 → upload/drive/file2_real.bin(=Vefects.7z 191MB, py7zr 재설치) 선별 추출로 research/vefects 285 텍스처 재확보 — Magic Attacks(원소 9종)/Slashes Piercing/AoE VFX/Anime Stylized 공용
+- [① GameStudio FX] "Game Studio 플러그인"은 코드·worklog·지시서·업로드 어디에도 미식별(웹검색 불확실) → 비주얼 스튜디오급 통합 FX 레이어 src/game/fx/StudioFX.ts 신설로 조치: ①addAmbientBloom/detachAmbientBloom(평시 서브틀 카메라 블룸) ②프리렌더 3D VFX 프리셋(spawnPentacle/FlarePop/RingPop/UltimateIntro). 유저가 정확한 레포/플러그인명 제공 시 추가 적용 필요 — 보고에 명시
+- [③ 쉐이더 평시 적용] 유저 리포트 "쉐이더가 보스전에만 적용"의 정체 = applyBossPostFX의 카메라 블룸이 보스전 한정이었던 구조. 수정: 앰비언트 블룸(threshold 0.74/blend 0.32) 신설 — fxLevel 1에서 상시 부착(씬 생성·applyFxMode·적응형 복원 3경로), 보스전 진입 시 강한 블룸으로 교체(clearBossPostFX에서 앰비언트 복귀), fxMode 3단계/적응형 축소와 연동. 실측: ambient=3 부착 확인
+- [③ 보스 카메라] bossIntroCinematic 선두 가드 추가 — `!DIALOGUES[id]||seenSet.has(id)`면 팬·물리정지 자체를 생략(재림/GM/재도전 = 즉시 전투). 팬-팔로우 충돌 스냅 제거: 시네마틱 중 stopFollow → restoreBossIntroCam 복귀 팬 완료 콜백에서 startFollow 재개. 실측: 첫 조우 시네마틱 정상(bossIntroPending=true) → 대사 종료 복귀 → 재소환 즉시 introPending=false·물리 가동(오염 케이스: 직전 보스 시네마틱 진행 중엔 pending 잔존 — 정상 동작)
+- [② 3D 에셋] gen_vfx_v1010.py — Vefects 25종 → public/assets/vf_*.webp(192KB, 512→384 다운스케일+q82): 펜타클 5(화이트/화염/전기/암흑/얼음)·원소 플레어 8·링 3·엠블럼 4·제네릭 5. 컨택트시트 육안 검수(contact_v1010.py). BootScene 로딩 25종 추가
+- [④ 스킬 강화] useSkill4 8종 전부 3D VFX 레이어 추가: doomsday(화염링+플레어+마법진)·judgment(기둥하단 골드 마법진+링)·godarrow(시전 마법진 스핀+플레어)·skystorm(자연 엠블럼 소용돌이+플레어 궤도)·manaburst(전기 마법진+보이드링)·eternalloop(시간정지 디스크+스파크 6방)·shadowclon(보이드 문양+암흑 플레어)·bladedance(점멸 임팩트+애니 참격 교차). useSkill5 공통 인트로 spawnUltimateIntro(마법진 스핀+이중 링+코어+4방 스파크) + 종결일격 8종 시그니처 + 5차 각성 의식 대형 골드 마법진. ADD 블렌드 과다노출 보정(alpha 0.85→0.66/0.62, 스케일 축소)
+- [검증 1280×720 가로] 타이틀 v1.0.10 배지·앰비언트 블룸 부착(ambient=3)·vf 텍스처 6/6 로드·궁극기 인트로 마법진 렌더 실측(v1010_10)·보스 재소환 무우회(v1010_14)·tsc 0에러·pageerror 0
+- [빌드·릴리스] build_apk.sh 전체 파이프라인(gradle 1m46s) → SERTZ-v1.0.10.apk 105,461,189B · aapt versionCode 75/1.0.10 · md5 6b6e1472ee1f543eaa5adfca1061ee21 · APK 내부 vf_ 25종+코드 검출 → GitHub Release v1.0.10(id 386005577) 업로드 → 재다운로드 md5 원격 일치 ✓ · 버저닝 7곳 · md5 기입·서빙 실측(307→v1.0.10·guide v1.0.10 7건)
+
+Stage Summary:
+- v1.0.10 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.10/SERTZ-v1.0.10.apk (versionCode 75, 105MB, md5 6b6e1472…)
+- ①GameStudio FX 통합 레이어 신설(평시 블룸+3D VFX 프리셋) ②Vefects 3D 25종 실전 투입 ③보스 카메라 근본 수정+쉐이더 상시화 ④4차/5차 스킬 전면 강화 — 유저 4건 전부 반영
+- 미해결: "Game Studio 플러그인"의 정확한 정체 미식별 — 유저 확인 필요(레포/링크/정식 명칭). 현재는 자체 구현 GameStudio FX로 대체 적용
+- 운영: research/는 리셋마다 소실 — upload/drive/ 원본(살아있음)에서 필요 시 재추출 / GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+Task ID: 74
 Agent: Super Z (메인)
 Task: 유저 상시 지시 정식화 — "N차마다 기존 스킬 강화 + 튜토리얼 제작" SOP 첫 운영 회차 (업로드 기술문서 v1.0 준거, 6단계 루프 + 8섹션 튜토리얼)
 
@@ -1430,4 +1473,4 @@ Work Log:
 Stage Summary:
 - 강화 스킬: version-management v2(481줄, 500줄 한도 준수 — 게이트 9/9) · task-review v2(본문 증강 — 게이트 9/9), 회귀 판정 PASS×2
 - 신규 산출: references 2+1(faq 포함) · evals.json 2건 · 튜토리얼 2건(8섹션, 게이트 6항 통과) · tutorials/README 2건 · CHANGELOG 2건 · 구조 검증기 + 비교 러너
-- 다음 차수 이월: ①evals 실실행 자동화(트리거 발동판정 러너) ②skill-creator 본문 485줄 임박 — 다음 강화 후보(패턴 D 예고) ③장기 미갱신 스킬 상위 10개 상세 점검(본 회차는 문서 규범 참조 3종 위주) ④Game Studio 플러그인·3D 에셋·보스 카메라/셰이더 상태 버그·4·5차 스킬 이펙트 강화(게임 측 4건 — 별도 이슈로 유지)
+- 다음 차수 이월: ①evals 실실행 자동화(트리거 발동판정 러너) ②skill-creator 본문 485줄 임박 — 다음 강화 후보(패턴 D 예고) ③장기 미갱신 스킬 상위 10개 상세 점검(본 회차는 문서 규범 참조 3종 위주) ④게임 측 4건(Game Studio FX·3D 에셋·보스 카메라/셰이더 버그·4·5차 스킬 이펙트) — 병행 세션 v1.0.10(8bd68fc)에서 완료 확인

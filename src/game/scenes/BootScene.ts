@@ -231,6 +231,15 @@ export class BootScene extends Phaser.Scene {
     this.load.image("hv_slash", "hv_slash.webp");
     this.load.image("hv_flash", "hv_flash.webp");
     this.load.image("uni_boom", "uni_boom.webp");
+    /* v1.0.10 — GameStudio FX: Vefects(Unity 3D VFX) 프리렌더 25종 — 4차/5차 스킬 강화 +
+     *  전투 상시 연출 (펜타클/원소 플레어/링/엠블럼/화이트 제네릭). scripts/gen_vfx_v1010.py 산출 */
+    for (const t of [
+      "vf_pentacle", "vf_penta_fire", "vf_penta_elec", "vf_penta_dark", "vf_penta_ice",
+      "vf_flare_fire", "vf_flare_elec", "vf_flare_dark", "vf_flare_ice", "vf_flare_nature",
+      "vf_flare_void", "vf_flare_water", "vf_flare_earth",
+      "vf_ring_void", "vf_ring_fire", "vf_emb_fire", "vf_emb_void", "vf_emb_nature", "vf_emb_sound",
+      "vf_slash", "vf_impact", "vf_ring", "vf_lightning", "vf_star", "vf_arrow",
+    ]) this.load.image(t, `${t}.webp`);
     /* v3.0.2 — 외부 신규 에셋 (전부 CC0, CREDITS.md 참조)
      *  50 Monsters Pack (isaiah658): 신규 몬스터 9종 × idle2/run4/atk1 프레임
      *  Pixelart Spells (Anokolisa?): 마법 투사체 6프레임 시트
