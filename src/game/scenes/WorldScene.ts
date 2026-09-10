@@ -39,6 +39,7 @@ import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
 import { applyToonStyle, clearToonStyle } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일)
+import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (앰비언트 블룸 + 3D 프리렌더 VFX 프리셋)
 import * as audio from "../audio";
 import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
@@ -853,6 +854,9 @@ export class WorldScene extends Phaser.Scene {
       this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
         rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
       });
+      /* v1.0.10 (#GameStudio FX) — 앰비언트 블룸: 보스전 전용이던 쉐이더를 평시 전투에도.
+       *  스킬 이펙트/파티클/참격이 카메라 블룸으로 발광 — “보스전에만 적용” 버그 해소 */
+      if (this.bossFilters.length === 0) this.ambientFilters = addAmbientBloom(this.cameras.main);
     }
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
     this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
@@ -2558,11 +2562,16 @@ export class WorldScene extends Phaser.Scene {
     return this.fxLevel === 0 ? 0.45 : 1;
   }
 
-  /* v1.0.8 — 그래픽 효과 모드 실제 적용: toon 림라이트 + 보스 블룸 부착(level 1) / 해제(level 0) */
+  /* v1.0.10 — 앰비언트 블룸 필터 (평시 서브틀 블룸 — 보스 블룸과 상호 배타) */
+  private ambientFilters: unknown[] = [];
+
+  /* v1.0.8 — 그래픽 효과 모드 실제 적용: toon 림라이트 + 보스 블룸 부착(level 1) / 해제(level 0)
+   *  v1.0.10 — 앰비언트 블룸 추가: 보스전 부재 시에도 평시 블룸 유지 (“쉐이더가 보스전에만” 버그) */
   private applyFxMode(level: 0 | 1) {
     try {
       if (level === 0) {
         if (this.bossFilters.length > 0) this.clearBossPostFX();
+        if (this.ambientFilters.length > 0) detachAmbientBloom(this.cameras.main, this.ambientFilters);
         if (this.playerToon && this.player) {
           clearToonStyle(this.player as unknown as Parameters<typeof clearToonStyle>[0]);
           this.playerToon = null;
@@ -2574,6 +2583,9 @@ export class WorldScene extends Phaser.Scene {
           });
         }
         if (this.boss?.active && this.bossFilters.length === 0) this.applyBossPostFX(this.bossChaos);
+        else if (this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL) {
+          this.ambientFilters = addAmbientBloom(this.cameras.main);
+        }
       }
     } catch { /* 필터 미지원 환경 무시 */ }
     console.info("[SERTZ] 그래픽 효과 모드 적용:", level === 1 ? "높음(셰이더 ON)" : "절전(셰이더 OFF)");
@@ -2607,6 +2619,8 @@ export class WorldScene extends Phaser.Scene {
         } catch { /* 배너 실패 무시 */ }
         /* v4.9.0 — 축소 모드 진입: 보스 블룸 즉시 해제 (프레임버퍼 다중 패스 = 모바일 최대 부하원) */
         if (this.bossFilters.length > 0) this.clearBossPostFX();
+        /* v1.0.10 — 앰비언트 블룸도 축소 (백그라운드 패스 절약 — 모바일 GPU 보호) */
+        if (this.ambientFilters.length > 0) detachAmbientBloom(this.cameras.main, this.ambientFilters);
         /* v1.0.2 (#툰셰이더) — 저사양 모드에선 플레이어/보스 툰 필터도 해제 */
         if (this.playerToon) {
           clearToonStyle(this.player as unknown as Parameters<typeof clearToonStyle>[0]);
@@ -2622,8 +2636,11 @@ export class WorldScene extends Phaser.Scene {
           this.fxLevel = 1;
           this.fxHighStreak = 0;
           console.info("[SERTZ] 적응형 품질 — FX 복원");
-          /* v4.9.0 — 복원: 보스전이면 블룸 재적용 */
+          /* v4.9.0 — 복원: 보스전이면 블룸 재적용, 평시면 앰비언트 블룸 복원 (v1.0.10) */
           if (this.boss?.active && this.bossFilters.length === 0) this.applyBossPostFX(this.bossChaos);
+          else if (this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL) {
+            this.ambientFilters = addAmbientBloom(this.cameras.main);
+          }
           /* v1.0.2 (#툰셰이더) — 복원 시 플레이어 툰 림라이트 재부착 */
           if (this.player && !this.playerToon) {
             this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
@@ -4756,6 +4773,10 @@ export class WorldScene extends Phaser.Scene {
       this.tweens.add({ targets: awFlash, alpha: 1, scale: 1.6, duration: 220, ease: "Cubic.out" });
       this.tweens.add({ targets: awFlash, alpha: 0, scale: 2.3, delay: 260, duration: 520, onComplete: () => awFlash.destroy() });
     }
+    /* v1.0.10 — GameStudio FX: 각성 의식 대형 골드 마법진 스핀+정화 링 (제5의 문 개방 연출) */
+    spawnPentacle(this, p.x, p.y, 0xffe66a, { scale: 3.2, duration: 1600, spin: true, alpha: 0.95 });
+    spawnRingPop(this, p.x, p.y, "vf_ring", 0xffe66a, 5.6, 1000);
+    spawnFlarePop(this, p.x, p.y - 10, "vf_flare_fire", { tint: 0xffe66a, scale: 2.0, duration: 700 });
     this.cameras.main.flash(240, 255, 230, 120);
     this.cameras.main.shake(460, 0.02);
     EventBus.emit("banner:show", {
@@ -5283,11 +5304,19 @@ export class WorldScene extends Phaser.Scene {
    *  v3.3.0 (#흑화) — 전체 try/catch: 시네마틱 도중 예외로 physics 정지가 누출되는 것 차단 */
   private bossIntroCinematic(bx: number, by: number, introId: string) {
     try {
+      /* v1.0.10 (#보스카메라 버그) — 이미 본 인트로 대사면 카메라 우회를 아예 하지 않는다.
+       *  기존: 재림·GM·재도전 보스마다 “보스 팬(900ms)→1.1초 홀드→플레이어 복귀 팬(620ms)”
+       *  반복 — 대사 없는 카메라 왕복이 “보스를 잠깐 가리키고 플레이어를 바라보는 버그”로 인식됨.
+       *  신규: 첫 조우(미본 대사)에만 시네마틱, 이후는 배너·포효·진동만으로 즉시 전투 개시. */
+      if (!DIALOGUES[introId] || this.seenSet.has(introId)) return;
       const cam = this.cameras.main;
       this.dialoguing = true;
       this.dialogueSince = this.time.now; // v3.3.0 — 붙임 자가치유 기준
       this.player.setVelocity(0, 0);
       this.physics.world.pause();
+      /* v1.0.10 — 시네마틱 동안 팔로우 정지: 팬 종료 시점에 팔로우가 개입해 순간 스냅되던
+       *  카메라 점프 근본 제거 (복귀는 restoreBossIntroCam의 팬 완료 콜백에서 재개) */
+      cam.stopFollow();
       /* v1.0.2 (#보스컷씬) — ① 보스 정확히 바라보기(중앙 고정 팬) ② 대사가 끝날 때까지 카메라 보스 유지.
        *  기존: 820ms 후 플레이어 복귀 팬 → 대사 도중 시점 복귀 + 대사 종료 전 컷씬 종료 느낌.
        *  복귀는 resumeFromDialogue(대사 완료 이벤트)에서 restoreBossIntroCam()으로 보간 처리 */
@@ -5320,7 +5349,15 @@ export class WorldScene extends Phaser.Scene {
     this.bossIntroPending = false;
     try {
       const cam = this.cameras.main;
-      if (this.player?.active) cam.pan(this.player.x, this.player.y, 620, "Sine.easeInOut", true);
+      if (this.player?.active) {
+        /* v1.0.10 — 복귀 팬 완료 콜백에서 팔로우 재개: 팬 도중 팔로우 개입으로 카메라가
+         *  순간 스냅되던 근본 수정 (보스 인트로 종료 후 뚝 끊기는 느낌 해소) */
+        cam.pan(this.player.x, this.player.y, 620, "Sine.easeInOut", true, () => {
+          if (this.player) cam.startFollow(this.player, true, 0.18, 0.18);
+        });
+      } else if (this.player) {
+        cam.startFollow(this.player, true, 0.18, 0.18);
+      }
     } catch (err) {
       console.warn("[SERTZ] 보스 인트로 카메라 복귀 실패 — 무시", err);
     }
@@ -5342,6 +5379,8 @@ export class WorldScene extends Phaser.Scene {
       const cam = this.cameras.main;
       /* v4.9.0 — FX 축소 모드(fxLevel 0)에선 블룸 자체를 생략 (모바일 GPU 최대 부하원) */
       if (this.fxLevel === 0) return;
+      /* v1.0.10 — 보스 블룸과 앰비언트 블룸은 상호 배타: 프레임버퍼 패스 이중화 방지 */
+      if (this.ambientFilters.length > 0) detachAmbientBloom(cam, this.ambientFilters);
       if (this.game.renderer.type === Phaser.WEBGL && cam.filters) {
         /* v4.7.0 — Phaser 4: v3 postFX.addBloom 대신 AddEffectBloom(Threshold+Blur+ParallelFilters 합성).
          *  v3 강도(strength 0.68/0.46, steps 4)를 config로 이식 — 보스전 블룸 체감 동일 유지 */
@@ -5393,6 +5432,10 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.2 (#툰셰이더) — 보스 스프라이트 툰 필터도 함께 해제 */
     if (this.boss) clearToonStyle(this.boss as unknown as Parameters<typeof clearToonStyle>[0]);
     this.bossToon = null;
+    /* v1.0.10 — 보스전 종료 후 평시 앰비언트 블룸으로 복귀 (fxLevel 유지 시) */
+    if (this.fxLevel >= 1 && this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL) {
+      this.ambientFilters = addAmbientBloom(this.cameras.main);
+    }
     this.bossEmber?.destroy();
     this.bossEmber = null;
     this.bossLight?.destroy();

@@ -43,7 +43,7 @@ export function TitleScreen() {
           이그드라실 : 아홉 왕국
           {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
            *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.9 — GM 로그인 복구: APK 서버 주소 갱신(sertz.z.ai)+구주소 자동 이행 · 연결 실패 원탭 복구</span>
+          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.10 — GameStudio FX: 평시 쉐이더 상시+3D VFX 25종 · 보스 카메라 버그 수정 · 4차·5차 스킬 이펙트 대강화</span>
         </p>
       </div>
 

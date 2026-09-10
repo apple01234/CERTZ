@@ -16,6 +16,7 @@ import {
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
+import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화)
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
 import type { Enemy } from "./Enemy";
@@ -2164,6 +2165,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnCrack?.(this.x, this.y);
           this.scene.spawnBurstAt(this.x, this.y, 46, hex);
           this.scene.spawnPillar(this.x, this.y, hex, 170);
+          /* v1.0.10 — GameStudio FX: 종언 대폭발 3중 합성 (화염 링+코어 플레어+마법진) */
+          spawnRingPop(this.scene, this.x, this.y, "vf_ring_fire", 0xffffff, 3.6, 560);
+          spawnFlarePop(this.scene, this.x, this.y - 6, "vf_flare_fire", { scale: 1.6, duration: 520 });
+          spawnPentacle(this.scene, this.x, this.y, 0xff6a3a, { tex: "vf_penta_fire", scale: 1.5, duration: 760 });
           this.scene.cameras.main.shake(200, 0.014);
           this.scene.cameras.main.flash(120, 255, 90, 50);
           for (const e of this.getAllTargetsIn(300)) {
@@ -2186,6 +2191,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (!e.active || this.state === "dead") return;
             this.scene.spawnPillar(e.x, e.y, 0xffe9a0, 220);
             this.scene.spawnBurstAt(e.x, e.y, 12, 0xffe9a0);
+            /* v1.0.10 — GameStudio FX: 기둥 하단 마법진+골드 링 (심판의 무게감) */
+            spawnPentacle(this.scene, e.x, e.y, 0xffe9a0, { scale: 0.9, duration: 620 });
+            spawnRingPop(this.scene, e.x, e.y, "vf_ring", 0xffe9a0, 2.2, 440);
             const { dmg, crit } = this.rollDamage(4.2, true);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 300, crit);
@@ -2215,6 +2223,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         this.scene.spawnBurstAt(this.x, this.y, 16, hex);
+        /* v1.0.10 — GameStudio FX: 시전 마법진+코어 플레어 (신의 화살비 발동 무게감) */
+        spawnPentacle(this.scene, this.x, this.y, hex, { scale: 1.15, duration: 840, spin: true });
+        spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_elec", { scale: 1.1, duration: 480 });
         this.scene.cameras.main.shake(80, 0.004);
         break;
       }
@@ -2242,6 +2253,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.selfSpdBuff = { mult: 1.3, until: now + 5000 };
         this.recalcSpeed();
         this.scene.spawnBurstAt(this.x, this.y, 22, hex);
+        /* v1.0.10 — GameStudio FX: 폭풍의 눈에 자연 엠블럼(소용돌이)+플레어 궤도 */
+        spawnPentacle(this.scene, this.x, this.y - 4, 0x7ade8a, { tex: "vf_emb_nature", scale: 2.1, duration: 1500, spin: true });
+        for (let k = 0; k < 3; k++) {
+          const a = (Math.PI * 2 * k) / 3;
+          spawnFlarePop(this.scene, this.x + Math.cos(a) * 52, this.y - 8 + Math.sin(a) * 36, "vf_flare_nature", { scale: 0.75, duration: 900, angle: a });
+        }
         this.scene.cameras.main.shake(100, 0.006);
         this.scene.spawnPickupText(this.x, this.y - 44, "천공의 폭풍! 신속 버프", "#ccffe8");
         break;
@@ -2254,6 +2271,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const mult = 3.2 + 4.2 * ratio;
         this.scene.spawnBurstAt(this.x, this.y, 42, hex);
         this.scene.spawnPillar(this.x, this.y, hex, 190);
+        /* v1.0.10 — GameStudio FX: 마나 붕괴 전기 마법진+보이드 링+플레어 코어 */
+        spawnPentacle(this.scene, this.x, this.y, 0x8ab0ff, { tex: "vf_penta_elec", scale: 1.45, duration: 820 });
+        spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0x8ab0ff, 3.2, 600);
+        spawnFlarePop(this.scene, this.x, this.y - 6, "vf_flare_elec", { scale: 1.5, duration: 500 });
         this.scene.cameras.main.shake(180, 0.012);
         this.scene.cameras.main.flash(110, 120, 140, 255);
         for (const e of this.getAllTargetsIn(350)) {
@@ -2288,6 +2309,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         this.scene.spawnBurstAt(this.x, this.y, 30, 0xb0a0ff);
         this.scene.spawnPillar(this.x, this.y, 0xb0a0ff, 160);
+        /* v1.0.10 — GameStudio FX: 시간 정지 디스크 (보이드 링+마법진 스핀+스파크) */
+        spawnRingPop(this.scene, this.x, this.y + 8, "vf_ring_void", 0xb0a0ff, 4.4, 1000);
+        spawnPentacle(this.scene, this.x, this.y, 0xb0a0ff, { scale: 1.8, duration: 1100, spin: true });
+        for (let k = 0; k < 6; k++) {
+          const a = (Math.PI * 2 * k) / 6;
+          const sx = this.x + Math.cos(a) * 40, sy = this.y + Math.sin(a) * 26;
+          const texExists = this.scene.textures.exists("vf_star");
+          if (!texExists) break;
+          const sp = this.scene.add.image(sx, sy, "vf_star").setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(0xd8ccff).setScale(0.2).setAlpha(0.9);
+          this.scene.tweens.add({ targets: sp, x: sx + Math.cos(a) * 90, y: sy + Math.sin(a) * 60, alpha: 0, scale: 0.04, duration: 700, ease: "Cubic.out", onComplete: () => sp.destroy() });
+        }
         this.scene.cameras.main.flash(140, 220, 200, 255);
         this.scene.spawnPickupText(this.x, this.y - 44, "영원의 고리 — 시간 정지!", "#ffffff");
         break;
@@ -2301,7 +2333,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         targets.forEach((e, i) => {
           this.scene.time.delayedCall(i * 150, () => {
-            if (e.active && this.state !== "dead") this.scene.fireShadowClone(e, hex, 3.0);
+            if (e.active && this.state !== "dead") {
+              this.scene.fireShadowClone(e, hex, 3.0);
+              /* v1.0.10 — GameStudio FX: 분신 소환 보이드 문양+암흑 플레어 */
+              spawnPentacle(this.scene, e.x, e.y, 0xb08aff, { tex: "vf_emb_void", scale: 0.85, duration: 700 });
+              spawnFlarePop(this.scene, e.x, e.y - 6, "vf_flare_dark", { scale: 0.95, duration: 460 });
+            }
           });
         });
         this.scene.spawnBurstAt(this.x, this.y, 14, hex);
@@ -2326,6 +2363,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.setPosition(nx, ny);
             const dir2 = new Phaser.Math.Vector2(e.x - nx, e.y - ny).normalize();
             this.scene.spawnSlash(nx, ny, dir2, i % 2 === 0, 1.45, hex);
+            /* v1.0.10 — GameStudio FX: 점멸 타격 임팩트+애니 참격 교차 (홀수번째) */
+            spawnFlarePop(this.scene, e.x, e.y - 6, "vf_impact", { tint: hex, scale: 0.9, duration: 380 });
+            if (i % 2 === 0) spawnFlarePop(this.scene, e.x, e.y - 6, "vf_slash", { tint: 0xffffff, scale: 1.05, duration: 360, angle: dir2.angle() });
+            spawnRingPop(this.scene, nx, ny, "vf_ring", hex, 1.7, 360);
             const { dmg, crit } = this.rollDamage(2.4, true);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, dir2, 240, crit);
@@ -2438,6 +2479,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.sfxSkill("timestop", 1.06);
     this.scene.cameras.main.flash(140, 255, 255, 255);
     this.scene.spawnPickupText(this.x, this.y - 58, `★ ${info.name} ★`, "#ffe66a");
+    /* v1.0.10 — GameStudio FX 궁극기 인트로: 프리렌더 3D 마법진(클래스 컬러 스핀)+이중 확장 링+
+     *  임팩트 코어+4방향 스파크 합성 — "4차·5차 밋밋함" 지시의 대표 개선점 */
+    spawnUltimateIntro(this.scene, this.x, this.y, hex);
     const ring = this.scene.add.circle(this.x, this.y, 34)
       .setStrokeStyle(3, hex, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.scene.tweens.add({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
@@ -2471,6 +2515,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnPillar(this.x, this.y, hex, 300);
           this.scene.spawnBurstAt(this.x, this.y, 80, hex);
+          /* v1.0.10 — GameStudio FX 종결 강화: 화염 링+대형 플레어+전투 엠블럼 (천멸의 각인) */
+          spawnRingPop(this.scene, this.x, this.y, "vf_ring_fire", 0xffffff, 5.2, 720);
+          spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_fire", { scale: 2.3, duration: 640 });
+          spawnPentacle(this.scene, this.x, this.y, 0xffd0a0, { tex: "vf_emb_fire", scale: 2.6, duration: 900 });
           this.scene.cameras.main.shake(460, 0.022);
           this.scene.cameras.main.flash(170, 255, 110, 50);
           this.scene.sfxSkill("superhit", 0.82);
@@ -2513,6 +2561,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xffffff, 320);
           this.scene.spawnPurifyRing(this.x, this.y, 560, 0xffe9a0);
           this.scene.spawnBurstAt(this.x, this.y, 80, 0xffe9a0);
+          /* v1.0.10 — GameStudio FX 종결 강화: 대형 골드 마법진 스핀+정화 링 */
+          spawnPentacle(this.scene, this.x, this.y, 0xffe9a0, { scale: 3.0, duration: 1100, spin: true, alpha: 0.95 });
+          spawnRingPop(this.scene, this.x, this.y, "vf_ring", 0xffe9a0, 5.0, 800);
           this.scene.cameras.main.flash(200, 255, 245, 200);
           this.scene.cameras.main.shake(460, 0.02);
           this.scene.sfxSkill("holy", 0.72);
@@ -2559,6 +2610,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSnipeBeam(this.x, this.y - 8, this.x + dir.x * 1400, this.y + dir.y * 1400, 0xffd76a);
             this.scene.cameras.main.shake(140, 0.012);
             this.scene.sfxSkill("snipe", 0.85);
+            /* v1.0.10 — GameStudio FX: 저격선 발사 코어 플레어+스파크 */
+            spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_elec", { tint: 0xffd76a, scale: 1.15, duration: 420 });
+            spawnFlarePop(this.scene, this.x + dir.x * 60, this.y - 8 + dir.y * 60, "vf_arrow", { tint: 0xffe9a0, scale: 1.2, duration: 460, angle: dir.angle() });
             for (const e of this.getAllTargetsIn(1400)) {
               const rel = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y);
               if (rel.normalize().dot(dir) < 0.92) continue; // 저격선 근처만
@@ -2597,6 +2651,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               if (this.state === "dead" || !t.active) return;
               this.scene.spawnPillar(t.x, t.y, 0xaed8ff, 240);
               this.scene.spawnBurstAt(t.x, t.y, 24, 0xaed8ff);
+              /* v1.0.10 — GameStudio FX: 낙뢰 3D 플레어+임팩트 (연쇄 낙뢰) */
+              spawnFlarePop(this.scene, t.x, t.y - 10, "vf_lightning", { tint: 0xcfe8ff, scale: 1.3, duration: 420 });
+              spawnRingPop(this.scene, t.x, t.y, "vf_ring", 0xaed8ff, 2.0, 420);
               this.scene.cameras.main.shake(110, 0.011);
               this.scene.sfxSkill("thunder", 0.82 + (i % 3) * 0.08);
               const away = new Phaser.Math.Vector2(0, 0.1).normalize();
@@ -2644,6 +2701,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xffffff, 320);
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnBurstAt(this.x, this.y, 90, hex);
+          /* v1.0.10 — GameStudio FX 종결 강화: 전기 마법진+보이드 링 3중 합성 (마나 붕괴) */
+          spawnPentacle(this.scene, this.x, this.y, 0x8ab0ff, { tex: "vf_penta_elec", scale: 2.8, duration: 1000 });
+          spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xaec6ff, 5.4, 820);
+          spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_elec", { scale: 2.4, duration: 620 });
           this.scene.spawnField({
             x: this.x, y: this.y, radius: 250, dur: 6000,
             dps: Math.max(18, Math.round(this.atkTotal * 1.7)),
@@ -2707,6 +2768,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnPillar(this.x, this.y, 0xd8ccff, 300);
           this.scene.spawnBurstAt(this.x, this.y, 76, 0xb0a0ff);
+          /* v1.0.10 — GameStudio FX 종결 강화: 영겁의 균열 — 시간 마법진 스핀+보이드 링 */
+          spawnPentacle(this.scene, this.x, this.y, 0xb0a0ff, { scale: 2.8, duration: 1150, spin: true });
+          spawnRingPop(this.scene, this.x, this.y + 6, "vf_ring_void", 0xffffff, 5.0, 860);
           this.scene.cameras.main.flash(200, 216, 204, 255);
           this.scene.cameras.main.shake(480, 0.02);
           this.scene.sfxSkill("superhit", 0.84);
@@ -2750,6 +2814,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0x8a4aff, 290);
           this.scene.spawnBurstAt(this.x, this.y, 80, 0x8a4aff);
           this.scene.spawnCrack(this.x, this.y);
+          /* v1.0.10 — GameStudio FX 종결 강화: 심연 각인 (보이드 엠블럼+암흑 플레어+보이드 링) */
+          spawnPentacle(this.scene, this.x, this.y, 0xc090ff, { tex: "vf_emb_void", scale: 2.6, duration: 950 });
+          spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_dark", { scale: 2.2, duration: 640 });
+          spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xffffff, 4.8, 780);
           this.scene.cameras.main.flash(190, 90, 40, 160);
           this.scene.cameras.main.shake(500, 0.022);
           this.scene.sfxSkill("dark", 0.66);
@@ -2792,6 +2860,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnSpinSlash(this.x, this.y, 2);
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnBurstAt(this.x, this.y, 70, hex);
+          /* v1.0.10 — GameStudio FX 종결 강화: 교차 쌍검 애니 참격+링 (극의 일격) */
+          spawnFlarePop(this.scene, this.x + dir.x * 44, this.y - 6, "vf_slash", { tint: hex, scale: 2.6, duration: 560, angle: dir.angle() });
+          spawnFlarePop(this.scene, this.x + dir.x * 44, this.y - 6, "vf_slash", { tint: 0xffffff, scale: 2.2, duration: 500, angle: dir.angle() + 0.5 });
+          spawnRingPop(this.scene, this.x, this.y, "vf_ring", hex, 4.6, 700);
           this.scene.cameras.main.flash(180, 255, 255, 255);
           this.scene.cameras.main.shake(440, 0.021);
           this.scene.sfxSkill("iainuki", 0.6);

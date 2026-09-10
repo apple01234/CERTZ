@@ -1428,3 +1428,24 @@ Stage Summary:
 - "GM 로그인 안됨" 결론: 서버·계정·GM 롤 로직 전부 정상(실측) — APK가 만료된 구 주소에 붙어 있었던 것. 구버전 즉시 우회: 우하단 🌐 → https://sertz.z.ai 입력 · v1.0.9 덮어설치 시 자동 이행
 - 운영 교훈: 서비스 주소 변경 시 (1) DEFAULT_SERVER (2) DEAD_SERVERS 등록 (3) 7곳 버저닝 3세트가 한 묶음 / 샌드박스 리셋마다 툴체인+db 소실 — rebuild_toolchain.sh·오토시드가 자가 복구
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 73
+Agent: Super Z (메인)
+Task: 유저 4건 — ①"Game Studio 플러그인 적용" ②"3D 에셋 왜 적용 안함??" ③보스 등장 카메라 버그+평시 쉐이더 미적용 ④4차·5차 스킬 밋밋 — v1.0.10 확정·릴리스 (versionCode 75)
+
+Work Log:
+- [재난 복구] 02:54 샌드박스 리셋으로 research/(784MB 7팩) 재소실 확인 → upload/drive/file2_real.bin(=Vefects.7z 191MB, py7zr 재설치) 선별 추출로 research/vefects 285 텍스처 재확보 — Magic Attacks(원소 9종)/Slashes Piercing/AoE VFX/Anime Stylized 공용
+- [① GameStudio FX] "Game Studio 플러그인"은 코드·worklog·지시서·업로드 어디에도 미식별(웹검색 불확실) → 비주얼 스튜디오급 통합 FX 레이어 src/game/fx/StudioFX.ts 신설로 조치: ①addAmbientBloom/detachAmbientBloom(평시 서브틀 카메라 블룸) ②프리렌더 3D VFX 프리셋(spawnPentacle/FlarePop/RingPop/UltimateIntro). 유저가 정확한 레포/플러그인명 제공 시 추가 적용 필요 — 보고에 명시
+- [③ 쉐이더 평시 적용] 유저 리포트 "쉐이더가 보스전에만 적용"의 정체 = applyBossPostFX의 카메라 블룸이 보스전 한정이었던 구조. 수정: 앰비언트 블룸(threshold 0.74/blend 0.32) 신설 — fxLevel 1에서 상시 부착(씬 생성·applyFxMode·적응형 복원 3경로), 보스전 진입 시 강한 블룸으로 교체(clearBossPostFX에서 앰비언트 복귀), fxMode 3단계/적응형 축소와 연동. 실측: ambient=3 부착 확인
+- [③ 보스 카메라] bossIntroCinematic 선두 가드 추가 — `!DIALOGUES[id]||seenSet.has(id)`면 팬·물리정지 자체를 생략(재림/GM/재도전 = 즉시 전투). 팬-팔로우 충돌 스냅 제거: 시네마틱 중 stopFollow → restoreBossIntroCam 복귀 팬 완료 콜백에서 startFollow 재개. 실측: 첫 조우 시네마틱 정상(bossIntroPending=true) → 대사 종료 복귀 → 재소환 즉시 introPending=false·물리 가동(오염 케이스: 직전 보스 시네마틱 진행 중엔 pending 잔존 — 정상 동작)
+- [② 3D 에셋] gen_vfx_v1010.py — Vefects 25종 → public/assets/vf_*.webp(192KB, 512→384 다운스케일+q82): 펜타클 5(화이트/화염/전기/암흑/얼음)·원소 플레어 8·링 3·엠블럼 4·제네릭 5. 컨택트시트 육안 검수(contact_v1010.py). BootScene 로딩 25종 추가
+- [④ 스킬 강화] useSkill4 8종 전부 3D VFX 레이어 추가: doomsday(화염링+플레어+마법진)·judgment(기둥하단 골드 마법진+링)·godarrow(시전 마법진 스핀+플레어)·skystorm(자연 엠블럼 소용돌이+플레어 궤도)·manaburst(전기 마법진+보이드링)·eternalloop(시간정지 디스크+스파크 6방)·shadowclon(보이드 문양+암흑 플레어)·bladedance(점멸 임팩트+애니 참격 교차). useSkill5 공통 인트로 spawnUltimateIntro(마법진 스핀+이중 링+코어+4방 스파크) + 종결일격 8종 시그니처 + 5차 각성 의식 대형 골드 마법진. ADD 블렌드 과다노출 보정(alpha 0.85→0.66/0.62, 스케일 축소)
+- [검증 1280×720 가로] 타이틀 v1.0.10 배지·앰비언트 블룸 부착(ambient=3)·vf 텍스처 6/6 로드·궁극기 인트로 마법진 렌더 실측(v1010_10)·보스 재소환 무우회(v1010_14)·tsc 0에러·pageerror 0
+- [빌드·릴리스] build_apk.sh 전체 파이프라인(gradle 1m46s) → SERTZ-v1.0.10.apk 105,461,189B · aapt versionCode 75/1.0.10 · md5 6b6e1472ee1f543eaa5adfca1061ee21 · APK 내부 vf_ 25종+코드 검출 → GitHub Release v1.0.10(id 386005577) 업로드 → 재다운로드 md5 원격 일치 ✓ · 버저닝 7곳 · md5 기입·서빙 실측(307→v1.0.10·guide v1.0.10 7건)
+
+Stage Summary:
+- v1.0.10 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.10/SERTZ-v1.0.10.apk (versionCode 75, 105MB, md5 6b6e1472…)
+- ①GameStudio FX 통합 레이어 신설(평시 블룸+3D VFX 프리셋) ②Vefects 3D 25종 실전 투입 ③보스 카메라 근본 수정+쉐이더 상시화 ④4차/5차 스킬 전면 강화 — 유저 4건 전부 반영
+- 미해결: "Game Studio 플러그인"의 정확한 정체 미식별 — 유저 확인 필요(레포/링크/정식 명칭). 현재는 자체 구현 GameStudio FX로 대체 적용
+- 운영: research/는 리셋마다 소실 — upload/drive/ 원본(살아있음)에서 필요 시 재추출 / GitHub 토큰 노출 지속 — 재발급 권고 필수
