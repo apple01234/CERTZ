@@ -1405,3 +1405,29 @@ Stage Summary:
 - ①확률: 감사 결과 롤 로직 정직 확인 — 주작 없음을 전제로 eert 공시+이중 천장(강화 실패 가산·잠재 확정)으로 신뢰 구조 확립 ②셰이더: enableFilters opt-in 근본 버그 수정(도입 후 처음으로 정상 부착) + 그래픽 효과 3모드 설정으로 유저 제어 가능 ③v1.0.8 전체 마무리 검증 완료 ④APK 릴리스 완료
 - 운영 교훈: APK 빌드는 반드시 scripts/build_apk.sh (cap sync 포함) — gradle 단독 실행 시 스테일 .next-apk 서빙됨 / GitHub 원격에 병행 세션의 동명 커밋 분기 상주 — 푸시 전 fetch 필수
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 73
+Agent: Super Z (메인)
+Task: 유저 상시 지시 정식화 — "N차마다 기존 스킬 강화 + 튜토리얼 제작" SOP 첫 운영 회차 (업로드 기술문서 v1.0 준거, 6단계 루프 + 8섹션 튜토리얼)
+
+Work Log:
+- [문서 인수] 업로드 문서(스킬강화_튜토리얼제작_기술문서_v1.0_2026-09-10.docx, 525단락) 전문 해석 — 6단계 강화 루프(스캔→선정→스냅샷→패턴적용→회귀검증→갱신종결)·강화 패턴 A~E·튜토리얼 8섹션 표준·품질 게이트 6항·worklog 기록 표준을 그대로 절차로 채택
+- [STEP 1 스캔] skills/ 70개 전수 구조 스캔 — BROKEN(frontmatter/description 누락) 0건, 스캔 요약 본 항목에 기록
+- [STEP 2 선정] 선정 기준표 평가 → 2개 확정: ①version-management(본문 582줄 = 500줄 한도 위반 → 패턴 D 필수 + git 운영 실장애 이력 → 패턴 E) ②task-review(본문 49줄 빈약 + description 경계 부재 + 踩坑记录 공란 — 실제 반복 장애 다수 → 패턴 A/B/E)
+- [STEP 3 스냅샷] skills-workspace/*-snapshot 복사(md5 원본 일치 검증) + git 태그 version-management/v1·task-review/v1 (HEAD bffea14 시점 고정, 순서 불변 준수: 스냅샷 → 편집 → 검증)
+- [강화] version-management (패턴 D): 본문 582→481줄 — §3.4.2/3.4.3/3.4.4(다중 진입·prototype 쌍파일·fixed-image export) → references/delivery-variants.md, §5(meta.json) → references/meta-json-spec.md, 원문 전부 보존 이동(핵심 문구 5건 검출 검증), 본문은 핵심 규칙+포인터만 유지. §8 학습자산 포인터 신설
+- [강화] version-management (패턴 E): references/faq.md 신설 — worklog Task 71 실측 장애 3건(스테일 산출물 커밋 / push 분기 거부 / 원격 md5 절단 다운로드)을 증상/원인/해결/재발방지 4항목으로 기록(추측 기록 0)
+- [강화] task-review (패턴 A): description 3요소 튜닝 — 정량 트리거 기준(도구 ≥5회/오류 극복/단계 ≥3) + 발동 발화 예시 + 비발동 경계(단순 요청·완전 실패·스킵 지시). before 1문장 → after 경계 완비
+- [강화] task-review (패턴 B+E): 기존 틀 유지(触发时机/执行步骤/质量标准/踩坑记录 구조·원문 지침 보존) 상태로 — 중복 검사 사유(이유 설명형), 스냅샷 선행 규칙, 500줄 예산+references 계층화, 근본 원인 수준 일반화 의무, worklog 연동 8단계 추가, 踩坑记录 실기록 2건 충원(운영 교훈 지연 승격·description 경계 부재)
+- [신설] evals/evals.json 2건 — version-management 회귀 3건(생성/수정/복원 흐름), task-review 트리거 4건(발동 2 + 비발동 2)
+- [검증] 구조 회귀 검증기 신설(scripts/validate_skill_structure.py — 9개 게이트 G1~G9 + 원문 보존 마커) + run_regression.py 비교 실행: version-management 5/9 → 9/9, task-review 4/9 → 9/9 — 통과율 하락 0 + 개선 +4/+5, 원문 보존 6/6 마커 전부 통과. evals 실실행은 다음 회차 자동화 과제(수동 폴백 판정: 구조 게이트 정량 통과 + 트리거용例 검토로 동등 이상 확인, 근거 본 기록)
+- [튜토리얼] 8섹션 표준 2건 제작: task-review/tutorials/tutorial-first-skillization-2026-09-10.md(worklog 소재 발굴→중복 확인→SKILL.md 3요소→evals→인덱스→검증기 9/9, 랩 샌드박스 long-build-fg 실측 9/9) · version-management/tutorials/tutorial-first-versioning-2026-09-10.md(V1 생성→V2 수정→V1 복원(V3), 실측 태그 v1/v2/v3·로그 3건 일치) + tutorials/README.md 인덱스 2건
+- [튜토리얼 게이트] 6항 전부 통과: 실행 검증(양츠 튜토리얼 명령 전부 실제 실행 — 게이트 1)·복사 가능성(코드블록 그대로 실행됨)·관찰 명시(전 단계 예상 관찰 기재, 실측과 불일치 2건은 즉시 문서 교정: worklog 출현수 3→6 표기, meta.json 제외 확인 명령 교체)·약속 일관성(9/9·v1v2v3 실측)·유형 순수성(특수 규칙은 references 위임)·FAQ 근거성(faq.md/worklog 실제 기록만 인용)
+- [버전 갱신] CHANGELOG.md 2건 신설(v1/v2 이력) + 태그 version-management/v2·task-review/v2 부여 — 순차 증가·소급 변경 없음
+- [운영 메모] skills-workspace/ 를 .gitignore 추가(스냅샷·랩은 태그로 시점 고정, 저장소 블로트 방지). 검증기 G3 키워드 한국어 경계 표현(금지/하지 않/스킵 등) 지원 추가
+
+Stage Summary:
+- 강화 스킬: version-management v2(481줄, 500줄 한도 준수 — 게이트 9/9) · task-review v2(본문 증강 — 게이트 9/9), 회귀 판정 PASS×2
+- 신규 산출: references 2+1(faq 포함) · evals.json 2건 · 튜토리얼 2건(8섹션, 게이트 6항 통과) · tutorials/README 2건 · CHANGELOG 2건 · 구조 검증기 + 비교 러너
+- 다음 차수 이월: ①evals 실실행 자동화(트리거 발동판정 러너) ②skill-creator 본문 485줄 임박 — 다음 강화 후보(패턴 D 예고) ③장기 미갱신 스킬 상위 10개 상세 점검(본 회차는 문서 규범 참조 3종 위주) ④Game Studio 플러그인·3D 에셋·보스 카메라/셰이더 상태 버그·4·5차 스킬 이펙트 강화(게임 측 4건 — 별도 이슈로 유지)
