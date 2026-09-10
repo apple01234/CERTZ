@@ -16,7 +16,7 @@ import {
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
-import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화)
+import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnTierFlair, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.0.11 — 기존 스킬 N차 강화
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
 import type { Enemy } from "./Enemy";
@@ -808,6 +808,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** 주력기(Z) — v3.0.6: 클래스 고유 메커니즘 12종 (겹침 0 — 지시 #4)
    *  3차/4차는 계열 체인에서 2차기 승계(강화판) — resolveSkill1Of */
+  /* v1.0.11 — N차마다 기존 스킬 강화 (유저 상시 지시): 주력기/기동기/3차기 시전 시
+   *  GameStudio(Gameworks) 3D VFX를 전직 단계에 비례해 합성 — 2차 광점 / 3차 충격링+계열 악센트 /
+   *  4차 룬 마법진+크리티컬 플래시 / 5차 폭발+화염+벚꽃잎. 미전직·1차는 기존 연출 유지 */
+  private tierFlair() {
+    const t = this.sTier;
+    if (t < 2) return;
+    const fam = familyOf(this.cls) as FamKey;
+    const aim = this.aimDir();
+    spawnTierFlair(this.scene, this.x, this.y, this.clsHex(), t, fam, aim.lengthSq() > 0.01 ? aim.angle() : 0);
+  }
+
+  /** v1.0.11 — 튜토리얼 알림 (월드 튜토리얼 컨트롤러에 이벤트 전달 — 스킬/물약 학습 판정) */
+  tutNotify(ev: string) {
+    const w = this.scene as unknown as { tut?: { notify: (e: string) => void } | null };
+    w.tut?.notify(ev);
+  }
+
   useSkill1() {
     if (this.state !== "idle" || this.skill1Cd > 0 || this.mp < 15) return;
     this.mp -= 15;
@@ -816,6 +833,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hitSet.clear();
     this.setVelocity(0, 0);
     this.netEmitAction("s1"); // v4.1.0
+    this.tutNotify("skill"); // v1.0.11 — 튜토리얼 스킬 학습 판정
+    this.tierFlair(); // v1.0.11 — N차 기존 스킬 강화 (전직 단계 비례 3D VFX)
     const kind = resolveSkill1Of(this.cls) ?? "spin";
     /* v3.0.11 — 3차/4차 주력기 진화감: 상위직은 클래스색 오라 링이 터지며 시전
      *  (2차기 승계라 이름만 바뀌어 보이던 문제를 시각적으로도 "강화판"임을 드러냄) */
@@ -1414,6 +1433,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     };
     const ds = DASH_SND[kind] ?? DASH_SND.dash;
     this.scene.sfxSkill(ds[0], ds[1]);
+    this.tutNotify("skill"); // v1.0.11 — 튜토리얼 스킬 학습 판정
+    this.tierFlair(); // v1.0.11 — N차 기존 스킬 강화
+    /* v1.0.11 — 기동기 대시 궤적: 혜성 코마트(gw_trail)를 진행 방향으로 신장해 잔상 강화 (2차+) */
+    if (this.sTier >= 2 && this.scene.textures.exists("gw_trail")) {
+      const tr = this.scene.add.image(this.x, this.y - 6, "gw_trail")
+        .setDepth(23).setBlendMode(Phaser.BlendModes.ADD)
+        .setRotation(dir.angle()).setTint(this.clsHex())
+        .setScale(1.6, 1.1).setAlpha(0.7);
+      this.scene.tweens.add({ targets: tr, alpha: 0, scaleX: 2.6, duration: 340, ease: "Sine.out", onComplete: () => tr.destroy() });
+    }
     const t = this.sTier;
     const hex = this.clsHex();
     const DASH_CFG: Record<string, { time: number; speed: number }> = {
@@ -1718,6 +1747,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       swordaura: ["bigsword", 1], // 블레이드마스터 — 파동 검기
     };
     this.scene.sfxSkill(...SND3[kind]);
+    this.tutNotify("skill"); // v1.0.11 — 튜토리얼 스킬 학습 판정
+    this.tierFlair(); // v1.0.11 — N차 기존 스킬 강화
 
     switch (kind) {
       /* 워로드 — 전장의 함성: 광역 외침 + 공격력 버프 (v3.0.4 — 임팩트 대폭 상향) */
@@ -3659,6 +3690,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       item.healFull ? "#ffd76a" : "#7dffa8",
     );
     this.scene.emitHud();
+    this.tutNotify("pot"); // v1.0.11 — 튜토리얼 물약 학습 판정
     return true;
   }
 

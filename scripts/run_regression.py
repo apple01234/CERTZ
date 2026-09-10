@@ -22,6 +22,14 @@ CASES = [
         "preserve": ["## 触发时机", "## 执行步骤", "## 质量标准", "调用了 5 次及以上的工具",
                      "先检查 skills/ 目录下是否已有匹配的技能文件", "踩坑记录只记真正踩过的坑，不要编造"],
     },
+    {
+        "name": "skill-creator",
+        "baseline": "/home/z/my-project/skills-workspace/skill-creator-snapshot",
+        "enhanced": "/home/z/my-project/skills/skill-creator",
+        "preserve": ["Decide what you want the skill to do", "## Improving the skill",
+                     "## Advanced: Blind comparison", "one continuous sequence",
+                     "best_description", "Please add steps to your TodoList"],
+    },
 ]
 
 summary, all_ok = [], True

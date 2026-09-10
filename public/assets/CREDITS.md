@@ -219,3 +219,20 @@
 - 미사용 보관: SPUM(캐릭터 제작은 Unity 에디터 필요 — 웹/Phaser 직접 사용 불가),
   Sci-Fi Irregular Frames(스타일 불일치), CFXR 잉걸불/해골 등 예비 텍스처
   (upload/ 원본 보존 — 추출 경로: scripts/_unity_extract/)
+
+## v1.0.10 — Vefects (Unity 3D VFX, 유료 — 유저 업로드)
+- Vefects.7z (upload/drive/file2_real.bin 원본 보존 — research/vefects 선별 추출)
+- 프리렌더 3D VFX 텍스처 25종 → /assets/vf_* (scripts/gen_vfx_v1010.py — 512 캡 q82 webp)
+- Used for: 4차 스킬 8종·5차 궁극기 인트로/시그니처 펜타클 마법진·원소 플레어·링·엠블럼
+
+## v1.0.11 — Gameworks 유니티 팩 4종 (유저 업로드 file3)
+- 원본 보존: upload/drive/file3_real.bin (68.9MB 7z) → research/gameworks/ 추출
+- Hovl Studio — Magic Effects Pack: 마법진 2종(magic/rune)·테크 서클·전기·플레어·플래시·
+  글로우·초승달 참격(arc)·지면 균열(crack)·혜성 궤적(trail)·화살·투사체·수정·크레이터 → /assets/gw_*
+- Matthew Guz — Slash Effects FREE: 참격 3종(slash a/b/c)·모션블러 스트릭(dash)·
+  충격파(shock)·폭발(boom)·스파크·크리티컬(crit)·화염(fire)·광점(dot) → /assets/gw_*
+- Petal Particles — Cherry Petals: 벚꽃잎 1종(petal — 4×4 그리드 셀 크롭) → /assets/gw_petal
+- Toon Shaders Pro: PerlinNoise 등 (참고용 — 이번 버전 미사용, 연구 보존)
+- 변환: scripts/gen_gameworks_v1011.py (512 캡 q82 webp, 총 512K)
+- Used for: N차마다 기존 스킬 강화(주력기/기동기/3차기 — 전직 단계 비례 합성)·
+  튜토리얼 완료 벚꽃 소나기·튜토리얼 마커

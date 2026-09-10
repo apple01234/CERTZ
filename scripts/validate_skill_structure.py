@@ -63,7 +63,7 @@ def check_skill(skill_dir, preserve_markers=None):
     faq_path = os.path.join(skill_dir, "references", "faq.md")
     if os.path.isfile(faq_path):
         faq = open(faq_path, encoding="utf-8").read()
-        entries = faq.count("## ") - 1  # 첫 헤더 제외
+        entries = faq.count("\n## ")  # 엔트리 카운트 — 제목은 H1(# ) 규약이라 첫 "## "도 엔트리 (2026-09-10 랩 실측 버그 수정: 구 로직 `-1`은 "## " 제목 규약 가정이 H1 규약과 불일치해 1건 FAQ를 0으로 계산)
         faq_ok = entries >= 1 and all(k in faq for k in ("症状", "原因", "解决", "复发防止"))
     if not faq_ok:
         m = re.search(r"^## .*(踩坑|故障|FAQ).*$", body, re.M)

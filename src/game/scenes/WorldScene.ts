@@ -39,7 +39,8 @@ import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
 import { applyToonStyle, clearToonStyle } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일)
-import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (앰비언트 블룸 + 3D 프리렌더 VFX 프리셋)
+import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnPetalStorm } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.11 — 벚꽃 소나기(튜토리얼)
+import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
 import * as audio from "../audio";
 import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
@@ -61,6 +62,13 @@ export class WorldScene extends Phaser.Scene {
   enemies: Enemy[] = [];
   boss: Boss | null = null;
   playerRef: Player | null = null;
+
+  /* v1.0.11 — 튜토리얼 (src/game/Tutorial.ts) — 신규 플레이어 온보딩 컨트롤러 */
+  tut: Tutorial | null = null;
+  private tutorialDone = false;
+  private tutStep = -1; // -1=미시작/완료, 0..5=진행 중 (세이브 유지 — 마을→사냥터 씬 전환 재개)
+  private tutPendingStart = false; // 인트로(이름짓기) 종료 후 시작 예약
+  private tutRetryMs = 0; // update 루프 재시도 누적 (타이머 이벤트가 유실되는 레이스 차단용)
 
   questIdx = 0;
   huntCount = 0;
@@ -526,6 +534,9 @@ export class WorldScene extends Phaser.Scene {
     this.boss = null;
     this.fragment = null;
     this.portal = null;
+    this.tut = null; // v1.0.11 — 씬 재시작 시 이전 인스턴스 참조 정리 (tutStep은 create에서 세이브로 재개)
+    this.tutPendingStart = false;
+    this.tutRetryMs = 0;
     this.portalSwirl = null; // v4.7.0 — 씬 재시작 시 파괴된 셰이더 참조 정리
     /* v2.7 — 씬 재시작 같은 인스턴스 재사용: 이전 구역 개방 상태가 유출되면
      *  다음 구역에서 시작부터 포탈이 열려 퀘스트를 건너뛰고, 보루도 early-return으로 죽는다 */
@@ -1323,6 +1334,33 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 사운드/BGM (v3.0.23 — 구역별 고정 1곡 루프 / 로테이션·곡 교체 없음) ---------- */
     audio.playStageBGM(stageKey);
 
+    /* v1.0.11 — 튜토리얼 시작/재개 판정 ("튜토리얼 제작" 지시):
+     *  · 신규(이름 없음) — 인트로(이름짓기) 종료 후 시작 예약 (resumeFromDialogue 훅)
+     *  · 이름 있는 유저 + tutorialDone=false + lv≤8 + 마을 — 즉시 시작/재개.
+     *    (tutStep≥0: 진행 중 이어하기 / tutStep=-1: 튜토리얼 도입 전 씬 재시작·구세이브 — v1.0.11 버그 수정:
+     *     인트로 직후 씬이 재시작되면 이름이 있어 pend 경로가 안 타고 tutStep도 -1이라 영영 시작 안 됐다) */
+    const savedTutStep = savedPlayer?.tutStep ?? -1;
+    this.tutorialDone = savedPlayer?.tutorialDone ?? false;
+    if (!this.tutorialDone && stageKey === "village" && !savedPlayer?.playerName) {
+      this.tutPendingStart = true;
+    } else if (!this.tutorialDone && savedTutStep >= 0 && (savedPlayer?.lv ?? 1) <= 8) {
+      /* 진행 중 튜토리얼 — 모든 구역(마을→사냥터 포탈 이동)에서 재개 (v1.0.11 — 마을 한정이라
+       *  사냥터에 도착해도 "첫 전투" 단계가 시작되지 않던 버그 수정).
+       *  시작은 update 루프 재시도(tutRetryMs)로 수행 — 타이머 이벤트가 챕터 컷신/대사 레이스에서
+       *  조용히 유실되는 케이스의 근본 차단 */
+      this.tutStep = savedTutStep;
+      this.tutRetryMs = 1;
+    } else if (!this.tutorialDone && stageKey === "village" && (savedPlayer?.lv ?? 1) <= 8) {
+      /* tutStep=-1인 저레벨 마을 유저(도입 전 씬 재시작·구세이브) — 마을에서 신규 시작 */
+      this.tutStep = 0;
+      this.tutRetryMs = 1;
+    } else if (!this.tutorialDone && (savedPlayer?.lv ?? 1) <= 8 && stageKey !== "dojang" && !this.isInterior) {
+      /* v1.0.11 오염 구제 — 재개 경로 부재 시절(초기 빌드)에 사냥터에서 필드 기본값 -1이
+       *  세이브에 기록된 저레벨 캐릭터: 처치(2) 단계부터 재개 (사냥터 도입부는 전투 학습이 본질) */
+      this.tutStep = 2;
+      this.tutRetryMs = 1;
+    }
+
     /* ---------- 오프닝 대사 (인트로 시퀀스 중이면 인트로가 인계 / 실내는 연출 생략) ----------
      *  v2.3 (지시 #1): 이미 본 대사는 재입장 시 재생하지 않는다 — 이전/다음 맵 왕복마다
      *  인트로·구역 안내 대사가 반복되던 버그 수정
@@ -2060,6 +2098,7 @@ export class WorldScene extends Phaser.Scene {
 
   private enterPortal() {
     this.portalActive = false;
+    this.tut?.notify("portal"); // v1.0.11 — 튜토리얼 차원문 학습 판정
     audio.sfx.portal();
     this.player.setVelocity(0, 0);
     this.player.state = "idle";
@@ -2864,6 +2903,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** 픽업 처리 (Drop가 접촉 시 호출 — viaPet은 펫 자동 줍기) */
   collectDrop(kind: DropKind, amount: number, x: number, y: number, viaPet = false) {
+    this.tut?.notify("pickup"); // v1.0.11 — 튜토리얼 줍기 학습 판정
     if (kind !== "gold") this.dailyFarms++; // v1.0.7 — 오늘의 파밍 (아이템 드롭 수집 카운트)
     if (kind === "gold") {
       // 펫 골드 보너스 (v1.9 BM — 슬라임 +10%, 핑크이 +20%)
@@ -3165,6 +3205,7 @@ export class WorldScene extends Phaser.Scene {
   onEnemyKilled(key: EnemyKey, exp: number, spawnX: number, spawnY: number, ref?: Enemy | Boss) {
     // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
     this.enemies = this.enemies.filter((e) => e.alive);
+    this.tut?.notify("kill"); // v1.0.11 — 튜토리얼 처치 학습 판정
     if (this.eliteEnemy && !this.eliteEnemy.alive) this.eliteEnemy = null;
     /* v4.1.4 — 침공 보스 격퇴 보상: 에메랄드 +2 확정 + 도전과제 카운트 */
     if (this.invasionBoss && ref === this.invasionBoss) {
@@ -6993,6 +7034,18 @@ export class WorldScene extends Phaser.Scene {
     // 인트로 플레이 시퀀스 (이동 학습 → 우물 → 이름 짓기)
     if (this.introStep >= 0 && this.introStep < 2) this.tickIntro(dt, move);
 
+    this.tut?.update(); // v1.0.11 — 튜토리얼 마커 추적
+
+    /* v1.0.11 — 튜토리얼 지연 시작 재시도 (update 루프 — 컷신/대사 레이스에도 확실하게 착화).
+     *  tutRetryMs>0이면 미시작 상태 — 1.5초마다 대화·실내가 아닐 때 시도, 시작되면 0으로 해제 */
+    if (this.tutRetryMs > 0 && !this.tut && !this.tutorialDone) {
+      this.tutRetryMs += dt;
+      if (this.tutRetryMs >= 1500) {
+        this.tutRetryMs = 1;
+        if (!this.dialoguing && !this.isInterior) this.startTutorial(this.tutStep);
+      }
+    }
+
     // 적 AI
     for (const e of this.enemies) {
       if (e.active && e.alive) e.tick(dt, this.player);
@@ -8579,6 +8632,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.dialoguing || this.sleeping || !this.player || this.player.state === "dead") return;
     const it = this.nearInteract;
     if (!it) return;
+    this.tut?.notify("talk"); // v1.0.11 — 튜토리얼 대화 학습 판정
     if (it.kind === "shop") {
       // v2.3 (지시 #4) — 반복 의뢰 수주 가능하면 상점 대신 수주 대사부터
       if (this.repeatUnlockable()) {
@@ -10146,6 +10200,9 @@ export class WorldScene extends Phaser.Scene {
       bossKills: this.bossKillCount,
       chaosKills: this.chaosKillCount,
       invasionKills: this.invasionKillCount,
+      /* v1.0.11 — 튜토리얼 완료 + 진행 단계 (구 세이브 호환: 없으면 미완료/미시작) */
+      tutorialDone: this.tutorialDone,
+      tutStep: this.tutStep,
       gateBest: this.gateBest,
       closetBest: this.closetBest,
       gateStars: [...this.gateStars],
@@ -10291,6 +10348,13 @@ export class WorldScene extends Phaser.Scene {
     this.portalHoldSince = 0; // v2.7 — 정상 종료면 강제개방 카운터도 리셋
     this.physics.world.resume();
     this.resetInputState(); // v4.9.0 — 대사 중 유실된 keyup 고착 청소 (자동이동 예방)
+    /* v1.0.11 — 신규 인트로(이름짓기) 종료 → 마을 튜토리얼 개시 (예약 플래그 소비).
+     *  villageIntro 대사가 끝난 뒤 여유를 두고 개시 — 인트로/대사 입력과 충돌하지 않게 */
+    if (this.tutPendingStart && !this.tut && !this.tutorialDone) {
+      this.tutPendingStart = false;
+      this.tutStep = 0;
+      this.tutRetryMs = 1; // update 루프 재시도로 개시 (v1.0.11 — 대사 연쇄 레이스 차단)
+    }
     EventBus.emit("dialogue:hide");
     // 대화 닫기 키의 잔여 justDown 소비 — 스페이스로 대화 넘긴 직후 공격이 새어나가는 것 방지
     // (v1.0.4 — 하드코딩 X/Z/C/E 대신 등록된 전 행동 키를 소비해 키맵과 무관하게 동작)
@@ -10382,6 +10446,58 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /* ═════════ v1.0.11 — 튜토리얼 지원 (Tutorial.ts 호출 API) ═════════ */
+
+  /** 튜토리얼 개시 — 인트로 종료 후(step 0, 시작 물약 지급) 또는 진행 중 세이브 재개.
+   *  v1.0.11 버그 수정: 후속 대사/컷신 재생 중 시작 시도는 update 루프 재시도로 연기 —
+   *  튜토리얼이 영영 시작되지 않았다 → dialoguing이면 1.2s 뒤 재시도(재스케줄) */
+  private startTutorial(step: number) {
+    if (this.tut || this.tutorialDone) return;
+    if (this.dialoguing) {
+      this.tutRetryMs = 1; // update 루프 재시도로 연기 (v1.0.11 — 대사 종료 후 자동 착화)
+      return;
+    }
+    if (step === 0) {
+      /* 시작 물약 +2 — 물약 학습 단계가 보유 부족으로 막히지 않게 (기본 지급 hp2에 추가) */
+      this.player.addPotion("hp");
+      this.player.addPotion("hp");
+      this.emitHud();
+    }
+    this.tutStep = step;
+    this.tut = new Tutorial(this, step);
+  }
+
+  /** 단계 통과 시마다 세이브 — 씬 전환(마을→사냥터) 후에도 이어서 재개 */
+  saveTutorialProgress(step: number) {
+    this.tutStep = step;
+    this.save();
+  }
+
+  /** 완료/스킵 — 세이브 플래그 확정 */
+  completeTutorialSave() {
+    this.tutorialDone = true;
+    this.tutStep = -1;
+    this.tut = null;
+    this.save();
+  }
+
+  /** 축하 연출 — 벚꽃 소나기 (Gameworks Petal Particles) */
+  spawnPetalBurst(x: number, y: number, n: number) {
+    spawnPetalStorm(this, x, y, n);
+  }
+
+  /** 축하 보상 — 뽑기권 +1 (골드/물약은 Tutorial에서 플레이어에 직접 지급) */
+  grantTutorialRewards() {
+    this.gachaTickets += 1;
+    this.emitHud();
+    this.emitRpgState();
+  }
+
+  /* v1.0.11 — 튜토리얼 마커용 공개 접근자 (private 필드의 읽기 전용 뷰) */
+  get enemyList(): Enemy[] { return this.enemies; }
+  get portalRef(): Phaser.Physics.Arcade.Sprite | null { return this.portal; }
+  get npcList(): { x: number; y: number }[] { return this.interactables; }
+
   showBanner(text: string) {
     EventBus.emit("banner:show", { text });
   }
@@ -10437,6 +10553,8 @@ export class WorldScene extends Phaser.Scene {
   private cleanup() {
     this.questTimer?.remove();
     this.scale.off("resize", this.applyCameraZoom, this);
+    this.tut?.destroy(); // v1.0.11 — 튜토리얼 HUD/마커 정리
+    this.tut = null;
     this.shockFX?.destroy(); // v4.8.0 — 셰이더 링 풀 정리
     this.slashArcFx?.destroy(); // v4.9.0 — 참격 궤적 풀 정리
     EventBus.emit("dialogue:hide");

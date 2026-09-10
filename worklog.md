@@ -1474,3 +1474,30 @@ Stage Summary:
 - 강화 스킬: version-management v2(481줄, 500줄 한도 준수 — 게이트 9/9) · task-review v2(본문 증강 — 게이트 9/9), 회귀 판정 PASS×2
 - 신규 산출: references 2+1(faq 포함) · evals.json 2건 · 튜토리얼 2건(8섹션, 게이트 6항 통과) · tutorials/README 2건 · CHANGELOG 2건 · 구조 검증기 + 비교 러너
 - 다음 차수 이월: ①evals 실실행 자동화(트리거 발동판정 러너) ②skill-creator 본문 485줄 임박 — 다음 강화 후보(패턴 D 예고) ③장기 미갱신 스킬 상위 10개 상세 점검(본 회차는 문서 규범 참조 3종 위주) ④게임 측 4건(Game Studio FX·3D 에셋·보스 카메라/셰이더 버그·4·5차 스킬 이펙트) — 병행 세션 v1.0.10(8bd68fc)에서 완료 확인
+
+---
+Task ID: 75
+Agent: Super Z (메인)
+Task: 유저 "계속 + 스킬 크리에이터 인가 그거 계속" — v1.0.11 마무리(빌드·릴리스) + skill-creator 스킬 강화(N차 루프 2회차 후보) 병행 수행
+
+Work Log:
+- [인수] 병행 세션이 진행하던 v1.0.11(versionCode 76, 미커밋) 인수 — 구현 완결 상태(튜토리얼 6단계 Tutorial.ts 255줄·WorldScene 통합, N차 기존 스킬 강화 tierFlair, Gameworks 25종 gw_*.webp, 검증 스크린샷 42장) — tsc 0에러 재확인
+- [스킬 강화 — skill-creator] Task 74 예고 후보(본문 485줄 임박)를 유저 지정으로 확정. SOP 준수: 스냅샷(md5 일치 검증 + git tag skill-creator/v1) → 편집 → 검증
+- [패턴 D] 본문 485 → 279줄: "Running and evaluating test cases"→references/eval-workflow.md(133줄) · "Description Optimization"→description-optimization.md(79줄) · "GLM.ai/Cowork"→platform-adapters.md(43줄) — 3섹션 원문 전부 보존 이동(그대로 검증 PASS) + 본문에 비협상 골격 요약·포인터
+- [패턴 B] description 3요화: "whenever" 발동 조건 + 비발동 경계("Do NOT use it to merely use or invoke an existing skill…") — G3 신규 통과
+- [패턴 E] references/faq.md 신설: 실측 장애 3건(①G6 포인터 부재 — baseline 4/9 실측 ②evals 실실행 폴백 판정 — Task 74 ③description 경계 부재 — task-review 사례) — 症状/原因/解决/复发防止 4항목, 추측 기록 0
+- [G7] evals/evals.json 신설: 트리거 2(주간보고서 제작·pdf-extractor 개선) + 비트리거 2(csv 조회·docx 사용) — expectations 필드 완비
+- [G9] tutorials/ 신설: "미니 스킬 제작→9게이트 통과" 8섹션 튜토리얼(전 명령 랩 실측: 초안 4/9 → 보강 9/9, 관찰값 전부 실측) + README 인덱스
+- [검증기 버그 수정] 랩 실측 중 발견: validate_skill_structure.py G8이 count("## ")-1로 첫 헤더 차감 → H1 제목 규약에선 1건 FAQ가 0으로 계산. count("\n## ")로 정정 — version-management·task-review 9/9 재검증(통과율 하락 0)
+- [회귀 판정] run_regression.py에 skill-creator 케이스 추가 → 3스킬 전부 PASS: version-management 5/9→9/9 · task-review 4/9→9/9 · skill-creator 4/9→9/9, 원문 보존 마커 6/6×3, tag skill-creator/v2 + CHANGELOG
+- [빌드 트러블슈팅] 1차 시도 실패: JAVA_HOME 미설정 환경에서 build_apk.sh 자동 감지가 시스템 JRE(/usr/lib/jvm/java-21-openjdk-amd64, javac 없음)를 집음 → "does not provide JAVA_COMPILER" — JAVA_HOME=/home/z/jdk ANDROID_HOME=/home/z/.android-sdk 명시 export로 해소(스크립트 수정 없음, 실행 환경 문제)
+- [빌드·검증] build_apk.sh 전체 파이프라인(gradle 2m16s) → SERTZ-v1.0.11.apk 105,994,164B · aapt versionCode 76/1.0.11 · md5 1c1b04cfaab1bac4a24ab9662220b04e · APK 내부 신규 코드 검출(tierFlair 4·tutorialDone 13·tutStep 12·gw_magic 3, gw_/vf_ 텍스처 50종)
+- [릴리스] GitHub Release v1.0.11(id 386115868) 업로드 state=uploaded → 재다운로드 md5 원격 일치 ✓(바이트 수 동일) · 구버전 md5(6b6e1472…) 잔존 2곳(apk-guide·안내.txt) 발견 → 신규 md5로 갱신
+- [서빙] 서버 재기동(PID 14186, /usr/bin/node 직접 경로 — bun 글로벌 node 경로 소실 확인) → /SERTZ-v1.0.11.apk 307→v1.0.11 · /apk-guide.html 신규 md5 서빙 · /api/auth/login admin 실측 정상
+- [웹 E2E 1280×720 가로] 타이틀 v1.0.11 배지(v1011_42) · 새로운 모험→마을 부팅(v1011_45) — pageerror 0 · 튜토리얼 전체 루프는 선행 세션 42장(v1011_01~41: 튜토리얼 완료 화면+보상·티어2/3 강화 이펙트)으로 실측 완료
+
+Stage Summary:
+- v1.0.11 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.11/SERTZ-v1.0.11.apk (versionCode 76, 105,994,164B, md5 1c1b04cf…)
+- skill-creator v2 강화: 4/9→9/9(개선 +5), 본문 279줄(500 한도), references 5종·evals·tutorials 완비, 회귀 PASS×3 — N차 강화 루프 2회차 종결
+- 운영 교훈: ①build_apk.sh는 JAVA_HOME/ANDROID_HOME 미설정 시 시스템 JRE 오탐 가능 — 재발 시 env 명시 ②bun 글로벌 node 경로는 리셋마다 소실 — /usr/bin/node 사용 ③검증기도 실실행해야 버그가 드러난다(G8 오프바이원은 랩 실행 덕에 발견)
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

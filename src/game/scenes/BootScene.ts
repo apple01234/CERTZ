@@ -240,6 +240,15 @@ export class BootScene extends Phaser.Scene {
       "vf_ring_void", "vf_ring_fire", "vf_emb_fire", "vf_emb_void", "vf_emb_nature", "vf_emb_sound",
       "vf_slash", "vf_impact", "vf_ring", "vf_lightning", "vf_star", "vf_arrow",
     ]) this.load.image(t, `${t}.webp`);
+    /* v1.0.11 — Gameworks Unity 팩 프리렌더 25종 (Hovl Studio Magic effects · Matthew Guz Slash ·
+     *  Petal Particles — 유저 업로드 file3). 1차~3차 기존 스킬 N차 강화 + 튜토리얼 축하 연출.
+     *  scripts/gen_gameworks_v1011.py 산출 (512 캡 q82, 총 512K) */
+    for (const t of [
+      "gw_magic", "gw_rune", "gw_tech", "gw_electro", "gw_flare", "gw_flash", "gw_glow",
+      "gw_arc", "gw_crack", "gw_trail", "gw_arrow", "gw_proj", "gw_crystal", "gw_crater",
+      "gw_slash_a", "gw_slash_b", "gw_slash_c", "gw_dash", "gw_shock", "gw_boom",
+      "gw_spark", "gw_crit", "gw_fire", "gw_dot", "gw_petal",
+    ]) this.load.image(t, `${t}.webp`);
     /* v3.0.2 — 외부 신규 에셋 (전부 CC0, CREDITS.md 참조)
      *  50 Monsters Pack (isaiah658): 신규 몬스터 9종 × idle2/run4/atk1 프레임
      *  Pixelart Spells (Anokolisa?): 마법 투사체 6프레임 시트
