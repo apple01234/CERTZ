@@ -1,0 +1,35 @@
+{
+  "skill_name": "Version Management Skill",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "做一个北京旅游网站（首页 + 美食页两个页面），完成后保存版本",
+      "expected_output": "在 我的项目/{项目名}/ 内创建项目：入口文件直接写入项目目录（非事后移动），git init + V1 提交 + v1 标签 + meta.json 创建，最后 send_file 吐出主入口",
+      "expectations": [
+        "第一个入口文件写入 我的项目/{项目名}/ 而非工作区根目录或 Desktop",
+        "git tag v1 存在，meta.json 的 latest_version 为 v1",
+        "send_file 的 ext 为 web_project，title 为项目名且不含版本号"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "把标题改大一点（无其他上下文）",
+      "expected_output": "编辑最新项目的最新版本：§3.3 创建版本指令（commit + tag v{n+1}）→ 更新 meta.json → send_file",
+      "expectations": [
+        "新版本号为当前最新版本 +1 的纯数字递增，禁止带后缀（如 V4-light）",
+        "meta.json 的 versions[] 追加一条，timestamp 为 ISO 8601 带时区",
+        "send_file 的 version 字段为新版本号"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "基于 V2 改风格，不要动其他部分",
+      "expected_output": "按 §4.4 合并流程：git checkout v2 -- . 恢复完整工作树（代码 + assets + export）→ 在其上编辑（不做中间 commit）→ 一次性提交为最新版本 +1",
+      "expectations": [
+        "恢复范围包含 assets/ 与 export/（整个项目目录状态），禁止跳过恢复步骤直接改",
+        "产生新版本号且不覆盖/移动/删除已有版本的 tag",
+        "完成后调用 send_file 吐出新版本主入口"
+      ]
+    }
+  ]
+}
