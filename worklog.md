@@ -1405,3 +1405,26 @@ Stage Summary:
 - ①확률: 감사 결과 롤 로직 정직 확인 — 주작 없음을 전제로 eert 공시+이중 천장(강화 실패 가산·잠재 확정)으로 신뢰 구조 확립 ②셰이더: enableFilters opt-in 근본 버그 수정(도입 후 처음으로 정상 부착) + 그래픽 효과 3모드 설정으로 유저 제어 가능 ③v1.0.8 전체 마무리 검증 완료 ④APK 릴리스 완료
 - 운영 교훈: APK 빌드는 반드시 scripts/build_apk.sh (cap sync 포함) — gradle 단독 실행 시 스테일 .next-apk 서빙됨 / GitHub 원격에 병행 세션의 동명 커밋 분기 상주 — 푸시 전 fetch 필수
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 72
+Agent: Super Z (메인)
+Task: 유저 리포트 "GM 로그인 안됨" — 근본 원인 분석·수정·v1.0.9 빌드·릴리스 (versionCode 74)
+
+Work Log:
+- [진단] 서버 측 로그인 정상 실측(admin/admin123·apple01234/admin123 → role=admin, /api/auth/me Bearer 정상) — 서버 문제 아님
+- [핵심 단서] db/audit.log에 유저 로그인 시도 0건(오토시드 2건뿐) + 서버 재기동(02:54 샌드박스 리셋, PID 15833→1179) → 유저 트래픽이 이 서버에 도달하지 않는다고 확정
+- [근본 원인] ServerConnect.tsx DEFAULT_SERVER="https://sertz4.space-z.ai" (v3.1.0 유저확인 당시 주소)가 만료된 상태 그대로 APK에 고정 — 로그인(account.ts apiBase)·거래소·멀티 소켓(net.ts) 전부 같은 localStorage 키(sertz.server.url) 공유 → 전부 실패. DEAD_SERVERS 자동 이행 목록에 sertz4 누락이 재발의 근본 원인
+- [부대 원인 기록] 02:54 샌드박스 재시작으로 gitignored db/accounts.json 소실 → 오토시드(v1.0.8)가 admin/apple01234를 admin123으로 자동 재배치 — 서버 다운 타임 중 시도분은 연결 실패였을 것
+- [수정] ServerConnect.tsx: DEFAULT_SERVER → "https://sertz.z.ai" + DEAD_SERVERS에 sertz4(http/https) 추가(기존 설치도 첫 기동 자동 재작성+reload) + 주석에 원인 기록
+- [웹 E2E 실측 1280×720 가로] 타이틀→새로운 모험→계정 패널→admin 로그인 → "관리자 계정" 배지+GM NPC 4종 visible [true×4] · adminRole="admin" (v109_01~04)
+- [버저닝 7곳] build.gradle 74/1.0.9 · package.json · Overlays 배지 · server.js APK_MIRROR · next.config.ts APK_DL · apk-guide.html(제목/h1/notice 본문 교체+변경점/footer) · APK_다운로드_안내.txt — apk-guide에 "구버전 즉시 해결법(🌐 버튼→sertz.z.ai 수동 입력)" 안내 추가
+- [툴체인] 02:54 리셋으로 /home/z/jdk·android-sdk 소실 → rebuild_toolchain.sh 재구축(JDK21+SDK36) 후 빌드
+- [빌드] build_apk.sh 전체 파이프라인(APK_EXPORT next build → cap sync → gradle 5m33s) → SERTZ-v1.0.9.apk 105,309,330B · aapt versionCode 74/1.0.9 · md5 d95048aff3d13b90632d65674cd668b5 · APK 내부 검증: "sertz.z.ai" 4곳 검출, sertz4는 DEAD_SERVERS 배열에만 존재 확인
+- [릴리스] GitHub Release v1.0.9(id 385985773) 업로드 state=uploaded → 재다운로드 md5 원격 일치 ✓ · 서버 재기동(PID 3591, SERTZ_ADMIN_USERS 유지) → /apk-guide.html v1.0.9 서빙 + /SERTZ-v1.0.9.apk 307→GitHub 실측 · 타이틀 v1.0.9 배지 스크린샷(v109_06)
+
+Stage Summary:
+- v1.0.9 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.9/SERTZ-v1.0.9.apk (versionCode 74, 105MB, md5 d95048af…)
+- "GM 로그인 안됨" 결론: 서버·계정·GM 롤 로직 전부 정상(실측) — APK가 만료된 구 주소에 붙어 있었던 것. 구버전 즉시 우회: 우하단 🌐 → https://sertz.z.ai 입력 · v1.0.9 덮어설치 시 자동 이행
+- 운영 교훈: 서비스 주소 변경 시 (1) DEFAULT_SERVER (2) DEAD_SERVERS 등록 (3) 7곳 버저닝 3세트가 한 묶음 / 샌드박스 리셋마다 툴체인+db 소실 — rebuild_toolchain.sh·오토시드가 자가 복구
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

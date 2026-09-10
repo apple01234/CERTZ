@@ -7,8 +7,8 @@ android {
         applicationId "com.sertz.yggdrasil"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 73
-        versionName "1.0.8" /* v1.0.8 — 로그인 DB 자가복구(오토시드)·로그인 창 컴팩트+스크롤·2-6 능대 퀘스트 수정·무한 콘텐츠 10종(심연의 탑/심층 균열/일일 시련/제작/펫 육성/황금몬스터/심연 상점/환생/주간 레이드/탑 랭킹) (versionCode는 단조 유지)*/
+        versionCode 74
+        versionName "1.0.9" /* v1.0.9 — #GM로그인 APK 기본 게임 서버 주소 갱신(sertz4 만료 → sertz.z.ai) + 구 주소 자동 이행(DEAD_SERVERS) + 연결 실패 원탭 복구 안내 고도 (versionCode는 단조 유지)*/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

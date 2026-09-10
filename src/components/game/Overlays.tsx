@@ -43,7 +43,7 @@ export function TitleScreen() {
           이그드라실 : 아홉 왕국
           {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
            *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.8 — 로그인 복구+창 개선 · 2-6 능대 밀도+퀘스트 수정 · 무한 콘텐츠 10종 · 확률 공시+천장 · 셰이더 모드 설정</span>
+          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.9 — GM 로그인 복구: APK 서버 주소 갱신(sertz.z.ai)+구주소 자동 이행 · 연결 실패 원탭 복구</span>
         </p>
       </div>
 

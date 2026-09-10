@@ -12,17 +12,24 @@ const KEY = "sertz.server.url";
  *  v3.0.25 — 만료된 구 프리뷰 주소를 실제 서비스 주소로 교체
  *  v3.1.0 — 신규 서비스 주소 sertz4.space-z.ai 로 교체 (유저 확인)
  *  v3.2.0 — 구 서버 목록 자동 이행 추가: 덮어쓰기 설치 시 localStorage에 남은
- *           만료 주소 때문에 “APK에서 연동 안됨”이 재발하는 것을 근본 차단 */
-const DEFAULT_SERVER = "https://sertz4.space-z.ai";
+ *           만료 주소 때문에 “APK에서 연동 안됨”이 재발하는 것을 근본 차단
+ *  v1.0.9 (#GM로그인) — sertz4.space-z.ai 만료로 “GM 로그인 안됨/서버 연결 실패” 재발:
+ *           기본값을 현재 서비스 주소 sertz.z.ai 로 교체 + sertz4 자동 이행 등록.
+ *           (로그인·거래소·멀티 소켓 전부 이 주소 하나를 공유한다 — account.ts apiBase 참고) */
+const DEFAULT_SERVER = "https://sertz.z.ai";
 
-/* v3.2.0 — 서비스 종료/만료된 과거 기본 서버들 (자동 이행 대상) */
+/* v3.2.0 — 서비스 종료/만료된 과거 기본 서버들 (자동 이행 대상)
+ *  v1.0.9 — sertz4.space-z.ai 추가: 기존 설치분도 첫 기동에 새 기본값(sertz.z.ai)로
+ *           자동 재작성된다(사용자 재설정 불필요 — DEAD_SERVERS 매칭 시 setItem+reload). */
 const DEAD_SERVERS = [
   "https://preview-6a94b1ab.space-z.ai",
   "https://preview-6a95efa8.space-z.ai",
   "https://sertz1234.space-z.ai",
+  "https://sertz4.space-z.ai",
   "http://preview-6a94b1ab.space-z.ai",
   "http://preview-6a95efa8.space-z.ai",
   "http://sertz1234.space-z.ai",
+  "http://sertz4.space-z.ai",
 ];
 
 function readUrl(): string {
