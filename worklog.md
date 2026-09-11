@@ -1569,3 +1569,24 @@ Stage Summary:
 - 유저 대응 3연속 보고 "투사체 좌우반전"의 멀티 동기화 근원까지 봉합(netFacingFlip 물리 방향 정규화)
 - 운영 교훈: ①rebase 후 파일 mtime 갱신은 내용 변경 아님 — git clean이면 APK 유효 ②GitHub API 404(릴리스 부재)는 정상 응답으로 처리 필요 ③서버 /SERTZ.apk는 404 — 정확 파일명만 리다이렉트
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 79
+Agent: Super Z (메인)
+Task: 유저 "로그인 안됨" (3차) — 근본 원인 규명·수정 · 중간에 샌드박스 리셋 재발 복구 포함 · v1.0.15 확정·릴리스 (versionCode 80)
+
+Work Log:
+- [재난 복구 3번째] 조사 중 샌드박스 리셋 재발 — 워크스페이스가 v1.0.8 시절(Task 71)로 통째로 롤백(.git·download/APK 전부 소실, 제 account.ts 수정만 04:16에 얹힌 상태). 원격 진실 확인: origin/main=0a774ce(v1.0.14+Task 78)·태그/릴리스 v1.0.10~14 전부 건재 → 수정분 cp 백업 후 git reset --hard origin/main 복구 → 툴체인 재구축(rebuild_toolchain.sh) → 수정 재적용. push된 원격이 진실원천 — 3번째 재확인
+- [근본 원인 확정] 유저 접속 서버 sertz4.space-z.ai = v1.0.7 '중간 상태' 스테일 배포 — APK_MIRROR가 v1.0.8을 가리키고 OPTIONS 프리플라이트 핸들러가 없음(실측: OPTIONS /api/auth/login → Next 폴백 404 HTML). APK 웹뷰(https://localhost)의 POST+application/json은 CORS 프리플라이트 필수 → 404로 전부 실패 → "서버에 연결할 수 없어요". WebSocket(채팅)은 프리플라이트가 없어 통과 — "채팅은 되는데 로그인이 안됨" 완벽 설명. 웹 same-origin은 무관해 로컬 테스트는 항상 통과(발견 지연 원인)
+- [수정 — 서버 무수정 클라이언트 해법] account.ts post()의 Content-Type을 text/plain;charset=UTF-8로 강등 → CORS 세이프리스트 단순 요청 → 프리플라이트 자체가 발생하지 않음. readBody는 JSON.parse만 하므로 구·신 서버 모두 무수정 호환 — sertz4 실측 curl 200+토큰 확인. 부수: 로그인 유저 localStorage 캐시(sertz.auth.user) + authMe 폴백(구서버에선 Bearer GET /me도 프리플라이트로 막혀 패널 재오픈 시 로그아웃처럼 보이던 것 보완)
+- [빌드·릴리스] tsc 0에러 · 웹빌드(.next 별도) · build_apk.sh(5m38s, JAVA_HOME/ANDROID_HOME 명시) → SERTZ-v1.0.15.apk 106,080,626B · aapt 80/1.0.15 · md5 c588b0060b8093eb5f290c53ffbfcdc1 · 안내.txt·apk-guide md5/버전 갱신(남은 v1.0.10~13 표기는 히스토리 섹션) · Release v1.0.15(id 386785467) 업로드 → 재다운로드 md5 원격 일치 ✓
+- [서버 전환] 재기동 후 /SERTZ-v1.0.15.apk 307→GitHub ✓ · guide md5 서빙 ✓ (노트: nohup 백그라운드가 세션 사이 죽는 케이스 재확인 — 기동+검증 한 명령 습관)
+- [가로 E2E 1280×720 실측] 타이틀→새로운 모험→계정 패널: ①회원가입(logintest15) → "테스터 계정 로그인!" 배너+패널 로그인 전환+계정 ON ②로그아웃→로그인 성공 ③패널 닫고 재오픈 → 로그인 상태 유지 ④pageerror 0. (노트: '로그인' 버튼이 탭/제출 2종 — find role 클릭은 탭을 잡음, ref로 구분 필요)
+- [미해결 인정] sertz4가 구버전이라 Bearer 인증 계열(클라우드 세이브/거래소)은 여전히 프리플라이트로 막힘 — 로그인/가입만 해소. 근본 해결은 sertz4를 최신으로 재배포하거나 기본 서버를 신규 안정 엔드포인트로 전환하는 것 — 다음 회차 과제로 기록
+
+Stage Summary:
+- v1.0.15 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.15/SERTZ-v1.0.15.apk (versionCode 80, 106,080,626B, md5 c588b006…)
+- 로그인 3차 보고 근본 종결: 프리플라이트 제거(text/plain 단순 요청)로 구형 서버에서도 로그인/가입 성공 — 웹 UI 실측 4단계 통과
+- 샌드박스 리셋 3회차 복구 완료(원격 기준 reset --hard + 툴체인 재구축) — 소요 수 분, 데이터 손실 0
+- 운영 교훈: ①"웹에서 되니까 끝"이 아님 — APK 크로스오리진 경로는 반드시 curl -H "Origin: https://localhost" 프리플라이트 실측 ②리셋 롤백 판별법: 버전체인 grep + ls-remote 대조 ③샌드박스 로컬 DB는 테스트 계정조차 날아감 — 시드 스크립트 검토 여지
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

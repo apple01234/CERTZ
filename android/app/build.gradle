@@ -7,8 +7,8 @@ android {
         applicationId "com.sertz.yggdrasil"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 79
-        versionName "1.0.14" /* v1.0.14 — 멀티 투사체 좌우반전 근본 수정(네트워크 flip 물리 방향 정규화 — 원격 활·화살 항상 등 뒤로 나가던 버그)·적 원거리 투사체 진행 방향 정렬(역주행 렌더 수정) */ /* v1.0.13 — 벚꽃 연출 전면 제거(날씨·스킬·축하)·직업별 계열색 마법진 시그니처(2~3차 절제판/4~5차 풀)·계정 DB GitHub 자동 백업/복원·스크린샷 정리 */ /* v1.0.12 — 투사체 스킬 좌우반전 수정·기본서버 복원(sertz4)·4차 전직 시련 신설·긴급귀환 검은화면 수정·스콜&하티 쌍랑·근접 횃불·마을BGM 복구·Toon팩 2차 투입(눈보라/벚꽃/크리스플랫) */ /* v1.0.11 — Gameworks 유니티 팩 25종(마법진·참격·충격파·벚꽃) 투입 + N차 기존 스킬 전부 강화 + 신규 튜토리얼 6단계 (versionCode는 단조 유지)*/
+        versionCode 80
+        versionName "1.0.15" /* v1.0.15 — APK 로그인 안 됨(3차) 근본 수정: 크로스오리진 POST를 text/plain 단순 요청으로 강등해 프리플라이트 제거(stale sertz4 OPTIONS 404 우회)·로그인 유저 캐시 폴백 */ /* v1.0.14 — 멀티 투사체 좌우반전 근본 수정(네트워크 flip 물리 방향 정규화 — 원격 활·화살 항상 등 뒤로 나가던 버그)·적 원거리 투사체 진행 방향 정렬(역주행 렌더 수정) */ /* v1.0.13 — 벚꽃 연출 전면 제거(날씨·스킬·축하)·직업별 계열색 마법진 시그니처(2~3차 절제판/4~5차 풀)·계정 DB GitHub 자동 백업/복원·스크린샷 정리 */ /* v1.0.12 — 투사체 스킬 좌우반전 수정·기본서버 복원(sertz4)·4차 전직 시련 신설·긴급귀환 검은화면 수정·스콜&하티 쌍랑·근접 횃불·마을BGM 복구·Toon팩 2차 투입(눈보라/벚꽃/크리스플랫) */ /* v1.0.11 — Gameworks 유니티 팩 25종(마법진·참격·충격파·벚꽃) 투입 + N차 기존 스킬 전부 강화 + 신규 튜토리얼 6단계 (versionCode는 단조 유지)*/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

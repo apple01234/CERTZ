@@ -12,12 +12,23 @@
  *  서버 무CORS로 전부 실패하고 ② SameSite=Lax 쿠키가 저장/전송되지 않아 로그인 세션이 유지되지 않았다.
  *  → 서버가 CORS+OPTIONS를 응답하고 로그인/가입 응답 본문에 token을 동봉한다.
  *    클라는 token을 localStorage에 저장해 Authorization: Bearer 로 전송한다 (웹은 쿠키 병행, 기존 동작 유지).
+ * v1.0.15 (#로그인안됨3차) — 근본 원인: 기본 서버 sertz4가 v1.0.7 중간 상태(스테일)로 server.js에
+ *  OPTIONS 프리플라이트 핸들러가 없다 → APK 웹뷰(https://localhost)의 POST+application/json은
+ *  프리플라이트(OPTIONS)가 Next 폴백 404 HTML로 떨어져 전부 실패 — "채팅(WS)은 되는데 로그인이 안 됨".
+ *  → 모든 POST를 Content-Type: text/plain;charset=UTF-8 (CORS 세이프리스트)으로 보내
+ *  단순 요청(simple request)으로 강등해 프리플라이트 자체를 제거. readBody는 JSON.parse만 하므로
+ *  서버(구·신 모두) 무수정 호환 — sertz4 실측 200+토큰 확인. 웹 same-origin은 영향 없음.
+ *  부수: 로그인 성공 유저를 localStorage에 캐시 — 구서버에선 Bearer GET(/me)도 프리플라이트로
+ *  막혀 패널 재오픈 시 로그아웃처럼 보이는 것을 캐시로 보완.
  */
 
 import { Capacitor } from "@capacitor/core";
 
 /* v1.0.7 — Bearer 세션 토큰 저장소 (APK 웹뷰 쿠키 불가 대응; 웹은 쿠키가 우선이라 없어도 됨) */
 const TOKEN_KEY = "sertz.auth.token";
+/* v1.0.15 — 로그인 유저 캐시: 구서버(stale)에선 Bearer GET(/me)도 프리플라이트 404로 실패해
+ *  패널을 다시 열면 로그아웃 상태처럼 보였다. 마지막 로그인 유저를 저장해 /me 실패 시 대신 표시. */
+const USER_KEY = "sertz.auth.user";
 function getToken(): string {
   try { return window.localStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
 }
@@ -25,6 +36,21 @@ function setToken(t: string) {
   try {
     if (t) window.localStorage.setItem(TOKEN_KEY, t);
     else window.localStorage.removeItem(TOKEN_KEY);
+  } catch { /* 무시 */ }
+}
+/** v1.0.15 — 마지막 로그인 유저 캐시 조회 (/me 실패 폴백용) */
+export function getCachedUser(): AuthUser | null {
+  try {
+    const raw = window.localStorage.getItem(USER_KEY);
+    if (!raw || !getToken()) return null; // 토큰이 없으면 캐시도 무효
+    const u = JSON.parse(raw) as AuthUser;
+    return u?.id ? u : null;
+  } catch { return null; }
+}
+function setCachedUser(u: AuthUser | null) {
+  try {
+    if (u) window.localStorage.setItem(USER_KEY, JSON.stringify(u));
+    else window.localStorage.removeItem(USER_KEY);
   } catch { /* 무시 */ }
 }
 /** SNS 콜백 리다이렉트(/?sns=ok#auth_token=…)의 토큰을 저장하고 해시를 제거 — 패널 마운트 시 1회 호출 */
@@ -59,9 +85,12 @@ export type SnsProviders = Record<string, { name: string; configured: boolean }>
 async function post(path: string, body?: unknown): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
   try {
     const tok = getToken(); // v1.0.7 — Bearer 세션 (쿠키 불가 환경: APK 웹뷰)
+    /* v1.0.15 — text/plain은 CORS 세이프리스트라 프리플라이트가 발생하지 않는다(단순 요청).
+     *  구서버(stale sertz4) OPTIONS 404에서도 로그인/가입이 통과된다. 본문은 JSON 문자열 그대로 —
+     *  서버 readBody는 Content-Type을 검사하지 않는다(실측 확인). */
     const r = await fetch(`${apiBase()}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) },
+      headers: { "Content-Type": "text/plain;charset=UTF-8", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) },
       body: JSON.stringify(body ?? {}),
     });
     const data = (await r.json().catch(() => ({}))) as Record<string, unknown>;
@@ -89,24 +118,31 @@ async function get(path: string): Promise<{ ok: boolean; status: number; data: R
 
 export async function authMe(): Promise<AuthUser | null> {
   const r = await get("/api/auth/me");
-  return (r.data.user as AuthUser) ?? null;
+  const u = (r.data.user as AuthUser) ?? null;
+  if (u) setCachedUser(u); // v1.0.15 — /me 성공 시 캐시 최신화
+  /* v1.0.15 — 구서버에선 Bearer GET도 프리플라이트 404로 실패한다. 토큰이 살아있고
+   *  캐시된 유저가 있으면 그걸로 대신 로그인 상태를 유지한다(오프라인 폴백과 동일 원리). */
+  return u ?? getCachedUser();
 }
 
 export async function authRegister(id: string, pw: string, name: string) {
   const r = await post("/api/auth/register", { id, pw, name });
   if (r.ok && typeof r.data.token === "string") setToken(r.data.token); // v1.0.7 — Bearer 세션 저장
+  if (r.ok && r.data.user) setCachedUser(r.data.user as AuthUser); // v1.0.15 — 유저 캐시
   return r;
 }
 
 export async function authLogin(id: string, pw: string) {
   const r = await post("/api/auth/login", { id, pw });
   if (r.ok && typeof r.data.token === "string") setToken(r.data.token); // v1.0.7 — Bearer 세션 저장
+  if (r.ok && r.data.user) setCachedUser(r.data.user as AuthUser); // v1.0.15 — 유저 캐시
   return r;
 }
 
 export async function authLogout() {
   const r = await post("/api/auth/logout");
   setToken(""); // v1.0.7 — 로컬 토큰 정리 (성공 여부 무관)
+  setCachedUser(null); // v1.0.15 — 유저 캐시 정리
   return r;
 }
 
