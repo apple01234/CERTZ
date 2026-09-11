@@ -342,17 +342,86 @@ git tag $NEXT_TAG
 {"title": "北京旅游网站", "ext": "web_project", "file_path": "/我的项目/北京旅游网站/index.html", "project_name": "北京旅游网站", "version": "V3"}
 ```
 
-#### 3.4.2 多入口文件项目
+#### 3.4.2 多入口文件项目（新增规则）
 
-项目包含**多个独立入口 HTML 文件**（如 `index.html` + `light.html`、多页面）时：所有入口文件必须在**同一 commit** 中提交；默认只 `send_file` 主入口；**禁止**对项目目录调用 `ext=directory` 吐文件夹。完整规则与示例见 **references/delivery-variants.md** §2。
+当项目包含**多个独立入口 HTML 文件**时（例如 `index.html` + `light.html`，或多个页面）：
+
+1. **所有入口文件必须在同一 commit 中提交**（`git add .` 自然包含全部）
+2. **send_file 策略：**
+   - 若只有一个**主入口**（其他为辅助），默认只吐主入口
+   - 若调用方 Skill 有显式要求吐出多个文件（如 prototype 双文件），按调用方要求执行
+   - 禁止遗漏：所有 HTML 文件都必须被 git 追踪
+3. **禁止**对项目目录调用 `ext=directory` 吐文件夹
+
+示例（`index.html` 为主入口，`light.html` 为新增变体）：
+```bash
+# 同一次 commit 包含两个文件
+git add index.html light.html assets/
+git commit -m "V4: 新增 light 主题变体"
+git tag v4
+```
+
+send_file 只吐主入口：
+```json
+{"title": "北京旅游网站", "ext": "web_project", "file_path": "/我的项目/北京旅游网站/index.html", "project_name": "北京旅游网站", "version": "V4"}
+```
 
 #### 3.4.3 Prototype 双文件交付（稳定规则）
 
-调用方 Skill 为 `prototype.md` 且版本包含双交付文件（可交互原型 + 流程文档）时：两个 HTML **同版本**提交，并对同一版本号**连续两次** `send_file`（prototype → flow）；禁止打包为目录或只吐其一。完整规则与示例见 **references/delivery-variants.md** §3。
+当调用方 Skill 为 `prototype.md` 且该版本包含双交付文件（可交互原型 + 流程文档）时：
 
-#### 3.4.4 固定图片导出项目（小红书卡片等）
+1. **版本纳入范围（必做）**
+   本次版本必须同时纳入并提交两个 HTML 文件（通常为 `prototype.html` 与 `flow.html`），禁止只提交其中一个。
+2. **对话流输出（必做）**
+   对同一版本号调用 `send_file` **两次**，分别吐出两个单文件：
+   - 第一次：`prototype.html`
+   - 第二次：`flow.html`
+3. **卡片命名建议**
+   在 `title` 中标注文件角色，便于用户区分（title 不含版本号）：
+   - `{项目名}-prototype`
+   - `{项目名}-flow`
+4. **禁止项**
+   - 禁止将 `prototype.html + flow.html` 打包为目录一次性吐出
+   - 禁止只吐其中一个文件并声称已完成 prototype 双交付
 
-`fixed-image` 输出目标（小红书卡片、封面图、长图）时：HTML 与 `export/` 产物**同目录、同版本（commit）**；先吐 HTML（`web_project`），再吐导出产物（单图用扩展名、多图用 `directory`）。完整规则与示例见 **references/delivery-variants.md** §4。
+示例（同一版本 V4，连续两次）：
+```json
+{"title":"企业客户管理后台-prototype","ext":"web_project","file_path":"/我的项目/企业客户管理后台/prototype.html","project_name":"企业客户管理后台","version":"V4"}
+{"title":"企业客户管理后台-flow","ext":"web_project","file_path":"/我的项目/企业客户管理后台/flow.html","project_name":"企业客户管理后台","version":"V4"}
+```
+
+#### 3.4.4 固定图片导出项目（小红书卡片等，新增规则）
+
+对于 `fixed-image` 输出目标的场景（如小红书卡片、封面图、长图），典型流程为：
+
+1. **先生成 HTML**（设计阶段产物）→ 按常规保存到 `我的项目/{项目名}/`
+2. **后执行 export** 导出图片 → 导出产物保存到 `我的项目/{项目名}/export/`
+3. **版本管理：** HTML 和 `export/` 都进 Git 追踪，同一次 commit
+4. **send_file 策略（必做）：**
+   - **第一次：** 吐出 HTML 文件（`ext: web_project`）
+   - **第二次：** 吐出 export 产物
+     - 若导出为单张图片：`ext: 具体扩展名`（如 `png`、`jpg`），`file_path: /我的项目/{项目名}/export/xxx.png`
+     - 若导出为文件夹（多张图）：`ext: directory`，`file_path: /我的项目/{项目名}/export/`
+
+**关键规则：**
+- HTML 和 export 产物**必须在同一个项目目录下**
+- 两者**必须在同一个版本（commit）中**
+- 禁止 export 产物散落在项目目录外
+
+示例（小红书长图项目，V2）：
+```bash
+# 项目目录结构
+cd 我的项目/小红书旅行攻略
+git add .
+git commit -m "V2: 优化封面配色与排版"
+git tag v2
+```
+
+send_file 调用（连续两次）：
+```json
+{"title":"小红书旅行攻略","ext":"web_project","file_path":"/我的项目/小红书旅行攻略/index.html","project_name":"小红书旅行攻略","version":"V2"}
+{"title":"小红书旅行攻略-export","ext":"directory","file_path":"/我的项目/小红书旅行攻略/export/"}
+```
 
 ### 3.5 对话流卡片与「基于该版本编辑」
 
@@ -436,9 +505,49 @@ git tag $NEXT_TAG
 
 ## 5. meta.json 结构
 
-每个项目一份，记录项目整体状态；通过 `.gitignore` 排除，不进入版本历史。**创建/更新 meta.json 前必读完整示例与逐字段说明：references/meta-json-spec.md**。
+每个项目一份，记录项目整体状态。通过 `.gitignore` 排除，不进入版本历史。
 
-核心字段速记：`project_name`（项目名）、`latest_version`（最新版本号）、`versions[]`（`id`／`timestamp`／`based_on`／`summary`；`based_on` 仅在恢复或基于历史版本编辑时有值，普通编辑为 null）。更新顺序固定不变：git commit + tag **全部完成后** → 更新 meta.json → 最后 `send_file`。
+```json
+{
+  "project_name": "北京旅游网站",
+  "latest_version": "v3",
+  "is_published": false,
+  "published_version": null,
+  "domain": null,
+  "versions": [
+    {
+      "id": "v1",
+      "timestamp": "2026-05-01T14:30:00+08:00",
+      "based_on": null,
+      "summary": "首页 + 景点列表"
+    },
+    {
+      "id": "v2",
+      "timestamp": "2026-05-05T10:30:00+08:00",
+      "based_on": null,
+      "summary": "风格变更为国际主义"
+    },
+    {
+      "id": "v3",
+      "timestamp": "2026-05-06T14:30:00+08:00",
+      "based_on": "v1",
+      "summary": "基于 V1：重新设计页面布局"
+    }
+  ]
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| project_name | string | 项目名称，Agent 自动生成，用户可修改 |
+| latest_version | string | 当前最新版本号（如 "v5"） |
+| is_published / published_version / domain | 一期默认 false / null |
+| versions[].id | string | 版本号（如 "v1"） |
+| versions[].timestamp | string | 创建时间（ISO 8601 带时区） |
+| versions[].based_on | string \| null | 仅在恢复或基于历史版本编辑时有值，指向基准版本号；普通编辑时为 null |
+| versions[].summary | string | Agent 自动生成的一句话变更摘要 |
+
+---
 
 ## 6. 操作速查
 
@@ -471,11 +580,3 @@ git tag $NEXT_TAG
 - **用户预览时：** 后端在云机解析绝对路径并替换为 OSS 链接；Agent **不要**在源码中写 OSS URL
 - **Git 追踪范围：** 代码文件 + `assets/` 资源 + `export/` 产物均进 Git；`meta.json` 和 `style-samples*.html` 被 `.gitignore` 排除
 - **已知限制：** 多文件项目的 JS/CSS 预览、历史版本预览与最新不一致——见 §0.1，本期不修复
-
----
-
-## 8. 学习资产与回归验证
-
-- 初学者教程（人用学习资产）：**tutorials/** — 索引见 `tutorials/README.md`
-- 回归测试集：**evals/evals.json** — 修改本 Skill 后全量重跑，通过率不得下降
-- 故障·解决记录：**references/faq.md** — 只记实际发生并解决的故障（禁止臆测性记录）
