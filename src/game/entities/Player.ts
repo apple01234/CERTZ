@@ -426,7 +426,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v4.1.0 — 내 공격/스킬을 같은 구역 플레이어에게 브로드캐스트 (코스메틱 전용) */
   protected netEmitAction(kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5") {
     try {
-      netAction({ kind, x: Math.round(this.x), y: Math.round(this.y), flip: this.flipX, cls: this.cls });
+      /* v1.0.14 — flip을 물리 방향(오른쪽=true)으로 정규화해 전송. 원격의
+       *  fireRemoteProj/spawnBow는 걷기 컨벤션(오른쪽=true)으로 해석하므로
+       *  공격 중 flipX를 그대로 보내면 화살이 항상 반대로 나갔다. */
+      netAction({ kind, x: Math.round(this.x), y: Math.round(this.y), flip: this.netFacingFlip, cls: this.cls });
     } catch {
       /* 오프라인 — 무시 */
     }
@@ -681,6 +684,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  반대방향을 보는 "투사체 스킬 좌우반전" 리포트의 근원 (데드아이 등 원거리 직업). */
   private faceAtk(aim: Phaser.Math.Vector2) {
     if (Math.abs(aim.x) >= Math.abs(aim.y)) this.setFlipX(aim.x < 0);
+  }
+
+  /** v1.0.14 — 네트워크 flip 정규화: "지금 오른쪽을 보고 있는가?" (물리 방향 — 걷기 컨벤션)
+   *  공격 중 flipX는 왼쪽 조준=true(faceAtk, 공격 시트 우향 네이티브)라 걷기 flipX와
+   *  의미가 정반대. 이 값을 그대로 netState/netAction에 실으면 원격 클라가
+   *  걷기 컨벤션으로 해석해 다른 유저의 활·화살이 항상 등 뒤로 나가는
+   *  "투사체 좌우반전(멀티)" 버그의 근원. 수직 조준 시엔 마지막 flipX를 유지한다. */
+  get netFacingFlip(): boolean {
+    return this.facing.x !== 0 ? this.facing.x > 0 : this.flipX;
   }
 
   /** 조준 방향: 마지막 이동 방향(4방향 스냅 — 근접 애니메이션은 4방향 시트 기준) */

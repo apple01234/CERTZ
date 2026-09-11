@@ -43,7 +43,7 @@ export function TitleScreen() {
           이그드라실 : 아홉 왕국
           {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
            *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.13 — 계열의 문양이 답하다 · 구름 너머의 백업 · 절제된 빛</span>
+          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.14 — 화살은 조준의 방향으로 · 멀티 투사체 정면화</span>
         </p>
       </div>
 

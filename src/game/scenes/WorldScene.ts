@@ -7238,7 +7238,10 @@ export class WorldScene extends Phaser.Scene {
       net.netState({
         x: Math.round(this.player.x),
         y: Math.round(this.player.y),
-        flip: this.player.flipX,
+        /* v1.0.14 — 물리 방향(오른쪽=true)으로 정규화. 공격 중 flipX는 걷기와
+         *  의미가 반대(공격 시트 우향 네이티브 — 왼쪽 조준=true)라 원격 캐릭터가
+         *  반대를 보고, 원격 화살도 등 뒤로 나갔다 (투사체 좌우반전 · 멀티). */
+        flip: this.player.netFacingFlip,
         moving: move.lengthSq() > 0.01 || this.player.state === "attack",
         lv: this.player.lv,
         cls: this.player.cls,
@@ -8408,6 +8411,11 @@ export class WorldScene extends Phaser.Scene {
     p.anims.stop();
     if (this.anims.exists(cfg.anim)) p.play(cfg.anim);
     else p.setTexture("orb");
+    /* v1.0.14 — 적 원거리 투사체 진행 방향 정렬. 기존엔 회전이 없어 왼쪽으로 쏜
+     *  파이어볼/다크볼트가 오른쪽을 본 채 뒤로 날아가 보였다(역주행 렌더).
+     *  사용 중 애님 4종(fx-icelance 대칭·fx-fireball·fx-darkbolt 우향 코멧·
+     *  fx-magicorb 대칭)은 전부 회전 안전 — 플레이어 투사체와 동일 방식. */
+    p.setRotation(cfg.angle);
     p.setTint(cfg.tint ?? 0xffffff).setScale(cfg.scale ?? 0.85).setAlpha(0.95);
     p.setBlendMode(Phaser.BlendModes.ADD);
     p.setData("dmg", cfg.dmg);
