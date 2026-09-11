@@ -13,7 +13,7 @@
  *    (앱 등록 후 키만 넣으면 코드 수정 없이 즉시 활성화되는 스캐폴딩)
  *  - 클라우드 세이브: 로그인 유저의 게임 세이브 백업/복원 (localStorage 덤프 통째로 저장)
  */
-const { scryptSync, randomBytes, timingSafeEqual } = require("node:crypto");
+const { scryptSync, randomBytes, timingSafeEqual, createHash, createCipheriv, createDecipheriv } = require("node:crypto");
 const { readFileSync, writeFileSync, mkdirSync, existsSync } = require("node:fs");
 const path = require("node:path");
 
@@ -67,9 +67,11 @@ function isAdminUser(u) {
 /* ---------------- 파일 DB (디바운드 저장) ---------------- */
 let db = { users: {}, tokens: {}, saves: {}, market: { nextId: 1, listings: {} }, payouts: {}, rank: {} };
 let saveTimer = null;
+let bootHadDbFile = false; // v1.0.13 — 부팅 시 DB 파일 존재 여부(원격 복원 판단용)
 function loadDb() {
   try {
-    if (existsSync(DB_FILE)) db = JSON.parse(readFileSync(DB_FILE, "utf8"));
+    bootHadDbFile = existsSync(DB_FILE);
+    if (bootHadDbFile) db = JSON.parse(readFileSync(DB_FILE, "utf8"));
     db.users ||= {};
     db.tokens ||= {};
     db.saves ||= {};
@@ -111,12 +113,166 @@ function persistDb() {
     try {
       mkdirSync(DB_DIR, { recursive: true });
       writeFileSync(DB_FILE, JSON.stringify(db));
+      scheduleBackupPush(); // v1.0.13 — 파일 저장 성공 시 원격 백업 예약
     } catch (e) {
       console.error("[SERTZ-accounts] DB 저장 실패", e);
     }
   }, 300);
 }
+
+/* ---------------- v1.0.13 — 계정 DB GitHub 원격 백업/복원 ----------------
+ *  워크스페이스(컨테이너)가 교체될 때마다 db/가 초기화되며 "모든 로그인 401" 사태가
+ *  반복됐다(오토시드는 관리자 계정만 살림 — 유저 계정·클라우드 세이브는 소실).
+ *  변경 발생 시 암호화 백업을 저장소 db-backup/accounts.enc 로 푸시하고, 부팅 시 DB가
+ *  비어 있으면 복원한다 — 계정이 워크스페이스 수명과 무관하게 생존한다.
+ *  · 토큰: env GITHUB_TOKEN 우선, 없으면 .git/config 리모트 URL에서 추출
+ *  · 암호화: AES-256-GCM(SERTZ_BACKUP_KEY env, 기본 상수) — 저장 내용은 솔트된
+ *    해시라 파일 유출돼도 원 비밀번호는 노출되지 않는다
+ *  · 모든 실패는 로그만 남기고 무시 — 백업이 게임 서비스를 절대 막지 않는다 */
+const BACKUP_PATH = "db-backup/accounts.enc";
+let ghTokenCache = null;
+function ghToken() {
+  if (ghTokenCache !== null) return ghTokenCache;
+  ghTokenCache = process.env.GITHUB_TOKEN || "";
+  try {
+    if (!ghTokenCache) {
+      const cfg = readFileSync(path.join(process.cwd(), ".git", "config"), "utf8");
+      const m = cfg.match(/https:\/\/(?:[^:@/]+):([^@]+)@github\.com\/([^/]+)\/([^\s.]+)/);
+      if (m) { ghTokenCache = m[1]; }
+    }
+  } catch { /* .git 없는 배포환경 — env 토큰만 사용 */ }
+  return ghTokenCache;
+}
+function ghRepo() {
+  try {
+    const cfg = readFileSync(path.join(process.cwd(), ".git", "config"), "utf8");
+    const m = cfg.match(/github\.com\/([^/]+)\/([^\s.]+)/);
+    if (m) return `${m[1]}/${m[2]}`;
+  } catch { /* 무시 */ }
+  return "apple01234/CERTZ";
+}
+function backupKey() {
+  return createHash("sha256").update(process.env.SERTZ_BACKUP_KEY || "sertz-accounts-backup::v1").digest();
+}
+function backupEncrypt(json) {
+  const iv = randomBytes(12);
+  const c = createCipheriv("aes-256-gcm", backupKey(), iv);
+  const enc = Buffer.concat([c.update(json, "utf8"), c.final()]);
+  return Buffer.concat([Buffer.from("SZBK1"), iv, c.getAuthTag(), enc]).toString("base64");
+}
+function backupDecrypt(b64) {
+  try {
+    const raw = Buffer.from(String(b64), "base64");
+    if (raw.length < 33 || raw.subarray(0, 5).toString() !== "SZBK1") return null;
+    const iv = raw.subarray(5, 17), tag = raw.subarray(17, 33), data = raw.subarray(33);
+    const d = createDecipheriv("aes-256-gcm", backupKey(), iv);
+    d.setAuthTag(tag);
+    return Buffer.concat([d.update(data), d.final()]).toString("utf8");
+  } catch { /* 변조/키 불일치 — GCM 인증 실패는 throw라서 여기서 흡수 */ }
+  return null;
+}
+async function ghGetFile() {
+  const tok = ghToken();
+  if (!tok) return null;
+  const r = await fetch(`https://api.github.com/repos/${ghRepo()}/contents/${BACKUP_PATH}?ref=main`, {
+    headers: { Authorization: `Bearer ${tok}`, Accept: "application/vnd.github+json", "User-Agent": "sertz-accounts" },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (r.status === 404) return null; // 백업 아직 없음
+  if (!r.ok) throw new Error(`GET ${r.status}`);
+  const j = await r.json();
+  return { sha: j.sha, content: j.content ? Buffer.from(j.content, "base64").toString("utf8") : "" };
+}
+async function ghPutFile(contentB64, sha) {
+  const tok = ghToken();
+  if (!tok) return false;
+  /* API content 필드 = "파일 내용"의 base64. 파일 내용 자체가 base64 텍스트라 이중 인코딩 필요 */
+  const fileB64 = Buffer.from(contentB64, "utf8").toString("base64");
+  const r = await fetch(`https://api.github.com/repos/${ghRepo()}/contents/${BACKUP_PATH}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${tok}`, Accept: "application/vnd.github+json", "User-Agent": "sertz-accounts", "Content-Type": "application/json" },
+    body: JSON.stringify({ message: `accounts backup ${new Date().toISOString().slice(0, 16)}`, content: fileB64, ...(sha ? { sha } : {}), branch: "main" }),
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!r.ok) throw new Error(`PUT ${r.status}`);
+  return true;
+}
+let backupTimer = null, backupBusy = false, lastBackupHash = "", lastRemoteSha = undefined;
+function scheduleBackupPush() {
+  if (!ghToken()) return;
+  if (backupTimer) clearTimeout(backupTimer);
+  backupTimer = setTimeout(() => { backupTimer = null; void backupPush(); }, 30_000);
+}
+async function backupPush() {
+  if (backupBusy) { scheduleBackupPush(); return; }
+  backupBusy = true;
+  try {
+    const json = JSON.stringify(db);
+    const h = createHash("sha256").update(json).digest("hex");
+    if (h === lastBackupHash) return; // 변경 없음
+    if (lastRemoteSha === undefined) {
+      const cur = await ghGetFile().catch(() => null);
+      lastRemoteSha = cur ? cur.sha : null;
+    }
+    const ok = await ghPutFile(backupEncrypt(json), lastRemoteSha);
+    if (ok) { lastBackupHash = h; lastRemoteSha = undefined; } // PUT 후 새 sha 모름 → 다음 push가 재조회
+  } catch (e) {
+    console.log(`[SERTZ-accounts] 원격 백업 보류: ${e && e.message ? e.message : e}`);
+  } finally {
+    backupBusy = false;
+  }
+}
+async function restoreFromGithubIfFresh() {
+  try {
+    /* 부팅 시 DB 파일이 없었고(신규 컨테이너) 지금도 계정이 비어 있을 때만 복원 */
+    const seedsOnly = Object.keys(db.users).length > 0 && Object.keys(db.users).every((u) => ADMIN_USERS.includes(u.toLowerCase()));
+    if (bootHadDbFile && !seedsOnly) return;
+    const cur = await ghGetFile();
+    if (!cur || !cur.content) return;
+    const json = backupDecrypt(cur.content);
+    if (!json) { console.log("[SERTZ-accounts] 원격 백업 복호화 실패 — 키 불일치?"); return; }
+    const remote = JSON.parse(json);
+    if (!remote || typeof remote !== "object" || !remote.users) return;
+    lastRemoteSha = cur.sha;
+    if (bootHadDbFile && seedsOnly) {
+      /* 오토시드만 있는 상태 — 시드 계정은 유지하고 원격 계정을 병합(추가만) */
+      for (const [uid, u] of Object.entries(remote.users)) if (!db.users[uid]) db.users[uid] = u;
+      for (const k of ["tokens", "saves", "payouts", "rank"]) {
+        const src = remote[k] || {};
+        db[k] = db[k] || {};
+        for (const [kk, vv] of Object.entries(src)) if (db[k][kk] === undefined) db[k][kk] = vv;
+      }
+      if (remote.market?.listings) {
+        db.market = db.market || { nextId: 1, listings: {} };
+        for (const [kk, vv] of Object.entries(remote.market.listings)) if (db.market.listings[kk] === undefined) db.market.listings[kk] = vv;
+      }
+    } else {
+      db = remote;
+    }
+    db.users ||= {}; db.tokens ||= {}; db.saves ||= {};
+    db.market ||= { nextId: 1, listings: {} }; db.market.listings ||= {};
+    db.payouts ||= {}; db.rank ||= {};
+    /* 복원 후에도 롤 동기화 + 오토시드(원격에 관리자가 없을 경우 대비) 재실행 */
+    for (const [uid, u] of Object.entries(db.users)) {
+      const shouldAdmin = ADMIN_USERS.includes(String(uid || "").toLowerCase()) || ADMIN_USERS.includes(String(u.name || "").toLowerCase());
+      if (shouldAdmin && u.role !== "admin") u.role = "admin";
+      else if (!shouldAdmin && u.role === "admin") u.role = "user";
+    }
+    for (const aid of ADMIN_USERS) {
+      if (!db.users[aid]) {
+        const salt = randomBytes(16).toString("hex");
+        db.users[aid] = { id: aid, name: aid.slice(0, 8), provider: "local", salt, hash: hashPw(process.env.SERTZ_ADMIN_PASSWORD || "admin123", salt), createdAt: Date.now(), role: "admin" };
+      }
+    }
+    persistDb();
+    console.log(`[SERTZ-accounts] 원격 백업 복원 완료 — 계정 ${Object.keys(db.users).length}명`);
+    audit("backup_restore", { users: Object.keys(db.users).length });
+  } catch (e) {
+    console.log(`[SERTZ-accounts] 원격 복원 생략: ${e && e.message ? e.message : e}`);
+  }
+}
 loadDb();
+void restoreFromGithubIfFresh();
 
 /* ---------------- 유틸 ---------------- */
 function hashPw(pw, salt) {

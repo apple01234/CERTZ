@@ -818,8 +818,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** 주력기(Z) — v3.0.6: 클래스 고유 메커니즘 12종 (겹침 0 — 지시 #4)
    *  3차/4차는 계열 체인에서 2차기 승계(강화판) — resolveSkill1Of */
   /* v1.0.11 — N차마다 기존 스킬 강화 (유저 상시 지시): 주력기/기동기/3차기 시전 시
-   *  GameStudio(Gameworks) 3D VFX를 전직 단계에 비례해 합성 — 2차 광점 / 3차 충격링+계열 악센트 /
-   *  4차 룬 마법진+크리티컬 플래시 / 5차 폭발+화염+벚꽃잎. 미전직·1차는 기존 연출 유지 */
+   *  GameStudio(Gameworks) 3D VFX를 전직 단계에 비례해 합성 — v1.0.13 재설계:
+   *  모든 직업이 자기 계열색 마법진 시그니처 보유 / 2·3차는 절제판(알파·크기 축소) /
+   *  4차 룬 마법진+크리티컬 플래시 풀 / 5차 폭발+화염 풀. 미전직·1차는 기존 연출 유지 */
   private tierFlair() {
     const t = this.sTier;
     if (t < 2) return;

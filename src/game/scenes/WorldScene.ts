@@ -39,7 +39,7 @@ import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
 import { applyToonStyle, clearToonStyle } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일)
-import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnPetalStorm } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.11 — 벚꽃 소나기(튜토리얼)
+import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
 import * as audio from "../audio";
 import {
@@ -71,9 +71,9 @@ export class WorldScene extends Phaser.Scene {
   private tutRetryMs = 0; // update 루프 재시도 누적 (타이머 이벤트가 유실되는 레이스 차단용)
   /* v1.0.12 (#횃불장치) — 암전 챕터 근접 점등 횃불 (가까이 가면 5초간 점등) */
   private torches: { prop: Phaser.GameObjects.Sprite; glow: Phaser.GameObjects.Image; x: number; y: number; litUntil: number; cdUntil: number }[] = [];
-  /* v1.0.12 (#3D팩 2차 투입) — 날씨 파티클 (니플헤임 눈보라 / 마을 벚꽃) */
+  /* v1.0.12 (#3D팩 2차 투입) — 날씨 파티클 (니플헤임 눈보라 · v1.0.13부터 벚꽃 날씨는 제거) */
   private weatherSnow: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
-  private weatherPetal: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  /* v1.0.13 — 마을 벚꽃 날림 제거 (유저 지시: "벚꽃 그냥 없애") — 날씨는 니플헤임 눈보라만 유지 */
 
   questIdx = 0;
   huntCount = 0;
@@ -544,7 +544,6 @@ export class WorldScene extends Phaser.Scene {
     this.tutRetryMs = 0;
     this.torches = []; // v1.0.12 — 횃불 장치 배열 리셋 (스프라이트는 씬 재시작이 정리)
     this.weatherSnow = null; // v1.0.12 — 날씨 emitter 참조 리셋
-    this.weatherPetal = null;
     this.portalSwirl = null; // v4.7.0 — 씬 재시작 시 파괴된 셰이더 참조 정리
     /* v2.7 — 씬 재시작 같은 인스턴스 재사용: 이전 구역 개방 상태가 유출되면
      *  다음 구역에서 시작부터 포탈이 열려 퀘스트를 건너뛰고, 보루도 early-return으로 죽는다 */
@@ -1846,7 +1845,8 @@ export class WorldScene extends Phaser.Scene {
     }
 
     /* v1.0.12 (#3D팩 2차 투입 — "내가 준 고급 에셋") — Toon Shaders Pro/Hovl 팩 텍스처로
-     *  날씨 레이어 구축: ①니플헤임 계열 = 눈보라(wx_snowflake) ②마을 = 벚꽃 날림(wx_petal).
+     *  날씨 레이어 구축: 니플헤임 계열 = 눈보라(wx_snowflake).
+     *  v1.0.13 — 마을 벚꽃 날림 제거 (유저 지시: "벚꽃 그냥 없애").
      *  카메라 상단 폭 emitZone — 파티클은 월드 좌표에 떨어져 스크롤과 자연스럽게 어긋난다. */
     {
       const chNow = parseStage(stageKey).ch;
@@ -1862,20 +1862,6 @@ export class WorldScene extends Phaser.Scene {
           rotate: { min: 0, max: 360 },
           quantity: 1,
           frequency: 130,
-        }).setDepth(54);
-      } else if (STAGES[stageKey]?.isVillage && chNow !== "abyss" && chNow !== "hel") {
-        this.weatherPetal = this.add.particles(0, 0, "wx_petal", {
-          x: { min: -80, max: 1400 },
-          y: 0,
-          lifespan: 12000,
-          speedY: { min: 18, max: 40 },
-          speedX: { min: -14, max: 26 },
-          scale: { min: 0.05, max: 0.11 },
-          alpha: { start: 0.85, end: 0.35 },
-          rotate: { min: 0, max: 360 },
-          quantity: 1,
-          frequency: 620,
-          tint: [0xffc4d6, 0xffd9e4, 0xffb0c8],
         }).setDepth(54);
       }
     }
@@ -7106,7 +7092,6 @@ export class WorldScene extends Phaser.Scene {
 
     /* v1.0.12 — 날씨 emitter 카메라 추적 (emit 구간을 화면 상단에 유지) */
     if (this.weatherSnow) this.weatherSnow.setPosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
-    if (this.weatherPetal) this.weatherPetal.setPosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
 
     /* v1.0.12 (#횃불장치) — 근접 점등 판정: 96px 진입 시 5초 점등 → 종료 0.8초 전 소등 예고 페이드.
      *  프레임당 거리 제곱 비교 8개 — 저비용. 꺼진 횃불은 재접근 시 다시 타오른다. */
@@ -10584,9 +10569,9 @@ export class WorldScene extends Phaser.Scene {
     this.save();
   }
 
-  /** 축하 연출 — 벚꽃 소나기 (Gameworks Petal Particles) */
-  spawnPetalBurst(x: number, y: number, n: number) {
-    spawnPetalStorm(this, x, y, n);
+  /** 축하 연출 — 스파클 버스트 (v1.0.13 — 벚꽃 소나기 제거 대체, 골드 광륜) */
+  spawnCelebrateFX(x: number, y: number, n: number) {
+    spawnCelebrateBurst(this, x, y, n);
   }
 
   /** 축하 보상 — 뽑기권 +1 (골드/물약은 Tutorial에서 플레이어에 직접 지급) */

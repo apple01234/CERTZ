@@ -3,7 +3,7 @@
  *
  *  기존 인트로(이동 학습 → 우물 → 이름 짓기)가 끝난 뒤 마을에서 이어지는 전투 온보딩.
  *   ① 주민과 대화(E) → ② 차원문 이동 → ③ 첫 전투(처치 ×3) → ④ 전리품 줍기 → ⑤ 스킬(Z) → ⑥ 물약(D)
- *  → 완료: 벚꽃 소나기 + 축하 보상 (골드/물약/뽑기권) + 세이브 플래그.
+ *  → 완료: 스파클 버스트 + 축하 보상 (골드/물약/뽑기권) + 세이브 플래그.
  *
  *  설계 규약 (기존 틀 유지):
  *   · UI는 Phaser 오브젝트 — React 오버레이 비개입 (banner/panel 체계 그대로)
@@ -12,7 +12,6 @@
  *   · 진행 판정은 실제 성공 시에만 (useSkill1 MP/CD 통과, usePotion 보유+회복 성공 등)
  */
 import Phaser from "phaser";
-import { spawnPetalStorm } from "./fx/StudioFX";
 import type { WorldScene } from "./scenes/WorldScene";
 
 type TutStepId = "talk" | "portal" | "kill" | "pickup" | "skill" | "pot";
@@ -221,9 +220,9 @@ export class Tutorial {
     const s = this.scene;
     const p = s.playerRef;
     if (!p) { s.completeTutorialSave(); this.destroy(); return; }
-    /* 축하 연출 — 벚꽃 소나기 + 광점 */
+    /* 축하 연출 — 스파클 버스트 + 광점 (v1.0.13 — 벚꽃 소나기 제거 대체) */
     try {
-      s.spawnPetalBurst(p.x, p.y, 24);
+      s.spawnCelebrateFX(p.x, p.y, 20);
       s.cameras.main.flash(220, 255, 220, 240);
       s.cameras.main.shake(120, 0.003);
     } catch { /* 연출 실패 — 보상은 정상 지급 */ }

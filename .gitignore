@@ -130,3 +130,8 @@ research/
 db/
 download/*.zip
 skills-workspace/
+
+# v1.0.13 — 검증 스크린샷 리포트 유입 차단 (에셋 아님)
+scripts/*.png
+scripts/_perf_charts/
+download/*.png

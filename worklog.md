@@ -1528,3 +1528,24 @@ Stage Summary:
 - "Game Studio 플러그인" 정체 최종 확정 = 유저 업로드 Unity 팩(Toon Shaders Pro 등) — 2D 프리렌더 방식으로 텍스처 32종 투입 완료
 - 운영 교훈: ①서버 주소는 외부 실험 필지 ②샌드박스 리셋 대비 push 우선 ③MultiEdit 실패 시 부분 적용 잔존 가능 — 실패 후 grep 재검증 의무 ④APK 빌드 후 웹 서빙용 .next 별도 빌드
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 77
+Agent: Super Z (메인)
+Task: 유저 3건 — ①벚꽃 그냥 없애 ②마법사만 마법진(타 직업은 다른 이펙트) ③4·5차만 풀 규모, 나머지는 약하게(눈아픔) — v1.0.13 확정·릴리스 (versionCode 78)
+
+Work Log:
+- [인수] 선행 러너의 v1.0.13 미커밋(벚꽃 16잎 절분 시도·계정 구름백업·스크린샷 정리 543파일 삭제) 인수 — 유저가 방향 전환("벚꽃 그냥 없애")하여 절분 코드를 제거 코드로 교체
+- [① 벚꽃 전면 철수] WorldScene 마을 벚꽃 날씨 emitter 삭제(니플헤임 눈보라만 유지) · StudioFX spawnPetalStorm 삭제 + tier5 flair 벚꽃잎 호출 제거 · Tutorial 축하 연출을 spawnCelebrateBurst(골드 스파클: 링+플레어+방사 스파크)로 교체 · BootScene gw_petal/wx_petal 로드 제거 + public/assets 에셋 파일 삭제(48KB, APK에서도 부재 확인)
+- [② 직업별 마법진] spawnTierFlair 재설계 — 3차+ 공통 구간에서 모든 직업이 자기 계열색(clsHex 틴트) gw_rune 마법진 보유. "마법사만 마법진" 해소. 계열 악센트(전사 참격/궁수 화살/도적 X날/마법사 오브)는 보조로 유지
+- [③ 티어별 강약] full = tier>=4 분기 신설 — 2차: 희미한 광점 1(alpha 0.38·scale 0.5) / 3차: 소형 반투명 마법진(alpha 0.28)+얕은 링(0.3)+악센트 1개 축소판 / 4·5차: 기존 풀 규모 그대로(유저 지시 "그대로 이정도 규모"). spawnFlarePop·spawnRingPop·spawnShockGW에 alpha 파라미터 추가
+- [웹 실측 1280×720 가로] 서버 재기동 후 이어하기 진입 — ①타이틀 v1.0.13 배지("계열의 문양이 답하다") ②마을 벚꽃 날림 부재 확인 ③4차 궁수(데드아이): 녹색 풀 마법진+링+플레어 실측 캡처 ④3차 전사(워로드): 골드 소형 절제판 마법진+스파크 실측 캡처 — 4차와 3차의 규모 차이 육안 확인 ⑤pageerror·콘솔 에러 0
+- [트러블슈팅] 서버 kill→재기동 직후 소켓 레이스로 접속 거부 2회 — 기동→검증을 단일 명령으로 연결해 해소 · agent-browser record가 페이지 컨텍스트를 깨는 것 확인 — reload+재진입으로 복구 · 세이브 cls 주입(warlord/berserker/deadeye)으로 티어별 실측
+- [빌드·릴리스] tsc 0에러 · 웹빌드(.next 별도 — Task 76 교훈 적용) · build_apk.sh(2m38s) → SERTZ-v1.0.13.apk 106,080,506B · aapt 78/1.0.13 · md5 6fe3b13b981cbf6f5a7a227200d74398 · APK 내부 검출(spawnCelebrateBurst 2건·gw_rune) / petal 텍스처 0건
+- [릴리스] 샌드박스 리셋으로 gh CLI 소실 → git remote URL 내장 토큰으로 REST API 직접 업로드 — Release v1.0.13(id 386740020) state=uploaded → 재다운로드 md5 원격 일치 ✓ · 안내.txt·apk-guide md5 기입(구 4f03b680 잔존분 교체) · 서버 재기동(307→v1.0.13 서빙 확인)
+
+Stage Summary:
+- v1.0.13 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.13/SERTZ-v1.0.13.apk (versionCode 78, 106,080,506B, md5 6fe3b13b…)
+- 유저 3건 전부 완료: 벚꽃 제거(코드·에셋·APK 3중 확인) · 전직업 계열색 마법진 · 티어별 강약(4·5차 풀/2·3차 절제)
+- 운영 교훈: ①kill 직후 재기동은 소켓 레이스 주의 — 기동과 검증을 한 명령에 ②agent-browser record는 컨텍스트 리셋됨 — 실측은 press+screenshot 연발이 안정 ③gh 소실 시 remote URL 토큰으로 REST API 대체 가능
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

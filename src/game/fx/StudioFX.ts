@@ -80,10 +80,11 @@ export function spawnPentacle(
   });
 }
 
-/** 원소 플레어 코어 팝 — 타격/폭발 중심 (베이크드 컬러 텍스처 권장: vf_flare_*) */
+/** 원소 플레어 코어 팝 — 타격/폭발 중심 (베이크드 컬러 텍스처 권장: vf_flare_*)
+ *  v1.0.13 — alpha 옵션 추가(티어별 강약: 2~3차는 희미하게, 4~5차만 풀) */
 export function spawnFlarePop(
   scene: SceneLike, x: number, y: number, tex: string,
-  opts: { tint?: number; scale?: number; duration?: number; angle?: number } = {},
+  opts: { tint?: number; scale?: number; duration?: number; angle?: number; alpha?: number } = {},
 ) {
   const im = vfImage(scene, tex, x, y, opts.tint);
   if (!im) return;
@@ -91,7 +92,7 @@ export function spawnFlarePop(
   const dur = opts.duration ?? 420;
   const target = opts.scale ?? 1.0;
   im.setAlpha(0).setScale(target * 0.3);
-  scene.tweens.add({ targets: im, alpha: 0.82, scale: target, duration: dur * 0.32, ease: "Cubic.out" });
+  scene.tweens.add({ targets: im, alpha: opts.alpha ?? 0.82, scale: target, duration: dur * 0.32, ease: "Cubic.out" });
   scene.tweens.add({
     targets: im, alpha: 0, scale: target * 1.3, angle: `+${Phaser.Math.Between(-14, 14)}`,
     delay: dur * 0.3, duration: dur * 0.7, ease: "Sine.out",
@@ -99,14 +100,15 @@ export function spawnFlarePop(
   });
 }
 
-/** 확장 링 — 충격파/시전 경계 (vf_ring: 화이트 tint 대응 · vf_ring_void/fire: 베이크드) */
+/** 확장 링 — 충격파/시전 경계 (vf_ring: 화이트 tint 대응 · vf_ring_void/fire: 베이크드)
+ *  v1.0.13 — alpha 파라미터 추가(티어별 강약) */
 export function spawnRingPop(
   scene: SceneLike, x: number, y: number, tex: string, tint: number,
-  toScale = 3.0, duration = 560,
+  toScale = 3.0, duration = 560, alpha = 0.72,
 ) {
   const im = vfImage(scene, tex, x, y, tint);
   if (!im) return;
-  im.setAlpha(0.72).setScale(0.3);
+  im.setAlpha(alpha).setScale(0.3);
   scene.tweens.add({
     targets: im, scale: toScale, alpha: 0, duration, ease: "Cubic.out",
     onComplete: () => im.destroy(),
@@ -138,7 +140,7 @@ export function spawnUltimateIntro(scene: SceneLike, x: number, y: number, tint:
 }
 
 /* ═══════════════ v1.0.11 — Gameworks 프리셋 (유저 업로드 Unity 팩) ═══════════════
- *  Hovl Studio Magic effects · Matthew Guz Slash Effects · Petal Particles 프리렌더 텍스처.
+ *  Hovl Studio Magic effects · Matthew Guz Slash Effects 프리렌더 텍스처 (Petal Particles는 v1.0.13 철수).
  *  용도: ① N차마다 기존 스킬 강화(1차~3차 주력/기동/3차기) ② 튜토리얼 축하 연출 ③ 축제 이펙트 */
 
 /** 마법진 (gw_magic: Hovl MagicCircle2 베이크드 퍼플 / gw_rune: 룬 서클 화이트 — 틴트 대응) */
@@ -161,11 +163,11 @@ export function spawnMagicCircleGW(
   });
 }
 
-/** 충격 링 (gw_shock — Guz Shockwave2, 화이트 틴트 대응) */
-export function spawnShockGW(scene: SceneLike, x: number, y: number, tint: number, toScale = 2.6, duration = 520) {
+/** 충격 링 (gw_shock — Guz Shockwave2, 화이트 틴트 대응) — v1.0.13 alpha 파라미터(티어별 강약) */
+export function spawnShockGW(scene: SceneLike, x: number, y: number, tint: number, toScale = 2.6, duration = 520, alpha = 0.78) {
   const im = vfImage(scene, "gw_shock", x, y, tint);
   if (!im) return;
-  im.setAlpha(0.78).setScale(0.35);
+  im.setAlpha(alpha).setScale(0.35);
   scene.tweens.add({
     targets: im, scale: toScale, alpha: 0, duration, ease: "Cubic.out",
     onComplete: () => im.destroy(),
@@ -198,27 +200,22 @@ export function spawnBoomGW(scene: SceneLike, x: number, y: number, tint: number
   });
 }
 
-/** 벚꽃잎 소나기 (gw_petal — Petal Particles 셀 크롭) — 튜토리얼 완료/축제 연출. NORMAL 블렌드(꽃잎은 빛이 아님) */
-export function spawnPetalStorm(scene: SceneLike, x: number, y: number, count = 10) {
-  if (!scene.textures.exists("gw_petal")) return;
+/** 축하 스파클 버스트 (v1.0.13 — 벚꽃 소나기 완전 제거에 따른 대체 연출) —
+ *  골드 톤 광륜: 링 + 플레어 + 방사 스파크. 튜토리얼 완료 등 승리의 순간용 */
+export function spawnCelebrateBurst(scene: SceneLike, x: number, y: number, count = 14) {
+  spawnRingPop(scene, x, y, "vf_ring", 0xffd98a, 2.2, 640);
+  spawnFlarePop(scene, x, y - 6, "gw_flare", { tint: 0xffe9b0, scale: 1.0, duration: 480 });
   for (let i = 0; i < count; i++) {
-    const px = x + Phaser.Math.Between(-130, 130);
-    const py = y - Phaser.Math.Between(20, 70);
-    const petal = scene.add.image(px, py, "gw_petal") as Img;
-    petal.setDepth(26).setScale(Phaser.Math.FloatBetween(0.1, 0.2)).setAlpha(0.92);
-    petal.setRotation(Phaser.Math.FloatBetween(-Math.PI, Math.PI));
-    const fall = Phaser.Math.Between(90, 150);
-    const drift = Phaser.Math.Between(-70, 70);
+    const ang = (Math.PI * 2 * i) / count + Phaser.Math.FloatBetween(-0.15, 0.15);
+    const dist = Phaser.Math.Between(70, 120);
+    const sp = vfImage(scene, "gw_spark", x, y, i % 3 === 0 ? 0xffffff : 0xffd98a);
+    if (!sp) break;
+    sp.setAlpha(0.9).setScale(0.18);
     scene.tweens.add({
-      targets: petal,
-      y: py + fall + Phaser.Math.Between(20, 60),
-      x: px + drift,
-      rotation: `+=${Phaser.Math.FloatBetween(-2.4, 2.4)}`,
-      alpha: 0.15,
-      duration: Phaser.Math.Between(900, 1500),
-      delay: i * 55,
-      ease: "Sine.inOut",
-      onComplete: () => petal.destroy(),
+      targets: sp,
+      x: x + Math.cos(ang) * dist, y: y + Math.sin(ang) * dist,
+      alpha: 0, scale: 0.04, angle: `+${Phaser.Math.Between(40, 160)}`,
+      duration: Phaser.Math.Between(500, 800), ease: "Cubic.out", onComplete: () => sp.destroy(),
     });
   }
 }
@@ -226,39 +223,54 @@ export function spawnPetalStorm(scene: SceneLike, x: number, y: number, count = 
 export type FamKey = "warrior" | "ranger" | "mage" | "thief";
 
 /** ═══ N차마다 기존 스킬 강화 (유저 상시 지시) ═══
+ *  v1.0.13 재설계 (유저 3건 지시 반영):
+ *   ① 벚꽃잎 연출 완전 제거  ② 모든 직업이 자기 계열색 마법진 시그니처 보유 (마법사 전용이 아님)
+ *   ③ 4·5차만 풀 규모, 2·3차는 절제판(눈아픔 완화 — 알파·크기·요소 수 축소)
  *  skill1(주력기)/skill2(기동기)/skill3(3차기) 호출부에서 sTier에 비례해 합성:
- *   t≥2 (2차+)  — 클래스색 광점 팝 + 스파크
- *   t≥3 (3차+)  — 충격 링 확장 + 궤도 스파크 3 + 계열 정체성 악센트
- *   t≥4 (4차+)  — 룬 마법진 스핀(클래스색) + 플레어 + 크리티컬 플래시
- *   t≥5 (5차각성) — 폭발 코어 + 화염 잔연 + 벚꽃잎 6 (각성의 격)
- *  미전직/1차는 기존 연출 유지 — "강화가 체감되는 최소 단계"를 2차로 잡은 하한 설계.
- *  fam: 계열 정체성 악센트 (전사=초승달 참격+지면 균열 / 궁수=화살+혜성 궤적 /
+ *   t2 (2차)  — [절제] 계열색 광점 1 (희미)
+ *   t3 (3차)  — [절제] 계열색 소형 마법진(반투명) + 얕은 링 + 계열 악센트 1개(소형)
+ *   t4 (4차)  — [풀] 룬 마법진 스핀(계열색) + 충격 링 + 궤도 스파크 3 + 플레어 + 크리티컬 플래시 + 계열 악센트 풀
+ *   t5 (5차각성) — [풀] 4차 전부 + 폭발 코어 + 화염 잔연 (각성의 격)
+ *  fam 계열 악센트 (전사=초승달 참격+지면 균열 / 궁수=화살+혜성 궤적 /
  *       마법사=오브 마법진+수정 파편 / 도적=교차 참격날). angle: 조준 방향(라디안) */
 export function spawnTierFlair(
   scene: SceneLike, x: number, y: number, hex: number, tier: number,
   fam?: FamKey, angle = 0,
 ) {
   if (tier < 2) return;
-  /* 2차+ — 광점 팝 */
-  spawnFlarePop(scene, x, y - 8, "gw_dot", { tint: hex, scale: 0.85, duration: 420 });
-  /* 3차+ — 충격 링 + 궤도 스파크 3 */
+  const full = tier >= 4; // v1.0.13 — 4·5차만 풀 규모, 2~3차는 절제(유저: "나머지는 이펙트를 넣되 약하게")
+  /* 2차+ — 광점 팝 (절제판은 희미하게) */
+  spawnFlarePop(scene, x, y - 8, "gw_dot", {
+    tint: hex, scale: full ? 0.85 : 0.5, duration: full ? 420 : 300, alpha: full ? 0.82 : 0.38,
+  });
+  /* 3차+ — 계열색 시그니처 마법진 (모든 직업 공통 — v1.0.13 "마법사만 마법진" 해소)
+   *  절제판: 반투명 소형 / 풀: 충격 링 + 궤도 스파크 3 동반 */
   if (tier >= 3) {
-    spawnShockGW(scene, x, y, hex, 2.5, 520);
-    for (let i = 0; i < 3; i++) {
-      const ang = (Math.PI * 2 * i) / 3 + Phaser.Math.FloatBetween(-0.2, 0.2);
-      const sp = vfImage(scene, "gw_spark", x + Math.cos(ang) * 14, y - 8 + Math.sin(ang) * 14, 0xffffff);
-      if (!sp) break;
-      sp.setAlpha(0.9).setScale(0.16);
-      scene.tweens.add({
-        targets: sp, x: x + Math.cos(ang) * 78, y: y - 8 + Math.sin(ang) * 78,
-        alpha: 0, scale: 0.03, angle: `+${Phaser.Math.Between(60, 160)}`,
-        duration: 560, ease: "Cubic.out", onComplete: () => sp.destroy(),
-      });
+    spawnMagicCircleGW(scene, x, y, hex, {
+      tex: "gw_rune",
+      scale: full ? 1.3 : 0.72,
+      duration: full ? 840 : 560,
+      alpha: full ? 0.66 : 0.28,
+    });
+    if (full) {
+      spawnShockGW(scene, x, y, hex, 2.5, 520);
+      for (let i = 0; i < 3; i++) {
+        const ang = (Math.PI * 2 * i) / 3 + Phaser.Math.FloatBetween(-0.2, 0.2);
+        const sp = vfImage(scene, "gw_spark", x + Math.cos(ang) * 14, y - 8 + Math.sin(ang) * 14, 0xffffff);
+        if (!sp) break;
+        sp.setAlpha(0.9).setScale(0.16);
+        scene.tweens.add({
+          targets: sp, x: x + Math.cos(ang) * 78, y: y - 8 + Math.sin(ang) * 78,
+          alpha: 0, scale: 0.03, angle: `+${Phaser.Math.Between(60, 160)}`,
+          duration: 560, ease: "Cubic.out", onComplete: () => sp.destroy(),
+        });
+      }
+    } else {
+      spawnShockGW(scene, x, y, hex, 1.5, 360, 0.3); // 얕은 링 — 절제판
     }
   }
-  /* 4차+ — 룬 마법진 스핀 + 플레어 + 크리티컬 플래시 */
+  /* 4차+ — 플레어 + 크리티컬 플래시 (마법진은 위 3차+ 공통 구간에서 이미 합성) */
   if (tier >= 4) {
-    spawnMagicCircleGW(scene, x, y, hex, { tex: "gw_rune", scale: 1.3, duration: 840, alpha: 0.66 });
     spawnFlarePop(scene, x, y - 10, "gw_flare", { tint: 0xffffff, scale: 1.0, duration: 460 });
     const cr = vfImage(scene, "gw_crit", x, y - 8, hex);
     if (cr) {
@@ -267,7 +279,7 @@ export function spawnTierFlair(
       scene.tweens.add({ targets: cr, alpha: 0, scale: 1.15, delay: 180, duration: 320, ease: "Sine.out", onComplete: () => cr.destroy() });
     }
   }
-  /* 5차 각성 — 폭발 코어 + 화염 잔연 + 벚꽃잎 (각성의 격) */
+  /* 5차 각성 — 폭발 코어 + 화염 잔연 (각성의 격 — 벚꽃잎은 v1.0.13 유저 지시로 제거) */
   if (tier >= 5) {
     spawnBoomGW(scene, x, y, hex, 1.15, 520);
     const fire = vfImage(scene, "gw_fire", x, y + 2);
@@ -276,60 +288,75 @@ export function spawnTierFlair(
       scene.tweens.add({ targets: fire, alpha: 0.5, scale: 0.95, duration: 260, ease: "Cubic.out" });
       scene.tweens.add({ targets: fire, alpha: 0, scale: 1.2, delay: 240, duration: 480, ease: "Sine.out", onComplete: () => fire.destroy() });
     }
-    spawnPetalStorm(scene, x, y, 6);
   }
 
-  /* 계열 정체성 악센트 (3차+에서 합성 — 2차는 광점만으로 절제) */
+  /* 계열 악센트 — 절제판(3차)은 소형 1개, 풀(4·5차)은 전 요소 */
   if (tier >= 3) {
     const ax = x + Math.cos(angle) * 26;
     const ay = y - 8 + Math.sin(angle) * 26;
     if (fam === "warrior") {
-      /* 전사 — 조준 방향 초승달 참격 + 지면 균열 */
-      spawnSlashGW(scene, ax, ay, hex, angle, 1.05, 300);
-      const crack = vfImage(scene, "gw_crack", x, y + 14, 0xffd0a0);
-      if (crack) {
-        crack.setAlpha(0).setScale(0.5);
-        scene.tweens.add({ targets: crack, alpha: 0.5, scale: 0.9, duration: 180, ease: "Cubic.out" });
-        scene.tweens.add({ targets: crack, alpha: 0, scale: 1.1, delay: 220, duration: 420, ease: "Sine.out", onComplete: () => crack.destroy() });
+      /* 전사 — 조준 방향 초승달 참격 (+풀: 지면 균열) */
+      spawnSlashGW(scene, ax, ay, hex, angle, full ? 1.05 : 0.62, full ? 300 : 230);
+      if (full) {
+        const crack = vfImage(scene, "gw_crack", x, y + 14, 0xffd0a0);
+        if (crack) {
+          crack.setAlpha(0).setScale(0.5);
+          scene.tweens.add({ targets: crack, alpha: 0.5, scale: 0.9, duration: 180, ease: "Cubic.out" });
+          scene.tweens.add({ targets: crack, alpha: 0, scale: 1.1, delay: 220, duration: 420, ease: "Sine.out", onComplete: () => crack.destroy() });
+        }
       }
     } else if (fam === "ranger") {
-      /* 궁수 — 조준 방향 화살 + 혜성 궤적 */
+      /* 궁수 — 조준 방향 화살 (+풀: 혜성 궤적) */
       const ar = vfImage(scene, "gw_arrow", ax, ay, hex);
       if (ar) {
-        ar.setRotation(angle).setAlpha(0).setScale(0.7);
-        scene.tweens.add({ targets: ar, alpha: 0.9, x: ax + Math.cos(angle) * 96, y: ay + Math.sin(angle) * 96, duration: 300, ease: "Cubic.out" });
-        scene.tweens.add({ targets: ar, alpha: 0, delay: 260, duration: 200, onComplete: () => ar.destroy() });
+        const fly = full ? 96 : 58;
+        ar.setRotation(angle).setAlpha(0).setScale(full ? 0.7 : 0.5);
+        scene.tweens.add({ targets: ar, alpha: full ? 0.9 : 0.45, x: ax + Math.cos(angle) * fly, y: ay + Math.sin(angle) * fly, duration: full ? 300 : 240, ease: "Cubic.out" });
+        scene.tweens.add({ targets: ar, alpha: 0, delay: full ? 260 : 220, duration: 200, onComplete: () => ar.destroy() });
       }
-      const tr = vfImage(scene, "gw_trail", ax, ay, hex);
-      if (tr) {
-        tr.setRotation(angle).setAlpha(0.75).setScale(1.1, 0.9);
-        scene.tweens.add({ targets: tr, alpha: 0, scaleX: 1.9, duration: 380, ease: "Sine.out", onComplete: () => tr.destroy() });
+      if (full) {
+        const tr = vfImage(scene, "gw_trail", ax, ay, hex);
+        if (tr) {
+          tr.setRotation(angle).setAlpha(0.75).setScale(1.1, 0.9);
+          scene.tweens.add({ targets: tr, alpha: 0, scaleX: 1.9, duration: 380, ease: "Sine.out", onComplete: () => tr.destroy() });
+        }
       }
     } else if (fam === "mage") {
-      /* 마법사 — 퍼플 오브 마법진 + 전기 아크 + 수정 파편 2 */
-      spawnMagicCircleGW(scene, x, y, hex, { tex: "gw_magic", scale: 0.95, duration: 780, alpha: 0.6 });
-      const el = vfImage(scene, "gw_electro", x + Phaser.Math.Between(-18, 18), y - 26, 0xffffff);
-      if (el) {
-        el.setAlpha(0).setScale(0.55);
-        scene.tweens.add({ targets: el, alpha: 0.8, scale: 0.8, duration: 160, ease: "Cubic.out" });
-        scene.tweens.add({ targets: el, alpha: 0, scale: 1.0, delay: 160, duration: 260, onComplete: () => el.destroy() });
-      }
-      for (let i = 0; i < 2; i++) {
-        const cy = vfImage(scene, "gw_crystal", x + Phaser.Math.Between(-34, 34), y - Phaser.Math.Between(10, 30), hex);
-        if (!cy) break;
-        cy.setAlpha(0).setScale(0.2).setRotation(Phaser.Math.FloatBetween(-0.6, 0.6));
-        scene.tweens.add({ targets: cy, alpha: 0.85, y: cy.y - Phaser.Math.Between(26, 44), duration: 380, ease: "Cubic.out" });
-        scene.tweens.add({ targets: cy, alpha: 0, scale: 0.08, delay: 340, duration: 260, onComplete: () => cy.destroy() });
+      /* 마법사 — 계열색 마법진은 위 공통 구간에서 수령 (+풀: 퍼플 오브 마법진·전기 아크·수정 파편) */
+      if (full) {
+        spawnMagicCircleGW(scene, x, y, hex, { tex: "gw_magic", scale: 0.95, duration: 780, alpha: 0.6 });
+        const el = vfImage(scene, "gw_electro", x + Phaser.Math.Between(-18, 18), y - 26, 0xffffff);
+        if (el) {
+          el.setAlpha(0).setScale(0.55);
+          scene.tweens.add({ targets: el, alpha: 0.8, scale: 0.8, duration: 160, ease: "Cubic.out" });
+          scene.tweens.add({ targets: el, alpha: 0, scale: 1.0, delay: 160, duration: 260, onComplete: () => el.destroy() });
+        }
+        for (let i = 0; i < 2; i++) {
+          const cy = vfImage(scene, "gw_crystal", x + Phaser.Math.Between(-34, 34), y - Phaser.Math.Between(10, 30), hex);
+          if (!cy) break;
+          cy.setAlpha(0).setScale(0.2).setRotation(Phaser.Math.FloatBetween(-0.6, 0.6));
+          scene.tweens.add({ targets: cy, alpha: 0.85, y: cy.y - Phaser.Math.Between(26, 44), duration: 380, ease: "Cubic.out" });
+          scene.tweens.add({ targets: cy, alpha: 0, scale: 0.08, delay: 340, duration: 260, onComplete: () => cy.destroy() });
+        }
+      } else {
+        const el = vfImage(scene, "gw_electro", x + Phaser.Math.Between(-14, 14), y - 22, 0xffffff);
+        if (el) {
+          el.setAlpha(0).setScale(0.4);
+          scene.tweens.add({ targets: el, alpha: 0.4, scale: 0.55, duration: 140, ease: "Cubic.out" });
+          scene.tweens.add({ targets: el, alpha: 0, scale: 0.7, delay: 150, duration: 200, onComplete: () => el.destroy() });
+        }
       }
     } else if (fam === "thief") {
-      /* 도적 — 교차 참격날 2 (X자) + 잔상 스트릭 */
-      spawnSlashGW(scene, ax, ay, hex, angle + 0.5, 0.95, 280);
-      spawnSlashGW(scene, ax, ay, 0xffffff, angle - 0.5, 0.85, 300);
-      const st = vfImage(scene, "gw_dash", x, y - 6, hex);
-      if (st) {
-        st.setRotation(angle).setAlpha(0).setScale(0.8);
-        scene.tweens.add({ targets: st, alpha: 0.6, scale: 1.05, duration: 160, ease: "Cubic.out" });
-        scene.tweens.add({ targets: st, alpha: 0, delay: 160, duration: 240, onComplete: () => st.destroy() });
+      /* 도적 — 교차 참격날 (절제판은 1개, 풀은 X자 2개 + 잔상 스트릭) */
+      spawnSlashGW(scene, ax, ay, hex, angle + 0.5, full ? 0.95 : 0.58, full ? 280 : 220);
+      if (full) {
+        spawnSlashGW(scene, ax, ay, 0xffffff, angle - 0.5, 0.85, 300);
+        const st = vfImage(scene, "gw_dash", x, y - 6, hex);
+        if (st) {
+          st.setRotation(angle).setAlpha(0).setScale(0.8);
+          scene.tweens.add({ targets: st, alpha: 0.6, scale: 1.05, duration: 160, ease: "Cubic.out" });
+          scene.tweens.add({ targets: st, alpha: 0, delay: 160, duration: 240, onComplete: () => st.destroy() });
+        }
       }
     }
   }
