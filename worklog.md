@@ -1549,3 +1549,23 @@ Stage Summary:
 - 유저 3건 전부 완료: 벚꽃 제거(코드·에셋·APK 3중 확인) · 전직업 계열색 마법진 · 티어별 강약(4·5차 풀/2·3차 절제)
 - 운영 교훈: ①kill 직후 재기동은 소켓 레이스 주의 — 기동과 검증을 한 명령에 ②agent-browser record는 컨텍스트 리셋됨 — 실측은 press+screenshot 연발이 안정 ③gh 소실 시 remote URL 토큰으로 REST API 대체 가능
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 78
+Agent: Super Z (메인)
+Task: 유저 "Apk 빌드" — 선행 세션 중단분(v1.0.14) 인수 완결: push·Release·서버 전환·가로 E2E
+
+Work Log:
+- [상태 인수] 선행 세션이 v1.0.14(멀티 투사체 좌우반전 근본 수정)를 코드 커밋+APK 빌드(03:01)까지 해두고 worklog·push·Release 없이 중단. APK 신선도 실증: 소스 최종 수정(02:53) < APK(03:01), aapt versionCode 79/1.0.14, .next 웹빌드(03:03:30)도 커밋(03:02:45) 이후 — 재빌드 불필요 판정
+- [수정 내용 검증] Player.ts netFacingFlip 신설(물리 방향 오른쪽=true 정규화 — 공격 중 flipX는 걷기 컨벤션과 정반대였던 것이 원격 활·화살 "등 뒤로 발사"의 근원) + netState/netAction 2곳 적용 + 적 원거리 투사체 setRotation(cfg.angle)(역주행 렌더 수정) — diff 전수 확인
+- [push] 원격에 계정백업 자동커밋(fbe75df) 선점 → pull --rebase(무충돌) → cad7567 push 완료. push 거부 시 rebase 습관 확립
+- [릴리스] scripts/release_v1014.py 작성(404를 '없음'으로 처리하는 api 래퍼 포함) — Release v1.0.14(id 386760606) 생성 + APK 업로드 state=uploaded + **원격 재다운로드 md5 일치**(313438c31e004b5e0feb4424393b4f15 = 로컬)
+- [서버 전환] 02:06 기동분(구 server.js — v1.0.13 미러) 재기동 → /SERTZ-v1.0.14.apk 307→GitHub v1.0.14 ✓, 구버전 링크(/SERTZ-v1.0.9.apk)도 404 없이 최신 미러 307 ✓, md5 안내.txt 서빙 ✓ (주의: 라우트는 /SERTZ-v[\d.]+\.apk 정확매치 — /SERTZ.apk는 404)
+- [가로 E2E 1280×720] 첫 로드 검은화면 → reload+9초 대기로 해소(초기 로딩 지연) — 타이틀 v1.0.14 배지("화살은 조준의 방향으로 · 멀티 투사체 정면화") 렌더 ✓ · 새로운 모험→마을 진입 HUD·퀘스트 로그·NPC·분수 정상 ✓ · pageerror 0 · .next 청크에 netFacingFlip 포함 확인
+- [마무리] e2e 스크린샷 3종 정리(에셋/research·public 제외 원칙 준수) + 본 worklog 기록
+
+Stage Summary:
+- v1.0.14 정식 배포 완결: https://github.com/apple01234/CERTZ/releases/download/v1.0.14/SERTZ-v1.0.14.apk (versionCode 79, 106,080,478B, md5 313438c3…)
+- 유저 대응 3연속 보고 "투사체 좌우반전"의 멀티 동기화 근원까지 봉합(netFacingFlip 물리 방향 정규화)
+- 운영 교훈: ①rebase 후 파일 mtime 갱신은 내용 변경 아님 — git clean이면 APK 유효 ②GitHub API 404(릴리스 부재)는 정상 응답으로 처리 필요 ③서버 /SERTZ.apk는 404 — 정확 파일명만 리다이렉트
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
