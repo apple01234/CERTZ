@@ -48,7 +48,7 @@ export type {
 } from "./stages";
 
 /** 몬스터 골드 드롭 조정 계수 (사용자 지시 #6 — 골드 과다 수정) */
-export const GOLD_DROP_SCALE = 0.75; // v4.2.0 — 0.62→0.75 (+21% 골드, 피로도 완화)
+export const GOLD_DROP_SCALE = 0.82; // v1.0.16 밸런스 — 0.75→0.82 (+9% 골드: 초반 상점 소비 여유 완화)
 
 /** 강화 비용 — 단계별 눈덩이 곡선 (높은 단계일수록 골드 소모 급증 → 골드 싱크)
  *  v3.0.5 — ★12부터 추가 계수 1.6^(성-11) 가산 (스타포스 후반부 급증 구간) */
@@ -146,6 +146,7 @@ export type ItemKey =
   | "pack_starter" | "pack_growth" | "pack_premium" | "pack_ultimate" | "pack_daily" | "pack_weekly"
   | "pet_wisp" | "pet_ember" | "pet_frost" | "pet_golem" | "pet_unicorn" | "pet_reaper"
   | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow"
+  | "cos_rose" | "cos_toxic" | "cos_magma" | "cos_lunar" | "cos_deep" | "cos_galaxy" // v1.0.16 — +6
   /* v1.0.8 무한 콘텐츠 — 연금 제작대 재료 3종 (필드/던전 적 처치 시 확률 드롭) */
   | "mat_mana" | "mat_heart" | "mat_mithril";
 
@@ -355,7 +356,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   /* ================= v4.3.0 — BM 대확장 (물약 8티어×2 · 장신구 12 · 상자 4 · 패키지 6) =================
    *  아이콘은 기존 텍스처 재활용 — 신규 에셋 0. 물약 3~5티어는 골드 상점 판매(골드 싱크),
    *  6티어 이상은 BM/가챠 전용 수급. */
-  potion_hp3: { key: "potion_hp3", kind: "consumable", name: "고급 HP 물약", icon: "i_potion_hp3", price: 150, tier: "rare", heal: 260, sellPrice: 60 },
+  potion_hp3: { key: "potion_hp3", kind: "consumable", name: "고급 HP 물약", icon: "i_potion_hp3", price: 340, tier: "rare", heal: 700, sellPrice: 130 },
   potion_hp4: { key: "potion_hp4", kind: "consumable", name: "최고급 HP 물약", icon: "i_potion_hp4", price: 280, tier: "rare", heal: 450, sellPrice: 110 },
   potion_hp5: { key: "potion_hp5", kind: "consumable", name: "왕실 HP 물약", icon: "i_potion_hp5", price: 520, tier: "epic", heal: 700, sellPrice: 200 },
   potion_hp6: { key: "potion_hp6", kind: "consumable", name: "용의 HP 물약", icon: "i_potion_hp6", price: 950, bmPrice: 6, bmOnly: true, sellPrice: 380, tier: "epic", heal: 1100 },
@@ -363,7 +364,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   potion_hp8: { key: "potion_hp8", kind: "consumable", name: "심연 HP 물약", icon: "i_potion_hp8", price: 4600, bmPrice: 15, bmOnly: true, sellPrice: 950, tier: "legend", heal: 2600 },
   potion_hp9: { key: "potion_hp9", kind: "consumable", name: "세계수 HP 물약", icon: "i_potion_hp9", price: 10000, bmPrice: 22, bmOnly: true, sellPrice: 1400, tier: "legend", heal: 4000 },
   potion_hp10: { key: "potion_hp10", kind: "consumable", name: "천멸 HP 물약", icon: "i_potion_hp10", price: 22000, bmPrice: 32, bmOnly: true, sellPrice: 2000, tier: "legend", heal: 6000 },
-  potion_mp3: { key: "potion_mp3", kind: "consumable", name: "고급 MP 물약", icon: "i_potion_mp3", price: 130, tier: "rare", restore: 160, sellPrice: 50 },
+  potion_mp3: { key: "potion_mp3", kind: "consumable", name: "고급 MP 물약", icon: "i_potion_mp3", price: 300, tier: "rare", restore: 450, sellPrice: 115 },
   potion_mp4: { key: "potion_mp4", kind: "consumable", name: "최고급 MP 물약", icon: "i_potion_mp4", price: 240, tier: "rare", restore: 280, sellPrice: 95 },
   potion_mp5: { key: "potion_mp5", kind: "consumable", name: "왕실 MP 물약", icon: "i_potion_mp5", price: 450, tier: "epic", restore: 450, sellPrice: 170 },
   potion_mp6: { key: "potion_mp6", kind: "consumable", name: "용의 MP 물약", icon: "i_potion_mp6", price: 800, bmPrice: 5, bmOnly: true, sellPrice: 320, tier: "epic", restore: 700 },
@@ -405,6 +406,13 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   cos_holy: { key: "cos_holy", kind: "cosmetic", name: "성스러운 오라", icon: "i_cos_holy", price: 38000, bmPrice: 22, bmOnly: true, tier: "epic" },
   cos_storm: { key: "cos_storm", kind: "cosmetic", name: "폭풍 오라", icon: "i_cos_storm", price: 45000, bmPrice: 26, bmOnly: true, tier: "epic" },
   cos_rainbow: { key: "cos_rainbow", kind: "cosmetic", name: "무지개 오라", icon: "i_cos_rainbow", price: 60000, bmPrice: 30, bmOnly: true, tier: "legend" },
+  /* v1.0.16 — 신규 치장 6종 (BM 판매 — 물약 철수분의 대체 소비재) */
+  cos_rose: { key: "cos_rose", kind: "cosmetic", name: "장미빛 오라", icon: "cos_wings", price: 28000, bmPrice: 16, bmOnly: true, tier: "rare" },
+  cos_toxic: { key: "cos_toxic", kind: "cosmetic", name: "맹독 오라", icon: "i_cos_shadow", price: 32000, bmPrice: 18, bmOnly: true, tier: "rare" },
+  cos_magma: { key: "cos_magma", kind: "cosmetic", name: "용암 오라", icon: "cos_gold", price: 36000, bmPrice: 20, bmOnly: true, tier: "epic" },
+  cos_lunar: { key: "cos_lunar", kind: "cosmetic", name: "달빛 오라", icon: "i_cos_frost", price: 36000, bmPrice: 20, bmOnly: true, tier: "epic" },
+  cos_deep: { key: "cos_deep", kind: "cosmetic", name: "심해 오라", icon: "i_cos_flame", price: 42000, bmPrice: 24, bmOnly: true, tier: "epic" },
+  cos_galaxy: { key: "cos_galaxy", kind: "cosmetic", name: "은하수 오라", icon: "i_cos_rainbow", price: 52000, bmPrice: 28, bmOnly: true, tier: "legend" },
   chest_silver: { key: "chest_silver", kind: "consumable", name: "은 상자", icon: "i_chest_silver", price: 20000, bmPrice: 12, bmOnly: true, sellPrice: 1200, tier: "epic" },
   chest_gold: { key: "chest_gold", kind: "consumable", name: "금 상자", icon: "i_chest_gold", price: 42000, bmPrice: 25, bmOnly: true, sellPrice: 3000, tier: "epic" },
   chest_legend: { key: "chest_legend", kind: "consumable", name: "전설 상자", icon: "i_chest_legend", price: 80000, bmPrice: 48, bmOnly: true, sellPrice: 6000, tier: "legend" },
@@ -466,6 +474,7 @@ export type PetKey = "pet_slime" | "pet_pixie" | "pet_atlas"
   | "pet_wisp" | "pet_ember" | "pet_frost" | "pet_golem" | "pet_unicorn" | "pet_reaper"; // v4.3.0 — +6
 export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | "cos_aurora" | "cos_isekai" | "cos_pixel"
   | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow" // v4.3.0 — +6
+  | "cos_rose" | "cos_toxic" | "cos_magma" | "cos_lunar" | "cos_deep" | "cos_galaxy" // v1.0.16 — +6 (유저 지시 "치장템을 차라리 늘려")
   | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy" | "hair_ponytail"; // v1.0.7 — 코스튬/헤어
 
 /** 버프 물약 효과 — 사용 시 지속시간 동안 적용 (같은 버프 재사용 시 시간 갱신) */
@@ -546,6 +555,13 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_holy: { key: "cos_holy", name: "성스러운 오라", icon: "cos_dawn", desc: "신성한 황금 후광", price: 0, tint: 0xfff0b0 },
   cos_storm: { key: "cos_storm", name: "폭풍 오라", icon: "cos_aurora", desc: "벼락치는 청백 후광", price: 0, tint: 0x90e8ff },
   cos_rainbow: { key: "cos_rainbow", name: "무지개 오라", icon: "cos_wings", desc: "일곱 빛깔 무지개 후광", price: 0, tint: 0xff9adf },
+  /* v1.0.16 — 신규 치장 오라 6종 (유저 지시 "물약 줄이고 치장템을 늘려" — 텍스처 재활용, 심연 상점 치장 상자에도 자동 합류) */
+  cos_rose: { key: "cos_rose", name: "장미빛 오라", icon: "cos_wings", desc: "붉은 장밋빛 낭만 후광", price: 0, tint: 0xff7ab0 },
+  cos_toxic: { key: "cos_toxic", name: "맹독 오라", icon: "cos_abyss", desc: "스멀스멀 독성 연록 후광", price: 0, tint: 0x8aff5a },
+  cos_magma: { key: "cos_magma", name: "용암 오라", icon: "cos_gold", desc: "녹아내리는 진홍 용암 후광", price: 0, tint: 0xff5a2a },
+  cos_lunar: { key: "cos_lunar", name: "달빛 오라", icon: "cos_dawn", desc: "차가운 월광 서릿 후광", price: 0, tint: 0xd8e8ff },
+  cos_deep: { key: "cos_deep", name: "심해 오라", icon: "cos_aurora", desc: "깊은 바닷빛 심연 후광", price: 0, tint: 0x3aa8d8 },
+  cos_galaxy: { key: "cos_galaxy", name: "은하수 오라", icon: "cos_aurora", desc: "별이 흐르는 은하빛 후광", price: 0, tint: 0xb08aff },
   /* v1.0.7 — SPUM식 코스튬 4종 (스프라이트 직접 착장 — hero 28프레임 의상 재색상 세트) + 포니테일 헤어 */
   outfit_royal: { key: "outfit_royal", name: "왕실 황금 갑옷", icon: "outfit_royal_idle0", desc: "황금빛 왕실 정장 코스튬 — 스프라이트에 직접 착장", price: 0, tint: 0xffd76a, slot: "outfit" },
   outfit_shadow: { key: "outfit_shadow", name: "암살자의 그림자의상", icon: "outfit_shadow_idle0", desc: "어둠에 스먹든 보라 의상 코스튬", price: 0, tint: 0x9a6aff, slot: "outfit" },
@@ -560,23 +576,11 @@ export const SHOP_STOCK: ItemKey[] = [
   "potion_mp",
   "potion_hp2",
   "potion_mp2",
-  "potion_hp3", // v4.3.0 — 물약 티어 확장 (골드 싱크)
+  /* v1.0.16 — 유저 지시 "물약 종류가 너무 많음": HP4~10·MP4~10 (14종) 상점 진열 전면 철수.
+   *  물약 사다리는 기본(hp/mp) → 상급(hp2/mp2) → 고급(hp3/mp3 — 회복량 상향으로 최상위 티어 대체) →
+   *  엘릭서의 4단으로 정리. ITEMS 정의는 구 세이브 보유분 호환을 위해 유지(획득 경로만 제거). */
+  "potion_hp3", // v1.0.16 — 고급 물약이 사다리 최상위 (회복량 700/450으로 상향, 가격 조정)
   "potion_mp3",
-  "potion_hp4",
-  "potion_mp4",
-  "potion_hp5",
-  "potion_mp5",
-  /* v1.0.2 (#물약상점) — 일반 물약 전 티어 일반 상점 판매 (엘릭서는 특수 소모품으로 BM 전용 유지) */
-  "potion_hp6",
-  "potion_mp6",
-  "potion_hp7",
-  "potion_mp7",
-  "potion_hp8",
-  "potion_mp8",
-  "potion_hp9",
-  "potion_mp9",
-  "potion_hp10",
-  "potion_mp10",
   "scroll_star", // v3.0.7 — 강화 주문서
   "weapon_2",
   "armor_2",
@@ -711,6 +715,8 @@ export const BM_STOCK: ItemKey[] = [
   "ring_dragon", "ring_phantom", "pendant_star", "ring_ancient", "ring_bless",
   "pet_wisp", "pet_ember", "pet_frost", "pet_golem", "pet_unicorn", "pet_reaper", "pet_atlas",
   "cos_frost", "cos_flame", "cos_shadow", "cos_holy", "cos_storm", "cos_rainbow", "cos_wings", "cos_aurora",
+  /* v1.0.16 — 신규 치장 6종 (캐시상점 합류) */
+  "cos_rose", "cos_toxic", "cos_magma", "cos_lunar", "cos_deep", "cos_galaxy",
   /* v1.0.7 — 코스튬/헤어 (캐시상점 신규 착장 치장) */
   "outfit_royal", "outfit_shadow", "outfit_spring", "outfit_navy", "hair_ponytail",
 ];
@@ -731,14 +737,14 @@ export type BmGrant = { gold?: number; emerald?: number; item?: ItemKey; n?: num
  *  에메랄드 무지급 원칙 — 현금 패키지는 아이템 구성만 (충전은 GEM_SKUS 이용) */
 export const STORE_PACK_CONTENTS: Record<string, BmGrant[]> = {
   sertz_pack_growth_19800: [
-    { label: "왕실 HP 물약 ×10", item: "potion_hp5", n: 10 },
-    { label: "왕실 MP 물약 ×10", item: "potion_mp5", n: 10 },
+    { label: "고급 HP 물약 ×10", item: "potion_hp3", n: 10 },
+    { label: "고급 MP 물약 ×10", item: "potion_mp3", n: 10 },
     { label: "강화 주문서 ×3", item: "scroll_star", n: 3 },
     { label: "골드 100,000G", gold: 100000 },
     { label: "경험치 책 ×3", item: "exp_book", n: 3 },
   ],
   sertz_pack_growth_cos_29900: [
-    { label: "왕실 HP 물약 ×10", item: "potion_hp5", n: 10 },
+    { label: "고급 HP 물약 ×10", item: "potion_hp3", n: 10 },
     { label: "강화 주문서 ×5", item: "scroll_star", n: 5 },
     { label: "골드 200,000G", gold: 200000 },
     { label: "무지개 오라 (전용)", item: "cos_rainbow", n: 1 },
@@ -782,7 +788,7 @@ export const CHEST_TABLES: Record<string, { w: number; g: BmGrant }[]> = {
   ],
   chest_gold: [
     { w: 22, g: { gold: 8000, label: "골드 8,000G" } },
-    { w: 18, g: { item: "potion_hp5", n: 3, label: "왕실 HP 물약 ×3" } },
+    { w: 18, g: { item: "potion_hp3", n: 3, label: "고급 HP 물약 ×3" } },
     { w: 16, g: { buff: "buff_king", label: "왕의 가호 버프" } },
     { w: 14, g: { item: "scroll_star", n: 4, label: "강화 주문서 ×4" } },
     { w: 12, g: { item: "ring_swift", label: "질풍의 반지" } },
@@ -794,7 +800,7 @@ export const CHEST_TABLES: Record<string, { w: number; g: BmGrant }[]> = {
     { w: 20, g: { gold: 25000, label: "골드 25,000G" } },
     { w: 16, g: { item: "ring_ancient", label: "고대 왕의 반지 (최상급!!)" } },
     { w: 14, g: { item: "pendant_star", label: "별의 부적 (레전드!!)" } },
-    { w: 14, g: { item: "potion_hp10", n: 3, label: "천멸 HP 물약 ×3" } },
+    { w: 14, g: { item: "potion_hp3", n: 3, label: "고급 HP 물약 ×3" } },
     { w: 12, g: { item: "pet_reaper", label: "심연의 사자 펫!!" } },
     { w: 10, g: { item: "chest_legend", label: "전설 상자 무료 1개!" } },
     { w: 8, g: { item: "ring_phantom", label: "유령의 반지 (레전드!!)" } },

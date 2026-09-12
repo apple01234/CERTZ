@@ -383,11 +383,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (this.scene.isPrologueSafe) {
       this.setVelocity(0, 0);
       if (this.anims.currentAnim?.key !== `${this.def.key}-idle`) this.play(`${this.def.key}-idle`);
-      if (this.hpBar && this.hpBarBg) {
-        const show = this.hp < this.maxHp;
-        this.hpBarBg.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
-        this.hpBar.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
-      }
+      this.syncHpBar();
       return;
     }
 
@@ -396,10 +392,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setVelocity(0, 0);
       if (this.anims.isPlaying) this.anims.pause();
       this.setTint(0xb0a0ff);
-      if (this.hpBar && this.hpBarBg) {
-        this.hpBarBg.setPosition(this.x, this.y - this.displayHeight / 2 - 8);
-        this.hpBar.setPosition(this.x, this.y - this.displayHeight / 2 - 8);
-      }
+      this.syncHpBar();
       return;
     } else if (this.anims.isPaused) {
       this.anims.resume();
@@ -427,11 +420,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.ai.update(this.farAcc);
         this.farAcc = 0;
         this.setVelocity(this.knockVec.x, this.knockVec.y);
-        if (this.hpBar && this.hpBarBg) {
-          const show = this.hp < this.maxHp;
-          this.hpBarBg.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
-          this.hpBar.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
-        }
+        this.syncHpBar();
         return;
       }
       this.setVelocity(this.knockVec.x, this.knockVec.y);
@@ -450,11 +439,23 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     else if (!moving && this.anims.currentAnim?.key !== idleKey) this.play(idleKey);
     if (c.vx !== 0) this.setFlipX(c.vx > 0); // v3.0.10 — 몬스터 시트(32rogues/0x72 등) 기본 왼쪽 향함 → 오른쪽 이동 시 flip
 
-    // HP바
+    // HP바 — v1.0.16 최적화: 풀피(숨김 상태)면 매 프레임 재배치를 건너뛴다
+    //  (적 20마리 × 60fps 중 대부분이 풀피 — Rectangle 2개 setPosition 절감)
+    this.syncHpBar();
+  }
+
+  /** HP바 표시/위치 갱신 — 풀피(비가시)면 스킵 (v1.0.16 최적화 공용 경로) */
+  private syncHpBar() {
     if (this.hpBar && this.hpBarBg) {
       const show = this.hp < this.maxHp;
-      this.hpBarBg.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
-      this.hpBar.setVisible(show).setPosition(this.x, this.y - this.displayHeight / 2 - 8);
+      if (!show) {
+        if (this.hpBarBg.visible) this.hpBarBg.setVisible(false);
+        if (this.hpBar.visible) this.hpBar.setVisible(false);
+        return;
+      }
+      const py = this.y - this.displayHeight / 2 - 8;
+      this.hpBarBg.setVisible(true).setPosition(this.x, py);
+      this.hpBar.setVisible(true).setPosition(this.x, py);
       this.hpBar.width = Math.max(1, (24 * this.hp) / this.maxHp);
     }
   }

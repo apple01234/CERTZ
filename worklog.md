@@ -1590,3 +1590,29 @@ Stage Summary:
 - 샌드박스 리셋 3회차 복구 완료(원격 기준 reset --hard + 툴체인 재구축) — 소요 수 분, 데이터 손실 0
 - 운영 교훈: ①"웹에서 되니까 끝"이 아님 — APK 크로스오리진 경로는 반드시 curl -H "Origin: https://localhost" 프리플라이트 실측 ②리셋 롤백 판별법: 버전체인 grep + ls-remote 대조 ③샌드박스 로컬 DB는 테스트 계정조차 날아감 — 시드 스크립트 검토 여지
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 80
+Agent: Super Z (메인)
+Task: 유저 11건 일괄 — ①디버그 스크린샷 삭제 ②환생 개편(200렙·직업/전직/스토리 전면 초기화) ③궁수 화살 반대 버그 ④몬스터 벽 통과 ⑤GM 이름표/캐릭터 차별화 ⑥물약 축소+치장 확대 ⑦기본공격 방향 불일치 ⑧마법진 우려먹기 해소 ⑨최적화 ⑩밸런스 ⑪멀티 장점 — v1.0.16 확정·릴리스 (versionCode 81)
+
+Work Log:
+- [① 스크린샷 정리] /tmp/my-project/download에 잔존한 디버그 캡처 213장 전부 삭제(shot_*·v1011_*·e2e 등) — 워크스페이스는 이미 청결(research/public·assets/upload 유저자산 보존)
+- [③⑦ 공격 방향 근본 원인 픽셀 실측] hero_atk0~3 웹프 렌더 → 공격 시트도 **좌향 네이티브** 확정. v1.0.12의 "공격 시트=우향" 전제가 틀려 공격 내내 캐릭터가 조준 반대편을 보고 있었고, 화살은 정면으로 나가니 "스킬 방향↔화살 반대(③)·기본공격 방향≠바라보는 방향(⑦)"으로 보였던 것. 수정: faceAtk·atkSlash·atkBow·atkBolt·atkShuriken·skill1WallSmash·점멸·연타난무 8곳 flip 부호 반전 + 버서커 폴백 dir 컨벤션 수정 → 걷기=공격=네트워크 flipX 전부 "오른쪽=true" 단일 컨벤션
+- [② 환생 개편] REBIRTH_BASE_LV 60→200(정수 -5·하한 120) + doRebirth 전면 개편: player.resetClass() 신설(cls/clsBonus/스킬쿨 리셋)·jobStory·jobStoryDone·pendingJobClass·savedQuestIdx·questIdx·cleared·seenSet·fragmentsFound·세계수 가호 전부 초기화 + 시작 마을 귀환. confirm·배너·패널 문구 갱신. 실측: warrior/티어1/done[1,2,3]/cleared/qi{5,3}/seen3 주입 → 환생 후 cls null·tier0·lv1·전부 비움·rebirths+1·abyss+50 ✓
+- [④ 벽 통과] 원인: 던전 벽 TileSprite를 StaticGroup에 add할 때 바디 크기가 런타임별로 어긋날 여지. 하드닝: 벽 셀마다 정적 바디를 셀 크기(422×346)로 명시 세팅. 실측: forest1에서 벽 건너 추격 2종 시나리오(원거리/근접) → crossedWall=false·vx=0, 벽선 422 미통과 ✓ (벽 바디 12개 전부 셀 크기 확인)
+- [⑤ GM 차별화] net.ts JoinInfo/NetPlayer에 gm 플래그 + multiplayer/index.js join 릴레이 + WorldScene: 내 이름표 [GM] 금색(#ffd76a)·stroke 갈색 + 발밑 황금 오라(요동 tween)·authMe/auth:changed 롤 확정 시 즉시 반영 / 원격: [GM] 태그·스프라이트 금빛 틴트+1.12배+오라, 승격/강등 실시간 전환. 실측: adminRole 강제 → tag "[GM] 세르츠"·color #ffd76a·aura true ✓ (비로그인 시 자동 해제 확인)
+- [⑥ 물약/치장] SHOP_STOCK에서 potion_hp4~10·mp4~10 14종 진열 철수(ITEMS 정의는 구세이브 호환 유지) — 사다리 기본→상급→고급→엘릭서 4단 정리, potion_hp3 heal 260→700·mp3 160→450·가격 조정, CHEST_TABLES·STORE_PACK hp5/hp10→hp3 치환. 신규 치장 6종(장미빛/맹독/용암/달빛/심해/은하수 오라 — 틴트 재활용 무자산) CosmeticKey·COSMETIC_DEFS·ITEMS·BM_STOCK 합류(심연 치장 상자 자동 합류)
+- [⑧ 마법진 다변화] spawnTierFlair 3차+ 공통 룬 마법진 폐지 → 계열별 시그니처: 전사=대지 충격링 / 궁수=질풍링(연록) / 도적=그림자 스트릭(gw_dash) / **마법사만 룬 마법진** 유지. 4차 풀 규모 공통(충격링+궤도 스파크)·계열 악센트는 유지
+- [⑨ 최적화] 적 HP바 syncHpBar() 공용화 — 풀피(비가시) 프레임에서 setPosition 2회/적/프레임 절감(20마리 기준 초당 수천 회 절감) + 벽 바디 명시화로 충돌 계산 결정화
+- [⑩ 밸런스] GOLD_DROP_SCALE 0.75→0.82(+9% 골드) · 필드 정예 exp 4→5·gold 3→4 · 침공 보스 에메랄드 +2→+3 · 물약 회복량 상향(⑥과 연계)
+- [⑪ 멀티 장점] 처치 EXP에 ①파티 보너스(파티원당 +8%, 최대 +24%) ②동행 보너스(같은 구역 접속자당 +4%, 최대 +12%) — "함께 사냥! EXP +N%" 플로팅 표시
+- [빌드·검증] tsc 0에러 · 웹빌드(.next 별도) · build_apk.sh — 중간에 샌드박스 리셋 후유증(JDK 소실) 재발 → rebuild_toolchain.sh로 JDK21+SDK35.0.0 재구축 후 성공(5m43s) → SERTZ-v1.0.16.apk 106,082,062B · aapt 81/1.0.16 · md5 8aa802c21e046b6d62ae606d700b75e4 · APK 내부 검출([GM] 10건·cos_galaxy·resetClass·함께 사냥·환생 confirm)
+- [가로 E2E 1280×720] 타이틀 v1.0.16 배지 ✓ · 공격 방향 실측: 오른쪽 조준 flipX=true·왼쪽 false(=좌향 시트 정면화) ✓ · 왼쪽 조준 공격 포즈 스크린샷(캐릭터가 정확히 왼쪽) ✓ · forest1 벽 통과 2종 시나리오 차단 ✓ · GM 태그/오라 ✓ · 환생 전면 초기화 ✓ · 마을 귀환 ✓ · pageerror/콘솔 에러 0
+- [릴리스] scripts/release_v1016.py 작성(404 tolerant·원격 md5 복수검증) — Release v1.0.16(id 387501371) 업로드 → 재다운로드 md5 원격 일치 ✓ · 안내.txt·apk-guide md5/버전 기입 · 서버 재기동(v1.0.16 307·구버전 링크 307·guide 서빙 ✓)
+
+Stage Summary:
+- v1.0.16 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.16/SERTZ-v1.0.16.apk (versionCode 81, 106,082,062B, md5 8aa802c2…)
+- 유저 11건 전부 완료: ①스크린샷 삭제 ②환생 200렙+직업/전직/스토리 초기화 ③⑦공격 방향 근본 수정(픽셀 실측 기반) ④벽 통과 차단 ⑤GM 금색 이름표+황금 오라 ⑥물약 21→7종+치장 6종 ⑧계열별 이펙트 ⑨HP바/바디 최적화 ⑩골드/정예/침공 밸런스 ⑪파티·동행 EXP 보너스
+- 운영 교훈: ①"공격 시트 우향"이라던 v1.0.12 전제가 틀렸다 — 시트 방향은 주석이 아니라 렌더 실측으로 검증할 것 ②샌드박스 리셋 시 JDK도 소실 — rebuild_toolchain.sh가 유일한 복구 경로 ③release 스크립트는 커밋해두면 리셋에 강함(이번엔 소실돼 재작성)
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

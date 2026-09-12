@@ -2729,7 +2729,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
                 <p className="text-[11px] font-black text-amber-100">환생 — 무한 성장 루프</p>
                 <span className="rounded bg-amber-400/25 px-1.5 py-0.5 text-[8px] font-black text-amber-100">{inf.rebirths}회 달성</span>
               </div>
-              <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">Lv {rebirthReqLv(inf.rebirthEss)} 달성 시 환생 가능. 레벨/AP는 초기화되지만 영구 보너스가 쌓인다: 스택당 공격 +8% · HP +60 · 골드 +2% + 심연 코인 {REBIRTH_ABYSS}</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">Lv {rebirthReqLv(inf.rebirthEss)} 달성 시 환생 가능. 레벨·AP·직업·전직·스토리가 모두 초기화되지만 영구 보너스가 쌓인다: 스택당 공격 +8% · HP +60 · 골드 +2% + 심연 코인 {REBIRTH_ABYSS}</p>
               {inf.rebirths > 0 && (
                 <p className="mt-1 text-[10px] font-black text-amber-200">현재 영구 보너스: 공격 +{rebirthBonus(inf.rebirths).atkPct}% · HP +{rebirthBonus(inf.rebirths).hp} · 골드 +{rebirthBonus(inf.rebirths).goldPct}%</p>
               )}

@@ -121,6 +121,8 @@ function attachMultiplayer(httpServer) {
         moving: false,
         stage: typeof p.stage === "string" ? p.stage.slice(0, 24) : "village",
         code: typeof p.code === "string" ? p.code.slice(0, 12) : "",
+        /* v1.0.16 — GM 계정 플래그 릴레이 (클라가 서버 인증 롤 admin일 때만 보냄 — 이름표/오라 코스메틱용) */
+        gm: !!p.gm,
         t: Date.now(),
       });
       broadcastPlayers(true);

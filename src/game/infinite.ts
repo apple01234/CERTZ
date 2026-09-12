@@ -156,12 +156,16 @@ export function trialReward(lv: number, mod: TrialMod): { gold: number; abyss: n
   };
 }
 
-/* ================= ④ 환생 (무한 성장 루프) ================= */
+/* ================= ④ 환생 (무한 성장 루프) =================
+ * v1.0.16 — 유저 지시 "환생을 하면 직업, 전직, 레벨, 스토리가 전부 초기화 되야지!! + 환생 레벨은 200렙":
+ *  요구 레벨 60 → 200 상향 + 환생 시 레벨/AP뿐 아니라 직업·전직·스토리 진행까지 전부 초기화
+ *  (클래스 null → 1차 시련부터, 스테이지 퀘스트 진행/스토리 클리어 플래그/대사 기록 리셋).
+ *  대가가 커진 만큼 환생 보너스가 영구 성장의 핵심 축이 된다. */
 
-export const REBIRTH_BASE_LV = 60;
-/** 환생 요구 레벨 — 환생의 정수 1개당 −5 */
+export const REBIRTH_BASE_LV = 200;
+/** 환생 요구 레벨 — 환생의 정수 1개당 −5 (하한 120) */
 export function rebirthReqLv(rebirthEss: number): number {
-  return Math.max(20, REBIRTH_BASE_LV - rebirthEss * 5);
+  return Math.max(120, REBIRTH_BASE_LV - rebirthEss * 5);
 }
 /** 환생 스택당 영구 보너스 — 공 +8% · HP +60 · 골드 +2% (무한 누적) */
 export function rebirthBonus(rebirths: number): { atkPct: number; hp: number; goldPct: number } {

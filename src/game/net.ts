@@ -29,6 +29,8 @@ export type NetPlayer = {
   y: number;
   flip: boolean;
   moving: boolean;
+  /** v1.0.16 — GM 계정 표시: 이름표 금색 [GM] 접두사 + 캐릭터 황금 오라 (코스메틱 전용 플래그) */
+  gm?: boolean;
 };
 
 export type NetChatMsg = {
@@ -110,7 +112,17 @@ export function netStatus(): { connected: boolean; hasServer: boolean; native: b
   return { connected: !!socket?.connected, hasServer, native };
 }
 
-export type JoinInfo = { name: string; lv: number; cls: string | null; x: number; y: number; stage?: string; code?: string };
+export type JoinInfo = {
+  name: string;
+  lv: number;
+  cls: string | null;
+  x: number;
+  y: number;
+  stage?: string;
+  code?: string;
+  /** v1.0.16 — 서버 인증 롤이 admin인 계정만 true (GM 이름표/오라 동기화 — 순수 코스메틱) */
+  gm?: boolean;
+};
 
 /* v2.0 수정 (지시 #14 — 채팅 안됨 원인):
  *  netJoin이 소켓 connect 이전에 호출되면 조용히 실패하고,

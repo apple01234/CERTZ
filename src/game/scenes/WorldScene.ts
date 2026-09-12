@@ -461,6 +461,9 @@ export class WorldScene extends Phaser.Scene {
       cls: string | null;
       lv: number;
       name: string;
+      /** v1.0.16 — GM 계정: 금색 이름표 [GM] + 황금 오라 (syncRemotes에서 세팅) */
+      gm: boolean;
+      aura: Phaser.GameObjects.Image | null;
     }
   >();
   private netOffs: (() => void)[] = [];
@@ -633,6 +636,7 @@ export class WorldScene extends Phaser.Scene {
     this.introGuide = null;
     this.introGuideSpark = null;
     this.playerNameTag = null;
+    this.gmAura = null; // v1.0.16 — 씬 재시작 시 GM 오라 참조 정리 (syncGmAura가 재생성)
     this.queuedDialogue = null;
     this.returnPortal = null;
     this.returnBeacon = null;
@@ -1184,11 +1188,13 @@ export class WorldScene extends Phaser.Scene {
     } else if (this.stageDef.isVillage) {
       /* v2.9 — 본마을 + 챕터 마을 공용 마을 빌드 (우물/여관/전직관/주민) */
       this.buildVillage();
-      /* v1.0.2 (#GM서버검증) — 부팅 시 서버 롤 조회 → 관리자만 GM NPC 표시 (일반 유저에겐 부재) */
+      /* v1.0.2 (#GM서버검증) — 부팅 시 서버 롤 조회 → 관리자만 GM NPC 표시 (일반 유저에겐 부재)
+       *  v1.0.16 — 롤 확정 후 이름표/황금 오라 재계산 (이름표가 롤 조회보다 먼저 생기는 케이스) */
       authMe()
         .then((u) => {
           this.adminRole = u?.role ?? null;
           if (this.adminRole === "admin") for (const g of this.gmNpcVisuals) g.setVisible(true);
+          this.refreshPlayerTag(); // GM 금색 이름표 + 오라 부여
           this.emitRpgState(); // v1.0.5 — admin 플래그를 React에 즉시 반영
         })
         .catch(() => {});
@@ -1479,6 +1485,15 @@ export class WorldScene extends Phaser.Scene {
           .setDepth(2)
           .setTint(scaled);
         this.solidGroup.add(ts);
+        /* v1.0.16 — 벽 통과 버그 하드닝: TileSprite를 그룹에 add할 때 정적 바디가
+         *  오브젝트 크기(텍스처 프레임 크기) 기준으로 잡히는 런타임 차이를 차단 —
+         *  셀 크기와 동일한 바디를 명시 세팅해 몬스터가 벽 셀을 절대 통과하지 않게 한다. */
+        const wbody = ts.body as Phaser.Physics.Arcade.StaticBody | null;
+        if (wbody) {
+          wbody.setSize(lay.cellW + 1, lay.cellH + 1, false);
+          wbody.position.set(x, y);
+          wbody.updateCenter();
+        }
         // 벽 셀 중 통로에 맞닿은 면에 밝은 림(하이라이트) — 벽 윤곽 강조
         const rim = Phaser.Display.Color.GetColor(
           Math.min(255, tint.red * 0.9), Math.min(255, tint.green * 0.9), Math.min(255, tint.blue * 0.9)
@@ -3258,13 +3273,14 @@ export class WorldScene extends Phaser.Scene {
     this.enemies = this.enemies.filter((e) => e.alive);
     this.tut?.notify("kill"); // v1.0.11 — 튜토리얼 처치 학습 판정
     if (this.eliteEnemy && !this.eliteEnemy.alive) this.eliteEnemy = null;
-    /* v4.1.4 — 침공 보스 격퇴 보상: 에메랄드 +2 확정 + 도전과제 카운트 */
+    /* v4.1.4 — 침공 보스 격퇴 보상: 에메랄드 확정 + 도전과제 카운트
+     *  v1.0.16 밸런스 — +2 → +3 (스폰 주기 6~9분 대비 보상 체감 상향) */
     if (this.invasionBoss && ref === this.invasionBoss) {
       this.invasionBoss = null;
       this.invasionKillCount++;
-      this.player.emerald += 2;
-      this.spawnPickupText(this.player.x, this.player.y - 74, "침공 격퇴! +2 에메랄드", "#ff9a7a");
-      this.showBanner("침공을 격퇴했다! (+2 에메랄드)");
+      this.player.emerald += 3;
+      this.spawnPickupText(this.player.x, this.player.y - 74, "침공 격퇴! +3 에메랄드", "#ff9a7a");
+      this.showBanner("침공을 격퇴했다! (+3 에메랄드)");
       audio.sfx.questDone();
       this.emitRpgState();
     }
@@ -3377,8 +3393,19 @@ export class WorldScene extends Phaser.Scene {
     this.comboStreak = nowMs < this.comboUntil ? this.comboStreak + 1 : 1;
     this.comboUntil = nowMs + 5000;
     const comboMul = 1 + Math.min(0.5, (this.comboStreak - 1) * 0.05);
+    /* v1.0.16 — 멀티(MMORPG) 장점 강화 — 사냥 보너스 2종:
+     *  ① 파티 사냥 보너스: 파티원 1명당 EXP +8% (최대 3명 +24%)
+     *  ② 동행 보너스: 파티가 아니어도 같은 구역 접속자 1명당 EXP +4% (최대 +12%)
+     *  "같이 사냥하면 더 크게 자란다" — 파티 가입·같은 구역 동행의 실익을 만든다 */
+    const partyN = Math.max(1, net.netLastParty()?.members.length ?? 1);
+    const partyMul = 1 + Math.min(3, partyN - 1) * 0.08;
+    const coMul = 1 + Math.min(3, this.remotes.size) * 0.04;
     /* v4.2.0 — 전역 EXP ×1.35 (피로도 완화: 레벨링 페이스업 — 콤보 보너스와 곱산) */
-    this.player.gainExp(Math.round(exp * 1.35 * comboMul));
+    this.player.gainExp(Math.round(exp * 1.35 * comboMul * partyMul * coMul));
+    if (partyMul > 1 || coMul > 1) {
+      const bonusPct = Math.round((partyMul * coMul - 1) * 100);
+      this.spawnPickupText(this.player.x - 14, this.player.y - 80, `함께 사냥! EXP +${bonusPct}%`, "#9df0c8");
+    }
     if (this.comboStreak >= 3) {
       const pct = Math.round((comboMul - 1) * 100);
       this.spawnPickupText(this.player.x, this.player.y - 52 + (this.comboStreak % 2) * 12, `연속킬 x${this.comboStreak}! EXP +${pct}%`, "#ffd76a");
@@ -4707,7 +4734,9 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= v1.0.8 — ④ 환생 / ⑤ 제작 / ⑧ 심연 상점 ================= */
 
-  /** 환생 — 요구 레벨 달성 시 레벨/경험치/AP를 초기화하고 영구 스탯 +1스택 획득 */
+  /** 환생 — v1.0.16 전면 개편 (유저 지시 "환생을 하면 직업, 전직, 레벨, 스토리가 전부 초기화 되야지!! + 환생 레벨은 200렙"):
+   *  요구 레벨 200(정수로 감소) 달성 시 레벨/경험치/AP에 더해 직업·전직·스토리까지 전부 초기화하고
+   *  시작 마을로 귀환한다. 남는 것은 영구 보너스(스택)·골드·아이템·장비·강화·심연 코인·치장·펫뿐. */
   private doRebirth() {
     if (!this.player) return;
     const req = rebirthReqLv(this.inf.rebirthEss);
@@ -4715,7 +4744,17 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: `환생하려면 Lv ${req}이 필요하다 (현재 Lv ${this.player.lv})` });
       return;
     }
-    if (!window.confirm(`환생하시겠습니까?\n\n· 레벨이 1로, 경험치/AP가 초기화됩니다 (스탯 재배분 필요)\n· 골드/아이템/장비/강화/심연코인은 유지됩니다\n· 보상: 영구 공격 +8% · HP +60 · 골드 +2% (누적) + 심연 코인 ${REBIRTH_ABYSS}`)) return;
+    if (
+      !window.confirm(
+        `환생하시겠습니까?\n\n` +
+        `· 레벨이 1로, 경험치/AP가 초기화됩니다 (스탯 재배분 필요)\n` +
+        `· 직업과 전직이 모두 사라집니다 — 1차 전직 시련부터 다시 시작합니다\n` +
+        `· 스토리 진행(챕터 퀘스트/클리어 기록/파편 수집)이 처음으로 되돌아갑니다\n` +
+        `· 유지: 골드/아이템/장비/강화/심연코인/치장/펫 + 영구 보너스\n` +
+        `· 보상: 영구 공격 +8% · HP +60 · 골드 +2% (누적) + 심연 코인 ${REBIRTH_ABYSS}`
+      )
+    )
+      return;
     this.inf.rebirths++;
     this.inf.abyss += REBIRTH_ABYSS;
     /* 레벨/경험치/AP 초기화 — 자동배분이 켜져 있으면 레벨업마다 자동 재분배 */
@@ -4724,20 +4763,34 @@ export class WorldScene extends Phaser.Scene {
     this.player.ap = 0;
     this.player.stats = { str: 0, dex: 0, int: 0, luk: 0 };
     this.player.hp = this.player.maxHp; // 풀피 부활
+    /* v1.0.16 — 직업·전직 초기화: 클래스/계열 보너스/스킬 쿨 전부 리셋 (1차 시련부터 재시작) */
+    this.player.resetClass();
+    this.jobStory = null;
+    this.jobStoryDone = [];
+    this.pendingJobClass = null;
+    /* v1.0.16 — 스토리 초기화: 챕터 퀘스트 진행/클리어 플래그/본 대사/파편 수집 리셋 */
+    this.savedQuestIdx = {};
+    this.questIdx = 0;
+    this.cleared = false;
+    this.seenSet = new Set();
+    this.fragmentsFound = {};
+    this.player.setWorldtreeBlessing(false); // 세계수 가호도 스토리 보상이므로 재도전으로
     this.syncExtBonus();
     this.save();
     this.emitRpgState();
     this.emitHud();
     audio.sfx.levelup();
-    this.showBanner(`환생 ${this.inf.rebirths}회 달성! 영구 스탯이 영원히 남는다 — 심연 코인 +${REBIRTH_ABYSS}`);
+    this.showBanner(`환생 ${this.inf.rebirths}회 달성! 직업과 스토리가 새 시작을 맞았다 — 심연 코인 +${REBIRTH_ABYSS}`);
     EventBus.emit("reward:show", {
-      title: `환생 ${this.inf.rebirths}회 — 새로운 시작!`,
+      title: `환생 ${this.inf.rebirths}회 — 완전히 새로운 시작!`,
       lines: [
         { text: `영구 보너스 누적: 공격 +${rebirthBonus(this.inf.rebirths).atkPct}% · HP +${rebirthBonus(this.inf.rebirths).hp} · 골드 +${rebirthBonus(this.inf.rebirths).goldPct}%`, color: "#ffd76a" },
         { text: `심연 코인 +${REBIRTH_ABYSS}`, color: "#c08aff" },
-        { text: "AP가 초기화됐다 — 스탯창에서 재배분하자!", color: "#a8ecff" },
+        { text: "직업·전직·스토리가 초기화됐다 — 시작 마을에서 1차 시련부터 다시!", color: "#a8ecff" },
       ] satisfies RewardPopupState["lines"],
     });
+    /* 시작 마을로 귀환 — 스토리 1장부터 (전환 중 패널 입력 차단을 위해 transitioning 게이트가 처리) */
+    if (!this.transitioning && this.stageDef.key !== "village") this.startTransition("village", { delay: 900 });
   }
 
   /** 연금 제작대 — 재료 소모 → 아이템 생산 (rpg:infCraft) */
@@ -5038,7 +5091,7 @@ export class WorldScene extends Phaser.Scene {
    */
   /* ================= v4.1.4 — 침공 보스 (월드 보스 이벤트) =================
    * MMORPG식 필드 침공 이벤트 — 6~9분마다 현재 전투 구역에 붉은 침공 몬스터 스폰.
-   *  ×6.0 HP / ×1.8 ATK / ×8 EXP / ×6 GOLD + 처치 시 에메랄드 +2 확정. */
+   *  ×6.0 HP / ×1.8 ATK / ×8 EXP / ×6 GOLD + 처치 시 에메랄드 +3 확정 (v1.0.16 밸런스). */
   private startInvasionTimer() {
     this.invasionTimer?.remove();
     this.invasionTimer = this.time.addEvent({
@@ -5108,7 +5161,7 @@ export class WorldScene extends Phaser.Scene {
     const spawnElite = eliteOk && Math.random() < 0.045;
     const e = spawnElite
       ? new Enemy(this, x, y, key, {
-          hp: 3.2, atk: 1.45, exp: 4, gold: 3, scale: 1.35, tint: 0xffd76a,
+          hp: 3.2, atk: 1.45, exp: 5, gold: 4, scale: 1.35, tint: 0xffd76a,
           displayName: `정예 ${ENEMIES[key].name}`,
         })
       : new Enemy(this, x, y, key);
@@ -6839,6 +6892,7 @@ export class WorldScene extends Phaser.Scene {
           this.adminRole = u?.role ?? null;
           const show = this.adminRole === "admin";
           for (const g of this.gmNpcVisuals) g.setVisible(show);
+          this.refreshPlayerTag(); // v1.0.16 — GM 금색 이름표/황금 오라 즉시 부여·해제
           this.emitRpgState();
         })
         .catch(() => { /* 오프라인 — 기존 롤 유지 */ });
@@ -6997,6 +7051,7 @@ export class WorldScene extends Phaser.Scene {
       r.sp.y += (r.ty - r.sp.y) * lerpK;
       r.sp.setFlipX(r.flip);
       r.tag.setPosition(r.sp.x, r.sp.y - 52);
+      r.aura?.setPosition(r.sp.x, r.sp.y + 6); // v1.0.16 — GM 황금 오라 추적
       const want = r.moving ? "hero-walk-side" : "hero-idle";
       if (r.sp.anims.currentAnim?.key !== want) r.sp.play(want);
     }
@@ -7084,6 +7139,7 @@ export class WorldScene extends Phaser.Scene {
 
     // 플레이어 이름표 추적 (인트로에서 지정 후)
     this.playerNameTag?.setPosition(this.player.x, this.player.y - 48);
+    this.gmAura?.setPosition(this.player.x, this.player.y + 6); // v1.0.16 — GM 황금 오라 추적
 
     // 인트로 플레이 시퀀스 (이동 학습 → 우물 → 이름 짓기)
     if (this.introStep >= 0 && this.introStep < 2) this.tickIntro(dt, move);
@@ -7763,6 +7819,7 @@ export class WorldScene extends Phaser.Scene {
           y: Math.round(this.player.y),
           stage: this.stageDef.key,
           code: getFcode(), // v2.1 친구 고유번호
+          gm: this.adminRole === "admin", // v1.0.16 — GM 이름표/오라 원격 표시
         });
       });
     } catch {
@@ -7902,37 +7959,58 @@ export class WorldScene extends Phaser.Scene {
         const sp = this.add.sprite(p.x, p.y, "hero_idle0").setDepth(9).setAlpha(0.96);
         sp.play("hero-idle");
         const d = classDef(p.cls);
+        /* v1.0.16 — GM 계정: [GM] 금색 이름표 + 황금 오라 + 스프라이트 금빛 틴트/살짝 확대 —
+         *  "GM은 로그인 하면 이름표 색깔 및 캐릭터가 달라야함" 지시의 원격 표현 */
+        const isGm = p.gm === true;
+        if (isGm) sp.setTint(0xffe9a8).setScale(1.12);
         const tag = this.add
-          .text(p.x, p.y - 52, `${p.name} Lv.${p.lv}`, {
+          .text(p.x, p.y - 52, isGm ? `[GM] ${p.name} Lv.${p.lv}` : `${p.name} Lv.${p.lv}`, {
             fontFamily: "Galmuri11, sans-serif",
-            fontSize: "11px",
-            color: d ? d.color : "#ffe9b0",
-            stroke: "#0a2030",
+            fontSize: isGm ? "12px" : "11px",
+            color: isGm ? "#ffd76a" : d ? d.color : "#ffe9b0",
+            stroke: isGm ? "#3a2400" : "#0a2030",
             strokeThickness: 4,
             fontStyle: "bold",
           })
           .setOrigin(0.5)
           .setDepth(60);
-        r = { sp, tag, tx: p.x, ty: p.y, flip: p.flip, moving: p.moving, cls: p.cls, lv: p.lv, name: p.name };
+        const aura = isGm
+          ? this.add.image(p.x, p.y + 6, "glow").setDepth(8).setTint(0xffd76a).setScale(1.5).setAlpha(0.4).setBlendMode(Phaser.BlendModes.ADD)
+          : null;
+        r = { sp, tag, tx: p.x, ty: p.y, flip: p.flip, moving: p.moving, cls: p.cls, lv: p.lv, name: p.name, gm: isGm, aura };
         this.remotes.set(p.id, r);
       }
       r.tx = p.x;
       r.ty = p.y;
       r.flip = p.flip;
       r.moving = p.moving;
-      if (r.cls !== p.cls || r.lv !== p.lv || r.name !== p.name) {
+      if (r.cls !== p.cls || r.lv !== p.lv || r.name !== p.name || r.gm !== (p.gm === true)) {
         r.cls = p.cls;
         r.lv = p.lv;
         r.name = p.name;
+        const wasGm = r.gm;
+        r.gm = p.gm === true;
         const d = classDef(p.cls);
-        r.tag.setText(`${p.name} Lv.${p.lv}${d ? ` · ${d.name}` : ""}`);
-        r.tag.setColor(d ? d.color : "#ffe9b0");
+        r.tag.setText(r.gm ? `[GM] ${p.name} Lv.${p.lv}${d ? ` · ${d.name}` : ""}` : `${p.name} Lv.${p.lv}${d ? ` · ${d.name}` : ""}`);
+        r.tag.setColor(r.gm ? "#ffd76a" : d ? d.color : "#ffe9b0");
+        if (r.gm !== wasGm) {
+          /* GM 승격/강등 실시간 반영 — 외형/오라/틴트 동기화 */
+          if (r.gm) {
+            r.sp.setTint(0xffe9a8).setScale(1.12);
+            r.aura = this.add.image(r.sp.x, r.sp.y + 6, "glow").setDepth(8).setTint(0xffd76a).setScale(1.5).setAlpha(0.4).setBlendMode(Phaser.BlendModes.ADD);
+          } else {
+            r.sp.clearTint().setScale(1);
+            r.aura?.destroy();
+            r.aura = null;
+          }
+        }
       }
     }
     for (const [id, r] of this.remotes) {
       if (!seen.has(id)) {
         r.sp.destroy();
         r.tag.destroy();
+        r.aura?.destroy();
         this.remotes.delete(id);
       }
     }
@@ -7942,15 +8020,48 @@ export class WorldScene extends Phaser.Scene {
     for (const r of this.remotes.values()) {
       r.sp.destroy();
       r.tag.destroy();
+      r.aura?.destroy();
     }
     this.remotes.clear();
   }
 
-  /** 내 이름표에 클래스 반영 (인트로에서 이름표 생성된 뒤 유효) */
+  /** 내 이름표에 클래스 반영 (인트로에서 이름표 생성된 뒤 유효)
+   *  v1.0.16 — GM 계정(admin 롤)은 [GM] 접두사 + 금색 이름표 + 황금 오라로 본인도 즉시 식별 */
   private refreshPlayerTag() {
     if (!this.playerNameTag || !this.player) return;
     const d = classDef(this.player.cls);
-    this.playerNameTag.setText(d ? `${getPlayerName()} · ${d.name}` : getPlayerName());
+    const gm = this.adminRole === "admin";
+    this.playerNameTag.setText(gm ? `[GM] ${getPlayerName()}${d ? ` · ${d.name}` : ""}` : d ? `${getPlayerName()} · ${d.name}` : getPlayerName());
+    this.playerNameTag.setColor(gm ? "#ffd76a" : "#baf3ff");
+    this.playerNameTag.setStroke(gm ? "#3a2400" : "#0a2030", 4);
+    this.syncGmAura();
+  }
+
+  /** v1.0.16 — GM 본인 캐릭터 황금 오라 (발밑 은은한 금빛 — 로그인 시 자동 부여) */
+  private gmAura: Phaser.GameObjects.Image | null = null;
+  private syncGmAura() {
+    const want = this.adminRole === "admin" && !!this.player;
+    if (want && !this.gmAura && this.player) {
+      this.gmAura = this.add
+        .image(this.player.x, this.player.y + 6, "glow")
+        .setDepth(this.player.depth - 1)
+        .setTint(0xffd76a)
+        .setScale(1.5)
+        .setAlpha(0.35)
+        .setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({
+        targets: this.gmAura,
+        alpha: { from: 0.28, to: 0.45 },
+        scale: { from: 1.4, to: 1.62 },
+        duration: 1100,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+    } else if (!want && this.gmAura) {
+      this.gmAura.destroy();
+      this.gmAura = null;
+    }
   }
 
   /** 플레이어 이름표 확보 — v2.4 수정: 재접속/씬 재시작 시에도 이름표 유지 (기존엔 인트로에서만 생성) */

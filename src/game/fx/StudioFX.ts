@@ -243,15 +243,36 @@ export function spawnTierFlair(
   spawnFlarePop(scene, x, y - 8, "gw_dot", {
     tint: hex, scale: full ? 0.85 : 0.5, duration: full ? 420 : 300, alpha: full ? 0.82 : 0.38,
   });
-  /* 3차+ — 계열색 시그니처 마법진 (모든 직업 공통 — v1.0.13 "마법사만 마법진" 해소)
-   *  절제판: 반투명 소형 / 풀: 충격 링 + 궤도 스파크 3 동반 */
+  /* 3차+ — 계열별 시그니처 (v1.0.16 — 유저 "다 너무 마법진 이펙트로 우려먹는 느낌" 해소:
+   *  v1.0.13의 전 직업 공통 룬 마법진을 폐지하고 마법사만 마법진 정체성을 유지한다.
+   *  전사=대지 충격 링 / 궁수=질풍 링 / 도적=그림자 스트릭 / 마법사=룬 마법진.
+   *  4차 풀 규모 공통 연출(충격 링+궤도 스파크)은 계열색 그대로 유지) */
   if (tier >= 3) {
-    spawnMagicCircleGW(scene, x, y, hex, {
-      tex: "gw_rune",
-      scale: full ? 1.3 : 0.72,
-      duration: full ? 840 : 560,
-      alpha: full ? 0.66 : 0.28,
-    });
+    if (fam === "mage") {
+      /* 마법사 — 유일하게 마법진 시그니처 유지 (절제판: 반투명 소형) */
+      spawnMagicCircleGW(scene, x, y, hex, {
+        tex: "gw_rune",
+        scale: full ? 1.3 : 0.72,
+        duration: full ? 840 : 560,
+        alpha: full ? 0.66 : 0.28,
+      });
+      if (!full) spawnShockGW(scene, x, y, hex, 1.5, 360, 0.3); // 얕은 링 — 절제판
+    } else if (fam === "ranger") {
+      /* 궁수 — 질풍 링 (바람이 원을 그리며 퍼지는 경쾌한 기동감) */
+      spawnShockGW(scene, x, y, 0x9dffc4, full ? 2.1 : 1.45, full ? 470 : 340, full ? 0.55 : 0.3);
+    } else if (fam === "thief") {
+      /* 도적 — 그림자 스트릭 (조준 방향으로 지나가는 암흑 잔상) */
+      const st = vfImage(scene, "gw_dash", x, y - 6, hex);
+      if (st) {
+        st.setRotation(angle).setAlpha(0).setScale(full ? 1.0 : 0.68);
+        scene.tweens.add({ targets: st, alpha: full ? 0.62 : 0.34, scale: full ? 1.18 : 0.85, duration: 170, ease: "Cubic.out" });
+        scene.tweens.add({ targets: st, alpha: 0, delay: 170, duration: 250, onComplete: () => st.destroy() });
+      }
+      if (!full) spawnShockGW(scene, x, y, hex, 1.35, 320, 0.24);
+    } else {
+      /* 전사(기본) — 대지 충격 링 (무게감 있는 지진 파동) */
+      spawnShockGW(scene, x, y, hex, full ? 2.3 : 1.5, full ? 500 : 350, full ? 0.6 : 0.3);
+    }
     if (full) {
       spawnShockGW(scene, x, y, hex, 2.5, 520);
       for (let i = 0; i < 3; i++) {
@@ -265,8 +286,6 @@ export function spawnTierFlair(
           duration: 560, ease: "Cubic.out", onComplete: () => sp.destroy(),
         });
       }
-    } else {
-      spawnShockGW(scene, x, y, hex, 1.5, 360, 0.3); // 얕은 링 — 절제판
     }
   }
   /* 4차+ — 플레어 + 크리티컬 플래시 (마법진은 위 3차+ 공통 구간에서 이미 합성) */

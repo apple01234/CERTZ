@@ -449,7 +449,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x < 0); // v1.0.12 — 공격 시트는 우향 네이티브 (걷기와 플립 의미 반대)
+    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 실측 재검증: 공격 시트도 좌향 네이티브(걷기와 동일) — 기존 우향 가정이 "공격 방향≠바라보는 방향"의 근원
     this.play(atkKey);
     // v3.0.2 — 도적(단검)은 참격 검기를 보라색으로 (무기 정체성)
     // v3.0.20 (#6) — 근접 직업 전원 검기 색 분리 (전원이 같은 색이었다)
@@ -518,7 +518,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *    비행 잔상(트레일) · 3발+ 동시 타격감 카메라 마이크로 셰이크 */
   private atkBow(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일 (faceAtk 주석 참고)
     this.play(atkKey);
     const angle0 = Math.atan2(dir.y, dir.x);
     this.scene.spawnBow(this.x + dir.x * 10, this.y - 8, angle0);
@@ -588,7 +588,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  v3.0.15 (#4) — "N차마다 N개" 공식 적용 (1차 1발 ~ 4차 4발) */
   private atkBolt(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
     this.play(atkKey);
     this.scene.spawnCast(this.x + dir.x * 12, this.y - 12);
 
@@ -646,7 +646,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   private atkShuriken(dir: Phaser.Math.Vector2) {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
     this.play(atkKey);
     const t = this.sTier;
     const empowered = this.nextAtkEmpowered;
@@ -678,19 +678,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  /** v1.0.12 — 공격 시트(hero_atk·hero_walkside와 다른 시트)는 우향 네이티브:
-   *  수평 성분이 우세할 때 왼쪽 조준이면 flip한다. 걷기/idle 시트는 좌향 네이티브라
-   *  플립 의미가 반대 — 걷기 flipX를 공격에 재사용하면 캐릭터와 투사체가 서로
-   *  반대방향을 보는 "투사체 스킬 좌우반전" 리포트의 근원 (데드아이 등 원거리 직업). */
+  /** v1.0.16 — 픽셀 실측(hero_atk0~3 렌더) 결과 공격 시트도 좌향 네이티브로 확정:
+   *  v1.0.12의 "우향 네이티브" 전제가 틀려 공격 내내 캐릭터가 조준 반대편을 봤고,
+   *  화살은 정면으로 나가니 "스킬 방향↔화살 반대"로 보였던 것이 근원.
+   *  이제 걷기와 동일 컨벤션(오른쪽 조준 시 flip) — 시트 전반이 좌향으로 통일.
+   *  부수 효과: 공격 중 flipX == 걷기 flipX == 물리 방향(오른쪽=true) 단일 컨벤션. */
   private faceAtk(aim: Phaser.Math.Vector2) {
-    if (Math.abs(aim.x) >= Math.abs(aim.y)) this.setFlipX(aim.x < 0);
+    if (Math.abs(aim.x) >= Math.abs(aim.y)) this.setFlipX(aim.x > 0);
   }
 
-  /** v1.0.14 — 네트워크 flip 정규화: "지금 오른쪽을 보고 있는가?" (물리 방향 — 걷기 컨벤션)
-   *  공격 중 flipX는 왼쪽 조준=true(faceAtk, 공격 시트 우향 네이티브)라 걷기 flipX와
-   *  의미가 정반대. 이 값을 그대로 netState/netAction에 실으면 원격 클라가
-   *  걷기 컨벤션으로 해석해 다른 유저의 활·화살이 항상 등 뒤로 나가는
-   *  "투사체 좌우반전(멀티)" 버그의 근원. 수직 조준 시엔 마지막 flipX를 유지한다. */
+  /** v1.0.14 — 네트워크 flip 정규화: "지금 오른쪽을 보고 있는가?" (물리 방향)
+   *  v1.0.16 — 전 시트 좌향 네이티브로 통일돼 공격/걷기 flipX가 동일 의미(오른쪽=true)가
+   *  됐지만, 수직 조준 시 facing.x가 0이므로 마지막 flipX로 대체하는 폴백은 유지한다.
+   *  이 값을 netState/netAction에 실으면 원격 클라가 정확한 물리 방향으로 재현한다. */
   get netFacingFlip(): boolean {
     return this.facing.x !== 0 ? this.facing.x > 0 : this.flipX;
   }
@@ -909,7 +909,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (bleed) {
       /* ═══ 버서커 — 파괴의 회전베기 (전사 원판과 완전 별개 연출) ═══
        *  광전사 정체성: 서서 돌지 않고 전방으로 박면서 돈다. 붉은 광기가 몸을 감쌈. */
-      const dir = aim.lengthSq() > 0.01 ? aim.clone().normalize() : new Phaser.Math.Vector2(this.flipX ? -1 : 1, 0);
+      const dir = aim.lengthSq() > 0.01 ? aim.clone().normalize() : new Phaser.Math.Vector2(this.flipX ? 1 : -1, 0); // v1.0.16 — flipX는 물리 방향(오른쪽=true) 단일 컨벤션
       this.scene.spawnSpinSlash(this.x, this.y, spin);
       this.scene.spawnSpinSlash(this.x + dir.x * 52, this.y + dir.y * 52, -spin); // 전방 이중 참격판
       /* v4.9.0 — 회전베기 참격 궤적 셰이더: 붉은 광기 2궤적 (이중 참격판 대응, 시작각 엇갈림) */
@@ -1153,7 +1153,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hex = this.clsHex();
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.play(atkKey);
-    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
     this.scene.sfxSkill("quake"); // v3.0.24 — 가디언 성벽 강타 (지진음)
     this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 1.5, hex);
     // 방어 버프 — 성벽 정체성 (전장의 함성 공격 버프와 별개 축)
@@ -1369,7 +1369,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           (this.body as Phaser.Physics.Arcade.Body).reset(nx, ny);
           this.scene.spawnBurstAt(nx, ny, 8, hex);
         }
-        this.setFlipX(lastDir.x < 0); // v1.0.12 — 공격 시트 우향 네이티브 (점멸 직후 참격 정면화)
+        this.setFlipX(lastDir.x > 0); // v1.0.16 — 좌향 네이티브 통일 (점멸 직후 참격 정면화)
         this.scene.spawnSlash(this.x, this.y, lastDir, i % 2 === 0, 1.2, hex);
         const { dmg, crit } = this.rollDamage(3.0 + 0.25 * t, true);
         if (crit) this.scene.sfxCrit();
@@ -1399,7 +1399,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hex = this.clsHex();
     const hits = t >= 3 ? 7 : 5;
     this.play("hero-atk");
-    this.setFlipX(dir.y === 0 && dir.x < 0);
+    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
     this.scene.sfxSkill("swift"); // v3.0.24 — 스와시버클러 연타 난무 (속공 베기)
     let total = 0;
     for (let i = 0; i < hits; i++) {
@@ -3294,6 +3294,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (!isClassKey(key) || this.cls) return;
     this.cls = key;
     this.clsBonus = bonusOf(key);
+    this.recalcSpeed();
+  }
+
+  /** v1.0.16 — 환생용 직업 완전 초기화: 클래스/계열 보너스/스킬 슬롯을 무직 상태로 되돌린다.
+   *  (applySavedClass는 "비어 있을 때만" 세팅이라 초기화에 쓸 수 없어 별도 경로) */
+  resetClass() {
+    if (!this.cls && this.clsBonus === bonusOf(null)) return;
+    this.cls = null;
+    this.clsBonus = bonusOf(null);
+    this.skill1Cd = 0;
+    this.skill2Cd = 0;
+    this.skill3Cd = 0;
+    this.skill4Cd = 0;
     this.recalcSpeed();
   }
 
