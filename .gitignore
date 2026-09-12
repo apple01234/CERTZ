@@ -135,3 +135,4 @@ skills-workspace/
 scripts/*.png
 scripts/_perf_charts/
 download/*.png
+server.pid
