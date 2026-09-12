@@ -1616,3 +1616,22 @@ Stage Summary:
 - 유저 11건 전부 완료: ①스크린샷 삭제 ②환생 200렙+직업/전직/스토리 초기화 ③⑦공격 방향 근본 수정(픽셀 실측 기반) ④벽 통과 차단 ⑤GM 금색 이름표+황금 오라 ⑥물약 21→7종+치장 6종 ⑧계열별 이펙트 ⑨HP바/바디 최적화 ⑩골드/정예/침공 밸런스 ⑪파티·동행 EXP 보너스
 - 운영 교훈: ①"공격 시트 우향"이라던 v1.0.12 전제가 틀렸다 — 시트 방향은 주석이 아니라 렌더 실측으로 검증할 것 ②샌드박스 리셋 시 JDK도 소실 — rebuild_toolchain.sh가 유일한 복구 경로 ③release 스크립트는 커밋해두면 리셋에 강함(이번엔 소실돼 재작성)
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 80-b
+Agent: Super Z (메인)
+Task: 세션 재개 — Task 80(v1.0.16) 배포 상태 검증 + 잔여 작업 마무리(push·원격 md5 복수검증·로컬 APK 복구·가이드 md5 정정)
+
+Work Log:
+- [상태 검증] 커밋 94e8ab4(v1.0.16)/d47722a 로컬 건재 · 버전체인 7곳 1.0.16/versionCode 81 일치 · Release v1.0.16 원격 존재(id 387501371, asset uploaded) · 서버 정상(localhost 200·APK 307 리다이렉트)
+- [push 완료] 원격 1커밋 선행(accounts backup 1dc3204) → checkout(모드변경 잔존) → pull --rebase fast-forward → push "Everything up-to-date" 확인 — HEAD=origin/main=1dc3204
+- [원격 md5 복수검증] API asset(octet-stream) 재다운로드 106,082,062B · md5 8aa802c21e046b6d62ae606d700b75e4 — worklog 기록·안내.txt 기입분과 정확 일치 (비인증 API는 rate limit — 토큰 헤더 필수, asset 다운로드는 Accept: application/octet-stream 필수)
+- [로컬 APK 복구] download/에서 APK 소실(샌드박스 리셋 후유증) → 원격 재다운로드본을 download/SERTZ-v1.0.16.apk로 보관(106,082,062B, md5 일치)
+- [버그 발견·정정] public/apk-guide.html 62행에 v1.0.15 구 md5(c588b006…) 잔존 — v1.0.16 md5(8aa802c2…)로 정정 · 서빙 실측 새 md5 즉시 반영 확인(정적 파일, 재시작 불요) · 커밋 682c126 push 완료(1dc3204..682c126)
+- worklog에는 Task 80이 이미 완료 기록된 상태였음 — 본 Task는 검증·봉합 회차
+
+Stage Summary:
+- v1.0.16 배포 봉합 완료: Release https://github.com/apple01234/CERTZ/releases/download/v1.0.16/SERTZ-v1.0.16.apk (versionCode 81, 106,082,062B, md5 8aa802c2…) — 원격 재다운로드 md5 일치로 무결성 재확인
+- 유저 11건(스크린샷 삭제·환생 200렙 개편·공격 방향 근본 수정·벽 통과 차단·GM 표시·물약 정리+치장 6종·마법진 계열 분리·최적화·밸런스·멀티 EXP 보너스) 전부 v1.0.16에 반영·배포 완료
+- 운영 교훈: ①worklog "md5 기입" 기록도 실측 대조 필수 — apk-guide.html에 구 md5가 잔존해 있었다 ②Release asset 검증은 비인증 API rate limit 회피 위해 토큰+octet-stream 헤더 사용 ③샌드박스 리셋 시 download/APK도 소실 — 원격 Release가 유일 백업
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
