@@ -1700,3 +1700,18 @@ Stage Summary:
 - 유저 6건 전부 완료: ①환생 시 시작 캐릭터 복귀+5차 리셋 수정(실측 증명) ②로비(캐릭터 선택·생성·삭제·슬롯 확장) ③유니온 풀세트(등급 11·그리드 DnD·효과·코인·상점·버프·아티팩트·레이드) ④모바일 하단바(RESIZE·터치패드는 기존) ⑤셰이더 강도 슬라이더+플리커 완화+보스전 밝기 ⑥몬스터 파크+환생 로그 (기존 대형 콘텐츠 탑/시련/제작/심연/펫/게이트/균열/도장/거래판/피규어/배지/룬/성좌/업적/출석/도감과 합산 15종+)
 - 운영 교훈: ①MultiEdit 실패 시 부분 적용 가능 — 편집 후 grep으로 중복 검증 필수(이번에 필드 블록 3중 중복 발생→정리) ②백그라운드 빌드는 세션 종료와 함께 죽는다 — 빌드는 포어그라운드+600s 타임아웃 ③시스템 JRE(headless)엔 javac 없음 — gradle은 JAVA_HOME=/home/z/jdk(Temurin) 필수 ④release_*.py는 커밋해두면 리셋에 강함(재작성 0)
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 82-b
+Agent: Super Z (메인)
+Task: 세션 재개 — Task 82(v1.0.18) 배포 상태 전면 재검증
+
+Work Log:
+- [로컬] HEAD=origin/main=ddf6a30(push 완료 상태) · 버전체인 package.json 1.0.18 / build.gradle versionCode 83·versionName 1.0.18 / server.js LATEST_VERSION 1.0.18 일치 · git status 클린
+- [로컬 APK] download/SERTZ-v1.0.18.apk 106,102,434B 존재 · md5 e35e39663ec36995e21a515180a51abf
+- [서버] /api/version 200 — {latest:1.0.18, code:83, apk 307 링크, guide} 정상 · apk-guide.html v1.0.18+새 md5 서빙 확인
+- [원격] Release asset 직접 다운로드 HTTP 200 · 재다운로드 md5 e35e3966… 로컬과 정확 일치 — 무결성 재확인
+
+Stage Summary:
+- v1.0.18 배포 상태 100% 건전 확인 — 유저 6건(환생·로비·유니온·반응형·셰이더/보스·몬스터 파크) 전부 반영·배포 완료 상태
+- 본 회차는 검증만 수행, 코드 수정 0건
