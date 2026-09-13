@@ -1675,3 +1675,28 @@ Stage Summary:
 - 화살 방향: 코드 3차 전수 검증 + E2E 물리 직독으로 "정상" 최종 확정 — 유저 증상은 구버전 APK 사용이 유일 원인. 이후로는 구버전 접속 시 게임이 스스로 재설치를 안내하므로 동일 재보고 원천 차단
 - 운영 교훈: ①릴리스마다 바뀌는 4개 문서(가이드·안내.txt·배지·미러) 갱신 누락이 2회 연속 발생 — 다음 릴리스부터 "버전체인 8곳 체크리스트" 스크립트화 권장 ②gradle 배포본 실패 시 curl→wrapper 캐시 주입이 복구 경로 ③구버전 유저 식별은 서버 세이브로 불가(db엔 계정만 있음) — 클라 게이트가 유일한 수단
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 82
+Agent: Super Z (메인)
+Task: 유저 대형 업데이트 6건 — ①환생 버그(스타트 캐릭터 미복귀) ②로비(캐릭터 선택·생성) ③유니온 시스템 ④반응형 ⑤셰이더 눈피로+보스전 밝기 ⑥신규 대형 콘텐츠 — v1.0.18 확정·릴리스 (versionCode 83)
+
+Work Log:
+- [① 환생 근본 원인] v1.0.16 개편분에 2가지 잔여 버그: (a) resetClass()가 5차 각성(fifth/fifthStoryDone)을 리셋 안 함 → 환생 후 스킬·기본공격이 "·극" 5차 강화 상태로 잔존 = 유저 보고 "스킬 및 기본공격 또한 마찬가지" (b) "시작 캐릭터" 개념 부재 → 환생 후 무직(null) 상태 = "스타트 캐릭터로 안바뀜"
+- [① 수정] Player.startCls 신설 + applyStartClass(key)(상위 키는 체인 1차로 강등 적용) · resetClass가 skill5Cd/fifth/fifthStoryDone까지 리셋 · doRebirth: resetClass → applyStartClass(startCls)로 시작 캐릭터 즉시 복귀 + inf.rebirthLog(최근 30건) 기록 + confirm/배너/보상팝업 문구 갱신 · 1차 시련 통과 시 startCls 고정 · 세이브 startCls 필드 + 구세이브 마이그레이션(cls 체인 역산 → pendingJobClass 순)
+- [② 로비] slots.ts 신설: sertz_slots_v1(계정 슬롯 8기본/최대 16) + sertz_char_<id>(캐릭터별 SaveData 1:1) 3계층 저장 · config.ts 활성 캐릭터 라우팅(loadSave/writeSave가 char_<id>로 라우팅, 레거시 키 미러링으로 구APK 롤백 안전망, registerSaveHook으로 메타 자동 동기화 — 순환 임포트 회피) · 구세이브 첫 부팅 시 c1으로 자동 이전(원본 보존) · Lobby.tsx: 카드 리스트(이름/직업/레벨/마지막 접속)·생성(4계열 카드 → 프리뷰: 대표스킬 아이콘 3개·주스탯·난이도★·소개 → 이름 8자)·삭제 확인 모달·슬롯 확장(유니온 코인 60) · 타이틀 "게임 시작"→로비 경유(메이플 흐름)
+- [③ 유니온] union.ts 신설: 등급 11단계(브론즈0→별6000, 등급당 배치+1 최대 18) · 13×9 그리드 · 계열별 폴리오미노(전사 2×2→6셀/궁수 L자/마법사 I자/도적 S자, 레벨 구간 60/100/200별 확대) + 4방향 회전 · 지역 효과 칸 수 비례(전사=공격+2.2/HP+22 · 궁수=크리+0.38 · 마법사=공격%+0.34 · 도적=골드+0.5/이동+0.22) · UnionPanel.tsx: 포인터 DnD(마우스+터치)·회전·해제·자동 추천 배치(계열 인터리브 그리디)·상점 5종·시간제 버프 4종(30~60분, 만료 자동 정리)·아티팩트 6종(레벨형 영구 성장)·레이드(600ms 틱 AI 교대 공격 시뮬, 난이도 3종·일 1회·코인 지급) · syncExtBonus에 유니온 효과+버프 병합(전 캐릭터 적용) + Player.expBonusPct 훅으로 경험치 버프 주입 · HUD 유니온 버튼 + PanelKind "union"
+- [⑥ 몬스터 파크] STAGES.park 신설(tower 패턴 완전 미러: 세이브 구역 제외·복귀 포탈·황금몬스터 배제) · 일일 입장권 2장(자동 리셋)·난이도 3종(Lv15/40/80)·90초 웨이브(30초마다 강화·소환 가속)·처치마다 파크 코인(웨이브 비례)·파크 상점 5종(rpg:parkBuy) · 세이브 parkCoins/parkBest/parkTickets + RpgState.park 스냅샷 · 콘텐츠 패널 "파크" 탭(6탭화) · 환생 기록 UI(환생·펫 탭에 로그 10건)
+- [⑤ 셰이더/보스] config.ts loadFx/writeFx(sertz_fx: intensity 기본 55/noFlicker) · StudioFX 앰비언트 블룸 강도 비례(0=미부착) · 보스 블룸+비네트 강도 비례 · Lighting: 플리커 완화 모드(트윈 미생성+update f=1 고정) · setBossFight(on): 암전 알파→0.2 완화+횃불 1.3배 확대, 보스 라이트 전 보스전 확대(밝은 톤 0xffd9a0·scale 1.6) · 설정 패널에 "셰이더·화면 편안함" 섹션(슬라이더+체크박스, 그래픽 효과 아래 배치)
+- [④ 반응형] GameRoot에 MobileNavBar 신설: coarse 포인터 전용 하단바(가방/스탯/유니온/콘텐츠/설정, safe-area 대응) — 패널 열림 시 자동 숨김. Phaser Scale.RESIZE+카메라 줌은 기존 유지(이미 3단 대응)
+- [E2E 1280×720] e2e_v1018.js: 타이틀 배지 v1.0.18 ✓ → 로비 진입 ✓ → 마법사 프리뷰(주 스탯 표기) ✓ → "유니온테스터" 생성 ✓ → 월드 진입+player.cls=mage(생성 직업 그대로 시작) ✓ → 유니온 패널(브론즈 배지·13×9 그리드·자동 추천·아티팩트·레이드 탭) ✓ → 파크 탭(입장권 2/2·코인 상점) ✓ → 설정(셰이더 강도 슬라이더+플리커 체크) ✓ → pageerror 0
+- [E2E 환생 실측] e2e_v1018_rebirth.js: 구세이브(eagleeye·5차각성·Lv200·환생5회) 시드 → 로비 카드 자동 마이그레이션(1캐릭터/슬롯8) ✓ → 로드 cls=eagleeye·fifth=true·startCls=ranger(체인 역산) ✓ → 환생 실행(confirm 수락) → cls=ranger(시작 캐릭터 복귀!)·fifth=false·lv=1·rebirths=6·rebirthLog 1건·세이브 cls=ranger 반영 ✓
+- [빌드] tsc 0에러 · 웹빌드 2회(셰이더 섹션 위치 수정 반영) · 서버 재기동(/api/version 1.0.18/code 83) · JDK 소실 재발 → rebuild_toolchain.sh(Temurin21→/home/z/jdk·SDK35/36) 재구축, 시스템 JRE엔 javac 없어 JAVA_HOME=/home/z/jdk 명시 필요 확인 · gradle BUILD SUCCESSFUL 4m41s → SERTZ-v1.0.18.apk 106,102,434B · aapt 83/1.0.18 · md5 e35e39663ec36995e21a515180a51abf · APK 내부 검출(startCls 19건·applyStartClass·몬스터 파크 6건·유니온 레벨·자동 추천 배치·플리커 완화 모드·환생 기록)
+- [릴리스] scripts/release_v1018.py(커밋됨) — Release v1.0.18(id 387950167) 생성·업로드(asset 561486264) → 원격 재다운로드 md5 일치 ✓ · 서버 재기동: /api/version 200(1.0.18/83)·APK 307→v1.0.18 Release·guide v1.0.18+새 md5 서빙 ✓ · 안내.txt v1.0.18 블록(md5 포함) 추가 · 커밋 cace21e → rebase(원격 선행 2커밋) → push 완료(HEAD=origin/main=6e13e59)
+- [가이드 md5 잔존 3회차 방지] 릴리스 직후 guide에 구 md5(b45438c1) 잔존 발견 → 즉시 정정·서빙 실측 — worklog 교훈(2회 연속)이 또 실제로 잡혔다. 다음 릴리스부터는 release_*.py에 guide md5 치환+curl 검증까지 자동화할 것
+
+Stage Summary:
+- v1.0.18 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.18/SERTZ-v1.0.18.apk (versionCode 83, 106,102,434B, md5 e35e3966…)
+- 유저 6건 전부 완료: ①환생 시 시작 캐릭터 복귀+5차 리셋 수정(실측 증명) ②로비(캐릭터 선택·생성·삭제·슬롯 확장) ③유니온 풀세트(등급 11·그리드 DnD·효과·코인·상점·버프·아티팩트·레이드) ④모바일 하단바(RESIZE·터치패드는 기존) ⑤셰이더 강도 슬라이더+플리커 완화+보스전 밝기 ⑥몬스터 파크+환생 로그 (기존 대형 콘텐츠 탑/시련/제작/심연/펫/게이트/균열/도장/거래판/피규어/배지/룬/성좌/업적/출석/도감과 합산 15종+)
+- 운영 교훈: ①MultiEdit 실패 시 부분 적용 가능 — 편집 후 grep으로 중복 검증 필수(이번에 필드 블록 3중 중복 발생→정리) ②백그라운드 빌드는 세션 종료와 함께 죽는다 — 빌드는 포어그라운드+600s 타임아웃 ③시스템 JRE(headless)엔 javac 없음 — gradle은 JAVA_HOME=/home/z/jdk(Temurin) 필수 ④release_*.py는 커밋해두면 리셋에 강함(재작성 0)
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
