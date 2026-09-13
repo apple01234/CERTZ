@@ -6,6 +6,7 @@ import { EventBus, type EndState, type RewardPopupState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
 import { RotateCw, Play, Save, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles, Smartphone } from "lucide-react";
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0
+import pkg from "../../../package.json"; // v1.0.17 — 클라 자체 버전 (단일 소스 = package.json)
 
 /** 세이브 이어하기 라벨용 스테이지 표기명 (v2.0 — 구역 체인 대응) */
 const STAGE_LABEL: Record<string, string> = {
@@ -29,9 +30,38 @@ function stageLabel(key: string): string {
 
 /* ---------- 타이틀 화면 ---------- */
 
+/** v1.0.17 — 클라 버전 게이트: 서버 최신 버전과 내 버전을 비교해 구버전이면 재설치 안내.
+ *  유저가 구버전 APK(v1.0.15 이하 — 캐릭터가 조준 반대를 보던 판)를 계속 쓰며
+ *  "화살 방향 반대" 같은 이미 수정된 증상을 재보고하는 문제를 원천 차단. */
+function compareVer(a: string, b: string): number {
+  const pa = a.split(".").map((n) => parseInt(n, 10) || 0);
+  const pb = b.split(".").map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d !== 0) return d;
+  }
+  return 0;
+}
+
 export function TitleScreen() {
   // 클라이언트 전용 컴포넌트(ssr:false)라 지연 초기화로 안전
   const [save, setSave] = useState<SaveData | null>(() => loadSave());
+  /* v1.0.17 — 구버전 알림: 서버 /api/version 조회 결과 (내 버전보다 높을 때만 채움) */
+  const [update, setUpdate] = useState<{ latest: string; note: string; guide: string } | null>(null);
+
+  useEffect(() => {
+    let dead = false;
+    fetch("/api/version", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { latest?: string; note?: string; guide?: string } | null) => {
+        if (dead || !j?.latest) return;
+        if (compareVer(j.latest, pkg.version) > 0) {
+          setUpdate({ latest: j.latest, note: j.note ?? "", guide: j.guide ?? "/apk-guide.html" });
+        }
+      })
+      .catch(() => {}); // 오프라인/구 서버 — 조용히 스킵 (게임 플레이 방해 없음)
+    return () => { dead = true; };
+  }, []);
 
   return (
     <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-transparent px-4">
@@ -43,9 +73,26 @@ export function TitleScreen() {
           이그드라실 : 아홉 왕국
           {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
            *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.16 — 공격 방향 완전 정면화 · 환생 개편 · GM 표시</span>
+          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.17 — 화살 방향 최종 검증 · 구버전 알림 게이트</span>
         </p>
       </div>
+
+      {/* v1.0.17 — 구버전 APK 사용자 필수 안내: 최신 수정(화살 방향 등)은 재설치 후에만 적용됨 */}
+      {update && (
+        <a
+          href={update.guide}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 w-[min(92vw,520px)] rounded-lg border border-red-300/60 bg-red-950/80 px-4 py-2.5 text-center shadow-[0_4px_20px_rgba(0,0,0,0.7)] transition-transform hover:scale-[1.02] active:scale-95"
+        >
+          <p className="text-[13px] font-black text-red-200 sm:text-sm">
+            새 버전 v{update.latest} 설치 필요 — 여기 눌러 APK 재설치
+          </p>
+          {update.note && (
+            <p className="mt-0.5 text-[10px] font-bold leading-snug text-amber-100/85">{update.note}</p>
+          )}
+        </a>
+      )}
 
       <div className="mt-8 flex w-56 flex-col gap-3 sm:w-64">
         <button

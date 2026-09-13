@@ -1653,3 +1653,25 @@ Stage Summary:
 - 코드 수정 0건 — v1.0.16이 이미 정상 (6종 실측 증명, /tmp/e2e_*.png)
 - 유저 안내: 타이틀 화면 우측 배지가 v1.0.16인지 확인 → 구버전이면 Release에서 재설치
 - 운영 교훈: ①화살 같은 대칭형 텍스처는 alpha 질량 분석이 오답 — 확대 렌더 육안이 유일 ②E2E 스킬 실측은 디버그 훅(__SERTZ__) 직접 제어가 키 입력보다 신뢰 ③"재보고"는 재현 전에 유저 버전 확인이 먼저
+
+---
+Task ID: 81
+Agent: Super Z (메인)
+Task: 유저 4회차 재보고 "화살표 전부 반대로" — 화살 전 경로 3차 전수 검증 + 구버전 알림 게이트 신설 v1.0.17 배포
+
+Work Log:
+- [전수 검증] 화살 투사체 생성 지점 전량(19곳 중 화살 12지점) 코드 리뷰: atkBow(533)·skill1Arrows(1051)·trueshot(1830)·화살 폭우(1985)·신의 화살비(2283)·신시극(2661)·천강(2993/3011) — 전부 angle=atan2(aim/타겟)+rot:true 단일 구조 · homing 회전 갱신(8438 setRotation(na))·원격 화살(fireRemoteProj flipX(!flip)+vx)·어시스트 엣지 화살표(rotation=Angle.Between) 전부 정상
+- [텍스처 직접 렌더 실측] x2_arrow 8배 확대 — 우향 네이티브 재확인(촉=오른쪽 노랑 삼각) · x2_bow 좌향 발사형 정상 · edge_arrow 6배 확대 — 우향 네이티브(rotation=angle 정합) · gw/vf_arrow 미사용 확인
+- [결론] 코드상 유저 증상("화살이 발사 반대로")을 만들 수 있는 경로가 구조적으로 존재하지 않음 확정 — v1.0.15 이하의 "캐릭터가 조준 반대를 보는" 버그(v1.0.16 수정)로 화살이 반대로 보였을 것이 최종 판정
+- [E2E 실측(가로 1280×720)] 타이틀 배지 v1.0.17 ✓ · 구버전 배너: network route로 /api/version을 1.0.18로 모킹 → "새 버전 v1.0.18 설치 필요 — 여기 눌러 APK 재설치" 붉은 배너 표시 실측 ✓ · 월드 진입 → applySavedClass('eagleeye') → 절명 화살(Z) 좌/우 라인빔 방향 ✓ · 절사명중(V) 물리 직독: 오른쪽 vx=+980·rot=0, 왼쪽 vx=-980·rot=-3.14 (화살촉=진행 방향 완전 일치) ✓ · 기본공격: 오른쪽 flipX=true+우향, 왼쪽 flipX=false+vx=-980·rot=-π ✓ · pageerror/콘솔 에러 0
+- [구버전 알림 게이트 신설] server.js: GET /api/version → {latest,code,note,apk,guide} (no-store) · Overlays.tsx TitleScreen: 마운트 시 fetch → compareVer(latest, pkg.version)>0이면 타이틀에 붉은 재설치 안내 배너(클릭=apk-guide.html) · 자체 버전은 package.json import 단일 소스 · 오프라인/구 서버는 조용히 스킵
+- [버그 정정] public/apk-guide.html sub행 "versionCode 79" 잔존(v1.0.16 배포 시 갱신 누락) → 82로 정정 — Task 80-b의 md5 잔존 사고와 동일 패턴(가이드 갱신 누락), 2회 연속 발생
+- [버전체인 8곳 동기화] package.json·build.gradle(versionCode 82·versionName 1.0.17+히스토리 주석)·server.js(APK_MIRROR+LATEST_VERSION)·Overlays.tsx 배지·apk-guide.html(v1.0.17·82·변경점)·안내.txt(블록 추가)
+- [빌드] JDK 소실 재발 → rebuild_toolchain.sh(JDK21+SDK36) 재구축 · gradle-8.14.3-all 배포본 다운로드 실패(SSL) → curl 직접 다운로드(224MB) 후 wrapper 캐시 주입으로 우회 · BUILD SUCCESSFUL 6m13s → SERTZ-v1.0.17.apk 106,083,990B · aapt 82/1.0.17 · md5 b45438c1c2335f32e81234f76b3b8a98 · APK 내부 검출(api/version 청크·"설치 필요" 안내) ✓
+- [릴리스] Release v1.0.17(id 387818088) 생성·업로드(asset 560739628, uploaded) → 원격 재다운로드 md5 일치 ✓ · 서버 재기동 후 서빙 실측: /api/version 200·APK 307→v1.0.17 Release·guide 새 md5 표기·안내.txt 200 ✓
+
+Stage Summary:
+- v1.0.17 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.17/SERTZ-v1.0.17.apk (versionCode 82, 106,083,990B, md5 b45438c1…)
+- 화살 방향: 코드 3차 전수 검증 + E2E 물리 직독으로 "정상" 최종 확정 — 유저 증상은 구버전 APK 사용이 유일 원인. 이후로는 구버전 접속 시 게임이 스스로 재설치를 안내하므로 동일 재보고 원천 차단
+- 운영 교훈: ①릴리스마다 바뀌는 4개 문서(가이드·안내.txt·배지·미러) 갱신 누락이 2회 연속 발생 — 다음 릴리스부터 "버전체인 8곳 체크리스트" 스크립트화 권장 ②gradle 배포본 실패 시 curl→wrapper 캐시 주입이 복구 경로 ③구버전 유저 식별은 서버 세이브로 불가(db엔 계정만 있음) — 클라 게이트가 유일한 수단
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
