@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState, type RewardPopupState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
-import { RotateCw, Play, Save, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles, Smartphone } from "lucide-react";
+import { RotateCw, Play, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles, Smartphone } from "lucide-react";
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0
 import pkg from "../../../package.json"; // v1.0.17 — 클라 자체 버전 (단일 소스 = package.json)
 
@@ -73,7 +73,7 @@ export function TitleScreen() {
           이그드라실 : 아홉 왕국
           {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
            *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.17 — 화살 방향 최종 검증 · 구버전 알림 게이트</span>
+          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.18 — 로비·유니온·몬스터 파크 · 셰이더 편안함</span>
         </p>
       </div>
 
@@ -95,24 +95,19 @@ export function TitleScreen() {
       )}
 
       <div className="mt-8 flex w-56 flex-col gap-3 sm:w-64">
+        {/* v1.0.18 — 시작/이어하기 모두 로비(캐릭터 선택·생성)로 진입 (메이플 메인메뉴 흐름) */}
         <button
-          onClick={() => EventBus.emit("game:new")}
+          onClick={() => EventBus.emit("lobby:open")}
           className="sertz-btn flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-black text-amber-100 shadow-[0_4px_16px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03] active:scale-95"
         >
           <Play size={18} />
-          새로운 모험
+          게임 시작
+          <span className="text-[9px] font-bold text-amber-200/70">— 캐릭터 선택·생성</span>
         </button>
         {save && (
-          <button
-            onClick={() => EventBus.emit("game:continue", save)}
-            className="sertz-btn flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-black text-white shadow-[0_4px_16px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03] active:scale-95"
-          >
-            <Save size={18} />
-            이어하기
-            <span className="text-[10px] font-bold text-sky-200">
-              LV{save.lv} · {save.cleared ? "클리어" : stageLabel(save.stage)}
-            </span>
-          </button>
+          <span className="mx-auto -mt-1 text-[9px] font-bold text-sky-200/70">
+            마지막 플레이: LV{save.lv} · {save.cleared ? "클리어" : stageLabel(save.stage)} — 로비에서 이어하기
+          </span>
         )}
         {save && (
           <button
@@ -122,7 +117,7 @@ export function TitleScreen() {
             }}
             className="mx-auto text-[11px] font-bold text-white/40 underline underline-offset-2 hover:text-white/70"
           >
-            저장 데이터 삭제
+            마지막 플레이 세이브 삭제 (로비에서 개별 캐릭터 삭제 가능)
           </button>
         )}
         {/* v3.2.0 — 폰에서 놀고 싶은 유저를 위한 APK 다운로드 안내 (타이틀에서 바로 찾기) */}

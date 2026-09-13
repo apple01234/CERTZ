@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { loadFx } from "../config";
 
 /**
  * v4.1.5 — 동적 조명 레이어 (Lighting Framework)
@@ -92,7 +93,25 @@ export class Lighting {
         .setAlpha(lp.alpha);
       this.baseScale = lp.scale;
       this.baseAlpha = lp.alpha;
-      this.flickerAmt = 0.05;
+      /* v1.0.18 — 플리커 완화 모드: 횃불 깜빡임 진폭 0 (빛 자체는 유지) */
+      this.flickerAmt = loadFx().noFlicker ? 0 : 0.05;
+    }
+  }
+
+  /** v1.0.18 — 보스전 밝기 부스트: 어두운 챕터라도 보스전 동안은 암전을 완화하고
+   *  횃불 광원을 최대로 키워 플레이어·보스·바닥 판정이 항상 보이게 한다 (유저 지시). */
+  setBossFight(on: boolean) {
+    if (!this.overlay) return;
+    const profAlpha = this.ambientAlpha;
+    const target = on ? Math.min(profAlpha, 0.2) : profAlpha;
+    this.scene.tweens.add({ targets: this.overlay, alpha: target, duration: 450 });
+    if (on) {
+      this.torchMul = 1.3; // 보스전 동안 횃불 확대 (구역 축소 무시)
+      this.playerLight?.setScale(this.baseScale * 1.45);
+      this.playerLight?.setAlpha(Math.min(1, this.baseAlpha * 1.35));
+    } else {
+      this.playerLight?.setScale(this.baseScale * this.torchMul);
+      this.playerLight?.setAlpha(this.baseAlpha);
     }
   }
 
@@ -108,12 +127,13 @@ export class Lighting {
     }
   }
 
-  /** 정적 광원 등록 (횃불/모닥불/포탈/수정 등) — ADD 글로우 + 플리커 */
+  /** 정적 광원 등록 (횃불/모닥불/포탈/수정 등) — ADD 글로우 + 플리커
+   *  v1.0.18 — 플리커 완화 모드면 트윈 없이 고정 광원 */
   addLight(x: number, y: number, opts: LightOpts = {}) {
     const tint = opts.tint ?? 0xffa040;
     const scale = opts.scale ?? 0.9;
     const alpha = opts.alpha ?? 0.3;
-    const flicker = opts.flicker ?? 0.08;
+    const flicker = loadFx().noFlicker ? 0 : (opts.flicker ?? 0.08);
     const g = this.scene.add
       .image(x, y, "pk_light_01")
       .setDepth(56)
@@ -136,14 +156,16 @@ export class Lighting {
     return g;
   }
 
-  /** 매 프레임 갱신 — 플레이어 광원 추적 + 미세 플리커 (update에서 호출) */
+  /** 매 프레임 갱신 — 플레이어 광원 추적 + 미세 플리커 (update에서 호출)
+   *  v1.0.18 — 플리커 완화 모드면 f=1 고정 (깜빡임 제거) */
   update(px: number, py: number, dt: number) {
     if (this.playerLight) {
       const k = 1 - Math.pow(0.001, dt / 1000); // 프레임율 독립 보간
       this.playerLight.x += (px - this.playerLight.x) * k;
       this.playerLight.y += (py - this.playerLight.y) * k;
-      this.phase += dt * 0.006;
-      const f = 1 + Math.sin(this.phase) * this.flickerAmt + Math.sin(this.phase * 2.7) * this.flickerAmt * 0.5;
+      const noFlicker = this.flickerAmt === 0;
+      if (!noFlicker) this.phase += dt * 0.006;
+      const f = noFlicker ? 1 : 1 + Math.sin(this.phase) * this.flickerAmt + Math.sin(this.phase * 2.7) * this.flickerAmt * 0.5;
       /* v4.2.0 — torchMul 반영: 구역 진행할수록 작아지고 어두워지는 횃불 */
       this.playerLight.setAlpha(this.baseAlpha * f * (0.7 + 0.3 * this.torchMul));
       this.playerLight.setScale(this.baseScale * this.torchMul * (1 + (f - 1) * 0.35));

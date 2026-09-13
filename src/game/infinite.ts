@@ -320,3 +320,14 @@ export function infBonus(
 export function todayKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+
+/** v1.0.18 — 몬스터 파크 난이도 (일반/어려움/지옥) */
+export const PARK_DIFFS = [
+  { name: "일반", minLv: 15, hpMul: 1, atkMul: 1, coin: 1, spawnMs: 950, color: "#8fe84a" },
+  { name: "어려움", minLv: 40, hpMul: 2.4, atkMul: 1.7, coin: 3, spawnMs: 800, color: "#a8ecff" },
+  { name: "지옥", minLv: 80, hpMul: 6, atkMul: 3, coin: 8, spawnMs: 620, color: "#ff8ab0" },
+] as const;
+/** 파크 한 세션 길이 (ms) */
+export const PARK_DURATION = 90000;
+/** 파크 입장권 일일 장수 */
+export const PARK_TICKETS = 2;

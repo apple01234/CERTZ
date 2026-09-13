@@ -97,6 +97,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private static readonly CRIT_MULT = 1.7;
   /* v3.0.6 (지시 #4 — 그림자 숨기) — 다음 기본공격 강화 플래그 */
   nextAtkEmpowered = false;
+  /** v1.0.18 — 유니온 버프 경험치 % 훅 (씬이 주입 — null이면 미적용) */
+  expBonusPct?: () => number;
   /* v3.0.6 (지시 #5) — 자동 물약/자동 버프 설정 (hpPct 0=끝, mpOn, 버프 키 목록) */
   autoUse: { hpPct: number; mpPct: number; mpOn: boolean; buffs: BuffKey[] } = { hpPct: 0, mpPct: 0, mpOn: false, buffs: [] };
   /* v3.3.0 (지시 #3/#8 — GM 5차전직(임시) + 5차전직 스토리) — 5차 각성 상태 (세이브 대상)
@@ -3224,7 +3226,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   gainExp(v: number) {
     // 지혜의 물약 — 경험치 +50% 버프 (v1.9 BM)
-    const gain = this.hasBuff("buff_exp") ? Math.round(v * 1.5) : v;
+    let gain = this.hasBuff("buff_exp") ? Math.round(v * 1.5) : v;
+    /* v1.0.18 — 유니온 훈련 명령 버프 (경험치 +20%) — 씬이 주입하는 훅으로 계산 */
+    if (this.expBonusPct) gain = Math.round(gain * (1 + this.expBonusPct() / 100));
     this.exp += gain;
     let leveled = false;
     while (this.exp >= this.expNext()) {

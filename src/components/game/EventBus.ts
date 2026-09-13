@@ -168,7 +168,11 @@ export type RpgState = {
     abyss: number;
     orbs: Record<string, number>;
     rebirthEss: number;
+    /** v1.0.18 — 환생 기록 로그 (최근 순) */
+    rebirthLog?: { at: number; lv: number; cls: string | null; n: number }[];
   };
+  /** v1.0.18 — 몬스터 파크 상태 (콘텐츠 패널 파크 탭) */
+  park?: { coins: number; best: number; tickets: number; lv: number };
   /** 오늘의 시련 수정자 (id/name/desc/color — 미표기 null) */
   trialToday?: { id: string; name: string; desc: string; color: string } | null;
   /** 오늘의 레이드 보스 (이름) */
@@ -176,7 +180,7 @@ export type RpgState = {
 };
 
 /** v3.1.0 — "bossdiff" 제거: 스토리 보스는 전용 난이도 즉시 스폰 (선택은 보스 재도전 창 "boss") */
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "isekai" | "benefit" | "pass" | "content" | null;
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "isekai" | "benefit" | "pass" | "content" | "union" | null;
 
 /* ----- v4.0.0 — 바르가 수비전 오버레이 ----- */
 export type GateCardState = {

@@ -976,6 +976,27 @@ NEXT_STAGE.tower = null;
 PREV_STAGE.tower = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 towerFrom
 STAGE_SHORT.tower = "심연의 탑";
 
+/* ================= v1.0.18 — 몬스터 파크 (일일 입장권 · 난이도별 웨이브 사냥) =================
+ *  콘텐츠 패널에서 입장 — 하루 2장의 입장권, 난이도(일반/어려움/지옥)별 몬스터 웨이브.
+ *  처치마다 파크 코인 획득 → 파크 상점에서 교환. 체인 분리 — 복귀 포탈은 입장 전 구역. */
+STAGES.park = {
+  key: "park",
+  name: "몬스터 파크",
+  subtitle: "몬스터들이 웅크린 사육장 — 웨이브를 전부 사냥해라",
+  width: 1300,
+  height: 860,
+  groundTint: 0xffffff,
+  flowerCount: 0,
+  treeCount: 0,
+  rockCount: 0,
+  quests: [],
+  enemies: [],
+  boss: false,
+};
+NEXT_STAGE.park = null;
+PREV_STAGE.park = "village";
+STAGE_SHORT.park = "몬스터 파크";
+
 /** 구 세이브 키 폴백 — v1.x 6스테이지 → 신규 체인 시작점 */
 export const LEGACY_STAGE_FALLBACK: Record<string, StageKey> = {
   forest: "forest1",

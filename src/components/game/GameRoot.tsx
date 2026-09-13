@@ -4,11 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { createGame } from "@/game/PhaserGame";
 import type Phaser from "phaser";
 import { HUD } from "./HUD";
+import { Backpack, Gauge, Settings, Swords, Users } from "lucide-react"; // v1.0.18 — 모바일 하단바 아이콘
+import { EventBus } from "./EventBus"; // v1.0.18 — 로비 개폐 이벤트
 import { TouchControls } from "./TouchControls";
 import { DialogueBox } from "./DialogueBox";
 import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel, RewardPopup, GateCardOverlay, GateHud } from "./Overlays";
 import { ServerConnect } from "./ServerConnect";
 import { GamePanels } from "./Panels";
+import { Lobby } from "./Lobby"; // v1.0.18 — 캐릭터 선택·생성 로비
+import { UnionPanel } from "./UnionPanel"; // v1.0.18 — 유니온 패널
 import { ChatBox } from "./ChatBox";
 import { PartyWidget } from "./PartyWidget";
 import { FriendsWidget } from "./FriendsWidget";
@@ -26,7 +30,7 @@ export default function GameRoot() {
   const gameRef = useRef<Phaser.Game | null>(null);
   const { state, hud, quest, questLog, skills, dialogue, boss, banner, end, rpg, panel, setPanel } = useGameUi();
   /* v4.1.7 — 패널 개폐 UI음 (유니티 에셋스토어 유료 SFX): HUD 버튼 토글 클릭음 + 열림 사운드 */
-  const togglePanelSfx = (key: "inv" | "job" | "stat" | "quest" | "boss" | "benefit" | "content" | "opt") => {
+  const togglePanelSfx = (key: "inv" | "job" | "stat" | "quest" | "boss" | "benefit" | "content" | "opt" | "union") => {
     audio.sfx.uiClick();
     const opening = panel !== key;
     setPanel(opening ? key : null);
@@ -88,6 +92,19 @@ export default function GameRoot() {
     };
   }, []);
 
+  /* v1.0.18 — 로비 (캐릭터 선택·생성) — 타이틀의 시작 버튼이 로비를 연다 */
+  const [lobbyOpen, setLobbyOpen] = useState(false);
+  useEffect(() => {
+    const onOpen = () => setLobbyOpen(true);
+    const onTitle = () => setLobbyOpen(false);
+    EventBus.on("lobby:open", onOpen);
+    EventBus.on("ui:title", onTitle);
+    return () => {
+      EventBus.off("lobby:open", onOpen);
+      EventBus.off("ui:title", onTitle);
+    };
+  }, []);
+
   return (
     <div className="game-root fixed inset-0 select-none overflow-hidden bg-[#05070d]">
       {/* Phaser 캔버스가 들어갈 부모 — FIT 스케일이 이 영역을 채움 */}
@@ -120,6 +137,7 @@ export default function GameRoot() {
                 onOpenBenefit={() => togglePanelSfx("benefit")}
                 onOpenContent={() => togglePanelSfx("content")}
                 onOpenOpt={() => togglePanelSfx("opt")}
+                onOpenUnion={() => togglePanelSfx("union")}
               />
             </div>
             {!panel && (
@@ -167,6 +185,8 @@ export default function GameRoot() {
             <TitleScreen />
             {/* APK 전용 — 멀티플레이 서버 주소 설정 (웹에서는 미렌더링) */}
             <ServerConnect />
+            {/* v1.0.18 — 캐릭터 선택·생성 로비 (타이틀 위에 표시) */}
+            {lobbyOpen && <Lobby onExit={() => setLobbyOpen(false)} />}
           </div>
         )}
 
@@ -187,8 +207,55 @@ export default function GameRoot() {
 
         <GamePanels panel={panel} rpg={rpg} hud={hud} questLog={questLog} onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />
 
+        {/* v1.0.18 — 유니온 패널 (GamePanels 밖 — 스토어 직접 참조라 rpg 상태 불요) */}
+        {panel === "union" && <UnionPanel onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />}
+
         <RotatePrompt active={portraitMobile} />
+
+        {/* v1.0.18 — 모바일 하단 네비게이션 바 (터치 기기 · 패널 닫힘 시만) */}
+        {state === "playing" && !panel && (
+          <MobileNavBar
+            onInv={() => togglePanelSfx("inv")}
+            onStat={() => togglePanelSfx("stat")}
+            onUnion={() => togglePanelSfx("union")}
+            onContent={() => togglePanelSfx("content")}
+            onOpt={() => togglePanelSfx("opt")}
+          />
+        )}
       </div>
     </div>
+  );
+}
+
+/** v1.0.18 — 모바일 하단 네비게이션 (메이플식 하단 메뉴 — 터치 기기에서만 표시) */
+function MobileNavBar({ onInv, onStat, onUnion, onContent, onOpt }: { onInv: () => void; onStat: () => void; onUnion: () => void; onContent: () => void; onOpt: () => void }) {
+  const [touch, setTouch] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    const apply = () => setTouch(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  if (!touch) return null;
+  const items: { label: string; icon: React.ReactNode; act: () => void; cls: string }[] = [
+    { label: "가방", icon: <Backpack size={16} />, act: onInv, cls: "text-sky-200" },
+    { label: "스탯", icon: <Gauge size={16} />, act: onStat, cls: "text-lime-200" },
+    { label: "유니온", icon: <Users size={16} />, act: onUnion, cls: "text-indigo-200" },
+    { label: "콘텐츠", icon: <Swords size={16} />, act: onContent, cls: "text-purple-200" },
+    { label: "설정", icon: <Settings size={16} />, act: onOpt, cls: "text-white/70" },
+  ];
+  return (
+    <nav
+      aria-label="모바일 메인 메뉴"
+      className="pointer-events-auto absolute inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-white/15 bg-black/70 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur-sm"
+    >
+      {items.map((it) => (
+        <button key={it.label} onClick={it.act} aria-label={`${it.label} 열기`} className={`flex min-w-12 flex-col items-center gap-0.5 px-2 py-1 active:scale-90 ${it.cls}`}>
+          {it.icon}
+          <span className="text-[8px] font-black">{it.label}</span>
+        </button>
+      ))}
+    </nav>
   );
 }

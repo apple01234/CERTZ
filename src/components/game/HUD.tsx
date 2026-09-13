@@ -6,7 +6,7 @@ import type { HudState, QuestState } from "./EventBus";
 import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users } from "lucide-react";
 import { EventBus } from "./EventBus";
 
 /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
@@ -82,6 +82,7 @@ export function HUD({
   onOpenBenefit,
   onOpenContent,
   onOpenOpt,
+  onOpenUnion,
 }: {
   hud: HudState;
   quest: QuestState;
@@ -108,6 +109,8 @@ export function HUD({
   onOpenContent: () => void;
   /** 설정/키 매핑 (O) */
   onOpenOpt: () => void;
+  /** v1.0.18 — 유니온 패널 (캐릭터 배치/상점/레이드) */
+  onOpenUnion: () => void;
 }) {
   /* v1.0.5 — 키맵 재배치 시 HUD 키 배지·aria도 함께 갱신 (I/T/J/K/O 하드코딩 제거) */
   const km = loadKeyMap();
@@ -274,6 +277,15 @@ export function HUD({
           >
             <Swords size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-purple-300/80">콘텐츠</span>
+          </button>
+          {/* v1.0.18 — 유니온 패널 버튼 (캐릭터 배치/상점/버프/레이드) */}
+          <button
+            onClick={onOpenUnion}
+            aria-label="유니온 열기 (캐릭터 배치/상점/레이드)"
+            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-300/40 bg-black/55 text-indigo-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+          >
+            <Users size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-indigo-300/90">유니온</span>
           </button>
           <button
             onClick={onOpenOpt}

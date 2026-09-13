@@ -10,6 +10,7 @@
  *     화이트 텍스처는 setTint로 전 직업 클래스 컬러 대응, 컬러 텍스처는 베이크드 컬러 그대로.
  */
 import Phaser from "phaser";
+import { loadFx } from "../config";
 
 type CamLike = {
   filters?: {
@@ -22,18 +23,23 @@ type CamLike = {
 type SceneLike = Phaser.Scene & { textures: Phaser.Textures.TextureManager };
 
 /** 카메라에 서브틀 앰비언트 블룸 부착 — 반환된 필터는 detachAmbientBloom으로 제거.
- *  반환 길이 0 = 미지원 환경(WebGL 아님/필터 불가). 중복 부착은 호출자가 length로 가드. */
+ *  반환 길이 0 = 미지원 환경(WebGL 아님/필터 불가). 중복 부착은 호출자가 length로 가드.
+ *  v1.0.18 — 셰이더 효과 강도 설정 반영: 0이면 부착하지 않고(완전 끄기), 기본값보다
+ *  낮은 강도는 blendAmount를 비례 축소해 눈 피로도를 낮춘다 (기본 강도 = 55). */
 export function addAmbientBloom(cam: CamLike): unknown[] {
   const out: unknown[] = [];
   try {
     if (!cam.filters) return out;
+    const fx = loadFx();
+    if (fx.intensity <= 0) return out; // 셰이더 완전 끄기
     /* 보스 블룸(threshold 0.6/blend 0.46~0.68)보다 눈에 덜 띄는 서브틀 프리셋 —
      * 프레임버퍼 패스 1개 추가분이라 모바일 비용은 보스전 대비 가볍다 */
+    const k = Math.min(1.6, fx.intensity / 55); // 55(기본)=1.0, 100=1.82→1.6 캡
     const bloom = Phaser.Actions.AddEffectBloom(cam as unknown as Phaser.Cameras.Scene2D.Camera, {
-      threshold: 0.74,
+      threshold: 0.74 + (1 - Math.min(1, k)) * 0.06,
       blurRadius: 1,
       blurSteps: 3,
-      blendAmount: 0.32,
+      blendAmount: 0.32 * k,
     });
     if (bloom[0]) out.push(bloom[0].threshold, bloom[0].blur, bloom[0].parallelFilters);
   } catch { /* 필터 미지원 무시 */ }

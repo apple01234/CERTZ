@@ -14,7 +14,7 @@ import {
 } from "@/game/data";
 import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
-import { getPlayerName, loadSave } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록
+import { getPlayerName, loadSave, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도
 import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
 import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
@@ -2580,7 +2580,7 @@ export function GamePanels({
  *  ① 심연의 탑 (무한 층수) · ② 심층 균열 (무한 티어) · ③ 일일 시련 (수정자 던전)
  *  ④ 연금 제작대 · ⑤ 심연 상점 · ⑥ 환생 + 펫 육성 — 총 10종 신규 무한 콘텐츠의 진입 허브
  * ===================================================================== */
-type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth";
+type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth" | "park";
 
 export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
@@ -2599,6 +2599,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
   const TABS: { id: ContentTab; label: string; on: string }[] = [
     { id: "tower", label: "심연의 탑", on: "bg-purple-400 text-slate-900" },
     { id: "trial", label: "시련·균열", on: "bg-rose-400 text-slate-900" },
+    { id: "park", label: "파크", on: "bg-emerald-400 text-slate-900" },
     { id: "craft", label: "제작대", on: "bg-sky-400 text-slate-900" },
     { id: "abyss", label: "심연 상점", on: "bg-violet-400 text-slate-900" },
     { id: "rebirth", label: "환생·펫", on: "bg-amber-400 text-slate-900" },
@@ -2612,7 +2613,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
         </div>
 
         {/* 탭 행 */}
-        <div className="mb-2.5 grid grid-cols-5 gap-1">
+        <div className="mb-2.5 grid grid-cols-6 gap-1">
           {TABS.map((tb) => (
             <button key={tb.id} onClick={() => setTab(tb.id)} className={`rounded-lg px-1 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${tab === tb.id ? tb.on : "border border-white/10 bg-white/[0.04] text-white/55"}`}>{tb.label}</button>
           ))}
@@ -2667,6 +2668,75 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
             <p className="mt-1.5 text-[9px] text-white/35">현재 해금: T{inf.closetTier}까지 · 기본 균열에서 2,600G 이상 획득 시 T1 해금</p>
           </div>
         )}
+
+        {/* v1.0.18 — 몬스터 파크 (일일 입장권 · 난이도별 웨이브 · 파크 코인 상점) */}
+        {tab === "park" && (() => {
+          const park = rpg.park ?? { coins: 0, best: 0, tickets: 0, lv: rpg.cls ? 1 : 1 };
+          const DIFFS = [
+            { name: "일반", minLv: 15, color: "#8fe84a", desc: "한 세션 8~14코인" },
+            { name: "어려움", minLv: 40, color: "#a8ecff", desc: "코인 ×3 — 웨이브 강화" },
+            { name: "지옥", minLv: 80, color: "#ff8ab0", desc: "코인 ×8 — 최고 기록 대상" },
+          ];
+          return (
+            <div>
+              <div className="mb-2 rounded-lg border border-emerald-300/40 bg-emerald-400/10 px-2.5 py-2">
+                <p className="text-[11px] font-black text-emerald-100">몬스터 파크 — 90초 웨이브 사냥</p>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">하루 2장의 입장권으로 입장한다. 30초마다 웨이브가 상승해 적이 강해지고 코인도 커진다. 처치마다 파크 코인을 획득!</p>
+              </div>
+              <div className="mb-2 grid grid-cols-3 gap-1.5 text-center">
+                <div className="rounded-lg border border-white/10 bg-white/[0.04] px-1 py-2">
+                  <p className="text-[9px] font-bold text-white/45">보유 코인</p>
+                  <p className="text-sm font-black text-amber-200">{park.coins}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.04] px-1 py-2">
+                  <p className="text-[9px] font-bold text-white/45">입장권</p>
+                  <p className="text-sm font-black text-emerald-200">{park.tickets}/2</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.04] px-1 py-2">
+                  <p className="text-[9px] font-bold text-white/45">지옥 최다</p>
+                  <p className="text-sm font-black text-rose-200">{park.best}</p>
+                </div>
+              </div>
+              <div className="mb-2 grid grid-cols-3 gap-1.5">
+                {DIFFS.map((d, i) => {
+                  const locked = park.lv < d.minLv;
+                  return (
+                    <button
+                      key={d.name}
+                      disabled={locked}
+                      onClick={() => EventBus.emit("rpg:parkEnter", { diff: i })}
+                      className={`rounded-lg border px-2 py-2.5 text-center transition-transform enabled:active:scale-95 ${locked ? "border-white/10 bg-white/5 opacity-50" : ""}`}
+                      style={!locked ? { borderColor: `${d.color}88`, background: `${d.color}14` } : undefined}
+                    >
+                      <p className="text-[11px] font-black" style={{ color: d.color }}>{d.name}</p>
+                      <p className="mt-0.5 text-[8px] font-bold text-white/50">{locked ? `Lv ${d.minLv} 해금` : d.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* 파크 코인 상점 */}
+              <p className="mb-1 text-[10px] font-black text-white/60">파크 코인 상점</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { id: "park_pot_hp", name: "HP 물약 ×5", cost: 6 },
+                  { id: "park_pot_mp", name: "MP 물약 ×5", cost: 6 },
+                  { id: "park_book", name: "경험치 책 ×2", cost: 10 },
+                  { id: "park_scroll", name: "강화 주문서", cost: 12 },
+                  { id: "park_emerald", name: "에메랄드 +2", cost: 24 },
+                ].map((it) => (
+                  <button
+                    key={it.id}
+                    onClick={() => EventBus.emit("rpg:parkBuy", { id: it.id })}
+                    className="flex items-center justify-between gap-1 rounded-lg border border-white/12 bg-white/[0.04] px-2 py-1.5 transition-transform active:scale-95"
+                  >
+                    <span className="truncate text-[10px] font-black text-white/85">{it.name}</span>
+                    <span className="shrink-0 text-[10px] font-black text-amber-200">{it.cost}C</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {tab === "craft" && (
           <div>
@@ -2736,6 +2806,21 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
               {inf.rebirthEss > 0 && <p className="mt-0.5 text-[9px] text-white/45">환생의 정수 ×{inf.rebirthEss} — 요구 레벨 −5씩 감소 (현재 Lv {rebirthReqLv(inf.rebirthEss)})</p>}
             </div>
             <button onClick={() => EventBus.emit("rpg:infRebirth")} className="mb-3 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">환생하기 (요구 Lv {rebirthReqLv(inf.rebirthEss)})</button>
+
+            {/* v1.0.18 — 환생 기록 로그 (직전 직업/레벨/횟수) */}
+            {(inf.rebirthLog?.length ?? 0) > 0 && (
+              <div className="mb-3 rounded-lg border border-white/10 bg-black/40 px-2.5 py-2">
+                <p className="text-[10px] font-black text-amber-200">환생 기록</p>
+                <div className="mt-1 max-h-24 overflow-y-auto">
+                  {inf.rebirthLog!.slice(0, 10).map((r, i) => (
+                    <p key={i} className="text-[9px] font-bold text-white/50">
+                      #{r.n}회 — Lv {r.lv} {r.cls ? `· ${r.cls}` : "· 무직"} {(() => { const d = new Date(r.at); return `· ${d.getMonth() + 1}/${d.getDate()}`; })()}
+                    </p>
+                  ))}
+                </div>
+                <p className="mt-1 text-[8px] font-bold text-white/30">환생 시 시작 캐릭터(생성 시 선택한 1차 직업)로 돌아온다</p>
+              </div>
+            )}
 
             {/* 펫 육성 */}
             <div className="mb-1.5 rounded-lg border border-sky-300/40 bg-sky-400/10 px-2.5 py-2">
@@ -3423,6 +3508,8 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
   useEscClose(onClose);
   const [km, setKm] = useState<KeyMap>(() => loadKeyMap());
   const [recording, setRecording] = useState<GameAction | null>(null);
+  /* v1.0.18 — 셰이더 효과 강도 표시값 */
+  const [fxLabel, setFxLabel] = useState(() => loadFx().intensity);
 
   // 키 캡처 — 기록 모드에서 아무 키나 누르면 해당 액션에 배정
   useEffect(() => {
@@ -3523,6 +3610,44 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
             이름 짓기
           </button>
         </div>
+
+        {/* v1.0.18 — 셰이더 효과 강도 / 플리커 완화 (유저 지시: 셰이더는 멋있지만 눈이 아프다) */}
+        <div className="mt-2.5 rounded-lg border border-sky-300/30 bg-sky-400/[0.06] px-2.5 py-2">
+          <p className="text-[12px] font-black text-sky-200">셰이더 · 화면 편안함</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/55">
+            발광 효과 강도를 낮추면 눈 피로도가 줄어든다. 0으로 두면 셰이더를 완전히 끈다.
+            플리커 완화 모드는 횃불·광원의 깜빡임을 제거한다 (빛 자체는 유지).
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="w-16 shrink-0 text-[10px] font-bold text-white/50">효과 강도</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              defaultValue={loadFx().intensity}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10) || 0;
+                writeFx({ ...loadFx(), intensity: v });
+                setFxLabel(v);
+              }}
+              className="h-1.5 flex-1 accent-sky-400"
+              aria-label="셰이더 효과 강도"
+            />
+            <span className="w-10 shrink-0 text-right text-[11px] font-black text-sky-200">{fxLabel}%</span>
+          </div>
+          <label className="mt-2 flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              defaultChecked={loadFx().noFlicker}
+              onChange={(e) => writeFx({ ...loadFx(), noFlicker: e.target.checked })}
+              className="h-4 w-4 accent-sky-400"
+            />
+            <span className="text-[11px] font-bold text-white/70">플리커 완화 모드 (광원 깜빡임 제거)</span>
+          </label>
+          <p className="mt-1 text-[9px] font-bold text-white/35">일부 발광 효과는 구역 이동·보스전 재진입 후 새 강도로 적용된다</p>
+        </div>
+
 
         <div className="flex flex-col gap-1">
           {(Object.keys(ACTION_LABELS) as GameAction[]).map((a) => (

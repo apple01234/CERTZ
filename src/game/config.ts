@@ -205,6 +205,12 @@ export type SaveData = {
   /** 스타터팩 구매 완료 (BM상점 하이라이트 표시용) */
   starterPackBought?: boolean;
   /* ----- v1.0.8 무한 콘텐츠 (탑/티어균열/시련/환생/제작/펫육성/심연상점) ----- */
+  /** v1.0.18 — 몬스터 파크 코인 (파크 상점 교환 재화) */
+  parkCoins?: number;
+  /** v1.0.18 — 파크 최고 기록 (난이도 2 기준 처치 수) */
+  parkBest?: number;
+  /** v1.0.18 — 파크 입장권 { 날짜, 잔여 } — 하루 2장 */
+  parkTickets?: { date: string; n: number };
   /** 무한 콘텐츠 상태 스냅샷 — 구조는 infinite.ts InfSave (infMerge로 안전 병합) */
   inf?: import("./infinite").InfSave;
 }
@@ -414,4 +420,41 @@ export function getActiveCharId(): string | null {
 
 export function activeSaveKey(): string {
   return activeCharId ? `sertz_char_${activeCharId}` : SAVE_KEY;
+}
+
+/* ---------- v1.0.18 — 셰이더 효과 강도 / 플리커 완화 설정 ---------- */
+
+export type FxSettings = {
+  /** 셰이더 효과 강도 0~100 (0 = 셰이더 완전 끄기, 100 = 최대). 기본 55 — 눈 피로도 완화 기본값 */
+  intensity: number;
+  /** 플리커 완화 모드 — 횃불/광원 깜빡임 제거 (빛 자체는 유지) */
+  noFlicker: boolean;
+};
+
+const FX_KEY = "sertz_fx";
+
+export function loadFx(): FxSettings {
+  if (typeof window === "undefined") return { intensity: 55, noFlicker: false };
+  try {
+    const raw = window.localStorage.getItem(FX_KEY);
+    if (raw) {
+      const d = JSON.parse(raw) as Partial<FxSettings>;
+      return {
+        intensity: Math.max(0, Math.min(100, typeof d.intensity === "number" ? d.intensity : 55)),
+        noFlicker: !!d.noFlicker,
+      };
+    }
+  } catch {
+    /* 무시 */
+  }
+  return { intensity: 55, noFlicker: false };
+}
+
+export function writeFx(s: FxSettings) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(FX_KEY, JSON.stringify(s));
+  } catch {
+    /* 무시 */
+  }
 }

@@ -33,8 +33,12 @@ import {
   infMerge, towerFloorScale, isTowerBossFloor, towerFloorReward, towerPool, TOWER, closetTierScale, closetTierAbyss,
   todayTrial, trialReward, rebirthReqLv, rebirthBonus, REBIRTH_ABYSS, MAT_CHANCES, CRAFT_RECIPES, canCraft,
   PET, petEvoStage, petBonus, PET_EVO_NAMES, GOLDEN, ABYSS_SHOP, orbBonus, weeklyRaidBoss, infBonus, todayKey,
+  PARK_DIFFS, PARK_DURATION, PARK_TICKETS,
   type InfSave, type TrialMod,
-} from "../infinite"; // v1.0.8 — 무한 콘텐츠 10종
+} from "../infinite"; // v1.0.8 — 무한 콘텐츠 10종 · v1.0.18 — 몬스터 파크
+import { loadUnion, unionEffects, activeBuffValues } from "../union"; // v1.0.18 — 유니온 시스템
+import { loadSlots } from "../slots"; // v1.0.18 — 캐릭터 슬롯
+import { loadFx } from "../config"; // v1.0.18 — 셰이더 강도 설정
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
@@ -311,6 +315,18 @@ export class WorldScene extends Phaser.Scene {
   private invasionTimer: Phaser.Time.TimerEvent | null = null;
   private gateBest = 0;
   private closetBest = 0;
+  /* v1.0.18 — 몬스터 파크 */
+  private parkDiff = 0;
+  private parkKills = 0;
+  private parkCoins = 0;
+  private parkCoinsEarned = 0;
+  private parkEndsAt = 0;
+  private parkAcc = 0;
+  private parkActive = false;
+  private parkFrom: StageKey = "village";
+  private parkText: Phaser.GameObjects.Text | null = null;
+  private parkBest = 0;
+  private parkTickets = { date: "", n: 2 };
   private gateStars: boolean[] = [false, false, false];
   private freeGachaAt = 0;
   private lastSeenAt = 0;
@@ -698,7 +714,10 @@ export class WorldScene extends Phaser.Scene {
     this.towerActive = false;
     this.towerBossRef = null;
     this.towerText = null;
-    this.closetTierNow = 0;
+    /* v1.0.18 — 파크 상태 리셋 (씬 재시작 이월 방지) */
+    this.parkActive = false;
+    this.parkText = null;
+    this.parkAcc = 0;
     this.trialMod = null;
     this.goldenRef = null;
     this.goldenAcc = 0;
@@ -1087,6 +1106,10 @@ export class WorldScene extends Phaser.Scene {
       this.invasionKillCount = savedPlayer.invasionKills ?? 0;
       this.gateBest = savedPlayer.gateBest ?? 0;
       this.closetBest = savedPlayer.closetBest ?? 0;
+      /* v1.0.18 — 파크 재화/기록/입장권 복원 */
+      this.parkCoins = savedPlayer.parkCoins ?? 0;
+      this.parkBest = savedPlayer.parkBest ?? 0;
+      this.parkTickets = savedPlayer.parkTickets ?? { date: "", n: 2 };
       this.gateStars = [...(savedPlayer.gateStars ?? [false, false, false])];
       while (this.gateStars.length < 3) this.gateStars.push(false);
       this.freeGachaAt = savedPlayer.freeGachaAt ?? 0;
@@ -1190,6 +1213,7 @@ export class WorldScene extends Phaser.Scene {
     if (stageKey === "closet") this.buildCloset();
     /* ---------- v1.0.8 — 심연의 탑 빌드 (무한 층수) ---------- */
     if (stageKey === "tower") this.buildTower();
+    if (stageKey === "park") this.buildPark(); // v1.0.18 — 몬스터 파크
 
     /* ---------- 퀘스트 오브젝트 (v2.2 — 실내는 포탈/퀘스트 오브젝트 없음) ---------- */
     if (this.isInterior) {
@@ -2274,6 +2298,7 @@ export class WorldScene extends Phaser.Scene {
       : key === "gate" ? (STAGES[this.gateFrom] ? this.gateFrom : "village")
       : key === "closet" ? (STAGES[this.closetFrom] ? this.closetFrom : "village")
       : key === "tower" ? (STAGES[this.towerFrom] ? this.towerFrom : "village")
+      : key === "park" ? (STAGES[this.parkFrom] ? this.parkFrom : "village") // v1.0.18 — 파크
       : PREV_STAGE[key];
     if (!prev) return;
     /* v3.3.0 — 무릉도장 중간 퇴장 시 기록 확정 */
@@ -2284,6 +2309,8 @@ export class WorldScene extends Phaser.Scene {
     if (this.closetActive) { this.returnActive = false; this.finishCloset(); return; }
     /* v1.0.8 — 탑 조기 퇴장 — 기록 확정 후 복귀 */
     if (this.towerActive) { this.exitTower(); this.showBanner(`탑 탈출 — 최고 기록 ${this.inf.towerBest}층`); }
+    /* v1.0.18 — 파크 조기 퇴장 — 정산 후 복귀 */
+    if (this.parkActive) { this.returnActive = false; this.exitPark(); return; }
     this.returnActive = false;
     audio.sfx.portal();
     this.startTransition(prev, { delay: 520 });
@@ -3351,10 +3378,17 @@ export class WorldScene extends Phaser.Scene {
       /* ③ 일일 시련 — titan 수정자: 처치 시 심연 코인 추가 */
       const am = this.trialMod.abyssMul ?? 0;
       if (am > 0) this.inf.abyss += am;
+    } else if (this.parkActive) {
+      /* v1.0.18 — 몬스터 파크 — 처치마다 파크 코인 지급 (웨이브 비례) */
+      const wave = this.parkWaveNow();
+      const c = Math.max(1, Math.round(PARK_DIFFS[this.parkDiff].coin * (1 + (wave - 1) * 0.5)));
+      this.parkCoinsEarned += c;
+      this.parkKills += 1;
+      if (Math.random() < 0.3) this.spawnPickupText(this.player.x, this.player.y - 70, `파크 코인 +${c}`, "#ffd76a");
     }
-    /* ⑤ 제작 재료 드롭 (탑/균열 1.6배 — 무한 파밍 싱크) */
+    /* ⑤ 제작 재료 드롭 (탑/균열/파크 1.6배 — 무한 파밍 싱크) */
     {
-      const matBoost = this.towerActive || this.closetActive ? 1.6 : 1;
+      const matBoost = this.towerActive || this.closetActive || this.parkActive ? 1.6 : 1;
       for (const m of MAT_CHANCES) {
         if (Math.random() < m.chance * matBoost) {
           this.inf.mats[m.key] = (this.inf.mats[m.key] ?? 0) + 1;
@@ -3646,15 +3680,20 @@ export class WorldScene extends Phaser.Scene {
     });
     /* v1.0.8 — 무한 콘텐츠 보너스 병합 (심연 부여아 flat + 환생/펫/도감 %) */
     const ib = infBonus(this.inf, Object.keys(this.monsterKills ?? {}).length, !!this.player.pet);
+    /* v1.0.18 — 유니온 효과 병합 (그리드 배치 + 등급 + 아티팩트 + 시간제 버프 — 계정 전체 적용) */
+    const ue = unionEffects(loadUnion(), loadSlots());
+    const uv = activeBuffValues(loadUnion());
     this.player.setExtBonus({
-      atk: base.atk + ib.atk,
-      hp: base.hp + ib.hp,
-      def: base.def + ib.def,
-      crit: base.crit + ib.crit,
-      atkPct: base.atkPct + ib.atkPct,
-      speedPct: base.speedPct,
-      goldPct: base.goldPct + ib.goldPct,
+      atk: base.atk + ib.atk + ue.atk,
+      hp: base.hp + ib.hp + ue.hp,
+      def: base.def + ib.def + ue.def + (uv.defPct > 0 ? 40 : 0),
+      crit: base.crit + ib.crit + ue.crit,
+      atkPct: base.atkPct + ib.atkPct + ue.atkPct + uv.atkPct,
+      speedPct: base.speedPct + ue.speedPct,
+      goldPct: base.goldPct + ib.goldPct + ue.goldPct + uv.goldPct,
     });
+    /* v1.0.18 — 유니온 경험치 버프 훅 주입 */
+    this.player.expBonusPct = () => activeBuffValues(loadUnion()).expPct;
   }
 
   /* ---------------- 데일리 (출석/일일 퀘스트/티켓/오프라인 보상) ---------------- */
@@ -4590,6 +4629,125 @@ export class WorldScene extends Phaser.Scene {
     this.emitRpgState();
   }
 
+  /* ================= v1.0.18 — 몬스터 파크 (일일 입장권 · 웨이브 사냥) ================= */
+
+  /** 파크 입장 — 입장권 검사 (하루 2장) + 레벨 제한 */
+  enterPark(diff: number) {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "park") return;
+    const d = PARK_DIFFS[Math.max(0, Math.min(2, diff))];
+    const today = todayKey();
+    if (this.parkTickets.date !== today) this.parkTickets = { date: today, n: PARK_TICKETS };
+    if (this.parkTickets.n <= 0) {
+      EventBus.emit("banner:show", { text: "파크 입장권이 소진됐다 (하루 2장 — 내일 다시!)" });
+      return;
+    }
+    if (this.player.lv < d.minLv) {
+      EventBus.emit("banner:show", { text: `${d.name} 난이도는 Lv ${d.minLv}부터 입장할 수 있다` });
+      return;
+    }
+    this.parkTickets.n--;
+    this.parkFrom = this.stageDef.key;
+    this.parkDiff = Math.max(0, Math.min(2, diff));
+    this.parkKills = 0;
+    this.parkCoinsEarned = 0;
+    this.save();
+    this.gotoStage("park");
+  }
+
+  private buildPark() {
+    this.parkActive = true; // 리셋 블록 이후 빌드 — 여기서 활성화 (tower/closet 패턴)
+    const d = PARK_DIFFS[this.parkDiff];
+    this.parkEndsAt = this.time.now + PARK_DURATION;
+    this.parkAcc = 0;
+    this.add
+      .text(this.cameras.main.width / 2, 66, "몬 스 터 파 크", { fontFamily: "Galmuri11, sans-serif", fontSize: "30px", color: d.color, stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0);
+    this.parkText = this.add
+      .text(this.cameras.main.width / 2, 96, "", { fontFamily: "Galmuri11, sans-serif", fontSize: "16px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    this.showBanner(`몬스터 파크 「${d.name}」 — 90초 동안 최대한 사냥해라!`);
+  }
+
+  /** 현재 웨이브 — 30초마다 +1 (적 강화·코인 증가) */
+  private parkWaveNow(): number {
+    const elapsed = PARK_DURATION - Math.max(0, this.parkEndsAt - this.time.now);
+    return 1 + Math.floor(elapsed / 30000);
+  }
+
+  private tickPark(dt: number) {
+    const d = PARK_DIFFS[this.parkDiff];
+    const wave = this.parkWaveNow();
+    /* 몬스터 지속 소환 — 웨이브가 오를수록 빠르게 */
+    this.parkAcc += dt;
+    const spawnMs = d.spawnMs / (1 + (wave - 1) * 0.18);
+    if (this.parkAcc >= spawnMs) {
+      this.parkAcc = 0;
+      const lv = this.player.lv;
+      const pool: EnemyKey[] = ["x3_goblin", "x2_frog", "wolf", "x2_rat", "x2_bat", "x2_firebird", "spider"];
+      const n = 1 + (wave >= 2 ? 1 : 0);
+      for (let i = 0; i < n; i++) {
+        const key = pool[Math.floor(Math.random() * pool.length)];
+        const def = ENEMIES[key];
+        const px = Phaser.Math.Between(80, this.stageW - 80);
+        const py = Phaser.Math.Between(80, this.stageH - 80);
+        const e = new Enemy(this, px, py, key, {
+          hp: Math.round((20 + lv * 2.6 + def.hp * 0.45) * d.hpMul * (1 + (wave - 1) * 0.35)),
+          atk: Math.round((4 + lv * 0.42) * d.atkMul * (1 + (wave - 1) * 0.2)),
+          exp: Math.round((24 + lv * 2.4) * (1 + (wave - 1) * 0.25)),
+          gold: 0,
+        });
+        this.enemies.push(e);
+        this.physics.add.collider(e, this.solidGroup);
+      }
+    }
+    /* UI */
+    this.gateTextAcc2 += dt;
+    this.parkText?.setX(this.cameras.main.width / 2);
+    if (this.gateTextAcc2 >= 100) {
+      this.gateTextAcc2 = 0;
+      const remain = Math.max(0, this.parkEndsAt - this.time.now);
+      this.parkText?.setText(`「${d.name}」 ${wave}차 웨이브 · 남은 시간 ${Math.ceil(remain / 1000)}초  |  파크 코인 +${this.parkCoinsEarned}`);
+    }
+    if (this.time.now >= this.parkEndsAt) this.finishPark();
+  }
+
+  private finishPark() {
+    if (!this.parkActive) return;
+    this.parkActive = false;
+    for (const e of this.enemies) {
+      if (e.alive) { e.alive = false; e.destroy(); }
+    }
+    this.enemies = [];
+    const d = PARK_DIFFS[this.parkDiff];
+    this.parkCoins += this.parkCoinsEarned;
+    const record = this.parkDiff === 2 && this.parkKills > this.parkBest;
+    if (record) this.parkBest = this.parkKills;
+    EventBus.emit("reward:show", {
+      title: `몬스터 파크 「${d.name}」 — 사냥 종료!`,
+      lines: [
+        { text: `획득 파크 코인: ${this.parkCoinsEarned}`, color: "#ffd76a" },
+        { text: `보유 파크 코인: ${this.parkCoins.toLocaleString()} — 파크 상점에서 교환!`, color: "#a8ecff" },
+        { text: record ? "지옥 난이도 신기록 달성!" : `입장권 잔여: ${this.parkTickets.n}장 (하루 2장)`, color: record ? "#7dffa8" : "#8a93a5" },
+      ] satisfies RewardPopupState["lines"],
+    });
+    audio.sfx.questDone();
+    this.emitRpgState();
+    this.save();
+    const back: StageKey = STAGES[this.parkFrom] ? this.parkFrom : "village";
+    this.startTransition(back, { delay: 1800 });
+  }
+
+  /** 파크 중간 퇴장 (복귀 포탈) — 정산 후 복귀 */
+  private exitPark() {
+    if (!this.parkActive) return;
+    this.finishPark();
+  }
+
   private tickCloset(dt: number) {
     const trial = this.trialMod;
     const tier = closetTierScale(this.closetTierNow);
@@ -4703,7 +4861,7 @@ export class WorldScene extends Phaser.Scene {
   private tickGolden(dt: number) {
     if (this.goldenRef) return; // 이미 활동 중
     if (!this.stageDef || this.stageDef.isVillage || this.isInterior) return;
-    if (this.stageDef.key === "gate" || this.stageDef.key === "closet" || this.stageDef.key === "tower" || this.stageDef.key === "dojang") return;
+    if (this.stageDef.key === "gate" || this.stageDef.key === "closet" || this.stageDef.key === "tower" || this.stageDef.key === "park" || this.stageDef.key === "dojang") return;
     if (this.stageDef.enemies.length === 0 || this.transitioning || !this.player) return;
     this.goldenAcc += dt;
     if (this.goldenAcc < GOLDEN.intervalMs) return;
@@ -5544,21 +5702,39 @@ export class WorldScene extends Phaser.Scene {
     }
     try {
       const cam = this.cameras.main;
+      /* v1.0.18 — 보스전 밝기 부스트: 어두운 챕터의 보스전도 너무 어둡지 않게 (암전 완화 + 횃불 확대) */
+      this.lighting?.setBossFight(true);
+      /* v1.0.18 — 보스 위치 밝은 광원 (카오스 전용이던 보스 라이트를 전 보스전으로 확대·밝은 톤) */
+      if (this.boss?.active) {
+        this.bossLight?.destroy();
+        this.bossLight = this.add.image(this.boss.x, this.boss.y - 6, "pk_light_01")
+          .setDepth(56)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(chaos ? 0xff4830 : 0xffd9a0)
+          .setScale(1.6)
+          .setAlpha(0.34);
+        /* 보스 추적 — update에서 보스 좌표 동기화 */
+        this.bossLightFollow = true;
+      }
       /* v4.9.0 — FX 축소 모드(fxLevel 0)에선 블룸 자체를 생략 (모바일 GPU 최대 부하원) */
       if (this.fxLevel === 0) return;
       /* v1.0.10 — 보스 블룸과 앰비언트 블룸은 상호 배타: 프레임버퍼 패스 이중화 방지 */
       if (this.ambientFilters.length > 0) detachAmbientBloom(cam, this.ambientFilters);
       if (this.game.renderer.type === Phaser.WEBGL && cam.filters) {
         /* v4.7.0 — Phaser 4: v3 postFX.addBloom 대신 AddEffectBloom(Threshold+Blur+ParallelFilters 합성).
-         *  v3 강도(strength 0.68/0.46, steps 4)를 config로 이식 — 보스전 블룸 체감 동일 유지 */
-        const bloom = Phaser.Actions.AddEffectBloom(cam, {
-          threshold: 0.6,
-          blurRadius: 1,
-          blurSteps: 4,
-          blendAmount: chaos ? 0.68 : 0.46,
-        });
-        if (bloom[0]) this.bossFilters.push(bloom[0].threshold, bloom[0].blur, bloom[0].parallelFilters);
-        if (chaos) this.bossFilters.push(cam.filters.external.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.62, 0.4));
+         *  v3 강도(strength 0.68/0.46, steps 4)를 config로 이식 — 보스전 블룸 체감 동일 유지
+         *  v1.0.18 — 셰이더 효과 강도 설정 반영 (기본 55 → 강도 비례 축소, 0이면 생략) */
+        const fxk = loadFx().intensity <= 0 ? 0 : Math.min(1.5, loadFx().intensity / 55);
+        if (fxk > 0) {
+          const bloom = Phaser.Actions.AddEffectBloom(cam, {
+            threshold: 0.6,
+            blurRadius: 1,
+            blurSteps: 4,
+            blendAmount: (chaos ? 0.68 : 0.46) * fxk,
+          });
+          if (bloom[0]) this.bossFilters.push(bloom[0].threshold, bloom[0].blur, bloom[0].parallelFilters);
+        }
+        if (chaos && fxk > 0) this.bossFilters.push(cam.filters.external.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.62, 0.4 * fxk));
       }
       if (chaos && this.boss?.active) {
         /* v4.1.8 — 카오스 잉걸불: 유료 CFXR 종 화염 (256x512, 설정 무변경) */
@@ -5574,12 +5750,6 @@ export class WorldScene extends Phaser.Scene {
           tint: [0xff5838, 0xffa040, 0xffd070],
           blendMode: Phaser.BlendModes.ADD,
         }).setDepth(57);
-        this.bossLight = this.add.image(this.boss.x, this.boss.y - 6, "pk_light_01")
-          .setDepth(56)
-          .setBlendMode(Phaser.BlendModes.ADD)
-          .setTint(0xff4830)
-          .setScale(1.5)
-          .setAlpha(0.3);
       }
     } catch {
       /* postFX 미지원 환경 무시 */
@@ -5588,9 +5758,14 @@ export class WorldScene extends Phaser.Scene {
 
   /* v4.9.0 — 적응형 품질 ↔ 보스 블룸 연동용 상태 */
   private bossChaos = false;
+  /** v1.0.18 — 보스 라이트가 보스를 추적 중인지 */
+  private bossLightFollow = false;
 
   /* v4.1.5 — 보스전 포스트FX/오라 해제 (사망·씬 전환 공통) */
   private clearBossPostFX() {
+    /* v1.0.18 — 보스전 밝기 부스트 해제 (암전 원복) */
+    this.lighting?.setBossFight(false);
+    this.bossLightFollow = false;
     /* v4.7.0 — Phaser 4: FilterList.remove()가 destroy까지 처리 */
     for (const f of this.bossFilters) {
       try { this.cameras.main.filters.external.remove(f); } catch { /* 이미 해제된 필터 무시 */ }
@@ -6875,6 +7050,56 @@ export class WorldScene extends Phaser.Scene {
     const onInfCraft = (v: { id: string }) => this.craftRecipe(v?.id ?? "");
     const onInfAbyss = (v: { id: string }) => this.abyssBuy(v?.id ?? "");
     const onInfRebirth = () => this.doRebirth();
+    /* v1.0.18 — 유니온 상점 보상 수령 (물약/주문서/골드 — 코인으로 구매한 것을 활성 캐릭터에 지급) */
+    const onUnionReward = (v: { kind: string; n: number }) => {
+      if (!this.player) return;
+      const n = Math.max(1, v?.n ?? 1);
+      if (v?.kind === "potion_hp") {
+        this.player.potions.hp += n;
+        this.showBanner(`유니온 상점 — HP 물약 ×${n} 지급`);
+      } else if (v?.kind === "potion_mp") {
+        this.player.potions.mp += n;
+        this.showBanner(`유니온 상점 — MP 물약 ×${n} 지급`);
+      } else if (v?.kind === "scroll") {
+        this.player.starBless = Math.min(3, this.player.starBless + n);
+        this.showBanner(`유니온 상점 — 강화 주문서 충전 +${n}`);
+      } else if (v?.kind === "gold") {
+        this.player.addGold(v?.n ?? 0);
+        this.showBanner(`유니온 상점 — 골드 +${(v?.n ?? 0).toLocaleString()}G`);
+      } else return;
+      this.save();
+      this.emitHud();
+      audio.sfx.coin();
+    };
+    EventBus.on("rpg:unionReward", onUnionReward);
+    /* v1.0.18 — 몬스터 파크 상점 구매 (파크 코인 차감 → 아이템 지급) */
+    const onParkBuy = (v: { id: string }) => {
+      if (!this.player) return;
+      const SHOP: Record<string, { name: string; cost: number; give: () => void }> = {
+        park_pot_hp: { name: "HP 물약 ×5", cost: 6, give: () => { this.player.potions.hp += 5; } },
+        park_pot_mp: { name: "MP 물약 ×5", cost: 6, give: () => { this.player.potions.mp += 5; } },
+        park_scroll: { name: "강화 주문서", cost: 12, give: () => { this.player.starBless = Math.min(3, this.player.starBless + 1); } },
+        park_book: { name: "경험치 책 ×2", cost: 10, give: () => { this.player.owned.push("exp_book", "exp_book"); } },
+        park_emerald: { name: "에메랄드 +2", cost: 24, give: () => { this.player.emerald += 2; } },
+      };
+      const it = SHOP[v?.id ?? ""];
+      if (!it) return;
+      if (this.parkCoins < it.cost) {
+        EventBus.emit("banner:show", { text: `파크 코인이 부족하다 (${it.cost} 필요 — 현재 ${this.parkCoins})` });
+        return;
+      }
+      this.parkCoins -= it.cost;
+      it.give();
+      this.showBanner(`파크 상점 — ${it.name} 교환 완료! (잔여 ${this.parkCoins}C)`);
+      audio.sfx.coin();
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    EventBus.on("rpg:parkBuy", onParkBuy);
+    /* v1.0.18 — 몬스터 파크 입장 (콘텐츠 패널) */
+    const onParkEnter = (v: { diff: number }) => this.enterPark(v?.diff ?? 0);
+    EventBus.on("rpg:parkEnter", onParkEnter);
     EventBus.on("rpg:infTower", onInfTower);
     EventBus.on("rpg:infTrial", onInfTrial);
     EventBus.on("rpg:infClosetTier", onInfClosetTier);
@@ -6975,6 +7200,9 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:ticketRefill", onTicketRefill);
       EventBus.off("fx:mode", onFxMode); // v1.0.8
       EventBus.off("rpg:infTower", onInfTower); // v1.0.8
+      EventBus.off("rpg:unionReward", onUnionReward); // v1.0.18 — 유니온 상점
+      EventBus.off("rpg:parkBuy", onParkBuy); // v1.0.18 — 파크 상점
+      EventBus.off("rpg:parkEnter", onParkEnter); // v1.0.18 — 파크 입장
       EventBus.off("rpg:infTrial", onInfTrial);
       EventBus.off("rpg:infClosetTier", onInfClosetTier);
       EventBus.off("rpg:infClosetBasic", onInfClosetBasic);
@@ -7060,6 +7288,7 @@ export class WorldScene extends Phaser.Scene {
     /* v4.0.0 — 바르가 수비전 웨이브 / 균열 던전 진행 */
     if (this.gateActive) this.tickGate(dt);
     if (this.closetActive) this.tickCloset(dt);
+    if (this.parkActive) this.tickPark(dt); // v1.0.18 — 몬스터 파크
     /* v1.0.8 — ⑦ 황금 몬스터 러시: 일반 필드 구역에서만 랜덤 스폰 (평균 60~100초) */
     this.tickGolden(dt);
 
@@ -10268,6 +10497,14 @@ export class WorldScene extends Phaser.Scene {
         abyss: this.inf.abyss,
         orbs: { ...this.inf.orbs },
         rebirthEss: this.inf.rebirthEss,
+        rebirthLog: [...(this.inf.rebirthLog ?? [])].reverse(), // v1.0.18 — 최근 순
+      },
+      /* v1.0.18 — 몬스터 파크 상태 */
+      park: {
+        coins: this.parkCoins,
+        best: this.parkBest,
+        tickets: this.parkTickets.date === todayKey() ? this.parkTickets.n : PARK_TICKETS,
+        lv: this.player.lv,
       },
       trialToday: (() => { const m = todayTrial(); return { id: m.id, name: m.name, desc: m.desc, color: m.color }; })(),
       raidBossToday: BOSS_DEFS[weeklyRaidBoss() as BossKey]?.name ?? null,
@@ -10334,6 +10571,7 @@ export class WorldScene extends Phaser.Scene {
     else if (this.stageDef.key === "gate") stageOverride = STAGES[this.gateFrom] ? this.gateFrom : "village";
     else if (this.stageDef.key === "closet") stageOverride = STAGES[this.closetFrom] ? this.closetFrom : "village";
     else if (this.stageDef.key === "tower") stageOverride = STAGES[this.towerFrom] ? this.towerFrom : "village"; // v1.0.8 — 탑은 세이브 구역 아님
+    else if (this.stageDef.key === "park") stageOverride = STAGES[this.parkFrom] ? this.parkFrom : "village"; // v1.0.18 — 파크도 세이브 구역 아님
     writeSave(this.buildSave(stageOverride));
   }
 
@@ -10434,6 +10672,10 @@ export class WorldScene extends Phaser.Scene {
       tutStep: this.tutStep,
       gateBest: this.gateBest,
       closetBest: this.closetBest,
+      /* v1.0.18 — 몬스터 파크 */
+      parkCoins: this.parkCoins,
+      parkBest: this.parkBest,
+      parkTickets: { ...this.parkTickets },
       gateStars: [...this.gateStars],
       freeGachaAt: this.freeGachaAt,
       lastSeen: Date.now(),
