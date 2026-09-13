@@ -69,6 +69,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   potPity = 0;
   /** 전직 클래스 (v1.8 다차원 트리 — 1차/2차/3차 키, 미전직 null) */
   cls: ClassKey | null = null;
+  /** v1.0.18 — 캐릭터 생성 시 선택한 시작(스타트) 1차 클래스. 환생 시 이 클래스로 돌아간다.
+   *  구 세이브는 로드 시 cls 체인의 최상위(1차)키로 자동 마이그레이션된다. */
+  startCls: ClassKey | null = null;
   /** 경로 누적 보너스 캐시 — cls 변경 시에만 갱신 (getter 프레임 호출 부담 제거) */
   private clsBonus: ClassBonus = bonusOf(null);
   private potCd = 0;
@@ -3297,16 +3300,39 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.recalcSpeed();
   }
 
+  /** v1.0.18 — 시작(스타트) 클래스 적용 — 환생·캐릭터 생성용.
+   *  applySavedClass는 "비어 있을 때만" 세팅이라 초기화/재적용에 쓸 수 없어 별도 경로.
+   *  1차 클래스(티어 1)만 유효 — 상위 키는 체인 최상위로 강등 후 적용. */
+  applyStartClass(key: ClassKey | null) {
+    const first = key ? (chainOf(key)[0]?.key ?? null) : null;
+    if (first) {
+      this.cls = first;
+      this.clsBonus = bonusOf(first);
+    } else {
+      this.cls = null;
+      this.clsBonus = bonusOf(null);
+    }
+    this.skill1Cd = 0;
+    this.skill2Cd = 0;
+    this.skill3Cd = 0;
+    this.skill4Cd = 0;
+    this.recalcSpeed();
+  }
+
   /** v1.0.16 — 환생용 직업 완전 초기화: 클래스/계열 보너스/스킬 슬롯을 무직 상태로 되돌린다.
-   *  (applySavedClass는 "비어 있을 때만" 세팅이라 초기화에 쓸 수 없어 별도 경로) */
+   *  v1.0.18 — 5차 각성(fifth)·각성 시련 완료(fifthStoryDone)도 함께 리셋
+   *  (기존엔 fifth가 남아 스킬·기본공격이 "·극" 5차 강화 상태로 남는 버그).
+   *  시작 클래스 복원은 doRebirth에서 applyStartClass(startCls)로 이어서 한다. */
   resetClass() {
-    if (!this.cls && this.clsBonus === bonusOf(null)) return;
     this.cls = null;
     this.clsBonus = bonusOf(null);
     this.skill1Cd = 0;
     this.skill2Cd = 0;
     this.skill3Cd = 0;
     this.skill4Cd = 0;
+    this.skill5Cd = 0;
+    this.fifth = false;
+    this.fifthStoryDone = false;
     this.recalcSpeed();
   }
 

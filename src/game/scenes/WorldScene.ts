@@ -932,6 +932,15 @@ export class WorldScene extends Phaser.Scene {
       if (savedPlayer.playerName) setPlayerName(savedPlayer.playerName);
       // 전직 클래스 복원 (v1.7 — 구 세이브 null 호환)
       this.player.applySavedClass(savedPlayer.cls);
+      /* v1.0.18 — 시작 클래스 복원 + 마이그레이션:
+       *  startCls 없는 구 세이브는 현재 cls 체인의 1차키로 역산해 자동 채운다 (환생 복귀 보장).
+       *  cls가 null인 구 세이브(시련 중)는 pendingJobClass를 시작 클래스로 채택한다. */
+      {
+        const sck = (savedPlayer as { startCls?: string | null }).startCls;
+        if (isClassKey(sck)) this.player.startCls = chainOf(sck)[0]?.key ?? null;
+        else if (isClassKey(savedPlayer.cls)) this.player.startCls = chainOf(savedPlayer.cls)[0]?.key ?? null;
+        else if (this.player.startCls === null && this.pendingJobClass) this.player.startCls = this.pendingJobClass;
+      }
       // v2.4 — 이어하기 시에도 이름표 유지 (클래스 복원 후 생성 — "이름 · 클래스" 표기)
       if (savedPlayer.playerName) this.ensurePlayerTag();
       // AP 스탯 복원 (v1.9 — 구 세이브는 loadSave()가 5/5/5/5 + 소급 AP 채움)
@@ -4748,13 +4757,18 @@ export class WorldScene extends Phaser.Scene {
       !window.confirm(
         `환생하시겠습니까?\n\n` +
         `· 레벨이 1로, 경험치/AP가 초기화됩니다 (스탯 재배분 필요)\n` +
-        `· 직업과 전직이 모두 사라집니다 — 1차 전직 시련부터 다시 시작합니다\n` +
+        `· 전직이 모두 해제되고 시작 캐릭터${this.player.startCls ? `(${classLabel(this.player.startCls)})` : ""}로 돌아갑니다\n` +
         `· 스토리 진행(챕터 퀘스트/클리어 기록/파편 수집)이 처음으로 되돌아갑니다\n` +
         `· 유지: 골드/아이템/장비/강화/심연코인/치장/펫 + 영구 보너스\n` +
         `· 보상: 영구 공격 +8% · HP +60 · 골드 +2% (누적) + 심연 코인 ${REBIRTH_ABYSS}`
       )
     )
       return;
+    /* v1.0.18 — 환생 직전 기록 로그 (직업/레벨/횟수) */
+    this.inf.rebirthLog = [
+      ...(this.inf.rebirthLog ?? []),
+      { at: Date.now(), lv: this.player.lv, cls: this.player.cls, n: this.inf.rebirths + 1 },
+    ].slice(-30);
     this.inf.rebirths++;
     this.inf.abyss += REBIRTH_ABYSS;
     /* 레벨/경험치/AP 초기화 — 자동배분이 켜져 있으면 레벨업마다 자동 재분배 */
@@ -4763,8 +4777,13 @@ export class WorldScene extends Phaser.Scene {
     this.player.ap = 0;
     this.player.stats = { str: 0, dex: 0, int: 0, luk: 0 };
     this.player.hp = this.player.maxHp; // 풀피 부활
-    /* v1.0.16 — 직업·전직 초기화: 클래스/계열 보너스/스킬 쿨 전부 리셋 (1차 시련부터 재시작) */
+    /* v1.0.16 — 직업·전직 초기화: 클래스/계열 보너스/스킬 쿨 전부 리셋 (1차 시련부터 재시작)
+     * v1.0.18 — 5차 각성(fifth)도 resetClass가 리셋 + "스타트 캐릭터"로 즉시 복귀:
+     *  캐릭터 생성 시 고른 시작 1차 클래스(cls=전사 등)로 돌아가 스킬셋·기본공격도 시작 직업 것으로 교체.
+     *  startCls가 없는 구 세이브는 기존처럼 무직(1차 시련부터) — 시련 통과 시 startCls가 생긴다. */
+    const startBack = this.player.startCls;
     this.player.resetClass();
+    if (startBack) this.player.applyStartClass(startBack);
     this.jobStory = null;
     this.jobStoryDone = [];
     this.pendingJobClass = null;
@@ -4780,13 +4799,13 @@ export class WorldScene extends Phaser.Scene {
     this.emitRpgState();
     this.emitHud();
     audio.sfx.levelup();
-    this.showBanner(`환생 ${this.inf.rebirths}회 달성! 직업과 스토리가 새 시작을 맞았다 — 심연 코인 +${REBIRTH_ABYSS}`);
+    this.showBanner(`환생 ${this.inf.rebirths}회 달성!${startBack ? ` ${classLabel(startBack)}(으)로 돌아왔다` : ""} — 심연 코인 +${REBIRTH_ABYSS}`);
     EventBus.emit("reward:show", {
       title: `환생 ${this.inf.rebirths}회 — 완전히 새로운 시작!`,
       lines: [
         { text: `영구 보너스 누적: 공격 +${rebirthBonus(this.inf.rebirths).atkPct}% · HP +${rebirthBonus(this.inf.rebirths).hp} · 골드 +${rebirthBonus(this.inf.rebirths).goldPct}%`, color: "#ffd76a" },
         { text: `심연 코인 +${REBIRTH_ABYSS}`, color: "#c08aff" },
-        { text: "직업·전직·스토리가 초기화됐다 — 시작 마을에서 1차 시련부터 다시!", color: "#a8ecff" },
+        { text: startBack ? `시작 캐릭터 ${classLabel(startBack)}(으)로 돌아왔다 — 다시 키워보자!` : "직업이 초기화됐다 — 시작 마을에서 1차 시련부터!", color: "#a8ecff" },
       ] satisfies RewardPopupState["lines"],
     });
     /* 시작 마을로 귀환 — 스토리 1장부터 (전환 중 패널 입력 차단을 위해 transitioning 게이트가 처리) */
@@ -9130,6 +9149,8 @@ export class WorldScene extends Phaser.Scene {
         const def = classDef(this.pendingJobClass);
         this.pendingJobClass = null;
         if (def && this.player.applyClass(def.key)) {
+          /* v1.0.18 — 첫 1차 전직 시 시작 클래스 고정 (환생 시 이 클래스로 복귀) */
+          if (!this.player.startCls) this.player.startCls = def.key;
           audio.sfx.levelup();
           this.spawnLevelUpFx(this.player.x, this.player.y);
           const jhex = def.hex;
@@ -10344,6 +10365,7 @@ export class WorldScene extends Phaser.Scene {
       emerald: this.player.emerald,
       questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },
       cls: this.player.cls,
+      startCls: this.player.startCls, // v1.0.18 — 시작 클래스 (환생 복귀용)
       playerName: getPlayerName(),
       /* v1.9 — AP 스탯 + BM */
       stats: { ...this.player.stats },

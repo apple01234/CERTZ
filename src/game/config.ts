@@ -89,6 +89,8 @@ export type SaveData = {
   questIdx?: Record<string, number>;
   /* ↓ 전직 클래스 (v1.7 — 구 세이브 호환 기본값 null) */
   cls?: string | null;
+  /* v1.0.18 — 캐릭터 생성 시 선택한 시작(스타트) 1차 클래스 (환생 복귀용 — 구 세이브는 cls 체인 역산) */
+  startCls?: string | null;
   /* ↓ AP 스탯 (v1.9 — 구 세이브 호환: 기본 5/5/5/5 + 레벨만큼 AP 소급) */
   stats?: { str: number; dex: number; int: number; luk: number };
   ap?: number;
@@ -252,7 +254,8 @@ export function mutateFriends(fn: (list: { code: string; name: string }[]) => { 
 export function loadSave(): SaveData | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(SAVE_KEY);
+    /* v1.0.18 — 로비 멀티캐릭터 라우팅: 활성 캐릭터가 있으면 캐릭터 전용 키에서 읽는다 */
+    const raw = window.localStorage.getItem(activeSaveKey());
     if (!raw) return null;
     const d = JSON.parse(raw) as SaveData;
     if (!d || typeof d.stage !== "string") return null;
@@ -361,7 +364,18 @@ export function loadSave(): SaveData | null {
 export function writeSave(data: SaveData) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    const key = activeSaveKey();
+    window.localStorage.setItem(key, JSON.stringify(data));
+    /* v1.0.18 — 로비 멀티캐릭터: 활성 캐릭터가 있으면 레거시 키에도 미러링
+     *  (구버전 APK 롤백 시 "마지막 플레이 캐릭터" 이어하기 보장 — 원본은 char_<id>가 진실) */
+    if (activeCharId) window.localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    for (const fn of saveHooks) {
+      try {
+        fn(data);
+      } catch {
+        /* 훅 실패는 저장 본체에 영향 없음 */
+      }
+    }
   } catch {
     /* 저장 실패는 무시 */
   }
@@ -371,7 +385,33 @@ export function clearSave() {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(SAVE_KEY);
+    /* 활성 캐릭터 전용 키도 함께 제거 (로비 삭제와 동기화) */
+    if (activeCharId) window.localStorage.removeItem(`sertz_char_${activeCharId}`);
   } catch {
     /* 무시 */
   }
+}
+
+/* ---------- v1.0.18 — 로비 멀티캐릭터 라우팅 ---------- */
+
+/** 세션 내 활성 캐릭터 (로비에서 게임 시작 시 slots.ts가 설정) — null이면 레거시 단일 키 */
+let activeCharId: string | null = null;
+
+/** 세이브 기록 후 훅 (slots.ts가 캐릭터 메타 동기화에 사용 — 순환 임포트 회피) */
+const saveHooks: ((data: SaveData) => void)[] = [];
+
+export function registerSaveHook(fn: (data: SaveData) => void) {
+  if (!saveHooks.includes(fn)) saveHooks.push(fn);
+}
+
+export function setActiveCharId(id: string | null) {
+  activeCharId = id;
+}
+
+export function getActiveCharId(): string | null {
+  return activeCharId;
+}
+
+export function activeSaveKey(): string {
+  return activeCharId ? `sertz_char_${activeCharId}` : SAVE_KEY;
 }

@@ -39,6 +39,8 @@ export type InfSave = {
   orbs: Record<string, number>;
   /** 환생의 정수 구매 누적 (요구 레벨 −5/개) */
   rebirthEss: number;
+  /** v1.0.18 — 환생 기록 로그 (최근 30건 — 직전 직업/레벨/횟수) */
+  rebirthLog?: { at: number; lv: number; cls: string | null; n: number }[];
 };
 
 export const INF_DEFAULT: InfSave = {
