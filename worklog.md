@@ -1635,3 +1635,21 @@ Stage Summary:
 - 유저 11건(스크린샷 삭제·환생 200렙 개편·공격 방향 근본 수정·벽 통과 차단·GM 표시·물약 정리+치장 6종·마법진 계열 분리·최적화·밸런스·멀티 EXP 보너스) 전부 v1.0.16에 반영·배포 완료
 - 운영 교훈: ①worklog "md5 기입" 기록도 실측 대조 필수 — apk-guide.html에 구 md5가 잔존해 있었다 ②Release asset 검증은 비인증 API rate limit 회피 위해 토큰+octet-stream 헤더 사용 ③샌드박스 리셋 시 download/APK도 소실 — 원격 Release가 유일 백업
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 80-c
+Agent: Super Z (메인)
+Task: 유저 재보고 "이글아이 절명 화살 같은 화살표 스킬들의 화살표 방향이 반대" — v1.0.16 실측 검증
+
+Work Log:
+- [경로 전수 리뷰] 절명 화살=eagleeye Z주력기=resolveSkill1Of 승계 "snipe"=skill1Snipe(히트스캔 라인빔) 확정 · 화살 투사체 경로 4종 전부 검토: atkBow(533행)/skill1Arrows volley/trueshot 1830행/호밍 화살(1988·2283·2661·2996·3011행) — 전부 firePlayerProj(angle=atan2(aim)·rot:true) 단일 경로
+- [텍스처 재실측] x2_arrow 8배 확대 육안 — **우향 네이티브 확정**(좌=깃털/우=화살촉) · alpha 질량은 1.02x로 대칭이라 질량분석 무효임 재확인(육안이 유일 신뢰) · x2_bow "(" 우향 발사형 + rotation=angle 조합 정상 · hero_atk0 6배 확대 재확인 — 좌향 네이티브(v1.0.16 판정 유지)
+- [원격 경로] fireRemoteProj flipX(!flip)+vx(flip?+:-) — flip이 물리 방향(오른쪽=true)이라 정상 · netEmitAction이 netFacingFlip 전송(v1.0.14 정규화 유지)
+- [E2E 실측 — window.__SERTZ__.game 디버그 훅으로 Player 직접 제어] 가로 1280×720 · eagleeye 세이브 주입(cls+lv10) → ①오른쪽 기본공격: 캐릭터 우향+화살촉 우향+잔상 ✓ ②왼쪽 기본공격: 좌향+화살촉 좌향 ✓ ③절명 화살(Z) 오른쪽: 캐릭터 우향+라인빔 우향+머즐플래시 ✓ ④절명 화살(Z) 왼쪽: 좌향+라인빔 좌향 ✓ ⑤절사명중(V) 오른쪽: scale2.0 화살촉 우향 ✓ ⑥절사명중(V) 왼쪽 발사 ✓ — **6종 전부 정상, v1.0.16에서 유저 보고 증상 미재현**
+- [조작 노트] Phaser 키 입력은 agent-browser press가 JustDown을 놓치는 케이스 있음 — __SERTZ__.game.scene.getScene('world').player 직접 호출이 확실 (facing.set()→cd리셋→useSkillN())
+- [결론] 유저 보고는 v1.0.12~15의 버그이며 v1.0.16에서 수정 완료됨이 실측 확정 — 유저가 구버전 APK 사용 중일 가능성 최우선. 타이틀 배지(v1.0.16) 확인 안내 필요
+
+Stage Summary:
+- 코드 수정 0건 — v1.0.16이 이미 정상 (6종 실측 증명, /tmp/e2e_*.png)
+- 유저 안내: 타이틀 화면 우측 배지가 v1.0.16인지 확인 → 구버전이면 Release에서 재설치
+- 운영 교훈: ①화살 같은 대칭형 텍스처는 alpha 질량 분석이 오답 — 확대 렌더 육안이 유일 ②E2E 스킬 실측은 디버그 훅(__SERTZ__) 직접 제어가 키 입력보다 신뢰 ③"재보고"는 재현 전에 유저 버전 확인이 먼저
