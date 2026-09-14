@@ -19,6 +19,7 @@ import { AuthPanel } from "./AuthPanel"; // v4.9.0 — 자체/SNS 계정 + 클�
 import * as audio from "@/game/audio";
 import { useGameUi } from "./useGameUi";
 import { loadMuted, writeMuted } from "@/game/config";
+import { installCrashGuard } from "./crashGuard"; // v1.0.20 — 크래시 가드 (검은 화면 → 복구 오버레이)
 
 /**
  * 게임 루트: Phaser 캔버스 + React UI 오버레이의 합체점
@@ -50,6 +51,11 @@ export default function GameRoot() {
   useEffect(() => {
     audio.loadVolumes();
     audio.setMuted(loadMuted());
+  }, []);
+
+  /* v1.0.20 — 크래시 가드: 미처리 예외가 검은 화면 대신 복구 오버레이를 띄우게 한다 */
+  useEffect(() => {
+    installCrashGuard();
   }, []);
 
   /* v3.0.22 (#40) — 퀘스트 창 기본 열림: 게임 시작 시 1회 자동 오픈.

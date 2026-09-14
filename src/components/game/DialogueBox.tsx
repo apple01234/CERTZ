@@ -194,11 +194,12 @@ export function DialogueBox({
       onPointerLeave={stopHold}
       onPointerCancel={stopHold}
     >
-      <div className="flex w-full max-w-2xl cursor-pointer touch-none items-stretch gap-2.5 rounded-xl border-2 border-amber-200/60 bg-slate-950/90 p-3 shadow-2xl backdrop-blur-sm sm:gap-3 sm:p-4">
+      {/* v1.0.20 — 대화창: 게임형 프레임 (우드 프레임 + 금 스피커 네임플레이트) */}
+      <div className="game-panel flex w-full max-w-2xl cursor-pointer touch-none items-stretch gap-2.5 p-3 sm:gap-3 sm:p-4">
         {/* v3.0.24 — 화자 초상화 (클래식 RPG 대화창 레이아웃: 좌측 초상 프레임) */}
         {portrait && (
           <div
-            className="relative h-14 w-14 shrink-0 self-start overflow-hidden rounded-lg border-2 bg-gradient-to-b from-slate-800/90 to-slate-950 sm:h-20 sm:w-20"
+            className="game-chip relative h-14 w-14 shrink-0 self-start overflow-hidden sm:h-20 sm:w-20"
             style={{ borderColor: `${portrait.tone}88` }}
           >
             {/* v3.0.25 (#비율 찌그러짐) — object-cover + object-top: 원본 비율 유지하며
@@ -227,13 +228,13 @@ export function DialogueBox({
                 style={{ backgroundColor: portrait.tone, boxShadow: `0 0 6px ${portrait.tone}` }}
               />
             )}
-            <span className="inline-block rounded-md bg-amber-300/90 px-2 py-0.5 text-[11px] font-black text-slate-900 sm:text-xs">
+            <span className="game-btn inline-block px-2 py-0.5 text-[11px] font-black sm:text-xs">
               {speakerName}
             </span>
           </div>
-          <p className="min-h-[2.6em] text-[13px] leading-relaxed text-white sm:min-h-[2.4em] sm:text-[15px]">
+          <p className="min-h-[2.6em] text-[13px] leading-relaxed text-[#f5ecd6] sm:min-h-[2.4em] sm:text-[15px]">
             {shown}
-            <span className="animate-pulse text-amber-300">{shown.length < line.length ? "▌" : ""}</span>
+            <span className="animate-pulse text-[#ffd98a]">{shown.length < line.length ? "▌" : ""}</span>
           </p>
           <div className="mt-1 text-right text-[10px] font-bold text-white/50 sm:text-[11px]">
             {shown.length < line.length

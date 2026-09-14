@@ -213,7 +213,120 @@ export class BootScene extends Phaser.Scene {
     super("boot");
   }
 
+  /* v1.0.20 — 부팅 로딩 화면 (유저 지시: "검은화면 뜨는 버그 없애").
+   *  기존엔 preload 동안 화면이 순수 검정이라 — 특히 APK 콜드스타트에서 수 초간
+   *  "검은 화면 = 고장"으로 보였다. 게임형 로딩 화면(로고+진행바+팁)을 즉시 렌더해
+   *  부팅 구간이 결코 검게 보이지 않게 한다. Scale.RESIZE 대응 리레이아웃 포함. */
+  private bootUi?: {
+    rebuild: () => void;
+    destroy: () => void;
+  };
+
+  private buildLoadingUi() {
+    const gold = 0xe8c064;
+    const wood = 0x7a5a2e;
+    const container = this.add.container(0, 0).setDepth(10).setScrollFactor(0);
+
+    const rebuild = () => {
+      container.removeAll(true);
+      const W = this.cameras.main.width;
+      const H = this.cameras.main.height;
+      /* 배경 — 밤하늘 네이비 (게임 배경색과 동일 계열) */
+      container.add(this.add.rectangle(0, 0, W, H, 0x0d1424).setOrigin(0));
+      /* 로고 */
+      container.add(
+        this.add
+          .text(W / 2, H * 0.34, "SERTZ", {
+            fontFamily: "Galmuri14, Galmuri11, sans-serif",
+            fontSize: `${Math.max(34, Math.round(W * 0.07))}px`,
+            color: "#ffd98a",
+            fontStyle: "bold",
+          })
+          .setOrigin(0.5)
+          .setStroke("#3a2508", Math.max(6, Math.round(W * 0.012)))
+          .setShadow(0, 5, "#000000", 0, true, true),
+      );
+      container.add(
+        this.add
+          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "이그드라실 : 아홉 왕국", {
+            fontFamily: "Galmuri11, sans-serif",
+            fontSize: `${Math.max(12, Math.round(W * 0.02))}px`,
+            color: "#cbb88a",
+          })
+          .setOrigin(0.5),
+      );
+      /* 진행바 프레임 (우드 프레임 + 금 채움) — 채움은 progress 핸들러가 갱신 */
+      const barW = Math.min(340, W * 0.6);
+      const barH = 18;
+      const barY = H * 0.58;
+      container.add(this.add.rectangle(W / 2, barY, barW + 8, barH + 8, wood).setStrokeStyle(2, 0x241a0d));
+      const fill = this.add.rectangle(W / 2 - barW / 2, barY, 1, barH, gold).setOrigin(0);
+      container.add(fill);
+      container.add(
+        this.add
+          .text(W / 2, barY + barH + 16, "모험의 세계를 불러오는 중…", {
+            fontFamily: "Galmuri9, sans-serif",
+            fontSize: "11px",
+            color: "#8a97b8",
+          })
+          .setOrigin(0.5),
+      );
+      this.load.on("progress", (p: number) => {
+        if (!fill.active) return; // resize로 파괴된 이전 채움 — 무시
+        fill.width = Math.max(2, barW * p);
+      });
+    };
+    rebuild();
+
+    /* 로딩 팁 — 1.6초마다 순환 (전직 시스템 안내 포함) */
+    const TIPS = [
+      "마을의 룬 정령 이그니와 대화해 첫 퀘스트를 시작하자",
+      "Lv 10이 되면 전직관의 카이엔에게 1차 전직 시련을 의뢰하자",
+      "물약은 D/F 키 — 설정에서 키 배치를 바꿀 수 있다",
+      "보스전이 어두우면 설정에서 셰이더 강도를 조절하자",
+      "유니온에 캐릭터를 배치하면 계정 전체에 힘이 실린다",
+    ];
+    let tipIdx = Math.floor(Math.random() * TIPS.length);
+    const tipText = this.add
+      .text(this.cameras.main.width / 2, this.cameras.main.height * 0.72, "", {
+        fontFamily: "Galmuri9, sans-serif",
+        fontSize: "11px",
+        color: "#6f7d9c",
+        wordWrap: { width: this.cameras.main.width * 0.8 },
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(11)
+      .setScrollFactor(0);
+    const showTip = () => {
+      tipText.setText(`TIP — ${TIPS[tipIdx % TIPS.length]}`);
+      tipIdx++;
+    };
+    showTip();
+    const tipTimer = this.time.addEvent({ delay: 1600, loop: true, callback: showTip });
+
+    const onResize = () => {
+      rebuild();
+      tipText.setPosition(this.cameras.main.width / 2, this.cameras.main.height * 0.72);
+      tipText.setWordWrapWidth(this.cameras.main.width * 0.8);
+    };
+    this.scale.on("resize", onResize);
+
+    this.bootUi = {
+      rebuild,
+      destroy: () => {
+        this.scale.off("resize", onResize);
+        tipTimer.remove();
+        tipText.destroy();
+        container.destroy();
+        this.load.off("progress");
+      },
+    };
+  }
+
   preload() {
+    /* v1.0.20 — 로딩 UI를 에셋 로드 시작 "직전"에 띄운다 (검은 화면 구간 0) */
+    this.buildLoadingUi();
     this.load.setPath("assets");
     for (const key of ASSET_LIST) this.load.image(key, `${key}.webp`);
     /* v1.0.7 — SPUM식 코스튬 프레임 4종×28 + 포니테일 (scripts/gen_outfits.py 생성 —
@@ -297,6 +410,9 @@ export class BootScene extends Phaser.Scene {
   }
 
   async create() {
+    /* v1.0.20 — 타이틀로 넘어가기 전 로딩 UI 정리 (검은 화면 잔상 방지) */
+    this.bootUi?.destroy();
+    this.bootUi = undefined;
     buildAllAnims(this);
     /* v4.1.5 — Galmuri 픽셀 폰트 로딩 대기 (최대 2.5초 폴백).
      *  Phaser 캔버스 텍스트(데미지 숫자/배너/월드 라벨)가 Galmuri로 렌더되려면

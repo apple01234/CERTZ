@@ -9332,7 +9332,14 @@ export class WorldScene extends Phaser.Scene {
     if (!this.player || this.jobStory) return false;
     if (this.jobStoryDone.includes(tier)) return false;
     // 이전 티어 시련을 먼저 완료해야 다음 티어 진행 (연쇄 게이팅 유지)
-    if (tier >= 2 && !this.jobStoryDone.includes((tier - 1) as 1 | 2 | 3)) return false;
+    if (tier >= 2 && !this.jobStoryDone.includes((tier - 1) as 1 | 2 | 3)) {
+      /* v1.0.20 — 생성 캐릭터 전직 데드락 수정 (유저 보고: "캐릭터 생성시 전직퀘스트가 없음").
+       *  로비에서 만든 캐릭터는 1차 직업을 "보고 태어난다" — 1차 시련을 거칠 방법이
+       *  구조적으로 없어 jobStoryDone이 비고, 2차 시련 시작이 영구히 막혔다.
+       *  → 직업 보유 캐릭터의 2차 시련은 1차 시련 완료를 면제해 시작 가능 (구세이브 복구 포함).
+       *  3차 이상은 여전히 직전 시련 완료가 필요 (연쇄 게이팅 유지). */
+      if (!(tier === 2 && !!this.player.cls)) return false;
+    }
     this.jobStory = { tier, step: 0, hunt: 0, fam };
     const story = JOBSTORY[fam][tier];
     this.showDialogue(story.startDialogue);

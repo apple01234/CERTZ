@@ -1738,3 +1738,25 @@ Stage Summary:
 - 지시서 6건 전부 완료: A-1 스크롤(휠/드래그 실측)·A-2 반응형(375×812 전 화면 실측)·A-4 중복 UI 제거·A-3 신규 15종(기존 90구역 무변경+보스 3종+고유성 15/15)·B-1 3단계 생성(실측)·B-2 유니온 공식/등급/실전 반영(합산 121 실측)
 - 운영 교훈: ①Playwright로 Phaser HUD 버튼 클릭은 액션러너 안정성 체크에 걸린다 — document.querySelector().click() 네이티브 위임이 확실 ②세로 유도 오버레이에 버튼 추가 시 pointer-events-auto 필수(부모가 pointer-events-none 레이어) ③type 유니온 확장 시 Record 전체 키 보강 필요(pirate 폴리오미노 누락 → tsc가 잡아줌)
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 84
+Agent: Super Z (메인)
+Task: 유저 피드백 4건 — ①유니온 UI 모바일 짤림 ②생성 캐릭터 전직퀘스트 부재(데드락) ③AI스러운 UI 전면 교체 ④검은화면 버그 — v1.0.20 확정·릴리스 (versionCode 85)
+
+Work Log:
+- [① 유니온 짤림 근본 원인] UnionPanel.tsx:207의 컨테이너 클래스가 `max-h-in(94svh,700px)] w-in(96vw,720px)]`로 변조 — `[min(` 가 `in(` 로 깨져 Tailwind가 스타일을 못 만들어 너비/높이 제한이 아예 부재 → 모바일에서 패널이 화면을 넘어 잘림. 제한 복원(`max-h-[min(94svh,700px)] w-[min(96vw,720px)]`) + E2E 실측: 375×812에서 패널 360×700 완전 수납 · 가로 스크롤 0
+- [② 전직 데드락 근본 원인] v1.0.18 로비 생성 캐릭터는 1차 직업을 "보고 태어남"(cls=mage 시작) — 1차 시련을 거칠 방법이 구조적으로 없어 jobStoryDone이 비고, startJobStory의 게이트(`tier>=2 → jobStoryDone.includes(tier-1)`)가 2차 시련 시작을 영구 차단. 카이엔과 대화해도 조용히 return false → 전직 패널은 "[전직 시련] 2차 스토리 완료 필요" 배너만 반복하는 완전 데드락. 수정: 직업 보유 캐릭터의 tier-2 시련은 1차 시련 완료를 면제(구세이브 복구 포함), 3차 이상 연쇄 게이트 유지. E2E 실측: 생성 궁수 Lv30 → 카이엔 경로(maybeStartJobStory)로 2차 시련 시작(tier=2) → 시련 완료 → jobStoryDone=[2] + jobQuestCleared()=true
+- [③ UI 전면 교체] "이그드라실 왕가" 디자인 시스템 신설(globals.css): .game-panel(딥 네이비 바디+우드 이중 프레임+내곽 금선+경질 하단 그림자) · .game-btn(금빛 베벨+active 눌림) · .game-btn-ghost/.game-btn-danger · .game-chip(우드 HUD 칩) · .game-tab/-on · .game-input · .game-panel h2(금색 네임플레이트) — radius ≤8px·포인트 컬러 gold/wood/navy 규약. 적용: Panels.tsx 19개 패널 컨테이너 일괄 교체(sweep 스크립트) · UnionPanel(인디고→골드) · TitleScreen(금 잉곽 로고타입+왕관 문장+양피지 부제 칩) · Lobby(게임형 헤더/카드/마법사) · HUD(LV 플레이트+칩 버튼+game-panel 트래커) · DialogueBox(우드 프레임+금 네임플레이트) · EndScreen/RewardPopup/NamePanel/RotatePrompt/BossBar(심홍 우드)/Banner/GateHud · AuthPanel/ServerConnect · TouchControls 스킬 버튼(네이비+골드 링). Galmuri 픽셀 폰트 유지 — 가독성(white/xx 텍스트) 보존 위해 바디는 어둡게, 프레임만 교체
+- [④ 검은화면 대책 3중] ①BootScene 로딩 화면 신설: 로고(확대 대응)+우드 진행바+TIP 5종 1.6초 순환+resize 리레이아웃 — APK 콜드스타트의 "순수 검은 화면" 구간 제거(기존 preload 중 렌더물 0) ②crashGuard.ts 신설: 전역 error/unhandledrejection 훅 → React 밖 순수 DOM 복구 오버레이(게임형 프레임+"다시 시작" 버튼) — React 크래시 시에도 검은 화면 대신 복구 경로. 네트워크 오류는 스킵, 10초 내 3회 반복 오류만 크래시 판정 ③HUD 버튼행 flex-wrap — 375px 세로에서 버튼 넘침 해소(유니온 열기 등 전 패널 접근 보장)
+- [E2E 17/17 PASS] e2e_v1020.js: ①375×812 — 유니온 패널 수납(360×700)+오픈/닫기 ②1280×720 — 생성 캐릭터 전직 플로우(시련 시작→완료→게이트 해제) ③game-chip 프레임 computed style(2px 보더+inset 금선)·게임형 탭 5개 ④부팅+pageerror/콘솔 에러 0. 스크린샷 검수: 타이틀(금 로고타입)·모바일 유니온(수납)·데스크톱 유니온·전직 시련 대화창 — 전부 게임형 렌더 확인
+- [운영 트러블슈팅] dev 서버(turbopack)가 globals.css 변경을 캐시한 채 서빙(hasRule=false) — bash append로 재컴파일 트리거 해소. build_apk.sh의 APK_EXPORT=1 next build가 .next를 export 상태로 덮어써 커스텀 서버가 청크 404 내는 것 확인 — **APK 빌드 후에는 반드시 일반 `bun run build`로 되돌린 뒤 서버 재기동** (신규 교훈)
+- [빌드] tsc 0에러 · 웹빌드(프로덕션) 2회 · build_apk.sh(JAVA_HOME=/home/z/jdk) BUILD SUCCESSFUL 54s → SERTZ-v1.0.20.apk 106,109,482B · aapt 85/1.0.20 · md5 6d22a7148db7160b1fe4fd5e3d237fde · APK 내부 검출(game-chip CSS·v1.0.20 배지·부팅 로딩 문구)
+- [릴리스] scripts/release_v1020.py — Release v1.0.20(id 388172409) 생성·업로드(asset 562698797) → 원격 재다운로드 md5 일치 ✓ · guide 서빙 새 md5 확인 ✓ · 서버 재기동: /api/version 200(1.0.20/85/새 note/v1.0.20 링크)·APK 307→v1.0.20 Release·guide md5·안내.txt 200 ✓
+- [버전체인 8곳] package.json(1.0.20)·build.gradle(versionCode 85·versionName 1.0.20+v1.0.19 히스토리 주석)·server.js(LATEST_VERSION/CODE/NOTE/APK_MIRROR)·Overlays.tsx 배지(v1.0.20)·apk-guide.html(제목·sub·노티스 v1.0.20 변경점·링크·md5·히스토리에 v1.0.19 라인 추가)·안내.txt(v1.0.20 블록+md5)
+
+Stage Summary:
+- v1.0.20 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.20/SERTZ-v1.0.20.apk (versionCode 85, 106,109,482B, md5 6d22a714…)
+- 유저 4건 전부 완료: ①유니온 모바일 짤림(클래스 변조 복원+수납 실측) ②생성 캐릭터 전직 데드락(2차 시련 시작 실측) ③UI 전면 교체(디자인 시스템+19패널+9화면, 스크린샷 검수) ④검은화면(부팅 로딩+크래시 가드)
+- 운영 교훈: ①CSS 커스텀 클래스 추가 시 dev 서버 turbopack 캐시가 안 따라올 수 있음 — 파일 캐시 무효화(내용 append) 필요 ②build_apk.sh의 export 빌드가 .next를 덮어쓴다 — 서버 재기동 전 일반 웹빌드 필수 ③E2E computed style 비교는 Chrome이 lab/oklch 색공간을 반환하므로 두께/그림자 등으로 판정
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

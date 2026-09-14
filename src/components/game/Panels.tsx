@@ -365,7 +365,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-cyan-300/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -661,7 +661,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-amber-200/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -881,7 +881,7 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-teal-200/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -1444,7 +1444,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
       onPointerDown={onClose}
     >
       <div
-        className="flex max-h-[min(94svh,680px)] w-[min(94vw,444px)] flex-col overflow-hidden rounded-xl border-2 border-[#6b5f52] bg-[#38322b] shadow-[0_0_0_2px_#191512,0_18px_50px_rgba(0,0,0,0.65)]"
+        className="game-panel flex max-h-[min(94svh,680px)] w-[min(94vw,444px)] flex-col overflow-hidden"
         onPointerDown={(e) => e.stopPropagation()}
       >
         {/* 타이틀 바 (메이플 EQUIPMENT / INVENTORY) */}
@@ -2038,7 +2038,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto rounded-xl border-2 border-amber-300/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -2272,7 +2272,7 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(88svh,620px)] w-[min(92vw,470px)] overflow-y-auto rounded-xl border-2 border-violet-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(88svh,620px)] w-[min(92vw,470px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -2401,7 +2401,7 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
   if (!p) {
     return (
       <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50" onPointerDown={onClose}>
-        <div className="rounded-xl border-2 border-amber-300/60 sertz-panel bg-slate-950/95 p-4 text-center text-[12px] text-white/70" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="game-panel p-4 text-center text-[12px] text-white/70" onPointerDown={(e) => e.stopPropagation()}>
           월드 진입 후 이용할 수 있다
           <button onClick={onClose} className="mt-2 block w-full rounded-lg bg-amber-400 px-3 py-1.5 text-[12px] font-black text-slate-900">닫기</button>
         </div>
@@ -2411,7 +2411,7 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
   const lvNow = p.lv;
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
-      <div className="max-h-[min(88svh,660px)] w-[min(94vw,520px)] overflow-y-auto rounded-xl border-2 border-amber-300/60 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="max-h-[min(88svh,660px)] w-[min(94vw,520px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
         <div className="mb-2 flex items-center justify-between">
           <div>
             <p className="text-sm font-black text-amber-200">🎫 시즌 패스 — {p.season}</p>
@@ -2590,7 +2590,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
   if (!inf) {
     return (
       <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50" onPointerDown={onClose}>
-        <div className="rounded-xl border-2 border-purple-300/50 sertz-panel bg-slate-950/95 p-4 text-[12px] font-bold text-white/70">게임 시작 후 이용할 수 있어요</div>
+        <div className="game-panel p-4 text-[12px] font-bold text-white/70">게임 시작 후 이용할 수 있어요</div>
       </div>
     );
   }
@@ -2606,7 +2606,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
   ];
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
-      <div className="sertz-scroll max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto rounded-xl border-2 border-purple-300/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="sertz-scroll max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-black text-purple-200">콘텐츠 허브 — 무한 도전</p>
           <button onClick={onClose} aria-label="콘텐츠 패널 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
@@ -2887,7 +2887,7 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-violet-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -3026,7 +3026,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
       role="presentation"
     >
       <div
-        className="pointer-events-auto max-h-[min(86svh,560px)] w-[min(92vw,470px)] overflow-y-auto rounded-xl border border-amber-300/30 bg-slate-950/95 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
+        className="pointer-events-auto max-h-[min(86svh,560px)] w-[min(92vw,470px)] overflow-y-auto game-panel p-4 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="전직"
@@ -3157,7 +3157,7 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-lime-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -3277,7 +3277,7 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-amber-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -3448,7 +3448,7 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-rose-300/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -3553,7 +3553,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto rounded-xl border-2 border-sky-200/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -3753,7 +3753,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   );
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
-      <div className="max-h-[min(88svh,640px)] w-[min(94vw,500px)] overflow-y-auto rounded-xl border-2 border-purple-300/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="max-h-[min(88svh,640px)] w-[min(94vw,500px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-black text-purple-200">바르가 원정대</p>
           <div className="flex items-center gap-1.5">
@@ -4054,7 +4054,7 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
   ];
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
-      <div className="max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto rounded-xl border-2 border-emerald-300/50 sertz-panel bg-slate-950/95 p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="max-h-[min(88svh,640px)] w-[min(94vw,470px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
         <div className="mb-2.5 flex items-center justify-between">
           <p className="text-sm font-black text-emerald-200">혜택 — 출석부 · 일일 퀘스트 · 쿠폰</p>
           <button onClick={onClose} aria-label="혜택 패널 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>

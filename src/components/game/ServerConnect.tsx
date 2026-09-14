@@ -146,7 +146,7 @@ export function ServerConnect() {
   return (
     <div className="absolute bottom-3 right-3 z-50">
       {open ? (
-        <div className="w-72 rounded-xl border border-white/15 bg-[#0b1020]/95 p-3 shadow-[0_8px_24px_rgba(0,0,0,0.8)]">
+        <div className="game-panel w-72 p-3">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-black text-amber-200">멀티플레이 서버</p>
             <button onClick={() => setOpen(false)} className="text-white/50 hover:text-white" aria-label="닫기">

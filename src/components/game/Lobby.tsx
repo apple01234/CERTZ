@@ -205,29 +205,30 @@ export function Lobby({ onExit }: { onExit: () => void }) {
   const STEP_LABELS = ["이름", "직업", "외형"];
 
   return (
-    /* [A-1 v1.0.19] 루트가 스크롤 컨테이너 — 모바일 세로에서 카드 그리드+정보 패널이 세로로 쌓여도 전체 스크롤된다 */
-    <div className="sertz-scroll absolute inset-0 z-40 overflow-y-auto bg-gradient-to-b from-[#0a0e22] via-[#0c1230] to-[#05070d]">
+    /* [A-1 v1.0.19] 루트가 스크롤 컨테이너 — 모바일 세로에서 카드 그리드+정보 패널이 세로로 쌓여도 전체 스크롤된다
+     *  v1.0.20 — 게임형 로비: 밤하늘 → 왕가 네이비+우드 톤 */
+    <div className="sertz-scroll absolute inset-0 z-40 overflow-y-auto bg-gradient-to-b from-[#0d1424] via-[#101a30] to-[#080d18]">
       <div className="flex min-h-full flex-col px-3 pb-6 pt-2.5 sm:px-5">
-        {/* 헤더 */}
-        <div className="mb-2 flex items-center justify-between gap-2">
+        {/* 헤더 — 금색 네임플레이트 */}
+        <div className="game-chip mb-2 flex items-center justify-between gap-2 px-3 py-2">
           <div className="flex items-center gap-2">
-            <Users size={18} className="text-amber-300" />
+            <Users size={18} className="text-[#ffd98a]" />
             <div>
-              <p className="text-sm font-black tracking-wide text-amber-200">캐릭터 선택</p>
+              <p className="text-sm font-black tracking-wide text-[#ffd98a]">캐릭터 선택</p>
               <p className="text-[9px] font-bold text-white/40">더블클릭으로 바로 입장 · 캐릭터마다 레벨·장비·진행도가 개별 저장된다</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="hidden rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1 text-[10px] font-black text-amber-200 sm:inline-flex sm:items-center sm:gap-1">
+            <span className="hidden rounded-md border border-[#8a6a34]/70 bg-black/40 px-2 py-1 text-[10px] font-black text-[#ffd98a] sm:inline-flex sm:items-center sm:gap-1">
               <Coins size={11} />
               유니온 코인 {coins}
             </span>
             {account && (
-              <span className="hidden rounded-md border border-sky-300/40 bg-sky-400/10 px-2 py-1 text-[10px] font-black text-sky-200 md:inline">
+              <span className="hidden rounded-md border border-[#8a6a34]/70 bg-black/40 px-2 py-1 text-[10px] font-black text-[#cbb88a] md:inline">
                 {account.name || account.email || "계정"} 로그인 중
               </span>
             )}
-            <button onClick={onExit} aria-label="타이틀로" className="flex h-9 w-9 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
+            <button onClick={onExit} aria-label="타이틀로" className="game-chip flex h-9 w-9 items-center justify-center text-white/70">
               <X size={15} />
             </button>
           </div>
@@ -245,8 +246,8 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                     key={m.id}
                     onClick={() => { setSelId(m.id); setMsg(null); }}
                     onDoubleClick={() => startChar(m)}
-                    className={`min-h-[92px] rounded-lg border-2 p-2 text-left transition-all ${active ? "scale-[1.02] shadow-[0_0_18px_rgba(255,215,106,0.25)]" : "hover:scale-[1.01]"}`}
-                    style={{ borderColor: active ? "#ffd76a" : `${color}44`, background: active ? `${color}1c` : "#ffffff08" }}
+                    className={`game-chip min-h-[92px] p-2 text-left transition-all ${active ? "scale-[1.02] shadow-[0_0_18px_rgba(232,192,100,0.3),inset_0_0_0_1px_#e8c06440]" : ""}`}
+                    style={{ borderColor: active ? "#e8c064" : "#7a5a2e" }}
                   >
                     <div className="flex items-center gap-1.5">
                       {/* v1.0.19 (B-1) — 외형 미리보기 (생성 시 고른 색조가 적용된 실제 스프라이트) */}
@@ -273,31 +274,31 @@ export function Lobby({ onExit }: { onExit: () => void }) {
               {used < store.slots ? (
                 <button
                   onClick={openCreate}
-                  className="flex min-h-[92px] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-white/20 bg-white/[0.03] text-white/50 transition-colors hover:border-amber-300/50 hover:text-amber-200"
+                  className="game-chip flex min-h-[92px] flex-col items-center justify-center gap-1 border-dashed text-white/50 transition-colors hover:border-[#e8c064] hover:text-[#ffd98a]"
                 >
                   <UserPlus size={18} />
                   <p className="text-[10px] font-black">캐릭터 생성</p>
                 </button>
               ) : (
-                <div className="flex min-h-[92px] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-white/10 bg-white/[0.02] text-white/25">
+                <div className="game-chip flex min-h-[92px] flex-col items-center justify-center gap-1 border-dashed text-white/25">
                   <Lock size={16} />
                   <p className="text-[9px] font-bold">슬롯 확장 필요</p>
                 </div>
               )}
             </div>
-            <button onClick={expand} className="mx-auto mt-2 flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-[10px] font-black text-white/60 active:scale-95">
-              <Coins size={11} className="text-amber-300" />
+            <button onClick={expand} className="game-btn-ghost mx-auto mt-2 flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black text-[#f0e2c0] active:scale-95">
+              <Coins size={11} className="text-[#ffd98a]" />
               슬롯 확장 (유니온 코인 60) — {used}/{store.slots}
             </button>
           </div>
 
-          {/* 정보 패널 */}
-          <div className="w-full shrink-0 rounded-lg border border-white/12 bg-black/40 p-3 lg:w-[340px]">
+          {/* 정보 패널 — 게임형 프레임 */}
+          <div className="game-panel w-full shrink-0 p-3 lg:w-[340px]">
             {creating ? (
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="text-[12px] font-black text-amber-200">캐릭터 생성</p>
-                  <button onClick={() => setCreating(false)} className="flex h-7 w-7 items-center justify-center rounded border border-white/15 text-white/50">
+                  <p className="text-[12px] font-black text-[#ffd98a]">캐릭터 생성</p>
+                  <button onClick={() => setCreating(false)} className="game-chip flex h-7 w-7 items-center justify-center text-white/50">
                     <ChevronLeft size={13} />
                   </button>
                 </div>
@@ -323,13 +324,13 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                       onChange={(e) => setNameInput(e.target.value)}
                       maxLength={8}
                       placeholder="캐릭터 이름 (최대 8자)"
-                      className="mt-2 w-full rounded-lg border border-white/20 bg-black/50 px-3 py-2.5 text-[13px] font-bold text-white placeholder:text-white/25 focus:border-amber-300/60 focus:outline-none"
+                      className="game-input mt-2 w-full px-3 py-2.5 text-[13px] font-bold placeholder:text-white/25"
                     />
-                    {msg && <p className="mt-1 text-[10px] font-black text-rose-300">{msg}</p>}
+                    {msg && <p className="mt-1 text-[10px] font-black text-[#ff9a8a]">{msg}</p>}
                     <button
                       onClick={() => { if (nameOk) { setMsg(null); setStep(1); } }}
                       disabled={!nameOk}
-                      className={`mt-2 flex w-full items-center justify-center gap-1 rounded-lg px-3 py-2.5 text-[12px] font-black transition-transform active:scale-95 ${nameOk ? "bg-gradient-to-b from-amber-400 to-amber-600 text-slate-900" : "cursor-not-allowed bg-white/10 text-white/30"}`}
+                      className="game-btn mt-2 flex w-full items-center justify-center gap-1 px-3 py-2.5 text-[12px] font-black active:scale-95"
                     >
                       다음 — 직업 선택
                       <ChevronRight size={14} />
@@ -348,11 +349,11 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                           <button
                             key={p.key}
                             onClick={() => setPickCls(p.key)}
-                            className={`min-h-[52px] rounded-lg border-2 px-2 py-2 text-left transition-transform active:scale-95 ${on ? "" : "border-white/10 bg-white/[0.03]"}`}
-                            style={on ? { borderColor: d.color, background: `${d.color}18` } : undefined}
+                            className={`game-tab min-h-[52px] px-2 py-2 text-left transition-transform active:scale-95 ${on ? "game-tab-on" : ""}`}
+                            style={on ? undefined : undefined}
                           >
-                            <p className="text-[12px] font-black" style={{ color: d.color }}>{d.name}</p>
-                            <p className="text-[8px] font-bold text-white/40">{d.title}</p>
+                            <p className="text-[12px] font-black" style={{ color: on ? "#3a2508" : d.color }}>{d.name}</p>
+                            <p className="text-[8px] font-bold" style={{ color: on ? "#6b4a1c" : "rgba(255,255,255,0.4)" }}>{d.title}</p>
                           </button>
                         );
                       })}
@@ -393,11 +394,11 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                       );
                     })()}
                     <div className="mt-2 grid grid-cols-2 gap-1.5">
-                      <button onClick={() => setStep(0)} className="flex items-center justify-center gap-1 rounded-lg border border-white/20 bg-white/5 px-3 py-2.5 text-[11px] font-black text-white/70">
+                      <button onClick={() => setStep(0)} className="game-btn-ghost flex items-center justify-center gap-1 px-3 py-2.5 text-[11px] font-black active:scale-95">
                         <ChevronLeft size={13} />
                         이름
                       </button>
-                      <button onClick={() => setStep(2)} className="flex items-center justify-center gap-1 rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-3 py-2.5 text-[11px] font-black text-slate-900">
+                      <button onClick={() => setStep(2)} className="game-btn flex items-center justify-center gap-1 px-3 py-2.5 text-[11px] font-black active:scale-95">
                         다음 — 외형 선택
                         <ChevronRight size={13} />
                       </button>
@@ -435,15 +436,15 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                         );
                       })}
                     </div>
-                    {msg && <p className="mt-1 text-[10px] font-black text-rose-300">{msg}</p>}
+                    {msg && <p className="mt-1 text-[10px] font-black text-[#ff9a8a]">{msg}</p>}
                     <div className="mt-2 grid grid-cols-2 gap-1.5">
-                      <button onClick={() => setStep(1)} className="flex items-center justify-center gap-1 rounded-lg border border-white/20 bg-white/5 px-3 py-2.5 text-[11px] font-black text-white/70">
+                      <button onClick={() => setStep(1)} className="game-btn-ghost flex items-center justify-center gap-1 px-3 py-2.5 text-[11px] font-black active:scale-95">
                         <ChevronLeft size={13} />
                         직업
                       </button>
                       <button
                         onClick={doCreate}
-                        className="rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-3 py-2.5 text-[12px] font-black text-slate-900 transition-transform active:scale-95"
+                        className="game-btn px-3 py-2.5 text-[12px] font-black active:scale-95"
                       >
                         {classDef(pickCls)!.name}로 생성!
                       </button>
@@ -463,21 +464,21 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                   </div>
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-1 text-center">
-                  <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
+                  <div className="game-chip py-1.5">
                     <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Swords size={8} />공격력</p>
-                    <p className="text-[11px] font-black text-amber-200">{selSave?.atk ?? "?"}</p>
+                    <p className="text-[11px] font-black text-[#ffd98a]">{selSave?.atk ?? "?"}</p>
                   </div>
-                  <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
+                  <div className="game-chip py-1.5">
                     <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Shield size={8} />최대 HP</p>
-                    <p className="text-[11px] font-black text-rose-200">{selSave?.maxHp ?? "?"}</p>
+                    <p className="text-[11px] font-black text-[#ffb0b0]">{selSave?.maxHp ?? "?"}</p>
                   </div>
-                  <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
+                  <div className="game-chip py-1.5">
                     <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Zap size={8} />골드</p>
-                    <p className="text-[11px] font-black text-yellow-200">{(selSave?.gold ?? 0).toLocaleString()}</p>
+                    <p className="text-[11px] font-black text-[#ffe49a]">{(selSave?.gold ?? 0).toLocaleString()}</p>
                   </div>
-                  <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
+                  <div className="game-chip py-1.5">
                     <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Gauge size={8} />마지막 구역</p>
-                    <p className="truncate text-[11px] font-black text-sky-200">{sel.stage}</p>
+                    <p className="truncate text-[11px] font-black text-[#cbb88a]">{sel.stage}</p>
                   </div>
                 </div>
                 {(() => {
@@ -495,7 +496,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                 })()}
                 <button
                   onClick={() => startChar(sel)}
-                  className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-3 py-3 text-[13px] font-black text-slate-900 transition-transform active:scale-95"
+                  className="game-btn mt-2.5 flex w-full items-center justify-center gap-1.5 px-3 py-3 text-[13px] font-black active:scale-95"
                 >
                   <Play size={15} />
                   이 캐릭터로 시작
@@ -503,18 +504,18 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                 <p className="mt-1 text-center text-[8px] font-bold text-white/30">카드를 더블클릭해도 바로 시작된다</p>
                 <button
                   onClick={() => setDelId(sel.id)}
-                  className="mx-auto mt-1 flex items-center gap-1 text-[10px] font-bold text-white/35 underline underline-offset-2 hover:text-rose-300"
+                  className="mx-auto mt-1 flex items-center gap-1 text-[10px] font-bold text-white/35 underline underline-offset-2 hover:text-[#ff9a8a]"
                 >
                   <Trash2 size={11} />
                   캐릭터 삭제
                 </button>
-                {msg && <p className="mt-1 text-[10px] font-black text-rose-300">{msg}</p>}
+                {msg && <p className="mt-1 text-[10px] font-black text-[#ff9a8a]">{msg}</p>}
               </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-2 py-8 text-center">
                 <UserPlus size={26} className="text-white/25" />
                 <p className="text-[11px] font-black text-white/50">첫 캐릭터를 만들어 모험을 시작하자</p>
-                <button onClick={openCreate} className="rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2.5 text-[11px] font-black text-slate-900">
+                <button onClick={openCreate} className="game-btn px-4 py-2.5 text-[11px] font-black">
                   캐릭터 생성
                 </button>
               </div>
@@ -526,13 +527,13 @@ export function Lobby({ onExit }: { onExit: () => void }) {
       {/* 삭제 확인 모달 */}
       {delId && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70" onPointerDown={() => setDelId(null)}>
-          <div className="w-[min(92vw,340px)] rounded-xl border-2 border-rose-300/50 bg-slate-950 p-4" onPointerDown={(e) => e.stopPropagation()}>
-            <p className="text-[13px] font-black text-rose-200">정말 삭제하시겠습니까?</p>
+          <div className="game-panel w-[min(92vw,340px)] p-4" onPointerDown={(e) => e.stopPropagation()}>
+            <p className="text-[13px] font-black text-[#ff9a8a]">정말 삭제하시겠습니까?</p>
             <p className="mt-1 text-[11px] font-bold leading-relaxed text-white/60">
               <b className="text-white">{store.chars[delId]?.name}</b>의 레벨·장비·진행도가 영구히 사라진다. (유니온 코인·아티팩트는 계정에 유지)
             </p>
             <div className="mt-3 grid grid-cols-2 gap-1.5">
-              <button onClick={() => setDelId(null)} className="rounded-lg border border-white/20 bg-white/5 px-3 py-2.5 text-[11px] font-black text-white/70">
+              <button onClick={() => setDelId(null)} className="game-btn-ghost px-3 py-2.5 text-[11px] font-black active:scale-95">
                 취소
               </button>
               <button
@@ -542,7 +543,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                   setSelId(null);
                   refresh();
                 }}
-                className="rounded-lg bg-gradient-to-b from-rose-500 to-rose-700 px-3 py-2.5 text-[11px] font-black text-white"
+                className="game-btn-danger px-3 py-2.5 text-[11px] font-black active:scale-95"
               >
                 삭제
               </button>

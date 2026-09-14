@@ -65,18 +65,28 @@ export function TitleScreen() {
 
   return (
     /* v1.0.19 (A-1/A-2) — 타이틀도 스크롤 가능하게: 저높이(가로 폰)에서 버튼/크레딧이 잘리던 것 수정.
-     *  컨테이너 overflow-y-auto + 내부 min-h-full flex — 내용이 짧으면 중앙정렬 유지, 길면 스크롤 */
+     *  컨테이너 overflow-y-auto + 내부 min-h-full flex — 내용이 짧으면 중앙정렬 유지, 길면 스크롤
+     *  v1.0.20 — AI스러운 텍스트 로고 → 게임 타이틀 로고타입(금 잉곽+왕관 문장+양피지 부제) 재디자인 */
     <div className="sertz-scroll absolute inset-0 z-40 overflow-y-auto">
       <div className="flex min-h-full flex-col items-center justify-center bg-transparent px-4 py-6">
         <div className="mb-1 text-center">
-          <h1 className="text-5xl font-black tracking-[0.18em] text-amber-300 [text-shadow:0_3px_0_#7a3c00,0_6px_18px_rgba(0,0,0,0.9)] sm:text-7xl">
+          {/* 왕관 문장 — 픽셀 게임 타이틀 장식 */}
+          <div aria-hidden className="mx-auto mb-1 flex items-center justify-center gap-2">
+            <span className="h-0.5 w-10 bg-gradient-to-r from-transparent to-[#e8c064]" />
+            <span className="text-[13px] leading-none text-[#ffd98a] [text-shadow:0_2px_0_#3a2508]">✦</span>
+            <span className="h-0.5 w-10 bg-gradient-to-l from-transparent to-[#e8c064]" />
+          </div>
+          <h1 className="text-5xl font-black tracking-[0.14em] text-[#ffe49a] [text-shadow:0_2px_0_#9a6410,0_4px_0_#6b4a1c,0_6px_0_#3a2508,0_10px_18px_rgba(0,0,0,0.9)] sm:text-7xl">
             SERTZ
           </h1>
-          <p className="mx-auto mt-1 max-w-[min(94vw,560px)] text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
-            이그드라실 : 아홉 왕국
+          {/* 양피지 부제 칩 — 우드 프레임 */}
+          <p className="game-chip mx-auto mt-3 inline-block max-w-[min(94vw,560px)] px-4 py-1.5">
+            <span className="text-sm font-black tracking-[0.3em] text-[#f0e2c0] [text-shadow:0_1px_2px_#000] sm:text-base">
+              이그드라실 : 아홉 왕국
+            </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.19 — 반응형·스크롤 수정 · 신규 스테이지 15종</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.0.20 — UI 전면 교체 · 유니온 모바일 수정 · 전직 수정</span>
           </p>
         </div>
 
@@ -86,9 +96,9 @@ export function TitleScreen() {
           href={update.guide}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 w-[min(92vw,520px)] rounded-lg border border-red-300/60 bg-red-950/80 px-4 py-2.5 text-center shadow-[0_4px_20px_rgba(0,0,0,0.7)] transition-transform hover:scale-[1.02] active:scale-95"
+          className="game-btn-danger mt-3 block w-[min(92vw,520px)] px-4 py-2.5 text-center"
         >
-          <p className="text-[13px] font-black text-red-200 sm:text-sm">
+          <p className="text-[13px] font-black sm:text-sm">
             새 버전 v{update.latest} 설치 필요 — 여기 눌러 APK 재설치
           </p>
           {update.note && (
@@ -101,14 +111,14 @@ export function TitleScreen() {
         {/* v1.0.18 — 시작/이어하기 모두 로비(캐릭터 선택·생성)로 진입 (메이플 메인메뉴 흐름) */}
         <button
           onClick={() => EventBus.emit("lobby:open")}
-          className="sertz-btn flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-black text-amber-100 shadow-[0_4px_16px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03] active:scale-95"
+          className="game-btn flex items-center justify-center gap-2 px-4 py-3 text-base font-black active:scale-95"
         >
           <Play size={18} />
           게임 시작
-          <span className="text-[9px] font-bold text-amber-200/70">— 캐릭터 선택·생성</span>
+          <span className="text-[9px] font-bold text-[#6b4a1c]/80">— 캐릭터 선택·생성</span>
         </button>
         {save && (
-          <span className="mx-auto -mt-1 text-[9px] font-bold text-sky-200/70">
+          <span className="game-chip mx-auto -mt-1 px-2 py-1 text-[9px] font-bold text-[#cbb88a]">
             마지막 플레이: LV{save.lv} · {save.cleared ? "클리어" : stageLabel(save.stage)} — 로비에서 이어하기
           </span>
         )}
@@ -128,7 +138,7 @@ export function TitleScreen() {
           href="/apk-guide.html"
           target="_blank"
           rel="noopener noreferrer"
-          className="mx-auto mt-1 flex items-center gap-1.5 text-[11px] font-bold text-sky-300/70 underline underline-offset-2 transition-colors hover:text-sky-200"
+          className="game-btn-ghost mx-auto mt-1 flex items-center gap-1.5 px-3.5 py-2 text-[11px] font-black text-[#f0e2c0] active:scale-95"
         >
           <Smartphone size={13} />
           폰용 APK 다운로드
@@ -141,7 +151,7 @@ export function TitleScreen() {
        *  첫 화면 하단에 고정되어 콘텐츠와 겹치던 문제 수정 — 내용이 짧으면 하단, 길면 흐름 따름 */}
       <div className="mt-auto flex flex-col items-center gap-1 px-3 pb-3 pt-8 text-center">
         {/* v1.0.3 — 저높이(가로 폰)에서는 키 안내줄이 APK 링크와 겹치므로 숨김 (터치 유저에게 불필요) */}
-        <p className="text-[10px] font-bold text-white/45 sm:text-[11px] [@media(max-height:540px)]:hidden">
+        <p className="game-chip px-2.5 py-1 text-[10px] font-bold text-[#cbb88a] [@media(max-height:540px)]:hidden">
           이동: 방향키 / 왼쪽 화면 드래그 · 공격: X · 스킬: Z, C, V, A, S · 물약: D, F
         </p>
         <p className="max-w-[min(94vw,760px)] text-[8px] leading-relaxed text-white/30 sm:text-[9px]">
@@ -160,8 +170,9 @@ export function Banner({ text }: { text: string | null }) {
   if (!text) return null;
   return (
     <div className="pointer-events-none absolute inset-x-0 top-[26%] z-30 flex justify-center">
-      <div className="animate-[bannerPop_2.3s_ease-out_forwards] rounded-lg border border-amber-200/50 bg-black/70 px-6 py-2.5 shadow-xl">
-        <p className="text-lg font-black tracking-wide text-amber-200 [text-shadow:0_2px_4px_#000] sm:text-xl">
+      {/* v1.0.20 — 게임형 배너: 우드 프레임 + 금 텍스트 */}
+      <div className="game-chip animate-[bannerPop_2.3s_ease-out_forwards] px-6 py-2.5">
+        <p className="text-lg font-black tracking-wide text-[#ffd98a] [text-shadow:0_2px_0_#3a2508,0_3px_6px_#000] sm:text-xl">
           {text}
         </p>
       </div>
@@ -190,17 +201,18 @@ export function BossBar({ boss }: { boss: { name: string; hp: number; maxHp: num
     <div className="pointer-events-none absolute inset-x-0 top-1.5 z-30 flex justify-center sm:top-3">
       <div
         className={
+          /* v1.0.20 — 보스바: 보라 글라스 → 심홍 우드 프레임 (보스전 긴장감) */
           compact
-            ? "w-[64%] max-w-[400px] rounded-md border border-purple-300/50 bg-black/65 px-2 py-1 shadow-lg backdrop-blur-sm" /* v4.2.0 — 44%/280px → 64%/400px 확대 (유저: 보스바가 조금 작음) */
-            : "w-[52%] max-w-[480px] rounded-md border border-purple-300/50 bg-black/70 px-2 py-1.5 shadow-xl backdrop-blur-sm sm:w-[78%] sm:max-w-2xl sm:rounded-lg sm:px-3 sm:py-2"
+            ? "w-[64%] max-w-[400px] rounded-md border-2 border-[#7a2a2a] bg-[#140d10]/85 px-2 py-1 shadow-[inset_0_0_0_1px_rgba(255,120,120,0.18),0_4px_0_rgba(0,0,0,0.4)]"
+            : "w-[52%] max-w-[480px] rounded-md border-2 border-[#7a2a2a] bg-[#140d10]/85 px-2 py-1.5 shadow-[inset_0_0_0_1px_rgba(255,120,120,0.18),0_4px_0_rgba(0,0,0,0.4)] sm:w-[78%] sm:max-w-2xl sm:rounded-lg sm:px-3 sm:py-2"
         }
       >
         <div className={compact ? "mb-0.5 flex items-center justify-between" : "mb-1 flex items-center justify-between"}>
           <span
             className={
               compact
-                ? "max-w-[70%] truncate text-[11px] font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000]"
-                : "truncate text-[11px] font-black tracking-wide text-purple-200 [text-shadow:0_1px_3px_#000] sm:text-sm"
+                ? "max-w-[70%] truncate text-[11px] font-black tracking-wide text-[#ffb0b0] [text-shadow:0_1px_3px_#000]"
+                : "truncate text-[11px] font-black tracking-wide text-[#ffb0b0] [text-shadow:0_1px_3px_#000] sm:text-sm"
             }
           >
             {boss.name}
@@ -211,7 +223,7 @@ export function BossBar({ boss }: { boss: { name: string; hp: number; maxHp: num
         </div>
         <div className={compact ? "h-2.5 overflow-hidden rounded-full border border-black/70 bg-black/70" : "h-2.5 overflow-hidden rounded-full border border-black/70 bg-black/70 sm:h-4"}>
           <div
-            className="h-full bg-gradient-to-b from-fuchsia-400 to-purple-800 transition-[width] duration-200"
+            className="h-full bg-gradient-to-b from-[#ff8080] to-[#8a1420] transition-[width] duration-200"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -225,21 +237,24 @@ export function BossBar({ boss }: { boss: { name: string; hp: number; maxHp: num
 export function RotatePrompt({ active, onDismiss }: { active: boolean; onDismiss?: () => void }) {
   if (!active) return null;
   return (
-    <div className="rotate-prompt pointer-events-auto absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-slate-950/95 p-8 text-center">
-      <RotateCw size={48} className="animate-spin-slow text-amber-300" />
-      <p className="text-lg font-black text-white">기기를 가로로 돌려주세요</p>
-      <p className="text-xs font-bold text-white/60">
-        SERTZ는 가로 화면에 최적화된 액션 RPG입니다
-      </p>
-      {/* v1.0.19 (A-2 반응형) — 세로로도 플레이 가능 (Scale.FIT) — 강제 차단 대신 유저 선택 존중 */}
-      {onDismiss && (
-        <button
-          onClick={onDismiss}
-          className="mt-2 rounded-lg border border-amber-300/50 bg-amber-400/10 px-5 py-2.5 text-[13px] font-black text-amber-200 transition-transform active:scale-95"
-        >
-          세로 화면으로 계속하기
-        </button>
-      )}
+    <div className="rotate-prompt pointer-events-auto absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-[#0b1120]/97 p-8 text-center">
+      {/* v1.0.20 — 게임형 회전 안내 */}
+      <div className="game-panel flex flex-col items-center gap-4 px-8 py-7">
+        <RotateCw size={48} className="animate-spin-slow text-[#ffd98a]" />
+        <p className="text-lg font-black text-[#ffd98a]">기기를 가로로 돌려주세요</p>
+        <p className="text-xs font-bold text-white/60">
+          SERTZ는 가로 화면에 최적화된 액션 RPG입니다
+        </p>
+        {/* v1.0.19 (A-2 반응형) — 세로로도 플레이 가능 (Scale.FIT) — 강제 차단 대신 유저 선택 존중 */}
+        {onDismiss && (
+          <button
+            onClick={onDismiss}
+            className="game-btn-ghost mt-2 px-5 py-2.5 text-[13px] font-black active:scale-95"
+          >
+            세로 화면으로 계속하기
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -250,12 +265,13 @@ export function EndScreen({ end }: { end: EndState }) {
   const fmt = (s: number) => `${Math.floor(s / 60)}분 ${s % 60}초`;
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/75 px-4 backdrop-blur-[2px]">
-      <div className="w-full max-w-sm rounded-2xl border-2 border-white/15 bg-slate-950/95 p-6 text-center shadow-2xl">
+      {/* v1.0.20 — 엔드 화면: 게임형 프레임 */}
+      <div className="game-panel w-full max-w-sm p-6 text-center">
         <div className="mb-4 flex justify-center">
           {end.victory ? (
-            <Trophy size={44} className="text-amber-300" />
+            <Trophy size={44} className="text-[#ffd98a]" />
           ) : (
-            <Skull size={44} className="text-rose-400" />
+            <Skull size={44} className="text-[#ff8a8a]" />
           )}
         </div>
         <h2 className="text-2xl font-black text-white">
@@ -277,7 +293,7 @@ export function EndScreen({ end }: { end: EndState }) {
           {end.victory ? (
             <button
               onClick={() => window.location.reload()}
-              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-3 text-sm font-black text-slate-900 transition-transform hover:scale-[1.02] active:scale-95"
+              className="game-btn flex items-center justify-center gap-2 px-4 py-3 text-sm font-black active:scale-95"
             >
               <Home size={16} />
               타이틀로 돌아가기
@@ -288,14 +304,14 @@ export function EndScreen({ end }: { end: EndState }) {
                 onClick={() => {
                   EventBus.emit("respawn");
                 }}
-                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-700 px-4 py-3 text-sm font-black text-white transition-transform hover:scale-[1.02] active:scale-95"
+                className="game-btn-danger flex items-center justify-center gap-2 px-4 py-3 text-sm font-black active:scale-95"
               >
                 <Play size={16} />
                 부활하기
               </button>
               <button
                 onClick={() => window.location.reload()}
-                className="flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-xs font-black text-white/80 transition-colors hover:bg-white/10"
+                className="game-btn-ghost flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-black active:scale-95"
               >
                 <Home size={14} />
                 타이틀로
@@ -310,8 +326,8 @@ export function EndScreen({ end }: { end: EndState }) {
 
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 py-2">
-      <div className="flex items-center justify-center gap-1 text-amber-200">{icon}</div>
+    <div className="game-chip py-2">
+      <div className="flex items-center justify-center gap-1 text-[#ffd98a]">{icon}</div>
       <div className="mt-0.5 text-sm font-black text-white">{value}</div>
       <div className="text-[9px] font-bold text-white/50">{label}</div>
     </div>
@@ -454,21 +470,21 @@ export function RewardPopup() {
     <div className="pointer-events-none absolute inset-x-0 top-28 z-[70] flex justify-center px-4 sm:top-20">
       {/* v3.0.23 (#56) — ① 알림 표시를 더 아래로(top-14→top-28) ② 카드에 pointer-events-auto 부여 —
           컨테이너가 pointer-events-none이라 X를 누를 수 없던 버그 수정 */}
-      <div className="pointer-events-auto w-[min(92vw,330px)] animate-[rewardPop_0.24s_ease-out] rounded-xl border-2 border-amber-200/70 bg-slate-950/95 p-3 shadow-2xl">
+      <div className="pointer-events-auto w-[min(92vw,330px)] animate-[rewardPop_0.24s_ease-out] game-panel p-3">
         <div className="flex items-center justify-between gap-2">
-          <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-black text-amber-200">
+          <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-black text-[#ffd98a]">
             <Sparkles size={14} className="shrink-0" />
             <span className="truncate">{st.title}</span>
           </p>
           <button
             onClick={() => setSt(null)}
             aria-label="보상 팝업 닫기"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70"
+            className="game-chip flex h-6 w-6 shrink-0 items-center justify-center text-white/70"
           >
             ✕
           </button>
         </div>
-        <div className="mt-1.5 flex flex-col gap-0.5 rounded-lg bg-black/40 px-2.5 py-2">
+        <div className="mt-1.5 flex flex-col gap-0.5 rounded-lg bg-black/45 px-2.5 py-2">
           {st.lines.map((l, i) => (
             <p key={i} className="text-[12px] font-black" style={{ color: l.color ?? "#ffffff" }}>
               {l.text}
@@ -510,10 +526,11 @@ export function NamePanel() {
 
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/55 px-4">
-      <div className="w-full max-w-sm rounded-2xl border-2 border-amber-200/70 bg-slate-950/95 p-5 shadow-2xl">
+      {/* v1.0.20 — 이름 패널: 게임형 프레임 */}
+      <div className="game-panel w-full max-w-sm p-5">
         <div className="mb-1 flex items-center gap-2">
-          <Sparkles size={18} className="text-amber-300" />
-          <span className="text-base font-black text-amber-300">이름을 정해라</span>
+          <Sparkles size={18} className="text-[#ffd98a]" />
+          <span className="text-base font-black text-[#ffd98a]">이름을 정해라</span>
         </div>
         <p className="mb-3 text-[12px] font-bold leading-relaxed text-white/70">
           룬 정령 이그니: &quot;그 이름, 세계수에 새겨질 거야. 모험가의 이름을 지어 줘.&quot;
@@ -538,13 +555,13 @@ export function NamePanel() {
             }
           }}
           placeholder="1~8자 (한글/영문/숫자)"
-          className="w-full rounded-xl border-2 border-white/25 bg-slate-900 px-3 py-3 text-lg font-black tracking-wider text-white outline-none placeholder:text-white/30 focus:border-amber-300"
+          className="game-input w-full px-3 py-3 text-lg font-black tracking-wider placeholder:text-white/30"
         />
         <div className="mt-1 text-right text-[10px] font-bold text-white/40">{val.length}/8</div>
         <button
           onClick={confirm}
           disabled={!val.trim()}
-          className="mt-2 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-3 text-sm font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:opacity-40"
+          className="game-btn mt-2 w-full px-4 py-3 text-sm font-black active:scale-95"
         >
           이 이름으로 모험 시작!
         </button>
@@ -587,8 +604,9 @@ export function GateCardOverlay() {
   if (!st || st.cards.length === 0) return null;
   return (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[3px]">
-      <div className="w-[min(94vw,520px)] rounded-xl border-2 border-purple-300/60 bg-slate-950/95 p-4 shadow-2xl">
-        <p className="mb-1 text-center text-lg font-black text-purple-200">웨이브 {st.wave} 클리어! — 강화 카드 선택</p>
+      {/* v1.0.20 — 게이트 카드: 게임형 프레임 */}
+      <div className="game-panel w-[min(94vw,520px)] p-4">
+        <p className="mb-1 text-center text-lg font-black text-[#ffd98a]">웨이브 {st.wave} 클리어! — 강화 카드 선택</p>
         <p className="mb-3 text-center text-[11px] text-white/50">카드 버프는 이번 게이트 방어전에서만 유지됩니다 · 실버 {st.silver}</p>
         <div className="mb-3 grid grid-cols-3 gap-2">
           {st.cards.map((c, i) => {
@@ -651,9 +669,9 @@ export function GateHud() {
   const barColor = pct > 50 ? "#7dffa8" : pct > 25 ? "#ffd76a" : "#e84a5a";
   return (
     <div className="pointer-events-none absolute left-1/2 top-1 z-40 w-[min(92vw,340px)] -translate-x-1/2 sm:top-2">
-      <div className="rounded-lg border border-purple-300/40 bg-black/60 px-2.5 py-1.5 backdrop-blur-sm">
+      <div className="game-chip rounded-lg px-2.5 py-1.5">
         <div className="flex items-center justify-between text-[10px] font-black">
-          <span className="text-purple-200">🚪 균열 문 {st.bossWave ? "· 보스 웨이브!" : ""}</span>
+          <span className="text-[#d0b0ff]">🚪 균열 문 {st.bossWave ? "· 보스 웨이브!" : ""}</span>
           <span className="text-white/70">웨이브 {st.wave} · 실버 {st.silver}</span>
         </div>
         <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-white/10">

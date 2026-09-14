@@ -161,7 +161,7 @@ export function AuthPanel() {
         /* v1.0.8 — 모바일 가화면(세로 360px급)에서 로그인 버튼이 하단에 잘리는 문제 수정:
          *  패널을 컴팩트하게 줄이고 + max-height 초과 시 내부 스크롤 허용 */
         <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/60 px-3 py-3" onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
-          <div className="sertz-scroll w-full max-w-[340px] max-h-[calc(100dvh-24px)] overflow-y-auto rounded-2xl border-2 border-sky-200/50 bg-slate-950/95 p-4 shadow-2xl">
+          <div className="sertz-scroll game-panel w-full max-w-[340px] max-h-[calc(100dvh-24px)] overflow-y-auto p-4">
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <KeyRound size={16} className="text-sky-300" />

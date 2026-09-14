@@ -125,10 +125,10 @@ export function HUD({
   };
   return (
     <>
-      {/* 좌상단: 상태 */}
+      {/* 좌상단: 상태 — v1.0.20 게임형 LV 플레이트 */}
       <div className="pointer-events-none absolute left-[max(0.5rem,env(safe-area-inset-left))] top-[max(0.5rem,env(safe-area-inset-top))] flex items-start gap-2 sm:left-3 sm:top-3">
-        <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-amber-300/90 bg-gradient-to-b from-slate-800 to-slate-900 shadow-lg sm:h-12 sm:w-12">
-          <span className="text-[8px] font-bold leading-none text-amber-200">LV</span>
+        <div className="game-chip flex h-10 w-10 shrink-0 flex-col items-center justify-center sm:h-12 sm:w-12">
+          <span className="text-[8px] font-bold leading-none text-[#cbb88a]">LV</span>
           <span className="text-base font-black leading-none text-white [text-shadow:0_1px_2px_#000] sm:text-lg">
             {hud.lv}
           </span>
@@ -139,8 +139,8 @@ export function HUD({
             const d = classDef(hud.cls);
             return d ? (
               <span
-                className="w-fit rounded-md border px-1.5 py-0.5 text-[10px] font-black backdrop-blur-sm"
-                style={{ color: d.color, borderColor: `${d.color}55`, background: "rgba(0,0,0,0.55)" }}
+                className="game-chip w-fit px-1.5 py-0.5 text-[10px] font-black"
+                style={{ color: d.color }}
               >
                 {classLabel(hud.cls)}
               </span>
@@ -163,20 +163,20 @@ export function HUD({
             ))}
           </div>
         )}
-        {/* 골드 + 공격/방어 (2D MMORPG 기본 요소) */}
+          {/* 골드 + 공격/방어 (2D MMORPG 기본 요소) — v1.0.20 게임형 칩 */}
           <div className="mt-0.5 flex items-center gap-1">
-            <span className="flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-amber-300 backdrop-blur-sm">
+            <span className="game-chip flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-black text-[#ffd98a]">
               { }
               <img src="/assets/item_coin.webp" alt="" className="h-3.5 w-3.5" style={{ imageRendering: "pixelated" }} />
               {hud.gold}
             </span>
-            <span className="rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-rose-300 backdrop-blur-sm">
+            <span className="game-chip px-1.5 py-0.5 text-[11px] font-black text-[#ffb0b0]">
               공격 {hud.atkTotal}
             </span>
-            <span className="rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-sky-300 backdrop-blur-sm">
+            <span className="game-chip px-1.5 py-0.5 text-[11px] font-black text-[#a8e0ff]">
               방어 {hud.defTotal}
             </span>
-            <span className="rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-black text-yellow-200 backdrop-blur-sm">
+            <span className="game-chip px-1.5 py-0.5 text-[11px] font-black text-[#ffe49a]">
               크리 {hud.critRate}%
             </span>
           </div>
@@ -185,16 +185,16 @@ export function HUD({
 
       {/* 우상단: 사운드/가방 + 퀘스트 */}
       <div className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-3 sm:top-3">
-        <div className="flex items-center gap-1.5">
-          {/* v2.5 — 자동사냥 토글 (펫 보유 시만 표시) */}
+        <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
+          {/* v2.5 — 자동사냥 토글 (펫 보유 시만 표시) · v1.0.20 flex-wrap: 375px 세로에서 버튼행 넘침 방지 */}
           {canAutoHunt && (
             <button
               onClick={() => EventBus.emit("rpg:autohunt", {})}
               aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
-              className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-sm transition-colors active:scale-95 ${
+              className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
                 autoHunt
-                  ? "animate-pulse border-lime-300/80 bg-gradient-to-b from-lime-600/90 to-emerald-800/90 text-lime-100"
-                  : "border-white/20 bg-black/55 text-white/80 hover:bg-black/75"
+                  ? "animate-pulse rounded-lg border-2 border-lime-300/80 bg-gradient-to-b from-lime-600/90 to-emerald-800/90 text-lime-100"
+                  : "game-chip text-white/80"
               }`}
             >
               <Bot size={17} />
@@ -204,14 +204,14 @@ export function HUD({
           <button
             onClick={onToggleMute}
             aria-label={muted ? "소리 켜기" : "소리 끄기"}
-            className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-black/55 text-white/90 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            className="game-chip pointer-events-auto flex h-9 w-9 items-center justify-center text-white/90 active:scale-95"
           >
             {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
           </button>
           <button
             onClick={onOpenInv}
             aria-label={`가방 열기 (${km.bag})`}
-            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-sky-200/40 bg-black/55 text-sky-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8e0ff] active:scale-95"
           >
             <Backpack size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">{km.bag}</span>
@@ -220,10 +220,10 @@ export function HUD({
             <button
               onClick={onOpenJob}
               aria-label={`전직 열기 (${km.job})`}
-              className={`pointer-events-auto relative flex h-9 items-center justify-center rounded-lg border backdrop-blur-sm transition-transform active:scale-95 ${
+              className={`pointer-events-auto relative flex h-9 items-center justify-center transition-transform active:scale-95 ${
                 canJob
-                  ? "animate-pulse border-amber-300/70 bg-gradient-to-b from-amber-500/80 to-amber-700/80 text-amber-100 hover:from-amber-400/90"
-                  : "border-white/20 bg-black/55 text-white/70 hover:bg-black/75"
+                  ? "game-btn w-9"
+                  : "game-chip w-9 text-white/70"
               }`}
             >
               <Sparkles size={17} />
@@ -234,10 +234,10 @@ export function HUD({
           <button
             onClick={onOpenStat}
             aria-label={`스탯 창 열기 (${km.stat})`}
-            className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-sm transition-colors active:scale-95 ${
+            className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
               hud.ap > 0
-                ? "animate-pulse border-lime-300/70 bg-gradient-to-b from-lime-500/80 to-emerald-700/80 text-lime-100"
-                : "border-white/20 bg-black/55 text-white/70 hover:bg-black/75"
+                ? "animate-pulse rounded-lg border-2 border-lime-300/70 bg-gradient-to-b from-lime-500/80 to-emerald-700/80 text-lime-100"
+                : "game-chip text-white/70"
             }`}
           >
             <Gauge size={17} />
@@ -246,7 +246,7 @@ export function HUD({
           <button
             onClick={onOpenQuest}
             aria-label={`퀘스트 로그 열기 (${km.quest})`}
-            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-black/55 text-white/70 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
           >
             <ListChecks size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.quest}</span>
@@ -255,7 +255,7 @@ export function HUD({
           <button
             onClick={onOpenBoss}
             aria-label="보스 재도전 창 열기"
-            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-rose-300/40 bg-black/55 text-rose-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffb0b0] active:scale-95"
           >
             <Crown size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-rose-300/80">보스</span>
@@ -264,7 +264,7 @@ export function HUD({
           <button
             onClick={onOpenBenefit}
             aria-label="혜택 열기 (출석부/일일 퀘스트/쿠폰)"
-            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-300/40 bg-black/55 text-emerald-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#b8f0a0] active:scale-95"
           >
             <Gift size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/80">혜택</span>
@@ -273,7 +273,7 @@ export function HUD({
           <button
             onClick={onOpenContent}
             aria-label="콘텐츠 열기 (심연의 탑/일일 시련/제작/심연 상점/환생)"
-            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-purple-300/40 bg-black/55 text-purple-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d0b0ff] active:scale-95"
           >
             <Swords size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-purple-300/80">콘텐츠</span>
@@ -282,7 +282,7 @@ export function HUD({
           <button
             onClick={onOpenUnion}
             aria-label="유니온 열기 (캐릭터 배치/상점/레이드)"
-            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-300/40 bg-black/55 text-indigo-200 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
           >
             <Users size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-indigo-300/90">유니온</span>
@@ -290,14 +290,14 @@ export function HUD({
           <button
             onClick={onOpenOpt}
             aria-label={`설정/키 매핑 열기 (${km.opt})`}
-            className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-black/55 text-white/70 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
           >
             <Settings size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.opt}</span>
           </button>
         </div>
         {/* v3.0.23 (#56) — 퀘스트 알림을 더 아래로: 모바일 간격 mt-8→mt-20 (상단 버튼행·보스바와 겹침 방지), PC는 mt-1 유지 */}
-        <div className="pointer-events-auto mt-20 w-full rounded-lg border border-amber-200/40 bg-black/55 px-2.5 py-1.5 backdrop-blur-sm sm:mt-1 sm:px-3 sm:py-2">
+        <div className="game-panel pointer-events-auto mt-20 w-full px-2.5 py-1.5 sm:mt-1 sm:px-3 sm:py-2">
           {/* v3.0.4 (지시 #5) — 모바일에서 퀘스트창 키고끄기: 헤더 전체가 토글 버튼 (터치 영역 확대) */}
           <div
             role="button"

@@ -203,15 +203,17 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-[2px]" onPointerDown={onClose}>
+      {/* v1.0.20 — 유니온 UI 모바일 짤림 수정: [min(...) 가 in( 로 변조되어 너비/높이 제한이
+       *  아예 적용되지 않았다(모바일에서 패널이 화면을 넘어 잘림). 제한 복원 + 게임형 프레임 적용 */}
       <div
-        className="sertz-panel sertz-scroll max-h-in(94svh,700px)] w-in(96vw,720px)] overflow-y-auto rounded-xl border-2 border-indigo-300/50 bg-slate-950/95 p-3 shadow-2xl sm:p-4"
+        className="game-panel sertz-scroll max-h-[min(94svh,700px)] w-[min(96vw,720px)] overflow-y-auto p-3 sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
         <div className="mb-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Users size={18} className="text-indigo-300" />
-            <p className="text-sm font-black text-indigo-100">유니온</p>
+            <Users size={18} className="text-amber-300" />
+            <p className="text-sm font-black text-amber-100">유니온</p>
             <span className="rounded-md border px-2 py-0.5 text-[10px] font-black" style={gradeStyle(grade.color)}>
               {grade.name} {idx > 0 ? `★${idx}` : ""}
             </span>
@@ -228,11 +230,11 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
         {/* 등급 진행 바 */}
         <div className="mb-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
           <div className="flex items-center justify-between text-[10px] font-bold text-white/60">
-            <span>유니온 레벨 <b className="text-indigo-200">{unionLv.toLocaleString()}</b> <span className="text-white/40">(캐릭터 레벨 합산 — 60까지 100%·초과분 10레벨당 1)</span></span>
+            <span>유니온 레벨 <b className="text-amber-200">{unionLv.toLocaleString()}</b> <span className="text-white/40">(캐릭터 레벨 합산 — 60까지 100%·초과분 10레벨당 1)</span></span>
             <span>{next ? `다음 등급 ${next.name} — ${nextNeed.toLocaleString()}` : "최고 등급 달성!"}</span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-black/60">
-            <div className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-violet-400" style={{ width: `${next ? Math.min(100, (unionLv / nextNeed) * 100) : 100}%` }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-amber-300 to-yellow-500" style={{ width: `${next ? Math.min(100, (unionLv / nextNeed) * 100) : 100}%` }} />
           </div>
           <div className="mt-1.5 flex flex-wrap gap-1">
             {eff.lines.map((l) => (
@@ -259,7 +261,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`flex items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${tab === id ? "bg-indigo-400 text-slate-900" : "border border-white/10 bg-white/[0.04] text-white/55"}`}
+              className={`flex items-center justify-center gap-1 px-1 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${tab === id ? "game-tab-on" : "game-tab"}`}
             >
               {icon}
               {label}
@@ -274,7 +276,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
               <p className="text-[10px] font-bold text-white/50">블록을 드래그해 배치 · 클릭해 해제 · <RotateCw size={9} className="inline" /> 회전</p>
               <button
                 onClick={() => { autoArrange(loadUnion(), loadSlots()); refresh(); }}
-                className="flex items-center gap-1 rounded-lg border border-indigo-300/50 bg-indigo-400/15 px-2 py-1 text-[10px] font-black text-indigo-200 transition-transform active:scale-95"
+                className="game-btn-ghost flex items-center gap-1 px-2 py-1 text-[10px] font-black text-amber-200 active:scale-95"
               >
                 <Sparkles size={11} />
                 자동 추천 배치

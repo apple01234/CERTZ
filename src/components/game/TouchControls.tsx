@@ -410,7 +410,7 @@ function SkillButton({
         ready
           ? ult
             ? "border-amber-100/90 bg-gradient-to-b from-amber-300 via-amber-500 to-orange-700 shadow-[0_0_14px_rgba(255,190,60,0.65)]"
-            : "border-sky-200/70 bg-gradient-to-b from-sky-500 to-blue-800"
+            : "border-[#e8c064]/80 bg-gradient-to-b from-[#2c3f6e] to-[#101827] shadow-[inset_0_1px_0_rgba(232,192,100,0.35),0_3px_0_rgba(0,0,0,0.45)]"
           : "border-white/20 bg-slate-700/70 opacity-60"
       }`}
       onPointerDown={(e) => {
@@ -431,7 +431,7 @@ function SkillButton({
         children
       )}
       <span className={`max-w-[42px] truncate text-[7px] font-bold leading-tight sm:max-w-none sm:text-[8px] ${ult ? "text-amber-100" : ""}`}>{label}</span>
-      <span className={`text-[7px] font-bold sm:text-[8px] ${ult ? "text-amber-200" : "text-sky-200"}`}>{mp}MP</span>
+      <span className={`text-[7px] font-bold sm:text-[8px] ${ult ? "text-amber-200" : "text-[#a8c0ff]"}`}>{mp}MP</span>
       {cdPct > 0 && (
         <div
           className="pointer-events-none absolute inset-0 bg-black/60"
