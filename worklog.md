@@ -1715,3 +1715,26 @@ Work Log:
 Stage Summary:
 - v1.0.18 배포 상태 100% 건전 확인 — 유저 6건(환생·로비·유니온·반응형·셰이더/보스·몬스터 파크) 전부 반영·배포 완료 상태
 - 본 회차는 검증만 수행, 코드 수정 0건
+
+---
+Task ID: 83
+Agent: Super Z (메인)
+Task: 유저 지시서 6건 — A-1 메인 스크롤·A-2 반응형·A-4 중복 UI 제거·A-3 신규 스테이지 15종·B-1 캐릭터 선택창·B-2 유니온 개편 — v1.0.19 확정·릴리스 (versionCode 84)
+
+Work Log:
+- [A-1 스크롤] 원인: 로비 루트가 absolute inset-0 고정 + 내부 그리드만 개별 스크롤(모바일에서 정보 패널이 밀려나 접근 불가). 수정: Lobby·TitleScreen 루트를 sertz-scroll overflow-y-auto 컨테이너로 전환 + min-h-full flex(짧으면 중앙정렬 유지) · 타이틀 크레딧 absolute→flow(mt-auto) 전환(스크롤 컨테이너에서 첫 화면 하단 고정되던 문제) · 게임 캔버스(game-root fixed)와 분리 — 인게임 중 페이지 스크롤 없음
+- [A-2 반응형] RotatePrompt에 "세로 화면으로 계속하기" 해제 버튼 신설(pointer-events-auto 누락 버그도 픽스) — 375×812 세로 플레이 허용(회전 시 유도 재표시) · viewport 메타 확인(기존 정상) · E2E 실측: 375×812에서 타이틀/로비/생성/인게임/퀘스트창 전부 레이아웃 깨짐 없음 + 가로 스크롤 0
+- [A-4 중복 UI] MobileNavBar 컴포넌트+렌더+아이콘 임포트 전량 제거 — 인게임 하단에 로비와 동일한 버튼 줄이 또 뜨던 유저 보고 해소 · 화면 상태 분리 주석 정리(title+lobbyOpen=로비 / playing=인게임 / end=결과)
+- [A-3 신규 15종] "해석 정정" — 기존 90구역 전부 무변경 유지, 그 뒤에 "재림의 땅" 15구역 추가: REBIRTH_STAGES 상수 1곳에서 관리(stages.ts 하단 독립 블록) · r1~r15 순차 체인(abyss10 전진 포탈만 r1로 연장 — 기존 난이도/보상/동작 0 변경) · 구역마다 고유 테마(색감/지형 타일 15세트)·고유 몬스터 구성·고유 보상(퀘스트 골드/경험치 15세트 전부 상이) · 보스 3종 신설(vord 베오르드/jorm 요르문간드/nagr 나그라파르 — r5/r10/r15, 기존 텍스처 재활용+신규 색조/패턴) · 정예 3곳(r3/r9/r13) · scaleMul 필드 신설(stageScale 오버라이드 — 기존 챕터 곡선 무변경, 재림은 hp 18→56 순차 상승) · 재림 전용 인트로 대사 4종(data.ts) · WarpPanel에 "재림의 땅" 그룹 추가 · tsx 데이터 검증 16/16 PASS(테마/몬스터/보상 고유성 15/15)
+- [B-1 캐릭터 선택창] 생성 플로우 3단계 개편: ①이름 → ②직업 → ③외형(색조 팔레트 8종) · CharAvatar 캔버스 미리보기(hero_idle0 실제 스프라이트를 tint multiply 합성 — 미리보기=실제 외형) · 슬롯 카드에 외형 미리보기 표시 · 카드 더블클릭 입장(모바일: 탭 후 시작 버튼) · lookTint SaveData/CharMeta 저장+WorldScene 로드/세이브(2곳)+Player.setLookTint 적용(상태이상 틴트 종료 후 look 복원 경유)
+- [B-2 유니온 개편] unionLevelOf 공식 교체: min(lv,60)+floor(max(0,lv-60)/10) — 60 미만도 기여(예: Lv75→61) · 등급 11단계 임계값 재조정(500~6000 → 60~1250: 새 공식 최대 ~1264 스케일) · 배치 등급 B/A/S/SS 신설(60~99/100~149/150~199/200+, 배율 ×1.0/1.6/2.4/3.2) · FAMILY_EFFECTS 상수표(전사=방어+6/HP+120 · 궁수=공격%+1.6 · 마법사=마력%+1.4 · 도적=크리+0.9/크리뎀+2.5 · 해적=예비행) — 배치 인원×등급 배율 합산, 상수 1곳 밸런스 조정 · ExtBonus.critDmg 추가+Player.critDmg getter 반영+syncExtBonus 병합(실전 스탯 반영) · UnionPanel 등급 배지/합산 크리뎀 표시 + FamilyKey 5계열 확장(해적 폴리오미노 추가로 tsc 정합)
+- [E2E 29/29 PASS] e2e_v1019.js: ①375×812(모바일 세로): 가로 스크롤 0·회전 유도 표시/해제·타이틀·로비·3단계 생성(장미빛 색조)·인게임 진입·중복 하단바 0 ②1280×720: 배지 v1.0.19·로비 스크롤·시드 Lv75+Lv60 캐릭터 더블클릭 입장·유니온 패널(합산 121=61+60·B등급 ×1 배지·효과 총람 방어+6·HP+120·블록 클릭 해제 시 즉시 갱신) — pageerror/콘솔 에러 0
+- [빌드] tsc 0에러 · 웹빌드 3회(RotatePrompt pointer-events 수정 반영) · JDK 소실 재발 → rebuild_toolchain.sh(Temurin21+SDK35/36) 재구축 · gradle BUILD SUCCESSFUL 5m45s(포그라운드 600s — worklog 교훈 적용) → SERTZ-v1.0.19.apk 106,107,034B · aapt 84/1.0.19 · md5 5bd1e559ebec01aeaaab48d93eb39ba6 · APK 내부 검출(재림의 땅 4건·세로 화면으로 계속하기 2건·lookTint 4건·등급 ×·60까지 100%·rebirthWalk·요르문간드)
+- [릴리스] scripts/release_v1019.py 신설(기존 패턴 + apk-guide 서빙 md5 자동 검증 추가 — 3회차 guide md5 잔존 사고 방지) · md5 사전 기입 후 릴리스(올바른 순서) · Release v1.0.19(id 388135167) 생성·업로드(asset 562497857) → 원격 재다운로드 md5 일치 ✓ · guide 서빙 새 md5 확인 ✓ · 서버 재기동 /api/version 200(1.0.19/84/새 note) ✓ · Release 직접 다운로드 HTTP 200 ✓ · 커밋 17cd6a2 push 완료(HEAD=origin/main)
+- [버전체인 8곳] package.json·build.gradle(versionCode 84·versionName 1.0.19)·server.js(APK_MIRROR+LATEST_VERSION+LATEST_CODE+VERSION_NOTE)·Overlays.tsx 배지(v1.0.19)·apk-guide.html(제목·sub·노티스·링크·md5·히스토리)·안내.txt(신규 블록+md5)
+
+Stage Summary:
+- v1.0.19 배포: https://github.com/apple01234/CERTZ/releases/download/v1.0.19/SERTZ-v1.0.19.apk (versionCode 84, 106,107,034B, md5 5bd1e559…)
+- 지시서 6건 전부 완료: A-1 스크롤(휠/드래그 실측)·A-2 반응형(375×812 전 화면 실측)·A-4 중복 UI 제거·A-3 신규 15종(기존 90구역 무변경+보스 3종+고유성 15/15)·B-1 3단계 생성(실측)·B-2 유니온 공식/등급/실전 반영(합산 121 실측)
+- 운영 교훈: ①Playwright로 Phaser HUD 버튼 클릭은 액션러너 안정성 체크에 걸린다 — document.querySelector().click() 네이티브 위임이 확실 ②세로 유도 오버레이에 버튼 추가 시 pointer-events-auto 필수(부모가 pointer-events-none 레이어) ③type 유니온 확장 시 Record 전체 키 보강 필요(pirate 폴리오미노 누락 → tsc가 잡아줌)
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
