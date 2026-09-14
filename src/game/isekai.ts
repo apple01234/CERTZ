@@ -240,6 +240,8 @@ export type ExtBonus = {
   crit: number;
   speedPct: number;
   goldPct: number;
+  /* v1.0.19 (B-2 유니온) — 크리티컬 데미지 +%p (도적 계열 배치 효과) */
+  critDmg?: number;
 };
 
 export const ZERO_EXT: ExtBonus = { atk: 0, atkPct: 0, def: 0, hp: 0, crit: 0, speedPct: 0, goldPct: 0 };
@@ -266,6 +268,7 @@ export function computeExtBonus(input: {
     crit: f.crit + b.crit + r.crit + c.crit + s.crit,
     speedPct: b.speedPct,
     goldPct: b.goldPct + s.goldPct,
+    critDmg: 0, // v1.0.19 — 유니온이 WorldScene syncExtBonus에서 병합
   };
 }
 

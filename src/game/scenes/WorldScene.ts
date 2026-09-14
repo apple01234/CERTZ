@@ -978,6 +978,9 @@ export class WorldScene extends Phaser.Scene {
       this.player.cosmetic = (savedPlayer.cosmetic && savedPlayer.cosmetic in COSMETIC_DEFS ? (savedPlayer.cosmetic as CosmeticKey) : null);
       /* v1.0.7 — 코스튬/헤어 슬롯 복원 (구 세이브는 undefined → null) */
       this.player.outfit = (savedPlayer.outfit && savedPlayer.outfit in COSMETIC_DEFS ? (savedPlayer.outfit as CosmeticKey) : null);
+      /* v1.0.19 (B-1 외형) — 로비에서 고른 색조 복원 */
+      this.player.lookTint = (savedPlayer as { lookTint?: number | null }).lookTint ?? null;
+      this.player.applyLookTint();
       this.player.hair = (savedPlayer.hair && savedPlayer.hair in COSMETIC_DEFS ? (savedPlayer.hair as CosmeticKey) : null);
       // 전직 스토리 복원 (v2.0 / v3.1.0 — fam 포함. 구 세이브는 cls 계열로 역산)
       if (savedPlayer.jobStory && typeof savedPlayer.jobStory.tier === "number") {
@@ -3691,6 +3694,7 @@ export class WorldScene extends Phaser.Scene {
       atkPct: base.atkPct + ib.atkPct + ue.atkPct + uv.atkPct,
       speedPct: base.speedPct + ue.speedPct,
       goldPct: base.goldPct + ib.goldPct + ue.goldPct + uv.goldPct,
+      critDmg: (base.critDmg ?? 0) + ue.critDmg, // v1.0.19 (B-2) — 유니온 도적 계열 크리뎀
     });
     /* v1.0.18 — 유니온 경험치 버프 훅 주입 */
     this.player.expBonusPct = () => activeBuffValues(loadUnion()).expPct;
@@ -10391,6 +10395,8 @@ export class WorldScene extends Phaser.Scene {
       /* v1.0.7 — 슬롯형 치장 (코스튬/헤어) */
       outfit: this.player.outfit,
       hair: this.player.hair,
+      /* v1.0.19 (B-1 외형) — 로비 생성 색조 */
+      lookTint: this.player.lookTint,
       stats: { ...this.player.stats },
       ap: this.player.ap,
       /* v2.5 — 자동사냥 상태 (v3.0.15 #5: 펫 조건 제거) */
@@ -10616,6 +10622,7 @@ export class WorldScene extends Phaser.Scene {
       cosmetic: this.player.cosmetic,
       outfit: this.player.outfit, // v1.0.7 — 코스튬 슬롯
       hair: this.player.hair, // v1.0.7 — 헤어 슬롯
+      lookTint: this.player.lookTint, // v1.0.19 (B-1) — 로비 생성 색조
       /* v2.0 — 전직 스토리 진행 */
       jobStory: this.jobStory ? { ...this.jobStory } : null,
       pendingJobClass: this.pendingJobClass, // v3.1.0 — 시련 중 선택한 1차 클래스

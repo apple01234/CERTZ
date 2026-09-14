@@ -9,12 +9,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Users, Coins, Zap, Gem, Swords, RotateCw, X, Sparkles, ShoppingBag, Timer, MousePointer2 } from "lucide-react";
 import {
   loadUnion, writeUnion, autoArrange, canPlace, occupancy, placedCells, shapeOfChar,
-  unionGradeOf, maxPlacedOf, UNION_COLS, UNION_ROWS, UNION_GRADES, familyOfChar,
+  unionGradeOf, maxPlacedOf, UNION_COLS, UNION_ROWS, UNION_GRADES, familyOfChar, placeGradeOf,
   unionEffects, unionDailyAndLevelup, buyUnionBuff, buySlotExpand, raidClear, raidDoneToday,
   raidPower, spendCoins, addCoins,
   ARTIFACTS, UNION_BUFFS, RAID_DIFFS, type Placement, type RaidDiff,
 } from "@/game/union";
-import { loadSlots, SLOT_EXPAND_COIN, type CharMeta } from "@/game/slots";
+import { loadSlots, unionLevelOf, SLOT_EXPAND_COIN, type CharMeta } from "@/game/slots";
 import { EventBus } from "./EventBus";
 
 const FAM_LABEL: Record<string, string> = { warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적" };
@@ -45,10 +45,8 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
   const slots = useMemo(() => loadSlots(), [tab, raid, hoverCell, dragId]); // eslint-disable-line react-hooks/exhaustive-deps
   const u = useMemo(() => loadUnion(), [tab, raid, hoverCell, dragId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const unionLv = useMemo(
-    () => Object.values(slots.chars).filter((c) => c.lv >= 60).reduce((a, c) => a + c.lv, 0),
-    [slots]
-  );
+  /* v1.0.19 (B-2) — 유니온 레벨 = 전체 캐릭터 기여 레벨 합산 (60까지 100% + 초과분 10레벨당 1) */
+  const unionLv = useMemo(() => unionLevelOf(slots), [slots]);
   const { idx, grade, next, nextNeed } = useMemo(() => unionGradeOf(unionLv), [unionLv]);
   const cap = maxPlacedOf(idx);
   const roster = useMemo(
@@ -230,7 +228,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
         {/* 등급 진행 바 */}
         <div className="mb-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
           <div className="flex items-center justify-between text-[10px] font-bold text-white/60">
-            <span>유니온 레벨 <b className="text-indigo-200">{unionLv.toLocaleString()}</b> (Lv60 이상 캐릭터 합산)</span>
+            <span>유니온 레벨 <b className="text-indigo-200">{unionLv.toLocaleString()}</b> <span className="text-white/40">(캐릭터 레벨 합산 — 60까지 100%·초과분 10레벨당 1)</span></span>
             <span>{next ? `다음 등급 ${next.name} — ${nextNeed.toLocaleString()}` : "최고 등급 달성!"}</span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-black/60">
@@ -243,7 +241,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
               </span>
             ))}
             <span className="rounded border border-white/10 bg-black/40 px-1.5 py-0.5 text-[9px] font-bold text-amber-200">
-              합계 — 공격 +{eff.atk.toFixed(0)} · HP +{eff.hp.toFixed(0)} · 방어 +{eff.def.toFixed(0)} · 크리 +{eff.crit.toFixed(1)}%p · 공격력 +{eff.atkPct.toFixed(1)}% · 골드 +{eff.goldPct.toFixed(1)}% · 이동 +{eff.speedPct.toFixed(1)}%
+              합계 — 공격 +{eff.atk.toFixed(0)} · HP +{eff.hp.toFixed(0)} · 방어 +{eff.def.toFixed(0)} · 크리 +{eff.crit.toFixed(1)}%p · 크리뎀 +{eff.critDmg.toFixed(1)}%p · 공격력 +{eff.atkPct.toFixed(1)}% · 골드 +{eff.goldPct.toFixed(1)}% · 이동 +{eff.speedPct.toFixed(1)}%
             </span>
           </div>
           <p className="mt-1 text-[9px] font-bold text-white/35">유니온 효과는 계정의 모든 캐릭터에 즉시 적용된다 · 배치 인원 {placedCount}/{cap} · 등급업 시 그리드 인원 +1</p>
@@ -340,6 +338,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
             <div className="grid max-h-28 grid-cols-4 gap-1 overflow-y-auto sm:grid-cols-6">
               {unplaced.map((m) => {
                 const fam = familyOfChar(m) ?? "warrior";
+                const pg = placeGradeOf(m.lv);
                 return (
                   <button
                     key={m.id}
@@ -349,6 +348,8 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                   >
                     <p className="truncate text-[9px] font-black" style={{ color: FAM_COLOR[fam] }}>{m.name}</p>
                     <p className="text-[8px] font-bold text-white/45">Lv{m.lv} · {FAM_LABEL[fam]}</p>
+                    {/* v1.0.19 (B-2) — 배치 등급 배지 (레벨 구간 → B/A/S/SS, 등급 배율만큼 효과 증폭) */}
+                    {pg && <p className="text-[8px] font-black" style={{ color: pg.color }}>{pg.grade}등급 ×{pg.mult}</p>}
                   </button>
                 );
               })}

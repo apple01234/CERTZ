@@ -28,6 +28,8 @@ export type CharMeta = {
   lastSeen: number;
   createdAt: number;
   rebirths: number;
+  /* v1.0.19 (B-1 외형) — 로비에서 고른 색조 (스프라이트 틴트 — 슬롯 카드 미리보기용) */
+  lookTint?: number | null;
 };
 
 export type SlotsStore = {
@@ -118,9 +120,10 @@ export function clearActiveChar() {
 
 export type CreateResult = { ok: true; id: string; save: SaveData } | { ok: false; reason: string };
 
-/** 새 캐릭터 생성 — 이름·시작 클래스를 받아 스텁 세이브를 즉시 기록하고 로비로 복귀한다.
- *  스텁 세이브는 game:continue로 월드에 전달되어 인트로 없이 바로 플레이 시작. */
-export function createCharacter(name: string, cls: string | null): CreateResult {
+/** 새 캐릭터 생성 — 이름·시작 클래스·외형을 받아 스텁 세이브를 즉시 기록하고 로비로 복귀한다.
+ *  스텁 세이브는 game:continue로 월드에 전달되어 인트로 없이 바로 플레이 시작.
+ *  v1.0.19 (B-1) — 외형(색조 lookTint) 파라미터 추가 */
+export function createCharacter(name: string, cls: string | null, lookTint?: number | null): CreateResult {
   const store = loadSlots();
   const used = Object.keys(store.chars).length;
   if (used >= store.slots) return { ok: false, reason: `캐릭터 슬롯이 부족해요 (${used}/${store.slots})` };
@@ -130,6 +133,7 @@ export function createCharacter(name: string, cls: string | null): CreateResult 
   if (dup) return { ok: false, reason: "이미 사용 중인 이름이에요" };
   const id = `c${Date.now().toString(36)}${Math.floor(Math.random() * 36).toString(36)}`;
   const now = Date.now();
+  const tint = lookTint ?? null;
   const stub: SaveData = {
     stage: "village",
     lv: 1,
@@ -142,13 +146,14 @@ export function createCharacter(name: string, cls: string | null): CreateResult 
     cls: cls,
     startCls: cls,
     gold: 30,
+    lookTint: tint,
   } as SaveData;
   try {
     window.localStorage.setItem(`sertz_char_${id}`, JSON.stringify(stub));
   } catch {
     return { ok: false, reason: "저장 공간에 기록할 수 없어요" };
   }
-  store.chars[id] = { id, name: trimmed, cls, lv: 1, stage: "village", cleared: false, lastSeen: now, createdAt: now, rebirths: 0 };
+  store.chars[id] = { id, name: trimmed, cls, lv: 1, stage: "village", cleared: false, lastSeen: now, createdAt: now, rebirths: 0, lookTint: tint };
   writeSlots(store);
   return { ok: true, id, save: stub };
 }
@@ -214,15 +219,26 @@ export function syncCharMeta(save: SaveData) {
     meta.rebirths = save.inf?.rebirths ?? meta.rebirths;
     const sc = (save as { startCls?: string | null }).startCls ?? save.cls ?? null;
     if (sc) meta.cls = sc;
+    /* v1.0.19 (B-1) — 외형 색조 동기화 (세이브에 기록된 값 우선) */
+    const lt = (save as { lookTint?: number | null }).lookTint;
+    if (lt !== undefined) meta.lookTint = lt;
   }
   writeSlots(store);
 }
 
-/** 유니온 지표 — 레벨 60 이상 캐릭터의 레벨 합산 (유니온 레벨) */
+/** v1.0.19 (B-2) — 유니온 기여 레벨 (메이플 실제 규칙 준용):
+ *  60레벨까지는 100% 반영, 60레벨 초과분은 10레벨당 1레벨씩 추가 반영.
+ *  예: Lv 75 → 60 + 1 = 61 기여 / Lv 250 → 60 + 19 = 79 기여 */
+export function charUnionContribution(lv: number): number {
+  if (lv <= 0) return 0;
+  return Math.min(lv, 60) + Math.floor(Math.max(0, lv - 60) / 10);
+}
+
+/** 유니온 지표 — 보유한 전체 캐릭터의 기여 레벨 합산 (v1.0.19 B-2 공식).
+ *  구버전(v1.0.18)은 "Lv60 이상 캐릭터의 레벨 합산"이었으나 지시서 규칙으로 교체 —
+ *  이제 60 미만 캐릭터도 레벨 그대로 기여한다 (60까지 100% 반영 규칙). */
 export function unionLevelOf(store: SlotsStore): number {
-  return Object.values(store.chars)
-    .filter((c) => c.lv >= 60)
-    .reduce((a, c) => a + c.lv, 0);
+  return Object.values(store.chars).reduce((a, c) => a + charUnionContribution(c.lv), 0);
 }
 
 /* 세이브 기록마다 캐릭터 메타 자동 동기화 (WorldScene save() → writeSave 훅) */

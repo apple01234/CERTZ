@@ -109,6 +109,8 @@ export type SaveData = {
   /* v1.0.7 — 슬롯형 치장 (코스튬/헤어 — 구 세이브는 undefined) */
   outfit?: string | null;
   hair?: string | null;
+  /* v1.0.19 (B-1 외형) — 로비 생성 시 고른 색조 (스프라이트 틴트, null=기본) */
+  lookTint?: number | null;
   /* ↓ 친구 시스템 (v2.1 — 구 세이브 호환: 로드 시 자동 발급/기본값) */
   fcode?: string;
   friends?: { code: string; name: string }[];

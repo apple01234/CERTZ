@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { createGame } from "@/game/PhaserGame";
 import type Phaser from "phaser";
 import { HUD } from "./HUD";
-import { Backpack, Gauge, Settings, Swords, Users } from "lucide-react"; // v1.0.18 — 모바일 하단바 아이콘
 import { EventBus } from "./EventBus"; // v1.0.18 — 로비 개폐 이벤트
 import { TouchControls } from "./TouchControls";
 import { DialogueBox } from "./DialogueBox";
@@ -39,6 +38,13 @@ export default function GameRoot() {
   // 클라이언트 전용 컴포넌트(ssr:false)라 localStorage 지연 초기화 안전 — 음소거 설정 복원
   const [muted, setMuted] = useState(() => loadMuted());
   const [portraitMobile, setPortraitMobile] = useState(false);
+  /* v1.0.19 (A-2 반응형) — 가로 유도 프롬프트를 유저가 닫으면 세로로도 플레이 허용.
+   *  기존엔 세로 모바일을 강제로 가렸지만(Scale.FIT이라 실제로는 플레이 가능) AC "375×812에서
+   *  인게임 화면 표시"를 충족하려면 닫기 가능해야 한다. 회전하면 해제 상태 리셋. */
+  const [rotateDismissed, setRotateDismissed] = useState(false);
+  useEffect(() => {
+    setRotateDismissed(false); // 회전/크기 변화 시 다시 유도
+  }, [portraitMobile]);
 
   // 부팅 시 저장된 음소거/볼륨을 오디오 시스템에 적용 (v3.1.0 — BGM/SFX 개별 볼륨 복원)
   useEffect(() => {
@@ -210,52 +216,11 @@ export default function GameRoot() {
         {/* v1.0.18 — 유니온 패널 (GamePanels 밖 — 스토어 직접 참조라 rpg 상태 불요) */}
         {panel === "union" && <UnionPanel onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />}
 
-        <RotatePrompt active={portraitMobile} />
+        {/* v1.0.19 (A-2) — 가로 유지 프롬프트: 닫기 가능 (세로 플레이 허용) */}
+        <RotatePrompt active={portraitMobile && !rotateDismissed} onDismiss={() => setRotateDismissed(true)} />
 
-        {/* v1.0.18 — 모바일 하단 네비게이션 바 (터치 기기 · 패널 닫힘 시만) */}
-        {state === "playing" && !panel && (
-          <MobileNavBar
-            onInv={() => togglePanelSfx("inv")}
-            onStat={() => togglePanelSfx("stat")}
-            onUnion={() => togglePanelSfx("union")}
-            onContent={() => togglePanelSfx("content")}
-            onOpt={() => togglePanelSfx("opt")}
-          />
-        )}
       </div>
     </div>
   );
 }
 
-/** v1.0.18 — 모바일 하단 네비게이션 (메이플식 하단 메뉴 — 터치 기기에서만 표시) */
-function MobileNavBar({ onInv, onStat, onUnion, onContent, onOpt }: { onInv: () => void; onStat: () => void; onUnion: () => void; onContent: () => void; onOpt: () => void }) {
-  const [touch, setTouch] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(pointer: coarse)");
-    const apply = () => setTouch(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-  if (!touch) return null;
-  const items: { label: string; icon: React.ReactNode; act: () => void; cls: string }[] = [
-    { label: "가방", icon: <Backpack size={16} />, act: onInv, cls: "text-sky-200" },
-    { label: "스탯", icon: <Gauge size={16} />, act: onStat, cls: "text-lime-200" },
-    { label: "유니온", icon: <Users size={16} />, act: onUnion, cls: "text-indigo-200" },
-    { label: "콘텐츠", icon: <Swords size={16} />, act: onContent, cls: "text-purple-200" },
-    { label: "설정", icon: <Settings size={16} />, act: onOpt, cls: "text-white/70" },
-  ];
-  return (
-    <nav
-      aria-label="모바일 메인 메뉴"
-      className="pointer-events-auto absolute inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-white/15 bg-black/70 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur-sm"
-    >
-      {items.map((it) => (
-        <button key={it.label} onClick={it.act} aria-label={`${it.label} 열기`} className={`flex min-w-12 flex-col items-center gap-0.5 px-2 py-1 active:scale-90 ${it.cls}`}>
-          {it.icon}
-          <span className="text-[8px] font-black">{it.label}</span>
-        </button>
-      ))}
-    </nav>
-  );
-}

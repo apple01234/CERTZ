@@ -13,26 +13,28 @@
  *  저장: sertz_union_v1 (계정 공유 — 캐릭터 세이브와 분리)
  */
 import type { SlotsStore, CharMeta } from "./slots";
-import { loadSlots, expandSlots } from "./slots";
+import { loadSlots, expandSlots, unionLevelOf, charUnionContribution } from "./slots";
 
 export const UNION_KEY = "sertz_union_v1";
 
 /* ================= 등급 테이블 ================= */
 
 export type UnionGrade = { name: string; need: number; color: string };
-/** 브론즈 → 별 11단계 (need = 유니온 레벨 합산 컷) */
+/** 브론즈 → 별 11단계 (need = 유니온 레벨 합산 컷)
+ *  v1.0.19 (B-2) — 유니온 레벨 공식이 "60까지 100% + 초과분 10레벨당 1"로 바뀌어
+ *  1인당 최대 기여 79(·Lv250), 16슬롯 최대 합산 ~1264 → 임계값을 새 스케일에 맞춰 재조정 */
 export const UNION_GRADES: UnionGrade[] = [
   { name: "브론즈", need: 0, color: "#c98f5a" },
-  { name: "실버", need: 500, color: "#cfd8e3" },
-  { name: "골드", need: 1000, color: "#ffd76a" },
-  { name: "플래티넘", need: 1500, color: "#8fe8d8" },
-  { name: "마스터", need: 2000, color: "#a8ecff" },
-  { name: "그랜드마스터", need: 2500, color: "#c08aff" },
-  { name: "가디언", need: 3000, color: "#7aa8ff" },
-  { name: "슈프림", need: 3500, color: "#ff9d6a" },
-  { name: "스카이", need: 4000, color: "#9fe8ff" },
-  { name: "문", need: 4500, color: "#e8e8ff" },
-  { name: "별", need: 6000, color: "#fff3a8" },
+  { name: "실버", need: 60, color: "#cfd8e3" },
+  { name: "골드", need: 140, color: "#ffd76a" },
+  { name: "플래티넘", need: 240, color: "#8fe8d8" },
+  { name: "마스터", need: 360, color: "#a8ecff" },
+  { name: "그랜드마스터", need: 500, color: "#c08aff" },
+  { name: "가디언", need: 650, color: "#7aa8ff" },
+  { name: "슈프림", need: 800, color: "#ff9d6a" },
+  { name: "스카이", need: 950, color: "#9fe8ff" },
+  { name: "문", need: 1100, color: "#e8e8ff" },
+  { name: "별", need: 1250, color: "#fff3a8" },
 ];
 
 export function unionGradeOf(level: number): { idx: number; grade: UnionGrade; next: UnionGrade | null; nextNeed: number } {
@@ -55,9 +57,8 @@ export function maxPlacedOf(gradeIdx: number): number {
 }
 
 /* ================= 폴리오미노 (계열 × 레벨 구간) =================
- *  셀 좌표 [c, r] — rot: 0/90/180/270도 회전은 rotateCells로 계산 */
-
-export type FamilyKey = "warrior" | "ranger" | "mage" | "thief";
+ *  셀 좌표 [c, r] — rot: 0/90/180/270도 회전은 rotateCells로 계산
+ *  FamilyKey는 아래 "지역 효과" 섹션에서 선언 (v1.0.19 — 해적 계열 포함 5계열) */
 
 /** 계열별 기본 블록 — 레벨 구간(60~99 / 100~199 / 200+)마다 크기 상승 */
 const SHAPE_TABLE: Record<FamilyKey, [number, number][][]> = {
@@ -84,6 +85,12 @@ const SHAPE_TABLE: Record<FamilyKey, [number, number][][]> = {
     [[0, 0], [1, 0], [1, 1], [2, 1]],
     [[0, 0], [1, 0], [1, 1], [2, 1], [2, 2], [3, 2]],
     [[0, 0], [1, 0], [1, 1], [2, 1], [2, 2], [3, 2], [0, 1], [3, 0]],
+  ],
+  /* v1.0.19 — 해적 계열 (현직 4직업이 없어 실배치 되지 않음 — 폴리오미노 완결성용) */
+  pirate: [
+    [[0, 0], [1, 0], [1, 1]],
+    [[0, 0], [1, 0], [1, 1], [2, 1]],
+    [[0, 0], [1, 0], [1, 1], [2, 1], [2, 2]],
   ],
 };
 
@@ -131,29 +138,42 @@ export function placedCells(rot: number, r: number, c: number, cells: [number, n
   return rotateCells(cells, rot).map(([dc, dr]) => [c + dc, r + dr] as [number, number]);
 }
 
-/* ================= 지역 효과 ================= */
+/* ================= 지역 효과 =================
+ *
+ * v1.0.19 (B-2) — 메이플 지시서 규칙으로 개편:
+ *  ① 효과는 "배치된 캐릭터 1명당" 발생 (칸 수 비례 폐지 — 폴리오미노는 연출로 유지)
+ *  ② 계열별 효과 분리: 전사=방어력/HP · 궁수=공격력% · 마법사=마력% · 도적=크리확률/크리뎀 · 해적=HP/버프효과
+ *  ③ 캐릭터 레벨 구간에 따라 등급 B/A/S/SS가 매겨지고 등급 배율만큼 증폭
+ *  ④ 수치는 아래 상수 표 한 곳에서 관리 — 밸런스 조정 용이
+ */
 
-export type UnionEffects = {
-  /** 계열별 차지 칸 수 */
-  cells: Record<FamilyKey, number>;
-  atk: number;
-  hp: number;
-  def: number;
-  crit: number;
-  atkPct: number;
-  speedPct: number;
-  goldPct: number;
-  /** 표시용 — 계열 이름 → 효과 요약 */
-  lines: { label: string; value: string; color: string }[];
-};
+export type FamilyKey = "warrior" | "ranger" | "mage" | "thief" | "pirate";
 
-/** 칸당 계열 효과 (메이플 지역 효과를 이 게임 스탯으로 매핑)
- *  전사=STR/HP · 궁수=DEX/크리확률 · 마법사=INT/공격력% · 도적=LUK/골드/이동속도 */
-const CELL_YIELD: Record<FamilyKey, { atk: number; hp: number; def: number; crit: number; atkPct: number; speedPct: number; goldPct: number; label: string; color: string }> = {
-  warrior: { atk: 2.2, hp: 22, def: 1.2, crit: 0, atkPct: 0, speedPct: 0, goldPct: 0, label: "전사 계열 — STR·HP 강화", color: "#ff9d8a" },
-  ranger: { atk: 1.0, hp: 6, def: 0, crit: 0.38, atkPct: 0.12, speedPct: 0.1, goldPct: 0, label: "궁수 계열 — DEX·크리티컬", color: "#a8ecff" },
-  mage: { atk: 1.2, hp: 10, def: 0, crit: 0.1, atkPct: 0.34, speedPct: 0, goldPct: 0, label: "마법사 계열 — INT·공격력%", color: "#c9a8ff" },
-  thief: { atk: 0.8, hp: 4, def: 0, crit: 0.22, atkPct: 0.08, speedPct: 0.22, goldPct: 0.5, label: "도적 계열 — LUK·골드·기동", color: "#b8ffb8" },
+/** 배치 등급 — 캐릭터 레벨 구간별 (메이플 B/A/S/SS) */
+export type PlaceGrade = "B" | "A" | "S" | "SS";
+export const PLACE_GRADES: { grade: PlaceGrade; minLv: number; mult: number; color: string }[] = [
+  { grade: "B", minLv: 60, mult: 1.0, color: "#9fb3d9" },
+  { grade: "A", minLv: 100, mult: 1.6, color: "#8fe8d8" },
+  { grade: "S", minLv: 150, mult: 2.4, color: "#ffd76a" },
+  { grade: "SS", minLv: 200, mult: 3.2, color: "#ff8ab0" },
+];
+
+/** 캐릭터 레벨 → 배치 등급 (60 미만은 배치 불가) */
+export function placeGradeOf(lv: number): { grade: PlaceGrade; mult: number; color: string } | null {
+  if (lv < 60) return null;
+  let out = PLACE_GRADES[0];
+  for (const g of PLACE_GRADES) if (lv >= g.minLv) out = g;
+  return { grade: out.grade, mult: out.mult, color: out.color };
+}
+
+/** 계열별 1인당 효과 (B등급 기준 수치 — 상수 한 곳에서 밸런스 조정)
+ *  해적 계열은 현직 4직업(전사/궁수/마법사/도적)이 없어 미사용 — 표는 규칙 완결성을 위해 유지 */
+export const FAMILY_EFFECTS: Record<FamilyKey, { def: number; hp: number; atkPct: number; crit: number; critDmg: number; buffPct: number; label: string; color: string }> = {
+  warrior: { def: 6, hp: 120, atkPct: 0, crit: 0, critDmg: 0, buffPct: 0, label: "전사 계열 — 방어력·HP", color: "#ff9d8a" },
+  ranger: { def: 0, hp: 0, atkPct: 1.6, crit: 0, critDmg: 0, buffPct: 0, label: "궁수 계열 — 공격력%", color: "#a8ecff" },
+  mage: { def: 0, hp: 0, atkPct: 1.4, crit: 0, critDmg: 0, buffPct: 0, label: "마법사 계열 — 마력%", color: "#c9a8ff" },
+  thief: { def: 0, hp: 0, atkPct: 0, crit: 0.9, critDmg: 2.5, buffPct: 0, label: "도적 계열 — 크리확률·크리뎀", color: "#b8ffb8" },
+  pirate: { def: 0, hp: 150, atkPct: 0, crit: 0, critDmg: 0, buffPct: 1.5, label: "해적 계열 — HP·버프 효과", color: "#ffd76a" },
 };
 
 /* ================= 아티팩트 ================= */
@@ -241,6 +261,21 @@ export function addCoins(n: number) {
 
 /* ================= 효과 계산 ================= */
 
+export type UnionEffects = {
+  /** 계열별 배치 인원 (v1.0.19 — 칸 수 → 인원 단위 변경) */
+  counts: Record<FamilyKey, number>;
+  atk: number;
+  hp: number;
+  def: number;
+  crit: number;
+  critDmg: number;
+  atkPct: number;
+  speedPct: number;
+  goldPct: number;
+  /** 표시용 — 계열 이름 → 효과 요약 */
+  lines: { label: string; value: string; color: string }[];
+};
+
 export function activeBuffValues(u: UnionStore): { atkPct: number; goldPct: number; defPct: number; expPct: number } {
   const now = Date.now();
   const out = { atkPct: 0, goldPct: 0, defPct: 0, expPct: 0 };
@@ -254,41 +289,46 @@ export function activeBuffValues(u: UnionStore): { atkPct: number; goldPct: numb
   return out;
 }
 
-/** 유니온 전체 효과 — 그리드 배치 + 등급 + 아티팩트 + 시간제 버프 합산 */
+/** 유니온 전체 효과 — 배치 캐릭터 1명당 계열 효과 × 배치 등급(B/A/S/SS) + 유니온 등급 + 아티팩트 합산.
+ *  v1.0.19 (B-2) — 칸 수 비례에서 "배치 인원 × 등급 배율" 방식으로 개편 (지시서 B-2 규칙).
+ *  시간제 버프는 activeBuffValues로 별도 합산 (WorldScene syncExtBonus). */
 export function unionEffects(u: UnionStore, slots: SlotsStore): UnionEffects {
-  const cells: Record<FamilyKey, number> = { warrior: 0, ranger: 0, mage: 0, thief: 0 };
-  const used = new Set<string>();
-  const placedIds = new Set(u.placements.map((p) => p.charId));
+  const counts: Record<FamilyKey, number> = { warrior: 0, ranger: 0, mage: 0, thief: 0, pirate: 0 };
+  const eff: UnionEffects = { counts, atk: 0, hp: 0, def: 0, crit: 0, critDmg: 0, atkPct: 0, speedPct: 0, goldPct: 0, lines: [] };
+  /* ① 배치 캐릭터 1명당 — 계열 기본 효과 × 레벨 구간 등급 배율 */
   for (const p of u.placements) {
     const meta = slots.chars[p.charId];
-    if (!meta || meta.lv < 60) continue;
-    for (const [c, r] of placedCells(p.rot, p.r, p.c, shapeOfChar(meta))) {
-      const k = `${c},${r}`;
-      if (used.has(k)) continue;
-      used.add(k);
-      const fam = familyOfChar(meta) ?? "warrior";
-      cells[fam] += 1;
-    }
+    if (!meta) continue;
+    const pg = placeGradeOf(meta.lv);
+    if (!pg) continue; // 60 미만 배치 불가
+    const fam = familyOfChar(meta);
+    if (!fam) continue;
+    const y = FAMILY_EFFECTS[fam];
+    counts[fam] += 1;
+    eff.def += y.def * pg.mult;
+    eff.hp += y.hp * pg.mult;
+    eff.atkPct += y.atkPct * pg.mult;
+    eff.crit += y.crit * pg.mult;
+    eff.critDmg += y.critDmg * pg.mult;
   }
-  const eff: UnionEffects = { cells, atk: 0, hp: 0, def: 0, crit: 0, atkPct: 0, speedPct: 0, goldPct: 0, lines: [] };
-  (Object.keys(cells) as FamilyKey[]).forEach((fam) => {
-    const y = CELL_YIELD[fam];
-    const n = cells[fam];
+  /* ② 효과 총람(미리보기) 라인 — 계열별 인원 + 합산 수치 */
+  (Object.keys(counts) as FamilyKey[]).forEach((fam) => {
+    const n = counts[fam];
     if (n <= 0) return;
-    eff.atk += y.atk * n;
-    eff.hp += y.hp * n;
-    eff.def += y.def * n;
-    eff.crit += y.crit * n;
-    eff.atkPct += y.atkPct * n;
-    eff.speedPct += y.speedPct * n;
-    eff.goldPct += y.goldPct * n;
-    eff.lines.push({ label: y.label, value: `${n}칸`, color: y.color });
+    const y = FAMILY_EFFECTS[fam];
+    const parts: string[] = [];
+    if (y.def) parts.push(`방어력 +${Math.round(y.def * n)}`);
+    if (y.hp) parts.push(`HP +${Math.round(y.hp * n)}`);
+    if (y.atkPct) parts.push(`${fam === "mage" ? "마력" : "공격력"} +${(y.atkPct * n).toFixed(1)}%`);
+    if (y.crit) parts.push(`크리 +${(y.crit * n).toFixed(1)}%p`);
+    if (y.critDmg) parts.push(`크리뎀 +${(y.critDmg * n).toFixed(1)}%p`);
+    eff.lines.push({ label: y.label, value: `${n}명 · ${parts.join(" · ")}`, color: y.color });
   });
-  /* 등급 보너스 — 등급 idx당 전체 공격력% +0.4 */
-  const uLv = Object.values(slots.chars).filter((c) => c.lv >= 60).reduce((a, c) => a + c.lv, 0);
+  /* ③ 유니온 등급 보너스 — 등급 idx당 전체 공격력% +0.4 */
+  const uLv = unionLevelOf(slots);
   const { idx } = unionGradeOf(uLv);
   eff.atkPct += idx * 0.4;
-  /* 아티팩트 */
+  /* ④ 아티팩트 */
   const art = u.artifacts;
   eff.atk += (art.art_atk ?? 0) * 3;
   eff.hp += (art.art_hp ?? 0) * 90;
@@ -299,16 +339,16 @@ export function unionEffects(u: UnionStore, slots: SlotsStore): UnionEffects {
   return eff;
 }
 
-/** 레이드 전투력 — 배치 캐릭터 레벨 합 × 계열 계수 + 아티팩트 가산 */
+/** 레이드 전투력 — 배치 캐릭터 기여 레벨 합 × 계열 계수 (v1.0.19 — 기여 레벨 공식 적용) */
 export function raidPower(u: UnionStore, slots: SlotsStore): { power: number; allies: { name: string; fam: FamilyKey | null; lv: number; color: string }[] } {
-  const FAM_MULT: Record<FamilyKey, number> = { warrior: 1.15, ranger: 1.1, mage: 1.1, thief: 1.0 };
+  const FAM_MULT: Record<FamilyKey, number> = { warrior: 1.15, ranger: 1.1, mage: 1.1, thief: 1.0, pirate: 1.05 };
   let power = 0;
   const allies: { name: string; fam: FamilyKey | null; lv: number; color: string }[] = [];
   for (const p of u.placements) {
     const meta = slots.chars[p.charId];
     if (!meta || meta.lv < 60) continue;
     const fam = familyOfChar(meta);
-    power += meta.lv * (fam ? FAM_MULT[fam] : 1);
+    power += charUnionContribution(meta.lv) * (fam ? FAM_MULT[fam] : 1);
     allies.push({ name: meta.name, fam, lv: meta.lv, color: meta.cls === "warrior" ? "#ff9d8a" : meta.cls === "ranger" ? "#a8ecff" : meta.cls === "mage" ? "#c9a8ff" : "#b8ffb8" });
   }
   return { power: Math.round(power), allies };
@@ -340,10 +380,9 @@ export function canPlace(u: UnionStore, slots: SlotsStore, p: Placement): boolea
   return true;
 }
 
-/** 자동 추천 배치 — 레벨 높은 순서로 좌상단부터 빈 자리에 배치 (효과 최대화: 계열 다양성 우선 배치) */
+/** 자동 추천 배치 — 기여 레벨 높은 순서로 좌상단부터 빈 자리에 배치 (효과 최대화: 계열 다양성 우선 배치) */
 export function autoArrange(u: UnionStore, slots: SlotsStore): Placement[] {
-  const gradeLv = Object.values(slots.chars).filter((c) => c.lv >= 60).reduce((a, c) => a + c.lv, 0);
-  const { idx } = unionGradeOf(gradeLv);
+  const { idx } = unionGradeOf(unionLevelOf(slots));
   const cap = maxPlacedOf(idx);
   const roster = Object.values(slots.chars)
     .filter((c) => c.lv >= 60 && familyOfChar(c))
@@ -351,7 +390,7 @@ export function autoArrange(u: UnionStore, slots: SlotsStore): Placement[] {
   const next: UnionStore = { ...u, placements: [] };
   const out: Placement[] = [];
   /* 계열 인터리브 — 전사/궁수/마법사/도적 순서로 돌려 배치해 지역 효과가 고루 퍼지게 */
-  const byFam: Record<FamilyKey, CharMeta[]> = { warrior: [], ranger: [], mage: [], thief: [] };
+  const byFam: Record<FamilyKey, CharMeta[]> = { warrior: [], ranger: [], mage: [], thief: [], pirate: [] };
   for (const c of roster) byFam[familyOfChar(c) ?? "warrior"].push(c);
   const queue: CharMeta[] = [];
   let added = true;
@@ -402,11 +441,12 @@ function today(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** 유니온 레벨 상승분 코인 정산 + 일일 보상 수령 — 패널 오픈 시 호출. 새로 오른 레벨 수 반환 */
+/** 유니온 레벨 상승분 코인 정산 + 일일 보상 수령 — 패널 오픈 시 호출. 새로 오른 레벨 수 반환
+ *  v1.0.19 — 유니온 레벨 산출을 unionLevelOf 공식으로 일원화 */
 export function unionDailyAndLevelup(): { coins: number; lvUps: number; dailyTaken: boolean } {
   const u = loadUnion();
   const slots = loadSlots();
-  const lv = Object.values(slots.chars).filter((c) => c.lv >= 60).reduce((a, c) => a + c.lv, 0);
+  const lv = unionLevelOf(slots);
   let coins = 0;
   let lvUps = 0;
   if (u.seenLv === 0 && lv > 0) {

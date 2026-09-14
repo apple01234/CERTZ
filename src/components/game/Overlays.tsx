@@ -64,18 +64,21 @@ export function TitleScreen() {
   }, []);
 
   return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-transparent px-4">
-      <div className="mb-1 text-center">
-        <h1 className="text-5xl font-black tracking-[0.18em] text-amber-300 [text-shadow:0_3px_0_#7a3c00,0_6px_18px_rgba(0,0,0,0.9)] sm:text-7xl">
-          SERTZ
-        </h1>
-        <p className="mx-auto mt-1 max-w-[min(94vw,560px)] text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
-          이그드라실 : 아홉 왕국
-          {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
-           *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-          <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.18 — 로비·유니온·몬스터 파크 · 셰이더 편안함</span>
-        </p>
-      </div>
+    /* v1.0.19 (A-1/A-2) — 타이틀도 스크롤 가능하게: 저높이(가로 폰)에서 버튼/크레딧이 잘리던 것 수정.
+     *  컨테이너 overflow-y-auto + 내부 min-h-full flex — 내용이 짧으면 중앙정렬 유지, 길면 스크롤 */
+    <div className="sertz-scroll absolute inset-0 z-40 overflow-y-auto">
+      <div className="flex min-h-full flex-col items-center justify-center bg-transparent px-4 py-6">
+        <div className="mb-1 text-center">
+          <h1 className="text-5xl font-black tracking-[0.18em] text-amber-300 [text-shadow:0_3px_0_#7a3c00,0_6px_18px_rgba(0,0,0,0.9)] sm:text-7xl">
+            SERTZ
+          </h1>
+          <p className="mx-auto mt-1 max-w-[min(94vw,560px)] text-sm font-bold tracking-widest text-sky-200/90 [text-shadow:0_2px_4px_#000] sm:text-base">
+            이그드라실 : 아홉 왕국
+            {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
+             *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
+            <span className="mt-1 block rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-white/65 line-clamp-2">v1.0.19 — 반응형·스크롤 수정 · 신규 스테이지 15종</span>
+          </p>
+        </div>
 
       {/* v1.0.17 — 구버전 APK 사용자 필수 안내: 최신 수정(화살 방향 등)은 재설치 후에만 적용됨 */}
       {update && (
@@ -133,8 +136,10 @@ export function TitleScreen() {
       </div>
 
       {/* v1.0.3 (#글자짤림) — inset-x-0 추가: absolute 컨테이너가 내용 폭만큼 늘어나
-       *  max-w-[92%]가 무효가 되고 크레딧이 화면 밖으로 잘리던 버그 */}
-      <div className="absolute inset-x-0 bottom-3 flex flex-col items-center gap-1 px-3 text-center">
+       *  max-w-[92%]가 무효가 되고 크레딧이 화면 밖으로 잘리던 버그
+       *  v1.0.19 (A-1) — absolute → flow(mt-auto): 스크롤 컨테이너에서 absolute bottom이
+       *  첫 화면 하단에 고정되어 콘텐츠와 겹치던 문제 수정 — 내용이 짧으면 하단, 길면 흐름 따름 */}
+      <div className="mt-auto flex flex-col items-center gap-1 px-3 pb-3 pt-8 text-center">
         {/* v1.0.3 — 저높이(가로 폰)에서는 키 안내줄이 APK 링크와 겹치므로 숨김 (터치 유저에게 불필요) */}
         <p className="text-[10px] font-bold text-white/45 sm:text-[11px] [@media(max-height:540px)]:hidden">
           이동: 방향키 / 왼쪽 화면 드래그 · 공격: X · 스킬: Z, C, V, A, S · 물약: D, F
@@ -143,6 +148,7 @@ export function TitleScreen() {
           Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by
           williamthompsonj (CC-BY) · Sotrak by gilgaphoenixignis (CC-BY) · SPUM · Cartoon FX Remaster & Fantasy UI SFX (Unity Asset Store 유료 라이선스) · Music: Kevin MacLeod (incompetech.com, CC-BY 4.0) · SFX: Rubberduck (CC0)
         </p>
+      </div>
       </div>
     </div>
   );
@@ -216,15 +222,24 @@ export function BossBar({ boss }: { boss: { name: string; hp: number; maxHp: num
 
 /* ---------- 가로 모드 안내 (모바일 세로 감지) ---------- */
 
-export function RotatePrompt({ active }: { active: boolean }) {
+export function RotatePrompt({ active, onDismiss }: { active: boolean; onDismiss?: () => void }) {
   if (!active) return null;
   return (
-    <div className="rotate-prompt absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-slate-950/95 p-8 text-center">
+    <div className="rotate-prompt pointer-events-auto absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-slate-950/95 p-8 text-center">
       <RotateCw size={48} className="animate-spin-slow text-amber-300" />
       <p className="text-lg font-black text-white">기기를 가로로 돌려주세요</p>
       <p className="text-xs font-bold text-white/60">
         SERTZ는 가로 화면에 최적화된 액션 RPG입니다
       </p>
+      {/* v1.0.19 (A-2 반응형) — 세로로도 플레이 가능 (Scale.FIT) — 강제 차단 대신 유저 선택 존중 */}
+      {onDismiss && (
+        <button
+          onClick={onDismiss}
+          className="mt-2 rounded-lg border border-amber-300/50 bg-amber-400/10 px-5 py-2.5 text-[13px] font-black text-amber-200 transition-transform active:scale-95"
+        >
+          세로 화면으로 계속하기
+        </button>
+      )}
     </div>
   );
 }

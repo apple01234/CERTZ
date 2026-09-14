@@ -2870,6 +2870,15 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
     }
     if (stages.length > 0) groups.push({ label: `제${ch.num}장 ${ch.title}`, stages });
   }
+  /* v1.0.19 (A-3) — 재림 지역(신규 15구역) 그룹: 방문한 구역만 표시 */
+  {
+    const rbStages: { key: StageKey; name: string }[] = [];
+    for (let i = 1; i <= 15; i++) {
+      const key = `r${i}` as StageKey;
+      if (visitedSet.has(key)) rbStages.push({ key, name: STAGE_SHORT[key] ?? key });
+    }
+    if (rbStages.length > 0) groups.push({ label: "재림의 땅 (신규)", stages: rbStages });
+  }
   const empty = visited.length === 0 || groups.every((g) => g.stages.length === 0);
 
   return (

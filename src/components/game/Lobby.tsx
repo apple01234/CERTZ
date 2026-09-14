@@ -1,14 +1,20 @@
 "use client";
 
 /**
- * v1.0.18 — 로비 (메이플스토리 캐릭터 선택·생성 화면 재현)
- *  · 캐릭터 카드 리스트 (이름/직업/레벨/마지막 접속) — 선택 시 정보 패널 + 직업 프리뷰
- *  · 캐릭터 생성: 직업 카드 → 프리뷰(대표 스킬·주 스탯·난이도·소개) → 이름 입력 → 생성
- *  · 캐릭터 삭제(확인 모달) · 슬롯 확장(유니온 코인) · 계정 공유 재화(유니온 코인) 표시
- *  · 캐릭터별 레벨/장비/진행도는 sertz_char_<id>에 개별 저장 (slots.ts)
+ * v1.0.19 — 로비 (메이플스토리 캐릭터 선택·생성 화면 재현 — 지시서 A-1/B-1 반영)
+ *
+ *  [A-1 스크롤 수정] 루트를 overflow-y-auto 스크롤 컨테이너로 전환 —
+ *    콘텐츠가 뷰포트보다 길면(모바일 세로 등) 전체가 스크롤된다. 데스크톱 lg+는 2컬럼 유지.
+ *    게임 캔버스(game-root fixed)와 분리되어 인게임 중엔 페이지 스크롤이 없다.
+ *
+ *  [B-1 메이플식 캐릭터 선택창]
+ *   · 슬롯 그리드 — 외형 미리보기(색조 틴트 캔버스)·레벨·직업·닉네임 표시, 빈 슬롯 [+]
+ *   · 더블클릭(모바일: 탭 후 "이 캐릭터로 시작")으로 입장
+ *   · 생성 플로우 3단계: ①닉네임 → ②직업 선택 → ③외형 선택(색조 팔레트)
+ *   · 삭제 확인 모달 · 캐릭터별 개별 세이브(sertz_char_<id>) · 슬롯 확장(유니온 코인)
  */
-import { useEffect, useMemo, useState } from "react";
-import { Play, Trash2, UserPlus, Users, Coins, ChevronLeft, X, Swords, Shield, Zap, Gauge, Clock, Lock } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Play, Trash2, UserPlus, Users, Coins, ChevronLeft, ChevronRight, X, Swords, Shield, Zap, Gauge, Clock, Lock } from "lucide-react";
 import { EventBus } from "./EventBus";
 import { loadUnion, buySlotExpand } from "@/game/union";
 import { loadSlots, writeSlots, createCharacter, deleteCharacter, readCharSave, setActiveChar, getActiveCharId, BASE_SLOTS, type CharMeta } from "@/game/slots";
@@ -39,6 +45,58 @@ const CLASS_PREVIEWS: { key: ClassKey; main: string; diff: number; skills: { nam
   },
 ];
 
+/* v1.0.19 (B-1 외형) — 색조 팔레트 (스프라이트 전체 틴트 — 게임 내 오라 치장과 같은 방식) */
+const LOOK_TINTS: { tint: number | null; name: string }[] = [
+  { tint: null, name: "기본" },
+  { tint: 0xffd2a1, name: "황혼" },
+  { tint: 0xfff3c9, name: "금빛" },
+  { tint: 0xffc9c9, name: "장미빛" },
+  { tint: 0xd9ffc9, name: "연두빛" },
+  { tint: 0xc9e8ff, name: "하늘빛" },
+  { tint: 0xe3d2ff, name: "라벤더" },
+  { tint: 0xb8c4d9, name: "그림자" },
+];
+
+/** 캐릭터 외형 미리보기 — hero_idle0 프레임을 캔버스에 그리고 색조를 multiply 합성.
+ *  인게임 스프라이트와 동일한 에셋이라 미리보기=실제 외형이 보장된다. */
+function CharAvatar({ tint, size = 44 }: { tint?: number | null; size?: number }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    let dead = false;
+    const img = new Image();
+    img.src = "/assets/hero_idle0.webp";
+    img.onload = () => {
+      if (dead || !ref.current) return;
+      const c = ref.current;
+      const ctx = c.getContext("2d");
+      if (!ctx) return;
+      c.width = size;
+      c.height = size;
+      ctx.imageSmoothingEnabled = false;
+      const s = Math.max(size / img.width, size / img.height) * 0.92;
+      const w = img.width * s;
+      const h = img.height * s;
+      const dx = (size - w) / 2;
+      const dy = (size - h) / 2;
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(img, dx, dy, w, h);
+      if (tint && tint !== 0xffffff) {
+        const r = (tint >> 16) & 255;
+        const g = (tint >> 8) & 255;
+        const b = tint & 255;
+        ctx.globalCompositeOperation = "multiply";
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(0, 0, size, size);
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(img, dx, dy, w, h);
+        ctx.globalCompositeOperation = "source-over";
+      }
+    };
+    return () => { dead = true; };
+  }, [tint, size]);
+  return <canvas ref={ref} style={{ width: size, height: size }} className="shrink-0 rounded border border-white/15 bg-black/40" aria-label="캐릭터 외형 미리보기" />;
+}
+
 function relTime(ts: number): string {
   if (!ts) return "기록 없음";
   const diff = Date.now() - ts;
@@ -53,8 +111,11 @@ export function Lobby({ onExit }: { onExit: () => void }) {
   const refresh = () => force((n) => n + 1);
   const [selId, setSelId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  /* v1.0.19 (B-1) — 생성 플로우 3단계: ①이름 → ②직업 → ③외형 */
+  const [step, setStep] = useState(0);
   const [pickCls, setPickCls] = useState<ClassKey>("warrior");
   const [nameInput, setNameInput] = useState("");
+  const [lookTint, setLookTint] = useState<number | null>(null);
   const [delId, setDelId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -74,21 +135,32 @@ export function Lobby({ onExit }: { onExit: () => void }) {
   const startChar = (meta: CharMeta) => {
     let save = readCharSave(meta.id);
     if (!save) {
-      save = { stage: "village", lv: 1, exp: 0, maxHp: 100, atk: 10, cleared: false, maxMp: 60, playerName: meta.name, cls: meta.cls, startCls: meta.cls, gold: 30 } as SaveData;
+      save = { stage: "village", lv: 1, exp: 0, maxHp: 100, atk: 10, cleared: false, maxMp: 60, playerName: meta.name, cls: meta.cls, startCls: meta.cls, gold: 30, lookTint: meta.lookTint ?? null } as SaveData;
       writeSave(save);
     }
     setActiveChar(meta.id);
     EventBus.emit("game:continue", save);
   };
 
+  const openCreate = () => {
+    setCreating(true);
+    setStep(0);
+    setNameInput("");
+    setLookTint(null);
+    setPickCls("warrior");
+    setMsg(null);
+  };
+
   const doCreate = () => {
-    const r = createCharacter(nameInput, pickCls);
+    const r = createCharacter(nameInput, pickCls, lookTint);
     if (!r.ok) {
       setMsg(r.reason);
+      setStep(0); // 이름 문제일 수 있으니 1단계로
       return;
     }
     setCreating(false);
     setNameInput("");
+    setLookTint(null);
     setSelId(r.id);
     setMsg(null);
     refresh();
@@ -128,224 +200,326 @@ export function Lobby({ onExit }: { onExit: () => void }) {
     return d?.color ?? "#9fb3d9";
   };
 
+  /* v1.0.19 (B-1) — 생성 플로우 단계 검증 */
+  const nameOk = nameInput.trim().length >= 1;
+  const STEP_LABELS = ["이름", "직업", "외형"];
+
   return (
-    <div className="absolute inset-0 z-40 flex flex-col bg-gradient-to-b from-[#0a0e22] via-[#0c1230] to-[#05070d] px-3 pb-3 pt-2.5 sm:px-5">
-      {/* 헤더 */}
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Users size={18} className="text-amber-300" />
-          <div>
-            <p className="text-sm font-black tracking-wide text-amber-200">캐릭터 선택</p>
-            <p className="text-[9px] font-bold text-white/40">캐릭터마다 레벨·장비·진행도가 개별 저장된다 · 여러 캐릭터를 키워 유니온을 만들자</p>
+    /* [A-1 v1.0.19] 루트가 스크롤 컨테이너 — 모바일 세로에서 카드 그리드+정보 패널이 세로로 쌓여도 전체 스크롤된다 */
+    <div className="sertz-scroll absolute inset-0 z-40 overflow-y-auto bg-gradient-to-b from-[#0a0e22] via-[#0c1230] to-[#05070d]">
+      <div className="flex min-h-full flex-col px-3 pb-6 pt-2.5 sm:px-5">
+        {/* 헤더 */}
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Users size={18} className="text-amber-300" />
+            <div>
+              <p className="text-sm font-black tracking-wide text-amber-200">캐릭터 선택</p>
+              <p className="text-[9px] font-bold text-white/40">더블클릭으로 바로 입장 · 캐릭터마다 레벨·장비·진행도가 개별 저장된다</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1 text-[10px] font-black text-amber-200 sm:inline-flex sm:items-center sm:gap-1">
+              <Coins size={11} />
+              유니온 코인 {coins}
+            </span>
+            {account && (
+              <span className="hidden rounded-md border border-sky-300/40 bg-sky-400/10 px-2 py-1 text-[10px] font-black text-sky-200 md:inline">
+                {account.name || account.email || "계정"} 로그인 중
+              </span>
+            )}
+            <button onClick={onExit} aria-label="타이틀로" className="flex h-9 w-9 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
+              <X size={15} />
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1 text-[10px] font-black text-amber-200 sm:inline-flex sm:items-center sm:gap-1">
-            <Coins size={11} />
-            유니온 코인 {coins}
-          </span>
-          {account && (
-            <span className="hidden rounded-md border border-sky-300/40 bg-sky-400/10 px-2 py-1 text-[10px] font-black text-sky-200 md:inline">
-              {account.name || account.email || "계정"} 로그인 중
-            </span>
-          )}
-          <button onClick={onExit} aria-label="타이틀로" className="flex h-8 w-8 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
-            <X size={15} />
-          </button>
-        </div>
-      </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
-        {/* 캐릭터 카드 그리드 */}
-        <div className="sertz-scroll min-h-0 flex-1 overflow-y-auto pr-0.5">
-          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
-            {chars.map((m) => {
-              const active = sel?.id === m.id;
-              const color = clsColor(m.cls);
-              return (
+        <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
+          {/* 캐릭터 카드 그리드 — [A-1] 내부 독자 스크롤 제거(루트 스크롤로 통합) */}
+          <div className="flex-1">
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
+              {chars.map((m) => {
+                const active = sel?.id === m.id;
+                const color = clsColor(m.cls);
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => { setSelId(m.id); setMsg(null); }}
+                    onDoubleClick={() => startChar(m)}
+                    className={`min-h-[92px] rounded-lg border-2 p-2 text-left transition-all ${active ? "scale-[1.02] shadow-[0_0_18px_rgba(255,215,106,0.25)]" : "hover:scale-[1.01]"}`}
+                    style={{ borderColor: active ? "#ffd76a" : `${color}44`, background: active ? `${color}1c` : "#ffffff08" }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {/* v1.0.19 (B-1) — 외형 미리보기 (생성 시 고른 색조가 적용된 실제 스프라이트) */}
+                      <CharAvatar tint={m.lookTint} size={40} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="truncate text-[12px] font-black text-white">{m.name}</p>
+                          <span className="shrink-0 rounded px-1 py-0.5 text-[8px] font-black" style={{ color, background: `${color}22` }}>
+                            {classLabel(m.cls as ClassKey) || "무직"}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-[10px] font-black text-amber-200">Lv. {m.lv}{m.rebirths > 0 ? ` · 환생 ${m.rebirths}회` : ""}</p>
+                        <p className="mt-0.5 flex items-center gap-0.5 text-[8px] font-bold text-white/40">
+                          <Clock size={8} />
+                          {relTime(m.lastSeen)}
+                        </p>
+                      </div>
+                    </div>
+                    {m.cleared && <p className="mt-1 text-[8px] font-black text-emerald-300">세계수 구원 완료</p>}
+                  </button>
+                );
+              })}
+              {/* 생성 카드 / 잠긴 슬롯 */}
+              {used < store.slots ? (
                 <button
-                  key={m.id}
-                  onClick={() => { setSelId(m.id); setMsg(null); }}
-                  className={`rounded-lg border-2 p-2 text-left transition-all ${active ? "scale-[1.02] shadow-[0_0_18px_rgba(255,215,106,0.25)]" : "hover:scale-[1.01]"}`}
-                  style={{ borderColor: active ? "#ffd76a" : `${color}44`, background: active ? `${color}1c` : "#ffffff08" }}
+                  onClick={openCreate}
+                  className="flex min-h-[92px] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-white/20 bg-white/[0.03] text-white/50 transition-colors hover:border-amber-300/50 hover:text-amber-200"
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="truncate text-[12px] font-black text-white">{m.name}</p>
-                    <span className="shrink-0 rounded px-1 py-0.5 text-[8px] font-black" style={{ color, background: `${color}22` }}>
-                      {classLabel(m.cls as ClassKey) || "무직"}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[10px] font-black text-amber-200">Lv. {m.lv}{m.rebirths > 0 ? ` · 환생 ${m.rebirths}회` : ""}</p>
-                  <p className="mt-0.5 flex items-center gap-0.5 text-[8px] font-bold text-white/40">
-                    <Clock size={8} />
-                    {relTime(m.lastSeen)}
-                  </p>
-                  {m.cleared && <p className="mt-0.5 text-[8px] font-black text-emerald-300">세계수 구원 완료</p>}
+                  <UserPlus size={18} />
+                  <p className="text-[10px] font-black">캐릭터 생성</p>
                 </button>
-              );
-            })}
-            {/* 생성 카드 / 잠긴 슬롯 */}
-            {used < store.slots ? (
-              <button
-                onClick={() => { setCreating(true); setMsg(null); }}
-                className="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-white/20 bg-white/[0.03] text-white/50 transition-colors hover:border-amber-300/50 hover:text-amber-200"
-              >
-                <UserPlus size={18} />
-                <p className="text-[10px] font-black">캐릭터 생성</p>
-              </button>
+              ) : (
+                <div className="flex min-h-[92px] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-white/10 bg-white/[0.02] text-white/25">
+                  <Lock size={16} />
+                  <p className="text-[9px] font-bold">슬롯 확장 필요</p>
+                </div>
+              )}
+            </div>
+            <button onClick={expand} className="mx-auto mt-2 flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-[10px] font-black text-white/60 active:scale-95">
+              <Coins size={11} className="text-amber-300" />
+              슬롯 확장 (유니온 코인 60) — {used}/{store.slots}
+            </button>
+          </div>
+
+          {/* 정보 패널 */}
+          <div className="w-full shrink-0 rounded-lg border border-white/12 bg-black/40 p-3 lg:w-[340px]">
+            {creating ? (
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-[12px] font-black text-amber-200">캐릭터 생성</p>
+                  <button onClick={() => setCreating(false)} className="flex h-7 w-7 items-center justify-center rounded border border-white/15 text-white/50">
+                    <ChevronLeft size={13} />
+                  </button>
+                </div>
+                {/* v1.0.19 (B-1) — 3단계 인디케이터: ①이름 → ②직업 → ③외형 */}
+                <div className="mb-2 flex items-center gap-1">
+                  {STEP_LABELS.map((lb, i) => (
+                    <div key={lb} className="flex flex-1 items-center gap-1">
+                      <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black ${i === step ? "bg-amber-400 text-slate-900" : i < step ? "bg-emerald-400/80 text-slate-900" : "border border-white/20 bg-black/40 text-white/40"}`}>
+                        {i < step ? "✓" : i + 1}
+                      </span>
+                      <span className={`text-[9px] font-black ${i === step ? "text-amber-200" : "text-white/40"}`}>{lb}</span>
+                      {i < STEP_LABELS.length - 1 && <div className={`h-px flex-1 ${i < step ? "bg-emerald-400/60" : "bg-white/15"}`} />}
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── 1단계: 닉네임 ── */}
+                {step === 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold leading-relaxed text-white/55">모험가의 이름을 정해라. (최대 8자 — 게임 내 모든 캐릭터에서 이 이름으로 불린다)</p>
+                    <input
+                      value={nameInput}
+                      onChange={(e) => setNameInput(e.target.value)}
+                      maxLength={8}
+                      placeholder="캐릭터 이름 (최대 8자)"
+                      className="mt-2 w-full rounded-lg border border-white/20 bg-black/50 px-3 py-2.5 text-[13px] font-bold text-white placeholder:text-white/25 focus:border-amber-300/60 focus:outline-none"
+                    />
+                    {msg && <p className="mt-1 text-[10px] font-black text-rose-300">{msg}</p>}
+                    <button
+                      onClick={() => { if (nameOk) { setMsg(null); setStep(1); } }}
+                      disabled={!nameOk}
+                      className={`mt-2 flex w-full items-center justify-center gap-1 rounded-lg px-3 py-2.5 text-[12px] font-black transition-transform active:scale-95 ${nameOk ? "bg-gradient-to-b from-amber-400 to-amber-600 text-slate-900" : "cursor-not-allowed bg-white/10 text-white/30"}`}
+                    >
+                      다음 — 직업 선택
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {/* ── 2단계: 직업 선택 ── */}
+                {step === 1 && (
+                  <div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {CLASS_PREVIEWS.map((p) => {
+                        const d = classDef(p.key)!;
+                        const on = pickCls === p.key;
+                        return (
+                          <button
+                            key={p.key}
+                            onClick={() => setPickCls(p.key)}
+                            className={`min-h-[52px] rounded-lg border-2 px-2 py-2 text-left transition-transform active:scale-95 ${on ? "" : "border-white/10 bg-white/[0.03]"}`}
+                            style={on ? { borderColor: d.color, background: `${d.color}18` } : undefined}
+                          >
+                            <p className="text-[12px] font-black" style={{ color: d.color }}>{d.name}</p>
+                            <p className="text-[8px] font-bold text-white/40">{d.title}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* 프리뷰 */}
+                    {(() => {
+                      const p = CLASS_PREVIEWS.find((x) => x.key === pickCls)!;
+                      const d = classDef(p.key)!;
+                      return (
+                        <div className="mt-2 rounded-lg border px-2.5 py-2" style={{ borderColor: `${d.color}55`, background: `${d.color}0d` }}>
+                          <p className="text-[11px] font-black" style={{ color: d.color }}>{d.name} — {d.title}</p>
+                          <p className="mt-1 text-[9px] font-bold leading-relaxed text-white/60">{p.intro}</p>
+                          <div className="mt-1.5 grid grid-cols-3 gap-1 text-center">
+                            <div className="rounded border border-white/10 bg-black/30 py-1">
+                              <p className="text-[7px] font-bold text-white/40">주 스탯</p>
+                              <p className="text-[9px] font-black text-amber-200">{p.main}</p>
+                            </div>
+                            <div className="rounded border border-white/10 bg-black/30 py-1">
+                              <p className="text-[7px] font-bold text-white/40">난이도</p>
+                              <p className="text-[9px] font-black text-amber-200">{"★".repeat(p.diff)}{"☆".repeat(4 - p.diff)}</p>
+                            </div>
+                            <div className="rounded border border-white/10 bg-black/30 py-1">
+                              <p className="text-[7px] font-bold text-white/40">공격력</p>
+                              <p className="text-[9px] font-black text-amber-200">+{d.atkPct}%</p>
+                            </div>
+                          </div>
+                          <p className="mt-1.5 text-[9px] font-black text-white/50">대표 스킬</p>
+                          <div className="mt-0.5 flex gap-1.5">
+                            {p.skills.map((s) => (
+                              <div key={s.name} className="flex flex-col items-center gap-0.5">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={s.icon} alt={s.name} width={34} height={34} className="rounded border border-white/15 bg-black/40" />
+                                <span className="text-[7px] font-bold text-white/55">{s.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    <div className="mt-2 grid grid-cols-2 gap-1.5">
+                      <button onClick={() => setStep(0)} className="flex items-center justify-center gap-1 rounded-lg border border-white/20 bg-white/5 px-3 py-2.5 text-[11px] font-black text-white/70">
+                        <ChevronLeft size={13} />
+                        이름
+                      </button>
+                      <button onClick={() => setStep(2)} className="flex items-center justify-center gap-1 rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-3 py-2.5 text-[11px] font-black text-slate-900">
+                        다음 — 외형 선택
+                        <ChevronRight size={13} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── 3단계: 외형 선택 ── */}
+                {step === 2 && (
+                  <div>
+                    <p className="text-[10px] font-bold leading-relaxed text-white/55">색조를 골라 외형을 꾸며라. 언제든 로비에서 다른 캐릭터를 만들 수 있다.</p>
+                    <div className="mt-2 flex items-center gap-3 rounded-lg border border-white/12 bg-black/40 p-2.5">
+                      <CharAvatar tint={lookTint} size={64} />
+                      <div>
+                        <p className="text-[11px] font-black text-white">{nameInput.trim() || "이름 미정"}</p>
+                        <p className="text-[9px] font-bold" style={{ color: clsColor(pickCls) }}>{classLabel(pickCls)} · Lv.1</p>
+                        <p className="mt-0.5 text-[9px] font-black text-amber-200">{LOOK_TINTS.find((x) => x.tint === lookTint)?.name ?? "기본"}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 grid grid-cols-4 gap-1.5">
+                      {LOOK_TINTS.map((l) => {
+                        const on = lookTint === l.tint;
+                        return (
+                          <button
+                            key={l.name}
+                            onClick={() => setLookTint(l.tint)}
+                            className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-lg border-2 px-1 py-1.5 transition-transform active:scale-95 ${on ? "border-amber-300 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"}`}
+                          >
+                            <span
+                              className="h-5 w-5 rounded-full border border-white/25"
+                              style={{ background: l.tint ? `#${l.tint.toString(16).padStart(6, "0")}` : "linear-gradient(135deg,#e8d5b0 0%,#5a4a3a 100%)" }}
+                            />
+                            <span className={`text-[8px] font-black ${on ? "text-amber-200" : "text-white/45"}`}>{l.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {msg && <p className="mt-1 text-[10px] font-black text-rose-300">{msg}</p>}
+                    <div className="mt-2 grid grid-cols-2 gap-1.5">
+                      <button onClick={() => setStep(1)} className="flex items-center justify-center gap-1 rounded-lg border border-white/20 bg-white/5 px-3 py-2.5 text-[11px] font-black text-white/70">
+                        <ChevronLeft size={13} />
+                        직업
+                      </button>
+                      <button
+                        onClick={doCreate}
+                        className="rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-3 py-2.5 text-[12px] font-black text-slate-900 transition-transform active:scale-95"
+                      >
+                        {classDef(pickCls)!.name}로 생성!
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : sel ? (
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <CharAvatar tint={sel.lookTint} size={52} />
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-black text-white">{sel.name}</p>
+                    <p className="text-[10px] font-bold" style={{ color: clsColor(sel.cls) }}>
+                      {classLabel(sel.cls as ClassKey) || "무직"} · Lv. {sel.lv} · 환생 {sel.rebirths}회
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-1 text-center">
+                  <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
+                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Swords size={8} />공격력</p>
+                    <p className="text-[11px] font-black text-amber-200">{selSave?.atk ?? "?"}</p>
+                  </div>
+                  <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
+                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Shield size={8} />최대 HP</p>
+                    <p className="text-[11px] font-black text-rose-200">{selSave?.maxHp ?? "?"}</p>
+                  </div>
+                  <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
+                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Zap size={8} />골드</p>
+                    <p className="text-[11px] font-black text-yellow-200">{(selSave?.gold ?? 0).toLocaleString()}</p>
+                  </div>
+                  <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
+                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Gauge size={8} />마지막 구역</p>
+                    <p className="truncate text-[11px] font-black text-sky-200">{sel.stage}</p>
+                  </div>
+                </div>
+                {(() => {
+                  const sc = (selSave as { startCls?: string | null } | null)?.startCls ?? sel.cls;
+                  const fam = familyOf(sc || undefined);
+                  return fam ? (
+                    <p className="mt-2 rounded border border-white/10 bg-white/[0.03] px-2 py-1.5 text-[9px] font-bold leading-relaxed text-white/50">
+                      환생 시 <b style={{ color: clsColor(sel.cls) }}>{classLabel(sc as ClassKey)}</b>(으)로 돌아온다 · 시작 캐릭터가 기록되어 있다
+                    </p>
+                  ) : (
+                    <p className="mt-2 rounded border border-white/10 bg-white/[0.03] px-2 py-1.5 text-[9px] font-bold leading-relaxed text-white/50">
+                      아직 시작 직업이 없다 — 1차 전직 시련을 통과하면 환생 시에도 그 직업으로 시작한다
+                    </p>
+                  );
+                })()}
+                <button
+                  onClick={() => startChar(sel)}
+                  className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-3 py-3 text-[13px] font-black text-slate-900 transition-transform active:scale-95"
+                >
+                  <Play size={15} />
+                  이 캐릭터로 시작
+                </button>
+                <p className="mt-1 text-center text-[8px] font-bold text-white/30">카드를 더블클릭해도 바로 시작된다</p>
+                <button
+                  onClick={() => setDelId(sel.id)}
+                  className="mx-auto mt-1 flex items-center gap-1 text-[10px] font-bold text-white/35 underline underline-offset-2 hover:text-rose-300"
+                >
+                  <Trash2 size={11} />
+                  캐릭터 삭제
+                </button>
+                {msg && <p className="mt-1 text-[10px] font-black text-rose-300">{msg}</p>}
+              </div>
             ) : (
-              <div className="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-white/10 bg-white/[0.02] text-white/25">
-                <Lock size={16} />
-                <p className="text-[9px] font-bold">슬롯 확장 필요</p>
+              <div className="flex h-full flex-col items-center justify-center gap-2 py-8 text-center">
+                <UserPlus size={26} className="text-white/25" />
+                <p className="text-[11px] font-black text-white/50">첫 캐릭터를 만들어 모험을 시작하자</p>
+                <button onClick={openCreate} className="rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2.5 text-[11px] font-black text-slate-900">
+                  캐릭터 생성
+                </button>
               </div>
             )}
           </div>
-          <button onClick={expand} className="mx-auto mt-2 flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-black text-white/60 active:scale-95">
-            <Coins size={11} className="text-amber-300" />
-            슬롯 확장 (유니온 코인 60) — {used}/{store.slots}
-          </button>
-        </div>
-
-        {/* 정보 패널 */}
-        <div className="w-full shrink-0 rounded-lg border border-white/12 bg-black/40 p-3 lg:w-[320px]">
-          {creating ? (
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-[12px] font-black text-amber-200">캐릭터 생성</p>
-                <button onClick={() => setCreating(false)} className="flex h-6 w-6 items-center justify-center rounded border border-white/15 text-white/50">
-                  <ChevronLeft size={13} />
-                </button>
-              </div>
-              {/* 직업 카드 */}
-              <div className="grid grid-cols-2 gap-1.5">
-                {CLASS_PREVIEWS.map((p) => {
-                  const d = classDef(p.key)!;
-                  const on = pickCls === p.key;
-                  return (
-                    <button
-                      key={p.key}
-                      onClick={() => setPickCls(p.key)}
-                      className={`rounded-lg border-2 px-2 py-2 text-left transition-transform active:scale-95 ${on ? "" : "border-white/10 bg-white/[0.03]"}`}
-                      style={on ? { borderColor: d.color, background: `${d.color}18` } : undefined}
-                    >
-                      <p className="text-[12px] font-black" style={{ color: d.color }}>{d.name}</p>
-                      <p className="text-[8px] font-bold text-white/40">{d.title}</p>
-                    </button>
-                  );
-                })}
-              </div>
-              {/* 프리뷰 */}
-              {(() => {
-                const p = CLASS_PREVIEWS.find((x) => x.key === pickCls)!;
-                const d = classDef(p.key)!;
-                return (
-                  <div className="mt-2 rounded-lg border px-2.5 py-2" style={{ borderColor: `${d.color}55`, background: `${d.color}0d` }}>
-                    <p className="text-[11px] font-black" style={{ color: d.color }}>{d.name} — {d.title}</p>
-                    <p className="mt-1 text-[9px] font-bold leading-relaxed text-white/60">{p.intro}</p>
-                    <div className="mt-1.5 grid grid-cols-3 gap-1 text-center">
-                      <div className="rounded border border-white/10 bg-black/30 py-1">
-                        <p className="text-[7px] font-bold text-white/40">주 스탯</p>
-                        <p className="text-[9px] font-black text-amber-200">{p.main}</p>
-                      </div>
-                      <div className="rounded border border-white/10 bg-black/30 py-1">
-                        <p className="text-[7px] font-bold text-white/40">난이도</p>
-                        <p className="text-[9px] font-black text-amber-200">{"★".repeat(p.diff)}{"☆".repeat(4 - p.diff)}</p>
-                      </div>
-                      <div className="rounded border border-white/10 bg-black/30 py-1">
-                        <p className="text-[7px] font-bold text-white/40">공격력</p>
-                        <p className="text-[9px] font-black text-amber-200">+{d.atkPct}%</p>
-                      </div>
-                    </div>
-                    <p className="mt-1.5 text-[9px] font-black text-white/50">대표 스킬</p>
-                    <div className="mt-0.5 flex gap-1.5">
-                      {p.skills.map((s) => (
-                        <div key={s.name} className="flex flex-col items-center gap-0.5">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={s.icon} alt={s.name} width={34} height={34} className="rounded border border-white/15 bg-black/40" />
-                          <span className="text-[7px] font-bold text-white/55">{s.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-              <input
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                maxLength={8}
-                placeholder="캐릭터 이름 (최대 8자)"
-                className="mt-2 w-full rounded-lg border border-white/20 bg-black/50 px-3 py-2 text-[12px] font-bold text-white placeholder:text-white/25 focus:border-amber-300/60 focus:outline-none"
-              />
-              <button
-                onClick={doCreate}
-                className="mt-1.5 w-full rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-3 py-2.5 text-[12px] font-black text-slate-900 transition-transform active:scale-95"
-              >
-                {classDef(pickCls)!.name}로 생성
-              </button>
-              {msg && <p className="mt-1 text-[10px] font-black text-rose-300">{msg}</p>}
-            </div>
-          ) : sel ? (
-            <div>
-              <p className="text-[12px] font-black text-white">{sel.name}</p>
-              <p className="mt-0.5 text-[10px] font-bold" style={{ color: clsColor(sel.cls) }}>
-                {classLabel(sel.cls as ClassKey) || "무직"} · Lv. {sel.lv} · 환생 {sel.rebirths}회
-              </p>
-              <div className="mt-2 grid grid-cols-2 gap-1 text-center">
-                <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
-                  <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Swords size={8} />공격력</p>
-                  <p className="text-[11px] font-black text-amber-200">{selSave?.atk ?? "?"}</p>
-                </div>
-                <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
-                  <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Shield size={8} />최대 HP</p>
-                  <p className="text-[11px] font-black text-rose-200">{selSave?.maxHp ?? "?"}</p>
-                </div>
-                <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
-                  <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Zap size={8} />골드</p>
-                  <p className="text-[11px] font-black text-yellow-200">{(selSave?.gold ?? 0).toLocaleString()}</p>
-                </div>
-                <div className="rounded border border-white/10 bg-white/[0.04] py-1.5">
-                  <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Gauge size={8} />마지막 구역</p>
-                  <p className="truncate text-[11px] font-black text-sky-200">{sel.stage}</p>
-                </div>
-              </div>
-              {(() => {
-                const sc = (selSave as { startCls?: string | null } | null)?.startCls ?? sel.cls;
-                const fam = familyOf(sc || undefined);
-                return fam ? (
-                  <p className="mt-2 rounded border border-white/10 bg-white/[0.03] px-2 py-1.5 text-[9px] font-bold leading-relaxed text-white/50">
-                    환생 시 <b style={{ color: clsColor(sel.cls) }}>{classLabel(sc as ClassKey)}</b>(으)로 돌아온다 · 시작 캐릭터가 기록되어 있다
-                  </p>
-                ) : (
-                  <p className="mt-2 rounded border border-white/10 bg-white/[0.03] px-2 py-1.5 text-[9px] font-bold leading-relaxed text-white/50">
-                    아직 시작 직업이 없다 — 1차 전직 시련을 통과하면 환생 시에도 그 직업으로 시작한다
-                  </p>
-                );
-              })()}
-              <button
-                onClick={() => startChar(sel)}
-                className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-3 py-2.5 text-[13px] font-black text-slate-900 transition-transform active:scale-95"
-              >
-                <Play size={15} />
-                이 캐릭터로 시작
-              </button>
-              <button
-                onClick={() => setDelId(sel.id)}
-                className="mx-auto mt-1.5 flex items-center gap-1 text-[10px] font-bold text-white/35 underline underline-offset-2 hover:text-rose-300"
-              >
-                <Trash2 size={11} />
-                캐릭터 삭제
-              </button>
-              {msg && <p className="mt-1 text-[10px] font-black text-rose-300">{msg}</p>}
-            </div>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-2 py-8 text-center">
-              <UserPlus size={26} className="text-white/25" />
-              <p className="text-[11px] font-black text-white/50">첫 캐릭터를 만들어 모험을 시작하자</p>
-              <button onClick={() => setCreating(true)} className="rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2 text-[11px] font-black text-slate-900">
-                캐릭터 생성
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -358,7 +532,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
               <b className="text-white">{store.chars[delId]?.name}</b>의 레벨·장비·진행도가 영구히 사라진다. (유니온 코인·아티팩트는 계정에 유지)
             </p>
             <div className="mt-3 grid grid-cols-2 gap-1.5">
-              <button onClick={() => setDelId(null)} className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-[11px] font-black text-white/70">
+              <button onClick={() => setDelId(null)} className="rounded-lg border border-white/20 bg-white/5 px-3 py-2.5 text-[11px] font-black text-white/70">
                 취소
               </button>
               <button
@@ -368,7 +542,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                   setSelId(null);
                   refresh();
                 }}
-                className="rounded-lg bg-gradient-to-b from-rose-500 to-rose-700 px-3 py-2 text-[11px] font-black text-white"
+                className="rounded-lg bg-gradient-to-b from-rose-500 to-rose-700 px-3 py-2.5 text-[11px] font-black text-white"
               >
                 삭제
               </button>
@@ -383,3 +557,4 @@ export function Lobby({ onExit }: { onExit: () => void }) {
 void writeSlots;
 void getActiveCharId;
 void BASE_SLOTS;
+void isClassKey;

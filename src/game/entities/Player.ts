@@ -91,6 +91,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* v1.0.7 — 슬롯형 치장: 코스튬(스프라이트 착장)·헤어(포니테일 등) — 오라(cosmetic)와 독립 착용 */
   outfit: CosmeticKey | null = null;
   hair: CosmeticKey | null = null;
+  /* v1.0.19 (B-1 캐릭터 생성 — 외형) — 로비에서 고른 색조(전체 스프라이트 틴트).
+   *  null/0xffffff면 미적용. 상태 이상 틴트(독/출혈)가 끝나면 이 색으로 복원된다. */
+  lookTint: number | null = null;
 
   /** 기본 크리티컬 확률 (%) — 장신구로 증가 */
   private static readonly BASE_CRIT = 8;
@@ -2488,7 +2491,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.spawnDamageText(this.x, this.y - 34, dmg);
     if (kind === "poison") this.setTint(0x9ade8a);
     else this.setTint(0xffb08a);
-    this.scene.time.delayedCall(120, () => this.state !== "dead" && this.clearTint());
+    /* v1.0.19 — 외형 색조(lookTint) 보존: clearTint 대신 look 복원 경유 */
+    this.scene.time.delayedCall(120, () => this.state !== "dead" && this.applyLookTint());
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = "dead";
@@ -3708,10 +3712,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** 데미지 굴림 — 크리티컬 판정 포함 (스킬은 skillMult 곱, 전장의 함성 공증 반영 v3.0.3)
    *  v3.0.6 (지시 #5) — 크리티컬 확률 100% 초과분은 크리티컬 데미지로 1:1 전환:
-   *  예: 크리 확률 130% → 항상 크리 + 크리 데미지 +30% (1.7 → 2.0배) */
+   *  예: 크리 확률 130% → 항상 크리 + 크리 데미지 +30% (1.7 → 2.0배)
+   *  v1.0.19 (B-2 유니온) — 유니온 도적 계열 크리티컬 데미지 보너스(extBonus.critDmg %p) 가산 */
   get critDmg(): number {
     const overflow = Math.max(0, this.critRate - 100);
-    return Player.CRIT_MULT + overflow / 100;
+    return Player.CRIT_MULT + overflow / 100 + (this.extBonus.critDmg ?? 0) / 100;
   }
 
   private rollDamage(mult: number, isSkill = false, forceCrit = false): { dmg: number; crit: boolean } {
@@ -4268,6 +4273,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hair = key;
     this.scene.onCosmeticChanged();
     return true;
+  }
+
+  /* v1.0.19 (B-1 외형) — 색조 적용/복원. 상태 이상 틴트와 충돌하지 않게 단일 진입점 사용.
+   *  tint가 null/0xffffff면 clearTint. 세이브 로드 후 씬에서 호출. */
+  applyLookTint() {
+    if (this.lookTint && this.lookTint !== 0xffffff) this.setTint(this.lookTint);
+    else this.clearTint();
+  }
+
+  /** 로비 생성 시 고른 외형 색조 설정 (소유권 검사 불요 — 외형은 무료 커스텀) */
+  setLookTint(tint: number | null) {
+    this.lookTint = tint;
+    this.applyLookTint();
   }
 
   /* ---------------- 장비 강화 (2D MMORPG 기본 요소) ---------------- */

@@ -78,7 +78,8 @@ export type QuestDef = {
 
 export type BossKey =
   | "guardian" | "behemoth" | "abysslord"
-  | "nidhog" | "surt" | "fenrir" | "skoll" | "gram" | "abudditos";
+  | "nidhog" | "surt" | "fenrir" | "skoll" | "gram" | "abudditos"
+  | "vord" | "jorm" | "nagr";
 
 /* ================= v3.0.28 (#보스난이도) — 메이플식 보스 난이도 =================
  *  이지 / 노말 / 하드 / 카오스 4단계. 스토리 보스·재림 보스 공통 적용.
@@ -146,6 +147,9 @@ export type StageDef = {
   /** 구역 5 정예 몬스터 (미드 보스급 단일 스폰) */
   elite?: { key: EnemyKey; hpMult: number; atkMult: number; name: string };
   repeat?: { targetKey: EnemyKey; need: number; gold: number; exp: number; title: string; desc: string };
+  /** v1.0.19 (A-3 신규 스테이지) — 스테이지별 고유 배율 (stageScale 오버라이드.
+   *  기존 챕터 스테이지는 이 필드가 없어 기존 곡선 그대로 유지 — 회귀 없음) */
+  scaleMul?: { hp: number; atk: number; exp: number; gold: number };
 };
 
 /* ================= 챕터 스펙 ================= */
@@ -484,6 +488,47 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
     summonKey: "helhound",
   },
+  /* v1.0.19 (A-3 신규 스테이지 15종) — 재림 지역 보스 3종.
+   *  기존 보스 정의는 전부 유지 — 신규 3종은 기존 텍스처(휴먼 리소스 제로)를 재활용하되
+   *  이름·색조·패턴 구성을 다르게 해 별개의 적으로 기능한다. */
+  vord: {
+    key: "vord", name: "재림의 파수꾼 베오르드",
+    hp: 16800, atk: 50, speed: 92, exp: 1500, gold: 800,
+    tex: "boss2", orbTint: 0xffb05a, introDialogue: "bossIntroAbudditos",
+    /* 대지를 지키는 파수꾼 — 연속 낙뢰(지진) + 반격 카운터 */
+    patterns: {
+      p1: ["slam", "charge", "volley", "zones"],
+      p2: ["slam", "charge", "ring", "zones", "quake", "counter"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "quake", "counter"],
+    },
+    summonKey: "x3_orcwarrior",
+  },
+  jorm: {
+    key: "jorm", name: "세계수를 먹는 뱀 요르문간드",
+    hp: 21500, atk: 55, speed: 104, exp: 1900, gold: 980,
+    tex: "boss_nidhog", orbTint: 0x9affd0, introDialogue: "bossIntroAbudditos",
+    /* 세계수를 감는 뱀 — 스윕 빔 + 나선 탄막 + 2연속 돌진 */
+    chargeChain: 2,
+    patterns: {
+      p1: ["volley", "charge", "beam"],
+      p2: ["volley", "charge", "ring", "zones", "beam", "spiral"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "blink"],
+    },
+    summonKey: "x2_reeffish",
+  },
+  nagr: {
+    key: "nagr", name: "재림의 종언 나그라파르",
+    hp: 30000, atk: 62, speed: 108, exp: 2600, gold: 1400,
+    tex: "boss_abudditos", orbTint: 0xffd76a, introDialogue: "bossIntroAbudditos",
+    /* 종언을 먹는 존재 — 재림 지역 최종 보스, 전 패턴 종합 + 카오스급 구성 */
+    chargeChain: 2,
+    patterns: {
+      p1: ["volley", "charge", "ring", "spiral"],
+      p2: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "counter"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "blink", "quake", "counter"],
+    },
+    summonKey: "x3_necromancer",
+  },
 };
 
 /* ================= 스테이지 생성기 ================= */
@@ -513,8 +558,11 @@ export function chapterSpec(key: StageKey): ChapterSpec | null {
   return CHAPTERS.find((c) => c.key === ch) ?? null;
 }
 
-/** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스) */
+/** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스)
+ *  v1.0.19 (A-3) — 신규 스테이지(scaleMul 보유)는 전용 배율 우선, 기존 챕터는 기존 곡선 유지 */
 export function stageScale(key: StageKey): { hp: number; atk: number; exp: number; gold: number } {
+  const own = STAGES[key]?.scaleMul;
+  if (own) return { ...own };
   const spec = chapterSpec(key);
   if (!spec) return { hp: 1, atk: 1, exp: 1, gold: 1 };
   const { sub } = parseStage(key);
@@ -997,6 +1045,220 @@ NEXT_STAGE.park = null;
 PREV_STAGE.park = "village";
 STAGE_SHORT.park = "몬스터 파크";
 
+/* ═══════════ v1.0.19 (A-3) — 신규 스테이지 15종: "재림의 땅" 지역 ═══════════
+ *
+ *  해석 정정: 이전 요청의 "15종"은 **기존 스테이지 전부 유지 + 신규 15종 추가**였다.
+ *  기존 90구역(마을 + 9챕터×10구역)은 전혀 손대지 않았고, 그 뒤(abyss10 이후)에
+ *  재림 지역 15구역을 순차 체인으로 추가한다.
+ *
+ *  · 각 스테이지: 고유 테마(색감/지형/컨셉) + 고유 몬스터 구성 + 고유 클리어 보상
+ *  · 난이도 곡선: abyss10(hp 15.5·atk 5.0) 이후부터 순차 상승 (scaleMul 전용 배율)
+ *  · 보스 스테이지 3종: 재림5 베오르드 / 재림10 요르문간드 / 재림15 나그라파르
+ *  · 목록은 이 블록의 REBIRTH_STAGES 상수 한 곳에서 관리 — 기존(CHAPTERS)과 분리
+ */
+type RebirthSpec = {
+  key: string;
+  name: string;
+  subtitle: string;
+  /** 지형/색감 테마 */
+  groundTex: string;
+  pathTex: string;
+  bg: string;
+  groundTint: number;
+  flowers: number;
+  trees: number;
+  rocks: number;
+  /** 고유 몬스터 구성 (기존 34종 풀에서 조합) */
+  enemies: { key: EnemyKey; count: number }[];
+  main: EnemyKey;
+  bossKey?: BossKey;
+  elite?: { key: EnemyKey; name: string };
+  /** 스테이지별 전용 배율 — abyss 이후 곡선 */
+  mul: { hp: number; atk: number; exp: number; gold: number };
+  /** 고유 클리어 보상 (토벌 퀘스트 골드/경험치) */
+  reward: { gold: number; exp: number };
+};
+
+const REBIRTH_STAGES: RebirthSpec[] = [
+  {
+    key: "r1", name: "재림 1 — 잿빛 늑대 숲", subtitle: "회색 안개가 걸린 오래된 사냥터",
+    groundTex: "tile_grass", pathTex: "tile_path", bg: "#101408", groundTint: 0xa8b89a, flowers: 4, trees: 12, rocks: 6,
+    enemies: [{ key: "wolf", count: 10 }, { key: "x2_darkhound", count: 6 }, { key: "x3_wogol", count: 4 }], main: "wolf",
+    mul: { hp: 18, atk: 5.5, exp: 10, gold: 5.6 }, reward: { gold: 320, exp: 1300 },
+  },
+  {
+    key: "r2", name: "재림 2 — 유리 폭풍 평원", subtitle: "유리 조각을 몰고 오는 바람의 땅",
+    groundTex: "tile_snow", pathTex: "tile_ice", bg: "#0e1a26", groundTint: 0xcfe4f0, flowers: 0, trees: 4, rocks: 10,
+    enemies: [{ key: "x2_frostfly", count: 9 }, { key: "x2_bat", count: 6 }, { key: "frostwolf", count: 5 }], main: "x2_frostfly",
+    mul: { hp: 20, atk: 5.9, exp: 11.2, gold: 6.1 }, reward: { gold: 380, exp: 1550 },
+  },
+  {
+    key: "r3", name: "재림 3 — 가시 결정 지대", subtitle: "가시 돋친 수정이 자라는 땅",
+    groundTex: "tile_cave", pathTex: "tile_path_dark", bg: "#120a18", groundTint: 0x9a7ab8, flowers: 0, trees: 0, rocks: 16,
+    enemies: [{ key: "x2_stonegolem", count: 8 }, { key: "spider", count: 7 }, { key: "golem", count: 5 }], main: "x2_stonegolem",
+    elite: { key: "x2_stonegolem", name: "가시의 군주 바늘골렘" },
+    mul: { hp: 22, atk: 6.3, exp: 12.4, gold: 6.6 }, reward: { gold: 440, exp: 1800 },
+  },
+  {
+    key: "r4", name: "재림 4 — 붉은 안개 늪", subtitle: "숨을 걸고 지나가는 독의 홍수",
+    groundTex: "tile_grass", pathTex: "tile_path", bg: "#160c08", groundTint: 0xb88a6a, flowers: 0, trees: 8, rocks: 6,
+    enemies: [{ key: "x3_swampy", count: 9 }, { key: "x3_imp", count: 6 }, { key: "swampbeast", count: 5 }], main: "x3_swampy",
+    mul: { hp: 24, atk: 6.7, exp: 13.6, gold: 7.1 }, reward: { gold: 500, exp: 2050 },
+  },
+  {
+    key: "r5", name: "재림 5 — 파수꾼의 대문", subtitle: "재림을 감시하는 첫 보스가 서 있다",
+    groundTex: "tile_stone", pathTex: "tile_path_dark", bg: "#1a1208", groundTint: 0xb89868, flowers: 0, trees: 2, rocks: 12,
+    enemies: [{ key: "x3_orcwarrior", count: 8 }, { key: "x3_maskedorc", count: 6 }, { key: "x3_orcshaman", count: 4 }], main: "x3_orcwarrior",
+    bossKey: "vord",
+    mul: { hp: 26, atk: 7.1, exp: 14.8, gold: 7.6 }, reward: { gold: 700, exp: 2600 },
+  },
+  {
+    key: "r6", name: "재림 6 — 소용돌이 해안", subtitle: "심연에서 밀려오는 검은 물결",
+    groundTex: "tile_dark", pathTex: "tile_path", bg: "#081420", groundTint: 0x6a9ab8, flowers: 2, trees: 5, rocks: 10,
+    enemies: [{ key: "x2_reeffish", count: 9 }, { key: "x2_snail", count: 6 }, { key: "minion", count: 5 }], main: "x2_reeffish",
+    mul: { hp: 28, atk: 7.4, exp: 16, gold: 8.1 }, reward: { gold: 560, exp: 2300 },
+  },
+  {
+    key: "r7", name: "재림 7 — 잿불 화산 갱도", subtitle: "아직 식지 않은 재와 불씨",
+    groundTex: "tile_magma", pathTex: "tile_magma_path", bg: "#200a06", groundTint: 0xd88a5a, flowers: 0, trees: 0, rocks: 14,
+    enemies: [{ key: "emberwolf", count: 9 }, { key: "firespirit", count: 6 }, { key: "x2_firebird", count: 5 }], main: "emberwolf",
+    mul: { hp: 30, atk: 7.8, exp: 17.2, gold: 8.6 }, reward: { gold: 620, exp: 2550 },
+  },
+  {
+    key: "r8", name: "재림 8 — 얼어붙은 왕좌", subtitle: "얼음 아래 박힌 옛 왕들의 자리",
+    groundTex: "tile_snow", pathTex: "tile_ice", bg: "#0a1622", groundTint: 0xdce8f4, flowers: 0, trees: 6, rocks: 12,
+    enemies: [{ key: "x3_icezombie", count: 9 }, { key: "icegolem", count: 6 }, { key: "frostwolf", count: 5 }], main: "x3_icezombie",
+    mul: { hp: 33, atk: 8.1, exp: 18.4, gold: 9.1 }, reward: { gold: 680, exp: 2800 },
+  },
+  {
+    key: "r9", name: "재림 9 — 그림자 미궁", subtitle: "길을 삼키는 어둠의 정원",
+    groundTex: "tile_hel", pathTex: "tile_path_dark", bg: "#0c0614", groundTint: 0x6a5a8a, flowers: 0, trees: 8, rocks: 8,
+    enemies: [{ key: "wraith", count: 9 }, { key: "x3_necromancer", count: 6 }, { key: "x2_bat", count: 5 }], main: "wraith",
+    elite: { key: "x3_necromancer", name: "미궁의 지배자 그림 강령사" },
+    mul: { hp: 36, atk: 8.4, exp: 19.6, gold: 9.6 }, reward: { gold: 740, exp: 3050 },
+  },
+  {
+    key: "r10", name: "재림 10 — 뱀의 소용돌이", subtitle: "세계수를 감은 뱀이 기다린다",
+    groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#0e0618", groundTint: 0x5a4a7a, flowers: 0, trees: 0, rocks: 14,
+    enemies: [{ key: "x2_darkhound", count: 8 }, { key: "helhound", count: 6 }, { key: "x3_chort", count: 4 }], main: "helhound",
+    bossKey: "jorm",
+    mul: { hp: 39, atk: 8.7, exp: 20.8, gold: 10.1 }, reward: { gold: 1000, exp: 3600 },
+  },
+  {
+    key: "r11", name: "재림 11 — 무너진 하늘 정원", subtitle: "하늘에서 떨어진 잿불의 꽃밭",
+    groundTex: "tile_grass", pathTex: "tile_path", bg: "#160e1e", groundTint: 0xc8a8d8, flowers: 8, trees: 6, rocks: 8,
+    enemies: [{ key: "x2_firebird", count: 9 }, { key: "x3_orcshaman", count: 6 }, { key: "x3_goblin", count: 5 }], main: "x2_firebird",
+    mul: { hp: 42, atk: 9.0, exp: 22, gold: 10.6 }, reward: { gold: 800, exp: 3300 },
+  },
+  {
+    key: "r12", name: "재림 12 — 심연 먹이 사슬", subtitle: "먹는 자와 먹히는 자의 경계",
+    groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#0a0612", groundTint: 0x4a3a6a, flowers: 0, trees: 4, rocks: 12,
+    enemies: [{ key: "x3_ogre", count: 8 }, { key: "x2_darkhound", count: 7 }, { key: "x3_tinyzombie", count: 5 }], main: "x3_ogre",
+    mul: { hp: 45, atk: 9.2, exp: 23.2, gold: 11.1 }, reward: { gold: 860, exp: 3550 },
+  },
+  {
+    key: "r13", name: "재림 13 — 룬 폐허", subtitle: "폭주한 룬이 울리는 돌의 무덤",
+    groundTex: "tile_stone", pathTex: "tile_path_dark", bg: "#141008", groundTint: 0xa89a7a, flowers: 0, trees: 0, rocks: 18,
+    enemies: [{ key: "runegolem", count: 9 }, { key: "x3_chort", count: 6 }, { key: "golem", count: 5 }], main: "runegolem",
+    elite: { key: "runegolem", name: "폭주 룬의 심장 골레마르" },
+    mul: { hp: 48, atk: 9.4, exp: 24.4, gold: 11.6 }, reward: { gold: 920, exp: 3800 },
+  },
+  {
+    key: "r14", name: "재림 14 — 종언의 문", subtitle: "마지막 문 너머가 숨을 쉰다",
+    groundTex: "tile_hel", pathTex: "tile_path_dark", bg: "#100514", groundTint: 0x8a5a7a, flowers: 0, trees: 4, rocks: 14,
+    enemies: [{ key: "x3_bigzombie", count: 8 }, { key: "x3_maskedorc", count: 7 }, { key: "x3_wogol", count: 5 }], main: "x3_bigzombie",
+    mul: { hp: 52, atk: 9.6, exp: 25.6, gold: 12.1 }, reward: { gold: 980, exp: 4050 },
+  },
+  {
+    key: "r15", name: "재림 15 — 종언의 왕좌 앞", subtitle: "재림의 종언과 마주하는 자리",
+    groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#120616", groundTint: 0x6a4a5a, flowers: 0, trees: 0, rocks: 16,
+    enemies: [{ key: "x3_necromancer", count: 8 }, { key: "helhound", count: 6 }, { key: "x3_bigzombie", count: 5 }], main: "x3_bigzombie",
+    bossKey: "nagr",
+    mul: { hp: 56, atk: 9.9, exp: 27, gold: 12.7 }, reward: { gold: 1500, exp: 5200 },
+  },
+];
+
+function buildRebirthStage(spec: RebirthSpec): StageDef {
+  const mul = spec.mul;
+  const quests: QuestDef[] = [
+    {
+      id: `${spec.key}-hunt`,
+      type: "hunt",
+      title: `${spec.name.split("— ")[1]} 정화`,
+      desc: `${spec.subtitle} — 이 땅의 몬스터 12마리를 처치해라. (무엇을 잡아도 카운트된다)`,
+      need: 12,
+      targetKey: spec.main,
+      targetKeys: [...new Set(spec.enemies.map((g) => g.key))],
+      targetLabel: `${ENEMIES[spec.main].name} 등 재림 몬스터`,
+      reward: spec.reward.gold,
+      expReward: spec.reward.exp,
+    },
+  ];
+  /* 보스 구역 — 보스 토벌 + 다음 구역 안내 퀘스트 */
+  if (spec.bossKey) {
+    quests.push({
+      id: `${spec.key}-boss`,
+      type: "boss",
+      title: BOSS_DEFS[spec.bossKey].name,
+      desc: `재림의 수호자 — ${BOSS_DEFS[spec.bossKey].name}를 처치해라!`,
+      targetLabel: BOSS_DEFS[spec.bossKey].name,
+      reward: Math.round(spec.reward.gold * 1.6),
+      expReward: Math.round(spec.reward.exp * 1.6),
+    });
+  } else {
+    quests.push({
+      id: `${spec.key}-collect`,
+      type: "collect",
+      title: "재림의 결정",
+      desc: "재림의 땅에 흩어진 결정의 흔적을 회수해라.",
+      targetLabel: "결정의 흔적",
+      reward: Math.round(spec.reward.gold * 0.6),
+      expReward: Math.round(spec.reward.exp * 0.6),
+    });
+  }
+  const def: StageDef = {
+    key: spec.key,
+    name: spec.name,
+    subtitle: spec.subtitle,
+    width: 2100 + Math.min(600, (mul.hp - 18) * 30),
+    height: 1200,
+    groundTint: spec.groundTint,
+    flowerCount: spec.flowers,
+    treeCount: spec.trees,
+    rockCount: spec.rocks,
+    quests,
+    enemies: spec.enemies,
+    boss: !!spec.bossKey,
+    bossKey: spec.bossKey,
+    repeat: {
+      targetKey: spec.main,
+      need: 22,
+      gold: Math.round(spec.reward.gold * 0.55),
+      exp: Math.round(spec.reward.exp * 0.55),
+      title: `[반복] ${spec.name.split("— ")[1]} 순찰`,
+      desc: "재림 땅의 어둠은 다시 자라난다 — 계속 사냥해라.",
+    },
+    scaleMul: { ...mul },
+  };
+  if (spec.elite) {
+    def.elite = { key: spec.elite.key, hpMult: 9, atkMult: 1.6, name: spec.elite.name };
+  }
+  return def;
+}
+
+/* 신규 15구역 등록 + 체인 연결 (기존 체인은 유지 — abyss10의 다음 포탈만 r1로 연장)
+ *  지형 테마(STAGE_THEME)는 파일 말미 선언부 이후 별도 등록 (TDZ 회피) */
+for (let i = 0; i < REBIRTH_STAGES.length; i++) {
+  const spec = REBIRTH_STAGES[i];
+  const def = buildRebirthStage(spec);
+  STAGES[def.key] = def;
+  STAGE_SHORT[def.key] = `재림${i + 1}`;
+  NEXT_STAGE[def.key] = i < REBIRTH_STAGES.length - 1 ? REBIRTH_STAGES[i + 1].key : null;
+  PREV_STAGE[def.key] = i > 0 ? REBIRTH_STAGES[i - 1].key : "abyss10";
+}
+/* 기존 마지막 구역(10-10) → 재림 1 연장 — 기존 난이도/보상/동작은 그대로, 전진 포탈만 열린다 */
+NEXT_STAGE.abyss10 = REBIRTH_STAGES[0].key;
+
 /** 구 세이브 키 폴백 — v1.x 6스테이지 → 신규 체인 시작점 */
 export const LEGACY_STAGE_FALLBACK: Record<string, StageKey> = {
   forest: "forest1",
@@ -1017,10 +1279,19 @@ export function resolveStage(key: string): StageKey {
   return "village";
 }
 
-/** 오프닝 대사 매핑 — 구역 1은 챕터 인트로, 나머지는 구역 안내 */
+/** 오프닝 대사 매핑 — 구역 1은 챕터 인트로, 나머지는 구역 안내
+ *  v1.0.19 (A-3) — 재림 지역(r1~r15)은 전용 인트로 대사 키 사용 (보스 구역은 rebirthBoss) */
 export function stageIntro(key: StageKey): string {
   const spec = chapterSpec(key);
-  if (!spec) return "villageIntro";
+  if (!spec) {
+    const rb = /^r(\d+)$/.exec(key);
+    if (rb) {
+      const n = parseInt(rb[1], 10);
+      if (n === 5 || n === 10 || n === 15) return "rebirthBoss";
+      return `rebirthWalk${((n - 1) % 3) + 1}`;
+    }
+    return "villageIntro";
+  }
   const { sub } = parseStage(key);
   if (sub === 1) return spec.intro;
   if (sub === 5) return `eliteWarn${spec.num}`;
@@ -1038,4 +1309,8 @@ for (const spec of CHAPTERS) {
   for (let sub = 1; sub <= 10; sub++) {
     STAGE_THEME[`${spec.key}${sub}`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
   }
+}
+/* v1.0.19 (A-3) — 재림 지역 15구역 지형 테마 등록 */
+for (const spec of REBIRTH_STAGES) {
+  STAGE_THEME[spec.key] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
 }
