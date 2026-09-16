@@ -98,7 +98,14 @@ function loadDb() {
           createdAt: Date.now(), role: "admin",
         };
         console.log(`[SERTZ-accounts] 관리자 계정 없음 → 오토시드: ${aid}`);
-        audit("admin_autoseed", { uid: aid });
+        /* v1.1.0 (#16 보안) — 기본 비밀번호로 오토시드되면 공개 서버에서 무차별 위험이 있다.
+         *  운영자에게 즉시 경고 + 감사 로그 남김 (배포 가이드에도 SERTZ_ADMIN_PASSWORD 설정 필수 명시) */
+        if (!process.env.SERTZ_ADMIN_PASSWORD) {
+          console.warn(`[SERTZ-accounts] ⚠ 경고: SERTZ_ADMIN_PASSWORD 미설정 — ${aid} 기본 비밀번호로 시드됨. 공개 배포 전 반드시 변경할 것!`);
+          audit("admin_autoseed_default_pw", { uid: aid });
+        } else {
+          audit("admin_autoseed", { uid: aid });
+        }
       }
     }
     persistDb();

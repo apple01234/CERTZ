@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { buildAllAnims } from "../textures";
+import { BODY_PREFIXES } from "../data";
 import { BGM_PRELOAD_TRACKS, SKILL_SFX_TRACKS } from "../audio";
 
 /**
@@ -260,7 +261,7 @@ export class BootScene extends Phaser.Scene {
       const barH = 18;
       const barY = H * 0.58;
       container.add(this.add.rectangle(W / 2, barY, barW + 8, barH + 8, wood).setStrokeStyle(2, 0x241a0d));
-      const fill = this.add.rectangle(W / 2 - barW / 2, barY, 1, barH, gold).setOrigin(0);
+      const fill = this.add.rectangle(W / 2 - barW / 2, barY, 1, barH, gold).setOrigin(0, 0.5); // v1.1.0 (#14) — originY 0.5: 채움 바가 프레임 세로 중앙에 정렬 (기존 9px 하강/돌출 버그)
       container.add(fill);
       container.add(
         this.add
@@ -329,16 +330,15 @@ export class BootScene extends Phaser.Scene {
     this.buildLoadingUi();
     this.load.setPath("assets");
     for (const key of ASSET_LIST) this.load.image(key, `${key}.webp`);
-    /* v1.0.7 — SPUM식 코스튬 프레임 4종×28 + 포니테일 (scripts/gen_outfits.py 생성 —
-     *  hero_* 프레임의 의상 픽셀만 재색상화, 피부/머리카락/외곽선 보호 — 총 31KB) */
-    for (const key of ASSET_LIST) {
-      if (!key.startsWith("hero_")) continue;
-      const f = key.slice(5);
-      for (const s of ["royal", "shadow", "spring", "navy"]) {
-        this.load.image(`outfit_${s}_${f}`, `outfit_${s}_${f}.webp`);
-      }
+    /* v1.1.0 (#1/#19/#21/#22) — 외형 시스템: 여성(chf)/피부(chm) 변형 11종 + SPUM식 코스튬 완전교체(cost_*) 10종 × 28프레임
+     *  + 어태치 장식 5종 (scripts/gen_char_system.py 산출). 구 outfit_* 재색상 오버레이는 폐기(미로드) */
+    const heroFrames = ASSET_LIST.filter((k) => k.startsWith("hero_")).map((k) => k.slice(5));
+    for (const p of BODY_PREFIXES) {
+      for (const f of heroFrames) this.load.image(`${p}_${f}`, `${p}_${f}.webp`);
     }
-    this.load.image("hair_ponytail", "hair_ponytail.webp");
+    for (const t of ["hair_ponytail", "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy"]) {
+      this.load.image(t, `${t}.webp`);
+    }
     /* v1.0.7 — 프리렌더 3D VFX 추가 (Hovl Studio Magic effects · UNI VFX — 연구용 원본 재확보분,
      *  유니티 3D 파이프라인 프리렌더 텍스처 → 2D 스프라이트. 보스 격파/각성 의식 등 희소 고급스 순간 전용) */
     this.load.image("hv_slash", "hv_slash.webp");

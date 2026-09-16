@@ -15,6 +15,8 @@ export type FigureDef = {
   name: string;
   grade: FigureGrade;
   desc: string;
+  /** v1.1.0 (#13) — 피규어 아이콘 (게임 내 실제 몬스터/펫 스프라이트 — 12종 전부 다른 모습) */
+  icon: string;
   /** 보너스 — 보유만으로 항상 적용 (노말/레어 flat, 에픽/전설 %) */
   bonus: { atk?: number; def?: number; hp?: number; crit?: number; atkPct?: number };
 };
@@ -27,18 +29,18 @@ export const FIGURE_GRADE_META: Record<FigureGrade, { name: string; color: strin
 };
 
 export const FIGURES: FigureDef[] = [
-  { key: "fig_slime", name: "필드 슬라임", grade: 0, desc: "첫 사냥 상대의 피규어", bonus: { hp: 40 } },
-  { key: "fig_gob", name: "고블린 정찰병", grade: 0, desc: "숲의 단골손님", bonus: { atk: 3 } },
-  { key: "fig_wolf", name: "서릿늑대", grade: 0, desc: "니플헤임의 주민", bonus: { def: 2 } },
-  { key: "fig_mush", name: "황금 버섯", grade: 0, desc: "숨겨진 하늘색 반짝임", bonus: { crit: 1 } },
-  { key: "fig_knight", name: "쿠소디아 기사", grade: 1, desc: "철벽의 방패 자세", bonus: { def: 6, hp: 80 } },
-  { key: "fig_archer", name: "요정 궁수", grade: 1, desc: "알프헤임의 명사수", bonus: { atk: 6 } },
-  { key: "fig_dragon", name: "새끼 파이어드레이크", grade: 1, desc: "아직 작은 화염", bonus: { atk: 4, crit: 2 } },
-  { key: "fig_reaper", name: "작은 사신", grade: 1, desc: "헬의 초보 사자", bonus: { crit: 3 } },
-  { key: "fig_golem", name: "룬 골렘", grade: 2, desc: "고대 룬이 깨어났다", bonus: { atkPct: 2, hp: 150 } },
-  { key: "fig_fenrir", name: "펜리르 그림자", grade: 2, desc: "포효가 남겨둔 흔적", bonus: { atkPct: 3 } },
-  { key: "fig_valk", name: "발키리 날개", grade: 2, desc: "빛의 결정 날개", bonus: { crit: 4, def: 8 } },
-  { key: "fig_worldtree", name: "세계수의 심장", grade: 3, desc: "아홉 왕국을 지탱하는 전설", bonus: { atkPct: 4, hp: 300, crit: 2 } },
+  { icon: "pet_slime", key: "fig_slime", name: "필드 슬라임", grade: 0, desc: "첫 사냥 상대의 피규어", bonus: { hp: 40 } },
+  { icon: "x3_goblin_idle0", key: "fig_gob", name: "고블린 정찰병", grade: 0, desc: "숲의 단골손님", bonus: { atk: 3 } },
+  { icon: "frostwolf_idle0", key: "fig_wolf", name: "서릿늑대", grade: 0, desc: "니플헤임의 주민", bonus: { def: 2 } },
+  { icon: "kd_plant2", key: "fig_mush", name: "황금 버섯", grade: 0, desc: "숨겨진 하늘색 반짝임", bonus: { crit: 1 } },
+  { icon: "x3_orcwarrior_idle0", key: "fig_knight", name: "쿠소디아 기사", grade: 1, desc: "철벽의 방패 자세", bonus: { def: 6, hp: 80 } },
+  { icon: "pet_pixie", key: "fig_archer", name: "요정 궁수", grade: 1, desc: "알프헤임의 명사수", bonus: { atk: 6 } },
+  { icon: "x2_firebird_idle0", key: "fig_dragon", name: "새끼 파이어드레이크", grade: 1, desc: "아직 작은 화염", bonus: { atk: 4, crit: 2 } },
+  { icon: "x3_necromancer_idle0", key: "fig_reaper", name: "작은 사신", grade: 1, desc: "헬의 초보 사자", bonus: { crit: 3 } },
+  { icon: "runegolem_idle0", key: "fig_golem", name: "룬 골렘", grade: 2, desc: "고대 룬이 깨어났다", bonus: { atkPct: 2, hp: 150 } },
+  { icon: "emberwolf_idle0", key: "fig_fenrir", name: "펜리르 그림자", grade: 2, desc: "포효가 남겨둔 흔적", bonus: { atkPct: 3 } },
+  { icon: "cos_wings", key: "fig_valk", name: "발키리 날개", grade: 2, desc: "빛의 결정 날개", bonus: { crit: 4, def: 8 } },
+  { icon: "gw_crystal", key: "fig_worldtree", name: "세계수의 심장", grade: 3, desc: "아홉 왕국을 지탱하는 전설", bonus: { atkPct: 4, hp: 300, crit: 2 } },
 ];
 
 export const FIGURE_MAP: Record<string, FigureDef> = Object.fromEntries(FIGURES.map((f) => [f.key, f]));

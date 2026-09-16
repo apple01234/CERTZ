@@ -30,6 +30,8 @@ export type CharMeta = {
   rebirths: number;
   /* v1.0.19 (B-1 외형) — 로비에서 고른 색조 (스프라이트 틴트 — 슬롯 카드 미리보기용) */
   lookTint?: number | null;
+  gender?: "m" | "f"; // v1.1.0 (#22)
+  skinIdx?: number; // v1.1.0 (#21)
 };
 
 export type SlotsStore = {
@@ -123,7 +125,12 @@ export type CreateResult = { ok: true; id: string; save: SaveData } | { ok: fals
 /** 새 캐릭터 생성 — 이름·시작 클래스·외형을 받아 스텁 세이브를 즉시 기록하고 로비로 복귀한다.
  *  스텁 세이브는 game:continue로 월드에 전달되어 인트로 없이 바로 플레이 시작.
  *  v1.0.19 (B-1) — 외형(색조 lookTint) 파라미터 추가 */
-export function createCharacter(name: string, cls: string | null, lookTint?: number | null): CreateResult {
+export function createCharacter(
+  name: string,
+  cls: string | null,
+  lookTint?: number | null,
+  look?: { gender: "m" | "f"; skinIdx: number }, // v1.1.0 (#21/#22) — 성별+피부
+): CreateResult {
   const store = loadSlots();
   const used = Object.keys(store.chars).length;
   if (used >= store.slots) return { ok: false, reason: `캐릭터 슬롯이 부족해요 (${used}/${store.slots})` };
@@ -147,13 +154,16 @@ export function createCharacter(name: string, cls: string | null, lookTint?: num
     startCls: cls,
     gold: 30,
     lookTint: tint,
+    gender: look?.gender ?? "m", // v1.1.0 (#22)
+    skinIdx: look?.skinIdx ?? 2, // v1.1.0 (#21)
+    introSeen: false, // v1.1.0 (#18) — 프롤로그 미시청
   } as SaveData;
   try {
     window.localStorage.setItem(`sertz_char_${id}`, JSON.stringify(stub));
   } catch {
     return { ok: false, reason: "저장 공간에 기록할 수 없어요" };
   }
-  store.chars[id] = { id, name: trimmed, cls, lv: 1, stage: "village", cleared: false, lastSeen: now, createdAt: now, rebirths: 0, lookTint: tint };
+  store.chars[id] = { id, name: trimmed, cls, lv: 1, stage: "village", cleared: false, lastSeen: now, createdAt: now, rebirths: 0, lookTint: tint, gender: look?.gender ?? "m", skinIdx: look?.skinIdx ?? 2 };
   writeSlots(store);
   return { ok: true, id, save: stub };
 }

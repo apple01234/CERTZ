@@ -1399,7 +1399,8 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
     wornLabel:
       COSMETIC_DEFS[ck as CosmeticKey]?.slot === "outfit" ? (rpg.outfit === ck ? "착용" : undefined)
       : COSMETIC_DEFS[ck as CosmeticKey]?.slot === "hair" ? (rpg.hair === ck ? "착용" : undefined)
-      : (rpg.cosmetic === ck ? "착용" : undefined),
+      : COSMETIC_DEFS[ck as CosmeticKey]?.slot === "acc" ? ((rpg as { accessory?: string | null }).accessory === ck ? "착용" : undefined)
+      : (rpg.cosmetic === ck ? "착용" : undefined), // v1.1.0 — acc 슬롯 착용 표기
   }));
 
   /* ----- 기타 탭 슬롯 (물약 전 티어 + 스크롤/큐브/책/상자 — 기본 물약은 카운터 가상 슬롯) ----- */
@@ -1757,7 +1758,8 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         </div>
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        <InvBtn tone={active ? "gray" : "amber"} onClick={() => EventBus.emit("rpg:cosmetic", { key: active ? null : (s.k as CosmeticKey) })}>
+                        <InvBtn tone={active ? "gray" : "amber"} onClick={() => EventBus.emit("rpg:cosmetic", { key: active ? null : (s.k as CosmeticKey), slot })}>
+                          {/* v1.1.0 (#4) — 해제 시 슬롯을 함께 전달: 코스튬+헤어 동시 착용 중에도 원하는 것만 정확히 해제 */}
                           {active ? "해제" : "착용"}
                         </InvBtn>
                       </div>
@@ -1830,11 +1832,11 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         {/* v1.0.2 (#등급업큐브) — 등급업 큐브 사용 버튼 신설 (기존 로직은 있었으나 진입 UI 부재로 죽은 기능이었다) */}
                         {equipped && it.tier !== "legend" && (rpg.tierCube ?? 0) > 0 && (
                           <InvBtn tone="violet" onClick={() => EventBus.emit("rpg:isekai", { action: "tierUp", slot: eqSlot })}>
-                            등급업 ×{(rpg.tierCube ?? 0)}
+                            등급업(티어↑) ×{(rpg.tierCube ?? 0)}
                           </InvBtn>
                         )}
                         {equipped && it.tier !== "legend" && (rpg.tierCube ?? 0) <= 0 && (
-                          <span className="rounded-md bg-violet-400/10 px-2.5 py-1.5 text-[10px] font-bold text-violet-200/60">등급업 큐브 없음</span>
+                          <span className="rounded-md bg-violet-400/10 px-2.5 py-1.5 text-[10px] font-bold text-violet-200/60">등급업(티어↑) 큐브 없음</span>
                         )}
                         {!equipped && <span className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[10px] font-bold text-white/40">장착 후 가방에서 강화</span>}
                         {eqFlash && (
@@ -1843,7 +1845,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                           </span>
                         )}
                         <InvBtn tone="gray" disabled={eertN <= 0} onClick={() => EventBus.emit("rpg:eert", { key: it.key })}>
-                          eert {eertN > 0 ? `×${eertN}` : ""}
+                          EERT(잠재) {eertN > 0 ? `×${eertN}` : ""}
                         </InvBtn>
                         {sellValue(it) > 0 && <SellQtyBox compact count={s.count} unitValue={sellValue(it)} ev="rpg:sell" keyName={s.k} />}
                           <span
@@ -2635,7 +2637,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
                 <p className="text-base font-black text-violet-200">{inf.abyss.toLocaleString()}</p>
               </div>
             </div>
-            <button onClick={() => EventBus.emit("rpg:infTower")} className="w-full rounded-xl border-2 border-purple-200/70 bg-gradient-to-b from-purple-400 to-purple-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">탑 입장 (무료 · 언제든)</button>
+            <button onClick={() => EventBus.emit("rpg:infTower")} className="w-full rounded-xl border-2 border-purple-200/70 bg-gradient-to-b from-purple-400 to-purple-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">탑 입장</button>
             <p className="mt-1.5 text-[9px] text-white/35">복귀 포탈로 중간 퇴장 가능 · 기록은 자동 저장되고 랭킹에 등록된다 (원정대 → 랭킹 탭)</p>
           </div>
         )}
@@ -3809,7 +3811,12 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                 return (
                   <div key={f.key} title={got ? `${f.desc} — ${bonusText}` : "미보유"} className={`flex flex-col items-center gap-0.5 rounded-lg border px-1.5 py-2 text-center ${got ? "border-purple-300/40 bg-purple-400/[0.08]" : "border-white/10 bg-white/[0.02] opacity-50"}`}>
                     <div className="flex h-8 w-8 items-center justify-center rounded-md border text-sm" style={{ borderColor: `${FIGURE_GRADE_META[f.grade].color}55`, background: `${FIGURE_GRADE_META[f.grade].color}18` }}>
-                      {got ? "🧸" : "?"}
+                      {/* v1.1.0 (#13) — 12종 피규어 전부 다른 모습: 실제 게임 스프라이트 렌더 (곰돌이 이모지 폐기) */}
+                      {got ? (
+                        <img src={`/assets/${f.icon}.webp`} alt={f.name} className="h-7 w-7 object-contain" style={{ imageRendering: "pixelated" }} draggable={false} />
+                      ) : (
+                        "?"
+                      )}
                     </div>
                     <p className="w-full truncate text-[9px] font-bold text-white">{got ? f.name : "???"}</p>
                     {gradeBadge(f.grade)}

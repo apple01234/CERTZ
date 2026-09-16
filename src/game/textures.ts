@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { BODY_PREFIXES } from "./data";
 
 /**
  * 애니메이션 등록 전용 모듈.
@@ -25,6 +26,18 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "hero-atk", ...fr("hero_atk", 4, 16, 0) }); // 측면(오른쪽)
   a.create({ key: "hero-atk-down", ...fr("hero_atkdown", 4, 16, 0) });
   a.create({ key: "hero-atk-up", ...fr("hero_atkup", 4, 16, 0) });
+  /* v1.1.0 (#1/#21/#22) — 외형 변형 시트 애님: 여성(chf)/피부(chm)/코스튬 완전 교체(cost_*)
+   *  hero-* 와 동일 구조 7종 애님을 프리픽스별로 등록 — Player.bodyKey()가 매핑한다 */
+  for (const p of BODY_PREFIXES) {
+    if (!scene.textures.exists(`${p}_idle0`)) continue; // 미로드 시트 스킵 (안전)
+    a.create({ key: `${p}-idle`, ...fr(`${p}_idle`, 4, 4, -1) });
+    a.create({ key: `${p}-walk`, ...fr(`${p}_walk`, 4, 9, -1) });
+    a.create({ key: `${p}-walk-up`, ...fr(`${p}_walkup`, 4, 9, -1) });
+    a.create({ key: `${p}-walk-side`, ...fr(`${p}_walkside`, 4, 9, -1) });
+    a.create({ key: `${p}-atk`, ...fr(`${p}_atk`, 4, 16, 0) });
+    a.create({ key: `${p}-atk-down`, ...fr(`${p}_atkdown`, 4, 16, 0) });
+    a.create({ key: `${p}-atk-up`, ...fr(`${p}_atkup`, 4, 16, 0) });
+  }
   /* v3.0.2 — 신규 외부 몬스터 9종 (50 Monsters Pack, CC0) */
   for (const k of [
     "x2_frog", "x2_rat", "x2_bat", "x2_firebird", "x2_frostfly",

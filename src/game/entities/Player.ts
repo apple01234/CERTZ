@@ -103,7 +103,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v1.0.18 — 유니온 버프 경험치 % 훅 (씬이 주입 — null이면 미적용) */
   expBonusPct?: () => number;
   /* v3.0.6 (지시 #5) — 자동 물약/자동 버프 설정 (hpPct 0=끝, mpOn, 버프 키 목록) */
-  autoUse: { hpPct: number; mpPct: number; mpOn: boolean; buffs: BuffKey[] } = { hpPct: 0, mpPct: 0, mpOn: false, buffs: [] };
+  autoUse: { hpPct: number; mpPct: number; mpOn: boolean; buffs: BuffKey[] } = { hpPct: 45, mpPct: 25, mpOn: false, buffs: [] }; // v1.1.0 (#5) — 기본 활성화 45%/25% (설정 저장값 우선, 0이면 끔)
+  /* v1.1.0 (#5) — 운영자 무한 소모품: 물약/엘릭서가 없어도 회복되고 소모되지 않는다 (WorldScene이 adminRole로 설정) */
+  gmInfinite = false;
+  /* v1.1.0 (#1/#22/#21) — 외형: 성별/피부/시트 프리픽스. "" = 기본(남성·기본피부 = 원본 hero_*) */
+  gender: "m" | "f" = "m";
+  skinIdx = 2;
+  bodyPrefix = "";
   /* v3.3.0 (지시 #3/#8 — GM 5차전직(임시) + 5차전직 스토리) — 5차 각성 상태 (세이브 대상)
    *  GM 부여 or 각성 시련 완료 시 true. Lv.200 도달과 별개 — true면 200 미만이어도 5차 강화+궁극기 사용 가능 */
   fifth = false;
@@ -220,7 +226,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 맵 밖으로 나가지 않도록 월드 경계 충돌 (러지/넉백/대시 전부 차단)
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     (this.body as Phaser.Physics.Arcade.Body).pushable = false;
-    this.play("hero-idle");
+    this.play(this.bodyKey("hero-idle"));
   }
 
   /* ---------------- 메인 업데이트 ---------------- */
@@ -260,7 +266,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* v3.0.11 — 돌진 중 주행 애니 (기존엔 애니 없이 마지막 프레임이 얼어붙은 채 미끄러짐) */
       {
         const horiz = Math.abs(this.dashDir.x) >= Math.abs(this.dashDir.y);
-        const key = horiz ? "hero-walk-side" : this.dashDir.y > 0 ? "hero-walk" : "hero-walk-up";
+        const key = horiz ? this.bodyKey("hero-walk-side") : this.dashDir.y > 0 ? this.bodyKey("hero-walk") : this.bodyKey("hero-walk-up");
         if (horiz) this.setFlipX(this.dashDir.x > 0); // v3.0.10 — 시트 왼쪽 기준
         if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) this.play(key);
       }
@@ -329,7 +335,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.facing.copy(move).normalize();
         // 방향 우세 축 기준 실제 걷기 프레임 사용 (아래/위/측면)
         const horiz = Math.abs(move.x) >= Math.abs(move.y);
-        const key = horiz ? "hero-walk-side" : move.y > 0 ? "hero-walk" : "hero-walk-up";
+        const key = horiz ? this.bodyKey("hero-walk-side") : move.y > 0 ? this.bodyKey("hero-walk") : this.bodyKey("hero-walk-up");
         // v3.0.2 — idle에서 setTexture로 전환 후 currentAnim 키가 잔존해 같은 방향 재입력 시 play가 스킵되던 버그:
         // 재생 중이 아니면 항상 재시작 (정지→같은 방향 재입력 애니메이션 복구)
         if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) this.play(key);
@@ -340,12 +346,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocity(0, 0);
         // 정지 시 마지막 바라본 방향 유지 (정면 idle로 튀는 문제 방지 — 사용자 피드백)
         const f = this.facing;
-        let tex = "hero_idle0"; // 기본: 정면 (아래쪽 바라볼 때/초기)
+        let tex = this.bodyKey("hero_idle0"); // 기본: 정면 (아래쪽 바라볼 때/초기) — v1.1.0 외형 매핑
         if (Math.abs(f.x) >= Math.abs(f.y) && f.x !== 0) {
           this.setFlipX(f.x > 0); // v3.0.10 — 측면 시트는 왼쪽 기준
-          tex = "hero_walkside0";
+          tex = this.bodyKey("hero_walkside0");
         } else if (f.y < 0) {
-          tex = "hero_walkup0"; // 위쪽 — 뒷모습 서있기
+          tex = this.bodyKey("hero_walkup0"); // 위쪽 — 뒷모습 서있기
         }
         if (this.anims.isPlaying) this.anims.stop();
         if (this.texture.key !== tex) this.setTexture(tex);
@@ -360,7 +366,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // 스윙 판정(65ms) 이후엔 걷기 애니로 복귀 — 공격 포즈로 미끄러지는 얼음막기 감삭 제거
         if (this.swingDone) {
           const horiz = Math.abs(this.facing.x) >= Math.abs(this.facing.y);
-          const key = horiz ? "hero-walk-side" : this.facing.y > 0 ? "hero-walk" : "hero-walk-up";
+          const key = horiz ? this.bodyKey("hero-walk-side") : this.facing.y > 0 ? this.bodyKey("hero-walk") : this.bodyKey("hero-walk-up");
           if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) this.play(key); // v3.0.2 — 동일 버그
           if (horiz) this.setFlipX(move.x > 0); // v1.0.12 — 회복 구간 걷기는 걷기 시트(좌향) 기준 — 공격 플립(우향)과 의미가 달라 직접 갱신
         }
@@ -456,7 +462,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const knock = warrior ? 320 : 280;
 
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
-    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 실측 재검증: 공격 시트도 좌향 네이티브(걷기와 동일) — 기존 우향 가정이 "공격 방향≠바라보는 방향"의 근원
     this.play(atkKey);
     // v3.0.2 — 도적(단검)은 참격 검기를 보라색으로 (무기 정체성)
@@ -525,7 +531,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *    부채꼴 확대(차수별 0.13~0.22rad) · 연사 간격 90→60ms · 발사 머즐 플래시 ·
    *    비행 잔상(트레일) · 3발+ 동시 타격감 카메라 마이크로 셰이크 */
   private atkBow(dir: Phaser.Math.Vector2) {
-    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일 (faceAtk 주석 참고)
     this.play(atkKey);
     const angle0 = Math.atan2(dir.y, dir.x);
@@ -595,7 +601,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  v3.0.2 — 칼을 휘두르지 않고 시전 이펙트(마나 불꽃) + 마법 구슬 발사 (무기 정체성)
    *  v3.0.15 (#4) — "N차마다 N개" 공식 적용 (1차 1발 ~ 4차 4발) */
   private atkBolt(dir: Phaser.Math.Vector2) {
-    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
     this.play(atkKey);
     this.scene.spawnCast(this.x + dir.x * 12, this.y - 12);
@@ -653,7 +659,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  회전하는 표창(24x24 픽셀 아트)이 관통 1로 날아간다.
    */
   private atkShuriken(dir: Phaser.Math.Vector2) {
-    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
     this.play(atkKey);
     const t = this.sTier;
@@ -977,7 +983,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // 몸통(스프라이트) 360° 회전 — 검 뻗은 공격 프레임을 돌려 휘두르는 동작
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play("hero-atk");
+    this.play(this.bodyKey("hero-atk"));
     this.scene.tweens.add({
       targets: this,
       rotation: spin * Math.PI * 2,
@@ -1047,7 +1053,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play("hero-atk");
+    this.play(this.bodyKey("hero-atk"));
     this.scene.sfxSkill("arrow", 0.92); // v3.0.24 — 궁수 활발사 (회전베기음 → 활음 교체)
     const count = 3 + t;
     const fireVolley = (n: number, spread: number, dmgMul: number, delay0: number) => {
@@ -1083,7 +1089,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const aim = this.aimDirFree(); // v3.0 — 8방향 자유 조준
     const angle = Math.atan2(aim.y, aim.x);
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play("hero-atk");
+    this.play(this.bodyKey("hero-atk"));
     this.scene.sfxSkill("flame"); // v3.0.24 — 마법사 대관통 볼트 (화염 시전음)
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8); // v3.0.2 — 시전 이펙트
     const t = this.sTier;
@@ -1129,7 +1135,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const count = 5 + (t >= 3 ? 2 : 0);
     const spread = 0.62; // 부채꼴 전체 각 (rad)
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play("hero-atk");
+    this.play(this.bodyKey("hero-atk"));
     this.scene.sfxSkill("knife", 1.05); // v3.0.24 — 도적 단검 다연발
     for (let i = 0; i < count; i++) {
       this.scene.time.delayedCall(60 + i * 55, () => {
@@ -1159,7 +1165,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const dir = this.aimDir();
     const t = this.sTier;
     const hex = this.clsHex();
-    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
     this.play(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
     this.scene.sfxSkill("quake"); // v3.0.24 — 가디언 성벽 강타 (지진음)
@@ -1207,7 +1213,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const range = 560 + 40 * t;
     const halfW = t >= 4 ? 46 : 26;
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play("hero-atk");
+    this.play(this.bodyKey("hero-atk"));
     this.scene.sfxSkill("arrowpierce"); // v3.0.24 — 스나이퍼 관통 저격음 (샤프 관통 화살)
     // 저격 라인 이펙트 — px 직선 (spawnSlash 대신 씬 그래픽 풀 활용: 라인 + 머즐 플래시)
     const ex = this.x + Math.cos(base) * range;
@@ -1249,7 +1255,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play("hero-atk");
+    this.play(this.bodyKey("hero-atk"));
     this.scene.sfxSkill("wind"); // v3.0.24 — 윈드러너 회오리 화살 (바람음)
     const shots = t >= 3 ? 2 : 1;
     for (let i = 0; i < shots; i++) {
@@ -1278,7 +1284,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play("hero-atk");
+    this.play(this.bodyKey("hero-atk"));
     this.scene.sfxSkill("electron"); // v3.0.24 — 아크메이지 아크 볼트 (전자음)
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8);
     const { dmg, crit } = this.rollDamage(2.4 + 0.3 * t, true);
@@ -1300,7 +1306,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(this.aimDir()); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play("hero-atk");
+    this.play(this.bodyKey("hero-atk"));
     this.scene.sfxSkill("cure"); // v3.0.24 — 세이지 정화의 파동 (성스러운 회복음)
     const wave = (delay: number) => {
       this.scene.time.delayedCall(delay, () => {
@@ -1348,7 +1354,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(this.aimDir()); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play("hero-atk");
+    this.play(this.bodyKey("hero-atk"));
     this.scene.sfxSkill("iainuki"); // v3.0.24 — 어세신 그림자 참수 (발도음)
     const targets = this.nearestTargets(t >= 3 ? 2 : 1, 260);
     if (targets.length === 0) {
@@ -1406,7 +1412,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     const hits = t >= 3 ? 7 : 5;
-    this.play("hero-atk");
+    this.play(this.bodyKey("hero-atk"));
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
     this.scene.sfxSkill("swift"); // v3.0.24 — 스와시버클러 연타 난무 (속공 베기)
     let total = 0;
@@ -3659,7 +3665,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.emitHud();
   }
 
-  /** eert 큐브 리롤 — 큐브 소모 후 잠재 재추첨. 결과를 반환 (씬에서 연출) */
+/** eert 큐브 리롤 — 큐브 소모 후 잠재 재추첨. 결과를 반환 (씬에서 연출)
+   *  v1.1.0 (#6) — 현재 등급 미만으로 떨어지지 않는다 (레어→레어 / 에픽 ≠> 레어 / 에픽 → 유니크) */
   rerollPotentials(key: ItemKey): Potentials | null {
     const item = ITEMS[key];
     if (!item || (item.kind !== "weapon" && item.kind !== "armor" && item.kind !== "accessory")) return null;
@@ -3667,8 +3674,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (!this.owned.includes(key) && this.weapon !== key && this.armor !== key && !this.accessories.includes(key)) return null;
     if (!this.owned.includes("eert_cube")) return null;
     this.consumeConsumable("eert_cube");
-    /* v1.0.8 — 잠재 천장: 유니크 미달 연속 카운터 (10회째 롤은 유니크+ 확정 — UI 공시) */
-    const pot = rollPotentials(this.potPity);
+    /* v1.0.8 — 잠재 천장: 유니크 미달 연속 카운터 (10회째 롤은 유니크+ 확정 — UI 공시)
+     *  v1.1.0 (#6) — minGrade 하한: 현재 등급 아래 굴림은 폐기하고 현재 등급 이상으로만 재추첨 */
+    const curGrade = this.potentials[key]?.grade ?? 0;
+    const pot = rollPotentials(this.potPity, curGrade);
     this.potPity = pot.grade >= 2 ? 0 : Math.min(POT_PITY_MAX - 1, this.potPity + 1);
     this.potentials[key] = pot;
     this.syncPotentialsHp();
@@ -3754,13 +3763,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (slotKey === "potion_hp") have = this.potions.hp > 0;
     else if (slotKey === "potion_mp") have = this.potions.mp > 0;
     else have = this.owned.includes(slotKey);
-    if (!have) return false;
+    /* v1.1.0 (#5) — 운영자는 보유와 무관하게 회복되고 소모되지 않는다 (무한 물약/엘릭서) */
+    if (!have && !this.gmInfinite) return false;
     /* v3.0.20 (#7) — 엘릭서(healFull)는 HP/MP 전부 100% 회복 */
     const used = item.healFull ? this.restoreAll() : isHp ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
     if (!used) return false;
-    if (slotKey === "potion_hp") this.potions.hp--;
-    else if (slotKey === "potion_mp") this.potions.mp--;
-    else this.consumeConsumable(slotKey);
+    if (slotKey === "potion_hp") { if (this.potions.hp > 0) this.potions.hp--; }
+    else if (slotKey === "potion_mp") { if (this.potions.mp > 0) this.potions.mp--; }
+    else if (have) this.consumeConsumable(slotKey);
     this.potCd = 800;
     this.scene.sfxPotion();
     this.scene.spawnPickupText(
@@ -4210,8 +4220,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* v3.0.15 (#6/#7) — 퀵슬롯에 지정된 물약(기본/상급) 기준으로 자동 사용 판정 */
     const hpKey = (this.quickPots.hp ?? "potion_hp") as ItemKey;
     const mpKey = (this.quickPots.mp ?? "potion_mp") as ItemKey;
-    const hpHave = hpKey === "potion_hp" ? this.potions.hp > 0 : this.owned.includes(hpKey);
-    const mpHave = mpKey === "potion_mp" ? this.potions.mp > 0 : this.owned.includes(mpKey);
+    const hpHave = this.gmInfinite || (hpKey === "potion_hp" ? this.potions.hp > 0 : this.owned.includes(hpKey)); // v1.1.0 (#5) — GM 무한
+    const mpHave = this.gmInfinite || (mpKey === "potion_mp" ? this.potions.mp > 0 : this.owned.includes(mpKey));
     if (cfg.hpPct > 0 && this.hp <= this.maxHp * (cfg.hpPct / 100) && hpHave && this.potCd <= 0) {
       this.usePotion("hp");
     } else {
@@ -4243,34 +4253,65 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  /** 치장 착용/해제 (가방에서) — 오라 연출만, 전투 능력 없음
-   *  v1.0.7 — 슬롯 분기: 코스튬/헤어 키가 오면 대응 슬롯에 착용 (기존 emit 경로 재사용) */
+/** 치장 착용/해제 (가방에서) — 오라 연출만, 전투 능력 없음
+   *  v1.0.7 — 슬롯 분기: 코스튬/헤어 키가 오면 대응 슬롯에 착용 (기존 emit 경로 재사용)
+   *  v1.1.0 (#4 해제 버그) — key=null이면 "해제" 의도인데 오라 슬롯으로만 처리돼 코스튬/헤어가 안 벗겨졌다.
+   *  착용 중인 슬롯을 추론해 무엇이든 벗는다 (정확한 슬롯 해제는 setCosmeticSlot 사용) */
   setCosmetic(key: CosmeticKey | null): boolean {
     if (key && !this.cosmetics.includes(key)) return false;
-    const slot = key ? COSMETIC_DEFS[key]?.slot ?? "aura" : "aura";
+    if (!key) {
+      if (this.outfit) return this.setOutfit(null);
+      if (this.hair) return this.setHair(null);
+      if (this.accessory) return this.setAccessory(null);
+      if (this.cosmetic) {
+        this.cosmetic = null;
+        this.scene.onCosmeticChanged();
+        return true;
+      }
+      return false;
+    }
+    return this.setCosmeticSlot(key, COSMETIC_DEFS[key]?.slot ?? "aura");
+  }
+
+  /** v1.1.0 (#4) — 슬롯 지정 착용/해제: UI가 클릭한 아이템의 슬롯을 정확히 전달한다.
+   *  해제(key=null) 시 대상 슬롯만 벗는다 — 코스튬+헤어 동시 착용 중에도 원하는 것만 해제 */
+  setCosmeticSlot(key: CosmeticKey | null, slot: "aura" | "outfit" | "hair" | "acc"): boolean {
+    if (key && !this.cosmetics.includes(key)) return false;
     if (slot === "outfit") return this.setOutfit(key);
     if (slot === "hair") return this.setHair(key);
+    if (slot === "acc") return this.setAccessory(key);
     if (this.cosmetic === key) return false;
     this.cosmetic = key;
     this.scene.onCosmeticChanged();
-    this.scene.emitHud();
     return true;
   }
 
-  /* v1.0.7 — 코스튬(의상) 착용/해제 — 스프라이트 직접 착장 (WorldScene 오버레이 동기화) */
+/* v1.0.7 — 코스튬(의상) 착용/해제 — v1.1.0부터 스프라이트 "완전 교체"(applyBodyLook).
+   *  기존: hero 위에 재색상 오버레이 겹치기 → 유저 지시 "겹치지 말고 아예 바뀌는 형식으로" */
   setOutfit(key: CosmeticKey | null): boolean {
     if (key && !this.cosmetics.includes(key)) return false;
     if (this.outfit === key) return false;
     this.outfit = key;
+    this.applyBodyLook();
     this.scene.onCosmeticChanged();
     return true;
   }
 
-  /* v1.0.7 — 헤어 착용/해제 (포니테일 등 — WorldScene 레이어 동기화) */
+/* v1.0.7 — 헤어 착용/해제 (포니테일 등 — WorldScene 레이어 동기화) */
   setHair(key: CosmeticKey | null): boolean {
     if (key && !this.cosmetics.includes(key)) return false;
     if (this.hair === key) return false;
     this.hair = key;
+    this.scene.onCosmeticChanged();
+    return true;
+  }
+
+  /* v1.1.0 (#1 장식) — 어태치 악세서리 (왕관/리본/후광/날개 — WorldScene이 캐릭터에 고정 + 실시간 동기화) */
+  accessory: CosmeticKey | null = null;
+  setAccessory(key: CosmeticKey | null): boolean {
+    if (key && !this.cosmetics.includes(key)) return false;
+    if (this.accessory === key) return false;
+    this.accessory = key;
     this.scene.onCosmeticChanged();
     return true;
   }
@@ -4280,6 +4321,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   applyLookTint() {
     if (this.lookTint && this.lookTint !== 0xffffff) this.setTint(this.lookTint);
     else this.clearTint();
+  }
+
+/* ---------------- v1.1.0 외형 시스템 (#1/#21/#22) ---------------- */
+
+  /** hero_* 텍스처 / hero-* 애님 키를 현재 외형 시트로 매핑.
+   *  "" 프리픽스(기본 남성·기본피부)면 원본 키 그대로 — 기존 동작과 100% 동일 */
+  bodyKey(k: string): string {
+    if (!this.bodyPrefix) return k;
+    if (k.startsWith("hero_")) return `${this.bodyPrefix}_${k.slice(5)}`;
+    if (k.startsWith("hero-")) return `${this.bodyPrefix}-${k.slice(5)}`;
+    return k;
+  }
+
+  /** 성별+피부(+코스튬) → 스프라이트 시트 전환. 코스튬이 최우선 (SPUM식 완전 교체 — 겹치기 아님) */
+  applyBodyLook() {
+    const prevAnim = this.anims?.currentAnim?.key ?? "";
+    const playing = this.anims?.isPlaying ?? false;
+    this.bodyPrefix = this.outfit
+      ? `cost_${this.outfit.replace("outfit_", "")}`
+      : (this.gender === "f" || this.skinIdx !== 2 ? `ch${this.gender}${this.skinIdx}` : "");
+    const wantTex = this.bodyKey("hero_idle0");
+    if (this.texture.key !== wantTex) this.setTexture(wantTex);
+    // 진행 중이던 애니를 새 시트로 이어 재생 (프레임 리셋 방지)
+    if (prevAnim && playing) {
+      const mapped = this.bodyKey(prevAnim);
+      if (this.scene.anims.exists(mapped)) this.play(mapped, true);
+    }
+    this.applyLookTint();
   }
 
   /** 로비 생성 시 고른 외형 색조 설정 (소유권 검사 불요 — 외형은 무료 커스텀) */
@@ -4360,7 +4429,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setPosition(x, y);
     this.setAlpha(1);
     this.setFlipX(false);
-    this.play("hero-idle");
+    this.play(this.bodyKey("hero-idle"));
     this.scene.emitHud();
   }
 }

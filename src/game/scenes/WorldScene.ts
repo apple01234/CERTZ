@@ -523,7 +523,8 @@ export class WorldScene extends Phaser.Scene {
   /** v1.0.2 (#치장외형) — 캐릭터 본체 치장색 오버레이 (Base/Cosmetic 장비 분리 — 능력치 무관, 외형만) */
   private cosmeticOverlay: Phaser.GameObjects.Image | null = null;
   /* v1.0.7 — 코스튬(착장)·헤어(포니테일) 오버레이 — 슬롯형 치장 (오라와 독립 착용) */
-  private outfitOverlay: Phaser.GameObjects.Image | null = null;
+  /* v1.1.0 (#1) — 코스튬 오버레이 폐기(스프라이트 완전 교체로 전환) → 어태치 장식(왕관/리본/후광/날개) 동기화 */
+  private accOverlays: { key: string; img: Phaser.GameObjects.Image }[] = [];
   private hairOverlay: Phaser.GameObjects.Image | null = null;
   private upgradeGlow: Phaser.GameObjects.Image | null = null;
   /** v3.0.5 — 스타포스 궤도성(★15)/주변 스파클(★8+)/티어 추적 */
@@ -634,7 +635,7 @@ export class WorldScene extends Phaser.Scene {
     this.cosmeticAura = null;
     this.cosmeticEmitter = null;
     this.cosmeticOverlay = null; // v1.0.2 — 오버레이 정리(destroy는 destroyAll에서)
-    this.outfitOverlay = null; // v1.0.7 — 코스튬/헤어 오버레이 참조 정리
+    this.accOverlays = []; // v1.1.0 — 어태치 장식 참조 정리
     this.hairOverlay = null;
     this.upgradeGlow = null;
     this.sfOrbits = [];
@@ -982,6 +983,12 @@ export class WorldScene extends Phaser.Scene {
       this.player.lookTint = (savedPlayer as { lookTint?: number | null }).lookTint ?? null;
       this.player.applyLookTint();
       this.player.hair = (savedPlayer.hair && savedPlayer.hair in COSMETIC_DEFS ? (savedPlayer.hair as CosmeticKey) : null);
+      /* v1.1.0 (#1/#21/#22) — 성별/피부/어태치 장식 복원 → 스프라이트 시트 전환(완전 교체) */
+      const savedLook = savedPlayer as { gender?: string; skinIdx?: number; accessory?: string | null };
+      this.player.gender = savedLook.gender === "f" ? "f" : "m";
+      this.player.skinIdx = typeof savedLook.skinIdx === "number" ? Phaser.Math.Clamp(savedLook.skinIdx, 0, 5) : 2;
+      this.player.accessory = (savedLook.accessory && savedLook.accessory in COSMETIC_DEFS ? (savedLook.accessory as CosmeticKey) : null);
+      this.player.applyBodyLook();
       // 전직 스토리 복원 (v2.0 / v3.1.0 — fam 포함. 구 세이브는 cls 계열로 역산)
       if (savedPlayer.jobStory && typeof savedPlayer.jobStory.tier === "number") {
         const famSaved = (savedPlayer.jobStory as { fam?: string }).fam;
@@ -1229,6 +1236,7 @@ export class WorldScene extends Phaser.Scene {
       authMe()
         .then((u) => {
           this.adminRole = u?.role ?? null;
+          if (this.player) this.player.gmInfinite = this.adminRole === "admin"; // v1.1.0 (#5) — GM 무한 물약/엘릭서
           if (this.adminRole === "admin") for (const g of this.gmNpcVisuals) g.setVisible(true);
           this.refreshPlayerTag(); // GM 금색 이름표 + 오라 부여
           this.emitRpgState(); // v1.0.5 — admin 플래그를 React에 즉시 반영
@@ -1320,7 +1328,11 @@ export class WorldScene extends Phaser.Scene {
         }
         const chainDone = this.questIdx >= this.stageDef.quests.length;
         const shouldOpen = !q || q.type === "reach" || (chainDone && this.repeatOn);
-        /* 보스 구역은 격파 전(boss 진행 중) 개방 금지 — 격파 후 reach는 개방 대상 */
+        /* 보스 구역은 격파 전(boss 진행 중) 개방 금지 — 격파 후 reach는 개방 대상
+         * v1.1.0 (#11 차원문 막힘) — 연결된 다음 구역(NEXT_STAGE)이 없는 콘텐츠(탑/파크/게이트/균열/도장)에선
+         *  포탈을 열지 않는다. 열어놔도 "이 앞은 막혀 있다"만 뜨는 죽은 차원문이므로 아예 생성하지 않는다 */
+        const hasNextStage = !!NEXT_STAGE[this.stageDef.key];
+        if (!hasNextStage) return;
         if (!shouldOpen || (this.stageDef.boss && q?.type !== "reach")) return;
         if (this.dialoguing || this.pendingPortal) {
           /* 대사 중엔 물리 정지로 전환 사고가 없다 — 유예하되 6초 이상 붙어있으면 강제 해제 */
@@ -1414,10 +1426,14 @@ export class WorldScene extends Phaser.Scene {
      *  v2.3 (지시 #1): 이미 본 대사는 재입장 시 재생하지 않는다 — 이전/다음 맵 왕복마다
      *  인트로·구역 안내 대사가 반복되던 버그 수정
      *  v3.0.10 (메이플식 챕터 연출): 챕터 1구역 최초 진입 시 타이틀 카드 컷신 후 인트로 대사 */
-    if (!this.isInterior && stageKey !== "dojang") {
+    /* v1.1.0 (#10) — 콘텐츠(탑/파크/게이트/옷장/도장)에선 마을 인트로 대사·튜토리얼을 띄우지 않는다.
+     *  기존엔 stageIntro 폴백(villageIntro — 룬 정령 이그니)이 모든 콘텐츠에서 재생돼
+     *  "컨텐츠마다 NPC UI가 뜨는데 아무 의미 없다"는 지적으로 이어졌다 */
+    const isContentStage = stageKey === "tower" || stageKey === "park" || stageKey === "gate" || stageKey === "closet" || stageKey === "dojang";
+    if (!this.isInterior && !isContentStage) {
       if (stageKey === "village" && !savedPlayer?.playerName) {
-        // 신규 플레이어 — 책장 넘기기 대신 플레이형 인트로 (이동 → 우물 → 이름 짓기)
-        this.startIntroSequence();
+        // v1.1.0 (#18) — 신규 플레이어: 프롤로그 시네마틱(내레이션 4비트) → 플레이형 인트로(이동 → 우물 → 이름 짓기)
+        this.showPrologue(() => this.startIntroSequence());
       } else {
         const spec = chapterSpec(stageKey);
         const introId = stageIntro(stageKey);
@@ -1435,9 +1451,16 @@ export class WorldScene extends Phaser.Scene {
             }
           });
         } else {
-          this.time.delayedCall(400, () => {
-            this.showDialogueOnce(introId);
-          });
+          /* v1.1.0 (#18) — 로비 생성 신규 캐릭터(introSeen=false): 프롤로그 시네마틱 → 기존 구역 안내 대사 순서 연결.
+           *  구세이브(introSeen undefined)는 프롤로그 없이 기존 흐름 그대로 */
+          const freshLobby = (savedPlayer as { introSeen?: boolean } | undefined)?.introSeen === false;
+          const runStageIntro = () => {
+            this.time.delayedCall(400, () => {
+              this.showDialogueOnce(introId);
+            });
+          };
+          if (freshLobby && stageKey === "village") this.showPrologue(runStageIntro);
+          else runStageIntro();
         }
       }
     }
@@ -1870,7 +1893,9 @@ export class WorldScene extends Phaser.Scene {
         const opens: number[] = [];
         for (let i = 0; i < lay1.open.length; i++) if (lay1.open[i]) opens.push(i);
         const tint = parseStage(stageKey).ch === "niflheim" ? 0x8ad4ff : 0xffa050;
-        for (let n = 0; n < 5 && opens.length > 0; n++) {
+        /* v1.1.0 (#8 라이트 절감) — 고정 환경광 5 → 3: "쓸데없이 배치된 불빛이 너무 많다" 지시 반영.
+         *  플레이어 횃불+근접 횃불로 시야 확보가 충분하다 */
+        for (let n = 0; n < 3 && opens.length > 0; n++) {
           const c = cellCenterOf(lay1, opens[Math.floor(Math.random() * opens.length)]);
           this.lighting.addLight(c.x, c.y - 6, { tint, scale: 0.7, alpha: 0.26, flicker: 0.09 });
         }
@@ -1881,7 +1906,7 @@ export class WorldScene extends Phaser.Scene {
       if (lay2) {
         const opens2: number[] = [];
         for (let i = 0; i < lay2.open.length; i++) if (lay2.open[i]) opens2.push(i);
-        const want2 = Math.min(8, opens2.length);
+        const want2 = Math.min(4, opens2.length); // v1.1.0 (#8) — 횃불 장치 8 → 4
         const step2 = Math.max(1, Math.floor(opens2.length / Math.max(1, want2)));
         const torchTint2 = parseStage(stageKey).ch === "niflheim" ? 0x8ad4ff : 0xffa050;
         for (let n = 0; n < opens2.length && this.torches.length < want2; n += step2) {
@@ -3074,8 +3099,12 @@ export class WorldScene extends Phaser.Scene {
     const cx = cam.width / 2;
     const cy = cam.height / 2 + (cam.height - 12 - gh * z * 0.5 - cam.height / 2) / z;
     mm.clear();
-    mm.fillStyle(0x0a0e18, 0.78).fillRoundedRect(cx - gw / 2, cy - gh / 2, gw, gh, 8 / z);
-    mm.lineStyle(1.5 / z, 0xffd76a, 0.5).strokeRoundedRect(cx - gw / 2, cy - gh / 2, gw, gh, 8 / z);
+    /* v1.1.0 (#7) — 어두운 맵(암전 챕터/카오스 보스전)에서도 지도가 잘 보이게:
+     *  반투명 0.78 → 사실상 불투명 판(0.96) + 두꺼운 금테 + 외곽 그림자. 카메라 포스트FX가 전체 프레임을
+     *  어둡게 해도 지도 자체의 대비로 내용을 판독할 수 있다 */
+    mm.fillStyle(0x000000, 0.5).fillRoundedRect(cx - gw / 2 - 3 / z, cy - gh / 2 - 3 / z, gw + 6 / z, gh + 6 / z, 10 / z);
+    mm.fillStyle(0x0c1220, 0.96).fillRoundedRect(cx - gw / 2, cy - gh / 2, gw, gh, 8 / z);
+    mm.lineStyle(2.5 / z, 0xffd76a, 0.95).strokeRoundedRect(cx - gw / 2, cy - gh / 2, gw, gh, 8 / z);
     const mx = (wx: number) => cx - gw / 2 + (wx / this.stageW) * gw;
     const my = (wy: number) => cy - gh / 2 + (wy / this.stageH) * gh;
     /* v3.0 (#7) — 개미굴 벽 셀을 어두운 블록으로 표시 */
@@ -4289,7 +4318,8 @@ export class WorldScene extends Phaser.Scene {
       const key = pool[Math.floor(Math.random() * pool.length)];
       const isBossUnit = boss && i === 0;
       const def = ENEMIES[key];
-      const e = new Enemy(this, px, py, key, {
+      const sp = this.safeSpawnXY(px, py); // v1.1.0 (#9) — 가장자리 벽 스폰 보정
+      const e = new Enemy(this, sp.x, sp.y, key, {
         hp: Math.round(def.hp * hpMul * (isBossUnit ? 7 : 1)),
         atk: Math.round(def.atk * atkMul),
         exp: Math.round(def.exp * 1.4),
@@ -4537,6 +4567,22 @@ export class WorldScene extends Phaser.Scene {
     this.spawnTowerFloor();
   }
 
+  /** v1.1.0 (#9 몬스터 벽 뚫기) — 닫힌 셀(벽) 안에서 태어난 몬스터는 물리 분리 과정에서
+   *  벽을 "뚫고" 나오는 것처럼 보였다. 스폰 좌표가 열린 셀이 아니면 가장 가까운 열린 셀 중심으로 보정 */
+  private safeSpawnXY(x: number, y: number): { x: number; y: number } {
+    const lay = this.layout;
+    if (!lay || isOpenXY(lay, x, y, 30)) return { x, y };
+    let best: { x: number; y: number } | null = null;
+    let bestD = Infinity;
+    for (let i = 0; i < lay.open.length; i++) {
+      if (!lay.open[i]) continue;
+      const c = cellCenterOf(lay, i);
+      const d = (c.x - x) * (c.x - x) + (c.y - y) * (c.y - y);
+      if (d < bestD) { bestD = d; best = c; }
+    }
+    return best ?? { x: this.player?.x ?? x, y: this.player?.y ?? y };
+  }
+
   /** 현재 층 스폰 — 층 스케일 적용, 보스층은 보스 1기 + 잡몹 소수 */
   private spawnTowerFloor() {
     const f = this.towerFloor;
@@ -4550,7 +4596,8 @@ export class WorldScene extends Phaser.Scene {
       const def = ENEMIES[key];
       const px = Phaser.Math.Between(80, this.stageW - 80);
       const py = Phaser.Math.Between(80, this.stageH - 80);
-      const e = new Enemy(this, px, py, key, {
+      const sp = this.safeSpawnXY(px, py); // v1.1.0 (#9) — 벽 안 스폰 금지
+      const e = new Enemy(this, sp.x, sp.y, key, {
         hp: Math.round((22 + lv * 2.8 + def.hp * 0.5) * sc),
         atk: Math.round((5 + lv * 0.45) * (1 + (f - 1) * TOWER.atkPerFloor)),
         exp: Math.round((20 + lv * 2) * (1 + (f - 1) * TOWER.expPerFloor)),
@@ -4697,9 +4744,8 @@ export class WorldScene extends Phaser.Scene {
       for (let i = 0; i < n; i++) {
         const key = pool[Math.floor(Math.random() * pool.length)];
         const def = ENEMIES[key];
-        const px = Phaser.Math.Between(80, this.stageW - 80);
-        const py = Phaser.Math.Between(80, this.stageH - 80);
-        const e = new Enemy(this, px, py, key, {
+        const sp = this.safeSpawnXY(Phaser.Math.Between(80, this.stageW - 80), Phaser.Math.Between(80, this.stageH - 80)); // v1.1.0 (#9)
+        const e = new Enemy(this, sp.x, sp.y, key, {
           hp: Math.round((20 + lv * 2.6 + def.hp * 0.45) * d.hpMul * (1 + (wave - 1) * 0.35)),
           atk: Math.round((4 + lv * 0.42) * d.atkMul * (1 + (wave - 1) * 0.2)),
           exp: Math.round((24 + lv * 2.4) * (1 + (wave - 1) * 0.25)),
@@ -4766,9 +4812,8 @@ export class WorldScene extends Phaser.Scene {
       for (let i = 0; i < n; i++) {
         const key = pool[Math.floor(Math.random() * pool.length)];
         const def = ENEMIES[key];
-        const px = Phaser.Math.Between(80, this.stageW - 80);
-        const py = Phaser.Math.Between(80, this.stageH - 80);
-        const e = new Enemy(this, px, py, key, {
+        const sp = this.safeSpawnXY(Phaser.Math.Between(80, this.stageW - 80), Phaser.Math.Between(80, this.stageH - 80)); // v1.1.0 (#9)
+        const e = new Enemy(this, sp.x, sp.y, key, {
           hp: Math.round((18 + lv * 2.4 + def.hp * 0.4) * tier.hpMul * (trial?.hpMul ?? 1)),
           atk: Math.round((4 + lv * 0.4) * tier.atkMul * (trial?.atkMul ?? 1)),
           exp: Math.round((22 + lv * 2.2) * (trial?.expMul ?? 1)),
@@ -5295,8 +5340,10 @@ export class WorldScene extends Phaser.Scene {
     const base = Phaser.Utils.Array.GetRandom(alive);
     const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
     const d = Phaser.Math.Between(480, 680);
-    const x = Phaser.Math.Clamp(this.player.x + Math.cos(ang) * d, 60, this.stageW - 60);
-    const y = Phaser.Math.Clamp(this.player.y + Math.sin(ang) * d, 60, this.stageH - 60);
+    const rx = Phaser.Math.Clamp(this.player.x + Math.cos(ang) * d, 60, this.stageW - 60);
+    const ry = Phaser.Math.Clamp(this.player.y + Math.sin(ang) * d, 60, this.stageH - 60);
+    const sp = this.safeSpawnXY(rx, ry); // v1.1.0 (#9)
+    const x = sp.x, y = sp.y;
     if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 220 && tries < 8) {
       this.time.delayedCall(1500, () => this.trySpawnInvasionBoss(tries + 1));
       return;
@@ -5734,11 +5781,15 @@ export class WorldScene extends Phaser.Scene {
             threshold: 0.6,
             blurRadius: 1,
             blurSteps: 4,
-            blendAmount: (chaos ? 0.68 : 0.46) * fxk,
+            /* v1.1.0 (#12) — 카오스 블룸 강도 완화(0.68→0.5): 보스전이 "맵이 어두워진다"고 체감되던 원인 1 */
+            blendAmount: (chaos ? 0.5 : 0.46) * fxk,
           });
           if (bloom[0]) this.bossFilters.push(bloom[0].threshold, bloom[0].blur, bloom[0].parallelFilters);
         }
-        if (chaos && fxk > 0) this.bossFilters.push(cam.filters.external.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.62, 0.4 * fxk));
+        /* v1.1.0 (#12) — 카오스 비네트 완화: 강도 0.4→0.14 · 반경 0.62→0.78 화면.
+         *  기존엔 가장자리 40% 수준의 강한 암흑이라 미니맵까지 가려 "어두워진다"고 체감됐다 (#7 동반 해소).
+         *  카오스 분위기는 붉은 보스 라이트+잉걸불 파티클로 유지한다 */
+        if (chaos && fxk > 0) this.bossFilters.push(cam.filters.external.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.78, 0.14 * fxk));
       }
       if (chaos && this.boss?.active) {
         /* v4.1.8 — 카오스 잉걸불: 유료 CFXR 종 화염 (256x512, 설정 무변경) */
@@ -6046,9 +6097,11 @@ export class WorldScene extends Phaser.Scene {
       if (this.player.setPet(v.key)) this.save();
       this.emitRpgState();
     };
-    const onCosmeticSet = (v: { key: CosmeticKey | null }) => {
+    const onCosmeticSet = (v: { key: CosmeticKey | null; slot?: "aura" | "outfit" | "hair" | "acc" }) => {
       if (!this.player || this.dialoguing) return;
-      if (this.player.setCosmetic(v.key)) this.save();
+      /* v1.1.0 (#4 해제 버그) — UI가 클릭한 아이템의 슬롯을 함께 전달: 원하는 슬롯만 정확히 해제 */
+      const ok = v.slot ? this.player.setCosmeticSlot(v.key, v.slot) : this.player.setCosmetic(v.key);
+      if (ok) this.save();
       this.emitRpgState();
     };
     const onUpgrade = (v: { slot: "weapon" | "armor" }) => {
@@ -6468,6 +6521,17 @@ export class WorldScene extends Phaser.Scene {
       if (key.startsWith("potion_")) {
         // v4.4.0 — 전 티어 물약 사용 경로 통합 (hp3~10·mp3~10은 v4.3.0에서 사용 경로가 누락돼 있었다)
         this.player.useConsumablePotion(key);
+        this.emitRpgState();
+        return;
+      }
+      if (key === "gm_elixir") {
+        /* v1.1.0 (#5) — 운영자 전용 무한 엘릭서: 소모되지 않고 HP/MP를 전부 회복한다.
+         *  기존엔 onUseItem 분기가 없어 조용히 무시됐다(아무 반응 없음 버그) */
+        this.player.hp = this.player.maxHp;
+        this.player.mp = this.player.maxMp;
+        EventBus.emit("banner:show", { text: "운영자 무한 엘릭서 — HP/MP 전부 회복!" });
+        this.spawnPickupText(this.player.x, this.player.y - 30, "HP/MP 전부 회복!", "#ffd76a");
+        this.emitHud();
         this.emitRpgState();
         return;
       }
@@ -7139,6 +7203,7 @@ export class WorldScene extends Phaser.Scene {
         .then((u) => {
           this.adminRole = u?.role ?? null;
           const show = this.adminRole === "admin";
+          if (this.player) this.player.gmInfinite = show; // v1.1.0 (#5)
           for (const g of this.gmNpcVisuals) g.setVisible(show);
           this.refreshPlayerTag(); // v1.0.16 — GM 금색 이름표/황금 오라 즉시 부여·해제
           this.emitRpgState();
@@ -7435,7 +7500,10 @@ export class WorldScene extends Phaser.Scene {
       this.tutRetryMs += dt;
       if (this.tutRetryMs >= 1500) {
         this.tutRetryMs = 1;
-        if (!this.dialoguing && !this.isInterior) this.startTutorial(this.tutStep);
+        /* v1.1.0 (#10) — 콘텐츠(탑/파크/게이트/옷장/도장)에선 튜토리얼 재개하지 않음 */
+        const cs = this.stageDef?.key ?? "";
+        const contentStage = cs === "tower" || cs === "park" || cs === "gate" || cs === "closet" || cs === "dojang";
+        if (!this.dialoguing && !this.isInterior && !contentStage) this.startTutorial(this.tutStep);
       }
     }
 
@@ -7469,15 +7537,26 @@ export class WorldScene extends Phaser.Scene {
       ov.setScale(this.player.scaleX, this.player.scaleY);
       ov.setDepth(this.player.depth + 0.2);
     }
-    /* v1.0.7 — 코스튬 오버레이: 프레임·위치·반전 본체 완전 동기화 (옷이 몸을 따라 움직인다) */
-    if (this.outfitOverlay && this.player) {
-      const ov = this.outfitOverlay;
-      ov.setPosition(this.player.x, this.player.y);
-      const want = this.outfitTex(this.player.texture.key, this.player.outfit ?? "");
-      if (ov.texture.key !== want) ov.setTexture(want);
-      ov.setFlipX(this.player.flipX);
-      ov.setScale(this.player.scaleX, this.player.scaleY);
-      ov.setDepth(this.player.depth + 0.15);
+    /* v1.1.0 (#1 장식) — 어태치 악세서리: 캐릭터에 고정 + 실시간 동기화 (유저 지시 — 최적화:
+     *  오버레이 겹침 렌더 없이 프레임별 앵커 오프셋만 갱신. 왕관/리본=머리, 후광=공중, 날개=등 뒤) */
+    if (this.accOverlays.length && this.player) {
+      const animKey = this.player.anims?.currentAnim?.key ?? "";
+      const back = animKey.includes("up"); // 뒷모습
+      for (const a of this.accOverlays) {
+        const im = a.img;
+        if (a.key === "acc_crown") {
+          im.setPosition(this.player.x + (this.player.flipX ? 1 : -1), this.player.y - (back ? 15 : 19) * (this.player.scaleY || 1));
+        } else if (a.key === "acc_ribbon") {
+          im.setPosition(this.player.x + (this.player.flipX ? -8 : 8), this.player.y - (back ? 10 : 15));
+        } else if (a.key === "acc_halo") {
+          im.setPosition(this.player.x, this.player.y - 26);
+        } else if (a.key === "acc_wings_devil" || a.key === "acc_wings_fairy") {
+          im.setPosition(this.player.x, this.player.y - (back ? 3 : 5));
+          im.setFlipX(this.player.flipX);
+        }
+        im.setScale(this.player.scaleX, this.player.scaleY);
+        im.setDepth(a.key.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3);
+      }
     }
     /* v1.0.7 — 포니테일: 등 뒤 위치 동기화 + 방향별 오프셋 (측면일 때 뒤편으로 흐르게) */
     if (this.hairOverlay && this.player) {
@@ -9494,6 +9573,82 @@ export class WorldScene extends Phaser.Scene {
    *  2) 우물 앞에서 이름 정하기 (인게임 패널)
    *  3) 이름 리액션 대사 → 마을 오프닝 → 퀘스트 시작
    */
+  /** v1.1.0 (#18) — 프롤로그 시청 플래그 저장 */
+  private introSeenSave() {
+    try {
+      const s = loadSave();
+      if (s && !s.introSeen) {
+        s.introSeen = true;
+        writeSave(s);
+      }
+    } catch { /* 세이브 실패 무시 — 재생돼도 치명적이지 않다 */ }
+  }
+
+  /* v1.1.0 (#18) — 프롤로그: 게임 첫 시작 시 세계관 내레이션 시네마틱.
+   *  클릭/탭/스페이스로 넘기고, 건너뛰기 버튼 제공. 종료 시 인트로(플레이형)로 자연 연결 */
+  private showPrologue(onDone: () => void) {
+    const beats = [
+      "아홉 왕국을 지탱하던 세계수가\n지쳐 무너져 내렸다.",
+      "어둠은 대지를 삼켰고,\n차원의 균열마다 마물이 흘러넘쳤다.",
+      "그러나 별들은 예언했다.\n한 명의 아이가 빛을 되돌려 놓으리라고.",
+      "이그드라실 왕국의 마지막 희망.\n그 이야기가 지금, 시작된다.",
+    ];
+    this.dialoguing = true;
+    this.physics.world.pause();
+    const cam = this.cameras.main;
+    const W = cam.width;
+    const H = cam.height;
+    const d = 3000;
+    /* 구역 진입 fadeIn이 아직 끝나지 않았으면 즉시 정리 — 프롤로그 텍스트가 페이드에 덮여
+     *  어둡게 보이는 문제 방지 (저사양 기기에서 페이드가 수 초 늘어지는 환경 보호) */
+    try { (cam as unknown as { resetFX?: () => void }).resetFX?.(); } catch { /* 미지원 무시 */ }
+    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x04060d, 0.97).setDepth(d).setScrollFactor(0).setInteractive();
+    const deco = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0).setDepth(d).setScrollFactor(0).setStrokeStyle(2, 0xffd76a, 0.25);
+    const t0 = this.add.text(W / 2, H * 0.32, "프롤로그", {
+      fontFamily: "Galmuri11, sans-serif", fontSize: "15px", color: "#ffd76a", align: "center",
+    }).setOrigin(0.5).setDepth(d + 1).setScrollFactor(0).setAlpha(0);
+    const t1 = this.add.text(W / 2, H * 0.52, beats[0], {
+      fontFamily: "Galmuri11, sans-serif", fontSize: "17px", color: "#fffbe8", align: "center", lineSpacing: 9,
+      wordWrap: { width: W * 0.82 },
+      shadow: { offsetX: 0, offsetY: 2, color: "#000000", blur: 4, fill: true },
+    }).setOrigin(0.5).setDepth(d + 1).setScrollFactor(0).setAlpha(0);
+    const t2 = this.add.text(W - 18, H - 20, "탭하여 계속 ▶", {
+      fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#ffe9b0",
+    }).setOrigin(1, 0.5).setDepth(d + 1).setScrollFactor(0).setInteractive({ useHandCursor: true });
+    const tSkip = this.add.text(18, H - 20, "건너뛰기", {
+      fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#ffffffc0",
+    }).setOrigin(0, 0.5).setDepth(d + 1).setScrollFactor(0).setInteractive({ useHandCursor: true });
+    this.tweens.add({ targets: t2, alpha: 0.55, duration: 800, yoyo: true, repeat: -1 });
+
+    let i = 0;
+    const showBeat = () => {
+      /* 알파 트윈 폐기 — 저FPS 환경에서 트윈이 수 초 늘어져 텍스트가 어둡게 보이고
+       *  빠른 탭이 씹히는 문제의 근본 차단. 비트 전환은 즉시 확정 + 짧은 위징(흔들림)만 */
+      t0.setAlpha(1);
+      t1.setAlpha(1).setText(beats[i]);
+      t1.setScale(1);
+      this.tweens.add({ targets: t1, scale: { from: 1.015, to: 1 }, duration: 260, overwrite: true });
+    };
+    const cleanup = () => {
+      overlay.destroy(); deco.destroy(); t0.destroy(); t1.destroy(); t2.destroy(); tSkip.destroy();
+      this.input.keyboard?.removeCapture("SPACE");
+      this.dialoguing = false;
+      this.physics.world.resume();
+      this.introSeenSave(); // v1.1.0 (#18) — 시청/스킵 모두 1회 기록 (재시작 시 재생 방지)
+    };
+    const next = () => {
+      i += 1;
+      if (i >= beats.length) { cleanup(); onDone(); return; }
+      showBeat();
+    };
+    overlay.on("pointerdown", next);
+    t2.on("pointerdown", next);
+    tSkip.on("pointerdown", () => { cleanup(); onDone(); });
+    this.input.keyboard?.addCapture("SPACE");
+    this.input.keyboard?.once("keydown-SPACE", next);
+    showBeat();
+  }
+
   private startIntroSequence() {
     this.introStep = 0;
     this.introMoveDist = 0;
@@ -9560,6 +9715,7 @@ export class WorldScene extends Phaser.Scene {
     this.dialoguing = false;
     this.resetInputState(); // v4.9.0 — 우물 이름 짓고 한방향 자동이동 버그 차단 (keyup 유실 고착 청소)
     setPlayerName(name);
+    this.introSeenSave(); // v1.1.0 (#18) — 인트로 완주 기록
     // 플레이어 이름표 (머리 위) — v2.4: 이어하기 경로와 공용 생성기 사용
     this.ensurePlayerTag();
     // 축하 연출
@@ -9740,17 +9896,27 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.2 (#치장외형) — 치장 해제 시 본체 오버레이도 제거 */
     this.cosmeticOverlay?.destroy();
     this.cosmeticOverlay = null;
-    /* v1.0.7 — 코스튬(착장)·헤어(포니테일) 오버레이 재생성 — 슬롯형 치장
-     *  코스튬: hero 프레임과 동일 캔버스의 재색상 프레임을 본체 위에 얹어 '옷을 입힌다'
-     *  헤어: 머리 묶음 위치에 앵커한 포니테일을 몸 뒤에 두고 미세하게 흔들린다 */
-    this.outfitOverlay?.destroy();
-    this.outfitOverlay = null;
+    /* v1.1.0 (#1) — 코스튬 = 스프라이트 "완전 교체": 본체 텍스처 자체가 cost_* 시트로 전환된다
+     *  (겹치기 오버레이 폐기 — SPUM NPC처럼 아예 다른 캐릭터로 변신). 성별/피부도 여기서 반영 */
+    this.player?.applyBodyLook();
+    /* 어태치 장식(왕관/리본/후광/날개) + 헤어(포니테일) 재생성 */
     if (this.hairOverlay) this.tweens.killTweensOf(this.hairOverlay); // 흔들림 tween 먼저 정리
     this.hairOverlay?.destroy();
     this.hairOverlay = null;
-    if (this.player?.outfit) {
-      const want = this.outfitTex(this.player.texture.key, this.player.outfit);
-      this.outfitOverlay = this.add.image(this.player.x, this.player.y, want).setDepth(this.player.depth + 0.15);
+    for (const a of this.accOverlays) {
+      this.tweens.killTweensOf(a.img);
+      a.img.destroy();
+    }
+    this.accOverlays = [];
+    const accKey = this.player?.accessory ?? null;
+    if (this.player && accKey) {
+      const img = this.add.image(this.player.x, this.player.y, accKey).setDepth(this.player.depth + 0.3);
+      this.accOverlays.push({ key: accKey, img });
+      if (accKey === "acc_halo") {
+        this.tweens.add({ targets: img, y: "-=3", duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      } else if (accKey === "acc_wings_devil" || accKey === "acc_wings_fairy") {
+        this.tweens.add({ targets: img, angle: { from: -3, to: 3 }, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      }
     }
     if (this.player?.hair === "hair_ponytail") {
       /* 오리진을 꼬리 묶음(캔버스 44,19)에 — 흔들림 회전 축이 자연스럽다 */
@@ -9821,15 +9987,6 @@ export class WorldScene extends Phaser.Scene {
    *  ★15   금색 글로우 + 궤도성 2기 + 최밀 스파클
    * 티어 변경 시 오라 재생성. ★4 미만은 소멸.
    */
-  /** v1.0.7 — hero 프레임 키 → 코스튬 프레임 키 매핑 (hero_idle0 → outfit_royal_idle0).
-   *  비-hero 텍스처(변신/오브 등)는 그대로 반환 — 코스튬 미적용 프레임은 본체가 그대로 보인다. */
-  private outfitTex(playerTexKey: string, outfitKey: string): string {
-    if (!outfitKey || !playerTexKey.startsWith("hero_")) return playerTexKey;
-    const style = outfitKey.replace("outfit_", "");
-    const cand = `outfit_${style}_${playerTexKey.slice(5)}`;
-    return this.textures.exists(cand) ? cand : playerTexKey;
-  }
-
   private syncUpgradeGlow() {
     const up = this.player?.upgrades.weapon ?? 0;
     const tier = starTier(up);
@@ -10399,9 +10556,10 @@ export class WorldScene extends Phaser.Scene {
       pet: this.player.pet,
       cosmetics: [...this.player.cosmetics],
       cosmetic: this.player.cosmetic,
-      /* v1.0.7 — 슬롯형 치장 (코스튬/헤어) */
+      /* v1.0.7 — 슬롯형 치장 (코스튬/헤어) · v1.1.0 — + 어태치 장식 */
       outfit: this.player.outfit,
       hair: this.player.hair,
+      accessory: this.player.accessory,
       /* v1.0.19 (B-1 외형) — 로비 생성 색조 */
       lookTint: this.player.lookTint,
       stats: { ...this.player.stats },
@@ -10630,6 +10788,9 @@ export class WorldScene extends Phaser.Scene {
       outfit: this.player.outfit, // v1.0.7 — 코스튬 슬롯
       hair: this.player.hair, // v1.0.7 — 헤어 슬롯
       lookTint: this.player.lookTint, // v1.0.19 (B-1) — 로비 생성 색조
+      gender: this.player.gender, // v1.1.0 (#22) — 남/여
+      skinIdx: this.player.skinIdx, // v1.1.0 (#21) — 피부 6종
+      accessory: this.player.accessory, // v1.1.0 (#1) — 어태치 장식
       /* v2.0 — 전직 스토리 진행 */
       jobStory: this.jobStory ? { ...this.jobStory } : null,
       pendingJobClass: this.pendingJobClass, // v3.1.0 — 시련 중 선택한 1차 클래스

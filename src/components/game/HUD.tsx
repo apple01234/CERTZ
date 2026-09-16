@@ -186,6 +186,16 @@ export function HUD({
       {/* 우상단: 사운드/가방 + 퀘스트 */}
       <div className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-3 sm:top-3">
         <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
+          {/* v1.1.0 (#2) — 퀘스트창 on/off 버튼: 접기가 아니라 아예 숨김/표시 (유저 지시) */}
+          <button
+            onClick={toggleTracker}
+            aria-label={trackerOpen ? "퀘스트창 끄기" : "퀘스트창 켜기"}
+            className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
+              trackerOpen ? "game-chip text-amber-200" : "game-chip text-white/45"
+            }`}
+          >
+            <ScrollText size={17} />
+          </button>
           {/* v2.5 — 자동사냥 토글 (펫 보유 시만 표시) · v1.0.20 flex-wrap: 375px 세로에서 버튼행 넘침 방지 */}
           {canAutoHunt && (
             <button
@@ -296,33 +306,18 @@ export function HUD({
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.opt}</span>
           </button>
         </div>
-        {/* v3.0.23 (#56) — 퀘스트 알림을 더 아래로: 모바일 간격 mt-8→mt-20 (상단 버튼행·보스바와 겹침 방지), PC는 mt-1 유지 */}
+        {/* v3.0.23 (#56) — 퀘스트 알림을 더 아래로: 모바일 간격 mt-8→mt-20 (상단 버튼행·보스바와 겹침 방지), PC는 mt-1 유지
+         *  v1.1.0 (#2) — "접는 형식 말고 버튼으로 아예 키고 끌 수 있게": 트래커 전체를 버튼 토글로 완전히 숨김/표시 */}
+        {trackerOpen && (
         <div className="game-panel pointer-events-auto mt-20 w-full px-2.5 py-1.5 sm:mt-1 sm:px-3 sm:py-2">
-          {/* v3.0.4 (지시 #5) — 모바일에서 퀘스트창 키고끄기: 헤더 전체가 토글 버튼 (터치 영역 확대) */}
-          <div
-            role="button"
-            tabIndex={0}
-            /* v3.0.4 — onPointerDown 단독 (onClick 병용 시 탭 1회에 2번 토글되는 문제 방지) */
-            onPointerDown={(e) => {
-              e.preventDefault();
-              toggleTracker();
-            }}
-            className="flex cursor-pointer items-center gap-1.5 select-none"
-            aria-label={trackerOpen ? "퀘스트 트래커 접기" : "퀘스트 트래커 펼치기"}
-          >
+          <div className="flex items-center gap-1.5">
             <ScrollText size={13} className="shrink-0 text-amber-300" />
             <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
             {quest.pending && (
               <span className="shrink-0 rounded bg-amber-400/25 px-1 py-px text-[8px] font-black text-amber-200">수락 대기</span>
             )}
-            <span
-              className="flex h-7 w-9 shrink-0 items-center justify-center rounded border border-white/25 bg-black/50 text-[11px] font-black leading-4 text-white/80 active:scale-95"
-            >
-              {trackerOpen ? "▲" : "▼"}
-            </span>
           </div>
-          {trackerOpen && (
-            <>
+          <>
               {quest.desc && (
                 <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/70 sm:text-[11px]">{quest.desc}</p>
               )}
@@ -361,8 +356,8 @@ export function HUD({
                 </div>
               )}
             </>
-          )}
         </div>
+        )}
       </div>
     </>
   );

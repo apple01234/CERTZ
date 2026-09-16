@@ -119,6 +119,9 @@ export type ItemKey =
   /* v1.0.7 — SPUM식 코스튬 4종 + 포니테일 헤어 (입고/벗기 슬롯형 치장 — gen_outfits.py 생성 프레임) */
   | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy"
   | "hair_ponytail"
+  /* v1.1.0 (#19/#1) — 프리미엄 완전 교체 코스튬 6종 + 어태치 장식 5종 */
+  | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
+  | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy"
   | "ring_bless"
   | "buff_king"
   /* v3.0.15 (#13) — eert 큐브 (메이플 큐브 시스템 — 잠재옵션 리롤) */
@@ -413,6 +416,19 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   cos_lunar: { key: "cos_lunar", kind: "cosmetic", name: "달빛 오라", icon: "i_cos_frost", price: 36000, bmPrice: 20, bmOnly: true, tier: "epic" },
   cos_deep: { key: "cos_deep", kind: "cosmetic", name: "심해 오라", icon: "i_cos_flame", price: 42000, bmPrice: 24, bmOnly: true, tier: "epic" },
   cos_galaxy: { key: "cos_galaxy", kind: "cosmetic", name: "은하수 오라", icon: "i_cos_rainbow", price: 52000, bmPrice: 28, bmOnly: true, tier: "legend" },
+  /* v1.1.0 (#19) — 프리미엄 완전 교체 코스튬 6종 (캐시상점 — 고가 고퀄 도트) */
+  outfit_silver: { key: "outfit_silver", kind: "cosmetic", name: "은월의 검희", icon: "cost_silver_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_crimson: { key: "outfit_crimson", kind: "cosmetic", name: "진홍의 마녀", icon: "cost_crimson_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_seraph: { key: "outfit_seraph", kind: "cosmetic", name: "성녀 세라피나", icon: "cost_seraph_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_abyss: { key: "outfit_abyss", kind: "cosmetic", name: "심해의 가곡", icon: "cost_abyss_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_nightmare: { key: "outfit_nightmare", kind: "cosmetic", name: "나이트메어 기사", icon: "cost_nightmare_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_gilded: { key: "outfit_gilded", kind: "cosmetic", name: "황금 백작", icon: "cost_gilded_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  /* v1.1.0 (#1) — 어태치 장식 5종 (캐릭터에 고정, 실시간 동기화) */
+  acc_crown: { key: "acc_crown", kind: "cosmetic", name: "왕가의 왕관", icon: "acc_crown", price: 64000, bmPrice: 24, bmOnly: true, tier: "epic" },
+  acc_ribbon: { key: "acc_ribbon", kind: "cosmetic", name: "진홍 리본", icon: "acc_ribbon", price: 42000, bmPrice: 16, bmOnly: true, tier: "rare" },
+  acc_halo: { key: "acc_halo", kind: "cosmetic", name: "성스러운 후광", icon: "acc_halo", price: 78000, bmPrice: 30, bmOnly: true, tier: "epic" },
+  acc_wings_devil: { key: "acc_wings_devil", kind: "cosmetic", name: "마왕의 날개", icon: "acc_wings_devil", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend" },
+  acc_wings_fairy: { key: "acc_wings_fairy", kind: "cosmetic", name: "요정의 날개", icon: "acc_wings_fairy", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend" },
   chest_silver: { key: "chest_silver", kind: "consumable", name: "은 상자", icon: "i_chest_silver", price: 20000, bmPrice: 12, bmOnly: true, sellPrice: 1200, tier: "epic" },
   chest_gold: { key: "chest_gold", kind: "consumable", name: "금 상자", icon: "i_chest_gold", price: 42000, bmPrice: 25, bmOnly: true, sellPrice: 3000, tier: "epic" },
   chest_legend: { key: "chest_legend", kind: "consumable", name: "전설 상자", icon: "i_chest_legend", price: 80000, bmPrice: 48, bmOnly: true, sellPrice: 6000, tier: "legend" },
@@ -475,7 +491,11 @@ export type PetKey = "pet_slime" | "pet_pixie" | "pet_atlas"
 export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | "cos_aurora" | "cos_isekai" | "cos_pixel"
   | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow" // v4.3.0 — +6
   | "cos_rose" | "cos_toxic" | "cos_magma" | "cos_lunar" | "cos_deep" | "cos_galaxy" // v1.0.16 — +6 (유저 지시 "치장템을 차라리 늘려")
-  | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy" | "hair_ponytail"; // v1.0.7 — 코스튬/헤어
+  | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy" | "hair_ponytail" // v1.0.7 — 코스튬/헤어
+  /* v1.1.0 (#19 프리미엄) — SPUM식 완전 교체 코스튬 6종 (머리+피부+의상 전부 다른 캐릭터로 변신) */
+  | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
+  /* v1.1.0 (#1 장식) — 캐릭터에 고정되는 어태치 장식 (캐릭터가 움직이면 실시간 동기화) */
+  | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy";
 
 /** 버프 물약 효과 — 사용 시 지속시간 동안 적용 (같은 버프 재사용 시 시간 갱신) */
 export type BuffDef = {
@@ -536,8 +556,9 @@ export type CosmeticDef = {
   price: number;
   tint: number;
   /* v1.0.7 — 착용 슬롯: aura(후광·기존) / outfit(코스튬 스프라이트 교체) / hair(머리카락 레이어)
-   *  슬롯별 독립 착용 — 오라+코스튬+헤어 동시 착용 가능 */
-  slot?: "aura" | "outfit" | "hair";
+   *  슬롯별 독립 착용 — 오라+코스튬+헤어 동시 착용 가능
+   *  v1.1.0 — + acc(어태치 장식: 왕관/리본/후광/날개 — 캐릭터에 고정, 실시간 동기화) */
+  slot?: "aura" | "outfit" | "hair" | "acc";
 };
 export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_dawn: { key: "cos_dawn", name: "새벽빛 오라", icon: "cos_dawn", desc: "하늘빛 후광", price: 200, tint: 0x7dc0ff },
@@ -562,13 +583,46 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_lunar: { key: "cos_lunar", name: "달빛 오라", icon: "cos_dawn", desc: "차가운 월광 서릿 후광", price: 0, tint: 0xd8e8ff },
   cos_deep: { key: "cos_deep", name: "심해 오라", icon: "cos_aurora", desc: "깊은 바닷빛 심연 후광", price: 0, tint: 0x3aa8d8 },
   cos_galaxy: { key: "cos_galaxy", name: "은하수 오라", icon: "cos_aurora", desc: "별이 흐르는 은하빛 후광", price: 0, tint: 0xb08aff },
-  /* v1.0.7 — SPUM식 코스튬 4종 (스프라이트 직접 착장 — hero 28프레임 의상 재색상 세트) + 포니테일 헤어 */
-  outfit_royal: { key: "outfit_royal", name: "왕실 황금 갑옷", icon: "outfit_royal_idle0", desc: "황금빛 왕실 정장 코스튬 — 스프라이트에 직접 착장", price: 0, tint: 0xffd76a, slot: "outfit" },
-  outfit_shadow: { key: "outfit_shadow", name: "암살자의 그림자의상", icon: "outfit_shadow_idle0", desc: "어둠에 스먹든 보라 의상 코스튬", price: 0, tint: 0x9a6aff, slot: "outfit" },
-  outfit_spring: { key: "outfit_spring", name: "봄맞이 새싹 의상", icon: "outfit_spring_idle0", desc: "포근한 봄날의 핑크 의상 코스튬", price: 0, tint: 0xff9ad2, slot: "outfit" },
-  outfit_navy: { key: "outfit_navy", name: "해군 사관 제복", icon: "outfit_navy_idle0", desc: "단정한 딥 네이비 제복 코스튬", price: 0, tint: 0x5ac8e8, slot: "outfit" },
+  /* v1.1.0 (#1) — 코스튬 = 스프라이트 "완전 교체" (겹치기 폐지).
+   *  cost_* 28프레임 시트로 본체 자체가 다른 캐릭터로 변신한다 (SPUM NPC 방식).
+   *  scripts/gen_char_system.py — 머리카락/피부/의상 전부 새 팔레트로 재탄생 */
+  outfit_royal: { key: "outfit_royal", name: "금발 왕자", icon: "cost_royal_idle0", desc: "금발의 왕위 계승자 — 백은 갑옷의 왕가 코스튬", price: 0, tint: 0xffd76a, slot: "outfit" },
+  outfit_shadow: { key: "outfit_shadow", name: "그림자 검술사", icon: "cost_shadow_idle0", desc: "적안의 그림자 검사 — 어둠에 스먹든 자", price: 0, tint: 0x9a6aff, slot: "outfit" },
+  outfit_spring: { key: "outfit_spring", name: "봄바람 소녀", icon: "cost_spring_idle0", desc: "분홍 머리에 스커트 원피스 — 봄날의 목화 코스튬", price: 0, tint: 0xff9ad2, slot: "outfit" },
+  outfit_navy: { key: "outfit_navy", name: "해군 장교", icon: "cost_navy_idle0", desc: "네이비 제복의 바다 지휘관 코스튬", price: 0, tint: 0x5ac8e8, slot: "outfit" },
+  /* v1.1.0 (#19) — 프리미엄 완전 교체 코스튬 6종 (서브컬처 도트) */
+  outfit_silver: { key: "outfit_silver", name: "은월의 검희", icon: "cost_silver_idle0", desc: "은발에 얼음빛 검의 무희 — 설원을 걷는 귀갑의 소녀", price: 560, tint: 0xcfe4ff, slot: "outfit" },
+  outfit_crimson: { key: "outfit_crimson", name: "진홍의 마녀", icon: "cost_crimson_idle0", desc: "적발의 마녀 — 심연의 마술을 다루는 자", price: 560, tint: 0xff6a8a, slot: "outfit" },
+  outfit_seraph: { key: "outfit_seraph", name: "성녀 세라피나", icon: "cost_seraph_idle0", desc: "금발의 성녀 — 세계수의 가호를 받는 기도사", price: 560, tint: 0xffe8b0, slot: "outfit" },
+  outfit_abyss: { key: "outfit_abyss", name: "심해의 가곡", icon: "cost_abyss_idle0", desc: "청록 머리칼의 심해 술사 — 파도의 노래를 부른다", price: 560, tint: 0x5ad8d0, slot: "outfit" },
+  outfit_nightmare: { key: "outfit_nightmare", name: "나이트메어 기사", icon: "cost_nightmare_idle0", desc: "백발의 암흑기사 — 악몽을 두르는 검은 갑주", price: 560, tint: 0xbe78ff, slot: "outfit" },
+  outfit_gilded: { key: "outfit_gilded", name: "황금 백작", icon: "cost_gilded_idle0", desc: "황금빛 귀족 — 부와 권력을 몸에 두른 자", price: 560, tint: 0xffd06a, slot: "outfit" },
   hair_ponytail: { key: "hair_ponytail", name: "포니테일 헤어", icon: "hair_ponytail", desc: "뒤로 넘긴 갈색 포니테일 — 걷는 바람에 살랑", price: 0, tint: 0x8a5c34, slot: "hair" },
+  /* v1.1.0 (#1 장식) — 어태치 악세서리: 캐릭터에 고정 + 실시간 동기화 */
+  acc_crown: { key: "acc_crown", name: "왕가의 왕관", icon: "acc_crown", desc: "머리에 얹히는 황금 왕관 — 루비가 박혀 있다", price: 320, tint: 0xffd76a, slot: "acc" },
+  acc_ribbon: { key: "acc_ribbon", name: "진홍 리본", icon: "acc_ribbon", desc: "머리 옆에 달리는 새빨간 리본 — 사랑스러운 한 점", price: 240, tint: 0xff6a8a, slot: "acc" },
+  acc_halo: { key: "acc_halo", name: "성스러운 후광", icon: "acc_halo", desc: "머리 위에 뜨는 금색 고리 — 성녀의 증표", price: 400, tint: 0xffe8a0, slot: "acc" },
+  acc_wings_devil: { key: "acc_wings_devil", name: "마왕의 날개", icon: "acc_wings_devil", desc: "등 뒤에 펼쳐지는 진홍 박쥐 날개", price: 480, tint: 0xff5a6a, slot: "acc" },
+  acc_wings_fairy: { key: "acc_wings_fairy", name: "요정의 날개", icon: "acc_wings_fairy", desc: "등 뒤에 반짝이는 하늘빛 요정 날개", price: 480, tint: 0xbaf3ff, slot: "acc" },
 };
+
+/* v1.1.0 (#1/#21/#22) — 외형 시스템: 성별 × 피부 6종 → 베이스 시트(chm/chf) 선택.
+ *  코스튬 착용 시 cost_* 로 완전 교체 (SPUM식). "" = 기본(남성·기본피부 = 원본 hero_*) */
+export const BODY_PREFIXES = [
+  "chm0", "chm1", "chm3", "chm4", "chm5",
+  "chf0", "chf1", "chf2", "chf3", "chf4", "chf5",
+  "cost_royal", "cost_shadow", "cost_spring", "cost_navy",
+  "cost_silver", "cost_crimson", "cost_seraph", "cost_abyss", "cost_nightmare", "cost_gilded",
+] as const;
+export const GENDER_LABELS = { m: "남캐", f: "여캐" } as const;
+export const SKIN_OPTIONS = [
+  { idx: 0, name: "백자" },
+  { idx: 1, name: "밝은" },
+  { idx: 2, name: "기본" },
+  { idx: 3, name: "밀색" },
+  { idx: 4, name: "구릿빛" },
+  { idx: 5, name: "초콜릿" },
+] as const;
 
 /** 상점 판매 목록 (표시 순서 — BM 섹션은 kind로 분리 렌더) */
 export const SHOP_STOCK: ItemKey[] = [
@@ -719,6 +773,9 @@ export const BM_STOCK: ItemKey[] = [
   "cos_rose", "cos_toxic", "cos_magma", "cos_lunar", "cos_deep", "cos_galaxy",
   /* v1.0.7 — 코스튬/헤어 (캐시상점 신규 착장 치장) */
   "outfit_royal", "outfit_shadow", "outfit_spring", "outfit_navy", "hair_ponytail",
+  /* v1.1.0 (#19/#1) — 프리미엄 코스튬 6종 + 어태치 장식 5종 */
+  "outfit_silver", "outfit_crimson", "outfit_seraph", "outfit_abyss", "outfit_nightmare", "outfit_gilded",
+  "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy",
 ];
 /** v1.0.3 (#0르쯔) — 캐시상점 진열 자격: bmPrice(에메랄드 가격)가 1 이상인 아이템만 (BmShopPanel 방어 필터용) */
 export function isCashStock(k: ItemKey): boolean {
@@ -969,7 +1026,7 @@ export function potLineText(l: PotLine): string {
   return `${POT_STAT_LABEL[l.k]} +${l.v}`;
 }
 
-export function rollPotentials(pity = 0): Potentials {
+export function rollPotentials(pity = 0, minGrade = 0): Potentials {
   const r = Math.random() * 100;
   let grade = 0;
   let acc = 0;
@@ -978,7 +1035,9 @@ export function rollPotentials(pity = 0): Potentials {
     if (r < acc) { grade = i; break; }
   }
   /* v1.0.8 — 잠재 천장: 유니크 미달 연속 POT_PITY_MAX-1회 후 이번 롤은 유니크+ 확정
-   *  (확률 왜곡 아님 — 공시된 확률 외 보장 시스템. 메이플 큐브 논란 대응) */
+   *  (확률 왜곡 아님 — 공시된 확률 외 보장 시스템. 메이플 큐브 논란 대응)
+   *  v1.1.0 (#6) — minGrade 하한: 현재 등급 미만 굴림은 폐기 (EERT 큐브가 등급을 깎지 않는다) */
+  if (grade < minGrade) grade = minGrade;
   if (grade < 2 && pity >= POT_PITY_MAX - 1) grade = 2;
   const strong = grade >= 2;
   const kinds: PotStatKey[] = ["atk", "def", "crit", "maxHp"];

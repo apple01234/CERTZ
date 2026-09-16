@@ -111,6 +111,9 @@ export type SaveData = {
   hair?: string | null;
   /* v1.0.19 (B-1 외형) — 로비 생성 시 고른 색조 (스프라이트 틴트, null=기본) */
   lookTint?: number | null;
+  gender?: "m" | "f"; // v1.1.0 (#22) — 남/여
+  introSeen?: boolean; // v1.1.0 (#18) — 프롤로그/인트로 시청 완료 (false=미시청 신규, undefined=구세이브 스킵)
+  skinIdx?: number; // v1.1.0 (#21) — 피부 0~5
   /* ↓ 친구 시스템 (v2.1 — 구 세이브 호환: 로드 시 자동 발급/기본값) */
   fcode?: string;
   friends?: { code: string; name: string }[];

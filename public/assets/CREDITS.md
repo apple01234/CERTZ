@@ -183,9 +183,14 @@
 - 각 팩 라이선스 원문은 upload/ 내 라이선스 파일 참조
 
 ## v3.0.8 2차 개편 — 히어로/몬스터 스프라이트 전면 교체
-- Mystic Woods (Game Supply Guy, Free Version) — 히어로 7종 애님 28프레임
+- Mystic Woods (Game Endeavor — itch.io game-endeavor.itch.io/mystic-woods) — 히어로 7종 애님 28프레임
   (idle/walk 4방향/공격 3방향, 참격 아크 포함): /assets/hero_*
-  ⚠ 라이선스: 비영리 프로젝트 한정 / 수정 가능 / 재배포 금지 — 원문: upload/extracted/mystic_woods_free_2.2/read_me.txt
+  ⚠ 라이선스 (v1.1.0 정정 — 제작자 공식 페이지 재확인):
+    · 무료 버전 = 비영리 전용 / 프리미엄(유료) 버전 = 상업 프로젝트 사용 가능
+    · 배포 금지: 팩 원본/파생 시트의 재판매·재배포 불가 (게임 내장 사용은 의도된 용도)
+    · 출시 전 필수 확인: 프리미엄 버전 소유 증명 (itch.io 구매 내역) — 무료 버전 출처라면
+      상업 배포(광고 포함) 전 프리미엄 업그레이드 필수
+  ※ v1.1.0 캐릭터 외형 시스템(chm/chf/cost_*)은 hero_* 픽셀 재구성 파생물 — 동일 라이선스 계열에 따름
 - 32rogues (Seth Boyles/Surt, v0.5.0) — 몬스터 42종 전면 교체 소스
   (오크 4종/트롤/임프/리치/죽음의 기사/좀비/구울/리퍼/레이스/거미/박쥐/쥐/
   와그(늑대 6종 파생 duotone)/록 골렘(골렘 5종 파생)/미노타우르스/바실리스크/
@@ -236,3 +241,12 @@
 - 변환: scripts/gen_gameworks_v1011.py (512 캡 q82 webp, 총 512K)
 - Used for: N차마다 기존 스킬 강화(주력기/기동기/3차기 — 전직 단계 비례 합성)·
   튜토리얼 완료 벚꽃 소나기·튜토리얼 마커
+
+
+## v1.1.0 — 캐릭터 외형 시스템 (성별/피부/완전 교체 코스튬)
+- scripts/gen_char_system.py — hero_*(Mystic Woods) 픽셀 팔레트 재구성 파생물
+  · chm*/chf* (성별×피부 6종): 피부 픽셀 재매핑 + 여성형 실루엣(긴 머리/스커트) 변환
+  · cost_* (코스튬 10종): 머리카락/피부/의상 전체 재팔레트 — SPUM NPC처럼 완전 교체 형식
+  · acc_* (왕관/리본/후광/날개 5종): 자체 제작 픽셀 아트
+  · 상위 라이선스: Mystic Woods 파생물 — 위 Mystic Woods 항목의 조건을 따름
+- SPUM (Unity Asset Store, 유저 구매분 upload/SPUM.7z): 신규 파생물 없음 — 기존 npc_* 초상화만 사용

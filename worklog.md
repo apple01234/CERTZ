@@ -1760,3 +1760,41 @@ Stage Summary:
 - 유저 4건 전부 완료: ①유니온 모바일 짤림(클래스 변조 복원+수납 실측) ②생성 캐릭터 전직 데드락(2차 시련 시작 실측) ③UI 전면 교체(디자인 시스템+19패널+9화면, 스크린샷 검수) ④검은화면(부팅 로딩+크래시 가드)
 - 운영 교훈: ①CSS 커스텀 클래스 추가 시 dev 서버 turbopack 캐시가 안 따라올 수 있음 — 파일 캐시 무효화(내용 append) 필요 ②build_apk.sh의 export 빌드가 .next를 덮어쓴다 — 서버 재기동 전 일반 웹빌드 필수 ③E2E computed style 비교는 Chrome이 lab/oklch 색공간을 반환하므로 두께/그림자 등으로 판정
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 85
+Agent: Super Z (메인)
+Task: 유저 지시서 24건 — ①치장 스프라이트 완전 교체+장식 어태치 ②퀘스트창 on/off ③플레이스토어 베타 가이드 ④코스튬 해제 ⑤GM 무한 엘릭서/자동물약 ⑥EERT 등급 하락 방지 ⑦어두운 맵 지도 ⑧라이트 절감 ⑨몬스터 벽 뚫기 ⑩콘텐츠 NPC UI ⑪차원문 ⑫카오스 암전 ⑬피규어 ⑭로딩바 ⑮AI 문구 ⑯보안 ⑰저작권 ⑱인트로/프롤로그 ⑲고퀄 도트 캐릭터/치장/스킬 ⑳3D 에셋 ㉑밝은 피부 ㉒남녀 선택 — v1.1.0 확정·릴리스 (versionCode 86)
+
+Work Log:
+- [자산 파이프라인] scripts/gen_char_system.py 신설 — hero_* 14색 고정 팔레트 분석(H=머리/조끼/신발, S/s=피부, T/t/u=셔츠, P/p/d=바지) → ①여성 실루엣 변환(카테인 긴 머리+앞머리 확장+A라인 스커트+고아 손 픽셀 소거) ②피부 6종 S/s 정밀 재매핑(multiply 틴트의 "다 어두워짐" 근본 해결) ③코스튬 10종 완전 팔레트 재탄생(기존 4종 재탄생+프리미엄 6종: 은월의 검희/진홍의 마녀/성녀 세라피나/심해의 가곡/나이트메어 기사/황금 백작) ④어태치 장식 5종 픽셀 드로잉(왕관/리본/후광/마왕날개/요정날개) — 총 588프레임+5장식 생성, 컨택트시트로 프레임별 육안 검수 3회 반복
+- [#1 코스튬 완전 교체] Player.bodyPrefix/bodyKey()/applyBodyLook() 신설 — hero_* 텍스처·hero-* 애님 키를 현재 외형 시트로 매핑(24개 call site 치환), 코스튬 착용 시 본체 텍스처 자체가 cost_* 로 전환(오버레이 겹치기 폐기) · WorldScene outfitOverlay/outfitTex 완전 제거, textures.ts에 21프리핕스×7애님 등록, BootScene 변형 시트 588프레임 로드(구 outfit_* 로드 폐기)
+- [#1 장식 어태치] Player.accessory+setAccessory 신설 · WorldScene accOverlays[] — 왕관/리본=머리, 후광=공중부양(트윈), 날개=등뒤 depth -0.2(흔들림 트윈), update 루프에서 프레임별 앵커 오프셋 실시간 동기화(뒷모습 시 높이 보정)
+- [#4 해제 버그] Player.setCosmetic(null)이 무조건 오라 슬롯 처리 → 착용 중 슬롯 추론 해제(outfit→hair→acc→aura) + setCosmeticSlot(key,slot) 신설 — UI가 클릭 아이템의 슬롯을 함께 전달(코스튬+헤어 동시 착용 중 원하는 것만 해제)
+- [#5 GM/자동물약] onUseItem에 gm_elixir 분기 신설(기존엔 분기 부재로 조용히 무시 — 무소모 풀회복) · Player.gmInfinite 플래그(adminRole 부여 시 설정) — usePotion 보유 검사/소모 우회, tickAutoUse 보유 체크 우회 · 자동물약 기본값 {hpPct:45, mpPct:25} 활성화(기존 0=영구 비활성이 "적용안됨"의 원인)
+- [#6 EERT 하락 방지] rollPotentials(pity, minGrade) 시그니처 확장 — 현재 등급 미만 굴림 폐기(에픽≠>레어), rerollPotentials가 curGrade 하한 전달 · 버튼 라벨 "등급업(티어↑)"/"EERT(잠재)" 분리
+- [#7/#12 지도/암전] 미니맵 불투명 판(0.96)+외곽 그림자+금테 2.5px — 카메라 포스트FX가 전체 프레임을 덮어도 판독 가능 · 카오스 비네트 0.4→0.14·반경 0.62→0.78, 블룸 0.68→0.5
+- [#8 라이트] 고정 환경광 5→3 · 횃불 장치 8→4
+- [#9 벽 뚫기] WorldScene.safeSpawnXY() 신설 — 닫힌 셀 스폰 시 가장 가까운 열린 셀 중심 보정, 탑/파크/도장/게이트/침공보스 5경로 적용(E2E로 벽 셀 스폰 0건 실측)
+- [#10 콘텐츠 NPC UI] 정체 규명 3단계: 실측 캡처→DOM 판독→setPanel/setPanelSfx 계측으로 v3.0.22 "퀘스트 로그 게임 시작 시 자동 오픈"이 매 콘텐츠 진입마다 NPC 팝업처럼 뜨던 것이 원인 확정 → 자동 오픈 폐기 + 콘텐츠(탑/파크/게이트/옷장/도장)에서 마을 인트로 대사(stageIntro 폴백 villageIntro)·튜토리얼 재개 억제
+- [#11 차원문] 보루 자가개방 루프에 NEXT_STAGE 존재 게이트 — 연결 구역 없는 콘텐츠는 포탈 미생성("이 앞은 막혀 있다" 배너 원천 제거)
+- [#13 피규어] FigureDef.icon 필드 신설(12종 → 실제 몬스터/펫 스프라이트 매핑: pet_slime/x3_goblin/frostwolf/kd_plant2/orcwarrior/pet_pixie/firebird/necromancer/runegolem/emberwolf/cos_wings/gw_crystal) — 곰돌이 이모지 🧸 폐지, Panels 도감 렌더 교체
+- [#14 로딩바] BootScene fill rect setOrigin(0)→setOrigin(0,0.5) — 채움 바가 프레임에서 9px 하강·돌출하던 버그
+- [#15 문구] "탑 입장 (무료 · 언제든)"→"탑 입장" 등 정리
+- [#16 보안] accounts 서버 감사(scrypt+timingSafeEqual·레이트리밋·감사로그·바디 6MB 제한·32바이트 토큰 확인 — 구조 양호) · 관리자 오토시드 시 SERTZ_ADMIN_PASSWORD 미설정이면 콘솔 경고+감사로그 신설
+- [#17 저작권] Mystic Woods 라이선스 웹 재확인 — 제작자 Game Endeavor, "프리미엄 버전 소유 시 상업 사용 가능/재배포만 금지" 확인 → CREDITS.md 정정(구 표기 "Game Supply Guy 비영리 한정"은 오기) + 출시 전 프리미엄 소유 확인 체크리스트화 · v1.1.0 파생물 크레딧 블록 추가
+- [#18 프롤로그] WorldScene.showPrologue() — 풀스크린 암막+내레이션 4비트(탭/스페이스 진행·건너뛰기·1회 시청 introSeen 플래그) · 로비 생성 캐릭터(introSeen=false)도 프롤로그→구역 안내 대사 순서 연결 · 저FPS 환경에서 페이드/트윈이 텍스트를 덮는 문제 — resetFX 즉시 정리+알파 트윈 폐기(즉시 확정)로 근본 차단
+- [#19/#21/#22 생성 UI] Lobby 3단계: 성별 토글(남캐/여캠 실제 스프라이트 미리보기)+피부 6종 그리드 — CharAvatar가 canvas multiply 시뮬레이션에서 실제 변형 스프라이트 <img>로 교체(미리보기=인게임 100% 일치) · SaveData/CharMeta에 gender/skinIdx/accessory/introSeen 필드+마이그레이션(undefined=구세이브 기본)
+- [#20 3D 에셋] 답변 확정: 원본(research/ 1.1GB FBX 포함)은 세션 리셋으로 디스크 유실 — 게임 반영분(vf_ 25종·gw_ 24종·hv_ 2종 등 프리렌더 webp)은 public/assets에 전부 존재·로드 중, 게임 영향 없음
+- [#3 가이드] download/플레이스토어_베타출시_가이드.txt 신설 — 개발자 계정/앱 생성/내부 테스트 트랙/스토어 등록정보/콘텐츠 등급(가챠 확률 문답 주의)/데이터 안전/개인정보처리방침/AAB 빌드(build_aab.sh)/보안 체크리스트/저작권 체크리스트/베타 운영 팁 11장
+- [환상 손상 사건] 작업 중 "const sg, setMsg]" 류 구문 손상으로 의심됐으나 od -c로 확인 — 툴 출력 파이프라인이 "[m" 시퀀스를 ANSI 리셋 코드로 소비하는 표시 문제였고 파일은 원래 정상(수정 무해)
+- [E2E 18/18 PASS] e2e_v110.js: 타이틀 배지 v1.1.0 · 여캠+백자 생성→스프라이트 chf0_* 적용 · 프롤로그 표시(씬 오브젝트 판정)+introSeen 기록 · 코스튬 착용=cost_silver_idle0 완전 교체→해제 복원 · 장식 착용/해제 · EERT 60연타 등급 하락 0건 · 퀘스트창 on/off · 탑 진입(퀘스트 로그 자동오픈 0·죽은 차원문 0·벽 스폰 0·미니맵 플레이트·횃불 ≤4) · pageerror 0
+- [빌드] tsc 0에러 · 웹빌드 4회 · JDK 소실 재발→rebuild_toolchain.sh · gradle BUILD SUCCESSFUL 4m59s → SERTZ-v1.1.0.apk 106,374,675B · aapt 86/1.1.0 · APK 내부 신규 자산 308종 확인 · md5 41146159d483b7b67776fcbfa6073a76
+- [릴리스] scripts/release_v110.py — Release v1.1.0(id 389759270) 생성·업로드(asset 567561124) → 원격 재다운로드 md5 일치 ✓ · 서버 재기동 /api/version 200(1.1.0/86/신규 note) · guide 서빙 새 md5 확인 ✓ · APK 307/206 다운로드 링크 확인 ✓
+- [버전체인 8곳] package.json(1.1.0)·build.gradle(86·1.1.0)·server.js(APK_MIRROR+LATEST_VERSION/CODE/NOTE)·Overlays.tsx 배지(v1.1.0)·apk-guide.html(제목·sub·노티스·링크·md5·히스토리)·안내.txt(v1.1.0 블록+md5)
+
+Stage Summary:
+- v1.1.0 배포: https://github.com/apple01234/CERTZ/releases/download/v1.1.0/SERTZ-v1.1.0.apk (versionCode 86, 106,374,675B, md5 41146159…)
+- 유저 24건 중 코드 분 22건 완료(#23 순서 재배치·#24 무문의 준수 포함): #1 완전 교체+어태치(#4 해제 수정 동반)·#2 on/off·#3 가이드 별첨·#5/#6 큐브/GM·#7/#12 지도/암전·#8 라이트·#9 벽·#10/#11 콘텐츠 UI/차원문·#13 피규어·#14 로딩바·#15 문구·#16 보안·#17 저작권·#18 프롤로그·#19 프리미엄 도트 세트·#21/#22 피부/성별 — #20은 조사 결과 답변(원본 유실·게임 반영분 정상)
+- 미해결(기능 아님/운영자 몫): Mystic Woods 프리미엄 소유 증명 확인(가이드 9장)·SERTZ_ADMIN_PASSWORD 설정(가이드 8장)·AAB 업로드는 콘솔에서 운영자 직접
+- 운영 교훈: ①"[m" 시퀀스가 터미널 출력에서 ANSI 코드로 소비돼 파일이 손상돼 보이는 환상 — 의심되면 od -c로 원본 바이트 확인 ②헤드리스 저FPS 환경에선 카메라 페이드/트윈이 수 초 늘어진다 — 페이드에 가려지는 연출은 resetFX 즉시 정리+알파 즉시 확정이 안전 ③Phaser HUD 버튼 클릭 E2E는 text 매칭 대신 aria-label/네이티브 위임

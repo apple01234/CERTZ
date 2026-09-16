@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.0.20/SERTZ-v1.0.20.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.1.0/SERTZ-v1.1.0.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -38,9 +38,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.0.20";
-  const LATEST_CODE = 85;
-  const VERSION_NOTE = "UI 전면 교체(게임형 우드·골드 프레임)·유니온 모바일 짤림 수정·생성 캐릭터 전직 데드락 수정·부팅 로딩 화면+크래시 복구(검은화면 대책)";
+  const LATEST_VERSION = "1.1.0";
+  const LATEST_CODE = 86;
+  const VERSION_NOTE = "캐릭터 외형 대개편(여캠/남캠·피부 6종·완전 교체 코스튬 10종·장식 5종)·프롤로그 시네마틱·버그 대량 수정(코스튬 해제·EERT 등급 하락 방지·벽 뚫기·카오스 암전 등)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

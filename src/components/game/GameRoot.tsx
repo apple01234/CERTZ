@@ -58,15 +58,10 @@ export default function GameRoot() {
     installCrashGuard();
   }, []);
 
-  /* v3.0.22 (#40) — 퀘스트 창 기본 열림: 게임 시작 시 1회 자동 오픈.
-   *  평소에는 열어두고, 유저가 직접 닫으면 그때부터 닫힌 상태를 유지한다 */
-  const questAutoOpened = useRef(false);
-  useEffect(() => {
-    if (state === "playing" && !questAutoOpened.current) {
-      questAutoOpened.current = true;
-      setPanel("quest");
-    }
-  }, [state, setPanel]);
+  /* v1.1.0 (#10) — 퀘스트 로그 "게임 시작 시 자동 오픈" 제거 (v3.0.22 #40 로직 폐기).
+   *  유저 지시: "컨텐츠마다 NPC UI가 있는 버그 — 작동도 안 하니 없애라".
+   *  매 진입마다 퀘스트 로그 패널이 자동으로 떠서 NPC 팝업처럼 보이던 것이 원인.
+   *  이제 우상단 퀘스트 버튼/J키로 필요할 때만 연다 (트래커 on/off 버튼은 #2로 신설) */
 
   // Phaser 부팅 (1회)
   useEffect(() => {

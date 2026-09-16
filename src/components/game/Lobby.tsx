@@ -45,56 +45,33 @@ const CLASS_PREVIEWS: { key: ClassKey; main: string; diff: number; skills: { nam
   },
 ];
 
-/* v1.0.19 (B-1 외형) — 색조 팔레트 (스프라이트 전체 틴트 — 게임 내 오라 치장과 같은 방식) */
-const LOOK_TINTS: { tint: number | null; name: string }[] = [
-  { tint: null, name: "기본" },
-  { tint: 0xffd2a1, name: "황혼" },
-  { tint: 0xfff3c9, name: "금빛" },
-  { tint: 0xffc9c9, name: "장미빛" },
-  { tint: 0xd9ffc9, name: "연두빛" },
-  { tint: 0xc9e8ff, name: "하늘빛" },
-  { tint: 0xe3d2ff, name: "라벤더" },
-  { tint: 0xb8c4d9, name: "그림자" },
+/* v1.1.0 (#21/#22) — 성별 × 피부 6종. multiply 틴트(다 어두워지는 문제) 폐기 →
+ *  실제 생성된 스프라이트 시트(chm/chf_*)를 그대로 미리보기 (백자~초콜릿 밝은 피부 포함) */
+const SKIN_CHOICES: { idx: number; name: string }[] = [
+  { idx: 0, name: "백자" },
+  { idx: 1, name: "밝은" },
+  { idx: 2, name: "기본" },
+  { idx: 3, name: "밀색" },
+  { idx: 4, name: "구릿빛" },
+  { idx: 5, name: "초콜릿" },
 ];
+const lookSprite = (g: "m" | "f", skin: number): string =>
+  g === "f" || skin !== 2 ? `/assets/ch${g}${skin}_idle0.webp` : "/assets/hero_idle0.webp";
 
-/** 캐릭터 외형 미리보기 — hero_idle0 프레임을 캔버스에 그리고 색조를 multiply 합성.
- *  인게임 스프라이트와 동일한 에셋이라 미리보기=실제 외형이 보장된다. */
-function CharAvatar({ tint, size = 44 }: { tint?: number | null; size?: number }) {
-  const ref = useRef<HTMLCanvasElement | null>(null);
-  useEffect(() => {
-    let dead = false;
-    const img = new Image();
-    img.src = "/assets/hero_idle0.webp";
-    img.onload = () => {
-      if (dead || !ref.current) return;
-      const c = ref.current;
-      const ctx = c.getContext("2d");
-      if (!ctx) return;
-      c.width = size;
-      c.height = size;
-      ctx.imageSmoothingEnabled = false;
-      const s = Math.max(size / img.width, size / img.height) * 0.92;
-      const w = img.width * s;
-      const h = img.height * s;
-      const dx = (size - w) / 2;
-      const dy = (size - h) / 2;
-      ctx.clearRect(0, 0, size, size);
-      ctx.drawImage(img, dx, dy, w, h);
-      if (tint && tint !== 0xffffff) {
-        const r = (tint >> 16) & 255;
-        const g = (tint >> 8) & 255;
-        const b = tint & 255;
-        ctx.globalCompositeOperation = "multiply";
-        ctx.fillStyle = `rgb(${r},${g},${b})`;
-        ctx.fillRect(0, 0, size, size);
-        ctx.globalCompositeOperation = "destination-in";
-        ctx.drawImage(img, dx, dy, w, h);
-        ctx.globalCompositeOperation = "source-over";
-      }
-    };
-    return () => { dead = true; };
-  }, [tint, size]);
-  return <canvas ref={ref} style={{ width: size, height: size }} className="shrink-0 rounded border border-white/15 bg-black/40" aria-label="캐릭터 외형 미리보기" />;
+/** v1.1.0 (#21/#22) — 캐릭터 외형 미리보기: 실제 생성된 변형 스프라이트(chm/chf/hero)를 그대로 노출.
+ *  미리보기 = 인게임 외형 100% 일치 (틴트 시뮬레이션 폐기) */
+function CharAvatar({ gender, skinIdx, size = 44 }: { gender?: "m" | "f" | null; skinIdx?: number | null; size?: number }) {
+  const g = gender ?? "m";
+  const s = skinIdx ?? 2;
+  return (
+    <img
+      src={lookSprite(g, s)}
+      alt="캐릭터 외형 미리보기"
+      style={{ width: size, height: size, imageRendering: "pixelated" }}
+      className="shrink-0 rounded border border-white/15 bg-black/40 object-cover object-[35%_78%]"
+      draggable={false}
+    />
+  );
 }
 
 function relTime(ts: number): string {
@@ -115,9 +92,10 @@ export function Lobby({ onExit }: { onExit: () => void }) {
   const [step, setStep] = useState(0);
   const [pickCls, setPickCls] = useState<ClassKey>("warrior");
   const [nameInput, setNameInput] = useState("");
-  const [lookTint, setLookTint] = useState<number | null>(null);
+  const [lookGender, setLookGender] = useState<"m" | "f">("m");
+  const [lookSkin, setLookSkin] = useState<number>(2);
   const [delId, setDelId] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null); // v1.1.0 — 구문 오류 복구 (v1.0.20 커밋분)
 
   const store = useMemo(() => loadSlots(), [selId, creating, delId, msg]); // eslint-disable-line react-hooks/exhaustive-deps
   const coins = loadUnion().coins;
@@ -135,7 +113,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
   const startChar = (meta: CharMeta) => {
     let save = readCharSave(meta.id);
     if (!save) {
-      save = { stage: "village", lv: 1, exp: 0, maxHp: 100, atk: 10, cleared: false, maxMp: 60, playerName: meta.name, cls: meta.cls, startCls: meta.cls, gold: 30, lookTint: meta.lookTint ?? null } as SaveData;
+      save = { stage: "village", lv: 1, exp: 0, maxHp: 100, atk: 10, cleared: false, maxMp: 60, playerName: meta.name, cls: meta.cls, startCls: meta.cls, gold: 30, lookTint: meta.lookTint ?? null, gender: meta.gender ?? "m", skinIdx: meta.skinIdx ?? 2 } as SaveData;
       writeSave(save);
     }
     setActiveChar(meta.id);
@@ -146,13 +124,14 @@ export function Lobby({ onExit }: { onExit: () => void }) {
     setCreating(true);
     setStep(0);
     setNameInput("");
-    setLookTint(null);
+    setLookGender("m");
+    setLookSkin(2);
     setPickCls("warrior");
     setMsg(null);
   };
 
   const doCreate = () => {
-    const r = createCharacter(nameInput, pickCls, lookTint);
+    const r = createCharacter(nameInput, pickCls, null, { gender: lookGender, skinIdx: lookSkin });
     if (!r.ok) {
       setMsg(r.reason);
       setStep(0); // 이름 문제일 수 있으니 1단계로
@@ -160,7 +139,8 @@ export function Lobby({ onExit }: { onExit: () => void }) {
     }
     setCreating(false);
     setNameInput("");
-    setLookTint(null);
+    setLookGender("m");
+    setLookSkin(2);
     setSelId(r.id);
     setMsg(null);
     refresh();
@@ -250,8 +230,8 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                     style={{ borderColor: active ? "#e8c064" : "#7a5a2e" }}
                   >
                     <div className="flex items-center gap-1.5">
-                      {/* v1.0.19 (B-1) — 외형 미리보기 (생성 시 고른 색조가 적용된 실제 스프라이트) */}
-                      <CharAvatar tint={m.lookTint} size={40} />
+                      {/* v1.1.0 (#21/#22) — 외형 미리보기 (성별+피부 변형 스프라이트) */}
+                      <CharAvatar gender={m.gender} skinIdx={m.skinIdx} size={40} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
                           <p className="truncate text-[12px] font-black text-white">{m.name}</p>
@@ -406,32 +386,46 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                   </div>
                 )}
 
-                {/* ── 3단계: 외형 선택 ── */}
+                {/* ── 3단계: 외형 선택 (v1.1.0 — 성별 + 피부 6종, 실제 스프라이트 미리보기) ── */}
                 {step === 2 && (
                   <div>
-                    <p className="text-[10px] font-bold leading-relaxed text-white/55">색조를 골라 외형을 꾸며라. 언제든 로비에서 다른 캐릭터를 만들 수 있다.</p>
+                    <p className="text-[10px] font-bold leading-relaxed text-white/55">성별과 피부를 골라 외형을 꾸며라. 언제든 로비에서 다른 캐릭터를 만들 수 있다.</p>
                     <div className="mt-2 flex items-center gap-3 rounded-lg border border-white/12 bg-black/40 p-2.5">
-                      <CharAvatar tint={lookTint} size={64} />
+                      <CharAvatar gender={lookGender} skinIdx={lookSkin} size={64} />
                       <div>
                         <p className="text-[11px] font-black text-white">{nameInput.trim() || "이름 미정"}</p>
                         <p className="text-[9px] font-bold" style={{ color: clsColor(pickCls) }}>{classLabel(pickCls)} · Lv.1</p>
-                        <p className="mt-0.5 text-[9px] font-black text-amber-200">{LOOK_TINTS.find((x) => x.tint === lookTint)?.name ?? "기본"}</p>
+                        <p className="mt-0.5 text-[9px] font-black text-amber-200">{lookGender === "f" ? "여캐" : "남캐"} · {SKIN_CHOICES.find((x) => x.idx === lookSkin)?.name ?? "기본"}</p>
                       </div>
                     </div>
-                    <div className="mt-2 grid grid-cols-4 gap-1.5">
-                      {LOOK_TINTS.map((l) => {
-                        const on = lookTint === l.tint;
+                    <p className="mt-2 text-[9px] font-black text-white/50">성별</p>
+                    <div className="mt-1 grid grid-cols-2 gap-1.5">
+                      {([["m", "남캐", "hero"], ["f", "여캐", "chf2"]] as const).map(([g, label, spr]) => {
+                        const on = lookGender === g;
                         return (
                           <button
-                            key={l.name}
-                            onClick={() => setLookTint(l.tint)}
-                            className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-lg border-2 px-1 py-1.5 transition-transform active:scale-95 ${on ? "border-amber-300 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"}`}
+                            key={g}
+                            onClick={() => setLookGender(g)}
+                            className={`flex items-center gap-2 rounded-lg border-2 px-2 py-1.5 transition-transform active:scale-95 ${on ? "border-amber-300 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"}`}
                           >
-                            <span
-                              className="h-5 w-5 rounded-full border border-white/25"
-                              style={{ background: l.tint ? `#${l.tint.toString(16).padStart(6, "0")}` : "linear-gradient(135deg,#e8d5b0 0%,#5a4a3a 100%)" }}
-                            />
-                            <span className={`text-[8px] font-black ${on ? "text-amber-200" : "text-white/45"}`}>{l.name}</span>
+                            <img src={`/assets/${spr}_idle0.webp`} alt="" style={{ width: 30, height: 30, imageRendering: "pixelated", objectFit: "cover", objectPosition: "35% 78%" }} draggable={false} />
+                            <span className={`text-[10px] font-black ${on ? "text-amber-200" : "text-white/60"}`}>{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-[9px] font-black text-white/50">피부</p>
+                    <div className="mt-1 grid grid-cols-3 gap-1.5">
+                      {SKIN_CHOICES.map((s) => {
+                        const on = lookSkin === s.idx;
+                        return (
+                          <button
+                            key={s.idx}
+                            onClick={() => setLookSkin(s.idx)}
+                            className={`flex flex-col items-center gap-0.5 rounded-lg border-2 px-1 py-1 transition-transform active:scale-95 ${on ? "border-amber-300 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"}`}
+                          >
+                            <img src={lookSprite(lookGender, s.idx)} alt={s.name} style={{ width: 32, height: 32, imageRendering: "pixelated", objectFit: "cover", objectPosition: "35% 78%" }} draggable={false} />
+                            <span className={`text-[8px] font-black ${on ? "text-amber-200" : "text-white/45"}`}>{s.name}</span>
                           </button>
                         );
                       })}
@@ -455,7 +449,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
             ) : sel ? (
               <div>
                 <div className="flex items-center gap-2.5">
-                  <CharAvatar tint={sel.lookTint} size={52} />
+                  <CharAvatar gender={sel.gender} skinIdx={sel.skinIdx} size={52} />
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-black text-white">{sel.name}</p>
                     <p className="text-[10px] font-bold" style={{ color: clsColor(sel.cls) }}>
