@@ -565,7 +565,7 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_gold: { key: "cos_gold", name: "황금 오라", icon: "cos_gold", desc: "금빛 후광", price: 200, tint: 0xffd76a },
   cos_abyss: { key: "cos_abyss", name: "심연 오라", icon: "cos_abyss", desc: "보라빛 후광", price: 260, tint: 0xa875ff },
   cos_wings: { key: "cos_wings", name: "요정 날개", icon: "cos_wings", desc: "반짝임 입자 트레일", price: 340, tint: 0xbaf3ff },
-  cos_aurora: { key: "cos_aurora", name: "오로라 후광", icon: "cos_aurora", desc: "무지빛 오로라 후광", price: 0, tint: 0x9df0ff },
+  cos_aurora: { key: "cos_aurora", name: "오로라 후광", icon: "cos_aurora", desc: "초록→청보라로 흐르는 오로라 후광", price: 0, tint: 0x9df0ff },
   /* v4.0.0 — 차원 여행자 스킨 (스킨 = 추가 능력치) */
   cos_isekai: { key: "cos_isekai", name: "차원문 여행자", icon: "cos_aurora", desc: "차원 여행자 스킨 — 공격 +10 · HP +120", price: 0, tint: 0xc08aff },
   cos_pixel: { key: "cos_pixel", name: "픽셀 히어로", icon: "cos_gold", desc: "레트로 스킨 — 공격 +6 · 크리 +2", price: 0, tint: 0xffe86a },
@@ -575,29 +575,29 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_shadow: { key: "cos_shadow", name: "그림자 오라", icon: "cos_abyss", desc: "어둠에 스먹든 후광", price: 0, tint: 0x8060c0 },
   cos_holy: { key: "cos_holy", name: "성스러운 오라", icon: "cos_dawn", desc: "신성한 황금 후광", price: 0, tint: 0xfff0b0 },
   cos_storm: { key: "cos_storm", name: "폭풍 오라", icon: "cos_aurora", desc: "벼락치는 청백 후광", price: 0, tint: 0x90e8ff },
-  cos_rainbow: { key: "cos_rainbow", name: "무지개 오라", icon: "cos_wings", desc: "일곱 빛깔 무지개 후광", price: 0, tint: 0xff9adf },
+  cos_rainbow: { key: "cos_rainbow", name: "무지개 오라", icon: "i_cos_rainbow", desc: "일곱 빛깔이 실시간으로 순환하는 무지개 후광", price: 0, tint: 0xff9adf },
   /* v1.0.16 — 신규 치장 오라 6종 (유저 지시 "물약 줄이고 치장템을 늘려" — 텍스처 재활용, 심연 상점 치장 상자에도 자동 합류) */
   cos_rose: { key: "cos_rose", name: "장미빛 오라", icon: "cos_wings", desc: "붉은 장밋빛 낭만 후광", price: 0, tint: 0xff7ab0 },
   cos_toxic: { key: "cos_toxic", name: "맹독 오라", icon: "cos_abyss", desc: "스멀스멀 독성 연록 후광", price: 0, tint: 0x8aff5a },
   cos_magma: { key: "cos_magma", name: "용암 오라", icon: "cos_gold", desc: "녹아내리는 진홍 용암 후광", price: 0, tint: 0xff5a2a },
   cos_lunar: { key: "cos_lunar", name: "달빛 오라", icon: "cos_dawn", desc: "차가운 월광 서릿 후광", price: 0, tint: 0xd8e8ff },
   cos_deep: { key: "cos_deep", name: "심해 오라", icon: "cos_aurora", desc: "깊은 바닷빛 심연 후광", price: 0, tint: 0x3aa8d8 },
-  cos_galaxy: { key: "cos_galaxy", name: "은하수 오라", icon: "cos_aurora", desc: "별이 흐르는 은하빛 후광", price: 0, tint: 0xb08aff },
+  cos_galaxy: { key: "cos_galaxy", name: "은하수 오라", icon: "cos_aurora", desc: "별이 흐르는 은하빛 후광 — 파랑↔보라로 맥동", price: 0, tint: 0xb08aff },
   /* v1.1.0 (#1) — 코스튬 = 스프라이트 "완전 교체" (겹치기 폐지).
    *  cost_* 28프레임 시트로 본체 자체가 다른 캐릭터로 변신한다 (SPUM NPC 방식).
    *  scripts/gen_char_system.py — 머리카락/피부/의상 전부 새 팔레트로 재탄생 */
-  outfit_royal: { key: "outfit_royal", name: "금발 왕자", icon: "cost_royal_idle0", desc: "금발의 왕위 계승자 — 백은 갑옷의 왕가 코스튬", price: 0, tint: 0xffd76a, slot: "outfit" },
-  outfit_shadow: { key: "outfit_shadow", name: "그림자 검술사", icon: "cost_shadow_idle0", desc: "적안의 그림자 검사 — 어둠에 스먹든 자", price: 0, tint: 0x9a6aff, slot: "outfit" },
-  outfit_spring: { key: "outfit_spring", name: "봄바람 소녀", icon: "cost_spring_idle0", desc: "분홍 머리에 스커트 원피스 — 봄날의 목화 코스튬", price: 0, tint: 0xff9ad2, slot: "outfit" },
-  outfit_navy: { key: "outfit_navy", name: "해군 장교", icon: "cost_navy_idle0", desc: "네이비 제복의 바다 지휘관 코스튬", price: 0, tint: 0x5ac8e8, slot: "outfit" },
+  outfit_royal: { key: "outfit_royal", name: "금발 왕자", icon: "cost_royal_idle0", desc: "금발의 왕위 계승자 — 백은 갑옷의 왕가 코스튬 (남녀형)", price: 0, tint: 0xffd76a, slot: "outfit" },
+  outfit_shadow: { key: "outfit_shadow", name: "그림자 검술사", icon: "cost_shadow_idle0", desc: "적안의 그림자 검사 — 어둠에 스먹든 자 (남녀형)", price: 0, tint: 0x9a6aff, slot: "outfit" },
+  outfit_spring: { key: "outfit_spring", name: "봄바람 소녀", icon: "cost_spring_idle0", desc: "분홍 머리에 스커트 원피스 — 봄날의 목화 코스튬 (남녀형)", price: 0, tint: 0xff9ad2, slot: "outfit" },
+  outfit_navy: { key: "outfit_navy", name: "해군 장교", icon: "cost_navy_idle0", desc: "네이비 제복의 바다 지휘관 코스튬 (남녀형)", price: 0, tint: 0x5ac8e8, slot: "outfit" },
   /* v1.1.0 (#19) — 프리미엄 완전 교체 코스튬 6종 (서브컬처 도트) */
-  outfit_silver: { key: "outfit_silver", name: "은월의 검희", icon: "cost_silver_idle0", desc: "은발에 얼음빛 검의 무희 — 설원을 걷는 귀갑의 소녀", price: 560, tint: 0xcfe4ff, slot: "outfit" },
-  outfit_crimson: { key: "outfit_crimson", name: "진홍의 마녀", icon: "cost_crimson_idle0", desc: "적발의 마녀 — 심연의 마술을 다루는 자", price: 560, tint: 0xff6a8a, slot: "outfit" },
-  outfit_seraph: { key: "outfit_seraph", name: "성녀 세라피나", icon: "cost_seraph_idle0", desc: "금발의 성녀 — 세계수의 가호를 받는 기도사", price: 560, tint: 0xffe8b0, slot: "outfit" },
-  outfit_abyss: { key: "outfit_abyss", name: "심해의 가곡", icon: "cost_abyss_idle0", desc: "청록 머리칼의 심해 술사 — 파도의 노래를 부른다", price: 560, tint: 0x5ad8d0, slot: "outfit" },
-  outfit_nightmare: { key: "outfit_nightmare", name: "나이트메어 기사", icon: "cost_nightmare_idle0", desc: "백발의 암흑기사 — 악몽을 두르는 검은 갑주", price: 560, tint: 0xbe78ff, slot: "outfit" },
-  outfit_gilded: { key: "outfit_gilded", name: "황금 백작", icon: "cost_gilded_idle0", desc: "황금빛 귀족 — 부와 권력을 몸에 두른 자", price: 560, tint: 0xffd06a, slot: "outfit" },
-  hair_ponytail: { key: "hair_ponytail", name: "포니테일 헤어", icon: "hair_ponytail", desc: "뒤로 넘긴 갈색 포니테일 — 걷는 바람에 살랑", price: 0, tint: 0x8a5c34, slot: "hair" },
+  outfit_silver: { key: "outfit_silver", name: "은월의 검희", icon: "cost_silver_idle0", desc: "은발에 얼음빛 검의 무희 — 설원을 걷는 귀갑 (남녀형)", price: 560, tint: 0xcfe4ff, slot: "outfit" },
+  outfit_crimson: { key: "outfit_crimson", name: "진홍의 마녀", icon: "cost_crimson_idle0", desc: "적발의 마녀 — 심연의 마술을 다루는 자 (남녀형)", price: 560, tint: 0xff6a8a, slot: "outfit" },
+  outfit_seraph: { key: "outfit_seraph", name: "성녀 세라피나", icon: "cost_seraph_idle0", desc: "금발의 성녀 — 세계수의 가호를 받는 기도사 (남녀형)", price: 560, tint: 0xffe8b0, slot: "outfit" },
+  outfit_abyss: { key: "outfit_abyss", name: "심해의 가곡", icon: "cost_abyss_idle0", desc: "청록 머리칼의 심해 술사 — 파도의 노래 (남녀형)", price: 560, tint: 0x5ad8d0, slot: "outfit" },
+  outfit_nightmare: { key: "outfit_nightmare", name: "나이트메어 기사", icon: "cost_nightmare_idle0", desc: "백발의 암흑기사 — 악몽을 두르는 검은 갑주 (남녀형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
+  outfit_gilded: { key: "outfit_gilded", name: "황금 백작", icon: "cost_gilded_idle0", desc: "황금빛 귀족 — 부와 권력을 몸에 두른 자 (남녀형)", price: 560, tint: 0xffd06a, slot: "outfit" },
+  hair_ponytail: { key: "hair_ponytail", name: "포니테일 헤어", icon: "hair_ponytail", desc: "뒤통수에 묶은 갈색 포니테일 — 방향별로 자연스럽게 살랑", price: 0, tint: 0x8a5c34, slot: "hair" },
   /* v1.1.0 (#1 장식) — 어태치 악세서리: 캐릭터에 고정 + 실시간 동기화 */
   acc_crown: { key: "acc_crown", name: "왕가의 왕관", icon: "acc_crown", desc: "머리에 얹히는 황금 왕관 — 루비가 박혀 있다", price: 320, tint: 0xffd76a, slot: "acc" },
   acc_ribbon: { key: "acc_ribbon", name: "진홍 리본", icon: "acc_ribbon", desc: "머리 옆에 달리는 새빨간 리본 — 사랑스러운 한 점", price: 240, tint: 0xff6a8a, slot: "acc" },
@@ -607,12 +607,16 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
 };
 
 /* v1.1.0 (#1/#21/#22) — 외형 시스템: 성별 × 피부 6종 → 베이스 시트(chm/chf) 선택.
- *  코스튬 착용 시 cost_* 로 완전 교체 (SPUM식). "" = 기본(남성·기본피부 = 원본 hero_*) */
+ *  코스튬 착용 시 cost_* 로 완전 교체 (SPUM식). "" = 기본(남성·기본피부 = 원본 hero_*)
+ *  v1.1.1 (#7 성별 치장 분리) — cost_* = 여성형 10종 / costm_* = 남성형 10종.
+ *  같은 코스튬 키라도 캐릭터 성별에 따라 대응 실루엣 시트가 적용된다 (applyBodyLook). */
 export const BODY_PREFIXES = [
   "chm0", "chm1", "chm3", "chm4", "chm5",
   "chf0", "chf1", "chf2", "chf3", "chf4", "chf5",
   "cost_royal", "cost_shadow", "cost_spring", "cost_navy",
   "cost_silver", "cost_crimson", "cost_seraph", "cost_abyss", "cost_nightmare", "cost_gilded",
+  "costm_royal", "costm_shadow", "costm_spring", "costm_navy",
+  "costm_silver", "costm_crimson", "costm_seraph", "costm_abyss", "costm_nightmare", "costm_gilded",
 ] as const;
 export const GENDER_LABELS = { m: "남캐", f: "여캐" } as const;
 export const SKIN_OPTIONS = [

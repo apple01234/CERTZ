@@ -159,13 +159,23 @@ export function DialogueBox({
     advance();
   };
 
+  /* v1.1.1 (#1 대사 홀드) — 홀드 인터벌 stale closure 수정.
+   *  setInterval이 pointerdown 시점 렌더의 advance를 영구 캡처해 첫 스텝(타이핑 스킵) 후
+   *  stale shown/idx로 같은 setState만 반복 → React bail-out으로 영구 정지.
+   *  "꾹 누르면 빠르게"가 실제로는 한 줄에서 멈추는 버그로, 긴 마을 오프닝 대사를
+   *  못 넘겨 튜토리얼 진입이 막히는 2차 피해까지 발생. 최신 advance를 ref로 우회 */
+  const advanceRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    advanceRef.current = advance;
+  });
+
   // PC: 스페이스바/엔터로 대화 넘기기 — 꾹 누르면 계속 빠르게 (e.repeat 활용)
   useEffect(() => {
     if (!dialogue) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.code === "Space" || e.code === "Enter" || e.code === "NumpadEnter") {
         e.preventDefault();
-        advanceThrottled();
+        advanceRef.current();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -177,7 +187,7 @@ export function DialogueBox({
     e.preventDefault();
     advanceThrottled();
     if (holdTimer.current) window.clearInterval(holdTimer.current);
-    holdTimer.current = window.setInterval(advanceThrottled, 150);
+    holdTimer.current = window.setInterval(() => advanceRef.current(), 150);
   };
   const stopHold = () => {
     if (holdTimer.current) window.clearInterval(holdTimer.current);

@@ -40,6 +40,17 @@ export function isNativeApp(): boolean {
 
 let adInitDone = false;
 
+/* v1.1.1 (#3 결제 취소) — 유저 취소와 진짜 실패를 구분한다.
+ *  기존엔 어떤 에러든 "결제가 취소됐다"로 표시돼 (상품 미등록·네트워크 오류 포함)
+ *  결제 시도마다 "취소됐다"가 반복 표시됐다. */
+function classifyPurchaseError(e: unknown): "cancelled" | "unavailable" | "error" {
+  const msg = String((e as { message?: string; code?: number })?.message ?? e ?? "").toLowerCase();
+  if (msg.includes("cancel")) return "cancelled"; // 유저가 다이얼로그를 닫음
+  if (msg.includes("item") && (msg.includes("not") || msg.includes("unavail"))) return "unavailable"; // 상품 미등록
+  if (msg.includes("not found") || msg.includes("unavailable") || msg.includes("sku")) return "unavailable";
+  return "error";
+}
+
 /** 보상형 광고 시청 → 성공 시 true. 웹/미초기화 환경은 false + 이유 반환 */
 export async function showRewardedAd(): Promise<{ ok: boolean; reason?: string }> {
   if (!isNativeApp()) return { ok: false, reason: "web" };
@@ -61,16 +72,22 @@ export async function showRewardedAd(): Promise<{ ok: boolean; reason?: string }
   }
 }
 
-/** 구글 플레이 결제 — 에메랄드 상품 구매. 성공 시 true */
+/** 구글 플레이 결제 — 에메랄드 상품 구매. 성공 시 true
+ *  v1.1.1 (#3) — reason 세분화: cancelled(유저 취소) / unavailable(상품 미등록) / error */
+let buying = false; // 결제창 중복 오픈 가드 (연타 → 다중 다이얼로그 방지)
 export async function purchaseGems(skuId: string): Promise<{ ok: boolean; reason?: string }> {
   if (!isNativeApp()) return { ok: false, reason: "web" };
+  if (buying) return { ok: false, reason: "busy" };
+  buying = true;
   try {
     const { NativePurchases } = await import("@capgo/native-purchases");
     await NativePurchases.purchaseProduct({ productIdentifier: skuId, productType: "inapp" as never });
     return { ok: true };
   } catch (e) {
     console.warn("[SERTZ] 구글 플레이 결제 실패", e);
-    return { ok: false, reason: "error" };
+    return { ok: false, reason: classifyPurchaseError(e) };
+  } finally {
+    buying = false;
   }
 }
 
@@ -83,16 +100,22 @@ export const STORE_PACKS: { id: string; label: string; desc: string }[] = [
   { id: "sertz_pack_season_15900", label: "시즌 패키지", desc: "시즌 코스튬 · 시즌 아이템 · 에메랄드" },
 ];
 
-/** 현금 패키지 구매 (스토어 상품 ID로 결제 위임). 웹/미등록 상품은 실패 */
+/** 현금 패키지 구매 (스토어 상품 ID로 결제 위임). 웹/미등록 상품은 실패
+ *  v1.1.1 (#3) — purchaseGems와 동일 분류 + 진행중 가드 */
+let packBuying = false;
 export async function purchaseStorePack(productId: string): Promise<{ ok: boolean; reason?: string }> {
   if (!isNativeApp()) return { ok: false, reason: "web" };
   if (!STORE_PACKS.some((x) => x.id === productId)) return { ok: false, reason: "unknown-product" };
+  if (packBuying) return { ok: false, reason: "busy" };
+  packBuying = true;
   try {
     const { NativePurchases } = await import("@capgo/native-purchases");
     await NativePurchases.purchaseProduct({ productIdentifier: productId, productType: "inapp" as never });
     return { ok: true };
   } catch (e) {
     console.warn("[SERTZ] 패키지 결제 실패", e);
-    return { ok: false, reason: "error" };
+    return { ok: false, reason: classifyPurchaseError(e) };
+  } finally {
+    packBuying = false;
   }
 }

@@ -49,6 +49,11 @@ export function AuthPanel() {
     consumeAuthTokenFromHash(); // v1.0.7 — SNS 콜백 토큰을 저장 후 /me 가 즉시 인식
     authMe().then(setUser).catch(() => {});
     fetchSnsProviders().then(setProviders).catch(() => {});
+    /* v1.1.1 (#8 거래소) — 패널 안에서 바로 계정창을 열 수 있는 외부 오픈 이벤트
+     *  (기존엔 우측 위 계정 버튼이 유일한 진입로라 "거래소 사용 불가"로 느껴졌다) */
+    const onOpen = () => setOpen(true);
+    EventBus.on("ui:authOpen", onOpen);
+    return () => { EventBus.off("ui:authOpen", onOpen); };
   }, []);
 
   // 게임 진입 시 자동 백업 (3분 주기, 로그인 중일 때만)

@@ -12,7 +12,7 @@
  *   · 진행 판정은 실제 성공 시에만 (useSkill1 MP/CD 통과, usePotion 보유+회복 성공 등)
  */
 import Phaser from "phaser";
-import { EventBus } from "./components/game/EventBus";
+import { EventBus } from "../components/game/EventBus"; // v1.1.1 — 상대경로 수정(세션 중단 커밋에서 잘못 기록됨)
 import type { WorldScene } from "./scenes/WorldScene";
 
 type TutStepId = "talk" | "portal" | "kill" | "pickup" | "skill" | "pot";

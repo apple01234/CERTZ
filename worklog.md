@@ -1798,3 +1798,25 @@ Stage Summary:
 - 유저 24건 중 코드 분 22건 완료(#23 순서 재배치·#24 무문의 준수 포함): #1 완전 교체+어태치(#4 해제 수정 동반)·#2 on/off·#3 가이드 별첨·#5/#6 큐브/GM·#7/#12 지도/암전·#8 라이트·#9 벽·#10/#11 콘텐츠 UI/차원문·#13 피규어·#14 로딩바·#15 문구·#16 보안·#17 저작권·#18 프롤로그·#19 프리미엄 도트 세트·#21/#22 피부/성별 — #20은 조사 결과 답변(원본 유실·게임 반영분 정상)
 - 미해결(기능 아님/운영자 몫): Mystic Woods 프리미엄 소유 증명 확인(가이드 9장)·SERTZ_ADMIN_PASSWORD 설정(가이드 8장)·AAB 업로드는 콘솔에서 운영자 직접
 - 운영 교훈: ①"[m" 시퀀스가 터미널 출력에서 ANSI 코드로 소비돼 파일이 손상돼 보이는 환상 — 의심되면 od -c로 원본 바이트 확인 ②헤드리스 저FPS 환경에선 카메라 페이드/트윈이 수 초 늘어진다 — 페이드에 가려지는 연출은 resetFX 즉시 정리+알파 즉시 확정이 안전 ③Phaser HUD 버튼 클릭 E2E는 text 매칭 대신 aria-label/네이티브 위임
+
+---
+Task ID: 86
+Agent: Super Z (메인)
+Task: 세션 재개 — v1.1.1(유저 신고 8건+AAB 빌드) 완성·검증·릴리스 마무리 (versionCode 87)
+
+Work Log:
+- [상태 재파악] 이전 세션에서 v1.1.1 코드 수정+APK 빌드까지 진행됐으나 미완료 상태(E2E 미실행·AAB 미빌드·미커밋·미릴리스·물료 미갱신) — worklog에 기록 부재
+- [8건 반영 검증] 기존 e2e_v111.js 23/23 PASS 실측(성별 치장 7·왕관 4·포니테일 3·오라 2·무릉도장 2·거래소 3+버전/정리) · ①튜토리얼 가림 ③결제 취소는 E2E 미포함 → 코드 확인(Overlays.tsx tut:active·ads.ts classifyPurchaseError) + ① 신규 E2E 작성(e2e_tutfix_v111.js)
+- [①튜토리얼 가림 실측 4/4 PASS] startTutorial 기동→tut:active emit 확인 · 튜토리얼 중 보상팝업 top 112px→331px(46%) 이동 · 종료 후 80px(top-20) 복귀 · pageerror 0 — window.__SERTZ_EB__(EventBus 노출 훅)로 reward:show/tut:active 직접 발화하는 강한 실측
+- [tsc] 0에러
+- [AAB 빌드] scripts/build_aab.sh(JAVA_HOME=/home/z/jdk ANDROID_HOME=/home/z/.android-sdk) — APK_EXPORT=1 next build+cap sync+gradle bundleRelease BUILD SUCCESSFUL 48s → download/SERTZ-v1.1.1.aab 105,509,173B · aapt2는 AAB 미지원 → 파이썬 zip 검증(AndroidManifest versionName 1.1.1 UTF-8 검출·costm_ 자산 280·ponytail 4시트·웹청크 v1.1.1/costm 히트)
+- [물료 갱신] apk-guide.html v1.1.1(제목·sub vc87·노티스 8건+AAB 안내·링크·md5 2건·히스토리에 v1.1.0 이동 — v1.0.20 라인 유실 1회 복구) · APK_다운로드_안내.txt v1.1.1 블록+md5 2건
+- [릴리스] scripts/release_v111.py(기존 패턴+AAB 업로드/검증 추가) — Release v1.1.1(id 390326438) 생성 · APK asset 568965626(106,502,352B)·AAB asset 568965803(105,509,173B) 업로드 → 원격 재다운로드 md5 양쪽 일치 ✓ · guide 서빙 md5 양쪽 포함 ✓
+- [서버 복구] AAB 빌드가 .next를 export로 덮음(worklog 기존 교훈) — 일반 npx next build 복구 후 서버 재기동 → /api/version 200(1.1.1/87)·guide 200·home 200
+
+Stage Summary:
+- v1.1.1 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.1.1/SERTZ-v1.1.1.apk (versionCode 87, md5 76c2f2f7…)
+- AAB(플레이스토어 업로드용): https://github.com/apple01234/CERTZ/releases/download/v1.1.1/SERTZ-v1.1.1.aab (md5 e4b12b3f…)
+- 유저 신고 8건 전부 코드 반영+E2E 실측 완료(①가림 4/4·②무릉도장·③결제취소 코드검증·④포니테일·⑤오라·⑥왕관·⑦성별치장·⑧거래소)
+- 운영 교훈: ①Phaser createInner는 scene.restart(data)의 data를 무시하고 registry initData를 다시 읽는다 — 재시작 주입은 registry.set 후 restart ②aapt2는 AAB badging 미지원 — zip 파싱(AndroidManifest UTF-8·에셋 카운트·웹청크 문자열)으로 검증 ③EventBus는 window.__SERTZ_EB__로 노출돼 있어 E2E에서 이벤트 직접 발화 가능(강한 실측)
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

@@ -336,7 +336,9 @@ export class BootScene extends Phaser.Scene {
     for (const p of BODY_PREFIXES) {
       for (const f of heroFrames) this.load.image(`${p}_${f}`, `${p}_${f}.webp`);
     }
-    for (const t of ["hair_ponytail", "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy"]) {
+    /* v1.1.1 (#4/#5) — 포니테일 방향별 3종(정면/측면/뒷면 — 본체와 묶음 좌표 정렬)
+     *  + 무지개 오라 전용 아이콘. 기존 hair_ponytail은 상점 아이콘용으로 유지 */
+    for (const t of ["hair_ponytail", "hair_ponytail_f", "hair_ponytail_s", "hair_ponytail_b", "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy", "i_cos_rainbow"]) {
       this.load.image(t, `${t}.webp`);
     }
     /* v1.0.7 — 프리렌더 3D VFX 추가 (Hovl Studio Magic effects · UNI VFX — 연구용 원본 재확보분,

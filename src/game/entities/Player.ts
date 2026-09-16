@@ -4044,10 +4044,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.cosmetics.includes(key as CosmeticKey)) return false;
       this.gold -= item.price;
       this.cosmetics.push(key as CosmeticKey);
-      /* v1.0.7 — 슬롯별 즉시 착용 (코스튬/헤어는 오라 슬롯을 침범하지 않는다) */
+      /* v1.0.7 — 슬롯별 즉시 착용 (코스튬/헤어는 오라 슬롯을 침범하지 않는다)
+       *  v1.1.1 (#6 왕관 착용) — acc(어태치 장식)도 전용 슬롯으로: 기존엔 else 폴백이라
+       *  왕관이 오라(틴트 글로우)로 착용돼 왕관 스프라이트가 안 보였다 */
       const slot = COSMETIC_DEFS[key as CosmeticKey]?.slot ?? "aura";
       if (slot === "outfit") this.outfit = key as CosmeticKey;
       else if (slot === "hair") this.hair = key as CosmeticKey;
+      else if (slot === "acc") this.accessory = key as CosmeticKey;
       else this.cosmetic = key as CosmeticKey;
       return true;
     }
@@ -4191,10 +4194,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.emerald < unit) return false; // v4.6.0 — 잔액 검사 누락 (음수 구매 버그)
       this.emerald -= unit;
       this.cosmetics.push(key as CosmeticKey);
-      /* v1.0.7 — 슬롯별 즉시 착용 */
+      /* v1.0.7 — 슬롯별 즉시 착용 · v1.1.1 (#6) — acc도 전용 슬롯 (buy와 동일) */
       const slot = COSMETIC_DEFS[key as CosmeticKey]?.slot ?? "aura";
       if (slot === "outfit") this.outfit = key as CosmeticKey;
       else if (slot === "hair") this.hair = key as CosmeticKey;
+      else if (slot === "acc") this.accessory = key as CosmeticKey;
       else this.cosmetic = key as CosmeticKey;
       return true;
     }
@@ -4334,12 +4338,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return k;
   }
 
-  /** 성별+피부(+코스튬) → 스프라이트 시트 전환. 코스튬이 최우선 (SPUM식 완전 교체 — 겹치기 아님) */
+  /** 성별+피부(+코스튬) → 스프라이트 시트 전환. 코스튬이 최우선 (SPUM식 완전 교체 — 겹치기 아님)
+   *  v1.1.1 (#7 성별 치장 분리) — 같은 코스튬 키도 성별에 따라 여성형(cost_*)/남성형(costm_*) 시트 분기 */
   applyBodyLook() {
     const prevAnim = this.anims?.currentAnim?.key ?? "";
     const playing = this.anims?.isPlaying ?? false;
-    this.bodyPrefix = this.outfit
-      ? `cost_${this.outfit.replace("outfit_", "")}`
+    const outfitKey = this.outfit?.replace("outfit_", "") ?? null;
+    this.bodyPrefix = outfitKey
+      ? this.gender === "m" ? `costm_${outfitKey}` : `cost_${outfitKey}`
       : (this.gender === "f" || this.skinIdx !== 2 ? `ch${this.gender}${this.skinIdx}` : "");
     const wantTex = this.bodyKey("hero_idle0");
     if (this.texture.key !== wantTex) this.setTexture(wantTex);

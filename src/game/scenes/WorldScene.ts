@@ -51,6 +51,25 @@ import {
   type RoomLayout,
 } from "../mapgen";
 
+/* v1.1.1 (#4 포니테일) — 방향별 시트/묶음 원점/프레임 오프셋.
+ *  묶음(타이) 픽셀 좌표를 원점으로 잡아 setPosition(플레이어+오프셋) 시 묶음이
+ *  머리 위(정면)·뒤통수(측면)·정수리(뒷면)에 정확히 고정된다. 플립 시 원점 기준
+ *  미러링이라 dx 부호는 코드에서 반전한다. 텍스처: scripts/gen_v111_gender_assets.py */
+type PonyDir = "f" | "s" | "b";
+const PONY_LOOK: Record<PonyDir, { tex: string; ox: number; oy: number; dx: number; dy: number }> = {
+  f: { tex: "hair_ponytail_f", ox: 50 / 96, oy: 18 / 64, dx: 2, dy: -14 },
+  s: { tex: "hair_ponytail_s", ox: 38 / 96, oy: 15 / 64, dx: -10, dy: -17 },
+  b: { tex: "hair_ponytail_b", ox: 48 / 96, oy: 16 / 64, dx: 0, dy: -16 },
+};
+
+/* v1.1.1 (#5 무지개 오라) — 이름과 외양이 일치하는 순환 틴트 테이블.
+ *  sp: 위상 속도(초당) · s/l: HSL 채도/명도 · min/max: hue 범위 (0~1, rainbow=전체) */
+const AURA_ANIM: Record<string, { sp: number; s: number; l: number; min: number; max: number }> = {
+  cos_rainbow: { sp: 0.10, s: 0.9, l: 0.62, min: 0, max: 1 },
+  cos_aurora: { sp: 0.035, s: 0.75, l: 0.66, min: 0.33, max: 0.82 },
+  cos_galaxy: { sp: 0.05, s: 0.6, l: 0.7, min: 0.55, max: 0.85 },
+};
+
 /**
  * 메인 플레이 씬.
  *  F1: 꽃/장식 배치를 정의된 소수로만 배치
@@ -526,6 +545,7 @@ export class WorldScene extends Phaser.Scene {
   /* v1.1.0 (#1) — 코스튬 오버레이 폐기(스프라이트 완전 교체로 전환) → 어태치 장식(왕관/리본/후광/날개) 동기화 */
   private accOverlays: { key: string; img: Phaser.GameObjects.Image }[] = [];
   private hairOverlay: Phaser.GameObjects.Image | null = null;
+  private auraPhase = 0; // v1.1.1 (#5) — 무지개/오로라/은하수 순환 위상
   private upgradeGlow: Phaser.GameObjects.Image | null = null;
   /** v3.0.5 — 스타포스 궤도성(★15)/주변 스파클(★8+)/티어 추적 */
   private sfOrbits: Phaser.GameObjects.Image[] = [];
@@ -6221,7 +6241,13 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: "구글 플레이 결제창을 여는 중…" });
       const r = await purchaseGems(sku.id);
       if (!r.ok) {
-        EventBus.emit("banner:show", { text: r.reason === "web" ? "결제는 폰 버전(APK)에서만 가능하다 (Play Console 상품 등록 후)" : "결제가 취소됐다" });
+        /* v1.1.1 (#3 결제 취소) — 유저 취소/상품 미준비/오류를 정확히 구분 (기존: 전부 "취소됐다") */
+        const msg = r.reason === "web" ? "결제는 폰 버전(APK)에서만 가능하다 (Play Console 상품 등록 후)"
+          : r.reason === "busy" ? "결제창이 이미 열려 있다"
+          : r.reason === "cancelled" ? "결제를 취소했다 — 언제든 다시 시도할 수 있다"
+          : r.reason === "unavailable" ? "아직 스토어에 상품이 등록 전이다 — 준비 후 다시"
+          : "결제에 실패했다 — 네트워크를 확인하고 다시 시도하자";
+        EventBus.emit("banner:show", { text: msg });
         return;
       }
       this.player.emerald += sku.gems;
@@ -6240,7 +6266,13 @@ export class WorldScene extends Phaser.Scene {
       }
       const r = await purchaseStorePack(v.id);
       if (!r.ok) {
-        EventBus.emit("banner:show", { text: r.reason === "web" ? "패키지는 앱(스토어 빌드)에서 구매할 수 있다" : "결제에 실패했다" });
+        /* v1.1.1 (#3) — 취소/미준비/오류 구분 메시지 */
+        const msg = r.reason === "web" ? "패키지는 앱(스토어 빌드)에서 구매할 수 있다"
+          : r.reason === "busy" ? "결제창이 이미 열려 있다"
+          : r.reason === "cancelled" ? "결제를 취소했다 — 언제든 다시 시도할 수 있다"
+          : r.reason === "unavailable" ? "아직 스토어에 상품이 등록 전이다 — 준비 후 다시"
+          : "결제에 실패했다 — 네트워크를 확인하고 다시 시도하자";
+        EventBus.emit("banner:show", { text: msg });
         return;
       }
       this.grantBmGrants("패키지 구매 감사합니다!", grants);
@@ -7168,6 +7200,10 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.18 — 몬스터 파크 입장 (콘텐츠 패널) */
     const onParkEnter = (v: { diff: number }) => this.enterPark(v?.diff ?? 0);
     EventBus.on("rpg:parkEnter", onParkEnter);
+    /* v1.1.1 (#2 무릉도장) — 일반 유저 진입 경로: GM 패널 전용이었어서 일반 유저는
+     *  훈련장 자체가 존재하지 않았다. 콘텐츠 허브 「훈련장」 탭 → 누구나 입장 가능 */
+    const onDojangEnter = () => this.enterDojang();
+    EventBus.on("rpg:dojangEnter", onDojangEnter);
     EventBus.on("rpg:infTower", onInfTower);
     EventBus.on("rpg:infTrial", onInfTrial);
     EventBus.on("rpg:infClosetTier", onInfClosetTier);
@@ -7271,6 +7307,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:ticketRefill", onTicketRefill);
       EventBus.off("fx:mode", onFxMode); // v1.0.8
       EventBus.off("rpg:infTower", onInfTower); // v1.0.8
+      EventBus.off("rpg:dojangEnter", onDojangEnter); // v1.1.1 — 무릉도장 일반 진입
       EventBus.off("rpg:unionReward", onUnionReward); // v1.0.18 — 유니온 상점
       EventBus.off("rpg:parkBuy", onParkBuy); // v1.0.18 — 파크 상점
       EventBus.off("rpg:parkEnter", onParkEnter); // v1.0.18 — 파크 입장
@@ -7302,6 +7339,19 @@ export class WorldScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
+
+    /* v1.1.1 (#5 무지개 오라) — 이름=외양: 무지개는 전 색상 순환, 오로라는 초록↔보라,
+     *  은하수는 파랑↔보라 맥동. 오라+본체 오버레이 틴트가 함께 흐른다.
+     *  대사/입력 중 조기 리턴 앞에서 갱신 — 대화 중에도 오라가 살아 있게 (순수 치장 연출) */
+    const auraKey = this.player?.cosmetic ?? null;
+    const auraCfg = auraKey ? AURA_ANIM[auraKey] : undefined;
+    if (auraCfg && (this.cosmeticAura || this.cosmeticOverlay)) {
+      this.auraPhase = (this.auraPhase + auraCfg.sp * (dt / 1000)) % 1;
+      const hue = auraCfg.min + (auraCfg.max - auraCfg.min) * (0.5 - 0.5 * Math.cos(this.auraPhase * Math.PI * 2));
+      const col = Phaser.Display.Color.HSLToColor(hue, auraCfg.s, auraCfg.l).color;
+      this.cosmeticAura?.setTint(col);
+      this.cosmeticOverlay?.setTint(col);
+    }
 
     /* v4.1.5 — 동적 조명: 플레이어 횃불 광원 추적 + 플리커 */
     if (this.lighting) this.lighting.update(this.player.x, this.player.y, dt);
@@ -7560,16 +7610,26 @@ export class WorldScene extends Phaser.Scene {
         im.setDepth(a.key.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3);
       }
     }
-    /* v1.0.7 — 포니테일: 등 뒤 위치 동기화 + 방향별 오프셋 (측면일 때 뒤편으로 흐르게) */
+    /* v1.0.7 — 포니테일 위치 동기화 · v1.1.1 (#4) — 방향별 텍스처 전환(정면/측면/뒷면)
+     *  묶음이 원점이므로 (dx,dy)는 묶음이 머리 위(정면)·뒤통수(측면/뒷면)에 오는 프레임 좌표 오프셋 */
     if (this.hairOverlay && this.player) {
       const hv = this.hairOverlay;
       const animKey = this.player.anims?.currentAnim?.key ?? "";
-      const trailX = this.player.flipX ? 5 : -5;
-      const dx = animKey.includes("up") ? 0 : animKey.includes("side") ? trailX : trailX * 0.4;
-      hv.setPosition(this.player.x + dx, this.player.y + 1);
+      const back = animKey.includes("up");
+      const side = !back && (animKey.includes("side") || animKey.endsWith("-atk"));
+      const dir: PonyDir = back ? "b" : side ? "s" : "f";
+      const cfg = PONY_LOOK[dir];
+      if (hv.texture.key !== cfg.tex) {
+        hv.setTexture(cfg.tex);
+        hv.setOrigin(cfg.ox, cfg.oy);
+      }
+      /* 좌우반전 시 텍스처가 원점 기준 미러링 → 묶음도 대칭 위치로 이동 (dx 부호 반전은 자동) */
+      const flipMul = this.player.flipX ? -1 : 1;
+      const trail = dir === "s" ? (this.player.flipX ? 3 : -3) : dir === "f" ? (this.player.flipX ? 2 : -2) : 0;
+      hv.setPosition(this.player.x + cfg.dx * flipMul + trail, this.player.y + cfg.dy);
       hv.setFlipX(this.player.flipX);
       hv.setScale(this.player.scaleX, this.player.scaleY);
-      hv.setDepth(this.player.depth - 0.1);
+      hv.setDepth(dir === "b" ? this.player.depth + 0.15 : this.player.depth - 0.1);
     }
     if (this.upgradeGlow) this.upgradeGlow.setPosition(this.player.x, this.player.y - 10);
     /* v3.0.5 — 스타포스: 궤도성 회전(★15) + 주변 스파클(★8+) */
@@ -9921,10 +9981,13 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     if (this.player?.hair === "hair_ponytail") {
-      /* 오리진을 꼬리 묶음(캔버스 44,19)에 — 흔들림 회전 축이 자연스럽다 */
+      /* v1.1.1 (#4 포니테일) — 방향별 3종 시트(f/s/b) + 묶음 좌표를 원점으로.
+       *  기존엔 정적 1프레임의 묶음이 캐릭터 중앙에 꽂혀 꼬리가 얼굴/몸통 앞에 처졌다.
+       *  묶음 좌표: f(50,18) / s(38,15) / b(48,16) — scripts/gen_v111_gender_assets.py */
+      const cfg = PONY_LOOK.f;
       this.hairOverlay = this.add
-        .image(this.player.x, this.player.y, "hair_ponytail")
-        .setOrigin(44 / 96, 19 / 64)
+        .image(this.player.x + cfg.dx, this.player.y + cfg.dy, cfg.tex)
+        .setOrigin(cfg.ox, cfg.oy)
         .setDepth(this.player.depth - 0.1);
       this.tweens.add({
         targets: this.hairOverlay,

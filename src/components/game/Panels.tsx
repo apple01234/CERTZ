@@ -1026,6 +1026,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
   const [msg, setMsg] = useState("");
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [netFail, setNetFail] = useState(false); // v1.1.1 (#8) — 서버 연결 실패 상태 (재시도 버튼)
 
   const refresh = async () => {
     const [me, st] = await Promise.all([authMe(), marketGet()]);
@@ -1033,11 +1034,17 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
     const snap = takeMarketSnapshot(st.state);
     setMk(snap);
     setLoaded(true);
+    /* v1.1.1 (#8 거래소) — 연결 실패/응답 불량을 netFail로 분리해 재시도 버튼 제공 */
+    setNetFail(!st.ok || !snap);
     if (st.error || !snap) setMsg(snap ? st.error ?? "" : "거래판 서버에 연결할 수 없어요 (멀티 서버 설정 확인)");
+    else setMsg("");
   };
   useEffect(() => {
     const t = setTimeout(() => { void refresh(); }, 0); // eslint 규칙 대응 — 비동기 조회는 태스크로 분리
-    return () => clearTimeout(t);
+    /* v1.1.1 (#8) — 로그인/로그아웃 직후 거래판 즉시 갱신 (기존엔 로그인해도 새로고침 전까지 게스트 상태 유지) */
+    const onAuth = () => { void refresh(); };
+    EventBus.on("auth:changed", onAuth);
+    return () => { clearTimeout(t); EventBus.off("auth:changed", onAuth); };
   }, []);
 
   /* 등록 가능: 보유 전설 중 미등록·미장착 — v1.0.3 mk/listings 전 접근을 ?./?? 로 방어 */
@@ -1100,12 +1107,30 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
         <p className="mt-1 text-[10px] leading-relaxed text-white/60">
           유저 거래판은 계정 시스템과 연동돼요 — 사기 방지와 정산 보호를 위해<br />로그인한 모험가만 이용할 수 있어요.
         </p>
-        <p className="mt-1.5 text-[10px] text-white/45">우측 위 계정 패널에서 회원가입/로그인 (구글·카카오·네이버 지원)</p>
+        {/* v1.1.1 (#8 거래소) — 안내문만 있어서 로그인 경로를 못 찾던 유저가 "거래소 사용 불가" 신고.
+            패널 안에서 바로 계정창을 열 수 있게 인라인 버튼 제공 */}
+        <button
+          onClick={() => EventBus.emit("ui:authOpen", {})}
+          className="mt-2.5 rounded-lg bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2 text-[12px] font-black text-slate-900 shadow-[0_2px_0_#78350f] hover:brightness-110 active:translate-y-[1px] active:shadow-none"
+        >
+          지금 계정 로그인하기
+        </button>
+        <p className="mt-1.5 text-[9px] text-white/40">회원가입은 아이디+비밀번호만 있으면 10초 · 구글/카카오/네이버 로그인 지원</p>
       </div>
     );
   }
   return (
     <div className="flex flex-col gap-2">
+      {/* v1.1.1 (#8) — 서버 연결 실패 시 재시도 제공 (기존엔 에러 문구만 있어 복구 경로 없음) */}
+      {netFail && (
+        <button
+          disabled={busy}
+          onClick={() => { setMsg(""); void refresh(); }}
+          className="rounded-lg border border-sky-300/40 bg-sky-400/10 px-2.5 py-2 text-[11px] font-black text-sky-200 hover:bg-sky-400/20 active:scale-95"
+        >
+          ⟳ 거래판 다시 불러오기 — 서버 연결 확인
+        </button>
+      )}
       {/* 정산금 바 */}
       <div className="flex items-center justify-between rounded-lg border border-amber-300/40 bg-amber-400/[0.08] px-2.5 py-2">
         <div>
@@ -1743,10 +1768,15 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 }
                 if (s.t === "cos") {
                   const def = COSMETIC_DEFS[s.k as CosmeticKey];
-                  /* v1.0.7 — 슬롯별 착용 판정 (emit은 기존 rpg:cosmetic 경로 재사용 — Player.setCosmetic이 슬롯 분기) */
+                  /* v1.0.7 — 슬롯별 착용 판정 (emit은 기존 rpg:cosmetic 경로 재사용 — Player.setCosmetic이 슬롯 분기)
+                   *  v1.1.1 (#6 왕관 착용) — acc(어태치 장식) 슬롯 판정 추가: 기존엔 오라 슬롯만 봐서
+                   *  왕관을 착용해도 "착용" 버튼이 그대로였고(상태 반영 0) 착용/해제가 동작하지 않았다 */
                   const slot = def?.slot ?? "aura";
-                  const active = slot === "outfit" ? rpg.outfit === s.k : slot === "hair" ? rpg.hair === s.k : rpg.cosmetic === s.k;
-                  const slotLabel = slot === "outfit" ? "코스튬" : slot === "hair" ? "헤어" : "오라";
+                  const active = slot === "outfit" ? rpg.outfit === s.k
+                    : slot === "hair" ? rpg.hair === s.k
+                    : slot === "acc" ? (rpg as { accessory?: string | null }).accessory === s.k
+                    : rpg.cosmetic === s.k;
+                  const slotLabel = slot === "outfit" ? "코스튬" : slot === "hair" ? "헤어" : slot === "acc" ? "장식" : "오라";
                   return (
                     <>
                       <div className="flex items-start gap-2.5">
@@ -2582,7 +2612,7 @@ export function GamePanels({
  *  ① 심연의 탑 (무한 층수) · ② 심층 균열 (무한 티어) · ③ 일일 시련 (수정자 던전)
  *  ④ 연금 제작대 · ⑤ 심연 상점 · ⑥ 환생 + 펫 육성 — 총 10종 신규 무한 콘텐츠의 진입 허브
  * ===================================================================== */
-type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth" | "park";
+type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth" | "park" | "dojang";
 
 export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
@@ -2602,6 +2632,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
     { id: "tower", label: "심연의 탑", on: "bg-purple-400 text-slate-900" },
     { id: "trial", label: "시련·균열", on: "bg-rose-400 text-slate-900" },
     { id: "park", label: "파크", on: "bg-emerald-400 text-slate-900" },
+    { id: "dojang", label: "훈련장", on: "bg-orange-400 text-slate-900" },
     { id: "craft", label: "제작대", on: "bg-sky-400 text-slate-900" },
     { id: "abyss", label: "심연 상점", on: "bg-violet-400 text-slate-900" },
     { id: "rebirth", label: "환생·펫", on: "bg-amber-400 text-slate-900" },
@@ -2615,7 +2646,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
         </div>
 
         {/* 탭 행 */}
-        <div className="mb-2.5 grid grid-cols-6 gap-1">
+        <div className="mb-2.5 grid grid-cols-7 gap-1">
           {TABS.map((tb) => (
             <button key={tb.id} onClick={() => setTab(tb.id)} className={`rounded-lg px-1 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${tab === tb.id ? tb.on : "border border-white/10 bg-white/[0.04] text-white/55"}`}>{tb.label}</button>
           ))}
@@ -2639,6 +2670,22 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
             </div>
             <button onClick={() => EventBus.emit("rpg:infTower")} className="w-full rounded-xl border-2 border-purple-200/70 bg-gradient-to-b from-purple-400 to-purple-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">탑 입장</button>
             <p className="mt-1.5 text-[9px] text-white/35">복귀 포탈로 중간 퇴장 가능 · 기록은 자동 저장되고 랭킹에 등록된다 (원정대 → 랭킹 탭)</p>
+          </div>
+        )}
+
+        {/* v1.1.1 (#2 무릉도장) — 일반 유저 훈련장: 기존엔 GM 패널 전용이었어서 일반 유저는 사용 불가 */}
+        {tab === "dojang" && (
+          <div>
+            <div className="mb-2 rounded-lg border border-orange-300/40 bg-orange-400/10 px-2.5 py-2">
+              <p className="text-[11px] font-black text-orange-100">무릉도장 — 90초 딜 미터기</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">훈련용 허수아비에게 90초 동안 누적 피해를 기록하는 훈련장. 스킬 사이클을 점검하고 최고 기록에 도전! 누적 피해에 비례한 훈련 보상도 지급된다.</p>
+            </div>
+            <div className="mb-2 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2 text-center">
+              <p className="text-[9px] font-bold text-white/45">내 최고 기록 (누적 피해)</p>
+              <p className="text-base font-black text-orange-200">{(() => { try { return (Number(localStorage.getItem("sertz.dojang.best") ?? "0") || 0).toLocaleString(); } catch { return "0"; } })()}</p>
+            </div>
+            <button onClick={() => EventBus.emit("rpg:dojangEnter")} className="w-full rounded-xl border-2 border-orange-200/70 bg-gradient-to-b from-orange-400 to-orange-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">도장 입장</button>
+            <p className="mt-1.5 text-[9px] text-white/35">입장 티켓 없음 · 언제든 무료로 도전 · 기록은 자동 저장되고 랭킹에 등록된다</p>
           </div>
         )}
 
