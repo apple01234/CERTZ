@@ -7212,6 +7212,8 @@ export class WorldScene extends Phaser.Scene {
     };
     EventBus.on("auth:changed", onAuthChanged);
     this.events.once("shutdown", () => {
+      /* v1.1.1 (#1 가림) — 씬 종료(로비 복귀 등)에 튜토리얼이 살아있으면 상단 UI 복귀 신호를 못 보낸다 → 여기서 대신 발사 */
+      if (this.tut) EventBus.emit("tut:active", { active: false });
       EventBus.off("auth:changed", onAuthChanged);
       EventBus.off("input:move", onMove);
       EventBus.off("input:attack", onAtk);

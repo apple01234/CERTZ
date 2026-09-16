@@ -12,6 +12,7 @@
  *   · 진행 판정은 실제 성공 시에만 (useSkill1 MP/CD 통과, usePotion 보유+회복 성공 등)
  */
 import Phaser from "phaser";
+import { EventBus } from "./components/game/EventBus";
 import type { WorldScene } from "./scenes/WorldScene";
 
 type TutStepId = "talk" | "portal" | "kill" | "pickup" | "skill" | "pot";
@@ -59,6 +60,10 @@ export class Tutorial {
     this.buildHud();
     this.refresh();
     this.scene.showBanner(`튜토리얼 시작 — ${STEPS[this.stepIdx].desc}`);
+    /* v1.1.1 (#1 가림) — 튜토리얼 활성 사실을 React에 알린다.
+     *  튜토리얼 패널은 Phaser(캔버스 내부)라 React DOM 오버레이(보상 팝업 z-70 · 퀘스트 트래커 등)에
+     *  항상 가려진다 → React가 tut:active를 받으면 상단 중앙 충돌 UI를 비켜세운다 (HUD/Overlays 참조) */
+    EventBus.emit("tut:active", { active: true });
   }
 
   get currentId(): TutStepId | null {
@@ -250,5 +255,7 @@ export class Tutorial {
     this.mkGlow?.destroy(); this.mkGlow = null;
     this.mkSpark?.destroy(); this.mkSpark = null;
     this.hud?.destroy(); this.hud = null;
+    /* v1.1.1 (#1 가림) — 종료(완료/스킵) 시 상단 UI 원위치 */
+    EventBus.emit("tut:active", { active: false });
   }
 }

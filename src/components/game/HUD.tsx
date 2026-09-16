@@ -123,6 +123,15 @@ export function HUD({
       return !v;
     });
   };
+  /* v1.1.1 (#1 가림) — 튜토리얼 진행 중엔 퀘스트 트래커를 숨긴다.
+   *  튜토리얼 패널(Phaser 캔버스 상단 중앙)과 트래커(우상단 DOM)가 모바일 가로에서 겹쳐
+   *  "튜토리얼 UI가 다른 UI에 가려진다"는 지적의 주범. 트래커는 튜토리얼 끝나면 복귀. */
+  const [tutActive, setTutActive] = React.useState(false);
+  React.useEffect(() => {
+    const onTut = (v: { active: boolean }) => setTutActive(!!v?.active);
+    EventBus.on("tut:active", onTut);
+    return () => { EventBus.off("tut:active", onTut); };
+  }, []);
   return (
     <>
       {/* 좌상단: 상태 — v1.0.20 게임형 LV 플레이트 */}
@@ -308,7 +317,7 @@ export function HUD({
         </div>
         {/* v3.0.23 (#56) — 퀘스트 알림을 더 아래로: 모바일 간격 mt-8→mt-20 (상단 버튼행·보스바와 겹침 방지), PC는 mt-1 유지
          *  v1.1.0 (#2) — "접는 형식 말고 버튼으로 아예 키고 끌 수 있게": 트래커 전체를 버튼 토글로 완전히 숨김/표시 */}
-        {trackerOpen && (
+        {trackerOpen && !tutActive && (
         <div className="game-panel pointer-events-auto mt-20 w-full px-2.5 py-1.5 sm:mt-1 sm:px-3 sm:py-2">
           <div className="flex items-center gap-1.5">
             <ScrollText size={13} className="shrink-0 text-amber-300" />

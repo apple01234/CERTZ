@@ -450,6 +450,10 @@ export function InteractPrompt() {
 
 export function RewardPopup() {
   const [st, setSt] = useState<RewardPopupState | null>(null);
+  /* v1.1.1 (#1 가림) — 튜토리얼 진행 중엔 팝업을 화면 중하단으로 물러난다 (top-28 → 46%).
+   *  팝업(z-70·상단 중앙)이 튜토리얼 패널(캔버스 상단 중앙)을 덮어 "튜토리얼이 가려진다"는
+   *  지적의 직접 원인. 팝업 자체는 항상 보인다 — 위치만 내린다. */
+  const [tutActive, setTutActive] = useState(false);
   useEffect(() => {
     let timer: number | undefined;
     const on = (v: RewardPopupState) => {
@@ -457,9 +461,12 @@ export function RewardPopup() {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => setSt(null), 5200);
     };
+    const onTut = (v: { active: boolean }) => setTutActive(!!v?.active);
     EventBus.on("reward:show", on);
+    EventBus.on("tut:active", onTut);
     return () => {
       EventBus.off("reward:show", on);
+      EventBus.off("tut:active", onTut);
       window.clearTimeout(timer);
     };
   }, []);
@@ -467,7 +474,7 @@ export function RewardPopup() {
   return (
     /* v1.0.3 (#랜덤박스UI) — z-30 → z-[70]: 인벤토리(z-40) 아래에 가려져 상자 개봉 보상이 안 보이던 버그.
      *  가방에서 [열기]를 누르면 보상 팝업이 인벤토리 위에 뜬다. */
-    <div className="pointer-events-none absolute inset-x-0 top-28 z-[70] flex justify-center px-4 sm:top-20">
+    <div className={`pointer-events-none absolute inset-x-0 z-[70] flex justify-center px-4 ${tutActive ? "top-[46%]" : "top-28 sm:top-20"}`}>
       {/* v3.0.23 (#56) — ① 알림 표시를 더 아래로(top-14→top-28) ② 카드에 pointer-events-auto 부여 —
           컨테이너가 pointer-events-none이라 X를 누를 수 없던 버그 수정 */}
       <div className="pointer-events-auto w-[min(92vw,330px)] animate-[rewardPop_0.24s_ease-out] game-panel p-3">
