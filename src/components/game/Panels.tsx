@@ -19,8 +19,9 @@ import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/a
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
 import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
 import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS } from "@/game/pass"; // v4.5.0 — 시즌 패스 + v1.0.1 시즌 미션
-import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, type MarketState, type AuthUser } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화
+import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, fetchRank, claimRankReward, type RankBoard, type RankRow, type MarketState, type AuthUser } from "@/game/account"; // v1.0.1 유저 거래판 · v1.3.0 랭킹 보드
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
+import { Trophy } from "lucide-react"; // v1.3.0 — 랭킹창 아이콘
 import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
 import { chestOdds, eertOdds, POT_PITY_MAX, STAR_PITY_FROM, STAR_PITY_STEP, STAR_PITY_MAX } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법) · v1.0.8 천장 공시
 import type { BmGrant } from "@/game/data";
@@ -1339,6 +1340,10 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
   useEscClose(onClose);
   const [tab, setTab] = useState<InvTab>("equip");
   const [sel, setSel] = useState<InvSel | null>(null);
+  /* v1.3.0 (#6 수량 사용) — 소모품 사용 개수 지정: 상세 보기에서 −/＋/최대로 수량을 정해 한 번에 사용 */
+  const [useQty, setUseQty] = useState(1);
+  /* 선택 아이템이 바뀌면 수량 1로 리셋 (아이템별 보유량이 다르므로) */
+  useEffect(() => { setUseQty(1); }, [sel?.t, sel?.k]);
   /* v4.6.0 — 가방 스타포스 강화 결과 플래시 (상점 강화와 동일 이벤트 재사용, 2.5초 후 자동 소멸) */
   const [flash, setFlash] = useState<{ slot: "weapon" | "armor"; result: "ok" | "fail"; seq: number } | null>(null);
   useEffect(() => {
@@ -1997,19 +2002,59 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       {usable && (
-                        <InvBtn
-                          tone={starScroll ? "violet" : "sky"}
-                          disabled={s.count <= 0}
-                          onClick={() =>
-                            isBasicPot
-                              ? EventBus.emit("rpg:use", { kind: s.k === "potion_hp" ? "hp" : "mp" })
-                              : starScroll
-                                ? EventBus.emit("rpg:starScroll")
-                                : EventBus.emit("rpg:useItem", { key: s.k })
-                          }
-                        >
-                          {useLabel}
-                        </InvBtn>
+                        <>
+                          {/* v1.3.0 (#6 수량 사용) — 개수 지정 스테퍼 + 사용 버튼.
+                              상급 물약/성장의 책 등 소모품을 보유분까지 한 번에 사용 (MAX=보유 전량) */}
+                          {(() => {
+                            const maxUse = isBasicPot ? (s.k === "potion_hp" ? rpg.hpPot : rpg.mpPot) : s.count;
+                            const qty = Math.min(useQty, Math.max(1, maxUse));
+                            return (
+                              <div className="flex items-center gap-1">
+                                <InvBtn
+                                  tone="gray"
+                                  disabled={maxUse <= 0 || qty <= 1}
+                                  onClick={() => setUseQty(Math.max(1, qty - 1))}
+                                  title="수량 감소"
+                                >
+                                  −
+                                </InvBtn>
+                                <span className="min-w-[44px] rounded-md border border-white/15 bg-black/40 px-1 py-1.5 text-center text-[11px] font-black text-white/90">
+                                  {maxUse <= 0 ? 0 : qty}
+                                  <span className="text-[9px] font-bold text-white/40"> / {maxUse}</span>
+                                </span>
+                                <InvBtn
+                                  tone="gray"
+                                  disabled={maxUse <= 0 || qty >= maxUse}
+                                  onClick={() => setUseQty(Math.min(maxUse, qty + 1))}
+                                  title="수량 증가"
+                                >
+                                  ＋
+                                </InvBtn>
+                                <InvBtn
+                                  tone="gray"
+                                  disabled={maxUse <= 0 || qty >= maxUse}
+                                  onClick={() => setUseQty(Math.max(1, maxUse))}
+                                  title="보유 전량"
+                                >
+                                  최대
+                                </InvBtn>
+                                <InvBtn
+                                  tone={starScroll ? "violet" : "sky"}
+                                  disabled={maxUse <= 0}
+                                  onClick={() => {
+                                    if (isBasicPot) EventBus.emit("rpg:use", { kind: s.k === "potion_hp" ? "hp" : "mp", qty });
+                                    else if (starScroll) EventBus.emit("rpg:starScroll");
+                                    else EventBus.emit("rpg:useItem", { key: s.k, qty });
+                                    setUseQty(1);
+                                  }}
+                                >
+                                  {useLabel}
+                                  {qty > 1 ? ` ×${qty}` : ""}
+                                </InvBtn>
+                              </div>
+                            );
+                          })()}
+                        </>
                       )}
                       {isPot && (
                         <>
@@ -2062,6 +2107,188 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               정리
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================= v1.3.0 (#7) — 랭킹창 + 랭커 특전 (유저 지시 "랭킹창 및 랭커들을 위한 기능 및 컨텐츠(BM 유도)")
+ *  · 레벨/전투력 랭킹 — 계정 서버가 클라우드 세이브를 실시간 집계 (별도 등록 없이 자동 반영)
+ *  · 콘텐츠 랭킹 — 멀티 서버 기록 (수비전/균열/도장/탑 — 기존 netRankTop 재사용)
+ *  · 랭커 특전 — 주간 TOP10 에메랄드 보상 수령 + 랭커 BM 패스 안내 (BM 유도) */
+type RankTabKind = "level" | "power" | "content";
+
+const CONTENT_RANK_MODES: [RankMode, string][] = [
+  ["gate", "바르가 수비전"],
+  ["closet", "균열 던전"],
+  ["dojang", "무릉도장"],
+  ["tower", "심연의 탑"],
+];
+
+function RankListRows({ rows, metric }: { rows: RankRow[]; metric: "lv" | "power" }) {
+  if (rows.length === 0)
+    return <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/40">아직 등록된 기록이 없어요 — 계정 패널에서 클라우드 백업 후 플레이하면 자동 등록됩니다</p>;
+  return (
+    <div className="flex flex-col gap-1">
+      {rows.map((r, i) => (
+        <div key={`${r.name}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${i < 3 ? "border-amber-300/40 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
+          <span className={`w-6 text-center text-[11px] font-black ${i === 0 ? "text-amber-300" : i < 3 ? "text-amber-200/90" : "text-white/40"}`}>{i + 1}</span>
+          <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white">{r.name}</span>
+          <span className="text-[10px] text-white/50">Lv{r.lv}</span>
+          <span className="w-14 text-right text-[10px] font-black text-sky-200">{(metric === "lv" ? r.lv : (r.power ?? 0)).toLocaleString()}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function RankingPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const [tab, setTab] = useState<RankTabKind>("power");
+  const [board, setBoard] = useState<RankBoard | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const [claimMsg, setClaimMsg] = useState("");
+  const [cMode, setCMode] = useState<RankMode>("gate");
+  const [cList, setCList] = useState<RankEntry[]>([]);
+
+  const refresh = () => { fetchRank().then(setBoard).catch(() => {}); };
+  useEffect(() => { refresh(); }, []);
+  /* 콘텐츠 탭 — 멀티 서버 랭킹 폴링 (기존 RankTab 패턴 재사용) */
+  useEffect(() => {
+    if (tab !== "content") return;
+    netRankTop(cMode);
+    const off = netOnRank((m, l) => { if (m === cMode) setCList(l); });
+    const t = setInterval(() => netRankTop(cMode), 8000);
+    return () => { off(); clearInterval(t); };
+  }, [tab, cMode]);
+
+  const doClaim = async () => {
+    setClaiming(true);
+    setClaimMsg("");
+    try {
+      const r = await claimRankReward();
+      if (r.ok && (r.emeralds ?? 0) > 0) {
+        EventBus.emit("rpg:rankReward", { emeralds: r.emeralds });
+        setClaimMsg(`TOP ${r.rank} 보상 에메랄드 +${r.emeralds} 지급!`);
+        refresh();
+      } else {
+        setClaimMsg(r.error ?? "수령 조건을 충족하지 않았어요");
+      }
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  const TABS: { id: RankTabKind; label: string }[] = [
+    { id: "power", label: "전투력" },
+    { id: "level", label: "레벨" },
+    { id: "content", label: "콘텐츠" },
+  ];
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
+      <div className="max-h-in(88svh,640px)] w-in(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="mb-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-7 w-7 text-amber-300" />
+            <div>
+              <p className="text-sm font-black text-amber-200">세르츠 랭킹</p>
+              <p className="text-[10px] text-white/50">{board?.week ? `${board.week} 기준 · ` : ""}클라우드 백업 계정 자동 등록</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button onClick={refresh} aria-label="랭킹 새로고침" className="flex h-7 items-center gap-1 rounded-md border border-white/20 bg-black/40 px-2 text-[10px] font-black text-white/70 hover:bg-black/70">갱신</button>
+            <button onClick={onClose} aria-label="랭킹 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+          </div>
+        </div>
+
+        {/* 내 순위 카드 */}
+        {board?.me ? (
+          <div className="mb-2 flex items-center gap-3 rounded-lg border border-amber-300/40 bg-gradient-to-r from-amber-400/15 to-transparent px-3 py-2">
+            <Trophy className="h-6 w-6 shrink-0 text-amber-300" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12px] font-black text-amber-100">{board.me.name}</p>
+              <p className="text-[10px] text-white/60">Lv{board.me.lv} · 전투력 {board.me.power.toLocaleString()}</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-[9px] font-bold text-white/45">레벨 {board.me.lvRank ?? "-"}위</p>
+              <p className="text-[11px] font-black text-amber-200">전투력 {board.me.pwRank ?? "-"}위</p>
+            </div>
+          </div>
+        ) : (
+          <p className="mb-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/45">
+            계정에 로그인하고 클라우드 백업을 하면 랭킹에 자동 등록돼요 (계정 패널 → 백업)
+          </p>
+        )}
+
+        {/* 탭 */}
+        <div className="mb-2 grid grid-cols-3 gap-1">
+          {TABS.map((t) => (
+            <button key={t.id} onClick={() => setTab(t.id)} className={`rounded-lg px-1 py-1.5 text-[11px] font-black ${tab === t.id ? "bg-amber-400 text-slate-900" : "border border-white/10 bg-white/[0.03] text-white/55"}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "power" && (
+          <>
+            <p className="mb-1.5 rounded-lg border border-sky-300/20 bg-sky-400/5 px-2 py-1.5 text-[10px] text-white/60">전투력 = 레벨·강화 성급·보스 처치·콘텐츠 기록·환생을 종합한 실력 지표</p>
+            <RankListRows rows={board?.power ?? []} metric="power" />
+          </>
+        )}
+        {tab === "level" && (
+          <>
+            <p className="mb-1.5 rounded-lg border border-sky-300/20 bg-sky-400/5 px-2 py-1.5 text-[10px] text-white/60">레벨 랭킹 — 같은 레벨이면 전투력이 높은 순</p>
+            <RankListRows rows={board?.level ?? []} metric="lv" />
+          </>
+        )}
+        {tab === "content" && (
+          <>
+            <div className="mb-1.5 grid grid-cols-4 gap-1">
+              {CONTENT_RANK_MODES.map(([k, label]) => (
+                <button key={k} onClick={() => setCMode(k)} className={`rounded-lg border px-0.5 py-1.5 text-[10px] font-black ${cMode === k ? "border-sky-300/60 bg-sky-400/20 text-sky-100" : "border-white/10 bg-white/[0.03] text-white/50"}`}>{label}</button>
+              ))}
+            </div>
+            {cList.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/40">멀티 서버 접속 후 기록을 세우면 등록됩니다 — 콘텐츠 허브에서 도전!</p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {cList.map((e, i) => (
+                  <div key={`${e.name}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${i < 3 ? "border-amber-300/40 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
+                    <span className={`w-6 text-center text-[11px] font-black ${i < 3 ? "text-amber-300" : "text-white/40"}`}>{i + 1}</span>
+                    <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white">{e.name}</span>
+                    <span className="text-[10px] text-white/40">Lv{e.lv}</span>
+                    <span className="text-[10px] font-black text-sky-200">{e.score.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 랭커 특전 — BM 유도 카드 */}
+        <div className="mt-2.5 rounded-lg border border-amber-300/40 bg-amber-400/[0.07] px-2.5 py-2.5">
+          <p className="text-[12px] font-black text-amber-200">랭커 특전</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/55">
+            매주 자정 리셋 — 전투력 TOP 10에게 에메랄드를 지급한다 (1위 30 · 3위 20 · 10위 10).
+            랭킹은 클라우드 백업 시점 기준으로 자동 등록됩니다.
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <button
+              onClick={doClaim}
+              disabled={claiming || (board?.claimed ?? false)}
+              className="rounded-md border-2 border-amber-300/70 bg-amber-500/25 px-1 py-2 text-[11px] font-black text-amber-100 transition hover:bg-amber-500/35 active:scale-95 disabled:opacity-40"
+            >
+              {board?.claimed ? "이번 주 수령 완료" : "주간 보상 수령"}
+            </button>
+            <button
+              onClick={() => EventBus.emit("ui:panel", { panel: "bmshop" })}
+              className="rounded-md border-2 border-cyan-300/70 bg-cyan-500/20 px-1 py-2 text-[11px] font-black text-cyan-100 transition hover:bg-cyan-500/30 active:scale-95"
+            >
+              랭킹 도전 아이템 💎
+            </button>
+          </div>
+          {claimMsg && <p className="mt-1.5 rounded bg-black/50 px-2 py-1.5 text-[10px] font-bold text-amber-200">{claimMsg}</p>}
         </div>
       </div>
     </div>
@@ -2618,6 +2845,7 @@ export function GamePanels({
   if (panel === "benefit") return <BenefitPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 혜택 (출석부/일일 퀘스트/쿠폰)
   if (panel === "pass") return <PassPanel rpg={rpg} onClose={onClose} />; // v4.5.0 — 시즌 패스 (배틀패스)
   if (panel === "content") return <ContentPanel rpg={rpg} onClose={onClose} />; // v1.0.8 — 무한 콘텐츠 허브
+  if (panel === "rank") return <RankingPanel rpg={rpg} onClose={onClose} />; // v1.3.0 — 랭킹창 + 랭커 특전 (BM 유도)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
 }
@@ -3707,7 +3935,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
         <div className="mt-2.5 rounded-lg border border-[#8a6a34]/50 bg-[#ffd98a]/[0.07] px-2.5 py-2.5">
           <p className="text-[12px] font-black text-[#ffd98a]">메뉴 화면</p>
           <p className="mt-0.5 text-[10px] leading-snug text-white/50">
-            진행 상황은 자동 저장됩니다. 우상단 ☰ 버튼에서도 나갈 수 있어요.
+            진행 상황은 자동 저장됩니다. 언제든 이 화면에서 메뉴로 돌아갈 수 있어요.
           </p>
           <div className="mt-1.5 grid grid-cols-2 gap-1.5">
             <button

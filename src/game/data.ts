@@ -121,6 +121,9 @@ export type ItemKey =
   /* v1.1.0 (#19/#1) — 프리미엄 완전 교체 코스튬 6종 + 어태치 장식 5종 */
   | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
   | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy"
+  /* v1.3.0 (#4 NPC급 옷 세트 3종 + #3 망토 2종) — 유저 지시 "npc 캐릭터처럼 멋지게 치장템 옷 세트를 만들어" */
+  | "outfit_flame" | "outfit_frost" | "outfit_mystic"
+  | "acc_cape_crimson" | "acc_cape_royal"
   | "ring_bless"
   | "buff_king"
   /* v3.0.15 (#13) — eert 큐브 (메이플 큐브 시스템 — 잠재옵션 리롤) */
@@ -437,6 +440,12 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   acc_halo: { key: "acc_halo", kind: "cosmetic", name: "성스러운 후광", icon: "acc_halo", price: 78000, bmPrice: 30, bmOnly: true, tier: "epic" },
   acc_wings_devil: { key: "acc_wings_devil", kind: "cosmetic", name: "마왕의 날개", icon: "acc_wings_devil", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend" },
   acc_wings_fairy: { key: "acc_wings_fairy", kind: "cosmetic", name: "요정의 날개", icon: "acc_wings_fairy", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend" },
+  /* v1.3.0 (#3 망토 2종 + #4 NPC급 옷 세트 3종) — 코스튬은 bmOnly 프리미엄 */
+  acc_cape_crimson: { key: "acc_cape_crimson", kind: "cosmetic", name: "진홍의 망토", icon: "acc_cape_crimson", price: 52000, bmPrice: 18, bmOnly: true, tier: "epic" },
+  acc_cape_royal: { key: "acc_cape_royal", kind: "cosmetic", name: "왕가의 망토", icon: "acc_cape_royal", price: 64000, bmPrice: 22, bmOnly: true, tier: "epic" },
+  outfit_flame: { key: "outfit_flame", kind: "cosmetic", name: "화염무사 세트", icon: "cost_flame_idle0", price: 96000, bmPrice: 34, bmOnly: true, tier: "legend" },
+  outfit_frost: { key: "outfit_frost", kind: "cosmetic", name: "서리기사 세트", icon: "cost_frost_idle0", price: 96000, bmPrice: 34, bmOnly: true, tier: "legend" },
+  outfit_mystic: { key: "outfit_mystic", kind: "cosmetic", name: "신비술사 세트", icon: "cost_mystic_idle0", price: 96000, bmPrice: 34, bmOnly: true, tier: "legend" },
   chest_silver: { key: "chest_silver", kind: "consumable", name: "은 상자", icon: "i_chest_silver", price: 20000, bmPrice: 12, bmOnly: true, sellPrice: 1200, tier: "epic" },
   chest_gold: { key: "chest_gold", kind: "consumable", name: "금 상자", icon: "i_chest_gold", price: 42000, bmPrice: 25, bmOnly: true, sellPrice: 3000, tier: "epic" },
   chest_legend: { key: "chest_legend", kind: "consumable", name: "전설 상자", icon: "i_chest_legend", price: 80000, bmPrice: 48, bmOnly: true, sellPrice: 6000, tier: "legend" },
@@ -504,7 +513,10 @@ export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | 
   /* v1.1.0 (#19 프리미엄) — SPUM식 완전 교체 코스튬 6종 (머리+피부+의상 전부 다른 캐릭터로 변신) */
   | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
   /* v1.1.0 (#1 장식) — 캐릭터에 고정되는 어태치 장식 (캐릭터가 움직이면 실시간 동기화) */
-  | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy";
+  | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy"
+  /* v1.3.0 (#3 망토 2종 — 방향 인지 렌더: 뒷모습에서 등에 보임) + (#4 세트 3종) */
+  | "acc_cape_crimson" | "acc_cape_royal"
+  | "outfit_flame" | "outfit_frost" | "outfit_mystic";
 
 /** 버프 물약 효과 — 사용 시 지속시간 동안 적용 (같은 버프 재사용 시 시간 갱신) */
 export type BuffDef = {
@@ -606,6 +618,13 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   outfit_abyss: { key: "outfit_abyss", name: "심해의 가곡", icon: "cost_abyss_idle0", desc: "청록 머리칼의 심해 술사 — 파도의 노래 (남녀형)", price: 560, tint: 0x5ad8d0, slot: "outfit" },
   outfit_nightmare: { key: "outfit_nightmare", name: "나이트메어 기사", icon: "cost_nightmare_idle0", desc: "백발의 암흑기사 — 악몽을 두르는 검은 갑주 (남녀형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
   outfit_gilded: { key: "outfit_gilded", name: "황금 백작", icon: "cost_gilded_idle0", desc: "황금빛 귀족 — 부와 권력을 몸에 두른 자 (남녀형)", price: 560, tint: 0xffd06a, slot: "outfit" },
+  /* v1.3.0 (#4 NPC급 옷 세트 3종) — NPC처럼 완성된 한 벌: 세트 팔레트 + 금 트림 + 그라데이션 */
+  outfit_flame: { key: "outfit_flame", name: "화염무사 세트", icon: "cost_flame_idle0", desc: "백발의 화염무사 — 진홍 갑주에 금 트림 (남녀형)", price: 620, tint: 0xff7a50, slot: "outfit" },
+  outfit_frost: { key: "outfit_frost", name: "서리기사 세트", icon: "cost_frost_idle0", desc: "은발의 서리기사 — 백은 판금에 빙하 청 (남녀형)", price: 620, tint: 0x9adfff, slot: "outfit" },
+  outfit_mystic: { key: "outfit_mystic", name: "신비술사 세트", icon: "cost_mystic_idle0", desc: "제비꽃 신비술사 — 칠흑 로브에 금성 문양 (남녀형)", price: 620, tint: 0xb08aff, slot: "outfit" },
+  /* v1.3.0 (#3 망토 2종) — 방향 인지 렌더: 뒷모습에서 등에 흐르고 정면에선 뒤로 숨음 */
+  acc_cape_crimson: { key: "acc_cape_crimson", name: "진홍의 망토", icon: "acc_cape_crimson", desc: "등에서 흩날리는 진홍 망토 — 전사의 낭만", price: 340, tint: 0xff6a6a, slot: "acc" },
+  acc_cape_royal: { key: "acc_cape_royal", name: "왕가의 망토", icon: "acc_cape_royal", desc: "금장이 박힌 왕가의 푸른 망토", price: 420, tint: 0x6a8aff, slot: "acc" },
   /* v1.1.0 (#1 장식) — 어태치 악세서리: 캐릭터에 고정 + 실시간 동기화 */
   acc_crown: { key: "acc_crown", name: "왕가의 왕관", icon: "acc_crown", desc: "머리에 얹히는 황금 왕관 — 루비가 박혀 있다", price: 320, tint: 0xffd76a, slot: "acc" },
   acc_ribbon: { key: "acc_ribbon", name: "진홍 리본", icon: "acc_ribbon", desc: "머리 옆에 달리는 새빨간 리본 — 사랑스러운 한 점", price: 240, tint: 0xff6a8a, slot: "acc" },
@@ -625,6 +644,9 @@ export const BODY_PREFIXES = [
   "cost_silver", "cost_crimson", "cost_seraph", "cost_abyss", "cost_nightmare", "cost_gilded",
   "costm_royal", "costm_shadow", "costm_spring", "costm_navy",
   "costm_silver", "costm_crimson", "costm_seraph", "costm_abyss", "costm_nightmare", "costm_gilded",
+  /* v1.3.0 (#4) — NPC급 프리미엄 옷 세트 3종 (여/남): 화염무사·서리기사·신비술사 */
+  "cost_flame", "cost_frost", "cost_mystic",
+  "costm_flame", "costm_frost", "costm_mystic",
   /* v1.2.0 (#13) — 2차 8직업 전용 외형 (여/남 각 8종): 전직하면 외형 자체가 바뀐다.
    *  버서커/가디언/스나이퍼/윈드러너/아크메이지/세이지/어세신/스와시버클러 */
   "jobf_berserker", "jobf_guardian", "jobf_sniper", "jobf_windrunner",
@@ -804,6 +826,9 @@ export const BM_STOCK: ItemKey[] = [
   /* v1.1.0 (#19/#1) — 프리미엄 코스튬 6종 + 어태치 장식 5종 */
   "outfit_silver", "outfit_crimson", "outfit_seraph", "outfit_abyss", "outfit_nightmare", "outfit_gilded",
   "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy",
+  /* v1.3.0 (#3/#4) — 망토 2종 + NPC급 옷 세트 3종 (캐시상점 합류) */
+  "acc_cape_crimson", "acc_cape_royal",
+  "outfit_flame", "outfit_frost", "outfit_mystic",
 ];
 /** v1.0.3 (#0르쯔) — 캐시상점 진열 자격: bmPrice(에메랄드 가격)가 1 이상인 아이템만 (BmShopPanel 방어 필터용) */
 export function isCashStock(k: ItemKey): boolean {

@@ -208,19 +208,26 @@ export function AuthPanel() {
               </>
             ) : (
               <>
-                {/* SNS 연동 로그인 */}
-                <p className="mb-1 text-[10px] font-black text-white/55">SNS로 시작하기 (계정 자동 연동)</p>
-                <div className="grid grid-cols-3 gap-1.5">
+                {/* v1.3.0 (#1) — SNS 로그인 임시 비활성 (유저 지시 "임시로 sns로그인은 불가능하게해(추후 업데이트 예정)"):
+                     버튼은 흐리게 남기고 클릭 시 안내 문구만 — OAuth 키 검증 후 다시 활성화 예정 */}
+                <p className="mb-1 flex items-center justify-between text-[10px] font-black text-white/55">
+                  <span>SNS로 시작하기 (계정 자동 연동)</span>
+                  <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8px] font-black text-amber-200/90">업데이트 준비 중</span>
+                </p>
+                <div className="grid grid-cols-3 gap-1.5 opacity-45 saturate-50">
                   {SNS_ORDER.map((k) => (
-                    <button key={k} onClick={() => snsStart(k)} className={`rounded-xl border-2 px-2 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${SNS_META[k].cls}`}>
+                    <button
+                      key={k}
+                      onClick={() => setMsg(`${SNS_META[k]?.label ?? k} 로그인은 업데이트 준비 중이에요 — 자체 회원가입을 이용해 주세요`)}
+                      className={`cursor-not-allowed rounded-xl border-2 px-2 py-1.5 text-[11px] font-black ${SNS_META[k].cls}`}
+                    >
                       {SNS_META[k].label}
-                      {providers[k] && !providers[k].configured && <span className="block text-[8px] opacity-60">미설정</span>}
                     </button>
                   ))}
                 </div>
 
                 <div className="my-2 flex items-center gap-2 text-[9px] font-black text-white/30">
-                  <span className="h-px flex-1 bg-white/15" /> 또는 자체 계정 <span className="h-px flex-1 bg-white/15" />
+                  <span className="h-px flex-1 bg-white/15" /> 자체 계정으로 시작 <span className="h-px flex-1 bg-white/15" />
                 </div>
 
                 <div className="mb-1.5 grid grid-cols-2 gap-1.5">

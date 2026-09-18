@@ -86,7 +86,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.2.1 — 치장 위치 수정 · 펫 BM 전용 · 프리미엄 펫 상점 특전 · 최적화 · 메뉴 나가기 · 미소녀 강화</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.3.0 — 오로라 오라 강화 · 층식 구조 맵 · 소모품 수량 사용 · 랭킹창 · NPC급 옷 세트 · 벚꽃 마을</span>
           </p>
         </div>
 

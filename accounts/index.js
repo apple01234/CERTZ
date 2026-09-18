@@ -725,6 +725,92 @@ async function handle(req, res) {
       sendJson(res, 200, { data: s?.data ?? null, updatedAt: s?.updatedAt ?? null });
       return true;
     }
+
+    /* ================= v1.3.0 (#7 랭킹창) — 유저 지시 "랭킹창 및 랭커들을 위한 기능 및 컨텐츠(BM 유도)"
+     *  레벨/전투력 랭킹은 클라우드 세이브(db.saves) 실시간 집계 — 별도 등록 절차 없이 자동 반영.
+     *  전투력 = 레벨·강화·보스처치·콘텐츠 기록·환생을 가중 합산한 지표. */
+    function powerScoreOf(save) {
+      if (!save || typeof save !== "object") return 0;
+      const num = (v) => (typeof v === "number" && isFinite(v) && v > 0 ? v : 0);
+      const inf = save.inf && typeof save.inf === "object" ? save.inf : {};
+      return Math.round(
+        num(save.lv) * 60 +
+        num(save.upWea) * 200 + num(save.upArm) * 150 +
+        num(save.bossKills) * 25 +
+        num(save.gateBest) * 2 + num(inf.towerBest) * 5 +
+        num(inf.rebirths) * 500
+      );
+    }
+    /** 표시명: 게임 캐릭터명 → 계정 닉네임 → 마스킹 아이디 (개인정보 보호) */
+    function rankNameOf(uid, save) {
+      const gname = save && typeof save.name === "string" ? save.name.trim() : "";
+      if (gname) return gname.slice(0, 8);
+      const acc = db.users[uid];
+      if (acc?.name) return acc.name.slice(0, 8);
+      return `${String(uid).slice(0, 2)}***`;
+    }
+    function rankBoard() {
+      const rows = [];
+      for (const [uid, s] of Object.entries(db.saves)) {
+        const save = s?.data;
+        if (!save || typeof save !== "object") continue;
+        const lv = typeof save.lv === "number" ? save.lv : 1;
+        const inf = save.inf && typeof save.inf === "object" ? save.inf : {};
+        rows.push({
+          uid,
+          name: rankNameOf(uid, save),
+          lv,
+          cls: typeof save.cls === "string" ? save.cls : "",
+          power: powerScoreOf(save),
+          rebirths: typeof inf.rebirths === "number" ? inf.rebirths : 0,
+        });
+      }
+      const level = [...rows].sort((a, b) => b.lv - a.lv || b.power - a.power).slice(0, 20)
+        .map(({ name, lv, cls, power }) => ({ name, lv, cls, power }));
+      const power = [...rows].sort((a, b) => b.power - a.power).slice(0, 20)
+        .map(({ name, power, lv }) => ({ name, power, lv }));
+      return { rows, level, power };
+    }
+    if (url === "/api/rank" && method === "GET") {
+      const { rows, level, power } = rankBoard();
+      const user = currentUser(req);
+      let me = null;
+      if (user) {
+        const row = rows.find((r) => r.uid === user.id);
+        if (row) {
+          const lvRank = [...rows].sort((a, b) => b.lv - a.lv || b.power - a.power).findIndex((r) => r.uid === user.id) + 1;
+          const pwRank = [...rows].sort((a, b) => b.power - a.power).findIndex((r) => r.uid === user.id) + 1;
+          me = { name: row.name, lv: row.lv, power: row.power, lvRank: lvRank > 0 ? lvRank : null, pwRank: pwRank > 0 ? pwRank : null };
+        }
+      }
+      /* 주간 보상 수령 여부 — ISO 주 키 */
+      const now = new Date();
+      const week = `${now.getUTCFullYear()}-W${Math.ceil((((now - new Date(now.getUTCFullYear(), 0, 1)) / 86400000) + 1) / 7)}`;
+      let claimed = false;
+      if (user && db.rank.claims?.[week]?.[user.id]) claimed = true;
+      sendJson(res, 200, { level, power, me, week, claimed });
+      return true;
+    }
+    /* 주간 랭커 보상 수령 — 전투력 TOP 10 에게 에메랄드 지급 (BM 소비 촉진 루프의 무료 재화 원천) */
+    if (url === "/api/rank/claim" && method === "POST") {
+      const user = currentUser(req);
+      if (!user) return sendJson(res, 401, { error: "로그인이 필요해요" });
+      const { rows } = rankBoard();
+      const sorted = [...rows].sort((a, b) => b.power - a.power);
+      const rank = sorted.findIndex((r) => r.uid === user.id) + 1;
+      if (rank <= 0) return sendJson(res, 200, { ok: false, error: "랭킹에 등록되려면 클라우드 백업 후 플레이해 주세요" });
+      if (rank > 10) return sendJson(res, 200, { ok: false, error: `현재 ${rank}위 — TOP 10 진입이 목표!` });
+      const now = new Date();
+      const week = `${now.getUTCFullYear()}-W${Math.ceil((((now - new Date(now.getUTCFullYear(), 0, 1)) / 86400000) + 1) / 7)}`;
+      db.rank.claims ||= {};
+      db.rank.claims[week] ||= {};
+      if (db.rank.claims[week][user.id]) return sendJson(res, 200, { ok: false, error: "이번 주 보상은 이미 수령했어요" });
+      const reward = rank === 1 ? 30 : rank <= 3 ? 20 : 10;
+      db.rank.claims[week][user.id] = { rank, reward, ts: Date.now() };
+      persistDb();
+      sendJson(res, 200, { ok: true, emeralds: reward, rank, week });
+      return true;
+    }
   } catch (e) {
     console.error("[SERTZ-accounts] 요청 처리 실패", e);
     try { sendJson(res, 500, { error: "서버 오류" }); } catch { /* 무시 */ }
@@ -743,7 +829,8 @@ function attachAccountsBefore(handleNext) {
       res.writeHead(204, CORS_HEADERS).end();
       return;
     }
-    if (u.startsWith("/api/auth/") || u.startsWith("/api/admin/")) {
+    /* v1.3.0 — /api/rank* 도 계정 모듈이 처리 (랭킹 보드 + 주간 랭커 보상) */
+    if (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") || u.startsWith("/api/rank")) {
       handle(req, res).catch((e) => {
         console.error("[SERTZ-accounts] 가로채기 실패 — Next로 전달", e);
         handleNext(req, res);

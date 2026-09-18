@@ -180,7 +180,7 @@ export type RpgState = {
 };
 
 /** v3.1.0 — "bossdiff" 제거: 스토리 보스는 전용 난이도 즉시 스폰 (선택은 보스 재도전 창 "boss") */
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "isekai" | "benefit" | "pass" | "content" | "union" | null;
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "collection" | "boss" | "isekai" | "benefit" | "pass" | "content" | "union" | "rank" | null; // v1.3.0 — +rank 랭킹창
 
 /* ----- v4.0.0 — 바르가 수비전 오버레이 ----- */
 export type GateCardState = {

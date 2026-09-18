@@ -162,4 +162,11 @@ export function buildAllAnims(scene: Phaser.Scene) {
   // 장식 이펙트
   a.create({ key: "flame-burn", ...fr("flame", 4, 8, -1) });
   a.create({ key: "sparkle", ...fr("sparkle", 2, 3, -1) });
+  /* v1.3.0 (#8) — PixelFX 모닥불 화염 + Cainos 분수 물 튀김 애님 */
+  if (scene.textures.exists("px_fire0")) {
+    a.create({ key: "vfx3-fire", frames: [0, 1, 2, 3, 4].map((i) => ({ key: `px_fire${i}` })), frameRate: 9, repeat: -1 });
+  }
+  if (scene.textures.exists("cainos_water0")) {
+    a.create({ key: "vfx3-water", frames: [0, 1, 2, 3].map((i) => ({ key: `cainos_water${i}` })), frameRate: 7, repeat: -1 });
+  }
 }

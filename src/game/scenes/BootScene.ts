@@ -124,6 +124,23 @@ const ASSET_LIST = [
   "sparkle0", "sparkle1",
   "impact_star",
   "flame0", "flame1", "flame2", "flame3",
+  /* v1.3.0 (#5 오라 강화) — 유저 지시 "캐시상점에서 산 오로라류 아이템 작동안함"의 본질:
+   *  기존 오라가 너무 미약해 착용해도 인지 불가였다. GameVFX/Hovl Studio 실사운 에셋으로
+   *  룬 서클+링+궤도 위스프를 깔아 "착용 즉시 보이는" 오라로 재탄생 */
+  "aura_ring",   // GameVFX Buff Collection — 흰 링 (틴트용)
+  "aura_circle", // Hovl Studio Magic Effects — 매직 서클 (발판 룬)
+  "aura_wisp",   // GameVFX — 글로우 볼 (궤도 위스프)
+  "aura_glow2",  // GameVFX — 청 글로우 (발광 보강)
+  /* v1.3.0 (#8 에셋 활용) — Vefects/Hovl/PixelFX/Cainos/Petal 3대 팩 선별 텍스처 */
+  "vfx3_impact",  // Vefects — 크리티컬 별burst
+  "vfx3_ring",    // Vefects — 레벨업 링
+  "vfx3_slash",   // Vefects — 참격 플래시
+  "vfx3_heart",   // Hovl — 회복 하트
+  "vfx3_flower",  // Vefects — 수집 꽃
+  "vfx3_flare",   // Hovl — 발사체 글로우
+  "px_fire0", "px_fire1", "px_fire2", "px_fire3", "px_fire4",           // PixelFX — 모닥불 화염
+  "cainos_water0", "cainos_water1", "cainos_water2", "cainos_water3",   // Cainos — 분수 물 튀김
+  "petal0",        // Petal Particles — 벚꽃잎
   // RPG 기본 요소 (2D MMORPG) — Kenney Tiny Dungeon/Roguelike CC0
   "item_coin",
   "item_potion_hp", "item_potion_mp",
@@ -340,7 +357,7 @@ export class BootScene extends Phaser.Scene {
       for (const f of heroFrames) this.load.image(`${p}_${f}`, `${p}_${f}.webp`);
     }
     /* v1.2.0 (#1) — 포니테일 4종 로드 제거(아이템 폐지) · 무지개 오라 아이콘 + 어태치 장식은 유지 */
-    for (const t of ["acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy", "i_cos_rainbow"]) {
+    for (const t of ["acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy", "acc_cape_crimson", "acc_cape_royal", "i_cos_rainbow"]) {
       this.load.image(t, `${t}.webp`);
     }
     /* v1.0.7 — 프리렌더 3D VFX 추가 (Hovl Studio Magic effects · UNI VFX — 연구용 원본 재확보분,

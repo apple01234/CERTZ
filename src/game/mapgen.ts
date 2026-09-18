@@ -22,6 +22,12 @@ export type RoomLayout = {
   open: boolean[];
   entry: number;
   exit: number;
+  /* v1.3.0 (#9 층식 구조) — 유저 지시 "레이어와 콜리전을 잘 이용하여 층 식 구조의 타일비맵을 좀 활용해":
+   *  level[c] = 0 지상 / 1 단(높은 지대). 단은 걸어 다닐 수 있는 높은 층 — 절벽 면(남측)이
+   *  플레이어를 덮는 레이어 연출 + 콜리전으로 통행 차단, 계단(stairs)으로만 오르내린다. */
+  level?: Uint8Array;
+  /** 단 ↔ 지상 통행이 허용된 계단 셀 (이 셀의 경계는 절벽 콜리전이 없다) */
+  stairs?: Set<number>;
 };
 
 export function generateRoomLayout(seed: string, mapW: number, mapH: number): RoomLayout {
@@ -78,6 +84,94 @@ export function generateRoomLayout(seed: string, mapW: number, mapH: number): Ro
   return { cols, rows, cellW, cellH, open, entry, exit };
 }
 
+/* ================= v1.3.0 (#9 층식 구조) — 단(plateau) 조각 =================
+ *  개방 셀 중 인접 2~3개를 골라 "높은 지대(단)"로 승격한다.
+ *  · 입구/출구 셀과 그 주변은 제외 (이동 동선 보호)
+ *  · 단 경계는 절벽 — WorldScene이 절벽 면(남측) 레이어 + 콜리전을 만든다
+ *  · 단 인접 지상 셀 1개를 계단으로 지정 — 유일한 통로
+ *  결정적(seed)이므로 같은 구역은 항상 같은 단 구조 (리젠/멀티 안전) */
+export function carvePlateaus(lay: RoomLayout, seed: string): void {
+  const rng = new Phaser.Math.RandomDataGenerator([seed + "-plateau"]);
+  const { cols, rows, open, entry, exit } = lay;
+  const idx = (c: number, r: number) => r * cols + c;
+  const level = new Uint8Array(cols * rows); // 0 = 지상
+  const stairs = new Set<number>();
+
+  // 입구/출구 제외 (셀 중심 기준 2셀 이내)
+  const protectedCells = new Set<number>([entry, exit]);
+  const guardRing = (cell: number) => {
+    const c = cell % cols, r = Math.floor(cell / cols);
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        const cc = c + dc, rr = r + dr;
+        if (cc >= 0 && rr >= 0 && cc < cols && rr < rows) protectedCells.add(idx(cc, rr));
+      }
+  };
+  guardRing(entry);
+  guardRing(exit);
+
+  const openNeighbors = (cell: number): number[] => {
+    const c = cell % cols, r = Math.floor(cell / cols);
+    const out: number[] = [];
+    if (c > 0 && open[idx(c - 1, r)]) out.push(idx(c - 1, r));
+    if (c < cols - 1 && open[idx(c + 1, r)]) out.push(idx(c + 1, r));
+    if (r > 0 && open[idx(c, r - 1)]) out.push(idx(c, r - 1));
+    if (r < rows - 1 && open[idx(c, r + 1)]) out.push(idx(c, r + 1));
+    return out;
+  };
+
+  // 단 후보: 보호 셀이 아니면서 이웃 지상 셀이 2개 이상인 개방 셀
+  const candidates: number[] = [];
+  for (let i = 0; i < open.length; i++) {
+    if (!open[i] || protectedCells.has(i)) continue;
+    const nbs = openNeighbors(i).filter((n) => !protectedCells.has(n));
+    if (nbs.length >= 1) candidates.push(i);
+  }
+  if (candidates.length === 0) {
+    lay.level = level;
+    lay.stairs = stairs;
+    return;
+  }
+
+  const plateauN = Math.min(candidates.length >= 8 ? 2 : 1, Math.max(1, Math.floor(cols * rows / 10)));
+  const used = new Set<number>();
+  for (let p = 0; p < plateauN; p++) {
+    // 후보 셀에서 성장 — 2~3셀짜리 단 덩어리
+    let seed0 = candidates[rng.between(0, candidates.length - 1)];
+    if (used.has(seed0)) continue;
+    const cells = [seed0];
+    used.add(seed0);
+    const want = rng.between(2, 3);
+    let guard = 12;
+    while (cells.length < want && guard-- > 0) {
+      const base = cells[rng.between(0, cells.length - 1)];
+      const nbs = openNeighbors(base).filter((n) => open[n] && !used.has(n) && !protectedCells.has(n) && !cells.includes(n));
+      if (nbs.length === 0) break;
+      const next = nbs[rng.between(0, nbs.length - 1)];
+      cells.push(next);
+      used.add(next);
+    }
+    for (const c of cells) level[c] = 1;
+    // 계단 — 단 셀에 인접한 지상 셀 1개 (보호 셀 회피)
+    const stairCands: number[] = [];
+    for (const c of cells) {
+      for (const n of openNeighbors(c)) {
+        if (level[n] === 0 && !protectedCells.has(n) && !cells.includes(n)) stairCands.push(n);
+      }
+    }
+    if (stairCands.length > 0) {
+      // 최후의 보루: 후보가 전부 보호셀이면 단 자체를 계단 가능으로 (통행 보장)
+      stairs.add(stairCands[rng.between(0, stairCands.length - 1)]);
+    } else {
+      const anyNb = openNeighbors(cells[0]);
+      if (anyNb.length > 0) stairs.add(anyNb[0]);
+    }
+  }
+
+  lay.level = level;
+  lay.stairs = stairs;
+}
+
 /** from 셀에서 가장 먼 개방 셀 인덱스 (BFS) */
 export function bfsFarthest(open: boolean[], cols: number, rows: number, from: number): number {
   const seen = new Array<boolean>(open.length).fill(false);
@@ -103,11 +197,22 @@ export function bfsFarthest(open: boolean[], cols: number, rows: number, from: n
   return last;
 }
 
-/** from → to 최단 경로의 "다음" 셀 (BFS, 자동사냥 경로 유도용) — 같은 셀이면 null */
+/** from → to 최단 경로의 "다음" 셀 (BFS, 자동사냥 경로 유도용) — 같은 셀이면 null
+ *  v1.3.0 (#9) — 단(높은 지대) 경계는 계단 셀을 통해서만 통과 (절벽 콜리전과 일치 —
+ *  자동사냥이 절벽에 막힌 경로를 따라가 벽에 끼는 버그 원천 차단) */
 export function nextStepToward(layout: RoomLayout, from: number, to: number): number | null {
   if (from === to) return null;
   const { cols, rows, open } = layout;
   if (!open[to] || !open[from]) return null;
+  const lvl = layout.level;
+  const stairs = layout.stairs;
+  const canCross = (a: number, b: number): boolean => {
+    if (!lvl || !stairs) return true;
+    const la = lvl[a] ?? 0;
+    const lb = lvl[b] ?? 0;
+    if (la === lb) return true;
+    return stairs.has(a) || stairs.has(b); // 계단 셀(또는 그 이웃)만 단↔지상 통과
+  };
   const prev = new Array<number>(open.length).fill(-1);
   const seen = new Array<boolean>(open.length).fill(false);
   const queue = [from];
@@ -118,7 +223,7 @@ export function nextStepToward(layout: RoomLayout, from: number, to: number): nu
     const c = cur % cols;
     const r = Math.floor(cur / cols);
     const push = (n: number) => {
-      if (n >= 0 && n < open.length && open[n] && !seen[n]) {
+      if (n >= 0 && n < open.length && open[n] && !seen[n] && canCross(cur, n)) {
         seen[n] = true;
         prev[n] = cur;
         queue.push(n);

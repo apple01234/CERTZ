@@ -176,6 +176,37 @@ export async function cloudSaveDownload(): Promise<{ ok: boolean; data: unknown;
   return { ok: true, data: r.data.data ?? null };
 }
 
+/* ================= v1.3.0 (#7 랭킹창) — 유저 지시 "랭킹창 및 랭커들을 위한 기능 및 컨텐츠(BM 유도)"
+ *  서버 /api/rank: 클라우드 세이브 실시간 집계 (레벨/전투력 TOP 20 + 내 순위 + 주간 보상 수령 여부)
+ *  서버 /api/rank/claim: 주간 랭커 보상 수령 (전투력 TOP 10 — 에메랄드 지급) */
+export type RankRow = { name: string; lv: number; cls?: string; power?: number };
+export type RankBoard = {
+  level: RankRow[];
+  power: RankRow[];
+  me: { name: string; lv: number; power: number; lvRank: number | null; pwRank: number | null } | null;
+  week: string;
+  claimed: boolean;
+  error?: string;
+};
+export async function fetchRank(): Promise<RankBoard> {
+  const r = await get("/api/rank");
+  if (!r.ok || r.data.error) return { level: [], power: [], me: null, week: "", claimed: false, error: String(r.data.error ?? "랭킹 서버에 연결할 수 없어요") };
+  const d = r.data as Partial<RankBoard>;
+  return {
+    level: Array.isArray(d.level) ? d.level : [],
+    power: Array.isArray(d.power) ? d.power : [],
+    me: (d.me as RankBoard["me"]) ?? null,
+    week: String(d.week ?? ""),
+    claimed: !!d.claimed,
+  };
+}
+export async function claimRankReward(): Promise<{ ok: boolean; emeralds?: number; rank?: number; error?: string }> {
+  const r = await post("/api/rank/claim", {});
+  if (!r.ok) return { ok: false, error: String(r.data.error ?? "수령 실패") };
+  if (!r.data.ok) return { ok: false, error: String(r.data.error ?? "수령 조건을 충족하지 않았어요") };
+  return { ok: true, emeralds: Number(r.data.emeralds ?? 0), rank: Number(r.data.rank ?? 0) };
+}
+
 /* ================= v1.0.1 — 유저 거래판 (마켓) 클라이언트 =================
  *  서버: /api/market (accounts/index.js) — 로그인 쿠키 세션 기반.
  *  등록/구매/취소/수령 성공 시 클라이언트가 세이브(골드/보유)를 조작한다 — 서버는 ledger만. */

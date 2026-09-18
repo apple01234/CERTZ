@@ -30,7 +30,7 @@ export default function GameRoot() {
   const gameRef = useRef<Phaser.Game | null>(null);
   const { state, hud, quest, questLog, skills, dialogue, boss, banner, end, rpg, panel, setPanel } = useGameUi();
   /* v4.1.7 — 패널 개폐 UI음 (유니티 에셋스토어 유료 SFX): HUD 버튼 토글 클릭음 + 열림 사운드 */
-  const togglePanelSfx = (key: "inv" | "job" | "stat" | "quest" | "boss" | "benefit" | "content" | "opt" | "union" | "trade") => {
+  const togglePanelSfx = (key: "inv" | "job" | "stat" | "quest" | "boss" | "benefit" | "content" | "opt" | "union" | "trade" | "rank") => { // v1.3.0 — +rank
     audio.sfx.uiClick();
     const opening = panel !== key;
     setPanel(opening ? key : null);
@@ -148,7 +148,8 @@ export default function GameRoot() {
                 onOpenOpt={() => togglePanelSfx("opt")}
                 onOpenUnion={() => togglePanelSfx("union")}
                 onOpenTrade={() => togglePanelSfx("trade")} /* v1.2.0 (#2) — 거래소 직접 진입 */
-                onOpenMenu={() => setExitMenuOpen(true)} /* v1.2.1 (#6) — 메뉴 나가기 */
+                onOpenRank={() => togglePanelSfx("rank")} /* v1.3.0 (#7) — 랭킹창 */
+                /* v1.3.0 (#2) — onOpenMenu 제거: HUD ☰ 버튼 삭제, 메뉴 나가기는 설정 패널로 */
               />
             </div>
             {!panel && (

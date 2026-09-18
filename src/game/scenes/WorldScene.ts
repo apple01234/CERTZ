@@ -44,11 +44,12 @@ import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
 import { applyToonStyle, clearToonStyle } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일)
+import { spawnCritStar, spawnHealHeart, spawnLevelRing, spawnPetalRain } from "../fx/Vfx3"; // v1.3.0 (#8) — 3대 VFX 팩 연출
 import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
 import * as audio from "../audio";
 import {
-  generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
+  generateRoomLayout, carvePlateaus, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
   type RoomLayout,
 } from "../mapgen";
 
@@ -544,6 +545,14 @@ export class WorldScene extends Phaser.Scene {
   /* v1.1.0 (#1) — 코스튬 오버레이 폐기(스프라이트 완전 교체로 전환) → 어태치 장식(왕관/리본/후광/날개) 동기화 */
   private accOverlays: { key: string; img: Phaser.GameObjects.Image }[] = [];
   private auraPhase = 0; // v1.1.1 (#5) — 무지개/오로라/은하수 순환 위상
+  /* v1.3.0 (#5 오라 강화) — "착용 즉시 보이는" 오라 패키지: 발판 룬 서클 + 회전 링 + 궤도 위스프.
+   *  기존 후광 글로우만으로는 미약해 "작동 안 함" 신고 — GameVFX/Hovl 실사운 에셋으로 재구성 */
+  private auraRing: Phaser.GameObjects.Image | null = null;   // 발판 링 (반대 회전)
+  private auraCircle: Phaser.GameObjects.Image | null = null; // 발판 룬 서클 (정회전)
+  private auraWisps: Phaser.GameObjects.Image[] = [];         // 궤도 위스프 3기
+  private auraWispAng = 0;
+  /* v1.3.0 (#8) — 마을 벚꽃 이미터 (절전 모드에서 정지) */
+  private petalEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private upgradeGlow: Phaser.GameObjects.Image | null = null;
   /** v3.0.5 — 스타포스 궤도성(★15)/주변 스파클(★8+)/티어 추적 */
   private sfOrbits: Phaser.GameObjects.Image[] = [];
@@ -653,6 +662,7 @@ export class WorldScene extends Phaser.Scene {
     this.cosmeticAura = null;
     this.cosmeticEmitter = null;
     this.cosmeticOverlay = null; // v1.0.2 — 오버레이 정리(destroy는 destroyAll에서)
+    this.petalEmitter = null; // v1.3.0 — 벚꽃 이미터 참조 정리 (씬 셧다운)
     this.accOverlays = []; // v1.1.0 — 어태치 장식 참조 정리
     this.upgradeGlow = null;
     this.sfOrbits = [];
@@ -870,12 +880,14 @@ export class WorldScene extends Phaser.Scene {
     /* v3.3.0 (#흑화) — 굴 레이아웃 조건에서 무릉도장 제외: 개방된 도장(벽 없음)으로 생성 */
     if (!this.isInterior && !this.stageDef.isVillage && stageKey !== "dojang") {
       const lay = generateRoomLayout(stageKey, this.stageW, this.stageH);
+      carvePlateaus(lay, stageKey); // v1.3.0 (#9) — 층식 구조: 단(높은 지대) + 계단 지정
       this.layout = lay;
       const entryC = cellCenterOf(lay, lay.entry);
       const exitC = cellCenterOf(lay, lay.exit);
       this.entryHome.set(entryC.x + 70, entryC.y);
       this.portalHome.set(exitC.x, exitC.y);
       this.buildDungeonWalls(lay, parseStage(stageKey).ch);
+      this.buildPlateaus(lay, parseStage(stageKey).ch); // v1.3.0 (#9) — 절벽 레이어+콜리전+계단
     } else {
       this.portalHome.set(this.stageW - 130, this.stageH * 0.52);
       this.entryHome.set(180, this.stageH / 2);
@@ -1629,6 +1641,139 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /* ================= v1.3.0 (#9 층식 구조) — 단(plateau) 절벽 레이어 + 콜리전 =================
+   *  유저 지시 "레이어와 콜리전을 잘 이용하여 층 식 구조의 타일비맵을 좀 활용해":
+   *  · 단 바닥 = 지상보다 밝은 톤 + 상단 하이라이트 — "높은 지대" 판정
+   *  · 남측 경계 = 절벽 면(22px, depth 9.5) + 밝은 림 — 높이차 레이어링
+   *  · 전 경계(동/서/북 포함) = 보이지 않는 콜리전 — 계단 셀 경계만 통과
+   *  · 계단 경계 = 3단 램프 슬랫 연출, 콜리전 없음 — 오르내리기 가능 */
+  private buildPlateaus(lay: RoomLayout, ch: string) {
+    if (!lay.level || !lay.stairs) return;
+    const WALLS: Record<string, number> = {
+      forest: 0x7a9a5a,
+      kingdom: 0xa89878,
+      alfheim: 0x8a7ac8,
+      muspelheim: 0xa85a38,
+      niflheim: 0x8ab8d8,
+      cave: 0x9a7a58,
+      nidavellir: 0xb8a068,
+      hel: 0x8a5aaa,
+      abyss: 0x6a5a9a,
+    };
+    const base = Phaser.Display.Color.IntegerToColor(WALLS[ch] ?? 0xffffff);
+    const brighten = (mul: number, add = 0) =>
+      Phaser.Display.Color.GetColor(
+        Math.min(255, base.red * mul + add),
+        Math.min(255, base.green * mul + add),
+        Math.min(255, base.blue * mul + add)
+      );
+    const faceCol = brighten(0.55); // 절벽 면 — 어두운 하부 암석
+    const faceDark = brighten(0.4);
+    const rimCol = brighten(1.25, 20); // 절벽 윗 림 — 햇빛 받는 모서리
+    const floorTint = brighten(1.0, 26); // 단 바닥 — 지상보다 밝게
+    const lvlAt = (c: number, r: number): number => {
+      if (c < 0 || r < 0 || c >= lay.cols || r >= lay.rows) return -1;
+      const i = r * lay.cols + c;
+      if (!lay.open[i]) return -1; // 벽
+      return lay.level![i] ?? 0;
+    };
+    const isStair = (cell: number) => lay.stairs!.has(cell);
+    const FACE = 22;
+
+    const addCliffBody = (x: number, y: number, w: number, h: number) => {
+      const b = this.add.rectangle(x, y, w, h, 0, 0).setOrigin(0);
+      this.physics.add.existing(b, true);
+      this.solidGroup.add(b);
+      const wb = b.body as Phaser.Physics.Arcade.StaticBody | null;
+      if (wb) {
+        wb.setSize(w, h, false);
+        wb.position.set(x, y);
+        wb.updateCenter();
+      }
+    };
+
+    for (let r = 0; r < lay.rows; r++) {
+      for (let c = 0; c < lay.cols; c++) {
+        const i = r * lay.cols + c;
+        if (!lay.open[i] || lvlAt(c, r) !== 1) continue;
+        const x = c * lay.cellW;
+        const y = r * lay.cellH;
+        /* 단 바닥 — 암석 톱 텍스처(밝게)로 전면 교체: 풀밭 위에서도 명확히 읽히는
+         *  "솟은 층" + 상단 하이라이트 림 (v1.3.0 실측 — 반투명 틴트는 풀밭에 묻혀 안 보임) */
+        this.add
+          .tileSprite(x, y, lay.cellW, lay.cellH, "wall_rock")
+          .setOrigin(0)
+          .setDepth(1.35)
+          .setTint(Phaser.Display.Color.GetColor(
+            Math.min(255, base.red * 1.42 + 34),
+            Math.min(255, base.green * 1.42 + 34),
+            Math.min(255, base.blue * 1.42 + 34)
+          ))
+          .setAlpha(0.96);
+        this.add.rectangle(x, y, lay.cellW, 4, rimCol, 0.5).setOrigin(0).setDepth(1.5);
+
+        const stairGroundNbs: [number, number][] = []; // 이 단 셀과 맞닿은 계단(지상) 셀
+        const nb = (cc: number, rr: number): [number, number, number] => [cc, rr, lvlAt(cc, rr)];
+        for (const [cc, rr, lv] of [nb(c, r - 1), nb(c, r + 1), nb(c - 1, r), nb(c + 1, r)]) {
+          if (lv === 0) {
+            const nIdx = rr * lay.cols + cc;
+            if (isStair(nIdx)) stairGroundNbs.push([cc, rr]);
+          }
+        }
+
+        for (const [dir, cc, rr] of [
+          ["S", c, r + 1], ["N", c, r - 1], ["W", c - 1, r], ["E", c + 1, r],
+        ] as [string, number, number][]) {
+          const lv = lvlAt(cc, rr);
+          const groundSide = lv === 0;
+          if (!groundSide) continue; // 벽/바깥/단끼리 경계는 처리 불필요 (벽은 이미 콜리전)
+          const stairEdge = stairGroundNbs.some(([sc, sr]) => sc === cc && sr === rr);
+          if (stairEdge) {
+            /* 계단 — 경계에 3단 램프 슬랫 (콜리전 없음) */
+            if (dir === "S" || dir === "N") {
+              const top = dir === "S" ? y + lay.cellH - 18 : y;
+              for (let s = 0; s < 3; s++) {
+                this.add
+                  .rectangle(x + 4, top + s * 6, lay.cellW - 8, 5, Phaser.Display.Color.GetColor(
+                    Math.min(255, base.red * (1.15 - s * 0.14)), Math.min(255, base.green * (1.15 - s * 0.14)), Math.min(255, base.blue * (1.15 - s * 0.14))
+                  ), 0.85)
+                  .setOrigin(0).setDepth(1.6 + s * 0.01);
+              }
+            } else {
+              const left = dir === "E" ? x + lay.cellW - 18 : x;
+              for (let s = 0; s < 3; s++) {
+                this.add
+                  .rectangle(left + s * 6, y + 4, 5, lay.cellH - 8, Phaser.Display.Color.GetColor(
+                    Math.min(255, base.red * (1.15 - s * 0.14)), Math.min(255, base.green * (1.15 - s * 0.14)), Math.min(255, base.blue * (1.15 - s * 0.14))
+                  ), 0.85)
+                  .setOrigin(0).setDepth(1.6 + s * 0.01);
+              }
+            }
+            continue;
+          }
+          if (dir === "S") {
+            /* 절벽 면 — 단 남측 경계에서 아래(지상 셀 방향)로 22px 돌출. depth 9.5:
+             *  지상을 걷는 플레이어(depth 10)는 면 앞에서 걷고(플레이어가 앞) — 높이차 레이어링 */
+            this.add.tileSprite(x, y + lay.cellH, lay.cellW, FACE, "wall_rock").setOrigin(0).setDepth(9.5).setTint(faceCol);
+            this.add.rectangle(x, y + lay.cellH, lay.cellW, 3, rimCol, 0.55).setOrigin(0).setDepth(9.6);
+            this.add.rectangle(x, y + lay.cellH + FACE - 5, lay.cellW, 5, faceDark, 0.6).setOrigin(0).setDepth(9.6);
+            addCliffBody(x, y + lay.cellH - 7, lay.cellW, 14);
+          } else if (dir === "N") {
+            /* 단 북측 경계 — 경계선 어두운 림 + 콜리전 (뒤에서 단으로 못 오르게) */
+            this.add.rectangle(x, y, lay.cellW, 3, faceDark, 0.5).setOrigin(0).setDepth(9.5);
+            addCliffBody(x, y - 7, lay.cellW, 14);
+          } else {
+            /* 동/서측 경계 — 얇은 암석 끝단 스트립 + 콜리전 */
+            const ex = dir === "W" ? x : x + lay.cellW - 6;
+            this.add.rectangle(ex, y, 6, lay.cellH, faceCol, 0.9).setOrigin(0).setDepth(9.5);
+            this.add.rectangle(dir === "W" ? ex : ex + 6, y, 2, lay.cellH, rimCol, 0.4).setOrigin(0).setDepth(9.55);
+            addCliffBody(dir === "W" ? x - 7 : x + lay.cellW - 7, y, 14, lay.cellH);
+          }
+        }
+      }
+    }
+  }
+
   /** 레이아웃 내 무작위 개방 지점 — 적/오브젝트 스폰 공용 (결정적 rng 주입) */
   private openPointRng(
     rng: Phaser.Math.RandomDataGenerator,
@@ -1913,6 +2058,10 @@ export class WorldScene extends Phaser.Scene {
       const fx7 = this.stageW / 2 - 250;
       const fy7 = this.stageH / 2 + 150;
       const fire = this.add.sprite(fx7, fy7, "sv_campfire").setDepth(Math.floor(fy7 / 10)).play("sv-campfire");
+      /* v1.3.0 (#8) — PixelFX Vol1 실사운 화염 레이어: 장작 위에서 활짝 타오르는 이중 화염 */
+      if (this.anims.exists("vfx3-fire")) {
+        this.add.sprite(fx7, fy7 - 6, "px_fire0").setDepth(Math.floor(fy7 / 10) + 0.1).play("vfx3-fire").setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.95);
+      }
       this.lighting.addLight(fx7, fy7 - 8, { tint: 0xff9a40, scale: 0.8, alpha: 0.3, flicker: 0.1 }); // v4.1.5 동적 광원
       this.solidGroup.add(fire);
       (fire.body as Phaser.Physics.Arcade.StaticBody).setSize(24, 14).setOffset(4, 18);
@@ -1923,6 +2072,12 @@ export class WorldScene extends Phaser.Scene {
         .setTint(0xffb060)
         .setScale(0.9)
         .setAlpha(0.2);
+    }
+    /* v1.3.0 (#8 에셋 활용) — Petal Particles 벚꽃 연출: 마을 하늘에 흩날리는 꽃잎.
+     *  유저 지시 "에셋 최대한 활용해서 게임 디자인 강화" — 마을 분위기 지수 1순위 */
+    if (STAGES[stageKey]?.isVillage) {
+      this.petalEmitter = spawnPetalRain(this, this.stageW, this.stageH);
+      if (this.petalEmitter && this.fxLevel === 0) this.petalEmitter.stop(); // 절전 모드 시작이면 정지
     }
 
     /* v4.3.0 — 암전 챕터 환경 불빛 (유저 지시 "어두운 분위기의 챕터만 맵 어둡게 + 불빛 있게"):
@@ -2393,6 +2548,10 @@ export class WorldScene extends Phaser.Scene {
 
     // 광장 우물 (중앙 랜드마크, 충돌 있음) — 접근 시 샘물 회복
     const well = this.add.image(cx, cy, "well").setDepth(Math.floor(cy / 10));
+    /* v1.3.0 (#8) — Cainos Interactive Pixel Water: 샘물 우물에서 꿈틀대는 물 튀김 */
+    if (this.anims.exists("vfx3-water")) {
+      this.add.sprite(cx, cy - 18, "cainos_water0").setDepth(Math.floor(cy / 10) + 0.1).play("vfx3-water").setAlpha(0.8);
+    }
     this.solidGroup.add(well);
     (well.body as Phaser.Physics.Arcade.StaticBody).setSize(68, 38).setOffset(14, 57); // v3.0.10 — 분수 72x72 하단 실측
     this.wellPos = new Phaser.Math.Vector2(cx, cy);
@@ -2814,8 +2973,12 @@ export class WorldScene extends Phaser.Scene {
           this.playerToon = null;
         }
         /* v1.2.1 (#4 최적화 x3) — 절전 모드: 지속 파티클(코스튬 스파클 트레일)도 정지.
-         *  셰이더 다음으로 모바일 GPU를 잡아먹는 게 상시 방출 이미터다. */
+         *  셰이더 다음으로 모바일 GPU를 잡아먹는 게 상시 방출 이미터다.
+         *  v1.3.0 (#5) — 궤도 위스프 3기도 절전 시 숨김 (ADD 블렌드 오버드로 비용 절감).
+         *  발판 서클/링/후광은 이미지 3장이라 유지 — 오라 정체성은 지킨다. */
         try { this.cosmeticEmitter?.stop(); } catch { /* 무시 */ }
+        for (const w of this.auraWisps) w.setVisible(false);
+        try { this.petalEmitter?.stop(); } catch { /* 무시 */ }
       } else {
         if (this.player && !this.playerToon && this.game.renderer.type === Phaser.WEBGL) {
           this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
@@ -2827,6 +2990,8 @@ export class WorldScene extends Phaser.Scene {
           this.ambientFilters = addAmbientBloom(this.cameras.main);
         }
         try { this.cosmeticEmitter?.start(); } catch { /* 무시 */ }
+        for (const w of this.auraWisps) w.setVisible(true);
+        try { this.petalEmitter?.start(); } catch { /* 무시 */ }
       }
     } catch { /* 필터 미지원 환경 무시 */ }
     console.info("[SERTZ] 그래픽 효과 모드 적용:", level === 1 ? "높음(셰이더 ON)" : "절전(셰이더 OFF)");
@@ -5631,6 +5796,8 @@ export class WorldScene extends Phaser.Scene {
   onLevelUp() {
     /* v1.2.0 (#8) — 레벨업 ★ 감정 버블 (씹덕 감성) */
     if (this.player) this.emote("star", this.player.x, this.player.y - 40);
+    /* v1.3.0 (#8) — Vefects Ring: 발밑에서 황금 링이 퍼지는 레벨업 연출 */
+    if (this.player) spawnLevelRing(this, this.player.x, this.player.y, 0xffd76a);
     this.tryCompleteLevel();
     if (this.autoAlloc && this.player.ap > 0) {
       if (this.player.allocateAutoPoints()) {
@@ -6162,8 +6329,10 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
       this.save();
     };
-    const onUse = (v: { kind: "hp" | "mp" }) => {
-      this.player?.usePotion(v.kind);
+    /* v1.3.0 (#6 수량 사용) — 기본 물약도 수량 지정 지원 (usePotionBatch가 소유/필요/쿨다운 판정) */
+    const onUse = (v: { kind: "hp" | "mp"; qty?: number }) => {
+      const n = Math.max(1, Math.min(99, Math.floor(v.qty ?? 1)));
+      this.player?.usePotionBatch(v.kind, n);
     };
     const onUseBuff = (v: { key: BuffKey }) => {
       if (!this.player || this.dialoguing) return;
@@ -6603,14 +6772,19 @@ export class WorldScene extends Phaser.Scene {
     };
 
     // v2.5 — 소지품 사용 (상급 물약/마을 귀환서/지역 이동 부적 — 지시 #5/#6/#7)
-    const onUseItem = (v: { key: string }) => {
+    /* v1.3.0 (#6 수량 사용) — 유저 지시 "소모품 사용 갯수 지정 및 맥스(버튼) 만들기":
+     *  UI에서 수량(qty)을 받아 한 번에 연속 사용. 소유 검사는 매 회차(useXXX 내부) 수행 —
+     *  보유분보다 큰 수량을 받으면 가진 만큼만 쓰고 조용히 멈춘다(부분 성공 허용). */
+    const onUseItem = (v: { key: string; qty?: number }) => {
       if (!this.player || this.dialoguing || this.player.state === "dead") return;
       const key = v.key as ItemKey;
+      const n = Math.max(1, Math.min(99, Math.floor(v.qty ?? 1)));
       if (key === "exp_book") {
-        /* v4.0.0 — 경험치 책 사용 */
-        const exp = this.player.useExpBook();
-        if (exp > 0) {
-          EventBus.emit("banner:show", { text: `경험치 책 사용! EXP +${exp.toLocaleString()}` });
+        /* v4.0.0 — 경험치 책 사용 (v1.3.0 #6 — 수량 지정 연속 사용) */
+        let total = 0;
+        for (let i = 0; i < n; i++) total += this.player.useExpBook();
+        if (total > 0) {
+          EventBus.emit("banner:show", { text: `경험치 책 사용${n > 1 ? ` ×${n}` : ""}! EXP +${total.toLocaleString()}` });
           audio.sfx.questDone();
           this.emitRpgState();
           this.save();
@@ -6622,23 +6796,34 @@ export class WorldScene extends Phaser.Scene {
       /* v1.2.0 (#15) — 경험치 책 3종 · v1.2.1 (#5) 비약→책 이름 변경 */
       if (key === "exp_book_s" || key === "exp_book_m" || key === "exp_book_l") {
         const NAME = { exp_book_s: "고급", exp_book_m: "태풍", exp_book_l: "극한" }[key as "exp_book_s" | "exp_book_m" | "exp_book_l"];
-        const r = this.player.useExpPotion(key as "exp_book_s" | "exp_book_m" | "exp_book_l");
-        if (r.ok) {
-          EventBus.emit("banner:show", { text: `${NAME} 성장의 책 사용! EXP +${r.exp.toLocaleString()}` });
-          this.spawnPickupText(this.player.x, this.player.y - 34, `EXP +${r.exp.toLocaleString()}`, "#8fe84a");
+        let total = 0;
+        let blocked = 0;
+        for (let i = 0; i < n; i++) {
+          const r = this.player.useExpPotion(key as "exp_book_s" | "exp_book_m" | "exp_book_l");
+          if (r.ok) total += r.exp;
+          else blocked++;
+        }
+        if (total > 0) {
+          EventBus.emit("banner:show", { text: `${NAME} 성장의 책 사용${n > 1 ? ` ×${n - blocked}` : ""}! EXP +${total.toLocaleString()}` });
+          this.spawnPickupText(this.player.x, this.player.y - 34, `EXP +${total.toLocaleString()}`, "#8fe84a");
           audio.sfx.questDone();
           this.emitRpgState();
           this.emitHud();
           this.save();
         } else {
-          EventBus.emit("banner:show", { text: r.msg ?? "사용할 수 없습니다" });
+          EventBus.emit("banner:show", { text: "사용할 수 없습니다" });
         }
         return;
       }
       if (key.startsWith("potion_")) {
         // v4.4.0 — 전 티어 물약 사용 경로 통합 (hp3~10·mp3~10은 v4.3.0에서 사용 경로가 누락돼 있었다)
-        this.player.useConsumablePotion(key);
-        this.emitRpgState();
+        // v1.3.0 (#6) — 수량 지정: 회복이 실제로 일어난 회차만 소모·연출(useConsumablePotion이 판정)
+        let used = 0;
+        for (let i = 0; i < n; i++) {
+          if (this.player.useConsumablePotion(key)) used++;
+        }
+        if (used > 0) this.emitRpgState();
+        else EventBus.emit("banner:show", { text: "지금은 회복할 수 없습니다" });
         return;
       }
       if (key === "gm_elixir") {
@@ -6872,7 +7057,25 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("chat:send", onChatSend);
     EventBus.on("rpg:escapeHome", onEscapeHome); // v4.1.0 — 설정창 긴급 귀환
     EventBus.on("rpg:exitMenu", onExitMenu); // v1.2.1 (#6) — 메뉴 화면(타이틀/캐릭터 선택)으로 나가기
+    /* v1.3.0 (#7) — 주간 랭커 보상 지급 (서버 /api/rank/claim이 검증한 수치만 수신) */
+    const onRankReward = (v: { emeralds?: number }) => {
+      if (!this.player) return;
+      const n = Math.max(0, Math.min(99, Math.floor(v?.emeralds ?? 0)));
+      if (n <= 0) return;
+      this.player.emerald += n;
+      this.save();
+      this.emitRpgState();
+      audio.sfx.questDone();
+      EventBus.emit("reward:show", {
+        title: "주간 랭커 보상!",
+        lines: [
+          { text: `에메랄드 +${n}`, color: "#7de8ff" },
+          { text: "다음 주에도 TOP 10을 노려보자!", color: "#a8ecff" },
+        ] satisfies RewardPopupState["lines"],
+      });
+    };
     EventBus.on("rpg:adReward", onAdReward); // v4.1.0 — 광고 보상
+    EventBus.on("rpg:rankReward", onRankReward); // v1.3.0 — 주간 랭커 보상
     EventBus.on("rpg:buyGems", onBuyGems); // v4.1.0 — 구글 플레이 충전
     EventBus.on("rpg:buyStorePack", onBuyStorePack); // v1.0.2 — 현금 패키지
     EventBus.on("rpg:passBuy", onPassBuy); // v4.5.0 — 프리미엄 패스 해금
@@ -7369,6 +7572,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:escapeHome", onEscapeHome); // v4.1.0
       EventBus.off("rpg:exitMenu", onExitMenu); // v1.2.1 (#6)
       EventBus.off("rpg:adReward", onAdReward); // v4.1.0
+      EventBus.off("rpg:rankReward", onRankReward); // v1.3.0
       EventBus.off("rpg:buyGems", onBuyGems); // v4.1.0
       EventBus.off("rpg:passBuy", onPassBuy); // v4.5.0
       EventBus.off("rpg:passClaim", onPassClaim); // v4.5.0
@@ -7444,6 +7648,30 @@ export class WorldScene extends Phaser.Scene {
       const col = Phaser.Display.Color.HSLToColor(hue, auraCfg.s, auraCfg.l).color;
       this.cosmeticAura?.setTint(col);
       this.cosmeticOverlay?.setTint(col);
+      /* v1.3.0 (#5) — 신규 오라 패키지(서클/링/위스프)도 색상 순환 연동 */
+      this.auraCircle?.setTint(col);
+      this.auraRing?.setTint(col);
+      for (const w of this.auraWisps) w.setTint(col);
+    }
+    /* v1.3.0 (#5) — 오라 패키지 추적: 발판 서클/링은 발밑 고정 + 정·역회전,
+     *  위스프 3기는 타원 궤도 공전 (각도 위상 120° 간격) */
+    if (this.player && (this.auraCircle || this.auraRing || this.auraWisps.length)) {
+      const feetY = this.player.y + 20;
+      this.auraWispAng += dt * 0.0021; // 약 3초/바퀴
+      if (this.auraCircle) {
+        this.auraCircle.setPosition(this.player.x, feetY);
+        this.auraCircle.rotation += dt * 0.00045; // 정회전 (느리게)
+      }
+      if (this.auraRing) {
+        this.auraRing.setPosition(this.player.x, feetY);
+        this.auraRing.rotation -= dt * 0.0007; // 역회전
+      }
+      for (let i = 0; i < this.auraWisps.length; i++) {
+        const ang = this.auraWispAng + (i * Math.PI * 2) / this.auraWisps.length;
+        const w = this.auraWisps[i];
+        w.setPosition(this.player.x + Math.cos(ang) * 27, this.player.y - 12 + Math.sin(ang) * 13);
+        w.setScale(0.14 + 0.07 * (0.5 + 0.5 * Math.sin(ang * 2))); // 공전하며 숨쉬듯 크기 변화
+      }
     }
 
     /* v4.1.5 — 동적 조명: 플레이어 횃불 광원 추적 + 플리커 */
@@ -7698,20 +7926,36 @@ export class WorldScene extends Phaser.Scene {
       const bob = Math.sin(this.time.now / 320) * 1.6;
       for (const a of this.accOverlays) {
         const im = a.img;
-        let wing = false;
         if (a.key === "acc_crown") {
           im.setPosition(px + (this.player.flipX ? 1 : -1), ht - 2 * sy);
         } else if (a.key === "acc_ribbon") {
           im.setPosition(px + (this.player.flipX ? -1 : 1) * hw, ht + 4 * sy);
         } else if (a.key === "acc_halo") {
           im.setPosition(px, ht - 9 * sy + bob);
-        } else if (a.key === "acc_wings_devil" || a.key === "acc_wings_fairy") {
-          im.setPosition(px, py + (an[0] + 11 + (back ? 2 : 0) - 32) * sy);
-          im.setFlipX(this.player.flipX);
-          wing = true;
+        } else if (a.key === "acc_wings_devil" || a.key === "acc_wings_fairy" || a.key.startsWith("acc_cape")) {
+          /* v1.3.0 (#3 방향 인지 렌더) — 유저 지시 "망토류(ex. 요정의 날개) 같은게 앞뒤로 바라볼때
+           *  방향에 맞게 안움직임(날개가 항상 등 뒤에 있어야함)":
+           *  등 아이템(날개/망토)은 "등에 붙어 있다"가 원칙 —
+           *  · 뒷모습(위 걷기/위 공격): 등이 카메라를 향함 → 몸 "앞"에 그려 날개·망토가 보인다
+           *  · 정면/측면: 등이 카메라 뒤 → 몸 "뒤"에 숨기고 날개 끝만 살짝 보인다
+           *  좌우반전은 측면에서만(뒷모습은 정면 시트라 반전 무의미 — 뒤집힘 오차 제거) */
+          if (a.key.startsWith("acc_cape")) {
+            // 망토: 어깨에서 아래로 흐르는 천 — 뒷모습에서 몸통 대부분을 덮는다
+            im.setPosition(px, py + (an[0] + 14 - 32) * sy);
+            im.setScale(sx * (back ? 1.0 : 1.12), sy);
+            im.setAngle(back ? Math.sin(this.time.now / 260) * 2.2 : 0); // 착용 중 흔들림
+          } else {
+            // 날개: 어깨 높이 ×1.35 확대
+            im.setPosition(px, py + (an[0] + 11 - 32) * sy);
+            im.setScale(sx * 1.35, sy * 1.35);
+          }
+          im.setFlipX(back ? false : this.player.flipX);
+          im.setDepth(back ? this.player.depth + 0.25 : this.player.depth - 0.2);
+          continue;
         }
-        im.setScale(wing ? sx * 1.35 : sx, wing ? sy * 1.35 : sy);
-        im.setDepth(a.key.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3);
+        /* 왕관/리본/후광 — 몸 앞 레이어 + 플레이어 스케일 동기화 */
+        im.setScale(sx, sy);
+        im.setDepth(this.player.depth + 0.3);
       }
     }
     /* v1.2.0 — 포니테일 동기화 루프 제거(아이템 폐지) */
@@ -10094,13 +10338,20 @@ export class WorldScene extends Phaser.Scene {
     this.cosmeticAura = null;
     this.cosmeticEmitter?.destroy();
     this.cosmeticEmitter = null;
+    /* v1.3.0 (#5) — 신규 오라 패키지 정리 */
+    this.auraRing?.destroy();
+    this.auraRing = null;
+    this.auraCircle?.destroy();
+    this.auraCircle = null;
+    for (const w of this.auraWisps) w.destroy();
+    this.auraWisps = [];
     /* v1.0.2 (#치장외형) — 치장 해제 시 본체 오버레이도 제거 */
     this.cosmeticOverlay?.destroy();
     this.cosmeticOverlay = null;
     /* v1.1.0 (#1) — 코스튬 = 스프라이트 "완전 교체": 본체 텍스처 자체가 cost_* 시트로 전환된다
      *  (겹치기 오버레이 폐기 — SPUM NPC처럼 아예 다른 캐릭터로 변신). 성별/피부도 여기서 반영 */
     this.player?.applyBodyLook();
-    /* 어태치 장식(왕관/리본/후광/날개) + 헤어(포니테일) 재생성 */
+    /* 어태치 장식(왕관/리본/후광/날개/망토) + 헤어 재생성 */
     for (const a of this.accOverlays) {
       this.tweens.killTweensOf(a.img);
       a.img.destroy();
@@ -10108,9 +10359,7 @@ export class WorldScene extends Phaser.Scene {
     this.accOverlays = [];
     const accKey = this.player?.accessory ?? null;
     if (this.player && accKey) {
-      /* v1.2.1 (#1) — 생성 위치만 여기서 잡고 매 프레임 동기화는 update 루프가 담당.
-       *  후광 보브/날개 흔들림 트윈 폐기 — update가 setPosition/setAngle을 덮어써
-       *  트윈이 무의미했고(기존 버그) 오히려 위치 튐의 원인이었다. */
+      /* v1.2.1 (#1) — 생성 위치만 여기서 잡고 매 프레임 동기화는 update 루프가 담당. */
       const img = this.add.image(this.player.x, this.player.y, accKey).setDepth(this.player.depth + 0.3);
       this.accOverlays.push({ key: accKey, img });
     }
@@ -10118,8 +10367,7 @@ export class WorldScene extends Phaser.Scene {
     const key = this.player?.cosmetic;
     if (!key) return;
     /* v1.0.2 (#치장외형) — 본체 오버레이: 같은 텍스처를 치장색 ADD 블렌드로 얹어
-     *  캐릭터 실루엣 자체가 치장색으로 물든다 (기존엔 배경 후광만 있어 "착용해도 외형 변화가 없다"는 지적).
-     *  능력치(COSMETIC_BONUS)와 완전 분리된 순수 외형 레이어 — wings 등 특수 이펙트와 병행 적용 */
+     *  캐릭터 실루엣 자체가 치장색으로 물든다. 능력치와 완전 분리된 순수 외형 레이어 */
     if (this.player) {
       this.cosmeticOverlay = this.add
         .image(this.player.x, this.player.y, this.player.texture.key)
@@ -10128,8 +10376,57 @@ export class WorldScene extends Phaser.Scene {
         .setAlpha(0.34)
         .setDepth(this.player.depth + 0.2);
     }
+    /* v1.3.0 (#5 오라 강화) — 유저 지시 "캐시상점에서 산 오로라류 아이템 작동안함":
+     *  실측 결과 구매·장착·복원은 전부 정상이지만 시각 연출이 너무 미약해 "안 되는 것"과 같았다.
+     *  before/after 스크린샷 비교에서도 인지 불가 수준 → 아래 4겹 패키지로 재탄생:
+     *  ① 발판 룬 서클(Hovl MagicCircle — 정회전) ② 발판 링(GameVFX ring — 역회전)
+     *  ③ 궤도 위스프 3기(GameVFX glow — 플레이어 주위 공전) ④ 강화된 후광 글로우
+     *  전부 치장 정의 tint + 오로라/무지개/은하수는 실시간 색상 순환(AURA_ANIM) 연동 */
+    const tint = COSMETIC_DEFS[key].tint;
+    if (this.player && this.textures.exists("aura_circle")) {
+      const feetY = this.player.y + 20; // 발밑 — ACC 앵커 feet(≈y+22) 기준 살짝 앞
+      this.auraCircle = this.add
+        .image(this.player.x, feetY, "aura_circle")
+        .setDepth(9.7)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(tint)
+        .setScale(0.34)
+        .setAlpha(0.5);
+      this.tweens.add({
+        targets: this.auraCircle,
+        alpha: 0.72,
+        scale: 0.38,
+        duration: 1100,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+      if (this.textures.exists("aura_ring")) {
+        this.auraRing = this.add
+          .image(this.player.x, feetY, "aura_ring")
+          .setDepth(9.75)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(tint)
+          .setScale(0.4)
+          .setAlpha(0.55);
+      }
+      /* 궤도 위스프 3기 — 플레이어 주위 타원 궤도 (update에서 공전) */
+      if (this.textures.exists("aura_wisp")) {
+        for (let i = 0; i < 3; i++) {
+          this.auraWisps.push(
+            this.add
+              .image(this.player.x, this.player.y - 10, "aura_wisp")
+              .setDepth(11)
+              .setBlendMode(Phaser.BlendModes.ADD)
+              .setTint(tint)
+              .setScale(0.18)
+              .setAlpha(0.85)
+          );
+        }
+      }
+    }
     if (key === "cos_wings") {
-      // 요정 날개 — 플레이어 주위 반짝임 입자 트레일
+      // 요정 날개 — 플레이어 주위 반짝임 입자 트레일 (v1.3.0: 위 패키지와 병행)
       this.cosmeticEmitter = this.add.particles(0, 0, "sparkle0", {
         lifespan: 620,
         speedY: { min: -26, max: -10 },
@@ -10141,18 +10438,18 @@ export class WorldScene extends Phaser.Scene {
       }).setDepth(11);
       this.cosmeticEmitter.startFollow(this.player);
     } else {
-      // 오라 계열 — 플레이어 뒤 은은한 후광 (tint는 치장 정의)
+      // ④ 오라 계열 — 플레이어 뒤 은은한 후광 (기존 대비 alpha 0.26→0.4·scale 1.7→1.9로 상향)
       this.cosmeticAura = this.add
         .image(this.player.x, this.player.y - 8, "glow")
         .setDepth(9)
         .setBlendMode(Phaser.BlendModes.ADD)
-        .setTint(COSMETIC_DEFS[key].tint)
-        .setScale(1.7)
-        .setAlpha(0.26);
+        .setTint(tint)
+        .setScale(1.9)
+        .setAlpha(0.4);
       this.tweens.add({
         targets: this.cosmeticAura,
-        alpha: 0.44,
-        scale: 2.0,
+        alpha: 0.58,
+        scale: 2.15,
         duration: 900,
         yoyo: true,
         repeat: -1,
@@ -11402,6 +11699,8 @@ export class WorldScene extends Phaser.Scene {
   }
   sfxPotion() {
     audio.sfx.potion();
+    /* v1.3.0 (#8) — Hovl Heart: 회복 순간마다 초록 하트가 떠오른다 (자동물약 연타 소음 없음 — 시각만) */
+    if (this.player && this.fxLevel === 1) spawnHealHeart(this, this.player.x, this.player.y, 0x7dffa8);
   }
   sfxEquip() {
     audio.sfx.equip();
@@ -11414,6 +11713,8 @@ export class WorldScene extends Phaser.Scene {
   /** v1.0.12 — 크리티컬 스플랫 (Toon Shaders Pro 팩 — 유저 Drive 업로드 "고급 에셋"):
    *  충격파 링 위에 터지는 방사형 스플랫 데칼 — 타격감 3중 구성(링+플래시+스플랫)의 마무리 */
   spawnCritSplat(x: number, y: number, hex = 0xffd76a) {
+    /* v1.3.0 (#8) — Vefects Impact_01 별burst + 참격 플래시 2겹 추가 (타격감 최종층) */
+    spawnCritStar(this, x, y, hex);
     if (!this.textures.exists("wx_splat")) return;
     const im = this.add.image(x, y - 6, "wx_splat")
       .setDepth(22)

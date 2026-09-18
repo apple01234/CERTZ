@@ -3778,6 +3778,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v3.0.15 — 물약 쿨다운 잔여 ms (씬에서 자동물약 판정용) */
   get potionCd(): number { return this.potCd; }
 
+  /** v1.3.0 (#6 수량 사용) — 기본 물약 일괄 사용: 쿨다운(0.8s)을 우회해 n회 연속 회복.
+   *  실제 회복에 성공한 횟수를 반환(0 = 전부 실패). 배치 종료 후 쿨다운은 원래 값 유지 —
+   *  단발 사용과 동일한 연사 제한을 유지하기 위함. */
+  usePotionBatch(kind: "hp" | "mp", n: number): number {
+    let used = 0;
+    const savedCd = this.potCd;
+    this.potCd = 0;
+    for (let i = 0; i < n; i++) {
+      if (this.usePotion(kind)) used++;
+      else break; // 소모/회복 불가(보유 0·풀피 등) — 잔여 회차 무의미, 즉시 중단
+    }
+    this.potCd = savedCd;
+    return used;
+  }
+
   /** 물약 사용 (퀵슬롯) — 0.8초 쿨다운.
    *  v3.0.15 (#7) — 퀵슬롯에 장착된 물약(기본/상급)을 사용. 슬롯 지정이 없으면 기본 물약. */
   usePotion(kind: "hp" | "mp"): boolean {
