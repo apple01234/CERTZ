@@ -7926,6 +7926,7 @@ export class WorldScene extends Phaser.Scene {
       const bob = Math.sin(this.time.now / 320) * 1.6;
       for (const a of this.accOverlays) {
         const im = a.img;
+        let wing = false;
         if (a.key === "acc_crown") {
           im.setPosition(px + (this.player.flipX ? 1 : -1), ht - 2 * sy);
         } else if (a.key === "acc_ribbon") {
