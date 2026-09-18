@@ -1435,6 +1435,9 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
     if (k.startsWith("scroll_")) return 200;
     if (k === "eert_cube" || k === "tier_cube") return 300;
     if (k === "exp_book") return 310;
+    if (k === "exp_book_s") return 315; // v1.2.0 (#15) 비약 — 정렬용 추정값
+    if (k === "exp_book_m") return 320;
+    if (k === "exp_book_l") return 330;
     return 400;
   };
   const etcSlots: InvSlot[] = [
@@ -1958,7 +1961,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 }
                 /* consumable */
                 const starScroll = s.k === "scroll_star";
-                const usable = isBasicPot || it.healFull || it.heal || it.restore || s.k === "scroll_return" || s.k === "scroll_warp" || starScroll || s.k === "exp_book";
+                const usable = isBasicPot || it.healFull || it.heal || it.restore || s.k === "scroll_return" || s.k === "scroll_warp" || starScroll || s.k === "exp_book" || s.k === "exp_book_s" || s.k === "exp_book_m" || s.k === "exp_book_l"; // v1.2.0 (#15) 비약 3종
                 const useLabel = starScroll ? "충전" : it.healFull || it.heal || it.restore ? "마시기" : "사용";
                 const chestLike = s.k.startsWith("chest_") || s.k.startsWith("pack_");
                 const eertCubeIt = s.k === "eert_cube";

@@ -129,7 +129,7 @@ export function createCharacter(
   name: string,
   cls: string | null,
   lookTint?: number | null,
-  look?: { gender: "m" | "f"; skinIdx: number }, // v1.1.0 (#21/#22) — 성별+피부
+  look?: { gender: "m" | "f"; skinIdx: number; gmSkin?: boolean }, // v1.1.0 (#21/#22) — 성별+피부 · v1.2.0 (#7) GM 외형
 ): CreateResult {
   const store = loadSlots();
   const used = Object.keys(store.chars).length;
@@ -156,6 +156,7 @@ export function createCharacter(
     lookTint: tint,
     gender: look?.gender ?? "m", // v1.1.0 (#22)
     skinIdx: look?.skinIdx ?? 2, // v1.1.0 (#21)
+    gmSkin: look?.gmSkin ?? false, // v1.2.0 (#7) — GM 외형 (렌더는 서버 롤 admin일 때만)
     introSeen: false, // v1.1.0 (#18) — 프롤로그 미시청
   } as SaveData;
   try {

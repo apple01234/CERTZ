@@ -18,10 +18,28 @@ module.exports = function attachFcMultiplayer(httpServer) {
   /* v4.9.0 — 계정 API 가로채기: 기존 request 리스너를 보존한 뒤 위에 얹는다 */
   try {
     const { handleAccountRequest, handleMarketRequest } = require("../../accounts");
+    /* v1.2.0 (#거래소접속) — CORS 프리플라이트 OPTIONS 즉시 204 응답.
+     *  이 래퍼가 OPTIONS를 handleMarket으로 그대로 넘겨 401로 답했고, 브라우저/APK 웹뷰는
+     *  preflight 응답이 2xx가 아니면 fetch 자체를 실패 처리한다 → Authorization 헤더를 붙이는
+     *  모든 요청(로그인 유저의 거래소·클라우드세이브·/me)이 "서버에 연결할 수 없어요"가 됐다.
+     *  (게스트는 헤더가 없어 단순 요청이라 멀쩡했다 — "로그인하면 거래소가 안 되는" 역설의 정체) */
+    const CORS_HEADERS = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Max-Age": "86400",
+      "Cache-Control": "no-store",
+    };
     const orig = httpServer.listeners("request").slice();
     httpServer.removeAllListeners("request");
     httpServer.addListener("request", (req, res) => {
       const u = req.url || "";
+      const m = (req.method || "GET").toUpperCase();
+      if (m === "OPTIONS" && (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") || u.startsWith("/api/market"))) {
+        res.writeHead(204, CORS_HEADERS);
+        res.end();
+        return;
+      }
       if (u.startsWith("/api/auth/")) {
         Promise.resolve(handleAccountRequest(req, res)).then((handled) => {
           if (!handled) orig.forEach((l) => l.call(httpServer, req, res));
@@ -33,7 +51,7 @@ module.exports = function attachFcMultiplayer(httpServer) {
       }
       if (u.startsWith("/api/market")) {
         const url = u.split("?")[0];
-        const method = (req.method || "GET").toUpperCase();
+        const method = m;
         Promise.resolve(handleMarketRequest(req, res, url, method)).catch((e) => {
           console.error("[SERTZ-FC] 마켓 API 실패", e);
         });

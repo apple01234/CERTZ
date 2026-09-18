@@ -116,9 +116,8 @@ export type ItemKey =
   /* v3.0.6 — BM 상점 (에메랄드 전용 — 상점과 분리) */
   | "pet_atlas"
   | "cos_aurora"
-  /* v1.0.7 — SPUM식 코스튬 4종 + 포니테일 헤어 (입고/벗기 슬롯형 치장 — gen_outfits.py 생성 프레임) */
+  /* v1.0.7 — SPUM식 코스튬 4종 (입고/벗기 슬롯형 치장 — gen_outfits.py 생성 프레임) · v1.2.0 — 포니테일 헤어는 유저 지시로 완전 제거 */
   | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy"
-  | "hair_ponytail"
   /* v1.1.0 (#19/#1) — 프리미엄 완전 교체 코스튬 6종 + 어태치 장식 5종 */
   | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
   | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy"
@@ -128,6 +127,7 @@ export type ItemKey =
   | "eert_cube"
   /* v4.0.0 — 바르가 업데이트 */
   | "exp_book"
+  | "exp_book_s" | "exp_book_m" | "exp_book_l" // v1.2.0 (#15) — 비약 3종
   | "tier_cube"
   /* v3.0.15 (#11) — 챕터 테마 장비 세트 9종 (무기/방어구/반지 × 챕터) */
   | "sfw_forest" | "sfa_forest" | "sfr_forest"
@@ -351,6 +351,12 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 12000, bmPrice: 8, bmOnly: true, sellPrice: 5000, tier: "epic" },
   /* v4.0.0 — 바르가 업데이트 아이템 */
   exp_book: { key: "exp_book", kind: "consumable", name: "경험치 책", icon: "i_exp_book", price: 5000, bmPrice: 3, bmOnly: true, sellPrice: 800, tier: "rare" },
+  /* v1.2.0 (#15 경험치책 비약 3종 — 메이플 비약 시스템 오마주):
+   *  고급=현재 레벨 필요 EXP의 60% · 태풍=150%(1.5레벨어치) · 극한=즉시 +1레벨(200 미만).
+   *  극한은 환생 요구 레벨(120~200)을 함부로 넘지 않게 200 미만에서만 사용 가능. */
+  exp_book_s: { key: "exp_book_s", kind: "consumable", name: "고급 성장의 비약", icon: "i_exp_book_s", price: 26000, bmPrice: 5, bmOnly: false, sellPrice: 4000, tier: "epic" },
+  exp_book_m: { key: "exp_book_m", kind: "consumable", name: "태풍 성장의 비약", icon: "i_exp_book_m", price: 0, bmPrice: 12, bmOnly: true, sellPrice: 9000, tier: "epic" },
+  exp_book_l: { key: "exp_book_l", kind: "consumable", name: "극한 성장의 비약", icon: "i_exp_book_l", price: 0, bmPrice: 24, bmOnly: true, sellPrice: 18000, tier: "legend" },
   /* v1.0.8 무한 콘텐츠 — 제작 재료 3종 (연금 제작대 전용 — 상점 판매 없음, 적 처치 드롭) */
   mat_mana: { key: "mat_mana", kind: "material", name: "마나 결정", icon: "item_mat_mana", price: 36, tier: "common", sellPrice: 18 },
   mat_heart: { key: "mat_heart", kind: "material", name: "몬스터 심장", icon: "item_mat_heart", price: 60, tier: "rare", sellPrice: 30 },
@@ -404,7 +410,6 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   outfit_shadow: { key: "outfit_shadow", kind: "cosmetic", name: "암살자의 그림자의상", icon: "outfit_shadow_idle0", price: 30000, bmPrice: 28, bmOnly: true, tier: "epic" },
   outfit_spring: { key: "outfit_spring", kind: "cosmetic", name: "봄맞이 새싹 의상", icon: "outfit_spring_idle0", price: 30000, bmPrice: 24, bmOnly: true, tier: "epic" },
   outfit_navy: { key: "outfit_navy", kind: "cosmetic", name: "해군 사관 제복", icon: "outfit_navy_idle0", price: 30000, bmPrice: 24, bmOnly: true, tier: "epic" },
-  hair_ponytail: { key: "hair_ponytail", kind: "cosmetic", name: "포니테일 헤어", icon: "hair_ponytail", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
   cos_shadow: { key: "cos_shadow", kind: "cosmetic", name: "그림자 오라", icon: "i_cos_shadow", price: 38000, bmPrice: 22, bmOnly: true, tier: "epic" },
   cos_holy: { key: "cos_holy", kind: "cosmetic", name: "성스러운 오라", icon: "i_cos_holy", price: 38000, bmPrice: 22, bmOnly: true, tier: "epic" },
   cos_storm: { key: "cos_storm", kind: "cosmetic", name: "폭풍 오라", icon: "i_cos_storm", price: 45000, bmPrice: 26, bmOnly: true, tier: "epic" },
@@ -491,7 +496,8 @@ export type PetKey = "pet_slime" | "pet_pixie" | "pet_atlas"
 export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | "cos_aurora" | "cos_isekai" | "cos_pixel"
   | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow" // v4.3.0 — +6
   | "cos_rose" | "cos_toxic" | "cos_magma" | "cos_lunar" | "cos_deep" | "cos_galaxy" // v1.0.16 — +6 (유저 지시 "치장템을 차라리 늘려")
-  | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy" | "hair_ponytail" // v1.0.7 — 코스튬/헤어
+  /* v1.0.7 — SPUM식 코스튬 4종 (v1.2.0 — 포니테일 헤어는 유저 지시로 완전 제거) */
+  | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy"
   /* v1.1.0 (#19 프리미엄) — SPUM식 완전 교체 코스튬 6종 (머리+피부+의상 전부 다른 캐릭터로 변신) */
   | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
   /* v1.1.0 (#1 장식) — 캐릭터에 고정되는 어태치 장식 (캐릭터가 움직이면 실시간 동기화) */
@@ -597,7 +603,6 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   outfit_abyss: { key: "outfit_abyss", name: "심해의 가곡", icon: "cost_abyss_idle0", desc: "청록 머리칼의 심해 술사 — 파도의 노래 (남녀형)", price: 560, tint: 0x5ad8d0, slot: "outfit" },
   outfit_nightmare: { key: "outfit_nightmare", name: "나이트메어 기사", icon: "cost_nightmare_idle0", desc: "백발의 암흑기사 — 악몽을 두르는 검은 갑주 (남녀형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
   outfit_gilded: { key: "outfit_gilded", name: "황금 백작", icon: "cost_gilded_idle0", desc: "황금빛 귀족 — 부와 권력을 몸에 두른 자 (남녀형)", price: 560, tint: 0xffd06a, slot: "outfit" },
-  hair_ponytail: { key: "hair_ponytail", name: "포니테일 헤어", icon: "hair_ponytail", desc: "뒤통수에 묶은 갈색 포니테일 — 방향별로 자연스럽게 살랑", price: 0, tint: 0x8a5c34, slot: "hair" },
   /* v1.1.0 (#1 장식) — 어태치 악세서리: 캐릭터에 고정 + 실시간 동기화 */
   acc_crown: { key: "acc_crown", name: "왕가의 왕관", icon: "acc_crown", desc: "머리에 얹히는 황금 왕관 — 루비가 박혀 있다", price: 320, tint: 0xffd76a, slot: "acc" },
   acc_ribbon: { key: "acc_ribbon", name: "진홍 리본", icon: "acc_ribbon", desc: "머리 옆에 달리는 새빨간 리본 — 사랑스러운 한 점", price: 240, tint: 0xff6a8a, slot: "acc" },
@@ -617,7 +622,21 @@ export const BODY_PREFIXES = [
   "cost_silver", "cost_crimson", "cost_seraph", "cost_abyss", "cost_nightmare", "cost_gilded",
   "costm_royal", "costm_shadow", "costm_spring", "costm_navy",
   "costm_silver", "costm_crimson", "costm_seraph", "costm_abyss", "costm_nightmare", "costm_gilded",
+  /* v1.2.0 (#13) — 2차 8직업 전용 외형 (여/남 각 8종): 전직하면 외형 자체가 바뀐다.
+   *  버서커/가디언/스나이퍼/윈드러너/아크메이지/세이지/어세신/스와시버클러 */
+  "jobf_berserker", "jobf_guardian", "jobf_sniper", "jobf_windrunner",
+  "jobf_archmage", "jobf_sage", "jobf_assassin", "jobf_swashbuckler",
+  "jobm_berserker", "jobm_guardian", "jobm_sniper", "jobm_windrunner",
+  "jobm_archmage", "jobm_sage", "jobm_assassin", "jobm_swashbuckler",
+  /* v1.2.0 (#7) — GM 전용 외형 (파란 몸 + 무지개 머리 — GM 계정 생성/플레이) */
+  "gm",
 ] as const;
+
+/** v1.2.0 (#13) — 2차 직업 키 → 외형 시트 접미사. 3·4차는 부모 계열의 2차 외형을 승계 */
+export const JOB_SKIN_KEYS = [
+  "berserker", "guardian", "sniper", "windrunner", "archmage", "sage", "assassin", "swashbuckler",
+] as const;
+export type JobSkinKey = (typeof JOB_SKIN_KEYS)[number];
 export const GENDER_LABELS = { m: "남캐", f: "여캐" } as const;
 export const SKIN_OPTIONS = [
   { idx: 0, name: "백자" },
@@ -662,6 +681,8 @@ export const SHOP_STOCK: ItemKey[] = [
   "pendant_blood", // v4.3.0
   "scroll_return",
   "scroll_warp",
+  /* v1.2.0 (#15) — 고급 성장의 비약은 골드 상점에서도 판매 (후반 레벨링 보조) */
+  "exp_book_s",
   "buff_atk",
   "buff_def",
   "buff_spd",
@@ -768,7 +789,7 @@ export const BM_STOCK: ItemKey[] = [
   "chest_iron", "chest_silver", "chest_gold", "chest_legend",
   "pack_daily", "pack_weekly", "pack_starter", "pack_growth", "pack_premium", "pack_ultimate",
   "buff_king",
-  "potion_elixir", "exp_book", "eert_cube", "tier_cube",
+  "potion_elixir", "exp_book", "exp_book_s", "exp_book_m", "exp_book_l", "eert_cube", "tier_cube", // v1.2.0 (#15) 비약 3종 추가
   "ring_fortune", "ring_titan", "pendant_moon", "pendant_sage",
   "ring_dragon", "ring_phantom", "pendant_star", "ring_ancient", "ring_bless",
   "pet_wisp", "pet_ember", "pet_frost", "pet_golem", "pet_unicorn", "pet_reaper", "pet_atlas",
@@ -776,7 +797,6 @@ export const BM_STOCK: ItemKey[] = [
   /* v1.0.16 — 신규 치장 6종 (캐시상점 합류) */
   "cos_rose", "cos_toxic", "cos_magma", "cos_lunar", "cos_deep", "cos_galaxy",
   /* v1.0.7 — 코스튬/헤어 (캐시상점 신규 착장 치장) */
-  "outfit_royal", "outfit_shadow", "outfit_spring", "outfit_navy", "hair_ponytail",
   /* v1.1.0 (#19/#1) — 프리미엄 코스튬 6종 + 어태치 장식 5종 */
   "outfit_silver", "outfit_crimson", "outfit_seraph", "outfit_abyss", "outfit_nightmare", "outfit_gilded",
   "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy",
@@ -914,7 +934,7 @@ export const PACK_CONTENTS: Record<string, BmGrant[]> = {
 export const DAILY_DEAL_POOL: ItemKey[] = [
   "chest_silver", "chest_gold", "chest_legend", "buff_king",
   "ring_fortune", "ring_titan", "ring_dragon", "pendant_moon", "pendant_sage",
-  "exp_book", "tier_cube", "eert_cube",
+  "exp_book", "exp_book_s", "exp_book_m", "tier_cube", "eert_cube",
   "pet_wisp", "cos_frost", "cos_flame", "cos_rainbow",
 ];
 export const DAILY_DEAL_OFF = 0.3;
@@ -1214,6 +1234,57 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "{name} 형아도 이제 진짜 모험가다! 부러워요.",
       "저는 마을 우물을 지키고 있을게요. 우물 물은 아프면 꼭 필요하답니다!",
       "할머니가 자주 그랬어요. '세계수는 기억한다'라고… 무슨 뜻일까요?",
+    ],
+  },
+  /* ================= v1.2.0 (#4) — 환생 n차수별 NPC 대사 변화 =================
+   *  환생할 때마다 NPC들이 기억하고 반응한다. 1차(rb1)/2차(rb2)/3차 이상(rb3).
+   *  WorldScene이 대화 키를 `${dlg}_rb${min(rebirths,3)}`로 치환 — 변형이 없으면 원본 재생. */
+  villager1_rb1: {
+    speaker: "마을 주민",
+    lines: [
+      "…어머나, {name}? 분명히 어제 늑대에게 당했다고 들었는데.",
+      "눈빛이 달라졌네. 세계수가 너를 다시 보냈나?",
+      "…환생자가 실제로 있다니. 할머니 말이 맞았구나.",
+    ],
+  },
+  villager1_rb2: {
+    speaker: "마을 주민",
+    lines: [
+      "두 번이나 세계를 건너왔다고? 이제 놀랍지도 않아.",
+      "솔직히 말하면… 조금은 무서워. 그만큼 네게 얹힌 바람도 커졌다는 뜻이지만.",
+      "그래도 이 마을 사람들은 응원한다. 아홉 왕국의 운명, 네가 메고 있잖아.",
+    ],
+  },
+  villager1_rb3: {
+    speaker: "마을 주민",
+    lines: [
+      "…전설 속 '빙환의 모험가'라는 게 바로 너구나.",
+      "세 번의 환생. 아이들은 이미 네 이야기로 놀아. 나도 손주한테 자랑할 거야.",
+      "부디 이번 생은 끝까지 가 줘. 마을 전체가 네 뒤를 봐주고 있어.",
+    ],
+  },
+  villager2_rb1: {
+    speaker: "마을 아이",
+    lines: [
+      "우와, 진짜예요?! {name} 형아가 죽었다가 돌아왔다고?",
+      "그럼… 환생자는 어떤 맛의 우물물을 마셔요? …아, 뭐냐 이게.",
+      "저도 크면 형아처럼 몇 번이고 다시 태어날래요!",
+    ],
+  },
+  villager2_rb2: {
+    speaker: "마을 아이",
+    lines: [
+      "형아… 이번엔 진짜 전설이 됐네요. 다들 다르게 말해요.",
+      "전에는 '미친 모험가'였는데, 이젠 '두 번 태어난 검사'래요!",
+      "…근데 형아, 두 번 죽어본 형아한테 죽음은 아무것도 아니에요?",
+    ],
+  },
+  villager2_rb3: {
+    speaker: "마을 아이",
+    lines: [
+      "…형아, 이제 너무 멀리 가 버린 거 아니에요?",
+      "세 번 환생한 사람은 더 이상 사람이 아니라 '이야기'라고 할머니 책에 있어요.",
+      "그치만 저는 알아요. 눈 반짝이는 건 변함없다는 거… 형아, 또 와 줘서 고마워요.",
     ],
   },
   /* ================= 제2장 숲의 신전 ================= */

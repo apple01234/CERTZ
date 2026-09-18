@@ -55,12 +55,8 @@ import {
  *  묶음(타이) 픽셀 좌표를 원점으로 잡아 setPosition(플레이어+오프셋) 시 묶음이
  *  머리 위(정면)·뒤통수(측면)·정수리(뒷면)에 정확히 고정된다. 플립 시 원점 기준
  *  미러링이라 dx 부호는 코드에서 반전한다. 텍스처: scripts/gen_v111_gender_assets.py */
-type PonyDir = "f" | "s" | "b";
-const PONY_LOOK: Record<PonyDir, { tex: string; ox: number; oy: number; dx: number; dy: number }> = {
-  f: { tex: "hair_ponytail_f", ox: 50 / 96, oy: 18 / 64, dx: 2, dy: -14 },
-  s: { tex: "hair_ponytail_s", ox: 38 / 96, oy: 15 / 64, dx: -10, dy: -17 },
-  b: { tex: "hair_ponytail_b", ox: 48 / 96, oy: 16 / 64, dx: 0, dy: -16 },
-};
+/* v1.2.0 — 포니테일 헤어는 유저 지시(#1)로 완전 제거 — 위치 고정이 계속 어긋나 대신 삭제.
+ *   보유분은 18 에메랄드로 자동 환수(config.ts 마이그레이션), 세이브 hair 슬롯은 null 강제. */
 
 /* v1.1.1 (#5 무지개 오라) — 이름과 외양이 일치하는 순환 틴트 테이블.
  *  sp: 위상 속도(초당) · s/l: HSL 채도/명도 · min/max: hue 범위 (0~1, rainbow=전체) */
@@ -234,6 +230,8 @@ export class WorldScene extends Phaser.Scene {
   private eertBusyUntil = 0;
   /** v1.0.2 (#GM서버검증) — 서버가 알려준 관리자 롤 (authMe 결과 캐시) */
   private adminRole: string | null = null;
+  /* v1.2.0 (#1) — 포니테일 환수 보류 플래그 (emerald 복원 순서 문제 회발) */
+  private pendingPonyRefund = false;
   private gmCheckBusy = false;
   /** GM NPC 비주얼 — 관리자 확인 시에만 표시 */
   private gmNpcVisuals: (Phaser.GameObjects.Image | Phaser.GameObjects.Text)[] = [];
@@ -544,7 +542,6 @@ export class WorldScene extends Phaser.Scene {
   /* v1.0.7 — 코스튬(착장)·헤어(포니테일) 오버레이 — 슬롯형 치장 (오라와 독립 착용) */
   /* v1.1.0 (#1) — 코스튬 오버레이 폐기(스프라이트 완전 교체로 전환) → 어태치 장식(왕관/리본/후광/날개) 동기화 */
   private accOverlays: { key: string; img: Phaser.GameObjects.Image }[] = [];
-  private hairOverlay: Phaser.GameObjects.Image | null = null;
   private auraPhase = 0; // v1.1.1 (#5) — 무지개/오로라/은하수 순환 위상
   private upgradeGlow: Phaser.GameObjects.Image | null = null;
   /** v3.0.5 — 스타포스 궤도성(★15)/주변 스파클(★8+)/티어 추적 */
@@ -656,7 +653,6 @@ export class WorldScene extends Phaser.Scene {
     this.cosmeticEmitter = null;
     this.cosmeticOverlay = null; // v1.0.2 — 오버레이 정리(destroy는 destroyAll에서)
     this.accOverlays = []; // v1.1.0 — 어태치 장식 참조 정리
-    this.hairOverlay = null;
     this.upgradeGlow = null;
     this.sfOrbits = [];
     this.sfOrbitAng = 0;
@@ -995,7 +991,17 @@ export class WorldScene extends Phaser.Scene {
         .map((b) => ({ key: b.key as BuffKey, remain: b.remain, total: b.total }));
       this.player.pets = (savedPlayer.pets ?? []).filter((k) => k in PET_DEFS) as PetKey[];
       this.player.pet = (savedPlayer.pet && savedPlayer.pet in PET_DEFS ? (savedPlayer.pet as PetKey) : null);
-      this.player.cosmetics = (savedPlayer.cosmetics ?? []).filter((k) => k in COSMETIC_DEFS) as CosmeticKey[];
+      /* v1.2.0 (#1) — 포니테일 폐지 환수: 캐릭터 슬롯 경로는 loadSave 마이그레이션을 우회하므로
+       *  여기서(플레이어 로드) 1회 환수 처리 — 보유 목록에서 소실된 hair_ponytail을 감지하면
+       *  18 에메랄드 지급 + ponyRefund 플래그 기록(buildSave가 세이브에 유지 → 이중 환수 방지) */
+      const rawCosmetics = savedPlayer.cosmetics ?? [];
+      const hadPony = rawCosmetics.includes("hair_ponytail") || (savedPlayer as { hair?: string | null }).hair === "hair_ponytail";
+      this.player.ponyRefund = !!(savedPlayer as { ponyRefund?: boolean }).ponyRefund;
+      if (hadPony && !this.player.ponyRefund) {
+        this.player.ponyRefund = true;
+        this.pendingPonyRefund = true; // emerald 복원(961행) 후 가산하기 위해 보류
+      }
+      this.player.cosmetics = rawCosmetics.filter((k) => k in COSMETIC_DEFS) as CosmeticKey[];
       this.player.cosmetic = (savedPlayer.cosmetic && savedPlayer.cosmetic in COSMETIC_DEFS ? (savedPlayer.cosmetic as CosmeticKey) : null);
       /* v1.0.7 — 코스튬/헤어 슬롯 복원 (구 세이브는 undefined → null) */
       this.player.outfit = (savedPlayer.outfit && savedPlayer.outfit in COSMETIC_DEFS ? (savedPlayer.outfit as CosmeticKey) : null);
@@ -1004,10 +1010,19 @@ export class WorldScene extends Phaser.Scene {
       this.player.applyLookTint();
       this.player.hair = (savedPlayer.hair && savedPlayer.hair in COSMETIC_DEFS ? (savedPlayer.hair as CosmeticKey) : null);
       /* v1.1.0 (#1/#21/#22) — 성별/피부/어태치 장식 복원 → 스프라이트 시트 전환(완전 교체) */
-      const savedLook = savedPlayer as { gender?: string; skinIdx?: number; accessory?: string | null };
+      const savedLook = savedPlayer as { gender?: string; skinIdx?: number; accessory?: string | null; gmSkin?: boolean };
       this.player.gender = savedLook.gender === "f" ? "f" : "m";
       this.player.skinIdx = typeof savedLook.skinIdx === "number" ? Phaser.Math.Clamp(savedLook.skinIdx, 0, 5) : 2;
       this.player.accessory = (savedLook.accessory && savedLook.accessory in COSMETIC_DEFS ? (savedLook.accessory as CosmeticKey) : null);
+      /* v1.2.0 (#7) — GM 외형 플래그 복원. 실제 렌더는 gmApproved(서버 롤 admin) 설정 후 applyBodyLook 재호출 시점 */
+      this.player.gmSkin = !!savedLook.gmSkin;
+      /* v1.2.0 (#1) — 포니테일 환수 플래그 복원 (buildSave 유지 필수 — 분실 시 재환생 이중 환수) */
+      this.player.gmApproved = this.adminRole === "admin";
+      /* v1.2.0 (#1) — 환수 정산 (emerald 복원 이후 +18) */
+      if (this.pendingPonyRefund) {
+        this.pendingPonyRefund = false;
+        this.player.emerald += 18;
+      }
       this.player.applyBodyLook();
       // 전직 스토리 복원 (v2.0 / v3.1.0 — fam 포함. 구 세이브는 cls 계열로 역산)
       if (savedPlayer.jobStory && typeof savedPlayer.jobStory.tier === "number") {
@@ -1257,6 +1272,11 @@ export class WorldScene extends Phaser.Scene {
         .then((u) => {
           this.adminRole = u?.role ?? null;
           if (this.player) this.player.gmInfinite = this.adminRole === "admin"; // v1.1.0 (#5) — GM 무한 물약/엘릭서
+          /* v1.2.0 (#7) — GM 계정 확정 시점에 GM 외형 승인 → 즉시 재렌더 */
+          if (this.player) {
+            this.player.gmApproved = this.adminRole === "admin";
+            this.player.applyBodyLook();
+          }
           if (this.adminRole === "admin") for (const g of this.gmNpcVisuals) g.setVisible(true);
           this.refreshPlayerTag(); // GM 금색 이름표 + 오라 부여
           this.emitRpgState(); // v1.0.5 — admin 플래그를 React에 즉시 반영
@@ -2673,6 +2693,26 @@ export class WorldScene extends Phaser.Scene {
       duration: crit ? 600 : 560,
       ease: "Quad.out",
       onComplete: () => t.setActive(false).setVisible(false),
+    });
+  }
+
+  /* ================= v1.2.0 (#10 타격감) — 히트스톱 =================
+   *  맞은 순간 물리를 수십 ms 정지해 "얻어맞은 느낌"을 극대화 (애니메이션/파티클은 유지).
+   *  일반 26ms · 크리티컬 55ms · 격파 70ms — 연타 스택 방지(최대 1회 연장) */
+  private hitStopUntil = 0;
+
+  hitStop(ms = 26) {
+    const now = this.time.now;
+    if (now < this.hitStopUntil) {
+      this.hitStopUntil = Math.min(this.hitStopUntil + 12, now + 90); // 연타 시 누적 상한 90ms
+      return;
+    }
+    this.hitStopUntil = now + ms;
+    const world = this.physics.world;
+    if (world.isPaused) return;
+    world.pause();
+    this.time.delayedCall(ms, () => {
+      if (this.scene.isActive() && this.physics.world === world) world.resume();
     });
   }
 
@@ -5021,6 +5061,10 @@ export class WorldScene extends Phaser.Scene {
     this.seenSet = new Set();
     this.fragmentsFound = {};
     this.player.setWorldtreeBlessing(false); // 세계수 가호도 스토리 보상이므로 재도전으로
+    /* v1.2.0 (#14) — 방문 구역 기록도 초기화: 환생 후 지역 이동 부적으로 환생 전 해방 맵을
+     *  그대로 워프하던 문제. 스토리 진행(포탈/퀘스트)과 함께 방문 기록도 처음부터.
+     *  시작 마을만 즉시 기록 — 재림의 땅(r1~r15)도 abyss10 재해방 후 다시 진입한다. */
+    this.visited = new Set(["village"]);
     this.syncExtBonus();
     this.save();
     this.emitRpgState();
@@ -5566,6 +5610,8 @@ export class WorldScene extends Phaser.Scene {
   /** Player.gainExp 레벨업 훅 — 레벨 목표 퀘스트 즉시 판정 (v2.4)
    *  v3.0.15 (#2) — 자동배분 ON이면 지급된 AP를 계열 권장 비율로 즉시 분배 */
   onLevelUp() {
+    /* v1.2.0 (#8) — 레벨업 ★ 감정 버블 (씹덕 감성) */
+    if (this.player) this.emote("star", this.player.x, this.player.y - 40);
     this.tryCompleteLevel();
     if (this.autoAlloc && this.player.ap > 0) {
       if (this.player.allocateAutoPoints()) {
@@ -6550,6 +6596,22 @@ export class WorldScene extends Phaser.Scene {
         }
         return;
       }
+      /* v1.2.0 (#15) — 비약 3종 (고급/태풍/극한 성장의 비약 — 메이플 비약 오마주) */
+      if (key === "exp_book_s" || key === "exp_book_m" || key === "exp_book_l") {
+        const NAME = { exp_book_s: "고급", exp_book_m: "태풍", exp_book_l: "극한" }[key as "exp_book_s" | "exp_book_m" | "exp_book_l"];
+        const r = this.player.useExpPotion(key as "exp_book_s" | "exp_book_m" | "exp_book_l");
+        if (r.ok) {
+          EventBus.emit("banner:show", { text: `${NAME} 성장의 비약 사용! EXP +${r.exp.toLocaleString()}` });
+          this.spawnPickupText(this.player.x, this.player.y - 34, `EXP +${r.exp.toLocaleString()}`, "#8fe84a");
+          audio.sfx.questDone();
+          this.emitRpgState();
+          this.emitHud();
+          this.save();
+        } else {
+          EventBus.emit("banner:show", { text: r.msg ?? "사용할 수 없습니다" });
+        }
+        return;
+      }
       if (key.startsWith("potion_")) {
         // v4.4.0 — 전 티어 물약 사용 경로 통합 (hp3~10·mp3~10은 v4.3.0에서 사용 경로가 누락돼 있었다)
         this.player.useConsumablePotion(key);
@@ -6563,6 +6625,7 @@ export class WorldScene extends Phaser.Scene {
         this.player.mp = this.player.maxMp;
         EventBus.emit("banner:show", { text: "운영자 무한 엘릭서 — HP/MP 전부 회복!" });
         this.spawnPickupText(this.player.x, this.player.y - 30, "HP/MP 전부 회복!", "#ffd76a");
+        this.emote("heart", this.player.x, this.player.y - 44); // v1.2.0 (#8) 감정 버블
         this.emitHud();
         this.emitRpgState();
         return;
@@ -7240,6 +7303,11 @@ export class WorldScene extends Phaser.Scene {
           this.adminRole = u?.role ?? null;
           const show = this.adminRole === "admin";
           if (this.player) this.player.gmInfinite = show; // v1.1.0 (#5)
+          /* v1.2.0 (#7) — GM 외형 승인 동기화 (로그인/로그아웃 즉시 반영) */
+          if (this.player) {
+            this.player.gmApproved = show;
+            this.player.applyBodyLook();
+          }
           for (const g of this.gmNpcVisuals) g.setVisible(show);
           this.refreshPlayerTag(); // v1.0.16 — GM 금색 이름표/황금 오라 즉시 부여·해제
           this.emitRpgState();
@@ -7610,27 +7678,7 @@ export class WorldScene extends Phaser.Scene {
         im.setDepth(a.key.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3);
       }
     }
-    /* v1.0.7 — 포니테일 위치 동기화 · v1.1.1 (#4) — 방향별 텍스처 전환(정면/측면/뒷면)
-     *  묶음이 원점이므로 (dx,dy)는 묶음이 머리 위(정면)·뒤통수(측면/뒷면)에 오는 프레임 좌표 오프셋 */
-    if (this.hairOverlay && this.player) {
-      const hv = this.hairOverlay;
-      const animKey = this.player.anims?.currentAnim?.key ?? "";
-      const back = animKey.includes("up");
-      const side = !back && (animKey.includes("side") || animKey.endsWith("-atk"));
-      const dir: PonyDir = back ? "b" : side ? "s" : "f";
-      const cfg = PONY_LOOK[dir];
-      if (hv.texture.key !== cfg.tex) {
-        hv.setTexture(cfg.tex);
-        hv.setOrigin(cfg.ox, cfg.oy);
-      }
-      /* 좌우반전 시 텍스처가 원점 기준 미러링 → 묶음도 대칭 위치로 이동 (dx 부호 반전은 자동) */
-      const flipMul = this.player.flipX ? -1 : 1;
-      const trail = dir === "s" ? (this.player.flipX ? 3 : -3) : dir === "f" ? (this.player.flipX ? 2 : -2) : 0;
-      hv.setPosition(this.player.x + cfg.dx * flipMul + trail, this.player.y + cfg.dy);
-      hv.setFlipX(this.player.flipX);
-      hv.setScale(this.player.scaleX, this.player.scaleY);
-      hv.setDepth(dir === "b" ? this.player.depth + 0.15 : this.player.depth - 0.1);
-    }
+    /* v1.2.0 — 포니테일 동기화 루프 제거(아이템 폐지) */
     if (this.upgradeGlow) this.upgradeGlow.setPosition(this.player.x, this.player.y - 10);
     /* v3.0.5 — 스타포스: 궤도성 회전(★15) + 주변 스파클(★8+) */
     if (this.sfOrbits.length && this.player) {
@@ -8303,21 +8351,54 @@ export class WorldScene extends Phaser.Scene {
 
   private escapeCd = 0;
 
-  /** 설정창의 긴급 귀환 — 지금 위치에서 가장 가까운 마을로 즉시 이동 (막힘/굴속 탈출용) */
+  /* v1.2.0 (#3 악용 방지) — 긴급 귀환 하루 3회 제한 (로컬 날짜 기준, 자정 리셋) */
+  private static readonly ESCAPE_DAILY_KEY = "sertz.escape.daily";
+  private static readonly ESCAPE_DAILY_MAX = 3;
+
+  private escapeUsesToday(): number {
+    try {
+      const raw = window.localStorage.getItem(WorldScene.ESCAPE_DAILY_KEY);
+      if (!raw) return 0;
+      const d = JSON.parse(raw) as { date: string; count: number };
+      const today = new Date().toISOString().slice(0, 10);
+      return d.date === today ? Math.max(0, Math.min(WorldScene.ESCAPE_DAILY_MAX, d.count | 0)) : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  private bumpEscapeUse() {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      window.localStorage.setItem(WorldScene.ESCAPE_DAILY_KEY, JSON.stringify({ date: today, count: this.escapeUsesToday() + 1 }));
+    } catch {
+      /* 저장 불가 환경 — 제한 없이 진행 */
+    }
+  }
+
+  /** 설정창의 긴급 귀환 — 지금 위치에서 가장 가까운 마을로 즉시 이동 (막힘/굴속 탈출용)
+   *  v1.2.0 (#3) — 하루 최대 3회로 제한 (악용 방지 — 던전 스킵 무한남용 차단). 쿨다운은 유지 */
   emergencyReturn() {
     if (!this.player || this.transitioning) return;
     if (this.escapeCd > 0) {
       this.showBanner(`긴급 귀환 재사용 대기 ${Math.ceil(this.escapeCd / 1000)}초`);
       return;
     }
+    const used = this.escapeUsesToday();
+    if (used >= WorldScene.ESCAPE_DAILY_MAX) {
+      audio.sfx.uiOpen(); // v1.2.0 — uiBack 부재 → uiOpen
+      this.showBanner(`긴급 귀환은 하루 ${WorldScene.ESCAPE_DAILY_MAX}회까지 — 내일 다시 사용할 수 있어요 (${used}/${WorldScene.ESCAPE_DAILY_MAX})`);
+      return;
+    }
     this.escapeCd = 8000;
+    this.bumpEscapeUse();
+    this.showBanner(`긴급 귀환 — ${STAGE_SHORT[this.nearestVillageKey()] ?? "마을"} (오늘 ${used + 1}/${WorldScene.ESCAPE_DAILY_MAX})`);
     /* 이벤트 구역 도중 이탈 정산 (보상 규칙은 각 finish*가 처리) */
     if (this.dojangActive) this.finishDojang(true);
     if (this.gateActive) { this.finishGate("exit"); return; }
     if (this.closetActive) { this.finishCloset(); return; }
     const target = this.nearestVillageKey();
     audio.sfx.portal();
-    this.showBanner(`긴급 귀환 — ${STAGE_SHORT[target] ?? "마을"}`);
     this.startTransition(target, { delay: 520 });
   }
 
@@ -9268,7 +9349,11 @@ export class WorldScene extends Phaser.Scene {
     } else if (it.kind === "exit") {
       this.leaveInterior();
     } else if (it.kind === "talk" && it.dlg) {
-      this.showDialogue(it.dlg, it.npcId ?? null);
+      /* v1.2.0 (#4) — 환생 n차수별 NPC 대사 변화: 환생 1~3차마다 NPC가 기억하고 다르게 반응한다.
+       *  `${dlg}_rb${n}` 변형이 존재하면 우선 재생 (n = min(rebirths, 3)) — 없으면 원본 대사. */
+      const rbN = Math.min(3, Math.max(0, this.inf?.rebirths ?? 0));
+      const rbKey = rbN > 0 ? `${it.dlg}_rb${rbN}` : it.dlg;
+      this.showDialogue(DIALOGUES[rbKey] ? rbKey : it.dlg, it.npcId ?? null);
     }
   }
 
@@ -9314,6 +9399,8 @@ export class WorldScene extends Phaser.Scene {
     }
     if (paid) this.player.gold -= 20;
     this.sleeping = true;
+    /* v1.2.0 (#8) — 취침 zZ 감정 버블 */
+    if (this.player) this.emote("sleep", this.player.x, this.player.y - 44);
     this.player.state = "idle";
     this.player.setVelocity(0, 0);
     this.cameras.main.fadeOut(600, 0, 0, 0);
@@ -9962,9 +10049,6 @@ export class WorldScene extends Phaser.Scene {
      *  (겹치기 오버레이 폐기 — SPUM NPC처럼 아예 다른 캐릭터로 변신). 성별/피부도 여기서 반영 */
     this.player?.applyBodyLook();
     /* 어태치 장식(왕관/리본/후광/날개) + 헤어(포니테일) 재생성 */
-    if (this.hairOverlay) this.tweens.killTweensOf(this.hairOverlay); // 흔들림 tween 먼저 정리
-    this.hairOverlay?.destroy();
-    this.hairOverlay = null;
     for (const a of this.accOverlays) {
       this.tweens.killTweensOf(a.img);
       a.img.destroy();
@@ -9980,24 +10064,7 @@ export class WorldScene extends Phaser.Scene {
         this.tweens.add({ targets: img, angle: { from: -3, to: 3 }, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       }
     }
-    if (this.player?.hair === "hair_ponytail") {
-      /* v1.1.1 (#4 포니테일) — 방향별 3종 시트(f/s/b) + 묶음 좌표를 원점으로.
-       *  기존엔 정적 1프레임의 묶음이 캐릭터 중앙에 꽂혀 꼬리가 얼굴/몸통 앞에 처졌다.
-       *  묶음 좌표: f(50,18) / s(38,15) / b(48,16) — scripts/gen_v111_gender_assets.py */
-      const cfg = PONY_LOOK.f;
-      this.hairOverlay = this.add
-        .image(this.player.x + cfg.dx, this.player.y + cfg.dy, cfg.tex)
-        .setOrigin(cfg.ox, cfg.oy)
-        .setDepth(this.player.depth - 0.1);
-      this.tweens.add({
-        targets: this.hairOverlay,
-        angle: { from: -2.2, to: 2.2 },
-        duration: 980,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.inOut",
-      });
-    }
+    /* v1.2.0 (#1) — 포니테일 렌더링 제거(아이템 폐지) — 헤어 슬롯은 신규 헤어용으로 유지 */
     const key = this.player?.cosmetic;
     if (!key) return;
     /* v1.0.2 (#치장외형) — 본체 오버레이: 같은 텍스처를 치장색 ADD 블렌드로 얹어
@@ -10855,6 +10922,8 @@ export class WorldScene extends Phaser.Scene {
       lookTint: this.player.lookTint, // v1.0.19 (B-1) — 로비 생성 색조
       gender: this.player.gender, // v1.1.0 (#22) — 남/여
       skinIdx: this.player.skinIdx, // v1.1.0 (#21) — 피부 6종
+      gmSkin: this.player.gmSkin, // v1.2.0 (#7) — GM 외형 플래그 (렌더는 서버 롤 admin일 때만)
+      ponyRefund: this.player.ponyRefund, // v1.2.0 (#1) — 포니테일 환수 1회성 플래그
       accessory: this.player.accessory, // v1.1.0 (#1) — 어태치 장식
       /* v2.0 — 전직 스토리 진행 */
       jobStory: this.jobStory ? { ...this.jobStory } : null,
@@ -11017,6 +11086,42 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
+  /* ================= v1.2.0 (#8/#16 서브컬쳐) — 감정 버블 =================
+   *  캐릭터/NPC 머리 위에 뜨는 픽셀 이모트 — 씹덕 감성의 핵심 표현 장치.
+   *  ♥(사랑) ★(레벨업) ♪(기분좋음) 💢(분노) …(당황) ！(경악) ？(의문) zZ(취침) */
+  private static readonly EMOTE_CHARS: Record<string, { ch: string; color: string }> = {
+    heart: { ch: "♥", color: "#ff6a9a" },
+    star: { ch: "★", color: "#ffd76a" },
+    note: { ch: "♪", color: "#8fd8ff" },
+    anger: { ch: "💢", color: "#ff5a5a" },
+    sweat: { ch: "…", color: "#9ad0ff" },
+    excl: { ch: "！", color: "#ffe27a" },
+    question: { ch: "？", color: "#c8b0ff" },
+    sleep: { ch: "zZ", color: "#b8c4e8" },
+  };
+
+  /** 머리 위 감정 버블 — 말풍선 배경 + 이모트 글자, 팝+플로트+페이드 연출 */
+  emote(kind: keyof typeof WorldScene.EMOTE_CHARS, x: number, y: number, tint?: number) {
+    const def = WorldScene.EMOTE_CHARS[kind];
+    if (!def) return;
+    const bubble = this.add.container(x, y).setDepth(9998);
+    const bg = this.add.rectangle(0, 0, 22, 18, tint ?? 0x101422, 0.92)
+      .setStrokeStyle(1.5, 0xffe9b0, 0.9);
+    const txt = this.add.text(0, -1, def.ch, {
+      fontFamily: "Galmuri11, sans-serif",
+      fontSize: "11px",
+      color: def.color,
+    }).setOrigin(0.5);
+    // 꼬리
+    const tail = this.add.triangle(0, 11, 0, 0, 8, 0, 4, 6, tint ?? 0x101422, 0.92);
+    bubble.add([bg, tail, txt]);
+    bubble.setScale(0.2);
+    this.tweens.add({ targets: bubble, scale: 1, duration: 130, ease: "Back.out" });
+    this.tweens.add({ targets: bubble, y: y - 14, duration: 900, ease: "Sine.out", delay: 120 });
+    this.tweens.add({ targets: bubble, alpha: 0, delay: 820, duration: 200, onComplete: () => bubble.destroy() });
+    return bubble;
+  }
+
   showDialogue(id: string, npcId: string | null = null) {
     let d = DIALOGUES[id];
     if (!d) {
@@ -11032,6 +11137,11 @@ export class WorldScene extends Phaser.Scene {
     this.dialogueSince = this.time.now; // v3.3.0 — 대사 붙임 자가치유 기준 시각
     this.player.setVelocity(0, 0);
     this.physics.world.pause();
+    /* v1.2.0 (#8) — 대화 시작: 상대 NPC 머리 위 ！ 감정 버블 */
+    if (npcId) {
+      const it = this.interactables.find((q) => q.npcId === npcId);
+      if (it) this.emote("excl", it.x, it.y - 44);
+    }
     EventBus.emit("dialogue:show", d);
   }
 

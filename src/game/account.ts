@@ -84,13 +84,20 @@ export type SnsProviders = Record<string, { name: string; configured: boolean }>
 
 async function post(path: string, body?: unknown): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
   try {
-    const tok = getToken(); // v1.0.7 — Bearer 세션 (쿠키 불가 환경: APK 웹뷰)
-    /* v1.0.15 — text/plain은 CORS 세이프리스트라 프리플라이트가 발생하지 않는다(단순 요청).
-     *  구서버(stale sertz4) OPTIONS 404에서도 로그인/가입이 통과된다. 본문은 JSON 문자열 그대로 —
-     *  서버 readBody는 Content-Type을 검사하지 않는다(실측 확인). */
-    const r = await fetch(`${apiBase()}${path}`, {
+    const tok = getToken();
+    /* v1.2.0 (#거래소접속) — 네이티브(APK/EXE)에서는 토큰을 Authorization 헤더 대신 URL 쿼리로 전달.
+     *  Authorization 헤더는 요청을 프리플라이트 대상으로 만들고, 구버전 배포 서버는 OPTIONS를
+     *  401/404로 답해 로그인 유저의 거래소·클라우드세이브가 전부 실패했다(게스트는 멀쩡했다).
+     *  쿼리 ?token= 은 단순 요청 — 프리플라이트 자체가 없어 신·구 서버 모두에서 동작한다.
+     *  웹(same-origin)은 쿠키가 동작하므로 기존 Bearer 경로 유지. */
+    const native = Capacitor.isNativePlatform() || /electron/i.test(navigator.userAgent);
+    const q = native && tok ? (path.includes("?") ? `&token=${encodeURIComponent(tok)}` : `?token=${encodeURIComponent(tok)}`) : "";
+    const r = await fetch(`${apiBase()}${path}${q}`, {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=UTF-8", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) },
+      headers: {
+        "Content-Type": "text/plain;charset=UTF-8", // CORS 세이프리스트 — 프리플라이트 없음
+        ...(!native && tok ? { Authorization: `Bearer ${tok}` } : {}),
+      },
       body: JSON.stringify(body ?? {}),
     });
     const data = (await r.json().catch(() => ({}))) as Record<string, unknown>;
@@ -103,10 +110,14 @@ async function post(path: string, body?: unknown): Promise<{ ok: boolean; status
 
 async function get(path: string): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
   try {
-    const tok = getToken(); // v1.0.7 — Bearer 세션
-    const r = await fetch(`${apiBase()}${path}`, {
+    const tok = getToken();
+    /* v1.2.0 (#거래소접속) — 네이티브는 토큰을 쿼리로 전달(프리플라이트 제거 — post() 주석 참조).
+     *  Authorization 헤더를 아예 빼면 GET은 항상 단순 요청이라 구서버에서도 로그인 세션이 산다. */
+    const native = Capacitor.isNativePlatform() || /electron/i.test(navigator.userAgent);
+    const q = native && tok ? (path.includes("?") ? `&token=${encodeURIComponent(tok)}` : `?token=${encodeURIComponent(tok)}`) : "";
+    const r = await fetch(`${apiBase()}${path}${q}`, {
       cache: "no-store",
-      ...(tok ? { headers: { Authorization: `Bearer ${tok}` } } : {}),
+      ...(!native && tok ? { headers: { Authorization: `Bearer ${tok}` } } : {}),
     });
     const data = (await r.json().catch(() => ({}))) as Record<string, unknown>;
     if (r.status === 401) setToken("");

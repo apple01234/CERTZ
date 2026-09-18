@@ -384,6 +384,15 @@ export function chainOf(key?: string | null): ClassDef[] {
   return out;
 }
 
+/** v1.2.0 (#13) — 현재 직업이 2차 이상이면 그 계열의 "2차 직업 키"를 반환 (외형 시트용).
+ *  3·4차는 부모 체인을 거슬러 2차 직업의 외형을 승계한다 (워로드→버서커 외형 등).
+ *  1차/무직은 null — 기본 성별/피부 시트 사용. */
+export function tier2RootOf(key?: string | null): ClassKey | null {
+  const chain = chainOf(key);
+  if (chain.length < 2) return null;
+  return chain[1].key;
+}
+
 export type ClassBonus = {
   atkPct: number;
   critAdd: number;

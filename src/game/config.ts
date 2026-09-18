@@ -112,6 +112,8 @@ export type SaveData = {
   /* v1.0.19 (B-1 외형) — 로비 생성 시 고른 색조 (스프라이트 틴트, null=기본) */
   lookTint?: number | null;
   gender?: "m" | "f"; // v1.1.0 (#22) — 남/여
+  gmSkin?: boolean; // v1.2.0 (#7) — GM 외형 캐릭터 (서버 롤 admin일 때만 렌더)
+  ponyRefund?: boolean; // v1.2.0 (#1) — 포니테일 환수 완료 플래그
   introSeen?: boolean; // v1.1.0 (#18) — 프롤로그/인트로 시청 완료 (false=미시청 신규, undefined=구세이브 스킵)
   skinIdx?: number; // v1.1.0 (#21) — 피부 0~5
   /* ↓ 친구 시스템 (v2.1 — 구 세이브 호환: 로드 시 자동 발급/기본값) */
@@ -309,6 +311,17 @@ export function loadSave(): SaveData | null {
     if (d.cosmetic === undefined) d.cosmetic = null;
     if (d.outfit === undefined) d.outfit = null; // v1.0.7 — 구 세이브 호환
     if (d.hair === undefined) d.hair = null;
+    if (typeof d.gmSkin !== "boolean") d.gmSkin = false; // v1.2.0 (#7) GM 외형
+    /* v1.2.0 (#1 포니테일 폐지) — hair_ponytail은 아이템 자체가 삭제됐다. 구 세이브에서
+     *  ① 착용 중이면 해제 ② 보유 목록에서 제거 + 18 에메랄드 자동 환수 (단 1회 — 환수 플래그 저장) */
+    if (d.hair === "hair_ponytail") d.hair = null;
+    if (Array.isArray(d.cosmetics) && d.cosmetics.includes("hair_ponytail")) {
+      d.cosmetics = d.cosmetics.filter((k) => k !== "hair_ponytail");
+      if (!(d as Record<string, unknown>).ponyRefund) {
+        d.emerald = (typeof d.emerald === "number" ? d.emerald : 0) + 18; // bmPrice 환수
+        (d as Record<string, unknown>).ponyRefund = true;
+      }
+    }
     // 전직 스토리 (v2.0 — 구 세이브 호환)
     if (d.jobStory === undefined) d.jobStory = null;
     if (!Array.isArray(d.jobStoryDone)) d.jobStoryDone = [];

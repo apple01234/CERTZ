@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
 import { MessageCircle, SendHorizontal } from "lucide-react";
 import { netChatReady } from "@/game/net";
@@ -17,6 +17,20 @@ type Msg = { id: string; name: string; text: string; sys?: boolean; party?: bool
 
 const COLLAPSE_KEY = "sertz.chat.collapsed";
 
+/* v1.2.0 (#5) — 채팅 목록 최대 높이: 이 값을 넘어 불어나면 위(오래된 메시지)부터 자동 잘라낸다.
+ *  화면 높이의 32%를 상한으로 하되 120~200px 사이로 클램프 — 좌하단 HUD를 덮지 않게.
+ *  최소 3개는 남긴다(완전 소실 방지) — 새 메시지가 오면 여유가 될 때 다시 위쪽도 보여준다. */
+const CHAT_MAX_H = (() => {
+  try {
+    const h = Math.min(200, Math.max(120, Math.round(window.innerHeight * 0.32)));
+    return h;
+  } catch {
+    return 168;
+  }
+})();
+const CHAT_MIN_VISIBLE = 3;
+const CHAT_MAX_VISIBLE = 7;
+
 export function ChatBox() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [open, setOpen] = useState(false);
@@ -31,6 +45,31 @@ export function ChatBox() {
   });
   const inputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  /* v1.2.0 (#5) — 화면에 실제로 렌더할 메시지 수: 목록 높이가 CHAT_MAX_H를 넘으면 줄이고,
+   *  새 메시지가 와서 여유가 생기면 다시 늘린다 (위쪽 = 오래된 것부터 잘림) */
+  const [visible, setVisible] = useState(CHAT_MAX_VISIBLE);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  /* #5 — 렌더 후 실측 → 초과 시 위부터 축소 (상태→렌더→실측 수렴 루프, 1프레임당 1개씩) */
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    if (!el || collapsed) return;
+    if (el.clientHeight > CHAT_MAX_H) {
+      setVisible((v) => Math.max(CHAT_MIN_VISIBLE, v - 1));
+    }
+  }, [msgs, visible, collapsed]);
+
+  /* #5 — 새 메시지 도착 시 여유(28px)가 있으면 다시 확장 (오래된 메시지 복귀) */
+  useEffect(() => {
+    if (collapsed) return;
+    setVisible((v) => {
+      if (v >= CHAT_MAX_VISIBLE) return v;
+      const el = listRef.current;
+      if (!el) return v;
+      return el.clientHeight <= CHAT_MAX_H - 28 ? Math.min(CHAT_MAX_VISIBLE, v + 1) : v;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [msgs.length]);
 
   useEffect(() => {
     try {
@@ -113,10 +152,10 @@ export function ChatBox() {
 
   return (
     <div ref={rootRef} className="absolute bottom-2 left-2 w-[300px] max-w-[52vw] sm:bottom-3 sm:left-3">
-      {/* 최근 메시지 (아래가 최신 — 최대 7개, 살짝 투명) — v4.1.0: 접기 상태면 숨김 */}
+      {/* 최근 메시지 (아래가 최신 — v1.2.0 (#5): 높이 초과 시 위부터 자동 잘라냄) — v4.1.0: 접기 상태면 숨김 */}
       {!collapsed && (
-        <div className="pointer-events-none mb-1 flex flex-col gap-0.5">
-          {msgs.slice(-7).map((m) => (
+        <div ref={listRef} className="pointer-events-none mb-1 flex flex-col gap-0.5">
+          {msgs.slice(-visible).map((m) => (
           <p
             key={`${m.t}-${m.id}`}
             className={`w-fit max-w-full truncate rounded bg-black/45 px-1.5 py-0.5 text-[10px] leading-snug backdrop-blur-[2px] sm:text-[11px] ${

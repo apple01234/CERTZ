@@ -19,6 +19,7 @@ import { EventBus } from "./EventBus";
 import { loadUnion, buySlotExpand } from "@/game/union";
 import { loadSlots, writeSlots, createCharacter, deleteCharacter, readCharSave, setActiveChar, getActiveCharId, BASE_SLOTS, type CharMeta } from "@/game/slots";
 import { loadSave, writeSave } from "@/game/config";
+import { authMe } from "@/game/account"; // v1.2.0 (#7) — GM 외형 옵션은 admin 롤에만 노출
 import { classDef, isClassKey, classLabel, familyOf, type ClassKey } from "@/game/classes";
 import type { SaveData } from "@/game/config";
 
@@ -94,6 +95,12 @@ export function Lobby({ onExit }: { onExit: () => void }) {
   const [nameInput, setNameInput] = useState("");
   const [lookGender, setLookGender] = useState<"m" | "f">("m");
   const [lookSkin, setLookSkin] = useState<number>(2);
+  /* v1.2.0 (#7) — GM 계정만 보이는 GM 외형 옵션 (파란 몸 + 무지개 머리) */
+  const [lookGm, setLookGm] = useState(false);
+  const [gmOk, setGmOk] = useState(false);
+  useEffect(() => {
+    void authMe().then((u) => setGmOk(u?.role === "admin"));
+  }, []);
   const [delId, setDelId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null); // v1.1.0 — 구문 오류 복구 (v1.0.20 커밋분)
 
@@ -126,12 +133,13 @@ export function Lobby({ onExit }: { onExit: () => void }) {
     setNameInput("");
     setLookGender("m");
     setLookSkin(2);
+    setLookGm(false);
     setPickCls("warrior");
     setMsg(null);
   };
 
   const doCreate = () => {
-    const r = createCharacter(nameInput, pickCls, null, { gender: lookGender, skinIdx: lookSkin });
+    const r = createCharacter(nameInput, pickCls, null, { gender: lookGender, skinIdx: lookSkin, gmSkin: lookGm && gmOk });
     if (!r.ok) {
       setMsg(r.reason);
       setStep(0); // 이름 문제일 수 있으니 1단계로
@@ -391,11 +399,15 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                   <div>
                     <p className="text-[10px] font-bold leading-relaxed text-white/55">성별과 피부를 골라 외형을 꾸며라. 언제든 로비에서 다른 캐릭터를 만들 수 있다.</p>
                     <div className="mt-2 flex items-center gap-3 rounded-lg border border-white/12 bg-black/40 p-2.5">
-                      <CharAvatar gender={lookGender} skinIdx={lookSkin} size={64} />
+                      {lookGm ? (
+                        <img src="/assets/gm_idle0.webp" alt="GM 외형 미리보기" style={{ width: 64, height: 64, imageRendering: "pixelated", objectFit: "cover", objectPosition: "35% 78%" }} draggable={false} />
+                      ) : (
+                        <CharAvatar gender={lookGender} skinIdx={lookSkin} size={64} />
+                      )}
                       <div>
                         <p className="text-[11px] font-black text-white">{nameInput.trim() || "이름 미정"}</p>
                         <p className="text-[9px] font-bold" style={{ color: clsColor(pickCls) }}>{classLabel(pickCls)} · Lv.1</p>
-                        <p className="mt-0.5 text-[9px] font-black text-amber-200">{lookGender === "f" ? "여캐" : "남캐"} · {SKIN_CHOICES.find((x) => x.idx === lookSkin)?.name ?? "기본"}</p>
+                        <p className="mt-0.5 text-[9px] font-black text-amber-200">{lookGm ? "GM 형태" : `${lookGender === "f" ? "여캐" : "남캐"} · ${SKIN_CHOICES.find((x) => x.idx === lookSkin)?.name ?? "기본"}`}</p>
                       </div>
                     </div>
                     <p className="mt-2 text-[9px] font-black text-white/50">성별</p>
@@ -414,6 +426,20 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                         );
                       })}
                     </div>
+                    {/* v1.2.0 (#7) — GM 계정 전용 외형: 파란 몸 + 무지개 머리 */}
+                    {gmOk && (
+                      <>
+                        <p className="mt-2 text-[9px] font-black text-[#ffd76a]">✦ 운영자 전용 외형</p>
+                        <button
+                          onClick={() => setLookGm((v) => !v)}
+                          className={`mt-1 flex w-full items-center gap-2 rounded-lg border-2 px-2 py-1.5 transition-transform active:scale-95 ${lookGm ? "border-amber-300 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"}`}
+                        >
+                          <img src="/assets/gm_idle0.webp" alt="GM 외형" style={{ width: 30, height: 30, imageRendering: "pixelated", objectFit: "cover", objectPosition: "35% 78%" }} draggable={false} />
+                          <span className={`text-[10px] font-black ${lookGm ? "text-amber-200" : "text-white/60"}`}>GM 형태 (무지개)</span>
+                          <span className="ml-auto rounded bg-amber-400/20 px-1 text-[8px] font-black text-amber-200">[GM]</span>
+                        </button>
+                      </>
+                    )}
                     <p className="mt-2 text-[9px] font-black text-white/50">피부</p>
                     <div className="mt-1 grid grid-cols-3 gap-1.5">
                       {SKIN_CHOICES.map((s) => {

@@ -9,7 +9,7 @@ import {
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
 } from "../data";
 import {
-  classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf,
+  classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf, tier2RootOf,
   resolveSkill1Of, resolveSkill2Of, resolveSkill5Of,
   type ClassKey, type ClassBonus, SKILL_LABELS, SKILL3_KIND, SKILL4_KIND,
   SKILL5_INFO, FIFTH_SKILL_MULT, FIFTH_CD_MULT, FIFTH_LEVEL,
@@ -108,6 +108,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   gmInfinite = false;
   /* v1.1.0 (#1/#22/#21) — 외형: 성별/피부/시트 프리픽스. "" = 기본(남성·기본피부 = 원본 hero_*) */
   gender: "m" | "f" = "m";
+  /* v1.2.0 (#7) — GM 외형 플래그: 로비에서 GM 외형을 고른 캐릭터. WorldScene이 서버 롤(admin)을
+   *  확인해 gmApproved를 설정한 뒤에만 실제 gm 시트로 렌더된다 (비GM 세이브 변조 차단) */
+  gmSkin = false;
+  gmApproved = false;
+  /* v1.2.0 (#1) — 포니테일 환수 1회성 플래그 (buildSave가 세이브에 유지 — 이중 환수 방지) */
+  ponyRefund = false;
   skinIdx = 2;
   bodyPrefix = "";
   /* v3.3.0 (지시 #3/#8 — GM 5차전직(임시) + 5차전직 스토리) — 5차 각성 상태 (세이브 대상)
@@ -3571,6 +3577,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return exp;
   }
 
+  /* v1.2.0 (#15 경험치책 비약 3종 — 메이플 비약 오마주):
+   *  고급 성장의 비약   — 현재 레벨 필요 EXP의 60% 획득
+   *  태풍 성장의 비약   — 필요 EXP의 150% (1.5레벨어치) 획득
+   *  극한 성장의 비약   — 즉시 +1레벨 (Lv200 이상에선 사용 불가 — 환생 루프 보호)
+   *  반환값: 실제 획득 EXP(표시용) — 극한은 다음 레벨까지 남은 EXP 정산치로 표기 */
+  useExpPotion(key: "exp_book_s" | "exp_book_m" | "exp_book_l"): { ok: boolean; exp: number; msg?: string } {
+    if (!this.owned.includes(key)) return { ok: false, exp: 0, msg: "비약이 없습니다" };
+    if (key === "exp_book_l" && this.lv >= 200) {
+      return { ok: false, exp: 0, msg: "극한 성장의 비약은 Lv 200 이상에선 사용할 수 없다" };
+    }
+    this.consumeConsumable(key);
+    if (key === "exp_book_l") {
+      const need = this.expNext() - this.exp;
+      this.gainExp(Math.max(1, need)); // 정확히 1레벨치 — 여분은 다음 레벨로 이월되지 않게 필요치만
+      return { ok: true, exp: Math.max(1, need) };
+    }
+    const pct = key === "exp_book_m" ? 1.5 : 0.6;
+    const exp = Math.round(this.expNext() * pct);
+    this.gainExp(exp);
+    return { ok: true, exp };
+  }
+
   /** v4.0.0 — 등급업 큐브: 장착 무기/방어구 티어 승급 (common→rare→epic→legend)
    *  승급된 장비는 보유 목록에 유지되고, 아이템 자체의 atk/def가 등급 배율만큼 상승한다.
    *  실제 티어 승급은 아이템 교체 대신 TIER_UP_BOOST 승수로 반영 (인스턴스 없는 구조 유지). */
@@ -4339,14 +4367,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** 성별+피부(+코스튬) → 스프라이트 시트 전환. 코스튬이 최우선 (SPUM식 완전 교체 — 겹치기 아님)
-   *  v1.1.1 (#7 성별 치장 분리) — 같은 코스튬 키도 성별에 따라 여성형(cost_*)/남성형(costm_*) 시트 분기 */
+   *  v1.1.1 (#7 성별 치장 분리) — 같은 코스튬 키도 성별에 따라 여성형(cost_*)/남성형(costm_*) 시트 분기
+   *  v1.2.0 (#13 8직업 외형) — 코스튬 미착용 + 2차 이상 직업이면 jobf_/jobm_ 시트로 완전 교체
+   *  (전직하면 외형 자체가 바뀐다 — 버서커는 붉은 머리 광전사로, 아크메이지는 제비꽃 로브 대마법사로).
+   *  3·4차는 계열 2차 외형 승계. v1.2.0 (#7 GM 외형) — gmSkin 플래그가 최우선 (GM 계정 전용) */
   applyBodyLook() {
     const prevAnim = this.anims?.currentAnim?.key ?? "";
     const playing = this.anims?.isPlaying ?? false;
     const outfitKey = this.outfit?.replace("outfit_", "") ?? null;
-    this.bodyPrefix = outfitKey
-      ? this.gender === "m" ? `costm_${outfitKey}` : `cost_${outfitKey}`
-      : (this.gender === "f" || this.skinIdx !== 2 ? `ch${this.gender}${this.skinIdx}` : "");
+    const jobRoot = tier2RootOf(this.cls);
+    const jobPrefix = jobRoot ? (this.gender === "m" ? `jobm_${jobRoot}` : `jobf_${jobRoot}`) : null;
+    this.bodyPrefix = this.gmSkin && this.gmApproved
+      ? "gm"
+      : outfitKey
+        ? this.gender === "m" ? `costm_${outfitKey}` : `cost_${outfitKey}`
+        : jobPrefix
+          ?? (this.gender === "f" || this.skinIdx !== 2 ? `ch${this.gender}${this.skinIdx}` : "");
     const wantTex = this.bodyKey("hero_idle0");
     if (this.texture.key !== wantTex) this.setTexture(wantTex);
     // 진행 중이던 애니를 새 시트로 이어 재생 (프레임 리셋 방지)

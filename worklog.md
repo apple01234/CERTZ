@@ -1820,3 +1820,34 @@ Stage Summary:
 - 유저 신고 8건 전부 코드 반영+E2E 실측 완료(①가림 4/4·②무릉도장·③결제취소 코드검증·④포니테일·⑤오라·⑥왕관·⑦성별치장·⑧거래소)
 - 운영 교훈: ①Phaser createInner는 scene.restart(data)의 data를 무시하고 registry initData를 다시 읽는다 — 재시작 주입은 registry.set 후 restart ②aapt2는 AAB badging 미지원 — zip 파싱(AndroidManifest UTF-8·에셋 카운트·웹청크 문자열)으로 검증 ③EventBus는 window.__SERTZ_EB__로 노출돼 있어 E2E에서 이벤트 직접 발화 가능(강한 실측)
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 87
+Agent: Super Z (메인)
+Task: 유저 지시 17건 — ①포니테일 제거 ②거래소 접속 ③긴급탈출 3회/일 ④환생 NPC 대사 ⑤채팅 자동절단 ⑥치장 외형 ⑦GM 캐릭터 ⑧⑯서브컬쳐 ⑨예쁜 여캠 ⑩타격감 ⑪에셋 다운로드 ⑫SNS OAuth 가이드 ⑬8직업 외형 ⑭환생 워프 차단 ⑮비약 3종 ⑰APK 빌드 — v1.2.0 확정·릴리스 (versionCode 88)
+
+Work Log:
+- [에셋 파이프라인] upload/SPUM.7z(유저 제공 — SPUM+JMO CartoonFX+Fantasy UI SFX) 추출 분석 — 레거시 파트는 21×31px 파트 조각이라 Phaser 런타임 조합 불가 판정, 대신 기존 hero_* 14색 팔레트 파이프라인(gen_char_system.py 계승)으로 신규 시트 대량 생성이 v1.2.0 아트 해법
+- [#1 포니테일 폐지] data.ts(CosmeticKey/ITEMS/COSMETIC_DEFS/BM_STOCK 4곳)·WorldScene(PONY_LOOK/hairOverlay 전부)·BootScene 로드·에셋 4파일 삭제. config.ts 마이그레이션: 착용 해제+보유 제거+18 에메랄드 환수(ponyRefund 플래그). **발견 버그**: 캐릭터 슬롯 경로는 loadSave 마이그레이션을 우회해 환수가 안 걸림 → WorldScene 플레이어 로드 경로에 2차 환수 처리(pendingPonyRefund→emerald 복원 후 +18) + buildSave에 ponyRefund 필드 추가(미유지 시 재진입마다 이중 환수). E2E 실측 emerald 0→18, 재진입 1회만
+- [#2 거래소 근본 원인] 실측 확정: 배포 서버(sertz4=FC 래퍼)가 OPTIONS를 401/404로 답아 preflight 실패 — Authorization 헤더가 붙는 요청(로그인 유저)만 전부 실패(게스트는 단순 요청이라 멀쩡했던 역설). 수정 4중: ①account.ts 네이티브에서 토큰을 URL 쿼리로 전송(프리플라이트 0회 — 구·신 서버 공용) ②accounts/index.js currentUser 쿼리 토큰 지원 ③fc-server/fc-entry.js OPTIONS 204(CORS 헤더 포함) ④HUD에 거래소 직행 버튼(GameRoot togglePanelSfx union 확장)
+- [#3 긴급귀환] localStorage 날짜별 카운터 — 하루 3회, 초과 배너, 사용마다 (n/3) 표시. 쿨다운 8초 유지
+- [#4 환생 대사] DIALOGUES에 villager1/2_rb1~rb3 6세트(놀람→경외→전설 톤) + WorldScene talk 핸들러에서 `${dlg}_rb${min(rebirths,3)}` 치환(변형 없으면 원본)
+- [#5 채팅] ChatBox에 visible 카운트 도입 — useLayoutEffect로 목록 clientHeight 실측(상한=화면 32% 클램프 120~200px) 초과 시 위부터 1개씩 축소(최소 3개), 새 메시지에 여유 28px면 복귀. E2E: 14개 투입→7개 표시 h=146px 수렴
+- [#6/#9/#13/#16 외형 대개편] scripts/gen_v120_looks.py 신설 — ①애니눈(하이라이트+아이리스 밝게+속눈썹)+블러셔를 chf0~5·chm0~5 인플레이스 ②jobf_/jobm_ 16시트×28프레임=448장 신규(직업별 머리/의상/눈 팔레트 완전 분화) ③gm_ 28프레임(파란 몸+무지개 머리 — GM.jpg 모티프) ④머리 광택 밴드. 컨택트시트+얼굴 줌 2회 육안 검수. 눈 클러스터 동적 탐지(2클러스터 2×4) — 정면/측면 자동 대응, 3-tuple 컬러 버그 수정 재실행
+- [#13 적용 로직] classes.ts tier2RootOf()(3·4차→계열 2차 승계) + Player.applyBodyLook 우선순위: gm 승인 > 코스튬 > 직업 시트 > 기본 성별/피부. BODY_PREFIXES 17종 추가
+- [#7 GM] gm_ 시트 + Player.gmSkin/gmApproved 플래그 + WorldScene authMe 롤 검증 후 applyBodyLook 재렌더 + 로비 생성 3단계에 GM 외형 카드(admin 롤만 노출 — authMe) + SaveData.gmSkin 마이그레이션 + buildSave 유지
+- [#8/#16 감정버블] WorldScene.emote() — 컨테이너(배경+꼬리+글자) 팝+플로트+페이드. 트리거: 대화 시작 ！(NPC 위치), 레벨업 ★, 취침 zZ, GM 엘릭서 ♥
+- [#10 타격감] WorldScene.hitStop() — physics.world.pause()+delayedCall resume(연타 누적 상한 90ms). Enemy.takeDamage 일반 26ms·크리 55ms(+shake 70ms/0.0022), die() 70ms. E2E 실측 pause 진입/자동 해제
+- [#14 환생 워프] doRebirth에 visited 초기화(new Set(["village"])) — E2E 실측 5구역→village만
+- [#15 비약 3종] exp_book_s/m/l(고급 60%/태풍 150%/극한 +1레벨·200 미만) — gen_exp_book_*.py 아이콘 3색 생성, ITEMS+SHOP_STOCK+BM_STOCK+DAILY_DEAL_POOL, Player.useExpPotion, WorldScene onUseItem 분기, Panels usable/tradeValue. E2E: 고급 EXP 지급·극한 레벨업·재사용 차단
+- [#12 가이드] download/SNS_OAuth_키발급_적용_가이드.txt — 계정 서버 실구조(SNS cfg/start/callback+환경변수 6종) 기준 발급 절차 3플랫폼+적용+FAQ 6건
+- [E2E 33/33 PASS] e2e_v120.js: 버전 배지·여캠 진입·8직업 시트 8건+남캠 1건·코스튬 우선 보존·GM 게이트 3건(비승인 차단/승인 gm_idle0/복구)·감정버블·히트스톱 2건·긴급귀환 차단·채팅 절단 2건·비약 3건·환생 워프 2건·포니테일 5건(텍스처 미로드/키 탐색/해제/제거/환수) — pageerror 0(콘솔 404 3건은 favicon 브라우저 자동요청, 스탠드얼론 재현 0)
+- [빌드] tsc 0에러 · 웹빌드 3회(검증용 2+복구 1) · JDK 소실 재발→rebuild_toolchain.sh(Temurin21) · **JAVA_HOME 미지정 시 시스템 JRE(java-21-openjdk=컴파일러 없음)로 gradle 실패** → JAVA_HOME=/home/z/jdk 명시 · BUILD SUCCESSFUL 3m43s → SERTZ-v1.2.0.apk 106,750,594B · aapt 88/1.2.0 · APK 내부 jobf_/jobm_/gm_ 자산 452건·gm_idle0 존재 · md5 76fa2bad71a120e163e12d5a14c9e13d
+- [릴리스] scripts/release_v120.py — Release v1.2.0(id 391282393) 생성·업로드(asset 572063021) → 원격 재다운로드 md5 일치 ✓ · guide 서빙 새 md5 포함 ✓ · AAB는 유저 지시("일단 apk만")로 제외
+- [버전체인 8곳] package.json(1.2.0)·build.gradle(88·1.2.0+히스토리 주석)·server.js(LATEST_VERSION/CODE/NOTE/APK_MIRROR)·Overlays.tsx 배지(v1.2.0)·apk-guide.html(제목·sub 88·노티스 17건·링크·md5·히스토리에 v1.1.1 추가·AAB 라인 제거)·안내.txt(v1.2.0 블록+md5)
+
+Stage Summary:
+- v1.2.0 배포: https://github.com/apple01234/CERTZ/releases/download/v1.2.0/SERTZ-v1.2.0.apk (versionCode 88, 106,750,594B, md5 76fa2bad…)
+- 지시 17건 전부 처리: #1~#17 코드/문서/에셋 반영 + E2E 33/33 + 릴리스/서버/가이드 검증 완료
+- 운영 교훈: ①build.gradle 빌드는 반드시 JAVA_HOME=/home/z/jdk — 시스템 java는 JRE라 javac 부재 ②캐릭터 슬롯 경로는 loadSave 마이그레이션을 우회한다 — 세이브 마이그레이션은 WorldScene 플레이어 로드 경로에도 이중 배치 필요 ③E2E에서 window.confirm 오버라이드·dialoguing 수동 해제로 물리 정지 상태 정리 필수 ④Playwright executablePath 하드코딩(chromium-1243) — playwright 버전 갱신 시 경로 확인
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

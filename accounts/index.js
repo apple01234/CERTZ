@@ -314,6 +314,18 @@ function currentUser(req) {
   const auth = String(req.headers.authorization || "");
   if (auth.startsWith("Bearer ")) token = auth.slice(7).trim();
   if (!token) token = parseCookies(req)[COOKIE] || "";
+  /* v1.2.0 (#거래소접속) — URL 쿼리 ?token= 지원. APK 웹뷰(https://localhost)에선 Authorization
+   *  헤더 자체가 프리플라이트(OPTIONS)를 유발하는데, 구버전 배포 서버(sertz4)는 OPTIONS를
+   *  401/404로 답해 preflight가 전부 실패 — 로그인 유저의 거래소/클라우드세이브가 전부
+   *  "연결할 수 없어요"가 되던 근본 원인. 쿼리 문자열은 단순 요청(simple request)이라
+   *  프리플라이트 없이 통과한다(신·구 서버 모두 호환). 토큰 형식 검증으로 오용 차단. */
+  if (!token) {
+    try {
+      const q = new URL(req.url || "/", "http://localhost").searchParams;
+      const qt = String(q.get("token") || "");
+      if (/^[A-Za-z0-9]{16,128}$/.test(qt)) token = qt;
+    } catch { /* 파싱 실패 무시 */ }
+  }
   if (!token) return null;
   const t = db.tokens[token];
   if (!t || t.expiresAt < Date.now()) {
