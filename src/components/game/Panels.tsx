@@ -9,7 +9,7 @@ import {
   CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue, dailyDeals, DAILY_DEAL_OFF,
   POT_GRADE_META, potLineText, SET_GEAR, POT_STAT_LABEL,
   ENEMIES, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, collectionBonus, nextCollectionGoal, COLLECTION_MILESTONES,
-  closetThemeOf, CLOSET_THEMES,
+  closetThemeOf, CLOSET_THEMES, isPremiumPet, // v1.2.1 (#3) — 프리미엄 펫 특전 판정
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
 import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
@@ -1435,7 +1435,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
     if (k.startsWith("scroll_")) return 200;
     if (k === "eert_cube" || k === "tier_cube") return 300;
     if (k === "exp_book") return 310;
-    if (k === "exp_book_s") return 315; // v1.2.0 (#15) 비약 — 정렬용 추정값
+    if (k === "exp_book_s") return 315; // v1.2.0 (#15) 경험치 책 — 정렬용 추정값
     if (k === "exp_book_m") return 320;
     if (k === "exp_book_l") return 330;
     return 400;
@@ -1752,19 +1752,31 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 if (s.t === "pet") {
                   const def = PET_DEFS[s.k as PetKey];
                   const active = rpg.pet === s.k;
+                  /* v1.2.1 (#3 프리미엄 펫 특전) — "비싼 펫"(BM 30+ 에메랄드: 아틀라스/철석/유니/리퍼) 소환 중엔
+                   *  인벤토리에서 라고스 상점을 바로 열어 장비/물약을 사고 닫을 수 있다(원격 상점). */
+                  const premium = active && isPremiumPet(s.k as string);
                   return (
                     <>
                       <div className="flex items-start gap-2.5">
                         <ItemIcon icon={s.icon} size={40} tier="rare" />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] font-black text-white">{def?.name ?? s.k}</p>
+                          <p className="truncate text-[13px] font-black text-white">
+                            {def?.name ?? s.k}
+                            {active && isPremiumPet(s.k as string) && <span className="ml-1.5 rounded bg-amber-400/20 px-1 py-px text-[9px] font-black text-amber-200">프리미엄 특전</span>}
+                          </p>
                           <p className="truncate text-[11px] font-bold text-emerald-300/90">{def?.desc}</p>
+                          {premium && <p className="mt-0.5 truncate text-[10px] font-bold text-amber-200/80">✦ 어디서든 라고스 상점 이용 가능</p>}
                         </div>
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         <InvBtn tone={active ? "gray" : "amber"} onClick={() => EventBus.emit("rpg:pet", { key: active ? null : (s.k as PetKey) })}>
                           {active ? "해제" : "소환"}
                         </InvBtn>
+                        {premium && (
+                          <InvBtn tone="sky" onClick={() => EventBus.emit("ui:panel", { panel: "shop" })}>
+                            라고스 상점
+                          </InvBtn>
+                        )}
                       </div>
                     </>
                   );
@@ -1961,7 +1973,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 }
                 /* consumable */
                 const starScroll = s.k === "scroll_star";
-                const usable = isBasicPot || it.healFull || it.heal || it.restore || s.k === "scroll_return" || s.k === "scroll_warp" || starScroll || s.k === "exp_book" || s.k === "exp_book_s" || s.k === "exp_book_m" || s.k === "exp_book_l"; // v1.2.0 (#15) 비약 3종
+                const usable = isBasicPot || it.healFull || it.heal || it.restore || s.k === "scroll_return" || s.k === "scroll_warp" || starScroll || s.k === "exp_book" || s.k === "exp_book_s" || s.k === "exp_book_m" || s.k === "exp_book_l"; // v1.2.0 (#15) 경험치 책 3종
                 const useLabel = starScroll ? "충전" : it.healFull || it.heal || it.restore ? "마시기" : "사용";
                 const chestLike = s.k.startsWith("chest_") || s.k.startsWith("pack_");
                 const eertCubeIt = s.k === "eert_cube";
@@ -3565,6 +3577,39 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
 
 /* ---------- 설정 / 키 매핑 (v1.9 — O키) ---------- */
 
+/** v1.2.1 (#4 최적화 x3) — 성능 카드: 실시간 FPS + 적응형 최적화 상태 표시.
+ *  WorldScene.tickFxQuality가 window.__SERTZ_PERF__를 갱신하고, 이 카드는 0.5초 폴링으로 읽는다. */
+function PerfCard() {
+  const [perf, setPerf] = useState<{ fps: number; fxLevel: number; mode: string; lowFx: boolean } | null>(null);
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      const p = (window as unknown as { __SERTZ_PERF__?: { fps: number; fxLevel: number; mode: string; lowFx: boolean } }).__SERTZ_PERF__;
+      if (p) setPerf(p);
+    }, 500);
+    return () => window.clearInterval(t);
+  }, []);
+  const fpsColor = !perf ? "text-white/40" : perf.fps >= 55 ? "text-emerald-300" : perf.fps >= 40 ? "text-amber-300" : "text-rose-300";
+  return (
+    <div className="mt-2.5 rounded-lg border border-emerald-300/25 bg-emerald-400/[0.06] px-2.5 py-2.5">
+      <div className="flex items-center justify-between">
+        <p className="text-[12px] font-black text-emerald-200">성능 (FPS)</p>
+        <p className={`text-[15px] font-black tabular-nums ${fpsColor}`}>{perf ? perf.fps : "—"}</p>
+      </div>
+      <p className="mt-0.5 text-[10px] leading-snug text-white/50">
+        {perf
+          ? perf.mode === "auto"
+            ? perf.lowFx
+              ? "자동 최적화 작동 중 — 셰이더·파티클·화면 흔들림 축소. 프레임이 회복되면 자동 복원."
+              : "자동 모드 — 프레임이 떨어지면 효과를 자동으로 줄여요."
+            : perf.mode === "low"
+              ? "절전 모드 — 셰이더·파티클·흔들림 상시 비활성 (배터리 아낌)"
+              : "항상 높음 — 모든 효과 상시 활성"
+          : "게임 화면에서 실측 중…"}
+      </p>
+    </div>
+  );
+}
+
 function KeymapPanel({ onClose }: { onClose: () => void }) {
   useEscClose(onClose);
   const [km, setKm] = useState<KeyMap>(() => loadKeyMap());
@@ -3653,6 +3698,31 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
           <p className="mt-1 text-[9px] leading-snug text-white/35">
             셰이더가 사라졌다면 → "항상 높음" 선택. 프레임 보호용 자동 축소가 켜진 것입니다.
           </p>
+        </div>
+
+        {/* v1.2.1 (#4 최적화 x3) — 성능 모니터: 실시간 FPS + 현재 최적화 상태 표시 */}
+        <PerfCard />
+
+        {/* v1.2.1 (#6) — 메뉴 화면 이동: 유저 지시 "메뉴화면(게임 시작창&캐릭터 선택화면)으로 어떻게 나감??" */}
+        <div className="mt-2.5 rounded-lg border border-[#8a6a34]/50 bg-[#ffd98a]/[0.07] px-2.5 py-2.5">
+          <p className="text-[12px] font-black text-[#ffd98a]">메뉴 화면</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/50">
+            진행 상황은 자동 저장됩니다. 우상단 ☰ 버튼에서도 나갈 수 있어요.
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <button
+              onClick={() => EventBus.emit("rpg:exitMenu", { lobby: true })}
+              className="rounded-md border-2 border-amber-300/70 bg-amber-500/20 px-1 py-1.5 text-[11px] font-black text-amber-200 transition hover:bg-amber-500/30 active:scale-95"
+            >
+              캐릭터 선택
+            </button>
+            <button
+              onClick={() => EventBus.emit("rpg:exitMenu", { lobby: false })}
+              className="rounded-md border-2 border-white/15 bg-black/40 px-1 py-1.5 text-[11px] font-black text-white/70 transition hover:border-white/40 active:scale-95"
+            >
+              게임 시작 화면
+            </button>
+          </div>
         </div>
 
         {/* v2.4 — 이름 변경 (인트로를 놓친 경우에도 언제든 이름 지정/변경 가능) */}

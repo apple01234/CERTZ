@@ -9,6 +9,29 @@ import { BODY_PREFIXES } from "./data";
  *  - 이외 캐릭터/몬스터/이펙트: ArMM1998/Kenney/LPC/Sotrak (CREDITS.md 참조)
  */
 
+/** v1.2.1 (#4 최적화) — 지연 로드된 외형 시트의 애님 후등록 (타이틀 백그라운드 로드 완료 직후 호출).
+ *  buildAllAnims는 부팅 시점에 존재하는 시트만 등록하므로, cost_/jobf_/jobm_/gm_ 시트는
+ *  로드 완료 후 이 함수로 애님을 만들어야 applyBodyLook 전환이 끊기지 않는다. */
+export function registerBodyAnims(scene: Phaser.Scene, prefixes: readonly string[]) {
+  const a = scene.anims;
+  const fr = (prefix: string, n: number, rate: number, repeat: number) => ({
+    frames: Array.from({ length: n }, (_, i) => ({ key: `${prefix}${i}` })),
+    frameRate: rate,
+    repeat,
+  });
+  for (const p of prefixes) {
+    if (!scene.textures.exists(`${p}_idle0`)) continue; // 미로드 시트 스킵 (안전)
+    if (a.exists(`${p}-idle`)) continue; // 이중 등록 방지
+    a.create({ key: `${p}-idle`, ...fr(`${p}_idle`, 4, 4, -1) });
+    a.create({ key: `${p}-walk`, ...fr(`${p}_walk`, 4, 9, -1) });
+    a.create({ key: `${p}-walk-up`, ...fr(`${p}_walkup`, 4, 9, -1) });
+    a.create({ key: `${p}-walk-side`, ...fr(`${p}_walkside`, 4, 9, -1) });
+    a.create({ key: `${p}-atk`, ...fr(`${p}_atk`, 4, 16, 0) });
+    a.create({ key: `${p}-atk-down`, ...fr(`${p}_atkdown`, 4, 16, 0) });
+    a.create({ key: `${p}-atk-up`, ...fr(`${p}_atkup`, 4, 16, 0) });
+  }
+}
+
 /** 전역 애니메이션 등록 (최초 1회) — 실제 에셋 시트 프레임 기반 */
 export function buildAllAnims(scene: Phaser.Scene) {
   const a = scene.anims;

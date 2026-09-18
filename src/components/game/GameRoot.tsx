@@ -7,7 +7,7 @@ import { HUD } from "./HUD";
 import { EventBus } from "./EventBus"; // v1.0.18 — 로비 개폐 이벤트
 import { TouchControls } from "./TouchControls";
 import { DialogueBox } from "./DialogueBox";
-import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel, RewardPopup, GateCardOverlay, GateHud } from "./Overlays";
+import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel, RewardPopup, GateCardOverlay, GateHud, ExitMenuOverlay } from "./Overlays";
 import { ServerConnect } from "./ServerConnect";
 import { GamePanels } from "./Panels";
 import { Lobby } from "./Lobby"; // v1.0.18 — 캐릭터 선택·생성 로비
@@ -43,6 +43,8 @@ export default function GameRoot() {
    *  기존엔 세로 모바일을 강제로 가렸지만(Scale.FIT이라 실제로는 플레이 가능) AC "375×812에서
    *  인게임 화면 표시"를 충족하려면 닫기 가능해야 한다. 회전하면 해제 상태 리셋. */
   const [rotateDismissed, setRotateDismissed] = useState(false);
+  /* v1.2.1 (#6) — 메뉴 나가기 확인 오버레이 (HUD ☰ 버튼) */
+  const [exitMenuOpen, setExitMenuOpen] = useState(false);
   useEffect(() => {
     setRotateDismissed(false); // 회전/크기 변화 시 다시 유도
   }, [portraitMobile]);
@@ -146,6 +148,7 @@ export default function GameRoot() {
                 onOpenOpt={() => togglePanelSfx("opt")}
                 onOpenUnion={() => togglePanelSfx("union")}
                 onOpenTrade={() => togglePanelSfx("trade")} /* v1.2.0 (#2) — 거래소 직접 진입 */
+                onOpenMenu={() => setExitMenuOpen(true)} /* v1.2.1 (#6) — 메뉴 나가기 */
               />
             </div>
             {!panel && (
@@ -220,6 +223,9 @@ export default function GameRoot() {
 
         {/* v1.0.19 (A-2) — 가로 유지 프롬프트: 닫기 가능 (세로 플레이 허용) */}
         <RotatePrompt active={portraitMobile && !rotateDismissed} onDismiss={() => setRotateDismissed(true)} />
+
+        {/* v1.2.1 (#6) — 메뉴 나가기 확인 (캐릭터 선택/게임 시작 화면) */}
+        <ExitMenuOverlay open={exitMenuOpen} onClose={() => setExitMenuOpen(false)} />
 
       </div>
     </div>

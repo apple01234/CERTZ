@@ -86,7 +86,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.2.0 — 거래소 접속 수정 · 8직업 외형 · 애니눈 여캠 · GM 외형 · 타격감 · 비약 3종</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.2.1 — 치장 위치 수정 · 펫 BM 전용 · 프리미엄 펫 상점 특전 · 최적화 · 메뉴 나가기 · 미소녀 강화</span>
           </p>
         </div>
 
@@ -254,6 +254,54 @@ export function RotatePrompt({ active, onDismiss }: { active: boolean; onDismiss
             세로 화면으로 계속하기
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- v1.2.1 (#6) — 메뉴 나가기 확인 오버레이 ---------- */
+
+/** 유저 지시 "메뉴화면(게임 시작창&캐릭터 선택화면)으로 어떻게 나감??":
+ *  인게임 우상단 ☰ 버튼으로 열리는 종료 확인창. 세이브는 월드 쪽(rpg:exitMenu)에서 수행. */
+export function ExitMenuOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null;
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px]" onPointerDown={onClose}>
+      <div
+        className="game-panel w-[min(88vw,360px)] p-4"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <p className="text-center text-sm font-black text-[#ffd98a]">메뉴 화면으로 나갈까요?</p>
+        <p className="mt-1 text-center text-[11px] font-bold text-white/55">
+          진행 상황은 자동 저장됩니다
+        </p>
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            onClick={() => {
+              onClose();
+              EventBus.emit("rpg:exitMenu", { lobby: true });
+            }}
+            className="game-btn px-4 py-3 text-[13px] font-black active:scale-95"
+          >
+            캐릭터 선택 화면으로
+            <span className="mt-0.5 block text-[9px] font-bold text-[#6b4a1c]/85">다른 캐릭터로 이어하기·새 캐릭터</span>
+          </button>
+          <button
+            onClick={() => {
+              onClose();
+              EventBus.emit("rpg:exitMenu", { lobby: false });
+            }}
+            className="game-btn-ghost px-4 py-2.5 text-[13px] font-black active:scale-95"
+          >
+            게임 시작 화면으로
+          </button>
+          <button
+            onClick={onClose}
+            className="mx-auto px-4 py-1.5 text-[11px] font-black text-white/50 hover:text-white/80 active:scale-95"
+          >
+            계속 플레이
+          </button>
+        </div>
       </div>
     </div>
   );

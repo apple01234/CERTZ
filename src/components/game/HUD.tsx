@@ -6,7 +6,7 @@ import type { HudState, QuestState } from "./EventBus";
 import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Menu } from "lucide-react";
 import { EventBus } from "./EventBus";
 
 /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
@@ -84,6 +84,7 @@ export function HUD({
   onOpenOpt,
   onOpenUnion,
   onOpenTrade,
+  onOpenMenu, // v1.2.1 (#6) — 메뉴 화면으로 나가기
 }: {
   hud: HudState;
   quest: QuestState;
@@ -114,6 +115,8 @@ export function HUD({
   onOpenUnion: () => void;
   /** v1.2.0 (#2) — 유저 거래소 직접 진입 (상점 속 작은 버튼에 숨어 있어 접근성 지적) */
   onOpenTrade: () => void;
+  /** v1.2.1 (#6) — 메뉴 화면(게임 시작창/캐릭터 선택)으로 나가기 */
+  onOpenMenu: () => void;
 }) {
   /* v1.0.5 — 키맵 재배치 시 HUD 키 배지·aria도 함께 갱신 (I/T/J/K/O 하드코딩 제거) */
   const km = loadKeyMap();
@@ -229,6 +232,14 @@ export function HUD({
             className="game-chip pointer-events-auto flex h-9 w-9 items-center justify-center text-white/90 active:scale-95"
           >
             {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+          </button>
+          {/* v1.2.1 (#6) — 메뉴 나가기: 인게임에서 타이틀/캐릭터 선택으로 돌아가는 유일한 길 */}
+          <button
+            onClick={onOpenMenu}
+            aria-label="메뉴 화면으로 나가기"
+            className="game-chip pointer-events-auto flex h-9 w-9 items-center justify-center text-white/90 active:scale-95"
+          >
+            <Menu size={17} />
           </button>
           <button
             onClick={onOpenInv}
