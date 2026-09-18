@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.2.0/SERTZ-v1.2.0.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.2.1/SERTZ-v1.2.1.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -38,9 +38,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.2.0";
-  const LATEST_CODE = 88;
-  const VERSION_NOTE = "포니테일 헤어 완전 제거(18 에메랄드 자동 환수)·유저 거래소 접속 근본 수정·긴급 귀환 하루 3회 제한·환생 차수별 NPC 대사·채팅창 자동 절단·애니메이션풍 여캠 외형·2차 8직업 전용 외형·GM 전용 외형·타격감 히트스톱·환생 후 맵 이동 차단·경험치 비약 3종";
+  const LATEST_VERSION = "1.2.1";
+  const LATEST_CODE = 89;
+  const VERSION_NOTE = "치장 부착 위치 앵커 수정(마왕 날개·왕관·리본·후광)·펫 BM 전용 판매·프리미엄 펫 라고스 상점 특전·최적화(적 AI 스로틀·부팅 분할 로드·자동 저사양 게이터+FPS 표시)·경험치 비약→책 이름 변경·메뉴 나가기(우상단 ☰)·미소녀 얼굴+트윈테일";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

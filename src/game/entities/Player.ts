@@ -3577,15 +3577,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return exp;
   }
 
-  /* v1.2.0 (#15 경험치책 비약 3종 — 메이플 비약 오마주):
-   *  고급 성장의 비약   — 현재 레벨 필요 EXP의 60% 획득
-   *  태풍 성장의 비약   — 필요 EXP의 150% (1.5레벨어치) 획득
-   *  극한 성장의 비약   — 즉시 +1레벨 (Lv200 이상에선 사용 불가 — 환생 루프 보호)
+  /* v1.2.0 (#15 경험치책 3종 — 메이플 성장책 오마주 · v1.2.1 (#5) 비약→책:
+   *  고급 성장의 책   — 현재 레벨 필요 EXP의 60% 획득
+   *  태풍 성장의 책   — 필요 EXP의 150% (1.5레벨어치) 획득
+   *  극한 성장의 책   — 즉시 +1레벨 (Lv200 이상에선 사용 불가 — 환생 루프 보호)
    *  반환값: 실제 획득 EXP(표시용) — 극한은 다음 레벨까지 남은 EXP 정산치로 표기 */
   useExpPotion(key: "exp_book_s" | "exp_book_m" | "exp_book_l"): { ok: boolean; exp: number; msg?: string } {
-    if (!this.owned.includes(key)) return { ok: false, exp: 0, msg: "비약이 없습니다" };
+    if (!this.owned.includes(key)) return { ok: false, exp: 0, msg: "성장의 책이 없습니다" };
     if (key === "exp_book_l" && this.lv >= 200) {
-      return { ok: false, exp: 0, msg: "극한 성장의 비약은 Lv 200 이상에선 사용할 수 없다" };
+      return { ok: false, exp: 0, msg: "극한 성장의 책은 Lv 200 이상에선 사용할 수 없다" };
     }
     this.consumeConsumable(key);
     if (key === "exp_book_l") {

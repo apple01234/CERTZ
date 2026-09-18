@@ -127,7 +127,7 @@ export type ItemKey =
   | "eert_cube"
   /* v4.0.0 — 바르가 업데이트 */
   | "exp_book"
-  | "exp_book_s" | "exp_book_m" | "exp_book_l" // v1.2.0 (#15) — 비약 3종
+  | "exp_book_s" | "exp_book_m" | "exp_book_l" // v1.2.0 (#15) — 경험치 책 3종
   | "tier_cube"
   /* v3.0.15 (#11) — 챕터 테마 장비 세트 9종 (무기/방어구/반지 × 챕터) */
   | "sfw_forest" | "sfa_forest" | "sfr_forest"
@@ -312,8 +312,10 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   buff_def: { key: "buff_def", kind: "buff", name: "수호의 물약", icon: "item_buff_def", price: 55, tier: "rare" },
   buff_spd: { key: "buff_spd", kind: "buff", name: "신속의 물약", icon: "item_buff_spd", price: 50, tier: "rare" },
   buff_exp: { key: "buff_exp", kind: "buff", name: "지혜의 물약", icon: "item_buff_exp", price: 90, tier: "rare" },
-  pet_slime: { key: "pet_slime", kind: "pet", name: "슬라임 젤리", icon: "pet_slime", price: 280, tier: "rare" },
-  pet_pixie: { key: "pet_pixie", kind: "pet", name: "요정 핑크이", icon: "pet_pixie", price: 520, tier: "epic" },
+  /* v1.2.1 (#2 펫BM전용) — 유저 지시 "펫은 bm으로만 팔아 (일반 골드로 팔지마)":
+   *  골드 상점 진열 철수 + BM 합류(bmPrice 신설). 기존 보유분은 그대로 사용 가능. */
+  pet_slime: { key: "pet_slime", kind: "pet", name: "슬라임 젤리", icon: "pet_slime", price: 280, bmPrice: 8, bmOnly: true, tier: "rare" },
+  pet_pixie: { key: "pet_pixie", kind: "pet", name: "요정 핑크이", icon: "pet_pixie", price: 520, bmPrice: 14, bmOnly: true, tier: "epic" },
   cos_dawn: { key: "cos_dawn", kind: "cosmetic", name: "새벽빛 오라", icon: "cos_dawn", price: 200, tier: "rare" },
   cos_gold: { key: "cos_gold", kind: "cosmetic", name: "황금 오라", icon: "cos_gold", price: 200, tier: "rare" },
   cos_abyss: { key: "cos_abyss", kind: "cosmetic", name: "심연 오라", icon: "cos_abyss", price: 260, tier: "epic" },
@@ -351,12 +353,13 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 12000, bmPrice: 8, bmOnly: true, sellPrice: 5000, tier: "epic" },
   /* v4.0.0 — 바르가 업데이트 아이템 */
   exp_book: { key: "exp_book", kind: "consumable", name: "경험치 책", icon: "i_exp_book", price: 5000, bmPrice: 3, bmOnly: true, sellPrice: 800, tier: "rare" },
-  /* v1.2.0 (#15 경험치책 비약 3종 — 메이플 비약 시스템 오마주):
+  /* v1.2.0 (#15 경험치책 3종 — 메이플 성장책 오마주 · v1.2.1 비약→책):
    *  고급=현재 레벨 필요 EXP의 60% · 태풍=150%(1.5레벨어치) · 극한=즉시 +1레벨(200 미만).
    *  극한은 환생 요구 레벨(120~200)을 함부로 넘지 않게 200 미만에서만 사용 가능. */
-  exp_book_s: { key: "exp_book_s", kind: "consumable", name: "고급 성장의 비약", icon: "i_exp_book_s", price: 26000, bmPrice: 5, bmOnly: false, sellPrice: 4000, tier: "epic" },
-  exp_book_m: { key: "exp_book_m", kind: "consumable", name: "태풍 성장의 비약", icon: "i_exp_book_m", price: 0, bmPrice: 12, bmOnly: true, sellPrice: 9000, tier: "epic" },
-  exp_book_l: { key: "exp_book_l", kind: "consumable", name: "극한 성장의 비약", icon: "i_exp_book_l", price: 0, bmPrice: 24, bmOnly: true, sellPrice: 18000, tier: "legend" },
+  /* v1.2.1 (#5 비약→책) — 유저 지시로 아이템명 변경 (비약→책) */
+  exp_book_s: { key: "exp_book_s", kind: "consumable", name: "고급 성장의 책", icon: "i_exp_book_s", price: 26000, bmPrice: 5, bmOnly: false, sellPrice: 4000, tier: "epic" },
+  exp_book_m: { key: "exp_book_m", kind: "consumable", name: "태풍 성장의 책", icon: "i_exp_book_m", price: 0, bmPrice: 12, bmOnly: true, sellPrice: 9000, tier: "epic" },
+  exp_book_l: { key: "exp_book_l", kind: "consumable", name: "극한 성장의 책", icon: "i_exp_book_l", price: 0, bmPrice: 24, bmOnly: true, sellPrice: 18000, tier: "legend" },
   /* v1.0.8 무한 콘텐츠 — 제작 재료 3종 (연금 제작대 전용 — 상점 판매 없음, 적 처치 드롭) */
   mat_mana: { key: "mat_mana", kind: "material", name: "마나 결정", icon: "item_mat_mana", price: 36, tier: "common", sellPrice: 18 },
   mat_heart: { key: "mat_heart", kind: "material", name: "몬스터 심장", icon: "item_mat_heart", price: 60, tier: "rare", sellPrice: 30 },
@@ -681,7 +684,7 @@ export const SHOP_STOCK: ItemKey[] = [
   "pendant_blood", // v4.3.0
   "scroll_return",
   "scroll_warp",
-  /* v1.2.0 (#15) — 고급 성장의 비약은 골드 상점에서도 판매 (후반 레벨링 보조) */
+  /* v1.2.0 (#15) — 고급 성장의 책은 골드 상점에서도 판매 (후반 레벨링 보조) */
   "exp_book_s",
   "buff_atk",
   "buff_def",
@@ -690,8 +693,7 @@ export const SHOP_STOCK: ItemKey[] = [
   "buff_crit", // v4.3.0 — 신규 버프 (골드 판매)
   "buff_gold", // v4.3.0
   "buff_luck", // v4.3.0
-  "pet_slime",
-  "pet_pixie",
+  /* v1.2.1 (#2 펫BM전용) — pet_slime/pet_pixie 골드 상점 진열 철수 (BM 전용으로 이동) */
   "cos_dawn",
   "cos_gold",
   "cos_abyss",
@@ -792,6 +794,8 @@ export const BM_STOCK: ItemKey[] = [
   "potion_elixir", "exp_book", "exp_book_s", "exp_book_m", "exp_book_l", "eert_cube", "tier_cube", // v1.2.0 (#15) 비약 3종 추가
   "ring_fortune", "ring_titan", "pendant_moon", "pendant_sage",
   "ring_dragon", "ring_phantom", "pendant_star", "ring_ancient", "ring_bless",
+  /* v1.2.1 (#2 펫BM전용) — 슬라임/핑크이도 BM 합류: 펫은 전부 에메랄드 전용 */
+  "pet_slime", "pet_pixie",
   "pet_wisp", "pet_ember", "pet_frost", "pet_golem", "pet_unicorn", "pet_reaper", "pet_atlas",
   "cos_frost", "cos_flame", "cos_shadow", "cos_holy", "cos_storm", "cos_rainbow", "cos_wings", "cos_aurora",
   /* v1.0.16 — 신규 치장 6종 (캐시상점 합류) */
@@ -805,6 +809,19 @@ export const BM_STOCK: ItemKey[] = [
 export function isCashStock(k: ItemKey): boolean {
   return (ITEMS[k]?.bmPrice ?? 0) > 0 && BM_STOCK.includes(k);
 }
+
+/** v1.2.1 (#3 프리미엄 펫 특전) — "비싼 펫" 정의: BM가 30 에메랄드 이상.
+ *  아틀라스(30)·철석 슬라임(32)·유니(40)·리퍼(55). 장착 중이면 인벤토리에서
+ *  라고스 상점을 바로 열 수 있는 원격 상점 특전이 활성화된다. */
+export function isPremiumPet(k: string): boolean {
+  return (ITEMS[k as ItemKey]?.bmPrice ?? 0) >= 30 && k in PET_DEFS;
+}
+
+/** v1.2.1 (#4 최적화) — 부팅 지연 로드 분할: 기본 성별/피부 시트만 부팅에서 즉시 로드하고
+ *  코스튬/직업/GM 시트(37종 × 28프레임 ≈ 1036장)는 타이틀 화면에서 백그라운드 로드.
+ *  모바일 첫 부팅 요청 수가 절반 이하로 줄어든다. */
+export const CORE_BODY_PREFIXES = ["chm0", "chm1", "chm3", "chm4", "chm5", "chf0", "chf1", "chf2", "chf3", "chf4", "chf5"] as const;
+export const DEFERRED_BODY_PREFIXES = BODY_PREFIXES.filter((p) => !(CORE_BODY_PREFIXES as readonly string[]).includes(p));
 
 /* ================= v4.3.0 — 도파민 시스템 (가챠 상자/패키지/일일 특가/출석 보상) =================
  *  유저 지시 "BM 수익 구조 및 dopamine driven development 100+ 기획+제작":

@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
+import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
@@ -1247,7 +1248,7 @@ export class WorldScene extends Phaser.Scene {
       this.physics.add.collider(e, this.solidGroup);
       this.showBanner(`${el.name} 출현!`);
       audio.sfx.roar();
-      this.cameras.main.shake(240, 0.007);
+      this.doShake(240, 0.007);
     }
 
     /* ---------- v3.3.0 (지시 #6) — 무릉도장: 허수아비 + 타이머/기록 UI ---------- */
@@ -2796,6 +2797,13 @@ export class WorldScene extends Phaser.Scene {
 
   /* v1.0.8 — 그래픽 효과 모드 실제 적용: toon 림라이트 + 보스 블룸 부착(level 1) / 해제(level 0)
    *  v1.0.10 — 앰비언트 블룸 추가: 보스전 부재 시에도 평시 블룸 유지 (“쉐이더가 보스전에만” 버그) */
+  /* v1.2.1 (#4 최적화 x3) — 절전 모드(fxLevel 0)에선 화면 쉐이크를 건너뛴다.
+   *  히트/피격 21곳에서 호출되는 카메라 쉐이크는 저사양 기기에서 렌더 버스트를 유발한다. */
+  doShake(duration: number, intensity: number) {
+    if (this.fxLevel === 0) return;
+    this.cameras.main.shake(duration, intensity);
+  }
+
   private applyFxMode(level: 0 | 1) {
     try {
       if (level === 0) {
@@ -2805,6 +2813,9 @@ export class WorldScene extends Phaser.Scene {
           clearToonStyle(this.player as unknown as Parameters<typeof clearToonStyle>[0]);
           this.playerToon = null;
         }
+        /* v1.2.1 (#4 최적화 x3) — 절전 모드: 지속 파티클(코스튬 스파클 트레일)도 정지.
+         *  셰이더 다음으로 모바일 GPU를 잡아먹는 게 상시 방출 이미터다. */
+        try { this.cosmeticEmitter?.stop(); } catch { /* 무시 */ }
       } else {
         if (this.player && !this.playerToon && this.game.renderer.type === Phaser.WEBGL) {
           this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
@@ -2815,12 +2826,20 @@ export class WorldScene extends Phaser.Scene {
         else if (this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL) {
           this.ambientFilters = addAmbientBloom(this.cameras.main);
         }
+        try { this.cosmeticEmitter?.start(); } catch { /* 무시 */ }
       }
     } catch { /* 필터 미지원 환경 무시 */ }
     console.info("[SERTZ] 그래픽 효과 모드 적용:", level === 1 ? "높음(셰이더 ON)" : "절전(셰이더 OFF)");
   }
 
   private tickFxQuality(dt: number) {
+    /* v1.2.1 (#4 최적화 x3) — 설정 패널 성능 카드용 실시간 노출 (FPS/모드/레벨) */
+    (window as unknown as { __SERTZ_PERF__?: { fps: number; fxLevel: number; mode: string; lowFx: boolean } }).__SERTZ_PERF__ = {
+      fps: Math.round(this.game.loop.actualFps),
+      fxLevel: this.fxLevel,
+      mode: this.fxMode,
+      lowFx: this.fxLevel === 0,
+    };
     /* v1.0.8 — 모드 강제: high는 항상 복원, low는 항상 축소 (적응형 판정 생략) */
     if (this.fxMode === "high") {
       this.fxSampleAt = 0;
@@ -3262,7 +3281,7 @@ export class WorldScene extends Phaser.Scene {
     // 스파크 + 카메라 킥
     this.burstEmitter.setParticleTint(0xa8ecff);
     this.burstEmitter.explode(10, x, y);
-    this.cameras.main.shake(80, 0.0035);
+    this.doShake(80, 0.0035);
   }
 
   /**
@@ -3554,7 +3573,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.multiKillCount >= 2) {
       const mk = WorldScene.MULTI_KILL_META[Math.min(this.multiKillCount, 5) - 2];
       this.spawnPickupText(this.player.x + 18, this.player.y - 66 + (this.multiKillCount % 2) * 10, mk.label, mk.color);
-      if (this.multiKillCount >= 5) this.cameras.main.shake(140, 0.004);
+      if (this.multiKillCount >= 5) this.doShake(140, 0.004);
     }
     // 리스폰 예약 — v2.3 단축: 9~13초 → 3.2~4.8초 (지시 #2 — 리젠이 너무 길어 사냥이 끊긴다)
     // v3.1.0 (#전직시련) — 시험 상대는 리스폰하지 않는다. 기존엔 시련 상대(golem 기반)를
@@ -4326,7 +4345,7 @@ export class WorldScene extends Phaser.Scene {
         const dmg = Math.round((e.def.atk ?? 10) * 2.2 + this.gateWave * 6);
         this.gateCoreHp -= dmg;
         this.spawnDamageText(core.x, core.y - 60, dmg, false);
-        this.cameras.main.shake(120, 0.006);
+        this.doShake(120, 0.006);
         e.takeDamage(999999, new Phaser.Math.Vector2(0, -1), 0);
         if (this.gateCoreHp <= 0) { this.finishGate("fail"); return; }
       } else if (dist > 340) {
@@ -4452,7 +4471,7 @@ export class WorldScene extends Phaser.Scene {
         if (e.alive) e.takeDamage(dmg, new Phaser.Math.Vector2(0, -1), 0);
       }
       this.cameras.main.flash(160, 255, 220, 140);
-      this.cameras.main.shake(200, 0.008);
+      this.doShake(200, 0.008);
       EventBus.emit("banner:show", { text: "차원 폭탄! 전 적에게 대미지!" });
     } else if (id === "sh_repair") {
       this.gateCoreHp = Math.min(this.gateCoreMax, this.gateCoreHp + this.gateCoreMax * 0.3);
@@ -5186,7 +5205,7 @@ export class WorldScene extends Phaser.Scene {
     this.spawnBurstAt(e.x, e.y, 40, 0xffd76a);
     this.showBanner("각성의 수호자 출현! 쓰러트려 5차 각성을 증명하라");
     audio.sfx.roar();
-    this.cameras.main.shake(280, 0.008);
+    this.doShake(280, 0.008);
   }
 
   /** 각성 완료 의식 — fifth 플래그 + 풀 의식 FX + 완료 대사 + 세이브 */
@@ -5213,7 +5232,7 @@ export class WorldScene extends Phaser.Scene {
     spawnRingPop(this, p.x, p.y, "vf_ring", 0xffe66a, 5.6, 1000);
     spawnFlarePop(this, p.x, p.y - 10, "vf_flare_fire", { tint: 0xffe66a, scale: 2.0, duration: 700 });
     this.cameras.main.flash(240, 255, 230, 120);
-    this.cameras.main.shake(460, 0.02);
+    this.doShake(460, 0.02);
     EventBus.emit("banner:show", {
       text: "5차 각성 완료! 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(S) 해금", // v1.0.5 — 스킬5 기본키 N→S 반영
     });
@@ -5423,7 +5442,7 @@ export class WorldScene extends Phaser.Scene {
     this.physics.add.collider(e, this.solidGroup);
     this.showBanner(`⚠ 침공! ${e.displayName} 등장 — 근처에서 흉조가 느껴진다!`);
     audio.sfx.roar();
-    this.cameras.main.shake(240, 0.006);
+    this.doShake(240, 0.006);
     this.spawnBurstAt(x, y, 20, 0xff6a7a);
   }
 
@@ -5647,7 +5666,7 @@ export class WorldScene extends Phaser.Scene {
     const bx = this.portalHome.x;
     const by = this.portalHome.y - 10;
     audio.sfx.roar();
-    this.cameras.main.shake(260, 0.008);
+    this.doShake(260, 0.008);
     this.showBanner(`${def.name} 출현!`);
     this.boss = new Boss(this, bx, by, def, "normal");
     this.spawnBossRunic(bx, by, false); /* v4.1.7 — 유료 팩 룬 마법진 */
@@ -5693,7 +5712,7 @@ export class WorldScene extends Phaser.Scene {
     const bx = this.portalHome.x;
     const by = this.portalHome.y - 10;
     audio.sfx.roar();
-    this.cameras.main.shake(340, lv === "chaos" ? 0.016 : 0.01);
+    this.doShake(340, lv === "chaos" ? 0.016 : 0.01);
     /* v4.1.4 — 카오스 등장 강조 배너 */
     this.showBanner(lv === "chaos" ? `카오스 재림 — ${base.name}!! (전용 패턴 개방)` : `재림한 ${base.name} 출현!`);
     this.boss = new Boss(this, bx, by, def, lv);
@@ -5731,7 +5750,7 @@ export class WorldScene extends Phaser.Scene {
     const bx = this.portalHome.x;
     const by = this.portalHome.y - 10;
     audio.sfx.roar();
-    this.cameras.main.shake(260, 0.008);
+    this.doShake(260, 0.008);
     this.showBanner(`GM 체험 — ${def.name} 출현!`);
     this.boss = new Boss(this, bx, by, def, "normal");
     this.spawnBossRunic(bx, by, false);
@@ -5918,7 +5937,7 @@ export class WorldScene extends Phaser.Scene {
       this.bossKillCount++;
       this.addPassXp(PASS_XP_RULES.boss);
       this.trackMission("boss");
-      this.cameras.main.shake(300, 0.008);
+      this.doShake(300, 0.008);
       this.updateTowerText();
       if (this.enemies.filter((e) => e.alive).length === 0) this.towerFloorCleared();
       return;
@@ -5959,7 +5978,7 @@ export class WorldScene extends Phaser.Scene {
       this.addPassXp(PASS_XP_RULES.boss); // v4.5.0 — 재림 보스도 패스 XP +30
       this.trackMission("boss"); // v1.0.1 — 시즌 미션 보스 카운트
       if (this.boss?.chaos) this.chaosKillCount++;
-      this.cameras.main.shake(400, 0.01);
+      this.doShake(400, 0.01);
       this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
       const exp = def?.exp ?? 220;
       const gold = def?.gold ?? 200;
@@ -5986,7 +6005,7 @@ export class WorldScene extends Phaser.Scene {
     // v2.0 수정 (지시 #7) — 보스전 종료 후 BGM이 멈추는 버그:
     // stopBGM 대신 1.4초 후 스테이지 테마 BGM으로 자연 전환
     this.time.delayedCall(1400, () => audio.playStageBGM(this.stageDef.key));
-    this.cameras.main.shake(400, 0.01);
+    this.doShake(400, 0.01);
     this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
     this.player.gainExp(def?.exp ?? 220);
     this.totalKills++;
@@ -6247,6 +6266,10 @@ export class WorldScene extends Phaser.Scene {
     const onChatSend = (v: { text: string }) => net.netSendChat(v.text);
     /* v4.1.0 — 긴급 귀환 (설정창 버튼) */
     const onEscapeHome = () => this.emergencyReturn();
+    /* v1.2.1 (#6 메뉴 나가기) — 유저 지시 "메뉴화면(게임 시작창&캐릭터 선택화면)으로 어떻게 나감??":
+     *  기존엔 인게임에서 타이틀/캐릭터 선택으로 돌아가는 길이 아예 없었다.
+     *  lobby=true면 타이틀 전환 후 캐릭터 선택(로비)을 곧장 연다. */
+    const onExitMenu = (v: { lobby?: boolean }) => this.exitToMenu(v?.lobby ?? false);
     /* v4.1.0 — 광고 보상/에메랄드 충전 (BM 수익 연동 — 유저 지시 #10) */
     const onAdReward = async () => {
       if (!this.player) return;
@@ -6534,7 +6557,7 @@ export class WorldScene extends Phaser.Scene {
         this.spawnPillar(this.player.x, this.player.y, jhex, 200);
         this.spawnBurstAt(this.player.x, this.player.y, 34, jhex);
         this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
-        this.cameras.main.shake(200, 0.008);
+        this.doShake(200, 0.008);
         this.spawnPickupText(this.player.x, this.player.y - 56, `${def.name} 각성! 스킬 강화`, `#${jhex.toString(16).padStart(6, "0")}`);
       }
       EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
@@ -6596,12 +6619,12 @@ export class WorldScene extends Phaser.Scene {
         }
         return;
       }
-      /* v1.2.0 (#15) — 비약 3종 (고급/태풍/극한 성장의 비약 — 메이플 비약 오마주) */
+      /* v1.2.0 (#15) — 경험치 책 3종 · v1.2.1 (#5) 비약→책 이름 변경 */
       if (key === "exp_book_s" || key === "exp_book_m" || key === "exp_book_l") {
         const NAME = { exp_book_s: "고급", exp_book_m: "태풍", exp_book_l: "극한" }[key as "exp_book_s" | "exp_book_m" | "exp_book_l"];
         const r = this.player.useExpPotion(key as "exp_book_s" | "exp_book_m" | "exp_book_l");
         if (r.ok) {
-          EventBus.emit("banner:show", { text: `${NAME} 성장의 비약 사용! EXP +${r.exp.toLocaleString()}` });
+          EventBus.emit("banner:show", { text: `${NAME} 성장의 책 사용! EXP +${r.exp.toLocaleString()}` });
           this.spawnPickupText(this.player.x, this.player.y - 34, `EXP +${r.exp.toLocaleString()}`, "#8fe84a");
           audio.sfx.questDone();
           this.emitRpgState();
@@ -6736,7 +6759,7 @@ export class WorldScene extends Phaser.Scene {
           this.spawnPillar(p.x, p.y, jhex, 200);
           this.spawnBurstAt(p.x, p.y, 34, jhex);
           this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
-          this.cameras.main.shake(200, 0.008);
+          this.doShake(200, 0.008);
         }
         this.emitSkills();
         this.emitRpgState();
@@ -6848,6 +6871,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("chat:focus", onChatFocus);
     EventBus.on("chat:send", onChatSend);
     EventBus.on("rpg:escapeHome", onEscapeHome); // v4.1.0 — 설정창 긴급 귀환
+    EventBus.on("rpg:exitMenu", onExitMenu); // v1.2.1 (#6) — 메뉴 화면(타이틀/캐릭터 선택)으로 나가기
     EventBus.on("rpg:adReward", onAdReward); // v4.1.0 — 광고 보상
     EventBus.on("rpg:buyGems", onBuyGems); // v4.1.0 — 구글 플레이 충전
     EventBus.on("rpg:buyStorePack", onBuyStorePack); // v1.0.2 — 현금 패키지
@@ -7343,6 +7367,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("chat:focus", onChatFocus);
       EventBus.off("chat:send", onChatSend);
       EventBus.off("rpg:escapeHome", onEscapeHome); // v4.1.0
+      EventBus.off("rpg:exitMenu", onExitMenu); // v1.2.1 (#6)
       EventBus.off("rpg:adReward", onAdReward); // v4.1.0
       EventBus.off("rpg:buyGems", onBuyGems); // v4.1.0
       EventBus.off("rpg:passBuy", onPassBuy); // v4.5.0
@@ -7657,24 +7682,35 @@ export class WorldScene extends Phaser.Scene {
       ov.setScale(this.player.scaleX, this.player.scaleY);
       ov.setDepth(this.player.depth + 0.2);
     }
-    /* v1.1.0 (#1 장식) — 어태치 악세서리: 캐릭터에 고정 + 실시간 동기화 (유저 지시 — 최적화:
-     *  오버레이 겹침 렌더 없이 프레임별 앵커 오프셋만 갱신. 왕관/리본=머리, 후광=공중, 날개=등 뒤) */
+    /* v1.2.1 (#1 치장위치) — 앵커 기반 부착 (유저 지시 "마왕의 날개 같은 착용 치장 위치가 이상해"):
+     *  기존 고정 오프셋은 시트별 머리 높이(여캠 긴머리/직업 시트/GM)가 달라 어긋났다.
+     *  ACC_ANCHORS(프레임별 headTop/hair 경계 스캔 테이블)로 실루엣에 정확히 붙인다.
+     *  왕관=머리꼭대기에 1~2px 겹침 · 리본=머리 옆 · 후광=머리 위 공중 보브(시간 기반 — 트윈 충돌 제거)
+     *  날개=어깨 높이 + ×1.35 확대로 몸 실루엣 밖까지 퍼져 보인다(기존엔 몸 뒤에 숨음). */
     if (this.accOverlays.length && this.player) {
       const animKey = this.player.anims?.currentAnim?.key ?? "";
       const back = animKey.includes("up"); // 뒷모습
+      const an = ACC_ANCHORS[this.player.texture.key] ?? ACC_DEFAULT_ANCHOR;
+      const px = this.player.x, py = this.player.y;
+      const sx = this.player.scaleX || 1, sy = this.player.scaleY || 1;
+      const ht = py + (an[0] - 32) * sy; // 머리 꼭대기 (월드 좌표)
+      const hw = Math.max(3, Math.min(48 - an[1], an[2] - 48) - 1) * sx; // 머리 반폭
+      const bob = Math.sin(this.time.now / 320) * 1.6;
       for (const a of this.accOverlays) {
         const im = a.img;
+        let wing = false;
         if (a.key === "acc_crown") {
-          im.setPosition(this.player.x + (this.player.flipX ? 1 : -1), this.player.y - (back ? 15 : 19) * (this.player.scaleY || 1));
+          im.setPosition(px + (this.player.flipX ? 1 : -1), ht - 2 * sy);
         } else if (a.key === "acc_ribbon") {
-          im.setPosition(this.player.x + (this.player.flipX ? -8 : 8), this.player.y - (back ? 10 : 15));
+          im.setPosition(px + (this.player.flipX ? -1 : 1) * hw, ht + 4 * sy);
         } else if (a.key === "acc_halo") {
-          im.setPosition(this.player.x, this.player.y - 26);
+          im.setPosition(px, ht - 9 * sy + bob);
         } else if (a.key === "acc_wings_devil" || a.key === "acc_wings_fairy") {
-          im.setPosition(this.player.x, this.player.y - (back ? 3 : 5));
+          im.setPosition(px, py + (an[0] + 11 + (back ? 2 : 0) - 32) * sy);
           im.setFlipX(this.player.flipX);
+          wing = true;
         }
-        im.setScale(this.player.scaleX, this.player.scaleY);
+        im.setScale(wing ? sx * 1.35 : sx, wing ? sy * 1.35 : sy);
         im.setDepth(a.key.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3);
       }
     }
@@ -7693,7 +7729,7 @@ export class WorldScene extends Phaser.Scene {
     }
     if (this.upgradeGlow && this.player) {
       const wUp = this.player.upgrades.weapon;
-      if (wUp >= 8) {
+      if (wUp >= 8 && this.fxLevel === 1) { // v1.2.1 (#4) — 절전 모드 스파클 스폰 중지
         this.sfSparkTimer -= dt;
         if (this.sfSparkTimer <= 0) {
           this.sfSparkTimer = wUp >= 12 ? 230 : 420;
@@ -8324,7 +8360,7 @@ export class WorldScene extends Phaser.Scene {
     }
     if (a.kind === "s5") {
       this.cameras.main.flash(120, 200, 170, 255);
-      this.cameras.main.shake(200, 0.004);
+      this.doShake(200, 0.004);
     }
   }
 
@@ -8373,6 +8409,22 @@ export class WorldScene extends Phaser.Scene {
       window.localStorage.setItem(WorldScene.ESCAPE_DAILY_KEY, JSON.stringify({ date: today, count: this.escapeUsesToday() + 1 }));
     } catch {
       /* 저장 불가 환경 — 제한 없이 진행 */
+    }
+  }
+
+  /** v1.2.1 (#6 메뉴 나가기) — 인게임 → 타이틀(게임 시작 화면) 복귀.
+   *  lobby=true면 타이틀 전환 뒤 캐릭터 선택 화면(로비)을 곧장 연다.
+   *  세이브 후 씬을 정리 종료하고 TitleScene으로 교체 — shutdown 핸들러(net 정리·타이머)가 자동 실행된다.
+   *  v1.2.1 운영 교훈 적용: 페이드/딜레이 게이트 폐기 — 저FPS 기기에서 게임 시간이 실제 시간보다
+   *  크게 느려져 전환이 수 초 지연될 수 있다. 씬 교체 자체가 하드컷이라 시각 손실도 없다. */
+  exitToMenu(goLobby = false) {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    try { this.save(); } catch { /* 세이브 실패해도 나가기는 진행 */ }
+    try { audio.stopBGM(); } catch { /* 무시 */ }
+    this.scene.start("title");
+    if (goLobby) {
+      window.setTimeout(() => EventBus.emit("lobby:open"), 120);
     }
   }
 
@@ -9625,7 +9677,7 @@ export class WorldScene extends Phaser.Scene {
           this.spawnPillar(this.player.x, this.player.y, jhex, 200);
           this.spawnBurstAt(this.player.x, this.player.y, 34, jhex);
           this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
-          this.cameras.main.shake(200, 0.008);
+          this.doShake(200, 0.008);
           this.spawnPickupText(this.player.x, this.player.y - 56, `${def.name} 각성! 스킬 강화`, `#${jhex.toString(16).padStart(6, "0")}`);
           EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
           this.refreshPlayerTag();
@@ -9678,7 +9730,7 @@ export class WorldScene extends Phaser.Scene {
     this.physics.add.collider(e, this.solidGroup);
     this.showBanner("시험 상대 출현!");
     audio.sfx.roar();
-    this.cameras.main.shake(220, 0.006);
+    this.doShake(220, 0.006);
   }
 
   /** 주민 대화 종료 — talk 퀘스트 진행 (마을 첫 퀘스트) */
@@ -9870,7 +9922,7 @@ export class WorldScene extends Phaser.Scene {
     // 축하 연출
     audio.sfx.levelup();
     this.spawnBurstAt(this.player.x, this.player.y, 26, 0x9df0ff);
-    this.cameras.main.shake(140, 0.004);
+    this.doShake(140, 0.004);
     this.player.healFull();
     // 세이브에 이름 기록
     this.save();
@@ -10056,13 +10108,11 @@ export class WorldScene extends Phaser.Scene {
     this.accOverlays = [];
     const accKey = this.player?.accessory ?? null;
     if (this.player && accKey) {
+      /* v1.2.1 (#1) — 생성 위치만 여기서 잡고 매 프레임 동기화는 update 루프가 담당.
+       *  후광 보브/날개 흔들림 트윈 폐기 — update가 setPosition/setAngle을 덮어써
+       *  트윈이 무의미했고(기존 버그) 오히려 위치 튐의 원인이었다. */
       const img = this.add.image(this.player.x, this.player.y, accKey).setDepth(this.player.depth + 0.3);
       this.accOverlays.push({ key: accKey, img });
-      if (accKey === "acc_halo") {
-        this.tweens.add({ targets: img, y: "-=3", duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-      } else if (accKey === "acc_wings_devil" || accKey === "acc_wings_fairy") {
-        this.tweens.add({ targets: img, angle: { from: -3, to: 3 }, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-      }
     }
     /* v1.2.0 (#1) — 포니테일 렌더링 제거(아이템 폐지) — 헤어 슬롯은 신규 헤어용으로 유지 */
     const key = this.player?.cosmetic;
@@ -10231,7 +10281,7 @@ export class WorldScene extends Phaser.Scene {
       });
     }
     this.cameras.main.flash(240, (col >> 16) & 0xff, (col >> 8) & 0xff, col & 0xff);
-    this.cameras.main.shake(260, 0.006);
+    this.doShake(260, 0.006);
     EventBus.emit("banner:show", { text: `${slot === "weapon" ? "무기" : "방어구"} ★${next} 돌파!` });
   }
 

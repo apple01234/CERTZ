@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { buildAllAnims } from "../textures";
-import { BODY_PREFIXES } from "../data";
+import { CORE_BODY_PREFIXES } from "../data";
 import { BGM_PRELOAD_TRACKS, SKILL_SFX_TRACKS } from "../audio";
 
 /**
@@ -331,9 +331,12 @@ export class BootScene extends Phaser.Scene {
     this.load.setPath("assets");
     for (const key of ASSET_LIST) this.load.image(key, `${key}.webp`);
     /* v1.1.0 (#1/#19/#21/#22) — 외형 시스템: 여성(chf)/피부(chm) 변형 11종 + SPUM식 코스튬 완전교체(cost_*) 10종 × 28프레임
-     *  + 어태치 장식 5종 (scripts/gen_char_system.py 산출). 구 outfit_* 재색상 오버레이는 폐기(미로드) */
+     *  + 어태치 장식 5종 (scripts/gen_char_system.py 산출). 구 outfit_* 재색상 오버레이는 폐기(미로드)
+     *  v1.2.1 (#4 최적화 x3) — 부팅 분할 로드: 기본 성별/피부 시트(11종·308프레임)만 즉시 로드.
+     *  코스튬/직업/GM 시트 37종(≈1036프레임)은 TitleScene 백그라운드 로드로 이관 —
+     *  모바일 첫 부팅 로드 요청이 절반 이하로 줄고 로딩바가 훨씬 빨리 끝난다. */
     const heroFrames = ASSET_LIST.filter((k) => k.startsWith("hero_")).map((k) => k.slice(5));
-    for (const p of BODY_PREFIXES) {
+    for (const p of CORE_BODY_PREFIXES) {
       for (const f of heroFrames) this.load.image(`${p}_${f}`, `${p}_${f}.webp`);
     }
     /* v1.2.0 (#1) — 포니테일 4종 로드 제거(아이템 폐지) · 무지개 오라 아이콘 + 어태치 장식은 유지 */

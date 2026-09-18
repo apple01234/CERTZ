@@ -2,6 +2,8 @@ import Phaser from "phaser";
 import { EventBus } from "../../components/game/EventBus";
 import { loadSave, type SaveData } from "../config";
 import * as audio from "../audio";
+import { DEFERRED_BODY_PREFIXES } from "../data"; // v1.2.1 (#4 최적화) — 지연 로드 외형 시트
+import { registerBodyAnims } from "../textures";
 
 /** 타이틀: Phaser는 배경 연출만, 버튼은 React 오버레이가 담당 */
 export class TitleScene extends Phaser.Scene {
@@ -9,9 +11,41 @@ export class TitleScene extends Phaser.Scene {
   private glow!: Phaser.GameObjects.Image;
   private tree!: Phaser.GameObjects.Image;
   private frag!: Phaser.GameObjects.Image;
+  /* v1.2.1 (#4 최적화 x3) — 백그라운드 에셋 로더 상태:
+   *  부팅은 기본 시트만 로드하고 나머지(코스튬/직업/GM 37종·≈1036프레임)는 타이틀 화면에서
+   *  유저가 메뉴를 보는 동안 몰래 받는다. 게임 시작 버튼을 눌렀는데 미완료면 잠깐 기다렸다 진입. */
+  private deferDone = false;
+  private deferStarted = false;
 
   constructor() {
     super("title");
+  }
+
+  /** v1.2.1 (#4 최적화) — 월드 진입 공통 게이트: 백그라운드 시트 로드가 끝났을 때만 시작.
+   *  대기 중엔 화면 하단에 작은 안내문 (평균 0~1초). */
+  private beginWorld(data: Record<string, unknown>) {
+    const launch = () => {
+      this.scene.start("world", data);
+    };
+    if (this.deferDone || this.load.totalToLoad === 0) {
+      launch();
+      return;
+    }
+    const note = this.add
+      .text(this.scale.width / 2, this.scale.height - 28, "에셋 정리 중… 잠시만요", {
+        fontFamily: "Galmuri11, 'Galmuri11', sans-serif",
+        fontSize: "14px",
+        color: "#cfe3ff",
+      })
+      .setOrigin(0.5)
+      .setDepth(50);
+    this.load.once("complete", () => {
+      registerBodyAnims(this, DEFERRED_BODY_PREFIXES);
+      this.deferDone = true;
+      (window as unknown as { __SERTZ_DEFER_DONE__?: boolean }).__SERTZ_DEFER_DONE__ = true;
+      note.destroy();
+      launch();
+    });
   }
 
   create() {
@@ -65,15 +99,32 @@ export class TitleScene extends Phaser.Scene {
     EventBus.emit("ui:title");
     audio.playBGM("title");
 
+    /* v1.2.1 (#4 최적화 x3) — 백그라운드 지연 로드: 타이틀 진입 즉시 코스튬/직업/GM 시트를 받는다.
+     *  완료 시 애님 후등록 + deferDone 플래그. 유저가 시작 버튼을 누르는 시점엔 대부분 완료돼 있다. */
+    if (!this.deferStarted) {
+      this.deferStarted = true;
+      const heroFrames = ["idle0", "idle1", "idle2", "idle3", "walk0", "walk1", "walk2", "walk3", "walkside0", "walkside1", "walkside2", "walkside3", "walkup0", "walkup1", "walkup2", "walkup3", "atk0", "atk1", "atk2", "atk3", "atkdown0", "atkdown1", "atkdown2", "atkdown3", "atkup0", "atkup1", "atkup2", "atkup3"];
+      this.load.setPath("assets");
+      for (const p of DEFERRED_BODY_PREFIXES) {
+        for (const f of heroFrames) this.load.image(`${p}_${f}`, `${p}_${f}.webp`);
+      }
+      this.load.start();
+      this.load.once("complete", () => {
+        registerBodyAnims(this, DEFERRED_BODY_PREFIXES);
+        this.deferDone = true;
+        (window as unknown as { __SERTZ_DEFER_DONE__?: boolean }).__SERTZ_DEFER_DONE__ = true;
+      });
+    }
+
     const onNew = () => {
       if (this.started) return;
       this.started = true;
       audio.initAudio();
       audio.sfx.questDone();
       this.cameras.main.fadeOut(400, 0, 0, 0);
-      this.time.delayedCall(420, () => {
-        this.scene.start("world", { stage: "village", fresh: true });
-      });
+      /* v1.2.1 (#4) — 지연 로드 미완료면 완료를 기다렸다 진입 (직업/코스튬 시트 미로드 진입 방지).
+       *  타이틀에서 이미 받는 동안이라 대기는 보통 0ms — 잠깐이면 로딩 표시 없이 넘어간다. */
+      this.time.delayedCall(420, () => this.beginWorld({ stage: "village", fresh: true }));
     };
     const onContinue = (save: SaveData) => {
       if (this.started) return;
@@ -81,9 +132,7 @@ export class TitleScene extends Phaser.Scene {
       audio.initAudio();
       audio.sfx.questDone();
       this.cameras.main.fadeOut(400, 0, 0, 0);
-      this.time.delayedCall(420, () => {
-        this.scene.start("world", { save, fresh: true });
-      });
+      this.time.delayedCall(420, () => this.beginWorld({ save, fresh: true }));
     };
 
     EventBus.on("game:new", onNew);

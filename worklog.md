@@ -1851,3 +1851,29 @@ Stage Summary:
 - 지시 17건 전부 처리: #1~#17 코드/문서/에셋 반영 + E2E 33/33 + 릴리스/서버/가이드 검증 완료
 - 운영 교훈: ①build.gradle 빌드는 반드시 JAVA_HOME=/home/z/jdk — 시스템 java는 JRE라 javac 부재 ②캐릭터 슬롯 경로는 loadSave 마이그레이션을 우회한다 — 세이브 마이그레이션은 WorldScene 플레이어 로드 경로에도 이중 배치 필요 ③E2E에서 window.confirm 오버라이드·dialoguing 수동 해제로 물리 정지 상태 정리 필수 ④Playwright executablePath 하드코딩(chromium-1243) — playwright 버전 갱신 시 경로 확인
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 88
+Agent: Super Z (메인)
+Task: 유저 지시 7건 — ①치장(마왕날개 등) 위치 수정 ②펫 BM 전용 ③비싼 펫 라고스 상점 특전 ④최적화 x3 ⑤비약→책 ⑥메뉴 나가기 ⑦미소녀 — v1.2.1 확정·릴리스 (versionCode 89)
+
+Work Log:
+- [#1 치장위치 근본수정] 원인 진단: 왕관/리본/후광/날개가 고정 픽셀 오프셋이라 시트별 머리 높이(여캠 긴머리+아호게 15px vs 기본 11px 등)가 다르면 전부 어긋남 + 날개(26px)가 몸(27px)보다 좁아 뒤에 숨음. 해법: scripts/gen_acc_anchors.py — 전 바디 시트 38종×28프레임=1,372장 알파 스캔 → [headTop, 머리좌/우경계, feet] 테이블(src/game/acc_anchors.ts) 생성 → WorldScene 동기화 루프를 앵커 기반 재작성(왕관=머리꼭대기 2px 겹침·리본=머리 옆·후광=시간 기반 보브·날개=어깨 높이×1.35 확대). 후광/날개 트윈이 update에 덮이던 버그 동시 수정. scripts/gen_v121_acc2.py — 마왕날개 40×24 스캘럽 리드로우(리본 같던 1판을 폐기하고 재작성), 요정날개 4엽 신규
+- [#2 펫BM전용] pet_slime(bmPrice 8)/pet_pixie(14) ITEMS에 bmPrice+bmOnly 신설, SHOP_STOCK에서 제거, BM_STOCK 합류 → 펫 9종 전량 에메랄드 전용
+- [#3 프리미엄펫 특전] data.ts isPremiumPet(bmPrice≥30: 아틀라스/철석/유니/리퍼) + Panels 인벤 펫 상세에 "프리미엄 특전" 배지+라고스 상점 버튼(ui:panel shop) — 소환 중 어디서든 상점 이용
+- [#4 최적화 x3] ① Enemy.ts 3단 스로틀: 1400px 밖 1.25Hz 신설(기존 950px 5Hz 유지) ② 부팅 분할 로드: data.ts CORE_BODY_PREFIXES(11종 chf/chm)/DEFERRED_BODY_PREFIXES(37종 cost/jobf/jobm/gm≈1,036프레임) 분리 → BootScene은 코어만, TitleScene.create가 백그라운드 로드+registerBodyAnims(textures.ts 신설) 후등록, beginWorld 게이트로 미완료시 "에셋 정리 중…" 대기 ③ 게이터 확장: applyFxMode에 cosmeticEmitter stop/start, doShake 래퍼로 21곳 카메라 셰이크 절전 게이트, 스타포스 스파클 스폰 게이트, tickFxQuality가 __SERTZ_PERF__ 노출 + 설정에 PerfCard(실시간 FPS/모드 설명)
+- [#5 비약→책] ITEMS 3종명+Player.useExpPotion 메시지+WorldScene 배너+Panels 주석+Overlays 배지 전부 "성장의 책"로 변경(파일/키/아이콘 유지 — 세이브 호환)
+- [#6 메뉴 나가기] WorldScene.exitToMenu(저장→BGM정리→scene.start("title"), lobby면 120ms 후 lobby:open) + EventBus rpg:exitMenu 수신/해제 + HUD ☰ 버튼(Menu 아이콘) + Overlays ExitMenuOverlay(캐릭터 선택/게임 시작 화면/계속하기) + GameRoot exitMenuOpen 상태 + 설정(KeymapPanel) 메뉴 화면 카드
+- [#7 미소녀] scripts/gen_v121_girls.py — girly_face(눈 아래 확장행·2번째 하이라이트·러시 2px·입술 2px — 전부 피부 위 가드)+twin_strands(chf 트윈테일) / jobf 8직업+cost 여성 10종에 블러셔·입술. **버그 자수정**: 스트랜드가 헤어 외곽선(검정)을 샘플링해 검은 실처럼 보임 → git checkout으로 chf 복원 후 hair_body_color(행16~26 최빈 비검정색)로 수정 재실행 — 168프레임(=chf 6종×28) 정상
+- [E2E 25/25 PASS] e2e_v121.js 신설 — 버전배지 v1.2.1·지연로드 완료+jobf/cost/gm 애님 후등록·여캠 진입·골드상점 펫 0/BM 9종·isPremiumPet 4+2·책 이름·왕관/후광/날개 프레임 앵커 실측(__SERTZ_DEBUG__.anchors 노출 추가 — PhaserGame.ts)·날개 1.35배/뒤 depth 9.8<10·아틀라스 소환→인벤 라고스 버튼→상점 오픈·__SERTZ_PERF__·chf 입술 픽셀·☰→오버레이→타이틀 전환+로비 오픈+재진입 — pageerror 0(404 2건은 favicon 자동요청)
+- [시각검수] scripts/visual_v121.js — 날개+펫 장착 3.2배 줌 스크린샷, girls_review.png 컨택트시트 2회 육안
+- [빌드] tsc 0에러 · 웹빌드 3회(검증 1+export 1+복구 1) · JAVA_HOME=/home/z/jdk build_apk.sh BUILD SUCCESSFUL 51s → SERTZ-v1.2.1.apk 106,763,574B · aapt 89/1.2.1 · APK 내부 검증(신규 wings 40×24·jobf 시트·책 문자열·비약 잔존 0·라고스/메뉴 나가기/성능 카드 문자열) · md5 379b6f6b1a536ea1deaff35941b60d5d
+- [릴리스] scripts/release_v121.py — Release v1.2.1(id 391339288) 생성·업로드(asset 572242537) → 원격 재다운로드 md5 일치 ✓ · guide 서빙 md5 ✓ · /SERTZ-v1.2.x.apk 307 리다이렉트(구버전 링크도 신규로) ✓
+- [버전체인 8곳] package.json(1.2.1)·build.gradle(89·1.2.1+히스토리 주석)·server.js(LATEST_VERSION/CODE/NOTE/APK_MIRROR)·Overlays.tsx 배지(v1.2.1)·apk-guide.html(제목·sub 89·노티스 7건·링크·md5·히스토리에 v1.2.0 추가)·안내.txt(v1.2.1 블록+md5)
+- [서버 운영] server.js를 NODE_ENV=production 미지정으로 재기동해 dev 모드로 뜬 것을 발견 → NODE_ENV=production 명시 재기동(이후 세션도 준수)
+
+Stage Summary:
+- v1.2.1 배포: https://github.com/apple01234/CERTZ/releases/download/v1.2.1/SERTZ-v1.2.1.apk (versionCode 89, 106,763,574B, md5 379b6f6b…)
+- 유저 지시 7건 전부 코드/에셋/문서 반영 + E2E 25/25 + 릴리스/서버/가이드 검증 완료
+- 운영 교훈: ①exitToMenu류 페이드/딜레이 게이트는 저FPS 헤드리스에서 게임시간 왜곡으로 수 초 지연 — 씬 전환은 즉시 실행이 견고(v1.1.0 교훈 재확인) ②E2E 앵커 판정은 현재 프레임 기준으로 — idle 고정 가정은 걷기 프레임에서 오탐 ③인게임 DOM 버튼 매칭은 trim().startsWith() — 중첩 span textContent 포함 ④server.js 재기동 시 NODE_ENV=production 필수(누락 시 dev 모드로 서빙)
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

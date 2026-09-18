@@ -413,7 +413,21 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     /* v3.2.0 (#최적화) — 원거리 적 AI 스로틀:
      *  플레이어에서 950px 밖(화면 밖)인 적은 FSM을 5Hz로만 갱신한다.
      *  광역 맵에 적 40~80기가 60Hz FSM을 돌리는 게 모바일 프레임 드롭의 주범.
-     *  넉백 감쇠/속도 적용은 매 프레임 유지해 움직임이 끊기지 않는다. */
+     *  넉백 감쇠/속도 적용은 매 프레임 유지해 움직임이 끊기지 않는다.
+     *  v1.2.1 (#4 최적화 x3) — 3단 확장: 1400px 밖은 1.25Hz(800ms)로 2중 스로틀.
+     *  원거리 몬스터는 어차피 어그로 획득 범위 밖이라 화면 밖 2중 스로틀은 체감 영향 0. */
+    if (c.dist > 1400) {
+      this.farAcc += dt;
+      if (this.farAcc >= 800) {
+        this.ai.update(this.farAcc);
+        this.farAcc = 0;
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        this.syncHpBar();
+        return;
+      }
+      this.setVelocity(this.knockVec.x, this.knockVec.y);
+      return;
+    }
     if (c.dist > 950) {
       this.farAcc += dt;
       if (this.farAcc >= 200) {
