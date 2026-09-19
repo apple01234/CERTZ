@@ -6,7 +6,7 @@ import type { HudState, QuestState } from "./EventBus";
 import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat } from "lucide-react";
 import { EventBus } from "./EventBus";
 
 /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
@@ -84,7 +84,7 @@ export function HUD({
   onOpenOpt,
   onOpenUnion,
   onOpenTrade,
-  onOpenRank, // v1.3.0 (#7) — 랭킹창
+  /* v1.3.0 (지시 #2) — onOpenMenu은 HUD에서 미사용(☰ 삭제) — 타입 유지, 디스트럭처링 제거 */
 }: {
   hud: HudState;
   quest: QuestState;
@@ -115,8 +115,8 @@ export function HUD({
   onOpenUnion: () => void;
   /** v1.2.0 (#2) — 유저 거래소 직접 진입 (상점 속 작은 버튼에 숨어 있어 접근성 지적) */
   onOpenTrade: () => void;
-  /** v1.3.0 (#7) — 랭킹창 (레벨/전투력/콘텐츠 + 주간 랭커 보상) */
-  onOpenRank: () => void;
+  /** v1.2.1 (#6) — 메뉴 화면(게임 시작창/캐릭터 선택)으로 나가기 */
+  onOpenMenu: () => void;
 }) {
   /* v1.0.5 — 키맵 재배치 시 HUD 키 배지·aria도 함께 갱신 (I/T/J/K/O 하드코딩 제거) */
   const km = loadKeyMap();
@@ -233,8 +233,8 @@ export function HUD({
           >
             {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
           </button>
-          {/* v1.3.0 (#2) — HUD ☰ 버튼 제거 (유저 지시 "선 3개 짜리 ui저거 없애").
-           *  메뉴 나가기 기능은 설정(⚙) → 메뉴 화면 카드로 이동 — 기능 유지, UI 간소화 */}
+          {/* v1.3.0 (지시 #2) — 선 3개(☰) UI 삭제: 유저 지시로 HUD에서 제거.
+           *  "메뉴로 나가기" 기능은 설정 패널의 메뉴 화면 카드로 이전 (기능 유지 — v1.2.1 #6 경로 보존) */}
           <button
             onClick={onOpenInv}
             aria-label={`가방 열기 (${km.bag})`}
@@ -322,15 +322,6 @@ export function HUD({
           >
             <Repeat size={17} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
-          </button>
-          {/* v1.3.0 (#7) — 랭킹창 버튼 (전투력/레벨/콘텐츠 랭킹 + 주간 랭커 보상) */}
-          <button
-            onClick={onOpenRank}
-            aria-label="랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffe08a] active:scale-95"
-          >
-            <Trophy size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
           </button>
           <button
             onClick={onOpenOpt}

@@ -121,9 +121,10 @@ export type ItemKey =
   /* v1.1.0 (#19/#1) — 프리미엄 완전 교체 코스튬 6종 + 어태치 장식 5종 */
   | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
   | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy"
-  /* v1.3.0 (#4 NPC급 옷 세트 3종 + #3 망토 2종) — 유저 지시 "npc 캐릭터처럼 멋지게 치장템 옷 세트를 만들어" */
-  | "outfit_flame" | "outfit_frost" | "outfit_mystic"
-  | "acc_cape_crimson" | "acc_cape_royal"
+  /* v1.3.0 (지시 #7) — 랭커 전용 치장 (랭킹 상점 — 서버 순위 검증 구매) */
+  | "rank_aura" | "rank_crown_gold"
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (완전 교체 코스튬) */
+  | "outfit_dragon" | "outfit_frost" | "outfit_sakura" | "outfit_void"
   | "ring_bless"
   | "buff_king"
   /* v3.0.15 (#13) — eert 큐브 (메이플 큐브 시스템 — 잠재옵션 리롤) */
@@ -350,6 +351,15 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   buff_gold: { key: "buff_gold", kind: "buff", name: "탐욕의 물약", icon: "item_coin", price: 120, tier: "rare", sellPrice: 40 },
   buff_luck: { key: "buff_luck", kind: "buff", name: "행운의 물약", icon: "i_buff_luck", price: 110, tier: "rare", sellPrice: 38 },
   cos_aurora: { key: "cos_aurora", kind: "cosmetic", name: "오로라 후광", icon: "cos_aurora", price: 30000, bmPrice: 20, bmOnly: true, tier: "legend" },
+  /* v1.3.0 (지시 #7) — 랭커 전용 치장: 랭킹 상점에서만 판매 (서버에서 내 순위 검증 — Top10 한정).
+   *  골드 상점/일반 캐시상점 진열 금지 — 랭커만 채울 수 있는 BM 소비 코너 */
+  rank_aura: { key: "rank_aura", kind: "cosmetic", name: "챔피언의 오라", icon: "cos_gold", price: 0, bmPrice: 30, bmOnly: true, tier: "legend" },
+  rank_crown_gold: { key: "rank_crown_gold", kind: "cosmetic", name: "랭커의 황금 왕관", icon: "acc_crown", price: 0, bmPrice: 50, bmOnly: true, tier: "legend" },
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (캐시상점 합류 — 완전 교체 코스튬) */
+  outfit_dragon: { key: "outfit_dragon", kind: "cosmetic", name: "용기사 드라고네트", icon: "cost_dragon_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_frost: { key: "outfit_frost", kind: "cosmetic", name: "서리의 백작", icon: "costm_frost_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_sakura: { key: "outfit_sakura", kind: "cosmetic", name: "벚꽃 검부이", icon: "cost_sakura_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_void: { key: "outfit_void", kind: "cosmetic", name: "공허의 순례자", icon: "costm_void_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   /* ---- v3.0.20 (#9) — eert 큐브: "큐브는 마시는 게 아니다" ----
    *  BM(에메랄드)로만 구매 가능 + 골드 판매가 5000G (아주 비싼 가격).
    *  장비 행의 [eert] 버튼으로 사용하며 1회 사용마다 1개 소모. */
@@ -440,12 +450,6 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   acc_halo: { key: "acc_halo", kind: "cosmetic", name: "성스러운 후광", icon: "acc_halo", price: 78000, bmPrice: 30, bmOnly: true, tier: "epic" },
   acc_wings_devil: { key: "acc_wings_devil", kind: "cosmetic", name: "마왕의 날개", icon: "acc_wings_devil", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend" },
   acc_wings_fairy: { key: "acc_wings_fairy", kind: "cosmetic", name: "요정의 날개", icon: "acc_wings_fairy", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend" },
-  /* v1.3.0 (#3 망토 2종 + #4 NPC급 옷 세트 3종) — 코스튬은 bmOnly 프리미엄 */
-  acc_cape_crimson: { key: "acc_cape_crimson", kind: "cosmetic", name: "진홍의 망토", icon: "acc_cape_crimson", price: 52000, bmPrice: 18, bmOnly: true, tier: "epic" },
-  acc_cape_royal: { key: "acc_cape_royal", kind: "cosmetic", name: "왕가의 망토", icon: "acc_cape_royal", price: 64000, bmPrice: 22, bmOnly: true, tier: "epic" },
-  outfit_flame: { key: "outfit_flame", kind: "cosmetic", name: "화염무사 세트", icon: "cost_flame_idle0", price: 96000, bmPrice: 34, bmOnly: true, tier: "legend" },
-  outfit_frost: { key: "outfit_frost", kind: "cosmetic", name: "서리기사 세트", icon: "cost_frost_idle0", price: 96000, bmPrice: 34, bmOnly: true, tier: "legend" },
-  outfit_mystic: { key: "outfit_mystic", kind: "cosmetic", name: "신비술사 세트", icon: "cost_mystic_idle0", price: 96000, bmPrice: 34, bmOnly: true, tier: "legend" },
   chest_silver: { key: "chest_silver", kind: "consumable", name: "은 상자", icon: "i_chest_silver", price: 20000, bmPrice: 12, bmOnly: true, sellPrice: 1200, tier: "epic" },
   chest_gold: { key: "chest_gold", kind: "consumable", name: "금 상자", icon: "i_chest_gold", price: 42000, bmPrice: 25, bmOnly: true, sellPrice: 3000, tier: "epic" },
   chest_legend: { key: "chest_legend", kind: "consumable", name: "전설 상자", icon: "i_chest_legend", price: 80000, bmPrice: 48, bmOnly: true, sellPrice: 6000, tier: "legend" },
@@ -514,9 +518,10 @@ export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | 
   | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
   /* v1.1.0 (#1 장식) — 캐릭터에 고정되는 어태치 장식 (캐릭터가 움직이면 실시간 동기화) */
   | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy"
-  /* v1.3.0 (#3 망토 2종 — 방향 인지 렌더: 뒷모습에서 등에 보임) + (#4 세트 3종) */
-  | "acc_cape_crimson" | "acc_cape_royal"
-  | "outfit_flame" | "outfit_frost" | "outfit_mystic";
+  /* v1.3.0 (지시 #7) — 랭커 전용 치장 2종 */
+  | "rank_aura" | "rank_crown_gold"
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 */
+  | "outfit_dragon" | "outfit_frost" | "outfit_sakura" | "outfit_void";
 
 /** 버프 물약 효과 — 사용 시 지속시간 동안 적용 (같은 버프 재사용 시 시간 갱신) */
 export type BuffDef = {
@@ -576,6 +581,8 @@ export type CosmeticDef = {
   desc: string;
   price: number;
   tint: number;
+  /* v1.3.0 (지시 #7) — 랭커 전용 치장의 에메랄드 가격 (랭킹 상점 전용 — 일반 상점 진열 없음) */
+  bmPrice?: number;
   /* v1.0.7 — 착용 슬롯: aura(후광·기존) / outfit(코스튬 스프라이트 교체) / hair(머리카락 레이어)
    *  슬롯별 독립 착용 — 오라+코스튬+헤어 동시 착용 가능
    *  v1.1.0 — + acc(어태치 장식: 왕관/리본/후광/날개 — 캐릭터에 고정, 실시간 동기화) */
@@ -618,19 +625,20 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   outfit_abyss: { key: "outfit_abyss", name: "심해의 가곡", icon: "cost_abyss_idle0", desc: "청록 머리칼의 심해 술사 — 파도의 노래 (남녀형)", price: 560, tint: 0x5ad8d0, slot: "outfit" },
   outfit_nightmare: { key: "outfit_nightmare", name: "나이트메어 기사", icon: "cost_nightmare_idle0", desc: "백발의 암흑기사 — 악몽을 두르는 검은 갑주 (남녀형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
   outfit_gilded: { key: "outfit_gilded", name: "황금 백작", icon: "cost_gilded_idle0", desc: "황금빛 귀족 — 부와 권력을 몸에 두른 자 (남녀형)", price: 560, tint: 0xffd06a, slot: "outfit" },
-  /* v1.3.0 (#4 NPC급 옷 세트 3종) — NPC처럼 완성된 한 벌: 세트 팔레트 + 금 트림 + 그라데이션 */
-  outfit_flame: { key: "outfit_flame", name: "화염무사 세트", icon: "cost_flame_idle0", desc: "백발의 화염무사 — 진홍 갑주에 금 트림 (남녀형)", price: 620, tint: 0xff7a50, slot: "outfit" },
-  outfit_frost: { key: "outfit_frost", name: "서리기사 세트", icon: "cost_frost_idle0", desc: "은발의 서리기사 — 백은 판금에 빙하 청 (남녀형)", price: 620, tint: 0x9adfff, slot: "outfit" },
-  outfit_mystic: { key: "outfit_mystic", name: "신비술사 세트", icon: "cost_mystic_idle0", desc: "제비꽃 신비술사 — 칠흑 로브에 금성 문양 (남녀형)", price: 620, tint: 0xb08aff, slot: "outfit" },
-  /* v1.3.0 (#3 망토 2종) — 방향 인지 렌더: 뒷모습에서 등에 흐르고 정면에선 뒤로 숨음 */
-  acc_cape_crimson: { key: "acc_cape_crimson", name: "진홍의 망토", icon: "acc_cape_crimson", desc: "등에서 흩날리는 진홍 망토 — 전사의 낭만", price: 340, tint: 0xff6a6a, slot: "acc" },
-  acc_cape_royal: { key: "acc_cape_royal", name: "왕가의 망토", icon: "acc_cape_royal", desc: "금장이 박힌 왕가의 푸른 망토", price: 420, tint: 0x6a8aff, slot: "acc" },
   /* v1.1.0 (#1 장식) — 어태치 악세서리: 캐릭터에 고정 + 실시간 동기화 */
   acc_crown: { key: "acc_crown", name: "왕가의 왕관", icon: "acc_crown", desc: "머리에 얹히는 황금 왕관 — 루비가 박혀 있다", price: 320, tint: 0xffd76a, slot: "acc" },
   acc_ribbon: { key: "acc_ribbon", name: "진홍 리본", icon: "acc_ribbon", desc: "머리 옆에 달리는 새빨간 리본 — 사랑스러운 한 점", price: 240, tint: 0xff6a8a, slot: "acc" },
   acc_halo: { key: "acc_halo", name: "성스러운 후광", icon: "acc_halo", desc: "머리 위에 뜨는 금색 고리 — 성녀의 증표", price: 400, tint: 0xffe8a0, slot: "acc" },
   acc_wings_devil: { key: "acc_wings_devil", name: "마왕의 날개", icon: "acc_wings_devil", desc: "등 뒤에 펼쳐지는 진홍 박쥐 날개", price: 480, tint: 0xff5a6a, slot: "acc" },
   acc_wings_fairy: { key: "acc_wings_fairy", name: "요정의 날개", icon: "acc_wings_fairy", desc: "등 뒤에 반짝이는 하늘빛 요정 날개", price: 480, tint: 0xbaf3ff, slot: "acc" },
+  /* v1.3.0 (지시 #7) — 랭커 전용: 오라는 Drive 팩 vfx_ring 황금 림, 왕관은 기존 왕관 어태치 재활용(황금 틴트) */
+  rank_aura: { key: "rank_aura", name: "챔피언의 오라", icon: "cos_gold", desc: "랭킹 10위 안의 자만이 허락된 황금 오라 — 챔피언의 증표", price: 0, bmPrice: 30, tint: 0xffd76a, slot: "aura" },
+  rank_crown_gold: { key: "rank_crown_gold", name: "랭커의 황금 왕관", icon: "acc_crown", desc: "랭킹 10위 안의 자만이 쓸 수 있는 황금 왕관 — 정점의 상징", price: 0, bmPrice: 50, tint: 0xffd76a, slot: "acc" },
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (costf_/costm_ 완전 교체) */
+  outfit_dragon: { key: "outfit_dragon", name: "용기사 드라고네트", icon: "cost_dragon_idle0", desc: "용의 비늘을 두른 황금발 용기사 — 용의 맹세를 받은 자 (여형)", price: 560, tint: 0x9adf6a, slot: "outfit" },
+  outfit_frost: { key: "outfit_frost", name: "서리의 백작", icon: "costm_frost_idle0", desc: "백은 갑옷의 서리 귀족 — 북풍을 지배하는 자 (남형)", price: 560, tint: 0x9ad8ff, slot: "outfit" },
+  outfit_sakura: { key: "outfit_sakura", name: "벚꽃 검부이", icon: "cost_sakura_idle0", desc: "흑발에 벚꽃 스커트의 검부이 — 봄밤의 일섭 (여형)", price: 560, tint: 0xffb0d0, slot: "outfit" },
+  outfit_void: { key: "outfit_void", name: "공허의 순례자", icon: "costm_void_idle0", desc: "보랏빛 로브의 은발 순례자 — 공허를 건니는 자 (남형)", price: 560, tint: 0xb08aff, slot: "outfit" },
 };
 
 /* v1.1.0 (#1/#21/#22) — 외형 시스템: 성별 × 피부 6종 → 베이스 시트(chm/chf) 선택.
@@ -642,11 +650,11 @@ export const BODY_PREFIXES = [
   "chf0", "chf1", "chf2", "chf3", "chf4", "chf5",
   "cost_royal", "cost_shadow", "cost_spring", "cost_navy",
   "cost_silver", "cost_crimson", "cost_seraph", "cost_abyss", "cost_nightmare", "cost_gilded",
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (여/남) */
+  "cost_dragon", "cost_frost", "cost_sakura", "cost_void",
   "costm_royal", "costm_shadow", "costm_spring", "costm_navy",
   "costm_silver", "costm_crimson", "costm_seraph", "costm_abyss", "costm_nightmare", "costm_gilded",
-  /* v1.3.0 (#4) — NPC급 프리미엄 옷 세트 3종 (여/남): 화염무사·서리기사·신비술사 */
-  "cost_flame", "cost_frost", "cost_mystic",
-  "costm_flame", "costm_frost", "costm_mystic",
+  "costm_dragon", "costm_frost", "costm_sakura", "costm_void",
   /* v1.2.0 (#13) — 2차 8직업 전용 외형 (여/남 각 8종): 전직하면 외형 자체가 바뀐다.
    *  버서커/가디언/스나이퍼/윈드러너/아크메이지/세이지/어세신/스와시버클러 */
   "jobf_berserker", "jobf_guardian", "jobf_sniper", "jobf_windrunner",
@@ -825,10 +833,9 @@ export const BM_STOCK: ItemKey[] = [
   /* v1.0.7 — 코스튬/헤어 (캐시상점 신규 착장 치장) */
   /* v1.1.0 (#19/#1) — 프리미엄 코스튬 6종 + 어태치 장식 5종 */
   "outfit_silver", "outfit_crimson", "outfit_seraph", "outfit_abyss", "outfit_nightmare", "outfit_gilded",
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (캐시상점 합류) */
+  "outfit_dragon", "outfit_frost", "outfit_sakura", "outfit_void",
   "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy",
-  /* v1.3.0 (#3/#4) — 망토 2종 + NPC급 옷 세트 3종 (캐시상점 합류) */
-  "acc_cape_crimson", "acc_cape_royal",
-  "outfit_flame", "outfit_frost", "outfit_mystic",
 ];
 /** v1.0.3 (#0르쯔) — 캐시상점 진열 자격: bmPrice(에메랄드 가격)가 1 이상인 아이템만 (BmShopPanel 방어 필터용) */
 export function isCashStock(k: ItemKey): boolean {

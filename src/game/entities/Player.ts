@@ -759,6 +759,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           anyCrit = true;
         }
         e.takeDamage(dmg, dir, knock, crit);
+        /* v1.3.0 (#에셋통합) — 명중 지점 참격 궤적 + Unity 근접 원음 (마지막 타격 지점 기준) */
+        this.scene.spawnMeleeVfx(e.x, e.y, dir.x, dir.y, crit);
       }
     }
     if (hits > 0) {

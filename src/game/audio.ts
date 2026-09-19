@@ -498,6 +498,26 @@ export const SFX_VOLUMES: Record<string, number> = {
   sfx_open: 0.34,
   sfx_close: 0.3,
   sfx_ach: 0.56,
+  /* v1.3.0 (#에셋통합) — 유저 Drive 팩(Vefects) VFX 사운드 래더 */
+  sfx_hit_basic: 0.4,
+  sfx_arrow_cast: 0.4,
+  sfx_arrow_hit: 0.42,
+  sfx_bomb_cast: 0.44,
+  sfx_bomb_exp: 0.58,
+  sfx_fire_cast: 0.46,
+  sfx_fire_hit: 0.46,
+  sfx_bolt_cast: 0.52,
+  sfx_bolt_hit: 0.5,
+  sfx_heal_cast: 0.46,
+  sfx_buff_cast: 0.44,
+  sfx_debuff_cast: 0.46,
+  sfx_dash2: 0.34,
+  sfx_pickup2: 0.4,
+  sfx_explosion: 0.58,
+  sfx_explosion_ice: 0.54,
+  sfx_aoe_cast: 0.48,
+  sfx_aoe_burst: 0.54,
+  sfx_smoke: 0.46,
 };
 
 /* ================= v3.0.24 — 직업별 스킬 전용 효과음 =================
@@ -512,8 +532,8 @@ const SKILL_SFX_FILES: Record<string, string> = {
   arrow: "skl_arrow1", // 궁수 활 발사 (기본공격·volley)
   cast: "skl_cast1", // 마법사 지팡이 시전 (기본공격 볼트)
   knife: "skl_knife1", // 도적 단검 (기본공격·bladestorm)
-  flame: "skl_flame1", // 마법사 대관통 볼트
-  electron: "skl_electron1", // 아크메이지 아크 볼트
+  flame: "sfx_fire_cast", // v1.3.0 — 마법사 대관통 볼트 (Drive 팩 화염 원음)
+  electron: "sfx_bolt_cast", // v1.3.0 — 아크메이지 아크 볼트 (Drive 팩 낙뢰 원음)
   arrowpierce: "skl_arrowpierce1", // 스나이퍼 관통 저격
   wind: "skl_wind1", // 윈드러너 회오리 화살 / 템페스트 폭풍의 눈
   wind2: "skl_wind2", // 질풍 계열 (windstep·windslash·cyclone)
@@ -524,8 +544,8 @@ const SKILL_SFX_FILES: Record<string, string> = {
   dark: "skl_dark1", // 암흑 계열 (그림자 숨기·칼날·지뢰·군주)
   heavydash: "skl_heavydash1", // 버서커/가디언 중장 돌진
   ambush: "skl_ambush1", // 어세신 암습 돌진
-  holy: "skl_holy1", // 신성 계열 (성역·성흔·심판)
-  thunder: "skl_thunder2", // 스톰브링어 낙뢰
+  holy: "sfx_aoe_light_cast", // v1.3.0 — 신성 계열 (Drive 팩 빛 AoE 원음)
+  thunder: "sfx_bolt_cast", // v1.3.0 — 스톰브링어 낙뢰 (Drive 팩 낙뢰 원음)
   slowmo: "skl_slowmo1", // 크로니클 시간 왜곡
   rage: "skl_rage1", // 워브링어 피의 격노
   chain: "skl_chain4", // 아크로드 연쇄 번개
@@ -649,4 +669,85 @@ export const sfx = {
     if (!file) return;
     play(file, SKILL_SFX_VOLUMES[key] ?? 0.45, rate);
   },
+  /* ================= v1.3.0 — 유저 Drive 팩(Vefects) 전용 효과음 =================
+   *  유니티 에셋스토어 VFX 팩에 포함된 실제 이펙트 원음 — 전투 타격감/스킬/축하 연출에 배치.
+   *  aoeSound는 원소 키 → cast/burst 자동 매핑 (aoeCast/aoeBurst에서 사용) */
+  /** 근접 기본공격 명중 — Unity BasicAttack 원음 (피치 변주로 단조로움 완화) */
+  basicHit() {
+    play("sfx_hit_basic", SFX_VOLUMES.sfx_hit_basic, 0.92 + Math.random() * 0.16);
+  },
+  /** 화살 발사/명중 */
+  arrowCast() {
+    play("sfx_arrow_cast", SFX_VOLUMES.sfx_arrow_cast);
+  },
+  arrowHit() {
+    play("sfx_arrow_hit", SFX_VOLUMES.sfx_arrow_hit, 0.94 + Math.random() * 0.12);
+  },
+  /** 폭발/폭탄 */
+  bombExp() {
+    play("sfx_bomb_exp", SFX_VOLUMES.sfx_bomb_exp);
+  },
+  explosion() {
+    play("sfx_explosion", SFX_VOLUMES.sfx_explosion);
+  },
+  /** 화염/번개 스킬 */
+  fireCast() {
+    play("sfx_fire_cast", SFX_VOLUMES.sfx_fire_cast);
+  },
+  fireHit() {
+    play("sfx_fire_hit", SFX_VOLUMES.sfx_fire_hit, 0.92 + Math.random() * 0.16);
+  },
+  boltCast() {
+    play("sfx_bolt_cast", SFX_VOLUMES.sfx_bolt_cast);
+  },
+  boltHit() {
+    play("sfx_bolt_hit", SFX_VOLUMES.sfx_bolt_hit, 0.92 + Math.random() * 0.16);
+  },
+  /** 회복/버프/디버프 */
+  healCast() {
+    play("sfx_heal_cast", SFX_VOLUMES.sfx_heal_cast);
+  },
+  buffCast() {
+    play("sfx_buff_cast", SFX_VOLUMES.sfx_buff_cast);
+  },
+  debuffCast() {
+    play("sfx_debuff_cast", SFX_VOLUMES.sfx_debuff_cast);
+  },
+  /** 원소 AoE — elem: fire/ice/light/dark/elec/earth/water/poison/void/heal/nature/air/crystal/magma/blood */
+  aoeCast(elem: string) {
+    const file = AOE_ELEM_FILES[elem];
+    if (file) play(`${file}_cast`, SFX_VOLUMES.sfx_aoe_cast);
+    else play("sfx_buff_cast", SFX_VOLUMES.sfx_aoe_cast);
+  },
+  aoeBurst(elem: string) {
+    const file = AOE_ELEM_FILES[elem];
+    if (file) play(`${file}_burst`, SFX_VOLUMES.sfx_aoe_burst, 0.94 + Math.random() * 0.12);
+    else play("sfx_explosion", SFX_VOLUMES.sfx_aoe_burst);
+  },
+  /** 연막/스팀 연출 */
+  smoke(kind: string) {
+    const map: Record<string, string> = {
+      fire: "sfx_smoke_fire", snow: "sfx_smoke_snow", thunder: "sfx_smoke_thunder",
+      toxic: "sfx_smoke_toxic", gold: "sfx_smoke_gold", dark: "sfx_smoke_dark",
+    };
+    const file = map[kind] ?? "sfx_smoke_fire";
+    play(file, SFX_VOLUMES.sfx_smoke);
+  },
 };
+
+/** v1.3.0 — 원소 → Drive 팩 AoE 사운드 파일 접두 매핑 */
+const AOE_ELEM_FILES: Record<string, string> = {
+  fire: "sfx_aoe_fire", ice: "sfx_aoe_ice", light: "sfx_aoe_light", dark: "sfx_aoe_dark",
+  elec: "sfx_aoe_elec", earth: "sfx_aoe_earth", water: "sfx_aoe_water", poison: "sfx_aoe_poison",
+  void: "sfx_aoe_void", heal: "sfx_aoe_heal", nature: "sfx_aoe_nature", crystal: "sfx_aoe_crystal",
+  magma: "sfx_aoe_magma", blood: "sfx_aoe_blood", air: "sfx_aoe_air",
+};
+/** 원소 표기 정규화 (electron→elec, holy→light, storm→elec, flame→fire, frost→ice 등) */
+export function normalizeElem(e: string): string {
+  const s = (e ?? "").toLowerCase();
+  if (s === "electron" || s === "storm" || s === "thunder") return "elec";
+  if (s === "holy" || s === "light") return "light";
+  if (s === "flame" || s === "fire") return "fire";
+  if (s === "frost" || s === "ice") return "ice";
+  return AOE_ELEM_FILES[s] ? s : "";
+}

@@ -517,7 +517,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.scene.hitStop(crit ? 55 : 26);
     this.scene.cameras.main.shake(crit ? 70 : 30, crit ? 0.0022 : 0.0009);
     /* v4.8.0 — 강한 순간 충격파 링: 크리티컬 금색 / 약점 원소색 (WebGL 전용, Canvas 무시) */
-    if (crit) { this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.1); this.scene.spawnCritSplat(this.x, this.y); }
+    if (crit) { this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.1); this.scene.spawnCritSplat(this.x, this.y); this.scene.driveFx?.critBurst(this.x, this.y); }
     else if (weak) this.scene.spawnShockwave(this.x, this.y, ELEMENT_META[this.elem].hex, 0.85);
     // v2.2 타격감 — 스쿼시(눌림) 반동: 맞은 순간 납작해졌다 복귀
     /* v1.0.2 (#허수아비) — 일반 몹도 동일 근본 수정: 고정 기준 스케일로 복귀 (누적 왜곡 차단) */
@@ -539,6 +539,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     /* v1.2.0 (#10) — 격파 히트스톱 70ms — 처치 순간의 무게감 */
     this.scene.hitStop(70);
     this.scene.spawnDeathBurst(this.x, this.y);
+    /* v1.3.0 (#에셋통합) — 사망 폭발 퍼프 + 충격파 (Drive 팩 5-explosion/UNI 코어) */
+    this.scene.driveFx?.explosion(this.x, this.y, 0xffb08a);
+    this.scene.driveFx?.shockRing(this.x, this.y, 0xffd0a0, 0.8);
     /* v3.0.3 — 사망 장판 (늪지 독괴물 등 — 죽어도 독 구덩이를 남긴다) */
     const fod = this.def.profile?.fieldOnDeath;
     if (fod) {

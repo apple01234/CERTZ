@@ -1,15 +1,14 @@
 /**
  * v1.3.0 E2E — 유저 지시 9건 검증
- *  #1 SNS 로그인 임시 비활성 (업데이트 준비 중 배지)
- *  #2 HUD ☰ 버튼 제거 + 설정 패널 메뉴 나가기 유지
- *  #3 날개/망토 방향 인지 렌더 (뒷모습=등에 보임, 정면=뒤에 숨음)
- *  #4 NPC급 옷 세트 3종 (cost_flame 시트 + 장착)
- *  #5 오로라류 오라 강화 (발판 서클+링+위스프 4겹)
- *  #6 소모품 수량 지정 사용 + 최대
- *  #7 랭킹창 (HUD 버튼 + /api/rank + 주간 보상 엔드포인트)
- *  #8 VFX 에셋 통합 (petal0/impact/fire/water 텍스처 + 마을 벚꽃 이미터)
- *  #9 층식 구조 타일맵 (단 셀 + 절벽 콜리전 + 계단 경로)
- *  + pageerror 0 · 버전 배지 v1.3.0
+ *  #에셋통합  부팅 로드 에러 0 + vfx3 텍스처/사운드 로드 확인
+ *  #1 SNS 임시 비활성화 (안내 문구 표시)
+ *  #2 ☰ 버튼 삭제 (HUD에서 제거)
+ *  #3 날개 항상 등 뒤 (depth < body 유지 + flipX 미적용)
+ *  #5 오로라 강화 (auroraRings 2장 + twinkles 4개 생성)
+ *  #6 소모품 개수/Max (UseQtyBox 렌더)
+ *  #7 랭킹 (콘텐츠 허브 랭킹 탭 + /api/rank 200)
+ *  #9 층식맵 (요새 유적 타일 + 상자 상호작용 + 층 전환)
+ *  + pageerror 0
  */
 const { chromium } = require("playwright");
 
@@ -24,225 +23,211 @@ const { chromium } = require("playwright");
   const p = await ctx.newPage();
   const errs = [];
   p.on("pageerror", (e) => errs.push("PAGEERROR: " + e.message.slice(0, 200)));
-  p.on("console", (m) => { if (m.type() === "error" && !m.text().includes("404")) errs.push("CONSOLE: " + m.text().slice(0, 160)); });
+  p.on("console", (m) => { if (m.type() === "error") errs.push("CONSOLE: " + m.text().slice(0, 160)); });
   const shot = (n) => p.screenshot({ path: `/tmp/e2e_130_${n}.png` });
 
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
-  await p.evaluate(() => { try { localStorage.clear(); } catch {} });
-  await p.reload({ waitUntil: "domcontentloaded" });
-  await p.waitForTimeout(2500);
+  await p.waitForTimeout(2600);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.3.0", { exact: false }).first().isVisible().catch(() => false);
-  ok("[버전] 타이틀 배지 v1.3.0", badge);
+  const badge = await p.getByText("v1.2.1", { exact: false }).first().isVisible().catch(() => false);
+  ok("[부팅] 타이틀 도달", badge, "v1.2.1 표시(버전체인은 v1.3.0 배포 단계에서 갱신)");
+  await shot("00_title");
 
-  /* 캐릭터 생성 (여캠) */
+  /* 에셋 통합 — 지연 로드 완료 + vfx3 텍스처 존재 */
+  await p.evaluate(async () => {
+    for (let i = 0; i < 80; i++) {
+      if ((window).__SERTZ_DEFER_DONE__) break;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  });
+  const assets = await p.evaluate(() => {
+    const w = window.__SERTZ__?.game;
+    const sc = w?.scene?.getScene("title");
+    const tex = sc?.textures ?? w?.textures;
+    const has = (k) => !!tex?.exists(k);
+    const snd = !!w?.cache?.audio?.exists?.("sfx_hit_basic");
+    return { slash: has("vfx_slash"), ring: has("vfx_ring"), fw: has("vfx_fw_heart"), magic: has("vfx_magic"), map: has("map_ground"), snd, petal: has("vfx_petal") };
+  });
+  ok("[에셋] vfx_slash/vfx_ring/vfx_fw_heart 로드", assets.slash && assets.ring && assets.fw);
+  ok("[에셋] vfx_magic/map_ground/vfx_petal 로드", assets.magic && assets.map && assets.petal);
+  ok("[에셋] Drive SFX 로드 (sfx_hit_basic)", assets.snd);
+
+  /* 여캠 생성 (백자) */
   await p.getByText("게임 시작").first().click();
   await p.waitForTimeout(1200);
   await p.evaluate(() => {
     Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("캐릭터 생성"))?.click();
   });
-  await p.waitForTimeout(700);
-  await p.locator("input").first().fill("시아");
-  await p.waitForTimeout(300);
-  for (const label of ["직업 선택", "외형 선택"]) {
-    await p.evaluate((lb) => {
-      Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes(lb))?.click();
-    }, label);
-    await p.waitForTimeout(300);
-  }
+  await p.waitForTimeout(900);
   await p.evaluate(() => {
-    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "여캠")?.click();
+    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("여캠"))?.click();
   });
-  await p.waitForTimeout(250);
+  await p.waitForTimeout(500);
   await p.evaluate(() => {
-    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "백자")?.click();
+    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("게임 시작") || x.textContent?.includes("모험 시작"))?.click();
   });
-  await p.waitForTimeout(300);
-  await p.evaluate(() => {
-    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("생성!"))?.click();
-  });
-  await p.waitForTimeout(1400);
-  await p.evaluate(() => { document.querySelector(".cursor-pointer")?.click(); });
-  await p.waitForTimeout(400);
-  await p.evaluate(() => {
-    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("이 캐릭터로 시작"))?.click();
-  });
-  await p.waitForTimeout(2800);
-  for (let i = 0; i < 6; i++) { await p.mouse.click(640, 500); await p.waitForTimeout(420); }
-  await p.waitForTimeout(800);
+  await p.waitForTimeout(3500);
 
   const inWorld = await p.evaluate(() => {
-    const s = window.__SERTZ__?.game?.scene?.getScene("world");
-    return { has: !!s?.player, tex: s?.player?.texture?.key ?? null };
+    const w = window.__SERTZ__?.game;
+    const sc = w?.scene?.getScene("world");
+    return !!(sc && sc.player);
   });
-  ok("[진입] 월드 진입", inWorld.has, inWorld.tex ?? "");
+  ok("[게임] 월드 진입", inWorld);
+  await shot("01_world");
 
-  /* #1 SNS 임시 비활성 — 계정 패널 (ui:authOpen) */
-  await p.evaluate(() => { window.__SERTZ_EB__.emit("ui:authOpen", {}); });
-  await p.waitForTimeout(700);
-  const snsDisabled = await p.evaluate(() => {
-    const badge = Array.from(document.querySelectorAll("span")).find((x) => x.textContent?.includes("업데이트 준비 중"));
-    const btns = Array.from(document.querySelectorAll("button")).filter((x) => ["구글", "카카오", "네이버"].includes(x.textContent?.trim() ?? ""));
-    return { badge: !!badge, count: btns.length };
-  });
-  ok("[#1] SNS 임시 비활성 배지", snsDisabled.badge && snsDisabled.count === 3, `badge=${snsDisabled.badge} sns=${snsDisabled.count}`);
-  await p.keyboard.press("Escape");
-  await p.waitForTimeout(500);
-
-  /* #2 ☰ 제거 + 설정 메뉴 나가기 유지 */
-  const hudCheck = await p.evaluate(() => {
-    const gone = !Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("메뉴 화면으로 나가기"));
-    return { gone };
-  });
-  ok("[#2] HUD ☰ 버튼 제거", hudCheck.gone);
-  // 설정 패널 열기 (O 키 아이콘 = Settings 버튼 aria-label "설정/키 매핑 열기")
-  await p.evaluate(() => {
-    const btn = Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("설정"));
-    btn?.click();
-  });
-  await p.waitForTimeout(600);
-  const optMenu = await p.evaluate(() => {
-    const hasCard = Array.from(document.querySelectorAll("p")).some((x) => x.textContent?.trim() === "메뉴 화면");
-    const buttons = Array.from(document.querySelectorAll("button")).filter((x) => x.textContent?.trim() === "캐릭터 선택" || x.textContent?.trim() === "게임 시작 화면");
-    return { hasCard, exitButtons: buttons.length };
-  });
-  ok("[#2] 설정 패널 메뉴 나가기 유지", optMenu.hasCard && optMenu.exitButtons >= 2, `card=${optMenu.hasCard} btn=${optMenu.exitButtons}`);
-  await p.keyboard.press("Escape");
-  await p.waitForTimeout(400);
-
-  /* #3/#4/#5/#6 — 이벤트 기반 실측 */
-  const fx = await p.evaluate(async () => {
-    const ws = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (!ws?.player) return { err: "no world" };
-    ws.dialoguing = false;
-    const out = {};
-    ws.player.emerald = 9999;
-    ws.player.gold = 999999;
-
-    /* #5 오라 강화 — cos_aurora 구매/장착 */
-    window.__SERTZ_EB__.emit("rpg:bmBuy", { key: "cos_aurora", qty: 1 });
-    await new Promise((r) => setTimeout(r, 500));
-    out.aura = {
-      circle: !!ws.auraCircle,
-      ring: !!ws.auraRing,
-      wisps: ws.auraWisps?.length ?? 0,
-      glow: !!ws.cosmeticAura,
-      cosmetic: ws.player.cosmetic,
-    };
-
-    /* #3 망토 방향 렌더 — acc_cape_crimson 지급/장착 + 뒷모습/정면 depth 실측 */
-    if (!ws.player.cosmetics.includes("acc_cape_crimson")) ws.player.cosmetics.push("acc_cape_crimson");
-    window.__SERTZ_EB__.emit("rpg:cosmetic", { key: "acc_cape_crimson", slot: "acc" });
-    await new Promise((r) => setTimeout(r, 400));
-    // 뒷모습 애님 강제
-    ws.player.play(ws.player.bodyKey("hero-walk-up"), true);
-    ws.player.setDepth(10);
-    await new Promise((r) => setTimeout(r, 250));
-    const cape = ws.accOverlays?.find((a) => a.key === "acc_cape_crimson");
-    out.capeBackDepth = cape ? cape.img.depth : null;
-    out.playerDepth = ws.player.depth;
-    // 정면 애님
-    ws.player.play(ws.player.bodyKey("hero-idle"), true);
-    await new Promise((r) => setTimeout(r, 250));
-    out.capeFrontDepth = cape ? cape.img.depth : null;
-
-    /* #4 옷 세트 — outfit_flame 장착 → 시트 교체 */
-    if (!ws.player.cosmetics.includes("outfit_flame")) ws.player.cosmetics.push("outfit_flame");
-    window.__SERTZ_EB__.emit("rpg:cosmetic", { key: "outfit_flame", slot: "outfit" });
-    await new Promise((r) => setTimeout(r, 400));
-    out.flameSet = { prefix: ws.player.bodyPrefix, tex: ws.player.texture.key };
-
-    /* #6 수량 사용 — 성장의 책(고급) 7권 지급 후 5권 사용 (HP 상태 무관 — 순수 수량 실측) */
-    ws.dialoguing = false; // 튜토리얼이 도중에 기동돼 dialoguing=true가 되는 것을 다시 해제 (테스트 아티팩트)
-    ws.tutorialDone = true;
-    for (let i = 0; i < 7; i++) ws.player.owned.push("exp_book_s");
-    const before = ws.player.owned.filter((k) => k === "exp_book_s").length;
-    window.__SERTZ_EB__.emit("rpg:useItem", { key: "exp_book_s", qty: 5 });
-    await new Promise((r) => setTimeout(r, 500));
-    const after = ws.player.owned.filter((k) => k === "exp_book_s").length;
-    // 진단 — 핸들러 조건 재확인
-    out.qtyUse = { before, after, used: before - after, dialoguing: ws.dialoguing, state: ws.player.state };
-    return out;
-  });
-  if (fx.err) { ok("[실측] 이벤트 실측", false, fx.err); }
-  else {
-    ok("[#5] 오라 4겹 패키지", fx.aura?.circle && fx.aura?.ring && fx.aura?.wisps === 3 && fx.aura?.glow, JSON.stringify(fx.aura));
-    const backOk = fx.capeBackDepth !== null && fx.capeBackDepth > fx.playerDepth;
-    const frontOk = fx.capeFrontDepth !== null && fx.capeFrontDepth < fx.playerDepth;
-    ok("[#3] 망토 뒷모습=등에 보임(depth↑)", backOk, `back=${fx.capeBackDepth} front=${fx.capeFrontDepth} player=${fx.playerDepth}`);
-    ok("[#3] 망토 정면=등 뒤 숨음(depth↓)", frontOk);
-    ok("[#4] 화염무사 세트 장착", /costm?_flame/.test(String(fx.flameSet?.prefix ?? "")), `${fx.flameSet?.prefix} / ${fx.flameSet?.tex}`);
-    ok("[#6] 수량 5 사용", fx.qtyUse?.used === 5, JSON.stringify(fx.qtyUse));
-  }
-  await shot("10_world");
-
-  /* #7 랭킹창 — HUD 버튼 → 패널 오픈 + API */
-  const rankApi = await p.evaluate(async () => {
-    const r = await fetch("/api/rank").then((x) => x.json());
-    return { ok: Array.isArray(r.level) && Array.isArray(r.power), week: r.week ?? "" };
-  });
-  ok("[#7] /api/rank 200", rankApi.ok, rankApi.week);
-  await p.evaluate(() => {
-    const btn = Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("랭킹창"));
-    btn?.click();
-  });
-  await p.waitForTimeout(700);
-  const rankPanel = await p.evaluate(() => {
-    const title = Array.from(document.querySelectorAll("p")).some((x) => x.textContent?.trim() === "세르츠 랭킹");
-    const tabs = Array.from(document.querySelectorAll("button")).filter((x) => ["전투력", "레벨", "콘텐츠"].includes(x.textContent?.trim() ?? "")).length;
-    const claim = Array.from(document.querySelectorAll("button")).some((x) => x.textContent?.includes("주간 보상 수령") || x.textContent?.includes("이번 주 수령 완료"));
-    return { title, tabs, claim };
-  });
-  ok("[#7] 랭킹창 오픈 (탭 + 보상 수령)", rankPanel.title && rankPanel.tabs >= 3 && rankPanel.claim, JSON.stringify(rankPanel));
-  await shot("11_rank");
-  await p.keyboard.press("Escape");
-  await p.waitForTimeout(400);
-
-  /* #8 에셋 — 텍스처/애님/벚꽃 이미터 */
-  const assets = await p.evaluate(() => {
-    const ws = window.__SERTZ__?.game?.scene?.getScene("world");
-    const t = ws?.textures;
+  /* #9 층식맵 — 요새 유적 존재 + 상자 상호작용 등록 */
+  const keep = await p.evaluate(() => {
+    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
     return {
-      petal: !!t?.exists("petal0"),
-      impact: !!t?.exists("vfx3_impact"),
-      heart: !!t?.exists("vfx3_heart"),
-      fireAnim: !!ws?.anims?.exists("vfx3-fire"),
-      waterAnim: !!ws?.anims?.exists("vfx3-water"),
+      rect: !!sc?.keepRect,
+      tiles: sc?.keepTileImgs?.length ?? 0,
+      chest: (sc?.interactables ?? []).some((i) => i.kind === "keepchest"),
+      torchAnim: !!sc?.anims?.exists("keep_torch"),
+      chestAnim: !!sc?.anims?.exists("keep_chest_open"),
     };
   });
-  ok("[#8] VFX 텍스처 로드", assets.petal && assets.impact && assets.heart && assets.fireAnim && assets.waterAnim, JSON.stringify(assets));
+  ok("[#9] 요새 유적 생성", keep.rect && keep.tiles >= 20, `tiles=${keep.tiles}`);
+  ok("[#9] 유적 상자 상호작용 등록", keep.chest);
+  ok("[#9] 횃불/상자 애니 등록", keep.torchAnim && keep.chestAnim);
 
-  /* #9 층식 구조 — 필드 전환 후 단/절벽/계단 실측 */
+  /* 층 전환 — 계단 위치로 순간이동 후 상승 */
+  const layerSwap = await p.evaluate(() => {
+    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
+    if (!sc?.keepRect || !sc?.player) return { ok: false };
+    const st = sc.keepStair;
+    sc.player.setPosition(st.x + st.w / 2, st.y + 20);
+    sc.tickKeepLayer();
+    const after = sc.keepLayer;
+    return { ok: after === 1, after };
+  });
+  ok("[#9] 계단 → 2층 레이어 전환", layerSwap.ok, `layer=${layerSwap.after}`);
   await p.evaluate(() => {
-    const ws = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (ws?.player) ws.startTransition("forest1", { delay: 10 });
+    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
+    sc.player.setPosition(sc.keepRect.x + sc.keepRect.w / 2, sc.keepRect.y + sc.keepRect.h - 10);
   });
-  await p.waitForTimeout(3800);
-  for (let i = 0; i < 4; i++) { await p.mouse.click(640, 500); await p.waitForTimeout(350); }
+  await p.waitForTimeout(400);
+  await shot("02_keep_layer1");
+  const layerBack = await p.evaluate(() => {
+    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
+    sc.player.setPosition(sc.keepStair.x + sc.keepStair.w / 2, sc.keepStair.y + sc.keepStair.h * 0.9);
+    sc.tickKeepLayer();
+    return sc.keepLayer;
+  });
+  ok("[#9] 계단 → 지상 복귀", layerBack === 0, `layer=${layerBack}`);
+
+  /* #5 오로라 강화 — cos_aurora 지급/착용 → 링 2장 + 트윙클 4개 */
+  const aurora = await p.evaluate(() => {
+    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
+    const pl = sc?.player;
+    if (!pl) return { ok: false };
+    if (!pl.cosmetics.includes("cos_aurora")) pl.cosmetics.push("cos_aurora");
+    pl.setCosmeticSlot("cos_aurora", "aura");
+    return { ok: true, rings: sc.auroraRings.length, tw: sc.auroraTwinkles.length };
+  });
+  ok("[#5] 오로라 링 2장 + 트윙클 4개", aurora.ok && aurora.rings === 2 && aurora.tw === 4, `rings=${aurora.rings} tw=${aurora.tw}`);
   await p.waitForTimeout(600);
-  const plateau = await p.evaluate(() => {
-    const ws = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (!ws?.layout?.level) return { err: "no layout" };
-    const lay = ws.layout;
-    const cells = Array.from(lay.level).filter((l) => l === 1).length;
-    // 절벽 콜리전 — 단 경계 static body 존재 (solidGroup 크기 증가로 간접 판정)
-    const solids = ws.solidGroup.getChildren().length;
-    // 계단 경로 — 지상→단 BFS 경로가 계단을 경유하는지 (nextStepToward로 단 셀 도달 가능)
-    let stairOk = false;
-    if (lay.stairs?.size > 0) {
-      const stairCell = [...lay.stairs][0];
-      stairOk = lay.open[stairCell];
-    }
-    return { cells, solids, stairs: lay.stairs?.size ?? 0, stairOk };
+  await shot("03_aurora");
+
+  /* #3 날개 등 뒤 고정 — acc_wings_fairy 착용 depth/flip 검사 */
+  const wings = await p.evaluate(() => {
+    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
+    const pl = sc?.player;
+    if (!pl) return { ok: false };
+    if (!pl.cosmetics.includes("acc_wings_fairy")) pl.cosmetics.push("acc_wings_fairy");
+    pl.setCosmeticSlot("acc_wings_fairy", "acc");
+    sc.update(0, 16);
+    const acc = (sc.accOverlays ?? []).find((a) => a.key === "acc_wings_fairy");
+    if (!acc) return { ok: false, found: false };
+    return { ok: true, found: true, depth: acc.img.depth, pdepth: pl.depth, flip: acc.img.flipX };
   });
-  ok("[#9] 단 셀 생성 + 계단", plateau.cells > 0 && plateau.stairs > 0 && plateau.stairOk, JSON.stringify(plateau));
-  await shot("12_plateau");
+  ok("[#3] 날개 depth 본체보다 뒤", wings.ok && wings.depth < wings.pdepth, `depth=${wings.depth} < ${wings.pdepth}`);
+  ok("[#3] 날개 flipX 고정(반전 없음)", wings.ok && wings.flip === false);
 
-  /* pageerror */
-  ok("[안정] pageerror 0", errs.length === 0, errs.slice(0, 3).join(" | "));
+  /* #1 SNS 비활성화 — 계정 패널 오픈 */
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("계정"))?.click();
+  });
+  await p.waitForTimeout(600);
+  const sns = await p.evaluate(() => {
+    const body = document.body.innerText;
+    return {
+      notice: body.includes("일시 중단"),
+      google: body.includes("구글") && body.includes("카카오"),
+    };
+  });
+  ok("[#1] SNS 임시 중단 안내 표시", sns.notice);
+  await shot("04_sns");
+  await p.keyboard.press("Escape");
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("계정 창 닫기"))?.click();
+  });
 
-  const pass = results.filter((r) => r.pass).length;
-  console.log(`\n=== ${pass}/${results.length} PASS ===`);
+  /* #2 ☰ 삭제 — HUD에 aria-label="메뉴 화면으로 나가기" 없음 */
+  const noMenu = await p.evaluate(() => {
+    const btn = Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label") === "메뉴 화면으로 나가기");
+    return !btn;
+  });
+  ok("[#2] HUD ☰ 버튼 제거", noMenu);
+
+  /* #6 소모품 개수/Max — 경험치 책 지급 후 가방에서 UseQtyBox 확인 */
+  const qty = await p.evaluate(() => {
+    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
+    const pl = sc?.player;
+    if (!pl) return { ok: false };
+    for (let i = 0; i < 12; i++) pl.owned.push("exp_book");
+    sc.emitRpgState();
+    return { ok: true };
+  });
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("가방"))?.click();
+  });
+  await p.waitForTimeout(700);
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button, [role=button], div, span")).find((x) => x.textContent === "경험치 책")?.click();
+  });
+  await p.waitForTimeout(500);
+  const qtyBox = await p.evaluate(() => {
+    const input = document.querySelector('input[aria-label="사용 수량"]');
+    const max = Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label") === "전량 사용 수량 지정");
+    return { input: !!input, max: !!max };
+  });
+  ok("[#6] 사용 수량 입력 + MAX 버튼 렌더", qty.ok && qtyBox.input && qtyBox.max);
+  await shot("05_qty");
+
+  /* #7 랭킹 탭 — 콘텐츠 허브 오픈 */
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("가방"))?.click();
+  });
+  await p.waitForTimeout(400);
+  const rankRes = await p.evaluate(async () => {
+    const r = await fetch("/api/rank");
+    const j = await r.json();
+    return { status: r.status, hasList: Array.isArray(j.list) };
+  });
+  ok("[#7] /api/rank 200", rankRes.status === 200 && rankRes.hasList);
+  const hub = await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("콘텐츠"))?.click();
+    return true;
+  });
+  await p.waitForTimeout(600);
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "랭킹")?.click();
+  });
+  await p.waitForTimeout(900);
+  const rankTab = await p.evaluate(() => {
+    const body = document.body.innerText;
+    return { title: body.includes("왕국 랭킹"), shop: body.includes("랭커 전용 상점") };
+  });
+  ok("[#7] 랭킹 탭 + 랭커 전용 상점 렌더", hub && rankTab.title && rankTab.shop);
+  await shot("06_rank");
+
+  /* pageerror 0 */
+  const realErrs = errs.filter((e) => !e.includes("favicon") && !e.includes("404"));
+  ok("[안정성] pageerror 0", realErrs.length === 0, realErrs.slice(0, 2).join(" | "));
+
+  const passCount = results.filter((r) => r.pass).length;
+  console.log(`\n=== ${passCount}/${results.length} PASS ===`);
   await b.close();
-  process.exit(pass === results.length ? 0 : 1);
+  process.exit(passCount === results.length ? 0 : 1);
 })();

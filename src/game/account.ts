@@ -245,3 +245,19 @@ export async function marketBuy(id: string) {
 export async function marketCollect() {
   return post("/api/market/collect", {});
 }
+
+/* ================= v1.3.0 (지시 #7) — 랭킹 클라이언트 =================
+ *  서버: /api/rank (accounts/index.js) — 클라우드 세이브에서 파생한 랭킹.
+ *  비로그인도 목록은 공개, 로그인 시 내 순위(me) 동봉. */
+
+export type RankEntry = { rank: number; name: string; lv: number; cls: string; rebirths: number; tower: number };
+export type RankMe = { rank: number; total?: number; name?: string; lv?: number; rebirths?: number; tower?: number; note?: string };
+export type RankState = { list: RankEntry[]; me: RankMe | null };
+
+export async function fetchRanking(): Promise<{ ok: boolean; error?: string; state?: RankState }> {
+  const r = await get("/api/rank");
+  if (!r.ok) return { ok: false, error: String(r.data.error ?? "랭킹 조회 실패") };
+  const d = r.data as Partial<RankState> | null;
+  if (!d || !Array.isArray(d.list)) return { ok: false, error: "랭킹 응답이 올바르지 않아요" };
+  return { ok: true, state: d as RankState };
+}

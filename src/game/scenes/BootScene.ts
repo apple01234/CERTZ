@@ -43,6 +43,48 @@ const X2_SPELLS: [string, number, number][] = [
   ["x2_sp_sparks", 96, 16],
 ];
 
+/** v1.3.0 (#에셋통합) — 유저 Drive 팩 변환산출 VFX 텍스처 58종 (public/assets/vfx2/).
+ *  전투 타격감(참격/크리/폭발)·오라 링·번개·마법진·불꽃놀이·원소 이펙트.
+ *  scripts/prep_drive_assets.py — Matthew Guz Slash·GameVFX Buff·Vefects Anime·
+ *  Hovl Magic·UNI VFX·CartoonVFX Fireworks·Cherry Petals에서 선별 변환. */
+export const VFX3_LIST = [
+  /* Matthew Guz Slash Effects FREE — 근접 타격감 */
+  "vfx_slash", "vfx_slash_m", "vfx_slash_turn", "vfx_crit", "vfx_explosion",
+  "vfx_shock", "vfx_fire", "vfx_spark",
+  /* GameVFX Buff Collection — 오라/버프/번개 */
+  "vfx_bolt", "vfx_bolt2", "vfx_flare", "vfx_twinkle", "vfx_star4",
+  "vfx_ring", "vfx_arc", "vfx_hex", "vfx_glowb", "vfx_glowy", "vfx_furnace",
+  /* Vefects Anime Stylized VFX — 스킬 임팩트/파티클 */
+  "vfx_ist", "vfx_is2", "vfx_ltn1", "vfx_ltn2", "vfx_ltn3",
+  "vfx_cl1", "vfx_cl2", "vfx_cl3",
+  "vfx_pt1", "vfx_pt2", "vfx_pt3", "vfx_pt4", "vfx_pt5", "vfx_pt6", "vfx_pt7", "vfx_pt8",
+  "vfx_ring1", "vfx_ring3", "vfx_flower", "vfx_arrowp",
+  /* Hovl Studio Magic effects — 마법진/원소 */
+  "vfx_magic", "vfx_magic2", "vfx_snow", "vfx_splat", "vfx_heal_heart",
+  "vfx_crystal", "vfx_proj", "vfx_flash",
+  /* UNI VFX Missiles & Explosions — 폭발/별 */
+  "vfx_starry", "vfx_shockf", "vfx_expc", "vfx_wisp",
+  /* CartoonVFX9X Fireworks — 축하 연출(레벨업/랭킹) */
+  "vfx_fw_heart", "vfx_fw_moon", "vfx_fw_star_b", "vfx_fw_star_y", "vfx_fw_tri", "vfx_fw_smile",
+  /* Cherry Petals — 봄 시즌 연출용 */
+  "vfx_petal",
+] as const;
+
+/** v1.3.0 — Drive 팩 VFX 사운드 48종 (Vefects WAV → OGG 변환, public/assets/audio/sfx/) */
+export const SFX3_LIST = [
+  "sfx_hit_basic", "sfx_arrow_cast", "sfx_arrow_hit", "sfx_bomb_cast", "sfx_bomb_exp",
+  "sfx_fire_cast", "sfx_fire_hit", "sfx_bolt_cast", "sfx_bolt_hit", "sfx_heal_cast",
+  "sfx_buff_cast", "sfx_debuff_cast", "sfx_dash2", "sfx_pickup2", "sfx_explosion", "sfx_explosion_ice",
+  "sfx_aoe_fire_cast", "sfx_aoe_fire_burst", "sfx_aoe_ice_cast", "sfx_aoe_ice_burst",
+  "sfx_aoe_light_cast", "sfx_aoe_light_burst", "sfx_aoe_dark_cast", "sfx_aoe_dark_burst",
+  "sfx_aoe_elec_cast", "sfx_aoe_elec_burst", "sfx_aoe_earth_cast", "sfx_aoe_earth_burst",
+  "sfx_aoe_water_cast", "sfx_aoe_water_burst", "sfx_aoe_poison_cast", "sfx_aoe_poison_burst",
+  "sfx_aoe_void_cast", "sfx_aoe_void_burst", "sfx_aoe_heal_cast", "sfx_aoe_heal_burst",
+  "sfx_aoe_nature_cast", "sfx_aoe_nature_burst", "sfx_aoe_magma_burst", "sfx_aoe_crystal_burst",
+  "sfx_aoe_blood_burst", "sfx_aoe_air_burst",
+  "sfx_smoke_fire", "sfx_smoke_snow", "sfx_smoke_thunder", "sfx_smoke_toxic", "sfx_smoke_gold", "sfx_smoke_dark",
+] as const;
+
 const ASSET_LIST = [
   // 타일
   "tile_grass",
@@ -197,6 +239,7 @@ const ASSET_LIST = [
   /* v4.9.0 — 유저 제공 VFX 팩(Hovl Studio Magic effects) 신규 채택:
    *  rune_circle = 보스 등장 룬 마법진 / slash_arc = 회전베기 참격 궤적 오버레이 */
   "rune_circle", "slash_arc",
+  /* v1.3.0 — VFX3_LIST(58종)/map 타일셋 6종은 preload에서 별도 setPath 로드 (vfx2/·map/ PNG) */
   /* v4.1.8 — Unity 에셋스토어 유료 SPUM 캐릭터: Unity 프리팹을 정밀 파싱해 조합한
    *  프리미엄 픽셀 NPC 14종 — 챕터 마을 주민/상점/직업교관 비주얼 전면 업그레이드 */
   "spum_villager_m", "spum_villager_f", "spum_knight", "spum_elf", "spum_mage",
@@ -428,6 +471,16 @@ export class BootScene extends Phaser.Scene {
     for (const s of TX_SETS) for (const k of TX_KINDS) this.load.image(`tx_${s}_${k}`, `tx_${s}_${k}.webp`);
     this.load.setPath("assets/audio");
     for (const key of AUDIO_LIST) this.load.audio(key, `${key}.ogg`);
+    /* v1.3.0 (#에셋통합) — Drive 팩 VFX 사운드 48종 + 텍스처 58종 (scripts/prep_drive_assets.py) */
+    this.load.setPath("assets/vfx2");
+    for (const key of VFX3_LIST) this.load.image(key, `${key}.png`);
+    this.load.setPath("assets/audio/sfx");
+    for (const key of SFX3_LIST) this.load.audio(key, `${key}.ogg`);
+    /* v1.3.0 (#층식맵) — Cainos 타일셋 애니 자산은 스프라이트시트로 재로드 (이미지 로드는 덮어쓰기 방지)
+     *  map_torch = 128×128 16px 8×8=64프레임 횃불 불꽃 / map_chest = 512×512 64px 8×5=32프레임 상자 */
+    this.load.setPath("assets/map");
+    this.load.spritesheet("map_torch_f", "map_torch.png", { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("map_chest_f", "map_chest.png", { frameWidth: 64, frameHeight: 64 });
   }
 
   async create() {

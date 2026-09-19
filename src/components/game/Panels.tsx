@@ -19,9 +19,8 @@ import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/a
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
 import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
 import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS } from "@/game/pass"; // v4.5.0 — 시즌 패스 + v1.0.1 시즌 미션
-import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, fetchRank, claimRankReward, type RankBoard, type RankRow, type MarketState, type AuthUser } from "@/game/account"; // v1.0.1 유저 거래판 · v1.3.0 랭킹 보드
+import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, fetchRanking, type MarketState, type AuthUser, type RankState } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화 · v1.3.0 랭킹
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
-import { Trophy } from "lucide-react"; // v1.3.0 — 랭킹창 아이콘
 import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
 import { chestOdds, eertOdds, POT_PITY_MAX, STAR_PITY_FROM, STAR_PITY_STEP, STAR_PITY_MAX } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법) · v1.0.8 천장 공시
 import type { BmGrant } from "@/game/data";
@@ -108,6 +107,51 @@ function SellQtyBox({
         className={`rounded-md border border-white/15 bg-white/[0.06] font-black text-white/70 hover:bg-rose-500/20 hover:text-rose-200 active:scale-95 disabled:opacity-40 ${compact ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-1 text-[10px]"}`}
       >
         판매 {unitValue}G{n > 1 && count > 1 ? ` ×${n}` : ""}
+      </button>
+    </span>
+  );
+}
+
+/** v1.3.0 (지시 #6) — 소모품 사용 개수 지정 박스: 수량 입력 + MAX 버튼 + 사용.
+ *  경험치 책류처럼 "한 번에 여러 개 쓰기"가 필요한 소모품용 (SellQtyBox 패턴 재사용). */
+function UseQtyBox({ count, keyName, label }: { count: number; keyName: string; label?: string }) {
+  const [qty, setQty] = useState("1");
+  const gate = useKeyGate();
+  const parsed = parseInt(qty || "1", 10);
+  const n = Math.max(1, Math.min(Math.max(count, 1), Number.isNaN(parsed) ? 1 : parsed));
+  const disabled = count <= 0;
+  return (
+    <span className="flex shrink-0 items-center gap-1">
+      <input
+        ref={gate}
+        {...swallowKeys}
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={Math.max(count, 1)}
+        value={disabled ? "" : qty}
+        placeholder="0"
+        disabled={disabled}
+        onChange={(e) => setQty(e.target.value)}
+        onPointerDown={(e) => e.stopPropagation()}
+        aria-label="사용 수량"
+        className="h-6 w-9 rounded border border-white/20 bg-black/50 px-0.5 py-1 text-center text-[10px] font-black text-white outline-none focus:border-sky-300/60 disabled:opacity-40"
+      />
+      <button
+        disabled={disabled}
+        onClick={() => setQty(String(count))}
+        aria-label="전량 사용 수량 지정"
+        className="rounded border border-sky-300/60 bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-black text-sky-200 hover:bg-sky-500/40 active:scale-95 disabled:opacity-40"
+      >
+        MAX
+      </button>
+      <button
+        disabled={disabled}
+        onClick={() => EventBus.emit("rpg:useItem", { key: keyName, qty: n })}
+        aria-label={`${count > 1 ? `${n}개` : ""} 사용`}
+        className="rounded-md border border-sky-300/50 bg-sky-500/15 px-1.5 py-0.5 text-[9px] font-black text-sky-100 hover:bg-sky-500/30 active:scale-95 disabled:opacity-40"
+      >
+        {label ?? "사용"} {n > 1 && count > 1 ? `×${n}` : ""}
       </button>
     </span>
   );
@@ -1340,10 +1384,6 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
   useEscClose(onClose);
   const [tab, setTab] = useState<InvTab>("equip");
   const [sel, setSel] = useState<InvSel | null>(null);
-  /* v1.3.0 (#6 수량 사용) — 소모품 사용 개수 지정: 상세 보기에서 −/＋/최대로 수량을 정해 한 번에 사용 */
-  const [useQty, setUseQty] = useState(1);
-  /* 선택 아이템이 바뀌면 수량 1로 리셋 (아이템별 보유량이 다르므로) */
-  useEffect(() => { setUseQty(1); }, [sel?.t, sel?.k]);
   /* v4.6.0 — 가방 스타포스 강화 결과 플래시 (상점 강화와 동일 이벤트 재사용, 2.5초 후 자동 소멸) */
   const [flash, setFlash] = useState<{ slot: "weapon" | "armor"; result: "ok" | "fail"; seq: number } | null>(null);
   useEffect(() => {
@@ -2002,59 +2042,23 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       {usable && (
-                        <>
-                          {/* v1.3.0 (#6 수량 사용) — 개수 지정 스테퍼 + 사용 버튼.
-                              상급 물약/성장의 책 등 소모품을 보유분까지 한 번에 사용 (MAX=보유 전량) */}
-                          {(() => {
-                            const maxUse = isBasicPot ? (s.k === "potion_hp" ? rpg.hpPot : rpg.mpPot) : s.count;
-                            const qty = Math.min(useQty, Math.max(1, maxUse));
-                            return (
-                              <div className="flex items-center gap-1">
-                                <InvBtn
-                                  tone="gray"
-                                  disabled={maxUse <= 0 || qty <= 1}
-                                  onClick={() => setUseQty(Math.max(1, qty - 1))}
-                                  title="수량 감소"
-                                >
-                                  −
-                                </InvBtn>
-                                <span className="min-w-[44px] rounded-md border border-white/15 bg-black/40 px-1 py-1.5 text-center text-[11px] font-black text-white/90">
-                                  {maxUse <= 0 ? 0 : qty}
-                                  <span className="text-[9px] font-bold text-white/40"> / {maxUse}</span>
-                                </span>
-                                <InvBtn
-                                  tone="gray"
-                                  disabled={maxUse <= 0 || qty >= maxUse}
-                                  onClick={() => setUseQty(Math.min(maxUse, qty + 1))}
-                                  title="수량 증가"
-                                >
-                                  ＋
-                                </InvBtn>
-                                <InvBtn
-                                  tone="gray"
-                                  disabled={maxUse <= 0 || qty >= maxUse}
-                                  onClick={() => setUseQty(Math.max(1, maxUse))}
-                                  title="보유 전량"
-                                >
-                                  최대
-                                </InvBtn>
-                                <InvBtn
-                                  tone={starScroll ? "violet" : "sky"}
-                                  disabled={maxUse <= 0}
-                                  onClick={() => {
-                                    if (isBasicPot) EventBus.emit("rpg:use", { kind: s.k === "potion_hp" ? "hp" : "mp", qty });
-                                    else if (starScroll) EventBus.emit("rpg:starScroll");
-                                    else EventBus.emit("rpg:useItem", { key: s.k, qty });
-                                    setUseQty(1);
-                                  }}
-                                >
-                                  {useLabel}
-                                  {qty > 1 ? ` ×${qty}` : ""}
-                                </InvBtn>
-                              </div>
-                            );
-                          })()}
-                        </>
+                        <InvBtn
+                          tone={starScroll ? "violet" : "sky"}
+                          disabled={s.count <= 0}
+                          onClick={() =>
+                            isBasicPot
+                              ? EventBus.emit("rpg:use", { kind: s.k === "potion_hp" ? "hp" : "mp" })
+                              : starScroll
+                                ? EventBus.emit("rpg:starScroll")
+                                : EventBus.emit("rpg:useItem", { key: s.k })
+                          }
+                        >
+                          {useLabel}
+                        </InvBtn>
+                      )}
+                      {/* v1.3.0 (지시 #6) — 소모품 개수 지정 + MAX 사용: 경험치 책/귀환서류 (보유 2개 이상일 때 표시) */}
+                      {(s.k === "exp_book" || s.k === "exp_book_s" || s.k === "exp_book_m" || s.k === "exp_book_l" || s.k === "scroll_return") && s.count > 1 && (
+                        <UseQtyBox count={s.count} keyName={s.k} />
                       )}
                       {isPot && (
                         <>
@@ -2107,188 +2111,6 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               정리
             </button>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ================= v1.3.0 (#7) — 랭킹창 + 랭커 특전 (유저 지시 "랭킹창 및 랭커들을 위한 기능 및 컨텐츠(BM 유도)")
- *  · 레벨/전투력 랭킹 — 계정 서버가 클라우드 세이브를 실시간 집계 (별도 등록 없이 자동 반영)
- *  · 콘텐츠 랭킹 — 멀티 서버 기록 (수비전/균열/도장/탑 — 기존 netRankTop 재사용)
- *  · 랭커 특전 — 주간 TOP10 에메랄드 보상 수령 + 랭커 BM 패스 안내 (BM 유도) */
-type RankTabKind = "level" | "power" | "content";
-
-const CONTENT_RANK_MODES: [RankMode, string][] = [
-  ["gate", "바르가 수비전"],
-  ["closet", "균열 던전"],
-  ["dojang", "무릉도장"],
-  ["tower", "심연의 탑"],
-];
-
-function RankListRows({ rows, metric }: { rows: RankRow[]; metric: "lv" | "power" }) {
-  if (rows.length === 0)
-    return <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/40">아직 등록된 기록이 없어요 — 계정 패널에서 클라우드 백업 후 플레이하면 자동 등록됩니다</p>;
-  return (
-    <div className="flex flex-col gap-1">
-      {rows.map((r, i) => (
-        <div key={`${r.name}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${i < 3 ? "border-amber-300/40 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
-          <span className={`w-6 text-center text-[11px] font-black ${i === 0 ? "text-amber-300" : i < 3 ? "text-amber-200/90" : "text-white/40"}`}>{i + 1}</span>
-          <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white">{r.name}</span>
-          <span className="text-[10px] text-white/50">Lv{r.lv}</span>
-          <span className="w-14 text-right text-[10px] font-black text-sky-200">{(metric === "lv" ? r.lv : (r.power ?? 0)).toLocaleString()}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export function RankingPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
-  useEscClose(onClose);
-  const [tab, setTab] = useState<RankTabKind>("power");
-  const [board, setBoard] = useState<RankBoard | null>(null);
-  const [claiming, setClaiming] = useState(false);
-  const [claimMsg, setClaimMsg] = useState("");
-  const [cMode, setCMode] = useState<RankMode>("gate");
-  const [cList, setCList] = useState<RankEntry[]>([]);
-
-  const refresh = () => { fetchRank().then(setBoard).catch(() => {}); };
-  useEffect(() => { refresh(); }, []);
-  /* 콘텐츠 탭 — 멀티 서버 랭킹 폴링 (기존 RankTab 패턴 재사용) */
-  useEffect(() => {
-    if (tab !== "content") return;
-    netRankTop(cMode);
-    const off = netOnRank((m, l) => { if (m === cMode) setCList(l); });
-    const t = setInterval(() => netRankTop(cMode), 8000);
-    return () => { off(); clearInterval(t); };
-  }, [tab, cMode]);
-
-  const doClaim = async () => {
-    setClaiming(true);
-    setClaimMsg("");
-    try {
-      const r = await claimRankReward();
-      if (r.ok && (r.emeralds ?? 0) > 0) {
-        EventBus.emit("rpg:rankReward", { emeralds: r.emeralds });
-        setClaimMsg(`TOP ${r.rank} 보상 에메랄드 +${r.emeralds} 지급!`);
-        refresh();
-      } else {
-        setClaimMsg(r.error ?? "수령 조건을 충족하지 않았어요");
-      }
-    } finally {
-      setClaiming(false);
-    }
-  };
-
-  const TABS: { id: RankTabKind; label: string }[] = [
-    { id: "power", label: "전투력" },
-    { id: "level", label: "레벨" },
-    { id: "content", label: "콘텐츠" },
-  ];
-  return (
-    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
-      <div className="max-h-in(88svh,640px)] w-in(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
-        <div className="mb-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-7 w-7 text-amber-300" />
-            <div>
-              <p className="text-sm font-black text-amber-200">세르츠 랭킹</p>
-              <p className="text-[10px] text-white/50">{board?.week ? `${board.week} 기준 · ` : ""}클라우드 백업 계정 자동 등록</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button onClick={refresh} aria-label="랭킹 새로고침" className="flex h-7 items-center gap-1 rounded-md border border-white/20 bg-black/40 px-2 text-[10px] font-black text-white/70 hover:bg-black/70">갱신</button>
-            <button onClick={onClose} aria-label="랭킹 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
-          </div>
-        </div>
-
-        {/* 내 순위 카드 */}
-        {board?.me ? (
-          <div className="mb-2 flex items-center gap-3 rounded-lg border border-amber-300/40 bg-gradient-to-r from-amber-400/15 to-transparent px-3 py-2">
-            <Trophy className="h-6 w-6 shrink-0 text-amber-300" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[12px] font-black text-amber-100">{board.me.name}</p>
-              <p className="text-[10px] text-white/60">Lv{board.me.lv} · 전투력 {board.me.power.toLocaleString()}</p>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-[9px] font-bold text-white/45">레벨 {board.me.lvRank ?? "-"}위</p>
-              <p className="text-[11px] font-black text-amber-200">전투력 {board.me.pwRank ?? "-"}위</p>
-            </div>
-          </div>
-        ) : (
-          <p className="mb-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/45">
-            계정에 로그인하고 클라우드 백업을 하면 랭킹에 자동 등록돼요 (계정 패널 → 백업)
-          </p>
-        )}
-
-        {/* 탭 */}
-        <div className="mb-2 grid grid-cols-3 gap-1">
-          {TABS.map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)} className={`rounded-lg px-1 py-1.5 text-[11px] font-black ${tab === t.id ? "bg-amber-400 text-slate-900" : "border border-white/10 bg-white/[0.03] text-white/55"}`}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {tab === "power" && (
-          <>
-            <p className="mb-1.5 rounded-lg border border-sky-300/20 bg-sky-400/5 px-2 py-1.5 text-[10px] text-white/60">전투력 = 레벨·강화 성급·보스 처치·콘텐츠 기록·환생을 종합한 실력 지표</p>
-            <RankListRows rows={board?.power ?? []} metric="power" />
-          </>
-        )}
-        {tab === "level" && (
-          <>
-            <p className="mb-1.5 rounded-lg border border-sky-300/20 bg-sky-400/5 px-2 py-1.5 text-[10px] text-white/60">레벨 랭킹 — 같은 레벨이면 전투력이 높은 순</p>
-            <RankListRows rows={board?.level ?? []} metric="lv" />
-          </>
-        )}
-        {tab === "content" && (
-          <>
-            <div className="mb-1.5 grid grid-cols-4 gap-1">
-              {CONTENT_RANK_MODES.map(([k, label]) => (
-                <button key={k} onClick={() => setCMode(k)} className={`rounded-lg border px-0.5 py-1.5 text-[10px] font-black ${cMode === k ? "border-sky-300/60 bg-sky-400/20 text-sky-100" : "border-white/10 bg-white/[0.03] text-white/50"}`}>{label}</button>
-              ))}
-            </div>
-            {cList.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/40">멀티 서버 접속 후 기록을 세우면 등록됩니다 — 콘텐츠 허브에서 도전!</p>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {cList.map((e, i) => (
-                  <div key={`${e.name}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${i < 3 ? "border-amber-300/40 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
-                    <span className={`w-6 text-center text-[11px] font-black ${i < 3 ? "text-amber-300" : "text-white/40"}`}>{i + 1}</span>
-                    <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white">{e.name}</span>
-                    <span className="text-[10px] text-white/40">Lv{e.lv}</span>
-                    <span className="text-[10px] font-black text-sky-200">{e.score.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* 랭커 특전 — BM 유도 카드 */}
-        <div className="mt-2.5 rounded-lg border border-amber-300/40 bg-amber-400/[0.07] px-2.5 py-2.5">
-          <p className="text-[12px] font-black text-amber-200">랭커 특전</p>
-          <p className="mt-0.5 text-[10px] leading-snug text-white/55">
-            매주 자정 리셋 — 전투력 TOP 10에게 에메랄드를 지급한다 (1위 30 · 3위 20 · 10위 10).
-            랭킹은 클라우드 백업 시점 기준으로 자동 등록됩니다.
-          </p>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            <button
-              onClick={doClaim}
-              disabled={claiming || (board?.claimed ?? false)}
-              className="rounded-md border-2 border-amber-300/70 bg-amber-500/25 px-1 py-2 text-[11px] font-black text-amber-100 transition hover:bg-amber-500/35 active:scale-95 disabled:opacity-40"
-            >
-              {board?.claimed ? "이번 주 수령 완료" : "주간 보상 수령"}
-            </button>
-            <button
-              onClick={() => EventBus.emit("ui:panel", { panel: "bmshop" })}
-              className="rounded-md border-2 border-cyan-300/70 bg-cyan-500/20 px-1 py-2 text-[11px] font-black text-cyan-100 transition hover:bg-cyan-500/30 active:scale-95"
-            >
-              랭킹 도전 아이템 💎
-            </button>
-          </div>
-          {claimMsg && <p className="mt-1.5 rounded bg-black/50 px-2 py-1.5 text-[10px] font-bold text-amber-200">{claimMsg}</p>}
         </div>
       </div>
     </div>
@@ -2845,7 +2667,6 @@ export function GamePanels({
   if (panel === "benefit") return <BenefitPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 혜택 (출석부/일일 퀘스트/쿠폰)
   if (panel === "pass") return <PassPanel rpg={rpg} onClose={onClose} />; // v4.5.0 — 시즌 패스 (배틀패스)
   if (panel === "content") return <ContentPanel rpg={rpg} onClose={onClose} />; // v1.0.8 — 무한 콘텐츠 허브
-  if (panel === "rank") return <RankingPanel rpg={rpg} onClose={onClose} />; // v1.3.0 — 랭킹창 + 랭커 특전 (BM 유도)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
 }
@@ -2855,7 +2676,7 @@ export function GamePanels({
  *  ① 심연의 탑 (무한 층수) · ② 심층 균열 (무한 티어) · ③ 일일 시련 (수정자 던전)
  *  ④ 연금 제작대 · ⑤ 심연 상점 · ⑥ 환생 + 펫 육성 — 총 10종 신규 무한 콘텐츠의 진입 허브
  * ===================================================================== */
-type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth" | "park" | "dojang";
+type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth" | "park" | "dojang" | "rank";
 
 export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
@@ -2879,6 +2700,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
     { id: "craft", label: "제작대", on: "bg-sky-400 text-slate-900" },
     { id: "abyss", label: "심연 상점", on: "bg-violet-400 text-slate-900" },
     { id: "rebirth", label: "환생·펫", on: "bg-amber-400 text-slate-900" },
+    { id: "rank", label: "랭킹", on: "bg-yellow-300 text-slate-900" },
   ];
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
@@ -2889,7 +2711,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
         </div>
 
         {/* 탭 행 */}
-        <div className="mb-2.5 grid grid-cols-7 gap-1">
+        <div className="mb-2.5 grid grid-cols-8 gap-1">
           {TABS.map((tb) => (
             <button key={tb.id} onClick={() => setTab(tb.id)} className={`rounded-lg px-1 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${tab === tb.id ? tb.on : "border border-white/10 bg-white/[0.04] text-white/55"}`}>{tb.label}</button>
           ))}
@@ -3129,9 +2951,117 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
             <p className="text-[9px] text-white/35">심연 상점의 치장 상자·전설 상자도 함께 노려보자 — 주간 레이드 보스(오늘: {rpg.raidBossToday ?? "—"}) 처치 시 보스 드롭 2배!</p>
           </div>
         )}
+
+        {/* v1.3.0 (지시 #7) — 랭킹 탭: 전체 랭킹 + 내 순위 + 랭커 전용 상점 (BM 유도) */}
+        {tab === "rank" && <KingdomRankTab />}
       </div>
     </div>
   )
+}
+
+/** v1.3.0 (지시 #7) — 왕국 랭킹 탭 본체: 서버 /api/rank 조회 (클라우드 세이브 파생).
+ *  랭커 전용 코너: 내 순위 Top10 진입 시 챔피언 오라/황금 왕관 구매 버튼 활성화 (에메랄드 소비). */
+function KingdomRankTab() {
+  const [state, setState] = useState<RankState | null>(null);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
+  const load = () => {
+    setLoading(true);
+    fetchRanking().then((r) => {
+      if (r.ok && r.state) setState(r.state);
+      else setErr(r.error ?? "랭킹을 불러올 수 없어요");
+      setLoading(false);
+    });
+  };
+  useEffect(load, []);
+  const myRank = state?.me?.rank ?? 0;
+  const isRanker = myRank > 0 && myRank <= 10;
+  const RANKER_ITEMS: { key: string; name: string; desc: string; price: number; icon: string }[] = [
+    { key: "rank_aura", name: "챔피언의 오라", desc: "황금 오라 — 챔피언의 증표", price: 30, icon: "cos_gold" },
+    { key: "rank_crown_gold", name: "랭커의 황금 왕관", desc: "정점의 황금 왕관", price: 50, icon: "acc_crown" },
+  ];
+  return (
+    <div>
+      <div className="mb-2 rounded-lg border border-yellow-300/40 bg-yellow-400/10 px-2.5 py-2">
+        <p className="text-[11px] font-black text-yellow-100">왕국 랭킹 — 전설의 명예</p>
+        <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">환생 · 심연의 탑 기록 · 레벨 순으로 명예의 전당이 결정된다. 계정 패널에서 클라우드 백업(3분 자동)이 켜져 있으면 자동 등록!</p>
+      </div>
+
+      {/* 내 순위 */}
+      {state?.me && (
+        <div className={`mb-2 rounded-lg border px-2.5 py-2 ${isRanker ? "border-amber-300/60 bg-amber-400/15" : "border-white/10 bg-white/[0.04]"}`}>
+          {myRank > 0 ? (
+            <>
+              <p className="text-[11px] font-black text-white">
+                내 순위 <span className={isRanker ? "text-amber-300" : "text-yellow-200"}>#{myRank}</span>
+                <span className="ml-1 text-[9px] text-white/40">/ {state.me.total}명 중</span>
+                {myRank <= 3 && <span className="ml-1.5 rounded bg-amber-400 px-1 text-[8px] font-black text-slate-900">TOP3</span>}
+              </p>
+              <p className="mt-0.5 text-[9px] text-white/45">Lv {state.me.lv} · 환생 {state.me.rebirths}회 · 탑 {state.me.tower}층</p>
+            </>
+          ) : (
+            <p className="text-[10px] font-bold text-white/55">{state.me.note ?? "랭킹 등록 대기 중"}</p>
+          )}
+        </div>
+      )}
+
+      {/* 랭킹 리스트 */}
+      {loading ? (
+        <p className="py-6 text-center text-[11px] font-bold text-white/40">랭킹을 불러오는 중…</p>
+      ) : err ? (
+        <div className="py-4 text-center">
+          <p className="text-[11px] font-bold text-rose-300">{err}</p>
+          <button onClick={load} className="mt-2 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1.5 text-[10px] font-black text-white/70 hover:bg-white/[0.12]">다시 시도</button>
+        </div>
+      ) : (
+        <div className="sertz-scroll max-h-56 overflow-y-auto rounded-lg border border-white/10 bg-black/40">
+          {(state?.list?.length ?? 0) === 0 ? (
+            <p className="py-6 text-center text-[10px] font-bold text-white/35">아직 등록된 랭커가 없어요 — 첫 랭커가 되어보세요!</p>
+          ) : (
+            (state?.list ?? []).map((e) => (
+              <div key={e.rank} className={`flex items-center gap-2 border-b border-white/[0.05] px-2.5 py-1.5 last:border-0 ${e.rank <= 3 ? "bg-amber-400/[0.06]" : ""}`}>
+                <span className={`w-7 shrink-0 text-center text-[11px] font-black ${e.rank === 1 ? "text-amber-300" : e.rank === 2 ? "text-slate-200" : e.rank === 3 ? "text-orange-300" : "text-white/45"}`}>{e.rank === 1 ? "👑1" : e.rank === 2 ? "🥈2" : e.rank === 3 ? "🥉3" : e.rank}</span>
+                <span className="min-w-0 flex-1 truncate text-[11px] font-black text-white/90">{e.name}</span>
+                <span className="shrink-0 text-[9px] font-bold text-white/45">Lv{e.lv}</span>
+                <span className="shrink-0 rounded bg-purple-400/15 px-1 text-[8px] font-black text-purple-200">환생{e.rebirths}</span>
+                <span className="shrink-0 rounded bg-violet-400/15 px-1 text-[8px] font-black text-violet-200">탑{e.tower}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* 랭커 전용 상점 — Top10 전용 BM 소비 코너 */}
+      <div className={`mt-2.5 rounded-lg border px-2.5 py-2.5 ${isRanker ? "border-amber-300/60 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"}`}>
+        <div className="flex items-center justify-between">
+          <p className="text-[12px] font-black text-amber-200">랭커 전용 상점</p>
+          <span className={`rounded px-1.5 py-0.5 text-[8px] font-black ${isRanker ? "bg-amber-400 text-slate-900" : "bg-white/10 text-white/50"}`}>{isRanker ? "랭커 인증 완료" : "TOP10 전용"}</span>
+        </div>
+        <p className="mt-0.5 text-[9px] leading-snug text-white/45">
+          {isRanker
+            ? `축하해요! 현재 ${myRank}위 — 랭커만 채울 수 있는 증표를 에메랄드로 구매할 수 있어요.`
+            : "랭킹 10위 안에 들면 챔피언의 증표를 구매할 수 있어요. 명예를 쟁취하라!"}
+        </p>
+        <div className="mt-1.5 grid gap-1.5">
+          {RANKER_ITEMS.map((ri) => (
+            <div key={ri.key} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11px] font-black text-white">{ri.name}</p>
+                <p className="truncate text-[9px] text-white/45">{ri.desc}</p>
+              </div>
+              <button
+                disabled={!isRanker}
+                onClick={() => EventBus.emit("rpg:rankBuy", { key: ri.key })}
+                className={`shrink-0 rounded-md border-2 px-2 py-1 text-[10px] font-black transition-transform active:scale-95 ${isRanker ? "border-amber-300/70 bg-amber-500/25 text-amber-100 hover:bg-amber-500/40" : "cursor-not-allowed border-white/10 bg-white/[0.04] text-white/35"}`}
+              >
+                {ri.price}💎
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ---------- 지역 이동 패널 (v2.5 — 지시 #7: 방문한 적 있는 구역으로 워프, 부적 1장 소모) ---------- */
@@ -3935,7 +3865,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
         <div className="mt-2.5 rounded-lg border border-[#8a6a34]/50 bg-[#ffd98a]/[0.07] px-2.5 py-2.5">
           <p className="text-[12px] font-black text-[#ffd98a]">메뉴 화면</p>
           <p className="mt-0.5 text-[10px] leading-snug text-white/50">
-            진행 상황은 자동 저장됩니다. 언제든 이 화면에서 메뉴로 돌아갈 수 있어요.
+            진행 상황은 자동 저장됩니다. 이곳(설정)에서 언제든 메뉴로 나갈 수 있어요.
           </p>
           <div className="mt-1.5 grid grid-cols-2 gap-1.5">
             <button
