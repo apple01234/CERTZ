@@ -481,6 +481,12 @@ export class BootScene extends Phaser.Scene {
     this.load.setPath("assets/map");
     this.load.spritesheet("map_torch_f", "map_torch.png", { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet("map_chest_f", "map_chest.png", { frameWidth: 64, frameHeight: 64 });
+    /* v1.3.0 — 층식맵 타일셋 이미지 2종 (buildLayeredKeep: map_ground 바닥 타일 크롭 + map_props 난간/기둥)
+     *  + 예비 장식 2종 (map_flame·map_bubble — 현재 미사용, 추측 확장용) */
+    this.load.image("map_ground", "map_ground.png");
+    this.load.image("map_props", "map_props.png");
+    this.load.image("map_flame", "map_flame.png");
+    this.load.image("map_bubble", "map_bubble.png");
   }
 
   async create() {

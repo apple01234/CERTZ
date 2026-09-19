@@ -28,8 +28,8 @@ const { chromium } = require("playwright");
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2400);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.2.1", { exact: false }).first().isVisible().catch(() => false);
-  ok("[버전] 타이틀 배지 v1.2.1", badge);
+  const badge = await p.getByText("v1.3.0", { exact: false }).first().isVisible().catch(() => false);
+  ok("[버전] 타이틀 배지 v1.3.0", badge);
   await shot("00_title");
 
   /* #4 부팅 분할 로드 — 타이틀 도달 시점에 백그라운드 로드 완료 */
@@ -161,7 +161,7 @@ const { chromium } = require("playwright");
     return { py: s.player.y, ht: an[0], tex: s.player.texture.key };
   });
   const wantCrown = s0.py + (s0.ht - 32) - 2;
-  const wantWing = s0.py + (s0.ht + 11 - 32);
+  const wantWing = s0.py + (s0.ht + 11 - 5 - 32); /* v1.3.0 — 정면(idle) dy=-5: 날개를 등 쪽으로 밀어 항상 등 뒤 유지 */
   ok("[#1] 왕관 머리 위 부착 (프레임 앵커)", acc.crown && Math.abs(acc.crown.y - wantCrown) <= 2, `crown.y=${acc.crown?.y} want=${wantCrown} tex=${s0.tex}`);
   ok("[#1] 후광 머리 위 부착", acc.halo && acc.halo.y < s0.py + (s0.ht - 32) - 5, `halo.y=${acc.halo?.y} headTop=${s0.py + (s0.ht - 32)}`);
   ok("[#1] 날개 1.35배 확대", acc.wing && Math.abs(acc.wing.sx - 1.35) < 0.01, `sx=${acc.wing?.sx}`);
@@ -238,13 +238,17 @@ const { chromium } = require("playwright");
   });
   ok("[#7] chf0 입술/블러셔 픽셀", lips);
 
-  /* #6 메뉴 나가기 — HUD ☰ → 오버레이 → 캐릭터 선택 */
+  /* #6 메뉴 나가기 — v1.3.0: HUD ☰ 삭제(지시 #2) → 설정 패널의 메뉴 화면 카드로 경로 이전 */
   await p.evaluate(() => {
-    Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label") === "메뉴 화면으로 나가기")?.click();
+    Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("설정/키 매핑 열기"))?.click();
   });
   await p.waitForTimeout(400);
-  const menuOpen = await p.evaluate(() => !!Array.from(document.querySelectorAll("p")).find((x) => x.textContent?.includes("메뉴 화면으로 나갈까요")));
-  ok("[#6] 종료 오버레이 열림", menuOpen);
+  const menuCard = await p.evaluate(() => !!Array.from(document.querySelectorAll("p")).find((x) => x.textContent?.trim() === "메뉴 화면") && !!Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "캐릭터 선택"));
+  ok("[#6] 설정 패널 메뉴 화면 카드(종료 경로)", menuCard); /* v1.3.0 — ☰ 삭제로 오버레이 경로 폐지, 설정 카드에서 직접 emit */
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "캐릭터 선택")?.click();
+  });
+  await p.waitForTimeout(400);
   await shot("03_exitmenu");
   await p.evaluate(() => {
     Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim().startsWith("캐릭터 선택 화면으로"))?.click();

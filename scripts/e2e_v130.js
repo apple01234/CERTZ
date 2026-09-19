@@ -29,8 +29,8 @@ const { chromium } = require("playwright");
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2600);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.2.1", { exact: false }).first().isVisible().catch(() => false);
-  ok("[부팅] 타이틀 도달", badge, "v1.2.1 표시(버전체인은 v1.3.0 배포 단계에서 갱신)");
+  const badge = await p.getByText("v1.3.0", { exact: false }).first().isVisible().catch(() => false);
+  ok("[부팅] 타이틀 도달", badge, "v1.3.0 배지 표시");
   await shot("00_title");
 
   /* 에셋 통합 — 지연 로드 완료 + vfx3 텍스처 존재 */
@@ -52,21 +52,41 @@ const { chromium } = require("playwright");
   ok("[에셋] vfx_magic/map_ground/vfx_petal 로드", assets.magic && assets.map && assets.petal);
   ok("[에셋] Drive SFX 로드 (sfx_hit_basic)", assets.snd);
 
-  /* 여캠 생성 (백자) */
+  /* 여캠 생성 (백자) — 로비 3단 흐름: 이름 → 직업 → 외형 (v1.2.1 e2e 준용) */
   await p.getByText("게임 시작").first().click();
   await p.waitForTimeout(1200);
   await p.evaluate(() => {
     Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("캐릭터 생성"))?.click();
   });
+  await p.waitForTimeout(700);
+  await p.locator("input").first().fill("시아");
+  await p.waitForTimeout(300);
+  for (const label of ["직업 선택", "외형 선택"]) {
+    await p.evaluate((lb) => {
+      Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes(lb))?.click();
+    }, label);
+    await p.waitForTimeout(400);
+  }
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "여캐")?.click();
+  });
+  await p.waitForTimeout(250);
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "백자")?.click();
+  });
+  await p.waitForTimeout(300);
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("생성!"))?.click();
+  });
+  await p.waitForTimeout(1400);
+  await p.evaluate(() => { document.querySelector(".cursor-pointer")?.click(); });
+  await p.waitForTimeout(400);
+  await p.evaluate(() => {
+    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("이 캐릭터로 시작"))?.click();
+  });
+  await p.waitForTimeout(2600);
+  for (let i = 0; i < 4; i++) { await p.mouse.click(640, 500); await p.waitForTimeout(400); }
   await p.waitForTimeout(900);
-  await p.evaluate(() => {
-    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("여캠"))?.click();
-  });
-  await p.waitForTimeout(500);
-  await p.evaluate(() => {
-    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.includes("게임 시작") || x.textContent?.includes("모험 시작"))?.click();
-  });
-  await p.waitForTimeout(3500);
 
   const inWorld = await p.evaluate(() => {
     const w = window.__SERTZ__?.game;
@@ -183,8 +203,13 @@ const { chromium } = require("playwright");
     Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("가방"))?.click();
   });
   await p.waitForTimeout(700);
+  /* 경험치 책은 "기타" 탭 — 기본 장비 탭에서 전환 후 아이콘 타일(aria-label=아이템키) 클릭 */
   await p.evaluate(() => {
-    Array.from(document.querySelectorAll("button, [role=button], div, span")).find((x) => x.textContent === "경험치 책")?.click();
+    Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "기타")?.click();
+  });
+  await p.waitForTimeout(500);
+  await p.evaluate(() => {
+    document.querySelector('button[aria-label="exp_book"]')?.click();
   });
   await p.waitForTimeout(500);
   const qtyBox = await p.evaluate(() => {

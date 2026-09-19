@@ -10420,7 +10420,11 @@ export class WorldScene extends Phaser.Scene {
        *  트윈이 무의미했고(기존 버그) 오히려 위치 튐의 원인이었다.
        *  v1.3.0 (지시 #7) — rank_crown_gold는 acc_crown 텍스처 재활용 (황금 왕관 동일 도트) */
       const accTex = accKey === "rank_crown_gold" ? "acc_crown" : accKey;
-      const img = this.add.image(this.player.x, this.player.y, accTex).setDepth(this.player.depth + 0.3);
+      /* v1.3.0 (#날개방향) — 날개류는 생성 시점부터 본체 뒤 depth로 만든다.
+       *  대화 중(업데이트 조기 리턴)에 착용해도 한 프레임이라도 앞에 튀어나오지 않게
+       *  (E2E에서 dialoguing 상태 depth +0.3 잔존 확인 → 근본 차단) */
+      const accDepth = accKey.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3;
+      const img = this.add.image(this.player.x, this.player.y, accTex).setDepth(accDepth);
       this.accOverlays.push({ key: accKey, img });
     }
     /* v1.2.0 (#1) — 포니테일 렌더링 제거(아이템 폐지) — 헤어 슬롯은 신규 헤어용으로 유지 */

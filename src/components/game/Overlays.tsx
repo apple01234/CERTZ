@@ -86,7 +86,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.3.0 — 오로라 오라 강화 · 층식 구조 맵 · 소모품 수량 사용 · 랭킹창 · NPC급 옷 세트 · 벚꽃 마을</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.3.0 — SNS 임시 중단 · ☰ 삭제 · 날개 등 뒤 고정 · NPC급 옷 세트 4종 · 오로라 강화 · 소모품 MAX · 왕국 랭킹 · 에셋 대량 통합 · 층식 유적</span>
           </p>
         </div>
 
