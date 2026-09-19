@@ -1877,3 +1877,27 @@ Stage Summary:
 - 유저 지시 7건 전부 코드/에셋/문서 반영 + E2E 25/25 + 릴리스/서버/가이드 검증 완료
 - 운영 교훈: ①exitToMenu류 페이드/딜레이 게이트는 저FPS 헤드리스에서 게임시간 왜곡으로 수 초 지연 — 씬 전환은 즉시 실행이 견고(v1.1.0 교훈 재확인) ②E2E 앵커 판정은 현재 프레임 기준으로 — idle 고정 가정은 걷기 프레임에서 오탐 ③인게임 DOM 버튼 매칭은 trim().startsWith() — 중첩 span textContent 포함 ④server.js 재기동 시 NODE_ENV=production 필수(누락 시 dev 모드로 서빙)
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 89
+Agent: Super Z (메인)
+Task: 세션 재개 — 유저 지시 9건(v1.3.0) 검증·완성·빌드·릴리스 마무리 (versionCode 90)
+
+Work Log:
+- [상태 재파악] 이전 세션이 v1.3.0 코드를 커밋(cd26c48)해 둔 상태 — 지시 #1~#9 전부 구현돼 있었으나 E2E 미통과·버전체인 미갱신·APK 미빌드·미릴리스. worklog 기록 부재
+- [Drive 에셋 재확인] upload/drive_extracted 3팩(488MB) 존재 확인 — Cainos/CartoonVFX/GameVFX Buff/Hovl/PixelFX/UNI VFX/Vefects/Matthew Guz/Petal/Toon Shaders. 이전 세션이 public/assets/vfx2 58종+map 6종+sfx 48종으로 변환 완료된 상태였고, 내가 중복 복사한 cn_/fx_ PNG는 제거(용량 이중화 방지)
+- [E2E 실패 원인 규명] 첫 실행 9건 FAIL → 404 추적 결과 구빌드 청크(01:15 빌드)가 커밋(01:18) 이전 중간 코드(VFX3 키를 assets/ webp로 로드)로 빌드된 것 — next build 재실행으로 해소. 이후 월드 진입 실패는 E2E가 로비 3단(이름→직업→외형)을 생략한 데 있었고 v1.2.1 e2e 흐름 준용으로 수정
+- [발견 버그 2건 근본 수정] ①BootScene: buildLayeredKeep이 쓰는 map_ground/map_props 이미지 로드 누락(스프라이트시트만 로드) — 이미지 4종 로드 추가 ②날개 depth: dialoguing 중엔 update()가 조기 리턴해 syncCosmeticAura 생성 시점의 +0.3(앞)이 유지되던 잔존 버그 — 생성 단계에서 acc_wings*는 본체 뒤(depth-0.2)로 즉시 부여
+- [E2E] e2e_v130.js 19/19 PASS(에셋 로드 3·월드 진입·층식맵 5·오로라 1·날개 2·SNS·☰삭제·수량MAX·랭킹 2·pageerror 0) + 회귀 e2e_v121.js 25/25 PASS — 날개 Y 기대값(v1.3.0 dy=-5)·종료 경로(☰ 삭제→설정 카드 직접 emit) 갱신, 배지 v1.3.0
+- [버전체인 8곳] package.json(1.3.0)·build.gradle(90·1.3.0+히스토리 주석)·server.js(LATEST_VERSION/CODE/NOTE/APK_MIRROR)·Overlays.tsx 배지(v1.3.0)·apk-guide.html(제목·sub 90·노티스 9건·링크·md5·히스토리에 v1.2.1 추가)·안내.txt(v1.3.0 블록+md5)
+- [빌드] JDK 소실 재발→rebuild_toolchain.sh(Temurin21) → JAVA_HOME=/home/z/jdk build_apk.sh BUILD SUCCESSFUL 5m34s → download/SERTZ-v1.3.0.apk 111,150,952B · aapt 90/1.3.0 · APK 내부 vfx2 58장+map 6장+cost_* 세트시트 56장+SFX 신규 2건 표본 검증 · md5 dba6d3e1ad08d13b85ba590084866f7b
+- [릴리스] scripts/release_v130.py — 기존 v1.3.0 태그(id 391632988) 재사용·asset 교체 업로드(id 573895591) → 원격 재다운로드 md5 일치 ✓ · /SERTZ-v1.3.0.apk 206 응답 확인 ✓
+- [서버] export 빌드가 .next 덮음→일반 next build 복구 후 재기동 · /api/version 200(1.3.0/90)·guide 200(md5 포함) · setsid 기동으로 자체 모니터와 EADDRINUSE 경합 제거(서버 데몬 안정화)
+- [git] 리베이스 충돌 2차(자동 accounts backup 커밋과 경합) — 우리 쪽 검증본으로 해결 후 푸시 완료(750b827)
+
+Stage Summary:
+- v1.3.0 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.3.0/SERTZ-v1.3.0.apk (versionCode 90, 111,150,952B, md5 dba6d3e1…)
+- 유저 지시 9건 전부 검증 완료: ①SNS 임시 비활성 ②선 3개(☰) 삭제 ③날개 항상 등 뒤(방향 렌더+생성 depth) ④NPC급 옷 세트 4종 ⑤오로라류 체감 강화 ⑥소모품 개수+MAX ⑦왕국 랭킹+랭커 전용 상점(BM) ⑧Drive 팩 VFX 58+SFX 48종 통합 ⑨Cainos 층식 유적맵
+- 운영 교훈: ①E2E 실패 시 서빙 청크와 소스 커밋 시각을 먼저 대조 — 구빌드 잔존이 상위 원인 ②inv 그리드는 aria-label=아이템키 타일 클릭(텍스트 매칭 불가) ③git 자동 백업 커밋과 경합 중인 세션에서는 pkill 후 ss로 포트 해제 확인 후 기동, setsid 분리가 견고 ④public/ 에셋 수동 복사 전 커밋된 vfx2·map 산출물부터 확인(이중화 방지)
+- 남은 지시(다음 세션): 치장 추가 세트·8직업 3차 외형 확장 등 미소수 — v1.3.0으로 9건 전부 소화됨
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
