@@ -1901,3 +1901,27 @@ Stage Summary:
 - 운영 교훈: ①E2E 실패 시 서빙 청크와 소스 커밋 시각을 먼저 대조 — 구빌드 잔존이 상위 원인 ②inv 그리드는 aria-label=아이템키 타일 클릭(텍스트 매칭 불가) ③git 자동 백업 커밋과 경합 중인 세션에서는 pkill 후 ss로 포트 해제 확인 후 기동, setsid 분리가 견고 ④public/ 에셋 수동 복사 전 커밋된 vfx2·map 산출물부터 확인(이중화 방지)
 - 남은 지시(다음 세션): 치장 추가 세트·8직업 3차 외형 확장 등 미소수 — v1.3.0으로 9건 전부 소화됨
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 90
+Agent: Super Z (메인)
+Task: 세션 재개 — v1.3.1(유저 지시 9건: SPUM 코스튬 8종·검은화면·게임 멈춤·부활 마을·전 장비 스타포스·전직 맵이동 퀘스트·지형물 배치·소수 정리·최적화) E2E·APK 빌드·릴리스 마무리 (versionCode 91)
+
+Work Log:
+- [상태 재파악] 이전 세션이 v1.3.1 코드를 커밋(9b7bbc1, 메시지는 자동백업 UUID)해 둔 상태 — 9건 구현+버전체인 5곳(package/build.gradle/server/배지) 완료, SPUM 코스튬 시트 450장 미커밋, E2E·APK·릴리스 미완료
+- [E2E] e2e_v131.js 16/16 PASS(부팅 배지·SPUM 여/남 텍스처+교차 시트·발키리 착용 전환·유적/포탈 장식 보호·장신구 스타포스 atk+10·travel 퀘스트 목적지·가까운 마을 부활·hud 소수 정리·모바일 절전 기본·pageerror 0) + 회귀 e2e_v130 19/19·e2e_v121 25/25 PASS — 회귀 2종의 배지 기대값을 v1.3.1로 갱신(버전업 정상 오차였던 1건 FAIL 해소)
+- [커밋] SPUM 코스튬 450장(cost_/costm_ 8종×여남) + 회귀 스크립트 갱신 커밋
+- [툴체인] 시스템 Java가 JRE만 제공(javac 부재 — "does not provide JAVA_COMPILER"로 그래들 실패) → scripts/rebuild_toolchain.sh로 Temurin21 /home/z/jdk + Android SDK 복구
+- [빌드] JAVA_HOME=/home/z/jdk build_apk.sh BUILD SUCCESSFUL → download/SERTZ-v1.3.1.apk
+- [가이드 정합성 재빌드] 1차 빌드 APK에 갱신 전 가이드(v1.3.0 제목)가 번들됨을 확인 — 선례(v1.3.0 APK) 대조해 "번들 가이드=올바른 버전 제목/링크, md5 라인은 공개 가이드에만" 패턴 확정 → 가이드에서 md5 라인 제거 후 재빌드(39s, up-to-date 재사용), 공개 guide/안내.txt에는 최종 md5 기재
+- [릴리스] scripts/release_v131.py — Release v1.3.1(id 392027899) 생성·asset 교체 업로드(111,654,919B) → 원격 재다운로드 md5 일치 ✓
+- [서버] export 빌드가 .next 덮음 → 일반 next build 복구 후 pkill→NODE_ENV=production setsid 재기동 → /api/version(1.3.1/91)·/(200)·apk-guide(200, 최종 md5 서빙)·/SERTZ-v1.3.x.apk 307 ✓
+- [git] 자동 백업 커밋 경합 → rebase 풀 후 푸시 완료(5caaca0)
+- [버전체인 8곳 확인] package.json·build.gradle(91)·server.js·Overlays 배지(v1.3.1)·apk-guide(제목·sub 91·노티스 9건·링크·md5·히스토리 v1.3.0 추가)·안내.txt(v1.3.1 블록)
+
+Stage Summary:
+- v1.3.1 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.3.1/SERTZ-v1.3.1.apk (versionCode 91, 111,654,919B, md5 1de1357f…)
+- 유저 지시 9건 전부 구현·검증·배포: ①SPUM 신규 코스튬 8종(여남 교차) ②지형물 배치 보호 ③전 장비 스타포스(장신구 atk/def 트랙) ④조각회수 폐지→계열별 맵이동 퀘스트 ⑤검은화면 자가치유 ⑥가까운 마을 부활 ⑦소수 정리 ⑧멈춤 자가치유 ⑨모바일 절전+적 상한 축소
+- 운영 교훈: ①시스템 JRE만 있으면 그래들이 javac 캐퍼빌리티 오류 — 툴체인 스크립트 먼저 ②APK 번들 가이드는 빌드 '전'에 갱신 완료 상태여야 함(릴리스 후 md5 확정 → 공개 가이드에만 md5 기재 패턴) ③샌드박스가 nohup 백그라운드 빌드를 정리함 — 장시간 빌드는 포그라운드 필수 ④public/ 가이드 갱신은 서버 재기동 불필요(디스크 직서빙)
+- 남은 지시: 없음 — 이번 9건까지 전 세대 지시 소화 완료
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
