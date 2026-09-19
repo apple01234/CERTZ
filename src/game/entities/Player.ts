@@ -3472,10 +3472,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const potAtk = sumPotLines([this.potentials[this.weapon]]).atk;
     /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +2 + 무기 기본 공격력의 8% (마일스톤은 별도) */
     const perStar = starPerStarAtk(ITEMS[this.weapon].atk ?? 0) * this.upgrades.weapon;
+    /* v1.3.1 (#3) — 장신구 스타포스 atk 가산 (atk 장신구도 별이 실제 공격력을 올린다) */
+    let accStarAtk = 0;
+    for (const k of this.accessories) accStarAtk += starAccBonus(this.accUp[k] ?? 0, ITEMS[k]).atk;
     /* v4.0.0 — 등급업 큐브 승급 배율 (무기 기본 스탯 강화) */
     const tierMul = this.tierUpMult("weapon");
     const base =
-      this.atk + (ITEMS[this.weapon].atk ?? 0) * tierMul + perStar +
+      this.atk + (ITEMS[this.weapon].atk ?? 0) * tierMul + perStar + accStarAtk +
       starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3 + potAtk +
       this.extBonus.atk; // v4.0.0 — 피규어/배지/룬 flat 공격
     const buff = this.hasBuff("buff_atk") || this.hasBuff("buff_king") ? 1.25 : 1;
@@ -3510,8 +3513,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +1 + 기본 방어의 6%
      *  v4.0.0 — 등급업 배율 + 피규어/배지/룬/성좌/스킨 flat 방어 */
     const perStar = starPerStarDef(ITEMS[this.armor].def ?? 0).def * this.upgrades.armor;
+    /* v1.3.1 (#3) — 장신구 스타포스 def 가산 (def 장신구도 별이 실제 방어력을 올린다) */
+    let accStarDef = 0;
+    for (const k of this.accessories) accStarDef += starAccBonus(this.accUp[k] ?? 0, ITEMS[k]).def;
     return ((
-      (ITEMS[this.armor].def ?? 0) * this.tierUpMult("armor") + perStar +
+      (ITEMS[this.armor].def ?? 0) * this.tierUpMult("armor") + perStar + accStarDef +
       starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff + potDef + setDef + blessDef +
       this.extBonus.def
     )) + kingDef;

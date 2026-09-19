@@ -127,6 +127,8 @@ export class WorldScene extends Phaser.Scene {
   private moveVec = new Phaser.Math.Vector2();
   private touchMove = new Phaser.Math.Vector2();
   private attackQueued = false;
+  /** v1.3.1 (#8) — 앱 전환 복귀 자가치유 핸들러 (cleanup에서 해제) */
+  private onVisChange: (() => void) | null = null;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private dialoguing = false;
 
@@ -214,7 +216,8 @@ export class WorldScene extends Phaser.Scene {
   /* v3.1.0 (#전직스토리선행) — fam 추가: 미전직(cls null) 상태에서도 계열 스토리 진행 가능.
    *  유저 지시 "전직은 전직 스토리(n차마다 다른 스토리/컷신) 완료 후에 실행" —
    *  계열 선택 → 해당 계열 시련 스토리 → 완료 시 전직 적용 순서로 반영했다. */
-  jobStory: { tier: 1 | 2 | 3 | 4; step: number; hunt: number; fam: FamilyKey } | null = null;
+  /* v1.3.1 (#4) — travel 목적지 스테이지(tst) 추가: 런타임 확정 → 세이브 유지 (구 세이브 호환) */
+  jobStory: { tier: 1 | 2 | 3 | 4; step: number; hunt: number; fam: FamilyKey; tst?: string } | null = null;
   private jobStoryDone: number[] = []; // 완료한 티어 기록 [2, 3]
   /** v3.1.0 (#전직스토리선행) — 미전직이 시련 스토리 중 선택해둔 1차 클래스 (완료 시 적용) */
   private pendingJobClass: ClassKey | null = null;
@@ -1052,6 +1055,8 @@ export class WorldScene extends Phaser.Scene {
             step: savedPlayer.jobStory.step,
             hunt: savedPlayer.jobStory.hunt,
             fam: jsFam,
+            /* v1.3.1 (#4) — travel 목적지 복원 (부재 시 트래커에서 확정) */
+            tst: (savedPlayer.jobStory as { tst?: string }).tst,
           };
         }
       }
@@ -1548,6 +1553,21 @@ export class WorldScene extends Phaser.Scene {
 
     this.events.once("shutdown", () => this.cleanup());
 
+    /* v1.3.1 (#8 게임 멈춤 수정) — 앱 전환 복귀 시 입력·물리 자가치유:
+     *  백그라운드 중 놓친 keyup 고착(자동이동/멈춤), 히트스톱·전환 중 복귀로 물리 정지 잔존을 정리한다.
+     *  프리즈 워치독(PhaserGame)이 렌더 정지는 잡지만, "렌더는 되는데 조작이 죽은" 상태는 여기서 회복 */
+    this.onVisChange = () => {
+      if (document.hidden) return;
+      try { this.resetInputState(); } catch { /* 무시 */ }
+      try { this.touchMove.reset(); } catch { /* 무시 */ }
+      try { this.attackQueued = false; } catch { /* 무시 */ }
+      if (!this.dialoguing && !this.transitioning && this.physics.world.isPaused) {
+        console.warn("[SERTZ] 복귀 — 물리 정지 잔존 감지, 자동 해제");
+        this.physics.world.resume();
+      }
+    };
+    document.addEventListener("visibilitychange", this.onVisChange);
+
     /* v4.1.4 — 침공 보스 이벤트 타이머 (월드 보스 이벤트) */
     this.startInvasionTimer();
   }
@@ -1709,8 +1729,16 @@ export class WorldScene extends Phaser.Scene {
             [vx + 210, vy + 120],
             [vx - 90, vy - 90],
             [def.width - 110, vy], // 차원문
+            /* v1.3.1 (#2 지형물 배치 수정) — 요적 유적 2층 구조물(v1.3.0 신설) 보호 누락:
+             *  기존엔 유적 구조물 좌표가 보호 목록에 없어 나무·바위가 발코니/계단/기둥 위에
+             *  겹쳐 심기고 (depth 충돌로 유적을 뚫고 보임). 구조물 중심+계단 끝 2점 보호 */
+            [vx + 430, vy + 40],
+            [vx + 580, vy + 90],
           ]
         : [];
+    /* v1.3.1 (#2) — 전 구역 공통: 포탈·입장 지점 보호 (필드에서도 차원문/스폰 앞이 나무로 막히던 것 차단) */
+    reserved.push([this.portalHome.x, this.portalHome.y]);
+    reserved.push([this.entryHome.x, this.entryHome.y]);
     const blocked = (x: number, y: number) => reserved.some(([rx, ry]) => Phaser.Math.Distance.Between(x, y, rx, ry) < 170);
 
     // 나무 & 소나무 & 바위 (충돌 있음) — 실제 에셋, 챕터 테마 변형 (v2.0: 구역 키 대응)
@@ -2976,12 +3004,24 @@ export class WorldScene extends Phaser.Scene {
   /* v1.0.8 — 그래픽 효과 모드 (유저 지시 "쉐이더 어디감??" 대응):
    *  auto=적응형(기존 동작) / high=항상 켜짐(셰이더 강제 — 적응형 축소 비활성) / low=절전.
    *  설정 패널 → localStorage sertz_fx_mode → EventBus "fx:mode"로 실시간 전환 */
-  fxMode: "auto" | "high" | "low" = (() => {
+  /* v1.3.1 (#9 최적화) — 모바일 기기는 절전 모드 기본 시작 (유저가 설정에서 항상 높음 가능):
+   *  셰이더 블룸/툰 필터가 모바일 GPU 최대 부하원 — 적응형(auto)은 저하까지 수 초 걸려
+   *  "최적화 ㅈ됐어" 체감의 주범. 판정 로직은 모듈 상수로 분리해 부팅 노출(E2E)에도 쓴다. */
+  static readonly DEFAULT_FX_MODE: "auto" | "high" | "low" = (() => {
     try {
       const m = window.localStorage.getItem("sertz_fx_mode");
-      return m === "high" || m === "low" ? m : "auto";
+      if (m === "high" || m === "low") return m;
+    } catch { /* 저장소 부재 무시 */ }
+    try {
+      const ua = navigator.userAgent || "";
+      const touch = (navigator.maxTouchPoints ?? 0) > 1;
+      const smallSide = Math.min(window.screen?.width ?? 9999, window.screen?.height ?? 9999);
+      const mobile = /Android|iPhone|iPad|Mobile/i.test(ua) || (touch && smallSide < 820);
+      return mobile ? "low" : "auto";
     } catch { return "auto"; }
   })();
+
+  fxMode: "auto" | "high" | "low" = WorldScene.DEFAULT_FX_MODE;
 
   get fxScale() {
     return this.fxLevel === 0 ? 0.45 : 1;
@@ -3811,7 +3851,7 @@ export class WorldScene extends Phaser.Scene {
         this.tryCompleteHunt(key);
       }
     }
-    // 전직 스토리 토벌/시험 단계 (지시 #13)
+    // 전직 스토리 토벌/시험/이동 단계 (지시 #13)
     if (this.jobStory) {
       const story = this.jobStoryDef();
       const step = story?.steps[this.jobStory.step];
@@ -3819,6 +3859,14 @@ export class WorldScene extends Phaser.Scene {
         if (step.type === "hunt") {
           this.jobStory.hunt++;
           if (this.jobStory.hunt >= (step.need ?? 0)) this.completeJobStoryStep();
+        } else if (step.type === "travel") {
+          /* v1.3.1 (#4) — 조각 회수 폐지 → 지정 맵 이동+사냥 단계:
+           *  목적지 맵에서 잡은 킬만 카운트된다 (다른 맵의 킬은 무시) */
+          if (this.jobStory.tst && this.stageDef.key === this.jobStory.tst) {
+            this.jobStory.hunt++;
+            if (this.jobStory.hunt % 2 === 0 || this.jobStory.hunt >= (step.need ?? 0)) this.emitQuest();
+            if (this.jobStory.hunt >= (step.need ?? 0)) this.completeJobStoryStep();
+          }
         } else if (step.type === "elite" && (ref === this.jobTrialEnemy || (this.jobEliteSummoned && this.eliteEnemy === null))) {
           // 소환된 시험 상대 처치 → 단계 완료
           // v3.0.22 (#46) — 죽은 개체 참조 기반 판정(기존 eliteEnemy null 우연 의존 → 시험 상대가
@@ -5657,11 +5705,12 @@ export class WorldScene extends Phaser.Scene {
       return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
     }
     /* v3.0 (사용자 지시 #6) — 동시 몬스터 상한 20마리: 이미 가득하면 리스폰 보류
-     * v3.0.2 — 정예/보스도 총량에 포함 (잡몹 20 + 정예/보스로 21~22마리 되던 빈틈 봉합) */
+     * v3.0.2 — 정예/보스도 총량에 포함 (잡몹 20 + 정예/보스로 21~22마리 되던 빈틈 봉합)
+     * v1.3.1 (#9 최적화) — 절전 모드(fxLevel 0)에선 상한 14마리로 축소 (FSM/충돌/렌더 부하 절반) */
     const aliveMobs = this.enemies.filter((e) => e.active && e.alive).length;
     const eliteAlive = this.eliteEnemy?.active && this.eliteEnemy.alive ? 1 : 0;
     const bossAlive = this.boss?.active && this.boss.alive ? 1 : 0;
-    if (aliveMobs + eliteAlive + bossAlive >= 20) {
+    if (aliveMobs + eliteAlive + bossAlive >= (this.fxLevel === 0 ? 14 : 20)) {
       /* v4.2.0 — 2400→1400ms (피로도 완화: 리젠 대기 단축) */
       this.time.delayedCall(1400, () => this.respawnEnemy(key, x, y, tries));
       return;
@@ -6284,13 +6333,57 @@ export class WorldScene extends Phaser.Scene {
   }
 
   respawnPlayer() {
+    /* v1.3.1 (#6/#8) — 부활 개편:
+     *  ①가까운 마을에서 부활 (유저 지시 #6) — PREV 체인 역추적(진행상 가장 최근에 지나온 마을).
+     *  긴급귀환의 nearestVillageKey는 "현재 챕터의 마을"(미개방 가능)을 반환하므로 부활 전용 역추적을 쓴다.
+     *  ②끼임 플래그 전면 해제 — dialoguing/transitioning/pendingPortal 잔존으로 인한 부활 후 멈춤 차단 (#8)
+     *  ③마을/실내 사망은 마을 스폰 지점에서 그 자리 부활 (전환 없음 — 빠른 재기) */
+    const inVillage = this.stageDef.isVillage || this.isInterior;
+    const village = this.respawnVillageKey();
+    /* 끼임 해제 공통 — 대사/보스바/포탈 게이트 전부 정리 */
+    this.dialoguing = false;
+    this.dialogueSince = 0;
+    this.portalHoldSince = 0;
+    this.queuedDialogue = null;
+    this.pendingPortal = false;
+    this.transitioning = false;
+    EventBus.emit("dialogue:hide");
+    EventBus.emit("boss:hide");
+    if (!inVillage && village !== this.stageDef.key) {
+      try { this.player.revive(180, this.stageH / 2); } catch { /* 전환 경로에서 재부활 처리 */ }
+      const def = STAGES[village];
+      const spawn = this.villageSpawnPos(def);
+      audio.playStageBGM(village, false);
+      this.gotoStage(village, { entry: spawn }, true);
+      EventBus.emit("banner:show", { text: `${STAGE_SHORT[village] ?? "마을"}에서 부활했다` });
+      return;
+    }
     this.cameras.main.fadeIn(400, 20, 0, 0);
     // 부활 캠핑 방지 — 몬스터를 원래 스폰 지점으로 되돌리고 어그로 해제
     for (const e of this.enemies) {
       if (e.active && e.alive) e.resetHome();
     }
-    this.player.revive(180, this.stageH / 2);
+    const spawn = inVillage ? this.villageSpawnPos(this.stageDef) : { x: 180, y: this.stageH / 2 };
+    this.player.revive(spawn.x, spawn.y);
     audio.playStageBGM(this.stageDef.key, !!this.boss);
+  }
+
+  /** v1.3.1 (#6) — 마을 스폰 좌표: 우물 광장 남쪽 개방지 (건물/우물/유적과 겹치지 않는 안전 지점) */
+  private villageSpawnPos(def: StageDef): { x: number; y: number } {
+    return { x: def.width / 2, y: def.height / 2 + 150 };
+  }
+
+  /** v1.3.1 (#6) — 부활 마을: PREV 체인 역추적(진행상 직전에 지나온 마을 — 항상 개방된 곳).
+   *  긴급귀환용 nearestVillageKey와 달리 "현재 챕터의 미개방 마을"로 보내지 않는다.
+   *  최대 60홉 안전망 + 최후 폴백 본마을. */
+  private respawnVillageKey(): StageKey {
+    let cur: StageKey | null = this.stageDef.key;
+    for (let i = 0; i < 60 && cur; i++) {
+      const def = STAGES[cur];
+      if (def?.isVillage) return cur;
+      cur = PREV_STAGE[cur] ?? null;
+    }
+    return "village";
   }
 
   /* ================= 입력 ================= */
@@ -9947,6 +10040,7 @@ export class WorldScene extends Phaser.Scene {
     this.spawnPickupText(this.player.x, this.player.y - 44, `스토리 보상 +${step.reward}G`, "#ffd76a");
     this.jobStory.step++;
     this.jobStory.hunt = 0;
+    this.jobStory.tst = undefined; // v1.3.1 (#4) — travel 목적지 리셋 (다음 travel 단계에서 재확정)
     this.jobEliteSummoned = false;
     if (this.jobStory.step >= story.steps.length) {
       // 전체 완료 — 최종 보상
@@ -9990,10 +10084,47 @@ export class WorldScene extends Phaser.Scene {
       this.showDialogue(step.dialogue);
       const next = story.steps[this.jobStory.step];
       if (next?.type === "elite") this.showBanner("카이엔에게 말 걸어 시험 상대 소환");
+      else if (next?.type === "travel") {
+        /* v1.3.1 (#4) — travel 단계 진입: 목적지 즉시 확정 + 이동 안내 (메이플식 맵이동 퀘스트) */
+        const tst = this.ensureTravelTarget();
+        const mapName = tst ? (STAGE_SHORT[tst as StageKey] ?? tst) : null;
+        this.showBanner(mapName ? `「${mapName}」(으)로 이동해 몬스터 ${next.need ?? 0}마리 토벌` : "지정된 계승지로 이동하자");
+      }
     }
     this.emitQuest(); // v4.1.3 (#전직조건표시) — 단계 완료 즉시 트래커 갱신 ([1/3]→[2/3])
     this.save();
     this.emitRpgState();
+  }
+
+  /** v1.3.1 (#4) — travel 단계 목적지 확정: 방문 기록(visited)의 전투 구역 중
+   *  계열별 고유 인덱스로 배정 — 4계열이 서로 다른 맵, 티어마다도 다른 맵.
+   *  마을/실내/현재 구역 제외 → 항상 도달 가능한 곳만 후보. 후보 부족 시 현재 구역 폴백. */
+  private ensureTravelTarget(): string | null {
+    if (!this.jobStory) return null;
+    const story = this.jobStoryDef();
+    const step = story?.steps[this.jobStory.step];
+    if (!story || !step || step.type !== "travel") return null;
+    if (this.jobStory.tst && STAGES[this.jobStory.tst as StageKey]) return this.jobStory.tst;
+    const famIdx: Record<FamilyKey, number> = { warrior: 0, ranger: 1, mage: 2, thief: 3 };
+    const idxBase = famIdx[this.jobStory.fam] * 2 + (this.jobStory.tier - 1); // 계열×티어 고유 오프셋
+    const visited = [...this.visited].filter((k) => {
+      const d = STAGES[k as StageKey];
+      /* 필드 전투 구역만 후보 — 마을/실내/도장·게이트·탑 등 특수 구역 제외 (parseStage 판정) */
+      return d && !d.isVillage && parseStage(k as StageKey).ch !== "village" && k !== this.stageDef.key;
+    });
+    /* 진행 순 정렬 (챕터 번호 → 서브 번호) — 재현성 있는 배정 */
+    visited.sort((a, b) => {
+      const pa = parseStage(a as StageKey); const pb = parseStage(b as StageKey);
+      const ca = CHAPTERS.findIndex((c) => c.key === pa.ch); const cb = CHAPTERS.findIndex((c) => c.key === pb.ch);
+      return (ca < 0 ? 99 : ca) - (cb < 0 ? 99 : cb) || pa.sub - pb.sub;
+    });
+    const target = visited.length > 0
+      ? visited[idxBase % visited.length]
+      : this.stageDef.key; // 폴백: 방문 기록 부재 → 현재 구역에서 수행
+    this.jobStory.tst = target;
+    this.jobStory.hunt = 0;
+    this.save();
+    return target;
   }
 
   /** 전직 스토리 elite 단계 — 카이엔 근처에 시험 상대 소환 */
@@ -10877,21 +11008,29 @@ export class WorldScene extends Phaser.Scene {
       const story = this.jobStoryDef();
       const step = story?.steps[this.jobStory.step];
       if (story && step) {
-        const isHunt = step.type === "hunt";
+        /* v1.3.1 (#4) — travel(이동 사냥) 단계도 hunt처럼 진행도 [n/N] 표시 */
+        const isHunt = step.type === "hunt" || step.type === "travel";
+        let mapName: string | null = null;
+        if (step.type === "travel") {
+          const tst = this.ensureTravelTarget();
+          mapName = tst ? (STAGE_SHORT[tst as StageKey] ?? tst) : null;
+        }
         st.jobStory = {
           title: story.title,
           step: this.jobStory.step + 1,
           total: story.steps.length,
           stepTitle: step.title.replace("[전직 스토리] ", ""),
-          stepDesc: step.desc,
+          stepDesc: step.type === "travel" && mapName ? `목적지 — 「${mapName}」\n${step.desc}` : step.desc,
           current: isHunt ? Math.min(this.jobStory.hunt, step.need ?? 0) : 0,
           need: step.need ?? 1,
           hint:
             step.type === "elite"
               ? "전직관의 카이엔에게 말 걸기 → 시험 상대 처치"
-              : step.type === "collect"
-                ? "해역의 빛나는 흔적을 회수"
-                : "",
+              : step.type === "travel"
+                ? `${mapName ?? "계승지"}에서 토벌 — 다른 맵의 킬은 포함되지 않는다`
+                : step.type === "collect"
+                  ? "해역의 빛나는 흔적을 회수"
+                  : "",
         };
       }
     }
@@ -11063,12 +11202,13 @@ export class WorldScene extends Phaser.Scene {
       gold: this.player.gold,
       atkTotal: this.player.atkTotal,
       defTotal: this.player.defTotal,
-      critRate: this.player.critRate,
+      /* v1.3.1 (#7 능력치 소수 정리) — 소수 둘째 자리에서 반올림해 표시 (크리티컬 %/이동속도) */
+      critRate: Math.round(this.player.critRate * 10) / 10,
       cls: this.player.cls,
       /* v1.9 — 버프 바 + AP 배지 + 속도 */
       buffs: this.player.buffs.map((b) => ({ key: b.key, remain: b.remain, total: b.total })),
       ap: this.player.ap,
-      speed: this.player.speed,
+      speed: Math.round(this.player.speed * 10) / 10,
     });
     this.emitRpgState();
   }
@@ -11815,6 +11955,8 @@ export class WorldScene extends Phaser.Scene {
   private cleanup() {
     this.questTimer?.remove();
     this.scale.off("resize", this.applyCameraZoom, this);
+    /* v1.3.1 (#8) — visibilitychange 리스너 해제 (씬 재시작 후 중복 실행 방지) */
+    if (this.onVisChange) document.removeEventListener("visibilitychange", this.onVisChange);
     this.tut?.destroy(); // v1.0.11 — 튜토리얼 HUD/마커 정리
     this.tut = null;
     this.shockFX?.destroy(); // v4.8.0 — 셰이더 링 풀 정리

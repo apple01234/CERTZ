@@ -19,7 +19,8 @@ import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/a
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
 import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
 import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS } from "@/game/pass"; // v4.5.0 — 시즌 패스 + v1.0.1 시즌 미션
-import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, fetchRanking, type MarketState, type AuthUser, type RankState } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화 · v1.3.0 랭킹
+import { Trophy } from "lucide-react";
+import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, fetchRanking, fetchRank, claimRankReward, type RankBoard, type MarketState, type AuthUser, type RankState, type RankRow } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화 · v1.3.0 랭킹
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
 import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
 import { chestOdds, eertOdds, POT_PITY_MAX, STAR_PITY_FROM, STAR_PITY_STEP, STAR_PITY_MAX } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법) · v1.0.8 천장 공시
@@ -1967,6 +1968,9 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                           </p>
                           <p className="truncate text-[11px] font-bold text-emerald-300/90">
                             {itemEffect(it)}
+                            {/* v1.3.1 (#3) — 장신구 스타포스 atk/def 트랙 표시 (atk/def 장신구도 별 효과가 보이게) */}
+                            {accBonus.atk > 0 && <span className="ml-1 text-[#ffd76a]">+공격 {accBonus.atk}</span>}
+                            {accBonus.def > 0 && <span className="ml-1 text-[#8fb8ff]">+방어 {accBonus.def}</span>}
                             {accBonus.crit > 0 && <span className="ml-1 text-[#d29dff]">+치명 {accBonus.crit}%</span>}
                             {accBonus.hp > 0 && <span className="ml-1 text-[#6ff2d8]">+HP {accBonus.hp}</span>}
                           </p>
@@ -2667,6 +2671,7 @@ export function GamePanels({
   if (panel === "benefit") return <BenefitPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 혜택 (출석부/일일 퀘스트/쿠폰)
   if (panel === "pass") return <PassPanel rpg={rpg} onClose={onClose} />; // v4.5.0 — 시즌 패스 (배틀패스)
   if (panel === "content") return <ContentPanel rpg={rpg} onClose={onClose} />; // v1.0.8 — 무한 콘텐츠 허브
+  if (panel === "rank") return <RankingPanel rpg={rpg} onClose={onClose} />; // v1.3.1 복원 — 랭킹창 + 랭커 특전 (93b3fbf에서 유실)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   return null;
 }
@@ -2959,8 +2964,53 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
   )
 }
 
-/** v1.3.0 (지시 #7) — 왕국 랭킹 탭 본체: 서버 /api/rank 조회 (클라우드 세이브 파생).
- *  랭커 전용 코너: 내 순위 Top10 진입 시 챔피언 오라/황금 왕관 구매 버튼 활성화 (에메랄드 소비). */
+type RankTabKind = "level" | "power" | "content";
+
+const CONTENT_RANK_MODES: [RankMode, string][] = [
+  ["gate", "바르가 수비전"],
+  ["closet", "균열 던전"],
+  ["dojang", "무릉도장"],
+  ["tower", "심연의 탑"],
+];
+
+function RankListRows({ rows, metric }: { rows: RankRow[]; metric: "lv" | "power" }) {
+  if (rows.length === 0)
+    return <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/40">아직 등록된 기록이 없어요 — 계정 패널에서 클라우드 백업 후 플레이하면 자동 등록됩니다</p>;
+  return (
+    <div className="flex flex-col gap-1">
+      {rows.map((r, i) => (
+        <div key={`${r.name}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${i < 3 ? "border-amber-300/40 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
+          <span className={`w-6 text-center text-[11px] font-black ${i === 0 ? "text-amber-300" : i < 3 ? "text-amber-200/90" : "text-white/40"}`}>{i + 1}</span>
+          <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white">{r.name}</span>
+          <span className="text-[10px] text-white/50">Lv{r.lv}</span>
+          <span className="w-14 text-right text-[10px] font-black text-sky-200">{(metric === "lv" ? r.lv : (r.power ?? 0)).toLocaleString()}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function RankingPanel({ onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  return (
+    <div className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center bg-black/55 px-4">
+      <div className="game-panel max-h-[86vh] w-full max-w-md overflow-y-auto p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-sm font-black text-amber-200">🏆 랭킹창</p>
+          <button
+            onClick={onClose}
+            aria-label="랭킹 창 닫기"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70"
+          >
+            ✕
+          </button>
+        </div>
+        <KingdomRankTab />
+      </div>
+    </div>
+  );
+}
+
 function KingdomRankTab() {
   const [state, setState] = useState<RankState | null>(null);
   const [err, setErr] = useState("");

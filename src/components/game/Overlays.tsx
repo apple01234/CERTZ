@@ -86,7 +86,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.3.0 — SNS 임시 중단 · ☰ 삭제 · 날개 등 뒤 고정 · NPC급 옷 세트 4종 · 오로라 강화 · 소모품 MAX · 왕국 랭킹 · 에셋 대량 통합 · 층식 유적</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.3.1 — SPUM 신규 코스튬 8종 · 검은화면/멈춤 자가치유 · 가까운 마을 부활 · 전 장비 스타포스 · 전직 맵이동 퀘스트 · 지형물 배치 수정 · 최적화 강화</span>
           </p>
         </div>
 
@@ -355,7 +355,7 @@ export function EndScreen({ end }: { end: EndState }) {
                 className="game-btn-danger flex items-center justify-center gap-2 px-4 py-3 text-sm font-black active:scale-95"
               >
                 <Play size={16} />
-                부활하기
+                가까운 마을에서 부활
               </button>
               <button
                 onClick={() => window.location.reload()}

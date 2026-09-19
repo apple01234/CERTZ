@@ -125,6 +125,9 @@ export type ItemKey =
   | "rank_aura" | "rank_crown_gold"
   /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (완전 교체 코스튬) */
   | "outfit_dragon" | "outfit_frost" | "outfit_sakura" | "outfit_void"
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (유저 제공 SPUM 파트 실제 조합) */
+  | "outfit_valkyrie" | "outfit_witch" | "outfit_sylvan" | "outfit_lily"
+  | "outfit_warlord" | "outfit_paladin" | "outfit_nightblade" | "outfit_mariner"
   | "ring_bless"
   | "buff_king"
   /* v3.0.15 (#13) — eert 큐브 (메이플 큐브 시스템 — 잠재옵션 리롤) */
@@ -222,9 +225,12 @@ export const STAR_BLESS_RATE = 15;
 export const STAR_BLESS_MAX = 3;
 
 /** v3.0.7 — 장신구 스타포스 마일스톤 보너스 (crit 트랙: 반지 계열 / hp 트랙: 펜던트 계열)
- *  v3.0.20 (#8) — 별 1개마다도 상승: 치명 +0.5%p/성, HP +8/성 (마일스톤은 기존보다 강하게) */
-export function starAccBonus(up: number, item: { crit?: number; maxHp?: number }): { crit: number; hp: number } {
-  let crit = 0, hp = 0;
+ *  v3.0.20 (#8) — 별 1개마다도 상승: 치명 +0.5%p/성, HP +8/성 (마일스톤은 기존보다 강하게)
+ *  v1.3.1 (#3) — atk/def 트랙 신설: 무력의 반지 등 atk/def 장신구도 스타포스 효과가
+ *  눈에 보이게 (무기/방어구 perStar와 동일 체감 — atk +2+8%/성 · def +1+6%/성).
+ *  기존엔 atk/def 장신구는 성급을 올려도 스탯이 0 증가 → "스타포스 적용 안 되는 장비" 민원 */
+export function starAccBonus(up: number, item: { crit?: number; maxHp?: number; atk?: number; def?: number }): { crit: number; hp: number; atk: number; def: number } {
+  let crit = 0, hp = 0, atk = 0, def = 0;
   if (item.crit) {
     crit = up * 0.5; // 본당 +0.5%p
     if (up >= 5) crit += 3;
@@ -237,7 +243,21 @@ export function starAccBonus(up: number, item: { crit?: number; maxHp?: number }
     if (up >= 10) hp += 35;
     if (up >= 15) hp += 55; // ★15 누적 +240 (기존 110 → 대폭 상향)
   }
-  return { crit: Math.round(crit * 10) / 10, hp };
+  /* v1.3.1 (#3) — atk/def 트랙: 본당 atk +2 + 기본atk 8% / def +1 + 기본def 6%,
+   *  마일스톤(★5/★10/★15)에 무기·방어구와 동일 톤의 가산 */
+  if (item.atk) {
+    atk = up * 2 + Math.round((item.atk * 0.08) * up);
+    if (up >= 5) atk += 6;
+    if (up >= 10) atk += 10;
+    if (up >= 15) atk += 16;
+  }
+  if (item.def) {
+    def = up * 1 + Math.round((item.def * 0.06) * up);
+    if (up >= 5) def += 2;
+    if (up >= 10) def += 3;
+    if (up >= 15) def += 5;
+  }
+  return { crit: Math.round(crit * 10) / 10, hp, atk, def };
 }
 
 /** 성급 티어 (0=흰색 ★1~4 / 1=청록 ★5~9 / 2=보라 ★10~14 / 3=금색 ★15) */
@@ -360,6 +380,15 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   outfit_frost: { key: "outfit_frost", kind: "cosmetic", name: "서리의 백작", icon: "costm_frost_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_sakura: { key: "outfit_sakura", kind: "cosmetic", name: "벚꽃 검부이", icon: "cost_sakura_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_void: { key: "outfit_void", kind: "cosmetic", name: "공허의 순례자", icon: "costm_void_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (유저 제공 SPUM 파트 실제 조합 — 투구/후드/헤어/망토/의상 파트) */
+  outfit_valkyrie: { key: "outfit_valkyrie", kind: "cosmetic", name: "발키리의 은빛 갑주", icon: "cost_valkyrie_idle0", price: 128000, bmPrice: 52, bmOnly: true, tier: "legend" },
+  outfit_witch: { key: "outfit_witch", kind: "cosmetic", name: "심연의 후드 마녀", icon: "cost_witch_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_sylvan: { key: "outfit_sylvan", kind: "cosmetic", name: "숲의 후드 수호자", icon: "cost_sylvan_idle0", price: 88000, bmPrice: 36, bmOnly: true, tier: "epic" },
+  outfit_lily: { key: "outfit_lily", kind: "cosmetic", name: "흑발의 백합 검부이", icon: "cost_lily_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_warlord: { key: "outfit_warlord", kind: "cosmetic", name: "파멸의 대군주", icon: "costm_warlord_idle0", price: 148000, bmPrice: 52, bmOnly: true, tier: "legend" },
+  outfit_paladin: { key: "outfit_paladin", kind: "cosmetic", name: "황실 그레이트 성기사", icon: "costm_paladin_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_nightblade: { key: "outfit_nightblade", kind: "cosmetic", name: "밤을 두른 칼날", icon: "costm_nightblade_idle0", price: 88000, bmPrice: 36, bmOnly: true, tier: "epic" },
+  outfit_mariner: { key: "outfit_mariner", kind: "cosmetic", name: "푸른 파도 항해사", icon: "costm_mariner_idle0", price: 82000, bmPrice: 32, bmOnly: true, tier: "epic" },
   /* ---- v3.0.20 (#9) — eert 큐브: "큐브는 마시는 게 아니다" ----
    *  BM(에메랄드)로만 구매 가능 + 골드 판매가 5000G (아주 비싼 가격).
    *  장비 행의 [eert] 버튼으로 사용하며 1회 사용마다 1개 소모. */
@@ -521,7 +550,10 @@ export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | 
   /* v1.3.0 (지시 #7) — 랭커 전용 치장 2종 */
   | "rank_aura" | "rank_crown_gold"
   /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 */
-  | "outfit_dragon" | "outfit_frost" | "outfit_sakura" | "outfit_void";
+  | "outfit_dragon" | "outfit_frost" | "outfit_sakura" | "outfit_void"
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 */
+  | "outfit_valkyrie" | "outfit_witch" | "outfit_sylvan" | "outfit_lily"
+  | "outfit_warlord" | "outfit_paladin" | "outfit_nightblade" | "outfit_mariner";
 
 /** 버프 물약 효과 — 사용 시 지속시간 동안 적용 (같은 버프 재사용 시 시간 갱신) */
 export type BuffDef = {
@@ -639,6 +671,15 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   outfit_frost: { key: "outfit_frost", name: "서리의 백작", icon: "costm_frost_idle0", desc: "백은 갑옷의 서리 귀족 — 북풍을 지배하는 자 (남형)", price: 560, tint: 0x9ad8ff, slot: "outfit" },
   outfit_sakura: { key: "outfit_sakura", name: "벚꽃 검부이", icon: "cost_sakura_idle0", desc: "흑발에 벚꽃 스커트의 검부이 — 봄밤의 일섭 (여형)", price: 560, tint: 0xffb0d0, slot: "outfit" },
   outfit_void: { key: "outfit_void", name: "공허의 순례자", icon: "costm_void_idle0", desc: "보랏빛 로브의 은발 순례자 — 공허를 건니는 자 (남형)", price: 560, tint: 0xb08aff, slot: "outfit" },
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (SPUM 파트 실제 조합 — 투구/후드/헤어/망토) */
+  outfit_valkyrie: { key: "outfit_valkyrie", name: "발키리의 은빛 갑주", icon: "cost_valkyrie_idle0", desc: "은빛 나이트 투구에 백은 장갑의 발키리 — 전장을 날는 여신 (여형)", price: 560, tint: 0xcfe0ff, slot: "outfit" },
+  outfit_witch: { key: "outfit_witch", name: "심연의 후드 마녀", icon: "cost_witch_idle0", desc: "보라 후드에 심연색 로브의 마녀 — 밤의 마술을 다루는 자 (여형)", price: 560, tint: 0xb08aff, slot: "outfit" },
+  outfit_sylvan: { key: "outfit_sylvan", name: "숲의 후드 수호자", icon: "cost_sylvan_idle0", desc: "갈색 후드에 녹색 튜닉의 숲 수호자 — 나무와 말이 통하는 자 (여형)", price: 560, tint: 0x9adf6a, slot: "outfit" },
+  outfit_lily: { key: "outfit_lily", name: "흑발의 백합 검부이", icon: "cost_lily_idle0", desc: "흑발에 백합 문장의 붉은 망토 검부이 — 조용한 일섭의 화신 (여형)", price: 560, tint: 0xffb0d0, slot: "outfit" },
+  outfit_warlord: { key: "outfit_warlord", name: "파멸의 대군주", icon: "costm_warlord_idle0", desc: "암흑 뿔투구에 붉은 망토의 대군주 — 천하를 삼킨 야망의 정점 (남형)", price: 560, tint: 0xff8a6a, slot: "outfit" },
+  outfit_paladin: { key: "outfit_paladin", name: "황실 그레이트 성기사", icon: "costm_paladin_idle0", desc: "그레이트 헬름에 청색 갑주의 성기사 — 왕가의 최후의 방패 (남형)", price: 560, tint: 0x9ad8ff, slot: "outfit" },
+  outfit_nightblade: { key: "outfit_nightblade", name: "밤을 두른 칼날", icon: "costm_nightblade_idle0", desc: "암흑 투구에 흑의 장비의 칼날 — 달빛 아래 소리 없이 다가온다 (남형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
+  outfit_mariner: { key: "outfit_mariner", name: "푸른 파도 항해사", icon: "costm_mariner_idle0", desc: "청색 캡에 청록 항해복의 모험가 — 아홉 바다를 건넌 자 (남형)", price: 560, tint: 0x5ac8e8, slot: "outfit" },
 };
 
 /* v1.1.0 (#1/#21/#22) — 외형 시스템: 성별 × 피부 6종 → 베이스 시트(chm/chf) 선택.
@@ -655,6 +696,12 @@ export const BODY_PREFIXES = [
   "costm_royal", "costm_shadow", "costm_spring", "costm_navy",
   "costm_silver", "costm_crimson", "costm_seraph", "costm_abyss", "costm_nightmare", "costm_gilded",
   "costm_dragon", "costm_frost", "costm_sakura", "costm_void",
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (여 4 + 남 4): SPUM 파트 실제 조합 */
+  "cost_valkyrie", "cost_witch", "cost_sylvan", "cost_lily",
+  "costm_warlord", "costm_paladin", "costm_nightblade", "costm_mariner",
+  /* v1.3.1 (#1) — 교차 성별 시트: 어떤 성별이 어떤 세트를 착용해도 시트가 존재 (성별 반대 착용 대응) */
+  "cost_warlord", "cost_paladin", "cost_nightblade", "cost_mariner",
+  "costm_valkyrie", "costm_witch", "costm_sylvan", "costm_lily",
   /* v1.2.0 (#13) — 2차 8직업 전용 외형 (여/남 각 8종): 전직하면 외형 자체가 바뀐다.
    *  버서커/가디언/스나이퍼/윈드러너/아크메이지/세이지/어세신/스와시버클러 */
   "jobf_berserker", "jobf_guardian", "jobf_sniper", "jobf_windrunner",
@@ -835,6 +882,9 @@ export const BM_STOCK: ItemKey[] = [
   "outfit_silver", "outfit_crimson", "outfit_seraph", "outfit_abyss", "outfit_nightmare", "outfit_gilded",
   /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (캐시상점 합류) */
   "outfit_dragon", "outfit_frost", "outfit_sakura", "outfit_void",
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (캐시상점 합류) */
+  "outfit_valkyrie", "outfit_witch", "outfit_sylvan", "outfit_lily",
+  "outfit_warlord", "outfit_paladin", "outfit_nightblade", "outfit_mariner",
   "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy",
 ];
 /** v1.0.3 (#0르쯔) — 캐시상점 진열 자격: bmPrice(에메랄드 가격)가 1 이상인 아이템만 (BmShopPanel 방어 필터용) */
@@ -1903,10 +1953,14 @@ DIALOGUES["rebirthBoss"] = {
 
 export type JobStoryStep = {
   id: string;
-  type: "hunt" | "collect" | "elite";
+  /* v1.3.1 (#4) — collect(조각 회수) 폐지 → travel(맵 이동 사냥) 신설.
+   *  메이플스토리 전직 퀘스트처럼 "다른 맵으로 이동해서" 수행하는 단계 */
+  type: "hunt" | "collect" | "elite" | "travel";
   title: string;
   desc: string;
   need?: number;
+  /** travel 단계 — 목적지 스테이지 키 (런타임에 방문 기록 기준으로 확정·세이브 유지) */
+  targetStage?: string;
   /** hunt 단계 — 현재 해역의 대표 몬스터로 동적 치환 (null = 어떤 몬스터든) */
   targetLabel: string;
   dialogue: string;
@@ -1939,6 +1993,18 @@ function jobStory(family: FamilyKey, tier: 1 | 2 | 3 | 4): JobStoryDef {
   const nameOf: Record<FamilyKey, string> = { warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적" };
   const stepBase = tier === 1 ? 8 : tier === 2 ? 10 : tier === 3 ? 14 : 18;
   const huntMid = tier === 1 ? 0 : tier === 2 ? 15 : tier === 3 ? 20 : 25;
+  /* v1.3.1 (#4) — collect(보석의 흔적 회수) 전면 폐지 → travel(지정 맵 이동+사냥)로 교체.
+   *  메이플스토리 전직 퀘스트처럼 "다른 맵으로 이동해서" 수행하며, 계열마다 톤·목표 수가 다르다.
+   *  목적지 스테이지는 런타임에 방문 기록(visited) 기준으로 직열별 인덱스를 배정해
+   *  항상 도달 가능한 맵을 확정하고, 세이브(tst)에 유지해 재접속에도 흔들리지 않는다. */
+  const travelNeed = tier === 1 ? 6 : tier === 2 ? 10 : tier === 3 ? 12 : 15;
+  const travelTone: Record<FamilyKey, { t2: string; t4: string; adj: number }> = {
+    warrior: { t2: "전사의 길은 전장이다. 계승의 시험장으로 이동해 그곳의 마수를 정면으로 격파하자.", t4: "강철의 증명 — 다른 계승지의 마수들을 백병전으로 제거하라.", adj: 2 },
+    ranger: { t2: "궁수의 길은 거리다. 계승의 시험장으로 이동해 멀리서 정확히 사냥하자.", t4: "바람의 증명 — 다른 계승지에서 움직이며 정밀 사격을 가하라.", adj: 0 },
+    mage: { t2: "마법사의 길은 마나다. 계승의 시험장으로 이동해 주문으로 마수를 정리하자.", t4: "심연의 증명 — 다른 계승지에서 마력으로 유산의 수호자를 쓰러뜨려라.", adj: -1 },
+    thief: { t2: "도적의 길은 그림자다. 계승의 시험장으로 이동해 소리 없이 마수를 처리하자.", t4: "그림자의 증명 — 다른 계승지에서 흔적 없이 표적을 암살하라.", adj: -1 },
+  };
+  const tn = Math.max(4, travelNeed + travelTone[family].adj);
   const titles: Record<FamilyKey, Record<1 | 2 | 3 | 4, string>> = {
     warrior: { 1: "강철의 싹", 2: "강철의 각오", 3: "전장의 정점", 4: "전장을 삼킨 자" },
     ranger: { 1: "바람의 씨앗", 2: "바람의 재능", 3: "천공의 사수", 4: "천을 꿰뚫는 화살" },
@@ -1959,11 +2025,13 @@ function jobStory(family: FamilyKey, tier: 1 | 2 | 3 | 4): JobStoryDef {
       expReward: 200 + tier * 120,
     },
     {
+      /* v1.3.1 (#4) — 조각 회수 폐지 → 맵 이동 사냥 (travel). 목적지는 런타임 확정 */
       id: "s2",
-      type: "collect",
-      title: tier === 1 ? "[전직 스토리] 가호의 인연" : tier === 2 ? "[전직 스토리] 가호의 증표" : tier === 3 ? "[전직 스토리] 유산의 조각" : "[전직 스토리] 계승의 인장",
-      desc: "보석의 흔적 1개를 회수해 계열의 시조에게 바치자. (해역 어디든 빛나는 흔적)",
-      targetLabel: "보석의 흔적",
+      type: "travel",
+      title: tier === 1 ? "[전직 스토리] 계승의 시험장" : tier === 2 ? "[전직 스토리] 가호의 증표" : tier === 3 ? "[전직 스토리] 유산의 조각" : "[전직 스토리] 계승의 인장",
+      desc: travelTone[family].t2,
+      need: tn,
+      targetLabel: "지정된 계승지의 몬스터",
       dialogue: `js${family}${tier}Step2`,
       reward: 150 + tier * 50,
       expReward: 240 + tier * 140,
@@ -1984,11 +2052,13 @@ function jobStory(family: FamilyKey, tier: 1 | 2 | 3 | 4): JobStoryDef {
   }
   if (tier >= 3) {
     steps.push({
+      /* v1.3.1 (#4) — 심심의 유물(조각 2개) 폐지 → 두 번째 계승지 이동 사냥 */
       id: "s4",
-      type: "collect",
+      type: "travel",
       title: "[전직 스토리] 심심의 유물",
-      desc: "보석의 흔적 2개를 모아 시조의 가호를 완성하자.",
-      targetLabel: "보석의 흔적",
+      desc: travelTone[family].t4,
+      need: Math.max(5, tn - 2),
+      targetLabel: "지정된 계승지의 몬스터",
       dialogue: `js${family}${tier}Step2`,
       reward: 320,
       expReward: 900,

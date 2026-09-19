@@ -30,6 +30,9 @@ export class ImpactFX {
   /**
    * Hit Stop — 월드 물리를 ms 동안 정지.
    * 연타로 여러 번 걸려도 한 번만 정지(frozen 가드), 정지 중 새 요청은 무시된다.
+   * v1.3.1 (#8 게임 멈춤 수정) — 재개 시 대사/전환/부활이 물리를 정지 중이면 건너뛴다.
+   *  기존엔 무조건 resume() → 대사 중 히트스톱이 물리를 깨워 정지 규약을 깨고,
+   *  씬 전환 경합 시 정지/재개 순서가 어긋나면 "조작 죽은 멈춤"으로 이어졌다.
    */
   hitStop(ms: number) {
     if (this.frozen || ms <= 0) return;
@@ -38,7 +41,9 @@ export class ImpactFX {
     world.pause();
     this.scene.time.delayedCall(ms, () => {
       this.frozen = false;
-      world.resume();
+      const s = this.scene as unknown as { dialoguing?: boolean; transitioning?: boolean };
+      if (s.dialoguing || s.transitioning) return; // 정지한 주인(대사/전환)이 회수 — 무단 재개 금지
+      if (this.scene.scene.isActive() && this.scene.physics.world === world) world.resume();
     });
   }
 

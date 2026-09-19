@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.3.0/SERTZ-v1.3.0.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.3.1/SERTZ-v1.3.1.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -38,9 +38,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.3.0";
-  const LATEST_CODE = 90;
-  const VERSION_NOTE = "SNS 로그인 임시 비활성화(재개 준비 완료)·선 3개(☰) UI 삭제·날개 항상 등 뒤 고정(방향 이동 렌더 근본 수정)·NPC급 옷 세트 4종(드래곤/프로스트/사쿠라/보이드)·오로라류 후광 체감 강화(림 2장+트윙클 4궤도)·소모품 사용 개수 지정+MAX 버튼(경험치 책/귀환서류)·왕국 랭킹+랭커 전용 상점(탑 환생 레벨 산정)·Drive 팩 에셋 대량 통합(참격/마법진/폭죽 VFX 58종+원소 SFX 48종)·Cainos 타일셋 층식 구조맵(요새 유적 2층·상자/횃불 애니)";
+  const LATEST_VERSION = "1.3.1";
+  const LATEST_CODE = 91;
+  const VERSION_NOTE = "SPUM 에셋 신규 코스튬 8종(발키리/마녀/숲수호자/백합/대군주/성기사/칼날/항해사 — 투구·후드·망토 실제 파트 조합)·검은화면 자가치유(로더 교착 폴백+장시간 백그라운드 재부팅)·게임 멈춤 수정(복귀 입력/물리 자가치유+히트스톱 재개 가드)·부활 가까운 마을 이동·모든 장비 스타포스(장신구 atk/def 트랙 신설)·전직 조각회수 폐지→맵이동 퀘스트(계열별 다른 맵)·지형물 배치 수정(유적/포탈/입구 보호)·능력치 소수 정리·모바일 절전 기본+적 상한 축소";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

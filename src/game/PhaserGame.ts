@@ -106,11 +106,35 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     } catch { /* 게임 미부팅 단계 무시 */ }
   }, 2000);
 
+  /* v1.3.1 (#5 검은화면 수정) — 장시간 백그라운드 복귀 자가치유:
+   *  모바일 WebView는 백그라운드 동안 GPU 텍스처를 회수해 복귀 시 캔버스가 검은 채로
+   *  남는다(webglcontextlost 이벤트 없이). 루프는 살아 있어 프리즈 워치독도 못 잡는다.
+   *  45초 이상 숨겨있다 돌아오면 세이브가 살아있으므로 안전하게 재부팅한다(모바일만).
+   *  짧은 전환(알림 확인 등)은 재부팅하지 않는다 — 플레이 흐름 보호. */
+  let hiddenAt = 0;
+  document.addEventListener("visibilitychange", () => {
+    try {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+        return;
+      }
+      const gone = Date.now() - hiddenAt;
+      hiddenAt = 0;
+      const isMobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || "");
+      if (isMobile && gone > 45000 && Date.now() - freezeBootAt > 20000) {
+        console.warn("[SERTZ] 장시간 백그라운드 — GPU 상태 불명, 안전 재부팅");
+        window.location.reload();
+      }
+    } catch { /* 무시 */ }
+  });
+
   // 오디오 모듈에 게임 인스턴스 연결 (Phaser SoundManager 사용)
   attachAudio(game);
 
   // E2E 검증/디버그 훅
   (window as unknown as { __SERTZ__?: unknown }).__SERTZ__ = { game };
+  /* v1.3.1 (#9) — 부팅 판정 노출 (모바일 절전 기본 — 월드 진입 없이도 E2E 검증 가능) */
+  (window as unknown as { __SERTZ_BOOT__?: unknown }).__SERTZ_BOOT__ = { fxMode: WorldScene.DEFAULT_FX_MODE };
   // v3.0.6 — E2E 정적 검증용 모듈 노출 (클래스/사운드/스테이지/아이템 테이블)
   // v3.0.23 — BGM 고정배치 검증 훅 (구역→트랙 매핑 실측)
   (window as unknown as { __SERTZ_DEBUG__?: unknown }).__SERTZ_DEBUG__ = {

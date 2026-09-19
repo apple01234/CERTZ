@@ -16,6 +16,8 @@ export class TitleScene extends Phaser.Scene {
    *  유저가 메뉴를 보는 동안 몰래 받는다. 게임 시작 버튼을 눌렀는데 미완료면 잠깐 기다렸다 진입. */
   private deferDone = false;
   private deferStarted = false;
+  /** v1.3.1 (#5) — 월드 진입 이중 실행 방지 + 로더 교착 폴백 판정 플래그 */
+  private launched = false;
 
   constructor() {
     super("title");
@@ -25,6 +27,9 @@ export class TitleScene extends Phaser.Scene {
    *  대기 중엔 화면 하단에 작은 안내문 (평균 0~1초). */
   private beginWorld(data: Record<string, unknown>) {
     const launch = () => {
+      /* 이중 진입 방지 — 워치독 폴백과 complete 콜백이 경합해도 restart는 1번만 */
+      if (this.launched) return;
+      this.launched = true;
       this.scene.start("world", data);
     };
     if (this.deferDone || this.load.totalToLoad === 0) {
@@ -46,10 +51,22 @@ export class TitleScene extends Phaser.Scene {
       note.destroy();
       launch();
     });
+    /* v1.3.1 (#5 검은화면 수정) — 로더 교착 폴백: 백그라운드 전환 등으로 로더가 영원히
+     *  끝나지 않으면 "에셋 정리 중…" 검은 화면에 갇힌다. 8초 후엔 무조건 진입
+     *  (미로드 코스튬/직업 시트는 applyBodyLook이 기본 외형으로 폴백 — 게임은 정상 기동) */
+    this.time.delayedCall(8000, () => {
+      if (!this.launched) {
+        console.warn("[SERTZ] 지연 로드 교착 — 폴백 진입");
+        try { this.load.removeAllListeners(); this.load.reset(); } catch { /* 무시 */ }
+        note.destroy();
+        launch();
+      }
+    });
   }
 
   create() {
     this.started = false;
+    this.launched = false; // v1.3.1 (#5) — 타이틀 재진입 시 진입 플래그 리셋 (씬 인스턴스 재사용)
     const w = this.scale.width;
     const h = this.scale.height;
 
