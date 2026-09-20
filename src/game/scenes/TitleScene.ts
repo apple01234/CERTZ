@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { EventBus } from "../../components/game/EventBus";
 import { loadSave, type SaveData } from "../config";
+import { readCharSave, setActiveChar } from "../slots"; // v1.4.0 (#16) 자동 복귀
 import * as audio from "../audio";
 import { DEFERRED_BODY_PREFIXES } from "../data"; // v1.2.1 (#4 최적화) — 지연 로드 외형 시트
 import { registerBodyAnims } from "../textures";
@@ -126,6 +127,11 @@ export class TitleScene extends Phaser.Scene {
         for (const f of heroFrames) this.load.image(`${p}_${f}`, `${p}_${f}.webp`);
       }
       this.load.start();
+      /* v1.4.0 (Task 0-1) — 지연 로드 실패 명시 처리: 실패 파일은 건너뛰고 complete가
+       *  반드시 오도록 (교착 시 8초 폴백이 이미 있으나 실패 파일 자체는 여기서 정리) */
+      this.load.on("loaderror", (file: { key?: string; url?: string }) => {
+        console.warn("[SERTZ] 지연 에셋 로드 실패 — 건너뜀:", file?.key ?? file?.url ?? "unknown");
+      });
       this.load.once("complete", () => {
         registerBodyAnims(this, DEFERRED_BODY_PREFIXES);
         this.deferDone = true;
@@ -160,5 +166,24 @@ export class TitleScene extends Phaser.Scene {
       this.scale.off("resize", layout);
       audio.stopBGM();
     });
+
+    /* v1.4.0 (Task 0-2 — 유저 지시 #16) — 재부팅 후 시작 화면 초기화 금지:
+     *  프리즈 워치독/장시간 백그라운드 복귀 등으로 안전 재부팅(location.reload)되면
+     *  기존엔 타이틀에서 멈춰 유저가 캐릭터를 다시 골라야 했다. 월드 진입 시 기록한
+     *  "sertz.autoResume" 플래그가 있으면 마지막 캐릭터 세이브로 즉시 복귀한다.
+     *  (정상 종료 exitToMenu는 플래그를 지우므로 수동 흐름은 그대로 유지) */
+    try {
+      const resumeId = localStorage.getItem("sertz.autoResume");
+      if (resumeId) {
+        localStorage.removeItem("sertz.autoResume");
+        const save = resumeId === "1" ? loadSave() : readCharSave(resumeId);
+        if (save && save.playerName) {
+          if (resumeId !== "1") setActiveChar(resumeId);
+          console.info("[SERTZ] 세션 자동 복귀 —", save.playerName);
+          this.beginWorld({ save, fresh: true });
+          return;
+        }
+      }
+    } catch { /* 플래그 손상은 무시 — 정상 타이틀 */ }
   }
 }

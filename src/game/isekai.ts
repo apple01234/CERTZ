@@ -387,13 +387,15 @@ export const ATTEND_REWARDS: { label: string; grant: { gold?: number; emerald?: 
   { label: "피규어 조각 20", grant: { shards: 20 } },
   { label: "뽑기권 2", grant: { tickets: 2 } },
   { label: "골드 15,000", grant: { gold: 15000 } },
-  { label: "에메랄드 3", grant: { emerald: 3 } },
+  /* v1.4.0 (Task 1-5 — 유저 지시 #1) — 르쯔(에메랄드) 수급 축소: 출석 3/5/10 → 1/1/3
+   *  무과금 1주 기준 총 수급 70%+ 감소 — 결제 유도 (페이투윈 아닌 편의/감성형 유지) */
+  { label: "에메랄드 1", grant: { emerald: 1 } },
   { label: "뽑기권 2", grant: { tickets: 2 } },
   { label: "골드 20,000", grant: { gold: 20000 } },
   { label: "피규어 조각 40", grant: { shards: 40 } },
-  { label: "에메랄드 5", grant: { emerald: 5 } },
+  { label: "에메랄드 1", grant: { emerald: 1 } },
   { label: "뽑기권 3", grant: { tickets: 3 } },
-  { label: "대박! 에메랄드 10 + 조각 50", grant: { emerald: 10, shards: 50 } },
+  { label: "대박! 에메랄드 3 + 조각 50", grant: { emerald: 3, shards: 50 } },
 ];
 
 /* ================= 12. 일일 퀘스트 (3종) ================= */

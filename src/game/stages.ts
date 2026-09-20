@@ -92,13 +92,15 @@ export const BOSS_DIFFS: Record<
   BossDiffKey,
   { key: BossDiffKey; label: string; color: string; hp: number; atk: number; reward: number; emerald: number; desc: string; spd: number }
 > = {
-  easy: { key: "easy", label: "이지", color: "#7de87d", hp: 0.75, atk: 0.85, reward: 0.6, emerald: 2, spd: 1, desc: "가볍게 클리어 — 보상 60%" },
-  normal: { key: "normal", label: "노말", color: "#7dc4ff", hp: 1.5, atk: 1.25, reward: 1.0, emerald: 5, spd: 1, desc: "기본 난이도 — 보상 100%" },
-  hard: { key: "hard", label: "하드", color: "#ffb05a", hp: 2.4, atk: 1.55, reward: 1.9, emerald: 9, spd: 1.06, desc: "도전자용 — 보상 190%" },
+  easy: { key: "easy", label: "이지", color: "#7de87d", hp: 2.25, atk: 0.85, reward: 0.6, emerald: 2, spd: 1, desc: "가볍게 클리어 — 보상 60%" },
+  /* v1.4.0 (Task 1-4 — 유저 지시 #10) — 스토리 보스 대폭 강화: 전 난이도 HP ×3
+   *  (노말 1.5→4.5). 최소 전투 시간 확보(초반 60초/후반 120초+) — ATK은 유저 피드백대로 유지 */
+  normal: { key: "normal", label: "노말", color: "#7dc4ff", hp: 4.5, atk: 1.25, reward: 1.0, emerald: 5, spd: 1, desc: "기본 난이도 — 보상 100%" },
+  hard: { key: "hard", label: "하드", color: "#ffb05a", hp: 7.2, atk: 1.55, reward: 1.9, emerald: 9, spd: 1.06, desc: "도전자용 — 보상 190%" },
   /* v4.1.4 (#카오스강화) — 유저 지시 "카오스 훨씬 더 어렵게": 수치 대폭 상향 + 전용 메커니즘(패턴 풀 조기 개방·
    *  쿨타임 25% 단축·탄속 +22%·돌진 연쇄 +1·카운터 창 단축·페이즈3 권속 지원군)은 Boss.ts의 chaos 플래그가 담당.
    *  노말 대비 HP 4.1배·ATK 2.0배 체감 — 보상도 460%로 재조정해 도전 가치 유지. */
-  chaos: { key: "chaos", label: "카오스", color: "#ff6a7d", hp: 6.2, atk: 2.55, reward: 4.6, emerald: 30, spd: 1.14, desc: "극한 난이도 — 전용 패턴·보상 460%" },
+  chaos: { key: "chaos", label: "카오스", color: "#ff6a7d", hp: 18.6, atk: 2.55, reward: 4.6, emerald: 30, spd: 1.14, desc: "극한 난이도 — 전용 패턴·보상 460%" },
 };
 
 export const BOSS_DIFF_ORDER: BossDiffKey[] = ["easy", "normal", "hard", "chaos"];
@@ -538,8 +540,13 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
  *  기존 곡선(HP 1→5.4·ATK 1→3.0)은 유저 장비 성장(스타포스/세트/잠재/엘릭서)을 전혀 못 따라갔다.
  *  신규 곡선: HP 챕터당 ~×1.35 복합(최종 15.5배)·ATK ~×1.22 복합(최종 5.0배)·EXP 완화 병행.
  *  1~2장은 기존 체감 유지(±0.1), 3장부터 격차가 벌어지기 시작한다. */
-const CH_HP = [1, 1.3, 1.85, 2.7, 3.9, 5.6, 8.0, 11.3, 15.5];
-const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0];
+/* v1.4.0 (Task 1-3 — 유저 지시 #9) — 후반 몬스터 HP 스케일링 대폭 상향:
+ *  유저 지시 “공격력은 괜찮은데 후반 갈수록 보스·몬스터가 너무 약하다” — ATK 곡선은 유지하고
+ *  HP만 후반 급등(챕터 9 = 기존 ×15.5 → ×42, 유저 DPS 2차 곡선 추격). 전투 체감: 동일 레벨
+ *  일반 몬스터 4~6타 → 후반 6~8타, 스킬 2~3타 유지 목표.
+ *  v1.4.0 세이브 호환 — 배율만 변경, 기존 테이블 구조/키 유지 */
+const CH_HP = [1, 1.35, 2.0, 3.2, 5.2, 8.5, 14.0, 24.0, 42.0];
+const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0]; // 유저 피드백: 공격력은 현행 유지
 const CH_EXP = [1, 1.4, 1.9, 2.55, 3.35, 4.35, 5.6, 7.2, 9.2];
 
 /** 스테이지 키 → {챕터, 구역} 파싱 */
@@ -556,6 +563,17 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
 export function chapterSpec(key: StageKey): ChapterSpec | null {
   const { ch } = parseStage(key);
   return CHAPTERS.find((c) => c.key === ch) ?? null;
+}
+
+/** v1.4.0 (Task 1-6 — 유저 지시 #14) — 레벨 구간별 퀘스트 요구 마릿수 곡선
+ *  1~20: 5~8 · 21~40: 10~15 · 41~60: 18~25 · 61~80: 30~40 · 81~100: 45~60 */
+export function questNeedByLv(lv: number): number {
+  const l = Math.min(100, Math.max(1, Math.round(lv))); // 순수 Math — stages.ts는 Phaser 미임포트(모듈 초기화 순서 보호)
+  if (l <= 20) return Math.round(5 + ((l - 1) / 19) * 3);
+  if (l <= 40) return Math.round(10 + ((l - 21) / 19) * 5);
+  if (l <= 60) return Math.round(18 + ((l - 41) / 19) * 7);
+  if (l <= 80) return Math.round(30 + ((l - 61) / 19) * 10);
+  return Math.round(45 + ((l - 81) / 19) * 15);
 }
 
 /** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스)
@@ -670,9 +688,11 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
   const zoneMon = zoneMix.reduce((m, g) => (g.count > m.count ? g : m), zoneMix[0]).key;
   const main = labels[zoneMon];
   if (quests.length < 2) {
-    // 자동 토벌 퀘스트 — v2.3 밸런스 (지시 #4): 목표 수 상한 12 (기존 3+sub*2는 후반 21마리로 지루함)
-    // 경험치는 살짝 더 많게 — 스토리 진행이 자연스럽게 이어지도록
-    const n = Math.min(12, 4 + Math.floor(sub * 0.8));
+    // 자동 토벌 퀘스트 — v1.4.0 (Task 1-6 — 유저 지시 #14): 스킬이 강해질수록 요구 마릿수도 성장
+    //   1~20렙 5~8 · 21~40 10~15 · 41~60 18~25 · 61~80 30~40 · 81+ 45~60 (챕터 입장 게이트 레벨 기준)
+    //   보상도 동일 곡선 배율로 상향 — 시간당 보상 급락 방지
+    const lvRef = spec.lvGate.enter + (sub - 1) * 2;
+    const n = questNeedByLv(lvRef);
     /* v3.0.28 (#퀘스트이름) — 토벌 대상을 "이 구역에 실제 스폰되는 몬스터 전체"로 확장(targetKeys).
      *  기존엔 구역 최다 종 1종만 대상이라 얼음좀비 구역에서 거미 사냥 퀘스트가 뜨는 등
      *  화면 몬스터와 퀘스트 이름이 어긋나 체감됐다 → 무엇을 잡아도 카운트되며 혼란 제거.
@@ -696,8 +716,8 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       targetKey: zoneMon, // v3.0.2 — 하위 호환(어시스트·히스테리시스 참조): 구역 최다 종
       targetKeys: mixKeys, // v3.0.28 — 카운트·판정은 구역 스폰 몬스터 전체 합산
       targetLabel: `${main} 등 구역 몬스터`,
-      reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G),
-      expReward: Math.round((60 + sub * 14) * CH_EXP[spec.num - 2] * 0.9),
+      reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G * Math.max(1, n / 8)), // 마릿수 증가분만큼 골드 보상 동반 상향
+      expReward: Math.round((60 + sub * 14) * CH_EXP[spec.num - 2] * 0.9 * Math.max(1, n / 8)),
     });
   }
   if (sub === 9) {
@@ -803,7 +823,8 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
     bossKey: boss ? spec.boss : undefined,
     repeat: {
       targetKey: spec.main,
-      need: spec.repeat.need + sub,
+      /* v1.4.0 (Task 1-6) — 반복 의뢰 요구량도 레벨 곡선 연동(기존 need+sub 대비 최대 ×1.5 상한) */
+      need: Math.min(Math.round(spec.repeat.need * 1.5), Math.round((spec.repeat.need + sub) * Math.max(1, questNeedByLv(spec.lvGate.enter) / 8))),
       gold: Math.round(spec.repeat.gold * stageScale(key).gold * 0.9),
       exp: Math.round(spec.repeat.exp * stageScale(key).exp * 0.9),
       title: spec.repeat.title,

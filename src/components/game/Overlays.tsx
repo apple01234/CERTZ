@@ -86,7 +86,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.3.1 — SPUM 신규 코스튬 8종 · 검은화면/멈춤 자가치유 · 가까운 마을 부활 · 전 장비 스타포스 · 전직 맵이동 퀘스트 · 지형물 배치 수정 · 최적화 강화</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.0 — 비밀수첩 100종 · 레벨게이트 · 보스 대폭 강화 · 르쯔 수급 축소 · 5차 스킬 고유 VFX · UI 정비 · 검은화면/랭킹/복귀 수정</span>
           </p>
         </div>
 

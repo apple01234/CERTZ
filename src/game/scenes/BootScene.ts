@@ -336,6 +336,12 @@ export class BootScene extends Phaser.Scene {
         if (!fill.active) return; // resize로 파괴된 이전 채움 — 무시
         fill.width = Math.max(2, barW * p);
       });
+      /* v1.4.0 (Task 0-1 검은화면 원인 제거) — 에셋 로드 실패를 명시 처리:
+       *  실패 파일을 조용히 건너뛰고(게임은 폴백 외형/사운드로 기동) 로더가
+       *  완료 신호를 반드시 내도록 보장 — "로딩 중 검은 화면 영구 정지" 원천 차단 */
+      this.load.on("loaderror", (file: { key?: string; url?: string }) => {
+        console.warn("[SERTZ] 에셋 로드 실패 — 건너뜀:", file?.key ?? file?.url ?? "unknown");
+      });
     };
     rebuild();
 

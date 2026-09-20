@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
+import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
+import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
 import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -47,6 +49,7 @@ import { DriveFX } from "../fx/DriveFX"; // v1.3.0 — Drive 팩 VFX 통합 (참
 import { applyToonStyle, clearToonStyle } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일)
 import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
+import { tickEggs, feedKey, eggMilestonePending, claimEggMilestone, type EggDef } from "../eggs"; // v1.4.0 — 이스터에그/ARG 비밀수첩
 import * as audio from "../audio";
 import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
@@ -456,6 +459,9 @@ export class WorldScene extends Phaser.Scene {
   private keepLayer = 0; // 0=지상, 1=발코니(2층)
   private keepRect: { x: number; y: number; w: number; h: number } | null = null;
   private keepStair: { x: number; y: number; w: number; h: number } | null = null;
+  /* v1.4.0 — 유적 y기반 depth (지상 렌더/발코니 렌더) — 고정 depth로 주변 오브제에 가려지던 버그 수정 */
+  private keepDepthGround = 11;
+  private keepDepthBalcony = 9;
   private keepTileImgs: { img: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite; off: number }[] = [];
   private keepChestKey = "";
   private keepChestSprite: Phaser.GameObjects.Sprite | null = null;
@@ -781,6 +787,13 @@ export class WorldScene extends Phaser.Scene {
    *  3) fadeIn + 워치독은 성공/실패 무관하게 "항상" 마지막에 실행 */
   create() {
     this.bootAt = this.time.now;
+    /* v1.4.0 (#16) — 월드 진입 기록: 재부팅(reload) 시 TitleScene이 이 플래그를 보고
+     *  시작 화면 대신 마지막 캐릭터로 자동 복귀한다 (정상 종료 exitToMenu는 해제) */
+    try {
+      const ac = getActiveCharId();
+      localStorage.setItem("sertz.autoResume", ac || "1");
+    } catch { /* 무시 */ }
+    this.eggOnCreate();
     try {
       this.createInner();
     } catch (err) {
@@ -2310,6 +2323,7 @@ export class WorldScene extends Phaser.Scene {
 
   private enterPortal() {
     this.portalActive = false;
+    this.eggCounters.portals++; // v1.4.0 이스터에그 카운터
     this.tut?.notify("portal"); // v1.0.11 — 튜토리얼 차원문 학습 판정
     audio.sfx.portal();
     this.player.setVelocity(0, 0);
@@ -2330,6 +2344,21 @@ export class WorldScene extends Phaser.Scene {
       this.portalActive = true;
       this.showBanner("이 앞은 막혀 있다 — 돌아가는 차원문을 타자");
       return;
+    }
+    /* v1.4.0 (Task 1-1 — 유저 지시 #7 길라잡이) — 챕터 입장 레벨 게이트:
+     *  다음 구역이 새 챕터(구역 1)이고 입장 레벨 미달이면 진입 차단.
+     *  "Lv.{n} 이상부터 {지역명} 입장 가능" — 챕터 클리어 후에도 레벨을 채우며
+     *  사냥·보스·반복 콘텐츠를 계속하게 만드는 진행 구조. */
+    const ns = parseStage(next);
+    if (ns.sub === 1 && ns.ch !== "village") {
+      const spec = chapterSpec(next);
+      const need = spec?.lvGate.enter ?? 0;
+      if (need > 0 && this.player.lv < need && this.adminRole !== "admin") {
+        this.portalActive = true; // 차단 — 다시 밟을 수 있게
+        audio.sfx.uiOpen();
+        this.showBanner(`Lv.${need} 이상부터 ${spec?.title ?? "다음 지역"} 입장 가능 — 지금은 Lv.${this.player.lv} (사냥터에서 레벨을 채우자!)`);
+        return;
+      }
     }
     /* v3.0.25 (#다음퀘스트 자동추적) — 다음 구역으로 진행하면 추적도 자동으로 따라간다
      *  (기존은 이전 구역 추적이 유지돼 화살표가 뒤를 가리켰다) */
@@ -2452,6 +2481,15 @@ export class WorldScene extends Phaser.Scene {
     // 계단 — 발코니 오른쪽 끝에서 지상까지 이어지는 통로 (위로 올라가며 접촉 시 층 전환)
     this.keepStair = { x: rx + platW - T, y: ry, w: T + 6, h: 118 };
 
+    /* v1.4.0 (Task 0-4 — 유저 지시 #5 “요새 유적 안보임”) — depth 근본 수정:
+     *  기존 고정 depth 11은 마을 중앙의 y기반 depth(≈floor(1400/10)=140) 오브제(나무/바위/NPC)에
+     *  전부 가려져 “유적이 안 보인다/배치가 이상하다”로 보였다. 다른 월드 오브제와 동일한
+     *  y기반 depth로 정렬해 자연스럽게 섞이게 한다:
+     *   - 지상 렌더: 발코니 바닥 하단 기준 (주변 소품과 자연 정렬, 플레이어 머리 가림)
+     *   - 발코니 렌더: 발밑 (플레이어보다 아래) */
+    this.keepDepthGround = Math.floor((ry + platH + 60) / 10);
+    this.keepDepthBalcony = Math.floor(ry / 10) - 3;
+
     /* 지면 타일 crop 영역 (16px 그리드): 잔디 윗면(0,0) / 흙 채움(0,48) */
     const grassRect = new Phaser.Geom.Rectangle(0, 0, 16, 16);
     const dirtRect = new Phaser.Geom.Rectangle(0, 48, 16, 16);
@@ -2463,7 +2501,7 @@ export class WorldScene extends Phaser.Scene {
         .setCrop(src.x, src.y, src.width, src.height)
         .setOrigin(0)
         .setScale(gscale)
-        .setDepth(11);
+        .setDepth(this.keepDepthGround); // v1.4.0 — y기반 depth (고정 11 → 주변 오브제에 가려지던 버그 수정)
       if (flip) im.setFlipX(true);
       this.keepTileImgs.push({ img: im, off: 0 });
       return im;
@@ -2497,7 +2535,7 @@ export class WorldScene extends Phaser.Scene {
         .setCrop(368, 96, 48, 32)
         .setOrigin(0, 1)
         .setScale(0.85)
-        .setDepth(11.2);
+        .setDepth(this.keepDepthGround + 0.2);
       this.keepTileImgs.push({ img: rail, off: 0.2 });
     }
 
@@ -2506,7 +2544,7 @@ export class WorldScene extends Phaser.Scene {
       this.anims.create({ key: "keep_torch", frames: this.anims.generateFrameNumbers("map_torch_f", { start: 0, end: 63 }), frameRate: 12, repeat: -1 });
     }
     for (const tx of [rx + T * 1.5, rx + platW - T * 1.5]) {
-      const fl = this.add.sprite(tx, ry - 14, "map_torch_f").setScale(1.1).setDepth(11.3);
+      const fl = this.add.sprite(tx, ry - 14, "map_torch_f").setScale(1.1).setDepth(this.keepDepthGround + 0.3);
       try { fl.play("keep_torch"); } catch { /* 애니 실패 시 정지 */ }
       this.keepTileImgs.push({ img: fl, off: 0.3 });
     }
@@ -2517,7 +2555,7 @@ export class WorldScene extends Phaser.Scene {
     }
     const chestX = rx + platW / 2;
     const chestY = ry + 14;
-    const chest = this.add.sprite(chestX, chestY, "map_chest_f", 0).setOrigin(0.5, 1).setScale(0.9).setDepth(11.25);
+    const chest = this.add.sprite(chestX, chestY, "map_chest_f", 0).setOrigin(0.5, 1).setScale(0.9).setDepth(this.keepDepthGround + 0.25);
     this.keepTileImgs.push({ img: chest, off: 0.25 });
     this.keepChestSprite = chest;
     this.keepChestKey = `sertz.keep.chest.${todayKey()}`;
@@ -2564,8 +2602,8 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     if (prev !== this.keepLayer) {
-      /* 렌더 스왑 — 지상에서는 상층 타일이 11(머리 위 가림), 발코니에서는 9(발밑) */
-      const base = this.keepLayer === 1 ? 9 : 11;
+      /* 렌더 스왑 — v1.4.0: y기반 depth (지상=하단 기준 정렬 / 발코니=발밑) */
+      const base = this.keepLayer === 1 ? this.keepDepthBalcony : this.keepDepthGround;
       for (const t of this.keepTileImgs) t.img.setDepth(base + t.off);
       audio.sfx.uiClick();
     }
@@ -2585,7 +2623,8 @@ export class WorldScene extends Phaser.Scene {
     const gold = 60 + this.player.lv * 6;
     this.player.addGold(gold);
     let msg = `유적 상자 개봉! 골드 +${gold}G`;
-    if (Math.random() < 0.35) {
+    /* v1.4.0 (Task 1-5) — 르쯔 수급 축소: 상자 에메랄드 확률 35%→15% */
+    if (Math.random() < 0.15) {
       this.player.emerald += 1;
       msg += " · 에메랄드 +1💎";
     }
@@ -2901,8 +2940,9 @@ export class WorldScene extends Phaser.Scene {
     if (!t) return; // 풀 소진 시 조용히 포기 (프레임 보호)
     // 크리티컬: 금색 큰 글씨 + 느낌표 (타격감 강조) · 약점: 원소색
     // v1.0.7 — 크리티컬 가시성 확보: 스케일 1.75→1.42 · 지속 740→600ms (유저 지시)
+    // v1.4.0 (규칙 1-1) — 표시 수치는 전역 포맷터로 소수 둘째 자리 반올림
     const c = color ?? (crit ? "#ffd76a" : "#ffffff");
-    const label = `${prefix ? prefix + " " : ""}${val}${crit ? "!" : ""}`;
+    const label = `${prefix ? prefix + " " : ""}${fmt(val)}${crit ? "!" : ""}`;
     t.setText(label).setColor(c);
     t.setPosition(x, y)
       .setActive(true)
@@ -3677,11 +3717,16 @@ export class WorldScene extends Phaser.Scene {
       audio.sfx.questDone();
       this.emitRpgState();
     }
-    /* v3.0.16 — 필드 정예 처치 보상: 에메랄드 +1 확정 (메이플 엘리트 몬스터 컨셉) */
+    /* v3.0.16 — 필드 정예 처치 보상: 에메랄드 +1 (메이플 엘리트 몬스터 컨셉)
+     *  v1.4.0 (Task 1-5) — 확정 지급 → 40% 확률 (수급 축소) */
     if (this.fieldEliteRef && !this.fieldEliteRef.alive) {
       this.fieldEliteRef = null;
-      this.player.emerald += 1;
-      this.spawnPickupText(this.player.x, this.player.y - 74, "정예 처치! +1 에메랄드", "#7de8ff");
+      if (Math.random() < 0.4) {
+        this.player.emerald += 1;
+        this.spawnPickupText(this.player.x, this.player.y - 74, "정예 처치! +1 에메랄드", "#7de8ff");
+      } else {
+        this.spawnPickupText(this.player.x, this.player.y - 74, "정예 처치!", "#7de8ff");
+      }
       audio.sfx.questDone();
       this.emitRpgState();
     }
@@ -5884,6 +5929,7 @@ export class WorldScene extends Phaser.Scene {
   /** Player.gainExp 레벨업 훅 — 레벨 목표 퀘스트 즉시 판정 (v2.4)
    *  v3.0.15 (#2) — 자동배분 ON이면 지급된 AP를 계열 권장 비율로 즉시 분배 */
   onLevelUp() {
+    this.eggCounters.levelups++; // v1.4.0 이스터에그 카운터
     /* v1.2.0 (#8) — 레벨업 ★ 감정 버블 (씹덕 감성) */
     if (this.player) this.emote("star", this.player.x, this.player.y - 40);
     this.tryCompleteLevel();
@@ -6182,6 +6228,7 @@ export class WorldScene extends Phaser.Scene {
   onBossDead() {
     this.clearBossPostFX(); /* v4.1.5 — 보스전 포스트FX/오라 해제 */
     const def = this.bossDef;
+    this.eggCounters.bossKills++; // v1.4.0 이스터에그 카운터
     audio.sfx.bossDie();
     /* v1.0.8 — ① 탑 보스층 격파: 스토리/재림 경로와 완전 분리 (층 클리어 처리만) */
     if (this.towerActive) {
@@ -7785,6 +7832,12 @@ export class WorldScene extends Phaser.Scene {
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
 
+    /* v1.4.0 (Task 3-2) — 이스터에그 600ms 틱 (장소/시간/아이템/카운터/방문) */
+    if (this.time.now - this.eggTickMs > 600) {
+      this.eggTickMs = this.time.now;
+      this.eggTick();
+    }
+
     /* v1.1.1 (#5 무지개 오라) — 이름=외양: 무지개는 전 색상 순환, 오로라는 초록↔보라,
      *  은하수는 파랑↔보라 맥동. 오라+본체 오버레이 틴트가 함께 흐른다.
      *  대사/입력 중 조기 리턴 앞에서 갱신 — 대화 중에도 오라가 살아 있게 (순수 치장 연출) */
@@ -8804,11 +8857,88 @@ export class WorldScene extends Phaser.Scene {
     if (this.transitioning) return;
     this.transitioning = true;
     try { this.save(); } catch { /* 세이브 실패해도 나가기는 진행 */ }
+    /* v1.4.0 (#16) — 정상 종료: 자동 복귀 플래그 해제 (유저가 고른 화면 유지) */
+    try { localStorage.removeItem("sertz.autoResume"); } catch { /* 무시 */ }
     try { audio.stopBGM(); } catch { /* 무시 */ }
     this.scene.start("title");
     if (goLobby) {
       window.setTimeout(() => EventBus.emit("lobby:open"), 120);
     }
+  }
+
+  /* ================= v1.4.0 (Task 3-2 — 유저 지시 #20) 이스터에그 엔진 훅 =================
+   *  장소 접근/시간/아이템/방문/행동 카운터를 600ms 틱으로 평가하고, 키 시퀀스(코나미류)는
+   *  document keydown 버퍼로 잡는다. 발견 시 즉시 보상 + 배너. 구간 보상(10/25/50/100) 지원. */
+  private eggVisits: Partial<Record<StageKey, number>> = {};
+  private eggCounters = { portals: 0, levelups: 0, crits: 0, bossKills: 0 };
+  private eggTickMs = 0;
+  private eggIdleStart = 0;
+  private eggKeyHandler: ((e: KeyboardEvent) => void) | null = null;
+
+  private eggOnCreate() {
+    try { this.eggVisits = JSON.parse(localStorage.getItem("sertz.visits") ?? "{}") as Partial<Record<StageKey, number>>; } catch { this.eggVisits = {}; }
+    const k = this.stageDef?.key;
+    if (k) {
+      this.eggVisits[k] = (this.eggVisits[k] ?? 0) + 1;
+      try { localStorage.setItem("sertz.visits", JSON.stringify(this.eggVisits)); } catch { /* 무시 */ }
+    }
+    this.eggIdleStart = 0; // update 첫 틱에서 기준점 잡힘
+    if (!this.eggKeyHandler) {
+      this.eggKeyHandler = (e: KeyboardEvent) => {
+        const el = e.target as HTMLElement | null;
+        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return; // 입력창 보호
+        const egg = feedKey(e.key);
+        if (egg && this.player) this.onEggsFound([egg]);
+      };
+      document.addEventListener("keydown", this.eggKeyHandler);
+    }
+  }
+
+  private eggTick() {
+    if (!this.player || !this.stageDef) return;
+    if (this.eggIdleStart === 0) this.eggIdleStart = this.time.now;
+    const found = tickEggs({
+      stage: this.stageDef.key,
+      px: this.player.x,
+      py: this.player.y,
+      lv: this.player.lv,
+      items: new Set(this.player.owned),
+      visitCounts: this.eggVisits,
+      totalKills: this.totalKills,
+      stageKills: this.totalKills,
+      counters: {
+        ...this.eggCounters,
+        gold: this.player.gold,
+        starMax: Math.max(this.player.upgrades.weapon, this.player.upgrades.armor),
+        rebirths: this.inf.rebirths,
+        pets: this.player.owned.filter((k) => k.startsWith("pet_")).length,
+        costumes: this.player.owned.filter((k) => k.startsWith("cos_") || k.startsWith("cost_")).length,
+        villageVisits: this.eggVisits.village ?? 0,
+      },
+      idleSec: this.totalKills === 0 ? Math.floor((this.time.now - this.eggIdleStart) / 1000) : 0,
+    });
+    if (found.length) this.onEggsFound(found);
+  }
+
+  private onEggsFound(list: EggDef[]) {
+    if (!this.player) return;
+    for (const e of list) {
+      if (e.reward.gold) this.player.addGold(e.reward.gold);
+      if (e.reward.emerald) this.player.emerald += e.reward.emerald;
+      this.spawnPickupText(this.player.x, this.player.y - 90, `🔍 비밀 발견 — ${e.name}`, "#7de8ff");
+      this.showBanner(`비밀수첩 발견! 「${e.name}」 (+${e.reward.gold ?? 0}G${e.reward.emerald ? ` · +${e.reward.emerald}💎` : ""})`);
+      audio.sfx.questDone();
+    }
+    const m = eggMilestonePending();
+    if (m) {
+      const rw = claimEggMilestone();
+      if (rw) {
+        this.player.addGold(rw.gold);
+        this.player.emerald += rw.emerald;
+        this.showBanner(`비밀수첩 ${m}개 돌파! +${rw.gold}G · +${rw.emerald}💎`);
+      }
+    }
+    this.emitRpgState();
   }
 
   /** 설정창의 긴급 귀환 — 지금 위치에서 가장 가까운 마을로 즉시 이동 (막힘/굴속 탈출용)
@@ -11925,6 +12055,7 @@ export class WorldScene extends Phaser.Scene {
   }
   /** 크리티컬 명중 — metal_02 고피치 샤프 음 */
   sfxCrit() {
+    this.eggCounters.crits++; // v1.4.0 이스터에그 카운터
     audio.sfx.crit();
   }
 

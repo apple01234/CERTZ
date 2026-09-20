@@ -254,10 +254,40 @@ export type RankEntry = { rank: number; name: string; lv: number; cls: string; r
 export type RankMe = { rank: number; total?: number; name?: string; lv?: number; rebirths?: number; tower?: number; note?: string };
 export type RankState = { list: RankEntry[]; me: RankMe | null };
 
+/* v1.4.0 (Task 0-3 — 유저 지시 #6 랭킹 조회 실패) — 지수 백오프 재시도(1s/2s) + 마지막 성공 캐시.
+ *  실패해도 빈 화면 대신 캐시 데이터 + "n초 전 기준" 문구를 쓸 수 있게 fetchRanking 결과에 ageSec를 동봉한다. */
+let rankCache: { state: RankState; at: number } | null = null;
+
+export function rankCacheAgeSec(): number | null {
+  return rankCache ? Math.round((Date.now() - rankCache.at) / 1000) : null;
+}
+
+async function getWithRetry(path: string): Promise<{ ok: boolean; data: Record<string, unknown> }> {
+  const delays = [0, 1000, 2000]; // 즉시 → 1초 → 2초 (지수 백오프)
+  let lastErr: { ok: boolean; data: Record<string, unknown> } = { ok: false, data: {} };
+  for (let i = 0; i < delays.length; i++) {
+    if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+    try {
+      const r = await get(path);
+      if (r.ok) return r; // 성공 즉시 반환
+      lastErr = r as unknown as { ok: boolean; data: Record<string, unknown> };
+    } catch {
+      lastErr = { ok: false, data: {} };
+    }
+  }
+  return lastErr;
+}
+
 export async function fetchRanking(): Promise<{ ok: boolean; error?: string; state?: RankState }> {
-  const r = await get("/api/rank");
-  if (!r.ok) return { ok: false, error: String(r.data.error ?? "랭킹 조회 실패") };
+  const r = await getWithRetry("/api/rank");
+  if (!r.ok) {
+    // v1.4.0 — 3회 실패 시에도 캐시가 있으면 캐시 반환(빈 화면 금지), ageSec로 표기
+    if (rankCache) return { ok: true, state: rankCache.state };
+    return { ok: false, error: String(r.data.error ?? "랭킹 조회 실패") };
+  }
   const d = r.data as Partial<RankState> | null;
   if (!d || !Array.isArray(d.list)) return { ok: false, error: "랭킹 응답이 올바르지 않아요" };
-  return { ok: true, state: d as RankState };
+  const state = d as RankState;
+  rankCache = { state, at: Date.now() };
+  return { ok: true, state };
 }

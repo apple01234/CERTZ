@@ -847,7 +847,7 @@ export const CLOSET_THEMES: ClosetTheme[] = [
   { dow: 2, name: "지혜의 균열", desc: "경험치 책 드롭 확률 2배 + 2권 드롭", color: "#8fe84a", bookMul: 2, bookN: 2 },
   { dow: 3, name: "강화의 균열", desc: "킬마다 12% 확률로 강화 주문서 드롭", color: "#b57de8", extra: [{ item: "scroll_star", chance: 0.12 }] },
   { dow: 4, name: "약초의 균열", desc: "킬마다 10% 확률로 상급 물약 드롭", color: "#ff8a9c", extra: [{ item: "potion_hp2", chance: 0.1 }, { item: "potion_mp2", chance: 0.1 }] },
-  { dow: 5, name: "전설의 문", desc: "골드 1.3배 + 킬마다 8% 확률로 에메랄드 +1", color: "#7dffa8", mul: 1.3, emeraldChance: 0.08 },
+  { dow: 5, name: "전설의 문", desc: "골드 1.3배 + 킬마다 2% 확률로 에메랄드 +1", color: "#7dffa8", mul: 1.3, emeraldChance: 0.02 },
   { dow: 6, name: "무한의 균열", desc: "몬스터 소환 속도 1.4배 — 웨이브 지옥", color: "#a8ecff", spawnMul: 1.4, mul: 1.1 },
 ];
 

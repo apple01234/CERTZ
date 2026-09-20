@@ -9,6 +9,7 @@ import * as classesMod from "./classes";
 import * as stagesMod from "./stages";
 import * as dataMod from "./data";
 import { ACC_ANCHORS } from "./acc_anchors"; // v1.2.1 (#1) — E2E 앵커 실측용
+import * as eggsMod from "./eggs"; // v1.4.0 — 이스터에그/ARG (E2E 데이터 검증)
 import { SFX_THROTTLE_MS, SFX_MAX_CONCURRENT, BGM_VOLUME, SFX_VOLUMES, playBGM, playStageBGM, stageTrack, bgmDebugState, bgmAdvanceForTest, BGM_PLAYLISTS } from "./audio";
 
 const audioDebug = { throttle: SFX_THROTTLE_MS, cap: SFX_MAX_CONCURRENT, bgm: BGM_VOLUME, volumes: SFX_VOLUMES };
@@ -148,6 +149,8 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     data: dataMod,
     /* v1.2.1 (#1) — 치장 앵커 테이블 (E2E 프레임 정확 판정용) */
     anchors: ACC_ANCHORS,
+    /* v1.4.0 — 이스터에그/ARG 트래커 (E2E 100종 데이터 검증용) */
+    eggs: eggsMod,
   };
   return game;
 }

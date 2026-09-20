@@ -239,13 +239,7 @@ export function AuthPanel() {
                 <button onClick={submit} disabled={busy || !id || !pw} className="mt-1.5 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:opacity-40">
                   {mode === "login" ? "로그인" : "이 정보로 가입!"}
                 </button>
-                {/* v1.0.8 — GM 안내를 접이식(details)로 전환: 패널 높이를 줄여 하단 잘림 방지 */}
-                <details className="mt-1.5 rounded-lg border border-amber-300/30 bg-amber-400/[0.08] px-2.5 py-1.5 text-[9px] font-bold leading-relaxed text-amber-200/85">
-                  <summary className="cursor-pointer text-[10px] text-amber-200/90">🛠 GM(운영자) 로그인 방법</summary>
-                  <p className="mt-1">
-                    <b className="text-amber-100">admin</b> 또는 <b className="text-amber-100">apple01234</b> 아이디로 회원가입/로그인하면 자동으로 관리자 인정 — 로그인 후 마을에 GM NPC가 나타납니다.
-                  </p>
-                </details>
+                {/* v1.4.0 (#4) — 관리자 로그인 방법 설명 완전 제거: 클라이언트에 운영자 진입 힌트 노출 금지 (서버 롤 검증만 유지) */}
               </>
             )}
 

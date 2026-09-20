@@ -28,8 +28,8 @@ const { chromium } = require("playwright");
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2600);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.3.1", { exact: false }).first().isVisible().catch(() => false);
-  ok("[부팅] 타이틀 도달", badge, "v1.3.1 배지 표시");
+  const badge = await p.getByText("v1.4.0", { exact: false }).first().isVisible().catch(() => false);
+  ok("[부팅] 타이틀 도달", badge, "v1.4.0 배지 표시");
 
   /* 지연 로드 완료 대기 → SPUM 코스튬 텍스처/애님 확인 */
   await p.evaluate(async () => {

@@ -29,8 +29,8 @@ const { chromium } = require("playwright");
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2600);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.3.1", { exact: false }).first().isVisible().catch(() => false);
-  ok("[부팅] 타이틀 도달", badge, "v1.3.1 배지 표시");
+  const badge = await p.getByText("v1.4.0", { exact: false }).first().isVisible().catch(() => false);
+  ok("[부팅] 타이틀 도달", badge, "v1.4.0 배지 표시");
   await shot("00_title");
 
   /* 에셋 통합 — 지연 로드 완료 + vfx3 텍스처 존재 */
@@ -232,6 +232,12 @@ const { chromium } = require("playwright");
   });
   ok("[#7] /api/rank 200", rankRes.status === 200 && rankRes.hasList);
   const hub = await p.evaluate(() => {
+    /* v1.4.0 — 콘텐츠 버튼이 더보기 폴더 안으로 이동 → 먼저 펼친다 */
+    Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("더보기"))?.click();
+    return true;
+  });
+  await p.waitForTimeout(400);
+  await p.evaluate(() => {
     Array.from(document.querySelectorAll("button")).find((x) => x.getAttribute("aria-label")?.includes("콘텐츠"))?.click();
     return true;
   });

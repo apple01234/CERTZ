@@ -386,3 +386,83 @@ export function spawnTierFlair(
     }
   }
 }
+
+/* ═══════════════ v1.4.0 (Task 3-1 — 유저 지시 #13) — 5차 궁극기 클래스별 고유 시그니처 ═══════════════
+ *  유저 지시 "4·5차가 스킬+마법진뿐" 개선: 8직업 궁극기마다 서로 다른 VFX2 팩 에셋으로
+ *  고유 연출을 부여한다 — 같은 이펙트 재활용 0건 (직업별 1:1 매핑).
+ *  데이터: docs/skill-asset-mapping.md */
+type UltKey = string;
+
+/** 클래스별 궁극기 고유 연출 — vfx2 팩 에셋 1:1 매핑 (텍스처 미로드 시 조용히 생략) */
+export function spawnUltFlourish(scene: SceneLike, x: number, y: number, key5: UltKey, tint: number) {
+  const orbit = (tex: string, count: number, radius: number, scale: number, alpha = 0.9, spinMs = 1500) => {
+    const imgs: Phaser.GameObjects.Image[] = [];
+    for (let i = 0; i < count; i++) {
+      const im = scene.add.image(x, y, tex) as Phaser.GameObjects.Image;
+      if (!im.texture || im.texture.key === "__MISSING") { im.destroy(); return; }
+      im.setDepth(30).setBlendMode(Phaser.BlendModes.ADD).setAlpha(alpha).setScale(scale);
+      imgs.push(im);
+    }
+    const t0 = scene.time.now;
+    const ev = scene.time.addEvent({
+      delay: 16, repeat: Math.ceil(spinMs / 16),
+      callback: () => {
+        const p = (scene.time.now - t0) / spinMs;
+        imgs.forEach((im, i) => {
+          const a = p * Math.PI * 2 + (i / imgs.length) * Math.PI * 2;
+          im.setPosition(x + Math.cos(a) * radius, y + Math.sin(a) * radius * 0.55);
+          im.setAlpha(alpha * (1 - p));
+        });
+      },
+      callbackScope: scene,
+    });
+    scene.time.delayedCall(spinMs + 30, () => { ev.remove(); imgs.forEach((im) => im.destroy()); });
+  };
+  const flashSprite = (tex: string, scale: number, dur: number, t = tint, yOff = 0) => {
+    const im = scene.add.image(x, y + yOff, tex) as Phaser.GameObjects.Image;
+    if (!im.texture || im.texture.key === "__MISSING") { im.destroy(); return; }
+    im.setDepth(29).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0).setScale(scale * 0.4);
+    scene.tweens.add({ targets: im, alpha: 0.95, scale, duration: dur * 0.3, ease: "Cubic.out" });
+    scene.tweens.add({ targets: im, alpha: 0, scale: scale * 1.25, delay: dur * 0.3, duration: dur * 0.7, onComplete: () => im.destroy() });
+  };
+
+  switch (key5) {
+    case "warbringer": // 천멸극 — 참격 십자 궤적 + 붉은 스플래시 (vfx_slash_m·vfx_splat)
+      flashSprite("vfx_slash_m", 2.6, 620, 0xffb08a);
+      flashSprite("vfx_splat", 1.8, 700, 0xff7a5a, -14);
+      orbit("vfx_slash", 3, 74, 0.9, 0.85, 1300);
+      break;
+    case "crusader": // 성흔극 — 성스러운 삼중 링 + 빛 기둥 플래시 (vfx_ring1·vfx_flash)
+      flashSprite("vfx_flash", 2.2, 560, 0xffe9a0);
+      orbit("vfx_ring1", 3, 64, 0.7, 0.8, 1600);
+      break;
+    case "deadeye": // 신시극 — 화살 파티클 소용돌이 + 크리티컬 십자 (vfx_arrowp·vfx_crit)
+      flashSprite("vfx_crit", 1.9, 520, 0xffe66a);
+      orbit("vfx_arrowp", 5, 82, 0.75, 0.9, 1200);
+      break;
+    case "skylord": // 궁극 폭풍 — 설풍 소용돌이 + 클라우드 링 (vfx_snow·vfx_cl1)
+      flashSprite("vfx_cl1", 2.4, 640, 0x9fd8ff);
+      orbit("vfx_snow", 6, 90, 0.6, 0.85, 1400);
+      break;
+    case "arclord": // 아르카나 — 크리스탈 붕괴 + 마나 링 (vfx_crystal·vfx_ring3)
+      flashSprite("vfx_crystal", 2.0, 700, 0xc08aff);
+      orbit("vfx_ring3", 3, 70, 0.65, 0.8, 1500);
+      break;
+    case "eternal": // 영원의 고리 — 룬 육각형 궤도 + 시간 트윙클 (vfx_hex·vfx_twinkle)
+      flashSprite("vfx_hex", 1.7, 900, 0x7de8ff);
+      orbit("vfx_twinkle", 4, 78, 0.5, 0.9, 1800);
+      break;
+    case "shadowlord": // 그림자 군주 — 잔상 분신 3체 방사 (vfx_ist·vfx_is2)
+      flashSprite("vfx_ist", 1.8, 620, 0x9a7aff);
+      orbit("vfx_is2", 4, 86, 0.55, 0.8, 1350);
+      break;
+    case "blademaster": // 검무 — 아크 검기 4연 회전 (vfx_arc·vfx_slash_turn)
+      flashSprite("vfx_slash_turn", 2.4, 560, tint);
+      orbit("vfx_arc", 4, 80, 0.7, 0.9, 1100);
+      break;
+    default: // 계열 폴백(전사/궁수/마법사/도적) — 계열색 코어 플래시 + 링
+      flashSprite("vfx_explosion", 2.0, 620, tint);
+      orbit("vfx_pt1", 4, 76, 0.6, 0.8, 1400);
+      break;
+  }
+}

@@ -6,7 +6,8 @@ import type { HudState, QuestState } from "./EventBus";
 import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy } from "lucide-react";
+import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis } from "lucide-react";
 import { EventBus } from "./EventBus";
 
 /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
@@ -123,6 +124,9 @@ export function HUD({
   const expPct = Math.min(100, (hud.exp / Math.max(1, hud.expNext)) * 100);
   /* v3.0.2 (지시 #4/#5) — 퀘스트 트래커 축소/펼침 토글 (모바일에서 너무 큰 문제) */
   const [trackerOpen, setTrackerOpen] = React.useState(() => localStorage.getItem("sertz.trackerOpen") !== "0");
+  /* v1.4.0 (#17) — 모바일 버튼 과밀 해소: 2선 버튼(보스/혜택/콘텐츠/유니온/거래소/랭킹/퀘스트로그)을
+   *  “더보기” 토글로 접는다 — 주 사용 버튼(가방/스탯/설정/소리/자동/퀘스트)만 상시 노출 */
+  const [moreOpen, setMoreOpen] = React.useState(false);
   const toggleTracker = () => {
     setTrackerOpen((v) => {
       localStorage.setItem("sertz.trackerOpen", v ? "0" : "1");
@@ -140,8 +144,11 @@ export function HUD({
   }, []);
   return (
     <>
-      {/* 좌상단: 상태 — v1.0.20 게임형 LV 플레이트 */}
-      <div className="pointer-events-none absolute left-[max(0.5rem,env(safe-area-inset-left))] top-[max(0.5rem,env(safe-area-inset-top))] flex items-start gap-2 sm:left-3 sm:top-3">
+      {/* 좌상단: 상태 — v1.0.20 게임형 LV 플레이트 · v1.4.0 (#18) zoom .85 전역 축소 (#15) 스탯칩 고정+버프 행은 그 아래 */}
+      <div
+        className="pointer-events-none absolute left-[max(0.5rem,env(safe-area-inset-left))] top-[max(0.5rem,env(safe-area-inset-top))] flex items-start gap-2 sm:left-3 sm:top-3"
+        style={{ zoom: 0.85 }}
+      >
         <div className="game-chip flex h-10 w-10 shrink-0 flex-col items-center justify-center sm:h-12 sm:w-12">
           <span className="text-[8px] font-bold leading-none text-[#cbb88a]">LV</span>
           <span className="text-base font-black leading-none text-white [text-shadow:0_1px_2px_#000] sm:text-lg">
@@ -170,36 +177,38 @@ export function HUD({
               style={{ width: `${expPct}%` }}
             />
           </div>
-        {/* 버프 아이콘 (v1.9 BM — 남은 시간 바) */}
-        {hud.buffs.length > 0 && (
-          <div className="flex items-center gap-1">
-            {hud.buffs.map((b) => (
-              <BuffChip key={b.key} buff={b} />
-            ))}
-          </div>
-        )}
-          {/* 골드 + 공격/방어 (2D MMORPG 기본 요소) — v1.0.20 게임형 칩 */}
+          {/* 골드 + 공격/방어/크리 (지시 #15 — 스탯창 고정) — v1.0.20 게임형 칩 */}
           <div className="mt-0.5 flex items-center gap-1">
             <span className="game-chip flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-black text-[#ffd98a]">
-              { }
               <img src="/assets/item_coin.webp" alt="" className="h-3.5 w-3.5" style={{ imageRendering: "pixelated" }} />
-              {hud.gold}
+              {fmtC(hud.gold)}
             </span>
             <span className="game-chip px-1.5 py-0.5 text-[11px] font-black text-[#ffb0b0]">
-              공격 {hud.atkTotal}
+              공격 {fmt(hud.atkTotal)}
             </span>
             <span className="game-chip px-1.5 py-0.5 text-[11px] font-black text-[#a8e0ff]">
-              방어 {hud.defTotal}
+              방어 {fmt(hud.defTotal)}
             </span>
             <span className="game-chip px-1.5 py-0.5 text-[11px] font-black text-[#ffe49a]">
-              크리 {hud.critRate}%
+              크리 {fmt(hud.critRate)}%
             </span>
           </div>
+          {/* 지시 #15 — 버프 아이콘 행을 스탯칩 “바로 아래”로 이동 (기존 EXP바 위 위치에서 전배) */}
+          {hud.buffs.length > 0 && (
+            <div className="mt-0.5 flex items-center gap-1">
+              {hud.buffs.map((b) => (
+                <BuffChip key={b.key} buff={b} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 우상단: 사운드/가방 + 퀘스트 */}
-      <div className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-3 sm:top-3">
+      {/* 우상단: 사운드/가방 + 퀘스트 — v1.4.0 (#17/#18) zoom .85 + 2선 버튼 더보기 접기 */}
+      <div
+        className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-3 sm:top-3"
+        style={{ zoom: 0.85 }}
+      >
         <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
           {/* v1.1.0 (#2) — 퀘스트창 on/off 버튼: 접기가 아니라 아예 숨김/표시 (유저 지시) */}
           <button
@@ -270,67 +279,19 @@ export function HUD({
             <Gauge size={17} />
             <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>{km.stat}</span>
           </button>
+          {/* v1.4.0 (#17) — 퀘스트 로그(J)·보스·혜택·콘텐츠·유니온·거래소·랭킹은 “더보기” 안으로 이동 */}
+          {/* v1.4.0 — 더보기 토글 */}
           <button
-            onClick={onOpenQuest}
-            aria-label={`퀘스트 로그 열기 (${km.quest})`}
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
+            onClick={() => setMoreOpen((v) => !v)}
+            aria-label={moreOpen ? "부가 창 접기" : "부가 창 더보기"}
+            className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
+              moreOpen
+                ? "rounded-lg border-2 border-amber-300/70 bg-gradient-to-b from-amber-500/80 to-amber-700/80 text-amber-100"
+                : "game-chip text-white/70"
+            }`}
           >
-            <ListChecks size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.quest}</span>
-          </button>
-          {/* v3.0.25 — 보스 재도전 전용 창 버튼 (퀘스트창과 분리) */}
-          <button
-            onClick={onOpenBoss}
-            aria-label="보스 재도전 창 열기"
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffb0b0] active:scale-95"
-          >
-            <Crown size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-rose-300/80">보스</span>
-          </button>
-          {/* v4.0.0 — 혜택 버튼 (출석부/일일 퀘스트/쿠폰/이세카이 허브) */}
-          <button
-            onClick={onOpenBenefit}
-            aria-label="혜택 열기 (출석부/일일 퀘스트/쿠폰)"
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#b8f0a0] active:scale-95"
-          >
-            <Gift size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/80">혜택</span>
-          </button>
-          {/* v1.0.8 — 무한 콘텐츠 허브 버튼 (탑/시련/제작/심연상점/환생) */}
-          <button
-            onClick={onOpenContent}
-            aria-label="콘텐츠 열기 (심연의 탑/일일 시련/제작/심연 상점/환생)"
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d0b0ff] active:scale-95"
-          >
-            <Swords size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-purple-300/80">콘텐츠</span>
-          </button>
-          {/* v1.0.18 — 유니온 패널 버튼 (캐릭터 배치/상점/버프/레이드) */}
-          <button
-            onClick={onOpenUnion}
-            aria-label="유니온 열기 (캐릭터 배치/상점/레이드)"
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
-          >
-            <Users size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-indigo-300/90">유니온</span>
-          </button>
-          {/* v1.2.0 (#2) — 유저 거래소 직접 진입 버튼 (보스 드롭 사고팔기) */}
-          <button
-            onClick={onOpenTrade}
-            aria-label="유저 거래소 열기 (보스 드롭 사고팔기)"
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9be8dd] active:scale-95"
-          >
-            <Repeat size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
-          </button>
-          {/* v1.3.0 (#7) — 랭킹창 버튼 (전투력/레벨/콘텐츠 랭킹 + 주간 랭커 보상) */}
-          <button
-            onClick={onOpenRank}
-            aria-label="랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffe08a] active:scale-95"
-          >
-            <Trophy size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
+            <Ellipsis size={17} />
+            <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${moreOpen ? "text-amber-200" : "text-white/50"}`}>더보기</span>
           </button>
           <button
             onClick={onOpenOpt}
@@ -341,6 +302,67 @@ export function HUD({
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.opt}</span>
           </button>
         </div>
+        {/* v1.4.0 (#17) — 접힌 2선 창 버튼 행 (더보기 열림 시만) */}
+        {moreOpen && (
+          <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5 rounded-lg border border-amber-200/20 bg-black/45 p-1">
+            <button
+              onClick={onOpenQuest}
+              aria-label={`퀘스트 로그 열기 (${km.quest})`}
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
+            >
+              <ListChecks size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.quest}</span>
+            </button>
+            <button
+              onClick={onOpenBoss}
+              aria-label="보스 재도전 창 열기"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffb0b0] active:scale-95"
+            >
+              <Crown size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-rose-300/80">보스</span>
+            </button>
+            <button
+              onClick={onOpenBenefit}
+              aria-label="혜택 열기 (출석부/일일 퀘스트/쿠폰)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#b8f0a0] active:scale-95"
+            >
+              <Gift size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/80">혜택</span>
+            </button>
+            <button
+              onClick={onOpenContent}
+              aria-label="콘텐츠 열기 (심연의 탑/일일 시련/제작/심연 상점/환생)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d0b0ff] active:scale-95"
+            >
+              <Swords size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-purple-300/80">콘텐츠</span>
+            </button>
+            <button
+              onClick={onOpenUnion}
+              aria-label="유니온 열기 (캐릭터 배치/상점/레이드)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
+            >
+              <Users size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-indigo-300/90">유니온</span>
+            </button>
+            <button
+              onClick={onOpenTrade}
+              aria-label="유저 거래소 열기 (보스 드롭 사고팔기)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9be8dd] active:scale-95"
+            >
+              <Repeat size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
+            </button>
+            <button
+              onClick={onOpenRank}
+              aria-label="랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffe08a] active:scale-95"
+            >
+              <Trophy size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
+            </button>
+          </div>
+        )}
         {/* v3.0.23 (#56) — 퀘스트 알림을 더 아래로: 모바일 간격 mt-8→mt-20 (상단 버튼행·보스바와 겹침 방지), PC는 mt-1 유지
          *  v1.1.0 (#2) — "접는 형식 말고 버튼으로 아예 키고 끌 수 있게": 트래커 전체를 버튼 토글로 완전히 숨김/표시 */}
         {trackerOpen && !tutActive && (

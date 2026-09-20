@@ -16,7 +16,7 @@ import {
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
-import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnTierFlair, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.0.11 — 기존 스킬 N차 강화
+import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnTierFlair, spawnUltFlourish, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
 import type { Enemy } from "./Enemy";
@@ -2567,6 +2567,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* v1.0.10 — GameStudio FX 궁극기 인트로: 프리렌더 3D 마법진(클래스 컬러 스핀)+이중 확장 링+
      *  임팩트 코어+4방향 스파크 합성 — "4차·5차 밋밋함" 지시의 대표 개선점 */
     spawnUltimateIntro(this.scene, this.x, this.y, hex);
+    /* v1.4.0 (Task 3-1 — 유저 지시 #13) — 직업별 고유 VFX2 시그니처 연출 (8직업 1:1 매핑) */
+    spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
     const ring = this.scene.add.circle(this.x, this.y, 34)
       .setStrokeStyle(3, hex, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.scene.tweens.add({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
