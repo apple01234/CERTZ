@@ -1925,3 +1925,27 @@ Stage Summary:
 - 운영 교훈: ①시스템 JRE만 있으면 그래들이 javac 캐퍼빌리티 오류 — 툴체인 스크립트 먼저 ②APK 번들 가이드는 빌드 '전'에 갱신 완료 상태여야 함(릴리스 후 md5 확정 → 공개 가이드에만 md5 기재 패턴) ③샌드박스가 nohup 백그라운드 빌드를 정리함 — 장시간 빌드는 포그라운드 필수 ④public/ 가이드 갱신은 서버 재기동 불필요(디스크 직서빙)
 - 남은 지시: 없음 — 이번 9건까지 전 세대 지시 소화 완료
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 91
+Agent: Super Z (메인)
+Task: v1.4.0 대규모 업데이트 — 유저 지시 20건(마스터 프롬프트 v2.0 업로드: game-update-master-prompt.md) Phase 0~3 구현·검증·빌드·릴리스 (versionCode 92)
+
+Work Log:
+- [마스터 프롬프트 수신] upload/game-update-master-prompt.md — 20건을 4 Phase(치명버그 0-1~0-6 / 밸런스 1-1~1-6 / UI 2-1~2-4 / 콘텐츠 3-1~3-3)로 구조화된 실행 지시문. #19(엔진 교체)는 문서 자체가 "이번 지시에서 제외" 명시
+- [P0 버그] ①#4 관리자 힌트: AuthPanel GM안내 블록(자격증명 포함) 완전 삭제 + 가이드 이력 자격증명 적출 ②#12 규칙1-1: src/game/fmt.ts 신설(fmt/fmtC/fmtPct — 둘째 자리 반올림) → HUD 칩/데미지 팝업 적용(toFixed(1) 기존분은 규칙 준수로 유지) ③#6 랭킹: getWithRetry(1s/2s 백오프) + rankCache + "n초 전 기준" UI ④#16 멀티윈도우: 재부팅 시 TitleScene 자동 이어하기(sertz.autoResume 플래그 — WorldScene create에서 set, exitToMenu에서 clear) ⑤#8 검은화면: BootScene/TitleScene loaderror 명시 핸들러(실패 파일 건너뛰기→complete 보장) + 기존 크래시 오버레이 유지 ⑥#5 요새 유적: 근본 원인=고정 depth 11 vs 마을 y기반 depth(≈140) 오브제에 가림 → keepDepthGround/Balcony y기반 산술로 재작성
+- [P1 밸런스] ①#9 CH_HP [1,1.35,2.0,3.2,5.2,8.5,14,24,42](기존 최종 15.5→42, ATK 유지) ②#10 BOSS_DIFFS HP ×3(노말 4.5/하드 7.2/카오스 18.6) ③#1 르쯔: 출석 3/5/10→1/1/3(-70%)+유적상자 35→15%+정예 확정→40%+금요일 8→2% ④#14 questNeedByLv(5~8/10~15/18~25/30~40/45~60) + 보상 동반 상향 ⑤#7 챕터 레벨게이트: enterPortal에서 다음 챕터 sub1 진입 시 lvGate.enter 미달 차단 배너("Lv.n 이상부터 {지역명} 입장 가능", GM 예외)
+- [P2 UI] ①#15 버프 행을 스탯칩(골드/공격/방어/크리) 바로 아래로 이동 ②#18 좌상/우상 클러스터 zoom 0.85 ③#17 2선 버튼 7종(퀘스트로그/보스/혜택/콘텐츠/유니온/거래소/랭킹) 더보기 토글로 접기 ④#2-4 asset-manifest.md 작성(코인/버프16/스킬32/VFX 56+20+6/타일/SFX48 매핑)
+- [P3 콘텐츠] ①#13 spawnUltFlourish(StudioFX) — 8직업 5차 궁극기 VFX2 에셋 1:1 매핑(warbringer=slash_m+splat / crusader=flash+ring1 / deadeye=crit+arrowp / skylord=cl1+snow / arclord=crystal+ring3 / eternal=hex+twinkle / shadowlord=ist+is2 / blademaster=slash_turn+arc) + docs/skill-asset-mapping.md ②#20 eggs.ts 신설 — 100종 데이터(9카테고리 정확 분배) + 엔진(tickEggs 600ms 틱/feedKey 코나미 버퍼(화살표 UDLR 정규화)/feedCode ARG/milestone 10·25·50·100 구간보상) + WorldScene 훅(방문카운터/크리·포탈·레벨업·보스 카운터/keydown/보상지급) + SecretNotebook 설정창 UI(n/100·구간보상 수령·ARG 암호 입력·힌트 열람) + public/secret/ ARG 페이지 2종(아크로스틱·ROT13·소스주석 암호) ③#3 최적화: 기존 3단 스로틀/풀링/지연로드 유지 + dmgPool 12장 재확인 — 별도 리스크 없는 선에서 종결
+- [E2E] e2e_v140.js 신설 15항목 — 초기 10/15 → Phaser.Math.Clamp 모듈초기화 크래시(stages.ts 무임포트) 수정 + 코나미 화살표 정규화 + 로비 흐름 v131 준용 + 더보기 UI 대응 → 15/15 PASS. 회귀 v131 16/16·v130 19/19(더보기 클릭 추가)·v121 25/25 PASS
+- [빌드] 툴체인 재소실 재확인(rebuild_toolchain.sh) → build_apk.sh BUILD SUCCESSFUL → 가이드 v1.4.0 번들 확인 재빌드(번들=제목/링크, md5=공개가이드 패턴) → SERTZ-v1.4.0.apk 111,665,566B
+- [릴리스] release_v140.py — Release v1.4.0(id 392356880) 신규 생성·업로드 → 원격 재다운로드 md5 일치 ✓
+- [서버] export 덮어씀 → 일반 next build 복구 + NODE_ENV=production setsid 재기동 → /api/version(1.4.0/92)·/(200)·guide(200, md5 서빙)·/secret/(200) ✓
+- [버전체인 8곳] package.json·build.gradle(92·1.4.0+히스토리)·server.js(VERSION/CODE/NOTE)·Overlays 배지(v1.4.0)·apk-guide(제목·sub 92·노티스 14건·링크·md5·히스토리 v1.3.1 추가)·안내.txt(v1.4.0 블록)
+
+Stage Summary:
+- v1.4.0 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.0/SERTZ-v1.4.0.apk (versionCode 92, 111,665,566B, md5 2cdc8747…)
+- 유저 지시 20건 전부 처리: #19는 마스터 프롬프트 자체가 제외 명시(엔진 유지 결정 문서화) — 나머지 19건 구현+검증+배포
+- 운영 교훈: ①stages.ts는 Phaser 미임포트 모듈 — 초기화 경로에 Phaser 전역 참조 금지(클라이언트 크래시 "Phaser is not defined") ②툴체인은 세션마다 소실 확인 후 rebuild_toolchain.sh ③MultiEdit 부적용 시 파일 상태 혼재 가능 — grep으로 현행 확인 후 개별 Edit ④E2E 실패는 서빙청크/진입흐름/판정로직 3원인 순으로 분리
+- 남은 지시: 없음 — 20건 소화. 향후 후보: 비밀수첩 100종 실기기 발견 플레이테스트, 레벨게이트 커브 미세조정, AAB 재개
+- GitHub 토큰 노출 지속 — 재발급 권고 필수
