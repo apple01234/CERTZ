@@ -5,6 +5,7 @@ import { readCharSave, setActiveChar } from "../slots"; // v1.4.0 (#16) 자동 �
 import * as audio from "../audio";
 import { DEFERRED_BODY_PREFIXES } from "../data"; // v1.2.1 (#4 최적화) — 지연 로드 외형 시트
 import { registerBodyAnims } from "../textures";
+import { hookLoaderForGuard } from "../texGuard"; // v1.4.2 — 지연 로드도 무결성 레지스트리에 수집
 
 /** 타이틀: Phaser는 배경 연출만, 버튼은 React 오버레이가 담당 */
 export class TitleScene extends Phaser.Scene {
@@ -122,6 +123,8 @@ export class TitleScene extends Phaser.Scene {
     if (!this.deferStarted) {
       this.deferStarted = true;
       const heroFrames = ["idle0", "idle1", "idle2", "idle3", "walk0", "walk1", "walk2", "walk3", "walkside0", "walkside1", "walkside2", "walkside3", "walkup0", "walkup1", "walkup2", "walkup3", "atk0", "atk1", "atk2", "atk3", "atkdown0", "atkdown1", "atkdown2", "atkdown3", "atkup0", "atkup1", "atkup2", "atkup3"];
+      /* v1.4.2 — 지연 로더도 무결성 레지스트리에 수집 (URL/키 — 월드 감시가 재사용) */
+      hookLoaderForGuard(this.load, this.textures);
       /* v1.4.1 (#스프라이트로딩) — 지연 로드 실패분 자동 재시도:
        *  BootScene 재시도 체계와 동일 — 실패 파일(key/완성 URL)을 모았다가
        *  complete 시점에 setPath("") 후 재요청(최대 2라운드). 성공 시 애님 후등록. */

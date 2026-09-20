@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.1/SERTZ-v1.4.1.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.2/SERTZ-v1.4.2.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -38,9 +38,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.1";
-  const LATEST_CODE = 93;
-  const VERSION_NOTE = "일부 스프라이트 미로딩 수정(로드실패 자동 재시도 3회 — Android WebView 대량요청 실패분 복구)·요새 유적 타일맵 정상화(흙타일 돌테두리 crop 교정·창·도끼였던 난간을 실제 목책으로·계단을 실제 나무계단 소품으로)";
+  const LATEST_VERSION = "1.4.2";
+  const LATEST_CODE = 94;
+  const VERSION_NOTE = "요새 유적 타일맵 근본 수정(Phaser 4 setCrop이 크롭을 원래 오프셋에 렌더하는 문제 — 프레임 방식 전환으로 발코니·목책·계단이 의도 위치에 렌더)·스프라이트 미로딩 2차 방어(텍스처 무결성 감사·수복 체계 — 재시도 한도 초과분·복귀 후 이미지 회수분까지 자동 재로드)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

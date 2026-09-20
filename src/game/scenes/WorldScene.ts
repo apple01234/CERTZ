@@ -28,6 +28,7 @@ import {
   type GateCard, type RuneOwned, type RoleKind,
 } from "../isekai";
 import { viewZoom } from "../PhaserGame";
+import { runTexGuardCycle, installWorldTexGuard } from "../texGuard"; // v1.4.2 — 텍스처 무결성 감시·수복
 import { authMe, fetchRanking } from "../account"; // v1.0.2 — GM 롤 검증 · v1.3.0 — 랭커 순위 검증
 import { purchaseStorePack } from "../ads"; // v1.0.2 — 현금 패키지 결제
 import { showRewardedAd, purchaseGems, GEM_SKUS } from "../ads"; // v4.1.0 — BM 수익 연동
@@ -1581,6 +1582,14 @@ export class WorldScene extends Phaser.Scene {
     };
     document.addEventListener("visibilitychange", this.onVisChange);
 
+    /* v1.4.2 — 월드 진입 무결성 감사(후행 비동기) 후 상주 감시 설치.
+     *  지연 로드 실패 잔존분(재시도 한도 초과)을 전수 대조해 수복하고,
+     *  이후 복귀/컨텍스트복구/주기 표본 감사로 이미지 회수분을 계속 잡는다.
+     *  씬 재시작마다 재실행되지만 전 정상이면 수 ms — 비용 무시 가능. */
+    void runTexGuardCycle(this, "월드 진입")
+      .catch(() => undefined)
+      .then(() => installWorldTexGuard(this));
+
     /* v4.1.4 — 침공 보스 이벤트 타이머 (월드 보스 이벤트) */
     this.startInvasionTimer();
   }
@@ -2490,23 +2499,23 @@ export class WorldScene extends Phaser.Scene {
     this.keepDepthGround = Math.floor((ry + platH + 60) / 10);
     this.keepDepthBalcony = Math.floor(ry / 10) - 3;
 
-    /* 지면 타일 crop 영역 (16px 그리드) — v1.4.1 crop 교정:
-     *  · 잔디 (0,0) → (48,0) — (0,0)은 섬 왼쪽 둥근 모서리(돌) 포함 → 발코니 왼쪽 끝만 돌진각 보임
-     *  · 흙 (0,48) → (48,32) — (0,48)은 아틀라스 왼쪽 가장자리라 돌 테두리가 매 타일마다 새겨져
-     *    "타일맵이 이상하다"로 보였던 직접 원인. (48,32)은 아틀라스 내부의 균일 흙셀(std≈0) */
-    const grassRect = new Phaser.Geom.Rectangle(48, 0, 16, 16);
-    const dirtRect = new Phaser.Geom.Rectangle(48, 32, 16, 16);
+    /* v1.4.2 — setCrop 완전 폐지 → 이름 프레임 방식 전환 (요새 유적 “타일맵 이상함” 최종 근본 수정).
+     *  실측 확정: 이 Phaser 4 빌드는 Image.setCrop 시 크롭 영역을 오브젝트 원점에 재고정하지 않고
+     *  전체 텍스처 쿼드 내 원래 오프셋(crop.x×scale, crop.y×scale)에 렌더한다.
+     *  → 잔디타일 +96px, 흙타일 +64px 이동해 발코니 아래 ‘π(탁자) 모양’ 유령 구조물이 생기고
+     *    목책·계단(crop.y 큼)은 화면 밖으로 밀려나 사라졌다. (스크린샷 실측: 스크립트/probe_keep_v142b.js)
+     *  프레임(textures.Texture.add)은 스프라이트시트와 동일 경로라 어떤 버전에서도 정확히 렌더된다
+     *  (상자·횃불이 정상이었던 것이 증거). 아틀라스 내 균일 셀 좌표는 v1.4.1 실측치 재사용:
+     *  · 잔디 (48,0,16,16) — 섬 모서리 돌 미포함 균일 잔디+흙 하단
+     *  · 흙   (48,32,16,16) — 아틀라스 내부 균일 흙셀(돌 테두리 미포함) */
+    const gtex = this.textures.get("map_ground");
+    if (!gtex.has("kg_grass")) gtex.add("kg_grass", 0, 48, 0, 16, 16);
+    if (!gtex.has("kg_dirt")) gtex.add("kg_dirt", 0, 48, 32, 16, 16);
     const gscale = T / 16;
 
-    /* v1.4.1 — flip 인자 제거: Phaser 4는 크롭+flipX 조합에서 크롭 영역을 '텍스처 전체 기준'으로
-     *  미러링해 재베이크한다(setCropUVs ox=cx+(cw-x-w)). (48,32)의 미러인 (448,32)는 투명 셀이라
-     *  플립 흙타일이 렌더에서 사라졌고(구 crop(0,48)의 미러 (496,48)도 사실상 투명 —
-     *  발코니 흙줄이 구멍투성이 + 돌테두리 타일이 섞여 보이던 직접 원인). 균일 흙셀은 변주가
-     *  불필요하므로 플립 자체를 폐지한다. */
-    const addTile = (src: Phaser.Geom.Rectangle, wx: number, wy: number) => {
+    const addTile = (frame: string, wx: number, wy: number) => {
       const im = this.add
-        .image(wx, wy, "map_ground")
-        .setCrop(src.x, src.y, src.width, src.height)
+        .image(wx, wy, "map_ground", frame)
         .setOrigin(0)
         .setScale(gscale)
         .setDepth(this.keepDepthGround); // v1.4.0 — y기반 depth (고정 11 → 주변 오브제에 가려지던 버그 수정)
@@ -2516,20 +2525,20 @@ export class WorldScene extends Phaser.Scene {
 
     /* 발코니 바닥 타일 — 윗줄 잔디 + 아랫줄 흙 */
     for (let c = 0; c < cols; c++) {
-      addTile(grassRect, rx + c * T, ry);
-      addTile(dirtRect, rx + c * T, ry + T);
+      addTile("kg_grass", rx + c * T, ry);
+      addTile("kg_dirt", rx + c * T, ry + T);
     }
     /* 받침 기둥 2개 (지상—발코니 사이) — 흙 타일 세로 3장 */
     for (const px of [rx + T * 0.5, rx + platW - T * 1.5]) {
-      for (let r = 0; r < 3; r++) addTile(dirtRect, px, ry + T + r * T);
+      for (let r = 0; r < 3; r++) addTile("kg_dirt", px, ry + T + r * T);
     }
-    /* v1.4.1 계단 시각화 — 기존 '징검다리 흙타일 4장'은 발코니 오른쪽 아래에 부유하는
-     *  깨진 타일로 보였다. props 아틀라스의 실제 나무 계단 소품(158,680 104×57)으로 교체:
-     *  왼쪽 상단 플랫폼이 발코니 오른쪽 끝에 닿고 계단이 지상으로 내려온다.
-     *  항상 플레이어 뒤(발밑 램프)로 렌더 — 층 스왑 대상에서 제외. */
+    /* v1.4.2 계단 — 프레임 방식 (기존 setCrop은 화면 밖으로 밀려나 안 보임).
+     *  props 아틀라스 실제 나무 계단 소품(158,680 104×57): 왼쪽 상단 플랫폼이 발코니
+     *  오른쪽 끝에 닿고 계단이 지상으로 내려온다. 항상 플레이어 뒤(발밑 램프) 렌더. */
+    const ptexStair = this.textures.get("map_props");
+    if (!ptexStair.has("kg_stairs")) ptexStair.add("kg_stairs", 0, 158, 680, 104, 57);
     this.add
-      .image(this.keepStair.x - 6, ry, "map_props")
-      .setCrop(158, 680, 104, 57)
+      .image(this.keepStair.x - 6, ry, "map_props", "kg_stairs")
       .setOrigin(0, 0)
       .setScale(1.6)
       .setDepth(this.keepDepthBalcony + 0.15);
@@ -2541,13 +2550,13 @@ export class WorldScene extends Phaser.Scene {
       this.solidGroup.add(zone as unknown as Phaser.GameObjects.GameObject & { body: Phaser.Physics.Arcade.Body });
     }
 
-    /* 난간 — v1.4.1 crop 교정: 기존 (368,96,48,32)은 실제로는 '창/도끼' 오브제라
-     *  발코니에 창이 꽂힌 것처럼 보였다. props 시트의 실제 목책(254,86 68×53)으로 교체 —
-     *  기둥 2개 + 가로대 2개 울타리가 잔디 위에 2타일 간격으로 놓인다 */
+    /* 난간 — v1.4.2 프레임 방식: props 시트 실제 목책(254,86 68×53). setCrop 시대엔
+     *  화면 밖으로 밀려나 안 보였다. 잔디 위에 2타일 간격으로 놓인다 */
+    const ptexFence = this.textures.get("map_props");
+    if (!ptexFence.has("kg_fence")) ptexFence.add("kg_fence", 0, 254, 86, 68, 53);
     for (let c = 0; c < cols; c += 2) {
       const rail = this.add
-        .image(rx + c * T + 4, ry + 2, "map_props")
-        .setCrop(254, 86, 68, 53)
+        .image(rx + c * T + 4, ry + 2, "map_props", "kg_fence")
         .setOrigin(0, 1)
         .setScale(0.85)
         .setDepth(this.keepDepthGround + 0.2);

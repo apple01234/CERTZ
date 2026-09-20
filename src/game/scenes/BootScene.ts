@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { buildAllAnims } from "../textures";
 import { CORE_BODY_PREFIXES } from "../data";
 import { BGM_PRELOAD_TRACKS, SKILL_SFX_TRACKS } from "../audio";
+import { hookLoaderForGuard, runTexGuardCycle, getTexGuardStats } from "../texGuard";
 
 /**
  * 외부 에셋 로드 (public/assets/)
@@ -452,6 +453,9 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
+    /* v1.4.2 — 텍스처 무결성 감시 수집 훅 (filecomplete/loaderror → 전역 레지스트리).
+     *  수집된 레지스트리는 create에서 전수 감사 + 월드 상주 감시가 재사용한다. */
+    hookLoaderForGuard(this.load, this.textures);
     /* v1.4.1 — 실패 수집기를 로드 시작 전 1회 등록 (rebuild 중복 등록 제거) */
     this.load.off("loaderror", this.onLoadError as never);
     this.load.on("loaderror", this.onLoadError as never);
@@ -561,6 +565,10 @@ export class BootScene extends Phaser.Scene {
   async create() {
     /* v1.4.1 — 실패 에셋 자동 재시도 완료 후 타이틀 진행 (몇몇 스프라이트 누락 원천 차단) */
     await this.retryFailedLoads();
+    /* v1.4.2 — 재시도 후 최종 무결성 감사: loaderror 재시도 3회 한도 초과분까지
+     *  전수 대조해 누락/손상 텍스처를 타이틀 진입 전에 수복한다. */
+    await runTexGuardCycle(this, "부트");
+    (window as unknown as { __SERTZ_TEXGUARD__?: unknown }).__SERTZ_TEXGUARD__ = getTexGuardStats();
     /* v1.0.20 — 타이틀로 넘어가기 전 로딩 UI 정리 (검은 화면 잔상 방지) */
     this.bootUi?.destroy();
     this.bootUi = undefined;

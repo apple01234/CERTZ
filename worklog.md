@@ -1972,3 +1972,25 @@ Stage Summary:
 - 유저 리포트 2건 근본 수정: ①스프라이트 미로딩=로드실패 자동 재시도 체계(부트+지연로더) ②요새 유적=크롭 교정+flip 폐지(투명셀 미러링 근원 제거)+실제 목책·나무계단
 - 운영 교훈: ①Phaser 4 setCrop은 frame.cutX가 아니라 GameObject._crop(cx/cy/cw/ch)으로 판정 — E2E 어서션 주의 ②setCrop+flipX 조합 금지: 매 프레임 setCropUVs 재베이크 시 크롭이 텍스처 전체 기준 미러링되어 엉뚱한(투명) 셀을 가리킴 ③E2E 어서션 실패 시 실제 값 덤프(scripts/dump_keep.js 패턴)로 원인 분리 — 판정식 버그 vs 코드 버그 ④서버 재기동은 dev.sh 워치독에 맡기는 것이 경합 없음
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 93
+Agent: Super Z (메인)
+Task: v1.4.2 — 유저 재리포트 "안고쳐졌는데??" (스프라이트 미로딩 + 요세유적 타일맵 이상) 재진단·근본 수정·빌드·릴리스 (versionCode 94)
+
+Work Log:
+- [재진단 #유적] 기존 E2E가 crop '수치'만 검증하고 실제 렌더는 본 적 없다는 공백 확정 → probe_keep_v142b.js로 오브제 전수 덤프+스크린샷 실측. 원인 확정: 이 Phaser 4 빌드는 Image.setCrop 시 크롭 영역을 오브젝트 원점에 재고정하지 않고 '전체 텍스처 쿼드 내 원래 오프셋(crop.x×scale, crop.y×scale)'에 렌더 → 잔디 +96px·흙 +64px 밀려 그려져 발코니 아래 'π(탁자) 모양' 유령 구조물, 목책(crop.y 86)·계단(crop.y 680)은 화면 밖 소실. 상자·횃불(스프라이트시트 프레임)이 정상이었던 것이 결정적 증거 — v1.4.1의 crop 수치 교정만으로는 렌더 이동을 잡지 못했음
+- [수정 #유적] WorldScene.buildLayeredKeep — setCrop 완전 폐지 → textures.Texture.add로 이름 프레임 등록(kg_grass 48,0,16,16 / kg_dirt 48,32,16,16 / kg_stairs 158,680,104,57 / kg_fence 254,86,68,53) 후 this.add.image(x,y,tex,frame) 방식 전환. 프레임은 스프라이트시트와 동일 렌더 경로라 어떤 엔진 버전에서도 위치 불변. probe_keep_v142.js 재촬영으로 발코니·기둥·목책 4·나무계단·횃불·상자 전부 의도 위치 렌더를 눈으로 검증
+- [재진단 #스프라이트] v1.4.1 재시도 체계의 사각지대 3종 파악: ①재시도 3회 한도 초과분의 영구 누락 ②재시도 후 '전체 무결성' 최종 검증 부재 ③복귀/컨텍스트복구 후 이미지 회수(eviction) 미감지. 런타임 로드는 부트/타이틀뿐임을 전수 확인해 수정 범위 확정
+- [수정 #스프라이트] src/game/texGuard.ts 신설 — hookLoaderForGuard(filecomplete/loaderror 훅으로 기대 텍스처 키·URL·시트 치수를 전역 레지스트리 수집) + auditTextures(텍스처 존재·img.complete·naturalWidth>0 검사) + repairTextures(remove→치수 보존 재로드→rebindChildren(setTexture로 씬 오브제 재결합)) + installWorldTexGuard(visibilitychange 복귀 1.5초 후 전수 감사 / webglcontextrestored 1.2초 후 감사 / 9초 주기 48키 표본 감사). BootScene create(부트 감사)·TitleScene defer(레지스트리 수집)·WorldScene create(월드 진입 감사→감시 설치)에 연결
+- [E2E] e2e_v142.js 신설 12항목(배지·지연로드·실패경고 0·texGuard 레지스트리 985종·월드 진입·유적 프레임 판정+실제 렌더 좌표 실측 badPos=0·목책 4·계단 부착·depth 회귀 없음·pageerror 0) → 12/12 PASS. e2e_v141.js의 유적 판정을 crop→프레임+좌표 실측으로 교체해 13/13. 회귀 v140 15/15(1차 14/15는 HUD 타이밍 플레이크, 재실행 통과)·v131 16/16·v130 19/19·v121 25/25 PASS — 회귀 5종 배지 기대값 v1.4.2 갱신. v121의 콘솔 404 2건은 favicon.ico로 식별(probe_404_ident2.js) — 무해
+- [버전체인 8곳] package.json(1.4.2)·build.gradle(94·1.4.2+히스토리 주석)·server.js(VERSION/CODE/NOTE/APK_MIRROR)·Overlays 배지(v1.4.2)·apk-guide(제목·sub 94·노티스 3건·링크·히스토리 v1.4.1 추가·md5)·안내.txt(v1.4.2 블록+v1.4.1 이전 표기)
+- [빌드] 툴체인 확인(/home/z/jdk 정상) → JAVA_HOME=/home/z/jdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 50s → download/SERTZ-v1.4.2.apk 111,666,934B · aapt 94/1.4.2 · 번들 가이드 v1.4.2(플레이스홀더 0) 선확인 · md5 7482a68498ff1efa4498614a3515007c
+- [릴리스] scripts/release_v142.py — Release v1.4.2(id 392473300) 신규 생성·업로드 → 원격 재다운로드 md5 일치 ✓
+- [서버] export 덮어씀 → 일반 next build 복구 → pkill 후 NODE_ENV=production setsid 재기동 → /api/version(1.4.2/94)·/(200)·guide(200, 최종 md5 서빙)·/SERTZ-v1.4.2.apk 307·/secret/second.html 200 ✓ · 최종 상태에서 v142 12/12·v141 13/13 재통과
+
+Stage Summary:
+- v1.4.2 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.2/SERTZ-v1.4.2.apk (versionCode 94, 111,666,934B, md5 7482a684…)
+- "안고쳐졌는데??" 재리포트 2건 최종 근본 수정: ①요새 유적=Phaser 4 setCrop 렌더 결함을 스크린샷 실측으로 확정·프레임 방식 전환 ②스프라이트 미로딩=texGuard 무결성 감사·수복 체계로 재시도 한도 초과분·이미지 회수분까지 자동 복구
+- 운영 교훈: ①E2E는 '속성값'만 보지 말고 반드시 스크린샷(눈)까지 봐야 한다 — v1.4.1은 crop 수치 PASS로 실제 화면 파손을 놓침 ②이 Phaser 4에서 setCrop은 오브젝트 위치에 크롭을 재고정하지 않는다 — 아틀라스 부분 렌더는 이름 프레임(texture.add)만 쓸 것 ③setCrop+flip 조합 금지(v1.4.1 교훈)에 이어 setCrop 자체 금지로 격상 ④v140/v142의 1회성 FAIL은 재실행으로 플레이크 분리 — 단, 같은 항목이 반복 FAIL되면 실버그
+- 남은 지시: 없음 — 재리포트 2건 소화. GitHub 토큰 노출 지속 — 재발급 권고 필수
