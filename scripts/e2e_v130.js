@@ -29,7 +29,7 @@ const { chromium } = require("playwright");
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2600);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.4.0", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.1", { exact: false }).first().isVisible().catch(() => false);
   ok("[부팅] 타이틀 도달", badge, "v1.4.0 배지 표시");
   await shot("00_title");
 

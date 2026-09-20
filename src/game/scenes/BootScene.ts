@@ -269,9 +269,73 @@ const TX_KINDS = [
   "bite_dn", "bite_up", "gvar1", "gvar2", "pvar",
 ] as const;
 
+/* v1.4.1 (#스프라이트로딩) — 로드 실패 파일 자동 재시도:
+ *  Android WebView는 부팅 시 1천+ 로컬 에셋 요청 중 일부를 실패시킬 수 있고,
+ *  Phaser 로더는 실패 파일을 조용히 건너뛰므로 해당 스프라이트가 그 세션에서 영구 누락됐다.
+ *  실패 목록을 모아 (스프라이트시트 치수/오디오 타입 보존) create에서 최대 3회 재시도한다. */
+const FAILED_TRIES_MAX = 3;
+const SHEET_DIMS = new Map<string, { fw: number; fh: number }>();
+for (const [k, , h] of X2_SPELLS) SHEET_DIMS.set(k, { fw: h, fh: h });
+for (const [k, w, h] of [
+  ["vfx2_bolt", 48, 32], ["vfx2_charged", 63, 48],
+  ["vfx2_hit1", 96, 96], ["vfx2_hit3", 96, 96], ["vfx2_hit5", 96, 96],
+  ["vfx2_pulse", 64, 32], ["vfx2_wspark", 64, 32],
+  ["vfx2_elec", 128, 128], ["vfx2_tri", 128, 128], ["vfx2_cfx1", 128, 128],
+  ["sv_campfire", 32, 32], ["fx_tornado", 64, 64], ["chest_anim", 64, 64],
+  ["map_torch_f", 16, 16], ["map_chest_f", 64, 64],
+] as [string, number, number][]) SHEET_DIMS.set(k, { fw: w, fh: h });
+const AUDIO_KEYS = new Set<string>([...AUDIO_LIST, ...SFX3_LIST]);
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super("boot");
+  }
+
+  /* v1.4.1 — 로드 실패 파일 수집 (재시도 큐) */
+  private failedLoads = new Map<string, { key: string; url: string; tries: number }>();
+
+  /* v1.4.1 — loaderror 수집기: 실패 파일의 key/완성 URL을 보존해 create에서 재시도.
+   *  file.url은 File 생성 시점에 loader.path가 이미 합성된 완성 상대경로("assets/xxx.webp")라
+   *  재시도 시 setPath("") 후 그대로 재사용하면 된다. */
+  private readonly onLoadError = (file: { key?: string; url?: string }) => {
+    const key = file?.key ?? "";
+    if (!key) return;
+    const prev = this.failedLoads.get(key);
+    const tries = (prev?.tries ?? 0) + 1;
+    if (tries > FAILED_TRIES_MAX) {
+      console.warn("[SERTZ] 에셋 로드 실패 — 재시도 한도 초과, 건너뜀:", key);
+      return;
+    }
+    this.failedLoads.set(key, { key, url: String(file?.url ?? ""), tries });
+    console.warn(`[SERTZ] 에셋 로드 실패 — 자동 재시도 예약 (${tries}/${FAILED_TRIES_MAX}):`, key);
+  };
+
+  /** v1.4.1 — 수집된 실패 파일 재시도 (최대 2라운드, 파일당 총 3회 한도) */
+  private async retryFailedLoads() {
+    for (let round = 0; round < 2 && this.failedLoads.size > 0; round++) {
+      const batch = Array.from(this.failedLoads.values());
+      this.failedLoads.clear();
+      this.load.setPath("");
+      for (const f of batch) {
+        try {
+          const dim = SHEET_DIMS.get(f.key);
+          if (dim) this.load.spritesheet(f.key, f.url, { frameWidth: dim.fw, frameHeight: dim.fh });
+          else if (AUDIO_KEYS.has(f.key)) this.load.audio(f.key, f.url);
+          else this.load.image(f.key, f.url);
+        } catch {
+          /* 큐잉 실패는 다음 라운드에서 재평가 */
+        }
+      }
+      if (this.load.list.size > 0) {
+        await new Promise<void>((resolve) => {
+          this.load.once("complete", () => resolve());
+          this.load.start();
+        });
+      }
+    }
+    if (this.failedLoads.size > 0) {
+      console.warn("[SERTZ] 재시도 후에도 로드 실패:", Array.from(this.failedLoads.keys()).join(", "));
+    }
   }
 
   /* v1.0.20 — 부팅 로딩 화면 (유저 지시: "검은화면 뜨는 버그 없애").
@@ -336,12 +400,8 @@ export class BootScene extends Phaser.Scene {
         if (!fill.active) return; // resize로 파괴된 이전 채움 — 무시
         fill.width = Math.max(2, barW * p);
       });
-      /* v1.4.0 (Task 0-1 검은화면 원인 제거) — 에셋 로드 실패를 명시 처리:
-       *  실패 파일을 조용히 건너뛰고(게임은 폴백 외형/사운드로 기동) 로더가
-       *  완료 신호를 반드시 내도록 보장 — "로딩 중 검은 화면 영구 정지" 원천 차단 */
-      this.load.on("loaderror", (file: { key?: string; url?: string }) => {
-        console.warn("[SERTZ] 에셋 로드 실패 — 건너뜀:", file?.key ?? file?.url ?? "unknown");
-      });
+      /* v1.4.1 — loaderror 수집은 preload()에서 1회 등록으로 이관 (재시도 체계 참조).
+       *  rebuild가 resize마다 재실행돼도 핸들러가 중복 등록되지 않는다. */
     };
     rebuild();
 
@@ -392,6 +452,9 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
+    /* v1.4.1 — 실패 수집기를 로드 시작 전 1회 등록 (rebuild 중복 등록 제거) */
+    this.load.off("loaderror", this.onLoadError as never);
+    this.load.on("loaderror", this.onLoadError as never);
     /* v1.0.20 — 로딩 UI를 에셋 로드 시작 "직전"에 띄운다 (검은 화면 구간 0) */
     this.buildLoadingUi();
     this.load.setPath("assets");
@@ -496,6 +559,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   async create() {
+    /* v1.4.1 — 실패 에셋 자동 재시도 완료 후 타이틀 진행 (몇몇 스프라이트 누락 원천 차단) */
+    await this.retryFailedLoads();
     /* v1.0.20 — 타이틀로 넘어가기 전 로딩 UI 정리 (검은 화면 잔상 방지) */
     this.bootUi?.destroy();
     this.bootUi = undefined;

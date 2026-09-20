@@ -1949,3 +1949,26 @@ Stage Summary:
 - 운영 교훈: ①stages.ts는 Phaser 미임포트 모듈 — 초기화 경로에 Phaser 전역 참조 금지(클라이언트 크래시 "Phaser is not defined") ②툴체인은 세션마다 소실 확인 후 rebuild_toolchain.sh ③MultiEdit 부적용 시 파일 상태 혼재 가능 — grep으로 현행 확인 후 개별 Edit ④E2E 실패는 서빙청크/진입흐름/판정로직 3원인 순으로 분리
 - 남은 지시: 없음 — 20건 소화. 향후 후보: 비밀수첩 100종 실기기 발견 플레이테스트, 레벨게이트 커브 미세조정, AAB 재개
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 92
+Agent: Super Z (메인)
+Task: v1.4.1 — 유저 리포트 2건(스프라이트 미로딩 + 요새 유적 타일맵 이상) 근본 수정·E2E·빌드·릴리스 (versionCode 93)
+
+Work Log:
+- [진단#1 스프라이트 미로딩] check_assets_v141.js로 로드 목록 2,690종 vs 실제 파일 전수 대조 — 누락 0·손상 0. check_texture_usage.js로 사용-미로드 키 스캔 — 0건(오탐 1건은 X2_SPELLS 타입주기 괄호 파싱 문제로 확인 후 제외). 원인 확정: Android WebView가 부팅 1천+ 로컬 요청 중 일부 실패 시 Phaser 로더가 조용히 스킵 → 해당 스프라이트 그 세션 영구 누락
+- [수정#1] BootScene: loaderror 수집기 1회 등록(rebuild 중복등록 해소) + create()에서 retryFailedLoads(2라운드·파일당 총 3회) — file.url이 path 합성 완료 상태임을 Phaser 4 File.js:96-100에서 확인, setPath("") 후 재요청. 스프라이트시트 치수 보존용 SHEET_DIMS 15종 + AUDIO_KEYS 세트 구축. TitleScene 지연 로더에도 동일 재시도 적용(complete 후 비동기 라운드 → registerBodyAnims)
+- [진단#2 유적] keep_final_preview.py 재현 프리뷰로 원인 3+1종 확정: ①흙 crop(0,48)이 아틀라스 가장자리 돌테두리 포함(std 10+) ②"난간" crop(368,96)은 실제 창·도끼 오브제 ③계단=발코니 우하단 부유 흙타일 4장 ④★setCrop+setFlipX 조합 — Phaser 4 Frame.setCropUVs가 flip 시 크롭을 텍스처 전체 기준 미러링(ox=cx+(cw-x-w)) → (0,48)의 미러(496,48)·(48,32)의 미러(448,32) 모두 투명셀 → 플립 흙타일이 렌더에서 소실(발코니 구멍의 직접 원인)
+- [수정#2] WorldScene.buildLayeredKeep: 잔디 crop(0,0)→(48,0)·흙 crop(0,48)→(48,32) 균일셀 교정 / addTile flip 인자 폐지(미러링 소실 근원) / 난간→실제 목책(254,86,68,53) 4개 / 부유 계단타일 삭제→props 나무계단 소품(158,680,104,57)×1.6 scale, keepStair.x-6 부착·keepDepthBalcony+0.15 고정(플레이어 항상 앞)
+- [E2E] e2e_v141.js 신설 12항목(로드실패 경고 0·타이틀 시점 핵심 텍스처 13종·유적 crop _crop 기반 판정 — frame.cutX가 아닌 _crop.cx/cy로 봐야 함/계단 부착·depth 회귀) → 12/12 PASS. 회귀 v140 15/15(1차 14/15는 HUD 타이밍 플레이크, 재실행 전부 통과)·v131 16/16·v130 19/19·v121 25/25 PASS — 4종 배지 기대값 v1.4.1 갱신
+- [버전체인 8곳] package.json(1.4.1)·build.gradle(93·1.4.1+히스토리 주석)·server.js(VERSION/CODE/NOTE/APK_MIRROR)·Overlays 배지(v1.4.1)·apk-guide(제목·sub 93·노티스 3건·링크·md5·히스토리 v1.4.0 추가)·안내.txt(v1.4.1 블록+v1.4.0 이전 표기)
+- [빌드] 툴체인 소실 재확인→rebuild_toolchain.sh(Temurin21 javac 21.0.12.1) → JAVA_HOME=/home/z/jdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 4m46s → download/SERTZ-v1.4.1.apk 111,665,538B · aapt 93/1.4.1 · 번들 가이드 v1.4.1 선확인 · md5 ddc0447300d9fba9541d5688d2b6df11
+- [릴리스] scripts/release_v141.py — Release v1.4.1(id 392444664) 신규 생성·업로드 → 원격 재다운로드 md5 일치 ✓
+- [서버] export 덮어씀 → 일반 next build 복구 → pkill 후 dev.sh 워치독(15초 주기 NODE_ENV=production 재기동)이 기동한 인스턴스 확인 — 수동 setsid 기동은 워치독과 EADDRINUSE 경합 유발(좀비 인스턴스가 리스너 없이 생존)하므로 이후 세션은 pkill→20초 대기→/api/version 확인이 안전
+- [검증] /api/version(1.4.1/93)·/(200)·guide(200, 최종 md5 서빙)·/SERTZ-v1.4.1.apk 307·/secret 200 · 최종 빌드 상태에서 v141 12/12+v131 16/16 재통과
+
+Stage Summary:
+- v1.4.1 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.1/SERTZ-v1.4.1.apk (versionCode 93, 111,665,538B, md5 ddc04473…)
+- 유저 리포트 2건 근본 수정: ①스프라이트 미로딩=로드실패 자동 재시도 체계(부트+지연로더) ②요새 유적=크롭 교정+flip 폐지(투명셀 미러링 근원 제거)+실제 목책·나무계단
+- 운영 교훈: ①Phaser 4 setCrop은 frame.cutX가 아니라 GameObject._crop(cx/cy/cw/ch)으로 판정 — E2E 어서션 주의 ②setCrop+flipX 조합 금지: 매 프레임 setCropUVs 재베이크 시 크롭이 텍스처 전체 기준 미러링되어 엉뚱한(투명) 셀을 가리킴 ③E2E 어서션 실패 시 실제 값 덤프(scripts/dump_keep.js 패턴)로 원인 분리 — 판정식 버그 vs 코드 버그 ④서버 재기동은 dev.sh 워치독에 맡기는 것이 경합 없음
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

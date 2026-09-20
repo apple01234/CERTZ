@@ -122,20 +122,54 @@ export class TitleScene extends Phaser.Scene {
     if (!this.deferStarted) {
       this.deferStarted = true;
       const heroFrames = ["idle0", "idle1", "idle2", "idle3", "walk0", "walk1", "walk2", "walk3", "walkside0", "walkside1", "walkside2", "walkside3", "walkup0", "walkup1", "walkup2", "walkup3", "atk0", "atk1", "atk2", "atk3", "atkdown0", "atkdown1", "atkdown2", "atkdown3", "atkup0", "atkup1", "atkup2", "atkup3"];
+      /* v1.4.1 (#스프라이트로딩) — 지연 로드 실패분 자동 재시도:
+       *  BootScene 재시도 체계와 동일 — 실패 파일(key/완성 URL)을 모았다가
+       *  complete 시점에 setPath("") 후 재요청(최대 2라운드). 성공 시 애님 후등록. */
+      const failed = new Map<string, { key: string; url: string; tries: number }>();
       this.load.setPath("assets");
       for (const p of DEFERRED_BODY_PREFIXES) {
         for (const f of heroFrames) this.load.image(`${p}_${f}`, `${p}_${f}.webp`);
       }
       this.load.start();
-      /* v1.4.0 (Task 0-1) — 지연 로드 실패 명시 처리: 실패 파일은 건너뛰고 complete가
-       *  반드시 오도록 (교착 시 8초 폴백이 이미 있으나 실패 파일 자체는 여기서 정리) */
       this.load.on("loaderror", (file: { key?: string; url?: string }) => {
-        console.warn("[SERTZ] 지연 에셋 로드 실패 — 건너뜀:", file?.key ?? file?.url ?? "unknown");
+        const key = file?.key ?? "";
+        if (!key) return;
+        const prev = failed.get(key);
+        const tries = (prev?.tries ?? 0) + 1;
+        if (tries > 3) {
+          console.warn("[SERTZ] 지연 에셋 로드 실패 — 재시도 한도 초과, 건너뜀:", key);
+          return;
+        }
+        failed.set(key, { key, url: String(file?.url ?? ""), tries });
+        console.warn(`[SERTZ] 지연 에셋 로드 실패 — 자동 재시도 예약 (${tries}/3):`, key);
       });
       this.load.once("complete", () => {
-        registerBodyAnims(this, DEFERRED_BODY_PREFIXES);
-        this.deferDone = true;
-        (window as unknown as { __SERTZ_DEFER_DONE__?: boolean }).__SERTZ_DEFER_DONE__ = true;
+        void (async () => {
+          for (let round = 0; round < 2 && failed.size > 0; round++) {
+            const batch = Array.from(failed.values());
+            failed.clear();
+            this.load.setPath("");
+            for (const f of batch) {
+              try {
+                this.load.image(f.key, f.url);
+              } catch {
+                /* 큐잉 실패 무시 */
+              }
+            }
+            if (this.load.list.size > 0) {
+              await new Promise<void>((resolve) => {
+                this.load.once("complete", () => resolve());
+                this.load.start();
+              });
+            }
+          }
+          if (failed.size > 0) {
+            console.warn("[SERTZ] 지연 재시도 후에도 로드 실패:", Array.from(failed.keys()).join(", "));
+          }
+          registerBodyAnims(this, DEFERRED_BODY_PREFIXES);
+          this.deferDone = true;
+          (window as unknown as { __SERTZ_DEFER_DONE__?: boolean }).__SERTZ_DEFER_DONE__ = true;
+        })();
       });
     }
 

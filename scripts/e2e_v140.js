@@ -25,7 +25,7 @@ const { chromium } = require("playwright");
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
 
   /* 부팅 + 배지 */
-  const badge = await p.getByText("v1.4.0", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.1", { exact: false }).first().isVisible().catch(() => false);
   ok("[부팅] 타이틀 도달 (v1.4.0 배지)", badge);
 
   /* #4 admin 힌트 제거 — 로그인 패널에 GM 안내/자격증명 없음 */
