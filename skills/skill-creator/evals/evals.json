@@ -1,0 +1,45 @@
+{
+  "skill_name": "skill-creator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "우리 팀이 매주 똑같은 형식의 주간 보고서를 만들어. 이걸 스킬로 만들어서 다음부터 한 번에 생성되게 하고 싶어",
+      "expected_output": "트리거: 스킬 신규 제작 요청. 의도 파악 인터뷰 → 초안 작성 → 테스트 프롬프트 2-3개 제안 → 평가 루프 진입",
+      "expectations": [
+        "SKILL.md 초안을 작성하기 전 의도/사용 맥락을 먼저 확인한다",
+        "테스트 케이스 2-3개를 사용자에게 제시하고 확인을 구한다",
+        "evals/evals.json에 테스트 프롬프트를 저장한다 (assertions는 런 시작 후 작성)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "지난번에 만든 pdf-extractor 스킬이 자꾸 표를 놓쳐. 성능을 측정해서 개선하고 싶어",
+      "expected_output": "트리거: 기존 스킬 개선 + 벤치마크 요청. 스냅샷 → 개선 → with_skill vs old_skill 비교 루프",
+      "expectations": [
+        "편집 전에 기존 스킬 스냅샷을 먼저 뜬다 (순서 불변)",
+        "with_skill과 old_skill(스냅샷) 런을 같은 턴에 병렬 스폰한다",
+        "eval-viewer/generate_review.py로 결과 뷰어를 생성한다 (직접 HTML 작성 금지)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "이 csv 파일에서 5월 매출 상위 10개 행만 뽑아줘",
+      "expected_output": "비트리거: 재사용 가능한 스킬이 산출물이 아닌 일회성 데이터 처리 작업",
+      "expectations": [
+        "스킬 제작 루프를 시작하지 않는다",
+        "SKILL.md나 evals 파일을 생성하지 않는다",
+        "요청한 데이터 작업만 수행한다"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "docx 스킬 써서 이 계약서 템플릿 채워줘",
+      "expected_output": "비트리거: 기존 스킬을 '사용'하는 일반 과업 — 스킬 제작/개선이 목적이 아님",
+      "expectations": [
+        "skill-creator 루프(초안→테스트→평가)를 시작하지 않는다",
+        "docx 스킬 자체를 사용해 과업을 수행한다",
+        "사용 중인 스킬의 개선 제안을 강요하지 않는다 (사용자가 요청하면 그때 제안)"
+      ]
+    }
+  ]
+}

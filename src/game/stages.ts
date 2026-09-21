@@ -207,7 +207,10 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 8, dialogue: "", quest: { id: "f3", type: "collect", title: "능대들이 지키던 결정", desc: "능대들이 지키던 곳에서 또 하나의 빛이 느껴진다.", targetLabel: "결정의 흔적", reward: Math.round(60 * G), expReward: 45 } },
     ],
     repeat: { need: 16, gold: Math.round(70 * G), exp: 70, title: "[반복] 늑대 토벌 의뢰", desc: "마을 토벌 의뢰 — 늑대를 계속 사냥해 골드와 경험치를 얻자." },
-    lvGate: { enter: 3, mid: 5 },
+    /* v1.4.3 (작업2) — enter 3→1: 신규 유저가 마을에서 1-1로 바로 나갈 수 있게 완화.
+     *  기존 Lv3 게이트가 시작 지점을 막아버리는 교착(레벨 올릴 곳 부재)의 핵심 원인.
+     *  대신 마을 훈련장+초보 퀘스트로 자연스러운 1→3 루트를 제공하고, mid 게이트(구역4·Lv5)는 유지. */
+    lvGate: { enter: 1, mid: 5 },
   },
   {
     key: "kingdom", num: 3, title: "쿠소디아", subtitle: "선박의 왕국 · 늪지대",
@@ -865,12 +868,26 @@ const VILLAGE: StageDef = {
       expReward: 25,
     },
     {
+      /* v1.4.3 (작업2) — 초보 사냥 퀘스트 신설: 사냥터 입장 전 마을 훈련장에서 기본기를 익히는
+       *  튜토리얼 전투. v0 인사(25 exp) → 훈련용 늑대 4마리(~29 exp×4 + 45) → Lv 2~3 달성 후 숲 이동.
+       *  구세이브는 마을 questIdx가 한 칸 밀린다 — 진행 재개는 자동(미완료 퀘스트만 다시 수행). */
       id: "v1",
+      type: "hunt",
+      title: "훈련용 늑대 길들이기",
+      desc: "마을 동쪽 초행자 훈련장의 훈련용 늑대 4마리를 처치해 기본기를 익혀라.",
+      need: 4,
+      targetKey: "wolf",
+      targetLabel: "훈련용 늑대",
+      reward: Math.round(30 * G),
+      expReward: 45,
+    },
+    {
+      id: "v2",
       type: "reach",
       /* v3.0.26 (#75) — "서쪽 숲의 신전으로" 제목이 실존하지 않는 '서쪽 숲'을 가리켜
        *  유저가 마을 서쪽을 헤매는 혼동 수정. 실제 목적지는 동쪽 차원문 너머 '숲의 신전'(2-1). */
       title: "숲의 신전으로",
-      desc: "펜던트가 이끄는 대로 마을 동쪽 차원문을 지나 첫 사냥터 '숲의 신전'(2-1)에 도착해라.",
+      desc: "훈련을 마쳤다 — 마을 동쪽 차원문을 지나 첫 사냥터 '숲의 신전'(2-1)에 도착해라.",
       targetLabel: "동쪽 차원문",
     },
   ],

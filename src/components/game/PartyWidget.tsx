@@ -1,27 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Users, LogOut, Crown } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Users, LogOut, Crown, Swords, CheckCircle2, Gift } from "lucide-react";
 import * as net from "@/game/net";
+import {
+  partySynergies, partyBoard, partyBoardResetsIn, PARTY_MISSION_POOL,
+  SOLO_BLESS_EXP_PCT, type PartyMissionDef,
+} from "@/game/partyContent";
+import { EventBus } from "./EventBus";
 
 /**
- * 파티 위젯 (v2.0 — 지시 #5 파티 & 보스 토벌)
+ * 파티 위젯 (v2.0 — 지시 #5 파티 & 보스 토벌 / v1.4.3 — 작업4 파티 콘텐츠)
  *  - 파티 창설 / 코드 참여 / 탈퇴 / 멤버 목록 (서버 릴레이)
  *  - 파티 채팅은 ChatBox에서 [파티] 프리픽스 메시지로 표시
+ *  - v1.4.3 신설:
+ *    · 파티 시너지 콤보 — 계열 조합별 실전 버프를 실시간 표시 (EXP/골드에 실적용)
+ *    · 오늘의 파티 미션 — 파티 중일 때만 카운트, 파티 중 수령 시 풀 보상 / 솔로 50%
+ *    · 솔로 가호 — 파티 없이 사냥해도 EXP +5% (솔로 유저 소외 방지)
  */
 export function PartyWidget() {
   const [open, setOpen] = useState(false);
   const [party, setParty] = useState<net.NetParty | null>(null);
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
+  const [, force] = useState(0);
+  const refresh = useCallback(() => force((n) => n + 1), []);
 
   useEffect(() => {
     const off = net.netOnParty((p) => {
       setParty(p);
       if (p === null) setErr("파티에 참여하지 못했습니다 — 코드 확인");
+      refresh();
     });
     return off;
-  }, []);
+  }, [refresh]);
+
+  /* 보드 진행도 실시간 갱신 (WorldScene 훅이 localStorage에 기록) */
+  useEffect(() => {
+    if (!open) return;
+    const iv = window.setInterval(refresh, 2000);
+    return () => window.clearInterval(iv);
+  }, [open, refresh]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -57,6 +76,16 @@ export function PartyWidget() {
     net.netPartyLeave();
   };
 
+  /* v1.4.3 — 파티 콘텐츠 상태 */
+  const inParty = !!(party && party.members.length >= 2);
+  const synergies = partySynergies(party);
+  const board = partyBoard();
+  const resetsIn = partyBoardResetsIn();
+  const resetMin = Math.floor(resetsIn / 60000);
+  const boardMissions: PartyMissionDef[] = board.missionIds
+    .map((id) => PARTY_MISSION_POOL.find((m) => m.id === id))
+    .filter((m): m is PartyMissionDef => !!m);
+
   return (
     <div className="absolute right-2 top-[132px] sm:right-3 sm:top-[150px] flex flex-col items-end gap-1.5">
       <button
@@ -70,7 +99,7 @@ export function PartyWidget() {
       </button>
 
       {open && (
-        <div className="pointer-events-auto max-h-[calc(100svh-192px)] w-56 overflow-y-auto rounded-xl border border-sky-200/25 bg-slate-950/95 p-2.5 shadow-2xl backdrop-blur">
+        <div className="pointer-events-auto max-h-[calc(100svh-192px)] w-60 overflow-y-auto rounded-xl border border-sky-200/25 bg-slate-950/95 p-2.5 shadow-2xl backdrop-blur">
           <p className="mb-1.5 flex items-center gap-1 text-[11px] font-black text-sky-200">
             <Users size={12} /> 파티 (최대 4인)
           </p>
@@ -92,6 +121,22 @@ export function PartyWidget() {
               <p className="mb-1.5 text-[10px] text-white/40">
                 파티 코드 <span className="font-black text-amber-200">{party.id}</span> — 친구에게 공유!
               </p>
+
+              {/* ===== v1.4.3 (작업4) — 파티 시너지 콤보 ===== */}
+              <div className="mb-2 rounded-lg border border-violet-300/25 bg-violet-500/[0.08] px-2 py-1.5">
+                <p className="mb-1 text-[10px] font-black text-violet-200">⚔ 파티 시너지 {synergies.length > 0 ? `— ${synergies.length}종 발동` : "(2인부터 발동)"}</p>
+                {synergies.length === 0 && (
+                  <p className="text-[9px] font-bold leading-snug text-white/40">
+                    서로 다른 직업 계열을 모으면 보너스가 커진다! (현재 {party.members.length}인)
+                  </p>
+                )}
+                {synergies.map((s) => (
+                  <p key={s.id} className="mt-0.5 text-[9px] font-black leading-snug" style={{ color: s.color }}>
+                    ● {s.name} — {s.desc.replace(/^.*— /, "")}
+                  </p>
+                ))}
+              </div>
+
               <button
                 onClick={leave}
                 className="flex w-full items-center justify-center gap-1 rounded-lg border border-rose-300/30 bg-rose-500/15 px-2 py-1.5 text-[11px] font-black text-rose-200 active:scale-95"
@@ -129,10 +174,56 @@ export function PartyWidget() {
               </div>
               {err && <p className="mt-1 text-[10px] font-bold text-rose-300">{err}</p>}
               <p className="mt-1.5 text-[10px] leading-snug text-white/40">
-                파티원과 같은 구역에 보이고, 보스 출현이 파티 전체에 공지됩니다.
+                파티원과 같은 구역에 보이고, 보스 출현이 파티 전체에 공지됩니다. 혼자 사냥하면 <b className="text-emerald-300">EXP +{SOLO_BLESS_EXP_PCT}%</b>(단독 가호)가 붙습니다.
               </p>
             </>
           )}
+
+          {/* ===== v1.4.3 (작업4) — 오늘의 파티 미션 (파티 퀘스트 보드) ===== */}
+          <div className="mt-2 rounded-lg border border-emerald-300/25 bg-emerald-500/[0.07] px-2 py-1.5">
+            <p className="flex items-center gap-1 text-[10px] font-black text-emerald-200">
+              <Swords size={10} /> 오늘의 파티 미션
+              <span className="ml-auto text-[8px] font-bold text-white/35">갱신 {resetMin}분 전</span>
+            </p>
+            {!inParty && (
+              <p className="mt-0.5 text-[9px] font-bold leading-snug text-white/40">
+                파티 중일 때만 카운트된다! 수령은 혼자도 가능(보상 50%)
+              </p>
+            )}
+            <ul className="mt-1 flex flex-col gap-1">
+              {boardMissions.map((m) => {
+                const prog = board.progress[m.id] ?? 0;
+                const done = prog >= m.need;
+                const claimed = board.claimed[m.id] ?? false;
+                return (
+                  <li key={m.id} className="rounded-md border border-white/10 bg-black/40 px-1.5 py-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <b className={`truncate text-[10px] ${claimed ? "text-white/30 line-through" : done ? "text-emerald-200" : "text-white/85"}`}>{m.title}</b>
+                      <span className="shrink-0 text-[9px] font-black text-white/50">{prog}/{m.need}{m.unit}</span>
+                    </div>
+                    <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-white/10">
+                      <div className={`h-full rounded-full ${done ? "bg-emerald-400" : "bg-sky-400"}`} style={{ width: `${Math.min(100, (prog / m.need) * 100)}%` }} />
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-1">
+                      <span className="text-[8px] font-bold text-amber-200/80">{m.gold.toLocaleString()}G · EXP {m.exp}{inParty ? "" : " (솔로 50%)"}</span>
+                      {claimed ? (
+                        <span className="flex items-center gap-0.5 text-[9px] font-black text-white/30"><CheckCircle2 size={9} /> 수령 완료</span>
+                      ) : done ? (
+                        <button
+                          onClick={() => { EventBus.emit("rpg:partyClaim", { id: m.id }); setTimeout(refresh, 120); }}
+                          className="flex items-center gap-0.5 rounded-md border border-emerald-300/50 bg-emerald-500/25 px-1.5 py-0.5 text-[9px] font-black text-emerald-100 active:scale-95"
+                        >
+                          <Gift size={9} /> 수령
+                        </button>
+                      ) : (
+                        <span className="text-[8px] font-bold text-white/25">진행 중</span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </div>
       )}
     </div>

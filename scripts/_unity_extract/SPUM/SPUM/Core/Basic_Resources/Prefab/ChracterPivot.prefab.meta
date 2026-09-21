@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: 1b5bc84254939ec4bbe2cf37db996660
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188715
+  packageName: 2D Pixel Unit Maker - SPUM
+  packageVersion: "p\u8BAF7\0\0\0\0\0\0\0\u0741\0\0\0\u7BAF7\0\0\0P\0"
+  assetPath: Assets/SPUM/Core/Basic_Resources/Prefab/ChracterPivot.prefab
+  uploadId: 892164
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188715
+  packageName: 2D Pixel Unit Maker - SPUM
+  packageVersion: 1.8.9
+  assetPath: Assets/SPUM/Core/Basic_Resources/Prefab/ChracterPivot.prefab
+  uploadId: 981060

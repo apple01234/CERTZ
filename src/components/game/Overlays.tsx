@@ -86,7 +86,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.2 — 요새 유적 타일맵 근본 수정(프레임 방식 렌더) · 스프라이트 무결성 감사·수복 체계</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.3 — 고대 유적 삭제·초반 동선 보강·파티 콘텐츠·유니온 에셋·ARG 페이지 복구·최적화</span>
           </p>
         </div>
 

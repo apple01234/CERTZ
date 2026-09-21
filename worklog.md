@@ -1994,3 +1994,27 @@ Stage Summary:
 - "안고쳐졌는데??" 재리포트 2건 최종 근본 수정: ①요새 유적=Phaser 4 setCrop 렌더 결함을 스크린샷 실측으로 확정·프레임 방식 전환 ②스프라이트 미로딩=texGuard 무결성 감사·수복 체계로 재시도 한도 초과분·이미지 회수분까지 자동 복구
 - 운영 교훈: ①E2E는 '속성값'만 보지 말고 반드시 스크린샷(눈)까지 봐야 한다 — v1.4.1은 crop 수치 PASS로 실제 화면 파손을 놓침 ②이 Phaser 4에서 setCrop은 오브젝트 위치에 크롭을 재고정하지 않는다 — 아틀라스 부분 렌더는 이름 프레임(texture.add)만 쓸 것 ③setCrop+flip 조합 금지(v1.4.1 교훈)에 이어 setCrop 자체 금지로 격상 ④v140/v142의 1회성 FAIL은 재실행으로 플레이크 분리 — 단, 같은 항목이 반복 FAIL되면 실버그
 - 남은 지시: 없음 — 재리포트 2건 소화. GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 94
+Agent: Super Z (메인)
+Task: v1.4.3 — 유저 지시 6건(고대 유적 전면 삭제·초반 레벨 동선 보강·최적화·파티 콘텐츠·유니온 에셋·ARG 웹페이지 복구) 구현 완료·검증·빌드·릴리스 (versionCode 95)
+
+Work Log:
+- [작업1 유적삭제] 요새 유적(고대 유적) 2층 구조물 전면 삭제: buildLayeredKeep/tickKeepLayer/openKeepChest 3메서드+필드 8종+보호좌표 2점+keepchest 상호작용 분기 삭제, BootScene 유적 전용 로드 6종(map_torch_f/map_chest_f/map_ground/map_props/map_flame/map_bubble)+SHEET_DIMS 2행 제거. 자리는 초행자 훈련장으로 대체
+- [작업2 초반동선] 1-1 게이트 enter 3→1(stages.ts) + 마을 초행자 훈련장(훈련용 늑대 3마리 — wolf의 0.6배 HP/0.35배 ATK/0.9배 EXP·상시 리스폰·표지판+퀘스트마커) + 마을 퀘스트 3단 체인(v0 인사→v1 훈련용 늑대 4마리 사냥 45exp+30G→v2 숲의 신전 이동) — Lv1→3 3~5분 루트 완성
+- [작업3 최적화] 오라 색 LUT 64단계 사전계산(HSLToColor 매프레임 제거·GC 0) / 적 애니키 캐시(초당 2,400회 문자열 생성 제거) / 포탈 가이드 150ms 스로틀 / 화면 밖 원격(1,700px+) 애니·이름표·오라 갱신 생략 + __SERTZ_PERF__ 프레임 실측 노출(avgMs/worstMs/enemies)
+- [작업4 파티] partyContent.ts 신설 — 파티 시너지 콤보(계열 조합: 3계열 모험의 단합 EXP+22% 등) + 오늘의 파티 미션 보드(일일 3종, 파티 풀/솔로 50%) + 솔로 가호 EXP+5%(솔플 소외 방지) — PartyWidget UI+WorldScene 카운터(순찰시간/원정/결정/킬) 연동
+- [작업5 유니온] 전용 에셋 13종 생성(아티팩트 아이콘 6·버프 4·레이드 보스 초상 3) + UnionPanel 매핑 + 아티팩트 성장단계 등급 프레임(일반→희귀→영웅→전설: 프레임색+발광+배지 분리)
+- [작업6 ARG] /secret/ 2종 복구·모바일 리디자인(URIEL 두문자+ROT13 조각) + apk-guide 소스 주석 8426 복원 + 마을 「이상한 비석」 상호작용(세계수의 기록 진입) + 비밀수첩 힌트 버튼 재연결
+- [구현 병행 노트] 세션 초기 스캔이 낡은 스냅샷을 읽어(샌드박스 복원 타이밍) 미구현으로 판단 — 유적 메서드 블록은 본 세션에서 직접 삭제 완료(2461~2658행), 나머지 5작업은 이전 세션 구현분을 grep 전수 재검증으로 확인
+- [E2E] e2e_v143.js 24/24 PASS(유적삭제 2·훈련장 3·퀘스트체인·비석·파티 4·유니온 13종·ARG 5·최적화 2·부팅/로딩/월드/안정성) · 회귀 v142 10/10·v141 10/10·v140 15/15·v131 16/16·v121 25/25 PASS(v121 favicon 404 2건 무해) — 전 E2E 배지 기대치 v1.4.3 갱신됨
+- [빌드] 툴체인 소실→rebuild_toolchain.sh(Temurin21) → JAVA_HOME=/home/z/jdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 5m16s → download/SERTZ-v1.4.3.apk 117,493,536B · aapt 95/1.4.3 · 번들 가이드 v1.4.3+8426 확인 · md5 414e9533c1b82a1ede3c038e6b3d669c
+- [릴리스] scripts/release_v143.py — Release v1.4.3(id 393316203) 신규 생성·업로드 → 원격 재다운로드 md5 일치 ✓
+- [서버] APK export가 .next 덮어씀 → 일반 next build 복구 → pkill 후 워치독 재기동 → /:200·/api/version(1.4.3/95)·guide(200, 최종 md5 서빙)·/secret/ 200 ✓
+
+Stage Summary:
+- v1.4.3 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.3/SERTZ-v1.4.3.apk (versionCode 95, 117,493,536B, md5 414e9533…)
+- 유저 지시 6건 전부 구현·검증·배포: 유적 3세대 반복 불만 근원 제거(훈련장으로 대체), 신규 유저 1→3레벨 3~5분 루트 완성, 품질 유지 최적화 4종, 파티 콘텐츠 2종+솔로 가호, 유니온 전용 에셋 13종+등급 프레임, ARG /secret/ 복구+마을 비석 진입로
+- 마이그레이션: 세이브 무영향 덮어설치 — 유적 상자 일일보상 폐기(localStorage sertz.keep.chest.* 자연 무효), 구세이브 마을 퀘스트 진행분은 초보 사냥 퀘스트로 자연 이어짐
+- 운영 교햔: ①세션 시작 시 git status+grep으로 "진짜" 현행 상태 재확인 필수 — 스냅샷 복원 타이밍에 따라 낡은 상태가 보일 수 있음 ②MultiEdit 주석 편집 시 종료 */ 누락 여부 반드시 확인(이번에 catch 후 즉시 수정) ③GitHub 토큰 노출 지속 — 재발급 권고 필수

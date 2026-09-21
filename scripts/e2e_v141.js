@@ -29,7 +29,7 @@ const { chromium } = require("playwright");
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
 
   /* 부팅 + 배지 */
-  const badge = await p.getByText("v1.4.2", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
   ok("[부팅] 타이틀 도달 (v1.4.1 배지)", badge);
 
   /* ① 스프라이트 미로딩 — 부트/지연 로드 실패 경고 0건 */
@@ -44,7 +44,7 @@ const { chromium } = require("playwright");
     const sc = g?.scene?.getScene("title");
     if (!sc) return null;
     const T = sc.textures;
-    const keys = ["hero_idle0", "chm0_idle0", "chf5_atkup3", "gm_idle0", "costm_valkyrie_idle0", "cost_warlord_atk0", "jobf_archmage_idle0", "jobm_assassin_walk1", "map_ground", "map_props", "npc_gm", "sv_campfire", "chest_anim"];
+    const keys = ["hero_idle0", "chm0_idle0", "chf5_atkup3", "gm_idle0", "costm_valkyrie_idle0", "cost_warlord_atk0", "jobf_archmage_idle0", "jobm_assassin_walk1", "npc_gm", "sv_campfire", "chest_anim"];
     return keys.map((k) => ({ k, ok: T.exists(k) }));
   });
   const missingTitle = (texTitle ?? []).filter((x) => !x.ok);
@@ -83,51 +83,30 @@ const { chromium } = require("playwright");
   });
   ok("[게임] 월드 진입", inWorld);
 
-  /* ② 요새 유적 타일맵 — v1.4.2부터 프레임 방식(kg_* 프레임). setCrop은 이 엔진에서
-   *  크롭을 원래 오프셋에 렌더해 폐지됨 — 렌더 좌표까지 실측하는 프레임 판정으로 교체 */
-  const keep = await p.evaluate(() => {
+  /* ② v1.4.3 — 요새 유적 전면 삭제 검증 + 초행자 훈련장 신설 검증 */
+  const keepGone = await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (!sc || !sc.keepRect) return null;
-    const kr = sc.keepRect;
-    let grass = 0, dirt = 0, fence = 0, stair = 0, badPos = 0;
+    if (!sc) return null;
+    let kg = 0, mg = 0;
     for (const ch of sc.children.list) {
       const tex = ch?.texture?.key;
       const fn = ch?.frame?.name;
-      if (tex === "map_ground" && (fn === "kg_grass" || fn === "kg_dirt")) {
-        const inX = ch.x >= kr.x - 1 && ch.x <= kr.x + kr.w + 1;
-        const inY = ch.y >= kr.y - 1 && ch.y <= kr.y + kr.h + 96 + 1;
-        if (fn === "kg_grass") grass++;
-        else dirt++;
-        if (!inX || !inY) badPos++;
-      } else if (tex === "map_props" && fn === "kg_fence") fence++;
-      else if (tex === "map_props" && fn === "kg_stairs") {
-        stair++;
-        if (Math.abs(ch.x - (sc.keepStair.x - 6)) > 1 || ch.y < kr.y - 40 || ch.y > kr.y + kr.h + 120) badPos++;
-      }
+      if (tex === "map_ground" || tex === "map_props") mg++;
+      if (fn && String(fn).startsWith("kg_")) kg++;
     }
-    const depthOk = sc.keepDepthGround === Math.floor((kr.y + kr.h + 60) / 10)
-      && sc.keepDepthBalcony === Math.floor(kr.y / 10) - 3;
-    return { grass, dirt, fence, stair, badPos, depthOk, stairX: sc.keepStair?.x ?? 0 };
+    return { keepRect: !!sc.keepRect, kg, mapTex: mg };
   });
-  ok("[유적] 발코니 타일 프레임 방식 (잔디 8 + 흙 14)", !!keep && keep.grass === 8 && keep.dirt === 14, keep ? `grass=${keep.grass} dirt=${keep.dirt}` : "keepRect 없음");
-  ok("[유적] 타일·계단 실제 렌더 좌표 정상 (화면 이탈 0)", !!keep && keep.badPos === 0, keep ? `badPos=${keep.badPos}` : "-");
-  ok("[유적] 실제 목책 난간 4개", !!keep && keep.fence === 4, keep ? `fence=${keep.fence}` : "-");
-  ok("[유적] 나무계단 소품 1개 (부유타일 제거)", !!keep && keep.stair === 1, keep ? `stair=${keep.stair}` : "-");
-  ok("[유적] y기반 depth 유지 (v1.4.0 회귀 없음)", !!keep && keep.depthOk, keep ? `g=${keep.stairX ? "ok" : "?"}` : "-");
+  ok("[유적삭제] 유적 구조물 완전 제거 (keepRect/kg_*/유적텍스처 0)", !!keepGone && !keepGone.keepRect && keepGone.kg === 0 && keepGone.mapTex === 0, keepGone ? JSON.stringify(keepGone) : "-");
 
-  /* 계단 소품 위치 — 발코니 오른쪽 끝(keepStair.x-6)에 부착 (프레임 kg_stairs) */
-  const stairPos = await p.evaluate(() => {
+  const train = await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (!sc?.keepStair) return null;
-    for (const ch of sc.children.list) {
-      if (ch?.texture?.key === "map_props" && ch?.frame?.name === "kg_stairs") {
-        return { dx: ch.x - (sc.keepStair.x - 6), dy: ch.y, depth: ch.depth };
-      }
-    }
-    return null;
+    if (!sc) return null;
+    const tw = (sc.enemies ?? []).filter((e) => e?.displayName === "훈련용 늑대" && e.active && e.alive);
+    const sign = (sc.children.list ?? []).some((ch) => ch?.text?.includes("초행자 훈련장"));
+    return { n: tw.length, hp: tw[0]?.maxHp ?? 0, sign };
   });
-  ok("[유적] 계단이 계단통로(x)에 부착 + 플레이어 뒤 depth", !!stairPos && Math.abs(stairPos.dx) < 0.5 && stairPos.depth < 100, stairPos ? JSON.stringify(stairPos) : "-");
-
+  ok("[훈련장] 훈련용 늑대 3마리 스폰 (약한 스탯)", !!train && train.n === 3 && train.hp > 0 && train.hp < 58, train ? JSON.stringify(train) : "-");
+  ok("[훈련장] 훈련장 표지판 존재", !!train && train.sign, "-");
   /* 재시도 체계 번들 존재 (로드된 스크립트 청크 전수 스캔) */
   const retryBundled = await p.evaluate(async () => {
     const srcs = [...document.querySelectorAll("script[src]")].map((s) => s.getAttribute("src")).filter(Boolean);

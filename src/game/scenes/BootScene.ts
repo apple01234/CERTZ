@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { buildAllAnims } from "../textures";
 import { CORE_BODY_PREFIXES } from "../data";
 import { BGM_PRELOAD_TRACKS, SKILL_SFX_TRACKS } from "../audio";
-import { hookLoaderForGuard, runTexGuardCycle, getTexGuardStats } from "../texGuard";
+import { hookLoaderForGuard, runTexGuardCycle, getTexGuardStats, installEngineFrameGuard } from "../texGuard";
 
 /**
  * 외부 에셋 로드 (public/assets/)
@@ -283,13 +283,14 @@ for (const [k, w, h] of [
   ["vfx2_pulse", 64, 32], ["vfx2_wspark", 64, 32],
   ["vfx2_elec", 128, 128], ["vfx2_tri", 128, 128], ["vfx2_cfx1", 128, 128],
   ["sv_campfire", 32, 32], ["fx_tornado", 64, 64], ["chest_anim", 64, 64],
-  ["map_torch_f", 16, 16], ["map_chest_f", 64, 64],
 ] as [string, number, number][]) SHEET_DIMS.set(k, { fw: w, fh: h });
 const AUDIO_KEYS = new Set<string>([...AUDIO_LIST, ...SFX3_LIST]);
 
 export class BootScene extends Phaser.Scene {
   constructor() {
     super("boot");
+    /* v1.4.3 — 엔진 프레임 가드 (파괴 프레임 재굽 크래시 무해화 — texGuard 참조) */
+    installEngineFrameGuard();
   }
 
   /* v1.4.1 — 로드 실패 파일 수집 (재시도 큐) */
@@ -549,17 +550,9 @@ export class BootScene extends Phaser.Scene {
     for (const key of VFX3_LIST) this.load.image(key, `${key}.png`);
     this.load.setPath("assets/audio/sfx");
     for (const key of SFX3_LIST) this.load.audio(key, `${key}.ogg`);
-    /* v1.3.0 (#층식맵) — Cainos 타일셋 애니 자산은 스프라이트시트로 재로드 (이미지 로드는 덮어쓰기 방지)
-     *  map_torch = 128×128 16px 8×8=64프레임 횃불 불꽃 / map_chest = 512×512 64px 8×5=32프레임 상자 */
-    this.load.setPath("assets/map");
-    this.load.spritesheet("map_torch_f", "map_torch.png", { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet("map_chest_f", "map_chest.png", { frameWidth: 64, frameHeight: 64 });
-    /* v1.3.0 — 층식맵 타일셋 이미지 2종 (buildLayeredKeep: map_ground 바닥 타일 크롭 + map_props 난간/기둥)
-     *  + 예비 장식 2종 (map_flame·map_bubble — 현재 미사용, 추측 확장용) */
-    this.load.image("map_ground", "map_ground.png");
-    this.load.image("map_props", "map_props.png");
-    this.load.image("map_flame", "map_flame.png");
-    this.load.image("map_bubble", "map_bubble.png");
+    /* v1.4.3 (작업1 — 유적 삭제) — Cainos 유적 전용 텍스처 4종(map_torch_f/map_chest_f/
+     *  map_ground/map_props) 로드 완전 제거. 유적 콘텐츠 삭제로 사용처가 없어졌고
+     *  부트 로드 4건 + 메모리를 절감한다. (map_flame/map_bubble 예비분도 미사용 — 함께 제거) */
   }
 
   async create() {

@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.2/SERTZ-v1.4.2.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.3/SERTZ-v1.4.3.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -30,6 +30,15 @@ app.prepare().then(() => {
       attach: false,
     },
   };
+  /* v1.4.3 (작업6) — ARG 힌트 페이지(/secret) 정적 서빙:
+   *  Next 정적 핸들러는 /secret(슬래시 없음)을 404로, /secret/는 /secret 리다이렉트로
+   *  돌려 게임 내 「이상한 비석」·비밀수첩 진입이 실패했다. 디스크 직서빙으로 원천 차단. */
+  const SECRET_FILES = {
+    "/secret": "public/secret/index.html",
+    "/secret/": "public/secret/index.html",
+    "/secret/index.html": "public/secret/index.html",
+    "/secret/second.html": "public/secret/second.html",
+  };
   /* v4.9.0 — 자체 회원가입/로그인 + SNS OAuth + 클라우드 세이브 (accounts/index.js)
    *  /api/auth/* 만 계정 모듈이 먼저 처리하고 나머지는 Next handle로 */
   const handlerWithAccounts = attachAccountsBefore(handle);
@@ -38,9 +47,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.2";
-  const LATEST_CODE = 94;
-  const VERSION_NOTE = "요새 유적 타일맵 근본 수정(Phaser 4 setCrop이 크롭을 원래 오프셋에 렌더하는 문제 — 프레임 방식 전환으로 발코니·목책·계단이 의도 위치에 렌더)·스프라이트 미로딩 2차 방어(텍스처 무결성 감사·수복 체계 — 재시도 한도 초과분·복귀 후 이미지 회수분까지 자동 재로드)";
+  const LATEST_VERSION = "1.4.3";
+  const LATEST_CODE = 95;
+  const VERSION_NOTE = "고대 유적 전면 삭제(3세대 반복 불만의 근원 제거)·초반 레벨 동선 보강(1-1 진입 게이트 3→1 + 마을 초행자 훈련장 + 초보 사냥 퀘스트)·최적화 4종(오라 LUT·적 애니키 캐시·포탈가이드 스로틀·원격 화면밖 생략)·파티 콘텐츠 2종(시너지 콤보+파티 퀘스트 보드)·유니온 전용 에셋 13종+등급 프레임·ARG 힌트 페이지(/secret) 복구";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
@@ -66,6 +75,19 @@ app.prepare().then(() => {
           "Content-Type": entry.type,
           "Content-Length": size,
         });
+        createReadStream(fp).pipe(res);
+        return;
+      } catch (e) {
+        res.writeHead(404).end("not found");
+        return;
+      }
+    }
+    const secretPath = SECRET_FILES[url];
+    if (secretPath) {
+      try {
+        const fp = path.join(__dirname, secretPath);
+        const size = statSync(fp).size;
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
         createReadStream(fp).pipe(res);
         return;
       } catch (e) {

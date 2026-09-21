@@ -121,6 +121,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private hpBarBg: Phaser.GameObjects.Rectangle | null = null;
   private hitFlash = 0;
 
+  /* v1.4.3 (작업3 최적화) — 애니 키 캐싱: 매 프레임 문자열 2회 생성(적 20기 × 60fps = 2,400회/s
+   *  GC 할당)을 생성 시 1회 계산으로 제거 — 시각 변화 0 */
+  private runAnimKey = "";
+  private idleAnimKey = "";
+
   private ai: FSM<AICtx>;
   private aiCtx: AICtx;
 
@@ -167,6 +172,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.def = base;
     }
+    /* v1.4.3 (작업3 최적화) — 애니 키 생성 1회 캐싱 (tick에서 매 프레임 문자열 생성 제거) */
+    this.runAnimKey = `${this.def.key}-run`;
+    this.idleAnimKey = `${this.def.key}-idle`;
     if (opts?.scale) this.setScale(opts.scale);
     /* v1.0.2 (#허수아비) — 스쿼시 기준 스케일 고정 캡처. 기존엔 맞을 때마다 '현재' 스케일을 기준으로
      * 잡아서, 연타로 복귀 트윈이 중단되면 중간 스케일이 새 기준이 돼 누적 부풀음/납작해짐 발생
@@ -445,12 +453,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     this.setVelocity(c.vx + this.knockVec.x, c.vy + this.knockVec.y);
 
-    // 애니메이션 & 방향
+    // 애니메이션 & 방향 — v1.4.3: 키 캐시 사용 (매 프레임 문자열 생성 제거)
     const moving = Math.abs(c.vx) + Math.abs(c.vy) > 12;
-    const runKey = `${this.def.key}-run`;
-    const idleKey = `${this.def.key}-idle`;
-    if (moving && this.anims.currentAnim?.key !== runKey) this.play(runKey);
-    else if (!moving && this.anims.currentAnim?.key !== idleKey) this.play(idleKey);
+    if (moving && this.anims.currentAnim?.key !== this.runAnimKey) this.play(this.runAnimKey);
+    else if (!moving && this.anims.currentAnim?.key !== this.idleAnimKey) this.play(this.idleAnimKey);
     if (c.vx !== 0) this.setFlipX(c.vx > 0); // v3.0.10 — 몬스터 시트(32rogues/0x72 등) 기본 왼쪽 향함 → 오른쪽 이동 시 flip
 
     // HP바 — v1.0.16 최적화: 풀피(숨김 상태)면 매 프레임 재배치를 건너뛴다

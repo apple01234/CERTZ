@@ -153,7 +153,8 @@ for (const [id, n, name] of QUEST_EGGS) {
   });
 }
 
-// ⑥ ARG 외부 연계 15종 — 공개 웹페이지(assets/secret/*.html)의 암호문을 게임 내 입력
+// ⑥ ARG 외부 연계 15종 — 공개 웹페이지(/secret/*.html — 세계수의 기록)의 암호문을 게임 내 입력
+//    v1.4.3 (작업6) — 페이지 2종 리디자인(모바일 대응) + 마을 「이상한 비석」·비밀수첩 버튼으로 재연결
 const ARG_CODES: [string, string, string, string][] = [
   ["arg01", "URIEL", "극락의 문지기", "세계수 아래 숨은 페이지 — 여섯 글자의 천사"],
   ["arg02", "YGGRASIL", "세계수의 이름", "README의 첫 글자들을 세로로 읽어라"],

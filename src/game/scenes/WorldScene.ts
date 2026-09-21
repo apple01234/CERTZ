@@ -51,6 +51,7 @@ import { applyToonStyle, clearToonStyle } from "../fx/ToonFX"; // v1.0.2 — 캐
 import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
 import { tickEggs, feedKey, eggMilestonePending, claimEggMilestone, type EggDef } from "../eggs"; // v1.4.0 — 이스터에그/ARG 비밀수첩
+import * as partyContent from "../partyContent"; // v1.4.3 (작업4) — 파티 시너지/파티 퀘스트 보드
 import * as audio from "../audio";
 import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
@@ -71,6 +72,22 @@ const AURA_ANIM: Record<string, { sp: number; s: number; l: number; min: number;
   cos_aurora: { sp: 0.035, s: 0.75, l: 0.66, min: 0.33, max: 0.82 },
   cos_galaxy: { sp: 0.05, s: 0.6, l: 0.7, min: 0.55, max: 0.85 },
 };
+
+/* v1.4.3 (작업3 최적화) — 오라 색 LUT(64단계) 사전 계산:
+ *  매 프레임 HSLToColor + Color 객체 할당(GC 압박)을 제거하고 테이블 조회로 대체.
+ *  기존 hue 곡선(min/max 범위 + 코사인 왕복)을 그대로 재현 — 퀄리티 동일. */
+const AURA_LUT_STEPS = 64;
+const AURA_LUT: Record<string, number[]> = {};
+for (const key of Object.keys(AURA_ANIM)) {
+  const cfg = AURA_ANIM[key];
+  const lut: number[] = [];
+  for (let i = 0; i < AURA_LUT_STEPS; i++) {
+    const phase = i / AURA_LUT_STEPS;
+    const hue = cfg.min + (cfg.max - cfg.min) * (0.5 - 0.5 * Math.cos(phase * Math.PI * 2));
+    lut.push(Phaser.Display.Color.HSLToColor(hue, cfg.s, cfg.l).color);
+  }
+  AURA_LUT[key] = lut;
+}
 
 /**
  * 메인 플레이 씬.
@@ -455,17 +472,11 @@ export class WorldScene extends Phaser.Scene {
   private gmTrial = false;
 
   /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
-  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest"; dlg?: string; npcId?: string; label: string }[] = [];
-  /* v1.3.0 (지시 #9 층식맵) — 요새 유적 2층 구조물 상태 */
-  private keepLayer = 0; // 0=지상, 1=발코니(2층)
-  private keepRect: { x: number; y: number; w: number; h: number } | null = null;
-  private keepStair: { x: number; y: number; w: number; h: number } | null = null;
-  /* v1.4.0 — 유적 y기반 depth (지상 렌더/발코니 렌더) — 고정 depth로 주변 오브제에 가려지던 버그 수정 */
-  private keepDepthGround = 11;
-  private keepDepthBalcony = 9;
-  private keepTileImgs: { img: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite; off: number }[] = [];
-  private keepChestKey = "";
-  private keepChestSprite: Phaser.GameObjects.Sprite | null = null;
+  /* v1.4.3 (작업1) — 요새 유적(고대 유적) 2층 구조물 전면 삭제:
+   *  3세대(v1.4.0~v1.4.2)에 걸쳐 반복된 타일맵 불만의 근원을 콘텐츠 자체로 제거하고,
+   *  남는 자리는 마을 초행자 훈련장(작업2)으로 대체했다.
+   *  buildLayeredKeep/tickKeepLayer/openKeepChest/keepchest 상호작용/유적 텍스처 로드 전부 제거. */
+  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "secret"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
   private activeNpcId: string | null = null;
   private talkedNpcs = new Set<string>();
@@ -615,6 +626,11 @@ export class WorldScene extends Phaser.Scene {
     this.beacon = null;
     this.portalBeacon = null;
     this.questMark = null;
+    /* v1.4.3 — 퀘스트 가장자리 화살표/라벨 참조 리셋 (scene.restart 시 파괴된 자식을
+     *  계속 참조해 setText에서 렌더 루프 크래시 — v131 사망→부활 흐름에서 실측 발견.
+     *  마을 퀘스트 3단 체인(훈련 사냥 삽입)으로 부활 후에도 목표가 남아 경로가 활성화되며 노출됐다) */
+    this.edgeArrow = null;
+    this.edgeLabel = null;
     this.fragSparkle = null;
     this.dialoguing = false;
     this.attackQueued = false;
@@ -1751,9 +1767,8 @@ export class WorldScene extends Phaser.Scene {
             [vx + 210, vy + 120],
             [vx - 90, vy - 90],
             [def.width - 110, vy], // 차원문
-            /* v1.3.1 (#2 지형물 배치 수정) — 요적 유적 2층 구조물(v1.3.0 신설) 보호 누락:
-             *  기존엔 유적 구조물 좌표가 보호 목록에 없어 나무·바위가 발코니/계단/기둥 위에
-             *  겹쳐 심기고 (depth 충돌로 유적을 뚫고 보임). 구조물 중심+계단 끝 2점 보호 */
+            /* v1.4.3 — 구 유적 자리 → 초행자 훈련장 (작업2): 표지판+훈련용 늑대 스폰 구역 보호
+             *  (나무·바위가 훈련장 표지판/스폰 지점 위에 겹쳐 심기는 것 차단) */
             [vx + 430, vy + 40],
             [vx + 580, vy + 90],
           ]
@@ -2111,6 +2126,11 @@ export class WorldScene extends Phaser.Scene {
   private collectFragment(glow: Phaser.GameObjects.Image) {
     audio.sfx.pickup();
     audio.sfx.questDone();
+    /* v1.4.3 (작업4) — 파티 보드: 결정 조사 카운트 (파티 중일 때만) */
+    {
+      const p = net.netLastParty();
+      if (p && p.members.length >= 2) partyContent.partyBoardTick("collect", 1);
+    }
     /* v3.0.22 (#43/#44) — 챕터별 고유 결정: 이름·색·보너스(ATK 5→30)가 전부 다르다 */
     const ch = parseStage(this.stageDef.key).ch;
     const meta = FRAGMENT_META[ch] ?? { name: "결정의 흔적", color: 0x9df0ff, atk: 5, lines: ["결정이 손안에서 빛난다."] };
@@ -2333,6 +2353,11 @@ export class WorldScene extends Phaser.Scene {
   private enterPortal() {
     this.portalActive = false;
     this.eggCounters.portals++; // v1.4.0 이스터에그 카운터
+    /* v1.4.3 (작업4) — 파티 보드: 원정 이동 카운트 (파티 중일 때만) */
+    {
+      const p = net.netLastParty();
+      if (p && p.members.length >= 2) partyContent.partyBoardTick("portal", 1);
+    }
     this.tut?.notify("portal"); // v1.0.11 — 튜토리얼 차원문 학습 판정
     audio.sfx.portal();
     this.player.setVelocity(0, 0);
@@ -2469,213 +2494,89 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= 시작 마을 (인간들의 마을) ================= */
 
-  /* ================= v1.3.0 (지시 #9) — 층식 구조 타일맵: 요새 유적 2층 구조물 =================
-   *  유저 Drive 팩의 Cainos "Pixel Art Platformer - Village Props" 타일셋(map_ground/map_props/
-   *  map_torch/map_chest)을 사용한 layer/collision 기반 층식 구조:
-   *  · 1층(지상) — 구조물 아래를 자유롭게 걸을 수 있다 (상층 타일이 depth 11로 머리 위를 가림)
-   *  · 계단 — 오르면 keepLayer=1 (발코니), 상층 타일이 depth 9로 발밑에 깔린다
-   *  · 발코니 — 가장자리 충돌로 떨어질 수 없고, 계단으로만 내려온다
-   *  · 2층 상자 — 하루 1회 보상 (keepchest 상호작용) */
 
-  /** 요새 유적 2층 구조물 생성 — (kx, ky) = 구조물 중심 */
-  private buildLayeredKeep(kx: number, ky: number) {
-    const T = 32; // 타일 월드 크기 (16px 타일 ×2)
-    const cols = 8; // 발코니 가로 타일 수
-    const rows = 2; // 발코니 두께 (타일)
-    const platW = cols * T; // 256
-    const platH = rows * T; // 64
-    const rx = kx - platW / 2;
-    const ry = ky - platH / 2 - 26; // 발코니 바닥 라인
-    this.keepRect = { x: rx, y: ry, w: platW, h: platH };
-    // 계단 — 발코니 오른쪽 끝에서 지상까지 이어지는 통로 (위로 올라가며 접촉 시 층 전환)
-    this.keepStair = { x: rx + platW - T, y: ry, w: T + 6, h: 118 };
+  /* ================= v1.4.3 (작업2) — 초행자 훈련장: 마을에서 1→3레벨 도달 루트 =================
+   *  기존엔 1-1 사냥터 진입 게이트(Lv3) 때문에 시작 지점에서 레벨을 올릴 곳이 없었다.
+   *  ① 숲 챕터 게이트 enter 3→1 (1-1 즉시 입장)
+   *  ② 마을 훈련장 — 훈련용 늑대 3마리 상시 리스폰, 약한 스탯·작은 보상
+   *  ③ 마을 퀘스트 체인에 초보 사냥 퀘스트 삽입 (v0 인사 → v1 훈련 사냥 → v2 숲 이동)
+   *  → Lv1→2→3 구간이 마을 안에서 3~5분 내 매끄럽게 이어진다. */
 
-    /* v1.4.0 (Task 0-4 — 유저 지시 #5 “요새 유적 안보임”) — depth 근본 수정:
-     *  기존 고정 depth 11은 마을 중앙의 y기반 depth(≈floor(1400/10)=140) 오브제(나무/바위/NPC)에
-     *  전부 가려져 “유적이 안 보인다/배치가 이상하다”로 보였다. 다른 월드 오브제와 동일한
-     *  y기반 depth로 정렬해 자연스럽게 섞이게 한다:
-     *   - 지상 렌더: 발코니 바닥 하단 기준 (주변 소품과 자연 정렬, 플레이어 머리 가림)
-     *   - 발코니 렌더: 발밑 (플레이어보다 아래) */
-    this.keepDepthGround = Math.floor((ry + platH + 60) / 10);
-    this.keepDepthBalcony = Math.floor(ry / 10) - 3;
+  /** 훈련용 늑대 스폰 지점 — respawnEnemy가 좌표로 판정해 훈련용 스탯으로 재소환한다 */
+  private trainSpawns: { x: number; y: number }[] = [];
 
-    /* v1.4.2 — setCrop 완전 폐지 → 이름 프레임 방식 전환 (요새 유적 “타일맵 이상함” 최종 근본 수정).
-     *  실측 확정: 이 Phaser 4 빌드는 Image.setCrop 시 크롭 영역을 오브젝트 원점에 재고정하지 않고
-     *  전체 텍스처 쿼드 내 원래 오프셋(crop.x×scale, crop.y×scale)에 렌더한다.
-     *  → 잔디타일 +96px, 흙타일 +64px 이동해 발코니 아래 ‘π(탁자) 모양’ 유령 구조물이 생기고
-     *    목책·계단(crop.y 큼)은 화면 밖으로 밀려나 사라졌다. (스크린샷 실측: 스크립트/probe_keep_v142b.js)
-     *  프레임(textures.Texture.add)은 스프라이트시트와 동일 경로라 어떤 버전에서도 정확히 렌더된다
-     *  (상자·횃불이 정상이었던 것이 증거). 아틀라스 내 균일 셀 좌표는 v1.4.1 실측치 재사용:
-     *  · 잔디 (48,0,16,16) — 섬 모서리 돌 미포함 균일 잔디+흙 하단
-     *  · 흙   (48,32,16,16) — 아틀라스 내부 균일 흙셀(돌 테두리 미포함) */
-    const gtex = this.textures.get("map_ground");
-    if (!gtex.has("kg_grass")) gtex.add("kg_grass", 0, 48, 0, 16, 16);
-    if (!gtex.has("kg_dirt")) gtex.add("kg_dirt", 0, 48, 32, 16, 16);
-    const gscale = T / 16;
+  /** v1.4.3 (작업4) — 파티 보드 순찰 시간 누적기 (1분마다 +1) */
+  private partyTimeAcc = 0;
 
-    const addTile = (frame: string, wx: number, wy: number) => {
-      const im = this.add
-        .image(wx, wy, "map_ground", frame)
-        .setOrigin(0)
-        .setScale(gscale)
-        .setDepth(this.keepDepthGround); // v1.4.0 — y기반 depth (고정 11 → 주변 오브제에 가려지던 버그 수정)
-      this.keepTileImgs.push({ img: im, off: 0 });
-      return im;
-    };
+  /** v1.4.3 (작업3 최적화) — 프레임 시간 실측 창 (1초 롤링) */
+  private perfWindow = { startedAt: 0, frames: 0, sumMs: 0, worstMs: 0, avgMs: 16.7, avgWorstMs: 16.7 };
 
-    /* 발코니 바닥 타일 — 윗줄 잔디 + 아랫줄 흙 */
-    for (let c = 0; c < cols; c++) {
-      addTile("kg_grass", rx + c * T, ry);
-      addTile("kg_dirt", rx + c * T, ry + T);
+  /** v1.4.3 (작업3 최적화) — 포탈 가이드 갱신 스로틀 타임스탬프 */
+  private portalGuideMs = 0;
+
+  /** 초행자 훈련장 생성 — (tx, ty) = 중심 (구 유적 자리, 우물과 동쪽 차원문 사이) */
+  private buildTrainingGround(tx: number, ty: number) {
+    /* 훈련장 원형 마킹 — 룬 원을 은은한 녹색으로 (충돌 없음, 바닥 장식) */
+    if (this.textures.exists("rune_circle")) {
+      this.add.image(tx, ty + 6, "rune_circle")
+        .setDisplaySize(190, 120)
+        .setAlpha(0.3)
+        .setTint(0x8fe84a)
+        .setDepth(Math.floor((ty + 40) / 10) - 1);
     }
-    /* 받침 기둥 2개 (지상—발코니 사이) — 흙 타일 세로 3장 */
-    for (const px of [rx + T * 0.5, rx + platW - T * 1.5]) {
-      for (let r = 0; r < 3; r++) addTile("kg_dirt", px, ry + T + r * T);
+    /* 횃불 2개 — 훈련장 입양식 (야간에도 보이게) */
+    for (const dx of [-118, 118]) {
+      this.add.image(tx + dx, ty - 6, "torch")
+        .setScale(1.1)
+        .setDepth(Math.floor((ty - 6) / 10));
     }
-    /* v1.4.2 계단 — 프레임 방식 (기존 setCrop은 화면 밖으로 밀려나 안 보임).
-     *  props 아틀라스 실제 나무 계단 소품(158,680 104×57): 왼쪽 상단 플랫폼이 발코니
-     *  오른쪽 끝에 닿고 계단이 지상으로 내려온다. 항상 플레이어 뒤(발밑 램프) 렌더. */
-    const ptexStair = this.textures.get("map_props");
-    if (!ptexStair.has("kg_stairs")) ptexStair.add("kg_stairs", 0, 158, 680, 104, 57);
+    /* 훈련용 늑대 3마리 — 기본 늑대의 0.6배 HP / 0.35배 공격 / 0.9배 경험치.
+     *  Lv1 캐릭터도 3~4방에 잡는다. 죽으면 같은 자리에 훈련용 스탯으로 재소환. */
+    this.trainSpawns = [
+      { x: tx - 66, y: ty + 14 },
+      { x: tx + 4, y: ty + 30 },
+      { x: tx + 70, y: ty + 8 },
+    ];
+    for (const p of this.trainSpawns) this.spawnTrainingWolf(p.x, p.y);
+    /* 안내 표지판 — 퀘스트 마커로 시선 유도 */
     this.add
-      .image(this.keepStair.x - 6, ry, "map_props", "kg_stairs")
-      .setOrigin(0, 0)
-      .setScale(1.6)
-      .setDepth(this.keepDepthBalcony + 0.15);
-
-    /* 지지대 충돌 (기둥 — 지상에서 통과 못하게) */
-    for (const px of [rx + T * 0.5, rx + platW - T * 1.5]) {
-      const zone = this.add.zone(px + T * 0.6, ry + T * 4.4, T * 0.8, T * 0.9);
-      this.physics.add.existing(zone, true);
-      this.solidGroup.add(zone as unknown as Phaser.GameObjects.GameObject & { body: Phaser.Physics.Arcade.Body });
-    }
-
-    /* 난간 — v1.4.2 프레임 방식: props 시트 실제 목책(254,86 68×53). setCrop 시대엔
-     *  화면 밖으로 밀려나 안 보였다. 잔디 위에 2타일 간격으로 놓인다 */
-    const ptexFence = this.textures.get("map_props");
-    if (!ptexFence.has("kg_fence")) ptexFence.add("kg_fence", 0, 254, 86, 68, 53);
-    for (let c = 0; c < cols; c += 2) {
-      const rail = this.add
-        .image(rx + c * T + 4, ry + 2, "map_props", "kg_fence")
-        .setOrigin(0, 1)
-        .setScale(0.85)
-        .setDepth(this.keepDepthGround + 0.2);
-      this.keepTileImgs.push({ img: rail, off: 0.2 });
-    }
-
-    /* 횃불 2개 — 16px 64프레임 불꽃 애니 (map_torch_f) */
-    if (!this.anims.exists("keep_torch")) {
-      this.anims.create({ key: "keep_torch", frames: this.anims.generateFrameNumbers("map_torch_f", { start: 0, end: 63 }), frameRate: 12, repeat: -1 });
-    }
-    for (const tx of [rx + T * 1.5, rx + platW - T * 1.5]) {
-      const fl = this.add.sprite(tx, ry - 14, "map_torch_f").setScale(1.1).setDepth(this.keepDepthGround + 0.3);
-      try { fl.play("keep_torch"); } catch { /* 애니 실패 시 정지 */ }
-      this.keepTileImgs.push({ img: fl, off: 0.3 });
-    }
-
-    /* 2층 상자 — 하루 1회 보상 상호작용 (map_chest_f 64px 프레임) */
-    if (!this.anims.exists("keep_chest_open")) {
-      this.anims.create({ key: "keep_chest_open", frames: this.anims.generateFrameNumbers("map_chest_f", { start: 0, end: 6 }), frameRate: 8, repeat: 0 });
-    }
-    const chestX = rx + platW / 2;
-    const chestY = ry + 14;
-    const chest = this.add.sprite(chestX, chestY, "map_chest_f", 0).setOrigin(0.5, 1).setScale(0.9).setDepth(this.keepDepthGround + 0.25);
-    this.keepTileImgs.push({ img: chest, off: 0.25 });
-    this.keepChestSprite = chest;
-    this.keepChestKey = `sertz.keep.chest.${todayKey()}`;
-    this.interactables.push({ x: chestX, y: chestY, kind: "keepchest", label: "유적 상자 — 열기 (하루 1회)" });
-
-    /* 안내 표지판 */
-    this.add
-      .text(kx, ry - 52, "요새 유적 — 2층 발코니 (계단 이용)", {
+      .text(tx, ty - 64, "초행자 훈련장 — Lv.3까지 여기서 단련!", {
         fontFamily: "Galmuri11, sans-serif",
         fontSize: "11px",
-        color: "#ffe9b0",
-        stroke: "#000000",
-        strokeThickness: 3,
+        color: "#b6f09c",
+        stroke: "#0c1a08",
+        strokeThickness: 4,
+        fontStyle: "bold",
       })
       .setOrigin(0.5)
-      .setDepth(Math.floor(ky / 10));
+      .setDepth(Math.floor(ty / 10));
+    const qm = this.add.image(tx, ty - 88, "quest_mark").setDepth(22).setScale(1.4);
+    this.tweens.add({ targets: qm, y: ty - 96, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
   }
 
-  /** 층 전환 틱 — 계단 통과 판정 + 발코니 경계 충돌 + 타일 depth 스왑 (update에서 호출) */
-  private tickKeepLayer() {
-    if (!this.keepRect || !this.keepStair || !this.player) return;
-    const p = this.player;
-    const st = this.keepStair;
-    const inStairX = p.x > st.x - 4 && p.x < st.x + st.w + 4;
-    const inStairY = p.y > st.y - 10 && p.y < st.y + st.h;
-    const prev = this.keepLayer;
-    if (this.keepLayer === 0 && inStairX && inStairY && p.y < st.y + st.h * 0.35) {
-      this.keepLayer = 1; // 계단 정상 도달 — 발코니로
-      this.showBanner("2층 발코니 — 유적 상자를 확인했다!");
-    } else if (this.keepLayer === 1 && inStairX && p.y > st.y + st.h * 0.75) {
-      this.keepLayer = 0; // 계단 하단 — 지상으로
-    }
-    if (this.keepLayer === 1) {
-      /* 발코니 경계 — 계단 입구를 제외한 가장자리에서 밀어내기 (낙하 차단) */
-      const r = this.keepRect;
-      const onStair = p.x > st.x - 4 && p.x < st.x + st.w + 4 && p.y > st.y - 10;
-      if (!onStair) {
-        const minX = r.x + 12, maxX = r.x + r.w - 12;
-        const minY = r.y + 4, maxY = r.y + r.h - 6;
-        if (p.x < minX) p.setX(minX);
-        if (p.x > maxX) p.setX(maxX);
-        if (p.y < minY) p.setY(minY);
-        if (p.y > maxY) p.setY(maxY);
-      }
-    }
-    if (prev !== this.keepLayer) {
-      /* 렌더 스왑 — v1.4.0: y기반 depth (지상=하단 기준 정렬 / 발코니=발밑) */
-      const base = this.keepLayer === 1 ? this.keepDepthBalcony : this.keepDepthGround;
-      for (const t of this.keepTileImgs) t.img.setDepth(base + t.off);
-      audio.sfx.uiClick();
-    }
-  }
-
-  /** 유적 상자 — 하루 1회 보상 (골드 + 확률 에메랄드) */
-  private openKeepChest() {
-    if (!this.player) return;
-    try {
-      const opened = window.localStorage.getItem(this.keepChestKey);
-      if (opened) {
-        EventBus.emit("banner:show", { text: "오늘은 이미 상자를 열었다 — 내일 다시 도전!" });
-        return;
-      }
-      window.localStorage.setItem(this.keepChestKey, "1");
-    } catch { /* 저장 불가 환경 — 보상은 지급 */ }
-    const gold = 60 + this.player.lv * 6;
-    this.player.addGold(gold);
-    let msg = `유적 상자 개봉! 골드 +${gold}G`;
-    /* v1.4.0 (Task 1-5) — 르쯔 수급 축소: 상자 에메랄드 확률 35%→15% */
-    if (Math.random() < 0.15) {
-      this.player.emerald += 1;
-      msg += " · 에메랄드 +1💎";
-    }
-    this.spawnPickupText(this.player.x, this.player.y - 40, "유적 상자!", "#ffd76a");
-    EventBus.emit("banner:show", { text: msg });
-    audio.sfx.coin();
-    this.driveFx?.twinkle(this.player.x, this.player.y - 20, 0xffd76a);
-    /* 상자 개봉 프레임 애니 (몇 프레임 진행 후 원위치) */
-    if (this.keepChestSprite) {
-      try {
-        this.keepChestSprite.play("keep_chest_open");
-        this.keepChestSprite.once("animationcomplete", () => this.keepChestSprite?.setTexture("map_chest_f", 0));
-      } catch { /* 애니 미등록 무시 */ }
-    }
-    this.save();
-    this.emitHud();
-    this.emitRpgState();
+  /** 훈련용 늑대 소환 (생성/리스폰 공용 — 훈련용 스탯 고정)
+   *  v1.4.3 — burst 플래그: 초기 마을 빌드 시점엔 FX 이미터가 아직 생성 전이라
+   *  spawnBurstAt 호출이 create 크래시를 유발했다(안전부팅 폴백 → 훈련장 전체 소실).
+   *  초기 생성은 버스트 없이 페이드인만, 리스폰은 버스트 연출 유지. */
+  private spawnTrainingWolf(x: number, y: number, burst = false) {
+    const e = new Enemy(this, x, y, "wolf", {
+      hp: 0.6, atk: 0.35, exp: 0.9, gold: 0.4,
+      scale: 0.8, tint: 0xd8f0c8, displayName: "훈련용 늑대",
+    });
+    e.setAlpha(0);
+    this.tweens.add({ targets: e, alpha: 1, duration: 380 });
+    if (burst && this.burstEmitter) this.spawnBurstAt(x, y, 5, e.burstTint);
+    this.enemies.push(e);
+    this.physics.add.collider(e, this.solidGroup);
   }
 
   private buildVillage() {
     const cx = this.stageW / 2;
     const cy = this.stageH / 2;
 
-    /* v1.3.0 (지시 #9 층식맵) — 요새 유적 2층 구조물 (본마을 랜드마크 — Cainos 타일셋).
-     *  layer/collision 활용 층식 구조 타일맵: 지상(1층)과 발코니(2층)가 계단으로만 연결되고,
-     *  지상에서는 상층 타일이 머리 위(가림), 발코니에서는 발밑으로 렌더가 전환된다. */
-    this.buildLayeredKeep(cx + 430, cy + 40);
+    /* v1.4.3 (작업1) — 요새 유적 2층 구조물 자리: 유적을 전면 삭제하고 이 자리에
+     *  초행자 훈련장(작업2 — 훈련용 늑대+표지판)을 세웠다. 아래 buildTrainingGround 참조. */
+    this.buildTrainingGround(cx + 430, cy + 40);
 
     // 광장 우물 (중앙 랜드마크, 충돌 있음) — 접근 시 샘물 회복
     const well = this.add.image(cx, cy, "well").setDepth(Math.floor(cy / 10));
@@ -2692,6 +2593,38 @@ export class WorldScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(Math.floor(cy / 10));
+
+    /* v1.4.3 (작업6) — 이상한 비석 (ARG 힌트 페이지 진입 단서):
+     *  마을 북서쪽 어귀에 세워진 낡은 비석. 은은한 보라빛이 감돈다.
+     *  가까이 가면 「이상한 비석 — 낙서를 읽는다」 — 세계수의 기록(/secret/)이 열린다. */
+    {
+      const mx = 170, my = 190;
+      if (this.textures.exists("glow")) {
+        const gl = this.add.image(mx, my - 6, "glow")
+          .setDisplaySize(64, 64)
+          .setAlpha(0.22)
+          .setTint(0xc08aff)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setDepth(Math.floor(my / 10) - 1);
+        this.tweens.add({ targets: gl, alpha: { from: 0.14, to: 0.3 }, duration: 1600, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      }
+      const stone = this.add.image(mx, my, "rock_dark")
+        .setScale(0.85)
+        .setDepth(Math.floor(my / 10));
+      this.solidGroup.add(stone);
+      (stone.body as Phaser.Physics.Arcade.StaticBody).setSize(40, 30).setOffset(12, 34);
+      this.add
+        .text(mx, my + 34, "이상한 비석", {
+          fontFamily: "Galmuri11, sans-serif",
+          fontSize: "10px",
+          color: "#c08aff",
+          stroke: "#0a0e18",
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5)
+        .setDepth(Math.floor(my / 10));
+      this.interactables.push({ x: mx, y: my + 30, kind: "secret", label: "이상한 비석 — 낙서를 읽는다" });
+    }
 
     // 건물 3채 (실제 Zelda-like 타일셋 건물, 충돌은 벽 하단만) — v2.0: 전부 기능 있음 (지시 #12)
     // v3.0 (#4) — 챕터 마을은 챕터 분위기색 틴트 + 마을 간판
@@ -3132,12 +3065,35 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private tickFxQuality(dt: number) {
-    /* v1.2.1 (#4 최적화 x3) — 설정 패널 성능 카드용 실시간 노출 (FPS/모드/레벨) */
-    (window as unknown as { __SERTZ_PERF__?: { fps: number; fxLevel: number; mode: string; lowFx: boolean } }).__SERTZ_PERF__ = {
+    /* v1.2.1 (#4 최적화 x3) — 설정 패널 성능 카드용 실시간 노출 (FPS/모드/레벨)
+     * v1.4.3 (작업3 최적화) — 프레임 시간 실측(1초 창 최악/평균) + 개체수 노출:
+     *  E2E 성능 회귀 가드가 이 값을 읽어 병목을 수치로 검증한다. */
+    const perfWin = this.perfWindow;
+    perfWin.frames++;
+    perfWin.sumMs += dt;
+    if (dt > perfWin.worstMs) perfWin.worstMs = dt;
+    if (this.time.now - perfWin.startedAt >= 1000) {
+      perfWin.avgMs = perfWin.sumMs / Math.max(1, perfWin.frames);
+      perfWin.avgWorstMs = perfWin.worstMs;
+      perfWin.frames = 0;
+      perfWin.sumMs = 0;
+      perfWin.worstMs = 0;
+      perfWin.startedAt = this.time.now;
+    }
+    (window as unknown as {
+      __SERTZ_PERF__?: {
+        fps: number; fxLevel: number; mode: string; lowFx: boolean;
+        avgMs: number; worstMs: number; enemies: number; remotes: number;
+      };
+    }).__SERTZ_PERF__ = {
       fps: Math.round(this.game.loop.actualFps),
       fxLevel: this.fxLevel,
       mode: this.fxMode,
       lowFx: this.fxLevel === 0,
+      avgMs: Math.round(perfWin.avgMs * 100) / 100,
+      worstMs: Math.round(perfWin.avgWorstMs * 100) / 100,
+      enemies: this.enemies.filter((e) => e.active && e.alive).length,
+      remotes: this.remotes.size,
     };
     /* v1.0.8 — 모드 강제: high는 항상 복원, low는 항상 축소 (적응형 판정 생략) */
     if (this.fxMode === "high") {
@@ -3219,6 +3175,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private updatePortalGuides() {
+    /* v1.4.3 (작업3 최적화) — 150ms 스로틀: 화살표 이동은 프레임당 갱신 없이도 부드럽다.
+    *  매 프레임 배열 할당+삼각함수 2회를 1/9 빈도로 절감 — 시각 동일. */
+    if (this.time.now - this.portalGuideMs < 150) return;
+    this.portalGuideMs = this.time.now;
     const cam = this.cameras.main;
     const view = cam.worldView;
     const pairs: [Phaser.GameObjects.Sprite | null, Phaser.GameObjects.Text][] = [
@@ -3389,7 +3349,9 @@ export class WorldScene extends Phaser.Scene {
   /** 몬스터 사망 드롭 — 골드 코인 + 물약 확률 (v2.0 밸런스: GOLD_DROP_SCALE 적용) */
   dropLoot(x: number, y: number, def: EnemyDef) {
     const base = Phaser.Math.Between(def.gold[0], def.gold[1]);
-    const total = Math.max(1, Math.round(base * GOLD_DROP_SCALE));
+    /* v1.4.3 (작업4) — 파티 시너지 골드 버프 (일심동체/전투 대장정/만능 원정대) 드롭 골드에 곱산 */
+    const synGold = 1 + partyContent.synergyTotals(net.netLastParty()).goldPct / 100;
+    const total = Math.max(1, Math.round(base * GOLD_DROP_SCALE * synGold));
     this.dropLootGold(x, y, total);
     const r = Math.random() / (this.player?.hasBuff("buff_luck") ? 1.35 : 1); // v4.3.0 — 행운의 물약: 물약 드롭률 +35%
     if (r < (def.dropHp ?? 0)) this.dropLootItem(x, y, "potion_hp");
@@ -3869,11 +3831,23 @@ export class WorldScene extends Phaser.Scene {
     const partyN = Math.max(1, net.netLastParty()?.members.length ?? 1);
     const partyMul = 1 + Math.min(3, partyN - 1) * 0.08;
     const coMul = 1 + Math.min(3, this.remotes.size) * 0.04;
+    /* v1.4.3 (작업4) — 파티 시너지 콤보: 계열 조합별 EXP/골드 버프 + 솔로 가호(파티 없으면 EXP +5%).
+     *  "조합이 좋은 파티가 더 강하다" — 파티 편성에 재미와 전략을 부여. */
+    const synParty = net.netLastParty();
+    const syn = partyContent.synergyTotals(synParty);
+    const soloBless = synParty && synParty.members.length >= 2 ? 0 : partyContent.SOLO_BLESS_EXP_PCT;
+    const synExpMul = 1 + (syn.expPct + soloBless) / 100;
     /* v4.2.0 — 전역 EXP ×1.35 (피로도 완화: 레벨링 페이스업 — 콤보 보너스와 곱산) */
-    this.player.gainExp(Math.round(exp * 1.35 * comboMul * partyMul * coMul));
+    this.player.gainExp(Math.round(exp * 1.35 * comboMul * partyMul * coMul * synExpMul));
     if (partyMul > 1 || coMul > 1) {
       const bonusPct = Math.round((partyMul * coMul - 1) * 100);
       this.spawnPickupText(this.player.x - 14, this.player.y - 80, `함께 사냥! EXP +${bonusPct}%`, "#9df0c8");
+    }
+    /* v1.4.3 (작업4) — 파티 보드 킬 카운트 (파티 중일 때만) + 정예/보스 판정 */
+    if (synParty && synParty.members.length >= 2) {
+      partyContent.partyBoardTick("kill", 1);
+      if (ref && (ref as Enemy).displayName?.startsWith("정예")) partyContent.partyBoardTick("elite", 1);
+      if (ref instanceof Boss) partyContent.partyBoardTick("boss", 1);
     }
     if (this.comboStreak >= 3) {
       const pct = Math.round((comboMul - 1) * 100);
@@ -5792,8 +5766,15 @@ export class WorldScene extends Phaser.Scene {
     }
     /* v3.0.16 — 필드 정예 출현 (메이플 엘리트/챔피언): 전투 구역 4.5%, 동시 1마리, 보스 부재 시.
      *  3.2배 HP / 1.45배 ATK / 4배 EXP / 3배 골드 + 처치 시 에메랄드 +1 확정 */
-    const eliteOk = !this.fieldEliteRef && !this.boss?.active && !this.stageDef.isVillage && !this.isInterior;
+    /* v1.4.3 (작업2) — 훈련용 늑대 스폰 지점 판정: 죽은 자리가 훈련장이면 훈련용 스탯으로 재소환
+     *  (기본 리스폰은 일반 늑대를 소환해 훈련장이 갑자기 위험해지는 문제 방지) */
+    const isTrainSpot = this.trainSpawns.some((p) => Math.abs(p.x - x) < 8 && Math.abs(p.y - y) < 8);
+    const eliteOk = !isTrainSpot && !this.fieldEliteRef && !this.boss?.active && !this.stageDef.isVillage && !this.isInterior;
     const spawnElite = eliteOk && Math.random() < 0.045;
+    if (isTrainSpot) {
+      this.spawnTrainingWolf(x, y, true);
+      return;
+    }
     const e = spawnElite
       ? new Enemy(this, x, y, key, {
           hp: 3.2, atk: 1.45, exp: 5, gold: 4, scale: 1.35, tint: 0xffd76a,
@@ -7647,6 +7628,23 @@ export class WorldScene extends Phaser.Scene {
       audio.sfx.coin();
     };
     EventBus.on("rpg:unionReward", onUnionReward);
+    /* v1.4.3 (작업4) — 파티 퀘스트 보드 수령 (PartyWidget → 씬 보상 지급):
+     *  파티 중이면 풀 보상, 솔로면 50% — 수령 판정/소비는 partyContent가 담당 */
+    const onPartyClaim = (v: { id: string }) => {
+      if (!this.player) return;
+      const p = net.netLastParty();
+      const inParty = !!(p && p.members.length >= 2);
+      const r = partyContent.claimPartyMission(v?.id ?? "", inParty);
+      if (!r.ok) return;
+      this.player.addGold(r.gold);
+      this.player.gainExp(r.exp);
+      this.showBanner(`파티 미션 완료! +${r.gold.toLocaleString()}G · EXP +${r.exp}${inParty ? " (파티 풀 보상)" : " (솔로 50% — 파티원과 함께하면 풀 보상!)"}`);
+      audio.sfx.coin();
+      this.driveFx?.twinkle(this.player.x, this.player.y - 20, 0x9df0c8);
+      this.save();
+      this.emitHud();
+    };
+    EventBus.on("rpg:partyClaim", onPartyClaim);
     /* v1.0.18 — 몬스터 파크 상점 구매 (파크 코인 차감 → 아이템 지급) */
     const onParkBuy = (v: { id: string }) => {
       if (!this.player) return;
@@ -7825,6 +7823,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:infTower", onInfTower); // v1.0.8
       EventBus.off("rpg:dojangEnter", onDojangEnter); // v1.1.1 — 무릉도장 일반 진입
       EventBus.off("rpg:unionReward", onUnionReward); // v1.0.18 — 유니온 상점
+      EventBus.off("rpg:partyClaim", onPartyClaim); // v1.4.3 — 파티 퀘스트 보드 수령
       EventBus.off("rpg:parkBuy", onParkBuy); // v1.0.18 — 파크 상점
       EventBus.off("rpg:parkEnter", onParkEnter); // v1.0.18 — 파크 입장
       EventBus.off("rpg:infTrial", onInfTrial);
@@ -7869,8 +7868,10 @@ export class WorldScene extends Phaser.Scene {
     const auraCfg = auraKey ? AURA_ANIM[auraKey] : undefined;
     if (auraCfg && (this.cosmeticAura || this.cosmeticOverlay)) {
       this.auraPhase = (this.auraPhase + auraCfg.sp * (dt / 1000)) % 1;
-      const hue = auraCfg.min + (auraCfg.max - auraCfg.min) * (0.5 - 0.5 * Math.cos(this.auraPhase * Math.PI * 2));
-      const col = Phaser.Display.Color.HSLToColor(hue, auraCfg.s, auraCfg.l).color;
+      /* v1.4.3 (작업3 최적화) — 매 프레임 HSLToColor 대신 64단계 LUT 조회 (GC 할당 0) */
+      const lut = AURA_LUT[auraKey as string];
+      const idx = Math.min(AURA_LUT_STEPS - 1, Math.max(0, Math.floor(this.auraPhase * AURA_LUT_STEPS * 0.999))) ;
+      const col = lut ? lut[idx] : 0xffffff;
       this.cosmeticAura?.setTint(col);
       this.cosmeticOverlay?.setTint(col);
     }
@@ -7885,8 +7886,13 @@ export class WorldScene extends Phaser.Scene {
     this.tickFxQuality(dt);
     this.updatePortalGuides();
     this.escapeCd = Math.max(0, this.escapeCd - dt);
-    /* v1.3.0 (지시 #9) — 층식 구조물(요새 유적) 층 전환/경계 틱 (마을에만 존재) */
-    if (this.keepRect) this.tickKeepLayer();
+    /* v1.4.3 (작업4) — 파티 보드: 파티 순찰 시간 (1분마다 +1, 파티 중일 때만) */
+    this.partyTimeAcc += dt;
+    if (this.partyTimeAcc >= 60000) {
+      this.partyTimeAcc = 0;
+      const p = net.netLastParty();
+      if (p && p.members.length >= 2) partyContent.partyBoardTick("time", 1);
+    }
 
     /* v3.2.0 (#흑화) — 카메라 자가치유 (v3.3.0: 상시화 — 6초 한정 제거):
      *  페이드 이펙트가 실행 중이 아닌데 알파가 1 미만으로 남아있으면(WebView에서
@@ -7938,10 +7944,12 @@ export class WorldScene extends Phaser.Scene {
     this.tickGolden(dt);
 
     // 원격 플레이어 보간 — 대화/채팅/사망과 무관하게 항상 갱신 (v1.7 멀티플레이)
+    // v1.4.3 (작업3 최적화) — 화면 밖 원격(1700px+)은 보간만 하고 애니/이름표/오라 갱신 생략
     const lerpK = Math.min(1, (dt / 1000) * 9);
     for (const r of this.remotes.values()) {
       r.sp.x += (r.tx - r.sp.x) * lerpK;
       r.sp.y += (r.ty - r.sp.y) * lerpK;
+      if (this.player && Phaser.Math.Distance.Between(r.sp.x, r.sp.y, this.player.x, this.player.y) > 1700) continue;
       r.sp.setFlipX(r.flip);
       r.tag.setPosition(r.sp.x, r.sp.y - 52);
       r.aura?.setPosition(r.sp.x, r.sp.y + 6); // v1.0.16 — GM 황금 오라 추적
@@ -9937,9 +9945,26 @@ export class WorldScene extends Phaser.Scene {
       this.trySleep();
     } else if (it.kind === "exit") {
       this.leaveInterior();
-    } else if (it.kind === "keepchest") {
-      /* v1.3.0 (지시 #9) — 요새 유적 2층 상자 (하루 1회) */
-      this.openKeepChest();
+    } else if (it.kind === "secret") {
+      /* v1.4.3 (작업6) — ARG 힌트 웹페이지 재연결: 마을 어귀의 이상한 비석이
+       *  세계수의 기록(/secret/)으로 이어진다. 새 탭 개방 시도, 실패 시 URL 클립보드 복사. */
+      const url = `${window.location.origin}/secret/`;
+      audio.sfx.uiOpen();
+      let opened = false;
+      try {
+        const w = window.open(url, "_blank", "noopener,noreferrer");
+        opened = !!w;
+      } catch { /* 개방 불가 환경 — 폴백으로 안내 */ }
+      if (!opened) {
+        try {
+          void navigator.clipboard?.writeText(url);
+          this.showBanner(`세계수의 기록 — ${url.replace(/^https?:\/\//, "")} (클립보드 복사 완료)`);
+        } catch {
+          this.showBanner("세계수의 기록이 숨 쉰다… /secret/ 을 찾아가라");
+        }
+      } else {
+        this.showBanner("비석의 낙서가 빛나며 페이지가 열렸다 — 세계수의 기록");
+      }
     } else if (it.kind === "talk" && it.dlg) {
       /* v1.2.0 (#4) — 환생 n차수별 NPC 대사 변화: 환생 1~3차마다 NPC가 기억하고 다르게 반응한다.
        *  `${dlg}_rb${n}` 변형이 존재하면 우선 재생 (n = min(rebirths, 3)) — 없으면 원본 대사. */

@@ -15,6 +15,8 @@
  *  - installWorldTexGuard(): 월드에서 복귀/컨텍스트복구/주기 샘플링 훅 설치.
  */
 
+import Phaser from "phaser"; // v1.4.3 — installEngineFrameGuard 런타임 참조 (타입 전용 아님)
+
 export type TexRec = { url: string; type: "image" | "spritesheet"; fw?: number; fh?: number };
 
 /** 기대 텍스처 레지스트리 — 부트+지연로드 filecomplete/loaderror 합집합 */
@@ -28,6 +30,25 @@ export function getTexGuardStats() {
   return {
     expected: REGISTRY.size,
   };
+}
+
+/* v1.4.3 — 엔진 프레임 가드:
+ *  수복 체계가 텍스처를 remove→재로드하는 비동기 창 사이에 오브제(특히 Text 재굽 setText→
+ *  updateText→Frame.setSize→updateUVs)가 파괴된 프레임(data=null)을 만지면
+ *  "Cannot read properties of null (reading 'drawImage')"로 렌더 루프가 죽는다.
+ *  (실측: Frame.updateUVs 첫 줄 var cd = this.data.drawImage — destroy()가 data를 null로)
+ *  파괴된 프레임 접근을 no-op으로 무해화한다 — 수복 완료 후 새 프레임으로 정상 복귀된다. */
+export function installEngineFrameGuard(): void {
+  const F = (Phaser.Textures as unknown as { Frame?: { prototype: Record<string, (...a: unknown[]) => unknown> } }).Frame;
+  if (!F?.prototype) return;
+  for (const m of ["updateUVs", "setCutPosition", "setCutSize", "setSize", "updateData"] as const) {
+    const orig = F.prototype[m];
+    if (typeof orig !== "function") continue;
+    F.prototype[m] = function (this: { data?: unknown } & Record<string, unknown>, ...a: unknown[]) {
+      if (this.data === null || this.data === undefined) return this;
+      return orig.apply(this, a);
+    };
+  }
 }
 
 /** 로더에 수집 훅 설치 (BootScene/TitleScene 각각 1회) */

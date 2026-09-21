@@ -29,7 +29,7 @@ const { chromium } = require("playwright");
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2600);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.4.2", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
   ok("[부팅] 타이틀 도달", badge, "v1.4.0 배지 표시");
   await shot("00_title");
 
@@ -46,10 +46,10 @@ const { chromium } = require("playwright");
     const tex = sc?.textures ?? w?.textures;
     const has = (k) => !!tex?.exists(k);
     const snd = !!w?.cache?.audio?.exists?.("sfx_hit_basic");
-    return { slash: has("vfx_slash"), ring: has("vfx_ring"), fw: has("vfx_fw_heart"), magic: has("vfx_magic"), map: has("map_ground"), snd, petal: has("vfx_petal") };
+    return { slash: has("vfx_slash"), ring: has("vfx_ring"), fw: has("vfx_fw_heart"), magic: has("vfx_magic"), snd, petal: has("vfx_petal") };
   });
   ok("[에셋] vfx_slash/vfx_ring/vfx_fw_heart 로드", assets.slash && assets.ring && assets.fw);
-  ok("[에셋] vfx_magic/map_ground/vfx_petal 로드", assets.magic && assets.map && assets.petal);
+  ok("[에셋] vfx_magic/vfx_petal 로드 (v1.4.3: map_ground 유적 삭제로 미로드)", assets.magic && assets.petal);
   ok("[에셋] Drive SFX 로드 (sfx_hit_basic)", assets.snd);
 
   /* 여캠 생성 (백자) — 로비 3단 흐름: 이름 → 직업 → 외형 (v1.2.1 e2e 준용) */
@@ -96,45 +96,28 @@ const { chromium } = require("playwright");
   ok("[게임] 월드 진입", inWorld);
   await shot("01_world");
 
-  /* #9 층식맵 — 요새 유적 존재 + 상자 상호작용 등록 */
-  const keep = await p.evaluate(() => {
+  /* v1.4.3 — 유적 전면 삭제(유저 지시)에 따른 재검증: 구조물 제거 + 훈련장 신설.
+   *  기존 #9 층식맵 생성/층전환 검증은 콘텐츠 자체가 삭제되어 "없음" 판정으로 대체. */
+  const keepGone = await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
+    let kg = 0;
+    for (const ch of (sc?.children.list ?? [])) {
+      const fn = ch?.frame?.name;
+      if (fn && String(fn).startsWith("kg_")) kg++;
+    }
     return {
-      rect: !!sc?.keepRect,
-      tiles: sc?.keepTileImgs?.length ?? 0,
+      rect: !!sc?.keepRect, kg,
       chest: (sc?.interactables ?? []).some((i) => i.kind === "keepchest"),
       torchAnim: !!sc?.anims?.exists("keep_torch"),
-      chestAnim: !!sc?.anims?.exists("keep_chest_open"),
     };
   });
-  ok("[#9] 요새 유적 생성", keep.rect && keep.tiles >= 20, `tiles=${keep.tiles}`);
-  ok("[#9] 유적 상자 상호작용 등록", keep.chest);
-  ok("[#9] 횃불/상자 애니 등록", keep.torchAnim && keep.chestAnim);
-
-  /* 층 전환 — 계단 위치로 순간이동 후 상승 */
-  const layerSwap = await p.evaluate(() => {
+  ok("[유적삭제] 요새 유적 완전 제거 (keepRect/kg_*/상자/애니 0)", !keepGone.rect && keepGone.kg === 0 && !keepGone.chest && !keepGone.torchAnim, JSON.stringify(keepGone));
+  const train = await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (!sc?.keepRect || !sc?.player) return { ok: false };
-    const st = sc.keepStair;
-    sc.player.setPosition(st.x + st.w / 2, st.y + 20);
-    sc.tickKeepLayer();
-    const after = sc.keepLayer;
-    return { ok: after === 1, after };
+    const tw = (sc?.enemies ?? []).filter((e) => e?.displayName === "훈련용 늑대" && e.active && e.alive);
+    return { n: tw.length, hp: tw[0]?.maxHp ?? 0, sign: (sc?.children.list ?? []).some((ch) => ch?.text?.includes("초행자 훈련장")) };
   });
-  ok("[#9] 계단 → 2층 레이어 전환", layerSwap.ok, `layer=${layerSwap.after}`);
-  await p.evaluate(() => {
-    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    sc.player.setPosition(sc.keepRect.x + sc.keepRect.w / 2, sc.keepRect.y + sc.keepRect.h - 10);
-  });
-  await p.waitForTimeout(400);
-  await shot("02_keep_layer1");
-  const layerBack = await p.evaluate(() => {
-    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    sc.player.setPosition(sc.keepStair.x + sc.keepStair.w / 2, sc.keepStair.y + sc.keepStair.h * 0.9);
-    sc.tickKeepLayer();
-    return sc.keepLayer;
-  });
-  ok("[#9] 계단 → 지상 복귀", layerBack === 0, `layer=${layerBack}`);
+  ok("[훈련장] 훈련용 늑대 3마리 + 표지판 (유적 자리 대체 콘텐츠)", train.n === 3 && train.hp === 35 && train.sign, JSON.stringify(train));
 
   /* #5 오로라 강화 — cos_aurora 지급/착용 → 링 2장 + 트윙클 4개 */
   const aurora = await p.evaluate(() => {

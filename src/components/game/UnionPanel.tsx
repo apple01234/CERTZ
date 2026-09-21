@@ -21,6 +21,31 @@ const FAM_LABEL: Record<string, string> = { warrior: "전사", ranger: "궁수",
 const FAM_COLOR: Record<string, string> = { warrior: "#ff8a70", ranger: "#7ddcff", mage: "#c9a0ff", thief: "#a0e8a0" };
 const FAM_HEX: Record<string, number> = { warrior: 0xff8a70, ranger: 0x7ddcff, mage: 0xc9a0ff, thief: 0xa0e8a0 };
 
+/* v1.4.3 (작업5) — 유니온 전용 시각 에셋 매핑 (public/assets/ui/union/)
+ *  기능만 있고 텍스트 UI만 있던 아티팩트 6종·시간제 버프 4종·레이드 보스 3종에
+ *  전용 아이콘/초상을 입히고, 아티팩트는 성장 단계별로 프레임 등급이 변한다. */
+const UNION_ASSET = (n: string) => `/assets/ui/union/${n}.png`;
+const ART_ICON: Record<string, string> = {
+  art_atk: UNION_ASSET("art_atk"), art_hp: UNION_ASSET("art_hp"), art_crit: UNION_ASSET("art_crit"),
+  art_gold: UNION_ASSET("art_gold"), art_def: UNION_ASSET("art_def"), art_speed: UNION_ASSET("art_speed"),
+};
+const BUFF_ICON: Record<string, string> = {
+  ub_atk: UNION_ASSET("ub_atk"), ub_gold: UNION_ASSET("ub_gold"), ub_def: UNION_ASSET("ub_def"), ub_exp: UNION_ASSET("ub_exp"),
+};
+const RAID_PORTRAIT: Record<string, string> = {
+  "수문장 거인 베히모스": UNION_ASSET("raid_behemoth"),
+  "심연의 감시자 니드호그": UNION_ASSET("raid_nidhogg"),
+  "차원의 군주 아비슬로드": UNION_ASSET("raid_abysslord"),
+};
+/** 아티팩트 성장 단계 등급 — 시각적 차이 (프레임/발광/배지) */
+function artGrade(lv: number): { label: string; color: string; glow: string } {
+  if (lv >= 9) return { label: "전설", color: "#ffd76a", glow: "0 0 10px rgba(255,215,106,.45), inset 0 0 8px rgba(255,215,106,.25)" };
+  if (lv >= 6) return { label: "영웅", color: "#c08aff", glow: "0 0 8px rgba(192,138,255,.4), inset 0 0 6px rgba(192,138,255,.2)" };
+  if (lv >= 3) return { label: "희귀", color: "#7ddcff", glow: "0 0 6px rgba(125,220,255,.35)" };
+  if (lv >= 1) return { label: "일반", color: "#9fb3d9", glow: "none" };
+  return { label: "미 개방", color: "#5a6478", glow: "none" };
+}
+
 type Tab = "grid" | "shop" | "buff" | "artifact" | "raid";
 
 /** 유니온 등급 배지 색 → tailwind 스타일 인라인 */
@@ -410,14 +435,18 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                 <button
                   key={b.key}
                   onClick={() => { const r = buyUnionBuff(b.key); EventBus.emit("banner:show", { text: r ? `${r.name} 발동! ${r.minutes}분간 ${r.desc}` : "코인이 부족하다" }); refresh(); }}
-                  className={`rounded-lg border px-2.5 py-2 text-left transition-transform active:scale-95 ${active ? "border-emerald-300/60 bg-emerald-400/10" : "border-white/12 bg-white/[0.04]"}`}
+                  className={`flex items-start gap-2 rounded-lg border px-2.5 py-2 text-left transition-transform active:scale-95 ${active ? "border-emerald-300/60 bg-emerald-400/10" : "border-white/12 bg-white/[0.04]"}`}
                 >
-                  <div className="flex items-center justify-between gap-1">
-                    <b className="truncate text-[11px] text-white">{b.name}</b>
-                    <b className="shrink-0 text-[10px] text-amber-200">{b.cost}C</b>
-                  </div>
-                  <p className="mt-0.5 text-[9px] font-bold text-white/45">{b.minutes}분 · {b.desc}</p>
-                  {active && <p className="mt-0.5 text-[9px] font-black text-emerald-300">발동 중 — {remainMin}분 남음 (전 캐릭터 적용)</p>}
+                  {/* v1.4.3 (작업5) — 전용 버프 아이콘 */}
+                  <img src={BUFF_ICON[b.key]} alt="" width={40} height={40} className="mt-0.5 shrink-0 rounded-md border border-white/15" draggable={false} />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-1">
+                      <b className="truncate text-[11px] text-white">{b.name}</b>
+                      <b className="shrink-0 text-[10px] text-amber-200">{b.cost}C</b>
+                    </span>
+                    <span className="mt-0.5 block text-[9px] font-bold text-white/45">{b.minutes}분 · {b.desc}</span>
+                    {active && <span className="mt-0.5 block text-[9px] font-black text-emerald-300">발동 중 — {remainMin}분 남음 (전 캐릭터 적용)</span>}
+                  </span>
                 </button>
               );
             })}
@@ -425,20 +454,46 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        {/* ===== 아티팩트 탭 ===== */}
+        {/* ===== 아티팩트 탭 — v1.4.3 (작업5) 전용 아이콘 + 단계별 등급 프레임 ===== */}
         {tab === "artifact" && (
           <div className="grid grid-cols-2 gap-1.5">
             {ARTIFACTS.map((a) => {
               const lv = u.artifacts[a.key] ?? 0;
               const maxed = lv >= a.max;
               const cost = maxed ? 0 : a.cost(lv);
+              const gr = artGrade(lv);
+              const nextGr = artGrade(Math.min(a.max, lv + 1));
               return (
-                <div key={a.key} className="rounded-lg border border-white/12 bg-white/[0.04] px-2.5 py-2">
-                  <div className="flex items-center justify-between gap-1">
-                    <b className="truncate text-[11px] text-white">{a.name}</b>
-                    <b className="shrink-0 text-[10px] font-black text-violet-200">Lv{lv}/{a.max}</b>
+                <div
+                  key={a.key}
+                  className="rounded-lg border bg-white/[0.04] px-2.5 py-2"
+                  style={{ borderColor: `${gr.color}66`, boxShadow: gr.glow }}
+                >
+                  <div className="flex items-center gap-2">
+                    {/* 전용 아이콘 — 등급 프레임 색 동반 */}
+                    <img
+                      src={ART_ICON[a.key]}
+                      alt={a.name}
+                      width={44}
+                      height={44}
+                      draggable={false}
+                      className="shrink-0 rounded-md border-2"
+                      style={{ borderColor: `${gr.color}88`, filter: lv > 0 ? "none" : "grayscale(0.55) brightness(0.75)" }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <b className="truncate text-[11px] text-white">{a.name}</b>
+                        <b className="shrink-0 text-[10px] font-black text-violet-200">Lv{lv}/{a.max}</b>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-1">
+                        <span className="rounded border px-1 py-px text-[8px] font-black" style={{ borderColor: `${gr.color}88`, color: gr.color, background: `${gr.color}14` }}>{gr.label}</span>
+                        {lv > 0 && nextGr.label !== gr.label && (
+                          <span className="text-[8px] font-bold text-white/30">→ {nextGr.label} (Lv{lv >= 9 ? 10 : lv >= 6 ? 9 : lv >= 3 ? 6 : 3})</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-0.5 text-[9px] font-bold text-white/45">{lv > 0 ? a.desc(lv) : "미 개방 — 성장시켜 계정 영구 보너스 획득"}</p>
+                  <p className="mt-1 text-[9px] font-bold text-white/45">{lv > 0 ? a.desc(lv) : "미 개방 — 성장시켜 계정 영구 보너스 획득"}</p>
                   <button
                     disabled={maxed}
                     onClick={() => {
@@ -458,7 +513,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                 </div>
               );
             })}
-            <p className="col-span-2 mt-1 text-[9px] font-bold text-white/35">아티팩트는 코인으로만 성장하는 계정 단위 영구 성장 요소 — 환생·캐릭터 삭제와 무관하게 유지된다</p>
+            <p className="col-span-2 mt-1 text-[9px] font-bold text-white/35">아티팩트는 코인으로만 성장하는 계정 단위 영구 성장 요소 — 성장 단계(일반→희귀→영웅→전설)마다 프레임이 변한다</p>
           </div>
         )}
 
@@ -480,6 +535,16 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                         className={`rounded-lg border px-2 py-2.5 text-center transition-transform active:scale-95 ${done !== null ? "border-white/10 bg-white/5 opacity-60" : locked ? "border-white/10 bg-white/5" : ""}`}
                         style={done === null && !locked ? { borderColor: `${d.color}88`, background: `${d.color}14` } : undefined}
                       >
+                        {/* v1.4.3 (작업5) — 레이드 보스 전용 초상 */}
+                        <img
+                          src={RAID_PORTRAIT[d.boss]}
+                          alt={d.boss}
+                          width={64}
+                          height={64}
+                          draggable={false}
+                          className="mx-auto mb-1 rounded-md border object-cover"
+                          style={{ borderColor: `${d.color}66`, width: 64, height: 64, filter: locked ? "grayscale(0.7) brightness(0.7)" : "none" }}
+                        />
                         <p className="text-[11px] font-black" style={{ color: d.color }}>{d.name}</p>
                         <p className="mt-0.5 truncate text-[9px] font-bold text-white/60">{d.boss}</p>
                         <p className="mt-0.5 text-[8px] font-bold text-white/40">배치 {d.req}명 이상 · 코인 +{d.coin}</p>
@@ -503,15 +568,29 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
             ) : (
               <div>
                 <div className="mb-2 rounded-lg border-2 px-3 py-3" style={gradeStyle(RAID_DIFFS[raid.diff].color)}>
-                  <p className="text-center text-[11px] font-black" style={{ color: RAID_DIFFS[raid.diff].color }}>
-                    [{RAID_DIFFS[raid.diff].name}] {RAID_DIFFS[raid.diff].boss}
-                  </p>
-                  <div className="mt-2 h-3 overflow-hidden rounded-full border border-black/70 bg-black/70">
-                    <div className="h-full bg-gradient-to-b from-fuchsia-400 to-purple-800 transition-[width] duration-300" style={{ width: `${(raid.hp / raid.maxHp) * 100}%` }} />
+                  <div className="flex items-center gap-2.5">
+                    {/* v1.4.3 (작업5) — 레이드 진행 중 보스 초상 */}
+                    <img
+                      src={RAID_PORTRAIT[RAID_DIFFS[raid.diff].boss]}
+                      alt={RAID_DIFFS[raid.diff].boss}
+                      width={52}
+                      height={52}
+                      draggable={false}
+                      className="shrink-0 rounded-md border object-cover"
+                      style={{ borderColor: `${RAID_DIFFS[raid.diff].color}88`, width: 52, height: 52 }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-black" style={{ color: RAID_DIFFS[raid.diff].color }}>
+                        [{RAID_DIFFS[raid.diff].name}] {RAID_DIFFS[raid.diff].boss}
+                      </p>
+                      <div className="mt-1 h-3 overflow-hidden rounded-full border border-black/70 bg-black/70">
+                        <div className="h-full bg-gradient-to-b from-fuchsia-400 to-purple-800 transition-[width] duration-300" style={{ width: `${(raid.hp / raid.maxHp) * 100}%` }} />
+                      </div>
+                      <p className="mt-1 text-[9px] font-bold text-white/60">
+                        남은 HP {raid.hp.toLocaleString()} / {raid.maxHp.toLocaleString()} · 남은 시간 {raid.t.toFixed(0)}초
+                      </p>
+                    </div>
                   </div>
-                  <p className="mt-1 text-center text-[9px] font-bold text-white/60">
-                    남은 HP {raid.hp.toLocaleString()} / {raid.maxHp.toLocaleString()} · 남은 시간 {raid.t.toFixed(0)}초
-                  </p>
                 </div>
                 {/* AI 파티원 공격 로그 */}
                 <div className="sertz-scroll mb-2 max-h-32 overflow-y-auto rounded-lg border border-white/10 bg-black/40 px-2.5 py-2">
