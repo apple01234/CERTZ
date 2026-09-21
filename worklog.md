@@ -2018,3 +2018,19 @@ Stage Summary:
 - 유저 지시 6건 전부 구현·검증·배포: 유적 3세대 반복 불만 근원 제거(훈련장으로 대체), 신규 유저 1→3레벨 3~5분 루트 완성, 품질 유지 최적화 4종, 파티 콘텐츠 2종+솔로 가호, 유니온 전용 에셋 13종+등급 프레임, ARG /secret/ 복구+마을 비석 진입로
 - 마이그레이션: 세이브 무영향 덮어설치 — 유적 상자 일일보상 폐기(localStorage sertz.keep.chest.* 자연 무효), 구세이브 마을 퀘스트 진행분은 초보 사냥 퀘스트로 자연 이어짐
 - 운영 교햔: ①세션 시작 시 git status+grep으로 "진짜" 현행 상태 재확인 필수 — 스냅샷 복원 타이밍에 따라 낡은 상태가 보일 수 있음 ②MultiEdit 주석 편집 시 종료 */ 누락 여부 반드시 확인(이번에 catch 후 즉시 수정) ③GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 95
+Agent: Super Z (메인)
+Task: v1.4.3 실구현 상태 전수 재검증 — 유저 지시 6건 코드 grep 검증 + E2E 실동작 확인 (요약 세션의 낡은 스냅샷 문제 해소)
+
+Work Log:
+- [스냅샷 문제 확인] 세션 요약이 v1.3.2 시점(6대 작업 미구현)으로 고착되어 있었으나 git log f5cac90=v1.4.3(vc95) 커밋·origin/main 동기화 완료 상태 — worklog Task 94 경고대로 낡은 스냅샷이었음
+- [6건 grep 전수 검증] ①유적: buildLayeredKeep/tickKeepLayer/openKeepChest 메서드 잔존 0(1건은 삭제 안내 주석) ②게이트: stages.ts lvGate enter:1+마을 훈련장+초보 사냥 퀘스트 ③최적화: AURA_LUT 64단계+__SERTZ_PERF__ 실측 필드 ④파티: partyContent.ts 8.6KB ⑤유니온: public/assets/ui/union/ 13종(art 6·ub 4·raid 3)+UnionPanel 매핑 정상(주석 public/ln/만 옛날 표기) ⑥ARG: public/secret/ 2종
+- [E2E 재실행] v143 24/24 PASS(pageerror 0) · 회귀 v142 10/10 · v131 16/16 PASS
+- [배포 상태 확인] 서버 /api/version=1.4.3/95 서빙 · /secret/ 200 · 원격 Release v1.4.3 존재(206 partial 응답) · 로컬 APK 117,493,536B · git HEAD==origin/main
+- 신규 코드 변경 0건 — 전부 기구현 확인 세션이었음
+
+Stage Summary:
+- 유저 지시 6건은 v1.4.3으로 이미 구현·검증·배포 완료 상태를 코드·E2E·릴리스 3중으로 재확인
+- 교훈: 세션 요약(컨텍스트)은 낡을 수 있음 — 작업 착수 전 git log+grep 현행화가 최우선(worklog Task 94 교훈의 재확인)
