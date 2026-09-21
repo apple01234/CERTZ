@@ -28,7 +28,7 @@ const { chromium } = require("playwright");
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2600);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
   ok("[부팅] 타이틀 도달", badge, "v1.4.0 배지 표시");
 
   /* 지연 로드 완료 대기 → SPUM 코스튬 텍스처/애님 확인 */
@@ -152,7 +152,7 @@ const { chromium } = require("playwright");
     const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
     const obstacles = sc.solidGroup.getChildren().filter((g) => g.getData?.("obstacle") && g.active);
     const near = (x, y, r) => obstacles.some((o) => dist(o.x, o.y, x, y) < r);
-    /* v1.4.3 — 유적 삭제 → 구 유적 자리(현 초행자 훈련장) 보호 판정으로 대체 */
+    /* v1.4.4 — 유적 삭제 → 구 유적 자리(현 초행자 훈련장) 보호 판정으로 대체 */
     const kc = { x: sc.stageW / 2 + 430, y: sc.stageH / 2 + 40 };
     const portal = { x: sc.portalHome.x, y: sc.portalHome.y };
     const entry = { x: sc.entryHome.x, y: sc.entryHome.y };

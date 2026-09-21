@@ -1,5 +1,5 @@
 /**
- * v1.4.3 E2E — 유저 지시 6건 검증
+ * v1.4.4 E2E — 유저 지시 6건 검증
  *  ① 고대(요새) 유적 전면 삭제 — 구조물/프레임/텍스처/애니 완전 제거
  *  ② 초반 레벨 동선 — 마을 훈련장(훈련용 늑대 3마리·약한 스탯·표지판) + 마을 퀘스트 3단 체인
  *  ③ 최적화 — __SERTZ_PERF__ 실측 필드(avgMs/worstMs) + 프레임 안정
@@ -52,8 +52,8 @@ const { chromium } = require("playwright");
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2600);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
-  ok("[부팅] 타이틀 도달 (v1.4.3 배지)", badge);
+  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
+  ok("[부팅] 타이틀 도달 (v1.4.4 배지)", badge);
 
   /* 지연 로드 + texGuard */
   for (let i = 0; i < 30 && !(await p.evaluate(() => !!window.__SERTZ_DEFER_DONE__)); i++) await p.waitForTimeout(300);
@@ -181,7 +181,7 @@ const { chromium } = require("playwright");
   ok("[안정성] pageerror 0", realErrors.length === 0, realErrors.slice(0, 2).join(" | "));
 
   const pass = results.filter((r) => r.pass).length;
-  console.log(`\n=== v1.4.3 E2E: ${pass}/${results.length} PASS, pageerror=${realErrors.length} ===`);
+  console.log(`\n=== v1.4.4 E2E: ${pass}/${results.length} PASS, pageerror=${realErrors.length} ===`);
   await b.close();
   process.exit(pass === results.length ? 0 : 1);
 })();

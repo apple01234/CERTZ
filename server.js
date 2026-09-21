@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.3/SERTZ-v1.4.3.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.4/SERTZ-v1.4.4.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -47,9 +47,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.3";
-  const LATEST_CODE = 95;
-  const VERSION_NOTE = "고대 유적 전면 삭제(3세대 반복 불만의 근원 제거)·초반 레벨 동선 보강(1-1 진입 게이트 3→1 + 마을 초행자 훈련장 + 초보 사냥 퀘스트)·최적화 4종(오라 LUT·적 애니키 캐시·포탈가이드 스로틀·원격 화면밖 생략)·파티 콘텐츠 2종(시너지 콤보+파티 퀘스트 보드)·유니온 전용 에셋 13종+등급 프레임·ARG 힌트 페이지(/secret) 복구";
+  const LATEST_VERSION = "1.4.4";
+  const LATEST_CODE = 96;
+  const VERSION_NOTE = "모바일 가로 화면에서 캐릭터 선택 후 게임 시작이 안 되던 버그 근본 수정 — 로비 레이아웃 높이 압착 제거(시작 버튼이 스크롤 영역 밖으로 밀리던 원인)+「이 캐릭터로 시작」 버튼을 캐릭터 카드 최상단으로 이동";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

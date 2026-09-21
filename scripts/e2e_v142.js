@@ -1,5 +1,5 @@
 /**
- * v1.4.3 E2E — 유저 리포트 2건 "재발 없음" 최종 검증
+ * v1.4.4 E2E — 유저 리포트 2건 "재발 없음" 최종 검증
  *  ① 요새 유적 타일맵: setCrop 폐지→프레임 방식 전환. 프레임명 + '실제 렌더 좌표'까지 검증
  *     (v1.4.1은 crop 수치만 봐서 화면상 이동을 놓쳤다 — 이번엔 좌표를 실측한다)
  *  ② 스프라이트 미로딩: texGuard 무결성 체계(레지스트리/부트 감사/월드 상주 감시) + 로드 실패 0
@@ -30,8 +30,8 @@ const { chromium } = require("playwright");
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
 
   /* 부팅 + 배지 */
-  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
-  ok("[부팅] 타이틀 도달 (v1.4.3 배지)", badge);
+  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
+  ok("[부팅] 타이틀 도달 (v1.4.4 배지)", badge);
 
   /* ② 스프라이트 미로딩 — 부트 감사 통과 + 지연 로드 완료 + 실패 경고 0건 */
   for (let i = 0; i < 30 && !(await p.evaluate(() => !!window.__SERTZ_DEFER_DONE__)); i++) await p.waitForTimeout(300);
@@ -80,7 +80,7 @@ const { chromium } = require("playwright");
   });
   ok("[게임] 월드 진입", inWorld);
 
-  /* ① v1.4.3 — 요새 유적 전면 삭제 검증 + 초행자 훈련장 신설 검증 */
+  /* ① v1.4.4 — 요새 유적 전면 삭제 검증 + 초행자 훈련장 신설 검증 */
   const keepGone = await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
     if (!sc) return null;
@@ -125,7 +125,7 @@ const { chromium } = require("playwright");
   ok("[안정성] pageerror 0", realErrors.length === 0, realErrors.slice(0, 2).join(" | "));
 
   const pass = results.filter((r) => r.pass).length;
-  console.log(`\n=== v1.4.3 E2E: ${pass}/${results.length} PASS, pageerror=${realErrors.length} ===`);
+  console.log(`\n=== v1.4.4 E2E: ${pass}/${results.length} PASS, pageerror=${realErrors.length} ===`);
   await b.close();
   process.exit(pass === results.length ? 0 : 1);
 })();

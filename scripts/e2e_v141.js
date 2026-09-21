@@ -29,7 +29,7 @@ const { chromium } = require("playwright");
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
 
   /* 부팅 + 배지 */
-  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
   ok("[부팅] 타이틀 도달 (v1.4.1 배지)", badge);
 
   /* ① 스프라이트 미로딩 — 부트/지연 로드 실패 경고 0건 */
@@ -83,7 +83,7 @@ const { chromium } = require("playwright");
   });
   ok("[게임] 월드 진입", inWorld);
 
-  /* ② v1.4.3 — 요새 유적 전면 삭제 검증 + 초행자 훈련장 신설 검증 */
+  /* ② v1.4.4 — 요새 유적 전면 삭제 검증 + 초행자 훈련장 신설 검증 */
   const keepGone = await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
     if (!sc) return null;

@@ -222,7 +222,11 @@ export function Lobby({ onExit }: { onExit: () => void }) {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
+        {/* v1.4.4 — 행 높이 압축 제거(min-h-0 flex-1 삭제): 모바일 가로(높이 390~)에서 flex-1이 행을
+         *  뷰포트 높이로 압착해 디테일 카드가 행 밖으로 넘치고 "이 캐릭터로 시작" 버튼이 스크롤
+         *  영역 밖(scrollHeight 초과)에 그려져 입장 불가였던 버그 수정. 행이 콘텐츠 높이만큼 자라
+         *  루트(sertz-scroll) 스크롤이 정상 동작한다. */}
+        <div className="flex flex-col gap-2 lg:flex-row">
           {/* 캐릭터 카드 그리드 — [A-1] 내부 독자 스크롤 제거(루트 스크롤로 통합) */}
           <div className="flex-1">
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
@@ -483,6 +487,16 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                     </p>
                   </div>
                 </div>
+                {/* v1.4.4 — 시작 버튼을 카드 최상단으로: 모바일 가로에서 통계 뒤로 밀리면
+                 *  폴드 밖으로 잘려 시작 자체가 불가능했다. 주요 액션 우선 배치. */}
+                <button
+                  onClick={() => startChar(sel)}
+                  className="game-btn mt-2.5 flex w-full items-center justify-center gap-1.5 px-3 py-3 text-[13px] font-black active:scale-95"
+                >
+                  <Play size={15} />
+                  이 캐릭터로 시작
+                </button>
+                <p className="mt-1 text-center text-[8px] font-bold text-white/30">카드를 더블클릭해도 바로 시작된다</p>
                 <div className="mt-2 grid grid-cols-2 gap-1 text-center">
                   <div className="game-chip py-1.5">
                     <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Swords size={8} />공격력</p>
@@ -514,14 +528,6 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                     </p>
                   );
                 })()}
-                <button
-                  onClick={() => startChar(sel)}
-                  className="game-btn mt-2.5 flex w-full items-center justify-center gap-1.5 px-3 py-3 text-[13px] font-black active:scale-95"
-                >
-                  <Play size={15} />
-                  이 캐릭터로 시작
-                </button>
-                <p className="mt-1 text-center text-[8px] font-bold text-white/30">카드를 더블클릭해도 바로 시작된다</p>
                 <button
                   onClick={() => setDelId(sel.id)}
                   className="mx-auto mt-1 flex items-center gap-1 text-[10px] font-bold text-white/35 underline underline-offset-2 hover:text-[#ff9a8a]"

@@ -2034,3 +2034,27 @@ Work Log:
 Stage Summary:
 - 유저 지시 6건은 v1.4.3으로 이미 구현·검증·배포 완료 상태를 코드·E2E·릴리스 3중으로 재확인
 - 교훈: 세션 요약(컨텍스트)은 낡을 수 있음 — 작업 착수 전 git log+grep 현행화가 최우선(worklog Task 94 교훈의 재확인)
+
+---
+Task ID: 96
+Agent: Super Z (메인)
+Task: v1.4.4 — 유저 리포트 "캐릭터 선택후 게임 시작 안됨" 재현·근본 수정·E2E·빌드·릴리스 (versionCode 96)
+
+Work Log:
+- [재현 실패 1차] 데스크톱 1280×720에서 신규 생성·기존 재입장·구세이브(questIdx=2/lv10)·forest1 진행·구버전 슬롯 메타 5시나리오 전부 world.player=true — 데스크톱에선 재현 불가
+- [재현 실패 2차] APK 번들(assets/public)을 http-server로 띄워 동일 흐름 검증 — 데스크톱에선 정상 진입
+- [재현 성공] 모바일 뷰포트(가로 844×390, hasTouch)에서 실측 — 로비 디테일 카드의 「이 캐릭터로 시작」 버튼이 cy=450(뷰포트 390 초과)·가림 있음, 스크롤해도 도달 불가(scrollHeight 440 < 버튼 하단 468) — 세로는 "가로로 돌려주세요" 게이트 정상 동작 확인
+- [근본 원인] 로비 콘텐츠 행 className "flex min-h-0 flex-1 flex-col gap-2 lg:flex-row"의 flex-1이 짧은 가로 높이에서 행을 뷰포트 높이로 압착 → 디테일 카드가 행 밖으로 넘치게 렌더되나 루트 스크롤 영역 산정에 반영 안 됨(버튼이 스크롤 밖 좌표에 존재). 데스크톱은 높이 여유로 통과하는 뷰포트 회귀
+- [수정] Lobby.tsx 2곳: ①행 클래스에서 min-h-0 flex-1 제거(콘텐츠 높이만큼 자라 루트 스크롤 정상화) ②「이 캐릭터로 시작」 버튼+더블클릭 힌트를 카드 최상단(아바타 행 직후)으로 이동 — 통계·삭제 버튼은 하단 유지
+- [수정 검증] 모바일 가로(844×390)에서 버튼 cy=313·inView·무가림 → 탭 → world.player=true·stage=village 진입, 스크린샷으로 HUD/퀘스트/대화창/터치컨트롤 전부 정상 렌더를 눈으로 확인
+- [E2E] v143 24/24·v142 10/10·v131 16/16 PASS(pageerror 0) — 배지 기대치 전 스크립트 v1.4.4로 sed 갱신
+- [버전체인 8곳] package.json(1.4.4)·build.gradle(96·1.4.4+히스토리 주석)·server.js(VERSION/CODE/NOTE/APK_MIRROR)·Overlays 배지(v1.4.4)·apk-guide(제목·sub 96·노티스+히스토리 v1.4.3 추가·링크·md5)·안내.txt(v1.4.4 블록)
+- [빌드] 툴체인 정상(javac 21.0.12.1) → JAVA_HOME=/home/z/jdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 53s → download/SERTZ-v1.4.4.apk 117,493,972B · aapt 96/1.4.4 · 번들 가이드 v1.4.4+주석 8426 확인 · md5 aaefe43028a133c2d07397bbf146ed34
+- [릴리스] scripts/release_v144.py — Release v1.4.4(id 393360984) 신규 생성·업로드 → 원격 재다운로드 md5 일치 ✓
+- [서버] APK export가 .next 덮어씀 → 일반 next build 복구 → pkill 후 워치독 재기동 → /:200·/api/version(1.4.4/96)·guide(200, 최종 md5 서빙)·/secret/ 200·union 에셋 200 ✓
+
+Stage Summary:
+- v1.4.4 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.4/SERTZ-v1.4.4.apk (versionCode 96, 117,493,972B, md5 aaefe430…)
+- "캐릭터 선택후 게임 시작 안됨" 근본 수정: 모바일 가로 뷰포트 실측으로 로비 레이아웃 압착 회귀 확정 → 압착 제거+시작 버튼 카드 최상단 이동
+- 운영 교훈: ①데스크톱 E2E는 높이 여유가 있어 뷰포트 회귀를 못 잡는다 — 모바일 뷰포트(hasTouch·390px 높이) 프로브를 로비/진입 흐름에 상시 추가할 것 ②flex-1+min-h-0 행은 자식이 넘칠 때 루트 스크롤 영역과 불일치한다 — 짧은 뷰포트에서 폴드 밖 요소가 scrollHeight에 반영되지 않는 함정 ③주요 액션 버튼은 카드 하단 말고 상단에 둘 것
+- 남은 지시: 없음 — 리포트 1건 소화. GitHub 토큰 노출 지속 — 재발급 권고 필수
