@@ -12,6 +12,52 @@ import { BODY_PREFIXES } from "./data";
 /** v1.2.1 (#4 최적화) — 지연 로드된 외형 시트의 애님 후등록 (타이틀 백그라운드 로드 완료 직후 호출).
  *  buildAllAnims는 부팅 시점에 존재하는 시트만 등록하므로, cost_/jobf_/jobm_/gm_ 시트는
  *  로드 완료 후 이 함수로 애님을 만들어야 applyBodyLook 전환이 끊기지 않는다. */
+
+const BODY_FRAME_NAMES = [
+  "idle0", "idle1", "idle2", "idle3",
+  "walk0", "walk1", "walk2", "walk3",
+  "walkside0", "walkside1", "walkside2", "walkside3",
+  "walkup0", "walkup1", "walkup2", "walkup3",
+  "atk0", "atk1", "atk2", "atk3",
+  "atkdown0", "atkdown1", "atkdown2", "atkdown3",
+  "atkup0", "atkup1", "atkup2", "atkup3",
+] as const;
+
+/** v1.5.1 — Phaser 로더를 완전히 우회하는 단일 이미지 로딩:
+ *  브라우저 네이티브 Image 로딩(병렬) + TextureManager.addImage 등록.
+ *  이 Phaser 4 빌드의 로더는 진행 중 큐잉 시 멈추는(1장 후 정지) 결함이 있어
+ *  로더와 아예 무관하게 동작시킨다 — 완료 감지는 textures.exists 폴링(tickBodyPending). */
+function loadImageRaw(scene: Phaser.Scene, key: string, url: string): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        if (!scene.textures.exists(key)) scene.textures.addImage(key, img);
+      } catch { /* 등록 실패 무시 — 폴백 유지 */ }
+      resolve();
+    };
+    img.onerror = () => resolve(); // 실패도 진행 — 재킷/폴백이 커버
+    img.src = url;
+  });
+}
+
+/** v1.5.0 — 선택한 캐릭터에 필요한 외형 시트만 지연 로드.
+ * 기존 타이틀의 37종 × 28프레임 일괄 요청을 제거해 입장 시 메인 스레드/네트워크
+ * 압박을 크게 줄인다. */
+export async function loadBodyPrefix(scene: Phaser.Scene, prefix: string | null | undefined): Promise<void> {
+  if (!prefix || scene.textures.exists(`${prefix}_idle0`)) return;
+
+  const need = BODY_FRAME_NAMES.filter((f) => !scene.textures.exists(`${prefix}_${f}`));
+  if (need.length === 0) {
+    registerBodyAnims(scene, [prefix]);
+    return;
+  }
+
+  await Promise.all(need.map((f) => loadImageRaw(scene, `${prefix}_${f}`, `assets/${prefix}_${f}.webp`)));
+  /* 핵심 프레임 등록 확인 후 애님 등록 (일부 실패 시 애님 참조 오류 방지) */
+  if (scene.textures.exists(`${prefix}_idle0`)) registerBodyAnims(scene, [prefix]);
+}
+
 export function registerBodyAnims(scene: Phaser.Scene, prefixes: readonly string[]) {
   const a = scene.anims;
   const fr = (prefix: string, n: number, rate: number, repeat: number) => ({

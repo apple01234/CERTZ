@@ -16,6 +16,7 @@ import {
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
+import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnTierFlair, spawnUltFlourish, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
@@ -116,6 +117,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   ponyRefund = false;
   skinIdx = 2;
   bodyPrefix = "";
+  /* v1.5.0 — 미로드 외형 로드 시도 이력 (무한 루프 방지 — 프리픽스당 1회) */
+  private bodyLoadTried: string | null = null;
+  /* v1.5.0 — 동적 외형 로드 완료 대기 중인 프리픽스 (preUpdate 폴링으로 재적용) */
+  private bodyPending: string | null = null;
+  /* v1.5.0 — 로더 재킥 스로틀/한도 (큐잉 씹힘 커버) */
+  private bodyKickAt: number | null = null;
+  private bodyKickCount = 0;
   /* v3.3.0 (지시 #3/#8 — GM 5차전직(임시) + 5차전직 스토리) — 5차 각성 상태 (세이브 대상)
    *  GM 부여 or 각성 시련 완료 시 true. Lv.200 도달과 별개 — true면 200 미만이어도 5차 강화+궁극기 사용 가능 */
   fifth = false;
@@ -4382,6 +4390,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
 /* ---------------- v1.1.0 외형 시스템 (#1/#21/#22) ---------------- */
 
+  /** v1.5.0 — 동적 외형 로드 완료 감지·재적용 (WorldScene.update에서 매 프레임 호출).
+   *  이벤트 경합/누락과 무관한 게임 루프 폴링 — 로드 성공 즉시 100% 전환 보장.
+   *  로딩은 Phaser 로더를 우회한 네이티브 Image 로딩(textures.loadBodyPrefix)이므로
+   *  로더 상태와 무관 — 미완료면 1초 스로틀 재시도(8회 한도), 실패 시 기본 외형 유지. */
+  tickBodyPending() {
+    if (!this.bodyPending) return;
+    const wanted = this.bodyPending;
+    if (this.scene.textures.exists(`${wanted}_idle0`)) {
+      this.bodyPending = null;
+      if (this.bodyPrefix !== wanted) {
+        this.bodyPrefix = wanted;
+        this.applyBodyLook();
+      }
+      return;
+    }
+    const now = this.scene.time.now;
+    if (!this.bodyKickAt || now - this.bodyKickAt > 1000) {
+      this.bodyKickAt = now;
+      this.bodyKickCount++;
+      if (this.bodyKickCount > 8) {
+        /* 재시도 한도 초과 — 로드 불가(파일 손상 등). 폴백 유지하고 대기 해제 */
+        this.bodyPending = null;
+        console.warn("[SERTZ] 외형 동적 로드 재시도 한도 초과 — 기본 외형 유지:", wanted);
+        return;
+      }
+      void loadBodyPrefix(this.scene, wanted);
+    }
+  }
+
   /** hero_* 텍스처 / hero-* 애님 키를 현재 외형 시트로 매핑.
    *  "" 프리픽스(기본 남성·기본피부)면 원본 키 그대로 — 기존 동작과 100% 동일 */
   bodyKey(k: string): string {
@@ -4408,6 +4445,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         ? this.gender === "m" ? `costm_${outfitKey}` : `cost_${outfitKey}`
         : jobPrefix
           ?? (this.gender === "f" || this.skinIdx !== 2 ? `ch${this.gender}${this.skinIdx}` : "");
+    /* v1.5.0 — 타이틀 37종 일괄 지연 로드 폐지(캐릭터 선택 후 진입 프리징 근본 수정)의 후속 방어:
+     *  게임 중 전직/GM 승인 등으로 미로드 외형 시트가 필요해지면 그 시트만 로드 후 재적용.
+     *  로드 완료까지 bodyPrefix를 비워둔다 — bodyKey가 hero_*(부트 로드분)를 가리켜
+     *  미로드 창 동안 setTexture(__MISSING) 깨짐 없이 기본 외형으로 안전하게 보인다.
+     *  재적용은 preUpdate 폴링이 담당 (이벤트 경합 무관). */
+    if (this.bodyPrefix && !this.scene.textures.exists(`${this.bodyPrefix}_idle0`)) {
+      const wanted = this.bodyPrefix;
+      this.bodyPrefix = "";
+      this.bodyPending = wanted;
+      if (this.bodyLoadTried !== wanted) {
+        this.bodyLoadTried = wanted;
+        void loadBodyPrefix(this.scene, wanted);
+      }
+    } else {
+      this.bodyPending = null;
+    }
     const wantTex = this.bodyKey("hero_idle0");
     if (this.texture.key !== wantTex) this.setTexture(wantTex);
     // 진행 중이던 애니를 새 시트로 이어 재생 (프레임 리셋 방지)

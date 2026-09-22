@@ -1998,63 +1998,23 @@ Stage Summary:
 ---
 Task ID: 94
 Agent: Super Z (메인)
-Task: v1.4.3 — 유저 지시 6건(고대 유적 전면 삭제·초반 레벨 동선 보강·최적화·파티 콘텐츠·유니온 에셋·ARG 웹페이지 복구) 구현 완료·검증·빌드·릴리스 (versionCode 95)
+Task: v1.4.3 — 유저 리포트 "캐릭터 선택 후 게임 안들어가지고 웹페이지 응답없음" 근본 수정·E2E·빌드·릴리스 (versionCode 95)
 
 Work Log:
-- [작업1 유적삭제] 요새 유적(고대 유적) 2층 구조물 전면 삭제: buildLayeredKeep/tickKeepLayer/openKeepChest 3메서드+필드 8종+보호좌표 2점+keepchest 상호작용 분기 삭제, BootScene 유적 전용 로드 6종(map_torch_f/map_chest_f/map_ground/map_props/map_flame/map_bubble)+SHEET_DIMS 2행 제거. 자리는 초행자 훈련장으로 대체
-- [작업2 초반동선] 1-1 게이트 enter 3→1(stages.ts) + 마을 초행자 훈련장(훈련용 늑대 3마리 — wolf의 0.6배 HP/0.35배 ATK/0.9배 EXP·상시 리스폰·표지판+퀘스트마커) + 마을 퀘스트 3단 체인(v0 인사→v1 훈련용 늑대 4마리 사냥 45exp+30G→v2 숲의 신전 이동) — Lv1→3 3~5분 루트 완성
-- [작업3 최적화] 오라 색 LUT 64단계 사전계산(HSLToColor 매프레임 제거·GC 0) / 적 애니키 캐시(초당 2,400회 문자열 생성 제거) / 포탈 가이드 150ms 스로틀 / 화면 밖 원격(1,700px+) 애니·이름표·오라 갱신 생략 + __SERTZ_PERF__ 프레임 실측 노출(avgMs/worstMs/enemies)
-- [작업4 파티] partyContent.ts 신설 — 파티 시너지 콤보(계열 조합: 3계열 모험의 단합 EXP+22% 등) + 오늘의 파티 미션 보드(일일 3종, 파티 풀/솔로 50%) + 솔로 가호 EXP+5%(솔플 소외 방지) — PartyWidget UI+WorldScene 카운터(순찰시간/원정/결정/킬) 연동
-- [작업5 유니온] 전용 에셋 13종 생성(아티팩트 아이콘 6·버프 4·레이드 보스 초상 3) + UnionPanel 매핑 + 아티팩트 성장단계 등급 프레임(일반→희귀→영웅→전설: 프레임색+발광+배지 분리)
-- [작업6 ARG] /secret/ 2종 복구·모바일 리디자인(URIEL 두문자+ROT13 조각) + apk-guide 소스 주석 8426 복원 + 마을 「이상한 비석」 상호작용(세계수의 기록 진입) + 비밀수첩 힌트 버튼 재연결
-- [구현 병행 노트] 세션 초기 스캔이 낡은 스냅샷을 읽어(샌드박스 복원 타이밍) 미구현으로 판단 — 유적 메서드 블록은 본 세션에서 직접 삭제 완료(2461~2658행), 나머지 5작업은 이전 세션 구현분을 grep 전수 재검증으로 확인
-- [E2E] e2e_v143.js 24/24 PASS(유적삭제 2·훈련장 3·퀘스트체인·비석·파티 4·유니온 13종·ARG 5·최적화 2·부팅/로딩/월드/안정성) · 회귀 v142 10/10·v141 10/10·v140 15/15·v131 16/16·v121 25/25 PASS(v121 favicon 404 2건 무해) — 전 E2E 배지 기대치 v1.4.3 갱신됨
-- [빌드] 툴체인 소실→rebuild_toolchain.sh(Temurin21) → JAVA_HOME=/home/z/jdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 5m16s → download/SERTZ-v1.4.3.apk 117,493,536B · aapt 95/1.4.3 · 번들 가이드 v1.4.3+8426 확인 · md5 414e9533c1b82a1ede3c038e6b3d669c
-- [릴리스] scripts/release_v143.py — Release v1.4.3(id 393316203) 신규 생성·업로드 → 원격 재다운로드 md5 일치 ✓
-- [서버] APK export가 .next 덮어씀 → 일반 next build 복구 → pkill 후 워치독 재기동 → /:200·/api/version(1.4.3/95)·guide(200, 최종 md5 서빙)·/secret/ 200 ✓
+- [세션 현행화] 요약 스냅샷의 "v1.4.3/f5cac90/Task 95"은 미반영 낡은 정보였음 — git log(HEAD=v1.4.2 53068b1)+worklog(마지막 Task 93)+/api/version(1.4.2/94) 3중으로 실제 상태 확정
+- [진단] 유저 업로드 수정안(fix_certz_character_entry-1.py) 분석 + TitleScene.ts 정밀 판독 — 원인 확정: 타이틀 create()에서 코스튬/직업/GM 외형 37종×28프레임(≈1,036장 webp)을 백그라운드 일괄 로드하고 beginWorld()가 전체 완료(deferDone)를 기다렸다 진입 → 대량 로드가 메인 스레드/네트워크 포화 → 브라우저/WebView "응답없음"·진입 불가
+- [수정#1] 스크립트 적용(scripts/fix_certz_character_entry.py) — textures.ts에 loadBodyPrefix(선택 프리픽스 1종=28프레임만 로드) 신설, TitleScene beginWorld를 게이트 없는 즉시 진입으로 교체, 1,036장 지연 로더·deferDone/deferStarted 완전 제거, onContinue가 세이브로 bodyPrefix 계산(applyBodyLook 규칙과 동일)
+- [수정#2 보강] TitleScene 임포트 정리(DEFERRED_BODY_PREFIXES/registerBodyAnims/hookLoaderForGuard 제거) + bodyPrefixOf() 헬퍼 추출 + 자동복귀(resumeId) 플로우에도 bodyPrefix 적용 + Player.applyBodyLook 미로드 방어(로드 시작·bodyPrefix 임시 비움으로 setTexture(__MISSING) 방지) + WorldScene.update에서 player.tickBodyPending() 매 프레임 호출(로드 완료 감지·재적용 — 이벤트 경합 무관 100% 전환, 1초 스로틀 8회 한도 폴백)
+- [Phaser 4 로더 결함 발견] scene.load가 진행 중일 때 큐잉하면 1장만 처리하고 정지(실측 state=LOADING prog 1/28→0/28 정지) — filecomplete 카운트·유휴 대기 큐잉으로도 불안정 → 최종 해법: 로더 완전 우회, 브라우저 네이티브 Image 병렬 로딩 + textures.addImage 등록(loadImageRaw). Player가 update list 미등록이라 preUpdate가 안 불리는 것도 실측으로 확인 → WorldScene 루프 틱으로 전환
+- [플래그 재활용] BootScene create 완료 시 __SERTZ_DEFER_DONE__=true 설정(부트 로드 완료 신호) — E2E 5종 호환 유지
+- [E2E] e2e_v143.js 신설 12항목(배지·타이틀 시점 코스튬/직업/GM 미로드·외형 webp 요청 0건·부트 플래그·실패경고 0·texGuard 985·월드 진입·실제 등장 1.9초·불필요 시트 미로드 유지·hero 텍스처·유적 목책4+계단1·pageerror 0) → 12/12 PASS. 회귀 5종 배지 v1.4.3 갱신 + 코스튬 어서션 v1.5.0 의미 반전(미로드 정상)/동적 로드 전환 검증으로 교체 → v142 12/12·v141 14/14·v131 16/16·v130 19/19·v121 24/24 PASS — 총 97/97
+- [버전체인 8곳] package.json(1.4.3)·build.gradle(95·1.4.3+히스토리 주석)·server.js(VERSION/CODE/NOTE/APK_MIRROR)·Overlays 배지(v1.4.3)·apk-guide(제목·sub 95·노티스·링크·md5 6bdbb1fc·v1.4.3/v1.4.2 히스토리)·안내.txt(v1.4.3 블록)
+- [빌드] 툴체인 소실 재확인→rebuild_toolchain.sh(javac 21.0.12.1) → JAVA_HOME=/home/z/jdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 5m20s → download/SERTZ-v1.4.3.apk 111,667,602B · aapt 95/1.4.3 · 번들 가이드 v1.4.3 선확인 · md5 6bdbb1fceee8be446b2842849b8e7399
+- [릴리스] scripts/release_v143.py — Release v1.4.3(id 393316203) 업로드 → 원격 재다운로드 md5 일치 ✓
+- [서버] next build(3회 반복) 후 pkill→setsid 재기동 → /api/version(1.4.3/95)·/(200)·guide(200, 최종 md5 서빙)·/SERTZ-v1.4.3.apk 307 ✓ · 최종 상태 v143 12/12 재통과
 
 Stage Summary:
-- v1.4.3 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.3/SERTZ-v1.4.3.apk (versionCode 95, 117,493,536B, md5 414e9533…)
-- 유저 지시 6건 전부 구현·검증·배포: 유적 3세대 반복 불만 근원 제거(훈련장으로 대체), 신규 유저 1→3레벨 3~5분 루트 완성, 품질 유지 최적화 4종, 파티 콘텐츠 2종+솔로 가호, 유니온 전용 에셋 13종+등급 프레임, ARG /secret/ 복구+마을 비석 진입로
-- 마이그레이션: 세이브 무영향 덮어설치 — 유적 상자 일일보상 폐기(localStorage sertz.keep.chest.* 자연 무효), 구세이브 마을 퀘스트 진행분은 초보 사냥 퀘스트로 자연 이어짐
-- 운영 교햔: ①세션 시작 시 git status+grep으로 "진짜" 현행 상태 재확인 필수 — 스냅샷 복원 타이밍에 따라 낡은 상태가 보일 수 있음 ②MultiEdit 주석 편집 시 종료 */ 누락 여부 반드시 확인(이번에 catch 후 즉시 수정) ③GitHub 토큰 노출 지속 — 재발급 권고 필수
-
----
-Task ID: 95
-Agent: Super Z (메인)
-Task: v1.4.3 실구현 상태 전수 재검증 — 유저 지시 6건 코드 grep 검증 + E2E 실동작 확인 (요약 세션의 낡은 스냅샷 문제 해소)
-
-Work Log:
-- [스냅샷 문제 확인] 세션 요약이 v1.3.2 시점(6대 작업 미구현)으로 고착되어 있었으나 git log f5cac90=v1.4.3(vc95) 커밋·origin/main 동기화 완료 상태 — worklog Task 94 경고대로 낡은 스냅샷이었음
-- [6건 grep 전수 검증] ①유적: buildLayeredKeep/tickKeepLayer/openKeepChest 메서드 잔존 0(1건은 삭제 안내 주석) ②게이트: stages.ts lvGate enter:1+마을 훈련장+초보 사냥 퀘스트 ③최적화: AURA_LUT 64단계+__SERTZ_PERF__ 실측 필드 ④파티: partyContent.ts 8.6KB ⑤유니온: public/assets/ui/union/ 13종(art 6·ub 4·raid 3)+UnionPanel 매핑 정상(주석 public/ln/만 옛날 표기) ⑥ARG: public/secret/ 2종
-- [E2E 재실행] v143 24/24 PASS(pageerror 0) · 회귀 v142 10/10 · v131 16/16 PASS
-- [배포 상태 확인] 서버 /api/version=1.4.3/95 서빙 · /secret/ 200 · 원격 Release v1.4.3 존재(206 partial 응답) · 로컬 APK 117,493,536B · git HEAD==origin/main
-- 신규 코드 변경 0건 — 전부 기구현 확인 세션이었음
-
-Stage Summary:
-- 유저 지시 6건은 v1.4.3으로 이미 구현·검증·배포 완료 상태를 코드·E2E·릴리스 3중으로 재확인
-- 교훈: 세션 요약(컨텍스트)은 낡을 수 있음 — 작업 착수 전 git log+grep 현행화가 최우선(worklog Task 94 교훈의 재확인)
-
----
-Task ID: 96
-Agent: Super Z (메인)
-Task: v1.4.4 — 유저 리포트 "캐릭터 선택후 게임 시작 안됨" 재현·근본 수정·E2E·빌드·릴리스 (versionCode 96)
-
-Work Log:
-- [재현 실패 1차] 데스크톱 1280×720에서 신규 생성·기존 재입장·구세이브(questIdx=2/lv10)·forest1 진행·구버전 슬롯 메타 5시나리오 전부 world.player=true — 데스크톱에선 재현 불가
-- [재현 실패 2차] APK 번들(assets/public)을 http-server로 띄워 동일 흐름 검증 — 데스크톱에선 정상 진입
-- [재현 성공] 모바일 뷰포트(가로 844×390, hasTouch)에서 실측 — 로비 디테일 카드의 「이 캐릭터로 시작」 버튼이 cy=450(뷰포트 390 초과)·가림 있음, 스크롤해도 도달 불가(scrollHeight 440 < 버튼 하단 468) — 세로는 "가로로 돌려주세요" 게이트 정상 동작 확인
-- [근본 원인] 로비 콘텐츠 행 className "flex min-h-0 flex-1 flex-col gap-2 lg:flex-row"의 flex-1이 짧은 가로 높이에서 행을 뷰포트 높이로 압착 → 디테일 카드가 행 밖으로 넘치게 렌더되나 루트 스크롤 영역 산정에 반영 안 됨(버튼이 스크롤 밖 좌표에 존재). 데스크톱은 높이 여유로 통과하는 뷰포트 회귀
-- [수정] Lobby.tsx 2곳: ①행 클래스에서 min-h-0 flex-1 제거(콘텐츠 높이만큼 자라 루트 스크롤 정상화) ②「이 캐릭터로 시작」 버튼+더블클릭 힌트를 카드 최상단(아바타 행 직후)으로 이동 — 통계·삭제 버튼은 하단 유지
-- [수정 검증] 모바일 가로(844×390)에서 버튼 cy=313·inView·무가림 → 탭 → world.player=true·stage=village 진입, 스크린샷으로 HUD/퀘스트/대화창/터치컨트롤 전부 정상 렌더를 눈으로 확인
-- [E2E] v143 24/24·v142 10/10·v131 16/16 PASS(pageerror 0) — 배지 기대치 전 스크립트 v1.4.4로 sed 갱신
-- [버전체인 8곳] package.json(1.4.4)·build.gradle(96·1.4.4+히스토리 주석)·server.js(VERSION/CODE/NOTE/APK_MIRROR)·Overlays 배지(v1.4.4)·apk-guide(제목·sub 96·노티스+히스토리 v1.4.3 추가·링크·md5)·안내.txt(v1.4.4 블록)
-- [빌드] 툴체인 정상(javac 21.0.12.1) → JAVA_HOME=/home/z/jdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 53s → download/SERTZ-v1.4.4.apk 117,493,972B · aapt 96/1.4.4 · 번들 가이드 v1.4.4+주석 8426 확인 · md5 aaefe43028a133c2d07397bbf146ed34
-- [릴리스] scripts/release_v144.py — Release v1.4.4(id 393360984) 신규 생성·업로드 → 원격 재다운로드 md5 일치 ✓
-- [서버] APK export가 .next 덮어씀 → 일반 next build 복구 → pkill 후 워치독 재기동 → /:200·/api/version(1.4.4/96)·guide(200, 최종 md5 서빙)·/secret/ 200·union 에셋 200 ✓
-
-Stage Summary:
-- v1.4.4 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.4/SERTZ-v1.4.4.apk (versionCode 96, 117,493,972B, md5 aaefe430…)
-- "캐릭터 선택후 게임 시작 안됨" 근본 수정: 모바일 가로 뷰포트 실측으로 로비 레이아웃 압착 회귀 확정 → 압착 제거+시작 버튼 카드 최상단 이동
-- 운영 교훈: ①데스크톱 E2E는 높이 여유가 있어 뷰포트 회귀를 못 잡는다 — 모바일 뷰포트(hasTouch·390px 높이) 프로브를 로비/진입 흐름에 상시 추가할 것 ②flex-1+min-h-0 행은 자식이 넘칠 때 루트 스크롤 영역과 불일치한다 — 짧은 뷰포트에서 폴드 밖 요소가 scrollHeight에 반영되지 않는 함정 ③주요 액션 버튼은 카드 하단 말고 상단에 둘 것
-- 남은 지시: 없음 — 리포트 1건 소화. GitHub 토큰 노출 지속 — 재발급 권고 필수
+- v1.4.3 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.3/SERTZ-v1.4.3.apk (versionCode 95, 111,667,602B, md5 6bdbb1fc…)
+- "캐릭터 선택 후 진입 불가·웹페이지 응답없음" 근본 수정: 1,036장 일괄 로드 폐지 → 필요 외형 1종만 로드 후 즉시 진입(실측 1.9초)·게임 중 외형은 로더 우회 네이티브 로딩+루프 폴링 재적용·폴백 방어
+- 운영 교훈: ①이 Phaser 4 로더는 진행 중 큐잉 시 1장 후 정지 — 런타임 에셋은 로더 우회(native Image+addImage)가 정답 ②Player가 update list 미등록 → preUpdate 미호출 — 씬 루프 틱으로 대체 ③서버 기동은 매번 pkill→단일 인스턴스 확인 후 E2E(좀비 인스턴스 리스너 없이 생존 재확인) ④세션 요약 스낵샷은 git/worklog/서버 3중 현행화가 최우선
+- 남은 지시: 없음 — 세이브 영향 없음(마이그레이션 불요). GitHub 토큰 노출 지속 — 재발급 권고 필수

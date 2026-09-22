@@ -133,7 +133,7 @@ const { chromium } = require("playwright");
     sc.player.outfit = "outfit_warlord";
     sc.player.applyBodyLook();
   });
-  await p.waitForTimeout(400);
+  await p.waitForTimeout(2500);
   const wearM = await p.evaluate(() => {
     const pl = window.__SERTZ__?.game?.scene?.getScene("world")?.player;
     return pl?.bodyPrefix;

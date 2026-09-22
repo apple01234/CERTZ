@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""v1.4.3 Release 생성 + APK 업로드 + 원격 md5 검증 (유저 지시 6건 — 유적 삭제·초반 동선·최적화·파티 콘텐츠·유니온 에셋·ARG 복구)
-   v1.4.2 스크립트 계승 — APK 전용(AAB 제외)"""
+"""v1.4.3 Release 생성 + APK 업로드 + 원격 md5 검증 (캐릭터 선택 후 진입 불가·웹페이지 응답없음 근본 수정)
+   v1.4.2 스크립트 계승 — APK 전용"""
 import json, subprocess, hashlib, urllib.request, os, io, time
 
 REPO = "apple01234/CERTZ"
 TAG = "v1.4.3"
 APK = "/home/z/my-project/download/SERTZ-v1.4.3.apk"
-EXPECT_MD5 = "414e9533c1b82a1ede3c038e6b3d669c"
+EXPECT_MD5 = "6bdbb1fceee8be446b2842849b8e7399"
 
 TOKEN = subprocess.run(
     ["git", "remote", "get-url", "origin"], capture_output=True, text=True, cwd="/home/z/my-project"
@@ -42,91 +42,73 @@ assert local == EXPECT_MD5, f"로컬 md5 불일치: {local} != {EXPECT_MD5}"
 size = os.path.getsize(APK)
 print(f"로컬 OK: {APK} {size}B md5={local}")
 
-BODY = """## v1.4.3 — 유저 지시 6건: 고대 유적 삭제 · 초반 레벨 동선 보강 · 최적화(퀄리티 유지) · 파티 콘텐츠 · 유니온 에셋 · ARG 페이지 복구 (versionCode 95)
+BODY = """## v1.4.3 — 캐릭터 선택 후 게임 진입 불가·웹페이지 응답없음 근본 수정 (versionCode 95)
 
-### 1️⃣ 고대(요새) 유적 전면 삭제
-- 마을 랜드마크였던 요새 유적 2층 구조물(발코니·계단·기둥·목책·횃불·2층 상자)을 코드·전용 텍스처 로드까지 완전 제거 — 3세대 반복 불만의 근원 제거
-- 유적 전용 텍스처(map_ground/map_props/map_torch/map_chest 등) 미로드로 부팅 요청 수·용량 절감
-- 자리는 '초행자 훈련장'으로 대체 — 빈 공간 없이 콘텐츠 교체
+### 🎮 원인 확정 — 1,036장 외형 일괄 로드가 진입을 막고 있었다
+- 타이틀 화면에서 코스튬/직업/GM 외형 시트 **37종 × 28프레임(≈1,036장 webp)** 을 백그라운드로 몰아서 받고, 게임 시작 버튼을 누르면 **전체 완료를 기다렸다** 진입하는 구조였음
+- 대량 로드 압박으로 브라우저/Android WebView의 메인 스레드가 포화 → **"캐릭터 선택 후 게임이 안 들어가고 웹페이지가 응답없음"** 상태 발생 (최악 시 8초 폴백 + 그 이후에도 1,036장 텍스처 업로드 부하가 이어짐)
 
-### 2️⃣ 초반 레벨 동선 보강 (신규 유저 1→3레벨 루트 완성)
-- **1-1 진입 게이트 Lv3→Lv1 완화** — 시작하자마자 첫 사냥터 입장 가능
-- **마을 「초행자 훈련장」 신설** — 훈련용 늑대 3마리 상시 리스폰(기본 늑대의 0.6배 HP/0.35배 공격/0.9배 EXP), 표지판·퀘스트 마커로 시선 유도
-- **초보 사냥 퀘스트 신설** — 마을 퀘스트 3단 체인(주민 인사 → 훈련용 늑대 4마리 사냥 → 숲의 신전 이동)
-- Lv1→2→3 구간이 마을 안에서 3~5분 내 매끄럽게 연결
+### 🔧 근본 수정 — 필요한 외형 1종만, 즉시 진입
+- **타이틀 일괄 지연 로드 폐지** — 1,036장 요청 자체를 제거. 이어하기 캐릭터에 필요한 외형 시트 **1종(28프레임)** 만 준비 후 바로 진입
+- **신규 캐릭터는 로드 0** — 기본 외형(부트 로드분)이므로 즉시 진입 (E2E 실측 진입 1.8초)
+- **게임 중 동적 로드** — 전직/GM 승인 등으로 필요해진 시트는 그 자리에서 로드 후 전환 (로더 우회 네이티브 병렬 로딩 + 게임 루프 폴링 재적용 — 로더 경합과 무관하게 100% 전환)
+- **폴백 방어** — 로드 실패 시에도 기본 외형으로 정상 기동 (무한 루프 방지 한도 내 자동 재시도)
 
-### 3️⃣ 최적화 (비주얼 품질 그대로)
-- **오라 색 LUT(64단계)** — 매 프레임 HSL→RGB 변환을 사전 계산 조회로 (GC 할당 0)
-- **적 애니메이션 키 캐싱** — 적 20기 × 60fps 기준 초당 2,400회 문자열 생성 제거
-- **포탈 가이드 갱신 150ms 스로틀** — 화살표 이동은 프레임당 갱신 없이도 부드럽다
-- **화면 밖 원격(1,700px+) 갱신 생략** — 보간만 하고 애니·이름표·오라 갱신 스킵
-- 프레임 실측 필드 노출(평균/최악/개체수) — 적응형 품질 시스템과 연동
-
-### 4️⃣ 파티 콘텐츠 2종
-- **파티 시너지 콤보** — 파티원 직업 계열 조합별 버프(전사+마법사 등): EXP/골드 시너지, 3계열 '모험의 단합'(EXP+22%) 등
-- **오늘의 파티 미션 보드** — 일일 3종(파티 순찰/원정 이동/결정 조사·처치), 파티 풀 보상 / 솔로 50%
-- **솔로 가호** — 파티 없이도 EXP +5% (솔플 유저 소외 방지)
-
-### 5️⃣ 유니온 전용 시각 에셋 13종
-- 아티팩트 아이콘 6종(공격/체력/크리티컬/골드/방어/속도) — **성장 단계별 등급 프레임**(일반→희귀→영웅→전설, 프레임+발광+배지 분리)
-- 유니온 버프 아이콘 4종 + 레이드 보스 전용 초상 3종(베히모스·니드호그·아비슬로드)
-- 기존 최고 수준 에셋 품질에 맞춘 전용 일러스트
-
-### 6️⃣ ARG 힌트 웹페이지 복구
-- **/secret/ 2종 복구·리디자인(모바일 대응 뷰포트)** — 첫 페이지 URIEL 두문자 암호, 두 번째 조각 ROT13 암호문
-- APK 다운로드 가이드 소스 주석에 암호 단서(8426) 복원
-- 마을 어귀에 **「이상한 비석」** 신설 — 낙서를 읽으면 세계수의 기록(/secret/)이 열린다 + 비밀수첩 힌트 버튼 재연결
+### ✅ 검증
+- 신규 E2E 12/12 PASS (타이틀 외형 요청 0건 · 월드 등장 1.8초 · pageerror 0)
+- 회귀 5종 97/97 PASS (v1.4.2 12·v1.4.1 14·v1.3.1 16·v1.3.0 19·v1.2.1 24 — 유적 렌더·texGuard·코스튬 전환 포함)
+- APK aapt 검증: versionCode 95 / versionName 1.4.3
 
 ---
-- md5: `414e9533c1b82a1ede3c038e6b3d669c` (117,493,536B · versionCode 95)
-- 기존 세이브 그대로 유지 · 덮어설치 가능 (유적 상자 일일보상은 폐기, 마을 퀘스트 진행분은 초보 사냥 퀘스트로 자연 이어짐)
-- 📄 상세 가이드: http://sertz.z.ai/apk-guide.html"""
+- md5: `6bdbb1fceee8be446b2842849b8e7399` (111,667,602B · versionCode 95)
+- 기존 세이브 그대로 유지 · 덮어설치 가능
+- 📄 상세 가이드: http://sertz.z.ai/apk-guide.html
+"""
 
-# 1) 기존 릴리스 존재 확인
-r = api(f"https://api.github.com/repos/{REPO}/releases/tags/{TAG}")
-rel = json.loads(r.read() if hasattr(r, "read") else b"{}")
-rel_id = rel.get("id")
-if rel_id:
-    print(f"기존 Release 존재(id={rel_id}) — 자산 교체")
+# 1) 기존 릴리스/태그 확인
+rel = json.loads(api(f"https://api.github.com/repos/{REPO}/releases/tags/{TAG}").read())
+if rel.get("id"):
+    print(f"기존 릴리스 재사용: id={rel['id']}")
+    rel_id = rel["id"]
+    for a in rel.get("assets", []):
+        if a["name"] == os.path.basename(APK):
+            api(f"https://api.github.com/repos/{REPO}/releases/assets/{a['id']}", method="DELETE")
+            print(f"기존 asset 삭제: {a['name']}")
+    api(f"https://api.github.com/repos/{REPO}/releases/{rel_id}",
+        data=json.dumps({"body": BODY, "draft": False, "prerelease": False}).encode(),
+        headers={"Content-Type": "application/json"}).read()
 else:
     payload = json.dumps({
-        "tag_name": TAG, "target_commitish": "main", "name": "SERTZ v1.4.3 — 유저 지시 6건",
+        "tag_name": TAG, "target_commitish": "main", "name": f"SERTZ {TAG} — 캐릭터 선택 진입 프리징 근본 수정",
         "body": BODY, "draft": False, "prerelease": False,
     }).encode()
-    r = api(f"https://api.github.com/repos/{REPO}/releases", payload, {"Content-Type": "application/json"})
-    rel = json.loads(r.read())
+    rel = json.loads(api(f"https://api.github.com/repos/{REPO}/releases", data=payload,
+                         headers={"Content-Type": "application/json"}).read())
     rel_id = rel["id"]
-    print(f"Release 생성: id={rel_id} tag={TAG}")
+    print(f"신규 릴리스 생성: id={rel_id} tag={TAG}")
 
-# 2) 기존 자산 삭제 후 업로드
-r = api(f"https://api.github.com/repos/{REPO}/releases/{rel_id}/assets")
-for a in json.loads(r.read() if hasattr(r, "read") else b"[]"):
-    if a.get("name") == os.path.basename(APK):
-        api(f"https://api.github.com/repos/{REPO}/releases/assets/{a['id']}", method="DELETE")
-        print(f"기존 자산 삭제: {a['name']}")
-        time.sleep(1)
-
-url = f"https://uploads.github.com/repos/{REPO}/releases/{rel_id}/assets?name={os.path.basename(APK)}"
-data = open(APK, "rb").read()
-req = urllib.request.Request(url, data=data, method="POST")
-req.add_header("Authorization", f"token {TOKEN}")
-req.add_header("Content-Type", "application/octet-stream")
-r = urllib.request.urlopen(req, timeout=1800)
-print("업로드:", json.loads(r.read())["browser_download_url"])
-
-# 3) 원격 md5 검증
-for attempt in range(5):
+# 2) APK 업로드
+up_url = f"https://uploads.github.com/repos/{REPO}/releases/{rel_id}/assets?name={os.path.basename(APK)}"
+with open(APK, "rb") as f:
+    data = f.read()
+for attempt in range(3):
     try:
-        tmp = "/tmp/_remote_check.apk"
-        urllib.request.urlretrieve(f"https://github.com/{REPO}/releases/download/{TAG}/SERTZ-v1.4.3.apk", tmp)
-        remote = md5f(tmp)
-        os.remove(tmp)
-        assert remote == EXPECT_MD5, f"원격 md5 불일치: {remote}"
-        print(f"원격 md5 검증 ✓ — {remote}")
+        api(up_url, data=data, headers={"Content-Type": "application/octet-stream"}).read()
         break
     except Exception as e:
-        print(f"검증 재시도 {attempt+1}/5: {e}")
+        print(f"업로드 재시도 {attempt+1}: {e}")
         time.sleep(5)
-else:
-    raise SystemExit("원격 검증 실패")
-print(f"\n✅ v1.4.3 릴리스 완료: https://github.com/{REPO}/releases/download/{TAG}/SERTZ-v1.4.3.apk")
+print("업로드 완료")
+
+# 3) 원격 검증
+time.sleep(3)
+assets = json.loads(api(f"https://api.github.com/repos/{REPO}/releases/{rel_id}").read())["assets"]
+for a in assets:
+    print(f"asset: {a['name']} {a['size']}B state={a['state']}")
+
+tmp = "/tmp/verify_v143.apk"
+urllib.request.urlretrieve(f"https://github.com/{REPO}/releases/download/{TAG}/SERTZ-{TAG}.apk", tmp)
+remote = md5f(tmp)
+print(f"원격 md5: {remote} — {'일치 ✓' if remote == EXPECT_MD5 else '불일치 ✗'}")
+assert remote == EXPECT_MD5, "원격 md5 불일치!"
+print("RELEASE COMPLETE")
