@@ -29,7 +29,7 @@ const { chromium } = require("playwright");
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
 
   /* 부팅 + 배지 */
-  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
   ok("[부팅] 타이틀 도달 (v1.4.1 배지)", badge);
 
   /* ① 스프라이트 미로딩 — 부트/지연 로드 실패 경고 0건 */
@@ -44,7 +44,7 @@ const { chromium } = require("playwright");
     const sc = g?.scene?.getScene("title");
     if (!sc) return null;
     const T = sc.textures;
-    const keys = ["hero_idle0", "chm0_idle0", "chf5_atkup3", "gm_idle0", "costm_valkyrie_idle0", "cost_warlord_atk0", "jobf_archmage_idle0", "jobm_assassin_walk1", "map_ground", "map_props", "npc_gm", "sv_campfire", "chest_anim"];
+    const keys = ["hero_idle0", "chm0_idle0", "chf5_atkup3", "gm_idle0", "costm_valkyrie_idle0", "cost_warlord_atk0", "jobf_archmage_idle0", "jobm_assassin_walk1", "npc_gm", "sv_campfire", "chest_anim"];
     return keys.map((k) => ({ k, ok: T.exists(k) }));
   });
   const missingTitle = (texTitle ?? []).filter((x) => !x.ok);

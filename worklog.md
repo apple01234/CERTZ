@@ -2018,3 +2018,26 @@ Stage Summary:
 - 유저 리포트 6건 전부 구현·E2E 입증: ①유적 은닉 히트박스 제거 ②유적 철거+보물상자 잔존 ③등급업 큐브 사용 경로 ④보스 유물 등 아이콘 3중 방어 ⑤파티 공동 토벌전(멀티 콘텐츠) ⑥재림 보스 3종 재도전
 - 운영 교훈: ①create 도중 보스 스폰은 FX 풀(buildFxPools) 이전 파티클 참조 크래시 — 보스 스폰은 반드시 delayedCall 지연+try/catch(재림판 패턴 준용) ②headless E2E는 게임 루프가 1-3fps라 delayedCall 의존 검증은 폴링(40s+)으로 — 클럭 정상 여부는 루프 이벤트 elapsed 증가율로 판별(스크립트 diag_clock*.js 계열) ③시스템 JRE만 있으면 javac 부재 — 세션 첫 빌드 전 rebuild_toolchain.sh 확인 ④프로브는 DEFER 대기+게임 시작 2단 버튼(게임 시작→캐릭터 선택)을 거쳐야 월드 진입 상태가 된다
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 96
+Agent: Super Z (메인)
+Task: v1.4.4 — 유저 리포트 "첫 사냥터 Lv3 교착(NPC 3명 대화→레벨3 지시)" 구현 + 병합 유실 복구 + 파티 보드 무한루프(프리즈) 근본 수정·빌드·릴리스 (versionCode 96)
+
+Work Log:
+- [진단 #Lv3교착] 유저 지시 "전직 npc 1명+일반 npc 2명(총 3명) 대화 끝내면 3레벨 찍히게" 검증 중 2중 근본 원인 확정: ①초행자 훈련장 자체가 코드에 부재 — f5cac90(v1.4.3 작업2)이 WorldScene에 buildTrainingGround/spawnTrainingWolf/AURA_LUT/perfWindow/portalGuideMs/partyTimeAcc/비석/파티 시너지 실적용을 넣었으나 직후 커밋 2101c7b가 구버전(9a9c996) WorldScene 위에 패치해 통째로 유실 — 그런데 stages.ts의 v1 퀘스트(훈련용 늑대 4마리)는 살아있어 유령 콘텐츠 상태 ②마을 NPC 3명 대화 보상 루트 부재
+- [무한루프 근본 수정 — 최우선] E2E 정체 원인 추적 중 CDP Debugger.pause로 프리즈 콜스택 실측 → partyContent.pickDailyMissions: "cur를 step(1+h%3)씩 이동해 3종 수집" 구조가 step과 풀 길이 6의 공약수(예: step=3, gcd=3)에서 주기 2 사이클로 빠져 무한루프 — 날짜 해시에 따라 간헐 재현되는 "캐릭터 선택 후 게임 진입 불가·웹페이지 응답없음"의 근본 원인 중 하나로 판명 → 결정적 Fisher-Yates(LCG 시드=h)로 교체, 어떤 날짜에도 즉시 종료. 소스 전역 while 루프 감사에서 유일한 무가드 루프였음
+- [재구성] git 3way 재구성: WorldScene/PartyWidget을 f5cac90 버전으로 되돌린 뒤 이전 세션 패치(2101c7b~c2380d4: 보물상자·praid·재림 재도전·spawnBurstAt 가드·접힘 토벌전 버튼)를 git apply --3way — 충돌 3곳은 훈련장+보물상자 공존(상자 (430,40) 유지·훈련장 (430,170) 신설)으로 수동 병합. tickKeepLayer(죽은 코드)는 폐지, keepChestSprite/keepChestKey 필드와 keepchest 상호작용 분기만 복구. BootScene에 map_chest_f 스프라이트시트 로드+SHEET_DIMS 복구(유적 삭제 때 함께 빠져 보물상자가 렌더 불가였던 것 수정)
+- [유저 지시 구현] onNpcTalked에 grantNpcTrioLv3 신설 — 마을에서 talkedNpcs 3개(주민2+jobmaster) 충족 시 expNext 잔여분만 gainExp로 지급해 정규 레벨업 경로(스탯/AP+5/연출/레벨목표 퀘스트 판정) 그대로 Lv3 도달, 1회성(lv>=3이면 미지급), 부족분 안내 배너 표시. resumeFromDialogue의 jobmaster 분기에도 onNpcTalked("jobmaster") 호출(구: 퀘스트 카운트 제외). v0 퀘스트 "마을 NPC 3명과 인사" need 2→3 갱신. 훈련장 보호 좌표(430,170) 추가
+- [E2E] e2e_v144.js 신설 16항목(배지·월드진입 폴링·훈련장 3종·보물상자 3종·v0 갱신·NPC 3명 카운트/Lv3 달성(lv 1→3)/questIdx 진행·파티보드 응답성·r5 재도전·praid·pageerror 0) → 16/16 PASS. 회귀 7종 전부 PASS: v143 14/14·v142 10/10·v141 10/10(유적 텍스처 기대값 현행화)·v140 15/15·v131 16/16·v130 17/17(map_ground 기대값 현행화)·v121 25/25(favicon 404 무해) — 배지 기대값 v1.4.4 일괄 갱신
+- [E2E 교훈] 헤드리스 씬 초기화가 세대별로 수 초 지연 — 고정 대기(2.6s) 대신 player+stageDef 폴링(최대 60s) 필수. 프리즈 판별법: evaluate를 800ms 타임아웃 레이스로 감싸 STUCK이면 CDP Debugger.pause로 콜스택 샘플링(스크립트 probe_stack_v144.js 패턴). 대화 중 이벤트 emit은 onBossReplay 조용한 리턴을 유발 — emit 전 dialoguing 정리 루프 필수
+- [버전체인 8곳] package.json(1.4.4)·build.gradle(96·1.4.4+히스토리 주석)·server.js(VERSION/CODE/NOTE/APK_MIRROR)·Overlays 배지(v1.4.4)·apk-guide(제목·sub 96·노티스 5건·링크·md5 81ed988f)·안내.txt(v1.4.4 블록+v1.4.3 이전 강등)
+- [빌드] 툴체인 정상(/home/z/jdk) → JAVA_HOME=/home/z/jdk ANDROID_HOME=/home/z/.android-sdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 55s → download/SERTZ-v1.4.4.apk 117,497,248B · aapt 96/1.4.4 · md5 81ed988f4db2e5a3343865da6fbadea9
+- [릴리스] scripts/release_v144.py — 기존 v1.4.4 태그 릴리스(id 393360984) 재사용·asset 교체 업로드(asset 580980138) → 원격 재다운로드 md5 일치 ✓ · /api/version(1.4.4/96)·/(200)·guide(200, 최종 md5 서빙)·/SERTZ-v1.4.4.apk 307·/secret/second.html 200 ✓
+
+Stage Summary:
+- v1.4.4 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.4/SERTZ-v1.4.4.apk (versionCode 96, 117,497,248B, md5 81ed988f…)
+- 유저 지시 완성: 마을 NPC 3명(주민 2+카이엔 교관) 대화 완료 → 레벨 3 즉시 달성 (E2E lv 1→3 실측) + 초행자 훈련장 복구로 마을 1→3 루트 이중화
+- 부수 근본 수정: 파티 보드 무한루프(프리즈) 제거·보물상자 렌더 복구·v1.4.3 병합 유실분(시너지/미션보드/최적화 4종/비석) 복구 — "캐릭터 선택 후 응답없음" 재발 소지 원천 차단
+- 운영 교훈: ①커밋 2101c7b처럼 stale 베이스 위 패치는 미반영 기능을 조용히 유실시킨다 — 커밋 메시지의 기능 주장은 grep으로 현행화 검증 필요 ②무한루프는 페이지 응답성 레이스+CDP 콜스택 샘플링으로 특정한다 ③세이브 마이그레이션 불요(v0 need 갱신은 진행 표시만 재계산, questIdx 의미 불변)
+- 남은 지시: 없음 — GitHub 토큰 노출 지속 — 재발급 권고 필수

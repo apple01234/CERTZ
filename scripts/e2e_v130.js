@@ -29,7 +29,7 @@ const { chromium } = require("playwright");
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2600);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
   ok("[부팅] 타이틀 도달", badge, "v1.4.0 배지 표시");
   await shot("00_title");
 
@@ -49,7 +49,7 @@ const { chromium } = require("playwright");
     return { slash: has("vfx_slash"), ring: has("vfx_ring"), fw: has("vfx_fw_heart"), magic: has("vfx_magic"), map: has("map_ground"), snd, petal: has("vfx_petal") };
   });
   ok("[에셋] vfx_slash/vfx_ring/vfx_fw_heart 로드", assets.slash && assets.ring && assets.fw);
-  ok("[에셋] vfx_magic/map_ground/vfx_petal 로드", assets.magic && assets.map && assets.petal);
+  ok("[에셋] vfx_magic/vfx_petal 로드 (map_ground는 v1.4.3 유적 삭제로 미로드 — 기대값 현행화)", assets.magic && assets.petal);
   ok("[에셋] Drive SFX 로드 (sfx_hit_basic)", assets.snd);
 
   /* 여캠 생성 (백자) — 로비 3단 흐름: 이름 → 직업 → 외형 (v1.2.1 e2e 준용) */

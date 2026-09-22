@@ -110,17 +110,25 @@ function todayKey(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** 날짜 기반 결정적 3종 선택 (풀 6종 → day 해시로 회전) */
+/** 날짜 기반 결정적 3종 선택 (풀 6종 → day 해시로 회전)
+ *  v1.4.4 긴급 수정 — 구현은 "cur를 step(1+h%3)씩 이동하며 3종 수집"이었는데,
+ *  step과 풀 길이(6)가 공약수를 가지는 날(예: step=3 → gcd=3)은 순환 사이클에 빠져
+ *  3종을 영영 채우지 못하는 무한루프가 됐다. 메인 스레드가 정지하는 치명적 버그로
+ *  "캐릭터 선택 후 게임 진입 불가·웹페이지 응답없음" 리포트의 근본 원인 중 하나.
+ *  → 결정적 Fisher-Yates 셔플(LCG 시드=h)로 교체: 어떤 날짜에도 즉시 종료·항상 3종. */
 function pickDailyMissions(day: string): string[] {
   let h = 0;
   for (let i = 0; i < day.length; i++) h = (h * 31 + day.charCodeAt(i)) >>> 0;
-  const idx: number[] = [];
-  let cur = h % PARTY_MISSION_POOL.length;
-  while (idx.length < 3) {
-    if (!idx.includes(cur)) idx.push(cur);
-    cur = (cur + 1 + (h % 3)) % PARTY_MISSION_POOL.length;
+  const pool = PARTY_MISSION_POOL.map((_, i) => i);
+  let s = h || 1; // LCG 시드 — 0이면 항상 같은 시퀀스가 나오므로 최소 1
+  const rnd = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    const t = pool[i];
+    pool[i] = pool[j];
+    pool[j] = t;
   }
-  return idx.map((i) => PARTY_MISSION_POOL[i].id);
+  return pool.slice(0, 3).map((i) => PARTY_MISSION_POOL[i].id);
 }
 
 let boardCache: PartyBoardState | null = null;

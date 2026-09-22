@@ -861,10 +861,12 @@ const VILLAGE: StageDef = {
     {
       id: "v0",
       type: "talk",
-      title: "마을 주민과 인사",
-      desc: "주민에게 가까이 가서 E키(모바일은 버튼)로 대화해 보자.",
-      need: 2,
-      targetLabel: "마을 주민",
+      /* v1.4.4 (유저 지시) — 전직 NPC 1명(카이엔) + 일반 NPC 2명 = 총 3명 대화 완료 시
+       *  레벨 3 달성. 마을에서 레벨을 올릴 곳이 없다는 리포트의 정면 해결. */
+      title: "마을 NPC 3명과 인사",
+      desc: "주민 2명과 카이엔 교관 — NPC 3명에게 가까이 가서 E키(모바일은 버튼)로 대화하자. 3명을 모두 만나면 레벨 3이 달성된다!",
+      need: 3,
+      targetLabel: "마을 NPC",
       expReward: 25,
     },
     {

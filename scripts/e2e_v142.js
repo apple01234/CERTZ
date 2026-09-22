@@ -30,8 +30,8 @@ const { chromium } = require("playwright");
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
 
   /* 부팅 + 배지 */
-  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
-  ok("[부팅] 타이틀 도달 (v1.4.3 배지)", badge);
+  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
+  ok("[부팅] 타이틀 도달 (v1.4.4 배지)", badge);
 
   /* ② 스프라이트 미로딩 — 부트 감사 통과 + 지연 로드 완료 + 실패 경고 0건 */
   for (let i = 0; i < 30 && !(await p.evaluate(() => !!window.__SERTZ_DEFER_DONE__)); i++) await p.waitForTimeout(300);

@@ -31,8 +31,8 @@ const { chromium } = require("playwright");
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
 
   /* 부팅 + 배지 */
-  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
-  ok("[부팅] 타이틀 도달 (v1.4.3 배지)", badge);
+  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
+  ok("[부팅] 타이틀 도달 (v1.4.4 배지)", badge);
 
   /* ④ 아이콘 로드 — 지연 로드 완료 후 bd_* 등 텍스처 존재 */
   for (let i = 0; i < 30 && !(await p.evaluate(() => !!window.__SERTZ_DEFER_DONE__)); i++) await p.waitForTimeout(300);
