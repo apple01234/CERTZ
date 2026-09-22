@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""v1.4.3 Release 생성 + APK 업로드 + 원격 md5 검증 (캐릭터 선택 후 진입 불가·웹페이지 응답없음 근본 수정)
-   v1.4.2 스크립트 계승 — APK 전용"""
+"""v1.4.3 Release 생성 + APK 업로드 + 원격 md5 검증 (유저 리포트 6건 — 유적 히트박스·철거 / 등급업 큐브 / 보스 유물 아이콘 / 공동 토벌전 / 재림 시리즈)
+   release_v142.py 계승 — APK 전용"""
 import json, subprocess, hashlib, urllib.request, os, io, time
 
 REPO = "apple01234/CERTZ"
 TAG = "v1.4.3"
 APK = "/home/z/my-project/download/SERTZ-v1.4.3.apk"
-EXPECT_MD5 = "6bdbb1fceee8be446b2842849b8e7399"
+EXPECT_MD5 = "e84879e38296cd2356fe8db6add7658e"
 
 TOKEN = subprocess.run(
     ["git", "remote", "get-url", "origin"], capture_output=True, text=True, cwd="/home/z/my-project"
@@ -42,73 +42,88 @@ assert local == EXPECT_MD5, f"로컬 md5 불일치: {local} != {EXPECT_MD5}"
 size = os.path.getsize(APK)
 print(f"로컬 OK: {APK} {size}B md5={local}")
 
-BODY = """## v1.4.3 — 캐릭터 선택 후 게임 진입 불가·웹페이지 응답없음 근본 수정 (versionCode 95)
+BODY = """## v1.4.3 — 유저 리포트 6건 전부 반영 (versionCode 95)
 
-### 🎮 원인 확정 — 1,036장 외형 일괄 로드가 진입을 막고 있었다
-- 타이틀 화면에서 코스튬/직업/GM 외형 시트 **37종 × 28프레임(≈1,036장 webp)** 을 백그라운드로 몰아서 받고, 게임 시작 버튼을 누르면 **전체 완료를 기다렸다** 진입하는 구조였음
-- 대량 로드 압박으로 브라우저/Android WebView의 메인 스레드가 포화 → **"캐릭터 선택 후 게임이 안 들어가고 웹페이지가 응답없음"** 상태 발생 (최악 시 8초 폴백 + 그 이후에도 1,036장 텍스처 업로드 부하가 이어짐)
+### 👻 요세유적 보이지 않는 히트박스 제거
+- 유적 지지대의 은닉 충돌 판정(기둥 하단 zone)이 원인 — 시각 경계와 어긋난 채 플레이어를 막았다
+- 구조물 철거와 함께 히트박스 원천 소멸
 
-### 🔧 근본 수정 — 필요한 외형 1종만, 즉시 진입
-- **타이틀 일괄 지연 로드 폐지** — 1,036장 요청 자체를 제거. 이어하기 캐릭터에 필요한 외형 시트 **1종(28프레임)** 만 준비 후 바로 진입
-- **신규 캐릭터는 로드 0** — 기본 외형(부트 로드분)이므로 즉시 진입 (E2E 실측 진입 1.8초)
-- **게임 중 동적 로드** — 전직/GM 승인 등으로 필요해진 시트는 그 자리에서 로드 후 전환 (로더 우회 네이티브 병렬 로딩 + 게임 루프 폴링 재적용 — 로더 경합과 무관하게 100% 전환)
-- **폴백 방어** — 로드 실패 시에도 기본 외형으로 정상 기동 (무한 루프 방지 한도 내 자동 재시도)
+### 🏰 마을 유적 구조물 철거 (보물 상자만 잔존)
+- 계단·발코니·목책·횃불·기둥·안내판 전부 제거
+- 하루 1회 보상 보물상자(골드 + 에메랄드 확률)만 지상에 남긴다 — 상자는 충돌 없음
 
-### ✅ 검증
-- 신규 E2E 12/12 PASS (타이틀 외형 요청 0건 · 월드 등장 1.8초 · pageerror 0)
-- 회귀 5종 97/97 PASS (v1.4.2 12·v1.4.1 14·v1.3.1 16·v1.3.0 19·v1.2.1 24 — 유적 렌더·texGuard·코스튬 전환 포함)
-- APK aapt 검증: versionCode 95 / versionName 1.4.3
+### 🎲 등급업 큐브 사용 가능
+- 기존엔 착용 장비 탭의 [등급업] 버튼으로만 사용 가능해 큐브를 눌러도 아무 일 없는 상태였다
+- 가방 큐브 행에서 [무기 등급업] / [방어구 등급업] 버튼 직접 노출
+- 실패 시 원인별 안내 (큐브 없음 — 캐시상점 안내 / 이미 전설 등급)
+
+### 🖼️ 보스 유물·일부 아이템 이미지 실패 근본 수정
+- 근원: 보스 유물(bd_*) 등 아이콘이 Phaser 로드 목록 밖 → 보스 드롭이 아예 안 보였다
+- 전 아이템 아이콘 173종 타이틀 지연 로드 등록 (texGuard 무결성 감시 대상 자동 합류)
+- 드롭 텍스처 폴백 + UI 아이콘 <img> 자동 재시도(2회 캐시버스팅) 3중 방어
+
+### ⚔️ 멀티 콘텐츠 — 파티 공동 토벌전 신설
+- 파티 위젯의 [공동 토벌전] 버튼으로 입장 (단독 입장도 가능)
+- 레이드 보스 "심연의 감시자" — 파티원 수만큼 HP +35%/명 · 보상 증가 · 에메랄드 +1/명
+- 같은 파티가 입장하면 서로 보이고 공격 연출 동기화 (기존 멀티 릴레이 재사용)
+
+### 🐉 재림 시리즈 완성
+- 보스 재도전 창에 재림의 땅 보스 3종 추가 — 재림5 베오르드 / 재림10 요르문간드 / 재림15 나그라파르
+- 난이도(이지~카오스) 공용 적용 · 재림판 계수(HP ×5 · ATK ×2.2 · 보상 ×3)
 
 ---
-- md5: `6bdbb1fceee8be446b2842849b8e7399` (111,667,602B · versionCode 95)
+- md5: `e84879e38296cd2356fe8db6add7658e` (111,668,934B · versionCode 95)
 - 기존 세이브 그대로 유지 · 덮어설치 가능
-- 📄 상세 가이드: http://sertz.z.ai/apk-guide.html
-"""
+- 📄 상세 가이드: http://sertz.z.ai/apk-guide.html"""
 
-# 1) 기존 릴리스/태그 확인
-rel = json.loads(api(f"https://api.github.com/repos/{REPO}/releases/tags/{TAG}").read())
-if rel.get("id"):
-    print(f"기존 릴리스 재사용: id={rel['id']}")
-    rel_id = rel["id"]
-    for a in rel.get("assets", []):
-        if a["name"] == os.path.basename(APK):
-            api(f"https://api.github.com/repos/{REPO}/releases/assets/{a['id']}", method="DELETE")
-            print(f"기존 asset 삭제: {a['name']}")
-    api(f"https://api.github.com/repos/{REPO}/releases/{rel_id}",
-        data=json.dumps({"body": BODY, "draft": False, "prerelease": False}).encode(),
-        headers={"Content-Type": "application/json"}).read()
+assert not os.path.exists(f"/tmp/.rel_v143_done"), "재실행 방지"
+open("/tmp/.rel_v143_done", "w").write("1")
+
+# 1) 기존 릴리스 있으면 재사용, 없으면 생성
+r = api(f"https://api.github.com/repos/{REPO}/releases/tags/{TAG}")
+rel = json.loads(r.read().decode())
+if "id" in rel and rel.get("id"):
+    rid = rel["id"]
+    print(f"기존 릴리스 재사용: id={rid}")
 else:
     payload = json.dumps({
-        "tag_name": TAG, "target_commitish": "main", "name": f"SERTZ {TAG} — 캐릭터 선택 진입 프리징 근본 수정",
-        "body": BODY, "draft": False, "prerelease": False,
+        "tag_name": TAG,
+        "target_commitish": "main",
+        "name": "SERTZ v1.4.3 — 리포트 6건 (유적 정리·등급업 큐브·아이콘·공동 토벌전·재림 완성)",
+        "body": BODY,
+        "draft": False,
+        "prerelease": False,
     }).encode()
-    rel = json.loads(api(f"https://api.github.com/repos/{REPO}/releases", data=payload,
-                         headers={"Content-Type": "application/json"}).read())
-    rel_id = rel["id"]
-    print(f"신규 릴리스 생성: id={rel_id} tag={TAG}")
+    r = api(f"https://api.github.com/repos/{REPO}/releases", payload)
+    rel = json.loads(r.read().decode())
+    rid = rel["id"]
+    print(f"릴리스 생성: id={rid}")
 
-# 2) APK 업로드
-up_url = f"https://uploads.github.com/repos/{REPO}/releases/{rel_id}/assets?name={os.path.basename(APK)}"
-with open(APK, "rb") as f:
-    data = f.read()
-for attempt in range(3):
-    try:
-        api(up_url, data=data, headers={"Content-Type": "application/octet-stream"}).read()
-        break
-    except Exception as e:
-        print(f"업로드 재시도 {attempt+1}: {e}")
-        time.sleep(5)
-print("업로드 완료")
+# 2) 기존 asset 동일명 있으면 삭제
+for a in rel.get("assets", []):
+    if a["name"] == "SERTZ-v1.4.3.apk":
+        api(f"https://api.github.com/repos/{REPO}/releases/assets/{a['id']}", method="DELETE")
+        print(f"기존 asset 삭제: {a['id']}")
+        time.sleep(2)
 
-# 3) 원격 검증
+# 3) 업로드
+up_url = f"https://uploads.github.com/repos/{REPO}/releases/{rid}/assets?name=SERTZ-v1.4.3.apk"
+data = open(APK, "rb").read()
+req = urllib.request.Request(up_url, data=data, headers={
+    "Authorization": f"token {TOKEN}", "User-Agent": "curl",
+    "Content-Type": "application/octet-stream",
+    "Content-Length": str(len(data)),
+})
+up = urllib.request.urlopen(req, timeout=1200)
+asset = json.loads(up.read().decode())
+print(f"업로드 완료: asset id={asset['id']} size={asset['size']}")
+
+# 4) 원격 재다운로드 md5 검증
 time.sleep(3)
-assets = json.loads(api(f"https://api.github.com/repos/{REPO}/releases/{rel_id}").read())["assets"]
-for a in assets:
-    print(f"asset: {a['name']} {a['size']}B state={a['state']}")
-
+remote = f"https://github.com/{REPO}/releases/download/{TAG}/SERTZ-v1.4.3.apk"
 tmp = "/tmp/verify_v143.apk"
-urllib.request.urlretrieve(f"https://github.com/{REPO}/releases/download/{TAG}/SERTZ-{TAG}.apk", tmp)
-remote = md5f(tmp)
-print(f"원격 md5: {remote} — {'일치 ✓' if remote == EXPECT_MD5 else '불일치 ✗'}")
-assert remote == EXPECT_MD5, "원격 md5 불일치!"
-print("RELEASE COMPLETE")
+urllib.request.urlretrieve(remote, tmp)
+rm = md5f(tmp)
+print(f"원격 md5: {rm}")
+assert rm == EXPECT_MD5, "원격 md5 불일치!"
+print("✅ v1.4.3 릴리스 완료 — 원격 md5 일치")

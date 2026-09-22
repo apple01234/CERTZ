@@ -1998,23 +1998,23 @@ Stage Summary:
 ---
 Task ID: 94
 Agent: Super Z (메인)
-Task: v1.4.3 — 유저 리포트 "캐릭터 선택 후 게임 안들어가지고 웹페이지 응답없음" 근본 수정·E2E·빌드·릴리스 (versionCode 95)
+Task: v1.4.3 — 유저 리포트 6건(요세유적 히트박스·유적 철거 / 등급업 큐브 사용안됨 / 보스 유물 이미지 실패 / 멀티 콘텐츠 / 재림 시리즈 완성) 구현·E2E·빌드·릴리스 (versionCode 95)
 
 Work Log:
-- [세션 현행화] 요약 스냅샷의 "v1.4.3/f5cac90/Task 95"은 미반영 낡은 정보였음 — git log(HEAD=v1.4.2 53068b1)+worklog(마지막 Task 93)+/api/version(1.4.2/94) 3중으로 실제 상태 확정
-- [진단] 유저 업로드 수정안(fix_certz_character_entry-1.py) 분석 + TitleScene.ts 정밀 판독 — 원인 확정: 타이틀 create()에서 코스튬/직업/GM 외형 37종×28프레임(≈1,036장 webp)을 백그라운드 일괄 로드하고 beginWorld()가 전체 완료(deferDone)를 기다렸다 진입 → 대량 로드가 메인 스레드/네트워크 포화 → 브라우저/WebView "응답없음"·진입 불가
-- [수정#1] 스크립트 적용(scripts/fix_certz_character_entry.py) — textures.ts에 loadBodyPrefix(선택 프리픽스 1종=28프레임만 로드) 신설, TitleScene beginWorld를 게이트 없는 즉시 진입으로 교체, 1,036장 지연 로더·deferDone/deferStarted 완전 제거, onContinue가 세이브로 bodyPrefix 계산(applyBodyLook 규칙과 동일)
-- [수정#2 보강] TitleScene 임포트 정리(DEFERRED_BODY_PREFIXES/registerBodyAnims/hookLoaderForGuard 제거) + bodyPrefixOf() 헬퍼 추출 + 자동복귀(resumeId) 플로우에도 bodyPrefix 적용 + Player.applyBodyLook 미로드 방어(로드 시작·bodyPrefix 임시 비움으로 setTexture(__MISSING) 방지) + WorldScene.update에서 player.tickBodyPending() 매 프레임 호출(로드 완료 감지·재적용 — 이벤트 경합 무관 100% 전환, 1초 스로틀 8회 한도 폴백)
-- [Phaser 4 로더 결함 발견] scene.load가 진행 중일 때 큐잉하면 1장만 처리하고 정지(실측 state=LOADING prog 1/28→0/28 정지) — filecomplete 카운트·유휴 대기 큐잉으로도 불안정 → 최종 해법: 로더 완전 우회, 브라우저 네이티브 Image 병렬 로딩 + textures.addImage 등록(loadImageRaw). Player가 update list 미등록이라 preUpdate가 안 불리는 것도 실측으로 확인 → WorldScene 루프 틱으로 전환
-- [플래그 재활용] BootScene create 완료 시 __SERTZ_DEFER_DONE__=true 설정(부트 로드 완료 신호) — E2E 5종 호환 유지
-- [E2E] e2e_v143.js 신설 12항목(배지·타이틀 시점 코스튬/직업/GM 미로드·외형 webp 요청 0건·부트 플래그·실패경고 0·texGuard 985·월드 진입·실제 등장 1.9초·불필요 시트 미로드 유지·hero 텍스처·유적 목책4+계단1·pageerror 0) → 12/12 PASS. 회귀 5종 배지 v1.4.3 갱신 + 코스튬 어서션 v1.5.0 의미 반전(미로드 정상)/동적 로드 전환 검증으로 교체 → v142 12/12·v141 14/14·v131 16/16·v130 19/19·v121 24/24 PASS — 총 97/97
-- [버전체인 8곳] package.json(1.4.3)·build.gradle(95·1.4.3+히스토리 주석)·server.js(VERSION/CODE/NOTE/APK_MIRROR)·Overlays 배지(v1.4.3)·apk-guide(제목·sub 95·노티스·링크·md5 6bdbb1fc·v1.4.3/v1.4.2 히스토리)·안내.txt(v1.4.3 블록)
-- [빌드] 툴체인 소실 재확인→rebuild_toolchain.sh(javac 21.0.12.1) → JAVA_HOME=/home/z/jdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 5m20s → download/SERTZ-v1.4.3.apk 111,667,602B · aapt 95/1.4.3 · 번들 가이드 v1.4.3 선확인 · md5 6bdbb1fceee8be446b2842849b8e7399
-- [릴리스] scripts/release_v143.py — Release v1.4.3(id 393316203) 업로드 → 원격 재다운로드 md5 일치 ✓
-- [서버] next build(3회 반복) 후 pkill→setsid 재기동 → /api/version(1.4.3/95)·/(200)·guide(200, 최종 md5 서빙)·/SERTZ-v1.4.3.apk 307 ✓ · 최종 상태 v143 12/12 재통과
+- [①요세유적 보이지 않는 히트박스] 원인 특정 — buildLayeredKeep의 지지대 충돌 zone(기둥 하단, ry+T*4.4)이 시각 기둥(ry+32~128)과 어긋난 채 solidGroup에 등록돼 플레이어를 은닉 차단. 구조물 철거와 함께 원천 소멸
+- [②유적 철거] buildLayeredKeep(발코니 16타일·기둥 2·충돌 zone 2·계단·목책 4·횃불 2·안내판) 완전 제거 → buildVillageChest 신설. 하루 1회 보상 보물상자(keepchest 상호작용·keep_chest_open 애니·유적 상자 보상 로직 유지)만 지상에 잔존, 상자는 충돌 없음. tickKeepLayer는 keepRect null 가드로 무해 잔존
+- [③등급업 큐브 사용안됨] 실측 진단(diag_tiercube.js) — 엔진 로직(upgradeTier)은 정상, 큐브 자체의 사용 경로 부재가 원인(usable 목록 밖 → 큐브 행에 버튼 0). 수정: 인벤 소모품 행 tier_cube에 [무기 등급업]/[방어구 등급업] 버튼 직접 노출(착용+전설 미만 게이트) + handleIsekai tierUp 실패 원인 분리(큐브 없음→캐시상점 안내 / 전설 상한 안내)
+- [④보스 유물 이미지 실패] 근원 확정 — Drop.spawnItem이 setTexture(icon)으로 월드 드롭 렌더하는데 bd_* 9종 등 다수 아이콘이 부트/지연 로드 목록 밖(실측: textures.exists(i_bd_guardian)=false). 수정 3중: ①data.ts ALL_ITEM_ICONS(169종) → TitleScene 지연 로더 일괄 등록(기존 보유 키 스킵, hookLoaderForGuard로 texGuard 감시 자동 합류) ②Drop 폴백(텍스처 부재 시 item_coin) ③ItemIcon <img> onError 자동 재시도 2회(캐시버스팅)
+- [⑤멀티 콘텐츠] 파티 공동 토벌전(praid) 신설 — STAGES.praid(1300×860·체인 분리) + buildPartyRaid(심연의 소환진 룬 + 레이드 보스 "심연의 감시자"=abysslord 변형·HP×(1+0.35×(파티-1))·보상 동배율·에메랄드 3+파티N) + PartyWidget [공동 토벌전] 버튼(접힘 상태 상시 노출·단독 입장 허용) + rpg:partyRaid 이벤트 + praidFrom 복귀/세이브 오버라이드/골든몬스터 제외. 격파 보상은 재림판 경로(replayBossActive) 재사용. E2E 중 발견 버그 수정: create 도중 Boss 스폰이 FX 풀 빌드 이전 파티클을 참조해 초기화 예외 → spawnReplayBoss와 동일 delayedCall(350)+try/catch 패턴으로 전환 + spawnBurstAt null 가드
+- [⑥재림 시리즈 완성] 보스 재도전 창(제목이 "보스 재도전 — 재림")에 재림 보스 미포함이 불완전 요인 — BossReplayPanel에 "재림의 땅 — 지역 보스 3종" 섹션 추가(vord/jorm/nagr·클리어 판정=컬렉션 boss_* 킬) + onBossReplay r5/r10/r15 분기(목적지=보스 구역 자체·컬렉션 기반 완료 판정) + spawnReplayBoss 재림 스테이지 지원(STAGES[key].bossKey 조회·stageScale 전용 곡선)
+- [E2E] e2e_v143.js 신설 14항목(배지·아이콘 9종 텍스처·월드 진입·유적 철거 3건·큐브 사용/실패 안내·r5 재도전 진입+재림 보스 스폰·praid 진입+레이드 보스+복귀지·pageerror 0) → 14/14 PASS. 회귀: v142 10/10(유적 판정 상자 전용 교체)·v141 10/10(동일)·v140 15/15·v131 16/16(장식 보호 판정을 상자 반경으로 교체)·v130 17/17(#9 층식맵을 철거 확인+상자 유지로 교체)·v121 25/25(favicon 404 무해) — 전 배지 기대값 v1.4.3 갱신
+- [운영 이슈] 서버 재기동 시 dev.sh 워치독과 경합해 좀비 프로세스+리스너 부재 상태 발생 → pkill -9 후 워치독 재기동 대기가 안정. E2E 환경 특성 규명: headless swiftshader에서 게임 루프 ~1-3fps(프레임당 렌더 과중)로 delayedCall 기반 전환이 수 초 소요 → 클럭 의존 E2E는 폴링 대기(최대 40s)로 전환. RAF 자체는 61fps 정상, 실기기 영향 없음(게임 코드 문제 아님 — 프로브 진단 기록 scripts/diag_*.js)
+- [버전체인 8곳] package.json(1.4.3)·build.gradle(95·1.4.3+히스토리)·server.js(VERSION/CODE/NOTE/APK_MIRROR)·Overlays 배지(v1.4.3)·apk-guide(제목·sub 95·노티스 6건·링크·md5·히스토리 v1.4.2 추가)·안내.txt(v1.4.3 블록+md5)
+- [빌드] 툴체인 재소실 → rebuild_toolchain.sh(Temurin21+jdk javac 확인) → JAVA_HOME=/home/z/jdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 5m15s(1차 시도 10분 제한 중단 — gradle 캐시로 재실행 성공) → download/SERTZ-v1.4.3.apk 111,668,934B · aapt 95/1.4.3 · 서명 cc774f34(기존 키 동일) · 번들 가이드 v1.4.3 선확인 · md5 e84879e38296cd2356fe8db6add7658e
+- [릴리스] scripts/release_v143.py — Release v1.4.3(id 393316203) 생성·업로드(asset 580754764) → 원격 재다운로드 md5 일치 ✓ · 가이드 서빙 최종 md5 ✓ · /SERTZ-v1.4.3.apk 307 ✓ · /api/version(1.4.3/95) ✓
 
 Stage Summary:
-- v1.4.3 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.3/SERTZ-v1.4.3.apk (versionCode 95, 111,667,602B, md5 6bdbb1fc…)
-- "캐릭터 선택 후 진입 불가·웹페이지 응답없음" 근본 수정: 1,036장 일괄 로드 폐지 → 필요 외형 1종만 로드 후 즉시 진입(실측 1.9초)·게임 중 외형은 로더 우회 네이티브 로딩+루프 폴링 재적용·폴백 방어
-- 운영 교훈: ①이 Phaser 4 로더는 진행 중 큐잉 시 1장 후 정지 — 런타임 에셋은 로더 우회(native Image+addImage)가 정답 ②Player가 update list 미등록 → preUpdate 미호출 — 씬 루프 틱으로 대체 ③서버 기동은 매번 pkill→단일 인스턴스 확인 후 E2E(좀비 인스턴스 리스너 없이 생존 재확인) ④세션 요약 스낵샷은 git/worklog/서버 3중 현행화가 최우선
-- 남은 지시: 없음 — 세이브 영향 없음(마이그레이션 불요). GitHub 토큰 노출 지속 — 재발급 권고 필수
+- v1.4.3 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.3/SERTZ-v1.4.3.apk (versionCode 95, 111,668,934B, md5 e84879e3…)
+- 유저 리포트 6건 전부 구현·E2E 입증: ①유적 은닉 히트박스 제거 ②유적 철거+보물상자 잔존 ③등급업 큐브 사용 경로 ④보스 유물 등 아이콘 3중 방어 ⑤파티 공동 토벌전(멀티 콘텐츠) ⑥재림 보스 3종 재도전
+- 운영 교훈: ①create 도중 보스 스폰은 FX 풀(buildFxPools) 이전 파티클 참조 크래시 — 보스 스폰은 반드시 delayedCall 지연+try/catch(재림판 패턴 준용) ②headless E2E는 게임 루프가 1-3fps라 delayedCall 의존 검증은 폴링(40s+)으로 — 클럭 정상 여부는 루프 이벤트 elapsed 증가율로 판별(스크립트 diag_clock*.js 계열) ③시스템 JRE만 있으면 javac 부재 — 세션 첫 빌드 전 rebuild_toolchain.sh 확인 ④프로브는 DEFER 대기+게임 시작 2단 버튼(게임 시작→캐릭터 선택)을 거쳐야 월드 진입 상태가 된다
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

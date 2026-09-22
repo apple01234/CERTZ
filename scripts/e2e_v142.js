@@ -93,7 +93,7 @@ const { chromium } = require("playwright");
       else if (tex === "map_props" && fn === "kg_fence") fence++;
       else if (tex === "map_props" && fn === "kg_stairs") stair++;
     }
-    const chest = sc.interactables?.filter((it: { kind: string }) => it.kind === "keepchest").length ?? 0;
+    const chest = sc.interactables?.filter((it) => it.kind === "keepchest").length ?? 0;
     return { kgTiles, fence, stair, chest, keepRectNull: !sc.keepRect, keepStairNull: !sc.keepStair };
   });
   ok("[유적] 구조물 철거 — 발코니/목책/계단 프레임 0", !!keep && keep.kgTiles === 0 && keep.fence === 0 && keep.stair === 0, keep ? `kg=${keep.kgTiles} fence=${keep.fence} stair=${keep.stair}` : "-");
@@ -109,7 +109,7 @@ const { chromium } = require("playwright");
     const cam = sc.cameras.main;
     cam.stopFollow();
     cam.setZoom(1.4);
-    const it = (sc.interactables ?? []).find((x: { kind: string }) => x.kind === "keepchest");
+    const it = (sc.interactables ?? []).find((x) => x.kind === "keepchest");
     if (it) cam.centerOn(it.x, it.y - 20);
     return true;
   });

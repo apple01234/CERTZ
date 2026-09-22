@@ -40,7 +40,7 @@ const { chromium } = require("playwright");
     const g = window.__SERTZ__?.game;
     const sc = g?.scene?.getScene("title") ?? g?.scene?.getScene("boot");
     if (!sc) return null;
-    const keys = ["i_bd_guardian", "i_bd_abudditos", "i_bd_fenrir", "i_gm_sword", "i_tier_cube", "i_eert_cube", "exp_book_l", "item_potion_hp5", "item_coin"];
+    const keys = ["i_bd_guardian", "i_bd_abudditos", "i_bd_fenrir", "i_gm_sword", "i_tier_cube", "item_eert_cube", "i_exp_book_l", "i_potion_hp5", "item_coin"];
     const out = {};
     for (const k of keys) out[k] = sc.textures.exists(k);
     return out;
@@ -118,29 +118,40 @@ const { chromium } = require("playwright");
     };
   });
   ok("[큐브] 등급업 큐브 사용 — 소모 1 + 승급 반영", !!tier && tier.cubesAfter === 2 && tier.weaponUp === 1 && tier.tierMul > 1, tier ? `cubes=${tier.cubesAfter} up=${tier.weaponUp} mul=${tier.tierMul}` : "-");
-  /* 실패 원인 분리 메시지 — 큐브 소진 후 재시도 */
+  /* 실패 원인 분리 메시지 — 큐브 소진 후 재시도 (React 렌더 대기 후 판정) */
   const tierFail = await p.evaluate(() => {
     const sc = window.__SERTZ__.game.scene.getScene("world");
     const p2 = sc.player;
     p2.owned = p2.owned.filter((k) => k !== "tier_cube");
     window.__SERTZ_EB__.emit("rpg:isekai", { action: "tierUp", slot: "weapon" });
-    return document.body.innerText.includes("등급업 큐브가 없습니다");
+    return true;
   });
-  ok("[큐브] 실패 원인별 안내 (큐브 없음 메시지)", !!tierFail, "-");
+  await p.waitForTimeout(600);
+  const tierFailMsg = await p.evaluate(() => document.body.innerText.includes("등급업 큐브가 없습니다"));
+  ok("[큐브] 실패 원인별 안내 (큐브 없음 메시지)", !!tierFail && !!tierFailMsg, "-");
 
   /* ⑥ 재림 시리즈 — bossReplay r5 (컬렉션 주입 → 이동 → 재림 보스 스폰) */
-  const rb = await p.evaluate(() => {
+  await p.waitForTimeout(600);
+  await p.evaluate(() => {
     const sc = window.__SERTZ__.game.scene.getScene("world");
     sc.monsterKills["boss_vord"] = 1; // 최초 처치 등록 시뮬레이션
     window.__SERTZ_EB__.emit("rpg:bossReplay", { ch: "r5", lv: "easy" });
-    return true;
   });
-  await p.waitForTimeout(2600);
-  const rbState = await p.evaluate(() => {
-    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (!sc) return null;
-    return { stage: sc.stageDef?.key, bossName: sc.bossDef?.name ?? null, hasBoss: !!sc.boss, replayActive: sc.replayBossActive };
-  });
+  /* 헤드리스는 게임 루프가 ~3fps라 delayedCall(440ms 전환 + 350ms 보스 스폰)에 수 초 소요 — 폴링 대기 */
+  let rbState = null;
+  for (let i = 0; i < 40; i++) {
+    await p.waitForTimeout(1000);
+    rbState = await p.evaluate(() => {
+      const sc = window.__SERTZ__?.game?.scene?.getScene("world");
+      if (!sc) return null;
+      return { stage: sc.stageDef?.key, bossName: sc.bossDef?.name ?? null, hasBoss: !!sc.boss, replayActive: sc.replayBossActive };
+    });
+    if (rbState && rbState.stage === "r5" && rbState.hasBoss) break;
+    /* 대화(보스 인트로)가 떠 있으면 정리 */
+    if (rbState && rbState.stage === "r5" && !rbState.hasBoss) {
+      await p.mouse.click(640, 500);
+    }
+  }
   ok("[재림] r5 보스 재도전 진입", !!rbState && rbState.stage === "r5", rbState ? `stage=${rbState.stage}` : "씬 없음");
   ok("[재림] 재림 보스(베오르드) 스폰 + 재림판 경로", !!rbState && rbState.hasBoss && /재림한 .*베오르드/.test(rbState.bossName ?? "") && rbState.replayActive, rbState ? `name=${rbState.bossName}` : "-");
 
@@ -152,34 +163,35 @@ const { chromium } = require("playwright");
     await p.waitForTimeout(360);
   }
   await p.evaluate(() => window.__SERTZ_EB__.emit("rpg:partyRaid", {}));
-  await p.waitForTimeout(3200);
-  for (let i = 0; i < 10; i++) {
-    const d = await p.evaluate(() => window.__SERTZ__?.game?.scene?.getScene("world")?.dialoguing);
-    if (!d) break;
-    await p.mouse.click(640, 500);
-    await p.waitForTimeout(360);
+  let raid = null;
+  for (let i = 0; i < 40; i++) {
+    await p.waitForTimeout(1000);
+    raid = await p.evaluate(() => {
+      const sc = window.__SERTZ__?.game?.scene?.getScene("world");
+      if (!sc) return null;
+      return {
+        stage: sc.stageDef?.key,
+        bossName: sc.bossDef?.name ?? null,
+        hasBoss: !!sc.boss,
+        bossHp: sc.boss?.maxHp ?? 0,
+        emerald: sc.replayBossEmerald,
+        returnActive: sc.returnActive,
+      };
+    });
+    if (raid && raid.stage === "praid" && raid.hasBoss) break;
+    if (raid && raid.stage === "praid") {
+      await p.mouse.click(640, 500);
+    }
   }
-  const raid = await p.evaluate(() => {
-    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (!sc) return null;
-    return {
-      stage: sc.stageDef?.key,
-      bossName: sc.bossDef?.name ?? null,
-      hasBoss: !!sc.boss,
-      bossHp: sc.boss?.maxHp ?? 0,
-      emerald: sc.replayBossEmerald,
-      returnActive: sc.returnActive,
-    };
-  });
   ok("[멀티] 공동 토벌전(praid) 진입", !!raid && raid.stage === "praid", raid ? `stage=${raid.stage}` : "씬 없음");
   ok("[멀티] 레이드 보스 심연의 감시자 스폰 + 파티 보상 경로", !!raid && raid.hasBoss && /심연의 감시자/.test(raid.bossName ?? "") && raid.emerald >= 4 && raid.returnActive, raid ? `name=${raid.bossName} em=${raid.emerald}` : "-");
 
-  /* 복귀 포탈 실측 — praidFrom(village) 복귀 경로 */
+  /* 복귀지 실측 — 이 흐름은 village → r5(재도전) → praid이므로 praidFrom = "r5"가 정상 */
   const back = await p.evaluate(() => {
     const sc = window.__SERTZ__.game.scene.getScene("world");
-    return { praidFrom: sc.praidFrom, stageOverrideWorks: !!(sc.praidFrom && window.__SERTZ__.game.scene.getScene("world").stageDef.key === "praid") };
+    return { praidFrom: sc.praidFrom, stageValid: !!window.__SERTZ__.game.scene.getScene("world").praidFrom };
   });
-  ok("[멀티] 복귀지 기록 (praidFrom=village)", !!back && back.praidFrom === "village", back ? `from=${back.praidFrom}` : "-");
+  ok("[멀티] 복귀지 기록 (praidFrom=입장 전 구역 r5)", !!back && back.praidFrom === "r5", back ? `from=${back.praidFrom}` : "-");
 
   /* 유적/토벌전 스크린샷 증거 */
   await p.evaluate(() => {

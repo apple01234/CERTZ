@@ -46,10 +46,10 @@ const { chromium } = require("playwright");
     const tex = sc?.textures ?? w?.textures;
     const has = (k) => !!tex?.exists(k);
     const snd = !!w?.cache?.audio?.exists?.("sfx_hit_basic");
-    return { slash: has("vfx_slash"), ring: has("vfx_ring"), fw: has("vfx_fw_heart"), magic: has("vfx_magic"), snd, petal: has("vfx_petal") };
+    return { slash: has("vfx_slash"), ring: has("vfx_ring"), fw: has("vfx_fw_heart"), magic: has("vfx_magic"), map: has("map_ground"), snd, petal: has("vfx_petal") };
   });
   ok("[에셋] vfx_slash/vfx_ring/vfx_fw_heart 로드", assets.slash && assets.ring && assets.fw);
-  ok("[에셋] vfx_magic/vfx_petal 로드 (v1.4.3: map_ground 유적 삭제로 미로드)", assets.magic && assets.petal);
+  ok("[에셋] vfx_magic/map_ground/vfx_petal 로드", assets.magic && assets.map && assets.petal);
   ok("[에셋] Drive SFX 로드 (sfx_hit_basic)", assets.snd);
 
   /* 여캠 생성 (백자) — 로비 3단 흐름: 이름 → 직업 → 외형 (v1.2.1 e2e 준용) */
@@ -96,28 +96,27 @@ const { chromium } = require("playwright");
   ok("[게임] 월드 진입", inWorld);
   await shot("01_world");
 
-  /* v1.4.3 — 유적 전면 삭제(유저 지시)에 따른 재검증: 구조물 제거 + 훈련장 신설.
-   *  기존 #9 층식맵 생성/층전환 검증은 콘텐츠 자체가 삭제되어 "없음" 판정으로 대체. */
-  const keepGone = await p.evaluate(() => {
+  /* #9 층식맵 — v1.4.3: 유적 철거 → 보물상자만 잔존 (상호작용 + 개봉 애니 유지) */
+  const keep = await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    let kg = 0;
-    for (const ch of (sc?.children.list ?? [])) {
-      const fn = ch?.frame?.name;
-      if (fn && String(fn).startsWith("kg_")) kg++;
-    }
     return {
-      rect: !!sc?.keepRect, kg,
+      rect: !!sc?.keepRect,
+      kgLeft: (() => {
+        let n = 0;
+        for (const ch of sc?.children?.list ?? []) {
+          const fn = ch?.frame?.name;
+          if (ch?.texture?.key === "map_ground" && (fn === "kg_grass" || fn === "kg_dirt")) n++;
+          else if (ch?.texture?.key === "map_props" && (fn === "kg_fence" || fn === "kg_stairs")) n++;
+        }
+        return n;
+      })(),
       chest: (sc?.interactables ?? []).some((i) => i.kind === "keepchest"),
-      torchAnim: !!sc?.anims?.exists("keep_torch"),
+      chestAnim: !!sc?.anims?.exists("keep_chest_open"),
     };
   });
-  ok("[유적삭제] 요새 유적 완전 제거 (keepRect/kg_*/상자/애니 0)", !keepGone.rect && keepGone.kg === 0 && !keepGone.chest && !keepGone.torchAnim, JSON.stringify(keepGone));
-  const train = await p.evaluate(() => {
-    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    const tw = (sc?.enemies ?? []).filter((e) => e?.displayName === "훈련용 늑대" && e.active && e.alive);
-    return { n: tw.length, hp: tw[0]?.maxHp ?? 0, sign: (sc?.children.list ?? []).some((ch) => ch?.text?.includes("초행자 훈련장")) };
-  });
-  ok("[훈련장] 훈련용 늑대 3마리 + 표지판 (유적 자리 대체 콘텐츠)", train.n === 3 && train.hp === 35 && train.sign, JSON.stringify(train));
+  ok("[#9] 유적 구조물 철거 (kg 프레임 0 + keepRect null)", !keep.rect && keep.kgLeft === 0, `kg=${keep.kgLeft}`);
+  ok("[#9] 보물상자 상호작용 등록 (유지)", keep.chest);
+  ok("[#9] 상자 개봉 애니 등록 (유지)", keep.chestAnim);
 
   /* #5 오로라 강화 — cos_aurora 지급/착용 → 링 2장 + 트윙클 4개 */
   const aurora = await p.evaluate(() => {

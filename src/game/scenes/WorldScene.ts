@@ -3158,7 +3158,9 @@ export class WorldScene extends Phaser.Scene {
   }
 
   spawnBurstAt(x: number, y: number, n: number, tint: number) {
-    /* v4.1.0 — 적응형 품질: FX 축소 모드에선 파티클 수를 줄인다 */
+    /* v4.1.0 — 적응형 품질: FX 축소 모드에선 파티클 수를 줄인다
+     *  v1.4.3 — 풀 빌드 전 호출 방어 (create 초반 보스 스폰 경로 등 — null 크래시 차단) */
+    if (!this.burstEmitter) return;
     const count = Math.max(3, Math.round(n * this.fxScale));
     this.burstEmitter.setParticleTint(tint);
     this.burstEmitter.explode(count, x, y);
@@ -4606,13 +4608,26 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.roar();
     this.doShake(320, 0.009);
     this.showBanner(partyN > 1 ? `심연의 감시자 출현! — 파티 ${partyN}인 힘을 모아라!` : "심연의 감시자 출현!");
-    this.boss = new Boss(this, bx, by, def, "hard");
-    this.spawnBossRunic(bx, by, false);
-    this.applyBossPostFX(false);
-    this.physics.add.collider(this.boss, this.solidGroup);
-    EventBus.emit("boss:show", { name: def.name, hp: this.boss.hp, maxHp: this.boss.maxHp });
-    audio.playStageBGM(this.stageDef.key, true);
-    this.bossIntroCinematic(bx, by, def.introDialogue);
+    /* v1.4.3 — 보스 스폰은 FX 풀 빌드(create 후반) 이후로 지연.
+     *  create 도중 Boss를 만들면 Boss 등장 연출이 아직 null인 파티클 풀을 써서
+     *  초기화 예외 → 안전 재부팅이 한 번 더 도는 문제가 있었다 (E2E 실측).
+     *  재림판(spawnReplayBoss · delayedCall 350ms)과 동일한 안전 패턴. */
+    this.time.delayedCall(350, () => {
+      try {
+        if (!this.scene.isActive() || this.boss) return;
+        this.boss = new Boss(this, bx, by, def, "hard");
+        this.spawnBossRunic(bx, by, false);
+        this.applyBossPostFX(false);
+        this.physics.add.collider(this.boss, this.solidGroup);
+        EventBus.emit("boss:show", { name: def.name, hp: this.boss.hp, maxHp: this.boss.maxHp });
+        audio.playStageBGM(this.stageDef.key, true);
+        this.bossIntroCinematic(bx, by, def.introDialogue);
+      } catch (e) {
+        console.error("[SERTZ] 공동 토벌전 보스 스폰 실패 — 자가치유로 정리", e);
+        this.dialoguing = false;
+        this.physics.world.resume();
+      }
+    });
   }
 
   /** 공동 토벌전 입장 (파티 위젯 → rpg:partyRaid) */

@@ -126,19 +126,20 @@ const { chromium } = require("playwright");
     sc.player.applyBodyLook();
   });
 
-  /* #2 지형물 배치 보호 — 유적/포탈/입장 반경 160px에 충돌 장식 없음 */
+  /* #2 지형물 배치 보호 — v1.4.3: 유적 철거 → 보물상자/포탈/입장 반경에 충돌 장식 없음 */
   const decor = await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (!sc?.keepRect) return { ok: false };
+    if (!sc) return { ok: false };
     const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
     const obstacles = sc.solidGroup.getChildren().filter((g) => g.getData?.("obstacle") && g.active);
     const near = (x, y, r) => obstacles.some((o) => dist(o.x, o.y, x, y) < r);
-    const kc = { x: sc.keepRect.x + sc.keepRect.w / 2, y: sc.keepRect.y + 30 };
+    const chestIt = (sc.interactables ?? []).find((it) => it.kind === "keepchest");
+    const kc = chestIt ? { x: chestIt.x, y: chestIt.y } : null;
     const portal = { x: sc.portalHome.x, y: sc.portalHome.y };
     const entry = { x: sc.entryHome.x, y: sc.entryHome.y };
-    return { ok: true, keep: near(kc.x, kc.y, 200), portal: near(portal.x, portal.y, 160), entry: near(entry.x, entry.y, 160) };
+    return { ok: !!kc, chest: kc ? near(kc.x, kc.y, 160) : null, portal: near(portal.x, portal.y, 160), entry: near(entry.x, entry.y, 160) };
   });
-  ok("[#2] 유적 구조물 주변 장식 없음", decor.ok && !decor.keep, JSON.stringify(decor));
+  ok("[#2] 보물상자 주변 장식 없음 (유적 철거 후)", decor.ok && !decor.chest, JSON.stringify(decor));
   ok("[#2] 포탈/입장 지점 장식 없음", decor.ok && !decor.portal && !decor.entry);
 
   /* #3 장신구 스타포스 atk 트랙 — ring_might 장착 + 성급 3 → atkTotal 증가 */

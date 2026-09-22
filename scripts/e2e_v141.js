@@ -95,7 +95,7 @@ const { chromium } = require("playwright");
       else if (tex === "map_props" && fn === "kg_fence") fence++;
       else if (tex === "map_props" && fn === "kg_stairs") stair++;
     }
-    const chest = (sc.interactables ?? []).filter((it: { kind: string }) => it.kind === "keepchest").length;
+    const chest = (sc.interactables ?? []).filter((it) => it.kind === "keepchest").length;
     return { kgTiles, fence, stair, chest, keepRectNull: !sc.keepRect, keepStairNull: !sc.keepStair };
   });
   ok("[유적] 구조물 철거 — kg 타일/목책/계단 0", !!keep && keep.kgTiles === 0 && keep.fence === 0 && keep.stair === 0, keep ? `kg=${keep.kgTiles} f=${keep.fence} s=${keep.stair}` : "-");
@@ -106,7 +106,7 @@ const { chromium } = require("playwright");
   await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
     if (!sc) return;
-    const it = (sc.interactables ?? []).find((x: { kind: string }) => x.kind === "keepchest");
+    const it = (sc.interactables ?? []).find((x) => x.kind === "keepchest");
     const cam = sc.cameras.main;
     cam.stopFollow();
     cam.setZoom(1.4);
