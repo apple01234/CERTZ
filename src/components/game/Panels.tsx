@@ -232,6 +232,10 @@ function ItemIcon({ icon, size = 34, tier, count, potGrade }: { icon: string; si
   const border = tier ? TIER_STYLE[tier].border : "border-white/10";
   /* v3.0.16 — eert 잠재옵션 등급 오라 (레어 파랑/에픽 보라/유니크 골드/레전드 오렌지) */
   const pot = potGrade !== undefined && potGrade >= 0 ? POT_GRADE_META[potGrade] : null;
+  /* v1.4.3 (#4 아이템 이미지 로드 실패) — DOM <img> 로드 실패 시 자동 재시도 (최대 2회).
+   *  Android WebView가 요청 일부를 조용히 실패할 때 Phaser texGuard는 복구하지만
+   *  DOM 쪽은 재시도가 없어 깨진 아이콘이 그대로 남았다 — 캐시버스팅 재요청으로 자가 치유. */
+  const [imgRetry, setImgRetry] = useState(0);
   return (
     <div
       className={`relative shrink-0 rounded-md border-2 bg-black/40 ${border}`}
@@ -242,9 +246,12 @@ function ItemIcon({ icon, size = 34, tier, count, potGrade }: { icon: string; si
       }}
     >
       <img
-        src={`/assets/${icon}.webp`}
+        src={`/assets/${icon}.webp${imgRetry > 0 ? `?retry=${imgRetry}` : ""}`}
         alt=""
         draggable={false}
+        onError={() => {
+          if (imgRetry < 2) window.setTimeout(() => setImgRetry((v) => v + 1), 350 + imgRetry * 650);
+        }}
         style={{ width: size, height: size, imageRendering: "pixelated" }}
       />
       {/* v3.0.3 — 겹침 수량 배지 (2개 이상일 때) */}
@@ -2027,6 +2034,16 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 const useLabel = starScroll ? "충전" : it.healFull || it.heal || it.restore ? "마시기" : "사용";
                 const chestLike = s.k.startsWith("chest_") || s.k.startsWith("pack_");
                 const eertCubeIt = s.k === "eert_cube";
+                /* v1.4.3 (유저 리포트 ③ 등급업 큐브 사용안됨) — 큐브 행에서 직접 사용 경로 신설.
+                 *  기존엔 착용 장비 탭의 [등급업] 버튼으로만 쓸 수 있어 “큐브를 눌러도 아무 일 없는” 상태였다.
+                 *  큐브 행에 무기/방어구 등급업 버튼을 직접 노출한다 (착용 중 + 전설 미만일 때만 활성). */
+                const tierCubeIt = s.k === "tier_cube";
+                const eqTierOf = (slot: "weapon" | "armor") => {
+                  const k = slot === "weapon" ? rpg.weapon : rpg.armor;
+                  return k ? ITEMS[k as ItemKey]?.tier : undefined;
+                };
+                const weaUpable = !!rpg.weapon && eqTierOf("weapon") !== "legend";
+                const armUpable = !!rpg.armor && eqTierOf("armor") !== "legend";
                 return (
                   <>
                     <div className="flex items-start gap-2.5">
@@ -2039,9 +2056,11 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         <p className="truncate text-[11px] font-bold text-emerald-300/90">
                           {s.k === "eert_cube"
                             ? "장비 탭에서 [eert] 버튼으로 잠재옵션 재추첨"
-                            : starScroll
-                              ? `다음 강화 성공률 +${STAR_BLESS_RATE}%p (충전 최대 ${STAR_BLESS_MAX}장)`
-                              : itemEffect(it) || "소모품"}
+                            : tierCubeIt
+                              ? "착용 중인 무기/방어구 등급 승급 (일반→고급→영웅→전설 · 승급당 스탯 +12%)"
+                              : starScroll
+                                ? `다음 강화 성공률 +${STAR_BLESS_RATE}%p (충전 최대 ${STAR_BLESS_MAX}장)`
+                                : itemEffect(it) || "소모품"}
                         </p>
                       </div>
                     </div>
@@ -2082,6 +2101,18 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         </InvBtn>
                       )}
                       {eertCubeIt && <span className="rounded-md bg-orange-500/15 px-2.5 py-1.5 text-[10px] font-black text-orange-200">장비 탭에서 사용</span>}
+                      {/* v1.4.3 (#등급업큐브) — 큐브 행 직접 사용: 착용 장비 슬롯별 등급업 버튼 */}
+                      {tierCubeIt && (
+                        <>
+                          <InvBtn tone="violet" disabled={!weaUpable} onClick={() => EventBus.emit("rpg:isekai", { action: "tierUp", slot: "weapon" })} title={weaUpable ? "착용 중인 무기 등급 승급" : "무기를 착용하거나 이미 전설 등급입니다"}>
+                            무기 등급업
+                          </InvBtn>
+                          <InvBtn tone="violet" disabled={!armUpable} onClick={() => EventBus.emit("rpg:isekai", { action: "tierUp", slot: "armor" })} title={armUpable ? "착용 중인 방어구 등급 승급" : "방어구를 착용하거나 이미 전설 등급입니다"}>
+                            방어구 등급업
+                          </InvBtn>
+                          {!rpg.weapon && !rpg.armor && <span className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[10px] font-bold text-white/40">장비를 먼저 착용하세요</span>}
+                        </>
+                      )}
                       {sellValue(it) > 0 && (
                         <SellQtyBox
                           compact
@@ -3777,6 +3808,45 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
             );
           })}
         </div>
+        {/* v1.4.3 (#재림시리즈 완성) — 재림의 땅 지역 보스 3종 재도전 추가.
+            기존엔 챕터 보스 9종만 재림판에 있어 "재림" 시리즈가 불완전했다. */}
+        {(() => {
+          const RB_BOSSES: { ch: string; bk: keyof typeof BOSS_DEFS; label: string }[] = [
+            { ch: "r5", bk: "vord", label: "재림5 파수꾼의 대문" },
+            { ch: "r10", bk: "jorm", label: "재림10 뱀의 소용돌이" },
+            { ch: "r15", bk: "nagr", label: "재림15 종언의 왕좌 앞" },
+          ];
+          return (
+            <>
+              <p className="mb-1 mt-2.5 border-t border-white/10 pt-2.5 text-[11px] font-black text-violet-200/90">
+                재림의 땅 — 지역 보스 <span className="text-white/40">(해당 보스를 처치한 적 있을 때 도전)</span>
+              </p>
+              <div className="grid grid-cols-3 gap-1">
+                {RB_BOSSES.map(({ ch, bk, label }) => {
+                  const cleared = (bossKills[`boss_${bk}`] ?? 0) > 0;
+                  return (
+                    <button
+                      key={ch}
+                      disabled={!cleared}
+                      title={cleared ? `${BOSS_DEFS[bk].name} 재림판에 도전` : "재림의 땅에서 해당 보스를 먼저 처치하세요"}
+                      onClick={() => EventBus.emit("rpg:bossReplay", { ch, lv: diff })}
+                      className={`rounded-md border px-1 py-1.5 text-left transition-colors ${
+                        cleared
+                          ? "border-violet-300/50 bg-violet-500/15 hover:bg-violet-500/30 active:scale-95"
+                          : "cursor-not-allowed border-white/10 bg-white/[0.03]"
+                      }`}
+                    >
+                      <p className={`truncate text-[10px] font-black ${cleared ? "text-violet-100" : "text-white/35"}`}>{label}</p>
+                      <p className={`truncate text-[9px] font-bold ${cleared ? "text-violet-200/90" : "text-white/25"}`}>
+                        {cleared ? BOSS_DEFS[bk].name : "재림 보스 처치 필요"}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
         <p className="mt-2.5 text-center text-[10px] text-white/40">스토리 클리어(토벌)한 챕터의 보스만 도전할 수 있습니다 · ESC로 닫기</p>
       </div>
     </div>

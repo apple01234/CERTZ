@@ -28,7 +28,7 @@ const { chromium } = require("playwright");
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2400);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
   ok("[버전] 타이틀 배지 v1.4.0", badge);
   await shot("00_title");
 

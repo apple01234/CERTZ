@@ -21,14 +21,14 @@ const { chromium } = require("playwright");
   const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
   const p = await ctx.newPage();
   const errs = [];
-  p.on("pageerror", (e) => { errs.push("PAGEERROR: " + e.message.slice(0, 200)); console.log("STACK>>", (e.stack || "").split("\n").slice(0, 6).join(" | ")); });
+  p.on("pageerror", (e) => errs.push("PAGEERROR: " + e.message.slice(0, 200)));
   p.on("console", (m) => { if (m.type() === "error") errs.push("CONSOLE: " + m.text().slice(0, 160)); });
   const shot = (n) => p.screenshot({ path: `/tmp/e2e_131_${n}.png` });
 
   await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
   await p.waitForTimeout(2600);
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
-  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
   ok("[부팅] 타이틀 도달", badge, "v1.4.0 배지 표시");
 
   /* 지연 로드 완료 대기 → SPUM 코스튬 텍스처/애님 확인 */
@@ -94,25 +94,6 @@ const { chromium } = require("playwright");
     return !!(sc && sc.player);
   });
   ok("[게임] 월드 진입", inWorld);
-  await p.evaluate(() => {
-    const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    const frames = sc?.textures?.get?.("hero_idle0")?.frames ?? {};
-    const fr = Object.getPrototypeOf(Object.values(frames)[0]);
-    if (fr && !fr.__dbgPatched) {
-      fr.__dbgPatched = true;
-      const orig = fr.setCutPosition;
-      fr.setCutPosition = function (...a) {
-        if (!this.source?.image) console.log("DBG_FRAME_NULL:", this.texture?.key, this.name);
-        return orig.apply(this, a);
-      };
-      const orig2 = fr.setSize;
-      fr.setSize = function (...a) {
-        if (!this.source?.image) console.log("DBG_FRAME_NULL_SIZE:", this.texture?.key, this.name);
-        return orig2.apply(this, a);
-      };
-    }
-  });
-
 
   /* #1 코스튬 착용 → bodyPrefix/텍스처 전환 + 시각 검수용 스크린샷 */
   const wear = await p.evaluate(() => {
@@ -133,7 +114,7 @@ const { chromium } = require("playwright");
     sc.player.outfit = "outfit_warlord";
     sc.player.applyBodyLook();
   });
-  await p.waitForTimeout(2500);
+  await p.waitForTimeout(400);
   const wearM = await p.evaluate(() => {
     const pl = window.__SERTZ__?.game?.scene?.getScene("world")?.player;
     return pl?.bodyPrefix;
@@ -148,17 +129,16 @@ const { chromium } = require("playwright");
   /* #2 지형물 배치 보호 — 유적/포탈/입장 반경 160px에 충돌 장식 없음 */
   const decor = await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (!sc?.player) return { ok: false };
+    if (!sc?.keepRect) return { ok: false };
     const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
     const obstacles = sc.solidGroup.getChildren().filter((g) => g.getData?.("obstacle") && g.active);
     const near = (x, y, r) => obstacles.some((o) => dist(o.x, o.y, x, y) < r);
-    /* v1.4.4 — 유적 삭제 → 구 유적 자리(현 초행자 훈련장) 보호 판정으로 대체 */
-    const kc = { x: sc.stageW / 2 + 430, y: sc.stageH / 2 + 40 };
+    const kc = { x: sc.keepRect.x + sc.keepRect.w / 2, y: sc.keepRect.y + 30 };
     const portal = { x: sc.portalHome.x, y: sc.portalHome.y };
     const entry = { x: sc.entryHome.x, y: sc.entryHome.y };
     return { ok: true, keep: near(kc.x, kc.y, 200), portal: near(portal.x, portal.y, 160), entry: near(entry.x, entry.y, 160) };
   });
-  ok("[#2] 훈련장(구 유적 자리) 주변 장식 없음", decor.ok && !decor.keep, JSON.stringify(decor));
+  ok("[#2] 유적 구조물 주변 장식 없음", decor.ok && !decor.keep, JSON.stringify(decor));
   ok("[#2] 포탈/입장 지점 장식 없음", decor.ok && !decor.portal && !decor.entry);
 
   /* #3 장신구 스타포스 atk 트랙 — ring_might 장착 + 성급 3 → atkTotal 증가 */

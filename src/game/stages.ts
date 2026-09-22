@@ -1041,6 +1041,29 @@ NEXT_STAGE.closet = null;
 PREV_STAGE.closet = "village";
 STAGE_SHORT.closet = "균열 던전";
 
+/* ================= v1.4.3 (유저 리포트 ⑤ 멀티 콘텐츠) — 파티 공동 토벌전 =================
+ *  파티원과 함께 심연의 감시자를 사냥하는 협동 레이드 구역.
+ *  파티원 수에 비례해 보스가 강해지고 보상(에메랄드/경험치/골드)도 커진다 — 함께 잡을 이유.
+ *  같은 파티가 같은 구역(praid)에 입장하면 서버 릴레이로 서로 보인다(기존 멀티 동기화 재사용).
+ *  체인 분리 — 전진 포탈 없음, 복귀 포탈은 입장 전 구역(praidFrom). */
+STAGES.praid = {
+  key: "praid",
+  name: "공동 토벌전",
+  subtitle: "파티원과 힘을 모아 심연의 감시자를 사냥해라",
+  width: 1300,
+  height: 860,
+  groundTint: 0xffffff,
+  flowerCount: 0,
+  treeCount: 0,
+  rockCount: 0,
+  quests: [],
+  enemies: [],
+  boss: false,
+};
+NEXT_STAGE.praid = null;
+PREV_STAGE.praid = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 praidFrom
+STAGE_SHORT.praid = "공동 토벌전";
+
 /* ================= v1.0.8 — 심연의 탑 (무한 층수 탑등반 — 무한 콘텐츠 ①) =================
  *  콘텐츠 패널에서 입장 — 층을 오를수록 강해지는 적, 5층마다 보스, 층 클리어 보상.
  *  체인 분리 — 전진 포탈 없음, 복귀 포탈은 입장 전 구역. */

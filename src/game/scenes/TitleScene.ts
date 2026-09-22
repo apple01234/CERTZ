@@ -3,7 +3,7 @@ import { EventBus } from "../../components/game/EventBus";
 import { loadSave, type SaveData } from "../config";
 import { readCharSave, setActiveChar } from "../slots"; // v1.4.0 (#16) 자동 복귀
 import * as audio from "../audio";
-import { DEFERRED_BODY_PREFIXES } from "../data"; // v1.2.1 (#4 최적화) — 지연 로드 외형 시트
+import { DEFERRED_BODY_PREFIXES, ALL_ITEM_ICONS } from "../data"; // v1.2.1 (#4 최적화) — 지연 로드 외형 시트 / v1.4.3 — 전 아이템 아이콘
 import { registerBodyAnims } from "../textures";
 import { hookLoaderForGuard } from "../texGuard"; // v1.4.2 — 지연 로드도 무결성 레지스트리에 수집
 
@@ -133,6 +133,18 @@ export class TitleScene extends Phaser.Scene {
       for (const p of DEFERRED_BODY_PREFIXES) {
         for (const f of heroFrames) this.load.image(`${p}_${f}`, `${p}_${f}.webp`);
       }
+      /* v1.4.3 (유저 리포트 ④ 보스 유물·일부 아이템 이미지 로드 실패) — 전 아이템 아이콘 지연 로드.
+       *  보스 드롭(bd_*)·큐브·책 등 아이콘이 Phaser 텍스처로 등록돼 있지 않아 Drop.spawnItem의
+       *  setTexture(icon)이 빈 렌더를 냈다. 173종(32px 웹프 소용량)을 타이틀 대기 시간에 일괄 등록.
+       *  이미 로드된 키(펫/코스튬/기본 물약 등)는 스킵해 중복 요청 0. hookLoaderForGuard가
+       *  이 요청도 무결성 레지스트리에 수집하므로 texGuard 감시 대상에 자동 합류한다. */
+      let iconQueued = 0;
+      for (const ic of ALL_ITEM_ICONS) {
+        if (!ic || this.textures.exists(ic)) continue;
+        this.load.image(ic, `${ic}.webp`);
+        iconQueued++;
+      }
+      console.log(`[SERTZ] 아이템 아이콘 지연 로드 — ${iconQueued}종 큐잉 (총 ${ALL_ITEM_ICONS.length}종)`);
       this.load.start();
       this.load.on("loaderror", (file: { key?: string; url?: string }) => {
         const key = file?.key ?? "";

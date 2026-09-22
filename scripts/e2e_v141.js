@@ -29,7 +29,7 @@ const { chromium } = require("playwright");
   await p.waitForSelector("text=게임 시작", { timeout: 30000 });
 
   /* 부팅 + 배지 */
-  const badge = await p.getByText("v1.4.4", { exact: false }).first().isVisible().catch(() => false);
+  const badge = await p.getByText("v1.4.3", { exact: false }).first().isVisible().catch(() => false);
   ok("[부팅] 타이틀 도달 (v1.4.1 배지)", badge);
 
   /* ① 스프라이트 미로딩 — 부트/지연 로드 실패 경고 0건 */
@@ -44,7 +44,7 @@ const { chromium } = require("playwright");
     const sc = g?.scene?.getScene("title");
     if (!sc) return null;
     const T = sc.textures;
-    const keys = ["hero_idle0", "chm0_idle0", "chf5_atkup3", "gm_idle0", "costm_valkyrie_idle0", "cost_warlord_atk0", "jobf_archmage_idle0", "jobm_assassin_walk1", "npc_gm", "sv_campfire", "chest_anim"];
+    const keys = ["hero_idle0", "chm0_idle0", "chf5_atkup3", "gm_idle0", "costm_valkyrie_idle0", "cost_warlord_atk0", "jobf_archmage_idle0", "jobm_assassin_walk1", "map_ground", "map_props", "npc_gm", "sv_campfire", "chest_anim"];
     return keys.map((k) => ({ k, ok: T.exists(k) }));
   });
   const missingTitle = (texTitle ?? []).filter((x) => !x.ok);
@@ -83,30 +83,36 @@ const { chromium } = require("playwright");
   });
   ok("[게임] 월드 진입", inWorld);
 
-  /* ② v1.4.4 — 요새 유적 전면 삭제 검증 + 초행자 훈련장 신설 검증 */
-  const keepGone = await p.evaluate(() => {
+  /* ② 요새 유적 — v1.4.3: 구조물 완전 철거 → 보물상자만 잔존. kg_* 프레임 0 + keepRect null 검증 */
+  const keep = await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
     if (!sc) return null;
-    let kg = 0, mg = 0;
+    let kgTiles = 0, fence = 0, stair = 0;
     for (const ch of sc.children.list) {
       const tex = ch?.texture?.key;
       const fn = ch?.frame?.name;
-      if (tex === "map_ground" || tex === "map_props") mg++;
-      if (fn && String(fn).startsWith("kg_")) kg++;
+      if (tex === "map_ground" && (fn === "kg_grass" || fn === "kg_dirt")) kgTiles++;
+      else if (tex === "map_props" && fn === "kg_fence") fence++;
+      else if (tex === "map_props" && fn === "kg_stairs") stair++;
     }
-    return { keepRect: !!sc.keepRect, kg, mapTex: mg };
+    const chest = (sc.interactables ?? []).filter((it: { kind: string }) => it.kind === "keepchest").length;
+    return { kgTiles, fence, stair, chest, keepRectNull: !sc.keepRect, keepStairNull: !sc.keepStair };
   });
-  ok("[유적삭제] 유적 구조물 완전 제거 (keepRect/kg_*/유적텍스처 0)", !!keepGone && !keepGone.keepRect && keepGone.kg === 0 && keepGone.mapTex === 0, keepGone ? JSON.stringify(keepGone) : "-");
+  ok("[유적] 구조물 철거 — kg 타일/목책/계단 0", !!keep && keep.kgTiles === 0 && keep.fence === 0 && keep.stair === 0, keep ? `kg=${keep.kgTiles} f=${keep.fence} s=${keep.stair}` : "-");
+  ok("[유적] 은닉 히트박스 소멸 (keepRect/keepStair null)", !!keep && keep.keepRectNull && keep.keepStairNull, "-");
+  ok("[유적] 보물상자 잔존 (1개)", !!keep && keep.chest === 1, keep ? `chest=${keep.chest}` : "-");
 
-  const train = await p.evaluate(() => {
+  /* 계단 소품은 v1.4.3 철거로 제거됐다 — 유적 스크린샷만 촬영 */
+  await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
-    if (!sc) return null;
-    const tw = (sc.enemies ?? []).filter((e) => e?.displayName === "훈련용 늑대" && e.active && e.alive);
-    const sign = (sc.children.list ?? []).some((ch) => ch?.text?.includes("초행자 훈련장"));
-    return { n: tw.length, hp: tw[0]?.maxHp ?? 0, sign };
+    if (!sc) return;
+    const it = (sc.interactables ?? []).find((x: { kind: string }) => x.kind === "keepchest");
+    const cam = sc.cameras.main;
+    cam.stopFollow();
+    cam.setZoom(1.4);
+    if (it) cam.centerOn(it.x, it.y - 20);
   });
-  ok("[훈련장] 훈련용 늑대 3마리 스폰 (약한 스탯)", !!train && train.n === 3 && train.hp > 0 && train.hp < 58, train ? JSON.stringify(train) : "-");
-  ok("[훈련장] 훈련장 표지판 존재", !!train && train.sign, "-");
+
   /* 재시도 체계 번들 존재 (로드된 스크립트 청크 전수 스캔) */
   const retryBundled = await p.evaluate(async () => {
     const srcs = [...document.querySelectorAll("script[src]")].map((s) => s.getAttribute("src")).filter(Boolean);

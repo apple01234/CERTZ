@@ -86,7 +86,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.4 — 모바일 가로 로비 입장 수정(시작 버튼 화면 밖 밀림)</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.3 — 리포트 6건: 유적 히트박스·철거 / 등급업 큐브 사용 경로 / 보스 유물 아이콘 / 파티 공동 토벌전 / 재림 시리즈 완성</span>
           </p>
         </div>
 

@@ -47,12 +47,14 @@ export class Drop extends Phaser.Physics.Arcade.Image {
     this.clearTint();
   }
 
-  /** v3.0.6 (지시 #9) — 보스 전용 아이템 드롭: 아이템 아이콘 텍스처 + 티어색 발광 */
+  /** v3.0.6 (지시 #9) — 보스 전용 아이템 드롭: 아이템 아이콘 텍스처 + 티어색 발광
+   *  v1.4.3 (#4 보스 유물 이미지 실패) — 텍스처 미로드 시 기본 아이콘 폴백.
+   *  타이틀 지연 로더가 전 아이템 아이콘을 등록하지만(근본 수정), 만약을 위한 방어. */
   spawnItem(key: ItemKey, x: number, y: number) {
     const icon = ITEMS[key]?.icon ?? "item_coin";
     this.kind = key;
     this.amount = 1;
-    this.setTexture(icon);
+    this.setTexture(this.scene.textures.exists(icon) ? icon : "item_coin");
     this.setPosition(x + Phaser.Math.Between(-8, 8), y + Phaser.Math.Between(-6, 2));
     this.setScale(1.05);
     this.setActive(true).setVisible(true).setAlpha(1);

@@ -824,6 +824,12 @@ export const TRADE_STOCK: ItemKey[] = [
   "bd_skoll", "bd_gram", "bd_abysslord", "bd_abudditos",
 ];
 
+/* v1.4.3 (유저 리포트 ④ 보스 유물·일부 아이템 이미지 로드 실패) — 전 아이템 아이콘 키.
+ *  근원: Drop.spawnItem이 월드 드롭 스프라이트를 setTexture(icon)으로 렌더하는데,
+ *  i_bd_*(보스 유물) 등 다수 아이콘이 부트/지연 로드 목록 밖이었다 → 텍스처 누락으로
+ *  드롭이 아예 안 보였다. 타이틀 지연 로더가 이 목록을 Phaser 텍스처로 일괄 등록한다. */
+export const ALL_ITEM_ICONS: string[] = Array.from(new Set(Object.values(ITEMS).map((i) => i.icon)));
+
 /* ================= v1.0.1 — 일일 던전 확장: 요일별 균열 테마 =================
  *  기존 60초 균열 던전 틀 유지 + 요일마다 다른 보너스로 "오늘 입장할 이유"를 만든다(리텐션).
  *  mul: 킬당 골드 배율 · bookMul: 경험치책 드롭 확률 배율 · spawnMul: 몬스터 소환 속도 배율
