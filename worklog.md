@@ -2087,3 +2087,29 @@ Stage Summary:
 - 세이브 영향 없음(마이그레이션 불요) — 서버 라우팅·UI 링크·APK API 베이스 수정만 포함
 - 운영 교훈: ①호출 경계 프로세스 전멸 환경에서는 커밋+세션 재시작이 유일한 영구 서빙 경로 ②표시 레이어 텍스트 왜곡 환경 — 파일 무결성 판정은 반드시 codePoint 기반으로 ③서명키·applicationId는 v1.4.5와 동일 유지(Play Console 등록값 불변)
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 99
+Agent: Super Z (메인)
+Task: v1.4.7 — 유저 지시 "오류나는 페이지 전면 철거"(이상한 비석·/secret·ARG 웹 연계)·ARG 외부 지원센터 이원화·APK 빌드·릴리스 (versionCode 99)
+
+Work Log:
+- [현행화] 로컬이 v1.4.2 뒤처짐 확인 → 원격 동기화(rebase 충돌로 reset --hard origin/main) — v1.4.3~v1.4.6에서 유저 리포트 13건 전부 구현 완료 상태(T94~T98). 본 건은 유저 신규 지시만 처리: "인게임에 있는 돌, 문의 페이지, 시크릿 페이지 등 오류나는 페이지 전부 없애고 고객 문의 페이지에 ARG 힌트를 숨긴 웹페이지로 이원화"
+- [전달물 #웹페이지프롬프트] 다른 AI 전달용 자기완결 지시서 작성 → download/SERTZ_고객문의페이지_제작_프롬프트.txt (게임 배경지식·Play 계정삭제 3요건·오타쿠 스타일·3단계 ARG 힌트 10종 a~j·ARG_DATA 상수·단일 index.html 제약). ARG 세계관 = "게임에서 삭제된 이상한 돌이 웹에 남아 관측자에게 말한다" + 반전 키워드 ZERTS
+- [제거 #비석] WorldScene — 마을 이상한 비석 오브제 블록(glow+rock_dark+라벨+interactable kind secret) 완전 삭제, 인터랙션 분기(kind === "secret" → /secret/ window.open/클립보드) 삭제, Capacitor import 제거(유일 사용처였음), interactables 타입 유니온에서 "secret" 제거. 무한 재부팅 근원 트리거의 오브제 자체 소멸 (v1.4.5는 차단만, v1.4.7은 철거)
+- [제거 #secretpage] public/secret/(index.html·second.html) 삭제 + server.js SECRET_FILES 직접 서빙 블록 삭제 → /secret* → /support 308 유도(구버전 APK·북마크 잔존 링크 404 방지)
+- [제거 #수첩버튼] Panels.tsx 비밀수첩 [🌐 힌트 페이지] 버튼 블록 삭제 — [🛰 지원센터·문의] 버튼만 유지(T98 신설분)
+- [이원화 #ARG] eggs.ts — ARG ⑥ 15종 코드 입력은 유지(정답 처리는 게임 내 비밀수첩), 힌트 참조 대상을 외부 지원센터 웹페이지로 갱신(arg01 "세계수 아래 숨은 페이지"→"지원센터 페이지 어딘가"). /secret 정적 페이지 의존 제로
+- [버전체인 8곳] package.json(1.4.7)·build.gradle(99·1.4.7+히스토리, 주석 구조 파손 즉시 복구)·server.js(1.4.7/99/NOTE)·Overlays 배지(v1.4.7)·apk-guide(제목·sub 99·노티스·링크·md5 3da1ba65·히스토리 v1.4.7 추가·v1.4.6 강등)·안내.txt(v1.4.7 블록+v1.4.6 강등) — scripts/patch_guide_v147.js
+- [E2E] e2e_v147.js 신설 19항목 → 1차 18/19(지연로드 타이밍 플레이크) → 재실행 19/19 PASS: /secret 3종 308→/support / 문의 별칭 3종 308 / version 1.4.7·99 / 타이틀 배지 / support·privacy 렌더 / 월드 진입 / 비석 소멸+보물상자 잔존 / NPC 3명→Lv3(1→3) / 큐브 승급(0→1) / 파티 훅 / pageerror 0 — v1.4.4~v1.4.6 핵심 회귀 전부 통과. e2e_v145·v146의 "비석 잔존" 단정은 본 지시로 의도적으로 FAIL(폐지 대상)
+- [빌드] 툴체인 소실 재확인 → rebuild_toolchain.sh(javac 21.0.12.1) → JAVA_HOME=/home/z/jdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 5m05s → download/SERTZ-v1.4.7.apk 117,541,818B · aapt com.sertz.myapp 99/1.4.7 · 번들 가이드 v1.4.7 확인 · md5 3da1ba65190c1157018d5a670d522381
+- [릴리스] scripts/gh_release_v147.sh — Release v1.4.7(id 394972808) 생성·업로드(asset 584416570) → 원격 재다운로드 md5 일치 ✓
+
+Stage Summary:
+- v1.4.7 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.7/SERTZ-v1.4.7.apk (versionCode 99, 117,541,818B, md5 3da1ba65…)
+- 유저 지시 이행: 오류나는 페이지(이상한 비석·/secret·수첩 힌트 버튼) 전면 철거 — 게임은 웹 의존 ARG 진입로 없음(재부팅 트리거 원천 소멸), ARG는 외부 공식 지원센터 웹페이지(다른 AI 제작 예정) + 게임 내 비밀수첩 코드 입력의 이원화 구조
+- /support·/privacy·계정삭제 API는 Play 심사 필수라 유지(T98 검증) — 유저가 말한 "문의 페이지 404"는 T98에서 이미 근본 수정된 상태
+- 세이브 영향 없음(마이그레이션 불요) — 오브제/링크/UI 버튼 제거와 서버 라우팅만 포함
+- 후속: 웹페이지 제작·배포(GitHub Pages) → Play Console 계정 삭제 URL에 등록 + 프롬프트 내 문의 이메일 교체는 유저 몫
+- 운영 교훈: ①MultiEdit로 gradle 주석 치환 시 주석 여는부분 유실로 Groovy 파손 직전 — 버전 주석 체인 편집은 편집 후 전체 라인 재출력 검증 필수 ②patch 스크립트 재실행 시 멱등성 깨짐(NO-MATCH=이미 적용) — 적용 상태 먼저 확인
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

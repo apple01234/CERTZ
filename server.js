@@ -38,9 +38,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.6";
-  const LATEST_CODE = 98;
-  const VERSION_NOTE = "비밀·문의 페이지 404 근본 수정(/secret 후행슬래시 308→404 사슬 제거·서버 직접 서빙·문의 별칭 경로 /support 유도·비밀수첩 지원센터 버튼·APK 문의/계정삭제 API 원격 HTTPS 호출)";
+  const LATEST_VERSION = "1.4.7";
+  const LATEST_CODE = 99;
+  const VERSION_NOTE = "오류나는 페이지 전면 철거(유저 지시): 마을 이상한 비석 완전 제거(무한 재부팅 근원 오브제)·세계수의 기록(/secret) 정적 페이지 삭제 및 지원센터 308 유도·비밀수첩 힌트 페이지 버튼 철거·ARG 힌트는 외부 공식 지원센터 웹페이지로 이원화(정답 코드 입력은 비밀수첩 유지)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
@@ -73,28 +73,12 @@ app.prepare().then(() => {
         return;
       }
     }
-    /* v1.4.6 (#비밀페이지404) — 세계수의 기록(/secret) 404 근본 수정.
-     *  원인: Next trailingSlash 규칙이 /secret/ 을 308(/secret)으로 리다이렉트하는데
-     *  public/ 폴더는 디렉터리 인덱스(/secret → index.html)를 해석하지 못해 404로 착지.
-     *  서버 레벨에서 후행 슬래시 유무와 무관하게 정적 ARG 페이지를 직접 서빙한다. */
-    const SECRET_FILES = {
-      "/secret": "public/secret/index.html",
-      "/secret/": "public/secret/index.html",
-      "/secret/index.html": "public/secret/index.html",
-      "/secret/second": "public/secret/second.html",
-      "/secret/second/": "public/secret/second.html",
-    };
-    const secretFile = SECRET_FILES[url];
-    if (secretFile) {
-      try {
-        const fp = path.join(__dirname, secretFile);
-        statSync(fp);
-        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
-        createReadStream(fp).pipe(res);
-        return;
-      } catch (e) {
-        /* 파일 부재 시 Next 핸들러로 낙하(기존 동작 유지) */
-      }
+    /* v1.4.7 (유저 지시 — 오류나는 페이지 철거) — 세계수의 기록(/secret) 정적 페이지 완전 철거.
+     *  인게임 비석·비밀수첩 버튼도 삭제되어 더 이상 진입 경로가 없지만, 구버전 APK/북마크의
+     *  잔존 링크가 404로 착지하지 않도록 지원센터로 308 유도한다. */
+    if (/^\/secret(\/.*)?$/i.test(url)) {
+      res.writeHead(308, { Location: "/support" }).end();
+      return;
     }
     /* v1.4.6 (#문의페이지404) — 유저가 임의로 추측해 입력하는 문의/삭제 URL을
      *  전부 지원센터(/support)로 유도 — 404 노출 원천 차단. */

@@ -4686,25 +4686,7 @@ function SecretNotebook() {
       </div>
       {msg && <p className="mt-1 text-[10px] font-bold text-violet-200">{msg}</p>}
 
-      {/* v1.4.3 (작업6) — 공개 ARG 힌트 페이지 재연결: /secret/ 세계수의 기록 */}
-      <div className="mt-1.5 flex items-center justify-between gap-1.5">
-        <p className="text-[9px] font-bold leading-snug text-white/35">힌트는 공개 웹페이지 「세계수의 기록」에 흩어져 있다</p>
-        <button
-          onClick={() => {
-            const url = `${window.location.origin}/secret/`;
-            let opened = false;
-            try { opened = !!window.open(url, "_blank", "noopener,noreferrer"); } catch { /* 폴백 */ }
-            if (!opened) {
-              try { void navigator.clipboard?.writeText(url); EventBus.emit("banner:show", { text: `세계수의 기록 — ${url.replace(/^https?:\/\//, "")} (클립보드 복사 완료)` }); }
-              catch { EventBus.emit("banner:show", { text: "/secret/ 페이지를 브라우저에서 열어라" }); }
-            }
-          }}
-          className="shrink-0 rounded-md border border-violet-300/30 bg-black/40 px-2 py-1 text-[9px] font-black text-violet-200 active:scale-95"
-        >
-          🌐 힌트 페이지
-        </button>
-      </div>
-
+      {/* v1.4.7 (유저 지시) — /secret 힌트 페이지 버튼 철거: ARG 힌트는 외부 공식 지원센터 웹페이지로 이원화 */}
       {/* v1.4.6 (#문의페이지404) — 지원센터(문의·계정삭제·FAQ) 상시 입구 */}
       <div className="mt-1.5 flex items-center justify-between gap-1.5">
         <p className="text-[9px] font-bold leading-snug text-white/35">계정 문의·데이터 삭제·버그 제보는 지원센터에서</p>

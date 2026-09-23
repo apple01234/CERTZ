@@ -3,7 +3,6 @@ import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PR
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
-import { Capacitor } from "@capacitor/core"; // v1.4.5 (#무한재부팅) — 네이티브에서 이상한 비석 window.open 금지
 import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -480,7 +479,7 @@ export class WorldScene extends Phaser.Scene {
    *  남는 자리는 마을 초행자 훈련장(작업2)으로 대체했다.
    *  buildLayeredKeep/유적 텍스처 로드는 제거 — tickKeepLayer(층 전환)도 함께 폐지.
    *  v1.4.4 — 유저 리포트 ②에 따라 하루 1회 보물상자(keepchest)만 부활(buildVillageChest). */
-  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "secret" | "keepchest"; dlg?: string; npcId?: string; label: string }[] = [];
+  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
   private activeNpcId: string | null = null;
   private talkedNpcs = new Set<string>();
@@ -2675,37 +2674,10 @@ export class WorldScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(Math.floor(cy / 10));
 
-    /* v1.4.3 (작업6) — 이상한 비석 (ARG 힌트 페이지 진입 단서):
-     *  마을 북서쪽 어귀에 세워진 낡은 비석. 은은한 보라빛이 감돈다.
-     *  가까이 가면 「이상한 비석 — 낙서를 읽는다」 — 세계수의 기록(/secret/)이 열린다. */
-    {
-      const mx = 170, my = 190;
-      if (this.textures.exists("glow")) {
-        const gl = this.add.image(mx, my - 6, "glow")
-          .setDisplaySize(64, 64)
-          .setAlpha(0.22)
-          .setTint(0xc08aff)
-          .setBlendMode(Phaser.BlendModes.ADD)
-          .setDepth(Math.floor(my / 10) - 1);
-        this.tweens.add({ targets: gl, alpha: { from: 0.14, to: 0.3 }, duration: 1600, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-      }
-      const stone = this.add.image(mx, my, "rock_dark")
-        .setScale(0.85)
-        .setDepth(Math.floor(my / 10));
-      this.solidGroup.add(stone);
-      (stone.body as Phaser.Physics.Arcade.StaticBody).setSize(40, 30).setOffset(12, 34);
-      this.add
-        .text(mx, my + 34, "이상한 비석", {
-          fontFamily: "Galmuri11, sans-serif",
-          fontSize: "10px",
-          color: "#c08aff",
-          stroke: "#0a0e18",
-          strokeThickness: 3,
-        })
-        .setOrigin(0.5)
-        .setDepth(Math.floor(my / 10));
-      this.interactables.push({ x: mx, y: my + 30, kind: "secret", label: "이상한 비석 — 낙서를 읽는다" });
-    }
+    /* v1.4.7 (유저 지시 — 오류나는 페이지 철거) — 이상한 비석 완전 제거:
+     *  비석 → /secret/ 웹페이지 개방이 APK WebView에서 게임 언로드→재부팅 루프의
+     *  근원 트리거였다(v1.4.3~1.4.5 리포트). v1.4.5는 차단(예산)만 했으나 유저 지시로
+     *  오브제 자체를 철거한다. ARG 힌트는 외부 공식 지원센터 웹페이지로 이원화. */
 
     // 건물 3채 (실제 Zelda-like 타일셋 건물, 충돌은 벽 하단만) — v2.0: 전부 기능 있음 (지시 #12)
     // v3.0 (#4) — 챕터 마을은 챕터 분위기색 틴트 + 마을 간판
@@ -10147,43 +10119,6 @@ export class WorldScene extends Phaser.Scene {
       this.trySleep();
     } else if (it.kind === "exit") {
       this.leaveInterior();
-    } else if (it.kind === "secret") {
-      /* v1.4.3 (작업6) — ARG 힌트 웹페이지 재연결: 마을 어귀의 이상한 비석이
-       *  세계수의 기록(/secret/)으로 이어진다. 새 탭 개방 시도, 실패 시 URL 클립보드 복사.
-       *  v1.4.5 (#무한재부팅) — APK(네이티브)에선 window.open을 아예 시도하지 않는다:
-       *  WebView가 같은 뷰로 /secret/을 로딩해 게임이 언로드되고, 복귀 직후 GPU 상태
-       *  악화로 재부팅 루프(유저 리포트)가 시작되던 트리거였다. 네이티브는
-       *  클립보드 복사+배너 안내만 제공 — 게임 화면을 떠나지 않는다. */
-      const url = `${window.location.origin}/secret/`;
-      audio.sfx.uiOpen();
-      let native = false;
-      try {
-        native = Capacitor.isNativePlatform();
-      } catch { /* 웹 — 무시 */ }
-      if (native) {
-        try {
-          void navigator.clipboard?.writeText(url);
-          this.showBanner(`세계수의 기록 — ${url.replace(/^https?:\/\//, "")} (주소가 클립보드에 복사됐다 — 브라우저로 열기)`);
-        } catch {
-          this.showBanner("세계수의 기록이 숨 쉰다… /secret/ 을 찾아가라");
-        }
-      } else {
-        let opened = false;
-        try {
-          const w = window.open(url, "_blank", "noopener,noreferrer");
-          opened = !!w;
-        } catch { /* 개방 불가 환경 — 폴백으로 안내 */ }
-        if (!opened) {
-          try {
-            void navigator.clipboard?.writeText(url);
-            this.showBanner(`세계수의 기록 — ${url.replace(/^https?:\/\//, "")} (클립보드 복사 완료)`);
-          } catch {
-            this.showBanner("세계수의 기록이 숨 쉰다… /secret/ 을 찾아가라");
-          }
-        } else {
-          this.showBanner("비석의 낙서가 빛나며 페이지가 열렸다 — 세계수의 기록");
-        }
-      }
     } else if (it.kind === "keepchest") {
       /* v1.3.0 (지시 #9) 신설 → v1.4.3 유적 철거 후에도 보물상자(하루 1회)로 생존 */
       this.openKeepChest();
