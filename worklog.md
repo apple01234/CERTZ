@@ -2062,3 +2062,28 @@ Stage Summary:
 - 무한 재부팅: 트리거 차단(비석 네이티브 폴백) + 루프 차단(재부팅 예산) 이중 방어 — 어떤 원인이든 2회 초과 자동 재부팅은 불가능
 - Play Console: 매니페스트/패키지명/서명키 지문/광고ID/데이터보안 답변표/계정삭제·개인정보 URL 전부 준비 — download/PLAY_CONSOLE_v145_등록가이드.txt 참조
 - 세이브 마이그레이션: applicationId 변경으로 구버전 덮어설치 불가(신규 앱) — 계정 로그인 유저는 클라우드 세이브 복원, 로컬 전용 유저는 신규 시작(가이드·릴리스 노트에 명기)
+
+---
+Task ID: 98
+Agent: Super Z (메인)
+Task: v1.4.6 — "비밀 페이지 및 문의 페이지 접속시 404" 근본 수정·APK 빌드·릴리스 (versionCode 98)
+
+Work Log:
+- [현행화] 요약 이후 세션에서 v1.4.4(vc96)·v1.4.5(vc97) 이미 배포됨을 확인 — 유저 12건 리포트 중 1~12번은 v1.4.3~v1.4.5에서 구현 완료 상태. 본 건은 신규 리포트 "비밀 페이지 및 문의 페이지 접속시 404"만 처리
+- [진단 #비밀페이지404] 게임 내 이상한 비석/비밀수첩이 여는 /secret/이 Next trailingSlash 규칙으로 308(/secret)→ public/ 폴더는 디렉터리 인덱스 미해석 → 404 착지(실측 curl 308→404 사슬). 정적 파일은 /secret/index.html로만 서빙되고 있었음
+- [진단 #문의페이지404] /support 자체는 200 정상 — 그러나 게임 UI 어디에도 링크가 없어 유저가 임의 추측 URL(/inquiry·/contact·/account-delete 등)로 접근 시 전부 404. 진단 과정에서 표시 레이어가 특정 파일 텍스트를 왜곡해 "support/page.tsx 46행 문법 오류"로 오인하는 사건 발생 — 문자코드(codePoint) 검증으로 파일이 실제로 정상임을 입증하고 무손상 유지. 교훈: 디스플레이 왜곡 환경에서는 반드시 codePoint/숫자 기반 검증
+- [수정 #1 server.js] SECRET_FILES 맵으로 /secret·/secret/·/secret/second(+슬래시 변형)를 public/secret/*.html에서 직접 스트리밍(200·utf-8) — Next 핸들러 우회. 문의 별칭 정규식 /(inquiry|contact|account-delete|delete-account|account\/delete|delete)\/?/ → /support 308. 파일 부재 시 기존 Next 동작으로 낙하
+- [수정 #2 UI 진입로] Panels.tsx 비밀수첩 패널에 [지원센터·문의] 버튼 신설(기존 힌트 페이지 버튼과 동일한 window.open+클립보드 폴백 패턴) — 문의·계정삭제·FAQ의 게임 내 상시 입구 확보
+- [수정 #3 APK 문의 경로] net.ts resolveServerUrl export + support/page.tsx의 /api/support·/api/auth/delete 호출을 apiBase() 경유(웹=same-origin, APK=저장된 https 서버) — APK 정적 export에서 문의 폼·계정삭제가 로컬 origin을 때리던 잠재 결함 제거
+- [E2E] e2e_v146.js 신설 19항목 → 19/19 PASS: /secret·/secret/·/secret/second 200·본문 마커 / 문의 별칭 3종 308→/support / 버전 1.4.6·98 / 타이틀 배지 / 지연로드 무실패 / support·privacy 렌더 / 월드 진입 / 비석·보물상자 잔존 / NPC 3명→Lv3(lv 1→3) / 큐브 승급(0→1) / 파티 훅 / pageerror 0 — v1.4.4·v1.4.5 핵심 회귀 전부 통과
+- [운영 규명 — 중요] Bash 도구 호출 종료 시점에 게이트웨이가 프로세스 트리 전체(setsid·nohup·disown 포함)를 SIGKILL함을 실측 확정(하트비트 관찰). 부팅 트리(start.sh→.zscripts/dev.sh 무한 감독 루프)의 자식만 생존 — 이전 06:26 서버가 그 자식이었음. dev.sh 루프는 이미 사망 상태 → 수동 기동분은 호출 내 검증용으로만 유효. 최종 서빙은 세션 재시작(컨테이너 재부팅 → start.sh → dev.sh가 커밋된 코드로 서버 기동)으로 완성됨 — 유저에게 재시작 안내 필수
+- [버전체인 8곳] package.json(1.4.6)·build.gradle(98·1.4.6+히스토리)·server.js(VERSION/CODE/NOTE/APK_MIRROR)·Overlays 배지(v1.4.6)·apk-guide(제목·sub 98·노티스·링크·md5 3350dcea·히스토리 v1.4.5 추가)·안내.txt(v1.4.6 블록+v1.4.5 강등)
+- [빌드] 툴체인 정상 → JAVA_HOME=/home/z/jdk ANDROID_HOME=/home/z/.android-sdk 포그라운드 build_apk.sh BUILD SUCCESSFUL 49s → download/SERTZ-v1.4.6.apk 117,545,433B · aapt com.sertz.myapp 98/1.4.6 · apksigner SHA-256 cc774f34(기존 키 동일) · 번들 가이드 v1.4.6 선확인 · md5 3350dceab41698a85dd580f610520fe6
+- [릴리스] scripts/gh_release_v146.sh — Release v1.4.6(id 394401376) 생성·업로드(asset 583250079) → 원격 재다운로드 md5 일치 ✓
+
+Stage Summary:
+- v1.4.6 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.6/SERTZ-v1.4.6.apk (versionCode 98, 117,545,433B, md5 3350dcea…)
+- "비밀 페이지 404" = /secret/ 308→404 사슬 → 서버 직접 서빙으로 200 (E2E 실측) / "문의 페이지 404" = 진입로 부재 → 별칭 5종 308 유도 + 게임 내 지원센터 버튼 신설
+- 세이브 영향 없음(마이그레이션 불요) — 서버 라우팅·UI 링크·APK API 베이스 수정만 포함
+- 운영 교훈: ①호출 경계 프로세스 전멸 환경에서는 커밋+세션 재시작이 유일한 영구 서빙 경로 ②표시 레이어 텍스트 왜곡 환경 — 파일 무결성 판정은 반드시 codePoint 기반으로 ③서명키·applicationId는 v1.4.5와 동일 유지(Play Console 등록값 불변)
+- GitHub 토큰 노출 지속 — 재발급 권고 필수

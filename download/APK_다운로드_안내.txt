@@ -1,5 +1,13 @@
 ══════════════════════════════════════════
-v1.4.5 (최신) — 무한 재부팅 근본 차단 + 플레이스토어 대비
+v1.4.6 (최신) — 비밀·문의 페이지 404 근본 수정
+· 다운로드: https://github.com/apple01234/CERTZ/releases/download/v1.4.6/SERTZ-v1.4.6.apk
+· md5: 3350dceab41698a85dd580f610520fe6 (117545433B, versionCode 98)
+· 비밀 페이지(세계수의 기록) 404 근본 수정 — /secret/ 308→404 사슬 제거, 후행 슬래시 유무 무관 직접 서빙
+· 문의 페이지 404 수정 — /inquiry·/contact·/account-delete·/delete-account 등 → /support 지원센터로 안내
+· 게임 설정창 비밀수첩에 [지원센터·문의] 버튼 신설 — 문의/계정삭제/FAQ 통합 입구
+· APK에서도 문의 폼·계정 삭제가 저장된 서버(HTTPS)로 전송
+
+v1.4.5 — 무한 재부팅 근본 차단 + 플레이스토어 대비
 · 다운로드: https://github.com/apple01234/CERTZ/releases/download/v1.4.5/SERTZ-v1.4.5.apk
 · md5: c497b5fc9ec168db78b2eac6ece38e8b (117541690B, versionCode 97)
 · 무한 재부팅 근본 차단 ("이상한 돌·ARG 웹페이지 접속시 게임 무한 재부팅") —

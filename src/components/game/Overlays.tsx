@@ -86,7 +86,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.5 — 무한 재부팅 근본 차단(이상한 비석·ARG 복귀) · 플레이스토어 대비(지원센터·계정삭제·HTTPS) · 멀티 진입 노출</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.6 — 비밀·문의 페이지 404 근본 수정(/secret 직접 서빙·문의 별칭 유도·지원센터 버튼) · APK 문의 API 원격 호출</span>
           </p>
         </div>
 

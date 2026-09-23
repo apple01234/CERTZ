@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { resolveServerUrl } from "@/game/net"; // v1.4.6 — APK 정적 export에서도 원격 서버 API 호출
+
+/** v1.4.6 — API 베이스: 웹=same-origin(""), APK=저장된 https 서버(오프라인이면 "") */
+const apiBase = () => {
+  try { return resolveServerUrl() || ""; } catch { return ""; }
+};
 
 /**
  * v1.4.5 (#유저지원페이지 — 유저 지시 #7)
@@ -86,7 +92,7 @@ export default function SupportPage() {
     if (!confirm("계정을 정말 삭제할까요?\n\n· 클라우드 세이브\n· 랭킹 기록\n· 거래소 등록 물건\n\n삭제된 계정은 복구할 수 없습니다!")) return;
     setDelMsg(null);
     try {
-      const r = await fetch("/api/auth/delete", {
+      const r = await fetch(`${apiBase()}/api/auth/delete`, {
         method: "POST",
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({ confirm: "DELETE" }),
@@ -109,7 +115,7 @@ export default function SupportPage() {
     }
     setSending(true);
     try {
-      const r = await fetch("/api/support", {
+      const r = await fetch(`${apiBase()}/api/support`, {
         method: "POST",
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({ category: cat, name, contact, message }),

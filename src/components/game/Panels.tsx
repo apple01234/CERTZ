@@ -4705,6 +4705,25 @@ function SecretNotebook() {
         </button>
       </div>
 
+      {/* v1.4.6 (#문의페이지404) — 지원센터(문의·계정삭제·FAQ) 상시 입구 */}
+      <div className="mt-1.5 flex items-center justify-between gap-1.5">
+        <p className="text-[9px] font-bold leading-snug text-white/35">계정 문의·데이터 삭제·버그 제보는 지원센터에서</p>
+        <button
+          onClick={() => {
+            const url = `${window.location.origin}/support`;
+            let opened = false;
+            try { opened = !!window.open(url, "_blank", "noopener,noreferrer"); } catch { /* 폴백 */ }
+            if (!opened) {
+              try { void navigator.clipboard?.writeText(url); EventBus.emit("banner:show", { text: `지원센터 — ${url.replace(/^https?:\/\//, "")} (클립보드 복사 완료)` }); }
+              catch { EventBus.emit("banner:show", { text: "/support 지원센터를 브라우저에서 열어라" }); }
+            }
+          }}
+          className="shrink-0 rounded-md border border-sky-300/30 bg-black/40 px-2 py-1 text-[9px] font-black text-sky-200 active:scale-95"
+        >
+          🛰 지원센터·문의
+        </button>
+      </div>
+
       {open && (
         <div className="sertz-scroll mt-2 max-h-52 overflow-y-auto rounded-md border border-white/10 bg-black/40 p-1.5">
           {list.map(({ def, found }) => (

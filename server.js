@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.5/SERTZ-v1.4.5.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.6/SERTZ-v1.4.6.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -38,9 +38,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.5";
-  const LATEST_CODE = 97;
-  const VERSION_NOTE = "이상한 비석·ARG 페이지 유발 무한 재부팅 근본 차단(재부팅 예산+네이티브 비석 안내 전환)·플레이스토어 대비(광고 ID 미사용 선언·지원센터/개인정보/계정삭제 페이지·HTTPS 강제)·멀티 진입 HUD 노출";
+  const LATEST_VERSION = "1.4.6";
+  const LATEST_CODE = 98;
+  const VERSION_NOTE = "비밀·문의 페이지 404 근본 수정(/secret 후행슬래시 308→404 사슬 제거·서버 직접 서빙·문의 별칭 경로 /support 유도·비밀수첩 지원센터 버튼·APK 문의/계정삭제 API 원격 HTTPS 호출)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
@@ -72,6 +72,35 @@ app.prepare().then(() => {
         res.writeHead(404).end("not found");
         return;
       }
+    }
+    /* v1.4.6 (#비밀페이지404) — 세계수의 기록(/secret) 404 근본 수정.
+     *  원인: Next trailingSlash 규칙이 /secret/ 을 308(/secret)으로 리다이렉트하는데
+     *  public/ 폴더는 디렉터리 인덱스(/secret → index.html)를 해석하지 못해 404로 착지.
+     *  서버 레벨에서 후행 슬래시 유무와 무관하게 정적 ARG 페이지를 직접 서빙한다. */
+    const SECRET_FILES = {
+      "/secret": "public/secret/index.html",
+      "/secret/": "public/secret/index.html",
+      "/secret/index.html": "public/secret/index.html",
+      "/secret/second": "public/secret/second.html",
+      "/secret/second/": "public/secret/second.html",
+    };
+    const secretFile = SECRET_FILES[url];
+    if (secretFile) {
+      try {
+        const fp = path.join(__dirname, secretFile);
+        statSync(fp);
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+        createReadStream(fp).pipe(res);
+        return;
+      } catch (e) {
+        /* 파일 부재 시 Next 핸들러로 낙하(기존 동작 유지) */
+      }
+    }
+    /* v1.4.6 (#문의페이지404) — 유저가 임의로 추측해 입력하는 문의/삭제 URL을
+     *  전부 지원센터(/support)로 유도 — 404 노출 원천 차단. */
+    if (/^\/(inquiry|contact|account-delete|delete-account|account\/delete|delete)\/?$/i.test(url)) {
+      res.writeHead(308, { Location: "/support" }).end();
+      return;
     }
     /* v4.9.0 — 계정 API(/api/auth/*) 우선 처리 래퍼 */
     handlerWithAccounts(req, res);

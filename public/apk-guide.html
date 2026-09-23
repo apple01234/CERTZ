@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SERTZ v1.4.5 APK 다운로드 안내</title>
+<title>SERTZ v1.4.6 APK 다운로드 안내</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -41,11 +41,16 @@
 </head>
 <body>
 <div class="card">
-  <h1>SERTZ v1.4.5 APK 다운로드 안내</h1>
-  <div class="sub">versionCode 97 · 기존 세이브 그대로 유지 · 덮어설치 가능</div>
+  <h1>SERTZ v1.4.6 APK 다운로드 안내</h1>
+  <div class="sub">versionCode 98 · 기존 세이브 그대로 유지 · 덮어설치 가능</div>
 
   <div class="notice">
-    <b>이번 버전(v1.4.5) — “이상한 비석·ARG 페이지 접속 후 무한 재부팅” 근본 차단 + 플레이스토어 대비</b><br>
+    <b>이번 버전(v1.4.6) — "비밀 페이지·문의 페이지 404" 근본 수정</b><br>
+    🔐 비밀 페이지(세계수의 기록) 404 수정 — /secret/ 접속 시 308→404로 착지하던 사슬 제거, 서버에서 직접 서빙 (후행 슬래시 유무 무관)<br>
+    🛰 문의 페이지 404 수정 — /inquiry·/contact·/account-delete·/delete-account 등 주소를 전부 지원센터(/support)로 안내<br>
+    🎮 게임 안 진입로 신설 — 설정창 비밀수첩에 [지원센터·문의] 버튼 추가<br>
+    📱 APK에서도 문의 가능 — 지원센터의 문의 폼·계정 삭제가 저장된 서버(HTTPS)로 전송<br>
+    ♻️ v1.4.5 — 이상한 비석·ARG 접속 후 무한 재부팅 근본 차단 + 플레이스토어 대비(AD_ID 미사용 선언·지원센터/개인정보/계정삭제·HTTPS 강제)<br>
     ♻️ 무한 재부팅 근본 차단 — ① 재부팅 예산: 2분 창에 자가 재부팅 최대 2회, 초과 시 자동 재부팅을 멈추고 수동 복구 화면 제공 ② 마을 이상한 비석은 APK에서 게임 화면을 떠나지 않게 변경(주소 클립보드 복사 안내) ③ 외부 페이지 복귀 직후 15초 관찰 유예 — 불필요한 즉시 재부팅 제거<br>
     📋 플레이스토어 대비 — 광고 ID(AD_ID) 미사용 선언 · 지원센터(/support)·개인정보처리방침(/privacy)·계정 삭제 API 신설 · 모든 통신 HTTPS 강제<br>
     🌐 멀티 진입 노출 — 더보기에 '멀티' 버튼 추가, 파티·친구 위젯을 좌측으로 이동(HUD 겹침 해소)<br>
@@ -68,13 +73,13 @@
 
   <div class="step">
     <h2><span class="badge">방법 1 (권장)</span>GitHub 릴리스 — 즉시 다운로드</h2>
-    <a href="https://github.com/apple01234/CERTZ/releases/download/v1.4.5/SERTZ-v1.4.5.apk"
+    <a href="https://github.com/apple01234/CERTZ/releases/download/v1.4.6/SERTZ-v1.4.6.apk"
        style="display:block; text-align:center; margin:10px 0; padding:14px; border-radius:12px; background:linear-gradient(180deg,#facc15,#d97706); color:#1e293b; font-weight:900; font-size:16px; text-decoration:none; box-shadow:0 6px 20px rgba(0,0,0,.4);">
-      ⬇ SERTZ v1.4.5 APK 바로 다운로드 (112MB · 즉시 시작)
+      ⬇ SERTZ v1.4.6 APK 바로 다운로드 (117MB · 즉시 시작)
     </a>
     <ul>
       <li>위 버튼을 누르면 브라우저가 곧바로 다운로드를 시작합니다 (대기 없음)</li>
-      <li>무결성 확인용 md5: <code>c497b5fc9ec168db78b2eac6ece38e8b</code> (<b>117541690B</b> · versionCode 97)</li>
+      <li>무결성 확인용 md5: <code>3350dceab41698a85dd580f610520fe6</code> (<b>117545433B</b> · versionCode 98)</li>
       <li>릴리스 페이지: <a href="https://github.com/apple01234/CERTZ/releases" style="color:#7dc4ff"><code>github.com/apple01234/CERTZ/releases</code></a></li>
     </ul>
   </div>
@@ -88,6 +93,8 @@
   </div>
 
   <div class="footer">
+    v1.4.6 변경점: 비밀·문의 페이지 404 근본 수정 — /secret 서버 직접 서빙(308→404 사슬 제거) · /inquiry·/contact·/account-delete·/delete-account → /support 유도 · 비밀수첩 [지원센터·문의] 버튼 신설 · APK에서도 문의/계정삭제 API 원격 서버(HTTPS) 호출
+    v1.4.5 변경점: 이상한 비석·ARG 페이지 접속 후 무한 재부팅 근본 차단(재부팅 예산 2회/2분·수동 복구 오버레이·네이티브 비석 클립보드 안내·복귀 15초 유예) · 플레이스토어 대비(AD_ID 미사용 선언·/support 지원센터+/privacy+계정삭제·문의 API·HTTPS 강제) · 멀티 진입 HUD 노출
     v1.4.4 변경점: 첫 사냥터 Lv3 교착 근본 수정 — NPC 3명(주민 2+카이엔 교관) 대화 완료 시 레벨 3 달성 · 초행자 훈련장 복구(훈련용 늑대 3마리) · 첫 퀘스트 "마을 NPC 3명과 인사" 개편 · 보물상자 렌더 복구 · v1.4.3 병합 유실분(파티 시너지/미션 보드/최적화 4종/마을 비석) 복구<br>
     v1.4.3 변경점: 유저 리포트 6건 — 유적 히트박스·구조물 철거(보물상자 잔존) · 등급업 큐브 사용 경로 신설 · 보스 유물 등 아이템 아이콘 미로딩 수정(전 아이콘 로드+폴백+DOM 재시도) · 파티 공동 토벌전 신설(멀티 콘텐츠) · 재림 시리즈 완성(재림 보스 3종 재도전 추가)<br>
     v1.4.2 변경점: 유저 리포트 2건 — 요새 유적 타일맵 근본 수정(Phaser 4 setCrop 렌더 결함 → 프레임 방식 전환) · 스프라이트 무결성 감사·수복 체계(texGuard)<br>

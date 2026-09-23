@@ -53,7 +53,11 @@ let lastParty: NetParty | null = null;
  *  - EXE(Electron) + 저장 주소 → 그 주소 (원격 멀티플레이 서버)
  *  - EXE(Electron) + 미지정 → undefined (same-origin: 내장 로컬 서버 — 싱글+로컬 멀티)
  */
-function resolveServerUrl(): string | null | undefined {
+/**
+ * v1.4.6 — export: /support 지원센터(문의·계정삭제)가 APK 정적 export에서도
+ *  원격 서버 API를 호출할 수 있도록 공개. 웹=same-origin(undefined→""), APK=저장된 https 서버.
+ */
+export function resolveServerUrl(): string | null | undefined {
   if (typeof window === "undefined") return undefined;
   const electron = isElectron();
   if (Capacitor.isNativePlatform() || electron) {
