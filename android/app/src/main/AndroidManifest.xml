@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- v1.4.3 (#플레이콘솔) — xmlns:tools 추가: AD_ID 권한 제거 선언용 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="false"
@@ -51,4 +53,10 @@
     <!-- v4.1.1 — 구글 플레이 인앱 결제(에메랄드 충전)용. 결제 시점에만 사용되며
          부팅에는 영향 없음. 미등록 SKU는 ads.ts의 try/catch가 안내로 흡수 -->
     <uses-permission android:name="com.android.vending.BILLING" />
+
+    <!-- v1.4.3 (#플레이콘솔 광고 ID 선언) — Android 13(API 33)+ 광고 ID 경고 대응.
+         본 앱은 AdMob SDK를 번들하지 않아(의존성 없음 — 광고 없음) 광고 ID를 사용하지 않는다.
+         tools:node="remove"로 어떤 라이브러리가 AD_ID를 병합하려 해도 최종 APK에서 제거된다.
+         Play Console '광고 ID' 선언에서는 "광고 ID를 사용하지 않음"으로 답변하면 된다. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
 </manifest>

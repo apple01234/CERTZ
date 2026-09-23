@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.4/SERTZ-v1.4.4.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.5/SERTZ-v1.4.5.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -38,9 +38,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.4";
-  const LATEST_CODE = 96;
-  const VERSION_NOTE = "첫 사냥터 Lv3 교착 근본 수정 — 마을 NPC 3명(주민 2+카이엔 교관) 대화 완료 시 레벨 3 즉시 달성·초행자 훈련장 복구(유실된 훈련용 늑대 3마리+표지판)·v0 퀘스트 3명 기준 갱신·보물상자 렌더 복구(map_chest_f 로드)·v1.4.3 파티 시너지/파티 미션 보드/최적화 4종/마을 비석 복구(병합 유실분)";
+  const LATEST_VERSION = "1.4.5";
+  const LATEST_CODE = 97;
+  const VERSION_NOTE = "이상한 비석·ARG 페이지 유발 무한 재부팅 근본 차단(재부팅 예산+네이티브 비석 안내 전환)·플레이스토어 대비(광고 ID 미사용 선언·지원센터/개인정보/계정삭제 페이지·HTTPS 강제)·멀티 진입 HUD 노출";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

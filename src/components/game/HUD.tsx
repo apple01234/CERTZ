@@ -7,7 +7,7 @@ import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
 import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis, Globe } from "lucide-react";
 import { EventBus } from "./EventBus";
 
 /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
@@ -352,6 +352,16 @@ export function HUD({
             >
               <Repeat size={17} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
+            </button>
+            {/* v1.4.3 (#멀티입구) — 멀티 콘텐츠 진입을 HUD에 노출 ("멀티 콘텐츠 어디감?" 리포트):
+             *  파티 위젯 토글 이벤트를 날린다 (위젯 자체는 좌측에 상주 — 겹침 없는 위치로 이동) */}
+            <button
+              onClick={() => EventBus.emit("party:toggle")}
+              aria-label="멀티 파티 창 열기 (Y)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9ec8ff] active:scale-95"
+            >
+              <Globe size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-sky-300/90">멀티</span>
             </button>
             <button
               onClick={onOpenRank}

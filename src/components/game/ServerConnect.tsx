@@ -114,7 +114,13 @@ export function ServerConnect() {
   if (!native) return null;
 
   const save = () => {
-    const v = url.trim().replace(/\/$/, "");
+    /* v1.4.3 (#데이터보안) — 모든 서버 통신은 암호화 전송(HTTPS)만 허용:
+     *  Play Console 데이터 보안 "수집 데이터 전체 암호화 전송: 예" 답변의 근거.
+     *  http:// 입력은 강제로 https://로 승격한다. */
+    const v = url
+      .trim()
+      .replace(/\/$/, "")
+      .replace(/^http:\/\//i, "https://");
     try {
       if (v) window.localStorage.setItem(KEY, v);
       else window.localStorage.removeItem(KEY);

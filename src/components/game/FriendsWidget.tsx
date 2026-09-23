@@ -102,7 +102,7 @@ export function FriendsWidget() {
   const stageLabel = (stage: string) => STAGE_SHORT[resolveStage(stage)] ?? stage;
 
   return (
-    <div className="absolute right-2 top-[168px] sm:right-3 sm:top-[190px] flex flex-col items-end gap-1.5">
+    <div className="absolute left-2 top-[168px] flex flex-col items-start gap-1.5 sm:left-3 sm:top-[190px]">
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="친구 열기 (B)"

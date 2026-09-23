@@ -3,6 +3,7 @@ import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PR
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
+import { Capacitor } from "@capacitor/core"; // v1.4.5 (#무한재부팅) — 네이티브에서 이상한 비석 window.open 금지
 import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -10148,23 +10149,40 @@ export class WorldScene extends Phaser.Scene {
       this.leaveInterior();
     } else if (it.kind === "secret") {
       /* v1.4.3 (작업6) — ARG 힌트 웹페이지 재연결: 마을 어귀의 이상한 비석이
-       *  세계수의 기록(/secret/)으로 이어진다. 새 탭 개방 시도, 실패 시 URL 클립보드 복사. */
+       *  세계수의 기록(/secret/)으로 이어진다. 새 탭 개방 시도, 실패 시 URL 클립보드 복사.
+       *  v1.4.5 (#무한재부팅) — APK(네이티브)에선 window.open을 아예 시도하지 않는다:
+       *  WebView가 같은 뷰로 /secret/을 로딩해 게임이 언로드되고, 복귀 직후 GPU 상태
+       *  악화로 재부팅 루프(유저 리포트)가 시작되던 트리거였다. 네이티브는
+       *  클립보드 복사+배너 안내만 제공 — 게임 화면을 떠나지 않는다. */
       const url = `${window.location.origin}/secret/`;
       audio.sfx.uiOpen();
-      let opened = false;
+      let native = false;
       try {
-        const w = window.open(url, "_blank", "noopener,noreferrer");
-        opened = !!w;
-      } catch { /* 개방 불가 환경 — 폴백으로 안내 */ }
-      if (!opened) {
+        native = Capacitor.isNativePlatform();
+      } catch { /* 웹 — 무시 */ }
+      if (native) {
         try {
           void navigator.clipboard?.writeText(url);
-          this.showBanner(`세계수의 기록 — ${url.replace(/^https?:\/\//, "")} (클립보드 복사 완료)`);
+          this.showBanner(`세계수의 기록 — ${url.replace(/^https?:\/\//, "")} (주소가 클립보드에 복사됐다 — 브라우저로 열기)`);
         } catch {
           this.showBanner("세계수의 기록이 숨 쉰다… /secret/ 을 찾아가라");
         }
       } else {
-        this.showBanner("비석의 낙서가 빛나며 페이지가 열렸다 — 세계수의 기록");
+        let opened = false;
+        try {
+          const w = window.open(url, "_blank", "noopener,noreferrer");
+          opened = !!w;
+        } catch { /* 개방 불가 환경 — 폴백으로 안내 */ }
+        if (!opened) {
+          try {
+            void navigator.clipboard?.writeText(url);
+            this.showBanner(`세계수의 기록 — ${url.replace(/^https?:\/\//, "")} (클립보드 복사 완료)`);
+          } catch {
+            this.showBanner("세계수의 기록이 숨 쉰다… /secret/ 을 찾아가라");
+          }
+        } else {
+          this.showBanner("비석의 낙서가 빛나며 페이지가 열렸다 — 세계수의 기록");
+        }
       }
     } else if (it.kind === "keepchest") {
       /* v1.3.0 (지시 #9) 신설 → v1.4.3 유적 철거 후에도 보물상자(하루 1회)로 생존 */

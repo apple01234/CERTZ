@@ -50,7 +50,13 @@ export function PartyWidget() {
       if (e.key.toLowerCase() === "y") setOpen((v) => !v);
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    /* v1.4.5 (#멀티입구) — HUD 더보기의 "멀티" 버튼에서도 파티 창을 연다 */
+    const onToggle = () => setOpen((v) => !v);
+    EventBus.on("party:toggle", onToggle);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      EventBus.off("party:toggle", onToggle);
+    };
   }, []);
 
   const create = () => {
@@ -87,7 +93,7 @@ export function PartyWidget() {
     .filter((m): m is PartyMissionDef => !!m);
 
   return (
-    <div className="absolute right-2 top-[132px] sm:right-3 sm:top-[150px] flex flex-col items-end gap-1.5">
+    <div className="absolute left-2 top-[132px] flex flex-col items-start gap-1.5 sm:left-3 sm:top-[150px]">
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="파티 열기 (Y)"

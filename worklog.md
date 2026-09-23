@@ -2041,3 +2041,24 @@ Stage Summary:
 - 부수 근본 수정: 파티 보드 무한루프(프리즈) 제거·보물상자 렌더 복구·v1.4.3 병합 유실분(시너지/미션보드/최적화 4종/비석) 복구 — "캐릭터 선택 후 응답없음" 재발 소지 원천 차단
 - 운영 교훈: ①커밋 2101c7b처럼 stale 베이스 위 패치는 미반영 기능을 조용히 유실시킨다 — 커밋 메시지의 기능 주장은 grep으로 현행화 검증 필요 ②무한루프는 페이지 응답성 레이스+CDP 콜스택 샘플링으로 특정한다 ③세이브 마이그레이션 불요(v0 need 갱신은 진행 표시만 재계산, questIdx 의미 불변)
 - 남은 지시: 없음 — GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: 97
+Agent: main (Super Z)
+Task: v1.4.5 — 이상한 돌·ARG 웹페이지 접속시 게임 무한 재부팅 근본 차단 + Play Console 대응 7건(서명키 등록·AD_ID 선언·암호화 전송·데이터 보안 폼·계정 삭제 URL·오타쿠 감성 지원 웹페이지)
+
+Work Log:
+- [현행화] 로컬 리셋으로 v1.4.2 스냅샷에서 작업 착각 → git fetch로 v1.4.4(origin/main c63a372) 확인 후 병합 정렬. WIP 커밋(6b333b3)에서 유일 신규분만 재적용, 원격 구현분(NPC Lv3·유적 철거·큐브 경로·아이콘 재시도)과 중복 제거
+- [무한재부팅 #1] 원인 2검 확정: ①이상한 비석(kind:secret) window.open이 WebView를 /secret/으로 이동→게임 언로드→복귀 직후 GPU 악화로 재부팅 루프 ②자가치유 3종(ctxLost 4s·프리즈 6s·복귀 45s)이 무한 reload 허용. 수정: (a)재부팅 예산 sessionStorage 2회/2분 — 초과 시 수동 복구 오버레이(showRecoveryOverlay 신설·crashGuard 재사용) (b)프리즈 판정은 루프 생존(hadFrame) 확인 후 (c)복귀 직후 15초 관찰 유예 (d)네이티브 비석은 window.open 금지→클립보드 복사 안내(Capacitor.isNativePlatform)
+- [Play Console] AndroidManifest AD_ID tools:node="remove" + xmlns:tools / applicationId com.sertz.yggdrasil→com.sertz.myapp / 서버 통신 https 강제(net.ts resolveServerUrl http→https·wss 승격 + ServerConnect save 승격)
+- [지원 웹페이지 #7] /support 신설(서브컬처 감성 — FAQ 6종·기기 데이터 즉시 삭제(same-origin localStorage sertz_* 정밀 제거)·계정 삭제 실행·문의 폼 5카테고리) + /privacy 개인정보처리방침(수집/보관/암호화/삭제/제3자) + accounts/index.js에 POST /api/support(db/support-inbox.jsonl 적재·rateLimit 5/10분)·POST /api/auth/delete(계정+클라우드세이브+토큰+랭킹+거래소등록물 즉시 파기·audit)
+- [가이드 #2/#3/#5/#6] download/PLAY_CONSOLE_v145_등록가이드.txt — 서명키 지문 실측(SHA1 2E:AD:70:…·SHA256 CC:77:4F:…·MD5 B7:0E:16:…, keystore android/sertz-release.keystore alias sertz)·광고ID 답변표("아니요")·데이터 보안 답변표(수집 예/암호화 예/사용자 이름+비밀번호/삭제 URL)·삭제 URL=https://sertz4.space-z.ai/support
+- [멀티 입구] HUD 더보기 '멀티' 버튼(EventBus party:toggle) + PartyWidget listener + 파티/친구 위젯 우측→좌측 이동(HUD 칼럼 top-132px 겹침 해소)
+- [검증] tsc 0 오류 · e2e_v145.js 13/13 PASS(pageerror 0 — version/API/support 접수/페이지 2종/월드/비석/상자/NPC Lv3 1→3/큐브 승급/party 훅) · e2e_v144 회귀 15/16(배지 문자열 1건만 예상 실패) · check_assets 2690 로드 누락 3(유저 문장 오탐 — 기존과 동일)
+- [빌드/릴리스] build_apk.sh 포그라운드(툴체인 재설치 setup_env.sh — 리셋으로 JDK/SDK 소실) BUILD SUCCESSFUL 48s → SERTZ-v1.4.5.apk 117,541,690B · apksigner SHA-256 cc774f34…=keystore 일치 · md5 c497b5fc9ec168db78b2eac6ece38e8b · GitHub Release v1.4.5 id 394345259 업로드 완료(gh_release_v145.py — remote URL 토큰 추출 방식)
+
+Stage Summary:
+- v1.4.5 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.5/SERTZ-v1.4.5.apk (versionCode 97, 117,541,690B, md5 c497b5fc…)
+- 무한 재부팅: 트리거 차단(비석 네이티브 폴백) + 루프 차단(재부팅 예산) 이중 방어 — 어떤 원인이든 2회 초과 자동 재부팅은 불가능
+- Play Console: 매니페스트/패키지명/서명키 지문/광고ID/데이터보안 답변표/계정삭제·개인정보 URL 전부 준비 — download/PLAY_CONSOLE_v145_등록가이드.txt 참조
+- 세이브 마이그레이션: applicationId 변경으로 구버전 덮어설치 불가(신규 앱) — 계정 로그인 유저는 클라우드 세이브 복원, 로컬 전용 유저는 신규 시작(가이드·릴리스 노트에 명기)

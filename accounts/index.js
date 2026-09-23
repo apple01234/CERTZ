@@ -19,6 +19,7 @@ const path = require("node:path");
 
 const DB_DIR = path.join(process.cwd(), "db");
 const DB_FILE = path.join(DB_DIR, "accounts.json");
+const SUPPORT_INBOX = path.join(DB_DIR, "support-inbox.jsonl"); // v1.4.3 — 문의/삭제 요청 수집함 (JSONL)
 const TOKEN_TTL_MS = 30 * 24 * 3600 * 1000; // 30일
 const COOKIE = "sertz_auth";
 /* ---------------- v1.0.2 보안 계층 (유저 지시 Phase 12/29) ----------------
@@ -677,6 +678,64 @@ async function handle(req, res) {
       return true;
     }
 
+    /* ================= v1.4.3 (#플레이콘솔 데이터보안) — 계정 삭제 =================
+     *  Google Play 계정 삭제 요구: 유저가 서비스 내에서 계정+관련 데이터를 삭제 가능해야 한다.
+     *  로그인 세션(Bearer/쿠키) 필요 — 본인 계정만 삭제 가능.
+     *  삭제 범위: 계정·클라우드 세이브·토큰·랭킹·거래소 등록분(+수익금 정산 레코드). */
+    if (url === "/api/auth/delete" && method === "POST") {
+      const me = currentUser(req);
+      if (!me) return sendJson(res, 401, { error: "로그인 상태에서만 삭제할 수 있어요" });
+      const b = await readBody(req);
+      if (String(b.confirm || "").toUpperCase() !== "DELETE") {
+        return sendJson(res, 400, { error: "확인 문구가 올바르지 않아요 — confirm: DELETE 필요" });
+      }
+      const uid = me.id;
+      delete db.users[uid];
+      delete db.saves[uid];
+      delete db.rank[uid];
+      for (const k of Object.keys(db.tokens)) if (db.tokens[k].userId === uid) delete db.tokens[k];
+      /* 거래소: 내 등록 물건 철회(판매자 존재 물건 제거) */
+      try {
+        for (const k of Object.keys(db.market.listings || {})) {
+          if (db.market.listings[k]?.sellerId === uid) delete db.market.listings[k];
+        }
+      } catch { /* 구조 변화 무시 */ }
+      delete db.payouts[uid];
+      persistDb();
+      audit("account_delete", { ip: clientIp(req), uid });
+      sendJson(res, 200, { ok: true });
+      return true;
+    }
+
+    /* ================= v1.4.3 (#유저지원페이지) — 문의 접수 =================
+     *  /support 페이지의 문의·데이터 삭제 요청 폼 수신처. db/support-inbox.json 적재.
+     *  인증 불요(비로그인 문의 허용) — 레이트리밋으로 남용만 차단. */
+    if (url === "/api/support" && method === "POST") {
+      if (!rateLimit(req, res, "support", 5, 10 * 60 * 1000)) return true;
+      const b = await readBody(req);
+      const rec = {
+        ts: Date.now(),
+        ip: clientIp(req),
+        category: String(b.category || "일반 문의").slice(0, 24),
+        name: String(b.name || "").trim().slice(0, 24),
+        contact: String(b.contact || "").trim().slice(0, 80),
+        uid: String(b.uid || "").trim().slice(0, 24),
+        message: String(b.message || "").trim().slice(0, 2000),
+      };
+      if (!rec.message) return sendJson(res, 400, { error: "내용을 입력해 주세요" });
+      try {
+        const { appendFileSync } = require("node:fs");
+        mkdirSync(DB_DIR, { recursive: true });
+        appendFileSync(SUPPORT_INBOX, JSON.stringify(rec) + "\n");
+      } catch (e) {
+        console.error("[SERTZ-support] 적재 실패", e);
+        return sendJson(res, 500, { error: "접수에 실패했어요 — 잠시 후 다시 시도" });
+      }
+      audit("support", { ip: rec.ip, category: rec.category });
+      sendJson(res, 200, { ok: true });
+      return true;
+    }
+
     /* 자체 회원가입 */
     if (url === "/api/auth/register" && method === "POST") {
       if (!rateLimit(req, res, "register", 10, 5 * 60 * 1000)) return true; // v1.0.2 — 무차별 가입 차단
@@ -815,7 +874,7 @@ function attachAccountsBefore(handleNext) {
       sendJson(res, 404, { error: "알 수 없는 랭킹 요청" });
       return;
     }
-    if (u.startsWith("/api/auth/") || u.startsWith("/api/admin/")) {
+    if (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") || u === "/api/support") {
       handle(req, res).catch((e) => {
         console.error("[SERTZ-accounts] 가로채기 실패 — Next로 전달", e);
         handleNext(req, res);

@@ -60,7 +60,14 @@ function resolveServerUrl(): string | null | undefined {
     try {
       const raw = window.localStorage.getItem("sertz.server.url");
       const u = raw?.trim();
-      if (u && /^(https?|wss?):\/\//i.test(u)) return u.replace(/\/$/, "");
+      /* v1.4.3 (#데이터보안) — 평문 http/wss 미허용: 저장 주소를 https/wss로 강제 승격
+       *  (Play Console "수집 데이터 전체 암호화 전송: 예" 근거 — 모든 API/소켓이 TLS 경유) */
+      if (u && /^(https?|wss?):\/\//i.test(u)) {
+        return u
+          .replace(/^http:\/\//i, "https://")
+          .replace(/^ws:\/\//i, "wss://")
+          .replace(/\/$/, "");
+      }
     } catch {
       /* localStorage 접근 불가 — 폴백 처리 */
     }

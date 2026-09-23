@@ -11,6 +11,7 @@ import * as dataMod from "./data";
 import { ACC_ANCHORS } from "./acc_anchors"; // v1.2.1 (#1) — E2E 앵커 실측용
 import * as eggsMod from "./eggs"; // v1.4.0 — 이스터에그/ARG (E2E 데이터 검증)
 import * as partyContentMod from "./partyContent"; // v1.4.3 — 파티 콘텐츠 (E2E 시너지/보드 검증)
+import { showRecoveryOverlay } from "../components/game/crashGuard"; // v1.4.5 — 재부팅 루프 차단 수동 복구
 import { SFX_THROTTLE_MS, SFX_MAX_CONCURRENT, BGM_VOLUME, SFX_VOLUMES, playBGM, playStageBGM, stageTrack, bgmDebugState, bgmAdvanceForTest, BGM_PLAYLISTS } from "./audio";
 
 const audioDebug = { throttle: SFX_THROTTLE_MS, cap: SFX_MAX_CONCURRENT, bgm: BGM_VOLUME, volumes: SFX_VOLUMES };
@@ -28,6 +29,45 @@ export function viewZoom(): number {
   if (typeof window === "undefined") return 1;
   const raw = window.innerHeight / 560;
   return Math.min(2.5, Math.max(1, Math.round(raw * 4) / 4));
+}
+
+/* ================= v1.4.5 (#무한재부팅) — 자가치유 재부팅 예산 =================
+ * 유저 리포트: "이상한 돌·ARG 웹페이지 접속 후 복귀 시 게임 무한 재부팅".
+ * 원인: 컨텍스트 유실/프리즈 워치독·백그라운드 복귀 재부팅이 전부 무한 reload를
+ * 허용했다. 외부 페이지 이동 후 복귀한 WebView는 GPU/컨텍스트 상태가 나빠져
+ * 부팅 직후 다시 실패 → reload → 실패 → … 무한 루프.
+ * 해결: 세션(탭) 단위 2분 창에 자동 재부팅 2회까지만 허용하고, 초과 시
+ * 자동 재부팅을 완전히 중단하고 수동 복구 오버레이를 표시한다.
+ * 수동 "다시 시작" 버튼은 예산을 리셋하므로 정상 복구 후 자가치유도 살아난다. */
+const REBOOT_WINDOW_MS = 120000;
+const REBOOT_MAX = 2;
+function rebootLedger(): number[] {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem("sertz.reboots") ?? "[]") as unknown;
+    return Array.isArray(raw) ? raw.filter((n): n is number => typeof n === "number") : [];
+  } catch {
+    return [];
+  }
+}
+function safeReload(reason: string) {
+  const now = Date.now();
+  const list = rebootLedger().filter((t) => now - t < REBOOT_WINDOW_MS);
+  if (list.length >= REBOOT_MAX) {
+    console.error(`[SERTZ] 재부팅 예산 초과(${reason}) — 자동 재부팅 중단, 수동 복구 대기`);
+    showRecoveryOverlay(
+      "게임이 반복적으로 재시작된다",
+      `자가치유 한도 초과 (${reason}) — 화면이 계속 재부팅되던 문제를 막았다. 다시 시작을 눌러 주세요`,
+      "재부팅 루프 방지 — 세이브는 주기적으로 저장되어 대부분 보존된다",
+    );
+    return;
+  }
+  list.push(now);
+  try {
+    sessionStorage.setItem("sertz.reboots", JSON.stringify(list));
+  } catch {
+    /* 세션 스토리지 불가 환경 — 예산 없이 기존 동작 */
+  }
+  window.location.reload();
 }
 
 export function createGame(parent: HTMLElement): Phaser.Game {
@@ -77,7 +117,7 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   window.setInterval(() => {
     if (ctxLostAt > 0 && Date.now() - ctxLostAt > 4000) {
       console.error("[SERTZ] 컨텍스트 미복구 — 안전 새로고침");
-      window.location.reload();
+      safeReload("webgl-context");
     }
   }, 1000);
 
@@ -90,22 +130,33 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   const freezeBootAt = Date.now();
   let freezeSamples = 0;
   let lastFrame = -1;
+  let hadFrame = false; // v1.4.5 — 루프가 실제로 살아본 적이 있어야 프리즈로 인정
+  let resumeGraceUntil = 0; // v1.4.5 — 백그라운드 복귀 직후 관찰 유예
   window.setInterval(() => {
     try {
       if (document.hidden) return;
       if (Date.now() - freezeBootAt < 12000) return;
       const f = game.loop.frame;
+      if (f > 0 && f !== lastFrame) hadFrame = true;
+      if (!hadFrame) return; // 부팅 실패 루프 — 프리즈가 아니라 재부팅 예산이 보호한다
+      if (Date.now() < resumeGraceUntil) {
+        lastFrame = f;
+        freezeSamples = 0;
+        return;
+      }
       if (f === lastFrame) {
         freezeSamples++;
         if (freezeSamples >= 3) {
           console.error("[SERTZ] 렌더 루프 정지 감지 — 안전 새로고침");
-          window.location.reload();
+          safeReload("render-freeze");
         }
       } else {
         freezeSamples = 0;
         lastFrame = f;
       }
-    } catch { /* 게임 미부팅 단계 무시 */ }
+    } catch {
+      /* 게임 미부팅 단계 무시 */
+    }
   }, 2000);
 
   /* v1.3.1 (#5 검은화면 수정) — 장시간 백그라운드 복귀 자가치유:
@@ -124,10 +175,18 @@ export function createGame(parent: HTMLElement): Phaser.Game {
       hiddenAt = 0;
       const isMobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || "");
       if (isMobile && gone > 45000 && Date.now() - freezeBootAt > 20000) {
-        console.warn("[SERTZ] 장시간 백그라운드 — GPU 상태 불명, 안전 재부팅");
-        window.location.reload();
+        /* v1.4.5 (#무한재부팅) — 즉시 reload 폐지: 15초 관찰 유예를 두고 프리즈 워치독
+         *  (예산화됨)이 실제 정지를 확인하면 그때 복구. ARG/외부 페이지 이동 후 복귀에서
+         *  즉시 reload가 누적되던 것이 루프의 시작점이었다. */
+        console.warn("[SERTZ] 장시간 백그라운드 복귀 — 15초 관찰 후 필요 시 자가치유");
+        resumeGraceUntil = Date.now() + 15000;
+        freezeSamples = 0;
+        lastFrame = -1;
+        hadFrame = false;
       }
-    } catch { /* 무시 */ }
+    } catch {
+      /* 무시 */
+    }
   });
 
   // 오디오 모듈에 게임 인스턴스 연결 (Phaser SoundManager 사용)
