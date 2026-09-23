@@ -24,7 +24,7 @@ export default function PrivacyPage() {
         <h1 className="bg-gradient-to-b from-[#ffe49a] via-[#f0b64a] to-[#c8871f] bg-clip-text text-3xl font-black text-transparent sm:text-4xl">
           개인정보처리방침
         </h1>
-        <p className="mt-3 text-[12px] text-sky-200/70">시행일: 2026-09-23 · 최종 개정: v1.4.3</p>
+        <p className="mt-3 text-[12px] text-sky-200/70">시행일: 2026-09-23 · 최종 개정: v1.4.5</p>
       </header>
 
       <div className="mt-8 flex flex-col gap-6 text-[13px] leading-relaxed text-slate-300">
