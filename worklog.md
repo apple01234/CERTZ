@@ -2113,3 +2113,21 @@ Stage Summary:
 - 후속: 웹페이지 제작·배포(GitHub Pages) → Play Console 계정 삭제 URL에 등록 + 프롬프트 내 문의 이메일 교체는 유저 몫
 - 운영 교훈: ①MultiEdit로 gradle 주석 치환 시 주석 여는부분 유실로 Groovy 파손 직전 — 버전 주석 체인 편집은 편집 후 전체 라인 재출력 검증 필수 ②patch 스크립트 재실행 시 멱등성 깨짐(NO-MATCH=이미 적용) — 적용 상태 먼저 확인
 - GitHub 토큰 노출 지속 — 재발급 권고 필수
+
+---
+Task ID: R147
+Agent: Super Z (메인)
+Task: 작업실 v1.4.7 상태 복원 — 유저 제보 "분명 1.4.7까지 만들었었지 않아?" — 세션 리셋으로 작업실이 미릴리스 로컬 라인(v1.4.4 vc96 ARG 전면제거, f9d184d)에 머물러 있었던 상태 교정
+
+Work Log:
+- 원격 조사: GitHub 릴리스 v1.4.5(vc97·재부팅 예산+플레이스토어 대비)→v1.4.6(vc98·비밀/문의 404 수정)→v1.4.7(vc99·이상한 비석 제거+/secret 철거) 존재 확인(모두 2026-09-23 발행)
+- 상태 진단: 로컬 main은 origin/main 대비 분기된 미릴리스 라인 — /api/version이 1.4.4/96을 내보내 구버전 업데이트 유도가 끊긴 상태. v1.4.7 태그(f53e132)는 릴리스 3분 후 커밋된 실제 코드 커밋 7b1943e 이전을 가리킴 → origin/main 끝(b4ca336)이 "v1.4.7 코드 + 최신 계정백업(9/28 13:28)" 정답 상태로 판정
+- 복원: git reset --hard origin/main → package.json 1.4.7·build.gradle vc99·public/secret 부재·server.js /support 확인. 유저 산출물 2종(고객문의페이지·로블록스 제작 프롬프트 txt)을 구 HEAD 14ce9d5에서 재추출
+- 서버 복구: npx next build(라우트 /·/support·/privacy 확인) → NODE_ENV=production node server.js 재기동
+- 버그 추가 수정: server.js APK_MIRROR가 v1.4.6을 가리키는 릴리스 잔여 발견 → v1.4.7로 정정(/SERTZ-*.apk 전 버전 요청이 전부 v1.4.7로 307)
+- 검증: /api/version {1.4.7, 99, apk=v1.4.7 URL} · /·/support·/privacy·/apk-guide.html 200 · /secret·/secret/second 308→/support · 원격 APK 재다운로드 117,541,818B·md5 3da1ba65190c1157018d5a670d522381 릴리스 노트와 일치
+
+Stage Summary:
+- 작업실·서버·릴리스 3자 정합 복구 완료: 서버가 1.4.7/99을 내보내 v1.4.7 미만 클라이언트에 재설치 안내 정상 동작
+- 미릴리스 라인(v1.4.4 vc96 — ARG 완전제거+3레벨 보정, commit f9d184d)은 v1.4.7이 채택한 방안(재부팅 예산+페이지 철거+비밀수첩 정답코드 유지)으로 대체됨 — 해당 실험은 reflog/해시로 보존, 추후 ARG 완전제거 요청 시 참조 가능
+- 운영 교훈: 세션 리셋 시 작업실은 origin/main이 아니라 마지막 로컬 커밋에 남을 수 있음 — 복구 기준은 항상 origin/main 최신 + GitHub 릴리스 태그 대조로 판정할 것
