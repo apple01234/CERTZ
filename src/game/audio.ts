@@ -300,6 +300,37 @@ function destroyBgm() {
   }
 }
 
+/* v1.4.8 (#5 BGM) — 크로스페이드 전환: 기존은 하드컷→새 곡 페이드인이어서 구간 전환마다
+ *  음악이 뚝 끊겼다. 이제 이전 트랙은 700ms 페이드아웃 후 파괴, 새 트랙은 동시에 페이드인 —
+ *  챕터/마을/보스 전환이 자연스럽게 이어진다. (뮤트·백그라운드 정지는 destroyBgm 즉시 경로 유지) */
+function retireBgm(ms = 700) {
+  clearFadeTimer();
+  const old = bgmSound;
+  bgmSound = null;
+  if (!old) return;
+  const snd = asVol(old);
+  if (!snd) {
+    try { old.stop(); old.destroy(); } catch { /* noop */ }
+    return;
+  }
+  const from = snd.volume ?? bgmVol;
+  const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const timer = setInterval(() => {
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const k = Math.min(1, (now - t0) / ms);
+    try {
+      snd.setVolume(Math.max(0, from * (1 - k)));
+      if (k >= 1) {
+        clearInterval(timer);
+        old.stop();
+        old.destroy();
+      }
+    } catch {
+      clearInterval(timer);
+    }
+  }, 60);
+}
+
 /** BaseSound 볼륨 조작 (Phaser 타입이 구현체별로 분리돼 있어 최소 인터페이스 캐스팅) */
 type VolumeSound = { volume: number; setVolume(v: number): void };
 function asVol(s: Phaser.Sound.BaseSound): VolumeSound | null {
@@ -429,7 +460,7 @@ export function playStageBGM(stage: string, bossActive = false) {
   const key = bossActive ? bossTrackOf(stage) : stageTrack(stage);
   bgmStage = stage;
   if (bgmKey === key && bgmSound?.isPlaying) return;
-  destroyBgm();
+  retireBgm(); /* v1.4.8 — 크로스페이드 */
   bgmKey = key;
   if (muted || !game) return;
   startTrack(key);
@@ -439,7 +470,7 @@ export function playStageBGM(stage: string, bossActive = false) {
 export function playBGM(kind: BGMKind) {
   const key = THEME_TRACKS[kind];
   if (bgmKey === key && bgmSound?.isPlaying) return;
-  destroyBgm();
+  retireBgm(); /* v1.4.8 — 크로스페이드 */
   bgmKey = key;
   if (muted || !game) return;
   startTrack(key);
@@ -556,6 +587,7 @@ const SKILL_SFX_FILES: Record<string, string> = {
   timestop: "skl_timestop1", // 이터널 영원의 고리 (시간 정지)
   manaburst: "skl_manaburst1", // 아크로드 마나 붕괴
   skyflight: "skl_skyflight1", // 스카이로드 천공의 폭풍
+  snipe: "skl_arrowpierce1", // v1.4.8 — 스나이퍼 정밀사격 (키 누락 무음 버그 수정 — 궁수 저격음 공유)
   /* 기존 파일 재사용 별칭 (피치/볼륨 변주로 클래스 차별화) */
   dash2: "sfx_dash", // 전사/스워시버클러 돌진 (highspeed-movement1)
   worp: "sfx_portal", // 마법사 점멸 계열 (magic-worp1)
@@ -567,6 +599,7 @@ const SKILL_SFX_VOLUMES: Record<string, number> = {
   spin: 0.4, // v4.3.0 — 기본공격음 (회전베기 스왑)
   arrow: 0.4, cast: 0.34, knife: 0.36, flame: 0.46, electron: 0.46,
   arrowpierce: 0.5, wind: 0.44, wind2: 0.42, cure: 0.44, iainuki: 0.48,
+  snipe: 0.5, // v1.4.8 — snipe 키 볼륨 누락 보완
   swift: 0.44, quake: 0.54, dark: 0.46, heavydash: 0.48, ambush: 0.44,
   holy: 0.52, thunder: 0.56, slowmo: 0.5, rage: 0.52, chain: 0.52,
   gravity: 0.54, bigsword: 0.52, warcry: 0.56, superhit: 0.6, timestop: 0.56,
@@ -732,6 +765,62 @@ export const sfx = {
     };
     const file = map[kind] ?? "sfx_smoke_fire";
     play(file, SFX_VOLUMES.sfx_smoke);
+  },
+
+  /* ================= v1.4.8 (#6 기능별 사운드 분리) =================
+   *  유저 지시: "유저가 헷갈리지 않게 기능마다 겹치는 사운드 및 UI&그래픽 없도록 해"
+   *  기존엔 sfx_quest(차임) 하나를 상자·상점·보상·출석 등 38개 기능이 공유하고
+   *  sfx_coin이 골드 픽업~정산 15곳에 쓰여 "무슨 소리가 무슨 일인지" 구분이 안 됐다.
+   *  전부 이미 로드된 Drive 팩 파일을 재할당(다운로드 추가 0)해 기능군별 고유음을 부여한다.
+   *  분리 원칙: 획득(코인) / 구매(상점) / 판매(정산) / 충전 / 완료(퀘스트 차임) /
+   *  보상(선물 차임) / 상자 / 수락 / 차단(deny) / 제작 / 성장(레벨업) 은 서로 다른 소리 */
+  /** 상점·거래소 구매 — 상품 수령 느낌의 밝은 픽업음 (골드 픽업음과 분리) */
+  shop() {
+    play("sfx_pickup2", 0.44);
+  },
+  /** 판매·정산 — 아이템이 골드로 바뀌는 금빛 연막 후속 (구매음과도 분리) */
+  sell() {
+    play("sfx_smoke_gold", 0.5);
+  },
+  /** 충전·티켓·스토어·구독 — 빛이 모이는 시전음 (재화음과 분리) */
+  charge() {
+    play("sfx_aoe_light_cast", 0.5);
+  },
+  /** 상자 개봉 — 수정이 깨지는 개방음 (퀘스트 차임에서 완전 분리) */
+  chest() {
+    play("sfx_aoe_crystal_burst", 0.5, 0.94 + Math.random() * 0.12);
+  },
+  /** 보상 수령(광고/출석/쿠폰/패스/미션/도감) — 밝은 힐링 차임 (퀘스트 완료음과 분리) */
+  reward() {
+    play("sfx_aoe_heal_burst", 0.5, 0.96 + Math.random() * 0.1);
+  },
+  /** 퀘스트/시련 수락 — 자연 기운 약속음 (완료 차임과 분리) */
+  questAccept() {
+    play("sfx_aoe_nature_cast", 0.46);
+  },
+  /** 차단·부족·실패 공용 부정 피드백 (게이트 차단/한도 초과/재료 부족 — open·bossdie 재활용 해제) */
+  deny() {
+    play("sfx_debuff_cast", 0.5, 0.9);
+  },
+  /** 제작 성공 — 용광로 폭발음 (코인음과 분리) */
+  craft() {
+    play("sfx_aoe_fire_burst", 0.5);
+  },
+  /** 횃불 점화 — 용암 위화감 점화음 (포탈음 재활용 해제) */
+  torch() {
+    play("sfx_aoe_magma_burst", 0.4, 1.1);
+  },
+  /** 보스 드롭 스폰 — 빛 폭발 (포효음 재활용 해제 — 보스 등장과 구분) */
+  bossDrop() {
+    play("sfx_aoe_light_burst", 0.5);
+  },
+  /** 전투 상태음(수비전 카드 회복 등) — 회복 시전 (코인음 재활용 해제) */
+  cardHeal() {
+    play("sfx_aoe_heal_cast", 0.46);
+  },
+  /** 플레이어 사망 — 어두운 연막 붕괴음 (사망 무음 해소) */
+  playerDie() {
+    play("sfx_smoke_dark", 0.55, 0.85);
   },
 };
 

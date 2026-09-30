@@ -133,6 +133,8 @@ export type JoinInfo = {
   code?: string;
   /** v1.0.16 — 서버 인증 롤이 admin인 계정만 true (GM 이름표/오라 동기화 — 순수 코스메틱) */
   gm?: boolean;
+  /** v1.4.8 (#4 보안) — GM 플래그 서버 검증용 세션 토큰 (netJoin에서 자동 첨부) */
+  token?: string;
 };
 
 /* v2.0 수정 (지시 #14 — 채팅 안됨 원인):
@@ -162,10 +164,14 @@ export function netJoin(info: JoinInfo) {
   const s = netConnect();
   if (!s) return;
   hookConnectFlush();
-  lastJoin = info; // v2.3 — 재접속 재참여용 최신 상태 보관
-  pendingJoin = info; // 최신 상태로 갱신 (리스폰/스테이지 이동 재합류 대응)
+  /* v1.4.8 (#4 보안) — join에 세션 토큰을 자동 첨부해 서버가 gm 플래그를 검증하게 한다 */
+  let token = "";
+  try { token = window.localStorage.getItem("sertz.auth.token") || ""; } catch { /* 무시 */ }
+  const payload = token ? { ...info, token } : info;
+  lastJoin = payload; // v2.3 — 재접속 재참여용 최신 상태 보관
+  pendingJoin = payload; // 최신 상태로 갱신 (리스폰/스테이지 이동 재합류 대응)
   if (s.connected) {
-    s.emit("join", info);
+    s.emit("join", payload);
     pendingJoin = null;
   }
 }

@@ -14,7 +14,7 @@
  *  - 클라우드 세이브: 로그인 유저의 게임 세이브 백업/복원 (localStorage 덤프 통째로 저장)
  */
 const { scryptSync, randomBytes, timingSafeEqual, createHash, createCipheriv, createDecipheriv } = require("node:crypto");
-const { readFileSync, writeFileSync, mkdirSync, existsSync } = require("node:fs");
+const { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync } = require("node:fs");
 const path = require("node:path");
 
 const DB_DIR = path.join(process.cwd(), "db");
@@ -32,11 +32,16 @@ const COOKIE = "sertz_auth";
 const ADMIN_USERS = (process.env.SERTZ_ADMIN_USERS || "admin,apple01234")
   .split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
 const rateBuckets = new Map(); // key -> { n, resetAt }
+/* v1.4.8 (#4 보안) — X-Forwarded-For 무조건 신뢰 제거: 리버스 프록시(루프백)를 경유한 요청만
+ *  XFF를 믿고, 외부 직접 접근은 소켓 주소를 그대로 쓴다 — IP 스푸핑으로 레이트리밋 무력화 차단 */
 function clientIp(req) {
-  return (
-    String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
-    req.socket?.remoteAddress || "?"
-  );
+  const peer = String(req.socket?.remoteAddress || "?");
+  const isLoopbackPeer = peer === "127.0.0.1" || peer === "::1" || peer === "::ffff:127.0.0.1";
+  if (isLoopbackPeer) {
+    const xff = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+    if (xff) return xff;
+  }
+  return peer || "?";
 }
 function rateLimit(req, res, bucket, max, windowMs) {
   const key = `${clientIp(req)}:${bucket}`;
@@ -88,22 +93,23 @@ function loadDb() {
       else if (!shouldAdmin && u.role === "admin") u.role = "user";
     }
     /* v1.0.8 — 관리자 계정 자가 복구(오토시드): 워크스페이스 재구성 등으로 db/accounts.json이
-     *  소실되면 "모든 로그인 401" 사태가 재발했다. 부팅 시 관리자 아이디가 없으면 기본 비밀번호로
-     *  즉시 재배치해 서버가 스스로 회복하게 한다. (SERTZ_ADMIN_PASSWORD로 변경 가능, 기본 admin123) */
+     *  소실되면 "모든 로그인 401" 사태가 재발했다. 부팅 시 관리자 아이디가 없으면 즉시 재배치해
+     *  서버가 스스로 회복하게 한다. (SERTZ_ADMIN_PASSWORD 설정 시 그 값 사용)
+     * v1.4.8 (#4 보안) — 알려진 기본 비밀번호(admin123) 시드 제거: env 미설정 시 12자 무작위
+     *  비밀번호를 발급해 서버 로그에 1회만 출력한다 — 복구 경로는 유지, 무차별 위험은 제거. */
     for (const aid of ADMIN_USERS) {
       if (!db.users[aid]) {
         const salt = randomBytes(16).toString("hex");
+        const seededPw = process.env.SERTZ_ADMIN_PASSWORD || randomBytes(12).toString("base64url");
         db.users[aid] = {
           id: aid, name: aid.slice(0, 8), provider: "local", salt,
-          hash: hashPw(process.env.SERTZ_ADMIN_PASSWORD || "admin123", salt),
+          hash: hashPw(seededPw, salt),
           createdAt: Date.now(), role: "admin",
         };
         console.log(`[SERTZ-accounts] 관리자 계정 없음 → 오토시드: ${aid}`);
-        /* v1.1.0 (#16 보안) — 기본 비밀번호로 오토시드되면 공개 서버에서 무차별 위험이 있다.
-         *  운영자에게 즉시 경고 + 감사 로그 남김 (배포 가이드에도 SERTZ_ADMIN_PASSWORD 설정 필수 명시) */
         if (!process.env.SERTZ_ADMIN_PASSWORD) {
-          console.warn(`[SERTZ-accounts] ⚠ 경고: SERTZ_ADMIN_PASSWORD 미설정 — ${aid} 기본 비밀번호로 시드됨. 공개 배포 전 반드시 변경할 것!`);
-          audit("admin_autoseed_default_pw", { uid: aid });
+          console.error(`[SERTZ-accounts] ⚠ ${aid} 임시 비밀번호: ${seededPw} — 서버 로그 1회만 노출. 로그인 후 계정창에서 변경할 것!`);
+          audit("admin_autoseed_random_pw", { uid: aid });
         } else {
           audit("admin_autoseed", { uid: aid });
         }
@@ -120,7 +126,11 @@ function persistDb() {
     saveTimer = null;
     try {
       mkdirSync(DB_DIR, { recursive: true });
-      writeFileSync(DB_FILE, JSON.stringify(db));
+      /* v1.4.8 (#4 보안) — 원자적 쓰기(tmp+rename): 크래시 순간 전체 재기록이 중단되면
+       *  계정 DB가 잘리는 사고가 가능했다. 임시 파일에 쓰고 원자적으로 교체한다. */
+      const tmp = `${DB_FILE}.tmp`;
+      writeFileSync(tmp, JSON.stringify(db));
+      renameSync(tmp, DB_FILE);
       scheduleBackupPush(); // v1.0.13 — 파일 저장 성공 시 원격 백업 예약
     } catch (e) {
       console.error("[SERTZ-accounts] DB 저장 실패", e);
@@ -301,13 +311,28 @@ function parseCookies(req) {
 }
 /* v1.0.7 — APK 웹뷰(https://localhost 오리진)에서 쿠키 세션이 유지되지 않아 로그인이 실패했다.
  *  ① 모든 /api 응답에 CORS 헤더(POST+JSON은 프리플라이트 OPTIONS 필요 — 기존엔 무응답)
- *  ② 세션 토큰을 본문+Bearer 헤더로도 전달 (쿠키는 웹 same-origin 호환용으로 유지) */
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
+ *  ② 세션 토큰을 본문+Bearer 헤더로도 전달 (쿠키는 웹 same-origin 호환용으로 유지)
+ * v1.4.8 (#4 보안) — Access-Control-Allow-Origin: * 제거 → 오리진 화이트리스트 반영:
+ *  APK 웹뷰(https://localhost)와 SERTZ_ORIGIN(env, 쉼표 복수)만 허용. 나머지 오리진의
+ *  브라우저 fetch는 CORS 검증에 걸려 인증 토큰 탈취 시에도 계정 API 남용이 불가해진다.
+ *  같은 오리진 요청(웹 버전)은 CORS 헤더 자체가 불필요 — 영향 없음. */
+const CORS_ALLOWED_ORIGINS = new Set([
+  "https://localhost", "http://localhost", "https://localhost:3000", "http://localhost:3000",
+  ...(String(process.env.SERTZ_ORIGIN || "") ? String(process.env.SERTZ_ORIGIN).split(",").map((s) => s.trim()).filter(Boolean) : []),
+]);
+const CORS_BASE_HEADERS = {
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Max-Age": "86400",
 };
+const CORS_HEADERS = { ...CORS_BASE_HEADERS }; // 하위 호환 정적 기본값 (req 미첨부 경로용)
+function corsHeadersFor(req) {
+  const origin = String(req.headers.origin || "");
+  if (origin && CORS_ALLOWED_ORIGINS.has(origin)) {
+    return { ...CORS_BASE_HEADERS, "Access-Control-Allow-Origin": origin, Vary: "Origin" };
+  }
+  return { ...CORS_BASE_HEADERS };
+}
 
 function currentUser(req) {
   /* v1.0.7 — Authorization: Bearer 우선, 없으면 기존 쿠키 */
@@ -353,15 +378,17 @@ function readBody(req, limit = 6 * 1024 * 1024) {
 }
 function sendJson(res, code, obj, headers = {}) {
   const body = JSON.stringify(obj);
-  /* v1.0.7 — CORS 헤더 전역 부착 (APK 웹뷰 크로스오리진 fetch 허용) */
-  res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...CORS_HEADERS, ...headers });
+  /* v1.0.7 — CORS 헤더 전역 부착 (APK 웹뷰 크로스오리진 fetch 허용)
+   * v1.4.8 — req에서 계산한 화이트리스트 CORS(res._cors) 우선, 없으면 정적 기본값 */
+  res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...(res._cors ?? CORS_HEADERS), ...headers });
   res.end(body);
 }
 function sessionCookie(token) {
-  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${TOKEN_TTL_MS / 1000}`;
+  /* v1.4.8 (#4 보안) — Secure 플래그 추가: 평문 http 경유 쿠키 유출 차단 (운영은 TLS 프록시/웹뷰 https 오리진) */
+  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${TOKEN_TTL_MS / 1000}`;
 }
 function clearCookie() {
-  return `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  return `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0`;
 }
 function issueToken(res, user) {
   const token = randomBytes(32).toString("hex");
@@ -742,7 +769,8 @@ async function handle(req, res) {
       const b = await readBody(req);
       const id = String(b.id || "").trim().toLowerCase();
       const pw = String(b.pw || "");
-      const name = String(b.name || "").trim().slice(0, 8) || id.slice(0, 8);
+      /* v1.4.8 (#4 보안) — 닉네임 제어문자/제로폭 정화 (채팅·거래소 표기 악용 차단) */
+      const name = String(b.name || "").replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028\u2029]/g, "").trim().slice(0, 8) || id.slice(0, 8);
       if (!/^[a-z0-9_]{3,20}$/.test(id)) return sendJson(res, 400, { error: "아이디는 영문 소문자/숫자/_ 3~20자" });
       if (pw.length < 6) return sendJson(res, 400, { error: "비밀번호는 6자 이상" });
       if (db.users[id]) return sendJson(res, 409, { error: "이미 존재하는 아이디예요" });
@@ -764,16 +792,18 @@ async function handle(req, res) {
       const b = await readBody(req);
       const id = String(b.id || "").trim().toLowerCase();
       const user = db.users[id];
-      /* v1.0.8 — 실패 원인 분리: DB 소실 후 재가입 필요한 상황을 유저가 알 수 있게 개선 */
+      /* v1.0.8 — 실패 원인 분리 → v1.4.8 (#4 보안) 계정 열거 방지: 미존재/비밀번호 불일치가
+       *  같은 응답을 반환해 외부가 아이디 존재 여부를 수집할 수 없게 통일했다 (가입 유도 힌트는 유지). */
+      const LOGIN_FAIL_MSG = "아이디 또는 비밀번호가 올바르지 않아요 — 가입한 적이 없다면 회원가입 탭을 이용해 주세요";
       if (!user || user.provider !== "local") {
         audit("login_fail", { ip: clientIp(req), uid: id }); // v1.0.2
-        return sendJson(res, 401, { error: "존재하지 않는 아이디예요 — 회원가입 탭에서 새로 가입해 주세요" });
+        return sendJson(res, 401, { error: LOGIN_FAIL_MSG });
       }
       const hash = Buffer.from(hashPw(String(b.pw || ""), user.salt), "hex");
       const stored = Buffer.from(user.hash, "hex");
       if (hash.length !== stored.length || !timingSafeEqual(hash, stored)) {
         audit("login_fail", { ip: clientIp(req), uid: id }); // v1.0.2
-        return sendJson(res, 401, { error: "비밀번호가 틀렸어요 — 다시 입력해 주세요" });
+        return sendJson(res, 401, { error: LOGIN_FAIL_MSG });
       }
       audit("login", { ip: clientIp(req), uid: id, role: user.role === "admin" ? "admin" : "user" }); // v1.0.2
       const ses = issueToken(res, user); // v1.0.7 — 토큰 본문 동봉 (APK Bearer 세션)
@@ -820,12 +850,26 @@ async function handle(req, res) {
       return true;
     }
 
-    /* 클라우드 세이브 — 업로드 */
+    /* 클라우드 세이브 — 업로드
+     * v1.4.8 (#4 보안) — 무검증 6MB JSON 저장 차단: 유저당 레이트리밋(10회/분) + 크기 2MB 캡 +
+     *  깊이/형식 검증. 스토리지 DoS·파일DB 비대화·백업 푸시 폭주를 근원 차단한다. */
     if (url === "/api/auth/cloud-save" && method === "POST") {
       const user = currentUser(req);
       if (!user) return sendJson(res, 401, { error: "로그인이 필요해요" });
+      if (!rateLimit(req, res, `csave:${user.id}`, 10, 60 * 1000)) return true;
       const b = await readBody(req);
-      db.saves[user.id] = { data: b.data ?? null, updatedAt: Date.now() };
+      const d = b.data;
+      if (d === null || typeof d !== "object" || Array.isArray(d)) {
+        return sendJson(res, 400, { error: "세이브 형식이 올바르지 않아요" });
+      }
+      if (JSON.stringify(d).length > 2 * 1024 * 1024) {
+        return sendJson(res, 413, { error: "세이브가 너무 커요 — 저장할 수 없어요" });
+      }
+      const depth = (v, n = 0) => (n > 8 ? 99 : v && typeof v === "object" ? Math.max(...Object.values(v).map((x) => depth(x, n + 1)), n + 1) : n);
+      if (depth(d) > 8) {
+        return sendJson(res, 400, { error: "세이브 구조가 올바르지 않아요" });
+      }
+      db.saves[user.id] = { data: d, updatedAt: Date.now() };
       persistDb();
       sendJson(res, 200, { ok: true, updatedAt: db.saves[user.id].updatedAt });
       return true;
@@ -851,10 +895,11 @@ async function handle(req, res) {
 function attachAccountsBefore(handleNext) {
   return (req, res) => {
     const u = req.url || "";
+    res._cors = corsHeadersFor(req); // v1.4.8 — 화이트리스트 CORS를 응답 헬퍼에 부착
     /* v1.0.7 — 프리플라이트 OPTIONS: 기존엔 Next로 떨어져 404/405 → APK에서 POST+JSON fetch가 전부 실패 */
     if ((req.method || "GET").toUpperCase() === "OPTIONS" &&
         (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") || u.startsWith("/api/market") || u.startsWith("/api/rank"))) {
-      res.writeHead(204, CORS_HEADERS).end();
+      res.writeHead(204, res._cors).end();
       return;
     }
     /* v1.3.0 (지시 #7) — 랭킹 조회 (공개 + 로그인 시 내 순위 동봉) */
@@ -900,4 +945,14 @@ function handleMarketRequest(req, res, url, method) {
   return handleMarket(req, res, url, method);
 }
 
-module.exports = { attachAccountsBefore, handleAccountRequest: handle, handleMarketRequest };
+/* v1.4.8 (#4 보안) — 소켓 GM 플래그 서버 검증용: 토큰이 유효한 admin 계정 세션인지 판정.
+ *  클라가 보낸 gm:true를 무조건 믿지 않고, 토큰 검증 통과 시에만 릴레이한다. */
+function isVerifiedAdmin(token) {
+  const t = String(token || "");
+  if (!/^[A-Za-z0-9]{16,128}$/.test(t)) return false;
+  const rec = db.tokens[t];
+  if (!rec || rec.expiresAt < Date.now()) return false;
+  const u = db.users[rec.userId];
+  return !!u && u.role === "admin";
+}
+module.exports = { attachAccountsBefore, handleAccountRequest: handle, handleMarketRequest, isVerifiedAdmin };

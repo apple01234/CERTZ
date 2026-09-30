@@ -1,5 +1,9 @@
+v1.4.8 (최신) — 전체 최적화·보안 강화·UI 재편 (유저 지시 7건)
+· 다운로드: https://github.com/apple01234/CERTZ/releases/download/v1.4.8/SERTZ-v1.4.8.apk
+· md5: 3efa119bf9fbf8d20cfe8b49b5773975 (117542406B, versionCode 100)
+
 ══════════════════════════════════════════
-v1.4.7 (최신) — 오류나는 페이지 전면 철거 (유저 지시)
+v1.4.7 — 오류나는 페이지 전면 철거 (유저 지시)
 · 다운로드: https://github.com/apple01234/CERTZ/releases/download/v1.4.7/SERTZ-v1.4.7.apk
 · md5: 3da1ba65190c1157018d5a670d522381 (117541818B, versionCode 99)
 · 마을 이상한 비석 완전 철거 — ARG 웹페이지 개방 트리거 제거 (무한 재부팅 사건의 근원 오브제)

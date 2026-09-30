@@ -52,7 +52,13 @@ export function FriendsWidget() {
       if (e.key.toLowerCase() === "b") setOpen((v) => !v); // v1.0.4 — F는 MP물약과 충돌 → B(buddy)
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    /* v1.4.8 — HUD 더보기 "친구" 버튼 진입로 */
+    const onToggle = () => setOpen((v) => !v);
+    EventBus.on("friends:toggle", onToggle);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      EventBus.off("friends:toggle", onToggle);
+    };
   }, []);
 
   const onlineByCode = useMemo(() => {
@@ -102,32 +108,30 @@ export function FriendsWidget() {
   const stageLabel = (stage: string) => STAGE_SHORT[resolveStage(stage)] ?? stage;
 
   return (
-    <div className="absolute left-2 top-[168px] flex flex-col items-start gap-1.5 sm:left-3 sm:top-[190px]">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        aria-label="친구 열기 (B)"
-        className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-emerald-200/30 bg-black/60 px-2.5 py-1.5 text-[11px] font-black text-emerald-200 backdrop-blur-sm transition-transform hover:bg-black/80 active:scale-95"
-      >
-        <UserRound size={13} />
-        친구 <span className="rounded bg-white/10 px-1 text-[9px] text-white/50">B</span>
-        {friends.length > 0 && (
-          <span className="rounded bg-emerald-400/25 px-1 text-[9px] text-emerald-100">{friends.length}</span>
-        )}
-      </button>
-
+    <>
       {open && (
-        <div className="pointer-events-auto max-h-[calc(100svh-232px)] w-60 overflow-y-auto rounded-xl border border-emerald-200/25 bg-slate-950/95 p-2.5 shadow-2xl backdrop-blur">
+        /* v1.4.8 (#3 겹침) — 좌측 부유 버튼 철거 → 중앙 모달 전환 (채팅·조이스틱 존과 겹치던 근원 차단) */
+        <div
+          className="pointer-events-auto absolute inset-0 z-[45] flex items-center justify-center bg-black/60 px-3 py-3"
+          onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+        >
+        <div className="sertz-scroll game-panel w-full max-w-[320px] max-h-[calc(100dvh-24px)] overflow-y-auto p-3">
           <div className="mb-1.5 flex items-center justify-between">
-            <p className="flex items-center gap-1 text-[11px] font-black text-emerald-200">
-              <UserRound size={12} /> 친구
+            <p className="flex items-center gap-1 text-[12px] font-black text-emerald-200">
+              <UserRound size={13} /> 친구
             </p>
-            <span
-              className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
-                conn.connected ? "bg-emerald-400/20 text-emerald-200" : "bg-white/10 text-white/45"
-              }`}
-            >
-              {conn.connected ? "온라인" : conn.hasServer ? "연결 중…" : "오프라인"}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
+                  conn.connected ? "bg-emerald-400/20 text-emerald-200" : "bg-white/10 text-white/45"
+                }`}
+              >
+                {conn.connected ? "온라인" : conn.hasServer ? "연결 중…" : "오프라인"}
+              </span>
+              <button aria-label="친구 창 닫기" onClick={() => setOpen(false)} className="flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
+                <X size={13} />
+              </button>
+            </div>
           </div>
 
           {/* 내 고유번호 */}
@@ -212,7 +216,8 @@ export function FriendsWidget() {
             친구끼리 코드를 서로 등록하면 접속 시 자동으로 온라인 표시됩니다.
           </p>
         </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }

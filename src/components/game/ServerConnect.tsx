@@ -28,10 +28,10 @@ const DEAD_SERVERS = [
   "https://preview-6a95efa8.space-z.ai",
   "https://sertz1234.space-z.ai",
   "https://sertz.z.ai",
-  "http://preview-6a94b1ab.space-z.ai",
-  "http://preview-6a95efa8.space-z.ai",
-  "http://sertz1234.space-z.ai",
-  "http://sertz.z.ai",
+  "https://preview-6a94b1ab.space-z.ai",
+  "https://preview-6a95efa8.space-z.ai",
+  "https://sertz1234.space-z.ai",
+  "https://sertz.z.ai",
 ];
 
 function readUrl(): string {

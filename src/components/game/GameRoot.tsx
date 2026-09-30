@@ -133,6 +133,7 @@ export default function GameRoot() {
                 canAutoHunt={rpg.canAutoHunt}
                 autoHunt={rpg.autoHunt}
                 onToggleMute={() => {
+                  audio.sfx.uiClick(); // v1.4.8 — 토글 피드백음 (뮤트 전 재생 → 켜기 시 바로 들림)
                   const next = !muted;
                   setMuted(next);
                   audio.setMuted(next);

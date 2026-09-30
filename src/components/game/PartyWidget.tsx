@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Users, LogOut, Crown, Swords, CheckCircle2, Gift } from "lucide-react";
+import { Users, LogOut, Crown, Swords, CheckCircle2, Gift, X } from "lucide-react";
 import * as net from "@/game/net";
 import {
   partySynergies, partyBoard, partyBoardResetsIn, PARTY_MISSION_POOL,
@@ -50,7 +50,8 @@ export function PartyWidget() {
       if (e.key.toLowerCase() === "y") setOpen((v) => !v);
     };
     window.addEventListener("keydown", onKey);
-    /* v1.4.5 (#멀티입구) — HUD 더보기의 "멀티" 버튼에서도 파티 창을 연다 */
+    /* v1.4.5 (#멀티입구) — HUD 더보기의 "멀티" 버튼에서도 파티 창을 연다
+     * v1.4.8 — HUD 더보기 "파티" 버튼도 같은 이벤트 사용 */
     const onToggle = () => setOpen((v) => !v);
     EventBus.on("party:toggle", onToggle);
     return () => {
@@ -93,36 +94,38 @@ export function PartyWidget() {
     .filter((m): m is PartyMissionDef => !!m);
 
   return (
-    <div className="absolute left-2 top-[132px] flex flex-col items-start gap-1.5 sm:left-3 sm:top-[150px]">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        aria-label="파티 열기 (Y)"
-        className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-sky-200/30 bg-black/60 px-2.5 py-1.5 text-[11px] font-black text-sky-200 backdrop-blur-sm transition-transform hover:bg-black/80 active:scale-95"
-      >
-        <Users size={13} />
-        파티 <span className="rounded bg-white/10 px-1 text-[9px] text-white/50">Y</span>
-        {party && <span className="rounded bg-sky-400/25 px-1 text-[9px] text-sky-100">{party.members.length}</span>}
-      </button>
-
-      {/* v1.4.3 (#멀티콘텐츠 어디감) — 파티 멀티 콘텐츠의 대표 입구: 공동 토벌전.
-       *  접힌 상태에서도 항상 노출해 “멀티 콘텐츠가 있는지”를 바로 알 수 있게 한다.
-       *  파티 없이 단독 입장도 가능(보스 HP/보상은 파티 인원 비례) — 파티 모집 동기가 된다. */}
-      <button
-        onClick={() => EventBus.emit("rpg:partyRaid", {})}
-        aria-label="파티 공동 토벌전 입장"
-        title="파티원과 함께 심연의 감시자를 토벌 — 인원수만큼 보스 강화·보상 증가 (단독 입장 가능)"
-        className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-indigo-200/30 bg-black/60 px-2.5 py-1.5 text-[11px] font-black text-indigo-200 backdrop-blur-sm transition-transform hover:bg-black/80 active:scale-95"
-      >
-        <Swords size={13} />
-        공동 토벌전
-        {party && party.members.length > 1 && <span className="rounded bg-indigo-400/25 px-1 text-[9px] text-indigo-100">×{party.members.length}</span>}
-      </button>
-
+    <>
       {open && (
-        <div className="pointer-events-auto max-h-[calc(100svh-192px)] w-60 overflow-y-auto rounded-xl border border-sky-200/25 bg-slate-950/95 p-2.5 shadow-2xl backdrop-blur">
-          <p className="mb-1.5 flex items-center gap-1 text-[11px] font-black text-sky-200">
-            <Users size={12} /> 파티 (최대 4인)
-          </p>
+        /* v1.4.8 (#3 겹침) — 좌측 부유 버튼 스택 철거 → 중앙 모달 전환.
+         *  퀘스트 트래커·채팅·월드 UI와 좌표가 겹치던 근원을 차단하고,
+         *  공동 토벌전 입구는 모달 헤더로 이동해 접근성 유지. */
+        <div
+          className="pointer-events-auto absolute inset-0 z-[45] flex items-center justify-center bg-black/60 px-3 py-3"
+          onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+        >
+        <div className="sertz-scroll game-panel w-full max-w-[340px] max-h-[calc(100dvh-24px)] overflow-y-auto p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="flex items-center gap-1 text-[12px] font-black text-sky-200">
+              <Users size={13} /> 파티 (최대 4인)
+              {party && <span className="rounded bg-sky-400/25 px-1 text-[9px] text-sky-100">{party.members.length}명</span>}
+            </p>
+            <button aria-label="파티 창 닫기" onClick={() => setOpen(false)} className="flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
+              <X size={13} />
+            </button>
+          </div>
+
+          {/* v1.4.3 공동 토벌전 입구 — v1.4.8부터 모달 헤더 아래 배치 (부유 버튼 철거 대체).
+           *  파티 없이 단독 입장도 가능(보스 HP/보상은 파티 인원 비례) — 파티 모집 동기가 된다. */}
+          <button
+            onClick={() => EventBus.emit("rpg:partyRaid", {})}
+            aria-label="파티 공동 토벌전 입장"
+            title="파티원과 함께 심연의 감시자를 토벌 — 인원수만큼 보스 강화·보상 증가 (단독 입장 가능)"
+            className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-200/30 bg-black/60 px-2.5 py-2 text-[11px] font-black text-indigo-200 transition-transform hover:bg-black/80 active:scale-95"
+          >
+            <Swords size={13} />
+            공동 토벌전 입장
+            {party && party.members.length > 1 && <span className="rounded bg-indigo-400/25 px-1 text-[9px] text-indigo-100">×{party.members.length}</span>}
+          </button>
 
           {party ? (
             <>
@@ -255,7 +258,8 @@ export function PartyWidget() {
             </ul>
           </div>
         </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }

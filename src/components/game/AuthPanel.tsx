@@ -149,23 +149,12 @@ export function AuthPanel() {
 
   return (
     <>
-      {/* 위젯 버튼 — 파티(132px)/친구(168px) 아래 우측 스택 */}
-      <div className="pointer-events-none absolute right-2 top-[204px] flex flex-col items-end gap-1.5 sm:right-3 sm:top-[228px]">
-        <button
-          aria-label="계정 창 열기"
-          onClick={() => setOpen(true)}
-          className="pointer-events-auto flex h-8 items-center gap-1 rounded-md border border-white/15 bg-black/55 px-2 text-[10px] font-black text-white/75 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
-        >
-          <UserRound size={13} />
-          계정
-          {user && <span className="rounded bg-emerald-400/25 px-1 text-[8px] text-emerald-100">ON</span>}
-        </button>
-      </div>
+      {/* v1.4.8 (#3 겹침) — 우측 부유 계정 버튼 제거 → HUD 더보기 메뉴 + ui:authOpen 이벤트 진입로로 대체 */}
 
       {open && (
         /* v1.0.8 — 모바일 가화면(세로 360px급)에서 로그인 버튼이 하단에 잘리는 문제 수정:
          *  패널을 컴팩트하게 줄이고 + max-height 초과 시 내부 스크롤 허용 */
-        <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/60 px-3 py-3" onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+        <div className="pointer-events-auto absolute inset-0 z-[45] flex items-center justify-center bg-black/60 px-3 py-3" onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
           <div className="sertz-scroll game-panel w-full max-w-[340px] max-h-[calc(100dvh-24px)] overflow-y-auto p-4">
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">

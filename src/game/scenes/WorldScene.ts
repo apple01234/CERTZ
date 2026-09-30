@@ -1240,7 +1240,7 @@ export class WorldScene extends Phaser.Scene {
           EventBus.emit("banner:show", {
             text: `장비 세트 해금! ${SET_GEAR[chKey].title} — 마을 상점에서 구매 가능`,
           });
-          audio.sfx.questDone();
+          audio.sfx.ach();
         });
         this.save();
         this.emitRpgState();
@@ -2133,8 +2133,8 @@ export class WorldScene extends Phaser.Scene {
 
   private collectFragment(glow: Phaser.GameObjects.Image) {
     audio.sfx.pickup();
-    audio.sfx.questDone();
-    /* v1.4.3 (작업4) — 파티 보드: 결정 조사 카운트 (파티 중일 때만) */
+    /* v1.4.3 (작업4) — 파티 보드: 결정 조사 카운트 (파티 중일 때만)
+     * v1.4.8 — questDone 이중 재생 제거 (pickup 단일 경로) */
     {
       const p = net.netLastParty();
       if (p && p.members.length >= 2) partyContent.partyBoardTick("collect", 1);
@@ -2397,7 +2397,7 @@ export class WorldScene extends Phaser.Scene {
       const need = spec?.lvGate.enter ?? 0;
       if (need > 0 && this.player.lv < need && this.adminRole !== "admin") {
         this.portalActive = true; // 차단 — 다시 밟을 수 있게
-        audio.sfx.uiOpen();
+        audio.sfx.deny();
         this.showBanner(`Lv.${need} 이상부터 ${spec?.title ?? "다음 지역"} 입장 가능 — 지금은 Lv.${this.player.lv} (사냥터에서 레벨을 채우자!)`);
         return;
       }
@@ -2634,7 +2634,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.spawnPickupText(this.player.x, this.player.y - 40, "유적 상자!", "#ffd76a");
     EventBus.emit("banner:show", { text: msg });
-    audio.sfx.coin();
+    audio.sfx.chest();
     this.driveFx?.twinkle(this.player.x, this.player.y - 20, 0xffd76a);
     /* 상자 개봉 프레임 애니 (몇 프레임 진행 후 원위치) */
     if (this.keepChestSprite) {
@@ -3011,14 +3011,29 @@ export class WorldScene extends Phaser.Scene {
 
     // v2.2 타격감 — 충격 링 (shock_ring 확산)
     // v1.0.7 — 알파 0.85→0.55 · 확산 0.85→0.7 (유저 지시: 이펙트 가림 축소)
-    const ring = this.add.image(x, y, "shock_ring").setDepth(19).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0.55).setTint(0xfff2c0);
+    // v1.4.8 (#1 최적화) — 모든 근접/투사체 히트마다 image 생성/파괴 → 8장 링 버퍼 풀로 재사용
+    let ring = this.shockRingPool[this.shockRingIdx];
+    if (!ring || !ring.scene) {
+      ring = this.add.image(x, y, "shock_ring");
+      this.shockRingPool[this.shockRingIdx] = ring;
+    }
+    this.shockRingIdx = (this.shockRingIdx + 1) % 8;
+    this.tweens.killTweensOf(ring);
+    ring.setTexture("shock_ring")
+      .setPosition(x, y)
+      .setDepth(19)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setScale(0.3)
+      .setAlpha(0.55)
+      .setTint(0xfff2c0)
+      .setActive(true)
+      .setVisible(true);
     this.tweens.add({
       targets: ring,
       scale: 0.7,
       alpha: 0,
       duration: 150,
       ease: "Cubic.out",
-      onComplete: () => ring.destroy(),
     });
 
     // 실제 에셋 타격 스타 팝 (풀 재사용 — F4 규칙 준수)
@@ -3120,7 +3135,9 @@ export class WorldScene extends Phaser.Scene {
   private tickFxQuality(dt: number) {
     /* v1.2.1 (#4 최적화 x3) — 설정 패널 성능 카드용 실시간 노출 (FPS/모드/레벨)
      * v1.4.3 (작업3 최적화) — 프레임 시간 실측(1초 창 최악/평균) + 개체수 노출:
-     *  E2E 성능 회귀 가드가 이 값을 읽어 병목을 수치로 검증한다. */
+     *  E2E 성능 회귀 가드가 이 값을 읽어 병목을 수치로 검증한다.
+     * v1.4.8 (#1 최적화) — 프레임 시간 누산(원시값 연산)은 매 프레임 유지하되,
+     *  __SERTZ_PERF__ 객체 재할당(매 프레임 새 객체 → GC 부담)만 500ms 스로틀 */
     const perfWin = this.perfWindow;
     perfWin.frames++;
     perfWin.sumMs += dt;
@@ -3133,21 +3150,24 @@ export class WorldScene extends Phaser.Scene {
       perfWin.worstMs = 0;
       perfWin.startedAt = this.time.now;
     }
-    (window as unknown as {
-      __SERTZ_PERF__?: {
-        fps: number; fxLevel: number; mode: string; lowFx: boolean;
-        avgMs: number; worstMs: number; enemies: number; remotes: number;
+    if (performance.now() - (this.perfSnapshotAt ?? 0) >= 500) {
+      this.perfSnapshotAt = performance.now();
+      (window as unknown as {
+        __SERTZ_PERF__?: {
+          fps: number; fxLevel: number; mode: string; lowFx: boolean;
+          avgMs: number; worstMs: number; enemies: number; remotes: number;
+        };
+      }).__SERTZ_PERF__ = {
+        fps: Math.round(this.game.loop.actualFps),
+        fxLevel: this.fxLevel,
+        mode: this.fxMode,
+        lowFx: this.fxLevel === 0,
+        avgMs: Math.round(perfWin.avgMs * 100) / 100,
+        worstMs: Math.round(perfWin.avgWorstMs * 100) / 100,
+        enemies: this.enemies.filter((e) => e.active && e.alive).length,
+        remotes: this.remotes.size,
       };
-    }).__SERTZ_PERF__ = {
-      fps: Math.round(this.game.loop.actualFps),
-      fxLevel: this.fxLevel,
-      mode: this.fxMode,
-      lowFx: this.fxLevel === 0,
-      avgMs: Math.round(perfWin.avgMs * 100) / 100,
-      worstMs: Math.round(perfWin.avgWorstMs * 100) / 100,
-      enemies: this.enemies.filter((e) => e.active && e.alive).length,
-      remotes: this.remotes.size,
-    };
+    }
     /* v1.0.8 — 모드 강제: high는 항상 복원, low는 항상 축소 (적응형 판정 생략) */
     if (this.fxMode === "high") {
       this.fxSampleAt = 0;
@@ -3455,7 +3475,7 @@ export class WorldScene extends Phaser.Scene {
       const it = ITEMS[kind as ItemKey];
       if (!it) return;
       this.player.owned.push(kind as ItemKey);
-      audio.sfx.questDone();
+      audio.sfx.pickup();
       this.spawnPickupText(x, y - 14, viaPet ? `${it.name} (펫)` : `${it.name} 획득!`, "#ffd76a");
       this.showBanner(`${it.name} 획득! — 보스 전용 아이템 (상점 판매 금지 · 거래소 예정)`);
       this.emitRpgState();
@@ -3495,7 +3515,10 @@ export class WorldScene extends Phaser.Scene {
     const gw = 156 / z;
     const gh = 88 / z;
     const cx = cam.width / 2;
-    const cy = cam.height / 2 + (cam.height - 12 - gh * z * 0.5 - cam.height / 2) / z;
+    /* v1.4.8 (#3 겹침) — 좌하단 ChatBox(하단 44vw)와 미니맵(하단 중앙) 좌하단 가림 해소:
+     *  좁은 화면(모바일 가로)에서는 채팅 입력바 위(56px)로 미니맵을 올리고, 넓은 화면은 하단 유지 */
+    const mmBottom = cam.width < 900 ? 56 : 12;
+    const cy = cam.height / 2 + (cam.height - mmBottom - gh * z * 0.5 - cam.height / 2) / z;
     mm.clear();
     /* v1.1.0 (#7) — 어두운 맵(암전 챕터/카오스 보스전)에서도 지도가 잘 보이게:
      *  반투명 0.78 → 사실상 불투명 판(0.96) + 두꺼운 금테 + 외곽 그림자. 카메라 포스트FX가 전체 프레임을
@@ -3686,11 +3709,12 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** v1.3.0 (#에셋통합) — 근접 명중 지점 VFX: Matthew Guz 참격 궤적 + Unity BasicAttack 원음.
-   *  checkMeleeHit에서 타격 1건 이상일 때 마지막 타격 지점 기준으로 1회 호출. */
+   *  checkMeleeHit에서 타격 1건 이상일 때 마지막 타격 지점 기준으로 1회 호출.
+   *  v1.4.8 (#6 사운드 분리) — basicHit 재생 제거: onMeleeConnect의 sfx_hit과 근접 1회 명중에
+   *  두 파일이 동시 재생되어 잡음 원인이었다. 명중음은 onMeleeConnect 단일 경로로 통일. */
   spawnMeleeVfx(x: number, y: number, dirX: number, dirY: number, crit: boolean) {
     const ang = Math.atan2(dirY, dirX);
     this.driveFx.slashArc(x - dirX * 6, y - 6, ang, crit ? 0xffd76a : 0xfff0d0, crit);
-    audio.sfx.basicHit();
   }
 
   /** v4.8.0 — 충격파 링 (강한 순간 강조 — 크리티컬/약점/보스 격파).
@@ -3755,7 +3779,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.emerald += 3;
       this.spawnPickupText(this.player.x, this.player.y - 74, "침공 격퇴! +3 에메랄드", "#ff9a7a");
       this.showBanner("침공을 격퇴했다! (+3 에메랄드)");
-      audio.sfx.questDone();
+      audio.sfx.reward();
       this.emitRpgState();
     }
     /* v3.0.16 — 필드 정예 처치 보상: 에메랄드 +1 (메이플 엘리트 몬스터 컨셉)
@@ -3864,7 +3888,7 @@ export class WorldScene extends Phaser.Scene {
       this.inf.abyss += GOLDEN.abyss;
       this.spawnPickupText(this.player.x, this.player.y - 84, `황금 사냥 성공! +${g.toLocaleString()} G · 심연 +${GOLDEN.abyss}`, "#ffd76a");
       this.showBanner("황금 몬스터를 잡았다! 대량의 골드가 쏟아진다!");
-      audio.sfx.questDone();
+      audio.sfx.reward();
       this.emitRpgState();
     }
     /* 일일 퀘스트 — 토벌 카운트 (게이트/던전 처치 포함) */
@@ -4117,7 +4141,7 @@ export class WorldScene extends Phaser.Scene {
         { text: reward > 0 ? `훈련 보상 +${reward.toLocaleString()} G` : "보상 없음 — 더 세게 때려라!", color: "#ffd76a" },
       ] satisfies RewardPopupState["lines"],
     });
-    audio.sfx.questDone();
+    audio.sfx.reward();
     this.emitRpgState();
     /* v4.0.0 — 도장 기록 서버 랭킹 제출 */
     net.netRankSubmit("dojang", score, getPlayerName(), this.player.lv);
@@ -4220,7 +4244,7 @@ export class WorldScene extends Phaser.Scene {
     this.passXp += n;
     const after = passLevel(this.passXp);
     if (after > before) {
-      audio.sfx.questDone();
+      audio.sfx.levelup();
       EventBus.emit("banner:show", { text: `시즌 패스 Lv.${after} 달성! — 패스 보상을 수령하세요` });
     }
   }
@@ -4267,7 +4291,7 @@ export class WorldScene extends Phaser.Scene {
     }
     /* 완료 순간 도파민 배너 (수령은 패스 패널에서) */
     if (completed) {
-      audio.sfx.questDone();
+      audio.sfx.reward();
       EventBus.emit("banner:show", { text: `시즌 미션 완료 — ${completed}! 패스 패널에서 수령하세요` });
     }
   }
@@ -4290,7 +4314,7 @@ export class WorldScene extends Phaser.Scene {
     claimed.push(m.id);
     this.addPassXp(m.xp);
     EventBus.emit("banner:show", { text: `미션 수령 — ${m.name} (+패스 XP ${m.xp})` });
-    audio.sfx.questDone();
+    audio.sfx.reward();
     this.save();
     this.emitRpgState();
   }
@@ -4319,7 +4343,7 @@ export class WorldScene extends Phaser.Scene {
       title: `출석 체크 — ${((this.attendCount - 1) % ATTEND_CYCLE) + 1}일차`,
       lines,
     });
-    audio.sfx.questDone();
+    audio.sfx.reward();
   }
 
   private checkOfflineReward() {
@@ -4338,7 +4362,7 @@ export class WorldScene extends Phaser.Scene {
         { text: `경험치 +${r.exp.toLocaleString()} EXP`, color: "#8fe84a" },
       ] satisfies RewardPopupState["lines"],
     });
-    audio.sfx.questDone();
+    audio.sfx.reward();
   }
 
   /** GM 무료 뽑기 — 광고 보상 대체 (10분 쿨) */
@@ -4353,7 +4377,7 @@ export class WorldScene extends Phaser.Scene {
     this.save();
     this.emitRpgState();
     EventBus.emit("banner:show", { text: "GM 방송 시청 완료! 뽑기권 +1 (10분마다 무료)" });
-    audio.sfx.coin();
+    audio.sfx.reward();
   }
 
   /* ---------------- 바르가 원정대 커맨드 (Panels → EventBus) ---------------- */
@@ -4388,7 +4412,7 @@ export class WorldScene extends Phaser.Scene {
             ] satisfies RewardPopupState["lines"],
           });
         }
-        audio.sfx.questDone();
+        audio.sfx.reward();
         this.syncExtBonus();
         this.save();
         this.emitRpgState();
@@ -4422,7 +4446,7 @@ export class WorldScene extends Phaser.Scene {
             const up = runeKey(kind, t + 1);
             this.runes[up] = (this.runes[up] ?? 0) + 1;
             EventBus.emit("banner:show", { text: `룬 합성 성공! ${RUNE_META[kind].name} T${t} ×3 → T${t + 1} ×1` });
-            audio.sfx.equip();
+            audio.sfx.craft();
             this.syncExtBonus();
             this.save();
             this.emitRpgState();
@@ -4465,7 +4489,7 @@ export class WorldScene extends Phaser.Scene {
         this.shards -= cost;
         this.constel.push(id);
         EventBus.emit("banner:show", { text: `성좌 개방 — ${c.name} 별${idx + 1}!` });
-        audio.sfx.equip();
+        audio.sfx.craft();
         this.syncExtBonus();
         this.save();
         this.emitRpgState();
@@ -4504,7 +4528,7 @@ export class WorldScene extends Phaser.Scene {
         this.addPassXp(PASS_XP_RULES.daily); // v4.5.0 — 일일 퀘스트 수령 시 패스 XP +40
         this.trackMission("dailyClaim"); // v1.0.1 — 주간 미션 "일일 퀘스트 수령" 카운트
         EventBus.emit("banner:show", { text: `일일 퀘스트 완료 — ${g.label}!` });
-        audio.sfx.questDone();
+        audio.sfx.reward();
         this.save();
         this.emitRpgState();
         break;
@@ -4524,7 +4548,7 @@ export class WorldScene extends Phaser.Scene {
           title: `쿠폰 사용 — ${def.name}`,
           lines: [{ text: def.desc, color: "#ffd76a" }] satisfies RewardPopupState["lines"],
         });
-        audio.sfx.questDone();
+        audio.sfx.reward();
         this.save();
         this.emitRpgState();
         break;
@@ -4556,7 +4580,7 @@ export class WorldScene extends Phaser.Scene {
           if (!p.cosmetics.includes(key as CosmeticKey)) p.cosmetics.push(key as CosmeticKey);
           EventBus.emit("banner:show", { text: `스킨 획득 — 인벤토리에서 착용!` });
         }
-        audio.sfx.coin();
+        audio.sfx.shop();
         this.syncExtBonus();
         this.save();
         this.emitRpgState();
@@ -4577,7 +4601,7 @@ export class WorldScene extends Phaser.Scene {
         const nextTier = p.upgradeTier(slot);
         if (nextTier) {
           EventBus.emit("banner:show", { text: `등급업 성공! ${slot === "weapon" ? "무기" : "방어구"} → ${nextTier.toUpperCase()} (스탯 +12%/회)` });
-          audio.sfx.equip();
+          audio.sfx.upgradeOk(); // v1.4.8 — 등급업 = 강화 성공 계열 사운드
           this.save();
           this.emitRpgState();
           this.emitHud();
@@ -4925,7 +4949,7 @@ export class WorldScene extends Phaser.Scene {
       p.mp = Math.min(p.maxMp, p.mp + p.maxMp);
       EventBus.emit("banner:show", { text: "정신 안정제 — MP 회복!" });
     }
-    audio.sfx.coin();
+    audio.sfx.cardHeal();
     this.emitGateState();
   }
 
@@ -4979,7 +5003,7 @@ export class WorldScene extends Phaser.Scene {
       title: mode === "fail" ? "바르가 수비전 — 균열 함락" : "바르가 수비전 — 철수",
       lines: lines as RewardPopupState["lines"],
     });
-    audio.sfx.questDone();
+    audio.sfx.reward();
     this.emitGateState();
     this.emitRpgState();
     this.save();
@@ -5174,7 +5198,7 @@ export class WorldScene extends Phaser.Scene {
     const record = f > this.inf.towerBest;
     if (record) this.inf.towerBest = f;
     this.spawnPickupText(this.player.x, this.player.y - 74, `${f}층 클리어! +${rw.abyss} 심연 코인${record ? " — 신기록!" : ""}`, "#c08aff");
-    audio.sfx.questDone();
+    audio.sfx.reward();
     if (f % 10 === 0) {
       /* 10층마다 에메랄드 보너스 — 장기 목표 */
       this.player.emerald += 3;
@@ -5309,7 +5333,7 @@ export class WorldScene extends Phaser.Scene {
         { text: record ? "지옥 난이도 신기록 달성!" : `입장권 잔여: ${this.parkTickets.n}장 (하루 2장)`, color: record ? "#7dffa8" : "#8a93a5" },
       ] satisfies RewardPopupState["lines"],
     });
-    audio.sfx.questDone();
+    audio.sfx.reward();
     this.emitRpgState();
     this.save();
     const back: StageKey = STAGES[this.parkFrom] ? this.parkFrom : "village";
@@ -5385,7 +5409,7 @@ export class WorldScene extends Phaser.Scene {
           { text: `내일의 시련: 「${todayTrial(new Date(Date.now() + 86400000)).name}」`, color: "#a8ecff" },
         ] satisfies RewardPopupState["lines"],
       });
-      audio.sfx.questDone();
+      audio.sfx.reward();
       this.trialMod = null;
       this.emitRpgState();
       this.save();
@@ -5420,7 +5444,7 @@ export class WorldScene extends Phaser.Scene {
         { text: this.inf.closetTier > tier ? `심층 균열 T${this.inf.closetTier} 해금!` : `다음 도전 — 심층 균열 T${this.inf.closetTier}`, color: "#c08aff" },
       ] satisfies RewardPopupState["lines"],
     });
-    audio.sfx.questDone();
+    audio.sfx.reward();
     this.emitRpgState();
     this.save();
     net.netRankSubmit("closet", this.closetBest, getPlayerName(), this.player.lv);
@@ -5554,7 +5578,7 @@ export class WorldScene extends Phaser.Scene {
     if (!r) return;
     if (!canCraft(r, this.inf.mats)) {
       EventBus.emit("banner:show", { text: "재료가 부족하다 — 사냥으로 재료를 모아보자!" });
-      audio.sfx.bossDie();
+      audio.sfx.deny();
       return;
     }
     for (const [k, n] of Object.entries(r.mats)) this.inf.mats[k] -= n;
@@ -5565,7 +5589,7 @@ export class WorldScene extends Phaser.Scene {
       for (let i = 0; i < r.out.n; i++) this.player.owned.push(r.out.item as ItemKey);
       EventBus.emit("banner:show", { text: `제작 완료! ${ITEMS[r.out.item as ItemKey]?.name ?? r.out.item} ×${r.out.n}` });
     }
-    audio.sfx.coin();
+    audio.sfx.craft();
     this.save();
     this.emitRpgState();
   }
@@ -5577,7 +5601,7 @@ export class WorldScene extends Phaser.Scene {
     if (!item) return;
     if (this.inf.abyss < item.cost) {
       EventBus.emit("banner:show", { text: `심연 코인이 부족하다 (${item.cost} 필요 · 보유 ${this.inf.abyss})` });
-      audio.sfx.bossDie();
+      audio.sfx.deny();
       return;
     }
     if (id === "rebirth_ess") {
@@ -5607,7 +5631,7 @@ export class WorldScene extends Phaser.Scene {
       this.syncExtBonus();
       EventBus.emit("banner:show", { text: `${item.name} 각인! (누적 ×${this.inf.orbs[id]}) — ${item.desc}` });
     }
-    audio.sfx.coin();
+    audio.sfx.shop();
     this.save();
     this.emitRpgState();
   }
@@ -5618,7 +5642,7 @@ export class WorldScene extends Phaser.Scene {
   private startFifthTrial() {
     if (!this.player || this.fifthTrialActive) return;
     this.fifthTrialActive = true;
-    audio.sfx.questDone();
+    audio.sfx.questAccept();
     /* 챕터 카드 규약 재사용 — "각성" 타이틀 카드 (physics 정지 + 자동 복귀 내장) */
     this.showChapterCard(5, "각성 — 제5의 문", "모든 스킬이 극으로, 궁극기가 손에 쥐어진다", () => {
       this.summonFifthGuardian();
@@ -5790,7 +5814,7 @@ export class WorldScene extends Phaser.Scene {
   /** 반복 토벌 완료 — 보상 지급 후 목표 +2 (무한 확장) */
   private completeRepeat() {
     const r = this.stageDef.repeat!;
-    audio.sfx.questDone();
+    audio.sfx.reward();
     this.player.addGold(r.gold);
     this.player.gainExp(r.exp);
     this.spawnPickupText(this.player.x, this.player.y - 44, `토벌 완료 +${r.gold}G`, "#ffd76a");
@@ -5830,7 +5854,7 @@ export class WorldScene extends Phaser.Scene {
     if (after === before) return;
     this.player.setCollection(after);
     this.spawnPickupText(this.player.x - 6, this.player.y - 84, `컬렉션 등록! ${name}`, "#ffe86a");
-    audio.sfx.questDone();
+    audio.sfx.reward();
     this.emitRpgState();
     this.save();
   }
@@ -6493,7 +6517,7 @@ export class WorldScene extends Phaser.Scene {
           const d = this.acquireDrop();
           if (d) d.spawnItem(dropKey, bx + Phaser.Math.Between(-20, 20), by + Phaser.Math.Between(-12, 8));
         }
-        audio.sfx.roar();
+        audio.sfx.bossDrop(); // v1.4.8 — 포효 재활용 해제 (보스 등장음과 구분)
       });
     }
     // 최종 보스(심연의 군주)만 클리어 — 이전 보스는 차원문으로 다음 지역 진행
@@ -6524,6 +6548,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   onPlayerDead() {
+    audio.sfx.playerDie(); // v1.4.8 — 사망 무음 해소 (어두운 붕괴음)
     audio.stopBGM();
     this.cameras.main.fadeOut(600, 20, 0, 0);
     this.time.delayedCall(700, () => {
@@ -6635,7 +6660,7 @@ export class WorldScene extends Phaser.Scene {
       const it = ITEMS[v.key];
       const cost = (it?.price ?? 0) * (it?.kind === "consumable" || it?.kind === "buff" ? qty : 1);
       if (this.player.buy(v.key, qty)) {
-        audio.sfx.questDone();
+        audio.sfx.shop();
         // BM 즉시 반영 — 펫 구매 시 스프라이트 교체, 치장 구매 시 오라 교체 (v1.9)
         const kind = ITEMS[v.key]?.kind;
         if (kind === "pet") this.syncPet();
@@ -6780,6 +6805,7 @@ export class WorldScene extends Phaser.Scene {
       /* v4.5.0 — 구독자 광고 한도 5→8회 (SERTZ 패스 특전) */
       const adLimit = subActive(this.subUntil) ? SUB_AD_LIMIT : 5;
       if (this.dailyAds >= adLimit) {
+        audio.sfx.deny(); // v1.4.8 — 한도 초과 차단음 신설
         EventBus.emit("banner:show", { text: `오늘의 광고 보상은 끝났다 (일 ${adLimit}회${adLimit > 5 ? " · 구독 특전" : ""}) — 내일 다시` });
         return;
       }
@@ -6796,7 +6822,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.emerald += 1 * adMul;
       this.save();
       this.emitRpgState();
-      audio.sfx.questDone();
+      audio.sfx.charge();
       EventBus.emit("reward:show", {
         title: "광고 보상 지급!",
         lines: [
@@ -6825,7 +6851,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.emerald += sku.gems;
       this.save();
       this.emitRpgState();
-      audio.sfx.questDone();
+      audio.sfx.charge();
       EventBus.emit("banner:show", { text: `에메랄드 +${sku.gems} 충전 완료!` });
     };
     /* v1.0.2 (#현금패키지) — 스토어 결제 패키지 구매: 결제 성공 후 정의된 구성 지급 */
@@ -6848,7 +6874,7 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       this.grantBmGrants("패키지 구매 감사합니다!", grants);
-      audio.sfx.coin();
+      audio.sfx.charge();
       this.save();
       this.emitRpgState();
     };
@@ -6866,7 +6892,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.player.emerald -= PASS_PREMIUM_PRICE;
       this.passPrem = true;
-      audio.sfx.questDone();
+      audio.sfx.shop();
       EventBus.emit("banner:show", { text: "프리미엄 패스 해금! 지금까지 도달한 레벨의 프리미엄 보상 전부 수령 가능" });
       this.save();
       this.emitRpgState();
@@ -6890,7 +6916,7 @@ export class WorldScene extends Phaser.Scene {
       if (!g) return;
       list.push(lv);
       this.grantBmGrants(`시즌 패스 Lv.${lv} — ${v.track === "free" ? "무료" : "프리미엄"} 보상`, [g]);
-      audio.sfx.questDone();
+      audio.sfx.reward();
       this.save();
       this.emitRpgState();
     };
@@ -6922,7 +6948,7 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       this.grantBmGrants(`시즌 패스 — 한번에 받기 (${grants.length}건)`, grants);
-      audio.sfx.questDone();
+      audio.sfx.reward();
       this.save();
       this.emitRpgState();
     };
@@ -6935,7 +6961,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.emerald -= SUB_PRICE;
       const base = this.subUntil > Date.now() ? this.subUntil : Date.now(); // 잔여기간 이어받기
       this.subUntil = base + SUB_DAYS * 86400000;
-      audio.sfx.questDone();
+      audio.sfx.charge();
       EventBus.emit("reward:show", {
         title: "SERTZ 패스 구독 완료!",
         lines: [
@@ -6962,7 +6988,7 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       this.dailyAdChest++;
-      audio.sfx.questDone();
+      audio.sfx.chest();
       if (this.player) this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor("chest_iron")); // v4.7.0
       this.grantBmGrants(`광고 무료 상자 개봉! (${this.dailyAdChest}/${AD_CHEST_PER_DAY})`, [this.rollChest("chest_iron")]);
       this.save();
@@ -6985,7 +7011,7 @@ export class WorldScene extends Phaser.Scene {
       this.dailyAdDrop++;
       this.player.addBuffItem("buff_gold", 1);
       this.player.addBuffItem("buff_luck", 1);
-      audio.sfx.questDone();
+      audio.sfx.reward();
       EventBus.emit("reward:show", {
         title: `광고 버프 지급! (${this.dailyAdDrop}/${AD_DROP_PER_DAY})`,
         lines: [
@@ -7124,7 +7150,7 @@ export class WorldScene extends Phaser.Scene {
         }
         if (used > 0) {
           EventBus.emit("banner:show", { text: `경험치 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}` });
-          audio.sfx.questDone();
+          audio.sfx.pickup();
           this.emitRpgState();
           this.save();
         } else {
@@ -7147,7 +7173,7 @@ export class WorldScene extends Phaser.Scene {
         if (used > 0) {
           EventBus.emit("banner:show", { text: `${NAME} 성장의 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}` });
           this.spawnPickupText(this.player.x, this.player.y - 34, `EXP +${total.toLocaleString()}`, "#8fe84a");
-          audio.sfx.questDone();
+          audio.sfx.pickup();
           this.emitRpgState();
           this.emitHud();
           this.save();
@@ -7476,7 +7502,7 @@ export class WorldScene extends Phaser.Scene {
           if (CHEST_TABLES[v.key]) grants.push(this.rollChest(v.key));
           else for (const g of PACK_CONTENTS[v.key] ?? []) grants.push(g);
         }
-        audio.sfx.questDone();
+        audio.sfx.chest();
         if (this.player) this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor(v.key)); // v4.7.0
         this.grantBmGrants(`${it.name}${n > 1 ? ` ×${n}` : ""} 개봉!`, grants);
         if (v.key === "pack_starter") this.starterPackBought = true; // v4.5.0 — 스타터팩 하이라이트 해제
@@ -7498,7 +7524,7 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost} 에메랄드${deal ? " · 일일특가 30%↓" : ""})` });
         if (it?.kind === "pet") this.onPetChanged();
         if (it?.kind === "cosmetic") this.onCosmeticChanged();
-        audio.sfx.equip();
+        audio.sfx.shop();
       } else {
         EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
       }
@@ -7519,7 +7545,7 @@ export class WorldScene extends Phaser.Scene {
       if (CHEST_TABLES[key]) grants.push(this.rollChest(key));
       else for (const g of PACK_CONTENTS[key] ?? []) grants.push(g);
       if (grants.length === 0) return;
-      audio.sfx.questDone();
+      audio.sfx.chest();
       this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor(key)); // v4.7.0
       this.grantBmGrants(`${it.name} 개봉!`, grants);
       this.save();
@@ -7561,7 +7587,7 @@ export class WorldScene extends Phaser.Scene {
         this.emitRpgState();
         this.emitHud();
         EventBus.emit("banner:show", { text: `거래소 구매 — ${it?.name ?? "아이템"} (-${TRADE_PRICES[v.key] ?? 0} 에메랄드)` });
-        audio.sfx.equip();
+        audio.sfx.shop();
       } else {
         EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
       }
@@ -7663,7 +7689,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.save();
       EventBus.emit("banner:show", { text: `퀘스트 수락! — ${def.quests[idx].title}` });
-      audio.sfx.questDone();
+      audio.sfx.questAccept();
       this.emitQuest();
       this.emitQuestLog();
     };
@@ -7707,7 +7733,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.trackMission("market"); // 주간 미션 "거래소 이용"
       EventBus.emit("banner:show", { text: `유저 거래판 구매 완료! (-${v.price.toLocaleString()} G)` });
-      audio.sfx.coin();
+      audio.sfx.shop();
       this.save();
       this.emitRpgState();
       this.emitHud();
@@ -7726,7 +7752,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || v.gold <= 0) return;
       this.player.gold += v.gold; // 정산금 — 버프 배율 미적용
       EventBus.emit("banner:show", { text: `정산금 수령 — +${v.gold.toLocaleString()} G (수수료 10% 제외)` });
-      audio.sfx.coin();
+      audio.sfx.sell();
       this.save();
       this.emitRpgState();
       this.emitHud();
@@ -7749,7 +7775,7 @@ export class WorldScene extends Phaser.Scene {
       if (v.kind === "gate") this.ticketGate++;
       else this.ticketCloset++;
       EventBus.emit("banner:show", { text: `${v.kind === "gate" ? "바르가 수비전" : "균열 던전"} 티켓 +1 재충전! (-3💎)` });
-      audio.sfx.coin();
+      audio.sfx.charge();
       this.save();
       this.emitRpgState();
     };
@@ -7798,7 +7824,7 @@ export class WorldScene extends Phaser.Scene {
       } else return;
       this.save();
       this.emitHud();
-      audio.sfx.coin();
+      audio.sfx.shop();
     };
     EventBus.on("rpg:unionReward", onUnionReward);
     /* v1.4.3 (작업4) — 파티 퀘스트 보드 수령 (PartyWidget → 씬 보상 지급):
@@ -7812,7 +7838,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.addGold(r.gold);
       this.player.gainExp(r.exp);
       this.showBanner(`파티 미션 완료! +${r.gold.toLocaleString()}G · EXP +${r.exp}${inParty ? " (파티 풀 보상)" : " (솔로 50% — 파티원과 함께하면 풀 보상!)"}`);
-      audio.sfx.coin();
+      audio.sfx.reward(); // v1.4.8 — 보상 수령 전용음 (재화음과 구분)
       this.driveFx?.twinkle(this.player.x, this.player.y - 20, 0x9df0c8);
       this.save();
       this.emitHud();
@@ -7837,7 +7863,7 @@ export class WorldScene extends Phaser.Scene {
       this.parkCoins -= it.cost;
       it.give();
       this.showBanner(`파크 상점 — ${it.name} 교환 완료! (잔여 ${this.parkCoins}C)`);
-      audio.sfx.coin();
+      audio.sfx.shop();
       this.save();
       this.emitRpgState();
       this.emitHud();
@@ -7895,7 +7921,7 @@ export class WorldScene extends Phaser.Scene {
         this.emitHud();
         this.onCosmeticChanged();
         EventBus.emit("banner:show", { text: `${it.name} 구매 완료! (-${it.bmPrice} 에메랄드) — 랭커의 증표` });
-        audio.sfx.equip();
+        audio.sfx.shop();
       } else {
         EventBus.emit("banner:show", { text: "에메랄드가 부족해요" });
       }
@@ -8247,7 +8273,7 @@ export class WorldScene extends Phaser.Scene {
           this.tweens.add({ targets: t.glow, alpha: 0.55, scale: 0.95, duration: 260, ease: "Cubic.out" });
           t.prop.clearTint();
           if (t.prop.anims.isPaused) t.prop.anims.resume();
-          audio.sfx.portal(); // 점화 훅 — 포탈 개방음을 낮은 볼륨의 불꽃 소리로 재활용
+          audio.sfx.torch();
         }
       }
     }
@@ -9133,7 +9159,7 @@ export class WorldScene extends Phaser.Scene {
       if (e.reward.emerald) this.player.emerald += e.reward.emerald;
       this.spawnPickupText(this.player.x, this.player.y - 90, `🔍 비밀 발견 — ${e.name}`, "#7de8ff");
       this.showBanner(`비밀수첩 발견! 「${e.name}」 (+${e.reward.gold ?? 0}G${e.reward.emerald ? ` · +${e.reward.emerald}💎` : ""})`);
-      audio.sfx.questDone();
+      audio.sfx.reward(); // v1.4.8 — 발견 보상 전용음
     }
     const m = eggMilestonePending();
     if (m) {
@@ -9157,7 +9183,7 @@ export class WorldScene extends Phaser.Scene {
     }
     const used = this.escapeUsesToday();
     if (used >= WorldScene.ESCAPE_DAILY_MAX) {
-      audio.sfx.uiOpen(); // v1.2.0 — uiBack 부재 → uiOpen
+      audio.sfx.deny(); // v1.4.8 — 열기음 재활용 해제 → 차단 전용음
       this.showBanner(`긴급 귀환은 하루 ${WorldScene.ESCAPE_DAILY_MAX}회까지 — 내일 다시 사용할 수 있어요 (${used}/${WorldScene.ESCAPE_DAILY_MAX})`);
       return;
     }
@@ -9386,22 +9412,39 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** v3.0.16 (#4) — 투사체 잔상: 진행 경로를 따라 페이드아웃하는 발광 애프터이미지.
-   *  다중사격 부채꼴이 “화살비”처럼 보이는 핵심 연출. 이미지는 tween으로 자가 소멸 */
+   *  다중사격 부채꼴이 “화살비”처럼 보이는 핵심 연출. 이미지는 tween으로 자가 소멸
+   *  v1.4.8 (#1 최적화) — 기존엔 trail 1장당 image 생성+tween+destroy를 반복(사격 중 초당 최대 20회)해
+   *  GC 부담이 컸다 → 16장 링 버퍼 풀로 재사용 (setTexture 교체 비용은 생성보다 훨씬 낮다) */
+  private projTrailPool: Phaser.GameObjects.Image[] = [];
+  private projTrailIdx = 0;
+  /* v1.4.8 — 충격 링 풀 (8장 링 버퍼) */
+  private shockRingPool: Phaser.GameObjects.Image[] = [];
+  private shockRingIdx = 0;
+
   private spawnProjTrail(p: Phaser.Physics.Arcade.Sprite, hex: number) {
-    const img = this.add.image(p.x, p.y, p.texture.key)
+    let img = this.projTrailPool[this.projTrailIdx];
+    if (!img || !img.scene) {
+      img = this.add.image(p.x, p.y, p.texture.key);
+      this.projTrailPool[this.projTrailIdx] = img;
+    }
+    this.projTrailIdx = (this.projTrailIdx + 1) % 16;
+    this.tweens.killTweensOf(img);
+    img.setTexture(p.texture.key)
+      .setPosition(p.x, p.y)
       .setRotation(p.rotation)
       .setScale(p.scaleX, p.scaleY)
       .setTint(hex)
       .setAlpha(0.4)
       .setDepth(11)
-      .setBlendMode(Phaser.BlendModes.ADD);
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setActive(true)
+      .setVisible(true);
     this.tweens.add({
       targets: img,
       alpha: 0,
       scale: p.scaleX * 0.5,
       duration: 240,
       ease: "Cubic.out",
-      onComplete: () => img.destroy(),
     });
   }
 
@@ -10346,7 +10389,7 @@ export class WorldScene extends Phaser.Scene {
     const story = JOBSTORY[fam][tier];
     this.showDialogue(story.startDialogue);
     this.showBanner(`전직 시련 시작 — ${story.title} (완료 후 전직!)`);
-    audio.sfx.questDone();
+    audio.sfx.questAccept();
     this.save();
     this.emitQuest();
     this.emitRpgState();
@@ -10372,7 +10415,7 @@ export class WorldScene extends Phaser.Scene {
     if (!step) return;
     this.player.addGold(step.reward);
     this.player.gainExp(step.expReward);
-    audio.sfx.questDone();
+    audio.sfx.reward();
     this.spawnPickupText(this.player.x, this.player.y - 44, `스토리 보상 +${step.reward}G`, "#ffd76a");
     this.jobStory.step++;
     this.jobStory.hunt = 0;
@@ -10740,11 +10783,24 @@ export class WorldScene extends Phaser.Scene {
     this.spawnFragment(p.x, p.y);
   }
 
+  /* v1.4.8 (#1 최적화) — 프레임 단위 타깃 목록 캐시: 기존엔 호출마다(프레임당 2~6회) 새 배열을
+   *  할당하고 전체 적을 순회했다 — 투사체×적 판정에 GC 스파이크와 상수 배수 비용이 누적됐다.
+   *  이제 프레임당 1회만 재계산한다. 프레임 중간 킬/스폰은 다음 프레임까지 반영이 1프레임 늦을
+   *  뿐이며, takeDamage에 alive 가드(Enemy L477·Boss)가 있어 위험 없다. */
+  private targetCacheFrame = -1;
+  private targetCache: (Enemy | Boss)[] = [];
+  private perfSnapshotAt = 0; // v1.4.8 — __SERTZ_PERF__ 500ms 스로틀용
+
   getAllTargets(): (Enemy | Boss)[] {
-    const list: (Enemy | Boss)[] = [];
-    for (const e of this.enemies) if (e.active && e.alive) list.push(e);
-    if (this.boss && this.boss.active && this.boss.alive) list.push(this.boss);
-    return list;
+    const frame = this.game.loop.frame;
+    if (frame !== this.targetCacheFrame) {
+      const list: (Enemy | Boss)[] = [];
+      for (const e of this.enemies) if (e.active && e.alive) list.push(e);
+      if (this.boss && this.boss.active && this.boss.alive) list.push(this.boss);
+      this.targetCache = list;
+      this.targetCacheFrame = frame;
+    }
+    return this.targetCache;
   }
 
   /* ================= BM (v1.9 — 펫/치장/강화 오라) ================= */
@@ -11954,7 +12010,7 @@ export class WorldScene extends Phaser.Scene {
     this.dialoguing = true;
     this.player.setVelocity(0, 0);
     this.physics.world.pause();
-    audio.sfx.questDone();
+    audio.sfx.ach();
     const depth = 118;
     const veil = this.add
       .rectangle(vw / 2, vh / 2, vw, vh, 0x06080f, 0.78)
@@ -12171,7 +12227,7 @@ export class WorldScene extends Phaser.Scene {
         if (this.repeatUnlockable()) {
           this.repeatOn = true;
           this.save();
-          audio.sfx.questDone();
+          audio.sfx.reward();
           this.showBanner("토벌 의뢰 수주! 구역 체인을 모두 끝낸 사냥터에서 [반복] 의뢰를 진행할 수 있어요");
           this.spawnPickupText(this.player.x, this.player.y - 44, "의뢰 수주!", "#7dffa8");
           this.emitQuest();
@@ -12268,7 +12324,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.skill(key, rate);
   }
   sfxSpin() {
-    audio.sfx.spin();
+    // v1.4.8 — 호출부 0개 사망 코드 제거 (spin 스킬음은 sfxSkill("spin") 경로로만 사용)
   }
   sfxDash() {
     audio.sfx.dash();

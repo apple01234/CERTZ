@@ -3025,7 +3025,7 @@ function RankListRows({ rows, metric }: { rows: RankRow[]; metric: "lv" | "power
 export function RankingPanel({ onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
   return (
-    <div className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center bg-black/55 px-4">
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/55 px-4">
       <div className="game-panel max-h-[86vh] w-full max-w-md overflow-y-auto p-4">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-black text-amber-200">🏆 랭킹창</p>
@@ -3329,7 +3329,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
 
   return (
     <div
-      className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
       onClick={onClose}
       role="presentation"
     >

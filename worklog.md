@@ -2131,3 +2131,29 @@ Stage Summary:
 - 작업실·서버·릴리스 3자 정합 복구 완료: 서버가 1.4.7/99을 내보내 v1.4.7 미만 클라이언트에 재설치 안내 정상 동작
 - 미릴리스 라인(v1.4.4 vc96 — ARG 완전제거+3레벨 보정, commit f9d184d)은 v1.4.7이 채택한 방안(재부팅 예산+페이지 철거+비밀수첩 정답코드 유지)으로 대체됨 — 해당 실험은 reflog/해시로 보존, 추후 ARG 완전제거 요청 시 참조 가능
 - 운영 교훈: 세션 리셋 시 작업실은 origin/main이 아니라 마지막 로컬 커밋에 남을 수 있음 — 복구 기준은 항상 origin/main 최신 + GitHub 릴리스 태그 대조로 판정할 것
+
+---
+Task ID: V148
+Agent: Super Z (메인)
+Task: 유저 지시 7건 — ①전체 최적화 ②UI 공간 축소 ③계정/파티/친구 UI 겹침 ④보안 강화 ⑤그래픽·사운드·BGM·애니메이션 강화 ⑥기능별 사운드/UI 중복 제거 ⑦학교발표 PPT 제작 프롬프트
+
+Work Log:
+- [조사] UI·오디오·보안·성능 4개 영역 Explore 병렬 정밀조사 — 겹침 근원(부유 위젯 top-132/168/204px vs 트래커), sfx_quest 38중복·coin 15중복, 보안 헤더 0건·CORS *, 트레일 초당 20회 create/destroy 등 전수 확보
+- [작업 중 사고] 세션 리셋으로 작업실이 구라인(14ce9d5)으로 재롤백 — v1.4.8 미커밋 수정 14파일을 stash로 구조 → origin/main(df51b54, v1.4.7+R147 포함) 복원 → stash pop 3-way 병합. 충돌 4파일(HUD·Party·Friends·WorldScene) 수동 병합: v1.4.5 파티 콘텐츠(시너지·미션·솔로가호·공동토벌전)와 v1.4.8 모달 전환 공존 처리
+- [표시 계층 주의] WorldScene "ROLE_OF.cls ??"은 표시 계층이 [m.을 .으로 망각한 것 — od 바이트 덤프로 ROLE_OF[m.cls ?? ""] 정상 코드 확인, 불필요한 수정 회피 (운영 교훈: 파일 검증은 od/sed -n으로)
+- [#2#3 UI] PartyWidget·FriendsWidget·AuthPanel 부유 버튼 철거 → 중앙 모달(z-[45]) 전환, HUD 더보기에 파티/친구/계정 버튼 추가(party:toggle·friends:toggle·ui:authOpen), 트래커 max-w-260px+mt 정리, ChatBox 52→42vw, 미니맵 좁은 화면 bottom 12→56px, 랭킹/전직 패널 z-30→z-40+백드롭 클릭 정상화
+- [#1 최적화] getAllTargets 프레임 단위 캐시(프레임당 1회 재계산), spawnProjTrail 16장 풀링, 충격 링 8장 풀링, __SERTZ_PERF__ 500ms 스로틀(프레임 누산은 유지), Enemy.takeDamage doShake 게이트 우회 수정
+- [#6 사운드] audio.ts에 기능별 전용음 12종 신설(shop·sell·charge·chest·reward·questAccept·deny·craft·torch·bossDrop·cardHeal·playerDie — 전부 기로드된 Drive 팩 재할당, 다운로드 0) + 67개 호출부 재배치(sfx_quest 38중복·coin 15중복 해소) + 무음 버그 3종 수정(snipe 키 누락·사망 무음·근접 이중 재생) + 뮤트/대화 피드백음
+- [#5 그래픽/BGM] panelIn 키프레임 160ms 팝(globals.css), BGM retireBgm 700ms 크로스페이드, HP30%↓ 위험 피격 암적색 플래시
+- [#4 보안] server.js 전역 보안 헤더(CSP·nosniff·XFO·RP·PP·조건부 HSTS), accounts: CORS 화이트리스트(*→localhost+SERTZ_ORIGIN)·쿠키 Secure·DB 원자쓰기(tmp+rename)·클라우드세이브 검증(형식/깊이/2MB/10rpm)·관리자 오토시드 무작위 12자 전환·로그인 열거 방지·XFF 루프백 신뢰 제한·닉네임 제어문자 정화, multiplayer: gm 플래그 isVerifiedAdmin(p.token) 서버 검증, net.ts join 토큰 자동 첨부, ServerConnect DEAD_SERVERS https 정규화
+- [빌드] JDK/SDK 재구축(세션 리셋 소실 — jdk-full 병합+install_android_sdk.sh) → APK_EXPORT=1 next build → cap sync → gradle assembleRelease BUILD SUCCESSFUL — vc100·117,542,406B·md5 3efa119bf9fbf8d20cfe8b49b5773975
+- [릴리스] scripts/release_v148.py — GitHub Release v1.4.8 신규 생성(id 399837223)·업로드·원격 재다운로드 md5 일치 ✓·apk-guide.html/다운로드 안내 v1.4.8 갱신
+- [서버] 일반 next build로 서버 복구 → 재기동 → /api/version 1.4.8/100·보안 헤더 5종 응답·/support·/privacy 200·/secret 308·CORS 허용 오리진만 ACAO 확인
+- [E2E] scripts/e2e_v148.js 신설 11항목 — 버전·보안 헤더·부팅(pageerror 0·CSP 통과)·월드 진입·부유 위젯 부재·더보기 소셜 3버튼·파티 중앙 모달·panelIn·트래커 축소·콘솔 에러 0 → 11/11 PASS
+- [#7 PPT] download/SERTZ_학교발표_PPT_제작_프롬프트.txt 작성 — 15슬라이드 구성·기술 스택·콘텐츠 수치·버그 해결 스토리·디자인 가이드 포함 자기완결 지시서
+
+Stage Summary:
+- v1.4.8 (versionCode 100) 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.8/SERTZ-v1.4.8.apk
+- 유저 지시 1~6 게임 반영 완료, 7(발표 PPT 프롬프트)은 download/ 산출물로 전달
+- 세션 리셋 사고에도 stash+3-way 병합으로 v1.4.8 작업 0 손실 복구, v1.4.5~7 기능(파티 콘텐츠·재부팅 예산·지원센터) 완전 보존
+- 남은 지시: 없음 — 유저 측 후속: Play Console 데이터 보안 폼·계정 삭제 URL(웹페이지 배포 후), 서명키 등록, PPT 프롬프트로 발표 자료 제작

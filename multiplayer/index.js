@@ -11,6 +11,8 @@
  *  - join 대기열 + connect 플러시, 파티 시스템(생성/참여/탈퇴/파티 채팅/보스 토벌 방송)
  */
 const { Server } = require("socket.io");
+/* v1.4.8 (#4 보안) — 소켓 gm 플래그 서버 검증 (계정 세션 토큰 → admin 롤 판정) */
+const { isVerifiedAdmin } = require("../accounts");
 
 function attachMultiplayer(httpServer) {
   const io = new Server(httpServer, {
@@ -121,8 +123,9 @@ function attachMultiplayer(httpServer) {
         moving: false,
         stage: typeof p.stage === "string" ? p.stage.slice(0, 24) : "village",
         code: typeof p.code === "string" ? p.code.slice(0, 12) : "",
-        /* v1.0.16 — GM 계정 플래그 릴레이 (클라가 서버 인증 롤 admin일 때만 보냄 — 이름표/오라 코스메틱용) */
-        gm: !!p.gm,
+        /* v1.0.16 — GM 계정 플래그 릴레이 (이름표/오라 코스메틱용)
+         * v1.4.8 (#4 보안) — 클라 선언 gm 스푸핑 차단: 세션 토큰이 admin 계정으로 검증될 때만 릴레이 */
+        gm: isVerifiedAdmin(p.token),
         t: Date.now(),
       });
       broadcastPlayers(true);

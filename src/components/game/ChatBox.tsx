@@ -151,7 +151,7 @@ export function ChatBox() {
   };
 
   return (
-    <div ref={rootRef} className="absolute bottom-2 left-2 w-[300px] max-w-[52vw] sm:bottom-3 sm:left-3">
+    <div ref={rootRef} className="absolute bottom-2 left-2 w-[300px] max-w-[42vw] sm:bottom-3 sm:left-3">
       {/* 최근 메시지 (아래가 최신 — v1.2.0 (#5): 높이 초과 시 위부터 자동 잘라냄) — v4.1.0: 접기 상태면 숨김 */}
       {!collapsed && (
         <div ref={listRef} className="pointer-events-none mb-1 flex flex-col gap-0.5">

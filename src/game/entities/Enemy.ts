@@ -521,7 +521,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     /* v1.2.0 (#10 타격감) — 히트스톱: 일반 26ms · 크리티컬 55ms + 미세 카메라 흔들림.
      *  플래시·스쿼시·넉백과 함께 "얻어맞은 순간이 멈춘다"는 손맛을 만드는 핵심 장치 */
     this.scene.hitStop(crit ? 55 : 26);
-    this.scene.cameras.main.shake(crit ? 70 : 30, crit ? 0.0022 : 0.0009);
+    this.scene.doShake(crit ? 70 : 30, crit ? 0.0022 : 0.0009); // v1.4.8 — doShake 게이트 우회 수정 (v1.2.1 절전 모드에서도 쉐이크 발생 버그)
     /* v4.8.0 — 강한 순간 충격파 링: 크리티컬 금색 / 약점 원소색 (WebGL 전용, Canvas 무시) */
     if (crit) { this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.1); this.scene.spawnCritSplat(this.x, this.y); this.scene.driveFx?.critBurst(this.x, this.y); }
     else if (weak) this.scene.spawnShockwave(this.x, this.y, ELEMENT_META[this.elem].hex, 0.85);

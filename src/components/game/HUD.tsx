@@ -7,8 +7,9 @@ import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
 import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis, Globe } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis, Globe, UserRound, KeyRound } from "lucide-react";
 import { EventBus } from "./EventBus";
+import * as audio from "@/game/audio"; // v1.4.8 — 더보기 소셜 버튼 클릭음
 
 /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
 function BuffChip({ buff }: { buff: HudState["buffs"][number] }) {
@@ -371,12 +372,39 @@ export function HUD({
               <Trophy size={17} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
             </button>
+            {/* v1.4.8 (#3 겹침) — 파티/친구/계정: 우측 부유 스택(퀘스트 트래커와 좌표 겹침) 철거 →
+             *  더보기 메뉴로 이동. 각 창은 중앙 모달로 열린다 (Y/B 키 유지) */}
+            <button
+              onClick={() => { audio.sfx.uiClick(); EventBus.emit("party:toggle"); }}
+              aria-label="파티 창 열기 (Y)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9cc8ff] active:scale-95"
+            >
+              <Users size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-sky-300/90">파티</span>
+            </button>
+            <button
+              onClick={() => { audio.sfx.uiClick(); EventBus.emit("friends:toggle"); }}
+              aria-label="친구 창 열기 (B)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9fe8c0] active:scale-95"
+            >
+              <UserRound size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">친구</span>
+            </button>
+            <button
+              onClick={() => { audio.sfx.uiClick(); EventBus.emit("ui:authOpen", {}); }}
+              aria-label="계정 창 열기 (클라우드 세이브)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d3c4ff] active:scale-95"
+            >
+              <KeyRound size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-violet-300/90">계정</span>
+            </button>
           </div>
         )}
-        {/* v3.0.23 (#56) — 퀘스트 알림을 더 아래로: 모바일 간격 mt-8→mt-20 (상단 버튼행·보스바와 겹침 방지), PC는 mt-1 유지
+        {/* v1.4.8 (#2 공간) — 트래커 축소: 부유 위젯 스택 철거로 mt-20 강제 간격 불필요 → 흐름 배치(mt-2),
+         *  폭도 46vw 전체 → 최대 260px로 캡 (우상단 점유 축소)
          *  v1.1.0 (#2) — "접는 형식 말고 버튼으로 아예 키고 끌 수 있게": 트래커 전체를 버튼 토글로 완전히 숨김/표시 */}
         {trackerOpen && !tutActive && (
-        <div className="game-panel pointer-events-auto mt-20 w-full px-2.5 py-1.5 sm:mt-1 sm:px-3 sm:py-2">
+        <div className="game-panel pointer-events-auto mt-2 w-full max-w-[260px] px-2.5 py-1.5 sm:mt-1 sm:px-3 sm:py-2">
           <div className="flex items-center gap-1.5">
             <ScrollText size={13} className="shrink-0 text-amber-300" />
             <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>

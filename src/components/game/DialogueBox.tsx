@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
 import { getPlayerName } from "@/game/config";
 import { BOSS_DEFS } from "@/game/data";
+import * as audio from "@/game/audio"; // v1.4.8 — 대화 진행 클릭음
 
 /**
  * 대화창: 타이프라이터 + 스페이스/엔터·탭으로 진행, 마지막 줄 완료 시 게임 재개.
@@ -145,6 +146,7 @@ export function DialogueBox({
       return;
     }
     if (dialogue && idx < dialogue.lines.length - 1) {
+      audio.sfx.uiClick(); // v1.4.8 — 줄 넘김 피드백음 (타이핑 스킵에는 무음)
       setIdx(idx + 1);
     } else {
       EventBus.emit("dialogue:done");

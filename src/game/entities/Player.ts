@@ -3226,6 +3226,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.iframes = 600;
     this.scene.sfxHurt();
     this.scene.cameras.main.shake(70, 0.004);
+    /* v1.4.8 (#5 그래픽) — 위험 피격 연출: HP 30% 이하 피격 시 암적색 플래시로 위험 상태를 즉각 인지 */
+    if (this.hp > 0 && this.hp / Math.max(1, this.maxHp) <= 0.3) this.scene.cameras.main.flash(160, 70, 0, 0);
     this.setVelocity(fromDir.x * 200, fromDir.y * 200);
     this.lungeTime = 0; // 피격 넉백이 러지에 덮이지 않게
     this.scene.spawnDamageText(this.x, this.y - 30, final);
@@ -3940,7 +3942,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     if (sold <= 0) return 0;
     this.gold += gold;
-    audio.sfx.coin();
+    audio.sfx.sell();
     this.scene.spawnPickupText(this.x, this.y - 30, sold > 1 ? `${item.name} 판매 ×${sold} +${gold}G` : `${item.name} 판매 +${value}G`, "#ffd76a");
     this.scene.emitHud();
     return sold;
@@ -4158,7 +4160,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.syncAccStarHp();
     }
     this.gold += gold;
-    audio.sfx.coin();
+    audio.sfx.sell();
     this.scene.spawnPickupText(this.x, this.y - 30, sold > 1 ? `${item.name} 판매 ×${sold} +${gold}G` : `${item.name} 판매 +${value}G`, "#ffd76a");
     this.scene.emitHud();
     return sold;
@@ -4177,7 +4179,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.owned.push(key);
     this.equip(key); // 즉시 장착 (슬롯 넘치면 기존 교체)
     this.syncAccStarHp();
-    audio.sfx.coin();
+    audio.sfx.shop();
     this.scene.spawnPickupText(this.x, this.y - 30, `거래소 구매 ${item.name}`, "#8ff2d8");
     this.scene.emitHud();
     return true;
@@ -4197,7 +4199,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.syncAccStarHp();
     }
     this.emerald += value;
-    audio.sfx.coin();
+    audio.sfx.sell();
     this.scene.spawnPickupText(this.x, this.y - 30, `거래소 판매 +${value} 에메랄드`, "#8ff2d8");
     this.scene.emitHud();
     return true;
