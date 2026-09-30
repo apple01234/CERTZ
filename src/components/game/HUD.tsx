@@ -205,9 +205,9 @@ export function HUD({
         </div>
       </div>
 
-      {/* 우상단: 사운드/가방 + 퀘스트 — v1.4.0 (#17/#18) zoom .85 + 2선 버튼 더보기 접기 */}
+      {/* 우상단: 사운드/가방 + 퀘스트 — v1.4.0 (#17/#18) zoom .85 + 2선 버튼 더보기 접기 · v1.4.9 — 우측 마진 축소(오른쪽 끝 정렬) */}
       <div
-        className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-3 sm:top-3"
+        className="absolute right-[max(0.25rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-1 sm:top-3"
         style={{ zoom: 0.85 }}
       >
         <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">

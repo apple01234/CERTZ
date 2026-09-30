@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.8/SERTZ-v1.4.8.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.9/SERTZ-v1.4.9.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -53,9 +53,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.8";
-  const LATEST_CODE = 100;
-  const VERSION_NOTE = "전체 최적화·보안 강화·UI 재편: 우측 부유 위젯(계정/파티/친구) 중앙 모달 전환으로 UI 겹침 근원 차단·퀘스트 트래커 축소·타깃 판정 캐시와 이펙트 풀링(프레임 안정화)·보안 헤더/CORS 화이트리스트/클라우드세이브 검증/소켓 GM 스푸핑 차단·기능별 사운드 전면 분리(quest 38중복 해소)+BGM 크로스페이드·패널 등장 애니메이션";
+  const LATEST_VERSION = "1.4.9";
+  const LATEST_CODE = 101;
+  const VERSION_NOTE = "보스 전면 리뉴얼: 9종 보스 아트 AI 리페인팅(심연의 수호자·니드호그·수르트·펜리르·스콜&하티·가름·아부디토스 전부 신규 일러스트)·보스 애니메이션 전면 강화(하늘 낙하 등장·호흡·공격 예동·피격 반응·사망 잔상 소멸)·전투 UI 우측 정렬(스킬·물약·자동 버튼 화면 끝)·관리자 비밀번호 복구 경로 공식화";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

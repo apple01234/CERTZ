@@ -2157,3 +2157,28 @@ Stage Summary:
 - 유저 지시 1~6 게임 반영 완료, 7(발표 PPT 프롬프트)은 download/ 산출물로 전달
 - 세션 리셋 사고에도 stash+3-way 병합으로 v1.4.8 작업 0 손실 복구, v1.4.5~7 기능(파티 콘텐츠·재부팅 예산·지원센터) 완전 보존
 - 남은 지시: 없음 — 유저 측 후속: Play Console 데이터 보안 폼·계정 삭제 URL(웹페이지 배포 후), 서명키 등록, PPT 프롬프트로 발표 자료 제작
+
+---
+Task ID: V149
+Agent: Super Z (메인)
+Task: 유저 지시 3건 — ①스킬·물약·자동전투 UI 오른쪽 이동 ②admin 계정 로그인(자격증명) ③보스 디자인·애니메이션 보강 — v1.4.9 (versionCode 101) 빌드·릴리스까지
+
+Work Log:
+- [작업실 롤백 복구] 세션 재시작 사이 작업실이 v1.4.4 시절(14ce9d5)로 롤백되어 있었음 — git fetch 후 origin/main(90a0221=v1.4.8+계정백업 13:19)으로 reset --hard 복구, 서버 재기동·/api/version 1.4.8 검증
+- [①UI 우측 이동] TouchControls.tsx:203 우하단 클러스터(자동·물약열+스킬2×2+공격) right 0.5rem→0.25rem·sm:right-5→sm:right-1, HUD.tsx:210 우상단 열(자동 토글 포함) right 0.5rem→0.25rem·sm:right-3→sm:right-1 — E2E 실측 우측여백 4px(HUD 3.39px zoom보정)
+- [②admin] accounts/index.js에 syncAdminPassword() 신설 — SERTZ_ADMIN_PASSWORD env 설정 부팅 시 admin 계정(한정) 해시 강제 갱신(loadDb+원격복원 경로 양쪽 호출), 복원 경로에 잔존하던 구기본비번 admin123 시드 제거(무작위 12자+로그 1회 출력으로 통일) — 서버를 SERTZ_ADMIN_PASSWORD='Sertz!2026'로 재기동, POST /api/auth/login 실측 200 role=admin 토큰 발급 확인
+- [③보스 아트] z-ai image CLI로 9종 전부 신규 일러스트 생성(1024×1024 흰배경) → scripts/boss_art.py 후처리: 경계 중위값 자동적응 흰배경 플러드필 제거(1차 시도 배경 236회색 미스→자동적응으로 수정)·알파 페더·원본과 동일 픽셀 규격 리사이즈(fit_pad 전체실루엣 보존 — 크롭으로 펜리르·스콜 머리 잘림 사고 → 패딩 방식으로 재작성)·idle1=밝기+7% 2프레임 — 히트박스/판정 100% 불변, webp 용량 구버전 대비 8~40배(264~498B→3~11KB)
+- [③보스 애니] Boss.ts — ①등장: 하늘 y-150 낙하(Bounce.easeOut 540ms)→착지 시 body.reset+오라색 충격파+먼지+진동+착지 스쿼시(착지 전 body 비활성·entranceDone 게이트로 행동 정지, 하티 twin 알파 0→착지 후 0.95) ②상시: preUpdate 호흡 ±2.2%(부피보존 scaleX 역상관)+baseS 기준 상대 스케일 ③공격 예동 squash(x,y) 지수감쇠(반감기 200ms): 강타 젖혔다 내려찍기·돌진 웅크림→러닝·볼리/링/나선 기모으기·브레스 들이마심→분출 반동·blink 수축→재등장 팝·소환 채널링·카운터 자세·파동 펄스 ④피격 미세진동 0.035 ⑤페이즈 포효 자세(-0.1,+0.16) ⑥사망: 오라색 ADD 잔상 3겹 확산+본체 Cubic 소멸 트윈+2중 충격파(160/340ms) — 카오스 알파 펄스는 착지 후 개시로 이동(등장 페이드 충돌 제거)
+- [버전체인] package.json 1.4.9·build.gradle vc101+히스토리·server.js(APK_MIRROR/LATEST 1.4.9/101/NOTE)·apk-guide.html(v1.4.9 블록+footer)·APK_다운로드_안내.txt v1.4.9 블록·PPT 프롬프트 txt 버전 표기 갱신
+- [빌드환경 재구축] 세션 리셋으로 JDK/SDK 소실 → scripts/restore_build_env.sh 신설(Debian pool openjdk-21-jdk-headless deb→/home/z/jdk-full 병합+cmdline-tools로 platforms;android-36·build-tools;36.0.0) — V144 절차 스크립트화
+- [빌드] scripts/build_apk.sh(APK_EXPORT=1 next build→cap sync→gradle) BUILD SUCCESSFUL — download/SERTZ-v1.4.9.apk 118,084,234B · md5 fca0e8245900eddea5b393ba0750dc11(번들 가이드는 포인터 문구, 호스팅 가이드에 실해시 기입 후 일반 next build로 서버 번들 복구)
+- [E2E] scripts/e2e_v149.js 신설 11항목 — 버전 1.4.9/101·admin 로그인 실측(200/admin)·보스 신규아트 9종 서빙(≥2500B 판정, 1차 4000B 임계로 gram 3,084B 오탈→보정)·보안헤더·부팅·월드진입·우하단 클러스터 우측여백 4px 실측·HUD 3.39px·보스 텍스처 로드·panelIn/트래커 회귀·콘솔에러 0 → 11/11 PASS (Playwright 브라우저 재설치 필요였음)
+- [릴리스] scripts/release_v149.py — GitHub Release v1.4.9 신규(id 400191396) 업로드 → 원격 재다운로드 md5 일치 ✓ · 릴리스 노트에 지시 3건 상세
+- [검증] 서버 재기동(/api/version 1.4.9/101)·E2E 11/11·원격 md5 일치
+
+Stage Summary:
+- v1.4.9 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.9/SERTZ-v1.4.9.apk (versionCode 101, 118,084,234B, md5 fca0e8245900eddea5b393ba0750dc11)
+- 보스 9종(스토리) 전부 신규 일러스트+전면 애니 강화 — 재림 보스 3종(vord/jorm/nagr)도 텍스처 재활용 구조라 자동 적용
+- admin 계정: 아이디 admin / 비밀번호 Sertz!2026 (SERTZ_ADMIN_PASSWORD env 동기화 — 비번 변경은 env 수정 후 서버 재시작)
+- 전투 UI(스킬·물약·자동) 화면 오른쪽 끝 정렬(4px) 완료
+- 운영 교훈: ①작업실 세션 롤백 재발 — 복구 기준은 항상 git fetch+origin/main ②흰배경 AI 생성물의 배경은 경계 중위값 자동적응 판정이 안전(순백 가정 금지) ③원본과 다른 비율 아트는 크롭 금지·fit_pad(투명패딩)로 실루엣 보존이 판정/실루엣 안전

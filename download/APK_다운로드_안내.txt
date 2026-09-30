@@ -1,3 +1,7 @@
+v1.4.9 (최신) — 보스 전면 리뉴얼 (유저 지시 3건: 보스 디자인·애니메이션 보강 / 전투 UI 우측 정렬 / admin 복구 경로)
+· 다운로드: https://github.com/apple01234/CERTZ/releases/download/v1.4.9/SERTZ-v1.4.9.apk
+· md5: fca0e8245900eddea5b393ba0750dc11 (118084234B, versionCode 101)
+
 v1.4.8 (최신) — 전체 최적화·보안 강화·UI 재편 (유저 지시 7건)
 · 다운로드: https://github.com/apple01234/CERTZ/releases/download/v1.4.8/SERTZ-v1.4.8.apk
 · md5: 3efa119bf9fbf8d20cfe8b49b5773975 (117542406B, versionCode 100)

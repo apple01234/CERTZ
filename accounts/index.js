@@ -115,9 +115,28 @@ function loadDb() {
         }
       }
     }
+    syncAdminPassword(); // v1.4.9 — env 설정 부팅에서 admin 비밀번호 강제 동기화 (분실 복구 경로)
     persistDb();
   } catch (e) {
     console.error("[SERTZ-accounts] DB 로드 실패 — 신규 생성", e);
+  }
+}
+/* v1.4.9 — 관리자 비밀번호 동기화: SERTZ_ADMIN_PASSWORD env가 설정된 상태로 서버를 시작하면
+ *  "admin" 계정의 비밀번호를 env 값으로 갱신한다 (비밀번호 분실 시 유일한 공식 복구 경로).
+ *  · 대상은 admin 계정 한정 — 개인 계정(apple01234 등)은 절대 건드리지 않는다
+ *  · env 미설정 부팅에서는 아무것도 하지 않는다 (기존 비밀번호 그대로 유지)
+ *  · 복원 경로(restoreFromGithubIfFresh)에서도 재호출 — 원격 백업이 db를 덮어써도 동기 보장
+ *  · 로그에 비밀번호 자체는 절대 출력하지 않는다 */
+function syncAdminPassword() {
+  const envPw = process.env.SERTZ_ADMIN_PASSWORD;
+  if (!envPw) return;
+  const target = db.users["admin"] || Object.values(db.users).find((u) => String(u.name || "").toLowerCase() === "admin");
+  if (!target) return;
+  const newHash = hashPw(envPw, target.salt);
+  if (target.hash !== newHash) {
+    target.hash = newHash;
+    console.log("[SERTZ-accounts] admin 비밀번호 동기화 완료 (SERTZ_ADMIN_PASSWORD env)");
+    audit("admin_pw_sync", { uid: target.id });
   }
 }
 function persistDb() {
@@ -276,12 +295,19 @@ async function restoreFromGithubIfFresh() {
       if (shouldAdmin && u.role !== "admin") u.role = "admin";
       else if (!shouldAdmin && u.role === "admin") u.role = "user";
     }
+    /* v1.4.9 — 복원 경로 오토시드도 알려진 기본 비밀번호(admin123) 제거: env 없으면 무작위 발급+로그 1회 출력 */
     for (const aid of ADMIN_USERS) {
       if (!db.users[aid]) {
         const salt = randomBytes(16).toString("hex");
-        db.users[aid] = { id: aid, name: aid.slice(0, 8), provider: "local", salt, hash: hashPw(process.env.SERTZ_ADMIN_PASSWORD || "admin123", salt), createdAt: Date.now(), role: "admin" };
+        const seededPw = process.env.SERTZ_ADMIN_PASSWORD || randomBytes(12).toString("base64url");
+        db.users[aid] = { id: aid, name: aid.slice(0, 8), provider: "local", salt, hash: hashPw(seededPw, salt), createdAt: Date.now(), role: "admin" };
+        if (!process.env.SERTZ_ADMIN_PASSWORD) {
+          console.error(`[SERTZ-accounts] ⚠ 복원 경로 ${aid} 임시 비밀번호: ${seededPw} — 서버 로그 1회만 노출. 로그인 후 변경할 것!`);
+          audit("admin_autoseed_random_pw", { uid: aid, via: "restore" });
+        }
       }
     }
+    syncAdminPassword(); // v1.4.9 — 원격 백업이 admin 해시를 덮어써도 env 설정 시 재동기화
     persistDb();
     console.log(`[SERTZ-accounts] 원격 백업 복원 완료 — 계정 ${Object.keys(db.users).length}명`);
     audit("backup_restore", { users: Object.keys(db.users).length });

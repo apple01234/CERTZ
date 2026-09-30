@@ -83,6 +83,14 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private counterRing: Phaser.GameObjects.Image | null = null;
   private counterHintShown = 0;
 
+  /* ---- v1.4.9 — 보스 생동감 애니메이션 (호흡·예동·낙하 등장) ---- */
+  private baseSX = 1;
+  private baseSY = 1;
+  private breathT = Math.random() * 4000;
+  private squashX = 0;
+  private squashY = 0;
+  private entranceDone = false;
+
   // F4: 투사체 고정 풀
   private orbPool: Phaser.Physics.Arcade.Image[] = [];
   private orbIdx = 0;
@@ -114,7 +122,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.twin = scene.add.sprite(this.x, this.y, this.texture.key)
         .setDepth(this.depth - 1)
         .setTint(0x9fb8ff)
-        .setAlpha(0.95);
+        .setAlpha(0); // v1.4.9 — 낙하 등장 중 비표시, 착지 시 0.95로 복원
       this.twin.play(`${def.tex}-idle`);
       this.twin.setFlipX(true);
     }
@@ -129,19 +137,56 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.orbPool.push(orb);
     }
 
-    // v4.1.4 — 카오스 등장 연출: 붉은 오라 펄스 (위협감 표시)
-    if (this.chaos) {
-      this.scene.tweens.add({
-        targets: this,
-        alpha: { from: 1, to: 0.86 },
-        duration: 420,
-        yoyo: true,
-        repeat: -1,
-      });
-    }
+    // v4.1.4 — 카오스 등장 연출은 착지 후 개시로 이동 (등장 페이드와 충돌 방지 — startChaosAura)
+    /* v1.4.9 — 등장 연출: 하늘 높이에서 낙하 착지 (충격파+먼지+진동+착지 찌그러짐).
+     *  착지 전까지 물리 바디 비활성 + 행동 정지(entranceDone) — 낙하 중 공격/충돌 없음 */
+    this.baseSX = this.scaleX || 1;
+    this.baseSY = this.scaleY || 1;
+    const landY = this.y;
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.enable = false;
+    this.setAlpha(0);
+    this.setY(landY - 150);
+    this.scene.tweens.add({ targets: this, alpha: 1, duration: 170 });
+    this.scene.tweens.add({
+      targets: this,
+      y: landY,
+      duration: 540,
+      ease: "Bounce.easeOut",
+      onComplete: () => {
+        this.entranceDone = true;
+        body.reset(this.x, landY);
+        body.enable = true;
+        this.squash(0.16, -0.16); // 착지 충격
+        this.twin?.setAlpha(0.95);
+        this.scene.spawnShockwave(this.x, this.y + 10, this.def.orbTint, 1.15, 420);
+        this.scene.spawnBurstAt(this.x, this.y + 12, 12, 0xffffff);
+        this.scene.cameras.main.shake(150, 0.007);
+        this.startChaosAura();
+      },
+    });
   }
 
-  /** v1.0.12 — 하티 동기화: 프레임마다 보스 뒤 오프셋에 붙어 같이 달린다 (tick 흐름과 무관) */
+  /** v1.4.9 — 카오스 붉은 오라 펄스 (착지 후 개시) */
+  private startChaosAura() {
+    if (!this.chaos || !this.alive) return;
+    this.scene.tweens.add({
+      targets: this,
+      alpha: { from: 1, to: 0.86 },
+      duration: 420,
+      yoyo: true,
+      repeat: -1,
+    });
+  }
+
+  /** v1.4.9 — 예동(스쿼시&스트레치): 양수=누르기, 음수=쭉 펴기. preUpdate에서 지수 감쇠로 자연 복원 */
+  private squash(x: number, y: number) {
+    this.squashX = x;
+    this.squashY = y;
+  }
+
+  /** v1.0.12 — 하티 동기화: 프레임마다 보스 뒤 오프셋에 붙어 같이 달린다 (tick 흐름과 무관)
+   *  v1.4.9 — + 생동감 애니메이션: 호흡(±2.2% 부피 보존 펄스) + 예동 감쇠 적용 */
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
     if (this.twin?.active) {
@@ -149,10 +194,19 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.twin.setFlipX(!this.flipX);
       this.twin.setDepth(this.depth - 1);
     }
+    if (!this.alive) return;
+    this.breathT += delta;
+    const decay = Math.pow(0.5, delta / 200);
+    this.squashX *= decay;
+    this.squashY *= decay;
+    const breathe = Math.sin(this.breathT / 300) * 0.022; // ±2.2% 호흡
+    this.scaleX = this.baseSX * (1 - breathe * 0.6 + this.squashX);
+    this.scaleY = this.baseSY * (1 + breathe + this.squashY);
+    this.twin?.setScale(this.scaleX, this.scaleY);
   }
 
   tick(dt: number, player: PlayerLike2) {
-    if (!this.alive) return;
+    if (!this.alive || !this.entranceDone) return; // v1.4.9 — 낙하 등장 중 행동 정지
     this.modeTimer -= dt;
     this.knockVec.scale(Math.pow(0.002, dt / 1000));
 
@@ -208,6 +262,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.setTint(0xff9060);
         if (this.modeTimer <= 0) {
           this.clearTint();
+          this.squash(0.12, -0.08); // v1.4.9 — 돌진 출발 러닝 스트레치
           this.chargeDir.set(player.x - this.x, player.y - this.y).normalize();
           this.chargeTarget.set(player.x, player.y);
           this.setMode("charging", 520);
@@ -328,6 +383,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.sfxRoar();
     this.scene.cameras.main.shake(220, this.phase === 3 ? 0.01 : 0.007);
     this.scene.spawnBurstAt(this.x, this.y, 20, this.def.orbTint);
+    this.squash(-0.1, 0.16); // v1.4.9 — 페이즈 포효 자세
     this.scene.showBanner(
       this.phase === 3
         ? `${this.def.name} — 최후의 힘을 해방한다!`
@@ -393,6 +449,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   private startSlam(player: PlayerLike2) {
     this.setMode("slamTele", 750);
+    this.squash(-0.07, 0.11); // v1.4.9 — 강타 예고: 몸을 뒤로 젖히며 기모으기
     // 텔레그래프: 플레이어 현재 위치에 붉은 원 — 외부 에셋 링(Kenney CC0) 적색 틴트
     const ring = this.scene.add
       .image(player.x, player.y, "ring")
@@ -408,6 +465,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   private doSlam(player: PlayerLike2) {
     this.setTint(0xffffff);
+    this.squash(0.14, -0.14); // v1.4.9 — 강타 착지 임팩트
     const ring = this.teleRing;
     if (ring) {
       const tx = ring.x;
@@ -446,6 +504,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private startVolley() {
     this.setMode("volley", 10);
     this.setTint(0x88a0ff);
+    this.squash(-0.05, 0.07); // v1.4.9 — 발사 전 들이마시기
   /** 페이즈별 탄 수 증가 (1:5 / 2:7 / 3:12) — v3.0.6: 보스 강화 */
     this.volleyCount = this.phase === 1 ? 5 : this.phase === 2 ? 7 : 12;
     let remaining = this.volleyCount;
@@ -480,6 +539,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private startRing() {
     this.setMode("ringTele", 420);
     this.setTint(0xffe08a);
+    this.squash(-0.05, 0.07); // v1.4.9 — 탄막 예고 기모으기
   }
 
   private doRing() {
@@ -490,6 +550,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     for (let w = 0; w < waves; w++) {
       this.scene.time.delayedCall(w * 340, () => {
         if (!this.alive) return;
+        this.squash(0.06, -0.06); // v1.4.9 — 파동 발사 펄스
         const offset = w * 0.19; // 두 번째 파동은 틀어진 각도 — 틈새 사격
         for (let i = 0; i < count; i++) {
           this.fireOrb(offset + (Math.PI * 2 * i) / count, 165 + w * 25, Math.round(this.def.atk * 0.5));
@@ -505,6 +566,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private startZones(player: PlayerLike2) {
     this.setMode("zonesTele", 850);
     this.setTint(0xffa060);
+    this.squash(-0.06, 0.09); // v1.4.9 — 장판 시전 기모으기
     // 플레이어 위치 중심 3개 장판 예고 — 1개는 보스 근처 무작위
     const spots: [number, number][] = [
       [player.x, player.y],
@@ -549,6 +611,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private startSummon() {
     this.setMode("summonTele", 620);
     this.setTint(0xc070ff);
+    this.squash(-0.07, 0.12); // v1.4.9 — 소환 주문 채널링
   }
 
   private doSummon() {
@@ -569,6 +632,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private startSpiral() {
     this.setMode("volley", 10); // 대기 전용 모드 재사용 (volleyTimer와 무관 — spiralTimer 별도)
     this.setTint(0x9ad0ff);
+    this.squash(-0.05, 0.08); // v1.4.9 — 나선 탄막 기모으기
     this.spiralAngle = Phaser.Math.FloatBetween(0, Math.PI * 2);
     const arms = this.chaos ? 3 : 2; // 카오스는 3갈래 나선
     const ticks = this.chaos ? 21 : 17;
@@ -597,6 +661,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private startBeam(player: PlayerLike2) {
     this.setMode("beamTele", 780);
     this.setTint(0xffd0a0);
+    this.squash(-0.06, 0.1); // v1.4.9 — 브레스 들이마시기
     this.beamAngle = Math.atan2(player.y - this.y, player.x - this.x);
     this.beamDir = Math.random() < 0.5 ? 1 : -1;
     // 예고: 시전 방향 직선상 3개 링 (스윕 궤적 암시)
@@ -623,6 +688,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private doBeam() {
     this.clearTint();
     this.setMode("beaming", 10);
+    this.squash(0.05, -0.05); // v1.4.9 — 브레스 분출 반동
     const step = this.chaos ? 0.042 : 0.032; // 카오스는 더 빠른 회전
     const speed = this.chaos ? 250 : 235;
     let done = 0;
@@ -648,12 +714,14 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private startBlink() {
     this.setMode("blinkTele", 320);
     this.setAlpha(0.25);
+    this.squash(-0.08, 0.1); // v1.4.9 — 그림자로 뭉개지는 수축
     this.scene.spawnBurstAt(this.x, this.y, 14, 0x8040c0);
     this.scene.sfxDash();
   }
 
   private doBlink(player: PlayerLike2) {
     this.setAlpha(1);
+    this.squash(0.1, -0.1); // v1.4.9 — 재등장 팝
     const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
     const d = Phaser.Math.Between(140, 190);
     this.setPosition(
@@ -740,6 +808,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private startCounter() {
     this.setMode("counterTele", this.chaos ? 1050 : 1400);
     this.setTint(0xffe95a);
+    this.squash(-0.06, 0.06); // v1.4.9 — 반격 자세
     this.counterRing = this.scene.add
       .image(this.x, this.y, "ring")
       .setDepth(5)
@@ -861,6 +930,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
     this.hp -= dealt;
     this.knockVec.set(dir.x * knock * 0.12, dir.y * knock * 0.12); // 보스는 넉백 거의 안 됨
+    this.squash(0.035, -0.035); // v1.4.9 — 피격 미세 진동
     // 타격감: 화이트 플래시 — 카운터/기절 상태의 틴트는 유지
     this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
     this.scene.time.delayedCall(60, () => {
@@ -888,6 +958,41 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.supportTimer?.remove();
       this.scene.tweens.killTweensOf(this); // v4.1.4 — 카오스 오라 펄스 정지
       this.setAlpha(1);
+      /* v1.4.9 — 사망 연출 강화: 오라색 잔상 3겹 확산 + 본체 소멸 트윈 + 2중 충격파 */
+      {
+        const gx = this.x, gy = this.y;
+        const gtex = this.texture.key;
+        const gfl = this.flipX;
+        const gsx = this.scaleX, gsy = this.scaleY;
+        for (let i = 0; i < 3; i++) {
+          const ghost = this.scene.add.image(gx, gy, gtex)
+            .setDepth(10)
+            .setTint(this.def.orbTint)
+            .setBlendMode(Phaser.BlendModes.ADD)
+            .setAlpha(0.5)
+            .setScale(gsx, gsy)
+            .setFlipX(gfl);
+          this.scene.tweens.add({
+            targets: ghost,
+            alpha: 0,
+            scaleX: gsx * (1.3 + i * 0.22),
+            scaleY: gsy * (1.3 + i * 0.22),
+            duration: 620 + i * 150,
+            ease: "Cubic.easeOut",
+            onComplete: () => ghost.destroy(),
+          });
+        }
+        this.scene.tweens.add({
+          targets: this,
+          alpha: 0,
+          scaleX: gsx * 1.1,
+          scaleY: gsy * 0.88,
+          duration: 850,
+          ease: "Cubic.easeIn",
+        });
+        this.scene.time.delayedCall(160, () => this.scene.spawnShockwave(gx, gy, this.def.orbTint, 1.1, 420));
+        this.scene.time.delayedCall(340, () => this.scene.spawnShockwave(gx, gy, 0xffffff, 0.85, 340));
+      }
       for (const orb of this.orbPool) this.killOrb(orb);
       for (const r of this.teleRings) r.destroy();
       this.teleRings = [];
