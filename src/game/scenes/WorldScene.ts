@@ -7155,13 +7155,17 @@ export class WorldScene extends Phaser.Scene {
           EventBus.emit("banner:show", { text: "시련 도중에는 계열을 바꿀 수 없다" });
           return;
         }
+        /* v1.4.12 (#19 유저 지시 "전직 버튼을 누르고 전직 퀘스트를 완료해야 전직을 시켜줘") —
+         *  즉시 적용 복구 경로 제거: 미전직은 예외 없이 1차 전직 시련(퀘스트)을
+         *  시작하고, 시련을 끝까지 완료해야만 전직된다 (completeJobStoryStep의
+         *  finTier===1 분기가 유일한 전직 통로). */
+        this.pendingJobClass = def.key;
         if (this.jobStoryDone.includes(1)) {
-          // 1차 시련 완료 후 재선택 — 복구 경로 (즉시 적용)
-        } else {
-          this.pendingJobClass = def.key;
-          this.startJobStory(fam, 1);
-          return;
+          // v1.4.12 — 비정상 세이브(시련 완료 기록만 있고 cls 없음) 복구용: 기록을 지워 재시련 허용
+          this.jobStoryDone = this.jobStoryDone.filter((t) => t !== 1);
         }
+        this.startJobStory(fam, 1);
+        return;
       } else if (!this.jobQuestCleared()) {
         // 2차/3차 승격 — 다음 차수 시련 완료 필수 (패널 우회 방지 scene-side 재검증)
         EventBus.emit("banner:show", {

@@ -2732,7 +2732,112 @@ export function GamePanels({
   if (panel === "content") return <ContentPanel rpg={rpg} onClose={onClose} />; // v1.0.8 — 무한 콘텐츠 허브
   if (panel === "rank") return <RankingPanel rpg={rpg} onClose={onClose} />; // v1.3.1 복원 — 랭킹창 + 랭커 특전 (93b3fbf에서 유실)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
+  if (panel === "guide") return <GuidePanel onClose={onClose} />; // v1.4.12 (#16) — 이그니의 UI 기능 안내
   return null;
+}
+
+/* =====================================================================
+ * v1.4.12 (#16 유저 지시 "각각의 UI가 무슨기능을 하는지를 설명해줘(이그니가)")
+ * — 이그니의 UI 기능 안내 패널.
+ *  긴 튜토리얼이 아니라 "각 UI가 무슨 기능을 하는지"를 화면 위치별로 한 줄씩 정리.
+ *  화자는 룬 정령 이그니 — 게임 세계관 유지.
+ * ===================================================================== */
+const GUIDE_SECTIONS: { area: string; icon: string; items: { name: string; desc: string }[] }[] = [
+  {
+    area: "화면 왼쪽 위",
+    icon: "🧭",
+    items: [
+      { name: "LV / 이름", desc: "캐릭터의 레벨과 이름. 레벨이 오르면 스탯 포인트(AP)를 받아." },
+      { name: "HP 바 (빨강)", desc: "생명력. 0이 되면 쓰러져 마을로 돌아와 — 빨갛게 되면 바로 물약(F)!" },
+      { name: "MP 바 (파랑)", desc: "마력. 스킬을 쓸 때 소모하고, 기본 공격으로 조금씩 회복된다." },
+      { name: "EXP 바 (연두)", desc: "경험치. 꽉 차면 다음 레벨로 올라간다." },
+      { name: "골드 / 공격 / 방어 / 크리", desc: "장착 장비를 반영한 실제 전투 스탯이야. 골드는 상점에서 쓴다." },
+      { name: "버프 아이콘", desc: "지금 걸려 있는 강화 효과(여관 휴식 등). 남은 시간을 아이콘 아래에서 확인." },
+    ],
+  },
+  {
+    area: "화면 오른쪽 위",
+    icon: "🎛️",
+    items: [
+      { name: "퀘스트 (J)", desc: "지금 진행 중인 퀘스트 로그. 접어도 진행은 계속돼." },
+      { name: "도움", desc: "지금 보고 있는 이 안내! UI가 헷갈리면 언제든 열어 봐." },
+      { name: "자동 (봇)", desc: "자동전투 켜기/끄기. 단, 보스전에서는 직접 싸워야 해!" },
+      { name: "소리", desc: "전체 음소거 토글. 소리 크기는 설정(O)에서 조절." },
+      { name: "가방 (I)", desc: "인벤토리 — 장비 착용·해제, 물약 퀵슬롯 장착, 잡템 판매." },
+      { name: "스탯 (T)", desc: "AP가 있으면 여기서 힘/민첩/체력에 투자해 캐릭터를 키운다." },
+      { name: "설정 (O)", desc: "BGM·효과음 크기, 키 매핑, 그래픽 품질, 메뉴 나가기." },
+      { name: "더보기 (⋯)", desc: "보스 재도전·혜택·콘텐츠·유니온·거래소·랭킹·파티·친구·계정 창 모음." },
+    ],
+  },
+  {
+    area: "화면 오른쪽 아래 — 전투 버튼",
+    icon: "⚔️",
+    items: [
+      { name: "기본 공격 (빨간 큰 버튼)", desc: "가장 가까운 적을 벤다. PC는 X 키. 콤보처럼 연타해도 좋아." },
+      { name: "스킬 버튼 (부채꼴)", desc: "공격 버튼 주위에 배치된 직업 스킬. MP와 쿨타임을 확인하고 눌러!" },
+      { name: "궁극기 (황금 버튼)", desc: "레벨 200에 해금되는 필살기. 쿨타임이 길지만 한 방이 아주 세다." },
+      { name: "HP 물약 (빨강, F)", desc: "체력을 회복. 가방에서 다른 물약을 퀵슬롯에 장착할 수 있어." },
+      { name: "MP 물약 (파랑, D)", desc: "마력을 회복. 스킬을 자주 쓰는 직업은 필수!" },
+      { name: "자동 버튼 (봇)", desc: "여기서도 자동전투 토글이 가능해. 상태는 '자동중' 표시로 보인다." },
+    ],
+  },
+  {
+    area: "화면 왼쪽 아래 — 이동과 대화",
+    icon: "🕹️",
+    items: [
+      { name: "조이스틱 (점선 원)", desc: "손가락으로 밀면 그 방향으로 이동. PC는 방향키/WASD." },
+      { name: "채팅", desc: "멀티 서버에서 다른 모험가와 대화. 싱글에서는 안내 메시지가 떠." },
+      { name: "'E' 버튼", desc: "NPC·상자·차원문 앞에 나타나는 상호작용 버튼. PC는 E 키!" },
+    ],
+  },
+  {
+    area: "게임 안의 오브젝트",
+    icon: "🗺️",
+    items: [
+      { name: "미니맵 (하단 중앙)", desc: "빈 점=나, 빨간 점=적, 금색 점=퀘스트 목표, 보라 점=차원문." },
+      { name: "차원문 (소용돌이)", desc: "다음 지역으로 이동. 보라가 전진, 청록이 복귀 — 자동전투 중에도 탈 수 있어." },
+      { name: "상인 라고스", desc: "마을 상점 NPC. 물약·장비 구매와 잡템 판매가 가능해." },
+      { name: "샘물 우물", desc: "가까이 가면 HP/MP가 완전히 회복된다. 마을의 무료 회복 지점!" },
+      { name: "보물 상자", desc: "마을의 하루 1회 보상 상자. 매일 한 번씩 열자." },
+      { name: "필드 NPC (사냥꾼 등)", desc: "사냥터의 주민들 — 챕터 공략 힌트를 알려 준다. 말 걸어 봐!" },
+      { name: "식인초 (이빨 달린 초목)", desc: "밟으면 최대 체력 10% 피해! 자동전투는 피해서 가지만 직접 이동할 땐 조심." },
+    ],
+  },
+];
+
+function GuidePanel({ onClose }: { onClose: () => void }) {
+  useEscClose(onClose);
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/55" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="game-panel flex max-h-[86vh] w-[min(560px,94vw)] flex-col p-4" style={{ zoom: 0.92 }}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-[15px] font-black">룬 정령 이그니의 UI 안내서</h2>
+          <button onClick={onClose} className="rounded border border-white/20 bg-white/5 px-2 py-1 text-[11px] font-black text-white/70 hover:bg-white/10">닫기</button>
+        </div>
+        <p className="mt-1.5 rounded-lg border border-emerald-300/25 bg-emerald-400/10 px-2.5 py-2 text-[11px] font-bold leading-relaxed text-emerald-100">
+          "화면의 모든 UI가 무슨 기능을 하는지 알려 줄게. 헷갈릴 때마다 이 창을 열어 봐!"
+        </p>
+        <div className="mt-2 min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-0.5">
+          {GUIDE_SECTIONS.map((sec) => (
+            <div key={sec.area}>
+              <p className="text-[11px] font-black text-amber-200">{sec.icon} {sec.area}</p>
+              <div className="mt-1 space-y-1">
+                {sec.items.map((it) => (
+                  <div key={it.name} className="sertz-listrow rounded px-2 py-1.5">
+                    <p className="text-[11px] font-black text-[#ffd98a]">{it.name}</p>
+                    <p className="mt-0.5 text-[10px] font-bold leading-snug text-white/70">{it.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          <p className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-[10px] font-bold leading-relaxed text-white/55">
+            팁: 모든 단축키는 설정(O)에서 자기 손에 맞게 바꿀 수 있어. 그럼, 모험을 계속하자!
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* =====================================================================

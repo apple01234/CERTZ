@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.11/SERTZ-v1.4.11.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.12/SERTZ-v1.4.12.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -53,9 +53,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.11";
-  const LATEST_CODE = 103;
-  const VERSION_NOTE = "Drive 신규 팩 통합(마법진·참격·낙뢰·지균·벚꽃)·보스 9종 아트 2차 전면 교체(애니 셀셰이드 — 판정 불변)·자동전투 제자리 진동 근본 수정 5종·신규 코스튬 2종(화염의 무희·신비술사)·appId com.sertz.myapp 일원화·ARG 체계 완전 제거(비밀수첩·eggs)";
+  const LATEST_VERSION = "1.4.12";
+  const LATEST_CODE = 104;
+  const VERSION_NOTE = "유저 지시 22건: 벚꽃 제거·자동시작 버그 수정·시작 사냥터 철거(NPC 3명→Lv3)·스프라이트 로드 근본 수정·GM/랭킹 실패 진단·기본 볼륨 BGM60/SE50·스킬 UI 와일드리프트 아크 배치·미니맵 하단 이동·보스전 자동전투 금지·자동전투 포탈 전면 허용·식인초 회피·이그니 UI 안내·사냥터 정보 NPC 9종·여캐 6종 SPUM 재생성·보스 9종 100% 실에셋+시그니처 패턴·UI ui2 에셋 전면 교체";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

@@ -408,7 +408,23 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.phase === 1 ? this.def.patterns.p1 : this.phase === 2 ? this.def.patterns.p2 : this.def.patterns.p3;
     let candidates = pool.filter((k) => k !== this.lastAttack);
     if (candidates.length === 0) candidates = pool;
-    const kind = Phaser.Utils.Array.GetRandom(candidates);
+    /* v1.4.12 (#20 보스마다 패턴 차별화) — 시그니처 패턴 가중치 뽑기:
+     *  보스별 정체성 패턴(sig)이 2.6배 확률로 나온다 — 수호자는 강타, 펜리르는 돌진,
+     *  가름은 반격처럼 각자의 전투 스타일이 체감된다. */
+    const sig = this.def.sig;
+    let kind: BossAttackKind;
+    if (sig && candidates.includes(sig)) {
+      const weight = (k: BossAttackKind) => (k === sig ? 2.6 : 1);
+      const total = candidates.reduce((s2, k) => s2 + weight(k), 0);
+      let roll = Math.random() * total;
+      kind = candidates[candidates.length - 1];
+      for (const k of candidates) {
+        roll -= weight(k);
+        if (roll <= 0) { kind = k; break; }
+      }
+    } else {
+      kind = Phaser.Utils.Array.GetRandom(candidates);
+    }
     this.lastAttack = kind;
     switch (kind) {
       case "slam":
@@ -956,6 +972,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.mode = "idle";
     let m = this.enraged ? 0.5 : this.phase === 2 ? 0.7 : 0.85;
     if (this.chaos) m *= 0.75;
+    /* v1.4.12 (#20) — 보스별 공격 성향 (aggr: 1보다 작으면 더 빠르게 다시 공격) */
+    if (this.def.aggr) m *= this.def.aggr;
     this.nextAttackCd = cd * m;
   }
 

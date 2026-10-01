@@ -2244,3 +2244,43 @@ Stage Summary:
 - 유저 지시 6건 전부 해결: Drive 팩 ~140종 적극 통합(신규 56+잠자던 기존 84)·보스 9종 애니 셀셰이드 전면 교체+9패턴 이펙트·자동전투 진동 5종 근본 수정·신규 코스튬 2종·appId 일원화·ARG 최종 봉쇄
 - 운영 교훈: ①주석 안의 와일드카드(hv2_*/mg_*)는 */로 주석을 조기 종료시킨다 — 주석에 파일그롭 쓰면 안 됨 ②MultiEdit 실패 시 원자성이 버전마다 다를 수 있으니 적용 후 grep으로 상태 확인 필수 ③Playwright는 초기 HTML script만 검색 — lazy 청크 판정은 .next/static/chunks fs grep 폴백이 정답(v1.4.10 재확인) ④보스 아트 프롬프트에 "no text"를 넣어도 텍스트 유입 가능 — 생성 후 육안 검증 전수 필수
 - 잔여: Play Console 데이터 보안 폼·서명 키 등록·API33 AD_ID 확인은 유저 측 작업 / admin 계정: admin / Sertz!2026 (SERTZ_ADMIN_PASSWORD env 동기화)
+
+---
+Task ID: V1412
+Agent: Super Z (메인)
+Task: 유저 지시 22건 — 버그 6건(벚꽃·자동시작·스프라이트·GM·보스방향·랭킹)·UI 4건(스킬아크·지도이동·볼륨·ui2전면교체)·시스템 6건(시작사냥터·사냥터NPC·보스전자동금지·포탈·식인초·이그니안내·전직퀘)·에셋 2건(여캐6종·보스9종 실에셋)·정리 1건(download) → v1.4.12 (vc104) 빌드·릴리스
+
+Work Log:
+- [#1 벚꽃] TitleScene cp_bg 언덕+cp_petal 낙하 타이머 전면 삭제 — 별빛+세계수 실루엣만 유지
+- [#5 자동시작] 근원=sertz.autoResume 플래그(월드진입 시 기록→재부팅 후 자동 복귀). TitleScene/WorldScene 설정·복구 경로 전부 폐지+잔존 키 청소 — 항상 캐릭터 선택부터 시작
+- [#4/#9 스프라이트] loadImageRaw 무음 실패가 근원(업데이트 직후 WebView 캐시 오염 시 walk 프레임 영구 누락) → loadBodyPrefix 3라운드 재시도+2차부터 캐시버스팅(?r=ts) 도입
+- [#6 GM][#21 랭킹] 실측: sertz4(원격 기본서버)가 v1.2 이전 구버전 — /api/rank 404(HTML), admin 로그인 401. 클라 계층에 원인 진단 추가: fetchRanking 404→"{서버호스트} 서버가 랭킹 기능이 없는 구버전" 안내, AuthPanel 로그인 실패 시 접속 서버 호스트 표시
+- [#18 보스방향] 근원2종: 속도부호 기반 flip(정지 시 뒷돌기)+AI아트 방향 불일치 → 플레이어 위치 기반 정면 판정+BossDef.faceLeft 플래그 신설
+- [#7 볼륨] BGM_VOLUME 0.38→0.6·SFX_VOLUME_DEFAULT 0.62→0.5
+- [#8 스킬UI] TouchControls 와일드리프트식 재배치: 공격버튼 우하단 고정+스킬(s1~s5) 공격 중심 부채꼴 극좌표(arcPos/arcAngles — 해금 수에 따라 196°→74° 등간격)+자동·물약 좌하단 클러스터. SkillButton compact 모드
+- [#11 지도] 미니맵 mmBottom 가로폭 700~900 구간 56→14px+중앙→우측 44px(채팅박스 회피). <700 세로모드는 기존 56 유지(충돌 방지)
+- [#3 시작사냥터] 초행자 훈련장(buildTrainingGround/spawnTrainingWolf/trainSpawns 리스폰 판정) 전면 철거+v1 훈련 퀘스트 삭제 — 마을 체인 v0(NPC3명→Lv3, 기존기능)→v2(숲 이동) 2단 단일화
+- [#14 사냥터] ep_/kd_ 이상한 소품(신전·성배·구조물·태아) 배치 철거 + spawnFieldNpc 신설: 챕터별 정보 NPC 9종(숲의 사냥꾼~심연 생존자) 입구 근처 배치, fieldNpc_* 대사 9종 신규(공략 힌트·식인초 경고·보스 팁)
+- [#12 보스전자동금지] onAutoHunt 토글 게이트(bossFightActive 시 deny음+설명 배너)+tickAutoHunt 이중 잠금+spawnBoss/spawnReplayBoss 진입 시 강제 해제+안내
+- [#13 포탈] 복귀 차원문 autoHunt 게이트 폐지(warnAutoPortal 삭제) — 전·복귀 모두 자동 탑승
+- [#15 식인초] autoPlantAvoid 신설(update에서 tickAutoHunt 후 후처리): 위험반경46px 이탈→전방 48/110px 탐지 ±42/84/126° 우회→전방 차단 시 정지 3단
+- [#16 이그니안내] PanelKind+guide·HUD 더보기 도움 버튼(HelpCircle)·GuidePanel 신설: 화면 위치별 UI 기능 5섹션 26항목 이그니 화자 안내
+- [#19 전직퀘] 미전직 계열 선택의 "즉시 적용 복구 경로" 폐지 — 1차 시련(퀘스트) 완료가 유일한 전직 통로(completeJobStoryStep finTier===1 분기)
+- [#17 여캐] gen_v1412_female_bodies.py — chf0~5 6종을 SPUM 파트(헤어9종 중 6·의상·어깨아머·망토) 합성으로 완전 재생성(28프레임×6=168프레임, 피부톤 보존 face_patch) — 6종 전부 서로 다른 캐릭터(진홍전사/보라마법사/숲궁수/백은성직자/흑의도적/하늘왕녀)
+- [#20 보스실에셋] gen_v1412_boss_assets.py — AI 아트 전면 폐기, x2/x3 몬스터팩(50 Monsters CC·0x72 DungeonTileset II CC0)에서 추출: boss←stonegolem(보라)·boss2←ogre(청백)·boss3←chort(진홍)·nidhog←bigzombie(부록)·surt←orcwarrior(잉걸)·fenrir/skoll←darkhound(보라/금)·gram←wogol(혈안)·abudditos←firebird(암홍 마룡) — 휘도 매핑 틴트+fit_pad(캔버스 규격 유지=판정 불변)+실프레임 2프레임 idle
+- [#20 패턴차별화] BossDef sig(시그니처 패턴 2.6배 가중치)+aggr(공격 성향 쿨배수) 신설 — 12종 보스 전부 부여(guardian slam/1.05~abudditos ring/0.8, 재림 3종 포함)
+- [#10/#22 UI교체] globals.css 디자인 시스템을 ui2 에셋으로 전면 교체: game-panel→panel_big·h2→header·game-btn/ghost/chip/tab/on→button·input→input·danger→button×red blend·sertz-panel→panel — CSS 보더 제거(프레임 텍스처 박제), panelIn 유지
+- [#2 정리] download/drive_in(193MB 에셋작업물) → asset_work/ 이동 — download는 결과물만
+- [버전체인] package.json 1.4.12·build.gradle vc104·server.js(VERSION/CODE/NOTE/APK_MIRROR)·apk-guide.html·APK_다운로드_안내.txt
+- [빌드] build_apk.sh BUILD SUCCESSFUL → download/SERTZ-v1.4.12.apk 135,519,065B·md5 478becd74dcac19743a4c65ea354ee9c·aapt com.sertz.myapp/104/1.4.12 — 일반 next build 서버 복구
+- [E2E] scripts/e2e_v1412.js 15항목 → 15/15 PASS(벚꽃미렌더·자동시작폐지·보스9종 실측·여캐 차별화 100%·번들 grep·월드진입·마을 적 0마리·볼륨 0.6/0.5·에러 0). 중간 3FAIL은 E2E 판정식 문제(무손실 webp 크기·minify 형식·디버그훅) — 보스파일은 정상이었음
+- [크래시 픽스] E2E 중 발견: PhaserGame audioDebug에 getBgmVolume 미import → 부팅 ReferenceError — import 추가 후 재빌드(릴리스 전 발견 — 실측의 중요성 재확인)
+- [릴리스] scripts/release_v1412.py — Release v1.4.12(id 400688994) 신규 생성·업로드·원격 재다운로드 md5 일치 ✓
+- [서버] 재기동 → /api/version 1.4.12/104·신규 NOTE 확인
+
+Stage Summary:
+- v1.4.12 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.12/SERTZ-v1.4.12.apk (versionCode 104, 135,519,065B, md5 478becd74dcac19743a4c65ea354ee9c, applicationId com.sertz.myapp)
+- 유저 지시 22건 전부 반영: 게임 내 AI 생성물 0(보스·여캐 전부 실 에셋), UI는 유저 제공 ui2 세트로 통일
+- GM 로그인·랭킹 실패의 근원은 "기본 접속 서버 sertz4가 구버전" — 클라에 원인 안내를 추가했으니 근본 해결은 유저가 서버 연결에서 최신 서버 주소로 변경하거나 sertz4를 최신 서버로 갱신해야 함
+- 운영 교훈: ①E2E는 빌드 체인을 &로 백그라운드화하면 미완성 상태를 검증한다 — 빌드→재기동→검증은 반드시 순차 실행 ②무손실 webp 픽셀아트는 200~500B가 정상 — 파일 크기 기준 판정 금지, 내용 실측(opaque 픽셀 수)이 정답 ③minify 후 프로퍼티는 aggr:.8 형태로 축약 — 번들 grep은 다형식 허용
+- 잔여: Play Console 데이터 보안 폼·서명 키 등록은 유저 측 작업 / admin 계정: admin / Sertz!2026 (본 워크스페이스 서버 기준 — sertz4는 별도)

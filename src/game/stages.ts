@@ -131,6 +131,10 @@ export type BossDef = {
   /** v1.4.12 (#18 보스 반대 방향 버그) — 원본 아트가 왼쪽을 바라보면 true (기본 false = 오른쪽 기준).
    *  플레이어 정면 판정이 이 플래그를 존중해 뒷돌기 버그를 없앤다. */
   faceLeft?: boolean;
+  /** v1.4.12 (#20 보스마다 패턴 차별화) — 시그니처 패턴: 뽑기 확률 2.6배 (보스 정체성 강화) */
+  sig?: BossAttackKind;
+  /** v1.4.12 (#20) — 공격 성향 (재공격 쿨 배수 — 1보다 작으면 더 공격적) */
+  aggr?: number;
 };
 
 export type StageDef = {
@@ -393,6 +397,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "guardian", name: "심연의 수호자",
     hp: 3200, atk: 24, speed: 92, exp: 320, gold: 220,
     tex: "boss", orbTint: 0x9d7aff, introDialogue: "bossIntroGuardian",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 slam · 성향 1.05 */
+    sig: "slam",
+    aggr: 1.05,
     /* 수호자 = 지진 — 마지막 페이즈에서 연속 낙뢰(심연 지진) 개방 */
     patterns: {
       p1: ["slam", "charge", "volley"],
@@ -404,6 +411,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "behemoth", name: "눈보라의 거수",
     hp: 5200, atk: 31, speed: 84, exp: 500, gold: 300,
     tex: "boss2", orbTint: 0x8ad4ff, introDialogue: "bossIntroBehemoth",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 spiral · 성향 0.95 */
+    sig: "spiral",
+    aggr: 0.95,
     /* 눈보라의 화신 — 나선 탄막(블리자드 스톰) 시그니처 */
     patterns: {
       p1: ["slam", "volley", "zones"],
@@ -415,6 +425,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "abysslord", name: "심연의 군주",
     hp: 8500, atk: 38, speed: 98, exp: 800, gold: 420,
     tex: "boss3", orbTint: 0xff5a7a, introDialogue: "bossIntroLord",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 summon · 성향 1.0 */
+    sig: "summon",
+    aggr: 1.0,
     /* 심연의 전술가 — 나선 탄막 + 최초의 반격 카운터 개방(2페이즈) */
     patterns: {
       p1: ["volley", "charge", "slam"],
@@ -427,6 +440,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "nidhog", name: "탐식의 드래곤 니드호그",
     hp: 3600, atk: 26, speed: 90, exp: 380, gold: 260,
     tex: "boss_nidhog", orbTint: 0x7dff9a, introDialogue: "bossIntroNidhog",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 beam · 성향 0.95 */
+    sig: "beam",
+    aggr: 0.95,
     /* 드래곤 — 독 브레스 스윕 빔 시그니처(2페이즈부터) */
     patterns: {
       p1: ["slam", "charge", "volley"],
@@ -439,6 +455,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "surt", name: "화염의 거인 수르트",
     hp: 5400, atk: 33, speed: 88, exp: 560, gold: 340,
     tex: "boss_surt", orbTint: 0xffa05a, introDialogue: "bossIntroSurt",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 zones · 성향 0.9 */
+    sig: "zones",
+    aggr: 0.9,
     /* 라그나로스 — 화염 스윕 빔 + 최후 연속 낙뢰(용암 분출) */
     patterns: {
       p1: ["slam", "volley", "zones"],
@@ -450,6 +469,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "fenrir", name: "탐욕의 늑대 펜리르",
     hp: 7400, atk: 36, speed: 96, exp: 640, gold: 380,
     tex: "boss_fenrir", orbTint: 0xc08aff, introDialogue: "bossIntroFenrir",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 charge · 성향 0.85 */
+    sig: "charge",
+    aggr: 0.85,
     /* 사슬이 묶인 늑대 — 2연속 돌진 + 그림자 급습(순간이동 강타) */
     chargeChain: 2,
     patterns: {
@@ -462,6 +484,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "skoll", name: "교만의 쌍랑 스콜&하티",
     hp: 8600, atk: 39, speed: 100, exp: 720, gold: 420,
     tex: "boss_skoll", orbTint: 0xffd97a, introDialogue: "bossIntroSkoll",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 blink · 성향 0.9 */
+    sig: "blink",
+    aggr: 0.9,
     /* 태양을 쫓는 쌍랑 — 3연속 교차 돌진(최종 페이즈 3회) + 스윕 빔 */
     chargeChain: 2,
     patterns: {
@@ -475,6 +500,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "gram", name: "혈안의 문지기 가름", /* v4.1.3 (#신화고증) — 구 표기 "대지의 괴물 그람": 그람(Gram)은 시구르드의 검이다. 헬의 대문을 지키는 존재는 사냥개 가름(Garmr) */
     hp: 10600, atk: 42, speed: 86, exp: 860, gold: 480,
     tex: "boss_gram", orbTint: 0x8affc0, introDialogue: "bossIntroGram",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 counter · 성향 1.0 */
+    sig: "counter",
+    aggr: 1.0,
     /* 헬의 문지기 — 반격 카운터(창을 놓치면 문이 닫힌다) + 그림자 급습 */
     patterns: {
       p1: ["slam", "charge", "volley", "zones"],
@@ -487,6 +515,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "abudditos", name: "종언의 마룡 아부디토스", /* v4.1.3 (#신화고증) — 구 표기 "니드그림"을 세계관 근원인 아부디토스로 통일 */
     hp: 14500, atk: 46, speed: 100, exp: 1200, gold: 650,
     tex: "boss_abudditos", orbTint: 0xff3a6a, introDialogue: "bossIntroAbudditos",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 ring · 성향 0.8 */
+    sig: "ring",
+    aggr: 0.8,
     /* 종언의 마룡 — 모든 시그니처 패턴의 종합 세트(마룡의 전례 없는 재앙) */
     chargeChain: 2,
     patterns: {
@@ -503,6 +534,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "vord", name: "재림의 파수꾼 베오르드",
     hp: 16800, atk: 50, speed: 92, exp: 1500, gold: 800,
     tex: "boss2", orbTint: 0xffb05a, introDialogue: "bossIntroAbudditos",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 quake · 성향 1.0 */
+    sig: "quake",
+    aggr: 1.0,
     /* 대지를 지키는 파수꾼 — 연속 낙뢰(지진) + 반격 카운터 */
     patterns: {
       p1: ["slam", "charge", "volley", "zones"],
@@ -515,6 +549,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "jorm", name: "세계수를 먹는 뱀 요르문간드",
     hp: 21500, atk: 55, speed: 104, exp: 1900, gold: 980,
     tex: "boss_nidhog", orbTint: 0x9affd0, introDialogue: "bossIntroAbudditos",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 beam · 성향 0.9 */
+    sig: "beam",
+    aggr: 0.9,
     /* 세계수를 감는 뱀 — 스윕 빔 + 나선 탄막 + 2연속 돌진 */
     chargeChain: 2,
     patterns: {
@@ -528,6 +565,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "nagr", name: "재림의 종언 나그라파르",
     hp: 30000, atk: 62, speed: 108, exp: 2600, gold: 1400,
     tex: "boss_abudditos", orbTint: 0xffd76a, introDialogue: "bossIntroAbudditos",
+    /* v1.4.12 (#20 보스 정체성) — 시그니처 spiral · 성향 0.8 */
+    sig: "spiral",
+    aggr: 0.8,
     /* 종언을 먹는 존재 — 재림 지역 최종 보스, 전 패턴 종합 + 카오스급 구성 */
     chargeChain: 2,
     patterns: {

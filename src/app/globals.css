@@ -203,8 +203,8 @@ body {
  *  라운드 글래스+보라 코러 → "딥 네이비 바디 + 우드 프레임 + 금선" 고전 게임 UI.
  *  인테리어 텍스트(white/xx) 가독성 유지를 위해 바디는 어둡게, 프레임만 따뜻하게. */
 .sertz-panel {
-  background-color: #141c31;
-  background-image: linear-gradient(180deg, #1b2440 0%, #141c31 52%, #0e1526 100%);
+  background-color: #100c08;
+  background-image: url("/assets/ui2/panel.webp");
   background-size: 100% 100%;
   background-repeat: no-repeat;
 }
@@ -234,27 +234,28 @@ body {
 .sertz-listrow { background-image: url("/assets/ui2/list.webp"); background-size: 100% 100%; }
 .sertz-listrow-sel { background-image: url("/assets/ui2/list_sel.webp"); background-size: 100% 100%; }
 
-/* ═══════════ v1.0.20 — 게임형 UI 디자인 시스템 "이그드라실 왕가" ═══════════
- *  유저 지시 "AI스러운 ui 전면 교체" — 제너릭 글래스모피즘(slate-950+보라 border+rounded-xl)
- *  을 고전 MMORPG 프레임으로 교체한다:
- *   · .game-panel      — 패널 본체: 딥 네이비 그라데이션 바디 + 우드 이중 프레임 + 내곽 금선
- *   · .game-panel h2   — 패널 제목: 금색 네임플레이트 (하단 이중 룰)
- *   · .game-btn        — 주 버튼: 금빛 베벨 (우드 보더 + 하단 암석 그림자, active 눌림)
- *   · .game-btn-ghost  — 보조 버튼: 우드 배경 + 금 테두리
- *   · .game-chip       — HUD 칩/버튼: 우드 프레임 네이비 칩
- *   · .game-tab / -on  — 패널 탭
- *   · .game-input      — 입력 필드
- *  디자인 규약: radius ≤ 8px(픽셀 게임 각), 그림자는 하단 경질(hard) 음영, 포인트 컬러는
- *  gold(#e8c064)·wood(#7a5a2e)·navy(#141c31) — 인디고/바이올렛 그라데이션 금지 */
+/* ═══════════ v1.4.12 (#10/#22 유저 지시 "내가 준 UI 에셋으로 ai로 생성한 Ui 및 짜치는 UI 전면 교체해") ═══════════
+ *  게임형 UI 디자인 시스템 전체를 유저 제공 ui2 에셋 세트로 교체 (아이콘 제외):
+ *   · .game-panel      → ui2/panel_big (다크 패널 + 주황 프레임이 박제된 텍스처 — 100% 스트레치)
+ *   · .game-panel h2   → ui2/header (제목 네임플레이트)
+ *   · .game-btn        → ui2/button (다크 버튼 + 주황 테두리) — 글자는 밝은 금색으로 통일
+ *   · .game-btn-ghost  → ui2/button 저휘도 변형
+ *   · .game-btn-danger → ui2/button × 적색 블렌드
+ *   · .game-chip       → ui2/button (작은 칩 — 테두리 박제)
+ *   · .game-tab/-on    → ui2/button 휘도 변형 2종
+ *   · .game-input      → ui2/input
+ *   · .sertz-panel     → ui2/panel
+ *  배경 텍스처는 background-size:100% 100% 스트레치(코드베이스 기존 규약) — 프레임이 텍스처에 박제되므로 CSS 보더 제거.
+ *  패널 등장 애니(panelIn)와 하드 음영은 유지. */
 
 .game-panel {
-  background-color: #141c31;
-  background-image: linear-gradient(180deg, #1c2643 0%, #151e36 48%, #0e1526 100%);
-  border: 2px solid #7a5a2e;
-  border-radius: 8px;
+  background-color: #100c08;
+  background-image: url("/assets/ui2/panel_big.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
   box-shadow:
-    inset 0 0 0 1px #e8c06466,      /* 내곽 금선 */
-    inset 0 0 0 3px #241a0d,        /* 금선 아래 암선 — 우드 깊이 */
     0 10px 0 rgba(0, 0, 0, 0.35),   /* 하단 경질 음영 */
     0 22px 44px rgba(0, 0, 0, 0.55);
 }
@@ -267,106 +268,131 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .game-panel { animation: none; }
 }
-/* 패널 제목 — 금색 네임플레이트 */
+/* 패널 제목 — ui2 헤더 네임플레이트 */
 .game-panel h2 {
   color: #ffd98a;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.65);
-  border-bottom: 2px solid #7a5a2e;
-  box-shadow: 0 3px 0 -1px #e8c06455;
-  padding-bottom: 6px;
-  margin-bottom: 8px;
+  background-image: url("/assets/ui2/header.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  box-shadow: none;
+  border-radius: 3px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
 }
-/* 주 버튼 — 금빛 베벨 */
+/* 주 버튼 — ui2 버튼 텍스처 (다크 바디 + 주황 프레임 박제, 글자는 밝은 금색) */
 .game-btn {
-  background-image: linear-gradient(180deg, #ffe49a 0%, #f0b64a 45%, #c8871f 100%);
-  border: 2px solid #6b4a1c;
-  border-radius: 7px;
-  color: #3a2508;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  background-color: #191007;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
+  color: #ffe9c0;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
   box-shadow:
-    inset 0 1px 0 #fff3c9,
-    inset 0 -2px 0 #9a6410,
-    0 3px 0 #4a3210,
-    0 6px 12px rgba(0, 0, 0, 0.45);
-  transition: transform 0.06s ease, filter 0.12s ease;
-}
-.game-btn:hover { filter: brightness(1.06); }
-.game-btn:active {
-  transform: translateY(2px);
-  box-shadow:
-    inset 0 1px 0 #fff3c9,
-    inset 0 -2px 0 #9a6410,
-    0 1px 0 #4a3210,
-    0 3px 8px rgba(0, 0, 0, 0.45);
-}
-.game-btn:disabled {
-  filter: grayscale(0.8) brightness(0.75);
-  cursor: not-allowed;
-}
-/* 보조 버튼 — 우드+금테두리 */
-.game-btn-ghost {
-  background-image: linear-gradient(180deg, #2a2013 0%, #1d1610 100%);
-  border: 2px solid #8a6a34;
-  border-radius: 7px;
-  color: #f0e2c0;
-  box-shadow:
-    inset 0 1px 0 #e8c06433,
-    0 3px 0 #17110a,
+    0 3px 0 rgba(0, 0, 0, 0.5),
     0 6px 12px rgba(0, 0, 0, 0.4);
   transition: transform 0.06s ease, filter 0.12s ease;
 }
-.game-btn-ghost:hover { filter: brightness(1.15); }
+.game-btn:hover { filter: brightness(1.14) saturate(1.08); }
+.game-btn:active {
+  transform: translateY(2px);
+  filter: brightness(0.92);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+.game-btn:disabled {
+  filter: grayscale(0.8) brightness(0.7);
+  cursor: not-allowed;
+}
+/* 보조 버튼 — ui2 버튼 저휘도 변형 */
+.game-btn-ghost {
+  background-color: #120d07;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
+  color: #e8d8b0;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
+  filter: brightness(0.72) saturate(0.8);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45), 0 6px 12px rgba(0, 0, 0, 0.35);
+  transition: transform 0.06s ease, filter 0.12s ease;
+}
+.game-btn-ghost:hover { filter: brightness(0.95) saturate(1); }
 .game-btn-ghost:active {
   transform: translateY(2px);
-  box-shadow: inset 0 1px 0 #e8c06433, 0 1px 0 #17110a;
+  filter: brightness(0.65);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
 }
-/* HUD 칩/아이콘 버튼 — 우드 프레임 네이비 칩 */
+/* HUD 칩/아이콘 버튼 — ui2 버튼 텍스처 (작은 프레임) */
 .game-chip {
-  background-image: linear-gradient(180deg, #1c2643 0%, #101827 100%);
-  border: 2px solid #7a5a2e;
-  border-radius: 7px;
+  background-color: #16100a;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
   box-shadow:
-    inset 0 0 0 1px #e8c06440,
     0 2px 0 rgba(0, 0, 0, 0.45),
     0 5px 10px rgba(0, 0, 0, 0.35);
 }
 .game-chip:active { transform: translateY(1px); }
-/* 패널 탭 */
+/* 패널 탭 — ui2 버튼 휘도 변형 2종 */
 .game-tab {
-  background-image: linear-gradient(180deg, #241c10 0%, #191308 100%);
-  border: 1px solid #6b5327;
-  border-radius: 6px;
+  background-color: #120d07;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
   color: #cbb88a;
-  box-shadow: inset 0 1px 0 #e8c06422;
+  filter: brightness(0.6) saturate(0.75);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
 }
 .game-tab-on {
-  background-image: linear-gradient(180deg, #ffe49a 0%, #e8ab3c 100%);
-  border: 1px solid #6b4a1c;
-  color: #3a2508;
-  box-shadow: inset 0 1px 0 #fff3c9, 0 2px 6px rgba(0, 0, 0, 0.4);
+  background-color: #1c1208;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
+  color: #ffe9c0;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+  filter: brightness(1.3) saturate(1.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
 }
-/* 입력 필드 */
+/* 입력 필드 — ui2 인풋 텍스처 */
 .game-input {
-  background: #0b1120;
-  border: 2px solid #7a5a2e;
-  border-radius: 6px;
+  background-color: #120d08;
+  background-image: url("/assets/ui2/input.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
   color: #f5ecd6;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
 }
 .game-input:focus {
-  border-color: #e8c064;
   outline: none;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 0 1px #e8c06488;
+  filter: brightness(1.22);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 1px #e8a75c88;
 }
-/* 위험/삭제 버튼 */
+/* 위험/삭제 버튼 — ui2 버튼 × 적색 블렌드 */
 .game-btn-danger {
-  background-image: linear-gradient(180deg, #ff9a8a 0%, #e05545 55%, #a32e22 100%);
-  border: 2px solid #5e1810;
-  border-radius: 7px;
+  background-color: #8c2418;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-blend-mode: multiply;
+  border: none;
+  border-radius: 4px;
   color: #fff1ec;
-  box-shadow: inset 0 1px 0 #ffc9bd, 0 3px 0 #4a120c, 0 6px 12px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 6px 12px rgba(0, 0, 0, 0.45);
 }
-.game-btn-danger:active { transform: translateY(2px); box-shadow: inset 0 1px 0 #ffc9bd, 0 1px 0 #4a120c; }
+.game-btn-danger:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5); }
 
 /* v4.1.5 — Galmuri 한글 픽셀 폰트 (npm galmuri, SIL OFL 1.1) — 게임 UI 전체 아이덴티티 */
 html, body {
