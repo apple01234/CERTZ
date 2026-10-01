@@ -2568,3 +2568,22 @@ Work Log:
 Stage Summary:
 - 워크스페이스가 소유자의 검증된 워크플로(production 서버 상시 구동)와 동일한 상태가 됨
 - 생성 페이지에서 재배포하면 sertz11.space-z.ai가 정상 서빙될 것으로 판단됨
+
+---
+Task ID: deploy-4
+Agent: Super Z (main)
+Task: Vercel 배포 준비 — 서버리스 호환 라우트 + 설정 추가, GitHub 푸시
+
+Work Log:
+- Vercel 호환성 분석: socket.io 멀티/계정API(accounts/index.js)는 커스텀 서버 의존 → 서버리스에서 불가. 게임 본체는 클라이언트 사이드라 단일플레이 정상 동작(웹에서 ServerConnect null 렌더 확인)
+- Prisma 미사용 확인(src에서 import 없음) → DB 걱정 없음
+- src/app/api/version/route.ts 신설: 서버리스에서 버전 게이트 응답(force-static, server.js와 v1.4.16 수동 싱크 주석)
+- vercel.json 신설: nextjs 프레임워크, buildCommand=next build(postbuild 스킵 — standalone 주입은 Vercel 불필요), PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD/ELECTRON_SKIP_BINARY_DOWNLOAD=1, DATABASE_URL 더미
+- npm run build 재검증: 7/7 페이지, /api/version 정적 생성, 컴파일 10.9s
+- production 서버 재기동(포트 3000, GET / 200, /api/version 정상)
+- 커밋 196e798 push(origin/main) — route.ts + vercel.json
+- Vercel CLI v62.1.0 설치 확인, 인증 토큰 없음 → 유저가 대시보드 임포트 또는 토큰 제공 필요
+
+Stage Summary:
+- GitHub main에 Vercel 배포 준비 완료. 유저가 vercel.com/new에서 저장소 임포트하면 바로 배포 가능
+- 제한: Vercel에서 멀티플레이/회원가입/클라우드세이브는 서버 기능이라 불가(단일플레이만) — 풀기능은 플랫폼 배포(sertz11) 또는 자체 호스팅 유지
