@@ -2329,3 +2329,24 @@ Stage Summary:
 - 게임 빌드에 필요한 모든 파일 보존 (소스/에셋/android 설정) — 불필요한 skills 디자인 템플릿·Unity 추출물·Kenney 팩·로그만 제거
 - 로컬 워크스페이스 파일은 그대로 (git 추적만 해제) — 다음 작업 시에도 접근 가능
 - 히스토리는 3개 커밋만 남음 (12e7d23 accounts backup / 7901dff v1.4.13 / 4640580 정리) — worklog.md에 전 작업 내역 보존되어 있어 컨텍스트 손실 없음
+
+---
+Task ID: V1413c
+Agent: Super Z (메인)
+Task: 배포 실패 2차 수정 — "프로젝트 폴더 안에 CERTZ 폴더가 있어서 빌드 안됨" — 프로젝트 파일을 루트로 이동
+
+Work Log:
+- [진단] 유저 리포트: "프로젝트 폴더 안에 CERTZ 폴더가 있고 그 안에 파일들이 있어서 서버 빌드간 안된다고" + 스크린샷
+- [확인] /home/z/my-project/ (배포 루트) 안에 /home/z/my-project/CERTZ/ 하위 폴더로 모든 프로젝트 파일이 들어있었음 — 배포 플랫폼이 루트의 package.json을 찾지만 실제론 CERTZ/package.json에 있어서 빌드 실패
+- [루트 stub 제거] /home/z/my-project/.git, .env, .gitignore (빈 workspace stub) 제거 + tool-results/ 제거 + download/README.md 제거
+- [CERTZ/* → 루트로 이동] shopt dotglob로 숨김파일(.git, .env, .gitignore, .apk-hold, .next, .next-apk, .zscripts) 포함 전부 이동. skills/는 플랫폼 관리 폴더라 충돌 시 CERTZ/skills는 제거 (이미 git에서 untrack됨)
+- [검증] 핵심 파일 모두 루트에 존재: package.json 1.4.13, server.js, .env (admin/Sertz!2026 포함), .gitignore, src/, public/, android/, scripts/, accounts/, multiplayer/
+- [서버 재기동] cd /home/z/my-project && node server.js → 포트 3000 정상 LISTEN
+- [엔드포인트 실측] /api/version 1.4.13/105, /api/auth/login admin/Sertz!2026 200 role:admin, / 200 OK, /assets/ui2/book_panel.webp 200, /assets/chf0_idle0.webp 200, /SERTZ-v1.4.13.apk 307 redirect
+- [git 상태] working tree clean — git는 cwd 기준으로 동작하므로 파일 위치 이동이 tracked 상태에 영향 없음. push 불필요 (이미 121dc5b로 최신 상태 동기화됨)
+
+Stage Summary:
+- 저장소 구조 변경: /home/z/my-project/CERTZ/* → /home/z/my-project/* (한 단자 위로 평탄화)
+- 배포 플랫폼이 /home/z/my-project/package.json을 찾을 수 있게 됨 — "프로젝트 안에 또다른 프로젝트" 문제 해결
+- 로컬 워크스페이스에서 모든 작업은 그대로 진행 가능 (git 추적 파일 변화 없음)
+- 서버 정상 구동 + 모든 API/에셋 엔드포인트 200 OK
