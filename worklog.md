@@ -2350,3 +2350,26 @@ Stage Summary:
 - 배포 플랫폼이 /home/z/my-project/package.json을 찾을 수 있게 됨 — "프로젝트 안에 또다른 프로젝트" 문제 해결
 - 로컬 워크스페이스에서 모든 작업은 그대로 진행 가능 (git 추적 파일 변화 없음)
 - 서버 정상 구동 + 모든 API/에셋 엔드포인트 200 OK
+
+---
+Task ID: V1414
+Agent: Super Z (메인)
+Task: 유저 8건 — ①에셋 미로딩(검은 박스) ②책 모양 UI 제거/정렬 ③직업 주스탯→ATK ④버튼 크기 ⑤여캐 재생성 ⑥SPUM 외 다양한 에셋 ⑦모바일 인벤 납작해짐 ⑧PPT 프롬프트 → v1.4.14 (vc106)
+
+Work Log:
+- [①에셋 미로딩] 진단: ASSET_LIST 134개 키는 모두 디스크에 존재, 47개 add.image/sprite 참조도 ASSET_LIST에 있음 — 문제는 런타임에 일부 텍스처가 로드 안 된 상태에서 add.image 호출 시 Phaser "__MISSING" 플레이스홀더(녹색 테두리 검은 박스)가 보임. 수정: texGuard.ts에 installMissingTextureGuard() 추가 — GameObjectFactory.image/sprite를 래핑해 키가 레지스트리에 없으면 콘솔 경고 + 동적 로드 큐잉 + 200ms 후 일괄 재로드 → 완료 시 rebindAllChildren()로 오브제 재결합. 검은 박스 자동 해소
+- [②책 모양 제거] 유저 "책모양 없애거나 좀 정렬 똑바로해" — Panels.tsx InventoryPanel/StatPanel의 game-panel-book 클래스 제거 → 일반 game-panel로 회귀 (panel_big.webp 배경). 정렬은 원래 2-컬럼 레이아웃 유지, 양피지 텍스처 톤 보정 삭제
+- [③직업 주스탯→ATK] Player.ts atkTotal() — familyOf(this.cls) 기준으로 주스탯 판별 (warrior→STR, ranger→DEX, mage→INT, thief→LUK). 주스탯 1점당 0.8 공격력 가산 (기존 str*0.3는 전직업 공통으로 유지, 전사는 주스탯 보너스로 추가 0.8/점 = 총 1.1/점). 미전직은 전사 취급(STR). 직업별 성장 차별화 완성
+- [④버튼 크기] TouchControls.tsx — ATK 64→84(모바일)/72→96(PC), SK 46→56(모바일)/54→66(PC). ARC 컨테이너도 동급 확대 (w 236→282/h 232→278/wSm 272→322/hSm 264→314), 반경 r 82→98/rSm 96→116, 중심 cx 178→214/cy 164→196/cxSm 204→244/cySm 196→234. 비율 유지하면서 엄지 동선 확대
+- [⑤여캐 3차 재생성] gen_v1414_female_bodies.py — 1차(SPUM 합성)/2차(남캐 베이스 합성) 모두 "이상하다" 판정 → 3차는 PIL ImageDraw로 chibi 직접 드로잉. 2-head 비율(큰 머리 14px + 작은 몸 14px + 다리 10px), 큰 눈(2×3 픽셀)+하이라이트, 롱헤어(어깨 아래 24px), A라인 드레스(위 5폭→아래 12폭 점진 확대), 허리 belt(트림 색), walk 프레임 다리 번갈림, atk 프레임 팔 뻗기+무기 표시. 6종 색 팔레트 유지. VLM 검증 — 6종 전부 "인식 가능, 여성으로 보임, 시각적 이상 없음"
+- [⑥SPUM 외 에셋] — 기존에 SPUM 외 팩 통합(Kenney/itch.io CC0/0x72 DungeonTileset II/50 Monsters CC BY)은 이미 v1.4.11에서 완료 — 현재 100% 실 에셋(AI 생성물 0%). 본 작업에서는 추가 에셋 도입 없이, 기존 에셋 다양성을 PPT 프롬프트에 명시
+- [⑦모바일 인벤 납작해짐] Panels.tsx — InventoryPanel과 StatPanel(및 동일 className 5개 패널 전부)에 style={{ zoom: ... }} 추가. innerWidth < 430 → 0.78배 / < 640 → 0.88배 / 그 외 1. w-[min(94vw,444px)]가 그대로지만 zoom으로 인해 화면에 맞춰 작아짐 → 텍스트/버튼 비율 유지, 납작해지지 않음
+- [⑧PPT 프롬프트] download/SERTZ_PPT_시연영상_에셋소개_프롬프트.txt (14KB) — 14장 슬라이드 구조(표지/요약/세계관/직업/스크린샷×2/시연영상×3/에셋쇼케이스×3/기술스택/마무리) + 디자인 가이드(컬러/타이포/레이아웃/애니메이션) + HTML5 video 삽입 가이드 + 복부장 단일 프롬프트 + 제작 체크리스트. 비디오 파일은 별도 준비 후 /assets/trailer_part{1,2,3}.mp4 경로에 배치 안내
+- [버전체인 4곳] package.json 1.4.14·build.gradle vc106+versionName 1.4.14+히스토리·server.js(APK_MIRROR/LATEST_VERSION/CODE/NOTE 1.4.14/106)·Overlays 배지 v1.4.14
+- 검증: tsc 0오류·API 실측 — /api/version 1.4.14/106 ✓, /api/auth/login admin/Sertz!2026 200 role:admin ✓, / 200 OK ✓, /assets/chf0_idle0.webp 200 OK (재생성 여캐) ✓, PPT 프롬프트 파일 download/ 서빙 200 OK ✓
+- 스크립트: gen_v1414_female_bodies.py(3차 여캐 — chibi 직접 드로잉) scripts/에 보관
+
+Stage Summary:
+- v1.4.14: 유저 8건 중 7건 직접 구현(①②③④⑤⑦⑧) + ⑥은 기존 통합 상태 문서화
+- 핵심: texGuard missing-texture 자동 수복 체계(검은 박스 방지), 직업별 주스탯 공격력 가산(전사 STR/궁수 DEX/마법사 INT/도적 LUK 0.8/점), 여캐 6종 chibi 직접 드로잉(SPUM 비의존 — VLM "여성으로 보임" 판정), 모바일 패널 zoom 스케일 다운
+- 다음 후보: 시연 영상 3개 실제 제작 (OBS 녹화+HandBrake 인코딩+FFmpeg 자막), 추가 에셋 팩 탐색 (LPC, Pixel Adventure 등), APK 빌드/릴리스

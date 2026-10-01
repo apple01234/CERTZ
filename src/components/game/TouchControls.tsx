@@ -18,21 +18,22 @@ const JOY_RADIUS = 64;
  *  극좌표 헬퍼: 각도(°)와 반경(px) → 버튼 left/top (버튼 중심 기준) */
 const ARC = {
   /** 컨테이너 크기 (sm: 태블림/PC 확대) */
-  w: 236,
-  h: 232,
-  wSm: 272,
-  hSm: 264,
+  /* v1.4.14 (#4) — 버튼 확대(64→84/72→96)에 맞춰 컨테이너도 동급 확대 */
+  w: 282,
+  h: 278,
+  wSm: 322,
+  hSm: 314,
   /** 스킬 반경 — 공격 버튼 중심에서 스킬 버튼 중심까지 */
-  r: 82,
-  rSm: 96,
+  r: 98,
+  rSm: 116,
   /** 시작/종료 각도 (°, 수학 좌표계 — 180=왼쪽, 90=위) */
   a0: 196,
   a1: 74,
   /** 공격 버튼 중심 = 컨테이너 우하단 코너에서 안쪽으로 */
-  cx: 178,
-  cy: 164,
-  cxSm: 204,
-  cySm: 196,
+  cx: 214,
+  cy: 196,
+  cxSm: 244,
+  cySm: 234,
 };
 
 /** 극좌표 → 컨테이너 내 left/top (버튼 중심 기준 px) */
@@ -212,7 +213,11 @@ export function TouchControls({
   const CR = sm ? ARC.rSm : ARC.r;
   const CCX = sm ? ARC.cxSm : ARC.cx;
   const CCY = sm ? ARC.cySm : ARC.cy;
-  const ATK = sm ? 72 : 64; // 공격 버튼 지름
+  /* v1.4.14 (#4 버튼 크기) — 유저 지시 "기본 공격 키가 너무너무 작고, 스킬키는 조금 작아"
+   *  공격 버튼 64→84 (모바일) / 72→96 (PC) — 대폭 확대
+   *  스킬 버튼 46→56 (모바일) / 54→66 (PC) — 살짝 확대
+   *  컨테이너/반경/중심도 함께 확대 — 비율 유지 */
+  const ATK = sm ? 96 : 84; // 공격 버튼 지름 (확대)
 
   const unlocked = [
     { key: "s1", name: s1Name || "회전베기", mp: 15, ready: s1Ready, cd: s1Pct, icon: skills.s1Icon, emit: "input:skill1" },
@@ -222,7 +227,8 @@ export function TouchControls({
   ].filter((s) => s.name); // 미해금(빈 이름) 스킬은 아크에서 제외
   const hasUlt = !!s5Name;
   const angles = arcAngles(unlocked.length + (hasUlt ? 1 : 0));
-  const SK = sm ? 54 : 46; // 스킬 버튼 지름
+  /* v1.4.14 (#4) — 스킬 버튼 지름 확대: 46→56 (모바일) / 54→66 (PC) */
+  const SK = sm ? 66 : 56; // 스킬 버튼 지름 (확대)
 
   return (
     <>

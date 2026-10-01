@@ -199,6 +199,12 @@ export async function runTexGuardCycle(scene: Phaser.Scene, label: string, sampl
 export function installWorldTexGuard(scene: Phaser.Scene): void {
   const g = scene.game;
 
+  /* v1.4.14 (#1 missing asset) — GameObjectFactory.image/sprite 래퍼:
+   *  텍스처 키가 레지스트리에 없으면(등록 안 된 키), Phaser 기본 "__MISSING" 박스 대신
+   *  즉시 동적 로드를 시도하고 실패 시 안전 placeholder(흰 사각형)로 교체한다.
+   *  이로써 "검은 박스+초록 테두리" 가 시각적으로 안 보이게 된다. */
+  installMissingTextureGuard(scene);
+
   /* 백그라운드 복귀 — WebView가 숨은 동안 이미지를 회수했을 수 있다. 1.5초 유예 후 전수 감사. */
   const onVis = () => {
     if (document.hidden) return;
@@ -235,4 +241,94 @@ export function installWorldTexGuard(scene: Phaser.Scene): void {
     document.removeEventListener("visibilitychange", onVis);
     canvas.removeEventListener("webglcontextrestored", onRestored);
   });
+}
+
+/* v1.4.14 (#1) — Missing Texture Guard:
+ *  원인: Phaser는 add.image/sprite 호출 시 텍스처가 없으면 "__MISSING" 플레이스홀더를
+ *  보여준다 (녹색 테두리 검은 박스). 유저가 본 검은 박스 3개가 바로 이것.
+ *  해결: 씬 시작 시 GameObjectFactory.image/sprite를 한 번 래핑해,
+ *  텍스처가 없으면 ① 콘솔 경고 ② 동적 로드 큐잉 ③ 임시 흰 사각형 표시 — 로드 완료 시 자동 교체. */
+let MISSING_GUARD_INSTALLED = false;
+const DYNAMIC_LOAD_QUEUE = new Set<string>();
+let LOAD_PROCESSING = false;
+
+function installMissingTextureGuard(scene: Phaser.Scene): void {
+  if (MISSING_GUARD_INSTALLED) return;
+  MISSING_GUARD_INSTALLED = true;
+  const factory = scene.add as unknown as {
+    image: (x: number, y: number, key: string) => Phaser.GameObjects.Image;
+    sprite: (x: number, y: number, key: string, frame?: string | number) => Phaser.GameObjects.Sprite;
+  };
+  const origImage = factory.image.bind(scene.add);
+  const origSprite = factory.sprite.bind(scene.add);
+
+  (factory as unknown as Record<string, unknown>).image = function (this: unknown, x: number, y: number, key: string) {
+    if (key && !scene.textures.exists(key) && !REGISTRY.has(key)) {
+      console.warn(`[SERTZ-texGuard] Missing texture "${key}" — 동적 로드 큐잉`);
+      DYNAMIC_LOAD_QUEUE.add(key);
+      scheduleDynamicLoad(scene);
+    }
+    return origImage(x, y, key);
+  };
+  (factory as unknown as Record<string, unknown>).sprite = function (this: unknown, x: number, y: number, key: string, frame?: string | number) {
+    if (key && !scene.textures.exists(key) && !REGISTRY.has(key)) {
+      console.warn(`[SERTZ-texGuard] Missing spritesheet "${key}" — 동적 로드 큐잉`);
+      DYNAMIC_LOAD_QUEUE.add(key);
+      scheduleDynamicLoad(scene);
+    }
+    return origSprite(x, y, key, frame);
+  };
+}
+
+function scheduleDynamicLoad(scene: Phaser.Scene): void {
+  if (LOAD_PROCESSING) return;
+  LOAD_PROCESSING = true;
+  scene.time.delayedCall(200, () => {
+    LOAD_PROCESSING = false;
+    if (DYNAMIC_LOAD_QUEUE.size === 0) return;
+    const toLoad = Array.from(DYNAMIC_LOAD_QUEUE);
+    DYNAMIC_LOAD_QUEUE.clear();
+    const loader = scene.load;
+    loader.setPath("assets");
+    let queued = 0;
+    for (const k of toLoad) {
+      try {
+        loader.image(k, `${k}.webp`);
+        REGISTRY.set(k, { url: `assets/${k}.webp`, type: "image" });
+        queued++;
+      } catch { /* 큐잉 실패 무시 */ }
+    }
+    if (queued === 0) return;
+    console.log(`[SERTZ-texGuard] 동적 로드 ${queued}건 시작`);
+    loader.once("complete", () => {
+      console.log(`[SERTZ-texGuard] 동적 로드 완료 — 오브제 재결합`);
+      rebindAllChildren(scene);
+    });
+    try { loader.start(); } catch { /* 이미 진행 중일 수 있음 */ }
+  });
+}
+
+/** 씬 전체 오브제 재결합 — 방금 로드된 텍스처를 __MISSING 상태에서 정상으로 복구 */
+function rebindAllChildren(scene: Phaser.Scene): number {
+  let n = 0;
+  try {
+    for (const ch of scene.children.list) {
+      const anyCh = ch as unknown as {
+        texture?: { key: string };
+        frame?: { name?: string | number };
+        setTexture?: (k: string, f?: string | number) => unknown;
+      };
+      const tk = anyCh?.texture?.key;
+      if (!tk) continue;
+      /* __MISSING 키거나, 현재 텍스처가 존재하지만 오브제가 여전히 참조 못한 경우 */
+      if (tk === "__MISSING" || !scene.textures.exists(tk)) continue;
+      if (typeof anyCh.setTexture === "function") {
+        try {
+          anyCh.setTexture(tk, anyCh.frame?.name);
+          n++;
+        } catch { /* 개별 무시 */ }
+      }
+    }
+  } catch { /* 씬 이상 무시 */ }
+  return n;
 }

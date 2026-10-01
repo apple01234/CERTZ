@@ -30,7 +30,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.13/SERTZ-v1.4.13.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.14/SERTZ-v1.4.14.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -63,9 +63,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.13";
-  const LATEST_CODE = 105;
-  const VERSION_NOTE = "v1.4.13 — 유저 지시 6건: ①download 폴더 정리(불필요한 프롬프트·대형 아키텍처 문서 제거) ②책 모양 GUI 적용(인벤토리+스탯 패널에 열린 책 텍스처 book_panel.webp·book_header.webp) ③여캐 6종 재생성(남캐 베이스 + 롱헤어 + A라인 스커트 — 진홍전사/보라마법사/숲궁수/백은성직자/흑의도적/하늘왕녀) ④admin 로그인 수정(.env + server.js @next/env 로드 — admin / Sertz!2026) ⑤퍼포먼스 최적화(Phaser batchSize 4096·desynchronized·maxTextures 16·fps smoothStep·physics useTree 공간분할) ⑥셰이더 약화(눈 맵 파티클 빈도 130→240ms/알파 0.8→0.42, 보스 블룸 blendAmount 0.46→0.24, 앰비언트 블룸 0.32→0.14, 비네트 0.14→0.06, 보스 라이트 0.34→0.18, 니플헤임 암전 0.28→0.18)";
+  const LATEST_VERSION = "1.4.14";
+  const LATEST_CODE = 106;
+  const VERSION_NOTE = "v1.4.14 — 유저 8건: ①texGuard 강화(missing texture 자동 재로드) ②책 모양 UI 제거(일반 패널 회귀) ③직업 주스탯 → ATK (전사 STR/궁수 DEX/마법사 INT/도적 LUK 0.8/점) ④기본공격 버튼 64→84, 스킬 46→56 확대 ⑤여캐 6종 chibi 직접 드로잉 (SPUM 비의존) ⑥SPUM 외 다양한 에셋 통합 (Kenney/itch.io CC0/0x72/50 Monsters) ⑦모바일 인벤 납작해짐 수정 (zoom 스케일 0.78/0.88) ⑧PPT 프롬프트 작성 (시연 영상+에셋 소개)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

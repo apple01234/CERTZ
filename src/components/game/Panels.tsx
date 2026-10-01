@@ -1553,8 +1553,12 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       onPointerDown={onClose}
     >
+      {/* v1.4.14 (#7 모바일 인벤 납작해짐) — 작은 화면에서 전체 스케일 다운 (transform 대신 zoom 사용으로 레이아웃 안정).
+       *  모바일(≤430px)은 0.78배 축소, 태블릿/PC는 원본. w-[min(94vw,444px)]가 그대로지만 scale로 인해 화면에 맞춰 작아짐.
+       *  세로는 max-h-[94svh]로 충분히 커버 → 납작해지지 않음 */}
       <div
-        className="game-panel game-panel-book flex max-h-[min(94svh,680px)] w-[min(94vw,444px)] flex-col overflow-hidden"
+        className="game-panel flex max-h-[min(94svh,680px)] w-[min(94vw,444px)] flex-col overflow-hidden"
+        style={{ zoom: typeof window !== "undefined" && window.innerWidth < 430 ? 0.78 : window.innerWidth < 640 ? 0.88 : 1 }}
         onPointerDown={(e) => e.stopPropagation()}
       >
         {/* 타이틀 바 (메이플 EQUIPMENT / INVENTORY) */}
@@ -3328,6 +3332,7 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
     >
       <div
         className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
+        style={{ zoom: typeof window !== "undefined" && window.innerWidth < 430 ? 0.78 : window.innerWidth < 640 ? 0.88 : 1 }}
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -3597,7 +3602,8 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel game-panel-book p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
+        style={{ zoom: typeof window !== "undefined" && window.innerWidth < 430 ? 0.78 : window.innerWidth < 640 ? 0.88 : 1 }}
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -3718,6 +3724,7 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
     >
       <div
         className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
+        style={{ zoom: typeof window !== "undefined" && window.innerWidth < 430 ? 0.78 : window.innerWidth < 640 ? 0.88 : 1 }}
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -3889,6 +3896,7 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
     >
       <div
         className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
+        style={{ zoom: typeof window !== "undefined" && window.innerWidth < 430 ? 0.78 : window.innerWidth < 640 ? 0.88 : 1 }}
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
@@ -4066,6 +4074,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
     >
       <div
         className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
+        style={{ zoom: typeof window !== "undefined" && window.innerWidth < 430 ? 0.78 : window.innerWidth < 640 ? 0.88 : 1 }}
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">

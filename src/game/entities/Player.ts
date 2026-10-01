@@ -3477,8 +3477,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /* ---------------- RPG 기본 요소 ---------------- */
 
-  /** 장비+강화+클래스 경로+힘 스탯 포함 실제 공격력 (v1.9: 힘 +0.3/점, 분노 버프 +25%)
-   *  v3.0.5 — 스타포스 마일스톤(★5/10/15) 공격 보너스 반영 */
+  /** 장비+강화+클래스 경로+직업 주스탯 포함 실제 공격력 (v1.9: 힘 +0.3/점, 분노 버프 +25%)
+   *  v3.0.5 — 스타포스 마일스톤(★5/10/15) 공격 보너스 반영
+   *  v1.4.14 (#3 직업 주스탯 → ATK) — 전사 STR/궁수 DEX/마법사 INT/도적 LUK 1점당 공격력 +0.5
+   *  기존 str*0.3에서 직업 주스탯은 0.8/점으로 상향 (주스탯 1점 = 공격력 약 0.8 증가) */
   get atkTotal(): number {
     /* v3.0.15 (#13) — 무기 잠재옵션 공격력 합산 */
     const potAtk = sumPotLines([this.potentials[this.weapon]]).atk;
@@ -3489,9 +3491,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     for (const k of this.accessories) accStarAtk += starAccBonus(this.accUp[k] ?? 0, ITEMS[k]).atk;
     /* v4.0.0 — 등급업 큐브 승급 배율 (무기 기본 스탯 강화) */
     const tierMul = this.tierUpMult("weapon");
+    /* v1.4.14 (#3) — 직업 주스탯 → ATK 가산:
+     *  전사(warrior) → STR 0.8/점
+     *  궁수(ranger) → DEX 0.8/점
+     *  마법사(mage) → INT 0.8/점
+     *  도적(thief) → LUK 0.8/점
+     *  기존 str*0.3은 모든 캐릭터에 그대로 유지 (전사는 주스탯 보너스로 추가 가산)
+     *  미전직 상태는 전사 취급 (STR) */
+    const fam = familyOf(this.cls) ?? "warrior";
+    const mainStatVal =
+      fam === "warrior" ? this.stats.str :
+      fam === "ranger" ? this.stats.dex :
+      fam === "mage" ? this.stats.int :
+      fam === "thief" ? this.stats.luk :
+      this.stats.str;
+    const mainStatAtk = mainStatVal * 0.8;
     const base =
       this.atk + (ITEMS[this.weapon].atk ?? 0) * tierMul + perStar + accStarAtk +
-      starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3 + potAtk +
+      starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3 + mainStatAtk + potAtk +
       this.extBonus.atk; // v4.0.0 — 피규어/배지/룬 flat 공격
     const buff = this.hasBuff("buff_atk") || this.hasBuff("buff_king") ? 1.25 : 1;
     const king = this.hasBuff("buff_king") ? 1.3 / 1.25 : 1; // v3.0.6 — 왕의 가호 공격 +30%
