@@ -2501,3 +2501,20 @@ Stage Summary:
 - 웹 배포: z.ai 플랫폼 배포 버튼(슬림화 완료, 재시도 대기) / 외부 호스팅 시 Railway·Render류 상시 Node 서버 필요(socket.io 커스텀 서버 — 서버리스 부적합)
 - APK 배포: GitHub Releases v1.4.15·v1.4.16 업로드 완료 — 유저 전달 경로 정상화
 - 플레이스토어: download/PLAY_CONSOLE_v143_등록가이드.txt·출시_체크리스트.txt 참조
+
+---
+Task ID: DEPLOY-500
+Agent: Super Z (유저 리포트 2차 — "open new tab은 되는데 https://sertz0.space-z.ai 가 Failed")
+Task: 배포 URL 500 Failed 원인 특정·수정 — postbuild Bun 하드의존 제거
+
+Work Log:
+- [실측] https://sertz0.space-z.ai → HTTP 500 + 플랫폼 "Failed" 페이지 — 배포 파이프라인은 도나 앱 기동 실패 (빌드 단계 실패 정황)
+- [원인 특정] package.json build가 `bun scripts/fc-server/postbuild.js` 하드의존 → 배포 러너가 bun 없이 npm/node로 빌드하면 postbuild가 "Bun 런타임 필요" throw → 빌드 실패 → 500. (로컬 재현 빌드는 bun이 있어 통과했던 것)
+- [수정 1 — postbuild.js] typeof Bun === "undefined" → throw 대신 경고 후 번들링만 건너뜀(나머지 복사·개명·래퍼는 node로 수행). Bun.build 실패도 비치명화. 근거: standalone 래퍼 server.js는 require('./fc-multi.js') 실패를 try/catch로 흡수(실측: fc-multi 없이 부팅 → 200 + "싱글플레이는 정상 동작" 로그) · npm start(루트 server.js)는 멀티플레이 자체 내장이라 영향 없음
+- [수정 2 — package.json] build = `next build && (bun scripts/fc-server/postbuild.js || node scripts/fc-server/postbuild.js)` — bun 없는 러너는 node 폴백으로 빌드 완주
+- [실증] node 폴백 경로: exit 0, 4단계 중 3단계 수행·번들만 생략 ✓ · standalone(fc-multi 제거 상태) 부팅 200 ✓ · 복원 완료
+- [푸시] 9c8c4c3 → origin/main 동기화
+
+Stage Summary:
+- 배포 빌드가 이제 bun·npm·node 어느 러너에서도 완주됨 — 500 Failed의 유력 원인 제거
+- 유저 안내: 배포 재시도 필요. 재실패 시 플랫폼 배포 로그 문구 확보가 다음 단계
