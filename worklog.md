@@ -2466,3 +2466,23 @@ Stage Summary:
 - 【반복 자동화 종료】 cron webDevReview 삭제 완료 — 이후 개발은 유저 지시 시 수동으로 진행
 - 【환경 메모】 dev 서버 기동은 `cd /home/z/my-project && (setsid node server.js >> dev.log 2>&1 &)` 권장 (bun run dev 래퍼는 호출 사이 세션 정리로 사망할 수 있음) · 4GB 메모리 제약 — headless chrome과 동시 장기 병행 시 OOM 주의
 - 【다음 후보 (유저 요청 시)】 반응 콤보 스코어링·원소 반응 도감 UI·GitHub Release v1.4.15/16 업로드·FC 배포 테스트
+
+---
+Task ID: DEPLOY-FIX
+Agent: Super Z (유저 리포트 — "Sorry, there was a problem deploying the code")
+Task: 배포 실패 원인 진단·보강 — 빌드 재현 검증 + 워크스페이스 슬림화 + 저장소 동기화
+
+Work Log:
+- [진단 1 — 빌드 재현] 배포와 동일한 `bun run build` (next build + postbuild 4단계) 로컬 전체 실행 → ✓ 성공 (컴파일 12.4초, 6 정적 페이지, fc-multi.js 338KB 번들, 래퍼 server.js 작성) — 빌드 자체는 원인 아님 확정
+- [진단 2 — 프로덕션 부팅] `PORT=3456 NODE_ENV=production node server.js` 실증 → ✓ 200 + /api/version 1.4.16 정상 — start 커맨드도 원인 아님 확정
+- [진단 3 — git 완전성] 런타임 필수 파일 9종(server.js·next.config·multiplayer·accounts·fc-server 2종·schema·page.tsx 등) 전부 git 추적 확인 ✓ · bun.lock+package-lock 병존(버전 고정) ✓
+- [보강 1 — 슬림화] 재생성 가능 산출물 정리: android/app/build·android/.gradle·capacitor-cordova-plugins·.next-apk·tool-results 제거 → 워크스페이스 1.6GB → 1.0GB (배포 패키징 부담 경감; APK 재빌드 시 build_apk.sh가 전부 재생성하므로 무손실)
+- [보강 2 — package.json] version 1.4.14 → 1.4.16 (게임 버전과 불일치 해소) · start 스크립트 `2>&1 | tee server.log` 파이프 제거 → `NODE_ENV=production node server.js` (외부 러너 호환성)
+- [보강 3 — 동기화] 미푸시 커밋 2건(664ab22 UUID 커밋 + 신규 97ac251) push → main...origin/main 0/0 완전 동기화
+- [서버 복구] dev 서버 재기동(3000) ✓ · 메모리 가용 2.4GB ✓
+
+Stage Summary:
+- 프로젝트 자체(빌드·부팅·런타임·저장소)는 배포 가능 상태로 전부 실증 통과 — 남은 실패 가능성은 (a) 배포 플랫폼 측 일시 장애/타임아웃 (b) 워크스페이스 스냅샷 과대 → 후자는 슬림화로 완화
+- 유저 안내: 배포 재시도 요청. 재실패 시 배포 로그 텍스트를 받아야 정밀 진단 가능
+- APK 재빌드가 필요해지면: JAVA_HOME=/home/z/jdk/jdk-21.0.12.1+1 ANDROID_HOME=/home/z/android-sdk bash scripts/build_apk.sh (중간 산출물 자동 재생성)
+
