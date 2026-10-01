@@ -26,11 +26,13 @@ import { loadFx } from "../config";
  *  v1.0.2 (#니플헤임) — 유저 피드백 "지나치게 어둡다": 암전 알파 완화 + 챕터별 횃불 광원 프로필(light) 신설.
  *  분위기(한기/어둠)는 유지하되 플레이어·NPC·적·아이템·지형이 명확히 보이도록 조정 */
 const CHAPTER_AMBIENT: Record<string, { color: number; alpha: number; light?: { scale: number; alpha: number } }> = {
-  cave: { color: 0x0d0b1e, alpha: 0.46, light: { scale: 1.55, alpha: 0.58 } },       // 7장 스바르트알프헤임 — 어둠 요정의 수정 광맥
-  nidavellir: { color: 0x0d0b1e, alpha: 0.48, light: { scale: 1.55, alpha: 0.58 } }, // 8장 니다벨리르 — 룬 광산
-  hel: { color: 0x161016, alpha: 0.42, light: { scale: 1.6, alpha: 0.6 } },        // 9장 헬
-  abyss: { color: 0x0b0918, alpha: 0.44, light: { scale: 1.6, alpha: 0.6 } },      // 10장 세계수의 뿌리 — 심연
-  niflheim: { color: 0x0c1626, alpha: 0.28, light: { scale: 1.75, alpha: 0.66 } },   // 6장 니플헤임 — 얼음의 성전 (v1.0.2 밝기 상향)
+  cave: { color: 0x0d0b1e, alpha: 0.42, light: { scale: 1.55, alpha: 0.5 } },       // 7장 스바르트알프헤임 — 어둠 요정의 수정 광맥 (v1.4.13 alpha 0.46→0.42)
+  nidavellir: { color: 0x0d0b1e, alpha: 0.42, light: { scale: 1.5, alpha: 0.5 } }, // 8장 니다벨리르 — 룬 광산 (v1.4.13 0.48→0.42)
+  hel: { color: 0x161016, alpha: 0.38, light: { scale: 1.55, alpha: 0.52 } },        // 9장 헬 (v1.4.13 0.42→0.38)
+  abyss: { color: 0x0b0918, alpha: 0.4, light: { scale: 1.55, alpha: 0.52 } },      // 10장 세계수의 뿌리 — 심연 (v1.4.13 0.44→0.40)
+  /* v1.4.13 (#6 셰이더 약화) — 니플헤임(눈 맵) 암전 0.28→0.18, 횃불 광원 알파 0.66→0.5:
+   * "눈오는 곳 셰이더 너무 강해" 유저 지시 — 암전을 더 얕게, 시야 가독성 확보. */
+  niflheim: { color: 0x0c1626, alpha: 0.18, light: { scale: 1.55, alpha: 0.5 } },   // 6장 니플헤임 — 얼음의 성전
 };
 
 export type AmbientProfile = { color: number; alpha: number; light?: { scale: number; alpha: number } } | null;

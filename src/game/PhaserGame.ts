@@ -78,14 +78,26 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     backgroundColor: "#05070d",
     pixelArt: true,
     roundPixels: true,
-    /* v3.2.0 (#최적화) — GPU 전원 우선순위 상향 + 프레임 관리 명시 */
-    render: { powerPreference: "high-performance", antialias: false },
+    /* v3.2.0 (#최적화) — GPU 전원 우선순위 상향 + 프레임 관리 명시
+     *  v1.4.13 (#5 최적화) — batchSize 4096 (기본 2000)으로 상향: 파티클·스프라이트 많은
+     *  장면에서 WebGL 드로우콜 수 감소, 데스크톱/모바일 공통 안정. desynchronized:true로
+     *  캔버스 래스터 동기화 우회 — 캔버스 2D 백엔드에서 입력-렌더 지연 단축. */
+    render: {
+      powerPreference: "high-performance",
+      antialias: false,
+      batchSize: 4096,
+      maxTextures: 16,
+      desynchronized: true,
+    },
     fps: { target: 60, min: 30 },
     physics: {
       default: "arcade",
       arcade: {
         debug: false,
         fps: 60,
+        /* v1.4.13 (#5 최적화) — physics useTree:true로 공간 분할 — 많은 적 스프라이트
+         *  환경에서 충돌 체크 비용 O(n²)에서 O(n log n)으로 완화. */
+        useTree: true,
       },
     },
     scale: {

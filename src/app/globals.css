@@ -406,4 +406,44 @@ html, body {
 .sertz-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 999px; }
 .sertz-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.45); }
 
+/* ═══════════ v1.4.13 (#2 유저 지시 "책 모양 플레이어 GUI + 인벤토리") ═══════════
+ *  StatPanel(스탯/캐릭터정보)과 InventoryPanel(가방)에 "열린 책" 모양 패널 적용.
+ *  책 표지(갈색 가죽) + 양쪽 페이지(양피지) + 가운데 제본선.
+ *  기존 .game-panel 규약(box-shadow, panelIn 애니)을 상속받아 시각 일관성 유지. */
+.game-panel-book {
+  background-color: #2a1810;
+  background-image: url("/assets/ui2/book_panel.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 14px;
+  box-shadow:
+    0 10px 0 rgba(0, 0, 0, 0.35),
+    0 22px 44px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(212, 168, 84, 0.35);
+  animation: panelIn 0.18s ease-out both;
+}
+/* 책 패널 제목 — book_header.webp (롤 시트지 네임플레이트) */
+.game-panel-book h2 {
+  color: #5a3a1a;
+  text-shadow: 0 1px 0 rgba(255, 220, 160, 0.65);
+  background-image: url("/assets/ui2/book_header.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  box-shadow: none;
+  border-radius: 12px;
+  padding: 7px 14px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+/* 책 내부 콘텐츠 — 양피지 가독성 위해 글자 색 약간 어둡게 (양피지에 어울리는 갈색 톤) */
+.game-panel-book .text-white\/80,
+.game-panel-book .text-white\/70 { color: #5a3a1a; }
+.game-panel-book .text-white { color: #3a2410; }
+.game-panel-book .text-white\/90 { color: #3a2410; }
+/* 책 내부의 작은 칩/버튼은 원래 ui2 버튼 유지 — 너무 칙칙해지지 않게 */
+
+
 /* v1.0.20 build trigger */

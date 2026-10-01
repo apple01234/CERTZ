@@ -2135,21 +2135,23 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.12 (#3D팩 2차 투입 — "내가 준 고급 에셋") — Toon Shaders Pro/Hovl 팩 텍스처로
      *  날씨 레이어 구축: 니플헤임 계열 = 눈보라(wx_snowflake).
      *  v1.0.13 — 마을 벚꽃 날림 제거 (유저 지시: "벚꽃 그냥 없애").
-     *  카메라 상단 폭 emitZone — 파티클은 월드 좌표에 떨어져 스크롤과 자연스럽게 어긋난다. */
+     *  카메라 상단 폭 emitZone — 파티클은 월드 좌표에 떨어져 스크롤과 자연스럽게 어긋난다.
+     *  v1.4.13 (#6 셰이더 약화) — 눈 맵 셰이더 너무 강함: 파티클 빈도 130→240ms, 알파 0.8→0.42,
+     *  속도/스케일 축소로 "눈보라 너무 강해" 체감 완화 (분위기는 유지, 가독성 향상). */
     {
       const chNow = parseStage(stageKey).ch;
       if (chNow === "niflheim") {
         this.weatherSnow = this.add.particles(0, 0, "wx_snowflake", {
           x: { min: -80, max: 1400 },
           y: 0,
-          lifespan: 11000,
-          speedY: { min: 26, max: 60 },
-          speedX: { min: -26, max: 6 },
-          scale: { min: 0.05, max: 0.14 },
-          alpha: { start: 0.8, end: 0.3 },
+          lifespan: 9000,
+          speedY: { min: 18, max: 42 },
+          speedX: { min: -18, max: 4 },
+          scale: { min: 0.04, max: 0.1 },
+          alpha: { start: 0.42, end: 0.18 },
           rotate: { min: 0, max: 360 },
           quantity: 1,
-          frequency: 130,
+          frequency: 240,
         }).setDepth(54);
       }
     }
@@ -6408,15 +6410,17 @@ export class WorldScene extends Phaser.Scene {
       const cam = this.cameras.main;
       /* v1.0.18 — 보스전 밝기 부스트: 어두운 챕터의 보스전도 너무 어둡지 않게 (암전 완화 + 횃불 확대) */
       this.lighting?.setBossFight(true);
-      /* v1.0.18 — 보스 위치 밝은 광원 (카오스 전용이던 보스 라이트를 전 보스전으로 확대·밝은 톤) */
+      /* v1.0.18 — 보스 위치 밝은 광원 (카오스 전용이던 보스 라이트를 전 보스전으로 확대·밝은 톤)
+       *  v1.4.13 (#6 셰이더 약화) — 보스 라이트 알파 0.34 → 0.18, 스케일 1.6 → 1.25:
+       *  너무 밝아 화면이 번쩍이는 느낌 완화, 보스 위치 인지는 유지. */
       if (this.boss?.active) {
         this.bossLight?.destroy();
         this.bossLight = this.add.image(this.boss.x, this.boss.y - 6, "pk_light_01")
           .setDepth(56)
           .setBlendMode(Phaser.BlendModes.ADD)
           .setTint(chaos ? 0xff4830 : 0xffd9a0)
-          .setScale(1.6)
-          .setAlpha(0.34);
+          .setScale(1.25)
+          .setAlpha(0.18);
         /* 보스 추적 — update에서 보스 좌표 동기화 */
         this.bossLightFollow = true;
       }
@@ -6427,22 +6431,26 @@ export class WorldScene extends Phaser.Scene {
       if (this.game.renderer.type === Phaser.WEBGL && cam.filters) {
         /* v4.7.0 — Phaser 4: v3 postFX.addBloom 대신 AddEffectBloom(Threshold+Blur+ParallelFilters 합성).
          *  v3 강도(strength 0.68/0.46, steps 4)를 config로 이식 — 보스전 블룸 체감 동일 유지
-         *  v1.0.18 — 셰이더 효과 강도 설정 반영 (기본 55 → 강도 비례 축소, 0이면 생략) */
+         *  v1.0.18 — 셰이더 효과 강도 설정 반영 (기본 55 → 강도 비례 축소, 0이면 생략)
+         *  v1.4.13 (#6 셰이더 약화) — 보스전 셰이더 너무 강함: blendAmount 0.46/0.5 → 0.24/0.30,
+         *  비네트 강도 0.14 → 0.06, blurSteps 4 → 3. 강렬한 순간은 살리고 눈부심 완화. */
         const fxk = loadFx().intensity <= 0 ? 0 : Math.min(1.5, loadFx().intensity / 55);
         if (fxk > 0) {
           const bloom = Phaser.Actions.AddEffectBloom(cam, {
-            threshold: 0.6,
+            threshold: 0.68,
             blurRadius: 1,
-            blurSteps: 4,
-            /* v1.1.0 (#12) — 카오스 블룸 강도 완화(0.68→0.5): 보스전이 "맵이 어두워진다"고 체감되던 원인 1 */
-            blendAmount: (chaos ? 0.5 : 0.46) * fxk,
+            blurSteps: 3,
+            /* v1.1.0 (#12) — 카오스 블룸 강도 완화(0.68→0.5): 보스전이 "맵이 어두워진다"고 체감되던 원인 1
+             *  v1.4.13 — 추가 축소 (0.5/0.46 → 0.30/0.24): "보스전 셰이더 너무 강해" 유저 지시 */
+            blendAmount: (chaos ? 0.3 : 0.24) * fxk,
           });
           if (bloom[0]) this.bossFilters.push(bloom[0].threshold, bloom[0].blur, bloom[0].parallelFilters);
         }
         /* v1.1.0 (#12) — 카오스 비네트 완화: 강도 0.4→0.14 · 반경 0.62→0.78 화면.
          *  기존엔 가장자리 40% 수준의 강한 암흑이라 미니맵까지 가려 "어두워진다"고 체감됐다 (#7 동반 해소).
-         *  카오스 분위기는 붉은 보스 라이트+잉걸불 파티클로 유지한다 */
-        if (chaos && fxk > 0) this.bossFilters.push(cam.filters.external.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.78, 0.14 * fxk));
+         *  카오스 분위기는 붉은 보스 라이트+잉걸불 파티클로 유지한다.
+         *  v1.4.13 (#6) — 비네트 0.14 → 0.06: 거의 희미하게 (분위기만, 가독성 확보) */
+        if (chaos && fxk > 0) this.bossFilters.push(cam.filters.external.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.78, 0.06 * fxk));
       }
       if (chaos && this.boss?.active) {
         /* v4.1.8 — 카오스 잉걸불: 유료 CFXR 종 화염 (256x512, 설정 무변경) */

@@ -25,21 +25,24 @@ type SceneLike = Phaser.Scene & { textures: Phaser.Textures.TextureManager };
 /** 카메라에 서브틀 앰비언트 블룸 부착 — 반환된 필터는 detachAmbientBloom으로 제거.
  *  반환 길이 0 = 미지원 환경(WebGL 아님/필터 불가). 중복 부착은 호출자가 length로 가드.
  *  v1.0.18 — 셰이더 효과 강도 설정 반영: 0이면 부착하지 않고(완전 끄기), 기본값보다
- *  낮은 강도는 blendAmount를 비례 축소해 눈 피로도를 낮춘다 (기본 강도 = 55). */
+ *  낮은 강도는 blendAmount를 비례 축소해 눈 피로도를 낮춘다 (기본 강도 = 55).
+ *  v1.4.13 (#6 셰이더 약화) — 평시 앰비언트 블룸도 눈에 띄게 약화: blendAmount 0.32 → 0.14,
+ *  threshold 0.74 → 0.82, blurSteps 3 → 2. 챕터 진입 시 "너무 강해" 체감 해소. */
 export function addAmbientBloom(cam: CamLike): unknown[] {
   const out: unknown[] = [];
   try {
     if (!cam.filters) return out;
     const fx = loadFx();
     if (fx.intensity <= 0) return out; // 셰이더 완전 끄기
-    /* 보스 블룸(threshold 0.6/blend 0.46~0.68)보다 눈에 덜 띄는 서브틀 프리셋 —
-     * 프레임버퍼 패스 1개 추가분이라 모바일 비용은 보스전 대비 가볍다 */
+    /* 보스 블룸(threshold 0.68/blend 0.24~0.30)보다 눈에 덜 띄는 서브틀 프리셋 —
+     * 프레임버퍼 패스 1개 추가분이라 모바일 비용은 보스전 대비 가볍다
+     * v1.4.13 — 평시 블룸 반강도 (0.14)로 눈부심 없는 서브틀로 축소 */
     const k = Math.min(1.6, fx.intensity / 55); // 55(기본)=1.0, 100=1.82→1.6 캡
     const bloom = Phaser.Actions.AddEffectBloom(cam as unknown as Phaser.Cameras.Scene2D.Camera, {
-      threshold: 0.74 + (1 - Math.min(1, k)) * 0.06,
+      threshold: 0.82 + (1 - Math.min(1, k)) * 0.06,
       blurRadius: 1,
-      blurSteps: 3,
-      blendAmount: 0.32 * k,
+      blurSteps: 2,
+      blendAmount: 0.14 * k,
     });
     if (bloom[0]) out.push(bloom[0].threshold, bloom[0].blur, bloom[0].parallelFilters);
   } catch { /* 필터 미지원 무시 */ }
