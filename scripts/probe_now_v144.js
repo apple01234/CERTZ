@@ -1,0 +1,20 @@
+const { chromium } = require("playwright");
+(async () => {
+  const b = await chromium.launch({ args: ["--use-gl=swiftshader"], executablePath: "/home/z/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome" });
+  const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+  const errs = [];
+  p.on("pageerror", (e) => errs.push(e.message.slice(0, 300)));
+  await p.goto("http://localhost:3000", { waitUntil: "domcontentloaded", timeout: 30000 });
+  await p.waitForTimeout(3000);
+  await p.waitForSelector("text=게임 시작", { timeout: 30000 });
+  await p.getByText("게임 시작").first().click();
+  await p.waitForTimeout(1500);
+  console.log("after game start, buttons:", await p.evaluate(() => Array.from(document.querySelectorAll("button")).map(x => x.textContent?.trim()).filter(Boolean).slice(0, 12).join(" | ")));
+  console.log("DEFER_DONE:", await p.evaluate(() => !!window.__SERTZ_DEFER_DONE__));
+  await p.evaluate(() => Array.from(document.querySelectorAll("button")).find(x => x.textContent?.includes("캐릭터 생성"))?.click());
+  await p.waitForTimeout(900);
+  console.log("after create click, buttons:", await p.evaluate(() => Array.from(document.querySelectorAll("button")).map(x => x.textContent?.trim()).filter(Boolean).slice(0, 12).join(" | ")));
+  await p.screenshot({ path: "/tmp/probe_lobby.png" });
+  console.log("PAGEERR:", errs.join(" || "));
+  await b.close();
+})().catch(e => { console.error("FAIL", e.message); process.exit(1); });

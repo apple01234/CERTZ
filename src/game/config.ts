@@ -1,0 +1,478 @@
+/** 게임 전역 상수 */
+export const GAME_W = 960;
+export const GAME_H = 540;
+
+export const COLORS = {
+  bg: 0x05070d,
+  hp: 0xe84a5a,
+  mp: 0x4aa8e8,
+  exp: 0x8fe84a,
+  gold: 0xffd76a,
+  portal: 0x9d7aff,
+};
+
+/** 세이브 키 (Capacitor WebView localStorage 호환) */
+export const SAVE_KEY = "sertz_save_v2";
+
+/** 음소거 기본 설정 키 — 세이브와 별도 보관 (저장 데이터 삭제 후에도 유지) */
+const MUTE_KEY = "sertz_muted";
+
+export function loadMuted(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(MUTE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function writeMuted(m: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(MUTE_KEY, m ? "1" : "0");
+  } catch {
+    /* 무시 */
+  }
+}
+
+/** 기본 주인공 이름 — 인트로에서 이름을 정하기 전까지 대사 치환용 */
+export const DEFAULT_NAME = "세르츠";
+
+/** 플레이어 이름 (세이브 무관 전역 — DialogueBox/배너 치환용) */
+let playerName = DEFAULT_NAME;
+
+export function getPlayerName(): string {
+  return playerName;
+}
+
+export function setPlayerName(name: string) {
+  const trimmed = name.trim().slice(0, 8);
+  playerName = trimmed.length > 0 ? trimmed : DEFAULT_NAME;
+}
+
+export type SaveData = {
+  stage: string;
+  lv: number;
+  exp: number;
+  maxHp: number;
+  atk: number;
+  cleared: boolean;
+  /* ↓ 레벨업 MP 성장 복원 (v1.9 — 구 세이브 호환: 없으면 60 기본) */
+  maxMp?: number;
+  /* ↓ 플레이어 이름 (인트로 플레이 시퀀스에서 지정 — 구 세이브 호환 기본값) */
+  playerName?: string;
+  /* ↓ 2D MMORPG 기본 요소 (구 세이브 호환: 로드 시 기본값 채움) */
+  gold?: number;
+  potions?: { hp: number; mp: number };
+  weapon?: string;
+  armor?: string;
+  owned?: string[];
+  /* ↓ RPG 2차 확장: 강화/장신구 (구 세이브 호환) */
+  upWea?: number;
+  upArm?: number;
+  /* v3.0.5 — 스타포스 마일스톤 HP 보너스 (이미 maxHp에 가산된 총액 — 중복 가산 방지) */
+  sfHp?: number;
+  /* v3.0.7 — 장신구 스타포스 (itemKey → 성) + 강화 주문서 충전 수 */
+  accUp?: Record<string, number>;
+  starBless?: number;
+  /** v1.0.8 — 강화 실패 가산 %p (★10+ 실패 연적 — 최대 15, 성공 시 리셋) */
+  starPity?: number;
+  /** v1.0.8 — 잠재 천장 카운터 (유니크 미달 연속 횟수) */
+  potPity?: number;
+  /** v3.0.7 — 장신구 스타포스 HP 마일스톤 가산 이력 (중복 가산 방지) */
+  accHp?: number;
+  accessory?: string | null;
+  /* v2.9 (#8) — 장신구 다중 슬롯 (반지 4 + 펜던트 2) · 과금 화폐 */
+  accessories?: string[];
+  emerald?: number;
+  /* ↓ 퀘스트 진행 (스테이지별 퀘스트 인덱스 — 구 세이브 호환 기본값 {}) */
+  questIdx?: Record<string, number>;
+  /* ↓ 전직 클래스 (v1.7 — 구 세이브 호환 기본값 null) */
+  cls?: string | null;
+  /* v1.0.18 — 캐릭터 생성 시 선택한 시작(스타트) 1차 클래스 (환생 복귀용 — 구 세이브는 cls 체인 역산) */
+  startCls?: string | null;
+  /* ↓ AP 스탯 (v1.9 — 구 세이브 호환: 기본 5/5/5/5 + 레벨만큼 AP 소급) */
+  stats?: { str: number; dex: number; int: number; luk: number };
+  ap?: number;
+  /* ↓ BM (v1.9 — 버프 물약/펫/치장) */
+  buffItems?: Record<string, number>;
+  buffs?: { key: string; remain: number; total: number }[];
+  pets?: string[];
+  pet?: string | null;
+  /* ↓ 전직 스토리 진행 (v2.0 — 구 세이브 호환 기본값 / v3.1.0 — fam: 미전직 시련 계열 / v1.3.1 — tst: travel 목적지) */
+  jobStory?: { tier: 1 | 2 | 3 | 4; step: number; hunt: number; fam?: string; tst?: string } | null;
+  jobStoryDone?: number[];
+  /* v3.1.0 (#전직스토리선행) — 시련 스토리 중 선택해둔 1차 클래스 (스토리 완료 시 적용) */
+  pendingJobClass?: string | null;
+  cosmetics?: string[];
+  cosmetic?: string | null;
+  /* v1.0.7 — 슬롯형 치장 (코스튬/헤어 — 구 세이브는 undefined) */
+  outfit?: string | null;
+  hair?: string | null;
+  /* v1.0.19 (B-1 외형) — 로비 생성 시 고른 색조 (스프라이트 틴트, null=기본) */
+  lookTint?: number | null;
+  gender?: "m" | "f"; // v1.1.0 (#22) — 남/여
+  gmSkin?: boolean; // v1.2.0 (#7) — GM 외형 캐릭터 (서버 롤 admin일 때만 렌더)
+  ponyRefund?: boolean; // v1.2.0 (#1) — 포니테일 환수 완료 플래그
+  introSeen?: boolean; // v1.1.0 (#18) — 프롤로그/인트로 시청 완료 (false=미시청 신규, undefined=구세이브 스킵)
+  skinIdx?: number; // v1.1.0 (#21) — 피부 0~5
+  /* ↓ 친구 시스템 (v2.1 — 구 세이브 호환: 로드 시 자동 발급/기본값) */
+  fcode?: string;
+  friends?: { code: string; name: string }[];
+  /* ↓ 반복 토벌 의뢰 수주 해금 (v2.3 — NPC에게 말 걸어 해금, 지시 #4) */
+  repeatOn?: boolean;
+  /* v3.0.6 — 반복 의뢰 진행도 (재입장 시 카운트 유지) */
+  repeatNeed?: number;
+  huntCount?: number;
+  repeatStage?: string;
+  /* v3.0.6 — 자동 물약/자동 버프 설정 (지시 #5) */
+  autoUse?: { hpPct: number; mpPct?: number; mpOn: boolean; buffs: string[] };
+  /* ↓ 이미 본 스토리 대사 (v2.3 — 재입장 시 대사 재생 방지, 지시 #1) */
+  seen?: string[];
+  /* ↓ 방문한 구역 목록 (v2.5 — 지역 이동 부적 워프 대상, 지시 #7) */
+  visited?: string[];
+  /* ↓ 자동사냥 토글 (v2.5 — 펫 보유 시에만 유효, 지시 #8) */
+  autoHunt?: boolean;
+  /* ----- v3.0.15 ----- */
+  /* #2 — 레벨업 시 스탯 자동배분 on/off */
+  autoAlloc?: boolean;
+  /* #6/#7 — 물약 퀵슬롯 장착 (슬롯 → 아이템키). 기본 potion_hp/potion_mp */
+  quickPots?: { hp: string; mp: string };
+  /* #13 — eert 큐브 잠재옵션 (아이템키 → 잠재) + maxHP 가산 이력 */
+  potentials?: Record<string, { grade: number; lines: { k: string; v: number }[] }>;
+  potHpApplied?: number;
+  /* #11 — 해금된 챕터 테마 장비 세트 (챕터키 목록) */
+  unlockedSets?: string[];
+  /* #8 — 퀘스트 수락/추적 (스테이지 → 수락 인덱스, 추적 스테이지 키) */
+  questAccepted?: Record<string, number>;
+  questTracked?: string | null;
+  /* v3.0.16 — 몬스터 컬렉션 처치 기록 (id → 처치 수, 최초 처치 시 등록) */
+  monsterKills?: Record<string, number>;
+  /* v3.0.22 (#43/#44) — 챕터별 세계수 결정 수집 기록 (챕터키 → 수집 수) */
+  fragmentsFound?: Record<string, number>;
+  /* v3.0.22 (#50) — 세계수의 가호 (아홉 결정 전부 수집 시 영구 해방) */
+  worldtreeBlessing?: boolean;
+  /* v3.0.28 (#보스난이도) — 진행 중 보스전의 난이도 (이지/노말/하드/카오스) — 재접속 복구용 */
+  bossDiff?: string;
+  /* v4.1.4 — 보스/카오스/침공 처치 누적 (도전과제 지표) */
+  bossKills?: number;
+  chaosKills?: number;
+  invasionKills?: number;
+  /* v1.0.11 — 튜토리얼 완료 플래그 + 진행 단계 (구 세이브 호환: 없으면 미완료/미시작) */
+  tutorialDone?: boolean;
+  tutStep?: number;
+  /* v3.3.0 (지시 #3/#8) — 5차 각성 상태 + 각성 시련 완료 여부
+   *  fifth=true면 레벨 무관하게 궁극기 해금 + 전 스킬 강화 적용 */
+  fifth?: boolean;
+  fifthStoryDone?: boolean;
+  /* ----- v4.0.0 바르가 업데이트 (균열 수비전·수집형 성장) ----- */
+  /** 피규어 도감 (보유 키 목록 — 보유만으로 보너스) */
+  figures?: string[];
+  /** 피규어 조각 (중복 가챠/업적 보상 — 성좌·배지·스킨 교환 재화) */
+  shards?: number;
+  /** 뽑기권 (피규어 가챠 재화) */
+  gachaTickets?: number;
+  /** 배지 보유 + 장착 슬롯 3개 */
+  badges?: string[];
+  badgeSlots?: (string | null)[];
+  /** 룬 보유 ("rune_fire#1" → 개수) + 장착 슬롯 4개 */
+  runes?: Record<string, number>;
+  runeSlots?: (string | null)[];
+  /** 성좌 개방 노드 ("aries:0" 형식) */
+  constel?: string[];
+  /** 사용 완료 쿠폰 코드 */
+  coupons?: string[];
+  /** 출석부 { 마지막 출석일, 사이클 카운트 } */
+  attend?: { last: string; count: number };
+  /** 일일 퀘스트 { 날짜, 토벌, 게이트, 던전, 수령 완료, 광고 시청 } */
+  daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number; adsChest?: number; adsDrop?: number; farms?: number; bosses?: number };
+  /** 일일 입장 티켓 { 날짜, 게이트 잔여, 던전 잔여, 재충전 횟수 } */
+  tickets?: { date: string; gate: number; closet: number; refills?: number };
+  /** 수령 완료 업적 */
+  achClaimed?: string[];
+  /** 게이트 최고 웨이브 / 옷장 던전 최고 골드 기록 */
+  gateBest?: number;
+  closetBest?: number;
+  /** GM 무료 뽑기 마지막 사용 시각 (10분 쿨) */
+  freeGachaAt?: number;
+  /** 오프라인 보상 계산용 마지막 접속 시각 */
+  lastSeen?: number;
+  /** 게이트 ★ 최초 달성 기록 ([false,false,false] → ★1/★2/★3) */
+  gateStars?: boolean[];
+  /** v4.0.0 — 등급업 큐브 누적 승급 수 (무기/방어구 개별) */
+  tierUpWea?: number;
+  tierUpArm?: number;
+  /* ----- v4.5.0 — 시즌 패스 + 구독 (BM 표준화) ----- */
+  /** 시즌 패스 { 시즌키, XP, 프리미엄 여부, 수령한 무료/프리미엄 레벨 목록 } — 시즌이 바뀌면 리셋 */
+  pass?: { season: string; xp: number; prem: boolean; claimedF: number[]; claimedP: number[] };
+  /** v1.0.1 — 시즌 미션 진행 { 일자, 주차, 일일 카운트, 주간 카운트, 수령 완료 } — day/week이 바뀌면 해당 그룹 리셋 */
+  missions?: { day: string; week: string; d: Record<string, number>; w: Record<string, number>; cd: string[]; cw: string[] };
+  /** 구독(SERTZ 패스) 만료 시각 (ms) — 0 = 미구독 */
+  sub?: { until: number };
+  /** 스타터팩 구매 완료 (BM상점 하이라이트 표시용) */
+  starterPackBought?: boolean;
+  /* ----- v1.0.8 무한 콘텐츠 (탑/티어균열/시련/환생/제작/펫육성/심연상점) ----- */
+  /** v1.0.18 — 몬스터 파크 코인 (파크 상점 교환 재화) */
+  parkCoins?: number;
+  /** v1.0.18 — 파크 최고 기록 (난이도 2 기준 처치 수) */
+  parkBest?: number;
+  /** v1.0.18 — 파크 입장권 { 날짜, 잔여 } — 하루 2장 */
+  parkTickets?: { date: string; n: number };
+  /** 무한 콘텐츠 상태 스냅샷 — 구조는 infinite.ts InfSave (infMerge로 안전 병합) */
+  inf?: import("./infinite").InfSave;
+}
+
+/* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */
+const FCODE_CHARS = "ACDEFGHJKLMNPQRTUVWXY34679";
+
+export function makeFcode(): string {
+  let s = "";
+  for (let i = 0; i < 6; i++) {
+    s += FCODE_CHARS[Math.floor(Math.random() * FCODE_CHARS.length)];
+  }
+  return s;
+}
+
+/** 세이브의 친구 코드 확보 — 없으면 발급 후 즉시 저장 (멀티 접속 시 서버 전파용) */
+export function ensureFcode(save: SaveData): string {
+  if (save.fcode && /^[A-Z0-9]{4,12}$/.test(save.fcode)) return save.fcode;
+  save.fcode = makeFcode();
+  writeSave(save);
+  return save.fcode;
+}
+
+/** 첫 세이브 생성 전 임시 코드 (세션 내 고정 — 이후 첫 저장 시 승격) */
+let sessionFcode: string | null = null;
+
+/** 친구 코드 조회 — 세이브 있으면 저장된 값, 없으면 세션 임시 코드 */
+export function getFcode(): string {
+  const save = loadSave();
+  if (save) return ensureFcode(save);
+  if (!sessionFcode) sessionFcode = makeFcode();
+  return sessionFcode;
+}
+
+/** 세이브 친구 목록 조작 헬퍼 — 로드→변경→저장 후 반환 */
+export function mutateFriends(fn: (list: { code: string; name: string }[]) => { code: string; name: string }[]): { code: string; name: string }[] {
+  const save = loadSave();
+  const list = save?.friends ?? [];
+  const next = fn(list.map((f) => ({ code: String(f.code || "").toUpperCase().slice(0, 12), name: String(f.name || "").slice(0, 8) })));
+  if (save) {
+    save.friends = next;
+    writeSave(save);
+  }
+  return next;
+}
+
+export function loadSave(): SaveData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    /* v1.0.18 — 로비 멀티캐릭터 라우팅: 활성 캐릭터가 있으면 캐릭터 전용 키에서 읽는다 */
+    const raw = window.localStorage.getItem(activeSaveKey());
+    if (!raw) return null;
+    const d = JSON.parse(raw) as SaveData;
+    if (!d || typeof d.stage !== "string") return null;
+    // 신규 필드 기본값 채우기 (구버전 세이브 호환)
+    if (typeof d.gold !== "number") d.gold = 30;
+    if (!d.potions) d.potions = { hp: 2, mp: 1 };
+    if (typeof d.weapon !== "string") d.weapon = "weapon_1";
+    if (typeof d.armor !== "string") d.armor = "armor_1";
+    if (!Array.isArray(d.owned)) d.owned = [d.weapon, d.armor];
+    // 강화/장신구 (구버전 세이브 호환)
+    if (typeof d.upWea !== "number") d.upWea = 0;
+    if (typeof d.upArm !== "number") d.upArm = 0;
+    // v3.0.7 — 장신구 스타포스/강화 주문서 (구버전 세이브 호환)
+    if (!d.accUp || typeof d.accUp !== "object") d.accUp = {};
+    if (typeof d.starBless !== "number") d.starBless = 0;
+    // v1.0.8 — 확률 천장 카운터 (구버전 세이브 호환)
+    if (typeof d.starPity !== "number") d.starPity = 0;
+    if (typeof d.potPity !== "number") d.potPity = 0;
+    if (d.accessory === undefined) d.accessory = null;
+    // v2.9 — 장신구 다중 슬롯 마이그레이션 (구 accessory 1개 → 배열)
+    if (!Array.isArray(d.accessories)) d.accessories = d.accessory ? [d.accessory] : [];
+    if (typeof d.emerald !== "number") d.emerald = 0;
+    // 퀘스트 진행 (구버전 세이브 호환 — 처음부터)
+    if (!d.questIdx || typeof d.questIdx !== "object") d.questIdx = {};
+    // 전직 클래스 (구버전 세이브 호환 — 미전직)
+    if (d.cls === undefined) d.cls = null;
+    // AP 스탯 (v1.9 — 구 세이브는 기본 5/5/5/5 + 레벨만큼 AP 소급 지급)
+    if (!d.stats || typeof d.stats !== "object") {
+      const lv = typeof d.lv === "number" ? d.lv : 1;
+      d.stats = { str: 5, dex: 5, int: 5, luk: 5 };
+      d.ap = Math.max(0, (lv - 1) * 5);
+    }
+    if (typeof d.ap !== "number") d.ap = 0;
+    // BM (v1.9 — 구 세이브 호환 기본값)
+    if (!d.buffItems || typeof d.buffItems !== "object") d.buffItems = {};
+    if (!Array.isArray(d.buffs)) d.buffs = [];
+    if (!Array.isArray(d.pets)) d.pets = [];
+    if (d.pet === undefined) d.pet = null;
+    if (!Array.isArray(d.cosmetics)) d.cosmetics = [];
+    if (d.cosmetic === undefined) d.cosmetic = null;
+    if (d.outfit === undefined) d.outfit = null; // v1.0.7 — 구 세이브 호환
+    if (d.hair === undefined) d.hair = null;
+    if (typeof d.gmSkin !== "boolean") d.gmSkin = false; // v1.2.0 (#7) GM 외형
+    /* v1.2.0 (#1 포니테일 폐지) — hair_ponytail은 아이템 자체가 삭제됐다. 구 세이브에서
+     *  ① 착용 중이면 해제 ② 보유 목록에서 제거 + 18 에메랄드 자동 환수 (단 1회 — 환수 플래그 저장) */
+    if (d.hair === "hair_ponytail") d.hair = null;
+    if (Array.isArray(d.cosmetics) && d.cosmetics.includes("hair_ponytail")) {
+      d.cosmetics = d.cosmetics.filter((k) => k !== "hair_ponytail");
+      if (!(d as Record<string, unknown>).ponyRefund) {
+        d.emerald = (typeof d.emerald === "number" ? d.emerald : 0) + 18; // bmPrice 환수
+        (d as Record<string, unknown>).ponyRefund = true;
+      }
+    }
+    // 전직 스토리 (v2.0 — 구 세이브 호환)
+    if (d.jobStory === undefined) d.jobStory = null;
+    if (!Array.isArray(d.jobStoryDone)) d.jobStoryDone = [];
+    // 친구 (v2.1 — 구 세이브 호환: 코드 자동 발급)
+    if (!d.fcode || !/^[A-Z0-9]{4,12}$/.test(d.fcode)) {
+      d.fcode = makeFcode();
+      // 발급만으로 저장하지 않음 — 다음 writeSave 시 반영 (로드 폭주 방지)
+    }
+    if (!Array.isArray(d.friends)) d.friends = [];
+    // 반복 의뢰 해금/본 대사 (v2.3 — 구 세이브 호환 기본값)
+    if (typeof d.repeatOn !== "boolean") d.repeatOn = false;
+    if (!Array.isArray(d.seen)) d.seen = [];
+    // 방문 기록/자동사냥 (v2.5 — 구 세이브 호환 기본값)
+    if (!Array.isArray(d.visited)) d.visited = [];
+    if (typeof d.autoHunt !== "boolean") d.autoHunt = false;
+    // v3.0.15 — 신규 설정/시스템 기본값 (구 세이브 호환)
+    if (typeof d.autoAlloc !== "boolean") d.autoAlloc = false;
+    if (!d.quickPots || typeof d.quickPots !== "object") d.quickPots = { hp: "potion_hp", mp: "potion_mp" };
+    if (!d.potentials || typeof d.potentials !== "object") d.potentials = {};
+    if (typeof d.potHpApplied !== "number") d.potHpApplied = 0;
+    if (!Array.isArray(d.unlockedSets)) d.unlockedSets = [];
+    if (!d.questAccepted || typeof d.questAccepted !== "object") d.questAccepted = {};
+    if (d.questTracked === undefined) d.questTracked = null;
+    // v3.0.16 — 몬스터 컬렉션 (구 세이브 호환)
+    if (!d.monsterKills || typeof d.monsterKills !== "object") d.monsterKills = {};
+    // v3.0.22 — 결정 수집/세계수 가호 (구 세이브 호환)
+    if (!d.fragmentsFound || typeof d.fragmentsFound !== "object") d.fragmentsFound = {};
+    if (typeof d.worldtreeBlessing !== "boolean") d.worldtreeBlessing = false;
+    // v4.0.0 — 이세카이 업데이트 (구 세이브 호환 기본값)
+    if (!Array.isArray(d.figures)) d.figures = [];
+    if (typeof d.shards !== "number") d.shards = 0;
+    if (typeof d.gachaTickets !== "number") d.gachaTickets = 1; // 첫 접속 환영 뽑기권 1장
+    if (!Array.isArray(d.badges)) d.badges = [];
+    if (!Array.isArray(d.badgeSlots) || d.badgeSlots.length !== 3) d.badgeSlots = [null, null, null];
+    if (!d.runes || typeof d.runes !== "object") d.runes = {};
+    if (!Array.isArray(d.runeSlots) || d.runeSlots.length !== 4) d.runeSlots = [null, null, null, null];
+    if (!Array.isArray(d.constel)) d.constel = [];
+    if (!Array.isArray(d.coupons)) d.coupons = [];
+    if (!d.attend || typeof d.attend !== "object" || typeof d.attend.count !== "number") d.attend = { last: "", count: 0 };
+    if (!d.daily || typeof d.daily !== "object") d.daily = { date: "", hunts: 0, gate: 0, closet: 0, claimed: [] };
+    if (!Array.isArray(d.daily.claimed)) d.daily.claimed = [];
+    if (typeof d.daily.ads !== "number") d.daily.ads = 0;
+    if (!d.tickets || typeof d.tickets !== "object") d.tickets = { date: "", gate: 0, closet: 0 };
+    if (!Array.isArray(d.achClaimed)) d.achClaimed = [];
+    if (typeof d.gateBest !== "number") d.gateBest = 0;
+    if (typeof d.closetBest !== "number") d.closetBest = 0;
+    if (typeof d.freeGachaAt !== "number") d.freeGachaAt = 0;
+    if (typeof d.lastSeen !== "number") d.lastSeen = 0;
+    if (!Array.isArray(d.gateStars) || d.gateStars.length !== 3) d.gateStars = [false, false, false];
+    if (typeof d.tierUpWea !== "number") d.tierUpWea = 0;
+    if (typeof d.tierUpArm !== "number") d.tierUpArm = 0;
+    // v1.0.1 — 시즌 미션 (구 세이브 호환)
+    if (!d.missions || typeof d.missions !== "object") d.missions = { day: "", week: "", d: {}, w: {}, cd: [], cw: [] };
+    if (!d.missions.d || typeof d.missions.d !== "object") d.missions.d = {};
+    if (!d.missions.w || typeof d.missions.w !== "object") d.missions.w = {};
+    if (!Array.isArray(d.missions.cd)) d.missions.cd = [];
+    if (!Array.isArray(d.missions.cw)) d.missions.cw = [];
+    return d;
+  } catch {
+    return null;
+  }
+}
+
+export function writeSave(data: SaveData) {
+  if (typeof window === "undefined") return;
+  try {
+    const key = activeSaveKey();
+    window.localStorage.setItem(key, JSON.stringify(data));
+    /* v1.0.18 — 로비 멀티캐릭터: 활성 캐릭터가 있으면 레거시 키에도 미러링
+     *  (구버전 APK 롤백 시 "마지막 플레이 캐릭터" 이어하기 보장 — 원본은 char_<id>가 진실) */
+    if (activeCharId) window.localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    for (const fn of saveHooks) {
+      try {
+        fn(data);
+      } catch {
+        /* 훅 실패는 저장 본체에 영향 없음 */
+      }
+    }
+  } catch {
+    /* 저장 실패는 무시 */
+  }
+}
+
+export function clearSave() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(SAVE_KEY);
+    /* 활성 캐릭터 전용 키도 함께 제거 (로비 삭제와 동기화) */
+    if (activeCharId) window.localStorage.removeItem(`sertz_char_${activeCharId}`);
+  } catch {
+    /* 무시 */
+  }
+}
+
+/* ---------- v1.0.18 — 로비 멀티캐릭터 라우팅 ---------- */
+
+/** 세션 내 활성 캐릭터 (로비에서 게임 시작 시 slots.ts가 설정) — null이면 레거시 단일 키 */
+let activeCharId: string | null = null;
+
+/** 세이브 기록 후 훅 (slots.ts가 캐릭터 메타 동기화에 사용 — 순환 임포트 회피) */
+const saveHooks: ((data: SaveData) => void)[] = [];
+
+export function registerSaveHook(fn: (data: SaveData) => void) {
+  if (!saveHooks.includes(fn)) saveHooks.push(fn);
+}
+
+export function setActiveCharId(id: string | null) {
+  activeCharId = id;
+}
+
+export function getActiveCharId(): string | null {
+  return activeCharId;
+}
+
+export function activeSaveKey(): string {
+  return activeCharId ? `sertz_char_${activeCharId}` : SAVE_KEY;
+}
+
+/* ---------- v1.0.18 — 셰이더 효과 강도 / 플리커 완화 설정 ---------- */
+
+export type FxSettings = {
+  /** 셰이더 효과 강도 0~100 (0 = 셰이더 완전 끄기, 100 = 최대). 기본 55 — 눈 피로도 완화 기본값 */
+  intensity: number;
+  /** 플리커 완화 모드 — 횃불/광원 깜빡임 제거 (빛 자체는 유지) */
+  noFlicker: boolean;
+};
+
+const FX_KEY = "sertz_fx";
+
+export function loadFx(): FxSettings {
+  if (typeof window === "undefined") return { intensity: 55, noFlicker: false };
+  try {
+    const raw = window.localStorage.getItem(FX_KEY);
+    if (raw) {
+      const d = JSON.parse(raw) as Partial<FxSettings>;
+      return {
+        intensity: Math.max(0, Math.min(100, typeof d.intensity === "number" ? d.intensity : 55)),
+        noFlicker: !!d.noFlicker,
+      };
+    }
+  } catch {
+    /* 무시 */
+  }
+  return { intensity: 55, noFlicker: false };
+}
+
+export function writeFx(s: FxSettings) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(FX_KEY, JSON.stringify(s));
+  } catch {
+    /* 무시 */
+  }
+}

@@ -1,0 +1,2573 @@
+/**
+ * SERTZ 게임 데이터 (v2.0)
+ *  - 스테이지/몬스터/보스 정의는 stages.ts (9챕터 × 10구역 생성기)에서 재수출
+ *  - v3.0.10 본게임 세계관 확정판 스토리 (이그드라실 9왕국 · 이그니 · 아부디토스)
+ *  - v4.1.3 (#신화고증) — 보스 표기 고증 정리 (지시 #8):
+ *    · 최종 보스 표기 니드그림 → 아부디토스 (키/세계관 근원인 아뜰란티스의 종언 존재)
+ *    · 수르트: 정령 → 화염의 거인 (무스펠헤임을 다스리는 불의 거인 — 라그나로크 고증)
+ *    · 스콜&하티: 쌍두 → 쌍랑 (해와 달을 쫓는 쌍둥이 늑대 — 두 머리가 아님)
+ *    · 헬 보스 그람 → 가름 (Garmr — 헬의 대문을 지키는 사냥개. 그람은 시구르드의 검이다)
+ *  - v1.9 아이템/BM(버프·펫·치장) 유지 + 강화 12단계 확장 (메이플 스타포스식)
+ */
+import { CHAPTERS, ENEMIES, type ChapterKey } from "./stages";
+import type { FamilyKey } from "./classes";
+
+/* ================= 스테이지/전투 데이터 (stages.ts 생성기) ================= */
+
+export {
+  CHAPTERS,
+  STAGES,
+  NEXT_STAGE,
+  PREV_STAGE,
+  STAGE_SHORT,
+  STAGE_THEME,
+  ENEMIES,
+  BOSS_DEFS,
+  /* v3.0.28 — 보스 난이도 (이지/노말/하드/카오스) */
+  BOSS_DIFFS,
+  BOSS_DIFF_ORDER,
+  parseStage,
+  chapterSpec,
+  stageScale,
+  resolveStage,
+  stageIntro,
+} from "./stages";
+
+export type {
+  ChapterKey,
+  StageKey,
+  EnemyKey,
+  EnemyDef,
+  QuestDef,
+  BossKey,
+  BossDef,
+  BossAttackKind,
+  /* v3.0.28 — 보스 난이도 키 */
+  BossDiffKey,
+  StageDef,
+} from "./stages";
+
+/** 몬스터 골드 드롭 조정 계수 (사용자 지시 #6 — 골드 과다 수정) */
+export const GOLD_DROP_SCALE = 0.82; // v1.0.16 밸런스 — 0.75→0.82 (+9% 골드: 초반 상점 소비 여유 완화)
+
+/** 강화 비용 — 단계별 눈덩이 곡선 (높은 단계일수록 골드 소모 급증 → 골드 싱크)
+ *  v3.0.5 — ★12부터 추가 계수 1.6^(성-11) 가산 (스타포스 후반부 급증 구간) */
+export function upgradeCost(slot: "weapon" | "armor", level: number): number {
+  const base = slot === "weapon" ? 45 : 38;
+  const core = base * Math.pow(1.45, level);
+  const late = level > 11 ? Math.pow(1.6, level - 11) : 1;
+  return Math.round(core * late);
+}
+
+/* ================= 아이템 (v1.9 유지) ================= */
+
+export type ItemKey =
+  | "potion_hp"
+  | "potion_mp"
+  | "potion_hp2"
+  | "potion_mp2"
+  /* v3.0.20 (#7) — 엘릭서: HP/MP 한 번에 100% 회복 */
+  | "potion_elixir"
+  | "weapon_1"
+  | "weapon_2"
+  | "weapon_3"
+  | "weapon_4"
+  | "weapon_5"
+  | "weapon_6"
+  | "armor_1"
+  | "armor_2"
+  | "armor_3"
+  | "armor_4"
+  | "armor_5"
+  | "armor_6"
+  | "ring_power"
+  | "ring_vital"
+  | "ring_crit"
+  | "ring_guard"
+  | "pendant_vital"
+  | "pendant_arcane"
+  | "scroll_return"
+  | "scroll_warp"
+  | "scroll_star"
+  | "buff_atk"
+  | "buff_def"
+  | "buff_spd"
+  | "buff_exp"
+  | "buff_crit"
+  | "buff_gold"
+  | "buff_luck"
+  | "pet_slime"
+  | "pet_pixie"
+  | "cos_dawn"
+  | "cos_gold"
+  | "cos_abyss"
+  | "cos_wings"
+  /* v3.0.6 (지시 #9) — 보스 전용 드롭 (상점 판매 금지 — 유저 거래소 예정) */
+  | "bd_guardian"
+  | "bd_behemoth"
+  | "bd_nidhog"
+  | "bd_surt"
+  | "bd_fenrir"
+  | "bd_skoll"
+  | "bd_gram"
+  | "bd_abysslord"
+  | "bd_abudditos"
+  | "gm_sword" | "gm_armor" | "gm_ring" | "gm_elixir" // v1.0.2 — GM 전용
+  /* v3.0.6 — BM 상점 (에메랄드 전용 — 상점과 분리) */
+  | "pet_atlas"
+  | "cos_aurora"
+  /* v1.0.7 — SPUM식 코스튬 4종 (입고/벗기 슬롯형 치장 — gen_outfits.py 생성 프레임) · v1.2.0 — 포니테일 헤어는 유저 지시로 완전 제거 */
+  | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy"
+  /* v1.1.0 (#19/#1) — 프리미엄 완전 교체 코스튬 6종 + 어태치 장식 5종 */
+  | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
+  | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy"
+  /* v1.3.0 (지시 #7) — 랭커 전용 치장 (랭킹 상점 — 서버 순위 검증 구매) */
+  | "rank_aura" | "rank_crown_gold"
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (완전 교체 코스튬) */
+  | "outfit_dragon" | "outfit_frost" | "outfit_sakura" | "outfit_void"
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (유저 제공 SPUM 파트 실제 조합) */
+  | "outfit_valkyrie" | "outfit_witch" | "outfit_sylvan" | "outfit_lily"
+  | "outfit_warlord" | "outfit_paladin" | "outfit_nightblade" | "outfit_mariner"
+  /* v1.4.11 — 잠자던 시트(cost_flame·cost_mystic 계열 112프레임) 활성화 신규 코스튬 2종 */
+  | "outfit_flame" | "outfit_mystic"
+  | "ring_bless"
+  | "buff_king"
+  /* v3.0.15 (#13) — eert 큐브 (메이플 큐브 시스템 — 잠재옵션 리롤) */
+  | "eert_cube"
+  /* v4.0.0 — 바르가 업데이트 */
+  | "exp_book"
+  | "exp_book_s" | "exp_book_m" | "exp_book_l" // v1.2.0 (#15) — 경험치 책 3종
+  | "tier_cube"
+  /* v3.0.15 (#11) — 챕터 테마 장비 세트 9종 (무기/방어구/반지 × 챕터) */
+  | "sfw_forest" | "sfa_forest" | "sfr_forest"
+  | "sfw_kingdom" | "sfa_kingdom" | "sfr_kingdom"
+  | "sfw_alfheim" | "sfa_alfheim" | "sfr_alfheim"
+  | "sfw_muspelheim" | "sfa_muspelheim" | "sfr_muspelheim"
+  | "sfw_niflheim" | "sfa_niflheim" | "sfr_niflheim"
+  | "sfw_cave" | "sfa_cave" | "sfr_cave"
+  | "sfw_nidavellir" | "sfa_nidavellir" | "sfr_nidavellir"
+  | "sfw_hel" | "sfa_hel" | "sfr_hel"
+  | "sfw_abyss" | "sfa_abyss" | "sfr_abyss"
+  /* v4.3.0 — BM 대확장 (유저 지시: BM 수익 구조·도파민 100+ 기획/제작)
+   *  물약 8티어 ×2 · 장신구 12 · 가챠 상자 4 · 패키지 6 (신규 아이템 46종 + 펫 6 + 치장 6 + 버프 3 = 61종) */
+  | "potion_hp3" | "potion_hp4" | "potion_hp5" | "potion_hp6" | "potion_hp7" | "potion_hp8" | "potion_hp9" | "potion_hp10"
+  | "potion_mp3" | "potion_mp4" | "potion_mp5" | "potion_mp6" | "potion_mp7" | "potion_mp8" | "potion_mp9" | "potion_mp10"
+  | "ring_might" | "ring_swift" | "ring_fortune" | "ring_dragon" | "ring_titan" | "ring_phantom" | "ring_ancient"
+  | "pendant_ward" | "pendant_blood" | "pendant_moon" | "pendant_sage" | "pendant_star"
+  | "chest_iron" | "chest_silver" | "chest_gold" | "chest_legend"
+  | "pack_starter" | "pack_growth" | "pack_premium" | "pack_ultimate" | "pack_daily" | "pack_weekly"
+  | "pet_wisp" | "pet_ember" | "pet_frost" | "pet_golem" | "pet_unicorn" | "pet_reaper"
+  | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow"
+  | "cos_rose" | "cos_toxic" | "cos_magma" | "cos_lunar" | "cos_deep" | "cos_galaxy" // v1.0.16 — +6
+  /* v1.0.8 무한 콘텐츠 — 연금 제작대 재료 3종 (필드/던전 적 처치 시 확률 드롭) */
+  | "mat_mana" | "mat_heart" | "mat_mithril";
+
+/** 아이템 등급 (클래식 MMORPG 관례 — 테두리/이름색 구분)
+ *  v3.0.6 — "legend" 추가 (보스 전용 드롭 전용 등급) */
+export type ItemTier = "common" | "rare" | "epic" | "legend";
+
+/**
+ * v3.0.5 — 스타포스 강화 (메이플스토리 Star Force식)
+ *  - 상한 +15로 확장, 15단계 성공률 곡선
+ *  - ★5/★10/★15 마일스톤 돌파 시 추가 효과(공격/치명/방어/HP) + 돌파 연출
+ *  - +9 이상 실패 시 1성 하락 (스타포스식 리스크)
+ */
+export const UPGRADE_MAX = 15;
+/** 강화 성공률 (%) — 현재 성 인덱스 (0=★0→★1, … 14=★14→★15) */
+export const UPGRADE_RATES = [100, 85, 70, 55, 40, 35, 30, 25, 20, 15, 12, 10, 8, 6, 5];
+/** 강화 하락 시작 단계 (★9 이상 실패 시 1성 하락 — 스타포스식 리스크) */
+export const UPGRADE_FALLBACK_FROM = 9;
+
+/** 마일스톤 성 구간 */
+export const STAR_MILESTONES = [5, 10, 15] as const;
+
+/** v3.0.20 (#8) — 별 1개마다 즉시 능력치 상승 (기존엔 마일스톤 5성마다만 체감 상승)
+ *  무기: 공격 +2 + 무기 기본 공격력의 8% / 방어구: 방어 +1 + 기본 방어의 6% + HP 12
+ *  → 상위 무기일수록 본당 상승폭이 커진다 (스타포스 답밖 성장감) */
+export function starPerStarAtk(itemAtk: number): number {
+  return 2 + Math.round(itemAtk * 0.08);
+}
+export function starPerStarDef(itemDef: number): { def: number; hp: number } {
+  return { def: 1 + Math.round(itemDef * 0.06), hp: 12 };
+}
+
+/** v3.0.20 (#8) — 마일스톤(★5/★10/★15)은 "더쌘 추가능력치(무기 고유능력)"
+ *  누적 — ★15 도달 시 공격+46·치명+21% + 기본 공격력 8%×15성 (기존 18/10 대비 대폭 상향) */
+export const WEAPON_MILESTONES: Readonly<Record<number, { atk: number; crit: number }>> = {
+  5: { atk: 8, crit: 3 },
+  10: { atk: 14, crit: 6 },
+  15: { atk: 24, crit: 12 },
+};
+/** 방어구 마일스톤 보너스 (누적 — ★15 도달 시 방어+10·최대HP+460) */
+export const ARMOR_MILESTONES: Readonly<Record<number, { def: number; hp: number }>> = {
+  5: { def: 1, hp: 80 },
+  10: { def: 3, hp: 160 },
+  15: { def: 6, hp: 220 },
+};
+
+/** 성수 up에서 누적된 무기 마일스톤 보너스 */
+export function starWeaponBonus(up: number): { atk: number; crit: number } {
+  let atk = 0, crit = 0;
+  for (const m of STAR_MILESTONES) {
+    if (up >= m) { atk += WEAPON_MILESTONES[m].atk; crit += WEAPON_MILESTONES[m].crit; }
+  }
+  return { atk, crit };
+}
+/** 성수 up에서 누적된 방어구 마일스톤 보너스 */
+export function starArmorBonus(up: number): { def: number; hp: number } {
+  let def = 0, hp = 0;
+  for (const m of STAR_MILESTONES) {
+    if (up >= m) { def += ARMOR_MILESTONES[m].def; hp += ARMOR_MILESTONES[m].hp; }
+  }
+  return { def, hp };
+}
+
+/** v3.0.7 — 강화 주문서 1장당 성공률 보너스 (%p, 중첩 최대 3장 = +45%p) */
+export const STAR_BLESS_RATE = 15;
+export const STAR_BLESS_MAX = 3;
+
+/** v3.0.7 — 장신구 스타포스 마일스톤 보너스 (crit 트랙: 반지 계열 / hp 트랙: 펜던트 계열)
+ *  v3.0.20 (#8) — 별 1개마다도 상승: 치명 +0.5%p/성, HP +8/성 (마일스톤은 기존보다 강하게)
+ *  v1.3.1 (#3) — atk/def 트랙 신설: 무력의 반지 등 atk/def 장신구도 스타포스 효과가
+ *  눈에 보이게 (무기/방어구 perStar와 동일 체감 — atk +2+8%/성 · def +1+6%/성).
+ *  기존엔 atk/def 장신구는 성급을 올려도 스탯이 0 증가 → "스타포스 적용 안 되는 장비" 민원 */
+export function starAccBonus(up: number, item: { crit?: number; maxHp?: number; atk?: number; def?: number }): { crit: number; hp: number; atk: number; def: number } {
+  let crit = 0, hp = 0, atk = 0, def = 0;
+  if (item.crit) {
+    crit = up * 0.5; // 본당 +0.5%p
+    if (up >= 5) crit += 3;
+    if (up >= 10) crit += 4;
+    if (up >= 15) crit += 7; // ★15 누적 +21.5%p (기존 12 → 대폭 상향)
+  }
+  if (item.maxHp) {
+    hp = up * 8; // 본당 +8
+    if (up >= 5) hp += 20;
+    if (up >= 10) hp += 35;
+    if (up >= 15) hp += 55; // ★15 누적 +240 (기존 110 → 대폭 상향)
+  }
+  /* v1.3.1 (#3) — atk/def 트랙: 본당 atk +2 + 기본atk 8% / def +1 + 기본def 6%,
+   *  마일스톤(★5/★10/★15)에 무기·방어구와 동일 톤의 가산 */
+  if (item.atk) {
+    atk = up * 2 + Math.round((item.atk * 0.08) * up);
+    if (up >= 5) atk += 6;
+    if (up >= 10) atk += 10;
+    if (up >= 15) atk += 16;
+  }
+  if (item.def) {
+    def = up * 1 + Math.round((item.def * 0.06) * up);
+    if (up >= 5) def += 2;
+    if (up >= 10) def += 3;
+    if (up >= 15) def += 5;
+  }
+  return { crit: Math.round(crit * 10) / 10, hp, atk, def };
+}
+
+/** 성급 티어 (0=흰색 ★1~4 / 1=청록 ★5~9 / 2=보라 ★10~14 / 3=금색 ★15) */
+export function starTier(up: number): 0 | 1 | 2 | 3 {
+  return up >= 15 ? 3 : up >= 10 ? 2 : up >= 5 ? 1 : 0;
+}
+/** 성급 티어 색상 (hex) — 오라/파티클/피커업 텍스트 공용 */
+export const STAR_TIER_COLORS = [0xffffff, 0x6ff2d8, 0xd29dff, 0xffd76a] as const;
+export const STAR_TIER_CSS = ["#e8ecf2", "#6ff2d8", "#d29dff", "#ffd76a"] as const;
+
+export type ItemDef = {
+  key: ItemKey;
+  kind: "consumable" | "weapon" | "armor" | "accessory" | "buff" | "pet" | "cosmetic" | "material";
+  name: string;
+  icon: string; // 텍스처 키
+  price: number; // 상점 구매가 (0 = 판매 안 함/기본 지급)
+  tier: ItemTier; // 등급 (UI 테두리/이름색)
+  heal?: number; // HP 회복
+  restore?: number; // MP 회복
+  /** v3.0.20 (#7) — 엘릭서: 사용 시 HP/MP 전부 100% 회복 */
+  healFull?: boolean;
+  /** v3.0.20 (#9) — 판매가 직접 지정 (eert 큐브 5000G 등 — 상점 구매가와 무관) */
+  sellPrice?: number;
+  atk?: number; // 무기 공격력 보너스
+  def?: number; // 방어구 방어력
+  crit?: number; // 장신구 — 크리티컬 확률 증가 (%p)
+  maxHp?: number; // 장신구 — 최대 HP 증가
+  slot?: "ring" | "pendant"; // v2.9 (#8) — 중복 장착 슬롯 종류 (기본 ring)
+  /** v3.0.6 (지시 #9) — 상점 구매 금지 (보스 드롭 전용 — 추후 유저 거래소 판매 예정) */
+  tradeLock?: boolean;
+  /** v3.0.6 — BM 상점(에메랄드) 전용 가격 / 골드 상점 판매 금지 플래그 */
+  bmPrice?: number;
+  bmOnly?: boolean;
+  /** v3.0.6 — 보스 드롭 설명 (인벤토리 툴팁용) */
+  bossDrop?: string;
+  /** v1.0.2 (#GM아이템) — GM 전용 아이템: 상점/드롭/거래판 어디에도 존재하지 않음 */
+  gmOnly?: boolean;
+};
+
+export const ITEMS: Record<ItemKey, ItemDef> = {
+  potion_hp: { key: "potion_hp", kind: "consumable", name: "HP 물약", icon: "item_potion_hp", price: 30, tier: "common", heal: 50 },
+  potion_mp: { key: "potion_mp", kind: "consumable", name: "MP 물약", icon: "item_potion_mp", price: 25, tier: "common", restore: 30 },
+  /* v2.5 — 상급 물약 (지시 #5 아이템 확장) */
+  potion_hp2: { key: "potion_hp2", kind: "consumable", name: "상급 HP 물약", icon: "item_potion_hp2", price: 70, tier: "rare", heal: 130 },
+  potion_mp2: { key: "potion_mp2", kind: "consumable", name: "상급 MP 물약", icon: "item_potion_mp2", price: 60, tier: "rare", restore: 80 },
+  /* v3.0.20 (#7) — 엘릭서: HP/MP 한 번에 100% 회복 (전투 지속력 최고급 소모품) */
+  potion_elixir: { key: "potion_elixir", kind: "consumable", name: "엘릭서", icon: "item_potion_elixir", price: 400, tier: "epic", healFull: true },
+  /* v2.5 — 이동 소모품 (지시 #6 귀환서 / #7 지역 워프 부적) */
+  scroll_return: { key: "scroll_return", kind: "consumable", name: "마을 귀환서", icon: "item_scroll_return", price: 40, tier: "common" },
+  scroll_warp: { key: "scroll_warp", kind: "consumable", name: "지역 이동 부적", icon: "item_scroll_warp", price: 120, tier: "rare" },
+  /* v3.0.7 — 강화 주문서: 사용 시 다음 강화 시도 1회 성공률 +15%p (최대 3중첩) */
+  scroll_star: { key: "scroll_star", kind: "consumable", name: "강화 주문서", icon: "item_scroll_star", price: 150, tier: "rare" },
+  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 10, tier: "common", atk: 0 },
+  weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 240, tier: "rare", atk: 6 },
+  weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 640, tier: "epic", atk: 14 },
+  weapon_4: { key: "weapon_4", kind: "weapon", name: "심연의 대검", icon: "item_weapon_4", price: 1400, tier: "epic", atk: 20 },
+  /* v2.5 — 상위 장비 티어 (지시 #5 아이템 확장) */
+  weapon_5: { key: "weapon_5", kind: "weapon", name: "용인의 마검", icon: "item_weapon_5", price: 2800, tier: "epic", atk: 28 },
+  weapon_6: { key: "weapon_6", kind: "weapon", name: "심연룡의 절세검", icon: "item_weapon_6", price: 5600, tier: "epic", atk: 38 },
+  armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 8, tier: "common", def: 0 },
+  armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 210, tier: "rare", def: 3 },
+  armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 580, tier: "epic", def: 7 },
+  armor_4: { key: "armor_4", kind: "armor", name: "수호자의 갑옷", icon: "item_armor_4", price: 1250, tier: "epic", def: 10 },
+  armor_5: { key: "armor_5", kind: "armor", name: "용린 갑주", icon: "item_armor_5", price: 2400, tier: "epic", def: 14 },
+  armor_6: { key: "armor_6", kind: "armor", name: "심연룡의 비늘갑옷", icon: "item_armor_6", price: 4800, tier: "epic", def: 18 },
+  ring_power: { key: "ring_power", kind: "accessory", name: "힘의 반지", icon: "item_ring_power", price: 380, tier: "rare", crit: 7, slot: "ring" },
+  ring_vital: { key: "ring_vital", kind: "accessory", name: "생명의 반지", icon: "item_ring_vital", price: 340, tier: "rare", maxHp: 25, slot: "ring" },
+  /* v2.5 — 상위 장신구 (지시 #5 아이템 확장) */
+  ring_crit: { key: "ring_crit", kind: "accessory", name: "매의 눈 반지", icon: "item_ring_crit", price: 1300, tier: "epic", crit: 12, slot: "ring" },
+  ring_guard: { key: "ring_guard", kind: "accessory", name: "수호 반지", icon: "item_ring_guard", price: 1200, tier: "epic", maxHp: 60, slot: "ring" },
+  /* v2.9 (#8) — 펜던트 (2개 중복 장착) */
+  pendant_vital: { key: "pendant_vital", kind: "accessory", name: "생명의 펜던트", icon: "item_pendant_vital", price: 900, tier: "rare", maxHp: 45, slot: "pendant" },
+  pendant_arcane: { key: "pendant_arcane", kind: "accessory", name: "신비의 펜던트", icon: "item_pendant_arcane", price: 1600, tier: "epic", crit: 10, slot: "pendant" },
+  /* ---- BM (v1.9): 버프 물약 / 펫 / 치장 ---- */
+  buff_atk: { key: "buff_atk", kind: "buff", name: "분노의 물약", icon: "item_buff_atk", price: 60, tier: "rare" },
+  buff_def: { key: "buff_def", kind: "buff", name: "수호의 물약", icon: "item_buff_def", price: 55, tier: "rare" },
+  buff_spd: { key: "buff_spd", kind: "buff", name: "신속의 물약", icon: "item_buff_spd", price: 50, tier: "rare" },
+  buff_exp: { key: "buff_exp", kind: "buff", name: "지혜의 물약", icon: "item_buff_exp", price: 90, tier: "rare" },
+  /* v1.2.1 (#2 펫BM전용) — 유저 지시 "펫은 bm으로만 팔아 (일반 골드로 팔지마)":
+   *  골드 상점 진열 철수 + BM 합류(bmPrice 신설). 기존 보유분은 그대로 사용 가능. */
+  pet_slime: { key: "pet_slime", kind: "pet", name: "슬라임 젤리", icon: "pet_slime", price: 280, bmPrice: 8, bmOnly: true, tier: "rare" },
+  pet_pixie: { key: "pet_pixie", kind: "pet", name: "요정 핑크이", icon: "pet_pixie", price: 520, bmPrice: 14, bmOnly: true, tier: "epic" },
+  cos_dawn: { key: "cos_dawn", kind: "cosmetic", name: "새벽빛 오라", icon: "cos_dawn", price: 200, tier: "rare" },
+  cos_gold: { key: "cos_gold", kind: "cosmetic", name: "황금 오라", icon: "cos_gold", price: 200, tier: "rare" },
+  cos_abyss: { key: "cos_abyss", kind: "cosmetic", name: "심연 오라", icon: "cos_abyss", price: 260, tier: "epic" },
+  cos_wings: { key: "cos_wings", kind: "cosmetic", name: "요정 날개", icon: "cos_wings", price: 340, tier: "epic" },
+  /* ---- v3.0.6 (지시 #9) — 보스 전용 드롭 아이템 (전설 등급) ----
+   *  상점에서 살 수 없음(tradeLock) — 추후 유저 거래소에서 사고팔게 할 예정.
+   *  보스별 1종, 100% 드롭. 상점 에픽 대비 확실히 강한 수치. */
+  bd_guardian: { key: "bd_guardian", kind: "accessory", name: "수호자의 문장", icon: "i_bd_guardian", price: 0, tier: "legend", maxHp: 90, crit: 5, slot: "ring", tradeLock: true, bossDrop: "심연의 수호자 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_behemoth: { key: "bd_behemoth", kind: "accessory", name: "눈보라의 심장", icon: "i_bd_behemoth", price: 0, tier: "legend", maxHp: 120, def: 2, slot: "pendant", tradeLock: true, bossDrop: "눈보라의 거수 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "니드호그 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_surt: { key: "bd_surt", kind: "accessory", name: "화염 정령의 인장", icon: "i_bd_surt", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "수르트 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_fenrir: { key: "bd_fenrir", kind: "accessory", name: "탐욕의 속니", icon: "i_bd_fenrir", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "펜리르 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_skoll: { key: "bd_skoll", kind: "accessory", name: "교만의 쌍랑 귀걸이", icon: "i_bd_skoll", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "스콜&하티 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "i_bd_gram", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "가름 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_abysslord: { key: "bd_abysslord", kind: "accessory", name: "심연의 군주의 관", icon: "i_bd_abysslord", price: 0, tier: "legend", crit: 14, maxHp: 100, slot: "pendant", tradeLock: true, bossDrop: "심연의 군주 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "아부디토스 드롭 — 최고 보스 전리품 · 거래소 예정" },
+  /* ================= v1.0.2 (#GM아이템) — 관리자 전용 테스트 장비 =================
+   *  일반 유저는 어떤 경로로도 획득 불가 (상품 목록/드롭 테이블 미포함 + gmOnly 거래 차단).
+   *  지급은 GM 패널(서버 롤 검증 통과자)에서만. tradeLock으로 골드 판매도 차단. */
+  gm_sword: { key: "gm_sword", kind: "weapon", name: "[GM] 세계수의 대검", icon: "i_gm_sword", price: 0, tier: "legend", atk: 420, tradeLock: true, gmOnly: true },
+  gm_armor: { key: "gm_armor", kind: "armor", name: "[GM] 세계수의 갑주", icon: "i_gm_armor", price: 0, tier: "legend", def: 120, tradeLock: true, gmOnly: true },
+  gm_ring: { key: "gm_ring", kind: "accessory", name: "[GM] 운명의 반지", icon: "i_gm_ring", price: 0, tier: "legend", crit: 25, maxHp: 500, slot: "ring", tradeLock: true, gmOnly: true },
+  gm_elixir: { key: "gm_elixir", kind: "consumable", name: "[GM] 완전 엘릭서", icon: "i_gm_elixir", price: 0, tier: "legend", healFull: true, sellPrice: 1, tradeLock: true, gmOnly: true },
+  /* ---- v3.0.6 — BM 상점 (에메랄드 전용 — 골드 상점과 분리, 지시 #1) ---- */
+  pet_atlas: { key: "pet_atlas", kind: "pet", name: "별의 정령 아틀라스", icon: "pet_atlas", price: 45000, bmPrice: 30, bmOnly: true, tier: "legend" },
+  ring_bless: { key: "ring_bless", kind: "accessory", name: "가호의 반지", icon: "ring_bless", price: 60000, bmPrice: 45, bmOnly: true, tier: "legend", crit: 15, maxHp: 100, slot: "ring" },
+  buff_king: { key: "buff_king", kind: "buff", name: "왕의 가호", icon: "buff_king", price: 15000, bmPrice: 15, bmOnly: true, tier: "legend" },
+  buff_crit: { key: "buff_crit", kind: "buff", name: "질풍의 물약", icon: "i_buff_crit", price: 130, tier: "rare", sellPrice: 45 },
+  buff_gold: { key: "buff_gold", kind: "buff", name: "탐욕의 물약", icon: "item_coin", price: 120, tier: "rare", sellPrice: 40 },
+  buff_luck: { key: "buff_luck", kind: "buff", name: "행운의 물약", icon: "i_buff_luck", price: 110, tier: "rare", sellPrice: 38 },
+  cos_aurora: { key: "cos_aurora", kind: "cosmetic", name: "오로라 후광", icon: "cos_aurora", price: 30000, bmPrice: 20, bmOnly: true, tier: "legend" },
+  /* v1.3.0 (지시 #7) — 랭커 전용 치장: 랭킹 상점에서만 판매 (서버에서 내 순위 검증 — Top10 한정).
+   *  골드 상점/일반 캐시상점 진열 금지 — 랭커만 채울 수 있는 BM 소비 코너 */
+  rank_aura: { key: "rank_aura", kind: "cosmetic", name: "챔피언의 오라", icon: "cos_gold", price: 0, bmPrice: 30, bmOnly: true, tier: "legend" },
+  rank_crown_gold: { key: "rank_crown_gold", kind: "cosmetic", name: "랭커의 황금 왕관", icon: "acc_crown", price: 0, bmPrice: 50, bmOnly: true, tier: "legend" },
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (캐시상점 합류 — 완전 교체 코스튬) */
+  outfit_dragon: { key: "outfit_dragon", kind: "cosmetic", name: "용기사 드라고네트", icon: "cost_dragon_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_frost: { key: "outfit_frost", kind: "cosmetic", name: "서리의 백작", icon: "costm_frost_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_sakura: { key: "outfit_sakura", kind: "cosmetic", name: "벚꽃 검부이", icon: "cost_sakura_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_void: { key: "outfit_void", kind: "cosmetic", name: "공허의 순례자", icon: "costm_void_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (유저 제공 SPUM 파트 실제 조합 — 투구/후드/헤어/망토/의상 파트) */
+  outfit_valkyrie: { key: "outfit_valkyrie", kind: "cosmetic", name: "발키리의 은빛 갑주", icon: "cost_valkyrie_idle0", price: 128000, bmPrice: 52, bmOnly: true, tier: "legend" },
+  outfit_witch: { key: "outfit_witch", kind: "cosmetic", name: "심연의 후드 마녀", icon: "cost_witch_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_sylvan: { key: "outfit_sylvan", kind: "cosmetic", name: "숲의 후드 수호자", icon: "cost_sylvan_idle0", price: 88000, bmPrice: 36, bmOnly: true, tier: "epic" },
+  outfit_lily: { key: "outfit_lily", kind: "cosmetic", name: "흑발의 백합 검부이", icon: "cost_lily_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_warlord: { key: "outfit_warlord", kind: "cosmetic", name: "파멸의 대군주", icon: "costm_warlord_idle0", price: 148000, bmPrice: 52, bmOnly: true, tier: "legend" },
+  outfit_paladin: { key: "outfit_paladin", kind: "cosmetic", name: "황실 그레이트 성기사", icon: "costm_paladin_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_nightblade: { key: "outfit_nightblade", kind: "cosmetic", name: "밤을 두른 칼날", icon: "costm_nightblade_idle0", price: 88000, bmPrice: 36, bmOnly: true, tier: "epic" },
+  outfit_mariner: { key: "outfit_mariner", kind: "cosmetic", name: "푸른 파도 항해사", icon: "costm_mariner_idle0", price: 82000, bmPrice: 32, bmOnly: true, tier: "epic" },
+  /* v1.4.11 — 잠자던 시트 활성화 신규 2종 (cost_flame/cost_mystic 계열 112프레임 — 미사용 에셋 통합) */
+  outfit_flame: { key: "outfit_flame", kind: "cosmetic", name: "화염의 무희", icon: "cost_flame_idle0", price: 96000, bmPrice: 40, bmOnly: true, tier: "epic" },
+  outfit_mystic: { key: "outfit_mystic", kind: "cosmetic", name: "신비술사", icon: "cost_mystic_idle0", price: 96000, bmPrice: 40, bmOnly: true, tier: "epic" },
+  /* ---- v3.0.20 (#9) — eert 큐브: "큐브는 마시는 게 아니다" ----
+   *  BM(에메랄드)로만 구매 가능 + 골드 판매가 5000G (아주 비싼 가격).
+   *  장비 행의 [eert] 버튼으로 사용하며 1회 사용마다 1개 소모. */
+  eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 12000, bmPrice: 8, bmOnly: true, sellPrice: 5000, tier: "epic" },
+  /* v4.0.0 — 바르가 업데이트 아이템 */
+  exp_book: { key: "exp_book", kind: "consumable", name: "경험치 책", icon: "i_exp_book", price: 5000, bmPrice: 3, bmOnly: true, sellPrice: 800, tier: "rare" },
+  /* v1.2.0 (#15 경험치책 3종 — 메이플 성장책 오마주 · v1.2.1 비약→책):
+   *  고급=현재 레벨 필요 EXP의 60% · 태풍=150%(1.5레벨어치) · 극한=즉시 +1레벨(200 미만).
+   *  극한은 환생 요구 레벨(120~200)을 함부로 넘지 않게 200 미만에서만 사용 가능. */
+  /* v1.2.1 (#5 비약→책) — 유저 지시로 아이템명 변경 (비약→책) */
+  exp_book_s: { key: "exp_book_s", kind: "consumable", name: "고급 성장의 책", icon: "i_exp_book_s", price: 26000, bmPrice: 5, bmOnly: false, sellPrice: 4000, tier: "epic" },
+  exp_book_m: { key: "exp_book_m", kind: "consumable", name: "태풍 성장의 책", icon: "i_exp_book_m", price: 0, bmPrice: 12, bmOnly: true, sellPrice: 9000, tier: "epic" },
+  exp_book_l: { key: "exp_book_l", kind: "consumable", name: "극한 성장의 책", icon: "i_exp_book_l", price: 0, bmPrice: 24, bmOnly: true, sellPrice: 18000, tier: "legend" },
+  /* v1.0.8 무한 콘텐츠 — 제작 재료 3종 (연금 제작대 전용 — 상점 판매 없음, 적 처치 드롭) */
+  mat_mana: { key: "mat_mana", kind: "material", name: "마나 결정", icon: "item_mat_mana", price: 36, tier: "common", sellPrice: 18 },
+  mat_heart: { key: "mat_heart", kind: "material", name: "몬스터 심장", icon: "item_mat_heart", price: 60, tier: "rare", sellPrice: 30 },
+  mat_mithril: { key: "mat_mithril", kind: "material", name: "미스릴 가루", icon: "item_mat_mithril", price: 120, tier: "epic", sellPrice: 60 },
+  tier_cube: { key: "tier_cube", kind: "consumable", name: "등급업 큐브", icon: "i_tier_cube", price: 22000, bmPrice: 15, bmOnly: true, sellPrice: 12000, tier: "epic" },
+  /* ================= v4.3.0 — BM 대확장 (물약 8티어×2 · 장신구 12 · 상자 4 · 패키지 6) =================
+   *  아이콘은 기존 텍스처 재활용 — 신규 에셋 0. 물약 3~5티어는 골드 상점 판매(골드 싱크),
+   *  6티어 이상은 BM/가챠 전용 수급. */
+  potion_hp3: { key: "potion_hp3", kind: "consumable", name: "고급 HP 물약", icon: "i_potion_hp3", price: 340, tier: "rare", heal: 700, sellPrice: 130 },
+  potion_hp4: { key: "potion_hp4", kind: "consumable", name: "최고급 HP 물약", icon: "i_potion_hp4", price: 280, tier: "rare", heal: 450, sellPrice: 110 },
+  potion_hp5: { key: "potion_hp5", kind: "consumable", name: "왕실 HP 물약", icon: "i_potion_hp5", price: 520, tier: "epic", heal: 700, sellPrice: 200 },
+  potion_hp6: { key: "potion_hp6", kind: "consumable", name: "용의 HP 물약", icon: "i_potion_hp6", price: 950, bmPrice: 6, bmOnly: true, sellPrice: 380, tier: "epic", heal: 1100 },
+  potion_hp7: { key: "potion_hp7", kind: "consumable", name: "성스러운 HP 물약", icon: "i_potion_hp7", price: 2100, bmPrice: 10, bmOnly: true, sellPrice: 620, tier: "epic", heal: 1700 },
+  potion_hp8: { key: "potion_hp8", kind: "consumable", name: "심연 HP 물약", icon: "i_potion_hp8", price: 4600, bmPrice: 15, bmOnly: true, sellPrice: 950, tier: "legend", heal: 2600 },
+  potion_hp9: { key: "potion_hp9", kind: "consumable", name: "세계수 HP 물약", icon: "i_potion_hp9", price: 10000, bmPrice: 22, bmOnly: true, sellPrice: 1400, tier: "legend", heal: 4000 },
+  potion_hp10: { key: "potion_hp10", kind: "consumable", name: "천멸 HP 물약", icon: "i_potion_hp10", price: 22000, bmPrice: 32, bmOnly: true, sellPrice: 2000, tier: "legend", heal: 6000 },
+  potion_mp3: { key: "potion_mp3", kind: "consumable", name: "고급 MP 물약", icon: "i_potion_mp3", price: 300, tier: "rare", restore: 450, sellPrice: 115 },
+  potion_mp4: { key: "potion_mp4", kind: "consumable", name: "최고급 MP 물약", icon: "i_potion_mp4", price: 240, tier: "rare", restore: 280, sellPrice: 95 },
+  potion_mp5: { key: "potion_mp5", kind: "consumable", name: "왕실 MP 물약", icon: "i_potion_mp5", price: 450, tier: "epic", restore: 450, sellPrice: 170 },
+  potion_mp6: { key: "potion_mp6", kind: "consumable", name: "용의 MP 물약", icon: "i_potion_mp6", price: 800, bmPrice: 5, bmOnly: true, sellPrice: 320, tier: "epic", restore: 700 },
+  potion_mp7: { key: "potion_mp7", kind: "consumable", name: "성스러운 MP 물약", icon: "i_potion_mp7", price: 1800, bmPrice: 8, bmOnly: true, sellPrice: 520, tier: "epic", restore: 1050 },
+  potion_mp8: { key: "potion_mp8", kind: "consumable", name: "심연 MP 물약", icon: "i_potion_mp8", price: 3900, bmPrice: 12, bmOnly: true, sellPrice: 800, tier: "legend", restore: 1600 },
+  potion_mp9: { key: "potion_mp9", kind: "consumable", name: "세계수 MP 물약", icon: "i_potion_mp9", price: 8500, bmPrice: 18, bmOnly: true, sellPrice: 1200, tier: "legend", restore: 2400 },
+  potion_mp10: { key: "potion_mp10", kind: "consumable", name: "천멸 MP 물약", icon: "i_potion_mp10", price: 19000, bmPrice: 26, bmOnly: true, sellPrice: 1700, tier: "legend", restore: 3600 },
+  ring_might: { key: "ring_might", kind: "accessory", name: "무력의 반지", icon: "i_ring_might", price: 900, tier: "epic", atk: 18, slot: "ring", sellPrice: 320 },
+  ring_swift: { key: "ring_swift", kind: "accessory", name: "질풍의 반지", icon: "i_ring_swift", price: 1100, tier: "epic", atk: 12, crit: 6, slot: "ring", sellPrice: 400 },
+  ring_fortune: { key: "ring_fortune", kind: "accessory", name: "행운의 반지", icon: "i_ring_fortune", price: 30000, bmPrice: 12, bmOnly: true, tier: "epic", crit: 10, maxHp: 60, slot: "ring" },
+  ring_dragon: { key: "ring_dragon", kind: "accessory", name: "용심의 반지", icon: "i_ring_dragon", price: 65000, bmPrice: 26, bmOnly: true, tier: "legend", atk: 26, maxHp: 120, slot: "ring" },
+  ring_titan: { key: "ring_titan", kind: "accessory", name: "거인의 반지", icon: "i_ring_titan", price: 50000, bmPrice: 20, bmOnly: true, tier: "epic", def: 6, maxHp: 260, slot: "ring" },
+  ring_phantom: { key: "ring_phantom", kind: "accessory", name: "유령의 반지", icon: "i_ring_phantom", price: 75000, bmPrice: 30, bmOnly: true, tier: "legend", atk: 8, crit: 14, slot: "ring" },
+  ring_ancient: { key: "ring_ancient", kind: "accessory", name: "고대 왕의 반지", icon: "i_ring_ancient", price: 140000, bmPrice: 55, bmOnly: true, tier: "legend", atk: 30, crit: 8, maxHp: 150, slot: "ring" },
+  pendant_ward: { key: "pendant_ward", kind: "accessory", name: "수호의 부적", icon: "i_pendant_ward", price: 850, tier: "rare", def: 8, slot: "pendant", sellPrice: 300 },
+  pendant_blood: { key: "pendant_blood", kind: "accessory", name: "피의 부적", icon: "i_pendant_blood", price: 1500, tier: "epic", atk: 14, maxHp: 90, slot: "pendant", sellPrice: 520 },
+  pendant_moon: { key: "pendant_moon", kind: "accessory", name: "달빛 부적", icon: "i_pendant_moon", price: 40000, bmPrice: 16, bmOnly: true, tier: "epic", crit: 8, def: 4, slot: "pendant" },
+  pendant_sage: { key: "pendant_sage", kind: "accessory", name: "현자의 부적", icon: "i_pendant_sage", price: 55000, bmPrice: 22, bmOnly: true, tier: "epic", def: 5, maxHp: 200, slot: "pendant" },
+  pendant_star: { key: "pendant_star", kind: "accessory", name: "별의 부적", icon: "i_pendant_star", price: 110000, bmPrice: 45, bmOnly: true, tier: "legend", atk: 20, crit: 6, maxHp: 100, slot: "pendant" },
+  chest_iron: { key: "chest_iron", kind: "consumable", name: "무쇠 상자", icon: "i_chest_iron", price: 8000, bmPrice: 5, bmOnly: true, sellPrice: 400, tier: "rare" },
+  /* v4.3.0 — 신규 펫 6종 (ITEMS 등록: BM 구매 경로 — PetDef 본체는 위 PET_DEFS) */
+  /* v1.0.3 (#펫이름) — PET_DEFS 표기명과 동일하게 싱크 (상점/인벤은 ITEMS명, 펫 출석은 PET_DEFS명) */
+  pet_wisp: { key: "pet_wisp", kind: "pet", name: "물빛 요정 위스프", icon: "i_pet_wisp", price: 45000, bmPrice: 18, bmOnly: true, tier: "epic" },
+  pet_ember: { key: "pet_ember", kind: "pet", name: "불꽃 요정 엠버", icon: "i_pet_ember", price: 55000, bmPrice: 22, bmOnly: true, tier: "epic" },
+  pet_frost: { key: "pet_frost", kind: "pet", name: "서리 슬라임", icon: "i_pet_frost", price: 65000, bmPrice: 26, bmOnly: true, tier: "epic" },
+  pet_golem: { key: "pet_golem", kind: "pet", name: "철석 슬라임", icon: "i_pet_golem", price: 80000, bmPrice: 32, bmOnly: true, tier: "epic" },
+  pet_unicorn: { key: "pet_unicorn", kind: "pet", name: "빛의 요정 유니", icon: "i_pet_unicorn", price: 100000, bmPrice: 40, bmOnly: true, tier: "legend" },
+  pet_reaper: { key: "pet_reaper", kind: "pet", name: "심연의 별 정령 리퍼", icon: "i_pet_reaper", price: 140000, bmPrice: 55, bmOnly: true, tier: "legend" },
+  /* v4.3.0 — 신규 치장 6종 (ITEMS 등록: BM 구매 경로 — CosmeticDef 본체는 위 COSMETIC_DEFS) */
+  cos_frost: { key: "cos_frost", kind: "cosmetic", name: "서리 오라", icon: "i_cos_frost", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
+  cos_flame: { key: "cos_flame", kind: "cosmetic", name: "화염 오라", icon: "i_cos_flame", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
+  /* v1.0.7 — 코스튬/헤어 (BM 에메랄드 구매 — 착용 슬롯형 치장) */
+  outfit_royal: { key: "outfit_royal", kind: "cosmetic", name: "왕실 황금 갑옷", icon: "outfit_royal_idle0", price: 30000, bmPrice: 32, bmOnly: true, tier: "legend" },
+  outfit_shadow: { key: "outfit_shadow", kind: "cosmetic", name: "암살자의 그림자의상", icon: "outfit_shadow_idle0", price: 30000, bmPrice: 28, bmOnly: true, tier: "epic" },
+  outfit_spring: { key: "outfit_spring", kind: "cosmetic", name: "봄맞이 새싹 의상", icon: "outfit_spring_idle0", price: 30000, bmPrice: 24, bmOnly: true, tier: "epic" },
+  outfit_navy: { key: "outfit_navy", kind: "cosmetic", name: "해군 사관 제복", icon: "outfit_navy_idle0", price: 30000, bmPrice: 24, bmOnly: true, tier: "epic" },
+  cos_shadow: { key: "cos_shadow", kind: "cosmetic", name: "그림자 오라", icon: "i_cos_shadow", price: 38000, bmPrice: 22, bmOnly: true, tier: "epic" },
+  cos_holy: { key: "cos_holy", kind: "cosmetic", name: "성스러운 오라", icon: "i_cos_holy", price: 38000, bmPrice: 22, bmOnly: true, tier: "epic" },
+  cos_storm: { key: "cos_storm", kind: "cosmetic", name: "폭풍 오라", icon: "i_cos_storm", price: 45000, bmPrice: 26, bmOnly: true, tier: "epic" },
+  cos_rainbow: { key: "cos_rainbow", kind: "cosmetic", name: "무지개 오라", icon: "i_cos_rainbow", price: 60000, bmPrice: 30, bmOnly: true, tier: "legend" },
+  /* v1.0.16 — 신규 치장 6종 (BM 판매 — 물약 철수분의 대체 소비재) */
+  cos_rose: { key: "cos_rose", kind: "cosmetic", name: "장미빛 오라", icon: "cos_wings", price: 28000, bmPrice: 16, bmOnly: true, tier: "rare" },
+  cos_toxic: { key: "cos_toxic", kind: "cosmetic", name: "맹독 오라", icon: "i_cos_shadow", price: 32000, bmPrice: 18, bmOnly: true, tier: "rare" },
+  cos_magma: { key: "cos_magma", kind: "cosmetic", name: "용암 오라", icon: "cos_gold", price: 36000, bmPrice: 20, bmOnly: true, tier: "epic" },
+  cos_lunar: { key: "cos_lunar", kind: "cosmetic", name: "달빛 오라", icon: "i_cos_frost", price: 36000, bmPrice: 20, bmOnly: true, tier: "epic" },
+  cos_deep: { key: "cos_deep", kind: "cosmetic", name: "심해 오라", icon: "i_cos_flame", price: 42000, bmPrice: 24, bmOnly: true, tier: "epic" },
+  cos_galaxy: { key: "cos_galaxy", kind: "cosmetic", name: "은하수 오라", icon: "i_cos_rainbow", price: 52000, bmPrice: 28, bmOnly: true, tier: "legend" },
+  /* v1.1.0 (#19) — 프리미엄 완전 교체 코스튬 6종 (캐시상점 — 고가 고퀄 도트) */
+  outfit_silver: { key: "outfit_silver", kind: "cosmetic", name: "은월의 검희", icon: "cost_silver_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_crimson: { key: "outfit_crimson", kind: "cosmetic", name: "진홍의 마녀", icon: "cost_crimson_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_seraph: { key: "outfit_seraph", kind: "cosmetic", name: "성녀 세라피나", icon: "cost_seraph_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_abyss: { key: "outfit_abyss", kind: "cosmetic", name: "심해의 가곡", icon: "cost_abyss_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_nightmare: { key: "outfit_nightmare", kind: "cosmetic", name: "나이트메어 기사", icon: "cost_nightmare_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_gilded: { key: "outfit_gilded", kind: "cosmetic", name: "황금 백작", icon: "cost_gilded_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  /* v1.1.0 (#1) — 어태치 장식 5종 (캐릭터에 고정, 실시간 동기화) */
+  acc_crown: { key: "acc_crown", kind: "cosmetic", name: "왕가의 왕관", icon: "acc_crown", price: 64000, bmPrice: 24, bmOnly: true, tier: "epic" },
+  acc_ribbon: { key: "acc_ribbon", kind: "cosmetic", name: "진홍 리본", icon: "acc_ribbon", price: 42000, bmPrice: 16, bmOnly: true, tier: "rare" },
+  acc_halo: { key: "acc_halo", kind: "cosmetic", name: "성스러운 후광", icon: "acc_halo", price: 78000, bmPrice: 30, bmOnly: true, tier: "epic" },
+  acc_wings_devil: { key: "acc_wings_devil", kind: "cosmetic", name: "마왕의 날개", icon: "acc_wings_devil", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend" },
+  acc_wings_fairy: { key: "acc_wings_fairy", kind: "cosmetic", name: "요정의 날개", icon: "acc_wings_fairy", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend" },
+  chest_silver: { key: "chest_silver", kind: "consumable", name: "은 상자", icon: "i_chest_silver", price: 20000, bmPrice: 12, bmOnly: true, sellPrice: 1200, tier: "epic" },
+  chest_gold: { key: "chest_gold", kind: "consumable", name: "금 상자", icon: "i_chest_gold", price: 42000, bmPrice: 25, bmOnly: true, sellPrice: 3000, tier: "epic" },
+  chest_legend: { key: "chest_legend", kind: "consumable", name: "전설 상자", icon: "i_chest_legend", price: 80000, bmPrice: 48, bmOnly: true, sellPrice: 6000, tier: "legend" },
+  pack_starter: { key: "pack_starter", kind: "consumable", name: "시작의 패키지", icon: "i_pack_starter", price: 14000, bmPrice: 9, bmOnly: true, sellPrice: 800, tier: "rare" },
+  pack_growth: { key: "pack_growth", kind: "consumable", name: "성장 패키지", icon: "i_pack_growth", price: 30000, bmPrice: 19, bmOnly: true, sellPrice: 2000, tier: "epic" },
+  pack_premium: { key: "pack_premium", kind: "consumable", name: "프리미엄 패키지", icon: "i_pack_premium", price: 60000, bmPrice: 39, bmOnly: true, sellPrice: 4500, tier: "epic" },
+  pack_ultimate: { key: "pack_ultimate", kind: "consumable", name: "궁극 패키지", icon: "i_pack_ultimate", price: 120000, bmPrice: 79, bmOnly: true, sellPrice: 9000, tier: "legend" },
+  pack_daily: { key: "pack_daily", kind: "consumable", name: "일일 한정 상자", icon: "i_pack_daily", price: 9000, bmPrice: 6, bmOnly: true, sellPrice: 700, tier: "rare" },
+  pack_weekly: { key: "pack_weekly", kind: "consumable", name: "주간 한정 패키지", icon: "i_pack_weekly", price: 46000, bmPrice: 29, bmOnly: true, sellPrice: 3200, tier: "epic" },
+  /* ---- v3.0.15 (#11) — 챕터 테마 세트 장비 (상점에서 챕터 해금 시 노출) ---- */
+  sfw_forest: { key: "sfw_forest", kind: "weapon", name: "숲의 수호자 대검", icon: "i_sfw_forest", price: 380, tier: "rare", atk: 9 },
+  sfa_forest: { key: "sfa_forest", kind: "armor", name: "숲의 수호자 갑옷", icon: "i_sfa_forest", price: 340, tier: "rare", def: 4 },
+  sfr_forest: { key: "sfr_forest", kind: "accessory", name: "숲의 수호자 반지", icon: "i_sfr_forest", price: 360, tier: "rare", crit: 5, maxHp: 20, slot: "ring" },
+  sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "쿠소디아 기사검", icon: "i_sfw_kingdom", price: 820, tier: "rare", atk: 15 },
+  sfa_kingdom: { key: "sfa_kingdom", kind: "armor", name: "쿠소디아 기사 갑옷", icon: "i_sfa_kingdom", price: 720, tier: "rare", def: 7 },
+  sfr_kingdom: { key: "sfr_kingdom", kind: "accessory", name: "쿠소디아 기사 반지", icon: "i_sfr_kingdom", price: 760, tier: "rare", crit: 7, maxHp: 30, slot: "ring" },
+  sfw_alfheim: { key: "sfw_alfheim", kind: "weapon", name: "정령왕의 마검", icon: "i_sfw_alfheim", price: 1600, tier: "epic", atk: 21 },
+  sfa_alfheim: { key: "sfa_alfheim", kind: "armor", name: "정령왕의 갑주", icon: "i_sfa_alfheim", price: 1400, tier: "epic", def: 10 },
+  sfr_alfheim: { key: "sfr_alfheim", kind: "accessory", name: "정령왕의 반지", icon: "i_sfr_alfheim", price: 1500, tier: "epic", crit: 9, maxHp: 40, slot: "ring" },
+  sfw_muspelheim: { key: "sfw_muspelheim", kind: "weapon", name: "화염의 군주 대검", icon: "i_sfw_muspelheim", price: 2700, tier: "epic", atk: 28 },
+  sfa_muspelheim: { key: "sfa_muspelheim", kind: "armor", name: "화염의 군주 갑주", icon: "i_sfa_muspelheim", price: 2300, tier: "epic", def: 13 },
+  sfr_muspelheim: { key: "sfr_muspelheim", kind: "accessory", name: "화염의 군주 반지", icon: "i_sfr_muspelheim", price: 2500, tier: "epic", crit: 11, maxHp: 55, slot: "ring" },
+  sfw_niflheim: { key: "sfw_niflheim", kind: "weapon", name: "서리바다의 검", icon: "i_sfw_niflheim", price: 4300, tier: "epic", atk: 36 },
+  sfa_niflheim: { key: "sfa_niflheim", kind: "armor", name: "서리바다의 갑주", icon: "i_sfa_niflheim", price: 3700, tier: "epic", def: 16 },
+  sfr_niflheim: { key: "sfr_niflheim", kind: "accessory", name: "서리바다의 반지", icon: "i_sfr_niflheim", price: 4000, tier: "epic", crit: 13, maxHp: 70, slot: "ring" },
+  sfw_cave: { key: "sfw_cave", kind: "weapon", name: "심연광의 대검", icon: "i_sfw_cave", price: 7000, tier: "epic", atk: 45 },
+  sfa_cave: { key: "sfa_cave", kind: "armor", name: "심연광의 갑주", icon: "i_sfa_cave", price: 6000, tier: "epic", def: 20 },
+  sfr_cave: { key: "sfr_cave", kind: "accessory", name: "심연광의 반지", icon: "i_sfr_cave", price: 6400, tier: "epic", crit: 15, maxHp: 90, slot: "ring" },
+  sfw_nidavellir: { key: "sfw_nidavellir", kind: "weapon", name: "드워프 장인의 검", icon: "i_sfw_nidavellir", price: 10800, tier: "epic", atk: 56 },
+  sfa_nidavellir: { key: "sfa_nidavellir", kind: "armor", name: "드워프 장인의 갑주", icon: "i_sfa_nidavellir", price: 9200, tier: "epic", def: 24 },
+  sfr_nidavellir: { key: "sfr_nidavellir", kind: "accessory", name: "드워프 장인의 반지", icon: "i_sfr_nidavellir", price: 9800, tier: "epic", crit: 17, maxHp: 115, slot: "ring" },
+  sfw_hel: { key: "sfw_hel", kind: "weapon", name: "저승 파수꾼의 검", icon: "i_sfw_hel", price: 16200, tier: "epic", atk: 68 },
+  sfa_hel: { key: "sfa_hel", kind: "armor", name: "저승 파수꾼의 갑주", icon: "i_sfa_hel", price: 13800, tier: "epic", def: 28 },
+  sfr_hel: { key: "sfr_hel", kind: "accessory", name: "저승 파수꾼의 반지", icon: "i_sfr_hel", price: 14700, tier: "epic", crit: 19, maxHp: 140, slot: "ring" },
+  sfw_abyss: { key: "sfw_abyss", kind: "weapon", name: "종언 마룡의 검", icon: "i_sfw_abyss", price: 24000, tier: "epic", atk: 82 },
+  sfa_abyss: { key: "sfa_abyss", kind: "armor", name: "종언 마룡의 갑주", icon: "i_sfa_abyss", price: 20500, tier: "epic", def: 33 },
+  sfr_abyss: { key: "sfr_abyss", kind: "accessory", name: "종언 마룡의 반지", icon: "i_sfr_abyss", price: 22000, tier: "epic", crit: 23, maxHp: 180, slot: "ring" },
+};
+
+/* v3.0.6 (지시 — "나중가면 플레이어가 너무 쌔닌까 보스 및 몬스터가 체력% 고정 데미지를 주게해"):
+ *  몬스터/보스 피해의 maxHP % 하한 — 방어력 스택으로 피해가 1로 굳는 후반 탱킹 방지.
+ *  최종 피해 = max(방어 감쇄 피해, maxHP × pct). 초반엔 원래 수치가 지배, 후반엔 %가 지배. */
+export const DMG_PCT = {
+  mob: 0.045,        // 일반 몬스터 접촉/투사체
+  elite: 0.06,       // 정예/시험 상대
+  boss: 0.09,        // 보스 탄막·돌진
+  bossSlam: 0.12,    // 보스 강타
+  plant: 0.1,        // v4.2.0 — 육식 식물: 최대체력 10% 고정데미지 (hitPlantHazard에서 trueDmg로 적용)
+} as const;
+
+/** 강화 1단계당 보너스 */
+export const UPGRADE_BONUS = { weaponAtk: 2, armorDef: 1 } as const;
+
+/* ================= BM (v1.9 — 버프/펫/치장, 메이플 BM 감각) ================= */
+
+export type BuffKey = "buff_atk" | "buff_def" | "buff_spd" | "buff_exp" | "buff_king"
+  | "buff_crit" | "buff_gold" | "buff_luck"; // v4.3.0 — 신규 BM 버프 3종 (질풍/탐욕/행운)
+export type PetKey = "pet_slime" | "pet_pixie" | "pet_atlas"
+  | "pet_wisp" | "pet_ember" | "pet_frost" | "pet_golem" | "pet_unicorn" | "pet_reaper"; // v4.3.0 — +6
+export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | "cos_aurora" | "cos_isekai" | "cos_pixel"
+  | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow" // v4.3.0 — +6
+  | "cos_rose" | "cos_toxic" | "cos_magma" | "cos_lunar" | "cos_deep" | "cos_galaxy" // v1.0.16 — +6 (유저 지시 "치장템을 차라리 늘려")
+  /* v1.0.7 — SPUM식 코스튬 4종 (v1.2.0 — 포니테일 헤어는 유저 지시로 완전 제거) */
+  | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy"
+  /* v1.1.0 (#19 프리미엄) — SPUM식 완전 교체 코스튬 6종 (머리+피부+의상 전부 다른 캐릭터로 변신) */
+  | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
+  /* v1.1.0 (#1 장식) — 캐릭터에 고정되는 어태치 장식 (캐릭터가 움직이면 실시간 동기화) */
+  | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy"
+  /* v1.3.0 (지시 #7) — 랭커 전용 치장 2종 */
+  | "rank_aura" | "rank_crown_gold"
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 */
+  | "outfit_dragon" | "outfit_frost" | "outfit_sakura" | "outfit_void"
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 */
+  | "outfit_valkyrie" | "outfit_witch" | "outfit_sylvan" | "outfit_lily"
+  | "outfit_warlord" | "outfit_paladin" | "outfit_nightblade" | "outfit_mariner"
+  | "outfit_flame" | "outfit_mystic";
+
+/** 버프 물약 효과 — 사용 시 지속시간 동안 적용 (같은 버프 재사용 시 시간 갱신) */
+export type BuffDef = {
+  key: BuffKey;
+  name: string;
+  icon: string;
+  desc: string;
+  duration: number;
+  color: string;
+  price: number;
+};
+export const BUFF_DEFS: Record<BuffKey, BuffDef> = {
+  buff_atk: { key: "buff_atk", name: "분노의 물약", icon: "item_buff_atk", desc: "공격력 +25%", duration: 60_000, color: "#ff8a8a", price: 60 },
+  buff_def: { key: "buff_def", name: "수호의 물약", icon: "item_buff_def", desc: "방어력 +8", duration: 60_000, color: "#8fb8ff", price: 55 },
+  buff_spd: { key: "buff_spd", name: "신속의 물약", icon: "item_buff_spd", desc: "이동속도 +25%", duration: 60_000, color: "#9af0c8", price: 50 },
+  buff_exp: { key: "buff_exp", name: "지혜의 물약", icon: "item_buff_exp", desc: "경험치 +50%", duration: 120_000, color: "#e8a8ff", price: 90 },
+  /* v3.0.6 — BM 전용 올인원 버프 (왕의 가호) */
+  buff_king: { key: "buff_king", name: "왕의 가호", icon: "buff_king", desc: "공격 +30% · 방어 +10 · 신속 +25%", duration: 90_000, color: "#ffe29a", price: 0 },
+  /* v4.3.0 — 신규 BM 버프 3종 (도파민 소비 루프 — 질풍/탐욕/행운) */
+  buff_crit: { key: "buff_crit", name: "질풍의 물약", icon: "item_buff_atk", desc: "치명타 확률 +12%", duration: 90_000, color: "#ffb0e8", price: 85 },
+  buff_gold: { key: "buff_gold", name: "탐욕의 물약", icon: "item_coin", desc: "골드 획득 +40%", duration: 120_000, color: "#ffd76a", price: 80 },
+  buff_luck: { key: "buff_luck", name: "행운의 물약", icon: "item_scroll_star", desc: "물약 드롭률 +35%", duration: 120_000, color: "#9af0c8", price: 70 },
+};
+
+/** 펫 정의 — 플레이어를 따라다니며 드롭 자동 줍기 + 골드 보너스 */
+export type PetDef = {
+  key: PetKey;
+  name: string;
+  icon: string;
+  desc: string;
+  bonusGoldPct: number;
+  price: number;
+  tint?: number; // v4.3.0 — 텍스처 재활용 펫 틴트 (Pet 스프라이트에 적용)
+};
+export const PET_DEFS: Record<PetKey, PetDef> = {
+  pet_slime: { key: "pet_slime", name: "슬라임 젤리", icon: "pet_slime", desc: "드롭 자동 줍기 · 골드 +10%", bonusGoldPct: 10, price: 280 },
+  pet_pixie: { key: "pet_pixie", name: "요정 핑크이", icon: "pet_pixie", desc: "드롭 자동 줍기 · 골드 +20%", bonusGoldPct: 20, price: 520 },
+  /* v3.0.6 — 3번째 펫: 맵 전체 드롭을 즉시 끌어오는 자석 정령 (BM 전용, 지시 #5) */
+  pet_atlas: { key: "pet_atlas", name: "별의 정령 아틀라스", icon: "pet_atlas", desc: "맵 전체 드롭 즉시 흡수 · 골드 +30%", bonusGoldPct: 30, price: 0 },
+  /* v4.3.0 — 신규 펫 6종 (텍스처 재활용 + 틴트 — 골드 보너스 레더로 BM 파는) */
+  /* v1.0.3 (#펫이름) — 이름=디자인 일치: 위스프/엠버/유니는 요정 스프라이트(pet_pixie 틴트),
+   *  프로스트/골렘은 슬라임 스프라이트(pet_slime 틴트), 리퍼는 별 정령 스프라이트(pet_atlas 틴트).
+   *  "새/유니콘/골렘 조각상"처럼 스프라이트에 없는 사물형 이름은 전부 실제 생김새로 교체(키 유지 — 세이브 호환). */
+  pet_wisp: { key: "pet_wisp", name: "물빛 요정 위스프", icon: "pet_pixie", tint: 0x8ad4ff, desc: "드롭 자동 줍기 · 골드 +35%", bonusGoldPct: 35, price: 0 },
+  pet_ember: { key: "pet_ember", name: "불꽃 요정 엠버", icon: "pet_pixie", tint: 0xff9a50, desc: "드롭 자동 줍기 · 골드 +40%", bonusGoldPct: 40, price: 0 },
+  pet_frost: { key: "pet_frost", name: "서리 슬라임", icon: "pet_slime", tint: 0x9adfff, desc: "드롭 자동 줍기 · 골드 +45%", bonusGoldPct: 45, price: 0 },
+  pet_golem: { key: "pet_golem", name: "철석 슬라임", icon: "pet_slime", tint: 0xb8b8c8, desc: "드롭 자동 줍기 · 골드 +50%", bonusGoldPct: 50, price: 0 },
+  pet_unicorn: { key: "pet_unicorn", name: "빛의 요정 유니", icon: "pet_pixie", tint: 0xffe8ff, desc: "드롭 자동 줍기 · 골드 +55%", bonusGoldPct: 55, price: 0 },
+  pet_reaper: { key: "pet_reaper", name: "심연의 별 정령 리퍼", icon: "pet_atlas", tint: 0xb070ff, desc: "맵 전체 드롭 즉시 흡수 · 골드 +65%", bonusGoldPct: 65, price: 0 },
+};
+
+/** 치장 아이템 — 플레이어 뒤에 따라붙는 오라 연출 (전투 능력 없음, 순수 치장) */
+export type CosmeticDef = {
+  key: CosmeticKey;
+  name: string;
+  icon: string;
+  desc: string;
+  price: number;
+  tint: number;
+  /* v1.3.0 (지시 #7) — 랭커 전용 치장의 에메랄드 가격 (랭킹 상점 전용 — 일반 상점 진열 없음) */
+  bmPrice?: number;
+  /* v1.0.7 — 착용 슬롯: aura(후광·기존) / outfit(코스튬 스프라이트 교체) / hair(머리카락 레이어)
+   *  슬롯별 독립 착용 — 오라+코스튬+헤어 동시 착용 가능
+   *  v1.1.0 — + acc(어태치 장식: 왕관/리본/후광/날개 — 캐릭터에 고정, 실시간 동기화) */
+  slot?: "aura" | "outfit" | "hair" | "acc";
+};
+export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
+  cos_dawn: { key: "cos_dawn", name: "새벽빛 오라", icon: "cos_dawn", desc: "하늘빛 후광", price: 200, tint: 0x7dc0ff },
+  cos_gold: { key: "cos_gold", name: "황금 오라", icon: "cos_gold", desc: "금빛 후광", price: 200, tint: 0xffd76a },
+  cos_abyss: { key: "cos_abyss", name: "심연 오라", icon: "cos_abyss", desc: "보라빛 후광", price: 260, tint: 0xa875ff },
+  cos_wings: { key: "cos_wings", name: "요정 날개", icon: "cos_wings", desc: "반짝임 입자 트레일", price: 340, tint: 0xbaf3ff },
+  cos_aurora: { key: "cos_aurora", name: "오로라 후광", icon: "cos_aurora", desc: "초록→청보라로 흐르는 오로라 후광", price: 0, tint: 0x9df0ff },
+  /* v4.0.0 — 차원 여행자 스킨 (스킨 = 추가 능력치) */
+  cos_isekai: { key: "cos_isekai", name: "차원문 여행자", icon: "cos_aurora", desc: "차원 여행자 스킨 — 공격 +10 · HP +120", price: 0, tint: 0xc08aff },
+  cos_pixel: { key: "cos_pixel", name: "픽셀 히어로", icon: "cos_gold", desc: "레트로 스킨 — 공격 +6 · 크리 +2", price: 0, tint: 0xffe86a },
+  /* v4.3.0 — 신규 치장 오라 6종 (텍스처 재활용 + 틴트, 순수 치장) */
+  cos_frost: { key: "cos_frost", name: "서리 오라", icon: "cos_aurora", desc: "차가운 얼음빛 후광", price: 0, tint: 0x9adfff },
+  cos_flame: { key: "cos_flame", name: "화염 오라", icon: "cos_gold", desc: "타오르는 붉은 후광", price: 0, tint: 0xff9a50 },
+  cos_shadow: { key: "cos_shadow", name: "그림자 오라", icon: "cos_abyss", desc: "어둠에 스먹든 후광", price: 0, tint: 0x8060c0 },
+  cos_holy: { key: "cos_holy", name: "성스러운 오라", icon: "cos_dawn", desc: "신성한 황금 후광", price: 0, tint: 0xfff0b0 },
+  cos_storm: { key: "cos_storm", name: "폭풍 오라", icon: "cos_aurora", desc: "벼락치는 청백 후광", price: 0, tint: 0x90e8ff },
+  cos_rainbow: { key: "cos_rainbow", name: "무지개 오라", icon: "i_cos_rainbow", desc: "일곱 빛깔이 실시간으로 순환하는 무지개 후광", price: 0, tint: 0xff9adf },
+  /* v1.0.16 — 신규 치장 오라 6종 (유저 지시 "물약 줄이고 치장템을 늘려" — 텍스처 재활용, 심연 상점 치장 상자에도 자동 합류) */
+  cos_rose: { key: "cos_rose", name: "장미빛 오라", icon: "cos_wings", desc: "붉은 장밋빛 낭만 후광", price: 0, tint: 0xff7ab0 },
+  cos_toxic: { key: "cos_toxic", name: "맹독 오라", icon: "cos_abyss", desc: "스멀스멀 독성 연록 후광", price: 0, tint: 0x8aff5a },
+  cos_magma: { key: "cos_magma", name: "용암 오라", icon: "cos_gold", desc: "녹아내리는 진홍 용암 후광", price: 0, tint: 0xff5a2a },
+  cos_lunar: { key: "cos_lunar", name: "달빛 오라", icon: "cos_dawn", desc: "차가운 월광 서릿 후광", price: 0, tint: 0xd8e8ff },
+  cos_deep: { key: "cos_deep", name: "심해 오라", icon: "cos_aurora", desc: "깊은 바닷빛 심연 후광", price: 0, tint: 0x3aa8d8 },
+  cos_galaxy: { key: "cos_galaxy", name: "은하수 오라", icon: "cos_aurora", desc: "별이 흐르는 은하빛 후광 — 파랑↔보라로 맥동", price: 0, tint: 0xb08aff },
+  /* v1.1.0 (#1) — 코스튬 = 스프라이트 "완전 교체" (겹치기 폐지).
+   *  cost_* 28프레임 시트로 본체 자체가 다른 캐릭터로 변신한다 (SPUM NPC 방식).
+   *  scripts/gen_char_system.py — 머리카락/피부/의상 전부 새 팔레트로 재탄생 */
+  outfit_royal: { key: "outfit_royal", name: "금발 왕자", icon: "cost_royal_idle0", desc: "금발의 왕위 계승자 — 백은 갑옷의 왕가 코스튬 (남녀형)", price: 0, tint: 0xffd76a, slot: "outfit" },
+  outfit_shadow: { key: "outfit_shadow", name: "그림자 검술사", icon: "cost_shadow_idle0", desc: "적안의 그림자 검사 — 어둠에 스먹든 자 (남녀형)", price: 0, tint: 0x9a6aff, slot: "outfit" },
+  outfit_spring: { key: "outfit_spring", name: "봄바람 소녀", icon: "cost_spring_idle0", desc: "분홍 머리에 스커트 원피스 — 봄날의 목화 코스튬 (남녀형)", price: 0, tint: 0xff9ad2, slot: "outfit" },
+  outfit_navy: { key: "outfit_navy", name: "해군 장교", icon: "cost_navy_idle0", desc: "네이비 제복의 바다 지휘관 코스튬 (남녀형)", price: 0, tint: 0x5ac8e8, slot: "outfit" },
+  /* v1.1.0 (#19) — 프리미엄 완전 교체 코스튬 6종 (서브컬처 도트) */
+  outfit_silver: { key: "outfit_silver", name: "은월의 검희", icon: "cost_silver_idle0", desc: "은발에 얼음빛 검의 무희 — 설원을 걷는 귀갑 (남녀형)", price: 560, tint: 0xcfe4ff, slot: "outfit" },
+  outfit_crimson: { key: "outfit_crimson", name: "진홍의 마녀", icon: "cost_crimson_idle0", desc: "적발의 마녀 — 심연의 마술을 다루는 자 (남녀형)", price: 560, tint: 0xff6a8a, slot: "outfit" },
+  outfit_seraph: { key: "outfit_seraph", name: "성녀 세라피나", icon: "cost_seraph_idle0", desc: "금발의 성녀 — 세계수의 가호를 받는 기도사 (남녀형)", price: 560, tint: 0xffe8b0, slot: "outfit" },
+  outfit_abyss: { key: "outfit_abyss", name: "심해의 가곡", icon: "cost_abyss_idle0", desc: "청록 머리칼의 심해 술사 — 파도의 노래 (남녀형)", price: 560, tint: 0x5ad8d0, slot: "outfit" },
+  outfit_nightmare: { key: "outfit_nightmare", name: "나이트메어 기사", icon: "cost_nightmare_idle0", desc: "백발의 암흑기사 — 악몽을 두르는 검은 갑주 (남녀형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
+  outfit_gilded: { key: "outfit_gilded", name: "황금 백작", icon: "cost_gilded_idle0", desc: "황금빛 귀족 — 부와 권력을 몸에 두른 자 (남녀형)", price: 560, tint: 0xffd06a, slot: "outfit" },
+  /* v1.1.0 (#1 장식) — 어태치 악세서리: 캐릭터에 고정 + 실시간 동기화 */
+  acc_crown: { key: "acc_crown", name: "왕가의 왕관", icon: "acc_crown", desc: "머리에 얹히는 황금 왕관 — 루비가 박혀 있다", price: 320, tint: 0xffd76a, slot: "acc" },
+  acc_ribbon: { key: "acc_ribbon", name: "진홍 리본", icon: "acc_ribbon", desc: "머리 옆에 달리는 새빨간 리본 — 사랑스러운 한 점", price: 240, tint: 0xff6a8a, slot: "acc" },
+  acc_halo: { key: "acc_halo", name: "성스러운 후광", icon: "acc_halo", desc: "머리 위에 뜨는 금색 고리 — 성녀의 증표", price: 400, tint: 0xffe8a0, slot: "acc" },
+  acc_wings_devil: { key: "acc_wings_devil", name: "마왕의 날개", icon: "acc_wings_devil", desc: "등 뒤에 펼쳐지는 진홍 박쥐 날개", price: 480, tint: 0xff5a6a, slot: "acc" },
+  acc_wings_fairy: { key: "acc_wings_fairy", name: "요정의 날개", icon: "acc_wings_fairy", desc: "등 뒤에 반짝이는 하늘빛 요정 날개", price: 480, tint: 0xbaf3ff, slot: "acc" },
+  /* v1.3.0 (지시 #7) — 랭커 전용: 오라는 Drive 팩 vfx_ring 황금 림, 왕관은 기존 왕관 어태치 재활용(황금 틴트) */
+  rank_aura: { key: "rank_aura", name: "챔피언의 오라", icon: "cos_gold", desc: "랭킹 10위 안의 자만이 허락된 황금 오라 — 챔피언의 증표", price: 0, bmPrice: 30, tint: 0xffd76a, slot: "aura" },
+  rank_crown_gold: { key: "rank_crown_gold", name: "랭커의 황금 왕관", icon: "acc_crown", desc: "랭킹 10위 안의 자만이 쓸 수 있는 황금 왕관 — 정점의 상징", price: 0, bmPrice: 50, tint: 0xffd76a, slot: "acc" },
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (costf_/costm_ 완전 교체) */
+  outfit_dragon: { key: "outfit_dragon", name: "용기사 드라고네트", icon: "cost_dragon_idle0", desc: "용의 비늘을 두른 황금발 용기사 — 용의 맹세를 받은 자 (여형)", price: 560, tint: 0x9adf6a, slot: "outfit" },
+  outfit_frost: { key: "outfit_frost", name: "서리의 백작", icon: "costm_frost_idle0", desc: "백은 갑옷의 서리 귀족 — 북풍을 지배하는 자 (남형)", price: 560, tint: 0x9ad8ff, slot: "outfit" },
+  outfit_sakura: { key: "outfit_sakura", name: "벚꽃 검부이", icon: "cost_sakura_idle0", desc: "흑발에 벚꽃 스커트의 검부이 — 봄밤의 일섭 (여형)", price: 560, tint: 0xffb0d0, slot: "outfit" },
+  outfit_void: { key: "outfit_void", name: "공허의 순례자", icon: "costm_void_idle0", desc: "보랏빛 로브의 은발 순례자 — 공허를 건니는 자 (남형)", price: 560, tint: 0xb08aff, slot: "outfit" },
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (SPUM 파트 실제 조합 — 투구/후드/헤어/망토) */
+  outfit_valkyrie: { key: "outfit_valkyrie", name: "발키리의 은빛 갑주", icon: "cost_valkyrie_idle0", desc: "은빛 나이트 투구에 백은 장갑의 발키리 — 전장을 날는 여신 (여형)", price: 560, tint: 0xcfe0ff, slot: "outfit" },
+  outfit_witch: { key: "outfit_witch", name: "심연의 후드 마녀", icon: "cost_witch_idle0", desc: "보라 후드에 심연색 로브의 마녀 — 밤의 마술을 다루는 자 (여형)", price: 560, tint: 0xb08aff, slot: "outfit" },
+  outfit_sylvan: { key: "outfit_sylvan", name: "숲의 후드 수호자", icon: "cost_sylvan_idle0", desc: "갈색 후드에 녹색 튜닉의 숲 수호자 — 나무와 말이 통하는 자 (여형)", price: 560, tint: 0x9adf6a, slot: "outfit" },
+  outfit_lily: { key: "outfit_lily", name: "흑발의 백합 검부이", icon: "cost_lily_idle0", desc: "흑발에 백합 문장의 붉은 망토 검부이 — 조용한 일섭의 화신 (여형)", price: 560, tint: 0xffb0d0, slot: "outfit" },
+  outfit_warlord: { key: "outfit_warlord", name: "파멸의 대군주", icon: "costm_warlord_idle0", desc: "암흑 뿔투구에 붉은 망토의 대군주 — 천하를 삼킨 야망의 정점 (남형)", price: 560, tint: 0xff8a6a, slot: "outfit" },
+  outfit_paladin: { key: "outfit_paladin", name: "황실 그레이트 성기사", icon: "costm_paladin_idle0", desc: "그레이트 헬름에 청색 갑주의 성기사 — 왕가의 최후의 방패 (남형)", price: 560, tint: 0x9ad8ff, slot: "outfit" },
+  outfit_nightblade: { key: "outfit_nightblade", name: "밤을 두른 칼날", icon: "costm_nightblade_idle0", desc: "암흑 투구에 흑의 장비의 칼날 — 달빛 아래 소리 없이 다가온다 (남형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
+  outfit_mariner: { key: "outfit_mariner", name: "푸른 파도 항해사", icon: "costm_mariner_idle0", desc: "청색 캡에 청록 항해복의 모험가 — 아홉 바다를 건넌 자 (남형)", price: 560, tint: 0x5ac8e8, slot: "outfit" },
+  /* v1.4.11 — 잠자던 시트 활성화 신규 2종 (미사용 에셋 통합 — 남녀형 시트 완비) */
+  outfit_flame: { key: "outfit_flame", name: "화염의 무희", icon: "cost_flame_idle0", desc: "백발에 진홍 드레스의 화염 무희 — 불꽃처럼 요동치는 무대 (남녀형)", price: 560, tint: 0xff8a6a, slot: "outfit" },
+  outfit_mystic: { key: "outfit_mystic", name: "신비술사", icon: "cost_mystic_idle0", desc: "보라색 트윈테일의 신비술사 — 별의 언어를 읽는 자 (남녀형)", price: 560, tint: 0xb08aff, slot: "outfit" },
+};
+
+/* v1.1.0 (#1/#21/#22) — 외형 시스템: 성별 × 피부 6종 → 베이스 시트(chm/chf) 선택.
+ *  코스튬 착용 시 cost_* 로 완전 교체 (SPUM식). "" = 기본(남성·기본피부 = 원본 hero_*)
+ *  v1.1.1 (#7 성별 치장 분리) — cost_* = 여성형 10종 / costm_* = 남성형 10종.
+ *  같은 코스튬 키라도 캐릭터 성별에 따라 대응 실루엣 시트가 적용된다 (applyBodyLook). */
+export const BODY_PREFIXES = [
+  "chm0", "chm1", "chm3", "chm4", "chm5",
+  "chf0", "chf1", "chf2", "chf3", "chf4", "chf5",
+  "cost_royal", "cost_shadow", "cost_spring", "cost_navy",
+  "cost_silver", "cost_crimson", "cost_seraph", "cost_abyss", "cost_nightmare", "cost_gilded",
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (여/남) */
+  "cost_dragon", "cost_frost", "cost_sakura", "cost_void",
+  "costm_royal", "costm_shadow", "costm_spring", "costm_navy",
+  "costm_silver", "costm_crimson", "costm_seraph", "costm_abyss", "costm_nightmare", "costm_gilded",
+  "costm_dragon", "costm_frost", "costm_sakura", "costm_void",
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (여 4 + 남 4): SPUM 파트 실제 조합 */
+  "cost_valkyrie", "cost_witch", "cost_sylvan", "cost_lily",
+  "costm_warlord", "costm_paladin", "costm_nightblade", "costm_mariner",
+  /* v1.3.1 (#1) — 교차 성별 시트: 어떤 성별이 어떤 세트를 착용해도 시트가 존재 (성별 반대 착용 대응) */
+  "cost_warlord", "cost_paladin", "cost_nightblade", "cost_mariner",
+  "costm_valkyrie", "costm_witch", "costm_sylvan", "costm_lily",
+  /* v1.4.11 — 잠자던 시트 활성화 (cost_flame·cost_mystic 계열 — 남녀형 완비) */
+  "cost_flame", "costm_flame", "cost_mystic", "costm_mystic",
+  /* v1.2.0 (#13) — 2차 8직업 전용 외형 (여/남 각 8종): 전직하면 외형 자체가 바뀐다.
+   *  버서커/가디언/스나이퍼/윈드러너/아크메이지/세이지/어세신/스와시버클러 */
+  "jobf_berserker", "jobf_guardian", "jobf_sniper", "jobf_windrunner",
+  "jobf_archmage", "jobf_sage", "jobf_assassin", "jobf_swashbuckler",
+  "jobm_berserker", "jobm_guardian", "jobm_sniper", "jobm_windrunner",
+  "jobm_archmage", "jobm_sage", "jobm_assassin", "jobm_swashbuckler",
+  /* v1.2.0 (#7) — GM 전용 외형 (파란 몸 + 무지개 머리 — GM 계정 생성/플레이) */
+  "gm",
+] as const;
+
+/** v1.2.0 (#13) — 2차 직업 키 → 외형 시트 접미사. 3·4차는 부모 계열의 2차 외형을 승계 */
+export const JOB_SKIN_KEYS = [
+  "berserker", "guardian", "sniper", "windrunner", "archmage", "sage", "assassin", "swashbuckler",
+] as const;
+export type JobSkinKey = (typeof JOB_SKIN_KEYS)[number];
+export const GENDER_LABELS = { m: "남캐", f: "여캐" } as const;
+export const SKIN_OPTIONS = [
+  { idx: 0, name: "백자" },
+  { idx: 1, name: "밝은" },
+  { idx: 2, name: "기본" },
+  { idx: 3, name: "밀색" },
+  { idx: 4, name: "구릿빛" },
+  { idx: 5, name: "초콜릿" },
+] as const;
+
+/** 상점 판매 목록 (표시 순서 — BM 섹션은 kind로 분리 렌더) */
+export const SHOP_STOCK: ItemKey[] = [
+  "potion_hp",
+  "potion_mp",
+  "potion_hp2",
+  "potion_mp2",
+  /* v1.0.16 — 유저 지시 "물약 종류가 너무 많음": HP4~10·MP4~10 (14종) 상점 진열 전면 철수.
+   *  물약 사다리는 기본(hp/mp) → 상급(hp2/mp2) → 고급(hp3/mp3 — 회복량 상향으로 최상위 티어 대체) →
+   *  엘릭서의 4단으로 정리. ITEMS 정의는 구 세이브 보유분 호환을 위해 유지(획득 경로만 제거). */
+  "potion_hp3", // v1.0.16 — 고급 물약이 사다리 최상위 (회복량 700/450으로 상향, 가격 조정)
+  "potion_mp3",
+  "scroll_star", // v3.0.7 — 강화 주문서
+  "weapon_2",
+  "armor_2",
+  "weapon_3",
+  "armor_3",
+  "weapon_4",
+  "armor_4",
+  "weapon_5",
+  "armor_5",
+  "weapon_6",
+  "armor_6",
+  "ring_power",
+  "ring_vital",
+  "ring_crit",
+  "ring_guard",
+  "ring_might", // v4.3.0 — 신규 장신구 (골드 상점)
+  "ring_swift",
+  "pendant_vital",
+  "pendant_arcane",
+  "pendant_ward", // v4.3.0
+  "pendant_blood", // v4.3.0
+  "scroll_return",
+  "scroll_warp",
+  /* v1.2.0 (#15) — 고급 성장의 책은 골드 상점에서도 판매 (후반 레벨링 보조) */
+  "exp_book_s",
+  "buff_atk",
+  "buff_def",
+  "buff_spd",
+  "buff_exp",
+  "buff_crit", // v4.3.0 — 신규 버프 (골드 판매)
+  "buff_gold", // v4.3.0
+  "buff_luck", // v4.3.0
+  /* v1.2.1 (#2 펫BM전용) — pet_slime/pet_pixie 골드 상점 진열 철수 (BM 전용으로 이동) */
+  "cos_dawn",
+  "cos_gold",
+  "cos_abyss",
+  "cos_wings",
+  /* v3.0.15 (#11) — 챕터 테마 세트 장비 (ShopPanel에서 unlockedSets 기반으로 미해금 숨김) */
+  "sfw_forest", "sfa_forest", "sfr_forest",
+  "sfw_kingdom", "sfa_kingdom", "sfr_kingdom",
+  "sfw_alfheim", "sfa_alfheim", "sfr_alfheim",
+  "sfw_muspelheim", "sfa_muspelheim", "sfr_muspelheim",
+  "sfw_niflheim", "sfa_niflheim", "sfr_niflheim",
+  "sfw_cave", "sfa_cave", "sfr_cave",
+  "sfw_nidavellir", "sfa_nidavellir", "sfr_nidavellir",
+  "sfw_hel", "sfa_hel", "sfr_hel",
+  "sfw_abyss", "sfa_abyss", "sfr_abyss",
+];
+
+/** v3.0.6 (지시 #4) — 아이템 판매가 (상점가의 40%, 최소 1G · 보스 전용은 고정가)
+ *  v3.0.7 — 보스 전용 드롭(tradeLock)은 골드 판매 불가 → 거래소 에메랄드 판매(tradeValue)로 이동 */
+export function sellValue(item: ItemDef): number {
+  if (item.tradeLock) return 0;
+  if (item.sellPrice) return item.sellPrice; // v3.0.20 (#9) — 직접 지정 판매가 (eert 5000G)
+  if (item.tier === "legend" && !item.bmOnly) return 400;
+  /* v1.0.2 (#0르쯔) — BM 아이템에도 price 기준가 부여: 판매가 0 표시 원천 제거 */
+  return Math.max(1, Math.floor(item.price * 0.4));
+}
+
+/* ================= v3.0.7 — 유저 거래소 (보스 드롭 전용 사고팔기) =================
+ *  보스 드롭 9종은 상점에서 살 수 없다(tradeLock) → 거래소에서 에메랄드로만 거래.
+ *  판매가 = 구매가의 60% (거래 수수료 컨셉). 에메랄드 수급처: 보스+2/정예+1/반복 사이클+1/GM. */
+export const TRADE_PRICES: Record<string, number> = {
+  bd_guardian: 8,   // 심연의 수호자 (1챕터)
+  bd_behemoth: 10,  // 눈보라의 거수
+  bd_nidhog: 12,    // 니드호그
+  bd_surt: 14,      // 수르트
+  bd_fenrir: 16,    // 펜리르
+  bd_skoll: 18,     // 스콜&하티
+  bd_gram: 20,      // 가름 (구 그람 — 신화 고증: 헬의 문지기 Garmr)
+  bd_abysslord: 24, // 심연의 군주
+  bd_abudditos: 30, // 아부디토스 (최종 보스 — 텍스처 키 bd_abudditos 유지)
+};
+
+/** 거래소 판매가 (에메랄드) — 구매가의 60%, 최소 1 */
+export function tradeValue(key: ItemKey): number {
+  const p = TRADE_PRICES[key];
+  return p ? Math.max(1, Math.floor(p * 0.6)) : 0;
+}
+
+/** 거래소 진열 목록 (보스 드롭 9종 — 등급순) */
+export const TRADE_STOCK: ItemKey[] = [
+  "bd_guardian", "bd_behemoth", "bd_nidhog", "bd_surt", "bd_fenrir",
+  "bd_skoll", "bd_gram", "bd_abysslord", "bd_abudditos",
+];
+
+/* v1.4.3 (유저 리포트 ④ 보스 유물·일부 아이템 이미지 로드 실패) — 전 아이템 아이콘 키.
+ *  근원: Drop.spawnItem이 월드 드롭 스프라이트를 setTexture(icon)으로 렌더하는데,
+ *  i_bd_*(보스 유물) 등 다수 아이콘이 부트/지연 로드 목록 밖이었다 → 텍스처 누락으로
+ *  드롭이 아예 안 보였다. 타이틀 지연 로더가 이 목록을 Phaser 텍스처로 일괄 등록한다. */
+export const ALL_ITEM_ICONS: string[] = Array.from(new Set(Object.values(ITEMS).map((i) => i.icon)));
+
+/* ================= v1.0.1 — 일일 던전 확장: 요일별 균열 테마 =================
+ *  기존 60초 균열 던전 틀 유지 + 요일마다 다른 보너스로 "오늘 입장할 이유"를 만든다(리텐션).
+ *  mul: 킬당 골드 배율 · bookMul: 경험치책 드롭 확률 배율 · spawnMul: 몬스터 소환 속도 배율
+ *  extra: 킬 시 추가 드롭 { item, chance } (chance는 킬당 확률) */
+export type ClosetTheme = {
+  dow: number;            // 0=일요일
+  name: string;           // 테마명
+  desc: string;           // 배너/패널 설명
+  color: string;          // 테마 대표색
+  mul?: number;           // 골드 배율 (기본 1)
+  bookMul?: number;       // 경험치책 드롭 확률 배율 (기본 1)
+  bookN?: number;         // 경험치책 드롭 수량 (기본 1)
+  spawnMul?: number;      // 몬스터 소환 속도 배율 (기본 1)
+  emeraldChance?: number; // 에메랄드 킬당 드롭 확률 (기본 0)
+  extra?: { item: ItemKey; chance: number }[]; // 킬당 확률 아이템 드롭
+};
+
+export const CLOSET_THEMES: ClosetTheme[] = [
+  { dow: 0, name: "만능의 균열", desc: "모든 보너스가 조금씩 — 골드 +20% · 책 +20% · 소환 +10%", color: "#ffffff", mul: 1.2, bookMul: 1.2, spawnMul: 1.1 },
+  { dow: 1, name: "골드 러시", desc: "킬당 골드 1.6배 — 파밍의 요일", color: "#ffd76a", mul: 1.6 },
+  { dow: 2, name: "지혜의 균열", desc: "경험치 책 드롭 확률 2배 + 2권 드롭", color: "#8fe84a", bookMul: 2, bookN: 2 },
+  { dow: 3, name: "강화의 균열", desc: "킬마다 12% 확률로 강화 주문서 드롭", color: "#b57de8", extra: [{ item: "scroll_star", chance: 0.12 }] },
+  { dow: 4, name: "약초의 균열", desc: "킬마다 10% 확률로 상급 물약 드롭", color: "#ff8a9c", extra: [{ item: "potion_hp2", chance: 0.1 }, { item: "potion_mp2", chance: 0.1 }] },
+  { dow: 5, name: "전설의 문", desc: "골드 1.3배 + 킬마다 2% 확률로 에메랄드 +1", color: "#7dffa8", mul: 1.3, emeraldChance: 0.02 },
+  { dow: 6, name: "무한의 균열", desc: "몬스터 소환 속도 1.4배 — 웨이브 지옥", color: "#a8ecff", spawnMul: 1.4, mul: 1.1 },
+];
+
+/** 오늘 요일의 균열 테마 (KST 기준 — 서버/클라 통일) */
+export function closetThemeOf(date = new Date()): ClosetTheme {
+  const kst = new Date(date.getTime() + (9 * 60 + date.getTimezoneOffset()) * 60000);
+  return CLOSET_THEMES[kst.getDay()] ?? CLOSET_THEMES[0];
+}
+
+/** v3.0.6 (지시 #1) — BM 상점 판매 목록 (에메랄드 전용 — 골드 상점과 분리) */
+/* v4.3.0 — BM 스톡 전면 개편: 카테고리 순 정렬 + 신규 61종 포함 (BmShopPanel 탭 필터용 kind/prefix)
+ *  표시 순서: 가챠 상자 → 패키지 → 버프 → 소모품(물약/큐브) → 장신구 → 펫 → 치장
+ * v1.0.3 (#0르쯔) — 유저 지시 "기본상점 아이템은 캐시상점에서 안 판다, 팔아도 에픽/전설만":
+ *  일반상점(SHOP_STOCK·골드)에서 파는 아이템(무료 버프 7종·하위 물약 6티어·ring_might/swift·
+ *  pendant_ward/blood·pet_slime/pixie·cos_dawn/gold)을 전부 캐시상점 목록에서 제외.
+ *  캐시상점에는 bmPrice가 매겨진 캐시 전용 아이템만 남는다(0르쯔 표시 원천 차단). */
+export const BM_STOCK: ItemKey[] = [
+  "chest_iron", "chest_silver", "chest_gold", "chest_legend",
+  "pack_daily", "pack_weekly", "pack_starter", "pack_growth", "pack_premium", "pack_ultimate",
+  "buff_king",
+  "potion_elixir", "exp_book", "exp_book_s", "exp_book_m", "exp_book_l", "eert_cube", "tier_cube", // v1.2.0 (#15) 비약 3종 추가
+  "ring_fortune", "ring_titan", "pendant_moon", "pendant_sage",
+  "ring_dragon", "ring_phantom", "pendant_star", "ring_ancient", "ring_bless",
+  /* v1.2.1 (#2 펫BM전용) — 슬라임/핑크이도 BM 합류: 펫은 전부 에메랄드 전용 */
+  "pet_slime", "pet_pixie",
+  "pet_wisp", "pet_ember", "pet_frost", "pet_golem", "pet_unicorn", "pet_reaper", "pet_atlas",
+  "cos_frost", "cos_flame", "cos_shadow", "cos_holy", "cos_storm", "cos_rainbow", "cos_wings", "cos_aurora",
+  /* v1.0.16 — 신규 치장 6종 (캐시상점 합류) */
+  "cos_rose", "cos_toxic", "cos_magma", "cos_lunar", "cos_deep", "cos_galaxy",
+  /* v1.0.7 — 코스튬/헤어 (캐시상점 신규 착장 치장) */
+  /* v1.1.0 (#19/#1) — 프리미엄 코스튬 6종 + 어태치 장식 5종 */
+  "outfit_silver", "outfit_crimson", "outfit_seraph", "outfit_abyss", "outfit_nightmare", "outfit_gilded",
+  /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (캐시상점 합류) */
+  "outfit_dragon", "outfit_frost", "outfit_sakura", "outfit_void",
+  /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (캐시상점 합류) */
+  "outfit_valkyrie", "outfit_witch", "outfit_sylvan", "outfit_lily",
+  "outfit_warlord", "outfit_paladin", "outfit_nightblade", "outfit_mariner",
+  "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy",
+];
+/** v1.0.3 (#0르쯔) — 캐시상점 진열 자격: bmPrice(에메랄드 가격)가 1 이상인 아이템만 (BmShopPanel 방어 필터용) */
+export function isCashStock(k: ItemKey): boolean {
+  return (ITEMS[k]?.bmPrice ?? 0) > 0 && BM_STOCK.includes(k);
+}
+
+/** v1.2.1 (#3 프리미엄 펫 특전) — "비싼 펫" 정의: BM가 30 에메랄드 이상.
+ *  아틀라스(30)·철석 슬라임(32)·유니(40)·리퍼(55). 장착 중이면 인벤토리에서
+ *  라고스 상점을 바로 열 수 있는 원격 상점 특전이 활성화된다. */
+export function isPremiumPet(k: string): boolean {
+  return (ITEMS[k as ItemKey]?.bmPrice ?? 0) >= 30 && k in PET_DEFS;
+}
+
+/** v1.2.1 (#4 최적화) — 부팅 지연 로드 분할: 기본 성별/피부 시트만 부팅에서 즉시 로드하고
+ *  코스튬/직업/GM 시트(37종 × 28프레임 ≈ 1036장)는 타이틀 화면에서 백그라운드 로드.
+ *  모바일 첫 부팅 요청 수가 절반 이하로 줄어든다. */
+export const CORE_BODY_PREFIXES = ["chm0", "chm1", "chm3", "chm4", "chm5", "chf0", "chf1", "chf2", "chf3", "chf4", "chf5"] as const;
+export const DEFERRED_BODY_PREFIXES = BODY_PREFIXES.filter((p) => !(CORE_BODY_PREFIXES as readonly string[]).includes(p));
+
+/* ================= v4.3.0 — 도파민 시스템 (가챠 상자/패키지/일일 특가/출석 보상) =================
+ *  유저 지시 "BM 수익 구조 및 dopamine driven development 100+ 기획+제작":
+ *  가챠(변동 보상+등급 연출)·패키지(묶음 가치)·일일 특가(날짜 로테이션 FOMO)·출석(연속 보상) 루프. */
+
+/** BM 지급 단위 — 상자 개봉/패키지/출석/시즌 패스 보상 공용 (reward:show 팝업 라인으로 변환)
+ *  v4.5.0 — ticket(뽑기권)/shard(피규어 조각) 추가 (시즌 패스 트랙 지급용) */
+export type BmGrant = { gold?: number; emerald?: number; item?: ItemKey; n?: number; buff?: BuffKey; ticket?: number; shard?: number; label: string };
+
+/** v1.0.2 (#현금패키지) — 현금 패키지 구매 성공 시 지급 내용 (스토어 상품 ID 매핑).
+ *  에메랄드 무지급 원칙 — 현금 패키지는 아이템 구성만 (충전은 GEM_SKUS 이용) */
+export const STORE_PACK_CONTENTS: Record<string, BmGrant[]> = {
+  sertz_pack_growth_19800: [
+    { label: "고급 HP 물약 ×10", item: "potion_hp3", n: 10 },
+    { label: "고급 MP 물약 ×10", item: "potion_mp3", n: 10 },
+    { label: "강화 주문서 ×3", item: "scroll_star", n: 3 },
+    { label: "골드 100,000G", gold: 100000 },
+    { label: "경험치 책 ×3", item: "exp_book", n: 3 },
+  ],
+  sertz_pack_growth_cos_29900: [
+    { label: "고급 HP 물약 ×10", item: "potion_hp3", n: 10 },
+    { label: "강화 주문서 ×5", item: "scroll_star", n: 5 },
+    { label: "골드 200,000G", gold: 200000 },
+    { label: "무지개 오라 (전용)", item: "cos_rainbow", n: 1 },
+    { label: "eert 큐브 ×5", item: "eert_cube", n: 5 },
+  ],
+  sertz_pack_season_15900: [
+    { label: "에메랄드 30💎", emerald: 30 },
+    { label: "성스러운 오라 (시즌)", item: "cos_holy", n: 1 },
+    { label: "전설 상자 ×1", item: "chest_legend", n: 1 },
+    { label: "골드 150,000G", gold: 150000 },
+  ],
+};
+
+/** v4.5.0 — 확률 공시 (게임산업법 확률형 아이템 정보 공시 의무)
+ *  CHEST_TABLES 가중치를 그대로 소스 오브 트루스로 % 환산 — UI와 로직의 이중 관리 방지 */
+export function chestOdds(key: string): { label: string; pct: number }[] {
+  const table = CHEST_TABLES[key];
+  if (!table) return [];
+  const total = table.reduce((s, e) => s + e.w, 0);
+  return table.map((e) => ({ label: e.g.label, pct: Math.round((e.w / total) * 1000) / 10 }));
+}
+
+/** 가챠 상자 롤 테이블 — w=가중치. 구매 즉시 개봉(보유 관리 없음 — 도파민 즉시성) */
+export const CHEST_TABLES: Record<string, { w: number; g: BmGrant }[]> = {
+  chest_iron: [
+    { w: 30, g: { gold: 800, label: "골드 800G" } },
+    { w: 22, g: { item: "potion_hp2", n: 2, label: "상급 HP 물약 ×2" } },
+    { w: 22, g: { item: "potion_mp2", n: 2, label: "상급 MP 물약 ×2" } },
+    { w: 12, g: { item: "scroll_star", n: 1, label: "강화 주문서 ×1" } },
+    { w: 10, g: { buff: "buff_atk", label: "분노의 물약 버프" } },
+    { w: 4, g: { emerald: 3, label: "에메랄드 +3 (대박!)" } },
+  ],
+  chest_silver: [
+    { w: 26, g: { gold: 2500, label: "골드 2,500G" } },
+    { w: 20, g: { item: "potion_hp3", n: 2, label: "고급 HP 물약 ×2" } },
+    { w: 18, g: { item: "scroll_star", n: 2, label: "강화 주문서 ×2" } },
+    { w: 14, g: { buff: "buff_king", label: "왕의 가호 버프" } },
+    { w: 12, g: { item: "ring_might", label: "무력의 반지" } },
+    { w: 6, g: { item: "ring_fortune", label: "행운의 반지 (에픽!)" } },
+    { w: 4, g: { emerald: 8, label: "에메랄드 +8 (대박!)" } },
+  ],
+  chest_gold: [
+    { w: 22, g: { gold: 8000, label: "골드 8,000G" } },
+    { w: 18, g: { item: "potion_hp3", n: 3, label: "고급 HP 물약 ×3" } },
+    { w: 16, g: { buff: "buff_king", label: "왕의 가호 버프" } },
+    { w: 14, g: { item: "scroll_star", n: 4, label: "강화 주문서 ×4" } },
+    { w: 12, g: { item: "ring_swift", label: "질풍의 반지" } },
+    { w: 8, g: { item: "ring_dragon", label: "용심의 반지 (레전드!)" } },
+    { w: 6, g: { item: "pet_frost", label: "서리 슬라임 펫!" } },
+    { w: 4, g: { emerald: 18, label: "에메랄드 +18 (대박!!)" } },
+  ],
+  chest_legend: [
+    { w: 20, g: { gold: 25000, label: "골드 25,000G" } },
+    { w: 16, g: { item: "ring_ancient", label: "고대 왕의 반지 (최상급!!)" } },
+    { w: 14, g: { item: "pendant_star", label: "별의 부적 (레전드!!)" } },
+    { w: 14, g: { item: "potion_hp3", n: 3, label: "고급 HP 물약 ×3" } },
+    { w: 12, g: { item: "pet_reaper", label: "심연의 사자 펫!!" } },
+    { w: 10, g: { item: "chest_legend", label: "전설 상자 무료 1개!" } },
+    { w: 8, g: { item: "ring_phantom", label: "유령의 반지 (레전드!!)" } },
+    { w: 6, g: { emerald: 40, label: "에메랄드 +40 (잭팟!!!)" } },
+  ],
+};
+
+/** 패키지 구성 — 구매 즉시 전부 지급 (묶음 가치 = 개별 합산가 대비 40~60% 저렴) */
+export const PACK_CONTENTS: Record<string, BmGrant[]> = {
+  pack_starter: [
+    { item: "potion_hp", n: 5, label: "HP 물약 ×5" },
+    { item: "potion_hp2", n: 3, label: "상급 HP 물약 ×3" },
+    { item: "potion_elixir", n: 1, label: "엘릭서 ×1" },
+    { gold: 2000, label: "골드 2,000G" },
+  ],
+  pack_growth: [
+    { item: "potion_hp3", n: 4, label: "고급 HP 물약 ×4" },
+    { item: "potion_mp3", n: 4, label: "고급 MP 물약 ×4" },
+    { buff: "buff_exp", label: "지혜의 물약 버프" },
+    { gold: 8000, label: "골드 8,000G" },
+  ],
+  pack_premium: [
+    { item: "chest_gold", n: 1, label: "금 상자 ×1" },
+    { buff: "buff_king", label: "왕의 가호 버프" },
+    { item: "scroll_star", n: 3, label: "강화 주문서 ×3" },
+    { gold: 20000, label: "골드 20,000G" },
+  ],
+  pack_ultimate: [
+    { item: "chest_legend", n: 1, label: "전설 상자 ×1" },
+    { buff: "buff_king", n: 2, label: "왕의 가호 ×2" },
+    { item: "scroll_star", n: 5, label: "강화 주문서 ×5" },
+    { item: "ring_ancient", label: "고대 왕의 반지" },
+    { gold: 50000, label: "골드 50,000G" },
+  ],
+  pack_daily: [
+    { item: "potion_hp2", n: 2, label: "상급 HP 물약 ×2" },
+    { item: "scroll_star", n: 1, label: "강화 주문서 ×1" },
+    { gold: 1500, label: "골드 1,500G" },
+  ],
+  pack_weekly: [
+    { item: "chest_silver", n: 1, label: "은 상자 ×1" },
+    { buff: "buff_exp", label: "지혜의 물약 버프" },
+    { gold: 15000, label: "골드 15,000G" },
+  ],
+};
+
+/** 일일 특가 — 날짜 시드 로테이션 3종 · 30% 할인 (패널 표시/구매 처리 양쪽에서 호출)
+ *  v1.0.3 (#0르쯔) — 캐시상점에서 팔리지 않는 아이템(scroll_star·고티어 물약 등 골드상점 아이템) 제외:
+ *  특가가 0르쯔로 표시되던 원인 제거 — 전부 캐시 전용(bmPrice ≥ 1) 아이템 */
+export const DAILY_DEAL_POOL: ItemKey[] = [
+  "chest_silver", "chest_gold", "chest_legend", "buff_king",
+  "ring_fortune", "ring_titan", "ring_dragon", "pendant_moon", "pendant_sage",
+  "exp_book", "exp_book_s", "exp_book_m", "tier_cube", "eert_cube",
+  "pet_wisp", "cos_frost", "cos_flame", "cos_rainbow",
+];
+export const DAILY_DEAL_OFF = 0.3;
+export function dailyDeals(today: string): ItemKey[] {
+  let h = 0;
+  for (let i = 0; i < today.length; i++) h = (h * 31 + today.charCodeAt(i)) >>> 0;
+  const pool = [...DAILY_DEAL_POOL];
+  const out: ItemKey[] = [];
+  for (let i = 0; i < 3; i++) {
+    const idx = h % pool.length;
+    out.push(pool[idx]);
+    pool.splice(idx, 1);
+    h = (h * 1103515245 + 12345) >>> 0;
+  }
+  return out;
+}
+
+/** 출석 보상 — 14일 순환 (연속 출석 일수 인덱스)
+ *  ponytail: 제거 — 이미 isekai.ts ATTEND_REWARDS(14일 순환)가 WorldScene 3120에서 동작 중. 중복 제거 */
+
+/** v3.0.6 (지시 #9) — 보스 → 전용 드롭 아이템 매핑 (100% 드롭, 상점 구매 불가) */
+export const BOSS_DROP_ITEMS: Record<string, ItemKey> = {
+  guardian: "bd_guardian",
+  behemoth: "bd_behemoth",
+  nidhog: "bd_nidhog",
+  surt: "bd_surt",
+  fenrir: "bd_fenrir",
+  skoll: "bd_skoll",
+  gram: "bd_gram",
+  abysslord: "bd_abysslord",
+  abudditos: "bd_abudditos",
+};
+
+/* ================= v3.0.15 (#16) — 원소 데미지 시스템 (원신 참고) =================
+ *  5원소 + 무속성. 3각 상성(화염>자연>냉기>화염) + 빛↔어둠 상호 강세.
+ *  유리 상성 +25% / 불리 상성 -15%. 챕터 테마가 적 원소를 결정한다. */
+export type ElemKey = "none" | "fire" | "ice" | "nature" | "dark" | "light";
+export const ELEMENT_META: Record<ElemKey, { name: string; color: string; hex: number }> = {
+  none: { name: "무속성", color: "#e8ecf2", hex: 0xe8ecf2 },
+  fire: { name: "화염", color: "#ff8a5c", hex: 0xff8a5c },
+  ice: { name: "냉기", color: "#7dd8ff", hex: 0x7dd8ff },
+  nature: { name: "자연", color: "#7de86a", hex: 0x7de86a },
+  dark: { name: "어둠", color: "#c08aff", hex: 0xc08aff },
+  light: { name: "빛", color: "#ffe86a", hex: 0xffe86a },
+};
+
+/** 원소 상성 배율 — 유리 1.25 / 불리 0.85 / 나머지 1 */
+export function elemAdvantage(atk: ElemKey, def: ElemKey): number {
+  if (atk === "none" || def === "none") return 1;
+  if (atk === def) return atk === "dark" ? 0.85 : 1; // 어둠끼리는 서로 저항
+  if (atk === "fire" && def === "nature") return 1.25;
+  if (atk === "nature" && def === "ice") return 1.25;
+  if (atk === "ice" && def === "fire") return 1.25;
+  if (atk === "light" && def === "dark") return 1.25;
+  if (atk === "dark" && def === "light") return 1.25;
+  if (atk === "nature" && def === "fire") return 0.85;
+  if (atk === "ice" && def === "nature") return 0.85;
+  if (atk === "fire" && def === "ice") return 0.85;
+  return 1;
+}
+
+/** 챕터 테마별 적 원소 */
+export const CHAPTER_ELEM: Record<string, ElemKey> = {
+  village: "none", forest: "nature", kingdom: "nature", alfheim: "light",
+  muspelheim: "fire", niflheim: "ice", cave: "dark", nidavellir: "dark",
+  hel: "dark", abyss: "dark",
+};
+
+/** 플레이어 계열별 공격 원소 (미전직은 무속성) */
+export const FAMILY_ELEM: Record<string, ElemKey> = {
+  warrior: "fire", ranger: "nature", mage: "ice", thief: "dark",
+};
+
+/* ================= v3.0.15 (#13) — eert 큐브 잠재옵션 (메이플 큐브 시스템) =================
+ *  장비(무기/방어구/장신구)에 1~3줄의 잠재옵션 부여. eert 큐브 사용 시 재추첨.
+ *  등급: 레어(1줄) / 에픽(2줄) / 유니크(2줄 강) / 레전드(3줄 강) */
+export type PotStatKey = "atk" | "def" | "crit" | "maxHp";
+export type PotLine = { k: PotStatKey; v: number };
+export type Potentials = { grade: number; lines: PotLine[] }; // grade 0~3
+
+export const POT_GRADE_META = [
+  { name: "레어", color: "#6fb8ff", css: "text-sky-300", lines: 1, weight: 60 },
+  { name: "에픽", color: "#c08aff", css: "text-purple-300", lines: 2, weight: 28 },
+  { name: "유니크", color: "#ffd76a", css: "text-amber-300", lines: 2, weight: 10 },
+  { name: "레전드", color: "#ff8a5c", css: "text-orange-300", lines: 3, weight: 2 },
+] as const;
+
+export const POT_STAT_LABEL: Record<PotStatKey, string> = {
+  atk: "공격력", def: "방어력", crit: "크리티컬", maxHp: "최대 HP",
+};
+
+/* v1.0.8 — 확률 투명화 (유저 지시 "메이플 확률 주작까지 따라함??" 대응)
+ *  모든 확률은 UI에 공시 + 천장(보장) 시스템으로 연속 미달 뽀짝 방지.
+ *  실제 롤은 단일 Math.random 가중치 — 조작 코드 전무 (감사 완료). */
+/** eert 큐브 잠재 등급 천장 — 유니크(grade 2) 미달 연속 N회 도달 시 유니크+ 확정 */
+export const POT_PITY_MAX = 10;
+/** 강화 실패 가산 — ★10 이상 실패 연속 1회당 다음 성공률 +5%p (최대 +15%p, 성공 시 리셋) */
+export const STAR_PITY_STEP = 5;
+export const STAR_PITY_MAX = 15;
+/** 강화 실패 가산 시작 성 (★10 이상부터 — 최악 구간 완화) */
+export const STAR_PITY_FROM = 10;
+
+/** eert 큐브 잠재 등급 확률 공시 (% 환산 — POT_GRADE_META 가중치 단일 출처) */
+export function eertOdds(): { name: string; color: string; pct: number }[] {
+  const total = POT_GRADE_META.reduce((s, e) => s + e.weight, 0);
+  return POT_GRADE_META.map((e) => ({ name: e.name, color: e.color, pct: Math.round((e.weight / total) * 1000) / 10 }));
+}
+
+/** 잠재옵션 1줄 표시 문자열 */
+export function potLineText(l: PotLine): string {
+  if (l.k === "crit") return `크리티컬 +${l.v}%`;
+  if (l.k === "maxHp") return `최대 HP +${l.v}`;
+  return `${POT_STAT_LABEL[l.k]} +${l.v}`;
+}
+
+export function rollPotentials(pity = 0, minGrade = 0): Potentials {
+  const r = Math.random() * 100;
+  let grade = 0;
+  let acc = 0;
+  for (let i = 0; i < POT_GRADE_META.length; i++) {
+    acc += POT_GRADE_META[i].weight;
+    if (r < acc) { grade = i; break; }
+  }
+  /* v1.0.8 — 잠재 천장: 유니크 미달 연속 POT_PITY_MAX-1회 후 이번 롤은 유니크+ 확정
+   *  (확률 왜곡 아님 — 공시된 확률 외 보장 시스템. 메이플 큐브 논란 대응)
+   *  v1.1.0 (#6) — minGrade 하한: 현재 등급 미만 굴림은 폐기 (EERT 큐브가 등급을 깎지 않는다) */
+  if (grade < minGrade) grade = minGrade;
+  if (grade < 2 && pity >= POT_PITY_MAX - 1) grade = 2;
+  const strong = grade >= 2;
+  const kinds: PotStatKey[] = ["atk", "def", "crit", "maxHp"];
+  // 셔플 후 앞에서 n개
+  for (let i = kinds.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [kinds[i], kinds[j]] = [kinds[j], kinds[i]];
+  }
+  const lines: PotLine[] = kinds.slice(0, POT_GRADE_META[grade].lines).map((k) => {
+    const maxV = strong ? 3 : 2;
+    const v = 1 + Math.floor(Math.random() * maxV);
+    if (k === "crit") return { k, v };                 // 1~3%p
+    if (k === "maxHp") return { k, v: v * (strong ? 25 : 15) }; // 15~75
+    return { k, v };                                   // atk/def 1~3
+  });
+  return { grade, lines };
+}
+
+/** 잠재옵션 합계 — 장착 중 아이템들의 라인 합산 */
+export function sumPotLines(pots: (Potentials | undefined)[]): { atk: number; def: number; crit: number; maxHp: number } {
+  const out = { atk: 0, def: 0, crit: 0, maxHp: 0 };
+  for (const p of pots) {
+    if (!p) continue;
+    for (const l of p.lines) out[l.k] += l.v;
+  }
+  return out;
+}
+
+/* ================= v3.0.15 (#11) — 챕터 테마 장비 세트 9종 =================
+ *  챕터 해금(해당 챕터 구역 최초 진입) 시 상점에 그 테마의 무기·방어구·반지 1세트가 등장.
+ *  수치는 해당 챕터 구간 최고급 장비보다 살짝 위 — 세트 가치 프리미엄. */
+export const SET_GEAR: Record<string, { ch: string; num: number; title: string; w: ItemKey; a: ItemKey; r: ItemKey }> = {
+  forest: { ch: "forest", num: 2, title: "숲의 수호자 세트", w: "sfw_forest", a: "sfa_forest", r: "sfr_forest" },
+  kingdom: { ch: "kingdom", num: 3, title: "쿠소디아 기사단 세트", w: "sfw_kingdom", a: "sfa_kingdom", r: "sfr_kingdom" },
+  alfheim: { ch: "alfheim", num: 4, title: "정령왕 세트", w: "sfw_alfheim", a: "sfa_alfheim", r: "sfr_alfheim" },
+  muspelheim: { ch: "muspelheim", num: 5, title: "화염의 군주 세트", w: "sfw_muspelheim", a: "sfa_muspelheim", r: "sfr_muspelheim" },
+  niflheim: { ch: "niflheim", num: 6, title: "서리바다 세트", w: "sfw_niflheim", a: "sfa_niflheim", r: "sfr_niflheim" },
+  cave: { ch: "cave", num: 7, title: "심연광 세트", w: "sfw_cave", a: "sfa_cave", r: "sfr_cave" },
+  nidavellir: { ch: "nidavellir", num: 8, title: "드워프 장인 세트", w: "sfw_nidavellir", a: "sfa_nidavellir", r: "sfr_nidavellir" },
+  hel: { ch: "hel", num: 9, title: "저승 파수꾼 세트", w: "sfw_hel", a: "sfa_hel", r: "sfr_hel" },
+  abyss: { ch: "abyss", num: 10, title: "종언 마룡 세트", w: "sfw_abyss", a: "sfa_abyss", r: "sfr_abyss" },
+};
+
+/* ================= v3.0.16 — 세트 아이템 효과 (메이플 "세트 아이템" 참고) =================
+ *  같은 챕터 테마 세트(무기+방어구+장신구 반지)를 모두 착용하면 세트 보너스 활성.
+ *  수치는 챕터 숫자에 비례해 상승 — 후반 세트일수록 프리미엄. */
+export type SetBonusDef = { atkPct: number; defAdd: number; maxHp: number; critAdd: number };
+export const SET_BONUS: Record<string, SetBonusDef> = {
+  forest: { atkPct: 3, defAdd: 1, maxHp: 40, critAdd: 0 },
+  kingdom: { atkPct: 4, defAdd: 2, maxHp: 60, critAdd: 0 },
+  alfheim: { atkPct: 5, defAdd: 2, maxHp: 80, critAdd: 1 },
+  muspelheim: { atkPct: 6, defAdd: 3, maxHp: 100, critAdd: 1 },
+  niflheim: { atkPct: 7, defAdd: 4, maxHp: 120, critAdd: 2 },
+  cave: { atkPct: 8, defAdd: 4, maxHp: 150, critAdd: 2 },
+  nidavellir: { atkPct: 9, defAdd: 5, maxHp: 180, critAdd: 2 },
+  hel: { atkPct: 10, defAdd: 6, maxHp: 220, critAdd: 3 },
+  abyss: { atkPct: 12, defAdd: 8, maxHp: 300, critAdd: 4 },
+};
+
+/** 아이템키 → 소속 세트 챕터키 (세트 장비 sfw_/sfa_/sfr_ 프리픽스 판정) */
+export function setOfItem(key: string): string | null {
+  if (!key.startsWith("sf")) return null;
+  const ch = key.slice(3);
+  return SET_GEAR[ch] ? ch : null;
+}
+
+/** 장착 상태에서 활성 세트 판정 — 무기+방어구+장신구 반지 3종 동일 챕터 */
+export function activeSetBonus(
+  weapon: string, armor: string, accessories: string[],
+): { ch: string; title: string; bonus: SetBonusDef } | null {
+  for (const [ch, def] of Object.entries(SET_GEAR)) {
+    if (weapon === def.w && armor === def.a && accessories.includes(def.r)) {
+      return { ch, title: def.title, bonus: SET_BONUS[ch] ?? { atkPct: 0, defAdd: 0, maxHp: 0, critAdd: 0 } };
+    }
+  }
+  return null;
+}
+
+/* ================= v3.0.16 — 몬스터 컬렉션 (메이플 "몬스터 컬렉션" 참고) =================
+ *  몬스터·보스 최초 처치 시 컬렉션 등록. 등록 종수가 마일스톤을 채울수록 계정 스탯 상승. */
+export type CollectionMilestone = { n: number; atkPct: number; critAdd: number; hpAdd: number; label: string };
+export const COLLECTION_MILESTONES: CollectionMilestone[] = [
+  { n: 5, atkPct: 1, critAdd: 0, hpAdd: 0, label: "공격력 +1%" },
+  { n: 10, atkPct: 0, critAdd: 0, hpAdd: 30, label: "최대 HP +30" },
+  { n: 15, atkPct: 2, critAdd: 0, hpAdd: 0, label: "공격력 +2%" },
+  { n: 20, atkPct: 0, critAdd: 0, hpAdd: 60, label: "최대 HP +60" },
+  { n: 25, atkPct: 0, critAdd: 2, hpAdd: 0, label: "크리티컬 +2%" },
+  { n: 30, atkPct: 3, critAdd: 0, hpAdd: 0, label: "공격력 +3%" },
+  { n: 35, atkPct: 0, critAdd: 0, hpAdd: 100, label: "최대 HP +100" },
+  { n: 40, atkPct: 5, critAdd: 3, hpAdd: 0, label: "공격력 +5% · 크리티컬 +3%" },
+];
+
+/** 등록 종수 → 누적 컬렉션 보너스 */
+export function collectionBonus(registered: number): { atkPct: number; critAdd: number; hpAdd: number } {
+  let out = { atkPct: 0, critAdd: 0, hpAdd: 0 };
+  for (const m of COLLECTION_MILESTONES) {
+    if (registered >= m.n) {
+      out.atkPct += m.atkPct;
+      out.critAdd += m.critAdd;
+      out.hpAdd += m.hpAdd;
+    }
+  }
+  return out;
+}
+
+/** 컬렉션 다음 마일스톤 안내 문구 (UI용) */
+export function nextCollectionGoal(registered: number): CollectionMilestone | null {
+  return COLLECTION_MILESTONES.find((m) => registered < m.n) ?? null;
+}
+
+/* ================= v3.0.22 (#43/#44) — 챕터별 세계수 결정(파편) =================
+ *  "챕터마다 조각이 달라야 되는데 다 같음" — 챕터마다 고유 이름/색/보너스/수확 멘트.
+ *  atk 보너스는 챕터가 깊어질수록 커진다(후반 결정이 더 값지다). */
+export const FRAGMENT_META: Record<string, { name: string; color: number; atk: number; lines: string[] }> = {
+  forest: { name: "숲의 결정", color: 0x9df0ff, atk: 5, lines: ["촉촉한 초록빛 결정이다. 숲의 숨결이 손안에서 맴돈다.", "잎사귀 문양이 잠시 떠올랐다 사라진다.", "세계수의 가지가 스쳤던 흔적이 아직 따뜻하다."] },
+  kingdom: { name: "늪의 진주", color: 0x8fd8ff, atk: 8, lines: ["진주 표면에 늪의 안개가 흘러간다.", "쿠소디아 기사단의 문장이 비쳐 나온다.", "물속에서도 꺼지지 않는 빛이다."] },
+  alfheim: { name: "성전의 빛구슬", color: 0xfff3a8, atk: 11, lines: ["손안에서 종소리 같은 온기가 퍼진다.", "요정들의 노랫소리가 잠깐 들리는 것 같다.", "빛의 결정 — 세계수와 가장 가까운 조각."] },
+  muspelheim: { name: "화염의 심핵", color: 0xffa24a, atk: 14, lines: ["극열의 해역에서도 타오르는 심장 같은 결정.", "불티가 튀며 룬 문자가 타오른다.", "이 열기는 세계수를 지키는 불꽃이다."] },
+  niflheim: { name: "서리 결정", color: 0xbfe8ff, atk: 17, lines: ["서리꽃이 결정 위에서 피었다 진다.", "극한의 추위도 이 빛을 삼키지 못했다.", "차가운 표면 아래에서 숨결이 뛴다."] },
+  cave: { name: "심연 수정", color: 0xc79aff, atk: 20, lines: ["보랏빛이 어둠을 삼키네.", "어둠 요정들의 비밀이 수정 안에 갇혀 있다.", "수정을 비추면 깊은 동굴이 비친다."] },
+  nidavellir: { name: "룬 광석의 눈", color: 0xffd76a, atk: 23, lines: ["룬 문자가 읽힌다 — '세계수를 지켜라'.", "난쟁이 장인들의 망치 소리가 울리는 것 같다.", "광맥 깊은 곳에서도 빛을 잃지 않는다."] },
+  hel: { name: "전쟁의 잔광", color: 0xff8f6a, atk: 26, lines: ["수많은 용사들의 기억이 담긴 결정.", "대전쟁의 땅에서도 살아 있었어.", "잔광이 울부짖다 조용해진다."] },
+  abyss: { name: "세계수의 눈동자", color: 0x7de8ff, atk: 30, lines: ["마지막 조각 — 세계수가 직접 두었던 눈.", "아홉 왕국의 숨결이 손안에서 하나로 울린다.", "종언의 왕좌도 이 빛 앞에서는 조용하다."] },
+};
+
+/* ================= v3.0.22 (#50) — 세계수의 가호 (신규 기능) =================
+ *  아홉 챕터의 결정을 모두 수집하면 해방되는 영구 스탯 보너스 + 스토리 대사. */
+export const WORLDTREE_BLESSING = { atk: 20, def: 8, hpAdd: 200, atkPct: 3 };
+/** 결정 수집 완료 판정에 필요한 챕터 수 = FRAGMENT_META 키 수 */
+export const FRAGMENT_CHAPTERS = Object.keys(FRAGMENT_META);
+
+export type DialogueDef = { speaker: string; /** v1.0.2 (#초상화) — portraitId 명시 지정(선택). 미지정 시 화자명→NPC_PORTRAITS→보스 토큰 매칭 자동 해석 */ portrait?: string; lines: string[] };
+
+/* ================= 스토리 대사 (v3.0.10 본게임 세계관 확정판) =================
+ *  잠뜰 아뜰란티스 라인을 본게임 고유 세계관으로 통합·증축:
+ *  세계수 이그드라실과 아홉 왕국 — 세계수의 가지로 빚은 룬 펜던트 속 정령 이그니,
+ *  뿌리에서 깨어난 종언의 마룡 아부디토스, 흩어진 일곱 세계의 결정. */
+
+export const DIALOGUES: Record<string, DialogueDef> = {
+  /* ================= 공통 / 인트로 ================= */
+  /* v1.4.12 (#14) — 사냥터 정보 NPC 대사 9챕터.
+   *  필드에 배치된 NPC가 챕터 공략 힌트(보스 패턴·위험 요소·진행 방향)를 알려준다.
+   *  상호작용 안 되던 이상한 소품을 대체하는 유저 친화 안내 역할. */
+  fieldNpc_forest: {
+    speaker: "숲의 사냥꾼",
+    lines: [
+      "{name}, 숲은 처음이지? 늑대는 무리로 다녀 — 한 마리 잡을 때 뒤를 조심해.",
+      "구역 4부터는 벽 앞 Lv.5 게이트가 있다. 먼저 사냥을 좀 하고 오렴.",
+      "보스 수호자는 참격 후 빈틈이 짧아. 물약은 단축키 F(HP)·D(MP)로 빠르게!",
+    ],
+  },
+  fieldNpc_kingdom: {
+    speaker: "능지 생존자",
+    lines: [
+      "능대 조심해! 저것들은 결정의 기운을 먹고 미쳤어.",
+      "능지의 이빨 달린 초목(식인초)은 밟으면 최대 체력의 10%가 깎여. 자동전투 중이라도 피해 다녀.",
+      "보스 베헤모스는 돌진 전에 웅크리는 예고 동작이 있어. 그때 옆으로 구르면 된다.",
+    ],
+  },
+  fieldNpc_cave: {
+    speaker: "광산 노동자",
+    lines: [
+      "동굴은 어둡지만 길은 하나야. 수정이 반짝이는 쪽이 진짜 길이지.",
+      "여기 스파이더들은 천장에서 떨어져. 소리가 들리면 위를 봐.",
+      "광석은 무겁지만 보스는 더 무거워. 강화 재료는 여관에서 세이브하고 도전하렴.",
+    ],
+  },
+  fieldNpc_niflheim: {
+    speaker: "설원 수렵꾼",
+    lines: [
+      "니플헤임의 눈보라는 방향을 가려. 미니맵을 자주 확인해.",
+      "얼음 늑대는 둔화 걸어. 기동성이 목숨이다 — 붙으면 떼어라.",
+      "보스 전에 마을 우물에서 HP/MP를 꽉 채워. 보스전에선 자동전투가 막혀 — 직접 싸워야 한다!",
+    ],
+  },
+  fieldNpc_muspelheim: {
+    speaker: "화산 광부",
+    lines: [
+      "용암 지대엔 발만 닿아도 타. 돌 디딤돌을 따라 걷렴.",
+      "불꽃 정령은 죽을 때 폭발해. 마지막 일격 뒤에 접근해라.",
+      "수르트의 브레스는 들이마신 뒤 나와. 불길이 커지면 도망 — 거리가 생명이야.",
+    ],
+  },
+  fieldNpc_alfheim: {
+    speaker: "요정 정찰병",
+    lines: [
+      "요정의 숲에 온 걸 환영해. 어둠이 깊어졌지만 횃불이 길을 밝혀 줄 거야.",
+      "그림자 요정은 사라졌다 나타나. 화면 가장자리 화살표를 봐 — 어디로 갔는지 알려 줄게.",
+      "수정 결정 지대는 보스가 지키고 있어. 파티가 있다면 같이 도전하렴.",
+    ],
+  },
+  fieldNpc_nidavellir: {
+    speaker: "대장장이 견습",
+    lines: [
+      "니다벨리르 대장간에 온 걸 환영하지. 장비 강화는 여기가 본고장이야.",
+      "돌 골렘은 마법에 약해. 스킬 쿨을 돌려가며 두들겨 보렴.",
+      "강화 실패해도 용 내지 말게 — 다음 주엔 성공 확률이 살짝 오르니까.",
+    ],
+  },
+  fieldNpc_hel: {
+    speaker: "묘지 관리인",
+    lines: [
+      "헬의 땅에서 죽은 자들이 걷지… 하지만 넌 살아 있지.",
+      "망자들은 느리지만 뭉쳐 다녀. 한 마리씩 끊어서 처리해.",
+      "헬의 문지기는 소환술을 써. 소환진이 보이면 진부터 부숴 — 그게 원칙이다.",
+    ],
+  },
+  fieldNpc_abyss: {
+    speaker: "심연 생존자",
+    lines: [
+      "…여기까지 온 건 네가 처음이 아니야. 그래도 살아서 보는 건 처음이지만.",
+      "심연의 눈동자는 레이저를 쏘며 움직인다. 빔이 모이면 옆으로 — 그것만 기억해.",
+      "마룡 아부디토스는 마지막 보스. 재림한 개체는 전용 패턴을 쓰니 각오해.",
+    ],
+  },
+  introNamed: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "{name}. 나쁘지 않은 이름이야.",
+      "힐다 할머니가 남긴 말 — '뒷산 폐허의 신전으로 가라.'",
+      "준비됐으면 가자. 모험은 기다려 주지 않아.",
+    ],
+  },
+  villageIntro: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "나는 이그니. 네 룬 펜던트에 깃든 정령이다.",
+      "세계수 이그드라실의 열매였던 일곱 결정이 아홉 왕국에 흩어졌어.",
+      "결정이 전부 어둠에 삼켜지면 세계수도, 아홉 왕국도 끝이야.",
+      /* v3.0.26 (#75) — '동쪽 차원문 → 서쪽 숲' 방향 모순 제거 (실존 지역명 '숲의 신전'으로 통일) */
+      "동쪽 차원문을 지나면 숲의 신전이야. 출발 전에 라고스 아저씨에게 물약을 챙겨라.",
+    ],
+  },
+  villager1: {
+    speaker: "마을 주민",
+    lines: [
+      "어머, {name}! 힐다 할머니를 따라나서기로 했구나.",
+      "차원문 너머 숲엔 늑대들이 돌아다녀. 물약 꼭 챙기고 다녀오렴.",
+      "…할머니는 좋은 분이었어. 신전에 간 뒤 소식이 끊기신 게 아직도 믿기지가 않아.",
+    ],
+  },
+  villager2: {
+    speaker: "마을 아이",
+    lines: [
+      "{name} 형아도 이제 진짜 모험가다! 부러워요.",
+      "저는 마을 우물을 지키고 있을게요. 우물 물은 아프면 꼭 필요하답니다!",
+      "할머니가 자주 그랬어요. '세계수는 기억한다'라고… 무슨 뜻일까요?",
+    ],
+  },
+  /* ================= v1.2.0 (#4) — 환생 n차수별 NPC 대사 변화 =================
+   *  환생할 때마다 NPC들이 기억하고 반응한다. 1차(rb1)/2차(rb2)/3차 이상(rb3).
+   *  WorldScene이 대화 키를 `${dlg}_rb${min(rebirths,3)}`로 치환 — 변형이 없으면 원본 재생. */
+  villager1_rb1: {
+    speaker: "마을 주민",
+    lines: [
+      "…어머나, {name}? 분명히 어제 늑대에게 당했다고 들었는데.",
+      "눈빛이 달라졌네. 세계수가 너를 다시 보냈나?",
+      "…환생자가 실제로 있다니. 할머니 말이 맞았구나.",
+    ],
+  },
+  villager1_rb2: {
+    speaker: "마을 주민",
+    lines: [
+      "두 번이나 세계를 건너왔다고? 이제 놀랍지도 않아.",
+      "솔직히 말하면… 조금은 무서워. 그만큼 네게 얹힌 바람도 커졌다는 뜻이지만.",
+      "그래도 이 마을 사람들은 응원한다. 아홉 왕국의 운명, 네가 메고 있잖아.",
+    ],
+  },
+  villager1_rb3: {
+    speaker: "마을 주민",
+    lines: [
+      "…전설 속 '빙환의 모험가'라는 게 바로 너구나.",
+      "세 번의 환생. 아이들은 이미 네 이야기로 놀아. 나도 손주한테 자랑할 거야.",
+      "부디 이번 생은 끝까지 가 줘. 마을 전체가 네 뒤를 봐주고 있어.",
+    ],
+  },
+  villager2_rb1: {
+    speaker: "마을 아이",
+    lines: [
+      "우와, 진짜예요?! {name} 형아가 죽었다가 돌아왔다고?",
+      "그럼… 환생자는 어떤 맛의 우물물을 마셔요? …아, 뭐냐 이게.",
+      "저도 크면 형아처럼 몇 번이고 다시 태어날래요!",
+    ],
+  },
+  villager2_rb2: {
+    speaker: "마을 아이",
+    lines: [
+      "형아… 이번엔 진짜 전설이 됐네요. 다들 다르게 말해요.",
+      "전에는 '미친 모험가'였는데, 이젠 '두 번 태어난 검사'래요!",
+      "…근데 형아, 두 번 죽어본 형아한테 죽음은 아무것도 아니에요?",
+    ],
+  },
+  villager2_rb3: {
+    speaker: "마을 아이",
+    lines: [
+      "…형아, 이제 너무 멀리 가 버린 거 아니에요?",
+      "세 번 환생한 사람은 더 이상 사람이 아니라 '이야기'라고 할머니 책에 있어요.",
+      "그치만 저는 알아요. 눈 반짝이는 건 변함없다는 거… 형아, 또 와 줘서 고마워요.",
+    ],
+  },
+  /* ================= 제2장 숲의 신전 ================= */
+  intro: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "저기 하늘로 빛 기둥이 솟았어 — 결정의 기운이야, {name}!",
+      "숲의 신전은 저쪽. 신전에 도착하면 네가 해야 할 일을 자세히 말해 줄게.",
+      "숲이 어두우니, 빛나는 기둥과 화살표를 따라가 보자.",
+    ],
+  },
+  fragment: {
+    speaker: "{name}",
+    lines: [
+      "이게… 결정의 조각. 손안에서 뜨거워져.",
+      "이그니, 이게 진짜 결정이야?",
+      "조각이야. 진짜는 수호자들이 삼켰지. 그래도 좋은 시작이야, {name}.",
+    ],
+  },
+  fragment2: {
+    speaker: "{name}",
+    lines: [
+      "또 하나의 조각… 몸속에서 세계수의 숨결이 느껴져.",
+      "이것도 어딘가의 결정이 삼킨 조각이야?",
+      "그래. 조각이 모이면 진짜 결정의 위치가 드러나.",
+    ],
+  },
+  /* v3.0.22 (#43/#44) — 챕터별 결정 첫 수확 스토리 대사 (9챕터 — 각 결정의 고유 이름 등장) */
+  fragment_forest: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "숲의 결정. 세계수의 가지가 스치며 남긴 흔적이지.",
+      "초록빛이 아직 살아 있어. 이걸 좇으면 결정을 찾을 수 있어, {name}.",
+    ],
+  },
+  fragment_kingdom: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "늪의 진주. 쿠소디아 기사들이 지키던 결정이다.",
+      "물속에서도 빛을 잃지 않네. 숨결이 점점 짙어지고 있어.",
+    ],
+  },
+  fragment_alfheim: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "성전의 빛구슬. 요정들이 천 년을 품어 온 결정이야.",
+      "…따뜻하네. 빛의 결정은 세계수와 가장 가까워.",
+    ],
+  },
+  fragment_muspelheim: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "화염의 심핵. 극열의 해역에서도 타오르는 결정이다.",
+      "조심해, 손대면 뜨거워. 그래도 이 열기는 세계수를 지키는 불꽃이야.",
+    ],
+  },
+  fragment_niflheim: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "서리 결정. 얼음 아래에서도 숨을 쉬고 있어.",
+      "이 극한의 추위조차 이 빛을 삼키지 못했어.",
+    ],
+  },
+  fragment_cave: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "심연 수정. 어둠 요정들이 감춰 온 결정이야.",
+      "보랏빛이 어둠을 삼키네. 조각이 하나씩 제 빛을 찾아가고 있어.",
+    ],
+  },
+  fragment_nidavellir: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "룬 광석의 눈. 난쟁이 장인들이 룬을 새기다 남긴 결정이다.",
+      "룬 문자가 읽혀… '세계수를 지켜라'. 옛 맹세가 남아 있어.",
+    ],
+  },
+  fragment_hel: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "전쟁의 잔광. 대전쟁의 땅에서도 결정은 살아 있었어.",
+      "수많은 용사들의 기억이 담겨 있네.",
+    ],
+  },
+  fragment_abyss: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "…마지막 조각이야. 세계수의 눈동자.",
+      "이것으로 결정의 위치가 드러났어. 아홉 왕국의 숨결이 {name}의 손에 모였어.",
+    ],
+  },
+  /* v3.0.22 (#50) — 세계수의 가호 (결정 전부 수집 보너스) */
+  worldtreeBlessing: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "아홉 결정이 하나로 울렸어… {name}, 세계수가 너를 기억하고 있어.",
+      "『세계수의 가호』 — 이그드라실의 힘이 네 팔과 몸에 깃든다. 영구히.",
+    ],
+  },
+  wolfRoutDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "능대 무리가 완전히 흩어졌어!",
+      "…그런데 이상해. 무리의 왕이 없었어. 저마다 뭔가에 이끌리듯 동쪽으로 달려갔었지.",
+      "결정의 기운이 숲을 지나 뿌리 쪽으로 흘러가고 있어, {name}.",
+    ],
+  },
+  wolvesDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "숲의 신전이 조금씩 눈을 뜨고 있어! 저기 차원문이 열리고 있어!",
+      "저 문 너머는 쿠소디아 왕국 — 선박의 왕국이지. 왕을 만나면 더 깊은 왕국으로 건널 수 있어.",
+      "가자, {name}. 아홉 왕국 순행이 시작된다!",
+    ],
+  },
+  /* ================= 제3장 쿠소디아 왕국 ================= */
+  kingdomIntro: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "쿠소디아 왕국에 도착했어. 왕족은 알프헤임과 동맹을 맺은 유서 깊은 왕국이지.",
+      "…그런데 늪지대가 이상해. 결정의 기운을 먹고 자란 능대가 왕국을 위협하고 있어.",
+      "기사단을 도우면 왕에게 갈 수 있을 거야. 대사 하나가 백 금자리지, {name}!",
+    ],
+  },
+  swampDone: {
+    speaker: "쿠소디아 기사단장",
+    lines: [
+      "훌륭하다, 젊은 모험가여! 왕국의 은혜를 잊지 않겠다.",
+      "왕께서 그대를 왕성에서 기다리신다. 저 차원문 너머 왕성으로 들어가게.",
+      "…한 가지 더. 왕성 앞 동상이 며칠 전부터 이상하게 울고 있다는 소문이 있네…",
+    ],
+  },
+  kingdomDone: {
+    speaker: "라이언 드 쿠소디아 국왕",
+    lines: [
+      "잘 왔네, 모험가. 나는 쿠소디아의 왕 라이언이다.",
+      "그대가 세계수에게 선택된 룬 지니는 자라는 것 — 나는 알고 있네. 옥새를 받아라.",
+      "이 옥새를 들고 샘에 서면, 요정들이 왕족으로 인식해 알프헤임으로 안내할 것이다.",
+      "폐하… 늪지의 동상이 니드호그로 변했다는 급보가! — 자, {name}. 서두르게!",
+    ],
+  },
+  /* ================= 제4장 알프헤임 성전 ================= */
+  alfheimIntro: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "알프헤임에 도착했어… 하지만 공기가 무거워.",
+      "니드호그 — 원래 알프헤임의 숲을 지키던 드래곤이었지. 지금은 탐식에 물들어 성전을 삼켰어.",
+      "니드호그는 뿌리에서 깨어난 아부디토스의 권속. 놈들의 의식이 결정을 부르고 있어.",
+      "여왕 요정에게 룬 유물을 받을 수 있도록, 먼저 하수인들을 정리하자, {name}!",
+    ],
+  },
+  minionPurgeDone: {
+    speaker: "알프헤임의 여왕 요정",
+    lines: [
+      "어서 오게, 세계수에게 선택된 자여. 나는 이 왕국의 여왕이다.",
+      "이 검의 이름은 '숲결의 검' — 세계수의 가지로 빚은 일곱 룬 유물 중 하나다.",
+      "조심하게. 룬 유물은 세계수에게 인정받은 자만 발동시킬 수 있고… 발동하면 힘을 강제로 끌어당겨. 대가가 있을 테니.",
+      "니드호그는 저 성전 한가운데에서 '빛의 결정'과 함께 대기하고 있네. 준비되면 가게, {name}!",
+    ],
+  },
+  bossIntroNidhog: {
+    speaker: "탐식의 드래곤 니드호그",
+    lines: [
+      "…빛나는 것이 보이는군. 룬 펜던트… 좋아, 좋아!",
+      "내 위장 속 결정이 네 것을 부러워하겠군. 탐식의 드래곤이 네게 뭐라 말해줬으면 좋겠느냐!",
+      "먹어 주마, 선택받은 자여! 이 성전째로!",
+    ],
+  },
+  guardianDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "니드호그를 물리쳤어! 저기, 떨어진 빛 — 그게 '빛의 결정'이야!",
+      "…그런데 {name}, 네 얼굴이 창백해. 숲결의 검이 수명을 끌어갔어… 룬 유물은 무겁다.",
+      "여왕이 성문을 열어 줬어. 다음은 극열의 왕국 무스펠헤임. 쉬어가며 가자!",
+    ],
+  },
+  /* ================= 제5장 무스펠헤임 ================= */
+  muspelIntro: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "무스펠헤임 — 극열의 왕국이야. 1년 주기로 열이 변하는 땅이지.",
+      "하필 오늘이 열이 가장 강해지는 '극열의 날'이야. 화염 정령들이 네빌라를 뒤덮고 있어!",
+      "저기 구조되어 있는 호족 소녀가 보여? 엘렌. 먼저 구해 주자, {name}!",
+    ],
+  },
+  spiritPurgeDone: {
+    speaker: "호족 소녀 엘렌",
+    lines: [
+      "고마워! …근데 방금 검은 화살, 봤어? 어둠에 잠식된 사람이 쏜 거라던데.",
+      "수르트가 화염 정령들을 이끌고 지하도시를 내려앉히려고 해.",
+      "촌장님이 유물 보물고를 열어 주셨어. '불씨의 목걸이'를 가져 가! 행운을 빌어.",
+    ],
+  },
+  bossIntroSurt: {
+    speaker: "화염의 거인 수르트",
+    lines: [
+      "작은 것… 내 영역을 침범했느냐!",
+      "오늘의 태양은 내 것이다. 불의 정령이 막강해지는 날 — 네가 온 날이 바로 그날!",
+      "재로 돌아가라, 룬 지니는 자!!",
+    ],
+  },
+  surtDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "수르트가 무너졌어! '화염의 결정' — 겟토! …그런데… 저기 검은 화살이 뭔지?",
+      "『결정을 내 놓아라.』",
+      "…누구야?! 화염의 결정이, 수르트의 것도 전부 저 사내한테…! 사라졌어, {name}!",
+      "마을 친구… '카일'이라 자칭했어. 힐다 할머니의 제자 — 우리와 함께 모험을 시작했던 애야.",
+    ],
+  },
+  /* ================= 제6장 니플헤임 ================= */
+  niflIntro: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "니플헤임이야… 숨만 쉴어도 몸이 얼어붙는 극한의 왕국.",
+      "저 앞 얼음의 성전에 마법사가 있대. 서리의 결정을 지키고 있어서… 돕고 나면 정보를 얻을지도?",
+      "그리고 조심해 — '탐욕의 늑대 펜리르'가 이 왕국을 배회하고 있어. 결정을 두 개나 삼킨 괴물이야!",
+    ],
+  },
+  frostRoutDone: {
+    speaker: "마법사 흐레스",
+    lines: [
+      "…고맙군, 젊은이. 나는 흐레스. 이 성전의 수호자였다.",
+      "펜리르에게 서리의 결정을 빼앗겼다. 놈은 폭풍의 늑대였던 것 — 결정을 삼키고 변질되었지.",
+      "성전 보물고의 '서리결의 반지'를 가져가게. 탐욕을 베는 검이 되길.",
+      "…저 녀석이 온다. 얼음의 성전으로 도망쳐라! 서두르게!",
+    ],
+  },
+  bossIntroFenrir: {
+    speaker: "탐욕의 늑대 펜리르",
+    lines: [
+      "이것이… 네가 말한 운명이라는 것인가, 아부디토스…!",
+      "결정 두 개의 힘을 지닌 나에게 — 인간이 무엇을 할 수 있겠느냐!",
+      "네 펜던트까지 삼켜 주마, 선택받은 자여!!",
+    ],
+  },
+  fenrirDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "펜리르가 쓰러졌어! 서리의 결정과 폭풍의 결정 — 두 개를 한 번에 되찾았어!",
+      "…{name}, 저기 사람이 있어. …카일이야!",
+      "『룬 유물은 사용자에게 귀속된다. 네가 쓴 유물은 네 것이야.』 …뭐야, 갑자기 등장해서 정보만 던지고 가네.",
+      "…{name}, 그 애의 눈동자가 완전히 어둠에 물려 있었어. 카일… 무슨 일이 생긴 게 분명해.",
+    ],
+  },
+  /* ================= 제7장 스바르트알프헤임 ================= */
+  caveIntro: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "스바르트알프헤임 — 알프헤임 아래에 숨은 어둠 요정들의 왕국이야.",
+      "여긴 옛날 세계수의 빛나던 수정을 캐던 곳이래.",
+      "지금은 어둠이 수정을 삼켰어. 물든 거미와 골렘이 돌아다녀. 여왕을 돕자, {name}!",
+    ],
+  },
+  spiderDone: {
+    speaker: "땅의 요정 여왕",
+    lines: [
+      "지하가 다시 빛을 머금기 시작했네. 고맙다, 세계수에게 선택된 자여.",
+      "…들려주겠다. 헬 — 무스펠헤임과 니플헤임 사이의 절벽 너머.",
+      "대전쟁의 유일한 생존자 두 모험가가 있었지. 하나는 힐다… 다른 하나는 그 동료 '무르'가 지키는 저택의 주인이야.",
+      "힐다가 무엇을 추적하고 있었는지는… 스스로 확인하게. 난쟁이들의 왕국으로 가게.",
+    ],
+  },
+  caveDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "지하 반대편 차원문이 열리고 있어!",
+      "저 문 너머는 니다벨리르 — 난쟁이들의 왕국이야. 스콜과 하티가 해와 달을 삼켰다던데…",
+    ],
+  },
+  /* ================= 제8장 니다벨리르 ================= */
+  nidavellirIntro: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "이다벨리르… 아니, 니다벨리르 — 난쟁이들의 왕국이야. 룬 광산이 유명하지.",
+      "…하늘이 어두워. 해와 달의 기운이 사라졌어. 스콜과 하티 — 교만의 쌍랑 늑대가 깨어난 거야!",
+      "광산 곳곳에 룬 골렘이 폭주하고 있어. 마을을 구하고, 유물 '룬의 지팡이'를 찾자!",
+    ],
+  },
+  runePurgeDone: {
+    speaker: "난쟁이 광산 조합장",
+    lines: [
+      "광산이 우리 것으로 돌아왔구나! 대단한 실력이네, 작은 영웅.",
+      "이 지팡이를 가져가게. '룬의 지팡이' — 교만을 꺾는 유일한 룬 유물이지.",
+      "스콜과 하티는 광산 최심부의 룬 제단에 잠들어 있네. 해와 달을 되돌려 다오!",
+    ],
+  },
+  bossIntroSkoll: {
+    speaker: "교만의 쌍랑 스콜&하티",
+    lines: [
+      "해는 내 것이고, 달도 내 것이다!",
+      "하늘을 삼킨 우리가 — 작은 인간 따위에게 굴복하겠느냐!",
+      "교만은 꺾이지 않아. 부서져라!",
+    ],
+  },
+  skollDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "스콜과 하티가 소멸했어! …{name}, 봐! 하늘에 해와 달이 돌아왔어!",
+      "저기 빛나는 것 — '천공의 결정'이야. 이제 여섯 개!",
+      "마지막 단서는 헬. …{name}, 이그니로서 네게 부탁할 게 있어. 무슨 일이 있어도… 나를 믿어 줘.",
+    ],
+  },
+  /* ================= 제9장 헬 ================= */
+  helIntro: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "헬의 절벽이야. 대전쟁의 최후 전장 — 그리고 힐다 할머니가 마지막으로 조사하던 땅이지.",
+      "대전쟁 이후 아무도 여기 못 들어왔어. 절벽을 지키는 하운드들을 먼저 정리하자.",
+      "…그리고 {name}. 여기서 네가 '진실'을 알게 될 거야. 각오하고 가자.",
+    ],
+  },
+  houndPurgeDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "절벽이 비었어! 저기 무르의 저택… 힐다 할머니의 조사 일지가 있어.",
+      "『…세계수의 뿌리에서 깨어난 그 존재의 이름은 아부디토스. 일곱 결정이 모이면 뿌리의 심연으로 가는 문이 열린다. 마지막 결정은… 룬 펜던트 속에…』",
+      "{name}, 듣자니 — 마지막 '세계수의 결정'은 네 펜던트 안에서 잠들어 있대. 아부디토스가 진짜 노린 건 그거야.",
+      "그리고 저기 — 대지의 결정. '대지의 방패'와 함께 헬의 문지기 가름이 기다리고 있어.",
+    ],
+  },
+  bossIntroGram: {
+    speaker: "헬의 문지기 가름",
+    lines: [
+      "…룬 펜던트. 세계수의 냄새다.",
+      "나는 가름. 피에 물든 문지기 — 헬의 대문 앞에 묶인 가장 큰 사냥개다.",
+      "…가라. 하지 않겠다면 — 갈라 놓겠다.",
+    ],
+  },
+  gramDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "가름까지 쓰러뜨렸어! '대지의 결정' — 일곱 개를 전부 모았어, {name}!",
+      "…그리고 이제, 진실을 말할 시간이야.",
+      "나는 그냥 소정령이 아니야. 세계수의 심장에서 태어난 룬 정령 — 아부디토스가 깨어나지 못하도록 나 일곱 결정과 함께 잠들어 있었지!",
+      "『마지막 결정 — 펜던트를 든 자여, 뿌리로 오라.』 …아부디토스가 너를 부르고 있어. 힐다 할머니도 분명 뿌리 아래에 있을 거야!",
+      "{name}, 이건… 나도 다 알고 있었던 게 아니야. 세계수의 뜻이 우리를 여기까지 이끈 거야. …가자, 마지막이야!",
+    ],
+  },
+  /* ================= 제10장 세계수의 뿌리 — 최종 ================= */
+  abyssIntro: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "…{name}. 지면이 흔들리고 있어 — 세계수의 뿌리가 문을 열었어!",
+      "『…룬 펜던트를 든 자여. 일곱 결정이 모였으니 뿌리의 심연으로 오라. — 땅이 너희를 삼켜 주마. 왕좌로.』",
+      "뿌리가 우리를 삼켰어… 어디로 가는 거지? …{name}, 잠깐. 저기 왕좌의 불빛…",
+      "왕좌를 지키는 유령들을 정리하면 길이 열려. 마지막이야, {name}.",
+    ],
+  },
+  wraithDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "왕좌 앞이 비었다… 이제 마지막 전투만 남았어.",
+      "{name}, 손을 봐. 네가 모은 여섯 결정의 빛… 네 마음이 빛나고 있어.",
+      "힐다 할머니가 말했었지 — '마지막 룬 유물은 마음속에 있다'고.",
+      "마음의 활. 마음의 빛을 내면 발동된대. 심호흡… 진정해. 우리가 함께할게!",
+    ],
+  },
+  bossIntroAbudditos: {
+    speaker: "종언의 마룡 아부디토스",
+    lines: [
+      "『후후… 왔구나, 세계수의 아이여. 나의 일곱 힘이 모두 돌아왔다.』",
+      "『룬 정령? 이그니? 그래, 그게 내 전부를 봉인하던 열쇠였지. 세계수의 심장이란 이름이지.』",
+      "『룬 유물? 웃기지 마라. 세계수는 죽어가고. 가지로 빚은 검 따위 — 이미 시들었다.』",
+      "『…아니. 네가 있구나. 힐다의 피를 이은 마지막 제자여 — 재미있게 구경해 주마!』",
+    ],
+  },
+  victory: {
+    speaker: "세계수 이그드라실",
+    lines: [
+      "『…끝났다. 종언의 마룡 아부디토스의 어둠이 소멸했다.』",
+      "『선택받은 자여. 일곱 결정의 빛이 하나가 되어, 마물들은 힘을 잃고 잠들 것이다.』",
+      "『아홉 왕국은 다시 교류를 시작하리라. 이 세계의 이름은 — 이그드라실로 불리게 되리라.』",
+      "『…이그니는 이제 내 심장으로 돌아간다. 아쉽냐? — 아니겠지. 새로운 모험이 시작됐으니.』",
+    ],
+  },
+  /* ================= 구 보스 (정의 유지 — 표기만 갱신) ================= */
+  bossIntroGuardian: {
+    speaker: "심연의 수호자",
+    lines: [
+      "…결정의 빛을 든 자여. 여기서 끝장내 주지.",
+      "시들어가는 세계수처럼, 너의 세계도 어둠에 잠길 것이다!",
+    ],
+  },
+  bossIntroBehemoth: {
+    speaker: "눈보라의 거수",
+    lines: [
+      "…이 뿌리는 이제 심연의 것이다. 얼어붙어라!",
+      "세계수가 그랬던 것처럼, 너희의 숨결도 얼음 아래 가라앉힐 것이다!",
+    ],
+  },
+  bossIntroLord: {
+    speaker: "심연의 군주",
+    lines: [
+      "작은 결정 수집가가 여기까지 왔군…",
+      "나는 뿌리의 원한이다. 세계수와 함께, 모든 것이 심연으로 귀할 것이다!",
+      "결정의 빛도, 이 세계도, 네 이름조차도 — 전부 잊히리라!",
+    ],
+  },
+  behemothDone: {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "거수가 무너지자 얼어붙은 차원문이 녹아나고 있어!",
+      "…그런데 저 마지막 문에서 느껴지는 기운은 달라. 왕좌로 가는 길이야.",
+      "마지막이야, {name}. 준비됐지?",
+    ],
+  },
+  /* ================= 여관 (v2.2 — 실내 취침 연출) ================= */
+  innkeeper: {
+    speaker: "여관 주인 로안",
+    lines: [
+      "어서 오세요, {name}. 여관 '쉼터'예요.",
+      "숙박은 20G — 따뜻한 침대에서 푹 자면 HP/MP가 전부 회복돼요.",
+      "잠깐 동안 몸이 개운해지는 버프 효과도 따라와요. 쉬어 갈까요?",
+    ],
+  },
+  innkeeperNoMoney: {
+    speaker: "여관 주인 로안",
+    lines: [
+      "앗, 골드가 부족하네요… 숙박비는 20G예요.",
+      "밖에서 몬스터나 잡고 오면 금방 모이지 않을까? 죄송해요~",
+    ],
+  },
+  innkeeperSlept: {
+    speaker: "여관 주인 로안",
+    lines: ["좋은 잠자리였나요? 천천히 가세요, 모험가님!"],
+  },
+  /* ================= 전직 (v1.8 클래스 트리) ================= */
+  jobMaster: {
+    speaker: "직업 교관 카이엔",
+    lines: [
+      "어서 오게, {name}. 나는 모험가들에게 길을 열어 주는 직업 교관 카이엔이다.",
+      "이제 네 몸에 흐르는 힘이 꽤 뚜렷해졌군. 전직할 자격이 있는지 보자!",
+      "전사·궁수·마법사 — 세 계열 중 하나를 택하면 2차, 3차로 더 깊이 들어갈 수 있어.",
+      "계열 안에서 방향이 바뀌고 싶으면 언제든 자유 전직을 찾아오게. 골드만 있으면 된다!",
+      "자, 결정하게. 네 가호를 새겨 주마!",
+    ],
+  },
+  /* ================= 반복 토벌 의뢰 수주 (v2.3 — NPC 수주 게이트, 지시 #4)
+   *  v3.0.26 (#76) — 일퀘는 전체 스토리 완료 후에만 수주 가능 (이 대사는 해금 후에만 노출) */
+  merchantRepeat: {
+    speaker: "상인 라고스",
+    lines: [
+      "오, {name}! 아홉 왕국의 스토리를 전부 끝낸 진짜 모험가로군!",
+      "의뢰판에 네 눈짐을 띤 특별 토벌 의뢰가 붙었어. 오늘부터 언제든 반복 수주할 수 있어!",
+      "의뢰를 수주하면 퀘스트창에 [반복] 토벌 의뢰가 떠. 목표를 채울 때마다 골드와 경험치를 받지.",
+      "자, 오늘의 의뢰 — 수주해 가게!",
+    ],
+  },
+  /* __FILLER_DIALOGUES__ */
+};
+
+/* ================= 구역 안내 대사 자동 생성 (구역별 탐험 분위기 대사) ================= */
+
+const WALK_AMBIENT: Record<ChapterKey, string[]> = {
+  forest: [
+    "숲의 신전 폐허가 점점 가까워져. 돌기둥 사이로 결정 기운이 새어 나오고 있어.",
+    "나뭇잎 사이로 어둠의 기운이 배어 나와. {name}, 물약 상태 확인했지?",
+    "이 늑대들… 결정 기운에 미친 것 같아. 발소리가 점점 요란해진다.",
+  ],
+  kingdom: [
+    "쿠소디아의 함대가 늪지 너머에 정박해 있어. 왕국의 기을 본다?",
+    "능대들이 점점 왕국 성벽 쪽으로 번지고 있어. 시간이 없다, {name}!",
+    "기사단이 이 근방을 순찰 중이래. 조금만 더 버티면 왕성 초대장이 올 거야.",
+  ],
+  alfheim: [
+    "성전의 기둥이 하나씩 불이 꺼지듯 어두워지고 있어… 니드호그가 깨어나는 소리.",
+    "요정들의 노래가 아까까지 들렸는데… 이제는 하수인의 낮은 울림만 남았어.",
+    "여왕의 가호가 네를 지켜보고 있어. 서두르자, {name}!",
+  ],
+  muspelheim: [
+    "지열이 발밑을 태운다. 극열의 날이 다가올수록 정령들이 포악해져.",
+    "멀리 지하도시의 첨탑이 보여. 엘렌이 그 안에 갇혀 있대.",
+    "용암이 올라오는 소리… 무스펠헤임의 심장이 뛰고 있어, {name}.",
+  ],
+  niflheim: [
+    "내쉰 숨이 얼음 결정이 돼. 극한의 왕국은 이름대로야.",
+    "얼음 성전의 불빛이 저기 희미하게 보여. 흐레스라는 마법사가 있대.",
+    "펜리르의 발자국이… 커지고 있어. 절대 정면 승부하지 마. 아직은!",
+  ],
+  cave: [
+    "수정 광맥이 흐릿하게 빛나. 어둠 요정들이 이곳을 지키고 있어.",
+    "거미줄이 점점 촘촘해져. 둥지가 가까워졌다는 증거야, {name}.",
+    "여왕의 목소리가 뿌리를 타고 들려와. '아직이다…' 라고.",
+  ],
+  nidavellir: [
+    "룬 각인이 빛나는 광산. 난쟁이 조합의 망치 소리가 들리지?",
+    "폭주한 골렘이 광맥을 부숴대. 해와 달이 없으니 기계도 미쳐 돌아가.",
+    "광산 최심부에 룬 제단이 있대. 스콜과 하티가 거기 잠들어 있대, {name}.",
+  ],
+  hel: [
+    "절벽 아래 전쟁의 잔재가 늘어서 있어. 대전쟁의 흉터야.",
+    "헬 하운드의 눈이 어둠 속에서 반짝여… 지지 말고 앞서 가자.",
+    "저기 저택 불빛… 힐다 할머니의 동료가 그곳에 있다고 했지.",
+  ],
+  abyss: [
+    "뿌리의 심연 폐허… 세계수가 흘린 피가 결정이 되어 바닥마다 빛나.",
+    "왕좌의 불빛이 점점 커진다. 아부디토스의 기운이… 숨을 쉬고 있어.",
+    "뿌리의 울림이 땅을 타고 와. 마지막이야, {name}.",
+  ],
+};
+
+for (const spec of CHAPTERS) {
+  const lines = WALK_AMBIENT[spec.key];
+  for (let i = 0; i < 3; i++) {
+    DIALOGUES[`ch${spec.num}Walk${i + 1}`] = {
+      speaker: "룬 정령 이그니",
+      lines: [lines[i]],
+    };
+  }
+  DIALOGUES[`eliteWarn${spec.num}`] = {
+    speaker: "룬 정령 이그니",
+    lines: [
+      "…{name}, 잠깐. 이 구역의 기운이 뒤틀리고 있어.",
+      `정예 ${ENEMIES[spec.main].name} — 무리의 대장이 우리를 기다리고 있어.`,
+      "물약을 챙기고, 상대의 공격 패턴을 봐가며 싸우자!",
+    ],
+  };
+  DIALOGUES[`bossApproach${spec.num}`] = {
+    speaker: "룬 정령 이그니",
+    lines: [
+      `제${spec.num}장의 심장부 — ${spec.title}의 왕좌가 눈앞이야.`,
+      "마지막 물약 확인, 장비 점검… 그리고 {name}, 긴장 풀어. 우리가 함께야.",
+      "문을 열자. 이 왕국의 진짜 주인을 만나러!",
+    ],
+  };
+}
+
+/* ================= v1.0.19 (A-3) — 재림 지역(신규 15구역) 인트로 대사 =================
+ *  지시서 A-3의 신규 스테이지에 기존 대사 시스템과 동일한 인트로를 제공한다.
+ *  키: rebirthWalk1~3 (일반 구역) / rebirthBoss (보스 구역 r5·r10·r15) */
+DIALOGUES["rebirthWalk1"] = {
+  speaker: "룬 정령 이그니",
+  lines: [
+    "세계수의 뿌리 너머… 죽은 땅이 다시 숨을 쉬기 시작했어. 여긴 '재림의 땅'.",
+    "심연이 완전히 죽진 않았어. 재림한 어둠이 예전보다 훨씬 짙게 번지고 있어.",
+    "{name}, 여긴 제10장보다 훨씬 위험해. 장비 점검 확실히 하고 가자!",
+  ],
+};
+DIALOGUES["rebirthWalk2"] = {
+  speaker: "룬 정령 이그니",
+  lines: [
+    "이 땅의 결정은 제10장의 것과 다른 빛을 내… 세계수가 두 번 흔들린 자국이야.",
+    "강해진 만큼 보상도 커. 여기서 얻는 경험치는 이전 구역과 비교도 안 돼.",
+    "밀리면 마을로 도망쳐. 복귀 차원문은 항상 열려 있으니까!",
+  ],
+};
+DIALOGUES["rebirthWalk3"] = {
+  speaker: "룬 정령 이그니",
+  lines: [
+    "재림한 몬스터들은 예전과 같은 얼굴이 아니야. 패턴을 다시 읽어야 해.",
+    "정예가 우뚝 서 있는 구역도 있어. 무리하면 물약부터 아껴.",
+    "좋아, {name}. 이 어둠을 우리가 정리하자!",
+  ],
+};
+DIALOGUES["rebirthBoss"] = {
+  speaker: "룬 정령 이그니",
+  lines: [
+    "재림의 심장부야… 이 땅의 수호자가 {name}를 기다리고 있어.",
+    "지금까지와는 규모가 달라. 최상급 물약과 강화된 장비를 확인해!",
+    "가자! 재림의 종언을 우리 손으로 끝내자!",
+  ],
+};
+
+/* ================= 전직 스토리 (v2.0 — 사용자 지시 #13) ================= */
+/*  2차/3차 전직마다 직업 계열 고유 스토리 퀘스트 체인 (퀘스트 + 컷씬 대사 + 보상) */
+
+export type JobStoryStep = {
+  id: string;
+  /* v1.3.1 (#4) — collect(조각 회수) 폐지 → travel(맵 이동 사냥) 신설.
+   *  메이플스토리 전직 퀘스트처럼 "다른 맵으로 이동해서" 수행하는 단계 */
+  type: "hunt" | "collect" | "elite" | "travel";
+  title: string;
+  desc: string;
+  need?: number;
+  /** travel 단계 — 목적지 스테이지 키 (런타임에 방문 기록 기준으로 확정·세이브 유지) */
+  targetStage?: string;
+  /** hunt 단계 — 현재 해역의 대표 몬스터로 동적 치환 (null = 어떤 몬스터든) */
+  targetLabel: string;
+  dialogue: string;
+  reward: number;
+  expReward: number;
+};
+
+export type JobStoryDef = {
+  family: FamilyKey;
+  tier: 1 | 2 | 3 | 4;
+  title: string;
+  startDialogue: string;
+  doneDialogue: string;
+  reward: { gold: number; ap: number; buffKey?: BuffKey };
+  steps: JobStoryStep[];
+};
+
+const JOB_SPKR: Record<FamilyKey, string> = {
+  warrior: "전사 계열의 시조 '강철의 마르테'",
+  ranger: "궁수 계열의 시조 '바람의 세이렌'",
+  mage: "마법사 계열의 시조 '만개한 세이렌'",
+  thief: "도적 계열의 시조 '그림자의 로크'",
+};
+
+/* v3.0.2 (지시 #12 — "전직 스토리 퀘스트 어디감, 1차 10분 2차 20분 3차 30분 이런식으로"):
+ *  전 계열 × 전 티어(1~4차) 스토리 체인 — 단계 수가 티어마다 늘어난다 (t1 3단계, t2 4단계, t3 5단계, t4 6단계)
+ *  v1.0.12 (#4차전직퀘) — 4차도 시련 스토리를 거치도록 확장 (기존엔 3차까지만 있어 4차는 퀘스트 없이 바로 전직됐다)
+ *  v1.0.12 (#문구청소) — 제목의 "(약 N분)" 개발 주석성 문구 제거 */
+function jobStory(family: FamilyKey, tier: 1 | 2 | 3 | 4): JobStoryDef {
+  const nameOf: Record<FamilyKey, string> = { warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적" };
+  const stepBase = tier === 1 ? 8 : tier === 2 ? 10 : tier === 3 ? 14 : 18;
+  const huntMid = tier === 1 ? 0 : tier === 2 ? 15 : tier === 3 ? 20 : 25;
+  /* v1.3.1 (#4) — collect(보석의 흔적 회수) 전면 폐지 → travel(지정 맵 이동+사냥)로 교체.
+   *  메이플스토리 전직 퀘스트처럼 "다른 맵으로 이동해서" 수행하며, 계열마다 톤·목표 수가 다르다.
+   *  목적지 스테이지는 런타임에 방문 기록(visited) 기준으로 직열별 인덱스를 배정해
+   *  항상 도달 가능한 맵을 확정하고, 세이브(tst)에 유지해 재접속에도 흔들리지 않는다. */
+  const travelNeed = tier === 1 ? 6 : tier === 2 ? 10 : tier === 3 ? 12 : 15;
+  const travelTone: Record<FamilyKey, { t2: string; t4: string; adj: number }> = {
+    warrior: { t2: "전사의 길은 전장이다. 계승의 시험장으로 이동해 그곳의 마수를 정면으로 격파하자.", t4: "강철의 증명 — 다른 계승지의 마수들을 백병전으로 제거하라.", adj: 2 },
+    ranger: { t2: "궁수의 길은 거리다. 계승의 시험장으로 이동해 멀리서 정확히 사냥하자.", t4: "바람의 증명 — 다른 계승지에서 움직이며 정밀 사격을 가하라.", adj: 0 },
+    mage: { t2: "마법사의 길은 마나다. 계승의 시험장으로 이동해 주문으로 마수를 정리하자.", t4: "심연의 증명 — 다른 계승지에서 마력으로 유산의 수호자를 쓰러뜨려라.", adj: -1 },
+    thief: { t2: "도적의 길은 그림자다. 계승의 시험장으로 이동해 소리 없이 마수를 처리하자.", t4: "그림자의 증명 — 다른 계승지에서 흔적 없이 표적을 암살하라.", adj: -1 },
+  };
+  const tn = Math.max(4, travelNeed + travelTone[family].adj);
+  const titles: Record<FamilyKey, Record<1 | 2 | 3 | 4, string>> = {
+    warrior: { 1: "강철의 싹", 2: "강철의 각오", 3: "전장의 정점", 4: "전장을 삼킨 자" },
+    ranger: { 1: "바람의 씨앗", 2: "바람의 재능", 3: "천공의 사수", 4: "천을 꿰뚫는 화살" },
+    thief: { 1: "그림자의 태동", 2: "그림자의 맹세", 3: "검의 그림자", 4: "그림자의 왕좌" },
+    mage: { 1: "마나의 눈뜸", 2: "마나의 문", 3: "심연의 지혜", 4: "세계의 법칙" },
+  };
+  const title = titles[family][tier];
+  const steps: JobStoryDef["steps"] = [
+    {
+      id: "s1",
+      type: "hunt",
+      title: tier === 1 ? "[전직 스토리] 첫 수련" : tier === 2 ? "[전직 스토리] 무장 훈련" : tier === 3 ? "[전직 스토리] 정예 사냥" : "[전직 스토리] 초월의 수련",
+      desc: `지금 머무는 해역의 몬스터 ${stepBase}마리를 처치하고 실전 감각을 되찾자.`,
+      need: stepBase,
+      targetLabel: "지금 해역의 몬스터",
+      dialogue: `js${family}${tier}Step1`,
+      reward: 120 + tier * 40,
+      expReward: 200 + tier * 120,
+    },
+    {
+      /* v1.3.1 (#4) — 조각 회수 폐지 → 맵 이동 사냥 (travel). 목적지는 런타임 확정 */
+      id: "s2",
+      type: "travel",
+      title: tier === 1 ? "[전직 스토리] 계승의 시험장" : tier === 2 ? "[전직 스토리] 가호의 증표" : tier === 3 ? "[전직 스토리] 유산의 조각" : "[전직 스토리] 계승의 인장",
+      desc: travelTone[family].t2,
+      need: tn,
+      targetLabel: "지정된 계승지의 몬스터",
+      dialogue: `js${family}${tier}Step2`,
+      reward: 150 + tier * 50,
+      expReward: 240 + tier * 140,
+    },
+  ];
+  if (tier >= 2) {
+    steps.push({
+      id: "s3",
+      type: "hunt",
+      title: tier >= 4 ? "[전직 스토리] 초월 적응" : "[전직 스토리] 전장 적응",
+      desc: `더 강해진 몸을 확인하자 — 몬스터 ${huntMid}마리를 처치하자.`,
+      need: huntMid,
+      targetLabel: "지금 해역의 몬스터",
+      dialogue: `js${family}${tier}Step1`,
+      reward: 200 + tier * 60,
+      expReward: 320 + tier * 180,
+    });
+  }
+  if (tier >= 3) {
+    steps.push({
+      /* v1.3.1 (#4) — 심심의 유물(조각 2개) 폐지 → 두 번째 계승지 이동 사냥 */
+      id: "s4",
+      type: "travel",
+      title: "[전직 스토리] 심심의 유물",
+      desc: travelTone[family].t4,
+      need: Math.max(5, tn - 2),
+      targetLabel: "지정된 계승지의 몬스터",
+      dialogue: `js${family}${tier}Step2`,
+      reward: 320,
+      expReward: 900,
+    });
+  }
+  steps.push({
+    id: `s${steps.length + 1}`,
+    type: "elite",
+    title: tier === 1 ? "[전직 스토리] 시조의 인정" : tier === 2 ? "[전직 스토리] 시조의 시험" : tier === 3 ? "[전직 스토리] 심연의 정예" : "[전직 스토리] 시조의 초월",
+    desc: "전직관에서 시조가 소환한 시험 상대를 쓰러뜨리자. (카이엔에게 말 걸기)",
+    targetLabel: "시험 상대",
+    dialogue: `js${family}${tier}Step3`,
+    reward: tier === 1 ? 260 : tier === 2 ? 250 : tier === 3 ? 800 : 1200,
+    expReward: tier === 1 ? 380 : tier === 2 ? 400 : tier === 3 ? 1400 : 2200,
+  });
+  return {
+    family,
+    tier,
+    title: `${nameOf[family]} 계열 ${tier}차 전직 스토리 — ${title}`,
+    startDialogue: `js${family}${tier}Start`,
+    doneDialogue: `js${family}${tier}Done`,
+    reward: {
+      gold: tier === 1 ? 260 : tier === 2 ? 400 : tier === 3 ? 1200 : 2000,
+      ap: tier === 1 ? 3 : tier === 2 ? 5 : tier === 3 ? 10 : 14,
+      buffKey: tier >= 3 ? "buff_exp" : "buff_atk",
+    },
+    steps,
+  };
+}
+
+export const JOBSTORY: Record<FamilyKey, Record<1 | 2 | 3 | 4, JobStoryDef>> = {
+  warrior: { 1: jobStory("warrior", 1), 2: jobStory("warrior", 2), 3: jobStory("warrior", 3), 4: jobStory("warrior", 4) },
+  ranger: { 1: jobStory("ranger", 1), 2: jobStory("ranger", 2), 3: jobStory("ranger", 3), 4: jobStory("ranger", 4) },
+  mage: { 1: jobStory("mage", 1), 2: jobStory("mage", 2), 3: jobStory("mage", 3), 4: jobStory("mage", 4) },
+  thief: { 1: jobStory("thief", 1), 2: jobStory("thief", 2), 3: jobStory("thief", 3), 4: jobStory("thief", 4) },
+};
+
+/* 전직 스토리 대사 (계열 × 차수 × 단계) */
+const T1_LINES: Record<FamilyKey, { start: string[]; s1: string[]; s2: string[]; s3: string[]; done: string[] }> = {
+  warrior: {
+    start: ["『…어느 쪽이든 검을 든 팔이군. 나는 강철의 마르테 — 최초의 전사다.』", "『전사의 길은 힘이 아니라 '버티는 법'부터다. 몸으로 배워라!』"],
+    s1: ["『호오, 검이 몸에 붙기 시작했군.』", "『계속해라. 몸은 거짓말을 하지 않는다.』"],
+    s2: ["『그 흔적의 무게가 느껴지는가. 그것이 가호의 씨앗이다.』"],
+    s3: ["『인정한다. 이제 마지막 — 내가 부린 시험 상대를 상대해라!』"],
+    done: ["『오늘부로 너는 전사다. 강철의 싹이 되어 자라라!』"],
+  },
+  ranger: {
+    start: ["『…바람의 인연이 느껴지는 손이다. 나는 바람의 세이렌 — 최초의 궁수다.』", "『활은 멀리를 보는 자의 무기. 먼저 '눈'부터 트게 해주마!』"],
+    s1: ["『호오, 시야가 조금씩 열리는군.』", "『바람을 믿고 화살을 맡겨 봐라.』"],
+    s2: ["『그 빛나는 흔적 — 바람이 너를 알아보는 증표다.』"],
+    s3: ["『인정한다. 마지막으로 시험 상대를 겨눠라!』"],
+    done: ["『오늘부로 너는 궁수다. 바람의 씨앗이 되어 날아오르라!』"],
+  },
+  mage: {
+    start: ["『…마나가 손끝에 머무는구나. 나는 만개한 세이렌 — 최초의 마법사다.』", "『마법은 지혜가 곧 힘. 먼저 마나와 '대화'하는 법을 가르쳐주마!』"],
+    s1: ["『마나가 네 말을 듣기 시작했군.』", "『집중이 흐트러지면 마나는 도망친다. 계속해라.』"],
+    s2: ["『마나가 형태를 얻었다 — 그것이 너의 첫 주문이다.』"],
+    s3: ["『인정한다. 마지막으로 시험 상대에게 주문을 쏘아라!』"],
+    done: ["『오늘부로 너는 마법사다. 마나의 눈이 떴으니, 세계가 보일 것이다.』"],
+  },
+  thief: {
+    start: ["『…발소리가 없는 녀석이군. 나는 그림자의 로크 — 최초의 도적이다.』", "『도적의 첫 재능은 '보이지 않는 법'이다. 몸으로 배워라!』"],
+    s1: ["『호오, 그림자에 몸을 맡기기 시작했군.』", "『좋아. 칼날은 조용해야 한다.』"],
+    s2: ["『그 흔적 — 어둠이 너를 알아보는 증표다.』"],
+    s3: ["『인정한다. 마지막으로 시험 상대를 뒤에서 놀려라!』"],
+    done: ["『오늘부로 너는 도적이다. 그림자의 태동을 잊지 마라.』"],
+  },
+};
+
+/* v1.0.12 (#4차전직퀘) — 4차 시련 대사: "초월" 테마 — 시조가 후예를 넘어서는 단계 */
+const T4_LINES: Record<FamilyKey, { start: string[]; s1: string[]; s2: string[]; s3: string[]; done: string[] }> = {
+  warrior: {
+    start: ["『…드디어 이 자리에 왔군, 전사여. 지금부턴 시조인 내가 시험대가 아니다.』", "『네가 넘어야 할 산은 '전장 그 자체' — 세계가 다른 계층에서 너를 부른다!』"],
+    s1: ["『전장의 무게가 몸에 익기 시작했군.』", "『좋다. 강철은 두들겨질수록 단단해진다!』"],
+    s2: ["『…계승의 인장이 검에 새겨졌군.』", "『그 검이 더는 흔들리지 않는다면 — 통과다!』"],
+    s3: ["『초월의 문 앞에서도 검이 무뎌지지 않았군.』", "『이제 마지막이다. 시조의 이름을 걸고 시험 상대를 베어라!』"],
+    done: ["『인정한다. 오늘부로 너는 전장 그 자체다.』", "『서라, 워로드(팔라딘). 너의 전장이 곧 세계다!』"],
+  },
+  ranger: {
+    start: ["『…화살이 하늘에 닿았구나. 나는 바람의 세이렌 — 마지막 시험을 열겠다.』", "『천은 아직 네가 닿지 않는 곳. 이제 '천을 꿰뚫는' 화살을 배울 때다!』"],
+    s1: ["『바람의 꼬리까지 읽기 시작했군.』", "『화살이 빛보다 먼저 닿는다 — 그 속도를 몸에 새겨라!』"],
+    s2: ["『…인장이 활에 박혔다. 활이 너를 알아본다.』", "『이제 활은 네 의지 그대로 날아간다!』"],
+    s3: ["『천의 문 앞에서도 조준이 흐트러지지 않았군.』", "『마지막이다 — 시험 상대의 심장을 겨눠라!』"],
+    done: ["『인정한다. 오늘부로 너의 화살은 하늘 아래 없는 것이니.』", "『날아라, 데드아이(스카이로드)! 천을 꿰뚫어라!』"],
+  },
+  mage: {
+    start: ["『…마나가 세계의 법칙에 닿았군. 나는 만개한 세이렌 — 마지막 문을 열겠다.』", "『이번 시험은 마법이 아니다. '세계 그 자체'와 문답해라!』"],
+    s1: ["『세계의 파동을 마나로 읽기 시작했군.』", "『법칙은 무겁다. 그 무게를 견디며 더 외워라!』"],
+    s2: ["『…인장이 지팡이에 새겨졌군. 마나가 주문보다 먼저 움직인다.』", "『이제 주문이 아니라 네가 법칙을 고른다!』"],
+    s3: ["『세계의 문 앞에서도 집중이 깨지지 않았군.』", "『마지막이다 — 시험 상대를 법칙으로 제압해라!』"],
+    done: ["『인정한다. 오늘부로 너의 말이 곧 법칙이다.』", "『일어나라, 아크메이지(세이지)! 세계가 너를 다시 쓴다!』"],
+  },
+  thief: {
+    start: ["『…이제 네 발소리는 세계에서도 사라졌군. 나는 그림자의 로크 — 왕좌를 열겠다.』", "『그림자의 왕좌는 무덤이다. 거기서 살아남아라!』"],
+    s1: ["『어둠의 결을 타고 움직이기 시작했군.』", "『좋다. 왕좌로 가는 길은 살아있는 자의 것이 아니다 — 조용히 가라!』"],
+    s2: ["『…인장을 훔쳐왔군. 아니, '받아냈'다.』", "『그림자가 너를 왕으로 인정하기 시작했다!』"],
+    s3: ["『왕좌의 문 앞에서도 숨결이 들리지 않았군.』", "『마지막이다 — 시험 상대를 무덤으로 보내라!』"],
+    done: ["『인정한다. 오늘부로 너가 그림자이자 왕이다.』", "『앉아라, 어세신(스와시버클러). 그림자의 왕좌에!』"],
+  },
+};
+
+const JS_LINES: Record<FamilyKey, Record<1 | 2 | 3, { start: string[]; s1: string[]; s2: string[]; s3: string[]; done: string[] }>> = {
+  warrior: {
+    1: T1_LINES.warrior,
+    2: {
+      start: ["『…왔는가, 후예여. 나는 강철의 마르테 — 최초의 전사다.』", "『전사의 힘은 검이 아니라 '버틸 결심'에서 나온다. 몸으로 보여라!』"],
+      s1: ["『좋다. 검이 몸에 붙기 시작했군.』", "『하지만 힘만으로는 전장을 못 넘는다. 다음을 보여라.』"],
+      s2: ["『…그 빛, 옛 전우들의 가호와 같다.』", "『인정한다. 이제 마지막 시험 — 내 앞에서 쓰러져라!』"],
+      s3: ["『…통과다. 그 상처, 숨김없이 받아냈군.』", "『오늘부로 너는 진정한 전사다. 강철의 각오를 이어받아라!』"],
+      done: ["『앞으로 맞서는 적이 강할수록 — 너의 검은 더 무거워질 것이다.』", "『기대하마, 전사여.』"],
+    },
+    3: {
+      start: ["『시간이 흘렀군, 전사여. 3차 계승의 시간이다.』", "『이번 시험은 전장 그 자체. 죽음의 냄새를 견뎌라!』"],
+      s1: ["『전장의 냄새를 익혔군. 하지만 아직 부족하다.』", "『전사의 검은 무게를 견디는 자의 것이다!』"],
+      s2: ["『그 조각… 전설의 전사들의 유산이다.』", "『그 무게를 감당할 자만이 정점에 선다!』"],
+      s3: ["『…심연의 정예를 베어냈군.』", "『인정한다. 지금이야말로 — 전장의 정점에 서라!』"],
+      done: ["『너의 이름은 이제 전설의 한 페이지가 될 것이다.』", "『서라, 워로드(팔라딘). 바다가 너를 기억한다!』"],
+    },
+  },
+  ranger: {
+    1: T1_LINES.ranger,
+    2: {
+      start: ["『…바람을 타고 왔구나. 나는 바람의 세이렌 — 최초의 궁수다.』", "『활은 멀리를 보는 자의 무기다. 네 '눈'을 보여라!』"],
+      s1: ["『호오, 바람의 흐름을 읽기 시작했군.』", "『하지만 시야가 좁다. 더 넓은 세계를 봐라!』"],
+      s2: ["『…그 빛을 겨눌 수 있었나. 눈이 트였군.』", "『인정한다. 마지막으로 — 나에게 화살을 쏘아라!』"],
+      s3: ["『…단 한 발로 나를 흘렬케 했군.』", "『오늘부로 너는 진정한 궁수다. 바람의 재능을 이어받아라!』"],
+      done: ["『바람이 네 편이 될 것이다. 어디에 있든.』", "『즐겁게 쏘아라, 궁수여!』"],
+    },
+    3: {
+      start: ["『천공의 자리가 비어 있었다. 이제 네가 오를 때다.』", "『최후의 시험 — 심연을 겨누어라!』"],
+      s1: ["『심연의 움직임을 한 발로 읽다니.』", "『하지만 천공은 그 정도가 아니다! 더 쏴라!』"],
+      s2: ["『…유산의 조각을 화살처럼 다루다니.』", "『그 눈이라면 — 하늘 위까지 닿는다!』"],
+      s3: ["『심연의 정예를 격추했군. 완벽하다.』", "『오르라! 천공의 사수가 되어라!』"],
+      done: ["『이제 네 화살은 지평선 너머의 어둠도 꿰뚫는다.』", "『날아라, 이글아이(템페스트)!』"],
+    },
+  },
+  mage: {
+    1: T1_LINES.mage,
+    2: {
+      start: ["『…마나가 네게 궁금해하고 있구나. 나는 만개한 세이렌 — 최초의 마법사다.』", "『마법은 지식이 아니라 '질문'이다. 물어봐라, 세계에!』"],
+      s1: ["『오, 마나와 호흡이 맞기 시작했군.』", "『하지만 아직 얕다. 더 깊이 물어봐라!』"],
+      s2: ["『…보석의 문답을 읽었군.』", "『인정한다. 마지막 시험 — 나의 마법을 받아라!』"],
+      s3: ["『…정면에서 받아냈군. 훌륭하다.』", "『오늘부로 너는 진정한 마법사다. 마나의 문을 열어라!』"],
+      done: ["『세계의 모든 마나가 네 질문에 답할 것이다.』", "『쓰고 싶은 만큼 써라, 마법사여!』"],
+    },
+    3: {
+      start: ["『심연의 지혜… 마지막 문이 열리는군.』", "『이번 시험은 '심연 그 자체'. 견뎌라!』"],
+      s1: ["『심연의 파동을 마나로 짜냈군.』", "『하지만 심연은 무한하다. 더 들어가라!』"],
+      s2: ["『…유산의 문장을 해독했다니.』", "『그 지혜라면 — 심연의 왕좌도 뒤집을 수 있다!』"],
+      s3: ["『심연의 정예를 지식으로 제압했군.』", "『완성이다. 심연의 지혜를 받아라!』"],
+      done: ["『이제 너의 마법은 세계의 법칙을 다시 쓸 것이다.』", "『일어나라, 아크메이지(세이지)!』"],
+    },
+  },
+  /* v2.9 — 도적 계열 전직 스토리 (시조 '그림자의 로크') */
+  thief: {
+    1: T1_LINES.thief,
+    2: {
+      start: ["『…소리도 없이 왔군. 나는 그림자의 로크 — 최초의 도적이다.』", "『도적의 힘은 칼날이 아니라 '보이지 않음'에서 나온다. 증명해라!』"],
+      s1: ["『발소리가 사라졌군. 이제 칼이 남았다.』", "『그림자는 다치지 않는 법. 다음을 보여라.』"],
+      s2: ["『…그 빛, 훔친 보석의 빛과 같군.』", "『인정한다. 마지막 시험 — 나에게서 훔쳐라!』"],
+      s3: ["『…내 품의 금화를 건드리지 않고 베었군.』", "『오늘부로 너는 진정한 도적이다. 그림자의 맹세를 이어받아라!』"],
+      done: ["『어둠이 짙을수록 — 너의 단검은 더 날카로워질 것이다.』", "『기대하마, 도적여.』"],
+    },
+    3: {
+      start: ["『시간이 흘렀군, 도적여. 검의 그림자가 너를 부른다.』", "『이번 시험은 '빛 그 자체'. 가장 밝은 곳에서 숨어라!』"],
+      s1: ["『빛 속의 그림자를 익혔군. 하지만 아직 부족하다.』", "『도적의 칼날은 눈에 보이지 않아야 한다!』"],
+      s2: ["『…전설 도적들의 유물을 훔쳐왔군.』", "『그 가치를 감당할 자만이 그림자의 정점에 선다!』"],
+      s3: ["『…심연의 정예도 네 앞에서는 시야에서 사라졌군.』", "『완성이다. 검의 그림자를 받아라!』"],
+      done: ["『이제 너의 이름은 어둠의 전설이 될 것이다.』", "『서라, 어세신(스와시버클러). 바다가 너를 기억한다!』"],
+    },
+  },
+};
+
+for (const fam of ["warrior", "ranger", "mage", "thief"] as FamilyKey[]) {
+  /* v1.0.12 — 4차 시련 대사 등록 (js{fam}4Start/Step1/Step2/Step3/Done) */
+  const L4 = T4_LINES[fam];
+  DIALOGUES[`js${fam}4Start`] = { speaker: JOB_SPKR[fam], lines: L4.start };
+  DIALOGUES[`js${fam}4Step1`] = { speaker: JOB_SPKR[fam], lines: L4.s1 };
+  DIALOGUES[`js${fam}4Step2`] = { speaker: JOB_SPKR[fam], lines: L4.s2 };
+  DIALOGUES[`js${fam}4Step3`] = { speaker: JOB_SPKR[fam], lines: L4.s3 };
+  DIALOGUES[`js${fam}4Done`] = { speaker: JOB_SPKR[fam], lines: L4.done };
+  for (const tier of [2, 3] as const) {
+    const L = JS_LINES[fam][tier];
+    const base = `js${fam}${tier}`;
+    DIALOGUES[`${base}Start`] = { speaker: JOB_SPKR[fam], lines: L.start };
+    DIALOGUES[`${base}Step1`] = { speaker: JOB_SPKR[fam], lines: L.s1 };
+    DIALOGUES[`${base}Step2`] = { speaker: JOB_SPKR[fam], lines: L.s2 };
+    DIALOGUES[`${base}Step3`] = { speaker: JOB_SPKR[fam], lines: L.s3 };
+    DIALOGUES[`${base}Done`] = { speaker: JOB_SPKR[fam], lines: L.done };
+  }
+}
+
+/* ================= 스탯 자동 배분 (v2.0 — 사용자 지시 #18, 메이플 4:1 감각) ================= */
+
+export const AUTO_ALLOC: Record<FamilyKey, { str: number; dex: number; int: number; luk: number }> = {
+  warrior: { str: 4, dex: 1, int: 0, luk: 0 }, // 힘 4 : 민첩 1
+  ranger: { str: 1, dex: 4, int: 0, luk: 0 }, // 민첩 4 : 힘 1
+  mage: { str: 0, dex: 0, int: 4, luk: 1 }, // 지력 4 : 행운 1
+  thief: { str: 2, dex: 2, int: 0, luk: 1 }, // 힘 2 : 민첩 2 : 행운 1 (치명타 특화)
+};
+
+/** AP를 계열 배분 비율로 나눠 담는다 (남는 AP는 주스탯에 몰아줌) */
+export function autoAllocPlan(family: FamilyKey, ap: number): { str: number; dex: number; int: number; luk: number } {
+  const r = AUTO_ALLOC[family];
+  const total = r.str + r.dex + r.int + r.luk;
+  const out = { str: 0, dex: 0, int: 0, luk: 0 };
+  if (total === 0 || ap <= 0) return out;
+  const keys: (keyof typeof out)[] = ["str", "dex", "int", "luk"];
+  let left = ap;
+  // 라운드 로빈 배분 — 4:1 비율 유지
+  let round = 0;
+  while (left > 0) {
+    for (const k of keys) {
+      if (left <= 0) break;
+      if (r[k] > 0 && round < r[k]) {
+        out[k]++;
+        left--;
+      }
+    }
+    if (keys.every((k) => r[k] === 0 || round >= r[k])) {
+      // 비율 1사이클 완료 → 주스탯 몰아주기
+      const main = keys.reduce((a, b) => (r[a] >= r[b] ? a : b));
+      out[main] += left;
+      left = 0;
+    }
+    round++;
+  }
+  return out;
+}
+
+/* ================= v3.0 (사용자 지시 #4) — 챕터 분위기별 마을 주민 =================
+ *  v2.9에서 모든 챕터 마을이 같은 주민·같은 대사를 재사용했다.
+ *  챕터마다 이름·성격·대사가 바뀌는 주민 2인 + 건물 틴트로 마을 분위기를 분리한다. */
+
+export type VillageNpcSpec = {
+  /** 건물 3채 공통 틴트 (챕터 분위기색) */
+  houseTint: number;
+  /** 마을 간판 색 */
+  signColor: string;
+  /** 주민 2인 — 이름 + 대사키 */
+  npcA: { name: string; tex: string; dlg: string };
+  npcB: { name: string; tex: string; dlg: string };
+};
+
+export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
+  forest: {
+    houseTint: 0xbfe4a8,
+    signColor: "#b8f0a0",
+    npcA: { name: "허브 채집가 베르", tex: "spum_forager", dlg: "vlgForestA" },
+    npcB: { name: "신전 관리인 노아", tex: "spum_mage", dlg: "vlgForestB" },
+  },
+  kingdom: {
+    houseTint: 0xe8d0a0,
+    signColor: "#ffe9b0",
+    npcA: { name: "선원 롤프", tex: "spum_villager_m", dlg: "vlgKingdomA" },
+    npcB: { name: "늪지 어부 팰", tex: "spum_fisher", dlg: "vlgKingdomB" },
+  },
+  alfheim: {
+    houseTint: 0xc2aef8,
+    signColor: "#d8c8ff",
+    npcA: { name: "요정 사절 리안", tex: "spum_elf", dlg: "vlgAlfheimA" },
+    npcB: { name: "성전 견습 기사", tex: "spum_knight", dlg: "vlgAlfheimB" },
+  },
+  muspelheim: {
+    houseTint: 0xffa878,
+    signColor: "#ffb080",
+    /* v3.0.28 (#NPC대화) — dlg 키가 VLG 등록 규칙(vlg{챕터명}A/B)과 어긋나 무스펠헤임부터
+     *  주민 대화가 표시되지 않던 버그 수정 (vlgMuspelA → vlgMuspelheimA) */
+    npcA: { name: "대장장이 브라키", tex: "spum_smith", dlg: "vlgMuspelheimA" },
+    npcB: { name: "용암 광부 코일", tex: "spum_miner", dlg: "vlgMuspelheimB" },
+  },
+  niflheim: {
+    houseTint: 0x9cccff,
+    signColor: "#a8e0ff",
+    npcA: { name: "얼음 낚시꾼 시그룬", tex: "spum_villager_f", dlg: "vlgNiflheimA" },
+    npcB: { name: "눈보라 정찰병", tex: "spum_scout", dlg: "vlgNiflheimB" },
+  },
+  cave: {
+    houseTint: 0xb09ccc,
+    signColor: "#c9a0ff",
+    npcA: { name: "수정 채굴자 그밀", tex: "spum_mystic", dlg: "vlgCaveA" },
+    npcB: { name: "어둠 요정 피난민", tex: "spum_devil", dlg: "vlgCaveB" },
+  },
+  nidavellir: {
+    houseTint: 0xe8c474,
+    signColor: "#ffd76a",
+    npcA: { name: "룬 대장장이 두린", tex: "spum_smith", dlg: "vlgNidavellirA" },
+    npcB: { name: "광산 감독관", tex: "spum_knight", dlg: "vlgNidavellirB" },
+  },
+  hel: {
+    houseTint: 0xc89ae8,
+    signColor: "#d0a8ff",
+    npcA: { name: "전쟁 유령 아르벨", tex: "spum_skel", dlg: "vlgHelA" },
+    npcB: { name: "저택 집사 무르", tex: "spum_butler", dlg: "vlgHelB" },
+  },
+  abyss: {
+    houseTint: 0x9a8ade,
+    signColor: "#b09aff",
+    npcA: { name: "폐허 학자 테일", tex: "spum_mage", dlg: "vlgAbyssA" },
+    npcB: { name: "마지막 항해사", tex: "spum_fisher", dlg: "vlgAbyssB" },
+  },
+};
+
+/* 챕터 마을 주민 대사 일괄 등록 — 각 챕터 분위기에 맞는 3줄 멘트 */
+{
+  const VLG: Record<string, { a: { sp: string; lines: string[] }; b: { sp: string; lines: string[] } }> = {
+    forest: {
+      a: { sp: "허브 채집가 베르", lines: [
+        "숲이 요즘 좀 이상해, {name}. 늑대들 눈빛이 달라졌어.",
+        "신전 깊은 곳에서 빛이 난다고 하던데… 네 룬 펜던트도 반응하는 것 같아.",
+        "허브 물약이 필요하면 언제든 와. 사냥꾼들한테는 서비스야!",
+      ] },
+      b: { sp: "신전 관리인 노아", lines: [
+        "오래된 신전을 지키는 노아라고 해. 얼굴에 흙 묻은 채 미안하네.",
+        "신전 안 벽화에 '일곱 세계의 결정'이 새겨져 있어… 네가 찾는 것도 거기 있을까?",
+        "조심하고 가, {name}. 숲은 밤이 되면 완전히 다른 얼굴이 되거든.",
+      ] },
+    },
+    kingdom: {
+      a: { sp: "선원 롤프", lines: [
+        "배 밑바닥에 이상한 종양이 붙었다고, {name}. 뿌리에서 뭔가 자라나는 것 같아.",
+        "쿠소디아의 선박들은 모두 검은 늪을 건너야 해. 물길이 불안하단 말이지.",
+        "네가 결정을 모은다니? 선원들의 미신으론 그게 유일한 희망이야.",
+      ] },
+      b: { sp: "늪지 어부 팰", lines: [
+        "늪 물고기들이 죄다 능대를 물어왔어. 소화기관이 뒤집히는 줄 알았지.",
+        "움직이는 초들… 원래 저러는 게 아니야. 뭔가가 저들을 깨운 것 같아.",
+        "우물 물은 여전히 깨끗해. 마음 놓고 마셔, {name}.",
+      ] },
+    },
+    alfheim: {
+      a: { sp: "요정 사절 리안", lines: [
+        "요정왕의 명으로 이 마을을 돕고 있어, {name}. 네 룬 펜던트에서 고대의 냄새가 나네.",
+        "알프헤임의 빛이 흐려지고 있어. 심연 유령들이 성전을 침식하고 있어.",
+        "요정들은 네 펜던트를 오래전부터 알고 있었대. '세계수의 상징'이라고.",
+      ] },
+      b: { sp: "성전 견습 기사", lines: [
+        "성전 기사단 견습입니다! 아직 검이 무겁지만, 훈련은 매일 빠지지 않아요.",
+        "심연 유령은 물리 공격이 잘 안 먹힌다고 하니, 마법 계열이라면 큰 도움이 될 거예요.",
+        "{name} 님도 언젠가 제 실력을 시험해 주세요. 약속이에요!",
+      ] },
+    },
+    muspelheim: {
+      a: { sp: "대장장이 브라키", lines: [
+        "화염 정령이 날로 거세진다, {name}. 용광로가 흔들리고 있어.",
+        "이 지옥 같은 열기에서도 우물은 차갑지. 세계수의 은혜라고나 할까.",
+        "좋은 무기가 필요하면 상점을 가라. 내가 갈아놓은 물건들이다!",
+      ] },
+      b: { sp: "용암 광부 코일", lines: [
+        "광맥이 녹아내려… 일이 불가능해졌다고, {name}.",
+        "불꽃 늑대 무리가 광부들만 노려. 뭔가에게 부려진 것 같은데.",
+        "아이스크림… 그게 뭐냐? 여기선 얼음을 꿈꾸는 게 취미야.",
+      ] },
+    },
+    niflheim: {
+      a: { sp: "얼음 낚시꾼 시그룬", lines: [
+        "호수가 또 얼었어, {name}. 서리 늑대들이 얼음 위로 다니거든.",
+        "얼음 아래에서 무언가 빛나는 걸 봤어… 네가 찾는 결정일까?",
+        "여관에서 온기를 판다. 북극성 아래서 자면 감기 걸린다!",
+      ] },
+      b: { sp: "눈보라 정찰병", lines: [
+        "정찰 보고 — 얼음 골렘이 남쪽 언덕에서 내려오고 있습니다, {name}.",
+        "니플헤임의 밤은 영원해. 하지만 사람들은 불을 지키며 살아가죠.",
+        "네 펜던트… 흥미롭군요. 눈보라 속에서도 빛을 잃지 않아.",
+      ] },
+    },
+    cave: {
+      a: { sp: "수정 채굴자 그밀", lines: [
+        "수정 광맥이 울고 있어, {name}. 동굴 거미 떼가 채굴장을 삼켰다니까.",
+        "가장 깊은 갱도엔 어둠 요정들의 제단이 있대. 가까이 가지 마.",
+        "수정은 빛을 기억해. 네 펜던트처럼 말이야.",
+      ] },
+      b: { sp: "어둠 요정 피난민", lines: [
+        "저는 저들을 따르지 않았어요, {name}. 마을에 와주셔서 감사해요.",
+        "여왕의 속삭임이 갱도를 타고 퍼져요… 귀를 막고 다니세요.",
+        "언젠가 이 동굴에도 빛이 돌아올까요? …네가 그 빛이 될 수 있을까?",
+      ] },
+    },
+    nidavellir: {
+      a: { sp: "룬 대장장이 두린", lines: [
+        "룬 각인이 폭주했다, {name}. 골렘들이 망치 대신 광산을 부수고 다녀.",
+        "스콜과 하티가 최심부에 잠들었다던데… 전설인 줄만 알았지.",
+        "좋은 장비를 공짜로 줄 순 없지만, 테스트용 아드레날린은 무한하다!",
+      ] },
+      b: { sp: "광산 감독관", lines: [
+        "광산 인부 결근률 40%… 이러다 조합이 망한다, {name}.",
+        "룬 골렘은 머리의 룬 돌이 심장이야. 그걸 깨면 멈춘다!",
+        "네 펜던트에서 열기가 느껴지네. 다행히 이 광산엔 그게 필요해.",
+      ] },
+    },
+    hel: {
+      a: { sp: "전쟁 유령 아르벨", lines: [
+        "나는 이 절벽에서 목숨을 잃은 병사다… 하지만 두렵지 않다, {name}.",
+        "헬 하운드들은 대전쟁의 잔재야. 그들도 잊혀지길 원하지 않을 뿐이지.",
+        "저택의 불빛? 힐다 할머니의 동료가 살던 곳이다… 예전에는.",
+      ] },
+      b: { sp: "저택 집사 무르", lines: [
+        "어서 오세요, {name}. 죽음의 땅에서도 다과 시간은 유효합니다.",
+        "이 저택의 주인은 오래전 사라졌지요. 저는 약속을 지키며 기다릴 뿐입니다.",
+        "여관에서 잠이나 자고 가세요. 꿈에 유령이 나온다면… 그건 서비스입니다.",
+      ] },
+    },
+    abyss: {
+      a: { sp: "폐허 학자 테일", lines: [
+        "세계수의 뿌리 — 여긴 아홉 왕국의 근원이자 종막이지, {name}.",
+        "왕좌의 불빛이 커지고 있어. 종언의 마룡 아부디토스… 룬 정령과 같은 시대의 존재라니.",
+        "기록에 따르면 '세계수의 심장'은 둘일 수 없대. 그럼 펜던트 속 정령은…",
+      ] },
+      b: { sp: "마지막 항해사", lines: [
+        "뿌리가 땅을 감고 있어, {name}. 저 균열 위를 지날 수 있는 배는 없어.",
+        "모든 항로가 끝났다. 남은 건 네 발뿐이야.",
+        "마지막 결정을 박아 넣을 자리… 왕좌의 가장 깊은 곳에 있을 거야.",
+      ] },
+    },
+  };
+  for (const [key, v] of Object.entries(VLG)) {
+      DIALOGUES[`vlg${key.charAt(0).toUpperCase()}${key.slice(1)}A`] = { speaker: v.a.sp, lines: v.a.lines };
+      DIALOGUES[`vlg${key.charAt(0).toUpperCase()}${key.slice(1)}B`] = { speaker: v.b.sp, lines: v.b.lines };
+    }
+  }

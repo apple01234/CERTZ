@@ -1,0 +1,34 @@
+/*
+ * v4.1.5 — Galmuri 한글 픽셀 폰트 (SIL OFL 1.1, https://github.com/quiple/galmuri)
+ *  npm galmuri 패키지에서 필요한 woff2 4종만 셀프 호스팅.
+ *  (패키지 CSS는 woff2+ttf 이중 참조 → APK/웹 번들이 40MB로 불어나는 문제 회피)
+ *  사용: Galmuri9(작은 UI) / Galmuri11(기본, 700=Bold) / Galmuri14(큰 타이틀)
+ */
+@font-face {
+  font-family: Galmuri9;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Galmuri9.woff2") format("woff2");
+}
+@font-face {
+  font-family: Galmuri11;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Galmuri11.woff2") format("woff2");
+}
+@font-face {
+  font-family: Galmuri11;
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/Galmuri11-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: Galmuri14;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Galmuri14.woff2") format("woff2");
+}

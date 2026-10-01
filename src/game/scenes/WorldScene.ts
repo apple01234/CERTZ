@@ -1,0 +1,12578 @@
+import Phaser from "phaser";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
+import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
+import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
+import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
+import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
+import { Player } from "../entities/Player";
+import { Enemy } from "../entities/Enemy";
+import { Boss } from "../entities/Boss";
+import { Drop, type DropKind } from "../entities/Drop";
+import { Lighting, ambientFor } from "../fx/Lighting";
+import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
+import { Pet } from "../entities/Pet";
+import { EventBus, type QuestState, type InteractState, type QuestLogState, type RewardPopupState } from "../../components/game/EventBus";
+import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
+import { loadKeyMap, type KeyMap, type GameAction } from "../keymap";
+import {
+  classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST, chainOf, FIFTH_LEVEL,
+  type ClassKey,
+} from "../classes";
+import * as net from "../net";
+import {
+  computeExtBonus, drawGateCards, rollFigure, GATE_STAR_WAVES, GATE_STAR_REWARD, SILVER_SHOP,
+  COUPONS, ATTEND_REWARDS, ATTEND_CYCLE, DAILY_QUESTS, TICKETS_PER_DAY, ACHIEVEMENTS,
+  CONSTELLATIONS, CONSTEL_NODE_COST, SHARD_SHOP, BADGE_MAP, FIGURE_GRADE_META, FIGURE_MAP, FIGURES,
+  RUNE_KINDS, RUNE_META, RUNE_SYNTH_COST, RUNE_MAX_TIER, runeKey, parseRuneKey,
+  ROLE_OF, teamworkBuff, offlineReward, BADGE_SLOTS,
+  type GateCard, type RuneOwned, type RoleKind,
+} from "../isekai";
+import { viewZoom } from "../PhaserGame";
+import { runTexGuardCycle, installWorldTexGuard } from "../texGuard"; // v1.4.2 — 텍스처 무결성 감시·수복
+import { authMe, fetchRanking } from "../account"; // v1.0.2 — GM 롤 검증 · v1.3.0 — 랭커 순위 검증
+import { purchaseStorePack } from "../ads"; // v1.0.2 — 현금 패키지 결제
+import { showRewardedAd, purchaseGems, GEM_SKUS } from "../ads"; // v4.1.0 — BM 수익 연동
+import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft, weekKey, missionsByHook, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS, type MissionHook } from "../pass"; // v4.5.0 — 시즌 패스/구독 + v1.0.1 시즌 미션
+import {
+  infMerge, towerFloorScale, isTowerBossFloor, towerFloorReward, towerPool, TOWER, closetTierScale, closetTierAbyss,
+  todayTrial, trialReward, rebirthReqLv, rebirthBonus, REBIRTH_ABYSS, MAT_CHANCES, CRAFT_RECIPES, canCraft,
+  PET, petEvoStage, petBonus, PET_EVO_NAMES, GOLDEN, ABYSS_SHOP, orbBonus, weeklyRaidBoss, infBonus, todayKey,
+  PARK_DIFFS, PARK_DURATION, PARK_TICKETS,
+  type InfSave, type TrialMod,
+} from "../infinite"; // v1.0.8 — 무한 콘텐츠 10종 · v1.0.18 — 몬스터 파크
+import { loadUnion, unionEffects, activeBuffValues } from "../union"; // v1.0.18 — 유니온 시스템
+import { loadSlots } from "../slots"; // v1.0.18 — 캐릭터 슬롯
+import { loadFx } from "../config"; // v1.0.18 — 셰이더 강도 설정
+import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
+import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
+import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
+import { DriveFX } from "../fx/DriveFX"; // v1.3.0 — Drive 팩 VFX 통합 (참격/크리/폭발/낙뢰/불꽃놀이)
+import { applyToonStyle, clearToonStyle } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일)
+import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
+import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
+import * as partyContent from "../partyContent"; // v1.4.3 (작업4) — 파티 시너지/파티 퀘스트 보드
+import * as audio from "../audio";
+import {
+  generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
+  type RoomLayout,
+} from "../mapgen";
+
+/* v1.1.1 (#4 포니테일) — 방향별 시트/묶음 원점/프레임 오프셋.
+ *  묶음(타이) 픽셀 좌표를 원점으로 잡아 setPosition(플레이어+오프셋) 시 묶음이
+ *  머리 위(정면)·뒤통수(측면)·정수리(뒷면)에 정확히 고정된다. 플립 시 원점 기준
+ *  미러링이라 dx 부호는 코드에서 반전한다. 텍스처: scripts/gen_v111_gender_assets.py */
+/* v1.2.0 — 포니테일 헤어는 유저 지시(#1)로 완전 제거 — 위치 고정이 계속 어긋나 대신 삭제.
+ *   보유분은 18 에메랄드로 자동 환수(config.ts 마이그레이션), 세이브 hair 슬롯은 null 강제. */
+
+/* v1.1.1 (#5 무지개 오라) — 이름과 외양이 일치하는 순환 틴트 테이블.
+ *  sp: 위상 속도(초당) · s/l: HSL 채도/명도 · min/max: hue 범위 (0~1, rainbow=전체) */
+const AURA_ANIM: Record<string, { sp: number; s: number; l: number; min: number; max: number }> = {
+  cos_rainbow: { sp: 0.10, s: 0.9, l: 0.62, min: 0, max: 1 },
+  cos_aurora: { sp: 0.035, s: 0.75, l: 0.66, min: 0.33, max: 0.82 },
+  cos_galaxy: { sp: 0.05, s: 0.6, l: 0.7, min: 0.55, max: 0.85 },
+};
+
+/* v1.4.3 (작업3 최적화) — 오라 색 LUT(64단계) 사전 계산:
+ *  매 프레임 HSLToColor + Color 객체 할당(GC 압박)을 제거하고 테이블 조회로 대체.
+ *  기존 hue 곡선(min/max 범위 + 코사인 왕복)을 그대로 재현 — 퀄리티 동일. */
+const AURA_LUT_STEPS = 64;
+const AURA_LUT: Record<string, number[]> = {};
+for (const key of Object.keys(AURA_ANIM)) {
+  const cfg = AURA_ANIM[key];
+  const lut: number[] = [];
+  for (let i = 0; i < AURA_LUT_STEPS; i++) {
+    const phase = i / AURA_LUT_STEPS;
+    const hue = cfg.min + (cfg.max - cfg.min) * (0.5 - 0.5 * Math.cos(phase * Math.PI * 2));
+    lut.push(Phaser.Display.Color.HSLToColor(hue, cfg.s, cfg.l).color);
+  }
+  AURA_LUT[key] = lut;
+}
+
+/**
+ * 메인 플레이 씬.
+ *  F1: 꽃/장식 배치를 정의된 소수로만 배치
+ *  F2: 목표물 빛기둥 비컨 + 화면 가장자리 화살표 + 실시간 거리 표시
+ *  F4: 데미지텍스트·참격·파티클 모두 풀링/공유 이미터 → 보스전 프레임 안정
+ */
+export class WorldScene extends Phaser.Scene {
+  stageDef!: StageDef;
+  stageW = 0;
+  stageH = 0;
+
+  player!: Player;
+  enemies: Enemy[] = [];
+  boss: Boss | null = null;
+  playerRef: Player | null = null;
+
+  /* v1.0.11 — 튜토리얼 (src/game/Tutorial.ts) — 신규 플레이어 온보딩 컨트롤러 */
+  tut: Tutorial | null = null;
+  private tutorialDone = false;
+  private tutStep = -1; // -1=미시작/완료, 0..5=진행 중 (세이브 유지 — 마을→사냥터 씬 전환 재개)
+  private tutPendingStart = false; // 인트로(이름짓기) 종료 후 시작 예약
+  private tutRetryMs = 0; // update 루프 재시도 누적 (타이머 이벤트가 유실되는 레이스 차단용)
+  /* v1.0.12 (#횃불장치) — 암전 챕터 근접 점등 횃불 (가까이 가면 5초간 점등) */
+  private torches: { prop: Phaser.GameObjects.Sprite; glow: Phaser.GameObjects.Image; x: number; y: number; litUntil: number; cdUntil: number }[] = [];
+  /* v1.0.12 (#3D팩 2차 투입) — 날씨 파티클 (니플헤임 눈보라 · v1.0.13부터 벚꽃 날씨는 제거) */
+  private weatherSnow: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  /* v1.0.13 — 마을 벚꽃 날림 제거 (유저 지시: "벚꽃 그냥 없애") — 날씨는 니플헤임 눈보라만 유지 */
+
+  questIdx = 0;
+  huntCount = 0;
+  totalKills = 0;
+  startTime = 0;
+  cleared = false;
+
+  private fragment: Phaser.Physics.Arcade.Sprite | null = null;
+  private portal: Phaser.Physics.Arcade.Sprite | null = null;
+  /* v4.7.0 — 차원문 GLSL 소용돌이 오라 (Phaser 4 Shader — WebGL 전용) */
+  private portalSwirl: PortalSwirl | null = null;
+  private portalActive = false;
+  /* v2.6 — 육식 식물 위험 오브젝트 (오버랩은 플레이어 생성 후 등록) */
+  private plantHazards: Phaser.GameObjects.Image[] = [];
+  private plantCd = 0;
+  private beacon: Phaser.GameObjects.Image | null = null;
+  private portalBeacon: Phaser.GameObjects.Image | null = null;
+  /* v4.1.0 — 전진 차원문 위치 라벨 (지시 #14) */
+  private portalLabel: Phaser.GameObjects.Text | null = null;
+  /* v3.0 (사용자 지시 #7) — 아이작/개미굴식 구역 레이아웃 (필드 전용, 마을·실내는 null) */
+  private layout: RoomLayout | null = null;
+  /** 전진 차원문/보스가 놓이는 최원거리 셀 중심 (포탈 보루 폴백 위치로도 사용) */
+  private portalHome = new Phaser.Math.Vector2(0, 0);
+  /** 입구 셀 중심 — 플레이어 스폰/복귀 차원문 기준점 */
+  private entryHome = new Phaser.Math.Vector2(0, 0);
+  private edgeArrow: Phaser.GameObjects.Image | null = null;
+  private edgeLabel: Phaser.GameObjects.Text | null = null;
+  private questMark: Phaser.GameObjects.Image | null = null;
+
+  private moveVec = new Phaser.Math.Vector2();
+  private touchMove = new Phaser.Math.Vector2();
+  private attackQueued = false;
+  /** v1.3.1 (#8) — 앱 전환 복귀 자가치유 핸들러 (cleanup에서 해제) */
+  private onVisChange: (() => void) | null = null;
+  private keys!: Record<string, Phaser.Input.Keyboard.Key>;
+  private dialoguing = false;
+
+  // F4: 공유 파티클 이미터 (생성 1회)
+  private hitEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private burstEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  // F4: 데미지 텍스트 풀
+  private dmgPool: Phaser.GameObjects.Text[] = [];
+  // F4: 참격 이펙트 풀 (외부 에셋 애니 스프라이트)
+  private slashPool: Phaser.GameObjects.Sprite[] = [];
+  private slashIdx = 0;
+  // 실제 에셋 기반 타격 스타 풀
+  private starPool: Phaser.GameObjects.Image[] = [];
+  private starIdx = 0;
+  /* v3.0.8 디자인 개편 — Warped Shooting Fx 히트 플립북 풀 */
+  private hitFxPool: Phaser.GameObjects.Sprite[] = [];
+  private hitFxIdx = 0;
+  private fragSparkle: Phaser.GameObjects.Sprite | null = null;
+
+  private questTimer: Phaser.Time.TimerEvent | null = null;
+  /** 히트스톱/카메라 셰이크 등급 프로파일 (기본공격 절제 / 크리·스킬 강조) */
+  impactFX!: ImpactFX;
+  /* v1.3.0 (#에셋통합) — Drive 팩 VFX 통합 레이어 (참격/크리/폭발/낙뢰/마법진/불꽃놀이) */
+  driveFx!: DriveFX;
+  /* v4.8.0 — 충격파 링 셰이더 풀 (크리티컬/약점/보스 격파 강한 순간) */
+  private shockFX!: ShockwaveFX;
+  private slashArcFx!: SlashArcFX; // v4.9.0 — 회전베기 참격 궤적
+  // 스테이지별 누적 킬 (퀘스트 순서와 무관하게 토벌 진행 유지 — 소프트락 방지)
+  private killTotals: Record<string, number> = {};
+  // 리스폰: 원래 스폰 지점 기록 (파밍 루프 — 사냥→골드→상점 순환이 적 소진으로 끊기지 않게)
+  private spawnRecords: { key: EnemyKey; x: number; y: number }[] = [];
+  // 퀘스트 진행 세이브 — 스테이지별 questIdx (이어하기 무결성: 파편 ATK 중복/보상 중복/보스 소프트락 방지)
+  private savedQuestIdx: Record<string, number> = {};
+  // 마을 우물 샘물 회복 (비전투 회복 수단)
+  private wellPos: Phaser.Math.Vector2 | null = null;
+  private wellCd = 0;
+  // 보스 격파 후 대사가 끝나면 열어줄 차원문 (스토리 진행 — 최종 스테이지 제외)
+  private pendingPortal = false;
+  // v2.7 — 대사/개방 유예가 시작된 시각 (보루 6초 자가해제용)
+  private portalHoldSince = 0;
+  // 현재 스테이지 보스 정의 (onBossDead에서 사용)
+  private bossDef: BossDef | null = null;
+  // 반복 토벌 의뢰 — 사이클별 목표 수 (완료할수록 +2)
+  private repeatNeed = 0;
+
+  /* ----- v3.0.16 — 몬스터 컬렉션 (메이플 몬스터 컬렉션) ----- */
+  /** 영구 컬렉션 처치 기록 (id → 처치 수). 최초 처치 시 컬렉션 등록 + 마일스톤 스탯 상승 */
+  private monsterKills: Record<string, number> = {};
+  /* ----- v3.0.16 — 멀티킬 연출 (메이플 콤보킬/멀티킬) ----- */
+  /** 1.5초 윈도 내 연속 처치 수 — 2+부터 더블킬~펜타킬 등급 표시 */
+  private multiKillCount = 0;
+  private multiKillUntil = 0;
+  /* ----- v3.0.16 — 필드 정예 몬스터 (메이플 엘리트/챔피언) ----- */
+  /** 현재 살아있는 필드 정예 (동시 1마리 제한) */
+  private fieldEliteRef: Enemy | null = null;
+
+  /* ----- v2.0: 복귀 차원문 (메이플식 자유 왕복 — 사용자 지시 #8) ----- */
+  private returnPortal: Phaser.Physics.Arcade.Sprite | null = null;
+  private returnBeacon: Phaser.GameObjects.Image | null = null;
+  private returnActive = false;
+  /* ----- v2.0: 정예 몬스터 (구역 5 미드보스급 — 사용자 지시 #5) ----- */
+  private eliteEnemy: Enemy | null = null;
+  /* v3.0.22 (#46) — 전직 스토리 시험 상대 전용 참조 (정예 몬스터와 분리 — 처치 판정 정확화) */
+  private jobTrialEnemy: Enemy | null = null;
+  /* v3.0.22 (#43/#44) — 챕터별 세계수 결정 수집 기록 (챕터키 → 수집 수) */
+  private fragmentsFound: Record<string, number> = {};
+  /* ----- v2.0: 프롤로그 보호 — 입장 직후 몬스터 즉시 공격 방지 ----- */
+  private agroHoldUntil = 0;
+  /** 지금 프롤로그 보호 상태인지 (인트로 시퀀스 또는 어그로 유예 중) — Enemy/Boss AI가 참조 */
+  get isPrologueSafe(): boolean {
+    return (this.introStep >= 0 && this.introStep < 2) || this.time.now < this.agroHoldUntil;
+  }
+  /** 인트로/대사 유예 부여 — Enemy/Boss AI가 대사 종료 후 호출 */
+  grantPrologueGrace(ms = 2600) {
+    this.agroHoldUntil = Math.max(this.agroHoldUntil, this.time.now + ms);
+  }
+  /* ----- v2.0: 토벌 퀘스트 기준선 (퀘스트 시작 이후 킬만 카운트 — 지시 #17) ----- */
+  private huntBaseline: Record<string, number> = {};
+  /* ----- v2.0: E 상호작용 말풍선 (이름 위 배치 — 지시 #14) ----- */
+  private eBubble: Phaser.GameObjects.Arc | null = null;
+  private eBubbleText: Phaser.GameObjects.Text | null = null;
+  /* ----- v2.0: 방향키 입력 순서 (마지막 누른 키 우선 — 지시 #16) ----- */
+  private dirOrder: { x: string[]; y: string[] } = { x: [], y: [] };
+  /* ----- v2.0: 전직 스토리 진행 (지시 #13) ----- */
+  /* v3.1.0 (#전직스토리선행) — fam 추가: 미전직(cls null) 상태에서도 계열 스토리 진행 가능.
+   *  유저 지시 "전직은 전직 스토리(n차마다 다른 스토리/컷신) 완료 후에 실행" —
+   *  계열 선택 → 해당 계열 시련 스토리 → 완료 시 전직 적용 순서로 반영했다. */
+  /* v1.3.1 (#4) — travel 목적지 스테이지(tst) 추가: 런타임 확정 → 세이브 유지 (구 세이브 호환) */
+  jobStory: { tier: 1 | 2 | 3 | 4; step: number; hunt: number; fam: FamilyKey; tst?: string } | null = null;
+  private jobStoryDone: number[] = []; // 완료한 티어 기록 [2, 3]
+  /** v3.1.0 (#전직스토리선행) — 미전직이 시련 스토리 중 선택해둔 1차 클래스 (완료 시 적용) */
+  private pendingJobClass: ClassKey | null = null;
+  /** v3.1.0 (#흑화) — 구역 전환 중 플래그: 중복 scene.restart로 인한 흑화 방지 */
+  private transitioning = false;
+  /** v4.1.2 — 전환 워치독 재시작용 마지막 캐리 스냅샷 (restart 유실 대비) */
+  private lastCarry?: SaveData;
+  /** v4.1.2 — 페이드 스타크 감지 누적 (update 자가치유) */
+  private fadeDarkMs = 0;
+  /* v3.2.0 (#흑화 근본 수정) — 부팅 시각/재부팅 이력 (create 래퍼 + 카메라 자가치유용) */
+  private bootAt = 0;
+  private bootRetried = false;
+  /* v3.3.0 (지시 #8) — 5차 각성 시련 상태 */
+  private fifthTrialActive = false;
+  private fifthTrialEnemy: Enemy | null = null;
+  /** v1.0.2 (#큐브연타) — eert 큐브 처리 잠금 시각 (260ms 내 재요청 무시) */
+  private eertBusyUntil = 0;
+  /** v1.0.2 (#GM서버검증) — 서버가 알려준 관리자 롤 (authMe 결과 캐시) */
+  private adminRole: string | null = null;
+  /* v1.2.0 (#1) — 포니테일 환수 보류 플래그 (emerald 복원 순서 문제 회발) */
+  private pendingPonyRefund = false;
+  private gmCheckBusy = false;
+  /** GM NPC 비주얼 — 관리자 확인 시에만 표시 */
+  private gmNpcVisuals: (Phaser.GameObjects.Image | Phaser.GameObjects.Text)[] = [];
+  /** v1.0.2 (#툰셰이더) — 플레이어/보스 툰 필터 컨트롤러 (fxLevel 복원/해제 관리) */
+  private playerToon: unknown[] | null = null;
+  private bossToon: unknown[] | null = null;
+  /** v1.0.2 (#자동강화) — 목표 강화 자동 루프 상태 (1틱=1강화, 목표 도달/재화 부족/최고치에서 종료) */
+  private autoUpSlot: "weapon" | "armor" | null = null;
+  private autoUpTarget = 0;
+  private autoUpTimer: Phaser.Time.TimerEvent | null = null;
+  /** 각성 대사 종료 후 수호자 소환 예약 (resumeFromDialogue에서 소비) */
+  private pendingFifthSummon = false;
+  /** v3.3.0 (#흑화) — 현재 대사 시작 시각 (20초 붙임 자가치유용) */
+  private dialogueSince = 0;
+  /** v1.0.2 (#보스컷씬) — 인트로 중 카메라 보스 고정 플래그. 대사 종료(resumeFromDialogue)에서만 해제되어
+   *  플레이어 시점으로 보간 복귀한다. 기존엔 820ms 고정 타이머가 대사와 무관하게 먼저 복귀시켰다 */
+  private bossIntroPending = false;
+  /* v3.3.0 (지시 #6) — 무릉도장 (메이플 무릉도장 오마주 훈련 스테이지) */
+  dojangActive = false;
+  dojangScore = 0;
+  private dojangEndsAt = 0;
+  private dojangFrom: StageKey = "village";
+  private dojangText: Phaser.GameObjects.Text | null = null;
+  private dojangTextAcc = 0;
+  /* ================= v4.0.0 — 바르가 업데이트 상태 ================= */
+  /* 게이트 디펜스 (웨이브) */
+  private gateActive = false;
+  private gateWave = 0;
+  private gateSilver = 0;
+  private gateCoreHp = 0;
+  private gateCoreMax = 0;
+  private gateFrom: StageKey = "village";
+  private gateText: Phaser.GameObjects.Text | null = null;
+  private gatePhase: "fight" | "cards" | "break" = "fight";
+  private gateAlive = 0;
+  private gateCorePos = new Phaser.Math.Vector2(0, 0);
+  private gateCoreBar: Phaser.GameObjects.Rectangle | null = null;
+  private gateCoreBarBg: Phaser.GameObjects.Rectangle | null = null;
+  private gatePendingCards: GateCard[] = [];
+  private gateBreakUntil = 0;
+  private gateEnded = false;
+  /* 균열 던전 */
+  private closetActive = false;
+  private closetEndsAt = 0;
+  private closetGold = 0;
+  private closetText: Phaser.GameObjects.Text | null = null;
+  private closetAcc = 0;
+  private closetFrom: StageKey = "village";
+  private closetTheme: ClosetTheme = closetThemeOf(); // v1.0.1 — 오늘의 요일 테마
+  /* 세이브 상태 (피규어/배지/룬/성좌/혜택) */
+  private figures: string[] = [];
+  private shards = 0;
+  private gachaTickets = 1;
+  private badges: string[] = [];
+  private badgeSlots: (string | null)[] = [null, null, null];
+  private runes: RuneOwned = {};
+  private runeSlots: (string | null)[] = [null, null, null, null];
+  private constel: string[] = [];
+  private couponsUsed: string[] = [];
+  private attendLast = "";
+  private attendCount = 0;
+  private dailyDate = "";
+  private dailyHunts = 0;
+  private dailyGate = 0;
+  private dailyCloset = 0;
+  /* v1.0.7 — 일일 파밍/보스 카운터 (일일 퀘스트 5종 확장) */
+  private dailyFarms = 0;
+  private dailyBosses = 0;
+  private dailyClaimed: string[] = [];
+  private dailyAds = 0; // v4.1.0 — 오늘 본 광고 보상 횟수 (일 5회 제한)
+  /* v4.5.0 — 시즌 패스 + 구독 + 광고 확장 카운터 (BM 표준화) */
+  private passSeason = "";
+  private passXp = 0;
+  private passPrem = false;
+  private passClaimedF: number[] = [];
+  private passClaimedP: number[] = [];
+  private subUntil = 0;
+  private dailyAdChest = 0;
+  private dailyAdDrop = 0;
+  private starterPackBought = false;
+  private ticketDate = "";
+  private ticketGate = 0;
+  private ticketCloset = 0;
+  private ticketRefills = 0; // v1.0.1 — 오늘 티켓 재충전 횟수 (일 3회 한정 — BM)
+  /* v1.0.1 — 시즌 미션 (일일/주간 리텐션 보드 — pass.ts SEASON_MISSIONS) */
+  private missionDay = "";
+  private missionWeek = "";
+  private missionD: Record<string, number> = {};
+  private missionW: Record<string, number> = {};
+  private missionCd: string[] = [];
+  private missionCw: string[] = [];
+  private achClaimed: string[] = [];
+  /* v4.1.4 — 보스/카오스/침공 처치 누적 (도전과제 지표) + 침공 보스 참조 */
+  private bossKillCount = 0;
+  private chaosKillCount = 0;
+  private invasionKillCount = 0;
+  private invasionBoss: Enemy | null = null;
+  private invasionTimer: Phaser.Time.TimerEvent | null = null;
+  private gateBest = 0;
+  private closetBest = 0;
+  /* v1.0.18 — 몬스터 파크 */
+  private parkDiff = 0;
+  private parkKills = 0;
+  private parkCoins = 0;
+  private parkCoinsEarned = 0;
+  private parkEndsAt = 0;
+  private parkAcc = 0;
+  private parkActive = false;
+  private parkFrom: StageKey = "village";
+  private parkText: Phaser.GameObjects.Text | null = null;
+  private parkBest = 0;
+  private parkTickets = { date: "", n: 2 };
+  private gateStars: boolean[] = [false, false, false];
+  private freeGachaAt = 0;
+  private lastSeenAt = 0;
+
+  /* ================= v1.0.8 — 무한 콘텐츠 10종 상태 ================= */
+  /** 무한 콘텐츠 저장 스냅샷 (탑/티어균열/시련/환생/제작/펫/심연) */
+  inf: InfSave = infMerge();
+  /** ① 심연의 탑 진행 상태 */
+  private towerActive = false;
+  private towerFloor = 0;
+  private towerFrom: StageKey = "village";
+  private towerText: Phaser.GameObjects.Text | null = null;
+  private towerBossRef: Boss | null = null;
+  /* v1.4.3 (#멀티콘텐츠) — 파티 공동 토벌전(praid) 복귀지 기록 */
+  private praidFrom: StageKey = "village";
+  /** ② 심층 균열 — 이번 입장 티어 (0=기본) */
+  private closetTierNow = 0;
+  /** ③ 일일 시련 — 진행 중 수정자 (null=일반 균열) */
+  private trialMod: TrialMod | null = null;
+  /** ⑦ 황금 몬스터 — 필드 스폰 타이머/참조 */
+  private goldenRef: Enemy | null = null;
+  private goldenAcc = 0;
+  /** v3.1.0 (#최적화) — HUD 브로드캐스트 스로틀 (프레임당 다중 emit 억제) */
+  private lastHudEmit = -999;
+  private hudEmitPending = false;
+  private jobEliteSummoned = false; // 시험 상대 소환 여부 (소환 전 완료 판정 방지)
+  /* ----- v2.0: 여관/집 상호작용 쿨다운 ----- */
+  private restCd = 0;
+
+  /* ----- v2.2: 실내(여관/집) + 취침 연출 ----- */
+  private isInterior = false;
+  /** v2.9 — 실내(여관/집)에 들어가기 전 마을 스테이지 키 (챕터 마을 복귀용) */
+  private interiorFrom: StageKey = "village";
+  private sleeping = false;
+  private sleepPending = false;
+  private entryPos: { x: number; y: number } | null = null;
+
+  /* ----- v2.3: 본 스토리 대사 기록 (재입장 시 대사 재생 방지 — 지시 #1) ----- */
+  private seenSet = new Set<string>();
+  /* ----- v2.3: 반복 토벌 의뢰 수주 해금 (상인 NPC에게 말 걸어 해금 — 지시 #4) ----- */
+  /* ----- v2.5: 방문 구역 기록(지역 이동 부적) + 자동사냥(펫 보유 시) ----- */
+  private visited = new Set<string>();
+  private autoHunt = false;
+  /** 자동사냥 이동 벡터 — update에서 계산해 move로 주입 */
+  private autoHuntMove = new Phaser.Math.Vector2();
+  /* ----- v3.0.14 — 자동사냥 장애물 회피/끼임 탈출 ----- */
+  /** 이동 명령 중 제자리(막힘) 지속 시간 (ms) */
+  private autoStuckMs = 0;
+  /** 직전 프레임 플레이어 위치 — 실제 이동량 측정용 */
+  private autoLastPos = new Phaser.Math.Vector2();
+  /** 탈출 강제 이동 유지 시각 (scene.time.now 기준) */
+  private autoUnstuckUntil = 0;
+  /** 탈출 강제 이동 방향 */
+  private autoUnstuckDir = new Phaser.Math.Vector2(1, 0);
+  /* ----- v3.0.15 — 자동사냥 안정화 (제자리 와리가리 수정) ----- */
+  /** 현재 추적 대상 — 1.25배 이상 가까운 후보가 생길 때만 교체 (타겟 전환 진동 방지) */
+  private autoTarget: Enemy | Boss | null = null;
+  /** 접근 이동 방향 홀드 (240ms) — 매 프레임 재계산으로 인한 좌우 진동 제거 */
+  private autoDirHold = new Phaser.Math.Vector2();
+  private autoDirHoldUntil = 0;
+  /** 도달 불가(벽 뒤 등) 타겟 블랙리스트 — target → 포기 해제 시각 */
+  private autoBlacklist = new Map<Enemy | Boss, number>();
+  /* ----- v1.4.11 — 자동전투 진동(제자리 왕복) 근본 수정 4종 ----- */
+  /** 이동 명령 0(공격/대기) 프레임 지속 시간 — 스택 감정이 공격 프레임에서 리셋되지 않게 분리 계측 */
+  private autoZeroMs = 0;
+  /** 카이팅(후퇴) 방향 홀드 — 후퇴와 접근이 빠르게 번갈아 나올 때 방향 뒤집힘 억제 */
+  private autoKitDir = new Phaser.Math.Vector2();
+  private autoKitUntil = 0;
+  /** 현재 접근 목표의 정지 거리 — 사거리 안에 들어오면 홀드를 즉시 끊어 오버런 방지 */
+  private autoHoldStopDist = 0;
+  /** v1.4.11 — 사쿠라 코스튬 벚꽃 스폰 누적기 (update 스로틀) */
+  private sakuraPetalAcc = 0;
+  /* ----- v3.0.15 (#20) — 콤보(연속킬) 보너스 경험치 ----- */
+  /** 연속킬 카운트 (마지막 킬 후 5초 내 유지) */
+  private comboStreak = 0;
+  private comboUntil = 0;
+  /* ----- v3.0.15 (#2) — 레벨업 스탯 자동배분 on/off ----- */
+  private autoAlloc = false;
+  /* ----- v3.0.15 (#8) — 퀘스트 수락/추적 ----- */
+  /** 스테이지 → 수락한 체인 인덱스. undefined면 기존 세이브(자동 수락 상태) */
+  private acceptedQuests: Record<string, number> = {};
+  /** 추적 중인 스테이지 키 (HUD 트래커 표시 대상 — null이면 현재 구역) */
+  private trackedStage: string | null = null;
+  /* ----- v3.0.15 (#11) — 해금된 챕터 테마 장비 세트 ----- */
+  private unlockedSets: Set<string> = new Set();
+
+  private repeatOn = false;
+
+  /* ----- v3.0.24 (#보스재도전) — 클리어한 챕터 보스 고능력치 재판 ----- */
+  /** 이동 중인 재도전 대상 챕터 (init data로 전달 — scene.restart 후 create에서 소비) */
+  private pendingReplayBoss: string | null = null;
+  /** v3.0.28 (#보스난이도) — 재도전 난이도 (init data로 전달) */
+  private pendingReplayBossDiff: BossDiffKey | null = null;
+  /** 재도전 보스 진행 중 — onBossDead에서 일반 보스 보상/포탈 진행과 분기 */
+  private replayBossActive = false;
+  /** v3.0.28 (#보스난이도) — 재림판 격파 에메랄드 (난이도별) */
+  private replayBossEmerald = 5;
+
+  /* ----- v3.0.28 (#보스난이도) — 메이플식 보스 난이도 (이지/노말/하드/카오스) ----- */
+  /** 현재(직전) 보스전 난이도 — 선택 후 세이브, 재접속 복구에도 유지 */
+  private bossDiff: BossDiffKey = "normal";
+  /** 보스 퀘스트 진입 후 난이도 선택 대기 중 — 선택 전 보스 스폰 금지(보루 4초 후 노말 자가치유) */
+  private bossDiffPending = false;
+  private bossDiffPendingSince = 0;
+
+  /* ----- v4.6.0 — GM 전 보스 체험 (재림 경로 재사용 — 스토리 진행 영향 0) ----- */
+  /** 이동 중인 GM 체험 보스키 (init data로 전달 — scene.restart 후 create에서 소비) */
+  private pendingGmBoss: string | null = null;
+  /** GM 체험 구역 방문 중 — 보루가 스토리 보스를 추가 스폰하는 것 방지 */
+  private gmTrial = false;
+
+  /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
+  /* v1.4.3 (작업1) — 요새 유적(고대 유적) 2층 구조물 전면 삭제:
+   *  3세대(v1.4.0~v1.4.2)에 걸쳐 반복된 타일맵 불만의 근원을 콘텐츠 자체로 제거하고,
+   *  남는 자리는 마을 초행자 훈련장(작업2)으로 대체했다.
+   *  buildLayeredKeep/유적 텍스처 로드는 제거 — tickKeepLayer(층 전환)도 함께 폐지.
+   *  v1.4.4 — 유저 리포트 ②에 따라 하루 1회 보물상자(keepchest)만 부활(buildVillageChest). */
+  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest"; dlg?: string; npcId?: string; label: string }[] = [];
+  private nearInteract: (typeof this.interactables)[number] | null = null;
+  private activeNpcId: string | null = null;
+  private talkedNpcs = new Set<string>();
+  /* v1.4.4 (유저 리포트 ②) — 보물 상자 하루 1회 보상 상태 */
+  private keepChestSprite: Phaser.GameObjects.Sprite | null = null;
+  private keepChestKey = "sertz.keep.chest";
+
+  /* ----- 인트로 플레이 시퀀스 (책장 넘기기 대신 직접 이동하며 진행) ----- */
+  private introStep = -1; // -1=해당없음/완료, 0=이동 학습, 1=우물 이동, 2=이름 입력, 3=완료
+  private introMoveDist = 0;
+  private introMarker: Phaser.GameObjects.Image | null = null;
+  private introGuide: Phaser.GameObjects.Image | null = null;
+  private introGuideSpark: Phaser.GameObjects.Sprite | null = null;
+  private playerNameTag: Phaser.GameObjects.Text | null = null;
+  private queuedDialogue: string | null = null;
+
+  /* ----- 2D MMORPG 기본 요소 ----- */
+  private drops: Drop[] = [];
+  private merchant: Phaser.GameObjects.Image | null = null;
+  private merchantLabel: Phaser.GameObjects.Text | null = null;
+  private nearShop = false;
+  private minimap: Phaser.GameObjects.Graphics | null = null;
+  private lastRpgSig = "";
+
+  /* ----- v4.1.5 — 동적 조명 + 보스 포스트FX + 신규 파티클 ----- */
+  private lighting!: Lighting;
+  /* v4.7.0 — Phaser 4 filters 전환 (v3 postFX → filters.external) */
+  private bossFilters: Phaser.Filters.Controller[] = [];
+  private bossEmber: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private bossLight: Phaser.GameObjects.Image | null = null;
+  private portalMagicA: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private portalMagicB: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private starEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private smokeEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private magicEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  /* v4.1.7 — 유료 팩(FireworksEffect2D) 네온 별 불꽃놀이 이미터 (레벨업 전용) */
+  private fwEmitterB!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private fwEmitterY!: Phaser.GameObjects.Particles.ParticleEmitter;
+
+  /* ----- 멀티플레이 (v1.7 — socket.io 동일 서버 접속자 동기화) ----- */
+  private remotes = new Map<
+    string,
+    {
+      sp: Phaser.GameObjects.Sprite;
+      tag: Phaser.GameObjects.Text;
+      tx: number;
+      ty: number;
+      flip: boolean;
+      moving: boolean;
+      cls: string | null;
+      lv: number;
+      name: string;
+      /** v1.0.16 — GM 계정: 금색 이름표 [GM] + 황금 오라 (syncRemotes에서 세팅) */
+      gm: boolean;
+      aura: Phaser.GameObjects.Image | null;
+    }
+  >();
+  private netOffs: (() => void)[] = [];
+  private chatFocused = false;
+  private netAcc = 0;
+
+  /* ----- 플레이어 투사체 (v1.8 — 궁수 관통 화살 / 마법사 매직 볼트) ----- */
+  private pProjPool: Phaser.Physics.Arcade.Sprite[] = [];
+  private pProjIdx = 0;
+
+  /* ----- v3.0.3: 몬스터 투사체 (임프 화염구/강령술사 다크볼트 등) ----- */
+  private eProjPool: Phaser.Physics.Arcade.Sprite[] = [];
+  private eProjIdx = 0;
+
+  /* ----- v3.0.3: 지면 장판 (독/화염/성역/시간왜곡) — owner별 판정 분기 ----- */
+  private fields: {
+    zone: Phaser.GameObjects.Arc;
+    x: number; y: number; radius: number;
+    dur: number; dps: number; kind: "poison" | "fire" | "light" | "time";
+    owner: "enemy" | "player";
+    tickAcc: number;
+    heal?: boolean; slow?: boolean; stun?: boolean;
+    /** v3.0.7 — 크로니컬 시간왜곡: 필드가 자신의 HP를 틱마다 회복 (플레이어 소유 장판 한정) */
+    selfHealPerTick?: number;
+  }[] = [];
+
+  /* ----- v3.0.3: 무기 스프라이트 (활/지팡이/단검 — 손에 들고 다니는 장비 비주얼) ----- */
+  private weaponImg: Phaser.GameObjects.Image | null = null;
+  private weaponKey: "x3_bow" | "x3_staff" | "x3_dagger" | null = null;
+
+  /* ----- v3.0.3: 그림자 칼날 오비트 (나이트블레이드/섀도우로드 3차기) ----- */
+  private orbitBlades: { imgs: Phaser.GameObjects.Image[]; angle: number; until: number; dmgMul: number; tint: number; hitCd: Map<unknown, number> } | null = null;
+
+  /* ----- v1.9: 키 매핑 / 펫 / 치장 오라 / 강화 오라 ----- */
+  private keymap: KeyMap = loadKeyMap();
+  private keyObjs: Record<string, Phaser.Input.Keyboard.Key> = {};
+  private pet: Pet | null = null;
+  /** 플레이어 추적 오브젝트 (치장 오라/강화 오라/날개 입자) */
+  private cosmeticAura: Phaser.GameObjects.Image | null = null;
+  private cosmeticEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  /** v1.0.2 (#치장외형) — 캐릭터 본체 치장색 오버레이 (Base/Cosmetic 장비 분리 — 능력치 무관, 외형만) */
+  private cosmeticOverlay: Phaser.GameObjects.Image | null = null;
+  /* v1.3.0 (#오로라 수정) — 오로라/오라 계열 림 링 + 궤도 트윙클 오브젝트 */
+  private auroraRings: Phaser.GameObjects.Image[] = [];
+  private auroraTwinkles: Phaser.GameObjects.Image[] = [];
+  /* v1.3.0 (#요정날개) — cos_wings 치장 실제 날개 이미지 (항상 등 뒤) */
+  private cosWingsImg: Phaser.GameObjects.Image | null = null;
+  /* v1.0.7 — 코스튬(착장)·헤어(포니테일) 오버레이 — 슬롯형 치장 (오라와 독립 착용) */
+  /* v1.1.0 (#1) — 코스튬 오버레이 폐기(스프라이트 완전 교체로 전환) → 어태치 장식(왕관/리본/후광/날개) 동기화 */
+  private accOverlays: { key: string; img: Phaser.GameObjects.Image }[] = [];
+  private auraPhase = 0; // v1.1.1 (#5) — 무지개/오로라/은하수 순환 위상
+  private upgradeGlow: Phaser.GameObjects.Image | null = null;
+  /** v3.0.5 — 스타포스 궤도성(★15)/주변 스파클(★8+)/티어 추적 */
+  private sfOrbits: Phaser.GameObjects.Image[] = [];
+  private sfOrbitAng = 0;
+  private sfSparkTimer = 0;
+  private glowTier: 0 | 1 | 2 | 3 = 0;
+  private jobNpc: Phaser.GameObjects.Image | null = null;
+
+  constructor() {
+    super("world");
+  }
+
+  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string }) {
+    this.questIdx = 0;
+    this.huntCount = 0;
+    this.totalKills = 0;
+    this.startTime = this.time.now;
+    this.cleared = false;
+    this.replayBossActive = false; // v3.0.24 — 재도전 플래그 리셋
+    /* v3.0.24 — 보스 재도전: init data로 전달된 챕터키 보관 (create 후반 스폰) */
+    this.pendingReplayBoss = typeof data.replayBoss === "string" ? data.replayBoss : null;
+    /* v4.6.0 — GM 전 보스 체험: init data로 전달된 보스키 보관 (create에서 소비) */
+    this.pendingGmBoss = typeof data.gmBoss === "string" ? data.gmBoss : null;
+    this.gmTrial = false;
+    /* v3.0.28 (#보스난이도) — 재도전 난이도 전달 (scene.restart 후 create에서 소비) */
+    this.pendingReplayBossDiff =
+      typeof data.replayDiff === "string" && data.replayDiff in BOSS_DIFFS ? (data.replayDiff as BossDiffKey) : null;
+    this.bossDiffPending = false;
+    this.bossDiffPendingSince = 0;
+    this.enemies = [];
+    this.boss = null;
+    this.fragment = null;
+    this.portal = null;
+    this.tut = null; // v1.0.11 — 씬 재시작 시 이전 인스턴스 참조 정리 (tutStep은 create에서 세이브로 재개)
+    this.tutPendingStart = false;
+    this.tutRetryMs = 0;
+    this.torches = []; // v1.0.12 — 횃불 장치 배열 리셋 (스프라이트는 씬 재시작이 정리)
+    this.weatherSnow = null; // v1.0.12 — 날씨 emitter 참조 리셋
+    this.portalSwirl = null; // v4.7.0 — 씬 재시작 시 파괴된 셰이더 참조 정리
+    /* v2.7 — 씬 재시작 같은 인스턴스 재사용: 이전 구역 개방 상태가 유출되면
+     *  다음 구역에서 시작부터 포탈이 열려 퀘스트를 건너뛰고, 보루도 early-return으로 죽는다 */
+    this.portalActive = false;
+    this.returnActive = false;
+    this.beacon = null;
+    this.portalBeacon = null;
+    this.questMark = null;
+    /* v1.4.3 — 퀘스트 가장자리 화살표/라벨 참조 리셋 (scene.restart 시 파괴된 자식을
+     *  계속 참조해 setText에서 렌더 루프 크래시 — v131 사망→부활 흐름에서 실측 발견.
+     *  마을 퀘스트 3단 체인(훈련 사냥 삽입)으로 부활 후에도 목표가 남아 경로가 활성화되며 노출됐다) */
+    this.edgeArrow = null;
+    this.edgeLabel = null;
+    this.fragSparkle = null;
+    this.dialoguing = false;
+    this.attackQueued = false;
+    this.killTotals = {};
+    this.spawnRecords = [];
+    this.savedQuestIdx = {};
+    this.wellPos = null;
+    this.wellCd = 0;
+    this.pendingPortal = false;
+    this.portalHoldSince = 0;
+    this.bossDef = null;
+    this.drops = [];
+    this.merchant = null;
+    this.merchantLabel = null;
+    this.nearShop = false;
+    this.minimap = null;
+    /* v4.1.5 — 조명/보스 포스트FX/신규 이미터 정리 */
+    this.lighting?.destroy();
+    this.bossFilters = [];
+    this.bossChaos = false; // v4.9.0 — 적응형 품질 상태 리셋
+    this.bossEmber = null;
+    this.bossLight = null;
+    this.portalMagicA = null;
+    this.portalMagicB = null;
+    this.lastRpgSig = "";
+    this.remotes.clear();
+    this.netOffs = [];
+    this.chatFocused = false;
+    this.netAcc = 0;
+    this.pProjPool = []; // 씬 소유 오브젝트는 씬 종료와 함께 정리 — 인덱스만 초기화
+    this.pProjIdx = 0;
+    this.ghostPool = []; // v4.9.0 — 돌진 잔상 풀도 씬 재시작마다 재생성 (파괴된 이미지 참조 방지)
+    this.ghostIdx = 0;
+    /* v3.0.3 — 신규 씬 소유 리소스 리셋 (씬 재시작 후 파괴된 구 객체 참조 방지) */
+    this.eProjPool = [];
+    this.eProjIdx = 0;
+    this.fields = [];
+    this.weaponImg = null;
+    this.weaponKey = null;
+    this.orbitBlades = null;
+    this.visited = new Set();
+    this.plantHazards = [];
+    this.layout = null;
+    this.portalHome = new Phaser.Math.Vector2(0, 0);
+    this.entryHome = new Phaser.Math.Vector2(0, 0);
+    this.plantCd = 0;
+    this.autoHunt = false;
+    this.autoHuntMove.set(0, 0);
+    this.autoStuckMs = 0;
+    this.autoUnstuckUntil = 0;
+    this.autoLastPos.set(0, 0);
+    this.autoTarget = null;
+    this.autoDirHold.set(0, 0);
+    this.autoDirHoldUntil = 0;
+    this.autoZeroMs = 0; // v1.4.11 — 진동 수정 신규 필드 리셋
+    this.autoKitDir.set(0, 0);
+    this.autoKitUntil = 0;
+    this.autoHoldStopDist = 0;
+    this.autoBlacklist.clear();
+    this.autoAvoidLastSign = 0;
+    this.repeatNeed = 0;
+    this.keymap = loadKeyMap();
+    this.keyObjs = {};
+    this.pet = null;
+    this.cosmeticAura = null;
+    this.cosmeticEmitter = null;
+    this.cosmeticOverlay = null; // v1.0.2 — 오버레이 정리(destroy는 destroyAll에서)
+    this.accOverlays = []; // v1.1.0 — 어태치 장식 참조 정리
+    this.upgradeGlow = null;
+    this.sfOrbits = [];
+    this.sfOrbitAng = 0;
+    this.sfSparkTimer = 0;
+    this.glowTier = 0;
+    this.jobNpc = null;
+    this.interactables = [];
+    this.nearInteract = null;
+    this.activeNpcId = null;
+    this.talkedNpcs = new Set();
+    this.introStep = -1;
+    this.introMoveDist = 0;
+    this.introMarker = null;
+    this.introGuide = null;
+    this.introGuideSpark = null;
+    this.playerNameTag = null;
+    this.gmAura = null; // v1.0.16 — 씬 재시작 시 GM 오라 참조 정리 (syncGmAura가 재생성)
+    this.queuedDialogue = null;
+    this.returnPortal = null;
+    this.returnBeacon = null;
+    this.returnActive = false;
+    this.eliteEnemy = null;
+    this.jobTrialEnemy = null; // v3.0.22 (#46) — 시험 상대 별도 참조 (처치 판정 정확화)
+    this.fragmentsFound = {}; // v3.0.22 (#44) — 세이브 복원 전 초기화
+    this.fieldEliteRef = null;
+    this.agroHoldUntil = 0;
+    this.huntBaseline = {};
+    /* v2.2 실내/취침 */
+    this.isInterior = false;
+    this.sleeping = false;
+    this.sleepPending = false;
+    /* v2.3 — 재시작(스테이지 전환) 시 대사 기록/의뢰 해금 리셋 후 세이브에서 복원 */
+    this.seenSet = new Set();
+    this.repeatOn = false;
+    this.entryPos = data.entry ?? null;
+    this.eBubble = null;
+    this.eBubbleText = null;
+    this.dirOrder = { x: [], y: [] };
+    this.jobStory = null;
+    this.jobStoryDone = [];
+    this.pendingJobClass = null; // v3.1.0 — 전직 시련 선택 클래스 리셋
+    this.transitioning = false; // v3.1.0 — 씬 재시작마다 전환 게이트 초기화
+    /* v3.3.0 (#흑화) — 안전 재부팅 구제횟수 리셋: 기존엔 세션 내 1회 한정이라
+     *  두 번째 초기화 실패부터는 영구 검은 화면이었다. 매 부팅마다 1회씩 재부팅 기회 부여 */
+    this.bootRetried = false;
+    /* v3.3.0 — 자동사냥 배회 좌표 리셋 (이전 맵 좌표가 새 맵으로 유출되는 것 방지) */
+    this.autoWanderPoint = null;
+    this.autoWanderUntil = 0;
+    /* v3.3.0 — 5차 시련/무릉도장/대사 상태 리셋 */
+    this.fifthTrialActive = false;
+    this.fifthTrialEnemy = null;
+    this.pendingFifthSummon = false;
+    this.dialogueSince = 0;
+    this.dojangActive = false;
+    this.dojangScore = 0;
+    this.dojangEndsAt = 0;
+    this.dojangFrom = "village";
+    this.dojangText = null;
+    this.dojangTextAcc = 0;
+    /* v4.0.0 — 게이트/균열 던전 상태 리셋 */
+    this.gateActive = false;
+    this.gateWave = 0;
+    this.gateSilver = 0;
+    this.gatePhase = "fight";
+    this.gateAlive = 0;
+    this.gateText = null;
+    this.gateCoreBar = null;
+    this.gateCoreBarBg = null;
+    this.gatePendingCards = [];
+    this.gateEnded = false;
+    this.closetActive = false;
+    this.closetGold = 0;
+    this.closetText = null;
+    this.closetAcc = 0;
+    /* v1.0.8 — 무한 콘텐츠 진행 상태 리셋 (towerFloor는 enterTower→buildTower 전달값으로 유지) */
+    this.towerActive = false;
+    this.towerBossRef = null;
+    this.towerText = null;
+    /* v1.0.18 — 파크 상태 리셋 (씬 재시작 이월 방지) */
+    this.parkActive = false;
+    this.parkText = null;
+    this.parkAcc = 0;
+    this.trialMod = null;
+    this.goldenRef = null;
+    this.goldenAcc = 0;
+    this.restCd = 0;
+    this.escapeCd = 0; // v4.9.0 — 씬 재시작마다 긴급귀환 쿨다운 초기화
+    this.fadeDarkMs = 0; // v4.9.0 — 페이드 자가치유 타이머 초기화
+    // 런 통계(처치/플레이타임) — 씬 재시작(스테이지 전환)과 무관하게 유지
+    // fresh=true는 타이틀에서 새 시작/이어하기일 때만 (사망화면 정확한 통계)
+    if (data.fresh) {
+      this.registry.set("runKills", 0);
+      this.registry.set("runStart", Date.now());
+    }
+    this.totalKills = (this.registry.get("runKills") as number | undefined) ?? 0;
+    const runStart = this.registry.get("runStart") as number | undefined;
+    this.startTime = runStart ?? this.time.now;
+    this.registry.set("initData", data);
+  }
+
+  /* v3.2.0 (#흑화 근본 수정) — create() 안전 래퍼.
+   *  "맵 이동 시 가끔 검은 화면 + 움직임 불능"의 잔존 원인은 씬 초기화(create) 중
+   *  예외로 fadeIn이 아예 실행되지 않는 케이스였다 (v3.1.0은 fadeIn 위치가 create
+   *  끝자락이라 초기화 중단 시 무효). 개선:
+   *  1) 초기화 예외를 잡아 최소 안전 부팅(배경 + fadeIn)을 보장
+   *  2) 실패 시 1회 한정 자동 재부팅 (세이브는 gotoStage마다 기록되어 있어 안전)
+   *  3) fadeIn + 워치독은 성공/실패 무관하게 "항상" 마지막에 실행 */
+  create() {
+    this.bootAt = this.time.now;
+    /* v1.4.0 (#16) — 월드 진입 기록: 재부팅(reload) 시 TitleScene이 이 플래그를 보고
+     *  시작 화면 대신 마지막 캐릭터로 자동 복귀한다 (정상 종료 exitToMenu는 해제) */
+    /* v1.4.11 — 구버전 세이브의 ARG 키(sertz.eggs/sertz.visits) 자동 청소 (v1.4.4 유실분 재적용 —
+     *  무한 재부팅 리포트 ⑧⑬의 근원 체계 완전 제거. eggs.ts·비밀수첩·eggTick 삭제와 세트) */
+    try { localStorage.removeItem("sertz.eggs"); } catch { /* 무시 */ }
+    try { localStorage.removeItem("sertz.visits"); } catch { /* 무시 */ }
+    /* v1.4.12 — sertz.autoResume 플래그 설정 폐지 (유저 지시: 캐릭터 선택 전 자동 시작 버그).
+     *  이제 재부팅/업데이트 후에도 항상 타이틀(캐릭터 선택)부터 시작한다. */
+    try {
+      localStorage.removeItem("sertz.autoResume");
+    } catch { /* 무시 */ }
+    try {
+      this.createInner();
+    } catch (err) {
+      console.error("[SERTZ] 씬 초기화 실패 — 안전 부팅으로 전환", err);
+      this.cameras.main.setBackgroundColor("#0a0e18");
+      this.cameras.main.fadeIn(320, 0, 0, 0);
+      if (!this.bootRetried) {
+        this.bootRetried = true;
+        this.time.delayedCall(650, () => {
+          /* 세이브에서 안전하게 다시 부팅 (스테이지 유지) */
+          try {
+            const d = this.registry.get("initData") as { stage?: StageKey; save?: SaveData } | undefined;
+            this.scene.restart({ stage: d?.stage, save: d?.save });
+          } catch (e2) {
+            console.error("[SERTZ] 자동 재부팅 실패", e2);
+          }
+        });
+      }
+    }
+    /* fadeIn + 자가치유 워치독 — v3.1.0에서 create 끝에 있던 것을 래퍼로 이동 (예외와 무관하게 항상 실행) */
+    this.cameras.main.fadeIn(350, 0, 0, 0);
+    this.time.delayedCall(1200, () => {
+      if (!this.scene.isActive()) return;
+      const cam = this.cameras.main as unknown as {
+        fadeEffect?: { isRunning: boolean };
+        alpha: number;
+        setAlpha: (v: number) => void;
+        resetFX?: () => void;
+      };
+      /* v4.1.0 — Phaser 3.90의 Fade에는 stop()이 없다(호출 시 런타임 에러).
+       *  isRunning은 시간 경과로 자동 해제되므로, 여기선 남은 알파만 정리한다
+       *  (update() 자가치유와 이중 안전망). */
+      if (cam.fadeEffect && !cam.fadeEffect.isRunning) {
+        /* v4.1.2 — create의 fadeIn이 이미 끝났는데(또는 유실돼) 어둡게 남은 경우
+         *  postFX 리셋으로 강제 복구 (완료된 fadeOut 잔상 — postFX 방식은 alpha로 안 보인다) */
+        const fx = cam.fadeEffect as unknown as { progress?: number; direction?: boolean };
+        const stuckDark = fx.direction === true && (fx.progress ?? 0) >= 0.99;
+        if (cam.alpha < 1 || stuckDark) {
+          try { cam.resetFX?.(); } catch { /* 미지원 환경 무시 */ }
+          cam.setAlpha(1);
+        }
+      }
+    });
+  }
+
+  private createInner() {
+    this.impactFX = new ImpactFX(this);
+    this.driveFx = new DriveFX(this);
+    /* v4.8.0 — 충격파 링 풀 (WebGL 전용 — Canvas 폴백은 풀이 비어 no-op) */
+    this.shockFX = new ShockwaveFX(this);
+    this.slashArcFx = new SlashArcFX(this); // v4.9.0
+    /* v4.9.0 — 돌진 잔상 고스트 풀 6장 (플레이어 depth 10 아래, 엔티티 뒤 궤적) */
+    for (let i = 0; i < 6; i++) {
+      const g = this.add.image(0, -9999, "hero_idle0").setDepth(9).setBlendMode(Phaser.BlendModes.ADD).setActive(false).setVisible(false);
+      this.ghostPool.push(g);
+    }
+    /* v3.0.3 — 씬 재시작 시 물리 월드 일시정지 상태가 이월되는 문제 방지:
+     *  대사 중 씬 재시작(포탈/사망 등)이 일어나면 구 씬의 world.pause()가
+     *  새 씬에서도 유지되어 캐릭터·몬스터가 완전히 멈춘다. 재시작마다 강제 resume. */
+    this.physics.world.resume();
+    const data = this.registry.get("initData") as {
+      stage?: StageKey;
+      save?: SaveData;
+      fresh?: boolean;
+    };
+    const save = data.save;
+    /* v2.2 — data.stage 명시 시 우선 (실내 진입: save는 village 캐리, stage는 interior) */
+    const rawStage = (data.stage as StageKey | undefined) ?? (save ? (save.stage as StageKey) : "village");
+    /* 유효하지 않은 스테이지 키(구 세이브/수정 세이브) 방어 — 체인 시작점으로 안전 폴백 (v2.0 구세이브 폴백 내장) */
+    const stageKey: StageKey = resolveStage(rawStage);
+    this.stageDef = STAGES[stageKey];
+    this.stageW = this.stageDef.width;
+    this.stageH = this.stageDef.height;
+
+    /* v4.1.5 — 동적 조명: 챕터별 암전 + 플레이어 횃불 광원 (fx/Lighting.ts).
+     *  create() 최상단에서 초기화 — 이후 포탈/모닥불 등 장식 배치 경로가 광원을 등록한다.
+     *  암전 챕터(동굴/헬/심연 등)에서는 어둠이 깔리고 광원이 시야를 만든다.
+     *  마을/실내/야외 밝은 챕터는 오버레이 없음(광원만 가능). */
+    this.lighting = new Lighting(this);
+    this.lighting.setupAmbient(parseStage(stageKey).ch, true);
+    /* v4.2.0 — 구역을 지날수록 횃불 광원 축소 (유저 지시: 스테이지마다 줄어들어 보스전 회피 난이도 상승) */
+    this.lighting.setTorchStage(parseStage(stageKey).sub);
+
+    /* ---------- 바닥 (v2.0 — 10챕터 테마 테이블 / v2.2 실내 분기) ---------- */
+    const theme = STAGE_THEME[stageKey] ?? STAGE_THEME.village;
+    this.solidGroup = this.physics.add.staticGroup();
+    this.isInterior = stageKey === "interior_inn" || stageKey === "interior_home";
+    if (this.isInterior) {
+      this.buildInterior(stageKey);
+    } else {
+    const groundTex = theme.ground;
+    this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
+    // v3.0.14 — 도로 표시 완전 제거: 가로/세로 일자 도로가 단조롭다는 피드백 ("길이 일자로만 되어있어")
+    //  지형은 테마 바닥 타일링만 남기고, 빈 지형은 placeDecor의 나무·바위·장식 배치로 자연감을 채운다.
+    // v3.0.13 — 지면 변형 스캐터(gvar) 완전 제거: 타 세트 색상의 64px 사각형이
+    //  "이상한 타일이 막 배치"된 것처럼 보이는 사용자 불만 → 기본 바닥만 사용 (클린 지형)
+    }
+
+    this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
+    this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
+    if (!this.isInterior) this.cameras.main.setBackgroundColor(theme.bg);
+
+    /* ---------- v3.0 (사용자 지시 #7) — 개미굴식 구역 레이아웃 (필드 전용) ----------
+     *  스테이지 키를 시드로 셀 그리드를 굴 형태로 개방하고 나머지는 벽으로 막는다.
+     *  마을/실내는 개방형 유지. 포탈·스폰·파편·보스 모두 레이아웃을 따른다. */
+    /* v3.3.0 (#흑화) — 굴 레이아웃 조건에서 무릉도장 제외: 개방된 도장(벽 없음)으로 생성 */
+    if (!this.isInterior && !this.stageDef.isVillage && stageKey !== "dojang") {
+      const lay = generateRoomLayout(stageKey, this.stageW, this.stageH);
+      this.layout = lay;
+      const entryC = cellCenterOf(lay, lay.entry);
+      const exitC = cellCenterOf(lay, lay.exit);
+      this.entryHome.set(entryC.x + 70, entryC.y);
+      this.portalHome.set(exitC.x, exitC.y);
+      this.buildDungeonWalls(lay, parseStage(stageKey).ch);
+    } else {
+      this.portalHome.set(this.stageW - 130, this.stageH * 0.52);
+      this.entryHome.set(180, this.stageH / 2);
+    }
+    /* v3.3.0 (지시 #6) — 무릉도장 중앙 입장/퇴장 위치 보정 */
+    if (stageKey === "dojang") {
+      this.entryHome.set(this.stageW / 2, this.stageH - 120);
+      this.portalHome.set(this.stageW / 2, 120);
+    }
+    /* v4.0.0 — 게이트/균열 던전 입장/퇴장 위치 보정 */
+    if (stageKey === "gate" || stageKey === "closet") {
+      this.entryHome.set(this.stageW / 2, this.stageH - 120);
+      this.portalHome.set(this.stageW / 2, 110);
+    }
+
+    // 반응형: 화면 밀도 유지용 카메라 줌 (RESIZE 캔버스 1:1 + 카메라 확대)
+    this.applyCameraZoom();
+    this.scale.on("resize", this.applyCameraZoom, this);
+
+    /* ---------- 장식 (F1: 정의된 소수만 — 실내는 buildInterior가 자체 배치) ---------- */
+    if (!this.isInterior) this.placeDecor(stageKey);
+
+    /* ---------- 상점 NPC (v3.0.15 #9 — 상인은 마을에만 배치. 필드 몬스터 구역에서 제거) ---------- */
+    if (!this.isInterior && this.stageDef.isVillage) this.spawnMerchant();
+
+    /* v1.4.12 (#14) — 사냥터 정보 NPC: 챕터별 대사를 가진 정찰병/생존자를 필드에 배치.
+     *  "상호작용 안 되는 이상한 오브젝트"의 대안 — 만나면 챕터 공략 힌트를 준다. */
+    if (!this.isInterior && !this.stageDef.isVillage) this.spawnFieldNpc(stageKey);
+
+    /* ---------- 플레이어 (v2.2 — 실내는 문 앞 스폰, 복귀 entry 좌표 우선) ---------- */
+    const savedPlayer = save;
+    this.player = new Player(
+      this,
+      this.entryPos?.x ?? (this.isInterior ? this.stageW / 2 : this.entryHome.x),
+      this.entryPos?.y ?? (this.isInterior ? this.stageH - 70 : this.entryHome.y)
+    );
+    /* v1.0.2 (#툰셰이더) — 플레이어 툰 림라이트 (WebGL+fxLevel 게이트, 실패 시 무시) */
+    if (this.game.renderer.type === Phaser.WEBGL && this.fxLevel >= 1) {
+      this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
+        rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
+      });
+      /* v1.0.10 (#GameStudio FX) — 앰비언트 블룸: 보스전 전용이던 쉐이더를 평시 전투에도.
+       *  스킬 이펙트/파티클/참격이 카메라 블룸으로 발광 — “보스전에만 적용” 버그 해소 */
+      if (this.bossFilters.length === 0) this.ambientFilters = addAmbientBloom(this.cameras.main);
+    }
+    /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
+    this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
+    if (savedPlayer) {
+      this.player.lv = savedPlayer.lv;
+      /* v3.0 (사용자 지시 #1) — 경험치 복원 누락 수정:
+       *  buildSave는 exp를 저장하면서 복원 경로엔 없어 포탈 이동(씬 재시작)마다
+       *  경험치가 0으로 초기화되는 버그. lv 복원 직후 함께 복원한다. */
+      this.player.exp = savedPlayer.exp ?? 0;
+      /* v1.0.2 (#무결성) — atk/maxHp 무가드 대입은 손상/불완전 세이브에서
+       *  undefined → HP "NaN/NaN"·공격 NaN으로 HUD가 깨졌다. 숫자 검증 후에만 복원한다. */
+      if (typeof savedPlayer.atk === "number" && savedPlayer.atk > 0) this.player.atk = savedPlayer.atk;
+      if (typeof savedPlayer.maxHp === "number" && savedPlayer.maxHp > 0) {
+        this.player.maxHp = savedPlayer.maxHp;
+        this.player.hp = this.player.maxHp;
+      }
+      // 레벨업 MP 성장 복원 (v1.9 — 구 세이브는 60 유지)
+      if (typeof savedPlayer.maxMp === "number") {
+        this.player.maxMp = Math.max(60, savedPlayer.maxMp);
+        this.player.mp = this.player.maxMp;
+      }
+      // RPG 자원 복원 (구 세이브는 loadSave()가 기본값 채움)
+      this.player.gold = savedPlayer.gold ?? 30;
+      this.player.potions = { hp: savedPlayer.potions?.hp ?? 2, mp: savedPlayer.potions?.mp ?? 1 };
+      this.player.weapon = (savedPlayer.weapon ?? "weapon_1") as ItemKey;
+      this.player.armor = (savedPlayer.armor ?? "armor_1") as ItemKey;
+      this.player.owned = (savedPlayer.owned ?? ["weapon_1", "armor_1"]) as ItemKey[];
+      // 강화/장신구 복원 (구 세이브는 loadSave()가 기본값 채움)
+      this.player.upgrades.weapon = savedPlayer.upWea ?? 0;
+      this.player.upgrades.armor = savedPlayer.upArm ?? 0;
+      /* v3.0.5 — 스타포스 마일스톤 HP 복원 (가산 이력 선복원 → 델타만 반영) */
+      this.player.restoreStarHp(savedPlayer.sfHp ?? 0);
+      this.player.syncStarHp();
+      /* v2.9 (#8) — 다중 장신구 마이그레이션 (구 세이브 accessory 1개 → 배열) */
+      this.player.accessories = ((savedPlayer.accessories as ItemKey[] | undefined) ??
+        (savedPlayer.accessory ? [savedPlayer.accessory as ItemKey] : [])) as ItemKey[];
+      /* v3.0.7 — 장신구 스타포스 복원 (성 + HP 가산 이력) */
+      this.player.accUp = { ...(savedPlayer.accUp ?? {}) };
+      this.player.starBless = savedPlayer.starBless ?? 0;
+      /* v1.0.8 — 확률 천장 카운터 복원 (강화 실패 가산 / 잠재 확정 카운트) */
+      this.player.starPity = savedPlayer.starPity ?? 0;
+      this.player.potPity = savedPlayer.potPity ?? 0;
+      this.player.restoreAccHp(savedPlayer.accHp ?? 0);
+      this.player.syncAccStarHp();
+      /* v4.6.0 — 음수 잔액 자동 복구: v4.5.0까지 구매 버그로 에메랄드가 음수인 세이브를 0으로 보정 */
+      this.player.emerald = Math.max(0, savedPlayer.emerald ?? 0);
+      // 퀘스트 진행 복원 (이어하기 — 파편/보상 중복 수령 방지)
+      this.savedQuestIdx = { ...(savedPlayer.questIdx ?? {}) };
+      this.questIdx = Phaser.Math.Clamp(this.savedQuestIdx[stageKey] ?? 0, 0, this.stageDef.quests.length);
+      // 플레이어 이름 복원 (인트로에서 지정)
+      if (savedPlayer.playerName) setPlayerName(savedPlayer.playerName);
+      // 전직 클래스 복원 (v1.7 — 구 세이브 null 호환)
+      this.player.applySavedClass(savedPlayer.cls);
+      /* v1.0.18 — 시작 클래스 복원 + 마이그레이션:
+       *  startCls 없는 구 세이브는 현재 cls 체인의 1차키로 역산해 자동 채운다 (환생 복귀 보장).
+       *  cls가 null인 구 세이브(시련 중)는 pendingJobClass를 시작 클래스로 채택한다. */
+      {
+        const sck = (savedPlayer as { startCls?: string | null }).startCls;
+        if (isClassKey(sck)) this.player.startCls = chainOf(sck)[0]?.key ?? null;
+        else if (isClassKey(savedPlayer.cls)) this.player.startCls = chainOf(savedPlayer.cls)[0]?.key ?? null;
+        else if (this.player.startCls === null && this.pendingJobClass) this.player.startCls = this.pendingJobClass;
+      }
+      // v2.4 — 이어하기 시에도 이름표 유지 (클래스 복원 후 생성 — "이름 · 클래스" 표기)
+      if (savedPlayer.playerName) this.ensurePlayerTag();
+      // AP 스탯 복원 (v1.9 — 구 세이브는 loadSave()가 5/5/5/5 + 소급 AP 채움)
+      // 지력/행운의 maxMp/maxHp 가산은 세이브 maxHp에 이미 포함 — 여기선 수치만 복원
+      const st = savedPlayer.stats ?? { str: 5, dex: 5, int: 5, luk: 5 };
+      this.player.stats = { ...st };
+      this.player.ap = savedPlayer.ap ?? 0;
+      // BM 복원 (v1.9)
+      this.player.buffItems = { ...(savedPlayer.buffItems ?? {}) } as Partial<Record<BuffKey, number>>;
+      this.player.buffs = (savedPlayer.buffs ?? [])
+        .filter((b) => b.key in BUFF_DEFS)
+        .map((b) => ({ key: b.key as BuffKey, remain: b.remain, total: b.total }));
+      this.player.pets = (savedPlayer.pets ?? []).filter((k) => k in PET_DEFS) as PetKey[];
+      this.player.pet = (savedPlayer.pet && savedPlayer.pet in PET_DEFS ? (savedPlayer.pet as PetKey) : null);
+      /* v1.2.0 (#1) — 포니테일 폐지 환수: 캐릭터 슬롯 경로는 loadSave 마이그레이션을 우회하므로
+       *  여기서(플레이어 로드) 1회 환수 처리 — 보유 목록에서 소실된 hair_ponytail을 감지하면
+       *  18 에메랄드 지급 + ponyRefund 플래그 기록(buildSave가 세이브에 유지 → 이중 환수 방지) */
+      const rawCosmetics = savedPlayer.cosmetics ?? [];
+      const hadPony = rawCosmetics.includes("hair_ponytail") || (savedPlayer as { hair?: string | null }).hair === "hair_ponytail";
+      this.player.ponyRefund = !!(savedPlayer as { ponyRefund?: boolean }).ponyRefund;
+      if (hadPony && !this.player.ponyRefund) {
+        this.player.ponyRefund = true;
+        this.pendingPonyRefund = true; // emerald 복원(961행) 후 가산하기 위해 보류
+      }
+      this.player.cosmetics = rawCosmetics.filter((k) => k in COSMETIC_DEFS) as CosmeticKey[];
+      this.player.cosmetic = (savedPlayer.cosmetic && savedPlayer.cosmetic in COSMETIC_DEFS ? (savedPlayer.cosmetic as CosmeticKey) : null);
+      /* v1.0.7 — 코스튬/헤어 슬롯 복원 (구 세이브는 undefined → null) */
+      this.player.outfit = (savedPlayer.outfit && savedPlayer.outfit in COSMETIC_DEFS ? (savedPlayer.outfit as CosmeticKey) : null);
+      /* v1.0.19 (B-1 외형) — 로비에서 고른 색조 복원 */
+      this.player.lookTint = (savedPlayer as { lookTint?: number | null }).lookTint ?? null;
+      this.player.applyLookTint();
+      this.player.hair = (savedPlayer.hair && savedPlayer.hair in COSMETIC_DEFS ? (savedPlayer.hair as CosmeticKey) : null);
+      /* v1.1.0 (#1/#21/#22) — 성별/피부/어태치 장식 복원 → 스프라이트 시트 전환(완전 교체) */
+      const savedLook = savedPlayer as { gender?: string; skinIdx?: number; accessory?: string | null; gmSkin?: boolean };
+      this.player.gender = savedLook.gender === "f" ? "f" : "m";
+      this.player.skinIdx = typeof savedLook.skinIdx === "number" ? Phaser.Math.Clamp(savedLook.skinIdx, 0, 5) : 2;
+      this.player.accessory = (savedLook.accessory && savedLook.accessory in COSMETIC_DEFS ? (savedLook.accessory as CosmeticKey) : null);
+      /* v1.2.0 (#7) — GM 외형 플래그 복원. 실제 렌더는 gmApproved(서버 롤 admin) 설정 후 applyBodyLook 재호출 시점 */
+      this.player.gmSkin = !!savedLook.gmSkin;
+      /* v1.2.0 (#1) — 포니테일 환수 플래그 복원 (buildSave 유지 필수 — 분실 시 재환생 이중 환수) */
+      this.player.gmApproved = this.adminRole === "admin";
+      /* v1.2.0 (#1) — 환수 정산 (emerald 복원 이후 +18) */
+      if (this.pendingPonyRefund) {
+        this.pendingPonyRefund = false;
+        this.player.emerald += 18;
+      }
+      this.player.applyBodyLook();
+      // 전직 스토리 복원 (v2.0 / v3.1.0 — fam 포함. 구 세이브는 cls 계열로 역산)
+      if (savedPlayer.jobStory && typeof savedPlayer.jobStory.tier === "number") {
+        const famSaved = (savedPlayer.jobStory as { fam?: string }).fam;
+        const famDerived = familyOf(savedPlayer.cls ?? "");
+        const jsFam: FamilyKey | undefined = (famSaved as FamilyKey | undefined) ?? famDerived ?? undefined;
+        if (jsFam) {
+          this.jobStory = {
+            tier: savedPlayer.jobStory.tier,
+            step: savedPlayer.jobStory.step,
+            hunt: savedPlayer.jobStory.hunt,
+            fam: jsFam,
+            /* v1.3.1 (#4) — travel 목적지 복원 (부재 시 트래커에서 확정) */
+            tst: (savedPlayer.jobStory as { tst?: string }).tst,
+          };
+        }
+      }
+      this.jobStoryDone = [...(savedPlayer.jobStoryDone ?? [])];
+      // v3.1.0 — 시련 스토리 중 선택해둔 1차 클래스 복원
+      if (
+        !savedPlayer.cls &&
+        typeof (savedPlayer as { pendingJobClass?: string | null }).pendingJobClass === "string" &&
+        isClassKey((savedPlayer as { pendingJobClass?: string | null }).pendingJobClass as string)
+      ) {
+        this.pendingJobClass = (savedPlayer as { pendingJobClass?: string | null }).pendingJobClass as ClassKey;
+      }
+      // v2.3 — 본 대사 기록 + 반복 의뢰 수주 해금 복원 (지시 #1/#4)
+      this.seenSet = new Set(savedPlayer.seen ?? []);
+      this.repeatOn = savedPlayer.repeatOn ?? false;
+      /* v3.0.26 (#76) — 스토리 클리어 플래그 복원: 기존엔 런타임 리셋(init false) 후
+       *  복원이 누락돼 재접속 시 cleared 상태가 유실됐다. 일퀘 해금 판정의 전제 */
+      this.cleared = savedPlayer.cleared ?? false;
+      /* v3.0.6 — 자동 물약/자동 버프 설정 복원 (지시 #5) */
+      if (savedPlayer.autoUse) {
+        this.player.autoUse = {
+          hpPct: savedPlayer.autoUse.hpPct ?? 0,
+          mpPct: savedPlayer.autoUse.mpPct ?? (savedPlayer.autoUse.mpOn ? 25 : 0), // v3.0.20 (#3) 기존 mpOn 마이그레이션
+          mpOn: savedPlayer.autoUse.mpOn ?? false,
+          buffs: (savedPlayer.autoUse.buffs ?? []) as BuffKey[],
+        };
+      }
+      /* v3.0.6 — 반복 의뢰 진행도 복원 (재입장 시 카운트 리셋 문제)
+       *  같은 구역 세이브에서만 복원 — 다른 구역이면 신규 시작 */
+      const savedRepeatStage = (savedPlayer as { repeatStage?: string }).repeatStage;
+      if (savedRepeatStage === this.stageDef.key) {
+        this.repeatNeed = (savedPlayer as { repeatNeed?: number }).repeatNeed ?? this.stageDef.repeat?.need ?? 0;
+        this.huntCount = (savedPlayer as { huntCount?: number }).huntCount ?? 0;
+      }
+      // v2.5 — 방문 기록 복원 + 자동사냥 (v3.0.15 #5: 펫 조건 제거)
+      this.visited = new Set(savedPlayer.visited ?? []);
+      this.autoHunt = savedPlayer.autoHunt ?? false;
+      /* ----- v3.0.15 복원 ----- */
+      this.autoAlloc = savedPlayer.autoAlloc ?? false;
+      if (savedPlayer.quickPots) this.player.quickPots = { ...savedPlayer.quickPots };
+      this.player.potentials = JSON.parse(JSON.stringify(savedPlayer.potentials ?? {}));
+      this.player.restorePotHp(savedPlayer.potHpApplied ?? 0);
+      this.player.syncPotentialsHp();
+      this.unlockedSets = new Set(savedPlayer.unlockedSets ?? []);
+      /* v3.0.15 (#8) — 퀘스트 수락/추적 상태 복원 */
+      this.acceptedQuests = { ...(savedPlayer.questAccepted ?? {}) };
+      this.trackedStage = savedPlayer.questTracked ?? null;
+      /* v3.0.16 — 몬스터 컬렉션 복원 + 등록 수 스탯 반영 */
+      this.monsterKills = { ...(savedPlayer.monsterKills ?? {}) };
+      this.player.setCollection(Object.keys(this.monsterKills).length);
+      /* v3.0.22 (#43/#44/#50) — 결정 수집 기록 + 세계수의 가호 복원 */
+      this.fragmentsFound = { ...(savedPlayer.fragmentsFound ?? {}) };
+      this.player.setWorldtreeBlessing(!!savedPlayer.worldtreeBlessing);
+      /* v3.0.28 (#보스난이도) — 진행 중이던 보스전 난이도 복원 (재접속 시 이지 선택 후 노말로 나오는 문제 방지) */
+      if (savedPlayer.bossDiff && savedPlayer.bossDiff in BOSS_DIFFS) {
+        this.bossDiff = savedPlayer.bossDiff as BossDiffKey;
+      }
+      this.player.recalcSpeedForLoad();
+      /* v3.3.0 — 5차 각성/시련 완료 플래그 복원 */
+      this.player.fifth = savedPlayer.fifth ?? false;
+      this.player.fifthStoryDone = savedPlayer.fifthStoryDone ?? false;
+      /* ----- v4.0.0 — 바르가 업데이트 복원 ----- */
+      this.figures = (savedPlayer.figures ?? []).filter((k) => k in FIGURE_MAP);
+      this.shards = savedPlayer.shards ?? 0;
+      this.gachaTickets = savedPlayer.gachaTickets ?? 0;
+      this.badges = (savedPlayer.badges ?? []).filter((k) => k in BADGE_MAP);
+      this.badgeSlots = (savedPlayer.badgeSlots ?? [null, null, null]).slice(0, BADGE_SLOTS);
+      while (this.badgeSlots.length < BADGE_SLOTS) this.badgeSlots.push(null);
+      this.runes = { ...(savedPlayer.runes ?? {}) };
+      this.runeSlots = (savedPlayer.runeSlots ?? [null, null, null, null]).slice(0, 4);
+      while (this.runeSlots.length < 4) this.runeSlots.push(null);
+      this.constel = [...(savedPlayer.constel ?? [])];
+      this.couponsUsed = [...(savedPlayer.coupons ?? [])];
+      this.attendLast = savedPlayer.attend?.last ?? "";
+      this.attendCount = savedPlayer.attend?.count ?? 0;
+      this.dailyDate = savedPlayer.daily?.date ?? "";
+      this.dailyHunts = savedPlayer.daily?.hunts ?? 0;
+      this.dailyGate = savedPlayer.daily?.gate ?? 0;
+      this.dailyCloset = savedPlayer.daily?.closet ?? 0;
+      this.dailyFarms = savedPlayer.daily?.farms ?? 0; // v1.0.7
+      this.dailyBosses = savedPlayer.daily?.bosses ?? 0; // v1.0.7
+      this.dailyClaimed = [...(savedPlayer.daily?.claimed ?? [])];
+      this.dailyAds = savedPlayer.daily?.ads ?? 0;
+      this.dailyAdChest = savedPlayer.daily?.adsChest ?? 0;
+      this.dailyAdDrop = savedPlayer.daily?.adsDrop ?? 0;
+      /* v4.5.0 — 시즌 패스/구독 복원 (시즌 키가 다르면 신규 시즌 — XP/수령 기록 리셋) */
+      const sp = savedPlayer.pass;
+      if (sp && sp.season === seasonKey()) {
+        this.passSeason = sp.season;
+        this.passXp = sp.xp ?? 0;
+        this.passPrem = !!sp.prem;
+        this.passClaimedF = [...(sp.claimedF ?? [])];
+        this.passClaimedP = [...(sp.claimedP ?? [])];
+      } else {
+        this.passSeason = seasonKey();
+      }
+      this.subUntil = savedPlayer.sub?.until ?? 0;
+      this.starterPackBought = !!savedPlayer.starterPackBought;
+      this.ticketDate = savedPlayer.tickets?.date ?? "";
+      this.ticketGate = savedPlayer.tickets?.gate ?? 0;
+      this.ticketCloset = savedPlayer.tickets?.closet ?? 0;
+      this.ticketRefills = savedPlayer.tickets?.refills ?? 0; // v1.0.1 — 재충전 카운트 복원
+      /* v1.0.1 — 시즌 미션 복원 (ensureMissions가 day/week 검증) */
+      this.missionDay = savedPlayer.missions?.day ?? "";
+      this.missionWeek = savedPlayer.missions?.week ?? "";
+      this.missionD = { ...(savedPlayer.missions?.d ?? {}) };
+      this.missionW = { ...(savedPlayer.missions?.w ?? {}) };
+      this.missionCd = [...(savedPlayer.missions?.cd ?? [])];
+      this.missionCw = [...(savedPlayer.missions?.cw ?? [])];
+      this.achClaimed = [...(savedPlayer.achClaimed ?? [])];
+      /* v4.1.4 — 보스/카오스/침공 처치 누적 복원 */
+      this.bossKillCount = savedPlayer.bossKills ?? 0;
+      this.chaosKillCount = savedPlayer.chaosKills ?? 0;
+      this.invasionKillCount = savedPlayer.invasionKills ?? 0;
+      this.gateBest = savedPlayer.gateBest ?? 0;
+      this.closetBest = savedPlayer.closetBest ?? 0;
+      /* v1.0.18 — 파크 재화/기록/입장권 복원 */
+      this.parkCoins = savedPlayer.parkCoins ?? 0;
+      this.parkBest = savedPlayer.parkBest ?? 0;
+      this.parkTickets = savedPlayer.parkTickets ?? { date: "", n: 2 };
+      this.gateStars = [...(savedPlayer.gateStars ?? [false, false, false])];
+      while (this.gateStars.length < 3) this.gateStars.push(false);
+      this.freeGachaAt = savedPlayer.freeGachaAt ?? 0;
+      this.lastSeenAt = savedPlayer.lastSeen ?? 0;
+      /* v1.0.8 — 무한 콘텐츠 상태 복원 (구 세이브는 infMerge 기본값) */
+      this.inf = infMerge(savedPlayer.inf);
+      this.syncExtBonus(); // 부여아/환생/펫 보너스 즉시 반영 (아래에서 다시 호출되지만 조기 반영)
+      this.player.tierUpTargets.weapon = savedPlayer.tierUpWea ?? 0;
+      this.player.tierUpTargets.armor = savedPlayer.tierUpArm ?? 0;
+      this.player.tierUpBoost = this.player.tierUpTargets.weapon + this.player.tierUpTargets.armor;
+      /* 외부 보너스(피규어/배지/룬/성좌/스킨) 주입 — HP 델타 동기화 포함 */
+      this.syncExtBonus();
+    }
+    /* v4.0.0 — 바르가 데일리 초기화 (출석부/일일 퀘스트/티켓/오프라인 보상) */
+    this.initIsekaiDaily();
+    // v2.5 — 현재 구역 방문 기록 (실내 제외) — 지역 이동 부적 워프 대상
+    if (!this.isInterior) {
+      const before = this.visited.size;
+      this.visited.add(this.stageDef.key);
+      /* v3.0.15 (#11) — 챕터 해금 시 테마 장비 세트 해금: 무기·방어구·악세 1세트가 상점에 등장 */
+      const chKey = parseStage(stageKey).ch;
+      if (SET_GEAR[chKey] && !this.unlockedSets.has(chKey)) {
+        this.unlockedSets.add(chKey);
+        this.time.delayedCall(1600, () => {
+          EventBus.emit("banner:show", {
+            text: `장비 세트 해금! ${SET_GEAR[chKey].title} — 마을 상점에서 구매 가능`,
+          });
+          audio.sfx.ach();
+        });
+        this.save();
+        this.emitRpgState();
+      }
+      if (this.visited.size !== before) this.save();
+    }
+    /* v3.0.6 — 반복 의뢰 진행도: 세이브에 같은 구역 기록이 있으면 유지, 없으면 신규 시작 */
+    if (!((savedPlayer as { repeatStage?: string } | undefined)?.repeatStage === this.stageDef.key)) {
+      this.repeatNeed = this.stageDef.repeat?.need ?? 0;
+      this.huntCount = 0;
+    }
+    this.playerRef = this.player;
+    /* v3.0.18 — 카메라 추적 lerp 0.12→0.18: 캐릭터가 카메라를 "끌고 가는" 둔감한
+     *  여운(걸리는 느낌의 시각적 원인) 축소. 0.2 이상은 화면 흔들림 유발 — 0.18 채택 */
+    this.cameras.main.startFollow(this.player, true, 0.18, 0.18);
+    this.physics.add.collider(this.player, this.solidGroup);
+    /* v2.6 — 육식 식물 접촉 데미지 등록 (플레이어 생성 후) */
+    for (const plant of this.plantHazards)
+      this.physics.add.overlap(this.player, plant, () => this.hitPlantHazard(plant));
+
+    /* ---------- BM 복원 (v1.9 — 펫 소환/치장 오라/강화 오라) ---------- */
+    this.syncPet();
+    this.syncCosmeticAura();
+    this.syncUpgradeGlow();
+
+    /* ---------- 적 배치 (v2.0 — 챕터/구역 난이도 배율 적용 / v3.0 — 개방 셀 스폰) ---------- */
+    const sc = stageScale(stageKey);
+    const rng = new Phaser.Math.RandomDataGenerator([stageKey]);
+    for (const group of this.stageDef.enemies) {
+      for (let i = 0; i < group.count; i++) {
+        /* v3.0 (#7) — 굴 레이아웃의 개방 셀 안에만 스폰 (입구 셀 회피 + 플레이어 380px 거리) */
+        const p = this.openPointRng(rng, { minDist: 380, avoidEntry: true });
+        const e = new Enemy(this, p.x, p.y, group.key, {
+          /* v3.0 (#8) — 몬스터 경험치 +35% (레벨업 속도 개선, 곡선 완화와 합산) */
+          hp: sc.hp, atk: sc.atk, exp: sc.exp * 1.35, gold: sc.gold,
+        });
+        this.enemies.push(e);
+        this.spawnRecords.push({ key: group.key, x: p.x, y: p.y });
+        this.physics.add.collider(e, this.solidGroup);
+      }
+    }
+    /* ---------- 정예 몬스터 (구역 5 — 미드보스급 단일 스폰, 지시 #5) ---------- */
+    if (this.stageDef.elite) {
+      const el = this.stageDef.elite;
+      /* v3.0 (#7) — 정예도 개방 셀에 배치 (플레이어와 충분히 떨어진 방) */
+      const ep = this.openPointRng(rng, { minDist: 520, avoidEntry: true });
+      const ex = ep.x;
+      const ey = ep.y;
+      const e = new Enemy(this, ex, ey, el.key, {
+        hp: el.hpMult * sc.hp,
+        atk: el.atkMult * sc.atk,
+        exp: 8 * sc.exp,
+        gold: 9 * sc.gold,
+        scale: 1.55,
+        tint: 0xff9090,
+        displayName: el.name,
+      });
+      e.dmgPct = DMG_PCT.elite; // v3.0.6 — 정예 % 피해 상향
+      this.eliteEnemy = e;
+      this.enemies.push(e);
+      this.spawnRecords.push({ key: el.key, x: ex, y: ey });
+      this.physics.add.collider(e, this.solidGroup);
+      this.showBanner(`${el.name} 출현!`);
+      audio.sfx.roar();
+      this.doShake(240, 0.007);
+    }
+
+    /* ---------- v3.3.0 (지시 #6) — 무릉도장: 허수아비 + 타이머/기록 UI ---------- */
+    if (stageKey === "dojang") this.buildDojang();
+
+    /* ---------- v4.0.0 — 바르가 수비전 / 균열 던전 빌드 ---------- */
+    if (stageKey === "gate") this.buildGate();
+    if (stageKey === "closet") this.buildCloset();
+    /* ---------- v1.0.8 — 심연의 탑 빌드 (무한 층수) ---------- */
+    if (stageKey === "tower") this.buildTower();
+    if (stageKey === "park") this.buildPark(); // v1.0.18 — 몬스터 파크
+    if (stageKey === "praid") this.buildPartyRaid(); // v1.4.3 (#멀티콘텐츠) — 파티 공동 토벌전
+
+    /* ---------- 퀘스트 오브젝트 (v2.2 — 실내는 포탈/퀘스트 오브젝트 없음) ---------- */
+    if (this.isInterior) {
+      /* 실내 — 출구 문은 interactables로 처리 */
+    } else if (this.stageDef.isVillage) {
+      /* v2.9 — 본마을 + 챕터 마을 공용 마을 빌드 (우물/여관/전직관/주민) */
+      this.buildVillage();
+      /* v1.0.2 (#GM서버검증) — 부팅 시 서버 롤 조회 → 관리자만 GM NPC 표시 (일반 유저에겐 부재)
+       *  v1.0.16 — 롤 확정 후 이름표/황금 오라 재계산 (이름표가 롤 조회보다 먼저 생기는 케이스) */
+      authMe()
+        .then((u) => {
+          this.adminRole = u?.role ?? null;
+          if (this.player) this.player.gmInfinite = this.adminRole === "admin"; // v1.1.0 (#5) — GM 무한 물약/엘릭서
+          /* v1.2.0 (#7) — GM 계정 확정 시점에 GM 외형 승인 → 즉시 재렌더 */
+          if (this.player) {
+            this.player.gmApproved = this.adminRole === "admin";
+            this.player.applyBodyLook();
+          }
+          if (this.adminRole === "admin") for (const g of this.gmNpcVisuals) g.setVisible(true);
+          this.refreshPlayerTag(); // GM 금색 이름표 + 오라 부여
+          this.emitRpgState(); // v1.0.5 — admin 플래그를 React에 즉시 반영
+        })
+        .catch(() => {});
+      // 마을 차원문은 항상 열려 있음 (다음 구역으로 출발)
+      this.spawnPortal(this.stageW - 110, this.stageH * 0.52);
+      this.activatePortal(true);
+    } else {
+      /* v4.1.0 — 전진 포탈은 다음 구역이 존재할 때만 스폰 (이벤트 구역의 죽은 포탈 제거) */
+      if (!this.stageDef.boss && stageKey !== "dojang" && NEXT_STAGE[stageKey]) this.spawnPortal(this.portalHome.x, this.portalHome.y);
+      // 수확(collect) 퀘스트 진행 중 — 파편 스폰 (이어하기 무결: ATK 중복 수령 방지)
+      if (this.currentQuest()?.type === "collect") this.spawnFragmentForQuest();
+    }
+    /* ---------- 복귀 차원문 (v2.0 — 이전 구역 자유 왕복, 지시 #8 / 실내 제외) ---------- */
+    if (!this.isInterior) this.spawnReturnPortal();
+    /* v4.1.0 — 포탈 화면 밖 방향 가이드 (지시 #14) */
+    this.createPortalGuides();
+
+    /* ---------- 퀘스트 진행 복구 (이어하기 — 진행 상태 정합, 오브젝트 생성 후) ---------- */
+    const bossQuestIdx = this.stageDef.quests.findIndex((q) => q.type === "boss");
+    if (this.stageDef.boss) {
+      if (this.currentQuest()?.type === "boss") {
+        // 보스전 진행 중 세이브 — 입장 직후 보스 등장 (복구 경로는 등장 대사 생략)
+        /* v3.3.0 (#흑화) — 복구 경로 try/catch: 재입장 전용 경로가 죽으면 physics 정지가
+         *  누출돼 검은 화면·조작 불능이 됐다. 실패 시 물리/대사를 즉시 복원한다 */
+        this.time.delayedCall(900, () => {
+          try {
+            if (!this.boss) this.spawnBoss(false);
+          } catch (e) {
+            console.error("[SERTZ] 보스 복구 스폰 실패 — 자가치유로 정리", e);
+            this.dialoguing = false;
+            this.physics.world.resume();
+          }
+        });
+      } else if (bossQuestIdx >= 0 && this.questIdx > bossQuestIdx && NEXT_STAGE[stageKey]) {
+        // 보스 격파 후 세이브 — 차원문 개방 상태 복구 (구 v1.0 클리어 세이브도 이 경로로 계속)
+        this.spawnPortal(this.portalHome.x, this.portalHome.y);
+        this.activatePortal(true);
+      }
+    } else if (stageKey !== "village" && this.currentQuest()?.type === "reach") {
+      // 수확 완료 후 세이브 — 차원문을 열어둔 채 시작 (소프트락 방지)
+      this.activatePortal(true);
+    } else if (stageKey !== "village" && !this.stageDef.boss && this.questIdx >= this.stageDef.quests.length) {
+      // v2.4 — 체인 완료 상태로 이어하기 시 전진 포탈 개방 복구 (구역 1~9 소프트락 방지)
+      this.activatePortal(true);
+    }
+    /* ---------- 이펙트 풀 ---------- */
+    this.buildFxPools();
+
+    /* v2.4 — 이어하기 시 레벨 게이트가 이미 충족된 상태면 즉시 연쇄 완료
+     *  (구세이브는 questIdx가 신규 체인의 앞쪽으로 밀려날 수 있다 — 자기 레벨이 충분하면 게이트 스킵) */
+    if (this.currentQuest()?.type === "level") this.tryCompleteLevel();
+
+    /* v2.7 — 포탈 개방 보루 2.0 (자가치유형): 개방 실패의 모든 원인을 1.5초 안에 스스로 봉합.
+     *  v2.6 보루의 빈틈 — dialoguing/pendingPortal 끼임 시 영구 거부, 보스 구역 영구 제외,
+     *  포탈 스프라이트 부재 시 무력 — 를 닫는다 (유저 재신고: "퀘스트 깨도 바로 포탈 안열림") */
+    this.time.addEvent({
+      delay: 1500,
+      loop: true,
+      callback: () => {
+        /* v3.3.0 (#흑화) — 대사 붙임 자가치유: 20초 이상 대사 상태가 지속되면 강제 종료
+         *  (대사 완료 콜백 유실 → dialoguing/physics 영구 정지 → 검은 화면·조작 불능 방지.
+         *  정상 대사는 이보다 훨씬 짧고, 클릭/스페이스로 언제든 넘길 수 있다) */
+        if (this.dialoguing && this.dialogueSince > 0 && this.time.now - this.dialogueSince > 20000) {
+          console.warn("[SERTZ] 대사 20초 붙임 감지 — 강제 종료(자가치유)");
+          this.restoreBossIntroCam(); // v1.0.2 (#보스컷씬) — 강제 종료 경로에서도 카메라 복귀
+          this.dialoguing = false;
+          this.dialogueSince = 0;
+          this.queuedDialogue = null;
+          this.physics.world.resume();
+          EventBus.emit("dialogue:hide");
+        }
+        if (this.portalActive || this.isInterior) return;
+        const q = this.currentQuest();
+        /* 오브젝트 소실 보루 — 파편/보스가 없으면 퀘스트가 영구 안 풀려 포탈이 안 열린다 */
+        if (q?.type === "collect" && !this.fragment) this.spawnFragmentForQuest();
+        /* v4.6.0 — gmTrial 중엔 보루가 스토리 보스를 스폰하지 않는다 (GM 체험 보스와 중복 방지) */
+        if (q?.type === "boss" && !this.boss && !this.gmTrial) {
+          /* v3.0.28 (#보스난이도) — 난이도 선택 패널을 4초 이상 닫아두면 노말로 자가치유
+           *  (패널을 닫고 방치해 보스가 영영 안 나오는 소프트락 방지) */
+          if (this.bossDiffPending) {
+            if (this.time.now - this.bossDiffPendingSince > 4000) {
+              this.bossDiffPending = false;
+              this.bossDiff = "normal";
+              this.spawnBoss(false);
+            }
+          } else this.spawnBoss(false);
+        }
+        const chainDone = this.questIdx >= this.stageDef.quests.length;
+        const shouldOpen = !q || q.type === "reach" || (chainDone && this.repeatOn);
+        /* 보스 구역은 격파 전(boss 진행 중) 개방 금지 — 격파 후 reach는 개방 대상
+         * v1.1.0 (#11 차원문 막힘) — 연결된 다음 구역(NEXT_STAGE)이 없는 콘텐츠(탑/파크/게이트/균열/도장)에선
+         *  포탈을 열지 않는다. 열어놔도 "이 앞은 막혀 있다"만 뜨는 죽은 차원문이므로 아예 생성하지 않는다 */
+        const hasNextStage = !!NEXT_STAGE[this.stageDef.key];
+        if (!hasNextStage) return;
+        if (!shouldOpen || (this.stageDef.boss && q?.type !== "reach")) return;
+        if (this.dialoguing || this.pendingPortal) {
+          /* 대사 중엔 물리 정지로 전환 사고가 없다 — 유예하되 6초 이상 붙어있으면 강제 해제 */
+          if (!this.portalHoldSince) this.portalHoldSince = this.time.now;
+          else if (this.time.now - this.portalHoldSince > 6000) {
+            this.portalHoldSince = 0;
+            this.pendingPortal = false;
+            if (!this.portal) this.spawnPortal(this.portalHome.x, this.portalHome.y);
+            this.activatePortal();
+          }
+          return;
+        }
+        this.portalHoldSince = 0;
+        if (!this.portal) this.spawnPortal(this.portalHome.x, this.portalHome.y);
+        this.activatePortal();
+      },
+    });
+
+    /* ---------- 미니맵 (2D MMORPG 기본 요소) ---------- */
+    this.minimap = this.add.graphics().setDepth(95).setScrollFactor(0).setAlpha(0.85);
+    this.redrawMinimap();
+
+    /* v3.0.24 (#보스재도전) — 클리어 챕터 보스 재도전: 보스 구역 도착 직후 재림 보스 스폰 */
+    if (this.pendingReplayBoss) {
+      const ch = this.pendingReplayBoss;
+      this.pendingReplayBoss = null;
+      /* v3.3.0 (#흑화) — 재도전 스폰도 try/catch (physics 정지 누출 방지) */
+      this.time.delayedCall(350, () => {
+        try {
+          this.spawnReplayBoss(ch);
+        } catch (e) {
+          console.error("[SERTZ] 재도전 보스 스폰 실패 — 자가치유로 정리", e);
+          this.dialoguing = false;
+          this.physics.world.resume();
+        }
+      });
+    }
+
+    /* v4.6.0 — GM 전 보스 체험: 보스 구역 도착 직후 GM 보스 스폰 (재림 경로와 동일 안전 패턴) */
+    if (this.pendingGmBoss) {
+      const bk = this.pendingGmBoss;
+      this.pendingGmBoss = null;
+      this.time.delayedCall(350, () => {
+        try {
+          this.spawnGmBoss(bk);
+        } catch (e) {
+          console.error("[SERTZ] GM 보스 체험 스폰 실패 — 자가치유로 정리", e);
+          this.dialoguing = false;
+          this.physics.world.resume();
+        }
+      });
+    }
+
+    /* ---------- 입력 ---------- */
+    this.setupInput();
+
+    // E2E/디버그 훅 — 씬 인스턴스 실측용 (v2.4)
+    (window as unknown as { __SERTZ_SCENE__?: unknown }).__SERTZ_SCENE__ = this;
+
+    /* ---------- 사운드/BGM (v3.0.23 — 구역별 고정 1곡 루프 / 로테이션·곡 교체 없음) ---------- */
+    audio.playStageBGM(stageKey);
+
+    /* v1.4.10 — 컨텍스트 힌트 (유저 지시 "게임 중 부연 설명 부족"): 구역 성격에 맞는 1회 안내 */
+    {
+      const { sub } = parseStage(stageKey);
+      if (sub === 10 && !this.isInterior) {
+        this.hintOnce(
+          "bosszone",
+          "보스 구역! 끝까지 가면 강력한 보스가 기다린다 — 물약·장비를 점검하고, HP가 절반 이하로 내려가면 물약 버튼(빨강)부터!"
+        );
+      } else if (sub >= 1 && sub <= 9 && !this.stageDef.isVillage) {
+        this.hintOnce(
+          "field",
+          "사냥터에 도착! 몬스터를 잡아 레벨을 올리자. 왼쪽 위 퀘스트 트래커가 다음 목표를 알려준다."
+        );
+      }
+    }
+
+    /* v1.0.11 — 튜토리얼 시작/재개 판정 ("튜토리얼 제작" 지시):
+     *  · 신규(이름 없음) — 인트로(이름짓기) 종료 후 시작 예약 (resumeFromDialogue 훅)
+     *  · 이름 있는 유저 + tutorialDone=false + lv≤8 + 마을 — 즉시 시작/재개.
+     *    (tutStep≥0: 진행 중 이어하기 / tutStep=-1: 튜토리얼 도입 전 씬 재시작·구세이브 — v1.0.11 버그 수정:
+     *     인트로 직후 씬이 재시작되면 이름이 있어 pend 경로가 안 타고 tutStep도 -1이라 영영 시작 안 됐다) */
+    const savedTutStep = savedPlayer?.tutStep ?? -1;
+    this.tutorialDone = savedPlayer?.tutorialDone ?? false;
+    if (!this.tutorialDone && stageKey === "village" && !savedPlayer?.playerName) {
+      this.tutPendingStart = true;
+    } else if (!this.tutorialDone && savedTutStep >= 0 && (savedPlayer?.lv ?? 1) <= 8) {
+      /* 진행 중 튜토리얼 — 모든 구역(마을→사냥터 포탈 이동)에서 재개 (v1.0.11 — 마을 한정이라
+       *  사냥터에 도착해도 "첫 전투" 단계가 시작되지 않던 버그 수정).
+       *  시작은 update 루프 재시도(tutRetryMs)로 수행 — 타이머 이벤트가 챕터 컷신/대사 레이스에서
+       *  조용히 유실되는 케이스의 근본 차단 */
+      this.tutStep = savedTutStep;
+      this.tutRetryMs = 1;
+    } else if (!this.tutorialDone && stageKey === "village" && (savedPlayer?.lv ?? 1) <= 8) {
+      /* tutStep=-1인 저레벨 마을 유저(도입 전 씬 재시작·구세이브) — 마을에서 신규 시작 */
+      this.tutStep = 0;
+      this.tutRetryMs = 1;
+    } else if (!this.tutorialDone && (savedPlayer?.lv ?? 1) <= 8 && stageKey !== "dojang" && !this.isInterior) {
+      /* v1.0.11 오염 구제 — 재개 경로 부재 시절(초기 빌드)에 사냥터에서 필드 기본값 -1이
+       *  세이브에 기록된 저레벨 캐릭터: 처치(2) 단계부터 재개 (사냥터 도입부는 전투 학습이 본질) */
+      this.tutStep = 2;
+      this.tutRetryMs = 1;
+    }
+
+    /* ---------- 오프닝 대사 (인트로 시퀀스 중이면 인트로가 인계 / 실내는 연출 생략) ----------
+     *  v2.3 (지시 #1): 이미 본 대사는 재입장 시 재생하지 않는다 — 이전/다음 맵 왕복마다
+     *  인트로·구역 안내 대사가 반복되던 버그 수정
+     *  v3.0.10 (메이플식 챕터 연출): 챕터 1구역 최초 진입 시 타이틀 카드 컷신 후 인트로 대사 */
+    /* v1.1.0 (#10) — 콘텐츠(탑/파크/게이트/옷장/도장)에선 마을 인트로 대사·튜토리얼을 띄우지 않는다.
+     *  기존엔 stageIntro 폴백(villageIntro — 룬 정령 이그니)이 모든 콘텐츠에서 재생돼
+     *  "컨텐츠마다 NPC UI가 뜨는데 아무 의미 없다"는 지적으로 이어졌다 */
+    const isContentStage = stageKey === "tower" || stageKey === "park" || stageKey === "gate" || stageKey === "closet" || stageKey === "dojang";
+    if (!this.isInterior && !isContentStage) {
+      if (stageKey === "village" && !savedPlayer?.playerName) {
+        // v1.1.0 (#18) — 신규 플레이어: 프롤로그 시네마틱(내레이션 4비트) → 플레이형 인트로(이동 → 우물 → 이름 짓기)
+        this.showPrologue(() => this.startIntroSequence());
+      } else {
+        const spec = chapterSpec(stageKey);
+        const introId = stageIntro(stageKey);
+        if (spec && parseStage(stageKey).sub === 1 && !this.seenSet.has(introId)) {
+          // 챕터 오프닝 컷신 — "제N장" 타이틀 카드 → 챕터 인트로 대사
+          /* v3.3.0 (#흑화) — 챕터 카드 연출도 try/catch (재입장 경로 예외 시 physics 정지 누출 방지) */
+          this.time.delayedCall(350, () => {
+            try {
+              this.showChapterCard(spec.num, spec.title, spec.subtitle, () => this.showDialogueOnce(introId));
+            } catch (e) {
+              console.error("[SERTZ] 챕터 카드 실패 — 대사로 폴백", e);
+              this.dialoguing = false;
+              this.physics.world.resume();
+              this.showDialogueOnce(introId);
+            }
+          });
+        } else {
+          /* v1.1.0 (#18) — 로비 생성 신규 캐릭터(introSeen=false): 프롤로그 시네마틱 → 기존 구역 안내 대사 순서 연결.
+           *  구세이브(introSeen undefined)는 프롤로그 없이 기존 흐름 그대로 */
+          const freshLobby = (savedPlayer as { introSeen?: boolean } | undefined)?.introSeen === false;
+          const runStageIntro = () => {
+            this.time.delayedCall(400, () => {
+              this.showDialogueOnce(introId);
+            });
+          };
+          if (freshLobby && stageKey === "village") this.showPrologue(runStageIntro);
+          else runStageIntro();
+        }
+      }
+    }
+
+    EventBus.emit("ui:playing");
+    this.emitHud();
+    this.emitQuest();
+    this.emitRpgState();
+
+    /* ---------- 멀티플레이 (같은 서버 접속자 동기화 — v1.7 / 실내는 제외) ---------- */
+    if (!this.isInterior) this.initNet();
+
+    // 프롤로그 유예 — 입장 대사 종료 후 몬스터 즉시 공격 방지 (v2.0)
+    this.agroHoldUntil = this.time.now + 2600;
+
+    // F2: 거리 실시간 갱신 (300ms 주기 — 프레임 부담 없음) + 미니맵/RPG 상태/퀘스트 로그
+    this.questTimer = this.time.addEvent({
+      delay: 300,
+      loop: true,
+      callback: () => {
+        this.emitQuest();
+        this.emitSkills();
+        this.emitRpgState();
+        this.emitQuestLog();
+        this.redrawMinimap();
+      },
+    });
+
+    this.events.once("shutdown", () => this.cleanup());
+
+    /* v1.3.1 (#8 게임 멈춤 수정) — 앱 전환 복귀 시 입력·물리 자가치유:
+     *  백그라운드 중 놓친 keyup 고착(자동이동/멈춤), 히트스톱·전환 중 복귀로 물리 정지 잔존을 정리한다.
+     *  프리즈 워치독(PhaserGame)이 렌더 정지는 잡지만, "렌더는 되는데 조작이 죽은" 상태는 여기서 회복 */
+    this.onVisChange = () => {
+      if (document.hidden) return;
+      try { this.resetInputState(); } catch { /* 무시 */ }
+      try { this.touchMove.reset(); } catch { /* 무시 */ }
+      try { this.attackQueued = false; } catch { /* 무시 */ }
+      if (!this.dialoguing && !this.transitioning && this.physics.world.isPaused) {
+        console.warn("[SERTZ] 복귀 — 물리 정지 잔존 감지, 자동 해제");
+        this.physics.world.resume();
+      }
+    };
+    document.addEventListener("visibilitychange", this.onVisChange);
+
+    /* v1.4.2 — 월드 진입 무결성 감사(후행 비동기) 후 상주 감시 설치.
+     *  지연 로드 실패 잔존분(재시도 한도 초과)을 전수 대조해 수복하고,
+     *  이후 복귀/컨텍스트복구/주기 표본 감사로 이미지 회수분을 계속 잡는다.
+     *  씬 재시작마다 재실행되지만 전 정상이면 수 ms — 비용 무시 가능. */
+    void runTexGuardCycle(this, "월드 진입")
+      .catch(() => undefined)
+      .then(() => installWorldTexGuard(this));
+
+    /* v4.1.4 — 침공 보스 이벤트 타이머 (월드 보스 이벤트) */
+    this.startInvasionTimer();
+  }
+
+  private solidGroup!: Phaser.Physics.Arcade.StaticGroup;
+
+  private applyCameraZoom() {
+    // v2.3 — 실내(정사각 방 832×832)는 확대 줌으로 아늑한 한 방 연출 (지시 #6)
+    this.cameras.main.setZoom(this.isInterior ? Math.min(3, viewZoom() * 1.45) : viewZoom());
+    this.redrawMinimap();
+  }
+
+  /* ================= 배치 ================= */
+
+  /* ================= v3.0 — 개미굴 던전 레이아웃 (사용자 지시 #7) ================= */
+
+  /** 닫힌 셀을 챕터 분위기에 맞는 암벽 타일로 채워 벽(충돌)을 만든다 */
+  private buildDungeonWalls(lay: RoomLayout, ch: string) {
+    /* v3.0.23 (#55) — "빈 공간이 이상한 검은 카펫으로 채워짐" 수정:
+     *  구 어두운 벽돌 텍스처를 44~54% 명도로 틴트하면 카펫처럼 보였음.
+     *  → 밝은 석벽 텍스처(wall_rock)로 교체 + 베이스 명도 62~74%로 상향 — 암벽으로 읽힘.
+     *  챕터 구분은 틴트 색으로 (숲=연두빛, 설원=하늘빛 등) */
+    const WALLS: Record<string, number> = {
+      forest: 0x7a9a5a,
+      kingdom: 0xa89878,
+      alfheim: 0x8a7ac8,
+      muspelheim: 0xa85a38,
+      niflheim: 0x8ab8d8,
+      cave: 0x9a7a58,
+      nidavellir: 0xb8a068,
+      hel: 0x8a5aaa,
+      abyss: 0x6a5a9a,
+    };
+    const wallTex = "wall_rock";
+    const wallTint = WALLS[ch] ?? 0xffffff;
+    const rng = new Phaser.Math.RandomDataGenerator([this.stageDef.key + "-walls"]);
+    const openAt = (c: number, r: number) => c >= 0 && r >= 0 && c < lay.cols && r < lay.rows && lay.open[r * lay.cols + c];
+    for (let r = 0; r < lay.rows; r++) {
+      for (let c = 0; c < lay.cols; c++) {
+        const i = r * lay.cols + c;
+        if (lay.open[i]) continue;
+        const x = c * lay.cellW;
+        const y = r * lay.cellH;
+        // 셀마다 살짝 다른 명도 — 암벽 덩어리가 단조로운 격자로 보이지 않게 (v3.0.23: 0.62~0.74 — 밝게)
+        const v = 0.62 + rng.frac() * 0.12;
+        const tint = Phaser.Display.Color.IntegerToColor(wallTint);
+        const scaled = Phaser.Display.Color.GetColor(tint.red * v, tint.green * v, tint.blue * v);
+        const ts = this.add
+          .tileSprite(x, y, lay.cellW + 1, lay.cellH + 1, wallTex)
+          .setOrigin(0)
+          .setDepth(2)
+          .setTint(scaled);
+        this.solidGroup.add(ts);
+        /* v1.0.16 — 벽 통과 버그 하드닝: TileSprite를 그룹에 add할 때 정적 바디가
+         *  오브젝트 크기(텍스처 프레임 크기) 기준으로 잡히는 런타임 차이를 차단 —
+         *  셀 크기와 동일한 바디를 명시 세팅해 몬스터가 벽 셀을 절대 통과하지 않게 한다. */
+        const wbody = ts.body as Phaser.Physics.Arcade.StaticBody | null;
+        if (wbody) {
+          wbody.setSize(lay.cellW + 1, lay.cellH + 1, false);
+          wbody.position.set(x, y);
+          wbody.updateCenter();
+        }
+        // 벽 셀 중 통로에 맞닿은 면에 밝은 림(하이라이트) — 벽 윤곽 강조
+        const rim = Phaser.Display.Color.GetColor(
+          Math.min(255, tint.red * 0.9), Math.min(255, tint.green * 0.9), Math.min(255, tint.blue * 0.9)
+        );
+        const RIM = 3;
+        if (openAt(c, r - 1))
+          this.add.rectangle(x, y, lay.cellW, RIM, rim, 0.34).setOrigin(0).setDepth(3);
+        if (openAt(c, r + 1))
+          this.add.rectangle(x, y + lay.cellH - RIM, lay.cellW, RIM, 0x000000, 0.3).setOrigin(0).setDepth(3);
+        if (openAt(c - 1, r))
+          this.add.rectangle(x, y, RIM, lay.cellH, rim, 0.26).setOrigin(0).setDepth(3);
+        if (openAt(c + 1, r))
+          this.add.rectangle(x + lay.cellW - RIM, y, RIM, lay.cellH, 0x000000, 0.26).setOrigin(0).setDepth(3);
+      }
+    }
+    // 길 쪽 그림자(앰비언트 오클루전) — 벽 옆 통로가 파인 것처럼 보이게
+    const SH = 14;
+    for (let r = 0; r < lay.rows; r++) {
+      for (let c = 0; c < lay.cols; c++) {
+        const i = r * lay.cols + c;
+        if (!lay.open[i]) continue;
+        const x = c * lay.cellW;
+        const y = r * lay.cellH;
+        if (!openAt(c, r - 1))
+          this.add.rectangle(x, y, lay.cellW, SH, 0x000000, 0.22).setOrigin(0).setDepth(2.5);
+        if (!openAt(c, r + 1))
+          this.add.rectangle(x, y + lay.cellH - SH, lay.cellW, SH, 0x000000, 0.16).setOrigin(0).setDepth(2.5);
+        if (!openAt(c - 1, r))
+          this.add.rectangle(x, y, SH, lay.cellH, 0x000000, 0.2).setOrigin(0).setDepth(2.5);
+        if (!openAt(c + 1, r))
+          this.add.rectangle(x + lay.cellW - SH, y, SH, lay.cellH, 0x000000, 0.14).setOrigin(0).setDepth(2.5);
+      }
+    }
+  }
+
+  /** 레이아웃 내 무작위 개방 지점 — 적/오브젝트 스폰 공용 (결정적 rng 주입) */
+  private openPointRng(
+    rng: Phaser.Math.RandomDataGenerator,
+    opts?: { minDist?: number; avoidEntry?: boolean }
+  ): { x: number; y: number } {
+    const lay = this.layout;
+    if (!lay) return { x: rng.between(240, this.stageW - 160), y: rng.between(120, this.stageH - 120) };
+    const idxs: number[] = [];
+    for (let i = 0; i < lay.open.length; i++) {
+      if (!lay.open[i]) continue;
+      if (opts?.avoidEntry && i === lay.entry && lay.open.filter(Boolean).length > 2) continue;
+      idxs.push(i);
+    }
+    if (idxs.length === 0) idxs.push(lay.entry);
+    const minDist = opts?.minDist ?? 0;
+    for (let tries = 0; tries < 24; tries++) {
+      const cell = idxs[rng.between(0, idxs.length - 1)];
+      const c = cellCenterOf(lay, cell);
+      const x = c.x + rng.realInRange(-lay.cellW * 0.26, lay.cellW * 0.26);
+      const y = c.y + rng.realInRange(-lay.cellH * 0.26, lay.cellH * 0.26);
+      if (minDist > 0 && this.player && Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < minDist) continue;
+      return { x, y };
+    }
+    return cellCenterOf(lay, idxs[rng.between(0, idxs.length - 1)]);
+  }
+
+  /** 실행 시점 무작위 개방 지점 (파편 등 — 재결정성 불필요) */
+  private openPointAny(opts?: { minDist?: number }): { x: number; y: number } {
+    return this.openPointRng(new Phaser.Math.RandomDataGenerator([`${Date.now()}-${Phaser.Math.Between(0, 1e9)}`]), opts);
+  }
+
+  /** 지점이 개방 영역인지 — 장식 배치 판정용 */
+  private inOpenArea(x: number, y: number): boolean {
+    return !this.layout || isOpenXY(this.layout, x, y);
+  }
+
+  /** v3.0.14 — 배치 겹침 방지: 지점이 기존 충돌 오브제(나무/바위) 중심에 너무 가까운지 */
+  private nearSolidObstacle(x: number, y: number, minDist: number): boolean {
+    for (const go of this.solidGroup.getChildren()) {
+      if (!go.active || !go.getData("obstacle")) continue;
+      const s = go as Phaser.Physics.Arcade.Sprite;
+      if (Phaser.Math.Distance.Between(x, y, s.x, s.y) < minDist) return true;
+    }
+    return false;
+  }
+
+  private placeDecor(stageKey: StageKey) {
+    const def = this.stageDef;
+    const ch = parseStage(stageKey).ch;
+    const rng = new Phaser.Math.RandomDataGenerator([stageKey + "-decor"]);
+
+    // 마을 건물/우물/주민 영역 보호 — 장식이 집 위에 심기지 않게
+    const vx = def.width / 2;
+    const vy = def.height / 2;
+    const reserved: [number, number][] =
+      STAGES[stageKey]?.isVillage
+        ? [
+            [vx - 400, vy - 170],
+            [vx + 90, vy - 200],
+            [vx - 190, vy + 215],
+            [vx, vy],
+            [vx + 210, vy + 120],
+            [vx - 90, vy - 90],
+            [def.width - 110, vy], // 차원문
+            /* v1.4.3 — 구 유적 자리: 보물상자(리포트 ②) + 초행자 훈련장(작업2)
+             *  표지판·훈련용 늑대 스폰 지점 보호 (나무·바위가 겹쳐 심기는 것 차단) */
+            [vx + 430, vy + 40],
+            [vx + 430, vy + 170],
+            [vx + 580, vy + 90],
+          ]
+        : [];
+    /* v1.3.1 (#2) — 전 구역 공통: 포탈·입장 지점 보호 (필드에서도 차원문/스폰 앞이 나무로 막히던 것 차단) */
+    reserved.push([this.portalHome.x, this.portalHome.y]);
+    reserved.push([this.entryHome.x, this.entryHome.y]);
+    const blocked = (x: number, y: number) => reserved.some(([rx, ry]) => Phaser.Math.Distance.Between(x, y, rx, ry) < 170);
+
+    // 나무 & 소나무 & 바위 (충돌 있음) — 실제 에셋, 챕터 테마 변형 (v2.0: 구역 키 대응)
+    // v3.0 (사용자 지시 #7) — 스바르트알프헤임(동굴) 초록 소나무 제거: 시든 나무·암석으로 교체
+    const treeSet: string[] =
+      ch === "niflheim" ? ["pine_snow"]
+      : ch === "abyss" || ch === "hel" ? ["pine_dark"]
+      : ch === "muspelheim" ? ["pine_dark", "ud_deadtree1", "ud_deadtree2"]
+      : ch === "cave" || ch === "nidavellir" ? ["ud_deadtree1", "ud_deadtree2", "ud_deadtree3", "pine_dark"]
+      : ["tree", "tree", "pine", "kd_plant1", "kd_plant2", "kd_plant3"]; // v1.4.11 — kd_plant 자생나무 3종 합류
+    const rockTex = ch === "niflheim" ? "rock_snow" : ch === "abyss" || ch === "hel" ? "rock_dark" : ch === "muspelheim" || ch === "nidavellir" ? "rock_stone" : "rock";
+
+    /* v2.1 자연 배치 — 군집 중심 산포 (v3.0.15 #18: 군집 반경 축소로 진로 봉쇄 완화) */
+    const clusterN = ch === "village" ? 2 : 3;
+    const clusters: [number, number][] = [];
+    for (let i = 0; i < clusterN; i++)
+      clusters.push([rng.between(200, this.stageW - 200), rng.between(140, this.stageH - 140)]);
+    const natPoint = (): [number, number] => {
+      if (rng.frac() < 0.55) {
+        const [kx, ky] = rng.pick(clusters);
+        return [
+          Phaser.Math.Clamp(kx + (rng.frac() + rng.frac() - 1) * 250, 80, this.stageW - 80),
+          Phaser.Math.Clamp(ky + (rng.frac() + rng.frac() - 1) * 180, 90, this.stageH - 80),
+        ];
+      }
+      return [rng.between(80, this.stageW - 80), rng.between(90, this.stageH - 80)];
+    };
+    /* v3.0.15 (#18) — 오브젝트 수 축소: 진로 방해 완화. 배치수 0.7배 + 간격 48px.
+     *  (v3.0.14에서 1.5배로 늘려 산맥처럼 막히던 문제 되돌림) */
+    const treeN = Math.round(def.treeCount * 0.7);
+    for (let i = 0; i < treeN; i++) {
+      for (let tries = 0; tries < 6; tries++) {
+        const [x, y] = natPoint();
+        if (blocked(x, y)) continue;
+        /* v3.0 — 개미굴 벽 셀에는 심지 않음 */
+        if (!this.inOpenArea(x, y)) continue;
+        if (this.nearSolidObstacle(x, y, 48)) continue;
+        const tex = rng.pick(treeSet);
+        const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
+        this.solidGroup.add(t);
+        /* v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과)
+         *  v3.0.10 후속 — 신규 나무(bbox 2~62, 하단 밀착) 줄기 폭 실측 (중앙 x20~44)
+         *  v3.0.18 — 24x20→16x14: 줄기에 스치기만 해도 멈추는 "걸리는 느낌" 완화
+         *  (중앙 x24~40 / y78~92 — 시각적 줄기보다 살짝 작게, 막힘은 유지)
+         *  v1.4.10 — 128² 고목(ud_deadtree) 분기 신설 (유저 지시 "나무/오브젝트 배치 이상"):
+         *  기존 64px 캔버스용 오프셋(24,78)이 128px 캔버스에선 좌상단 공중에 걸려
+         *  "나무를 뚫고 다닌다"의 원인 → 줄기 하단 중앙 배치 */
+        if (tex.startsWith("ud_deadtree")) {
+          (t.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 22).setOffset(55, 100);
+        } else if (tex.startsWith("kd_plant")) {
+          /* v1.4.11 — kd_plant 자생나무(88~123px 캔버스): 줄기 하단 중앙만 충돌 */
+          const tw2 = t.width, th2 = t.height;
+          (t.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 22).setOffset((tw2 - 18) / 2, th2 - 24);
+        } else {
+          (t.body as Phaser.Physics.Arcade.StaticBody).setSize(16, 14).setOffset(24, 78);
+        }
+        t.setData("obstacle", true);
+        break;
+      }
+    }
+    const rockN = Math.round(def.rockCount * 0.7);
+    for (let i = 0; i < rockN; i++) {
+      for (let tries = 0; tries < 6; tries++) {
+        const [x, y] = natPoint();
+        if (blocked(x, y)) continue;
+        if (!this.inOpenArea(x, y)) continue;
+        if (this.nearSolidObstacle(x, y, 48)) continue;
+        const r = this.add.image(x, y, rockTex).setDepth(Math.floor(y / 10));
+        this.solidGroup.add(r);
+        /* v3.0.10 — 64x64 바위 하단 실측
+         *  v3.0.18 — 44x28→36x20: 바위 모서리 걸림 완화 (x14~50 / y39~59) */
+        (r.body as Phaser.Physics.Arcade.StaticBody).setSize(36, 20).setOffset(14, 39);
+        r.setData("obstacle", true);
+        break;
+      }
+    }
+
+    // F1 핵심: 꽃은 def.flowerCount 송이만 (10 이하)
+    const flowers = ["flower_r", "flower_y", "flower_w"];
+    for (let i = 0; i < def.flowerCount; i++) {
+      const x = rng.between(60, this.stageW - 60);
+      const y = rng.between(60, this.stageH - 60);
+      if (blocked(x, y)) continue;
+      if (!this.inOpenArea(x, y)) continue;
+      this.add.image(x, y, rng.pick(flowers)).setDepth(1).setAlpha(0.95);
+    }
+
+    /* v1.4.11 — 지면 변형 스캐터 (tx_* 전환타일 세트 활성화 — 로드만 되고 배치 0이던 45종).
+     *  v3.0.13 민원(타 세트 색상 사각형 뒤죽박죽)과 달리 같은 세트의 pvar/gvar 변형만
+     *  저밀도(열린 셀의 ~2.5%)·저알파로 깔아 바닥 리듬감만 더한다.
+     *  세트는 스테이지 바닥 텍스처에서 자동 매핑 (gp=잔디 dp=흙 cp=동굴 ap=암석 si=설원). */
+    {
+      const TX_SET_OF: Record<string, string> = {
+        tile_grass: "gp", tile_path: "dp", tile_magma: "dp", tile_magma_path: "dp",
+        tile_cave: "cp", tile_stone: "cp", tile_dark: "ap", tile_hel: "ap", tile_abyss: "ap",
+        tile_snow: "si", tile_ice: "si",
+      };
+      const txSet = TX_SET_OF[STAGE_THEME[stageKey]?.ground ?? "tile_grass"];
+      if (txSet && this.layout) {
+        const gvars = [`tx_${txSet}_pvar`, `tx_${txSet}_gvar1`, `tx_${txSet}_gvar2`];
+        for (let i = 0; i < this.layout.open.length; i++) {
+          if (!this.layout.open[i]) continue;
+          if (rng.frac() > 0.025) continue;
+          const c = cellCenterOf(this.layout, i);
+          this.add.image(c.x, c.y, rng.pick(gvars)).setDepth(0).setAlpha(0.5).setScale(1.02);
+        }
+      }
+    }
+
+    /* v1.4.12 (#14 유저 지시 "사냥터에 상호작용도 안되는 이상한 UI들 없애거나 npc를 배치하고 대사를 만들어") —
+     *  v1.4.11의 ep_*(신전·성배·구조물)·kd_*(태아·덩어리·광산 소품) 배치는
+     *  "만져보고 싶은데 아무 반응 없는 이상한 오브젝트"라는 민원의 근원 — 전면 철거.
+     *  대신 아래 spawnFieldNpc()가 챕터별 정보 NPC(대사 있음)를 세운다 — 장식은
+     *  나무/바위/꽃/바닥 스캐터만 남겨 아트 정합성 유지. */
+    // 마을 횃불 — 이원(cv_torch) 변형: 우물 양옆 (온기 글로우)
+    if (STAGES[stageKey]?.isVillage) {
+      for (const [tx2, ty2] of [[vx - 60, vy - 40], [vx + 60, vy - 40]] as [number, number][]) {
+        this.add.image(tx2, ty2, "cv_torch").setDepth(Math.floor(ty2 / 10) + 1).setScale(1.1);
+        const g2 = this.add.image(tx2, ty2, "glow").setDepth(56).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.0).setAlpha(0.2);
+        this.tweens.add({ targets: g2, alpha: 0.4, scale: 1.3, duration: 760, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      }
+    }
+
+    // 심연 구역(알프헤임) 횃불 — 실제 Kenney 횃불 + 온기 글로우
+    //  v4.1.5 — 글로우 depth 1→56 (암전 오버레이 위로 올려 어둠 속에서도 빛나게)
+    if (ch === "alfheim") {
+      for (let i = 0; i < 6; i++) {
+        const tx = 200 + (i * (this.stageW - 400)) / 5;
+        const ty = i % 2 === 0 ? this.stageH / 2 - 140 : this.stageH / 2 + 140;
+        this.add.image(tx, ty, "torch").setDepth(2);
+        const g = this.add
+          .image(tx, ty, "glow")
+          .setDepth(56)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0xffa040)
+          .setScale(1.1)
+          .setAlpha(0.22);
+        this.tweens.add({ targets: g, alpha: 0.42, scale: 1.35, duration: 650, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      }
+    }
+
+    // 스바르트알프헤임 동굴/광산 — 심연에 물든 수정 광맥 (세계수 파편 텍스처 보라 변형 + 글로우)
+    if (ch === "cave" || ch === "nidavellir") {
+      const rng2 = new Phaser.Math.RandomDataGenerator(["cave-crystal"]);
+      for (let i = 0; i < 7; i++) {
+        const cx2 = rng2.between(140, this.stageW - 140);
+        const cy2 = rng2.between(90, this.stageH - 90);
+        const c = this.add.image(cx2, cy2, "fragment").setDepth(1).setTint(0xc77aff).setScale(rng2.realInRange(0.7, 1.2));
+        const g = this.add
+          .image(cx2, cy2, "glow")
+          .setDepth(56) /* v4.1.5 — 암전 위 렌더 */
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0x9d5aff)
+          .setScale(1.2)
+          .setAlpha(0.18);
+        this.tweens.add({ targets: g, alpha: 0.38, scale: 1.5, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+        void c;
+      }
+    }
+
+    // 심연의 왕좌 — 보라 화염 횃불 (심연의 표식)
+    if (ch === "abyss") {
+      for (let i = 0; i < 5; i++) {
+        const tx = 220 + (i * (this.stageW - 440)) / 4;
+        const ty = i % 2 === 0 ? this.stageH / 2 - 130 : this.stageH / 2 + 130;
+        this.add.image(tx, ty, "torch").setDepth(2).setTint(0xb08aff);
+        const g = this.add
+          .image(tx, ty, "glow")
+          .setDepth(56) /* v4.1.5 — 암전 위 렌더 */
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0x8a5aff)
+          .setScale(1.2)
+          .setAlpha(0.24);
+        this.tweens.add({ targets: g, alpha: 0.45, scale: 1.4, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      }
+    }
+
+    // 무스펠헤임 — 용암 균열(마그마 타일 변형) + 화염 글로우 (v2.0 신규 테마)
+    if (ch === "muspelheim") {
+      const rng3 = new Phaser.Math.RandomDataGenerator(["muspel-embers"]);
+      for (let i = 0; i < 8; i++) {
+        const ex3 = rng3.between(140, this.stageW - 140);
+        const ey3 = rng3.between(90, this.stageH - 90);
+        if (Math.abs(ey3 - this.stageH / 2) < 80) continue;
+        /* v3.0.19 — tile_magma 64→256px 텍스처 전환: 0.5→0.125 스케일 (시각 32px 동일 유지) */
+        this.add.image(ex3, ey3, "tile_magma").setDepth(0).setScale(0.125).setTint(0xffb070);
+        const g = this.add
+          .image(ex3, ey3, "glow")
+          .setDepth(56) /* v4.1.5 — 암전 위 렌더 */
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0xff8a4a)
+          .setScale(1.0)
+          .setAlpha(0.16);
+        this.tweens.add({ targets: g, alpha: 0.34, scale: 1.35, duration: 950, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      }
+    }
+
+    // 헬 — 무덤·고목·해골 (무료 에셋 Undead Pack, CC0 — v1.5 배치1 이관)
+    /* v1.4.10 — 고목(ud_deadtree 128² 캔버스)에 줄기 충돌 부여: 기존엔 충돌 없어
+     *  캐릭터가 나무를 뚫고 다니며 "배치가 이상하다"로 느껴졌다 (줄기 하단 중앙 배치) */
+    if (ch === "hel") {
+      const rng4 = new Phaser.Math.RandomDataGenerator(["hel-graves"]);
+      const graves = ["ud_grave1", "ud_grave2", "ud_grave3"];
+      for (let i = 0; i < 6; i++) {
+        const gx4 = rng4.between(140, this.stageW - 140);
+        const gy4 = rng4.between(90, this.stageH - 90);
+        if (Math.abs(gy4 - this.stageH / 2) < 90) continue;
+        const g4 = this.add.image(gx4, gy4, rng4.pick(graves)).setDepth(Math.floor(gy4 / 10));
+        this.solidGroup.add(g4);
+        (g4.body as Phaser.Physics.Arcade.StaticBody).setSize(26, 30).setOffset(12, 16);
+      }
+      for (let i = 0; i < 4; i++) {
+        const dx4 = rng4.between(140, this.stageW - 140);
+        const dy4 = rng4.between(90, this.stageH - 90);
+        if (Math.abs(dy4 - this.stageH / 2) < 90) continue;
+        const dt = this.add.image(dx4, dy4, rng4.pick(["ud_deadtree1", "ud_deadtree2", "ud_deadtree3"])).setDepth(Math.floor(dy4 / 10));
+        this.solidGroup.add(dt);
+        /* 128² 캔버스 — 줄기 하단 중앙만 충돌 (케노피는 통과) */
+        (dt.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 22).setOffset(55, 100);
+      }
+    }
+
+    /* v1.4.10 — 숲(미드가르드) 유적 나무/소품(fm_tree/fm_prop) 블록 삭제 (유저 지시
+     *  "나무 및 오브젝트들의 배치가 이상하고 에셋이 안어울려" + "유적 없애고 상자만 놔뒀는데 뭐임?"):
+     *  ForgottenMemories 팩은 183~235px 대형 유적풍 소품 — 64px 짤리 나무·바위와
+     *  아트 스타일도 스케일도 어울리지 않고, 충돌 없는 depth 1 배치라 캐릭터 발밑에
+     *  깔리거나 뚫고 다니게 된다. 마을 유적은 v1.4.3~4에서 이미 철거됐고, 유저가
+     *  필드에서 여전히 본 '유적 같은 것'의 잔여분이 이 fm_* 소품 — 전면 제거로 정리.
+     *  숲은 기본 tree/pine/rock 세트로 통일해 아트 정합성 확보 */
+    // 쿠소디아/아뜰란티스 — 육한 식물·바위·뼈 (Cursed Land, CC0 — v1.5 배치1 이관)
+    /* v2.6 수정 — 육식 식물류(cl_jawsplant 등)는 장식이 아니라 '위험 오브젝트'.
+     *  (※ 능대 swampbeast는 몬스터명 — 이 오브젝트와는 별개)
+     *  밟으면 챕터 배율에 비례한 접촉 데미지 + 씹기 연출 (버그: 닿아도 데미지 없음) */
+    if (ch === "kingdom" || ch === "abyss") {
+      const rng6 = new Phaser.Math.RandomDataGenerator(["cursed-plants"]);
+      const hazardPlants = ["cl_jawsplant", "cl_eyeplant", "cl_manyeyes"];
+      /* v1.4.10 — cl_bones(256² 대형, depth 1·충돌 없음) 제외: 발밑에 깔리는 거대 소품이
+       *  "배치가 이상하다"의 원인. 나머지 식물·바위 소품은 128² 이하라 유지 */
+      const passiveProps = ["cl_mflower", "cl_pustules", "cl_rock"];
+      const allProps = [...hazardPlants, ...passiveProps];
+      for (let i = 0; i < 9; i++) {
+        const px6 = rng6.between(120, this.stageW - 120);
+        const py6 = rng6.between(70, this.stageH - 70);
+        if (Math.abs(py6 - this.stageH / 2) < 85) continue;
+        if (blocked(px6, py6)) continue;
+        if (!this.inOpenArea(px6, py6)) continue;
+        const tex6 = rng6.pick(allProps);
+        const p6 = this.add.image(px6, py6, tex6).setDepth(1);
+        if (hazardPlants.includes(tex6)) {
+          // 육식 식물 — 목록 적재만 (오버랩은 플레이어 생성 후 일괄 등록)
+          this.physics.add.existing(p6, true);
+          (p6.body as Phaser.Physics.Arcade.StaticBody).setSize(56, 44); // center=true — 식물 중앙 배치
+          this.plantHazards.push(p6);
+          this.tweens.add({ targets: p6, scaleX: 1.06, scaleY: 0.96, duration: 900 + (i % 4) * 130, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+        }
+      }
+    }
+
+    // 마을 모닥불 (Serene Village, CC-BY) — 광장 남서 고정 + 글로우
+    if (STAGES[stageKey]?.isVillage) {
+      const fx7 = this.stageW / 2 - 250;
+      const fy7 = this.stageH / 2 + 150;
+      const fire = this.add.sprite(fx7, fy7, "sv_campfire").setDepth(Math.floor(fy7 / 10)).play("sv-campfire");
+      this.lighting.addLight(fx7, fy7 - 8, { tint: 0xff9a40, scale: 0.8, alpha: 0.3, flicker: 0.1 }); // v4.1.5 동적 광원
+      this.solidGroup.add(fire);
+      (fire.body as Phaser.Physics.Arcade.StaticBody).setSize(24, 14).setOffset(4, 18);
+      this.add
+        .image(fx7, fy7, "glow")
+        .setDepth(1)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(0xffb060)
+        .setScale(0.9)
+        .setAlpha(0.2);
+    }
+
+    /* v4.3.0 — 암전 챕터 환경 불빛 (유저 지시 "어두운 분위기의 챕터만 맵 어둡게 + 불빛 있게"):
+     *  열린 셀 중심에 정적 횃불 글로우 5개 — 니플헤임은 한파(청색), 그 외 따뜻한 횃불색.
+     *  충돌/파티클 없는 저비용 ADD 글로우+플리커 (이펙트 절제 원칙 유지) */
+    if (ambientFor(parseStage(stageKey).ch)) {
+      const lay1 = this.layout;
+      if (lay1) {
+        const opens: number[] = [];
+        for (let i = 0; i < lay1.open.length; i++) if (lay1.open[i]) opens.push(i);
+        const tint = parseStage(stageKey).ch === "niflheim" ? 0x8ad4ff : 0xffa050;
+        /* v1.1.0 (#8 라이트 절감) — 고정 환경광 5 → 3: "쓸데없이 배치된 불빛이 너무 많다" 지시 반영.
+         *  플레이어 횃불+근접 횃불로 시야 확보가 충분하다 */
+        for (let n = 0; n < 3 && opens.length > 0; n++) {
+          const c = cellCenterOf(lay1, opens[Math.floor(Math.random() * opens.length)]);
+          this.lighting.addLight(c.x, c.y - 6, { tint, scale: 0.7, alpha: 0.26, flicker: 0.09 });
+        }
+      }
+      /* v1.0.12 (#횃불장치) — 근접 점등 횃불 장치: 맵 곳곳에 꺼진 횃불이 서 있고,
+       *  가까이(96px) 가면 5초간 불이 켜졌다가 스러진다 (재접근 재점화). 탐험 재미 + 시야 확보. */
+      const lay2 = this.layout;
+      if (lay2) {
+        const opens2: number[] = [];
+        for (let i = 0; i < lay2.open.length; i++) if (lay2.open[i]) opens2.push(i);
+        const want2 = Math.min(4, opens2.length); // v1.1.0 (#8) — 횃불 장치 8 → 4
+        const step2 = Math.max(1, Math.floor(opens2.length / Math.max(1, want2)));
+        const torchTint2 = parseStage(stageKey).ch === "niflheim" ? 0x8ad4ff : 0xffa050;
+        for (let n = 0; n < opens2.length && this.torches.length < want2; n += step2) {
+          const c = cellCenterOf(lay2, opens2[n]);
+          if (Math.abs(c.y - this.stageH / 2) < 80) continue; // 중앙 통로 회피
+          const prop = this.add.sprite(c.x, c.y, "sv_campfire").setDepth(2).setTint(0x50505e);
+          try { prop.play("sv-campfire"); prop.anims.pause(); } catch { /* 애니 부재 환경 무시 */ }
+          const glow = this.lighting.addLight(c.x, c.y - 6, { tint: torchTint2, scale: 0.95, alpha: 0, flicker: 0 });
+          this.torches.push({ prop, glow, x: c.x, y: c.y, litUntil: 0, cdUntil: 0 });
+        }
+      }
+    }
+
+    /* v1.0.12 (#3D팩 2차 투입 — "내가 준 고급 에셋") — Toon Shaders Pro/Hovl 팩 텍스처로
+     *  날씨 레이어 구축: 니플헤임 계열 = 눈보라(wx_snowflake).
+     *  v1.0.13 — 마을 벚꽃 날림 제거 (유저 지시: "벚꽃 그냥 없애").
+     *  카메라 상단 폭 emitZone — 파티클은 월드 좌표에 떨어져 스크롤과 자연스럽게 어긋난다. */
+    {
+      const chNow = parseStage(stageKey).ch;
+      if (chNow === "niflheim") {
+        this.weatherSnow = this.add.particles(0, 0, "wx_snowflake", {
+          x: { min: -80, max: 1400 },
+          y: 0,
+          lifespan: 11000,
+          speedY: { min: 26, max: 60 },
+          speedX: { min: -26, max: 6 },
+          scale: { min: 0.05, max: 0.14 },
+          alpha: { start: 0.8, end: 0.3 },
+          rotate: { min: 0, max: 360 },
+          quantity: 1,
+          frequency: 130,
+        }).setDepth(54);
+      }
+    }
+  }
+
+  /** v2.6 — 육식 식물(jawsplant류) 접촉 데미지. 피격 처리(무적시간·연출)는 Player.takeDamage 재사용 */
+  private hitPlantHazard(plant: Phaser.GameObjects.Image) {
+    const p = this.player;
+    if (p.state === "dead" || this.time.now < this.plantCd) return;
+    this.plantCd = this.time.now + 700;
+    const dir = new Phaser.Math.Vector2(p.x - plant.x, p.y - plant.y);
+    if (dir.length() < 1) dir.set(1, 0);
+    /* v4.2.0 — 최대체력 10% 고정데미지 (유저 지시): 방어력·챕터 하한 무시 trueDmg */
+    p.takeDamage(Math.round(p.maxHp * DMG_PCT.plant), dir.normalize(), 0, 0, true);
+    this.tweens.add({ targets: plant, angle: { from: -9, to: 9 }, yoyo: true, duration: 70, repeat: 1, onComplete: () => plant.setAngle(0) });
+    plant.setTint(0xff9a8a);
+    this.time.delayedCall(220, () => plant.clearTint());
+  }
+
+  private spawnFragment(x: number, y: number) {
+    /* v3.0.22 (#44) — 챕터별 결정 색상 (결정 본체+글로우+비컨 틴트) */
+    const fmeta = FRAGMENT_META[parseStage(this.stageDef.key).ch];
+    this.fragment = this.physics.add.sprite(x, y, "fragment").setDepth(4);
+    if (fmeta) this.fragment.setTint(fmeta.color);
+    (this.fragment.body as Phaser.Physics.Arcade.Body).setCircle(13, 3, 3);
+
+    // 실제 에셋 수정 위 반짝임 (objects.png 별/다이아 프레임)
+    this.fragSparkle = this.add
+      .sprite(x, y - 14, "sparkle0")
+      .setDepth(5)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .play("sparkle");
+
+    // F2 핵심 1: 하늘까지 닿는 빛 기둥 비컨 — 외부 에셋(Kenney Light Masks CC0)
+    this.beacon = this.add
+      .image(x, y - 128, "beam")
+      .setDepth(3)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setAlpha(0.55);
+    this.tweens.add({
+      targets: this.beacon,
+      alpha: { from: 0.4, to: 0.75 },
+      scaleX: { from: 1, to: 1.25 },
+      duration: 900,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.inOut",
+    });
+    // 바닥 글로우
+    const glow = this.add.image(x, y + 8, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setScale(1.4);
+    this.tweens.add({ targets: glow, scale: 1.7, alpha: 0.7, duration: 800, yoyo: true, repeat: -1 });
+    // 뜨는 모션 + 반짝임 동기화
+    this.tweens.add({ targets: this.fragment, y: y - 8, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    if (this.fragSparkle) {
+      this.tweens.add({ targets: this.fragSparkle, y: y - 22, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+
+    this.physics.add.overlap(this.player, this.fragment, () => {
+      if (!this.fragment || !this.fragment.active) return;
+      this.collectFragment(glow);
+    });
+  }
+
+  private collectFragment(glow: Phaser.GameObjects.Image) {
+    audio.sfx.pickup();
+    /* v1.4.3 (작업4) — 파티 보드: 결정 조사 카운트 (파티 중일 때만)
+     * v1.4.8 — questDone 이중 재생 제거 (pickup 단일 경로) */
+    {
+      const p = net.netLastParty();
+      if (p && p.members.length >= 2) partyContent.partyBoardTick("collect", 1);
+    }
+    /* v3.0.22 (#43/#44) — 챕터별 고유 결정: 이름·색·보너스(ATK 5→30)가 전부 다르다 */
+    const ch = parseStage(this.stageDef.key).ch;
+    const meta = FRAGMENT_META[ch] ?? { name: "결정의 흔적", color: 0x9df0ff, atk: 5, lines: ["결정이 손안에서 빛난다."] };
+    this.player.atk += meta.atk; // 파편 보너스 — 챕터별 상이 (기존 고정 +5)
+    this.player.healFull();
+    glow.destroy();
+    this.tweens.add({ targets: this.beacon, alpha: 0, duration: 400, onComplete: () => this.beacon?.destroy() });
+    this.beacon = null;
+    this.fragSparkle?.destroy();
+    this.fragSparkle = null;
+    const f = this.fragment!;
+    this.tweens.add({
+      targets: f,
+      y: f.y - 60,
+      alpha: 0,
+      scale: 1.6,
+      duration: 500,
+      onComplete: () => f.destroy(),
+    });
+    this.fragment = null;
+    this.spawnBurstAt(f.x, f.y, 14, meta.color);
+    this.spawnPickupText(this.player.x, this.player.y - 80, `「${meta.name}」 획득! ATK +${meta.atk}`, "#9df0ff");
+    /* v3.0.22 (#43) — 수확 멘트 다양화: 챕터 첫 수확은 스토리 대사, 이후엔 3종 랜덤 멘트 */
+    const firstId = `fragment_${ch}`;
+    if (DIALOGUES[firstId] && !this.seenSet.has(firstId)) {
+      this.showDialogueOnce(firstId);
+    } else {
+      const line = meta.lines[Math.floor(Math.random() * meta.lines.length)];
+      this.showDialogueRaw({ speaker: "{name}", lines: [line] });
+    }
+    /* v3.0.22 (#50) — 세계수의 가호: 아홉 챕터의 결정을 모두 수집하면 영구 해방 */
+    this.fragmentsFound[ch] = (this.fragmentsFound[ch] ?? 0) + 1;
+    if (!this.player.worldtreeBlessing && FRAGMENT_CHAPTERS.every((k) => (this.fragmentsFound[k] ?? 0) > 0)) {
+      this.player.setWorldtreeBlessing(true);
+      audio.sfx.levelup();
+      this.spawnBurstAt(this.player.x, this.player.y, 26, 0x7de8ff);
+      this.showBanner("세계수의 가호 해방! — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)");
+      if (!this.queuedDialogue) {
+        this.markSeen("worldtreeBlessing");
+        this.queuedDialogue = "worldtreeBlessing";
+      }
+      this.emitRpgState();
+    }
+    this.advanceQuest();
+    // 전직 스토리 수확 단계 (지시 #13)
+    if (this.jobStory) {
+      const step = this.jobStoryDef()?.steps[this.jobStory.step];
+      if (step?.type === "collect") this.completeJobStoryStep();
+    }
+    // 다음 목표 범용 배치 (파편 연속 수확/토벌/개방 등) — 대사 종료 후 자연스럽게 진행
+    this.afterAdvance();
+    this.save();
+  }
+
+  private spawnPortal(x: number, y: number) {
+    // 외부 에셋 차원문(varkalandar CC-BY, 8프레임 소용돌이) — 비활성 시 회색 틴트
+    this.portal = this.physics.add.sprite(x, y, "portal0").setDepth(3).setTint(0x777777);
+    /* v4.7.0 — Phaser 4 GLSL 소용돌이 오라 (셰이더 기반 3D 느낌 VFX 첫 단계 — 기존 스프라이트/입자 유지,
+     *  실패 시 null로 기존 포탈만 동작) */
+    this.portalSwirl?.destroy();
+    this.portalSwirl = addPortalSwirl(this, x, y, 0xd8f4ff, 0x7e9bff, 0.5);
+    /* v4.1.8 — 차원문 마법 입자: 유료 CFXR 마법 별 (Kenney pk_magic_01 대체) */
+    this.portalMagicA = this.add.particles(x, y - 4, "cfxr_mstar", {
+      lifespan: 900,
+      frequency: 420,
+      quantity: 1,
+      angle: { min: 200, max: 340 },
+      speed: { min: 12, max: 38 },
+      scale: { start: 0.22, end: 0 },
+      alpha: { start: 0.75, end: 0 },
+      tint: 0x8ad8ff,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(57);
+    this.lighting.addLight(x, y, { tint: 0x6ab8ff, scale: 0.75, alpha: 0.2, flicker: 0.05 });
+    (this.portal.body as Phaser.Physics.Arcade.Body).setSize(34, 44).setOffset(15, 10);
+    this.physics.add.overlap(this.player, this.portal, () => {
+      if (!this.portalActive || !this.portal?.active) return;
+      /* v4.3.0 — 자동사냥 중에도 전진 차원문 탑승 허용 (유저 지시 "자동전투 시에도 포탈 탈수있게").
+       *  검은 화면 재발 방지 안전 가드: 주변 260px에 생존 적이 있으면(전투 중 관성 겹침) 무시,
+       *  비어 있을 때만 진입 — 전환은 startTransition 단일 통로(1회 게이트+4초 워치독)로 처리.
+       *  복귀 차원문은 자동 무한 루프 방지를 위해 기존 게이트 유지. */
+      if (this.autoHunt && this.liveEnemiesNear(260)) return;
+      this.enterPortal();
+    });
+  }
+
+  private activatePortal(silent = false) {
+    if (!this.portal) return;
+    this.portalActive = true;
+    this.portal.clearTint();
+    this.portal.play("portal-spin");
+    if (!silent) audio.sfx.portal();
+    /* v4.1.0 — 전진 차원문 위치 라벨 (복귀 차원문 라벨과 동일 규약 — 지시 #14) */
+    this.portalLabel?.destroy();
+    this.portalLabel = this.add
+      .text(this.portal.x, this.portal.y - 46, `→ ${STAGE_SHORT[NEXT_STAGE[this.stageDef.key] as StageKey] ?? "다음 지역"}`, {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "11px",
+        color: "#d8b0ff",
+        stroke: "#0a2030",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(30);
+    // F2: 차원문에도 작은 비컨
+    this.portalBeacon = this.add
+      .image(this.portal.x, this.portal.y - 120, "beam")
+      .setDepth(2)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setAlpha(0.4)
+      .setTint(0x9d7aff);
+    this.tweens.add({
+      targets: this.portalBeacon,
+      alpha: { from: 0.28, to: 0.5 },
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+    });
+    if (!silent) this.showBanner("차원문이 열렸다!");
+  }
+
+  /**
+   * v3.1.0 (#흑화) — 구역 전환 공통 게이트. 유저 지시 "가끔 맵 이동 시 검은 화면":
+   *  포탈/부적/재림 등 여러 경로가 같은 프레임에 restart를 예약하거나 이중 호출되면
+   *  init 데이터가 유실되어 create()가 비정상 종료 → 화면이 검은 채로 멈춘다.
+   *  모든 전환을 단일 헬퍼로 모으고 transitioning 플래그로 1회만 실행되도록 막는다.
+   */
+  private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }, force = false) {
+    if (this.transitioning && !force) return;
+    this.transitioning = true;
+    // ⚠️ 다음 스테이지에 현재 스탯/소지품을 그대로 넘긴다
+    //   (restart에 save를 안 넘기면 기본값 플레이어로 시작 — 골드/레벨/장비 소실 버그)
+    // v3.2.0 (#흑화) — 세이브 직렬화/기록 실패가 씬 전환을 막아 검은 화면·멈춤으로
+    //   이어지던 것을 차단: 예외가 나도 restart는 반드시 진행한다.
+    // v4.1.2 — save 지정 시(실내 전환 등) buildSave를 건너뛰고 그대로 사용
+    let carry: SaveData | null = extra?.save ?? null;
+    if (!carry) {
+      try {
+        carry = this.buildSave(next);
+        if (carry) writeSave(carry);
+      } catch (e) {
+        console.error("[SERTZ] 전환 세이브 실패 — 무시하고 이동", e);
+      }
+    }
+    this.lastCarry = carry ?? undefined;
+    const { save: _save, ...rest } = extra ?? {};
+    this.scene.restart({ stage: next, save: carry ?? undefined, ...rest });
+  }
+
+  /* ================= v4.1.2 — 전환 단일 통로 (흑화·멈춤 근본 수정) =================
+   *  기존엔 fadeOut 후 gotoStage까지의 블랙아웃 창(0.4~1.9초) 동안 transitioning이
+   *  열려 있었다. 그 창에 경합 전환(관성으로 다른 포탈 겹침·이중 탭·UI 중복 클릭)이
+   *  들어오면 scene.restart가 2번 경합 → fadeIn 유실 → 영구 검은 화면·멈춤.
+   *  "이전 맵으로 돌아갈 때" 특히 잦았던 건 수비전 퇴장(1.9초)·균열 퇴장(1.8초)의
+   *  긴 블랙아웃 창이 원인. 이제 즉시 게이트를 닫고 포탈 오버랩을 전부 끊는다. */
+  private startTransition(
+    target: StageKey,
+    opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }
+  ) {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    this.portalActive = false;
+    this.returnActive = false;
+    /* v4.9.0 — 전환 시작 시 카메라 필터(보스 블룸/비네트)를 먼저 해체.
+     *  필터가 켜진 카메라는 프레임버퍼 경로로 렌더링되는데, 약한 모바일 GPU에서
+     *  fadeOut(전체 화면 검정 쿼드)과 겹치면 GM 보스 이동·긴급귀환 직후 검은 화면이
+     *  남는 사례가 보고됐다. 필터는 새 구역에서 재적용되므로 미리 제거해도 무해. */
+    this.clearBossPostFX();
+    /* v1.0.12 — 긴급귀환 검은화면 수정: v1.0.10부터 카메라에 상시 부착된 앰비언트 블룸이
+     *  fadeOut과 겹치면 v4.9.0 때 보고됐던 "필터+페이드 = 검은 화면 잔존" 패턴이 재현된다.
+     *  보스 블룸만 해체하던 기존 복구 경로에 앰비언트 해체를 추가 — 새 구역 create가 재부착한다. */
+    if (this.ambientFilters.length > 0) detachAmbientBloom(this.cameras.main, this.ambientFilters);
+    this.fadeDarkMs = 0;
+    if (this.player) {
+      this.player.setVelocity(0, 0); // 관성 드리프트로 다른 포탈에 겹치는 것 차단
+      this.player.state = "idle";
+    }
+    this.cameras.main.fadeOut(500, 0, 0, 0);
+    this.time.delayedCall(opts?.delay ?? 520, () => this.gotoStage(target, opts, true));
+    /* 4초 하드 워치독 — restart가 유실된 채 전환 플래그만 남은 경우 최후 복구.
+     *  같은 키 씬은 인스턴스 재사용이라 this.scene/cameras 접근이 유효하다. */
+    window.setTimeout(() => {
+      try {
+        if (!this.scene.isActive()) {
+          this.scene.restart({ stage: target, save: this.lastCarry, ...(opts?.entry ? { entry: opts.entry } : {}) });
+        } else if (this.transitioning) {
+          this.transitioning = false;
+          /* v4.1.2 — 완료된 fadeOut이 검게 남은 채 씬이 머문 경우 postFX 강제 복구.
+           *  create의 fadeIn이 아직 실행 중이면(isRunning) 건드리지 않는다. */
+          const cam = this.cameras?.main as unknown as
+            | { fadeEffect?: { isRunning: boolean }; resetFX?(): void }
+            | undefined;
+          if (cam?.fadeEffect && !cam.fadeEffect.isRunning) {
+            try { cam.resetFX?.(); } catch { /* 미지원 환경 무시 */ }
+          }
+        }
+      } catch { /* 실패 시 update() 자가치유가 알파를 회복한다 */ }
+    }, 4000);
+  }
+
+  /** v1.4.12 (#13) — 복귀 차원문 자동 게이트 폐지로 안내 배너 불필요 (메서드 제거) */
+
+  /** v4.3.0 — 반경 r 내 생존 적 존재 여부 (자동 포탈 진입 안전 가드) */
+  private liveEnemiesNear(r: number): boolean {
+    if (!this.player) return true;
+    for (const e of this.enemies) {
+      if (e.active && e.alive && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < r) return true;
+    }
+    return false;
+  }
+
+  /** v1.4.12 (#12 보스전 자동전투 금지) — 현재 보스전 진행 중 여부 (스토리/재림/GM 체험 공통) */
+  private bossFightActive(): boolean {
+    return !!(this.boss && this.boss.active && this.boss.alive);
+  }
+
+  private enterPortal() {
+    this.portalActive = false;
+    /* v1.4.3 (작업4) — 파티 보드: 원정 이동 카운트 (파티 중일 때만) */
+    {
+      const p = net.netLastParty();
+      if (p && p.members.length >= 2) partyContent.partyBoardTick("portal", 1);
+    }
+    this.tut?.notify("portal"); // v1.0.11 — 튜토리얼 차원문 학습 판정
+    audio.sfx.portal();
+    this.player.setVelocity(0, 0);
+    this.player.state = "idle";
+    /* v3.0.28 (#이동퀘스트) — 이동형(reach) 퀘스트 완료 판정 누락 수정:
+     *  포탈을 타고 구역을 떠날 때 현재 퀘스트가 reach면 완료(advance) 처리 후 이동.
+     *  기존엔 완료 처리 없이 씬만 전환해 세이브의 questIdx가 reach에 그대로 남아
+     *  "숲의 신전으로"/"다음 해역으로"가 이동해도 영영 미완료로 유지됐다.
+     *  (다음 퀘스트 배치는 새 구역 진입 복구 로직이 처리하므로 afterAdvance는 생략) */
+    if (this.currentQuest()?.type === "reach") this.advanceQuest();
+    // 구역 체인 — 마을 → forest1..10 → kingdom1..10 → … → abyss10 순차 진행
+    const next: StageKey | null = NEXT_STAGE[this.stageDef.key];
+    if (!next) {
+      /* v4.1.0 — 이벤트 구역(무릉도장/바르가/균열)의 전진 포탈은 막힌 문.
+       *  fadeOut만 하고 전환을 예약하지 않으면 영구 검은 화면이 된다 (유저 지시 #2).
+       *  v4.1.2 — fadeOut을 startTransition으로 옮겼으므로 여기선 어둡지도 않았다:
+       *  안내만 하고 포탈을 다시 활성화한다. */
+      this.portalActive = true;
+      this.showBanner("이 앞은 막혀 있다 — 돌아가는 차원문을 타자");
+      return;
+    }
+    /* v1.4.0 (Task 1-1 — 유저 지시 #7 길라잡이) — 챕터 입장 레벨 게이트:
+     *  다음 구역이 새 챕터(구역 1)이고 입장 레벨 미달이면 진입 차단.
+     *  "Lv.{n} 이상부터 {지역명} 입장 가능" — 챕터 클리어 후에도 레벨을 채우며
+     *  사냥·보스·반복 콘텐츠를 계속하게 만드는 진행 구조. */
+    const ns = parseStage(next);
+    if (ns.sub === 1 && ns.ch !== "village") {
+      const spec = chapterSpec(next);
+      const need = spec?.lvGate.enter ?? 0;
+      if (need > 0 && this.player.lv < need && this.adminRole !== "admin") {
+        this.portalActive = true; // 차단 — 다시 밟을 수 있게
+        audio.sfx.deny();
+        this.showBanner(`Lv.${need} 이상부터 ${spec?.title ?? "다음 지역"} 입장 가능 — 지금은 Lv.${this.player.lv} (사냥터에서 레벨을 채우자!)`);
+        return;
+      }
+    }
+    /* v3.0.25 (#다음퀘스트 자동추적) — 다음 구역으로 진행하면 추적도 자동으로 따라간다
+     *  (기존은 이전 구역 추적이 유지돼 화살표가 뒤를 가리켰다) */
+    if (this.trackedStage === this.stageDef.key) {
+      this.trackedStage = next;
+      this.emitQuestLog();
+    }
+    this.startTransition(next, { delay: 520 });
+  }
+
+  /* ================= 복귀 차원문 (v2.0 — 메이플식 자유 왕복, 지시 #8) ================= */
+
+  /** 이전 구역으로 돌아가는 청록 차원문 — 스폰 지점 왼쪽에 항상 활성 */
+  private spawnReturnPortal() {
+    const prev = PREV_STAGE[this.stageDef.key];
+    if (!prev || !this.player) return;
+    /* v3.0 (#7) — 필드는 입구 셀 중심에 복귀 차원문 (마을은 기존 좌측 가장자리) */
+    const rx = this.layout ? this.entryHome.x - 80 : 110;
+    const ry = this.layout ? this.entryHome.y : this.stageH * 0.52;
+    this.returnPortal = this.physics.add.sprite(rx, ry, "portal0").setDepth(3).setTint(0x54c8ff).setScale(0.92);
+    /* v4.1.5 — 복귀 차원문 마법 입자 + 광원 */
+    this.portalMagicB = this.add.particles(rx, ry - 4, "cfxr_mstar", {
+      lifespan: 900,
+      frequency: 420,
+      quantity: 1,
+      angle: { min: 200, max: 340 },
+      speed: { min: 12, max: 38 },
+      scale: { start: 0.2, end: 0 },
+      alpha: { start: 0.7, end: 0 },
+      tint: 0x54c8ff,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(57);
+    this.lighting.addLight(rx, ry, { tint: 0x54c8ff, scale: 0.7, alpha: 0.2, flicker: 0.05 });
+    (this.returnPortal.body as Phaser.Physics.Arcade.Body).setSize(30, 40).setOffset(17, 12);
+    this.returnPortal.play("portal-spin");
+    this.physics.add.overlap(this.player, this.returnPortal, () => {
+      if (!this.returnActive || !this.returnPortal?.active) return;
+      /* v1.4.12 (#13 유저 지시 "자동전투 중에도 포탈 전부 탈수있게") — 복귀 차원문
+       *  자동 게이트 폐지. 기존엔 자동 무한 루프(자동→복귀→자동…) 방지를 위해 막았지만
+       *  유저가 의도적으로 돌아가려는 경우가 더 많다 — 이제 자동사냥 중에도 자유 이용.
+       *  (전진 차원문은 v4.3.0부터 이미 허용 — 이제 전·복귀 모두 자동 탑승 가능) */
+      this.enterPrevStage();
+    });
+    // 청록 비컨 — 전진 포탈(보라)과 시각 구분
+    this.returnBeacon = this.add
+      .image(rx, ry - 120, "beam")
+      .setDepth(2)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setAlpha(0.32)
+      .setTint(0x54c8ff);
+    this.tweens.add({
+      targets: this.returnBeacon,
+      alpha: { from: 0.22, to: 0.42 },
+      duration: 850,
+      yoyo: true,
+      repeat: -1,
+    });
+    this.add
+      .text(rx, ry - 46, `← ${STAGE_SHORT[prev] ?? "이전 지역"}`, {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "11px",
+        color: "#a8ecff",
+        stroke: "#0a2030",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(30);
+    this.returnActive = true;
+  }
+
+  /** 복귀 차원문 진입 — 이전 구역으로 (스탯/진행 캐리는 전진과 동일 경로) */
+  private enterPrevStage() {
+    if (!this.returnActive) return;
+    /* v3.3.0 (지시 #6) — 무릉도장 복귀: 들어오기 전 구역으로 (기록 없으면 마을)
+     * v4.1.0 — 바르가/균열도 입장 전 구역으로 복귀 (village 폴백 고정이던 것 수정) */
+    const key = this.stageDef.key;
+    const prev: StageKey | null =
+      key === "dojang" ? (STAGES[this.dojangFrom] ? this.dojangFrom : "village")
+      : key === "gate" ? (STAGES[this.gateFrom] ? this.gateFrom : "village")
+      : key === "closet" ? (STAGES[this.closetFrom] ? this.closetFrom : "village")
+      : key === "tower" ? (STAGES[this.towerFrom] ? this.towerFrom : "village")
+      : key === "praid" ? (STAGES[this.praidFrom] ? this.praidFrom : "village") // v1.4.3 — 공동 토벌전
+      : key === "park" ? (STAGES[this.parkFrom] ? this.parkFrom : "village") // v1.0.18 — 파크
+      : PREV_STAGE[key];
+    if (!prev) return;
+    /* v3.3.0 — 무릉도장 중간 퇴장 시 기록 확정 */
+    if (this.dojangActive) this.finishDojang(true);
+    /* v4.0.0 — 게이트 중간 퇴장 시 보상 정산 후 복귀 (gotoStage는 finishGate가 처리) */
+    if (this.gateActive) { this.returnActive = false; this.finishGate("exit"); return; }
+    /* v4.0.0 — 균열 던전 조기 퇴장 — 지금까지 획득한 골드 기준 정산 */
+    if (this.closetActive) { this.returnActive = false; this.finishCloset(); return; }
+    /* v1.0.8 — 탑 조기 퇴장 — 기록 확정 후 복귀 */
+    if (this.towerActive) { this.exitTower(); this.showBanner(`탑 탈출 — 최고 기록 ${this.inf.towerBest}층`); }
+    /* v1.0.18 — 파크 조기 퇴장 — 정산 후 복귀 */
+    if (this.parkActive) { this.returnActive = false; this.exitPark(); return; }
+    this.returnActive = false;
+    audio.sfx.portal();
+    this.startTransition(prev, { delay: 520 });
+  }
+
+  /* ================= 시작 마을 (인간들의 마을) ================= */
+
+
+  /* ================= v1.4.12 (#3) — 초행자 훈련장 철거 =================
+   *  유저 지시로 훈련장(훈련용 늑대 사냥터) 제거. buildTrainingGround/spawnTrainingWolf/
+   *  trainSpawns 리스폰 판정 전부 삭제 — 마을 레벨업 루트는 NPC 3명 대화(Lv3) 단일화.
+   *  (구 훈련장 퀘스트 v1도 스테이지 정의에서 제거 — v0 인사 → v2 숲 이동 2단 체인) */
+
+  /** v1.4.3 (작업4) — 파티 보드 순찰 시간 누적기 (1분마다 +1) */
+  private partyTimeAcc = 0;
+
+  /** v1.4.3 (작업3 최적화) — 프레임 시간 실측 창 (1초 롤링) */
+  private perfWindow = { startedAt: 0, frames: 0, sumMs: 0, worstMs: 0, avgMs: 16.7, avgWorstMs: 16.7 };
+
+  /** v1.4.3 (작업3 최적화) — 포탈 가이드 갱신 스로틀 타임스탬프 */
+  private portalGuideMs = 0;
+
+  /* v1.4.3 (유저 리포트 ①②) — 요새 유적 구조물 완전 철거, 보물상자만 잔존.
+   *  · ① "맵에 보이지 않는 히트박스" — 지지대 충돌 zone(기둥 하단, 시각 경계와 어긋난 은닉 히트박스)이
+   *    원인. 발코니/기둥/계단/목책을 전부 철거하면 히트박스도 원천 소멸.
+   *  · ② "보물상자 계단 및 유적 없애 (보물 상자만 남겨)" — 유적 구조물(발코니·계단·목책·횃불·안내판) 제거,
+   *    하루 1회 보상 지급 상자(keepchest)만 지상에 남긴다. 상자는 충돌 없음(히트박스 신규 발생 0).
+   *  v1.4.4 — 유실됐던 초행자 훈련장을 남쪽 이웃으로 복구(buildTrainingGround 참조). */
+  private buildVillageChest(kx: number, ky: number) {
+    /* 상자 개봉 애니 (map_chest_f 64px 프레임) — 기존 유적 상자 연출 재사용 */
+    if (!this.anims.exists("keep_chest_open")) {
+      this.anims.create({ key: "keep_chest_open", frames: this.anims.generateFrameNumbers("map_chest_f", { start: 0, end: 6 }), frameRate: 8, repeat: 0 });
+    }
+    const chestX = kx;
+    const chestY = ky;
+    const chest = this.add.sprite(chestX, chestY, "map_chest_f", 0).setOrigin(0.5, 1).setScale(0.9).setDepth(Math.floor(chestY / 10));
+    this.keepChestSprite = chest;
+    this.keepChestKey = `sertz.keep.chest.${todayKey()}`;
+    this.interactables.push({ x: chestX, y: chestY, kind: "keepchest", label: "보물 상자 — 열기 (하루 1회)" });
+
+    /* 안내 표지판 — 유적 철거 후 상자 정체성 유지용 */
+    this.add
+      .text(kx, chestY - 46, "보물 상자 (하루 1회)", {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "11px",
+        color: "#b6f09c",
+        stroke: "#0c1a08",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(Math.floor(chestY / 10));
+  }
+
+  /** 유적 상자 — 하루 1회 보상 (골드 + 확률 에메랄드) */
+  private openKeepChest() {
+    if (!this.player) return;
+    try {
+      const opened = window.localStorage.getItem(this.keepChestKey);
+      if (opened) {
+        EventBus.emit("banner:show", { text: "오늘은 이미 상자를 열었다 — 내일 다시 도전!" });
+        return;
+      }
+      window.localStorage.setItem(this.keepChestKey, "1");
+    } catch { /* 저장 불가 환경 — 보상은 지급 */ }
+    const gold = 60 + this.player.lv * 6;
+    this.player.addGold(gold);
+    let msg = `유적 상자 개봉! 골드 +${gold}G`;
+    /* v1.4.0 (Task 1-5) — 르쯔 수급 축소: 상자 에메랄드 확률 35%→15% */
+    if (Math.random() < 0.15) {
+      this.player.emerald += 1;
+      msg += " · 에메랄드 +1💎";
+    }
+    this.spawnPickupText(this.player.x, this.player.y - 40, "유적 상자!", "#ffd76a");
+    EventBus.emit("banner:show", { text: msg });
+    audio.sfx.chest();
+    this.driveFx?.twinkle(this.player.x, this.player.y - 20, 0xffd76a);
+    /* 상자 개봉 프레임 애니 (몇 프레임 진행 후 원위치) */
+    if (this.keepChestSprite) {
+      try {
+        this.keepChestSprite.play("keep_chest_open");
+        this.keepChestSprite.once("animationcomplete", () => this.keepChestSprite?.setTexture("map_chest_f", 0));
+      } catch { /* 애니 미등록 무시 */ }
+    }
+    this.save();
+    this.emitHud();
+    this.emitRpgState();
+  }
+
+  private buildVillage() {
+    const cx = this.stageW / 2;
+    const cy = this.stageH / 2;
+
+    /* v1.4.3 (작업1/리포트 ②) — 구 유적 자리: 보물상자(상자만 잔존 — 유저 리포트 ②)는
+     *  원래 자리에 둔다.
+     * v1.4.12 (#3 유저 지시 "시작 사냥터 없애 (단, npc 3명에게 말걸면 3레벨이 찍히도록 해)") —
+     *  초행자 훈련장(훈련용 늑대 사냥터) 전면 철거. 마을에서의 레벨업은
+     *  NPC 3명 대화 보상(v0 퀘스트 → Lv3)으로 대체한다 — 사냥 없이도 첫 사냥터(1-1)
+     *  진입 게이트를 통과하는 매끄러운 시작 흐름. */
+    this.buildVillageChest(cx + 430, cy + 40);
+
+    // 광장 우물 (중앙 랜드마크, 충돌 있음) — 접근 시 샘물 회복
+    const well = this.add.image(cx, cy, "well").setDepth(Math.floor(cy / 10));
+    this.solidGroup.add(well);
+    (well.body as Phaser.Physics.Arcade.StaticBody).setSize(68, 38).setOffset(14, 57); // v3.0.10 — 분수 72x72 하단 실측
+    this.wellPos = new Phaser.Math.Vector2(cx, cy);
+    this.add
+      .text(cx, cy - 44, "샘물 우물", {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "11px",
+        color: "#bfe8ff",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(Math.floor(cy / 10));
+
+    /* v1.4.7 (유저 지시 — 오류나는 페이지 철거) — 이상한 비석 완전 제거:
+     *  비석 → /secret/ 웹페이지 개방이 APK WebView에서 게임 언로드→재부팅 루프의
+     *  근원 트리거였다(v1.4.3~1.4.5 리포트). v1.4.5는 차단(예산)만 했으나 유저 지시로
+     *  오브제 자체를 철거한다. ARG 힌트는 외부 공식 지원센터 웹페이지로 이원화. */
+
+    // 건물 3채 (실제 Zelda-like 타일셋 건물, 충돌은 벽 하단만) — v2.0: 전부 기능 있음 (지시 #12)
+    // v3.0 (#4) — 챕터 마을은 챕터 분위기색 틴트 + 마을 간판
+    const chKey = parseStage(this.stageDef.key).ch;
+    const vSpec = chKey !== "village" ? CHAPTER_VILLAGE_NPC[chKey] : undefined;
+    const chSpec = chapterSpec(this.stageDef.key);
+    const houses: { x: number; y: number; tex: string; flip?: boolean }[] = [
+      { x: cx - 400, y: cy - 170, tex: "house_a" },
+      { x: cx + 90, y: cy - 200, tex: "house_b" },
+      { x: cx - 190, y: cy + 215, tex: "house_a", flip: true },
+    ];
+    for (const h of houses) {
+      const img = this.add.image(h.x, h.y, h.tex).setDepth(Math.floor(h.y / 10));
+      if (vSpec) img.setTint(vSpec.houseTint);
+      if (h.flip) img.setFlipX(true);
+      this.solidGroup.add(img);
+      const bw = h.tex === "house_a" ? 110 : 100;
+      (img.body as Phaser.Physics.Arcade.StaticBody)
+        .setSize(bw, 56)
+        .setOffset((img.width - bw) / 2, img.height - 66);
+    }
+    // v3.0 (#4) — 챕터 마을 간판 (마을 이름을 알려준다)
+    if (chSpec && vSpec) {
+      this.addBuildingSign(cx, cy - 320, `${chSpec.title} 마을`, vSpec.signColor);
+    }
+    // 건물 간판 + 기능 상호작용 — 여관(회복+저장), 내 집(무료 휴식), 전직관(카이엔 앞)
+    this.addBuildingSign(cx - 400, cy - 236, "여관 — 20G 회복+버프", "#7de8ff"); // v1.0.2 밸런스 분리
+    this.addBuildingSign(cx + 90, cy - 266, "전직관", "#ffd76a");
+    this.addBuildingSign(cx - 190, cy + 149, "내 집 — 무료 회복", "#9af0c8"); // v1.0.2 밸런스 분리
+    this.interactables.push({ x: cx - 400, y: cy - 140, kind: "inn", label: "여관 — 들어가기" });
+    this.interactables.push({ x: cx - 190, y: cy + 289, kind: "house", label: "내 집 — 들어가기" });
+
+    // 마을 주민 2인 — E키 상호작용 (접근 자동 트리거 제거, 바운스 애니 + 이름표 유지)
+    // v3.0 (#4) — 챕터마다 이름/대사가 다른 주민 배치 (본마을은 기존 주민)
+    const villagers: { x: number; y: number; tex: string; name: string; dlg: string }[] = vSpec
+      ? [
+          { x: cx + 210, y: cy + 120, tex: vSpec.npcA.tex, name: vSpec.npcA.name, dlg: vSpec.npcA.dlg },
+          { x: cx - 90, y: cy - 90, tex: vSpec.npcB.tex, name: vSpec.npcB.name, dlg: vSpec.npcB.dlg },
+        ]
+      : [
+          { x: cx + 210, y: cy + 120, tex: "spum_villager_m", name: "주민", dlg: "villager1" },
+          { x: cx - 90, y: cy - 90, tex: "spum_villager_f", name: "마을 아이", dlg: "villager2" },
+        ];
+    for (const v of villagers) {
+      /* v4.1.8 — 유료 SPUM 캐릭터(96px 캔버스) 배율 보정: 32px 무료 NPC × 1.6과 동일 화면 크기 */
+      const img = this.add.image(v.x, v.y, v.tex).setDepth(Math.floor(v.y / 10)).setScale(0.62);
+      this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      this.add
+        .text(v.x, v.y - 34, v.name, {
+          fontFamily: "Galmuri11, sans-serif",
+          fontSize: "11px",
+          color: "#ffe9b0",
+          stroke: "#000000",
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5)
+        .setDepth(Math.floor(v.y / 10));
+      this.interactables.push({ x: v.x, y: v.y, kind: "talk", dlg: v.dlg, npcId: v.dlg, label: `${v.name}와 대화` });
+    }
+
+    // 직업 교관 카이엔 (v1.9 — 전직 NPC, E키 상담 후 전직 패널 열림) — 전직관 건물 앞 배치
+    const jx = cx + 90;
+    const jy = cy - 120;
+    const jglow = this.add.image(jx, jy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.8).setAlpha(0.22);
+    this.tweens.add({ targets: jglow, alpha: 0.4, scale: 1.05, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    /* v4.1.8 — 카이엔: 유료 SPUM 기사 캐릭터 (무료 villager 금색 틴트 대체 — 갑옷 자체가 황금색) */
+    this.jobNpc = this.add.image(jx, jy, "spum_knight").setDepth(Math.floor(jy / 10)).setScale(0.66);
+    this.tweens.add({ targets: this.jobNpc, y: jy - 3, duration: 1000, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.add
+      .text(jx, jy - 38, "직업 교관 카이엔", {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "12px",
+        color: "#ffd76a",
+        stroke: "#1a1020",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(21);
+    this.interactables.push({ x: jx, y: jy, kind: "job", npcId: "jobmaster", label: "카이엔 교관 — 전직 상담" });
+
+    /* v3.0.3 (사용자 지시 #2) — GM NPC: 자유전직/골드/레벨 지원
+     *  v1.0.2 (#GM서버검증) — GM은 NPC가 아닌 관리자 도구로 분리.
+     *  · 마을 NPC는 관리자 계정(서버 롤) 확인 전까지 렌더 숨김 → 일반 유저에게는 존재하지 않음
+     *  · 인터랙션 시 authMe()로 서버 롤 재확인 — 클라 플래그(isGM=true)만으론 절대 열리지 않음 */
+    const gx = jx + 70;
+    const gy = jy + 6;
+    const gglow = this.add.image(gx, gy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe9a0).setScale(0.75).setAlpha(0.3).setVisible(false);
+    this.tweens.add({ targets: gglow, alpha: 0.5, scale: 0.95, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    const gmNpc = this.add.image(gx, gy, "npc_gm").setDepth(Math.floor(gy / 10)).setScale(1.15).setVisible(false);
+    this.tweens.add({ targets: gmNpc, y: gy - 3, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    const gmLbl1 = this.add
+      .text(gx, gy - 46, "GM", {
+        fontFamily: "Galmuri11, sans-serif", fontSize: "12px", color: "#ffd76a",
+        stroke: "#1a1020", strokeThickness: 4, fontStyle: "bold",
+      })
+      .setOrigin(0.5).setDepth(21).setVisible(false);
+    const gmLbl2 = this.add
+      .text(gx, gy - 34, "운영자 지원", {
+        fontFamily: "Galmuri11, sans-serif", fontSize: "10px", color: "#ffe9b0",
+        stroke: "#000000", strokeThickness: 3,
+      })
+      .setOrigin(0.5).setDepth(21).setVisible(false);
+    this.gmNpcVisuals = [gglow, gmNpc, gmLbl1, gmLbl2];
+    this.interactables.push({ x: gx, y: gy, kind: "gm", npcId: "gm", label: "GM — 자유전직·골드·레벨·5차전직·무릉도장" });
+  }
+
+  /** 건물 간판 — 목재 패널 스타일 텍스트 */
+  private addBuildingSign(x: number, y: number, label: string, color: string) {
+    const pad = 5;
+    const t = this.add
+      .text(x, y, label, {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "11px",
+        color,
+        stroke: "#0a1020",
+        strokeThickness: 3,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(30);
+    const w = t.width + pad * 2;
+    const h = t.height + pad * 1.4;
+    const bg = this.add
+      .rectangle(x, y, w, h, 0x14202e, 0.82)
+      .setStrokeStyle(1, 0x3a4a5e, 0.9)
+      .setDepth(29);
+    t.setDepth(30);
+    void bg;
+  }
+
+  /* ================= 이펙트 풀 (F4) ================= */
+
+  private buildFxPools() {
+    // ⚠️ 씬 재시작(스테이지 전환) 시 풀이 누적되지 않도록 리셋
+    //   (파괴된 텍스트 재사용 → setText 크래시 원인)
+    for (const d of this.dmgPool) d.destroy();
+    this.dmgPool = [];
+    for (const s of this.slashPool) s.destroy();
+    this.slashPool = [];
+    for (const s of this.starPool) s.destroy();
+    this.starPool = [];
+    for (const s of this.hitFxPool) s.destroy();
+    this.hitFxPool = [];
+
+    /* v4.1.8 — 유료 CFXR 임팩트 텍스처로 교체 (기존 16px 무료 spark → 128px 카툰 임팩트)
+     *  스케일 보정: 128px 텍스처 × 0.22/0.30 ≈ 기존 16px × 1.0/1.4 시각 크기의 ~1.8배 쥬스 업 */
+    this.hitEmitter = this.add.particles(0, 0, "cfxr_impact", {
+      lifespan: 240,
+      speed: { min: 60, max: 170 },
+      scale: { start: 0.18, end: 0 },
+      emitting: false,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(30);
+    this.burstEmitter = this.add.particles(0, 0, "cfxr_impact", {
+      lifespan: 420,
+      speed: { min: 90, max: 260 },
+      scale: { start: 0.24, end: 0 },
+      emitting: false,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(30);
+
+    /* v4.1.5 — 신규 이미터 3종: star: 레벨업 황금 별 폭발 / smoke: 몬스터 사망 연기 / magic: 승리·수집 반짝임
+     *  v4.1.8 — Kenney 무료 텍스처 → Unity 에셋스토어 유료 CFXR (별/연기/마법 별) — 설정 무변경 드롭인 */
+    this.starEmitter = this.add.particles(0, 0, "cfxr_star", {
+      lifespan: { min: 520, max: 900 },
+      speed: { min: 60, max: 220 },
+      scale: { start: 0.38, end: 0 },
+      rotate: { min: 0, max: 360 },
+      alpha: { start: 0.95, end: 0 },
+      emitting: false,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(31);
+    /* v4.1.9 — 사망 연기 재조정: 구름 4장 시트(512px) 통째 렌더 → 단일 패프(240px) 소형화
+     *  scale 0.3→0.85 (최대 435px 화면 덮음) → 0.12→0.3 (29~72px, 은은한 품질 연기) */
+    this.smokeEmitter = this.add.particles(0, 0, "cfxr_puff", {
+      lifespan: { min: 550, max: 850 },
+      speed: { min: 10, max: 38 },
+      scale: { start: 0.12, end: 0.3 },
+      alpha: { start: 0.42, end: 0 },
+      angle: { min: 220, max: 320 },
+      emitting: false,
+    }).setDepth(31);
+    this.magicEmitter = this.add.particles(0, 0, "cfxr_mstar", {
+      lifespan: 800,
+      speed: { min: 30, max: 120 },
+      scale: { start: 0.3, end: 0 },
+      alpha: { start: 0.9, end: 0 },
+      emitting: false,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(31);
+    /* v4.1.7 — 유료 팩 불꽃놀이 네온 별 2색 (파랑/노랑) — 중력 낙하 곡선으로
+     *  진짜 불꽃놀이 궤적. 레벨업 스폰레벨업FX에서 폭발 */
+    this.fwEmitterB = this.add.particles(0, 0, "pfx_fw_b", {
+      lifespan: { min: 700, max: 1150 },
+      speed: { min: 120, max: 300 },
+      gravityY: 240,
+      scale: { start: 0.34, end: 0 },
+      alpha: { start: 1, end: 0 },
+      rotate: { min: 0, max: 360 },
+      emitting: false,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(31);
+    this.fwEmitterY = this.add.particles(0, 0, "pfx_fw_y", {
+      lifespan: { min: 700, max: 1150 },
+      speed: { min: 120, max: 300 },
+      gravityY: 240,
+      scale: { start: 0.34, end: 0 },
+      alpha: { start: 1, end: 0 },
+      rotate: { min: 0, max: 360 },
+      emitting: false,
+      blendMode: Phaser.BlendModes.ADD,
+    }).setDepth(31);
+
+    // 데미지 텍스트 12장 고정 풀
+    for (let i = 0; i < 12; i++) {
+      const t = this.add
+        .text(0, 0, "", {
+          fontFamily: "Galmuri11, sans-serif",
+          fontSize: "22px",
+          color: "#ffffff",
+          stroke: "#1a1020",
+          strokeThickness: 4,
+          fontStyle: "bold",
+        })
+        .setDepth(56) /* v4.1.5 — 어둠 오버레이 위(가독성) + Galmuri 픽셀 숫자 */
+        .setActive(false)
+        .setVisible(false);
+      this.dmgPool.push(t);
+    }
+
+    // 참격(초승달 애니) 스프라이트 5장 고정 풀 — 외부 에셋(Cethiel CC0)
+    for (let i = 0; i < 5; i++) {
+      const s = this.add
+        .sprite(0, 0, "slash0")
+        .setDepth(25)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setActive(false)
+        .setVisible(false);
+      this.slashPool.push(s);
+    }
+
+    // 타격 스타 4장 고정 풀 (실제 에셋: objects.png 폭발 프레임)
+    for (let i = 0; i < 4; i++) {
+      const s = this.add
+        .image(0, 0, "impact_star")
+        .setDepth(29)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setActive(false)
+        .setVisible(false);
+      this.starPool.push(s);
+    }
+
+    /* v3.0.8 디자인 개편 — Warped 히트 플립북 6장 고정 풀 */
+    for (let i = 0; i < 6; i++) {
+      const s = this.add
+        .sprite(0, 0, "vfx2_hit1")
+        .setDepth(24)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setActive(false)
+        .setVisible(false);
+      this.hitFxPool.push(s);
+    }
+  }
+
+  /** v3.0.15 (#16) — color/prefix 지원: 원소 약점 시 원소색 + "약점" 접두 표시
+   *  v3.3.0 (지시 #9) — 크리티컬 펀치 스케일 + 큰 글씨 (타격감 강화) */
+  spawnDamageText(x: number, y: number, val: number, crit = false, color?: string, prefix?: string) {
+    const t = this.dmgPool.find((d) => d.scene && !d.active);
+    if (!t) return; // 풀 소진 시 조용히 포기 (프레임 보호)
+    // 크리티컬: 금색 큰 글씨 + 느낌표 (타격감 강조) · 약점: 원소색
+    // v1.0.7 — 크리티컬 가시성 확보: 스케일 1.75→1.42 · 지속 740→600ms (유저 지시)
+    // v1.4.0 (규칙 1-1) — 표시 수치는 전역 포맷터로 소수 둘째 자리 반올림
+    const c = color ?? (crit ? "#ffd76a" : "#ffffff");
+    const label = `${prefix ? prefix + " " : ""}${fmt(val)}${crit ? "!" : ""}`;
+    t.setText(label).setColor(c);
+    t.setPosition(x, y)
+      .setActive(true)
+      .setVisible(true)
+      .setAlpha(1)
+      .setScale(crit ? 1.42 : 1.08);
+    this.tweens.add({
+      targets: t,
+      y: y - (crit ? 46 : 36),
+      alpha: 0,
+      scale: crit ? 1.0 : 0.92, // 펀치 스케일 — 튀어오르다 살짝 수축
+      duration: crit ? 600 : 560,
+      ease: "Quad.out",
+      onComplete: () => t.setActive(false).setVisible(false),
+    });
+  }
+
+  /* ================= v1.2.0 (#10 타격감) — 히트스톱 =================
+   *  맞은 순간 물리를 수십 ms 정지해 "얻어맞은 느낌"을 극대화 (애니메이션/파티클은 유지).
+   *  일반 26ms · 크리티컬 55ms · 격파 70ms — 연타 스택 방지(최대 1회 연장) */
+  private hitStopUntil = 0;
+
+  hitStop(ms = 26) {
+    const now = this.time.now;
+    if (now < this.hitStopUntil) {
+      this.hitStopUntil = Math.min(this.hitStopUntil + 12, now + 90); // 연타 시 누적 상한 90ms
+      return;
+    }
+    this.hitStopUntil = now + ms;
+    const world = this.physics.world;
+    if (world.isPaused) return;
+    world.pause();
+    this.time.delayedCall(ms, () => {
+      if (this.scene.isActive() && this.physics.world === world) world.resume();
+    });
+  }
+
+  spawnHitSpark(x: number, y: number) {
+    /* v3.3.0 (지시 #9) — 타격 스파크 5→9개로 증량 (화면이 더 밝게 터진다)
+     *  v1.0.7 — 가림 축소: 9→6개 (유저 지시 — 타격감은 히트스톱+사운드가 담당) */
+    this.hitEmitter.setParticleTint(0xfff0a0);
+    this.hitEmitter.explode(6, x, y);
+
+    /* v1.4.11 — pk_spark 타격 스파크 팝 (Particle Kit 활성화 — 히트 이미터 위 미세 점화) */
+    this.driveFx?.sparkPop(x, y - 4);
+
+    /* v3.0.8 디자인 개편 — Warped Hits 플립북 오버레이 (3종 랜덤, ADD 블렌드) */
+    const fx = this.hitFxPool.find((s) => s.scene && !s.active);
+    if (fx) {
+      const anim = Phaser.Utils.Array.GetRandom(["fx2-hit1", "fx2-hit3", "fx2-hit5"]);
+      fx.setPosition(x, y - 4)
+        .setScale(0.48) // v1.0.7 — 0.55→0.48 가림 축소
+        .setActive(true)
+        .setVisible(true)
+        .setAlpha(0.8) // v1.0.7 — 0.95→0.8
+        .play(anim);
+      fx.once("animationcomplete", () => fx.setActive(false).setVisible(false));
+    }
+
+    // v2.2 타격감 — 충격 링 (shock_ring 확산)
+    // v1.0.7 — 알파 0.85→0.55 · 확산 0.85→0.7 (유저 지시: 이펙트 가림 축소)
+    // v1.4.8 (#1 최적화) — 모든 근접/투사체 히트마다 image 생성/파괴 → 8장 링 버퍼 풀로 재사용
+    let ring = this.shockRingPool[this.shockRingIdx];
+    if (!ring || !ring.scene) {
+      ring = this.add.image(x, y, "shock_ring");
+      this.shockRingPool[this.shockRingIdx] = ring;
+    }
+    this.shockRingIdx = (this.shockRingIdx + 1) % 8;
+    this.tweens.killTweensOf(ring);
+    ring.setTexture("shock_ring")
+      .setPosition(x, y)
+      .setDepth(19)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setScale(0.3)
+      .setAlpha(0.55)
+      .setTint(0xfff2c0)
+      .setActive(true)
+      .setVisible(true);
+    this.tweens.add({
+      targets: ring,
+      scale: 0.7,
+      alpha: 0,
+      duration: 150,
+      ease: "Cubic.out",
+    });
+
+    // 실제 에셋 타격 스타 팝 (풀 재사용 — F4 규칙 준수)
+    const s = this.starPool[this.starIdx];
+    this.starIdx = (this.starIdx + 1) % this.starPool.length;
+    if (s && s.scene) {
+      s.setPosition(x, y - 8)
+        .setRotation(Phaser.Math.FloatBetween(0, Math.PI))
+        .setActive(true)
+        .setVisible(true)
+        .setAlpha(1)
+        .setScale(0.32);
+      this.tweens.add({
+        targets: s,
+        scale: 0.68,
+        alpha: 0,
+        duration: 140,
+        ease: "Quad.out",
+        onComplete: () => s.setActive(false).setVisible(false),
+      });
+    }
+  }
+
+  /* ================= v4.1.0 — 적응형 품질 (유저 지시 #12 최적화) =================
+   *  평균 프레임이 2.5초 간격으로 42 미만이면 FX 양을 자동 축소, 56+ 유지 시 복원.
+   *  격발/파티클 과다 환경(저사양 폰·다수 원격)에서 프레임을 지킨다. */
+
+  /* v4.9.0 — fxLevel을 public으로 (Player 돌진 잔상 게이트에서 직접 조회) */
+  fxLevel: 0 | 1 = 1;
+  private fxSampleAt = 0;
+  private fxLowStreak = 0;
+  private fxHighStreak = 0;
+  /* v1.0.8 — 그래픽 효과 모드 (유저 지시 "쉐이더 어디감??" 대응):
+   *  auto=적응형(기존 동작) / high=항상 켜짐(셰이더 강제 — 적응형 축소 비활성) / low=절전.
+   *  설정 패널 → localStorage sertz_fx_mode → EventBus "fx:mode"로 실시간 전환 */
+  /* v1.3.1 (#9 최적화) — 모바일 기기는 절전 모드 기본 시작 (유저가 설정에서 항상 높음 가능):
+   *  셰이더 블룸/툰 필터가 모바일 GPU 최대 부하원 — 적응형(auto)은 저하까지 수 초 걸려
+   *  "최적화 ㅈ됐어" 체감의 주범. 판정 로직은 모듈 상수로 분리해 부팅 노출(E2E)에도 쓴다. */
+  static readonly DEFAULT_FX_MODE: "auto" | "high" | "low" = (() => {
+    try {
+      const m = window.localStorage.getItem("sertz_fx_mode");
+      if (m === "high" || m === "low") return m;
+    } catch { /* 저장소 부재 무시 */ }
+    try {
+      const ua = navigator.userAgent || "";
+      const touch = (navigator.maxTouchPoints ?? 0) > 1;
+      const smallSide = Math.min(window.screen?.width ?? 9999, window.screen?.height ?? 9999);
+      const mobile = /Android|iPhone|iPad|Mobile/i.test(ua) || (touch && smallSide < 820);
+      return mobile ? "low" : "auto";
+    } catch { return "auto"; }
+  })();
+
+  fxMode: "auto" | "high" | "low" = WorldScene.DEFAULT_FX_MODE;
+
+  get fxScale() {
+    return this.fxLevel === 0 ? 0.45 : 1;
+  }
+
+  /* v1.0.10 — 앰비언트 블룸 필터 (평시 서브틀 블룸 — 보스 블룸과 상호 배타) */
+  private ambientFilters: unknown[] = [];
+
+  /* v1.0.8 — 그래픽 효과 모드 실제 적용: toon 림라이트 + 보스 블룸 부착(level 1) / 해제(level 0)
+   *  v1.0.10 — 앰비언트 블룸 추가: 보스전 부재 시에도 평시 블룸 유지 (“쉐이더가 보스전에만” 버그) */
+  /* v1.2.1 (#4 최적화 x3) — 절전 모드(fxLevel 0)에선 화면 쉐이크를 건너뛴다.
+   *  히트/피격 21곳에서 호출되는 카메라 쉐이크는 저사양 기기에서 렌더 버스트를 유발한다. */
+  doShake(duration: number, intensity: number) {
+    if (this.fxLevel === 0) return;
+    this.cameras.main.shake(duration, intensity);
+  }
+
+  private applyFxMode(level: 0 | 1) {
+    try {
+      if (level === 0) {
+        if (this.bossFilters.length > 0) this.clearBossPostFX();
+        if (this.ambientFilters.length > 0) detachAmbientBloom(this.cameras.main, this.ambientFilters);
+        if (this.playerToon && this.player) {
+          clearToonStyle(this.player as unknown as Parameters<typeof clearToonStyle>[0]);
+          this.playerToon = null;
+        }
+        /* v1.2.1 (#4 최적화 x3) — 절전 모드: 지속 파티클(코스튬 스파클 트레일)도 정지.
+         *  셰이더 다음으로 모바일 GPU를 잡아먹는 게 상시 방출 이미터다. */
+        try { this.cosmeticEmitter?.stop(); } catch { /* 무시 */ }
+      } else {
+        if (this.player && !this.playerToon && this.game.renderer.type === Phaser.WEBGL) {
+          this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
+            rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
+          });
+        }
+        if (this.boss?.active && this.bossFilters.length === 0) this.applyBossPostFX(this.bossChaos);
+        else if (this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL) {
+          this.ambientFilters = addAmbientBloom(this.cameras.main);
+        }
+        try { this.cosmeticEmitter?.start(); } catch { /* 무시 */ }
+      }
+    } catch { /* 필터 미지원 환경 무시 */ }
+    console.info("[SERTZ] 그래픽 효과 모드 적용:", level === 1 ? "높음(셰이더 ON)" : "절전(셰이더 OFF)");
+  }
+
+  private tickFxQuality(dt: number) {
+    /* v1.2.1 (#4 최적화 x3) — 설정 패널 성능 카드용 실시간 노출 (FPS/모드/레벨)
+     * v1.4.3 (작업3 최적화) — 프레임 시간 실측(1초 창 최악/평균) + 개체수 노출:
+     *  E2E 성능 회귀 가드가 이 값을 읽어 병목을 수치로 검증한다.
+     * v1.4.8 (#1 최적화) — 프레임 시간 누산(원시값 연산)은 매 프레임 유지하되,
+     *  __SERTZ_PERF__ 객체 재할당(매 프레임 새 객체 → GC 부담)만 500ms 스로틀 */
+    const perfWin = this.perfWindow;
+    perfWin.frames++;
+    perfWin.sumMs += dt;
+    if (dt > perfWin.worstMs) perfWin.worstMs = dt;
+    if (this.time.now - perfWin.startedAt >= 1000) {
+      perfWin.avgMs = perfWin.sumMs / Math.max(1, perfWin.frames);
+      perfWin.avgWorstMs = perfWin.worstMs;
+      perfWin.frames = 0;
+      perfWin.sumMs = 0;
+      perfWin.worstMs = 0;
+      perfWin.startedAt = this.time.now;
+    }
+    if (performance.now() - (this.perfSnapshotAt ?? 0) >= 500) {
+      this.perfSnapshotAt = performance.now();
+      (window as unknown as {
+        __SERTZ_PERF__?: {
+          fps: number; fxLevel: number; mode: string; lowFx: boolean;
+          avgMs: number; worstMs: number; enemies: number; remotes: number;
+        };
+      }).__SERTZ_PERF__ = {
+        fps: Math.round(this.game.loop.actualFps),
+        fxLevel: this.fxLevel,
+        mode: this.fxMode,
+        lowFx: this.fxLevel === 0,
+        avgMs: Math.round(perfWin.avgMs * 100) / 100,
+        worstMs: Math.round(perfWin.avgWorstMs * 100) / 100,
+        enemies: this.enemies.filter((e) => e.active && e.alive).length,
+        remotes: this.remotes.size,
+      };
+    }
+    /* v1.0.8 — 모드 강제: high는 항상 복원, low는 항상 축소 (적응형 판정 생략) */
+    if (this.fxMode === "high") {
+      this.fxSampleAt = 0;
+      if (this.fxLevel === 0) this.applyFxMode(this.fxLevel = 1);
+      return;
+    }
+    if (this.fxMode === "low") {
+      this.fxSampleAt = 0;
+      if (this.fxLevel === 1) this.applyFxMode(this.fxLevel = 0);
+      return;
+    }
+    this.fxSampleAt += dt;
+    if (this.fxSampleAt < 2500) return;
+    this.fxSampleAt = 0;
+    const fps = this.game.loop.actualFps;
+    if (fps < 42) {
+      this.fxLowStreak++;
+      this.fxHighStreak = 0;
+      if (this.fxLowStreak >= 2 && this.fxLevel === 1) {
+        this.fxLevel = 0;
+        console.info("[SERTZ] 적응형 품질 — FX 축소 모드", Math.round(fps));
+        /* v1.0.8 — 축소 진입 공지: "쉐이더 어디감?" 방지 — 이유와 해제 경로를 안내 */
+        try {
+          EventBus.emit("banner:show", { text: "프레임 안정화 — 셰이더·이펙트 축소 (설정 → 그래픽 효과: 항상 높음)" });
+        } catch { /* 배너 실패 무시 */ }
+        /* v4.9.0 — 축소 모드 진입: 보스 블룸 즉시 해제 (프레임버퍼 다중 패스 = 모바일 최대 부하원) */
+        if (this.bossFilters.length > 0) this.clearBossPostFX();
+        /* v1.0.10 — 앰비언트 블룸도 축소 (백그라운드 패스 절약 — 모바일 GPU 보호) */
+        if (this.ambientFilters.length > 0) detachAmbientBloom(this.cameras.main, this.ambientFilters);
+        /* v1.0.2 (#툰셰이더) — 저사양 모드에선 플레이어/보스 툰 필터도 해제 */
+        if (this.playerToon) {
+          clearToonStyle(this.player as unknown as Parameters<typeof clearToonStyle>[0]);
+          this.playerToon = null;
+        }
+      }
+    } else {
+      this.fxLowStreak = 0;
+      if (fps > 56) {
+        this.fxHighStreak++;
+        /* v1.0.8 — 복원 대기 6회(15s) → 3회(7.5s): 셰이더 복귀 단축 */
+        if (this.fxHighStreak >= 3 && this.fxLevel === 0) {
+          this.fxLevel = 1;
+          this.fxHighStreak = 0;
+          console.info("[SERTZ] 적응형 품질 — FX 복원");
+          /* v4.9.0 — 복원: 보스전이면 블룸 재적용, 평시면 앰비언트 블룸 복원 (v1.0.10) */
+          if (this.boss?.active && this.bossFilters.length === 0) this.applyBossPostFX(this.bossChaos);
+          else if (this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL) {
+            this.ambientFilters = addAmbientBloom(this.cameras.main);
+          }
+          /* v1.0.2 (#툰셰이더) — 복원 시 플레이어 툰 림라이트 재부착 */
+          if (this.player && !this.playerToon) {
+            this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
+              rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
+            });
+          }
+        }
+      } else {
+        this.fxHighStreak = 0;
+      }
+    }
+  }
+
+  /* ================= v4.1.0 — 포탈 위치 가이드 (유저 지시 #14) =================
+   *  복귀 차원문이 화면 밖에 있으면 가장자리에 방향 화살표를 띄운다.
+   *  전진 차원문은 기존 퀘스트 어시스트 화살표(questTargetPos)가 이미 담당한다. */
+
+  private retGuide!: Phaser.GameObjects.Text;
+
+  private createPortalGuides() {
+    const style = {
+      fontFamily: "Galmuri11, sans-serif",
+      fontSize: "18px",
+      fontStyle: "bold",
+      stroke: "#0a2030",
+      strokeThickness: 4,
+    } as const;
+    this.retGuide = this.add.text(0, 0, "◀", { ...style, color: "#8ae0ff" }).setOrigin(0.5).setDepth(95).setScrollFactor(0).setVisible(false);
+  }
+
+  private updatePortalGuides() {
+    /* v1.4.3 (작업3 최적화) — 150ms 스로틀: 화살표 이동은 프레임당 갱신 없이도 부드럽다.
+    *  매 프레임 배열 할당+삼각함수 2회를 1/9 빈도로 절감 — 시각 동일. */
+    if (this.time.now - this.portalGuideMs < 150) return;
+    this.portalGuideMs = this.time.now;
+    const cam = this.cameras.main;
+    const view = cam.worldView;
+    const pairs: [Phaser.GameObjects.Sprite | null, Phaser.GameObjects.Text][] = [
+      [this.returnPortal && this.returnActive ? this.returnPortal : null, this.retGuide],
+    ];
+    const zoom = cam.zoom || 1;
+    const vw = cam.width;
+    const vh = cam.height;
+    for (const [t, g] of pairs) {
+      if (!g) continue;
+      if (!t || !t.active) {
+        if (g.visible) g.setVisible(false);
+        continue;
+      }
+      if (view.contains(t.x, t.y)) {
+        if (g.visible) g.setVisible(false);
+        continue;
+      }
+      const ang = Math.atan2(t.y - view.centerY, t.x - view.centerX);
+      /* 화면 가장자리(여백 8%) 지점 — sf0 + 줌 보정 좌표 */
+      const ex = vw / 2 + Math.cos(ang) * (vw * 0.44);
+      const ey = vh / 2 + Math.sin(ang) * (vh * 0.42);
+      g.setPosition((ex - vw / 2) / zoom + vw / 2, (ey - vh / 2) / zoom + vh / 2);
+      const deg = Phaser.Math.RadToDeg(ang);
+      const ch = deg > -45 && deg <= 45 ? "▶" : deg > 45 && deg <= 135 ? "▼" : deg > 135 || deg <= -135 ? "◀" : "▲";
+      if (g.text !== ch) g.setText(ch);
+      g.setVisible(true);
+    }
+  }
+
+  spawnBurstAt(x: number, y: number, n: number, tint: number) {
+    /* v4.1.0 — 적응형 품질: FX 축소 모드에선 파티클 수를 줄인다
+     *  v1.4.3 — 풀 빌드 전 호출 방어 (create 초반 보스 스폰 경로 등 — null 크래시 차단) */
+    if (!this.burstEmitter) return;
+    const count = Math.max(3, Math.round(n * this.fxScale));
+    this.burstEmitter.setParticleTint(tint);
+    this.burstEmitter.explode(count, x, y);
+  }
+
+  spawnDeathBurst(x: number, y: number) {
+    /* v4.2.0 — 절제: 10→6 파편·연기 4→3 (유저 지시: 적 처치는 잦은 호출이라 과하지 않게) */
+    this.spawnBurstAt(x, y, 6, 0xff9a8a);
+    /* v4.1.9 — 사망 연기 퍼프 (단일 패프 소형화 — 화면 덮는 대형 연기 수정) */
+    this.smokeEmitter?.setParticleTint(0xd8d0e8);
+    this.smokeEmitter?.explode(3, x, y - 6);
+  }
+
+  spawnSlamBurst(x: number, y: number) {
+    this.spawnBurstAt(x, y, 16, 0xffb090);
+    /* v1.4.11 — Drive 팩 보강: MG 충격파 링 + Toon 먼지 (강타/낙뢰 착지 임팩트 2중화) */
+    this.driveFx?.shockHeavy(x, y, 0xffc9a0, 1.3);
+    this.driveFx?.dustPuff(x, y, 1.1);
+  }
+
+  spawnEnrageBurst(x: number, y: number) {
+    this.spawnBurstAt(x, y, 22, 0xff7080);
+  }
+
+  spawnLevelUpFx(x: number, y: number) {
+    const ring = this.add.image(x, y, "shock_ring").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(0x86d9ff).setScale(0.2);
+    this.tweens.add({
+      targets: ring,
+      scale: 1.3,
+      alpha: 0,
+      duration: 500,
+      onComplete: () => ring.destroy(),
+    });
+    /* v4.1.5 — 레벨업 황금 별 폭발 + 마법 반짝임 (Kenney star/magic) */
+    this.starEmitter?.setParticleTint(0xffe66a);
+    this.starEmitter?.explode(16, x, y - 8);
+    this.magicEmitter?.setParticleTint(0xfff0b0);
+    this.magicEmitter?.explode(8, x, y - 10);
+    /* v1.4.11 — pk_star 별 파편 산개 (Particle Kit 활성화) */
+    this.driveFx?.starBurst(x, y - 10);
+    /* v4.1.7 — 유료 팩(FireworksEffect2D) 네온 별 불꽃놀이 2색 동시 폭발
+     *  + 중앙 백색 스타 플래시 (CFR star) */
+    this.fwEmitterB?.explode(14, x, y - 10);
+    this.fwEmitterY?.explode(14, x, y - 10);
+    const star = this.add.image(x, y - 14, "pfx_star").setDepth(32).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0);
+    this.tweens.add({ targets: star, scale: 1.5, alpha: 1, duration: 180, yoyo: true, hold: 90, onComplete: () => star.destroy() });
+    /* v1.3.0 (#에셋통합) — Drive 팩 네온 도형 불꽃놀이(하트/별/달/미소) 추가 폭발 + 원소 축하음 */
+    this.driveFx?.fireworks(x, y - 12);
+    audio.sfx.aoeBurst("heal");
+  }
+
+  /** v4.1.7 — 보스 등장 룬 마법진 + 오라 광선 플래시
+   *  유니티 에셋스토어 유료 (Cartoon FX Remaster — cfxr aura runic/rays)
+   *  일반 보스는 황금룬, 카오스는 붉은룬. 지면 마법진 회전 확대 → 페이드아웃 */
+  spawnBossRunic(x: number, y: number, chaos: boolean) {
+    const tint = chaos ? 0xff5a4a : 0xffd76a;
+    const runic = this.add.image(x, y + 14, "pfx_runic").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.1).setAlpha(0);
+    this.tweens.add({ targets: runic, alpha: 0.9, scale: 1.6, duration: 620, ease: "Cubic.out" });
+    this.tweens.add({ targets: runic, angle: 120, duration: 2300 });
+    this.tweens.add({ targets: runic, alpha: 0, delay: 1500, duration: 800, onComplete: () => runic.destroy() });
+    const aura = this.add.image(x, y - 20, "pfx_aura").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.2).setAlpha(0);
+    this.tweens.add({ targets: aura, alpha: 0.75, scale: 1.35, duration: 420, yoyo: true, hold: 120, onComplete: () => aura.destroy() });
+    this.tweens.add({ targets: aura, angle: 45, duration: 1100 });
+    /* v4.9.0 — 보스 등장 연출 강화 (유저 지시 #2 "룬 마법진 위 셰이더 링"):
+     *  유저 제공 VFX 팩(Hovl Studio Magic effects)의 MagicCircle2를 깔고,
+     *  그 위에 충격파 링 셰이더(ShockwaveFX) 2연격 + 빛 기둥 + 마법 별 파편.
+     *  지형 아래 깔리는 마법진( depth 1 ) + 링은 엔티티 위( depth 39 ) — 입체감 구성 */
+    if (this.textures.exists("rune_circle")) {
+      const circle = this.add.image(x, y + 14, "rune_circle")
+        .setDepth(1)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(chaos ? 0xff6a5a : 0xb07dff)
+        .setScale(0.12)
+        .setAlpha(0);
+      this.tweens.add({ targets: circle, alpha: 0.85, scale: 2.35, duration: 560, ease: "Cubic.out" });
+      this.tweens.add({ targets: circle, angle: chaos ? -190 : 155, duration: 2400 });
+      this.tweens.add({ targets: circle, alpha: 0, delay: 1600, duration: 900, onComplete: () => circle.destroy() });
+      // 빛 기둥 — 마법진에서 솟아오르는 기둥 (보스 등장의 수직 성대)
+      if (this.textures.exists("beam")) {
+        const pillar = this.add.image(x, y - 60, "beam")
+          .setDepth(24)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(chaos ? 0xff8870 : 0x9df0ff)
+          .setScale(0.7, 0.4)
+          .setAlpha(0);
+        this.tweens.add({ targets: pillar, alpha: 0.55, scaleY: 1.5, duration: 300, ease: "Cubic.out" });
+        this.tweens.add({ targets: pillar, alpha: 0, delay: 420, duration: 500, onComplete: () => pillar.destroy() });
+      }
+      // 셰이더 링 2연격 — 마법진 가장자리에서 파동 확산 (지연 스태거)
+      this.spawnShockwave(x, y + 14, chaos ? 0xff5a4a : 0xb07dff, 2.2, 400, 0.6); // v1.0.7 — 2.6/480/0.9 → 축소
+      this.time.delayedCall(190, () => this.spawnShockwave(x, y + 14, tint, 1.8, 360, 0.5));
+      // 마법 별 파편 — 마법진 위로 솟구치는 스파클
+      this.burstEmitter?.setParticleTint(chaos ? 0xff7a5a : 0xc9a6ff);
+      this.burstEmitter?.explode(14, x, y);
+    }
+  }
+
+  spawnCrack(x: number, y: number) {
+    // 외부 에셋 스코치(그을음) 마크 — 보스 강타 지면 표시
+    const c = this.add.image(x, y + 20, "scorch").setDepth(1).setAlpha(0.75).setTint(0x8a7a66).setScale(1.4);
+    this.tweens.add({ targets: c, alpha: 0, delay: 3500, duration: 800, onComplete: () => c.destroy() });
+  }
+
+  /* ================= 2D MMORPG 기본 요소 (골드/물약/장비/상점/미니맵) ================= */
+
+  /** 상점 NPC — 스폰 근처 대기 (스테이지 공통) */
+  private spawnMerchant() {
+    /* v3.0 (#7) — 필드는 입구 셀 안에 상인 배치 (개미굴 벽에 묻히지 않게) */
+    const mx = this.layout ? this.entryHome.x - 120 : 340;
+    const my = this.layout ? this.entryHome.y - 40 : this.stageH / 2 - 60;
+    const glow = this.add.image(mx, my + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.9).setAlpha(0.25);
+    this.tweens.add({ targets: glow, alpha: 0.42, scale: 1.15, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.merchant = this.add.image(mx, my, "npc_merchant").setDepth(Math.floor(my / 10)).setScale(1.7);
+    this.tweens.add({ targets: this.merchant, y: my - 3, duration: 1200, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.merchantLabel = this.add
+      .text(mx, my - 36, "상인 라고스", {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "13px",
+        color: "#ffd76a",
+        stroke: "#1a1020",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(21);
+    // 상점도 E키 상호작용 대상 (F키 병행)
+    this.interactables.push({ x: mx, y: my, kind: "shop", label: "라고스 상점" });
+  }
+
+  /** v1.4.12 (#14 유저 지시 "사냥터에 상호작용도 안되는 이상한 UI들 없애거나 npc를 배치하고 대사를 만들어") —
+   *  사냥터 정보 NPC: 챕터별 정찰병/생존자가 필드 입구 근처에서 챕터 공략 힌트를 준다.
+   *  이상한 소품(ep_·kd_ 계열) 철거의 대안 — 이제 필드의 모든 사람 그림은 말을 건다. */
+  private spawnFieldNpc(stageKey: StageKey) {
+    const ch = parseStage(stageKey).ch;
+    const SPEC: Record<string, { tex: string; name: string; dlg: string }> = {
+      forest: { tex: "spum_villager_m", name: "숲의 사냥꾼", dlg: "fieldNpc_forest" },
+      kingdom: { tex: "spum_villager_f", name: "능지 생존자", dlg: "fieldNpc_kingdom" },
+      cave: { tex: "spum_villager_m", name: "광산 노동자", dlg: "fieldNpc_cave" },
+      niflheim: { tex: "spum_villager_f", name: "설원 수렵꾼", dlg: "fieldNpc_niflheim" },
+      muspelheim: { tex: "spum_villager_m", name: "화산 광부", dlg: "fieldNpc_muspelheim" },
+      alfheim: { tex: "spum_villager_f", name: "요정 정찰병", dlg: "fieldNpc_alfheim" },
+      nidavellir: { tex: "spum_villager_m", name: "대장장이 견습", dlg: "fieldNpc_nidavellir" },
+      hel: { tex: "spum_villager_f", name: "묘지 관리인", dlg: "fieldNpc_hel" },
+      abyss: { tex: "spum_villager_m", name: "심연 생존자", dlg: "fieldNpc_abyss" },
+    };
+    const s = SPEC[ch];
+    if (!s) return; // 재림/특수 구역은 제외
+    /* 위치: 입구 근처 열린 지점 (포탈·스폰 보호 170px 안이면 재추첨) */
+    let px = this.entryHome.x + 96;
+    let py = this.entryHome.y - 96;
+    for (let tries = 0; tries < 24; tries++) {
+      const tx = Phaser.Math.Clamp(this.entryHome.x + Phaser.Math.Between(-220, 240), 80, this.stageW - 80);
+      const ty = Phaser.Math.Clamp(this.entryHome.y + Phaser.Math.Between(-200, 140), 80, this.stageH - 80);
+      if (this.inOpenArea(tx, ty) && !this.nearSolidObstacle(tx, ty, 44)) { px = tx; py = ty; break; }
+    }
+    const img = this.add.image(px, py, s.tex).setDepth(Math.floor(py / 10)).setScale(0.62);
+    this.tweens.add({ targets: img, y: py - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.add
+      .text(px, py - 34, s.name, {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "11px",
+        color: "#bfe9ff",
+        stroke: "#0a1420",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(Math.floor(py / 10));
+    this.interactables.push({ x: px, y: py, kind: "talk", dlg: s.dlg, npcId: s.dlg, label: `${s.name}와 대화` });
+  }
+
+  private acquireDrop(): Drop | null {
+    const free = this.drops.find((d) => d.scene && !d.active);
+    if (free) return free;
+    if (this.drops.length < 24) {
+      const d = new Drop(this, 0, -9999);
+      this.drops.push(d);
+      return d;
+    }
+    return null;
+  }
+
+  /** 몬스터 사망 드롭 — 골드 코인 + 물약 확률 (v2.0 밸런스: GOLD_DROP_SCALE 적용) */
+  dropLoot(x: number, y: number, def: EnemyDef) {
+    const base = Phaser.Math.Between(def.gold[0], def.gold[1]);
+    /* v1.4.3 (작업4) — 파티 시너지 골드 버프 (일심동체/전투 대장정/만능 원정대) 드롭 골드에 곱산 */
+    const synGold = 1 + partyContent.synergyTotals(net.netLastParty()).goldPct / 100;
+    const total = Math.max(1, Math.round(base * GOLD_DROP_SCALE * synGold));
+    this.dropLootGold(x, y, total);
+    const r = Math.random() / (this.player?.hasBuff("buff_luck") ? 1.35 : 1); // v4.3.0 — 행운의 물약: 물약 드롭률 +35%
+    if (r < (def.dropHp ?? 0)) this.dropLootItem(x, y, "potion_hp");
+    else if (r < (def.dropHp ?? 0) + (def.dropMp ?? 0)) this.dropLootItem(x, y, "potion_mp");
+  }
+
+  /** 골드를 코인 여러 개로 분산 드롭 */
+  dropLootGold(x: number, y: number, total: number) {
+    const n = total >= 150 ? 5 : total >= 40 ? 3 : 2;
+    const per = Math.max(1, Math.round(total / n));
+    for (let i = 0; i < n; i++) {
+      const d = this.acquireDrop();
+      if (!d) break;
+      d.spawn("gold", x, y, i === n - 1 ? total - per * (n - 1) : per);
+    }
+  }
+
+  dropLootItem(x: number, y: number, key: DropKind) {
+    const d = this.acquireDrop();
+    d?.spawn(key, x, y, 1);
+  }
+
+  /** 픽업 처리 (Drop가 접촉 시 호출 — viaPet은 펫 자동 줍기) */
+  collectDrop(kind: DropKind, amount: number, x: number, y: number, viaPet = false) {
+    this.tut?.notify("pickup"); // v1.0.11 — 튜토리얼 줍기 학습 판정
+    if (kind !== "gold") this.dailyFarms++; // v1.0.7 — 오늘의 파밍 (아이템 드롭 수집 카운트)
+    if (kind === "gold") {
+      // 펫 골드 보너스 (v1.9 BM — 슬라임 +10%, 핑크이 +20%)
+      // v4.0.0 — 피규어/배지/스킨 골드 획득 보너스 추가
+      const bonus = this.player.petGoldBonusPct + this.player.extBonus.goldPct;
+      const gold = bonus > 0 ? Math.max(1, Math.round(amount * (1 + bonus / 100))) : amount;
+      this.player.addGold(gold);
+      audio.sfx.coin();
+      this.spawnPickupText(x, y - 14, viaPet ? `+${gold}G (펫)` : `+${gold}G`, "#ffd76a");
+    } else if (kind === "potion_hp") {
+      this.player.addPotion("hp");
+      audio.sfx.pickup();
+      this.spawnPickupText(x, y - 14, viaPet ? "+HP 물약 (펫)" : "+HP 물약", "#ff8a8a");
+    } else if (kind === "potion_mp") {
+      this.player.addPotion("mp");
+      audio.sfx.pickup();
+      this.spawnPickupText(x, y - 14, viaPet ? "+MP 물약 (펫)" : "+MP 물약", "#7dc0ff");
+    } else {
+      /* v3.0.6 (지시 #9) — 보스 전용 드롭 아이템: 인벤토리 지급
+       *  상점 판매 금지(tradeLock) — 추후 유저 거래소에서 사고팔 예정 */
+      const it = ITEMS[kind as ItemKey];
+      if (!it) return;
+      this.player.owned.push(kind as ItemKey);
+      audio.sfx.pickup();
+      this.spawnPickupText(x, y - 14, viaPet ? `${it.name} (펫)` : `${it.name} 획득!`, "#ffd76a");
+      this.showBanner(`${it.name} 획득! — 보스 전용 아이템 (상점 판매 금지 · 거래소 예정)`);
+      this.emitRpgState();
+    }
+  }
+
+  /** 획득/보상 안내 텍스트 — 데미지 텍스트 풀 재사용 (F4 규칙) */
+  spawnPickupText(x: number, y: number, msg: string, color: string) {
+    const t = this.dmgPool.find((d) => d.scene && !d.active);
+    if (!t) return;
+    t.setText(msg).setColor(color);
+    t.setPosition(x, y)
+      .setActive(true)
+      .setVisible(true)
+      .setAlpha(1)
+      .setScale(1);
+    this.tweens.add({
+      targets: t,
+      y: y - 40,
+      alpha: 0,
+      duration: 750,
+      ease: "Quad.out",
+      onComplete: () => {
+        t.setColor("#ffffff");
+        t.setActive(false).setVisible(false);
+      },
+    });
+  }
+
+  /* ---------- 미니맵 (하단 중앙, 줌 보정) ---------- */
+
+  private redrawMinimap() {
+    const mm = this.minimap;
+    if (!mm || !mm.scene || !this.player) return;
+    const cam = this.cameras.main;
+    const z = cam.zoom || 1;
+    const gw = 156 / z;
+    const gh = 88 / z;
+    const cx0 = cam.width / 2;
+    /* v1.4.8 (#3 겹침) — 좌하단 ChatBox(하단 44vw)와 미니맵(하단 중앙) 좌하단 가림 해소:
+     *  좁은 화면(모바일 가로)에서는 채팅 입력바 위(56px)로 미니맵을 올리고, 넓은 화면은 하단 유지
+     * v1.4.12 (#11 유저 지시 "맵 지도 UI가 너무 위에 있어 좀 아래로 내려") — 가로폭 700~900px
+     *  기기(가로 모드 폰)에서 56px 리프트가 맵을 중공에 떠 있게 보이는 원인.
+     *  ①이 구간에선 하단 14px까지 내리고 ②채팅박스(하단 44vw) 회피를 위해 중앙에서 44px 우측 이동.
+     *  매우 좁은 화면(<700px, 세로 모드)은 채팅/조이스틱/스킬 아크와 충돌해 기존 56px 유지. */
+    const mmBottom = cam.width < 900 ? (cam.width < 700 ? 56 : 14) : 12;
+    const cx = cam.width < 900 && cam.width >= 700 ? cx0 + 44 : cx0;
+    const cy = cam.height / 2 + (cam.height - mmBottom - gh * z * 0.5 - cam.height / 2) / z;
+    mm.clear();
+    /* v1.1.0 (#7) — 어두운 맵(암전 챕터/카오스 보스전)에서도 지도가 잘 보이게:
+     *  반투명 0.78 → 사실상 불투명 판(0.96) + 두꺼운 금테 + 외곽 그림자. 카메라 포스트FX가 전체 프레임을
+     *  어둡게 해도 지도 자체의 대비로 내용을 판독할 수 있다 */
+    mm.fillStyle(0x000000, 0.5).fillRoundedRect(cx - gw / 2 - 3 / z, cy - gh / 2 - 3 / z, gw + 6 / z, gh + 6 / z, 10 / z);
+    mm.fillStyle(0x0c1220, 0.96).fillRoundedRect(cx - gw / 2, cy - gh / 2, gw, gh, 8 / z);
+    mm.lineStyle(2.5 / z, 0xffd76a, 0.95).strokeRoundedRect(cx - gw / 2, cy - gh / 2, gw, gh, 8 / z);
+    const mx = (wx: number) => cx - gw / 2 + (wx / this.stageW) * gw;
+    const my = (wy: number) => cy - gh / 2 + (wy / this.stageH) * gh;
+    /* v3.0 (#7) — 개미굴 벽 셀을 어두운 블록으로 표시 */
+    if (this.layout) {
+      const lay = this.layout;
+      mm.fillStyle(0x2a3550, 0.9);
+      const cw = (lay.cellW / this.stageW) * gw;
+      const chh = (lay.cellH / this.stageH) * gh;
+      for (let r = 0; r < lay.rows; r++) {
+        for (let c = 0; c < lay.cols; c++) {
+          if (lay.open[r * lay.cols + c]) continue;
+          mm.fillRect(mx(c * lay.cellW), my(r * lay.cellH), cw + 0.5, chh + 0.5);
+        }
+      }
+    }
+    // 적 (빨강) / 보스 (크게)
+    mm.fillStyle(0xff5a5a, 0.95);
+    for (const e of this.enemies) if (e.active && e.alive) mm.fillCircle(mx(e.x), my(e.y), 2.2 / z);
+    if (this.boss?.active && this.boss.alive) mm.fillCircle(mx(this.boss.x), my(this.boss.y), 3.4 / z);
+    // 상인 (녹색)
+    if (this.merchant) {
+      mm.fillStyle(0x7dffa8, 0.95);
+      mm.fillCircle(mx(this.merchant.x), my(this.merchant.y), 2.4 / z);
+    }
+    // 퀘스트 목표 (금색)
+    const t = this.questTargetPos();
+    if (t) {
+      mm.fillStyle(0xffd76a, 1);
+      mm.fillCircle(mx(t.x), my(t.y), 2.8 / z);
+    }
+    // 차원문 (활성 보라 / 비활성 회색)
+    if (this.portal?.active) {
+      mm.fillStyle(this.portalActive ? 0x9d7aff : 0x8a8a8a, 0.9);
+      mm.fillCircle(mx(this.portal.x), my(this.portal.y), 2.8 / z);
+    }
+    // 플레이어 (흰 점 + 링)
+    const px = mx(this.player.x);
+    const py = my(this.player.y);
+    mm.fillStyle(0xffffff, 1).fillCircle(px, py, 2.6 / z);
+    mm.lineStyle(1 / z, 0xffffff, 0.45).strokeCircle(px, py, 4.6 / z);
+  }
+
+  /**
+   * 회전베기(Skill 1) 이펙트 — 검이 몸 주위를 360° 한 바퀴 돌며 베는 연출
+   *  1) 반달 참격 2장이 플레이어 중심을 축으로 360° 궤도 회전 (트레일 1장 추가)
+   *  2) 회전이 끝나는 시점에 확장 충격파 링
+   *  3) 청백 스파크 버스트 + 미세 카메라 킥
+   *  몸통 회전 자체는 Player.useSkill1에서 스프라이트 rotation 트윈으로 처리
+   */
+  spawnSpinSlash(x: number, y: number, spin: number) {
+    for (let i = 0; i < 2; i++) {
+      const s = this.slashPool[this.slashIdx];
+      this.slashIdx = (this.slashIdx + 1) % this.slashPool.length;
+      if (!s || !s.scene) continue;
+      this.tweens.killTweensOf(s);
+      s.off("animationcomplete");
+      const trail = i === 1;
+      s.setPosition(x, y - 4)
+        .setRotation(-0.5 * spin - (trail ? 0.55 * spin : 0))
+        .setActive(true)
+        .setVisible(true)
+        .setAlpha(trail ? 0.6 : 1)
+        .setScale(trail ? 0.82 : 0.98)
+        .play("fx-slash");
+      this.tweens.add({
+        targets: s,
+        rotation: Math.PI * 2 * spin + (trail ? -0.55 * spin : 0),
+        scale: trail ? 1.02 : 1.18,
+        alpha: 0,
+        delay: trail ? 70 : 0,
+        duration: trail ? 210 : 260,
+        ease: "Cubic.inOut",
+        onComplete: () => s.setActive(false).setVisible(false),
+      });
+    }
+
+    // 확장 충격파 — 외부 에셋 링(Kenney CC0)
+    const ring = this.add
+      .image(x, y - 4, "shock_ring")
+      .setDepth(24)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0xa8ecff)
+      .setScale(0.28)
+      .setAlpha(0.95);
+    this.tweens.add({
+      targets: ring,
+      scale: 1.45,
+      alpha: 0,
+      delay: 90,
+      duration: 310,
+      ease: "Cubic.out",
+      onComplete: () => ring.destroy(),
+    });
+
+    // 스파크 + 카메라 킥
+    this.burstEmitter.setParticleTint(0xa8ecff);
+    this.burstEmitter.explode(10, x, y);
+    this.doShake(80, 0.0035);
+  }
+
+  /**
+   * F5+α: 참격 — 캐릭터가 바라보는 방향에 초승달 검기 애니(외부 에셋 6프레임 스윕)를
+   *  배치하고 교차 베기(alt)로 미세 회전을 바꿔 휘두르는 느낌을 강화한다.
+   */
+  spawnSlash(x: number, y: number, dir: Phaser.Math.Vector2, alt: boolean, scale = 1, tint?: number) {
+    const s = this.slashPool[this.slashIdx];
+    this.slashIdx = (this.slashIdx + 1) % this.slashPool.length;
+    if (!s || !s.scene) return;
+    this.tweens.killTweensOf(s);
+    s.off("animationcomplete"); // 재사용 시 지연된 완료 콜백 제거
+    const base = Math.atan2(dir.y, dir.x);
+    if (tint) s.setTint(tint); // v3.0.2 — 계열별 검기 색 (도적 보라 등)
+    else s.clearTint();
+    s.setPosition(x + dir.x * 30, y - 6 + dir.y * 16)
+      .setRotation(base + (alt ? -0.28 : 0.28))
+      .setActive(true)
+      .setVisible(true)
+      .setAlpha(1)
+      .setScale(1.05 * scale) // v4.2.0 — 1.35→1.05 절제 (유저 지시: 자주 호출되는 기본공격 이펙트 과하지 않게 — 스킬 배율분은 유지)
+      .play("fx-slash");
+    s.once("animationcomplete", () => {
+      s.setActive(false).setVisible(false).clearTint();
+    });
+    /* v3.3.0 (지시 #9) — 참격 글로우 링: 검기가 지나가는 자리에 확산 링이 겹쳐진다 */
+    const glowRing = this.add
+      .image(x + dir.x * 34, y - 6 + dir.y * 16, "shock_ring")
+      .setDepth(24)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(tint ?? 0xfff2c0)
+      .setScale(0.2 * scale)
+      .setAlpha(0.32); // v4.2.0 — 0.7→0.32 절제 (기본공격마다 도는 글로우 링 톤다운)
+    this.tweens.add({
+      targets: glowRing,
+      scale: 0.42 * scale,
+      alpha: 0,
+      duration: 210,
+      ease: "Cubic.out",
+      onComplete: () => glowRing.destroy(),
+    });
+  }
+
+  /** v3.0.2 — 궁수 활 비주얼: 발사 순간 활 프레임 표시 (20x20, 각도 회전) */
+  spawnBow(x: number, y: number, angle: number) {
+    // v3.0.4 — 활 텍스처는 오른쪽(촉 방향)을 향하므로 조준각 그대로 회전 (기존 +90° 오프셋 제거 — 지시 #1)
+    const bow = this.add.image(x, y, "x2_bow").setDepth(11).setRotation(angle).setScale(1.15);
+    this.tweens.add({
+      targets: bow,
+      alpha: 0,
+      scale: 0.85,
+      duration: 170,
+      onComplete: () => bow.destroy(),
+    });
+  }
+
+  /** v3.0.2 — 마법사 시전 이펙트: 손 앞 마나 불꽃 (Pixelart Spells 6프레임 1회)
+   *  v1.0.7 — 프리렌더 슬래시(Hovl Slash) 추가 — 시전 손짓에 참격 궤적 겹침 */
+  spawnCast(x: number, y: number) {
+    const fx = this.add.sprite(x, y, "x2_sp_sparks").setDepth(11).setScale(1.2);
+    fx.play("fx-sparks");
+    fx.once("animationcomplete", () => fx.destroy());
+    if (this.textures.exists("hv_slash")) {
+      const sl = this.add.image(x, y - 6, "hv_slash")
+        .setDepth(11)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(0x9db4ff)
+        .setScale(0.22)
+        .setAlpha(0.4)
+        .setRotation(Phaser.Math.FloatBetween(-0.5, 0.2));
+      this.tweens.add({ targets: sl, alpha: 0, scale: 0.34, duration: 260, onComplete: () => sl.destroy() });
+    }
+  }
+
+  /* ================= 히트스톱 / 타격감 ================= */
+
+  /** F5: 명중 시 히트스톱 + 등급별 카메라 셰이크 — '베인' 느낌의 핵심.
+   *  기본공격(basic)은 히트스톱 65ms 유지로 타격감을 살리고 흔들림은 최소로 절제,
+   *  크리티컬(crit)/스킬(skill)만 더 강한 흔들림으로 대비를 만든다. (피드백: 기본공격 흔들림 과다) */
+  onMeleeConnect(_hits: number, profile: ImpactKind = "basic") {
+    audio.sfx.hit();
+    this.impactFX.trigger(profile);
+  }
+
+  /** v1.3.0 (#에셋통합) — 근접 명중 지점 VFX: Matthew Guz 참격 궤적 + Unity BasicAttack 원음.
+   *  checkMeleeHit에서 타격 1건 이상일 때 마지막 타격 지점 기준으로 1회 호출.
+   *  v1.4.8 (#6 사운드 분리) — basicHit 재생 제거: onMeleeConnect의 sfx_hit과 근접 1회 명중에
+   *  두 파일이 동시 재생되어 잡음 원인이었다. 명중음은 onMeleeConnect 단일 경로로 통일. */
+  spawnMeleeVfx(x: number, y: number, dirX: number, dirY: number, crit: boolean) {
+    const ang = Math.atan2(dirY, dirX);
+    this.driveFx.slashArc(x - dirX * 6, y - 6, ang, crit ? 0xffd76a : 0xfff0d0, crit);
+  }
+
+  /** v4.8.0 — 충격파 링 (강한 순간 강조 — 크리티컬/약점/보스 격파).
+   *  WebGL 전용(풀 비어 있으면 no-op) — Canvas 폴백/저사양에서 기존 이펙트만 동작.
+   *  v4.9.0 — alpha 파라미터 추가 (보스 등장 마법진 링 강도 조절용). */
+  spawnShockwave(x: number, y: number, tint = 0xffd76a, scale = 1, duration = 360, alpha = 0.85) {
+    this.shockFX?.spawn(x, y, tint, scale, duration, alpha);
+  }
+
+  /** v4.9.0 — 회전베기 참격 궤적 (스킬 전용 셰이더 #1).
+   *  fxLevel 0(적응형 축소 모드)에선 생략 — 기존 fx-slash 스프라이트가 담당. */
+  spawnSlashArc(x: number, y: number, spin: number, tint = 0xffb090, scale = 1, duration = 300, alpha = 0.9, start = -0.9) {
+    if (this.fxLevel === 0) return;
+    this.slashArcFx?.spawn(x, y, spin, tint, scale, duration, alpha, start);
+  }
+
+  /* v4.9.0 — 돌진 잔상 고스트 풀 (스킬 전용 이펙트 #1 — 유저 지시 #1 "돌진 잔상")
+   *  현재 애니 프레임을 그대로 찍은 ADD 블렌드 고스트가 등 뒤에 흩어지며
+   *  속도감 있는 궤적을 만든다. 풀 6장 상한 — 남발돼도 드로우콜 6장. */
+  private ghostPool: Phaser.GameObjects.Image[] = [];
+  private ghostIdx = 0;
+
+  spawnDashGhost(x: number, y: number, texKey: string, frameName: string | undefined, flipX: boolean, tint: number, scale: number) {
+    if (this.fxLevel === 0 || this.ghostPool.length === 0) return;
+    const g = this.ghostPool[this.ghostIdx];
+    this.ghostIdx = (this.ghostIdx + 1) % this.ghostPool.length;
+    if (!g || !g.scene) return;
+    const tex = this.textures.get(texKey);
+    if (!tex || (!frameName && tex.key !== "hero_idle0")) return;
+    if (frameName && !tex.has(frameName)) return;
+    this.tweens.killTweensOf(g);
+    if (frameName) g.setTexture(texKey, frameName);
+    else g.setTexture("hero_idle0");
+    g.setPosition(x, y)
+      .setFlipX(flipX)
+      .setScale(scale)
+      .setTint(tint)
+      .setAlpha(0.38)
+      .setActive(true)
+      .setVisible(true);
+    this.tweens.add({
+      targets: g,
+      alpha: 0,
+      scaleX: scale * 0.86,
+      scaleY: scale * 0.86,
+      duration: 240,
+      ease: "Quad.out",
+      onComplete: () => g.setActive(false).setVisible(false),
+    });
+  }
+
+  onEnemyKilled(key: EnemyKey, exp: number, spawnX: number, spawnY: number, ref?: Enemy | Boss) {
+    // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
+    this.enemies = this.enemies.filter((e) => e.alive);
+    this.tut?.notify("kill"); // v1.0.11 — 튜토리얼 처치 학습 판정
+    if (this.eliteEnemy && !this.eliteEnemy.alive) this.eliteEnemy = null;
+    /* v4.1.4 — 침공 보스 격퇴 보상: 에메랄드 확정 + 도전과제 카운트
+     *  v1.0.16 밸런스 — +2 → +3 (스폰 주기 6~9분 대비 보상 체감 상향) */
+    if (this.invasionBoss && ref === this.invasionBoss) {
+      this.invasionBoss = null;
+      this.invasionKillCount++;
+      this.player.emerald += 3;
+      this.spawnPickupText(this.player.x, this.player.y - 74, "침공 격퇴! +3 에메랄드", "#ff9a7a");
+      this.showBanner("침공을 격퇴했다! (+3 에메랄드)");
+      audio.sfx.reward();
+      this.emitRpgState();
+    }
+    /* v3.0.16 — 필드 정예 처치 보상: 에메랄드 +1 (메이플 엘리트 몬스터 컨셉)
+     *  v1.4.0 (Task 1-5) — 확정 지급 → 40% 확률 (수급 축소) */
+    if (this.fieldEliteRef && !this.fieldEliteRef.alive) {
+      this.fieldEliteRef = null;
+      if (Math.random() < 0.4) {
+        this.player.emerald += 1;
+        this.spawnPickupText(this.player.x, this.player.y - 74, "정예 처치! +1 에메랄드", "#7de8ff");
+      } else {
+        this.spawnPickupText(this.player.x, this.player.y - 74, "정예 처치!", "#7de8ff");
+      }
+      audio.sfx.questDone();
+      this.emitRpgState();
+    }
+    this.totalKills++;
+    this.registry.set("runKills", this.totalKills);
+    /* ---------- v4.0.0 — 게이트/균열 던전/일일 퀘스트 훅 ---------- */
+    if (this.gateActive) {
+      this.gateAlive = Math.max(0, this.gateAlive - 1);
+      const silver = Math.round((3 + this.gateWave * 1.6) * (1 + this.player.runBuffs.silverPct / 100));
+      this.gateSilver += silver;
+      /* 흡혈 카드 — 처치 시 HP 회복 */
+      if (this.player.runBuffs.lifesteal > 0) {
+        const healV = Math.round(this.player.atkTotal * this.player.runBuffs.lifesteal / 100);
+        if (healV > 0 && this.player.heal(healV)) this.spawnPickupText(this.player.x, this.player.y - 46, `흡혈 +${healV}`, "#ff8a9c");
+      }
+      this.emitGateState();
+      if (this.gateAlive <= 0 && this.gatePhase === "fight") this.onGateWaveCleared();
+    } else if (this.closetActive) {
+      /* 균열 던전 — 레벨 스케일 골드 지급 + 경험치책 확률 드롭 (v1.0.1 — 요일 테마 배율 적용) */
+      const th = this.closetTheme;
+      const g = Math.round((42 + this.player.lv * 6) * (1 + this.player.extBonus.goldPct / 100 + this.player.petGoldBonusPct / 100) * (th.mul ?? 1));
+      this.player.addGold(g);
+      this.closetGold += g;
+      if (Math.random() < 0.28 * (th.bookMul ?? 1)) {
+        const books = th.bookN ?? 1; // 지혜의 균열 2권
+        for (let i = 0; i < books; i++) this.player.owned.push("exp_book");
+        this.spawnPickupText(this.player.x, this.player.y - 70, `경험치 책 드롭${books > 1 ? ` ×${books}` : ""}!`, "#8fe84a");
+        this.emitRpgState();
+      }
+      /* v1.0.1 — 테마 확률 드롭 (강화 주문서/상급 물약/에메랄드) */
+      for (const ex of th.extra ?? []) {
+        if (Math.random() < ex.chance) {
+          this.player.owned.push(ex.item);
+          this.spawnPickupText(this.player.x, this.player.y - 88, `${ITEMS[ex.item]?.name ?? "아이템"} 드롭!`, th.color);
+          this.emitRpgState();
+        }
+      }
+      if (th.emeraldChance && Math.random() < th.emeraldChance) {
+        this.player.emerald += 1;
+        this.spawnPickupText(this.player.x, this.player.y - 88, "+1 에메랄드", "#7de8ff");
+        this.emitRpgState();
+      }
+    }
+    /* ---------- v1.0.8 — 무한 콘텐츠 훅 ---------- */
+    if (this.towerActive) {
+      /* ① 심연의 탑 — 남은 적 갱신, 전멸 시 다음 층 */
+      if (this.towerBossRef && ref === this.towerBossRef) this.towerBossRef = null;
+      this.updateTowerText();
+      if (this.enemies.filter((e) => e.alive).length === 0 && !this.towerBossRef) this.towerFloorCleared();
+    } else if (this.closetActive && this.trialMod) {
+      /* ③ 일일 시련 — titan 수정자: 처치 시 심연 코인 추가 */
+      const am = this.trialMod.abyssMul ?? 0;
+      if (am > 0) this.inf.abyss += am;
+    } else if (this.parkActive) {
+      /* v1.0.18 — 몬스터 파크 — 처치마다 파크 코인 지급 (웨이브 비례) */
+      const wave = this.parkWaveNow();
+      const c = Math.max(1, Math.round(PARK_DIFFS[this.parkDiff].coin * (1 + (wave - 1) * 0.5)));
+      this.parkCoinsEarned += c;
+      this.parkKills += 1;
+      if (Math.random() < 0.3) this.spawnPickupText(this.player.x, this.player.y - 70, `파크 코인 +${c}`, "#ffd76a");
+    }
+    /* ⑤ 제작 재료 드롭 (탑/균열/파크 1.6배 — 무한 파밍 싱크) */
+    {
+      const matBoost = this.towerActive || this.closetActive || this.parkActive ? 1.6 : 1;
+      for (const m of MAT_CHANCES) {
+        if (Math.random() < m.chance * matBoost) {
+          this.inf.mats[m.key] = (this.inf.mats[m.key] ?? 0) + 1;
+          this.spawnPickupText(this.player.x, this.player.y - 88, `${m.name} +1`, "#a8ecff");
+          this.emitRpgState();
+        }
+      }
+    }
+    /* ⑥ 펫 육성 — 소환 중 펫이 사냥 경험치를 얻는다 (진화 3단계) */
+    if (this.player.pet) {
+      const before = petEvoStage(this.inf.petLv);
+      this.inf.petExp += Math.max(1, Math.round(exp * PET.expShare));
+      while (this.inf.petExp >= PET.expPerLv(this.inf.petLv) && this.inf.petLv < 50) {
+        this.inf.petExp -= PET.expPerLv(this.inf.petLv);
+        this.inf.petLv++;
+        this.syncExtBonus(); // 펫 스탯 보너스 반영
+        this.spawnPickupText(this.player.x, this.player.y - 108, `펫 Lv${this.inf.petLv}! (공격 +${petBonus(this.inf.petLv).atkPct.toFixed(1)}%)`, "#7de8ff");
+        const after = petEvoStage(this.inf.petLv);
+        if (after > before) {
+          this.showBanner(`펫이 ${PET_EVO_NAMES[after]}으로 진화했다! 보너스 효과 증가`);
+          audio.sfx.levelup();
+        }
+      }
+    }
+    /* ⑦ 황금 몬스터 처치 — 대량 골드 + 심연 코인 */
+    if (this.goldenRef && ref === this.goldenRef) {
+      this.goldenRef = null;
+      const g = Math.round((60 + this.player.lv * 10) * GOLDEN.goldMul);
+      this.player.addGold(g);
+      this.inf.abyss += GOLDEN.abyss;
+      this.spawnPickupText(this.player.x, this.player.y - 84, `황금 사냥 성공! +${g.toLocaleString()} G · 심연 +${GOLDEN.abyss}`, "#ffd76a");
+      this.showBanner("황금 몬스터를 잡았다! 대량의 골드가 쏟아진다!");
+      audio.sfx.reward();
+      this.emitRpgState();
+    }
+    /* 일일 퀘스트 — 토벌 카운트 (게이트/던전 처치 포함) */
+    this.addDailyHunt();
+    /* v4.5.0 — 시즌 패스 XP (토벌 +1 — 사냥 자체가 패스 진행으로 이어진다) */
+    this.addPassXp(PASS_XP_RULES.hunt);
+    /* v1.0.1 — 시즌 미션 토벌 카운트 */
+    this.trackMission("hunt");
+    /* v3.0.15 (#20) — 콤보킬 보너스 경험치: 5초 내 연속 킬 시 콤보×5% (최대 +50%).
+     *  콤보 3 이상부터 "연속킬 xN" 플로팅 텍스트로 연출 */
+    const nowMs = this.time.now;
+    this.comboStreak = nowMs < this.comboUntil ? this.comboStreak + 1 : 1;
+    this.comboUntil = nowMs + 5000;
+    const comboMul = 1 + Math.min(0.5, (this.comboStreak - 1) * 0.05);
+    /* v1.0.16 — 멀티(MMORPG) 장점 강화 — 사냥 보너스 2종:
+     *  ① 파티 사냥 보너스: 파티원 1명당 EXP +8% (최대 3명 +24%)
+     *  ② 동행 보너스: 파티가 아니어도 같은 구역 접속자 1명당 EXP +4% (최대 +12%)
+     *  "같이 사냥하면 더 크게 자란다" — 파티 가입·같은 구역 동행의 실익을 만든다 */
+    const partyN = Math.max(1, net.netLastParty()?.members.length ?? 1);
+    const partyMul = 1 + Math.min(3, partyN - 1) * 0.08;
+    const coMul = 1 + Math.min(3, this.remotes.size) * 0.04;
+    /* v1.4.3 (작업4) — 파티 시너지 콤보: 계열 조합별 EXP/골드 버프 + 솔로 가호(파티 없으면 EXP +5%).
+     *  "조합이 좋은 파티가 더 강하다" — 파티 편성에 재미와 전략을 부여. */
+    const synParty = net.netLastParty();
+    const syn = partyContent.synergyTotals(synParty);
+    const soloBless = synParty && synParty.members.length >= 2 ? 0 : partyContent.SOLO_BLESS_EXP_PCT;
+    const synExpMul = 1 + (syn.expPct + soloBless) / 100;
+    /* v4.2.0 — 전역 EXP ×1.35 (피로도 완화: 레벨링 페이스업 — 콤보 보너스와 곱산) */
+    this.player.gainExp(Math.round(exp * 1.35 * comboMul * partyMul * coMul * synExpMul));
+    if (partyMul > 1 || coMul > 1) {
+      const bonusPct = Math.round((partyMul * coMul - 1) * 100);
+      this.spawnPickupText(this.player.x - 14, this.player.y - 80, `함께 사냥! EXP +${bonusPct}%`, "#9df0c8");
+    }
+    /* v1.4.3 (작업4) — 파티 보드 킬 카운트 (파티 중일 때만) + 정예/보스 판정 */
+    if (synParty && synParty.members.length >= 2) {
+      partyContent.partyBoardTick("kill", 1);
+      if (ref && (ref as Enemy).displayName?.startsWith("정예")) partyContent.partyBoardTick("elite", 1);
+      if (ref instanceof Boss) partyContent.partyBoardTick("boss", 1);
+    }
+    if (this.comboStreak >= 3) {
+      const pct = Math.round((comboMul - 1) * 100);
+      this.spawnPickupText(this.player.x, this.player.y - 52 + (this.comboStreak % 2) * 12, `연속킬 x${this.comboStreak}! EXP +${pct}%`, "#ffd76a");
+    }
+    this.killTotals[key] = (this.killTotals[key] ?? 0) + 1;
+    /* v3.0.16 — 몬스터 컬렉션 등록 (최초 처치 시) */
+    this.registerCollection(key, ENEMIES[key].name);
+    /* v3.0.16 — 멀티킬 연출 (1.5초 내 다중 처치 등급 표시 — 메이플 멀티킬) */
+    this.multiKillCount = nowMs < this.multiKillUntil ? this.multiKillCount + 1 : 1;
+    this.multiKillUntil = nowMs + 1500;
+    if (this.multiKillCount >= 2) {
+      const mk = WorldScene.MULTI_KILL_META[Math.min(this.multiKillCount, 5) - 2];
+      this.spawnPickupText(this.player.x + 18, this.player.y - 66 + (this.multiKillCount % 2) * 10, mk.label, mk.color);
+      if (this.multiKillCount >= 5) this.doShake(140, 0.004);
+    }
+    // 리스폰 예약 — v2.3 단축: 9~13초 → 3.2~4.8초 (지시 #2 — 리젠이 너무 길어 사냥이 끊긴다)
+    // v3.1.0 (#전직시련) — 시험 상대는 리스폰하지 않는다. 기존엔 시련 상대(golem 기반)를
+    //  잡으면 일반 몬스터 리스폰 큐에 등록돼 "시련 후 약한 몬스터가 계속 소환"되었다.
+    if (ref && ref === this.jobTrialEnemy) {
+      /* 시련 상대 — 재소환 금지 (재도전은 카이엔에게 말 걸기) */
+    } else if (this.gateActive || this.closetActive) {
+      /* v4.0.0 — 게이트/던전 몬스터는 웨이브 소환이다 — 필드 리스폰 금지 */
+    } else {
+      this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
+        this.respawnEnemy(key, spawnX, spawnY, 0)
+      );
+    }
+    const q = this.currentQuest();
+    if (q && q.type === "hunt") {
+      if (!this.repeatActive() && !this.isQuestAccepted(this.stageDef.key, this.questIdx)) {
+        /* v3.0.15 (#8) — 미수락 토벌 퀘스트는 카운트하지 않는다 */
+      } else if (this.repeatActive()) {
+        // 반복 토벌 의뢰 — 메인 체인 종료 후 무한 파밍 (사이클별 카운트)
+        if (q.targetKey === key) {
+          this.huntCount++;
+          if (this.huntCount >= this.repeatNeed) this.completeRepeat();
+          else this.emitQuest();
+        }
+      } else if (q.targetKeys ? q.targetKeys.includes(key) : q.targetKey === key) {
+        // v2.0 수정 (지시 #17) — 퀘스트 대상 몬스터만 카운트
+        // v3.0.28 (#퀘스트이름) — targetKeys 지정(자동 토벌) 시 구역 몬스터 전체 합산 카운트
+        this.huntCount = Math.min(this.huntProgressSum(q), q.need ?? 0);
+        this.tryCompleteHunt(key);
+      }
+    }
+    // 전직 스토리 토벌/시험/이동 단계 (지시 #13)
+    if (this.jobStory) {
+      const story = this.jobStoryDef();
+      const step = story?.steps[this.jobStory.step];
+      if (story && step) {
+        if (step.type === "hunt") {
+          this.jobStory.hunt++;
+          if (this.jobStory.hunt >= (step.need ?? 0)) this.completeJobStoryStep();
+        } else if (step.type === "travel") {
+          /* v1.3.1 (#4) — 조각 회수 폐지 → 지정 맵 이동+사냥 단계:
+           *  목적지 맵에서 잡은 킬만 카운트된다 (다른 맵의 킬은 무시) */
+          if (this.jobStory.tst && this.stageDef.key === this.jobStory.tst) {
+            this.jobStory.hunt++;
+            if (this.jobStory.hunt % 2 === 0 || this.jobStory.hunt >= (step.need ?? 0)) this.emitQuest();
+            if (this.jobStory.hunt >= (step.need ?? 0)) this.completeJobStoryStep();
+          }
+        } else if (step.type === "elite" && (ref === this.jobTrialEnemy || (this.jobEliteSummoned && this.eliteEnemy === null))) {
+          // 소환된 시험 상대 처치 → 단계 완료
+          // v3.0.22 (#46) — 죽은 개체 참조 기반 판정(기존 eliteEnemy null 우연 의존 → 시험 상대가
+          //  몇 번이고 재소환되던 무한 루프 제거). 참조 일치 시에만 완료 처리
+          this.jobTrialEnemy = null;
+          this.jobEliteSummoned = false;
+          this.completeJobStoryStep();
+        }
+      }
+    }
+    /* v3.3.0 (지시 #8) — 5차 각성 시련: 각성의 수호자 격파 → 각성 완료 의식 */
+    if (ref && ref === this.fifthTrialEnemy) {
+      this.fifthTrialEnemy = null;
+      this.fifthTrialActive = false;
+      this.completeFifthTrial();
+    }
+    this.emitQuest();
+  }
+
+  /** 메인 체인 완료 후 반복 의뢰 활성 여부
+   *  v2.3 (지시 #4): 스토리 체인이 끝나도 자동 활성되지 않는다 —
+   *  마을 상인에게 말을 걸어 수주해야 [반복] 토벌 의뢰가 퀘스트창에 뜬다 */
+  private repeatActive(): boolean {
+    return this.repeatOn && this.questIdx >= this.stageDef.quests.length && !!this.stageDef.repeat;
+  }
+
+  /** 반복 의뢰 시스템 수주 가능 여부 — v3.0.26 (#76): 일퀘(라고스 의뢰)는
+   *  "전체 스토리(최종 보스) 완료 후"에만 해금 (사용자 요구: 메이플식 엔드게임 일일의뢰).
+   *  v3.0.15 (#3)의 "대화만 하면 항상 수주" 완화를 폐지 — 스토리 진행 중엔 라고스가
+   *  그냥 상점으로만 응대한다. 기존에 repeatOn=true로 수주해둔 유저는 그대로 진행 유지. */
+  private repeatUnlockable(): boolean {
+    if (this.repeatOn || this.isInterior) return false;
+    return this.cleared;
+  }
+
+  /* ================= v3.3.0 (지시 #6) — 무릉도장 (메이플 무릉도장 오마주) =================
+   *  GM NPC → 무릉도장 입장 → 90초 동안 허수아비를 자유롭게 공격해 누적 피해를 기록.
+   *  종료(시간 경과 or 중간 퇴장) 시 기록 + 최고 기록(localStorage) + 훈련 보상 지급. */
+
+  /** GM → 무릉도장 입장 (어느 구역에서든 — 복귀는 원 구역) */
+  enterDojang() {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "dojang") return;
+    this.dojangFrom = this.stageDef.key; // 퇴장 시 이 구역으로 복귀
+    this.showBanner("무릉도장으로 이동합니다 — 90초 동안 최대한 많은 피해를!");
+    this.gotoStage("dojang");
+  }
+
+  /** 무릉도장 빌드 — 허수아비 6기 + 중앙 문양 + 타이머/기록 UI */
+  private buildDojang() {
+    const cx = this.stageW / 2;
+    const cy = this.stageH / 2;
+    /* 도장 중앙 문양 (Add 링 2겹 + 중심 원) */
+    const emblem = this.add.circle(cx, cy, 150).setStrokeStyle(4, 0xc8a05a, 0.35).setDepth(1);
+    const emblem2 = this.add.circle(cx, cy, 110).setStrokeStyle(2, 0xc8a05a, 0.28).setDepth(1);
+    const emblemFill = this.add.circle(cx, cy, 56, 0xc8a05a, 0.12).setDepth(1);
+    void emblem2;
+    this.tweens.add({ targets: emblem, scale: 1.04, alpha: 0.7, duration: 1800, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    void emblemFill;
+    this.add
+      .text(this.cameras.main.width / 2, 66, "無 量 道 場", {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "30px",
+        color: "#e8c88a",
+        stroke: "#1a1020",
+        strokeThickness: 6,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0)
+      .setAlpha(0.9);
+    /* 훈련용 허수아비 6기 — 2열 배치 (dummy = AI/사망 없음, 피해 누적만) */
+    for (let i = 0; i < 6; i++) {
+      const dx = cx - 260 + (i % 3) * 260;
+      const dy = cy - 80 + Math.floor(i / 3) * 170;
+      const e = new Enemy(this, dx, dy, "golem", {
+        hp: 1, atk: 0, exp: 0, gold: 0,
+        scale: 1.55, tint: 0xd8b06a,
+        displayName: "훈련용 허수아비",
+        dummy: true,
+      });
+      this.enemies.push(e);
+      this.physics.add.collider(e, this.solidGroup);
+    }
+    /* 타이머/기록 UI (화면 고정 — v4.1.0: 카메라 중앙 기준. 기존엔 스테이지 중앙 x를
+     *  그대로 써서 줌이 1보다 큰 폰에서 텍스트가 화면 밖으로 나가 타이머가 안 보였다) */
+    this.dojangText = this.add
+      .text(this.cameras.main.width / 2, 108, "", {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "17px",
+        color: "#ffe66a",
+        stroke: "#1a1020",
+        strokeThickness: 5,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    /* 도장 개시 */
+    this.dojangActive = true;
+    this.dojangScore = 0;
+    this.dojangEndsAt = this.time.now + 90000;
+    this.dojangTextAcc = 0;
+    this.showBanner("무릉도장 입장! 90초 동안 허수아비에게 최대 피해를 기록하라");
+  }
+
+  /** 허수아비 피해 누적 — Enemy.takeDamage(dummy)에서 호출 */
+  addDojangScore(v: number) {
+    if (this.dojangActive) this.dojangScore += v;
+  }
+
+  /** 무릉도장 진행 (update에서 매 프레임 — UI는 100ms 스로틀) */
+  private tickDojang(dt: number) {
+    /* v4.1.0 — 화면 고정 UI는 카메라 뷰 기준 중앙 유지 (리사이즈/줌 대응) */
+    this.dojangText?.setX(this.cameras.main.width / 2);
+    this.dojangTextAcc += dt;
+    if (this.dojangTextAcc >= 100) {
+      this.dojangTextAcc = 0;
+      const remain = Math.max(0, this.dojangEndsAt - this.time.now);
+      this.dojangText?.setText(
+        `무릉도장  ${Math.ceil(remain / 1000)}초  |  기록: ${this.dojangScore.toLocaleString()}`
+      );
+    }
+    if (this.time.now >= this.dojangEndsAt) this.finishDojang(false);
+  }
+
+  /** 무릉도장 종료 — 기록/최고기록/보상 정산 (early=true면 중간 퇴장) */
+  finishDojang(early: boolean) {
+    if (!this.dojangActive) return;
+    this.dojangActive = false;
+    const score = this.dojangScore;
+    const KEY = "sertz.dojang.best";
+    let best = 0;
+    try { best = Number(localStorage.getItem(KEY) ?? "0") || 0; } catch { best = 0; }
+    const record = score > best && score > 0;
+    if (record) {
+      try { localStorage.setItem(KEY, String(score)); } catch { /* 저장 불가 환경 무시 */ }
+    }
+    const reward = Math.min(30000, Math.round(score / 250));
+    if (reward > 0) this.player.addGold(reward);
+    this.dojangText?.setText(
+      `무릉도장 ${early ? "중단" : "종료"} — 기록: ${score.toLocaleString()}${record ? " (신기록!)" : ""}`
+    );
+    EventBus.emit("reward:show", {
+      title: early ? "무릉도장 — 훈련 중단" : "무릉도장 — 훈련 종료!",
+      lines: [
+        { text: `누적 피해: ${score.toLocaleString()}`, color: "#ffe66a" },
+        { text: record ? "신기록 달성!" : `최고 기록: ${Math.max(best, score).toLocaleString()}`, color: record ? "#7dffa8" : "#a8ecff" },
+        { text: reward > 0 ? `훈련 보상 +${reward.toLocaleString()} G` : "보상 없음 — 더 세게 때려라!", color: "#ffd76a" },
+      ] satisfies RewardPopupState["lines"],
+    });
+    audio.sfx.reward();
+    this.emitRpgState();
+    /* v4.0.0 — 도장 기록 서버 랭킹 제출 */
+    net.netRankSubmit("dojang", score, getPlayerName(), this.player.lv);
+  }
+
+  /* ================= v4.0.0 — 바르가 업데이트: 게이트 디펜스/균열 던전/혜택 시스템 ================= */
+
+  private today(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  /** 피규어/배지/룬/성좌/스킨 + 무한 콘텐츠(부여아/환생/펫/도감) 보너스 재계산 → Player 주입 */
+  private syncExtBonus() {
+    if (!this.player) return;
+    const base = computeExtBonus({
+      figures: this.figures,
+      badgeSlots: this.badgeSlots,
+      runes: this.runes,
+      runeSlots: this.runeSlots,
+      constel: this.constel,
+      cosmetic: this.player.cosmetic,
+    });
+    /* v1.0.8 — 무한 콘텐츠 보너스 병합 (심연 부여아 flat + 환생/펫/도감 %) */
+    const ib = infBonus(this.inf, Object.keys(this.monsterKills ?? {}).length, !!this.player.pet);
+    /* v1.0.18 — 유니온 효과 병합 (그리드 배치 + 등급 + 아티팩트 + 시간제 버프 — 계정 전체 적용) */
+    const ue = unionEffects(loadUnion(), loadSlots());
+    const uv = activeBuffValues(loadUnion());
+    this.player.setExtBonus({
+      atk: base.atk + ib.atk + ue.atk,
+      hp: base.hp + ib.hp + ue.hp,
+      def: base.def + ib.def + ue.def + (uv.defPct > 0 ? 40 : 0),
+      crit: base.crit + ib.crit + ue.crit,
+      atkPct: base.atkPct + ib.atkPct + ue.atkPct + uv.atkPct,
+      speedPct: base.speedPct + ue.speedPct,
+      goldPct: base.goldPct + ib.goldPct + ue.goldPct + uv.goldPct,
+      critDmg: (base.critDmg ?? 0) + ue.critDmg, // v1.0.19 (B-2) — 유니온 도적 계열 크리뎀
+    });
+    /* v1.0.18 — 유니온 경험치 버프 훅 주입 */
+    this.player.expBonusPct = () => activeBuffValues(loadUnion()).expPct;
+  }
+
+  /* ---------------- 데일리 (출석/일일 퀘스트/티켓/오프라인 보상) ---------------- */
+
+  private initIsekaiDaily() {
+    this.ensureDaily();
+    this.ensureTickets();
+    this.ensureMissions(); // v1.0.1 — 시즌 미션 일/주 리셋 검증
+    this.ensurePassSeason(); // v4.5.0 — 시즌 키 검증 (월이 바뀌면 새 시즌 개시)
+    this.checkAttendance();
+    this.checkOfflineReward();
+    this.save();
+    this.emitRpgState();
+  }
+
+  private ensureDaily() {
+    const t = this.today();
+    if (this.dailyDate !== t) {
+      this.dailyDate = t;
+      this.dailyHunts = 0;
+      this.dailyGate = 0;
+      this.dailyCloset = 0;
+      this.dailyFarms = 0; // v1.0.7
+      this.dailyBosses = 0; // v1.0.7
+      this.dailyClaimed = [];
+      this.dailyAds = 0;
+      this.dailyAdChest = 0; // v4.5.0 — 광고 무료 상자/버프 카운터 리셋
+      this.dailyAdDrop = 0;
+    }
+  }
+
+  private ensureTickets() {
+    const t = this.today();
+    if (this.ticketDate !== t) {
+      this.ticketDate = t;
+      this.ticketGate = TICKETS_PER_DAY.gate;
+      this.ticketCloset = TICKETS_PER_DAY.closet;
+      this.ticketRefills = 0; // v1.0.1 — 재충전 횟수 일일 리셋
+    }
+  }
+
+  /* ================= v4.5.0 — 시즌 패스 + 구독 (BM 표준화) ================= */
+
+  /** 시즌 키 검증 — 월이 바뀌면 XP/수령 기록 리셋 (새 시즌 자동 개시) */
+  private ensurePassSeason() {
+    const sk = seasonKey();
+    if (this.passSeason !== sk) {
+      this.passSeason = sk;
+      this.passXp = 0;
+      this.passPrem = false;
+      this.passClaimedF = [];
+      this.passClaimedP = [];
+    }
+  }
+
+  /** 시즌 패스 XP 부여 — 레벨업 시 배너 (도파민: 진행 가시화) */
+  private addPassXp(n: number) {
+    this.ensurePassSeason();
+    const before = passLevel(this.passXp);
+    this.passXp += n;
+    const after = passLevel(this.passXp);
+    if (after > before) {
+      audio.sfx.levelup();
+      EventBus.emit("banner:show", { text: `시즌 패스 Lv.${after} 달성! — 패스 보상을 수령하세요` });
+    }
+  }
+
+  private addDailyHunt() {
+    this.ensureDaily();
+    this.dailyHunts++;
+  }
+
+  /* ================= v1.0.1 — 시즌 미션 (일일/주간 리텐션 보드) ================= */
+
+  /** 일자/주차 검증 — 바뀌었으면 해당 그룹 카운트·수령 기록 리셋 */
+  private ensureMissions() {
+    const d = this.today();
+    const w = weekKey();
+    if (this.missionDay !== d) {
+      this.missionDay = d;
+      this.missionD = {};
+      this.missionCd = [];
+    }
+    if (this.missionWeek !== w) {
+      this.missionWeek = w;
+      this.missionW = {};
+      this.missionCw = [];
+    }
+  }
+
+  /** 미션 진행 훅 — hunt/boss/closet/gate/dailyClaim/market (n은 진행량) */
+  private trackMission(hook: MissionHook, n = 1) {
+    this.ensureMissions();
+    const { daily, weekly } = missionsByHook(hook);
+    let completed = "";
+    for (const m of daily) {
+      if (this.missionCd.includes(m.id)) continue;
+      const before = this.missionD[m.id] ?? 0;
+      this.missionD[m.id] = Math.min(m.target, before + n);
+      if (before < m.target && this.missionD[m.id] >= m.target) completed = m.name;
+    }
+    for (const m of weekly) {
+      if (this.missionCw.includes(m.id)) continue;
+      const before = this.missionW[m.id] ?? 0;
+      this.missionW[m.id] = Math.min(m.target, before + n);
+      if (before < m.target && this.missionW[m.id] >= m.target) completed = m.name;
+    }
+    /* 완료 순간 도파민 배너 (수령은 패스 패널에서) */
+    if (completed) {
+      audio.sfx.reward();
+      EventBus.emit("banner:show", { text: `시즌 미션 완료 — ${completed}! 패스 패널에서 수령하세요` });
+    }
+  }
+
+  /** 미션 보상 수령 — 패스 XP 지급 (rpg:missionClaim) */
+  private claimMission(v: { kind: "daily" | "weekly"; id: string }) {
+    if (!this.player || this.dialoguing) return;
+    this.ensureMissions();
+    const m = v.kind === "daily"
+      ? SEASON_DAILY_MISSIONS.find((x) => x.id === v.id)
+      : SEASON_WEEKLY_MISSIONS.find((x) => x.id === v.id);
+    if (!m) return;
+    const claimed = v.kind === "daily" ? this.missionCd : this.missionCw;
+    if (claimed.includes(m.id)) return;
+    const prog = (v.kind === "daily" ? this.missionD[m.id] : this.missionW[m.id]) ?? 0;
+    if (prog < m.target) {
+      EventBus.emit("banner:show", { text: "아직 완료되지 않은 미션이다" });
+      return;
+    }
+    claimed.push(m.id);
+    this.addPassXp(m.xp);
+    EventBus.emit("banner:show", { text: `미션 수령 — ${m.name} (+패스 XP ${m.xp})` });
+    audio.sfx.reward();
+    this.save();
+    this.emitRpgState();
+  }
+
+  private checkAttendance() {
+    const t = this.today();
+    if (this.attendLast === t) return;
+    this.attendLast = t;
+    this.attendCount++;
+    const rw = ATTEND_REWARDS[(this.attendCount - 1) % ATTEND_CYCLE];
+    const g = rw.grant;
+    if (g.gold) this.player.addGold(g.gold);
+    if (g.emerald) this.player.emerald += g.emerald;
+    if (g.tickets) this.gachaTickets += g.tickets;
+    if (g.shards) this.shards += g.shards;
+    const lines: RewardPopupState["lines"] = [
+      { text: rw.label, color: "#ffd76a" },
+      { text: `누적 출석 ${this.attendCount}일 · 14일 사이클`, color: "#a8ecff" },
+    ];
+    /* v4.5.0 — SERTZ 패스(구독) 특전: 출석 시 에메랄드 +3 (월정액 LTV 루프) */
+    if (subActive(this.subUntil)) {
+      this.player.emerald += SUB_DAILY_EMERALD;
+      lines.push({ text: `구독 특전 — 에메랄드 +${SUB_DAILY_EMERALD}`, color: "#c08aff" });
+    }
+    EventBus.emit("reward:show", {
+      title: `출석 체크 — ${((this.attendCount - 1) % ATTEND_CYCLE) + 1}일차`,
+      lines,
+    });
+    audio.sfx.reward();
+  }
+
+  private checkOfflineReward() {
+    if (!this.lastSeenAt) return;
+    const elapsed = Date.now() - this.lastSeenAt;
+    if (elapsed < 30 * 60 * 1000) return;
+    const r = offlineReward(elapsed, this.player.lv);
+    if (r.gold <= 0) return;
+    this.player.addGold(r.gold);
+    this.player.gainExp(r.exp);
+    EventBus.emit("reward:show", {
+      title: "오프라인 사냥 보상",
+      lines: [
+        { text: `부재 시간: ${r.hours.toFixed(1)}시간 (최대 12시간)`, color: "#a8ecff" },
+        { text: `골드 +${r.gold.toLocaleString()} G`, color: "#ffd76a" },
+        { text: `경험치 +${r.exp.toLocaleString()} EXP`, color: "#8fe84a" },
+      ] satisfies RewardPopupState["lines"],
+    });
+    audio.sfx.reward();
+  }
+
+  /** GM 무료 뽑기 — 광고 보상 대체 (10분 쿨) */
+  freeGacha() {
+    const remain = this.freeGachaAt + 600000 - Date.now();
+    if (remain > 0) {
+      EventBus.emit("banner:show", { text: `무료 뽑기 쿨타임 — ${Math.ceil(remain / 60000)}분 후 다시!` });
+      return;
+    }
+    this.freeGachaAt = Date.now();
+    this.gachaTickets += 1;
+    this.save();
+    this.emitRpgState();
+    EventBus.emit("banner:show", { text: "GM 방송 시청 완료! 뽑기권 +1 (10분마다 무료)" });
+    audio.sfx.reward();
+  }
+
+  /* ---------------- 바르가 원정대 커맨드 (Panels → EventBus) ---------------- */
+
+  handleIsekai(v: { action: string; key?: string; slot?: number | string; ck?: string; idx?: number; id?: string; code?: string }) {
+    if (!this.player) return;
+    const p = this.player;
+    switch (v.action) {
+      case "gacha": {
+        if (this.gachaTickets <= 0) { EventBus.emit("banner:show", { text: "뽑기권이 없습니다 — 출석/일일 퀘스트/게이트로 획득!" }); return; }
+        this.gachaTickets--;
+        const res = rollFigure(this.figures);
+        const def = FIGURE_MAP[res.key];
+        if (res.dup) {
+          const sh = FIGURE_GRADE_META[res.grade].shard;
+          this.shards += sh;
+          EventBus.emit("reward:show", {
+            title: "피규어 뽑기 — 중복!",
+            lines: [
+              { text: `${FIGURE_GRADE_META[res.grade].name} · ${def.name}`, color: FIGURE_GRADE_META[res.grade].color },
+              { text: `이미 보유 중 → 피규어 조각 +${sh}`, color: "#ffd76a" },
+            ] satisfies RewardPopupState["lines"],
+          });
+        } else {
+          this.figures.push(res.key);
+          EventBus.emit("reward:show", {
+            title: "피규어 뽑기 — 신규!",
+            lines: [
+              { text: `${FIGURE_GRADE_META[res.grade].name} · ${def.name}`, color: FIGURE_GRADE_META[res.grade].color },
+              { text: def.desc, color: "#a8ecff" },
+              { text: `도감 등록 ${this.figures.length}/${FIGURES.length}`, color: "#7dffa8" },
+            ] satisfies RewardPopupState["lines"],
+          });
+        }
+        audio.sfx.reward();
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "badgeEquip": {
+        const slot = Math.max(0, Math.min(BADGE_SLOTS - 1, Number(v.slot ?? 0)));
+        if (!v.key || !this.badges.includes(v.key)) return;
+        this.badgeSlots[slot] = v.key;
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        break;
+      }
+      case "badgeUnequip": {
+        const slot = Math.max(0, Math.min(BADGE_SLOTS - 1, Number(v.slot ?? 0)));
+        this.badgeSlots[slot] = null;
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "runeSynth": {
+        const kind = RUNE_KINDS.find((k) => k === v.key);
+        if (!kind) return;
+        for (let t = 1; t < RUNE_MAX_TIER; t++) {
+          const k = runeKey(kind, t);
+          if ((this.runes[k] ?? 0) >= RUNE_SYNTH_COST) {
+            this.runes[k] = (this.runes[k] ?? 0) - RUNE_SYNTH_COST;
+            const up = runeKey(kind, t + 1);
+            this.runes[up] = (this.runes[up] ?? 0) + 1;
+            EventBus.emit("banner:show", { text: `룬 합성 성공! ${RUNE_META[kind].name} T${t} ×3 → T${t + 1} ×1` });
+            audio.sfx.craft();
+            this.syncExtBonus();
+            this.save();
+            this.emitRpgState();
+            return;
+          }
+        }
+        EventBus.emit("banner:show", { text: `같은 룬 ${RUNE_SYNTH_COST}개가 모이면 합성할 수 있어요` });
+        break;
+      }
+      case "runeEquip": {
+        const slot = Math.max(0, Math.min(3, Number(v.slot ?? 0)));
+        const parsed = v.key ? parseRuneKey(v.key) : null;
+        if (!parsed || !v.key) return;
+        const equippedSame = this.runeSlots.filter((s) => s === v.key).length;
+        if ((this.runes[v.key] ?? 0) <= equippedSame) return;
+        this.runeSlots[slot] = v.key;
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        break;
+      }
+      case "runeUnequip": {
+        const slot = Math.max(0, Math.min(3, Number(v.slot ?? 0)));
+        this.runeSlots[slot] = null;
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "constelUnlock": {
+        const c = CONSTELLATIONS.find((x) => x.key === v.ck);
+        const idx = v.idx ?? 0;
+        if (!c || idx < 0 || idx >= c.nodes.length) return;
+        const id = `${c.key}:${idx}`;
+        if (this.constel.includes(id)) return;
+        if (idx > 0 && !this.constel.includes(`${c.key}:${idx - 1}`)) { EventBus.emit("banner:show", { text: "이전 별부터 개방해야 합니다" }); return; }
+        const cost = CONSTEL_NODE_COST[idx] ?? 999;
+        if (this.shards < cost) { EventBus.emit("banner:show", { text: `피규어 조각 ${cost}개가 필요합니다` }); return; }
+        this.shards -= cost;
+        this.constel.push(id);
+        EventBus.emit("banner:show", { text: `성좌 개방 — ${c.name} 별${idx + 1}!` });
+        audio.sfx.craft();
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "achClaim": {
+        const ach = ACHIEVEMENTS.find((a) => a.id === v.id);
+        if (!ach || this.achClaimed.includes(ach.id)) return;
+        const snap = this.achSnapshot();
+        if (ach.prog(snap) < ach.goal) { EventBus.emit("banner:show", { text: "아직 달성하지 못했습니다" }); return; }
+        this.achClaimed.push(ach.id);
+        this.shards += ach.shards;
+        EventBus.emit("reward:show", {
+          title: `업적 달성 — ${ach.name}`,
+          lines: [
+            { text: ach.desc, color: "#a8ecff" },
+            { text: `피규어 조각 +${ach.shards}`, color: "#ffd76a" },
+          ] satisfies RewardPopupState["lines"],
+        });
+        audio.sfx.ach(); /* v4.1.7 — 업적 전용 팡파레 (유료 팩) */
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "dailyClaim": {
+        this.ensureDaily();
+        const q = DAILY_QUESTS.find((d) => d.id === v.id);
+        if (!q || this.dailyClaimed.includes(q.id)) return;
+        const prog = q.id === "hunt" ? this.dailyHunts : q.id === "farm" ? this.dailyFarms : q.id === "boss" ? this.dailyBosses : q.id === "gate" ? this.dailyGate : this.dailyCloset;
+        if (prog < q.goal) { EventBus.emit("banner:show", { text: `진행도 부족 (${prog}/${q.goal})` }); return; }
+        this.dailyClaimed.push(q.id);
+        const g = q.reward;
+        if (g.gold) p.addGold(g.gold);
+        if (g.emerald) p.emerald += g.emerald;
+        if (g.tickets) this.gachaTickets += g.tickets;
+        this.addPassXp(PASS_XP_RULES.daily); // v4.5.0 — 일일 퀘스트 수령 시 패스 XP +40
+        this.trackMission("dailyClaim"); // v1.0.1 — 주간 미션 "일일 퀘스트 수령" 카운트
+        EventBus.emit("banner:show", { text: `일일 퀘스트 완료 — ${g.label}!` });
+        audio.sfx.reward();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "coupon": {
+        const code = (v.code ?? "").trim().toUpperCase();
+        const def = COUPONS.find((c) => c.code === code);
+        if (!def) { EventBus.emit("banner:show", { text: "잘못된 쿠폰 코드입니다" }); return; }
+        if (this.couponsUsed.includes(code)) { EventBus.emit("banner:show", { text: "이미 사용한 쿠폰입니다" }); return; }
+        this.couponsUsed.push(code);
+        const g = def.grant;
+        if (g.gold) p.addGold(g.gold);
+        if (g.emerald) p.emerald += g.emerald;
+        if (g.tickets) this.gachaTickets += g.tickets;
+        if (g.tierCube) p.owned.push("tier_cube");
+        EventBus.emit("reward:show", {
+          title: `쿠폰 사용 — ${def.name}`,
+          lines: [{ text: def.desc, color: "#ffd76a" }] satisfies RewardPopupState["lines"],
+        });
+        audio.sfx.reward();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "shardBuy": {
+        const item = SHARD_SHOP.find((s) => s.id === v.id);
+        if (!item) return;
+        if (this.shards < item.cost) { EventBus.emit("banner:show", { text: `피규어 조각 ${item.cost}개가 필요합니다` }); return; }
+        this.shards -= item.cost;
+        if (item.grant === "ticket") {
+          this.gachaTickets += 1;
+        } else if (item.grant === "badge") {
+          const unowned = Object.keys(BADGE_MAP).filter((k) => !this.badges.includes(k));
+          if (unowned.length === 0) { this.shards += item.cost; EventBus.emit("banner:show", { text: "모든 배지를 보유 중입니다" }); return; }
+          const pick = unowned[Math.floor(Math.random() * unowned.length)];
+          this.badges.push(pick);
+          EventBus.emit("banner:show", { text: `배지 획득 — ${BADGE_MAP[pick].name}!` });
+        } else if (item.grant === "rune") {
+          const kind = RUNE_KINDS[Math.floor(Math.random() * RUNE_KINDS.length)];
+          const k = runeKey(kind, 1);
+          this.runes[k] = (this.runes[k] ?? 0) + 1;
+          EventBus.emit("banner:show", { text: `룬 획득 — ${RUNE_META[kind].name} T1!` });
+        } else if (item.grant === "tier_cube") {
+          p.owned.push("tier_cube");
+        } else {
+          /* 스킨 */
+          const key = item.grant;
+          if (!p.owned.includes(key as ItemKey)) p.owned.push(key as ItemKey);
+          if (!p.cosmetics.includes(key as CosmeticKey)) p.cosmetics.push(key as CosmeticKey);
+          EventBus.emit("banner:show", { text: `스킨 획득 — 인벤토리에서 착용!` });
+        }
+        audio.sfx.shop();
+        this.syncExtBonus();
+        this.save();
+        this.emitRpgState();
+        break;
+      }
+      case "tierUp": {
+        const slot = v.slot === "armor" ? "armor" : "weapon";
+        /* v1.4.3 (#등급업큐브 사용안됨) — 실패 원인을 분리해 안내 (큐브 부재 vs 전설 상한) */
+        if (!p.owned.includes("tier_cube")) {
+          EventBus.emit("banner:show", { text: "등급업 큐브가 없습니다 — 캐시상점(에메랄드 15💎)에서 구매할 수 있어요" });
+          break;
+        }
+        const curTier = ITEMS[slot === "weapon" ? p.weapon : p.armor].tier;
+        if (curTier === "legend") {
+          EventBus.emit("banner:show", { text: `${slot === "weapon" ? "무기" : "방어구"}가 이미 최고 등급(전설)입니다` });
+          break;
+        }
+        const nextTier = p.upgradeTier(slot);
+        if (nextTier) {
+          EventBus.emit("banner:show", { text: `등급업 성공! ${slot === "weapon" ? "무기" : "방어구"} → ${nextTier.toUpperCase()} (스탯 +12%/회)` });
+          audio.sfx.upgradeOk(); // v1.4.8 — 등급업 = 강화 성공 계열 사운드
+          this.save();
+          this.emitRpgState();
+          this.emitHud();
+        } else {
+          EventBus.emit("banner:show", { text: "등급업 큐브가 없거나 이미 최고 등급입니다" });
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  private achSnapshot() {
+    const killsSum = Object.values(this.monsterKills).reduce((a, b) => a + b, 0);
+    let dojangBest = 0;
+    try { dojangBest = Number(localStorage.getItem("sertz.dojang.best") ?? "0") || 0; } catch { dojangBest = 0; }
+    return {
+      totalKills: killsSum,
+      lv: this.player.lv,
+      gateBest: this.gateBest,
+      closetBest: this.closetBest,
+      upSum: this.player.upgrades.weapon + this.player.upgrades.armor,
+      collection: Object.keys(this.monsterKills).length,
+      figures: this.figures.length,
+      constelNodes: this.constel.length,
+      dojangBest,
+      /* v4.1.4 — 보스 개편 연계 지표 */
+      bossKills: this.bossKillCount,
+      chaosKills: this.chaosKillCount,
+      invasionKills: this.invasionKillCount,
+    };
+  }
+
+  /* ---------------- 바르가 수비전 (웨이브 디펜스) ---------------- */
+
+  enterGate() {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "gate") return;
+    this.ensureTickets();
+    if (this.ticketGate <= 0) {
+      EventBus.emit("banner:show", { text: "오늘의 게이트 티켓 소진! (매일 3장 — 내일 다시 도전)" });
+      return;
+    }
+    this.ticketGate--;
+    this.ensureDaily();
+    this.dailyGate++;
+    this.gateFrom = this.stageDef.key;
+    /* 팀워크 버프 — 파티 2인 이상 (협동 수비전 보너스) */
+    const party = net.netLastParty();
+    const roles = (party?.members ?? []).map((m) => ROLE_OF[m.cls ?? ""]).filter(Boolean) as RoleKind[];
+    const tw = teamworkBuff(party?.members.length ?? 1, roles);
+    if (tw.pct > 0 && tw.label) {
+      this.player.applyRunCard([{ id: "tw", tier: 2, name: "팀워크", desc: tw.label, stat: { atkPct: tw.pct, hpPct: tw.pct } }]);
+      EventBus.emit("banner:show", { text: tw.label });
+    } else {
+      this.showBanner("바르가 수비전으로 이동합니다 — 균열의 문을 지켜라!");
+    }
+    this.save();
+    this.emitRpgState();
+    this.gotoStage("gate");
+  }
+
+  private buildGate() {
+    const cx = this.stageW / 2;
+    const cy = this.stageH / 2 - 30;
+    this.gateCorePos.set(cx, cy);
+    /* 바르가 균열의 문 코어 — 발광 균열 문 + 테두리 */
+    const door = this.add.rectangle(cx, cy, 84, 120, 0x4a3a6b).setStrokeStyle(4, 0x9d7aff, 0.9).setDepth(4);
+    const doorInner = this.add.rectangle(cx, cy - 8, 60, 88, 0x6b5a8a).setDepth(5);
+    const knob = this.add.circle(cx + 22, cy, 5, 0xffd76a).setDepth(6);
+    void knob; void doorInner;
+    const glow = this.add.circle(cx, cy, 86, 0x9d7aff, 0.08).setDepth(2);
+    void glow;
+    this.tweens.add({ targets: door, scale: 1.03, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.add
+      .text(cx, cy - 92, "바르가 균열", { fontFamily: "Galmuri11, sans-serif", fontSize: "20px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90);
+    /* 코어 HP 바 (월드 좌표) */
+    this.gateCoreBarBg = this.add.rectangle(cx, cy + 82, 120, 8, 0x22262e).setDepth(96);
+    this.gateCoreBar = this.add.rectangle(cx, cy + 82, 116, 5, 0x9d7aff).setDepth(97);
+    this.gateText = this.add
+      .text(this.cameras.main.width / 2, 96, "", { fontFamily: "Galmuri11, sans-serif", fontSize: "17px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    this.gateCoreMax = 1200 + this.player.lv * 60 + this.player.maxHp * 0.5;
+    this.gateCoreHp = this.gateCoreMax;
+    this.gateWave = 0;
+    this.gateSilver = 0;
+    this.gateAlive = 0;
+    this.gateEnded = false;
+    this.gateActive = true;
+    this.gatePhase = "break";
+    this.gateBreakUntil = this.time.now + 2600;
+    this.emitGateState();
+    this.showBanner("바르가 수비전 시작! 균열에 닿기 전에 몬스터를 처치하라");
+  }
+
+  /* ================= v1.4.3 (유저 리포트 ⑤ 멀티 콘텐츠) — 파티 공동 토벌전 =================
+   *  파티 위젯의 [공동 토벌전 입장] 버튼으로 들어오는 협동 레이드 구역.
+   *  · 파티원 수만큼 보스 HP/보상이 증가 (1명당 HP +35% · 보상 +35% · 에메랄드 +1)
+   *  · 같은 파티가 같은 구역(praid)에 있으면 기존 멀티 릴레이(위치/공격 연출)로 서로 보인다
+   *  · 격파 처리는 재림판 보상 경로(replayBossActive)를 재사용 — 스토리 진행 영향 0
+   *  · 단독 입장도 허용 (혼자서도 콘텐츠를 "본다" — 파티 모집 동기가 된다) */
+  private buildPartyRaid() {
+    const cx = this.stageW / 2;
+    const cy = this.stageH / 2;
+    const partyN = Math.max(1, net.netLastParty()?.members.length ?? 1);
+    const hpMul = 1 + (partyN - 1) * 0.35;
+
+    /* 구역 타이틀 + 파티 상태 표시 */
+    this.add
+      .text(this.cameras.main.width / 2, 66, "공 동 토 벌 전", { fontFamily: "Galmuri11, sans-serif", fontSize: "30px", color: "#8fb8ff", stroke: "#101820", strokeThickness: 6, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0);
+    this.add
+      .text(this.cameras.main.width / 2, 96, partyN > 1 ? `파티 ${partyN}인 동시 토벌 — 보스 HP ×${hpMul.toFixed(2)} · 보상 ×${hpMul.toFixed(2)} · 에메랄드 +${3 + partyN}` : "파티 없이 단독 도전 — 파티원과 함께 잡으면 보상이 커진다", { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    /* 심연의 소환진 (바닥 룬 — 분위기) */
+    if (this.textures.exists("rune_circle")) {
+      const rune = this.add.image(cx, cy, "rune_circle").setDepth(3).setAlpha(0.5).setTint(0x5a7aff).setBlendMode(Phaser.BlendModes.ADD).setScale(1.6);
+      this.tweens.add({ targets: rune, angle: 360, duration: 16000, repeat: -1 });
+    }
+
+    /* 레이드 보스 — 심연의 감시자 (심연의 군주 스펙 변형) */
+    const base = BOSS_DEFS.abysslord;
+    const def: BossDef = {
+      ...base,
+      name: partyN > 1 ? `심연의 감시자 (파티 ${partyN}인)` : "심연의 감시자",
+      hp: Math.round(base.hp * 1.25 * hpMul),
+      atk: Math.round(base.atk * 1.15 * (1 + (partyN - 1) * 0.08)),
+      speed: Math.round(base.speed * 0.92), // 협동전 — 추격 살짝 완만 (각자 패턴 대응 여유)
+      exp: Math.round(base.exp * hpMul * 1.2),
+      gold: Math.round(base.gold * hpMul * 1.2),
+      orbTint: 0x5a8aff,
+    };
+    this.bossDef = def;
+    this.replayBossActive = true; // onBossDead의 스토리 분리 보상 경로 재사용
+    this.replayBossEmerald = 3 + partyN; // 파티원 1명당 에메랄드 +1
+    const bx = cx;
+    const by = cy - 40;
+    audio.sfx.roar();
+    this.doShake(320, 0.009);
+    this.showBanner(partyN > 1 ? `심연의 감시자 출현! — 파티 ${partyN}인 힘을 모아라!` : "심연의 감시자 출현!");
+    /* v1.4.3 — 보스 스폰은 FX 풀 빌드(create 후반) 이후로 지연.
+     *  create 도중 Boss를 만들면 Boss 등장 연출이 아직 null인 파티클 풀을 써서
+     *  초기화 예외 → 안전 재부팅이 한 번 더 도는 문제가 있었다 (E2E 실측).
+     *  재림판(spawnReplayBoss · delayedCall 350ms)과 동일한 안전 패턴. */
+    this.time.delayedCall(350, () => {
+      try {
+        if (!this.scene.isActive() || this.boss) return;
+        this.boss = new Boss(this, bx, by, def, "hard");
+        this.spawnBossRunic(bx, by, false);
+        this.applyBossPostFX(false);
+        this.physics.add.collider(this.boss, this.solidGroup);
+        EventBus.emit("boss:show", { name: def.name, hp: this.boss.hp, maxHp: this.boss.maxHp });
+        audio.playStageBGM(this.stageDef.key, true);
+        this.bossIntroCinematic(bx, by, def.introDialogue);
+      } catch (e) {
+        console.error("[SERTZ] 공동 토벌전 보스 스폰 실패 — 자가치유로 정리", e);
+        this.dialoguing = false;
+        this.physics.world.resume();
+      }
+    });
+  }
+
+  /** 공동 토벌전 입장 (파티 위젯 → rpg:partyRaid) */
+  private enterPartyRaid() {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "praid") return;
+    const partyN = Math.max(1, net.netLastParty()?.members.length ?? 1);
+    this.praidFrom = this.stageDef.key;
+    audio.sfx.portal();
+    EventBus.emit("ui:panel", { panel: null });
+    EventBus.emit("banner:show", { text: partyN > 1 ? `공동 토벌전 — 파티 ${partyN}인 동시 토벌!` : "공동 토벌전으로 이동합니다" });
+    this.startTransition("praid", { delay: 440 });
+  }
+
+  private emitGateState() {
+    EventBus.emit("gate:state", {
+      active: this.gateActive,
+      wave: this.gateWave,
+      coreHp: Math.max(0, Math.round(this.gateCoreHp)),
+      coreMax: Math.round(this.gateCoreMax),
+      silver: this.gateSilver,
+      phase: this.gatePhase,
+      bossWave: this.gateWave > 0 && this.gateWave % 5 === 0,
+    });
+  }
+
+  private tickGate(dt: number) {
+    if (this.gateEnded) return;
+    /* 휴식 → 다음 웨이브 */
+    if (this.gatePhase === "break" && this.time.now >= this.gateBreakUntil) {
+      this.spawnGateWave();
+    }
+    /* 코어 접촉 몬스터 — 자폭 피해 */
+    const core = this.gateCorePos;
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      const dx = e.x - core.x;
+      const dy = e.y - core.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 78) {
+        const dmg = Math.round((e.def.atk ?? 10) * 2.2 + this.gateWave * 6);
+        this.gateCoreHp -= dmg;
+        this.spawnDamageText(core.x, core.y - 60, dmg, false);
+        this.doShake(120, 0.006);
+        e.takeDamage(999999, new Phaser.Math.Vector2(0, -1), 0);
+        if (this.gateCoreHp <= 0) { this.finishGate("fail"); return; }
+      } else if (dist > 340) {
+        /* 플레이어가 멀면 코어를 향해 직진 (AI 보정 — 유인 불가 방지) */
+        const v = 52;
+        e.setVelocity(((core.x - e.x) / dist) * v, ((core.y - e.y) / dist) * v);
+      }
+    }
+    /* UI 100ms 스로틀 */
+    this.gateTextAcc2 += dt;
+    this.gateText?.setX(this.cameras.main.width / 2);
+    if (this.gateTextAcc2 >= 100) {
+      this.gateTextAcc2 = 0;
+      if (this.gatePhase === "break") {
+        const sec = Math.max(0, Math.ceil((this.gateBreakUntil - this.time.now) / 1000));
+        this.gateText?.setText(`바르가 수비전  |  다음 웨이브 ${sec}초  |  웨이브 ${this.gateWave}  |  실버 ${this.gateSilver}`);
+      } else {
+        this.gateText?.setText(`바르가 수비전  |  웨이브 ${this.gateWave} (${this.gateAlive}마리)  |  실버 ${this.gateSilver}`);
+      }
+      if (this.gateCoreBar && this.gateCoreBarBg) {
+        const pct = Math.max(0, this.gateCoreHp / this.gateCoreMax);
+        this.gateCoreBar.width = Math.max(1, 116 * pct);
+        this.gateCoreBar.x = this.gateCorePos.x - (116 - this.gateCoreBar.width) / 2;
+        this.gateCoreBar.fillColor = pct > 0.5 ? 0x7dffa8 : pct > 0.25 ? 0xffd76a : 0xe84a5a;
+      }
+    }
+  }
+  private gateTextAcc2 = 0;
+
+  private GATE_POOL_EASY = ["x3_goblin", "wolf", "x2_frog", "x2_rat"] as EnemyKey[];
+  private GATE_POOL_MID = ["minion", "spider", "frostwolf", "x2_bat", "x3_imp", "x3_tinyzombie"] as EnemyKey[];
+  private GATE_POOL_HARD = ["emberwolf", "helhound", "x3_orcwarrior", "x3_wogol", "x2_darkhound", "x3_necromancer"] as EnemyKey[];
+
+  private spawnGateWave() {
+    this.gateWave++;
+    this.gatePhase = "fight";
+    const lv = this.player.lv;
+    const hpMul = (1 + (this.gateWave - 1) * 0.26) * (1 + lv * 0.012);
+    const atkMul = (1 + (this.gateWave - 1) * 0.18) * (1 + lv * 0.008);
+    const pool = this.gateWave <= 3 ? this.GATE_POOL_EASY : this.gateWave <= 7 ? [...this.GATE_POOL_EASY, ...this.GATE_POOL_MID] : [...this.GATE_POOL_MID, ...this.GATE_POOL_HARD];
+    const boss = this.gateWave % 5 === 0;
+    let count = Math.min(24, 4 + Math.round(this.gateWave * 1.7));
+    if (boss) count = Math.min(14, Math.ceil(count * 0.55));
+    this.gateAlive = count;
+    for (let i = 0; i < count; i++) {
+      const side = i % 4;
+      const px = side === 0 ? Phaser.Math.Between(60, this.stageW - 60) : side === 2 ? Phaser.Math.Between(60, this.stageW - 60) : side === 1 ? this.stageW - 50 : 50;
+      const py = side === 1 ? Phaser.Math.Between(60, this.stageH - 60) : side === 3 ? Phaser.Math.Between(60, this.stageH - 60) : side === 0 ? 50 : this.stageH - 50;
+      const key = pool[Math.floor(Math.random() * pool.length)];
+      const isBossUnit = boss && i === 0;
+      const def = ENEMIES[key];
+      const sp = this.safeSpawnXY(px, py); // v1.1.0 (#9) — 가장자리 벽 스폰 보정
+      const e = new Enemy(this, sp.x, sp.y, key, {
+        hp: Math.round(def.hp * hpMul * (isBossUnit ? 7 : 1)),
+        atk: Math.round(def.atk * atkMul),
+        exp: Math.round(def.exp * 1.4),
+        gold: 0,
+        scale: isBossUnit ? 1.8 : 1,
+        tint: isBossUnit ? 0xc07aff : undefined,
+        displayName: isBossUnit ? `게이트 수호 마왕` : undefined,
+      });
+      this.enemies.push(e);
+      this.physics.add.collider(e, this.solidGroup);
+    }
+    this.showBanner(boss ? `제 ${this.gateWave} 웨이브 — 보스 출현! 게이트 수호 마왕을 막아라!` : `제 ${this.gateWave} 웨이브 — ${count}마리 접근!`);
+    if (boss) audio.sfx.roar();
+    this.emitGateState();
+  }
+
+  private onGateWaveCleared() {
+    if (this.gatePhase !== "fight" || this.gateEnded) return;
+    this.trackMission("gate"); // v1.0.1 — 시즌 미션 게이트 웨이브 카운트
+    this.gatePhase = "cards";
+    this.gatePendingCards = drawGateCards(this.gateWave);
+    /* 웨이브 클리어 보너스 — 룬 드롭 (확률) */
+    const lines: { text: string; color?: string }[] = [
+      { text: `웨이브 ${this.gateWave} 방어 성공!`, color: "#7dffa8" },
+      { text: "카드를 선택해 강화하자 (실버 상점도 이용 가능)", color: "#a8ecff" },
+    ];
+    if (Math.random() < 0.4) {
+      const kind = RUNE_KINDS[Math.floor(Math.random() * RUNE_KINDS.length)];
+      const k = runeKey(kind, 1);
+      this.runes[k] = (this.runes[k] ?? 0) + 1;
+      lines.push({ text: `룬 드롭! ${RUNE_META[kind].name} T1 획득`, color: "#c08aff" });
+    }
+    EventBus.emit("reward:show", { title: "웨이브 방어 성공", lines: lines as RewardPopupState["lines"] });
+    this.emitGateState();
+    EventBus.emit("gate:cards", {
+      open: true,
+      wave: this.gateWave,
+      silver: this.gateSilver,
+      cards: this.gatePendingCards.map((c) => ({ id: c.id, tier: c.tier, name: c.name, desc: c.desc })),
+    });
+  }
+
+  pickGateCard(idx: number) {
+    if (!this.gateActive || this.gatePhase !== "cards") return;
+    const card = this.gatePendingCards[idx];
+    if (!card) return;
+    this.player.applyRunCard([card]);
+    this.gatePhase = "break";
+    this.gateBreakUntil = this.time.now + 3200;
+    this.gatePendingCards = [];
+    EventBus.emit("gate:cards", { open: false, wave: this.gateWave, silver: this.gateSilver, cards: [] });
+    EventBus.emit("banner:show", { text: `[${card.tier}성] ${card.name} — ${card.desc}` });
+    audio.sfx.equip();
+    this.emitGateState();
+  }
+
+  buySilverShop(id: string) {
+    if (!this.gateActive) return;
+    const item = SILVER_SHOP.find((s) => s.id === id);
+    if (!item) return;
+    if (this.gateSilver < item.cost) { EventBus.emit("banner:show", { text: `실버가 부족합니다 (${item.cost} 필요)` }); return; }
+    this.gateSilver -= item.cost;
+    const p = this.player;
+    if (id === "sh_heal") {
+      p.heal(Math.round(p.maxHp * 0.6));
+      EventBus.emit("banner:show", { text: "응급 키트 — HP 60% 회복!" });
+    } else if (id === "sh_bomb") {
+      const dmg = Math.round(p.atkTotal * 9);
+      for (const e of [...this.enemies]) {
+        if (e.alive) e.takeDamage(dmg, new Phaser.Math.Vector2(0, -1), 0);
+      }
+      this.cameras.main.flash(160, 255, 220, 140);
+      this.doShake(200, 0.008);
+      EventBus.emit("banner:show", { text: "차원 폭탄! 전 적에게 대미지!" });
+    } else if (id === "sh_repair") {
+      this.gateCoreHp = Math.min(this.gateCoreMax, this.gateCoreHp + this.gateCoreMax * 0.3);
+      EventBus.emit("banner:show", { text: "게이트 수리 — HP 30% 복구!" });
+    } else if (id === "sh_mp") {
+      p.mp = Math.min(p.maxMp, p.mp + p.maxMp);
+      EventBus.emit("banner:show", { text: "정신 안정제 — MP 회복!" });
+    }
+    audio.sfx.cardHeal();
+    this.emitGateState();
+  }
+
+  finishGate(mode: "fail" | "exit") {
+    if (!this.gateActive || this.gateEnded) return;
+    this.gateEnded = true;
+    this.gateActive = false;
+    this.gatePhase = "fight";
+    const waves = this.gateWave;
+    /* 잔여 적 정리 */
+    for (const e of this.enemies) {
+      if (e.alive) { e.alive = false; e.destroy(); }
+    }
+    this.enemies = [];
+    this.player.clearRunBuffs();
+    /* v4.1.0 — 도중 철수 보상 축소 (유저 지시 #9 — 클리어 없이 나가도 풀보상이던 버그):
+     *  코어 파괴(정산 종료)만 풀보상. 포탈로 도중 철수 시 웨이브 3 미만 = 무보상,
+     *  3 이상 = 골드 30%만. 뽑기권/별/배지는 정상 종료에만. */
+    const early = mode === "exit";
+    const goldMul = early ? (waves >= 3 ? 0.3 : 0) : 1;
+    const goldReward = Math.round(waves * 900 * goldMul * (1 + this.player.extBonus.goldPct / 100));
+    const ticketReward = early ? 0 : 1 + Math.floor(waves / 5);
+    this.player.addGold(goldReward);
+    this.gachaTickets += ticketReward;
+    const lines: { text: string; color?: string }[] = [
+      { text: `방어 웨이브: ${waves}`, color: "#a8ecff" },
+      { text: goldReward > 0 ? `골드 +${goldReward.toLocaleString()} G` : "골드 0 G", color: "#ffd76a" },
+    ];
+    if (!early) lines.push({ text: `뽑기권 +${ticketReward}`, color: "#c08aff" });
+    const record = waves > this.gateBest && !early;
+    if (record) this.gateBest = waves;
+    if (!early) this.addPassXp(waves * PASS_XP_RULES.gateWave); // v4.5.0 — 정상 종료 시 웨이브×2 패스 XP
+    if (record) lines.push({ text: `신기록! 최고 ${this.gateBest} 웨이브`, color: "#7dffa8" });
+    /* ★ 달성 보상 (최초 1회 — 정상 종료만) */
+    if (!early) for (let i = 0; i < GATE_STAR_WAVES.length; i++) {
+      if (waves >= GATE_STAR_WAVES[i] && !this.gateStars[i]) {
+        this.gateStars[i] = true;
+        this.player.emerald += GATE_STAR_REWARD[i];
+        lines.push({ text: `★${i + 1} 달성! 에메랄드 +${GATE_STAR_REWARD[i]}`, color: "#7de8ff" });
+        const badgeKey = ["bdg_gate1", "bdg_gate2", "bdg_gate3"][i];
+        if (!this.badges.includes(badgeKey)) {
+          this.badges.push(badgeKey);
+          lines.push({ text: `배지 획득 — ${BADGE_MAP[badgeKey].name}!`, color: "#ffd76a" });
+        }
+      }
+    }
+    if (mode === "fail") lines.push({ text: "균열이 부서졌다… 다음엔 더 강하게!", color: "#ff8a9c" });
+    else if (waves < 3) lines.push({ text: "바로 철수 — 보상이 없다. 제대로 싸우고 돌아오자!", color: "#ff8a9c" });
+    else lines.push({ text: "도중 철수 — 골드 30%만 정산 (별·뽑기권 없음)", color: "#ff8a9c" });
+    EventBus.emit("reward:show", {
+      title: mode === "fail" ? "바르가 수비전 — 균열 함락" : "바르가 수비전 — 철수",
+      lines: lines as RewardPopupState["lines"],
+    });
+    audio.sfx.reward();
+    this.emitGateState();
+    this.emitRpgState();
+    this.save();
+    /* 랭킹 제출 (멀티 서버 연결 시) */
+    net.netRankSubmit("gate", this.gateBest, getPlayerName(), this.player.lv);
+    const back: StageKey = STAGES[this.gateFrom] ? this.gateFrom : "village";
+    this.startTransition(back, { delay: 1900 });
+  }
+
+  /* ---------------- 균열 던전 (골드/경험치책 파밍) ---------------- */
+
+  enterCloset(tier = 0) {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "closet") return;
+    this.ensureTickets();
+    if (this.ticketCloset <= 0) {
+      const left = Math.max(0, 3 - this.ticketRefills);
+      EventBus.emit("banner:show", { text: left > 0 ? `오늘의 균열 던전 티켓 소진! (혜택 패널에서 재충전 ${left}회 가능 — 3💎)` : "오늘의 균열 던전 티켓 소진! (재충전 한도 초과)" });
+      return;
+    }
+    /* v1.0.8 — 심층 균열: 티어 잠금 검증 (클리어한 티어+1까지 입장 가능) */
+    const maxTier = Math.min(99, this.inf.closetTier);
+    const t = Math.max(0, Math.min(maxTier, Math.floor(tier)));
+    this.ticketCloset--;
+    this.ensureDaily();
+    this.dailyCloset++;
+    this.closetFrom = this.stageDef.key;
+    this.closetTheme = closetThemeOf(); // v1.0.1 — 오늘의 요일 테마
+    this.closetTierNow = t; // v1.0.8 — 심층 균열 티어
+    this.trialMod = null;
+    this.trackMission("closet"); // v1.0.1 — 시즌 미션 균열 입장 카운트
+    this.showBanner(t > 0 ? `심층 균열 T${t} 입장! — 적 ×${closetTierScale(t).hpMul.toFixed(1)} · 보상 ×${closetTierScale(t).goldMul.toFixed(1)}` : `오늘의 테마 「${this.closetTheme.name}」 — ${this.closetTheme.desc}`);
+    this.save();
+    this.emitRpgState();
+    this.gotoStage("closet");
+  }
+
+  /* v1.0.8 — 일일 시련: 티켓 소모 없음, 1일 1회 클리어 보상 (입장 자체는 무제한 — 훈련 겸 파밍) */
+  enterTrial() {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "closet") return;
+    const mod = todayTrial();
+    this.trialMod = mod;
+    this.closetTierNow = 0;
+    this.closetFrom = this.stageDef.key;
+    this.closetTheme = closetThemeOf();
+    this.trackMission("closet");
+    this.showBanner(`일일 시련 「${mod.name}」 — ${mod.desc}`);
+    this.save();
+    this.emitRpgState();
+    this.gotoStage("closet");
+  }
+
+  /* v1.0.8 — ① 심연의 탑: 무한 층수 탑등반 (입장 무료 — 층 보상은 심연 코인 중심) */
+  enterTower() {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "tower") return;
+    this.towerFrom = this.stageDef.key;
+    this.towerActive = true;
+    this.towerFloor = 1;
+    this.showBanner("심연의 탑 입장 — 층을 오를수록 강해진다. 5층마다 보스가 기다린다!");
+    this.save();
+    this.gotoStage("tower");
+  }
+
+  private buildCloset() {
+    const cx = this.stageW / 2;
+    const th = this.closetTheme;
+    const trial = this.trialMod;
+    const tier = this.closetTierNow;
+    this.add
+      .text(this.cameras.main.width / 2, 66, trial ? "일 일 시 련" : tier > 0 ? "심 층 균 열" : "균 열 던 전", { fontFamily: "Galmuri11, sans-serif", fontSize: "30px", color: trial ? trial.color : "#8fe84a", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0);
+    /* v1.0.8 — 시련 수정자/티어 배지 (기존 요일 테마 배지 대체) */
+    this.add
+      .text(this.cameras.main.width / 2, 96, trial ? `${trial.name} — ${trial.desc}` : tier > 0 ? `심층 T${tier} — 적 HP ×${closetTierScale(tier).hpMul.toFixed(1)} · 골드 ×${closetTierScale(tier).goldMul.toFixed(1)}` : `오늘의 테마 — ${th.name}`, { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: trial ? trial.color : tier > 0 ? "#c08aff" : th.color, stroke: "#1a1020", strokeThickness: 4, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0);
+    this.closetText = this.add
+      .text(this.cameras.main.width / 2, 120, "", { fontFamily: "Galmuri11, sans-serif", fontSize: "17px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    this.closetGold = 0;
+    this.closetAcc = 0;
+    this.closetActive = true;
+    this.closetEndsAt = this.time.now + 60000;
+    if (!trial) this.showBanner(tier > 0 ? `심층 균열 T${tier} — 60초 파밍!` : `「${th.name}」 입장! 60초 동안 ${th.mul ? "골드" : "보물"}을 모아라`);
+  }
+
+  /* ================= v1.0.8 — ① 심연의 탑 (무한 층수) ================= */
+
+  private buildTower() {
+    this.towerActive = true; // 리셋 블록 이후 빌드 — 여기서 활성화 (closet/gate 패턴)
+    if (this.towerFloor < 1) this.towerFloor = 1;
+    this.add
+      .text(this.cameras.main.width / 2, 66, "심 연 의 탑", { fontFamily: "Galmuri11, sans-serif", fontSize: "30px", color: "#c08aff", stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0);
+    this.towerText = this.add
+      .text(this.cameras.main.width / 2, 96, "", { fontFamily: "Galmuri11, sans-serif", fontSize: "16px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    this.spawnTowerFloor();
+  }
+
+  /** v1.1.0 (#9 몬스터 벽 뚫기) — 닫힌 셀(벽) 안에서 태어난 몬스터는 물리 분리 과정에서
+   *  벽을 "뚫고" 나오는 것처럼 보였다. 스폰 좌표가 열린 셀이 아니면 가장 가까운 열린 셀 중심으로 보정 */
+  private safeSpawnXY(x: number, y: number): { x: number; y: number } {
+    const lay = this.layout;
+    if (!lay || isOpenXY(lay, x, y, 30)) return { x, y };
+    let best: { x: number; y: number } | null = null;
+    let bestD = Infinity;
+    for (let i = 0; i < lay.open.length; i++) {
+      if (!lay.open[i]) continue;
+      const c = cellCenterOf(lay, i);
+      const d = (c.x - x) * (c.x - x) + (c.y - y) * (c.y - y);
+      if (d < bestD) { bestD = d; best = c; }
+    }
+    return best ?? { x: this.player?.x ?? x, y: this.player?.y ?? y };
+  }
+
+  /** 현재 층 스폰 — 층 스케일 적용, 보스층은 보스 1기 + 잡몹 소수 */
+  private spawnTowerFloor() {
+    const f = this.towerFloor;
+    const lv = this.player.lv;
+    const sc = towerFloorScale(f);
+    const bossFloor = isTowerBossFloor(f);
+    const pool = towerPool(f);
+    const n = bossFloor ? 4 : Phaser.Math.Clamp(5 + Math.floor(f / 3), 5, 14);
+    for (let i = 0; i < n; i++) {
+      const key = pool[Math.floor(Math.random() * pool.length)];
+      const def = ENEMIES[key];
+      const px = Phaser.Math.Between(80, this.stageW - 80);
+      const py = Phaser.Math.Between(80, this.stageH - 80);
+      const sp = this.safeSpawnXY(px, py); // v1.1.0 (#9) — 벽 안 스폰 금지
+      const e = new Enemy(this, sp.x, sp.y, key, {
+        hp: Math.round((22 + lv * 2.8 + def.hp * 0.5) * sc),
+        atk: Math.round((5 + lv * 0.45) * (1 + (f - 1) * TOWER.atkPerFloor)),
+        exp: Math.round((20 + lv * 2) * (1 + (f - 1) * TOWER.expPerFloor)),
+        gold: 0,
+      });
+      this.enemies.push(e);
+      this.physics.add.collider(e, this.solidGroup);
+    }
+    if (bossFloor) {
+      /* 보스층 — 전 챕터 보스 로테이션 (5층 간격으로 순환), 층 스케일 적용 */
+      const rot: BossKey[] = ["guardian", "behemoth", "nidhog", "surt", "fenrir", "skoll", "gram", "abysslord", "abudditos"];
+      const bkey = rot[(Math.floor(f / TOWER.bossEvery) - 1) % rot.length];
+      const base = BOSS_DEFS[bkey];
+      const def: BossDef = {
+        ...base,
+        name: `${base.name} T${f}`,
+        hp: Math.round(base.hp * sc * 0.9),
+        atk: Math.round(base.atk * (1 + (f - 1) * TOWER.atkPerFloor)),
+        exp: Math.round(base.exp * (1 + (f - 1) * TOWER.expPerFloor)),
+        gold: 0,
+      };
+      const b = new Boss(this, this.stageW / 2, 200, def, "normal");
+      this.boss = b;
+      this.bossDef = def;
+      this.towerBossRef = b;
+      this.physics.add.collider(b, this.solidGroup);
+      audio.sfx.roar();
+      EventBus.emit("boss:show", { name: `[탑 ${f}층] ${def.name}`, hp: b.hp, maxHp: b.maxHp });
+    }
+    this.updateTowerText();
+  }
+
+  private updateTowerText() {
+    const f = this.towerFloor;
+    const alive = this.enemies.filter((e) => e.alive).length;
+    const bossAlive = this.towerBossRef ? 1 : 0;
+    const bossTag = isTowerBossFloor(f) ? " [BOSS]" : "";
+    this.towerText?.setText(`${f}층${bossTag}  |  남은 적 ${alive + bossAlive}  |  최고 기록 ${this.inf.towerBest}층`);
+    this.towerText?.setX(this.cameras.main.width / 2);
+  }
+
+  /** 층 전멸 시 호출 — 보상 지급 후 다음 층 스폰 */
+  private towerFloorCleared() {
+    const f = this.towerFloor;
+    const rw = towerFloorReward(f, this.player.lv);
+    this.player.addGold(rw.gold);
+    this.player.gainExp(rw.exp);
+    this.inf.abyss += rw.abyss;
+    /* 기록 갱신 */
+    const record = f > this.inf.towerBest;
+    if (record) this.inf.towerBest = f;
+    this.spawnPickupText(this.player.x, this.player.y - 74, `${f}층 클리어! +${rw.abyss} 심연 코인${record ? " — 신기록!" : ""}`, "#c08aff");
+    audio.sfx.reward();
+    if (f % 10 === 0) {
+      /* 10층마다 에메랄드 보너스 — 장기 목표 */
+      this.player.emerald += 3;
+      this.spawnPickupText(this.player.x, this.player.y - 96, "+3 에메랄드 (10층 돌파)", "#7de8ff");
+    }
+    this.towerFloor++;
+    this.emitRpgState();
+    this.save();
+    this.time.delayedCall(650, () => {
+      if (this.towerActive && this.scene.isActive()) {
+        this.showBanner(`${this.towerFloor}층 — 더 깊이 내려간다…`);
+        this.spawnTowerFloor();
+      }
+    });
+  }
+
+  /** 탑 중간 퇴장 (복귀 포탈/사망) — 기록 확정 */
+  private exitTower() {
+    if (!this.towerActive) return;
+    this.towerActive = false;
+    this.towerBossRef = null;
+    this.towerText?.destroy();
+    this.towerText = null;
+    /* 탑 랭킹 등록 (멀티 서버 — ⑩) */
+    try { net.netRankSubmit("tower", this.inf.towerBest, getPlayerName(), this.player.lv); } catch { /* 미접속 무시 */ }
+    this.save();
+    this.emitRpgState();
+  }
+
+  /* ================= v1.0.18 — 몬스터 파크 (일일 입장권 · 웨이브 사냥) ================= */
+
+  /** 파크 입장 — 입장권 검사 (하루 2장) + 레벨 제한 */
+  enterPark(diff: number) {
+    if (!this.player || this.transitioning) return;
+    if (this.stageDef.key === "park") return;
+    const d = PARK_DIFFS[Math.max(0, Math.min(2, diff))];
+    const today = todayKey();
+    if (this.parkTickets.date !== today) this.parkTickets = { date: today, n: PARK_TICKETS };
+    if (this.parkTickets.n <= 0) {
+      EventBus.emit("banner:show", { text: "파크 입장권이 소진됐다 (하루 2장 — 내일 다시!)" });
+      return;
+    }
+    if (this.player.lv < d.minLv) {
+      EventBus.emit("banner:show", { text: `${d.name} 난이도는 Lv ${d.minLv}부터 입장할 수 있다` });
+      return;
+    }
+    this.parkTickets.n--;
+    this.parkFrom = this.stageDef.key;
+    this.parkDiff = Math.max(0, Math.min(2, diff));
+    this.parkKills = 0;
+    this.parkCoinsEarned = 0;
+    this.save();
+    this.gotoStage("park");
+  }
+
+  private buildPark() {
+    this.parkActive = true; // 리셋 블록 이후 빌드 — 여기서 활성화 (tower/closet 패턴)
+    const d = PARK_DIFFS[this.parkDiff];
+    this.parkEndsAt = this.time.now + PARK_DURATION;
+    this.parkAcc = 0;
+    this.add
+      .text(this.cameras.main.width / 2, 66, "몬 스 터 파 크", { fontFamily: "Galmuri11, sans-serif", fontSize: "30px", color: d.color, stroke: "#1a1020", strokeThickness: 6, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setScrollFactor(0);
+    this.parkText = this.add
+      .text(this.cameras.main.width / 2, 96, "", { fontFamily: "Galmuri11, sans-serif", fontSize: "16px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(96)
+      .setScrollFactor(0);
+    this.showBanner(`몬스터 파크 「${d.name}」 — 90초 동안 최대한 사냥해라!`);
+  }
+
+  /** 현재 웨이브 — 30초마다 +1 (적 강화·코인 증가) */
+  private parkWaveNow(): number {
+    const elapsed = PARK_DURATION - Math.max(0, this.parkEndsAt - this.time.now);
+    return 1 + Math.floor(elapsed / 30000);
+  }
+
+  private tickPark(dt: number) {
+    const d = PARK_DIFFS[this.parkDiff];
+    const wave = this.parkWaveNow();
+    /* 몬스터 지속 소환 — 웨이브가 오를수록 빠르게 */
+    this.parkAcc += dt;
+    const spawnMs = d.spawnMs / (1 + (wave - 1) * 0.18);
+    if (this.parkAcc >= spawnMs) {
+      this.parkAcc = 0;
+      const lv = this.player.lv;
+      const pool: EnemyKey[] = ["x3_goblin", "x2_frog", "wolf", "x2_rat", "x2_bat", "x2_firebird", "spider"];
+      const n = 1 + (wave >= 2 ? 1 : 0);
+      for (let i = 0; i < n; i++) {
+        const key = pool[Math.floor(Math.random() * pool.length)];
+        const def = ENEMIES[key];
+        const sp = this.safeSpawnXY(Phaser.Math.Between(80, this.stageW - 80), Phaser.Math.Between(80, this.stageH - 80)); // v1.1.0 (#9)
+        const e = new Enemy(this, sp.x, sp.y, key, {
+          hp: Math.round((20 + lv * 2.6 + def.hp * 0.45) * d.hpMul * (1 + (wave - 1) * 0.35)),
+          atk: Math.round((4 + lv * 0.42) * d.atkMul * (1 + (wave - 1) * 0.2)),
+          exp: Math.round((24 + lv * 2.4) * (1 + (wave - 1) * 0.25)),
+          gold: 0,
+        });
+        this.enemies.push(e);
+        this.physics.add.collider(e, this.solidGroup);
+      }
+    }
+    /* UI */
+    this.gateTextAcc2 += dt;
+    this.parkText?.setX(this.cameras.main.width / 2);
+    if (this.gateTextAcc2 >= 100) {
+      this.gateTextAcc2 = 0;
+      const remain = Math.max(0, this.parkEndsAt - this.time.now);
+      this.parkText?.setText(`「${d.name}」 ${wave}차 웨이브 · 남은 시간 ${Math.ceil(remain / 1000)}초  |  파크 코인 +${this.parkCoinsEarned}`);
+    }
+    if (this.time.now >= this.parkEndsAt) this.finishPark();
+  }
+
+  private finishPark() {
+    if (!this.parkActive) return;
+    this.parkActive = false;
+    for (const e of this.enemies) {
+      if (e.alive) { e.alive = false; e.destroy(); }
+    }
+    this.enemies = [];
+    const d = PARK_DIFFS[this.parkDiff];
+    this.parkCoins += this.parkCoinsEarned;
+    const record = this.parkDiff === 2 && this.parkKills > this.parkBest;
+    if (record) this.parkBest = this.parkKills;
+    EventBus.emit("reward:show", {
+      title: `몬스터 파크 「${d.name}」 — 사냥 종료!`,
+      lines: [
+        { text: `획득 파크 코인: ${this.parkCoinsEarned}`, color: "#ffd76a" },
+        { text: `보유 파크 코인: ${this.parkCoins.toLocaleString()} — 파크 상점에서 교환!`, color: "#a8ecff" },
+        { text: record ? "지옥 난이도 신기록 달성!" : `입장권 잔여: ${this.parkTickets.n}장 (하루 2장)`, color: record ? "#7dffa8" : "#8a93a5" },
+      ] satisfies RewardPopupState["lines"],
+    });
+    audio.sfx.reward();
+    this.emitRpgState();
+    this.save();
+    const back: StageKey = STAGES[this.parkFrom] ? this.parkFrom : "village";
+    this.startTransition(back, { delay: 1800 });
+  }
+
+  /** 파크 중간 퇴장 (복귀 포탈) — 정산 후 복귀 */
+  private exitPark() {
+    if (!this.parkActive) return;
+    this.finishPark();
+  }
+
+  private tickCloset(dt: number) {
+    const trial = this.trialMod;
+    const tier = closetTierScale(this.closetTierNow);
+    /* 몬스터 지속 소환 — 0.75초마다 1~2마리 (테마 spawnMul·시련 spawnMul 가속) */
+    const spawnMs = 750 / ((this.closetTheme.spawnMul ?? 1) * (trial?.spawnMul ?? 1));
+    this.closetAcc += dt;
+    if (this.closetAcc >= spawnMs) {
+      this.closetAcc = 0;
+      const n = Phaser.Math.Between(1, 2) * (trial?.spawnMul ? 2 : 1);
+      const lv = this.player.lv;
+      const pool: EnemyKey[] = ["x3_goblin", "x2_frog", "wolf", "x2_rat", "x2_bat"];
+      for (let i = 0; i < n; i++) {
+        const key = pool[Math.floor(Math.random() * pool.length)];
+        const def = ENEMIES[key];
+        const sp = this.safeSpawnXY(Phaser.Math.Between(80, this.stageW - 80), Phaser.Math.Between(80, this.stageH - 80)); // v1.1.0 (#9)
+        const e = new Enemy(this, sp.x, sp.y, key, {
+          hp: Math.round((18 + lv * 2.4 + def.hp * 0.4) * tier.hpMul * (trial?.hpMul ?? 1)),
+          atk: Math.round((4 + lv * 0.4) * tier.atkMul * (trial?.atkMul ?? 1)),
+          exp: Math.round((22 + lv * 2.2) * (trial?.expMul ?? 1)),
+          gold: 0,
+        });
+        this.enemies.push(e);
+        this.physics.add.collider(e, this.solidGroup);
+      }
+    }
+    /* UI */
+    this.gateTextAcc2 += dt;
+    this.closetText?.setX(this.cameras.main.width / 2);
+    if (this.gateTextAcc2 >= 100) {
+      this.gateTextAcc2 = 0;
+      const remain = Math.max(0, this.closetEndsAt - this.time.now);
+      const tag = this.trialMod ? "시련" : this.closetTierNow > 0 ? `T${this.closetTierNow}` : "파밍";
+      this.closetText?.setText(`${tag} · 남은 시간 ${Math.ceil(remain / 1000)}초  |  획득 골드 ${this.closetGold.toLocaleString()} G`);
+    }
+    if (this.time.now >= this.closetEndsAt) this.finishCloset();
+  }
+
+  private finishCloset() {
+    if (!this.closetActive) return;
+    this.closetActive = false;
+    for (const e of this.enemies) {
+      if (e.alive) { e.alive = false; e.destroy(); }
+    }
+    this.enemies = [];
+    const th = this.closetTheme;
+    const trial = this.trialMod;
+    const tier = this.closetTierNow;
+    /* v1.0.8 — 일일 시련 종료: 1일 1회 보상 (심연 코인 + 골드) */
+    if (trial) {
+      const today = todayKey();
+      const first = this.inf.trialDone !== today;
+      if (first) this.inf.trialDone = today;
+      const rw = trialReward(this.player.lv, trial);
+      if (first) this.inf.abyss += rw.abyss;
+      this.player.addGold(rw.gold);
+      EventBus.emit("reward:show", {
+        title: `일일 시련 「${trial.name}」 — 생존 완료!`,
+        lines: [
+          { text: `획득 골드: ${rw.gold.toLocaleString()} G`, color: "#ffd76a" },
+          { text: first ? `일일 보상 — 심연 코인 +${rw.abyss}` : "일일 보상은 이미 수령했다 (내일 다시!)", color: first ? "#c08aff" : "#8a93a5" },
+          { text: `내일의 시련: 「${todayTrial(new Date(Date.now() + 86400000)).name}」`, color: "#a8ecff" },
+        ] satisfies RewardPopupState["lines"],
+      });
+      audio.sfx.reward();
+      this.trialMod = null;
+      this.emitRpgState();
+      this.save();
+      const backT: StageKey = STAGES[this.closetFrom] ? this.closetFrom : "village";
+      this.startTransition(backT, { delay: 1800 });
+      return;
+    }
+    /* v1.0.8 — 심층 균열 티어 클리어 판정: 획득 골드가 이전 티어 기준선을 넘으면 해금
+     *  기준선 = 기본 균열 평균 수익 × 티어 배율 (T1 클리어 시 T2 해금 — 무한 상승) */
+    if (tier > 0 && this.closetGold >= 2600 * closetTierScale(tier).goldMul * 0.55) {
+      if (this.inf.closetTier <= tier) {
+        this.inf.closetTier = tier + 1;
+        this.inf.abyss += closetTierAbyss(tier);
+        EventBus.emit("banner:show", { text: `심층 균열 T${this.inf.closetTier} 해금! (심연 코인 +${closetTierAbyss(tier)})` });
+      }
+    } else if (tier === 0 && this.closetGold >= 2600 && this.inf.closetTier < 1) {
+      /* 첫 심층 진입 해금 — 기본 균열에서 2,600G 이상 */
+      this.inf.closetTier = 1;
+      this.inf.abyss += closetTierAbyss(0);
+      EventBus.emit("banner:show", { text: "심층 균열 T1 해금! — 콘텐츠 패널에서 도전!" });
+    }
+    const record = this.closetGold > this.closetBest;
+    if (record) this.closetBest = this.closetGold;
+    const badgeKey = "bdg_closet";
+    const gotBadge = this.closetBest >= 100000 && !this.badges.includes(badgeKey);
+    if (gotBadge) this.badges.push(badgeKey);
+    EventBus.emit("reward:show", {
+      title: tier > 0 ? `심층 균열 T${tier} — 파밍 종료!` : `균열 던전 「${th.name}」 — 파밍 종료!`,
+      lines: [
+        { text: `획득 골드: ${this.closetGold.toLocaleString()} G`, color: "#ffd76a" },
+        { text: record ? "신기록 달성!" : `최고 기록: ${this.closetBest.toLocaleString()} G`, color: record ? "#7dffa8" : "#a8ecff" },
+        { text: this.inf.closetTier > tier ? `심층 균열 T${this.inf.closetTier} 해금!` : `다음 도전 — 심층 균열 T${this.inf.closetTier}`, color: "#c08aff" },
+      ] satisfies RewardPopupState["lines"],
+    });
+    audio.sfx.reward();
+    this.emitRpgState();
+    this.save();
+    net.netRankSubmit("closet", this.closetBest, getPlayerName(), this.player.lv);
+    const back: StageKey = STAGES[this.closetFrom] ? this.closetFrom : "village";
+    this.startTransition(back, { delay: 1800 });
+  }
+
+  /* ================= v1.0.8 — ⑦ 황금 몬스터 러시 ================= */
+
+  /** 필드 전용 랜덤 이벤트 — 마을/실내/이벤트 구역 제외, 평균 60~100초에 1마리 */
+  private tickGolden(dt: number) {
+    if (this.goldenRef) return; // 이미 활동 중
+    if (!this.stageDef || this.stageDef.isVillage || this.isInterior) return;
+    if (this.stageDef.key === "gate" || this.stageDef.key === "closet" || this.stageDef.key === "tower" || this.stageDef.key === "park" || this.stageDef.key === "dojang" || this.stageDef.key === "praid") return;
+    if (this.stageDef.enemies.length === 0 || this.transitioning || !this.player) return;
+    this.goldenAcc += dt;
+    if (this.goldenAcc < GOLDEN.intervalMs) return;
+    this.goldenAcc = 0;
+    if (Math.random() >= GOLDEN.chance) return;
+    this.spawnGolden();
+  }
+
+  private spawnGolden() {
+    if (!this.player) return;
+    const mix = this.stageDef.enemies;
+    if (!mix || mix.length === 0) return; // 마을 등 무적 구역 가드
+    const key = mix[Math.floor(Math.random() * mix.length)].key;
+    const def = ENEMIES[key];
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 190;
+    const px = Phaser.Math.Clamp(this.player.x + Math.cos(ang) * dist, 60, this.stageW - 60);
+    const py = Phaser.Math.Clamp(this.player.y + Math.sin(ang) * dist, 60, this.stageH - 60);
+    const e = new Enemy(this, px, py, key, {
+      hp: Math.round((18 + this.player.lv * 2.4 + def.hp * 0.4) * GOLDEN.hpMul),
+      atk: Math.round((4 + this.player.lv * 0.4) * GOLDEN.atkMul),
+      exp: Math.round((20 + this.player.lv * 2) * GOLDEN.expMul),
+      gold: 0,
+    });
+    /* 황금 변이 연출 — 황금 틴트 + 확대 + 반짝임 */
+    e.setTint(0xffd76a);
+    e.setScale(1.28);
+    const glow = this.add.image(e.x, e.y - 4, "glow").setDepth(9).setScale(1.4).setAlpha(0.5).setTint(0xffd76a).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: glow, alpha: 0.18, scale: 1.8, yoyo: true, repeat: -1, duration: 640 });
+    e.once("destroy", () => glow.destroy());
+    this.goldenRef = e;
+    this.enemies.push(e);
+    this.physics.add.collider(e, this.solidGroup);
+    this.showBanner("✨ 황금 몬스터 출현! 잡으면 대량의 골드!");
+    audio.sfx.roar();
+  }
+
+  /* ================= v1.0.8 — ④ 환생 / ⑤ 제작 / ⑧ 심연 상점 ================= */
+
+  /** 환생 — v1.0.16 전면 개편 (유저 지시 "환생을 하면 직업, 전직, 레벨, 스토리가 전부 초기화 되야지!! + 환생 레벨은 200렙"):
+   *  요구 레벨 200(정수로 감소) 달성 시 레벨/경험치/AP에 더해 직업·전직·스토리까지 전부 초기화하고
+   *  시작 마을로 귀환한다. 남는 것은 영구 보너스(스택)·골드·아이템·장비·강화·심연 코인·치장·펫뿐. */
+  private doRebirth() {
+    if (!this.player) return;
+    const req = rebirthReqLv(this.inf.rebirthEss);
+    if (this.player.lv < req) {
+      EventBus.emit("banner:show", { text: `환생하려면 Lv ${req}이 필요하다 (현재 Lv ${this.player.lv})` });
+      return;
+    }
+    if (
+      !window.confirm(
+        `환생하시겠습니까?\n\n` +
+        `· 레벨이 1로, 경험치/AP가 초기화됩니다 (스탯 재배분 필요)\n` +
+        `· 전직이 모두 해제되고 시작 캐릭터${this.player.startCls ? `(${classLabel(this.player.startCls)})` : ""}로 돌아갑니다\n` +
+        `· 스토리 진행(챕터 퀘스트/클리어 기록/파편 수집)이 처음으로 되돌아갑니다\n` +
+        `· 유지: 골드/아이템/장비/강화/심연코인/치장/펫 + 영구 보너스\n` +
+        `· 보상: 영구 공격 +8% · HP +60 · 골드 +2% (누적) + 심연 코인 ${REBIRTH_ABYSS}`
+      )
+    )
+      return;
+    /* v1.0.18 — 환생 직전 기록 로그 (직업/레벨/횟수) */
+    this.inf.rebirthLog = [
+      ...(this.inf.rebirthLog ?? []),
+      { at: Date.now(), lv: this.player.lv, cls: this.player.cls, n: this.inf.rebirths + 1 },
+    ].slice(-30);
+    this.inf.rebirths++;
+    this.inf.abyss += REBIRTH_ABYSS;
+    /* 레벨/경험치/AP 초기화 — 자동배분이 켜져 있으면 레벨업마다 자동 재분배 */
+    this.player.lv = 1;
+    this.player.exp = 0;
+    this.player.ap = 0;
+    this.player.stats = { str: 0, dex: 0, int: 0, luk: 0 };
+    this.player.hp = this.player.maxHp; // 풀피 부활
+    /* v1.0.16 — 직업·전직 초기화: 클래스/계열 보너스/스킬 쿨 전부 리셋 (1차 시련부터 재시작)
+     * v1.0.18 — 5차 각성(fifth)도 resetClass가 리셋 + "스타트 캐릭터"로 즉시 복귀:
+     *  캐릭터 생성 시 고른 시작 1차 클래스(cls=전사 등)로 돌아가 스킬셋·기본공격도 시작 직업 것으로 교체.
+     *  startCls가 없는 구 세이브는 기존처럼 무직(1차 시련부터) — 시련 통과 시 startCls가 생긴다. */
+    const startBack = this.player.startCls;
+    this.player.resetClass();
+    if (startBack) this.player.applyStartClass(startBack);
+    this.jobStory = null;
+    this.jobStoryDone = [];
+    this.pendingJobClass = null;
+    /* v1.0.16 — 스토리 초기화: 챕터 퀘스트 진행/클리어 플래그/본 대사/파편 수집 리셋 */
+    this.savedQuestIdx = {};
+    this.questIdx = 0;
+    this.cleared = false;
+    this.seenSet = new Set();
+    this.fragmentsFound = {};
+    this.player.setWorldtreeBlessing(false); // 세계수 가호도 스토리 보상이므로 재도전으로
+    /* v1.2.0 (#14) — 방문 구역 기록도 초기화: 환생 후 지역 이동 부적으로 환생 전 해방 맵을
+     *  그대로 워프하던 문제. 스토리 진행(포탈/퀘스트)과 함께 방문 기록도 처음부터.
+     *  시작 마을만 즉시 기록 — 재림의 땅(r1~r15)도 abyss10 재해방 후 다시 진입한다. */
+    this.visited = new Set(["village"]);
+    this.syncExtBonus();
+    this.save();
+    this.emitRpgState();
+    this.emitHud();
+    audio.sfx.levelup();
+    this.showBanner(`환생 ${this.inf.rebirths}회 달성!${startBack ? ` ${classLabel(startBack)}(으)로 돌아왔다` : ""} — 심연 코인 +${REBIRTH_ABYSS}`);
+    EventBus.emit("reward:show", {
+      title: `환생 ${this.inf.rebirths}회 — 완전히 새로운 시작!`,
+      lines: [
+        { text: `영구 보너스 누적: 공격 +${rebirthBonus(this.inf.rebirths).atkPct}% · HP +${rebirthBonus(this.inf.rebirths).hp} · 골드 +${rebirthBonus(this.inf.rebirths).goldPct}%`, color: "#ffd76a" },
+        { text: `심연 코인 +${REBIRTH_ABYSS}`, color: "#c08aff" },
+        { text: startBack ? `시작 캐릭터 ${classLabel(startBack)}(으)로 돌아왔다 — 다시 키워보자!` : "직업이 초기화됐다 — 시작 마을에서 1차 시련부터!", color: "#a8ecff" },
+      ] satisfies RewardPopupState["lines"],
+    });
+    /* 시작 마을로 귀환 — 스토리 1장부터 (전환 중 패널 입력 차단을 위해 transitioning 게이트가 처리) */
+    if (!this.transitioning && this.stageDef.key !== "village") this.startTransition("village", { delay: 900 });
+  }
+
+  /** 연금 제작대 — 재료 소모 → 아이템 생산 (rpg:infCraft) */
+  private craftRecipe(id: string) {
+    if (!this.player) return;
+    const r = CRAFT_RECIPES.find((x) => x.id === id);
+    if (!r) return;
+    if (!canCraft(r, this.inf.mats)) {
+      EventBus.emit("banner:show", { text: "재료가 부족하다 — 사냥으로 재료를 모아보자!" });
+      audio.sfx.deny();
+      return;
+    }
+    for (const [k, n] of Object.entries(r.mats)) this.inf.mats[k] -= n;
+    if (r.out.item === "__abyss15") {
+      this.inf.abyss += 15;
+      EventBus.emit("banner:show", { text: "제작 완료! 심연 코인 +15" });
+    } else {
+      for (let i = 0; i < r.out.n; i++) this.player.owned.push(r.out.item as ItemKey);
+      EventBus.emit("banner:show", { text: `제작 완료! ${ITEMS[r.out.item as ItemKey]?.name ?? r.out.item} ×${r.out.n}` });
+    }
+    audio.sfx.craft();
+    this.save();
+    this.emitRpgState();
+  }
+
+  /** 심연 상점 — 심연 코인 소모 (rpg:infAbyss) */
+  private abyssBuy(id: string) {
+    if (!this.player) return;
+    const item = ABYSS_SHOP.find((x) => x.id === id);
+    if (!item) return;
+    if (this.inf.abyss < item.cost) {
+      EventBus.emit("banner:show", { text: `심연 코인이 부족하다 (${item.cost} 필요 · 보유 ${this.inf.abyss})` });
+      audio.sfx.deny();
+      return;
+    }
+    if (id === "rebirth_ess") {
+      this.inf.abyss -= item.cost;
+      this.inf.rebirthEss++;
+      EventBus.emit("banner:show", { text: `환생의 정수 구매! — 환생 요구 레벨 ${rebirthReqLv(this.inf.rebirthEss)}` });
+    } else if (id === "cos_box") {
+      /* 미보유 치장 1종 랜덤 — 전부 보유 시 에메랄드 5 환불 보상 */
+      const pool = (Object.keys(COSMETIC_DEFS) as CosmeticKey[]).filter((k) => !(this.player.cosmetics as string[]).includes(k));
+      this.inf.abyss -= item.cost;
+      if (pool.length === 0) {
+        this.player.emerald += 5;
+        EventBus.emit("banner:show", { text: "치장 콜렉션 완성! 대신 에메랄드 +5" });
+      } else {
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        this.player.cosmetics.push(pick as CosmeticKey);
+        EventBus.emit("banner:show", { text: `치장 상자 개봉! ${COSMETIC_DEFS[pick as CosmeticKey]?.name ?? pick} 획득!` });
+      }
+    } else if (id === "legend_chest") {
+      this.inf.abyss -= item.cost;
+      this.player.owned.push("chest_legend");
+      EventBus.emit("banner:show", { text: "전설 상자 획득! — 인벤토리에서 개봉" });
+    } else {
+      /* 부여아 — 영구 스탯 (중복 구매) */
+      this.inf.abyss -= item.cost;
+      this.inf.orbs[id] = (this.inf.orbs[id] ?? 0) + 1;
+      this.syncExtBonus();
+      EventBus.emit("banner:show", { text: `${item.name} 각인! (누적 ×${this.inf.orbs[id]}) — ${item.desc}` });
+    }
+    audio.sfx.shop();
+    this.save();
+    this.emitRpgState();
+  }
+
+  /* ================= v3.3.0 (지시 #8) — 5차 각성 스토리/시련 ================= */
+
+  /** 각성 챕터 카드 → 각성의 수호자 소환 (resumeFromDialogue에서 호출) */
+  private startFifthTrial() {
+    if (!this.player || this.fifthTrialActive) return;
+    this.fifthTrialActive = true;
+    audio.sfx.questAccept();
+    /* 챕터 카드 규약 재사용 — "각성" 타이틀 카드 (physics 정지 + 자동 복귀 내장) */
+    this.showChapterCard(5, "각성 — 제5의 문", "모든 스킬이 극으로, 궁극기가 손에 쥐어진다", () => {
+      this.summonFifthGuardian();
+    });
+  }
+
+  /** 각성의 수호자 소환 — 카이엔 근처, 레벨 비례 강력한 정예 */
+  private summonFifthGuardian() {
+    if (!this.player) return;
+    if (this.fifthTrialEnemy && this.fifthTrialEnemy.alive) {
+      this.showBanner("이미 각성의 수호자가 있어!");
+      return;
+    }
+    const lv = Math.max(1, this.player.lv);
+    const e = new Enemy(this, this.player.x + 110, this.player.y - 30, "runegolem", {
+      hp: 10 + lv * 4,
+      atk: 1 + lv * 0.18,
+      exp: 6 * lv,
+      gold: 3 * lv,
+      scale: 1.8,
+      tint: 0xffd76a,
+      displayName: "각성의 수호자",
+    });
+    e.dmgPct = DMG_PCT.elite;
+    this.fifthTrialEnemy = e;
+    this.enemies.push(e);
+    this.physics.add.collider(e, this.solidGroup);
+    this.spawnPillar(e.x, e.y, 0xffd76a, 260);
+    this.spawnBurstAt(e.x, e.y, 40, 0xffd76a);
+    this.showBanner("각성의 수호자 출현! 쓰러트려 5차 각성을 증명하라");
+    audio.sfx.roar();
+    this.doShake(280, 0.008);
+  }
+
+  /** 각성 완료 의식 — fifth 플래그 + 풀 의식 FX + 완료 대사 + 세이브 */
+  private completeFifthTrial() {
+    if (!this.player) return;
+    const p = this.player;
+    p.fifthStoryDone = true;
+    p.fifth = true;
+    p.healFull();
+    p.skill5Cd = 0;
+    audio.sfx.levelup();
+    this.spawnLevelUpFx(p.x, p.y);
+    this.spawnPillar(p.x, p.y, 0xffe66a, 300);
+    this.spawnBurstAt(p.x, p.y, 80, 0xffe66a);
+    this.spawnCrack(p.x, p.y);
+    /* v1.0.7 — 각성 의식 프리렌더 3D 플래시 (Hovl FlashFree2 — 희소 의식 순간 전용 연출) */
+    if (this.textures.exists("hv_flash")) {
+      const awFlash = this.add.image(p.x, p.y - 12, "hv_flash").setDepth(28).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe66a).setScale(0.25).setAlpha(0);
+      this.tweens.add({ targets: awFlash, alpha: 1, scale: 1.6, duration: 220, ease: "Cubic.out" });
+      this.tweens.add({ targets: awFlash, alpha: 0, scale: 2.3, delay: 260, duration: 520, onComplete: () => awFlash.destroy() });
+    }
+    /* v1.0.10 — GameStudio FX: 각성 의식 대형 골드 마법진 스핀+정화 링 (제5의 문 개방 연출) */
+    spawnPentacle(this, p.x, p.y, 0xffe66a, { scale: 3.2, duration: 1600, spin: true, alpha: 0.95 });
+    spawnRingPop(this, p.x, p.y, "vf_ring", 0xffe66a, 5.6, 1000);
+    spawnFlarePop(this, p.x, p.y - 10, "vf_flare_fire", { tint: 0xffe66a, scale: 2.0, duration: 700 });
+    this.cameras.main.flash(240, 255, 230, 120);
+    this.doShake(460, 0.02);
+    EventBus.emit("banner:show", {
+      text: "5차 각성 완료! 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(S) 해금", // v1.0.5 — 스킬5 기본키 N→S 반영
+    });
+    this.showDialogueRaw({
+      speaker: "카이엔",
+      lines: [
+        "...드디어 제5의 문이 열렸다. 그대는 이제 '극'의 경지에 섰다.",
+        "모든 스킬이 강화됐고 쿨타임도 짧아졌다. 그리고—",
+        "N 키 (모바일은 황금 버튼)로 그대만의 궁극기를 쏟아내라!",
+      ],
+    });
+    this.emitSkills();
+    this.emitRpgState();
+    this.save();
+  }
+
+  /* ================= v3.0.22 (#38) — 전직 퀘스트 게이트 =================
+   *  "전직 퀘스트를 완료해야만 전직 시켜줘야지!!" — 레벨 조건만으로 전직되던 것을
+   *  퀘스트 완료까지 요구한다.
+   *  v3.1.0 (#전직스토리선행) — 순서 반영: 미전직 → 마을 체인 완료 후 계열 선택 시
+   *  1차 시련 스토리 시작(선택 즉시 전직 아님), 1→2차 · 2→3차 → 다음 차수의
+   *  [전직 시련] 스토리 완료가 승격 잠금 해제 조건. */
+  private jobQuestCleared(): boolean {
+    const tier = chainOf(this.player?.cls ?? "").length;
+    /* v1.0.12 (#4차전직퀘) — 4차도 시련 스토리 완료를 게이트로 (기존엔 3차부터 무조건 허용) */
+    if (tier >= 4) return true;
+    if (tier === 0) {
+      const vq = STAGES["village"].quests.length;
+      return (this.savedQuestIdx["village"] ?? 0) >= vq;
+    }
+    // 1차→2차: 2차 시련 / 2차→3차: 3차 시련 / 3차→4차: 4차 시련 완료
+    return this.jobStoryDone.includes((tier + 1) as 2 | 3 | 4);
+  }
+
+  /** 전직 잠금 사유 문구 (패널 표기용 — null이면 퀘스트 조건 충족) */
+  private jobQuestLockText(): string | null {
+    const tier = chainOf(this.player?.cls ?? "").length;
+    if (tier >= 4) return null;
+    if (tier === 0) {
+      const vq = STAGES["village"].quests.length;
+      if ((this.savedQuestIdx["village"] ?? 0) < vq) return "마을 퀘스트 체인 완료 (이그니와 함께)";
+      return null;
+    }
+    if (!this.jobStoryDone.includes((tier + 1) as 2 | 3 | 4)) {
+      return tier === 1
+        ? "[전직 시련] 2차 스토리 완료 필요 (카이엔과 대화)"
+        : tier === 2
+          ? "[전직 시련] 3차 스토리 완료 필요 (카이엔과 대화)"
+          : "[전직 시련] 4차 스토리 완료 필요 (카이엔과 대화)";
+    }
+    return null;
+  }
+
+  /** v3.0.22 (#43) — 동적 단발 대사 (DIALOGUES 테이블 밖 — 결정 수확 랜덤 멘트) */
+  private showDialogueRaw(d: { speaker: string; lines: string[] }) {
+    if (!this.player) return;
+    this.activeNpcId = null;
+    this.dialoguing = true;
+    this.dialogueSince = this.time.now; // v3.3.0 — 대사 붙임 자가치유 기준 시각
+    this.player.setVelocity(0, 0);
+    this.physics.world.pause();
+    EventBus.emit("dialogue:show", d);
+  }
+
+  /* ================= v3.0.22 (#47) — 추적 퀘스트 구역 자동 여행 =================
+   *  추적 구역이 다르면 경유 포탈 좌표를 반환한다. 전진 포탈은 체인 완료(활성)일 때만,
+   *  복귀 포탈은 항상. 포탈이 잠긴 구역은 null — 자동사냥이 현 구역 체인을 진행한다. */
+  private autoTravelPortal(): { x: number; y: number } | null {
+    if (!this.trackedStage || this.trackedStage === this.stageDef.key || this.isInterior) return null;
+    const path = this.stagePathTo(this.trackedStage);
+    if (!path || path.length === 0) return null;
+    const next = path[0];
+    if (NEXT_STAGE[this.stageDef.key] === next) {
+      if (this.portal?.active && this.portalActive) return { x: this.portal.x, y: this.portal.y };
+      return null;
+    }
+    if (PREV_STAGE[this.stageDef.key] === next) {
+      if (this.returnPortal?.active) return { x: this.returnPortal.x, y: this.returnPortal.y };
+      return null;
+    }
+    return null;
+  }
+
+  /** 현재 구역 → 목표 구역 최단 경로 (NEXT/PREV 양방향 BFS — 다음 경유지만 반환) */
+  private stagePathTo(target: string): string[] | null {
+    const cur = this.stageDef.key;
+    if (target === cur) return [];
+    const prev = new Map<string, string | null>([[cur, null]]);
+    const queue: string[] = [cur];
+    while (queue.length) {
+      const s = queue.shift()!;
+      for (const nx of [NEXT_STAGE[s as StageKey], PREV_STAGE[s as StageKey]]) {
+        if (!nx || prev.has(nx)) continue;
+        prev.set(nx, s);
+        if (nx === target) {
+          const path: string[] = [];
+          let c: string | null = nx;
+          while (c && c !== cur) {
+            path.unshift(c);
+            c = prev.get(c) ?? null;
+          }
+          return path;
+        }
+        queue.push(nx);
+      }
+    }
+    return null;
+  }
+
+  /** 반복 토벌 완료 — 보상 지급 후 목표 +2 (무한 확장) */
+  private completeRepeat() {
+    const r = this.stageDef.repeat!;
+    audio.sfx.reward();
+    this.player.addGold(r.gold);
+    this.player.gainExp(r.exp);
+    this.spawnPickupText(this.player.x, this.player.y - 44, `토벌 완료 +${r.gold}G`, "#ffd76a");
+    /* v3.0.16 — 반복 의뢰 보상 수령 팝업 */
+    EventBus.emit("reward:show", {
+      title: "반복 토벌 의뢰 완료!",
+      lines: [
+        { text: `골드 +${r.gold} G`, color: "#ffd76a" },
+        { text: `경험치 +${r.exp} EXP`, color: "#8fe84a" },
+        { text: "에메랄드 +1", color: "#7de8ff" },
+      ],
+    } satisfies RewardPopupState);
+    this.huntCount = 0;
+    this.repeatNeed += 2;
+    /* v3.0.6 — 반복 의뢰 사이클 완료 보너스 에메랄드 +1 */
+    this.player.emerald += 1;
+    this.spawnPickupText(this.player.x, this.player.y - 58, "+1 에메랄드", "#7de8ff");
+    this.save();
+    this.emitRpgState();
+    this.emitQuest();
+    this.emitRpgState();
+  }
+
+  /** v3.0.16 — 멀티킬 등급 메타 (더블킬~펜타킬) */
+  static MULTI_KILL_META = [
+    { label: "더블킬!", color: "#7dd8ff" },
+    { label: "트리플킬!", color: "#c08aff" },
+    { label: "쿼드라킬!", color: "#ffd76a" },
+    { label: "펜타킬!!", color: "#ff8a5c" },
+  ];
+
+  /** v3.0.16 — 컬렉션 등록: 최초 처치 시 등록 연출 + 보너스 스탯 재계산 + 영구 세이브 */
+  private registerCollection(id: string, name: string) {
+    const before = Object.keys(this.monsterKills).length;
+    this.monsterKills[id] = (this.monsterKills[id] ?? 0) + 1;
+    const after = Object.keys(this.monsterKills).length;
+    if (after === before) return;
+    this.player.setCollection(after);
+    this.spawnPickupText(this.player.x - 6, this.player.y - 84, `컬렉션 등록! ${name}`, "#ffe86a");
+    audio.sfx.reward();
+    this.emitRpgState();
+    this.save();
+  }
+  /** 컬렉션 전체 종수 (잡몹 전 종 + 보스 전 종) */
+  get collectionTotal(): number {
+    return Object.keys(ENEMIES).length + Object.keys(BOSS_DEFS).length;
+  }
+
+  /**
+   * 몬스터 리스폰 — 원래 스폰 지점에서 페이드 인.
+   * 플레이어가 스폰 지점 근처(140px)에 서 있으면 얼굴에 팝업하는 걸 막기 위해 2.5초씩 재시도.
+   */
+  /* ================= v4.1.4 — 침공 보스 (월드 보스 이벤트) =================
+   * MMORPG식 필드 침공 이벤트 — 6~9분마다 현재 전투 구역에 붉은 침공 몬스터 스폰.
+   *  ×6.0 HP / ×1.8 ATK / ×8 EXP / ×6 GOLD + 처치 시 에메랄드 +3 확정 (v1.0.16 밸런스). */
+  private startInvasionTimer() {
+    this.invasionTimer?.remove();
+    this.invasionTimer = this.time.addEvent({
+      delay: Phaser.Math.Between(360000, 540000),
+      loop: true,
+      callback: () => this.trySpawnInvasionBoss(),
+    });
+  }
+
+  private trySpawnInvasionBoss(tries = 0) {
+    /* 스폰 조건: 전투 구역 + 보스/침공 부재 + 전투 중 특별 모드 아님 */
+    if (
+      !this.scene.isActive() || !this.player || this.player.state === "dead" ||
+      this.stageDef.isVillage || this.isInterior || this.transitioning ||
+      this.gateActive || this.closetActive || this.boss?.active ||
+      this.invasionBoss?.active || this.fieldEliteRef?.active
+    ) return;
+    const alive = this.enemies.filter((e) => e.active && e.alive);
+    if (alive.length === 0) return; // 현재 구역 몬스터 종으로 스폰
+    const base = Phaser.Utils.Array.GetRandom(alive);
+    const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    const d = Phaser.Math.Between(480, 680);
+    const rx = Phaser.Math.Clamp(this.player.x + Math.cos(ang) * d, 60, this.stageW - 60);
+    const ry = Phaser.Math.Clamp(this.player.y + Math.sin(ang) * d, 60, this.stageH - 60);
+    const sp = this.safeSpawnXY(rx, ry); // v1.1.0 (#9)
+    const x = sp.x, y = sp.y;
+    if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 220 && tries < 8) {
+      this.time.delayedCall(1500, () => this.trySpawnInvasionBoss(tries + 1));
+      return;
+    }
+    const e = new Enemy(this, x, y, base.def.key, {
+      hp: 6.0, atk: 1.8, exp: 8, gold: 6, scale: 1.55, tint: 0xff6a7a,
+      displayName: `침공 ${ENEMIES[base.def.key].name}`,
+    });
+    this.invasionBoss = e;
+    e.setAlpha(0);
+    this.tweens.add({ targets: e, alpha: 1, duration: 420 });
+    this.enemies.push(e);
+    this.physics.add.collider(e, this.solidGroup);
+    this.showBanner(`⚠ 침공! ${e.displayName} 등장 — 근처에서 흉조가 느껴진다!`);
+    audio.sfx.roar();
+    this.doShake(240, 0.006);
+    this.spawnBurstAt(x, y, 20, 0xff6a7a);
+  }
+
+  private respawnEnemy(key: EnemyKey, x: number, y: number, tries: number) {
+    if (!this.scene.isActive() || this.player.state === "dead") {
+      return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
+    }
+    /* v3.0 (사용자 지시 #6) — 동시 몬스터 상한 20마리: 이미 가득하면 리스폰 보류
+     * v3.0.2 — 정예/보스도 총량에 포함 (잡몹 20 + 정예/보스로 21~22마리 되던 빈틈 봉합)
+     * v1.3.1 (#9 최적화) — 절전 모드(fxLevel 0)에선 상한 14마리로 축소 (FSM/충돌/렌더 부하 절반) */
+    const aliveMobs = this.enemies.filter((e) => e.active && e.alive).length;
+    const eliteAlive = this.eliteEnemy?.active && this.eliteEnemy.alive ? 1 : 0;
+    const bossAlive = this.boss?.active && this.boss.alive ? 1 : 0;
+    if (aliveMobs + eliteAlive + bossAlive >= (this.fxLevel === 0 ? 14 : 20)) {
+      /* v4.2.0 — 2400→1400ms (피로도 완화: 리젠 대기 단축) */
+      this.time.delayedCall(1400, () => this.respawnEnemy(key, x, y, tries));
+      return;
+    }
+    const nearPlayer = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 140;
+    if (nearPlayer && tries < 24) {
+      // v2.3 — 재시도 간격 2.5초 → 1.2초 (리젠 단축에 맞춰 스폰 지점 대기도 짧게)
+      this.time.delayedCall(1200, () => this.respawnEnemy(key, x, y, tries + 1));
+      return;
+    }
+    /* v3.0.16 — 필드 정예 출현 (메이플 엘리트/챔피언): 전투 구역 4.5%, 동시 1마리, 보스 부재 시.
+     *  3.2배 HP / 1.45배 ATK / 4배 EXP / 3배 골드 + 처치 시 에메랄드 +1 확정 */
+    /* v1.4.3 (작업2) — 훈련용 늑대 스폰 지점 판정 — v1.4.12 (#3) 훈련장 철거로 삭제.
+     *  이제 모든 리스폰은 일반 규칙을 따른다. */
+    const eliteOk = !this.fieldEliteRef && !this.boss?.active && !this.stageDef.isVillage && !this.isInterior;
+    const spawnElite = eliteOk && Math.random() < 0.045;
+    const e = spawnElite
+      ? new Enemy(this, x, y, key, {
+          hp: 3.2, atk: 1.45, exp: 5, gold: 4, scale: 1.35, tint: 0xffd76a,
+          displayName: `정예 ${ENEMIES[key].name}`,
+        })
+      : new Enemy(this, x, y, key);
+    if (spawnElite) {
+      this.fieldEliteRef = e;
+      this.showBanner("정예 몬스터 출현!");
+      audio.sfx.roar();
+    }
+    e.setAlpha(0);
+    this.tweens.add({ targets: e, alpha: 1, duration: 420 });
+    this.spawnBurstAt(x, y, 6, e.burstTint);
+    this.enemies.push(e);
+    this.physics.add.collider(e, this.solidGroup);
+  }
+
+  /** 현재 토벌 퀘스트의 대상 몬스터 키 (없으면 스테이지 첫 적 그룹) */
+  private currentHuntKey(): EnemyKey | null {
+    const q = this.currentQuest();
+    if (q?.targetKey) return q.targetKey;
+    return this.stageDef.enemies[0]?.key ?? null;
+  }
+
+  /** v3.0.28 (#퀘스트이름) — 현재 hunt 퀘스트의 합산 진행량.
+   *  targetKeys(자동 토벌)면 구역 몬스터 전체, 단일 대상(스토리/반복)이면 해당 종만. */
+  private huntProgressSum(q: QuestDef): number {
+    const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+    let sum = 0;
+    for (const k of keys) sum += (this.killTotals[k] ?? 0) - (this.huntBaseline[k] ?? 0);
+    return sum;
+  }
+
+  /**
+   * 토벌 퀘스트 완료 시도.
+   * v2.0 — 퀘스트 시작 이후의 킬만 카운트 (huntBaseline) → 이전 킬이 한꺼번에 채워지는 버그 차단.
+   * v3.0.28 — targetKeys(자동 토벌) 지정 시 구역 몬스터 전체 합산 판정.
+   */
+  private tryCompleteHunt(_key: EnemyKey) {
+    const q = this.currentQuest();
+    if (!q || q.type !== "hunt") return;
+    const progress = this.huntProgressSum(q);
+    if (progress < (q.need ?? 0)) return;
+    this.huntCount = Math.min(progress, q.need ?? 0);
+    audio.sfx.questDone();
+    this.advanceQuest();
+    this.afterAdvance();
+    this.save();
+  }
+
+  /** v3.0.15 (#8) — 현재 구역 활성 퀘스트의 토벌 기준선 재설정 (수락 시점 킬만 카운트)
+   *  v3.0.28 — targetKeys 지원: 자동 토벌은 구역 몬스터 전체의 기준선 설정 */
+  private syncQuestBaseline() {
+    const q = this.currentQuest();
+    if (q?.type === "hunt" && !this.repeatActive()) {
+      const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+      for (const k of keys) {
+        if (!(k in this.huntBaseline)) this.huntBaseline[k] = this.killTotals[k] ?? 0;
+      }
+    }
+  }
+
+  /** v3.0.15 (#8) — 현재 구역 체인 퀘스트가 수락됐는지.
+   *  기존 세이브(acceptedQuests에 기록 없음)는 자동 수락 상태로 간주 — 무중단 호환. */
+  private isQuestAccepted(stageKey: string, idx: number): boolean {
+    const a = this.acceptedQuests[stageKey];
+    return a === undefined || a >= idx;
+  }
+
+  /**
+   * 퀘스트 진행기 — 체인의 다음 목표를 범용으로 배치한다.
+   *  reach → 안내 대사 후 차원문 개방 / collect → 파편 스폰 / boss → 보스 등장
+   *  hunt → 이미 조건 충족이면 즉시 연쇄 완료 (미리 잡은 경우 소프트락 방지)
+   *  v3.0.15 (#8) — 수락되지 않은 hunt/collect/boss 퀘스트는 활성화하지 않는다
+   *  (reach는 구역 이동 자유도를 위해 수락 전에도 포탈 개방 유지)
+   */
+  private afterAdvance() {
+    const q = this.currentQuest();
+    this.emitQuest();
+    if (!q) {
+      /* v2.4 치명 버그 수정 — 구역 1~9(보스 없는 구역)에서 체인 완료 후 전진 포탈이
+       *  활성화되지 않는 소프트락. v1.9는 모든 스테이지가 reach로 끝났지만 v2.0 구역
+       *  시스템에서 이 경로가 누락됐다. 체인 종료 = 곧바로 다음 사냥터 개방. */
+      if (!this.isInterior && !this.stageDef.boss && this.portal && !this.portalActive) {
+        this.activatePortal();
+      }
+      return;
+    }
+    if (q.type === "hunt" && !this.repeatActive()) {
+      /* 토벌 퀘스트 시작 기준선 — 시작 이후 킬만 진행 (지시 #17)
+       * v3.0.28 — targetKeys(자동 토벌)는 구역 몬스터 전체 기준선 */
+      const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+      for (const k of keys) {
+        if (!(k in this.huntBaseline)) this.huntBaseline[k] = this.killTotals[k] ?? 0;
+      }
+    }
+    if (q.type === "level") {
+      // v2.4 — 이미 목표 레벨을 넘었으면 즉시 연쇄 완료 (소프트락 방지)
+      this.tryCompleteLevel();
+      return;
+    }
+    if (q.type === "reach") {
+      if (!this.portal) this.spawnPortal(this.portalHome.x, this.portalHome.y);
+      if (!this.portalActive) {
+        // v2.3 (지시 #1) — 이미 본 체인 대사는 재생하지 않고 바로 개방
+        if (q.dialogue && !this.seenSet.has(q.dialogue)) {
+          // 대사 중 포탈 위 즉시 전환 방지 — 대사 종료 후 개방 (resumeFromDialogue)
+          this.pendingPortal = true;
+          /* v2.6 보루 — 대사 종료 훅을 어떤 이유로 놓쳐도 5초 뒤엔 반드시 개방 */
+          this.time.delayedCall(5000, () => {
+            if (this.pendingPortal && !this.portalActive) { this.pendingPortal = false; this.activatePortal(); }
+          });
+          if (this.dialoguing) {
+            // 이미 대사 진행 중 (파편 수집 직후 등) — 기록 후 예약 순차 재생
+            this.markSeen(q.dialogue);
+            this.queuedDialogue = q.dialogue;
+          } else {
+            this.showDialogueOnce(q.dialogue); // 표시 + 기록
+          }
+        } else {
+          this.activatePortal();
+        }
+      } else if (q.dialogue && !this.dialoguing && !this.seenSet.has(q.dialogue)) {
+        this.showDialogueOnce(q.dialogue);
+      }
+    } else if (q.type === "collect") {
+      if (!this.fragment) this.spawnFragmentForQuest();
+    } else if (q.type === "boss") {
+      /* v3.1.0 (#스토리보스난이도) — 유저 지시 "스토리 보스는 전용 난이도, 난이도 선택창은 띄우지 마라":
+       *  스토리 보스는 선택창 없이 전용 기준(노말 상향치 고정 — stages.ts BOSS_DIFFS.normal)으로 즉시 스폰.
+       *  난이도 선택은 재림(재도전) 보스판에서만 노출된다. */
+      if (!this.boss) this.spawnBoss(true);
+    } else if (q.type === "hunt") {
+      /* v3.0.28 — targetKeys(자동 토벌) 합산 판정: 이미 조건 충족이면 즉시 연쇄 완료 (소프트락 방지) */
+      if (this.huntProgressSum(q) >= (q.need ?? 0) && q.targetKey) this.tryCompleteHunt(q.targetKey);
+    }
+  }
+
+  /**
+   * v2.4 레벨 목표 퀘스트 완료 판정 — 현재 체인 퀘스트가 "level"이고
+   *  목표 레벨에 도달했으면 즉시 완료. 레벨업 순간(Player.onLevelUp 훅)과
+   *  체인 진입 시각(afterAdvance) 양쪽에서 호출된다.
+   */
+  private tryCompleteLevel() {
+    const q = this.currentQuest();
+    if (!q || q.type !== "level") return;
+    if (this.player.lv < (q.need ?? 1)) return;
+    audio.sfx.questDone();
+    this.showBanner(`목표 달성 — Lv ${this.player.lv}! 다음 목표로!`);
+    this.spawnPickupText(this.player.x, this.player.y - 58, `Lv ${q.need} 달성!`, "#8fe84a");
+    this.advanceQuest();
+    this.afterAdvance();
+    this.save();
+  }
+
+  /** Player.gainExp 레벨업 훅 — 레벨 목표 퀘스트 즉시 판정 (v2.4)
+   *  v3.0.15 (#2) — 자동배분 ON이면 지급된 AP를 계열 권장 비율로 즉시 분배 */
+  onLevelUp() {
+    /* v1.2.0 (#8) — 레벨업 ★ 감정 버블 (씹덕 감성) */
+    if (this.player) this.emote("star", this.player.x, this.player.y - 40);
+    this.tryCompleteLevel();
+    if (this.autoAlloc && this.player.ap > 0) {
+      if (this.player.allocateAutoPoints()) {
+        this.spawnPickupText(this.player.x, this.player.y - 70, "AP 자동 배분!", "#a8ff7d");
+        this.emitHud();
+      }
+    }
+  }
+
+  /* ================= 보스 ================= */
+
+  private spawnBoss(intro = true) {
+    /* v3.0.28 (#보스난이도) — 난이도 선택 전엔 스폰 금지 (보루/복구 경로도 이 게이트로 통과 차단) */
+    if (this.bossDiffPending) return;
+    const base = BOSS_DEFS[this.stageDef.bossKey ?? "guardian"];
+    // v2.0 밸런스 — 챕터 보스는 구역 진행 배율만큼 강화 (지시 #6: 보스 체력 상향)
+    // v3.0.6 (지시 #8 — "보스가 너무 약함"): HP ×1.35·ATK ×1.05로 대폭 상향 (기존 ×0.9 완화)
+    // v3.0.22 (#50 — "챕터 지날수록 쎄져야"): 잡몹 곡선 강화에 맞춰 보스 가중치 HP ×1.6·ATK ×1.15로 재상향
+    //  + Boss 내부 관통 50%·페이즈별 태진 단축·탄막 증가가 함께 적용된다
+    // v3.0.28 (#보스난이도) — 이지 0.65 / 노말 1.0 / 하드 1.8 / 카오스 2.8 배율 (보상은 reward 배율)
+    const sc = stageScale(this.stageDef.key);
+    const dif = BOSS_DIFFS[this.bossDiff];
+    const def: BossDef = {
+      ...base,
+      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * dif.hp),
+      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15) * dif.atk),
+      exp: Math.round(base.exp * sc.exp * dif.reward),
+      gold: Math.round(base.gold * sc.gold * dif.reward),
+    };
+    this.bossDef = def;
+    this.bossDiffPending = false; // v3.0.28 — 스폰 시점에 선택 완료
+    /* v3.0 (#7) — 보스는 최원거리 셀(포탈 방)에 배치 — 격파 후 포탈이 바로 그 자리에 열림 */
+    const bx = this.portalHome.x;
+    const by = this.portalHome.y - 10;
+    audio.sfx.roar();
+    this.doShake(260, 0.008);
+    this.showBanner(`${def.name} 출현!`);
+    /* v1.4.12 (#12 보스전 자동전투 금지) — 보스전 진입 시 자동전투 강제 해제 + 이유 안내:
+     *  보스는 패턴 회피가 전부라 알고리즘 자동전투로는 읽지 못한다(즉사 루트). */
+    if (this.autoHunt) {
+      this.autoHunt = false;
+      this.autoHuntMove.set(0, 0);
+      this.autoTarget = null;
+      this.emitRpgState();
+      this.save();
+      EventBus.emit("banner:show", { text: "⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)" });
+    }
+    this.boss = new Boss(this, bx, by, def, "normal");
+    this.spawnBossRunic(bx, by, false); /* v4.1.7 — 유료 팩 룬 마법진 */
+    this.applyBossPostFX(false); /* v4.1.5 — 보스전 블룸 */
+    this.physics.add.collider(this.boss, this.solidGroup);
+    EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
+    // 파티 보스 토벌 공지 (v2.0 — 지시 #5)
+    net.netAnnounceBoss(def.name, STAGE_SHORT[this.stageDef.key] ?? this.stageDef.key);
+    // 보스전 전용 BGM (v2.0)
+    audio.playStageBGM(this.stageDef.key, true);
+    // 등장 대사 — 이어하기 복구 경로는 생략 (오프닝 대사와 충돌 방지) / v2.3: 1회만 재생
+    // v3.0.10 (메이플식 보스 조우 연출): 카메라가 보스에게 팬 → 보스 인트로 대사 → 카메라 복귀
+    if (intro) this.bossIntroCinematic(bx, by, def.introDialogue);
+  }
+
+  /* v3.0.24 (#보스재도전) — 재림 보스 스폰: 클리어한 챕터 보스의 고능력치 판
+   *  유저 지시: "이미 스토리를 진행한 챕터의 보스전을 따로 플레이 (스토리 보스보다 훨씬 능력치가 높음)"
+   *  · 스토리판 대비 HP ×5.0 · ATK ×2.2 (챕터 스케일링 포함 위에 곱연산)
+   *  · 스토리 진행과 완전 분리 — 퀘스트 진행/포탈 개방/클리어 판정 없음 (onBossDead 분기)
+   *  · 보상: EXP/GOLD ×3 · 에메랄드 +5 (보상 팝업 표시) */
+  private spawnReplayBoss(ch: string) {
+    if (!this.player || this.boss || this.isInterior) return;
+    /* v1.4.3 (#재림시리즈 완성) — 재림 지역 보스(r5/r10/r15): chapterSpec 대신 STAGES의 boss 키 직접 조회.
+     *  배율은 stageScale(r구역).scaleMul(전용 곡선)을 그대로 쓰고, 재림판 계수(HP ×5 · ATK ×2.2 · 보상 ×3) 적용. */
+    const isRebirth = /^r(5|10|15)$/.test(ch);
+    const spec = chapterSpec(`${ch}10`);
+    const bossKey = isRebirth ? STAGES[ch as StageKey]?.bossKey : spec?.boss;
+    if (!bossKey) return;
+    const base = BOSS_DEFS[bossKey];
+    const sc = stageScale((isRebirth ? ch : `${ch}10`) as StageKey);
+    /* v3.0.28 (#보스난이도) — 재림판 기준 수치(HP ×5.0 · ATK ×2.2 · 보상 ×3)에 난이도 배율 추가 적용 */
+    const lv = this.pendingReplayBossDiff ?? "normal";
+    const dif = BOSS_DIFFS[lv];
+    this.pendingReplayBossDiff = null;
+    const def: BossDef = {
+      ...base,
+      name: `재림한 ${base.name}`,
+      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * 5.0 * dif.hp),
+      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15) * 2.2 * dif.atk),
+      speed: Math.round(base.speed * dif.spd), // v4.1.4 — 난이도별 추격 속도
+      exp: Math.round(base.exp * sc.exp * 3 * dif.reward),
+      gold: Math.round(base.gold * sc.gold * 3 * dif.reward),
+    };
+    this.bossDef = def;
+    this.replayBossActive = true;
+    this.replayBossEmerald = dif.emerald; // v3.0.28 — 난이도별 에메랄드 (2/5/9/30)
+    const bx = this.portalHome.x;
+    const by = this.portalHome.y - 10;
+    audio.sfx.roar();
+    this.doShake(340, lv === "chaos" ? 0.016 : 0.01);
+    /* v4.1.4 — 카오스 등장 강조 배너 */
+    this.showBanner(lv === "chaos" ? `카오스 재림 — ${base.name}!! (전용 패턴 개방)` : `재림한 ${base.name} 출현!`);
+    /* v1.4.12 (#12 보스전 자동전투 금지) — 재림 보스전도 동일 강제 해제 */
+    if (this.autoHunt) {
+      this.autoHunt = false;
+      this.autoHuntMove.set(0, 0);
+      this.autoTarget = null;
+      this.emitRpgState();
+      this.save();
+      EventBus.emit("banner:show", { text: "⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)" });
+    }
+    this.boss = new Boss(this, bx, by, def, lv);
+    this.spawnBossRunic(bx, by, lv === "chaos"); /* v4.1.7 — 룬 마법진 (카오스는 붉은룬) */
+    this.applyBossPostFX(lv === "chaos"); /* v4.1.5 — 카오스: 블룸+비네트+잉걸불 오라 */
+    this.physics.add.collider(this.boss, this.solidGroup);
+    EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
+    // 재도전 전투곡 — 일반 보스전과 동일 오버라이드
+    audio.playStageBGM(this.stageDef.key, true);
+    // 조우 연출은 카메라 팬만 (인트로 대사는 이미 본 대사 — 재생 생략 로직이 자동 처리)
+    this.bossIntroCinematic(bx, by, def.introDialogue);
+  }
+
+  /** v4.6.0 — GM 전 보스 체험: 스토리 스펙 보스를 퀘스트/포탈 판정과 분리해 즉시 스폰.
+   *  스탯 산식은 스토리판(spawnBoss)과 동일 — 체험 목적에 맞게 재림판(×5/×2.2) 미적용.
+   *  격파 처리는 재림 경로(replayBossActive)를 재사용 — 스토리 진행/포탈 개방 영향 0. */
+  private spawnGmBoss(bossKey: string) {
+    if (!this.player || this.boss || this.isInterior) return;
+    const base = BOSS_DEFS[bossKey as BossKey];
+    if (!base) return;
+    const sc = stageScale(this.stageDef.key);
+    const dif = BOSS_DIFFS[this.bossDiff]; // GM 체험은 현재 선택 난이도(기본 노말) 배율
+    const def: BossDef = {
+      ...base,
+      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * dif.hp),
+      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15) * dif.atk),
+      speed: Math.round(base.speed * dif.spd),
+      exp: Math.round(base.exp * sc.exp * dif.reward),
+      gold: Math.round(base.gold * sc.gold * dif.reward),
+    };
+    this.bossDef = def;
+    this.gmTrial = true; // 이 구역 방문 동안 보루가 스토리 보스를 추가 스폰하지 않게 차단
+    this.replayBossActive = true; // onBossDead 분리 보상 경로 재사용
+    this.replayBossEmerald = 2;
+    const bx = this.portalHome.x;
+    const by = this.portalHome.y - 10;
+    audio.sfx.roar();
+    this.doShake(260, 0.008);
+    this.showBanner(`GM 체험 — ${def.name} 출현!`);
+    this.boss = new Boss(this, bx, by, def, "normal");
+    this.spawnBossRunic(bx, by, false);
+    this.applyBossPostFX(false);
+    this.physics.add.collider(this.boss, this.solidGroup);
+    EventBus.emit("boss:show", { name: `[GM] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
+    audio.playStageBGM(this.stageDef.key, true);
+    this.bossIntroCinematic(bx, by, def.introDialogue);
+  }
+
+  /** v3.0.10 — 보스 조우 시네마틱: 물리 정지 + 카메라 팬(보스) + 인트로 대사 + 카메라 복귀
+   *  v3.3.0 (#흑화) — 전체 try/catch: 시네마틱 도중 예외로 physics 정지가 누출되는 것 차단 */
+  private bossIntroCinematic(bx: number, by: number, introId: string) {
+    try {
+      /* v1.0.10 (#보스카메라 버그) — 이미 본 인트로 대사면 카메라 우회를 아예 하지 않는다.
+       *  기존: 재림·GM·재도전 보스마다 “보스 팬(900ms)→1.1초 홀드→플레이어 복귀 팬(620ms)”
+       *  반복 — 대사 없는 카메라 왕복이 “보스를 잠깐 가리키고 플레이어를 바라보는 버그”로 인식됨.
+       *  신규: 첫 조우(미본 대사)에만 시네마틱, 이후는 배너·포효·진동만으로 즉시 전투 개시. */
+      if (!DIALOGUES[introId] || this.seenSet.has(introId)) return;
+      const cam = this.cameras.main;
+      this.dialoguing = true;
+      this.dialogueSince = this.time.now; // v3.3.0 — 붙임 자가치유 기준
+      this.player.setVelocity(0, 0);
+      this.physics.world.pause();
+      /* v1.0.10 — 시네마틱 동안 팔로우 정지: 팬 종료 시점에 팔로우가 개입해 순간 스냅되던
+       *  카메라 점프 근본 제거 (복귀는 restoreBossIntroCam의 팬 완료 콜백에서 재개) */
+      cam.stopFollow();
+      /* v1.0.2 (#보스컷씬) — ① 보스 정확히 바라보기(중앙 고정 팬) ② 대사가 끝날 때까지 카메라 보스 유지.
+       *  기존: 820ms 후 플레이어 복귀 팬 → 대사 도중 시점 복귀 + 대사 종료 전 컷씬 종료 느낌.
+       *  복귀는 resumeFromDialogue(대사 완료 이벤트)에서 restoreBossIntroCam()으로 보간 처리 */
+      this.bossIntroPending = true;
+      cam.pan(bx, by - 20, 900, "Sine.easeInOut", true);
+      this.time.delayedCall(960, () => {
+        if (!this.scene.isActive()) return;
+        // 이미 본 대사면 보스 연출을 잠깐 유지한 뒤 복귀, 아니면 인트로 대사 재생(복귀는 resumeFromDialogue 담당)
+        if (!this.showDialogueOnce(introId)) {
+          this.time.delayedCall(1100, () => {
+            this.restoreBossIntroCam();
+            // 이미 본 대사 경로 — 대사 없이 바로 연출 종료이므로 입력/물리도 여기서 복구
+            this.dialoguing = false;
+            this.physics.world.resume();
+          });
+        }
+      });
+    } catch (err) {
+      console.error("[SERTZ] 보스 인트로 시네마틱 실패 — 즉시 복구", err);
+      this.bossIntroPending = false;
+      this.dialoguing = false;
+      this.physics.world.resume();
+    }
+  }
+
+  /** v1.0.2 (#보스컷씬) — 인트로 종료 후 플레이어 시점 복귀(순간이동 아닌 보간 팬).
+   *  대사 종료·20초 자가치유·이미 본 대사 홀드 종료 3경로에서 모두 호출되어 상태 정합 보장 */
+  private restoreBossIntroCam() {
+    if (!this.bossIntroPending) return;
+    this.bossIntroPending = false;
+    try {
+      const cam = this.cameras.main;
+      if (this.player?.active) {
+        /* v1.0.10 — 복귀 팬 완료 콜백에서 팔로우 재개: 팬 도중 팔로우 개입으로 카메라가
+         *  순간 스냅되던 근본 수정 (보스 인트로 종료 후 뚝 끊기는 느낌 해소) */
+        cam.pan(this.player.x, this.player.y, 620, "Sine.easeInOut", true, () => {
+          if (this.player) cam.startFollow(this.player, true, 0.18, 0.18);
+        });
+      } else if (this.player) {
+        cam.startFollow(this.player, true, 0.18, 0.18);
+      }
+    } catch (err) {
+      console.warn("[SERTZ] 보스 인트로 카메라 복귀 실패 — 무시", err);
+    }
+  }
+
+  /* v4.1.5 — 보스전 포스트FX: 블룸(전투) + 카오스 비네트·잉걸불 오라·붉은 광원.
+   *  WebGL 전용(캔버스 렌더러 폴백 무시) — 재림판 카오스는 강도 상향. */
+  private applyBossPostFX(chaos: boolean) {
+    this.bossChaos = chaos; // v4.9.0 — 적응형 품질 복원 시 재적용용
+    /* v1.0.2 (#툰셰이더) — 보스 툰 림라이트: 카오스는 붉은 림으로 위협 강조, 일반은 오브색 계열.
+     *  카메라 블룸(전체 프레임버퍼)과 달리 스프라이트 단일 필터라 모바일 비용이 작다 */
+    if (this.fxLevel >= 1 && this.game.renderer.type === Phaser.WEBGL && this.boss?.active) {
+      clearToonStyle(this.boss as unknown as Parameters<typeof clearToonStyle>[0]);
+      this.bossToon = applyToonStyle(this.boss as unknown as Parameters<typeof applyToonStyle>[0], {
+        rim: chaos ? 0xff7a7a : 0xbfd8ff, rimStrength: 2.6, contrast: 1.07, saturate: 1.2,
+      });
+    }
+    try {
+      const cam = this.cameras.main;
+      /* v1.0.18 — 보스전 밝기 부스트: 어두운 챕터의 보스전도 너무 어둡지 않게 (암전 완화 + 횃불 확대) */
+      this.lighting?.setBossFight(true);
+      /* v1.0.18 — 보스 위치 밝은 광원 (카오스 전용이던 보스 라이트를 전 보스전으로 확대·밝은 톤) */
+      if (this.boss?.active) {
+        this.bossLight?.destroy();
+        this.bossLight = this.add.image(this.boss.x, this.boss.y - 6, "pk_light_01")
+          .setDepth(56)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(chaos ? 0xff4830 : 0xffd9a0)
+          .setScale(1.6)
+          .setAlpha(0.34);
+        /* 보스 추적 — update에서 보스 좌표 동기화 */
+        this.bossLightFollow = true;
+      }
+      /* v4.9.0 — FX 축소 모드(fxLevel 0)에선 블룸 자체를 생략 (모바일 GPU 최대 부하원) */
+      if (this.fxLevel === 0) return;
+      /* v1.0.10 — 보스 블룸과 앰비언트 블룸은 상호 배타: 프레임버퍼 패스 이중화 방지 */
+      if (this.ambientFilters.length > 0) detachAmbientBloom(cam, this.ambientFilters);
+      if (this.game.renderer.type === Phaser.WEBGL && cam.filters) {
+        /* v4.7.0 — Phaser 4: v3 postFX.addBloom 대신 AddEffectBloom(Threshold+Blur+ParallelFilters 합성).
+         *  v3 강도(strength 0.68/0.46, steps 4)를 config로 이식 — 보스전 블룸 체감 동일 유지
+         *  v1.0.18 — 셰이더 효과 강도 설정 반영 (기본 55 → 강도 비례 축소, 0이면 생략) */
+        const fxk = loadFx().intensity <= 0 ? 0 : Math.min(1.5, loadFx().intensity / 55);
+        if (fxk > 0) {
+          const bloom = Phaser.Actions.AddEffectBloom(cam, {
+            threshold: 0.6,
+            blurRadius: 1,
+            blurSteps: 4,
+            /* v1.1.0 (#12) — 카오스 블룸 강도 완화(0.68→0.5): 보스전이 "맵이 어두워진다"고 체감되던 원인 1 */
+            blendAmount: (chaos ? 0.5 : 0.46) * fxk,
+          });
+          if (bloom[0]) this.bossFilters.push(bloom[0].threshold, bloom[0].blur, bloom[0].parallelFilters);
+        }
+        /* v1.1.0 (#12) — 카오스 비네트 완화: 강도 0.4→0.14 · 반경 0.62→0.78 화면.
+         *  기존엔 가장자리 40% 수준의 강한 암흑이라 미니맵까지 가려 "어두워진다"고 체감됐다 (#7 동반 해소).
+         *  카오스 분위기는 붉은 보스 라이트+잉걸불 파티클로 유지한다 */
+        if (chaos && fxk > 0) this.bossFilters.push(cam.filters.external.addVignette(cam.width / 2, cam.height / 2, cam.width * 0.78, 0.14 * fxk));
+      }
+      if (chaos && this.boss?.active) {
+        /* v4.1.8 — 카오스 잉걸불: 유료 CFXR 종 화염 (256x512, 설정 무변경) */
+        this.bossEmber = this.add.particles(0, 0, "cfxr_flamme", {
+          follow: this.boss,
+          lifespan: 780,
+          frequency: 130,
+          quantity: 1,
+          angle: { min: 200, max: 340 },
+          speed: { min: 18, max: 62 },
+          scale: { start: 0.34, end: 0 },
+          alpha: { start: 0.85, end: 0 },
+          tint: [0xff5838, 0xffa040, 0xffd070],
+          blendMode: Phaser.BlendModes.ADD,
+        }).setDepth(57);
+      }
+    } catch {
+      /* postFX 미지원 환경 무시 */
+    }
+  }
+
+  /* v4.9.0 — 적응형 품질 ↔ 보스 블룸 연동용 상태 */
+  private bossChaos = false;
+  /** v1.0.18 — 보스 라이트가 보스를 추적 중인지 */
+  private bossLightFollow = false;
+
+  /* v4.1.5 — 보스전 포스트FX/오라 해제 (사망·씬 전환 공통) */
+  private clearBossPostFX() {
+    /* v1.0.18 — 보스전 밝기 부스트 해제 (암전 원복) */
+    this.lighting?.setBossFight(false);
+    this.bossLightFollow = false;
+    /* v4.7.0 — Phaser 4: FilterList.remove()가 destroy까지 처리 */
+    for (const f of this.bossFilters) {
+      try { this.cameras.main.filters.external.remove(f); } catch { /* 이미 해제된 필터 무시 */ }
+    }
+    this.bossFilters = [];
+    /* v1.0.2 (#툰셰이더) — 보스 스프라이트 툰 필터도 함께 해제 */
+    if (this.boss) clearToonStyle(this.boss as unknown as Parameters<typeof clearToonStyle>[0]);
+    this.bossToon = null;
+    /* v1.0.10 — 보스전 종료 후 평시 앰비언트 블룸으로 복귀 (fxLevel 유지 시) */
+    if (this.fxLevel >= 1 && this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL) {
+      this.ambientFilters = addAmbientBloom(this.cameras.main);
+    }
+    this.bossEmber?.destroy();
+    this.bossEmber = null;
+    this.bossLight?.destroy();
+    this.bossLight = null;
+  }
+
+  onBossDead() {
+    this.clearBossPostFX(); /* v4.1.5 — 보스전 포스트FX/오라 해제 */
+    const def = this.bossDef;
+    audio.sfx.bossDie();
+    /* v1.0.8 — ① 탑 보스층 격파: 스토리/재림 경로와 완전 분리 (층 클리어 처리만) */
+    if (this.towerActive) {
+      this.towerBossRef = null;
+      this.boss = null;
+      this.ensureDaily();
+      this.dailyBosses++;
+      this.bossKillCount++;
+      this.addPassXp(PASS_XP_RULES.boss);
+      this.trackMission("boss");
+      this.doShake(300, 0.008);
+      this.updateTowerText();
+      if (this.enemies.filter((e) => e.alive).length === 0) this.towerFloorCleared();
+      return;
+    }
+    /* v1.0.8 — ⑨ 주간 보스 레이드: 요일 보스 처치 시 심연 코인 +3 (드롭 2배는 스토리 경로 하단) */
+    const raidToday = weeklyRaidBoss();
+    const isRaidBoss = def?.key === raidToday;
+    if (isRaidBoss) {
+      this.inf.abyss += 3;
+      this.showBanner(`주간 레이드 보스 격파! (${def?.name}) — 심연 코인 +3`);
+      this.emitRpgState();
+    }
+    this.ensureDaily();
+    this.dailyBosses++; // v1.0.7 — 보스 사냥 일일 퀘스트 카운트 (재림/카오스/GM 전 경로 공통)
+    /* v4.8.0 — 보스 격파 대형 충격파 (오브 색상 — 스토리/재림/GM 경로 공통, WebGL 전용) */
+    if (this.boss?.active) {
+      this.spawnShockwave(this.boss.x, this.boss.y, def?.orbTint ?? 0x9d7aff, 2.4, 520, 0.6); // v1.0.7 — 알파 명시 축소
+      /* v1.0.7 — 프리렌더 3D VFX (UNI 폭발 충격파 + Hovl 플래시) — 보스 격파의 결정적 순간 연출 */
+      if (this.textures.exists("uni_boom")) {
+        const boom = this.add.image(this.boss.x, this.boss.y + 8, "uni_boom").setDepth(27).setBlendMode(Phaser.BlendModes.ADD).setTint(def?.orbTint ?? 0x9d7aff).setScale(0.15).setAlpha(0);
+        this.tweens.add({ targets: boom, alpha: 0.85, scale: 1.5, duration: 340, ease: "Cubic.out" });
+        this.tweens.add({ targets: boom, alpha: 0, delay: 380, duration: 520, onComplete: () => boom.destroy() });
+      }
+      if (this.textures.exists("hv_flash")) {
+        const flash = this.add.image(this.boss.x, this.boss.y - 10, "hv_flash").setDepth(28).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0);
+        this.tweens.add({ targets: flash, alpha: 0.95, scale: 1.1, duration: 160, ease: "Cubic.out" });
+        this.tweens.add({ targets: flash, alpha: 0, scale: 1.5, delay: 180, duration: 420, onComplete: () => flash.destroy() });
+      }
+    }
+    /* v3.0.24 (#보스재도전) — 재림 보스 격파: 스토리 진행과 분리된 전용 보상 경로
+     *  퀘스트 진행/포탈 개방/클리어 판정 없음 → 골드·경험치·에메랄드 즉시 지급 후 구역 BGM 복귀 */
+    if (this.replayBossActive) {
+      this.replayBossActive = false;
+      this.totalKills++;
+      this.registry.set("runKills", this.totalKills);
+      /* v4.1.4 — 보스/카오스 처치 누적 (도전과제 지표) */
+      this.bossKillCount++;
+      this.addPassXp(PASS_XP_RULES.boss); // v4.5.0 — 재림 보스도 패스 XP +30
+      this.trackMission("boss"); // v1.0.1 — 시즌 미션 보스 카운트
+      if (this.boss?.chaos) this.chaosKillCount++;
+      this.doShake(400, 0.01);
+      this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
+      const exp = def?.exp ?? 220;
+      const gold = def?.gold ?? 200;
+      const em = this.replayBossEmerald;
+      this.player.gainExp(exp);
+      this.player.addGold(gold);
+      this.player.emerald += em;
+      this.spawnPickupText(this.player.x, this.player.y - 60, `+${em} 에메랄드`, "#7de8ff");
+      this.registerCollection(`boss_${def?.key ?? "guardian"}`, def?.name ?? "보스");
+      EventBus.emit("reward:show", {
+        title: this.gmTrial ? `GM 보스 체험 격파! — ${def?.name ?? "보스"}` : `재도전 성공 — ${def?.name ?? "보스"}`,
+        lines: [
+          { text: `골드 +${gold} G`, color: "#ffd76a" },
+          { text: `경험치 +${exp} EXP`, color: "#8fe84a" },
+          { text: `에메랄드 +${em}`, color: "#7de8ff" },
+        ] satisfies RewardPopupState["lines"],
+      });
+      this.emitRpgState();
+      this.emitHud();
+      this.save();
+      this.time.delayedCall(1400, () => audio.playStageBGM(this.stageDef.key));
+      return;
+    }
+    // v2.0 수정 (지시 #7) — 보스전 종료 후 BGM이 멈추는 버그:
+    // stopBGM 대신 1.4초 후 스테이지 테마 BGM으로 자연 전환
+    this.time.delayedCall(1400, () => audio.playStageBGM(this.stageDef.key));
+    this.doShake(400, 0.01);
+    this.spawnBurstAt(this.boss!.x, this.boss!.y, 30, def?.orbTint ?? 0x9d7aff);
+    this.player.gainExp(def?.exp ?? 220);
+    this.totalKills++;
+    this.registry.set("runKills", this.totalKills);
+    /* v4.1.4 — 보스/카오스 처치 누적 (도전과제 지표) */
+    this.bossKillCount++;
+    this.addPassXp(PASS_XP_RULES.boss); // v4.5.0 — 스토리 보스 패스 XP +30
+    this.trackMission("boss"); // v1.0.1 — 시즌 미션 보스 카운트
+    if (this.boss?.chaos) this.chaosKillCount++;
+    /* v3.0.6 (지시 #1) — 보스 처치 시 에메랄드 +2 (BM 상점 재화) */
+    this.player.emerald += 2;
+    this.spawnPickupText(this.player.x, this.player.y - 60, "+2 에메랄드", "#7de8ff");
+    /* v3.0.16 — 보스 컬렉션 등록 (최초 처치 시) */
+    this.registerCollection(`boss_${def?.key ?? "guardian"}`, def?.name ?? "보스");
+    this.emitRpgState();
+    /* v3.0.6 (지시 #9) — 보스 전용 드롭: 보스별 유니크 아이템 100% 드롭
+     *  상점에서 살 수 없음(tradeLock) — 추후 유저 거래소에서 사고팔게 할 예정 */
+    const dropKey = BOSS_DROP_ITEMS[def?.key ?? "guardian"];
+    if (dropKey && this.boss) {
+      const bx = this.boss.x;
+      const by = this.boss.y;
+      const dropN = isRaidBoss ? 2 : 1; // v1.0.8 — 주간 레이드 보스 드롭 2배
+      this.time.delayedCall(420, () => {
+        if (!this.scene.isActive()) return;
+        for (let i = 0; i < dropN; i++) {
+          const d = this.acquireDrop();
+          if (d) d.spawnItem(dropKey, bx + Phaser.Math.Between(-20, 20), by + Phaser.Math.Between(-12, 8));
+        }
+        audio.sfx.bossDrop(); // v1.4.8 — 포효 재활용 해제 (보스 등장음과 구분)
+      });
+    }
+    // 최종 보스(심연의 군주)만 클리어 — 이전 보스는 차원문으로 다음 지역 진행
+    const final = NEXT_STAGE[this.stageDef.key] === null;
+    this.cleared = final;
+    this.advanceQuest(); // 보스 퀘스트 완료 — 골드/경험치 보상 포함
+    this.save();
+    if (final) {
+      this.time.delayedCall(1200, () => {
+        this.showDialogueOnce("victory");
+        this.time.delayedCall(400, () => {
+          this.saveCleared();
+        });
+        this.time.delayedCall(4600, () => {
+          // 엔드 화면이 최종 화면 — 타이틀 복귀는 EndScreen 버튼(reload)이 담당
+          EventBus.emit("end", {
+            victory: true,
+            playTime: Math.floor((Date.now() - this.startTime) / 1000),
+            kills: this.totalKills,
+            lv: this.player.lv,
+          });
+        });
+      });
+    } else {
+      // 다음 지역 안내 대사 + 차원문 개방은 afterAdvance가 일반 처리 (1200ms 유예)
+      this.time.delayedCall(1200, () => this.afterAdvance());
+    }
+  }
+
+  onPlayerDead() {
+    audio.sfx.playerDie(); // v1.4.8 — 사망 무음 해소 (어두운 붕괴음)
+    audio.stopBGM();
+    /* v1.4.10 — 사망 안내 (부연 설명 강화): 부활 규칙 + 패널티 없음을 미리 알려 좌절감 완화 */
+    this.hintOnce(
+      "death",
+      "쓰러졌다! 잠시 후 가장 가까운 마을에서 부활한다 — 경험치·아이템은 그대로라 걱정 없다. 물약을 미리 챙기고 몬스터 무리에 파고들지 말자!"
+    );
+    this.cameras.main.fadeOut(600, 20, 0, 0);
+    this.time.delayedCall(700, () => {
+      EventBus.emit("end", {
+        victory: false,
+        playTime: Math.floor((Date.now() - this.startTime) / 1000),
+        kills: this.totalKills,
+        lv: this.player.lv,
+      });
+    });
+  }
+
+  respawnPlayer() {
+    /* v1.3.1 (#6/#8) — 부활 개편:
+     *  ①가까운 마을에서 부활 (유저 지시 #6) — PREV 체인 역추적(진행상 가장 최근에 지나온 마을).
+     *  긴급귀환의 nearestVillageKey는 "현재 챕터의 마을"(미개방 가능)을 반환하므로 부활 전용 역추적을 쓴다.
+     *  ②끼임 플래그 전면 해제 — dialoguing/transitioning/pendingPortal 잔존으로 인한 부활 후 멈춤 차단 (#8)
+     *  ③마을/실내 사망은 마을 스폰 지점에서 그 자리 부활 (전환 없음 — 빠른 재기) */
+    const inVillage = this.stageDef.isVillage || this.isInterior;
+    const village = this.respawnVillageKey();
+    /* 끼임 해제 공통 — 대사/보스바/포탈 게이트 전부 정리 */
+    this.dialoguing = false;
+    this.dialogueSince = 0;
+    this.portalHoldSince = 0;
+    this.queuedDialogue = null;
+    this.pendingPortal = false;
+    this.transitioning = false;
+    EventBus.emit("dialogue:hide");
+    EventBus.emit("boss:hide");
+    if (!inVillage && village !== this.stageDef.key) {
+      try { this.player.revive(180, this.stageH / 2); } catch { /* 전환 경로에서 재부활 처리 */ }
+      const def = STAGES[village];
+      const spawn = this.villageSpawnPos(def);
+      audio.playStageBGM(village, false);
+      this.gotoStage(village, { entry: spawn }, true);
+      EventBus.emit("banner:show", { text: `${STAGE_SHORT[village] ?? "마을"}에서 부활했다` });
+      return;
+    }
+    this.cameras.main.fadeIn(400, 20, 0, 0);
+    // 부활 캠핑 방지 — 몬스터를 원래 스폰 지점으로 되돌리고 어그로 해제
+    for (const e of this.enemies) {
+      if (e.active && e.alive) e.resetHome();
+    }
+    const spawn = inVillage ? this.villageSpawnPos(this.stageDef) : { x: 180, y: this.stageH / 2 };
+    this.player.revive(spawn.x, spawn.y);
+    audio.playStageBGM(this.stageDef.key, !!this.boss);
+  }
+
+  /** v1.3.1 (#6) — 마을 스폰 좌표: 우물 광장 남쪽 개방지 (건물/우물/유적과 겹치지 않는 안전 지점) */
+  private villageSpawnPos(def: StageDef): { x: number; y: number } {
+    return { x: def.width / 2, y: def.height / 2 + 150 };
+  }
+
+  /** v1.3.1 (#6) — 부활 마을: PREV 체인 역추적(진행상 직전에 지나온 마을 — 항상 개방된 곳).
+   *  긴급귀환용 nearestVillageKey와 달리 "현재 챕터의 미개방 마을"로 보내지 않는다.
+   *  최대 60홉 안전망 + 최후 폴백 본마을. */
+  private respawnVillageKey(): StageKey {
+    let cur: StageKey | null = this.stageDef.key;
+    for (let i = 0; i < 60 && cur; i++) {
+      const def = STAGES[cur];
+      if (def?.isVillage) return cur;
+      cur = PREV_STAGE[cur] ?? null;
+    }
+    return "village";
+  }
+
+  /* ================= 입력 ================= */
+
+  private setupInput() {
+    const kb = this.input.keyboard!;
+    // v1.9 키 매핑 — 모든 배정 가능 키를 미리 등록해 두고 keymap에서 조회
+    // (재배치 시 키 재등록 불필요, 이동 W/A/S/D + 화살표는 고정)
+    const allKeys =
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,Q,E,R,T,Y,U,I,O,P,F,G,H,J,K,L,V,B,N,M,Z,X,C";
+    const raw = kb.addKeys(allKeys) as Record<string, Phaser.Input.Keyboard.Key>;
+    this.keys = raw;
+    for (const letter of allKeys.split(",")) {
+      if (letter.length === 1) this.keyObjs[letter] = raw[letter];
+    }
+
+    const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);
+    const onAtk = () => (this.attackQueued = true);
+    const onS1 = () => this.player?.useSkill1();
+    const onS2 = () => this.player?.useSkill2();
+    /* v3.0.4 (지시 #7) — 모바일 3/4차기 버튼이 발행하는 input:skill3/4 미수신으로 안 쓰이던 버그 수정 */
+    const onS3 = () => this.player?.useSkill3();
+    const onS4 = () => this.player?.useSkill4();
+    const onS5 = () => this.player?.useSkill5(); // v3.2.0 — 궁극기 (모바일 버튼 공용)
+    const onRespawn = () => this.respawnPlayer();
+    const onDialogueDone = () => this.resumeFromDialogue();
+    const onInteract = () => this.tryInteract();
+    const onKeymapChanged = (m: KeyMap) => {
+      this.keymap = m;
+    };
+    const onNameSet = (v: { name: string }) => {
+      if (this.introStep === 2) {
+        this.finishIntro(v.name);
+        return;
+      }
+      // v2.4 — 인트로 외 이름 변경 (옵션 패널 → NamePanel 공용) — "이름 지정 어디감?" 해소
+      setPlayerName(v.name);
+      this.refreshPlayerTag();
+      this.save();
+      EventBus.emit("banner:show", { text: `이름이 '${v.name}'(으)로 바뀌었어요!` });
+    };
+    const onBuy = (v: { key: ItemKey; qty?: number }) => {
+      if (!this.player || this.dialoguing) return;
+      const qty = Math.max(1, Math.min(99, Math.floor(v.qty ?? 1))); // v3.0.24 — 수량 지정 구매
+      const it = ITEMS[v.key];
+      const cost = (it?.price ?? 0) * (it?.kind === "consumable" || it?.kind === "buff" ? qty : 1);
+      if (this.player.buy(v.key, qty)) {
+        audio.sfx.shop();
+        // BM 즉시 반영 — 펫 구매 시 스프라이트 교체, 치장 구매 시 오라 교체 (v1.9)
+        const kind = ITEMS[v.key]?.kind;
+        if (kind === "pet") this.syncPet();
+        else if (kind === "cosmetic") this.syncCosmeticAura();
+        this.save();
+        EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost}G)` });
+      }
+      this.emitRpgState();
+      this.emitHud();
+    };
+    const onEquip = (v: { key: ItemKey }) => {
+      if (!this.player || this.dialoguing) return;
+      /* v1.0.3 (#반지중첩) — 장착 실패 안내: 같은 장신구 중복 장착 시도 등에 조용히 무시되지 않게 */
+      if (!this.player.equip(v.key)) {
+        const it = ITEMS[v.key];
+        const dup = it?.kind === "accessory" && this.player.accessories.includes(v.key);
+        EventBus.emit("banner:show", { text: dup ? "같은 장신구는 1개만 장착할 수 있어요" : "장착할 수 없어요" });
+        return;
+      }
+      this.emitRpgState();
+      this.save();
+    };
+    /* v2.9 (#8) — 장신구 슬롯 클릭 해제 */
+    const onUnequip = (v: { key: ItemKey }) => {
+      if (!this.player || this.dialoguing) return;
+      this.player.unequipAccessory(v.key);
+      this.emitRpgState();
+      this.save();
+    };
+    const onUse = (v: { kind: "hp" | "mp" }) => {
+      this.player?.usePotion(v.kind);
+    };
+    const onUseBuff = (v: { key: BuffKey }) => {
+      if (!this.player || this.dialoguing) return;
+      this.player.useBuffItem(v.key);
+      this.save();
+      this.emitRpgState();
+    };
+    const onAllocate = (v: { stat: "str" | "dex" | "int" | "luk"; n: number }) => {
+      if (!this.player || this.dialoguing) return;
+      if (this.player.allocateStat(v.stat, v.n)) this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    const onPetSet = (v: { key: PetKey | null }) => {
+      if (!this.player || this.dialoguing) return;
+      if (this.player.setPet(v.key)) this.save();
+      this.emitRpgState();
+    };
+    const onCosmeticSet = (v: { key: CosmeticKey | null; slot?: "aura" | "outfit" | "hair" | "acc" }) => {
+      if (!this.player || this.dialoguing) return;
+      /* v1.1.0 (#4 해제 버그) — UI가 클릭한 아이템의 슬롯을 함께 전달: 원하는 슬롯만 정확히 해제 */
+      const ok = v.slot ? this.player.setCosmeticSlot(v.key, v.slot) : this.player.setCosmetic(v.key);
+      if (ok) this.save();
+      this.emitRpgState();
+    };
+    const onUpgrade = (v: { slot: "weapon" | "armor" }) => {
+      if (!this.player || this.dialoguing) return;
+      const r = this.player.tryUpgrade(v.slot);
+      this.syncUpgradeGlow(); // 스타포스 오라 갱신 (티어별)
+      /* v3.0.5 — 패널에 결과 통보 (성공 금빛/실패 붉은 흔들림 CSS 연출용) */
+      if (r === "ok" || r === "fail")
+        EventBus.emit("rpg:upgradeResult", { slot: v.slot, result: r, up: this.player.upgrades[v.slot] });
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    /* v1.0.2 (#자동강화) — 목표 강화까지 자동 반복.
+     *  · 정지 조건: 목표 도달 / 골드 부족("poor") / 이미 목표 이상 / 최고 강화("max") / 패널 취소 / 씬 종료
+     *  · 강화 실패(+9 이상 하락)는 계속 재시도 (하락도 정상 경로 — 재료/골드가 지속 검증됨)
+     *  · 1틱 330ms 간격으로 저장·UI 갱신 — 즉발 반복으로 재화가 순간 유실되지 않게 단계 검증 */
+    const stopAutoUpgrade = (msg?: string) => {
+      if (this.autoUpTimer) { this.autoUpTimer.remove(); this.autoUpTimer = null; }
+      const was = this.autoUpSlot !== null;
+      this.autoUpSlot = null;
+      if (was) {
+        this.save();
+        this.emitRpgState();
+        if (msg) EventBus.emit("banner:show", { text: msg });
+      }
+    };
+    const autoUpTick = () => {
+      if (!this.player || !this.autoUpSlot) return stopAutoUpgrade();
+      const slot = this.autoUpSlot;
+      const cur = this.player.upgrades[slot];
+      if (cur >= this.autoUpTarget) return stopAutoUpgrade(`자동 강화 완료! ${slot === "weapon" ? "무기" : "방어구"} ★${cur}`);
+      if (cur >= this.player.upMax) return stopAutoUpgrade(`최고 강화 도달 — 자동 강화 종료 (★${cur})`);
+      const r = this.player.tryUpgrade(slot);
+      this.syncUpgradeGlow();
+      if (r === "poor") return stopAutoUpgrade("골드가 부족해 자동 강화를 멈췄다");
+      if (r === "max") return stopAutoUpgrade(`최고 강화 도달 — 자동 강화 종료`);
+      if (r === "ok" || r === "fail")
+        EventBus.emit("rpg:upgradeResult", { slot, result: r, up: this.player.upgrades[slot] });
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    const onAutoUpgrade = (v: { slot: "weapon" | "armor"; target: number }) => {
+      if (!this.player || this.dialoguing) return;
+      if (this.autoUpTimer) return EventBus.emit("banner:show", { text: "자동 강화가 이미 진행 중이다" });
+      const target = Math.max(1, Math.min(15, Math.floor(v.target || 0)));
+      const cur = this.player.upgrades[v.slot];
+      if (target <= cur) {
+        EventBus.emit("banner:show", { text: `목표가 현재 강화(★${cur})보다 높아야 한다` });
+        return;
+      }
+      this.autoUpSlot = v.slot;
+      this.autoUpTarget = target;
+      EventBus.emit("banner:show", { text: `자동 강화 시작 — ★${cur} → ★${target}` });
+      this.autoUpTimer = this.time.addEvent({ delay: 330, loop: true, callback: autoUpTick });
+    };
+    EventBus.on("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 목표 자동 강화
+    EventBus.on("rpg:autoUpgradeStop", () => stopAutoUpgrade("자동 강화를 취소했다"));
+    // 채팅 입력 포커스 — 게임 키 입력 완전 차단 (v1.7 멀티플레이 채팅)
+    const onChatFocus = (v: { focus: boolean }) => {
+      this.chatFocused = v.focus;
+      if (v.focus) this.touchMove.set(0, 0);
+      /* v4.9.0 — DOM 텍스트 입력 중 Phaser 키보드 관리자 자체를 차단 (이름 소문자·자동이동 버그 근본 수정)
+       *  ①캡처 preventDefault: Phaser는 window에서 A~Z 키캡처를 하고 수정키 없는 소문자만
+       *    preventDefault한다 → 포커스 경로에 따라 인풋 글자가 유실됐다 (모바일 WebView 특히).
+       *  ②keyup 유실 고착: keydown은 Phaser가 받고 keyup은 인풋 swallow로 유실되면
+       *    Key.isDown이 영구 true → 대사 종료 후 한방향 자동이동.
+       *  → 입력 중엔 관리자를 꺼 어떤 키 이벤트도 게임에 도달하지 않게 하고, 경계마다
+       *    입력 상태를 완전 리셋한다. */
+      try {
+        const km = this.input.keyboard;
+        if (km?.manager) km.manager.enabled = !v.focus;
+      } catch { /* 키보드 미지원 환경 무시 */ }
+      this.resetInputState();
+    };
+    const onChatSend = (v: { text: string }) => net.netSendChat(v.text);
+    /* v4.1.0 — 긴급 귀환 (설정창 버튼) */
+    const onEscapeHome = () => this.emergencyReturn();
+    /* v1.2.1 (#6 메뉴 나가기) — 유저 지시 "메뉴화면(게임 시작창&캐릭터 선택화면)으로 어떻게 나감??":
+     *  기존엔 인게임에서 타이틀/캐릭터 선택으로 돌아가는 길이 아예 없었다.
+     *  lobby=true면 타이틀 전환 후 캐릭터 선택(로비)을 곧장 연다. */
+    const onExitMenu = (v: { lobby?: boolean }) => this.exitToMenu(v?.lobby ?? false);
+    /* v4.1.0 — 광고 보상/에메랄드 충전 (BM 수익 연동 — 유저 지시 #10) */
+    const onAdReward = async () => {
+      if (!this.player) return;
+      this.ensureDaily();
+      /* v4.5.0 — 구독자 광고 한도 5→8회 (SERTZ 패스 특전) */
+      const adLimit = subActive(this.subUntil) ? SUB_AD_LIMIT : 5;
+      if (this.dailyAds >= adLimit) {
+        audio.sfx.deny(); // v1.4.8 — 한도 초과 차단음 신설
+        EventBus.emit("banner:show", { text: `오늘의 광고 보상은 끝났다 (일 ${adLimit}회${adLimit > 5 ? " · 구독 특전" : ""}) — 내일 다시` });
+        return;
+      }
+      EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
+      const r = await showRewardedAd();
+      if (!r.ok) {
+        EventBus.emit("banner:show", { text: r.reason === "web" ? "광고 보상은 폰 버전(APK)에서 볼 수 있어" : "광고를 못 봤다 — 다시 시도하자" });
+        return;
+      }
+      /* v4.5.0 — 구독자 광고 보상 2배 (💎+2 · 골드+1,000) */
+      const adMul = subActive(this.subUntil) ? SUB_AD_MUL : 1;
+      this.dailyAds++;
+      this.player.addGold(500 * adMul);
+      this.player.emerald += 1 * adMul;
+      this.save();
+      this.emitRpgState();
+      audio.sfx.charge();
+      /* v1.4.11 — item_emerald 픽업 팝 (에메랄드 지급 시각화 — 미사용 에셋 활성화) */
+      this.driveFx?.emeraldPop(this.player.x, this.player.y - 34, 1 * adMul);
+      EventBus.emit("reward:show", {
+        title: "광고 보상 지급!",
+        lines: [
+          { text: `에메랄드 +${1 * adMul}`, color: "#7de8ff" },
+          { text: `골드 +${500 * adMul}`, color: "#ffd76a" },
+          { text: `오늘 ${this.dailyAds}/${adLimit}회 시청${adMul > 1 ? " · 구독 2배" : ""}`, color: "#a8ecff" },
+        ] satisfies RewardPopupState["lines"],
+      });
+    };
+    const onBuyGems = async (v: { sku: string }) => {
+      if (!this.player) return;
+      const sku = GEM_SKUS.find((s) => s.id === v.sku);
+      if (!sku) return;
+      EventBus.emit("banner:show", { text: "구글 플레이 결제창을 여는 중…" });
+      const r = await purchaseGems(sku.id);
+      if (!r.ok) {
+        /* v1.1.1 (#3 결제 취소) — 유저 취소/상품 미준비/오류를 정확히 구분 (기존: 전부 "취소됐다") */
+        const msg = r.reason === "web" ? "결제는 폰 버전(APK)에서만 가능하다 (Play Console 상품 등록 후)"
+          : r.reason === "busy" ? "결제창이 이미 열려 있다"
+          : r.reason === "cancelled" ? "결제를 취소했다 — 언제든 다시 시도할 수 있다"
+          : r.reason === "unavailable" ? "아직 스토어에 상품이 등록 전이다 — 준비 후 다시"
+          : "결제에 실패했다 — 네트워크를 확인하고 다시 시도하자";
+        EventBus.emit("banner:show", { text: msg });
+        return;
+      }
+      this.player.emerald += sku.gems;
+      this.save();
+      this.emitRpgState();
+      audio.sfx.charge();
+      EventBus.emit("banner:show", { text: `에메랄드 +${sku.gems} 충전 완료!` });
+    };
+    /* v1.0.2 (#현금패키지) — 스토어 결제 패키지 구매: 결제 성공 후 정의된 구성 지급 */
+    const onBuyStorePack = async (v: { id: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const grants = STORE_PACK_CONTENTS[v.id];
+      if (!grants) {
+        EventBus.emit("banner:show", { text: "아직 등록되지 않은 상품이다" });
+        return;
+      }
+      const r = await purchaseStorePack(v.id);
+      if (!r.ok) {
+        /* v1.1.1 (#3) — 취소/미준비/오류 구분 메시지 */
+        const msg = r.reason === "web" ? "패키지는 앱(스토어 빌드)에서 구매할 수 있다"
+          : r.reason === "busy" ? "결제창이 이미 열려 있다"
+          : r.reason === "cancelled" ? "결제를 취소했다 — 언제든 다시 시도할 수 있다"
+          : r.reason === "unavailable" ? "아직 스토어에 상품이 등록 전이다 — 준비 후 다시"
+          : "결제에 실패했다 — 네트워크를 확인하고 다시 시도하자";
+        EventBus.emit("banner:show", { text: msg });
+        return;
+      }
+      this.grantBmGrants("패키지 구매 감사합니다!", grants);
+      audio.sfx.charge();
+      this.save();
+      this.emitRpgState();
+    };
+    /* ================= v4.5.0 — 시즌 패스/구독/광고 확장 (BM 표준화) ================= */
+    const onPassBuy = () => {
+      if (!this.player || this.dialoguing) return;
+      this.ensurePassSeason();
+      if (this.passPrem) {
+        EventBus.emit("banner:show", { text: "이미 프리미엄 패스 보유 중이다" });
+        return;
+      }
+      if (this.player.emerald < PASS_PREMIUM_PRICE) {
+        EventBus.emit("banner:show", { text: `에메랄드가 부족하다 (프리미엄 패스 ${PASS_PREMIUM_PRICE}💎 — 충전소 이용)` });
+        return;
+      }
+      this.player.emerald -= PASS_PREMIUM_PRICE;
+      this.passPrem = true;
+      audio.sfx.shop();
+      EventBus.emit("banner:show", { text: "프리미엄 패스 해금! 지금까지 도달한 레벨의 프리미엄 보상 전부 수령 가능" });
+      this.save();
+      this.emitRpgState();
+    };
+    const onPassClaim = (v: { lv: number; track: "free" | "prem" }) => {
+      if (!this.player) return;
+      this.ensurePassSeason();
+      const lv = Math.floor(v.lv);
+      if (lv < 1 || lv > PASS_MAX_LV) return;
+      if (lv > passLevel(this.passXp)) {
+        EventBus.emit("banner:show", { text: `아직 도달하지 않은 레벨이다 (현재 Lv.${passLevel(this.passXp)})` });
+        return;
+      }
+      if (v.track === "prem" && !this.passPrem) {
+        EventBus.emit("banner:show", { text: "프리미엄 트랙은 해금이 필요하다 (30💎)" });
+        return;
+      }
+      const list = v.track === "free" ? this.passClaimedF : this.passClaimedP;
+      if (list.includes(lv)) return;
+      const g = PASS_TRACKS[lv - 1][v.track];
+      if (!g) return;
+      list.push(lv);
+      this.grantBmGrants(`시즌 패스 Lv.${lv} — ${v.track === "free" ? "무료" : "프리미엄"} 보상`, [g]);
+      audio.sfx.reward();
+      this.save();
+      this.emitRpgState();
+    };
+    /* v1.0.2 (#패스일괄수령) — 수령 가능한 패스 보상 전부 지급.
+     *  · 도달 레벨 && 미수령만 지급 (중복/조건 미달 원천 차단 — 개별 수령과 동일 검증 재사용)
+     *  · 프리미엄 미해금이면 프리미엄 트랙 제외 · 지급 실패 아이템 없음(owned 배열 캡 없음 — 롤백 불요)
+     *  · 지급 완료 후 1회 save/emit으로 UI 갱신 */
+    const onPassClaimAll = () => {
+      if (!this.player) return;
+      this.ensurePassSeason();
+      const lv = passLevel(this.passXp);
+      const grants: BmGrant[] = [];
+      for (let i = 1; i <= lv; i++) {
+        const gF = PASS_TRACKS[i - 1].free;
+        if (gF && !this.passClaimedF.includes(i)) {
+          this.passClaimedF.push(i);
+          grants.push(gF);
+        }
+        if (this.passPrem) {
+          const gP = PASS_TRACKS[i - 1].prem;
+          if (gP && !this.passClaimedP.includes(i)) {
+            this.passClaimedP.push(i);
+            grants.push(gP);
+          }
+        }
+      }
+      if (!grants.length) {
+        EventBus.emit("banner:show", { text: "지금 수령 가능한 보상이 없다 (레벨이 오르면 다시 시도)" });
+        return;
+      }
+      this.grantBmGrants(`시즌 패스 — 한번에 받기 (${grants.length}건)`, grants);
+      audio.sfx.reward();
+      this.save();
+      this.emitRpgState();
+    };
+    const onSubBuy = () => {
+      if (!this.player || this.dialoguing) return;
+      if (this.player.emerald < SUB_PRICE) {
+        EventBus.emit("banner:show", { text: `에메랄드가 부족하다 (SERTZ 패스 ${SUB_PRICE}💎 — 충전소 이용)` });
+        return;
+      }
+      this.player.emerald -= SUB_PRICE;
+      const base = this.subUntil > Date.now() ? this.subUntil : Date.now(); // 잔여기간 이어받기
+      this.subUntil = base + SUB_DAYS * 86400000;
+      audio.sfx.charge();
+      EventBus.emit("reward:show", {
+        title: "SERTZ 패스 구독 완료!",
+        lines: [
+          { text: `구독 ${SUB_DAYS}일 — 잔여 ${subDaysLeft(this.subUntil)}일`, color: "#c08aff" },
+          { text: `매일 출석 시 에메랄드 +${SUB_DAILY_EMERALD}`, color: "#7de8ff" },
+          { text: "광고 보상 2배 · 광고 한도 5→8회", color: "#ffd76a" },
+        ] satisfies RewardPopupState["lines"],
+      });
+      this.save();
+      this.emitRpgState();
+    };
+    /* 광고 확장 1 — 무료 상자 (일 3회, 철 상자 즉시 개봉) */
+    const onAdChest = async () => {
+      if (!this.player) return;
+      this.ensureDaily();
+      if (this.dailyAdChest >= AD_CHEST_PER_DAY) {
+        EventBus.emit("banner:show", { text: `오늘의 무료 상자는 끝났다 (일 ${AD_CHEST_PER_DAY}회) — 내일 다시` });
+        return;
+      }
+      EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
+      const r = await showRewardedAd();
+      if (!r.ok) {
+        EventBus.emit("banner:show", { text: r.reason === "web" ? "광고 보상은 폰 버전(APK)에서 볼 수 있어" : "광고를 못 봤다 — 다시 시도하자" });
+        return;
+      }
+      this.dailyAdChest++;
+      audio.sfx.chest();
+      if (this.player) this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor("chest_iron")); // v4.7.0
+      this.grantBmGrants(`광고 무료 상자 개봉! (${this.dailyAdChest}/${AD_CHEST_PER_DAY})`, [this.rollChest("chest_iron")]);
+      this.save();
+      this.emitRpgState();
+    };
+    /* 광고 확장 2 — 버프 물약 세트 (일 2회: 탐욕+행운) */
+    const onAdDrop = async () => {
+      if (!this.player) return;
+      this.ensureDaily();
+      if (this.dailyAdDrop >= AD_DROP_PER_DAY) {
+        EventBus.emit("banner:show", { text: `오늘의 광고 버프는 끝났다 (일 ${AD_DROP_PER_DAY}회) — 내일 다시` });
+        return;
+      }
+      EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
+      const r = await showRewardedAd();
+      if (!r.ok) {
+        EventBus.emit("banner:show", { text: r.reason === "web" ? "광고 보상은 폰 버전(APK)에서 볼 수 있어" : "광고를 못 봤다 — 다시 시도하자" });
+        return;
+      }
+      this.dailyAdDrop++;
+      this.player.addBuffItem("buff_gold", 1);
+      this.player.addBuffItem("buff_luck", 1);
+      audio.sfx.reward();
+      EventBus.emit("reward:show", {
+        title: `광고 버프 지급! (${this.dailyAdDrop}/${AD_DROP_PER_DAY})`,
+        lines: [
+          { text: "탐욕의 물약 (골드 +40%) ×1", color: "#ffd76a" },
+          { text: "행운의 물약 (드롭 +35%) ×1", color: "#c08aff" },
+          { text: "가방의 자동 버프 또는 인벤에서 사용", color: "#a8ecff" },
+        ] satisfies RewardPopupState["lines"],
+      });
+      this.save();
+      this.emitRpgState();
+    };
+    // 전직/승격 선택 (JobPanel → v1.8 다차원 트리)
+    /* v3.1.0 (#전직스토리선행) — 유저 지시 "전직은 전직 스토리(n차마다 다른 스토리·컷신)
+     *  완료 후에만": 미전직 계열 선택 → 1차 시련 시작 (전직은 시련 완료 시 자동 적용),
+     *  2차/3차 승격 → 다음 차수 시련 완료가 잠금 해제 조건 (scene-side 재검증). */
+    const onJobSelect = (v: { key: string }) => {
+      if (!this.player || this.player.state === "dead") return;
+      if (this.dialoguing) {
+        EventBus.emit("banner:show", { text: "대화 중에는 전직할 수 없습니다" });
+        return;
+      }
+      const def = classDef(v.key);
+      if (!def) return;
+      const need = nextJobLevel(this.player.cls);
+      if (need === null) {
+        EventBus.emit("banner:show", { text: "이미 최종 전직 완료 — 자유 전직을 이용하세요" });
+        return;
+      }
+      if (this.player.lv < need) {
+        EventBus.emit("banner:show", { text: `전직은 Lv ${need}부터 가능합니다` });
+        return;
+      }
+      /* ---------- 미전직: 계열 선택 → 1차 시련 스토리 ---------- */
+      if (chainOf(this.player.cls).length === 0) {
+        const fam = familyOf(def.key);
+        if (!fam) return;
+        if (this.jobStory?.tier === 1 && !this.player.cls) {
+          if (this.jobStory.fam === fam) {
+            EventBus.emit("banner:show", { text: "이미 전직 시련 진행 중 — 스토리를 완료하면 전직한다!" });
+            return;
+          }
+          if (this.jobStory.step === 0) {
+            // 시작 직후라면 계열 변경 허용 — 시련 재시작
+            this.jobStory = null;
+            this.pendingJobClass = def.key;
+            this.startJobStory(fam, 1);
+            return;
+          }
+          EventBus.emit("banner:show", { text: "시련 도중에는 계열을 바꿀 수 없다" });
+          return;
+        }
+        /* v1.4.12 (#19 유저 지시 "전직 버튼을 누르고 전직 퀘스트를 완료해야 전직을 시켜줘") —
+         *  즉시 적용 복구 경로 제거: 미전직은 예외 없이 1차 전직 시련(퀘스트)을
+         *  시작하고, 시련을 끝까지 완료해야만 전직된다 (completeJobStoryStep의
+         *  finTier===1 분기가 유일한 전직 통로). */
+        this.pendingJobClass = def.key;
+        if (this.jobStoryDone.includes(1)) {
+          // v1.4.12 — 비정상 세이브(시련 완료 기록만 있고 cls 없음) 복구용: 기록을 지워 재시련 허용
+          this.jobStoryDone = this.jobStoryDone.filter((t) => t !== 1);
+        }
+        this.startJobStory(fam, 1);
+        return;
+      } else if (!this.jobQuestCleared()) {
+        // 2차/3차 승격 — 다음 차수 시련 완료 필수 (패널 우회 방지 scene-side 재검증)
+        EventBus.emit("banner:show", {
+          text: `📜 ${this.jobQuestLockText() ?? "전직 시련을 먼저 완료하세요"}`,
+        });
+        return;
+      }
+      if (!this.player.applyClass(def.key)) return;
+      audio.sfx.levelup();
+      this.spawnLevelUpFx(this.player.x, this.player.y);
+      /* v3.0.4 (지시 #2) — 전직 시 기존 스킬 강화 체감 연출: 클래스색 빛기둥+폭발+화면 플래시 */
+      {
+        const jhex = def.hex;
+        this.spawnPillar(this.player.x, this.player.y, jhex, 200);
+        this.spawnBurstAt(this.player.x, this.player.y, 34, jhex);
+        this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
+        this.doShake(200, 0.008);
+        this.spawnPickupText(this.player.x, this.player.y - 56, `${def.name} 각성! 스킬 강화`, `#${jhex.toString(16).padStart(6, "0")}`);
+      }
+      EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
+      this.refreshPlayerTag();
+      this.save();
+      this.emitHud();
+      this.emitRpgState();
+      net.netAnnounceJob(def.key);
+      // v3.1.0 — 승격 직후 다음 차수 시련 자동 시작 (n차마다 다른 스토리)
+      this.time.delayedCall(900, () => this.maybeStartJobStory());
+    };
+
+    // 자유 전직 (v1.8 — 메이플 자유전직 재현: 같은 계열 내 반대 경로, 골드 소모)
+    const onJobSwitch = (v: { key: string }) => {
+      if (!this.player || this.player.state === "dead") return;
+      if (this.dialoguing) {
+        EventBus.emit("banner:show", { text: "대화 중에는 전직할 수 없습니다" });
+        return;
+      }
+      const alt = freeJobOption(this.player.cls);
+      if (!alt || alt.key !== v.key) return;
+      if (this.player.gold < FREE_JOB_COST) {
+        EventBus.emit("banner:show", { text: `자유 전직에는 ${FREE_JOB_COST}G가 필요합니다` });
+        return;
+      }
+      if (!this.player.switchClass(alt.key)) return;
+      this.player.gold -= FREE_JOB_COST;
+      EventBus.emit("banner:show", { text: `자유 전직! ${alt.name} — ${alt.title} (-${FREE_JOB_COST}G)` });
+      audio.sfx.levelup();
+      this.refreshPlayerTag();
+      this.save();
+      this.emitHud();
+      this.emitRpgState();
+      net.netAnnounceJob(alt.key);
+    };
+
+    // 친구 따라가기 (v2.1 — 친구가 접속 중인 구역으로 즉시 이동)
+    const onFriendGoto = (v: { stage: string }) => {
+      if (!this.player || this.player.state === "dead") return;
+      const target = resolveStage(String(v?.stage || ""));
+      if (!target || target === this.stageDef.key) return;
+      this.startTransition(target, { delay: 440 });
+    };
+
+    // v2.5 — 소지품 사용 (상급 물약/마을 귀환서/지역 이동 부적 — 지시 #5/#6/#7)
+    const onUseItem = (v: { key: string; qty?: number }) => {
+      if (!this.player || this.dialoguing || this.player.state === "dead") return;
+      const key = v.key as ItemKey;
+      /* v1.3.0 (지시 #6) — 소모품 사용 개수 지정: qty 없으면 1개, 있으면 보유분 상한으로 클램프 */
+      const ownedCount = this.player.owned.filter((k) => k === key).length;
+      const qtyReq = Math.max(1, Math.min(ownedCount || 1, Math.floor(v?.qty ?? 1)));
+      if (key === "exp_book") {
+        /* v4.0.0 — 경험치 책 사용 · v1.3.0 (지시 #6) — 개수 지정/Max 사용 지원 */
+        let total = 0;
+        let used = 0;
+        for (let i = 0; i < qtyReq; i++) {
+          const exp = this.player.useExpBook();
+          if (exp <= 0) break;
+          total += exp;
+          used++;
+        }
+        if (used > 0) {
+          EventBus.emit("banner:show", { text: `경험치 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}` });
+          audio.sfx.pickup();
+          this.emitRpgState();
+          this.save();
+        } else {
+          EventBus.emit("banner:show", { text: "경험치 책이 없습니다" });
+        }
+        return;
+      }
+      /* v1.2.0 (#15) — 경험치 책 3종 · v1.2.1 (#5) 비약→책 이름 변경 · v1.3.0 (지시 #6) 개수 지정 */
+      if (key === "exp_book_s" || key === "exp_book_m" || key === "exp_book_l") {
+        const NAME = { exp_book_s: "고급", exp_book_m: "태풍", exp_book_l: "극한" }[key as "exp_book_s" | "exp_book_m" | "exp_book_l"];
+        let total = 0;
+        let used = 0;
+        let failMsg: string | undefined;
+        for (let i = 0; i < qtyReq; i++) {
+          const r = this.player.useExpPotion(key as "exp_book_s" | "exp_book_m" | "exp_book_l");
+          if (!r.ok) { failMsg = r.msg; break; }
+          total += r.exp;
+          used++;
+        }
+        if (used > 0) {
+          EventBus.emit("banner:show", { text: `${NAME} 성장의 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}` });
+          this.spawnPickupText(this.player.x, this.player.y - 34, `EXP +${total.toLocaleString()}`, "#8fe84a");
+          audio.sfx.pickup();
+          this.emitRpgState();
+          this.emitHud();
+          this.save();
+        } else {
+          EventBus.emit("banner:show", { text: failMsg ?? "사용할 수 없습니다" });
+        }
+        return;
+      }
+      if (key.startsWith("potion_")) {
+        // v4.4.0 — 전 티어 물약 사용 경로 통합 (hp3~10·mp3~10은 v4.3.0에서 사용 경로가 누락돼 있었다)
+        this.player.useConsumablePotion(key);
+        this.emitRpgState();
+        return;
+      }
+      if (key === "gm_elixir") {
+        /* v1.1.0 (#5) — 운영자 전용 무한 엘릭서: 소모되지 않고 HP/MP를 전부 회복한다.
+         *  기존엔 onUseItem 분기가 없어 조용히 무시됐다(아무 반응 없음 버그) */
+        this.player.hp = this.player.maxHp;
+        this.player.mp = this.player.maxMp;
+        EventBus.emit("banner:show", { text: "운영자 무한 엘릭서 — HP/MP 전부 회복!" });
+        this.spawnPickupText(this.player.x, this.player.y - 30, "HP/MP 전부 회복!", "#ffd76a");
+        this.emote("heart", this.player.x, this.player.y - 44); // v1.2.0 (#8) 감정 버블
+        this.emitHud();
+        this.emitRpgState();
+        return;
+      }
+      if (key === "scroll_return") {
+        // v2.9 (지시 #6) — 마을 귀환서: “가장 가까운 마을(현재 챕터의 마을)”로 즉시 귀환
+        if (this.stageDef.isVillage) {
+          EventBus.emit("banner:show", { text: "이미 마을에 있습니다" });
+          return;
+        }
+        if (!this.player.hasConsumable(key)) return;
+        this.player.consumeConsumable(key);
+        audio.sfx.portal();
+        const { ch } = parseStage(this.stageDef.key);
+        const vk: StageKey = ch === "village" ? "village" : `${ch}v`;
+        EventBus.emit("banner:show", { text: `마을 귀환서 사용! ${STAGES[vk]?.name ?? "마을"}로 이동합니다…` });
+        this.startTransition(vk, { delay: 440 });
+        return;
+      }
+      if (key === "scroll_warp") {
+        // 지역 이동 부적 — 방문한 구역 선택 UI 오픈 (차감은 워프 실행 시)
+        if (this.visited.size === 0) {
+          EventBus.emit("banner:show", { text: "기록된 방문 구역이 없습니다" });
+          return;
+        }
+        EventBus.emit("ui:panel", { panel: "warp" });
+        return;
+      }
+    };
+
+    // v2.5 — 지역 이동 부적 워프 실행 (WarpPanel → 방문한 구역으로)
+    const onWarp = (v: { stage: string }) => {
+      if (!this.player || this.dialoguing || this.player.state === "dead") return;
+      const target = resolveStage(String(v?.stage || ""));
+      if (!target) return;
+      if (!this.visited.has(target)) {
+        EventBus.emit("banner:show", { text: "한 번이라도 도착한 구역만 이동할 수 있어요" });
+        return;
+      }
+      if (target === this.stageDef.key) {
+        EventBus.emit("banner:show", { text: "이미 있는 구역입니다" });
+        return;
+      }
+      if (!this.player.hasConsumable("scroll_warp")) {
+        EventBus.emit("banner:show", { text: "지역 이동 부적이 없습니다 — 상인 라고스에게서 구매" });
+        EventBus.emit("ui:panel", { panel: null });
+        return;
+      }
+      this.player.consumeConsumable("scroll_warp");
+      audio.sfx.portal();
+      EventBus.emit("ui:panel", { panel: null });
+      EventBus.emit("banner:show", { text: `부적 사용! ${STAGE_SHORT[target] ?? target}(으)로 이동합니다…` });
+      this.startTransition(target, { delay: 440 });
+    };
+
+    /* v3.0.24 (#보스재도전) — 클리어한 챕터 보스 고능력치 재판:
+     *  해당 챕터 보스 구역(`${ch}10`)으로 이동 후 "재림" 보스 스폰 (스토리판 HP ×5 · ATK ×2.2) */
+    const onBossReplay = (v: { ch: string; lv?: string }) => {
+      if (!this.player || this.dialoguing || this.player.state === "dead") return;
+      const ch = String(v?.ch ?? "");
+      /* v3.0.28 (#보스난이도) — 재도전 난이도 (기본 노말) */
+      const lv = typeof v?.lv === "string" && v.lv in BOSS_DIFFS ? (v.lv as BossDiffKey) : "normal";
+      /* v1.4.3 (#재림시리즈 완성) — 재림 지역 보스 3종(r5 베오르드 / r10 요르문간드 / r15 나그라파르)
+       *  재도전 지원. 재림판은 보스 구역 자체가 목적지라 target = r구역 그대로.
+       *  스토리 완료 판정은 퀘스트 인덱스 대신 컬렉션 등록(최초 처치)으로 한다. */
+      const isRebirth = /^r(5|10|15)$/.test(ch);
+      const target = (isRebirth ? ch : `${ch}10`) as StageKey;
+      const spec = chapterSpec(target);
+      const rbBoss = isRebirth ? STAGES[target]?.bossKey : spec?.boss;
+      if (!rbBoss) return;
+      if (isRebirth) {
+        const cleared = (this.monsterKills[`boss_${rbBoss}`] ?? 0) > 0;
+        if (!cleared) {
+          EventBus.emit("banner:show", { text: "재림의 땅 스토리를 먼저 완료하세요 — 해당 보스를 처치해야 합니다" });
+          return;
+        }
+        audio.sfx.portal();
+        EventBus.emit("ui:panel", { panel: null });
+        EventBus.emit("banner:show", { text: `재림 — ${BOSS_DEFS[rbBoss].name}의 재도전! [${BOSS_DIFFS[lv].label}]` });
+        this.startTransition(target, { delay: 440, replayBoss: ch, replayDiff: lv });
+        return;
+      }
+      if (!spec || !spec.boss) return;
+      // 스토리 완료 확인 — 해당 보스 퀘스트가 진행 인덱스를 지난 경우만 (미완료 챕터는 거부)
+      const stageQuests = STAGES[target]?.quests ?? [];
+      const bossIdx = stageQuests.findIndex((q) => q.type === "boss");
+      const cleared = bossIdx >= 0 ? (this.savedQuestIdx[target] ?? 0) > bossIdx : false;
+      if (!cleared) {
+        EventBus.emit("banner:show", { text: "아직 스토리를 완료하지 않은 챕터의 보스입니다" });
+        return;
+      }
+      audio.sfx.portal();
+      EventBus.emit("ui:panel", { panel: null });
+      EventBus.emit("banner:show", { text: `재림 — ${BOSS_DEFS[spec.boss].name}의 재도전! [${BOSS_DIFFS[lv].label}]` });
+      this.startTransition(target, { delay: 440, replayBoss: ch, replayDiff: lv });
+    };
+    /* v3.0.28 (#보스난이도) — 스토리 보스 난이도 선택 수신은 v3.1.0에서 제거됐다:
+     *  스토리 보스는 전용 난이도(노말 상향 고정)로 즉시 스폰, 선택창 없음.
+     *  난이도 선택은 재림판(rpg:bossReplay · lv)에서만 받는다. */
+
+    // v2.5 — 자동사냥 토글 (v3.0.15 #5: 펫 없이도 사용 가능)
+    const onAutoHunt = () => {
+      if (!this.player) return;
+      /* v1.4.12 (#12 유저 지시 "보스전에서는 자동전투 못쓰게해(+부가 설명해줘)") —
+       *  보스전 개시 중엔 켜기 금지: 보스는 패턴 회피·타이밍이 전부인 전투라
+       *  알고리즘 자동전투로는 패턴을 읽지 못하고 무조건 사망한다. */
+      if (!this.autoHunt && this.bossFightActive()) {
+        EventBus.emit("banner:show", { text: "⚔ 보스전에서는 자동전투를 쓸 수 없다! 보스의 패턴을 직접 피하고, 공격 타이밍을 잡아 싸워야 한다" });
+        audio.sfx.deny();
+        return;
+      }
+      this.autoHunt = !this.autoHunt;
+      this.autoHuntMove.set(0, 0);
+      this.autoTarget = null;
+      this.autoDirHoldUntil = 0;
+      EventBus.emit("banner:show", { text: this.autoHunt ? "자동사냥 ON — 위협 제거 우선 · 사냥/보스 최적화" : "자동사냥 OFF" });
+      this.emitRpgState();
+      this.save();
+    };
+
+    /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
+     *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가
+     *  v4.0.0 — 바르가 수비전/균열 던전 입장 + 무료 뽑기 + 티켓 충전 */
+    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss" | "gmitems"; value?: number | string }) => {
+      if (!this.player) return;
+      const p = this.player;
+      if (v.type === "job" && typeof v.value === "string") {
+        if (!isClassKey(v.value)) return;
+        const ok = p.gmSetClass(v.value);
+        EventBus.emit("banner:show", { text: ok ? `GM 전직 완료 — ${classLabel(v.value)}` : "전직 실패" });
+        if (ok) {
+          /* v3.0.4 — GM 전직도 강화 연출 동일 적용 */
+          const jhex = classDef(v.value)?.hex ?? 0xffffff;
+          this.spawnPillar(p.x, p.y, jhex, 200);
+          this.spawnBurstAt(p.x, p.y, 34, jhex);
+          this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
+          this.doShake(200, 0.008);
+        }
+        this.emitSkills();
+        this.emitRpgState();
+        this.save();
+      } else if (v.type === "gold" && typeof v.value === "number") {
+        p.addGold(v.value);
+        EventBus.emit("banner:show", { text: `GM — 골드 ${v.value >= 0 ? "+" : ""}${v.value}` });
+      } else if (v.type === "lv" && typeof v.value === "number") {
+        p.gmSetLevel(v.value);
+        EventBus.emit("banner:show", { text: `GM — 레벨 ${p.lv}` });
+        this.emitSkills();
+      } else if (v.type === "heal") {
+        p.healFull();
+        EventBus.emit("banner:show", { text: "GM — HP/MP 완전 회복" });
+      } else if (v.type === "ap" && typeof v.value === "number") {
+        p.ap += v.value;
+        this.emitHud();
+        EventBus.emit("banner:show", { text: `GM — AP +${v.value}` });
+      } else if (v.type === "gmitems") {
+        /* v1.0.2 (#GM아이템) — GM 전용 장비 4종 지급 (gmOnly — 상점/드롭/거래 불가, 관리자 테스트용) */
+        for (const k of ["gm_sword", "gm_armor", "gm_ring", "gm_elixir"]) {
+          if (!p.owned.includes(k as ItemKey)) p.owned.push(k as ItemKey);
+        }
+        this.spawnPillar(p.x, p.y, 0xffd76a, 240);
+        EventBus.emit("banner:show", { text: "GM 장비 지급 완료 — [GM] 대검·갑주·반지·엘릭서" });
+        this.emitRpgState();
+        this.save();
+      } else if (v.type === "em" && typeof v.value === "number") {
+        /* v3.0.6 — GM 에메랄드 지급 (BM 상점 테스트용) */
+        p.emerald = Math.max(0, p.emerald + v.value);
+        this.emitRpgState();
+        EventBus.emit("banner:show", { text: `GM — 에메랄드 ${v.value >= 0 ? "+" : ""}${v.value}` });
+      } else if (v.type === "fifth") {
+        /* v3.3.0 (지시 #3) — GM 5차전직(임시): 부여/해제 토글 */
+        const on = v.value === 1 || v.value === "1";
+        p.gmGrantFifth(on);
+        EventBus.emit("banner:show", {
+          text: on
+            ? "GM 5차 전직 완료(임시)! 전 스킬 ·극 강화 + 고유 궁귁기(S) 해금" // v1.0.5 — 스킬5 기본키 반영
+            : "5차 각성 해제 — 일반 상태로 복귀",
+        });
+        this.emitSkills();
+        this.emitRpgState();
+        this.save();
+      } else if (v.type === "dojang") {
+        /* v3.3.0 (지시 #6) — GM → 무릉도장 입장 */
+        this.enterDojang();
+      } else if (v.type === "gate") {
+        /* v4.0.0 — GM → 바르가 수비전 입장 */
+        this.enterGate();
+      } else if (v.type === "closet") {
+        /* v4.0.0 — GM → 균열 던전 입장 */
+        this.enterCloset();
+      } else if (v.type === "freegacha") {
+        /* v4.0.0 — GM 무료 뽑기 (10분 쿨 — 광고 보상 대체) */
+        this.freeGacha();
+      } else if (v.type === "tickets") {
+        /* v4.0.0 — GM 티켓 충전 (테스트/긴급 지원) */
+        this.ensureTickets();
+        this.ticketGate = TICKETS_PER_DAY.gate;
+        this.ticketCloset = TICKETS_PER_DAY.closet;
+        this.save();
+        this.emitRpgState();
+        EventBus.emit("banner:show", { text: "GM — 오늘 입장 티켓 전량 충전!" });
+      } else if (v.type === "boss" && typeof v.value === "string") {
+        /* v4.6.0 — GM 전 보스 체험: 해당 보스 구역으로 이동 후 스토리 스펙 보스 즉시 스폰.
+         *  처치 처리는 재림 분리 경로 — 스토리 퀘스트/포탈 진행 영향 0 */
+        const bk = BOSS_DEFS[v.value as BossKey];
+        const ch = CHAPTERS.find((c) => c.boss === (v.value as BossKey));
+        if (!bk || !ch) return;
+        EventBus.emit("banner:show", { text: `GM 보스 체험 — ${bk.name} (${STAGE_SHORT[`${ch.key}10` as StageKey] ?? ch.title})` });
+        this.startTransition(`${ch.key}10` as StageKey, { gmBoss: v.value });
+      }
+    };
+
+    /* ================= v4.0.0 — 바르가 시스템 커맨드 ================= */
+    const onIsekai = (v: { action: string; key?: string; slot?: number; ck?: string; idx?: number; id?: string; code?: string }) => {
+      if (!this.player) return;
+      this.handleIsekai(v);
+    };
+    /* 게이트 오버레이 (카드 선택/실버 상점/강제 종료) */
+    const onGatePick = (idx: number) => this.pickGateCard(idx);
+    const onGateShop = (id: string) => this.buySilverShop(id);
+    /* v1.4.3 (#멀티콘텐츠) — 파티 공동 토벌전 입장 (파티 위젯 버튼) */
+    const onPartyRaid = () => this.enterPartyRaid();
+    EventBus.on("rpg:isekai", onIsekai);
+    EventBus.on("rpg:partyRaid", onPartyRaid);
+    EventBus.on("rpg:gatePick", onGatePick);
+    EventBus.on("rpg:gateShop", onGateShop);
+
+    EventBus.on("input:move", onMove);
+    EventBus.on("input:attack", onAtk);
+    EventBus.on("input:skill1", onS1);
+    EventBus.on("input:skill2", onS2);
+    EventBus.on("input:skill3", onS3);
+    EventBus.on("input:skill4", onS4);
+    EventBus.on("input:skill5", onS5);
+    EventBus.on("input:interact", onInteract);
+    EventBus.on("name:set", onNameSet);
+    EventBus.on("keymap:changed", onKeymapChanged);
+    EventBus.on("rpg:buy", onBuy);
+    EventBus.on("rpg:equip", onEquip);
+    EventBus.on("rpg:unequip", onUnequip);
+    EventBus.on("rpg:use", onUse);
+    EventBus.on("rpg:useBuff", onUseBuff);
+    EventBus.on("rpg:allocate", onAllocate);
+    EventBus.on("rpg:pet", onPetSet);
+    EventBus.on("rpg:cosmetic", onCosmeticSet);
+    EventBus.on("rpg:upgrade", onUpgrade);
+    EventBus.on("respawn", onRespawn);
+    EventBus.on("dialogue:done", onDialogueDone);
+    EventBus.on("chat:focus", onChatFocus);
+    EventBus.on("chat:send", onChatSend);
+    EventBus.on("rpg:escapeHome", onEscapeHome); // v4.1.0 — 설정창 긴급 귀환
+    EventBus.on("rpg:exitMenu", onExitMenu); // v1.2.1 (#6) — 메뉴 화면(타이틀/캐릭터 선택)으로 나가기
+    EventBus.on("rpg:adReward", onAdReward); // v4.1.0 — 광고 보상
+    EventBus.on("rpg:buyGems", onBuyGems); // v4.1.0 — 구글 플레이 충전
+    EventBus.on("rpg:buyStorePack", onBuyStorePack); // v1.0.2 — 현금 패키지
+    EventBus.on("rpg:passBuy", onPassBuy); // v4.5.0 — 프리미엄 패스 해금
+    EventBus.on("rpg:passClaim", onPassClaim); // v4.5.0 — 패스 보상 수령
+    EventBus.on("rpg:passClaimAll", onPassClaimAll); // v1.0.2 — 패스 보상 한번에 받기
+    EventBus.on("rpg:subBuy", onSubBuy); // v4.5.0 — SERTZ 패스 구독
+    EventBus.on("rpg:adChest", onAdChest); // v4.5.0 — 광고 무료 상자
+    EventBus.on("rpg:adDrop", onAdDrop); // v4.5.0 — 광고 버프 물약
+    EventBus.on("job:select", onJobSelect);
+    EventBus.on("job:switch", onJobSwitch);
+    EventBus.on("friend:goto", onFriendGoto);
+    EventBus.on("rpg:useItem", onUseItem);
+    EventBus.on("rpg:warp", onWarp);
+    EventBus.on("rpg:bossReplay", onBossReplay); // v3.0.24 — 보스 재도전
+    /* v3.1.0 — 스토리 보스 난이도 선택 이벤트는 제거됐다: 전용 난이도로 즉시 스폰 */
+    /* v3.0.6 (지시 #4) — 아이템 판매 · v3.1.0 (#판매포기) — 수량 지정 판매 (MAX = 전량) */
+    const onSell = (v: { key: string; qty?: number }) => {
+      if (!this.player || this.dialoguing) return;
+      const qty = Math.max(1, Math.min(999, Math.floor(v.qty ?? 1)));
+      const sold = this.player.sell(v.key as ItemKey, qty);
+      if (sold > 0) {
+        this.save();
+        this.emitRpgState();
+        EventBus.emit("banner:show", {
+          text: sold > 1 ? `판매 완료 ×${sold} — 상점가의 40%` : "판매 완료 — 상점가의 40%",
+        });
+      }
+    };
+    /* v3.0.20 (#7) — 물약 판매 (기본은 카운터 차감, 상급/엘릭서는 owned) · v3.1.0 — 수량 지정 */
+    const onSellPotion = (v: { key: string; qty?: number }) => {
+      if (!this.player || this.dialoguing) return;
+      const qty = Math.max(1, Math.min(999, Math.floor(v.qty ?? 1)));
+      const sold = this.player.sellPotion(v.key as "potion_hp" | "potion_mp" | "potion_hp2" | "potion_mp2" | "potion_elixir", qty);
+      if (sold > 0) {
+        this.save();
+        this.emitRpgState();
+        EventBus.emit("banner:show", {
+          text: sold > 1 ? `물약 판매 완료 ×${sold} — 상점가의 40%` : "물약 판매 완료 — 상점가의 40%",
+        });
+      }
+    };
+    /* v3.0.6 (지시 #1) — BM 상점 구매 (에메랄드) · v3.0.24 — 수량 지정 + 소모품 재구매 버그 수정 */
+    const onBmBuy = (v: { key: string; qty?: number }) => {
+      if (!this.player || this.dialoguing) return;
+      const it = ITEMS[v.key as ItemKey];
+      if (!it) return;
+      /* v4.3.0 — 가챠 상자/패키지: 구매 즉시 개봉·지급 (도파민 즉시성 — 창고 경유 없음).
+       *  상자는 CHEST_TABLES 가중치 롤, 패키지는 PACK_CONTENTS 전부 지급. */
+      if (v.key.startsWith("chest_") || v.key.startsWith("pack_")) {
+        const n = Math.max(1, Math.min(10, Math.floor(v.qty ?? 1)));
+        const cost = (it.bmPrice ?? 0) * n;
+        if (this.player.emerald < cost) {
+          EventBus.emit("banner:show", { text: "에메랄드가 부족합니다" });
+          return;
+        }
+        this.player.emerald -= cost;
+        const grants: BmGrant[] = [];
+        for (let i = 0; i < n; i++) {
+          if (CHEST_TABLES[v.key]) grants.push(this.rollChest(v.key));
+          else for (const g of PACK_CONTENTS[v.key] ?? []) grants.push(g);
+        }
+        audio.sfx.chest();
+        if (this.player) this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor(v.key)); // v4.7.0
+        this.grantBmGrants(`${it.name}${n > 1 ? ` ×${n}` : ""} 개봉!`, grants);
+        if (v.key === "pack_starter") this.starterPackBought = true; // v4.5.0 — 스타터팩 하이라이트 해제
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        return;
+      }
+      /* v4.3.0 — 일일 특가: 오늘의 3종은 30% 할인가 (buyBm에 단가 오버라이드) */
+      const deal = dailyDeals(this.today()).includes(v.key as ItemKey);
+      const unitPay = deal && it.bmPrice ? Math.max(1, Math.round(it.bmPrice * (1 - DAILY_DEAL_OFF))) : undefined;
+      const qty = Math.max(1, Math.min(99, Math.floor(v.qty ?? 1)));
+      const cost = (unitPay ?? it.bmPrice ?? 0) * (it.kind === "consumable" || it.kind === "buff" ? qty : 1);
+      const okBuy = this.player.buyBm(v.key as ItemKey, qty, unitPay);
+      if (okBuy) {
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost} 에메랄드${deal ? " · 일일특가 30%↓" : ""})` });
+        if (it?.kind === "pet") this.onPetChanged();
+        if (it?.kind === "cosmetic") this.onCosmeticChanged();
+        audio.sfx.shop();
+      } else {
+        EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
+      }
+    };
+    /* v4.6.0 — 인벤토리에서 상자/패키지 개봉: 보유 소모 후 구매 개봉과 동일한 가중치 롤 지급.
+     *  시즌 패스·GM 뽑기 등으로 가방에 쌓인 상자를 UI에서 직접 열 수 있게 한다 (구매 개봉 경로 유지) */
+    const onOpenChest = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const key = v.key;
+      const it = ITEMS[key as ItemKey];
+      if (!it || !(key.startsWith("chest_") || key.startsWith("pack_"))) return;
+      if (!this.player.hasConsumable(key as ItemKey)) {
+        EventBus.emit("banner:show", { text: "개봉할 상자가 없습니다" });
+        return;
+      }
+      this.player.consumeConsumable(key as ItemKey);
+      const grants: BmGrant[] = [];
+      if (CHEST_TABLES[key]) grants.push(this.rollChest(key));
+      else for (const g of PACK_CONTENTS[key] ?? []) grants.push(g);
+      if (grants.length === 0) return;
+      audio.sfx.chest();
+      this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor(key)); // v4.7.0
+      this.grantBmGrants(`${it.name} 개봉!`, grants);
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    /* v4.4.0 — 메이플식 인벤토리 [정리] 버튼: owned 멀티셋을 종류→이름순 정렬 (로직 영향 없음 — UI 표시순만) */
+    const onSortInv = () => {
+      if (!this.player) return;
+      const rank = (k: string) => {
+        const it = ITEMS[k as ItemKey];
+        const kindOrder: Record<string, number> = { consumable: 0, buff: 1, accessory: 2, weapon: 3, armor: 4, pet: 5, cosmetic: 6 };
+        return `${String(kindOrder[it?.kind ?? "z"] ?? 9).padStart(2, "0")}:${it?.name ?? k}`;
+      };
+      this.player.owned.sort((a, b) => rank(a).localeCompare(rank(b), "ko"));
+      this.save();
+      this.emitRpgState();
+      EventBus.emit("banner:show", { text: "가방을 정리했다 — 깔끔하네" });
+    };
+    /* v3.0.6 (지시 #5) — 자동 물약/자동 버프 설정 */
+    const onAutoSet = (v: { hpPct?: number; mpPct?: number; mpOn?: boolean; buffs?: string[] }) => {
+      if (!this.player) return;
+      this.player.setAutoUse({
+        hpPct: v.hpPct,
+        mpPct: v.mpPct,
+        mpOn: v.mpOn,
+        buffs: v.buffs as BuffKey[] | undefined,
+      });
+      this.save();
+      this.emitRpgState();
+    };
+    /* v3.0.7 — 유저 거래소: 구매(에메랄드 차감) */
+    const onTradeBuy = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const it = ITEMS[v.key as ItemKey];
+      const okBuy = this.player.tradeBuy(v.key as ItemKey);
+      if (okBuy) {
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        EventBus.emit("banner:show", { text: `거래소 구매 — ${it?.name ?? "아이템"} (-${TRADE_PRICES[v.key] ?? 0} 에메랄드)` });
+        audio.sfx.shop();
+      } else {
+        EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
+      }
+    };
+    /* v3.0.7 — 유저 거래소: 판매(에메랄드 환급) */
+    const onTradeSell = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const okSell = this.player.tradeSell(v.key as ItemKey);
+      if (okSell) {
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        EventBus.emit("banner:show", { text: `거래소 판매 — +${tradeValue(v.key as ItemKey)} 에메랄드` });
+      }
+    };
+    /* v3.0.7 — 강화 주문서 사용 (충전) */
+    const onStarScroll = () => {
+      if (!this.player || this.dialoguing) return;
+      if (!this.player.useStarScroll()) {
+        EventBus.emit("banner:show", { text: this.player.starBless >= 3 ? "충전 최대 3장 — 강화부터" : "강화 주문서가 없습니다" });
+        return;
+      }
+      this.save();
+      this.emitRpgState();
+    };
+    /* v3.0.7 — 장신구 스타포스 강화 */
+    const onUpgradeAcc = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const r = this.player.tryUpgradeAcc(v.key as ItemKey);
+      if (r === "poor") {
+        EventBus.emit("banner:show", { text: "골드가 부족합니다" });
+      } else if (r === "max") {
+        EventBus.emit("banner:show", { text: "이미 최대 성수입니다 (★15)" });
+      }
+      if (r === "ok" || r === "fail") {
+        this.save();
+        this.emitRpgState();
+        EventBus.emit("rpg:upgradeResult", { slot: "weapon", result: r === "ok" ? "ok" : "fail" });
+      }
+    };
+    /* ================= v3.0.15 신규 리스너 ================= */
+    /* #2 — 레벨업 스탯 자동배분 on/off */
+    const onAutoAlloc = (v: { on: boolean }) => {
+      this.autoAlloc = !!v.on;
+      if (this.autoAlloc && this.player && this.player.ap > 0) {
+        if (this.player.allocateAutoPoints()) this.emitHud();
+      }
+      this.save();
+      this.emitRpgState();
+      EventBus.emit("banner:show", { text: v.on ? "레벨업 자동 배분 ON — 스탯을 자동으로 나눕니다" : "레벨업 자동 배분 OFF" });
+    };
+    /* #7 — 물약 퀵슬롯 장착 (인벤토리에서) */
+    const onQuickPot = (v: { slot: "hp" | "mp"; key: string }) => {
+      if (!this.player) return;
+      const item = ITEMS[v.key as ItemKey];
+      if (!item || item.kind !== "consumable") return;
+      this.player.quickPots[v.slot] = v.key;
+      this.save();
+      this.emitRpgState();
+      EventBus.emit("banner:show", { text: `${item.name} → ${v.slot === "hp" ? "HP" : "MP"} 버튼에 장착!` });
+    };
+    /* #13 — eert 큐브 리롤 */
+    const onEert = (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      /* v1.0.2 (#큐브연타) — 처리 잠금: 260ms 내 재요청 무시. 기존엔 연타마다 이벤트가 큐잉돼
+       * 큐브가 연속 소모됐고, UI 카운트는 emitRpgState 이후에야 갱신돼 "한 번 눌렀는데 전부 사라짐"으로 보였다.
+       * 로직 자체는 1클릭=1소모(consumeConsumable)가 맞으므로 잠금만으로 근본 해결 */
+      if (this.time.now < this.eertBusyUntil) return;
+      this.eertBusyUntil = this.time.now + 260;
+      const pot = this.player.rerollPotentials(v.key as ItemKey);
+      if (!pot) {
+        EventBus.emit("banner:show", { text: "eert 큐브가 없습니다 (캐시상점 8💎)" }); // v1.0.5 — 캐시상점 명칭 통일
+        return;
+      }
+      const meta = POT_GRADE_META[pot.grade];
+      const gradeHex = pot.grade === 3 ? 0xff8a5c : pot.grade === 2 ? 0xffd76a : pot.grade === 1 ? 0xc08aff : 0x6fb8ff;
+      this.spawnPillar(this.player.x, this.player.y, gradeHex, 220);
+      this.spawnBurstAt(this.player.x, this.player.y, 20, gradeHex);
+      EventBus.emit("banner:show", {
+        text: `eert 큐브 — ${meta.name} 등급! ${pot.lines.map((l) => potLineText(l)).join(" · ")}`,
+      });
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    /* #8 — 퀘스트 수락 */
+    const onQuestAccept = (v: { stage: string }) => {
+      const idx = v.stage === this.stageDef.key ? this.questIdx : this.savedQuestIdx[v.stage] ?? 0;
+      const def = STAGES[v.stage as StageKey];
+      if (!def || idx >= def.quests.length) {
+        EventBus.emit("banner:show", { text: "수락할 퀘스트가 없습니다" });
+        return;
+      }
+      this.acceptedQuests[v.stage] = idx;
+      // 현재 구역 퀘스트를 수락했다면 즉시 활성화 (기준선/파편/보스 배치)
+      if (v.stage === this.stageDef.key) {
+        this.syncQuestBaseline();
+        this.afterAdvance();
+      }
+      this.save();
+      EventBus.emit("banner:show", { text: `퀘스트 수락! — ${def.quests[idx].title}` });
+      audio.sfx.questAccept();
+      this.emitQuest();
+      this.emitQuestLog();
+    };
+    /* #8 — 퀘스트 추적 선택 */
+    const onQuestTrack = (v: { stage: string | null }) => {
+      this.trackedStage = v.stage;
+      this.save();
+      this.emitQuest();
+      this.emitQuestLog();
+    };
+
+    /* v1.0.1 — 시즌 미션 보상 수령 (패스 패널) */
+    const onMissionClaim = (v: { kind: "daily" | "weekly"; id: string }) => this.claimMission(v);
+    /* v1.0.1 — 유저 거래판: 서버 처리 성공 후 세이브 반영 (TradePanel이 서버 응답 검증 후 emit) */
+    const onMarketList = (v: { key: string; up: number }) => {
+      if (!this.player || this.dialoguing) return;
+      /* v1.0.2 (#GM아이템) — GM 전용 아이템은 거래판 등록 불가 */
+      if (ITEMS[v.key as ItemKey]?.gmOnly) {
+        EventBus.emit("banner:show", { text: "GM 전용 아이템은 거래할 수 없다" });
+        return;
+      }
+      const idx = this.player.owned.indexOf(v.key as ItemKey);
+      if (idx < 0) return;
+      this.player.owned.splice(idx, 1);
+      if (v.up > 0) delete this.player.accUp?.[v.key]; // 강화 수치는 서버 등록분으로 이전
+      this.trackMission("market"); // 주간 미션 "거래소 이용"
+      this.save();
+      this.emitRpgState();
+    };
+    const onMarketBuy = (v: { itemKey: string; up: number; price: number }) => {
+      if (!this.player || this.dialoguing) return;
+      if (this.player.gold < v.price) {
+        EventBus.emit("banner:show", { text: "골드가 부족하다" });
+        return;
+      }
+      this.player.gold -= v.price; // 시세 왜곡 방지 — buff_gold 배율 미적용 (직접 차감)
+      this.player.owned.push(v.itemKey as ItemKey);
+      if (v.up > 0) {
+        if (!this.player.accUp) this.player.accUp = {};
+        this.player.accUp[v.itemKey] = v.up;
+      }
+      this.trackMission("market"); // 주간 미션 "거래소 이용"
+      EventBus.emit("banner:show", { text: `유저 거래판 구매 완료! (-${v.price.toLocaleString()} G)` });
+      audio.sfx.shop();
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    const onMarketCancel = (v: { itemKey: string; up: number }) => {
+      if (!this.player) return;
+      this.player.owned.push(v.itemKey as ItemKey);
+      if (v.up > 0) {
+        if (!this.player.accUp) this.player.accUp = {};
+        this.player.accUp[v.itemKey] = v.up;
+      }
+      this.save();
+      this.emitRpgState();
+    };
+    const onMarketCollect = (v: { gold: number }) => {
+      if (!this.player || v.gold <= 0) return;
+      this.player.gold += v.gold; // 정산금 — 버프 배율 미적용
+      EventBus.emit("banner:show", { text: `정산금 수령 — +${v.gold.toLocaleString()} G (수수료 10% 제외)` });
+      audio.sfx.sell();
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    /* v1.0.1 — 입장 티켓 재충전 (혜택 패널 — 에메랄드 3개 → 티켓 +1, 일 3회) */
+    const onTicketRefill = (v: { kind: "gate" | "closet" }) => {
+      if (!this.player || this.dialoguing) return;
+      this.ensureTickets();
+      if (this.ticketRefills >= 3) {
+        EventBus.emit("banner:show", { text: "오늘의 재충전 한도 초과 — 내일 다시!" });
+        return;
+      }
+      const cost = 3;
+      if (this.player.emerald < cost) {
+        EventBus.emit("banner:show", { text: "에메랄드가 부족하다 (3💎 필요)" });
+        return;
+      }
+      this.player.emerald -= cost;
+      this.ticketRefills++;
+      if (v.kind === "gate") this.ticketGate++;
+      else this.ticketCloset++;
+      EventBus.emit("banner:show", { text: `${v.kind === "gate" ? "바르가 수비전" : "균열 던전"} 티켓 +1 재충전! (-3💎)` });
+      audio.sfx.charge();
+      this.save();
+      this.emitRpgState();
+    };
+
+    EventBus.on("rpg:tradeBuy", onTradeBuy);
+    EventBus.on("rpg:tradeSell", onTradeSell);
+    EventBus.on("rpg:missionClaim", onMissionClaim);
+    EventBus.on("rpg:ticketRefill", onTicketRefill);
+    /* v1.0.8 — 그래픽 효과 모드 실시간 전환 (설정 패널 → 셰이더 즉시 부착/해제) */
+    const onFxMode = (m: "auto" | "high" | "low") => {
+      this.fxMode = m === "high" || m === "low" ? m : "auto";
+      try { window.localStorage.setItem("sertz_fx_mode", this.fxMode); } catch { /* 저장 실패 무시 */ }
+      const forced: 0 | 1 = this.fxMode === "high" ? 1 : this.fxMode === "low" ? 0 : this.fxLevel;
+      if (this.fxLevel !== forced) this.applyFxMode(this.fxLevel = forced);
+      EventBus.emit("banner:show", {
+        text: this.fxMode === "high" ? "그래픽 효과: 항상 높음 — 셰이더·블룸 항상 적용"
+          : this.fxMode === "low" ? "그래픽 효과: 절전 — 셰이더 비활성"
+          : "그래픽 효과: 자동 — 프레임에 따라 조정",
+      });
+    };
+    EventBus.on("fx:mode", onFxMode);
+    /* v1.0.8 — 무한 콘텐츠 허브 리스너 (탑/시련/티어균열/제작/심연상점/환생) */
+    const onInfTower = () => this.enterTower();
+    const onInfTrial = () => this.enterTrial();
+    const onInfClosetTier = (v: { tier: number }) => this.enterCloset(v?.tier ?? 0);
+    const onInfClosetBasic = () => this.enterCloset(0);
+    const onInfCraft = (v: { id: string }) => this.craftRecipe(v?.id ?? "");
+    const onInfAbyss = (v: { id: string }) => this.abyssBuy(v?.id ?? "");
+    const onInfRebirth = () => this.doRebirth();
+    /* v1.0.18 — 유니온 상점 보상 수령 (물약/주문서/골드 — 코인으로 구매한 것을 활성 캐릭터에 지급) */
+    const onUnionReward = (v: { kind: string; n: number }) => {
+      if (!this.player) return;
+      const n = Math.max(1, v?.n ?? 1);
+      if (v?.kind === "potion_hp") {
+        this.player.potions.hp += n;
+        this.showBanner(`유니온 상점 — HP 물약 ×${n} 지급`);
+      } else if (v?.kind === "potion_mp") {
+        this.player.potions.mp += n;
+        this.showBanner(`유니온 상점 — MP 물약 ×${n} 지급`);
+      } else if (v?.kind === "scroll") {
+        this.player.starBless = Math.min(3, this.player.starBless + n);
+        this.showBanner(`유니온 상점 — 강화 주문서 충전 +${n}`);
+      } else if (v?.kind === "gold") {
+        this.player.addGold(v?.n ?? 0);
+        this.showBanner(`유니온 상점 — 골드 +${(v?.n ?? 0).toLocaleString()}G`);
+      } else return;
+      this.save();
+      this.emitHud();
+      audio.sfx.shop();
+    };
+    EventBus.on("rpg:unionReward", onUnionReward);
+    /* v1.4.3 (작업4) — 파티 퀘스트 보드 수령 (PartyWidget → 씬 보상 지급):
+     *  파티 중이면 풀 보상, 솔로면 50% — 수령 판정/소비는 partyContent가 담당 */
+    const onPartyClaim = (v: { id: string }) => {
+      if (!this.player) return;
+      const p = net.netLastParty();
+      const inParty = !!(p && p.members.length >= 2);
+      const r = partyContent.claimPartyMission(v?.id ?? "", inParty);
+      if (!r.ok) return;
+      this.player.addGold(r.gold);
+      this.player.gainExp(r.exp);
+      this.showBanner(`파티 미션 완료! +${r.gold.toLocaleString()}G · EXP +${r.exp}${inParty ? " (파티 풀 보상)" : " (솔로 50% — 파티원과 함께하면 풀 보상!)"}`);
+      audio.sfx.reward(); // v1.4.8 — 보상 수령 전용음 (재화음과 구분)
+      this.driveFx?.twinkle(this.player.x, this.player.y - 20, 0x9df0c8);
+      this.save();
+      this.emitHud();
+    };
+    EventBus.on("rpg:partyClaim", onPartyClaim);
+    /* v1.0.18 — 몬스터 파크 상점 구매 (파크 코인 차감 → 아이템 지급) */
+    const onParkBuy = (v: { id: string }) => {
+      if (!this.player) return;
+      const SHOP: Record<string, { name: string; cost: number; give: () => void }> = {
+        park_pot_hp: { name: "HP 물약 ×5", cost: 6, give: () => { this.player.potions.hp += 5; } },
+        park_pot_mp: { name: "MP 물약 ×5", cost: 6, give: () => { this.player.potions.mp += 5; } },
+        park_scroll: { name: "강화 주문서", cost: 12, give: () => { this.player.starBless = Math.min(3, this.player.starBless + 1); } },
+        park_book: { name: "경험치 책 ×2", cost: 10, give: () => { this.player.owned.push("exp_book", "exp_book"); } },
+        park_emerald: { name: "에메랄드 +2", cost: 24, give: () => { this.player.emerald += 2; } },
+      };
+      const it = SHOP[v?.id ?? ""];
+      if (!it) return;
+      if (this.parkCoins < it.cost) {
+        EventBus.emit("banner:show", { text: `파크 코인이 부족하다 (${it.cost} 필요 — 현재 ${this.parkCoins})` });
+        return;
+      }
+      this.parkCoins -= it.cost;
+      it.give();
+      this.showBanner(`파크 상점 — ${it.name} 교환 완료! (잔여 ${this.parkCoins}C)`);
+      audio.sfx.shop();
+      this.save();
+      this.emitRpgState();
+      this.emitHud();
+    };
+    EventBus.on("rpg:parkBuy", onParkBuy);
+    /* v1.0.18 — 몬스터 파크 입장 (콘텐츠 패널) */
+    const onParkEnter = (v: { diff: number }) => this.enterPark(v?.diff ?? 0);
+    EventBus.on("rpg:parkEnter", onParkEnter);
+    /* v1.1.1 (#2 무릉도장) — 일반 유저 진입 경로: GM 패널 전용이었어서 일반 유저는
+     *  훈련장 자체가 존재하지 않았다. 콘텐츠 허브 「훈련장」 탭 → 누구나 입장 가능 */
+    const onDojangEnter = () => this.enterDojang();
+    EventBus.on("rpg:dojangEnter", onDojangEnter);
+    EventBus.on("rpg:infTower", onInfTower);
+    EventBus.on("rpg:infTrial", onInfTrial);
+    EventBus.on("rpg:infClosetTier", onInfClosetTier);
+    EventBus.on("rpg:infClosetBasic", onInfClosetBasic);
+    EventBus.on("rpg:infCraft", onInfCraft);
+    EventBus.on("rpg:infAbyss", onInfAbyss);
+    EventBus.on("rpg:infRebirth", onInfRebirth);
+    EventBus.on("rpg:marketList", onMarketList);
+    EventBus.on("rpg:marketBuy", onMarketBuy);
+    EventBus.on("rpg:marketCancel", onMarketCancel);
+    EventBus.on("rpg:marketCollect", onMarketCollect);
+    EventBus.on("rpg:starScroll", onStarScroll);
+    EventBus.on("rpg:upgradeAcc", onUpgradeAcc);
+    EventBus.on("rpg:sell", onSell);
+    EventBus.on("rpg:sellPotion", onSellPotion);
+    EventBus.on("rpg:bmBuy", onBmBuy);
+    EventBus.on("rpg:openChest", onOpenChest); // v4.6.0 — 인벤토리 상자 개봉
+    /* v1.3.0 (지시 #7) — 랭커 전용 상점 구매: 서버 /api/rank에서 내 순위를 "서버 기준" 재확인 후 지급.
+     *  Top10에 진입한 랭커만 챔피언 오라/황금 왕관을 에메랄드(BM)로 구입 — 랭킹 BM 유도 코너 */
+    const onRankBuy = async (v: { key: string }) => {
+      if (!this.player || this.dialoguing) return;
+      const key = String(v?.key ?? "") as ItemKey;
+      const it = ITEMS[key];
+      if (!it || (key !== "rank_aura" && key !== "rank_crown_gold")) return;
+      if (this.player.cosmetics.includes(key as CosmeticKey)) {
+        EventBus.emit("banner:show", { text: "이미 보유 중인 랭커 치장이에요" });
+        return;
+      }
+      EventBus.emit("banner:show", { text: "랭킹 서버에서 순위를 확인하는 중…" });
+      const r = await fetchRanking();
+      if (!r.ok || !r.state?.me || !r.state.me.rank) {
+        EventBus.emit("banner:show", { text: "랭킹 확인 실패 — 로그인 + 클라우드 백업(3분 자동) 후 이용할 수 있어요" });
+        return;
+      }
+      if (r.state.me.rank > 10) {
+        EventBus.emit("banner:show", { text: `랭커 전용 치장 — 현재 ${r.state.me.rank}위! 10위 안으로 진입하면 구매 가능` });
+        return;
+      }
+      const okBuy = this.player.buyBm(key, 1);
+      if (okBuy) {
+        this.save();
+        this.emitRpgState();
+        this.emitHud();
+        this.onCosmeticChanged();
+        EventBus.emit("banner:show", { text: `${it.name} 구매 완료! (-${it.bmPrice} 에메랄드) — 랭커의 증표` });
+        audio.sfx.shop();
+      } else {
+        EventBus.emit("banner:show", { text: "에메랄드가 부족해요" });
+      }
+    };
+    EventBus.on("rpg:rankBuy", onRankBuy);
+    /* v3.0.15 — 신규 패널 리스너 */
+    EventBus.on("rpg:autoAlloc", onAutoAlloc);
+    EventBus.on("rpg:quickpot", onQuickPot);
+    EventBus.on("rpg:eert", onEert);
+    EventBus.on("rpg:sortInv", onSortInv); // v4.4.0 — 메이플식 [정리]
+    EventBus.on("rpg:questAccept", onQuestAccept);
+    EventBus.on("rpg:questTrack", onQuestTrack);
+    EventBus.on("rpg:autoset", onAutoSet);
+    EventBus.on("rpg:autohunt", onAutoHunt);
+    EventBus.on("rpg:gm", onGm);
+    /* v1.0.6 — 세션 중 로그인/로그아웃 시 GM NPC·관리자 플래그 즉시 갱신
+     *  (기존엔 마을 빌드 시 1회만 조회라, 마을 로드 뒤 admin으로 가입/로그인하면
+     *   재입장 전까지 GM NPC가 안 떴다 — 유저 "GM 로그인 어케함?"의 실질 원인) */
+    const onAuthChanged = () => {
+      authMe()
+        .then((u) => {
+          this.adminRole = u?.role ?? null;
+          const show = this.adminRole === "admin";
+          if (this.player) this.player.gmInfinite = show; // v1.1.0 (#5)
+          /* v1.2.0 (#7) — GM 외형 승인 동기화 (로그인/로그아웃 즉시 반영) */
+          if (this.player) {
+            this.player.gmApproved = show;
+            this.player.applyBodyLook();
+          }
+          for (const g of this.gmNpcVisuals) g.setVisible(show);
+          this.refreshPlayerTag(); // v1.0.16 — GM 금색 이름표/황금 오라 즉시 부여·해제
+          this.emitRpgState();
+        })
+        .catch(() => { /* 오프라인 — 기존 롤 유지 */ });
+    };
+    EventBus.on("auth:changed", onAuthChanged);
+    this.events.once("shutdown", () => {
+      /* v1.1.1 (#1 가림) — 씬 종료(로비 복귀 등)에 튜토리얼이 살아있으면 상단 UI 복귀 신호를 못 보낸다 → 여기서 대신 발사 */
+      if (this.tut) EventBus.emit("tut:active", { active: false });
+      EventBus.off("auth:changed", onAuthChanged);
+      EventBus.off("input:move", onMove);
+      EventBus.off("input:attack", onAtk);
+      EventBus.off("input:skill1", onS1);
+      EventBus.off("input:skill2", onS2);
+      EventBus.off("input:skill3", onS3);
+      EventBus.off("input:skill4", onS4);
+      EventBus.off("input:skill5", onS5);
+      EventBus.off("input:interact", onInteract);
+      EventBus.off("name:set", onNameSet);
+      EventBus.off("keymap:changed", onKeymapChanged);
+      EventBus.off("rpg:buy", onBuy);
+      EventBus.off("rpg:equip", onEquip);
+      EventBus.off("rpg:unequip", onUnequip);
+      EventBus.off("rpg:use", onUse);
+      EventBus.off("rpg:useBuff", onUseBuff);
+      EventBus.off("rpg:allocate", onAllocate);
+      EventBus.off("rpg:pet", onPetSet);
+      EventBus.off("rpg:cosmetic", onCosmeticSet);
+      EventBus.off("rpg:upgrade", onUpgrade);
+      EventBus.off("respawn", onRespawn);
+      EventBus.off("dialogue:done", onDialogueDone);
+      EventBus.off("chat:focus", onChatFocus);
+      EventBus.off("chat:send", onChatSend);
+      EventBus.off("rpg:escapeHome", onEscapeHome); // v4.1.0
+      EventBus.off("rpg:exitMenu", onExitMenu); // v1.2.1 (#6)
+      EventBus.off("rpg:adReward", onAdReward); // v4.1.0
+      EventBus.off("rpg:buyGems", onBuyGems); // v4.1.0
+      EventBus.off("rpg:passBuy", onPassBuy); // v4.5.0
+      EventBus.off("rpg:passClaim", onPassClaim); // v4.5.0
+      EventBus.off("rpg:passClaimAll", onPassClaimAll); // v1.0.2 — 한번에 받기
+      EventBus.off("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 자동 강화
+      EventBus.off("rpg:autoUpgradeStop", () => stopAutoUpgrade("자동 강화를 취소했다")); // v1.0.2
+      EventBus.off("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 자동 강화
+      EventBus.off("rpg:autoUpgradeStop", () => stopAutoUpgrade("자동 강화를 취소했다")); // v1.0.2
+      EventBus.off("rpg:subBuy", onSubBuy); // v4.5.0
+      EventBus.off("rpg:adChest", onAdChest); // v4.5.0
+      EventBus.off("rpg:adDrop", onAdDrop); // v4.5.0
+      EventBus.off("job:select", onJobSelect);
+      EventBus.off("job:switch", onJobSwitch);
+      EventBus.off("friend:goto", onFriendGoto);
+      EventBus.off("rpg:useItem", onUseItem);
+      EventBus.off("rpg:warp", onWarp);
+      EventBus.off("rpg:bossReplay", onBossReplay);
+      EventBus.off("rpg:sell", onSell);
+      EventBus.off("rpg:sellPotion", onSellPotion);
+      EventBus.off("rpg:bmBuy", onBmBuy);
+      EventBus.off("rpg:rankBuy", onRankBuy); // v1.3.0 — 랭커 상점
+      EventBus.off("rpg:openChest", onOpenChest); // v4.6.0
+      EventBus.off("rpg:sortInv", onSortInv); // v4.4.0
+      EventBus.off("rpg:autoset", onAutoSet);
+      EventBus.off("rpg:autohunt", onAutoHunt);
+      EventBus.off("rpg:gm", onGm);
+      EventBus.off("rpg:tradeBuy", onTradeBuy);
+      EventBus.off("rpg:tradeSell", onTradeSell);
+      EventBus.off("rpg:missionClaim", onMissionClaim);
+      EventBus.off("rpg:ticketRefill", onTicketRefill);
+      EventBus.off("fx:mode", onFxMode); // v1.0.8
+      EventBus.off("rpg:infTower", onInfTower); // v1.0.8
+      EventBus.off("rpg:dojangEnter", onDojangEnter); // v1.1.1 — 무릉도장 일반 진입
+      EventBus.off("rpg:unionReward", onUnionReward); // v1.0.18 — 유니온 상점
+      EventBus.off("rpg:partyClaim", onPartyClaim); // v1.4.3 — 파티 퀘스트 보드 수령
+      EventBus.off("rpg:parkBuy", onParkBuy); // v1.0.18 — 파크 상점
+      EventBus.off("rpg:parkEnter", onParkEnter); // v1.0.18 — 파크 입장
+      EventBus.off("rpg:infTrial", onInfTrial);
+      EventBus.off("rpg:infClosetTier", onInfClosetTier);
+      EventBus.off("rpg:infClosetBasic", onInfClosetBasic);
+      EventBus.off("rpg:infCraft", onInfCraft);
+      EventBus.off("rpg:infAbyss", onInfAbyss);
+      EventBus.off("rpg:infRebirth", onInfRebirth);
+      EventBus.off("rpg:marketList", onMarketList);
+      EventBus.off("rpg:marketBuy", onMarketBuy);
+      EventBus.off("rpg:marketCancel", onMarketCancel);
+      EventBus.off("rpg:marketCollect", onMarketCollect);
+      EventBus.off("rpg:starScroll", onStarScroll);
+      EventBus.off("rpg:upgradeAcc", onUpgradeAcc);
+      EventBus.off("rpg:isekai", onIsekai);
+      EventBus.off("rpg:partyRaid", onPartyRaid);
+      EventBus.off("rpg:gatePick", onGatePick);
+      EventBus.off("rpg:gateShop", onGateShop);
+    });
+
+    /* ================= v3.1.0 (#흑화) — fadeIn/워치독은 create() 래퍼로 이동 (v3.2.0)
+     *  초기화 중 예외가 나도 화면이 반드시 밝아지도록 보장하기 위함 */
+  }
+
+  /** 액션에 배정된 키 객체 (키 매핑 v1.9) */
+  private keyFor(a: GameAction): Phaser.Input.Keyboard.Key {
+    return this.keyObjs[this.keymap[a]] ?? this.keys[this.keymap[a]];
+  }
+
+  update(_time: number, delta: number) {
+    const dt = Math.min(delta, 50);
+
+    /* v1.4.0 (Task 3-2) — 이스터에그 600ms 틱 — v1.4.11 제거 (eggs.ts 삭제와 세트) */
+
+    /* v1.1.1 (#5 무지개 오라) — 이름=외양: 무지개는 전 색상 순환, 오로라는 초록↔보라,
+     *  은하수는 파랑↔보라 맥동. 오라+본체 오버레이 틴트가 함께 흐른다.
+     *  대사/입력 중 조기 리턴 앞에서 갱신 — 대화 중에도 오라가 살아 있게 (순수 치장 연출) */
+    const auraKey = this.player?.cosmetic ?? null;
+    const auraCfg = auraKey ? AURA_ANIM[auraKey] : undefined;
+
+    /* v1.4.10 — 저HP 경고 힌트 (부연 설명 강화): HP 30% 이하 최초 1회 — 물약 사용법 즉시 안내 */
+    if (this.player?.hp > 0 && this.player.maxHp > 0 && this.player.hp <= this.player.maxHp * 0.3) {
+      this.hintOnce(
+        "lowhp",
+        "HP가 위험하다! 공격 버튼 옆 빨간 물약 버튼(PC는 D 키)으로 회복하자 — 물약이 없으면 상점에서 사자!"
+      );
+    }
+
+    /* v1.4.11 — 사쿠라 코스튬 착용자 전용 벚꽃 파티클 (CherryPetal 팩 — 순수 치장 연출).
+     *  v1.0.13의 "벚꽃 전면 제거"는 전역 날씨/축하 연출 대상 — 착용자 한정 반복 소량은 의도 유지. */
+    this.sakuraPetalAcc += dt;
+    if (this.player?.outfit === "outfit_sakura" && this.sakuraPetalAcc > 420) {
+      this.sakuraPetalAcc = 0;
+      this.driveFx?.petal(
+        this.player.x + Phaser.Math.Between(-130, 130),
+        this.player.y - Phaser.Math.Between(70, 110),
+        30
+      );
+    }
+    if (auraCfg && (this.cosmeticAura || this.cosmeticOverlay)) {
+      this.auraPhase = (this.auraPhase + auraCfg.sp * (dt / 1000)) % 1;
+      /* v1.4.3 (작업3 최적화) — 매 프레임 HSLToColor 대신 64단계 LUT 조회 (GC 할당 0) */
+      const lut = AURA_LUT[auraKey as string];
+      const idx = Math.min(AURA_LUT_STEPS - 1, Math.max(0, Math.floor(this.auraPhase * AURA_LUT_STEPS * 0.999))) ;
+      const col = lut ? lut[idx] : 0xffffff;
+      this.cosmeticAura?.setTint(col);
+      this.cosmeticOverlay?.setTint(col);
+    }
+
+    /* v4.1.5 — 동적 조명: 플레이어 횃불 광원 추적 + 플리커 */
+    if (this.lighting) this.lighting.update(this.player.x, this.player.y, dt);
+    if (this.bossLight?.scene && this.boss?.active) {
+      this.bossLight.setPosition(this.boss.x, this.boss.y - 6);
+    }
+
+    /* v4.1.0 — 적응형 품질/포탈 가이드/긴급귀환 쿨다운 */
+    this.tickFxQuality(dt);
+    this.updatePortalGuides();
+    this.escapeCd = Math.max(0, this.escapeCd - dt);
+    /* v1.4.3 (작업4) — 파티 보드: 파티 순찰 시간 (1분마다 +1, 파티 중일 때만) */
+    this.partyTimeAcc += dt;
+    if (this.partyTimeAcc >= 60000) {
+      this.partyTimeAcc = 0;
+      const p = net.netLastParty();
+      if (p && p.members.length >= 2) partyContent.partyBoardTick("time", 1);
+    }
+
+    /* v3.2.0 (#흑화) — 카메라 자가치유 (v3.3.0: 상시화 — 6초 한정 제거):
+     *  페이드 이펙트가 실행 중이 아닌데 알파가 1 미만으로 남아있으면(WebView에서
+     *  fadeOut 완료 콜백 유실 등) 매 프레임 강제로 밝힌다. 사망 페이드아웃은 fadeEffect가
+     *  실행 중이라 미간섭 — 죽은 뒤 어두운 화면도 정상 유지된다. */
+    {
+      const cam = this.cameras.main as unknown as {
+        fadeEffect?: { isRunning: boolean; progress: number; direction: boolean };
+        alpha: number; setAlpha(a: number): void; resetFX?(): void;
+      };
+      if (!cam.fadeEffect?.isRunning && cam.alpha < 1) cam.setAlpha(1);
+      /* v4.1.2 — 페이드 스타크 자가치유: Phaser 3.60+ 페이드는 postFX 방식(카메라 alpha 불변)이라
+       *  완료된 fadeOut이 검은 화면으로 남아도 위 알파 치유가 못 본다. 전환·사망·취침·대사가
+       *  아닌데 어둡게 머물면(실행 중 3.5초+ 또는 완료된 fadeOut 1.2초+) resetFX로 강제 복구 —
+       *  "검은 화면이 화면을 가리고 멈춤"의 마지막 방어선. */
+      const fx = cam.fadeEffect;
+      const protectedDark = this.transitioning || this.player?.state === "dead" || this.sleeping || this.dialoguing;
+      if (fx && !protectedDark) {
+        const stuckCompleted = fx.direction === true && fx.progress >= 0.99 && !fx.isRunning;
+        if (fx.isRunning || stuckCompleted) {
+          this.fadeDarkMs += dt;
+          if (this.fadeDarkMs > (stuckCompleted ? 1200 : 3500)) {
+            try { cam.resetFX?.(); } catch { /* 미지원 환경 무시 */ }
+            cam.setAlpha(1);
+            this.fadeDarkMs = 0;
+          }
+        } else {
+          this.fadeDarkMs = 0;
+        }
+      } else if (!fx) {
+        this.fadeDarkMs = 0;
+      }
+    }
+    /* v3.3.0 (#흑화) — 물리 월드 자가치유: 대사/취침/사망도 아닌데 정지돼 있으면
+     *  (보스 시네마틱 도중 예외, 복구 경로 실패 등) 즉시 복원해 조작 불능을 막는다 */
+    if (
+      this.physics.world.isPaused && !this.dialoguing && !this.sleeping &&
+      this.player && this.player.state !== "dead"
+    ) {
+      this.physics.world.resume();
+    }
+    /* v3.3.0 (지시 #6) — 무릉도장 타이머/기록 UI 진행 */
+    if (this.dojangActive) this.tickDojang(dt);
+    /* v4.0.0 — 바르가 수비전 웨이브 / 균열 던전 진행 */
+    if (this.gateActive) this.tickGate(dt);
+    if (this.closetActive) this.tickCloset(dt);
+    if (this.parkActive) this.tickPark(dt); // v1.0.18 — 몬스터 파크
+    /* v1.0.8 — ⑦ 황금 몬스터 러시: 일반 필드 구역에서만 랜덤 스폰 (평균 60~100초) */
+    this.tickGolden(dt);
+
+    // 원격 플레이어 보간 — 대화/채팅/사망과 무관하게 항상 갱신 (v1.7 멀티플레이)
+    // v1.4.3 (작업3 최적화) — 화면 밖 원격(1700px+)은 보간만 하고 애니/이름표/오라 갱신 생략
+    const lerpK = Math.min(1, (dt / 1000) * 9);
+    for (const r of this.remotes.values()) {
+      r.sp.x += (r.tx - r.sp.x) * lerpK;
+      r.sp.y += (r.ty - r.sp.y) * lerpK;
+      if (this.player && Phaser.Math.Distance.Between(r.sp.x, r.sp.y, this.player.x, this.player.y) > 1700) continue;
+      r.sp.setFlipX(r.flip);
+      r.tag.setPosition(r.sp.x, r.sp.y - 52);
+      r.aura?.setPosition(r.sp.x, r.sp.y + 6); // v1.0.16 — GM 황금 오라 추적
+      const want = r.moving ? "hero-walk-side" : "hero-idle";
+      if (r.sp.anims.currentAnim?.key !== want) r.sp.play(want);
+    }
+
+    // 플레이어 투사체 진행/판정 — 대화/채팅 중에도 날아가는 것은 계속 (v1.8)
+    this.tickPlayerProjs(dt);
+    // v3.0.3 — 몬스터 투사체/장판/오비트 칼날 + 무기 비주얼 (사망/대화 중에도 진행)
+    this.tickEnemyProjs(dt);
+    this.tickFields(dt);
+    this.tickOrbitBlades(dt);
+    if (this.player && this.player.state !== "dead") this.syncWeaponSprite();
+    else if (this.weaponImg) { this.weaponImg.setVisible(false); }
+
+    /* v1.0.4 — 어떤 DOM 입력(로그인/수량/이름 등)이든 포커스 중이면 게임 키 전면 차단.
+     *  비게이트 인풋(비밀번호 등)에서 단축키가 발동하던 문제의 공용 방어선 —
+     *  입력 중엔 매 프레임 입력 상태를 리셋해 keyup 유실 고착도 동시 청소 */
+    const ae = document.activeElement as HTMLElement | null;
+    const typing = !!ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable);
+    if (typing) this.resetInputState();
+    if (this.chatFocused || this.dialoguing || typing || !this.player) return;
+    if (this.player.state === "dead") return;
+
+    this.wellCd = Math.max(0, this.wellCd - dt);
+    this.restCd = Math.max(0, this.restCd - dt);
+
+    // 마을 우물 샘물 — 근접 시 풀회복 (HP/MP가 꽉 차 있으면 미발동, 8초 쿨다운)
+    if (this.wellPos && this.stageDef.isVillage && this.wellCd <= 0) {
+      const nearWell = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.wellPos.x, this.wellPos.y) < 86;
+      if (nearWell && (this.player.hp < this.player.maxHp || this.player.mp < this.player.maxMp)) {
+        this.wellCd = 8000;
+        this.player.healFull();
+        this.sfxPotion();
+        this.spawnPickupText(this.player.x, this.player.y - 34, "샘물로 완전히 회복!", "#7dffa8");
+        this.spawnBurstAt(this.player.x, this.player.y, 8, 0x7de8ff);
+      }
+    }
+
+    // 키보드 이동 (v2.0 — 지시 #16: 같은 축 방향키 동시 입력 시 마지막으로 누른 키 우선)
+    const mv = this.resolveDirVec();
+    if (mv.lengthSq() > 0) mv.normalize();
+
+    // 터치 우선
+    const useTouch = this.touchMove.lengthSq() > 0.01;
+    // v2.5 — 자동사냥 (펫 보유 시): 가장 가까운 적 추적·공격 — 조이스틱/키보드 입력 시 수동 우선
+    this.tickAutoHunt();
+    /* v1.4.12 (#15 유저 지시 "자동전투시 식인초를 피해서 가게 해줘") — 식인초 회피 후처리 */
+    this.autoPlantAvoid();
+    // v3.0.14 — 끼임 탈출: 이동 명령 중 제자리면 측면 탈출로 autoHuntMove 덮어씀
+    this.tickAutoUnstuck(dt);
+    let move = useTouch ? this.touchMove : mv;
+    if (this.autoHunt && !useTouch) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
+
+    // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
+    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
+      this.attackQueued = true;
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
+    /* v3.0.3 — 3차기(V) / 4차기(A): 해금 티어 미달/쿨/MP 무시하고 호출하면 내부에서 무시된다 (v1.0.4 키맵 B→A) */
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill3"))) this.player.useSkill3();
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill4"))) this.player.useSkill4();
+    /* v3.2.0 — 5차 궁극기(S): Lv.200 해금, 쿨타임 60초 (v1.0.4 키맵 N→S) */
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5"))) this.player.useSkill5();
+
+    // 수면 연출 중 — 입력 봉인 (v2.2)
+    if (this.sleeping) {
+      this.player.update(dt, Phaser.Math.Vector2.ZERO, false);
+    } else {
+      this.player.update(dt, move, this.attackQueued);
+    }
+    this.attackQueued = false;
+
+    // 물약 퀵슬롯 + 상점/패널 열기 + E키 상호작용 (v1.9 — 모두 키 매핑 대응)
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("potHp"))) this.player.usePotion("hp");
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("potMp"))) this.player.usePotion("mp");
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("interact"))) this.tryInteract();
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("shop")) && this.nearShop) EventBus.emit("ui:panel", { panel: "shop" });
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("bag"))) EventBus.emit("ui:panel", { panel: "inv" });
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("job"))) EventBus.emit("ui:panel", { panel: "job" });
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("stat"))) EventBus.emit("ui:panel", { panel: "stat" });
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("quest"))) EventBus.emit("ui:panel", { panel: "quest" });
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("opt"))) EventBus.emit("ui:panel", { panel: "opt" });
+    /* v3.0.16 — 몬스터 컬렉션 패널 (M키) */
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
+
+    // E키 상호작용 감지 — 가장 가까운 NPC/상점 프롬프트 갱신
+    this.updateInteractPrompt();
+
+    // 플레이어 이름표 추적 (인트로에서 지정 후)
+    this.playerNameTag?.setPosition(this.player.x, this.player.y - 48);
+    this.gmAura?.setPosition(this.player.x, this.player.y + 6); // v1.0.16 — GM 황금 오라 추적
+
+    // 인트로 플레이 시퀀스 (이동 학습 → 우물 → 이름 짓기)
+    if (this.introStep >= 0 && this.introStep < 2) this.tickIntro(dt, move);
+
+    this.tut?.update(); // v1.0.11 — 튜토리얼 마커 추적
+
+    /* v1.0.12 — 날씨 emitter 카메라 추적 (emit 구간을 화면 상단에 유지) */
+    if (this.weatherSnow) this.weatherSnow.setPosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
+
+    /* v1.0.12 (#횃불장치) — 근접 점등 판정: 96px 진입 시 5초 점등 → 종료 0.8초 전 소등 예고 페이드.
+     *  프레임당 거리 제곱 비교 8개 — 저비용. 꺼진 횃불은 재접근 시 다시 타오른다. */
+    if (this.torches.length > 0 && this.player) {
+      const nowMs = this.time.now;
+      const px = this.player.x, py = this.player.y;
+      for (const t of this.torches) {
+        if (t.litUntil > nowMs) {
+          if (t.litUntil - nowMs < 800 && !t.prop.getData("fading")) {
+            t.prop.setData("fading", true);
+            this.tweens.add({ targets: t.glow, alpha: 0, duration: 700, onComplete: () => t.prop.setData("fading", false) });
+          }
+          continue;
+        }
+        if (nowMs < t.cdUntil) continue;
+        const dx = px - t.x, dy = py - t.y;
+        if (dx * dx + dy * dy < 96 * 96) {
+          t.litUntil = nowMs + 5000;
+          t.cdUntil = t.litUntil + 1200;
+          this.tweens.killTweensOf(t.glow);
+          t.glow.setAlpha(0).setScale(0.5);
+          this.tweens.add({ targets: t.glow, alpha: 0.55, scale: 0.95, duration: 260, ease: "Cubic.out" });
+          t.prop.clearTint();
+          if (t.prop.anims.isPaused) t.prop.anims.resume();
+          audio.sfx.torch();
+        }
+      }
+    }
+
+    /* v1.0.11 — 튜토리얼 지연 시작 재시도 (update 루프 — 컷신/대사 레이스에도 확실하게 착화).
+     *  tutRetryMs>0이면 미시작 상태 — 1.5초마다 대화·실내가 아닐 때 시도, 시작되면 0으로 해제 */
+    if (this.tutRetryMs > 0 && !this.tut && !this.tutorialDone) {
+      this.tutRetryMs += dt;
+      if (this.tutRetryMs >= 1500) {
+        this.tutRetryMs = 1;
+        /* v1.1.0 (#10) — 콘텐츠(탑/파크/게이트/옷장/도장)에선 튜토리얼 재개하지 않음 */
+        const cs = this.stageDef?.key ?? "";
+        const contentStage = cs === "tower" || cs === "park" || cs === "gate" || cs === "closet" || cs === "dojang";
+        if (!this.dialoguing && !this.isInterior && !contentStage) this.startTutorial(this.tutStep);
+      }
+    }
+
+    // 적 AI
+    for (const e of this.enemies) {
+      if (e.active && e.alive) e.tick(dt, this.player);
+    }
+    // 보스 AI
+    this.boss?.tick(dt, this.player);
+
+    // 드롭 아이템 (자석/픽업) — 펫이 소환 중이면 근처 드롭을 펫이 직접 줍는다 (v1.9)
+    for (const d of this.drops) {
+      if (!d.active) continue;
+      d.tick(dt, this.player.x, this.player.y);
+      if (d.active && this.pet && Phaser.Math.Distance.Between(d.x, d.y, this.pet.x, this.pet.y) < 26) {
+        this.collectDrop(d.kind, d.amount, d.x, d.y, true);
+        d.release();
+      }
+    }
+    // 펫 추적 — 드롭이 있으면 그쪽으로 헤엄침
+    this.pet?.tick(dt, this.player.x, this.player.y);
+
+    // 추적 오브젝트 (치장 오라/강화 오라) 위치 갱신
+    if (this.cosmeticAura) this.cosmeticAura.setPosition(this.player.x, this.player.y - 8);
+    /* v1.3.0 (#오로라 수정) — 림 링/궤도 트윙클 추적 (오로라류 가시성 강화) */
+    if (this.auroraRings.length && this.player) {
+      for (const r of this.auroraRings) r.setPosition(this.player.x, this.player.y - 10);
+    }
+    if (this.auroraTwinkles.length && this.player) {
+      const t0 = this.time.now / 1000;
+      for (let i = 0; i < this.auroraTwinkles.length; i++) {
+        const a = t0 * 1.5 + (i * Math.PI * 2) / this.auroraTwinkles.length;
+        this.auroraTwinkles[i].setPosition(
+          this.player.x + Math.cos(a) * 24,
+          this.player.y - 12 + Math.sin(a) * 15
+        );
+        this.auroraTwinkles[i].setAlpha(0.55 + 0.4 * Math.sin(t0 * 4 + i));
+      }
+    }
+    /* v1.3.0 (#요정날개) — cos_wings 날개 이미지 추적 (항상 등 뒤·오프셋 등 쪽) */
+    if (this.cosWingsImg && this.player) {
+      const animKeyW = this.player.anims?.currentAnim?.key ?? "";
+      const dyW = animKeyW.includes("up") ? 2 : animKeyW.includes("side") ? -2 : -5;
+      this.cosWingsImg.setPosition(this.player.x, this.player.y + (dyW - 6));
+      this.cosWingsImg.setScale(this.player.scaleX * 1.35, this.player.scaleY * 1.35);
+      this.cosWingsImg.setDepth(this.player.depth - 0.2);
+    }
+    /* v1.0.2 (#치장외형) — 치장 오버레이가 플레이어와 완전 동기화(위치·텍스처·좌우반전·스케일·depth) */
+    if (this.cosmeticOverlay && this.player) {
+      const ov = this.cosmeticOverlay;
+      ov.setPosition(this.player.x, this.player.y);
+      if (ov.texture.key !== this.player.texture.key) ov.setTexture(this.player.texture.key);
+      ov.setFlipX(this.player.flipX);
+      ov.setScale(this.player.scaleX, this.player.scaleY);
+      ov.setDepth(this.player.depth + 0.2);
+    }
+    /* v1.2.1 (#1 치장위치) — 앵커 기반 부착 (유저 지시 "마왕의 날개 같은 착용 치장 위치가 이상해"):
+     *  기존 고정 오프셋은 시트별 머리 높이(여캠 긴머리/직업 시트/GM)가 달라 어긋났다.
+     *  ACC_ANCHORS(프레임별 headTop/hair 경계 스캔 테이블)로 실루엣에 정확히 붙인다.
+     *  왕관=머리꼭대기에 1~2px 겹침 · 리본=머리 옆 · 후광=머리 위 공중 보브(시간 기반 — 트윈 충돌 제거)
+     *  날개=어깨 높이 + ×1.35 확대로 몸 실루엣 밖까지 퍼져 보인다(기존엔 몸 뒤에 숨음). */
+    if (this.accOverlays.length && this.player) {
+      const animKey = this.player.anims?.currentAnim?.key ?? "";
+      const back = animKey.includes("up"); // 뒷모습
+      /* v1.3.0 (#날개방향) — 진행 방향 판정: 아래(정면)를 볼수록 날개를 위(등 쪽)로 밀어
+       *  항상 등 뒤에 붙어 있게 유지 — "방향 이동에 따라 앞뒤가 바뀐다" 체감 차단 */
+      const an = ACC_ANCHORS[this.player.texture.key] ?? ACC_DEFAULT_ANCHOR;
+      const px = this.player.x, py = this.player.y;
+      const sx = this.player.scaleX || 1, sy = this.player.scaleY || 1;
+      const ht = py + (an[0] - 32) * sy; // 머리 꼭대기 (월드 좌표)
+      const hw = Math.max(3, Math.min(48 - an[1], an[2] - 48) - 1) * sx; // 머리 반폭
+      const bob = Math.sin(this.time.now / 320) * 1.6;
+      for (const a of this.accOverlays) {
+        const im = a.img;
+        let wing = false;
+        if (a.key === "acc_crown") {
+          im.setPosition(px + (this.player.flipX ? 1 : -1), ht - 2 * sy);
+        } else if (a.key === "acc_ribbon") {
+          im.setPosition(px + (this.player.flipX ? -1 : 1) * hw, ht + 4 * sy);
+        } else if (a.key === "acc_halo") {
+          im.setPosition(px, ht - 9 * sy + bob);
+        } else if (a.key === "acc_wings_devil" || a.key === "acc_wings_fairy") {
+          /* v1.3.0 (#날개방향) — 날개는 "항상 등 뒤" 고정:
+           *  ① depth는 어떤 방향이든 본체 뒤 (앞으로 튀어나오지 않음)
+           *  ② 진행 방향이 아래(정면)면 위로 −5px, 옆이면 −2px, 위(뒷모습)면 +2px — 등 쪽 유지
+           *  ③ flipX 제거 — 좌우 전환에 날개가 앞뒤로 뒤집혀 보이지 않게 (대칭 시트라 반전 무의미) */
+          const dy = back ? 2 : animKey.includes("side") ? -2 : -5;
+          im.setPosition(px, py + (an[0] + 11 + dy - 32) * sy);
+          wing = true;
+        }
+        im.setScale(wing ? sx * 1.35 : sx, wing ? sy * 1.35 : sy);
+        im.setDepth(a.key.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3);
+      }
+    }
+    /* v1.2.0 — 포니테일 동기화 루프 제거(아이템 폐지) */
+    if (this.upgradeGlow) this.upgradeGlow.setPosition(this.player.x, this.player.y - 10);
+    /* v3.0.5 — 스타포스: 궤도성 회전(★15) + 주변 스파클(★8+) */
+    if (this.sfOrbits.length && this.player) {
+      this.sfOrbitAng += dt * 0.0026;
+      for (let i = 0; i < this.sfOrbits.length; i++) {
+        const ang = this.sfOrbitAng + (i * Math.PI * 2) / this.sfOrbits.length;
+        this.sfOrbits[i].setPosition(
+          this.player.x + Math.cos(ang) * 27,
+          this.player.y - 12 + Math.sin(ang) * 11
+        );
+      }
+    }
+    if (this.upgradeGlow && this.player) {
+      const wUp = this.player.upgrades.weapon;
+      if (wUp >= 8 && this.fxLevel === 1) { // v1.2.1 (#4) — 절전 모드 스파클 스폰 중지
+        this.sfSparkTimer -= dt;
+        if (this.sfSparkTimer <= 0) {
+          this.sfSparkTimer = wUp >= 12 ? 230 : 420;
+          const sx = this.player.x + (Math.random() - 0.5) * 44;
+          const sy = this.player.y - 6 - Math.random() * 36;
+          const sp = this.add
+            .image(sx, sy, "sparkle0")
+            .setDepth(11)
+            .setBlendMode(Phaser.BlendModes.ADD)
+            .setScale(0.5 + Math.random() * 0.4)
+            .setAlpha(0.9);
+          this.tweens.add({
+            targets: sp,
+            y: sy - 16,
+            alpha: 0,
+            duration: 520,
+            onComplete: () => sp.destroy(),
+          });
+        }
+      }
+    }
+
+    // 상점 NPC 접근 감지
+    if (this.merchant) {
+      const near = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.merchant.x, this.merchant.y) < 92;
+      if (near !== this.nearShop) {
+        this.nearShop = near;
+        this.emitRpgState();
+      }
+    }
+
+    // F2 핵심 2: 화면 가장자리 화살표 — 목표물이 안 보일 때 방향 안내
+    this.updateEdgeArrow();
+
+    // 멀티플레이 상태 송신 (약 8Hz — v1.7)
+    this.netAcc += dt;
+    if (this.netAcc >= 120) {
+      this.netAcc = 0;
+      net.netState({
+        x: Math.round(this.player.x),
+        y: Math.round(this.player.y),
+        /* v1.0.14 — 물리 방향(오른쪽=true)으로 정규화. 공격 중 flipX는 걷기와
+         *  의미가 반대(공격 시트 우향 네이티브 — 왼쪽 조준=true)라 원격 캐릭터가
+         *  반대를 보고, 원격 화살도 등 뒤로 나갔다 (투사체 좌우반전 · 멀티). */
+        flip: this.player.netFacingFlip,
+        moving: move.lengthSq() > 0.01 || this.player.state === "attack",
+        lv: this.player.lv,
+        cls: this.player.cls,
+        stage: this.stageDef.key,
+      });
+    }
+  }
+
+  /** v4.9.0 — 입력 상태 완전 리셋 (키 고착 → 한방향 자동이동 버그 근본 차단)
+   *  호출 시점: 텍스트 입력 게이트 경계(채팅/이름 패널 열·닫), 인트로 이름 입력 시작/종료,
+   *  대사 종료. keydown은 도달했는데 keyup이 DOM 인풋 swallow로 유실돼 Key.isDown이
+   *  true로 남는(=resolveDirVec가 마지막 방향을 영구 유지하는) 상태를 즉시 청소한다. */
+  private resetInputState() {
+    this.touchMove.set(0, 0);
+    this.attackQueued = false;
+    this.dirOrder.x.length = 0;
+    this.dirOrder.y.length = 0;
+    try {
+      for (const k of Object.values(this.keys)) k?.reset?.();
+    } catch { /* 키맵 미초기화 단계 무시 */ }
+  }
+
+  /** 방향키 우선순위 결정 — 같은 축에서 마지막으로 누른 키가 이김 (지시 #16)
+   *  예: ← 를 누른 채 → 를 누르면 → 로 이동, → 를 떼면 다시 ← 로 이동 */
+  private resolveDirVec(): Phaser.Math.Vector2 {
+    const mv = new Phaser.Math.Vector2(0, 0);
+    // 입력 순서 스택 갱신
+    const track = (key: string, axis: "x" | "y", dir: number) => {
+      const k = this.keys[key];
+      if (!k) return;
+      const stack = this.dirOrder[axis];
+      if (Phaser.Input.Keyboard.JustDown(k)) {
+        const i = stack.indexOf(key);
+        if (i >= 0) stack.splice(i, 1);
+        stack.push(key);
+      } else if (!k.isDown && stack.includes(key)) {
+        stack.splice(stack.indexOf(key), 1);
+      }
+      void dir;
+    };
+    track("LEFT", "x", -1); track("RIGHT", "x", 1); // v1.0.4 — 이동은 화살표 전용 (WASD 이동 제거)
+    track("UP", "y", -1); track("DOWN", "y", 1);
+    const lastX = this.dirOrder.x[this.dirOrder.x.length - 1];
+    const lastY = this.dirOrder.y[this.dirOrder.y.length - 1];
+    if (lastX === "LEFT") mv.x = -1;
+    else if (lastX === "RIGHT") mv.x = 1;
+    if (lastY === "UP") mv.y = -1;
+    else if (lastY === "DOWN") mv.y = 1;
+    return mv;
+  }
+
+  /** v2.5 — 자동사냥 틱 (펫 보유 시): 가장 가까운 적 추적·공격 + 물약 자동 사용.
+   *  이동은 autoHuntMove 주입(조이스틱 터치 중이면 무시), 공격은 attackQueued로 자연 연결
+   *  v3.0.1 — 직업별 스킬 최적화: 조준 보정 / 원거리 카이팅+이탈 점멸 / 근접 돌진 갭클로저 /
+   *  광역기(회전베기·관통 화살)는 군집·보스 한정, 마법사 볼트는 쿨마다 */
+  private tickAutoHunt() {
+    this.autoHuntMove.set(0, 0);
+    // v3.0.15 (#5) — 펫 없이도 자동전투 가능 (펫 게이트 제거)
+    if (!this.autoHunt || !this.player) return;
+    /* v1.4.12 (#12) — 보스전 중 자동전투 동작 금지 (토글 외 동작측 이중 잠금) */
+    if (this.bossFightActive()) { this.autoTarget = null; return; }
+    if (this.dialoguing || this.sleeping) return;
+    this.autoPotion();
+    if (this.player.state !== "idle") return; // 공격/돌진/사망 중엔 개입 안 함
+    /* v3.0.25 (#길찾기제거) — 구역 간 자동 길찾기 제거: 자동사냥은 현 구역 안에서만 사냥하고,
+     *  다음 목표는 대형 어시스트 화살표(엣지 화살표 + 구역명 라벨)가 방향을 안내한다.
+     *  (기존 #47 자동 여행은 포탈 앞 정지·장거리 왕복 체감이 나빠 삭제 — #1 요청 반영) */
+    const targets = this.getAllTargets();
+    if (targets.length === 0) {
+      /* v4.3.0 — 적 전멸 + 전진 차원문 활성 → 자동 탑승 (유저 지시 "자동전투 시에도 포탈 탈수있게").
+       *  접근은 autoApproach(BFS 경로) — 실제 전환은 overlap 가드 + startTransition 단일 통로라
+       *  검은 화면 경합이 재발하지 않는다. */
+      if (this.portalActive && this.portal?.active) {
+        this.autoApproach({ x: this.portal.x, y: this.portal.y });
+        return;
+      }
+      this.autoWanderTick(); // v3.0.25 — 적 없음: 제자리 대신 구역 내 배회 (리스폰 탐색)
+      return;
+    }
+    /* v3.0.15 (#1) — 제자리 와리가리 수정 3종:
+     *  ① 블랙리스트 정리: 도달 불가 타겟은 만료 시 제외
+     *  ② 타겟 히스테리시스: 현재 타겟보다 25% 이상 가까울 때만 교체
+     *  ③ 접근 방향 홀드: autoApproach 내부에서 240ms 유지 (매 프레임 재계산 진동 제거) */
+    if (this.autoBlacklist.size > 0) {
+      for (const [k, until] of this.autoBlacklist) {
+        if (this.time.now >= until || !k.active) this.autoBlacklist.delete(k);
+      }
+    }
+    const live = targets.filter((e) => e.active && !this.autoBlacklist.has(e));
+    if (live.length === 0) {
+      this.autoWanderTick();
+      return;
+    }
+    /* v3.0.28 (#자동전투개편) — 퀘스트 비종속 사냥·보스 최적화:
+     *  ① 퀘스트 타겟 우선 필터(v3.0.25) 완전 제거 — 퀘스트 몬스터를 먼저 잡으려 몬스터 무리 한가운데로
+     *     돌진해 계속 맞던 원인. 이제 자동전투는 퀘스트에 전혀 영향을 받지 않는다.
+     *  ② 위협도 우선: 나에게 붙어있는/다가오는 몬스터를 먼저 제거해 피격 최소화 (생존 1순위)
+     *  ③ 보스 우선: 보스전 구역에선 보스를 최우선 타겟
+     *  ④ 밀집도 보정 유지(v3.0.22) — 무리를 따라가며 효율 사냥 */
+    const pool = live;
+    let best: Enemy | Boss = pool[0];
+    let bestEff = Infinity;
+    for (const e of pool) {
+      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
+      const eff = this.autoThreatScore(e, d, live);
+      if (eff < bestEff) {
+        bestEff = eff;
+        best = e;
+      }
+    }
+    const curT = this.autoTarget;
+    if (curT && curT !== best && curT.active && !this.autoBlacklist.has(curT) && pool.includes(curT)) {
+      const curD = Phaser.Math.Distance.Between(this.player.x, this.player.y, curT.x, curT.y);
+      const curEff = this.autoThreatScore(curT, curD, live);
+      /* v3.0.22 (#41) — 히스테리시스 확대(1.25→1.3·420→700px): 먼 무리 이동 중 매 틱 타깃이
+       *  바뀌며 제자리에서 방향만 흔들리던 떨림 제거 */
+      if (curEff <= bestEff * 1.3 && curD < 700) best = curT; // 위협도 반영한 히스테리시스
+    }
+    this.autoTarget = best;
+    const bestD = Phaser.Math.Distance.Between(this.player.x, this.player.y, best.x, best.y); // v3.0.20 (#4) — 실거리 기준 판정 유지
+    const fam = familyOf(this.player.cls);
+    const ranged = fam === "ranger" || fam === "mage";
+    const atkRange = ranged ? 250 : 56;
+    /* v1.4.11 — 사거리 진입 시 이동 홀드 즉시 해제 (진동 근본 수정 ①).
+     *  기존엔 접근 홀드(300~1100ms)가 사거리 안에서도 남아 계속 밀어붙여 적을
+     *  통과해 반대편으로 나갔다가 다시 돌아오는 "제자리 왕복"이 재현됐다.
+     *  사거리(약간 여유)에 들어온 순간 이동을 끊고 공격 자세로 전환한다. */
+    if (bestD <= atkRange * 1.08 && this.time.now < this.autoDirHoldUntil) {
+      this.autoDirHoldUntil = 0;
+      this.autoHuntMove.set(0, 0);
+    }
+    /* v3.0.15 (#1) — 도달 불가 타겟 포기: 사거리 밖인데 1.2초 이상 제자리면(벽 뒤·장애물 뒤)
+     *  5초간 이 타겟을 제외하고 다음 가까운 적을 잡는다 */
+    if (bestD > atkRange && this.autoStuckMs > 1200) {
+      this.autoBlacklist.set(best, this.time.now + 5000);
+      this.autoStuckMs = 0;
+      this.autoTarget = null;
+      this.autoDirHoldUntil = 0;
+      return;
+    }
+    const p = this.player;
+
+    // 조준 보정 — 공격 전 대상 방향으로 facing 고정 (정지 뒤 조준이 어긋나는 문제 제거)
+    const aimAt = () => {
+      const aim = new Phaser.Math.Vector2(best.x - p.x, best.y - p.y);
+      if (aim.lengthSq() > 0.001) p.facing.copy(aim).normalize();
+    };
+
+    if (ranged) {
+      /* v3.0.6 (지시 #6 — "원거리 자동사냥시 몬스터가 너무 가까이 있으면 끼어버리는 버그"):
+       *  ① 후퇴 방향 탐색을 110px로 확대 + 다른 근접 위협까지 고려한 스코어링
+       *  ② 코너(8방향 전부 막힘) 판정 — 영원히 벽을 보고 후퇴만 하던 원인 제거:
+       *     - 돌진기 가능 → 적 "통과" 돌진으로 반대편 탈출
+       *     - 아니면 정면 반격 (공격+주력기) — 맞으면서라도 싸움
+       *  ③ 열린 후퇴로가 있으면 이탈하되 즉시 조준·사격 유지 (카이팅) */
+      if (bestD < 150) {
+        const cornered = this.autoRetreatBlocked();
+        aimAt();
+        if (cornered) {
+          if (p.skill2Cd <= 0 && p.mp >= 20) {
+            // 적을 통과해 반대편으로 탈출 (돌진은 적과 충돌하지 않음 — 스윕 피해도 함께)
+            p.autoDashDir = new Phaser.Math.Vector2(best.x - p.x, best.y - p.y).normalize();
+            p.useSkill2();
+          } else {
+            // 반격 — 벽에 붙어서 맞기만 하던 상태를 끊음
+            this.attackQueued = true;
+            if (p.skill1Cd <= 0 && p.mp >= 15) p.useSkill1();
+          }
+          return;
+        }
+        /* v1.4.11 — 카이팅 방향 홀드 600ms (진동 근본 수정 ④).
+         *  두 마리가 서로 반대편에서 다가오면 후퇴 방향이 틱마다 뒤집혀
+         *  제자리에서 좌우로 떨리던 것 — 직전 후퇴 방향이 여전히 유효하면 재사용 */
+        let away: Phaser.Math.Vector2;
+        if (this.time.now < this.autoKitUntil && this.autoKitDir.lengthSq() > 0.01
+            && this.autoKitDir.dot(new Phaser.Math.Vector2(p.x - best.x, p.y - best.y).normalize()) > 0.15
+            && this.autoRetreatOpen(this.autoKitDir)) {
+          away = this.autoKitDir.clone();
+        } else {
+          away = this.autoRetreatDir(best);
+          this.autoKitDir.copy(away);
+          this.autoKitUntil = this.time.now + 600;
+        }
+        if (p.skill2Cd <= 0 && p.mp >= 20) {
+          p.autoDashDir = away;
+          p.useSkill2();
+        } else {
+          // 카이팅 — 이탈 방향 이동 유지 (공격은 state가 attack이면 다음 틱에 이어서)
+          this.autoHuntMove.copy(away);
+          this.attackQueued = true;
+        }
+        return;
+      }
+      if (bestD > atkRange) {
+        this.autoApproach(best, atkRange * 0.78); // v1.4.11 — 사거리의 78%에서 정지 (카이팅 안정 밴드)
+        return;
+      }
+      // 사거리 내 — 조준 보정 후 공격 + 직업별 주력기 판단
+      aimAt();
+      this.attackQueued = true;
+      if (p.skill1Cd <= 0 && p.mp >= 15) {
+        if (fam === "mage") p.useSkill1(); // 매직 볼트 — 주력 딜링, 쿨마다
+        // 궁수 관통 화살 — 군집(2+) 또는 보스 한정 (단일 몹엔 기본공격으로 MP 절약)
+        else if (this.countTargetsNear(340) >= 2 || best instanceof Boss) p.useSkill1();
+      }
+      /* v3.0.3 — 3차기: 보스/군집에서 우선 사용, 4차기: 보스 또는 군집 3+ */
+      if (p.skill3Unlocked && p.skill3Cd <= 0 && p.mp >= 40 && (best instanceof Boss || this.countTargetsNear(300) >= 2)) {
+        p.useSkill3();
+      }
+      if (p.skill4Unlocked && p.skill4Cd <= 0 && p.mp >= 60 && (best instanceof Boss || this.countTargetsNear(340) >= 3)) {
+        p.useSkill4();
+      }
+    } else {
+      // 근접 (전사/도적/미전직)
+      /* v3.0.28 (#자동전투개편) — 생존 우선: HP 30% 이하 + 포위(2+)면 물약 회복 텀을 벌리기 위해
+       *  열린 후퇴로로 잠깐 이탈 (코너에선 후퇴가 불가하므로 정면 반격 유지) */
+      if (p.hp <= p.maxHp * 0.3 && this.countTargetsNear(150) >= 2 && !this.autoRetreatBlocked()) {
+        this.autoHuntMove.copy(this.autoRetreatDir(best));
+        this.attackQueued = false;
+        return;
+      }
+      if (bestD > atkRange) {
+        // 돌진 갭클로저 — 240px 이내 + 직선 경로 개방 시 돌진기 접근 (2.1x 스윕 + 전사 충격파)
+        if (bestD <= 240 && p.skill2Cd <= 0 && p.mp >= 20 && this.dashPathClear(best)) {
+          aimAt();
+          p.autoDashDir = new Phaser.Math.Vector2(best.x - p.x, best.y - p.y).normalize();
+          p.useSkill2();
+          return;
+        }
+        this.autoApproach(best, atkRange * 0.75); // v1.4.11 — 사거리의 75%에서 정지 (경계 진동 제거)
+        return;
+      }
+      aimAt();
+      this.attackQueued = true;
+      // 회전베기 — 주변 2+ 군집 또는 보스일 때만 (단일 대상엔 기본공격)
+      if (p.skill1Cd <= 0 && p.mp >= 15) {
+        const spinR = 118 + 16 * p.tier; // v3.0.4 — 회전베기 강화 반경과 동기화
+        if (this.countTargetsNear(spinR) >= 2 || best instanceof Boss) p.useSkill1();
+      }
+      /* v3.0.3 — 3차기/4차기: 군집·보스 상황에서 자동 기동 */
+      if (p.skill3Unlocked && p.skill3Cd <= 0 && p.mp >= 40 && (best instanceof Boss || this.countTargetsNear(260) >= 2)) {
+        p.useSkill3();
+      }
+      if (p.skill4Unlocked && p.skill4Cd <= 0 && p.mp >= 60 && (best instanceof Boss || this.countTargetsNear(320) >= 3)) {
+        p.useSkill4();
+      }
+    }
+  }
+
+  /** v3.0.28 (#자동전투개편) — 자동전투 타겟 스코어링 (작을수록 우선).
+   *  위협도(나에게 붙은 몬스터) > 보스 > 밀집도 보정. 퀘스트 대상은 점수에 아예 개입하지 않는다. */
+  private autoThreatScore(e: Enemy | Boss, d: number, live: (Enemy | Boss)[]): number {
+    let eff = d;
+    /* 밀집도 보정 (v3.0.22 #37 로직 유지) — 무리가 모인 곳으로의 효율 사냥 */
+    let near = 0;
+    for (const o of live) {
+      if (o === e) continue;
+      if (Phaser.Math.Distance.Between(e.x, e.y, o.x, o.y) <= 260) near++;
+    }
+    eff *= 1 - Math.min(0.62, near * 0.15);
+    /* 위협도 우선 — 내 근접 위험대(220px) 몬스터를 먼저 제거해 피격 최소화 */
+    if (d <= 220) eff *= 0.45;
+    else if (d <= 340) eff *= 0.8;
+    /* 보스 우선 — 보스전에선 보스를 잡는 게 답 */
+    if (e instanceof Boss) eff *= 0.5;
+    return eff;
+  }
+
+  /** v3.0.25 (#자동사냥개선) — 적이 없을 때 구역 내 배회: 리스폰/남은 몬스터를 찾아 이동
+   *  (기존은 제자리 정지 — 화면 밖 몬스터를 영영 못 찾는 문제) */
+  private autoWanderPoint: { x: number; y: number } | null = null;
+  private autoWanderUntil = 0;
+  private autoWanderTick() {
+    if (!this.player) return;
+    if (this.time.now >= this.autoWanderUntil) {
+      /* v1.4.11 — 배회 지점 선정 시 BFS 도달 가능 셀 우선 (진동 근본 수정 ③).
+       *  벽 뒤/단절 셀을 골라 벽에 부딪히며 2.8초를 보내는 "걸제 걸제" 제거 */
+      this.autoWanderPoint = this.randomOpenPointNear(560);
+      this.autoWanderUntil = this.time.now + 2800;
+    }
+    const w = this.autoWanderPoint;
+    if (!w) return;
+    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, w.x, w.y) > 44) this.autoApproach(w);
+    else this.autoWanderUntil = 0;
+  }
+
+  /** 반경 내 열린 셀 중 무작위 지점 (배회 대상)
+   *  v1.4.11 — BFS 도달 가능한 셀만 후보로 채택 (도달 불가 셀로 걸어가 벽에 붙어 있던 문제).
+   *  도달 가능 후보가 비면 기존처럼 아무 열린 셀이나 허용 (전멸 구역 안전망) */
+  private randomOpenPointNear(radius: number): { x: number; y: number } | null {
+    if (!this.layout || !this.player) return null;
+    const pcc = cellCenterOf(this.layout, cellIndexOf(this.layout, this.player.x, this.player.y));
+    const pc = cellIndexOf(this.layout, this.player.x, this.player.y);
+    const cand: number[] = [];
+    const reach: number[] = [];
+    for (let i = 0; i < this.layout.open.length; i++) {
+      if (!this.layout.open[i]) continue;
+      const c = cellCenterOf(this.layout, i);
+      if (Phaser.Math.Distance.Between(pcc.x, pcc.y, c.x, c.y) <= radius) {
+        /* v4.1.3 (#자동사냥포탈) — 차원문(전진/복귀) 주변 130px는 배회 목표에서 제외.
+         *  적이 없을 때 포탈 쪽으로 걸어가 서 있던 행동 자체를 차단 (1차 방어선은
+         *  overlap 게이트 — 이 필터는 "포탈 앞에서 멍하니 서 있음" 체감 제거용) */
+        if (this.portal?.active && Phaser.Math.Distance.Between(c.x, c.y, this.portal.x, this.portal.y) < 130) continue;
+        if (this.returnPortal?.active && Phaser.Math.Distance.Between(c.x, c.y, this.returnPortal.x, this.returnPortal.y) < 130) continue;
+        cand.push(i);
+        /* v1.4.11 — 도달 가능(같은 셀이거나 BFS 다음 스텝 존재)한 후보만 별도 수집 */
+        if (i === pc || nextStepToward(this.layout, pc, i) !== null) reach.push(i);
+      }
+    }
+    const pool = reach.length > 0 ? reach : cand;
+    if (pool.length === 0) return null;
+    const c = cellCenterOf(this.layout, pool[Phaser.Math.Between(0, pool.length - 1)]);
+    return { x: c.x, y: c.y };
+  }
+
+  /** v3.0.1 — BFS 우회 접근 (개미굴 레이아웃: 다른 셀이면 경로의 다음 셀 중심으로)
+   *  v3.0.14 — 셀 내부 오브젝트(나무·바위) 직선 돌파 방지: 바로 앞이 막혔으면 열린 각도로 우회
+   *  v3.0.22 (#47) — 좌표 일반화: 적뿐 아니라 여행 포탈 좌표도 접근 가능
+   *  v3.0.22 (#41) — 원거리 목표(340px+)는 방향 홀드 1100ms — 제자리 떨림 제거 */
+  private autoApproach(target: { x: number; y: number }, stopDist = 0) {
+    if (!this.player) return;
+    /* v1.4.11 — 정지거리(stopDist) 도입 (진동 근본 수정 ②).
+     *  사거리의 75~78% 지점에 도착하면 이동을 끊는다 — 사거리 경계에서
+     *  접근↔공격이 번갈아 나오며 제자리를 왔다갔다하던 원인 제거.
+     *  홀드 중이라도 목표가 정지거리 안이면 즉시 해제 (오버런 방지). */
+    if (stopDist > 0) {
+      const dd = Phaser.Math.Distance.Between(this.player.x, this.player.y, target.x, target.y);
+      if (dd <= stopDist) {
+        this.autoDirHoldUntil = 0;
+        this.autoHoldStopDist = 0;
+        this.autoHuntMove.set(0, 0);
+        return;
+      }
+    }
+    if (this.time.now < this.autoDirHoldUntil) {
+      this.autoHuntMove.copy(this.autoDirHold);
+      return;
+    }
+    let dir: Phaser.Math.Vector2;
+    const pc = this.layout ? cellIndexOf(this.layout, this.player.x, this.player.y) : -1;
+    const tc = this.layout ? cellIndexOf(this.layout, target.x, target.y) : -1;
+    const step = this.layout ? nextStepToward(this.layout, pc, tc) : null;
+    if (this.layout && step !== null && step !== pc) {
+      const c = cellCenterOf(this.layout, step);
+      dir = new Phaser.Math.Vector2(c.x - this.player.x, c.y - this.player.y).normalize();
+    } else {
+      dir = new Phaser.Math.Vector2(target.x - this.player.x, target.y - this.player.y).normalize();
+    }
+    dir = this.autoAvoidDir(dir);
+    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, target.x, target.y);
+    this.autoDirHold.copy(dir);
+    this.autoDirHoldUntil = this.time.now + (dist > 340 ? 1100 : 300);
+    this.autoHoldStopDist = stopDist;
+    this.autoHuntMove.copy(dir);
+  }
+
+  /** v3.0.14 — 지점이 장애물(나무/바위) 충돌 박스와 겹치는지 (플레이어 반경 여유 포함) */
+  private blockedByObstacle(x: number, y: number): boolean {
+    for (const go of this.solidGroup.getChildren()) {
+      if (!go.active || !go.getData("obstacle")) continue;
+      const b = (go as Phaser.Physics.Arcade.Image).body as Phaser.Physics.Arcade.StaticBody | null;
+      if (!b) continue;
+      if (x >= b.x - 14 && x <= b.x + b.width + 14 && y >= b.y - 12 && y <= b.y + b.height + 14) return true;
+    }
+    return false;
+  }
+
+  /** v3.0.14 — 진행 방향 장애물 회피: 전방 탐지점 3단계(40/110/180px) 중 하나라도 막히면
+   *  ±34°/±69°/±103°/±137° 순으로 열린 방향 탐색 (전부 막히면 원방향 유지 — 끼임 탈출이 처리) */
+  /** v3.0.15 (#1) — 직전 회피 부호 (±): 같은 쪽 회피를 우선해 좌우 번갈아 진동 억제 */
+  private autoAvoidLastSign = 0;
+  private autoAvoidDir(base: Phaser.Math.Vector2): Phaser.Math.Vector2 {
+    const p = this.player!;
+    const probe = (d: Phaser.Math.Vector2, dist: number) => {
+      const nx = p.x + d.x * dist;
+      const ny = p.y + d.y * dist;
+      if (this.layout && !isOpenXY(this.layout, nx, ny)) return false;
+      return !this.blockedByObstacle(nx, ny);
+    };
+    const clear = (d: Phaser.Math.Vector2) => probe(d, 40) && probe(d, 110) && probe(d, 180);
+    if (clear(base)) {
+      this.autoAvoidLastSign = 0;
+      return base;
+    }
+    // 이전에 +쪽으로 피했다면 +쪽 후보를 먼저 검사 (부호 연속성)
+    const sign = this.autoAvoidLastSign || 1;
+    const angles = [0.6, -0.6, 1.2, -1.2, 1.8, -1.8, 2.4, -2.4].map((a) => a * sign);
+    for (const ang of angles) {
+      const d = base.clone().rotate(ang);
+      if (clear(d)) {
+        this.autoAvoidLastSign = Math.sign(ang);
+        return d;
+      }
+    }
+    return base;
+  }
+
+  /** v1.4.12 (#15 유저 지시 "자동전투시 식인초를 피해서 가게 해줘") — 식인초(육식 식물
+   *  위험 오브젝트 cl_jawsplant/cl_eyeplant/cl_manyeyes) 회피 후처리.
+   *  tickAutoHunt가 계산한 autoHuntMove를 그대로 쓰면 챕터 최대체력 10% 고정데미지
+   *  (hitPlantHazard)를 반복해서 받는다. 자동전투 이동에만 후처리 적용:
+   *  ①몸이 위험 반경(46px) 안이면 가장 가까운 식물 반대방향으로 즉시 이탈
+   *  ②전방 탐지점(48/110px)이 위험하면 ±42°/±84°/±126° 우회
+   *  ③전부 위험하면 정지 — 원거리 직업은 제자리 공격으로 해결, 근접은 벽 탈출과 동일하게 다른 경로 탐색 */
+  private autoPlantAvoid() {
+    if (!this.autoHunt || !this.player) return;
+    if (this.plantHazards.length === 0) return;
+    const p = this.player;
+    const plants = this.plantHazards.filter((pl) => pl.active);
+    if (plants.length === 0) return;
+    const DANGER_R = 46; // 접촉 바디(56×44)보다 약간 큰 이탈 반경
+    const mv = this.autoHuntMove;
+    const nearPlant = (x: number, y: number, r: number): Phaser.GameObjects.Image | null => {
+      let best: Phaser.GameObjects.Image | null = null;
+      let bd = Number.MAX_SAFE_INTEGER;
+      for (const pl of plants) {
+        const d = Phaser.Math.Distance.Between(x, y, pl.x, pl.y);
+        if (d < r && d < bd) { bd = d; best = pl; }
+      }
+      return best;
+    };
+    // ① 이미 위험 반경 안 — 이탈이 최우선
+    const cur = nearPlant(p.x, p.y, DANGER_R);
+    if (cur) {
+      mv.set(p.x - cur.x, p.y - cur.y).normalize();
+      return;
+    }
+    // ② 진행 방향 전방 탐지 — 위험하면 각도 우회
+    if (mv.lengthSq() > 0.01) {
+      const probeOk = (d: Phaser.Math.Vector2, dist: number) =>
+        !nearPlant(p.x + d.x * dist, p.y + d.y * dist, DANGER_R + 6);
+      const dir = mv.clone().normalize();
+      if (probeOk(dir, 48) && probeOk(dir, 110)) return; // 안전 — 그대로 진행
+      for (const ang of [0.74, -0.74, 1.47, -1.47, 2.2, -2.2]) {
+        const d = dir.clone().rotate(ang);
+        if (probeOk(d, 48) && probeOk(d, 110)) { mv.copy(d); return; }
+      }
+      mv.set(0, 0); // 전방 전부 위험 — 정지 (자동 공격은 계속됨)
+    }
+  }
+
+  /** v3.0.14 — 끼임 탈출: 이동 명령 중인데 실제 이동량이 0.35초 이상 미미하면
+   *  측면(±51°/±86°/±126°) 중 열린 방향으로 0.5초간 강제 이동 (autoHuntMove를 덮어씀) */
+  private tickAutoUnstuck(dt: number) {
+    if (!this.autoHunt || !this.player) return;
+    const p = this.player;
+    if (this.autoHuntMove.lengthSq() < 0.01) {
+      /* v1.4.11 — 공격/대기 프레임에서 즉시 리셋하지 않는다 (진동 근본 수정 ⑤).
+       *  사거리 경계에서 이동↔공격이 번갈아 나오면 이동 프레임마다 스택이 0으로
+       *  초기화돼 벽에 끼인 진동을 평생 못 잡았다. 150ms 이하의 0 이동은
+       *  공격 프레임으로 보고 누적을 유지, 그 이상 지속되는 정지만 리셋. */
+      this.autoZeroMs += dt;
+      if (this.autoZeroMs > 150) {
+        this.autoStuckMs = 0;
+        this.autoLastPos.set(p.x, p.y);
+      }
+      return;
+    }
+    this.autoZeroMs = 0;
+    if (this.time.now < this.autoUnstuckUntil) {
+      this.autoHuntMove.copy(this.autoUnstuckDir); // tickAutoHunt가 다시 덮어써도 탈출 유지
+      return;
+    }
+    const moved = Phaser.Math.Distance.Between(p.x, p.y, this.autoLastPos.x, this.autoLastPos.y);
+    this.autoLastPos.set(p.x, p.y);
+    /* 초당 ~48px 미만 이동이면 막힘으로 간주 (정상 속도의 절반 이하) */
+    if (moved < dt * 0.048) this.autoStuckMs += dt;
+    else this.autoStuckMs = 0;
+    if (this.autoStuckMs < 350) return;
+    const base = this.autoHuntMove.clone();
+    const wb = this.physics.world.bounds;
+    for (const ang of [0.9, -0.9, 1.5, -1.5, 2.2, -2.2]) {
+      const d = base.clone().rotate(ang);
+      const nx = p.x + d.x * 60;
+      const ny = p.y + d.y * 60;
+      if (nx < 60 || nx > wb.width - 60 || ny < 60 || ny > wb.height - 60) continue;
+      if (this.layout && !isOpenXY(this.layout, nx, ny)) continue;
+      if (this.blockedByObstacle(nx, ny)) continue;
+      this.autoUnstuckDir.copy(d);
+      this.autoUnstuckUntil = this.time.now + 500;
+      this.autoStuckMs = 0;
+      break;
+    }
+  }
+
+  /** v3.0.1 — 돌진 갭클로저 직선 경로 개방 확인 (중간 지점이 열려 있어야 허용) */
+  private dashPathClear(best: Enemy | Boss): boolean {
+    if (!this.layout || !this.player) return true;
+    return isOpenXY(this.layout, (this.player.x + best.x) / 2, (this.player.y + best.y) / 2);
+  }
+
+  /** v3.0.1 — 사거리 내 적 수 (광역기 가치 판단) */
+  private countTargetsNear(r: number): number {
+    if (!this.player) return 0;
+    let n = 0;
+    for (const e of this.getAllTargets()) {
+      if (!e.active) continue;
+      if (Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) <= r) n++;
+    }
+    return n;
+  }
+
+  /** v3.0.1 — 이탈 방향: 대상 반대편 (개미굴 벽이면 45°씩 회전해 열린 방향 탐색)
+   *  v3.0.6 (지시 #6) — 탐지 거리 72→110px 확대 + 각 후보 방향을 "주변 위협과의 최소거리"로 스코어링해
+   *  몬스터 사이로 끼이는 후퇴를 줄인다 */
+  private autoRetreatDir(threat: Enemy | Boss): Phaser.Math.Vector2 {
+    const p = this.player!;
+    const wb = this.physics.world.bounds;
+    const base = new Phaser.Math.Vector2(p.x - threat.x, p.y - threat.y);
+    if (base.lengthSq() < 0.001) base.set(1, 0);
+    base.normalize();
+    const threats = this.getAllTargets().filter(
+      (e) => e.active && e !== threat && Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y) < 260
+    );
+    // v3.0.6 — 개미굴 벽 + 맵 가장자리(월드 바운드) 양쪽을 열림 판정에 반영
+    // v3.0.14 — 오브젝트(나무/바위) 방향도 후퇴 불가로 판정 — 후퇴 중 끼임 방지
+    const openDir = (d: Phaser.Math.Vector2) => {
+      const nx = p.x + d.x * 110;
+      const ny = p.y + d.y * 110;
+      if (nx < 70 || nx > wb.width - 70 || ny < 70 || ny > wb.height - 70) return false;
+      if (this.blockedByObstacle(p.x + d.x * 56, p.y + d.y * 56)) return false;
+      return !this.layout || isOpenXY(this.layout, nx, ny);
+    };
+    let bestDir: Phaser.Math.Vector2 | null = null;
+    let bestScore = -Infinity;
+    for (const ang of [0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1, Math.PI]) {
+      const d = base.clone().rotate(ang);
+      if (openDir(d)) {
+        // 스코어 = 이 방향으로 90px 이동했을 때의 최악 위협 거리 (클수록 좋음)
+        const nx = p.x + d.x * 90;
+        const ny = p.y + d.y * 90;
+        let score = 9999;
+        for (const e of threats) {
+          const dd = Phaser.Math.Distance.Between(nx, ny, e.x, e.y);
+          if (dd < score) score = dd;
+        }
+        // 진행 방향 앞쪽 후보에 소폭 가산 (제자리 회전 방지)
+        score += d.dot(base) * 24;
+        if (score > bestScore) {
+          bestScore = score;
+          bestDir = d;
+        }
+      }
+    }
+    return bestDir ?? base;
+  }
+
+  /** v1.4.11 — 카이팅 홀드 중 재사용 가능 여부: 방향이 여전히 열려 있는지
+   *  (autoRetreatDir의 openDir 경량판 — 후퇴 홀드 유지 판정용) */
+  private autoRetreatOpen(d: Phaser.Math.Vector2): boolean {
+    const p = this.player!;
+    const wb = this.physics.world.bounds;
+    const nx = p.x + d.x * 96;
+    const ny = p.y + d.y * 96;
+    if (nx < 70 || nx > wb.width - 70 || ny < 70 || ny > wb.height - 70) return false;
+    if (this.blockedByObstacle(p.x + d.x * 48, p.y + d.y * 48)) return false;
+    return !this.layout || isOpenXY(this.layout, nx, ny);
+  }
+
+  /** v3.0.6 — 코너 판정: 8방향 모두 막혀 후퇴 불가 (원거리 자동사냥 "끼어버림" 해결용)
+   *  맵 가장자리(월드 바운드)도 벽으로 간주 — 개미굴이 아닌 개방 맵 코너도 잡는다 */
+  private autoRetreatBlocked(): boolean {
+    const p = this.player!;
+    const wb = this.physics.world.bounds;
+    for (const ang of [0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1, Math.PI]) {
+      const d = new Phaser.Math.Vector2(1, 0).rotate(ang);
+      const nx = p.x + d.x * 110;
+      const ny = p.y + d.y * 110;
+      if (nx < 70 || nx > wb.width - 70 || ny < 70 || ny > wb.height - 70) continue;
+      if (!this.layout || isOpenXY(this.layout, nx, ny)) return false;
+    }
+    return true;
+  }
+
+  /** v2.5 — 자동 물약 (자동사냥 중).
+   *  v3.0.15 (#6) — 하드코딩 45% 대신 BM 설정값(autoUse.hpPct/mpOn)을 따르되,
+   *  설정이 꺼져 있어도 안전망(HP 35%)으로 기본 물약만 사용. 슬롯에 지정된 물약 사용. */
+  private autoPotion() {
+    if (!this.player) return;
+    const cfg = this.player.autoUse;
+    const hpKey = (this.player.quickPots.hp ?? "potion_hp") as ItemKey;
+    const mpKey = (this.player.quickPots.mp ?? "potion_mp") as ItemKey;
+    const hpHave = hpKey === "potion_hp" ? this.player.potions.hp > 0 : this.player.owned.includes(hpKey);
+    const mpHave = mpKey === "potion_mp" ? this.player.potions.mp > 0 : this.player.owned.includes(mpKey);
+    if (this.player.potionCd > 0) return;
+    if (cfg.hpPct > 0 && this.player.hp <= this.player.maxHp * (cfg.hpPct / 100) && hpHave) {
+      this.player.usePotion("hp");
+    } else if (this.player.hp < this.player.maxHp * 0.35 && hpHave) {
+      this.player.usePotion("hp"); // 안전망
+    } else if (cfg.mpOn && this.player.mp <= this.player.maxMp * 0.25 && mpHave) {
+      this.player.usePotion("mp");
+    }
+  }
+
+  currentMoveVec() {
+    return this.touchMove.lengthSq() > 0.01 ? this.touchMove.clone() : new Phaser.Math.Vector2();
+  }
+
+  /* ================= 멀티플레이 (v1.7) ================= */
+
+  /** 같은 서버에 접속한 다른 플레이어 실시간 동기화 — 오프라인이면 조용히 생략 */
+  private initNet() {
+    try {
+      const s = net.netConnect();
+      if (!s) {
+        // APK 오프라인 모드 — 멀티 사용법을 한 번만 안내 (v2.1)
+        if (net.netStatus().native) {
+          this.time.delayedCall(1100, () => this.showBanner("오프라인 모드 — 타이틀 화면 우하단에서 서버 연결 시 멀티플레이"));
+        }
+        return;
+      }
+      const offPlayers = net.netOnPlayers((list) => this.syncRemotes(list));
+      const offChat = net.netOnChat((m) => EventBus.emit("chat:msg", m));
+      const offFriends = net.netOnFriends((list) => EventBus.emit("friends:online", list));
+      const offAct = net.netOnAction((a) => this.playRemoteAction(a)); // v4.1.0 — 파티원 공격/스킬 표시
+      this.netOffs = [offPlayers, offChat, offFriends, offAct];
+      this.events.once("shutdown", () => this.shutdownNet());
+      // 소켓 연결 안정화 후 입장 방송 (v2.0 — netJoin이 connect 전이면 대기열 후 자동 발송)
+      this.time.delayedCall(650, () => {
+        if (!this.player) return;
+        net.netJoin({
+          name: getPlayerName(),
+          lv: this.player.lv,
+          cls: this.player.cls,
+          x: Math.round(this.player.x),
+          y: Math.round(this.player.y),
+          stage: this.stageDef.key,
+          code: getFcode(), // v2.1 친구 고유번호
+          gm: this.adminRole === "admin", // v1.0.16 — GM 이름표/오라 원격 표시
+        });
+      });
+    } catch {
+      /* 오프라인/APK 단독 실행 — 멀티 없이 진행 */
+    }
+  }
+
+  private shutdownNet() {
+    for (const off of this.netOffs) off();
+    this.netOffs = [];
+    this.clearRemotes();
+  }
+
+  /* ================= v4.1.0 — 파티원 공격/스킬 표시 (유저 지시 #4) =================
+   *  로컬에서 쓴 공격/스킬이 같은 구역 원격 플레이어 화면에서도 보인다.
+   *  데미지 판정은 각 클라 자기 자신 — 여기선 보기용 연출만 재생 (경량). */
+
+  private lastRemoteActAt = 0;
+
+  private playRemoteAction(a: net.NetAction) {
+    if (!a || a.id === net.netId()) return;
+    /* 스로틀 — 다수 원격이 몰려있을 때 FX 도폭 방지 (최적화 #12) */
+    const now = this.time.now;
+    if (now - this.lastRemoteActAt < 80) return;
+    this.lastRemoteActAt = now;
+    const r = a.id ? this.remotes.get(a.id) : undefined;
+    const x = r ? r.sp.x : a.x;
+    const y = r ? r.sp.y : a.y;
+    const flip = r ? r.flip : a.flip;
+    const cls = r?.cls ?? a.cls;
+    const fam = familyOf(cls ?? undefined);
+    const hex = Number(classDef(cls ?? undefined)?.color?.replace("#", "0x") ?? 0xffffff) || 0xffe9b0;
+    const dir = new Phaser.Math.Vector2(flip ? 1 : -1, 0);
+    if (a.kind === "atk") {
+      /* 계열별 기본 공격 실루엣 — 근접 참격 / 궁수 활 / 마법 시전 */
+      if (fam === "ranger") {
+        this.spawnBow(x + dir.x * 10, y - 8, flip ? 0 : Math.PI);
+        this.fireRemoteProj(x, y, flip, 0x9adf6a, 1);
+      } else if (fam === "mage") {
+        this.spawnCast(x + dir.x * 12, y - 12);
+        this.fireRemoteProj(x, y, flip, 0x6fc8ff, 1);
+      } else {
+        this.spawnSlash(x, y, dir, false, 1, undefined);
+      }
+      return;
+    }
+    /* 스킬 — 클래스색 버스트 링 + 발사체 (등급이 클수록 크게) */
+    const scale = a.kind === "s5" ? 2.6 : a.kind === "s4" ? 2.0 : a.kind === "s3" ? 1.55 : 1.2;
+    const ring = this.add.circle(x, y, 26 * scale)
+      .setStrokeStyle(3, hex, 0.85)
+      .setDepth(12)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: ring, scale: 1.9, alpha: 0, duration: 460, ease: "Cubic.out", onComplete: () => ring.destroy() });
+    this.spawnBurstAt(x, y, a.kind === "s5" ? 14 : 8, hex);
+    const shots = a.kind === "s5" ? 5 : a.kind === "s4" ? 3 : 2;
+    for (let i = 0; i < shots; i++) {
+      this.time.delayedCall(i * 70, () => {
+        if (!r) return;
+        this.fireRemoteProj(r.sp.x, r.sp.y, flip, hex, scale);
+      });
+    }
+    if (a.kind === "s5") {
+      this.cameras.main.flash(120, 200, 170, 255);
+      this.doShake(200, 0.004);
+    }
+  }
+
+  /** 원격 플레이어의 보기용 발사체 — 판정 없이 직진 후 소멸 */
+  private fireRemoteProj(x: number, y: number, flip: boolean, tint: number, scale: number) {
+    const img = this.add.image(x, y - 8, "x2_arrow")
+      .setDepth(11)
+      .setTint(tint)
+      .setScale(0.9 * scale)
+      .setFlipX(!flip);
+    const vx = (flip ? 1 : -1) * (360 + Math.random() * 60);
+    this.tweens.add({
+      targets: img,
+      x: img.x + vx * 0.5,
+      y: img.y + Phaser.Math.Between(-26, 26),
+      alpha: 0,
+      duration: 500,
+      ease: "Linear",
+      onComplete: () => img.destroy(),
+    });
+  }
+
+  /* ================= v4.1.0 — 긴급 귀환 (유저 지시 #3 — 설정창 배치) ================= */
+
+  private escapeCd = 0;
+
+  /* v1.2.0 (#3 악용 방지) — 긴급 귀환 하루 3회 제한 (로컬 날짜 기준, 자정 리셋) */
+  private static readonly ESCAPE_DAILY_KEY = "sertz.escape.daily";
+  private static readonly ESCAPE_DAILY_MAX = 3;
+
+  private escapeUsesToday(): number {
+    try {
+      const raw = window.localStorage.getItem(WorldScene.ESCAPE_DAILY_KEY);
+      if (!raw) return 0;
+      const d = JSON.parse(raw) as { date: string; count: number };
+      const today = new Date().toISOString().slice(0, 10);
+      return d.date === today ? Math.max(0, Math.min(WorldScene.ESCAPE_DAILY_MAX, d.count | 0)) : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  private bumpEscapeUse() {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      window.localStorage.setItem(WorldScene.ESCAPE_DAILY_KEY, JSON.stringify({ date: today, count: this.escapeUsesToday() + 1 }));
+    } catch {
+      /* 저장 불가 환경 — 제한 없이 진행 */
+    }
+  }
+
+  /** v1.2.1 (#6 메뉴 나가기) — 인게임 → 타이틀(게임 시작 화면) 복귀.
+   *  lobby=true면 타이틀 전환 뒤 캐릭터 선택 화면(로비)을 곧장 연다.
+   *  세이브 후 씬을 정리 종료하고 TitleScene으로 교체 — shutdown 핸들러(net 정리·타이머)가 자동 실행된다.
+   *  v1.2.1 운영 교훈 적용: 페이드/딜레이 게이트 폐기 — 저FPS 기기에서 게임 시간이 실제 시간보다
+   *  크게 느려져 전환이 수 초 지연될 수 있다. 씬 교체 자체가 하드컷이라 시각 손실도 없다. */
+  exitToMenu(goLobby = false) {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    try { this.save(); } catch { /* 세이브 실패해도 나가기는 진행 */ }
+    /* v1.4.0 (#16) — 정상 종료: 자동 복귀 플래그 해제 (유저가 고른 화면 유지) */
+    try { localStorage.removeItem("sertz.autoResume"); } catch { /* 무시 */ }
+    try { audio.stopBGM(); } catch { /* 무시 */ }
+    this.scene.start("title");
+    if (goLobby) {
+      window.setTimeout(() => EventBus.emit("lobby:open"), 120);
+    }
+  }
+
+
+  /** 설정창의 긴급 귀환 — 지금 위치에서 가장 가까운 마을로 즉시 이동 (막힘/굴속 탈출용)
+   *  v1.2.0 (#3) — 하루 최대 3회로 제한 (악용 방지 — 던전 스킵 무한남용 차단). 쿨다운은 유지 */
+  emergencyReturn() {
+    if (!this.player || this.transitioning) return;
+    if (this.escapeCd > 0) {
+      this.showBanner(`긴급 귀환 재사용 대기 ${Math.ceil(this.escapeCd / 1000)}초`);
+      return;
+    }
+    const used = this.escapeUsesToday();
+    if (used >= WorldScene.ESCAPE_DAILY_MAX) {
+      audio.sfx.deny(); // v1.4.8 — 열기음 재활용 해제 → 차단 전용음
+      this.showBanner(`긴급 귀환은 하루 ${WorldScene.ESCAPE_DAILY_MAX}회까지 — 내일 다시 사용할 수 있어요 (${used}/${WorldScene.ESCAPE_DAILY_MAX})`);
+      return;
+    }
+    this.escapeCd = 8000;
+    this.bumpEscapeUse();
+    this.showBanner(`긴급 귀환 — ${STAGE_SHORT[this.nearestVillageKey()] ?? "마을"} (오늘 ${used + 1}/${WorldScene.ESCAPE_DAILY_MAX})`);
+    /* 이벤트 구역 도중 이탈 정산 (보상 규칙은 각 finish*가 처리) */
+    if (this.dojangActive) this.finishDojang(true);
+    if (this.gateActive) { this.finishGate("exit"); return; }
+    if (this.closetActive) { this.finishCloset(); return; }
+    const target = this.nearestVillageKey();
+    audio.sfx.portal();
+    this.startTransition(target, { delay: 520 });
+  }
+
+  /** 현재 구역 기준 가장 가까운 마을 — 같은 챕터 마을 → 이전 챕터 → 시작 마을 */
+  private nearestVillageKey(): StageKey {
+    const cur = this.stageDef.key;
+    const curDef = STAGES[cur];
+    if (curDef?.isVillage) {
+      /* 이미 마을 — 체인의 이전 마을로 (시작 마을이면 그대로) */
+      const pv = PREV_STAGE[cur];
+      return (pv && STAGES[pv]?.isVillage ? pv : "village") as StageKey;
+    }
+    const fromKey = cur === "dojang" ? this.dojangFrom : cur === "gate" ? this.gateFrom : cur === "closet" ? this.closetFrom : cur;
+    if (STAGES[fromKey]?.isVillage) return fromKey;
+    const spec = chapterSpec(fromKey);
+    if (spec) {
+      const vk = (spec.num <= 1 ? "village" : `${spec.key}v`) as StageKey;
+      if (STAGES[vk]) return vk;
+    }
+    return "village";
+  }
+
+  /** 서버 브로드캐스트 → 원격 플레이어 스프라이트/이름표 동기화 */
+  private syncRemotes(list: net.NetPlayer[]) {
+    const myId = net.netId();
+    const seen = new Set<string>();
+    for (const p of list) {
+      if (!p || p.id === myId) continue;
+      seen.add(p.id);
+      let r = this.remotes.get(p.id);
+      if (!r) {
+        const sp = this.add.sprite(p.x, p.y, "hero_idle0").setDepth(9).setAlpha(0.96);
+        sp.play("hero-idle");
+        const d = classDef(p.cls);
+        /* v1.0.16 — GM 계정: [GM] 금색 이름표 + 황금 오라 + 스프라이트 금빛 틴트/살짝 확대 —
+         *  "GM은 로그인 하면 이름표 색깔 및 캐릭터가 달라야함" 지시의 원격 표현 */
+        const isGm = p.gm === true;
+        if (isGm) sp.setTint(0xffe9a8).setScale(1.12);
+        const tag = this.add
+          .text(p.x, p.y - 52, isGm ? `[GM] ${p.name} Lv.${p.lv}` : `${p.name} Lv.${p.lv}`, {
+            fontFamily: "Galmuri11, sans-serif",
+            fontSize: isGm ? "12px" : "11px",
+            color: isGm ? "#ffd76a" : d ? d.color : "#ffe9b0",
+            stroke: isGm ? "#3a2400" : "#0a2030",
+            strokeThickness: 4,
+            fontStyle: "bold",
+          })
+          .setOrigin(0.5)
+          .setDepth(60);
+        const aura = isGm
+          ? this.add.image(p.x, p.y + 6, "glow").setDepth(8).setTint(0xffd76a).setScale(1.5).setAlpha(0.4).setBlendMode(Phaser.BlendModes.ADD)
+          : null;
+        r = { sp, tag, tx: p.x, ty: p.y, flip: p.flip, moving: p.moving, cls: p.cls, lv: p.lv, name: p.name, gm: isGm, aura };
+        this.remotes.set(p.id, r);
+      }
+      r.tx = p.x;
+      r.ty = p.y;
+      r.flip = p.flip;
+      r.moving = p.moving;
+      if (r.cls !== p.cls || r.lv !== p.lv || r.name !== p.name || r.gm !== (p.gm === true)) {
+        r.cls = p.cls;
+        r.lv = p.lv;
+        r.name = p.name;
+        const wasGm = r.gm;
+        r.gm = p.gm === true;
+        const d = classDef(p.cls);
+        r.tag.setText(r.gm ? `[GM] ${p.name} Lv.${p.lv}${d ? ` · ${d.name}` : ""}` : `${p.name} Lv.${p.lv}${d ? ` · ${d.name}` : ""}`);
+        r.tag.setColor(r.gm ? "#ffd76a" : d ? d.color : "#ffe9b0");
+        if (r.gm !== wasGm) {
+          /* GM 승격/강등 실시간 반영 — 외형/오라/틴트 동기화 */
+          if (r.gm) {
+            r.sp.setTint(0xffe9a8).setScale(1.12);
+            r.aura = this.add.image(r.sp.x, r.sp.y + 6, "glow").setDepth(8).setTint(0xffd76a).setScale(1.5).setAlpha(0.4).setBlendMode(Phaser.BlendModes.ADD);
+          } else {
+            r.sp.clearTint().setScale(1);
+            r.aura?.destroy();
+            r.aura = null;
+          }
+        }
+      }
+    }
+    for (const [id, r] of this.remotes) {
+      if (!seen.has(id)) {
+        r.sp.destroy();
+        r.tag.destroy();
+        r.aura?.destroy();
+        this.remotes.delete(id);
+      }
+    }
+  }
+
+  private clearRemotes() {
+    for (const r of this.remotes.values()) {
+      r.sp.destroy();
+      r.tag.destroy();
+      r.aura?.destroy();
+    }
+    this.remotes.clear();
+  }
+
+  /** 내 이름표에 클래스 반영 (인트로에서 이름표 생성된 뒤 유효)
+   *  v1.0.16 — GM 계정(admin 롤)은 [GM] 접두사 + 금색 이름표 + 황금 오라로 본인도 즉시 식별 */
+  private refreshPlayerTag() {
+    if (!this.playerNameTag || !this.player) return;
+    const d = classDef(this.player.cls);
+    const gm = this.adminRole === "admin";
+    this.playerNameTag.setText(gm ? `[GM] ${getPlayerName()}${d ? ` · ${d.name}` : ""}` : d ? `${getPlayerName()} · ${d.name}` : getPlayerName());
+    this.playerNameTag.setColor(gm ? "#ffd76a" : "#baf3ff");
+    this.playerNameTag.setStroke(gm ? "#3a2400" : "#0a2030", 4);
+    this.syncGmAura();
+  }
+
+  /** v1.0.16 — GM 본인 캐릭터 황금 오라 (발밑 은은한 금빛 — 로그인 시 자동 부여) */
+  private gmAura: Phaser.GameObjects.Image | null = null;
+  private syncGmAura() {
+    const want = this.adminRole === "admin" && !!this.player;
+    if (want && !this.gmAura && this.player) {
+      this.gmAura = this.add
+        .image(this.player.x, this.player.y + 6, "glow")
+        .setDepth(this.player.depth - 1)
+        .setTint(0xffd76a)
+        .setScale(1.5)
+        .setAlpha(0.35)
+        .setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({
+        targets: this.gmAura,
+        alpha: { from: 0.28, to: 0.45 },
+        scale: { from: 1.4, to: 1.62 },
+        duration: 1100,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+    } else if (!want && this.gmAura) {
+      this.gmAura.destroy();
+      this.gmAura = null;
+    }
+  }
+
+  /** 플레이어 이름표 확보 — v2.4 수정: 재접속/씬 재시작 시에도 이름표 유지 (기존엔 인트로에서만 생성) */
+  private ensurePlayerTag() {
+    if (this.playerNameTag || !this.player) return;
+    this.playerNameTag = this.add
+      .text(this.player.x, this.player.y - 48, getPlayerName(), {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "12px",
+        color: "#baf3ff",
+        stroke: "#0a2030",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(60);
+    this.refreshPlayerTag();
+  }
+
+  /* ================= 플레이어 투사체 (v1.8) ================= */
+
+  /** 궁수 화살 / 마법사 볼트 발사 — 보스 orb 풀 패턴 재사용 (물리 velocity + 수동 판정) */
+  /** v3.0.2 — tex/anim/blend 지원: 궁수는 실제 화살(normal), 마법사는 스펠 애니 프레임 */
+  firePlayerProj(cfg: {
+    x: number;
+    y: number;
+    angle: number;
+    speed: number;
+    /** 관통 가능 적 수 (1 = 단일 대상) */
+    pierce: number;
+    dmg: number;
+    crit: boolean;
+    tint: number;
+    knock: number;
+    scale?: number;
+    tex?: string;
+    anim?: string;
+    blend?: "add" | "normal";
+    /** angle로 스프라이트 회전 (화살 등 방향성 텍스처) */
+    rot?: boolean;
+    /** v3.0.3 — 유도 (데드아이 신의 화살비): 가장 가까운 적으로 진로 수정 */
+    homing?: boolean;
+    /** v3.0.16 (#4) — 비행 잔상(트레일) 색. 지정하면 진행 경로가 발광 잔상으로 남는다 */
+    trail?: number;
+  }) {
+    if (this.pProjPool.length === 0) {
+      for (let i = 0; i < 24; i++) {
+        const p = this.physics.add.sprite(0, 0, "orb");
+        p.setBlendMode(Phaser.BlendModes.ADD).setDepth(12);
+        p.setActive(false).setVisible(false);
+        (p.body as Phaser.Physics.Arcade.Body).setCircle(6);
+        this.pProjPool.push(p);
+      }
+    }
+    const p = this.pProjPool[this.pProjIdx];
+    this.pProjIdx = (this.pProjIdx + 1) % this.pProjPool.length;
+    p.enableBody(true, cfg.x, cfg.y, true, true);
+    this.physics.velocityFromRotation(cfg.angle, cfg.speed, p.body!.velocity);
+    p.anims.stop(); // 풀 재사용 — 이전 애니/텍스처 잔존 제거
+    if (cfg.tex) p.setTexture(cfg.tex);
+    else if (p.texture.key !== "orb") p.setTexture("orb");
+    p.setTint(cfg.tint).setScale(cfg.scale ?? 0.9).setAlpha(0.95);
+    p.setBlendMode(cfg.blend === "normal" ? Phaser.BlendModes.NORMAL : Phaser.BlendModes.ADD);
+    /* v1.4.10 — 투사체 히트박스를 스프라이트에 정확히 맞춤 (유저 지시 "히트박스 정렬"):
+     *  기존 setCircle(6) 고정 12px 원판은 화살(28×9)·대형 파동(scale 1.5) 등
+     *  어떤 텍스처에도 같은 크기라 시각과 판정이 어긋났다. 프레임×스케일 기반으로 재계산
+     *  (setCircle이 스케일을 자동 곱하므로 반으로 나눠 소스 크기를 넣는다).
+     *  반경 = 짧은 변의 35%·하한 5px — ADD 글로우 패딩을 제한한 코어 기준 판정 */
+    {
+      const psc = cfg.scale ?? 0.9;
+      const fw = p.frame.realWidth || p.frame.width;
+      const fh = p.frame.realHeight || p.frame.height;
+      const half = Math.max(5, Math.min(fw, fh) * 0.35); // 소스 픽셀 반경 (월드 = half×2×psc)
+      const pb = p.body as Phaser.Physics.Arcade.Body;
+      pb.setCircle(half, fw / 2 - half, fh / 2 - half);
+    }
+    if (cfg.anim && this.anims.exists(cfg.anim)) p.play(cfg.anim);
+    else if (cfg.anim) p.setTexture("orb");
+    p.setRotation(cfg.rot ? cfg.angle : 0);
+    p.setData("rot", cfg.rot === true); // v3.0.12 — 유도 중 회전 갱신용 플래그
+    p.setData("dmg", cfg.dmg);
+    p.setData("crit", cfg.crit);
+    p.setData("pierce", cfg.pierce);
+    p.setData("knock", cfg.knock);
+    p.setData("tint", cfg.tint);
+    p.setData("homing", cfg.homing === true);
+    p.setData("trail", cfg.trail ?? 0); // 0 = 트레일 없음
+    p.setData("trailAcc", 0);
+    p.setData("life", 1700);
+  }
+
+  /** v3.0.16 (#4) — 투사체 잔상: 진행 경로를 따라 페이드아웃하는 발광 애프터이미지.
+   *  다중사격 부채꼴이 “화살비”처럼 보이는 핵심 연출. 이미지는 tween으로 자가 소멸
+   *  v1.4.8 (#1 최적화) — 기존엔 trail 1장당 image 생성+tween+destroy를 반복(사격 중 초당 최대 20회)해
+   *  GC 부담이 컸다 → 16장 링 버퍼 풀로 재사용 (setTexture 교체 비용은 생성보다 훨씬 낮다) */
+  private projTrailPool: Phaser.GameObjects.Image[] = [];
+  private projTrailIdx = 0;
+  /* v1.4.8 — 충격 링 풀 (8장 링 버퍼) */
+  private shockRingPool: Phaser.GameObjects.Image[] = [];
+  private shockRingIdx = 0;
+
+  private spawnProjTrail(p: Phaser.Physics.Arcade.Sprite, hex: number) {
+    let img = this.projTrailPool[this.projTrailIdx];
+    if (!img || !img.scene) {
+      img = this.add.image(p.x, p.y, p.texture.key);
+      this.projTrailPool[this.projTrailIdx] = img;
+    }
+    this.projTrailIdx = (this.projTrailIdx + 1) % 16;
+    this.tweens.killTweensOf(img);
+    img.setTexture(p.texture.key)
+      .setPosition(p.x, p.y)
+      .setRotation(p.rotation)
+      .setScale(p.scaleX, p.scaleY)
+      .setTint(hex)
+      .setAlpha(0.4)
+      .setDepth(11)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setActive(true)
+      .setVisible(true);
+    this.tweens.add({
+      targets: img,
+      alpha: 0,
+      scale: p.scaleX * 0.5,
+      duration: 240,
+      ease: "Cubic.out",
+    });
+  }
+
+  /* ================= v3.0.6 — 클래스 고유 주력기 신규 이펙트 4종 ================= */
+
+  /** 스나이퍼 저격 라인 — 즉발 히트스캔 빔 (짧게 번쩍이고 소멸) */
+  spawnSnipeBeam(x1: number, y1: number, x2: number, y2: number, hex: number) {
+    const line = this.add.line(0, 0, x1, y1, x2, y2, hex, 0.9)
+      .setDepth(22)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setLineWidth(3);
+    const core = this.add.line(0, 0, x1, y1, x2, y2, 0xffffff, 0.9)
+      .setDepth(23)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setLineWidth(1);
+    this.tweens.add({
+      targets: [line, core],
+      alpha: 0,
+      duration: 170,
+      ease: "Cubic.out",
+      onComplete: () => { line.destroy(); core.destroy(); },
+    });
+  }
+
+  /* ================= v3.0.11 — 돌진 계열별 특색 이펙트 =================
+   *  전사=대지 먼지 / 궁수=질풍 바람꼬리 / 도적=그림자 잔상 / 마법사=룬 링 (직업 특색 돌진) */
+
+  /** 전사 계열 — 발밑 먼지 기둥 (대지를 박차는 무게감) */
+  spawnDashDust(x: number, y: number, tint = 0xff9a8a) {
+    for (let i = 0; i < 2; i++) {
+      const c = this.add.circle(x + (Math.random() - 0.5) * 24, y + 16 + Math.random() * 6, 3 + Math.random() * 3, 0xb8a890, 0.5)
+        .setDepth(9);
+      this.tweens.add({ targets: c, scale: 2.1, alpha: 0, y: c.y + 7, duration: 380, ease: "Cubic.out", onComplete: () => c.destroy() });
+    }
+    this.spawnBurstAt(x, y + 14, 1, tint);
+  }
+
+  /** 궁수 계열 — 몸 뒤로 흩어지는 바람 꼬리 선 (질풍 질주감) */
+  spawnWindStreak(x: number, y: number, dir: Phaser.Math.Vector2, tint = 0x9dffc4) {
+    const len = 34 + Math.random() * 18;
+    const ox = (Math.random() - 0.5) * 26;
+    const oy = (Math.random() - 0.5) * 30 - 6;
+    const line = this.add.line(
+      0, 0,
+      x + ox - dir.x * len, y + oy - dir.y * len,
+      x + ox, y + oy,
+      tint, 0.7
+    )
+      .setDepth(11)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setLineWidth(1.5);
+    this.tweens.add({ targets: line, alpha: 0, duration: 260, ease: "Cubic.out", onComplete: () => line.destroy() });
+  }
+
+  /** 도적 계열 — 내 실루엣이 어둡게 남는 그림자 잔상 */
+  spawnShadowAfterimage(p: Player, tint = 0x2a1040) {
+    const img = this.add.image(p.x, p.y, p.texture.key, p.frame.name)
+      .setDepth(p.depth - 1)
+      .setFlipX(p.flipX)
+      .setTint(tint)
+      .setAlpha(0.55);
+    this.tweens.add({ targets: img, alpha: 0, scale: 0.92, duration: 320, ease: "Cubic.out", onComplete: () => img.destroy() });
+  }
+
+  /** 마법사 계열(블링크) — 출발/도착 지점에 펼쳐지는 룬 링 */
+  spawnRuneRing(x: number, y: number, hex = 0x8fa6ff) {
+    const ring = this.add.circle(x, y + 10, 42, 0x8fa6ff, 0.001)
+      .setStrokeStyle(2, hex, 0.9)
+      .setDepth(12)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setScale(0.2);
+    this.tweens.add({ targets: ring, scale: 1, alpha: 0, duration: 340, ease: "Cubic.out", onComplete: () => ring.destroy() });
+  }
+
+  /** 윈드러너 회오리 화살 — 회오리 투사체: 경로상 적을 끌어당기고 틱 피해
+   *  v3.0.11 — 단색 원 → 토네이도 스프라이트(fx-tornado 8프레임 회전)로 교체 + 바람 꼬리 잔상 */
+  fireGustTornado(cfg: {
+    x: number; y: number; angle: number; speed: number;
+    dmg: number; crit: boolean; hex: number; pull: number; radius: number; life: number;
+  }) {
+    const g = this.add.sprite(cfg.x, cfg.y, "fx_tornado", 0)
+      .setDepth(13)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(cfg.hex)
+      .setScale(1.15)
+      .setAlpha(0.92);
+    g.play("fx-tornado");
+    const vx = Math.cos(cfg.angle) * cfg.speed;
+    const vy = Math.sin(cfg.angle) * cfg.speed;
+    let life = cfg.life;
+    const tick = this.time.addEvent({
+      delay: 120,
+      repeat: Math.ceil(cfg.life / 120),
+      callback: () => {
+        life -= 120;
+        if (!g.active || life <= 0) { tick.remove(); if (g.active) g.destroy(); return; }
+        g.setPosition(g.x + vx * 0.12, g.y + vy * 0.12);
+        const wb = this.physics.world.bounds;
+        for (const e of this.getAllTargets()) {
+          if (!e.active) continue;
+          const d = Phaser.Math.Distance.Between(g.x, g.y, e.x, e.y);
+          if (d <= cfg.radius) {
+            // 끌어당김 — 회오리 중심으로
+            const nx = Phaser.Math.Clamp(e.x + (g.x - e.x) * cfg.pull * 0.22, 40, wb.width - 40);
+            const ny = Phaser.Math.Clamp(e.y + (g.y - e.y) * cfg.pull * 0.22, 40, wb.height - 40);
+            (e as unknown as { body?: Phaser.Physics.Arcade.Body }).body?.reset?.(nx, ny);
+            // 틱 피해 — 낮은 배율 다발
+            if (Math.random() < 0.65) {
+              e.takeDamage(Math.max(1, Math.round(cfg.dmg * 0.28)), new Phaser.Math.Vector2(vx, vy).normalize(), 60, cfg.crit);
+            }
+          }
+        }
+        this.spawnBurstAt(g.x, g.y, 2, cfg.hex);
+      },
+    });
+    this.time.delayedCall(cfg.life, () => { if (g.active) g.destroy(); });
+  }
+
+  /* v3.0.11 — 스카이로드 전용 대형 토네이도 (폭풍 소용돌이/천공의 폭풍).
+   *  회오리 스프라이트가 이동하며 주변 적을 강하게 빨아들이고 틱 피해.
+   *  종료 시(또는 벽 도달 시) 소용돌이가 터지며 마무리. */
+  fireCyclone(cfg: {
+    x: number; y: number; angle: number; speed: number;
+    dmg: number; crit: boolean; hex: number;
+    pull: number; radius: number; life: number; scale: number;
+  }) {
+    const g = this.add.sprite(cfg.x, cfg.y, "fx_tornado", 0)
+      .setDepth(14)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(cfg.hex)
+      .setScale(cfg.scale)
+      .setAlpha(0.95);
+    g.play("fx-tornado");
+    const vx = Math.cos(cfg.angle) * cfg.speed;
+    const vy = Math.sin(cfg.angle) * cfg.speed;
+    // 진행 축에 수직인 방향 — 소용돌이가 S자로 흔들리는 와인딩
+    const px = -Math.sin(cfg.angle);
+    const py = Math.cos(cfg.angle);
+    const wb0 = this.physics.world.bounds;
+    const hitOnce = new Set<Enemy | Boss>();
+    let life = cfg.life;
+    let t = 0;
+    const tick = this.time.addEvent({
+      delay: 100,
+      repeat: Math.ceil(cfg.life / 100),
+      callback: () => {
+        life -= 100;
+        t += 100;
+        if (!g.active || life <= 0) {
+          tick.remove();
+          if (g.active) {
+            // 소멸 연출 — 회오리가 터지며 마무리 타격
+            this.spawnBurstAt(g.x, g.y, 14, cfg.hex);
+            for (const e of this.getAllTargets()) {
+              if (!e.active || hitOnce.has(e)) continue;
+              const d = Phaser.Math.Distance.Between(g.x, g.y, e.x, e.y);
+              if (d <= cfg.radius * 1.1) {
+                hitOnce.add(e);
+                const away = new Phaser.Math.Vector2(e.x - g.x, e.y - g.y).normalize();
+                e.takeDamage(Math.max(1, Math.round(cfg.dmg * 0.9)), away, 340, cfg.crit);
+              }
+            }
+            g.destroy();
+          }
+          return;
+        }
+        // 이동 + 사인 와인딩 (토네이도 특유의 꿈틀거림)
+        const sway = Math.sin(t * 0.012) * 34;
+        g.setPosition(
+          Phaser.Math.Clamp(g.x + vx * 0.1 + px * sway * 0.1, 30, wb0.width - 30),
+          Phaser.Math.Clamp(g.y + vy * 0.1 + py * sway * 0.1, 30, wb0.height - 30)
+        );
+        // 크기 맥동 — 숨쉬는 회오리
+        g.setScale(cfg.scale * (0.94 + 0.1 * Math.sin(t * 0.02)));
+        const wb = this.physics.world.bounds;
+        for (const e of this.getAllTargets()) {
+          if (!e.active) continue;
+          const d = Phaser.Math.Distance.Between(g.x, g.y, e.x, e.y);
+          if (d <= cfg.radius) {
+            // 강한 끌어당김 — 회오리 안으로 빨려들어감
+            const nx = Phaser.Math.Clamp(e.x + (g.x - e.x) * cfg.pull * 0.3, 40, wb.width - 40);
+            const ny = Phaser.Math.Clamp(e.y + (g.y - e.y) * cfg.pull * 0.3, 40, wb.height - 40);
+            (e as unknown as { body?: Phaser.Physics.Arcade.Body }).body?.reset?.(nx, ny);
+            if (Math.random() < 0.7) {
+              e.takeDamage(Math.max(1, Math.round(cfg.dmg * 0.3)), new Phaser.Math.Vector2(vx, vy).normalize(), 40, cfg.crit);
+            }
+          }
+        }
+        // 바람 파편 — 회오리 가장자리에서 흩날림
+        if (Math.random() < 0.8) {
+          const a = Math.random() * Math.PI * 2;
+          this.spawnBurstAt(g.x + Math.cos(a) * cfg.radius * 0.5, g.y + Math.sin(a) * cfg.radius * 0.4, 1, cfg.hex);
+        }
+      },
+    });
+  }
+
+  /** 아크메이지 아크 볼트 — 착탄 광역 폭발 투사체 (첫 명중 지점에서 폭발, 4차+ 2차 폭발) */
+  fireExplodingBolt(cfg: {
+    x: number; y: number; angle: number; speed: number;
+    dmg: number; crit: boolean; pierce: number; hex: number;
+    blastRadius: number; blastMul: number; secondary: boolean; scale: number;
+  }) {
+    this.firePlayerProj({
+      x: cfg.x, y: cfg.y, angle: cfg.angle, speed: cfg.speed,
+      pierce: cfg.pierce, dmg: cfg.dmg, crit: cfg.crit,
+      tint: cfg.hex, knock: 260, scale: cfg.scale,
+      anim: "fx-arcane", blend: "normal", rot: true, // v3.0.12 — 아크 볼트도 비행 방향 회전
+    });
+    // 마지막 발사 투사체에 폭발 플래그 부여 — tickPlayerProjs에서 첫 명중 시 처리
+    const p = this.pProjPool[(this.pProjIdx + this.pProjPool.length - 1) % this.pProjPool.length];
+    if (p?.active) {
+      p.setData("explodeR", cfg.blastRadius);
+      p.setData("explodeMul", cfg.blastMul);
+      p.setData("explodeHex", cfg.hex);
+      p.setData("explodeSecondary", cfg.secondary);
+    }
+  }
+
+  /** 세이지 정화의 파동 — 확산 링 비주얼 */
+  spawnPurifyRing(x: number, y: number, radius: number, hex: number) {
+    const ring = this.add.image(x, y, "shock_ring")
+      .setDepth(19)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(hex)
+      .setScale(0.2)
+      .setAlpha(0.85);
+    this.tweens.add({
+      targets: ring,
+      scale: radius / 130,
+      alpha: 0,
+      duration: 420,
+      ease: "Cubic.out",
+      onComplete: () => ring.destroy(),
+    });
+  }
+
+  /** 투사체 진행 — 수명 감소 + 적 원판 판정(관통 소모) + 회수 */
+  private tickPlayerProjs(dt: number) {
+    if (this.pProjPool.length === 0) return;
+    for (const p of this.pProjPool) {
+      if (!p.active) continue;
+      const life = (p.getData("life") as number) - dt;
+      if (life <= 0) {
+        p.disableBody(true, true);
+        continue;
+      }
+      p.setData("life", life);
+      /* v3.0.16 (#4) — 잔상 스폰 (50ms 간격): 텍스처가 화살/볼트일 때만 (구슬은 원래 발광이라 생략) */
+      const trailHex = p.getData("trail") as number;
+      if (trailHex && p.texture.key !== "orb") {
+        const acc = (p.getData("trailAcc") as number) + dt;
+        if (acc >= 50) {
+          this.spawnProjTrail(p, trailHex);
+          p.setData("trailAcc", acc - 50);
+        } else p.setData("trailAcc", acc);
+      }
+      const vel = p.body!.velocity;
+      /* v3.0.3 — 유도 화살: 활성 적 중 가장 가까운 대상으로 진로 서서히 수정 */
+      if (p.getData("homing") === true) {
+        let tgt: Enemy | Boss | null = null;
+        let bd = 420;
+        for (const e of this.getAllTargets()) {
+          if (!e.active) continue;
+          const d = Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y);
+          if (d < bd) { bd = d; tgt = e; }
+        }
+        if (tgt) {
+          const want = Math.atan2(tgt.y - p.y, tgt.x - p.x);
+          const cur = Math.atan2(vel.y, vel.x);
+          let diff = want - cur;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          const speed = Math.hypot(vel.x, vel.y);
+          const na = cur + Phaser.Math.Clamp(diff, -0.12, 0.12);
+          p.body!.velocity.set(Math.cos(na) * speed, Math.sin(na) * speed);
+          vel.setTo(p.body!.velocity.x, p.body!.velocity.y);
+          // v3.0.12 — 유도 중 스프라이트도 진행 방향 추적 (화살/볼트가 옆으로 날아 보이던 문제)
+          if (p.getData("rot") === true) p.setRotation(na);
+        }
+      }
+      const dir = new Phaser.Math.Vector2(vel.x, vel.y).normalize();
+      for (const e of this.getAllTargets()) {
+        let pierce = p.getData("pierce") as number;
+        if (pierce <= 0) break;
+        if (!e.active) continue;
+        /* v3.0 (사용자 지시 #2) — 히트박스 확대: 투사체 크기 + 대상 몸통 반영
+         *  (기존 평면 28px는 마법사 볼트가 코앞을 스쳐도 빗나가는 체감 유발) */
+        const projR = 14 * (p.scaleX || 1);
+        const bodyR = Math.max(
+          ((e as unknown as { hitW?: number }).hitW ?? 24),
+          ((e as unknown as { hitH?: number }).hitH ?? 24)
+        ) * 0.5;
+        const hitR = projR + bodyR + 8;
+        if (Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y) <= hitR) {
+          pierce--;
+          p.setData("pierce", pierce);
+          e.takeDamage(
+            p.getData("dmg") as number,
+            dir,
+            p.getData("knock") as number,
+            p.getData("crit") as boolean
+          );
+          this.onMeleeConnect(1, "skill");
+          this.spawnBurstAt(p.x, p.y, 4, (p.getData("tint") as number) ?? 0xffffff);
+          /* v3.0.6 — 아크 볼트 착탄 폭발: 첫 명중 지점에서 광역 폭발 (4차+ 2차 폭발) */
+          const exR = p.getData("explodeR") as number | undefined;
+          if (exR) {
+            const exHex = (p.getData("explodeHex") as number) ?? 0x8fa6ff;
+            const blastDmg = Math.max(1, Math.round((p.getData("dmg") as number) * ((p.getData("explodeMul") as number) ?? 1)));
+            this.spawnBurstAt(p.x, p.y, 16, exHex);
+            const ringFx = this.add.image(p.x, p.y, "shock_ring").setDepth(19).setBlendMode(Phaser.BlendModes.ADD).setTint(exHex).setScale(0.25).setAlpha(0.9);
+            this.tweens.add({ targets: ringFx, scale: exR / 110, alpha: 0, duration: 320, ease: "Cubic.out", onComplete: () => ringFx.destroy() });
+            for (const e2 of this.getAllTargets()) {
+              if (!e2.active) continue;
+              const d2 = Phaser.Math.Distance.Between(p.x, p.y, e2.x, e2.y);
+              if (d2 <= exR) {
+                const away = new Phaser.Math.Vector2(e2.x - p.x, e2.y - p.y).normalize();
+                e2.takeDamage(blastDmg, away, 240, p.getData("crit") as boolean);
+              }
+            }
+            if (p.getData("explodeSecondary") === true) {
+              const sx = p.x, sy = p.y;
+              this.time.delayedCall(280, () => {
+                this.spawnBurstAt(sx, sy, 12, exHex);
+                for (const e3 of this.getAllTargets()) {
+                  if (!e3.active) continue;
+                  const d3 = Phaser.Math.Distance.Between(sx, sy, e3.x, e3.y);
+                  if (d3 <= exR * 0.85) {
+                    const away = new Phaser.Math.Vector2(e3.x - sx, e3.y - sy).normalize();
+                    e3.takeDamage(Math.round(blastDmg * 0.7), away, 200, false);
+                  }
+                }
+              });
+            }
+          }
+          if (pierce <= 0) {
+            p.disableBody(true, true);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  /* ================= v3.0.3 — 몬스터 투사체 (고유 개성: 원거리 캐스터) ================= */
+
+  /** 몬스터 투사체 발사 — 임프 화염구 / 강령술사 다크볼트 / 서리 날도요 얼음창 등 */
+  fireEnemyProj(cfg: { x: number; y: number; angle: number; speed: number; dmg: number; anim: string; tint?: number; scale?: number }) {
+    if (this.eProjPool.length === 0) {
+      for (let i = 0; i < 16; i++) {
+        const p = this.physics.add.sprite(0, 0, "orb");
+        p.setBlendMode(Phaser.BlendModes.ADD).setDepth(12);
+        p.setActive(false).setVisible(false);
+        (p.body as Phaser.Physics.Arcade.Body).setCircle(6);
+        this.eProjPool.push(p);
+      }
+    }
+    const p = this.eProjPool[this.eProjIdx];
+    this.eProjIdx = (this.eProjIdx + 1) % this.eProjPool.length;
+    p.enableBody(true, cfg.x, cfg.y, true, true);
+    this.physics.velocityFromRotation(cfg.angle, cfg.speed, p.body!.velocity);
+    p.anims.stop();
+    if (this.anims.exists(cfg.anim)) p.play(cfg.anim);
+    else p.setTexture("orb");
+    /* v1.0.14 — 적 원거리 투사체 진행 방향 정렬. 기존엔 회전이 없어 왼쪽으로 쏜
+     *  파이어볼/다크볼트가 오른쪽을 본 채 뒤로 날아가 보였다(역주행 렌더).
+     *  사용 중 애님 4종(fx-icelance 대칭·fx-fireball·fx-darkbolt 우향 코멧·
+     *  fx-magicorb 대칭)은 전부 회전 안전 — 플레이어 투사체와 동일 방식. */
+    p.setRotation(cfg.angle);
+    p.setTint(cfg.tint ?? 0xffffff).setScale(cfg.scale ?? 0.85).setAlpha(0.95);
+    p.setBlendMode(Phaser.BlendModes.ADD);
+    p.setData("dmg", cfg.dmg);
+    p.setData("life", 2600);
+  }
+
+  /** 몬스터 투사체 진행 — 플레이어 원판 판정 */
+  private tickEnemyProjs(dt: number) {
+    if (!this.player || this.eProjPool.length === 0) return;
+    for (const p of this.eProjPool) {
+      if (!p.active) continue;
+      const life = (p.getData("life") as number) - dt;
+      if (life <= 0) {
+        p.disableBody(true, true);
+        continue;
+      }
+      p.setData("life", life);
+      const d = Phaser.Math.Distance.Between(p.x, p.y, this.player.x, this.player.y);
+      if (d <= 26 && this.player.state !== "dead") {
+        const dir = new Phaser.Math.Vector2(p.body!.velocity.x, p.body!.velocity.y).normalize();
+        this.player.takeDamage(p.getData("dmg") as number, dir, 0, DMG_PCT.mob); // v3.0.6 — 적 투사체 % 하한
+        this.spawnBurstAt(p.x, p.y, 6, (p.getData("tint") as number) ?? 0xffffff);
+        p.disableBody(true, true);
+      }
+    }
+  }
+
+  /* ================= v3.0.3 — 지면 장판 (독/화염/성역/시간왜곡) ================= */
+
+  /** 범용 장판 생성 — owner=enemy(플레이어에 데미지) / player(적에 데미지+옵션 힐/감속) */
+  spawnField(cfg: {
+    x: number; y: number; radius: number; dur: number; dps: number;
+    kind: "poison" | "fire" | "light" | "time";
+    owner: "enemy" | "player";
+    heal?: boolean; slow?: boolean; stun?: boolean;
+    selfHealPerTick?: number;
+  }) {
+    const tint = cfg.kind === "poison" ? 0x7ade4a : cfg.kind === "fire" ? 0xff8a3a : cfg.kind === "light" ? 0xffe9a0 : 0xb0a0ff;
+    const zone = this.add.circle(cfg.x, cfg.y, cfg.radius, tint, 0.22).setDepth(2).setStrokeStyle(2, tint, 0.55);
+    this.tweens.add({ targets: zone, alpha: { from: 0.85, to: 0.5 }, duration: 900, yoyo: true, repeat: -1 });
+    this.fields.push({
+      zone, x: cfg.x, y: cfg.y, radius: cfg.radius,
+      dur: cfg.dur, dps: cfg.dps, kind: cfg.kind, owner: cfg.owner,
+      tickAcc: 0, heal: cfg.heal, slow: cfg.slow, stun: cfg.stun,
+      selfHealPerTick: cfg.selfHealPerTick,
+    });
+  }
+
+  private tickFields(dt: number) {
+    if (this.fields.length === 0) return;
+    for (let i = this.fields.length - 1; i >= 0; i--) {
+      const f = this.fields[i];
+      f.dur -= dt;
+      f.tickAcc += dt;
+      if (f.dur <= 0) {
+        f.zone.destroy();
+        this.fields.splice(i, 1);
+        continue;
+      }
+      if (f.tickAcc < 500) continue; // 0.5초마다 판정
+      f.tickAcc = 0;
+      const dmgTick = Math.max(1, Math.round(f.dps * 0.5));
+      if (f.owner === "enemy") {
+        // 몬스터 장판 — 플레이어가 밟으면 피해 (+독이면 상태이상도)
+        if (this.player && this.player.state !== "dead" &&
+            Phaser.Math.Distance.Between(f.x, f.y, this.player.x, this.player.y) <= f.radius) {
+          this.player.applyFieldDamage(dmgTick, f.kind === "poison" ? "poison" : "burn");
+          if (f.kind === "poison") this.player.applyDot("poison", f.dps * 0.6, 2000);
+        }
+      } else {
+        // 플레이어 장판 — 적 피해 (+감속/기절/힐 옵션)
+        for (const e of this.getAllTargets()) {
+          if (!e.active) continue;
+          if (Phaser.Math.Distance.Between(f.x, f.y, e.x, e.y) > f.radius) continue;
+          const away = new Phaser.Math.Vector2(e.x - f.x, e.y - f.y).normalize();
+          e.takeDamage(dmgTick, away, 40, false);
+          const now = this.time.now;
+          if (f.slow) (e as Enemy).applySlow?.(0.45, 1200);
+          if (f.stun) (e as Enemy).applyStun?.(600);
+          void now;
+        }
+        if (f.heal && this.player && this.player.state !== "dead" &&
+            Phaser.Math.Distance.Between(f.x, f.y, this.player.x, this.player.y) <= f.radius) {
+          const healAmt = Math.max(2, Math.round(this.player.maxHp * 0.015));
+          this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmt);
+          this.spawnHealFx(this.player.x, this.player.y, 0xffe9a0);
+          this.emitHud();
+        }
+        // v3.0.7 — 시간왜곡 자신 회복 (selfHealPerTick — 크로니컬 힐러 강화)
+        if (f.selfHealPerTick && this.player && this.player.state !== "dead" &&
+            Phaser.Math.Distance.Between(f.x, f.y, this.player.x, this.player.y) <= f.radius) {
+          this.player.hp = Math.min(this.player.maxHp, this.player.hp + f.selfHealPerTick);
+          this.spawnHealFx(this.player.x, this.player.y, 0xb0a0ff);
+          this.emitHud();
+        }
+      }
+    }
+  }
+
+  /** v3.0.7 — 세이지 정화의 파동: 반경 내 동접자(원격 아군)에게 치유 파동 연출.
+   *  HP는 각 클라이언트 로컬 권한이라 연출(이펙트+텍스트)만 — 멀티 힐러 정체성 표현 */
+  healRemotesPulse(x: number, y: number, radius: number, amount: number) {
+    for (const r of this.remotes.values()) {
+      if (!r.sp?.active) continue;
+      if (Phaser.Math.Distance.Between(x, y, r.tx, r.ty) > radius) continue;
+      this.spawnHealFx(r.tx, r.ty - 10, 0x7dffa8);
+      this.spawnPickupText(r.tx, r.ty - 42, `+${amount} HP`, "#7dffa8");
+    }
+  }
+
+  /* ================= v3.0.3 — 신규 스킬 이펙트 헬퍼 ================= */
+
+  /** 힐 이펙트 — 상승하는 초록/빛 반짝임 */
+  spawnHealFx(x: number, y: number, tint = 0x7dffa8) {
+    this.burstEmitter.setParticleTint(tint);
+    this.burstEmitter.explode(10, x, y - 10);
+    const ring = this.add.image(x, y - 6, "shock_ring").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.18).setAlpha(0.9);
+    this.tweens.add({ targets: ring, scale: 0.9, alpha: 0, duration: 420, onComplete: () => ring.destroy() });
+  }
+
+  /** 빛기둥 — 크루세이더 심판/낙뢰 공용 기둥 이펙트
+   *  v3.3.0 (지시 #9) — 백색 코어 기둥 + 착지 플래시 추가 (더 웅장하게) */
+  spawnPillar(x: number, y: number, tint = 0xffe9a0, height = 120) {
+    const pillar = this.add.rectangle(x, y - height / 2 + 14, 22, height, tint, 0.75).setDepth(25).setBlendMode(Phaser.BlendModes.ADD);
+    const core = this.add.rectangle(x, y - height / 2 + 14, 8, height * 0.92, 0xffffff, 0.9).setDepth(26).setBlendMode(Phaser.BlendModes.ADD);
+    const glow = this.add.image(x, y, "glow").setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(1.2).setAlpha(0.8);
+    const flash = this.add.image(x, y, "glow").setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffffff).setScale(0.9).setAlpha(0.95);
+    this.tweens.add({ targets: pillar, alpha: 0, scaleY: 0.2, duration: 320, ease: "Quad.in", onComplete: () => pillar.destroy() });
+    this.tweens.add({ targets: core, alpha: 0, scaleY: 0.12, duration: 260, ease: "Quad.in", onComplete: () => core.destroy() });
+    this.tweens.add({ targets: glow, alpha: 0, scale: 0.4, duration: 380, onComplete: () => glow.destroy() });
+    this.tweens.add({ targets: flash, alpha: 0, scale: 1.7, duration: 180, onComplete: () => flash.destroy() });
+    this.spawnBurstAt(x, y, 14, tint);
+  }
+
+  /** 그림자 칼날 오비트 시작 — 나이트블레이드/섀도우로드 3차기 */
+  startOrbitBlades(dmgMul: number, tint: number, durMs = 6000) {
+    if (this.orbitBlades) {
+      for (const im of this.orbitBlades.imgs) im.destroy();
+    }
+    const imgs: Phaser.GameObjects.Image[] = [];
+    for (let i = 0; i < 3; i++) {
+      const im = this.add.image(0, 0, "slash0").setDepth(14).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.55).setRotation(i * ((Math.PI * 2) / 3));
+      imgs.push(im);
+    }
+    this.orbitBlades = { imgs, angle: 0, until: this.time.now + durMs, dmgMul, tint, hitCd: new Map() };
+  }
+
+  private tickOrbitBlades(dt: number) {
+    const ob = this.orbitBlades;
+    if (!ob || !this.player) return;
+    if (this.time.now >= ob.until || this.player.state === "dead") {
+      for (const im of ob.imgs) im.destroy();
+      this.orbitBlades = null;
+      return;
+    }
+    ob.angle += dt * 0.0055; // 초당 ~315°
+    const r = 78;
+    for (let i = 0; i < ob.imgs.length; i++) {
+      const a = ob.angle + (i * Math.PI * 2) / ob.imgs.length;
+      ob.imgs[i].setPosition(this.player.x + Math.cos(a) * r, this.player.y - 8 + Math.sin(a) * r * 0.72);
+      ob.imgs[i].setRotation(a + Math.PI / 2);
+    }
+    // 판정 — 개체별 380ms 재히트 쿨
+    for (const e of this.getAllTargets()) {
+      if (!e.active) continue;
+      const last = ob.hitCd.get(e) ?? 0;
+      if (this.time.now - last < 380) continue;
+      for (const im of ob.imgs) {
+        if (Phaser.Math.Distance.Between(im.x, im.y, e.x, e.y) <= 34) {
+          ob.hitCd.set(e, this.time.now);
+          const away = new Phaser.Math.Vector2(e.x - this.player.x, e.y - this.player.y).normalize();
+          e.takeDamage(Math.round(this.player.atkTotal * ob.dmgMul), away, 140, false);
+          break;
+        }
+      }
+    }
+  }
+
+  /** 그림자 분신 자폭 — 섀도우로드 4차기 (플레이어 위치에서 대상에게 돌진 후 폭발) */
+  fireShadowClone(target: Enemy | Boss, tint: number, dmgMul: number) {
+    if (!this.player) return;
+    const sx = this.player.x;
+    const sy = this.player.y;
+    const clone = this.add.image(sx, sy, "hero_idle0").setDepth(14).setTint(tint).setAlpha(0.85);
+    this.tweens.add({
+      targets: clone,
+      x: target.x, y: target.y,
+      duration: 240, ease: "Cubic.in",
+      onComplete: () => {
+        this.spawnBurstAt(target.x, target.y, 18, tint);
+        const away = new Phaser.Math.Vector2(1, 0);
+        target.takeDamage(Math.round(this.player!.atkTotal * dmgMul), away, 240, false);
+        clone.destroy();
+      },
+    });
+  }
+
+  /* ================= v3.0.3 — 무기 스프라이트 (활/지팡이/단검 손에 들기) =================
+   *  사용자 지시 #6 — "궁수가 왜 활을 안씀? 마법사가 왜 지팡이를 안씀? 도적이 왜 단검을 안씀?":
+   *  계열별 무기를 항상 손에 든 채로 렌더링. 바라보는 방향에 따라 앞/뒤 레이어가 바뀐다. */
+  private syncWeaponSprite() {
+    if (!this.player) return;
+    const fam = familyOf(this.player.cls);
+    const want = fam === "ranger" ? "x3_bow" : fam === "mage" ? "x3_staff" : fam === "thief" ? "x3_dagger" : null;
+    if (!want) {
+      if (this.weaponImg) { this.weaponImg.setVisible(false); }
+      return;
+    }
+    if (this.weaponKey !== want) {
+      if (!this.weaponImg) {
+        this.weaponImg = this.add.image(0, 0, want).setDepth(11);
+      } else {
+        this.weaponImg.setTexture(want);
+      }
+      this.weaponKey = want;
+    }
+    const w = this.weaponImg!;
+    w.setVisible(true);
+    const p = this.player;
+    const f = p.facing;
+    const aimingUp = Math.abs(f.x) < Math.abs(f.y) && f.y < 0;
+    const aimingDown = Math.abs(f.x) < Math.abs(f.y) && f.y > 0;
+    if (want === "x3_bow") {
+      // 활 — 조준 방향을 향함. v3.0.4 — 활 텍스처(현 왼쪽·활몸 오른쪽 → 오른쪽 발사)는
+      // 조준각 그대로 회전. 기존 +90° 오프셋이 활을 수직으로 세워 “이상하다”는 지시 #1 원인.
+      const ang = Math.atan2(f.y, f.x);
+      w.setRotation(ang);
+      w.setPosition(p.x + f.x * 14, p.y - 8 + f.y * 10);
+      w.setScale(0.62);
+    } else if (want === "x3_staff") {
+      // 지팡이 — 어깨 옆에 세워 들기 (위를 보면 뒤로 기울임)
+      w.setRotation(aimingUp ? -0.35 : aimingDown ? 0.15 : 0.1);
+      w.setPosition(p.x + (p.flipX ? -13 : 13), p.y - 10);
+      w.setScale(0.58);
+    } else {
+      // 단검 — 허리 옆 (역습 시 그림자연타 스윕과 함께)
+      w.setRotation(p.flipX ? 2.4 : 0.7);
+      w.setPosition(p.x + (p.flipX ? -11 : 11), p.y - 2);
+      w.setScale(0.9);
+    }
+    // 측면 반대 방향을 볼 때 몸 뒤로 (원근감)
+    w.setDepth(f.x < 0 && Math.abs(f.x) >= Math.abs(f.y) ? 9 : 11);
+  }
+
+  /* ================= E키 상호작용 ================= */
+
+  /** 가장 가까운 상호작용 대상 탐색 → React 프롬프트 갱신 (변경 시만 emit)
+   *  v1.0.3 (#GM잔존UI) — GM 인터랙터는 관리자(서버 롤 admin)에게만 노출:
+   *  비관리자에게는 NPC 스프라이트만 숨기고 인터랙터가 남아 "GM — 자유전직…" 접속 칩이
+   *  마을에 계속 떠 있던 버그. 프롬프트 탐색 단계에서 자체를 걸러낸다. */
+  private updateInteractPrompt() {
+    let best: (typeof this.interactables)[number] | null = null;
+    let bd = 130;
+    for (const it of this.interactables) {
+      if (it.kind === "gm" && this.adminRole !== "admin") continue; // 비관리자에게 GM 접속 UI는 존재하지 않는다
+      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, it.x, it.y);
+      if (d < bd) {
+        bd = d;
+        best = it;
+      }
+    }
+    const prev = this.nearInteract;
+    if (best === prev) return;
+    this.nearInteract = best;
+    const payload: InteractState = best
+      ? {
+          active: true,
+          label: best.label,
+          kind: best.kind === "shop" ? "shop" : best.kind === "job" ? "job" : "talk",
+          x: best.x,
+          y: best.y,
+        }
+      : { active: false, label: "", kind: null };
+    EventBus.emit("ui:interact", payload);
+    this.syncEBubble();
+  }
+
+  /* E 말풍선 — NPC 이름표 위(위쪽)에 배치 (지시 #14: 이름과 겹침 해소) */
+  private syncEBubble() {
+    const it = this.nearInteract;
+    if (!it) {
+      if (this.eBubble) { this.eBubble.destroy(); this.eBubble = null; }
+      if (this.eBubbleText) { this.eBubbleText.destroy(); this.eBubbleText = null; }
+      return;
+    }
+    if (!this.eBubble) {
+      this.eBubble = this.add.circle(0, 0, 11, 0x0f2233).setStrokeStyle(2, 0x7de8ff, 0.95).setDepth(61);
+      this.eBubbleText = this.add
+        .text(0, 0, "E", {
+          fontFamily: "Galmuri11, sans-serif",
+          fontSize: "12px",
+          color: "#7de8ff",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5)
+        .setDepth(62);
+      this.tweens.add({ targets: this.eBubble, y: "-=4", duration: 620, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+    // 이름표(-34~38)보다 충분히 위 — 겹침 없음
+    const bx = it.x;
+    const by = it.y - 58;
+    this.eBubble.setPosition(bx, by);
+    this.eBubbleText?.setPosition(bx, by);
+  }
+  /** E키/모바일 버튼 — 가까운 NPC 대화 시작, 전직 상담, 건물 출입, 실내 상호작용, 상점 열기 */
+  tryInteract() {
+    if (this.dialoguing || this.sleeping || !this.player || this.player.state === "dead") return;
+    const it = this.nearInteract;
+    if (!it) return;
+    this.tut?.notify("talk"); // v1.0.11 — 튜토리얼 대화 학습 판정
+    if (it.kind === "shop") {
+      // v2.3 (지시 #4) — 반복 의뢰 수주 가능하면 상점 대신 수주 대사부터
+      if (this.repeatUnlockable()) {
+        this.showDialogue("merchantRepeat", "merchant");
+      } else {
+        EventBus.emit("ui:panel", { panel: "shop" });
+      }
+    } else if (it.kind === "job") {
+      // 전직 교관 — 상담 대사 후 전직 패널 자동 오픈 (v1.9)
+      this.showDialogue("jobMaster", "jobmaster");
+    } else if (it.kind === "gm") {
+      /* v1.0.2 (#GM서버검증) — GM 패널 진입은 서버 롤 재확인 후 허용 (매 상호작용 시 신선한 검증) */
+      if (this.gmCheckBusy) return;
+      this.gmCheckBusy = true;
+      authMe()
+        .then((u) => {
+          this.adminRole = u?.role ?? null;
+          if (this.adminRole === "admin") {
+            EventBus.emit("ui:panel", { panel: "gm" });
+          } else {
+            EventBus.emit("banner:show", { text: "GM 기능은 관리자 계정 전용입니다" });
+          }
+        })
+        .catch(() => EventBus.emit("banner:show", { text: "권한 확인에 실패했다 (관리자 전용)" }))
+        .finally(() => { this.gmCheckBusy = false; });
+    } else if (it.kind === "inn") {
+      this.enterInterior("interior_inn");
+    } else if (it.kind === "house") {
+      this.enterInterior("interior_home");
+    } else if (it.kind === "innkeeper") {
+      // 여관주인 대사 → 대사 종료 후 취침 연출로 이어짐 (resumeFromDialogue 훅)
+      this.sleepPending = true;
+      this.showDialogue("innkeeper", "innkeeper");
+    } else if (it.kind === "bed") {
+      this.trySleep();
+    } else if (it.kind === "exit") {
+      this.leaveInterior();
+    } else if (it.kind === "keepchest") {
+      /* v1.3.0 (지시 #9) 신설 → v1.4.3 유적 철거 후에도 보물상자(하루 1회)로 생존 */
+      this.openKeepChest();
+    } else if (it.kind === "talk" && it.dlg) {
+      /* v1.2.0 (#4) — 환생 n차수별 NPC 대사 변화: 환생 1~3차마다 NPC가 기억하고 다르게 반응한다.
+       *  `${dlg}_rb${n}` 변형이 존재하면 우선 재생 (n = min(rebirths, 3)) — 없으면 원본 대사. */
+      const rbN = Math.min(3, Math.max(0, this.inf?.rebirths ?? 0));
+      const rbKey = rbN > 0 ? `${it.dlg}_rb${rbN}` : it.dlg;
+      this.showDialogue(DIALOGUES[rbKey] ? rbKey : it.dlg, it.npcId ?? null);
+    }
+  }
+
+  /* ================= 실내(여관/내 집) + 취침 연출 (v2.2 — 사용자 지시) ================= */
+
+  /** 건물 E — 실내 맵으로 이동 (세이브 스테이지는 유지) */
+  private enterInterior(key: "interior_inn" | "interior_home") {
+    if (this.restCd > 0 || this.transitioning) return;
+    this.restCd = 1500;
+    /* v2.9 — 어느 마을(챕터 마을 포함)에서 들어왔는지 기억 → 퇴장 시 그 마을로 복귀 */
+    this.interiorFrom = this.stageDef.isVillage ? this.stageDef.key : "village";
+    audio.sfx.portal();
+    // 실내는 세이브에 기록하지 않음(종료 시 들어온 마을로 복귀) — save 옵션으로 전달
+    const carry = this.buildSave(this.interiorFrom);
+    this.startTransition(key, { delay: 460, save: carry ?? undefined });
+  }
+
+  /** 실내 출구 문 E — 밖(건물 앞)으로 복귀 */
+  private leaveInterior() {
+    if (this.restCd > 0 || this.sleeping || this.transitioning) return;
+    this.restCd = 1500;
+    audio.sfx.portal();
+    /* v2.9 — 들어온 마을(챕터 마을 포함)로 복귀 */
+    const vk = STAGES[this.interiorFrom] ? this.interiorFrom : "village";
+    const carry = this.buildSave(vk);
+    writeSave(carry);
+    const def = STAGES[vk];
+    const cx = def.width / 2;
+    const cy = def.height / 2;
+    const entry = this.stageDef.key === "interior_inn"
+      ? { x: cx - 400, y: cy - 60 } // 여관 문 앞
+      : { x: cx - 190, y: cy + 330 }; // 내 집 문 앞
+    this.startTransition(vk, { delay: 420, save: carry, entry });
+  }
+
+  /** 취침 — 여관(20G)/내 집(무료): 암막 + Zzz 연출 → 풀회복 + 버프 + 저장 */
+  private trySleep() {
+    if (this.sleeping || this.restCd > 0) return;
+    const paid = this.stageDef.key === "interior_inn";
+    if (paid && this.player.gold < 20) {
+      this.showDialogue("innkeeperNoMoney", "innkeeper");
+      return;
+    }
+    if (paid) this.player.gold -= 20;
+    this.sleeping = true;
+    /* v1.2.0 (#8) — 취침 zZ 감정 버블 */
+    if (this.player) this.emote("sleep", this.player.x, this.player.y - 44);
+    this.player.state = "idle";
+    this.player.setVelocity(0, 0);
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.emitHud();
+    this.time.delayedCall(700, () => {
+      const vw = this.scale.width;
+      const vh = this.scale.height;
+      // 암막 + Zzz 연출
+      const veil = this.add.rectangle(0, 0, vw, vh, 0x000000, 1).setOrigin(0).setScrollFactor(0).setDepth(300).setAlpha(0);
+      this.tweens.add({ targets: veil, alpha: 1, duration: 380 });
+      const zzz = this.add
+        .text(vw / 2, vh / 2 - 24, "Zzz…", {
+          fontFamily: "Galmuri11, sans-serif", fontSize: "44px", color: "#ffe9b0", fontStyle: "bold",
+          stroke: "#000000", strokeThickness: 6,
+        })
+        .setOrigin(0.5).setScrollFactor(0).setDepth(301).setAlpha(0);
+      this.tweens.add({ targets: zzz, alpha: 1, y: "-=14", duration: 950, yoyo: true, repeat: 1, ease: "Sine.inOut" });
+      const sub = this.add
+        .text(vw / 2, vh / 2 + 40, paid ? "20G를 내고 푹 잤다…" : "내 침대에서 푹 잤다…", {
+          fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: "#ffffffcc", fontStyle: "bold",
+        })
+        .setOrigin(0.5).setScrollFactor(0).setDepth(301).setAlpha(0);
+      this.tweens.add({ targets: sub, alpha: 1, duration: 600, delay: 300 });
+      this.time.delayedCall(2600, () => {
+        veil.destroy();
+        zzz.destroy();
+        sub.destroy();
+        this.player.healFull();
+        /* v1.0.2 (#집여관밸런스) — 목적 분리:
+         *  · 여관(유료 20G) = 단기 전투 버프 패키지: 풀회복 + 공/방 버프 60초
+         *  · 집(무료) = 생활 콘텐츠: 풀회복만 (기존엔 무료인 집이 여관의 상위호환이었음)
+         *  여관이 필수가 되지 않게 버프 강도는 기존 그대로 유지 — 유료의 가치는 "버프 포함" */
+        if (paid) {
+          this.player.addBuffItem("buff_atk");
+          this.player.useBuffItem("buff_atk");
+          this.player.addBuffItem("buff_def");
+          this.player.useBuffItem("buff_def");
+        }
+        this.save();
+        this.restCd = 1500;
+        this.sleeping = false;
+        this.cameras.main.fadeIn(500, 0, 0, 0);
+        this.showBanner(paid ? "푹 잤다! HP/MP 완전 회복 + 공격력·방어력 버프 (60초)" : "푹 잤다! HP/MP 완전 회복");
+        this.spawnBurstAt(this.player.x, this.player.y, 12, 0xffe9b0);
+        this.emitHud();
+        this.emitRpgState();
+        if (paid) this.time.delayedCall(600, () => this.showDialogue("innkeeperSlept", "innkeeper"));
+      });
+    });
+  }
+
+  /** 실내 맵 — v2.3 정사각 방 개편 (지시 #6: 여관/집은 굳이 크게 만들 필요 없다)
+   *  832×832 정사각 한 방 + 실내 전용 확대 줌 → 아늑한 방 느낌.
+   *  나무 바닥 + 상단/좌우 벽 + 원형 러그 + 침대/모닥불/촛불 + 여관주인(여관) + 출구 문 */
+  private buildInterior(stageKey: StageKey) {
+    const W = this.stageW;
+    const H = this.stageH;
+    const isInn = stageKey === "interior_inn";
+    this.cameras.main.setBackgroundColor("#150e08");
+
+    // 상단 벽 + 나무판 바닥
+    this.add.rectangle(0, 0, W, 104, 0x34220f).setOrigin(0).setDepth(0);
+    this.add.rectangle(0, 96, W, 8, 0x1c1108).setOrigin(0).setDepth(1);
+    this.add.tileSprite(0, 104, W, H - 104, "tile_path").setOrigin(0).setDepth(0).setAlpha(0.96);
+    // 좌우 벽 — 정사각 방 테두리 (원목 패널 + 어두운 베이스보드 라인)
+    this.add.rectangle(0, 104, 22, H - 104, 0x2c1c0c).setOrigin(0).setDepth(2);
+    this.add.rectangle(22, 104, 5, H - 104, 0x1c1108).setOrigin(0).setDepth(2);
+    this.add.rectangle(W - 22, 104, 22, H - 104, 0x2c1c0c).setOrigin(0).setDepth(2);
+    this.add.rectangle(W - 27, 104, 5, H - 104, 0x1c1108).setOrigin(0).setDepth(2);
+    // 원형 러그 — 방 중앙
+    this.add.ellipse(W / 2, H / 2 + 30, 300, 210, isInn ? 0x7a3030 : 0x2f5a7a, 0.55).setDepth(0);
+
+    // 충돌 (보이지 않는 벽) — 상단 벽 + 좌우 벽
+    const wall = this.add.rectangle(W / 2, 92, W, 28, 0x000000, 0);
+    this.solidGroup.add(wall);
+    const wallL = this.add.rectangle(11, (104 + H) / 2, 26, H - 104, 0x000000, 0);
+    this.solidGroup.add(wallL);
+    const wallR = this.add.rectangle(W - 11, (104 + H) / 2, 26, H - 104, 0x000000, 0);
+    this.solidGroup.add(wallR);
+
+    // 벽 촛불 — 상단 2개 + 측벽 2개, 은은한 조명
+    for (const cx of [W * 0.26, W * 0.74]) {
+      this.add.image(cx, 78, "cv_candle").setDepth(2).setScale(1.15);
+      const g = this.add.image(cx, 92, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.6).setAlpha(0.16);
+      this.tweens.add({ targets: g, alpha: 0.3, scale: 1.9, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+    for (const cy of [H * 0.4, H * 0.66]) {
+      this.add.image(40, cy, "cv_candle").setDepth(3).setScale(0.9);
+      this.add.image(W - 40, cy, "cv_candle").setDepth(3).setScale(0.9);
+      const gl = this.add.image(40, cy + 10, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.1).setAlpha(0.13);
+      const gr = this.add.image(W - 40, cy + 10, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.1).setAlpha(0.13);
+      this.tweens.add({ targets: gl, alpha: 0.24, duration: 820, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      this.tweens.add({ targets: gr, alpha: 0.24, duration: 940, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
+
+    // 침대 (그래픽 조합) — 프레임/매트리스/베개/이불 (좌측 상단)
+    const bx = 52;
+    const by = 150;
+    this.add.rectangle(bx, by, 68, 100, 0x5a3a1e).setOrigin(0).setDepth(2);
+    this.add.rectangle(bx + 6, by + 6, 56, 88, 0xe8dcc4).setOrigin(0).setDepth(3);
+    this.add.rectangle(bx + 6, by + 6, 56, 24, 0xf7f2e2).setOrigin(0).setDepth(4);
+    this.add.rectangle(bx + 6, by + 42, 56, 52, isInn ? 0x3f6f8f : 0x7a4f8f).setOrigin(0).setDepth(4);
+    const bedBody = this.add.rectangle(bx + 34, by + 50, 68, 96, 0x000000, 0);
+    this.solidGroup.add(bedBody);
+
+    if (isInn) {
+      // 모닥불 — 여관 감성 (4프레임 애니메이션, 우측 상단)
+      const fire = this.add.sprite(W - 100, 160, "sv_campfire", 0).setDepth(3);
+      if (this.anims.exists("sv-campfire")) fire.play("sv-campfire");
+      const fg = this.add.image(W - 100, 160, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setTint(0xff9a40).setScale(1.8).setAlpha(0.2);
+      this.tweens.add({ targets: fg, alpha: 0.34, scale: 2.1, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      // 카운터 + 여관주인 로안 (상단 중앙)
+      this.add.rectangle(W / 2 - 75, 148, 150, 18, 0x6b4423).setOrigin(0).setDepth(3);
+      this.add.rectangle(W / 2 - 75, 130, 150, 10, 0x8a5a2e).setOrigin(0).setDepth(3);
+      const keeper = this.add.image(W / 2, 116, "spum_mage").setDepth(4).setScale(0.38);
+      this.add
+        .text(keeper.x, keeper.y - 34, "로안", {
+          fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#ffe9b0",
+          stroke: "#0a2030", strokeThickness: 4, fontStyle: "bold",
+        })
+        .setOrigin(0.5).setDepth(60);
+      this.interactables.push({ x: keeper.x, y: keeper.y + 26, kind: "innkeeper", npcId: "innkeeper", label: "로안 — 잠자기 (20G)" });
+    } else {
+      // 내 집 — 화분/선반 느낌의 소품 (우측 상단)
+      this.add.image(W - 84, 150, "fm_shrub1").setDepth(3).setScale(1.2);
+      this.add.rectangle(W * 0.3, 142, 110, 14, 0x6b4423).setOrigin(0).setDepth(3);
+    }
+
+    // 침대 상호작용
+    this.interactables.push({
+      x: bx + 34, y: by + 118,
+      kind: "bed",
+      label: isInn ? "침대 — 쉬기 (20G)" : "침대 — 쉬기",
+    });
+
+    // 출구 문 (하단 중앙)
+    this.add.image(W / 2, H - 34, "sv_door").setDepth(3);
+    this.interactables.push({ x: W / 2, y: H - 44, kind: "exit", label: "밖으로 나가기" });
+  }
+
+  /* ================= 전직 스토리 (v2.0 — 지시 #13) ================= */
+
+  /** 현재 진행 가능한 전직 스토리 정의 (v3.1.0 — fam 우선: 미전직 시련도 지원) */
+  jobStoryDef(): JobStoryDef | null {
+    const fam = this.jobStory?.fam ?? familyOf(this.player?.cls ?? "");
+    if (!fam) return null;
+    return JOBSTORY[fam][this.jobStory?.tier ?? 1] ?? null;
+  }
+
+  /**
+   * v3.1.0 (#전직스토리선행) — 전직 스토리(시련) 시작. 유저 지시:
+   *  "전직은 전직 스토리(n차마다 다른 스토리·컷신)를 완료한 후에 실행한다."
+   *  · 미전직: 전직관에서 계열 선택 시 tier-1 시련 시작 → 완료 시 전직 적용
+   *  · 1차/2차: 다음 차수(tier+1) 시련 시작 → 완료 시 다음 전직 잠금 해제
+   */
+  private startJobStory(fam: FamilyKey, tier: 1 | 2 | 3 | 4): boolean {
+    if (!this.player || this.jobStory) return false;
+    if (this.jobStoryDone.includes(tier)) return false;
+    // 이전 티어 시련을 먼저 완료해야 다음 티어 진행 (연쇄 게이팅 유지)
+    if (tier >= 2 && !this.jobStoryDone.includes((tier - 1) as 1 | 2 | 3)) {
+      /* v1.0.20 — 생성 캐릭터 전직 데드락 수정 (유저 보고: "캐릭터 생성시 전직퀘스트가 없음").
+       *  로비에서 만든 캐릭터는 1차 직업을 "보고 태어난다" — 1차 시련을 거칠 방법이
+       *  구조적으로 없어 jobStoryDone이 비고, 2차 시련 시작이 영구히 막혔다.
+       *  → 직업 보유 캐릭터의 2차 시련은 1차 시련 완료를 면제해 시작 가능 (구세이브 복구 포함).
+       *  3차 이상은 여전히 직전 시련 완료가 필요 (연쇄 게이팅 유지). */
+      if (!(tier === 2 && !!this.player.cls)) return false;
+    }
+    this.jobStory = { tier, step: 0, hunt: 0, fam };
+    const story = JOBSTORY[fam][tier];
+    this.showDialogue(story.startDialogue);
+    this.showBanner(`전직 시련 시작 — ${story.title} (완료 후 전직!)`);
+    audio.sfx.questAccept();
+    this.save();
+    this.emitQuest();
+    this.emitRpgState();
+    return true;
+  }
+
+  /** 전직관 카이엔 대화 후 — 미진행 다음 차수 시련 자동 시작 (v3.1.0 재정의, v1.0.12 4차 확장) */
+  private maybeStartJobStory() {
+    if (!this.player) return;
+    const fam = familyOf(this.player.cls ?? "");
+    if (!fam) return;
+    const len = chainOf(this.player.cls).length; // 1=1차 … 4=4차 (4차 시련 완료 후엔 종료)
+    if (len < 1 || len >= 4) return;
+    this.startJobStory(fam, (len + 1) as 2 | 3 | 4);
+  }
+
+  /** 전직 스토리 단계 완료 — 보상 지급 + 다음 단계 대사 */
+  private completeJobStoryStep() {
+    if (!this.jobStory || !this.player) return;
+    const story = this.jobStoryDef();
+    if (!story) return;
+    const step = story.steps[this.jobStory.step];
+    if (!step) return;
+    this.player.addGold(step.reward);
+    this.player.gainExp(step.expReward);
+    audio.sfx.reward();
+    this.spawnPickupText(this.player.x, this.player.y - 44, `스토리 보상 +${step.reward}G`, "#ffd76a");
+    this.jobStory.step++;
+    this.jobStory.hunt = 0;
+    this.jobStory.tst = undefined; // v1.3.1 (#4) — travel 목적지 리셋 (다음 travel 단계에서 재확정)
+    this.jobEliteSummoned = false;
+    if (this.jobStory.step >= story.steps.length) {
+      // 전체 완료 — 최종 보상
+      this.player.addGold(story.reward.gold);
+      this.player.ap += story.reward.ap;
+      const finTier = this.jobStory.tier;
+      this.jobStoryDone.push(finTier);
+      this.jobStory = null;
+      this.showDialogue(story.doneDialogue);
+      /* v3.1.0 (#전직스토리선행) — 시련 완료 후 전직 적용 (유저 지시 핵심):
+       *  미전직이 tier-1 시련을 끝냈으면 여기서 비로소 1차 전직이 이루어진다. */
+      if (finTier === 1 && !this.player.cls && this.pendingJobClass) {
+        const def = classDef(this.pendingJobClass);
+        this.pendingJobClass = null;
+        if (def && this.player.applyClass(def.key)) {
+          /* v1.0.18 — 첫 1차 전직 시 시작 클래스 고정 (환생 시 이 클래스로 복귀) */
+          if (!this.player.startCls) this.player.startCls = def.key;
+          audio.sfx.levelup();
+          this.spawnLevelUpFx(this.player.x, this.player.y);
+          const jhex = def.hex;
+          this.spawnPillar(this.player.x, this.player.y, jhex, 200);
+          this.spawnBurstAt(this.player.x, this.player.y, 34, jhex);
+          this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
+          this.doShake(200, 0.008);
+          this.spawnPickupText(this.player.x, this.player.y - 56, `${def.name} 각성! 스킬 강화`, `#${jhex.toString(16).padStart(6, "0")}`);
+          EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
+          this.refreshPlayerTag();
+          net.netAnnounceJob(def.key);
+          this.time.delayedCall(1400, () => this.showBanner("카이엔과 대화하면 2차 전직 시련이 이어집니다"));
+        }
+      } else if (finTier === 2) {
+        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 2차 전직이 해금되었다`);
+      } else if (finTier === 3) {
+        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 3차 전직이 해금되었다`);
+      } else if (finTier === 4) {
+        /* v1.0.12 (#4차전직퀘) — 4차 시련 완료 배너 (기존엔 4차 스토리 자체가 없었다) */
+        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 4차 전직이 해금되었다`);
+      }
+      this.emitRpgState();
+    } else {
+      this.showDialogue(step.dialogue);
+      const next = story.steps[this.jobStory.step];
+      if (next?.type === "elite") this.showBanner("카이엔에게 말 걸어 시험 상대 소환");
+      else if (next?.type === "travel") {
+        /* v1.3.1 (#4) — travel 단계 진입: 목적지 즉시 확정 + 이동 안내 (메이플식 맵이동 퀘스트) */
+        const tst = this.ensureTravelTarget();
+        const mapName = tst ? (STAGE_SHORT[tst as StageKey] ?? tst) : null;
+        this.showBanner(mapName ? `「${mapName}」(으)로 이동해 몬스터 ${next.need ?? 0}마리 토벌` : "지정된 계승지로 이동하자");
+      }
+    }
+    this.emitQuest(); // v4.1.3 (#전직조건표시) — 단계 완료 즉시 트래커 갱신 ([1/3]→[2/3])
+    this.save();
+    this.emitRpgState();
+  }
+
+  /** v1.3.1 (#4) — travel 단계 목적지 확정: 방문 기록(visited)의 전투 구역 중
+   *  계열별 고유 인덱스로 배정 — 4계열이 서로 다른 맵, 티어마다도 다른 맵.
+   *  마을/실내/현재 구역 제외 → 항상 도달 가능한 곳만 후보. 후보 부족 시 현재 구역 폴백. */
+  private ensureTravelTarget(): string | null {
+    if (!this.jobStory) return null;
+    const story = this.jobStoryDef();
+    const step = story?.steps[this.jobStory.step];
+    if (!story || !step || step.type !== "travel") return null;
+    if (this.jobStory.tst && STAGES[this.jobStory.tst as StageKey]) return this.jobStory.tst;
+    const famIdx: Record<FamilyKey, number> = { warrior: 0, ranger: 1, mage: 2, thief: 3 };
+    const idxBase = famIdx[this.jobStory.fam] * 2 + (this.jobStory.tier - 1); // 계열×티어 고유 오프셋
+    const visited = [...this.visited].filter((k) => {
+      const d = STAGES[k as StageKey];
+      /* 필드 전투 구역만 후보 — 마을/실내/도장·게이트·탑 등 특수 구역 제외 (parseStage 판정) */
+      return d && !d.isVillage && parseStage(k as StageKey).ch !== "village" && k !== this.stageDef.key;
+    });
+    /* 진행 순 정렬 (챕터 번호 → 서브 번호) — 재현성 있는 배정 */
+    visited.sort((a, b) => {
+      const pa = parseStage(a as StageKey); const pb = parseStage(b as StageKey);
+      const ca = CHAPTERS.findIndex((c) => c.key === pa.ch); const cb = CHAPTERS.findIndex((c) => c.key === pb.ch);
+      return (ca < 0 ? 99 : ca) - (cb < 0 ? 99 : cb) || pa.sub - pb.sub;
+    });
+    const target = visited.length > 0
+      ? visited[idxBase % visited.length]
+      : this.stageDef.key; // 폴백: 방문 기록 부재 → 현재 구역에서 수행
+    this.jobStory.tst = target;
+    this.jobStory.hunt = 0;
+    this.save();
+    return target;
+  }
+
+  /** 전직 스토리 elite 단계 — 카이엔 근처에 시험 상대 소환 */
+  private summonJobElite() {
+    if (!this.jobStory || !this.player) return;
+    if (this.jobStoryDef()?.steps[this.jobStory.step]?.type !== "elite") return;
+    /* v3.0.22 (#46) — 시험 상대 생존 여부는 전용 참조로 판정 (정예 몬스터와 충돌 제거) */
+    if (this.jobTrialEnemy && this.jobTrialEnemy.alive) {
+      this.showBanner("이미 시험 상대가 있어!");
+      return;
+    }
+    const lv = this.player.lv;
+    const e = new Enemy(this, this.player.x + 90, this.player.y - 40, "golem", {
+      hp: 6 + lv * 2.2,
+      atk: 1 + lv * 0.16,
+      exp: 3 * lv,
+      gold: 2 * lv,
+      scale: 1.5,
+      tint: 0xb08aff,
+      displayName: "시험 상대 — 룬 제령",
+    });
+    e.dmgPct = DMG_PCT.elite; // v3.0.6 — 시험 상대 % 피해 상향
+    this.eliteEnemy = e;
+    this.jobTrialEnemy = e; // v3.0.22 (#46) — 전용 참조 (처치 판정/재소환 방지)
+    this.jobEliteSummoned = true;
+    this.enemies.push(e);
+    this.physics.add.collider(e, this.solidGroup);
+    this.showBanner("시험 상대 출현!");
+    audio.sfx.roar();
+    this.doShake(220, 0.006);
+  }
+
+  /** 주민/카이엔 대화 종료 — talk 퀘스트 진행 + v1.4.4 NPC 3명 레벨 보상
+   *  v1.4.4 (유저 지시) — 마을 NPC 3명(주민 2명 + 카이엔 교관) 대화를 모두 끝내면
+   *  레벨 3이 찍히게 한다. 첫 사냥터 진입 전 레벨을 올릴 곳이 없던 교착의 근본 해결. */
+  private onNpcTalked(npcId: string) {
+    if (this.talkedNpcs.has(npcId)) return;
+    this.talkedNpcs.add(npcId);
+    /* v1.4.4 — NPC 3명 대화 완료 보상 (마을, Lv.3 미만일 때만 — 중복 지급 불가) */
+    if (this.stageDef.isVillage) this.grantNpcTrioLv3();
+    const q = this.currentQuest();
+    if (!q || q.type !== "talk") return;
+    this.huntCount = Math.min(this.talkedNpcs.size, q.need ?? 0);
+    audio.sfx.questDone();
+    this.spawnPickupText(this.player.x, this.player.y - 40, "대화 완료!", "#7dffa8");
+    if (this.talkedNpcs.size >= (q.need ?? 0)) {
+      this.advanceQuest();
+      this.afterAdvance();
+      this.save();
+    } else {
+      this.emitQuest();
+    }
+  }
+
+  /** v1.4.4 (유저 지시) — 마을 NPC 3명(주민 2 + 카이엔 교관) 대화 완료 → 레벨 3 달성.
+   *  gainExp의 정규 레벨업 경로(AP+5·스탯 성장·연출·레벨 목표 퀘스트 판정)를 그대로 태우기 위해
+   *  부족분 경험치만 정확히 지급한다. 버프(경험치 +%)로 초과 지급돼도 Lv.3 도달은 보장. */
+  private grantNpcTrioLv3() {
+    if (!this.player || this.player.lv >= 3) return;
+    if (this.talkedNpcs.size < 3) {
+      /* 첫 진입 안내 — 3명 중 일부만 만났을 때 목표를 알려준다 (1회) */
+      if (!this.npcTrioHintShown) {
+        this.npcTrioHintShown = true;
+        this.showBanner(`마을 NPC ${this.talkedNpcs.size}/3 명과 대화 — 3명(주민 2 + 카이엔 교관)을 모두 만나면 Lv.3 달성!`);
+      }
+      return;
+    }
+    let guard = 0;
+    while (this.player.lv < 3 && guard++ < 5) {
+      const need = Math.max(1, this.player.expNext() - this.player.exp);
+      this.player.gainExp(need);
+    }
+    this.showBanner("마을 NPC 3명과의 인사 완료 — 레벨 3 달성!");
+    this.spawnPickupText(this.player.x, this.player.y - 56, "Lv.3 달성!", "#ffe66a");
+    this.save();
+  }
+  private npcTrioHintShown = false;
+
+  /** 보스 소환 패턴 — 권속 등장 (리스폰 대상 제외, 상한 방어) */
+  requestSummon(key: EnemyKey, count: number, bx: number, by: number) {
+    if (this.enemies.length >= 9) return;
+    for (let i = 0; i < count; i++) {
+      const ex = Phaser.Math.Clamp(bx + Phaser.Math.Between(-90, 90), 60, this.stageW - 60);
+      const ey = Phaser.Math.Clamp(by + Phaser.Math.Between(-70, 70), 60, this.stageH - 60);
+      const e = new Enemy(this, ex, ey, key);
+      e.setAlpha(0);
+      this.tweens.add({ targets: e, alpha: 1, duration: 380 });
+      this.spawnBurstAt(ex, ey, 10, 0xc070ff);
+      this.enemies.push(e);
+      this.physics.add.collider(e, this.solidGroup);
+    }
+  }
+
+  /* ================= 인트로 플레이 시퀀스 ================= */
+  /**
+   * 책장 넘기기 대신 직접 플레이하는 오프닝:
+   *  0) 이동 학습 — 이그니의 안내로 실제로 걸어보기
+   *  1) 마을 우물로 이동 — 빛 기둥 마커 추적
+   *  2) 우물 앞에서 이름 정하기 (인게임 패널)
+   *  3) 이름 리액션 대사 → 마을 오프닝 → 퀘스트 시작
+   */
+  /** v1.1.0 (#18) — 프롤로그 시청 플래그 저장 */
+  private introSeenSave() {
+    try {
+      const s = loadSave();
+      if (s && !s.introSeen) {
+        s.introSeen = true;
+        writeSave(s);
+      }
+    } catch { /* 세이브 실패 무시 — 재생돼도 치명적이지 않다 */ }
+  }
+
+  /* v1.1.0 (#18) — 프롤로그: 게임 첫 시작 시 세계관 내레이션 시네마틱.
+   *  클릭/탭/스페이스로 넘기고, 건너뛰기 버튼 제공. 종료 시 인트로(플레이형)로 자연 연결 */
+  private showPrologue(onDone: () => void) {
+    const beats = [
+      "아홉 왕국을 지탱하던 세계수가\n지쳐 무너져 내렸다.",
+      "어둠은 대지를 삼켰고,\n차원의 균열마다 마물이 흘러넘쳤다.",
+      "그러나 별들은 예언했다.\n한 명의 아이가 빛을 되돌려 놓으리라고.",
+      "이그드라실 왕국의 마지막 희망.\n그 이야기가 지금, 시작된다.",
+    ];
+    this.dialoguing = true;
+    this.physics.world.pause();
+    const cam = this.cameras.main;
+    const W = cam.width;
+    const H = cam.height;
+    const d = 3000;
+    /* 구역 진입 fadeIn이 아직 끝나지 않았으면 즉시 정리 — 프롤로그 텍스트가 페이드에 덮여
+     *  어둡게 보이는 문제 방지 (저사양 기기에서 페이드가 수 초 늘어지는 환경 보호) */
+    try { (cam as unknown as { resetFX?: () => void }).resetFX?.(); } catch { /* 미지원 무시 */ }
+    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x04060d, 0.97).setDepth(d).setScrollFactor(0).setInteractive();
+    const deco = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0).setDepth(d).setScrollFactor(0).setStrokeStyle(2, 0xffd76a, 0.25);
+    const t0 = this.add.text(W / 2, H * 0.32, "프롤로그", {
+      fontFamily: "Galmuri11, sans-serif", fontSize: "15px", color: "#ffd76a", align: "center",
+    }).setOrigin(0.5).setDepth(d + 1).setScrollFactor(0).setAlpha(0);
+    const t1 = this.add.text(W / 2, H * 0.52, beats[0], {
+      fontFamily: "Galmuri11, sans-serif", fontSize: "17px", color: "#fffbe8", align: "center", lineSpacing: 9,
+      wordWrap: { width: W * 0.82 },
+      shadow: { offsetX: 0, offsetY: 2, color: "#000000", blur: 4, fill: true },
+    }).setOrigin(0.5).setDepth(d + 1).setScrollFactor(0).setAlpha(0);
+    const t2 = this.add.text(W - 18, H - 20, "탭하여 계속 ▶", {
+      fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#ffe9b0",
+    }).setOrigin(1, 0.5).setDepth(d + 1).setScrollFactor(0).setInteractive({ useHandCursor: true });
+    const tSkip = this.add.text(18, H - 20, "건너뛰기", {
+      fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#ffffffc0",
+    }).setOrigin(0, 0.5).setDepth(d + 1).setScrollFactor(0).setInteractive({ useHandCursor: true });
+    this.tweens.add({ targets: t2, alpha: 0.55, duration: 800, yoyo: true, repeat: -1 });
+
+    let i = 0;
+    const showBeat = () => {
+      /* 알파 트윈 폐기 — 저FPS 환경에서 트윈이 수 초 늘어져 텍스트가 어둡게 보이고
+       *  빠른 탭이 씹히는 문제의 근본 차단. 비트 전환은 즉시 확정 + 짧은 위징(흔들림)만 */
+      t0.setAlpha(1);
+      t1.setAlpha(1).setText(beats[i]);
+      t1.setScale(1);
+      this.tweens.add({ targets: t1, scale: { from: 1.015, to: 1 }, duration: 260, overwrite: true });
+    };
+    const cleanup = () => {
+      overlay.destroy(); deco.destroy(); t0.destroy(); t1.destroy(); t2.destroy(); tSkip.destroy();
+      this.input.keyboard?.removeCapture("SPACE");
+      this.dialoguing = false;
+      this.physics.world.resume();
+      this.introSeenSave(); // v1.1.0 (#18) — 시청/스킵 모두 1회 기록 (재시작 시 재생 방지)
+    };
+    const next = () => {
+      i += 1;
+      if (i >= beats.length) { cleanup(); onDone(); return; }
+      showBeat();
+    };
+    overlay.on("pointerdown", next);
+    t2.on("pointerdown", next);
+    tSkip.on("pointerdown", () => { cleanup(); onDone(); });
+    this.input.keyboard?.addCapture("SPACE");
+    this.input.keyboard?.once("keydown-SPACE", next);
+    showBeat();
+  }
+
+  private startIntroSequence() {
+    this.introStep = 0;
+    this.introMoveDist = 0;
+    this.introGuide = this.add
+      .image(this.player.x + 26, this.player.y - 30, "glow")
+      .setDepth(50)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0x9df0ff)
+      .setScale(0.55)
+      .setAlpha(0.9);
+    this.tweens.add({ targets: this.introGuide, scale: 0.75, alpha: 0.65, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.introGuideSpark = this.add
+      .sprite(this.player.x + 26, this.player.y - 48, "sparkle0")
+      .setDepth(51)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .play("sparkle");
+    this.showBanner("방향키 또는 조이스틱으로 이동해 보자!");
+  }
+
+  private tickIntro(dt: number, move: Phaser.Math.Vector2) {
+    const p = this.player;
+    // 이그니 가이드가 플레이어를 따라다님
+    this.introGuide?.setPosition(p.x + 24, p.y - 30);
+    this.introGuideSpark?.setPosition(p.x + 24, p.y - 48);
+
+    if (this.introStep === 0) {
+      // 이동 학습 — 실제로 움직인 거리 누적
+      const spd = Math.hypot(move.x, move.y);
+      if (spd > 0.1) this.introMoveDist += (spd * dt) / 10;
+      if (this.introMoveDist > 240) {
+        this.introStep = 1;
+        const wp = this.wellPos;
+        const wx = wp?.x ?? this.stageW * 0.5;
+        const wy = wp?.y ?? this.stageH * 0.5;
+        // 우물 위 빛 기둥 마커
+        this.introMarker = this.add
+          .image(wx, wy - 110, "beam")
+          .setDepth(3)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0x9df0ff)
+          .setAlpha(0.55);
+        this.tweens.add({ targets: this.introMarker, alpha: { from: 0.4, to: 0.8 }, scaleX: { from: 1, to: 1.2 }, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+        this.showBanner("룬 정령 이그니: 마을 우물로 와! 네 이름을 정해 주고 싶어!");
+      }
+    } else if (this.introStep === 1) {
+      const wp = this.wellPos;
+      if (wp) this.introMarker?.setPosition(wp.x, wp.y - 110);
+      if (!wp || Phaser.Math.Distance.Between(p.x, p.y, wp.x, wp.y) < 120) {
+        this.introStep = 2;
+        this.introMarker?.destroy();
+        this.introMarker = null;
+        // 이름 입력 중 게임 일시 정지 (업데이트 루프 차단)
+        this.dialoguing = true;
+        this.player.setVelocity(0, 0);
+        this.resetInputState(); // v4.9.0 — 이동 키 고착이 이름 입력 후 자동이동으로 이어지지 않게
+        EventBus.emit("name:ask");
+      }
+    }
+  }
+
+  /** 이름 결정 — 저장 + 이름표 연출 + 오프닝 인계 */
+  private finishIntro(name: string) {
+    this.introStep = 3;
+    this.dialoguing = false;
+    this.resetInputState(); // v4.9.0 — 우물 이름 짓고 한방향 자동이동 버그 차단 (keyup 유실 고착 청소)
+    setPlayerName(name);
+    this.introSeenSave(); // v1.1.0 (#18) — 인트로 완주 기록
+    // 플레이어 이름표 (머리 위) — v2.4: 이어하기 경로와 공용 생성기 사용
+    this.ensurePlayerTag();
+    // 축하 연출
+    audio.sfx.levelup();
+    this.spawnBurstAt(this.player.x, this.player.y, 26, 0x9df0ff);
+    this.doShake(140, 0.004);
+    this.player.healFull();
+    // 세이브에 이름 기록
+    this.save();
+    // 가이드 페이드아웃
+    this.tweens.add({
+      targets: [this.introGuide, this.introGuideSpark],
+      alpha: 0,
+      duration: 700,
+      onComplete: () => {
+        this.introGuide?.destroy();
+        this.introGuideSpark?.destroy();
+      },
+    });
+    this.introGuide = null;
+    this.introGuideSpark = null;
+    // 이름 리액션 → 마을 오프닝(본게임 세계관) 순차 재생 (v2.3 — 기록 후 재생 방지)
+    this.queuedDialogue = "villageIntro";
+    this.markSeen("villageIntro");
+    this.showDialogue("introNamed");
+    this.emitQuest();
+  }
+
+  /** 수확(collect) 퀘스트용 파편 스폰 — 맵 우측 원영역 무작위 */
+  private spawnFragmentForQuest() {
+    /* v3.0 (#7) — 개방 셀 안, 플레이어와 충분히 먼 지점에 파편 배치 */
+    const p = this.openPointAny({ minDist: Math.max(420, this.stageW * 0.28) });
+    this.spawnFragment(p.x, p.y);
+  }
+
+  /* v1.4.8 (#1 최적화) — 프레임 단위 타깃 목록 캐시: 기존엔 호출마다(프레임당 2~6회) 새 배열을
+   *  할당하고 전체 적을 순회했다 — 투사체×적 판정에 GC 스파이크와 상수 배수 비용이 누적됐다.
+   *  이제 프레임당 1회만 재계산한다. 프레임 중간 킬/스폰은 다음 프레임까지 반영이 1프레임 늦을
+   *  뿐이며, takeDamage에 alive 가드(Enemy L477·Boss)가 있어 위험 없다. */
+  private targetCacheFrame = -1;
+  private targetCache: (Enemy | Boss)[] = [];
+  private perfSnapshotAt = 0; // v1.4.8 — __SERTZ_PERF__ 500ms 스로틀용
+
+  getAllTargets(): (Enemy | Boss)[] {
+    const frame = this.game.loop.frame;
+    if (frame !== this.targetCacheFrame) {
+      const list: (Enemy | Boss)[] = [];
+      for (const e of this.enemies) if (e.active && e.alive) list.push(e);
+      if (this.boss && this.boss.active && this.boss.alive) list.push(this.boss);
+      this.targetCache = list;
+      this.targetCacheFrame = frame;
+    }
+    return this.targetCache;
+  }
+
+  /* ================= BM (v1.9 — 펫/치장/강화 오라) ================= */
+
+  /** v4.3.0 — 가챠 상자 가중치 롤 (chest_* 전용 — CHEST_TABLES) */
+  /* v4.7.0 — 상자 개봉 연출: Cainos 개봉 애니(행별 7프레임) + 절제된 스파클 1회.
+   *  고빈도 절제 원칙 — 상자 개봉(BM 도파민 지점)에만 사용, 일반 전투에는 미적용 */
+  private chestRowFor(key: string): number {
+    if (key === "chest_gold" || key === "chest_legend") return 3;
+    if (key === "chest_silver") return 2;
+    if (key === "chest_iron") return 1;
+    return 0; // pack_* 등 → 목재 상자
+  }
+
+  private playChestOpenAnim(x: number, y: number, row: number) {
+    try {
+      if (!this.anims.exists(`chest-open-${row}`) || !this.textures.exists("chest_anim")) return;
+      const chest = this.add.sprite(x, y, "chest_anim", row * 8).setDepth(31);
+      chest.play(`chest-open-${row}`);
+      chest.once("animationcomplete", () => {
+        if (!chest.active) return;
+        const fx = this.add.sprite(chest.x, chest.y - 8, "cfxr_star", 0).setDepth(32).setScale(0.5).setAlpha(0.9);
+        this.tweens.add({ targets: fx, scale: 1.1, alpha: 0, duration: 300, ease: "Cubic.out", onComplete: () => fx.destroy() });
+        chest.destroy();
+      });
+    } catch { /* 연출 실패 — 지급은 정상 진행 */ }
+  }
+
+  private rollChest(key: string): BmGrant {
+    const table = CHEST_TABLES[key] ?? CHEST_TABLES.chest_iron;
+    const total = table.reduce((s, e) => s + e.w, 0);
+    let r = Math.random() * total;
+    for (const e of table) {
+      r -= e.w;
+      if (r <= 0) return e.g;
+    }
+    return table[table.length - 1].g;
+  }
+
+  /** v4.3.0 — BmGrant 목록 지급 + reward:show 팝업 (가챠/패키지/시즌 패스 공용)
+   *  ponytail: 이미 보유 펫/치장이 뽑히면 스킵(라벨 유지) — 중복 보상 환수 처리는 확장 시
+   *  v4.5.0 — ticket(뽑기권)/shard(조각) 분기 추가. 라벨 중복 방지: 메인 지급이 있으면
+   *  메인 라벨이 전체 내용을 표시하고(예: "전설 상자 + 뽑기권 ×10"), 단독 지급일 때만 라벨을 직접 표시 */
+  private grantBmGrants(title: string, grants: BmGrant[]) {
+    const p = this.player;
+    if (!p) return;
+    const lines: RewardPopupState["lines"] = [];
+    for (const g of grants) {
+      let mainHandled = false;
+      if (g.gold) {
+        p.addGold(g.gold);
+        lines.push({ text: g.label, color: "#ffd76a" });
+        mainHandled = true;
+      } else if (g.emerald) {
+        p.emerald += g.emerald;
+        lines.push({ text: g.label, color: "#7de8ff" });
+        mainHandled = true;
+      } else if (g.buff) {
+        p.addBuffItem(g.buff, g.n ?? 1);
+        lines.push({ text: g.label, color: "#ffb0e8" });
+        mainHandled = true;
+      } else if (g.item) {
+        const it = ITEMS[g.item];
+        if (it.kind === "pet") {
+          if (!p.pets.includes(g.item as PetKey)) {
+            p.pets.push(g.item as PetKey);
+            p.pet = g.item as PetKey;
+            this.onPetChanged();
+          }
+        } else if (it.kind === "cosmetic") {
+          if (!p.cosmetics.includes(g.item as CosmeticKey)) {
+            p.cosmetics.push(g.item as CosmeticKey);
+            this.onCosmeticChanged();
+          }
+        } else if (it.kind === "buff") {
+          p.addBuffItem(g.item as BuffKey, g.n ?? 1);
+        } else {
+          for (let i = 0; i < (g.n ?? 1); i++) p.owned.push(g.item);
+        }
+        lines.push({ text: g.label, color: "#e8ecf2" });
+        mainHandled = true;
+      }
+      if (g.ticket) {
+        this.gachaTickets += g.ticket;
+        if (!mainHandled) lines.push({ text: g.label, color: "#c08aff" });
+        mainHandled = true;
+      }
+      if (g.shard) {
+        this.shards += g.shard;
+        if (!mainHandled) lines.push({ text: g.label, color: "#a8ecff" });
+      }
+    }
+    EventBus.emit("reward:show", { title, lines } satisfies RewardPopupState);
+  }
+
+  /** 펫 기준 가장 가까운 활성 드롭 (Pet.tick 목표 탐색) */
+  nearestDrop(x: number, y: number, range: number): Drop | null {
+    let best: Drop | null = null;
+    let bd = range;
+    for (const d of this.drops) {
+      if (!d.active) continue;
+      const dist = Phaser.Math.Distance.Between(x, y, d.x, d.y);
+      if (dist < bd) {
+        bd = dist;
+        best = d;
+      }
+    }
+    return best;
+  }
+
+  /** 펫 소환 상태 동기화 — 가방/상점에서 변경 시 호출 */
+  onPetChanged() {
+    this.syncPet();
+    this.save();
+  }
+
+  private syncPet() {
+    if (this.pet) {
+      this.pet.destroy();
+      this.pet = null;
+    }
+    if (this.player?.pet) {
+      this.pet = new Pet(this, this.player.pet, this.player.x + 26, this.player.y + 6);
+    }
+  }
+
+  /** 치장 착용 상태 동기화 — 오라/날개 입자 갱신 */
+  onCosmeticChanged() {
+    this.syncCosmeticAura();
+    this.save();
+  }
+
+  private syncCosmeticAura() {
+    this.cosmeticAura?.destroy();
+    this.cosmeticAura = null;
+    this.cosmeticEmitter?.destroy();
+    this.cosmeticEmitter = null;
+    /* v1.3.0 (#오로라 수정) — 림 링/궤도 트윙클 정리 (트윈 폐기 포함) */
+    for (const r of this.auroraRings) {
+      this.tweens.killTweensOf(r);
+      r.destroy();
+    }
+    this.auroraRings = [];
+    for (const t of this.auroraTwinkles) {
+      this.tweens.killTweensOf(t);
+      t.destroy();
+    }
+    this.auroraTwinkles = [];
+    /* v1.3.0 (#요정날개) — 실제 날개 이미지 정리 */
+    this.cosWingsImg?.destroy();
+    this.cosWingsImg = null;
+    /* v1.0.2 (#치장외형) — 치장 해제 시 본체 오버레이도 제거 */
+    this.cosmeticOverlay?.destroy();
+    this.cosmeticOverlay = null;
+    /* v1.1.0 (#1) — 코스튬 = 스프라이트 "완전 교체": 본체 텍스처 자체가 cost_* 시트로 전환된다
+     *  (겹치기 오버레이 폐기 — SPUM NPC처럼 아예 다른 캐릭터로 변신). 성별/피부도 여기서 반영 */
+    this.player?.applyBodyLook();
+    /* 어태치 장식(왕관/리본/후광/날개) + 헤어(포니테일) 재생성 */
+    for (const a of this.accOverlays) {
+      this.tweens.killTweensOf(a.img);
+      a.img.destroy();
+    }
+    this.accOverlays = [];
+    const accKey = this.player?.accessory ?? null;
+    if (this.player && accKey) {
+      /* v1.2.1 (#1) — 생성 위치만 여기서 잡고 매 프레임 동기화는 update 루프가 담당.
+       *  후광 보브/날개 흔들림 트윈 폐기 — update가 setPosition/setAngle을 덮어써
+       *  트윈이 무의미했고(기존 버그) 오히려 위치 튐의 원인이었다.
+       *  v1.3.0 (지시 #7) — rank_crown_gold는 acc_crown 텍스처 재활용 (황금 왕관 동일 도트) */
+      const accTex = accKey === "rank_crown_gold" ? "acc_crown" : accKey;
+      /* v1.3.0 (#날개방향) — 날개류는 생성 시점부터 본체 뒤 depth로 만든다.
+       *  대화 중(업데이트 조기 리턴)에 착용해도 한 프레임이라도 앞에 튀어나오지 않게
+       *  (E2E에서 dialoguing 상태 depth +0.3 잔존 확인 → 근본 차단) */
+      const accDepth = accKey.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3;
+      const img = this.add.image(this.player.x, this.player.y, accTex).setDepth(accDepth);
+      this.accOverlays.push({ key: accKey, img });
+    }
+    /* v1.2.0 (#1) — 포니테일 렌더링 제거(아이템 폐지) — 헤어 슬롯은 신규 헤어용으로 유지 */
+    const key = this.player?.cosmetic;
+    if (!key) return;
+    /* v1.0.2 (#치장외형) — 본체 오버레이: 같은 텍스처를 치장색 ADD 블렌드로 얹어
+     *  캐릭터 실루엣 자체가 치장색으로 물든다 (기존엔 배경 후광만 있어 "착용해도 외형 변화가 없다"는 지적).
+     *  능력치(COSMETIC_BONUS)와 완전 분리된 순수 외형 레이어 — wings 등 특수 이펙트와 병행 적용 */
+    if (this.player) {
+      this.cosmeticOverlay = this.add
+        .image(this.player.x, this.player.y, this.player.texture.key)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(COSMETIC_DEFS[key].tint)
+        .setAlpha(0.34)
+        .setDepth(this.player.depth + 0.2);
+    }
+    if (key === "cos_wings") {
+      // 요정 날개 — v1.3.0: 실제 날개 이미지를 등 뒤에 부착 (항상 본체 뒤 depth·반전 없음)
+      //  + 플레이어 주위 반짝임 입자 트레일 유지. "요정의 날개를 착용해도 날개가 안 보인다" 개선.
+      if (this.player && this.textures.exists("acc_wings_fairy")) {
+        this.cosWingsImg = this.add
+          .image(this.player.x, this.player.y - 6, "acc_wings_fairy")
+          .setDepth(this.player.depth - 0.2)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setAlpha(0.92);
+      }
+      this.cosmeticEmitter = this.add.particles(0, 0, "sparkle0", {
+        lifespan: 620,
+        speedY: { min: -26, max: -10 },
+        speedX: { min: -14, max: 14 },
+        scale: { start: 0.8, end: 0 },
+        alpha: { start: 0.9, end: 0 },
+        frequency: 90,
+        blendMode: Phaser.BlendModes.ADD,
+      }).setDepth(11);
+      this.cosmeticEmitter.startFollow(this.player);
+    } else if (key === "cos_aurora") {
+      /* v1.3.0 (#오로라 수정) — "캐시상점 오로라류 아이템 작동 안함": 기존엔 glow 이미지 1장의
+       *  미묘한 알파(0.26) 후광이라 "착용해도 아무 변화가 없다"는 체감. Drive 팩 vfx_ring(선명한
+       *  림 링)+vfx_twinkle(궤도 반짝임)+glow 3층 구성으로 확실히 보이는 오로라로 재작성:
+       *  ① 바닥 글로우(기존) ② 캐릭터를 도는 림 링 2장(역회전) ③ 궤도 트윙클 4개 — 초록↔보라 HSL 순환은 update 루프가 유지 */
+      this.cosmeticAura = this.add
+        .image(this.player.x, this.player.y - 8, "glow")
+        .setDepth(9)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(COSMETIC_DEFS[key].tint)
+        .setScale(1.9)
+        .setAlpha(0.34);
+      this.tweens.add({
+        targets: this.cosmeticAura,
+        alpha: 0.5,
+        scale: 2.2,
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+      const tint = COSMETIC_DEFS[key].tint;
+      /* 림 링 2장 — 반대 방향 회전 (오로라 커튼 띠 느낌) */
+      for (let i = 0; i < 2; i++) {
+        const ring = this.add
+          .image(this.player.x, this.player.y - 10, "vfx_ring")
+          .setDepth(9.5 + i * 0.1)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(tint)
+          .setScale(1.1, 0.62 + i * 0.16)
+          .setAlpha(0.5 - i * 0.14);
+        this.tweens.add({ targets: ring, angle: i === 0 ? 360 : -360, duration: 5200 + i * 2400, repeat: -1 });
+        this.auroraRings.push(ring);
+      }
+      /* 궤도 트윙클 4개 — 반짝임이 공전 (update 루프에서 위치 갱신) */
+      for (let i = 0; i < 4; i++) {
+        const tw = this.add
+          .image(this.player.x, this.player.y - 12, "vfx_twinkle")
+          .setDepth(10.5)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(tint)
+          .setScale(0.42)
+          .setAlpha(0.95);
+        this.auroraTwinkles.push(tw);
+      }
+    } else {
+      // 오라 계열 — 플레이어 뒤 은은한 후광 + vfx_ring 림 1장 (v1.3.0 — 오로라류 체감 강화 공통 적용)
+      this.cosmeticAura = this.add
+        .image(this.player.x, this.player.y - 8, "glow")
+        .setDepth(9)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(COSMETIC_DEFS[key].tint)
+        .setScale(1.7)
+        .setAlpha(0.26);
+      this.tweens.add({
+        targets: this.cosmeticAura,
+        alpha: 0.44,
+        scale: 2.0,
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+      if (this.textures.exists("vfx_ring")) {
+        const ring = this.add
+          .image(this.player.x, this.player.y - 10, "vfx_ring")
+          .setDepth(9.4)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(COSMETIC_DEFS[key].tint)
+          .setScale(1.15, 0.6)
+          .setAlpha(0.4);
+        this.tweens.add({ targets: ring, angle: 360, duration: 6400, repeat: -1 });
+        this.auroraRings.push(ring);
+      }
+    }
+  }
+
+  /**
+   * v3.0.5 — 스타포스 오라 (성급 티어별 강화 효과 가시화)
+   *  ★4~7  흰빛(따뜻한 백금) 글로우
+   *  ★8~11 청록 글로우 + 주변 스파클 입자 (update 루프)
+   *  ★12~14 보라 글로우 + 촘촘한 스파클
+   *  ★15   금색 글로우 + 궤도성 2기 + 최밀 스파클
+   * 티어 변경 시 오라 재생성. ★4 미만은 소멸.
+   */
+  private syncUpgradeGlow() {
+    const up = this.player?.upgrades.weapon ?? 0;
+    const tier = starTier(up);
+    // 궤도성은 항상 재평가 (★15 미만이면 제거)
+    if (up < 15 && this.sfOrbits.length) {
+      for (const o of this.sfOrbits) o.destroy();
+      this.sfOrbits = [];
+    }
+    if ((up < 4 || tier !== this.glowTier) && this.upgradeGlow) {
+      this.upgradeGlow.destroy();
+      this.upgradeGlow = null;
+    }
+    if (up >= 4 && this.player && !this.upgradeGlow) {
+      const raw = STAR_TIER_COLORS[tier];
+      const col = tier === 0 ? 0xffe9c9 : raw;
+      this.upgradeGlow = this.add
+        .image(this.player.x, this.player.y - 10, "glow")
+        .setDepth(9)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(col)
+        .setScale(1.3 + tier * 0.14)
+        .setAlpha(0.28 + tier * 0.05);
+      this.tweens.add({
+        targets: this.upgradeGlow,
+        alpha: 0.46 + tier * 0.05,
+        scale: 1.5 + tier * 0.16,
+        duration: 700 - tier * 60,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+      this.glowTier = tier;
+    }
+    // ★15 — 궤도성 2기 (impact_star, ADD 블렌드 금색)
+    if (up >= 15 && this.player && this.sfOrbits.length === 0) {
+      for (let i = 0; i < 2; i++) {
+        const o = this.add
+          .image(this.player.x, this.player.y - 12, "impact_star")
+          .setDepth(12)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0xffd76a)
+          .setScale(0.42);
+        this.sfOrbits.push(o);
+      }
+      this.sfOrbitAng = 0;
+    }
+  }
+
+  /**
+   * v3.0.5 — 스타포스 강화 결과 연출
+   *  성공: 티어색 스타 버스트 + 확장 링 + 중앙 스타 팝
+   *  실패: 잿빛 연기 퍼프 (착실히 실패감)
+   */
+  spawnStarForceBurst(x: number, y: number, up: number, ok: boolean) {
+    if (ok) {
+      const raw = STAR_TIER_COLORS[starTier(up)];
+      const col = raw === 0xffffff ? 0xfff3c4 : raw;
+      this.spawnBurstAt(x, y - 14, 18, col);
+      const ring = this.add
+        .image(x, y - 10, "shock_ring")
+        .setDepth(27)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(col)
+        .setScale(0.15);
+      this.tweens.add({ targets: ring, scale: 0.95, alpha: 0, duration: 430, onComplete: () => ring.destroy() });
+      const star = this.add
+        .image(x, y - 40, "impact_star")
+        .setDepth(30)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(col)
+        .setScale(0.4);
+      this.tweens.add({
+        targets: star,
+        scale: 1.15,
+        alpha: 0,
+        duration: 470,
+        ease: "Cubic.out",
+        onComplete: () => star.destroy(),
+      });
+    } else {
+      this.spawnBurstAt(x, y - 10, 8, 0x8a8f99);
+      const puff = this.add
+        .image(x, y - 24, "glow")
+        .setDepth(27)
+        .setTint(0x555a66)
+        .setScale(0.4)
+        .setAlpha(0.7);
+      this.tweens.add({ targets: puff, scale: 1.05, alpha: 0, duration: 500, onComplete: () => puff.destroy() });
+    }
+  }
+
+  /** v3.0.5 — ★5/10/15 마일스톤 돌파 대형 연출 (3중 링 + 카메라 플래시/쉐이크 + 배너) */
+  spawnStarForceBreakthrough(x: number, y: number, slot: "weapon" | "armor", next: number) {
+    const col = STAR_TIER_COLORS[starTier(next)];
+    this.spawnBurstAt(x, y - 14, 40, col);
+    for (let i = 0; i < 3; i++) {
+      const ring = this.add
+        .image(x, y - 12, "shock_ring")
+        .setDepth(28)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(col)
+        .setScale(0.2);
+      this.tweens.add({
+        targets: ring,
+        scale: 1.5 + i * 0.45,
+        alpha: 0,
+        delay: i * 130,
+        duration: 650,
+        onComplete: () => ring.destroy(),
+      });
+    }
+    this.cameras.main.flash(240, (col >> 16) & 0xff, (col >> 8) & 0xff, col & 0xff);
+    this.doShake(260, 0.006);
+    EventBus.emit("banner:show", { text: `${slot === "weapon" ? "무기" : "방어구"} ★${next} 돌파!` });
+  }
+
+  /* ================= 가독성 (F2) ================= */
+
+  private questTargetPos(): Phaser.Math.Vector2 | null {
+    const q = this.currentQuest();
+    if (!q) {
+      /* v2.7 — 체인 완료 시 화살표가 사라져 포탈 개방을 못 알아봄 (체감 "안열림") → 개방된 포탈을 가리킨다 */
+      return this.portalActive && this.portal?.active ? new Phaser.Math.Vector2(this.portal.x, this.portal.y) : null;
+    }
+    /* v3.0.22 (#47) — 추적 퀘스트가 다른 구역이면 경유 포탈을 가리킨다 (방향 어시스턴트 + 미니맵 금색 점) */
+    const travel = this.autoTravelPortal();
+    if (travel) return new Phaser.Math.Vector2(travel.x, travel.y);
+    switch (q.type) {
+      case "collect":
+        return this.fragment && this.fragment.active ? new Phaser.Math.Vector2(this.fragment.x, this.fragment.y) : null;
+      case "hunt": {
+        /* v4.1.3 (#어시스트일치) — 퀘스트 대상 종만 가리킨다.
+         *  기존엔 종 필터 없이 "가장 가까운 아무 몬스터"를 가려 라벨("▶ 고블린 약탈자
+         *  등 구역 몬스터")과 실제 가리키는 개체(독개구리 등)가 어긋났다 — 지시 #3.
+         *  대상 종 = targetKeys(자동 토벌) 또는 targetKey(스토리/반복). */
+        const want = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+        let best: Enemy | null = null;
+        let bd = Infinity;
+        for (const e of this.enemies) {
+          if (!e.active || !e.alive) continue;
+          if (want.length > 0 && !want.includes(e.def.key)) continue;
+          const d = Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y);
+          if (d < bd) {
+            bd = d;
+            best = e;
+          }
+        }
+        return best ? new Phaser.Math.Vector2(best.x, best.y) : null;
+      }
+      case "reach":
+        return this.portal && this.portal.active ? new Phaser.Math.Vector2(this.portal.x, this.portal.y) : null;
+      case "talk": {
+        // 아직 대화하지 않은 주민 중 가장 가까운 곳
+        let best: { x: number; y: number } | null = null;
+        let bd = Infinity;
+        for (const it of this.interactables) {
+          if (it.kind !== "talk" || (it.npcId && this.talkedNpcs.has(it.npcId))) continue;
+          const d = Phaser.Math.Distance.Between(it.x, it.y, this.player.x, this.player.y);
+          if (d < bd) {
+            bd = d;
+            best = it;
+          }
+        }
+        return best ? new Phaser.Math.Vector2(best.x, best.y) : null;
+      }
+      case "boss":
+        return this.boss && this.boss.active && this.boss.alive
+          ? new Phaser.Math.Vector2(this.boss.x, this.boss.y)
+          : null;
+      default:
+        return null;
+    }
+  }
+
+  /** v3.0.25 (#화살표 가독성) — 어시스트 화살표 라벨: 이동 대상 구역명 / 퀘스트 목표명 */
+  private questTargetLabel(): string {
+    const travel = this.autoTravelPortal();
+    if (travel) {
+      const t = this.trackedStage ? STAGES[this.trackedStage as StageKey] : null;
+      return t ? `▶ ${t.name}` : "▶ 목표 구역";
+    }
+    const q = this.currentQuest();
+    if (!q) return this.portalActive ? "▶ 차원문" : "";
+    if (q.type === "hunt") return q.targetLabel ? `▶ ${q.targetLabel}` : "";
+    if (q.type === "boss") return "▶ 보스";
+    if (q.type === "reach") return "▶ 동쪽 차원문"; /* v3.0.26 (#75) — 목적지 방향 명시 */
+    if (q.type === "collect") return "▶ 결정";
+    return "";
+  }
+
+  private updateEdgeArrow() {
+    const target = this.questTargetPos();
+    if (!target) {
+      if (this.edgeArrow) {
+        this.edgeArrow.destroy();
+        this.edgeArrow = null;
+      }
+      if (this.edgeLabel) {
+        this.edgeLabel.destroy();
+        this.edgeLabel = null;
+      }
+      if (this.questMark) {
+        this.questMark.destroy();
+        this.questMark = null;
+      }
+      return;
+    }
+
+    // 목표물 바로 위 퀘스트 마커(?) — 외부 에셋(Zelda-like CC0 말풍선)
+    // v3.0.25 — 16px 텍스처 → 스케일 2.1 (기존 1.3은 너무 작음)
+    if (!this.questMark) {
+      this.questMark = this.add.image(target.x, target.y - 34, "quest_mark").setDepth(22).setScale(2.1);
+    }
+    this.questMark.setPosition(target.x, target.y - 34 + Math.sin(this.time.now / 200) * 3);
+
+    // 카메라 뷰 밖이면 가장자리 화살표 표시
+    const view = this.cameras.main.worldView;
+    const margin = 40;
+    const inside =
+      target.x > view.x + margin &&
+      target.x < view.right - margin &&
+      target.y > view.y + margin &&
+      target.y < view.bottom - margin;
+
+    if (!inside) {
+      /* v3.0.25 (#화살표 가독성) — 16px 텍스처 → 스케일 2.7 + 맥동 강화 + 목표명 라벨
+       *  (기존 1.0 스케일 16px는 어시스트 화살표 역할을 못함 — #2 요청) */
+      if (!this.edgeArrow)
+        this.edgeArrow = this.add
+          .image(0, 0, "edge_arrow")
+          .setDepth(50)
+          .setScrollFactor(0)
+          .setTint(0xffd76a)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setScale(2.7);
+      if (!this.edgeLabel)
+        this.edgeLabel = this.add
+          .text(0, 0, "", {
+            fontFamily: "Galmuri11, sans-serif",
+            fontSize: "13px",
+            fontStyle: "900",
+            color: "#ffe9a8",
+            stroke: "#3a2400",
+            strokeThickness: 4,
+          })
+          .setDepth(50)
+          .setScrollFactor(0)
+          .setOrigin(0.5, 0);
+      const cx = this.cameras.main.width / 2;
+      const cy = this.cameras.main.height / 2;
+      const angle = Phaser.Math.Angle.Between(cx, cy, target.x - view.x, target.y - view.y);
+      // 화면 중심에서 끝까지 레이캐스트하여 클램프 (큰 화살표 여유 64px)
+      const halfW = this.cameras.main.width / 2 - 64;
+      const halfH = this.cameras.main.height / 2 - 64;
+      const t = Math.min(
+        Math.abs(halfW / Math.cos(angle)) || Infinity,
+        Math.abs(halfH / Math.sin(angle)) || Infinity
+      );
+      this.edgeArrow.setPosition(cx + Math.cos(angle) * t, cy + Math.sin(angle) * t);
+      this.edgeArrow.setRotation(angle);
+      this.edgeArrow.setScale(2.7 + Math.sin(this.time.now / 140) * 0.3);
+      this.edgeArrow.setAlpha(0.72 + Math.sin(this.time.now / 140) * 0.28);
+      const label = this.questTargetLabel();
+      this.edgeLabel.setText(label);
+      this.edgeLabel.setVisible(label.length > 0);
+      // 라벨은 화살표 안쪽에 붙이되 화면 밖으로 못 나가게 클램프
+      const lx = Phaser.Math.Clamp(cx + Math.cos(angle) * Math.max(0, t - 84), 70, this.cameras.main.width - 70);
+      const ly = Phaser.Math.Clamp(cy + Math.sin(angle) * Math.max(0, t - 24) + 12, 20, this.cameras.main.height - 34);
+      this.edgeLabel.setPosition(lx, ly);
+    } else if (this.edgeArrow || this.edgeLabel) {
+      this.edgeArrow?.destroy();
+      this.edgeArrow = null;
+      this.edgeLabel?.destroy();
+      this.edgeLabel = null;
+    }
+  }
+
+  /* ================= 퀘스트/세이브 ================= */
+
+  /** 현재 퀘스트 — 메인 체인 종료 후 반복 토벌 의뢰를 합성 퀘스트로 반환 */
+  currentQuest(): QuestDef | null {
+    if (this.repeatActive()) {
+      const r = this.stageDef.repeat!;
+      return {
+        id: "repeat",
+        type: "hunt",
+        title: r.title,
+        desc: r.desc,
+        need: this.repeatNeed,
+        targetKey: r.targetKey,
+        targetLabel: ENEMIES[r.targetKey].name,
+      };
+    }
+    return this.stageDef.quests[this.questIdx] ?? null;
+  }
+
+  private advanceQuest() {
+    const done = this.stageDef.quests[this.questIdx];
+    this.questIdx = Math.min(this.questIdx + 1, this.stageDef.quests.length);
+    this.huntCount = 0;
+    /* v3.0.15 (#3) — 반복의뢰 수주 판정용 savedQuestIdx 즉시 갱신 (stale 판정 제거:
+     *  기존엔 씬 재입장 전까지 옛 인덱스를 보고 수주 조건을 false로 판정했다) */
+    this.savedQuestIdx[this.stageDef.key] = this.questIdx;
+    // 퀘스트 보상 — 골드 + 경험치 (2D MMORPG 기본 요소)
+    if (done?.reward) {
+      this.player.addGold(done.reward);
+      this.spawnPickupText(this.player.x, this.player.y - 44, `퀘스트 보상 +${done.reward}G`, "#ffd76a");
+    }
+    if (done?.expReward) {
+      this.player.gainExp(done.expReward);
+      this.spawnPickupText(this.player.x, this.player.y - 62, `경험치 +${done.expReward}`, "#8fe84a");
+    }
+    /* v3.0.16 — 퀘스트 보상 수령 팝업 (메이플식 보상 내역 창 — 지급 내역을 명확히 안내) */
+    if (done && (done.reward || done.expReward)) {
+      const lines: { text: string; color?: string }[] = [];
+      if (done.reward) lines.push({ text: `골드 +${done.reward} G`, color: "#ffd76a" });
+      if (done.expReward) lines.push({ text: `경험치 +${done.expReward} EXP`, color: "#8fe84a" });
+      EventBus.emit("reward:show", { title: `퀘스트 완료 — ${done.title}`, lines } satisfies RewardPopupState);
+    }
+    this.emitQuest();
+    this.emitRpgState();
+  }
+
+  /** v3.0.2 — 모든 퀘스트 emit에 진행 중인 전직 스토리 정보 병기 (트래커 발견성)
+   *  v4.1.3 (#전직조건표시) — 단계 수행 방법(stepDesc)·진행도(current/need)·행동 힌트(hint) 추가.
+   *  기존은 "1/3 — 첫 수련"만 표시돼 뭘 해야 다음 단계가 되는지 알 수 없었다 (지시 #6). */
+  private emitQuestState(st: QuestState) {
+    if (this.jobStory) {
+      const story = this.jobStoryDef();
+      const step = story?.steps[this.jobStory.step];
+      if (story && step) {
+        /* v1.3.1 (#4) — travel(이동 사냥) 단계도 hunt처럼 진행도 [n/N] 표시 */
+        const isHunt = step.type === "hunt" || step.type === "travel";
+        let mapName: string | null = null;
+        if (step.type === "travel") {
+          const tst = this.ensureTravelTarget();
+          mapName = tst ? (STAGE_SHORT[tst as StageKey] ?? tst) : null;
+        }
+        st.jobStory = {
+          title: story.title,
+          step: this.jobStory.step + 1,
+          total: story.steps.length,
+          stepTitle: step.title.replace("[전직 스토리] ", ""),
+          stepDesc: step.type === "travel" && mapName ? `목적지 — 「${mapName}」\n${step.desc}` : step.desc,
+          current: isHunt ? Math.min(this.jobStory.hunt, step.need ?? 0) : 0,
+          need: step.need ?? 1,
+          hint:
+            step.type === "elite"
+              ? "전직관의 카이엔에게 말 걸기 → 시험 상대 처치"
+              : step.type === "travel"
+                ? `${mapName ?? "계승지"}에서 토벌 — 다른 맵의 킬은 포함되지 않는다`
+                : step.type === "collect"
+                  ? "해역의 빛나는 흔적을 회수"
+                  : "",
+        };
+      }
+    }
+    EventBus.emit("quest", st);
+  }
+
+  emitQuest() {
+    // 인트로 시퀀스 중 — 이그니의 안내를 퀘스트 패널에 표시
+    if (this.introStep >= 0 && this.introStep < 3) {
+      this.emitQuestState({
+        title: "룬 정령 이그니의 안내",
+        desc: "배너를 따라 마을을 돌아보자",
+        current: 1,
+        target: 1,
+        distance: null,
+      } satisfies QuestState);
+      return;
+    }
+    const q = this.currentQuest();
+    if (!q) {
+      // v2.3 (지시 #4) — 체인 완료 + 반복 의뢰 존재 + 미수주 → 수주 안내
+      /* v3.0.26 (#76) — 스토리 미완료 시엔 수주 안내 트래커도 노출 금지 */
+      if (!this.isInterior && this.cleared && this.stageDef.repeat && !this.repeatOn) {
+        this.emitQuestState({
+          title: "반복 의뢰 수주 가능",
+          desc: "마을 상인 라고스에게 말을 걸어 [반복] 토벌 의뢰를 수주하자",
+          current: 1,
+          target: 1,
+          distance: null,
+        } satisfies QuestState);
+        return;
+      }
+      /* v3.0 (사용자 지시 #5) — 마을/실내는 "지역 클리어!" 오표기 버그 수정:
+       *  퀘스트 없는 안전 구역에 전투 구역 완료 배너가 뜨지 않게 전용 문구 사용 */
+      if (this.isInterior) {
+        this.emitQuestState({
+          title: "실내 — 잠시 쉬어 가자",
+          desc: "",
+          current: 1,
+          target: 1,
+          distance: null,
+        } satisfies QuestState);
+        return;
+      }
+      if (this.stageDef.isVillage) {
+        this.emitQuestState({
+          title: "마을 — 안전 지대",
+          desc: "우물·여관·상점·전직관을 이용하자",
+          current: 1,
+          target: 1,
+          distance: null,
+        } satisfies QuestState);
+        return;
+      }
+      this.emitQuestState({
+        title: "지역 클리어!",
+        desc: "",
+        current: 1,
+        target: 1,
+        distance: null,
+      } satisfies QuestState);
+      return;
+    }
+    let current = 0;
+    let target = 1;
+    if (q.type === "hunt") {
+      current = Math.min(this.huntCount, q.need ?? 0);
+      target = q.need ?? 0;
+    } else if (q.type === "talk") {
+      current = Math.min(this.talkedNpcs.size, q.need ?? 0);
+      target = q.need ?? 0;
+    } else if (q.type === "level") {
+      // v2.4 — 현재 레벨 / 목표 레벨 진행 바
+      current = Math.min(this.player.lv, q.need ?? 1);
+      target = q.need ?? 1;
+    }
+    let distance: number | null = null;
+    const t = this.questTargetPos();
+    if (t) distance = Math.round(Phaser.Math.Distance.Between(this.player.x, this.player.y, t.x, t.y) / 32);
+    /* v3.0.15 (#8) — 추적 중인 다른 구역 퀘스트 안내: 해당 구역으로 이동하라는 표시 */
+    if (this.trackedStage && this.trackedStage !== this.stageDef.key) {
+      const tdef = STAGES[this.trackedStage as StageKey];
+      const tIdx = tdef ? (this.savedQuestIdx[this.trackedStage] ?? 0) : 0;
+      const tq = tdef?.quests[tIdx];
+      if (tdef && tq) {
+        this.emitQuestState({
+          title: `[이동] ${tq.title}`,
+          desc: `${tdef.name}에서 진행할 수 있는 수락 퀘스트입니다`,
+          current: 0,
+          target: 1,
+          distance: null,
+        } satisfies QuestState);
+        return;
+      }
+    }
+    /* v3.0.15 (#8) — 현재 구역 퀘스트 미수락 시 수락 유도 */
+    const accepted = this.isQuestAccepted(this.stageDef.key, this.questIdx);
+    this.emitQuestState({
+      title: accepted ? q.title : `[수락 대기] ${q.title}`,
+      desc: accepted ? q.desc : "퀘스트 로그(J)에서 수락하면 진행됩니다",
+      current: accepted ? current : 0,
+      target: accepted ? target : 1,
+      distance: accepted ? distance : null,
+      pending: !accepted,
+    } satisfies QuestState);
+  }
+
+  emitSkills() {
+    if (!this.player) return;
+    EventBus.emit("skills", {
+      mp: Math.round(this.player.mp),
+      s1Cd: Math.round(this.player.skill1Cd),
+      s1Max: this.player.skill1MaxEff,
+      s2Cd: Math.round(this.player.skill2Cd),
+      s2Max: this.player.skill2MaxEff,
+      /* v3.0.3 — 3차기(V)/4차기(A) 쿨다운 + 해금 (v1.0.4 키맵 B→A) */
+      s3Cd: Math.round(this.player.skill3Cd),
+      s3Max: this.player.skill3MaxEff,
+      s4Cd: Math.round(this.player.skill4Cd),
+      s4Max: this.player.skill4MaxEff,
+      s3Unlocked: this.player.skill3Unlocked,
+      s4Unlocked: this.player.skill4Unlocked,
+      /* v3.2.0 — 5차 궁극기 (Lv.200) */
+      s5Cd: Math.round(this.player.skill5Cd),
+      s5Max: this.player.skill5Max,
+      s5Unlocked: this.player.skill5Unlocked,
+      s5Name: this.player.skill5Name,
+      s5Icon: "/assets/skillicon/ultimate_s5.webp",
+      /* v2.5 — 계열별 스킬 라벨 (기본공격 포함 3슬롯 교체 표기) */
+      atkName: this.player.attackName,
+      s1Name: this.player.skill1Name,
+      s2Name: this.player.skill2Name,
+      s3Name: this.player.skill3Name,
+      s4Name: this.player.skill4Name,
+      /* v3.0.8 디자인 개편 — 클래스별 스킬 아이콘 (RPG Icons Pixel Art)
+       * v3.0.10 — 미전직(cls=null)은 "base" 아이콘 세트 사용 (스킬 아이콘 미적용 버그 수정) */
+      ...(SKILL_ICONS[(this.player.cls ?? "base") as keyof typeof SKILL_ICONS] ?? {}),
+    });
+  }
+
+  /**
+   * v3.1.0 (#최적화) — HUD 브로드캐스트 스로틀.
+   *  피격·회복·자동사냥 등 한 프레임에 수 회 호출되면 React HUD가 매번 리렌더돼
+   *  모바일에서 프레임 드롭이 컸다. 90ms 내 중복 호출은 하나의 지연 emit으로 합친다
+   *  (trailing 보장 — 마지막 상태가 반드시 반영된다).
+   */
+  emitHud() {
+    if (!this.player) return;
+    const now = this.time.now;
+    if (now - this.lastHudEmit < 90) {
+      if (!this.hudEmitPending) {
+        this.hudEmitPending = true;
+        this.time.delayedCall(100, () => {
+          this.hudEmitPending = false;
+          this.emitHud();
+        });
+      }
+      return;
+    }
+    this.lastHudEmit = now;
+    EventBus.emit("hud", {
+      hp: Math.max(0, Math.round(this.player.hp)),
+      maxHp: this.player.maxHp,
+      mp: Math.round(this.player.mp),
+      maxMp: this.player.maxMp,
+      lv: this.player.lv,
+      exp: this.player.exp,
+      expNext: this.player.expNext(),
+      gold: this.player.gold,
+      atkTotal: this.player.atkTotal,
+      defTotal: this.player.defTotal,
+      /* v1.3.1 (#7 능력치 소수 정리) — 소수 둘째 자리에서 반올림해 표시 (크리티컬 %/이동속도) */
+      critRate: Math.round(this.player.critRate * 10) / 10,
+      cls: this.player.cls,
+      /* v1.9 — 버프 바 + AP 배지 + 속도 */
+      buffs: this.player.buffs.map((b) => ({ key: b.key, remain: b.remain, total: b.total })),
+      ap: this.player.ap,
+      speed: Math.round(this.player.speed * 10) / 10,
+    });
+    this.emitRpgState();
+  }
+
+  /** 인벤토리/상점 패널 상태 브로드캐스트 (변경 시만) */
+  emitRpgState() {
+    if (!this.player) return;
+    const st = {
+      gold: this.player.gold,
+      hpPot: this.player.potions.hp,
+      mpPot: this.player.potions.mp,
+      owned: [...this.player.owned],
+      weapon: this.player.weapon,
+      armor: this.player.armor,
+      accessories: [...this.player.accessories],
+      emerald: this.player.emerald,
+      upWea: this.player.upgrades.weapon,
+      upArm: this.player.upgrades.armor,
+      sfHp: this.player.starHpApplied,
+      accUp: { ...this.player.accUp },
+      starBless: this.player.starBless,
+      accHp: this.player.accHpAppliedVal,
+      /* v1.0.8 — 확률 천장 카운터 (강화 실패 가산 / 잠재 확정 카운트) */
+      starPity: this.player.starPity,
+      potPity: this.player.potPity,
+      nearShop: this.nearShop,
+      shopStock: [...SHOP_STOCK],
+      /* v1.0.5 — 서버 롤 기반 관리자 플래그 (혜택 패널 "GM 콘텐츠 입장" 게이트) */
+      admin: this.adminRole === "admin",
+      /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 (지시 #1/#5) */
+      bmStock: [...BM_STOCK],
+      autoUse: { ...this.player.autoUse },
+      cls: this.player.cls,
+      /* v3.0.22 (#38) — 전직은 레벨 + 전직 퀘스트 완료가 모두 필요. jobLock = 미완료 사유 */
+      canJob: canJobNow(this.player.lv, this.player.cls) && this.jobQuestCleared(),
+      jobLock: this.jobQuestLockText(),
+      /* v3.0.22 (#43/#44/#50) — 결정 수집 진행도 + 세계수의 가호 */
+      fragFound: FRAGMENT_CHAPTERS.filter((k) => (this.fragmentsFound[k] ?? 0) > 0).length,
+      fragTotal: FRAGMENT_CHAPTERS.length,
+      blessing: this.player.worldtreeBlessing,
+      /* v1.9 BM + 스탯 */
+      buffItems: { ...this.player.buffItems } as Record<string, number>,
+      pets: [...this.player.pets],
+      pet: this.player.pet,
+      cosmetics: [...this.player.cosmetics],
+      cosmetic: this.player.cosmetic,
+      /* v1.0.7 — 슬롯형 치장 (코스튬/헤어) · v1.1.0 — + 어태치 장식 */
+      outfit: this.player.outfit,
+      hair: this.player.hair,
+      accessory: this.player.accessory,
+      /* v1.0.19 (B-1 외형) — 로비 생성 색조 */
+      lookTint: this.player.lookTint,
+      stats: { ...this.player.stats },
+      ap: this.player.ap,
+      /* v2.5 — 자동사냥 상태 (v3.0.15 #5: 펫 조건 제거) */
+      autoHunt: this.autoHunt,
+      canAutoHunt: true, // v3.0.15 (#5) — 펫 없이도 자동전투 가능
+      /* ----- v3.0.15 신규 ----- */
+      autoAlloc: this.autoAlloc,
+      quickPots: { ...this.player.quickPots },
+      potentials: JSON.parse(JSON.stringify(this.player.potentials)),
+      eertCube: this.player.owned.filter((k) => k === "eert_cube").length,
+      tierCube: this.player.owned.filter((k) => k === "tier_cube").length, // v1.0.2 (#등급업큐브)
+      unlockedSets: [...this.unlockedSets],
+      /* ----- v3.0.16 — 컬렉션 + 세트 효과 ----- */
+      collection: {
+        registered: Object.keys(this.monsterKills).length,
+        total: this.collectionTotal,
+        kills: { ...this.monsterKills },
+      },
+      activeSet: (() => {
+        const s = this.player.activeSet;
+        if (!s) return null;
+        const b = s.bonus;
+        const lines: string[] = [];
+        if (b.atkPct) lines.push(`공격력 +${b.atkPct}%`);
+        if (b.defAdd) lines.push(`방어력 +${b.defAdd}`);
+        if (b.maxHp) lines.push(`최대 HP +${b.maxHp}`);
+        if (b.critAdd) lines.push(`크리티컬 +${b.critAdd}%`);
+        return { title: s.title, lines };
+      })(),
+      /* ----- v4.0.0 — 바르가 업데이트 상태 ----- */
+      isekai: {
+        figures: [...this.figures],
+        shards: this.shards,
+        gachaTickets: this.gachaTickets,
+        badges: [...this.badges],
+        badgeSlots: [...this.badgeSlots],
+        runes: { ...this.runes },
+        runeSlots: [...this.runeSlots],
+        constel: [...this.constel],
+        achClaimed: [...this.achClaimed],
+        /* v1.0.2 (#업적UI) — 업적별 진행도 (수령 가능 여부를 UI가 직접 판정할 수 있게) */
+        achProg: (() => {
+          const snap = this.achSnapshot();
+          return ACHIEVEMENTS.map((a) => ({ id: a.id, prog: Math.min(a.goal, a.prog(snap)), goal: a.goal }));
+        })(),
+        /* v4.1.4 — 보스/카오스/침공 처치 누적 */
+        bossKills: this.bossKillCount,
+        chaosKills: this.chaosKillCount,
+        invasionKills: this.invasionKillCount,
+        gateBest: this.gateBest,
+        closetBest: this.closetBest,
+        gateStars: [...this.gateStars],
+        freeGachaIn: Math.max(0, 600000 - (Date.now() - this.freeGachaAt)),
+        attend: { last: this.attendLast, count: this.attendCount },
+        daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop, farms: this.dailyFarms, bosses: this.dailyBosses },
+        tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
+        extSummary: (() => {
+          const e = this.player.extBonus;
+          const lines: string[] = [];
+          if (e.atk) lines.push(`공격력 +${e.atk}`);
+          if (e.atkPct) lines.push(`공격력 +${e.atkPct}%`);
+          if (e.def) lines.push(`방어력 +${e.def}`);
+          if (e.hp) lines.push(`최대 HP +${e.hp}`);
+          if (e.crit) lines.push(`크리티컬 +${e.crit}%`);
+          if (e.speedPct) lines.push(`이동 속도 +${e.speedPct}%`);
+          if (e.goldPct) lines.push(`골드 획득 +${e.goldPct}%`);
+          return lines;
+        })(),
+      },
+      /* ----- v4.5.0 — 시즌 패스 + 구독 ----- */
+      pass: {
+        season: this.passSeason,
+        daysLeft: seasonDaysLeft(),
+        xp: this.passXp,
+        lv: passLevel(this.passXp),
+        lvXp: passXpInLv(this.passXp),
+        prem: this.passPrem,
+        claimedF: [...this.passClaimedF],
+        claimedP: [...this.passClaimedP],
+        /* v1.0.1 — 시즌 미션 (일일/주간 진행 + 수령 기록) */
+        missions: {
+          day: this.missionDay,
+          week: this.missionWeek,
+          d: { ...this.missionD },
+          w: { ...this.missionW },
+          cd: [...this.missionCd],
+          cw: [...this.missionCw],
+        },
+      },
+      sub: { until: this.subUntil, left: subDaysLeft(this.subUntil), active: subActive(this.subUntil) },
+      starterPackBought: this.starterPackBought,
+      /* v1.0.1 — 티켓 재충전 잔여 횟수 (혜택 패널) */
+      ticketRefillsLeft: Math.max(0, 3 - this.ticketRefills),
+      /* v1.0.8 — 무한 콘텐츠 허브 스냅샷 */
+      inf: {
+        towerBest: this.inf.towerBest,
+        closetTier: this.inf.closetTier,
+        trialDone: this.inf.trialDone,
+        rebirths: this.inf.rebirths,
+        mats: { ...this.inf.mats },
+        petLv: this.inf.petLv,
+        petExp: this.inf.petExp,
+        petExpNeed: PET.expPerLv(this.inf.petLv),
+        abyss: this.inf.abyss,
+        orbs: { ...this.inf.orbs },
+        rebirthEss: this.inf.rebirthEss,
+        rebirthLog: [...(this.inf.rebirthLog ?? [])].reverse(), // v1.0.18 — 최근 순
+      },
+      /* v1.0.18 — 몬스터 파크 상태 */
+      park: {
+        coins: this.parkCoins,
+        best: this.parkBest,
+        tickets: this.parkTickets.date === todayKey() ? this.parkTickets.n : PARK_TICKETS,
+        lv: this.player.lv,
+      },
+      trialToday: (() => { const m = todayTrial(); return { id: m.id, name: m.name, desc: m.desc, color: m.color }; })(),
+      raidBossToday: BOSS_DEFS[weeklyRaidBoss() as BossKey]?.name ?? null,
+    };
+    const sig = JSON.stringify(st);
+    if (sig === this.lastRpgSig) return;
+    this.lastRpgSig = sig;
+    EventBus.emit("rpg:state", st);
+  }
+
+  /** 퀘스트 로그 (J) — 스테이지 메인 체인 전체 진행 상황
+   *  v3.0.15 (#8) — 수락/추적 상태 + 전 구역 수락 퀘스트 목록 (메이플식 퀘스트 선택) */
+  emitQuestLog() {
+    if (!this.player) return;
+    const curAcc = this.isQuestAccepted(this.stageDef.key, this.questIdx);
+    const list = this.stageDef.quests.map((q, i) => ({
+      title: q.title,
+      desc: q.desc,
+      state: (i < this.questIdx ? "done" : i === this.questIdx ? "active" : "locked") as
+        | "done"
+        | "active"
+        | "locked",
+      /* 수락 가능: 현재 진행 인덱스 && 아직 미수락 */
+      canAccept: i === this.questIdx && !this.isQuestAccepted(this.stageDef.key, i),
+      accepted: i < this.questIdx || this.isQuestAccepted(this.stageDef.key, i),
+    }));
+    /* 전 구역 수락 퀘스트 목록 — 다른 구역에서 수락해둔 것 (메이플식: 수락한 퀘스트 선택 진행) */
+    const tracked: QuestLogState["trackedList"] = [];
+    const allIdx: Record<string, number> = { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx };
+    for (const [k, idx] of Object.entries(allIdx)) {
+      const def = STAGES[k as StageKey];
+      if (!def || !this.isQuestAccepted(k, idx)) continue;
+      const q = def.quests[idx];
+      if (!q) continue;
+      tracked.push({
+        stage: k,
+        stageName: def.name,
+        title: q.title,
+        desc: q.desc,
+        isCurrent: k === this.stageDef.key,
+        isTracked: this.trackedStage === k,
+        state: (idx >= def.quests.length ? "done" : k === this.stageDef.key ? "active" : "move") as "done" | "active" | "move",
+      });
+    }
+    const r = this.stageDef.repeat;
+    const payload: QuestLogState = {
+      stageName: `${this.stageDef.name} — ${this.stageDef.subtitle}`,
+      list,
+      /* v3.0.26 (#76) — 스토리 미완료 시 반복 의뢰 섹션 자체를 숨김 ("스토리 다 완료 후 창이 뜨게") */
+      repeat: this.cleared && r ? { title: r.title, desc: r.desc } : null,
+      repeatActive: this.repeatActive(),
+      repeatUnlocked: this.repeatOn,
+      trackedList: tracked,
+    };
+    EventBus.emit("questlog", payload);
+  }
+
+  private save() {
+    // v2.3 — 실내(여관/집)에서의 저장도 세이브 스테이지는 진행 구역 유지
+    //  (설계 의도대로 실내가 세이브에 기록되지 않게 — 재접속 시 마을에서 계속)
+    // v4.0.0 — 게이트/균열 던전 진행 중 저장도 입장 전 구역으로 기록 (재접속 시 특별 구역 재부팅 방지)
+    let stageOverride: StageKey | undefined;
+    if (this.isInterior) stageOverride = "village";
+    else if (this.stageDef.key === "gate") stageOverride = STAGES[this.gateFrom] ? this.gateFrom : "village";
+    else if (this.stageDef.key === "closet") stageOverride = STAGES[this.closetFrom] ? this.closetFrom : "village";
+    else if (this.stageDef.key === "tower") stageOverride = STAGES[this.towerFrom] ? this.towerFrom : "village"; // v1.0.8 — 탑은 세이브 구역 아님
+    else if (this.stageDef.key === "praid") stageOverride = STAGES[this.praidFrom] ? this.praidFrom : "village"; // v1.4.3 — 공동 토벌전도 세이브 구역 아님
+    else if (this.stageDef.key === "park") stageOverride = STAGES[this.parkFrom] ? this.parkFrom : "village"; // v1.0.18 — 파크도 세이브 구역 아님
+    writeSave(this.buildSave(stageOverride));
+  }
+
+  /** 세이브 페이로드 생성 — stageOverride는 스테이지 전환 캐리용 */
+  private buildSave(stageOverride?: StageKey): SaveData {
+    return {
+      stage: stageOverride ?? this.stageDef.key,
+      lv: this.player.lv,
+      exp: this.player.exp,
+      maxHp: this.player.maxHp,
+      maxMp: this.player.maxMp,
+      atk: this.player.atk,
+      cleared: this.cleared,
+      gold: this.player.gold,
+      potions: { ...this.player.potions },
+      weapon: this.player.weapon,
+      armor: this.player.armor,
+      owned: [...this.player.owned],
+      upWea: this.player.upgrades.weapon,
+      upArm: this.player.upgrades.armor,
+      sfHp: this.player.starHpApplied,
+      accUp: { ...this.player.accUp },
+      starBless: this.player.starBless,
+      accHp: this.player.accHpAppliedVal,
+      /* v1.0.8 — 확률 천장 카운터 (강화 실패 가산 / 잠재 확정 카운트) */
+      starPity: this.player.starPity,
+      potPity: this.player.potPity,
+      accessories: [...this.player.accessories],
+      emerald: this.player.emerald,
+      questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },
+      cls: this.player.cls,
+      startCls: this.player.startCls, // v1.0.18 — 시작 클래스 (환생 복귀용)
+      playerName: getPlayerName(),
+      /* v1.9 — AP 스탯 + BM */
+      stats: { ...this.player.stats },
+      ap: this.player.ap,
+      buffItems: { ...this.player.buffItems } as Record<string, number>,
+      buffs: this.player.buffs.map((b) => ({ key: b.key, remain: Math.round(b.remain), total: b.total })),
+      pets: [...this.player.pets],
+      pet: this.player.pet,
+      cosmetics: [...this.player.cosmetics],
+      cosmetic: this.player.cosmetic,
+      outfit: this.player.outfit, // v1.0.7 — 코스튬 슬롯
+      hair: this.player.hair, // v1.0.7 — 헤어 슬롯
+      lookTint: this.player.lookTint, // v1.0.19 (B-1) — 로비 생성 색조
+      gender: this.player.gender, // v1.1.0 (#22) — 남/여
+      skinIdx: this.player.skinIdx, // v1.1.0 (#21) — 피부 6종
+      gmSkin: this.player.gmSkin, // v1.2.0 (#7) — GM 외형 플래그 (렌더는 서버 롤 admin일 때만)
+      ponyRefund: this.player.ponyRefund, // v1.2.0 (#1) — 포니테일 환수 1회성 플래그
+      accessory: this.player.accessory, // v1.1.0 (#1) — 어태치 장식
+      /* v2.0 — 전직 스토리 진행 */
+      jobStory: this.jobStory ? { ...this.jobStory } : null,
+      pendingJobClass: this.pendingJobClass, // v3.1.0 — 시련 중 선택한 1차 클래스
+      jobStoryDone: [...this.jobStoryDone],
+      /* v2.3 — 반복 의뢰 수주 해금 + 본 스토리 대사 기록 */
+      repeatOn: this.repeatOn,
+      /* v3.0.22 (#43/#44/#50) — 결정 수집 + 세계수의 가호 */
+      fragmentsFound: { ...this.fragmentsFound },
+      worldtreeBlessing: this.player.worldtreeBlessing,
+      /* v3.0.6 — 반복 의뢰 진행도 (재입장 시 카운트 유지) */
+      repeatNeed: this.repeatNeed,
+      huntCount: this.huntCount,
+      repeatStage: this.stageDef.key,
+      autoUse: { ...this.player.autoUse },
+      seen: [...this.seenSet].slice(-160),
+      /* v2.5 — 방문 구역 기록 + 자동사냥 토글 */
+      visited: [...this.visited],
+      autoHunt: this.autoHunt,
+      /* v3.0.15 ----- */
+      autoAlloc: this.autoAlloc,
+      /* v3.0.28 (#보스난이도) — 보스전 난이도 세이브 */
+      bossDiff: this.bossDiff,
+      /* v3.3.0 — 5차 각성 상태 (GM 임시 전직 or 각성 시련 완료) */
+      fifth: this.player.fifth,
+      fifthStoryDone: this.player.fifthStoryDone,
+      /* ----- v4.0.0 — 바르가 업데이트 ----- */
+      figures: [...this.figures],
+      shards: this.shards,
+      gachaTickets: this.gachaTickets,
+      badges: [...this.badges],
+      badgeSlots: [...this.badgeSlots],
+      runes: { ...this.runes },
+      runeSlots: [...this.runeSlots],
+      constel: [...this.constel],
+      coupons: [...this.couponsUsed],
+      attend: { last: this.attendLast, count: this.attendCount },
+      daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop, farms: this.dailyFarms, bosses: this.dailyBosses },
+      tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset, refills: this.ticketRefills },
+      achClaimed: [...this.achClaimed],
+      /* v4.5.0 — 시즌 패스 + 구독 + 스타터팩 */
+      pass: { season: this.passSeason, xp: this.passXp, prem: this.passPrem, claimedF: [...this.passClaimedF], claimedP: [...this.passClaimedP] },
+      /* v1.0.1 — 시즌 미션 */
+      missions: { day: this.missionDay, week: this.missionWeek, d: { ...this.missionD }, w: { ...this.missionW }, cd: [...this.missionCd], cw: [...this.missionCw] },
+      sub: { until: this.subUntil },
+      starterPackBought: this.starterPackBought,
+      /* v1.0.8 — 무한 콘텐츠 상태 */
+      inf: JSON.parse(JSON.stringify(this.inf)),
+      /* v4.1.4 — 보스/카오스/침공 처치 누적 */
+      bossKills: this.bossKillCount,
+      chaosKills: this.chaosKillCount,
+      invasionKills: this.invasionKillCount,
+      /* v1.0.11 — 튜토리얼 완료 + 진행 단계 (구 세이브 호환: 없으면 미완료/미시작) */
+      tutorialDone: this.tutorialDone,
+      tutStep: this.tutStep,
+      gateBest: this.gateBest,
+      closetBest: this.closetBest,
+      /* v1.0.18 — 몬스터 파크 */
+      parkCoins: this.parkCoins,
+      parkBest: this.parkBest,
+      parkTickets: { ...this.parkTickets },
+      gateStars: [...this.gateStars],
+      freeGachaAt: this.freeGachaAt,
+      lastSeen: Date.now(),
+      tierUpWea: this.player.tierUpTargets.weapon,
+      tierUpArm: this.player.tierUpTargets.armor,
+      quickPots: { ...this.player.quickPots },
+      potentials: JSON.parse(JSON.stringify(this.player.potentials)),
+      potHpApplied: this.player.potHpAppliedVal,
+      unlockedSets: [...this.unlockedSets],
+      questAccepted: { ...this.acceptedQuests },
+      questTracked: this.trackedStage,
+      /* ----- v3.0.16 ----- */
+      monsterKills: { ...this.monsterKills },
+    };
+  }
+
+  private saveCleared() {
+    this.save();
+    const d = loadSave();
+    if (d) {
+      d.cleared = true;
+      writeSave(d);
+    }
+  }
+
+  /* ================= 대사/배너/사운드 브릿지 ================= */
+
+  /* v3.0.10 (메이플식 챕터 연출) — 챕터 타이틀 카드 컷신.
+   *  화면을 세미 클로즈업 어둡게 덮고 "제N장 / 챕터명 / 부제" 카드를 페이드 인·아웃한다.
+   *  컷신 중엔 물리를 일시 정지해 이동·전투가 멈춘다(대사 박스와 동일 규약). */
+  private showChapterCard(chNum: number, title: string, subtitle: string, cb?: () => void) {
+    const cam = this.cameras.main;
+    const vw = cam.width;
+    const vh = cam.height;
+    this.dialoguing = true;
+    this.player.setVelocity(0, 0);
+    this.physics.world.pause();
+    audio.sfx.ach();
+    const depth = 118;
+    const veil = this.add
+      .rectangle(vw / 2, vh / 2, vw, vh, 0x06080f, 0.78)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth)
+      .setAlpha(0);
+    const rule = this.add
+      .rectangle(vw / 2, vh / 2 + 30, 0, 2, 0xffd76a, 0.95)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 1);
+    const tCh = this.add
+      .text(vw / 2, vh / 2 - 34, `제${chNum}장`, {
+        fontFamily: "Galmuri14, sans-serif",
+        fontSize: "26px",
+        color: "#ffd76a",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 1)
+      .setAlpha(0);
+    const tTitle = this.add
+      .text(vw / 2, vh / 2 + 2, title, {
+        fontFamily: "Galmuri14, sans-serif",
+        fontSize: "40px",
+        color: "#ffffff",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 1)
+      .setAlpha(0);
+    const tSub = this.add
+      .text(vw / 2, vh / 2 + 46, subtitle, {
+        fontFamily: "Galmuri14, sans-serif",
+        fontSize: "15px",
+        color: "#cfe3ff",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 1)
+      .setAlpha(0);
+    const cleanup = () => {
+      veil.destroy();
+      rule.destroy();
+      tCh.destroy();
+      tTitle.destroy();
+      tSub.destroy();
+      this.dialoguing = false;
+      this.physics.world.resume();
+      cb?.();
+    };
+    this.tweens.add({ targets: veil, alpha: 0.78, duration: 420, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: rule, width: 300, duration: 560, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: [tCh, tTitle], alpha: 1, y: "+10", duration: 560, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: tSub, alpha: 1, delay: 160, duration: 460, ease: "Sine.easeOut" });
+    this.time.delayedCall(2050, () => {
+      this.tweens.add({ targets: [veil, rule, tCh, tTitle, tSub], alpha: 0, duration: 420, ease: "Sine.easeIn", onComplete: cleanup });
+    });
+  }
+
+  /* ================= v1.2.0 (#8/#16 서브컬쳐) — 감정 버블 =================
+   *  캐릭터/NPC 머리 위에 뜨는 픽셀 이모트 — 씹덕 감성의 핵심 표현 장치.
+   *  ♥(사랑) ★(레벨업) ♪(기분좋음) 💢(분노) …(당황) ！(경악) ？(의문) zZ(취침) */
+  private static readonly EMOTE_CHARS: Record<string, { ch: string; color: string }> = {
+    heart: { ch: "♥", color: "#ff6a9a" },
+    star: { ch: "★", color: "#ffd76a" },
+    note: { ch: "♪", color: "#8fd8ff" },
+    anger: { ch: "💢", color: "#ff5a5a" },
+    sweat: { ch: "…", color: "#9ad0ff" },
+    excl: { ch: "！", color: "#ffe27a" },
+    question: { ch: "？", color: "#c8b0ff" },
+    sleep: { ch: "zZ", color: "#b8c4e8" },
+  };
+
+  /** 머리 위 감정 버블 — 말풍선 배경 + 이모트 글자, 팝+플로트+페이드 연출 */
+  emote(kind: keyof typeof WorldScene.EMOTE_CHARS, x: number, y: number, tint?: number) {
+    const def = WorldScene.EMOTE_CHARS[kind];
+    if (!def) return;
+    const bubble = this.add.container(x, y).setDepth(9998);
+    const bg = this.add.rectangle(0, 0, 22, 18, tint ?? 0x101422, 0.92)
+      .setStrokeStyle(1.5, 0xffe9b0, 0.9);
+    const txt = this.add.text(0, -1, def.ch, {
+      fontFamily: "Galmuri11, sans-serif",
+      fontSize: "11px",
+      color: def.color,
+    }).setOrigin(0.5);
+    // 꼬리
+    const tail = this.add.triangle(0, 11, 0, 0, 8, 0, 4, 6, tint ?? 0x101422, 0.92);
+    bubble.add([bg, tail, txt]);
+    bubble.setScale(0.2);
+    this.tweens.add({ targets: bubble, scale: 1, duration: 130, ease: "Back.out" });
+    this.tweens.add({ targets: bubble, y: y - 14, duration: 900, ease: "Sine.out", delay: 120 });
+    this.tweens.add({ targets: bubble, alpha: 0, delay: 820, duration: 200, onComplete: () => bubble.destroy() });
+    return bubble;
+  }
+
+  showDialogue(id: string, npcId: string | null = null) {
+    let d = DIALOGUES[id];
+    if (!d) {
+      /* v3.0.28 (#NPC대화) — 키 불일치 방어 폴백: dlg 키가 등록 규칙과 어긋나도
+       *  현재 챕터 마을 주민 대사(vlg{챕터명}A/B)로 재시도해 대화가 조용히 무시되는 일 방지 */
+      const ch = parseStage(this.stageDef.key).ch;
+      const cap = ch.charAt(0).toUpperCase() + ch.slice(1);
+      d = DIALOGUES[`vlg${cap}A`] ?? DIALOGUES[`vlg${cap}B`];
+    }
+    if (!d) return;
+    this.activeNpcId = npcId;
+    this.dialoguing = true;
+    this.dialogueSince = this.time.now; // v3.3.0 — 대사 붙임 자가치유 기준 시각
+    this.player.setVelocity(0, 0);
+    this.physics.world.pause();
+    /* v1.2.0 (#8) — 대화 시작: 상대 NPC 머리 위 ！ 감정 버블 */
+    if (npcId) {
+      const it = this.interactables.find((q) => q.npcId === npcId);
+      if (it) this.emote("excl", it.x, it.y - 44);
+    }
+    EventBus.emit("dialogue:show", d);
+  }
+
+  /** v2.3 (지시 #1) — 스토리 대사 1회 재생: 이미 본 대사(세이브 기록)는 스킵.
+   *  인트로/구역 안내/체인 대사/보스 등장 대사 등 재입장 시 다시 뜨던 버그 방지 */
+  private showDialogueOnce(id: string, npcId: string | null = null): boolean {
+    if (!DIALOGUES[id] || this.seenSet.has(id)) return false;
+    this.seenSet.add(id);
+    this.save();
+    this.showDialogue(id, npcId);
+    return true;
+  }
+
+  /** 대사 기록만 저장 (예약 재생 대상 — queuedDialogue) */
+  private markSeen(id: string) {
+    if (this.seenSet.has(id)) return;
+    this.seenSet.add(id);
+    this.save();
+  }
+
+  resumeFromDialogue() {
+    this.restoreBossIntroCam(); // v1.0.2 (#보스컷씬) — 대사 종료 후에만 플레이어 시점 복귀
+    this.dialoguing = false;
+    this.dialogueSince = 0; // v3.3.0 — 붙임 시각 리셋
+    this.portalHoldSince = 0; // v2.7 — 정상 종료면 강제개방 카운터도 리셋
+    this.physics.world.resume();
+    this.resetInputState(); // v4.9.0 — 대사 중 유실된 keyup 고착 청소 (자동이동 예방)
+    /* v1.0.11 — 신규 인트로(이름짓기) 종료 → 마을 튜토리얼 개시 (예약 플래그 소비).
+     *  villageIntro 대사가 끝난 뒤 여유를 두고 개시 — 인트로/대사 입력과 충돌하지 않게 */
+    if (this.tutPendingStart && !this.tut && !this.tutorialDone) {
+      this.tutPendingStart = false;
+      this.tutStep = 0;
+      this.tutRetryMs = 1; // update 루프 재시도로 개시 (v1.0.11 — 대사 연쇄 레이스 차단)
+    }
+    EventBus.emit("dialogue:hide");
+    // 대화 닫기 키의 잔여 justDown 소비 — 스페이스로 대화 넘긴 직후 공격이 새어나가는 것 방지
+    // (v1.0.4 — 하드코딩 X/Z/C/E 대신 등록된 전 행동 키를 소비해 키맵과 무관하게 동작)
+    if (this.keys) {
+      Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
+      for (const k of Object.values(this.keyObjs)) Phaser.Input.Keyboard.JustDown(k);
+    }
+    // v2.2 — 여관주인 대사 종료 → 취침 연출로 자연스럽게 이어짐
+    if (this.sleepPending) {
+      this.sleepPending = false;
+      this.activeNpcId = null;
+      this.time.delayedCall(160, () => this.trySleep());
+      return;
+    }
+    // 주민/카이엔 대화 종료 → talk 퀘스트 진행
+    // v1.4.4 (유저 지시) — 카이엔 교관도 NPC 3명 카운트에 포함 (전직 NPC 1 + 일반 NPC 2 = 3명)
+    if (this.activeNpcId) {
+      const npc = this.activeNpcId;
+      this.activeNpcId = null;
+      if (npc === "jobmaster") {
+        /* v1.4.4 — 카이엔 대화도 NPC 카운트에 합산 (대화 완료 시점 기준) */
+        if (this.stageDef.isVillage) this.onNpcTalked(npc);
+        /* v3.3.0 (지시 #8) — 5차 각성 스토리: Lv.200 도달 + 미각성 → 카이엔이 제5의 문을 연다 */
+        if (
+          !this.player.fifth && !this.player.fifthStoryDone &&
+          this.player.lv >= FIFTH_LEVEL && !this.fifthTrialActive
+        ) {
+          this.pendingFifthSummon = true;
+          this.showDialogueRaw({
+            speaker: "카이엔",
+            lines: [
+              "...제법 서늘한 눈이 되었군. 그 힘이 등 뒤에서 속삭이고 있어.",
+              "레벨 200 — 이그드라실의 정점에 선 자만이 '다섯 번째 문'을 볼 수 있다.",
+              "제5의 문이 열리면 모든 스킬이 '극'으로 재태어나고, 세부 직업마다 다른 궁극기가 손에 쥐어진다.",
+              "준비됐나? 각성의 수호자를 쓰러뜨려 스스로를 증명해라!",
+            ],
+          });
+          return; // 대사 종료 후 pendingFifthSummon 경로로 이어짐
+        }
+        // 전직 스토리 elite 단계 — 시험 상대 소환 (지시 #13)
+        const step = this.jobStory ? this.jobStoryDef()?.steps[this.jobStory.step] : null;
+        if (step?.type === "elite") {
+          this.summonJobElite();
+        } else if (
+          familyOf(this.player?.cls ?? "") &&
+          chainOf(this.player?.cls ?? "").length >= 1 &&
+          !this.jobStory
+        ) {
+          // v3.1.0 — 전직관 대화로 미진행 다음 차수 시련 시작 (완료 시 승격 해금)
+          this.maybeStartJobStory();
+          // 시련이 시작되지 않았으면(완료/조건) 패널 오픈
+          if (!this.jobStory) {
+            this.time.delayedCall(120, () => EventBus.emit("ui:panel", { panel: "job" }));
+          }
+        } else {
+          // 전직 상담 종료 → 전직 패널 자동 오픈 (v1.9 전직 NPC)
+          this.time.delayedCall(120, () => EventBus.emit("ui:panel", { panel: "job" }));
+        }
+      } else if (npc === "merchant") {
+        // v2.3 (지시 #4) — 상인 대화 종료 → 반복 토벌 의뢰 수주
+        if (this.repeatUnlockable()) {
+          this.repeatOn = true;
+          this.save();
+          audio.sfx.reward();
+          this.showBanner("토벌 의뢰 수주! 구역 체인을 모두 끝낸 사냥터에서 [반복] 의뢰를 진행할 수 있어요");
+          this.spawnPickupText(this.player.x, this.player.y - 44, "의뢰 수주!", "#7dffa8");
+          this.emitQuest();
+          this.emitQuestLog();
+        }
+      } else {
+        this.onNpcTalked(npc);
+      }
+    }
+    // 예약 대사 (이름 리액션 → 마을 오프닝 등 순차 재생)
+    if (this.queuedDialogue) {
+      const next = this.queuedDialogue;
+      this.queuedDialogue = null;
+      this.time.delayedCall(60, () => this.showDialogue(next));
+      return;
+    }
+    /* v3.3.0 (지시 #8) — 각성 대사 종료 → "각성" 챕터 카드 + 수호자 소환 */
+    if (this.pendingFifthSummon) {
+      this.pendingFifthSummon = false;
+      this.time.delayedCall(120, () => this.startFifthTrial());
+      return;
+    }
+    // 보스 격파 후 안내 대사 종료 시 차원문 개방 (플레이어가 포탈 위에 서 있어도
+    // 대사 도중 즉시 전환되는 사고 방지 — 600ms 유예)
+    if (this.pendingPortal) {
+      this.pendingPortal = false;
+      this.time.delayedCall(600, () => this.activatePortal());
+    }
+  }
+
+  /* ═════════ v1.0.11 — 튜토리얼 지원 (Tutorial.ts 호출 API) ═════════ */
+
+  /** 튜토리얼 개시 — 인트로 종료 후(step 0, 시작 물약 지급) 또는 진행 중 세이브 재개.
+   *  v1.0.11 버그 수정: 후속 대사/컷신 재생 중 시작 시도는 update 루프 재시도로 연기 —
+   *  튜토리얼이 영영 시작되지 않았다 → dialoguing이면 1.2s 뒤 재시도(재스케줄) */
+  private startTutorial(step: number) {
+    if (this.tut || this.tutorialDone) return;
+    if (this.dialoguing) {
+      this.tutRetryMs = 1; // update 루프 재시도로 연기 (v1.0.11 — 대사 종료 후 자동 착화)
+      return;
+    }
+    if (step === 0) {
+      /* 시작 물약 +2 — 물약 학습 단계가 보유 부족으로 막히지 않게 (기본 지급 hp2에 추가) */
+      this.player.addPotion("hp");
+      this.player.addPotion("hp");
+      this.emitHud();
+    }
+    this.tutStep = step;
+    this.tut = new Tutorial(this, step);
+  }
+
+  /** 단계 통과 시마다 세이브 — 씬 전환(마을→사냥터) 후에도 이어서 재개 */
+  saveTutorialProgress(step: number) {
+    this.tutStep = step;
+    this.save();
+  }
+
+  /** 완료/스킵 — 세이브 플래그 확정 */
+  completeTutorialSave() {
+    this.tutorialDone = true;
+    this.tutStep = -1;
+    this.tut = null;
+    this.save();
+  }
+
+  /** 축하 연출 — 스파클 버스트 (v1.0.13 — 벚꽃 소나기 제거 대체, 골드 광륜) */
+  spawnCelebrateFX(x: number, y: number, n: number) {
+    spawnCelebrateBurst(this, x, y, n);
+  }
+
+  /** 축하 보상 — 뽑기권 +1 (골드/물약은 Tutorial에서 플레이어에 직접 지급) */
+  grantTutorialRewards() {
+    this.gachaTickets += 1;
+    this.emitHud();
+    this.emitRpgState();
+  }
+
+  /* v1.0.11 — 튜토리얼 마커용 공개 접근자 (private 필드의 읽기 전용 뷰) */
+  get enemyList(): Enemy[] { return this.enemies; }
+  get portalRef(): Phaser.Physics.Arcade.Sprite | null { return this.portal; }
+  get npcList(): { x: number; y: number }[] { return this.interactables; }
+
+  /* v1.4.10 — 1회성 컨텍스트 힌트 (유저 지시 "게임 중에 부연 설명이 너무 적어"):
+   *  세션당 1회만 뜨는 상황 안내 배너. 세이브에 기록하지 않는다(부담 최소화) —
+   *  재접속하면 다시 1회씩 노출돼 잊은 조작법을 자연 복습하게 한다. */
+  private hintShown: Record<string, boolean> = {};
+  hintOnce(key: string, text: string) {
+    if (this.hintShown[key]) return;
+    this.hintShown[key] = true;
+    this.showBanner(text);
+  }
+
+  showBanner(text: string) {
+    EventBus.emit("banner:show", { text });
+  }
+
+  sfxSwing() {
+    audio.sfx.swing();
+  }
+  /** v3.0.24 — 직업별 스킬 전용 효과음 (audio.ts SKILL_SFX_FILES 매핑)
+   *  @param key 스킬 음향 키 (arrow/cast/knife/flame/wind/dark/holy/thunder/warcry 등)
+   *  @param rate 피치 배율 (상위직 강화판·계열 변주) */
+  sfxSkill(key: string, rate = 1) {
+    audio.sfx.skill(key, rate);
+  }
+  sfxSpin() {
+    // v1.4.8 — 호출부 0개 사망 코드 제거 (spin 스킬음은 sfxSkill("spin") 경로로만 사용)
+  }
+  sfxDash() {
+    audio.sfx.dash();
+  }
+  sfxHurt() {
+    audio.sfx.hurt();
+  }
+  sfxLevelUp() {
+    audio.sfx.levelup();
+  }
+  sfxRoar() {
+    audio.sfx.roar();
+  }
+  sfxEnemyDie() {
+    audio.sfx.enemyDie();
+  }
+  sfxPotion() {
+    audio.sfx.potion();
+  }
+  sfxEquip() {
+    audio.sfx.equip();
+  }
+  /** 크리티컬 명중 — metal_02 고피치 샤프 음 */
+  sfxCrit() {
+    audio.sfx.crit();
+  }
+
+  /** v1.0.12 — 크리티컬 스플랫 (Toon Shaders Pro 팩 — 유저 Drive 업로드 "고급 에셋"):
+   *  충격파 링 위에 터지는 방사형 스플랫 데칼 — 타격감 3중 구성(링+플래시+스플랫)의 마무리 */
+  spawnCritSplat(x: number, y: number, hex = 0xffd76a) {
+    if (!this.textures.exists("wx_splat")) return;
+    const im = this.add.image(x, y - 6, "wx_splat")
+      .setDepth(22)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(hex)
+      .setScale(0.38)
+      .setRotation(Math.random() * Math.PI * 2)
+      .setAlpha(0.85);
+    this.tweens.add({ targets: im, scale: 1.0, alpha: 0, duration: 300, ease: "Cubic.out", onComplete: () => im.destroy() });
+    /* v1.4.11 — MG 5-Crit 크리티컬 버스트 오버레이 (크리 타격감 상향) */
+    if (this.textures.exists("mg_crit")) {
+      const cr = this.add.image(x, y - 10, "mg_crit")
+        .setDepth(23)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(hex)
+        .setScale(0.34)
+        .setAlpha(0.95);
+      this.tweens.add({ targets: cr, scale: 0.9, alpha: 0, duration: 340, ease: "Quad.out", onComplete: () => cr.destroy() });
+    }
+  }
+  /** 강화 성공 — 퀘스트 차임 저피치 (무게감) */
+  sfxUpgradeOk() {
+    audio.sfx.upgradeOk();
+  }
+  /** 강화 실패 — hurt 저피치 (둔탁한 낙방음) */
+  sfxUpgradeFail() {
+    audio.sfx.upgradeFail();
+  }
+
+  /* ================= 정리 ================= */
+
+  private cleanup() {
+    this.questTimer?.remove();
+    this.scale.off("resize", this.applyCameraZoom, this);
+    /* v1.3.1 (#8) — visibilitychange 리스너 해제 (씬 재시작 후 중복 실행 방지) */
+    if (this.onVisChange) document.removeEventListener("visibilitychange", this.onVisChange);
+    this.tut?.destroy(); // v1.0.11 — 튜토리얼 HUD/마커 정리
+    this.tut = null;
+    this.shockFX?.destroy(); // v4.8.0 — 셰이더 링 풀 정리
+    this.slashArcFx?.destroy(); // v4.9.0 — 참격 궤적 풀 정리
+    EventBus.emit("dialogue:hide");
+  }
+}

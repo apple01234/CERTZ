@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.4.3 (#플레이콘솔) — xmlns:tools 추가: AD_ID 권한 제거 선언용 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <!-- v4.1.1 — AdMob 앱 ID 누락이 앱 부팅 FATAL 크래시의 원인
+             (Google Mobile Ads SDK는 ContentProvider 자동초기화 때 매니페스트 검증 —
+              미등록 시 IllegalStateException로 앱이 즉시 사망 → "앱 안열림")
+             현재는 구글 공식 테스트 앱 ID로 안전 부팅. 실제 수익화 시 본인 앱 ID로 교체:
+             AdMob 콘솔 → 앱 추가 → 앱 ID(ca-app-pub-XXXXX~XXXXX) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- v4.1.1 — 구글 플레이 인앱 결제(에메랄드 충전)용. 결제 시점에만 사용되며
+         부팅에는 영향 없음. 미등록 SKU는 ads.ts의 try/catch가 안내로 흡수 -->
+    <uses-permission android:name="com.android.vending.BILLING" />
+
+    <!-- v1.4.3 (#플레이콘솔 광고 ID 선언) — Android 13(API 33)+ 광고 ID 경고 대응.
+         본 앱은 AdMob SDK를 번들하지 않아(의존성 없음 — 광고 없음) 광고 ID를 사용하지 않는다.
+         tools:node="remove"로 어떤 라이브러리가 AD_ID를 병합하려 해도 최종 APK에서 제거된다.
+         Play Console '광고 ID' 선언에서는 "광고 ID를 사용하지 않음"으로 답변하면 된다. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+</manifest>

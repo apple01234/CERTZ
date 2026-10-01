@@ -1,0 +1,216 @@
+import Phaser from "phaser";
+import { GAME_W, GAME_H } from "./config";
+import { BootScene } from "./scenes/BootScene";
+import { TitleScene } from "./scenes/TitleScene";
+import { WorldScene } from "./scenes/WorldScene";
+import { attachAudio } from "./audio";
+/* v3.0.6 — E2E 정적 검증용 노출 (window.__SERTZ_DEBUG__) */
+import * as classesMod from "./classes";
+import * as stagesMod from "./stages";
+import * as dataMod from "./data";
+import { ACC_ANCHORS } from "./acc_anchors"; // v1.2.1 (#1) — E2E 앵커 실측용
+import * as partyContentMod from "./partyContent"; // v1.4.3 — 파티 콘텐츠 (E2E 시너지/보드 검증)
+import { showRecoveryOverlay } from "../components/game/crashGuard"; // v1.4.5 — 재부팅 루프 차단 수동 복구
+import { SFX_THROTTLE_MS, SFX_MAX_CONCURRENT, BGM_VOLUME, SFX_VOLUMES, playBGM, playStageBGM, stageTrack, bgmDebugState, bgmAdvanceForTest, BGM_PLAYLISTS, getBgmVolume, getSfxVolume } from "./audio";
+
+const audioDebug = { throttle: SFX_THROTTLE_MS, cap: SFX_MAX_CONCURRENT, bgm: BGM_VOLUME, volumes: SFX_VOLUMES, getBgmVolume, getSfxVolume };
+
+/**
+ * F3 반응형 핵심:
+ *  - Scale.RESIZE → 캔버스가 부모(뷰포트)를 항상 1:1로 꽉 채움 — 레터박스/검은 여백 0
+ *  - 화면 밀도는 각 씬의 카메라 줌으로 조정 (보기 좋은 세계 단위 유지)
+ *    camera zoom = clamp(innerHeight / 560, 1, 2.5) — 0.25 스텝 스냅
+ *  - pixelArt + roundPixels → 픽셀아트 선명도 유지
+ */
+
+/** 뷰포트 높이 기준 카메라 줌 계산 (씬들 공용) */
+export function viewZoom(): number {
+  if (typeof window === "undefined") return 1;
+  const raw = window.innerHeight / 560;
+  return Math.min(2.5, Math.max(1, Math.round(raw * 4) / 4));
+}
+
+/* ================= v1.4.5 (#무한재부팅) — 자가치유 재부팅 예산 =================
+ * 유저 리포트: "이상한 돌·ARG 웹페이지 접속 후 복귀 시 게임 무한 재부팅".
+ * 원인: 컨텍스트 유실/프리즈 워치독·백그라운드 복귀 재부팅이 전부 무한 reload를
+ * 허용했다. 외부 페이지 이동 후 복귀한 WebView는 GPU/컨텍스트 상태가 나빠져
+ * 부팅 직후 다시 실패 → reload → 실패 → … 무한 루프.
+ * 해결: 세션(탭) 단위 2분 창에 자동 재부팅 2회까지만 허용하고, 초과 시
+ * 자동 재부팅을 완전히 중단하고 수동 복구 오버레이를 표시한다.
+ * 수동 "다시 시작" 버튼은 예산을 리셋하므로 정상 복구 후 자가치유도 살아난다. */
+const REBOOT_WINDOW_MS = 120000;
+const REBOOT_MAX = 2;
+function rebootLedger(): number[] {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem("sertz.reboots") ?? "[]") as unknown;
+    return Array.isArray(raw) ? raw.filter((n): n is number => typeof n === "number") : [];
+  } catch {
+    return [];
+  }
+}
+function safeReload(reason: string) {
+  const now = Date.now();
+  const list = rebootLedger().filter((t) => now - t < REBOOT_WINDOW_MS);
+  if (list.length >= REBOOT_MAX) {
+    console.error(`[SERTZ] 재부팅 예산 초과(${reason}) — 자동 재부팅 중단, 수동 복구 대기`);
+    showRecoveryOverlay(
+      "게임이 반복적으로 재시작된다",
+      `자가치유 한도 초과 (${reason}) — 화면이 계속 재부팅되던 문제를 막았다. 다시 시작을 눌러 주세요`,
+      "재부팅 루프 방지 — 세이브는 주기적으로 저장되어 대부분 보존된다",
+    );
+    return;
+  }
+  list.push(now);
+  try {
+    sessionStorage.setItem("sertz.reboots", JSON.stringify(list));
+  } catch {
+    /* 세션 스토리지 불가 환경 — 예산 없이 기존 동작 */
+  }
+  window.location.reload();
+}
+
+export function createGame(parent: HTMLElement): Phaser.Game {
+  const game = new Phaser.Game({
+    type: Phaser.AUTO,
+    parent,
+    width: GAME_W,
+    height: GAME_H,
+    backgroundColor: "#05070d",
+    pixelArt: true,
+    roundPixels: true,
+    /* v3.2.0 (#최적화) — GPU 전원 우선순위 상향 + 프레임 관리 명시 */
+    render: { powerPreference: "high-performance", antialias: false },
+    fps: { target: 60, min: 30 },
+    physics: {
+      default: "arcade",
+      arcade: {
+        debug: false,
+        fps: 60,
+      },
+    },
+    scale: {
+      mode: Phaser.Scale.RESIZE,
+      autoCenter: Phaser.Scale.NO_CENTER,
+      width: GAME_W,
+      height: GAME_H,
+      expandParent: true,
+    },
+    scene: [BootScene, TitleScene, WorldScene],
+  });
+
+  /* v3.2.0 (#흑화) — WebGL 컨텍스트 손실 자가복구.
+   *  모바일 WebView/구형 GPU에서 긴 세션 중 컨텍스트가 유실되면 캔버스가 검은 채로
+   *  멈춘다(입력도 죽음). lost에서 복구 대기, 4초 내 미복구 시 세이브가 살아있으므로
+   *  안전하게 새로고침해 부팅한다. */
+  let ctxLostAt = 0;
+  const canvas = game.canvas;
+  canvas.addEventListener("webglcontextlost", (e) => {
+    e.preventDefault();
+    ctxLostAt = Date.now();
+    console.error("[SERTZ] WebGL 컨텍스트 손실 — 복구 대기");
+  });
+  canvas.addEventListener("webglcontextrestored", () => {
+    ctxLostAt = 0;
+    console.log("[SERTZ] WebGL 컨텍스트 복구됨");
+  });
+  window.setInterval(() => {
+    if (ctxLostAt > 0 && Date.now() - ctxLostAt > 4000) {
+      console.error("[SERTZ] 컨텍스트 미복구 — 안전 새로고침");
+      safeReload("webgl-context");
+    }
+  }, 1000);
+
+  /* v4.9.0 — 렌더 프리즈 최후 워치독 (유저 지시: GM 보스 이동·긴급귀환 후 검은 화면이 안 사라짐).
+   *  컨텍스트 유실 외에도 약한 GPU에서 필터/셰이더 경합으로 게임 루프 자체가 멈추면
+   *  캔버스가 검은 채로 얼어붙는다(씬 내 자가치유는 update가 살아 있어야 동작).
+   *  화면이 보이는 상태에서 2초 간격 샘플로 프레임 카운터가 연속 3회(≥6초) 무변화면
+   *  진짜 프리즈다(배터리 세이버도 0fps까지는 안 끊는다). 세이브가 살아있으므로
+   *  안전하게 새로고침해 부팅한다. 부팅 직후 12초는 유예(느린 기기 초기 로딩 보호). */
+  const freezeBootAt = Date.now();
+  let freezeSamples = 0;
+  let lastFrame = -1;
+  let hadFrame = false; // v1.4.5 — 루프가 실제로 살아본 적이 있어야 프리즈로 인정
+  let resumeGraceUntil = 0; // v1.4.5 — 백그라운드 복귀 직후 관찰 유예
+  window.setInterval(() => {
+    try {
+      if (document.hidden) return;
+      if (Date.now() - freezeBootAt < 12000) return;
+      const f = game.loop.frame;
+      if (f > 0 && f !== lastFrame) hadFrame = true;
+      if (!hadFrame) return; // 부팅 실패 루프 — 프리즈가 아니라 재부팅 예산이 보호한다
+      if (Date.now() < resumeGraceUntil) {
+        lastFrame = f;
+        freezeSamples = 0;
+        return;
+      }
+      if (f === lastFrame) {
+        freezeSamples++;
+        if (freezeSamples >= 3) {
+          console.error("[SERTZ] 렌더 루프 정지 감지 — 안전 새로고침");
+          safeReload("render-freeze");
+        }
+      } else {
+        freezeSamples = 0;
+        lastFrame = f;
+      }
+    } catch {
+      /* 게임 미부팅 단계 무시 */
+    }
+  }, 2000);
+
+  /* v1.3.1 (#5 검은화면 수정) — 장시간 백그라운드 복귀 자가치유:
+   *  모바일 WebView는 백그라운드 동안 GPU 텍스처를 회수해 복귀 시 캔버스가 검은 채로
+   *  남는다(webglcontextlost 이벤트 없이). 루프는 살아 있어 프리즈 워치독도 못 잡는다.
+   *  45초 이상 숨겨있다 돌아오면 세이브가 살아있으므로 안전하게 재부팅한다(모바일만).
+   *  짧은 전환(알림 확인 등)은 재부팅하지 않는다 — 플레이 흐름 보호. */
+  let hiddenAt = 0;
+  document.addEventListener("visibilitychange", () => {
+    try {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+        return;
+      }
+      const gone = Date.now() - hiddenAt;
+      hiddenAt = 0;
+      const isMobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || "");
+      if (isMobile && gone > 45000 && Date.now() - freezeBootAt > 20000) {
+        /* v1.4.5 (#무한재부팅) — 즉시 reload 폐지: 15초 관찰 유예를 두고 프리즈 워치독
+         *  (예산화됨)이 실제 정지를 확인하면 그때 복구. ARG/외부 페이지 이동 후 복귀에서
+         *  즉시 reload가 누적되던 것이 루프의 시작점이었다. */
+        console.warn("[SERTZ] 장시간 백그라운드 복귀 — 15초 관찰 후 필요 시 자가치유");
+        resumeGraceUntil = Date.now() + 15000;
+        freezeSamples = 0;
+        lastFrame = -1;
+        hadFrame = false;
+      }
+    } catch {
+      /* 무시 */
+    }
+  });
+
+  // 오디오 모듈에 게임 인스턴스 연결 (Phaser SoundManager 사용)
+  attachAudio(game);
+
+  // E2E 검증/디버그 훅
+  (window as unknown as { __SERTZ__?: unknown }).__SERTZ__ = { game };
+  /* v1.3.1 (#9) — 부팅 판정 노출 (모바일 절전 기본 — 월드 진입 없이도 E2E 검증 가능) */
+  (window as unknown as { __SERTZ_BOOT__?: unknown }).__SERTZ_BOOT__ = { fxMode: WorldScene.DEFAULT_FX_MODE };
+  // v3.0.6 — E2E 정적 검증용 모듈 노출 (클래스/사운드/스테이지/아이템 테이블)
+  // v3.0.23 — BGM 고정배치 검증 훅 (구역→트랙 매핑 실측)
+  (window as unknown as { __SERTZ_DEBUG__?: unknown }).__SERTZ_DEBUG__ = {
+    classes: classesMod,
+    audio: audioDebug,
+    bgm: { playBGM, playStageBGM, stageTrack, bgmDebugState, bgmAdvanceForTest, playlists: BGM_PLAYLISTS },
+    stages: stagesMod,
+    items: dataMod.ITEMS,
+    bossDrops: dataMod.BOSS_DROP_ITEMS,
+    /* v3.0.7 — 거래소/강화 주문서 정적 검증용 */
+    data: dataMod,
+    /* v1.2.1 (#1) — 치장 앵커 테이블 (E2E 프레임 정확 판정용) */
+    anchors: ACC_ANCHORS,
+    /* v1.4.0 — 이스터에그/ARG 트래커 (E2E 100종 데이터 검증용) */
+    /* v1.4.3 — 파티 시너지/퀘스트 보드 (E2E 로직 검증용) */
+    party: partyContentMod,
+  };
+  return game;
+}

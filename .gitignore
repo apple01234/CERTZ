@@ -1,0 +1,138 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+local-*
+.claude
+.z-ai-config
+*.log
+dev.log
+dev.out.log
+test
+prompt
+
+server.log
+# Skills directory
+/skills/backups/
+
+# ── 자율 개발 루프: 런타임 산물은 저장소에서 제외 ──
+# 로그 (한 바퀴마다 쌓이는 날짜별 로그)
+/logs/
+# 루프 신호/상태 파일 (STOP=꺼짐 스위치, pid/lock=실행 상태)
+loop/STOP
+loop/loop.pid
+loop/loop.lock
+loop/loop-console.log
+# 빌드 산출물 (APK 등)
+*.apk
+# 배포용 APK는 예외 — download/ 동기화
+!download/*.apk
+*.aab
+android/app/build/
+backups/
+.gh_*
+.device_*
+nohup.out
+out/
+.next-apk/
+prev-project/
+upload/
+
+# android (capacitor)
+android/.gradle
+android/local.properties
+android/capacitor-cordova-android-plugins
+android/app/src/main/assets
+*.keystore
+!android/sertz-release.keystore
+tool-results/
+
+tmp/
+upload/
+asset_work/
+
+# electron exe build scraps (v3.0.8 — 재빌드 가능 산출물 추적 금지)
+/electron/dist/
+/electron/game/
+/.next-apk/
+/upload/extracted/
+*.nsis.7z
+/upload/
+tmp_design/
+download/*.apk
+# v3.0.26 — 141MB APK 분할 파트도 git 제외 (대용량 바이너리 → 서버 직결 다운로드로만 배포)
+download/*.apk.part*
+
+# platform sandbox dirs
+tool-results/
+upload/
+dev.log
+server.log
+*.log.tmp
+.android-sdk/
+.apk-hold/
+jdk17/
+.android-sdk/jdk21/
+
+# local secrets (NEVER commit) — AdMob OAuth service account / API keys
+.secrets/
+
+# v4.1.6 — 성능 최적화 중간 산출물
+/scripts/_a2b/
+/scripts/_webp/
+/scripts/_*.log
+/scripts/_ff*.txt
+/scripts/_enc_test.ogg
+/scripts/_seg_*.ogg
+/scripts/_mid.wav
+ref/
+ui_check_*.png
+research/
+*.7z
+db/
+download/*.zip
+skills-workspace/
+
+# v1.0.13 — 검증 스크린샷 리포트 유입 차단 (에셋 아님)
+scripts/*.png
+scripts/_perf_charts/
+download/*.png
+server.pid

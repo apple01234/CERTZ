@@ -1,0 +1,67 @@
+/**
+ * SERTZ FC standalone 멀티플레이 주입 엔트리 (v3.1)
+ *  - postbuild.js 가 이 파일을 Bun.build 로 단일 번들(.next/standalone/fc-multi.js)로 만든다
+ *    (socket.io + 의존성 전부 인라인 — FC 런타임 node_modules 부재 문제 회피)
+ *  - standalone 래퍼 server.js 가 캡처한 http.Server 에 멀티플레이를 부착한다
+ *  - v4.9.0 — 계정 API(/api/auth/*: 자체 가입/로그인 + SNS OAuth + 클라우드 세이브)도
+ *    여기서 가로챈다. request 리스너를 통째로 감싸 계정 요청만 먼저 처리한다.
+ *  - v1.0.1 — 유저 거래판 API(/api/market)도 동일 경로로 가로챈다
+ */
+module.exports = function attachFcMultiplayer(httpServer) {
+  const { attachMultiplayer } = require("../../multiplayer");
+  const ret = attachMultiplayer(httpServer);
+  if (ret && ret.heartbeat && typeof ret.heartbeat.unref === "function") {
+    ret.heartbeat.unref();
+  }
+  console.log("> [SERTZ-FC] 멀티플레이 소켓 서버 부착 완료 (/socket.io)");
+
+  /* v4.9.0 — 계정 API 가로채기: 기존 request 리스너를 보존한 뒤 위에 얹는다 */
+  try {
+    const { handleAccountRequest, handleMarketRequest } = require("../../accounts");
+    /* v1.2.0 (#거래소접속) — CORS 프리플라이트 OPTIONS 즉시 204 응답.
+     *  이 래퍼가 OPTIONS를 handleMarket으로 그대로 넘겨 401로 답했고, 브라우저/APK 웹뷰는
+     *  preflight 응답이 2xx가 아니면 fetch 자체를 실패 처리한다 → Authorization 헤더를 붙이는
+     *  모든 요청(로그인 유저의 거래소·클라우드세이브·/me)이 "서버에 연결할 수 없어요"가 됐다.
+     *  (게스트는 헤더가 없어 단순 요청이라 멀쩡했다 — "로그인하면 거래소가 안 되는" 역설의 정체) */
+    const CORS_HEADERS = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Max-Age": "86400",
+      "Cache-Control": "no-store",
+    };
+    const orig = httpServer.listeners("request").slice();
+    httpServer.removeAllListeners("request");
+    httpServer.addListener("request", (req, res) => {
+      const u = req.url || "";
+      const m = (req.method || "GET").toUpperCase();
+      if (m === "OPTIONS" && (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") || u.startsWith("/api/market"))) {
+        res.writeHead(204, CORS_HEADERS);
+        res.end();
+        return;
+      }
+      if (u.startsWith("/api/auth/")) {
+        Promise.resolve(handleAccountRequest(req, res)).then((handled) => {
+          if (!handled) orig.forEach((l) => l.call(httpServer, req, res));
+        }).catch((e) => {
+          console.error("[SERTZ-FC] 계정 API 실패", e);
+          orig.forEach((l) => l.call(httpServer, req, res));
+        });
+        return;
+      }
+      if (u.startsWith("/api/market")) {
+        const url = u.split("?")[0];
+        const method = m;
+        Promise.resolve(handleMarketRequest(req, res, url, method)).catch((e) => {
+          console.error("[SERTZ-FC] 마켓 API 실패", e);
+        });
+        return;
+      }
+      orig.forEach((l) => l.call(httpServer, req, res));
+    });
+    console.log("> [SERTZ-FC] 계정 서버 부착 완료 (/api/auth/*, /api/market)");
+  } catch (e) {
+    console.error("[SERTZ-FC] 계정 모듈 부착 실패 — 계정 기능 없이 계속", e);
+  }
+  return ret;
+};

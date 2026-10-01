@@ -1,0 +1,1521 @@
+diff --git a/accounts/index.js b/accounts/index.js
+index 3eed8dc..b8a382b 100755
+--- a/accounts/index.js
++++ b/accounts/index.js
+@@ -14,7 +14,7 @@
+  *  - 클라우드 세이브: 로그인 유저의 게임 세이브 백업/복원 (localStorage 덤프 통째로 저장)
+  */
+ const { scryptSync, randomBytes, timingSafeEqual, createHash, createCipheriv, createDecipheriv } = require("node:crypto");
+-const { readFileSync, writeFileSync, mkdirSync, existsSync } = require("node:fs");
++const { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync } = require("node:fs");
+ const path = require("node:path");
+ 
+ const DB_DIR = path.join(process.cwd(), "db");
+@@ -31,11 +31,16 @@ const COOKIE = "sertz_auth";
+ const ADMIN_USERS = (process.env.SERTZ_ADMIN_USERS || "admin,apple01234")
+   .split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
+ const rateBuckets = new Map(); // key -> { n, resetAt }
++/* v1.4.8 (#4 보안) — X-Forwarded-For 무조건 신뢰 제거: 리버스 프록시(루프백)를 경유한 요청만
++ *  XFF를 믿고, 외부 직접 접근은 소켓 주소를 그대로 쓴다 — IP 스푸핑으로 레이트리밋 무력화 차단 */
+ function clientIp(req) {
+-  return (
+-    String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
+-    req.socket?.remoteAddress || "?"
+-  );
++  const peer = String(req.socket?.remoteAddress || "?");
++  const isLoopbackPeer = peer === "127.0.0.1" || peer === "::1" || peer === "::ffff:127.0.0.1";
++  if (isLoopbackPeer) {
++    const xff = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
++    if (xff) return xff;
++  }
++  return peer || "?";
+ }
+ function rateLimit(req, res, bucket, max, windowMs) {
+   const key = `${clientIp(req)}:${bucket}`;
+@@ -87,22 +92,23 @@ function loadDb() {
+       else if (!shouldAdmin && u.role === "admin") u.role = "user";
+     }
+     /* v1.0.8 — 관리자 계정 자가 복구(오토시드): 워크스페이스 재구성 등으로 db/accounts.json이
+-     *  소실되면 "모든 로그인 401" 사태가 재발했다. 부팅 시 관리자 아이디가 없으면 기본 비밀번호로
+-     *  즉시 재배치해 서버가 스스로 회복하게 한다. (SERTZ_ADMIN_PASSWORD로 변경 가능, 기본 admin123) */
++     *  소실되면 "모든 로그인 401" 사태가 재발했다. 부팅 시 관리자 아이디가 없으면 즉시 재배치해
++     *  서버가 스스로 회복하게 한다. (SERTZ_ADMIN_PASSWORD 설정 시 그 값 사용)
++     * v1.4.8 (#4 보안) — 알려진 기본 비밀번호(admin123) 시드 제거: env 미설정 시 12자 무작위
++     *  비밀번호를 발급해 서버 로그에 1회만 출력한다 — 복구 경로는 유지, 무차별 위험은 제거. */
+     for (const aid of ADMIN_USERS) {
+       if (!db.users[aid]) {
+         const salt = randomBytes(16).toString("hex");
++        const seededPw = process.env.SERTZ_ADMIN_PASSWORD || randomBytes(12).toString("base64url");
+         db.users[aid] = {
+           id: aid, name: aid.slice(0, 8), provider: "local", salt,
+-          hash: hashPw(process.env.SERTZ_ADMIN_PASSWORD || "admin123", salt),
++          hash: hashPw(seededPw, salt),
+           createdAt: Date.now(), role: "admin",
+         };
+         console.log(`[SERTZ-accounts] 관리자 계정 없음 → 오토시드: ${aid}`);
+-        /* v1.1.0 (#16 보안) — 기본 비밀번호로 오토시드되면 공개 서버에서 무차별 위험이 있다.
+-         *  운영자에게 즉시 경고 + 감사 로그 남김 (배포 가이드에도 SERTZ_ADMIN_PASSWORD 설정 필수 명시) */
+         if (!process.env.SERTZ_ADMIN_PASSWORD) {
+-          console.warn(`[SERTZ-accounts] ⚠ 경고: SERTZ_ADMIN_PASSWORD 미설정 — ${aid} 기본 비밀번호로 시드됨. 공개 배포 전 반드시 변경할 것!`);
+-          audit("admin_autoseed_default_pw", { uid: aid });
++          console.error(`[SERTZ-accounts] ⚠ ${aid} 임시 비밀번호: ${seededPw} — 서버 로그 1회만 노출. 로그인 후 계정창에서 변경할 것!`);
++          audit("admin_autoseed_random_pw", { uid: aid });
+         } else {
+           audit("admin_autoseed", { uid: aid });
+         }
+@@ -119,7 +125,11 @@ function persistDb() {
+     saveTimer = null;
+     try {
+       mkdirSync(DB_DIR, { recursive: true });
+-      writeFileSync(DB_FILE, JSON.stringify(db));
++      /* v1.4.8 (#4 보안) — 원자적 쓰기(tmp+rename): 크래시 순간 전체 재기록이 중단되면
++       *  계정 DB가 잘리는 사고가 가능했다. 임시 파일에 쓰고 원자적으로 교체한다. */
++      const tmp = `${DB_FILE}.tmp`;
++      writeFileSync(tmp, JSON.stringify(db));
++      renameSync(tmp, DB_FILE);
+       scheduleBackupPush(); // v1.0.13 — 파일 저장 성공 시 원격 백업 예약
+     } catch (e) {
+       console.error("[SERTZ-accounts] DB 저장 실패", e);
+@@ -300,13 +310,28 @@ function parseCookies(req) {
+ }
+ /* v1.0.7 — APK 웹뷰(https://localhost 오리진)에서 쿠키 세션이 유지되지 않아 로그인이 실패했다.
+  *  ① 모든 /api 응답에 CORS 헤더(POST+JSON은 프리플라이트 OPTIONS 필요 — 기존엔 무응답)
+- *  ② 세션 토큰을 본문+Bearer 헤더로도 전달 (쿠키는 웹 same-origin 호환용으로 유지) */
+-const CORS_HEADERS = {
+-  "Access-Control-Allow-Origin": "*",
++ *  ② 세션 토큰을 본문+Bearer 헤더로도 전달 (쿠키는 웹 same-origin 호환용으로 유지)
++ * v1.4.8 (#4 보안) — Access-Control-Allow-Origin: * 제거 → 오리진 화이트리스트 반영:
++ *  APK 웹뷰(https://localhost)와 SERTZ_ORIGIN(env, 쉼표 복수)만 허용. 나머지 오리진의
++ *  브라우저 fetch는 CORS 검증에 걸려 인증 토큰 탈취 시에도 계정 API 남용이 불가해진다.
++ *  같은 오리진 요청(웹 버전)은 CORS 헤더 자체가 불필요 — 영향 없음. */
++const CORS_ALLOWED_ORIGINS = new Set([
++  "https://localhost", "http://localhost", "https://localhost:3000", "http://localhost:3000",
++  ...(String(process.env.SERTZ_ORIGIN || "") ? String(process.env.SERTZ_ORIGIN).split(",").map((s) => s.trim()).filter(Boolean) : []),
++]);
++const CORS_BASE_HEADERS = {
+   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+   "Access-Control-Allow-Headers": "Content-Type, Authorization",
+   "Access-Control-Max-Age": "86400",
+ };
++const CORS_HEADERS = { ...CORS_BASE_HEADERS }; // 하위 호환 정적 기본값 (req 미첨부 경로용)
++function corsHeadersFor(req) {
++  const origin = String(req.headers.origin || "");
++  if (origin && CORS_ALLOWED_ORIGINS.has(origin)) {
++    return { ...CORS_BASE_HEADERS, "Access-Control-Allow-Origin": origin, Vary: "Origin" };
++  }
++  return { ...CORS_BASE_HEADERS };
++}
+ 
+ function currentUser(req) {
+   /* v1.0.7 — Authorization: Bearer 우선, 없으면 기존 쿠키 */
+@@ -352,15 +377,17 @@ function readBody(req, limit = 6 * 1024 * 1024) {
+ }
+ function sendJson(res, code, obj, headers = {}) {
+   const body = JSON.stringify(obj);
+-  /* v1.0.7 — CORS 헤더 전역 부착 (APK 웹뷰 크로스오리진 fetch 허용) */
+-  res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...CORS_HEADERS, ...headers });
++  /* v1.0.7 — CORS 헤더 전역 부착 (APK 웹뷰 크로스오리진 fetch 허용)
++   * v1.4.8 — req에서 계산한 화이트리스트 CORS(res._cors) 우선, 없으면 정적 기본값 */
++  res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...(res._cors ?? CORS_HEADERS), ...headers });
+   res.end(body);
+ }
+ function sessionCookie(token) {
+-  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${TOKEN_TTL_MS / 1000}`;
++  /* v1.4.8 (#4 보안) — Secure 플래그 추가: 평문 http 경유 쿠키 유출 차단 (운영은 TLS 프록시/웹뷰 https 오리진) */
++  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${TOKEN_TTL_MS / 1000}`;
+ }
+ function clearCookie() {
+-  return `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
++  return `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0`;
+ }
+ function issueToken(res, user) {
+   const token = randomBytes(32).toString("hex");
+@@ -683,7 +710,8 @@ async function handle(req, res) {
+       const b = await readBody(req);
+       const id = String(b.id || "").trim().toLowerCase();
+       const pw = String(b.pw || "");
+-      const name = String(b.name || "").trim().slice(0, 8) || id.slice(0, 8);
++      /* v1.4.8 (#4 보안) — 닉네임 제어문자/제로폭 정화 (채팅·거래소 표기 악용 차단) */
++      const name = String(b.name || "").replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028\u2029]/g, "").trim().slice(0, 8) || id.slice(0, 8);
+       if (!/^[a-z0-9_]{3,20}$/.test(id)) return sendJson(res, 400, { error: "아이디는 영문 소문자/숫자/_ 3~20자" });
+       if (pw.length < 6) return sendJson(res, 400, { error: "비밀번호는 6자 이상" });
+       if (db.users[id]) return sendJson(res, 409, { error: "이미 존재하는 아이디예요" });
+@@ -705,16 +733,18 @@ async function handle(req, res) {
+       const b = await readBody(req);
+       const id = String(b.id || "").trim().toLowerCase();
+       const user = db.users[id];
+-      /* v1.0.8 — 실패 원인 분리: DB 소실 후 재가입 필요한 상황을 유저가 알 수 있게 개선 */
++      /* v1.0.8 — 실패 원인 분리 → v1.4.8 (#4 보안) 계정 열거 방지: 미존재/비밀번호 불일치가
++       *  같은 응답을 반환해 외부가 아이디 존재 여부를 수집할 수 없게 통일했다 (가입 유도 힌트는 유지). */
++      const LOGIN_FAIL_MSG = "아이디 또는 비밀번호가 올바르지 않아요 — 가입한 적이 없다면 회원가입 탭을 이용해 주세요";
+       if (!user || user.provider !== "local") {
+         audit("login_fail", { ip: clientIp(req), uid: id }); // v1.0.2
+-        return sendJson(res, 401, { error: "존재하지 않는 아이디예요 — 회원가입 탭에서 새로 가입해 주세요" });
++        return sendJson(res, 401, { error: LOGIN_FAIL_MSG });
+       }
+       const hash = Buffer.from(hashPw(String(b.pw || ""), user.salt), "hex");
+       const stored = Buffer.from(user.hash, "hex");
+       if (hash.length !== stored.length || !timingSafeEqual(hash, stored)) {
+         audit("login_fail", { ip: clientIp(req), uid: id }); // v1.0.2
+-        return sendJson(res, 401, { error: "비밀번호가 틀렸어요 — 다시 입력해 주세요" });
++        return sendJson(res, 401, { error: LOGIN_FAIL_MSG });
+       }
+       audit("login", { ip: clientIp(req), uid: id, role: user.role === "admin" ? "admin" : "user" }); // v1.0.2
+       const ses = issueToken(res, user); // v1.0.7 — 토큰 본문 동봉 (APK Bearer 세션)
+@@ -761,12 +791,26 @@ async function handle(req, res) {
+       return true;
+     }
+ 
+-    /* 클라우드 세이브 — 업로드 */
++    /* 클라우드 세이브 — 업로드
++     * v1.4.8 (#4 보안) — 무검증 6MB JSON 저장 차단: 유저당 레이트리밋(10회/분) + 크기 2MB 캡 +
++     *  깊이/형식 검증. 스토리지 DoS·파일DB 비대화·백업 푸시 폭주를 근원 차단한다. */
+     if (url === "/api/auth/cloud-save" && method === "POST") {
+       const user = currentUser(req);
+       if (!user) return sendJson(res, 401, { error: "로그인이 필요해요" });
++      if (!rateLimit(req, res, `csave:${user.id}`, 10, 60 * 1000)) return true;
+       const b = await readBody(req);
+-      db.saves[user.id] = { data: b.data ?? null, updatedAt: Date.now() };
++      const d = b.data;
++      if (d === null || typeof d !== "object" || Array.isArray(d)) {
++        return sendJson(res, 400, { error: "세이브 형식이 올바르지 않아요" });
++      }
++      if (JSON.stringify(d).length > 2 * 1024 * 1024) {
++        return sendJson(res, 413, { error: "세이브가 너무 커요 — 저장할 수 없어요" });
++      }
++      const depth = (v, n = 0) => (n > 8 ? 99 : v && typeof v === "object" ? Math.max(...Object.values(v).map((x) => depth(x, n + 1)), n + 1) : n);
++      if (depth(d) > 8) {
++        return sendJson(res, 400, { error: "세이브 구조가 올바르지 않아요" });
++      }
++      db.saves[user.id] = { data: d, updatedAt: Date.now() };
+       persistDb();
+       sendJson(res, 200, { ok: true, updatedAt: db.saves[user.id].updatedAt });
+       return true;
+@@ -792,10 +836,11 @@ async function handle(req, res) {
+ function attachAccountsBefore(handleNext) {
+   return (req, res) => {
+     const u = req.url || "";
++    res._cors = corsHeadersFor(req); // v1.4.8 — 화이트리스트 CORS를 응답 헬퍼에 부착
+     /* v1.0.7 — 프리플라이트 OPTIONS: 기존엔 Next로 떨어져 404/405 → APK에서 POST+JSON fetch가 전부 실패 */
+     if ((req.method || "GET").toUpperCase() === "OPTIONS" &&
+         (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") || u.startsWith("/api/market") || u.startsWith("/api/rank"))) {
+-      res.writeHead(204, CORS_HEADERS).end();
++      res.writeHead(204, res._cors).end();
+       return;
+     }
+     /* v1.3.0 (지시 #7) — 랭킹 조회 (공개 + 로그인 시 내 순위 동봉) */
+diff --git a/src/app/globals.css b/src/app/globals.css
+index dff7627..b7c3969 100755
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -258,6 +258,15 @@ body {
+     0 10px 0 rgba(0, 0, 0, 0.35),   /* 하단 경질 음영 */
+     0 22px 44px rgba(0, 0, 0, 0.55);
+ }
++/* v1.4.8 (#5 애니메이션) — 패널 등장 연출: 마운트 시 살짝 떠오르는 팝 (160ms, 저사양 배려 없음 — CSS 합성만) */
++@keyframes panelIn {
++  from { opacity: 0; transform: translateY(10px) scale(0.965); }
++  to   { opacity: 1; transform: translateY(0) scale(1); }
++}
++.game-panel { animation: panelIn 0.16s ease-out both; }
++@media (prefers-reduced-motion: reduce) {
++  .game-panel { animation: none; }
++}
+ /* 패널 제목 — 금색 네임플레이트 */
+ .game-panel h2 {
+   color: #ffd98a;
+diff --git a/src/components/game/AuthPanel.tsx b/src/components/game/AuthPanel.tsx
+index b6a3d91..635d8d2 100755
+--- a/src/components/game/AuthPanel.tsx
++++ b/src/components/game/AuthPanel.tsx
+@@ -149,23 +149,12 @@ export function AuthPanel() {
+ 
+   return (
+     <>
+-      {/* 위젯 버튼 — 파티(132px)/친구(168px) 아래 우측 스택 */}
+-      <div className="pointer-events-none absolute right-2 top-[204px] flex flex-col items-end gap-1.5 sm:right-3 sm:top-[228px]">
+-        <button
+-          aria-label="계정 창 열기"
+-          onClick={() => setOpen(true)}
+-          className="pointer-events-auto flex h-8 items-center gap-1 rounded-md border border-white/15 bg-black/55 px-2 text-[10px] font-black text-white/75 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+-        >
+-          <UserRound size={13} />
+-          계정
+-          {user && <span className="rounded bg-emerald-400/25 px-1 text-[8px] text-emerald-100">ON</span>}
+-        </button>
+-      </div>
++      {/* v1.4.8 (#3 겹침) — 우측 부유 계정 버튼 제거 → HUD 더보기 메뉴 + ui:authOpen 이벤트 진입로로 대체 */}
+ 
+       {open && (
+         /* v1.0.8 — 모바일 가화면(세로 360px급)에서 로그인 버튼이 하단에 잘리는 문제 수정:
+          *  패널을 컴팩트하게 줄이고 + max-height 초과 시 내부 스크롤 허용 */
+-        <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/60 px-3 py-3" onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
++        <div className="pointer-events-auto absolute inset-0 z-[45] flex items-center justify-center bg-black/60 px-3 py-3" onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+           <div className="sertz-scroll game-panel w-full max-w-[340px] max-h-[calc(100dvh-24px)] overflow-y-auto p-4">
+             <div className="mb-2 flex items-center justify-between">
+               <div className="flex items-center gap-2">
+diff --git a/src/components/game/ChatBox.tsx b/src/components/game/ChatBox.tsx
+index 496b32f..f0b72c0 100755
+--- a/src/components/game/ChatBox.tsx
++++ b/src/components/game/ChatBox.tsx
+@@ -151,7 +151,7 @@ export function ChatBox() {
+   };
+ 
+   return (
+-    <div ref={rootRef} className="absolute bottom-2 left-2 w-[300px] max-w-[52vw] sm:bottom-3 sm:left-3">
++    <div ref={rootRef} className="absolute bottom-2 left-2 w-[300px] max-w-[42vw] sm:bottom-3 sm:left-3">
+       {/* 최근 메시지 (아래가 최신 — v1.2.0 (#5): 높이 초과 시 위부터 자동 잘라냄) — v4.1.0: 접기 상태면 숨김 */}
+       {!collapsed && (
+         <div ref={listRef} className="pointer-events-none mb-1 flex flex-col gap-0.5">
+diff --git a/src/components/game/DialogueBox.tsx b/src/components/game/DialogueBox.tsx
+index 6386825..9b61a53 100755
+--- a/src/components/game/DialogueBox.tsx
++++ b/src/components/game/DialogueBox.tsx
+@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
+ import { EventBus } from "./EventBus";
+ import { getPlayerName } from "@/game/config";
+ import { BOSS_DEFS } from "@/game/data";
++import * as audio from "@/game/audio"; // v1.4.8 — 대화 진행 클릭음
+ 
+ /**
+  * 대화창: 타이프라이터 + 스페이스/엔터·탭으로 진행, 마지막 줄 완료 시 게임 재개.
+@@ -145,6 +146,7 @@ export function DialogueBox({
+       return;
+     }
+     if (dialogue && idx < dialogue.lines.length - 1) {
++      audio.sfx.uiClick(); // v1.4.8 — 줄 넘김 피드백음 (타이핑 스킵에는 무음)
+       setIdx(idx + 1);
+     } else {
+       EventBus.emit("dialogue:done");
+diff --git a/src/components/game/FriendsWidget.tsx b/src/components/game/FriendsWidget.tsx
+index afbb10b..8782a27 100755
+--- a/src/components/game/FriendsWidget.tsx
++++ b/src/components/game/FriendsWidget.tsx
+@@ -13,6 +13,7 @@ import { EventBus } from "./EventBus";
+  *  - 친구 코드 추가/삭제 (세이브에 저장 — 기기별 유지)
+  *  - 접속 중인 친구: 초록 점 + 현재 구역 + "이동"(따라가기) 버튼
+  *  - 접속 중이 아닌 친구: 회색 점 (서버는 코드→온라인 상태만 중계)
++ * v1.4.8 (#3 겹침) — 우측 부유 버튼 제거 → HUD 더보기/B키/ui:friendsOpen 이벤트 + 중앙 모달 전환
+  */
+ export function FriendsWidget() {
+   const [open, setOpen] = useState(false);
+@@ -52,7 +53,13 @@ export function FriendsWidget() {
+       if (e.key.toLowerCase() === "b") setOpen((v) => !v); // v1.0.4 — F는 MP물약과 충돌 → B(buddy)
+     };
+     window.addEventListener("keydown", onKey);
+-    return () => window.removeEventListener("keydown", onKey);
++    /* v1.4.8 — HUD 더보기 진입로 */
++    const onOpen = () => setOpen(true);
++    EventBus.on("ui:friendsOpen", onOpen);
++    return () => {
++      window.removeEventListener("keydown", onKey);
++      EventBus.off("ui:friendsOpen", onOpen);
++    };
+   }, []);
+ 
+   const onlineByCode = useMemo(() => {
+@@ -102,32 +109,30 @@ export function FriendsWidget() {
+   const stageLabel = (stage: string) => STAGE_SHORT[resolveStage(stage)] ?? stage;
+ 
+   return (
+-    <div className="absolute right-2 top-[168px] sm:right-3 sm:top-[190px] flex flex-col items-end gap-1.5">
+-      <button
+-        onClick={() => setOpen((v) => !v)}
+-        aria-label="친구 열기 (B)"
+-        className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-emerald-200/30 bg-black/60 px-2.5 py-1.5 text-[11px] font-black text-emerald-200 backdrop-blur-sm transition-transform hover:bg-black/80 active:scale-95"
+-      >
+-        <UserRound size={13} />
+-        친구 <span className="rounded bg-white/10 px-1 text-[9px] text-white/50">B</span>
+-        {friends.length > 0 && (
+-          <span className="rounded bg-emerald-400/25 px-1 text-[9px] text-emerald-100">{friends.length}</span>
+-        )}
+-      </button>
+-
++    <>
+       {open && (
+-        <div className="pointer-events-auto max-h-[calc(100svh-232px)] w-60 overflow-y-auto rounded-xl border border-emerald-200/25 bg-slate-950/95 p-2.5 shadow-2xl backdrop-blur">
++        /* v1.4.8 — 중앙 모달 전환 (부유 좌표 제거 — 계정/파티/친구 UI 겹침 근원 차단) */
++        <div
++          className="pointer-events-auto absolute inset-0 z-[45] flex items-center justify-center bg-black/60 px-3 py-3"
++          onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
++        >
++        <div className="sertz-scroll game-panel w-full max-w-[320px] max-h-[calc(100dvh-24px)] overflow-y-auto p-3">
+           <div className="mb-1.5 flex items-center justify-between">
+-            <p className="flex items-center gap-1 text-[11px] font-black text-emerald-200">
+-              <UserRound size={12} /> 친구
++            <p className="flex items-center gap-1 text-[12px] font-black text-emerald-200">
++              <UserRound size={13} /> 친구
+             </p>
+-            <span
+-              className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
+-                conn.connected ? "bg-emerald-400/20 text-emerald-200" : "bg-white/10 text-white/45"
+-              }`}
+-            >
+-              {conn.connected ? "온라인" : conn.hasServer ? "연결 중…" : "오프라인"}
+-            </span>
++            <div className="flex items-center gap-1.5">
++              <span
++                className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
++                  conn.connected ? "bg-emerald-400/20 text-emerald-200" : "bg-white/10 text-white/45"
++                }`}
++              >
++                {conn.connected ? "온라인" : conn.hasServer ? "연결 중…" : "오프라인"}
++              </span>
++              <button aria-label="친구 창 닫기" onClick={() => setOpen(false)} className="flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
++                <X size={13} />
++              </button>
++            </div>
+           </div>
+ 
+           {/* 내 고유번호 */}
+@@ -212,7 +217,8 @@ export function FriendsWidget() {
+             친구끼리 코드를 서로 등록하면 접속 시 자동으로 온라인 표시됩니다.
+           </p>
+         </div>
++        </div>
+       )}
+-    </div>
++    </>
+   );
+ }
+diff --git a/src/components/game/GameRoot.tsx b/src/components/game/GameRoot.tsx
+index ebc4f01..e01ba2a 100755
+--- a/src/components/game/GameRoot.tsx
++++ b/src/components/game/GameRoot.tsx
+@@ -133,6 +133,7 @@ export default function GameRoot() {
+                 canAutoHunt={rpg.canAutoHunt}
+                 autoHunt={rpg.autoHunt}
+                 onToggleMute={() => {
++                  audio.sfx.uiClick(); // v1.4.8 — 토글 피드백음 (뮤트 전 재생 → 켜기 시 바로 들림)
+                   const next = !muted;
+                   setMuted(next);
+                   audio.setMuted(next);
+diff --git a/src/components/game/HUD.tsx b/src/components/game/HUD.tsx
+index c2ce5f8..e1b77db 100755
+--- a/src/components/game/HUD.tsx
++++ b/src/components/game/HUD.tsx
+@@ -7,8 +7,9 @@ import { classDef, classLabel } from "@/game/classes";
+ import { BUFF_DEFS, type BuffKey } from "@/game/data";
+ import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
+ import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
+-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis } from "lucide-react";
++import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis, UserRound, KeyRound } from "lucide-react";
+ import { EventBus } from "./EventBus";
++import * as audio from "@/game/audio"; // v1.4.8 — 더보기 소셜 버튼 클릭음
+ 
+ /** 버프 아이콘 + 남은 시간 바 (v1.9 BM) */
+ function BuffChip({ buff }: { buff: HudState["buffs"][number] }) {
+@@ -361,12 +362,39 @@ export function HUD({
+               <Trophy size={17} />
+               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
+             </button>
++            {/* v1.4.8 (#3 겹침) — 파티/친구/계정: 우측 부유 스택(퀘스트 트래커와 좌표 겹침) 철거 →
++             *  더보기 메뉴로 이동. 각 창은 중앙 모달로 열린다 (Y/B 키 유지) */}
++            <button
++              onClick={() => { audio.sfx.uiClick(); EventBus.emit("ui:partyOpen", {}); }}
++              aria-label="파티 창 열기 (Y)"
++              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9cc8ff] active:scale-95"
++            >
++              <Users size={17} />
++              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-sky-300/90">파티</span>
++            </button>
++            <button
++              onClick={() => { audio.sfx.uiClick(); EventBus.emit("ui:friendsOpen", {}); }}
++              aria-label="친구 창 열기 (B)"
++              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9fe8c0] active:scale-95"
++            >
++              <UserRound size={17} />
++              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">친구</span>
++            </button>
++            <button
++              onClick={() => { audio.sfx.uiClick(); EventBus.emit("ui:authOpen", {}); }}
++              aria-label="계정 창 열기 (클라우드 세이브)"
++              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d3c4ff] active:scale-95"
++            >
++              <KeyRound size={17} />
++              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-violet-300/90">계정</span>
++            </button>
+           </div>
+         )}
+-        {/* v3.0.23 (#56) — 퀘스트 알림을 더 아래로: 모바일 간격 mt-8→mt-20 (상단 버튼행·보스바와 겹침 방지), PC는 mt-1 유지
++        {/* v1.4.8 (#2 공간) — 트래커 축소: 부유 위젯 스택 철거로 mt-20 강제 간격 불필요 → 흐름 배치(mt-2),
++         *  폭도 46vw 전체 → 최대 260px로 캡 (우상단 점유 축소)
+          *  v1.1.0 (#2) — "접는 형식 말고 버튼으로 아예 키고 끌 수 있게": 트래커 전체를 버튼 토글로 완전히 숨김/표시 */}
+         {trackerOpen && !tutActive && (
+-        <div className="game-panel pointer-events-auto mt-20 w-full px-2.5 py-1.5 sm:mt-1 sm:px-3 sm:py-2">
++        <div className="game-panel pointer-events-auto mt-2 w-full max-w-[260px] px-2.5 py-1.5 sm:mt-1 sm:px-3 sm:py-2">
+           <div className="flex items-center gap-1.5">
+             <ScrollText size={13} className="shrink-0 text-amber-300" />
+             <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
+diff --git a/src/components/game/Panels.tsx b/src/components/game/Panels.tsx
+index 3c3ce59..72b9ea8 100755
+--- a/src/components/game/Panels.tsx
++++ b/src/components/game/Panels.tsx
+@@ -2995,7 +2995,7 @@ function RankListRows({ rows, metric }: { rows: RankRow[]; metric: "lv" | "power
+ export function RankingPanel({ onClose }: { rpg: RpgState; onClose: () => void }) {
+   useEscClose(onClose);
+   return (
+-    <div className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center bg-black/55 px-4">
++    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/55 px-4">
+       <div className="game-panel max-h-[86vh] w-full max-w-md overflow-y-auto p-4">
+         <div className="mb-2 flex items-center justify-between">
+           <p className="text-sm font-black text-amber-200">🏆 랭킹창</p>
+@@ -3299,7 +3299,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+ 
+   return (
+     <div
+-      className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
++      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/55 backdrop-blur-[2px]"
+       onClick={onClose}
+       role="presentation"
+     >
+diff --git a/src/components/game/PartyWidget.tsx b/src/components/game/PartyWidget.tsx
+index 4a510d6..25b86b4 100755
+--- a/src/components/game/PartyWidget.tsx
++++ b/src/components/game/PartyWidget.tsx
+@@ -1,13 +1,16 @@
+ "use client";
+ 
+ import { useEffect, useState } from "react";
+-import { Users, LogOut, Crown } from "lucide-react";
++import { Users, LogOut, Crown, X } from "lucide-react";
+ import * as net from "@/game/net";
++import { EventBus } from "./EventBus";
+ 
+ /**
+  * 파티 위젯 (v2.0 — 지시 #5 파티 & 보스 토벌)
+  *  - 파티 창설 / 코드 참여 / 탈퇴 / 멤버 목록 (서버 릴레이)
+  *  - 파티 채팅은 ChatBox에서 [파티] 프리픽스 메시지로 표시
++ * v1.4.8 (#3 겹침) — 우측 부유 버튼 제거 → HUD 더보기 메뉴/Y키/ui:partyOpen 이벤트로 열고
++ *  좌표 고정 부유창 대신 중앙 모달로 전환 (퀘스트 트래커·버튼행과 겹치던 근원 차단)
+  */
+ export function PartyWidget() {
+   const [open, setOpen] = useState(false);
+@@ -31,7 +34,13 @@ export function PartyWidget() {
+       if (e.key.toLowerCase() === "y") setOpen((v) => !v);
+     };
+     window.addEventListener("keydown", onKey);
+-    return () => window.removeEventListener("keydown", onKey);
++    /* v1.4.8 — HUD 더보기 진입로 */
++    const onOpen = () => setOpen(true);
++    EventBus.on("ui:partyOpen", onOpen);
++    return () => {
++      window.removeEventListener("keydown", onKey);
++      EventBus.off("ui:partyOpen", onOpen);
++    };
+   }, []);
+ 
+   const create = () => {
+@@ -58,22 +67,23 @@ export function PartyWidget() {
+   };
+ 
+   return (
+-    <div className="absolute right-2 top-[132px] sm:right-3 sm:top-[150px] flex flex-col items-end gap-1.5">
+-      <button
+-        onClick={() => setOpen((v) => !v)}
+-        aria-label="파티 열기 (Y)"
+-        className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-sky-200/30 bg-black/60 px-2.5 py-1.5 text-[11px] font-black text-sky-200 backdrop-blur-sm transition-transform hover:bg-black/80 active:scale-95"
+-      >
+-        <Users size={13} />
+-        파티 <span className="rounded bg-white/10 px-1 text-[9px] text-white/50">Y</span>
+-        {party && <span className="rounded bg-sky-400/25 px-1 text-[9px] text-sky-100">{party.members.length}</span>}
+-      </button>
+-
++    <>
+       {open && (
+-        <div className="pointer-events-auto max-h-[calc(100svh-192px)] w-56 overflow-y-auto rounded-xl border border-sky-200/25 bg-slate-950/95 p-2.5 shadow-2xl backdrop-blur">
+-          <p className="mb-1.5 flex items-center gap-1 text-[11px] font-black text-sky-200">
+-            <Users size={12} /> 파티 (최대 4인)
+-          </p>
++        /* v1.4.8 — 중앙 모달 전환 (부유 좌표 제거 — 계정/파티/친구 UI 겹침 근원 차단) */
++        <div
++          className="pointer-events-auto absolute inset-0 z-[45] flex items-center justify-center bg-black/60 px-3 py-3"
++          onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
++        >
++        <div className="sertz-scroll game-panel w-full max-w-[300px] max-h-[calc(100dvh-24px)] overflow-y-auto p-3">
++          <div className="mb-2 flex items-center justify-between">
++            <p className="flex items-center gap-1 text-[12px] font-black text-sky-200">
++              <Users size={13} /> 파티 (최대 4인)
++              {party && <span className="rounded bg-sky-400/25 px-1 text-[9px] text-sky-100">{party.members.length}명</span>}
++            </p>
++            <button aria-label="파티 창 닫기" onClick={() => setOpen(false)} className="flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
++              <X size={13} />
++            </button>
++          </div>
+ 
+           {party ? (
+             <>
+@@ -134,7 +144,8 @@ export function PartyWidget() {
+             </>
+           )}
+         </div>
++        </div>
+       )}
+-    </div>
++    </>
+   );
+ }
+diff --git a/src/game/audio.ts b/src/game/audio.ts
+index 64a855a..a9c5e1f 100755
+--- a/src/game/audio.ts
++++ b/src/game/audio.ts
+@@ -300,6 +300,37 @@ function destroyBgm() {
+   }
+ }
+ 
++/* v1.4.8 (#5 BGM) — 크로스페이드 전환: 기존은 하드컷→새 곡 페이드인이어서 구간 전환마다
++ *  음악이 뚝 끊겼다. 이제 이전 트랙은 700ms 페이드아웃 후 파괴, 새 트랙은 동시에 페이드인 —
++ *  챕터/마을/보스 전환이 자연스럽게 이어진다. (뮤트·백그라운드 정지는 destroyBgm 즉시 경로 유지) */
++function retireBgm(ms = 700) {
++  clearFadeTimer();
++  const old = bgmSound;
++  bgmSound = null;
++  if (!old) return;
++  const snd = asVol(old);
++  if (!snd) {
++    try { old.stop(); old.destroy(); } catch { /* noop */ }
++    return;
++  }
++  const from = snd.volume ?? bgmVol;
++  const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
++  const timer = setInterval(() => {
++    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
++    const k = Math.min(1, (now - t0) / ms);
++    try {
++      snd.setVolume(Math.max(0, from * (1 - k)));
++      if (k >= 1) {
++        clearInterval(timer);
++        old.stop();
++        old.destroy();
++      }
++    } catch {
++      clearInterval(timer);
++    }
++  }, 60);
++}
++
+ /** BaseSound 볼륨 조작 (Phaser 타입이 구현체별로 분리돼 있어 최소 인터페이스 캐스팅) */
+ type VolumeSound = { volume: number; setVolume(v: number): void };
+ function asVol(s: Phaser.Sound.BaseSound): VolumeSound | null {
+@@ -429,7 +460,7 @@ export function playStageBGM(stage: string, bossActive = false) {
+   const key = bossActive ? bossTrackOf(stage) : stageTrack(stage);
+   bgmStage = stage;
+   if (bgmKey === key && bgmSound?.isPlaying) return;
+-  destroyBgm();
++  retireBgm(); /* v1.4.8 — 크로스페이드 */
+   bgmKey = key;
+   if (muted || !game) return;
+   startTrack(key);
+@@ -439,7 +470,7 @@ export function playStageBGM(stage: string, bossActive = false) {
+ export function playBGM(kind: BGMKind) {
+   const key = THEME_TRACKS[kind];
+   if (bgmKey === key && bgmSound?.isPlaying) return;
+-  destroyBgm();
++  retireBgm(); /* v1.4.8 — 크로스페이드 */
+   bgmKey = key;
+   if (muted || !game) return;
+   startTrack(key);
+@@ -556,6 +587,7 @@ const SKILL_SFX_FILES: Record<string, string> = {
+   timestop: "skl_timestop1", // 이터널 영원의 고리 (시간 정지)
+   manaburst: "skl_manaburst1", // 아크로드 마나 붕괴
+   skyflight: "skl_skyflight1", // 스카이로드 천공의 폭풍
++  snipe: "skl_arrowpierce1", // v1.4.8 — 스나이퍼 정밀사격 (키 누락 무음 버그 수정 — 궁수 저격음 공유)
+   /* 기존 파일 재사용 별칭 (피치/볼륨 변주로 클래스 차별화) */
+   dash2: "sfx_dash", // 전사/스워시버클러 돌진 (highspeed-movement1)
+   worp: "sfx_portal", // 마법사 점멸 계열 (magic-worp1)
+@@ -567,6 +599,7 @@ const SKILL_SFX_VOLUMES: Record<string, number> = {
+   spin: 0.4, // v4.3.0 — 기본공격음 (회전베기 스왑)
+   arrow: 0.4, cast: 0.34, knife: 0.36, flame: 0.46, electron: 0.46,
+   arrowpierce: 0.5, wind: 0.44, wind2: 0.42, cure: 0.44, iainuki: 0.48,
++  snipe: 0.5, // v1.4.8 — snipe 키 볼륨 누락 보완
+   swift: 0.44, quake: 0.54, dark: 0.46, heavydash: 0.48, ambush: 0.44,
+   holy: 0.52, thunder: 0.56, slowmo: 0.5, rage: 0.52, chain: 0.52,
+   gravity: 0.54, bigsword: 0.52, warcry: 0.56, superhit: 0.6, timestop: 0.56,
+@@ -733,6 +766,62 @@ export const sfx = {
+     const file = map[kind] ?? "sfx_smoke_fire";
+     play(file, SFX_VOLUMES.sfx_smoke);
+   },
++
++  /* ================= v1.4.8 (#6 기능별 사운드 분리) =================
++   *  유저 지시: "유저가 헷갈리지 않게 기능마다 겹치는 사운드 및 UI&그래픽 없도록 해"
++   *  기존엔 sfx_quest(차임) 하나를 상자·상점·보상·출석 등 38개 기능이 공유하고
++   *  sfx_coin이 골드 픽업~정산 15곳에 쓰여 "무슨 소리가 무슨 일인지" 구분이 안 됐다.
++   *  전부 이미 로드된 Drive 팩 파일을 재할당(다운로드 추가 0)해 기능군별 고유음을 부여한다.
++   *  분리 원칙: 획득(코인) / 구매(상점) / 판매(정산) / 충전 / 완료(퀘스트 차임) /
++   *  보상(선물 차임) / 상자 / 수락 / 차단(deny) / 제작 / 성장(레벨업) 은 서로 다른 소리 */
++  /** 상점·거래소 구매 — 상품 수령 느낌의 밝은 픽업음 (골드 픽업음과 분리) */
++  shop() {
++    play("sfx_pickup2", 0.44);
++  },
++  /** 판매·정산 — 아이템이 골드로 바뀌는 금빛 연막 후속 (구매음과도 분리) */
++  sell() {
++    play("sfx_smoke_gold", 0.5);
++  },
++  /** 충전·티켓·스토어·구독 — 빛이 모이는 시전음 (재화음과 분리) */
++  charge() {
++    play("sfx_aoe_light_cast", 0.5);
++  },
++  /** 상자 개봉 — 수정이 깨지는 개방음 (퀘스트 차임에서 완전 분리) */
++  chest() {
++    play("sfx_aoe_crystal_burst", 0.5, 0.94 + Math.random() * 0.12);
++  },
++  /** 보상 수령(광고/출석/쿠폰/패스/미션/도감) — 밝은 힐링 차임 (퀘스트 완료음과 분리) */
++  reward() {
++    play("sfx_aoe_heal_burst", 0.5, 0.96 + Math.random() * 0.1);
++  },
++  /** 퀘스트/시련 수락 — 자연 기운 약속음 (완료 차임과 분리) */
++  questAccept() {
++    play("sfx_aoe_nature_cast", 0.46);
++  },
++  /** 차단·부족·실패 공용 부정 피드백 (게이트 차단/한도 초과/재료 부족 — open·bossdie 재활용 해제) */
++  deny() {
++    play("sfx_debuff_cast", 0.5, 0.9);
++  },
++  /** 제작 성공 — 용광로 폭발음 (코인음과 분리) */
++  craft() {
++    play("sfx_aoe_fire_burst", 0.5);
++  },
++  /** 횃불 점화 — 용암 위화감 점화음 (포탈음 재활용 해제) */
++  torch() {
++    play("sfx_aoe_magma_burst", 0.4, 1.1);
++  },
++  /** 보스 드롭 스폰 — 빛 폭발 (포효음 재활용 해제 — 보스 등장과 구분) */
++  bossDrop() {
++    play("sfx_aoe_light_burst", 0.5);
++  },
++  /** 전투 상태음(수비전 카드 회복 등) — 회복 시전 (코인음 재활용 해제) */
++  cardHeal() {
++    play("sfx_aoe_heal_cast", 0.46);
++  },
++  /** 플레이어 사망 — 어두운 연막 붕괴음 (사망 무음 해소) */
++  playerDie() {
++    play("sfx_smoke_dark", 0.55, 0.85);
++  },
+ };
+ 
+ /** v1.3.0 — 원소 → Drive 팩 AoE 사운드 파일 접두 매핑 */
+diff --git a/src/game/entities/Enemy.ts b/src/game/entities/Enemy.ts
+index 26d9259..c8d99c9 100755
+--- a/src/game/entities/Enemy.ts
++++ b/src/game/entities/Enemy.ts
+@@ -515,7 +515,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
+     /* v1.2.0 (#10 타격감) — 히트스톱: 일반 26ms · 크리티컬 55ms + 미세 카메라 흔들림.
+      *  플래시·스쿼시·넉백과 함께 "얻어맞은 순간이 멈춘다"는 손맛을 만드는 핵심 장치 */
+     this.scene.hitStop(crit ? 55 : 26);
+-    this.scene.cameras.main.shake(crit ? 70 : 30, crit ? 0.0022 : 0.0009);
++    this.scene.doShake(crit ? 70 : 30, crit ? 0.0022 : 0.0009); // v1.4.8 — doShake 게이트 우회 수정 (v1.2.1 절전 모드에서도 쉐이크 발생 버그)
+     /* v4.8.0 — 강한 순간 충격파 링: 크리티컬 금색 / 약점 원소색 (WebGL 전용, Canvas 무시) */
+     if (crit) { this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.1); this.scene.spawnCritSplat(this.x, this.y); this.scene.driveFx?.critBurst(this.x, this.y); }
+     else if (weak) this.scene.spawnShockwave(this.x, this.y, ELEMENT_META[this.elem].hex, 0.85);
+diff --git a/src/game/entities/Player.ts b/src/game/entities/Player.ts
+index d34b0c1..bc13cc0 100755
+--- a/src/game/entities/Player.ts
++++ b/src/game/entities/Player.ts
+@@ -3218,6 +3218,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
+     this.iframes = 600;
+     this.scene.sfxHurt();
+     this.scene.cameras.main.shake(70, 0.004);
++    /* v1.4.8 (#5 그래픽) — 위험 피격 연출: HP 30% 이하 피격 시 암적색 플래시로 위험 상태를 즉각 인지 */
++    if (this.hp > 0 && this.hp / Math.max(1, this.maxHp) <= 0.3) this.scene.cameras.main.flash(160, 70, 0, 0);
+     this.setVelocity(fromDir.x * 200, fromDir.y * 200);
+     this.lungeTime = 0; // 피격 넉백이 러지에 덮이지 않게
+     this.scene.spawnDamageText(this.x, this.y - 30, final);
+@@ -3946,7 +3948,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
+     }
+     if (sold <= 0) return 0;
+     this.gold += gold;
+-    audio.sfx.coin();
++    audio.sfx.sell();
+     this.scene.spawnPickupText(this.x, this.y - 30, sold > 1 ? `${item.name} 판매 ×${sold} +${gold}G` : `${item.name} 판매 +${value}G`, "#ffd76a");
+     this.scene.emitHud();
+     return sold;
+@@ -4164,7 +4166,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
+       this.syncAccStarHp();
+     }
+     this.gold += gold;
+-    audio.sfx.coin();
++    audio.sfx.sell();
+     this.scene.spawnPickupText(this.x, this.y - 30, sold > 1 ? `${item.name} 판매 ×${sold} +${gold}G` : `${item.name} 판매 +${value}G`, "#ffd76a");
+     this.scene.emitHud();
+     return sold;
+@@ -4183,7 +4185,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
+     this.owned.push(key);
+     this.equip(key); // 즉시 장착 (슬롯 넘치면 기존 교체)
+     this.syncAccStarHp();
+-    audio.sfx.coin();
++    audio.sfx.shop();
+     this.scene.spawnPickupText(this.x, this.y - 30, `거래소 구매 ${item.name}`, "#8ff2d8");
+     this.scene.emitHud();
+     return true;
+@@ -4203,7 +4205,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
+       this.syncAccStarHp();
+     }
+     this.emerald += value;
+-    audio.sfx.coin();
++    audio.sfx.sell();
+     this.scene.spawnPickupText(this.x, this.y - 30, `거래소 판매 +${value} 에메랄드`, "#8ff2d8");
+     this.scene.emitHud();
+     return true;
+diff --git a/src/game/scenes/WorldScene.ts b/src/game/scenes/WorldScene.ts
+index 8b53e92..9dfebab 100755
+--- a/src/game/scenes/WorldScene.ts
++++ b/src/game/scenes/WorldScene.ts
+@@ -1228,7 +1228,7 @@ export class WorldScene extends Phaser.Scene {
+           EventBus.emit("banner:show", {
+             text: `장비 세트 해금! ${SET_GEAR[chKey].title} — 마을 상점에서 구매 가능`,
+           });
+-          audio.sfx.questDone();
++          audio.sfx.ach();
+         });
+         this.save();
+         this.emitRpgState();
+@@ -2123,7 +2123,7 @@ export class WorldScene extends Phaser.Scene {
+ 
+   private collectFragment(glow: Phaser.GameObjects.Image) {
+     audio.sfx.pickup();
+-    audio.sfx.questDone();
++
+     /* v3.0.22 (#43/#44) — 챕터별 고유 결정: 이름·색·보너스(ATK 5→30)가 전부 다르다 */
+     const ch = parseStage(this.stageDef.key).ch;
+     const meta = FRAGMENT_META[ch] ?? { name: "결정의 흔적", color: 0x9df0ff, atk: 5, lines: ["결정이 손안에서 빛난다."] };
+@@ -2376,7 +2376,7 @@ export class WorldScene extends Phaser.Scene {
+       const need = spec?.lvGate.enter ?? 0;
+       if (need > 0 && this.player.lv < need && this.adminRole !== "admin") {
+         this.portalActive = true; // 차단 — 다시 밟을 수 있게
+-        audio.sfx.uiOpen();
++        audio.sfx.deny();
+         this.showBanner(`Lv.${need} 이상부터 ${spec?.title ?? "다음 지역"} 입장 가능 — 지금은 Lv.${this.player.lv} (사냥터에서 레벨을 채우자!)`);
+         return;
+       }
+@@ -2666,7 +2666,7 @@ export class WorldScene extends Phaser.Scene {
+     }
+     this.spawnPickupText(this.player.x, this.player.y - 40, "유적 상자!", "#ffd76a");
+     EventBus.emit("banner:show", { text: msg });
+-    audio.sfx.coin();
++    audio.sfx.chest();
+     this.driveFx?.twinkle(this.player.x, this.player.y - 20, 0xffd76a);
+     /* 상자 개봉 프레임 애니 (몇 프레임 진행 후 원위치) */
+     if (this.keepChestSprite) {
+@@ -3037,14 +3037,29 @@ export class WorldScene extends Phaser.Scene {
+ 
+     // v2.2 타격감 — 충격 링 (shock_ring 확산)
+     // v1.0.7 — 알파 0.85→0.55 · 확산 0.85→0.7 (유저 지시: 이펙트 가림 축소)
+-    const ring = this.add.image(x, y, "shock_ring").setDepth(19).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0.55).setTint(0xfff2c0);
++    // v1.4.8 (#1 최적화) — 모든 근접/투사체 히트마다 image 생성/파괴 → 8장 링 버퍼 풀로 재사용
++    let ring = this.shockRingPool[this.shockRingIdx];
++    if (!ring || !ring.scene) {
++      ring = this.add.image(x, y, "shock_ring");
++      this.shockRingPool[this.shockRingIdx] = ring;
++    }
++    this.shockRingIdx = (this.shockRingIdx + 1) % 8;
++    this.tweens.killTweensOf(ring);
++    ring.setTexture("shock_ring")
++      .setPosition(x, y)
++      .setDepth(19)
++      .setBlendMode(Phaser.BlendModes.ADD)
++      .setScale(0.3)
++      .setAlpha(0.55)
++      .setTint(0xfff2c0)
++      .setActive(true)
++      .setVisible(true);
+     this.tweens.add({
+       targets: ring,
+       scale: 0.7,
+       alpha: 0,
+       duration: 150,
+       ease: "Cubic.out",
+-      onComplete: () => ring.destroy(),
+     });
+ 
+     // 실제 에셋 타격 스타 팝 (풀 재사용 — F4 규칙 준수)
+@@ -3144,13 +3159,18 @@ export class WorldScene extends Phaser.Scene {
+   }
+ 
+   private tickFxQuality(dt: number) {
+-    /* v1.2.1 (#4 최적화 x3) — 설정 패널 성능 카드용 실시간 노출 (FPS/모드/레벨) */
+-    (window as unknown as { __SERTZ_PERF__?: { fps: number; fxLevel: number; mode: string; lowFx: boolean } }).__SERTZ_PERF__ = {
+-      fps: Math.round(this.game.loop.actualFps),
+-      fxLevel: this.fxLevel,
+-      mode: this.fxMode,
+-      lowFx: this.fxLevel === 0,
+-    };
++    /* v1.2.1 (#4 최적화 x3) — 설정 패널 성능 카드용 실시간 노출 (FPS/모드/레벨)
++     *  v1.4.8 (#1 최적화) — 기존엔 매 프레임마다 객체를 새로 할당해 GC 부담이었다 → 500ms 스로틀 */
++    const perfWin = window as unknown as { __SERTZ_PERF__?: { fps: number; fxLevel: number; mode: string; lowFx: boolean } };
++    if (!perfWin.__SERTZ_PERF__ || performance.now() - (this.perfSnapshotAt ?? 0) >= 500) {
++      this.perfSnapshotAt = performance.now();
++      perfWin.__SERTZ_PERF__ = {
++        fps: Math.round(this.game.loop.actualFps),
++        fxLevel: this.fxLevel,
++        mode: this.fxMode,
++        lowFx: this.fxLevel === 0,
++      };
++    }
+     /* v1.0.8 — 모드 강제: high는 항상 복원, low는 항상 축소 (적응형 판정 생략) */
+     if (this.fxMode === "high") {
+       this.fxSampleAt = 0;
+@@ -3450,7 +3470,7 @@ export class WorldScene extends Phaser.Scene {
+       const it = ITEMS[kind as ItemKey];
+       if (!it) return;
+       this.player.owned.push(kind as ItemKey);
+-      audio.sfx.questDone();
++      audio.sfx.pickup();
+       this.spawnPickupText(x, y - 14, viaPet ? `${it.name} (펫)` : `${it.name} 획득!`, "#ffd76a");
+       this.showBanner(`${it.name} 획득! — 보스 전용 아이템 (상점 판매 금지 · 거래소 예정)`);
+       this.emitRpgState();
+@@ -3490,7 +3510,10 @@ export class WorldScene extends Phaser.Scene {
+     const gw = 156 / z;
+     const gh = 88 / z;
+     const cx = cam.width / 2;
+-    const cy = cam.height / 2 + (cam.height - 12 - gh * z * 0.5 - cam.height / 2) / z;
++    /* v1.4.8 (#3 겹침) — 좌하단 ChatBox(하단 44vw)와 미니맵(하단 중앙) 좌하단 가림 해소:
++     *  좁은 화면(모바일 가로)에서는 채팅 입력바 위(56px)로 미니맵을 올리고, 넓은 화면은 하단 유지 */
++    const mmBottom = cam.width < 900 ? 56 : 12;
++    const cy = cam.height / 2 + (cam.height - mmBottom - gh * z * 0.5 - cam.height / 2) / z;
+     mm.clear();
+     /* v1.1.0 (#7) — 어두운 맵(암전 챕터/카오스 보스전)에서도 지도가 잘 보이게:
+      *  반투명 0.78 → 사실상 불투명 판(0.96) + 두꺼운 금테 + 외곽 그림자. 카메라 포스트FX가 전체 프레임을
+@@ -3681,11 +3704,12 @@ export class WorldScene extends Phaser.Scene {
+   }
+ 
+   /** v1.3.0 (#에셋통합) — 근접 명중 지점 VFX: Matthew Guz 참격 궤적 + Unity BasicAttack 원음.
+-   *  checkMeleeHit에서 타격 1건 이상일 때 마지막 타격 지점 기준으로 1회 호출. */
++   *  checkMeleeHit에서 타격 1건 이상일 때 마지막 타격 지점 기준으로 1회 호출.
++   *  v1.4.8 (#6 사운드 분리) — basicHit 재생 제거: onMeleeConnect의 sfx_hit과 근접 1회 명중에
++   *  두 파일이 동시 재생되어 잡음 원인이었다. 명중음은 onMeleeConnect 단일 경로로 통일. */
+   spawnMeleeVfx(x: number, y: number, dirX: number, dirY: number, crit: boolean) {
+     const ang = Math.atan2(dirY, dirX);
+     this.driveFx.slashArc(x - dirX * 6, y - 6, ang, crit ? 0xffd76a : 0xfff0d0, crit);
+-    audio.sfx.basicHit();
+   }
+ 
+   /** v4.8.0 — 충격파 링 (강한 순간 강조 — 크리티컬/약점/보스 격파).
+@@ -3750,7 +3774,7 @@ export class WorldScene extends Phaser.Scene {
+       this.player.emerald += 3;
+       this.spawnPickupText(this.player.x, this.player.y - 74, "침공 격퇴! +3 에메랄드", "#ff9a7a");
+       this.showBanner("침공을 격퇴했다! (+3 에메랄드)");
+-      audio.sfx.questDone();
++      audio.sfx.reward();
+       this.emitRpgState();
+     }
+     /* v3.0.16 — 필드 정예 처치 보상: 에메랄드 +1 (메이플 엘리트 몬스터 컨셉)
+@@ -3859,7 +3883,7 @@ export class WorldScene extends Phaser.Scene {
+       this.inf.abyss += GOLDEN.abyss;
+       this.spawnPickupText(this.player.x, this.player.y - 84, `황금 사냥 성공! +${g.toLocaleString()} G · 심연 +${GOLDEN.abyss}`, "#ffd76a");
+       this.showBanner("황금 몬스터를 잡았다! 대량의 골드가 쏟아진다!");
+-      audio.sfx.questDone();
++      audio.sfx.reward();
+       this.emitRpgState();
+     }
+     /* 일일 퀘스트 — 토벌 카운트 (게이트/던전 처치 포함) */
+@@ -4100,7 +4124,7 @@ export class WorldScene extends Phaser.Scene {
+         { text: reward > 0 ? `훈련 보상 +${reward.toLocaleString()} G` : "보상 없음 — 더 세게 때려라!", color: "#ffd76a" },
+       ] satisfies RewardPopupState["lines"],
+     });
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+     this.emitRpgState();
+     /* v4.0.0 — 도장 기록 서버 랭킹 제출 */
+     net.netRankSubmit("dojang", score, getPlayerName(), this.player.lv);
+@@ -4203,7 +4227,7 @@ export class WorldScene extends Phaser.Scene {
+     this.passXp += n;
+     const after = passLevel(this.passXp);
+     if (after > before) {
+-      audio.sfx.questDone();
++      audio.sfx.levelup();
+       EventBus.emit("banner:show", { text: `시즌 패스 Lv.${after} 달성! — 패스 보상을 수령하세요` });
+     }
+   }
+@@ -4250,7 +4274,7 @@ export class WorldScene extends Phaser.Scene {
+     }
+     /* 완료 순간 도파민 배너 (수령은 패스 패널에서) */
+     if (completed) {
+-      audio.sfx.questDone();
++      audio.sfx.reward();
+       EventBus.emit("banner:show", { text: `시즌 미션 완료 — ${completed}! 패스 패널에서 수령하세요` });
+     }
+   }
+@@ -4273,7 +4297,7 @@ export class WorldScene extends Phaser.Scene {
+     claimed.push(m.id);
+     this.addPassXp(m.xp);
+     EventBus.emit("banner:show", { text: `미션 수령 — ${m.name} (+패스 XP ${m.xp})` });
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+     this.save();
+     this.emitRpgState();
+   }
+@@ -4302,7 +4326,7 @@ export class WorldScene extends Phaser.Scene {
+       title: `출석 체크 — ${((this.attendCount - 1) % ATTEND_CYCLE) + 1}일차`,
+       lines,
+     });
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+   }
+ 
+   private checkOfflineReward() {
+@@ -4321,7 +4345,7 @@ export class WorldScene extends Phaser.Scene {
+         { text: `경험치 +${r.exp.toLocaleString()} EXP`, color: "#8fe84a" },
+       ] satisfies RewardPopupState["lines"],
+     });
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+   }
+ 
+   /** GM 무료 뽑기 — 광고 보상 대체 (10분 쿨) */
+@@ -4336,7 +4360,7 @@ export class WorldScene extends Phaser.Scene {
+     this.save();
+     this.emitRpgState();
+     EventBus.emit("banner:show", { text: "GM 방송 시청 완료! 뽑기권 +1 (10분마다 무료)" });
+-    audio.sfx.coin();
++    audio.sfx.reward();
+   }
+ 
+   /* ---------------- 바르가 원정대 커맨드 (Panels → EventBus) ---------------- */
+@@ -4371,7 +4395,7 @@ export class WorldScene extends Phaser.Scene {
+             ] satisfies RewardPopupState["lines"],
+           });
+         }
+-        audio.sfx.questDone();
++        audio.sfx.reward();
+         this.syncExtBonus();
+         this.save();
+         this.emitRpgState();
+@@ -4405,7 +4429,7 @@ export class WorldScene extends Phaser.Scene {
+             const up = runeKey(kind, t + 1);
+             this.runes[up] = (this.runes[up] ?? 0) + 1;
+             EventBus.emit("banner:show", { text: `룬 합성 성공! ${RUNE_META[kind].name} T${t} ×3 → T${t + 1} ×1` });
+-            audio.sfx.equip();
++            audio.sfx.craft();
+             this.syncExtBonus();
+             this.save();
+             this.emitRpgState();
+@@ -4448,7 +4472,7 @@ export class WorldScene extends Phaser.Scene {
+         this.shards -= cost;
+         this.constel.push(id);
+         EventBus.emit("banner:show", { text: `성좌 개방 — ${c.name} 별${idx + 1}!` });
+-        audio.sfx.equip();
++        audio.sfx.craft();
+         this.syncExtBonus();
+         this.save();
+         this.emitRpgState();
+@@ -4487,7 +4511,7 @@ export class WorldScene extends Phaser.Scene {
+         this.addPassXp(PASS_XP_RULES.daily); // v4.5.0 — 일일 퀘스트 수령 시 패스 XP +40
+         this.trackMission("dailyClaim"); // v1.0.1 — 주간 미션 "일일 퀘스트 수령" 카운트
+         EventBus.emit("banner:show", { text: `일일 퀘스트 완료 — ${g.label}!` });
+-        audio.sfx.questDone();
++        audio.sfx.reward();
+         this.save();
+         this.emitRpgState();
+         break;
+@@ -4507,7 +4531,7 @@ export class WorldScene extends Phaser.Scene {
+           title: `쿠폰 사용 — ${def.name}`,
+           lines: [{ text: def.desc, color: "#ffd76a" }] satisfies RewardPopupState["lines"],
+         });
+-        audio.sfx.questDone();
++        audio.sfx.reward();
+         this.save();
+         this.emitRpgState();
+         break;
+@@ -4539,7 +4563,7 @@ export class WorldScene extends Phaser.Scene {
+           if (!p.cosmetics.includes(key as CosmeticKey)) p.cosmetics.push(key as CosmeticKey);
+           EventBus.emit("banner:show", { text: `스킨 획득 — 인벤토리에서 착용!` });
+         }
+-        audio.sfx.coin();
++        audio.sfx.shop();
+         this.syncExtBonus();
+         this.save();
+         this.emitRpgState();
+@@ -4557,7 +4581,7 @@ export class WorldScene extends Phaser.Scene {
+           const nextTier = p.upgradeTier(slot);
+           if (nextTier) {
+             EventBus.emit("banner:show", { text: `등급업 성공! ${slot === "weapon" ? "무기" : "방어구"} → ${nextTier.toUpperCase()} (스탯 +12%/회)` });
+-            audio.sfx.equip();
++            audio.sfx.upgradeOk();
+             this.save();
+             this.emitRpgState();
+             this.emitHud();
+@@ -4823,7 +4847,7 @@ export class WorldScene extends Phaser.Scene {
+       p.mp = Math.min(p.maxMp, p.mp + p.maxMp);
+       EventBus.emit("banner:show", { text: "정신 안정제 — MP 회복!" });
+     }
+-    audio.sfx.coin();
++    audio.sfx.cardHeal();
+     this.emitGateState();
+   }
+ 
+@@ -4877,7 +4901,7 @@ export class WorldScene extends Phaser.Scene {
+       title: mode === "fail" ? "바르가 수비전 — 균열 함락" : "바르가 수비전 — 철수",
+       lines: lines as RewardPopupState["lines"],
+     });
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+     this.emitGateState();
+     this.emitRpgState();
+     this.save();
+@@ -5072,7 +5096,7 @@ export class WorldScene extends Phaser.Scene {
+     const record = f > this.inf.towerBest;
+     if (record) this.inf.towerBest = f;
+     this.spawnPickupText(this.player.x, this.player.y - 74, `${f}층 클리어! +${rw.abyss} 심연 코인${record ? " — 신기록!" : ""}`, "#c08aff");
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+     if (f % 10 === 0) {
+       /* 10층마다 에메랄드 보너스 — 장기 목표 */
+       this.player.emerald += 3;
+@@ -5207,7 +5231,7 @@ export class WorldScene extends Phaser.Scene {
+         { text: record ? "지옥 난이도 신기록 달성!" : `입장권 잔여: ${this.parkTickets.n}장 (하루 2장)`, color: record ? "#7dffa8" : "#8a93a5" },
+       ] satisfies RewardPopupState["lines"],
+     });
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+     this.emitRpgState();
+     this.save();
+     const back: StageKey = STAGES[this.parkFrom] ? this.parkFrom : "village";
+@@ -5283,7 +5307,7 @@ export class WorldScene extends Phaser.Scene {
+           { text: `내일의 시련: 「${todayTrial(new Date(Date.now() + 86400000)).name}」`, color: "#a8ecff" },
+         ] satisfies RewardPopupState["lines"],
+       });
+-      audio.sfx.questDone();
++      audio.sfx.reward();
+       this.trialMod = null;
+       this.emitRpgState();
+       this.save();
+@@ -5318,7 +5342,7 @@ export class WorldScene extends Phaser.Scene {
+         { text: this.inf.closetTier > tier ? `심층 균열 T${this.inf.closetTier} 해금!` : `다음 도전 — 심층 균열 T${this.inf.closetTier}`, color: "#c08aff" },
+       ] satisfies RewardPopupState["lines"],
+     });
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+     this.emitRpgState();
+     this.save();
+     net.netRankSubmit("closet", this.closetBest, getPlayerName(), this.player.lv);
+@@ -5452,7 +5476,7 @@ export class WorldScene extends Phaser.Scene {
+     if (!r) return;
+     if (!canCraft(r, this.inf.mats)) {
+       EventBus.emit("banner:show", { text: "재료가 부족하다 — 사냥으로 재료를 모아보자!" });
+-      audio.sfx.bossDie();
++      audio.sfx.deny();
+       return;
+     }
+     for (const [k, n] of Object.entries(r.mats)) this.inf.mats[k] -= n;
+@@ -5463,7 +5487,7 @@ export class WorldScene extends Phaser.Scene {
+       for (let i = 0; i < r.out.n; i++) this.player.owned.push(r.out.item as ItemKey);
+       EventBus.emit("banner:show", { text: `제작 완료! ${ITEMS[r.out.item as ItemKey]?.name ?? r.out.item} ×${r.out.n}` });
+     }
+-    audio.sfx.coin();
++    audio.sfx.craft();
+     this.save();
+     this.emitRpgState();
+   }
+@@ -5475,7 +5499,7 @@ export class WorldScene extends Phaser.Scene {
+     if (!item) return;
+     if (this.inf.abyss < item.cost) {
+       EventBus.emit("banner:show", { text: `심연 코인이 부족하다 (${item.cost} 필요 · 보유 ${this.inf.abyss})` });
+-      audio.sfx.bossDie();
++      audio.sfx.deny();
+       return;
+     }
+     if (id === "rebirth_ess") {
+@@ -5505,7 +5529,7 @@ export class WorldScene extends Phaser.Scene {
+       this.syncExtBonus();
+       EventBus.emit("banner:show", { text: `${item.name} 각인! (누적 ×${this.inf.orbs[id]}) — ${item.desc}` });
+     }
+-    audio.sfx.coin();
++    audio.sfx.shop();
+     this.save();
+     this.emitRpgState();
+   }
+@@ -5516,7 +5540,7 @@ export class WorldScene extends Phaser.Scene {
+   private startFifthTrial() {
+     if (!this.player || this.fifthTrialActive) return;
+     this.fifthTrialActive = true;
+-    audio.sfx.questDone();
++    audio.sfx.questAccept();
+     /* 챕터 카드 규약 재사용 — "각성" 타이틀 카드 (physics 정지 + 자동 복귀 내장) */
+     this.showChapterCard(5, "각성 — 제5의 문", "모든 스킬이 극으로, 궁극기가 손에 쥐어진다", () => {
+       this.summonFifthGuardian();
+@@ -5688,7 +5712,7 @@ export class WorldScene extends Phaser.Scene {
+   /** 반복 토벌 완료 — 보상 지급 후 목표 +2 (무한 확장) */
+   private completeRepeat() {
+     const r = this.stageDef.repeat!;
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+     this.player.addGold(r.gold);
+     this.player.gainExp(r.exp);
+     this.spawnPickupText(this.player.x, this.player.y - 44, `토벌 완료 +${r.gold}G`, "#ffd76a");
+@@ -5728,7 +5752,7 @@ export class WorldScene extends Phaser.Scene {
+     if (after === before) return;
+     this.player.setCollection(after);
+     this.spawnPickupText(this.player.x - 6, this.player.y - 84, `컬렉션 등록! ${name}`, "#ffe86a");
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+     this.emitRpgState();
+     this.save();
+   }
+@@ -6378,7 +6402,7 @@ export class WorldScene extends Phaser.Scene {
+           const d = this.acquireDrop();
+           if (d) d.spawnItem(dropKey, bx + Phaser.Math.Between(-20, 20), by + Phaser.Math.Between(-12, 8));
+         }
+-        audio.sfx.roar();
++        audio.sfx.bossDrop(); // v1.4.8 — 포효 재활용 해제 (보스 등장음과 구분)
+       });
+     }
+     // 최종 보스(심연의 군주)만 클리어 — 이전 보스는 차원문으로 다음 지역 진행
+@@ -6409,6 +6433,7 @@ export class WorldScene extends Phaser.Scene {
+   }
+ 
+   onPlayerDead() {
++    audio.sfx.playerDie(); // v1.4.8 — 사망 무음 해소 (어두운 붕괴음)
+     audio.stopBGM();
+     this.cameras.main.fadeOut(600, 20, 0, 0);
+     this.time.delayedCall(700, () => {
+@@ -6520,7 +6545,7 @@ export class WorldScene extends Phaser.Scene {
+       const it = ITEMS[v.key];
+       const cost = (it?.price ?? 0) * (it?.kind === "consumable" || it?.kind === "buff" ? qty : 1);
+       if (this.player.buy(v.key, qty)) {
+-        audio.sfx.questDone();
++        audio.sfx.shop();
+         // BM 즉시 반영 — 펫 구매 시 스프라이트 교체, 치장 구매 시 오라 교체 (v1.9)
+         const kind = ITEMS[v.key]?.kind;
+         if (kind === "pet") this.syncPet();
+@@ -6665,6 +6690,7 @@ export class WorldScene extends Phaser.Scene {
+       /* v4.5.0 — 구독자 광고 한도 5→8회 (SERTZ 패스 특전) */
+       const adLimit = subActive(this.subUntil) ? SUB_AD_LIMIT : 5;
+       if (this.dailyAds >= adLimit) {
++        audio.sfx.deny(); // v1.4.8 — 한도 초과 차단음 신설
+         EventBus.emit("banner:show", { text: `오늘의 광고 보상은 끝났다 (일 ${adLimit}회${adLimit > 5 ? " · 구독 특전" : ""}) — 내일 다시` });
+         return;
+       }
+@@ -6681,7 +6707,7 @@ export class WorldScene extends Phaser.Scene {
+       this.player.emerald += 1 * adMul;
+       this.save();
+       this.emitRpgState();
+-      audio.sfx.questDone();
++      audio.sfx.charge();
+       EventBus.emit("reward:show", {
+         title: "광고 보상 지급!",
+         lines: [
+@@ -6710,7 +6736,7 @@ export class WorldScene extends Phaser.Scene {
+       this.player.emerald += sku.gems;
+       this.save();
+       this.emitRpgState();
+-      audio.sfx.questDone();
++      audio.sfx.charge();
+       EventBus.emit("banner:show", { text: `에메랄드 +${sku.gems} 충전 완료!` });
+     };
+     /* v1.0.2 (#현금패키지) — 스토어 결제 패키지 구매: 결제 성공 후 정의된 구성 지급 */
+@@ -6733,7 +6759,7 @@ export class WorldScene extends Phaser.Scene {
+         return;
+       }
+       this.grantBmGrants("패키지 구매 감사합니다!", grants);
+-      audio.sfx.coin();
++      audio.sfx.charge();
+       this.save();
+       this.emitRpgState();
+     };
+@@ -6751,7 +6777,7 @@ export class WorldScene extends Phaser.Scene {
+       }
+       this.player.emerald -= PASS_PREMIUM_PRICE;
+       this.passPrem = true;
+-      audio.sfx.questDone();
++      audio.sfx.shop();
+       EventBus.emit("banner:show", { text: "프리미엄 패스 해금! 지금까지 도달한 레벨의 프리미엄 보상 전부 수령 가능" });
+       this.save();
+       this.emitRpgState();
+@@ -6775,7 +6801,7 @@ export class WorldScene extends Phaser.Scene {
+       if (!g) return;
+       list.push(lv);
+       this.grantBmGrants(`시즌 패스 Lv.${lv} — ${v.track === "free" ? "무료" : "프리미엄"} 보상`, [g]);
+-      audio.sfx.questDone();
++      audio.sfx.reward();
+       this.save();
+       this.emitRpgState();
+     };
+@@ -6807,7 +6833,7 @@ export class WorldScene extends Phaser.Scene {
+         return;
+       }
+       this.grantBmGrants(`시즌 패스 — 한번에 받기 (${grants.length}건)`, grants);
+-      audio.sfx.questDone();
++      audio.sfx.reward();
+       this.save();
+       this.emitRpgState();
+     };
+@@ -6820,7 +6846,7 @@ export class WorldScene extends Phaser.Scene {
+       this.player.emerald -= SUB_PRICE;
+       const base = this.subUntil > Date.now() ? this.subUntil : Date.now(); // 잔여기간 이어받기
+       this.subUntil = base + SUB_DAYS * 86400000;
+-      audio.sfx.questDone();
++      audio.sfx.charge();
+       EventBus.emit("reward:show", {
+         title: "SERTZ 패스 구독 완료!",
+         lines: [
+@@ -6847,7 +6873,7 @@ export class WorldScene extends Phaser.Scene {
+         return;
+       }
+       this.dailyAdChest++;
+-      audio.sfx.questDone();
++      audio.sfx.chest();
+       if (this.player) this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor("chest_iron")); // v4.7.0
+       this.grantBmGrants(`광고 무료 상자 개봉! (${this.dailyAdChest}/${AD_CHEST_PER_DAY})`, [this.rollChest("chest_iron")]);
+       this.save();
+@@ -6870,7 +6896,7 @@ export class WorldScene extends Phaser.Scene {
+       this.dailyAdDrop++;
+       this.player.addBuffItem("buff_gold", 1);
+       this.player.addBuffItem("buff_luck", 1);
+-      audio.sfx.questDone();
++      audio.sfx.reward();
+       EventBus.emit("reward:show", {
+         title: `광고 버프 지급! (${this.dailyAdDrop}/${AD_DROP_PER_DAY})`,
+         lines: [
+@@ -7009,7 +7035,7 @@ export class WorldScene extends Phaser.Scene {
+         }
+         if (used > 0) {
+           EventBus.emit("banner:show", { text: `경험치 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}` });
+-          audio.sfx.questDone();
++          audio.sfx.pickup();
+           this.emitRpgState();
+           this.save();
+         } else {
+@@ -7032,7 +7058,7 @@ export class WorldScene extends Phaser.Scene {
+         if (used > 0) {
+           EventBus.emit("banner:show", { text: `${NAME} 성장의 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}` });
+           this.spawnPickupText(this.player.x, this.player.y - 34, `EXP +${total.toLocaleString()}`, "#8fe84a");
+-          audio.sfx.questDone();
++          audio.sfx.pickup();
+           this.emitRpgState();
+           this.emitHud();
+           this.save();
+@@ -7340,7 +7366,7 @@ export class WorldScene extends Phaser.Scene {
+           if (CHEST_TABLES[v.key]) grants.push(this.rollChest(v.key));
+           else for (const g of PACK_CONTENTS[v.key] ?? []) grants.push(g);
+         }
+-        audio.sfx.questDone();
++        audio.sfx.chest();
+         if (this.player) this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor(v.key)); // v4.7.0
+         this.grantBmGrants(`${it.name}${n > 1 ? ` ×${n}` : ""} 개봉!`, grants);
+         if (v.key === "pack_starter") this.starterPackBought = true; // v4.5.0 — 스타터팩 하이라이트 해제
+@@ -7362,7 +7388,7 @@ export class WorldScene extends Phaser.Scene {
+         EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost} 에메랄드${deal ? " · 일일특가 30%↓" : ""})` });
+         if (it?.kind === "pet") this.onPetChanged();
+         if (it?.kind === "cosmetic") this.onCosmeticChanged();
+-        audio.sfx.equip();
++        audio.sfx.shop();
+       } else {
+         EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
+       }
+@@ -7383,7 +7409,7 @@ export class WorldScene extends Phaser.Scene {
+       if (CHEST_TABLES[key]) grants.push(this.rollChest(key));
+       else for (const g of PACK_CONTENTS[key] ?? []) grants.push(g);
+       if (grants.length === 0) return;
+-      audio.sfx.questDone();
++      audio.sfx.chest();
+       this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor(key)); // v4.7.0
+       this.grantBmGrants(`${it.name} 개봉!`, grants);
+       this.save();
+@@ -7425,7 +7451,7 @@ export class WorldScene extends Phaser.Scene {
+         this.emitRpgState();
+         this.emitHud();
+         EventBus.emit("banner:show", { text: `거래소 구매 — ${it?.name ?? "아이템"} (-${TRADE_PRICES[v.key] ?? 0} 에메랄드)` });
+-        audio.sfx.equip();
++        audio.sfx.shop();
+       } else {
+         EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
+       }
+@@ -7527,7 +7553,7 @@ export class WorldScene extends Phaser.Scene {
+       }
+       this.save();
+       EventBus.emit("banner:show", { text: `퀘스트 수락! — ${def.quests[idx].title}` });
+-      audio.sfx.questDone();
++      audio.sfx.questAccept();
+       this.emitQuest();
+       this.emitQuestLog();
+     };
+@@ -7571,7 +7597,7 @@ export class WorldScene extends Phaser.Scene {
+       }
+       this.trackMission("market"); // 주간 미션 "거래소 이용"
+       EventBus.emit("banner:show", { text: `유저 거래판 구매 완료! (-${v.price.toLocaleString()} G)` });
+-      audio.sfx.coin();
++      audio.sfx.shop();
+       this.save();
+       this.emitRpgState();
+       this.emitHud();
+@@ -7590,7 +7616,7 @@ export class WorldScene extends Phaser.Scene {
+       if (!this.player || v.gold <= 0) return;
+       this.player.gold += v.gold; // 정산금 — 버프 배율 미적용
+       EventBus.emit("banner:show", { text: `정산금 수령 — +${v.gold.toLocaleString()} G (수수료 10% 제외)` });
+-      audio.sfx.coin();
++      audio.sfx.sell();
+       this.save();
+       this.emitRpgState();
+       this.emitHud();
+@@ -7613,7 +7639,7 @@ export class WorldScene extends Phaser.Scene {
+       if (v.kind === "gate") this.ticketGate++;
+       else this.ticketCloset++;
+       EventBus.emit("banner:show", { text: `${v.kind === "gate" ? "바르가 수비전" : "균열 던전"} 티켓 +1 재충전! (-3💎)` });
+-      audio.sfx.coin();
++      audio.sfx.charge();
+       this.save();
+       this.emitRpgState();
+     };
+@@ -7662,7 +7688,7 @@ export class WorldScene extends Phaser.Scene {
+       } else return;
+       this.save();
+       this.emitHud();
+-      audio.sfx.coin();
++      audio.sfx.shop();
+     };
+     EventBus.on("rpg:unionReward", onUnionReward);
+     /* v1.0.18 — 몬스터 파크 상점 구매 (파크 코인 차감 → 아이템 지급) */
+@@ -7684,7 +7710,7 @@ export class WorldScene extends Phaser.Scene {
+       this.parkCoins -= it.cost;
+       it.give();
+       this.showBanner(`파크 상점 — ${it.name} 교환 완료! (잔여 ${this.parkCoins}C)`);
+-      audio.sfx.coin();
++      audio.sfx.shop();
+       this.save();
+       this.emitRpgState();
+       this.emitHud();
+@@ -7747,7 +7773,7 @@ export class WorldScene extends Phaser.Scene {
+         this.emitHud();
+         this.onCosmeticChanged();
+         EventBus.emit("banner:show", { text: `${it.name} 구매 완료! (-${it.bmPrice} 에메랄드) — 랭커의 증표` });
+-        audio.sfx.equip();
++        audio.sfx.shop();
+       } else {
+         EventBus.emit("banner:show", { text: "에메랄드가 부족해요" });
+       }
+@@ -8083,7 +8109,7 @@ export class WorldScene extends Phaser.Scene {
+           this.tweens.add({ targets: t.glow, alpha: 0.55, scale: 0.95, duration: 260, ease: "Cubic.out" });
+           t.prop.clearTint();
+           if (t.prop.anims.isPaused) t.prop.anims.resume();
+-          audio.sfx.portal(); // 점화 훅 — 포탈 개방음을 낮은 볼륨의 불꽃 소리로 재활용
++          audio.sfx.torch();
+         }
+       }
+     }
+@@ -8920,7 +8946,7 @@ export class WorldScene extends Phaser.Scene {
+     }
+     const used = this.escapeUsesToday();
+     if (used >= WorldScene.ESCAPE_DAILY_MAX) {
+-      audio.sfx.uiOpen(); // v1.2.0 — uiBack 부재 → uiOpen
++      audio.sfx.deny(); // v1.4.8 — 열기음 재활용 해제 → 차단 전용음
+       this.showBanner(`긴급 귀환은 하루 ${WorldScene.ESCAPE_DAILY_MAX}회까지 — 내일 다시 사용할 수 있어요 (${used}/${WorldScene.ESCAPE_DAILY_MAX})`);
+       return;
+     }
+@@ -9149,22 +9175,39 @@ export class WorldScene extends Phaser.Scene {
+   }
+ 
+   /** v3.0.16 (#4) — 투사체 잔상: 진행 경로를 따라 페이드아웃하는 발광 애프터이미지.
+-   *  다중사격 부채꼴이 “화살비”처럼 보이는 핵심 연출. 이미지는 tween으로 자가 소멸 */
++   *  다중사격 부채꼴이 “화살비”처럼 보이는 핵심 연출. 이미지는 tween으로 자가 소멸
++   *  v1.4.8 (#1 최적화) — 기존엔 trail 1장당 image 생성+tween+destroy를 반복(사격 중 초당 최대 20회)해
++   *  GC 부담이 컸다 → 16장 링 버퍼 풀로 재사용 (setTexture 교체 비용은 생성보다 훨씬 낮다) */
++  private projTrailPool: Phaser.GameObjects.Image[] = [];
++  private projTrailIdx = 0;
++  /* v1.4.8 — 충격 링 풀 (8장 링 버퍼) */
++  private shockRingPool: Phaser.GameObjects.Image[] = [];
++  private shockRingIdx = 0;
++
+   private spawnProjTrail(p: Phaser.Physics.Arcade.Sprite, hex: number) {
+-    const img = this.add.image(p.x, p.y, p.texture.key)
++    let img = this.projTrailPool[this.projTrailIdx];
++    if (!img || !img.scene) {
++      img = this.add.image(p.x, p.y, p.texture.key);
++      this.projTrailPool[this.projTrailIdx] = img;
++    }
++    this.projTrailIdx = (this.projTrailIdx + 1) % 16;
++    this.tweens.killTweensOf(img);
++    img.setTexture(p.texture.key)
++      .setPosition(p.x, p.y)
+       .setRotation(p.rotation)
+       .setScale(p.scaleX, p.scaleY)
+       .setTint(hex)
+       .setAlpha(0.4)
+       .setDepth(11)
+-      .setBlendMode(Phaser.BlendModes.ADD);
++      .setBlendMode(Phaser.BlendModes.ADD)
++      .setActive(true)
++      .setVisible(true);
+     this.tweens.add({
+       targets: img,
+       alpha: 0,
+       scale: p.scaleX * 0.5,
+       duration: 240,
+       ease: "Cubic.out",
+-      onComplete: () => img.destroy(),
+     });
+   }
+ 
+@@ -10109,7 +10152,7 @@ export class WorldScene extends Phaser.Scene {
+     const story = JOBSTORY[fam][tier];
+     this.showDialogue(story.startDialogue);
+     this.showBanner(`전직 시련 시작 — ${story.title} (완료 후 전직!)`);
+-    audio.sfx.questDone();
++    audio.sfx.questAccept();
+     this.save();
+     this.emitQuest();
+     this.emitRpgState();
+@@ -10135,7 +10178,7 @@ export class WorldScene extends Phaser.Scene {
+     if (!step) return;
+     this.player.addGold(step.reward);
+     this.player.gainExp(step.expReward);
+-    audio.sfx.questDone();
++    audio.sfx.reward();
+     this.spawnPickupText(this.player.x, this.player.y - 44, `스토리 보상 +${step.reward}G`, "#ffd76a");
+     this.jobStory.step++;
+     this.jobStory.hunt = 0;
+@@ -10505,11 +10548,24 @@ export class WorldScene extends Phaser.Scene {
+     this.spawnFragment(p.x, p.y);
+   }
+ 
++  /* v1.4.8 (#1 최적화) — 프레임 단위 타깃 목록 캐시: 기존엔 호출마다(프레임당 2~6회) 새 배열을
++   *  할당하고 전체 적을 순회했다 — 투사체×적 판정에 GC 스파이크와 상수 배수 비용이 누적됐다.
++   *  이제 프레임당 1회만 재계산한다. 프레임 중간 킬/스폰은 다음 프레임까지 반영이 1프레임 늦을
++   *  뿐이며, takeDamage에 alive 가드(Enemy L477·Boss)가 있어 위험 없다. */
++  private targetCacheFrame = -1;
++  private targetCache: (Enemy | Boss)[] = [];
++  private perfSnapshotAt = 0; // v1.4.8 — __SERTZ_PERF__ 500ms 스로틀용
++
+   getAllTargets(): (Enemy | Boss)[] {
+-    const list: (Enemy | Boss)[] = [];
+-    for (const e of this.enemies) if (e.active && e.alive) list.push(e);
+-    if (this.boss && this.boss.active && this.boss.alive) list.push(this.boss);
+-    return list;
++    const frame = this.game.loop.frame;
++    if (frame !== this.targetCacheFrame) {
++      const list: (Enemy | Boss)[] = [];
++      for (const e of this.enemies) if (e.active && e.alive) list.push(e);
++      if (this.boss && this.boss.active && this.boss.alive) list.push(this.boss);
++      this.targetCache = list;
++      this.targetCacheFrame = frame;
++    }
++    return this.targetCache;
+   }
+ 
+   /* ================= BM (v1.9 — 펫/치장/강화 오라) ================= */
+@@ -11720,7 +11776,7 @@ export class WorldScene extends Phaser.Scene {
+     this.dialoguing = true;
+     this.player.setVelocity(0, 0);
+     this.physics.world.pause();
+-    audio.sfx.questDone();
++    audio.sfx.ach();
+     const depth = 118;
+     const veil = this.add
+       .rectangle(vw / 2, vh / 2, vw, vh, 0x06080f, 0.78)
+@@ -11937,7 +11993,7 @@ export class WorldScene extends Phaser.Scene {
+         if (this.repeatUnlockable()) {
+           this.repeatOn = true;
+           this.save();
+-          audio.sfx.questDone();
++          audio.sfx.reward();
+           this.showBanner("토벌 의뢰 수주! 구역 체인을 모두 끝낸 사냥터에서 [반복] 의뢰를 진행할 수 있어요");
+           this.spawnPickupText(this.player.x, this.player.y - 44, "의뢰 수주!", "#7dffa8");
+           this.emitQuest();
+@@ -12034,7 +12090,7 @@ export class WorldScene extends Phaser.Scene {
+     audio.sfx.skill(key, rate);
+   }
+   sfxSpin() {
+-    audio.sfx.spin();
++    // v1.4.8 — 호출부 0개 사망 코드 제거 (spin 스킬음은 sfxSkill("spin") 경로로만 사용)
+   }
+   sfxDash() {
+     audio.sfx.dash();

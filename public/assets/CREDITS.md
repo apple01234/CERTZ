@@ -1,0 +1,252 @@
+# SERTZ — Third-party Asset Credits
+
+이 게임의 그래픽/오디오 에셋은 아래 무료 에셋 팩에서 추출/가공하여 사용했습니다.
+(자체 절차 생성 에셋 없음 — 전부 외부 실제 에셋)
+
+## 그래픽
+
+### Zelda-like tilesets and sprites — ArMM1998
+- License: CC0 1.0 (Public Domain)
+- Source: https://opengameart.org/content/zelda-like-tilesets-and-sprites
+- Used for: 주인공 캐릭터(걷기/방향별 검 공격), 필드 타일, 흙길 타일, 꽃,
+  하트 UI, 불꽃, 반짝임, 타격 스타, 수정(세계수 파편), "?" 퀘스트 말풍선
+
+### Weapon Slash - Effect — Cethiel
+- License: CC0 1.0
+- Source: https://opengameart.org/content/weapon-slash-effect
+- Used for: 참격 초승달 검기 애니메이션 6프레임 (Alternative 2 청색 변형)
+
+### Animated Portal or Wormhole — varkalandar
+- License: CC-BY 4.0
+- Source: https://opengameart.org/content/animated-portal-or-wormhole-several-variants
+- Used for: 차원문 소용돌이 애니메이션 8프레임 (8번 변형, 루미넌스 알파 변환)
+
+### Tiny Dungeon — Kenney
+- License: CC0 1.0
+- Source: https://kenney.nl/assets/tiny-dungeon
+- Used for: 심연 하수인(고스트), HP/MP 물약, 무기 아이콘(단검/검/대검), 방패(방어구 티어 틴트), 상인 NPC(라고스)
+
+### Roguelike/RPG pack — Kenney
+- License: CC0 1.0
+- (금화 코인 타일 추가 사용 — 2D MMORPG 골드 드롭)
+- Source: https://kenney.nl/assets/roguelike-rpg-pack
+- Used for: 나무, 소나무, 횃불, 화면 가장자리 방향 화살표
+
+### Particle Pack — Kenney
+- License: CC0 1.0
+- Source: https://kenney.nl/assets/particle-pack
+- Used for: 충격파 링(circle_02), 보스 텔레그래프 링(circle_03), 글로우(light_01),
+  보스 투사체 구슬(circle_05), 지면 강타 스코치(scorch_01)
+
+### Light Masks — Kenney
+- License: CC0 1.0
+- Source: https://kenney.nl/assets/light-masks
+- Used for: 목표물/차원문 빛기둥(cone_b_blur, 루미넌스 알파 변환)
+
+### [LPC] Wolf Animation — williamthompsonj
+- License: CC-BY 3.0 / CC-BY 4.0
+- Source: https://opengameart.org/content/lpc-wolf-animation
+- Used for: 이그드라실 늑대 (걷기/포효 프레임)
+
+### Sotrak Rewop — gilgaphoenixignis
+- License: CC-BY 3.0 / CC-BY 4.0
+- Source: https://opengameart.org/content/sotrak-rewop
+- Used for: 심연의 수호자 (보스)
+
+## 오디오
+
+### BGM 40트랙 — Kevin MacLeod (incompetech.com)
+- License: CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+- Source: https://incompetech.com/music/royalty-free/
+- Used for: v3.0.21 전체 BGM — 테마당 5곡 × 8테마 로테이션 (Music by Kevin MacLeod 표기)
+
+**타이틀/로비 (웅장한 모험)**
+- bgm_title1.ogg — 「Call to Adventure」 (원본 130초 캡+페이드아웃)
+- bgm_title2.ogg — 「At Launch」 (원본 130초 캡+페이드아웃)
+- bgm_title3.ogg — 「Noble Race」 (원본 130초 캡+페이드아웃)
+- bgm_title4.ogg — 「Majestic Hills」 (원본 130초 캡+페이드아웃)
+- bgm_title5.ogg — 「Mighty and Meek」 (원본 100초)
+
+**마을 (평화로운 중세 마을)**
+- bgm_village1.ogg — 「The Britons」 (원본 130초 캡+페이드아웃)
+- bgm_village2.ogg — 「Thatched Villagers」 (원본 130초 캡+페이드아웃)
+- bgm_village3.ogg — 「Village Consort」 (원본 130초 캡+페이드아웃)
+- bgm_village4.ogg — 「Midnight Tale」 (원본 130초 캡+페이드아웃)
+- bgm_village5.ogg — 「Folk Round」 (원본 130초 캡+페이드아웃)
+
+**필드/숲 (모험)**
+- bgm_field1.ogg — 「Overworld」 (원본 130초 캡+페이드아웃)
+- bgm_field2.ogg — 「Crossing the Chasm」 (원본 130초 캡+페이드아웃)
+- bgm_field3.ogg — 「Fantasia Fantasia」 (원본 130초 캡+페이드아웃)
+- bgm_field4.ogg — 「Journey To Ascend」 (원본 130초 캡+페이드아웃)
+- bgm_field5.ogg — 「Darkling」 (원본 130초 캡+페이드아웃)
+
+**알프헤임 (신비)**
+- bgm_alfheim1.ogg — 「Equatorial Complex
+」 (원본 130초 캡+페이드아웃)
+- bgm_alfheim2.ogg — 「Dreamy Flashback」 (원본 127초)
+- bgm_alfheim3.ogg — 「The Other Side of the Door」 (원본 130초 캡+페이드아웃)
+- bgm_alfheim4.ogg — 「Magic Forest」 (원본 130초 캡+페이드아웃)
+- bgm_alfheim5.ogg — 「Soaring」 (원본 130초 캡+페이드아웃)
+
+**동굴/니달벨리르 (어두운 던전)**
+- bgm_cave1.ogg — 「Chee Zee Caves V2」 (원본 130초 캡+페이드아웃)
+- bgm_cave2.ogg — 「SCP-x5x (Outer Thoughts)」 (원본 130초 캡+페이드아웃)
+- bgm_cave3.ogg — 「Night of Chaos」 (원본 130초 캡+페이드아웃)
+- bgm_cave4.ogg — 「Scissors」 (원본 130초 캡+페이드아웃)
+- bgm_cave5.ogg — 「Secrets of the Schoolyard」 (원본 130초 캡+페이드아웃)
+
+**니플헤임 (차가운 설원)**
+- bgm_snow1.ogg — 「Frost Waltz」 (원본 130초 캡+페이드아웃)
+- bgm_snow2.ogg — 「Frost Waltz (Alternate)」 (원본 130초 캡+페이드아웃)
+- bgm_snow3.ogg — 「Ice Demon」 (원본 130초 캡+페이드아웃)
+- bgm_snow4.ogg — 「Northern Glade」 (원본 130초 캡+페이드아웃)
+- bgm_snow5.ogg — 「Night Vigil」 (원본 130초 캡+페이드아웃)
+
+**무스펠하임/헬/심연 (사악함)**
+- bgm_abyss1.ogg — 「SCP-x1x (Gateway to Hell)」 (원본 130초 캡+페이드아웃)
+- bgm_abyss2.ogg — 「SCP-x2x (Unseen Presence)」 (원본 130초 캡+페이드아웃)
+- bgm_abyss3.ogg — 「River Fire」 (원본 130초 캡+페이드아웃)
+- bgm_abyss4.ogg — 「Shadowlands 3 - Machine」 (원본 130초 캡+페이드아웃)
+- bgm_abyss5.ogg — 「Welcome to HorrorLand」 (원본 130초 캡+페이드아웃)
+
+**보스전 (전투)**
+- bgm_boss1.ogg — 「Clash Defiant」 (원본 130초 캡+페이드아웃)
+- bgm_boss2.ogg — 「Curse of the Scarab」 (원본 130초 캡+페이드아웃)
+- bgm_boss3.ogg — 「Volatile Reaction」 (원본 130초 캡+페이드아웃)
+- bgm_boss4.ogg — 「Chase」 (원본 133초)
+- bgm_boss5.ogg — 「Clenched Teeth」 (원본 91초)
+
+### 80 CC0 RPG SFX / 80 CC0 creature SFX — Rubberduck (SubspaceAudio)
+- License: CC0 1.0
+- Source: https://opengameart.org/content/80-cc0-rpg-sfx
+         https://opengameart.org/content/80-cc0-creature-sfx
+- Used for: 효과음 12종 — 검 휘두르기(blade), 명중(metal), 피격(hurt),
+  파편 줍기(item_gem), 퀘스트 완료(item_gem), 레벨업/차원문(spell),
+  보스 포효(roar), 몬스터 사망(creature_die), 보스 사망(monster)
+
+### 효과음연구소 (soundeffect-lab.info) — 스킬 효과음
+- License: 상업 이용 무료 / 크레딧 표기 불필요 / 원본 파일 재배포만 금지
+  (게임 빌드에 내장하는 형태는 허용 범위)
+- Source: https://soundeffect-lab.info/sound/battle/ (전투·마법 카테고리)
+- Download script: scripts/sfx-fetch/download_skills.sh
+- Used for: v3.0.24 직업별 스킬 전용 효과음 27종 (skl_*.ogg)
+  활발사(arrow-release/arrow-pierce) · 지팡이 시전(magic-stick) · 단검(knife-slash) ·
+  화염(magic-flame) · 전자/번개(magic-electron) · 바람(magic-wind) · 회복(magic-cure) ·
+  발도(iainuki) · 지진(magic-quake) · 암흑(magic-attack-darkness) · 신성(magic-attack-holy) ·
+  중력(magic-gravity) · 시간 왜곡(slow-motion) · 시간 정지(dimension-stop) ·
+  격노(transform-monster) · 포효(dragon-cry) · 대검(large-sword-slash) ·
+  필살기 타격(super-arts-hit) · 비행(wizard-flight) · 중장 돌진(armor-dash) · 암습(step-into)
+
+### 50+ Monsters Pack 2D — isaiah658
+- License: CC0 1.0 (Public Domain)
+- Source: https://opengameart.org/content/50-monsters-pack-2d
+- Used for: v3.0.2 신규 몬스터 9종 (독개구리/궁전 뒷쥐/황혼 박쥐/잿불 새/서리 날도요/
+  동굴 달팽이/장벽 돌골렘/그늘 이리/심연 암초물고기) — idle/run/atk 프레임 가공
+
+### Pixelart Spells — Anokolisa
+- License: CC0 1.0
+- Source: https://opengameart.org/content/pixel-art-spells
+- Used for: 마법사 투사체(마법 구슬/아케인 볼트/다크 볼트) 6프레임 + 시전 이펙트(마나 불꽃)
+
+### 4-Color Dungeon Bricks 16x16 — LOSCH
+- License: CC0 1.0
+- Source: https://opengameart.org/content/4-color-dungeon-bricks-16x16
+- Used for: 개미굴 던전 벽 벽돌 타일 (벽/길 구분 개선)
+
+### Bow 20x20 — CoolNav.js
+- License: CC0 1.0
+- Source: https://opengameart.org/content/20x20-bow-sprites
+- Used for: 궁수 활 발사 비주얼 (회전 프레임 중 1프레임 + 코드 회전)
+
+### 16x16 DungeonTileset II — 0x72
+- License: CC0 1.0 (Public Domain)
+- Source: https://0x72.itch.io/dungeontileset-ii (itch.io 직접 다운로드)
+- Used for: v3.0.3 신규 몬스터 7종 (잉걸불 임프/늪지 독괴물/굶주린 좀비/악마다라 촐트/
+  강령술사/광포한 오거/얼음 좀비) idle4+run4 프레임 + 무기 스프라이트
+  (활/붉은 지팡이/단검) + GM NPC (knight_m 재조색)
+
+### 16x16 DungeonTileset II — 0x72 (v3.0.4 추가)
+- License: CC0 1.0 (Public Domain)
+- Source: https://0x72.itch.io/dungeontileset-ii (itch.io 직접 다운로드)
+- Used for: v3.0.4 신규 몬스터 6종 (가면 전사/오르크 전사/오르크 주술사/지옥견 워골/
+  고블린 약탈자/거대 시체) idle4+run4 프레임 — 전 구역 소량 혼합 스폰
+
+## v3.0.8 디자인 개편 추가 에셋
+- SharpUI (Penzilla Design) — React UI 스킨(panel/button/gauge/potion/ability): /assets/ui2/*
+- RPG Icons Pixel Art (CraftPix 무료팩) — 아이템 아이콘 30종 교체 + 클래스별 스킬 아이콘 56종 신설: /assets/skillicon/*
+- Warped Shooting Fx (Anokolisa) — 투사체 bolt/charged + 히트 플립북 3종/pulse/spark: /assets/vfx2_*
+- Cartoon FX Remaster (Jeong Seung Hyun/CFXR) — electric/hit triangle/explosion/blood: /assets/vfx2_*
+- Serene Village Revamped (Cainos) — 잔디/흙길 타일·집 2종·나무·바위
+- Free Cursed Land (aamatniekss? — itch.io) — 저주 땅 지면(magma/hel 변형)
+- RF Catacombs (ansimuz/Lunarian?) — 던전 바닥/벽돌(cave/stone/abyss/x2_bricks)
+- 각 팩 라이선스 원문은 upload/ 내 라이선스 파일 참조
+
+## v3.0.8 2차 개편 — 히어로/몬스터 스프라이트 전면 교체
+- Mystic Woods (Game Endeavor — itch.io game-endeavor.itch.io/mystic-woods) — 히어로 7종 애님 28프레임
+  (idle/walk 4방향/공격 3방향, 참격 아크 포함): /assets/hero_*
+  ⚠ 라이선스 (v1.1.0 정정 — 제작자 공식 페이지 재확인):
+    · 무료 버전 = 비영리 전용 / 프리미엄(유료) 버전 = 상업 프로젝트 사용 가능
+    · 배포 금지: 팩 원본/파생 시트의 재판매·재배포 불가 (게임 내장 사용은 의도된 용도)
+    · 출시 전 필수 확인: 프리미엄 버전 소유 증명 (itch.io 구매 내역) — 무료 버전 출처라면
+      상업 배포(광고 포함) 전 프리미엄 업그레이드 필수
+  ※ v1.1.0 캐릭터 외형 시스템(chm/chf/cost_*)은 hero_* 픽셀 재구성 파생물 — 동일 라이선스 계열에 따름
+- 32rogues (Seth Boyles/Surt, v0.5.0) — 몬스터 42종 전면 교체 소스
+  (오크 4종/트롤/임프/리치/죽음의 기사/좀비/구울/리퍼/레이스/거미/박쥐/쥐/
+  와그(늑대 6종 파생 duotone)/록 골렘(골렘 5종 파생)/미노타우르스/바실리스크/
+  드래곤/코카트리스/램프리만더/자이언트 앤트/라이컨스로프/괴수 등)
+  파생 변형: 하단 앵커 스쿼시 idle/run 애님 합성 + 휘도 기반 duotone 테마색
+  (frost/ember/hel/dark/rune/ice/gold/surt/fenrir/gram/abyss/nidhog)
+  ⚠ 라이선스: 영리/비영리 사용 가능(단 NFT·블록체인·AI/ML 프로젝트 제외),
+  수정 가능, 재판매/재배포 금지 — 원문: upload/extracted/32rogues-0.5.0/32rogues/LICENSE.txt
+
+## v4.1.5 — 프레임워크 & 에셋 업그레이드
+- Galmuri 한글 픽셀 폰트 (quiple/Lee Minseo, SIL OFL 1.1) — npm `galmuri` 패키지
+  게임 UI 전체(React HUD + Phaser 캔버스 텍스트: 데미지 숫자/월드 라벨/챕터 타이틀)
+  Galmuri9/11(400·700)/14 — https://github.com/quiple/galmuri
+- Kenney Particle Pack 1.1 (Kenney Vleugels, CC0) — 파티클 27종 선별: /assets/pk_*
+  조명 마스크(light)·연기(smoke)·별(star)·마법(magic)·화염(fire/flame)·스파크(spark)·
+  원(circle)·버스트(muzzle)·먼지(dirt) — https://kenney.nl/assets/particle-pack
+  (동일 팩은 기존 v1 glow/ring/orb/spark에도 사용됨)
+
+## v4.1.7 — Unity Asset Store 유료 에셋 (유저 구매)
+- Fantasy UI SFX — Lite Edition (유료 구매) — 효과음 17종:
+  · 기존 교체(drop-in): sfx_swing←Weapon, sfx_hit←Wood Impact, sfx_spin←Weapon,
+    sfx_dash←Arrow & Bow, sfx_hurt←Armor, sfx_pickup←Coins, sfx_quest←Magical Interface,
+    sfx_levelup←Magical Texture Chimes, sfx_portal←Magical Interface
+  · 신규 전용음: sfx_coin←Coins, sfx_potion←Potion Item, sfx_equip←Armor,
+    sfx_upgrade←Blacksmithing, sfx_click←Interface, sfx_open/close←Bag Handle,
+    sfx_ach←Special Interface (WAV→OGG mono q4 변환)
+- Cartoon FX Remaster — JMO Assets (유료 구매) — VFX 텍스처: /assets/pfx_*
+  · 레벨업 중앙 스타 플래시(pfx_star), 보스 등장 룬 마법진(pfx_runic)/오라 광선(pfx_aura)
+- FireworksEffect2D (유료 구매) — 네온 불꽃놀이 텍스처: /assets/pfx_fw_b·pfx_fw_y
+  · 레벨업 2색 불꽃놀이 폭발 (중력 낙하 궤적)
+- 미사용 보관: SPUM(캐릭터 제작은 Unity 에디터 필요 — 웹/Phaser 직접 사용 불가),
+  Sci-Fi Irregular Frames(스타일 불일치), CFXR 잉걸불/해골 등 예비 텍스처
+  (upload/ 원본 보존 — 추출 경로: scripts/_unity_extract/)
+
+## v1.0.10 — Vefects (Unity 3D VFX, 유료 — 유저 업로드)
+- Vefects.7z (upload/drive/file2_real.bin 원본 보존 — research/vefects 선별 추출)
+- 프리렌더 3D VFX 텍스처 25종 → /assets/vf_* (scripts/gen_vfx_v1010.py — 512 캡 q82 webp)
+- Used for: 4차 스킬 8종·5차 궁극기 인트로/시그니처 펜타클 마법진·원소 플레어·링·엠블럼
+
+## v1.0.11 — Gameworks 유니티 팩 4종 (유저 업로드 file3)
+- 원본 보존: upload/drive/file3_real.bin (68.9MB 7z) → research/gameworks/ 추출
+- Hovl Studio — Magic Effects Pack: 마법진 2종(magic/rune)·테크 서클·전기·플레어·플래시·
+  글로우·초승달 참격(arc)·지면 균열(crack)·혜성 궤적(trail)·화살·투사체·수정·크레이터 → /assets/gw_*
+- Matthew Guz — Slash Effects FREE: 참격 3종(slash a/b/c)·모션블러 스트릭(dash)·
+  충격파(shock)·폭발(boom)·스파크·크리티컬(crit)·화염(fire)·광점(dot) → /assets/gw_*
+- Petal Particles — Cherry Petals: 벚꽃잎 1종(petal — 4×4 그리드 셀 크롭) → /assets/gw_petal
+- Toon Shaders Pro: PerlinNoise 등 (참고용 — 이번 버전 미사용, 연구 보존)
+- 변환: scripts/gen_gameworks_v1011.py (512 캡 q82 webp, 총 512K)
+- Used for: N차마다 기존 스킬 강화(주력기/기동기/3차기 — 전직 단계 비례 합성)·
+  튜토리얼 완료 벚꽃 소나기·튜토리얼 마커
+
+
+## v1.1.0 — 캐릭터 외형 시스템 (성별/피부/완전 교체 코스튬)
+- scripts/gen_char_system.py — hero_*(Mystic Woods) 픽셀 팔레트 재구성 파생물
+  · chm*/chf* (성별×피부 6종): 피부 픽셀 재매핑 + 여성형 실루엣(긴 머리/스커트) 변환
+  · cost_* (코스튬 10종): 머리카락/피부/의상 전체 재팔레트 — SPUM NPC처럼 완전 교체 형식
+  · acc_* (왕관/리본/후광/날개 5종): 자체 제작 픽셀 아트
+  · 상위 라이선스: Mystic Woods 파생물 — 위 Mystic Woods 항목의 조건을 따름
+- SPUM (Unity Asset Store, 유저 구매분 upload/SPUM.7z): 신규 파생물 없음 — 기존 npc_* 초상화만 사용

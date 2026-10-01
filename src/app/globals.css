@@ -1,0 +1,409 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ================= SERTZ 게임 스타일 ================= */
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.game-root,
+.game-root * {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.game-root canvas {
+  touch-action: none;
+  display: block;
+}
+
+/* 배너 등장 애니메이션 */
+@keyframes bannerPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7) translateY(12px);
+  }
+  12% {
+    opacity: 1;
+    transform: scale(1.05) translateY(0);
+  }
+  18% {
+    transform: scale(1);
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* v3.0.16 — 퀘스트 보상 팝업 등장 (상태 제거로 닫히므로 페이드아웃 없음) */
+@keyframes rewardPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 2.4s linear infinite;
+}
+
+/* 데스크톱 마우스 전용 화면에서는 조작 힌트 강조 없음 처리 */
+@media (pointer: fine) {
+  .rotate-prompt {
+    display: none;
+  }
+}
+
+/* v3.0.5 — 스타포스 강화 실패 흔들림 */
+@keyframes sfshake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+/* ═══════════ v3.0.8 디자인 개편 — SharpUI 스킨 (upload/SharpUI 팩) ═══════════ */
+/* 패널: SharpUI info_box 를 100% 스트레치 — 기존 bg 컬러 위에 렌더
+ * v1.0.20 — AI스러운 글래스 패널을 게임형 프레임으로 전면 교체 (유저 지시):
+ *  라운드 글래스+보라 코러 → "딥 네이비 바디 + 우드 프레임 + 금선" 고전 게임 UI.
+ *  인테리어 텍스트(white/xx) 가독성 유지를 위해 바디는 어둡게, 프레임만 따뜻하게. */
+.sertz-panel {
+  background-color: #100c08;
+  background-image: url("/assets/ui2/panel.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+/* 대형 패널(상점/인벤 본체) — background 텍스처 */
+.sertz-panel-big {
+  background-image: url("/assets/ui2/panel_big.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+/* 프레임 버튼 (타이틀/다이얼로그 확인 등) */
+.sertz-btn {
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(255, 200, 130, 0.35) !important;
+}
+.sertz-btn:active { filter: brightness(1.25) saturate(1.2); }
+/* 게이지 프레임 — HP/MP/EXP 바 컨테이너 */
+.sertz-gauge {
+  background-image: url("/assets/ui2/bar_frame.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none !important;
+  background-color: rgba(0, 0, 0, 0.55);
+}
+/* 리스트 행 (인벤/상점 슬롯 행) */
+.sertz-listrow { background-image: url("/assets/ui2/list.webp"); background-size: 100% 100%; }
+.sertz-listrow-sel { background-image: url("/assets/ui2/list_sel.webp"); background-size: 100% 100%; }
+
+/* ═══════════ v1.4.12 (#10/#22 유저 지시 "내가 준 UI 에셋으로 ai로 생성한 Ui 및 짜치는 UI 전면 교체해") ═══════════
+ *  게임형 UI 디자인 시스템 전체를 유저 제공 ui2 에셋 세트로 교체 (아이콘 제외):
+ *   · .game-panel      → ui2/panel_big (다크 패널 + 주황 프레임이 박제된 텍스처 — 100% 스트레치)
+ *   · .game-panel h2   → ui2/header (제목 네임플레이트)
+ *   · .game-btn        → ui2/button (다크 버튼 + 주황 테두리) — 글자는 밝은 금색으로 통일
+ *   · .game-btn-ghost  → ui2/button 저휘도 변형
+ *   · .game-btn-danger → ui2/button × 적색 블렌드
+ *   · .game-chip       → ui2/button (작은 칩 — 테두리 박제)
+ *   · .game-tab/-on    → ui2/button 휘도 변형 2종
+ *   · .game-input      → ui2/input
+ *   · .sertz-panel     → ui2/panel
+ *  배경 텍스처는 background-size:100% 100% 스트레치(코드베이스 기존 규약) — 프레임이 텍스처에 박제되므로 CSS 보더 제거.
+ *  패널 등장 애니(panelIn)와 하드 음영은 유지. */
+
+.game-panel {
+  background-color: #100c08;
+  background-image: url("/assets/ui2/panel_big.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
+  box-shadow:
+    0 10px 0 rgba(0, 0, 0, 0.35),   /* 하단 경질 음영 */
+    0 22px 44px rgba(0, 0, 0, 0.55);
+}
+/* v1.4.8 (#5 애니메이션) — 패널 등장 연출: 마운트 시 살짝 떠오르는 팝 (160ms, 저사양 배려 없음 — CSS 합성만) */
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.965); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.game-panel { animation: panelIn 0.16s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .game-panel { animation: none; }
+}
+/* 패널 제목 — ui2 헤더 네임플레이트 */
+.game-panel h2 {
+  color: #ffd98a;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.65);
+  background-image: url("/assets/ui2/header.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  box-shadow: none;
+  border-radius: 3px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
+}
+/* 주 버튼 — ui2 버튼 텍스처 (다크 바디 + 주황 프레임 박제, 글자는 밝은 금색) */
+.game-btn {
+  background-color: #191007;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
+  color: #ffe9c0;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.5),
+    0 6px 12px rgba(0, 0, 0, 0.4);
+  transition: transform 0.06s ease, filter 0.12s ease;
+}
+.game-btn:hover { filter: brightness(1.14) saturate(1.08); }
+.game-btn:active {
+  transform: translateY(2px);
+  filter: brightness(0.92);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+.game-btn:disabled {
+  filter: grayscale(0.8) brightness(0.7);
+  cursor: not-allowed;
+}
+/* 보조 버튼 — ui2 버튼 저휘도 변형 */
+.game-btn-ghost {
+  background-color: #120d07;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
+  color: #e8d8b0;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
+  filter: brightness(0.72) saturate(0.8);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45), 0 6px 12px rgba(0, 0, 0, 0.35);
+  transition: transform 0.06s ease, filter 0.12s ease;
+}
+.game-btn-ghost:hover { filter: brightness(0.95) saturate(1); }
+.game-btn-ghost:active {
+  transform: translateY(2px);
+  filter: brightness(0.65);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+/* HUD 칩/아이콘 버튼 — ui2 버튼 텍스처 (작은 프레임) */
+.game-chip {
+  background-color: #16100a;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.45),
+    0 5px 10px rgba(0, 0, 0, 0.35);
+}
+.game-chip:active { transform: translateY(1px); }
+/* 패널 탭 — ui2 버튼 휘도 변형 2종 */
+.game-tab {
+  background-color: #120d07;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
+  color: #cbb88a;
+  filter: brightness(0.6) saturate(0.75);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+.game-tab-on {
+  background-color: #1c1208;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
+  color: #ffe9c0;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+  filter: brightness(1.3) saturate(1.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+/* 입력 필드 — ui2 인풋 텍스처 */
+.game-input {
+  background-color: #120d08;
+  background-image: url("/assets/ui2/input.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 4px;
+  color: #f5ecd6;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+.game-input:focus {
+  outline: none;
+  filter: brightness(1.22);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 1px #e8a75c88;
+}
+/* 위험/삭제 버튼 — ui2 버튼 × 적색 블렌드 */
+.game-btn-danger {
+  background-color: #8c2418;
+  background-image: url("/assets/ui2/button.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-blend-mode: multiply;
+  border: none;
+  border-radius: 4px;
+  color: #fff1ec;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 6px 12px rgba(0, 0, 0, 0.45);
+}
+.game-btn-danger:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5); }
+
+/* v4.1.5 — Galmuri 한글 픽셀 폰트 (npm galmuri, SIL OFL 1.1) — 게임 UI 전체 아이덴티티 */
+html, body {
+  font-family: Galmuri11, "Noto Sans KR", sans-serif;
+}
+
+/* v1.0.8 — 컴팩트 패널 내부 스크롤바 (로그인 창 잘림 수정·콘텐츠 허브) */
+.sertz-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.28) transparent; }
+.sertz-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.sertz-scroll::-webkit-scrollbar-track { background: transparent; }
+.sertz-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 999px; }
+.sertz-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.45); }
+
+/* v1.0.20 build trigger */
