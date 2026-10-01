@@ -136,3 +136,26 @@ scripts/*.png
 scripts/_perf_charts/
 download/*.png
 server.pid
+
+# v1.4.13 — 배포 실패 원인: 저장소 과대 (skills/ 전체 + Unity/Kenney 에셋 추출물 등 ~270MB)
+# 게임 빌드/배포에는 불필요한 산출물·참조자료 전부 git 추적에서 제외
+/skills/
+/scripts/_unity_extract/
+/scripts/kenney_pp/
+/scripts/kenney_pp.zip
+/scripts/sfx-fetch/
+/scripts/_sfx_backup_rubberduck/
+/scripts/diag/
+/scripts/union_raw/
+/scripts/boss_raw/
+/scripts/boss_raw2/
+/scripts/archdoc/
+/scripts/bgm_work/
+/scripts/preview/
+/scripts/_preview/
+/scripts/asset_work/
+.zscripts/
+apk_build_v106.status
+dev.log
+server.log
+*.log
