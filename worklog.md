@@ -2552,3 +2552,19 @@ Work Log:
 Stage Summary:
 - 워크스페이스 루트 = 프로젝트 루트 구조 완성 (package.json/server.js/src/.git 모두 루트)
 - 서버 정상 구동 중(포트 3000, 에러 0), 생성 페이지에서 재배포 시도 가능한 상태
+
+---
+Task ID: deploy-3
+Agent: Super Z (main)
+Task: sertz11.space-z.ai 배포 500 원인 제거 — production 빌드 + 포트 3000 정복
+
+Work Log:
+- 배포 실패 원인 분석: 플랫폼은 Caddyfile 구조상 도메인→localhost:3000 프록시 방식. 이전 상태는 ①dev 서버가 3000 점유 ②production 빠산출물(.next) 부재 — 배포 파이프라인이 서버를 띄우지 못해 "Failed" 페이지 노출
+- dev 서버 종료로 포트 3000 확보
+- npm run build 성공 (컴파일 11.4s, 정적 6페이지, fc-postbuild로 standalone 멀티플레이 주입 완료)
+- npm start (NODE_ENV=production node server.js) 기동 → 포트 3000 리스닝
+- 검증: GET / 200(타이틀 "SERTZ — 이그드라실: 아홉 왕국"), /support 200, /api/version 정상, socket.io 핸드셰이크 OK, logo.svg/assets webp/_next chunks 전부 200, 에러 로그 0건
+
+Stage Summary:
+- 워크스페이스가 소유자의 검증된 워크플로(production 서버 상시 구동)와 동일한 상태가 됨
+- 생성 페이지에서 재배포하면 sertz11.space-z.ai가 정상 서빙될 것으로 판단됨
