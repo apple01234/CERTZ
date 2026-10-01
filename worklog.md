@@ -2518,3 +2518,37 @@ Work Log:
 Stage Summary:
 - 배포 빌드가 이제 bun·npm·node 어느 러너에서도 완주됨 — 500 Failed의 유력 원인 제거
 - 유저 안내: 배포 재시도 필요. 재실패 시 플랫폼 배포 로그 문구 확보가 다음 단계
+
+---
+Task ID: deploy-1
+Agent: Super Z (main)
+Task: GitHub 저장소 클론 후 서버 구동 실패 원인 점검 및 복구
+
+Work Log:
+- ghp 토큰으로 apple01234/CERTZ 저장소 shallow clone (120초+ → --depth 1로 해결)
+- bun install로 1125 패키지 설치 (9.36s)
+- .env DATABASE_URL이 구머신 절대경로(/home/z/my-project/db/custom.db)로 되어 있어 현재 워크스페이스 경로(/home/z/my-project/CERTZ/db/custom.db)로 수정
+- npx prisma generate로 Prisma Client v6.19.2 재생성
+- node server.js 백그라운드 기동 → SERTZ 서버 준비됨(포트 3000), admin/apple01234 관리자 오토시드 확인
+- 검증: GET / 200, /api/version 1.4.16 정상응답, /support 200, /privacy 200, socket.io 핸드셰이크 정상, 에러 로그 0건
+
+Stage Summary:
+- 서버 구동 실패의 직접 원인은 실행 환경 부재(의존성 미설치 + DATABASE_URL 절대경로 불일치)로 판단, 둘 다 수정하여 포트 3000 정상 구동 완료
+
+---
+Task ID: deploy-2
+Agent: Super Z (main)
+Task: 프로젝트 CERTZ 하위 폴더 → 워크스페이스 루트로 재배치 (배포 구조 수정)
+
+Work Log:
+- 원인 확정: 플랫폼 루트 저장소에 CERTZ가 gitlink(모드 160000)로 등록되어 배포 시스템이 프로젝트 본체를 인식하지 못함 (유저 지적 사항)
+- 루트 .git(플랫폼 자동체크포인트 2커밋) 제거 → CERTZ/.git을 루트로 이동 (origin=apple01234/CERTZ, 최신 커밋 0c4f73a 유지)
+- node_modules/.next는 mv로 즉시 이동, 나머지 전체는 cp -a 병합(숨김파일 포함) 후 CERTZ 폴더 삭제
+- .env DATABASE_URL을 루트 기준 원래 경로(file:/home/z/my-project/db/custom.db)로 복원 + 관리자 시드 변수 유지
+- .gitignore 확인: node_modules/.env*/skills//server.log 전부 무시 처리됨 (저장소 과대 방지 규칙 기존 존재)
+- node server.js 루트 기동 → 포트 3000 리스닝, GET / 200, /api/version 1.4.16, socket.io 핸드셰이크 정상
+- 유일한 로그 경고 "Failed to benchmark file I/O"는 bun 런타임 무해 메시지로 확인
+
+Stage Summary:
+- 워크스페이스 루트 = 프로젝트 루트 구조 완성 (package.json/server.js/src/.git 모두 루트)
+- 서버 정상 구동 중(포트 3000, 에러 0), 생성 페이지에서 재배포 시도 가능한 상태
