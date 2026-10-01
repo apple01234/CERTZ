@@ -1376,5 +1376,5 @@ export const ACC_ANCHORS: Record<string, [number, number, number, number]> = {
   "jobm_windrunner_walkup3": [13, 35, 60, 56],
 };
 
-/** 미등록 시트 폴백 (기본 hero 기준) — v1.2.1 (#1) */
+/** 미등록 시트 폴백 (기본 hero 기준) — v1.2.1 (#1) · v1.4.18 gen_acc_anchors 재산출 시 유지 보존 */
 export const ACC_DEFAULT_ANCHOR: [number, number, number, number] = [15, 35, 60, 56];

@@ -18,25 +18,27 @@ const JOY_RADIUS = 64;
  *  극좌표 헬퍼: 각도(°)와 반경(px) → 버튼 left/top (버튼 중심 기준) */
 const ARC = {
   /** 컨테이너 크기 (sm: 태블림/PC 확대) */
-  /* v1.4.14 (#4) — 버튼 확대(64→84/72→96)에 맞춰 컨테이너도 동급 확대 */
-  w: 282,
-  h: 278,
-  wSm: 322,
-  hSm: 314,
+  /* v1.4.18 (#4) — 공격 버튼 재코너화+대형화(84→100/96→112)에 맞춰 컨테이너 재확대 */
+  w: 306,
+  h: 294,
+  wSm: 348,
+  hSm: 336,
   /** 스킬 반경 — 공격 버튼 중심에서 스킬 버튼 중심까지 */
-  r: 98,
-  rSm: 116,
+  r: 94,
+  rSm: 108,
   /** 시작/종료 각도 (°, 수학 좌표계 — 180=왼쪽, 90=위) */
   a0: 196,
   a1: 74,
-  /** v1.4.17 (#4 유저 지시 "기본 공격키가 너무 구석에 있어") — 공격 버튼을 코너에서 안쪽으로 이동.
-   *  기존: 버튼이 컨테이너 최우하단에 부착(CW-ATK, CH-ATK) → 화면 구석 엄지 꺾임.
-   *  변경: 공격 버튼 중심=(cx,cy), 스킬 부채꼴도 같은 중심(동심원) — 엄지 자연 각도 확보.
-   *  조이스틱 영역(화면 좌 46%)과 스킬 아크 최원점 모두 검증하여 겹침 없음. */
-  cx: 206,
-  cy: 184,
-  cxSm: 236,
-  cySm: 220,
+  /** v1.4.18 (#4 유저 지시 "기본공격 키 좀더 구석으로 + 좀더 크게") —
+   *  v1.4.17에 중심(206,184)으로 옮겼던 공격 버튼을 다시 우하단 코너로 되돌리고 지름 확대.
+   *  중심(250,240)·지름 100 → 우측/하단 가장자리에서 여백 4~6px 코너 밀착.
+   *  스킬 부채꼴은 같은 중심의 동심원(r 98→94) — 겹침 없음 유지.
+   *  검증: 360px 폰 기준 스킬 아크 최좌점 185px > 조이스틱 영역 165px(46%),
+   *  공격-스킬 버튼 간격 94-50-28 = 16px, s1 하단 294 ≤ 컨테이너 294. */
+  cx: 250,
+  cy: 240,
+  cxSm: 280,
+  cySm: 266,
 };
 
 /** 극좌표 → 컨테이너 내 left/top (버튼 중심 기준 px) */
@@ -216,11 +218,10 @@ export function TouchControls({
   const CR = sm ? ARC.rSm : ARC.r;
   const CCX = sm ? ARC.cxSm : ARC.cx;
   const CCY = sm ? ARC.cySm : ARC.cy;
-  /* v1.4.14 (#4 버튼 크기) — 유저 지시 "기본 공격 키가 너무너무 작고, 스킬키는 조금 작아"
-   *  공격 버튼 64→84 (모바일) / 72→96 (PC) — 대폭 확대
-   *  스킬 버튼 46→56 (모바일) / 54→66 (PC) — 살짝 확대
-   *  컨테이너/반경/중심도 함께 확대 — 비율 유지 */
-  const ATK = sm ? 96 : 84; // 공격 버튼 지름 (확대)
+  /* v1.4.18 (#4) — 유저 지시 "기본공격 키 좀더 구석으로 + 좀더 크게"
+   *  공격 버튼 84→100 (모바일) / 96→112 (PC) — 추가 대형화
+   *  스킬 버튼은 v1.4.14 크기 유지(56/66) — 공격키만 확대해 위계 강조 */
+  const ATK = sm ? 112 : 100; // 공격 버튼 지름 (확대)
 
   const unlocked = [
     { key: "s1", name: s1Name || "회전베기", mp: 15, ready: s1Ready, cd: s1Pct, icon: skills.s1Icon, emit: "input:skill1" },
@@ -322,8 +323,8 @@ export function TouchControls({
             </div>
           );
         })()}
-        {/* 기본공격 — v1.4.17 (#4): 코너 고정(CW-ATK,CH-ATK) → 중심 (CCX,CCY)으로 안쪽 이동.
-         *  스킬 부채꼴과 동심원 배치 — 손목 각도 자연스러움 */}
+        {/* 기본공격 — v1.4.18 (#4): 중심(CCX,CCY)을 우하단 코너로 이동 + 지름 100/112 대형화.
+         *  스킬 부채꼴과 동심원 유지 — 코너 엄지 자연 동선 + 손목 각도 자연스러움 */}
         <button
           aria-label="공격"
           className="pointer-events-auto absolute flex touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
@@ -334,8 +335,8 @@ export function TouchControls({
           }}
         >
           <div className="flex flex-col items-center">
-            <Swords size={22} />
-            <span className="mt-0.5 text-[9px] font-black tracking-wide">{atkName || "공격"}</span>
+            <Swords size={26} />
+            <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
           </div>
         </button>
         {/* 자동전투 + 물약 퀵슬롯 — 좌하단 세로 클러스터 (와일드리프트 소환사 주문 자리 역할) */}

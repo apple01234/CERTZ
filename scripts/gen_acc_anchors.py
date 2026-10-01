@@ -99,6 +99,10 @@ def main():
     lines.append("")
     with open("src/game/acc_anchors.ts", "w") as fp:
         fp.write("\n".join(lines))
+    # 폴백 앵커 상수 보존 (WorldScene이 import — 재산출 때마다 유지돼야 한다)
+    with open("src/game/acc_anchors.ts", "a", encoding="utf-8") as f:
+        f.write("\n/** 미등록 시트 폴백 (기본 hero 기준) — v1.2.1 (#1) · 재산출 시 자동 보존 */\n")
+        f.write('export const ACC_DEFAULT_ANCHOR: [number, number, number, number] = [15, 35, 60, 56];\n')
     print(f"anchors: {made} frames, {len(entries)} keys -> src/game/acc_anchors.ts")
 
 
