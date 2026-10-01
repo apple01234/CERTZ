@@ -2373,3 +2373,28 @@ Stage Summary:
 - v1.4.14: 유저 8건 중 7건 직접 구현(①②③④⑤⑦⑧) + ⑥은 기존 통합 상태 문서화
 - 핵심: texGuard missing-texture 자동 수복 체계(검은 박스 방지), 직업별 주스탯 공격력 가산(전사 STR/궁수 DEX/마법사 INT/도적 LUK 0.8/점), 여캐 6종 chibi 직접 드로잉(SPUM 비의존 — VLM "여성으로 보임" 판정), 모바일 패널 zoom 스케일 다운
 - 다음 후보: 시연 영상 3개 실제 제작 (OBS 녹화+HandBrake 인코딩+FFmpeg 자막), 추가 에셋 팩 탐색 (LPC, Pixel Adventure 등), APK 빌드/릴리스
+
+---
+Task ID: 14
+Agent: Super Z (main)
+Task: CERTZ 레포지토리 신규 워크스페이스 이전 + 웹빌드 + APK 빌드
+
+Work Log:
+- git clone --depth 1 (토큰 인증) → 267MB(전체)/134MB(public) 체크아웃
+- 기존 샌드박스 템플릿은 /home/z/my-project-old-template 로 백업, upload 마운트 유지 위해 내용물만 교체 이전 (shopt -s dotglob, .git/.env 포함)
+- bun install 1,125패키지 (4.4초) + prisma generate 성공
+- .env DATABASE_URL=file:/home/z/my-project/db/custom.db 경로 그대로 일치 — DB 이슈 없음
+- 웹 검증: `bun run dev`(node server.js 커스텀서버 — socket.io 멀티+계정) 포트 3000 기동, GET / 200, Phaser v4.2.1 WebGL 부팅, 타이틀→게임시작→캐릭터 선택 UI 클릭 인터랙션 E2E 확인(agent-browser)
+- 웹빌드: `bun run build` (next build standalone + scripts/fc-server/postbuild.js) 성공 — 6 라우트 정적 생성, fc-multi.js 번들(338KB socket.io 인라인) + standalone 래퍼 server.js 작성 완료 (FC 배포 준비)
+- Android SDK 재설치: scripts/install_android_sdk.sh → /home/z/android-sdk (cmdline-tools, platform-36, build-tools 36.0.0)
+- JDK 이슈: 시스템 Java 21은 JRE(javac 없음) → Gradle toolchain JAVA_COMPILER 에러 → Temurin JDK 21.0.12.1+1 을 /home/z/jdk 로 수동 설치(207MB), JAVA_HOME 지정
+- android/local.properties 생성 (sdk.dir=/home/z/android-sdk)
+- APK 빌드: scripts/build_apk.sh 전체 파이프라인 — APK_EXPORT=1 next build(.next-apk 정적 export) → cap sync android → gradle assembleRelease BUILD SUCCESSFUL(6m57s, 206 tasks)
+- 산출물 검증: download/SERTZ-v1.4.14.apk (135MB) — versionCode 106, versionName 1.4.14, minSdk 24/targetSdk 36, apksigner 서명 SHA-256 cc774f34... (기존 키와 동일 — 덮어설치 호환)
+
+Stage Summary:
+- CERTZ(SERTZ 게임) 프로젝트가 /home/z/my-project 로 완전 이전됨, git 원격 유지(apple01234/CERTZ)
+- 웹: dev 서버(3000) 정상 + standalone 웹빌드 산출(.next/standalone — FC 배포 가능)
+- APK: download/SERTZ-v1.4.14.apk 빌드·서명 완료 (기존 키 호환)
+- 환경 메모: JDK=/home/z/jdk/jdk-21.0.12.1+1 (JAVA_HOME으로 export 필요), ANDROID_HOME=/home/z/android-sdk, android/local.properties 생성됨
+- 다음 후보: v1.4.15 기능 개발(원소 반응 연출 강화, 세트 효과 보너스 등 worklog 13 후계), 웹빌드 산출물 FC 배포 테스트
