@@ -40,12 +40,13 @@ const SFX_THROTTLE_MS = 55;
 const SFX_MAX_CONCURRENT = 12;
 /** BGM 볼륨 — v3.0.22 밸런스: BGM 존재감 +0.04 (원곡이 묻히지 않게)
  *  v3.1.0 — 유저 지시 "BGM과 SFX를 각각 조절할수 있는 UI": 런타임 조절 변수로 전환
- *  (BGM_VOLUME 상수는 E2E 호환용 기본값 스냅샷으로 유지) */
-export const BGM_VOLUME = 0.38;
-const BGM_VOLUME_DEFAULT = 0.38;
-/** v3.1.0 — 효과음 마스터 게인 기본값 하향 (유저 지시 "BGM보다 효과음이 너무 큼"):
- *  기존 SFX 래더가 그대로 1.0 배율이었던 것을 0.62로 스케일 — BGM 대비 체감 균형 잡기 */
-const SFX_VOLUME_DEFAULT = 0.62;
+ *  (BGM_VOLUME 상수는 E2E 호환용 기본값 스냅샷으로 유지)
+ *  v1.4.12 (#7 유저 지시) — 기본 시작 설정 BGM 60% */
+export const BGM_VOLUME = 0.6;
+const BGM_VOLUME_DEFAULT = 0.6;
+/** v3.1.0 — 효과음 마스터 게인 (유저 지시 "BGM보다 효과음이 너무 큼": 1.0→0.62 스케일)
+ *  v1.4.12 (#7 유저 지시) — 기본 시작 설정 SE 50% */
+const SFX_VOLUME_DEFAULT = 0.5;
 let bgmVol = BGM_VOLUME_DEFAULT;
 let sfxVol = SFX_VOLUME_DEFAULT;
 const lastPlayed: Record<string, number> = {};

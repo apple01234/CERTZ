@@ -13,6 +13,7 @@ import {
   consumeAuthTokenFromHash, // v1.0.7 — SNS 콜백 해시 토큰 저장
   cloudSaveUpload,
   cloudSaveDownload,
+  getApiServerHost, // v1.4.12 — GM 로그인 진단 (접속 서버 표시)
   type AuthUser,
   type SnsProviders,
 } from "@/game/account";
@@ -87,7 +88,17 @@ export function AuthPanel() {
         : await authRegister(id, pw, nick || id.slice(0, 8));
     setBusy(false);
     if (!r.ok) {
-      setMsg(String(r.data.error ?? "실패했어요"));
+      /* v1.4.12 (#6 GM 로그인 안됨) — 실패 원인에 접속 서버를 노출:
+       *  GM(admin) 계정은 서버별로 관리되므로, 접속 서버가 구버전이거나 그 서버의
+       *  admin 비밀번호가 다르면 로그인이 안 된다. 유저가 "어느 서버에서 실패했는지"
+       *  알 수 있게 오류문에 호스트를 붙인다. */
+      const base = String(r.data.error ?? "실패했어요");
+      const hint = r.status === 401
+        ? ` — 접속 서버: ${getApiServerHost()}`
+        : r.status === 404
+          ? " — 이 서버는 계정 기능이 없는 구버전이에요 (서버 연결에서 변경)"
+          : "";
+      setMsg(base + hint);
       return;
     }
     setUser((r.data.user as AuthUser) ?? null);
@@ -186,6 +197,7 @@ export function AuthPanel() {
                 {user.role === "admin" && (
                   <p className="mt-2 rounded-lg border border-amber-300/40 bg-amber-400/10 px-2.5 py-2 text-[10px] font-black text-amber-200">
                     ✨ 관리자 계정 — 마을 우물 오른쪽의 GM NPC와 대화하면 운영자 패널이 열려요
+                    <br />접속 서버: {getApiServerHost()}
                   </p>
                 )}
                 <p className="mt-2 text-[9px] font-bold leading-relaxed text-white/40">

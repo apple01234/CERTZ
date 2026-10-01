@@ -20,7 +20,7 @@ import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 �
 import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
 import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS } from "@/game/pass"; // v4.5.0 — 시즌 패스 + v1.0.1 시즌 미션
 import { Trophy } from "lucide-react";
-import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, fetchRanking, fetchRank, claimRankReward, rankCacheAgeSec, type RankBoard, type MarketState, type AuthUser, type RankState, type RankRow } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화 · v1.3.0 랭킹 · v1.4.0 랭킹 캐시 표기
+import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, fetchRanking, fetchRank, claimRankReward, rankCacheAgeSec, getApiServerHost, type RankBoard, type MarketState, type AuthUser, type RankState, type RankRow } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화 · v1.3.0 랭킹 · v1.4.0 랭킹 캐시 표기
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
 import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
 import { chestOdds, eertOdds, POT_PITY_MAX, STAR_PITY_FROM, STAR_PITY_STEP, STAR_PITY_MAX } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법) · v1.0.8 천장 공시

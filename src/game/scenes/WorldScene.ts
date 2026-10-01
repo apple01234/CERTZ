@@ -829,9 +829,10 @@ export class WorldScene extends Phaser.Scene {
      *  무한 재부팅 리포트 ⑧⑬의 근원 체계 완전 제거. eggs.ts·비밀수첩·eggTick 삭제와 세트) */
     try { localStorage.removeItem("sertz.eggs"); } catch { /* 무시 */ }
     try { localStorage.removeItem("sertz.visits"); } catch { /* 무시 */ }
+    /* v1.4.12 — sertz.autoResume 플래그 설정 폐지 (유저 지시: 캐릭터 선택 전 자동 시작 버그).
+     *  이제 재부팅/업데이트 후에도 항상 타이틀(캐릭터 선택)부터 시작한다. */
     try {
-      const ac = getActiveCharId();
-      localStorage.setItem("sertz.autoResume", ac || "1");
+      localStorage.removeItem("sertz.autoResume");
     } catch { /* 무시 */ }
     try {
       this.createInner();
@@ -971,6 +972,10 @@ export class WorldScene extends Phaser.Scene {
 
     /* ---------- 상점 NPC (v3.0.15 #9 — 상인은 마을에만 배치. 필드 몬스터 구역에서 제거) ---------- */
     if (!this.isInterior && this.stageDef.isVillage) this.spawnMerchant();
+
+    /* v1.4.12 (#14) — 사냥터 정보 NPC: 챕터별 대사를 가진 정찰병/생존자를 필드에 배치.
+     *  "상호작용 안 되는 이상한 오브젝트"의 대안 — 만나면 챕터 공략 힌트를 준다. */
+    if (!this.isInterior && !this.stageDef.isVillage) this.spawnFieldNpc(stageKey);
 
     /* ---------- 플레이어 (v2.2 — 실내는 문 앞 스폰, 복귀 entry 좌표 우선) ---------- */
     const savedPlayer = save;
@@ -1925,32 +1930,17 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    /* v1.4.11 — 미사용 소품 활성화 (ep_* 신전 · kd_* 광산/유물 · cv_torch 이원 횃불).
-     *  kd_plant1/2/3은 큰 나무 — treeSet 합류(충돌 있음), 나머지는 충돌 없는 배경 소품. */
-    {
-      const shrineProps: string[] =
-        ch === "alfheim" ? ["ep_shrine0", "ep_chalice0"]
-        : ch === "kingdom" ? ["ep_struct1"]
-        : ch === "muspelheim" ? ["ep_struct1", "kd_rock2"]
-        : ch === "abyss" || ch === "hel" ? ["kd_fetus", "kd_pustules", "kd_rock2"]
-        : ch === "cave" || ch === "nidavellir" ? ["kd_rock2", "kd_prop1", "kd_prop2", "kd_prop3", "kd_pustules"]
-        : [];
-      const propN = shrineProps.length > 0 ? 5 : 0;
-      for (let i = 0; i < propN; i++) {
-        const x = rng.between(90, this.stageW - 90);
-        const y = rng.between(80, this.stageH - 80);
-        if (blocked(x, y)) continue;
-        if (!this.inOpenArea(x, y)) continue;
-        if (this.nearSolidObstacle(x, y, 40)) continue;
-        this.add.image(x, y, rng.pick(shrineProps)).setDepth(Math.floor(y / 10)).setAlpha(0.95);
-      }
-      // 마을 횃불 — 이원(cv_torch) 변형: 우물 양옆 (온기 글로우)
-      if (STAGES[stageKey]?.isVillage) {
-        for (const [tx2, ty2] of [[vx - 60, vy - 40], [vx + 60, vy - 40]] as [number, number][]) {
-          this.add.image(tx2, ty2, "cv_torch").setDepth(Math.floor(ty2 / 10) + 1).setScale(1.1);
-          const g2 = this.add.image(tx2, ty2, "glow").setDepth(56).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.0).setAlpha(0.2);
-          this.tweens.add({ targets: g2, alpha: 0.4, scale: 1.3, duration: 760, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-        }
+    /* v1.4.12 (#14 유저 지시 "사냥터에 상호작용도 안되는 이상한 UI들 없애거나 npc를 배치하고 대사를 만들어") —
+     *  v1.4.11의 ep_*(신전·성배·구조물)·kd_*(태아·덩어리·광산 소품) 배치는
+     *  "만져보고 싶은데 아무 반응 없는 이상한 오브젝트"라는 민원의 근원 — 전면 철거.
+     *  대신 아래 spawnFieldNpc()가 챕터별 정보 NPC(대사 있음)를 세운다 — 장식은
+     *  나무/바위/꽃/바닥 스캐터만 남겨 아트 정합성 유지. */
+    // 마을 횃불 — 이원(cv_torch) 변형: 우물 양옆 (온기 글로우)
+    if (STAGES[stageKey]?.isVillage) {
+      for (const [tx2, ty2] of [[vx - 60, vy - 40], [vx + 60, vy - 40]] as [number, number][]) {
+        this.add.image(tx2, ty2, "cv_torch").setDepth(Math.floor(ty2 / 10) + 1).setScale(1.1);
+        const g2 = this.add.image(tx2, ty2, "glow").setDepth(56).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.0).setAlpha(0.2);
+        this.tweens.add({ targets: g2, alpha: 0.4, scale: 1.3, duration: 760, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       }
     }
 
@@ -2432,14 +2422,7 @@ export class WorldScene extends Phaser.Scene {
     }, 4000);
   }
 
-  /** v4.1.3 (#자동사냥포탈) — 자동사냥 중 차원문 접근 안내 (5초 스로틀 — 스팸 방지)
-   *  v4.3.0 — 전진 차원문은 자동 탑승 허용으로 변경돼 복귀 차원문 전용 안내로 남음 */
-  private autoPortalWarnUntil = 0;
-  private warnAutoPortal() {
-    if (this.time.now < this.autoPortalWarnUntil) return;
-    this.autoPortalWarnUntil = this.time.now + 5000;
-    this.showBanner("자동사냥 중에는 복귀 차원문을 타지 않는다 — 끄고 이용하자");
-  }
+  /** v1.4.12 (#13) — 복귀 차원문 자동 게이트 폐지로 안내 배너 불필요 (메서드 제거) */
 
   /** v4.3.0 — 반경 r 내 생존 적 존재 여부 (자동 포탈 진입 안전 가드) */
   private liveEnemiesNear(r: number): boolean {
@@ -2448,6 +2431,11 @@ export class WorldScene extends Phaser.Scene {
       if (e.active && e.alive && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < r) return true;
     }
     return false;
+  }
+
+  /** v1.4.12 (#12 보스전 자동전투 금지) — 현재 보스전 진행 중 여부 (스토리/재림/GM 체험 공통) */
+  private bossFightActive(): boolean {
+    return !!(this.boss && this.boss.active && this.boss.alive);
   }
 
   private enterPortal() {
@@ -2529,9 +2517,10 @@ export class WorldScene extends Phaser.Scene {
     this.returnPortal.play("portal-spin");
     this.physics.add.overlap(this.player, this.returnPortal, () => {
       if (!this.returnActive || !this.returnPortal?.active) return;
-      /* v4.1.3 (#자동사냥포탈) — 복귀 차원문도 동일 게이트 (특히 입구 쪽에 스폰돼
-       *  자동 배회 시작점과 겹치기 쉽다 — "이전 맵으로 돌아갈 때 자주 발생"의 주범) */
-      if (this.autoHunt) { this.warnAutoPortal(); return; }
+      /* v1.4.12 (#13 유저 지시 "자동전투 중에도 포탈 전부 탈수있게") — 복귀 차원문
+       *  자동 게이트 폐지. 기존엔 자동 무한 루프(자동→복귀→자동…) 방지를 위해 막았지만
+       *  유저가 의도적으로 돌아가려는 경우가 더 많다 — 이제 자동사냥 중에도 자유 이용.
+       *  (전진 차원문은 v4.3.0부터 이미 허용 — 이제 전·복귀 모두 자동 탑승 가능) */
       this.enterPrevStage();
     });
     // 청록 비컨 — 전진 포탈(보라)과 시각 구분
@@ -2595,17 +2584,10 @@ export class WorldScene extends Phaser.Scene {
   /* ================= 시작 마을 (인간들의 마을) ================= */
 
 
-  /* ================= v1.4.3 (작업2) — 초행자 훈련장: 마을에서 1→3레벨 도달 루트 =================
-   *  기존엔 1-1 사냥터 진입 게이트(Lv3) 때문에 시작 지점에서 레벨을 올릴 곳이 없었다.
-   *  ① 숲 챕터 게이트 enter 3→1 (1-1 즉시 입장)
-   *  ② 마을 훈련장 — 훈련용 늑대 3마리 상시 리스폰, 약한 스탯·작은 보상
-   *  ③ 마을 퀘스트 체인에 초보 사냥 퀘스트 삽입 (v0 인사 → v1 훈련 사냥 → v2 숲 이동)
-   *  → Lv1→2→3 구간이 마을 안에서 3~5분 내 매끄럽게 이어진다.
-   *  v1.4.4 — 유실됐던 훈련장 복구 + 유저 리포트 ②의 보물상자와 공존 배치(상자 북쪽, 훈련장 남쪽).
-   *  v1.4.4 (유저 지시) — 마을 NPC 3명(주민 2 + 카이엔 교관) 대화 완료 시 레벨 3 즉시 달성. */
-
-  /** 훈련용 늑대 스폰 지점 — respawnEnemy가 좌표로 판정해 훈련용 스탯으로 재소환한다 */
-  private trainSpawns: { x: number; y: number }[] = [];
+  /* ================= v1.4.12 (#3) — 초행자 훈련장 철거 =================
+   *  유저 지시로 훈련장(훈련용 늑대 사냥터) 제거. buildTrainingGround/spawnTrainingWolf/
+   *  trainSpawns 리스폰 판정 전부 삭제 — 마을 레벨업 루트는 NPC 3명 대화(Lv3) 단일화.
+   *  (구 훈련장 퀘스트 v1도 스테이지 정의에서 제거 — v0 인사 → v2 숲 이동 2단 체인) */
 
   /** v1.4.3 (작업4) — 파티 보드 순찰 시간 누적기 (1분마다 +1) */
   private partyTimeAcc = 0;
@@ -2615,62 +2597,6 @@ export class WorldScene extends Phaser.Scene {
 
   /** v1.4.3 (작업3 최적화) — 포탈 가이드 갱신 스로틀 타임스탬프 */
   private portalGuideMs = 0;
-
-  /** 초행자 훈련장 생성 — (tx, ty) = 중심 (구 유적 자리 남쪽 — 보물상자 남쪽 이웃) */
-  private buildTrainingGround(tx: number, ty: number) {
-    /* 훈련장 원형 마킹 — 룬 원을 은은한 녹색으로 (충돌 없음, 바닥 장식) */
-    if (this.textures.exists("rune_circle")) {
-      this.add.image(tx, ty + 6, "rune_circle")
-        .setDisplaySize(190, 120)
-        .setAlpha(0.3)
-        .setTint(0x8fe84a)
-        .setDepth(Math.floor((ty + 40) / 10) - 1);
-    }
-    /* 횃불 2개 — 훈련장 입양식 (야간에도 보이게) */
-    for (const dx of [-118, 118]) {
-      this.add.image(tx + dx, ty - 6, "torch")
-        .setScale(1.1)
-        .setDepth(Math.floor((ty - 6) / 10));
-    }
-    /* 훈련용 늑대 3마리 — 기본 늑대의 0.6배 HP / 0.35배 공격 / 0.9배 경험치.
-     *  Lv1 캐릭터도 3~4방에 잡는다. 죽으면 같은 자리에 훈련용 스탯으로 재소환. */
-    this.trainSpawns = [
-      { x: tx - 66, y: ty + 14 },
-      { x: tx + 4, y: ty + 30 },
-      { x: tx + 70, y: ty + 8 },
-    ];
-    for (const p of this.trainSpawns) this.spawnTrainingWolf(p.x, p.y);
-    /* 안내 표지판 — 퀘스트 마커로 시선 유도 */
-    this.add
-      .text(tx, ty - 64, "초행자 훈련장 — Lv.3까지 여기서 단련!", {
-        fontFamily: "Galmuri11, sans-serif",
-        fontSize: "11px",
-        color: "#b6f09c",
-        stroke: "#0c1a08",
-        strokeThickness: 4,
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(Math.floor(ty / 10));
-    const qm = this.add.image(tx, ty - 88, "quest_mark").setDepth(22).setScale(1.4);
-    this.tweens.add({ targets: qm, y: ty - 96, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-  }
-
-  /** 훈련용 늑대 소환 (생성/리스폰 공용 — 훈련용 스탯 고정)
-   *  v1.4.3 — burst 플래그: 초기 마을 빌드 시점엔 FX 이미터가 아직 생성 전이라
-   *  spawnBurstAt 호출이 create 크래시를 유발했다(안전부팅 폴백 → 훈련장 전체 소실).
-   *  초기 생성은 버스트 없이 페이드인만, 리스폰은 버스트 연출 유지. */
-  private spawnTrainingWolf(x: number, y: number, burst = false) {
-    const e = new Enemy(this, x, y, "wolf", {
-      hp: 0.6, atk: 0.35, exp: 0.9, gold: 0.4,
-      scale: 0.8, tint: 0xd8f0c8, displayName: "훈련용 늑대",
-    });
-    e.setAlpha(0);
-    this.tweens.add({ targets: e, alpha: 1, duration: 380 });
-    if (burst && this.burstEmitter) this.spawnBurstAt(x, y, 5, e.burstTint);
-    this.enemies.push(e);
-    this.physics.add.collider(e, this.solidGroup);
-  }
 
   /* v1.4.3 (유저 리포트 ①②) — 요새 유적 구조물 완전 철거, 보물상자만 잔존.
    *  · ① "맵에 보이지 않는 히트박스" — 지지대 충돌 zone(기둥 하단, 시각 경계와 어긋난 은닉 히트박스)이
@@ -2744,10 +2670,12 @@ export class WorldScene extends Phaser.Scene {
     const cy = this.stageH / 2;
 
     /* v1.4.3 (작업1/리포트 ②) — 구 유적 자리: 보물상자(상자만 잔존 — 유저 리포트 ②)는
-     *  원래 자리에 두고, 그 남쪽에 초행자 훈련장(작업2 — 훈련용 늑대+표지판)을 세운다.
-     *  v1.4.4 — 2101c7b에서 훈련장이 유실돼 마을 1→3레벨 루트(v1 훈련 퀘스트)가 끊겼던 것 복구. */
+     *  원래 자리에 둔다.
+     * v1.4.12 (#3 유저 지시 "시작 사냥터 없애 (단, npc 3명에게 말걸면 3레벨이 찍히도록 해)") —
+     *  초행자 훈련장(훈련용 늑대 사냥터) 전면 철거. 마을에서의 레벨업은
+     *  NPC 3명 대화 보상(v0 퀘스트 → Lv3)으로 대체한다 — 사냥 없이도 첫 사냥터(1-1)
+     *  진입 게이트를 통과하는 매끄러운 시작 흐름. */
     this.buildVillageChest(cx + 430, cy + 40);
-    this.buildTrainingGround(cx + 430, cy + 170);
 
     // 광장 우물 (중앙 랜드마크, 충돌 있음) — 접근 시 샘물 회복
     const well = this.add.image(cx, cy, "well").setDepth(Math.floor(cy / 10));
@@ -3509,6 +3437,47 @@ export class WorldScene extends Phaser.Scene {
     this.interactables.push({ x: mx, y: my, kind: "shop", label: "라고스 상점" });
   }
 
+  /** v1.4.12 (#14 유저 지시 "사냥터에 상호작용도 안되는 이상한 UI들 없애거나 npc를 배치하고 대사를 만들어") —
+   *  사냥터 정보 NPC: 챕터별 정찰병/생존자가 필드 입구 근처에서 챕터 공략 힌트를 준다.
+   *  이상한 소품(ep_·kd_ 계열) 철거의 대안 — 이제 필드의 모든 사람 그림은 말을 건다. */
+  private spawnFieldNpc(stageKey: StageKey) {
+    const ch = parseStage(stageKey).ch;
+    const SPEC: Record<string, { tex: string; name: string; dlg: string }> = {
+      forest: { tex: "spum_villager_m", name: "숲의 사냥꾼", dlg: "fieldNpc_forest" },
+      kingdom: { tex: "spum_villager_f", name: "능지 생존자", dlg: "fieldNpc_kingdom" },
+      cave: { tex: "spum_villager_m", name: "광산 노동자", dlg: "fieldNpc_cave" },
+      niflheim: { tex: "spum_villager_f", name: "설원 수렵꾼", dlg: "fieldNpc_niflheim" },
+      muspelheim: { tex: "spum_villager_m", name: "화산 광부", dlg: "fieldNpc_muspelheim" },
+      alfheim: { tex: "spum_villager_f", name: "요정 정찰병", dlg: "fieldNpc_alfheim" },
+      nidavellir: { tex: "spum_villager_m", name: "대장장이 견습", dlg: "fieldNpc_nidavellir" },
+      hel: { tex: "spum_villager_f", name: "묘지 관리인", dlg: "fieldNpc_hel" },
+      abyss: { tex: "spum_villager_m", name: "심연 생존자", dlg: "fieldNpc_abyss" },
+    };
+    const s = SPEC[ch];
+    if (!s) return; // 재림/특수 구역은 제외
+    /* 위치: 입구 근처 열린 지점 (포탈·스폰 보호 170px 안이면 재추첨) */
+    let px = this.entryHome.x + 96;
+    let py = this.entryHome.y - 96;
+    for (let tries = 0; tries < 24; tries++) {
+      const tx = Phaser.Math.Clamp(this.entryHome.x + Phaser.Math.Between(-220, 240), 80, this.stageW - 80);
+      const ty = Phaser.Math.Clamp(this.entryHome.y + Phaser.Math.Between(-200, 140), 80, this.stageH - 80);
+      if (this.inOpenArea(tx, ty) && !this.nearSolidObstacle(tx, ty, 44)) { px = tx; py = ty; break; }
+    }
+    const img = this.add.image(px, py, s.tex).setDepth(Math.floor(py / 10)).setScale(0.62);
+    this.tweens.add({ targets: img, y: py - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.add
+      .text(px, py - 34, s.name, {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "11px",
+        color: "#bfe9ff",
+        stroke: "#0a1420",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(Math.floor(py / 10));
+    this.interactables.push({ x: px, y: py, kind: "talk", dlg: s.dlg, npcId: s.dlg, label: `${s.name}와 대화` });
+  }
+
   private acquireDrop(): Drop | null {
     const free = this.drops.find((d) => d.scene && !d.active);
     if (free) return free;
@@ -3613,10 +3582,15 @@ export class WorldScene extends Phaser.Scene {
     const z = cam.zoom || 1;
     const gw = 156 / z;
     const gh = 88 / z;
-    const cx = cam.width / 2;
+    const cx0 = cam.width / 2;
     /* v1.4.8 (#3 겹침) — 좌하단 ChatBox(하단 44vw)와 미니맵(하단 중앙) 좌하단 가림 해소:
-     *  좁은 화면(모바일 가로)에서는 채팅 입력바 위(56px)로 미니맵을 올리고, 넓은 화면은 하단 유지 */
-    const mmBottom = cam.width < 900 ? 56 : 12;
+     *  좁은 화면(모바일 가로)에서는 채팅 입력바 위(56px)로 미니맵을 올리고, 넓은 화면은 하단 유지
+     * v1.4.12 (#11 유저 지시 "맵 지도 UI가 너무 위에 있어 좀 아래로 내려") — 가로폭 700~900px
+     *  기기(가로 모드 폰)에서 56px 리프트가 맵을 중공에 떠 있게 보이는 원인.
+     *  ①이 구간에선 하단 14px까지 내리고 ②채팅박스(하단 44vw) 회피를 위해 중앙에서 44px 우측 이동.
+     *  매우 좁은 화면(<700px, 세로 모드)은 채팅/조이스틱/스킬 아크와 충돌해 기존 56px 유지. */
+    const mmBottom = cam.width < 900 ? (cam.width < 700 ? 56 : 14) : 12;
+    const cx = cam.width < 900 && cam.width >= 700 ? cx0 + 44 : cx0;
     const cy = cam.height / 2 + (cam.height - mmBottom - gh * z * 0.5 - cam.height / 2) / z;
     mm.clear();
     /* v1.1.0 (#7) — 어두운 맵(암전 챕터/카오스 보스전)에서도 지도가 잘 보이게:
@@ -6037,15 +6011,10 @@ export class WorldScene extends Phaser.Scene {
     }
     /* v3.0.16 — 필드 정예 출현 (메이플 엘리트/챔피언): 전투 구역 4.5%, 동시 1마리, 보스 부재 시.
      *  3.2배 HP / 1.45배 ATK / 4배 EXP / 3배 골드 + 처치 시 에메랄드 +1 확정 */
-    /* v1.4.3 (작업2) — 훈련용 늑대 스폰 지점 판정: 죽은 자리가 훈련장이면 훈련용 스탯으로 재소환
-     *  (기본 리스폰은 일반 늑대를 소환해 훈련장이 갑자기 위험해지는 문제 방지) */
-    const isTrainSpot = this.trainSpawns.some((p) => Math.abs(p.x - x) < 8 && Math.abs(p.y - y) < 8);
-    const eliteOk = !isTrainSpot && !this.fieldEliteRef && !this.boss?.active && !this.stageDef.isVillage && !this.isInterior;
+    /* v1.4.3 (작업2) — 훈련용 늑대 스폰 지점 판정 — v1.4.12 (#3) 훈련장 철거로 삭제.
+     *  이제 모든 리스폰은 일반 규칙을 따른다. */
+    const eliteOk = !this.fieldEliteRef && !this.boss?.active && !this.stageDef.isVillage && !this.isInterior;
     const spawnElite = eliteOk && Math.random() < 0.045;
-    if (isTrainSpot) {
-      this.spawnTrainingWolf(x, y, true);
-      return;
-    }
     const e = spawnElite
       ? new Enemy(this, x, y, key, {
           hp: 3.2, atk: 1.45, exp: 5, gold: 4, scale: 1.35, tint: 0xffd76a,
@@ -6244,6 +6213,16 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.roar();
     this.doShake(260, 0.008);
     this.showBanner(`${def.name} 출현!`);
+    /* v1.4.12 (#12 보스전 자동전투 금지) — 보스전 진입 시 자동전투 강제 해제 + 이유 안내:
+     *  보스는 패턴 회피가 전부라 알고리즘 자동전투로는 읽지 못한다(즉사 루트). */
+    if (this.autoHunt) {
+      this.autoHunt = false;
+      this.autoHuntMove.set(0, 0);
+      this.autoTarget = null;
+      this.emitRpgState();
+      this.save();
+      EventBus.emit("banner:show", { text: "⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)" });
+    }
     this.boss = new Boss(this, bx, by, def, "normal");
     this.spawnBossRunic(bx, by, false); /* v4.1.7 — 유료 팩 룬 마법진 */
     this.applyBossPostFX(false); /* v4.1.5 — 보스전 블룸 */
@@ -6295,6 +6274,15 @@ export class WorldScene extends Phaser.Scene {
     this.doShake(340, lv === "chaos" ? 0.016 : 0.01);
     /* v4.1.4 — 카오스 등장 강조 배너 */
     this.showBanner(lv === "chaos" ? `카오스 재림 — ${base.name}!! (전용 패턴 개방)` : `재림한 ${base.name} 출현!`);
+    /* v1.4.12 (#12 보스전 자동전투 금지) — 재림 보스전도 동일 강제 해제 */
+    if (this.autoHunt) {
+      this.autoHunt = false;
+      this.autoHuntMove.set(0, 0);
+      this.autoTarget = null;
+      this.emitRpgState();
+      this.save();
+      EventBus.emit("banner:show", { text: "⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)" });
+    }
     this.boss = new Boss(this, bx, by, def, lv);
     this.spawnBossRunic(bx, by, lv === "chaos"); /* v4.1.7 — 룬 마법진 (카오스는 붉은룬) */
     this.applyBossPostFX(lv === "chaos"); /* v4.1.5 — 카오스: 블룸+비네트+잉걸불 오라 */
@@ -7403,6 +7391,14 @@ export class WorldScene extends Phaser.Scene {
     // v2.5 — 자동사냥 토글 (v3.0.15 #5: 펫 없이도 사용 가능)
     const onAutoHunt = () => {
       if (!this.player) return;
+      /* v1.4.12 (#12 유저 지시 "보스전에서는 자동전투 못쓰게해(+부가 설명해줘)") —
+       *  보스전 개시 중엔 켜기 금지: 보스는 패턴 회피·타이밍이 전부인 전투라
+       *  알고리즘 자동전투로는 패턴을 읽지 못하고 무조건 사망한다. */
+      if (!this.autoHunt && this.bossFightActive()) {
+        EventBus.emit("banner:show", { text: "⚔ 보스전에서는 자동전투를 쓸 수 없다! 보스의 패턴을 직접 피하고, 공격 타이밍을 잡아 싸워야 한다" });
+        audio.sfx.deny();
+        return;
+      }
       this.autoHunt = !this.autoHunt;
       this.autoHuntMove.set(0, 0);
       this.autoTarget = null;
@@ -8318,6 +8314,8 @@ export class WorldScene extends Phaser.Scene {
     const useTouch = this.touchMove.lengthSq() > 0.01;
     // v2.5 — 자동사냥 (펫 보유 시): 가장 가까운 적 추적·공격 — 조이스틱/키보드 입력 시 수동 우선
     this.tickAutoHunt();
+    /* v1.4.12 (#15 유저 지시 "자동전투시 식인초를 피해서 가게 해줘") — 식인초 회피 후처리 */
+    this.autoPlantAvoid();
     // v3.0.14 — 끼임 탈출: 이동 명령 중 제자리면 측면 탈출로 autoHuntMove 덮어씀
     this.tickAutoUnstuck(dt);
     let move = useTouch ? this.touchMove : mv;
@@ -8622,6 +8620,8 @@ export class WorldScene extends Phaser.Scene {
     this.autoHuntMove.set(0, 0);
     // v3.0.15 (#5) — 펫 없이도 자동전투 가능 (펫 게이트 제거)
     if (!this.autoHunt || !this.player) return;
+    /* v1.4.12 (#12) — 보스전 중 자동전투 동작 금지 (토글 외 동작측 이중 잠금) */
+    if (this.bossFightActive()) { this.autoTarget = null; return; }
     if (this.dialoguing || this.sleeping) return;
     this.autoPotion();
     if (this.player.state !== "idle") return; // 공격/돌진/사망 중엔 개입 안 함
@@ -8956,6 +8956,50 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     return base;
+  }
+
+  /** v1.4.12 (#15 유저 지시 "자동전투시 식인초를 피해서 가게 해줘") — 식인초(육식 식물
+   *  위험 오브젝트 cl_jawsplant/cl_eyeplant/cl_manyeyes) 회피 후처리.
+   *  tickAutoHunt가 계산한 autoHuntMove를 그대로 쓰면 챕터 최대체력 10% 고정데미지
+   *  (hitPlantHazard)를 반복해서 받는다. 자동전투 이동에만 후처리 적용:
+   *  ①몸이 위험 반경(46px) 안이면 가장 가까운 식물 반대방향으로 즉시 이탈
+   *  ②전방 탐지점(48/110px)이 위험하면 ±42°/±84°/±126° 우회
+   *  ③전부 위험하면 정지 — 원거리 직업은 제자리 공격으로 해결, 근접은 벽 탈출과 동일하게 다른 경로 탐색 */
+  private autoPlantAvoid() {
+    if (!this.autoHunt || !this.player) return;
+    if (this.plantHazards.length === 0) return;
+    const p = this.player;
+    const plants = this.plantHazards.filter((pl) => pl.active);
+    if (plants.length === 0) return;
+    const DANGER_R = 46; // 접촉 바디(56×44)보다 약간 큰 이탈 반경
+    const mv = this.autoHuntMove;
+    const nearPlant = (x: number, y: number, r: number): Phaser.GameObjects.Image | null => {
+      let best: Phaser.GameObjects.Image | null = null;
+      let bd = Number.MAX_SAFE_INTEGER;
+      for (const pl of plants) {
+        const d = Phaser.Math.Distance.Between(x, y, pl.x, pl.y);
+        if (d < r && d < bd) { bd = d; best = pl; }
+      }
+      return best;
+    };
+    // ① 이미 위험 반경 안 — 이탈이 최우선
+    const cur = nearPlant(p.x, p.y, DANGER_R);
+    if (cur) {
+      mv.set(p.x - cur.x, p.y - cur.y).normalize();
+      return;
+    }
+    // ② 진행 방향 전방 탐지 — 위험하면 각도 우회
+    if (mv.lengthSq() > 0.01) {
+      const probeOk = (d: Phaser.Math.Vector2, dist: number) =>
+        !nearPlant(p.x + d.x * dist, p.y + d.y * dist, DANGER_R + 6);
+      const dir = mv.clone().normalize();
+      if (probeOk(dir, 48) && probeOk(dir, 110)) return; // 안전 — 그대로 진행
+      for (const ang of [0.74, -0.74, 1.47, -1.47, 2.2, -2.2]) {
+        const d = dir.clone().rotate(ang);
+        if (probeOk(d, 48) && probeOk(d, 110)) { mv.copy(d); return; }
+      }
+      mv.set(0, 0); // 전방 전부 위험 — 정지 (자동 공격은 계속됨)
+    }
   }
 
   /** v3.0.14 — 끼임 탈출: 이동 명령 중인데 실제 이동량이 0.35초 이상 미미하면

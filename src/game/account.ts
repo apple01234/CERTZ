@@ -262,17 +262,24 @@ export function rankCacheAgeSec(): number | null {
   return rankCache ? Math.round((Date.now() - rankCache.at) / 1000) : null;
 }
 
-async function getWithRetry(path: string): Promise<{ ok: boolean; data: Record<string, unknown> }> {
+/** v1.4.12 (#21 랭킹 실패 진단) — 현재 API 서버 호스트 표시용 (웹은 same-origin) */
+export function getApiServerHost(): string {
+  const b = apiBase();
+  if (!b) return "현재 접속 사이트";
+  try { return new URL(b).host; } catch { return b; }
+}
+
+async function getWithRetry(path: string): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
   const delays = [0, 1000, 2000]; // 즉시 → 1초 → 2초 (지수 백오프)
-  let lastErr: { ok: boolean; data: Record<string, unknown> } = { ok: false, data: {} };
+  let lastErr: { ok: boolean; status: number; data: Record<string, unknown> } = { ok: false, status: 0, data: {} };
   for (let i = 0; i < delays.length; i++) {
     if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
     try {
       const r = await get(path);
       if (r.ok) return r; // 성공 즉시 반환
-      lastErr = r as unknown as { ok: boolean; data: Record<string, unknown> };
+      lastErr = r as unknown as { ok: boolean; status: number; data: Record<string, unknown> };
     } catch {
-      lastErr = { ok: false, data: {} };
+      lastErr = { ok: false, status: 0, data: {} };
     }
   }
   return lastErr;
@@ -283,7 +290,13 @@ export async function fetchRanking(): Promise<{ ok: boolean; error?: string; sta
   if (!r.ok) {
     // v1.4.0 — 3회 실패 시에도 캐시가 있으면 캐시 반환(빈 화면 금지), ageSec로 표기
     if (rankCache) return { ok: true, state: rankCache.state };
-    return { ok: false, error: String(r.data.error ?? "랭킹 조회 실패") };
+    /* v1.4.12 (#21 랭킹 불러오기 실패) — 404는 "서버가 구버전"이라는 명확한 신호.
+     *  구버전 서버(예: sertz4 v1.2 이하)는 /api/rank 자체가 없어 Next 404 HTML로 답한다
+     *  — generic 실패 대신 원인과 해결 경로를 정확히 알려준다. */
+    if (r.status === 404) {
+      return { ok: false, error: `${getApiServerHost()} 서버가 랭킹 기능이 없는 구버전이에요 — 서버 연결에서 최신 서버로 바꿔주세요` };
+    }
+    return { ok: false, error: String(r.data.error ?? `랭킹 조회 실패 (${getApiServerHost()})`) };
   }
   const d = r.data as Partial<RankState> | null;
   if (!d || !Array.isArray(d.list)) return { ok: false, error: "랭킹 응답이 올바르지 않아요" };

@@ -26,8 +26,13 @@ const BODY_FRAME_NAMES = [
 /** v1.5.1 — Phaser 로더를 완전히 우회하는 단일 이미지 로딩:
  *  브라우저 네이티브 Image 로딩(병렬) + TextureManager.addImage 등록.
  *  이 Phaser 4 빌드의 로더는 진행 중 큐잉 시 멈추는(1장 후 정지) 결함이 있어
- *  로더와 아예 무관하게 동작시킨다 — 완료 감지는 textures.exists 폴링(tickBodyPending). */
-function loadImageRaw(scene: Phaser.Scene, key: string, url: string): Promise<void> {
+ *  로더와 아예 무관하게 동작시킨다 — 완료 감지는 textures.exists 폴링(tickBodyPending).
+ * v1.4.12 (#4/#9 스프라이트 안불러와짐) — 무음 실패가 진짜 원인:
+ *  onerror에서 재시도 없이 resolve() 하면 WebView 캐시 오염(업데이트 직후 흔함 —
+ *  stale 캐시 항목이 partial/corrupt 응답을 내놓는다) 시 walk 프레임 일부가 영구 누락돼
+ *  "이동하면 애니메이션이 안 나온다"는 증상이 됐다. → 2라운드 재시도 + 재시도 시
+ *  캐시버스팅 쿼리(?r=타임스탬프)로 오염된 캐시 항목을 우회한다. */
+function loadImageRaw(scene: Phaser.Scene, key: string, url: string, bust = false): Promise<void> {
   return new Promise<void>((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -36,8 +41,8 @@ function loadImageRaw(scene: Phaser.Scene, key: string, url: string): Promise<vo
       } catch { /* 등록 실패 무시 — 폴백 유지 */ }
       resolve();
     };
-    img.onerror = () => resolve(); // 실패도 진행 — 재킷/폴백이 커버
-    img.src = url;
+    img.onerror = () => resolve(); // 실패도 진행 — 상위 라운드 재시도가 커버
+    img.src = bust ? `${url}${url.includes("?") ? "&" : "?"}r=${Date.now()}` : url;
   });
 }
 
@@ -53,7 +58,18 @@ export async function loadBodyPrefix(scene: Phaser.Scene, prefix: string | null 
     return;
   }
 
-  await Promise.all(need.map((f) => loadImageRaw(scene, `${prefix}_${f}`, `assets/${prefix}_${f}.webp`)));
+  /* v1.4.12 (#4/#9) — 3라운드 로드: 1차 정상 → 2차 캐시버스팅 → 3차 재버스팅.
+   *  각 라운드는 "앞 라운드에서 실패한(미등록된) 프레임"만 다시 시도한다.
+   *  업데이트 직후 WebView 캐시 오염으로 일부 프레임(특히 walk)이 무음 실패하던
+   *  문제를 재시도+버스팅으로 수복한다. */
+  let pending = need;
+  for (let round = 0; round < 3 && pending.length > 0; round++) {
+    await Promise.all(pending.map((f) => loadImageRaw(scene, `${prefix}_${f}`, `assets/${prefix}_${f}.webp`, round > 0)));
+    pending = BODY_FRAME_NAMES.filter((f) => !scene.textures.exists(`${prefix}_${f}`));
+  }
+  if (pending.length > 0) {
+    console.warn(`[SERTZ] 외형 프레임 재시도 후에도 누락 — ${prefix}: ${pending.join(",")}`);
+  }
   /* 핵심 프레임 등록 확인 후 애님 등록 (일부 실패 시 애님 참조 오류 방지) */
   if (scene.textures.exists(`${prefix}_idle0`)) registerBodyAnims(scene, [prefix]);
 }

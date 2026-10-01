@@ -2,13 +2,52 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
-import { Swords, RefreshCw, Zap, Bot, Pause, Flame, Star } from "lucide-react";
+import { Swords, Bot, Pause, Star } from "lucide-react";
 import type { Skills } from "./useGameUi";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.4 — 물약 키 힌트를 키맵 따라 표시
 
 /* v3.0.18 — 52→64px: 스틱 반경 확대로 미세 조작 정밀도 향상 + 풀 기울임이 쉬워짐
  *  (기존 52px는 손가락이 조금만 쉬어도 실질 60~85% 속도 — "이속이 느림" 체감의 주원인) */
 const JOY_RADIUS = 64;
+
+/* ═══ v1.4.12 (#8 유저 지시 "사진처럼 스킬 UI 배치를 바꿔") — 와일드리프트식 아크 레이아웃 ═══
+ *  사진(LoL Wild Rift) 기준:
+ *   · 기본공격 버튼을 우하단 코너에 두고, 스킬 버튼들이 공격 버튼을 중심으로
+ *     부채꼴(arc) 위에 극좌표 배치된다 — 엄지 회전 동선상 어느 스킬이든 한 손에 닿는다.
+ *   · 자동전투/물약은 공격 버튼 왼쪽·아래 작은 원형으로 별도 클러스터.
+ *  극좌표 헬퍼: 각도(°)와 반경(px) → 버튼 left/top (버튼 중심 기준) */
+const ARC = {
+  /** 컨테이너 크기 (sm: 태블림/PC 확대) */
+  w: 236,
+  h: 232,
+  wSm: 272,
+  hSm: 264,
+  /** 스킬 반경 — 공격 버튼 중심에서 스킬 버튼 중심까지 */
+  r: 82,
+  rSm: 96,
+  /** 시작/종료 각도 (°, 수학 좌표계 — 180=왼쪽, 90=위) */
+  a0: 196,
+  a1: 74,
+  /** 공격 버튼 중심 = 컨테이너 우하단 코너에서 안쪽으로 */
+  cx: 178,
+  cy: 164,
+  cxSm: 204,
+  cySm: 196,
+};
+
+/** 극좌표 → 컨테이너 내 left/top (버튼 중심 기준 px) */
+function arcPos(cx: number, cy: number, r: number, deg: number): { left: number; top: number } {
+  const rad = (deg * Math.PI) / 180;
+  return { left: Math.round(cx + Math.cos(rad) * r), top: Math.round(cy - Math.sin(rad) * r) };
+}
+
+/** 해금된 스킬 수에 따라 부채꼴 각도 분배 (a0→a1 사이 등간격) */
+function arcAngles(n: number): number[] {
+  if (n <= 0) return [];
+  if (n === 1) return [(ARC.a0 + ARC.a1) / 2];
+  const step = (ARC.a0 - ARC.a1) / (n - 1);
+  return Array.from({ length: n }, (_, i) => ARC.a0 - i * step);
+}
 
 /**
  * F3 반응형 핵심: 멀티터치 가상 컨트롤러
@@ -164,6 +203,27 @@ export function TouchControls({
   const s5Ready = (skills.s5Cd ?? 0) <= 0 && skills.mp >= 100;
   const s5Pct = (skills.s5Cd ?? 0) > 0 ? ((skills.s5Cd ?? 0) / Math.max(1, skills.s5Max ?? 60000)) * 100 : 0;
 
+  /* ═══ v1.4.12 (#8) — 와일드리프트식 아크 레이아웃 ═══
+   *  해금된 스킬(s1~s5)을 공격 버튼 중심 부채꼴에 등간격 배치.
+   *  자동전투·HP/MP 물약은 좌하단 세로 클러스터 (공격 버튼 반대쪽 엄지 닿는 곳). */
+  const sm = !isTouch; // PC(넓은 화면)에선 살짝 큰 크기
+  const CW = sm ? ARC.wSm : ARC.w;
+  const CH = sm ? ARC.hSm : ARC.h;
+  const CR = sm ? ARC.rSm : ARC.r;
+  const CCX = sm ? ARC.cxSm : ARC.cx;
+  const CCY = sm ? ARC.cySm : ARC.cy;
+  const ATK = sm ? 72 : 64; // 공격 버튼 지름
+
+  const unlocked = [
+    { key: "s1", name: s1Name || "회전베기", mp: 15, ready: s1Ready, cd: s1Pct, icon: skills.s1Icon, emit: "input:skill1" },
+    { key: "s2", name: s2Name || "돌진베기", mp: 20, ready: s2Ready, cd: s2Pct, icon: skills.s2Icon, emit: "input:skill2" },
+    { key: "s3", name: s3Name ?? "", mp: 25, ready: s3Ready, cd: s3Pct, icon: skills.s3Icon, emit: "input:skill3" },
+    { key: "s4", name: s4Name ?? "", mp: 40, ready: s4Ready, cd: s4Pct, icon: skills.s4Icon, emit: "input:skill4" },
+  ].filter((s) => s.name); // 미해금(빈 이름) 스킬은 아크에서 제외
+  const hasUlt = !!s5Name;
+  const angles = arcAngles(unlocked.length + (hasUlt ? 1 : 0));
+  const SK = sm ? 54 : 46; // 스킬 버튼 지름
+
   return (
     <>
       {/* 조이스틱 영역 — v3.0.5: 화면 왼쪽 전체(45% × 전체 높이)에서 좌하단(46% × 아래 55%)으로 축소.
@@ -197,19 +257,83 @@ export function TouchControls({
       </div>
       )}
 
-      {/* 버튼: 우하단 — 터치/PC 공용 (사용자 지시 #2) — v3.0.4: 모바일에서 스킬 버튼 축소+2×2 그리드 (지시 #6) */
-      }
-      {/* v1.4.9 — 유저 지시: 스킬·물약·자동 UI를 화면 오른쪽 끝에 더 붙임 (우측 마진 8px→4px, 태블릿 20px→4px)
-       *  v1.4.10 — 유저 지시 "스킬 및 자동전투&물약 아이콘을 기본공격 버튼 가까이로 옮겨":
-       *  flex order로 배치를 [스킬 그리드(1)] → [자동전투+물약 열(2)] → [기본공격(3)] 순으로 재정렬 —
-       *  모든 액션 아이콘이 공격 버튼 1~2칸 옆(≈12px)에 밀착한다 */}
-      <div className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.25rem,env(safe-area-inset-right))] flex items-end gap-1.5 sm:bottom-6 sm:right-1 sm:gap-3">
-        <div className="order-2 flex flex-col gap-1.5">
-          {/* v2.5 — 자동사냥 토글 (펫 보유 시) */}
+      {/* ═══ v1.4.12 (#8 유저 지시 "사진처럼 스킬 UI 배치를 바꿔") — 와일드리프트식 아크 배치 ═══
+       *  공격 버튼 우하단 코너 + 스킬 부채꼴(극좌표) + 자동/물약 좌하단 클러스터.
+       *  컨테이너는 pointer-events-none, 개별 버튼만 pointer-events-auto — 아크 빈 공간은 터치 통과 */}
+      <div
+        className="pointer-events-none absolute z-20"
+        style={{
+          width: CW,
+          height: CH,
+          right: "max(0.25rem, env(safe-area-inset-right))",
+          bottom: "max(0.75rem, env(safe-area-inset-bottom))",
+        }}
+      >
+        {/* 스킬 아크 (s1→s5: 왼쪽→위쪽 부채꼴) — 해금된 스킬만 등간격 배치 */}
+        {unlocked.map((s, i) => {
+          const p = arcPos(CCX, CCY, CR, angles[i]);
+          return (
+            <div
+              key={s.key}
+              className="pointer-events-auto absolute"
+              style={{ left: p.left - SK / 2, top: p.top - SK / 2, width: SK, height: SK }}
+            >
+              <SkillButton
+                ready={s.ready}
+                cdPct={s.cd}
+                label={s.name}
+                mp={s.mp}
+                icon={s.icon}
+                compact={!!sm}
+                onDown={() => EventBus.emit(s.emit as "input:skill1")}
+              />
+            </div>
+          );
+        })}
+        {/* 궁극기(s5) — 아크 끝(가장 위쪽)에 살짝 큰 황금 버튼 */}
+        {hasUlt && (() => {
+          const p = arcPos(CCX, CCY, CR + (sm ? 10 : 8), angles[unlocked.length]);
+          return (
+            <div
+              className="pointer-events-auto absolute"
+              style={{ left: p.left - (SK + 6) / 2, top: p.top - (SK + 6) / 2, width: SK + 6, height: SK + 6 }}
+            >
+              <SkillButton
+                ready={s5Ready}
+                cdPct={s5Pct}
+                label={s5Name || ""}
+                mp={100}
+                icon={skills.s5Icon}
+                ult
+                compact={!!sm}
+                onDown={() => EventBus.emit("input:skill5")}
+              >
+                <Star size={18} />
+              </SkillButton>
+            </div>
+          );
+        })()}
+        {/* 기본공격 — 컨테이너 우하단 코너 고정 */}
+        <button
+          aria-label="공격"
+          className="pointer-events-auto absolute flex touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
+          style={{ left: CW - ATK, top: CH - ATK, width: ATK, height: ATK }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            EventBus.emit("input:attack");
+          }}
+        >
+          <div className="flex flex-col items-center">
+            <Swords size={22} />
+            <span className="mt-0.5 text-[9px] font-black tracking-wide">{atkName || "공격"}</span>
+          </div>
+        </button>
+        {/* 자동전투 + 물약 퀵슬롯 — 좌하단 세로 클러스터 (와일드리프트 소환사 주문 자리 역할) */}
+        <div className="pointer-events-auto absolute bottom-0 left-0 flex flex-col gap-1.5">
           {canAutoHunt && (
             <button
               aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
-              className={`relative flex h-10 w-10 touch-none select-none items-center justify-center rounded-full border-2 shadow-lg transition-transform active:scale-90 sm:h-14 sm:w-14 ${
+              className={`relative flex h-10 w-10 touch-none select-none items-center justify-center rounded-full border-2 shadow-lg transition-transform active:scale-90 sm:h-12 sm:w-12 ${
                 autoHunt
                   ? "border-lime-200/80 bg-gradient-to-b from-lime-500 to-emerald-700 text-white animate-pulse"
                   : "border-white/25 bg-slate-800/85 text-white/80"
@@ -243,83 +367,6 @@ export function TouchControls({
             onDown={() => EventBus.emit("rpg:use", { kind: "mp" })}
           />
         </div>
-        {/* v3.0.4 — 스킬 2×2 그리드 (4차까지 해금돼도 자리 부족하지 않게: 지시 #6) */}
-        {/* v3.0.4 — 스킬 2×2 그리드 — v1.4.10: order-1 (공격 버튼 왼쪽에 밀착) */}
-        <div className="order-1 grid grid-cols-2 gap-1.5">
-          {/* v3.2.0 — 5차 궁극기: Lv.200 해금. 황금빛 전용 스타일 */}
-          {s5Name && (
-            <SkillButton
-              ready={s5Ready}
-              cdPct={s5Pct}
-              label={s5Name}
-              mp={100}
-              icon={skills.s5Icon}
-              ult
-              onDown={() => EventBus.emit("input:skill5")}
-            >
-              <Star size={18} />
-            </SkillButton>
-          )}
-          {/* v3.0.3 — 4차기(B): 해금 시만 표시 */}
-          {s4Name && (
-            <SkillButton
-              ready={s4Ready}
-              cdPct={s4Pct}
-              label={s4Name}
-              mp={40}
-              icon={skills.s4Icon}
-              onDown={() => EventBus.emit("input:skill4")}
-            >
-              <Star size={17} />
-            </SkillButton>
-          )}
-          {/* v3.0.3 — 3차기(V): 해금 시만 표시 */}
-          {s3Name && (
-            <SkillButton
-              ready={s3Ready}
-              cdPct={s3Pct}
-              label={s3Name}
-              mp={25}
-              icon={skills.s3Icon}
-              onDown={() => EventBus.emit("input:skill3")}
-            >
-              <Flame size={16} />
-            </SkillButton>
-          )}
-          <SkillButton
-            ready={s1Ready}
-            cdPct={s1Pct}
-            label={s1Name || "회전베기"}
-            mp={15}
-            icon={skills.s1Icon}
-            onDown={() => EventBus.emit("input:skill1")}
-          >
-            <RefreshCw size={16} />
-          </SkillButton>
-          <SkillButton
-            ready={s2Ready}
-            cdPct={s2Pct}
-            label={s2Name || "돌진베기"}
-            mp={20}
-            icon={skills.s2Icon}
-            onDown={() => EventBus.emit("input:skill2")}
-          >
-            <Zap size={18} />
-          </SkillButton>
-        </div>
-        <button
-          aria-label="공격"
-          className="order-3 flex h-16 w-16 touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90 sm:h-20 sm:w-20"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            EventBus.emit("input:attack");
-          }}
-        >
-          <div className="flex flex-col items-center">
-            <Swords size={22} />
-            <span className="mt-0.5 text-[9px] font-black tracking-wide">{atkName || "공격"}</span>
-          </div>
-        </button>
       </div>
     </>
   );
@@ -387,8 +434,9 @@ function SkillButton({
   onDown,
   icon,
   ult,
+  compact,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   label: string;
   mp: number;
   ready: boolean;
@@ -397,6 +445,8 @@ function SkillButton({
   icon?: string;
   /** v3.2.0 — 궁극기 전용 황금 스타일 */
   ult?: boolean;
+  /** v1.4.12 (#8 아크 레이아웃) — 컨테이너가 크기를 결정하므로 버튼은 h-full w-full */
+  compact?: boolean;
 }) {
   /* v3.0.27 — 아이콘 로드 실패 시 lucide 폴백 (웹뷰 캐시 오류 등 어떤 환경에서도 버튼이 깨지지 않게)
      전직 등으로 icon 경로가 바뀌면 렌더 중 상태 조정 패턴으로 에러 플래그 리셋 */
@@ -411,7 +461,7 @@ function SkillButton({
     <button
       aria-label={label}
       disabled={!ready}
-      className={`relative flex h-11 w-11 touch-none select-none flex-col items-center justify-center overflow-hidden rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 sm:h-14 sm:w-14 ${
+      className={`relative flex h-full w-full touch-none select-none flex-col items-center justify-center overflow-hidden rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 ${
         ready
           ? ult
             ? "border-amber-100/90 bg-gradient-to-b from-amber-300 via-amber-500 to-orange-700 shadow-[0_0_14px_rgba(255,190,60,0.65)]"
@@ -429,7 +479,7 @@ function SkillButton({
           src={icon}
           alt=""
           onError={() => setIconErr(true)}
-          className="h-6 w-6 rounded-sm sm:h-7 sm:w-7"
+          className={compact ? "h-7 w-7 rounded-sm" : "h-6 w-6 rounded-sm sm:h-7 sm:w-7"}
           style={{ imageRendering: "pixelated" }}
         />
       ) : (

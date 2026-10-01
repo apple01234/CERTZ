@@ -7,7 +7,7 @@ import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
 import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis, Globe, UserRound, KeyRound } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis, Globe, UserRound, KeyRound, HelpCircle } from "lucide-react";
 import { EventBus } from "./EventBus";
 import * as audio from "@/game/audio"; // v1.4.8 — 더보기 소셜 버튼 클릭음
 
@@ -87,6 +87,7 @@ export function HUD({
   onOpenUnion,
   onOpenTrade,
   onOpenRank, // v1.3.0 (#7) — 랭킹창
+  onOpenGuide, // v1.4.12 (#16) — 이그니의 UI 기능 안내
 }: {
   hud: HudState;
   quest: QuestState;
@@ -119,6 +120,8 @@ export function HUD({
   onOpenTrade: () => void;
   /** v1.3.0 (#7) — 랭킹창 (레벨/전투력/콘텐츠 + 주간 랭커 보상) */
   onOpenRank: () => void;
+  /** v1.4.12 (#16) — 이그니의 UI 기능 안내 */
+  onOpenGuide: () => void;
 }) {
   /* v1.0.5 — 키맵 재배치 시 HUD 키 배지·aria도 함께 갱신 (I/T/J/K/O 하드코딩 제거) */
   const km = loadKeyMap();
@@ -313,6 +316,15 @@ export function HUD({
             >
               <ListChecks size={17} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.quest}</span>
+            </button>
+            {/* v1.4.12 (#16) — 이그니의 UI 안내: 각 UI가 무슨 기능을 하는지 궁금할 때 */}
+            <button
+              onClick={onOpenGuide}
+              aria-label="이그니의 UI 기능 안내 열기"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8f0d0] active:scale-95"
+            >
+              <HelpCircle size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">도움</span>
             </button>
             <button
               onClick={onOpenBoss}

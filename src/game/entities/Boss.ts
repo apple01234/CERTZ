@@ -344,7 +344,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         break;
     }
 
-    if (Math.abs(this.body!.velocity.x) > 8) this.setFlipX(this.body!.velocity.x > 0); // v3.0.10 — 보스 시트 왼쪽 기준 → flip 반전
+    /* v1.4.12 (#18 보스가 플레이어 반대 방향을 바라보는 버그) — 근원 2가지:
+     *  ①기존엔 이동 속도 부호만 봤다 → 정지 상태(속도 0)에선 마지막 방향을 유지해
+     *    플레이어가 뒤로 돌면 뒷돌기 ②교체된 아트가 오른쪽 기준일 땐 부호가 반대로 해석됨.
+     *  이제 항상 플레이어 위치 기준으로 정면을 향하고, 아트 기준 방향(faceLeft)을 존중한다. */
+    const playerOnLeft = player.x < this.x;
+    this.setFlipX(this.def.faceLeft ? !playerOnLeft : playerOnLeft);
   }
 
   /* ---------- 페이즈 관리 ---------- */
