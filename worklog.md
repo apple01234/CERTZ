@@ -2211,3 +2211,36 @@ Stage Summary:
 - 유저 지시 8건 전부 해결: 수량 직접 입력·UI 공격 버튼 밀착·숲 유적풍 소품 제거(유적 잔여물의 잔여분)·고목 충돌·히트박스 정밀 정렬(Phaser 4 실측 기반)·튜토리얼/힌트 강화·챕터별 보스 BGM(9챕터 1:1+재림)·44트랙 곡별 생성 프롬프트
 - 운영 교훈: ①세션 리셋 후 로컬이 원격보다 과거면 rebase 대신 stash→reset→재적용이 충돌 지옥 회피의 정답 ②Phaser 4 Arcade 바디는 setSize 인자에 스케일 자동 곱 — hitW/hitH 같은 수동 판정 값만 스케일 누락 검토할 것 ③이전 세션의 릴리스 스크립트(scripts/release_v149.py)가 재사용 템플릿으로 최적
 - 잔여: eggTick/eggs.ts가 원격 기준 의도 유지 상태인지 유저 확인 필요(무한 재부팅 리포트와의 관계), Play Console 데이터 보안 폼·서명 키 등록은 유저 측 작업
+
+---
+Task ID: V1411
+Agent: Super Z (메인)
+Task: 유저 지시 6건 — ①Drive 에셋 팩 적극 활용 ②보스 디자인 전면 교체(원작 고증 유지) ③비플레이어블 플랫포머 에셋 활용 ④버리는 에셋 최소화 ⑤appId com.sertz.myapp ⑥자동전투 제자리 진동 수정 → v1.4.11 (vc103) 빌드·릴리스
+
+Work Log:
+- [세션 복구] 로컬이 v1.4.4에 멈춤 → git fetch 후 origin/main(v1.4.10+계정백업) reset --hard 동기화 확인
+- [Drive 팩 추출] download/drive_in/dl.bin(68MB 7z, Google Drive) → py7zr로 추출 128MB — Hovl Studio Magic effects·Matthew Guz Slash Effects·Petal Particles·Toon Shaders Pro 4팩
+- [에셋 변환] scripts/convert_drive_pack_v1411.py — 53종 webp 변환(hv2_* 29·mg_* 17·tn_* 6) + CherryPetal 4x4 16프레임 시트(cp_petal) + 타이틀 언덕(cp_bg) + TIFF 2종 보충 — 총 56신규 파일(~1MB)
+- [미사용 에셋 스캔] scripts/scan_unused_assets.py — 504 패밀리 중 66 미사용(270파일) 특정 → 이번에 활성화: pk_* 27종·ep_ 소품(ep_shrine0/ep_chalice0 스트립 슬라이스 포함)·kd_ 소품·tx_* 스캐터·kd_plant1/2/3 자생나무·item_emerald·cv_torch·cfxr_smoke
+- [BootScene] V1411 로드 리스트 84종 등록 + cp_petal spritesheet(176x266) + cp_bg
+- [DriveFX 확장] 12종 신규 메서드 — crater·shockHeavy·electroStrike·crystalPop·slashHeavy·dustPuff·sparkPop·starBurst·deathPuff·emeraldPop·petal (+기존 slashArc/critBurst/explosion 유지)
+- [보스 아트 2차 교체] scripts/gen_boss_art2.sh — 애니 셀셰이드 방향 신규 프롬프트 9종 생성(boss_raw2) → 스콜 텍스트 유입·아부디토스/수르트 유사 문제 2종 재생성 → BOSS_RAW_DIR env로 boss_art.py 후처리(경계 흰색비 0.81~1.00·원본 규격 fit_pad — 판정 불변) → 스크린샷 전수 육안 검증
+- [보스 패턴 이펙트] Boss.ts — bossFx 헬퍼+summonFx 신설, 소환(룬진+결정)·빔(테크링)·quake(낙뢰+지균)·slam(지균+충격파+먼지)·zones(결정+폭발)·blink(연기)·volley(원소 충전)·페이즈(플래시+룬진2)·사망(mg_explode+mg_smoke) 9패턴 연결
+- [WorldScene 훅] spawnSlamBurst(shockHeavy+dustPuff)·spawnHitSpark(sparkPop)·spawnCritSplat(mg_crit)·spawnLevelUpFx(starBurst)·Enemy.die(deathPuff)·광고보상(emeraldPop)
+- [자동전투 진동 수정 5종] ①사거리 진입(atkRange×1.08) 시 autoDirHold 즉시 해제 ②autoApproach stopDist 파라미터(근접 0.75×56·원거리 0.78×250) 도착 오버런 차단 ③randomOpenPointNear BFS 연결성 검증(reach 풀 우선) ④카이팅 방향 홀드 600ms(autoKitDir/autoRetreatOpen 헬퍼) ⑤tickAutoUnstuck autoZeroMs 150ms 유예 — 이동↔공격 경계 진동에서 스택 누적 유지
+- [placeDecor] 지면 스캐터(tx_{gp,dp,cp,ap,si}_{pvar,gvar1,gvar2} — 바닥텍스처→세트 자동 매핑, 열린 셀 2.5%·알파 0.5) + 챕터별 소품(ep_struct1/ep_shrine0/kd_rock2/kd_fetus 등) + 마을 cv_torch 2기 + treeSet에 kd_plant 3종(충돌 하단 중앙 분기)
+- [코스튬 2종] data.ts — outfit_flame(화염의 무희)·outfit_mystic(신비술사) 2종×5곳(CosmeticKey 2군데·ITEMS·COSMETIC_DEFS·BODY_PREFIXES) — cost_flame/costm_flame/cost_mystic/costm_mystic 112프레임 활성화
+- [벚꽃] TitleScene cp_bg 언덕(황혼 틴트 0x8f86b8·하단 34%·페이드인) + 700ms 꽃잎 낙하 + WorldScene 사쿠라 코스튬 착용자 420ms 파티클(v1.0.13 전역 제거 원칙 유지 — 착용자 한정)
+- [appId 일원화] capacitor.config.ts com.sertz.myapp + MainActivity java/com/sertz/yggdrasil→myapp 이동 + namespace + strings.xml(package_name·custom_url_scheme)
+- [ARG 완전 제거] 유실된 v1.4.4 승인 작업 완수 — eggs.ts(435줄) 삭제·WorldScene egg 섹션 90줄 삭제(eggOnCreate/eggTick/onEggsFound/eggCounters/keydown 훅)·Panels SecretNotebook(110줄) 삭제·PhaserGame eggs 노출 제거·create()에서 sertz.eggs/visits 키 자동 청소
+- [버전체인 6곳] package.json 1.4.11·build.gradle vc103+히스토리·server.js(VERSION/CODE/NOTE/APK_MIRROR)·Overlays NOTE·apk-guide.html(v1.4.11+실측 md5 1dd88577…·135610665B)·APK_다운로드_안내.txt
+- [빌드] restore_build_env.sh(JDK/SDK 재구축) → build_apk.sh(APK_EXPORT=1 next build→cap sync→gradle) BUILD SUCCESSFUL 4m54s → download/SERTZ-v1.4.11.apk 135,610,665B · aapt com.sertz.myapp/103/1.4.11 · 일반 next build 서버 복구
+- [E2E] scripts/e2e_v1411.js 32항목 → 32/32 PASS(1차 27/32는 lazy 청크 검색 한계 — fs grep 폴백 보강 후 전부 PASS, v1.4.10 교훈 재확인)
+- [릴리스] scripts/release_v1411.py — Release v1.4.11(id 400626888) 신규 업로드 → 원격 재다운로드 md5 일치 ✓
+- [커밋] git pull --rebase(백업봇 커밋 흡수) → push origin main 완료
+
+Stage Summary:
+- v1.4.11 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.11/SERTZ-v1.4.11.apk (versionCode 103, 135,610,665B, md5 1dd88577437b9df9de3bbad09c012a84, applicationId com.sertz.myapp)
+- 유저 지시 6건 전부 해결: Drive 팩 ~140종 적극 통합(신규 56+잠자던 기존 84)·보스 9종 애니 셀셰이드 전면 교체+9패턴 이펙트·자동전투 진동 5종 근본 수정·신규 코스튬 2종·appId 일원화·ARG 최종 봉쇄
+- 운영 교훈: ①주석 안의 와일드카드(hv2_*/mg_*)는 */로 주석을 조기 종료시킨다 — 주석에 파일그롭 쓰면 안 됨 ②MultiEdit 실패 시 원자성이 버전마다 다를 수 있으니 적용 후 grep으로 상태 확인 필수 ③Playwright는 초기 HTML script만 검색 — lazy 청크 판정은 .next/static/chunks fs grep 폴백이 정답(v1.4.10 재확인) ④보스 아트 프롬프트에 "no text"를 넣어도 텍스트 유입 가능 — 생성 후 육안 검증 전수 필수
+- 잔여: Play Console 데이터 보안 폼·서명 키 등록·API33 AD_ID 확인은 유저 측 작업 / admin 계정: admin / Sertz!2026 (SERTZ_ADMIN_PASSWORD env 동기화)
