@@ -29,11 +29,14 @@ const ARC = {
   /** 시작/종료 각도 (°, 수학 좌표계 — 180=왼쪽, 90=위) */
   a0: 196,
   a1: 74,
-  /** 공격 버튼 중심 = 컨테이너 우하단 코너에서 안쪽으로 */
-  cx: 214,
-  cy: 196,
-  cxSm: 244,
-  cySm: 234,
+  /** v1.4.17 (#4 유저 지시 "기본 공격키가 너무 구석에 있어") — 공격 버튼을 코너에서 안쪽으로 이동.
+   *  기존: 버튼이 컨테이너 최우하단에 부착(CW-ATK, CH-ATK) → 화면 구석 엄지 꺾임.
+   *  변경: 공격 버튼 중심=(cx,cy), 스킬 부채꼴도 같은 중심(동심원) — 엄지 자연 각도 확보.
+   *  조이스틱 영역(화면 좌 46%)과 스킬 아크 최원점 모두 검증하여 겹침 없음. */
+  cx: 206,
+  cy: 184,
+  cxSm: 236,
+  cySm: 220,
 };
 
 /** 극좌표 → 컨테이너 내 left/top (버튼 중심 기준 px) */
@@ -319,11 +322,12 @@ export function TouchControls({
             </div>
           );
         })()}
-        {/* 기본공격 — 컨테이너 우하단 코너 고정 */}
+        {/* 기본공격 — v1.4.17 (#4): 코너 고정(CW-ATK,CH-ATK) → 중심 (CCX,CCY)으로 안쪽 이동.
+         *  스킬 부채꼴과 동심원 배치 — 손목 각도 자연스러움 */}
         <button
           aria-label="공격"
           className="pointer-events-auto absolute flex touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
-          style={{ left: CW - ATK, top: CH - ATK, width: ATK, height: ATK }}
+          style={{ left: CCX - ATK / 2, top: CCY - ATK / 2, width: ATK, height: ATK }}
           onPointerDown={(e) => {
             e.preventDefault();
             EventBus.emit("input:attack");

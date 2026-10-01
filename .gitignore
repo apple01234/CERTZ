@@ -159,3 +159,4 @@ apk_build_v106.status
 dev.log
 server.log
 *.log
+vercel-deploy.log
