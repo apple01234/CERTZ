@@ -128,6 +128,8 @@ export type ItemKey =
   /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (유저 제공 SPUM 파트 실제 조합) */
   | "outfit_valkyrie" | "outfit_witch" | "outfit_sylvan" | "outfit_lily"
   | "outfit_warlord" | "outfit_paladin" | "outfit_nightblade" | "outfit_mariner"
+  /* v1.4.11 — 잠자던 시트(cost_flame·cost_mystic 계열 112프레임) 활성화 신규 코스튬 2종 */
+  | "outfit_flame" | "outfit_mystic"
   | "ring_bless"
   | "buff_king"
   /* v3.0.15 (#13) — eert 큐브 (메이플 큐브 시스템 — 잠재옵션 리롤) */
@@ -389,6 +391,9 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   outfit_paladin: { key: "outfit_paladin", kind: "cosmetic", name: "황실 그레이트 성기사", icon: "costm_paladin_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_nightblade: { key: "outfit_nightblade", kind: "cosmetic", name: "밤을 두른 칼날", icon: "costm_nightblade_idle0", price: 88000, bmPrice: 36, bmOnly: true, tier: "epic" },
   outfit_mariner: { key: "outfit_mariner", kind: "cosmetic", name: "푸른 파도 항해사", icon: "costm_mariner_idle0", price: 82000, bmPrice: 32, bmOnly: true, tier: "epic" },
+  /* v1.4.11 — 잠자던 시트 활성화 신규 2종 (cost_flame/cost_mystic 계열 112프레임 — 미사용 에셋 통합) */
+  outfit_flame: { key: "outfit_flame", kind: "cosmetic", name: "화염의 무희", icon: "cost_flame_idle0", price: 96000, bmPrice: 40, bmOnly: true, tier: "epic" },
+  outfit_mystic: { key: "outfit_mystic", kind: "cosmetic", name: "신비술사", icon: "cost_mystic_idle0", price: 96000, bmPrice: 40, bmOnly: true, tier: "epic" },
   /* ---- v3.0.20 (#9) — eert 큐브: "큐브는 마시는 게 아니다" ----
    *  BM(에메랄드)로만 구매 가능 + 골드 판매가 5000G (아주 비싼 가격).
    *  장비 행의 [eert] 버튼으로 사용하며 1회 사용마다 1개 소모. */
@@ -553,7 +558,8 @@ export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | 
   | "outfit_dragon" | "outfit_frost" | "outfit_sakura" | "outfit_void"
   /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 */
   | "outfit_valkyrie" | "outfit_witch" | "outfit_sylvan" | "outfit_lily"
-  | "outfit_warlord" | "outfit_paladin" | "outfit_nightblade" | "outfit_mariner";
+  | "outfit_warlord" | "outfit_paladin" | "outfit_nightblade" | "outfit_mariner"
+  | "outfit_flame" | "outfit_mystic";
 
 /** 버프 물약 효과 — 사용 시 지속시간 동안 적용 (같은 버프 재사용 시 시간 갱신) */
 export type BuffDef = {
@@ -680,6 +686,9 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   outfit_paladin: { key: "outfit_paladin", name: "황실 그레이트 성기사", icon: "costm_paladin_idle0", desc: "그레이트 헬름에 청색 갑주의 성기사 — 왕가의 최후의 방패 (남형)", price: 560, tint: 0x9ad8ff, slot: "outfit" },
   outfit_nightblade: { key: "outfit_nightblade", name: "밤을 두른 칼날", icon: "costm_nightblade_idle0", desc: "암흑 투구에 흑의 장비의 칼날 — 달빛 아래 소리 없이 다가온다 (남형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
   outfit_mariner: { key: "outfit_mariner", name: "푸른 파도 항해사", icon: "costm_mariner_idle0", desc: "청색 캡에 청록 항해복의 모험가 — 아홉 바다를 건넌 자 (남형)", price: 560, tint: 0x5ac8e8, slot: "outfit" },
+  /* v1.4.11 — 잠자던 시트 활성화 신규 2종 (미사용 에셋 통합 — 남녀형 시트 완비) */
+  outfit_flame: { key: "outfit_flame", name: "화염의 무희", icon: "cost_flame_idle0", desc: "백발에 진홍 드레스의 화염 무희 — 불꽃처럼 요동치는 무대 (남녀형)", price: 560, tint: 0xff8a6a, slot: "outfit" },
+  outfit_mystic: { key: "outfit_mystic", name: "신비술사", icon: "cost_mystic_idle0", desc: "보라색 트윈테일의 신비술사 — 별의 언어를 읽는 자 (남녀형)", price: 560, tint: 0xb08aff, slot: "outfit" },
 };
 
 /* v1.1.0 (#1/#21/#22) — 외형 시스템: 성별 × 피부 6종 → 베이스 시트(chm/chf) 선택.
@@ -702,6 +711,8 @@ export const BODY_PREFIXES = [
   /* v1.3.1 (#1) — 교차 성별 시트: 어떤 성별이 어떤 세트를 착용해도 시트가 존재 (성별 반대 착용 대응) */
   "cost_warlord", "cost_paladin", "cost_nightblade", "cost_mariner",
   "costm_valkyrie", "costm_witch", "costm_sylvan", "costm_lily",
+  /* v1.4.11 — 잠자던 시트 활성화 (cost_flame·cost_mystic 계열 — 남녀형 완비) */
+  "cost_flame", "costm_flame", "cost_mystic", "costm_mystic",
   /* v1.2.0 (#13) — 2차 8직업 전용 외형 (여/남 각 8종): 전직하면 외형 자체가 바뀐다.
    *  버서커/가디언/스나이퍼/윈드러너/아크메이지/세이지/어세신/스와시버클러 */
   "jobf_berserker", "jobf_guardian", "jobf_sniper", "jobf_windrunner",

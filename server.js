@@ -20,7 +20,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.10/SERTZ-v1.4.10.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.11/SERTZ-v1.4.11.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -53,9 +53,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.10";
-  const LATEST_CODE = 102;
-  const VERSION_NOTE = "유저 지시 8건: 구매 수량 직접 입력 · 전투 UI 기본공격 버튼 밀착 · 숲 유적풍 이질 소품 제거·고목 충돌 부여 · 히트박스 정밀 정렬(정예 판정 스케일 보정·투사체 프레임 기반) · 튜토리얼/게임 중 부연 설명 강화 · 챕터별 보스 BGM 전용화(9챕터 1:1)";
+  const LATEST_VERSION = "1.4.11";
+  const LATEST_CODE = 103;
+  const VERSION_NOTE = "Drive 신규 팩 통합(마법진·참격·낙뢰·지균·벚꽃)·보스 9종 아트 2차 전면 교체(애니 셀셰이드 — 판정 불변)·자동전투 제자리 진동 근본 수정 5종·신규 코스튬 2종(화염의 무희·신비술사)·appId com.sertz.myapp 일원화·ARG 체계 완전 제거(비밀수첩·eggs)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

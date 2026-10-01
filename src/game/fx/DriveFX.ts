@@ -232,4 +232,201 @@ export class DriveFX {
       .setAlpha(0.95);
     this.scene.tweens.add({ targets: tw, scale: 0.1, alpha: 0, duration: 300, onComplete: () => tw.destroy() });
   }
+
+  /* ============ v1.4.11 — Drive 신규 팩 2차 통합 (hv2_·mg_·tn_·cp_·pk_ 시리즈) ============ */
+
+  /** 지균 데칼 — Hovl CraterFree (강타/낙뢰 착지). NORMAL 블렌드로 바닥에 새긴 뒤 천천히 사라진다 */
+  crater(x: number, y: number, tint = 0x181008, scale = 1, dur = 2400) {
+    if (!this.scene.textures.exists("hv2_crater")) return;
+    const c = this.scene.add
+      .image(x, y + 2, "hv2_crater")
+      .setDepth(4)
+      .setTint(tint)
+      .setScale(0.5 * scale)
+      .setAlpha(0);
+    this.scene.tweens.add({ targets: c, alpha: 0.6, scaleX: scale, scaleY: scale, duration: 130, ease: "Quad.out" });
+    this.scene.tweens.add({ targets: c, alpha: 0, duration: 400, delay: Math.max(0, dur - 400), onComplete: () => c.destroy() });
+  }
+
+  /** 중형 충격파 — Matthew Guz 5-Shockwave (기존 vfx_shock보다 두꺼운 임팩트 링) */
+  shockHeavy(x: number, y: number, tint = 0xffd0a0, target = 1.35) {
+    if (!this.scene.textures.exists("mg_shock0")) return;
+    const r = this.scene.add
+      .image(x, y - 4, "mg_shock0")
+      .setDepth(24)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(tint)
+      .setScale(0.3)
+      .setAlpha(0.9);
+    this.scene.tweens.add({ targets: r, scale: target, alpha: 0, duration: 460, ease: "Quad.out", onComplete: () => r.destroy() });
+  }
+
+  /** 번개 낙하 — Hovl Electro (보스 지진/폭풍 패턴 전용 섬광) */
+  electroStrike(x: number, y: number, tint = 0xffd28a) {
+    if (!this.scene.textures.exists("hv2_electro")) return;
+    const b = this.scene.add
+      .image(x, y - 52, "hv2_electro")
+      .setDepth(27)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(tint)
+      .setScale(1.3)
+      .setAlpha(0);
+    this.scene.tweens.add({ targets: b, alpha: 0.95, duration: 60, yoyo: true, hold: 60, onComplete: () => b.destroy() });
+  }
+
+  /** 결정 파편 팝 — Hovl CrystalFree (장판 폭발/소환 파편 산개) */
+  crystalPop(x: number, y: number, tint = 0x8ad4ff, n = 3) {
+    if (!this.scene.textures.exists("hv2_crystal")) return;
+    const k = this.lowFx ? 1 : n;
+    for (let i = 0; i < k; i++) {
+      const a = (Math.PI * 2 * i) / Math.max(1, n) + Math.random() * 0.6;
+      const c = this.scene.add
+        .image(x, y, "hv2_crystal")
+        .setDepth(26)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(tint)
+        .setScale(0.4)
+        .setRotation(a);
+      this.scene.tweens.add({
+        targets: c,
+        x: x + Math.cos(a) * 46,
+        y: y + Math.sin(a) * 30 - 18,
+        alpha: 0,
+        scale: 0.18,
+        rotation: c.rotation + 0.9,
+        duration: 420 + i * 60,
+        ease: "Quad.out",
+        onComplete: () => c.destroy(),
+      });
+    }
+  }
+
+  /** 참격 헤비 — Matthew Guz 6종 참격 중 지정 변형 (2차 극기/회전베기 오버레이) */
+  slashHeavy(x: number, y: number, angle: number, variant = 0, tint = 0xfff0d0, big = false) {
+    const key = `mg_slash${Math.max(0, Math.min(5, Math.round(variant)))}`;
+    if (!this.scene.textures.exists(key)) return;
+    const im = this.scene.add
+      .image(x, y, key)
+      .setDepth(25)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(tint)
+      .setRotation(angle)
+      .setScale(big ? 1.3 : 0.95)
+      .setAlpha(0.95);
+    this.scene.tweens.add({ targets: im, scale: big ? 1.85 : 1.3, alpha: 0, duration: 240, ease: "Quad.out", onComplete: () => im.destroy() });
+  }
+
+  /** 먼지 — Toon dirt 2종 (강타/낙뢰 착지 충격 먼지) */
+  dustPuff(x: number, y: number, scale = 1) {
+    const keys = ["tn_dirt0", "tn_dirt1"];
+    const n = this.lowFx ? 1 : 2;
+    for (let i = 0; i < n; i++) {
+      const d = this.scene.add
+        .image(x + Phaser.Math.Between(-16, 16), y + Phaser.Math.Between(-4, 4), keys[i % 2])
+        .setDepth(9)
+        .setTint(0xcab99a)
+        .setScale(0.22 * scale)
+        .setAlpha(0.75);
+      this.scene.tweens.add({
+        targets: d,
+        x: d.x + Phaser.Math.Between(-34, 34),
+        y: d.y - Phaser.Math.Between(4, 14),
+        alpha: 0,
+        scale: 0.4 * scale,
+        duration: 480 + i * 90,
+        ease: "Quad.out",
+        onComplete: () => d.destroy(),
+      });
+    }
+  }
+
+  /** 타격 스파크 팝 — pk_spark (Particle Kit, 미사용 에셋 활성화) */
+  sparkPop(x: number, y: number, tint = 0xfff0a0) {
+    const key = this.scene.textures.exists("pk_spark_02") ? "pk_spark_02" : "pk_spark_04";
+    if (!this.scene.textures.exists(key)) return;
+    const s = this.scene.add
+      .image(x, y, key)
+      .setDepth(26)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(tint)
+      .setScale(0.3)
+      .setRotation(Math.random() * Math.PI)
+      .setAlpha(0.9);
+    this.scene.tweens.add({ targets: s, scale: 0.72, alpha: 0, rotation: s.rotation + 0.5, duration: 200, onComplete: () => s.destroy() });
+  }
+
+  /** 별 폭발 — pk_star (레벨업/보상 축하 보조) */
+  starBurst(x: number, y: number, tint = 0xffe66a) {
+    if (!this.scene.textures.exists("pk_star_01")) return;
+    const n = this.lowFx ? 3 : 6;
+    for (let i = 0; i < n; i++) {
+      const a = (Math.PI * 2 * i) / n;
+      const s = this.scene.add
+        .image(x, y, "pk_star_01")
+        .setDepth(30)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(tint)
+        .setScale(0.34);
+      this.scene.tweens.add({
+        targets: s,
+        x: x + Math.cos(a) * 54,
+        y: y + Math.sin(a) * 40,
+        alpha: 0,
+        scale: 0.1,
+        rotation: 1.2,
+        duration: 520,
+        ease: "Quad.out",
+        onComplete: () => s.destroy(),
+      });
+    }
+  }
+
+  /** 사망 잔연기 — pk_smoke (몬스터 소멸 후 은은한 잔상) */
+  deathPuff(x: number, y: number, tint = 0xcfc6de) {
+    const key = this.scene.textures.exists("pk_smoke_01") ? "pk_smoke_01" : "cfxr_smoke";
+    const s = this.scene.add
+      .image(x, y - 8, key)
+      .setDepth(11)
+      .setTint(tint)
+      .setScale(0.4)
+      .setAlpha(0.8);
+    this.scene.tweens.add({ targets: s, y: s.y - 26, scale: 0.85, alpha: 0, duration: 620, ease: "Quad.out", onComplete: () => s.destroy() });
+  }
+
+  /** 에메랄드 픽업 팝 — item_emerald (광고 보상/BM 지급 시계열 연출, 미사용 에셋 활성화) */
+  emeraldPop(x: number, y: number, n = 1) {
+    if (!this.scene.textures.exists("item_emerald")) return;
+    const k = Phaser.Math.Clamp(n, 1, 8);
+    for (let i = 0; i < k; i++) {
+      const e = this.scene.add
+        .image(x + Phaser.Math.Between(-18, 18), y, "item_emerald")
+        .setDepth(30)
+        .setScale(0.9)
+        .setAlpha(0);
+      this.scene.tweens.add({ targets: e, alpha: 1, y: y - 34 - i * 8, duration: 260, delay: i * 70, ease: "Quad.out" });
+      this.scene.tweens.add({ targets: e, alpha: 0, y: e.y - 54, duration: 340, delay: 280 + i * 70, onComplete: () => e.destroy() });
+    }
+  }
+
+  /** 벚꽃 잎 — CherryPetal 16프레임 시트 (타이틀/사쿠라 코스튬 착용자 전용 떨어짐) */
+  petal(x: number, y: number, drift = 26) {
+    if (!this.scene.textures.exists("cp_petal")) return;
+    const fr = Phaser.Math.Between(0, 15);
+    const p = this.scene.add
+      .image(x, y, "cp_petal", fr)
+      .setDepth(58)
+      .setAlpha(0.92)
+      .setScale(0.4)
+      .setRotation(Math.random() * Math.PI);
+    this.scene.tweens.add({
+      targets: p,
+      y: y + 70 + Math.random() * 30,
+      x: x + Phaser.Math.FloatBetween(-drift, drift),
+      rotation: p.rotation + Phaser.Math.FloatBetween(-1.4, 1.4),
+      alpha: 0,
+      duration: 1500 + Math.random() * 700,
+      ease: "Sine.inOut",
+      onComplete: () => p.destroy(),
+    });
+  }
 }

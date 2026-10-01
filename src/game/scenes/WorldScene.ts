@@ -50,7 +50,6 @@ import { DriveFX } from "../fx/DriveFX"; // v1.3.0 — Drive 팩 VFX 통합 (참
 import { applyToonStyle, clearToonStyle } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일)
 import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
-import { tickEggs, feedKey, eggMilestonePending, claimEggMilestone, type EggDef } from "../eggs"; // v1.4.0 — 이스터에그/ARG 비밀수첩
 import * as partyContent from "../partyContent"; // v1.4.3 (작업4) — 파티 시너지/파티 퀘스트 보드
 import * as audio from "../audio";
 import {
@@ -434,6 +433,16 @@ export class WorldScene extends Phaser.Scene {
   private autoDirHoldUntil = 0;
   /** 도달 불가(벽 뒤 등) 타겟 블랙리스트 — target → 포기 해제 시각 */
   private autoBlacklist = new Map<Enemy | Boss, number>();
+  /* ----- v1.4.11 — 자동전투 진동(제자리 왕복) 근본 수정 4종 ----- */
+  /** 이동 명령 0(공격/대기) 프레임 지속 시간 — 스택 감정이 공격 프레임에서 리셋되지 않게 분리 계측 */
+  private autoZeroMs = 0;
+  /** 카이팅(후퇴) 방향 홀드 — 후퇴와 접근이 빠르게 번갈아 나올 때 방향 뒤집힘 억제 */
+  private autoKitDir = new Phaser.Math.Vector2();
+  private autoKitUntil = 0;
+  /** 현재 접근 목표의 정지 거리 — 사거리 안에 들어오면 홀드를 즉시 끊어 오버런 방지 */
+  private autoHoldStopDist = 0;
+  /** v1.4.11 — 사쿠라 코스튬 벚꽃 스폰 누적기 (update 스로틀) */
+  private sakuraPetalAcc = 0;
   /* ----- v3.0.15 (#20) — 콤보(연속킬) 보너스 경험치 ----- */
   /** 연속킬 카운트 (마지막 킬 후 5초 내 유지) */
   private comboStreak = 0;
@@ -691,6 +700,10 @@ export class WorldScene extends Phaser.Scene {
     this.autoTarget = null;
     this.autoDirHold.set(0, 0);
     this.autoDirHoldUntil = 0;
+    this.autoZeroMs = 0; // v1.4.11 — 진동 수정 신규 필드 리셋
+    this.autoKitDir.set(0, 0);
+    this.autoKitUntil = 0;
+    this.autoHoldStopDist = 0;
     this.autoBlacklist.clear();
     this.autoAvoidLastSign = 0;
     this.repeatNeed = 0;
@@ -812,11 +825,14 @@ export class WorldScene extends Phaser.Scene {
     this.bootAt = this.time.now;
     /* v1.4.0 (#16) — 월드 진입 기록: 재부팅(reload) 시 TitleScene이 이 플래그를 보고
      *  시작 화면 대신 마지막 캐릭터로 자동 복귀한다 (정상 종료 exitToMenu는 해제) */
+    /* v1.4.11 — 구버전 세이브의 ARG 키(sertz.eggs/sertz.visits) 자동 청소 (v1.4.4 유실분 재적용 —
+     *  무한 재부팅 리포트 ⑧⑬의 근원 체계 완전 제거. eggs.ts·비밀수첩·eggTick 삭제와 세트) */
+    try { localStorage.removeItem("sertz.eggs"); } catch { /* 무시 */ }
+    try { localStorage.removeItem("sertz.visits"); } catch { /* 무시 */ }
     try {
       const ac = getActiveCharId();
       localStorage.setItem("sertz.autoResume", ac || "1");
     } catch { /* 무시 */ }
-    this.eggOnCreate();
     try {
       this.createInner();
     } catch (err) {
@@ -1809,7 +1825,7 @@ export class WorldScene extends Phaser.Scene {
       : ch === "abyss" || ch === "hel" ? ["pine_dark"]
       : ch === "muspelheim" ? ["pine_dark", "ud_deadtree1", "ud_deadtree2"]
       : ch === "cave" || ch === "nidavellir" ? ["ud_deadtree1", "ud_deadtree2", "ud_deadtree3", "pine_dark"]
-      : ["tree", "tree", "pine"];
+      : ["tree", "tree", "pine", "kd_plant1", "kd_plant2", "kd_plant3"]; // v1.4.11 — kd_plant 자생나무 3종 합류
     const rockTex = ch === "niflheim" ? "rock_snow" : ch === "abyss" || ch === "hel" ? "rock_dark" : ch === "muspelheim" || ch === "nidavellir" ? "rock_stone" : "rock";
 
     /* v2.1 자연 배치 — 군집 중심 산포 (v3.0.15 #18: 군집 반경 축소로 진로 봉쇄 완화) */
@@ -1849,6 +1865,10 @@ export class WorldScene extends Phaser.Scene {
          *  "나무를 뚫고 다닌다"의 원인 → 줄기 하단 중앙 배치 */
         if (tex.startsWith("ud_deadtree")) {
           (t.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 22).setOffset(55, 100);
+        } else if (tex.startsWith("kd_plant")) {
+          /* v1.4.11 — kd_plant 자생나무(88~123px 캔버스): 줄기 하단 중앙만 충돌 */
+          const tw2 = t.width, th2 = t.height;
+          (t.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 22).setOffset((tw2 - 18) / 2, th2 - 24);
         } else {
           (t.body as Phaser.Physics.Arcade.StaticBody).setSize(16, 14).setOffset(24, 78);
         }
@@ -1881,6 +1901,57 @@ export class WorldScene extends Phaser.Scene {
       if (blocked(x, y)) continue;
       if (!this.inOpenArea(x, y)) continue;
       this.add.image(x, y, rng.pick(flowers)).setDepth(1).setAlpha(0.95);
+    }
+
+    /* v1.4.11 — 지면 변형 스캐터 (tx_* 전환타일 세트 활성화 — 로드만 되고 배치 0이던 45종).
+     *  v3.0.13 민원(타 세트 색상 사각형 뒤죽박죽)과 달리 같은 세트의 pvar/gvar 변형만
+     *  저밀도(열린 셀의 ~2.5%)·저알파로 깔아 바닥 리듬감만 더한다.
+     *  세트는 스테이지 바닥 텍스처에서 자동 매핑 (gp=잔디 dp=흙 cp=동굴 ap=암석 si=설원). */
+    {
+      const TX_SET_OF: Record<string, string> = {
+        tile_grass: "gp", tile_path: "dp", tile_magma: "dp", tile_magma_path: "dp",
+        tile_cave: "cp", tile_stone: "cp", tile_dark: "ap", tile_hel: "ap", tile_abyss: "ap",
+        tile_snow: "si", tile_ice: "si",
+      };
+      const txSet = TX_SET_OF[STAGE_THEME[stageKey]?.ground ?? "tile_grass"];
+      if (txSet && this.layout) {
+        const gvars = [`tx_${txSet}_pvar`, `tx_${txSet}_gvar1`, `tx_${txSet}_gvar2`];
+        for (let i = 0; i < this.layout.open.length; i++) {
+          if (!this.layout.open[i]) continue;
+          if (rng.frac() > 0.025) continue;
+          const c = cellCenterOf(this.layout, i);
+          this.add.image(c.x, c.y, rng.pick(gvars)).setDepth(0).setAlpha(0.5).setScale(1.02);
+        }
+      }
+    }
+
+    /* v1.4.11 — 미사용 소품 활성화 (ep_* 신전 · kd_* 광산/유물 · cv_torch 이원 횃불).
+     *  kd_plant1/2/3은 큰 나무 — treeSet 합류(충돌 있음), 나머지는 충돌 없는 배경 소품. */
+    {
+      const shrineProps: string[] =
+        ch === "alfheim" ? ["ep_shrine0", "ep_chalice0"]
+        : ch === "kingdom" ? ["ep_struct1"]
+        : ch === "muspelheim" ? ["ep_struct1", "kd_rock2"]
+        : ch === "abyss" || ch === "hel" ? ["kd_fetus", "kd_pustules", "kd_rock2"]
+        : ch === "cave" || ch === "nidavellir" ? ["kd_rock2", "kd_prop1", "kd_prop2", "kd_prop3", "kd_pustules"]
+        : [];
+      const propN = shrineProps.length > 0 ? 5 : 0;
+      for (let i = 0; i < propN; i++) {
+        const x = rng.between(90, this.stageW - 90);
+        const y = rng.between(80, this.stageH - 80);
+        if (blocked(x, y)) continue;
+        if (!this.inOpenArea(x, y)) continue;
+        if (this.nearSolidObstacle(x, y, 40)) continue;
+        this.add.image(x, y, rng.pick(shrineProps)).setDepth(Math.floor(y / 10)).setAlpha(0.95);
+      }
+      // 마을 횃불 — 이원(cv_torch) 변형: 우물 양옆 (온기 글로우)
+      if (STAGES[stageKey]?.isVillage) {
+        for (const [tx2, ty2] of [[vx - 60, vy - 40], [vx + 60, vy - 40]] as [number, number][]) {
+          this.add.image(tx2, ty2, "cv_torch").setDepth(Math.floor(ty2 / 10) + 1).setScale(1.1);
+          const g2 = this.add.image(tx2, ty2, "glow").setDepth(56).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.0).setAlpha(0.2);
+          this.tweens.add({ targets: g2, alpha: 0.4, scale: 1.3, duration: 760, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+        }
+      }
     }
 
     // 심연 구역(알프헤임) 횃불 — 실제 Kenney 횃불 + 온기 글로우
@@ -2381,7 +2452,6 @@ export class WorldScene extends Phaser.Scene {
 
   private enterPortal() {
     this.portalActive = false;
-    this.eggCounters.portals++; // v1.4.0 이스터에그 카운터
     /* v1.4.3 (작업4) — 파티 보드: 원정 이동 카운트 (파티 중일 때만) */
     {
       const p = net.netLastParty();
@@ -3017,6 +3087,9 @@ export class WorldScene extends Phaser.Scene {
     this.hitEmitter.setParticleTint(0xfff0a0);
     this.hitEmitter.explode(6, x, y);
 
+    /* v1.4.11 — pk_spark 타격 스파크 팝 (Particle Kit 활성화 — 히트 이미터 위 미세 점화) */
+    this.driveFx?.sparkPop(x, y - 4);
+
     /* v3.0.8 디자인 개편 — Warped Hits 플립북 오버레이 (3종 랜덤, ADD 블렌드) */
     const fx = this.hitFxPool.find((s) => s.scene && !s.active);
     if (fx) {
@@ -3322,6 +3395,9 @@ export class WorldScene extends Phaser.Scene {
 
   spawnSlamBurst(x: number, y: number) {
     this.spawnBurstAt(x, y, 16, 0xffb090);
+    /* v1.4.11 — Drive 팩 보강: MG 충격파 링 + Toon 먼지 (강타/낙뢰 착지 임팩트 2중화) */
+    this.driveFx?.shockHeavy(x, y, 0xffc9a0, 1.3);
+    this.driveFx?.dustPuff(x, y, 1.1);
   }
 
   spawnEnrageBurst(x: number, y: number) {
@@ -3342,6 +3418,8 @@ export class WorldScene extends Phaser.Scene {
     this.starEmitter?.explode(16, x, y - 8);
     this.magicEmitter?.setParticleTint(0xfff0b0);
     this.magicEmitter?.explode(8, x, y - 10);
+    /* v1.4.11 — pk_star 별 파편 산개 (Particle Kit 활성화) */
+    this.driveFx?.starBurst(x, y - 10);
     /* v4.1.7 — 유료 팩(FireworksEffect2D) 네온 별 불꽃놀이 2색 동시 폭발
      *  + 중앙 백색 스타 플래시 (CFR star) */
     this.fwEmitterB?.explode(14, x, y - 10);
@@ -6127,7 +6205,6 @@ export class WorldScene extends Phaser.Scene {
   /** Player.gainExp 레벨업 훅 — 레벨 목표 퀘스트 즉시 판정 (v2.4)
    *  v3.0.15 (#2) — 자동배분 ON이면 지급된 AP를 계열 권장 비율로 즉시 분배 */
   onLevelUp() {
-    this.eggCounters.levelups++; // v1.4.0 이스터에그 카운터
     /* v1.2.0 (#8) — 레벨업 ★ 감정 버블 (씹덕 감성) */
     if (this.player) this.emote("star", this.player.x, this.player.y - 40);
     this.tryCompleteLevel();
@@ -6430,7 +6507,6 @@ export class WorldScene extends Phaser.Scene {
   onBossDead() {
     this.clearBossPostFX(); /* v4.1.5 — 보스전 포스트FX/오라 해제 */
     const def = this.bossDef;
-    this.eggCounters.bossKills++; // v1.4.0 이스터에그 카운터
     audio.sfx.bossDie();
     /* v1.0.8 — ① 탑 보스층 격파: 스토리/재림 경로와 완전 분리 (층 클리어 처리만) */
     if (this.towerActive) {
@@ -6849,6 +6925,8 @@ export class WorldScene extends Phaser.Scene {
       this.save();
       this.emitRpgState();
       audio.sfx.charge();
+      /* v1.4.11 — item_emerald 픽업 팝 (에메랄드 지급 시각화 — 미사용 에셋 활성화) */
+      this.driveFx?.emeraldPop(this.player.x, this.player.y - 34, 1 * adMul);
       EventBus.emit("reward:show", {
         title: "광고 보상 지급!",
         lines: [
@@ -8081,11 +8159,7 @@ export class WorldScene extends Phaser.Scene {
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
 
-    /* v1.4.0 (Task 3-2) — 이스터에그 600ms 틱 (장소/시간/아이템/카운터/방문) */
-    if (this.time.now - this.eggTickMs > 600) {
-      this.eggTickMs = this.time.now;
-      this.eggTick();
-    }
+    /* v1.4.0 (Task 3-2) — 이스터에그 600ms 틱 — v1.4.11 제거 (eggs.ts 삭제와 세트) */
 
     /* v1.1.1 (#5 무지개 오라) — 이름=외양: 무지개는 전 색상 순환, 오로라는 초록↔보라,
      *  은하수는 파랑↔보라 맥동. 오라+본체 오버레이 틴트가 함께 흐른다.
@@ -8098,6 +8172,18 @@ export class WorldScene extends Phaser.Scene {
       this.hintOnce(
         "lowhp",
         "HP가 위험하다! 공격 버튼 옆 빨간 물약 버튼(PC는 D 키)으로 회복하자 — 물약이 없으면 상점에서 사자!"
+      );
+    }
+
+    /* v1.4.11 — 사쿠라 코스튬 착용자 전용 벚꽃 파티클 (CherryPetal 팩 — 순수 치장 연출).
+     *  v1.0.13의 "벚꽃 전면 제거"는 전역 날씨/축하 연출 대상 — 착용자 한정 반복 소량은 의도 유지. */
+    this.sakuraPetalAcc += dt;
+    if (this.player?.outfit === "outfit_sakura" && this.sakuraPetalAcc > 420) {
+      this.sakuraPetalAcc = 0;
+      this.driveFx?.petal(
+        this.player.x + Phaser.Math.Between(-130, 130),
+        this.player.y - Phaser.Math.Between(70, 110),
+        30
       );
     }
     if (auraCfg && (this.cosmeticAura || this.cosmeticOverlay)) {
@@ -8598,6 +8684,14 @@ export class WorldScene extends Phaser.Scene {
     const fam = familyOf(this.player.cls);
     const ranged = fam === "ranger" || fam === "mage";
     const atkRange = ranged ? 250 : 56;
+    /* v1.4.11 — 사거리 진입 시 이동 홀드 즉시 해제 (진동 근본 수정 ①).
+     *  기존엔 접근 홀드(300~1100ms)가 사거리 안에서도 남아 계속 밀어붙여 적을
+     *  통과해 반대편으로 나갔다가 다시 돌아오는 "제자리 왕복"이 재현됐다.
+     *  사거리(약간 여유)에 들어온 순간 이동을 끊고 공격 자세로 전환한다. */
+    if (bestD <= atkRange * 1.08 && this.time.now < this.autoDirHoldUntil) {
+      this.autoDirHoldUntil = 0;
+      this.autoHuntMove.set(0, 0);
+    }
     /* v3.0.15 (#1) — 도달 불가 타겟 포기: 사거리 밖인데 1.2초 이상 제자리면(벽 뒤·장애물 뒤)
      *  5초간 이 타겟을 제외하고 다음 가까운 적을 잡는다 */
     if (bestD > atkRange && this.autoStuckMs > 1200) {
@@ -8637,7 +8731,19 @@ export class WorldScene extends Phaser.Scene {
           }
           return;
         }
-        const away = this.autoRetreatDir(best);
+        /* v1.4.11 — 카이팅 방향 홀드 600ms (진동 근본 수정 ④).
+         *  두 마리가 서로 반대편에서 다가오면 후퇴 방향이 틱마다 뒤집혀
+         *  제자리에서 좌우로 떨리던 것 — 직전 후퇴 방향이 여전히 유효하면 재사용 */
+        let away: Phaser.Math.Vector2;
+        if (this.time.now < this.autoKitUntil && this.autoKitDir.lengthSq() > 0.01
+            && this.autoKitDir.dot(new Phaser.Math.Vector2(p.x - best.x, p.y - best.y).normalize()) > 0.15
+            && this.autoRetreatOpen(this.autoKitDir)) {
+          away = this.autoKitDir.clone();
+        } else {
+          away = this.autoRetreatDir(best);
+          this.autoKitDir.copy(away);
+          this.autoKitUntil = this.time.now + 600;
+        }
         if (p.skill2Cd <= 0 && p.mp >= 20) {
           p.autoDashDir = away;
           p.useSkill2();
@@ -8649,7 +8755,7 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       if (bestD > atkRange) {
-        this.autoApproach(best);
+        this.autoApproach(best, atkRange * 0.78); // v1.4.11 — 사거리의 78%에서 정지 (카이팅 안정 밴드)
         return;
       }
       // 사거리 내 — 조준 보정 후 공격 + 직업별 주력기 판단
@@ -8684,7 +8790,7 @@ export class WorldScene extends Phaser.Scene {
           p.useSkill2();
           return;
         }
-        this.autoApproach(best);
+        this.autoApproach(best, atkRange * 0.75); // v1.4.11 — 사거리의 75%에서 정지 (경계 진동 제거)
         return;
       }
       aimAt();
@@ -8730,6 +8836,8 @@ export class WorldScene extends Phaser.Scene {
   private autoWanderTick() {
     if (!this.player) return;
     if (this.time.now >= this.autoWanderUntil) {
+      /* v1.4.11 — 배회 지점 선정 시 BFS 도달 가능 셀 우선 (진동 근본 수정 ③).
+       *  벽 뒤/단절 셀을 골라 벽에 부딪히며 2.8초를 보내는 "걸제 걸제" 제거 */
       this.autoWanderPoint = this.randomOpenPointNear(560);
       this.autoWanderUntil = this.time.now + 2800;
     }
@@ -8739,11 +8847,15 @@ export class WorldScene extends Phaser.Scene {
     else this.autoWanderUntil = 0;
   }
 
-  /** 반경 내 열린 셀 중 무작위 지점 (배회 대상) */
+  /** 반경 내 열린 셀 중 무작위 지점 (배회 대상)
+   *  v1.4.11 — BFS 도달 가능한 셀만 후보로 채택 (도달 불가 셀로 걸어가 벽에 붙어 있던 문제).
+   *  도달 가능 후보가 비면 기존처럼 아무 열린 셀이나 허용 (전멸 구역 안전망) */
   private randomOpenPointNear(radius: number): { x: number; y: number } | null {
     if (!this.layout || !this.player) return null;
     const pcc = cellCenterOf(this.layout, cellIndexOf(this.layout, this.player.x, this.player.y));
+    const pc = cellIndexOf(this.layout, this.player.x, this.player.y);
     const cand: number[] = [];
+    const reach: number[] = [];
     for (let i = 0; i < this.layout.open.length; i++) {
       if (!this.layout.open[i]) continue;
       const c = cellCenterOf(this.layout, i);
@@ -8754,10 +8866,13 @@ export class WorldScene extends Phaser.Scene {
         if (this.portal?.active && Phaser.Math.Distance.Between(c.x, c.y, this.portal.x, this.portal.y) < 130) continue;
         if (this.returnPortal?.active && Phaser.Math.Distance.Between(c.x, c.y, this.returnPortal.x, this.returnPortal.y) < 130) continue;
         cand.push(i);
+        /* v1.4.11 — 도달 가능(같은 셀이거나 BFS 다음 스텝 존재)한 후보만 별도 수집 */
+        if (i === pc || nextStepToward(this.layout, pc, i) !== null) reach.push(i);
       }
     }
-    if (cand.length === 0) return null;
-    const c = cellCenterOf(this.layout, cand[Phaser.Math.Between(0, cand.length - 1)]);
+    const pool = reach.length > 0 ? reach : cand;
+    if (pool.length === 0) return null;
+    const c = cellCenterOf(this.layout, pool[Phaser.Math.Between(0, pool.length - 1)]);
     return { x: c.x, y: c.y };
   }
 
@@ -8765,10 +8880,21 @@ export class WorldScene extends Phaser.Scene {
    *  v3.0.14 — 셀 내부 오브젝트(나무·바위) 직선 돌파 방지: 바로 앞이 막혔으면 열린 각도로 우회
    *  v3.0.22 (#47) — 좌표 일반화: 적뿐 아니라 여행 포탈 좌표도 접근 가능
    *  v3.0.22 (#41) — 원거리 목표(340px+)는 방향 홀드 1100ms — 제자리 떨림 제거 */
-  private autoApproach(target: { x: number; y: number }) {
+  private autoApproach(target: { x: number; y: number }, stopDist = 0) {
     if (!this.player) return;
-    /* v3.0.15 (#1) — 이동 방향 홀드(240ms): 매 프레임 BFS/회피 재계산으로 좌우로 흔들리던
-     *  "제자리 와리가리" 제거. 홀드 중에는 직전 방향을 유지한다 */
+    /* v1.4.11 — 정지거리(stopDist) 도입 (진동 근본 수정 ②).
+     *  사거리의 75~78% 지점에 도착하면 이동을 끊는다 — 사거리 경계에서
+     *  접근↔공격이 번갈아 나오며 제자리를 왔다갔다하던 원인 제거.
+     *  홀드 중이라도 목표가 정지거리 안이면 즉시 해제 (오버런 방지). */
+    if (stopDist > 0) {
+      const dd = Phaser.Math.Distance.Between(this.player.x, this.player.y, target.x, target.y);
+      if (dd <= stopDist) {
+        this.autoDirHoldUntil = 0;
+        this.autoHoldStopDist = 0;
+        this.autoHuntMove.set(0, 0);
+        return;
+      }
+    }
     if (this.time.now < this.autoDirHoldUntil) {
       this.autoHuntMove.copy(this.autoDirHold);
       return;
@@ -8787,6 +8913,7 @@ export class WorldScene extends Phaser.Scene {
     const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, target.x, target.y);
     this.autoDirHold.copy(dir);
     this.autoDirHoldUntil = this.time.now + (dist > 340 ? 1100 : 300);
+    this.autoHoldStopDist = stopDist;
     this.autoHuntMove.copy(dir);
   }
 
@@ -8837,10 +8964,18 @@ export class WorldScene extends Phaser.Scene {
     if (!this.autoHunt || !this.player) return;
     const p = this.player;
     if (this.autoHuntMove.lengthSq() < 0.01) {
-      this.autoStuckMs = 0;
-      this.autoLastPos.set(p.x, p.y);
+      /* v1.4.11 — 공격/대기 프레임에서 즉시 리셋하지 않는다 (진동 근본 수정 ⑤).
+       *  사거리 경계에서 이동↔공격이 번갈아 나오면 이동 프레임마다 스택이 0으로
+       *  초기화돼 벽에 끼인 진동을 평생 못 잡았다. 150ms 이하의 0 이동은
+       *  공격 프레임으로 보고 누적을 유지, 그 이상 지속되는 정지만 리셋. */
+      this.autoZeroMs += dt;
+      if (this.autoZeroMs > 150) {
+        this.autoStuckMs = 0;
+        this.autoLastPos.set(p.x, p.y);
+      }
       return;
     }
+    this.autoZeroMs = 0;
     if (this.time.now < this.autoUnstuckUntil) {
       this.autoHuntMove.copy(this.autoUnstuckDir); // tickAutoHunt가 다시 덮어써도 탈출 유지
       return;
@@ -8927,6 +9062,18 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     return bestDir ?? base;
+  }
+
+  /** v1.4.11 — 카이팅 홀드 중 재사용 가능 여부: 방향이 여전히 열려 있는지
+   *  (autoRetreatDir의 openDir 경량판 — 후퇴 홀드 유지 판정용) */
+  private autoRetreatOpen(d: Phaser.Math.Vector2): boolean {
+    const p = this.player!;
+    const wb = this.physics.world.bounds;
+    const nx = p.x + d.x * 96;
+    const ny = p.y + d.y * 96;
+    if (nx < 70 || nx > wb.width - 70 || ny < 70 || ny > wb.height - 70) return false;
+    if (this.blockedByObstacle(p.x + d.x * 48, p.y + d.y * 48)) return false;
+    return !this.layout || isOpenXY(this.layout, nx, ny);
   }
 
   /** v3.0.6 — 코너 판정: 8방향 모두 막혀 후퇴 불가 (원거리 자동사냥 "끼어버림" 해결용)
@@ -9132,80 +9279,6 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /* ================= v1.4.0 (Task 3-2 — 유저 지시 #20) 이스터에그 엔진 훅 =================
-   *  장소 접근/시간/아이템/방문/행동 카운터를 600ms 틱으로 평가하고, 키 시퀀스(코나미류)는
-   *  document keydown 버퍼로 잡는다. 발견 시 즉시 보상 + 배너. 구간 보상(10/25/50/100) 지원. */
-  private eggVisits: Partial<Record<StageKey, number>> = {};
-  private eggCounters = { portals: 0, levelups: 0, crits: 0, bossKills: 0 };
-  private eggTickMs = 0;
-  private eggIdleStart = 0;
-  private eggKeyHandler: ((e: KeyboardEvent) => void) | null = null;
-
-  private eggOnCreate() {
-    try { this.eggVisits = JSON.parse(localStorage.getItem("sertz.visits") ?? "{}") as Partial<Record<StageKey, number>>; } catch { this.eggVisits = {}; }
-    const k = this.stageDef?.key;
-    if (k) {
-      this.eggVisits[k] = (this.eggVisits[k] ?? 0) + 1;
-      try { localStorage.setItem("sertz.visits", JSON.stringify(this.eggVisits)); } catch { /* 무시 */ }
-    }
-    this.eggIdleStart = 0; // update 첫 틱에서 기준점 잡힘
-    if (!this.eggKeyHandler) {
-      this.eggKeyHandler = (e: KeyboardEvent) => {
-        const el = e.target as HTMLElement | null;
-        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return; // 입력창 보호
-        const egg = feedKey(e.key);
-        if (egg && this.player) this.onEggsFound([egg]);
-      };
-      document.addEventListener("keydown", this.eggKeyHandler);
-    }
-  }
-
-  private eggTick() {
-    if (!this.player || !this.stageDef) return;
-    if (this.eggIdleStart === 0) this.eggIdleStart = this.time.now;
-    const found = tickEggs({
-      stage: this.stageDef.key,
-      px: this.player.x,
-      py: this.player.y,
-      lv: this.player.lv,
-      items: new Set(this.player.owned),
-      visitCounts: this.eggVisits,
-      totalKills: this.totalKills,
-      stageKills: this.totalKills,
-      counters: {
-        ...this.eggCounters,
-        gold: this.player.gold,
-        starMax: Math.max(this.player.upgrades.weapon, this.player.upgrades.armor),
-        rebirths: this.inf.rebirths,
-        pets: this.player.owned.filter((k) => k.startsWith("pet_")).length,
-        costumes: this.player.owned.filter((k) => k.startsWith("cos_") || k.startsWith("cost_")).length,
-        villageVisits: this.eggVisits.village ?? 0,
-      },
-      idleSec: this.totalKills === 0 ? Math.floor((this.time.now - this.eggIdleStart) / 1000) : 0,
-    });
-    if (found.length) this.onEggsFound(found);
-  }
-
-  private onEggsFound(list: EggDef[]) {
-    if (!this.player) return;
-    for (const e of list) {
-      if (e.reward.gold) this.player.addGold(e.reward.gold);
-      if (e.reward.emerald) this.player.emerald += e.reward.emerald;
-      this.spawnPickupText(this.player.x, this.player.y - 90, `🔍 비밀 발견 — ${e.name}`, "#7de8ff");
-      this.showBanner(`비밀수첩 발견! 「${e.name}」 (+${e.reward.gold ?? 0}G${e.reward.emerald ? ` · +${e.reward.emerald}💎` : ""})`);
-      audio.sfx.reward(); // v1.4.8 — 발견 보상 전용음
-    }
-    const m = eggMilestonePending();
-    if (m) {
-      const rw = claimEggMilestone();
-      if (rw) {
-        this.player.addGold(rw.gold);
-        this.player.emerald += rw.emerald;
-        this.showBanner(`비밀수첩 ${m}개 돌파! +${rw.gold}G · +${rw.emerald}💎`);
-      }
-    }
-    this.emitRpgState();
-  }
 
   /** 설정창의 긴급 귀환 — 지금 위치에서 가장 가까운 마을로 즉시 이동 (막힘/굴속 탈출용)
    *  v1.2.0 (#3) — 하루 최대 3회로 제한 (악용 방지 — 던전 스킵 무한남용 차단). 쿨다운은 유지 */
@@ -12406,7 +12479,6 @@ export class WorldScene extends Phaser.Scene {
   }
   /** 크리티컬 명중 — metal_02 고피치 샤프 음 */
   sfxCrit() {
-    this.eggCounters.crits++; // v1.4.0 이스터에그 카운터
     audio.sfx.crit();
   }
 
@@ -12422,6 +12494,16 @@ export class WorldScene extends Phaser.Scene {
       .setRotation(Math.random() * Math.PI * 2)
       .setAlpha(0.85);
     this.tweens.add({ targets: im, scale: 1.0, alpha: 0, duration: 300, ease: "Cubic.out", onComplete: () => im.destroy() });
+    /* v1.4.11 — MG 5-Crit 크리티컬 버스트 오버레이 (크리 타격감 상향) */
+    if (this.textures.exists("mg_crit")) {
+      const cr = this.add.image(x, y - 10, "mg_crit")
+        .setDepth(23)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(hex)
+        .setScale(0.34)
+        .setAlpha(0.95);
+      this.tweens.add({ targets: cr, scale: 0.9, alpha: 0, duration: 340, ease: "Quad.out", onComplete: () => cr.destroy() });
+    }
   }
   /** 강화 성공 — 퀘스트 차임 저피치 (무게감) */
   sfxUpgradeOk() {

@@ -24,7 +24,6 @@ import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, 
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
 import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
 import { chestOdds, eertOdds, POT_PITY_MAX, STAR_PITY_FROM, STAR_PITY_STEP, STAR_PITY_MAX } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법) · v1.0.8 천장 공시
-import { eggCount, eggList, eggMilestonePending, claimEggMilestone, feedCode } from "@/game/eggs"; // v1.4.0 — 비밀수첩 (이스터에그/ARG)
 import type { BmGrant } from "@/game/data";
 import {
   CRAFT_RECIPES, canCraft, ABYSS_SHOP,
@@ -4013,9 +4012,6 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
 
         {/* v1.2.1 (#4 최적화 x3) — 성능 모니터: 실시간 FPS + 현재 최적화 상태 표시 */}
         <PerfCard />
-        {/* v1.4.0 (Task 3-2) — 이스터에그+ARG 비밀수첩 (발견 트래커/구간 보상/ARG 암호 입력) */}
-        <SecretNotebook />
-
         {/* v1.2.1 (#6) — 메뉴 화면 이동: 유저 지시 "메뉴화면(게임 시작창&캐릭터 선택화면)으로 어떻게 나감??" */}
         <div className="mt-2.5 rounded-lg border border-[#8a6a34]/50 bg-[#ffd98a]/[0.07] px-2.5 py-2.5">
           <p className="text-[12px] font-black text-[#ffd98a]">메뉴 화면</p>
@@ -4636,120 +4632,4 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
   );
 }
 
-/* ================= v1.4.0 (Task 3-2 — 유저 지시 #20) 비밀수첩 =================
- *  이스터에그 + ARG 발견 트래커 — 설정창 하단 카드.
- *  발견 개수(n/100) · 구간 보상 수령 · ARG 암호 입력 · 힌트 열람 */
-function SecretNotebook() {
-  const [count, setCount] = useState(eggCount());
-  const [list, setList] = useState(() => eggList());
-  const [open, setOpen] = useState(false);
-  const [code, setCode] = useState("");
-  const [msg, setMsg] = useState("");
-  const milestone = eggMilestonePending();
 
-  const refresh = () => {
-    setCount(eggCount());
-    setList(eggList());
-  };
-
-  const tryCode = () => {
-    const egg = feedCode(code);
-    if (egg) {
-      setMsg(`🔓 암호 해독 성공 — 「${egg.name}」 ${egg.reward.label}`);
-      setCode("");
-    } else {
-      setMsg("아직 알맞은 암호가 아니다… 힌트를 다시 읽어보자");
-    }
-    refresh();
-  };
-
-  const claim = () => {
-    const rw = claimEggMilestone();
-    if (rw) setMsg(`구간 보상 수령! +${rw.gold}G · +${rw.emerald}💎`);
-    refresh();
-  };
-
-  return (
-    <div className="mb-2.5 mt-3 rounded-lg border border-violet-300/30 bg-violet-500/[0.08] px-2.5 py-2.5">
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-black text-violet-200">🔍 비밀수첩 — {count} / {list.length} 발견</p>
-          <p className="mt-0.5 text-[10px] leading-snug text-white/50">
-            세계 곳곳에 숨은 비밀 100가지. 숨은 장소·시간·입력·암호문… 발견할 때마다 보상!
-          </p>
-        </div>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="shrink-0 rounded-md border border-violet-300/40 bg-black/40 px-2 py-1 text-[10px] font-black text-violet-200 active:scale-95"
-        >
-          {open ? "접기" : "열람"}
-        </button>
-      </div>
-
-      {milestone !== null && (
-        <button
-          onClick={claim}
-          className="mt-2 w-full rounded-md border-2 border-amber-300/70 bg-amber-500/25 px-2 py-1.5 text-[11px] font-black text-amber-200 active:scale-95"
-        >
-          🎁 {milestone}개 돌파 보상 받기
-        </button>
-      )}
-
-      {/* ARG 암호 입력 — 공개 웹페이지의 암호문을 여기에 입력 */}
-      <div className="mt-2 flex items-center gap-1.5">
-        <input
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); tryCode(); } }}
-          placeholder="암호문 입력 (외부 힌트 참고)"
-          maxLength={20}
-          className="min-w-0 flex-1 rounded-md border border-white/15 bg-black/50 px-2 py-1.5 text-[11px] font-bold text-white placeholder:text-white/25"
-        />
-        <button
-          onClick={tryCode}
-          className="shrink-0 rounded-md border border-violet-300/40 bg-violet-500/25 px-2.5 py-1.5 text-[10px] font-black text-violet-100 active:scale-95"
-        >
-          해독
-        </button>
-      </div>
-      {msg && <p className="mt-1 text-[10px] font-bold text-violet-200">{msg}</p>}
-
-      {/* v1.4.7 (유저 지시) — /secret 힌트 페이지 버튼 철거: ARG 힌트는 외부 공식 지원센터 웹페이지로 이원화 */}
-      {/* v1.4.6 (#문의페이지404) — 지원센터(문의·계정삭제·FAQ) 상시 입구 */}
-      <div className="mt-1.5 flex items-center justify-between gap-1.5">
-        <p className="text-[9px] font-bold leading-snug text-white/35">계정 문의·데이터 삭제·버그 제보는 지원센터에서</p>
-        <button
-          onClick={() => {
-            const url = `${window.location.origin}/support`;
-            let opened = false;
-            try { opened = !!window.open(url, "_blank", "noopener,noreferrer"); } catch { /* 폴백 */ }
-            if (!opened) {
-              try { void navigator.clipboard?.writeText(url); EventBus.emit("banner:show", { text: `지원센터 — ${url.replace(/^https?:\/\//, "")} (클립보드 복사 완료)` }); }
-              catch { EventBus.emit("banner:show", { text: "/support 지원센터를 브라우저에서 열어라" }); }
-            }
-          }}
-          className="shrink-0 rounded-md border border-sky-300/30 bg-black/40 px-2 py-1 text-[9px] font-black text-sky-200 active:scale-95"
-        >
-          🛰 지원센터·문의
-        </button>
-      </div>
-
-      {open && (
-        <div className="sertz-scroll mt-2 max-h-52 overflow-y-auto rounded-md border border-white/10 bg-black/40 p-1.5">
-          {list.map(({ def, found }) => (
-            <div key={def.id} className="border-b border-white/[0.04] px-1 py-1 last:border-0">
-              <p className={`text-[10px] font-black ${found ? "text-violet-200" : "text-white/35"}`}>
-                {found ? "✔" : "✖"} {found ? def.name : "???"}
-                <span className="ml-1 text-[8px] font-bold text-white/30">
-                  {{ portal: "은신처", npc: "NPC", input: "입력", time: "시간", quest: "업적", arg: "ARG", item: "수집", sound: "행동", collection: "도감" }[def.cat]}
-                </span>
-              </p>
-              {!found && <p className="text-[9px] leading-snug text-white/30">힌트: {def.hint}</p>}
-              {found && <p className="text-[9px] leading-snug text-amber-200/70">{def.reward.label}</p>}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}

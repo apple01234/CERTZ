@@ -557,6 +557,31 @@ export class BootScene extends Phaser.Scene {
      *  하루 1회 보상 상자(리포트 ② — "보물 상자만 남겨")가 지상에 남는다. */
     this.load.setPath("assets/map");
     this.load.spritesheet("map_chest_f", "map_chest.png", { frameWidth: 64, frameHeight: 64 });
+    /* v1.4.11 — Google Drive 신규 팩 2차 통합 (scripts/convert_drive_pack_v1411.py — 54종 변환)
+     *  Hovl Studio 마법 이펙트 29종(hv2_*) · Matthew Guz 참격 2차 17종(mg_*) · Toon 텍스처 5종(tn_*)
+     *  + 잠자던 기존 에셋 활성화: 파티클킷 27종(pk_*) · 횃불(cv_torch) · 사망연기(cfxr_smoke) · 에메랄드(item_emerald)
+     *  + 벚꽃 팩(cp_petal 16프레임 시트 · cp_bg 언덕 배경) — 타이틀/사쿠라 코스튬 전용 */
+    this.load.setPath("assets");
+    const V1411 = [
+      "hv2_magiccircle", "hv2_magiccircle2", "hv2_techcircle", "hv2_techcircle2", "hv2_electro",
+      "hv2_crater", "hv2_crack", "hv2_crystal", "hv2_flash1", "hv2_flash2", "hv2_flash3",
+      "hv2_glow", "hv2_projectile", "hv2_smoke", "hv2_smoke26", "hv2_star", "hv2_snow",
+      "hv2_splat", "hv2_stone", "hv2_heart", "hv2_circle", "hv2_circle2", "hv2_flare",
+      "hv2_flash0", "hv2_trail", "hv2_arrow", "hv2_gradient", "hv2_point", "hv2_mask",
+      "mg_slash0", "mg_slash1", "mg_slash2", "mg_slash3", "mg_slash4", "mg_slash5",
+      "mg_shock0", "mg_explode", "mg_crit", "mg_spark", "mg_fire", "mg_light", "mg_point",
+      "mg_particles", "mg_particles2", "mg_light2", "mg_smoke",
+      "tn_dirt0", "tn_dirt1", "tn_floor", "tn_rock", "tn_sand", "tn_concrete",
+      "pk_circle_02", "pk_circle_04", "pk_dirt_01", "pk_dirt_02", "pk_fire_01", "pk_fire_02",
+      "pk_flame_02", "pk_flame_04", "pk_light_01", "pk_light_02", "pk_light_03",
+      "pk_magic_01", "pk_magic_02", "pk_magic_03", "pk_magic_05", "pk_muzzle_02", "pk_muzzle_04",
+      "pk_smoke_01", "pk_smoke_04", "pk_smoke_06", "pk_smoke_08", "pk_spark_02", "pk_spark_04", "pk_spark_06",
+      "pk_star_01", "pk_star_02", "pk_star_03",
+      "cv_torch", "cfxr_smoke", "item_emerald",
+    ];
+    for (const k of V1411) this.load.image(k, `${k}.webp`);
+    this.load.spritesheet("cp_petal", "cp_petal.webp", { frameWidth: 176, frameHeight: 266 });
+    this.load.image("cp_bg", "cp_bg.webp");
   }
 
   async create() {

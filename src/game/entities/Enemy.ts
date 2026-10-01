@@ -554,6 +554,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     /* v1.3.0 (#에셋통합) — 사망 폭발 퍼프 + 충격파 (Drive 팩 5-explosion/UNI 코어) */
     this.scene.driveFx?.explosion(this.x, this.y, 0xffb08a);
     this.scene.driveFx?.shockRing(this.x, this.y, 0xffd0a0, 0.8);
+    /* v1.4.11 — pk_smoke 사망 잔연기 (소멸 후 여운 — Particle Kit 활성화) */
+    this.scene.driveFx?.deathPuff(this.x, this.y, 0xcfc6de);
     /* v3.0.3 — 사망 장판 (늪지 독괴물 등 — 죽어도 독 구덩이를 남긴다) */
     const fod = this.def.profile?.fieldOnDeath;
     if (fod) {

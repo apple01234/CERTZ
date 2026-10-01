@@ -383,6 +383,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.sfxRoar();
     this.scene.cameras.main.shake(220, this.phase === 3 ? 0.01 : 0.007);
     this.scene.spawnBurstAt(this.x, this.y, 20, this.def.orbTint);
+    /* v1.4.11 — 페이즈 전환 대형 플래시 + 룬진 펄스 (hv2_flash2·hv2_magiccircle2) */
+    this.bossFx("hv2_flash2", this.x, this.y - 20, { tint: 0xffffff, scale: 2.1, alpha: 0.7, dur: 320, depth: 29 });
+    this.bossFx("hv2_magiccircle2", this.x, this.y + 8, { tint: this.def.orbTint, scale: 1.5, alpha: 0.8, dur: 620, depth: 8 });
     this.squash(-0.1, 0.16); // v1.4.9 — 페이즈 포효 자세
     this.scene.showBanner(
       this.phase === 3
@@ -473,6 +476,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.scene.cameras.main.shake(90, 0.006);
       this.scene.spawnSlamBurst(tx, ty);
       this.scene.spawnCrack(tx, ty);
+      /* v1.4.11 — 강타 지균 데칼 (hv2_crater — 바닥에 새겨지는 충격 흔적) */
+      this.scene.driveFx?.crater(tx, ty, 0x181008, 1.0, 2600);
       if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 118) {
         const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
         player.takeDamage(Math.round(this.def.atk * 1.35), dir, 0.5, 0.12); // v3.0.6 — 관통 + 강타 maxHP % 하한
@@ -505,6 +510,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.setMode("volley", 10);
     this.setTint(0x88a0ff);
     this.squash(-0.05, 0.07); // v1.4.9 — 발사 전 들이마시기
+    /* v1.4.11 — 원소 충전 연출 (빙결=눈꽃·화염=화염 퍼프·기타=글로우 — hv2_·mg_ 시리즈 팩) */
+    {
+      const e = this.elem;
+      const ck = e === "ice" ? "hv2_snow" : e === "fire" ? "mg_fire" : "hv2_glow";
+      this.bossFx(ck, this.x, this.y - 30, { tint: e === "fire" ? 0xff9a5a : 0xffffff, scale: 0.55, alpha: 0.85, dur: 300, depth: 20 });
+    }
   /** 페이즈별 탄 수 증가 (1:5 / 2:7 / 3:12) — v3.0.6: 보스 강화 */
     this.volleyCount = this.phase === 1 ? 5 : this.phase === 2 ? 7 : 12;
     let remaining = this.volleyCount;
@@ -596,6 +607,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.cameras.main.shake(110, 0.005);
     for (const ring of this.zoneRings) {
       this.scene.spawnSlamBurst(ring.x, ring.y);
+      /* v1.4.11 — 장판 폭발: 결정 파편 + MG 폭발 퍼프 (hv2_crystal·mg_explode) */
+      this.scene.driveFx?.crystalPop(ring.x, ring.y, 0xff9a68, 3);
+      this.bossFx("mg_explode", ring.x, ring.y - 6, { tint: 0xff8848, scale: 0.9, alpha: 0.95, dur: 340, depth: 25 });
       if (Phaser.Math.Distance.Between(ring.x, ring.y, player.x, player.y) < 95) {
         const dir = new Phaser.Math.Vector2(player.x - ring.x, player.y - ring.y).normalize();
         player.takeDamage(Math.round(this.def.atk * 0.9), dir);
@@ -608,10 +622,40 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   /* ---------- 스킬 6: 소환 ---------- */
 
+  /* ---------- v1.4.11 — Drive 신규 팩 이펙트 헬퍼 (hv2_·mg_ 시리즈 — 텍스처 없으면 무시, 구버전 호환) ---------- */
+
+  /** 보스 이펙트 공용: 텍스처 존재 가드 + ADD 블렌드 페이드인→아웃 1회성 이미지 */
+  private bossFx(key: string, x: number, y: number, opt: { tint?: number; scale?: number; alpha?: number; dur?: number; depth?: number } = {}) {
+    if (!this.scene.textures.exists(key)) return;
+    const s = opt.scale ?? 1;
+    const im = this.scene.add.image(x, y, key)
+      .setDepth(opt.depth ?? 9)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(opt.tint ?? 0xffffff)
+      .setScale(s * 0.6)
+      .setAlpha(0);
+    this.scene.tweens.add({ targets: im, alpha: opt.alpha ?? 0.9, scaleX: s, scaleY: s, duration: 130, ease: "Quad.out" });
+    this.scene.tweens.add({ targets: im, alpha: 0, duration: opt.dur ?? 260, delay: (opt.dur ?? 260) * 0.4, onComplete: () => im.destroy() });
+  }
+
+  /** 소환 채널링 — Hovl 룬 마법진 회전 (보스 발밑) */
+  private summonFx(tint = 0xc070ff, dur = 620) {
+    if (!this.scene.textures.exists("hv2_magiccircle")) return;
+    const c = this.scene.add.image(this.x, this.y + 8, "hv2_magiccircle")
+      .setDepth(8)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(tint)
+      .setScale(0.55)
+      .setAlpha(0.9);
+    this.scene.tweens.add({ targets: c, rotation: Math.PI * 2, duration: dur * 2, repeat: -1 });
+    this.scene.tweens.add({ targets: c, alpha: 0, scale: 0.8, duration: dur, delay: dur * 0.4, onComplete: () => c.destroy() });
+  }
+
   private startSummon() {
     this.setMode("summonTele", 620);
     this.setTint(0xc070ff);
     this.squash(-0.07, 0.12); // v1.4.9 — 소환 주문 채널링
+    this.summonFx(0xc070ff, 620); // v1.4.11 — 룬 마법진 (hv2_magiccircle)
   }
 
   private doSummon() {
@@ -620,6 +664,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     if (key) {
       this.scene.requestSummon(key, this.phase === 3 ? 2 : 1, this.x, this.y);
       this.scene.spawnBurstAt(this.x, this.y, 16, 0xc070ff);
+      this.bossFx("hv2_crystal", this.x, this.y - 6, { tint: 0xc070ff, scale: 0.9, dur: 320 }); // v1.4.11 — 결정 파편
       this.scene.showBanner(`${this.def.name}가 권속을 부른다!`);
     }
     this.endAttack(1700);
@@ -662,6 +707,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.setMode("beamTele", 780);
     this.setTint(0xffd0a0);
     this.squash(-0.06, 0.1); // v1.4.9 — 브레스 들이마시기
+    this.bossFx("hv2_techcircle", this.x, this.y + 8, { tint: 0xffc46a, scale: 0.95, alpha: 0.85, dur: 760 }); // v1.4.11 — 테크 서클 시전 링
     this.beamAngle = Math.atan2(player.y - this.y, player.x - this.x);
     this.beamDir = Math.random() < 0.5 ? 1 : -1;
     // 예고: 시전 방향 직선상 3개 링 (스윕 궤적 암시)
@@ -716,6 +762,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.setAlpha(0.25);
     this.squash(-0.08, 0.1); // v1.4.9 — 그림자로 뭉개지는 수축
     this.scene.spawnBurstAt(this.x, this.y, 14, 0x8040c0);
+    this.scene.driveFx?.deathPuff(this.x, this.y - 10, 0x9a7ad8); // v1.4.11 — 소멸 연기
     this.scene.sfxDash();
   }
 
@@ -729,6 +776,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       Phaser.Math.Clamp(player.y + Math.sin(ang) * d, 60, this.scene.stageH - 60)
     );
     this.scene.spawnBurstAt(this.x, this.y, 14, 0xb06aff);
+    this.bossFx("hv2_smoke", this.x, this.y - 8, { tint: 0xb08aff, scale: 0.9, alpha: 0.8, dur: 380, depth: 11 }); // v1.4.11 — 재등장 연기
     // 짧은 강타 — 보라색 링(일반 강타와 구분)
     this.startShadowSlam(player);
   }
@@ -784,6 +832,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.scene.time.delayedCall(600, () => {
           if (!ring.active) return;
           this.scene.spawnSlamBurst(ring.x, ring.y);
+          /* v1.4.11 — 낙뢰 섬광 + 지균 데칼 (hv2_electro·hv2_crater — 지진 임팩트) */
+          this.bossFx("hv2_electro", ring.x, ring.y, { tint: 0xffd28a, scale: 1.25, alpha: 0.95, dur: 200, depth: 27 });
+          this.scene.driveFx?.crater(ring.x, ring.y, 0x1a1208, 0.85, 2200);
           this.scene.cameras.main.shake(80, 0.004);
           const p = this.scene.playerRef;
           if (p && Phaser.Math.Distance.Between(ring.x, ring.y, p.x, p.y) < 88) {
@@ -992,6 +1043,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         });
         this.scene.time.delayedCall(160, () => this.scene.spawnShockwave(gx, gy, this.def.orbTint, 1.1, 420));
         this.scene.time.delayedCall(340, () => this.scene.spawnShockwave(gx, gy, 0xffffff, 0.85, 340));
+        /* v1.4.11 — 최후 폭발 + 상승 연기 (mg_explode·mg_smoke — Drive 팩 종결 연출) */
+        this.bossFx("mg_explode", gx, gy - 10, { tint: this.def.orbTint, scale: 1.7, alpha: 0.95, dur: 420, depth: 26 });
+        this.bossFx("mg_smoke", gx, gy - 22, { tint: 0xcfc6de, scale: 1.3, alpha: 0.7, dur: 800, depth: 12 });
       }
       for (const orb of this.orbPool) this.killOrb(orb);
       for (const r of this.teleRings) r.destroy();

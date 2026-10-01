@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 9dca676f2ff988a45a505d56f3bd0bb6
+timeCreated: 1573804840
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 157869
+  packageName: Petal Particles - Cherry Petals
+  packageVersion: 1.0
+  assetPath: Assets/Petal Particles - Cherry Petals/Particle/Prefabs/Petals Prefab
+    1.prefab
+  uploadId: 339526

@@ -9,7 +9,6 @@ import * as classesMod from "./classes";
 import * as stagesMod from "./stages";
 import * as dataMod from "./data";
 import { ACC_ANCHORS } from "./acc_anchors"; // v1.2.1 (#1) — E2E 앵커 실측용
-import * as eggsMod from "./eggs"; // v1.4.0 — 이스터에그/ARG (E2E 데이터 검증)
 import * as partyContentMod from "./partyContent"; // v1.4.3 — 파티 콘텐츠 (E2E 시너지/보드 검증)
 import { showRecoveryOverlay } from "../components/game/crashGuard"; // v1.4.5 — 재부팅 루프 차단 수동 복구
 import { SFX_THROTTLE_MS, SFX_MAX_CONCURRENT, BGM_VOLUME, SFX_VOLUMES, playBGM, playStageBGM, stageTrack, bgmDebugState, bgmAdvanceForTest, BGM_PLAYLISTS } from "./audio";
@@ -210,7 +209,6 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     /* v1.2.1 (#1) — 치장 앵커 테이블 (E2E 프레임 정확 판정용) */
     anchors: ACC_ANCHORS,
     /* v1.4.0 — 이스터에그/ARG 트래커 (E2E 100종 데이터 검증용) */
-    eggs: eggsMod,
     /* v1.4.3 — 파티 시너지/퀘스트 보드 (E2E 로직 검증용) */
     party: partyContentMod,
   };

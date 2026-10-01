@@ -13,6 +13,8 @@ export class TitleScene extends Phaser.Scene {
   private glow!: Phaser.GameObjects.Image;
   private tree!: Phaser.GameObjects.Image;
   private frag!: Phaser.GameObjects.Image;
+  /** v1.4.11 — 벚꽃 언덕 배경 (Petal Particles 팩) */
+  private hill: Phaser.GameObjects.Image | null = null;
   /* v1.2.1 (#4 최적화 x3) — 백그라운드 에셋 로더 상태:
    *  부팅은 기본 시트만 로드하고 나머지(코스튬/직업/GM 37종·≈1036프레임)는 타이틀 화면에서
    *  유저가 메뉴를 보는 동안 몰래 받는다. 게임 시작 버튼을 눌렀는데 미완료면 잠깐 기다렸다 진입. */
@@ -95,6 +97,15 @@ export class TitleScene extends Phaser.Scene {
 
     // 중앙 세계수 실루엣 + 빛 + 파편
     this.glow = this.add.image(w / 2, h / 2 + 40, "glow").setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD);
+    /* v1.4.11 — 벚꽃 언덕 배경 (Petal Particles 팩 cp_bg — 황혼 톤으로 뒤떠여 타이틀 하단에 안착).
+     *  텍스처가 없으면(구버전 캐시) 원래 배경 그대로 — 무영향 */
+    if (this.textures.exists("cp_bg")) {
+      this.hill = this.add.image(0, 0, "cp_bg")
+        .setOrigin(0, 1)
+        .setAlpha(0.0)
+        .setTint(0x8f86b8) // 황혼 자주빛 틴트 — 밤하늘과 조화
+        .setDepth(-1);
+    }
     this.tree = this.add.image(w / 2, h / 2 + 10, "tree").setAlpha(0.92);
     this.frag = this.add.image(w / 2 + 120, h / 2 + 60, "fragment").setBlendMode(Phaser.BlendModes.ADD);
 
@@ -104,6 +115,12 @@ export class TitleScene extends Phaser.Scene {
       const gw = this.scale.width;
       const gh = this.scale.height;
       const s = Phaser.Math.Clamp(gh / 210, 1.5, 5.2); // 화면 높이의 ~30% 크기 유지
+      /* v1.4.11 — 언덕 레이어: 화면 폭 커버 + 하단 30% 높이, 페이드인 */
+      if (this.hill) {
+        const sc = Math.max(gw / this.hill.width, (gh * 0.34) / this.hill.height);
+        this.hill.setScale(sc).setPosition(0, gh);
+        this.tweens.add({ targets: this.hill, alpha: 0.55, duration: 1400, ease: "Sine.inOut" });
+      }
       this.tweens.killTweensOf([this.glow, this.tree, this.frag]);
       this.glow.setScale(s * 2.65).setPosition(gw / 2, gh / 2 + 40).setAlpha(0.35);
       this.tweens.add({ targets: this.glow, scale: s * 2.95, alpha: 0.5, duration: 2400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
@@ -117,6 +134,32 @@ export class TitleScene extends Phaser.Scene {
 
     EventBus.emit("ui:title");
     audio.playBGM("title");
+
+    /* v1.4.11 — 타이틀 화면 벚꽃 잎 낙하 (cp_petal 16프레임 — Petal Particles 팩 활용).
+     *  700ms마다 상단에서 1장씩 — 은은한 봄기운 (텍스처 미로드 시 무시) */
+    this.time.addEvent({
+      delay: 700,
+      loop: true,
+      callback: () => {
+        if (!this.textures.exists("cp_petal")) return;
+        const fr = Phaser.Math.Between(0, 15);
+        const px = Phaser.Math.Between(0, this.scale.width);
+        const p = this.add.image(px, -20, "cp_petal", fr)
+          .setDepth(2)
+          .setScale(0.42)
+          .setAlpha(0.9)
+          .setRotation(Math.random() * Math.PI);
+        this.tweens.add({
+          targets: p,
+          y: this.scale.height + 30,
+          x: px + Phaser.Math.FloatBetween(-70, 70),
+          rotation: p.rotation + Phaser.Math.FloatBetween(-2, 2),
+          duration: 5200 + Math.random() * 2400,
+          ease: "Sine.inOut",
+          onComplete: () => p.destroy(),
+        });
+      },
+    });
 
     /* v1.2.1 (#4 최적화 x3) — 백그라운드 지연 로드: 타이틀 진입 즉시 코스튬/직업/GM 시트를 받는다.
      *  완료 시 애님 후등록 + deferDone 플래그. 유저가 시작 버튼을 누르는 시점엔 대부분 완료돼 있다. */

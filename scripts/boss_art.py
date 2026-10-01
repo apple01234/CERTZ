@@ -6,7 +6,7 @@ import os, sys
 import numpy as np
 from PIL import Image, ImageFilter, ImageEnhance
 
-RAW = "/home/z/my-project/scripts/boss_raw"
+RAW = os.environ.get("BOSS_RAW_DIR", "/home/z/my-project/scripts/boss_raw")
 OUT = "/home/z/my-project/public/assets"
 
 # 원본 규격 (게임 판정 유지용)
