@@ -2587,3 +2587,20 @@ Work Log:
 Stage Summary:
 - GitHub main에 Vercel 배포 준비 완료. 유저가 vercel.com/new에서 저장소 임포트하면 바로 배포 가능
 - 제한: Vercel에서 멀티플레이/회원가입/클라우드세이브는 서버 기능이라 불가(단일플레이만) — 풀기능은 플랫폼 배포(sertz11) 또는 자체 호스팅 유지
+
+---
+Task ID: apk-1
+Agent: Super Z (main)
+Task: v1.4.16 APK 재빌드 — 세션 리셋 후 툴체인 재구축 + export 충돌 수정
+
+Work Log:
+- 툴체인 재구축: scripts/rebuild_toolchain.sh로 JDK 21.0.12.1(/home/z/jdk)·cmdline-tools 11076708·platforms android-36·build-tools 35.0.0(/home/z/.android-sdk) 재설치, android/local.properties 재생성
+- 1차 빌드 실패(EISDIR): output:export에서 /api(route.ts 헬로월드)와 /api/version이 'api' 경로를 파일/디렉토리로 동시 요구 — deploy-4에서 추가한 version 라우트와 템플릿 라우트의 구조적 충돌
+- 수정: 미사용 템플릿 src/app/api/route.ts 삭제(참조 0건 확인) + .next/.next-apk 클린
+- 2차 빌드: scripts/build_apk.sh BUILD SUCCESSFUL(4m50s, Gradle 태스크 206개)
+- 검증: aapt versionCode 108·versionName 1.4.16·targetSdk 36, apksigner 서명 SHA-256 cc774f34(기존 키 동일 — 덮어설치 호환), 4661파일 135MB, APK 내부 /api/version 번들 확인(505B)
+- 커밋 bcef36e push(origin/main)
+
+Stage Summary:
+- 산출물: download/SERTZ-v1.4.16.apk (135MB, versionCode 108, 기존 키 서명)
+- 원격 저장소에도 export 충돌 수정 반영 완료 — 다음 빌드부터 원커맨드 재현 가능
