@@ -2486,3 +2486,18 @@ Stage Summary:
 - 유저 안내: 배포 재시도 요청. 재실패 시 배포 로그 텍스트를 받아야 정밀 진단 가능
 - APK 재빌드가 필요해지면: JAVA_HOME=/home/z/jdk/jdk-21.0.12.1+1 ANDROID_HOME=/home/z/android-sdk bash scripts/build_apk.sh (중간 산출물 자동 재생성)
 
+
+---
+Task ID: REL-1416
+Agent: Super Z (유저 질문 "배포는 어케함?" — 배포 상태 점검 중 발견·보완)
+Task: GitHub 릴리스 누락 보완 (v1.4.15/16 APK 업로드)
+
+Work Log:
+- [발견] GitHub Releases 최신이 v1.4.14였고 서버 APK_MIRROR가 가리키는 v1.4.16 릴리스가 없어 /SERTZ-v*.apk 리다이렉트가 404로 착지할 상태였음
+- [생성·업로드] v1.4.16 릴리스 생성+APK 업로드(129MB) ✓ · v1.4.15 릴리스 생성+APK 업로드 ✓ (릴리스 이력 일관성 — 30개 기존 릴리스 전 항목 APK 보유 패턴 유지)
+- [검증] https://github.com/apple01234/CERTZ/releases/download/v1.4.16/SERTZ-v1.4.16.apk → HTTP 200 실측 ✓ — 인게임 "최종 APK 다운로드" 경로 완전 복구
+
+Stage Summary:
+- 웹 배포: z.ai 플랫폼 배포 버튼(슬림화 완료, 재시도 대기) / 외부 호스팅 시 Railway·Render류 상시 Node 서버 필요(socket.io 커스텀 서버 — 서버리스 부적합)
+- APK 배포: GitHub Releases v1.4.15·v1.4.16 업로드 완료 — 유저 전달 경로 정상화
+- 플레이스토어: download/PLAY_CONSOLE_v143_등록가이드.txt·출시_체크리스트.txt 참조
