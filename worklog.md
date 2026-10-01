@@ -2398,3 +2398,26 @@ Stage Summary:
 - APK: download/SERTZ-v1.4.14.apk 빌드·서명 완료 (기존 키 호환)
 - 환경 메모: JDK=/home/z/jdk/jdk-21.0.12.1+1 (JAVA_HOME으로 export 필요), ANDROID_HOME=/home/z/android-sdk, android/local.properties 생성됨
 - 다음 후보: v1.4.15 기능 개발(원소 반응 연출 강화, 세트 효과 보너스 등 worklog 13 후계), 웹빌드 산출물 FC 배포 테스트
+
+---
+Task ID: 15
+Agent: Super Z (cron 자동 리뷰 라운드 1)
+Task: agent-browser 전체 플로우 QA → 월드 진입 프리즈 버그 발견·원인 분석·근본 완화 (v1.4.15)
+
+Work Log:
+- [QA] dev 서버 점검(200) → agent-browser로 타이틀→게임시작→캐릭터생성(리뷰어/전사/남캐)→캐릭터 선택까지 정상 확인
+- [발견] "이 캐릭터로 시작" 월드 진입 직후 페이지 완전 응답불가(evaluate·screenshot CDP 타임아웃) — 2회 세션 연속 재현
+- [배제 1] 캐릭터 지속성: agent-browser 세션마다 새 프로필이라 사라진 것처럼 보였던 것 — 같은 세션 reload 테스트로 저장 로직 정상 확인(sertz_slots_v1 + sertz_char_* 유지)
+- [배제 2] 404 리소스: 월드 진입 후 404 0건 — 진입 전 일시적 것(무관)
+- [계측] 브레드크럼 6개점 심어 확인: createInner 시작→레이아웃→placeDecor→적배치→완료→update 1~18프레임(45fps) 모두 정상 → 프리즈는 진입 수 초 후 발생
+- [원인 확정] fx=low 프리셋 대조 실험: 30초 무프리즈 → 툰 림라이트+앰비언트 블룸+동적 조명의 셰이더가 소프트웨어 GL(SwiftShader)에서 컴파일 폭주해 메인 스레드를 수십 초 블록 (워치독 setInterval도 블록돼 자가치유 불가)
+- [수정] WorldScene.isSoftwareGL() 신설 — WEBGL_debug_renderer_info로 SwiftShader/llvmpipe/softpipe 감지 → DEFAULT_FX_MODE에서 감지 시 'low' 자동 시작(판정 순위: 저장 프리셋 > 모바일 절전 > 소프트웨어 GL)
+- [검증] tsc 0오류 · lint 신규 에러 0(기존 2건은 pre-existing) · Playwright E2E 기본 모드 30초 무프리즈+프롤로그/HUD/퀘스트/터치컨트롤 렌더 확인 · __SERTZ_BOOT__.fxMode="low" 노출 확인
+- [범프] versionCode 107 / 1.4.15 — build.gradle·server.js(APK_MIRROR/LATEST/NOTE)·Overlays 배지
+- [진단 자산] scripts/diag_world_entry.js(전체 플로우+응답성 감시)·diag6_fxlow.js(fx 대조)·diag7_404url.js(404 추적) 영구 보관
+
+Stage Summary:
+- v1.4.15 (vc107): 소프트웨어 렌더러 환경(QA 브라우저·에뮬레이터·저사양 GPU) 월드 진입 프리즈 근본 완화
+- 실기기(GPU 탑재)엔 영향 없음 — 감지 실패 시 기존 auto 동작 유지
+- APK v1.4.15 빌드 진행(build_apk.sh 백그라운드) → download/SERTZ-v1.4.15.apk 예정
+- 다음 후보: 원소 반응 연출 강화·세트 착용 보너스(worklog 13 후계)·GitHub 릴리스 v1.4.15 업로드
