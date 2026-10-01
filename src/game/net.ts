@@ -97,6 +97,22 @@ export function netConnect(): Socket | null {
         path: "/socket.io",
         transports: ["polling", "websocket"],
         tryAllTransports: true,
+        /* v1.4.19 (#화면깨짐) — 서버가 아예 없는 환경(정적 배포: Vercel export 등)에서
+         *  socket.io 기본값은 무한 재연결(reconnectionAttempts: Infinity)이라
+         *  polling 404 + websocket 308 시도가 몇 초마다 영원히 반복됐다.
+         *  모바일 브라우저에서 이 재시도 스톰이 프레임을 잠식해 "움직일 때마다
+         *  화면이 끊기는" 체감의 원인. 4회 실패 후 재귀를 완전히 멈춘다.
+         *  서버가 살아있는 배포( space-z/로컬/APK 지정 서버)에서는 첫 시도에서
+         *  연결되므로 영향 없음 — 일시적 단절 후 복구도 connect 성공 시 카운터 리셋. */
+        reconnectionAttempts: 4,
+        reconnectionDelay: 800,
+        reconnectionDelayMax: 4000,
+        timeout: 10000,
+      });
+      socket.on("reconnect_failed", () => {
+        /* 서버 없는 배포 환경 — 조용히 오프라인 모드 확정 (추가 시도 없음).
+         * netStatus().connected = false → 전송 계열 emit는 전부 가드에서 노옵 처리됨 */
+        console.info("[SERTZ] 멀티 서버 미발견 — 오프라인 모드로 전환 (재시도 중단)");
       });
       // E2E/디버그 훅 — 소켓 상태 실측용
       (window as unknown as { __SERTZ_NET__?: unknown }).__SERTZ_NET__ = socket;

@@ -2624,3 +2624,23 @@ Stage Summary:
 - 산출물: download/SERTZ-v1.4.16.apk(135MB, 여캐+공격키 반영), https://sertz11.vercel.app 라이브
 - 여캐 3차 실패 라인 종료 — 기존 에셋 재사용 정책으로 전환(유저 지시 충족)
 - 미해결: 플랫폼 배포(sertz11.space-z.ai) 파이프라인은 플랫폼 측 문제로 추정, Vercel 멀티/계정은 아키텍처 제약
+
+---
+Task ID: batch-7
+Agent: Super Z (main)
+Task: 유저 3개 지시 — 공격키 코너+대형화, 에셋 로딩 재발 조사, APK 빌드
+
+Work Log:
+- [2 원인 규명] "또 에셋 안불러와짐" = 2중 원인:
+  ①GitHub 릴리스 v1.4.16 APK(md5 628981a3, 12:58 업로드)는 batch-6 수정(14:35 빌드, 90b1b044) 이전 빌드 — 유저가 다운로드 카운트 1로 구버전을 받아 파손 여캐를 그대로 사용 중이었고, 버전 미인상(1.4.16/108 중복)이라 인앱 업데이터도 갱신 불가
+  ②batch-6의 jobf 재색칠 여캐도 "머리+갈색 덩어리" 실루엣(원본 jobf 자체가 그 스타일)이라 여전히 "에셋 깨짐"으로 인지됨
+- [2 수정] scripts/regen_chf_original.py: v1.1.0 원본 레시피(gen_char_system.py의 hero 실루엣 변환 — 긴머리 카테인+스커트+피부 6종)로 chf0~5 168프레임 전부 재생성. 남캐(chm)와 동일 아트 스타일 확인(컨택트시트 시각검증). gen_acc_anchors.py로 앵커 1372키 재산출 + ACC_DEFAULT_ANCHOR 보존 패치(월드씬 import 의존)
+- [1 수정] TouchControls ARC: 공격 버튼 중심 (206,184)→(250,240) 우하단 코너 복귀, 지름 84→100/96→112, 아이콘 22→26px. 스킬 아크 동심원 r 98→94/116→108. 검증: 360px 폰 스킬 아크 최좌점 185px > 조이스틱 165px, 공격-스킬 간격 16px
+- [3 빌드] 버전 1.4.17/109 싱크(server.js·route.ts·build.gradle·package.json) → scripts/build_apk.sh BUILD SUCCESSFUL(38s) → aapt vc109/v1.4.17, apksigner cc774f34(동일키), APK 내부 chf2=2c944f7f(신규와 일치), 청크에 B?280:250/B?266:240/B?112:100 확인
+- [배포] 웹 빌드+서버 재기동(구프로세스 EADDRINUSE 정리 후, /api/version 1.4.17·소켓 200) · Vercel --prod 재배포(sertz11-2ls5qgvcm, api/chf/bgm 전부 200) · GitHub 커밋 9d6c21b push · **릴리스 v1.4.17 신설 + APK 업로드 완료(135,548,508B, state=uploaded, 크기 대조 일치)** — scripts/gh_release_v1417.sh
+- Playwright 부팅 실측: 타이틀 진입, 네트워크 실패 0, 로드실패 0, texGuard 경고 0
+
+Stage Summary:
+- 산출물: download/SERTZ-v1.4.17.apk(135.5MB, vc109) + https://github.com/apple01234/CERTZ/releases/tag/v1.4.17 + https://sertz11.vercel.app (1.4.17)
+- 교훈: APK 배포는 빌드→릴리스 업로드→버전 인상이 3종 세트 — 이번부터 gh_release_v*.sh가 파이프라인 필수 단계
+- 미해결: sertz11.space-z.ai는 플랫폼 엣지 500(로컬 Caddy→노드 체인 200 정상) — 플랫폼 생성 페이지에서 재배포 필요

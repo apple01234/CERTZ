@@ -1658,10 +1658,36 @@ export class WorldScene extends Phaser.Scene {
 
   private solidGroup!: Phaser.Physics.Arcade.StaticGroup;
 
+  /* v1.4.19 (#화면깨짐) — resize 시 줌 재적용 상태 추적:
+   *  모바일 브라우저는 주소창 토글·키보드·화면 분할 등으로 innerHeight가 ±60~90px
+   *  흔들린다. viewZoom()은 0.25 스텝 스냅이라 경계 근처에서 줌이 1.5↔1.25로
+   *  점프 = "움직일 때마다 화면이 펄럭이며 깨진다"는 체감의 원인.
+   *  → 작은 변화(96px 미만, 회전 아님)는 무시, 실제 회전/큰 창 변화만 300ms
+   *  디바운스 후 재적용. 최초 1회는 즉시 적용(부팅 팝 방지). */
+  private zoomLastH = 0;
+  private zoomLastW = 0;
+  private zoomTimer: Phaser.Time.TimerEvent | null = null;
+
   private applyCameraZoom() {
-    // v2.3 — 실내(정사각 방 832×832)는 확대 줌으로 아늑한 한 방 연출 (지시 #6)
-    this.cameras.main.setZoom(this.isInterior ? Math.min(3, viewZoom() * 1.45) : viewZoom());
-    this.redrawMinimap();
+    const w = this.scale.gameSize.width;
+    const h = this.scale.gameSize.height;
+    const first = this.zoomLastH === 0;
+    const rotated = !first && w > h !== this.zoomLastW > this.zoomLastH;
+    const dh = Math.abs(h - this.zoomLastH);
+    this.zoomLastH = h;
+    this.zoomLastW = w;
+    if (!first && dh < 96 && !rotated) return; // 주소창 토글 수준 노이즈 무시
+    const apply = () => {
+      // v2.3 — 실내(정사각 방 832×832)는 확대 줌으로 아늑한 한 방 연출 (지시 #6)
+      this.cameras.main.setZoom(this.isInterior ? Math.min(3, viewZoom() * 1.45) : viewZoom());
+      this.redrawMinimap();
+    };
+    if (first) {
+      apply();
+      return;
+    }
+    this.zoomTimer?.remove();
+    this.zoomTimer = this.time.delayedCall(300, apply);
   }
 
   /* ================= 배치 ================= */

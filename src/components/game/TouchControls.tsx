@@ -109,11 +109,18 @@ export function TouchControls({
       typeof window !== "undefined" &&
       (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900)
   );
+  /* v1.4.19 (#화면깨짐) — 세로 좁은 화면에서는 ARC 컨테이너 왼쪽 가장자리가
+   *  조이스틱 영역(46%) 안으로 파고든다 → 물약/자동사냥 버튼이 조이스틱과 겹쳐
+   *  "이동할 때마다 물약이 발려 화면이 깨진다"는 리포트의 직접 원인.
+   *  겹침 판정: 컨테이너 left = W - CW - 4 < 0.46W  ⇔  W < (CW+4)/0.54 ≈ 576px.
+   *  겹침 시 물약 클러스터를 컨테이너 밖(아크 위 우측 고정 가로열)으로 플로팅한다. */
+  const [clusterFloat, setClusterFloat] = useState(() => typeof window !== "undefined" && window.innerWidth < 576);
 
   useEffect(() => {
     const reevaluate = () => {
       const coarse = window.matchMedia("(pointer: coarse)").matches;
       setIsTouch(coarse || window.innerWidth < 900);
+      setClusterFloat(window.innerWidth < 576);
     };
     reevaluate();
     const onTouch = () => setIsTouch(true);
@@ -234,6 +241,47 @@ export function TouchControls({
   /* v1.4.14 (#4) — 스킬 버튼 지름 확대: 46→56 (모바일) / 54→66 (PC) */
   const SK = sm ? 66 : 56; // 스킬 버튼 지름 (확대)
 
+  /* v1.4.19 — 자동사냥+물약 버튼 묶음 (컨테이너 내부/플로팅 양쪽에서 재사용) */
+  const clusterButtons = (
+    <>
+      {canAutoHunt && (
+        <button
+          aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
+          className={`relative flex h-10 w-10 shrink-0 touch-none select-none items-center justify-center rounded-full border-2 shadow-lg transition-transform active:scale-90 sm:h-12 sm:w-12 ${
+            autoHunt
+              ? "border-lime-200/80 bg-gradient-to-b from-lime-500 to-emerald-700 text-white animate-pulse"
+              : "border-white/25 bg-slate-800/85 text-white/80"
+          }`}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            EventBus.emit("rpg:autohunt", {});
+          }}
+        >
+          {autoHunt ? <Pause size={17} /> : <Bot size={17} />}
+          <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/80">
+            {autoHunt ? "자동중" : "자동"}
+          </span>
+        </button>
+      )}
+      <PotionButton
+        kind="hp"
+        count={hpPot}
+        itemKey={quickPots?.hp ?? "potion_hp"}
+        itemCount={potCount?.(quickPots?.hp ?? "potion_hp") ?? hpPot}
+        tint="from-rose-500 to-rose-700 border-rose-200/70"
+        onDown={() => EventBus.emit("rpg:use", { kind: "hp" })}
+      />
+      <PotionButton
+        kind="mp"
+        count={mpPot}
+        itemKey={quickPots?.mp ?? "potion_mp"}
+        itemCount={potCount?.(quickPots?.mp ?? "potion_mp") ?? mpPot}
+        tint="from-sky-500 to-blue-800 border-sky-200/70"
+        onDown={() => EventBus.emit("rpg:use", { kind: "mp" })}
+      />
+    </>
+  );
+
   return (
     <>
       {/* 조이스틱 영역 — v3.0.5: 화면 왼쪽 전체(45% × 전체 높이)에서 좌하단(46% × 아래 55%)으로 축소.
@@ -339,46 +387,30 @@ export function TouchControls({
             <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
           </div>
         </button>
-        {/* 자동전투 + 물약 퀵슬롯 — 좌하단 세로 클러스터 (와일드리프트 소환사 주문 자리 역할) */}
+        {/* 자동전투 + 물약 퀵슬롯 — 좌하단 세로 클러스터 (와일드리프트 소환사 주문 자리 역할)
+         *  v1.4.19 — 넓은 화면(가로/태블릿)에서만 컨테이너 좌하단 유지.
+         *  좁은 세로 화면은 clusterFloat로 아크 위 가로열 이동 — 조이스틱 겹침 제거 */}
+        {!clusterFloat && (
         <div className="pointer-events-auto absolute bottom-0 left-0 flex flex-col gap-1.5">
-          {canAutoHunt && (
-            <button
-              aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
-              className={`relative flex h-10 w-10 touch-none select-none items-center justify-center rounded-full border-2 shadow-lg transition-transform active:scale-90 sm:h-12 sm:w-12 ${
-                autoHunt
-                  ? "border-lime-200/80 bg-gradient-to-b from-lime-500 to-emerald-700 text-white animate-pulse"
-                  : "border-white/25 bg-slate-800/85 text-white/80"
-              }`}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                EventBus.emit("rpg:autohunt", {});
-              }}
-            >
-              {autoHunt ? <Pause size={17} /> : <Bot size={17} />}
-              <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/80">
-                {autoHunt ? "자동중" : "자동"}
-              </span>
-            </button>
-          )}
-          {/* 물약 퀵슬롯 — v3.0.15 (#7) 인벤토리에서 장착한 물약이 버튼에 표시/사용된다 */}
-          <PotionButton
-            kind="hp"
-            count={hpPot}
-            itemKey={quickPots?.hp ?? "potion_hp"}
-            itemCount={potCount?.(quickPots?.hp ?? "potion_hp") ?? hpPot}
-            tint="from-rose-500 to-rose-700 border-rose-200/70"
-            onDown={() => EventBus.emit("rpg:use", { kind: "hp" })}
-          />
-          <PotionButton
-            kind="mp"
-            count={mpPot}
-            itemKey={quickPots?.mp ?? "potion_mp"}
-            itemCount={potCount?.(quickPots?.mp ?? "potion_mp") ?? mpPot}
-            tint="from-sky-500 to-blue-800 border-sky-200/70"
-            onDown={() => EventBus.emit("rpg:use", { kind: "mp" })}
-          />
+          {clusterButtons}
         </div>
+        )}
       </div>
+
+      {/* v1.4.19 (#화면깨짐) — 좁은 세로 화면용 물약/자동 클러스터 플로팅:
+       *  ARC 컨테이너(우하단 고정) 바로 위 우측 가로열 — 조이스틱 영역(왼쪽 46%)과
+       *  절대 겹치지 않으면서 엄지 도달 거리 유지. HUD 우상단 버튼과도 무관 */}
+      {clusterFloat && (
+        <div
+          className="pointer-events-auto absolute z-20 flex flex-row gap-1.5"
+          style={{
+            right: "max(0.25rem, env(safe-area-inset-right))",
+            bottom: `calc(max(0.75rem, env(safe-area-inset-bottom)) + ${CH + 8}px)`,
+          }}
+        >
+          {clusterButtons}
+        </div>
+      )}
     </>
   );
 }
