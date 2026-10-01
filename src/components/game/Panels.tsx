@@ -1554,7 +1554,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
       onPointerDown={onClose}
     >
       <div
-        className="game-panel flex max-h-[min(94svh,680px)] w-[min(94vw,444px)] flex-col overflow-hidden"
+        className="game-panel game-panel-book flex max-h-[min(94svh,680px)] w-[min(94vw,444px)] flex-col overflow-hidden"
         onPointerDown={(e) => e.stopPropagation()}
       >
         {/* 타이틀 바 (메이플 EQUIPMENT / INVENTORY) */}
@@ -3597,7 +3597,7 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
       onPointerDown={onClose}
     >
       <div
-        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
+        className="max-h-[min(86svh,560px)] w-[min(92vw,430px)] overflow-y-auto game-panel game-panel-book p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">

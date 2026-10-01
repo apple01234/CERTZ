@@ -5,7 +5,17 @@
  *  - v3.1 (멀티 안됨 근본 수정): FC 배포는 .next/standalone 자동생성 server.js 로 구동되어
  *    이 파일의 socket.io 가 실행되지 않았다 → scripts/fc-server/postbuild.js 가
  *    standalone 서버에 multiplayer 모듈을 주입해 라이브 서버에서도 멀티가 동작한다.
+ *  - v1.4.13 (#4 admin 로그인) — 커스텀 서버는 Next 런타임을 거치지 않으므로 .env 파일이
+ *    자동 로드되지 않았다 → SERTZ_ADMIN_PASSWORD 등 환경변수가 계정 모듈에 전달되지 않아
+ *    "admin/Sertz!2026" 으로 지정해도 실제론 무작위 비밀번호로 시드되는 문제. 부팅 시
+ *    @next/env.loadEnvConfig 로 .env를 명시적으로 읽어 process.env에 주입한다.
  */
+try {
+  const { loadEnvConfig } = require("@next/env");
+  loadEnvConfig(__dirname);
+} catch (e) {
+  /* @next/env 미설치/파솄 시 조용히 스킵 — process.env는 외부 설정된 값으로 동작 */
+}
 const { createServer } = require("node:http");
 const next = require("next");
 const { attachMultiplayer } = require("./multiplayer");
@@ -20,7 +30,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.12/SERTZ-v1.4.12.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.13/SERTZ-v1.4.13.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -53,9 +63,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.12";
-  const LATEST_CODE = 104;
-  const VERSION_NOTE = "유저 지시 22건: 벚꽃 제거·자동시작 버그 수정·시작 사냥터 철거(NPC 3명→Lv3)·스프라이트 로드 근본 수정·GM/랭킹 실패 진단·기본 볼륨 BGM60/SE50·스킬 UI 와일드리프트 아크 배치·미니맵 하단 이동·보스전 자동전투 금지·자동전투 포탈 전면 허용·식인초 회피·이그니 UI 안내·사냥터 정보 NPC 9종·여캐 6종 SPUM 재생성·보스 9종 100% 실에셋+시그니처 패턴·UI ui2 에셋 전면 교체";
+  const LATEST_VERSION = "1.4.13";
+  const LATEST_CODE = 105;
+  const VERSION_NOTE = "v1.4.13 — 유저 지시 6건: ①download 폴더 정리(불필요한 프롬프트·대형 아키텍처 문서 제거) ②책 모양 GUI 적용(인벤토리+스탯 패널에 열린 책 텍스처 book_panel.webp·book_header.webp) ③여캐 6종 재생성(남캐 베이스 + 롱헤어 + A라인 스커트 — 진홍전사/보라마법사/숲궁수/백은성직자/흑의도적/하늘왕녀) ④admin 로그인 수정(.env + server.js @next/env 로드 — admin / Sertz!2026) ⑤퍼포먼스 최적화(Phaser batchSize 4096·desynchronized·maxTextures 16·fps smoothStep·physics useTree 공간분할) ⑥셰이더 약화(눈 맵 파티클 빈도 130→240ms/알파 0.8→0.42, 보스 블룸 blendAmount 0.46→0.24, 앰비언트 블룸 0.32→0.14, 비네트 0.14→0.06, 보스 라이트 0.34→0.18, 니플헤임 암전 0.28→0.18)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

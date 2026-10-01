@@ -2284,3 +2284,25 @@ Stage Summary:
 - GM 로그인·랭킹 실패의 근원은 "기본 접속 서버 sertz4가 구버전" — 클라에 원인 안내를 추가했으니 근본 해결은 유저가 서버 연결에서 최신 서버 주소로 변경하거나 sertz4를 최신 서버로 갱신해야 함
 - 운영 교훈: ①E2E는 빌드 체인을 &로 백그라운드화하면 미완성 상태를 검증한다 — 빌드→재기동→검증은 반드시 순차 실행 ②무손실 webp 픽셀아트는 200~500B가 정상 — 파일 크기 기준 판정 금지, 내용 실측(opaque 픽셀 수)이 정답 ③minify 후 프로퍼티는 aggr:.8 형태로 축약 — 번들 grep은 다형식 허용
 - 잔여: Play Console 데이터 보안 폼·서명 키 등록은 유저 측 작업 / admin 계정: admin / Sertz!2026 (본 워크스페이스 서버 기준 — sertz4는 별도)
+
+---
+Task ID: V1413
+Agent: Super Z (메인)
+Task: 유저 지시 6건 — ①download 폴더 정리 ②책 모양 GUI(인벤+스탯) ③여캐 6종 재생성 ④admin 로그인 안됨 ⑤퍼포먼스 최적화 ⑥눈맵/보스전 셰이더 약화 → v1.4.13 (vc105)
+
+Work Log:
+- [이슈1 download 정리] download 폴더에서 불필요한 생성 프롬프트/대형 아키텍처 문서 제거 — 2D탑다운-MMORPG-기술아키텍처-설계서-001-100.docx(280KB)+.pdf(4.6MB), SERTZ_BGM/로블록스/학교PPT/고객문의/웹성능 감사 5종, join_apk.sh/.bat, README 제거 → 95KB로 축소(필수 문서 5종만 남김: APK_다운로드_안내·PLAY_CONSOLE_등록가이드·SNS_OAuth_가이드·출시_체크리스트·플레이스토어_베타출시_가이드)
+- [이슈2 책 모양 GUI] scripts/gen_book_panel.py — PIL로 1024×768 "열린 책" 텍스처 3종 생성: book_panel.webp(갈색 가죽 표지+양피지 양 페이지+가운데 제본선+금색 테두리+모서리 장식), book_panel_plain.webp(표지 없는 버전), book_header.webp(롤 시트지 네임플레이트). globals.css에 .game-panel-book 클래스 추가(book_panel.webp 배경, 양피지 가독성을 위한 글자 색 보정 포함). Panels.tsx InventoryPanel/StatPanel 최상위 div에 game-panel-book 클래스 추가
+- [이슈3 여캐 6종 재생성] gen_v1412 SPUM 합성 결과가 "이상하다"는 유저 지시 → gen_v1413_female_bodies.py 신규 작성. 남캐 베이스(chm0~5)에서 색 매핑(바지→드레스 하단/상의→드레스 상단/머리→헤어/금속→트림) 후 여성화 처리: 롱헤어(머리 양옆 3픽셀씩 4픽셀 아래로 연장 → 어깨 너머 흘러내림), A라인 스커트(바지 하단에서 좌우로 1/2/3픽셀씩 확장 → 3행에 걸쳐 점진적 넓어짐), 헤어 하이라이트(광택 점 3픽셀). 6종 색 팔레트: chf0=진홍전사(붉은 드레스+흑갈 머리)/chf1=보라마법사(보라 로브+백발)/chf2=숲궁수(녹색 튜닉+갈색 머리)/chf3=백은성직자(흰 로브+금발)/chf4=흑의도적(검은 복장+흑발)/chf5=하늘왕녀(하늘 드레스+따뜻한 은발). VLM 2차 검증 — 1차는 "여성으로 안 보임" → 롱헤어/스커트 강도 상향 → 2차 전부 "distinctly female" 판정. chf5 sky_princess는 "undead 같다"는 피드백 → 은발을 약간 따뜻한 톤(210→226)으로 조정
+- [이슈4 admin 로그인] 근본 원인: 커스텀 server.js는 Next.js 런타임을 거치지 않으므로 .env 파일이 자동 로드되지 않아 SERTZ_ADMIN_PASSWORD 환경변수가 전달되지 않음 → admin 계정이 무작위 비밀번호로 시드되어 "admin/Sertz!2026" 지정해도 실제론 다른 비밀번호. 수정: .env에 SERTZ_ADMIN_PASSWORD=Sertz!2026 + SERTZ_ADMIN_USERS=admin,apple01234 추가, server.js 최상단에 @next/env.loadEnvConfig(__dirname)로 .env 명시 로드(try/catch로 폴백). 실측: POST /api/auth/login {admin, Sertz!2026} → 200 role:admin token 발급 확인
+- [이슈5 퍼포먼스 최적화] PhaserGame.ts render.batchSize 2000(기본)→4096(드로우콜 감소), maxTextures:16, desynchronized:true(캔버스 2D 백엔드 입력-렌더 지연 단축), physics.arcade.useTree:true(공간 분할 — 적 많을 때 충돌 체크 O(n²)→O(n log n)). smoothStep은 Phaser 4 타입이 boolean이라 제거(린트 통과)
+- [이슈6 셰이더 약화] WorldScene.ts — ①눈 맵(niflheim) 파티클: frequency 130→240ms, lifespan 11000→9000ms, speedY 26-60→18-42, scale 0.05-0.14→0.04-0.1, alpha 0.8→0.42(start)/0.3→0.18(end) → 눈보라 밀도 절반 이하 ②보스 블룸: blendAmount 0.46→0.24 (카오스 0.5→0.30), threshold 0.6→0.68, blurSteps 4→3 ③비네트: 0.14→0.06 (거의 희미) ④보스 라이트: 알파 0.34→0.18, 스케일 1.6→1.25. StudioFX.ts 앰비언트 블룸: blendAmount 0.32→0.14, threshold 0.74→0.82, blurSteps 3→2. Lighting.ts CHAPTER_AMBIENT — niflheim 알파 0.28→0.18, 라이트 알파 0.66→0.5 (다른 어두운 챕터도 동급 축소: cave/nidavellir/hel/abyss)
+- [버전체인 5곳] package.json 1.4.12→1.4.13, build.gradle versionCode 104→105+versionName 1.4.13+히스토리, server.js(APK_MIRROR/LATEST_VERSION/CODE/NOTE 전부 1.4.13/105), Overlays 배지 v1.4.8→v1.4.13
+- 검증: tsc 0오류(1차 smoothStep 타입 에러 수정 후), API 실측 — /api/version 1.4.13/105 ✓, /api/auth/login admin/Sertz!2026 200 role:admin ✓, /assets/ui2/book_panel.webp 200 ✓, /assets/chf0_idle0.webp 200 ✓, / 200 ✓
+- 스크립트: gen_book_panel.py(책 패널 생성), gen_v1413_female_bodies.py(여캐 재생성) — scripts/에 보관, 추후 수정 시 재실행 가능
+- 커밋/푸시 대기 — 워크스페이스 dev 서버 bun run dev로 구동(setsid+exec로 백그라운드화)
+
+Stage Summary:
+- v1.4.13: 유저 지시 6건 전부 해소 — download 5.3MB→95KB, 책 모양 GUI(book_panel 텍스처+CSS), 여캐 6종 chibi 재생성(VLM "distinctly female" 검증), admin 비번 Sertz!2026 자동 동기화(@next/env), Phaser 퍼포먼스 최적화(batchSize/desync/useTree), 셰이더 6종 약화(눈 파티클/보스 블룸/앰비언트 블룸/비네트/보스 라이트/암전)
+- admin 계정: admin / Sertz!2026 (.env + @next/env 부팅 동기화 — env 수정 후 서버 재시작 시 자동 반영)
+- 다음 후보: APK 빌드(scripts/build_apk.sh) 후 GitHub Release 업로드 — 필요 시 안내
