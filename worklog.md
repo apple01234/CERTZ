@@ -2306,3 +2306,26 @@ Stage Summary:
 - v1.4.13: 유저 지시 6건 전부 해소 — download 5.3MB→95KB, 책 모양 GUI(book_panel 텍스처+CSS), 여캐 6종 chibi 재생성(VLM "distinctly female" 검증), admin 비번 Sertz!2026 자동 동기화(@next/env), Phaser 퍼포먼스 최적화(batchSize/desync/useTree), 셰이더 6종 약화(눈 파티클/보스 블룸/앰비언트 블룸/비네트/보스 라이트/암전)
 - admin 계정: admin / Sertz!2026 (.env + @next/env 부팅 동기화 — env 수정 후 서버 재시작 시 자동 반영)
 - 다음 후보: APK 빌드(scripts/build_apk.sh) 후 GitHub Release 업로드 — 필요 시 안내
+
+---
+Task ID: V1413b
+Agent: Super Z (메인)
+Task: 배포 실패 수정 — 저장소 과대 해결 (skills/ + Unity/Kenney 에셋 추출물 등 untrack + git filter-repo로 히스토리 정리)
+
+Work Log:
+- [진단] 유저 리포트 "프로젝트 저장소 안에 프로젝트 파일이 또있어서 그런듯?" → 저장소 크기 점검
+- [측정] .git 크기 1.7GB / 트랙된 파일 8804개 / 히스토리 내 큰 blob: scripts/_unity_extract/CartoonVFX9X (28MB), skills/design/design-templates/waitlist-page/层云-waitlist.html (20MB), scripts/kenney_pp.zip (15MB), skills/design/design-templates/xianying-tool/index.standalone.html (11MB) 등 — 게임 빌드/배포와 무관한 ~270MB 추출물
+- [.gitignore 업데이트] /skills/, /scripts/_unity_extract/, /scripts/kenney_pp/, /scripts/kenney_pp.zip, /scripts/{sfx-fetch,_sfx_backup_rubberduck,diag,union_raw,boss_raw,boss_raw2,archdoc,bgm_work,preview,_preview,asset_work}/, .zscripts/, apk_build_v106.status, server.pid, dev.log, *.log — 게임 빌드에 불필요한 산출물/참조자료 전부 ignore
+- [git rm -r --cached] 위 디렉토리 전부 untrack — 8804 → 4763 파일 (4041 파일 제거, 2.6M 라인 삭제). 로컬 파일은 보존 (워크스페이스에서는 여전히 접근 가능, git 추적만 해제)
+- [1차 커밋/푸시] commit 40403a9 "v1.4.13 — 배포 실패 수정: 저장소 정리" → push 완료. 하지만 .git 히스토리엔 여전히 큰 blob이 남아 1.7GB (shallow clone이 아닌 full clone 시간 초과 우려)
+- [git filter-repo 히스토리 정리] pip install git-filter-repo → git filter-repo --invert-paths --path {skills/, scripts/_unity_extract/, scripts/kenney_pp/, ...} --force — 히스토리 전체에서 위 path들을 제거. 결과: .git 1.7GB → 125MB (93% 축소)
+- [force push] git remote 복구 후 git push --force origin main — 원격 히스토리를 정리된 버전으로 교체. commit 4640580이 최신 HEAD
+- [shallow clone 테스트] git clone --depth 1 → 267MB (123MB .git + 144MB 작업 트리) / 4764 파일 — 게임 에셋 + 소스만 남아 배포 플랫폼 clone 시간 충분히 단축
+- [클론 검증] 클론된 저장소에서 package.json 1.4.13, .env (admin 비번 포함), server.js, src/, public/assets/ui2/book_panel.webp, public/assets/chf0_idle0.webp (재생성된 여캐), scripts/gen_v1413_*.py, android/app/build.gradle 전부 정상 존재 확인
+- [유의사항] GitHub API의 size 메트릭은 캐시되어 즉시 갱신 안 됨 — 실제 clone 크기로 판단할 것. GitHub의 dangling blob은 자동 GC(24h 내)로 정리됨
+
+Stage Summary:
+- 저장소 1.7GB → 125MB (.git) / shallow clone 267MB — 배포 플랫폼 clone/build 시간 초과 문제 해결
+- 게임 빌드에 필요한 모든 파일 보존 (소스/에셋/android 설정) — 불필요한 skills 디자인 템플릿·Unity 추출물·Kenney 팩·로그만 제거
+- 로컬 워크스페이스 파일은 그대로 (git 추적만 해제) — 다음 작업 시에도 접근 가능
+- 히스토리는 3개 커밋만 남음 (12e7d23 accounts backup / 7901dff v1.4.13 / 4640580 정리) — worklog.md에 전 작업 내역 보존되어 있어 컨텍스트 손실 없음
