@@ -2421,3 +2421,27 @@ Stage Summary:
 - 실기기(GPU 탑재)엔 영향 없음 — 감지 실패 시 기존 auto 동작 유지
 - APK v1.4.15 빌드 진행(build_apk.sh 백그라운드) → download/SERTZ-v1.4.15.apk 예정
 - 다음 후보: 원소 반응 연출 강화·세트 착용 보너스(worklog 13 후계)·GitHub 릴리스 v1.4.15 업로드
+
+---
+Task ID: 16
+Agent: Super Z (cron 자동 리뷰 라운드 2)
+Task: v1.4.15 회귀 QA + 신규 기능 "원소 반응 시스템 (원신식)" 구현 (v1.4.16)
+
+Work Log:
+- [회귀 QA] agent-browser 전체 플로우 재검증 — v1.4.15 소프트웨어 GL 감지(fx=low 자동) 유지 확인, 마을 진입 후 프리즈 없음, 프롤로그/HUD/퀘스트/터치컨트롤 정상
+- [기능 설계] worklog 후보 "원소 반응 연출 강화(원신식)" 채택 — v3.0.15 #16의 5원소 상성 위에 반응 레이어 추가
+- [data.ts] ELEM_REACTION_META 4반응 신설: 화염>자연 "폭발"(스플래시 0.25)·자연>냉기 "결빙"(슬로우 0.55/2.2s)·냉기>화염 "융해"·빛↔어둠 "소멸"(기절 0.7s) + elementReaction() 매핑 (반응 배율 1.2~1.35)
+- [Enemy.ts] takeDamage에 반응 경로: 유리 조합 + 개별 쿨다운 1.6초 통과 시 발동 — 데미지 보너스 + 상태이상 + 120px 스플래시(spill 피해에 noReact 플래그로 폭발 연쇄 차단)
+- [Boss.ts] 보스도 반응 연출+데미지 보너스만 (스플래시/기절/슬로우 면역 — 보스전 밸런스), 동일 1.6초 쿨다운
+- [WorldScene.ts] spawnElementReaction(반응명 텍스트 풀 3장 + 원소색 폭발 + 이중 충격파 + 히트스톱 45ms/셰이크) + applyReactionSplash 헬퍼
+- [PhaserGame.ts] ?renderer=canvas 오버라이드 신설 — 소프트웨어 GL 환경 비상 통로 (QA/저사양 폴백)
+- [Panels.tsx] 이그니 UI 안내서 전투 섹션에 원소 반응 안내 추가
+- [조사 과정] forest1 진입 시 "응답 없음" 관찰 → 브레드크럼 8종 계측 → create는 완료되고 관측 타이밍 문제(일시적 스윕 셰이더 컴파일 지연)로 수렴 — 최종 E2E에서 정상 동작 확인 (페이지2 응답성으로 메인스레드 블록 아님 입증)
+- [E2E] scripts/e2e_v146_reactions.js 26/26 PASS — 정적 13(테이블/연결/가이드) + 유닛 6(4반응 매핑+부정) + 실측 7(forest1 진입·전사 화염 vs 자연 적·반응 수치 169=100×1.25×1.35 정확·쿨다운 내 125·반응 텍스트 VFX 활성·스플래시 피해·pageerror 0)
+- [범프] versionCode 108 / v1.4.16 — gradle·server.js(APK_MIRROR/LATEST/NOTE)·Overlays 배지
+
+Stage Summary:
+- v1.4.16 (vc108): 원소 반응 시스템 — 전투에 "약점 원소를 노리는" 전략성+쾌감 추가 (전사 화염→숲 챕터, 궁수 자연→설원 챕터 등 계열별 유리 챕터 공략 동선 생김)
+- ?renderer=canvas로 소프트웨어 GL 환경 QA 안정성 확보
+- APK v1.4.16 빌드 진행 중 → download/SERTZ-v1.4.16.apk
+- 다음 후보: 반응 콤보 시스템(연쇄 반응 스코어링)·GitHub Release v1.4.15/16 업로드·원소 반응 도감 UI
