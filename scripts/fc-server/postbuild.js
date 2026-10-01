@@ -44,11 +44,14 @@ async function main() {
   }
 
   /* 2) fc-entry → 단일 CJS 번들 (socket.io 인라인)
-   *    ⚠ Bun.build 는 outdir 없이는 outfile 을 무시하므로, 메모리 빌드 후 직접 기록한다 */
+   *    ⚠ Bun.build 는 outdir 없이는 outfile 을 무시하므로, 메모리 빌드 후 직접 기록한다
+   *    v1.4.16 (배포 호환) — Bun 이 없는 러너(npm/node 배포 환경)에서도 빌드가 죽지 않게
+   *      번들링만 건너뛴다. 래퍼 server.js 는 require('./fc-multi.js') 실패를 try/catch로
+   *      흡수하므로(싱글플레이 정상), npm start(루트 server.js — 멀티 내장) 경로는 영향 없다. */
   const bundleOut = path.join(STANDALONE, "fc-multi.js");
   if (typeof Bun === "undefined") {
-    throw new Error("[fc-postbuild] Bun 런타임이 필요합니다 (bun run build 로 실행할 것)");
-  }
+    console.warn("[fc-postbuild] Bun 런타임 없음 — fc-multi 번들링 건너뜀 (루트 server.js 경로로 멀티플레이 정상 / FC 주입만 생략)");
+  } else {
   const result = await Bun.build({
     entrypoints: [path.join(__dirname, "fc-entry.js")],
     target: "node",
@@ -57,13 +60,14 @@ async function main() {
     sourcemap: "none",
   });
   if (!result.success) {
-    console.error("[fc-postbuild] 번들 실패:", result.logs);
-    throw new Error("fc-multi 번들링 실패");
-  }
+    console.error("[fc-postbuild] 번들 실패 — FC 주입만 생략하고 계속:", result.logs);
+  } else {
   const jsOutput = result.outputs.find((o) => o.kind === "entry-point") || result.outputs[0];
   const bundleText = await jsOutput.text();
   writeFileSync(bundleOut, bundleText, "utf8");
   console.log(`[fc-postbuild] fc-multi.js 번들 완료 (socket.io 인라인, ${Math.round(bundleText.length / 1024)}KB)`);
+  }
+  }
 
   /* 3) 자동생성 server.js 개명 (멱등 — 래퍼 마커로 자동생성본만 판별)
    *    ⚠ 재실행 시 server.js 는 이미 래퍼다: 이때 next-server.js 를 건드리지 않는다.
