@@ -1494,6 +1494,22 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 사운드/BGM (v3.0.23 — 구역별 고정 1곡 루프 / 로테이션·곡 교체 없음) ---------- */
     audio.playStageBGM(stageKey);
 
+    /* v1.4.10 — 컨텍스트 힌트 (유저 지시 "게임 중 부연 설명 부족"): 구역 성격에 맞는 1회 안내 */
+    {
+      const { sub } = parseStage(stageKey);
+      if (sub === 10 && !this.isInterior) {
+        this.hintOnce(
+          "bosszone",
+          "보스 구역! 끝까지 가면 강력한 보스가 기다린다 — 물약·장비를 점검하고, HP가 절반 이하로 내려가면 물약 버튼(빨강)부터!"
+        );
+      } else if (sub >= 1 && sub <= 9 && !this.stageDef.isVillage) {
+        this.hintOnce(
+          "field",
+          "사냥터에 도착! 몬스터를 잡아 레벨을 올리자. 왼쪽 위 퀘스트 트래커가 다음 목표를 알려준다."
+        );
+      }
+    }
+
     /* v1.0.11 — 튜토리얼 시작/재개 판정 ("튜토리얼 제작" 지시):
      *  · 신규(이름 없음) — 인트로(이름짓기) 종료 후 시작 예약 (resumeFromDialogue 훅)
      *  · 이름 있는 유저 + tutorialDone=false + lv≤8 + 마을 — 즉시 시작/재개.
@@ -1827,8 +1843,15 @@ export class WorldScene extends Phaser.Scene {
         /* v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과)
          *  v3.0.10 후속 — 신규 나무(bbox 2~62, 하단 밀착) 줄기 폭 실측 (중앙 x20~44)
          *  v3.0.18 — 24x20→16x14: 줄기에 스치기만 해도 멈추는 "걸리는 느낌" 완화
-         *  (중앙 x24~40 / y78~92 — 시각적 줄기보다 살짝 작게, 막힘은 유지) */
-        (t.body as Phaser.Physics.Arcade.StaticBody).setSize(16, 14).setOffset(24, 78);
+         *  (중앙 x24~40 / y78~92 — 시각적 줄기보다 살짝 작게, 막힘은 유지)
+         *  v1.4.10 — 128² 고목(ud_deadtree) 분기 신설 (유저 지시 "나무/오브젝트 배치 이상"):
+         *  기존 64px 캔버스용 오프셋(24,78)이 128px 캔버스에선 좌상단 공중에 걸려
+         *  "나무를 뚫고 다닌다"의 원인 → 줄기 하단 중앙 배치 */
+        if (tex.startsWith("ud_deadtree")) {
+          (t.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 22).setOffset(55, 100);
+        } else {
+          (t.body as Phaser.Physics.Arcade.StaticBody).setSize(16, 14).setOffset(24, 78);
+        }
         t.setData("obstacle", true);
         break;
       }
@@ -1935,6 +1958,8 @@ export class WorldScene extends Phaser.Scene {
     }
 
     // 헬 — 무덤·고목·해골 (무료 에셋 Undead Pack, CC0 — v1.5 배치1 이관)
+    /* v1.4.10 — 고목(ud_deadtree 128² 캔버스)에 줄기 충돌 부여: 기존엔 충돌 없어
+     *  캐릭터가 나무를 뚫고 다니며 "배치가 이상하다"로 느껴졌다 (줄기 하단 중앙 배치) */
     if (ch === "hel") {
       const rng4 = new Phaser.Math.RandomDataGenerator(["hel-graves"]);
       const graves = ["ud_grave1", "ud_grave2", "ud_grave3"];
@@ -1950,26 +1975,20 @@ export class WorldScene extends Phaser.Scene {
         const dx4 = rng4.between(140, this.stageW - 140);
         const dy4 = rng4.between(90, this.stageH - 90);
         if (Math.abs(dy4 - this.stageH / 2) < 90) continue;
-        this.add.image(dx4, dy4, rng4.pick(["ud_deadtree1", "ud_deadtree2", "ud_deadtree3"])).setDepth(Math.floor(dy4 / 10));
+        const dt = this.add.image(dx4, dy4, rng4.pick(["ud_deadtree1", "ud_deadtree2", "ud_deadtree3"])).setDepth(Math.floor(dy4 / 10));
+        this.solidGroup.add(dt);
+        /* 128² 캔버스 — 줄기 하단 중앙만 충돌 (케노피는 통과) */
+        (dt.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 22).setOffset(55, 100);
       }
     }
 
-    // 숲(미드가르드) — 유적 나무/소품 (ForgottenMemories, CC-BY — v1.5 배치1 이관)
-    if (ch === "forest") {
-      const rng5 = new Phaser.Math.RandomDataGenerator(["forest-ruins"]);
-      for (let i = 0; i < 4; i++) {
-        const px5 = rng5.between(200, this.stageW - 200);
-        const py5 = rng5.between(90, this.stageH - 90);
-        if (Math.abs(py5 - this.stageH / 2) < 90) continue;
-        this.add.image(px5, py5, rng5.pick(["fm_tree1", "fm_tree2", "fm_tree3", "fm_tree4"])).setDepth(Math.floor(py5 / 10));
-      }
-      for (let i = 0; i < 5; i++) {
-        const qx5 = rng5.between(120, this.stageW - 120);
-        const qy5 = rng5.between(70, this.stageH - 70);
-        this.add.image(qx5, qy5, rng5.pick(["fm_prop1", "fm_prop2", "fm_prop3", "fm_shrub1"])).setDepth(1);
-      }
-    }
-
+    /* v1.4.10 — 숲(미드가르드) 유적 나무/소품(fm_tree/fm_prop) 블록 삭제 (유저 지시
+     *  "나무 및 오브젝트들의 배치가 이상하고 에셋이 안어울려" + "유적 없애고 상자만 놔뒀는데 뭐임?"):
+     *  ForgottenMemories 팩은 183~235px 대형 유적풍 소품 — 64px 짤리 나무·바위와
+     *  아트 스타일도 스케일도 어울리지 않고, 충돌 없는 depth 1 배치라 캐릭터 발밑에
+     *  깔리거나 뚫고 다니게 된다. 마을 유적은 v1.4.3~4에서 이미 철거됐고, 유저가
+     *  필드에서 여전히 본 '유적 같은 것'의 잔여분이 이 fm_* 소품 — 전면 제거로 정리.
+     *  숲은 기본 tree/pine/rock 세트로 통일해 아트 정합성 확보 */
     // 쿠소디아/아뜰란티스 — 육한 식물·바위·뼈 (Cursed Land, CC0 — v1.5 배치1 이관)
     /* v2.6 수정 — 육식 식물류(cl_jawsplant 등)는 장식이 아니라 '위험 오브젝트'.
      *  (※ 능대 swampbeast는 몬스터명 — 이 오브젝트와는 별개)
@@ -1977,7 +1996,9 @@ export class WorldScene extends Phaser.Scene {
     if (ch === "kingdom" || ch === "abyss") {
       const rng6 = new Phaser.Math.RandomDataGenerator(["cursed-plants"]);
       const hazardPlants = ["cl_jawsplant", "cl_eyeplant", "cl_manyeyes"];
-      const passiveProps = ["cl_mflower", "cl_pustules", "cl_rock", "cl_bones"];
+      /* v1.4.10 — cl_bones(256² 대형, depth 1·충돌 없음) 제외: 발밑에 깔리는 거대 소품이
+       *  "배치가 이상하다"의 원인. 나머지 식물·바위 소품은 128² 이하라 유지 */
+      const passiveProps = ["cl_mflower", "cl_pustules", "cl_rock"];
       const allProps = [...hazardPlants, ...passiveProps];
       for (let i = 0; i < 9; i++) {
         const px6 = rng6.between(120, this.stageW - 120);
@@ -6550,6 +6571,11 @@ export class WorldScene extends Phaser.Scene {
   onPlayerDead() {
     audio.sfx.playerDie(); // v1.4.8 — 사망 무음 해소 (어두운 붕괴음)
     audio.stopBGM();
+    /* v1.4.10 — 사망 안내 (부연 설명 강화): 부활 규칙 + 패널티 없음을 미리 알려 좌절감 완화 */
+    this.hintOnce(
+      "death",
+      "쓰러졌다! 잠시 후 가장 가까운 마을에서 부활한다 — 경험치·아이템은 그대로라 걱정 없다. 물약을 미리 챙기고 몬스터 무리에 파고들지 말자!"
+    );
     this.cameras.main.fadeOut(600, 20, 0, 0);
     this.time.delayedCall(700, () => {
       EventBus.emit("end", {
@@ -8066,6 +8092,14 @@ export class WorldScene extends Phaser.Scene {
      *  대사/입력 중 조기 리턴 앞에서 갱신 — 대화 중에도 오라가 살아 있게 (순수 치장 연출) */
     const auraKey = this.player?.cosmetic ?? null;
     const auraCfg = auraKey ? AURA_ANIM[auraKey] : undefined;
+
+    /* v1.4.10 — 저HP 경고 힌트 (부연 설명 강화): HP 30% 이하 최초 1회 — 물약 사용법 즉시 안내 */
+    if (this.player?.hp > 0 && this.player.maxHp > 0 && this.player.hp <= this.player.maxHp * 0.3) {
+      this.hintOnce(
+        "lowhp",
+        "HP가 위험하다! 공격 버튼 옆 빨간 물약 버튼(PC는 D 키)으로 회복하자 — 물약이 없으면 상점에서 사자!"
+      );
+    }
     if (auraCfg && (this.cosmeticAura || this.cosmeticOverlay)) {
       this.auraPhase = (this.auraPhase + auraCfg.sp * (dt / 1000)) % 1;
       /* v1.4.3 (작업3 최적화) — 매 프레임 HSLToColor 대신 64단계 LUT 조회 (GC 할당 0) */
@@ -9396,6 +9430,19 @@ export class WorldScene extends Phaser.Scene {
     else if (p.texture.key !== "orb") p.setTexture("orb");
     p.setTint(cfg.tint).setScale(cfg.scale ?? 0.9).setAlpha(0.95);
     p.setBlendMode(cfg.blend === "normal" ? Phaser.BlendModes.NORMAL : Phaser.BlendModes.ADD);
+    /* v1.4.10 — 투사체 히트박스를 스프라이트에 정확히 맞춤 (유저 지시 "히트박스 정렬"):
+     *  기존 setCircle(6) 고정 12px 원판은 화살(28×9)·대형 파동(scale 1.5) 등
+     *  어떤 텍스처에도 같은 크기라 시각과 판정이 어긋났다. 프레임×스케일 기반으로 재계산
+     *  (setCircle이 스케일을 자동 곱하므로 반으로 나눠 소스 크기를 넣는다).
+     *  반경 = 짧은 변의 35%·하한 5px — ADD 글로우 패딩을 제한한 코어 기준 판정 */
+    {
+      const psc = cfg.scale ?? 0.9;
+      const fw = p.frame.realWidth || p.frame.width;
+      const fh = p.frame.realHeight || p.frame.height;
+      const half = Math.max(5, Math.min(fw, fh) * 0.35); // 소스 픽셀 반경 (월드 = half×2×psc)
+      const pb = p.body as Phaser.Physics.Arcade.Body;
+      pb.setCircle(half, fw / 2 - half, fh / 2 - half);
+    }
     if (cfg.anim && this.anims.exists(cfg.anim)) p.play(cfg.anim);
     else if (cfg.anim) p.setTexture("orb");
     p.setRotation(cfg.rot ? cfg.angle : 0);
@@ -12309,6 +12356,16 @@ export class WorldScene extends Phaser.Scene {
   get enemyList(): Enemy[] { return this.enemies; }
   get portalRef(): Phaser.Physics.Arcade.Sprite | null { return this.portal; }
   get npcList(): { x: number; y: number }[] { return this.interactables; }
+
+  /* v1.4.10 — 1회성 컨텍스트 힌트 (유저 지시 "게임 중에 부연 설명이 너무 적어"):
+   *  세션당 1회만 뜨는 상황 안내 배너. 세이브에 기록하지 않는다(부담 최소화) —
+   *  재접속하면 다시 1회씩 노출돼 잊은 조작법을 자연 복습하게 한다. */
+  private hintShown: Record<string, boolean> = {};
+  hintOnce(key: string, text: string) {
+    if (this.hintShown[key]) return;
+    this.hintShown[key] = true;
+    this.showBanner(text);
+  }
 
   showBanner(text: string) {
     EventBus.emit("banner:show", { text });

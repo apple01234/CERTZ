@@ -323,7 +323,10 @@ function shopState(rpg: RpgState, k: ItemKey): "equipped" | "owned" | "buyable" 
 }
 
 /** v3.0.24 — 수량 스테퍼 (−/n/+) — 소모품·버프 수량 지정 구매 (유저 지시 #5)
- *  금액 부족 시 자동 클램프는 구매 실패 배너로 처리 — 여기선 1~99 범위만 보장 */
+ *  금액 부족 시 자동 클램프는 구매 실패 배너로 처리 — 여기선 1~99 범위만 보장
+ *  v1.4.10 — 가운데 숫자를 직접 입력 가능하게 개편 (유저 지시 "구매 수량을 선택하여 입력"):
+ *  숫자를 탭하면 키패드로 원하는 수량을 바로 타이핑(1~99), −/+ 버튼도 병행 지원.
+ *  입력 중엔 draft 상태로 두고, 포커스 해제/Enter에 클램프 확정 — 상점 목록 리렌더에도 값 보존 */
 function QtyStepper({
   qty,
   onChange,
@@ -331,23 +334,48 @@ function QtyStepper({
   qty: number;
   onChange: (n: number) => void;
 }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const gate = useKeyGate();
+  const commit = (raw: string) => {
+    const n = parseInt(raw, 10);
+    onChange(Number.isNaN(n) ? qty : Math.max(1, Math.min(99, n)));
+    setDraft(null);
+  };
   return (
     <div className="flex shrink-0 items-center overflow-hidden rounded-md border border-white/20 bg-black/40">
       <button
         aria-label="수량 감소"
         onClick={(e) => {
           e.stopPropagation();
+          setDraft(null);
           onChange(Math.max(1, qty - 1));
         }}
         className="h-6 w-6 text-[13px] font-black text-white/80 hover:bg-white/10 active:scale-90"
       >
         −
       </button>
-      <span className="w-7 text-center text-[11px] font-black text-white">{qty}</span>
+      <input
+        ref={gate}
+        {...swallowKeys}
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={99}
+        value={draft ?? String(qty)}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+        aria-label="구매 수량 직접 입력"
+        className="w-7 bg-transparent text-center text-[11px] font-black text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+      />
       <button
         aria-label="수량 증가"
         onClick={(e) => {
           e.stopPropagation();
+          setDraft(null);
           onChange(Math.min(99, qty + 1));
         }}
         className="h-6 w-6 text-[13px] font-black text-white/80 hover:bg-white/10 active:scale-90"

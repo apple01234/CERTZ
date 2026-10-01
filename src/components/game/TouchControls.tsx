@@ -199,9 +199,12 @@ export function TouchControls({
 
       {/* 버튼: 우하단 — 터치/PC 공용 (사용자 지시 #2) — v3.0.4: 모바일에서 스킬 버튼 축소+2×2 그리드 (지시 #6) */
       }
-      {/* v1.4.9 — 유저 지시: 스킬·물약·자동 UI를 화면 오른쪽 끝에 더 붙임 (우측 마진 8px→4px, 태블릿 20px→4px) */}
+      {/* v1.4.9 — 유저 지시: 스킬·물약·자동 UI를 화면 오른쪽 끝에 더 붙임 (우측 마진 8px→4px, 태블릿 20px→4px)
+       *  v1.4.10 — 유저 지시 "스킬 및 자동전투&물약 아이콘을 기본공격 버튼 가까이로 옮겨":
+       *  flex order로 배치를 [스킬 그리드(1)] → [자동전투+물약 열(2)] → [기본공격(3)] 순으로 재정렬 —
+       *  모든 액션 아이콘이 공격 버튼 1~2칸 옆(≈12px)에 밀착한다 */}
       <div className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.25rem,env(safe-area-inset-right))] flex items-end gap-1.5 sm:bottom-6 sm:right-1 sm:gap-3">
-        <div className="flex flex-col gap-1.5">
+        <div className="order-2 flex flex-col gap-1.5">
           {/* v2.5 — 자동사냥 토글 (펫 보유 시) */}
           {canAutoHunt && (
             <button
@@ -241,7 +244,8 @@ export function TouchControls({
           />
         </div>
         {/* v3.0.4 — 스킬 2×2 그리드 (4차까지 해금돼도 자리 부족하지 않게: 지시 #6) */}
-        <div className="grid grid-cols-2 gap-1.5">
+        {/* v3.0.4 — 스킬 2×2 그리드 — v1.4.10: order-1 (공격 버튼 왼쪽에 밀착) */}
+        <div className="order-1 grid grid-cols-2 gap-1.5">
           {/* v3.2.0 — 5차 궁극기: Lv.200 해금. 황금빛 전용 스타일 */}
           {s5Name && (
             <SkillButton
@@ -305,7 +309,7 @@ export function TouchControls({
         </div>
         <button
           aria-label="공격"
-          className="flex h-16 w-16 touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90 sm:h-20 sm:w-20"
+          className="order-3 flex h-16 w-16 touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90 sm:h-20 sm:w-20"
           onPointerDown={(e) => {
             e.preventDefault();
             EventBus.emit("input:attack");

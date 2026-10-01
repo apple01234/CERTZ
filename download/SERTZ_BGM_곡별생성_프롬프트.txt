@@ -1,0 +1,319 @@
+════════════════════════════════════════════════════════════════════
+ SERTZ: 이그드라실 — 게임 BGM 곡별 생성 프롬프트 (v1.4.8 기준 · 44트랙)
+════════════════════════════════════════════════════════════════════
+
+■ 사용법
+ · 아래 프롬프트는 Suno / Udio / Stable Audio 등 음악 생성 AI에 그대로 붙여넣어 사용한다.
+ · 각 곡마다 프롬프트가 완전히 다르다 (장르·템포·악기·무드 전부 상이).
+ · 생성 후 반드시 [파일 규격]에 맞춰 변환해서 넣는다.
+   - 파일명: 아래 표기 그대로 (예: bgm_boss1.ogg)
+   - 위치: public/assets/audio/ (웹서버) — 게임이 구역 진입 시 자동 로딩
+   - 포맷: OGG(Vorbis) 권장 — audio.ts가 assets/audio/{키}.ogg를 fetch한다
+   - 길이: 60~120초 이상 권장, 끝→처음 자연 루프(페이드아웃 없음)
+ · 보스곡 9개는 챕터 1:1 매핑이며, boss6~9는 현재 boss1~4의 피치 변형 파생곡으로
+   임시 운영 중이므로, 새로 만들면 그대로 교체 가능하다.
+
+────────────────────────────────────────────────────────────────────
+ [1] 타이틀 화면 — bgm_title1 ~ bgm_title5
+────────────────────────────────────────────────────────────────────
+
+▶ bgm_title1.ogg — 메인 타이틀 테마 (게임 최전면에 걸리는 곡)
+ 한국어: 웅장하면서도 신비로운 노르드 신화 오케스트라. 북유럽 여신전생 감성. 여성 보컬리
+  제(가사 없는 아아)가 세계수를 송영한다. 서두의 하프 아르페지오 → 현악 스웰 → 합창 폭발.
+ Suno: epic norse fantasy orchestral, ethereal female choir vocalise, soaring strings,
+  harp arpeggio intro, mystical world tree theme, 80 BPM, C minor, cinematic trailer mood,
+  no drums until climax, seamless loop
+
+▶ bgm_title2.ogg — 왕국의 대기 (쿠소디아 왕국 테마이기도 함)
+ 한국어: 르네상스 궁정 음악과 오케스트라의 만남. 하프시코드·비올라·금관 팡파레. 권위 있고
+  안정적인 왕도의 분위기. 타이틀2는 챕터3 필드 테마로도 쓰인다.
+ Suno: renaissance court music fusion, harpsichord and viola da gamba, royal brass fanfare
+  accents, stately and dignified, medieval kingdom ambience, 96 BPM, F major, orchestral,
+  seamless loop
+
+▶ bgm_title3.ogg — 여관/실내 테마 (interior_inn)
+ 한국어: 따뜻한 벽난로 여관의 잔잔한 포크. 어쿠스틱 기타+아코디언+박수 소리. 촛불이
+  흔들리는 목탁 테이블, 간판 삐걱임이 들리는 밤.
+ Suno: cozy tavern folk, fingerstyle acoustic guitar, soft accordion, gentle hand claps,
+  warm fireplace ambience, intimate and nostalgic, 72 BPM, G major, lofi edge, seamless loop
+
+▶ bgm_title4.ogg — 내 집/실내 테마 (interior_home)
+ 한국어: 새벽빛 침실의 럴러바이. 은은한 음악상자+패드+가끔 스칠 라코딜. 플레이어의 안식처.
+ Suno: gentle music box lullaby, dreamy ambient pads, soft celesta, tender home theme,
+  sleepy dawn atmosphere, 60 BPM, D major, minimal and quiet, seamless loop
+
+▶ bgm_title5.ogg — 세계수의 비밀 (엔딩/마지막 마을 분위기 겸용)
+ 한국어: 미스터리한 아코스틱+신스 하이브리드. 세계수의 뿌리 깊은 곳, 모든 답이 모이는 곳의
+  정적. 북유럽 류르(렬) 선율이 낮게 노래한다.
+ Suno: mystical acoustic synth hybrid, deep ambient drone, nordic lyre melody, ancient
+  world tree mystery, reverent and contemplative, 66 BPM, A minor, ethereal, seamless loop
+
+────────────────────────────────────────────────────────────────────
+ [2] 마을 — bgm_village1 ~ bgm_village5 (챕터별 마을 테마)
+────────────────────────────────────────────────────────────────────
+
+▶ bgm_village1.ogg — 시작 마을 '미드가르드' (본마을)
+ 한국어: 밝고 사랑스러운 마을 테마. 플루트+통기타+짐벌. 아이들이 뛰노는 안전지대.
+  콩쿠르 분위기의 해피 하드코어 아님 — 어쿠스틱 팝 느낌의 RPG 마을 표준곡.
+ Suno: cheerful village theme, bright flute melody, acoustic guitar strumming, glockenspiel
+  accents, warm safe haven feeling, maplestory-like town music, 104 BPM, C major, seamless loop
+
+▶ bgm_village2.ogg — 쿠소디아 왕국 마을
+ 한국어: 중세 상점가의 북적임. 하프시코드+현악+경쾌한 탬버린. 성벽 안 시장의 활기.
+ Suno: bustling medieval market town, harpsichord groove, lively strings, tambourine,
+  merchant chatter energy, festive kingdom square, 112 BPM, D major, seamless loop
+
+▶ bgm_village3.ogg — 알프헤임 성전 마을
+ 한국어: 요정 마을의 몽환적 테마. 벨+하프+코럴 패드. 유리종이 울리는 성당 앞 광장.
+ Suno: elven sanctuary village, dreamy harp and bell, angelic pad chords, crystal chimes,
+  sacred forest clearing, floating and light, 88 BPM, E major, seamless loop
+
+▶ bgm_village4.ogg — 화산 촌락 (무스펠헤임 마을)
+ 한국어: 용암 옆 대장간 마을. 타르+브라스 스태브+아프리카 드럼. 불티가 튀는 모루 소리와
+  함께 커지는 남성 콧노래.
+ Suno: volcanic blacksmith village, taiko drums and tribal percussion, low brass stabs,
+  forge hammer rhythm, fiery hardy settlement, 100 BPM, D minor, seamless loop
+
+▶ bgm_village5.ogg — 세계수 뿌리 마지막 마을
+ 한국어: 종막 앞의 고요한 안식처. 피아노+현악+숨소리 같은 패드. 여정의 끝자락, 애틋함과
+  결의가 공존하는 곡.
+ Suno: melancholic last refuge, emotional piano and strings, breathy ambient pad, bittersweet
+  final town before the end, hopeful sadness, 76 BPM, B minor, seamless loop
+
+────────────────────────────────────────────────────────────────────
+ [3] 일반 필드 — bgm_field1 ~ bgm_field5 (숲/초원 계열 탐험곡)
+────────────────────────────────────────────────────────────────────
+
+▶ bgm_field1.ogg — 제2장 '숲의 신전' 필드 테마 (메인 사냥터)
+ 한국어: 초록빛 숲의 모험. 통기타+민들레 같은 스트링+판적 문턱. 첫 사냥터의 설렘 —
+  위험하지 않지만 어딘가 신비로운 고대 숲.
+ Suno: forest adventure theme, playful woodwind melody, acoustic guitar and strings,
+  gentle mysterious woodland, explorer's excitement, 100 BPM, G major, seamless loop
+
+▶ bgm_field2.ogg — 깊은 숲길 (일반 필드 서브)
+ 한국어: 안개 낀 침엽수림. 낮은 클라리넷+하프+패드. 걸을수록 조금씩 어두워지는 숲길.
+ Suno: misty pine forest walk, low clarinet and harp, ambient string pads, gradually darkening
+  woodland path, hushed and curious, 84 BPM, E minor, seamless loop
+
+▶ bgm_field3.ogg — 초원의 바람 (일반 필드 서브)
+ 한국어: 들판을 가로지르는 바람. 첼로+플루트 유니즌+경쾌한 스트럽. 넓고 시원한 오후.
+ Suno: open grassland breeze, cello and flute unison, bright acoustic strumming, wide
+  afternoon sky, refreshing travel theme, 108 BPM, A major, seamless loop
+
+▶ bgm_field4.ogg — 고대 신전 유적 (일반 필드 서브)
+ 한국어: 덩그러니 남은 신전 계단. 금속 타격음 같은 벨+드론+코랄. 고대 문명의 그림자.
+ Suno: ancient temple ruins, metallic bell pulses, ambient drone and choir swells, forgotten
+  civilization mystery, 78 BPM, D minor, seamless loop
+
+▶ bgm_field5.ogg — 모험가의 새벽 (일반 필드 서브)
+ 한국어: 캠프를 걷어차고 출발하는 아침. 브라스+스트링+스네어 롤. 오늘도 앞으로 나아간다는
+  다이나믹한 이동곡.
+ Suno: morning departure march, bright brass and strings, snare roll energy, adventurous
+  journey begins, heroic optimism, 116 BPM, C major, seamless loop
+
+────────────────────────────────────────────────────────────────────
+ [4] 알프헤임 — bgm_alfheim1 ~ bgm_alfheim5 (요정 숲/성전)
+────────────────────────────────────────────────────────────────────
+
+▶ bgm_alfheim1.ogg — 제4장 '알프헤임' 필드 테마
+ 한국어: 빛이 입자로 떠다니는 요정의 숲. 하프+플루트+글로켄슈필+패드. 반짝이는 포 Giles
+  라이트, 몽환과 신성함의 중간.
+ Suno: elven fairy forest, sparkling harp and flute, glockenspiel twinkles, ethereal pads,
+  glowing particles of light, enchanted sacred grove, 92 BPM, E major, seamless loop
+
+▶ bgm_alfheim2.ogg — 요정 우물가 (알프헤임 서브)
+ 한국어: 물방울이 악보가 되는 곳. 마림바+물소리+하프 하모닉스. 물맑은 정적.
+ Suno: fairy spring waterside, marimba droplets and harp harmonics, gentle water ambience,
+  crystal clear tranquility, playful sprites, 86 BPM, A major, seamless loop
+
+▶ bgm_alfheim3.ogg — 요정왕의 정원 (알프헤임 서브)
+ 한국어: 웅장하되 우아한 정원. 스트링+호른+하프 캐스케이드. 요정왕의 품격과 경외감.
+ Suno: fairy king's garden, elegant strings and french horn, cascading harp, regal and
+  awe-inspiring, royal elven court, 96 BPM, F major, seamless loop
+
+▶ bgm_alfheim4.ogg — 빛의 길목 (알프헤임 서브)
+ 한국어: 빛줄기가 쏟아지는 숲 통로. 신스 패드+성가대+경쾌한 벨. 상승감.
+ Suno: pathway of light, shimmering synth pads, gentle choir, rising bell arpeggios,
+  sunbeam through canopy, uplifting sacred, 90 BPM, D major, seamless loop
+
+▶ bgm_alfheim5.ogg — 요정의 잔치 (알프헤임 서브)
+ 한국어: 숨겨진 요정 축제. 경쾌한 아일랜드 지그+휘슬+보란. 발끝이 절로 뛰는 축제곡.
+ Suno: hidden fairy feast, irish jig, tin whistle and bodhran, fiddle reels, mischievous
+  dancing sprites, joyful celebration, 128 BPM, G major, seamless loop
+
+────────────────────────────────────────────────────────────────────
+ [5] 동굴/광산 — bgm_cave1 ~ bgm_cave5 (스바르트알프헤임/니다벨리르)
+────────────────────────────────────────────────────────────────────
+
+▶ bgm_cave1.ogg — 제7장 '스바르트알프헤임' 필드 테마
+ 한국어: 물 한 방울 울리는 깊은 동굴. 낮은 드론+디거두+에코 피아노. 어둠에 적응하는 눈.
+ Suno: deep dark cave ambience, low drone and didgeridoo, echoing piano notes, water drip
+  percussion, underground mystery, 70 BPM, C minor, spacious reverb, seamless loop
+
+▶ bgm_cave2.ogg — 동굴 마을 (스바르트알프헤임 마을 겸용)
+ 한국어: 동굴 속 난로 마을. 아코디언+현악 피치코토. 바깥이 어두워서 더 따뜻한 실내 테마.
+ Suno: underground village hearth, warm accordion, pizzicato strings, cozy cave settlement
+  glow, safe shelter underground, 94 BPM, A minor, seamless loop
+
+▶ bgm_cave3.ogg — 룬 광산 (니다벨리르 필드 테마 겸용)
+ 한국어: 룬 문자가 반짝이는 광맥. 금속성 타악+스틸드럼+드론. 망치와 곡괭이의 리듬.
+ Suno: rune mine shafts, metallic percussion and steel drum, hammer rhythm, glowing rune
+  crystals, dwarven industrial, 102 BPM, E minor, seamless loop
+
+▶ bgm_cave4.ogg — 룬 광산 마을 (니다벨리르 마을 겸용)
+ 한국어: 난쟁이 대장간 마을. 브라스+해머 타악+체어 춤. 맥주잔 부딪히는 소리가 백이 되는
+  활기찬 마을.
+ Suno: dwarven forge town, brassy tavern energy, anvil percussion, beer stein cheers rhythm,
+  hearty craftsmen village, 110 BPM, D major, seamless loop
+
+▶ bgm_cave5.ogg — 지하 호수 (동굴 서브)
+ 한국어: 지하수가 고인 검은 호수. 패드+반향 핀드 소리+차음벨. 심연을 들여다보는 아찔함.
+ Suno: underground black lake, ethereal pads, echoing chimes, dark water reflections, abyssal
+  stillness, vertigo of depth, 64 BPM, B minor, seamless loop
+
+────────────────────────────────────────────────────────────────────
+ [6] 설원 — bgm_snow1 ~ bgm_snow5 (니플헤임)
+────────────────────────────────────────────────────────────────────
+
+▶ bgm_snow1.ogg — 제6장 '니플헤임' 필드 테마
+ 한국어: 얼어붙은 폭풍의 설원. 바람 소리+얼음 퍼커션+차가운 피아노. 하얀 세상의 고독과
+  아름다움.
+ Suno: frozen tundra blizzard, icy wind textures, cold piano notes, crystalline percussion,
+  desolate white wilderness, lonely beauty, 80 BPM, F minor, seamless loop
+
+▶ bgm_snow2.ogg — 설원 마을 (니플헤임 마을 겸용)
+ 한국어: 눈 속에 등불 켜진 마을. 따뜻한 스트링+체레스타+숨소리 합창. 혹한 속 유일한 온기.
+ Suno: snowbound village with lanterns, warm strings and celesta, soft breathy choir, only
+  warmth in the frozen world, tender shelter, 88 BPM, C major, seamless loop
+
+▶ bgm_snow3.ogg — 빙하 균열 (설원 서브)
+ 한국어: 빙하가 갈라지는 절벽길. 긴장감 있는 스트링 오스티나토+헤비 브라스 스탭. 한 발
+  잘못 딛으면 끝.
+ Suno: glacier crevasse crossing, tense string ostinato, heavy brass stabs, cracking ice
+  tension, treacherous ice bridge, 98 BPM, D minor, seamless loop
+
+▶ bgm_snow4.ogg — 오로라 아래 (설원 서브)
+ 한국어: 오로라가 흐르는 밤하늘. 신스 패드+유리 하모니카+은하수 같은 아르페지오. 신비로운
+  정적의 미.
+ Suno: beneath dancing aurora, ethereal synth pads, glass harmonica, starlight arpeggios,
+  celestial night sky wonder, 72 BPM, A major, seamless loop
+
+▶ bgm_snow5.ogg — 영하의 폭풍우 (설원 서브)
+ 한국어: 눈보라가 세차게 몰아치는 구간. 타이트한 스트링+디스토션 베이스+스톰 퍼커션.
+  버티고 나아가는 생존의 박동.
+ Suno: blizzard survival march, driving strings, distorted bass pulses, storm percussion,
+  pushing through the whiteout, relentless determination, 112 BPM, G minor, seamless loop
+
+────────────────────────────────────────────────────────────────────
+ [7] 심연/저승 — bgm_abyss1 ~ bgm_abyss5 (헬/세계수의 뿌리)
+────────────────────────────────────────────────────────────────────
+
+▶ bgm_abyss1.ogg — 제9장 '헬' 필드 테마
+ 한국어: 시체가 쌓인 저승의 강변. 죽음의 드론+디스토션 오르간+낮은 코럴. 서늘하고 악의적인
+  분위기.
+ Suno: hellish underworld shore, death drone, dark distorted organ, low male choir mutter,
+  malevolent and chilling, river of the dead, 74 BPM, C minor, seamless loop
+
+▶ bgm_abyss2.ogg — 화산 촌락 (무스펠헤임 마을 겸용)
+ 한국어: 용암이 흐르는 마을의 무거운 활력. 타르+로우 브라스+부족 합창. 뜨겁고 위험하지만
+  사람이 산다.
+ Suno: lava-side settlement, heavy taiko and low brass, tribal chants, smoldering vitality,
+  dangerous warmth, 100 BPM, E minor, seamless loop
+
+▶ bgm_abyss3.ogg — 제5장 '무스펠헤임' 필드 테마
+ 한국어: 불지옥 화산 지대. 헤비 메탈 리프+오케스트라 히트+화염 텍스처. 지상이 녹아내리는
+  전투적 탐험.
+ Suno: volcanic hellfire field, heavy metal guitar riffs with orchestral hits, ember textures,
+  molten ground aggression, burning exploration, 128 BPM, F minor, seamless loop
+
+▶ bgm_abyss4.ogg — 제10장 '세계수의 뿌리' 필드 테마
+ 한국어: 모든 것이 끝나는 곳. 오케스트라+신스 하이브리드, 종막의 예감. 장엄하면서도 슬픈
+  최종 챕터.
+ Suno: final chapter world tree roots, epic orchestral synth hybrid, apocalyptic yet mournful,
+  grand premonition of the end, 86 BPM, A minor, seamless loop
+
+▶ bgm_abyss5.ogg — 저승 마을 (헬 마을 겸용)
+ 한국어: 죽은 자들의 마을. 고딕 아코디언+죽은 자들의 왈츠. 어두운 유머와 서늘한 환대.
+ Suno: ghost town waltz, gothic accordion, dead men's dance, eerie hospitality with dark
+  humor, 3/4 waltz 96 BPM, D minor, seamless loop
+
+────────────────────────────────────────────────────────────────────
+ [8] 보스전 — bgm_boss1 ~ bgm_boss9 (챕터 1:1 전용 전투곡)
+     ※ boss6~9는 현재 boss1~4의 피치 변형 임시 운영 → 새 곡으로 교체 시 그대로 적용됨
+────────────────────────────────────────────────────────────────────
+
+▶ bgm_boss1.ogg — 제2장 보스전: 심연의 수호자 (숲의 신전)
+ 한국어: 첫 보스전의 긴장. 오케스트라+타악의 추격 리듬. 아직 어리지만 확실히 위험한 적.
+ Suno: first boss battle, urgent orchestral pursuit rhythm, driving taiko and strings,
+  menacing but novice-scale threat, heroic tension, 140 BPM, D minor, epic loop
+
+▶ bgm_boss2.ogg — 제3장 보스전: 눈보라의 거수 (쿠소디아)
+ 한국어: 눈보라 속 거인과의 대치. 성가대+브라스+블리자드 퍼커션. 하늘이 무너지는 듯한
+  압도감.
+ Suno: blizzard colossus boss fight, massive choir and brass, blizzard percussion, sky-
+  collapsing pressure, overwhelming scale, 132 BPM, C minor, epic loop
+
+▶ bgm_boss3.ogg — 제4장 보스전: 탐식의 드래곤 니드호그 (알프헤임)
+ 한국어: 세계수 뿌리를 갉아먹는 용. 속도감 있는 스트링+디스토션 기타+용의 포효 같은 브라스.
+  요정 숲이 어두워지는 순간.
+ Suno: dragon boss battle, aggressive strings with distortion guitar, brass roars, sacred
+  forest corruption, fast dragon flight chase, 152 BPM, E minor, epic loop
+
+▶ bgm_boss4.ogg — 제5장 보스전: 화염의 거인 수르트 (무스펠헤임)
+ 한국어: 불의 거인의 일격. 헤비 메탈+오케스트라+화염 리듬. 땅이 갈라지고 하늘이 탄다.
+ Suno: fire giant boss battle, heavy metal with full orchestra, flame rhythm and anvil
+  hits, earth splitting power, apocalyptic heat, 148 BPM, F minor, epic loop
+
+▶ bgm_boss5.ogg — 제6장 보스전: 탐욕의 늑대 펜리르 (니플헤임)
+ 한국어: 신을 삼키는 늑대. 북유럽 콜+야성적 타악+광기의 스트링. 얼어붙은 겁쟁이의 노래.
+ Suno: mythic wolf boss battle, nordic throat singing, feral tribal percussion, madness
+  strings, frozen terror, ragnarok prelude, 144 BPM, G minor, epic loop
+
+▶ bgm_boss6.ogg — 제7장 보스전: 심연의 군주 (스바르트알프헤임)
+ 한국어: 지하 심연의 지배자. 어두운 신스+드론+압박하는 퍼커션. 어둠이 숨쉬는 전투.
+ Suno: abyssal overlord boss battle, dark synth and drone, crushing pressure percussion,
+  breathing darkness, claustrophobic underground war, 136 BPM, C minor, epic loop
+
+▶ bgm_boss7.ogg — 제8장 보스전: 교만의 쌍랑 스콜&하티 (니다벨리르)
+ 한국어: 쌍둥이 늑대의 협공. 이중 리듬+카논 스트링+금관 대응. 두 마리가 주고받는 악센트.
+ Suno: twin wolf boss battle, dual rhythm canons, call-and-response brass and strings,
+  coordinated two-beast assault, relentless sync, 150 BPM, D minor, epic loop
+
+▶ bgm_boss8.ogg — 제9장 보스전: 혈안의 문지기 가름 (헬)
+ 한국어: 저승의 문지기와의 결전. 고딕 오르간+죽음의 코럴+헤비 드럼. 관문을 지키는 절대자.
+ Suno: underworld gatekeeper boss battle, gothic organ and death choir, heavy doom drums,
+  absolute gate guardian, blood-red fury, 138 BPM, C minor, epic loop
+
+▶ bgm_boss9.ogg — 제10장 보스전: 종언의 마룡 아부디토스 (세계수의 뿌리)
+ 한국어: 최종 보스전. 풀 오케스트라+합창+신스의 총집합. 세계수와 함께 무너지는 종막의
+  전투 — 이 게임의 정점.
+ Suno: final boss battle, full orchestra massed choir and synth, world-ending dragon duel,
+  collapse of the world tree, ultimate climax of the saga, 156 BPM, A minor, epic loop
+
+────────────────────────────────────────────────────────────────────
+ [9] 기타 활용 프롬프트 (재림 보스·특수 콘텐츠 — 여유가 되면 제작)
+────────────────────────────────────────────────────────────────────
+
+▶ 재림 보스 공통 (r5 베오르드 / r10 요르문간드 / r15 나그라파르):
+ 한국어: 챕터 보스곡보다 더 어둡고 빠른 '재림' 전용 변주. 현재는 boss7/8/9를 재사용하므로
+  전용곡이 생기면 audio.ts의 REBIRTH_BOSS_OF 표만 바꾸면 된다.
+ Suno: rebirth endgame boss battle, darker faster variation of finale themes, doom chorus
+  and thrash strings, second coming of the apocalypse, 160 BPM, B minor, epic loop
+
+▶ 바르가 수비전 (콘텐츠 스테이지):
+ Suno: tower defense wave battle, escalating orchestral urgency, alarm horns and marching
+  percussion, defend the gate, 138 BPM, E minor, epic loop
+
+▶ 무릉도장 (허수아비 딜체크):
+ Suno: martial arts trial arena, focused percussion and shamisen, disciplined combat test,
+  120 BPM, A minor, minimal loop
+
+════════════════════════════════════════════════════════════════════
+ ■ 적용 체크리스트 (곡 생성 후)
+════════════════════════════════════════════════════════════════════
+ 1. 파일명 확인: bgm_{종류}{번호}.ogg (소문자, 공백 없음)
+ 2. 위치: public/assets/audio/ 에 복사
+ 3. 포맷 변환: ffmpeg -i 새곡.wav -c:a libvorbis -q:a 5 bgm_x1.ogg
+ 4. 루프 확인: 끝→처음 이어 재생 시 박자가 자연스럽게 이어지는지
+ 5. 서버 반영: git push 후 서버 재배포 (APK는 재빌드 불필요 — BGM은 서버에서 스트리밍)
+ 6. 보스곡 교체 시: 코드 수정 불필요 (같은 파일명이면 자동 적용)

@@ -354,14 +354,20 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setDepth(9);
     const cfg = BODY_CFG[key];
+    /* v1.4.10 — 히트박스와 스프라이트 모양 정확히 맞추기 (유저 지시):
+     *  Phaser 4 Body.setSize는 인자에 스프라이트 스케일을 자동 곱하고(width = sourceWidth×scale),
+     *  본 위치 공식(x + scale×(offset−origin))이 오프셋에도 스케일을 곱하므로
+     *  물리 바디는 원본 cfg 그대로가 스케일 스폰(정예 1.55·훈련용 0.8 등)에서도 정중앙·발정렬 유지.
+     *  반면 근접 피격 판정 hitW/hitH는 수동 곱셈 값이라 스케일이 빠져 있었다 —
+     *  정예 몬스터의 "시각 몸통보다 히트박스가 작다(때려도 안 맞는다)"의 직접 원인 → 스케일 곱 */
     this.body!.setSize(cfg.bw, cfg.bh);
     this.body!.setOffset((this.width - cfg.bw) / 2, this.height - cfg.bh - 2);
     // 추격/넉백으로 맵 밖으로 밀려 나가지 않도록 경계 충돌
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     this.play(`${key}-idle`);
-    // 스프라이트 크기에 맞춘 근접 판정 크기
-    this.hitW = cfg.hw;
-    this.hitH = cfg.hh;
+    // 스프라이트 크기에 맞춘 근접 판정 크기 (v1.4.10 — 정예 등 스케일 스폰분 반영)
+    this.hitW = cfg.hw * this.scaleX;
+    this.hitH = cfg.hh * this.scaleY;
   }
 
   /** 리스폰 버스트 색 (월드 씬에서 사용) */

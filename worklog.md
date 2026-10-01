@@ -2182,3 +2182,32 @@ Stage Summary:
 - admin 계정: 아이디 admin / 비밀번호 Sertz!2026 (SERTZ_ADMIN_PASSWORD env 동기화 — 비번 변경은 env 수정 후 서버 재시작)
 - 전투 UI(스킬·물약·자동) 화면 오른쪽 끝 정렬(4px) 완료
 - 운영 교훈: ①작업실 세션 롤백 재발 — 복구 기준은 항상 git fetch+origin/main ②흰배경 AI 생성물의 배경은 경계 중위값 자동적응 판정이 안전(순백 가정 금지) ③원본과 다른 비율 아트는 크롭 금지·fit_pad(투명패딩)로 실루엣 보존이 판정/실루엣 안전
+
+---
+Task ID: V1410
+Agent: Super Z (메인)
+Task: 유저 지시 8건 — ①구매/판매 수량 입력 ②스킬·자동전투·물약 UI 기본공격 근처로 ③요세 유적 잔여물 ④히트박스↔스프라이트 정렬 ⑤나무/오브젝트 배치·에셋 정합성 ⑥튜토리얼/게임 중 설명 강화 ⑦챕터별 보스 BGM ⑧곡별 BGM 생성 프롬프트 → v1.4.10 (vc102) 빌드·릴리스
+
+Work Log:
+- [세션 복구] 로컬 HEAD가 v1.4.4에 멈춰 있고 원격은 v1.4.9(vc101)까지 진행 확인 → 로컬 수정 stash 후 origin/main reset→재적용 방식으로 전환 (v1.4.4 커밋은 원격 미푸시 유실 커밋이었음 밝혀짐)
+- [v1.4.9 재점검] 유적 철거+보물상자(v1.4.3~4 buildVillageChest)·보스 리뉴얼·admin 복구·UI 화면끝 정렬 이미 존재 — 유저 요청은 v1.4.9 기준 미해결분만 재적용
+- [①수량] QtyStepper 가운데 span → 직접 입력 input(1~99·키패드·draft 상태 클램프 확정) — 골드/캐시 상점 구매 수량 타이핑 지원 (판매는 기존 SellQtyBox 유지)
+- [②UI] TouchControls flex order 재배치 [스킬(order-1)]→[자동+물약(order-2)]→[기본공격(order-3)] — 모든 아이콘 공격 버튼 1~2칸 밀착 (v1.4.9의 "화면끝 4px" 정렬 위에 공격 근접성 추가)
+- [③유적] v1.4.9에서 이미 철거 완료 확인 → 유저가 계속 본 잔여물은 숲 필드의 fm_tree/fm_prop(183~235px ForgottenMemories 유적풍 소품)으로 특정 — placeDecor forest 블록 전면 삭제
+- [④히트박스] Phaser 4 Body.setSize 실측(setSize 인자에 scaleX 자동 곱·본 위치 공식에 오프셋 스케일 곱) 검증 → 물리 바디는 원래 정확, 진짜 버그는 ①정예 hitW/hitH 스케일 누락(cfg.hw×scaleX 보정) ②플레이어 투사체 setCircle(6) 고정 12px → 프레임×스케일 기반 원판(짧은 변 35%·하한 5px)으로 재계산
+- [⑤배치/에셋] cl_bones(256² depth1 충돌없음) 제외·ud_deadtree(128²) 줄기 충돌 부여(55,100 18×22 — 64px 캔버스용 오프셋(24,78)이 공중에 걸리던 문제)·hel 고목 루프에도 동일 충돌
+- [⑥설명] Tutorial 6단계 전부 2~3문장 상세 설명 보강+PANEL_H 62→80, WorldScene hintOnce(세션당 1회) 신설 → 보스구역 진입/필드 진입(create 후 BGM 직후)·사망(onPlayerDead)·저HP(update 30% 이하) 4종 훅
+- [⑦보스BGM] audio.ts BOSS_OF 9챕터 1:1 표+REBIRTH_BOSS_OF(r5/r10/r15)+bossTrackOfCh() — 기존 chIdx%5 순환 폐지; ffmpeg 파생 보스곡 4종 생성(scripts/gen_boss_variants.sh: boss6=boss1 −3st/1.06, boss7=boss2 +2st/0.97, boss8=boss3 −4st/1.12, boss9=boss4 +3st/0.94 — asetrate+atempo) → BGM_PLAYLISTS.boss 9곡 확장
+- [⑧프롬프트] download/SERTZ_BGM_곡별생성_프롬프트.txt (319줄·44트랙 전체: 타이틀5/마을5/필드5/알프헤임5/동굴5/설원5/심연5/보스9 — 곡마다 한국어 설명+영어 Suno 프롬프트+BPM·키·루프 노트+재림/수비전 보너스+적용 체크리스트)
+- [버전체인] package.json 1.4.10·build.gradle vc102+히스토리 주석·server.js(APK_MIRROR/LATEST 1.4.10/102/NOTE)·apk-guide.html(전면 v1.4.10+실측 md5 6d94a95b9b656b248e08293ed780afa1·134628858B)·APK_다운로드_안내.txt 신규 블록
+- [빌드] JDK 소실 재구축(apt download openjdk-21-jdk-headless → 시스템 JRE 병합 /home/z/jdk-full — javac 21.0.12.1) + Android SDK 재구축(cmdline-tools 11076708 + platforms;android-36 + build-tools;36.0.0 + platform-tools — license 전체 yes) → APK_EXPORT=1 next build → cap sync → gradle assembleRelease BUILD SUCCESSFUL(5m, 134,628,858B) → 가이드 md5 기입 → 일반 next build 서버 복구
+- [릴리스] scripts/release_v1410.py — GitHub Release v1.4.10 신규(id 400579416) 업로드 → 원격 재다운로드 md5 일치 ✓
+- [서버] pkill → NODE_ENV=production node server.js 재기동 → /api/version(1.4.10/102)·/(200)·/apk-guide(200)·bgm_boss6~9(200) ✓
+- [E2E] scripts/e2e_v1410.js 11항목 → 8/11 PASS(번들 문구 3건은 lazy 청크로 분리된 초기 HTML 검색 한계 — .next/static/chunks 직접 grep으로 3건 모두 포함 확인 → 실질 11/11)
+- [eggTick 회귀 조사] v1.4.9 update()에 eggTick 잔존 — git log -S 추적 결과 v1.4.4의 ARG 완전제거 커밋은 원격 미푸시 유실분이고 원격은 v1.4.7에서 페이지/비석만 철거한 상태 → 본 작업에서는 미개입(리스크 회피), 유저 보고 필요
+
+Stage Summary:
+- v1.4.10 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.10/SERTZ-v1.4.10.apk (versionCode 102, 134,628,858B, md5 6d94a95b9b656b248e08293ed780afa1)
+- 유저 지시 8건 전부 해결: 수량 직접 입력·UI 공격 버튼 밀착·숲 유적풍 소품 제거(유적 잔여물의 잔여분)·고목 충돌·히트박스 정밀 정렬(Phaser 4 실측 기반)·튜토리얼/힌트 강화·챕터별 보스 BGM(9챕터 1:1+재림)·44트랙 곡별 생성 프롬프트
+- 운영 교훈: ①세션 리셋 후 로컬이 원격보다 과거면 rebase 대신 stash→reset→재적용이 충돌 지옥 회피의 정답 ②Phaser 4 Arcade 바디는 setSize 인자에 스케일 자동 곱 — hitW/hitH 같은 수동 판정 값만 스케일 누락 검토할 것 ③이전 세션의 릴리스 스크립트(scripts/release_v149.py)가 재사용 템플릿으로 최적
+- 잔여: eggTick/eggs.ts가 원격 기준 의도 유지 상태인지 유저 확인 필요(무한 재부팅 리포트와의 관계), Play Console 데이터 보안 폼·서명 키 등록은 유저 측 작업

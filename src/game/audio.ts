@@ -134,7 +134,9 @@ export const BGM_PLAYLISTS: Record<BGMKind, string[]> = {
   cave: ["bgm_cave1", "bgm_cave2", "bgm_cave3", "bgm_cave4", "bgm_cave5"],
   snow: ["bgm_snow1", "bgm_snow2", "bgm_snow3", "bgm_snow4", "bgm_snow5"],
   abyss: ["bgm_abyss1", "bgm_abyss2", "bgm_abyss3", "bgm_abyss4", "bgm_abyss5"],
-  boss: ["bgm_boss1", "bgm_boss2", "bgm_boss3", "bgm_boss4", "bgm_boss5"],
+  /* v1.4.10 — 보스 플레이리스트 5→9곡 확장: bgm_boss6~9는 ffmpeg 피치/템포 파생 트랙
+   *  (BGM_ALL_TRACKS 자산 목록/E2E 훅이 자동으로 9곡을 인식한다) */
+  boss: ["bgm_boss1", "bgm_boss2", "bgm_boss3", "bgm_boss4", "bgm_boss5", "bgm_boss6", "bgm_boss7", "bgm_boss8", "bgm_boss9"],
 };
 /** 40트랙 전체 자산 목록 (모든 곡이 구역 배치에 사용됨 — v3.0.24부터 지연 로딩) */
 export const BGM_ALL_TRACKS: string[] = Object.values(BGM_PLAYLISTS).flat();
@@ -193,6 +195,32 @@ const VILLAGE_OF: Record<string, string> = {
   abyss: "bgm_village5",      // 세계수 뿌리 마지막 마을
 };
 const BOSS_TRACKS = ["bgm_boss1", "bgm_boss2", "bgm_boss3", "bgm_boss4", "bgm_boss5"];
+/* ================= v1.4.10 — 챕터별 보스 BGM 전용 트랙표 (유저 지시 "챕터마다 보스브금 다르게") =================
+ *  기존 BOSS_TRACKS[chIdx % 5] 순환은 9챕터가 5곡을 나눠 썼다 — cave=forest와 동일곡,
+ *  abyss=muspelheim과 동일곡이라 "보스마다 브금이 같다"로 느껴졌다.
+ *  bgm_boss6~9는 기존 보스곡을 피치/템포 변형해 만든 파생 트랙(scripts/gen_boss_variants.sh):
+ *  · boss6 = boss1 −3음정 (어둡고 묵직 — 동굴) · boss7 = boss2 +2음정 (팽팽 — 니다벨리르)
+ *  · boss8 = boss3 −4음정 (저릿한 압박 — 헬) · boss9 = boss4 +3음정 (광란의 고조 — 세계수의 뿌리)
+ *  → 9챕터 전부 서로 다른 보스전 BGM + 재림 보스(r5/r10/r15) 전용 배치.
+ *  새 원곡으로 교체하려면 같은 파일명으로 덮으면 된다 (코드 수정 불필요) */
+const BOSS_OF: Record<string, string> = {
+  forest: "bgm_boss1",      // 제2장 숲의 신전 — 심연의 수호자
+  kingdom: "bgm_boss2",     // 제3장 쿠소디아 — 눈보라의 거수
+  alfheim: "bgm_boss3",     // 제4장 알프헤임 — 니드호그
+  muspelheim: "bgm_boss4",  // 제5장 무스펠헤임 — 수르트
+  niflheim: "bgm_boss5",    // 제6장 니플헤임 — 펜리르
+  cave: "bgm_boss6",        // 제7장 스바르트알프헤임 — 심연의 군주
+  nidavellir: "bgm_boss7",  // 제8장 니다벨리르 — 스콜&하티
+  hel: "bgm_boss8",         // 제9장 헬 — 가름
+  abyss: "bgm_boss9",       // 제10장 세계수의 뿌리 — 아부디토스 (최종전 광란 고조)
+};
+/** 재림 보스 — splitStage("r5")는 ch="r", zone=5/10/15로 파싱된다 */
+const REBIRTH_BOSS_OF: Record<number, string> = { 5: "bgm_boss7", 10: "bgm_boss8", 15: "bgm_boss9" };
+/** 챕터/재림 공용 보스 트랙 선택 (미지의 챕터 → boss1 폴백) */
+function bossTrackOfCh(ch: string, zone: number): string {
+  if (ch === "r") return REBIRTH_BOSS_OF[zone] ?? BOSS_TRACKS[0];
+  return BOSS_OF[ch] ?? BOSS_TRACKS[0];
+}
 /** 챕터 일반 구역 폴백 (미지의 챕터 키) */
 const FALLBACK_TRACKS = CHAPTER_TRACKS.forest;
 
@@ -217,14 +245,17 @@ export function stageTrack(stage: string): string {
   if (stage === "interior_inn") return "bgm_title3";
   if (stage === "interior_home") return "bgm_title4";
   const { ch, zone } = splitStage(stage);
-  if (zone === 10) return BOSS_TRACKS[chIndexOf(ch) % BOSS_TRACKS.length]; // 보스 구역 — 전투곡 고정
+  /* v1.4.10 — 보스 구역: BOSS_OF 명시적 챕터 매핑 (기존 chIdx%5 순환 대체) */
+  if (zone === 10) return bossTrackOfCh(ch, zone); // 보스 구역 — 챕터 전용 전투곡
   if (zone <= 0) return VILLAGE_OF[ch] ?? VILLAGE_TRACKS[Math.max(0, chIndexOf(ch)) % VILLAGE_TRACKS.length]; // v1.0.12 — 음수 인덱스 가드 (미지의 챕터 마을 폴백)
   return CHAPTER_THEME[ch] ?? FALLBACK_TRACKS[0]; // v4.1.3 — 챕터 테마 1곡
 }
 
-/** 보스 조우 중 오버라이드 트랙 (구역 일반곡과 별개 — 전투곡) */
+/** 보스 조우 중 오버라이드 트랙 (구역 일반곡과 별개 — 전투곡)
+ *  v1.4.10 — 챕터별 전용 보스 트랙(BOSS_OF) + 재림 보스(r5/r10/r15) 전용 트랙 */
 function bossTrackOf(stage: string): string {
-  return BOSS_TRACKS[chIndexOf(splitStage(stage).ch) % BOSS_TRACKS.length];
+  const { ch, zone } = splitStage(stage);
+  return bossTrackOfCh(ch, zone);
 }
 
 /** PhaserGame 생성 직후 1회 호출 */

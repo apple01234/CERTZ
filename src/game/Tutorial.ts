@@ -25,17 +25,57 @@ interface TutStep {
   marker: "npc" | "portal" | "enemy" | null;
 }
 
+/* v1.4.10 — 유저 지시 "튜토리얼 및 게임 중에 부연 설명이 너무 적어 사용자 친화적이 않음":
+ *  각 단계에 ▸조작법 · ▸위치 · ▸실패 시 대처까지 담은 2~3문장 상세 설명으로 보강.
+ *  desc는 패널(520px)에 2줄까지 표시되며, 시작 배너로도 그대로 안내된다. */
 const STEPS: TutStep[] = [
-  { id: "talk", title: "주민과 대화", desc: "NPC에게 가까이 가서 E 키(모바일은 상호작용 버튼)로 말을 걸어 보자!", goal: 1, marker: "npc" },
-  { id: "portal", title: "차원문 이동", desc: "마을 동쪽 차원문(포탈)에 들어가 첫 사냥터 '숲의 신전'으로 가자!", goal: 1, marker: "portal" },
-  { id: "kill", title: "첫 전투", desc: "X 키(공격)로 몬스터를 처치하자! (3마리)", goal: 3, marker: "enemy" },
-  { id: "pickup", title: "전리품 줍기", desc: "몬스터가 떨어뜨린 골드/아이템에 부딪혀 주워 보자!", goal: 1, marker: null },
-  { id: "skill", title: "스킬 사용", desc: "Z 키(스킬 1)로 화려한 스킬을 쓸 수 있다! 몬스터에게 써 보자!", goal: 1, marker: "enemy" },
-  { id: "pot", title: "물약 회복", desc: "HP가 깎였으면 D 키로 HP 물약을 마시자! (시작 물약 지급 완료)", goal: 1, marker: null },
+  {
+    id: "talk",
+    title: "① 주민과 대화",
+    desc: "머리 위에 표시가 뜬 주민에게 가까이 가면 아래에 '말 걸기(E)' 버튼이 나타난다. 모바일은 그 버튼, PC는 E 키! 대화창이 열리면 클릭/탭으로 다음 대사로 넘길 수 있다.",
+    goal: 1,
+    marker: "npc",
+  },
+  {
+    id: "portal",
+    title: "② 차원문 이동",
+    desc: "마을 동쪽 끝의 소용돌이 차원문(포탈)으로 걸어 들어가면 사냥터 목록이 열린다. 첫 사냥터 '숲의 신전'을 선택! 화면 왼쪽 아래 빈 점선 원을 손가락으로 밀면 그 방향으로 이동한다.",
+    goal: 1,
+    marker: "portal",
+  },
+  {
+    id: "kill",
+    title: "③ 첫 전투",
+    desc: "오른쪽 아래 큰 빨간 '기본 공격' 버튼(PC는 X 키)으로 몬스터를 3마리 처치! 몬스터에게 닿으면 데미지를 받으니, 때리고 살짝 물러났다 때리는 리듬이 안전하다. 왼쪽 아래 파란 MP가 차면 스킬도 쓸 수 있다.",
+    goal: 3,
+    marker: "enemy",
+  },
+  {
+    id: "pickup",
+    title: "④ 전리품 줍기",
+    desc: "몬스터를 잡으면 골드·아이템이 바닥에 떨어진다. 그 위로 지나가면 자동으로 주워진다! 장비는 인벤토리(가방 버튼)에서 착용하고, 잡동사니는 판매하면 골드가 된다.",
+    goal: 1,
+    marker: null,
+  },
+  {
+    id: "skill",
+    title: "⑤ 스킬 사용",
+    desc: "공격 버튼 옆의 금색 스킬 버튼(PC는 Z 키)을 누르면 주변 전체를 베는 '회전베기'! MP가 부족하거나 쿨타임이 도는 동안은 버튼이 어두우니, 기본 공격으로 MP를 회복하며 쓰자.",
+    goal: 1,
+    marker: "enemy",
+  },
+  {
+    id: "pot",
+    title: "⑥ 물약 회복",
+    desc: "HP가 빨갛게 깎이면 공격 버튼 바로 옆 빨간 물약 버튼(PC는 D 키)! 물약이 0개면 상점에서 살 수 있다. HP 물약은 연속 사용 쿨타임이 있으니, 위험하기 전에 미리 마시는 게 좋다.",
+    goal: 1,
+    marker: null,
+  },
 ];
 
+/* v1.4.10 — 상세 설명(2~3줄) 수용을 위해 패널 높이 62→80 확대 */
 const PANEL_W = 520;
-const PANEL_H = 62;
+const PANEL_H = 80;
 
 export class Tutorial {
   private scene: WorldScene;
