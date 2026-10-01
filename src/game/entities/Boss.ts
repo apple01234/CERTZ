@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import type { BossDef, BossAttackKind, BossDiffKey } from "../data";
-import { elemAdvantage, ELEMENT_META, type ElemKey, CHAPTER_ELEM } from "../data";
+import { elemAdvantage, elementReaction, ELEM_REACTION_META, ELEMENT_META, type ElemKey, CHAPTER_ELEM } from "../data";
 import { parseStage } from "../stages";
 import { EventBus } from "../../components/game/EventBus";
 
@@ -979,13 +979,26 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   /* ---------- 피격/사망 ---------- */
 
+  /* v1.4.16 — 원소 반응 쿨다운 (보스도 같은 규칙 적용 — CC는 면역) */
+  private lastReactAt = 0;
+
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
     /* v3.0.15 (#16) — 보스도 챕터 테마 원소를 가진다 (상성 배율 적용) */
     const atkElem = this.scene.playerRef?.attackElem ?? "none";
     const adv = elemAdvantage(atkElem, this.elem);
     const weak = adv > 1;
-    let dealt = adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
+    /* v1.4.16 — 보스 원소 반응: 연출+데미지 보너스만 (스플래시/기절/슬로우 면역 — 보스전 밸런스) */
+    const now = this.scene.time.now;
+    const reactKey = elementReaction(atkElem, this.elem);
+    const reacted = !!reactKey && now - this.lastReactAt > 1600;
+    if (reacted && reactKey) {
+      this.lastReactAt = now;
+      this.scene.spawnElementReaction(this.x, this.y - 20, reactKey);
+    }
+    const R = reacted && reactKey ? ELEM_REACTION_META[reactKey] : null;
+    let dealt = R ? Math.max(1, Math.round(dmg * adv * R.dmgMul))
+      : adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
 
     // v4.1.4 — 반격 카운터: 창(노란 링) 안에 한 대라도 맞추면 카운터 성공 → 기절 + 취약
     if (this.mode === "counterTele") {

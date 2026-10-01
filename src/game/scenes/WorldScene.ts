@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
@@ -157,6 +157,8 @@ export class WorldScene extends Phaser.Scene {
   private burstEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   // F4: 데미지 텍스트 풀
   private dmgPool: Phaser.GameObjects.Text[] = [];
+  /* v1.4.16 — 원소 반응명 텍스트 3장 고정 풀 (폭발/결빙/융해/소멸) */
+  private reactTextPool: Phaser.GameObjects.Text[] = [];
   // F4: 참격 이펙트 풀 (외부 에셋 애니 스프라이트)
   private slashPool: Phaser.GameObjects.Sprite[] = [];
   private slashIdx = 0;
@@ -2930,6 +2932,24 @@ export class WorldScene extends Phaser.Scene {
       this.dmgPool.push(t);
     }
 
+    /* v1.4.16 — 원소 반응명 텍스트 풀 (반응 연출 전용 — 데미지 풀과 분리해 겹침 방지) */
+    for (let i = 0; i < 3; i++) {
+      const rt = this.add
+        .text(0, 0, "", {
+          fontFamily: "Galmuri11, sans-serif",
+          fontSize: "19px",
+          color: "#ffffff",
+          stroke: "#1a1020",
+          strokeThickness: 5,
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5)
+        .setDepth(57)
+        .setActive(false)
+        .setVisible(false);
+      this.reactTextPool.push(rt);
+    }
+
     // 참격(초승달 애니) 스프라이트 5장 고정 풀 — 외부 에셋(Cethiel CC0)
     for (let i = 0; i < 5; i++) {
       const s = this.add
@@ -3820,6 +3840,55 @@ export class WorldScene extends Phaser.Scene {
    *  v4.9.0 — alpha 파라미터 추가 (보스 등장 마법진 링 강도 조절용). */
   spawnShockwave(x: number, y: number, tint = 0xffd76a, scale = 1, duration = 360, alpha = 0.85) {
     this.shockFX?.spawn(x, y, tint, scale, duration, alpha);
+  }
+
+  /* ================= v1.4.16 — 원소 반응 연출 (원신식) ================= */
+
+  /** v1.4.16 — 원소 반응 발동 연출: 반응명 텍스트 + 폭발 + 이중 충격파 + 원소 파편 + 히트스톱/흔들림.
+   *  Enemy.takeDamage/Boss.takeDamage의 반응 경로에서 호출. */
+  spawnElementReaction(x: number, y: number, reactKey: ElemReactionKey) {
+    const R = ELEM_REACTION_META[reactKey];
+    /* 반응명 텍스트 — 원소색 강조, 살짝 위로 떠오르며 펀치 스케일 */
+    const rt = this.reactTextPool.find((d) => d.scene && !d.active) ?? this.reactTextPool[0];
+    if (rt) {
+      const css = `#${R.hex.toString(16).padStart(6, "0")}`;
+      rt.setText(R.name + "!")
+        .setColor(css)
+        .setPosition(x, y - 44)
+        .setActive(true)
+        .setVisible(true)
+        .setAlpha(1)
+        .setScale(1.3);
+      this.tweens.add({
+        targets: rt,
+        y: y - 74,
+        alpha: 0,
+        scale: 0.95,
+        duration: 640,
+        ease: "Quad.out",
+        onComplete: () => rt.setActive(false).setVisible(false),
+      });
+    }
+    /* 반응 폭발 — 원소색 (드라이브 팩 폭발 + 원소 파편 버스트) */
+    this.driveFx?.explosion(x, y, R.hex);
+    this.spawnBurstAt(x, y, 18, R.hex);
+    /* 이중 충격파 — 즉시 큰 링 + 120ms 뒤 잔향 링 */
+    this.spawnShockwave(x, y, R.hex, 1.25, 420, 0.9);
+    this.time.delayedCall(120, () => this.spawnShockwave(x, y, R.hex, 0.85, 320, 0.55));
+    /* 타격감 — 반응은 강한 순간이므로 크리티컬급 히트스톱+흔들림 */
+    this.hitStop(45);
+    this.doShake(110, 0.0035);
+  }
+
+  /** v1.4.16 — 반응 스플래시: 반응 중심 120px 내 다른 적에게 비례 피해(반응 연쇄 없음 — noReact).
+   *  원소 반응의 "범위 쾌감"을 담당. 스플래시 대상은 약점 판정 없이 고정 피해. */
+  applyReactionSplash(x: number, y: number, baseDealt: number, splashMul: number, source: Enemy, _atkElem: ElemKey) {
+    for (const e of this.enemies) {
+      if (!e || !e.active || !e.alive || e === source) continue;
+      if (Phaser.Math.Distance.Between(x, y, e.x, e.y) > 120) continue;
+      const dmg = Math.max(1, Math.round(baseDealt * splashMul));
+      e.takeDamage(dmg, new Phaser.Math.Vector2(e.x - x, e.y - y).normalize(), 40, false, true);
+    }
   }
 
   /** v4.9.0 — 회전베기 참격 궤적 (스킬 전용 셰이더 #1).

@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import { DMG_PCT } from "../data";
-import { ENEMIES, type EnemyDef, type EnemyKey, CHAPTER_ELEM, elemAdvantage, ELEMENT_META, type ElemKey } from "../data";
+import { ENEMIES, type EnemyDef, type EnemyKey, CHAPTER_ELEM, elemAdvantage, elementReaction, ELEM_REACTION_META, ELEMENT_META, type ElemKey } from "../data";
 import { parseStage } from "../stages";
 import { FSM, type FSMState } from "../ai/FSM";
 /** 종별 물리/판정 크기 + 리스폰 버스트 색 */
@@ -86,6 +86,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private slowUntil = 0;
   private slowMult = 1;
   private stunUntil = 0;
+  /* v1.4.16 — 원소 반응 쿨다운 (같은 적 1.6초 — 연타 폭발 방지) */
+  private lastReactAt = 0;
   /** 돌진형 전용 — 돌진 방향 캐시 */
   private chargeDir = new Phaser.Math.Vector2();
 
@@ -486,7 +488,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
+  takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false, noReact = false) {
     if (!this.alive) return;
     /* v3.3.0 (지시 #6) — 허수아비: 피해 누적만 하고 절대 죽지 않는다 (넉백/HP바 없음) */
     if (this.dummy) {
@@ -512,7 +514,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const atkElem = this.scene.playerRef?.attackElem ?? "none";
     const adv = elemAdvantage(atkElem, this.elem);
     const weak = adv > 1;
-    const dealt = adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
+    /* v1.4.16 — 원소 반응: 유리 조합 + 쿨다운 통과 시 반응 발동 (데미지 보너스 + 고유 효과/연출).
+     *  스플래시 피해(noReact)로는 연쇄되지 않는다 — 폭발 도미노 방지. */
+    const now = this.scene.time.now;
+    const reactKey = noReact ? null : elementReaction(atkElem, this.elem);
+    const reacted = !!reactKey && now - this.lastReactAt > 1600;
+    if (reacted) this.lastReactAt = now;
+    const R = reactKey ? ELEM_REACTION_META[reactKey] : null;
+    const dealt = reacted && R ? Math.max(1, Math.round(dmg * adv * R.dmgMul))
+      : adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
     this.hp -= dealt;
     this.hitFlash = 90;
     // 타격감: 화이트 플래시 (기존 빨간 틴트보다 명확한 피격 피드백)
@@ -523,6 +533,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       weak ? ELEMENT_META[this.elem].color : undefined,
       weak ? "약점" : undefined
     );
+    /* v1.4.16 — 반응 발동: 반응명 텍스트 + 반응 연출 + 상태이상/스플래시 */
+    if (reacted && R && reactKey) {
+      this.scene.spawnElementReaction(this.x, this.y, reactKey);
+      if (R.stunMs) this.applyStun(R.stunMs);
+      if (R.slowMult && R.slowMs) this.applySlow(R.slowMult, R.slowMs);
+      this.scene.applyReactionSplash(this.x, this.y, dealt, R.splashMul, this, atkElem);
+    }
     this.scene.spawnHitSpark(this.x, this.y);
     /* v1.2.0 (#10 타격감) — 히트스톱: 일반 26ms · 크리티컬 55ms + 미세 카메라 흔들림.
      *  플래시·스쿼시·넉백과 함께 "얻어맞은 순간이 멈춘다"는 손맛을 만드는 핵심 장치 */

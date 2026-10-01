@@ -30,7 +30,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.15/SERTZ-v1.4.15.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.16/SERTZ-v1.4.16.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -63,9 +63,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.15";
-  const LATEST_CODE = 107;
-  const VERSION_NOTE = "v1.4.15 — QA 수정: 소프트웨어 렌더러(SwiftShader/llvmpipe) 감지 시 절전 모드 자동 시작 — 셰이더 컴파일 폭주로 월드 진입이 수십 초 멈추던 문제 근본 완화 (QA 실측: auto 진입 직후 메인 스레드 블록 → fx=low 30초 무프리즈) · 저장 프리셋/모바일 절전 판정 순위 유지";
+  const LATEST_VERSION = "1.4.16";
+  const LATEST_CODE = 108;
+  const VERSION_NOTE = "v1.4.16 — 신규: 원소 반응 시스템 — 유리 상성 조합에서 특수 반응 발동! 화염>자연 폭발(주변 스플래시)·자연>냉기 결빙(둔화)·냉기>화염 융해·빛↔어둠 소멸(기절) — 반응명 텍스트+원소색 폭발+이중 충격파 연출, 같은 적 1.6초 쿨다운 · QA: ?renderer=canvas 비상 통로";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

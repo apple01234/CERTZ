@@ -1124,6 +1124,34 @@ export const FAMILY_ELEM: Record<string, ElemKey> = {
   warrior: "fire", ranger: "nature", mage: "ice", thief: "dark",
 };
 
+/* ================= v1.4.16 — 원소 반응 시스템 (원신식 반응 연출) =================
+ *  유리 상성 조합에서만 발동하는 특수 반응 — 데미지 보너스 + 반응별 고유 효과/연출:
+ *  · 화염>자연  "폭발"  — 화염 폭발 + 주변 적 스플래시 피해
+ *  · 자연>냉기  "결빙"  — 이동속도 감소(슬로우 2.2초) + 얼음 결정 파편
+ *  · 냉기>화염  "융해"  — 증기 폭발로 추가 피해 강화
+ *  · 빛↔어둠    "소멸"  — 상호 반응(유일한 쌍방 조합) — 기절 0.7초 + 강한 충격파
+ *  같은 적에게 반응 쿨다운 1.6초(연타 폭발 방지), 스플래시 피해로는 반응 연쇄되지 않음. */
+export type ElemReactionKey = "blast" | "frostbite" | "melt" | "annihilate";
+export const ELEM_REACTION_META: Record<ElemReactionKey, {
+  name: string; hex: number;
+  dmgMul: number; splashMul: number;
+  slowMult?: number; slowMs?: number; stunMs?: number;
+}> = {
+  blast:      { name: "폭발", hex: 0xff8a5c, dmgMul: 1.35, splashMul: 0.25 },
+  frostbite:  { name: "결빙", hex: 0x7dd8ff, dmgMul: 1.2,  splashMul: 0.15, slowMult: 0.55, slowMs: 2200 },
+  melt:       { name: "융해", hex: 0xffd76a, dmgMul: 1.35, splashMul: 0.15 },
+  annihilate: { name: "소멸", hex: 0xc08aff, dmgMul: 1.3,  splashMul: 0.2, stunMs: 700 },
+};
+
+/** 유리 조합 → 반응 키 (반응 없으면 null) */
+export function elementReaction(atk: ElemKey, def: ElemKey): ElemReactionKey | null {
+  if (atk === "fire" && def === "nature") return "blast";
+  if (atk === "nature" && def === "ice") return "frostbite";
+  if (atk === "ice" && def === "fire") return "melt";
+  if ((atk === "light" && def === "dark") || (atk === "dark" && def === "light")) return "annihilate";
+  return null;
+}
+
 /* ================= v3.0.15 (#13) — eert 큐브 잠재옵션 (메이플 큐브 시스템) =================
  *  장비(무기/방어구/장신구)에 1~3줄의 잠재옵션 부여. eert 큐브 사용 시 재추첨.
  *  등급: 레어(1줄) / 에픽(2줄) / 유니크(2줄 강) / 레전드(3줄 강) */

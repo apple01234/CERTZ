@@ -70,8 +70,19 @@ function safeReload(reason: string) {
 }
 
 export function createGame(parent: HTMLElement): Phaser.Game {
+  /* v1.4.16 (QA) — 렌더러 강제 오버라이드: ?renderer=canvas
+   *  소프트웨어 GL(SwiftShader)에서 WebGL 파이프라인 컴파일이 메인 스레드를 수십 초
+   *  블록하는 환경(QA 헤드리스·에뮬레이터·일부 저사양 GPU)에서 Canvas 백엔드로
+   *  강등해 게임 자체는 항상 플레이 가능하게 하는 비상 통로. 기본은 AUTO(변경 없음). */
+  const forceCanvas = (() => {
+    try {
+      return new URLSearchParams(window.location.search).get("renderer") === "canvas";
+    } catch {
+      return false;
+    }
+  })();
   const game = new Phaser.Game({
-    type: Phaser.AUTO,
+    type: forceCanvas ? Phaser.CANVAS : Phaser.AUTO,
     parent,
     width: GAME_W,
     height: GAME_H,
