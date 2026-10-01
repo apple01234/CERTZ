@@ -2604,3 +2604,23 @@ Work Log:
 Stage Summary:
 - 산출물: download/SERTZ-v1.4.16.apk (135MB, versionCode 108, 기존 키 서명)
 - 원격 저장소에도 export 충돌 수정 반영 완료 — 다음 빌드부터 원커맨드 재현 가능
+
+---
+Task ID: batch-6
+Agent: Super Z (main)
+Task: 유저 6개 지시 일괄 처리 — 배포·여캐 에셋·공격키·최적화
+
+Work Log:
+- [1 배포] sertz11.space-z.ai는 플랫폼 파이프라인 의존이라 직접 제어 불가 → 대안으로 Vercel 배포 완료
+- [2 Vercel] 유저 제공 토큰으로 vercel CLI 인증(계정 202630719-4818) → sertz11 프로젝트 production 배포 성공(2m). /api/version·에셋·타이틀 전부 검증. 제한사항: socket.io 멀티/계정API는 서버리스 불가(단일플레이만)
+- [3 여캐] 원인: chf0~5 전 세트(168파일)가 v1.4.14 PIL 드로잉 산출물(상자 머리+삼각 드레스)로 전부 파손 상태 — 로비 프리뷰 크롭(object-[35%_78%])으로 더 기괴하게 보임(#5의 정체). 수정: 정상 에셋 jobf_swashbuckler를 베이스로 피부톤 6종 재색칠(남캐 chm 라인에서 추출한 실제 톤) + acc_anchors chf 168개를 jobf 값으로 싱크. scripts/rebuild_chf_from_jobf.py 재현 스크립트
+- [4 공격키] TouchControls 공격 버튼이 CW-ATK/CH-ATK 최코너 고정 → 중심(206,184)/(236,220)으로 이동 + 스킬 부채꼴 동심원 정렬. 조이스틱 영역(좌 46%)·컨테이너 경계 겹침 없음 계산 검증
+- [5 무서운 사진] #3과 동근원 — 깨진 여캐 스프라이트였고 교체로 소멸
+- [6 최적화] .vercelignore로 Vercel 업로드 675MB→120MB. APK는 135MB 중 대부분이 실제 게임 아트(webp 124MB)라 무손실 축소 여지 적음 — PNG 중복은 8.8MB로 이득 미미해 보존. FPS 계열 최적화는 측정 후 별도 작업 권장
+- 검증: tsc 0오류, APK 재빌드 BUILD SUCCESSFUL(47s) — APK 내부 chf2 새 스프라이트 해시 일치, Vercel 서빙 스프라이트도 수정본 해시 일치
+- 커밋 019a85d push(origin/main)
+
+Stage Summary:
+- 산출물: download/SERTZ-v1.4.16.apk(135MB, 여캐+공격키 반영), https://sertz11.vercel.app 라이브
+- 여캐 3차 실패 라인 종료 — 기존 에셋 재사용 정책으로 전환(유저 지시 충족)
+- 미해결: 플랫폼 배포(sertz11.space-z.ai) 파이프라인은 플랫폼 측 문제로 추정, Vercel 멀티/계정은 아키텍처 제약
