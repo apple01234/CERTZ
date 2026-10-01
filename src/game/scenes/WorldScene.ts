@@ -3096,6 +3096,11 @@ export class WorldScene extends Phaser.Scene {
   /* v1.3.1 (#9 최적화) — 모바일 기기는 절전 모드 기본 시작 (유저가 설정에서 항상 높음 가능):
    *  셰이더 블룸/툰 필터가 모바일 GPU 최대 부하원 — 적응형(auto)은 저하까지 수 초 걸려
    *  "최적화 ㅈ됐어" 체감의 주범. 판정 로직은 모듈 상수로 분리해 부팅 노출(E2E)에도 쓴다. */
+  /* v1.4.15 (QA 수정) — 소프트웨어 렌더러 감지 시 절전 모드 자동 시작:
+   *  SwiftShader/llvmpipe 등 소프트웨어 GL에서 툰 림라이트+앰비언트 블룸+동적 조명의
+   *  셰이더 컴파일이 메인 스레드를 수십 초씩 블록해 "월드 진입 프리즈"처럼 보였다
+   *  (QA 실측: auto 진입 직후 evaluate 무응답·렌더 정지 → fx=low로는 30초 무프리즈).
+   *  저장 프리셋 > 모바일 절전 > 소프트웨어 GL 순으로 판정한다. */
   static readonly DEFAULT_FX_MODE: "auto" | "high" | "low" = (() => {
     try {
       const m = window.localStorage.getItem("sertz_fx_mode");
@@ -3106,9 +3111,27 @@ export class WorldScene extends Phaser.Scene {
       const touch = (navigator.maxTouchPoints ?? 0) > 1;
       const smallSide = Math.min(window.screen?.width ?? 9999, window.screen?.height ?? 9999);
       const mobile = /Android|iPhone|iPad|Mobile/i.test(ua) || (touch && smallSide < 820);
-      return mobile ? "low" : "auto";
+      if (mobile) return "low";
+      return WorldScene.isSoftwareGL() ? "low" : "auto";
     } catch { return "auto"; }
   })();
+
+  /** v1.4.15 (QA) — 현재 WebGL 컨텍스트가 소프트웨어 구현(SwiftShader 등)인지 판정.
+   *  WebGL 미지원(CANVAS 폴백)은 셰이더 자체가 없어 프리즈 원인이 아니므로 false. */
+  static isSoftwareGL(): boolean {
+    try {
+      const c = document.createElement("canvas");
+      const gl = (c.getContext("webgl2") || c.getContext("webgl")) as WebGLRenderingContext | null;
+      if (!gl) return false; // WebGL 부재 → Phaser가 Canvas로 폴백 — 셰이더 블록 없음
+      const ext = gl.getExtension("WEBGL_debug_renderer_info");
+      const renderer = ext
+        ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || "")
+        : "";
+      return /swiftshader|llvmpipe|softpipe|softwarerender|software renderer|basic render/i.test(renderer);
+    } catch {
+      return false;
+    }
+  }
 
   fxMode: "auto" | "high" | "low" = WorldScene.DEFAULT_FX_MODE;
 
