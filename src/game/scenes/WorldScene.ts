@@ -1859,6 +1859,12 @@ export class WorldScene extends Phaser.Scene {
       : ch === "muspelheim" ? ["pine_dark", "ud_deadtree1", "ud_deadtree2"]
       : ch === "cave" || ch === "nidavellir" ? ["ud_deadtree1", "ud_deadtree2", "ud_deadtree3", "pine_dark"]
       : ["tree", "tree", "pine", "kd_plant1", "kd_plant2", "kd_plant3"]; // v1.4.11 — kd_plant 자생나무 3종 합류
+    /* v1.4.19 (검은 사각형 글리치 안전망) — 배치 전에 실제 등록된 텍스처만 남긴다.
+     *  부트 로드 목록 누락 키(예: v1.4.11 kd_plant)가 Phaser __MISSING 폴백으로
+     *  렌더돼 "검은 사각형+녹색 대각선"이 필드에 생기던 것을 구조적으로 차단 —
+     *  향후 누락이 생겨도 글리치 사각형 대신 정상 나무로 대체된다. */
+    const treePool = treeSet.filter((k) => this.textures.exists(k));
+    const treePick = () => (treePool.length > 0 ? rng.pick(treePool) : "tree");
     const rockTex = ch === "niflheim" ? "rock_snow" : ch === "abyss" || ch === "hel" ? "rock_dark" : ch === "muspelheim" || ch === "nidavellir" ? "rock_stone" : "rock";
 
     /* v2.1 자연 배치 — 군집 중심 산포 (v3.0.15 #18: 군집 반경 축소로 진로 봉쇄 완화) */
@@ -1886,7 +1892,7 @@ export class WorldScene extends Phaser.Scene {
         /* v3.0 — 개미굴 벽 셀에는 심지 않음 */
         if (!this.inOpenArea(x, y)) continue;
         if (this.nearSolidObstacle(x, y, 48)) continue;
-        const tex = rng.pick(treeSet);
+        const tex = treePick();
         const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
         this.solidGroup.add(t);
         /* v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과)

@@ -105,6 +105,13 @@ const ASSET_LIST = [
   "pine",
   "pine_snow",
   "pine_dark",
+  /* v1.4.19 (스크린샷 검은 사각형 수정) — v1.4.11에서 나무 배치 풀(treeSet)에
+   *  kd_plant 3종을 합류시키면서 부트 로드 목록에 등록하지 않았던 누락.
+   *  로드되지 않은 키는 Phaser __MISSING 폴백으로 렌더돼 "검은 사각형+녹색
+   *  대각선" 글리치로 보였다 (마을 나무의 절반 확률로 발생). */
+  "kd_plant1",
+  "kd_plant2",
+  "kd_plant3",
   "torch",
   "rock",
   "rock_snow",

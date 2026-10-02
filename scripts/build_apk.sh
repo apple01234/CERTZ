@@ -9,7 +9,14 @@ cd "$PROJECT_ROOT"
 
 echo "[0/5] 빌드 도구 환경 감지"
 if [ -z "${JAVA_HOME:-}" ]; then
-  JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
+  # v1.4.19 — PATH의 java가 JRE만 깔린 시스템 JVM(javac 없음)을 잡아
+  # "does not provide the required capabilities: [JAVA_COMPILER]"로 실패하던 것 수정:
+  # 툴체인 스크립트(rebuild_toolchain.sh)가 설치하는 풀 JDK(/home/z/jdk)를 우선 사용.
+  if [ -x /home/z/jdk/bin/javac ]; then
+    JAVA_HOME=/home/z/jdk
+  else
+    JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
+  fi
 fi
 export JAVA_HOME
 if [ -z "${ANDROID_HOME:-}" ]; then

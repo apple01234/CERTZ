@@ -202,64 +202,20 @@ body {
  * v1.0.20 — AI스러운 글래스 패널을 게임형 프레임으로 전면 교체 (유저 지시):
  *  라운드 글래스+보라 코러 → "딥 네이비 바디 + 우드 프레임 + 금선" 고전 게임 UI.
  *  인테리어 텍스트(white/xx) 가독성 유지를 위해 바디는 어둡게, 프레임만 따뜻하게. */
-.sertz-panel {
-  background-color: #100c08;
-  background-image: url("/assets/ui2/panel.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-}
-/* 대형 패널(상점/인벤 본체) — background 텍스처 */
-.sertz-panel-big {
-  background-image: url("/assets/ui2/panel_big.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-}
-/* 프레임 버튼 (타이틀/다이얼로그 확인 등) */
-.sertz-btn {
-  background-image: url("/assets/ui2/button.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: 1px solid rgba(255, 200, 130, 0.35) !important;
-}
-.sertz-btn:active { filter: brightness(1.25) saturate(1.2); }
-/* 게이지 프레임 — HP/MP/EXP 바 컨테이너 */
-.sertz-gauge {
-  background-image: url("/assets/ui2/bar_frame.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none !important;
-  background-color: rgba(0, 0, 0, 0.55);
-}
-/* 리스트 행 (인벤/상점 슬롯 행) */
-.sertz-listrow { background-image: url("/assets/ui2/list.webp"); background-size: 100% 100%; }
-.sertz-listrow-sel { background-image: url("/assets/ui2/list_sel.webp"); background-size: 100% 100%; }
+/* ═══════════ v1.4.19 (유저 지시 "tailwind css 쓰자") — UI 스킨 Tailwind 전환 ═══════════
+ *  기존: ui2 비트맵 텍스처(panel/button/input.webp)를 background-size:100% 100%로
+ *        스트레치해 프레임을 박제하는 방식 — 확대 시 프레임이 흐려지고 톤 편차 발생.
+ *  신규: Tailwind 유틸리티(@apply) 기반 디자인 시스템. 클래스명은 그대로 유지해
+ *        컴포넌트(35곳 이상) 무수정 — 스타일만 교체. Galmuri 픽셀 폰트·다크+앰버
+ *        팔레트·경질 하단 음영(게임 감성)은 유지. ui2 비트맵 의존 제거. */
 
-/* ═══════════ v1.4.12 (#10/#22 유저 지시 "내가 준 UI 에셋으로 ai로 생성한 Ui 및 짜치는 UI 전면 교체해") ═══════════
- *  게임형 UI 디자인 시스템 전체를 유저 제공 ui2 에셋 세트로 교체 (아이콘 제외):
- *   · .game-panel      → ui2/panel_big (다크 패널 + 주황 프레임이 박제된 텍스처 — 100% 스트레치)
- *   · .game-panel h2   → ui2/header (제목 네임플레이트)
- *   · .game-btn        → ui2/button (다크 버튼 + 주황 테두리) — 글자는 밝은 금색으로 통일
- *   · .game-btn-ghost  → ui2/button 저휘도 변형
- *   · .game-btn-danger → ui2/button × 적색 블렌드
- *   · .game-chip       → ui2/button (작은 칩 — 테두리 박제)
- *   · .game-tab/-on    → ui2/button 휘도 변형 2종
- *   · .game-input      → ui2/input
- *   · .sertz-panel     → ui2/panel
- *  배경 텍스처는 background-size:100% 100% 스트레치(코드베이스 기존 규약) — 프레임이 텍스처에 박제되므로 CSS 보더 제거.
- *  패널 등장 애니(panelIn)와 하드 음영은 유지. */
-
+/* 패널 본체 — 스톤 블랙 + 앰버 헤어라인 + 경질 하단 음영 */
 .game-panel {
-  background-color: #100c08;
-  background-image: url("/assets/ui2/panel_big.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none;
-  border-radius: 4px;
+  @apply rounded-lg border border-amber-600/30 bg-stone-950/95 backdrop-blur-sm;
   box-shadow:
-    0 10px 0 rgba(0, 0, 0, 0.35),   /* 하단 경질 음영 */
+    0 8px 0 rgba(0, 0, 0, 0.35),
     0 22px 44px rgba(0, 0, 0, 0.55);
 }
-/* v1.4.8 (#5 애니메이션) — 패널 등장 연출: 마운트 시 살짝 떠오르는 팝 (160ms, 저사양 배려 없음 — CSS 합성만) */
 @keyframes panelIn {
   from { opacity: 0; transform: translateY(10px) scale(0.965); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -268,131 +224,88 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .game-panel { animation: none; }
 }
-/* 패널 제목 — ui2 헤더 네임플레이트 */
+/* 패널 제목 — 앰버 좌정렬 그라디언트 네임플레이트 */
 .game-panel h2 {
-  color: #ffd98a;
+  @apply mb-2.5 rounded border-l-4 border-amber-500 bg-gradient-to-r from-amber-900/70 via-amber-900/25 to-transparent
+    px-2.5 py-1.5 text-amber-200;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.65);
-  background-image: url("/assets/ui2/header.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none;
-  box-shadow: none;
-  border-radius: 3px;
-  padding: 7px 10px;
-  margin-bottom: 10px;
 }
-/* 주 버튼 — ui2 버튼 텍스처 (다크 바디 + 주황 프레임 박제, 글자는 밝은 금색) */
+/* 주 버튼 — 앰버 그라디언트 + 경질 하단 음영 */
 .game-btn {
-  background-color: #191007;
-  background-image: url("/assets/ui2/button.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none;
-  border-radius: 4px;
-  color: #ffe9c0;
+  @apply rounded-md border border-amber-400/40 bg-gradient-to-b from-amber-700 to-amber-900
+    text-amber-50 transition-[transform,filter] duration-100;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
-  box-shadow:
-    0 3px 0 rgba(0, 0, 0, 0.5),
-    0 6px 12px rgba(0, 0, 0, 0.4);
-  transition: transform 0.06s ease, filter 0.12s ease;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 6px 12px rgba(0, 0, 0, 0.4);
 }
-.game-btn:hover { filter: brightness(1.14) saturate(1.08); }
+.game-btn:hover { @apply brightness-110; }
 .game-btn:active {
-  transform: translateY(2px);
-  filter: brightness(0.92);
+  @apply translate-y-[2px] brightness-95;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
 }
 .game-btn:disabled {
-  filter: grayscale(0.8) brightness(0.7);
-  cursor: not-allowed;
+  @apply cursor-not-allowed grayscale opacity-70;
 }
-/* 보조 버튼 — ui2 버튼 저휘도 변형 */
+/* 보조 버튼 — 스톤 저채도 변형 */
 .game-btn-ghost {
-  background-color: #120d07;
-  background-image: url("/assets/ui2/button.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none;
-  border-radius: 4px;
-  color: #e8d8b0;
+  @apply rounded-md border border-white/15 bg-gradient-to-b from-stone-800 to-stone-900
+    text-stone-200 transition-[transform,filter] duration-100;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
-  filter: brightness(0.72) saturate(0.8);
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45), 0 6px 12px rgba(0, 0, 0, 0.35);
-  transition: transform 0.06s ease, filter 0.12s ease;
 }
-.game-btn-ghost:hover { filter: brightness(0.95) saturate(1); }
+.game-btn-ghost:hover { @apply brightness-125; }
 .game-btn-ghost:active {
-  transform: translateY(2px);
-  filter: brightness(0.65);
+  @apply translate-y-[2px] brightness-90;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
 }
-/* HUD 칩/아이콘 버튼 — ui2 버튼 텍스처 (작은 프레임) */
-.game-chip {
-  background-color: #16100a;
-  background-image: url("/assets/ui2/button.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none;
-  border-radius: 4px;
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.45),
-    0 5px 10px rgba(0, 0, 0, 0.35);
-}
-.game-chip:active { transform: translateY(1px); }
-/* 패널 탭 — ui2 버튼 휘도 변형 2종 */
-.game-tab {
-  background-color: #120d07;
-  background-image: url("/assets/ui2/button.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none;
-  border-radius: 4px;
-  color: #cbb88a;
-  filter: brightness(0.6) saturate(0.75);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
-}
-.game-tab-on {
-  background-color: #1c1208;
-  background-image: url("/assets/ui2/button.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none;
-  border-radius: 4px;
-  color: #ffe9c0;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
-  filter: brightness(1.3) saturate(1.15);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-}
-/* 입력 필드 — ui2 인풋 텍스처 */
-.game-input {
-  background-color: #120d08;
-  background-image: url("/assets/ui2/input.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none;
-  border-radius: 4px;
-  color: #f5ecd6;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
-}
-.game-input:focus {
-  outline: none;
-  filter: brightness(1.22);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 1px #e8a75c88;
-}
-/* 위험/삭제 버튼 — ui2 버튼 × 적색 블렌드 */
+/* 위험/삭제 버튼 — 레드 변형 */
 .game-btn-danger {
-  background-color: #8c2418;
-  background-image: url("/assets/ui2/button.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-blend-mode: multiply;
-  border: none;
-  border-radius: 4px;
-  color: #fff1ec;
+  @apply rounded-md border border-red-400/40 bg-gradient-to-b from-red-700 to-red-950
+    text-red-50 transition-transform duration-100;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 6px 12px rgba(0, 0, 0, 0.45);
 }
-.game-btn-danger:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5); }
+.game-btn-danger:active {
+  @apply translate-y-[2px];
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+/* HUD 칩/아이콘 버튼 — 작은 스톤 프레임 */
+.game-chip {
+  @apply rounded-md border border-amber-500/25 bg-stone-950/90;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45), 0 5px 10px rgba(0, 0, 0, 0.35);
+}
+.game-chip:active { @apply translate-y-[1px]; }
+/* 패널 탭 — 비활성/활성 2종 */
+.game-tab {
+  @apply rounded-md border border-white/10 bg-stone-900/80 text-stone-400;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+.game-tab-on {
+  @apply rounded-md border border-amber-400/50 bg-gradient-to-b from-amber-800/80 to-amber-950/90
+    text-amber-100;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+/* 입력 필드 — 스톤 인셋 + 앰버 포커스 링 */
+.game-input {
+  @apply rounded-md border border-white/10 bg-stone-950/90 text-stone-100
+    shadow-[inset_0_2px_6px_rgba(0,0,0,0.45)];
+}
+.game-input:focus {
+  @apply outline-none ring-1 ring-amber-500/60;
+}
+/* 위험/삭제 버튼 (구 고스트 규약 유지용 구 클래스는 삭제 — game-btn-danger로 통합) */
+
+/* 게이지 프레임 — HP/MP/EXP 바 컨테이너 (HUD가 rounded-full/border를 자체 지정) */
+.sertz-gauge {
+  @apply border-none bg-black/55 shadow-[inset_0_1px_2px_rgba(0,0,0,0.8)];
+}
+/* 리스트 행 (인벤/상점 슬롯 행) */
+.sertz-listrow {
+  @apply border border-white/10 bg-white/5;
+}
+.sertz-listrow-sel {
+  @apply border border-amber-400/50 bg-amber-500/15;
+}
 
 /* v4.1.5 — Galmuri 한글 픽셀 폰트 (npm galmuri, SIL OFL 1.1) — 게임 UI 전체 아이덴티티 */
 html, body {
@@ -406,44 +319,6 @@ html, body {
 .sertz-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 999px; }
 .sertz-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.45); }
 
-/* ═══════════ v1.4.13 (#2 유저 지시 "책 모양 플레이어 GUI + 인벤토리") ═══════════
- *  StatPanel(스탯/캐릭터정보)과 InventoryPanel(가방)에 "열린 책" 모양 패널 적용.
- *  책 표지(갈색 가죽) + 양쪽 페이지(양피지) + 가운데 제본선.
- *  기존 .game-panel 규약(box-shadow, panelIn 애니)을 상속받아 시각 일관성 유지. */
-.game-panel-book {
-  background-color: #2a1810;
-  background-image: url("/assets/ui2/book_panel.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none;
-  border-radius: 14px;
-  box-shadow:
-    0 10px 0 rgba(0, 0, 0, 0.35),
-    0 22px 44px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 1px rgba(212, 168, 84, 0.35);
-  animation: panelIn 0.18s ease-out both;
-}
-/* 책 패널 제목 — book_header.webp (롤 시트지 네임플레이트) */
-.game-panel-book h2 {
-  color: #5a3a1a;
-  text-shadow: 0 1px 0 rgba(255, 220, 160, 0.65);
-  background-image: url("/assets/ui2/book_header.webp");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  border: none;
-  box-shadow: none;
-  border-radius: 12px;
-  padding: 7px 14px;
-  margin-bottom: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-/* 책 내부 콘텐츠 — 양피지 가독성 위해 글자 색 약간 어둡게 (양피지에 어울리는 갈색 톤) */
-.game-panel-book .text-white\/80,
-.game-panel-book .text-white\/70 { color: #5a3a1a; }
-.game-panel-book .text-white { color: #3a2410; }
-.game-panel-book .text-white\/90 { color: #3a2410; }
-/* 책 내부의 작은 칩/버튼은 원래 ui2 버튼 유지 — 너무 칙칙해지지 않게 */
-
-
+/* v1.4.19 — v1.4.13 책 패널(.game-panel-book) 삭제: v1.4.12에서 컴포넌트 사용이
+ *  철거됐던 데드 CSS. Tailwind 전환과 함께 잔존 ui2/book_*.webp 참조 제거. */
 /* v1.0.20 build trigger */

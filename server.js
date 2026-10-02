@@ -30,7 +30,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.18/SERTZ-v1.4.18.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.19/SERTZ-v1.4.19.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -63,9 +63,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.18";
-  const LATEST_CODE = 110;
-  const VERSION_NOTE = "v1.4.18 — 수정: ①세로 화면 이동 시 물약/자동사냥 버튼이 조이스틱과 겹쳐 발리는 문제(화면 깨짐) — 클러스터 아크 위 가로열 플로팅 ②서버 없는 배포(Vercel 등) socket.io 무한 재연결 스톰 차단(4회 후 오프라인 확정) ③모바일 주소창 리사이즈 노이즈로 줌 스냅 점프하던 것 디바운스+임계값 차단 · APK: GitHub 릴리스 v1.4.18";
+  const LATEST_VERSION = "1.4.19";
+  const LATEST_CODE = 111;
+  const VERSION_NOTE = "v1.4.19 — 변경: ①필드/마을에 간헐적으로 생기던 '검은 사각형+녹색 대각선' 글리치 근원 제거 — v1.4.11 나무 배치 풀 kd_plant 3종의 부트 로드 누락 수정 + 등록된 텍스처만 배치하는 안전망 ②게임 UI 스킨을 Tailwind CSS 기반으로 전환(ui2 비트맵 스트레치 프레임 → 앰버/스톤 유틸리티 디자인 — 패널·버튼·탭·입력·게이지 전체, 픽셀 폰트와 게임 감성은 유지) · APK: GitHub 릴리스 v1.4.19";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
