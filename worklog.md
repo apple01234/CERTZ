@@ -2834,3 +2834,25 @@ Stage Summary:
 - 미리보기 주소 = 없음(0건)이 확정 답변. 서비스 주소는 https://sertz.vercel.app/ 단일.
 - ②안 아키텍처 정상 운영 중: Vercel serverless(계정·거래소·랭킹·클라우드세이브) + GitHub CERTZ-DB
 - 잔여 작업은 APK v1.4.22 빌드·릴리스(게이트 상수 승격) 단 하나
+
+---
+Task ID: FLK-1
+Agent: Super Z (main)
+Task: 유저 버그 #1 — "움직이거나 스킬 사용 시 화면이 검게 반짝임" 원인 추적·수정 (v1.4.23)
+
+Work Log:
+- 코드 추적: Phaser 4.2.1 카메라 파이프라인 확인 — external 필터(앰비언트 블룸) 존재 시 매 프레임 framebuffer 렌더+필터 패스+컴포지트 3단 경로. render()의 contextLost 가드는 유실 중 그리기를 스킵 → 캔버스가 검게 보임(반짝임의 정체 후보). 레포 히스토리에도 "필터+페이드=검은 화면"(v4.9.0), 컨텍스트 유실 흑화(v3.2.0) 등 동일 계열 패턴 다수.
+- 실증 측정(scripts/dbg_flicker_v1423.js, Playwright + POST_RENDER readPixels 프레임 샘플러, 가로 850×400):
+  · WebGL+fx high(블룸+툰): 3fps — 프레임버퍼 경로 극단 비용
+  · WebGL+fx low: 21fps · Canvas: 60fps — 두 변형 모두 검은 프레임 0건(헤드리스에선 비재현)
+- 픽스 3겹 (38439ed):
+  ① PhaserGame render.desynchronized 제거 — 이동/스킬처럼 갱신 격한 순간 WebView에서 검은 프레임 유발하는 문서화된 옵션
+  ② GPU 불안정 브레이커 — webglcontextlost 60초 창 2회 → "sertz:gpu-unstable" 이벤트 → WorldScene gpuUnstable 래치, fxLevel 0 강제(블룸/툰/보스 블룸 즉시 해제, tickFxQuality에서 auto 복원·high 강제 차단) + 배너 안내
+  ③ 4회 유실 → sessionStorage sertz.renderer=canvas 예약 + 예산화 safeReload — 재부팅부터 Canvas 백엔드(실측 60fps), ?renderer=webgl로 세션 해제 가능
+- 툴 체인: 부팅 자동화 시딩 로직 확립(sertz_slots_v1 v:1 필드 필수) — dbg_flicker_v1423.js가 타이틀→로비→월드→이동/스킬 시뮬레이션→프레임 통계까지 자동 수행
+- 회귀: 픽스 적용 후 gl-high 재실행 — 정상 부팅·렌더 확인. tsc 에러는 ②안 때부터의 sapi.ts 기존분(수정 파일 무관)
+
+Stage Summary:
+- 반짝임은 기기별 GPU/WebView 조합 의존성이 강해 헤드리스 재현 불가였으나, 3겹 방어선으로 "유실 반복 GPU"와 "desynchronized 캔버스" 양쪽 경로 모두 차단. 본체 v1.4.23 커밋 38439ed push 완료 → Vercel 자동 배포
+- 유저 안내: 웹(sertz.vercel.app)은 새로고침 시 적용. APK는 차기 빌드(v1.4.22/23 게이트 승격 시) 반영
+- 잔여: 유저 재확인 필요 — 반짝임이 설정 "그래픽 효과: 항상 높음"에서만 발생하는지, 절전에서도 발생하는지에 따라 후속 분기
