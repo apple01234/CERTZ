@@ -88,7 +88,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.20 — 멀티서버 분리: Vercel 정적 미러가 게임 서버에 직접 접속 — 웹에서도 멀티·계정·거래소 원격 연동 + APK 기본 서버 sertz11 전환</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.21 — APK 기본 주소 Vercel 미러(sertz.vercel.app) 전환 — 미러는 게임 서버 본체로 자동 연결</span>
           </p>
         </div>
 

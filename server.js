@@ -30,7 +30,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.20/SERTZ-v1.4.20.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.21/SERTZ-v1.4.21.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -63,9 +63,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.20";
-  const LATEST_CODE = 112;
-  const VERSION_NOTE = "v1.4.20 — 변경: ①멀티서버 분리 아키텍처 — Vercel 정적 프론트 미러가 게임 서버(sertz11)에 직접 접속(소켓·계정·거래소·랭킹 전부 원격 연동) ②APK 기본 서버 sertz11 전환 + 구 서버(sertz4) 저장분 자동 이행 ③웹 정적 배포에서 소켓 재접속 스톰 제거(이동 시 화면 끊김 완화) · APK: GitHub 릴리스 v1.4.20";
+  const LATEST_VERSION = "1.4.21";
+  const LATEST_CODE = 113;
+  const VERSION_NOTE = "v1.4.21 — 변경: ①APK 기본 접속 주소를 Vercel 미러(sertz.vercel.app)로 전환 — 미러 주소는 자동으로 게임 서버 본체(sertz11)의 소켓·계정·거래소 API로 우회 연결 ②미러 호스트 자동 인식 로직 추가(서버 주소 교체 시 APK 재설치 불필요) · APK: GitHub 릴리스 v1.4.21";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

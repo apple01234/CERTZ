@@ -12,7 +12,7 @@
 import { Capacitor } from "@capacitor/core";
 import { io, type Socket } from "socket.io-client";
 /* v1.4.20 — 멀티서버 분리: 게임 서버 해석 로직을 server.ts로 일원화 */
-import { GAME_SERVER, isGameServerHost, storedServerUrl } from "./server";
+import { GAME_SERVER, isGameServerHost, resolveEntryTarget, storedServerUrl } from "./server";
 
 /** v3.0.8 — Electron(EXE 데스크톱) 감지: UA에 Electron 포함.
  *  EXE는 자체 로컬 서버(same-origin)를 내장하므로 웹과 동일하게 동작하되,
@@ -66,15 +66,20 @@ export function resolveServerUrl(): string | null | undefined {
   const electron = isElectron();
   if (Capacitor.isNativePlatform() || electron) {
     /* v1.4.3 (#데이터보안) — 평문 http/wss 미허용: 저장 주소를 https/wss로 강제 승격
-     *  (Play Console "수집 데이터 전체 암호화 전송: 예" 근거 — 모든 API/소켓이 TLS 경유) */
-    return storedServerUrl() ?? (electron ? undefined : null);
+     *  (Play Console "수집 데이터 전체 암호화 전송: 예" 근거 — 모든 API/소켓이 TLS 경유)
+     * v1.4.21 — 저장 주소가 미러(vercel.app)면 게임 서버 본체(GAME_SERVER)로 해석 */
+    return resolveEntryTarget(storedServerUrl(), electron ? undefined : null);
   }
   /* v1.4.20 — 웹 분기 (멀티서버 분리):
    *  Vercel 등 정적 배포에서는 same-origin에 소켓 서버가 없다 → 게임 서버(sertz11)로
    *  직접 접속해 웹 버전에서도 멀티/채팅/파티가 동작한다. 재접속 스톰(화면끊김 원인)
    *  자체가 사라진다 — 서버가 살아있으니 첫 시도에서 연결됨. */
   const stored = storedServerUrl();
-  if (stored) return stored;
+  if (stored) {
+    /* v1.4.21 — 저장 오버라이드가 미러 주소면 본체로 우회 */
+    const t = resolveEntryTarget(stored, GAME_SERVER);
+    return typeof t === "string" ? t : GAME_SERVER;
+  }
   if (isGameServerHost(window.location.hostname)) return undefined; // same-origin
   return GAME_SERVER; // 정적 배포 → 원격 게임 서버
 }

@@ -20,8 +20,12 @@ const KEY = "sertz.server.url";
  *           클라이언트 API 계약은 v1.0.8 이후 불변이므로 구 서버와 호환. 서버 이전 시 이 상수+DEAD_SERVERS 한 쌍만 갱신.
  *  v1.4.20 — 서버 이전: sertz4 → sertz11.space-z.ai (현재 라이브 게임 서버 본체).
  *           멀티서버 분리 아키텍처의 유일한 게임 서버(소켓+계정/거래소/랭킹 API).
- *           구 기본값 sertz4는 DEAD_SERVERS로 이동 — 구 APK 설치분도 첫 기동에 자동 이행. */
-const DEFAULT_SERVER = "https://sertz11.space-z.ai";
+ *           구 기본값 sertz4는 DEAD_SERVERS로 이동 — 구 APK 설치분도 첫 기동에 자동 이행.
+ *  v1.4.21 — 유저 지시: 기본 주소를 Vercel 미러(sertz.vercel.app)로 전환.
+ *           미러 주소는 '입구 주소'일 뿐 — 소켓/계정 API는 server.ts의 미러 해석을 통해
+ *           게임 서버 본체(GAME_SERVER = sertz11)로 자동 우회 접속된다.
+ *           본체 주소가 바뀌면 APK 재설치 없이 vercel.json env 한 줄만 고치면 된다. */
+const DEFAULT_SERVER = "https://sertz.vercel.app";
 
 /* v3.2.0 — 서비스 종료/만료된 과거 기본 서버들 (자동 이행 대상)
  *  v1.0.12 — sertz4 복원(생존 실측)에 따라 목록에서 제외, 대신 DNS 미존재가 실측된
@@ -193,7 +197,7 @@ export function ServerConnect() {
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://sertz11.space-z.ai"
+            placeholder="https://sertz.vercel.app"
             className="w-full rounded-lg border border-white/15 bg-black/40 px-2.5 py-2 text-[11px] text-white placeholder:text-white/25 focus:border-amber-300/60 focus:outline-none"
             spellCheck={false}
             inputMode="url"
