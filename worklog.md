@@ -3082,3 +3082,20 @@ Stage Summary:
 - 포함: 채팅·파티 부활(릴레이 폴링) + 수신 폴링/발신자명 픽스 + 포탈 줌 픽스 + #APK기본API + v1.4.26 자동전투 튜닝
 - 환경 장애 기록: .secrets 디렉터리 통째 소실(원인 불명, 10:00 전후) — 토큰 2종 컨텍스트에서 재생성·검증(200). github_token은 git remote URL에도 내장돼 있어 git 조작은 무영향
 - undici 대용량 업로드(fetch+createReadStream+duplex) 불안정 — 100MB+ 업로드는 curl 권장
+
+---
+Task ID: drive-assets-restore
+Agent: main
+Task: 유저 "그 많던 에셋 다 어디감??" — Drive Assets.zip(724MB) 확인·복구
+
+Work Log:
+- 소실 원인 확정: 원본 에셋팩은 git 제외 폴더(research/·asset_work/·scripts/drive/)에 보관 중이었음(GitHub 100MB 한도 + v1.4.13 저장소 과대 배포실패로 git 추적 제거 이력). 세션(컨테이너) 교체 시 디스크 초기화 → git에 없는 폴더 전부 유실. 실측: research/·asset_work/·scripts/drive/ 부재
+- 게임 통합분 무사 확인: public/assets 3,625파일(133MB) git 보존 — 게임 자체 영향 없음
+- 유저 제공 Drive Assets.zip(724MB, 파일ID 1byRLOe9i9Axt1Y_jd96ODdz_sLdUMu6n) 다운로드: 바이러스스캔 경고 페이지 → confirm 토큰 URL로 759,550,311B 수신 성공(1차 시도 nohup 실패, 포그라운드 재시도 66MB/s)
+- 내용물: 에셋팩 34개(itch.io 무료팩 중심) — 28 High Quality 16-bit RPG Music(602MB)·Super Dialogue Audio Pack(80MB)·Effect and FX Pixel All Free(28MB)·2D HD Character Knight(14MB)·Super Pixel Effects Gigapack(11MB)·Raven Fantasy Icons(8.3MB) 외
+- scripts/restore_drive_assets.py 작성·실행: 33/34 해제 성공(rar 1개는 zip 동봉분으로 대체 무관)
+- 보관: research/assetpacks/ 33팩 풀림(866MB) + research/assetpacks_zips/ 원본 zip 34개(732MB). Assets.zip·extracted 중복 제거로 디스크 절약
+
+Stage Summary:
+- 원본 에셋 34팩 전량 복구 완료(research/assetpacks + assetpacks_zips) — 향후 "Drive 에셋 팩 적극 활용" 지시 시 변환 소스로 사용
+- 교훈 재확인: git 제외 대용량 원본은 세션마다 유실 → 필요 시 이 보관소가 유일 소스
