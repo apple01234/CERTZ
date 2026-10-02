@@ -2800,3 +2800,21 @@ Stage Summary:
 - Vercel(sertz.vercel.app) = 게임 웹 + 계정/거래소/랭킹/클라우드세이브 API 본체. 소켓 멀티플레이는 제외(오프라인 모드) — 재개 시 NEXT_PUBLIC_GAME_SERVER 채우면 부활
 - 데이터는 CERTZ-DB 단일 원본 — FC 서버·로컬 본체와 독립, 서버 교체와 무관하게 생존
 - 구 APK(v1.4.21 이하)는 apiBase가 구 게임서버(sertz11 죽음)로 향해 계정 연동 불가 — 웹은 자동 갱신, APK는 v1.4.22 빌드 시 해결(차기 작업)
+
+---
+Task ID: VC-2
+Agent: Super Z (main)
+Task: ②안 라이브 배포·검증 완료 — Vercel serverless 계정/거래소 실서비스 전환
+
+Work Log:
+- [푸시 이슈] 로컬 본체 부팅 시(02:09 재시작) 30초 후 구 백업 위치(CERTZ/db-backup)에 "accounts backup" 커밋 자동 푸시 → non-fast-forward 거부 → rebase 후 재푸시 해소(신규 DB인 CERTZ-DB와는 무관·무해, 구 백업 파일 갱신분)
+- [배포] 커밋 188f253 → Vercel 자동 배포 dpl_FHckbN9f99Z8CMCGPPjJ2rGd16oo BUILDING→READY — STATIC_EXPORT 제거 후 첫 서버리스 빌드 성공(21 정적 + 15 ƒ + /api/version ○)
+- [라이브 검증 1차] / 200(1.0s) · /api/version 1.4.21/113(게이트 유지) · /api/auth/sns 프로바이더 JSON · /api/market 200+CORS 에코+guest:true · /api/rank 200
+- [라이브 E2E 9/9] livetest1 가입→로그인→클라우드세이브 업로드/복원(데이터 일치)→랭킹 등재→거래소 등록(m7)→취소→계정삭제→세션 무효 — Vercel 람다에서 CERTZ-DB(GitHub) 읽기·쓰기·잠금 전 경로 실측 통과
+- [번들 검사] 게임 청크에 sertz11/space-z 주소 0건 — GAME_SERVER="" 인라인 확인 · OPTIONS 프리플라이트 204+CORS(https://localhost 에코 — APK 웹뷰 경로)
+- [최종 상태] CERTZ-DB users=4(원상복구) saves=0 listings=0 · 라이브 sertz.vercel.app = 계정·거래소·랭킹·클라우드세이브 본체 + 오프라인 싱글 플레이
+
+Stage Summary:
+- space-z.ai 게임 서버 의존성 전면 제거 완료 — 서버 인프라가 "Vercel(serverless) + GitHub(private DB)" 두 서비스로 축소
+- 기존 계정 데이터는 CERTZ-DB 단일 원본으로 생존, 서버 교체 개념 자체가 소멸
+- 잔여 작업: APK v1.4.22 빌드·릴리스(게이트 상수 승격 필요) — 구 APK 설치분은 오프라인 플레이 가능, 계정 연동은 신규 APK 필요
