@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SERTZ v1.4.23 APK 다운로드 안내</title>
+<title>SERTZ v1.4.25 APK 다운로드 안내</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -41,11 +41,17 @@
 </head>
 <body>
 <div class="card">
-  <h1>SERTZ v1.4.23 APK 다운로드 안내</h1>
-  <div class="sub">versionCode 115 · 기존 세이브 그대로 유지 · 덮어설치 가능</div>
+  <h1>SERTZ v1.4.25 APK 다운로드 안내</h1>
+  <div class="sub">versionCode 117 · 기존 세이브 그대로 유지 · 덮어설치 가능</div>
 
   <div class="notice">
-    <b>이번 버전(v1.4.23) — "이동·스킬 사용 시 검은 화면 반짝임 수정 + 계정·거래소 직결"</b><br>
+    <b>이번 버전(v1.4.25) — "물약 버튼, 공격 버튼 바로 아래로"</b><br>
+💊 모바일 물약(HP/MP)·자동 버튼을 기본공격 버튼 바로 아래-왼쪽으로 이동 — 와일드리프트 스펠 자리 배치<br>
+📏 공격 버튼 ↔ 물약 버튼 거리 약 230px → 74px 단축 — 엄지를 화면 가로질러 옮길 필요 없이 즉시 물약<br>
+💾 세이브/진행상황 그대로 유지 — 덮어설치만 하면 됩니다<br>
+<b>이전 버전(v1.4.24) — "APK 연결 상태 표시 수정"</b><br>
+✅ 서버 주소가 올바른데도 "연결 실패"로 뜨던 오타보 수정 — 소켓 판정(오프라인 설계에서 항상 실패)을 계정 API 헬스체크로 교체, 서버 정상 시 "서버 연결됨" 표시<br>
+<b>이전 버전(v1.4.23) — "이동·스킬 사용 시 검은 화면 반짝임 수정 + 계정·거래소 직결"</b><br>
     ✨ 검은 화면 반짝임 근본 수정 — 이동·스킬처럼 갱신이 격한 순간 WebView에서 검은 프레임을 유발하던 render.desynchronized 옵션 제거<br>
     🛡 GPU 불안정 브레이커 — WebGL 컨텍스트가 60초 안에 2회 유실되면 자동으로 그래픽 효과 절전 모드 강제(블룸·툰 셰이더 즉시 해제)+배너 안내<br>
     🔄 Canvas 백엔드 폴백 — 컨텍스트 유실 4회 누적 시 안전 재부팅 후 Canvas 렌더러로 전환(실측 60fps·검은 프레임 0건). ?renderer=webgl로 세션 해제 가능<br>
@@ -101,13 +107,13 @@
 
   <div class="step">
     <h2><span class="badge">방법 1 (권장)</span>GitHub 릴리스 — 즉시 다운로드</h2>
-    <a href="https://github.com/apple01234/CERTZ/releases/download/v1.4.23/SERTZ-v1.4.23.apk"
+    <a href="https://github.com/apple01234/CERTZ/releases/download/v1.4.25/SERTZ-v1.4.25.apk"
        style="display:block; text-align:center; margin:10px 0; padding:14px; border-radius:12px; background:linear-gradient(180deg,#facc15,#d97706); color:#1e293b; font-weight:900; font-size:16px; text-decoration:none; box-shadow:0 6px 20px rgba(0,0,0,.4);">
-      ⬇ SERTZ v1.4.23 APK 바로 다운로드 (~135MB · 즉시 시작)
+      ⬇ SERTZ v1.4.25 APK 바로 다운로드 (~135MB · 즉시 시작)
     </a>
     <ul>
       <li>위 버튼을 누르면 브라우저가 곧바로 다운로드를 시작합니다 (대기 없음)</li>
-      <li>무결성 확인용 md5: <code>1635f14957ba47fc65c36fda65805a3b</code> (<b>sha1: 6177f7c6240dd5217d92d2ee2a7a589f5e91b748</b> · 135550372B · versionCode 115)</li>
+      <li>무결성 확인용 md5: <code>adcc7478605800d7cca8a6b1d8548926</code> (<b>sha1: 59443cedded2cdb08c0b538fa760874965114344</b> · 135551068B · versionCode 117)</li>
       <li>릴리스 페이지: <a href="https://github.com/apple01234/CERTZ/releases" style="color:#7dc4ff"><code>github.com/apple01234/CERTZ/releases</code></a></li>
     </ul>
   </div>
@@ -121,6 +127,8 @@
   </div>
 
   <div class="footer">
+    v1.4.25 변경점: 모바일 물약·자동 버튼을 기본공격 버튼 바로 아래-왼쪽으로 이동(와일드리프트 스펠 자리 — 230px→74px, 좁은 세로 화면 플로팅은 유지)<br>
+    v1.4.24 변경점: APK 연결 상태 표시 수정 — 소켓 판정(②안 오프라인 설계상 항상 실패 → 무조건 "연결 실패" 오타보)을 계정 API 헬스체크(/api/version)로 교체 — 서버 정상 시 "서버 연결됨" 표시, 실패 시에만 "연결 실패"+복구 안내<br>
     v1.4.23 변경점: ①이동·스킬 사용 시 검은 화면 반짝임 수정 — render.desynchronized 제거(WebView 검은 프레임 유발점)·GPU 불안정 브레이커(컨텍스트 유실 60초 내 2회 → fx 절전 강제)·4회 유실 시 Canvas 백엔드 폴백 재부팅(?renderer=webgl로 해제) ②계정·거래소·랭킹·클라우드세이브 Vercel 직결(구 게임서버 sertz11/5 의존 제거 — 저장분 자동 이행) ③멀티플레이는 오프라인 모드로 동작<br>
     v1.4.12 변경점: ①타이틀 벚꽃 이펙트·배경 제거 ②캐릭터 선택 전 자동 시작 버그 수정 ③시작 사냥터(초행자 훈련장) 철거 — 마을 NPC 3명 대화로 레벨 3 ④업데이트 후 스프라이트 애니메이션 미로딩 근본 수정(3라운드 재시도+캐시 우회) ⑤GM 로그인·랭킹 실패 시 원인(구버전 서버) 명확 안내 ⑥기본 볼륨 BGM 60%·효과음 50% ⑦스킬 UI 와일드리프트식 부채꼴 배치(공격 버튼 중심 아크) ⑧미니맵 하단으로 이동 ⑨보스전 자동전투 금지+사유 안내 ⑩자동전투 중 포탈 전부 사용 가능 ⑪자동전투 식인초 회피 ⑫이그니의 UI 기능 안내(더보기→도움) ⑬사냥터 이상한 소품 철거+챕터별 정보 NPC 9종·대사 ⑭여캐 외형 6종 완전 교체(SPUM 파트 합성) ⑮보스 9종 100% 실제 에셋 교체(AI 그림 0)+보스별 시그니처 패턴·공격 성향 ⑯UI 전면 유저 제공 ui2 에셋 교체 ⑰다운로드 폴더 정리<br>
     v1.4.9 변경점: 보스 전면 리뉴얼 — 9종 보스 아트 AI 리페인팅(판정 불변, 원본과 동일 텍스처 규격) · 보스 애니메이션 전면 강화(낙하 등장·호흡·공격 예동·피격 반응·사망 잔상 소멸) · 전투 UI 우측 정렬 · admin 비밀번호 복구 경로 공식화(복원 경로 구비밀번호 잔존 제거)<br>
