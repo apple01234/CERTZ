@@ -7,7 +7,7 @@ import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
 import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis, Globe, UserRound, KeyRound, HelpCircle } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle } from "lucide-react";
 import { EventBus } from "./EventBus";
 import * as audio from "@/game/audio"; // v1.4.8 — 더보기 소셜 버튼 클릭음
 
@@ -366,16 +366,8 @@ export function HUD({
               <Repeat size={17} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
             </button>
-            {/* v1.4.3 (#멀티입구) — 멀티 콘텐츠 진입을 HUD에 노출 ("멀티 콘텐츠 어디감?" 리포트):
-             *  파티 위젯 토글 이벤트를 날린다 (위젯 자체는 좌측에 상주 — 겹침 없는 위치로 이동) */}
-            <button
-              onClick={() => EventBus.emit("party:toggle")}
-              aria-label="멀티 파티 창 열기 (Y)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9ec8ff] active:scale-95"
-            >
-              <Globe size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-sky-300/90">멀티</span>
-            </button>
+            {/* v1.4.24 — 멀티 아이콘 제거: 파티 아이콘과 기능 중복 + 멀티서버(serverless) 미지원으로
+             *  파티/채팅이 동작하지 않아 입구 자체를 철거 (v1.4.24 #멀티정리) */}
             <button
               onClick={onOpenRank}
               aria-label="랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"
@@ -384,16 +376,8 @@ export function HUD({
               <Trophy size={17} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
             </button>
-            {/* v1.4.8 (#3 겹침) — 파티/친구/계정: 우측 부유 스택(퀘스트 트래커와 좌표 겹침) 철거 →
-             *  더보기 메뉴로 이동. 각 창은 중앙 모달로 열린다 (Y/B 키 유지) */}
-            <button
-              onClick={() => { audio.sfx.uiClick(); EventBus.emit("party:toggle"); }}
-              aria-label="파티 창 열기 (Y)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9cc8ff] active:scale-95"
-            >
-              <Users size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-sky-300/90">파티</span>
-            </button>
+            {/* v1.4.24 — 파티 아이콘 제거: 파티는 socket.io 릴레이 의존이라 Vercel serverless에서
+             *  동작 불가(멀티서버 전면 중단). 죽은 기능의 입구를 남기지 않는다 (v1.4.24 #멀티정리) */}
             <button
               onClick={() => { audio.sfx.uiClick(); EventBus.emit("friends:toggle"); }}
               aria-label="친구 창 열기 (B)"

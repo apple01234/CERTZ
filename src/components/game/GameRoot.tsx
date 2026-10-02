@@ -8,12 +8,14 @@ import { EventBus } from "./EventBus"; // v1.0.18 — 로비 개폐 이벤트
 import { TouchControls } from "./TouchControls";
 import { DialogueBox } from "./DialogueBox";
 import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel, RewardPopup, GateCardOverlay, GateHud, ExitMenuOverlay } from "./Overlays";
-import { ServerConnect } from "./ServerConnect";
+// v1.4.24 — ServerConnect 제거 (#멀티정리 — 서버주소 설정창 철거)
+// import { ServerConnect } from "./ServerConnect";
 import { GamePanels } from "./Panels";
 import { Lobby } from "./Lobby"; // v1.0.18 — 캐릭터 선택·생성 로비
 import { UnionPanel } from "./UnionPanel"; // v1.0.18 — 유니온 패널
-import { ChatBox } from "./ChatBox";
-import { PartyWidget } from "./PartyWidget";
+// v1.4.24 — ChatBox/PartyWidget/ServerConnect 제거 (#멀티정리 — socket.io 릴레이 의존 UI 철거)
+// import { ChatBox } from "./ChatBox";
+// import { PartyWidget } from "./PartyWidget";
 import { FriendsWidget } from "./FriendsWidget";
 import { AuthPanel } from "./AuthPanel"; // v4.9.0 — 자체/SNS 계정 + 클라우드 세이브
 import * as audio from "@/game/audio";
@@ -183,10 +185,11 @@ export default function GameRoot() {
             <InteractPrompt />
             <Banner text={banner} />
             <BossBar boss={boss} />
-            {/* 멀티플레이 전체 채팅 (v1.7) */}
+            {/* v1.4.24 — 채팅/파티 UI 제거 (#멀티정리): 둘 다 socket.io 릴레이(net.ts) 의존이라
+             *  Vercel serverless(②안)에서는 원리적으로 동작 불가. 죽은 UI를 남겨 혼란만 주던 것을 철거.
+             *  멀티서버 재개 시 이 블록만 복원하면 된다.
             <ChatBox />
-            {/* 파티 위젯 (v2.0 — 파티 & 보스 토벌) */}
-            <PartyWidget />
+            <PartyWidget /> */}
             {/* 친구 위젯 (v2.1 — 친구코드·고유번호) */}
             <FriendsWidget />
             {/* 계정 위젯 (v4.9.0 — 자체 회원가입/로그인 + SNS 연동 + 클라우드 세이브) */}
@@ -197,8 +200,8 @@ export default function GameRoot() {
         {state === "title" && (
           <div className="pointer-events-auto contents">
             <TitleScreen />
-            {/* APK 전용 — 멀티플레이 서버 주소 설정 (웹에서는 미렌더링) */}
-            <ServerConnect />
+            {/* v1.4.24 — 서버주소 설정창 제거 (#멀티정리): 멀티서버 중단으로 무용 + "서버주소 = https://sertz.vercel.app/" 표시 보고의 근원이던 UI. 멀티 재개 시 복원.
+            <ServerConnect /> */}
             {/* v1.0.18 — 캐릭터 선택·생성 로비 (타이틀 위에 표시) */}
             {lobbyOpen && <Lobby onExit={() => setLobbyOpen(false)} />}
           </div>

@@ -8946,7 +8946,10 @@ export class WorldScene extends Phaser.Scene {
        *  열린 후퇴로로 잠깐 이탈 (코너에선 후퇴가 불가하므로 정면 반격 유지) */
       if (p.hp <= p.maxHp * 0.3 && this.countTargetsNear(150) >= 2 && !this.autoRetreatBlocked()) {
         this.autoHuntMove.copy(this.autoRetreatDir(best));
-        this.attackQueued = false;
+        /* v1.4.24 (#자동전투개선) — 후퇴 중에도 반격 유지(false→true):
+         *  기존엔 이탈 이동만 하다 물약 텀이 길면 그냥 맞아 죽던 케이스 —
+         *  이동 명령은 공격 상태 진입 시 무시되므로 카이팅+딜이 자연스럽게 공존한다 */
+        this.attackQueued = true;
         return;
       }
       if (bestD > atkRange) {
@@ -9304,7 +9307,11 @@ export class WorldScene extends Phaser.Scene {
 
   /** v2.5 — 자동 물약 (자동사냥 중).
    *  v3.0.15 (#6) — 하드코딩 45% 대신 BM 설정값(autoUse.hpPct/mpOn)을 따르되,
-   *  설정이 꺼져 있어도 안전망(HP 35%)으로 기본 물약만 사용. 슬롯에 지정된 물약 사용. */
+   *  설정이 꺼져 있어도 안전망(HP 40%)으로 기본 물약만 사용. 슬롯에 지정된 물약 사용.
+   *  v1.4.24 (#자동전투개선) — 3종 튜닝:
+   *   ① 선제 회복 — 포위(주변 160px 적 2+) 상태에서 HP 60% 이하면 물약부터 ( Panic 회복은 늦다)
+   *   ② 안전망 35% → 40% 상향 (잠깐 늦게 마셔 죽던 케이스 축소)
+   *   ③ MP 회복선 25% → 35% (스킬 기반 자동전투가 MP 고갈로 기본공격만 돌던 케이스 개선) */
   private autoPotion() {
     if (!this.player) return;
     const cfg = this.player.autoUse;
@@ -9313,12 +9320,16 @@ export class WorldScene extends Phaser.Scene {
     const hpHave = hpKey === "potion_hp" ? this.player.potions.hp > 0 : this.player.owned.includes(hpKey);
     const mpHave = mpKey === "potion_mp" ? this.player.potions.mp > 0 : this.player.owned.includes(mpKey);
     if (this.player.potionCd > 0) return;
-    if (cfg.hpPct > 0 && this.player.hp <= this.player.maxHp * (cfg.hpPct / 100) && hpHave) {
+    /* v1.4.24 ① — 선제 회복: 포위전 한가운데서는 설정 임계까지 버티지 않고 먼저 마신다.
+     *  (전투 중 피격 누적이 임계 도달 전에 즉사로 이어지던 케이스 방어) */
+    if (hpHave && this.player.hp <= this.player.maxHp * 0.6 && this.countTargetsNear(160) >= 2) {
       this.player.usePotion("hp");
-    } else if (this.player.hp < this.player.maxHp * 0.35 && hpHave) {
-      this.player.usePotion("hp"); // 안전망
-    } else if (cfg.mpOn && this.player.mp <= this.player.maxMp * 0.25 && mpHave) {
-      this.player.usePotion("mp");
+    } else if (cfg.hpPct > 0 && this.player.hp <= this.player.maxHp * (cfg.hpPct / 100) && hpHave) {
+      this.player.usePotion("hp");
+    } else if (this.player.hp < this.player.maxHp * 0.40 && hpHave) {
+      this.player.usePotion("hp"); // 안전망 (v1.4.24 ② — 35→40%)
+    } else if (cfg.mpOn && this.player.mp <= this.player.maxMp * 0.35 && mpHave) {
+      this.player.usePotion("mp"); // v1.4.24 ③ — 25→35%
     }
   }
 
@@ -9333,10 +9344,12 @@ export class WorldScene extends Phaser.Scene {
     try {
       const s = net.netConnect();
       if (!s) {
-        // APK 오프라인 모드 — 멀티 사용법을 한 번만 안내 (v2.1)
+        /* v1.4.24 — 오프라인 안내 배너 제거 (#멀티정리): 서버주소 설정창(ServerConnect)이 철거돼
+         *  안내가 가리키는 입구가 없다. 오프라인은 정상 상태라 조용히 진행한다.
         if (net.netStatus().native) {
           this.time.delayedCall(1100, () => this.showBanner("오프라인 모드 — 타이틀 화면 우하단에서 서버 연결 시 멀티플레이"));
         }
+         */
         return;
       }
       const offPlayers = net.netOnPlayers((list) => this.syncRemotes(list));
