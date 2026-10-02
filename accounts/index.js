@@ -210,15 +210,28 @@ function backupDecrypt(b64) {
 }
 async function ghGetFile() {
   const tok = ghToken();
-  if (!tok) return null;
-  const r = await fetch(`https://api.github.com/repos/${ghRepo()}/contents/${BACKUP_PATH}?ref=main`, {
-    headers: { Authorization: `Bearer ${tok}`, Accept: "application/vnd.github+json", "User-Agent": "sertz-accounts" },
-    signal: AbortSignal.timeout(8000),
-  });
-  if (r.status === 404) return null; // 백업 아직 없음
-  if (!r.ok) throw new Error(`GET ${r.status}`);
-  const j = await r.json();
-  return { sha: j.sha, content: j.content ? Buffer.from(j.content, "base64").toString("utf8") : "" };
+  if (tok) {
+    const r = await fetch(`https://api.github.com/repos/${ghRepo()}/contents/${BACKUP_PATH}?ref=main`, {
+      headers: { Authorization: `Bearer ${tok}`, Accept: "application/vnd.github+json", "User-Agent": "sertz-accounts" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (r.status === 404) return null; // 백업 아직 없음
+    if (!r.ok) throw new Error(`GET ${r.status}`);
+    const j = await r.json();
+    return { sha: j.sha, content: j.content ? Buffer.from(j.content, "base64").toString("utf8") : "" };
+  }
+  /* v1.4.22 (#FC복원) — 토큰 없는 배포환경(FC 패키지: .git·env 부재)에서도 복원 가능하게.
+   *  저장소가 공개이므로 raw URL은 무인증 다운로드 가능(실측 200). sha는 반환 불가 —
+   *  sha는 백업 PUT(토큰 필요)에만 쓰이므로 복원 용도로는 결측 무해. */
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/${ghRepo()}/main/${BACKUP_PATH}`, {
+      headers: { "User-Agent": "sertz-accounts" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error(`GET ${r.status}`);
+    return { sha: null, content: await r.text() };
+  } catch { return null; }
 }
 async function ghPutFile(contentB64, sha) {
   const tok = ghToken();

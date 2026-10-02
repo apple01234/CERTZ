@@ -2735,3 +2735,23 @@ Stage Summary:
 - Vercel 배포·관리가 세션/로그인 상태와 무관하게 토큰만으로 가능해짐 (배포: git 푸시 자동 or API redeploy / 관찰: status·deployments / 전환: envset)
 - 토큰 위치: .secrets/vercel_token · 사용법: scripts/vercel_api.sh (인자 없이 실행 시 도움말)
 - 라이브 상태: sertz.vercel.app 1.4.21/vc113 (재배포 후에도 정상)
+
+---
+Task ID: FC-1
+Agent: Super Z (main)
+Task: sertz11·sertz5 배포 "500 Failed" 근본 원인 규명 및 수정 — FC 부팅 트리(standalone) 소실 복원
+
+Work Log:
+- [증상 확대] 유저가 새 배포 sertz5.space-z.ai 생성 → 동일한 500 "Failed" 실측 — sertz11 고유 문제가 아니라 신규 배포 전반의 실패로 판명 전환
+- [DNS/헤더 실측] sertz4·sertz1234·sertz5 = 47.239.88.7 동일 엣지 풀 / sertz11 = 47.83.197.91 타 풀 + HEAD 410 Gone — 엣지가 아니라 배포 패키지(컨테이너) 자체가 실패
+- [근본 원인 확정] FC 배포 패키지 = .next/standalone(+static+public) — 그런데 워크스페이스 .next가 최근 Vercel용 STATIC_EXPORT 빌드로 덮여 standalone 소실 실측(export-detail.json만 존재) → 패키징 시점에 부팅 트리가 없어 "Failed". sertz4(200)는 standalone 보존 시절 생성분
+- [복원] npm run build 재실행 → standalone + fc-multi.js(339KB) + 래퍼 server.js 재생성 확인
+- [FC 동일조건 재현 검증] /tmp/fc-test에 standalone 복제(.git·루트 node_modules 부재) → bun server.js 구동 → 부팅 성공, /api/version 1.4.21/113, socket.io sid 발급, POST /api/auth/login 401(라우트 정상) 전부 실측
+- [추가 패치 #FC복원] accounts/index.js ghGetFile — 토큰 부재 시(FX 패키지엔 .git·env 없음) raw.githubusercontent.com 무인증 복원 경로 추가(공개 저장소 실측 200) → FC 재현 부팅에서 "원격 백업 복원 완료 — 계정 4명(admin·apple01234·testlogin01·logintest15)" 실측
+- [로컬 재기동] :3000 본체 재시작(pids 14926→17604) — 복원 4계정 실측, HTTP 200
+- [계정 데이터 결론] 현재 본체 db/accounts.json 부재(등록 계정 0) + GitHub 백업(accounts.enc) 자동복원 확인 → 서버 교체 시 데이터 손실 사실상 없음
+
+Stage Summary:
+- 신규 배포 "500 Failed"의 원인은 코드가 아니라 **패키징 시점 워크스페이스에 standalone 빌드가 없었던 것** — Vercel static export 빌드가 .next를 덮어쓰는 것이 트리거
+- 운용 규칙 확립: STATIC_EXPORT/APK export 빌드를 마친 뒤에는 반드시 npm run build(standalone+postbuild)로 마무리 — FC 부팅 트리 상시 유지
+- 유저 다음 액션: 플랫폼에서 sertz5 재배포(또는 신규 생성) → 이번엔 부팅될 것. 뜨면 GAME_SERVER 전환(envset)으로 마무리
