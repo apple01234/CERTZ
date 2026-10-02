@@ -2988,3 +2988,22 @@ Work Log:
 Stage Summary:
 - 포탈 줌 픽스 웹 라이브 반영 완료(sertz.vercel.app). APK는 미빌드 — 다음 APK 릴리스 시 자동 포함
 - 신규 도구: scripts/check_deploy_status.js <sha> — Vercel 토큰 없이 배포 성공 여부 확인 가능(커밋 status 조회)
+
+---
+Task ID: multi-relay-1
+Agent: Super Z (main)
+Task: 멀티·채팅 복원 요청 — 채팅/파티 UI 복원 + Vercel serverless 릴레이 배선(웹 전용, APK 미빌드)
+
+Work Log:
+- 방향 수정: 사용자가 "멀티하고 채팅 어디감??" — 이전 멀티 UI 철거가 과했다. UI는 살리고 동작만 고치는 것으로 재작업
+- 배선: net.ts가 소켓 미연결 시 relay.ts(HTTP 폴링 클라이언트, 기존 미배선 상태)로 위임 — netChatReady/multiReady/netSendChat/netPartyCreate/Join/Leave/Leave/netOnChat/netOnParty 전부 릴레이 폴백, netJoin에서 relaySetIdentity 주입
+- 라우트 복원: api/chat·api/party(8ec69d4^에서 복구) — sapi 헬퍼(audit/json/options/rateLimit) import 픽스. 헬퍼가 relaydb에 없던 게 Vercel 빌드 실패 근원이었음
+- **치명 선재 버그 픽스(#릴레이null)**: relay.ts partyCode 함수/변수 중복선언(모듈 로드 시 SyntaxError → 백화 위험) + mutateRelay가 파일 없을 때 원본 null을 PUT해 relay-chat/parties.json이 리터럴 null로 덮임(POST ok:true, GET 빈목록) → 빈 객체 치환 전달+제자리 변경 계약으로 전면 수정
+- UI 복원: GameRoot에 ChatBox/PartyWidget 복원(멀티 아이콘·ServerConnect는 철거 유지), PartyWidget multiReady 게이트+오프라인 멤버 회색 표시+실패 안내 분기
+- 검증: 로컬 next build ƒ(api/chat·party) 통과 → 푸시 2회(9ef3e08 배선, 9978fd6 null픽스) → Vercel success → 라이브 E2E 실측: 채팅 POST→GET 수신 ✓, 파티 create→코드 LVBK→스냅샷(leader/online) ✓, leave 정리 ✓
+
+Stage Summary:
+- 채팅·파티가 Vercel serverless에서 실제 동작(소켓 불필요 — GitHub-as-DB 릴레이, 폴링 5~6초/edge cache). 웹 라이브 반영 완료
+- APK는 미빌드(사용자 지시) — 현재 v1.4.26 APK에는 채팅/파티 UI 없음. 다음 APK 릴리스 시 릴레이 배선 포함됨
+- 멀티 아이콘 제거는 유지(사용자 원 요청) — 파티는 더보기 메뉴/Y키, 채팅은 좌하단 Enter
+- 알려진 한계: 릴레이는 채팅+파티 명단 동기화까지만 지원(실시간 캐릭터 렌더링·좌표 동기는 소켓 서버 필요 — 별도 과제)
