@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Globe, X } from "lucide-react";
-import { netConnect, netJoined, isElectron } from "@/game/net";
+import { netConnect, isElectron } from "@/game/net";
+import { storedServerUrl } from "@/game/server";
 
 const KEY = "sertz.server.url";
 
@@ -28,7 +29,12 @@ const KEY = "sertz.server.url";
  *  v1.4.22 — ②안 전환: 계정·거래소·랭킹 API가 Vercel serverless로 이주 (GitHub-as-DB).
  *           멀티플레이는 제외(오프라인 모드 — 소켓 시도 없음). 기본 주소는 그대로
  *           sertz.vercel.app — 이제 계정/거래소가 그 오리진에서 직접 동작한다.
- *           구 게임 서버 sertz11·sertz5는 DEAD_SERVERS로 이동 — 저장분 자동 이행. */
+ *           구 게임 서버 sertz11·sertz5는 DEAD_SERVERS로 이동 — 저장분 자동 이행.
+ *  v1.4.24 — 연결 판정 전환(②안 오타보 수정): 소켓 netJoined()는 ②안에서 영원히 false
+ *           (Vercel은 소켓 서버가 없음 — 설계상 오프라인) → 12초 후 무조건 “연결 실패”
+ *           오타보가 뜨는 유저 리포트 실측. 판정을 계정 API 헬스체크로 교체:
+ *           저장 주소 + GET {주소}/api/version(CORS * 실측 확인, 6초 타임아웃).
+ *           성공 = “서버 연결됨” / 실패만 “연결 실패”+복구 / 미저장 = “오프라인 모드”. */
 const DEFAULT_SERVER = "https://sertz.vercel.app";
 
 /* v3.2.0 — 서비스 종료/만료된 과거 기본 서버들 (자동 이행 대상)
@@ -85,7 +91,8 @@ export function ServerConnect() {
   const [saved] = useState(() => readUrl());
   const [online, setOnline] = useState(false);
   const [copied, setCopied] = useState(false);
-  /* v3.2.0 — 12초 내 미연결 시 “연결 실패” 표시 + 원탭 복구 제공 */
+  /* v3.2.0 — 미연결 시 “연결 실패” 표시 + 원탭 복구 제공
+   *  v1.4.24 — 판정 주체를 소켓(netJoined)에서 계정 API 헬스체크로 교체 (②안 오타보 수정) */
   const [connFailed, setConnFailed] = useState(false);
 
   /* v2.9 — 서버 주소가 비어 있으면 기본 서버를 자동 저장해 즉시 연결 (멀티 첫 경험 개선).
@@ -115,14 +122,41 @@ export function ServerConnect() {
 
   useEffect(() => {
     if (!native) return;
-    netConnect(); // 타이틀에서 조기 접속 → 상태 실시간 표시 (EXE: 내장 로컬 서버 or 저장 주소)
-    const t0 = Date.now();
-    const t = setInterval(() => {
-      const ok = netJoined();
-      setOnline(ok);
-      if (!ok && Date.now() - t0 > 12000) setConnFailed(true);
-    }, 1500);
-    return () => clearInterval(t);
+    netConnect(); // ②안: GAME_SERVER 빈값 → null(소켓 시도 없음). 멀티 재개 시 자동 부활
+    /* v1.4.24 — 계정 API 헬스체크로 연결 상태 판정 (소켓 판정은 ②안에서 항상 실패).
+     *  저장 주소가 없으면 오프라인 모드(의도적 상태 — 알람 아님)로 확정. */
+    let alive = true;
+    const check = async () => {
+      const base = storedServerUrl(); // 트레일링 슬래시·http 승격 정규화 완료
+      if (!base) {
+        if (alive) {
+          setOnline(false);
+          setConnFailed(false);
+        }
+        return;
+      }
+      try {
+        const ctrl = new AbortController();
+        const to = window.setTimeout(() => ctrl.abort(), 6000);
+        const res = await fetch(base + "/api/version", { cache: "no-store", signal: ctrl.signal });
+        window.clearTimeout(to);
+        if (alive) {
+          setOnline(res.ok);
+          setConnFailed(!res.ok);
+        }
+      } catch {
+        if (alive) {
+          setOnline(false);
+          setConnFailed(true);
+        }
+      }
+    };
+    void check();
+    const t = setInterval(check, 30000); // 정적 라우트(CDN) — 가벼운 재확인
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
   }, [native, saved]);
 
   if (!native) return null;
