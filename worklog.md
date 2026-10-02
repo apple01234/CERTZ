@@ -3042,3 +3042,22 @@ Work Log:
 Stage Summary:
 - 토큰 로테이션 절차 확립: (1) .secrets+루트+원격URL 3종 갱신 (2) envset(업서트+재배포 자동) (3) wait (4) E2E 3종 — 약 3분 소요
 - 주의: 사용자가 토큰을 또 취소하면 같은 장애 재발 — 토큰 발급 시 만료 No-expiration 권장 + 재발급 시 이 절차 통보
+
+---
+Task ID: chat-polling-fix
+Agent: Super Z (main)
+Task: "채팅을 입력해도 채팅이 안올라옴" — 릴레이 채팅 수신 폴링 미기동 픽스 (웹 전용)
+
+Work Log:
+- 진단: API 레벨 E2E는 통과 상태였으므로 클라이언트 경로 추적. agent-browser로 실측 — 발송 메시지가 CERTZ-DB에는 저장되는데(사용자 메시지 "ㅋㅋㅋ…" 3건 발견) 화면에 미표현
+- 원인 1(#채팅폴링): WorldScene.initNet()이 netConnect() null(소켓 없는 Vercel 배포) 시 조기 리턴 → netOnChat(=relayEnsureChatPoll) 미등록 → 수신 폴링 0. 발송 경로(netSendChat→relaySendChat)는 살아있어 DB엔 쌓이는 비대칭
+- 픽스 1(02e5315): initNet !s 분기에서도 netOnChat 등록(릴레이 폴링 기동) + delayedCall(650) netJoin 신원 주입. 플레이어/친구/액션 동기는 소켓 전용이라 생략
+- 원인 2(#채팅폴링2): netJoin이 relaySetIdentity보다 netConnect() null 리턴이 앞서 발신자명이 전부 "이름없음" — 브라우저 실측에서 발견(DB name=이름없음)
+- 픽스 2(f566928): relaySetIdentity를 netJoin 최상단으로 이동
+- 검증(agent-browser 실측): 새로고침→월드 진입→"최종확인-952" 전송 → DB name=테스터 ✓ / 화면 렌더 "테스터: 최종확인-952" ✓. 이전 세션 사용자 메시지도 히스토리로 화면 표현 확인
+- 부수 발견: 채팅 전송 버튼이 다른 레이어(div.absolute.inset-x-0)에 가려짐 — Enter 전송은 정상 동작, 모바일 UI 레이어 이슈는 별도 과제로 기록
+
+Stage Summary:
+- 릴레이 채팅 수발신 전 경로 정상화(웹 라이브). 파티도 동일 신원 경로 사용 — 발신자명 정상화 같이 적용
+- 도출: "서버리스=소켓 전제 조기리턴" 패턴이 멀티 기능 전반에 남아있을 수 있음 — 파티 위젯은 이미 multiReady 게이트라 무영향 확인
+- tsc: 신규 에러 0(login/register Resp는 기존 항목)
