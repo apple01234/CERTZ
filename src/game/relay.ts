@@ -8,7 +8,7 @@
  *  - net.ts가 소켓 미연결 시 이 모듈로 위임한다 (UI·EventBus 흐름 불변)
  */
 import { Capacitor } from "@capacitor/core";
-import { resolveApiBase, storedServerUrl } from "./server";
+import { resolveApiBase } from "./server";
 
 export type RelayChatMsg = { id: string; name: string; text: string; sys?: boolean; t: number };
 export type RelayPartySnapshot = { id: string; leader: string; max: number; members: { id: string; name: string; lv: number; cls: string | null; online: boolean }[] };
@@ -33,10 +33,9 @@ export function relaySetIdentity(v: { name: string; lv: number; cls: string | nu
   me = { name: String(v.name || "이름없음").slice(0, 8), lv: Math.max(1, Number(v.lv) || 1), cls: v.cls };
 }
 
-/** 릴레이 사용 가능 — 네이티브는 저장 서버 주소가 있어야 API 본체로 향한다 */
+/** 릴레이 사용 가능 — 네이티브는 기본 API 본체(DEFAULT_API_BASE)가 상시 존재 (v1.4.27) */
 export function relayChatReady(): boolean {
-  if (Capacitor.isNativePlatform()) return !!storedServerUrl();
-  return true; // 웹(동일 오리진 serverless)·EXE
+  return true; // 웹(동일 오리진 serverless)·EXE(내장 서버)·APK(resolveApiBase → 기본 Vercel API)
 }
 
 function base(): string {

@@ -30,7 +30,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.26/SERTZ-v1.4.26.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.27/SERTZ-v1.4.27.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -63,9 +63,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.26";
-  const LATEST_CODE = 118;
-  const VERSION_NOTE = "v1.4.26 — 변경: ①멀티 UI 철거(멀티 아이콘·파티·채팅·서버주소 설정 — 멀티플레이 제외 확정, 오프라인 모드 정리) ②자동전투 개선: 포위 시 선제 물약·HP 안전망 40%·MP 회복선 35%·후퇴 중 반격 유지 ③v1.4.25 포함: 물약·자동 버튼 공격 버튼 바로 아래 이동 · APK: GitHub 릴리스 v1.4.26";
+  const LATEST_VERSION = "1.4.27";
+  const LATEST_CODE = 119;
+  const VERSION_NOTE = "v1.4.27 — 변경: ①채팅·파티 부활(서버리스 릴레이 폴링 — Vercel 직결, 소켓 불필요) ②채팅 수신 폴링 미기동·발신자명(이름없음) 픽스 ③PC 포탈 이동 후 화면 축소 픽스 ④v1.4.26 포함: 자동전투 개선(포위 시 선제 물약·HP 안전망 40%·MP 회복선 35%·후퇴 중 반격) · APK: GitHub 릴리스 v1.4.27";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

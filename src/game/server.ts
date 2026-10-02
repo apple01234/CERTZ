@@ -19,9 +19,15 @@
  */
 
 /** 기본 게임 서버 (소켓 본체 — v1.4.22: 없음 = 오프라인 모드). API는 Vercel serverless가 담당 */
+import { Capacitor } from "@capacitor/core";
+
 export const GAME_SERVER = (
   process.env.NEXT_PUBLIC_GAME_SERVER || ""
 ).replace(/\/+$/, "");
+
+/** v1.4.27 (#APK기본API) — 네이티브 웹뷰 기본 API 본체 (ServerConnect 철거로 저장 주소가
+ *  없는 신규 설치분의 유일한 API 경로). 서버 이전 시 이 상수만 갱신하면 된다. */
+export const DEFAULT_API_BASE = "https://sertz.vercel.app";
 
 /**
  * same-origin 게임 서버 오리진 판정 — 이 오리진에서 열린 페이지는
@@ -99,7 +105,23 @@ export function resolveApiBase(): string {
   if (typeof window === "undefined") return "";
   const stored = storedServerUrl();
   if (stored) return stored;
-  if (isGameServerHost(window.location.hostname)) return "";
+  if (isGameServerHost(window.location.hostname)) {
+    /* v1.4.27 (#APK기본API) — APK 네이티브 웹뷰(https://localhost)는 자체 API 본체가 없다.
+     *  기존엔 localhost를 '게임 서버 오리진'으로 판정해 same-origin("")을 반환 → 상대경로
+     *  fetch가 로컬 WebView로 향해 404 → 계정/거래소/채팅/파티 전부 실패 (ServerConnect
+     *  철거 후엔 저장 주소도 없어 신규 설치분 전부 해당). 네이티브는 기본 Vercel API로.
+     *  EXE(Electron)는 server.js 내장이라 same-origin 유지 — userAgent로 판별(순환 import 회피). */
+    const isNative = (() => {
+      try {
+        if (/Electron/i.test(navigator.userAgent || "")) return false; // EXE는 server.js 내장 — same-origin 유지
+        return Capacitor.isNativePlatform();
+      } catch {
+        return false;
+      }
+    })();
+    if (isNative) return DEFAULT_API_BASE;
+    return "";
+  }
   if (isStaticMirrorHost(window.location.hostname)) return ""; // v1.4.22 — serverless API same-origin
   return GAME_SERVER;
 }

@@ -12,7 +12,8 @@ echo "[0] node server.js kill (OOM 방지)"
 pkill -f "node server.js" 2>/dev/null; sleep 1
 
 HOLD="$PROJECT_ROOT/.apk-hold/api-routes"
-ROUTES="admin auth market rank support"
+# v1.4.27 — 릴레이 채팅/파티 라우트도 격리(동적 라우트 — output:export 충돌)
+ROUTES="admin auth market rank support chat party"
 
 cleanup() {
   echo "[cleanup] 라우트 복원 (절대경로)"
