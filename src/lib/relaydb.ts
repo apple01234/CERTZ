@@ -91,11 +91,16 @@ export async function mutateRelay<T>(path: string, fn: (data: T) => RelayResp | 
   const busy: RelayResp = { status: 503, body: { error: "서버가 바빠요 — 잠시 후 다시 시도해 주세요" } };
   for (let i = 0; i < 4; i++) {
     const { data, sha } = await loadRelay<T>(path, 0); // 쓰기 전엔 항상 fresh
-    const early = fn(data as T);
+    /* v1.4.27-w2 픽스 (#릴레이null) — 파일이 없으면 data가 null로 들어왔고, 라우트 mutator가
+     * '새 객체 생성'으로 빠져 그 객체에 추가한 뒤 원본(null)이 PUT돼 파일이 리터럴 null로
+     * 덮여써졌다 (POST ok:true인데 GET이 빈 목록이던 근원). → null/비객체를 빈 객체로 치환해
+     * 전달하고, PUT도 전달한 그 참조를 쓴다. mutator는 전달받은 객체를 제자리 변경해야 한다. */
+    const cur = ((data && typeof data === "object" ? data : {}) as T);
+    const early = fn(cur);
     if (early) return early;
-    const put = await relayPut(path, data, sha);
+    const put = await relayPut(path, cur, sha);
     if (put.ok) {
-      caches.set(path, { json: data, sha: put.sha, at: Date.now() });
+      caches.set(path, { json: cur, sha: put.sha, at: Date.now() });
       return { status: 200, body: { ok: true } };
     }
     if (!put.conflict) return { status: 503, body: { error: "서버 저장에 실패했어요 — 잠시 후 다시 시도" } };

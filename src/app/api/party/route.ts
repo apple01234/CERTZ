@@ -82,11 +82,13 @@ export async function POST(req: NextRequest) {
 
     if (action === "beat") {
       if (!rateLimit(req, "party-beat", 3, 60 * 1000)) return json(req, 429, { error: "busy" });
-      const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (db) => {
-        if (!db?.parties) return null;
-        prune(db, now);
+      /* v1.4.27-w2 (#릴레이null) — mutator는 전달받은 객체를 제자리 변경 (빈 객체 전달 대응) */
+      const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (raw) => {
+        const d = (raw && typeof raw === "object" ? raw : {}) as RelayPartyFile;
+        if (!d.parties || typeof d.parties !== "object") return { status: 404, body: { error: "파티가 없어요" } };
+        prune(d, now);
         if (!code) return { status: 400, body: { error: "코드 없음" } };
-        const p = db.parties[code];
+        const p = d.parties[code];
         const m = p?.members[cid];
         if (!p || !m) return { status: 404, body: { error: "파티가 없어요" } };
         m.seenAt = now;
@@ -100,9 +102,9 @@ export async function POST(req: NextRequest) {
     if (action === "create") {
       if (!rateLimit(req, "party-create", 3, 60 * 1000)) return json(req, 429, { error: "요청이 너무 많아요" });
       let newCode = "";
-      const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (db) => {
-        const d = db?.parties ? db : emptyParties();
-        d.parties ||= {};
+      const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (raw) => {
+        const d = (raw && typeof raw === "object" ? raw : {}) as RelayPartyFile;
+        if (!d.parties || typeof d.parties !== "object") d.parties = {};
         prune(d, now);
         /* 1인 1파티 — 기존 파티에서 탈퇴 */
         for (const [c, p] of Object.entries(d.parties)) {
@@ -125,9 +127,9 @@ export async function POST(req: NextRequest) {
     if (action === "join") {
       if (!rateLimit(req, "party-join", 6, 60 * 1000)) return json(req, 429, { error: "요청이 너무 많아요" });
       if (!/^[A-Z0-9]{4,8}$/.test(code)) return json(req, 400, { error: "코드 형식이 틀렸어요" });
-      const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (db) => {
-        const d = db?.parties ? db : emptyParties();
-        d.parties ||= {};
+      const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (raw) => {
+        const d = (raw && typeof raw === "object" ? raw : {}) as RelayPartyFile;
+        if (!d.parties || typeof d.parties !== "object") d.parties = {};
         prune(d, now);
         const p = d.parties[code];
         if (!p) return { status: 404, body: { error: "없는 파티 코드예요" } };
@@ -149,12 +151,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "leave") {
-      const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (db) => {
-        if (!db?.parties) return { status: 404, body: { error: "파티가 없어요" } };
-        for (const [c, p] of Object.entries(db.parties)) {
+      const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (raw) => {
+        const d = (raw && typeof raw === "object" ? raw : {}) as RelayPartyFile;
+        if (!d.parties || typeof d.parties !== "object") return { status: 404, body: { error: "파티가 없어요" } };
+        for (const [c, p] of Object.entries(d.parties)) {
           if (!p.members[cid]) continue;
           delete p.members[cid];
-          if (Object.keys(p.members).length === 0) { delete db.parties[c]; break; }
+          if (Object.keys(p.members).length === 0) { delete d.parties[c]; break; }
           if (p.leader === cid) {
             /* 최장 입장자 승계 */
             const next = Object.entries(p.members).sort((a, z) => a[1].joinedAt - z[1].joinedAt)[0];

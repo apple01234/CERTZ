@@ -57,11 +57,14 @@ export async function POST(req: NextRequest) {
       return json(req, 400, { error: "잘못된 요청이에요" });
     }
     const msg: RelayChatMsg = { id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name, text, cls, lv, t: Date.now() };
-    const r = await mutateRelay<RelayChatFile>(CHAT_PATH, (db) => {
-      const d = db && Array.isArray(db.global) ? db : emptyChat();
-      d.global ||= [];
+    /* v1.4.27-w2 (#릴레이null) — mutator는 전달받은 객체를 '제자리 변경'해야 한다.
+     *  기존 `const d = db && ... ? db : emptyChat()` 패턴은 파일 없을 때 새 객체에만
+     *  메시지를 붙여 원본 null이 PUT됐다 (파일이 리터럴 null로 덮이는 버그). */
+    const r = await mutateRelay<RelayChatFile>(CHAT_PATH, (raw) => {
+      const d = (raw && typeof raw === "object" ? raw : {}) as RelayChatFile;
+      if (!Array.isArray(d.global)) d.global = [];
+      if (!d.party || typeof d.party !== "object" || Array.isArray(d.party)) d.party = {};
       if (party) {
-        d.party ||= {};
         const arr = d.party[party] || [];
         arr.push(msg);
         const cut = Date.now() - PARTY_CHAT_TTL_MS;
