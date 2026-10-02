@@ -2930,3 +2930,22 @@ Stage Summary:
 - 최종 관리자 자격증명: admin / admin123, apple01234 / admin123 (둘 다 role=admin, 라이브 Vercel API 실측 통과)
 - .secrets/github_token 소실 확인 — 이후 세션은 git remote URL 폴백 사용하거나 재생성 필요
 - GM NPC·관리자 UI는 이 계정 로그인 시 즉시 활성화(authMe 롤 기준)
+
+---
+Task ID: multi-cleanup-1
+Agent: Super Z (main)
+Task: 4건 보고 처리 — ①멀티 아이콘 제거 ②파티 창설 버그 ③자동전투 개선 ④채팅 불가
+
+Work Log:
+- 원인 확정: 채팅(ChatBox)·파티(PartyWidget)·서버주소 설정(ServerConnect) 모두 net.ts socket.io 릴레이 의존 → Vercel serverless(②안)에서 원리적 불가. api/chat, api/party 라우트는 존재하나 클라이언트가 미사용
+- HUD.tsx: 멀티 아이콘·파티 아이콘 버튼 삭제, Globe import 제거(Users는 더보기 메뉴에서 계속 사용)
+- GameRoot.tsx: ChatBox/PartyWidget/ServerConnect 렌더 중단(주석 보존 — 멀티 재개 시 복원점), import 주석화
+- WorldScene.ts: initNet 오프라인 배너 제거(설정창 철거로 안내 경로 소실)
+- 자동전투 튜닝: autoPotion ①포위(160px 2체) 시 HP60% 선제 물약 ②안전망 35→40% ③MP선 25→35% / 근접 후퇴 중 attackQueued false→true(반격 유지)
+- tsc --noEmit: 수정 파일 에러 0 (relay.ts/sapi.ts 등 선재 에러는 ignoreBuildErrors로 무시되는 기존 상태)
+- 커밋 ba696fb push → Vercel production 자동배포, 라이브 HTTP 200 확인
+
+Stage Summary:
+- 웹(sertz.vercel.app)에는 즉시 반영 완료. 멀티 UI 전면 철거로 "채팅/파티/멀티 아이콘" 3건 해소
+- 자동전투는 1차 튜닝(물약·후퇴반격) 적용, 추가 튜닝 여지 있음
+- 미반영: APK는 Capacitor 번들라 웹을 내장하므로 재빌드 필요 → v1.4.24/vc116 빌드 시 HUD/게임 로직 반영 + 게이트 2종·build.gradle·apk-guide 동기 필수
