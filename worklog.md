@@ -3061,3 +3061,24 @@ Stage Summary:
 - 릴레이 채팅 수발신 전 경로 정상화(웹 라이브). 파티도 동일 신원 경로 사용 — 발신자명 정상화 같이 적용
 - 도출: "서버리스=소켓 전제 조기리턴" 패턴이 멀티 기능 전반에 남아있을 수 있음 — 파티 위젯은 이미 multiReady 게이트라 무영향 확인
 - tsc: 신규 에러 0(login/register Resp는 기존 항목)
+
+---
+Task ID: release-1-4-27
+Agent: Super Z (main)
+Task: v1.4.27/vc119 APK 릴리스 — 채팅·파티 부활(릴레이 폴링) + 픽스 전반 APK 반영
+
+Work Log:
+- 환경 재구축: JDK 21.0.12.1(scripts/rebuild_jdk.sh 신설) + Android SDK(cmdline-tools+android-36+build-tools 35/36 — scripts/rebuild_sdk.sh 신설) — repo 커밋해 다음 세션 재사용 가능
+- 1차 빌드 실패: 복원된 api/chat·party가 output:export와 충돌(동적 라우트) → build_apk.sh 격리 목록에 chat·party 추가
+- **#APK기본API 구조 버그 발견·픽스(src/game/server.ts)**: 네이티브 웹뷰(https://localhost)가 isGameServerHost 매칭으로 same-origin("") 반환 → 상대경로 fetch가 로컬 WebView로 향해 404 → 계정/거래소/채팅/파티 전체 실패. ServerConnect 철거로 저장 주소도 없어 신규 설치분 전부 해당(v1.4.24~26 잠재 버그 — "로그인 안됨" 보고의 APK측 근원으로 추정). DEFAULT_API_BASE(sertz.vercel.app) 상수 신설 + 네이티브 판정(Electron userAgent 제외 — EXE는 server.js 내장) 후 기본 본체 반환. relay.ts relayChatReady는 상시 true로 단순화
+- 재빌드: BUILD SUCCESSFUL 4m26s · 135,551,516B · aapt vc119/1.4.27 · apksigner SHA-256 cc774f34(동일 키)
+- 버전 승격 4종: package.json 1.4.27 · build.gradle vc119/1.4.27 · 게이트 2종(server.js·route.ts) 1.4.27/119+신규 URL · apk-guide.html(md5 e8b7e111/sha1 13af522d/135551516B/vc119+변경점 블록)
+- 푸시: 원격에 DB 백업 자동커밋(3f08d9b) 있어 rebase 후 02191b8 푸시 → Vercel READY → 라이브 게이트 1.4.27/119+apk URL 확인
+- 릴리스: scripts/release_1_4_27.js — 릴리스 생성은 성공, 135MB 스트리밍 업로드만 undici fetch 실패 반복 → curl --data-binary로 업로드 전환 → uploaded 135,551,516B
+- 검증: 릴리스 APK 공개 다운로드 200(135,551,516B) ✓ · 게이트 apk URL 일치 ✓ · apk-guide 라이브 v1.4.27 ✓ · 홈 200 ✓
+
+Stage Summary:
+- v1.4.27 출시: https://github.com/apple01234/CERTZ/releases/download/v1.4.27/SERTZ-v1.4.27.apk
+- 포함: 채팅·파티 부활(릴레이 폴링) + 수신 폴링/발신자명 픽스 + 포탈 줌 픽스 + #APK기본API + v1.4.26 자동전투 튜닝
+- 환경 장애 기록: .secrets 디렉터리 통째 소실(원인 불명, 10:00 전후) — 토큰 2종 컨텍스트에서 재생성·검증(200). github_token은 git remote URL에도 내장돼 있어 git 조작은 무영향
+- undici 대용량 업로드(fetch+createReadStream+duplex) 불안정 — 100MB+ 업로드는 curl 권장
