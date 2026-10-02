@@ -18,11 +18,13 @@ const JOY_RADIUS = 64;
  *  극좌표 헬퍼: 각도(°)와 반경(px) → 버튼 left/top (버튼 중심 기준) */
 const ARC = {
   /** 컨테이너 크기 (sm: 태블림/PC 확대) */
-  /* v1.4.18 (#4) — 공격 버튼 재코너화+대형화(84→100/96→112)에 맞춰 컨테이너 재확대 */
+  /* v1.4.18 (#4) — 공격 버튼 재코너화+대형화(84→100/96→112)에 맞춰 컨테이너 재확대
+   * v1.4.25 (#물약거리) — h 294→340/hSm 336→382: 물약·자동을 공격 버튼 바로 아래로
+   *   내리면서(와일드리프트 스펠 자리) MP 하단 y 336 → 컨테이너 340 필요 */
   w: 306,
-  h: 294,
+  h: 340,
   wSm: 348,
-  hSm: 336,
+  hSm: 382,
   /** 스킬 반경 — 공격 버튼 중심에서 스킬 버튼 중심까지 */
   r: 94,
   rSm: 108,
@@ -241,45 +243,54 @@ export function TouchControls({
   /* v1.4.14 (#4) — 스킬 버튼 지름 확대: 46→56 (모바일) / 54→66 (PC) */
   const SK = sm ? 66 : 56; // 스킬 버튼 지름 (확대)
 
-  /* v1.4.19 — 자동사냥+물약 버튼 묶음 (컨테이너 내부/플로팅 양쪽에서 재사용) */
-  const clusterButtons = (
-    <>
-      {canAutoHunt && (
-        <button
-          aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
-          className={`relative flex h-10 w-10 shrink-0 touch-none select-none items-center justify-center rounded-full border-2 shadow-lg transition-transform active:scale-90 sm:h-12 sm:w-12 ${
-            autoHunt
-              ? "border-lime-200/80 bg-gradient-to-b from-lime-500 to-emerald-700 text-white animate-pulse"
-              : "border-white/25 bg-slate-800/85 text-white/80"
-          }`}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            EventBus.emit("rpg:autohunt", {});
-          }}
-        >
-          {autoHunt ? <Pause size={17} /> : <Bot size={17} />}
-          <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/80">
-            {autoHunt ? "자동중" : "자동"}
-          </span>
-        </button>
-      )}
-      <PotionButton
-        kind="hp"
-        count={hpPot}
-        itemKey={quickPots?.hp ?? "potion_hp"}
-        itemCount={potCount?.(quickPots?.hp ?? "potion_hp") ?? hpPot}
-        tint="from-rose-500 to-rose-700 border-rose-200/70"
-        onDown={() => EventBus.emit("rpg:use", { kind: "hp" })}
-      />
-      <PotionButton
-        kind="mp"
-        count={mpPot}
-        itemKey={quickPots?.mp ?? "potion_mp"}
-        itemCount={potCount?.(quickPots?.mp ?? "potion_mp") ?? mpPot}
-        tint="from-sky-500 to-blue-800 border-sky-200/70"
-        onDown={() => EventBus.emit("rpg:use", { kind: "mp" })}
-      />
-    </>
+  /* ═══ v1.4.25 (#물약거리 "모바일에서 기본공격 키와 물약키가 너무 멀어") ═══
+   *  기존: 클러스터가 컨테이너 좌하단(left-0 bottom-0) → 공격 버튼(코너 250,240)에서 MP 물약까지 230px —
+   *        엄지가 화면을 횡단해야 함(스크린샷 실측 일치).
+   *  신규: 와일드리프트 스펠 자리처럼 공격 버튼 바로 아래-왼쪽에 개별 절대배치.
+   *        자동 중심 (CCX-126, CCY+64) / HP (CCX-46, CCY+74) / MP (CCX+2, CCY+74)
+   *        → 최원거리 74px(기존 230px). PC(sm)는 좌표도 ×1.12(PSC) 동일 위상.
+   *  원 간섭 검증(모바일): 자동(124,304,r20)-s1(160,266,r28) 52.3>48 ✓
+   *        HP(204,314,r22)-s1 65>50 ✓ · MP(252,314,r22)-공격(250,240,r50) 74>72 ✓
+   *        HP-MP 48>44 ✓ · MP 하단 336≤CH 340 ✓ (sm: MP-공격 84>82 ✓ · 하단 376≤382 ✓) */
+  const PSC = sm ? 1.12 : 1;
+  const autoBtn = canAutoHunt ? (
+    <button
+      aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
+      className={`relative flex h-10 w-10 shrink-0 touch-none select-none items-center justify-center rounded-full border-2 shadow-lg transition-transform active:scale-90 sm:h-12 sm:w-12 ${
+        autoHunt
+          ? "border-lime-200/80 bg-gradient-to-b from-lime-500 to-emerald-700 text-white animate-pulse"
+          : "border-white/25 bg-slate-800/85 text-white/80"
+      }`}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        EventBus.emit("rpg:autohunt", {});
+      }}
+    >
+      {autoHunt ? <Pause size={17} /> : <Bot size={17} />}
+      <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/80">
+        {autoHunt ? "자동중" : "자동"}
+      </span>
+    </button>
+  ) : null;
+  const hpBtn = (
+    <PotionButton
+      kind="hp"
+      count={hpPot}
+      itemKey={quickPots?.hp ?? "potion_hp"}
+      itemCount={potCount?.(quickPots?.hp ?? "potion_hp") ?? hpPot}
+      tint="from-rose-500 to-rose-700 border-rose-200/70"
+      onDown={() => EventBus.emit("rpg:use", { kind: "hp" })}
+    />
+  );
+  const mpBtn = (
+    <PotionButton
+      kind="mp"
+      count={mpPot}
+      itemKey={quickPots?.mp ?? "potion_mp"}
+      itemCount={potCount?.(quickPots?.mp ?? "potion_mp") ?? mpPot}
+      tint="from-sky-500 to-blue-800 border-sky-200/70"
+      onDown={() => EventBus.emit("rpg:use", { kind: "mp" })}
+    />
   );
 
   return (
@@ -387,13 +398,23 @@ export function TouchControls({
             <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
           </div>
         </button>
-        {/* 자동전투 + 물약 퀵슬롯 — 좌하단 세로 클러스터 (와일드리프트 소환사 주문 자리 역할)
-         *  v1.4.19 — 넓은 화면(가로/태블릿)에서만 컨테이너 좌하단 유지.
-         *  좁은 세로 화면은 clusterFloat로 아크 위 가로열 이동 — 조이스틱 겹침 제거 */}
+        {/* 자동전투 + 물약 퀵슬롯 — v1.4.25: 공격 버튼 바로 아래-왼쪽 (와일드리프트 스펠 자리)
+         *  기존 좌하단 클러스터는 공격 버튼에서 230px — "물약키가 너무 멀다" 픽스.
+         *  좁은 세로 화면(clusterFloat)은 아크 위 가로열 플로팅 유지 */}
         {!clusterFloat && (
-        <div className="pointer-events-auto absolute bottom-0 left-0 flex flex-col gap-1.5">
-          {clusterButtons}
-        </div>
+        <>
+          {autoBtn && (
+            <div className="pointer-events-auto absolute" style={{ left: CCX - Math.round(146 * PSC), top: CCY + Math.round(44 * PSC) }}>
+              {autoBtn}
+            </div>
+          )}
+          <div className="pointer-events-auto absolute" style={{ left: CCX - Math.round(68 * PSC), top: CCY + Math.round(52 * PSC) }}>
+            {hpBtn}
+          </div>
+          <div className="pointer-events-auto absolute" style={{ left: CCX - Math.round(20 * PSC), top: CCY + Math.round(52 * PSC) }}>
+            {mpBtn}
+          </div>
+        </>
         )}
       </div>
 
@@ -408,7 +429,9 @@ export function TouchControls({
             bottom: `calc(max(0.75rem, env(safe-area-inset-bottom)) + ${CH + 8}px)`,
           }}
         >
-          {clusterButtons}
+          {autoBtn}
+          {hpBtn}
+          {mpBtn}
         </div>
       )}
     </>

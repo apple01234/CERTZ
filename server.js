@@ -30,7 +30,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.24/SERTZ-v1.4.24.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.4.25/SERTZ-v1.4.25.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -63,9 +63,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.24";
-  const LATEST_CODE = 116;
-  const VERSION_NOTE = "v1.4.24 — 변경: ①APK 연결 상태 표시 수정 — 소켓 판정(②안에서 항상 실패 → 무조건 “연결 실패” 오타보)을 계정 API 헬스체크로 교체, 서버 정상 시 “서버 연결됨” 표시 ②v1.4.23 포함: 이동·스킬 시 검은 화면 반짝임 수정·계정/거래소 Vercel 직결 · APK: GitHub 릴리스 v1.4.24";
+  const LATEST_VERSION = "1.4.25";
+  const LATEST_CODE = 117;
+  const VERSION_NOTE = "v1.4.25 — 변경: ①모바일 물약·자동 버튼을 기본공격 버튼 바로 아래로 이동(기존 화면 반대편 230px → 74px, 엄지 도달 거리 픽스) ②v1.4.24 포함: APK 연결 상태 표시 수정(계정 API 헬스체크) ③v1.4.23 포함: 이동·스킬 시 검은 화면 반짝임 수정 · APK: GitHub 릴리스 v1.4.25";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
