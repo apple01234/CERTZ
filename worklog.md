@@ -3027,3 +3027,18 @@ Stage Summary:
 - admin / sertz2026! 로그인 가능(role=admin — GM NPC 등장). apple01234 관리자 계정은 비번 미상 — 요청 시 동일 스크립트로 리셋 가능
 - fantasticpie 계정은 실사용으로 보고 미조작
 - 교훈: 토큰 재발급 시 Vercel env 동기 갱신 필수(envset이 자동 재배포까지 처리). .secrets/vercel_token 소실 대비 vercel_api.sh에 팀/프로젝트 ID 하드코딩돼 있어 토큰만 있으면 복구 가능
+
+---
+Task ID: token-incident-2
+Agent: Super Z (main)
+Task: 토큰 2차 교체 — ghp_VCDM 취소 → ghp_cKlE로 전체 체인 재적용
+
+Work Log:
+- 구토큰 ghp_VCDM 401 확인(사용자 취소) → Vercel env 재사망 상태로 즉시 감지
+- 신규 ghp_cKlE 저장(.secrets/github_token + 루트 github_token + 원격 URL) · CERTZ/CERTZ-DB 200 검증
+- vercel_api.sh envset GITHUB_TOKEN → created:1 → 재배포 dpl_7fCpBK… READY
+- E2E 재전수: 채팅 POST/GET ✓ · 파티 create(92FZ)/leave ✓ · admin 로그인 200 ✓
+
+Stage Summary:
+- 토큰 로테이션 절차 확립: (1) .secrets+루트+원격URL 3종 갱신 (2) envset(업서트+재배포 자동) (3) wait (4) E2E 3종 — 약 3분 소요
+- 주의: 사용자가 토큰을 또 취소하면 같은 장애 재발 — 토큰 발급 시 만료 No-expiration 권장 + 재발급 시 이 절차 통보
