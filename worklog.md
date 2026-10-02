@@ -3007,3 +3007,23 @@ Stage Summary:
 - APK는 미빌드(사용자 지시) — 현재 v1.4.26 APK에는 채팅/파티 UI 없음. 다음 APK 릴리스 시 릴레이 배선 포함됨
 - 멀티 아이콘 제거는 유지(사용자 원 요청) — 파티는 더보기 메뉴/Y키, 채팅은 좌하단 Enter
 - 알려진 한계: 릴레이는 채팅+파티 명단 동기화까지만 지원(실시간 캐릭터 렌더링·좌표 동기는 소켓 서버 필요 — 별도 과제)
+
+---
+Task ID: token-incident-1
+Agent: Super Z (main)
+Task: Vercel env GITHUB_TOKEN 사망 장애 복구 + admin 비번 리셋 (사용자 토큰 재발급 여파)
+
+Work Log:
+- 증상: 채팅 POST 500 / GET 빈목록(에러 삼킴) / 로그인 전면 실패 — 단, DB 파일엔 데이터 존재
+- 진단: 08:06 E2E 성공 → 사용자 구토큰 취소(재발급) → 08:23부터 500. 배포 코드(c2e00b2=worklog만 변경) 동일 → 유일 변인 = 토큰. Vercel env GITHUB_TOKEN 사망 확정
+- 사용자 제공 토큰 2종 처리: 신규 GitHub PAT(.secrets/github_token + 원격 URL 갱신 + 루트 github_token 로컬 dev용 생성) / Vercel 토큰 vcp_(.secrets/vercel_token — 컨테이너 리셋으로 소실했던 것 복구)
+- 신규 PAT 권한 검증: CERTZ-DB 읽기 200 + 쓰기 201(스크래치 파일 PUT/DELETE) — fine-grained 쓰기 스코프 정상
+- 복구: scripts/vercel_api.sh envset GITHUB_TOKEN <신규PAT> → upsert created:1 → 재배포 dpl_4PA5CC… READY (envset 재배포 파서에 exit 1 오타 있으나 트리거 자체는 성공 — 추후 수정 여지)
+- E2E 전수: 채팅 POST ok→GET 수신 ✓ / 파티 create→코드 QEFN→스냅샷(leader/online)→leave ✓ / 로그인 401(계정없음)→200(정상) ✓
+- admin 비번 리셋: scripts/db_accounts_list.js 신설 — accounts.enc SZBK1(AES-256-GCM, 키=sha256("sertz-accounts-backup::v1") 기본값 — Vercel env에 SERTZ_BACKUP_KEY 없음 확인) 로컬 복호화. 주의: 파일이 base64 텍스트라 API content 1차 디코딩 + SZBK1 2차 디코딩 필요. admin 비번 sertz2026! 로 리셋 → 라이브 로그인 200(role=admin) 검증
+
+Stage Summary:
+- 전면 장애 복구 완료: 채팅·파티·계정·클라우드세이브 전부 라이브 정상
+- admin / sertz2026! 로그인 가능(role=admin — GM NPC 등장). apple01234 관리자 계정은 비번 미상 — 요청 시 동일 스크립트로 리셋 가능
+- fantasticpie 계정은 실사용으로 보고 미조작
+- 교훈: 토큰 재발급 시 Vercel env 동기 갱신 필수(envset이 자동 재배포까지 처리). .secrets/vercel_token 소실 대비 vercel_api.sh에 팀/프로젝트 ID 하드코딩돼 있어 토큰만 있으면 복구 가능
