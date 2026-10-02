@@ -2755,3 +2755,26 @@ Stage Summary:
 - 신규 배포 "500 Failed"의 원인은 코드가 아니라 **패키징 시점 워크스페이스에 standalone 빌드가 없었던 것** — Vercel static export 빌드가 .next를 덮어쓰는 것이 트리거
 - 운용 규칙 확립: STATIC_EXPORT/APK export 빌드를 마친 뒤에는 반드시 npm run build(standalone+postbuild)로 마무리 — FC 부팅 트리 상시 유지
 - 유저 다음 액션: 플랫폼에서 sertz5 재배포(또는 신규 생성) → 이번엔 부팅될 것. 뜨면 GAME_SERVER 전환(envset)으로 마무리
+
+---
+Task ID: FC-2
+Agent: Super Z (main)
+Task: GitHub 토큰 등록 + FC 패키지 계정 백업 인증 복원 (유저가 ghp_ 토큰 전달) — #FC백업토큰
+
+Work Log:
+- [토큰 검증] 유저 전달 ghp_ 토큰 = apple01234(id 111742198) 유효, x-oauth-scopes repo+workflow 포함 풀권한 실측. .secrets/github_token 저장(gitignore 확인, chmod 600)
+- [remote 갱신] 기존 remote URL 내장 토큰과 상이함 확인(구 토큰도 ls-remote 유효) → remote set-url로 신규 토큰 교체 — git push 신규 토큰으로 실측 성공(915b719)
+- [플랫폼 부트 구조 규명] /start.sh 해석: FC 컨테이너는 /home/sync/repo.tar 스냅숏 복원으로 부팅, .env는 부팅마다 DATABASE_URL로 강제 덮어씀(토큰 운반 불가), .zscripts 부재 시 bun run dev(루트 server.js) 폴백. gitignore auto-heal 트리거(upload/+download/+db/ 3종 동시)는 미해당 — .secrets/ 방어선 안전
+- [갭 확정] FC 패키지엔 .git·env 부재 → ghPutFile(백업 쓰기) 인증 불가가 유일한 미해결 갭(FC-1에서 무인증 복원만 확보된 상태)
+- [패치 3건] ① accounts/index.js ghToken() — env 다음 순위로 cwd/github_token 파일 직독 경로 추가(.env 덮어쓰기·모듈 로드 순서와 무관하게 확정적, 로그 1회) ② postbuild.js 5단계 — .secrets/github_token → standalone/github_token 복사(재빌드마다 자동 심김) ③ .gitignore /github_token 추가(플랫폼 git add -A 유출 방어)
+- [루트 토큰 파일] /home/z/my-project/github_token 배치(bun run dev 폴백 경로용 cwd 커버) — gitignore 확인
+- [재빌드] npm run build → fc-multi.js 339KB 재번들(패치 포함) + "github_token → standalone 복사 완료" 로그 실측
+- [FC 동일조건 재현 검증] .secrets/_fc_test(번역 디렉터리, .git·루트 node_modules·.env 부재) + bun server.js → "백업 토큰 로드: github_token 파일" + 원격 복원 4계정 + socket.io sid + /api/version 1.4.21/113 + login 401 전부 실측 통과
+- [로컬 재기동] :3000 본체 재시작(pids 17604→18300) — 1.4.21/113, 복원 4계정, 토큰 파일 로드, 소켓 정상
+- [커밋] 915b719 푸시(신규 토큰으로) → Vercel 자동 배포 트리거(미러 기능 변화 없음)
+
+Stage Summary:
+- 계정 백업 체계 완성: 이제 신규 FC 배포(sertz5)도 부팅 즉시 GitHub 백업 쓰기 인증 확보 — 서버 교체 시 계정 데이터 원격 생존 경로가 복원뿐 아니라 백업까지 겸비
+- 토큰 3중 경로: env GITHUB_TOKEN → cwd/github_token 파일(FC용) → .git/config(로컬용)
+- 토큰 보안: .secrets/·/github_token 전부 gitignore 검증 완료, 공개 repo 유출 경로 없음. 토큰 스코프가 넓어(user/admin:org 등) 추후 fine-grained PAT(Contents RW on CERTZ 한정) 교체 권장
+- 라이브 상태: 로컬 :3000 1.4.21/113 정상 / sertz11=Recycled(소멸) / sertz5=Failed(수정 전 생성분) — 유저가 플랫폼에서 sertz5 재배포하면 이번엔 부팅+백업인증 모두 준비됨. 뜨는 즉시 envset으로 GAME_SERVER 전환 → 이후 APK v1.4.22(게임서버 sertz5 인라인 + DEAD_SERVERS sertz11 추가)
