@@ -2972,3 +2972,19 @@ Stage Summary:
 - Vercel 빌드 실패 원인(죽은 라우트) 제거로 웹 배포 체계 정상화
 - 신규 환경 메모: JDK 21 필수(capacitor 8.5), SDK는 매 세션 재구축, build_apk.sh repo 커밋됨
 - 미해결 잠재 이슈(기록): 세로 좁은 화면(clusterFloat) 물약 버튼 위치 재설계 여지
+
+---
+Task ID: portal-zoom-1
+Agent: Super Z (main)
+Task: 웹 전용 픽스 — PC 포탈 이동 후 화면 축소(줌아웃) 버그
+
+Work Log:
+- 원인 확정: 포탈 = scene.restart() → 카메라는 새로 생성(줌 1 초기화)인데 applyCameraZoom의 zoomLastH가 인스턴스에 잔존 → "dh<96 노이즈 무시" 조기 리턴 → 줌 재적용 누락. PC(innerHeight/560≈1.5~1.75)에서 줌 1로 고정돼 맵 축소 체감. 실내(*1.45 줌)·모바일도 동일 영향
+- 픽스: WorldScene.cleanup()에 zoomTimer remove + zoomLastH/zoomLastW 리셋 추가 → 다음 create가 '최초 적용' 경로(즉시 setZoom) 탐
+- tsc --noEmit: WorldScene/PhaserGame 에러 0 (sapi.ts는 기존 무시 항목)
+- 커밋 326a380 push(웹 전용 — APK 미빌드, 게이트 버전 무변경)
+- 검증: scripts/check_deploy_status.js 신설 — GitHub commit status로 Vercel 배포 판별(토큰 폴백) → "Vercel | success | Deployment has completed" 확인
+
+Stage Summary:
+- 포탈 줌 픽스 웹 라이브 반영 완료(sertz.vercel.app). APK는 미빌드 — 다음 APK 릴리스 시 자동 포함
+- 신규 도구: scripts/check_deploy_status.js <sha> — Vercel 토큰 없이 배포 성공 여부 확인 가능(커밋 status 조회)
