@@ -12743,6 +12743,17 @@ export class WorldScene extends Phaser.Scene {
   private cleanup() {
     this.questTimer?.remove();
     this.scale.off("resize", this.applyCameraZoom, this);
+    /* v1.4.26-w2 (#포탈줌) — 씬 정리 시 줌 추적 상태 초기화.
+     *  scene.restart는 같은 인스턴스를 재사용해 zoomLastH/zoomLastW가 남고, 카메라는
+     *  새로 만들어져 줌 1로 돌아온다. 이 상태로 create의 applyCameraZoom이
+     *  "dh<96 노이즈 무시" 조기 리턴을 타면 줌이 재적용되지 않아 포탈 이동 직후
+     *  화면이 줌 1(맵 축소)로 고정됐다 — PC(innerHeight/560 ≈ 1.5~1.75)에서 특히
+     *  크게 체감. → 추적값을 0으로 되돌려 다음 create가 '최초 적용' 경로를 타게
+     *  한다(즉시 setZoom — 첫 적용은 디바운스 없이 즉시가 설계 의도). */
+    this.zoomTimer?.remove();
+    this.zoomTimer = null;
+    this.zoomLastH = 0;
+    this.zoomLastW = 0;
     /* v1.4.23 (#반짝임) — GPU 불안정 리스너 해제 */
     window.removeEventListener("sertz:gpu-unstable", this.onGpuUnstable);
     /* v1.3.1 (#8) — visibilitychange 리스너 해제 (씬 재시작 후 중복 실행 방지) */
