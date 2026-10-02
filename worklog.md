@@ -2856,3 +2856,23 @@ Stage Summary:
 - 반짝임은 기기별 GPU/WebView 조합 의존성이 강해 헤드리스 재현 불가였으나, 3겹 방어선으로 "유실 반복 GPU"와 "desynchronized 캔버스" 양쪽 경로 모두 차단. 본체 v1.4.23 커밋 38439ed push 완료 → Vercel 자동 배포
 - 유저 안내: 웹(sertz.vercel.app)은 새로고침 시 적용. APK는 차기 빌드(v1.4.22/23 게이트 승격 시) 반영
 - 잔여: 유저 재확인 필요 — 반짝임이 설정 "그래픽 효과: 항상 높음"에서만 발생하는지, 절전에서도 발생하는지에 따라 후속 분기
+---
+Task ID: APK-23
+Agent: Super Z (main)
+Task: APK v1.4.23 빌드·릴리스 — 깜빠임 픽스(FLK-1) + ②안 Vercel 직결 게이트 승격 (유저 지시 "Apk 빌드좀")
+
+Work Log:
+- 컨테이너 복원 후유증 복구: node_modules 재설치, JDK 21(adoptium API 프록시가 병목 0.38MB/s → GitHub 릴리스 직결 6.9MB/s로 우회, /home/z/jdk), Android SDK(cmdline-tools·platform-36·build-tools 35.0.0, dl.google.com 고속), local.properties sdk.dir — 툴체인 재구축 완료
+- 버전 승격: build.gradle vc114/1.4.22 → vc115/1.4.23(변경점 주석 추가), 게이트 2종(server.js·api/version/route.ts) 1.4.21/113 → 1.4.23/115 + APK_MIRROR v1.4.23 릴리스 URL
+- APK export 이슈 신규 해결: ②안 serverless API 15개 라우트가 output:export와 비호환(force-static 미선언 — v1.4.21 때는 라우트 자체가 없어 미발생) → 빌드 중 admin·auth·market·rank·support 5개 디렉터리를 .apk-hold로 임시 격리(trap EXIT 복원) — APK는 원격 API(sertz.vercel.app)만 사용하므로 무해, export 트리는 v1.4.21와 동일(/api/version만 static 포함)
+- Gradle OOM 극복: 3.9GB 상자에서 lintVitalAnalyzeRelease가 java 1.7GB 점유 → 커널 OOM 킬. 로컬 본체 node server.js(1GB) 중지(②안 정책상 원래 중지 원칙) + -x lintVitalAnalyzeRelease·lintVitalReportRelease·lintVitalRelease로 재빌드 → BUILD SUCCESSFUL 38s
+- 산출물: download/SERTZ-v1.4.23.apk 135,550,372B · versionCode 115/1.4.23 · apksigner 검증 cc774f34(기존 릴리스와 동일 키 — 덮어설치 호환)
+- 릴리스: GitHub release v1.4.23(ID 401557149) 생성 + APK 업로드 완료. 초회 401은 릴리스 스크립트 토큰 조건식 버그(cat 성공해도 git remote가 &&로 실행돼 TOKEN 오염) — 스크립트 수정 후 성공
+- 푸시: 88097ee(게이트 승격) → Vercel dpl_AkG31xC4L13JQRfFCzp8nVHrgq5h READY(40초) · 27e3d4f(apk-guide v1.4.23 갱신 — 다운로드 URL·vc115·md5/sha1·변경점)
+- 검증: /api/version → latest 1.4.23·code 115·apk URL 정상 · 릴리스 APK URL HTTP 206(존재·서빙 확인) · / 200
+
+Stage Summary:
+- v1.4.23 APK 출시 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.23/SERTZ-v1.4.23.apk
+- 구 APK(v1.4.21 이하)는 기동 시 /api/version 게이트로 1.4.23 갱신 안내 수신 → 타이틀에 재설치 유도. 설치분은 오프라인 플레이만 가능했던 상태에서 계정·거래소·랭킹·클라우드세이브 전부 복구
+- 유저 확인 필요: 깜빠임 재현 여부(픽스 3겹 — desynchronized 제거·GPU 브레이커·Canvas 폴백). 재발 시 ?renderer=canvas 강제 경로 존재
+- 로컬 :3000 본체는 중지 상태 유지(VC-1 이중 쓰기 방지 정책) — 라이브 본체는 sertz.vercel.app 단일
