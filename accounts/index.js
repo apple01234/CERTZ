@@ -173,6 +173,15 @@ function ghToken() {
   ghTokenCache = process.env.GITHUB_TOKEN || "";
   try {
     if (!ghTokenCache) {
+      /* v1.4.22 (#FC백업토큰) — FC 패키지용: postbuild가 패키지 루트에 심는 토큰 파일.
+       *  .env는 플랫폼 부팅 시 매번 DATABASE_URL로 덮어써짐 + next-server 로드 시점이
+       *  fc-multi(계정 모듈)보다 늦어 타이밍 확률적 → 파일 직독은 부팅 즉시 확정적. */
+      ghTokenCache = readFileSync(path.join(process.cwd(), "github_token"), "utf8").trim();
+      if (ghTokenCache) console.log("[SERTZ-accounts] 백업 토큰 로드: github_token 파일 (FC 패키지)");
+    }
+  } catch { /* 파일 없음 — 다음 경로 */ }
+  try {
+    if (!ghTokenCache) {
       const cfg = readFileSync(path.join(process.cwd(), ".git", "config"), "utf8");
       const m = cfg.match(/https:\/\/(?:[^:@/]+):([^@]+)@github\.com\/([^/]+)\/([^\s.]+)/);
       if (m) { ghTokenCache = m[1]; }

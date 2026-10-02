@@ -16,7 +16,7 @@
  *      fc-multi.js 로 멀티플레이를 부착하고 next-server.js 를 require 한다
  *   → FC 런타임(`bun server.js`)은 코드 변경 없이 멀티플레이가 살아난다.
  */
-const { existsSync, mkdirSync, renameSync, writeFileSync, cpSync } = require("node:fs");
+const { existsSync, mkdirSync, renameSync, writeFileSync, cpSync, copyFileSync } = require("node:fs");
 const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..", "..");
@@ -114,6 +114,18 @@ require("./next-server.js");
 `;
   writeFileSync(autoServer, wrapper, "utf8");
   console.log("[fc-postbuild] 래퍼 server.js 작성 완료 — FC 배포 멀티플레이 준비됨");
+
+  /* 5) 계정 백업 토큰 심기 (v1.4.22 — #FC백업토큰)
+   *    FC 패키지엔 .git·env가 없어 ghPutFile(백업 쓰기)이 인증 불가였다.
+   *    .secrets/github_token(gitignore 대상)을 패키지 루트에 github_token으로 복사 —
+   *    accounts ghToken()이 cwd에서 직독한다. 부팅 시 .env 덮어쓰기·모듈 로드 순서와 무관. */
+  const tokSrc = path.join(ROOT, ".secrets", "github_token");
+  if (existsSync(tokSrc)) {
+    copyFileSync(tokSrc, path.join(STANDALONE, "github_token"));
+    console.log("[fc-postbuild] github_token → standalone 복사 완료 (계정 백업 인증용)");
+  } else {
+    console.warn("[fc-postbuild] .secrets/github_token 없음 — FC 계정 백업 쓰기는 무인증으로 불가 (복원만 가능)");
+  }
 }
 
 main().catch((e) => {

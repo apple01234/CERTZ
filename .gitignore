@@ -114,6 +114,9 @@ jdk17/
 
 # local secrets (NEVER commit) — AdMob OAuth service account / API keys
 .secrets/
+# v1.4.22 (#FC백업토큰) — 계정 백업 인증용 토큰 파일(워크스페이스 루트·standalone 내 복사본).
+#  FC 패키지(.git·env 부재)에서 accounts ghToken()이 읽는다. 유출 시 계정 백업 쓰기 탈취 위험.
+/github_token
 
 # v4.1.6 — 성능 최적화 중간 산출물
 /scripts/_a2b/
