@@ -2893,3 +2893,23 @@ Stage Summary:
 - v1.4.23 설치분은 기동 시 게이트로 116 갱신 안내 자동 수신
 - APK의 "연결 실패"는 기능 장애가 아니라 소켓 기반 판정의 오타보였음 — 이제 계정 서버 실제 상태를 표시
 - 발견한 잠재 이슈(미수정·기록): APK에서 "오프라인" 버튼은 제거한 KEY를 부팅 effect가 즉시 DEFAULT로 재저장·reload — 사실상 동작 안 함. ②안에서 오프라인은 계정 API same-origin(https://localhost) 부재 문제로 별도 설계 필요 — 유저 요청 시 처리
+---
+Task ID: APK-25
+Agent: Super Z (main)
+Task: 유저 리포트 "모바일에서 기본공격 키와 물약키가 너무 멀어"(스크린샷 첨부) — 원인 규명·수정·v1.4.25 릴리스
+
+Work Log:
+- 스크린샷 실측: 공격 버튼(우하단 코너)↔물약 클러스터(화면 왼쪽) 수평거리 230px(공격 지름 2.3배) — TouchControls.tsx의 clusterFloat=false 경로에서 클러스터가 ARC 컨테이너 좌하단(left-0 bottom-0)에 고정된 것이 원인. 가로 화면(≥576px)에서 항상 이 경로
+- 픽스: 물약 HP/MP·자동 버튼을 공격 버튼 바로 아래-왼쪽으로 개별 절대배치(와일드리프트 스펠 자리) — 자동(CCX-126,CCY+64)·HP(CCX-46,CCY+74)·MP(CCX+2,CCY+74), 최원거리 230px→74px. PC(sm)는 좌표×1.12 동일 위상. 원 간섭 검증 완료(자동-s1 52.3>48, MP-공격 74>72, HP-MP 48>44, MP 하단 336≤CH). ARC h 294→340/hSm 336→382. 좁은 세로 화면(clusterFloat) 플로팅은 유지
+- 편집 이슈: 한국어 포함 old_str 매칭 실패(조합형 유니코드) → 코드부는 Edit·한국어부는 python 라인 교체로 해결. python 교체 시 JSX 주석 닫는 '}' 누락 → TS1136 → 즉시 수정
+- 버전 승격 4종 싱크: package.json·build.gradle(vc117/1.4.25)·게이트 2종(server.js·route.ts → 1.4.25/117+신규 APK URL)
+- build_apk.sh 보강(이번 빌드부터 표준): ①node server.js kill(OOM 방지) ②serverless 라우트 5개 .apk-hold/api-routes 격리+trap EXIT 복원 ③lintVital 3개 태스크 -x. 신규 버그 발견·수정: trap 복원이 cd android 이후 실행돼 상대경로 실패 → 절대경로($PROJECT_ROOT)로 픽스(최초 실행분은 수동 복원 완료)
+- 재빌드: 라우트 격리 export → cap sync → gradle -x lint 3종 → BUILD SUCCESSFUL 29s · SERTZ-v1.4.25.apk 135,551,068B · aapt vc117/1.4.25 · apksigner cc774f34(동일 키 — 덮어설치 호환)
+- 릴리스: GitHub v1.4.25(ID 401567259) 업로드 완료 · 푸시 86d5d34 → Vercel READY · 검증: 게이트 latest 1.4.25/code 117/apk URL · 릴리스 APK URL 최종 200(135,551,068B) · / 200
+- apk-guide 갱신(64a9e23): v1.4.23에서 멈춰 있던 표기를 v1.4.25로 전면 갱신(URL·해시 md5 adcc7478/sha1 59443ce/vc117+물약 배치·연결 표시 변경점 추가, v1.4.23 이력 보존)
+
+Stage Summary:
+- v1.4.25 출시: https://github.com/apple01234/CERTZ/releases/download/v1.4.25/SERTZ-v1.4.25.apk
+- v1.4.24 설치분은 기동 시 게이트로 117 갱신 안내 자동 수신
+- 물약 버튼이 공격 버튼 바로 아래(74px)로 이동 — 스크린샷 리포트의 직접 해소. APK 재설치 후 확인 필요
+- 미해결 잠재 이슈(기록): 세로 좁은 화면(clusterFloat)에서는 물약이 여전히 공격 버튼에서 ~270px 위 — 불만 접수 시 플로팅 위치도 공격 버튼 근처로 재설계 필요(스킬 아크와 간섭 고려)
