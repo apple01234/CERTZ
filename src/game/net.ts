@@ -192,6 +192,10 @@ function hookConnectFlush() {
 }
 
 export function netJoin(info: JoinInfo) {
+  /* v1.4.27-w3 (#채팅폴링) — 소켓 없는 배포(Vercel serverless)에서도 신원 주입은 필요하다.
+   *  릴레이 채팅/파티 발신자명이 여기서 세팅되는데, 기존엔 netConnect() null 즉시 리턴이
+   *  relaySetIdentity보다 앞에 있어 이름이 전부 "이름없음"으로 전송됐다. → 주입을 최우선으로. */
+  relaySetIdentity({ name: info.name, lv: info.lv, cls: info.cls });
   const s = netConnect();
   if (!s) return;
   hookConnectFlush();
@@ -201,8 +205,6 @@ export function netJoin(info: JoinInfo) {
   const payload = token ? { ...info, token } : info;
   lastJoin = payload; // v2.3 — 재접속 재참여용 최신 상태 보관
   pendingJoin = payload; // 최신 상태로 갱신 (리스폰/스테이지 이동 재합류 대응)
-  /* v1.4.27-w1 — 릴레이 채팅/파티가 쓸 신원 주입 (이름 8자·Lv·직업) */
-  relaySetIdentity({ name: info.name, lv: info.lv, cls: info.cls });
   if (s.connected) {
     s.emit("join", payload);
     pendingJoin = null;
