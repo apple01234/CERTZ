@@ -2778,3 +2778,25 @@ Stage Summary:
 - 토큰 3중 경로: env GITHUB_TOKEN → cwd/github_token 파일(FC용) → .git/config(로컬용)
 - 토큰 보안: .secrets/·/github_token 전부 gitignore 검증 완료, 공개 repo 유출 경로 없음. 토큰 스코프가 넓어(user/admin:org 등) 추후 fine-grained PAT(Contents RW on CERTZ 한정) 교체 권장
 - 라이브 상태: 로컬 :3000 1.4.21/113 정상 / sertz11=Recycled(소멸) / sertz5=Failed(수정 전 생성분) — 유저가 플랫폼에서 sertz5 재배포하면 이번엔 부팅+백업인증 모두 준비됨. 뜨는 즉시 envset으로 GAME_SERVER 전환 → 이후 APK v1.4.22(게임서버 sertz5 인라인 + DEAD_SERVERS sertz11 추가)
+
+---
+Task ID: VC-1
+Agent: Super Z (main)
+Task: ②안 — 계정·거래소·랭킹 Vercel serverless 마이그레이션 (GitHub-as-DB, 멀티플레이 제외) — 유저 지시 "vercel에서 전부 작업, sertz5 버리자" 후속
+
+Work Log:
+- [아키텍처 확정] Vercel 정적 export(STATIC_EXPORT=1) → 표준 빌드 전환으로 serverless API 활성화. DB = 전용 private 저장소 apple01234/CERTZ-DB :: db-backup/accounts.enc (CERTZ 본토에 두면 계정 쓰기마다 커밋→Vercel 재배포 폭주라 분리 필수)
+- [데이터 계승] 기존 백업 파일을 SZBK1(AES-256-GCM, 기본 키) 그대로 CERTZ-DB로 이식(scripts/ghdb_seed.js) — 기존 4계정(admin·apple01234·testlogin01·logintest15) 복호화 호환 실측 통과, 무손실
+- [DB 계층] src/lib/ghdb.ts — Contents API GET/PUT + sha 낙관 잠금(409/422 재조회→재적용 4회) + 8초 인스턴스 캐시(읽기) + 지원센터 별도 파일(support-inbox.json, 300건 상한)
+- [API 15개] auth register/login/logout/me/sns/cloud-save/delete + market GET/list/cancel/buy/collect + rank + support + admin/summary — accounts/index.js 프로토콜 100% 계승(동일 응답·에러문구·CORS 화이트리스트·?token= 쿼리·scrypt 해시·거래소 수수료 10%·보스드롭 화이트리스트 실보유 검증·랭킹 GM 제외)
+- [클라이언트] server.ts — resolveApiBase: vercel.app 저장주소/오리진 = same-origin(API 본체화), GAME_SERVER 기본 "" / net.ts — GAME_SERVER 빈값 → null(오프라인 즉시 확정, 재시도 스톰 제거) / ServerConnect — DEAD_SERVERS에 sertz11·sertz5 추가(저장분 자동 이행), 안내문 갱신
+- [버전] package.json 1.4.22 / build.gradle vc114·1.4.22 / 게이트(server.js·route.ts)는 APK 미출시로 1.4.21 유지 / 타이틀 배지 갱신
+- [로컬 본체 중지] :3000 server.js 종료 + db/accounts.json→.localstash 스태시 — GitHub DB 이중 쓰기(스테일 백업 푸시에 의한 덮어쓰기) 근원 차단
+- [E2E 43건] scripts/e2e_ghdb_v1422.js — 실계정 DB로 가입/로그인(쿼리토큰 포함)/클라우드세이브/거래소 전경로(등록·중복·미보유·구매·정산 4500G·취소)/랭킹 등재/지원센터/삭제 원상복구 → PASS 43/FAIL 0. 중간 발견: sapi ADMIN_USERS 미정의 500 수정, 가입→즉시로그인 레이스(캐시 미스 강제 재조회 방어 추가), me는 항상 fresh 조회(삭제 세션 착시 제거)
+- [빌드 검증] npx next build — 21 정적 프리렌더 + 15 ƒ(serverless) + /api/version ○ 정적 확인, postbuild로 FC standalone 부팅 트리 상시 유지 규칙 준수
+- [Vercel env] GITHUB_TOKEN encrypted(production+preview) 등록 + NEXT_PUBLIC_GAME_SERVER 빈값 무효화 — 멀티 소켓 시도 자체 제거
+
+Stage Summary:
+- Vercel(sertz.vercel.app) = 게임 웹 + 계정/거래소/랭킹/클라우드세이브 API 본체. 소켓 멀티플레이는 제외(오프라인 모드) — 재개 시 NEXT_PUBLIC_GAME_SERVER 채우면 부활
+- 데이터는 CERTZ-DB 단일 원본 — FC 서버·로컬 본체와 독립, 서버 교체와 무관하게 생존
+- 구 APK(v1.4.21 이하)는 apiBase가 구 게임서버(sertz11 죽음)로 향해 계정 연동 불가 — 웹은 자동 갱신, APK는 v1.4.22 빌드 시 해결(차기 작업)

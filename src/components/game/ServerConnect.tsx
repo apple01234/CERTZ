@@ -24,20 +24,28 @@ const KEY = "sertz.server.url";
  *  v1.4.21 — 유저 지시: 기본 주소를 Vercel 미러(sertz.vercel.app)로 전환.
  *           미러 주소는 '입구 주소'일 뿐 — 소켓/계정 API는 server.ts의 미러 해석을 통해
  *           게임 서버 본체(GAME_SERVER = sertz11)로 자동 우회 접속된다.
- *           본체 주소가 바뀌면 APK 재설치 없이 vercel.json env 한 줄만 고치면 된다. */
+ *           본체 주소가 바뀌면 APK 재설치 없이 vercel.json env 한 줄만 고치면 된다.
+ *  v1.4.22 — ②안 전환: 계정·거래소·랭킹 API가 Vercel serverless로 이주 (GitHub-as-DB).
+ *           멀티플레이는 제외(오프라인 모드 — 소켓 시도 없음). 기본 주소는 그대로
+ *           sertz.vercel.app — 이제 계정/거래소가 그 오리진에서 직접 동작한다.
+ *           구 게임 서버 sertz11·sertz5는 DEAD_SERVERS로 이동 — 저장분 자동 이행. */
 const DEFAULT_SERVER = "https://sertz.vercel.app";
 
 /* v3.2.0 — 서비스 종료/만료된 과거 기본 서버들 (자동 이행 대상)
  *  v1.0.12 — sertz4 복원(생존 실측)에 따라 목록에서 제외, 대신 DNS 미존재가 실측된
  *           sertz.z.ai를 등록 — v1.0.9~11 설치분도 첫 기동에 sertz4로 자동 복귀된다.
  *  v1.4.20 — 서버가 sertz11로 이전됨에 따라 sertz4를 목록에 등록 —
- *           sertz4 저장분(구 APK)도 첫 기동에 sertz11로 자동 이행된다. */
+ *           sertz4 저장분(구 APK)도 첫 기동에 sertz11로 자동 이행된다.
+ *  v1.4.22 — space-z.ai 게임 서버 전량 폐기(②안 Vercel serverless 전환):
+ *           sertz11(Recycled)·sertz5(폐기) 등록 — 저장분 첫 기동에 Vercel 기본값으로 자동 이행. */
 const DEAD_SERVERS = [
   "https://preview-6a94b1ab.space-z.ai",
   "https://preview-6a95efa8.space-z.ai",
   "https://sertz1234.space-z.ai",
   "https://sertz.z.ai",
   "https://sertz4.space-z.ai",
+  "https://sertz11.space-z.ai",
+  "https://sertz5.space-z.ai",
 ];
 
 function readUrl(): string {
@@ -192,7 +200,7 @@ export function ServerConnect() {
           <p className="mb-2 text-[10px] leading-relaxed text-white/50">
             {electron
               ? "EXE는 내장 로컬 서버로 실행됩니다(싱글/같은 PC 멀티). 웹 버전 서버 주소를 입력하면 그 서버의 플레이어와 함께 플레이할 수 있습니다."
-              : <>멀티 하는 법: ① 위 주소를 PC 브라우저로 열어 게임 시작 ② 폰 APK도 같은 주소 입력(자동 연결). 같은 주소로 접속한 기기끼리 같은 월드에서 만납니다.</>}
+              : "계정·거래소·랭킹은 이 주소(Vercel)에서 바로 동작합니다. 실시간 멀티플레이는 현재 제외 — 오프라인 모드로 플레이해 주세요."}
           </p>
           <input
             value={url}

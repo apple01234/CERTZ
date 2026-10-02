@@ -1,22 +1,26 @@
 /**
  * v1.4.20 — 서버 해석 단일 모듈 (Vercel 멀티서버 분리 아키텍처)
+ *  v1.4.22 — ②안 전환: 계정·거래소·랭킹·클라우드세이브 API가 Vercel serverless로 이주
+ *  (GitHub-as-DB — apple01234/CERTZ-DB :: db-backup/accounts.enc).
  *
  *  배포 구조:
- *   [Vercel]        = 정적 프론트 미러 (output:export — 소켓/API 서버 없음, CDN 캐시)
- *   [게임 서버]      = sertz11.space-z.ai (server.js — socket.io + 계정/거래소/랭킹 API + 정적 서빙)
+ *   [Vercel]        = 게임 웹 + 계정/거래소/랭킹 API 본체 (serverless 라우트)
+ *   [게임 서버]      = 없음 (멀티플레이 제외 — 소켓은 오프라인 모드, GAME_SERVER로 재지정 가능)
  *
  *  클라이언트 해석 우선순위:
  *   ① localStorage 'sertz.server.url' 저장 주소 (APK/EXE 설정 UI + 웹 수동 오버라이드)
- *   ② 게임 서버 오리진(localhost / *.space-z.ai)에서 열었으면 same-origin (기존 동작 유지)
- *   ③ 그 외 정적 배포(Vercel 등)에서 열었으면 원격 게임 서버(GAME_SERVER)로 직접 접속
+ *      — 미러(vercel.app) 포함 그 주소가 이제 API 본체다 (그대로 사용)
+ *   ② 게임 서버 오리진(localhost / *.space-z.ai)에서 열었으면 same-origin (구 FC 배포 호환)
+ *   ③ Vercel(.vercel.app)에서 열었으면 same-origin (serverless API)
+ *   ④ 그 외 — GAME_SERVER (기본 "": same-origin)
  *
- *  GAME_SERVER는 빌드타임 env NEXT_PUBLIC_GAME_SERVER로 교체 가능 (Vercel 프로젝트별
- *  다른 게임 서버 연결 — 멀티서버 운영 시 프로젝트 env만 바꾸면 된다).
+ *  GAME_SERVER는 빌드타임 env NEXT_PUBLIC_GAME_SERVER로 교체 가능 —
+ *  멀티 서버를 다시 운영할 때 이 값을 채우면 소켓·계정 API 우회가 부활한다.
  */
 
-/** 기본 게임 서버 (소켓 + 계정/거래소/랭킹 API 본체) */
+/** 기본 게임 서버 (소켓 본체 — v1.4.22: 없음 = 오프라인 모드). API는 Vercel serverless가 담당 */
 export const GAME_SERVER = (
-  process.env.NEXT_PUBLIC_GAME_SERVER || "https://sertz11.space-z.ai"
+  process.env.NEXT_PUBLIC_GAME_SERVER || ""
 ).replace(/\/+$/, "");
 
 /**
@@ -83,17 +87,19 @@ export function resolveEntryTarget(entry: string | null, fallback: string | null
 
 /**
  * 계정/거래소/랭킹/버전 API 베이스 URL (account.ts·Overlays.tsx 공용).
- *  - 저장 주소 최우선 (APK 웹뷰 + 웹 수동 오버라이드 공통) — 미러 주소는 게임 서버 본체로 해석
- *  - 게임 서버 오리진 → "" (same-origin — 쿠키 세션 동작)
- *  - 정적 배포(Vercel 등) → GAME_SERVER (크로스오리진 — Bearer/쿼리 토큰 + 서버 CORS 화이트리스트)
+ *  v1.4.22 — Vercel이 API 본체가 됐다:
+ *  - 저장 주소 최우선 — 미러(vercel.app) 포함 "그 주소 그대로"가 API 베이스
+ *    (APK 웹뷰 https://localhost에서 sertz.vercel.app API를 크로스오리진 호출 —
+ *     서버 CORS가 https://localhost를 허용하므로 동작)
+ *  - 게임 서버 오리진(구 FC) → "" (same-origin, 쿠키 세션)
+ *  - Vercel 오리진 → "" (same-origin serverless API — 쿠키 세션 동작)
+ *  - 그 외(커스텀 도메인) → GAME_SERVER (기본 "" = same-origin)
  */
 export function resolveApiBase(): string {
   if (typeof window === "undefined") return "";
   const stored = storedServerUrl();
-  if (stored) {
-    const t = resolveEntryTarget(stored, stored);
-    return typeof t === "string" ? t : "";
-  }
+  if (stored) return stored;
   if (isGameServerHost(window.location.hostname)) return "";
+  if (isStaticMirrorHost(window.location.hostname)) return ""; // v1.4.22 — serverless API same-origin
   return GAME_SERVER;
 }

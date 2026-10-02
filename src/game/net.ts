@@ -66,22 +66,24 @@ export function resolveServerUrl(): string | null | undefined {
   const electron = isElectron();
   if (Capacitor.isNativePlatform() || electron) {
     /* v1.4.3 (#데이터보안) — 평문 http/wss 미허용: 저장 주소를 https/wss로 강제 승격
-     *  (Play Console "수집 데이터 전체 암호화 전송: 예" 근거 — 모든 API/소켓이 TLS 경유)
-     * v1.4.21 — 저장 주소가 미러(vercel.app)면 게임 서버 본체(GAME_SERVER)로 해석 */
-    return resolveEntryTarget(storedServerUrl(), electron ? undefined : null);
+     * v1.4.22 — 해석 결과가 빈 문자열(GAME_SERVER 미지정)이면 null로 정규화 —
+     *  오프라인 모드(연결 시도 자체 없음, 배터리 낭비 제거). */
+    const t = resolveEntryTarget(storedServerUrl(), electron ? undefined : null);
+    if (typeof t === "string") return t ? t : null;
+    return t;
   }
-  /* v1.4.20 — 웹 분기 (멀티서버 분리):
-   *  Vercel 등 정적 배포에서는 same-origin에 소켓 서버가 없다 → 게임 서버(sertz11)로
-   *  직접 접속해 웹 버전에서도 멀티/채팅/파티가 동작한다. 재접속 스톰(화면끊김 원인)
-   *  자체가 사라진다 — 서버가 살아있으니 첫 시도에서 연결됨. */
+  /* v1.4.22 — 웹 분기 (②안: 멀티플레이 제외):
+   *  Vercel은 계정/거래소 API 본체지만 소켓 서버는 없다. GAME_SERVER가 비어 있으면
+   *  재시도 스톰 없이 즉시 오프라인 모드(null — 연결 시도 없음)로 확정한다.
+   *  멀티를 재개하면 NEXT_PUBLIC_GAME_SERVER만 채우면 이 경로가 부활한다. */
   const stored = storedServerUrl();
   if (stored) {
-    /* v1.4.21 — 저장 오버라이드가 미러 주소면 본체로 우회 */
     const t = resolveEntryTarget(stored, GAME_SERVER);
-    return typeof t === "string" ? t : GAME_SERVER;
+    if (typeof t === "string") return t ? t : null;
+    return t;
   }
   if (isGameServerHost(window.location.hostname)) return undefined; // same-origin
-  return GAME_SERVER; // 정적 배포 → 원격 게임 서버
+  return GAME_SERVER ? GAME_SERVER : null; // v1.4.22 — 미지정 = 오프라인
 }
 
 export function netConnect(): Socket | null {
