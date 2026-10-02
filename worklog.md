@@ -2670,3 +2670,31 @@ Stage Summary:
 - 검증: __MISSING 0개, 글리치 픽셀 스캔 0건, Tailwind 스킨 실측, APK vc111 동일키 서명
 - 미해결: sertz11.space-z.ai 플랫폼 엣지 500(플랫폼 파이프라인 — 유저 생성 페이지 재시도 필요), Vercel 멀티는 아키텍처 제약(답변 전달함)
 - 교훈: ①Phaser 4 __MISSING 폴백은 '검정+녹색대각선'으로 렌더됨 — 에셋 추가 시 부트 로드 목록 동기 필수, treePick() 안전망이 구조적 방어 ②bash 주석은 #(C스타일 금지) ③세션 리셋 시 vercel link·툴체인·production 빌드 3종 재점검
+
+---
+Task ID: SEP-1
+Agent: Super Z (main)
+Task: Vercel 멀티서버 분리 아키텍처 구현 (유저 지시 "ㅇㅇ 분리해") — v1.4.20 (vc112)
+
+Work Log:
+- [아키텍처] Vercel=정적 프론트 미러(output:export, CDN) / sertz11.space-z.ai=게임 서버 본체(socket.io+계정/거래소/랭킹 API) — 클라이언트가 배포 위치에 따라 접속 대상 자동 해석
+- [신규] src/game/server.ts — GAME_SERVER(NEXT_PUBLIC_GAME_SERVER env 교체 가능, 기본 https://sertz11.space-z.ai)·isGameServerHost(localhost/*.space-z.ai=same-origin)·storedServerUrl(http→https 승격)·resolveApiBase 단일 모듈화
+- [net.ts] resolveServerUrl 웹 분기 추가: 게임서버 오리진=same-origin(기존 불변), 정적 배포(Vercel 등)=GAME_SERVER 직접 접속, 저장 오버라이드 최우선 — native/Electron 기존 계약 완전 보존
+- [account.ts] apiBase()를 resolveApiBase로 위임 — 정적 배포에서 계정/거래소/클라우드세이브 원격 서버 호출
+- [Overlays.tsx] /api/version 조회에 apiBase 접두 + 타이틀 배지 v1.4.20 갱신(기존 v1.4.16 하드코딩) / [AuthPanel.tsx] SNS OAuth 시작 경로 apiBase 접두
+- [next.config.ts] STATIC_EXPORT=1 분기 — output:export + 기본 distDir 유지(→ 표준 out/ 생성, Vercel 빌더 감지 조건) / APK_EXPORT는 .next-apk 유지
+- [vercel.json] env에 STATIC_EXPORT=1 + NEXT_PUBLIC_GAME_SERVER=https://sertz11.space-z.ai 추가
+- [accounts/index.js] CORS 화이트리스트에 접미사 패턴 추가(*.vercel.app, *.space-z.ai) — 정적 미러의 크로스오리진 API 읽기 허용(토큰 요구 불변)
+- [ServerConnect.tsx] DEFAULT_SERVER sertz4→sertz11 전환 + sertz4를 DEAD_SERVERS 등록(구 APK 저장분 첫 기동 자동 이행) — placeholder 갱신
+- [버전] package.json 1.4.20 / server.js LATEST 1.4.20·code112·NOTE·APK_MIRROR / api/version/route.ts 싱크 / build.gradle versionCode 112·versionName 1.4.20
+- [빌드 검증] standalone next build ✓(6 라우트) / STATIC_EXPORT=1 export ✓(out/index.html·out/api/version JSON·게임 청크에 sertz11 URL 인라인 확인)
+- [서버 재기동] 더블포크 (setsid node server.js &) 방식으로 production 재시작 — /api/version(1.4.20/112)·socket.io 핸드셰이크(0{"sid"…})·vercel.app 오리진 CORS 프리플라이트(Access-Control-Allow-Origin 에코) 전부 실측 ✓
+- [Vercel] 푸시→자동 배포 dpl_EMpPeBSQJfQrTXaGCCoFVrZUEbpV READY — 별칭 sertz.vercel.app 포함 / 라이브 검증: /(200)·apk-guide(200)·/api/version(1.4.20)·게임 청크에 sertz11 인라인 ✓ — 기존 "Sorry, there was a problem deploying" 실패 해소(정적 export 전환으로 serverless 부적합 요소 소거)
+- [APK] build_apk.sh 성공 → download/SERTZ-v1.4.20.apk(135MB) — GitHub 릴리스 v1.4.20 생성+업로드(401456094, 다운로드 302→200 실측)
+- [미해결] https://sertz11.space-z.ai 플랫폼 엣지 500 "Failed" — 로컬 체인 200 정상, 타 배포(sertz4/sertz1234)는 엣지 200 → sertz11 라우트 등록 문제(플랫폼 파이프라인) — 플랫폼 생성 페이지에서 유저 재배포/재시작 필요(전 세션 동일 결론 재확인). 복구 전까지 APK/웹 신규 접속은 연결 실패 표시(오프라인 플레이 가능)
+
+Stage Summary:
+- 멀티서버 분리 완료: Vercel(sertz.vercel.app)=정적 미러, sertz11=게임 서버 본체 — 어느 쪽에서 열어도 소켓·계정·거래소·랭킹 원격 연동
+- 게임 서버 스케일 아웃 절차 확립: 새 서버에서 server.js 구동 → NEXT_PUBLIC_GAME_SERVER(또는 클라 저장 주소)만 교체
+- 서버 기동 불변식: (setsid env NODE_ENV=production node server.js >> server.log 2>&1 &) — 툴 호출 사이 생존 실측
+- v1.4.20(vc112) APK 릴리스 완료 — 111 이하 설치분은 버전 게이트로 자동 안내
