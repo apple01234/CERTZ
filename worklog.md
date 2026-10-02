@@ -2651,3 +2651,22 @@ Stage Summary:
 - 검증: Playwright 실측 4/4 PASS — 조이스틱 겹침 제거, socket 재시도 정지, 터치 이동 성공, resize 줌 안정
 - 미해결: sertz11.space-z.ai는 플랫폼 엣지 500(로컬 200 정상) — 플랫폼 생성 페이지에서 유저 재시도 필요
 - 교훈: ①세션 리셋 시 툴체인(rebuild_toolchain.sh)·.vercel link 재점검 필수 ②gh 토큰 하드코딩 금지 — git remote 추출 방식 표준 ③headless 게임 테스트는 RotatePrompt·프롤로그·DOM 대사 3중 게이트 통과 후 실측
+---
+Task ID: batch-9
+Agent: Super Z (main)
+Task: ①스크린샷 '검은 사각형+녹색 대각선' 글리치 근원 규명·수정 ②유저 지시 "tailwind css 쓰자" — UI 스킨 Tailwind 전환 ③v1.4.19 릴리스 ④Vercel 멀티서버 답변
+
+Work Log:
+- [진입 차단] 세션 리셋 후 production .next 불일치(체렁 500) → npm run build + node server.js 재기동으로 복구
+- [① 원인 규명] Playwright 재현(Probe: 400x800 세로, 그리드 텔레포트 + 캔버스 픽셀 스캔) → 마을 (1014,165)·(184,116)에 texture.key=__MISSING Image 2체 검출. 파괴 실험(before/after destroy)으로 인과 확정. Phaser 4.2.1의 __MISSING 폴백이 "검정 사각형+녹색 테두리+녹색 점선 대각선"으로 렌더됨(사용자 스크린샷과 100% 일치)
+- [① 근원] depth=Math.floor(y/10) → 나무 스캐터. v1.4.11이 treeSet에 kd_plant1/2/3을 합류시키면서 BootScene 부트 로드 목록에 등록 누락(전수 감사 스크립트 audit_texture_keys.py로 유일 고스트키 확인 — 나머지 400+ 키는 외형시트/아이콘 지연로드 커버)
+- [① 수정] BootScene 부트 목록에 kd_plant1/2/3 추가 + WorldScene treePick() 안전망(등록 텍스처만 배치 — 향후 누락키도 정상 나무 대체). 검증: __MISSING 0개·kd_plant 로드 true·글리치 픽셀 스캔 마을 전역 0건·kd_plant 대형 나무 정상 렌더
+- [② Tailwind] globals.css 스킨 레이어(ui2 비트맵 100% 스트레치: panel/button/header/input/list)를 Tailwind @apply 유틸리티로 전환 — 클래스명 유지로 컴포넌트 무수정. 스톤950+앰버 헤어라인+경질 하단 음영, Galmuri 픽셀 폰트 유지. 데드 CSS(game-panel-book·sertz-panel·sertz-panel-big·sertz-btn) 삭제. Playwright 스크린샷으로 로테이트 프롬프트·HUD 칩·더보기 메뉴 신스킨 확인
+- [③ 릴리스] 1.4.19/vc111 싱크(package.json·build.gradle·server.js·route.ts) · build_apk.sh에 JDK 우선 선택 추가(시스템 JRE가 PATH 잡아 JAVA_COMPILER 부재로 실패하던 것) → BUILD SUCCESSFUL 43s, aapt vc111/v1.4.19, apksigner cc774f34(동일키), 135,549,780B · GitHub 릴리스 v1.4.19 생성+APK 업로드(state: uploaded) · 커밋 abbfa3f push · Vercel --prod 배포(sertz11-89sjxgt75) → sertz11.vercel.app 1.4.19/vc111 라이브 확인
+- [④ 답변] Vercel 멀티서버: serverless 상시접속 불가 → 3안 정리(소켓 서버 분리/현 구조 유지/매니지드 리얼타임), 현 resolveServerUrl·server.js 구조 기준 권장안 제시
+
+Stage Summary:
+- 산출물: download/SERTZ-v1.4.19.apk + GitHub 릴리스 v1.4.19 + sertz11.vercel.app(1.4.19) + 커밋 abbfa3f
+- 검증: __MISSING 0개, 글리치 픽셀 스캔 0건, Tailwind 스킨 실측, APK vc111 동일키 서명
+- 미해결: sertz11.space-z.ai 플랫폼 엣지 500(플랫폼 파이프라인 — 유저 생성 페이지 재시도 필요), Vercel 멀티는 아키텍처 제약(답변 전달함)
+- 교훈: ①Phaser 4 __MISSING 폴백은 '검정+녹색대각선'으로 렌더됨 — 에셋 추가 시 부트 로드 목록 동기 필수, treePick() 안전망이 구조적 방어 ②bash 주석은 #(C스타일 금지) ③세션 리셋 시 vercel link·툴체인·production 빌드 3종 재점검
