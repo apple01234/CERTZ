@@ -13,6 +13,15 @@ import { Capacitor } from "@capacitor/core";
 import { io, type Socket } from "socket.io-client";
 /* v1.4.20 — 멀티서버 분리: 게임 서버 해석 로직을 server.ts로 일원화 */
 import { GAME_SERVER, isGameServerHost, resolveEntryTarget, storedServerUrl } from "./server";
+/* v1.4.27-w1 (#멀티릴레이) — 소켓 미연결(②안 Vercel) 시 서버리스 릴레이로 위임.
+ *  채팅·파티를 HTTP 폴링(relay.ts → /api/chat·/api/party, GitHub-as-DB)으로 구동 —
+ *  소켓 없는 배포에서도 채팅·파티 창설/참여가 실제로 동작한다. UI·EventBus 흐름 불변. */
+import {
+  relayChatReady, relaySendChat, relaySetIdentity,
+  relayEnsureChatPoll, relayEnsurePartyPoll,
+  relayPartyCreate, relayPartyJoin, relayPartyLeave,
+  type RelayPartySnapshot,
+} from "./relay";
 
 /** v3.0.8 — Electron(EXE 데스크톱) 감지: UA에 Electron 포함.
  *  EXE는 자체 로컬 서버(same-origin)를 내장하므로 웹과 동일하게 동작하되,
@@ -192,15 +201,22 @@ export function netJoin(info: JoinInfo) {
   const payload = token ? { ...info, token } : info;
   lastJoin = payload; // v2.3 — 재접속 재참여용 최신 상태 보관
   pendingJoin = payload; // 최신 상태로 갱신 (리스폰/스테이지 이동 재합류 대응)
+  /* v1.4.27-w1 — 릴레이 채팅/파티가 쓸 신원 주입 (이름 8자·Lv·직업) */
+  relaySetIdentity({ name: info.name, lv: info.lv, cls: info.cls });
   if (s.connected) {
     s.emit("join", payload);
     pendingJoin = null;
   }
 }
 
-/** 채팅 가능 여부 — 미연결이면 UI에서 안내 메시지를 보여준다 (v2.3, 지시 #7) */
+/** 채팅 가능 여부 — 소켓 연결 또는 서버리스 릴레이 사용 가능 (v1.4.27-w1) */
 export function netChatReady(): boolean {
-  return !!socket?.connected;
+  return !!socket?.connected || relayChatReady();
+}
+
+/** v1.4.27-w1 — 파티/채팅 기능 준비 완료(소켓 OR 릴레이). UI 게이트용 */
+export function multiReady(): boolean {
+  return netJoined() || relayChatReady();
 }
 
 export type NetState = {
@@ -218,7 +234,9 @@ export function netState(st: NetState) {
 }
 
 export function netSendChat(text: string) {
-  if (socket?.connected) socket.emit("chat", text);
+  if (socket?.connected) { socket.emit("chat", text); return; }
+  /* v1.4.27-w1 — 소켓 없는 배포: 릴레이 POST로 발송 (전송 직후 즉시 폴링 수신) */
+  void relaySendChat(text);
 }
 
 /* ================= v4.1.0 — 공격/스킬 동작 동기화 (파티원 공격 보임) =================
@@ -256,33 +274,56 @@ export function netOnAction(cb: (a: NetAction) => void): () => void {
 export type NetParty = {
   id: string;
   leader: string;
-  members: { id: string; name: string; lv: number; cls: string | null }[];
+  members: { id: string; name: string; lv: number; cls: string | null; online?: boolean }[];
   max: number;
 };
 
+/* v1.4.27-w1 — 릴레이 파티: 등록된 UI 콜백으로 실패(null) 통지 → 위젯이 안내 문구 표시 */
+let relayPartyCb: ((p: NetParty | null) => void) | null = null;
+
+function relaySnapshotToNet(p: RelayPartySnapshot | null): NetParty | null {
+  if (!p) return null;
+  return {
+    id: p.id,
+    leader: p.leader,
+    max: p.max,
+    members: p.members.map((m) => ({ id: m.id, name: m.name, lv: m.lv, cls: m.cls, online: m.online })),
+  };
+}
+
 export function netPartyCreate() {
-  if (socket?.connected) socket.emit("party:create");
+  if (socket?.connected) { socket.emit("party:create"); return; }
+  void relayPartyCreate().then((code) => { if (!code) relayPartyCb?.(null); });
 }
 
 export function netPartyJoin(partyId: string) {
-  if (socket?.connected) socket.emit("party:join", partyId);
+  if (socket?.connected) { socket.emit("party:join", partyId); return; }
+  void relayPartyJoin(partyId).then((ok) => { if (!ok) relayPartyCb?.(null); });
 }
 
 export function netPartyLeave() {
-  if (socket?.connected) socket.emit("party:leave");
+  if (socket?.connected) { socket.emit("party:leave"); return; }
+  void relayPartyLeave();
 }
 
 export function netPartyChat(text: string) {
-  if (socket?.connected) socket.emit("party:chat", text);
+  if (socket?.connected) { socket.emit("party:chat", text); return; }
+  /* v1.4.27-w1 — 릴레이 파티 채널로 발송 (relay 내부의 현재 파티 코드 사용) */
+  void relaySendChat(text, true);
 }
 
 export function netOnParty(cb: (p: NetParty | null) => void): () => void {
-  const s = netConnect();
-  if (!s) return () => {};
   const wrapped = (p: NetParty | null) => {
     lastParty = p; // v4.0.0 — 스냅샷 보관
     cb(p);
   };
+  const s = netConnect();
+  if (!s) {
+    /* v1.4.27-w1 — 소켓 없는 배포: 릴레이 폴링으로 스냅샷 수신 */
+    relayPartyCb = wrapped;
+    relayEnsurePartyPoll((p) => relayPartyCb?.(relaySnapshotToNet(p)));
+    return () => { relayPartyCb = null; };
+  }
   s.on("party", wrapped);
   return () => s.off("party", wrapped);
 }
@@ -335,6 +376,9 @@ export function netOnPlayers(cb: (list: NetPlayer[]) => void): () => void {
 
 export function netOnChat(cb: (m: NetChatMsg) => void): () => void {
   const s = netConnect();
+  /* v1.4.27-w1 — 소켓 유무와 무관하게 릴레이 폴링 상시 기동 (폴링 실패는 조용히 무시되고
+   *  소켓 채팅이 살아있는 배포에서는 릴레이가 404 등으로 조용히 실패 — 이중 등록 무해) */
+  relayEnsureChatPoll((m) => cb(m as NetChatMsg));
   if (!s) return () => {};
   s.on("chat", cb);
   return () => s.off("chat", cb);

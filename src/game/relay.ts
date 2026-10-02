@@ -52,7 +52,7 @@ const seenIds = new Set<string>();
 let onChat: ((m: RelayChatMsg) => void) | null = null;
 let chatParty = ""; // 파티 채널 (net.ts가 파티 스냅샷 반영 시 갱신)
 
-function partyCode(): string {
+function chatPartyCode(): string {
   return chatParty;
 }
 export function relaySetPartyCode(code: string) {
@@ -84,7 +84,7 @@ async function chatTick() {
     const bp = base();
     const g = await fetch(`${bp}/api/chat`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
     if (g?.list) handleList(g.list as RelayChatMsg[], false);
-    const pc = partyCode();
+    const pc = chatPartyCode();
     if (pc) {
       const p = await fetch(`${bp}/api/chat?p=${encodeURIComponent(pc)}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
       if (p?.list) handleList(p.list as RelayChatMsg[], true);
@@ -115,7 +115,7 @@ export async function relaySendChat(text: string, party = false): Promise<boolea
     const r = await fetch(`${base()}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: me.name, text, cid: ensureCid(), cls: me.cls || "", lv: me.lv, party: party ? partyCode() : "" }),
+      body: JSON.stringify({ name: me.name, text, cid: ensureCid(), cls: me.cls || "", lv: me.lv, party: party ? chatPartyCode() : "" }),
       signal: AbortSignal.timeout(8000),
     });
     if (r.ok) {

@@ -13,9 +13,10 @@ import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, 
 import { GamePanels } from "./Panels";
 import { Lobby } from "./Lobby"; // v1.0.18 — 캐릭터 선택·생성 로비
 import { UnionPanel } from "./UnionPanel"; // v1.0.18 — 유니온 패널
-// v1.4.24 — ChatBox/PartyWidget/ServerConnect 제거 (#멀티정리 — socket.io 릴레이 의존 UI 철거)
-// import { ChatBox } from "./ChatBox";
-// import { PartyWidget } from "./PartyWidget";
+// v1.4.27-w1 (#멀티릴레이) — ChatBox/PartyWidget 복원: socket.io 대신 서버리스 릴레이(net.ts 위임)로 동작.
+// ServerConnect(서버주소 설정창)는 철거 유지 — 릴레이는 별도 설정 불필요.
+import { ChatBox } from "./ChatBox";
+import { PartyWidget } from "./PartyWidget";
 import { FriendsWidget } from "./FriendsWidget";
 import { AuthPanel } from "./AuthPanel"; // v4.9.0 — 자체/SNS 계정 + 클라우드 세이브
 import * as audio from "@/game/audio";
@@ -185,11 +186,11 @@ export default function GameRoot() {
             <InteractPrompt />
             <Banner text={banner} />
             <BossBar boss={boss} />
-            {/* v1.4.24 — 채팅/파티 UI 제거 (#멀티정리): 둘 다 socket.io 릴레이(net.ts) 의존이라
-             *  Vercel serverless(②안)에서는 원리적으로 동작 불가. 죽은 UI를 남겨 혼란만 주던 것을 철거.
-             *  멀티서버 재개 시 이 블록만 복원하면 된다.
+            {/* v1.4.27-w1 (#멀티릴레이) — 채팅/파티 UI 복원: 소켓 없는 ②안 배포에서도
+             *  HTTP 릴레이(/api/chat·/api/party 폴링)로 실제 동작한다 (net.ts 위임).
+             *  멀티 아이콘·ServerConnect는 철거 유지 — 파티는 더보기 메뉴/Y키. */}
             <ChatBox />
-            <PartyWidget /> */}
+            <PartyWidget />
             {/* 친구 위젯 (v2.1 — 친구코드·고유번호) */}
             <FriendsWidget />
             {/* 계정 위젯 (v4.9.0 — 자체 회원가입/로그인 + SNS 연동 + 클라우드 세이브) */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Users, LogOut, Crown, Swords, CheckCircle2, Gift, X } from "lucide-react";
 import * as net from "@/game/net";
 import {
@@ -25,11 +25,21 @@ export function PartyWidget() {
   const [err, setErr] = useState("");
   const [, force] = useState(0);
   const refresh = useCallback(() => force((n) => n + 1), []);
+  /* v1.4.27-w1 — 마지막 시도(창설/참여) 기록: 실패(null 스냅샷) 안내 문구 분기용 */
+  const lastTry = useRef<"create" | "join" | "">("");
 
   useEffect(() => {
     const off = net.netOnParty((p) => {
       setParty(p);
-      if (p === null) setErr("파티에 참여하지 못했습니다 — 코드 확인");
+      if (p === null) {
+        setErr(
+          lastTry.current === "join"
+            ? "파티에 참여하지 못했습니다 — 코드 확인"
+            : lastTry.current === "create"
+              ? "파티 서버와 통신할 수 없어요 — 잠시 후 다시 시도"
+              : "",
+        );
+      }
       refresh();
     });
     return off;
@@ -62,20 +72,23 @@ export function PartyWidget() {
 
   const create = () => {
     setErr("");
-    if (!net.netJoined()) {
-      setErr(net.netStatus().hasServer ? "서버 연결 중입니다 — 잠시 후 다시 시도" : "오프라인 모드 — 타이틀 화면에서 서버 연결 후 이용할 수 있습니다");
+    /* v1.4.27-w1 — 소켓 없는 배포에서도 릴레이로 창설 가능 (multiReady = 소켓 OR 릴레이) */
+    if (!net.multiReady()) {
+      setErr("멀티 릴레이에 연결할 수 없어요 — 네트워크 확인 후 다시 시도");
       return;
     }
+    lastTry.current = "create";
     net.netPartyCreate();
   };
   const join = () => {
     setErr("");
     const c = code.trim().toUpperCase();
     if (!c) return;
-    if (!net.netJoined()) {
-      setErr(net.netStatus().hasServer ? "서버 연결 중입니다 — 잠시 후 다시 시도" : "오프라인 모드 — 타이틀 화면에서 서버 연결 후 이용할 수 있습니다");
+    if (!net.multiReady()) {
+      setErr("멀티 릴레이에 연결할 수 없어요 — 네트워크 확인 후 다시 시도");
       return;
     }
+    lastTry.current = "join";
     net.netPartyJoin(c);
   };
   const leave = () => {
@@ -133,11 +146,12 @@ export function PartyWidget() {
                 {party.members.map((m) => (
                   <li
                     key={m.id}
-                    className="flex items-center gap-1.5 rounded bg-white/[0.05] px-1.5 py-1 text-[11px] text-white/90"
+                    className={`flex items-center gap-1.5 rounded bg-white/[0.05] px-1.5 py-1 text-[11px] ${m.online === false ? "opacity-45" : "text-white/90"}`}
                   >
                     {m.name === party.leader && <Crown size={11} className="text-amber-300" />}
                     <span className="font-bold">{m.name}</span>
                     <span className="text-white/45">Lv.{m.lv}</span>
+                    {m.online === false && <span className="ml-auto text-[9px] font-bold text-white/35">오프라인</span>}
                   </li>
                 ))}
               </ul>
