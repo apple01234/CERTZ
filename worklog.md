@@ -2949,3 +2949,26 @@ Stage Summary:
 - 웹(sertz.vercel.app)에는 즉시 반영 완료. 멀티 UI 전면 철거로 "채팅/파티/멀티 아이콘" 3건 해소
 - 자동전투는 1차 튜닝(물약·후퇴반격) 적용, 추가 튜닝 여지 있음
 - 미반영: APK는 Capacitor 번들라 웹을 내장하므로 재빌드 필요 → v1.4.24/vc116 빌드 시 HUD/게임 로직 반영 + 게이트 2종·build.gradle·apk-guide 동기 필수
+
+---
+Task ID: release-1-4-26
+Agent: Super Z (main)
+Task: v1.4.26/vc118 APK 재빌드·릴리스 — 멀티 UI 철거+자동전투 튜닝의 APK 반영
+
+Work Log:
+- 컨테이너 복원 후유증 복구: JDK 재설치(17 설치 → capacitor-android가 Java 21 요구로 21.0.12.1 재설치), node_modules npm 재설치, Android SDK 완전 재구축(cmdline-tools+licenses+platforms;android-36+build-tools 35/36+platform-tools)
+- build_apk.sh 소실 → 표준 절차 재작성(node kill·라우트 5종 .apk-hold 격리·trap 절대경로 복원·lint 3종 -x)
+- 버전 승격 4종 싱크: package.json 1.4.26 · build.gradle vc118/1.4.26 · 게이트 2종(server.js·route.ts) 1.4.26/118+신규 APK URL
+- 빌드 1차 실패: api/chat·api/party 라우트가 relaydb의 삭제된 rateLimit export 참조(ba696fb 멀티 정리 잔해) → next 빌드 에러. **Vercel 배포도 같은 원인으로 실패했을 가능성 확정(라이브 게이트가 구버전 1.4.25를 서빙 중)**
+- 픽스: 죽은 api/chat·api/party 라우트 삭제(클라이언트 미사용·멀티 제외 확정) → 빌드 통과
+- 재빌드: BUILD SUCCESSFUL 2m55s · 135,546,864B · aapt vc118/1.4.26 · apksigner SHA-256 cc774f34(동일 키)
+- apk-guide.html 갱신: v1.4.26 표기·URL·md5 7e7b03cd/sha1 2ed00461/135546864B/vc118·변경점 블록+푸터 추가
+- 릴리스: GitHub v1.4.26(ID 401617612) 업로드 · 커밋 8ec69d4 push → Vercel READY
+- 검증: 라이브 게이트 latest 1.4.26/code 118/note·APK URL ✓ · 릴리스 APK 200(135,546,864B) ✓ · / 200 ✓ → **웹 배포도 정상 복귀 확인**
+
+Stage Summary:
+- v1.4.26 출시: https://github.com/apple01234/CERTZ/releases/download/v1.4.26/SERTZ-v1.4.26.apk
+- 4건 보고 최종 해소: ①멀티 아이콘 제거 ✓ ②파티 창설(멀티 의존) UI 철거 ✓ ③자동전투 1차 튜닝 ✓ ④채팅(멀티 의존) UI 철거 ✓ — 웹+APK 모두 반영
+- Vercel 빌드 실패 원인(죽은 라우트) 제거로 웹 배포 체계 정상화
+- 신규 환경 메모: JDK 21 필수(capacitor 8.5), SDK는 매 세션 재구축, build_apk.sh repo 커밋됨
+- 미해결 잠재 이슈(기록): 세로 좁은 화면(clusterFloat) 물약 버튼 위치 재설계 여지
