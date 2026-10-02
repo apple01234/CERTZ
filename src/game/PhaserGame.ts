@@ -76,7 +76,15 @@ export function createGame(parent: HTMLElement): Phaser.Game {
    *  강등해 게임 자체는 항상 플레이 가능하게 하는 비상 통로. 기본은 AUTO(변경 없음). */
   const forceCanvas = (() => {
     try {
-      return new URLSearchParams(window.location.search).get("renderer") === "canvas";
+      const q = new URLSearchParams(window.location.search).get("renderer");
+      if (q === "canvas") return true;
+      /* v1.4.23 (#반짝임) — ?renderer=webgl로 세션 폴백 해제 */
+      if (q === "webgl") {
+        sessionStorage.removeItem("sertz.renderer");
+        return false;
+      }
+      /* v1.4.23 (#반짝임) — GPU 불안정으로 Canvas 폴백이 예약된 세션 */
+      return sessionStorage.getItem("sertz.renderer") === "canvas";
     } catch {
       return false;
     }
@@ -98,7 +106,9 @@ export function createGame(parent: HTMLElement): Phaser.Game {
       antialias: false,
       batchSize: 4096,
       maxTextures: 16,
-      desynchronized: true,
+      /* v1.4.23 (#반짝임) — desynchronized 제거: 캔버스 프레젠테이션 동기화 우회는
+       *  이동/스킬처럼 갱신이 격한 순간 Android WebView·일부 Chromium에서
+       *  "검은 프레임 반짝임"을 유발하는 문서화된 유발점 — 지연 단축 이익보다 크다. */
     },
     fps: { target: 60, min: 30 },
     physics: {
@@ -126,11 +136,31 @@ export function createGame(parent: HTMLElement): Phaser.Game {
    *  멈춘다(입력도 죽음). lost에서 복구 대기, 4초 내 미복구 시 세이브가 살아있으므로
    *  안전하게 새로고침해 부팅한다. */
   let ctxLostAt = 0;
+  /* v1.4.23 (#반짝임) — GPU 불안정 브레이커:
+   *  유저 리포트 "움직이거나 스킬 사용 시 화면이 검게 반짝임". 유실 동안은
+   *  render()의 contextLost 가드가 그리기를 스킵 → 캔버스가 검게 보인다(반짝임의 정체).
+   *  60초 창 반복 유실은 "블룸/툰 셰이더 프레임버퍼 경로를 GPU가 못 버틴다"는 신호:
+   *   ① 2회 — 세션 이벤트(sertz:gpu-unstable)로 WorldScene에 절전 전환 요청
+   *   ② 4회 — Canvas 백엔드 폴백 예약 + 예산화된 안전 재부팅 */
+  const ctxLossTimes: number[] = [];
   const canvas = game.canvas;
   canvas.addEventListener("webglcontextlost", (e) => {
     e.preventDefault();
     ctxLostAt = Date.now();
-    console.error("[SERTZ] WebGL 컨텍스트 손실 — 복구 대기");
+    const now = Date.now();
+    while (ctxLossTimes.length > 0 && now - ctxLossTimes[0] > 60000) ctxLossTimes.shift();
+    ctxLossTimes.push(now);
+    console.error("[SERTZ] WebGL 컨텍스트 손실 — 복구 대기 (", ctxLossTimes.length, "회/60초)");
+    try {
+      if (ctxLossTimes.length >= 2) {
+        window.dispatchEvent(new CustomEvent("sertz:gpu-unstable", { detail: { losses: ctxLossTimes.length } }));
+      }
+      if (ctxLossTimes.length >= 4) {
+        try { sessionStorage.setItem("sertz.renderer", "canvas"); } catch { /* 무시 */ }
+        console.error("[SERTZ] 컨텍스트 반복 유실 — Canvas 백엔드 폴백 재부팅");
+        safeReload("gpu-unstable");
+      }
+    } catch { /* 무시 */ }
   });
   canvas.addEventListener("webglcontextrestored", () => {
     ctxLostAt = 0;

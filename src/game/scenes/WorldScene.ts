@@ -882,6 +882,23 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private createInner() {
+    /* v1.4.23 (#반짝임) — GPU 불안정 브레이커 수신:
+     *  PhaserGame이 60초 창에 컨텍스트 유실 2회 이상을 감지하면 발행.
+     *  즉시 절전 모드(fxLevel 0)로 강등해 셰이더/블룸 프레임버퍼 경로를 제거하고,
+     *  이후 적응형 복원(high 강제 포함)도 tickFxQuality 게이트로 차단한다. */
+    this.onGpuUnstable = () => {
+      if (this.gpuUnstable) return;
+      this.gpuUnstable = true;
+      console.warn("[SERTZ] GPU 불안정 감지 — 절전 모드 강제 전환 (셰이더·블룸 OFF)");
+      try {
+        this.showBanner("GPU가 불안정하다 — 화면 반짝임 방지를 위해 절전 모드로 전환했다");
+      } catch { /* 배너 실패 무시 */ }
+      if (this.fxLevel === 1) {
+        this.fxLevel = 0;
+        this.applyFxMode(0);
+      }
+    };
+    window.addEventListener("sertz:gpu-unstable", this.onGpuUnstable);
     this.impactFX = new ImpactFX(this);
     this.driveFx = new DriveFX(this);
     /* v4.8.0 — 충격파 링 풀 (WebGL 전용 — Canvas 폴백은 풀이 비어 no-op) */
@@ -3139,6 +3156,11 @@ export class WorldScene extends Phaser.Scene {
 
   /* v4.9.0 — fxLevel을 public으로 (Player 돌진 잔상 게이트에서 직접 조회) */
   fxLevel: 0 | 1 = 1;
+  /* v1.4.23 (#반짝임) — GPU 불안정 래치: WebGL 컨텍스트 반복 유실 세션에서
+   *  블룸/툰 셰이더 프레임버퍼 경로를 즉시 제거한다 (유실 동안 렌더 스킵 =
+   *  "이동/스킬 사용 시 검은 반짝임"의 정체). 씬 재시작과 무관하게 세션 동안 유지. */
+  private gpuUnstable = false;
+  private onGpuUnstable: () => void = () => {};
   private fxSampleAt = 0;
   private fxLowStreak = 0;
   private fxHighStreak = 0;
@@ -3266,6 +3288,15 @@ export class WorldScene extends Phaser.Scene {
         enemies: this.enemies.filter((e) => e.active && e.alive).length,
         remotes: this.remotes.size,
       };
+    }
+    /* v1.4.23 (#반짝임) — GPU 불안정 세션: auto 복원·high 강제를 모두 차단.
+     *  유실이 반복되는 GPU에 셰이더 경로를 돌려주면 반짝임이 재발한다. */
+    if (this.gpuUnstable) {
+      if (this.fxLevel === 1) {
+        this.fxLevel = 0;
+        this.applyFxMode(0);
+      }
+      return;
     }
     /* v1.0.8 — 모드 강제: high는 항상 복원, low는 항상 축소 (적응형 판정 생략) */
     if (this.fxMode === "high") {
@@ -12699,6 +12730,8 @@ export class WorldScene extends Phaser.Scene {
   private cleanup() {
     this.questTimer?.remove();
     this.scale.off("resize", this.applyCameraZoom, this);
+    /* v1.4.23 (#반짝임) — GPU 불안정 리스너 해제 */
+    window.removeEventListener("sertz:gpu-unstable", this.onGpuUnstable);
     /* v1.3.1 (#8) — visibilitychange 리스너 해제 (씬 재시작 후 중복 실행 방지) */
     if (this.onVisChange) document.removeEventListener("visibilitychange", this.onVisChange);
     this.tut?.destroy(); // v1.0.11 — 튜토리얼 HUD/마커 정리
