@@ -2818,3 +2818,19 @@ Stage Summary:
 - space-z.ai 게임 서버 의존성 전면 제거 완료 — 서버 인프라가 "Vercel(serverless) + GitHub(private DB)" 두 서비스로 축소
 - 기존 계정 데이터는 CERTZ-DB 단일 원본으로 생존, 서버 교체 개념 자체가 소멸
 - 잔여 작업: APK v1.4.22 빌드·릴리스(게이트 상수 승격 필요) — 구 APK 설치분은 오프라인 플레이 가능, 계정 연동은 신규 APK 필요
+
+---
+Task ID: VC-3
+Agent: Super Z (main)
+Task: ②안 이후 상태 재확인 — 미리보기 주소 조사 + 라이브 헬스체크 (컨테이너 복원 후 세션)
+
+Work Log:
+- 컨테이너 복원으로 gitignore된 토큰 3종(.secrets/vercel_token, .secrets/github_token, /github_token) 소실 → 대화 기록 토큰으로 재복구(chmod 600)
+- 미리보기 주소 조사: GET /v6/deployments?target=preview → preview 배포 0건 존재하지 않음. 프로젝트의 모든 배포(최근 15건 전부) target=production — 별도 미리보기 주소는 없으며 sertz.vercel.app(프로덕션)이 곧 서비스 주소
+- 라이브 헬스체크: / 200(0.27s) · /api/market 200(0.66s) · /api/auth/sns 프로바이더 JSON 정상 · /api/version 1.4.21/113(게이트 의도적 유지 — APK v1.4.22 미출시)
+- ②안 완료 상태 재확인: VC-1(구축)+VC-2(라이브 검증 E2E 9/9) 이력과 현재 라이브 상태 일치 — 추가 복구 작업 불필요
+
+Stage Summary:
+- 미리보기 주소 = 없음(0건)이 확정 답변. 서비스 주소는 https://sertz.vercel.app/ 단일.
+- ②안 아키텍처 정상 운영 중: Vercel serverless(계정·거래소·랭킹·클라우드세이브) + GitHub CERTZ-DB
+- 잔여 작업은 APK v1.4.22 빌드·릴리스(게이트 상수 승격) 단 하나
