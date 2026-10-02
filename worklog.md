@@ -2716,3 +2716,22 @@ Stage Summary:
 - v1.4.21(vc113) 릴리스 완료 — 1.4.20 설치분은 버전 게이트로 재설치 안내 표시
 - 미러 해석 로직으로 "기본 주소=Vercel, 실제 연결=게임 서버 본체" 구조 확립
 - 미해결: sertz11 플랫폼 엣지 500 — 유저가 플랫폼 페이지에서 sertz11 재배포 필요(복구 시 APK·Vercel 모두 무조치 자동 연결)
+
+---
+Task ID: SEP-3
+Agent: Super Z (main)
+Task: Vercel API 토큰 등록 — 세션 리셋 무관 배포/관리 체계 확립 (유저가 vcp_ 토큰 전달)
+
+Work Log:
+- [토큰 검증] 유저 전달 토큰 vcp_… 이 Vercel 팀 202630719-4818s(team_tU80jP4GxpzCqs69YnAYe0jl) 유효 토큰임을 실측 확인 — /v9/projects·/v6/deployments·/v4/aliases·/v9/env 읽기 + /v13/deployments 생성 + /v10/env 쓰기 전부 성공
+- [제약 확인] 스코프드 토큰 특성: /v2/user·whoami 해석 불가 → vercel CLI(whoami/deploy) 사용 불가. REST API + teamId 경유만 동작 — 헬퍼를 API 기반으로 설계
+- [보관] .secrets/vercel_token 저장(gitignore L116 .secrets/ 제외 확인, chmod 600) — 세션 리셋 후에도 배포 가능해짐(기존 교훈 "세션 리셋 시 vercel 로그인 유실" 해소)
+- [헬퍼] scripts/vercel_api.sh 신규 — status/deployments/redeploy/wait/alias/env/envset/live 8개 명령. 재배포는 gitSource(repoId 1349316842, apple01234/CERTZ@main) 방식
+- [재배포 실증] API로 프로덕션 재배포 트리거 → dpl_2btmXVZeCbKMaRXVBWNSx3jwCLic READY + sertz.vercel.app 별칭 재할당 실측 — 푸시 없이도 배포 가능
+- [서버 본체 전환 경로 확립] 프로젝트 env에 NEXT_PUBLIC_GAME_SERVER=https://sertz11.space-z.ai 설정(현재 vercel.json 값과 동일 → 무효화 없음). 이후 서버 본체 교체 시: envset NEXT_PUBLIC_GAME_SERVER <새주소> 한 줄로 env 변경+재배포 완료 — git 푸시/APK 재설치 불필요
+- [커밋] worklog+헬퍼 스크립트 커밋/푸시
+
+Stage Summary:
+- Vercel 배포·관리가 세션/로그인 상태와 무관하게 토큰만으로 가능해짐 (배포: git 푸시 자동 or API redeploy / 관찰: status·deployments / 전환: envset)
+- 토큰 위치: .secrets/vercel_token · 사용법: scripts/vercel_api.sh (인자 없이 실행 시 도움말)
+- 라이브 상태: sertz.vercel.app 1.4.21/vc113 (재배포 후에도 정상)
