@@ -1,15 +1,19 @@
 import type { NextConfig } from "next";
 
 /**
- * APK_EXPORT=1 → Capacitor용 정적 export (distDir 분리로 dev .next 보호)
+ * APK_EXPORT=1 → Capacitor용 정적 export (distDir .next-apk 분리로 dev .next 보호 — webDir)
+ * STATIC_EXPORT=1 → Vercel 정적 프론트 미러 export (v1.4.20 멀티서버 분리)
+ *   - distDir 기본값(.next) 유지: output:export 결과가 표준 out/에 생성돼야 Vercel 빌더가 감지
  * 일반 dev/배포는 standalone 그대로.
  */
 const isApkExport = process.env.APK_EXPORT === "1";
+const isVercelExport = process.env.STATIC_EXPORT === "1";
+const isStaticExport = isApkExport || isVercelExport;
 
-const nextConfig: NextConfig = isApkExport
+const nextConfig: NextConfig = isStaticExport
   ? {
       output: "export",
-      distDir: ".next-apk",
+      ...(isApkExport ? { distDir: ".next-apk" } : {}),
       images: { unoptimized: true },
       typescript: { ignoreBuildErrors: true },
       reactStrictMode: false,

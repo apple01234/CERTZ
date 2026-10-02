@@ -17,21 +17,23 @@ const KEY = "sertz.server.url";
  *  v1.0.12 (#접속불가 리포트) — 외부 실프측 재검증: sertz.z.ai = "Domain could not be resolved"(DNS 미존재),
  *           sertz4.space-z.ai = 생존 확인(외부 page_reader 200, 구버전 가이드 서빙 — 유저 계정 DB가 있는 살아있는 유일 엔드포인트).
  *           기본값을 sertz4로 복원 + sertz.z.ai를 DEAD_SERVERS에 등록(기존 v1.0.9~11 설치분 자동 복귀).
- *           클라이언트 API 계약은 v1.0.8 이후 불변이므로 구 서버와 호환. 서버 이전 시 이 상수+DEAD_SERVERS 한 쌍만 갱신. */
-const DEFAULT_SERVER = "https://sertz4.space-z.ai";
+ *           클라이언트 API 계약은 v1.0.8 이후 불변이므로 구 서버와 호환. 서버 이전 시 이 상수+DEAD_SERVERS 한 쌍만 갱신.
+ *  v1.4.20 — 서버 이전: sertz4 → sertz11.space-z.ai (현재 라이브 게임 서버 본체).
+ *           멀티서버 분리 아키텍처의 유일한 게임 서버(소켓+계정/거래소/랭킹 API).
+ *           구 기본값 sertz4는 DEAD_SERVERS로 이동 — 구 APK 설치분도 첫 기동에 자동 이행. */
+const DEFAULT_SERVER = "https://sertz11.space-z.ai";
 
 /* v3.2.0 — 서비스 종료/만료된 과거 기본 서버들 (자동 이행 대상)
  *  v1.0.12 — sertz4 복원(생존 실측)에 따라 목록에서 제외, 대신 DNS 미존재가 실측된
- *           sertz.z.ai를 등록 — v1.0.9~11 설치분도 첫 기동에 sertz4로 자동 복귀된다. */
+ *           sertz.z.ai를 등록 — v1.0.9~11 설치분도 첫 기동에 sertz4로 자동 복귀된다.
+ *  v1.4.20 — 서버가 sertz11로 이전됨에 따라 sertz4를 목록에 등록 —
+ *           sertz4 저장분(구 APK)도 첫 기동에 sertz11로 자동 이행된다. */
 const DEAD_SERVERS = [
   "https://preview-6a94b1ab.space-z.ai",
   "https://preview-6a95efa8.space-z.ai",
   "https://sertz1234.space-z.ai",
   "https://sertz.z.ai",
-  "https://preview-6a94b1ab.space-z.ai",
-  "https://preview-6a95efa8.space-z.ai",
-  "https://sertz1234.space-z.ai",
-  "https://sertz.z.ai",
+  "https://sertz4.space-z.ai",
 ];
 
 function readUrl(): string {
@@ -191,7 +193,7 @@ export function ServerConnect() {
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://preview-xxxx.space-z.ai"
+            placeholder="https://sertz11.space-z.ai"
             className="w-full rounded-lg border border-white/15 bg-black/40 px-2.5 py-2 text-[11px] text-white placeholder:text-white/25 focus:border-amber-300/60 focus:outline-none"
             spellCheck={false}
             inputMode="url"

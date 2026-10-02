@@ -23,6 +23,9 @@
  */
 
 import { Capacitor } from "@capacitor/core";
+/* v1.4.20 — 멀티서버 분리: API 베이스 해석을 server.ts 공용 모듈로 일원화
+ *  (웹 same-origin은 기존대로, Vercel 등 정적 배포는 원격 게임 서버 자동 지정) */
+import { resolveApiBase } from "./server";
 
 /* v1.0.7 — Bearer 세션 토큰 저장소 (APK 웹뷰 쿠키 불가 대응; 웹은 쿠키가 우선이라 없어도 됨) */
 const TOKEN_KEY = "sertz.auth.token";
@@ -65,18 +68,10 @@ export function consumeAuthTokenFromHash(): void {
   } catch { /* 무시 */ }
 }
 
-/** 계정/거래소 API 베이스 URL — 웹 ""(same-origin) · APK/EXE 설정된 게임 서버 주소 */
+/** 계정/거래소 API 베이스 URL — v1.4.20: server.ts resolveApiBase로 일원화
+ *  웹 게임서버 오리진 ""(same-origin) · 정적 배포(Vercel 등) 원격 게임서버 · APK/EXE 설정 주소 */
 function apiBase(): string {
-  try {
-    if (Capacitor.isNativePlatform() || /electron/i.test(navigator.userAgent)) {
-      const raw = window.localStorage.getItem("sertz.server.url");
-      const u = raw?.trim();
-      if (u && /^https?:\/\//i.test(u)) return u.replace(/\/$/, "");
-    }
-  } catch {
-    /* localStorage 접근 불가 — same-origin 폴백 */
-  }
-  return "";
+  return resolveApiBase();
 }
 
 export type AuthUser = { id: string; name: string; provider: string; createdAt?: number; /** v1.0.2 — 서버 검증 롤 (admin만 GM 진입) */ role?: string };

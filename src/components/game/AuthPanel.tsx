@@ -18,6 +18,7 @@ import {
   type SnsProviders,
 } from "@/game/account";
 import { SAVE_KEY } from "@/game/config";
+import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리: 정적 배포에서 원격 서버 OAuth 시작
 
 /**
  * v4.9.0 — 계정 패널 (유저 지시 #4)
@@ -149,7 +150,8 @@ export function AuthPanel() {
   const snsStart = (key: string) => {
     const p = providers[key];
     if (p?.configured) {
-      window.location.assign(`/api/auth/sns/${key}/start`);
+      /* v1.4.20 — 정적 배포(Vercel 등)에서는 원격 게임 서버의 OAuth 시작 경로로 이동 */
+      window.location.assign(`${resolveApiBase()}/api/auth/sns/${key}/start`);
     } else {
       setMsg(`${SNS_META[key]?.label ?? key} 로그인은 서버 OAuth 키 미등록 상태예요 — 자체 회원가입을 이용해 주세요`);
     }

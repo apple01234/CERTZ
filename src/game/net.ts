@@ -11,6 +11,8 @@
  */
 import { Capacitor } from "@capacitor/core";
 import { io, type Socket } from "socket.io-client";
+/* v1.4.20 — 멀티서버 분리: 게임 서버 해석 로직을 server.ts로 일원화 */
+import { GAME_SERVER, isGameServerHost, storedServerUrl } from "./server";
 
 /** v3.0.8 — Electron(EXE 데스크톱) 감지: UA에 Electron 포함.
  *  EXE는 자체 로컬 서버(same-origin)를 내장하므로 웹과 동일하게 동작하되,
@@ -47,7 +49,9 @@ let lastParty: NetParty | null = null;
 
 /**
  * 접속 대상 서버 URL 결정:
- *  - 웹 → undefined (same-origin: server.js socket.io)
+ *  - 웹(게임 서버 오리진: localhost/*.space-z.ai) → undefined (same-origin: server.js socket.io)
+ *  - 웹(정적 배포: Vercel 등) → 게임 서버(GAME_SERVER) 직접 접속 (v1.4.20 멀티서버 분리)
+ *  - 웹 + localStorage 'sertz.server.url' → 그 주소 (수동 오버라이드)
  *  - APK + localStorage 'sertz.server.url' → 그 주소 (멀티플레이 서버)
  *  - APK + 미지정 → null (오프라인 모드 — 연결 시도 없음)
  *  - EXE(Electron) + 저장 주소 → 그 주소 (원격 멀티플레이 서버)
@@ -61,23 +65,18 @@ export function resolveServerUrl(): string | null | undefined {
   if (typeof window === "undefined") return undefined;
   const electron = isElectron();
   if (Capacitor.isNativePlatform() || electron) {
-    try {
-      const raw = window.localStorage.getItem("sertz.server.url");
-      const u = raw?.trim();
-      /* v1.4.3 (#데이터보안) — 평문 http/wss 미허용: 저장 주소를 https/wss로 강제 승격
-       *  (Play Console "수집 데이터 전체 암호화 전송: 예" 근거 — 모든 API/소켓이 TLS 경유) */
-      if (u && /^(https?|wss?):\/\//i.test(u)) {
-        return u
-          .replace(/^http:\/\//i, "https://")
-          .replace(/^ws:\/\//i, "wss://")
-          .replace(/\/$/, "");
-      }
-    } catch {
-      /* localStorage 접근 불가 — 폴백 처리 */
-    }
-    return electron ? undefined : null;
+    /* v1.4.3 (#데이터보안) — 평문 http/wss 미허용: 저장 주소를 https/wss로 강제 승격
+     *  (Play Console "수집 데이터 전체 암호화 전송: 예" 근거 — 모든 API/소켓이 TLS 경유) */
+    return storedServerUrl() ?? (electron ? undefined : null);
   }
-  return undefined;
+  /* v1.4.20 — 웹 분기 (멀티서버 분리):
+   *  Vercel 등 정적 배포에서는 same-origin에 소켓 서버가 없다 → 게임 서버(sertz11)로
+   *  직접 접속해 웹 버전에서도 멀티/채팅/파티가 동작한다. 재접속 스톰(화면끊김 원인)
+   *  자체가 사라진다 — 서버가 살아있으니 첫 시도에서 연결됨. */
+  const stored = storedServerUrl();
+  if (stored) return stored;
+  if (isGameServerHost(window.location.hostname)) return undefined; // same-origin
+  return GAME_SERVER; // 정적 배포 → 원격 게임 서버
 }
 
 export function netConnect(): Socket | null {

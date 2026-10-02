@@ -6,6 +6,7 @@ import { EventBus, type EndState, type RewardPopupState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
 import { RotateCw, Play, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles, Smartphone } from "lucide-react";
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0
+import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리
 import pkg from "../../../package.json"; // v1.0.17 — 클라 자체 버전 (단일 소스 = package.json)
 
 /** 세이브 이어하기 라벨용 스테이지 표기명 (v2.0 — 구역 체인 대응) */
@@ -51,7 +52,8 @@ export function TitleScreen() {
 
   useEffect(() => {
     let dead = false;
-    fetch("/api/version", { cache: "no-store" })
+    /* v1.4.20 — 멀티서버 분리: 정적 배포(Vercel 등)에서는 원격 게임 서버의 버전 API 조회 */
+    fetch(`${resolveApiBase()}/api/version`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((j: { latest?: string; note?: string; guide?: string } | null) => {
         if (dead || !j?.latest) return;
@@ -86,7 +88,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.16 — 원소 반응 시스템: 폭발·결빙·융해·소멸 — 유리 상성 특수 반응 + 상태이상·스플래시</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.20 — 멀티서버 분리: Vercel 정적 미러가 게임 서버에 직접 접속 — 웹에서도 멀티·계정·거래소 원격 연동 + APK 기본 서버 sertz11 전환</span>
           </p>
         </div>
 

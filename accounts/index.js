@@ -352,9 +352,23 @@ const CORS_BASE_HEADERS = {
   "Access-Control-Max-Age": "86400",
 };
 const CORS_HEADERS = { ...CORS_BASE_HEADERS }; // 하위 호환 정적 기본값 (req 미첨부 경로용)
+/* v1.4.20 — 멀티서버 분리: 정적 프론트 미러(Vercel 등)에서 게임 서버 API를 직접 호출.
+ *  배포마다 서브도메인이 다르고 빌드마다 바뀔 수 있어 접미사 화이트리스트로 허용.
+ *  보안 영향 없음: 이 헤더는 "토큰 없는 제3자"가 응답을 읽게 해주는 것뿐 —
+ *  인증은 여전히 세션 토큰(Bearer/쿼리)이 필요하다. */
+const CORS_ALLOW_SUFFIXES = [".vercel.app", ".space-z.ai"];
+function originAllowed(origin) {
+  if (CORS_ALLOWED_ORIGINS.has(origin)) return true;
+  try {
+    const h = new URL(origin).hostname.toLowerCase();
+    return CORS_ALLOW_SUFFIXES.some((s) => h.endsWith(s) && h.length > s.length);
+  } catch {
+    return false;
+  }
+}
 function corsHeadersFor(req) {
   const origin = String(req.headers.origin || "");
-  if (origin && CORS_ALLOWED_ORIGINS.has(origin)) {
+  if (origin && originAllowed(origin)) {
     return { ...CORS_BASE_HEADERS, "Access-Control-Allow-Origin": origin, Vary: "Origin" };
   }
   return { ...CORS_BASE_HEADERS };

@@ -4,16 +4,16 @@ import { NextResponse } from "next/server";
  *  - server.js(커스텀 서버)가 살아있는 셀프호스트/플랫폼 배포에서는 server.js가
  *    /api/version을 먼저 가로채므로 이 라우트는 도달하지 않는다(무해).
  *  - Vercel 등 서버리스 배포에서는 이 라우트가 응답한다.
- *  - server.js의 LATEST_VERSION/VERSION_NOTE/APK_MIRROR 와 수동 싱크 유지 (v1.4.19 기준).
+ *  - server.js의 LATEST_VERSION/VERSION_NOTE/APK_MIRROR 와 수동 싱크 유지 (v1.4.20 기준).
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.4.19";
-const LATEST_CODE = 111;
+const LATEST_VERSION = "1.4.20";
+const LATEST_CODE = 112;
 const VERSION_NOTE =
-  "v1.4.19 — 변경: ①필드/마을에 간헐적으로 생기던 '검은 사각형+녹색 대각선' 글리치 근원 제거 — v1.4.11 나무 배치 풀 kd_plant 3종의 부트 로드 누락 수정 + 등록된 텍스처만 배치하는 안전망 ②게임 UI 스킨을 Tailwind CSS 기반으로 전환(ui2 비트맵 스트레치 프레임 → 앰버/스톤 유틸리티 디자인 — 패널·버튼·탭·입력·게이지 전체, 픽셀 폰트와 게임 감성은 유지) · APK: GitHub 릴리스 v1.4.19";
+  "v1.4.20 — 변경: ①멀티서버 분리 아키텍처 — Vercel 정적 프론트 미러가 게임 서버(sertz11)에 직접 접속(소켓·계정·거래소·랭킹 전부 원격 연동) ②APK 기본 서버 sertz11 전환 + 구 서버(sertz4) 저장분 자동 이행 ③웹 정적 배포에서 소켓 재접속 스톰 제거(이동 시 화면 끊김 완화) · APK: GitHub 릴리스 v1.4.20";
 const APK_MIRROR =
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.19/SERTZ-v1.4.19.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.20/SERTZ-v1.4.20.apk";
 
 export async function GET() {
   return NextResponse.json({
