@@ -9350,6 +9350,28 @@ export class WorldScene extends Phaser.Scene {
           this.time.delayedCall(1100, () => this.showBanner("오프라인 모드 — 타이틀 화면 우하단에서 서버 연결 시 멀티플레이"));
         }
          */
+        /* v1.4.27-w3 (#채팅폴링) — 소켓 없는 배포(Vercel serverless)에서도 릴레이 채팅 폴링은
+         *  기동돼야 한다. 기존엔 여기서 조기 리턴해 netOnChat(=relayEnsureChatPoll)이 등록되지
+         *  않았고, 발송은 /api/chat POST로 DB에 저장되는데 수신 폴링이 없어 남 채팅은커녕 내
+         *  메시지조차 화면에 안 떴다 (보고: "채팅을 입력해도 채팅이 안올라옴").
+         *  → 채팅 수신만 릴레이로 연결. 플레이어/친구/액션 동기는 소켓 전용이므로 생략. */
+        const offChatRelay = net.netOnChat((m) => EventBus.emit("chat:msg", m));
+        this.netOffs = [offChatRelay];
+        this.events.once("shutdown", () => this.shutdownNet());
+        // 소켓 경로와 동일 시점에 신원 주입 — relaySetIdentity로 이름/Lv/직업 세팅(이름없음 방지)
+        this.time.delayedCall(650, () => {
+          if (!this.player) return;
+          net.netJoin({
+            name: getPlayerName(),
+            lv: this.player.lv,
+            cls: this.player.cls,
+            x: Math.round(this.player.x),
+            y: Math.round(this.player.y),
+            stage: this.stageDef.key,
+            code: getFcode(), // v2.1 친구 고유번호
+            gm: this.adminRole === "admin", // v1.0.16 — GM 이름표/오라 원격 표시
+          });
+        });
         return;
       }
       const offPlayers = net.netOnPlayers((list) => this.syncRemotes(list));
