@@ -2876,3 +2876,20 @@ Stage Summary:
 - 구 APK(v1.4.21 이하)는 기동 시 /api/version 게이트로 1.4.23 갱신 안내 수신 → 타이틀에 재설치 유도. 설치분은 오프라인 플레이만 가능했던 상태에서 계정·거래소·랭킹·클라우드세이브 전부 복구
 - 유저 확인 필요: 깜빠임 재현 여부(픽스 3겹 — desynchronized 제거·GPU 브레이커·Canvas 폴백). 재발 시 ?renderer=canvas 강제 경로 존재
 - 로컬 :3000 본체는 중지 상태 유지(VC-1 이중 쓰기 방지 정책) — 라이브 본체는 sertz.vercel.app 단일
+---
+Task ID: APK-24
+Agent: Super Z (main)
+Task: 유저 리포트 "APK에서 서버 주소 올바른데 연결 실패 표시" — 원인 규명·수정·v1.4.24 릴리스
+
+Work Log:
+- 원인 규명: ServerConnect가 연결 상태를 멀티플레이 소켓 netJoined()로 판정 — ②안(Vercel serverless, 소켓 서버 없음·설계상 오프라인)에서는 영원히 false → 12초 후 무조건 "연결 실패"+기본서버 복구 오타보. 실제 계정·거래소 API는 resolveApiBase()=저장 주소로 정상 동작 중(기능 문제 아님 — 표시 문제)
+- 픽스: ServerConnect.tsx 판정을 계정 API 헬스체크로 교체 — storedServerUrl()(정규화) + GET {base}/api/version 6초 타임아웃, 30초 주기 재확인. 성공=녹색 "서버 연결됨", 실패만 "연결 실패"+복구, 미저장="오프라인 모드"(의도적 상태 — 알람 없음). /api/version CORS * 실측 확인 후 일반 fetch 사용. netConnect() 유지(멀티 재개 시 GAME_SERVER만 채우면 부활)
+- 버전 승격 4종 싱크: package.json·build.gradle(vc116/1.4.24)·게이트 2종(server.js·route.ts → 1.4.24/116+신규 APK URL)
+- 재빌드: 라우트 격리 export(trap 복원) → cap sync → gradle -x lint 3종 → BUILD SUCCESSFUL 29s · SERTZ-v1.4.24.apk 135,550,992B · apksigner cc774f34(동일 키) · aapt vc116/1.4.24
+- 릴리스: GitHub v1.4.24(ID 401561000) 업로드 완료 · 푸시 42fa0bf → Vercel dpl_B2GCHdznwHQ2KLfrhwh9B2UqaJvZ READY · 검증: 게이트 latest 1.4.24/code 116/apk URL · 릴리스 URL 206 · / 200
+
+Stage Summary:
+- v1.4.24 출시: https://github.com/apple01234/CERTZ/releases/download/v1.4.24/SERTZ-v1.4.24.apk
+- v1.4.23 설치분은 기동 시 게이트로 116 갱신 안내 자동 수신
+- APK의 "연결 실패"는 기능 장애가 아니라 소켓 기반 판정의 오타보였음 — 이제 계정 서버 실제 상태를 표시
+- 발견한 잠재 이슈(미수정·기록): APK에서 "오프라인" 버튼은 제거한 KEY를 부팅 effect가 즉시 DEFAULT로 재저장·reload — 사실상 동작 안 함. ②안에서 오프라인은 계정 API same-origin(https://localhost) 부재 문제로 별도 설계 필요 — 유저 요청 시 처리
