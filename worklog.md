@@ -3180,3 +3180,27 @@ Stage Summary:
 - v1.4.28 출시: https://github.com/apple01234/CERTZ/releases/download/v1.4.28/SERTZ-v1.4.28.apk
 - 밀린 이슈 2종(채팅 전송 버튼 가림 · 세로 좁은 화면 물약 거리) 전부 해소 — 요약서 미해결 목록에서 "모바일 키 거리·clusterFloat 물약 버튼" 제거 가능. 남은 것: apple01234 계정 비번(요청 시 리셋), 채팅 전송 버튼 모바일 키보드 상호작용(실기기 확인 권장 — 헤드리스 한계)
 - 다음 세션 대비: .secrets 3종 + JDK/SDK 재구축 필요 시 scripts/rebuild_*.sh 포그라운드 실행
+
+---
+Task ID: release-1-0-0-beta
+Agent: Super Z (main)
+Task: 유저 "이제 출시 할꺼니 최종 정리 및 beta 1.0.0 버전으로 고치고 aab 파일을 줘" — v1.0.0-beta/vc121 출시 + AAB 빌드 전달
+
+Work Log:
+- 환경 재구축: JDK 21.0.12.1(rebuild_jdk.sh)·Android SDK(cmdline-tools+android-36+build-tools 35/36, /home/z/.android-sdk) 포그라운드 재설치 + android/local.properties 신설(build_apk.sh의 ANDROID_HOME 후보 목록에 /home/z/.android-sdk 없음 — local.properties가 실제 연결 경로)
+- 토큰: .secrets 4차 소실 — git remote URL 내장 토큰(ghp_WeBx8, 유효 200)을 .secrets/github_token으로 재저장. Vercel 토큰 불필요(푸시 → Git 연동 자동배포 확인)
+- 버전 승격 4종(scripts/bump_1_0_0_beta.py): package.json 1.0.0-beta · build.gradle vc121/1.0.0-beta(주석 프리펜드) · server.js 게이트(LATEST_VERSION/LATEST_CODE/APK_MIRROR/VERSION_NOTE) · api/version 게이트 — 클라이언트 버전 비교는 versionCode 숫자(121>120)라 문자 버전 무영향
+- 빌드 트러블슈팅 3건: ①백그라운드 빌드 2회 자가 사망(nohup/setsid 무관, 환경이 고아 프로세스 비가동성 수거) → 웹빌드+cap sync는 16:11 실행분(버전 승격 후 · .next-apk·android assets에 1.0.0-beta 반영 확인) 재사용하고 gradle만 포그라운드 청크로 전환 ②Gradle 래퍼 다운로드 0B stall(curl 수동 다운로드 224.5MB → dists 해제+.ok 마커 심기) ③pkill로 중단 시 EXIT trap 미실행 → api 라우트 7종이 .apk-hold에 격리 잔존(build_apk.sh 격리 목록에 chat·party 누락이 근원 — worklog release-1-4-27 유실분 복원) → 커밋 전 수동 복원 확인 필수
+- 스크립트 보강: build_apk.sh·build_aab.sh 격리 목록 "chat party" 복원 + build_aab.sh build_apk.sh 패리티(node kill·라우트 격리·lint 3종 -x·versionName [^"]* 패치 — "1.0.0-beta" 문자 버전 파싱)
+- 빌드: assembleRelease 4m27s + bundleRelease 35s BUILD SUCCESSFUL → download/SERTZ-v1.0.0-beta.apk(135,551,796B)·SERTZ-v1.0.0-beta.aab(134,367,602B)
+- 검증: aapt vc121/1.0.0-beta/com.sertz.myapp/targetSdk36 · apksigner SHA-256 cc774f34(동일 키 — 덮어설치 호환) · AAB jarsigner "jar verified."(PKIX 경고는 셀프서명 체인 무해) · bundletool 1.18.1 dump manifest vc121/1.0.0-beta/targetSdk36
+- 릴리스: scripts/release_1_0_0_beta.sh — tag v1.0.0-beta(prerelease) ID 402599561, APK+AAB 모두 curl --data-binary 업로드 → 공개 다운로드 200×2
+- apk-guide.html: v1.0.0-beta 갱신(md5 f5938566/sha1 80659b5d/135551796B/vc121) + v1.4.7 변경점 중복 라인 제거
+- 푸시: 원격 accounts backup(96d4340) rebase 후 603cde9 → Vercel 자동배포 READY → 라이브 게이트 latest 1.0.0-beta/code 121/apk URL 확인 + apk-guide 라이브 확인 + 홈 200
+- 회귀: 채팅 POST 200·GET 정상(릴레이 무영향) · 로컬 서버 production 재기동(포트 3000, GET / 200)
+
+Stage Summary:
+- v1.0.0-beta 출시: APK https://github.com/apple01234/CERTZ/releases/download/v1.0.0-beta/SERTZ-v1.0.0-beta.apk
+- AAB(Play Console 업로드용): download/SERTZ-v1.0.0-beta.aab (134,367,602B · vc121 · sertz-release.keystore 서명 — 업로드 키로 그대로 사용 가능)
+- Play 등록 시: versionCode 121 / versionName 1.0.0-beta 그대로 사용, 다음 업로드는 122 이상 필수
+- 다음 세션 대비: .secrets 소실 시 remote URL 토큰 재저장 가능 · JDK/SDK는 rebuild_*.sh 포그라운드 · 백그라운드 빌드는 수거 위험 → 웹빌드 산출 재사용 + gradle 포그라운드 권장
