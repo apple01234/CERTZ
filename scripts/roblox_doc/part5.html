@@ -1,0 +1,139 @@
+<!-- ══════════════ PART 4: 검증·부록 ══════════════ -->
+<div class="chapter-header">
+  <div class="sec-tag">PART 4 · VERIFY & APPENDIX</div>
+  <div class="sec-title">검증 프롬프트 · 함정 10선 · 수익화 가격표 · 밸런스 수치</div>
+  <div class="divider"></div>
+</div>
+
+<h3 class="sub">4-1. E2E 검증 프롬프트 (P12 이후 언제든 실행)</h3>
+<p class="body">
+전 시스템을 한 바퀴 돌리는 통합 테스트 지시입니다. 페이즈를 몇 개만 완성했으면 해당 범위만 남겨 실행하세요.
+버그가 발견되면 아래 리포트 양식으로 AI에게 되물어 합니다.
+</p>
+
+<div class="prompt">
+  <div class="p-head"><span>VERIFY — E2E TEST PROMPT</span><span class="copy">전체 복사</span></div>
+  <pre>【E2E 검증】지금까지 구현한 시스템을 통합 테스트하자. 아래 시나리오 각각에 대해
+①필요한 테스트 코드(자동 검증 스크립트 또는 수동 절차) ②예상 결과 ③실패 시
+원인 후보 3가지를 출력하라.
+
+S1 세이브: 접속→골드 지급→강제 종료→재접속 = 골드 보존
+S2 전투: 스킬 36종 각각 1회 발동 — 오류·쿨타임 무시·MP 음수 0건
+S3 전직: 4계열 모두 1차→4차 완주 + 자유전직 2회 — 트리 누락 경로 0건
+S4 레이드: 9보스 각각 토벌 1회 — 페이즈 전환·드롭·귀환 정상
+S5 파티: 4인 구성→사냥→분배→레이드 8인→해산 — 분배 오차 0
+S6 상점: 골드 구매 10건 / 게임패스 효과 4종 / 데브상품 6종 이중지급 0건
+S7 수집: 에그 3개 획득→구간보상 / 퀘스트 일일 리셋
+S8 운영: GM 커맨드 권한 검증 / 랭킹 갱신 / 환생 플로우
+S9 모바일: 디바이스 에뮬레이터 3종(폰/태블릿) 조작·UI 표시
+S10 보안: 클라 위조 공격(데미지·좌표·아이템 생성) 서버 거부
+
+버그 리포트 양식(발견 시 이 형식으로 출력):
+[BUG-n] 제목 / 재현 절차 / 기대 vs 실제 / 원인 파일·함수 / 수정 코드 / 회귀 테스트 방법</pre>
+</div>
+
+<h3 class="sub">4-2. 로블록스 함정 10선 — AI에게도 미리 알려주기</h3>
+<p class="body">
+다음 10개는 로블록스 개발에서 가장 흔한 사고 지점입니다. AI가 마스터 프롬프트의 규칙을 놓쳤다 싶으면
+해당 항목을 인용해 지적하세요. 각 페이즈 프롬프트가 이미 대부분 예방하도록 작성돼 있지만, 리뷰 시 체크리스트로 활용합니다.
+</p>
+
+<table class="tb">
+  <colgroup><col style="width:5%"><col style="width:27%"><col style="width:68%"></colgroup>
+  <thead><tr><th class="c">#</th><th>함정</th><th>대처</th></tr></thead>
+  <tbody>
+    <tr><td class="c">1</td><td><span class="key">DataStore 한도</span></td><td>키당 4MB, 플레이어당 초당 쓰기 제한. 오토탈 30초 + 이벤트 시 저장으로 해결(P1 설계에 반영됨)</td></tr>
+    <tr><td class="c">2</td><td><span class="key">ProcessReceipt 이중지급</span></td><td>영수증 ID 기록 없이 지급하면 재시도 때 복제됨. 반드시 처리 기록 후 true 반환(P9)</td></tr>
+    <tr><td class="c">3</td><td><span class="key">클라 신뢰</span></td><td>클라가 보낸 데미지·아이템은 전부 위조 가능. 서버 재검증 원칙(P4)</td></tr>
+    <tr><td class="c">4</td><td><span class="key">RemoteEvent 스팸</span></td><td>초당 다수 fire → 네트워크 붕괴. 상태는 Attribute, 위치는 Unreliable(P4·P8)</td></tr>
+    <tr><td class="c">5</td><td><span class="key">Humanoid 물리 랙</span></td><td>몬스터 100체 Humanoid는 서버에 무겁다. 사고 스로틀 + 정리(Despawn) 필수(P4)</td></tr>
+    <tr><td class="c">6</td><td><span class="key">wait() 폴링</span></td><td>while true do wait(0.1)로 상태 감시하면 크래시 전조. task.wait + 이벤트 구독으로 교체</td></tr>
+    <tr><td class="c">7</td><td><span class="key">모바일 UI 가림</span></td><td>채팅·버튼이 조이스틱과 겹침. TouchEnabled 분기 레이아웃 필수(P3)</td></tr>
+    <tr><td class="c">8</td><td><span class="key">Teleport 시 세이브 유실</span></td><td>레이드 서버 이동 전 저장 + 귀환 후 재로드. 데이터는 Place별로 독립됨(P7)</td></tr>
+    <tr><td class="c">9</td><td><span class="key">유령 참조</span></td><td>사망한 몬스터/떠난 플레이어를 계속 참조하면 메모리 누수. Destroy 후 nil 체크 습관화</td></tr>
+    <tr><td class="c">10</td><td><span class="key">Studio≠실서버</span></td><td>스튜디오 통과 ≠ 실서버 통과. 퍼블리시 후 실서버에서 S1~S10 재실행 권장</td></tr>
+  </tbody>
+</table>
+
+<h3 class="sub">4-3. 수익화 가격표 — 게임팸스 4종 · 개발자 상품 6종</h3>
+<p class="body">
+웹버전 캐시 상점(에메랄드 90종)을 로블록스 결제 구조로 압축한 설계입니다. Robux 가격은 로블록스
+수수료(약 30%)와 개발자 지분(프리미엄 가입자 이용분 70% 배분)을 감안한 표준 밴드이며, 출시 후
+판매 데이터로 조정합니다. 게임패스는 영구 소유 효과만 올리고, 강한 전투력(스탯·장비)은 판매하지
+않는 것이 커뮤니티 신뢰를 지키는 원칙입니다.
+</p>
+
+<table class="tb">
+  <colgroup><col style="width:23%"><col style="width:15%"><col style="width:38%"><col style="width:24%"></colgroup>
+  <thead><tr><th>상품</th><th class="c">Robux</th><th>효과</th><th>설계 근거</th></tr></thead>
+  <tbody>
+    <tr><td><span class="key">GP1</span> 광고 제거</td><td class="c">149</td><td>보상형 광고 미표시, 대신 보상 소형 지급 유지</td><td>중과세 없는 편의 개선</td></tr>
+    <tr><td><span class="key">GP2</span> 가방 확장</td><td class="c">299</td><td>인벤 40→80칸 영구</td><td>수집 콘텐츠와 시너지</td></tr>
+    <tr><td><span class="key">GP3</span> 골드 1.5배</td><td class="c">499</td><td>골드 획득량 영구 1.5배</td><td>성장 가속, 파밍 시간 절감</td></tr>
+    <tr><td><span class="key">GP4</span> 프리미엄 뱃지</td><td class="c">999</td><td>전용 칭호·치장 5종·채팅 뱃지</td><td>정체성 소비, 파워 아님</td></tr>
+    <tr><td><span class="key">DP1~3</span> 골드 번들</td><td class="c">99/499/999</td><td>골드 50,000 / 300,000 / 700,000</td><td>일일 획득 대비 3~5일분</td></tr>
+    <tr><td><span class="key">DP4~5</span> 물약 번들</td><td class="c">199/499</td><td>HP/MP 물약 세트 30개 / 100개</td><td>레이드 준비 소모품</td></tr>
+    <tr><td><span class="key">DP6</span> 레이드 입장권</td><td class="c">49</td><td>레이드 즉시 입장 1회(일일 무료 2회 외 추가)</td><td>시간을 돈으로 사는 옵션</td></tr>
+  </tbody>
+</table>
+<p class="tbl-note">운영 규칙: 쿠폰은 GM 커맨드로 1회용 코드 발급(P9), 도장 7일 연속 시 DP 보정품 지급. 로블록스 정책상 미성년 유저 결제 환불이 잦으므로 소모품 지급 로그를 반드시 남긴다.</p>
+
+<h3 class="sub">4-4. 밸런스 수치표 (골드값 — 임의 변경 금지)</h3>
+<p class="body">
+P12에서 GameData/Balance 모듈로 박을 최종 수치입니다. 웹버전 v1.4.27의 실측 밸런스에서 로블록스
+25인 서버 페이스로 보정한 값입니다. AI가 이 표를 임의로 바꾸려 하면 원본으로 되돌리세요.
+</p>
+
+<table class="tb">
+  <colgroup><col style="width:30%"><col style="width:35%"><col style="width:35%"></colgroup>
+  <thead><tr><th>구간</th><th>성장 지표</th><th>경제 지표</th></tr></thead>
+  <tbody>
+    <tr><td>Lv1~10 (미전직)</td><td>EXP 100→273, 스탯 가중 ×1.0</td><td>골드/분 150, 티어1 물약 주력</td></tr>
+    <tr><td>Lv10~30 (1차→2차)</td><td>EXP 배수 1.13, 스킬 mult 1.6~2.2</td><td>골드/분 350, 첫 장신구 목표</td></tr>
+    <tr><td>Lv30~50 (2차→3차)</td><td>스킬 mult 2.2~3.0, MP 소모 +40%</td><td>골드/분 700, 티어3 사냥터</td></tr>
+    <tr><td>Lv50~100 (3차→4차)</td><td>스킬 mult 3.0~4.2, 보스 필수</td><td>골드/분 1,200, 레이드 파밍</td></tr>
+    <tr><td>Lv100+ (4차 궁극기)</td><td>궁극기 ×4.2 쿨 60초, 환생 +3%/회</td><td>골드/분 1,800, 치장·환생 소비</td></tr>
+    <tr><td>보스 레이드 (8인)</td><td>HP 티어 8단계, 전투 시간 목표 4~7분</td><td>레어 드롭 8~15%, 입장권 DP6</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="t">밸런스 검증 방법 (P12 시뮬에서 사용)</div>
+  <p>위 수치를 GameData/Balance 모듈로 박은 뒤, "Lv30 2차 전직 기본장비" 가상 캐릭터로 티어3 사냥터 몬스터 100마리 처치 시뮬을 돌립니다. 초당 처치 0.6마리·유지 골드 500/분에서 벗어나면 몬스터 HP 배율과 물약 회복량부터 미세 조정하고, 레이드는 파티 8인 기준 전투 시간이 4~7분 안에 끝나는지로 보스 HP 티어를 조정합니다. 시뮬 스크립트는 P12 프롬프트가 생성해 줍니다.</p>
+</div>
+
+</div><!-- /main-content -->
+
+<!-- ══════════════ 엔딩 ══════════════ -->
+<div class="ending">
+  <div class="dots"><span></span><span></span><span></span><span></span></div>
+  <div class="e-title">지금 Cursor(또는 Claude)를 열고<br>마스터 프롬프트부터 붙여넣으세요</div>
+  <div class="e-sub">
+    이 지시서의 모든 프롬프트는 원작 CERTZ v1.4.27의 실제 구현 기록에서 추출했습니다.
+    페이즈를 한 칸 넘길 때마다 완료기준을 직접 플레이하며 검증하면, 원작의 12개 시스템이
+    로블록스에서 다시 살아납니다. 진행 상황을 아래 트래커에 기록하세요.
+  </div>
+  <div class="tracker">
+    <div class="t">PHASE TRACKER — 진행 체크</div>
+    <div class="row"><div class="box"></div><div class="pk">P0</div><div class="pd">프로젝트 세팅 & 폴더 구조</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P1</div><div class="pd">데이터 모델 & 저장 (ProfileService)</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P2</div><div class="pd">캐릭터 스폰 & 스탯 & R15 어태치</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P3</div><div class="pd">이동·조작·카메라 (모바일 지원)</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P4</div><div class="pd">전투 코어 & 몬스터 AI</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P5</div><div class="pd">전직 트리 32클래스 & 스킬</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P6</div><div class="pd">인벤토리·장비·아이템·드롭</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P7</div><div class="pd">맵·사냥터·보스 레이드</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P8</div><div class="pd">파티·채팅·멀티 완성</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P9</div><div class="pd">상점·쿠폰·게임패스 수익화</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P10</div><div class="pd">퀘스트·에그·펫·치장</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P11</div><div class="pd">랭킹·GM 운영·환생</div></div>
+    <div class="row"><div class="box"></div><div class="pk">P12</div><div class="pd">밸런스 & 출시 체크리스트 → E2E 검증</div></div>
+  </div>
+  <div class="e-foot">
+    <div class="b">CERTZ · PORT TO ROBLOX</div>
+    <div>15 PROMPTS · 13 PHASES · BASED ON v1.4.27 (vc119) · 2026.10</div>
+  </div>
+</div>
+
+</body>
+</html>

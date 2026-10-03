@@ -1,0 +1,299 @@
+<!-- ══════════════ PART 3: 프롬프트 체인 ══════════════ -->
+<div class="chapter-header">
+  <div class="sec-tag">PART 3 · PHASED PROMPT CHAIN</div>
+  <div class="sec-title">단계별 프롬프트 체인 — Phase 0 → 12</div>
+  <div class="divider"></div>
+</div>
+
+<p class="body">
+총 13개의 페이즈 프롬프트입니다. 각 페이즈는 <b>목적 → 프롬프트 블록 → 완료기준</b> 순으로 구성됩니다.
+프롬프트 블록을 복사해 AI에 붙여넣고, 나온 코드를 로블록스 스튜디오에 반영한 뒤 완료기준을 실제 플레이로
+검증하세요. 검증을 통과하면 다음 페이즈로 넘어갑니다. 페이즈 프롬프트에는 "이전 페이즈 산출물"을 참조하는
+문장이 들어 있어, 마스터 프롬프트가 주입된 세션이라면 AI가 문맥을 자동으로 이어받습니다.
+</p>
+
+<!-- P0 -->
+<h3 class="sub">Phase 0 — 프로젝트 세팅 & 폴더 구조 <span class="badge ess">필수</span></h3>
+<p class="purpose">스튜디오에 CERTZ의 뼈대(서비스 폴더·모듈 껍데기·Rojo 구조)를 세팅합니다. 이후 모든 페이즈가 이 구조에 파일을 추가하는 방식입니다.</p>
+<div class="prompt">
+  <div class="p-head"><span>P0 — PHASE 0 PROMPT</span><span class="copy">전체 복사</span></div>
+  <pre>【Phase 0】프로젝트 골격을 세팅하자.
+
+1) 로블록스 Studio 새 Baseplate에서 아래 서비스 폴더/스크립트 껍데기를 만드는
+   셋업 코드(커맨드바에 붙여넣을 Luau 스크립트 한 개)를 출력하라.
+
+   - ReplicatedStorage/
+       Modules/GameData (ModuleScript — 상수 테이블, 지금은 빈 틀)
+       Modules/Net (ModuleScript — RemoteEvent 이름 상수 모음)
+       Remotes/ (폴더 — RemoteEvent 인스턴스들이 런타임에 생성됨)
+   - ServerScriptService/
+       Services/ (폴더)
+       Bootstrap (Script — 서버 진입점, 추후 서비스들을 require)
+   - StarterPlayer/StarterPlayerScripts/
+       ClientBootstrap (LocalScript — 클라 진입점)
+       Modules/ (폴더 — 로컬 모듈)
+   - ServerStorage/Assets/ (폴더)
+   - Workspace/Maps/ (폴더), Workspace/Entities/ (폴더)
+
+2) Bootstrap이 시작 시 Remotes 폴더에 RemoteEvent 자동 생성기를 돌리고,
+   Net 모듈에 이벤트 이름 상수를 집중시키는 코드를 출력하라.
+   이벤트 이름 규칙: "RE_" 접두어(발화형), "RF_" 접두어(조회형 RemoteFunction).
+
+3) GameData 모듈에 버전 상수 GAME_VERSION = "R1.0.0"와
+   SAVE_SCHEMA_VERSION = 1을 넣어라.
+
+4) Rojo로 동기화할 수 있게 default.project.json 예시도 함께 출력하라.
+
+출력: ①설계 요약 3줄 ②셋업 코드 ③Bootstrap/ClientBootstrap 코드 ④Rojo json ⑤스튜디오에서
+확인하는 방법(Explorer 트리 스크린샷 기준 설명).</pre>
+</div>
+<div class="done">
+  <div class="t">완료기준 — 실측 확인</div>
+  <ul>
+    <li>Play 실행 시 Output에 "Bootstrap OK" 로그가 뜬다</li>
+    <li>Explorer에 위 트리가 전부 존재하고 Remotes에 RE_/RF_ 이벤트가 자동 생성된다</li>
+    <li>Stop 후 Restart(Play 다시)해도 이벤트가 중복 생성되지 않는다(멱등성)</li>
+  </ul>
+</div>
+
+<!-- P1 -->
+<h3 class="sub">Phase 1 — 데이터 모델 & 저장 (ProfileService) <span class="badge ess">필수</span></h3>
+<p class="purpose">플레이어 세이브 스키마 전체와 로드/저장/오프라인 보호를 구축합니다. 웹버전의 클라우드 세이브·계정 시스템을 DataStore 하나로 대체하는 페이즈입니다.</p>
+<div class="prompt">
+  <div class="p-head"><span>P1 — PHASE 1 PROMPT</span><span class="copy">전체 복사</span></div>
+  <pre>【Phase 1】플레이어 데이터 시스템을 만들자. (Phase 0 구조 위에 추가)
+
+1) ServerScriptService/Services/ProfileService.lua 자체 구현 또는
+   ProfileStore 사용 코드로 아래를 만족하는 저장 서비스를 작성하라.
+   - 게임 접속 시 세이브 로드(재시도 3회, 실패 시 안전 모드 진입)
+   - 30초마다 오토탈 + 사망/퇴장/서버 마감 시 즉시 저장
+   - DataStore 접근 실패 시 플레이어에게 "저장 지연" 경고 UI 트리거
+
+2) 세이브 스키마(SAVE_SCHEMA_VERSION = 1)를 ReplicatedStorage/Modules/SaveSchema
+   로 정의하라. 기본값 표:
+   - lv: 1, exp: 0, gold: 100, emerald: 0 (로블록스 유료 재화 보류값)
+   - cls: nil (미전직), family: nil, jobTier: 0, skillPoints: 0
+   - stats: { atk: 10, hp: 100, mp: 30, def: 5, crit: 5 }
+   - inventory: {}, equipment: { weapon: nil, armor: nil, acc1: nil, acc2: nil }
+   - cosmetics: {}, pets: {}, quests: { done: {}, daily: {} }, eggs: { found: {} }
+   - rebirth: 0, stamp: { streak: 0, lastDate: "" }, settings: { bgm: 1, sfx: 1 }
+   - 스키마 마이그레이션 함수도 함께(버전 비교 후 누락 필드 채우기)
+
+3) StatsService: 플레이어 Attribute(hp/atk/lv/gold…)를 세이브와 동기화하고,
+   다른 서버 스크립트가 Data util(Require)로 안전하게 읽도록 Get(userId) 제공.
+
+4) 클라 진입 화면: 로드 완료 전 스피너, 완료 후 "CERTZ에 오신 것을 환영합니다"
+   토스트. (UI는 간단한 ScreenGui로 충분)
+
+출력: ①설계 요약 ②전체 코드 ③Studio 테스트 절차(Test → 2플레이어 로컬 서버 포함)
+④저장 실패 시나리오 시뮬 방법.</pre>
+</div>
+<div class="done">
+  <div class="t">완료기준 — 실측 확인</div>
+  <ul>
+    <li>레벨/골드를 변경하고 퇴장 후 재접속하면 값이 보존된다</li>
+    <li>테스트 탭의 "2인 로컬 서버"에서 두 플레이어 세이브가 서로 섞이지 않는다</li>
+    <li>DataStore 접근 차단(Studio 설정) 시 안전 모드 경고가 뜬다</li>
+  </ul>
+</div>
+
+<!-- P2 -->
+<h3 class="sub">Phase 2 — 캐릭터 스폰 & 스탯 & R15 어태치 <span class="badge ess">필수</span></h3>
+<p class="purpose">플레이어 스폰, 스탯 성장(레벨업), 직업별 색상, 무기·장식 어태치 파이프라인을 만듭니다.</p>
+<div class="prompt">
+  <div class="p-head"><span>P2 — PHASE 2 PROMPT</span><span class="copy">전체 복사</span></div>
+  <pre>【Phase 2】캐릭터 시스템을 만들자. (Phase 0~1 위에 추가)
+
+1) SpawnService: 스폰 지점(마을)에서 R15로 스폰, 사망 시 마을 리스폰(3초 지연),
+   이름표(레벨 + 직업명 + 닉네임) BillboardGui 표시.
+
+2) LevelService: 경험치 테이블 EXP_TABLE = Lv1→100, 배수 1.13 증가(최대 Lv120).
+   레벨업 시 stats가 LevelGrowth 상수만큼 상승 + 파티클·사운드 연출 트리거.
+
+3) AttachmentService: 캐릭터에 무기/장식을 부착하는 범용 모듈.
+   - AttachPoint 규칙: 무기=RightGripAttachment, 날개/등장식=UpperTorso "Back_Attachment",
+     머리 장식=Head "Hat_Attachment", 펫=플레이어 뒤 3스터드 Follow(별도 PetService는 P10).
+   - 장비 슬롯(weapon/armor/acc1/acc2) → 어태치 매핑 테이블과
+     장착/해제 RemoteEvent(RE_Equip) 서버 처리 포함.
+
+4) JobColorService: 32클래스 색상 상수(웹버전 hex 이식)를 캐릭터 틴트·이름표에 적용.
+   미전직 = 회색. 색상 테이블은 GameData/ClassColors 모듈로 분리.
+
+5) 클라: 로컬 캐릭터 조작(로블록스 기본) + 다른 플레이어 이름표 표기 확인.
+
+출력: ①설계 요약 ②전체 코드 ③Studio에서 무기 부착 확인 방법
+④다음 페이즈(P3 조작)와 이어질 인터페이스 목록.</pre>
+</div>
+<div class="done">
+  <div class="t">완료기준 — 실측 확인</div>
+  <ul>
+    <li>콘솔 커맨드로 레벨업 시 스탯이 LevelGrowth만큼 오르고 연출이 나온다</li>
+    <li>RE_Equip으로 무기 장착/해제가 두 플레이어에게 모두 보인다(리플리케이션)</li>
+    <li>이름표에 레벨·닉네임이 뜨고, 사망 시 3초 후 마을에서 리스폰된다</li>
+  </ul>
+</div>
+
+<!-- P3 -->
+<h3 class="sub">Phase 3 — 이동·조작·카메라 (모바일 1등 시민) <span class="badge ess">필수</span></h3>
+<p class="purpose">PC 키보드와 모바일 터치를 모두 지원하는 조작 체계와, 웹버전 특유의 "따라오는 카메라" 감각을 구현합니다.</p>
+<div class="prompt">
+  <div class="p-head"><span>P3 — PHASE 3 PROMPT</span><span class="copy">전체 복사</span></div>
+  <pre>【Phase 3】조작·카메라를 만들자. (Phase 2 캐릭터 위에 추가)
+
+1) PC 조작: WASD 이동(기본 유지) + 좌클릭 기본공격 예약(RE_Attack 발화),
+   Space 회피구르기(0.4초 무적, 쿨 3초), Tab 인벤토리 토글, Enter 채팅 포커스.
+   키 바인딩은 ContextActionService로 등록.
+
+2) 모바일 조작: 커스텀 조이스틱(좌하단) + 기본공격 버튼(우하단 대형) + 스킬 버튼
+   4개(원형, 쿨타임 방사형 오버레이) + 회피 버튼. Dynamic joystick으로 구현.
+
+3) 카메라: 웹버전 감성 재현 — 플레이어를 살짝 위(12스터드)에서 내려보는 줌
+   탑다운 혼합, 부드러운 lerp 추적, 보스 방에 진입하면 줌 아웃(FOV/줌 거리 상수).
+   CameraType 스크립트로 고정 각도 유지.
+
+4) 조작 품질: 이동 입력 누적 시 방향 전환 스무딩(0.1초), 점프 비활성화(CERTZ는
+   지상 RPG), 낙사 구역은 사냥터 지형에서만 리스폰 처리.
+
+5) UI는 StarterGui ScreenGui로, 모바일에서만 보이는 버튼은
+   UserInputService.TouchEnabled 분기.
+
+출력: ①설계 요약 ②전체 코드 ③PC/모바일 각각의 테스트 절차(Studio Test 탭 디바이스
+에뮬레이터 사용법 포함) ④P4 전투가 받아쓸 입력 인터페이스(RE_Attack 페이로드 정의).</pre>
+</div>
+<div class="done">
+  <div class="t">완료기준 — 실측 확인</div>
+  <ul>
+    <li>디바이스 에뮬레이터(iPhone/태블릿)에서 조이스틱·스킬 버튼이 정상 표시된다</li>
+    <li>회피구르기 중 0.4초 무적(테스트 데미지로 검증)이고 쿨 3초가 UI에 표시된다</li>
+    <li>카메라가 플레이어를 부드럽게 따라오고 포탈 진입 시 줌 전환이 자연스럽다</li>
+  </ul>
+</div>
+
+<!-- P4 -->
+<h3 class="sub">Phase 4 — 전투 코어 & 몬스터 AI <span class="badge ess">필수</span></h3>
+<p class="purpose">서버 권위 데미지 파이프라인과 FSM 몬스터 AI를 구축합니다. CERTZ의 타격감(히트스톱·넉백·화면 흔들림)을 클라 연출로 재현합니다.</p>
+<div class="prompt">
+  <div class="p-head"><span>P4 — PHASE 4 PROMPT</span><span class="copy">전체 복사</span></div>
+  <pre>【Phase 4】전투의 심장을 만들자. (Phase 0~3 위에 추가)
+
+1) DamageService(서버, 유일한 데미지 계산 지점):
+   - 공격 페이로드: { attacker, skillId, origin, dir }. 서버가 거리·각도·쿨타임
+     유효성 검증 후 데미지 계산. 클라가 보낸 수치는 절대 신뢰 금지.
+   - 공식: dmg = atk * skillMult * (1 - def/(def+200)) * critMult.
+     critMult = 1.75, 크리 확률 = crit(%). 최소 데미지 1.
+   - 적중 판정: 히트박스 스윕(구체 2스터드), 어택 중 프레임 데이터는 스킬 모듈 참조.
+
+2) MonsterService + FSM 모듈(서버):
+   - 상태: Idle → Patrol → Aggro(시야 25스터드) → Chase → Attack(사거리 3.5) →
+     Flee(HP 15% 이하 일부 종) → Dead(리스폰 타이머).
+   - 사고 스로틀: 플레이어와 60스터드 밖 몬스터는 사고 1.25Hz, 30스터드 밖은 5Hz
+     (웹버전 3단 스로틀 이식). 서버 성능 보호가 목적.
+   - 몬스터 테이블 GameData/Monsters: 12종(슬라임·쥐·박쥐·고블린·오크전사·
+     얼음좀비·임프·돼지·거미·스톨골렘·다크하운드·리프피시). hp/atk/exp/gold/사거리 포함.
+
+3) 스폰 시스템: 사냥터 구역(Workspace/Maps/HuntZone1)에 SpawnPoint 폴더 →
+   구역별 몬스터 배치, 최대 동시 수 유지(죽으면 리스폰 8초).
+
+4) 타격감 연출(클라): 데미지 숫자(BillboardGui 튕김), 히트스톱 0.05초, 넉백 1.5스터드,
+   화면 흔들림(보스 공격 피격 시), 몬스터 피격 플래시(흰색 1프레임).
+   UnreliableRemoteEvent로 이벤트 브로드캐스트.
+
+5) 사망·드롭: 몬스터 사망 시 exp/gold 지급(파티 분배는 P8), 드롭 테이블은 P6에서
+   연결되도록 DropService 인터페이스만 만들어 둔다.
+
+출력: ①설계 요약 ②전체 코드 ③"서버 권위 검증" 테스트(클라 조작으로 데미지 위조
+시도 시 서버 거부 확인) ④성능 프로파일 확인 방법(Performance Stats).</pre>
+</div>
+<div class="done">
+  <div class="t">완료기준 — 실측 확인</div>
+  <ul>
+    <li>몬스터가 순찰→추격→공격→사망→리스폰 전 흐름이 동작한다</li>
+    <li>데미지 숫자·히트스톱·넉백이 두 클라 모두에서 동시에 보인다</li>
+    <li>클라에서 데미지 페이로드 위조 시 서버가 무시한다(테스트 코드로 검증)</li>
+    <li>25인 시뮬(트래픽 부하 테스트는 P8 이후) 전에도 프레임 저하가 크지 않다</li>
+  </ul>
+</div>
+
+<!-- P5 -->
+<h3 class="sub">Phase 5 — 전직 트리 32클래스 & 스킬 <span class="badge ess">필수</span></h3>
+<p class="purpose">CERTZ의 핵심 차별화인 4계열×2경로×4차 전직 시스템과 스킬 모듈을 이식합니다. 스킬 32종은 1차 계열 공용 4종 + 클래스별 1~4차 증분으로 구성합니다.</p>
+<div class="prompt">
+  <div class="p-head"><span>P5 — PHASE 5 PROMPT</span><span class="copy">전체 복사</span></div>
+  <pre>【Phase 5】직업·스킬 시스템을 만들자. (Phase 4 전투 위에 추가)
+
+1) GameData/ClassTree 모듈로 전직 트리 정의:
+   계열 4(warrior/ranger/mage/thief) → 1차 Lv10, 2차 Lv30, 3차 Lv50, 4차 Lv100.
+   - warrior → { berserker, guardian } → { warlord, paladin } → { warbringer, crusader }
+   - ranger  → { sniper, windrunner } → { eagleeye, tempest } → { deadeye, skylord }
+   - mage    → { archmage, sage }     → { stormbringer, chronicle } → { arclord, eternal }
+   - thief   → { assassin, swashbuckler } → { nightblade, duelist } → { shadowlord, blademaster }
+   자유전직: 2차 이상에서 같은 계열 반대 경로 전환 가능, 비용 골드 5,000, 무제한.
+   스탯 보너스는 경로 누적(원작 규칙) — 클래스별 스탯 가중 테이블 포함.
+
+2) SkillService(서버): 스킬 정의 모듈 SkillDefs — 각 스킬 { id, name, cls, tier,
+   mult, mp, cooldown, hitbox { type, size, offset }, fx } 형식. 최소 세트:
+   - 계열 공용 4종(warrior 강타 / ranger 정밀사격 / mage 마법탄 / thief 연격)
+   - 클래스별 시그니처 1~4차 각 1종(총 32+4=36스킬). 4차 스킬은 궁극기(쿨 60초).
+   스킬은 hitbox 타입 4종(단일·범위원·부채꼴·관통직선)으로 구현을 통일.
+
+3) 전직 흐름: 마을 전직 NPC(ProximityPrompt) 대화 UI → 계열 선택(1차) →
+   경로 선택(2차+) → 자유전직 탭(골드 차감). RemoteFunction으로 서버 검증 후
+   세이브 cls/jobTier 갱신, 스킬 해금 알림.
+
+4) 스킬 UI: P3의 스킬 버튼 4개가 현재 클래스 해금 스킬로 채워지고,
+   MP 부족·쿨타임 게이트는 클라 선검증 + 서버 재검증 이중화.
+
+5) 이펙트: 스킬 fx는 ParticleEmitter·Beam 4종 템플릿(물리타격·마법탄·검풍·약속의
+   룬)을 프리셋화해 스킬 정의에서 참조.
+
+출력: ①트리 시각화(텍스트 다이어그램) ②전체 코드 ③스킬 36종 정의 표 요약
+④전직→스킬 해금→사용까지의 Studio 테스트 시나리오.</pre>
+</div>
+<div class="done">
+  <div class="t">완료기준 — 실측 확인</div>
+  <ul>
+    <li>1차→2차 전직 후 스킬 버튼에 새 스킬이 뜨고 실제 발동된다</li>
+    <li>자유전직 시 골드 5,000이 차감되고 반대 경로 스킬로 교체된다</li>
+    <li>MP 부족·쿨타임 중 발동이 서버에서 거부된다(위조 테스트)</li>
+    <li>32클래스 트리 데이터에 오탈자·누락 경로가 없다(자동 검증 코드 포함)</li>
+  </ul>
+</div>
+
+<!-- P6 -->
+<h3 class="sub">Phase 6 — 인벤토리·장비·아이템·드롭 <span class="badge ess">필수</span></h3>
+<p class="purpose">아이템 테이블(무기·방어·물약·장신구·버프·상자), 인벤 UI, 드롭 시스템을 완성해 사냥 루프(사냥→드롭→장비→강해짐)를 닫습니다.</p>
+<div class="prompt">
+  <div class="p-head"><span>P6 — PHASE 6 PROMPT</span><span class="copy">전체 복사</span></div>
+  <pre>【Phase 6】아이템 인프라를 만들자. (Phase 4 DropService와 연결)
+
+1) GameData/Items 모듈 — 원작 테이블 이식:
+   - 무기 6(목검1→용곤봉6 등 계열 공용 티어) / 방어 6 / 물약 16(hp3·hp10·mp3·mp10·
+     엘릭서 등) / 장신구 12(반지4·펜던트4·주얼4) / 버프 3(atk·def·crit 10분) /
+     상자 4(일반·고급·전설·몬스터) + CHEST_TABLES 가중치 롤 표.
+   - 아이템 구조: { id, name, cat, tier, stats?, use?, price, rarity }.
+
+2) InventoryService(서버): 인벤 40칸(세이브 inventory 배열), 획득/소모/스택,
+   RE_UseItem(물약 사용→HP/MP 회복+버프), 장비 장착은 P2 RE_Equip 연결.
+   상자 개봉은 서버 가중치 롤 + 결과 팝업 클라 브로드캐스트.
+
+3) DropService 완성: 몬스터별 드롭 표(골드 자동, 아이템 확률), 파티 드롭 분배는
+   P8 PartyService와 인터페이스만 미리(분배 규칙: 획득자 우선 30초 후 자동 루팅).
+   바닥 드롭은 Part+ProximityPrompt 루팅 방식.
+
+4) 인벤 UI(클라): 그리드 8x5, 카테고리 탭(전체/장비/소모/장신구), 툴팁(스탯·설명),
+   장착/사용/버리기 컨텍스트 메뉴, 모바일 터치 최적화(탭=선택, 롱탭=메뉴).
+
+5) BM 연결은 P9, 치장은 P10 — 인터페이스만 확보.
+
+출력: ①아이템 표 요약(카테고리별 개수) ②전체 코드 ③상자 확률 롤 검증 스크립트
+(1만 회 시뮬 히스토그램 텍스트) ④사냥→드롭→장착 루프 테스트 시나리오.</pre>
+</div>
+<div class="done">
+  <div class="t">완료기준 — 실측 확인</div>
+  <ul>
+    <li>몬스터 사냥으로 골드·물약·장비가 드롭되고 루팅되어 인벤에 쌓인다</li>
+    <li>물약 사용 시 HP 회복 + 서버 검증(중복 사용 위조 거부)된다</li>
+    <li>상자 1만 롤 시뮬 결과가 CHEST_TABLES 가중치와 일치한다</li>
+    <li>인벤 UI가 모바일 에뮬레이터에서 조작 가능하다</li>
+  </ul>
+</div>

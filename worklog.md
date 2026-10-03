@@ -3099,3 +3099,24 @@ Work Log:
 Stage Summary:
 - 원본 에셋 34팩 전량 복구 완료(research/assetpacks + assetpacks_zips) — 향후 "Drive 에셋 팩 적극 활용" 지시 시 변환 소스로 사용
 - 교훈 재확인: git 제외 대용량 원본은 세션마다 유실 → 필요 시 이 보관소가 유일 소스
+
+---
+Task ID: roblox-prompt-doc
+Agent: main
+Task: "이제 이 프로젝트를 로블록스에서 만들껀데 총 프롬프트 및 지시서좀" — 로블록스 이식 AI 개발용 프롬프트 체인 PDF 제작
+
+Work Log:
+- 요구 확정(AskUserQuestion): AI 개발용 / 로블록스 재해석 / PDF / 수익화 포함 / 풀멀티 / 로블록스 기본(R15)
+- 스킬 체인 전량 숙독: pdf SKILL → creative-flow brief → overflow/pagination/typography/cover/palette/fonts
+- 원본 스펙 수집: classes.ts(4계열×2경로×4차=32클래스, Lv10/30/50/100, 자유전직 5,000골드)·data.ts(보스9종·아이템 카테고리)·worklog 12시스템
+- palette.cascade 실행 → Warm Gold on Ivory(#907422 골드/#4aa3c1 시안/#f1f0ef 아이보리)
+- HTML 5파트 작성(총 ~1,300행): 표지(Galmuri 픽셀 폰트) + 사용법 + PART0 마스터 프롬프트 + PART1 12시스템 스펙표 + PART2 재해석 설계(매핑표·풀멀티·R15·수익화) + PART3 프롬프트 체인 P0~P12(각: 목적+복붙 프롬프트+완료기준) + PART4(E2E 검증 프롬프트·함정 10선·게임패스 4종+데브상품 6종 가격표·밸런스 수치표) + 엔딩(진행 트래커)
+- 트러블슈팅 3건: ①@font-face font-family에 FONT_NO_FALLBACK 오탐 → CSS 주석 삽입(font-family/*f*/:)으로 통과 ②Google Fonts 네트워크 로드 실패(본문이 WenQuanYi 폴백) → Noto Sans CJK KR OTF 4웨이트 로컬 다운로드(jsdelivr) + @font-face 로컬 참조, 코드블록은 시스템 Sarasa Mono SC(한글 모노 실측 완벽) ③pagedjs 누락 → 프로젝트 루트 npm install로 해결(html2pdf 검색 경로: skills/../../node_modules)
+- cover_validate 오타봇 확인(부모-자식 중첩 오류 표기) — cover 전용 검사로 전체 문서엔 부적합, pdf_qa로 대체
+- QA 통과: 9 passed(폰트 임베드·무공백·full-bleed·대칭·overflow 0·fill ratio 전 페이지 OK) / Author 메타데이터 설정(초기 경고 해소)
+- 시각 검증: p1(표지)·p3(마스터)·p6(매핑표)·p21(엔딩) 렌더 육안 확인 — 한글·픽셀폰트·다크코드블록 정상
+
+Stage Summary:
+- 산출물: download/roblox_prompt/ — CERTZ_Roblox_이식_총지시서.pdf(21p·539KB·벡터) + HTML 소스 + 폰트 9종(HTML 재편집용, 67MB)
+- 문서 구성: 프롬프트 15종(마스터 1 + 페이즈 13 + E2E 검증 1) — 복붙 순서: 마스터 → P0~P12 → VERIFY
+- 재생성 방법: scripts/roblox_doc/part1~5.html 편집 → cat 합침 → html2pdf-next.js 720x1020

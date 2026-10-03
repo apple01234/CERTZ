@@ -1,0 +1,98 @@
+<!-- ══════════════ PART 1: 시스템 스펙 ══════════════ -->
+<div class="chapter-header">
+  <div class="sec-tag">PART 1 · SOURCE SPEC</div>
+  <div class="sec-title">원본 게임 시스템 스펙 — 이식할 재료 목록</div>
+  <div class="divider"></div>
+</div>
+
+<p class="body">
+웹버전 CERTZ(v1.4.27)에 실제로 구현된 시스템 12종입니다. 이 표는 <b>AI에게 "무엇을 만들어야 하는지"를
+알려주는 재고 목록</b>이며, PART 3의 각 페이즈 프롬프트가 이 시스템들을 어떤 순서로 로블록스에 재건하는지를
+규정합니다. 난이도는 로블록스 이식 기준 5점 만점으로, ★★★ 이상은 해당 페이즈에서 설계를 단순화하는
+대안을 함께 제시했으니 참고하세요.
+</p>
+
+<table class="tb">
+  <colgroup><col style="width:16%"><col style="width:52%"><col style="width:19%"><col style="width:13%"></colgroup>
+  <thead><tr><th>시스템</th><th>원본 구현 내용 (웹버전)</th><th>로블록스 이식 형태</th><th class="c">난이도</th></tr></thead>
+  <tbody>
+    <tr><td><span class="key">전직 트리</span></td><td>4계열(전사·궁수·마법사·도적) × 2경로 × 4차전직 = 32클래스. 1차 Lv10 / 2차 Lv30 / 3차 Lv50 / 4차 Lv100. 자유전직 5,000골드(계열 내 경로 전환, 무제한)</td><td>ModuleScript 클래스 트리 데이터 + 전직 NPC + 스킬 해금</td><td class="c">★★</td></tr>
+    <tr><td><span class="key">전투 코어</span></td><td>기본공격 + 스킬 4슬롯(4차 전직), 쿨타임·MP·캔슬·히트박스 스윕, 자동전투(물약 자동·스킬 로테이션), 타격감(넉백·화면흔들림·히트스톱)</td><td>서버 권위 데미지 파이프라인 + 스킬 모듈 32종 + 모바일 버튼</td><td class="c">★★★★</td></tr>
+    <tr><td><span class="key">몬스터·AI</span></td><td>60여 종 몬스터, FSM(순찰→경계→추격→공격→도주), 어그로, 3단 스로틀(거리별 사고 빈도 절감)</td><td>FSM 모듈 + Humanoid/NPC + 서버 사고 스로틀 재현</td><td class="c">★★★</td></tr>
+    <tr><td><span class="key">보스 레이드</span></td><td>보스 9종(수호자·로드·펜리르·스콜·수르트·니드호그·그람·아부디토스·베헤모스), 페이즈 1~3 + 시그니처 패턴, 등장 연출(룬 마법진)</td><td><b>핵심 콘텐츠로 강화</b>: 파티 레이드 전용 서버(8인), 페이즈 전환, 레어 드롭 표</td><td class="c">★★★★</td></tr>
+    <tr><td><span class="key">맵·스테이지</span><br><span style="font-size:10.5px;color:#7f7c75">mapgen·isekai</span></td><td>다층식 사냥터(포탈 이동·층별 테마), 마을, 이벤트 맵, 이세카이(별관), 포탈 줌 전환</td><td>Place별 맵 빌드 + TeleportService 또는 구역 분리 + 포탈 파트</td><td class="c">★★★</td></tr>
+    <tr><td><span class="key">아이템·인벤</span></td><td>무기 6·방어 6·물약 16·장신구 12·버프 3·상자 4(가중치 롤)·패키지 6, 인벤 그리드, 장비 장착 슬롯</td><td>인벤 모듈 + 장비 Attribute + 상자 확률 롤 서버 처리</td><td class="c">★★★</td></tr>
+    <tr><td><span class="key">펫·치장</span></td><td>펫 6종(팔로잉·버프), 코스튬 12·액세서리 5(날개·헤일로·리본·왕관)·아웃핏, 헤어 6색 팔레트</td><td>R15 어태치 장식 + 펫 Follow 모듈 + 가챠 상자</td><td class="c">★★</td></tr>
+    <tr><td><span class="key">상점·수익화</span></td><td>BM상점 90종(캐시=에메랄드), 특가 3종 날짜 로테이션, 쿠폰, 도장(출석), 광고 보상</td><td><b>게임패스 + 개발자 상품 + 광고 API</b>로 치환 (PART 4 가격표)</td><td class="c">★★</td></tr>
+    <tr><td><span class="key">거래소</span></td><td>플레이어 간 아이템 거래 게시판(등록·구매·검색), 수수료</td><td>로블록스 정책상 제한 → <b>파티 드롭 분배 + 트레이드 창</b>으로 재해석</td><td class="c">★★★</td></tr>
+    <tr><td><span class="key">퀘스트·에그</span></td><td>메인·일일 퀘스트, 숨은 에그 100종(9카테고리·코나미 버퍼·구간 보상), 튜토리얼</td><td>퀘스트 모듈 + 에그 수집(맵 숨김 파트) + 마일스톤 보상</td><td class="c">★★</td></tr>
+    <tr><td><span class="key">계정·세이브</span><br><span style="font-size:10.5px;color:#7f7c75">account·relay</span></td><td>자체 계정(AES-GCM 백업), SNS 로그인, 클라우드 세이브, 랭킹(레벨·전직·길드)</td><td><b>DataStore+ProfileService로 단일화</b>(로블록스 계정 내장), OrderedDataStore 랭킹</td><td class="c">★</td></tr>
+    <tr><td><span class="key">GM·운영</span><br><span style="font-size:10.5px;color:#7f7c75">admin·chat·party</span></td><td>GM 무한 엘릭서·보스 소환·공지, 파티(초대·해산), 전체/파티 채팅, 환생(영구 성장), EERT 등급</td><td>관리자 커맨드(Studio 태그 기반) + 로블록스 채팅 연동 + 파티 모듈 + 환생 시스템</td><td class="c">★★</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="t">재해석 3원칙 (원작 기계 복사 금지의 근거)</div>
+  <p>① <b>세이브는 단순화</b> — 로블록스는 계정이 플랫폼에 내장되므로 자체 계정·SNS 로그인·백업 토큰 시스템을 전부 버리고 DataStore 하나로 합니다. ② <b>멀티는 재설계</b> — 웹버전이 HTTP 폴링으로 흉내 낸 것을 RemoteEvent 실시간으로 교체하고, 파티·레이드를 로블록스 강점으로 확대합니다. ③ <b>수익화는 플랫폼 네이티브</b> — 캐시 재화(에메랄드)를 Robux 결제 게임패스·개발자 상품으로 치환합니다.</p>
+</div>
+
+<!-- ══════════════ PART 2: 재해석 설계 ══════════════ -->
+<div class="chapter-header">
+  <div class="sec-tag">PART 2 · REDESIGN BLUEPRINT</div>
+  <div class="sec-title">로블록스 재해석 설계</div>
+  <div class="divider"></div>
+</div>
+
+<h3 class="sub">2-1. 아키텍처 매핑 — 웹버전 → 로블록스</h3>
+<p class="body">
+페이즈 프롬프트를 줄 때마다 AI가 이 매핑표를 기준으로 설계합니다. 원작의 어떤 개념이 로블록스의
+어떤 구성요소로 이동하는지를 한눈에 보여주는 표로, 마스터 프롬프트 다음에 PART 2 요약본을 함께
+주면 AI의 설계 일관성이 크게 올라갑니다.
+</p>
+
+<table class="tb">
+  <colgroup><col style="width:27%"><col style="width:6%"><col style="width:34%"><col style="width:33%"></colgroup>
+  <thead><tr><th>웹버전 (Next.js + Phaser)</th><th class="c">→</th><th>로블록스 대응물</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td>WorldScene (Phaser 씬)</td><td class="arrow-cell">→</td><td>Workspace + StarterPlayerScripts</td><td>렌더·연출은 클라, 상태는 서버</td></tr>
+    <tr><td>net.ts / socket.io 폴링</td><td class="arrow-cell">→</td><td>RemoteEvent · UnreliableRemoteEvent</td><td>HTTP 폴링 완전 폐기</td></tr>
+    <tr><td>api/chat · party (CERTZ-DB)</td><td class="arrow-cell">→</td><td>로블록스 채팅 TextChatService + 파티 ModuleScript</td><td>서버 없이 네이티브</td></tr>
+    <tr><td>accounts.enc (GitHub 백업)</td><td class="arrow-cell">→</td><td>ProfileService (DataStore)</td><td>자체 계정 체계 폐기</td></tr>
+    <tr><td>data.ts (아이템·스킬 테이블)</td><td class="arrow-cell">→</td><td>ReplicatedStorage/Modules/GameData</td><td>상수 골드값 그대로 이식</td></tr>
+    <tr><td>Player.ts + 스킬 FSM</td><td class="arrow-cell">→</td><td>서버 NPC + 클라 연출 분리</td><td>서버 권위 필수</td></tr>
+    <tr><td>mapgen.ts (코드 생성 맵)</td><td class="arrow-cell">→</td><td>Studio 파트 빌드 + 워크스페이스 폴더</td><td>프리빌트 맵 권장</td></tr>
+    <tr><td>거래소 게시판 (DB 저장)</td><td class="arrow-cell">→</td><td>트레이드 RemoteFunction + 파티 드롭 분배</td><td>로블록스 정책 대응</td></tr>
+    <tr><td>광고 보상 (AdMob)</td><td class="arrow-cell">→</td><td>Premium Payouts + 보상형 광고(가능 시)</td><td>수익화 PART 4</td></tr>
+    <tr><td>관리자(GM) 커맨드</td><td class="arrow-cell">→</td><td>Studio 권한 태그 + 서버 콘솔 커맨드</td><td>UserId 화이트리스트</td></tr>
+  </tbody>
+</table>
+
+<h3 class="sub">2-2. 풀멀티 설계 — 25인 서버와 서버 권위</h3>
+<ul class="mark">
+  <li><b>서버 권위 전투</b> — 클라이언트는 "내가 스킬 S를 X좌표에서 쐈다"는 입력만 보내고, 적중 판정·데미지 계산·상태이상은 전부 서버가 수행해 Attribute로 브로드캐스트합니다. 핵킹 방지의 기본이자 페이즈 4의 설계 축입니다.</li>
+  <li><b>동기화 예산</b> — 플레이어 상태는 Attribute 변경(자동 리플리케이션), 전투 이벤트는 RemoteEvent, 몬스터 위치는 UnreliableRemoteEvent로 초당 10회 브로드캐스트해 네트워크 예산을 지킵니다. 25인×60몬스터 전제 설계입니다.</li>
+  <li><b>파티 시스템</b> — 파티 4인(사냥) / 레이드 8인(보스) 2티어. 파티 경험치 분배(기여도 가중)와 레어 드롭 우선권(파티장 배분 또는 순번제)을 포함해 웹버전의 파티를 한 단계 강화합니다.</li>
+  <li><b>보스 레이드 서버</b> — 보스 입구는 TeleportService로 레이드 전용 ReserveServer를 띄워 8인 인스턴스를 구성합니다. 메인 서버 부하 분리 + "레이드 도전"이 이벤트가 되는 구조로 만듭니다.</li>
+</ul>
+
+<h3 class="sub">2-3. R15 캐릭터와 외형 방향</h3>
+<p class="body">
+캐릭터는 로블록스 기본 R15 리그를 쓰되, 웹버전의 8직업 감성을 <b>장비 어태치</b>로 표현합니다. 무기는
+손 AttachPoint에 부착하는 MeshPart(도검·활·지팡이·단검 4형), 코스튬은 텔소/MeshPart 오버레이,
+날개·헤일로는 백·헤드 AttachPoint에 부착합니다. 직업별 색상 코드(웹버전 hex 상수)를 캐릭터 틴트와
+장식 색에 그대로 적용하면 32클래스의 정체성이 저비용으로 살아납니다. AI 생성 에셋은 사용하지 않으며,
+Toolbox CC0 메시와 Studio 기본 파츠 조합으로 시작해 추후 전용 메시로 교체하는 경로입니다.
+</p>
+
+<h3 class="sub">2-4. 수익화 개요 (상세 가격표는 PART 4)</h3>
+<p class="body">
+웹버전의 캐시 재화 "에메랄드"를 Robux 결제 구조로 치환합니다. <b>게임패스</b>는 광고 제거·인벤 확장·
+프리미엄 뱃지 같은 영구 편의, <b>개발자 상품</b>은 골드 번들·물약 번들·레이드 입장권 같은 소모성 재화,
+<b>보상형 광고</b>는 광고 1회 = 물약 3개 같은 무료 유저 진입 경로로 설계합니다. 유료 재화는 서버에서만
+지급하고 영수증 검증(ProcessReceipt)을 필수로 두는 것이 페이즈 9의 핵심입니다.
+</p>
+
+<div class="callout">
+  <div class="t">로블록스 한계 — 처음부터 알고 설계하기</div>
+  <p>① 개인 간 자유 거래는 플랫폼 정책상 제한이 크므로 <b>트레이드 창(대면 확인식)</b>으로만 지원합니다. ② 웹버전의 코드 생성 맵은 Studio 수동 빌드로 대체합니다(프로그래매틱 배치는 부분 지원). ③ 서버 인스턴스당 인원은 설계 목표 25인이지만 로블록스 기본값 50인 범위 내에서 운영 단계에 조정합니다.</p>
+</div>
