@@ -40,7 +40,7 @@ find public -maxdepth 1 -name "*.apk" -exec mv {} "$PROJECT_ROOT/.apk-hold/" \; 
 
 echo "[0.6/5] ②안 serverless 라우트 5개 임시 격리 (output:export 비호환 — trap EXIT로 항상 복원)"
 mkdir -p "$PROJECT_ROOT/.apk-hold/api-routes"
-ROUTE_DIRS="admin auth market rank support"
+ROUTE_DIRS="admin auth market rank support chat party"
 for d in $ROUTE_DIRS; do
   if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" "$PROJECT_ROOT/.apk-hold/api-routes/"; fi
 done
