@@ -3156,3 +3156,27 @@ Stage Summary:
 - 채팅·파티·로그인·클라우드세이브·거래소 전 기능 라이브 복구 완료. DB 유실 0
 - 토큰 로테이션 3회 반복 패턴 확정 — .secrets/ 소실(세션 청소 추정)은 유저 컨텍스트 재조달이 유일 회복 경로
 - 권고(3회째): 토큰 만료 없음(No expiration) + 취소 전 사전 통보
+
+---
+Task ID: release-1-4-28
+Agent: Super Z (main)
+Task: 유저 "ㅇㅇ 밀린작업 + apk 빌드해" — 밀린 UI 이슈 2종 픽스 + v1.4.28/vc120 APK 릴리스
+
+Work Log:
+- 환경 재구축: .secrets 3차 소실과 무관하게 JDK/SDK도 세션 유실 — rebuild_jdk.sh(rebuild_sdk.sh) 포그라운드 재실행(JDK 21.0.12.1 + android-36/build-tools 35·36). nohup 백그라운드 재발 실패(프로세스 자가 사망) → 포그라운드 원칙 재확인
+- #채팅가림 진단(agent-browser 라이브 실측): elementFromPoint 3뷰포트(390×844·844×390·360×640) 전부 버튼 히트 정상 → 평소엔 무문제. 실제 원인 = **NPC 대화창(DialogueBox absolute inset-x-0 bottom-0 z-30, GameRoot DOM 순서도 ChatBox 뒤)** 활성 시 입력·전송 영역 잠식 + 대화의 startHold가 탭을 "대화 진행"으로 소비. 실측 중 대화창 열림 상태에서 재현 확인
+- 픽스 1(ChatBox.tsx): 입력행 래퍼에 relative z-40 — 대화창(z-30) 위 · 모달(z-45+) 아래
+- #물약거리2 픽스(TouchControls.tsx): clusterFloat(W<576) 물약·자동 버튼의 아크 위 플로팅(bottom: CH+8, 공격 버튼에서 ~270px) 철거 → ARC 컨테이너 '내부' 우측 앵커 배치(자동 186,312 · HP 238,316 · MP 284,316 — 컨테이너 로컬 우측 기준이라 W와 무관하게 좁은 폭일수록 조이스틱에서 멀어짐). 간섭 전수 검증: s1-자동 52.8>48 · 공격-HP 77.3>70 · 공격-MP 82.5>70 · HP-MP 46>40 · MP 우측 302≤306 · 하단 336≤340 · 조이스틱 자동 좌변 W-144≥0.46W ⇔ W≥281(전 폰 커버). 최원거리 270→83px(v1.4.25 가로 픽스 74px와 동일 위상)
+- tsc: 신규 에러 0(기존 4건 로그인/Resp 항목)
+- 버전 승격 4종(scripts/bump_1_4_28.py 신설 — 한국어 라인 python 교체): package.json·build.gradle(vc120/1.4.28)·server.js·api/version 게이트
+- 빌드: BUILD SUCCESSFUL 8m32s · 135,551,568B · aapt vc120/1.4.28 · apksigner SHA-256 cc774f34(동일 키 — 덮어설치 호환)
+- 릴리스: scripts/release_1_4_28.sh — 릴리스 ID 402536100, curl --data-binary 업로드 135,551,568B → 공개 다운로드 200 검증
+- apk-guide.html: v1.4.28 전면 갱신(md5 84dd46f9/sha1 e92cdee5/135551568B/vc120) + **v1.4.27 블록에 v1.4.26 "멀티 UI 철거" 문구가 남아있던 오기 정정**(v1.4.27은 채팅·파티 부활 릴리스)
+- 배포: 푸시 04236b8 → Vercel dpl_BUZmc6jA READY → 라이브 게이트 1.4.28/120 + apk URL 확인
+- 라이브 검증(agent-browser): 세로 390×844에서 물약·자동이 공격 버튼 바로 왼쪽 부착(스크린샷 육안) · 합성 대화창(z-30·DOM 후순위) 주입 히트테스트 → 전송 버튼 승리 · 입력행 computed z-index 40
+- 회귀: 배포 후 채팅 POST ok·GET 정상(릴레이 무영향)
+
+Stage Summary:
+- v1.4.28 출시: https://github.com/apple01234/CERTZ/releases/download/v1.4.28/SERTZ-v1.4.28.apk
+- 밀린 이슈 2종(채팅 전송 버튼 가림 · 세로 좁은 화면 물약 거리) 전부 해소 — 요약서 미해결 목록에서 "모바일 키 거리·clusterFloat 물약 버튼" 제거 가능. 남은 것: apple01234 계정 비번(요청 시 리셋), 채팅 전송 버튼 모바일 키보드 상호작용(실기기 확인 권장 — 헤드리스 한계)
+- 다음 세션 대비: .secrets 3종 + JDK/SDK 재구축 필요 시 scripts/rebuild_*.sh 포그라운드 실행
