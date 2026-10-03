@@ -168,7 +168,10 @@ export function ChatBox() {
         </div>
       )}
 
-      <div className="flex items-end gap-1">
+      {/* v1.4.28 (#채팅가림) — relative z-40: NPC 대화창(DialogueBox absolute inset-x-0 bottom-0 z-30,
+       *  DOM 순서도 ChatBox보다 뒤)이 열리면 입력행+전송 버튼이 대화창 뒤로 가려지고 대화의
+       *  "터치로 계속" 핸들러가 탭을 잡아먹던 문제 수정. z-40 = 대화창(30) 위 · 모달(45+) 아래 */}
+      <div className="relative z-40 flex items-end gap-1">
         {open ? (
           <div className="pointer-events-auto flex min-w-0 flex-1 items-center gap-1.5">
             <input

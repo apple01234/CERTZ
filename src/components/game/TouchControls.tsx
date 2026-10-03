@@ -400,7 +400,7 @@ export function TouchControls({
         </button>
         {/* 자동전투 + 물약 퀵슬롯 — v1.4.25: 공격 버튼 바로 아래-왼쪽 (와일드리프트 스펠 자리)
          *  기존 좌하단 클러스터는 공격 버튼에서 230px — "물약키가 너무 멀다" 픽스.
-         *  좁은 세로 화면(clusterFloat)은 아크 위 가로열 플로팅 유지 */}
+         *  좁은 세로 화면(clusterFloat)은 v1.4.28 우측 앵커 배치로 재설계(아래) */}
         {!clusterFloat && (
         <>
           {autoBtn && (
@@ -416,24 +416,30 @@ export function TouchControls({
           </div>
         </>
         )}
+        {/* ═══ v1.4.28 (#물약거리2) — clusterFloat 재설계: 아크 위 플로팅(공격 버튼에서 ~270px) 철거,
+         *  ARC 컨테이너 '내부' 우측 하단 앵커 배치로 전환 — 공격 버튼(코너) 바로 왼쪽.
+         *  위치는 W와 무관하게 컨테이너 로컬 우측 기준 → 좁은 폭일수록 조이스틱에서 '멀어진다':
+         *    자동 (186,312) · HP (238,316) · MP (284,316) — 컨테이너 306×340, 버튼 r20
+         *  간섭 검증(모바일): s1(160,266,r28)-자동 52.8>48 ✓ · 공격(250,240,r50)-HP 76.9>70 ✓
+         *    · 공격-MP 83.2>70 ✓ · 자동-HP 52.3>40 ✓ · HP-MP 46>40 ✓ · MP 우측 306≤306 ✓
+         *    · 하단 336≤340 ✓ · 조이스틱(0.46W): 자동 좌변 W-144 ≥ 0.46W ⇔ W≥281 — 전 폰 커버
+         *  최원거리(공격↔MP) 83px — 기존 플로팅 ~270px → v1.4.25 가로 화면 픽스(74px)와 동일 위상 */}
+        {clusterFloat && (
+        <>
+          {autoBtn && (
+            <div className="pointer-events-auto absolute" style={{ left: 166, top: 292 }}>
+              {autoBtn}
+            </div>
+          )}
+          <div className="pointer-events-auto absolute" style={{ left: 216, top: 296 }}>
+            {hpBtn}
+          </div>
+          <div className="pointer-events-auto absolute" style={{ left: 262, top: 296 }}>
+            {mpBtn}
+          </div>
+        </>
+        )}
       </div>
-
-      {/* v1.4.19 (#화면깨짐) — 좁은 세로 화면용 물약/자동 클러스터 플로팅:
-       *  ARC 컨테이너(우하단 고정) 바로 위 우측 가로열 — 조이스틱 영역(왼쪽 46%)과
-       *  절대 겹치지 않으면서 엄지 도달 거리 유지. HUD 우상단 버튼과도 무관 */}
-      {clusterFloat && (
-        <div
-          className="pointer-events-auto absolute z-20 flex flex-row gap-1.5"
-          style={{
-            right: "max(0.25rem, env(safe-area-inset-right))",
-            bottom: `calc(max(0.75rem, env(safe-area-inset-bottom)) + ${CH + 8}px)`,
-          }}
-        >
-          {autoBtn}
-          {hpBtn}
-          {mpBtn}
-        </div>
-      )}
     </>
   );
 }
