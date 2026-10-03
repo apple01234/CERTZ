@@ -3138,3 +3138,21 @@ Stage Summary:
 - GitHub 측 복구 100% 완료. 남은 것: Vercel env GITHUB_TOKEN 교체 — **.secrets/vercel_token 소실로 API 호출 불가, 유저의 Vercel 토큰 제공 필요**
 - 복구 절차(토큰 받는 즉시): (1) .secrets/vercel_token 저장 (2) scripts/vercel_api.sh envset GITHUB_TOKEN ghp_WeBx8… (envset이 재배포 자동) (3) wait READY (4) E2E: 채팅 POST/GET·파티 create/leave·admin 로그인
 - 사용자 토큰 취소가 3회 반복됨(ghp_VCDM→ghp_cKlE→ghp_WeBx8) — 만료 없는 토큰 사용 + 취소 전 사전 통보 권장
+
+---
+Task ID: token-incident-3-recovery
+Agent: Super Z (main)
+Task: Vercel 토큰(vcp_3BQd…) 수령 — env 교체 + 채팅/멀티/로그인 완전 복구
+
+Work Log:
+- vcp_3BQd… 저장(.secrets/vercel_token 600) → vercel_api.sh status 200 (team_tU80·prj_aV9S 접근 확인)
+- envset GITHUB_TOKEN ghp_WeBx8… → created:2/failed:0 (production+preview 업서트). 단 envset 내장 재배포 트리거가 KeyError 실패 → 원인: redeploy 로직이 repoId를 비인증 조회 → 403. 수동 v13 POST로 트리거(dpl_BexUuRbt) → 80초 READY
+- vercel_api.sh redeploy 픽스: repoId 조회에 GITHUB_TOKEN 인증 헤더 추가(GH_T 있을 때만) — 재발 방지
+- E2E 전수 통과: ①채팅 POST ok(운영자 "복구완료-1331" 저장) ②채팅 GET 19건(장애 전 18건 히스토리 보존 확인) ③admin 로그인 role=admin ④파티 create(F94N 발급·스냅샷 정상)→leave(1인 파티 삭제)
+- 오진 정리: leave 후 멤버가 남아 보였던 것은 엣지 캐시(s-maxage=4s+SWR 15s)가 만료 전 스냅샷 반환한 것 — 캐시 만료 후 party:null 확인, 로직 무결
+- 테스트 잔여물 정리: 1차 테스트 고아 파티 PSB9($RANDOM 실수로 leave cid 불일치) → 실멤버 cid로 leave → DB 파티 0개
+
+Stage Summary:
+- 채팅·파티·로그인·클라우드세이브·거래소 전 기능 라이브 복구 완료. DB 유실 0
+- 토큰 로테이션 3회 반복 패턴 확정 — .secrets/ 소실(세션 청소 추정)은 유저 컨텍스트 재조달이 유일 회복 경로
+- 권고(3회째): 토큰 만료 없음(No expiration) + 취소 전 사전 통보

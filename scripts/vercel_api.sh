@@ -68,7 +68,9 @@ for x in d.get('deployments',[]):
     ;;
   redeploy)
     REF="${2:-main}"
-    REPO_ID=$(curl -s -m 8 https://api.github.com/repos/$GIT_ORG/$GIT_REPO | python3 -c "import json,sys;print(json.load(sys.stdin)['id'])")
+    # token-incident-3 픽스 — 비인증 repoId 조회가 403(rate limit/private) 먹는 문제 → GITHUB_TOKEN 인증 조회
+    GH_T="$(cat "$ROOT/.secrets/github_token" 2>/dev/null || true)"
+    REPO_ID=$(curl -s -m 8 ${GH_T:+-H "Authorization: Bearer $GH_T"} https://api.github.com/repos/$GIT_ORG/$GIT_REPO | python3 -c "import json,sys;print(json.load(sys.stdin)['id'])")
     echo "→ $GIT_ORG/$GIT_REPO@$REF 재배포 트리거 (repoId=$REPO_ID)..."
     api POST "/v13/deployments?teamId=$TEAM&skipAutoDetectionConfirmation=1" \
       "{\"name\":\"$PROJECT_NAME\",\"gitSource\":{\"type\":\"github\",\"org\":\"$GIT_ORG\",\"repoId\":$REPO_ID,\"ref\":\"$REF\",\"projectId\":\"$PROJECT_ID\"},\"target\":\"production\",\"meta\":{}}" \
