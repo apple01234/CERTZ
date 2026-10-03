@@ -3120,3 +3120,21 @@ Stage Summary:
 - 산출물: download/roblox_prompt/ — CERTZ_Roblox_이식_총지시서.pdf(21p·539KB·벡터) + HTML 소스 + 폰트 9종(HTML 재편집용, 67MB)
 - 문서 구성: 프롬프트 15종(마스터 1 + 페이즈 13 + E2E 검증 1) — 복붙 순서: 마스터 → P0~P12 → VERIFY
 - 재생성 방법: scripts/roblox_doc/part1~5.html 편집 → cat 합침 → html2pdf-next.js 720x1020
+
+---
+Task ID: token-incident-3
+Agent: Super Z (main)
+Task: 유저 "채팅&멀티 안됨" + 신규 토큰 ghp_WeBx8 제공 — 3차 토큰 로테이션
+
+Work Log:
+- 진단: 구토큰 ghp_cKlE GitHub API 401(사용자 취소) → Vercel env GITHUB_TOKEN 사망 → CERTZ-DB 전 접근 실패. 라이브 실측: 채팅 GET {"list":[]} · 파티 0 · POST 400/500 (ghdb/relay loadRelay 예외 → catch로 빈값 반환하는 설계상 표현)
+- .secrets/ 디렉터리 3번째 소실 확인(루트 github_token도 없음, vercel 토큰 포함 전멸) — 이전 세션도 동일 현상("원인 불명 10:00 전후") → 세션 환경이 .secrets를 주기적으로 청소하는 것으로 추정. **대책: 토큰은 세션 시작 시 유저 컨텍스트에서 재조달하는 절차로만 회복 가능**
+- 신규 ghp_WeBx8 검증: /user 200(apple01234), 풀스코프(repo+workflow+delete:packages 등 classic PAT), CERTZ·CERTZ-DB 모두 200
+- 3종 저장: .secrets/github_token(600) + 루트 github_token + git remote set-url → ls-remote 200
+- CERTZ-DB 무결성: relay-chat.json 2,090B(글로벌 18건 보존 — GG "앙기모띠", 운영자 "zzzz…") · accounts.enc 12,256B 보존 · relay-parties.json 0개(정상). **DB 유실 없음 — env 갱신 즉시 복구 예정**
+- 미푸시 커밋 7d94aac(accounts backup) rebase 후 푸시 완료
+
+Stage Summary:
+- GitHub 측 복구 100% 완료. 남은 것: Vercel env GITHUB_TOKEN 교체 — **.secrets/vercel_token 소실로 API 호출 불가, 유저의 Vercel 토큰 제공 필요**
+- 복구 절차(토큰 받는 즉시): (1) .secrets/vercel_token 저장 (2) scripts/vercel_api.sh envset GITHUB_TOKEN ghp_WeBx8… (envset이 재배포 자동) (3) wait READY (4) E2E: 채팅 POST/GET·파티 create/leave·admin 로그인
+- 사용자 토큰 취소가 3회 반복됨(ghp_VCDM→ghp_cKlE→ghp_WeBx8) — 만료 없는 토큰 사용 + 취소 전 사전 통보 권장
