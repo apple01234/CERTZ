@@ -55,7 +55,7 @@ const nextConfig: NextConfig = isStaticExport
       // gofile은 콜드스토리지 첫 응답 ~1분 지연 때문에 apk-guide의 백업 경로로만 안내
       async redirects() {
         const APK_DL =
-          "https://github.com/apple01234/CERTZ/releases/download/v1.0.16/SERTZ-v1.0.16.apk";
+          "https://github.com/apple01234/CERTZ/releases/download/v1.0.1-beta/SERTZ-v1.0.1-beta.apk";
         return [
           {
             /* v4.1.0 — 모든 버전의 /SERTZ-vX.apk 경로를 한 규칙으로 처리
