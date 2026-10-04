@@ -3292,3 +3292,24 @@ Stage Summary:
 - Play 업로드용 AAB: download/SERTZ-v1.0.2-beta.aab (vc123) — 다음 업로드는 124 이상
 - 스토어 에셋: download/Capture/ 10개 폴더 67장 전량 규격 통과(메인그래픽·폰12·7인치12·10인치12·데스크톱12·PC8·XR4·로고·PC그래픽·선별4)
 - 유저 콘솔 작업 2종 대기: ①AdMob 앱 ID+보상형 단위 ID 복사 → patch_admob_ids.py 1발 교체 ②Firebase 콘솔 Google 공급자 활성화+google-services.json 투입(없어도 앱은 정상 빌드·부팅)
+
+---
+Task ID: fix-vc124-nativepurchases-crash
+Agent: Super Z (main)
+Task: 유저 스크린샷 버그 리포트(Screenshot_20261005_000353_SERTZ.jpg) — "NativePurchases.then() is not implemented on android" 재부팅 오버레이 크래시 — 진단·픽스·vc124 릴리스
+
+Work Log:
+- 진단: crashGuard unhandledrejection 오버레이가 캡처한 예외 메시지 역추적 → @capacitor/core dist 실측(registerPlugin 프록시 get 핸들러에 then 특수처리 없음 — prop 접근 전부 네이티브 메서드 호출로 위임, 라인 122가 정확히 유저 메시지 포맷)
+- 근원: ads.ts의 async plugin() 헬퍼가 registerPlugin 프록시를 return → JS thenable 해석이 proxy.then(res,rej) 호출 → 네이티브 "then" 미구현 CapacitorException이 무처리 거절로 발생(crashGuard 오버레이) + plugin() 프라미스는 영구 hang → 결제·부팅 복구·충전소 실가격 전면 불능(vc122·vc123 공통 — 네이티브에서만 발현, 웹은 isNativeApp 가드로 우회)
+- 픽스: ads.ts 재설계 — ensurePlugin()(모듈 로드 후 모듈 변수 "대입"만 — 대입은 thenable 해석 없음) + plugin() 동기 접근자(일반 반환은 해석 없음) + 6개 호출부 전환( await ensurePlugin(); const P = plugin() ). 로드 실패 시 npLoading 리셋으로 재시도 허용
+- 버전 승격 4종(scripts/bump_1_0_3_beta.py): package.json 1.0.3-beta · build.gradle vc124(+변경이력 주석) · server.js · api/version 게이트 — VERSION_NOTE 내부 이중따옴표가 문자열 리터럴 파괴 → 단일따옴표 핫픽스 커밋 5e203fe(첫 푸시 3faf3b8이 Vercel 빌드 실패 → 게이트 123 정체 원인이었음)
+- 환경 풀리셋 3연속 소실: JDK(/home/z/jdk)·Android SDK(/home/z/.android-sdk)·local.properties 전부 재구축(rebuild_jdk.sh + rebuild_sdk.sh + sdk.dir 재생성) — 세션 중간에도 산출물 무결성 확인 후 재빌드
+- 빌드: build_aab.sh 풀체인 성공(AAB 131,861,423B) · build_apk.sh versionName 파싱 실패 유지(app-release.apk 수동 복사 — 스크립트 보강 과제) · aapt2 vc124/1.0.3-beta · apksigner cc774f34 동일키
+- 릴리스: v1.0.3-beta(prerelease) ID 403084690 — APK+AAB 201×2 · next.config APK_DL 레거시 경로 v1.0.1-beta(vc121·크래시 버전) → v1.0.3-beta 갱신(934de16)
+- 라이브: 게이트 latest 1.0.3-beta/code 124 · ads.txt 유지 · 릴리스 APK 공개 200 · 채팅 릴레이 200
+
+Stage Summary:
+- 크래시 픽스 릴리스: https://github.com/apple01234/CERTZ/releases/tag/v1.0.3-beta — Play 업로드용 AAB: download/SERTZ-v1.0.3-beta.aab (vc124)
+- v1.0.2-beta(vc123)·v1.0.1-beta(vc122) 설치 기기는 부팅 3초 후 복구 훅이 크래시 오버레이를 띄우는 상태 — 게이트(124)로 구버전 알림이 뜨므로 vc124로 업데이트 유도됨
+- 유저에게 안내: 스크린샷 버그는 vc124에서 수정 — APK 재설치(같은 키 cc774f34 덮어설치 호환) 또는 Play 업로드
+- 미해결 과제: build_apk.sh versionName 파싱([0-9.]* → [^"]* 패리티) — 다음 세션 보강
