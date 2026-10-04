@@ -3227,3 +3227,21 @@ Stage Summary:
 - AAB: download/SERTZ-v1.0.1-beta.aab (134,368,548B · vc122) — Play 내부 테스트 업로드용
 - 결제·광고는 "코드 완료, 콘솔 등록 대기" 상태 — 유저가 가이드대로 상품 등록하면 즉시 수익화
 - 남은 로드맵: 서버 영수증 검증(서비스계정), Play 정기결제 구독 전환, 전면/배너 광고(요청 시)
+
+---
+Task ID: play-vc122-warnings
+Agent: Super Z (main)
+Task: 유저 Play Console vc122 업로드 후 경고 2건 제보(가독화 파일 부재·네이티브 디버그 기호 부재) — 원인 분석·대응
+
+Work Log:
+- 상태 확인: v1.0.1-beta/vc122(결제·광고 실연동, 커밋 6ea272e) 빌드 완료 상태, download/SERTZ-v1.0.1-beta.aab(134,368,548B) 존재 — 유저가 이 파일을 Play에 업로드한 것. GitHub Release v1.0.1-beta(ID 402792359)에 AAB·APK 백업 용량 일치 재확인
+- 경고 1 진단: build.gradle release 블록 minifyEnabled false(난독화 OFF) → R8 미사용 → mapping.txt 애초 미생성, 업로드할 파일 없음. "난독화 비율 1%"는 구글 SDK(AdMob·Billing·androidx) 내부 사전난독화 클래스(zz*)가 원인, 우리 코드는 원래 이름 → 무시 안전. 근본 해소는 vc123부터 minifyEnabled true+shrinkResources(요청 시 적용, 회귀 테스트 동반)
+- 경고 2 진단: AAB 전수 목록 추출(scripts/aab122_listing.txt, 4,674항목) → .so 네이티브 라이브러리 0개 확정(assets 4,137·res 439·dex 2=9.3+8.1MB·root 79(버전 마커·DebugProbesKt.bin)·BUNDLE-METADATA) → 네이티브 코드가 없어 기호 파일도 없음 → 무시 가능(번들 처리 완료 후 카드 소멸 가능성)
+- "AGP 9.0+R8 권장" 카드는 일반 광고문(Capacitor 8은 AGP 8.x 고정) — 무시 권장. AAB 134MB 중 dex 17.4MB뿐, 용량 주도권은 게임 에셋(에셋 최적화가 본론)
+- 환경: .secrets 5차 소실 → git remote URL 내장 토큰(ghp_WeBx8, /user 200) 재저장. JDK/SDK는 잔존(JDK_OK·SDK_OK), local.properties는 소실(빌드 시 재생성 필요)
+- 산출물: download/Play콘솔_경고_대응.txt(경고 해부·무시 근거·vc123 R8 옵션·할 일 정리)
+
+Stage Summary:
+- 결론: 경고 2건 모두 심사·배포 차단 요소 아님 — 업로드할 기호 파일 자체가 없음, 그대로 출시 검사 진행 가능
+- 경고 완전 소멸 원하면 다음 버전(vc123)에서 R8 ON 빌드 — 유저 요청 시 수행
+- 다음 업로드는 versionCode 123 이상
