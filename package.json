@@ -1,6 +1,6 @@
 {
   "name": "nextjs_tailwind_shadcn_ts",
-  "version": "1.0.1-beta",
+  "version": "1.0.2-beta",
   "private": true,
   "scripts": {
     "dev": "node server.js 2>&1 | tee dev.log",
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",
+    "@capacitor-firebase/authentication": "^8.5.2",
     "@capacitor/android": "^8.5.0",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0",
@@ -61,6 +62,7 @@
     "date-fns": "^4.1.0",
     "docx": "^9.7.1",
     "embla-carousel-react": "^8.6.0",
+    "firebase": "^12.6.0",
     "framer-motion": "^12.23.2",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.525.0",

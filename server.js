@@ -63,9 +63,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.0.1-beta";
-  const LATEST_CODE = 122;
-  const VERSION_NOTE = "v1.0.1-beta — 결제·광고 실연동: ①구글 플레이 인앱 결제(에메랄드 충전 4종·현금 패키지 3종) 소비(consume) 흐름 확정 — 재구매 차단 버그 픽스 ②결제 성공 직후 종료 시 미지급 결제 부팅 자동 복구(이중 지급 차단) ③충전소에 Play 등록 실가격 표시 ④AdMob 보상형 광고 실연동(AD_ID 권한 복원 — v1.4.3 잔재 제거) · 콘솔 상품 등록 가이드: download/결제_광고_연동_가이드.txt";
+  const LATEST_VERSION = "1.0.2-beta";
+  const LATEST_CODE = 123;
+  const VERSION_NOTE = "v1.0.2-beta — 구글 로그인·초반 브금·조작UI 복귀: ①구글 통합 로그인(Firebase Auth — 앱 네이티브 구글창·웹 팝업, 서버 ID토큰 검증 후 기존 계정 체계와 동일 세션) ②초반 1~3챕터 BGM 3곡 오리지널 합성 음원 교체(bgm_village1·field1·title2) ③조작 UI 배치 예전 형태 복귀(우하단 [자동+물약][스킬][공격] 행 — 버튼 색·모양은 유지) ④ads.txt/app-ads.txt 배포(pub-5675573589406258) ⑤Firebase Analytics·Crashlytics 연동 준비 · 구글로그인 설정 가이드: download/결제_광고_연동_가이드.txt";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

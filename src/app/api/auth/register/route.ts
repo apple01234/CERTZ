@@ -5,7 +5,8 @@
 import { NextRequest } from "next/server";
 import { randomBytes } from "node:crypto";
 import { mutateDb } from "@/lib/ghdb";
-import { hashPw, issueToken, json, options, publicUser, rateLimit, audit, type Resp } from "@/lib/sapi";
+import { hashPw, issueToken, json, options, publicUser, rateLimit, audit } from "@/lib/sapi";
+import type { Resp } from "@/lib/ghdb";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 

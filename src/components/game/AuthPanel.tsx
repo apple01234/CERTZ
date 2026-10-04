@@ -9,6 +9,7 @@ import {
   authLogin,
   authRegister,
   authLogout,
+  authGoogle, // v1.0.2-beta — 구글 로그인(Firebase Auth ID 토큰 → 서버 검증·세션 발급)
   fetchSnsProviders,
   consumeAuthTokenFromHash, // v1.0.7 — SNS 콜백 해시 토큰 저장
   cloudSaveUpload,
@@ -157,6 +158,55 @@ export function AuthPanel() {
     }
   };
 
+  /* ═══ v1.0.2-beta — 구글 로그인 실연동 (Firebase Auth) ═══
+   *  · 앱(Capacitor): @capacitor-firebase/authentication signInWithGoogle → 네이티브 구글 계정 선택창
+   *    (동작 조건: android/app/google-services.json 투입 + Firebase Console에서 구글 공급자 활성화 + SHA-1 등록)
+   *  · 웹(브라우저): Firebase JS SDK signInWithPopup
+   *  · 획득한 ID 토큰을 /api/auth/google로 보내 서버 검증 → 기존 세션 체계와 동일하게 로그인 */
+  const googleLogin = async () => {
+    if (busy) return;
+    setMsg("");
+    setBusy(true);
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      let idToken = "";
+      if (Capacitor.isNativePlatform()) {
+        const { FirebaseAuthentication } = await import("@capacitor-firebase/authentication");
+        const res = await FirebaseAuthentication.signInWithGoogle();
+        idToken = res.credential?.idToken ?? ""; // OIDC 자격증명의 ID 토큰 (구글)
+      } else {
+        const { initializeApp, getApps } = await import("firebase/app");
+        const { getAuth, GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
+        const app = getApps()[0] ?? initializeApp({ apiKey: "AIzaSyD8bXRnF1HA5RDFZitbds45BO2GX2KodmM", authDomain: "sertz-681eb.firebaseapp.com", projectId: "sertz-681eb" });
+        const cred = await signInWithPopup(getAuth(app), new GoogleAuthProvider());
+        idToken = await cred.user.getIdToken();
+      }
+      if (!idToken) {
+        setMsg("구글 로그인 토큰을 받지 못했어요 — 다시 시도해 주세요");
+        return;
+      }
+      const r = await authGoogle(idToken);
+      if (!r.ok) {
+        setMsg(String(r.data.error ?? "구글 로그인에 실패했어요"));
+        return;
+      }
+      setUser((r.data.user as AuthUser) ?? null);
+      EventBus.emit("banner:show", { text: `${(r.data.user as AuthUser)?.name ?? ""} 님, 구글 계정으로 로그인! — 클라우드 세이브 사용 가능` });
+      EventBus.emit("auth:changed");
+    } catch (e) {
+      const msg = String((e as { message?: string })?.message ?? e ?? "").toLowerCase();
+      if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("popup_closed")) {
+        setMsg(""); // 유저가 창을 닫은 것 — 오류 아님
+      } else if (msg.includes("configuration-not-found") || msg.includes("operation-not-allowed") || msg.includes("api key") || msg.includes("firebaseapp") || msg.includes("not configured")) {
+        setMsg("구글 로그인이 아직 서버에서 활성화되지 않았어요 (Firebase 설정 준비 중) — 자체 계정을 이용해 주세요");
+      } else {
+        setMsg("구글 로그인 중 오류가 발생했어요 — 잠시 후 다시 시도해 주세요");
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const inputCls =
     "w-full rounded-lg border border-white/20 bg-slate-900/90 px-3 py-2 text-[13px] font-bold text-white outline-none placeholder:text-white/30 focus:border-amber-300/70";
 
@@ -211,13 +261,23 @@ export function AuthPanel() {
               </>
             ) : (
               <>
-                {/* v1.3.0 (지시 #1) — SNS 연동 로그인 임시 비활성화:
-                 *  OAuth 키 운영 안정화 전까지 SNS 버튼을 숨기고 안내 문구로 대체.
-                 *  snsStart/프로바이더 로직은 유지 — 재개 시 이 블록만 되돌리면 즉시 복구된다. */}
-                <p className="mb-1.5 rounded-lg border border-amber-300/35 bg-amber-400/10 px-2.5 py-2 text-[10px] font-black leading-relaxed text-amber-200">
-                  🔒 SNS 로그인(구글·카카오·네이버)은 일시 중단 중이에요.
-                  <br />
-                  다음 업데이트에서 다시 열릴 예정 — 지금은 자체 계정으로 플레이해 주세요!
+                {/* v1.0.2-beta — 구글 로그인 재개(Firebase Auth 실연동): 카카오·네이버는
+                 *  OAuth 키 준비 전까지 일시 중단 유지. 구글 버튼은 앱/웹 모두 동일 UI. */}
+                <button
+                  onClick={googleLogin}
+                  disabled={busy}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-white/70 bg-white px-4 py-2.5 text-[13px] font-black text-slate-800 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:opacity-40"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                    <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.56-5.17 3.56-8.81z" />
+                    <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.88-3c-1.07.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.72-4.96H1.27v3.1A12 12 0 0 0 12 24z" />
+                    <path fill="#FBBC05" d="M5.28 14.28A7.2 7.2 0 0 1 4.9 12c0-.79.14-1.56.38-2.28v-3.1H1.27a12 12 0 0 0 0 10.76l4.01-3.1z" />
+                    <path fill="#EA4335" d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.44-3.44A11.98 11.98 0 0 0 12 0 12 12 0 0 0 1.27 6.62l4.01 3.1C6.22 6.88 8.87 4.77 12 4.77z" />
+                  </svg>
+                  구글로 로그인
+                </button>
+                <p className="mt-1.5 rounded-lg border border-white/15 bg-black/30 px-2.5 py-2 text-[9px] font-bold leading-relaxed text-white/45">
+                  🔒 카카오·네이버 로그인은 일시 중단 중이에요 — 구글·자체 계정을 이용해 주세요
                 </p>
 
                 <div className="my-2 flex items-center gap-2 text-[9px] font-black text-white/30">

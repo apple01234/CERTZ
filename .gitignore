@@ -163,3 +163,4 @@ dev.log
 server.log
 *.log
 vercel-deploy.log
+download/Capture/

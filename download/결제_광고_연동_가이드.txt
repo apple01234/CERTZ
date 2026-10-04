@@ -79,3 +79,43 @@
     상품 전환은 별도 등록 필요 — 원하면 다음 릴리스에서 연결 가능.
   · 전면 광고/배너: 리텐션 해치지 않으려고 의도적으로 보상형만 넣었다.
     추가 원하면 지시 필요.
+
+────────────────────────────────────────────────────────────────────
+6. v1.0.2-beta — AdMob 실제 ID 적용 (ads.txt 완료 / 앱 ID·단위 ID 대기)
+────────────────────────────────────────────────────────────────────
+  이미 완료된 것:
+  · ads.txt + app-ads.txt 배포 (public/ads.txt, public/app-ads.txt)
+    → https://sertz.vercel.app/ads.txt 에서 확인 가능
+    → 라인: google.com, pub-5675573589406258, DIRECT, f08c47fec0942fa0
+
+  아직 대기 중인 것 (콘솔에서 값 2개만 복사하면 끝):
+  · AdMob 콘솔(https://admob.google.com) → 내 앱 → SERTZ 선택
+      ① 앱 ID        = ca-app-pub-5675573589406258~NNNNNNNNNN  (앱 설정)
+      ② 보상형 단위 ID = ca-app-pub-5675573589406258/MMMMMMMMMM  (광고 단위 → 보상형 추가)
+  · 받으면 1발 교체:
+      python3 scripts/patch_admob_ids.py "앱ID" "단위ID"
+    → AndroidManifest.xml + src/game/ads.ts 동시 교체, 다음 빌드부터 실제 수익 광고
+  ※ 현재는 구글 테스트 ID로 안전 부팅 중(잘못된 앱 ID 넣으면 앱 전체 크래시 —
+    콘솔 복사값 그대로만 넣으면 됨). 테스트 ID 상태로도 출시·심사는 문제 없음.
+
+7. v1.0.2-beta — 구글 통합 로그인(OAuth) 실연동
+────────────────────────────────────────────────────────────────────
+  구현: Firebase Authentication (구글 공급자)
+  · 웹: Firebase JS SDK 팝업 로그인 / 앱: @capacitor-firebase/authentication 네이티브 구글창
+  · 서버: POST /api/auth/google — Firebase ID 토큰 RS256 서명검증(fbverify) 후
+    기존 계정 DB에 g_ 접두 자동 가입 → 자체 계정과 동일 세션 발급
+    (클라우드 세이브·거래소·랭킹 전부 그대로 호환)
+
+  유저가 해야 할 일 (Firebase 콘솔 https://console.firebase.google.com):
+  ① 프로젝트(sertz-681eb) → Authentication → 시작하기 → Sign-in method →
+     "Google" 공급자 사용 설정 (지원 이메일 선택)
+  ② 프로젝트 설정 → 일반 → 내 앱 → Android 앱 추가:
+     · 패키지명: com.sertz.myapp
+     · SHA-1: cc774f34... (아래 명령으로 확인 가능)
+       keytool -list -v -keystore android/sertz-release.keystore
+     → google-services.json 다운로드 → android/app/google-services.json 저장
+  ③ (웹 팝업용) Authentication → Settings → 승인된 도메인에 sertz.vercel.app 추가
+
+  ※ google-services.json이 없어도 앱은 정상 빌드·부팅된다(Firebase만 비활성).
+    파일 투입 즉시 구글 로그인 활성화(build.gradle 조건부 플러그인).
+  ※ 제공해준 AIzaSy... 키는 Firebase 웹 API 키로 웹 SDK에 반영 완료.

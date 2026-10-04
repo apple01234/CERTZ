@@ -145,6 +145,16 @@ export async function authLogin(id: string, pw: string) {
   return r;
 }
 
+/** v1.0.2-beta — 구글 로그인 (Firebase Auth ID 토큰 → 서버 검증·계정 연동 → 세션 발급)
+ *  토큰 획득은 AuthPanel이 수행(앱: @capacitor-firebase/authentication / 웹: Firebase JS SDK)하고
+ *  이 함수는 검증+세션 발급만 담당 — 자체 로그인과 동일한 세션·캐시 경로를 쓴다. */
+export async function authGoogle(idToken: string) {
+  const r = await post("/api/auth/google", { idToken });
+  if (r.ok && typeof r.data.token === "string") setToken(r.data.token);
+  if (r.ok && r.data.user) setCachedUser(r.data.user as AuthUser);
+  return r;
+}
+
 export async function authLogout() {
   const r = await post("/api/auth/logout");
   setToken(""); // v1.0.7 — 로컬 토큰 정리 (성공 여부 무관)

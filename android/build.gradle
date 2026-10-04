@@ -8,7 +8,11 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.13.0'
-        classpath 'com.google.gms:google-services:4.4.4'
+        /* v1.0.2-beta — Firebase 연동 (유저 지시 "Firebase로 게임 관리"): 프로젝트 sertz-681eb
+         *  google-services 4.5.0(콘솔 권장판) + Crashlytics 플러그인(크래시 리포트).
+         *  실제 활성화는 app/google-services.json 존재 시 자동(하단 app 모듈 참조) */
+        classpath 'com.google.gms:google-services:4.5.0'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.8'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
