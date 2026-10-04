@@ -3245,3 +3245,24 @@ Stage Summary:
 - 결론: 경고 2건 모두 심사·배포 차단 요소 아님 — 업로드할 기호 파일 자체가 없음, 그대로 출시 검사 진행 가능
 - 경고 완전 소멸 원하면 다음 버전(vc123)에서 R8 ON 빌드 — 유저 요청 시 수행
 - 다음 업로드는 versionCode 123 이상
+
+---
+Task ID: web-play-shutdown
+Agent: Super Z (main)
+Task: 유저 "웹 서버 비용 과다 — 앱으로만 사용, 서버만 Vercel 관리, 게임 플레이는 기기 부담" 제안 수용 — 웹 플레이 종료·앱 전환 정책 구현
+
+Work Log:
+- 비용 원인 분석 확정: capacitor.config에 server.url 없음 → APK는 번들 에셋(135MB)을 https://localhost에서 **로컬 실행**(게임 플레이 이미 100% 기기 부담). 서버 호출은 계정·거래소·랭킹·채팅·파티·버전 JSON API뿐(DEFAULT_API_BASE) + APK 배포도 GitHub Releases 직접(무료). **진짜 비용 원인 = 웹 브라우저 플레이어** — public/assets 133MB+게임 JS를 Vercel 대역폭으로 서빙
+- 구현 ① src/middleware.ts 신설: 외부 호스트에서 "/" 접속 → 307 /apk-guide.html 리다이렉트(에지 차단 — 게임 JS·에셋 대역폭 0 수렴). 예외: localhost 계열(로컬 개발·EXE same-origin)·*.space-z.ai(QA 프리뷰). matcher "/" 한정이라 /api/*·/support·/privacy·/apk-guide.html 자연 유지. 복구 방법 = 파일 삭제+재배포
+- 구현 ② build_apk.sh·build_aab.sh에 [0.7] middleware 격리 단계 추가(output:export 비호환 대비 — 기존 api 라우트 격리 패턴과 동일, trap EXIT 복원, proxy.ts까지 방어)
+- 구현 ③ public/apk-guide.html에 "웹 플레이 종료 안내" 배너 추가(.web-close 에메랄드 카드 — 계정·클라우드세이브·거래소·랭킹 그대로 이어짐 안내) — 웹 이탈 유저의 첫 랜딩이 됨
+- 검증(로컬): standalone next build 성공("ƒ Proxy (Middleware)" 등록·API 13 라우트 무결) → server.js 3100 기동 6종 실측 전부 통과(외부호스트 / 307→guide · localhost / 200 · 외부 /api/version 200(게이트 122) · /support·/apk-guide.html 200 · space-z.ai / 200)
+- 발견·픽스(기존 버그): next.config redirects의 APK_DL이 v1.0.16(구버전 유물)로 고정 — /SERTZ-v*.apk 레거시 경로가 옛 APK를 내려주던 것 → v1.0.1-beta로 갱신(bf31804). apk-guide 본문 링크는 GitHub 직결이라 실피해 미발생이었음
+- 검증(라이브): / 307→apk-guide ✓ · /api/version 122 ✓ · apk-guide 배너 ✓ · support·privacy 200 ✓ · 채팅 POST ok("웹종료-검증-1004")·GET 히스토리 정상 ✓ · /SERTZ-v1.0.1-beta.apk → GitHub v1.0.1-beta 리다이렉트 ✓(배포 폴링 3회차 반영 확인)
+- APK 재빌드 불필요 확정 — middleware는 앱 빌드에 미포함(격리), 앱 자체 변경 0, 버전 게이트 유지(vc122). 유저 기기의 게임 플레이 방식에 변화 없음
+
+Stage Summary:
+- 웹 플레이 종료: sertz.vercel.app/ → 앱 다운로드 안내로 리다이렉트. Vercel 소비가 "API JSON KB 단위+정적 안내 페이지"로 수렴 — 트래픽 폭증해도 대역폭 과금 위험 소멸
+- 웹 유저 이전 경로: 리다이렉트 → APK 설치(GitHub Releases 무료) 또는 Play 스토어 → 로그인 시 계정·세이브 이어짐(계정·거래소·랭킹 API 무변경)
+- 유저 후속 권장: Vercel 콘솔 Usage에서 spend cap 점검, Pro 유지/다운그레이드 판단(Hobby는 상업 약관 주의), 구 게임서버(sertz11/sertz4) 유료 VPS가 남아 있으면 해지 — 웹 차단으로 소켓 본체 필요성은 제로
+- 커밋: 6c553c7(middleware·격리·배너) + bf31804(APK_DL 갱신)
