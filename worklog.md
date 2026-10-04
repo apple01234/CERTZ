@@ -3204,3 +3204,26 @@ Stage Summary:
 - AAB(Play Console 업로드용): download/SERTZ-v1.0.0-beta.aab (134,367,602B · vc121 · sertz-release.keystore 서명 — 업로드 키로 그대로 사용 가능)
 - Play 등록 시: versionCode 121 / versionName 1.0.0-beta 그대로 사용, 다음 업로드는 122 이상 필수
 - 다음 세션 대비: .secrets 소실 시 remote URL 토큰 재저장 가능 · JDK/SDK는 rebuild_*.sh 포그라운드 · 백그라운드 빌드는 수거 위험 → 웹빌드 산출 재사용 + gradle 포그라운드 권장
+
+---
+Task ID: release-1-0-1-beta
+Agent: Super Z (main)
+Task: 유저 "이제 결제기능하고 광고 연동기능 넣을꺼야" — Play Billing·AdMob 실연동 + v1.0.1-beta/vc122 릴리스
+
+Work Log:
+- 전수 조사: @capgo/native-purchases@8.7 + @capacitor-community/admob@8.1 번들·settings.gradle 등록 확인 — ads.ts(v4.1.0 골격)·WorldScene 지급 플로우·BmShopPanel 충전소 이미 존재. 즉 "골격 완성 → 실연동" 단계였음
+- 버그 발견·픽스(src/game/ads.ts): purchaseGems가 consumable 미지정(isConsumable 기본 false)로 구매 후 소비 없음 → 2회째 결제 시 "이미 소유" 차단되던 치명 결제 버그. isConsumable:false 보관 + autoAcknowledge:false → 지급 → consumePurchase(승인 포함)의 엄격 순서로 확정
+- 신규: 부팅 복구 restorePendingPurchases(스토어 소유 조회 → ledger 미기록분 지급 → 젬 소비/패키지 승인 — 결제 직후 종료 지급누락 방지, localStorage token ledger로 이중 지급 차단·상한 80) · completeGemPurchase/completePackPurchase · fetchStorePrices(getProducts 실가격)
+- WorldScene: 부팅 3초 후 복구 훅(1회 가드·reward:show 안내) · onBuyGems/onBuyStorePack에 ledger+소비/승인 연결 · PENDING 결제(편의점 대기 등) 안내 분류 추가
+- Manifest 픽스: v1.4.3의 AD_ID tools:node="remove" 잔재 제거(주석 "AdMob 미번들"은 사실과 달랐음 — admob 플러그인 실제 번들) → AD_ID 복원(Android 13+ 광고 수익 정상화). Play 콘솔 "광고 ID" 선언 변경 필요 안내 포함
+- Panels.tsx 충전소: 스토어 실가격 표시(fetchStorePrices → Play 등록 통화·가격, 실패 시 폴백 라벨)
+- 검증: tsc 신규 0(sapi.ts 2건 기존) · eslint 내 파일 0(Panels 3209 setState-in-effect는 기존 이슈) · aapt vc122/1.0.1-beta/targetSdk36 · 권한 실측 AD_ID+BILLING 복원 확인 · apksigner cc774f34 동일 키 · AAB jarsigner verified
+- 환경: download/ 10/1 스냅샷 롤백 사고(v1.0.0-beta 산출물 유실) — GitHub 릴리스에서 재수신·무결성 검증(md5 정합)으로 복구. JDK/SDK/Gradle 캐시 재구축(Gradle 224MB 수동 캐시 심기 재수행) · 웹빌드+cap sync+gradle 포그라운드 청크 방식(백그라운드 수거 문제 회피)
+- 릴리스: v1.0.1-beta(prerelease) ID 402792359 — APK+AAB 업로드 → 공개 200×2 · 푸시 6ea272e → Vercel READY → 라이브 게이트 1.0.1-beta/122+apk-guide 확인 · 로컬 서버 재기동(3000, 게이트 1.0.1-beta/122)
+- 가이드: download/결제_광고_연동_가이드.txt — Play Console 상품 7종 등록표(SKU·가격)·라이선스 테스터·AdMob 2개 ID 교체 위치·결제 테스트 6단계·로드맵(서버 검증·Play 구독 전환)
+
+Stage Summary:
+- v1.0.1-beta 출시: https://github.com/apple01234/CERTZ/releases/download/v1.0.1-beta/SERTZ-v1.0.1-beta.apk (+AAB 동일 태그)
+- AAB: download/SERTZ-v1.0.1-beta.aab (134,368,548B · vc122) — Play 내부 테스트 업로드용
+- 결제·광고는 "코드 완료, 콘솔 등록 대기" 상태 — 유저가 가이드대로 상품 등록하면 즉시 수익화
+- 남은 로드맵: 서버 영수증 검증(서비스계정), Play 정기결제 구독 전환, 전면/배너 광고(요청 시)
