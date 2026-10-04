@@ -36,9 +36,18 @@ ROUTE_DIRS="admin auth market rank support chat party"
 for d in $ROUTE_DIRS; do
   if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" "$PROJECT_ROOT/.apk-hold/api-routes/"; fi
 done
+echo "[0.7/3] middleware 임시 격리 (output:export 비호환 — trap EXIT 복원)"
+MIDDLEWARE_FILES="src/middleware.ts src/middleware.js src/proxy.ts src/proxy.js"
+for f in $MIDDLEWARE_FILES; do
+  if [ -f "$f" ]; then mv "$f" "$PROJECT_ROOT/.apk-hold/"; fi
+done
 restore_routes_aab() {
   for d in $ROUTE_DIRS; do
     if [ -d "$PROJECT_ROOT/.apk-hold/api-routes/$d" ]; then mv "$PROJECT_ROOT/.apk-hold/api-routes/$d" "$PROJECT_ROOT/src/app/api/$d"; fi
+  done
+  # 웹 플레이 차단 middleware 복원 (export 빌드 전 격리분)
+  for f in middleware.ts middleware.js proxy.ts proxy.js; do
+    if [ -f "$PROJECT_ROOT/.apk-hold/$f" ]; then mv "$PROJECT_ROOT/.apk-hold/$f" "$PROJECT_ROOT/src/$f"; fi
   done
 }
 trap restore_routes_aab EXIT
