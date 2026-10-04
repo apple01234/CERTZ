@@ -8,12 +8,12 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.0.2-beta";
-const LATEST_CODE = 123;
+const LATEST_VERSION = "1.0.3-beta";
+const LATEST_CODE = 124;
 const VERSION_NOTE =
-  "v1.0.2-beta — 구글 로그인·초반 브금·조작UI 복귀: ①구글 통합 로그인(Firebase Auth — 앱 네이티브 구글창·웹 팝업, 서버 ID토큰 검증 후 기존 계정 체계와 동일 세션) ②초반 1~3챕터 BGM 3곡 오리지널 합성 음원 교체(bgm_village1·field1·title2) ③조작 UI 배치 예전 형태 복귀(우하단 [자동+물약][스킬][공격] 행 — 버튼 색·모양은 유지) ④ads.txt/app-ads.txt 배포(pub-5675573589406258) ⑤Firebase Analytics·Crashlytics 연동 준비 · 구글로그인 설정 가이드: download/결제_광고_연동_가이드.txt";
+  "v1.0.3-beta — 긴급 픽스: 기기에서 인앱 결제·부팅 복구·충전소 실가격 사용 시 "NativePurchases.then() is not implemented" 크래시(재부팅 오버레이)가 발생하던 버그 수정 — 결제 플러그인 접근을 프록시 thenable 함정 없는 구조로 재설계. v1.0.2-beta 설치 기기는 이 버전으로 업데이트 필요";
 const APK_MIRROR =
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.2-beta/SERTZ-v1.0.2-beta.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.3-beta/SERTZ-v1.0.3-beta.apk";
 
 export async function GET() {
   return NextResponse.json({

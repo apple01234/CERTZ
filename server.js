@@ -30,7 +30,8 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.0.1-beta/SERTZ-v1.0.1-beta.apk";
+  const APK_MIRROR =
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.3-beta/SERTZ-v1.0.3-beta.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -63,9 +64,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.0.2-beta";
-  const LATEST_CODE = 123;
-  const VERSION_NOTE = "v1.0.2-beta — 구글 로그인·초반 브금·조작UI 복귀: ①구글 통합 로그인(Firebase Auth — 앱 네이티브 구글창·웹 팝업, 서버 ID토큰 검증 후 기존 계정 체계와 동일 세션) ②초반 1~3챕터 BGM 3곡 오리지널 합성 음원 교체(bgm_village1·field1·title2) ③조작 UI 배치 예전 형태 복귀(우하단 [자동+물약][스킬][공격] 행 — 버튼 색·모양은 유지) ④ads.txt/app-ads.txt 배포(pub-5675573589406258) ⑤Firebase Analytics·Crashlytics 연동 준비 · 구글로그인 설정 가이드: download/결제_광고_연동_가이드.txt";
+  const LATEST_VERSION = "1.0.3-beta";
+  const LATEST_CODE = 124;
+  const VERSION_NOTE =
+  "v1.0.3-beta — 긴급 픽스: 기기에서 인앱 결제·부팅 복구·충전소 실가격 사용 시 "NativePurchases.then() is not implemented" 크래시(재부팅 오버레이)가 발생하던 버그 수정 — 결제 플러그인 접근을 프록시 thenable 함정 없는 구조로 재설계. v1.0.2-beta 설치 기기는 이 버전으로 업데이트 필요";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

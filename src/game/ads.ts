@@ -89,9 +89,29 @@ type Txn = {
   isAcknowledged?: boolean;
 };
 
-async function plugin(): Promise<typeof import("@capgo/native-purchases").NativePurchases> {
-  const m = await import("@capgo/native-purchases");
-  return m.NativePurchases;
+/* v1.0.3-beta 긴급 픽스 — registerPlugin 프록시는 모든 프로퍼티 접근을 네이티브 메서드 호출로
+ * 위임한다(then 포함 — core에 특수처리 없음 실측). 프록시를 async 함수에서 return하면
+ * JS thenable 해석이 proxy.then(res,rej)를 호출 → 네이티브 "then" 미구현 CapacitorException이
+ * Unhandled Rejection으로 발생(crashGuard 재부팅 오버레이 표출) + 본체 프라미스는 영구 hang
+ * → 결제·복구·실가격 전체 불능. 대입(assignment)은 thenable 해석이 없으므로
+ * 모듈 변수에 캐시하고 동기 접근자로만 꺼낸다. */
+type NP = typeof import("@capgo/native-purchases").NativePurchases;
+let np: NP | null = null;
+let npLoading: Promise<void> | null = null;
+
+/** 플러그인 모듈 로드 → 모듈 변수에 "대입"만 한다(프록시를 프라미스 체인에 흘려보내지 않음) */
+function ensurePlugin(): Promise<void> {
+  if (np || !isNativeApp()) return Promise.resolve();
+  npLoading ??= import("@capgo/native-purchases")
+    .then((m) => { np = m.NativePurchases; }) // 대입 — thenable 해석 없음(안전)
+    .catch((e) => { npLoading = null; console.warn("[SERTZ] 결제 플러그인 로드 실패(재시도 가능)", e); });
+  return npLoading;
+}
+
+/** 동기 접근자 — 일반 반환은 thenable 해석이 없어 안전. 미로드 시 예외(호출부 catch 처리) */
+function plugin(): NP {
+  if (!np) throw new Error("NativePurchases not loaded");
+  return np;
 }
 
 let adInitDone = false;
@@ -129,7 +149,8 @@ export async function purchaseGems(skuId: string): Promise<{ ok: boolean; reason
   if (buying) return { ok: false, reason: "busy" };
   buying = true;
   try {
-    const P = await plugin();
+    await ensurePlugin();
+    const P = plugin();
     const r = (await P.purchaseProduct({
       productIdentifier: skuId,
       productType: "inapp" as never,
@@ -151,7 +172,8 @@ export async function purchaseGems(skuId: string): Promise<{ ok: boolean; reason
 export async function completeGemPurchase(token: string): Promise<void> {
   ledgerAdd(token);
   try {
-    const P = await plugin();
+    await ensurePlugin();
+    const P = plugin();
     await P.consumePurchase({ purchaseToken: token });
   } catch (e) {
     console.warn("[SERTZ] 젬 소비 실패(부팅 복구가 마무리)", e);
@@ -178,7 +200,8 @@ export async function purchaseStorePack(productId: string): Promise<{ ok: boolea
   if (packBuying) return { ok: false, reason: "busy" };
   packBuying = true;
   try {
-    const P = await plugin();
+    await ensurePlugin();
+    const P = plugin();
     const r = (await P.purchaseProduct({
       productIdentifier: productId,
       productType: "inapp" as never,
@@ -201,7 +224,8 @@ export async function completePackPurchase(token: string, alreadyAcknowledged = 
   ledgerAdd(token);
   if (alreadyAcknowledged) return;
   try {
-    const P = await plugin();
+    await ensurePlugin();
+    const P = plugin();
     await P.acknowledgePurchase({ purchaseToken: token });
   } catch (e) {
     console.warn("[SERTZ] 패키지 승인 실패(부팅 복구가 마무리)", e);
@@ -219,7 +243,8 @@ export async function restorePendingPurchases(handlers: {
 }): Promise<void> {
   if (!isNativeApp()) return;
   try {
-    const P = await plugin();
+    await ensurePlugin();
+    const P = plugin();
     const { purchases } = await P.getPurchases({ productType: "inapp" as never });
     const ledger = loadLedger();
     for (const p of purchases as unknown as Txn[]) {
@@ -257,7 +282,8 @@ export async function restorePendingPurchases(handlers: {
 export async function fetchStorePrices(ids: string[]): Promise<Record<string, string>> {
   if (!isNativeApp()) return {};
   try {
-    const P = await plugin();
+    await ensurePlugin();
+    const P = plugin();
     const { products } = await P.getProducts({ productIdentifiers: ids, productType: "inapp" as never });
     const out: Record<string, string> = {};
     for (const pr of products as unknown as { productId?: string; id?: string; price?: string; displayPrice?: string; title?: string }[]) {
