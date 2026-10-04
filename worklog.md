@@ -3313,3 +3313,25 @@ Stage Summary:
 - v1.0.2-beta(vc123)·v1.0.1-beta(vc122) 설치 기기는 부팅 3초 후 복구 훅이 크래시 오버레이를 띄우는 상태 — 게이트(124)로 구버전 알림이 뜨므로 vc124로 업데이트 유도됨
 - 유저에게 안내: 스크린샷 버그는 vc124에서 수정 — APK 재설치(같은 키 cc774f34 덮어설치 호환) 또는 Play 업로드
 - 미해결 과제: build_apk.sh versionName 파싱([0-9.]* → [^"]* 패리티) — 다음 세션 보강
+
+---
+Task ID: fix-vc125-user-bugs-3
+Agent: Super Z (main)
+Task: 유저 버그 리포트 3건 — ①랭킹 노무현 제거 ②구글 로그인 안됨 ③초반 1~3챕터 BGM 원곡 복구 — v1.0.4-beta(vc125) 릴리스
+
+Work Log:
+- ①랭킹: CERTZ-DB 복호화 실측 → fantasticpie 세이브(playerName=노무현, lv17 ranger, 2026-10-02 등록) 확정 → scripts/db_find_player.js·db_remove_rank_entry.js 신설로 세이브 삭제(sha 낙관잠금 PUT 200) → 라이브 /api/rank에서 항목 소멸 확인. 계정 자체는 유지(재등장 시 계정삭제+닉네임 필터로 에스컬레이션)
+- ②구글 로그인 원인 확정(실측 2건): identitytoolkit API가 프로젝트 1085081106426(sertz-681eb)에서 미활성(403 SERVICE_DISABLED) + android/app/google-services.json 부재 → 플러그인이 R.string.default_web_client_id 참조(GoogleAuthProviderHandler.java:179)하므로 네이티브 구글창 즉시 실패. 서버 검증 체계(/api/auth/google·fbverify)는 실측 정상(가짜 토큰 401)
+- 코드 보완: capacitor.config.ts에 plugins.FirebaseAuthentication { skipNativeAuth:false, providers:["google.com"] } 신설 · AuthPanel 에러 분기 정밀화(DEVELOPER_ERROR/ApiException 10·12500·12501/리소스부재 → 콘솔 설정 안내 메시지) · 키스토어 SHA-1(2E:AD:70...)·SHA-256(CC:77:4F:34...) 지문 추출해 콘솔 등록용 체크리스트 작성(download/v1.0.4-beta_버그3건_조치보고.txt)
+- ③BGM: git show c44b584^로 bgm_village1(3,174,776B)·bgm_field1(1,467,274B)·bgm_title2(1,755,560B) 원곡 복구(Ogg Vorbis 48kHz 확인) + CREDITS.md 합성음원 섹션 철거·Kevin MacLeod 표기 복원 + audio.ts 주석 갱신
+- 버전 승격: scripts/bump_1_0_4_beta.py — package.json·build.gradle(vc125)·server.js·api/version 4종 일괄
+- 보강: build_apk.sh versionName 파싱 [0-9.]* → sed [^"]* 교체 — "-beta" 접미 잘림 버그 해소(실측 "1.0.4-beta" 파싱 성공)
+- 빌드: AAB 135,405,101B / APK 136,589,991B — AAB 내부 BGM 3곡 원본 사이즈 일치 확인 · aapt2 vc125/1.0.4-beta · apksigner cc774f34 동일키
+- 릴리스: v1.0.4-beta(prerelease) ID 403102255 — APK+AAB 201×2 · 공개 200×2
+- 라이브: 게이트 latest 1.0.4-beta/code 125 · ads.txt 200 · /api/rank list [] · 채팅 릴레이 POST 200
+- 커밋 f35da10 푸시 → Vercel READY
+
+Stage Summary:
+- Play 업로드용: download/SERTZ-v1.0.4-beta.aab (vc125) — 다음은 126 이상
+- 구글 로그인 잔여 작업은 유저 콘솔 5분: Firebase Authentication Google 공급자 활성화 → Android 앱 등록(SHA-1 붙여넣기) → google-services.json 전달 → 이쪽 재빌드(vc126)
+- 유저 보고서: download/v1.0.4-beta_버그3건_조치보고.txt
