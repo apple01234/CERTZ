@@ -67,7 +67,7 @@ app.prepare().then(() => {
   const LATEST_VERSION = "1.0.3-beta";
   const LATEST_CODE = 124;
   const VERSION_NOTE =
-  "v1.0.3-beta — 긴급 픽스: 기기에서 인앱 결제·부팅 복구·충전소 실가격 사용 시 "NativePurchases.then() is not implemented" 크래시(재부팅 오버레이)가 발생하던 버그 수정 — 결제 플러그인 접근을 프록시 thenable 함정 없는 구조로 재설계. v1.0.2-beta 설치 기기는 이 버전으로 업데이트 필요";
+  "v1.0.3-beta — 긴급 픽스: 기기에서 인앱 결제·부팅 복구·충전소 실가격 사용 시 'NativePurchases.then() is not implemented' 크래시(재부팅 오버레이)가 발생하던 버그 수정 — 결제 플러그인 접근을 프록시 thenable 함정 없는 구조로 재설계. v1.0.2-beta 설치 기기는 이 버전으로 업데이트 필요";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
