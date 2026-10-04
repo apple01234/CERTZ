@@ -30,8 +30,7 @@ import {
 import { viewZoom } from "../PhaserGame";
 import { runTexGuardCycle, installWorldTexGuard } from "../texGuard"; // v1.4.2 — 텍스처 무결성 감시·수복
 import { authMe, fetchRanking } from "../account"; // v1.0.2 — GM 롤 검증 · v1.3.0 — 랭커 순위 검증
-import { purchaseStorePack } from "../ads"; // v1.0.2 — 현금 패키지 결제
-import { showRewardedAd, purchaseGems, GEM_SKUS } from "../ads"; // v4.1.0 — BM 수익 연동
+import { showRewardedAd, purchaseGems, purchaseStorePack, GEM_SKUS, restorePendingPurchases, completeGemPurchase, completePackPurchase } from "../ads"; // v4.1.0 — BM 수익 연동 / v1.0.1-beta — 결제 소비·부팅 복구
 import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft, weekKey, missionsByHook, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS, type MissionHook } from "../pass"; // v4.5.0 — 시즌 패스/구독 + v1.0.1 시즌 미션
 import {
   infMerge, towerFloorScale, isTowerBossFloor, towerFloorReward, towerPool, TOWER, closetTierScale, closetTierAbyss,
@@ -331,6 +330,7 @@ export class WorldScene extends Phaser.Scene {
   private dailyBosses = 0;
   private dailyClaimed: string[] = [];
   private dailyAds = 0; // v4.1.0 — 오늘 본 광고 보상 횟수 (일 5회 제한)
+  private purchRestoreDone = false; // v1.0.1-beta — 부팅 결제 복구 1회 가드
   /* v4.5.0 — 시즌 패스 + 구독 + 광고 확장 카운터 (BM 표준화) */
   private passSeason = "";
   private passXp = 0;
@@ -1268,6 +1268,34 @@ export class WorldScene extends Phaser.Scene {
     }
     /* v4.0.0 — 바르가 데일리 초기화 (출석부/일일 퀘스트/티켓/오프라인 보상) */
     this.initIsekaiDaily();
+    /* v1.0.1-beta — 미지급 결제 부팅 복구 (결제 성공 직후 종료·크래시로 젬/패키지가
+     * 지급 안 된 건을 스토어 소유 조회로 복구 — ledger로 이중 지급 차단).
+     * 3초 지연(월드·세이브 안정화 후) 1회만. 웹에서는 내부적으로 no-op. */
+    if (!this.purchRestoreDone) {
+      this.purchRestoreDone = true;
+      setTimeout(() => {
+        void restorePendingPurchases({
+          grantGems: (skuId, gems) => {
+            if (!this.player) return;
+            this.player.emerald += gems;
+            this.save();
+            this.emitRpgState();
+            audio.sfx.charge();
+            EventBus.emit("reward:show", {
+              title: "미지급 결제 복구",
+              lines: [{ text: `에메랄드 +${gems} (구글 플레이 결제분)`, color: "#7de8ff" }],
+            } satisfies RewardPopupState);
+          },
+          grantPack: (productId) => {
+            const grants = STORE_PACK_CONTENTS[productId];
+            if (!grants) return;
+            this.grantBmGrants("미지급 패키지 결제 복구 — 감사합니다!", grants);
+            this.save();
+            this.emitRpgState();
+          },
+        });
+      }, 3000);
+    }
     // v2.5 — 현재 구역 방문 기록 (실내 제외) — 지역 이동 부적 워프 대상
     if (!this.isInterior) {
       const before = this.visited.size;
@@ -7094,16 +7122,19 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: "구글 플레이 결제창을 여는 중…" });
       const r = await purchaseGems(sku.id);
       if (!r.ok) {
-        /* v1.1.1 (#3 결제 취소) — 유저 취소/상품 미준비/오류를 정확히 구분 (기존: 전부 "취소됐다") */
+        /* v1.1.1 (#3 결제 취소) — 유저 취소/상품 미준비/오류를 정확히 구분 (기존: 전부 "취소됐다")
+         * v1.0.1-beta — PENDING(결제 수단 확정 대기) 분류 추가 */
         const msg = r.reason === "web" ? "결제는 폰 버전(APK)에서만 가능하다 (Play Console 상품 등록 후)"
           : r.reason === "busy" ? "결제창이 이미 열려 있다"
           : r.reason === "cancelled" ? "결제를 취소했다 — 언제든 다시 시도할 수 있다"
+          : r.reason === "pending" ? "결제가 확정 대기 중이다 — 확정되면 게임 재부팅 때 자동 지급된다"
           : r.reason === "unavailable" ? "아직 스토어에 상품이 등록 전이다 — 준비 후 다시"
           : "결제에 실패했다 — 네트워크를 확인하고 다시 시도하자";
         EventBus.emit("banner:show", { text: msg });
         return;
       }
       this.player.emerald += sku.gems;
+      if (r.token) void completeGemPurchase(r.token); // ledger 등록 + 소비(재구매 가능화) — v1.0.1-beta
       this.save();
       this.emitRpgState();
       audio.sfx.charge();
@@ -7119,10 +7150,11 @@ export class WorldScene extends Phaser.Scene {
       }
       const r = await purchaseStorePack(v.id);
       if (!r.ok) {
-        /* v1.1.1 (#3) — 취소/미준비/오류 구분 메시지 */
+        /* v1.1.1 (#3) — 취소/미준비/오류 구분 메시지 + v1.0.1-beta PENDING */
         const msg = r.reason === "web" ? "패키지는 앱(스토어 빌드)에서 구매할 수 있다"
           : r.reason === "busy" ? "결제창이 이미 열려 있다"
           : r.reason === "cancelled" ? "결제를 취소했다 — 언제든 다시 시도할 수 있다"
+          : r.reason === "pending" ? "결제가 확정 대기 중이다 — 확정되면 게임 재부팅 때 자동 지급된다"
           : r.reason === "unavailable" ? "아직 스토어에 상품이 등록 전이다 — 준비 후 다시"
           : "결제에 실패했다 — 네트워크를 확인하고 다시 시도하자";
         EventBus.emit("banner:show", { text: msg });
@@ -7130,6 +7162,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.grantBmGrants("패키지 구매 감사합니다!", grants);
       audio.sfx.charge();
+      if (r.token) void completePackPurchase(r.token, !!r.acknowledged); // ledger + 승인 — v1.0.1-beta
       this.save();
       this.emitRpgState();
     };

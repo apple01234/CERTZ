@@ -30,7 +30,7 @@ app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.0.0-beta/SERTZ-v1.0.0-beta.apk";
+  const APK_MIRROR = "https://github.com/apple01234/CERTZ/releases/download/v1.0.1-beta/SERTZ-v1.0.1-beta.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -63,9 +63,9 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.0.0-beta";
-  const LATEST_CODE = 121;
-  const VERSION_NOTE = "v1.0.0-beta — 정식 출시(베타): v1.4.28까지의 전체 기능 포함 — ①채팅·파티 부활(Vercel 릴레이 폴링) ②자동전투 튜닝(포위 시 선제 물약·HP 안전망 40%) ③채팅 입력·전송 버튼 대화창 가림 픽스 ④세로 좁은 화면 물약·자동 버튼 공격 버튼 인접 재배치 · Google Play AAB 출시용 · APK: GitHub 릴리스 v1.0.0-beta";
+  const LATEST_VERSION = "1.0.1-beta";
+  const LATEST_CODE = 122;
+  const VERSION_NOTE = "v1.0.1-beta — 결제·광고 실연동: ①구글 플레이 인앱 결제(에메랄드 충전 4종·현금 패키지 3종) 소비(consume) 흐름 확정 — 재구매 차단 버그 픽스 ②결제 성공 직후 종료 시 미지급 결제 부팅 자동 복구(이중 지급 차단) ③충전소에 Play 등록 실가격 표시 ④AdMob 보상형 광고 실연동(AD_ID 권한 복원 — v1.4.3 잔재 제거) · 콘솔 상품 등록 가이드: download/결제_광고_연동_가이드.txt";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

@@ -17,7 +17,7 @@ import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEY
 import { getPlayerName, loadSave, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도
 import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
-import { GEM_SKUS } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품
+import { GEM_SKUS, fetchStorePrices } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품 / v1.0.1-beta — 스토어 실가격
 import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS } from "@/game/pass"; // v4.5.0 — 시즌 패스 + v1.0.1 시즌 미션
 import { Trophy } from "lucide-react";
 import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, fetchRanking, fetchRank, claimRankReward, rankCacheAgeSec, getApiServerHost, type RankBoard, type MarketState, type AuthUser, type RankState, type RankRow } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화 · v1.3.0 랭킹 · v1.4.0 랭킹 캐시 표기
@@ -422,6 +422,19 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
   /* v3.0.24 (#수량) — 소모품/버프 수량 지정 (아이템키별) */
   const [qtyMap, setQtyMap] = useState<Record<string, number>>({});
   const qtyOf = (k: string) => qtyMap[k] ?? 1;
+  /* v1.0.1-beta — 충전소 스토어 실가격 표시: Play에 등록된 통화·가격 그대로(조회 실패 시 하드코딩 폴백).
+   * 네이티브(APK)에서만 조회 — 웹은 폴백 라벨. 가격은 Play Console에서만 관리(v4.1.0 원칙). */
+  const [storePrices, setStorePrices] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const p = await fetchStorePrices(GEM_SKUS.map((s) => s.id));
+      if (alive && Object.keys(p).length) setStorePrices(p);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
   /* v4.3.0 — 일일 특가 (날짜 로테이션 3종 · 30%↓) + 카테고리 탭. WorldScene today()와 동일 로컬 날짜 포맷 */
   const _d = new Date();
   const dayKey = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
@@ -706,7 +719,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                 className="flex flex-col items-center rounded-lg border border-cyan-300/40 bg-cyan-400/10 px-1 py-1.5 text-center hover:bg-cyan-400/20 active:scale-95"
               >
                 <span className="text-[13px] font-black text-cyan-200">{s.gems}</span>
-                <span className="text-[9px] font-bold text-white/55">{s.priceLabel}</span>
+                <span className="text-[9px] font-bold text-white/55">{storePrices[s.id] ?? s.priceLabel}</span>
               </button>
             ))}
           </div>
