@@ -197,10 +197,14 @@ export function AuthPanel() {
       const msg = String((e as { message?: string })?.message ?? e ?? "").toLowerCase();
       if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("popup_closed")) {
         setMsg(""); // 유저가 창을 닫은 것 — 오류 아님
-      } else if (msg.includes("configuration-not-found") || msg.includes("operation-not-allowed") || msg.includes("api key") || msg.includes("firebaseapp") || msg.includes("not configured")) {
+      } else if (msg.includes("developer_error") || msg.includes("apiexception") || msg.includes("10:") || msg.includes("12500") || msg.includes("12501") || msg.includes("not_found") || msg.includes("resources")) {
+        /* v1.0.3-beta — Android DEVELOPER_ERROR(코드 10)·리소스 부재 = Firebase 콘솔 설정 미완료.
+         *  유저가 "왜 안 되는지" 바로 알 수 있게 원인을 명시한다. */
+        setMsg("구글 로그인 서버 설정이 아직 완료되지 않았어요 (운영자: Firebase 콘솔 Google 공급자 활성화 + Android 앱 SHA-1 등록 + google-services.json) — 자체 계정을 이용해 주세요");
+      } else if (msg.includes("configuration-not-found") || msg.includes("operation-not-allowed") || msg.includes("api key") || msg.includes("firebaseapp") || msg.includes("not configured") || msg.includes("identitytoolkit") || msg.includes("permission_denied")) {
         setMsg("구글 로그인이 아직 서버에서 활성화되지 않았어요 (Firebase 설정 준비 중) — 자체 계정을 이용해 주세요");
       } else {
-        setMsg("구글 로그인 중 오류가 발생했어요 — 잠시 후 다시 시도해 주세요");
+        setMsg(`구글 로그인 중 오류가 발생했어요 — 자체 계정을 이용해 주세요 (${msg.slice(0, 60)})`);
       }
     } finally {
       setBusy(false);

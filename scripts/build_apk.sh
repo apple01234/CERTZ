@@ -78,7 +78,9 @@ cd android
 ./gradlew assembleRelease --no-daemon -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease
 
 echo "[4/5] APK 복사"
-VER="$(grep -o 'versionName "[0-9.]*"' app/build.gradle | head -1 | grep -o "[0-9.]*")"
+# v1.0.4-beta 보강 — 기존 [0-9.]* 파싱은 "-beta" 접미에서 잘려 VER=1.0.4 가 되던 버그 수정
+VER="$(sed -n 's/.*versionName "\([^"]*\)".*/\1/p' app/build.gradle | head -1)"
+echo "  versionName 파싱: ${VER}"
 cp -f app/build/outputs/apk/release/app-release.apk "$PROJECT_ROOT/download/SERTZ-v${VER}.apk"
 
 echo "[5/5] 완료 → $PROJECT_ROOT/download/SERTZ-v${VER}.apk"

@@ -3,8 +3,8 @@ import type Phaser from "phaser";
 /**
  * 외부 오디오 에셋 재생 (public/assets/audio/)
  *  - BGM: v3.0.23 — 40트랙을 구역(맵)별로 고정 배치
- *    · v1.0.2-beta — 초반 3곡(bgm_village1·bgm_field1·bgm_title2)을 SERTZ 오리지널 합성 음원으로 교체
- *      (유저 지시 "초반 1,2,3챕터 브금이 별로" — 같은 파일명 교체라 코드 무수정, scripts/gen_bgm_ch123.py)
+ *    · v1.0.3-beta — 초반 3곡(bgm_village1·bgm_field1·bgm_title2) 원본(Kevin MacLeod)으로 복구
+ *      (v1.0.2-beta 합성 음원 교체를 유저 평가 "별로"로 롤백 — 같은 파일명 복원이라 코드 무수정)
  *    · 나머지 37트랙: Kevin MacLeod, incompetech.com, CC-BY 4.0
  *    · 로테이션(곡 교체) 기능 완전 제거 — 한 구역은 항상 같은 곡 한 곡을 무한 루프
  *    · 40곡 전부를 챕터 성격에 맞는 풀로 배치 (맵마다 적절히 — CHAPTER_TRACKS 참조)

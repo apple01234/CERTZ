@@ -55,20 +55,10 @@
 
 ## 오디오
 
-### BGM 신규 3트랙 — SERTZ 오리지널 합성 음원 (v1.0.2-beta, 2026-10-04)
-- License: 저작권 전체 SERTZ (외부 소스 없음 — numpy 순수 합성, scripts/gen_bgm_ch123.py)
-- Used for: 초반 챕터 테마 교체 (유저 지시 "초반 1,2,3챕터 브금이 별로")
-  - bgm_village1.ogg — 「미드가르드 항구 마을」 D장조 96bpm (제1장 마을 테마, 80초 루프)
-  - bgm_field1.ogg — 「숲의 신전 탐험」 A단조 124bpm (제2장 필드 테마, 62초 루프)
-  - bgm_title2.ogg — 「쿠소디아 왕국」 F장조 100bpm (제3장 왕국 테마, 77초 루프)
-  ※ 이 3곡은 더 이상 Kevin MacLeod 원곡이 아니다(같은 파일명 교체 — 코드 무수정).
-
 ### BGM 40트랙 — Kevin MacLeod (incompetech.com)
 - License: CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
 - Source: https://incompetech.com/music/royalty-free/
 - Used for: v3.0.21 전체 BGM — 테마당 5곡 × 8테마 로테이션 (Music by Kevin MacLeod 표기)
-- v1.0.2-beta: 아래 목록 중 bgm_village1(「???」초기 트랙)·bgm_field1·bgm_title2(「At Launch」)는
-  오리지널 합성 음원으로 교체됨 — Kevin MacLeod 원곡은 더 이상 배포되지 않음.
 
 **타이틀/로비 (웅장한 모험)**
 - bgm_title1.ogg — 「Call to Adventure」 (원본 130초 캡+페이드아웃)
