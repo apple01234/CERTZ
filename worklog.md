@@ -3266,3 +3266,29 @@ Stage Summary:
 - 웹 유저 이전 경로: 리다이렉트 → APK 설치(GitHub Releases 무료) 또는 Play 스토어 → 로그인 시 계정·세이브 이어짐(계정·거래소·랭킹 API 무변경)
 - 유저 후속 권장: Vercel 콘솔 Usage에서 spend cap 점검, Pro 유지/다운그레이드 판단(Hobby는 상업 약관 주의), 구 게임서버(sertz11/sertz4) 유료 VPS가 남아 있으면 해지 — 웹 차단으로 소켓 본체 필요성은 제로
 - 커밋: 6c553c7(middleware·격리·배너) + bf31804(APK_DL 갱신)
+
+---
+Task ID: release-1-0-2-beta
+Agent: Super Z (main)
+Task: 유저 신규 5건 — ①AdMob 실제 ID(ads.txt) ②조작 UI 배치 롤백 ③Play 스토어 그래픽·스크린샷 전수 캡처 ④초반 1~3챕터 BGM 교체 ⑤구글 통합 로그인(OAuth) — v1.0.2-beta/vc123 릴리스
+
+Work Log:
+- 세션 재개 시 이전 세션의 미커밋 작업 전량 발견(ads.txt·TouchControls·AuthPanel 구글 로그인·BGM 3곡·캡처 67장·가이드 갱신) — 전수 검증 후 잔여분만 보완하는 방식으로 완수
+- (A) AdMob: public/ads.txt·app-ads.txt 라인 검증(google.com, pub-5675573589406258, DIRECT, f08c47fec0942fa0) — 라이브 실측 200×2. 앱 ID·보상형 단위 ID는 콘솔 확보 전이라 scripts/patch_admob_ids.py "앱ID" "단위ID" 1발 교체기 준비(가이드 §6)
+- (B) 조작 UI: TouchControls.tsx 배치 복귀 커밋 확인(우하단 [자동+물약][스킬][공격] 행 — 색·모양 유지, patch_touchcontrols_restore.py)
+- (C) 캡처 67장 스펙 전수 검사(PIL): 메인그래픽 1024x500·폰/7인치/10인치/데스크톱 12장씩·PC 8장·XR 4장·로고 600x400 투명·선별 4장 — 유일 결함 PC그래픽이 검정 단색(toDataURL이 WebGL에서 검정 반환) → scripts/gen_pcgraphic_fix.js로 HUD 은닉(Phaser Text·Graphics·minimap 씬·DOM 전체)+전투 버스트 프레임 재촬영, 텍스트 0 개질 컷 확보
+- (D) BGM: bgm_village1·field1·title2 3곡 교체분 실측(용량 변화 정상, gen_bgm_ch123.py — 같은 파일명 교체라 코드 무수정) + CREDITS.md 갱신
+- (E) OAuth: /api/auth/google(POST, FB ID토큰 RS256 검증 — src/lib/fbverify.ts x509 서명·iss/aud/exp)·AuthPanel 구글 버튼(앱=네이티브 @capacitor-firebase/authentication, 웹=firebase signInWithPopup)·g_ 접두 자동가입·기존 세션 체계 동일 발급. AIzaSy... 키는 Firebase 웹 API 키로 반영 완료(projectId sertz-681eb)
+- 픽스: api/auth/login·register의 type Resp import가 sapi→ghdb로 틀린 기존 tsc 오류 2건 해소(잔여 sapi.ts 2건은 기존 이슈 유지)
+- .gitignore에 download/Capture/ 추가(67장 수백MB 레포 유입 방지 — 산출물은 download로 전달)
+- 커밋 c44b584 푸시(원격 accounts backup 리베이스 후) → Vercel READY
+- 빌드: JDK 소실 재설치(rebuild_jdk.sh 21.0.12.1) 후 build_aab.sh 전체 체인 — .next-apk export+cap sync(플러그인 3종: admob·firebase-auth·native-purchases)+bundleRelease 3m20s. APK는 build_apk.sh의 versionName [0-9.]* 파싱이 "1.0.2-beta" 접미에서 실패 → app-release.apk 수동 복사(스크립트 보강 과제)
+- 검증: aapt2 vc123/1.0.2-beta/com.sertz.myapp · apksigner SHA-256 cc774f34(동일 키 덮어설치 호환) · API 라우트 8종 격리 복원 실측 · 채팅 POST/GET 릴레이 정상(필드명 text 확인)
+- 릴리스: v1.0.2-beta(prerelease) ID 403031679 — APK(133,077,791B)+AAB(131,862,573B) 201×2 → 공개 200×2
+- 라이브: /api/version latest 1.0.2-beta·code 123 · ads.txt·app-ads.txt pub-5675573589406258 · 홈 외부 307(웹종료 유지) · /SERTZ-v1.0.1-beta.apk 307 미러
+
+Stage Summary:
+- v1.0.2-beta 릴리스: https://github.com/apple01234/CERTZ/releases/tag/v1.0.2-beta (APK+AAB)
+- Play 업로드용 AAB: download/SERTZ-v1.0.2-beta.aab (vc123) — 다음 업로드는 124 이상
+- 스토어 에셋: download/Capture/ 10개 폴더 67장 전량 규격 통과(메인그래픽·폰12·7인치12·10인치12·데스크톱12·PC8·XR4·로고·PC그래픽·선별4)
+- 유저 콘솔 작업 2종 대기: ①AdMob 앱 ID+보상형 단위 ID 복사 → patch_admob_ids.py 1발 교체 ②Firebase 콘솔 Google 공급자 활성화+google-services.json 투입(없어도 앱은 정상 빌드·부팅)
