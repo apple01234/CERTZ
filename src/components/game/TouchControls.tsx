@@ -10,52 +10,12 @@ import { loadKeyMap } from "@/game/keymap"; // v1.0.4 — 물약 키 힌트를 �
  *  (기존 52px는 손가락이 조금만 쉬어도 실질 60~85% 속도 — "이속이 느림" 체감의 주원인) */
 const JOY_RADIUS = 64;
 
-/* ═══ v1.4.12 (#8 유저 지시 "사진처럼 스킬 UI 배치를 바꿔") — 와일드리프트식 아크 레이아웃 ═══
- *  사진(LoL Wild Rift) 기준:
- *   · 기본공격 버튼을 우하단 코너에 두고, 스킬 버튼들이 공격 버튼을 중심으로
- *     부채꼴(arc) 위에 극좌표 배치된다 — 엄지 회전 동선상 어느 스킬이든 한 손에 닿는다.
- *   · 자동전투/물약은 공격 버튼 왼쪽·아래 작은 원형으로 별도 클러스터.
- *  극좌표 헬퍼: 각도(°)와 반경(px) → 버튼 left/top (버튼 중심 기준) */
-const ARC = {
-  /** 컨테이너 크기 (sm: 태블림/PC 확대) */
-  /* v1.4.18 (#4) — 공격 버튼 재코너화+대형화(84→100/96→112)에 맞춰 컨테이너 재확대
-   * v1.4.25 (#물약거리) — h 294→340/hSm 336→382: 물약·자동을 공격 버튼 바로 아래로
-   *   내리면서(와일드리프트 스펠 자리) MP 하단 y 336 → 컨테이너 340 필요 */
-  w: 306,
-  h: 340,
-  wSm: 348,
-  hSm: 382,
-  /** 스킬 반경 — 공격 버튼 중심에서 스킬 버튼 중심까지 */
-  r: 94,
-  rSm: 108,
-  /** 시작/종료 각도 (°, 수학 좌표계 — 180=왼쪽, 90=위) */
-  a0: 196,
-  a1: 74,
-  /** v1.4.18 (#4 유저 지시 "기본공격 키 좀더 구석으로 + 좀더 크게") —
-   *  v1.4.17에 중심(206,184)으로 옮겼던 공격 버튼을 다시 우하단 코너로 되돌리고 지름 확대.
-   *  중심(250,240)·지름 100 → 우측/하단 가장자리에서 여백 4~6px 코너 밀착.
-   *  스킬 부채꼴은 같은 중심의 동심원(r 98→94) — 겹침 없음 유지.
-   *  검증: 360px 폰 기준 스킬 아크 최좌점 185px > 조이스틱 영역 165px(46%),
-   *  공격-스킬 버튼 간격 94-50-28 = 16px, s1 하단 294 ≤ 컨테이너 294. */
-  cx: 250,
-  cy: 240,
-  cxSm: 280,
-  cySm: 266,
-};
-
-/** 극좌표 → 컨테이너 내 left/top (버튼 중심 기준 px) */
-function arcPos(cx: number, cy: number, r: number, deg: number): { left: number; top: number } {
-  const rad = (deg * Math.PI) / 180;
-  return { left: Math.round(cx + Math.cos(rad) * r), top: Math.round(cy - Math.sin(rad) * r) };
-}
-
-/** 해금된 스킬 수에 따라 부채꼴 각도 분배 (a0→a1 사이 등간격) */
-function arcAngles(n: number): number[] {
-  if (n <= 0) return [];
-  if (n === 1) return [(ARC.a0 + ARC.a1) / 2];
-  const step = (ARC.a0 - ARC.a1) / (n - 1);
-  return Array.from({ length: n }, (_, i) => ARC.a0 - i * step);
-}
+/* ═══ v1.0.2-beta — 조작 UI 배치 복귀 (유저 지시 "배치만 옛날처럼") ═══
+ *  v1.4.12~v1.4.28의 와일드리프트식 아크(부채꼴) 배치를 철거하고, 그 이전의
+ *  우하단 flex 행 [자동+물약 세로열] [스킬그리드] [공격] 구조로 되돌린다.
+ *  단, 스킬/물약/공격/자동 버튼의 색·모양·크기(현행 SkillButton/PotionButton)는 그대로 —
+ *  "배치만" 복귀가 원칙. 좁은 세로 화면(W<576)의 물약-조이스틱 겹침만은
+ *  v1.4.18 안전장치(클러스터 플로팅)를 유지한다(배치가 아닌 사고 방지 장치). */
 
 /**
  * F3 반응형 핵심: 멀티터치 가상 컨트롤러
@@ -111,11 +71,11 @@ export function TouchControls({
       typeof window !== "undefined" &&
       (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900)
   );
-  /* v1.4.19 (#화면깨짐) — 세로 좁은 화면에서는 ARC 컨테이너 왼쪽 가장자리가
+  /* v1.4.19 (#화면깨짐) — 세로 좁은 화면에서는 우하단 버튼 클러스터 왼쪽 가장자리가
    *  조이스틱 영역(46%) 안으로 파고든다 → 물약/자동사냥 버튼이 조이스틱과 겹쳐
    *  "이동할 때마다 물약이 발려 화면이 깨진다"는 리포트의 직접 원인.
-   *  겹침 판정: 컨테이너 left = W - CW - 4 < 0.46W  ⇔  W < (CW+4)/0.54 ≈ 576px.
-   *  겹침 시 물약 클러스터를 컨테이너 밖(아크 위 우측 고정 가로열)으로 플로팅한다. */
+   *  겹침 판정: 컨테이너 left = W - 클러스터폭 < 0.46W 구간.
+   *  겹침 시 [자동+물약] 클러스터를 행 위쪽 가로열로 플로팅한다. */
   const [clusterFloat, setClusterFloat] = useState(() => typeof window !== "undefined" && window.innerWidth < 576);
 
   useEffect(() => {
@@ -218,41 +178,19 @@ export function TouchControls({
   const s5Ready = (skills.s5Cd ?? 0) <= 0 && skills.mp >= 100;
   const s5Pct = (skills.s5Cd ?? 0) > 0 ? ((skills.s5Cd ?? 0) / Math.max(1, skills.s5Max ?? 60000)) * 100 : 0;
 
-  /* ═══ v1.4.12 (#8) — 와일드리프트식 아크 레이아웃 ═══
-   *  해금된 스킬(s1~s5)을 공격 버튼 중심 부채꼴에 등간격 배치.
-   *  자동전투·HP/MP 물약은 좌하단 세로 클러스터 (공격 버튼 반대쪽 엄지 닿는 곳). */
   const sm = !isTouch; // PC(넓은 화면)에선 살짝 큰 크기
-  const CW = sm ? ARC.wSm : ARC.w;
-  const CH = sm ? ARC.hSm : ARC.h;
-  const CR = sm ? ARC.rSm : ARC.r;
-  const CCX = sm ? ARC.cxSm : ARC.cx;
-  const CCY = sm ? ARC.cySm : ARC.cy;
-  /* v1.4.18 (#4) — 유저 지시 "기본공격 키 좀더 구석으로 + 좀더 크게"
-   *  공격 버튼 84→100 (모바일) / 96→112 (PC) — 추가 대형화
-   *  스킬 버튼은 v1.4.14 크기 유지(56/66) — 공격키만 확대해 위계 강조 */
-  const ATK = sm ? 112 : 100; // 공격 버튼 지름 (확대)
+  /* v1.4.18 (#4) — 공격 버튼 100 (모바일) / 112 (PC) · v1.4.14 — 스킬 56/66 (현행 크기 유지) */
+  const ATK = sm ? 112 : 100; // 공격 버튼 지름
+  const SK = sm ? 66 : 56; // 스킬 버튼 지름
 
   const unlocked = [
     { key: "s1", name: s1Name || "회전베기", mp: 15, ready: s1Ready, cd: s1Pct, icon: skills.s1Icon, emit: "input:skill1" },
     { key: "s2", name: s2Name || "돌진베기", mp: 20, ready: s2Ready, cd: s2Pct, icon: skills.s2Icon, emit: "input:skill2" },
     { key: "s3", name: s3Name ?? "", mp: 25, ready: s3Ready, cd: s3Pct, icon: skills.s3Icon, emit: "input:skill3" },
     { key: "s4", name: s4Name ?? "", mp: 40, ready: s4Ready, cd: s4Pct, icon: skills.s4Icon, emit: "input:skill4" },
-  ].filter((s) => s.name); // 미해금(빈 이름) 스킬은 아크에서 제외
+  ].filter((s) => s.name); // 미해금(빈 이름) 스킬은 그리드에서 제외
   const hasUlt = !!s5Name;
-  const angles = arcAngles(unlocked.length + (hasUlt ? 1 : 0));
-  /* v1.4.14 (#4) — 스킬 버튼 지름 확대: 46→56 (모바일) / 54→66 (PC) */
-  const SK = sm ? 66 : 56; // 스킬 버튼 지름 (확대)
 
-  /* ═══ v1.4.25 (#물약거리 "모바일에서 기본공격 키와 물약키가 너무 멀어") ═══
-   *  기존: 클러스터가 컨테이너 좌하단(left-0 bottom-0) → 공격 버튼(코너 250,240)에서 MP 물약까지 230px —
-   *        엄지가 화면을 횡단해야 함(스크린샷 실측 일치).
-   *  신규: 와일드리프트 스펠 자리처럼 공격 버튼 바로 아래-왼쪽에 개별 절대배치.
-   *        자동 중심 (CCX-126, CCY+64) / HP (CCX-46, CCY+74) / MP (CCX+2, CCY+74)
-   *        → 최원거리 74px(기존 230px). PC(sm)는 좌표도 ×1.12(PSC) 동일 위상.
-   *  원 간섭 검증(모바일): 자동(124,304,r20)-s1(160,266,r28) 52.3>48 ✓
-   *        HP(204,314,r22)-s1 65>50 ✓ · MP(252,314,r22)-공격(250,240,r50) 74>72 ✓
-   *        HP-MP 48>44 ✓ · MP 하단 336≤CH 340 ✓ (sm: MP-공격 84>82 ✓ · 하단 376≤382 ✓) */
-  const PSC = sm ? 1.12 : 1;
   const autoBtn = canAutoHunt ? (
     <button
       aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
@@ -326,27 +264,33 @@ export function TouchControls({
       </div>
       )}
 
-      {/* ═══ v1.4.12 (#8 유저 지시 "사진처럼 스킬 UI 배치를 바꿔") — 와일드리프트식 아크 배치 ═══
-       *  공격 버튼 우하단 코너 + 스킬 부채꼴(극좌표) + 자동/물약 좌하단 클러스터.
-       *  컨테이너는 pointer-events-none, 개별 버튼만 pointer-events-auto — 아크 빈 공간은 터치 통과 */}
+      {/* ═══ v1.0.2-beta — 옛날 배치 복귀: 우하단 flex 행 [자동+물약][스킬그리드][공격] ═══
+       *  버튼 색·모양·크기는 현행 그대로(SkillButton/PotionButton), 배치만 v1.4.12 이전 구조.
+       *  컨테이너는 pointer-events-none, 개별 버튼만 pointer-events-auto — 빈 공간 터치 통과 */}
       <div
-        className="pointer-events-none absolute z-20"
+        className="pointer-events-none absolute z-20 flex items-end gap-2"
         style={{
-          width: CW,
-          height: CH,
-          right: "max(0.25rem, env(safe-area-inset-right))",
+          right: "max(0.5rem, env(safe-area-inset-right))",
           bottom: "max(0.75rem, env(safe-area-inset-bottom))",
         }}
       >
-        {/* 스킬 아크 (s1→s5: 왼쪽→위쪽 부채꼴) — 해금된 스킬만 등간격 배치 */}
-        {unlocked.map((s, i) => {
-          const p = arcPos(CCX, CCY, CR, angles[i]);
-          return (
-            <div
-              key={s.key}
-              className="pointer-events-auto absolute"
-              style={{ left: p.left - SK / 2, top: p.top - SK / 2, width: SK, height: SK }}
-            >
+        {/* [자동+물약] 세로열 — 옛날 좌측 클러스터. 좁은 세로 화면(clusterFloat)은
+         *  조이스틱 겹침 방지(v1.4.18 안전장치 유지) 때문에 행 위쪽 가로열로 피난 */}
+        {!clusterFloat && (
+          <div className="pointer-events-auto flex flex-col items-center gap-1.5">
+            {autoBtn}
+            {hpBtn}
+            {mpBtn}
+          </div>
+        )}
+        {/* [스킬그리드] — 해금된 스킬 2열 랩 그리드(아래→위로 쌓임), 궁극기는 마지막 칸의
+         *  살짝 큰 황금 버튼(현행 스타일). 미해금 스킬은 그리드에서 제외 */}
+        <div
+          className="pointer-events-auto flex flex-wrap-reverse items-end justify-end gap-1.5"
+          style={{ maxWidth: SK * 2 + 14 }}
+        >
+          {unlocked.map((s) => (
+            <div key={s.key} style={{ width: SK, height: SK }}>
               <SkillButton
                 ready={s.ready}
                 cdPct={s.cd}
@@ -357,16 +301,9 @@ export function TouchControls({
                 onDown={() => EventBus.emit(s.emit as "input:skill1")}
               />
             </div>
-          );
-        })}
-        {/* 궁극기(s5) — 아크 끝(가장 위쪽)에 살짝 큰 황금 버튼 */}
-        {hasUlt && (() => {
-          const p = arcPos(CCX, CCY, CR + (sm ? 10 : 8), angles[unlocked.length]);
-          return (
-            <div
-              className="pointer-events-auto absolute"
-              style={{ left: p.left - (SK + 6) / 2, top: p.top - (SK + 6) / 2, width: SK + 6, height: SK + 6 }}
-            >
+          ))}
+          {hasUlt && (
+            <div style={{ width: SK + 6, height: SK + 6 }}>
               <SkillButton
                 ready={s5Ready}
                 cdPct={s5Pct}
@@ -380,14 +317,13 @@ export function TouchControls({
                 <Star size={18} />
               </SkillButton>
             </div>
-          );
-        })()}
-        {/* 기본공격 — v1.4.18 (#4): 중심(CCX,CCY)을 우하단 코너로 이동 + 지름 100/112 대형화.
-         *  스킬 부채꼴과 동심원 유지 — 코너 엄지 자연 동선 + 손목 각도 자연스러움 */}
+          )}
+        </div>
+        {/* [공격] — 행 끝 대형 원형 버튼 (현행 스타일·크기 유지) */}
         <button
           aria-label="공격"
-          className="pointer-events-auto absolute flex touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
-          style={{ left: CCX - ATK / 2, top: CCY - ATK / 2, width: ATK, height: ATK }}
+          className="pointer-events-auto flex touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
+          style={{ width: ATK, height: ATK }}
           onPointerDown={(e) => {
             e.preventDefault();
             EventBus.emit("input:attack");
@@ -398,46 +334,14 @@ export function TouchControls({
             <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
           </div>
         </button>
-        {/* 자동전투 + 물약 퀵슬롯 — v1.4.25: 공격 버튼 바로 아래-왼쪽 (와일드리프트 스펠 자리)
-         *  기존 좌하단 클러스터는 공격 버튼에서 230px — "물약키가 너무 멀다" 픽스.
-         *  좁은 세로 화면(clusterFloat)은 v1.4.28 우측 앵커 배치로 재설계(아래) */}
-        {!clusterFloat && (
-        <>
-          {autoBtn && (
-            <div className="pointer-events-auto absolute" style={{ left: CCX - Math.round(146 * PSC), top: CCY + Math.round(44 * PSC) }}>
-              {autoBtn}
-            </div>
-          )}
-          <div className="pointer-events-auto absolute" style={{ left: CCX - Math.round(68 * PSC), top: CCY + Math.round(52 * PSC) }}>
-            {hpBtn}
-          </div>
-          <div className="pointer-events-auto absolute" style={{ left: CCX - Math.round(20 * PSC), top: CCY + Math.round(52 * PSC) }}>
-            {mpBtn}
-          </div>
-        </>
-        )}
-        {/* ═══ v1.4.28 (#물약거리2) — clusterFloat 재설계: 아크 위 플로팅(공격 버튼에서 ~270px) 철거,
-         *  ARC 컨테이너 '내부' 우측 하단 앵커 배치로 전환 — 공격 버튼(코너) 바로 왼쪽.
-         *  위치는 W와 무관하게 컨테이너 로컬 우측 기준 → 좁은 폭일수록 조이스틱에서 '멀어진다':
-         *    자동 (186,312) · HP (238,316) · MP (284,316) — 컨테이너 306×340, 버튼 r20
-         *  간섭 검증(모바일): s1(160,266,r28)-자동 52.8>48 ✓ · 공격(250,240,r50)-HP 76.9>70 ✓
-         *    · 공격-MP 83.2>70 ✓ · 자동-HP 52.3>40 ✓ · HP-MP 46>40 ✓ · MP 우측 306≤306 ✓
-         *    · 하단 336≤340 ✓ · 조이스틱(0.46W): 자동 좌변 W-144 ≥ 0.46W ⇔ W≥281 — 전 폰 커버
-         *  최원거리(공격↔MP) 83px — 기존 플로팅 ~270px → v1.4.25 가로 화면 픽스(74px)와 동일 위상 */}
+        {/* clusterFloat(좁은 세로 화면) — [자동+물약]을 행 위쪽 가로열로 피난:
+         *  배치 복귀와 무관하게 조이스틱(화면 좌하단 46%)과의 겹침만 막는 안전장치(v1.4.18 계승) */}
         {clusterFloat && (
-        <>
-          {autoBtn && (
-            <div className="pointer-events-auto absolute" style={{ left: 166, top: 292 }}>
-              {autoBtn}
-            </div>
-          )}
-          <div className="pointer-events-auto absolute" style={{ left: 216, top: 296 }}>
+          <div className="pointer-events-auto absolute bottom-full right-0 mb-2 flex items-center gap-2">
+            {autoBtn}
             {hpBtn}
-          </div>
-          <div className="pointer-events-auto absolute" style={{ left: 262, top: 296 }}>
             {mpBtn}
           </div>
-        </>
         )}
       </div>
     </>
@@ -517,7 +421,7 @@ function SkillButton({
   icon?: string;
   /** v3.2.0 — 궁극기 전용 황금 스타일 */
   ult?: boolean;
-  /** v1.4.12 (#8 아크 레이아웃) — 컨테이너가 크기를 결정하므로 버튼은 h-full w-full */
+  /** v1.4.12 (#8) — 컨테이너가 크기를 결정하므로 버튼은 h-full w-full */
   compact?: boolean;
 }) {
   /* v3.0.27 — 아이콘 로드 실패 시 lucide 폴백 (웹뷰 캐시 오류 등 어떤 환경에서도 버튼이 깨지지 않게)
