@@ -177,7 +177,7 @@ export function AuthPanel() {
       } else {
         const { initializeApp, getApps } = await import("firebase/app");
         const { getAuth, GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
-        const app = getApps()[0] ?? initializeApp({ apiKey: "AIzaSyD8bXRnF1HA5RDFZitbds45BO2GX2KodmM", authDomain: "sertz-681eb.firebaseapp.com", projectId: "sertz-681eb" });
+        const app = getApps()[0] ?? initializeApp({ apiKey: "AIzaSyDQqPSeG3zLINfpynVF3dVxNTVSVD6nE2g", authDomain: "sertz-681eb.firebaseapp.com", projectId: "sertz-681eb" }); /* v1.0.5-beta — 웹키를 sertz-681eb 소속 키로 교체(구키 AIzaSyD8bX...는 타 프로젝트 1085081106426 소속 실측 — identitytoolkit 403) */
         const cred = await signInWithPopup(getAuth(app), new GoogleAuthProvider());
         idToken = await cred.user.getIdToken();
       }
