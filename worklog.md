@@ -3335,3 +3335,21 @@ Stage Summary:
 - Play 업로드용: download/SERTZ-v1.0.4-beta.aab (vc125) — 다음은 126 이상
 - 구글 로그인 잔여 작업은 유저 콘솔 5분: Firebase Authentication Google 공급자 활성화 → Android 앱 등록(SHA-1 붙여넣기) → google-services.json 전달 → 이쪽 재빌드(vc126)
 - 유저 보고서: download/v1.0.4-beta_버그3건_조치보고.txt
+
+---
+Task ID: diag-google-login-plugin-not-implemented
+Agent: Super Z (main)
+Task: 유저 스크린샷 오류 리포트(Screenshot_20261005_130436) — "firebaseauthentication plugin is not implemented on android" 원인 규명
+
+Work Log:
+- 오류문 형식 역추적으로 유저 기기 = vc125 확정(에러 문구가 vc125 신규 포맷과 정확히 일치)
+- 릴리스된 vc125 APK 전수 해부(GitHub 재다운로드): assets/capacitor.plugins.json에 @capacitor-firebase/authentication 등록 3종 존재 + classes2.dex에 FirebaseAuthenticationPlugin·GoogleAuthProviderHandler·com.google.firebase.auth.FirebaseAuth 클래스 모두 존재(dex 디스크립터 형식 Lcom/...; 검색 — 최초 점 형식 검색은 오탐이었음)
+- 근본 원인 체인 확정: google-services.json 부재 → FirebaseInitProvider가 FirebaseApp.initializeApp 실패(리소스 없음) → 플러그인 load()의 getFirebaseAuthInstance()(=FirebaseAuth.getInstance())가 IllegalStateException → PluginHandle 생성자에서 PluginLoadException → Bridge.registerPlugin의 catch가 조용히 스킵(Bridge.java logPluginLoadException) → JS가 "not implemented" 수신
+- 보조 확인: GoogleAuthProviderHandler.buildGoogleSignInClient도 R.string.default_web_client_id(google-services.json에서 생성) 참조 — 콘솔에 OAuth 클라이언트 없으면 계정 선택창 자체 불가
+- 결론: vc125 APK 결함 아님 — Firebase 콘솔 작업(Google 공급자 활성화 + Android 앱 등록 + google-services.json) 전까지 구글 로그인은 어떤 코드로도 동작 불가. 잠정 합성 google-services.json 투입은 FIS·ID토큰 단계에서 실패해 무의미하다고 판단(미투입)
+- 픽스: AuthPanel 에러 분기에 "not implemented" 패턴 추가 → 콘솔 설정 안내 메시지 매핑(커밋 b6d5764 푸시 — 다음 빌드(vc126, json 투입 시)에 반영)
+- 환경: 세션 리셋으로 download/ 바이너리 정리 확인 — 릴리스 자산은 GitHub에 원본 보존(200 확인), 빌드 산출물은 필요 시 릴리스에서 재다운로드
+
+Stage Summary:
+- 구글 로그인은 유저 콘솔 5분 작업이 남은 유일한 블로커 — SHA-1(2E:AD:70:14:E0:0A:8E:46:DC:87:8B:93:1A:8A:5E:EC:4C:5F:15:27)·SHA-256(CC:77:4F:34...) 값은 체크리스트에 기재 완료
+- google-services.json 수령 즉시 android/app/ 투입 → vc126 빌드·릴리스 (versionCode 126)
