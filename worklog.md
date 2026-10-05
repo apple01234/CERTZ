@@ -3353,3 +3353,27 @@ Work Log:
 Stage Summary:
 - 구글 로그인은 유저 콘솔 5분 작업이 남은 유일한 블로커 — SHA-1(2E:AD:70:14:E0:0A:8E:46:DC:87:8B:93:1A:8A:5E:EC:4C:5F:15:27)·SHA-256(CC:77:4F:34...) 값은 체크리스트에 기재 완료
 - google-services.json 수령 즉시 android/app/ 투입 → vc126 빌드·릴리스 (versionCode 126)
+
+---
+Task ID: feat-vc126-google-login-complete
+Agent: Super Z (main)
+Task: 유저 google-services.json 수령 → 투입 → 구글 로그인 완성 — v1.0.5-beta(vc126) 릴리스
+
+Work Log:
+- 유저 업로드 파일 수신(upload/google-services.json) → 전수 검증: package_name com.sertz.myapp·certificate_hash 2ead7014...(릴리즈 키스토어 SHA-1 정확 일치 — 콘솔 SHA-1 등록 완료 입증)·client_type 3 웹 클라이언트 존재(default_web_client_id 생성 가능)·project_id sertz-681eb / project_number 650738641826
+- 투입: android/app/google-services.json 복사 (gitignore 아님 확인) — build.gradle의 조건부 google-services 플러그인 적용 블록(v1.0.2-beta 신설)이 자동 활성화
+- 환경 재구축(세션 소실): 토큰은 .git/config에서 추출(.secrets/github_token, /user 200) · rebuild_jdk.sh(Temurin 21.0.12.1)·rebuild_sdk.sh(build-tools 35/36·android-36) 포그라운드 재실행 · local.properties 재생성(sdk.dir=/home/z/.android-sdk) · Gradle 캐시 소실 → 첫 빌드에서 자동 재다운로드(gradle 8.14.3)
+- 버전 승격: scripts/bump_1_0_5_beta.py — package.json·build.gradle(vc126+이력주석)·server.js·api/version 4종
+- 빌드 1차: build_apk.sh BUILD SUCCESSFUL 4m41s(versionName 파싱 "1.0.5-beta" 정상) · build_aab.sh 40s
+- 핵심 검증: aapt2 dump resources로 APK 내 default_web_client_id·gcm_defaultSenderId·google_api_key·google_app_id 리소스 생성 확인(이전 네이티브 구글창 실패 직접 원인 해소) · vc126/1.0.5-beta · apksigner cc774f34 동일키
+- identitytoolkit 실측(2키 비교): 웹키 AIzaSyD8bX... → 403 SERVICE_DISABLED 프로젝트 1085081106426(=구키는 타 프로젝트 소속 — 이전 세션 기록의 "sertz-681eb 넘버 1085081106426"은 오해석이었음) / 신규 Android키 AIzaSyDQqPSeG... → 400 INVALID_LOGIN_CREDENTIALS·INVALID_ID_TOKEN(=sertz-681eb Identity Toolkit API 활성화 완료 — 유저 Authentication 시작 입증)
+- 웹키 교체 발견·반영: AuthPanel.tsx 웹(PC) signInWithPopup 초기화 키를 구키 → AIzaSyDQqPSeG... 교체(APK 네이티브 경로는 플러그인이라 무관했으나 웹 팝업 흐름은 프로젝트 불일치로 실패 예정이었음) → 재빌드(APK 136,593,731B·AAB 135,405,821B) + 웹 JS 번들 내 새키 존재 확인
+- 릴리스: v1.0.5-beta Release ID 403446266 — 1차 업로드(201×2) 후 웹키 교체분으로 자산 교체(204삭제×2 → 201재업로드×2)
+- 커밋: 327cc29(게이트+json 투입)·d2149ee(웹키 교체+릴리스 스크립트) 푸시 — 원격 백업 커밋 cad8686(db-backup)과 rebase 정리
+- 라이브: 게이트 latest 1.0.5-beta/code 126/apk 미러 v1.0.5-beta 확인
+
+Stage Summary:
+- Play 업로드용: download/SERTZ-v1.0.5-beta.aab (vc126) — 다음은 127 이상
+- Release: https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
+- 유저 잔여 작업(웹 PC 구글 로그인용): Firebase Console → Authentication → 설정 → 승인된 도메인에 "sertz.vercel.app" 추가(네이티브 APK 로그인과는 무관). Google 공급자 활성화는 json에 OAuth 클라이언트 2종 존재로 사실상 완료 추정 — 최종 확인은 APK 실기기 테스트
+- 다음 세션 대비: 토큰 .git/config 추출 가능 · JDK/SDK rebuild_*.sh 포그라운드 · Gradle 캐시 재다운로드 자동
