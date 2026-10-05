@@ -3377,3 +3377,20 @@ Stage Summary:
 - Release: https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
 - 유저 잔여 작업(웹 PC 구글 로그인용): Firebase Console → Authentication → 설정 → 승인된 도메인에 "sertz.vercel.app" 추가(네이티브 APK 로그인과는 무관). Google 공급자 활성화는 json에 OAuth 클라이언트 2종 존재로 사실상 완료 추정 — 최종 확인은 APK 실기기 테스트
 - 다음 세션 대비: 토큰 .git/config 추출 가능 · JDK/SDK rebuild_*.sh 포그라운드 · Gradle 캐시 재다운로드 자동
+
+---
+Task ID: hotfix-vc126-google-oidc-verify
+Agent: Super Z (main)
+Task: 유저 리포트 "구글 로그인 검증에 실패 했데" — 서버 검증 실패 원인 규명·핫픽스 (APK 무수정)
+
+Work Log:
+- 유저 메시지 == 서버 401 응답문 "구글 로그인 검증에 실패했어요" 정확 일치 → /api/auth/google의 fbverify 실패로 국소화. 계정 선택창·토큰 획득은 성공(진전)
+- 근본 원인: @capacitor-firebase/authentication signInWithGoogle().credential.idToken = 구글 OIDC 토큰(iss=accounts.google.com·aud=구글 OAuth 클라이언트 ID·서명키=www.googleapis.com/oauth2/v3/certs) — fbverify는 Firebase ID토큰 전용(iss=securetoken.google.com/{pid}·aud={pid}·securetoken@system.gserviceaccount.com 인증서)이라 kid 불매칭 → 무조건 401
+- 핫픽스(src/lib/fbverify.ts 재작성): iss 기반 이중 경로 — Firebase ID토큰(기존) + 구글 OIDC(JWKS RS256 검증·aud 허용목록=google-services.json 2종 클라이언트·exp·sub) · JWKS 60분 캐시 · env SERTZ_GOOGLE_CLIENT_IDS 오버라이드
+- 검증: scripts/test_fbverify_oidc.js 미러 테스트(JWKS 페치·JWK 공개키 생성·verify·iss 분기·aud 매칭 전부 통과) · tsc — fbverify 에러 0(sapi.ts 기존 에러 2건 무관) · 라이브 스모크: 가짜 OIDC 토큰 POST → 401(500 아님 — OIDC 경로 정상 처리)
+- 커밋 40dc679 푸시 → Vercel 배포 완료(게이트 1.0.5-beta/126 유지)
+
+Stage Summary:
+- APK/AAB 재빌드·재설치 불필요 — vc126 그대로 서버 배포만으로 로그인 정상화
+- 다음 릴리스 후보 과제: 클라이언트도 Firebase ID토큰을 보내도록 정석화(FirebaseAuthentication.getIdToken()) — 서버는 둘 다 수용하므로 호환 무관
+- 다음 세션 대비: 토큰 .git/config 추출 · rebuild_*.sh 포그라운드 · Gradle 캐시 자동
