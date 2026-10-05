@@ -3448,3 +3448,25 @@ Stage Summary:
 - vc127 R8 ON: download/SERTZ-v1.0.5-beta.aab(Play 업로드 대기)·APK(실기기 테스트용) — 유저 4종 테스트(부팅·구글 로그인·결제·광고) 후 업로드 권장
 - AGP 9.0 업그레이드는 보류(Capacitor 호환 리스크) — R8만으로 DEX 인사이트 점수 개선 예상, 점수 갱신은 Play에 AAB 업로드·처리 후
 - 다음 세션 대비: 토큰 .git/config 추출 · rebuild_*.sh 포그라운드 · R8 실패 시 missing_rules.txt 반영 패턴 · 데몬 OOM 시 pkill GradleDaemon
+
+---
+Task ID: feat-vc128-immersive-fullscreen
+Agent: Super Z (main)
+Task: 유저 요청 — "게임 시작시 휴대폰에 이부분 없애" (스크린샷: 삼성 3버튼 내비게이션 바) → 몰입 모드(전체화면) 적용 vc128 빌드·릴리스
+
+Work Log:
+- 스크린샷 판정: Screenshot_20261006_075027_SERTZ.jpg = 안드로이드 시스템 내비게이션 바(뒤로가기 <·홈 ○·최근앱 |||) — 가로모드(sensorLandscape)에서 화면 가장자리에 세로로 표시되는 시스템 바. 게임 내 UI가 아님
+- 상속 확인: 직전 세션에서 vc127 R8 ON 빌드·릴리스 이미 완료된 상태(커밋 e0813bb·Release 자산 vc127·게이트 127) — 본 세션은 그 다음 versionCode 128로 진행
+- MainActivity.java 몰입 모드 구현: WindowCompat.setDecorFitsSystemWindows(false) + WindowInsetsControllerCompat.hide(systemBars()) + BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE(가장자리 스와이프 시 임시 표시·자동 재숨김) + onWindowFocusChanged 재숨김(구글 로그인 계정 선택창 등 다이얼로그 포커스 회복 시 시스템 바 복원 방지). targetSdk 36 엣지투엣지 강제와 minSdk 24 구형기기 동시 호환(androidx 내부 분기)
+- 게이트 128 승격 4종: android/app/build.gradle(versionCode 128+헤더 주석)·server.js·src/app/api/version/route.ts(버전노트 갱신)·package.json(1.0.5-beta 유지 — versionName 불변)
+- 커밋·푸시: 19530f6(작업분)→리베이스(원격 accounts backup 659c821 존중)→0ded227 / 매핑 교체 커밋 9dc68bc
+- 환경 재구축(세션 소실분): 토큰 .git/config 추출(200)·rebuild_jdk.sh(Temurin 21.0.12.1)·rebuild_sdk.sh(build-tools 35/36·android-36)·local.properties 재생성
+- 빌드: build_apk.sh(풀 sync 포함, 6m55s)→SKIP_SYNC=1 build_aab.sh(3m48s) — APK 132,456,066B·AAB 134,370,655B
+- 실측 검증: aapt2 badging versionCode=128/versionName=1.0.5-beta · locales '--_--','ko'만(it 등 다국어 리소스 제거 — resourceConfigurations 유효 확인) · apksigner SHA-256 cc774f34(릴리즈 키 동일) · mapping.txt에 com.sertz.myapp.MainActivity 유지+hideSystemBars() DEX 반영 확인
+- Release 403446266 자산 교체: 구자산 DELETE(204×3: aab·apk·vc127-mapping)→신규 업로드(201×3: aab 134,370,655B·apk 132,456,066B·SERTZ-vc128-mapping.txt) — 태그 v1.0.5-beta 유지로 다운로드 URL 불변
+- Vercel 자동배포 확인: 라이브 /api/version code:128 응답(실측) · apk-guide.html 버전 표기 갱신 불필요 확인
+
+Stage Summary:
+- vc128 AAB(Play 업로드용)·APK(실기기 테스트용) 릴리스 완료 — https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
+- 유저 테스트 포인트: ①게임 시작 시 내비게이션 바·상태바 소멸(전체화면) ②화면 가장자리 스와이프하면 임시 표시 후 자동 숨김 ③구글 로그인 창·채팅 입력(키보드) 정상 동작 ④R8 적용 상태에서 부팅·결제·광고 무결
+- Play 업로드: vc128 AAB 그대로 업로드 — versionCode 128 단조 충족(127 미업로드 상태여도 무관), DEX 인사이트 점수는 이 빌드 처리 후 갱신 예상
