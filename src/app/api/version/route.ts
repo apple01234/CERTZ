@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 126;
+const LATEST_CODE = 127;
 const VERSION_NOTE =
-  "v1.0.5-beta — 구글 로그인 완성: Firebase 콘솔 연동값(google-services.json·SHA-1 등록) 투입 — 네이티브 구글 계정 선택창·ID토큰 발급 정상화(vc125까지의 '구글 로그인 서버 설정 미완료' 안내 해소)";
+  "v1.0.5-beta (vc127) — R8 코드 최적화 ON(DEX 축소·난독화·리소스 축소·Crashlytics 매핑 업로드)+라이브러리 유입 다국어 리소스 ko/en 필터 — Play DEX 최적화 인사이트 대응";
 const APK_MIRROR =
   "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
 

@@ -65,9 +65,9 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.0.5-beta";
-  const LATEST_CODE = 126;
+  const LATEST_CODE = 127;
   const VERSION_NOTE =
-  "v1.0.5-beta — 구글 로그인 완성: Firebase 콘솔 연동값(google-services.json·SHA-1 등록) 투입 — 네이티브 구글 계정 선택창·ID토큰 발급 정상화(vc125까지의 '구글 로그인 서버 설정 미완료' 안내 해소)";
+  "v1.0.5-beta (vc127) — R8 코드 최적화 ON(DEX 축소·난독화·리소스 축소·Crashlytics 매핑 업로드)+라이브러리 유입 다국어 리소스 ko/en 필터 — Play DEX 최적화 인사이트 대응";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
