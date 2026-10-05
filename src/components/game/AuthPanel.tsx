@@ -197,8 +197,11 @@ export function AuthPanel() {
       const msg = String((e as { message?: string })?.message ?? e ?? "").toLowerCase();
       if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("popup_closed")) {
         setMsg(""); // 유저가 창을 닫은 것 — 오류 아님
-      } else if (msg.includes("developer_error") || msg.includes("apiexception") || msg.includes("10:") || msg.includes("12500") || msg.includes("12501") || msg.includes("not_found") || msg.includes("resources")) {
-        /* v1.0.3-beta — Android DEVELOPER_ERROR(코드 10)·리소스 부재 = Firebase 콘솔 설정 미완료.
+      } else if (msg.includes("developer_error") || msg.includes("apiexception") || msg.includes("10:") || msg.includes("12500") || msg.includes("12501") || msg.includes("not_found") || msg.includes("resources") || msg.includes("not implemented") || msg.includes("firebaseapp") && msg.includes("initialize")) {
+        /* v1.0.3-beta — Android DEVELOPER_ERROR(코드 10)·리소스 부재·플러그인 로드 실패
+         *  ("plugin is not implemented" = google-services.json 부재로 네이티브 플러그인이
+         *   등록되지 않은 상태 — FirebaseAuth.getInstance()가 IllegalStateException을 내고
+         *   Bridge가 조용히 스킵) = 전부 Firebase 콘솔 설정 미완료가 원인.
          *  유저가 "왜 안 되는지" 바로 알 수 있게 원인을 명시한다. */
         setMsg("구글 로그인 서버 설정이 아직 완료되지 않았어요 (운영자: Firebase 콘솔 Google 공급자 활성화 + Android 앱 SHA-1 등록 + google-services.json) — 자체 계정을 이용해 주세요");
       } else if (msg.includes("configuration-not-found") || msg.includes("operation-not-allowed") || msg.includes("api key") || msg.includes("firebaseapp") || msg.includes("not configured") || msg.includes("identitytoolkit") || msg.includes("permission_denied")) {
