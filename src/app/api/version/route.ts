@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 127;
+const LATEST_CODE = 128;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc127) — R8 코드 최적화 ON(DEX 축소·난독화·리소스 축소·Crashlytics 매핑 업로드)+라이브러리 유입 다국어 리소스 ko/en 필터 — Play DEX 최적화 인사이트 대응";
+  "v1.0.5-beta (vc128) — 게임 화면 완전 전체화면(몰입 모드): 시스템 내비게이션 바·상태바 숨김(가장자리 스와이프 시 임시 표시) — R8 최적화(DEX 축소·난독화)·ko/en 리소스 필터 유지";
 const APK_MIRROR =
   "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
 
