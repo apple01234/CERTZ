@@ -3394,3 +3394,18 @@ Stage Summary:
 - APK/AAB 재빌드·재설치 불필요 — vc126 그대로 서버 배포만으로 로그인 정상화
 - 다음 릴리스 후보 과제: 클라이언트도 Firebase ID토큰을 보내도록 정석화(FirebaseAuthentication.getIdToken()) — 서버는 둘 다 수용하므로 호환 무관
 - 다음 세션 대비: 토큰 .git/config 추출 · rebuild_*.sh 포그라운드 · Gradle 캐시 자동
+
+---
+Task ID: diag-play-console-org-requirement-reject
+Agent: Super Z (main)
+Task: 유저 Play Console 심사 거부 — "Some types of apps can only be distributed by organizations" 원인 규명·해결 안내
+
+Work Log:
+- 거부 메시지 분석: "You have selected an app category or declared your app offers certain features that require you to submit your app using an organization account" — 앱 카테고리 선택 또는 앱 콘텐츠 선언이 조직 필수 유형에 해당한다는 판정
+- 정책 전문 실측(support.google.com/.../10788890?hl=ko curl 다운로드·파싱): 현재 조직 등록 필수 = ①금융 상품·서비스(은행/대출/주식/투자펀드/암호화폐 지갑·거래소) ②건강 앱(의료·인간대상연구) ③VpnService 승인 앱 ④정부 앱 — 딱 4종. 소셜/채팅/커뮤니티는 현재 정책 문서에 없음(안심 근거)
+- 판정: SERTZ(RPG 게임, Play 인앱결제·AdMob·게임아이템 거래소·채팅)는 4종 어느 것도 해당 없음 → 유저가 앱 콘텐츠 설문에서 실수로 조직 필수 유형을 "예"로 답했거나 앱 유형/카테고리(앱>소셜 등)를 잘못 선택했을 가능성 최우선
+- 해결 경로 도출: ①앱 콘텐츠 선언 수정(금융 기능/건강/정부 모두 "아니오") ②카테고리 게임>롤플레잉 확인 ③재제출 — 선언 수정만으로 되고 새 AAB 불필요 · 반복 거부 시 조직 계정(D-U-N-S+사업자등록증) 경로만 남음
+
+Stage Summary:
+- 유저 안내: 콘솔 앱 콘텐츠 4종 선언값 확인·수정 요청 (스크린샷 요청) — 코드·빌드 수정 불필요
+- 정책상 채팅 기능은 조직 필수 사유 아님 — 채팅 유지 가능
