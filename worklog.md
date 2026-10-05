@@ -3409,3 +3409,20 @@ Work Log:
 Stage Summary:
 - 유저 안내: 콘솔 앱 콘텐츠 4종 선언값 확인·수정 요청 (스크린샷 요청) — 코드·빌드 수정 불필요
 - 정책상 채팅 기능은 조직 필수 사유 아님 — 채팅 유지 가능
+
+---
+Task ID: diag-play-console-it-translation-warning
+Agent: Super Z (main)
+Task: Play Console "it 언어의 번역에 실패했습니다" 경고 진단·대응 (정책 위반 아님 — 번역 서비스 경고)
+
+Work Log:
+- 유저 붙여넣은 경고문 분석: "{lang} 번역 실패 → AAB 재업로드 or 사용자 늘리기 > 번역 > 앱 문자열에서 해당 언어 사용 중지" — Play의 선택 기능(앱 문자열 자동 번역) 작업 실패 알림으로 정책 위반·배포 차단과 무관
+- AAB 실측: 로컬 download/ 소실 → GitHub Release(403446266)에서 vc126 AAB 재다운로드(135,405,821B 동일) → base/res에 values* 계열 파일 부재 확인(AAB는 문자열이 resources.pb로 컴파일되는 정상 구조)
+- 소스 실측: android/app/src/main/res는 values/ 1개뿐(문자열 5줄 app_name 등, 언어 지정 없음) → AAB의 it 등 다국어 문자열은 전부 라이브러리(androidx·Firebase·AdMob·플러그인) 유입 → Play가 이를 "앱 문자열"로 추출해 스토어 언어(it)로 기계번역 시도 중 실패한 것으로 판정
+- 근본 대책 반영: android/app/build.gradle defaultConfig에 resourceConfigurations += ["ko", "en"] 추가 — 라이브러리 유입 다국어 리소스 제거, 앱 자체 문자열은 기본 values뿐이라 영향 0, 게임 텍스트는 WebView(JS)라 무관. 유효 시점 다음 빌드(vc127+)
+- 커밋 f302b8e 푸시 완료 · 환경 복구: 토큰 .git/config에서 추출(.secrets/github_token, /user 200) — JDK/SDK는 이번 세션 빌드 불필요로 미재구축
+- 유저 안내 사항: ①즉시 해결은 콘솔 "사용자 늘리기 > 번역 > 앱 문자열"에서 it(및 미사용 언어) 사용 중지 — AAB 재업로드 불필요(versionCode 절약) ②이 경고 자체는 심사/배포 차단 아님 ③직전 '조직 계정' 위반 별개 — 앱 콘텐츠 선언(금융/건강/정부/VPN 아니오) 수정 후 릴리스 페이지 위반 소멸 여부 확인 필요
+
+Stage Summary:
+- vc126 AAB 그대로 사용 가능 — 이 경고로 재업로드·재빌드 불필요. 다음 업로드는 vc127부터이며 그 빌드부터 언어 필터 유효
+- 다음 빌드 체크: merged resources에 values-it 등 부재 확인(resourceConfigurations 효과 실측) · scripts/bump 스크립트로 127 승격
