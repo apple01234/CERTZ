@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "650738641826",
+    "project_id": "sertz-681eb",
+    "storage_bucket": "sertz-681eb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:650738641826:android:c17c0b5f995f3b2d0d20fb",
+        "android_client_info": {
+          "package_name": "com.sertz.myapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "650738641826-29c196sq1db27re7hrat5b0e8qcoionj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sertz.myapp",
+            "certificate_hash": "2ead7014e00a8e46dc878b931a8a5eec4c5f1527"
+          }
+        },
+        {
+          "client_id": "650738641826-3to3nfhcfipe56rgm0edmkdmh7s0sfnc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQqPSeG3zLINfpynVF3dVxNTVSVD6nE2g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "650738641826-3to3nfhcfipe56rgm0edmkdmh7s0sfnc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

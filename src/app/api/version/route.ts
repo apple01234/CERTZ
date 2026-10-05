@@ -8,12 +8,12 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.0.4-beta";
-const LATEST_CODE = 125;
+const LATEST_VERSION = "1.0.5-beta";
+const LATEST_CODE = 126;
 const VERSION_NOTE =
-  "v1.0.4-beta — 유저 버그 리포트 3건: ①랭킹 부적절 닉네임 항목 운영 제거(서버 DB 조치) ②구글 로그인 실패 원인별 안내 강화+플러그인 설정 보완(Firebase 콘솔 연동값 등록 후 정상 동작) ③초반 1~3챕터 BGM 원곡(Kevin MacLeod) 복구";
+  "v1.0.5-beta — 구글 로그인 완성: Firebase 콘솔 연동값(google-services.json·SHA-1 등록) 투입 — 네이티브 구글 계정 선택창·ID토큰 발급 정상화(vc125까지의 '구글 로그인 서버 설정 미완료' 안내 해소)";
 const APK_MIRROR =
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.4-beta/SERTZ-v1.0.4-beta.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
 
 export async function GET() {
   return NextResponse.json({

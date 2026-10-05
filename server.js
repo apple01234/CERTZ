@@ -31,7 +31,7 @@ app.prepare().then(() => {
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
    *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
   const APK_MIRROR =
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.4-beta/SERTZ-v1.0.4-beta.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -64,10 +64,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.0.4-beta";
-  const LATEST_CODE = 125;
+  const LATEST_VERSION = "1.0.5-beta";
+  const LATEST_CODE = 126;
   const VERSION_NOTE =
-  "v1.0.4-beta — 유저 버그 리포트 3건: ①랭킹 부적절 닉네임 항목 운영 제거(서버 DB 조치) ②구글 로그인 실패 원인별 안내 강화+플러그인 설정 보완(Firebase 콘솔 연동값 등록 후 정상 동작) ③초반 1~3챕터 BGM 원곡(Kevin MacLeod) 복구";
+  "v1.0.5-beta — 구글 로그인 완성: Firebase 콘솔 연동값(google-services.json·SHA-1 등록) 투입 — 네이티브 구글 계정 선택창·ID토큰 발급 정상화(vc125까지의 '구글 로그인 서버 설정 미완료' 안내 해소)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
