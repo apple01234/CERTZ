@@ -3426,3 +3426,25 @@ Work Log:
 Stage Summary:
 - vc126 AAB 그대로 사용 가능 — 이 경고로 재업로드·재빌드 불필요. 다음 업로드는 vc127부터이며 그 빌드부터 언어 필터 유효
 - 다음 빌드 체크: merged resources에 values-it 등 부재 확인(resourceConfigurations 효과 실측) · scripts/bump 스크립트로 127 승격
+
+---
+Task ID: feat-vc127-r8-dex-optimize
+Agent: Super Z (main)
+Task: Play Console "DEX 코드 최적화 낮음" 인사이트 대응 — vc127 R8 ON 빌드·릴리스 + 금융 기능 선언 정답 가이드
+
+Work Log:
+- DEX 인사이트 판정: 오류 아닌 성능 권고 — 릴리스 빌드 minifyEnabled false로 난독화 1%·축소 없음·DEX 20MB(라이브러리 대량 미사용 클래스)
+- R8 ON 적용: build.gradle release { minifyEnabled true + shrinkResources true + proguard-android-optimize.txt } · proguard-rules.pro에 Capacitor 브릿지 전면 keep(com.getcapacitor.**)+@CapacitorPlugin·@PluginMethod keep+org.apache.cordova.** keep+SourceFile/LineNumberTable 속성 유지 · gradle.properties에 android.enableR8.fullMode=false(첫 R8 릴리스 안전화)+힙 2048m 상향
+- R8 1차 실패: firebase-authentication 플러그인의 선택 의존성(Facebook SDK 미포함) 누락 클래스 4종(CallbackManager$Factory·CallbackManager·FacebookCallback·LoginManager) → R8 생성 missing_rules.txt 그대로 -dontwarn 반영
+- Gradle 데몬 비정상 종료(OOM) 1회 — 잔존 데몬 pkill 후 복구(3.5GB 확보)
+- 환경 재구축: rebuild_jdk.sh(Temurin 21.0.12.1)·rebuild_sdk.sh(build-tools 35/36·android-36)·local.properties 재생성
+- 빌드·실측: APK 132,457,666B(−4.1MB) · AAB 134,371,203B(−1.0MB) · DEX 미압축 20MB→3.7MB(−82%) · locales 기본+ko만(it 등 라이브러리 다국어 리소스 제거 확인 — it 번역 경고 근원 차단) · aapt2 versionCode 127/versionName 1.0.5-beta · apksigner SHA-256 cc774f34 동일 키
+- Crashlytics mappingFileUploadEnabled=true 전환 + mapping.txt(30MB)를 릴리스 자산 SERTZ-vc127-mapping.txt로 보관
+- 릴리스 자산 교체: Release 403446266에서 AAB·APK DELETE(204×2)→업로드(201×2)+매핑 추가(201) — URL 불변으로 미러 유지
+- 게이트 127 승격(server.js·route.ts)·커밋 e0813bb 푸시 → Vercel 배포 → 라이브 /api/version code:127 확인
+- 금융 기능 선언 정답 가이드(직전 미응답분): 정책 전문 재실측(10788890) — 조직 계정 필수는 ①금융상품·서비스 ②건강 ③VPN ④정부 딱 4종(전 회차 실측과 동일) · SERTZ는 현금 보상·기프트카드·P2E·암호화폐·NFT 전무 — Play Billing 표준 인앱결제(게임 아이템)는 이 선언의 금융 자산 범위가 아님 → 권장 답안 "아니요"(항목별 폼이면 표준 IAP만 해당) · 조직 계정 위반 트리거는 앱 카테고리(게임>롤플레잉 확인) 또는 4종 선언 오답
+
+Stage Summary:
+- vc127 R8 ON: download/SERTZ-v1.0.5-beta.aab(Play 업로드 대기)·APK(실기기 테스트용) — 유저 4종 테스트(부팅·구글 로그인·결제·광고) 후 업로드 권장
+- AGP 9.0 업그레이드는 보류(Capacitor 호환 리스크) — R8만으로 DEX 인사이트 점수 개선 예상, 점수 갱신은 Play에 AAB 업로드·처리 후
+- 다음 세션 대비: 토큰 .git/config 추출 · rebuild_*.sh 포그라운드 · R8 실패 시 missing_rules.txt 반영 패턴 · 데몬 OOM 시 pkill GradleDaemon
