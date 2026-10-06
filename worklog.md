@@ -3524,3 +3524,24 @@ Stage Summary:
 - sertz.vercel.app = PC·모바일·태블릿 전 기기 브라우저 즉시 플레이 가능(완전 개방) — APK 설치 없이 모바일 브라우저에서도 게임 구동
 - 대역폭 유의: 모바일 웹 유입 재개로 Vercel 대역폭 소비 증가 예상(첫 로드 ~133MB/유저, 캐시 후 경량) — Vercel usage 모니터링 권장
 - 웹 구글 로그인 잔무 유지: Firebase Console → Authentication → 설정 → 승인된 도메인에 sertz.vercel.app 추가(미추가 시 웹에서 구글 로그인 팝업 실패)
+
+---
+Task ID: fix-vc130-camera-center + feat-speed-insights
+Agent: Super Z (main)
+Task: 유저 지시 2건 — ①"맵이 지금 위치에서 x축이 화면 정 가운데에 있어야지" → 카메라 x축 중앙 정렬 근본 수정 ②Vercel Speed Insights 추가 → vc130 빌드·릴리스
+
+Work Log:
+- 진단(라이브 3뷰포트 Playwright 실측 + Phaser 3/4 소스 대조): 엔진 preRender follow가 desired scroll을 `follow.x - width/2`로 계산(originX = width×origin — displayWidth(/zoom) 아님, 줌 미반영·P3.87과 P4.2.1 공통). clampX 특이 공식 `bx = bounds.x + (displayWidth-width)/2`이 정확히 같은 폭만큼 좌측 초과 스크롤 허용 → 두 식이 맞물려 줌>1에서 캐릭터가 화면 x ~87%에 고정 + 맵 좌측 가장자리 공백(1080p 기준 719px) + 맵 우측 끝 도달 불가. 앱(줌=1, CSS 높이 360~390<560)에선 모든 식이 우연히 정확해 무증상 — PC 웹 개방(전 세션) 후 줌 1.5~2.5 환경에서 처음 발현. 실측 scrollX 3개 지점(-411/-210/-9)이 desired·clamp 공식과 전부 정확 일치해 확정
+- 보정 구현(WorldScene): ①setupCameraClampFix — clampX/Y를 인스턴스에서 정석 범위로 교체(맵≥뷰: [0, world-view] 가장자리 밀착, 맵<뷰: (world-view)/2 고정 = 맵 x축 화면 정중앙 — 4K 마을·실내 커버) ②applyFollowZoomOffset — followOffset = -(w×(z-1))/(2z)로 진짜 중앙 추적, applyCameraZoom의 apply()와 리사이즈 노이즈 게이트 앞에서 재계산 ③startFollow가 followOffset을 0으로 리셋하는 엔진 동작(858행) 대비 3개 호출부 뒤 재보정. midPoint는 보정의 영향을 받지만 게임 코드 미사용(전수 확인) — 앱(줌 1)은 보정 0 무영향
+- 검증(로컬+라이브): 플레이어 x=750에서 offCenter 0(정중앙)·scrollX 201.4 정확 수렴, 좌 클램프 시 맵 왼쪽 끝 화면 x=0(공백 0), 우 클램프 402.9=1500-1097로 우측 끝 도달 복원, followOffset -411.4 라이브 확인
+- SpeedInsights: @vercel/speed-insights 2.0.0 설치 → layout에 컴포넌트 추가(APK_EXPORT 빌드 상수 게이트 — APK export에선 비활성). 라이브 실측: window.si 활성 + Vercel 해시 경로 script.js 로드 확인(컴포넌트는 클라 하이드레이션 후 주입 — SSR HTML엔 없음이 정상)
+- 게이트 130 승격 4종(build.gradle versionCode·server.js·route.ts LATEST_CODE+NOTE·package.json 1.0.5-beta 유지) — 중간에 sed로 route.ts VERSION_NOTE 선언부 유실 후 복구, node --check로 server.js 문법 검증
+- 빌드: build_apk.sh(4m01s)→SKIP_SYNC=1 build_aab.sh — APK 132,461,835B·AAB 134,376,812B
+- 실측: aapt2 versionCode=130/1.0.5-beta · apksigner SHA-256 cc774f34 동일 · APK assets에 clampX 반영 확인 · speed-insights 문자열은 미사용 모듈 잔여(빌드 상수 게이트로 렌더 경로 소거 — 무동작)
+- Release 403446266 자산 교체: DELETE(204×3: vc129 aab/apk/mapping)→UPLOAD(201×3: aab/apk/SERTZ-vc130-mapping.txt) — 태그 v1.0.5-beta 유지 · 매핑 교체 커밋 ea39a95(원격 accounts backup 충돌 → 리베이스 재푸시)
+- 라이브: /api/version code:130 노트 갱신 확인
+
+Stage Summary:
+- vc130 = 카메라 x축 중앙 정렬 수정 빌드(웹 즉시 반영 + APK/AAB) — https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
+- 유저 테스트 포인트: ①PC 웹에서 캐릭터가 화면 정중앙 추적 ②맵 가장자리에서 빈 공간 없이 밀착 ③맵 오른쪽 끝까지 이동 가능(구버전은 캐릭터 화면 밖 이탈) ④앱에서도 여관·집(실내 줌 1.45) 중앙 정렬 개선 — 앱은 APK 재설치 필요(웹은 자동)
+- Vercel 대시보드 Speed Insights 탭에서 웹 바이탈 수집 시작(방문자 유입 후 수 시간 내 데이터 축적)
