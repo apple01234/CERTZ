@@ -3507,3 +3507,20 @@ Stage Summary:
 - PC 웹 플레이 복귀(sertz.vercel.app 바로 플레이) — 모바일 웹은 여전히 앱 안내로 유지(완전 개방 원하면 middleware 삭제 재배포)
 - 유저 잔무 알림: 웹(PC) 구글 로그인용 Firebase Console → Authentication → 설정 → 승인된 도메인에 sertz.vercel.app 추가 필요(미추가 시 웹 구글 로그인 팝업 실패)
 - 대역폭 유의: PC 웹 유저가 늘면 Vercel 대역폭 소비 재개(첫 로드 에셋 ~133MB 캐시) — 사용량 모니터 권장
+
+---
+Task ID: feat-web-full-open
+Agent: Super Z (main)
+Task: 유저 응답 "ㅇㅇ 개방해" — PC 개방(32620d9)에 이어 모바일 브라우저 차단까지 해제 → 웹 완전 개방
+
+Work Log:
+- 직전 단계 상태: PC(데스크톱) UA는 200 게임 서빙, 모바일 UA만 /apk-guide.html 307 유지 중(middleware.ts 주석에 완전 개방 절차 기재돼 있었음)
+- build_apk.sh/build_aab.sh 격리 로직 확인: `if [ -f ]` 가드 방식이라 middleware.ts 부재 시 스킵 — 삭제 안전 확인
+- src/middleware.ts 삭제(git rm) → 커밋 9ac5988 푸시 — 307 리다이렉트 전면 폐지, 전 UA 웹 플레이 허용
+- Vercel 자동배포 후 라이브 실측: PC(Windows) 200 · Android 200 · iPhone 200 (redirect_url 전부 빈 값) · 게임 HTML <title>SERTZ — 이그드라실: 아홉 왕국</title> 서빙 확인 · /api/version code:129(앱 게이트 무영향) · /apk-guide.html 200 잔존
+- APK 무영향: 네이티브 웹뷰는 https://localhost 오리진 + export 빌드 때 미들웨어 자체가 격리됐으므로 재빌드 불필요(versionCode 129 유지)
+
+Stage Summary:
+- sertz.vercel.app = PC·모바일·태블릿 전 기기 브라우저 즉시 플레이 가능(완전 개방) — APK 설치 없이 모바일 브라우저에서도 게임 구동
+- 대역폭 유의: 모바일 웹 유입 재개로 Vercel 대역폭 소비 증가 예상(첫 로드 ~133MB/유저, 캐시 후 경량) — Vercel usage 모니터링 권장
+- 웹 구글 로그인 잔무 유지: Firebase Console → Authentication → 설정 → 승인된 도메인에 sertz.vercel.app 추가(미추가 시 웹에서 구글 로그인 팝업 실패)
