@@ -3545,3 +3545,35 @@ Stage Summary:
 - vc130 = 카메라 x축 중앙 정렬 수정 빌드(웹 즉시 반영 + APK/AAB) — https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
 - 유저 테스트 포인트: ①PC 웹에서 캐릭터가 화면 정중앙 추적 ②맵 가장자리에서 빈 공간 없이 밀착 ③맵 오른쪽 끝까지 이동 가능(구버전은 캐릭터 화면 밖 이탈) ④앱에서도 여관·집(실내 줌 1.45) 중앙 정렬 개선 — 앱은 APK 재설치 필요(웹은 자동)
 - Vercel 대시보드 Speed Insights 탭에서 웹 바이탈 수집 시작(방문자 유입 후 수 시간 내 데이터 축적)
+
+---
+Task ID: feat-boss-remake-v5
+Agent: Super Z (main)
+Task: 유저 지시 "보스 전면 리메이크" — 설계도(9종 로스터 스펙표) 반영 전면 교체
+
+Work Log:
+- 설계도 8칸 라벨 고배율 재독출 + 유저 답변(1/9=니드호그)으로 9종 매핑 확정:
+  니드호그(녹룡,1/9)→nidhog · 요르문간드(화염드래곤,2/9)→jorm · 설인(흰늑대,3/9)→fenrir ·
+  미드가르드(해적선,4/9)→behemoth · 무스펠헤임(골렘,6/9)→surt · 니플헤임(얼음봉황,7/9)→skoll ·
+  헬(지옥악마,8/9)→gram · 발할라(천사기사,9/9)→nagr · 설계도 없는 4종(guardian/abysslord/abudditos/vord)은 동일 스타일 신규 생성
+- 아트 생성: z-ai CLI 1024x1024 시트 15회 생성(실패 재생성 포함) — scripts/gen_boss_raw3.sh / gen_boss_raw3_retry.sh
+  · fenrir 재생성 2회 실패(머리만/프레임 접촉) → 기존 서리늑대 아트 유지 결정(설계와 이미 일치)
+  · behemoth 1차 실패(단일 일러스트) → 격자 강조 프롬프트로 재생성 성공
+- 슬라이스 파이프라인: scripts/slice_boss_frames2.py — 흰배경→알파(가장자리 플러드필, scipy label) +
+  y/x 투영 행·프레임 검출(보스별 ROWS/COLS_OVERRIDE 병행) + 보스별 단일 스케일 240x180 균일셀 + 6프레임 사이클 패딩
+  · 산출: idle/walk/atk/die 6프레임 교체 + sp1~3 6프레임 신규 (tex 매핑 guardian=boss/behemoth=boss2/abysslord=boss3 유지)
+- 게임 연결:
+  · textures.ts — registerBossAnims(12FPS·idle/walk 루프·atk 14fps·die/sp 원샷, 존재 프레임만 등록) +
+    loadBossFrames(36장 지연 로드, 3라운드 캐시버스팅 재시도 → 완료 후 애니 승격)
+  · Boss.ts — 생성자에서 애니등록+지연로드 발화, animFor(모드별 매핑: slam/counter→atk · charge/blink→walk ·
+    volley/ring/summon→sp2 · zones/quake→sp1 · beam→sp3 · dead→die · 이동중→walk) + setBossAnim(idle 폴백) + 하티 동기화
+  · stages.ts — 스콜&하티 "교만의 쌍랑"→"교만의 얼음 봉황"(설계도 7/9 반영) · data.ts 인트로 대사 갱신
+- 검증: scripts/e2e_boss_remake.js 10/10 PASS — alfheim10 진입→spawnBoss→니드호그 신규아트·
+  12FPS 6프레임 애니 7종 등록·36프레임 지연로드·idle↔walk 전환 관찰·pageerror/에셋에러 0
+  · tsc 소스 에러 0 · npm run build 성공
+- 커밋 9c76859 푸시 (리베이스 후) → Vercel 자동 배포
+
+Stage Summary:
+- 11종 보스 아트 전면 교체 + 특수기술 애니 신규 — fenrir만 기존 아트 유지(재생성 실패, 기존이 설계와 일치)
+- 다음 후보: 유저 실기기 확인 → 필요 시 개별 보스 시트 재생성(gram/nagr 등 행 구조 개선 여지) ·
+  APK 반영 시 versionCode 130 승격(4종 게이트 동시) · 카메라 zoom 보정·Speed Insights 잔여 과제
