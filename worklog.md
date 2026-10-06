@@ -3577,3 +3577,26 @@ Stage Summary:
 - 11종 보스 아트 전면 교체 + 특수기술 애니 신규 — fenrir만 기존 아트 유지(재생성 실패, 기존이 설계와 일치)
 - 다음 후보: 유저 실기기 확인 → 필요 시 개별 보스 시트 재생성(gram/nagr 등 행 구조 개선 여지) ·
   APK 반영 시 versionCode 130 승격(4종 게이트 동시) · 카메라 zoom 보정·Speed Insights 잔여 과제
+
+---
+Task ID: build-vc131-boss-remake
+Agent: Super Z (main)
+Task: 유저 지시 "재빌드 ㄱㄱ" — 보스 전면 리메이크 v5.0(9c76859)의 APK/AAB 반영 vc131 빌드·릴리스
+
+Work Log:
+- 상태 확인: 보스 리메이크는 웹 배포 완료 상태, APK는 vc130(카메라 수정)이라 미포함 → vc131 승격 재빌드 결정
+- 환경 재구축 4회차: .git/config에서 토큰 재추출(URL이 user:token 형식 — 첫 추출이 username까지 잡아 401, 콜론 뒤 재추출로 200) · rebuild_jdk.sh(Temurin 21.0.12.1→/home/z/jdk) · rebuild_sdk.sh(cmdline-tools+platform-tools+android-36+build-tools 36/35→/home/z/.android-sdk) 병렬 실행 · android/local.properties 생성
+- 게이트 131 승격 3종(build.gradle versionCode+헤더 주석 · server.js LATEST_CODE+NOTE · route.ts LATEST_CODE+NOTE · package.json 1.0.5-beta 유지) — node --check 통과
+- 빌드: build_apk.sh BUILD SUCCESSFUL(7m13s) — ANDROID_HOME=/home/z/.android-sdk env 직접 지정(스크립트 후보 경로에 dot 디렉터리 없음) → SKIP_SYNC=1 build_aab.sh(4m21s)
+- 실측 검증: aapt2 dump badging versionCode='131'/1.0.5-beta · apksigner SHA-256 cc774f34(릴리즈 키 동일) · APK 내 보스 자산 522종 + 번들 JS에 'nidhog' 20건·'얼음 봉황' 2건 검출(registerBossAnims 등 함수명은 미니파이 소거) · APK 138,301,349B / AAB 140,253,756B(보스 자산 증가로 ~6MB 증량)
+- 매핑 교체: download/SERTZ-vc130-mapping.txt → SERTZ-vc131-mapping.txt(29,998,108B) git mv+재생성
+- 커밋 7b72e79 → 원격 accounts backup(ac16c33) 리베이스 → b2e83a9 푸시
+- Release 403446266 자산 교체: DELETE(204×3: vc130 aab/apk/mapping)→UPLOAD(201×3: aab 140,253,756B·apk 138,301,349B·SERTZ-vc131-mapping.txt) — 태그 v1.0.5-beta 유지로 다운로드 URL 불변
+- 라이브 실측: /api/version code:131 노트 확인 · Release APK 다운로드 200(content-length 138,301,349 일치) · 보스 자산 라이브 5종 200(boss_nidhog_idle0/boss_gram_sp1_0/boss_nagr_sp3_5/boss_skoll_atk2/boss2_sp1_0 — 최초 테스트한 boss8_*는 존재하지 않는 파일명이라 404가 정상)
+- 로컬 웹 서버 재기동(build_apk.sh가 OOM 방지로 node server.js 종료) — GET / 200·code 131
+
+Stage Summary:
+- vc131 = 보스 전면 리메이크 v5.0 빌드(웹 자동 반영 + APK/AAB 릴리스) — https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
+- 유저 테스트 포인트: ①APK 재설치(덮어설치) 후 보스전 진입 — 11종 신규 스프라이트·특수기술(sp1~3) 애니 12FPS 확인 ②사망 애니(die) 확인 ③스콜&하티 '교만의 얼음 봉황' 인트로 표기 ④기존 세이브 무중단 호환
+- Play 업로드 잔무: vc131 AAB(140,253,756B) 그대로 업로드 — versionCode 131 단조 충족
+- 참고: 보스 텍스처 키 = boss(guardian)·boss_nidhog·boss_jorm·boss_fenrir·boss2(behemoth)·boss_surt·boss_skoll·boss_gram·boss_nagr·boss3(abysslord)·boss_abudditos·boss_vord
