@@ -65,9 +65,9 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.0.5-beta";
-  const LATEST_CODE = 129;
+  const LATEST_CODE = 130;
   const VERSION_NOTE =
-  "v1.0.5-beta (vc129) — AdMob 수익화 전환: 실광고(본인 보상형 단위·앱 ID 전환)+app-ads.txt 게시 — 전체화면(몰입 모드)·R8 최적화 유지";
+  "v1.0.5-beta (vc130) — 카메라 x축 중앙 정렬 수정: Phaser follow 줌 누락 보정(실내 등 줌>1에서 캐릭터 중앙 이탈·맵 가장자리 공백/도달불가 해소)+Vercel Speed Insights(APK 제외)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

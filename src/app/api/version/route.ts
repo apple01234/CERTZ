@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 129;
+const LATEST_CODE = 130;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc129) — AdMob 수익화 전환: 실광고(본인 보상형 단위·앱 ID 전환)+app-ads.txt 게시 — 전체화면(몰입 모드)·R8 최적화 유지";
+  "v1.0.5-beta (vc130) — 카메라 x축 중앙 정렬 수정: Phaser follow 줌 누락 보정(실내 등 줌>1에서 캐릭터 중앙 이탈·맵 가장자리 공백/도달불가 해소)+Vercel Speed Insights(APK 제외)";
 const APK_MIRROR =
   "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
 
