@@ -953,6 +953,10 @@ export class WorldScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
     this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
+    /* v4.10.0 (유저 지시 "맵이 지금 위치에서 x축이 화면 정 가운데에 있어야지") —
+     *  Phaser follow/clamp 줌 보정 — PC 웹(줌>1)에서 맵이 화면 x축에서 어긋나던 근본 수정.
+     *  상세 원인·보정 내용은 setupCameraClampFix 주석 참조. */
+    this.setupCameraClampFix();
     if (!this.isInterior) this.cameras.main.setBackgroundColor(theme.bg);
 
     /* ---------- v3.0 (사용자 지시 #7) — 개미굴식 구역 레이아웃 (필드 전용) ----------
@@ -1324,6 +1328,9 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.18 — 카메라 추적 lerp 0.12→0.18: 캐릭터가 카메라를 "끌고 가는" 둔감한
      *  여운(걸리는 느낌의 시각적 원인) 축소. 0.2 이상은 화면 흔들림 유발 — 0.18 채택 */
     this.cameras.main.startFollow(this.player, true, 0.18, 0.18);
+    /* v4.10.0 — startFollow는 followOffset을 0으로 리셋하므로(엔진 startFollow 858행)
+     *  줌 보정값을 다시 적용해야 진짜 중앙 추적이 된다 */
+    this.applyFollowZoomOffset();
     this.physics.add.collider(this.player, this.solidGroup);
     /* v2.6 — 육식 식물 접촉 데미지 등록 (플레이어 생성 후) */
     for (const plant of this.plantHazards)
@@ -1713,6 +1720,43 @@ export class WorldScene extends Phaser.Scene {
   private zoomLastW = 0;
   private zoomTimer: Phaser.Time.TimerEvent | null = null;
 
+  /* ================= v4.10.0 (유저 지시 "맵이 지금 위치에서 x축이 화면 정 가운데에 있어야지") =================
+   *  Phaser 4.2.1 카메라 follow 줌 누락 + clamp 특이 공식 보정.
+   *
+   *  [원인 실측 — 라이브 3뷰포트, desired/clamp 공식과 전부 일치해 확정]
+   *  엔진 preRender의 follow는 desired scroll을 `follow.x - width * 0.5`로 계산한다
+   *  (originX = width × origin — displayWidth(/zoom)이 아님 → 줌 미반영).
+   *  clampX는 `bx = bounds.x + (displayWidth - width)/2` 특이 공식으로 정확히 같은 폭만큼
+   *  좌측 초과 스크롤을 허용하고 우측은 `bounds.right - displayWidth + (width-dw)/2`까지라
+   *  맵 우측 끝이 화면에 도달하지 않는다.
+   *  → 줌 1(앱)에선 모든 식이 우연히 정확해 무증상, PC 웹(줌 1.5~2.5)에서 처음 발현:
+   *    캐릭터가 항상 화면 x ~87%에 고정 + 맵 좌측 가장자리 공백 + 맵 우측 도달 불가.
+   *
+   *  [보정]
+   *   ① followOffset = -width×(z-1)/(2z) → desired = follow.x - displayWidth/2 (진짜 정중앙)
+   *   ② clampX/Y를 인스턴스에서 정석 범위로 교체 — 맵≥뷰: [0, world-view] (가장자리 밀착·공백 0),
+   *      맵<뷰: (world-view)/2 고정 (4K 마을·실내처럼 맵이 화면보다 작으면 맵 x축을 화면 정중앙에).
+   *  줌은 applyCameraZoom에서 변하므로 followOffset도 매 줌 적용마다 재계산.
+   *  앱(줌=1)은 보정값 0 — 기존 동작 무영향. cam.midPoint는 followOffset의 영향을 받지만
+   *  게임 코드는 midPoint를 사용하지 않아(전수 확인) 안전. */
+  private setupCameraClampFix() {
+    const cam = this.cameras.main;
+    const clampAxis = (v: number, view: number, world: number) =>
+      world > view ? Phaser.Math.Clamp(v, 0, world - view) : (world - view) / 2;
+    cam.clampX = (x: number) => clampAxis(x, cam.width / (cam.zoom || 1), this.stageW);
+    cam.clampY = (y: number) => clampAxis(y, cam.height / (cam.zoom || 1), this.stageH);
+    this.applyFollowZoomOffset();
+  }
+
+  private applyFollowZoomOffset() {
+    const cam = this.cameras.main;
+    const z = cam.zoom || 1;
+    cam.followOffset.set(
+      -(cam.width * (z - 1)) / (2 * z),
+      -(cam.height * (z - 1)) / (2 * z),
+    );
+  }
+
   private applyCameraZoom() {
     const w = this.scale.gameSize.width;
     const h = this.scale.gameSize.height;
@@ -1721,10 +1765,14 @@ export class WorldScene extends Phaser.Scene {
     const dh = Math.abs(h - this.zoomLastH);
     this.zoomLastH = h;
     this.zoomLastW = w;
+    /* v4.10.0 — 노이즈 게이트(96px 미만 무시)와 무관하게 follow 보정은 매 리사이즈 반영:
+     *  보정값은 width/height에 비례하므로 줌이 그대로여도 창 폭 변화를 따라가야 한다 */
+    this.applyFollowZoomOffset();
     if (!first && dh < 96 && !rotated) return; // 주소창 토글 수준 노이즈 무시
     const apply = () => {
       // v2.3 — 실내(정사각 방 832×832)는 확대 줌으로 아늑한 한 방 연출 (지시 #6)
       this.cameras.main.setZoom(this.isInterior ? Math.min(3, viewZoom() * 1.45) : viewZoom());
+      this.applyFollowZoomOffset(); // v4.10.0 — 줌이 바뀔 때마다 follow 보정 재계산
       this.redrawMinimap();
     };
     if (first) {
@@ -6568,9 +6616,11 @@ export class WorldScene extends Phaser.Scene {
          *  순간 스냅되던 근본 수정 (보스 인트로 종료 후 뚝 끊기는 느낌 해소) */
         cam.pan(this.player.x, this.player.y, 620, "Sine.easeInOut", true, () => {
           if (this.player) cam.startFollow(this.player, true, 0.18, 0.18);
+          this.applyFollowZoomOffset(); // v4.10.0 — startFollow의 followOffset 리셋 재보정
         });
       } else if (this.player) {
         cam.startFollow(this.player, true, 0.18, 0.18);
+        this.applyFollowZoomOffset(); // v4.10.0 — 동일 재보정
       }
     } catch (err) {
       console.warn("[SERTZ] 보스 인트로 카메라 복귀 실패 — 무시", err);
