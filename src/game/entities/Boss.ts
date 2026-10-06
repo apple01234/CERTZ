@@ -3,6 +3,7 @@ import type { WorldScene } from "../scenes/WorldScene";
 import type { BossDef, BossAttackKind, BossDiffKey } from "../data";
 import { elemAdvantage, elementReaction, ELEM_REACTION_META, ELEMENT_META, type ElemKey, CHAPTER_ELEM } from "../data";
 import { parseStage } from "../stages";
+import { registerBossAnims, loadBossFrames } from "../textures";
 import { EventBus } from "../../components/game/EventBus";
 
 /**
@@ -115,6 +116,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     // 돌진/넉백으로 아레나 밖으로 나가지 않도록 경계 충돌
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     this.play(`${def.tex}-idle`);
+    /* v5.0 보스 전면 리메이크 — 12FPS 풀애니(idle/walk/atk/die/sp1~3):
+     *  캐시된 프레임 즉시 애니 등록 + 나머지 프레임 지연 로드 후 애니 승격(무결성 폴백) */
+    registerBossAnims(scene, def.tex);
+    void loadBossFrames(scene, def.tex);
 
     /* v1.0.12 — 하티 스폰: 스콜(금양 — orbTint 0xffd97a) 옆에 달빛 실버 늑대가 나란히 달린다.
      *  히트박스/판정은 보스 본체 그대로(밸런스 불변) — 순수 비주얼 쌍두 표현. */
@@ -185,6 +190,50 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.squashY = y;
   }
 
+  /* ═══ v5.0 보스 전면 리메이크 — 모드별 풀애니 (12FPS 시트) ═══
+   *  idle=대기/호흡 · walk=이동/돌진 · atk=근접 강타 · sp1=지면기 · sp2=탄막/소환 · sp3=브레스/빔 · die=사망
+   *  프레임 미로드/미보유 애니는 자동 폴백(기존 idle 동작 유지) */
+  private animFor(): string {
+    const t = this.def.tex;
+    switch (this.mode) {
+      case "dead":
+        return `${t}-die`;
+      case "slamTele":
+      case "counterTele":
+        return `${t}-atk`;
+      case "chargeTele":
+      case "charging":
+      case "blinkTele":
+        return `${t}-walk`;
+      case "volley":
+      case "ringTele":
+      case "summonTele":
+        return `${t}-sp2`;
+      case "zonesTele":
+      case "quakeCast":
+        return `${t}-sp1`;
+      case "beamTele":
+      case "beaming":
+        return `${t}-sp3`;
+      case "staggered":
+        return `${t}-idle`;
+      case "idle": {
+        const v = this.body?.velocity;
+        return v && Math.abs(v.x) + Math.abs(v.y) > 24 ? `${t}-walk` : `${t}-idle`;
+      }
+    }
+    return `${t}-idle`;
+  }
+
+  /** 애니 전환 (미보유 애니 → idle 폴백). 현재 애니와 같으면 무시 — 루프 유지 */
+  private setBossAnim(key: string) {
+    const a = this.scene.anims;
+    const want = a.exists(key) ? key : `${this.def.tex}-idle`;
+    if (!a.exists(want) || this.anims.currentAnim?.key === want) return;
+    this.play(want);
+    this.twin?.play(want); // 하티 동기화
+  }
+
   /** v1.0.12 — 하티 동기화: 프레임마다 보스 뒤 오프셋에 붙어 같이 달린다 (tick 흐름과 무관)
    *  v1.4.9 — + 생동감 애니메이션: 호흡(±2.2% 부피 보존 펄스) + 예동 감쇠 적용 */
   preUpdate(time: number, delta: number) {
@@ -213,9 +262,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     // v2.0 프롤로그 보호 — 인트로/입장 유예 중 보스 행동 정지 (투사체는 유지)
     if (this.scene.isPrologueSafe) {
       this.setVelocity(0, 0);
-      if (this.anims.currentAnim?.key !== `${this.def.tex}-idle`) this.play(`${this.def.tex}-idle`);
+      this.setBossAnim(`${this.def.tex}-idle`);
       return;
     }
+    // v5.0 — 모드/이동 기반 애니 갱신 (매 틱 평가, 전환 시에만 play)
+    this.setBossAnim(this.animFor());
 
     const toPlayer = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
     const dist = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
@@ -1038,6 +1089,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.hp = 0;
       this.alive = false;
       this.mode = "dead";
+      this.setBossAnim(`${this.def.tex}-die`); // v5.0 — 사망 애니 (미보유 시 idle 폴백)
       this.volleyTimer?.remove();
       this.spiralTimer?.remove();
       this.beamTimer?.remove();

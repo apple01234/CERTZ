@@ -232,3 +232,69 @@ export function buildAllAnims(scene: Phaser.Scene) {
     a.create({ key: "vfx3-water", frames: [0, 1, 2, 3].map((i) => ({ key: `cainos_water${i}` })), frameRate: 7, repeat: -1 });
   }
 }
+
+/* ═════════ v5.0 — 보스 전면 리메이크: 12FPS 풀애니 (idle/walk/atk/die/sp1~3) ═════════
+ *  설계도 스펙(12FPS · 각 애니 6프레임 · 특수기술 3종)에 맞춘 보스 전용 애니 등록.
+ *  - 부팅 시 idle0/1만 로드된 상태에선 기존 2프레임 애니가 폴백으로 동작
+ *  - loadBossFrames()가 나머지 프레임을 지연 로드하면 이 함수가 애니를 재등록(교체)한다
+ *  - 프레임이 존재하는 애니만 등록 — fenrir처럼 sp가 없는 구판 아트도 안전 */
+export function registerBossAnims(scene: Phaser.Scene, tex: string) {
+  if (!tex) return;
+  const a = scene.anims;
+  const countSeq = (prefix: string) => {
+    let n = 0;
+    while (scene.textures.exists(`${prefix}${n}`)) n++;
+    return n;
+  };
+  const mk = (name: string, filePrefix: string, rate: number, repeat: number, min = 2) => {
+    const n = countSeq(filePrefix);
+    if (n < min) return;
+    const key = `${tex}-${name}`;
+    if (a.exists(key)) a.remove(key); // 지연 로드 완료 후 2프레임 → 6프레임 교체
+    a.create({
+      key,
+      frames: Array.from({ length: n }, (_, i) => ({ key: `${filePrefix}${i}` })),
+      frameRate: rate,
+      repeat,
+    });
+  };
+  mk("idle", `${tex}_idle`, 12, -1);
+  mk("walk", `${tex}_walk`, 12, -1);
+  mk("atk", `${tex}_atk`, 14, 0, 3);
+  mk("die", `${tex}_die`, 10, 0, 3);
+  for (const s of ["sp1", "sp2", "sp3"]) {
+    const n = countSeq(`${tex}_${s}_`);
+    if (n < 2) continue;
+    const key = `${tex}-${s}`;
+    if (a.exists(key)) a.remove(key);
+    a.create({
+      key,
+      frames: Array.from({ length: n }, (_, i) => ({ key: `${tex}_${s}_${i}` })),
+      frameRate: 12,
+      repeat: 0,
+    });
+  }
+}
+
+/** v5.0 — 보스 프레임 지연 로드 (idle2+ · walk · atk · die · sp1~3 = 최대 36장).
+ *  Boss 생성자에서 발화(fire-and-forget) — 보스 인트로 연출(수 초) 동안 로드가 끝난다.
+ *  완료 후 registerBossAnims로 12FPS 풀애니 승격. 실패해도 기존 idle 폴백 유지. */
+export async function loadBossFrames(scene: Phaser.Scene, tex: string): Promise<void> {
+  if (!tex) return;
+  const files: string[] = [];
+  for (const s of ["idle", "walk", "atk", "die"]) for (let i = 0; i < 6; i++) files.push(`${tex}_${s}${i}`);
+  for (const s of ["sp1", "sp2", "sp3"]) for (let i = 0; i < 6; i++) files.push(`${tex}_${s}_${i}`);
+  let pending = files.filter((f) => !scene.textures.exists(f));
+  if (pending.length === 0) {
+    registerBossAnims(scene, tex);
+    return;
+  }
+  for (let round = 0; round < 3 && pending.length > 0; round++) {
+    await Promise.all(pending.map((f) => loadImageRaw(scene, f, `assets/${f}.webp`, round > 0)));
+    pending = files.filter((f) => !scene.textures.exists(f));
+  }
+  if (pending.length > 0) {
+    console.warn(`[SERTZ] 보스 프레임 재시도 후에도 누락 — ${tex}: ${pending.length}장`);
+  }
+  registerBossAnims(scene, tex);
+}
