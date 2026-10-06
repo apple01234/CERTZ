@@ -14,11 +14,11 @@
         <!-- v4.1.1 — AdMob 앱 ID 누락이 앱 부팅 FATAL 크래시의 원인
              (Google Mobile Ads SDK는 ContentProvider 자동초기화 때 매니페스트 검증 —
               미등록 시 IllegalStateException로 앱이 즉시 사망 → "앱 안열림")
-             현재는 구글 공식 테스트 앱 ID로 안전 부팅. 실제 수익화 시 본인 앱 ID로 교체:
-             AdMob 콘솔 → 앱 추가 → 앱 ID(ca-app-pub-XXXXX~XXXXX) -->
+             v1.0.5-beta (vc129) — 수익화 전환: 본인 AdMob 앱 ID로 교체 (테스트 앱 ID 3940256099942544에서 전환).
+             광고 단위 실ID는 src/game/ads.ts ADMOB_REWARDED_ID에서 관리 -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-5675573589406258~2954033564" />
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"

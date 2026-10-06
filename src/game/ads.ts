@@ -7,9 +7,11 @@ import { Capacitor } from "@capacitor/core";
  *
  * [보상형 광고 — AdMob]
  *  - 폰 버전(APK/AAB)에서만 동작 (Capacitor 네이티브 감지)
- *  - 기본값은 구글 공식 테스트 단위 ID — 실제 광고가 내려오고 보상도 지급된다.
- *  - 수익화 전환: 아래 ADMOB_REWARDED_ID를 본인 AdMob 보상형 단위 ID로 바꾸고
- *    AndroidManifest의 APPLICATION_ID(테스트 앱 ID)도 본인 앱 ID로 교체 후 재빌드.
+ *  - v1.0.5-beta (vc129) — 수익화 전환 완료: 본인 AdMob 실제 광고 단위로 교체
+ *    (앱 ID는 AndroidManifest APPLICATION_ID, 본인 앱 ca-app-pub-5675573589406258~2954033564).
+ *  - ⚠️ 실광고 유의: 개발자 본인 광고 클릭 금지(무효 트래픽 — AdMob 계정 정지 사유).
+ *    광고 시청(보상 받기)은 무방. 신규 앱은 구글 평가 기간에 광고 게시 제한으로
+ *    며칠간 광고 미게재될 수 있음(콘솔 상단 알림 확인).
  *
  * [에메랄드 충전 — Google Play 결제 (v1.0.1-beta 실연동)]
  *  - @capgo/native-purchases 플러그인 (구글 플레이 Billing 래퍼)
@@ -24,8 +26,9 @@ import { Capacitor } from "@capacitor/core";
  * 웹(브라우저)에서는 네이티브 SDK가 없어 두 기능 모두 안내만 제공한다.
  */
 
-/** 내 AdMob 보상형 광고 단위 ID — 여기만 바꾸면 실제 수익 연동 완료 */
-export const ADMOB_REWARDED_ID = "ca-app-pub-3940256099942544/5224354917"; // 구글 공식 테스트 ID
+/** 본인 AdMob 보상형 광고 단위 ID (vc129 수익화 전환 — 실광고)
+ *  콘솔에서 이 단위 삭제·재생성 시 여기만 교체하면 됨 */
+export const ADMOB_REWARDED_ID = "ca-app-pub-5675573589406258/9466279051";
 
 /** 에메랄드 충전 상품 (Play Console 인앱 상품 ID → 에메랄드 수량)
  *  priceLabel은 스토어 가격 조회 실패 시 폴백 — 실가격은 getProducts로 실측 표시 */
