@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next"; // v4.10.0 — Vercel Speed Insights (웹 성능 실측)
 import "./fonts.css";
 import "./globals.css";
 
@@ -34,6 +35,8 @@ export default function RootLayout({
         <link rel="preload" href="/fonts/Galmuri9.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/Galmuri14.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         {children}
+        {/* v4.10.0 — Vercel Speed Insights (웹 바이탈 실측). APK 정적 export 빌드에선 비활성(빌드 시 상수 평가) */}
+        {process.env.APK_EXPORT !== "1" && <SpeedInsights />}
       </body>
     </html>
   );
