@@ -3470,3 +3470,24 @@ Stage Summary:
 - vc128 AAB(Play 업로드용)·APK(실기기 테스트용) 릴리스 완료 — https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
 - 유저 테스트 포인트: ①게임 시작 시 내비게이션 바·상태바 소멸(전체화면) ②화면 가장자리 스와이프하면 임시 표시 후 자동 숨김 ③구글 로그인 창·채팅 입력(키보드) 정상 동작 ④R8 적용 상태에서 부팅·결제·광고 무결
 - Play 업로드: vc128 AAB 그대로 업로드 — versionCode 128 단조 충족(127 미업로드 상태여도 무관), DEX 인사이트 점수는 이 빌드 처리 후 갱신 예상
+
+---
+Task ID: feat-vc129-admob-monetization
+Agent: Super Z (main)
+Task: 유저 요청 — "광고가 테스트 광고밖에 안뜸" → AdMob 수익화 전환(테스트 ID→본인 실ID) vc129 빌드·릴리스
+
+Work Log:
+- 원인 실측: AndroidManifest APPLICATION_ID=구글 공식 테스트 앱 ID(3940256099942544~3347511713) + ads.ts ADMOB_REWARDED_ID=구글 공식 테스트 보상형 단위(/5224354917) — v4.1.1 부팅 크래시 방지용 임시 구성이 계속 유지 중이었음. initializeForTesting:false는 이미 정상이라 이 구성에선 무조건 테스트 광고만 게재
+- 유저가 AdMob 콘솔에서 실ID 2종 입수·전달: 앱 ID ca-app-pub-5675573589406258~2954033564 / 보상형 단위 ca-app-pub-5675573589406258/9466279051 (게시자 pub-5675573589406258 확인)
+- 전환 3종: ①AndroidManifest APPLICATION_ID→본인 앱 ID(주석 갱신) ②ads.ts ADMOB_REWARDED_ID→본인 단위(실광고 유의 주석: 본인 클릭 금지·신규 앱 게시 제한) ③public/app-ads.txt 신규(google.com, pub-5675573589406258, DIRECT, f08c47fec0942fa0)
+- 게이트 129 승격(build.gradle versionCode·server.js·route.ts·헤더 주석) · 커밋 3eec820 푸시
+- 환경 재소실 3회차(세션 중간 리셋): 토큰·JDK·SDK 전부 재구축 — build_apk.sh 1차 실행이 gradle 직전 실패했으나 trap 복원 확인(git clean)·웹빌드+cap sync는 완료된 상태(assets에 신규 단위 ID 반영 확인) → gradlew assemble/bundle 직접 재개로 시간 절약
+- 빌드: APK 132,456,074B(6m27s)·AAB 134,370,675B(3m57s)
+- 실측 검증: versionCode=129 · 매니페스트 APPLICATION_ID=ca-app-pub-5675573589406258~2954033564(aapt2 xmltree) · APK 자산 JS에 9466279051 반영 · 서명 cc774f34 동일
+- Release 403446266 자산 교체: DELETE(204×3)→UPLOAD(201×3: aab·apk·SERTZ-vc129-mapping.txt) · 매핑 git 교체 커밋 badf85a 푸시
+- 라이브 확인: /api/version code:129 · https://sertz.vercel.app/app-ads.txt 정상 응답(실측)
+
+Stage Summary:
+- vc129 = 최초 수익화 빌드(실광고) + vc128 전체화면·vc127 R8 스택 유지 — https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
+- 유저 테스트: APK 설치 → 광고 시청 플로우가 실광고로 전환되는지 확인(신규 단위는 첫 게재까지 수 시간 소요 정상 · AdMob 콘솔 상단 "광고 게시 제한" 알림 여부 확인 · 본인 광고 클릭 금지)
+- AdMob 콘솔 잔무: 앱↔Play 스토어 목록 연결(앱 설정) · app-ads.txt 도메인은 Play Console 개발자 웹사이트 등록값과 일치 필요(sertz.vercel.app)
