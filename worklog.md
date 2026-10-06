@@ -3491,3 +3491,19 @@ Stage Summary:
 - vc129 = 최초 수익화 빌드(실광고) + vc128 전체화면·vc127 R8 스택 유지 — https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
 - 유저 테스트: APK 설치 → 광고 시청 플로우가 실광고로 전환되는지 확인(신규 단위는 첫 게재까지 수 시간 소요 정상 · AdMob 콘솔 상단 "광고 게시 제한" 알림 여부 확인 · 본인 광고 클릭 금지)
 - AdMob 콘솔 잔무: 앱↔Play 스토어 목록 연결(앱 설정) · app-ads.txt 도메인은 Play Console 개발자 웹사이트 등록값과 일치 필요(sertz.vercel.app)
+
+---
+Task ID: feat-web-pc-play-restore
+Agent: Super Z (main)
+Task: 유저 요청 — "PC에서도 즐기게 웹에서도 가능하게 해" → 웹 플레이 정책 복귀(데스크톱)
+
+Work Log:
+- 원인 실측: src/middleware.ts(2026-10-04 서버비용 절감 정책)가 외부 호스트의 "/" 접근을 UA 무관 전부 /apk-guide.html로 307 리다이렉트 — PC·모바일 라이브 실측 둘 다 307 확인. page.tsx는 GameRoot 직결이라 클라이언트 게이트 없음 → 미들웨어만 수정하면 즉시 복귀
+- 정책 재설계(대역폭 절감과 유저 지시 절충): MOBILE_UA(Android/iPhone/iPod/Windows Phone/Mobi 등) 매치 → 모바일 브라우저는 기존대로 앱 안내 리다이렉트(앱이 최적 경험+셀룰러 133MB 낭비 방지), 데스크톱 UA는 게임 서빙. iPad는 Macintosh UA라 데스크톱 취급(웹 허용). localhost/EXE·*.space-z.ai 예외 유지
+- APK 무영향 확인: 네이티브 웹뷰는 localhost 오리진 + export 빌드 때 middleware 자체 격리(build_apk.sh) — versionCode 129 불변, 앱 재빌드 불필요
+- 커밋 32620d9 푸시 → Vercel 배포 → 라이브 실측: PC UA(Windows/Mac) 200 게임 서빙 · 모바일 UA(Android/iPhone) 307 앱 안내 유지 · /api/version code:129 정상
+
+Stage Summary:
+- PC 웹 플레이 복귀(sertz.vercel.app 바로 플레이) — 모바일 웹은 여전히 앱 안내로 유지(완전 개방 원하면 middleware 삭제 재배포)
+- 유저 잔무 알림: 웹(PC) 구글 로그인용 Firebase Console → Authentication → 설정 → 승인된 도메인에 sertz.vercel.app 추가 필요(미추가 시 웹 구글 로그인 팝업 실패)
+- 대역폭 유의: PC 웹 유저가 늘면 Vercel 대역폭 소비 재개(첫 로드 에셋 ~133MB 캐시) — 사용량 모니터 권장
