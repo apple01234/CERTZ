@@ -9465,20 +9465,10 @@ export class WorldScene extends Phaser.Scene {
         const offChatRelay = net.netOnChat((m) => EventBus.emit("chat:msg", m));
         this.netOffs = [offChatRelay];
         this.events.once("shutdown", () => this.shutdownNet());
-        // 소켓 경로와 동일 시점에 신원 주입 — relaySetIdentity로 이름/Lv/직업 세팅(이름없음 방지)
-        this.time.delayedCall(650, () => {
-          if (!this.player) return;
-          net.netJoin({
-            name: getPlayerName(),
-            lv: this.player.lv,
-            cls: this.player.cls,
-            x: Math.round(this.player.x),
-            y: Math.round(this.player.y),
-            stage: this.stageDef.key,
-            code: getFcode(), // v2.1 친구 고유번호
-            gm: this.adminRole === "admin", // v1.0.16 — GM 이름표/오라 원격 표시
-          });
-        });
+        /* v1.0.5-beta (vc134) — 라이브 실측 버그 수정: 플레이어 스폰이 늦으면(느린 로딩/저사양)
+         *  650ms 시점 player가 null이라 netJoin이 영원히 스킵됐다 → "웹에서 서로 안보임"의 진짜 원인.
+         *  → 플레이어가 생길 때까지 400ms 간 재시도(최대 60회) + shutdown 시 중단. */
+        this.netJoinRetry();
         return;
       }
       const offPlayers = net.netOnPlayers((list) => this.syncRemotes(list));
@@ -9488,28 +9478,41 @@ export class WorldScene extends Phaser.Scene {
       this.netOffs = [offPlayers, offChat, offFriends, offAct];
       this.events.once("shutdown", () => this.shutdownNet());
       // 소켓 연결 안정화 후 입장 방송 (v2.0 — netJoin이 connect 전이면 대기열 후 자동 발송)
-      this.time.delayedCall(650, () => {
-        if (!this.player) return;
-        net.netJoin({
-          name: getPlayerName(),
-          lv: this.player.lv,
-          cls: this.player.cls,
-          x: Math.round(this.player.x),
-          y: Math.round(this.player.y),
-          stage: this.stageDef.key,
-          code: getFcode(), // v2.1 친구 고유번호
-          gm: this.adminRole === "admin", // v1.0.16 — GM 이름표/오라 원격 표시
-        });
-      });
+      /* v1.0.5-beta (vc134) — 650ms 1회성 발송 → 플레이어 스폰 대기 재시도로 교체(위 netJoinRetry 주석 참조) */
+      this.netJoinRetry();
     } catch {
       /* 오프라인/APK 단독 실행 — 멀티 없이 진행 */
     }
   }
 
   private shutdownNet() {
+    this.netJoinDead = true; // vc134 — 재시도 루프 중단
     for (const off of this.netOffs) off();
     this.netOffs = [];
     this.clearRemotes();
+  }
+
+  private netJoinDead = false;
+
+  /** v1.0.5-beta (vc134) — 멀티 입장 방송 스폰 대기 재시도:
+   *  플레이어 생성이 지연되면 1회성 delayedCall에서 netJoin이 조용히 유실됐다(라이브 실측).
+   *  플레이어가 생길 때까지 400ms 간 재시도한다(최대 60회 = 24초). */
+  private netJoinRetry(tries = 0) {
+    if (this.netJoinDead) return;
+    if (!this.player) {
+      if (tries < 60) this.time.delayedCall(400, () => this.netJoinRetry(tries + 1));
+      return;
+    }
+    net.netJoin({
+      name: getPlayerName(),
+      lv: this.player.lv,
+      cls: this.player.cls,
+      x: Math.round(this.player.x),
+      y: Math.round(this.player.y),
+      stage: this.stageDef.key,
+      code: getFcode(), // v2.1 친구 고유번호
+      gm: this.adminRole === "admin", // v1.0.16 — GM 이름표/오라 원격 표시
+    });
   }
 
   /* ================= v4.1.0 — 파티원 공격/스킬 표시 (유저 지시 #4) =================

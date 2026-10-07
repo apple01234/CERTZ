@@ -137,6 +137,22 @@ class MqttBusImpl implements MqttBus {
 
   constructor() {
     this.open(0);
+    /* vc134 진단 훅 — E2E/운영 진단용 버스 내부 상태 (기능 영향 없음) */
+    try {
+      (window as unknown as { __SERTZ_MQTT__?: unknown }).__SERTZ_MQTT__ = {
+        get connected() { return bus?.connected ?? false; },
+        get broker() { return BROKERS[(bus as MqttBusImpl | null)?.brokerIdx ?? 0]; },
+        get pid() { return (bus as MqttBusImpl | null)?.id ?? null; },
+        get stage() { return (bus as MqttBusImpl | null)?.stage ?? ""; },
+        get subStage() { return (bus as MqttBusImpl | null)?.subscribedStage ?? ""; },
+        get presenceSub() { return (bus as MqttBusImpl | null)?.presenceSubbed ?? false; },
+        get peers() { return Object.fromEntries([...((bus as MqttBusImpl | null)?.peers ?? new Map())].map(([k, v]) => [k, { name: v.name, stage: v.stage }])); },
+        get friends() { return Object.fromEntries([...((bus as MqttBusImpl | null)?.friends ?? new Map())].map(([k, v]) => [k, { name: v.name, stage: v.stage }])); },
+        get sentSt() { return (bus as MqttBusImpl | null)?.sentSt ?? 0; },
+        get recvSt() { return (bus as MqttBusImpl | null)?.recvSt ?? 0; },
+        get sentHi() { return (bus as MqttBusImpl | null)?.sentHi ?? 0; },
+      };
+    } catch { /* 무시 */ }
     /* 목표좌표 방식 원격 렌더 — 일정 주기로 스냅샷 전달 (서버 2초 하트비트 대체 + 실시간 state) */
     this.timers.push(setInterval(() => this.emitPlayers(), PLAYERS_EMIT_MS));
     /* 프레즌스 하트비트 */
@@ -202,13 +218,24 @@ class MqttBusImpl implements MqttBus {
   private syncStageSub() {
     if (!this.client || !this.connected) return;
     const want = ROOT + "stage/" + this.stage;
-    if (this.subscribedStage === want) return;
-    if (this.subscribedStage) {
-      try { this.client.unsubscribe(this.subscribedStage); } catch { /* 무시 */ }
+    if (this.subscribedStage !== want) {
+      if (this.subscribedStage) {
+        try { this.client.unsubscribe(this.subscribedStage); } catch { /* 무시 */ }
+      }
+      this.subscribedStage = want;
+      try { this.client.subscribe(want, { qos: 0 }); } catch { /* 무시 */ }
     }
-    this.subscribedStage = want;
-    try { this.client.subscribe(want, { qos: 0 }); } catch { /* 무시 */ }
+    /* vc134 — presence 토픽도 구독(친구 온라인 목록·LWT 즉시 퇴장 수신).
+     *  기존엔 stage 토픽만 구독해 friends 이벤트가 영원히 안 왔다. */
+    if (!this.presenceSubbed) {
+      try {
+        this.client.subscribe(ROOT + "presence", { qos: 0 });
+        this.presenceSubbed = true;
+      } catch { /* 무시 */ }
+    }
   }
+
+  private presenceSubbed = false;
 
   private publish(obj: Record<string, unknown>, topic: string) {
     if (!this.client || !this.connected) return;
@@ -262,6 +289,7 @@ class MqttBusImpl implements MqttBus {
         t: Date.now(),
       };
       this.peers.set(pid, rec);
+      if (k === "st") this.recvSt++;
       /* hi는 프레즌스에도 반영 — 상태 하트비트 전에 이름표가 뜨도록 */
       const f = this.friends.get(pid);
       if (f) { f.name = rec.name; f.lv = rec.lv; f.cls = rec.cls; f.stage = rec.stage; f.t = Date.now(); }
@@ -304,6 +332,7 @@ class MqttBusImpl implements MqttBus {
         this.syncStageSub();
         this.publishPresence();
         /* 입장 즉시 자리 알림 — 다음 state(≤120ms) 전에 이름표 좌표 확보 */
+        this.sentHi++;
         this.publish(
           {
             k: "hi", pid: this.id, ...this.mePublic(),
@@ -347,6 +376,10 @@ class MqttBusImpl implements MqttBus {
   }
 
   private lastActKind = "";
+  /* vc134 진단 카운터 */
+  sentSt = 0;
+  recvSt = 0;
+  sentHi = 0;
 
   private mePublic(): Record<string, unknown> {
     return { name: this.me.name, lv: this.me.lv, cls: this.me.cls, code: this.me.code, stage: this.stage };
@@ -357,6 +390,7 @@ class MqttBusImpl implements MqttBus {
     if (!force && now - this.lastSentAt < 100) return; // 최대 10Hz
     if (!this.lastState) return;
     this.lastSentAt = now;
+    this.sentSt++;
     this.publish(
       { k: "st", pid: this.id, ...this.mePublic(), ...this.lastState, t: now },
       ROOT + "stage/" + this.stage,
