@@ -548,7 +548,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   jorm: {
     key: "jorm", name: "세계수를 먹는 뱀 요르문간드",
     hp: 21500, atk: 55, speed: 104, exp: 1900, gold: 980,
-    tex: "boss_nidhog", orbTint: 0x9affd0, introDialogue: "bossIntroAbudditos",
+    /* v5.0.1 — 유저 제공 시트(박쥐날개 황금뿔 드래곤)로 boss_jorm 독립 (nidhog 공유 해제) */
+    tex: "boss_jorm", orbTint: 0x9affd0, introDialogue: "bossIntroAbudditos",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 beam · 성향 0.9 */
     sig: "beam",
     aggr: 0.9,
