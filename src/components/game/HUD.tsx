@@ -7,7 +7,7 @@ import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
 import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, UsersRound, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle } from "lucide-react";
 import { EventBus } from "./EventBus";
 import * as audio from "@/game/audio"; // v1.4.8 — 더보기 소셜 버튼 클릭음
 
@@ -366,8 +366,17 @@ export function HUD({
               <Repeat size={17} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
             </button>
-            {/* v1.4.24 — 멀티 아이콘 제거: 파티 아이콘과 기능 중복 + 멀티서버(serverless) 미지원으로
-             *  파티/채팅이 동작하지 않아 입구 자체를 철거 (v1.4.24 #멀티정리) */}
+            {/* v1.4.29 (#멀티입구복원) — v1.4.24에 철거됐던 파티 입구 복원:
+             *  vc134(공개 릴레이 멀티 복원)로 채팅·파티·공동 토벌전이 다시 동작하므로
+             *  죽은 기능의 입구가 아니라 실제 동작하는 멀티 콘텐츠 입구 (Y키 단축키 동일) */}
+            <button
+              onClick={() => { audio.sfx.uiClick(); EventBus.emit("party:toggle"); }}
+              aria-label="파티 창 열기 (Y)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8c8ff] active:scale-95"
+            >
+              <UsersRound size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-sky-300/90">파티</span>
+            </button>
             <button
               onClick={onOpenRank}
               aria-label="랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"
@@ -376,8 +385,6 @@ export function HUD({
               <Trophy size={17} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
             </button>
-            {/* v1.4.24 — 파티 아이콘 제거: 파티는 socket.io 릴레이 의존이라 Vercel serverless에서
-             *  동작 불가(멀티서버 전면 중단). 죽은 기능의 입구를 남기지 않는다 (v1.4.24 #멀티정리) */}
             <button
               onClick={() => { audio.sfx.uiClick(); EventBus.emit("friends:toggle"); }}
               aria-label="친구 창 열기 (B)"

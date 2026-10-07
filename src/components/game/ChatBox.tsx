@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
-import { MessageCircle, SendHorizontal } from "lucide-react";
+import { History, MessageCircle, SendHorizontal, X } from "lucide-react";
 import { netChatReady } from "@/game/net";
 
 /**
@@ -30,11 +30,19 @@ const CHAT_MAX_H = (() => {
 })();
 const CHAT_MIN_VISIBLE = 3;
 const CHAT_MAX_VISIBLE = 7;
+/* v1.4.29 (#채팅기록50) — 채팅 기록 보관 상한: 유저 지시 "최근 채팅기록 50개까지는 스크롤 해서
+ *  확인 가능하게" — 41개 → 50개로 상향. 부유 목록은 여전히 최신 몇 개만 보여주고(조이스틱
+ *  겹침 회피 — pointer-events-none 유지), [기록] 버튼으로 여는 채팅 기록 뷰에서 전체 50개를
+ *  스크롤해 확인한다 (줄바꿈 전문 표시 + 새 메시지 도착 시 하단 자동 추적). */
+const CHAT_RETAIN = 50;
 
 export function ChatBox() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
+  /* v1.4.29 (#채팅기록50) — 채팅 기록 뷰(최근 50개 스크롤) 열림 상태 */
+  const [logOpen, setLogOpen] = useState(false);
+  const logListRef = useRef<HTMLDivElement>(null);
   /* v4.1.0 — 채팅창 접기 (유저 지시 #11): 메시지 목록을 숨기고 상태를 저장한다 */
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -83,13 +91,33 @@ export function ChatBox() {
     // 서버는 접속 시 히스토리(배열), 이후 새 메시지(단건)를 보낸다 — 둘 다 처리
     const onMsg = (m: Msg | Msg[]) => {
       const list = Array.isArray(m) ? m : [m];
-      setMsgs((cur) => [...cur, ...list].slice(-41));
+      setMsgs((cur) => [...cur, ...list].slice(-CHAT_RETAIN));
     };
     EventBus.on("chat:msg", onMsg);
     return () => {
       EventBus.off("chat:msg", onMsg);
     };
   }, []);
+
+  /* v1.4.29 (#채팅기록50) — 기록 뷰가 열려 있고 유저가 하단 근처를 보고 있으면
+   *  새 메시지 도착 시 맨 아래로 자동 추적 (위쪽 기록을 읽는 중이면 시선 보존) */
+  useEffect(() => {
+    if (!logOpen) return;
+    const el = logListRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    if (nearBottom) el.scrollTop = el.scrollHeight;
+  }, [msgs, logOpen]);
+
+  /* v1.4.29 — 기록 뷰를 방금 열었을 때 맨 아래(최신)부터 보여주기 */
+  useEffect(() => {
+    if (!logOpen) return;
+    const t = setTimeout(() => {
+      const el = logListRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }, 0);
+    return () => clearTimeout(t);
+  }, [logOpen]);
 
   // 포커스 상태를 씬에 알림 (게임 키 차단)
   useEffect(() => {
@@ -142,7 +170,7 @@ export function ChatBox() {
       } else {
         // v2.3 — 미연결 피드백: 보낸 말이 조용히 증발하지 않게 로컬 안내
         setMsgs((cur) =>
-          [...cur, { id: "local", name: "", text: "서버 미연결 — 멀티 서버 접속 시 채팅을 사용할 수 있어요", sys: true, t: Date.now() }].slice(-41),
+          [...cur, { id: "local", name: "", text: "서버 미연결 — 멀티 서버 접속 시 채팅을 사용할 수 있어요", sys: true, t: Date.now() }].slice(-CHAT_RETAIN),
         );
       }
     }
@@ -221,9 +249,73 @@ export function ChatBox() {
             >
               {collapsed ? "▸" : "▾"}
             </button>
+            {/* v1.4.29 (#채팅기록50) — 채팅 기록 뷰: 최근 50개를 스크롤하며 확인.
+             *  부유 목록은 조이스틱 겹침 때문에 터치 이벤트를 게임에 양보하는 대신,
+             *  전용 기록 뷰에서 전문(전체 문장) 스크롤 열람을 제공한다. */}
+            <button
+              onClick={() => setLogOpen(true)}
+              aria-label="채팅 기록 열기 (최근 50개)"
+              title="채팅 기록 — 최근 50개 스크롤"
+              className="pointer-events-auto flex h-7 items-center gap-1 rounded-md border border-white/15 bg-black/55 px-1.5 text-[10px] font-black text-white/70 backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            >
+              <History size={12} />
+              기록
+            </button>
           </>
         )}
       </div>
+
+      {/* v1.4.29 (#채팅기록50) — 채팅 기록 뷰 (최근 50개 · 스크롤 · 전문 표시).
+       *  PartyWidget과 동일한 중앙 모달 패턴(z-[45]) — 좁은 화면에서도 읽기 좋게. */}
+      {logOpen && (
+        <div
+          className="pointer-events-auto fixed inset-0 z-[45] flex items-center justify-center bg-black/60 px-3 py-3"
+          onPointerDown={(e) => { if (e.target === e.currentTarget) setLogOpen(false); }}
+        >
+          <div className="game-panel flex max-h-[calc(100dvh-24px)] w-full max-w-[380px] flex-col p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="flex items-center gap-1 text-[12px] font-black text-sky-200">
+                <History size={13} /> 채팅 기록
+                <span className="rounded bg-sky-400/25 px-1 text-[9px] text-sky-100">최근 {msgs.length}개 (최대 {CHAT_RETAIN})</span>
+              </p>
+              <button
+                onClick={() => setLogOpen(false)}
+                aria-label="채팅 기록 닫기"
+                className="flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70"
+              >
+                <X size={13} />
+              </button>
+            </div>
+            <div ref={logListRef} className="sertz-scroll min-h-0 flex-1 overflow-y-auto pr-0.5">
+              {msgs.length === 0 && (
+                <p className="py-6 text-center text-[11px] font-bold text-white/35">
+                  아직 채팅 기록이 없어요 — 채팅을 보내면 여기에 쌓입니다
+                </p>
+              )}
+              <div className="flex flex-col gap-1">
+                {msgs.map((m) => (
+                  <div
+                    key={`${m.t}-${m.id}`}
+                    className={`w-fit max-w-full rounded-md px-1.5 py-1 text-[11px] leading-relaxed ${
+                      m.sys ? "bg-sky-500/10 font-bold text-sky-300/90" : m.party ? "bg-emerald-500/10 text-emerald-100" : "bg-white/[0.06] text-white/85"
+                    }`}
+                  >
+                    {m.sys ? (
+                      m.text
+                    ) : (
+                      <>
+                        {m.party && <span className="mr-1 rounded bg-emerald-400/25 px-1 text-[9px] font-bold text-emerald-100">[파티]</span>}
+                        <span className="font-black text-amber-200">{m.name}</span>: {m.text}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="mt-1.5 text-center text-[9px] font-bold text-white/30">위로 스크롤해 이전 기록 확인 · 최대 {CHAT_RETAIN}개까지 보관</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

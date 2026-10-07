@@ -88,7 +88,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.4.23 — 이동·스킬 시 화면 반짝임 수정(GPU 자가방어·desynchronized 제거) · 계정·거래소 Vercel 직접 연동 — 실시간 멀티는 오프라인 모드</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v1.0.5-beta — 보스 전면 리메이크 · 웹 멀티플레이 서로 보기 복원 · 모바일 맵·구글 로그인 안정화 · 웹/앱 계정 이어하기</span>
           </p>
         </div>
 
