@@ -22,6 +22,19 @@ const config = {
       skipNativeAuth: false,
       providers: ["google.com"],
     },
+    /* v1.0.5-beta (vc134) — 모바일 맵이 오른쪽으로 치우침 수정:
+     *  Capacitor 8.5 내장 SystemBars 플러그인이 Android 15+ 엣지투엣지에서
+     *  WebView 부모에 systemBars+displayCutout 인셋을 "패딩"으로 강제 주입한다
+     *  (insetsHandling 기본값 "css"). 가로 모드에서 좌측 펀치홀 컷아웃 인셋(~40dp)만큼
+     *  WebView가 오른쪽으로 밀려 화면 왼쪽에 검은 띠가 생기고 맵 전체가 우측으로 치우쳤다.
+     *  → "disable"로 인셋 리스너 자체를 끈다 = WebView가 화면을 100% 채운다(진짜 풀스크린).
+     *  게임은 어두운 배경 풀스크린이라 컷아웃 밑으로 그려도 시각 문제 없음 +
+     *  HUD/터치조작은 이미 env(safe-area-inset-*) 마진으로 펀치홀을 피한다.
+     *  · safe-area CSS 변수 주입(--safe-area-inset-*)은 사라지지만 앱은 env()만 사용 — 영향 없음
+     *  · 키보드(IME) 하단 보정도 사라지지만 채팅 입력은 WebView 자체 팬으로 노출됨 — 영향 미미 */
+    SystemBars: {
+      insetsHandling: "disable",
+    },
   },
 };
 
