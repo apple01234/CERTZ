@@ -65,9 +65,9 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.0.5-beta";
-  const LATEST_CODE = 134;
+  const LATEST_CODE = 135;
   const VERSION_NOTE =
-  "v1.0.5-beta (vc134) — 모바일 맵 좌측 검은 여백(컷아웃 인셋) 수정·웹 멀티플레이 서로 보기 복원(공개 릴레이)·모바일 웹 구글 로그인 안정화";
+  "v1.0.5-beta (vc135) — 파티·멀티 입구 복원(HUD 파티 버튼·공동 토벌전·시너지·미션)·채팅 기록 50개 스크롤 뷰·APK 다운로드 안내 페이지 최신화";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

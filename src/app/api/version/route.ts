@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 134;
+const LATEST_CODE = 135;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc134) — 모바일 맵 좌측 검은 여백(컷아웃 인셋) 수정·웹 멀티플레이 서로 보기 복원(공개 릴레이)·모바일 웹 구글 로그인 안정화";
+  "v1.0.5-beta (vc135) — 파티·멀티 입구 복원(HUD 파티 버튼·공동 토벌전·시너지·미션)·채팅 기록 50개 스크롤 뷰·APK 다운로드 안내 페이지 최신화";
 const APK_MIRROR =
   "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
 
