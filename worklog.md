@@ -3673,3 +3673,32 @@ Stage Summary:
 - vc135 = 파티 입구 복원+채팅 기록 50개 스크롤+APK 가이드 최신화 빌드 — 웹 자동 반영 + APK/AAB 릴리스 완료
 - 유저 테스트 포인트: ①APK 덮어설치 → 더보기(⋯)에 [파티] 버튼 → 창설/참여·공동 토벌전·시너지·미션 ②채팅 행 [기록] → 최근 50개 스크롤 ③/apk-guide.html → v1.0.5-beta APK 139MB 다운로드(139,347,389B 일치 확인)
 - Play 업로드 잔무: vc135 AAB(141,301,605B) 업로드 — versionCode 135 단조 충족
+---
+Task ID: v1.4.30-vc136-15items
+Agent: Super Z (main)
+Task: 유저 지시 15건(게임 멈춤·스킬 밸런스·토벌전 제한·자동강화 확장·주문서 화폐·5차 이펙트·이터널 성능·모험가 시작·클래스룸·구글로그인·니플헤임 조명·보스전 포탈·랭킹 갱신·반격 UX) → vc136 빌드·릴리스
+
+Work Log:
+- [탐색] Explore 4병렬(스킬/보스·토벌전·강화·로그인·니플헤임·멀티)로 15건 전부 실제 라인 특정
+- [#1프리즈] gainExp while 루프 상한 200(대량 EXP 한 프레임 폭주 방지)·cleanup()에서 Boss.destroyPool() 호출(죽은 코드 부활 — 씬 재시작 시 타이머 유출 방지)·무스펠헤임 보스전 카메라 블룸 스킵(bloomSkip — 화염 챕터 ADD 블렌드+프레임버퍼 이중 패스 충돌 완화)
+- [#2밸런스] rollDamage에 tierScl(스킬 ×1.12·t) + 기본공격/주력기 사다리 계수 상향(회전베기 0.3→0.42 등 6종)+ 버프 지속시간 티어 스케일(5종) + ClassDef에 bossDmgPct/mobDmgPct 28직업 부여(전사·데드아이·아크로드·섀도우로드=보스형 최대 50%, 스카이로드·이터널·블레이드마스터=사냥형 최대 52%) — Enemy/Boss.takeDamage에서 playerRef 특화 배율 적용
+- [#6이펙트] spawnTierFlair에 major 파라미터 — 4차기(B) useSkill4만 tierFlair(true), s1/s2/s3는 3차 수준 경량판(t≥4 플레어·t≥5 폭발 게이트)
+- [#7이터널] skillMult 체인 1.26→1.646(세이지 1.05·크로니컬 1.12·이터널 1.4)·atkPct 18→24·중력 붕괴 2.8+0.25t·영원의 고리 2.6→4.4+0.3t+보스 applyStun(시간의 잠금 — staggered 최대 1.4초, 반격 창 보호)·영겁극 42배→63배(기둥 4.0·잔상 2.2 상시·종결 8.0)
+- [#3토벌전] daily.praid 세이브 필드(config 마이그레이션 포함)·enterPartyRaid 입장 시점 기록+재입장 차단·보스 HP ×6(솔로 6.4만/4인 13만)·공격 계수 1.15→1.0·UI에 "하루 1회" 표기
+- [#4자동강화] autoUpSlot을 string 일반화 — accUp 키 지원(장착 중 장신구만)·autoUpTick 분기·Panels 장신구 행에 자동강화 select+버튼 추가
+- [#5주문서] scroll_star bmPrice 30·bmOnly·SHOP_STOCK 철수→BM_STOCK 합류(균열 던전 12% 드롭 등 획득 경로 유지)
+- [#8모험가] Lobby 생성 플로우 3단→2단(직업 선택 철거)·createCharacter(cls=null)·"무직/평민"→"모험가" 라벨(JobPanel 포함)·미전직 tier1 시련 플로우 재사용(구세이브 cls 보유분은 v1.0.20 우회 유지)
+- [#9클래스룸] classroom.ts 신설(공개 MQTT sertz/mp/v2/class/<6자리 코드> — hi/st 3초·cfg retained+host 5초 재발행·end·bye, 12초 TTL)·활동 3종(hunt 전체 킬 합산 참가자×20 / boss 공유 HP 풀 3000+900·n 딜 델타 합산 / race 5분 킬 랭킹)·ClassroomPanel 신설(생성/참여·코드 복사·진행바·명단·host 활동 관리)·HUD 더보기 [교실] 버튼+L키·WorldScene kill 훅·Enemy.takeDamage 딜 훅·보상 지급(협동 2💎+500G, 우승 5💎+2000G)·**핫픽스: cfg 메시지가 id 가드 `if(!id) return`에서 drop되던 버그**(id 필수를 hi/st/bye로 한정 — E2E에서 발견)·스냅샷 dedupe(3초 재렌더 클릭 레이스 제거)
+- [#10구글로그인] **근본 원인 2겹 발견**: ①accounts/index.js attachAccountsBefore가 /api/auth/*를 가로채고 미매칭(/api/auth/google) 시 handle()=false 반환 후 응답자 부재 → 요청 영구 hang → 클라 타임아웃이 "검증 실패"로 표시(커스텀 서버·FC 배포 전부 해당) — headersSent 가드와 함께 Next 전달 복구 ②fbverify 블라인드스팟(서명·exp 무경우) → 전 분기 warn+reason 코드, kid 캐시 미스 시 강제 재조회(로테이션 대응), 클라에 "(원인)" 표시 — 로컬 실측 401 0.03s 응답 확인
+- [#11니플헤임] ambient 0.18→0.38·횃불 1.6/0.55·지면 타일 틴트 0x9db4d0(신설 GROUND_TINT)·고정광 0.26→0.22·눈보라 0.42→0.30
+- [#12포탈] startTransition 초입에 bossFightActive() 가드 — 전진/복귀 포탈·부적 워프·친구 이동·토벌전 입장·긴급귀환 전부 차단("보스 전투 중에는 이동할 수 없어요!")
+- [#13랭킹] KingdomRankTab 30초 폴링 추가+안내 문구 갱신
+- [#15반격] startCounter에 "반격! 공격 ➤" 라벨 상시 표시(머리 위 펄스)·힌트 배너 개선("창이 닫히기 전에 1번 때려라")·destroyCounterRing/destroyPool 라벨 정리
+- [검증] tsc 0·npm run build 성공·게이트 136 승격 3종+NOTE 갱신·e2e_vc136.js 11/11(게이트·구글 401 원인 코드·로비 직업단계 철거·모험가 생성·HUD 교실 버튼·패널·코드·활동 3종)·e2e_vc136_classroom.js 7/7(**2클라이언트 MQTT 동기화 실측 — 코드 발급·상호 명단·cfg 전파·진행바 표시**)
+- [빌드/릴리스] APK 4m8s 139,352,049B(versionCode 136·SHA-256 cc774f34 동일)·AAB 141,306,261B·**GitHub API 쓰기 전면 500 장애**(자산 DELETE·릴리스 PATCH 전부 실패 — GET·토큰 스코프 정상) → 백그라운드 재시도 루프(3분 간격 프로브)로 복구 감지 후 자동 교체 완료: APK/AAB/mapping 3종 vc136 교체+릴리스명 "SERTZ v1.0.5-beta (vc136)"+본문 15건 변경점·다운로드 URL 206 실측
+- 커밋 e812ac7+68e0131+43bd8ba 푸시 → Vercel /api/version code:136 라이브 확인
+
+Stage Summary:
+- vc136 = 유저 지시 15건 전부 반영 (웹 Vercel 즉시 반영 + APK/AAB 릴리스 교체 완료)
+- 핵심 신기능: 클래스룸(교실 모드) — 서버 없이 공개 MQTT만으로 10~100인 협동 미니게임, 수행평가용
+- 유저 테스트 포인트: ①무스펠헤임 장시간 사냥(멈춤 여부) ②전직 후 스킬 체감(사냥/보스 직업 차등) ③공동토벌전 재입장 차단+보스 체력 ④가방 장신구 [자동 강화] ⑤캐시상점 주문서 30💎 ⑥5차 스킬 이펙트 절제 확인 ⑦이터널 보스전 딜링 ⑧신규 캐릭터 → 모험가 → 마을 퀘스트 → 전직관(K) ⑨더보기→교실→코드 공유→단체 활동 ⑩PC 구글 로그인 ⑪니플헤임 ⑫보스전 중 포탈 차단 ⑬랭킹창 30초 갱신 ⑮노란 링 라벨
