@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 131;
+const LATEST_CODE = 132;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc131) — 보스 전면 리메이크 v5.0: 설계도 9종 반영 신규 스프라이트 11종(idle/walk/atk/die+특수기술 sp1~3 · 12FPS 풀애니)+스콜&하티 '얼음 봉황' 표기";
+  "v1.0.5-beta (vc132) — PC 카메라 근본 수정: Phaser 4 렌더 변환 재해석 — 줌>1 캐릭터 시야 이탈/클리핑 해소+보스 전면 리메이크 v5.0(신규 스프라이트 11종·12FPS 풀애니)";
 const APK_MIRROR =
   "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
 

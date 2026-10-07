@@ -65,9 +65,9 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.0.5-beta";
-  const LATEST_CODE = 131;
+  const LATEST_CODE = 132;
   const VERSION_NOTE =
-  "v1.0.5-beta (vc131) — 보스 전면 리메이크 v5.0: 설계도 9종 반영 신규 스프라이트 11종(idle/walk/atk/die+특수기술 sp1~3 · 12FPS 풀애니)+스콜&하티 '얼음 봉황' 표기";
+  "v1.0.5-beta (vc132) — PC 카메라 근본 수정: Phaser 4 렌더 변환 재해석 — 줌>1 캐릭터 시야 이탈/클리핑 해소+보스 전면 리메이크 v5.0(신규 스프라이트 11종·12FPS 풀애니)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
