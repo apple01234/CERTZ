@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
+import { trackDamage } from "../classroom"; // v1.4.30 (#9) — 교실 모드 공유 보스 딜 합산
 import { DMG_PCT } from "../data";
 import { ENEMIES, type EnemyDef, type EnemyKey, CHAPTER_ELEM, elemAdvantage, elementReaction, ELEM_REACTION_META, ELEMENT_META, type ElemKey } from "../data";
 import { parseStage } from "../stages";
@@ -512,6 +513,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     /* v3.0.15 (#16) — 원소 상성: 플레이어 공격 원소 vs 이 적의 원소.
      *  유리 +25% (원소색 데미지 텍스트 "약점!") / 불리 -15% / 어둠끼리 서로 저항 */
     const atkElem = this.scene.playerRef?.attackElem ?? "none";
+    /* v1.4.30 (#2 사냥/보스 밸런스) — 사냥 특화 직업(스카이로드·이터널·블레이드마스터 등)
+     *  체인 합산 mobDmgPct만큼 일반 몬스터에게 주는 피해 증가 */
+    const mobSpec = (this.scene.playerRef as unknown as { mobDmgBonus?: number } | null)?.mobDmgBonus ?? 0;
+    if (mobSpec > 0) dmg = Math.max(1, Math.round(dmg * (1 + mobSpec / 100)));
     const adv = elemAdvantage(atkElem, this.elem);
     const weak = adv > 1;
     /* v1.4.16 — 원소 반응: 유리 조합 + 쿨다운 통과 시 반응 발동 (데미지 보너스 + 고유 효과/연출).
@@ -523,6 +528,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const R = reactKey ? ELEM_REACTION_META[reactKey] : null;
     const dealt = reacted && R ? Math.max(1, Math.round(dmg * adv * R.dmgMul))
       : adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
+    trackDamage(dealt); // v1.4.30 (#9) — 교실 모드: 공유 보스 레이드 딜 합산 (교실 밖 no-op)
     this.hp -= dealt;
     this.hitFlash = 90;
     // 타격감: 화이트 플래시 (기존 빨간 틴트보다 명확한 피격 피드백)

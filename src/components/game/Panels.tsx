@@ -2052,6 +2052,28 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                             강화 {accCost}G · {accRate}%
                           </InvBtn>
                         )}
+                        {/* v1.4.30 (#4 장신구 자동강화) — 무기/방어구와 동일한 자동 강화 UI를 장신구에도 제공 */}
+                        {!accMaxed && wornN >= 1 && (
+                          <span className="inline-flex items-center gap-1">
+                            <select
+                              aria-label="장신구 목표 강화 수치"
+                              defaultValue={Math.min(UPGRADE_MAX, up + 3)}
+                              onChange={(e) => { autoTargetMap.current[it.key] = Number(e.target.value); }}
+                              className="rounded-md border border-white/15 bg-black/40 px-1 py-1 text-[10px] font-black text-white/80"
+                            >
+                              {Array.from({ length: UPGRADE_MAX - up }, (_, i) => up + i + 1).map((n) => (
+                                <option key={n} value={n}>★{n}</option>
+                              ))}
+                            </select>
+                            <InvBtn
+                              tone="sky"
+                              onClick={() => EventBus.emit("rpg:autoUpgrade", { slot: it.key, target: autoTargetMap.current[it.key] ?? Math.min(UPGRADE_MAX, up + 3) })}
+                            >
+                              자동 강화 ▶
+                            </InvBtn>
+                            <InvBtn tone="gray" onClick={() => EventBus.emit("rpg:autoUpgradeStop")}>정지</InvBtn>
+                          </span>
+                        )}
                         <InvBtn tone="gray" disabled={eertN <= 0} onClick={() => EventBus.emit("rpg:eert", { key: it.key })}>
                           eert {eertN > 0 ? `×${eertN}` : ""}
                         </InvBtn>
@@ -3206,6 +3228,17 @@ function KingdomRankTab() {
     });
   };
   useEffect(load, []);
+  /* v1.4.30 (#13 랭킹 자동 갱신) — 마운트 1회 로드만 하던 것을 30초 폴링으로 교체.
+   *  클라우드 세이브 업로드(3분 주기) 이후에도 패널을 다시 열 때까지 순위가 안 바뀌던
+   *  "랭킹 자동 갱신 안됨" 체감 해소 — 패널이 열려 있는 동안 주기적으로 새로고침한다. */
+  useEffect(() => {
+    const iv = setInterval(() => {
+      fetchRanking().then((r) => {
+        if (r.ok && r.state) setState(r.state);
+      });
+    }, 30000);
+    return () => clearInterval(iv);
+  }, []);
   const myRank = state?.me?.rank ?? 0;
   const isRanker = myRank > 0 && myRank <= 10;
   const RANKER_ITEMS: { key: string; name: string; desc: string; price: number; icon: string }[] = [
@@ -3219,7 +3252,7 @@ function KingdomRankTab() {
         <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">환생 · 심연의 탑 기록 · 레벨 순으로 명예의 전당이 결정된다. 계정 패널에서 클라우드 백업(3분 자동)이 켜져 있으면 자동 등록!</p>
         {/* v1.4.0 (Task 0-3) — 조회 실패 시 캐시 데이터 표기: 빈 화면 대신 “n초 전 기준” 안내 */}
         {rankCacheAgeSec() !== null && (
-          <p className="mt-0.5 text-[9px] font-bold text-yellow-200/70">⏱ {rankCacheAgeSec()}초 전 기준 — 최신 목록은 다시 열 때 갱신돼요</p>
+          <p className="mt-0.5 text-[9px] font-bold text-yellow-200/70">⏱ {rankCacheAgeSec()}초 전 기준 — 열려 있는 동안 30초마다 자동 갱신돼요</p>
         )}
       </div>
 
@@ -3504,7 +3537,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
         {/* 현재 경로 — 메이플식 계열 트리 표기 */}
         <p className="mb-3 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-bold text-white/70">
           {chain.length === 0 ? (
-            <>현재: <span className="text-white/45">미전직 (평민)</span></>
+            <>현재: <span className="text-white/45">모험가 (공통직업 — 마을 퀘스트 완료 후 1차 선택)</span></>
           ) : (
             <>
               현재: {chain.map((c, i) => (

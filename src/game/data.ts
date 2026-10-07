@@ -310,8 +310,11 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   /* v2.5 — 이동 소모품 (지시 #6 귀환서 / #7 지역 워프 부적) */
   scroll_return: { key: "scroll_return", kind: "consumable", name: "마을 귀환서", icon: "item_scroll_return", price: 40, tier: "common" },
   scroll_warp: { key: "scroll_warp", kind: "consumable", name: "지역 이동 부적", icon: "item_scroll_warp", price: 120, tier: "rare" },
-  /* v3.0.7 — 강화 주문서: 사용 시 다음 강화 시도 1회 성공률 +15%p (최대 3중첩) */
-  scroll_star: { key: "scroll_star", kind: "consumable", name: "강화 주문서", icon: "item_scroll_star", price: 150, tier: "rare" },
+  /* v3.0.7 — 강화 주문서: 사용 시 다음 강화 시도 1회 성공률 +15%p (최대 3중첩)
+   *  v1.4.30 (#5 에메랄드 전용) — 골드 판매 철수, 캐시상점(에메랄드) 단일 판매 —
+   *  골드 인플레로 주문서가 상시 상시 접근 가능해지던 것을 유료 화폐 쪽으로 재조정.
+   *  균열 던전/뽑기/패키지 획득 경로는 유지 */
+  scroll_star: { key: "scroll_star", kind: "consumable", name: "강화 주문서", icon: "item_scroll_star", price: 150, tier: "rare", bmPrice: 30, bmOnly: true },
   weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 10, tier: "common", atk: 0 },
   weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 240, tier: "rare", atk: 6 },
   weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 640, tier: "epic", atk: 14 },
@@ -749,7 +752,7 @@ export const SHOP_STOCK: ItemKey[] = [
    *  엘릭서의 4단으로 정리. ITEMS 정의는 구 세이브 보유분 호환을 위해 유지(획득 경로만 제거). */
   "potion_hp3", // v1.0.16 — 고급 물약이 사다리 최상위 (회복량 700/450으로 상향, 가격 조정)
   "potion_mp3",
-  "scroll_star", // v3.0.7 — 강화 주문서
+  /* v1.4.30 (#5) — 강화 주문서 골드 상점 철수: 에메랄드 전용 판매로 이관 */
   "weapon_2",
   "armor_2",
   "weapon_3",
@@ -886,6 +889,7 @@ export const BM_STOCK: ItemKey[] = [
   "pack_daily", "pack_weekly", "pack_starter", "pack_growth", "pack_premium", "pack_ultimate",
   "buff_king",
   "potion_elixir", "exp_book", "exp_book_s", "exp_book_m", "exp_book_l", "eert_cube", "tier_cube", // v1.2.0 (#15) 비약 3종 추가
+  "scroll_star", // v1.4.30 (#5) — 강화 주문서 에메랄드 전용 판매 (골드 상점 철수)
   "ring_fortune", "ring_titan", "pendant_moon", "pendant_sage",
   "ring_dragon", "ring_phantom", "pendant_star", "ring_ancient", "ring_bless",
   /* v1.2.1 (#2 펫BM전용) — 슬라임/핑크이도 BM 합류: 펫은 전부 에메랄드 전용 */

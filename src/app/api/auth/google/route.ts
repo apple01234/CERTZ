@@ -8,7 +8,7 @@
  */
 import { NextRequest } from "next/server";
 import { mutateDb, type Resp } from "@/lib/ghdb";
-import { verifyFirebaseIdToken } from "@/lib/fbverify";
+import { verifyFirebaseIdTokenDetailed } from "@/lib/fbverify";
 import { issueToken, json, options, publicUser, rateLimit, audit } from "@/lib/sapi";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
@@ -28,10 +28,12 @@ export async function POST(req: NextRequest) {
     const idToken = String(b.idToken || "");
     if (!idToken) return json(req, 400, { error: "로그인 토큰이 없어요" });
 
-    const fb = await verifyFirebaseIdToken(idToken);
+    /* v1.4.30 (#10) — 검증 실패 원인을 클라에 노출 + Vercel 로그에 reason 기록:
+     *  "검증에 실패했어요"만 반복되던 블랙박스를 해소 — 원인별 메시지로 재시도 유도 */
+    const { ident: fb, reason } = await verifyFirebaseIdTokenDetailed(idToken);
     if (!fb) {
-      audit("google_verify_fail", { ip: "serverless" });
-      return json(req, 401, { error: "구글 로그인 검증에 실패했어요 — 다시 시도해 주세요" });
+      audit("google_verify_fail", { ip: "serverless", reason });
+      return json(req, 401, { error: `구글 로그인 검증에 실패했어요${reason ? ` (${reason})` : ""} — 다시 시도해 주세요` });
     }
 
     const uid = `g_${fb.sub}`; // Firebase sub는 전역 유일 — 자체 아이디와 충돌 불가

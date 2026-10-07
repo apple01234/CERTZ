@@ -244,10 +244,12 @@ export type FamKey = "warrior" | "ranger" | "mage" | "thief";
  *       마법사=오브 마법진+수정 파편 / 도적=교차 참격날). angle: 조준 방향(라디안) */
 export function spawnTierFlair(
   scene: SceneLike, x: number, y: number, hex: number, tier: number,
-  fam?: FamKey, angle = 0,
+  fam?: FamKey, angle = 0, major = false,
 ) {
   if (tier < 2) return;
-  const full = tier >= 4; // v1.0.13 — 4·5차만 풀 규모, 2~3차는 절제(유저: "나머지는 이펙트를 넣되 약하게")
+  /* v1.4.30 (#6 5차 공통 이펙트 축소) — major(중요 스킬: 4차기·필살기)일 때만 4·5차 풀 패키지.
+   *  Z/C/V 일반 스킬은 5차여도 3차 수준 경량판 — "모든 스킬에 공통 이펙트가 과하다" 완화 */
+  const full = tier >= 4 && major; // v1.0.13 — 4·5차만 풀 규모 → v1.4.30 major 게이트 추가
   /* 2차+ — 광점 팝 (절제판은 희미하게) */
   spawnFlarePop(scene, x, y - 8, "gw_dot", {
     tint: hex, scale: full ? 0.85 : 0.5, duration: full ? 420 : 300, alpha: full ? 0.82 : 0.38,
@@ -297,8 +299,8 @@ export function spawnTierFlair(
       }
     }
   }
-  /* 4차+ — 플레어 + 크리티컬 플래시 (마법진은 위 3차+ 공통 구간에서 이미 합성) */
-  if (tier >= 4) {
+  /* 4차+ — 플레어 + 크리티컬 플래시 (major만 — v1.4.30 #6) */
+  if (tier >= 4 && major) {
     spawnFlarePop(scene, x, y - 10, "gw_flare", { tint: 0xffffff, scale: 1.0, duration: 460 });
     const cr = vfImage(scene, "gw_crit", x, y - 8, hex);
     if (cr) {
@@ -307,8 +309,8 @@ export function spawnTierFlair(
       scene.tweens.add({ targets: cr, alpha: 0, scale: 1.15, delay: 180, duration: 320, ease: "Sine.out", onComplete: () => cr.destroy() });
     }
   }
-  /* 5차 각성 — 폭발 코어 + 화염 잔연 (각성의 격 — 벚꽃잎은 v1.0.13 유저 지시로 제거) */
-  if (tier >= 5) {
+  /* 5차 각성 — 폭발 코어 + 화염 잔연 (major만 — v1.4.30 #6, 각성의 격은 중요 스킬에만) */
+  if (tier >= 5 && major) {
     spawnBoomGW(scene, x, y, hex, 1.15, 520);
     const fire = vfImage(scene, "gw_fire", x, y + 2);
     if (fire) {

@@ -82,6 +82,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private supportTimer: Phaser.Time.TimerEvent | null = null;
   /** 카운터 창 텔레그래프 링 */
   private counterRing: Phaser.GameObjects.Image | null = null;
+  /* v1.4.30 (#15) — 반격 창 라벨 (startCounter에서 생성, destroyCounterRing에서 소멸) */
+  private counterLabel: Phaser.GameObjects.Text | null = null;
   private counterHintShown = 0;
 
   /* ---- v1.4.9 — 보스 생동감 애니메이션 (호흡·예동·낙하 등장) ---- */
@@ -940,9 +942,21 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       .setScale(1.15);
     this.teleRings.push(this.counterRing);
     this.scene.tweens.add({ targets: this.counterRing, scale: 0.9, alpha: 0.95, duration: 300, yoyo: true, repeat: -1 });
+    /* v1.4.30 (#15 반격 UX) — 링 위에 "반격! 공격" 라벨을 상시 띄운다.
+     *  기존엔 첫 2회 배너 힌트뿐이라 창이 왔는지 인지 못해 방관→응징 폭발을 당했다.
+     *  이제 라벨이 창이 열릴 때마다 보스 머리 위에 떠서 "지금 때려야 한다"가 즉시 보인다. */
+    const lbl = this.scene.add
+      .text(this.x, this.y - 66, "반격! 공격 ➤", {
+        fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: "#ffe95a",
+        stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(26);
+    this.scene.tweens.add({ targets: lbl, y: this.y - 74, alpha: { from: 1, to: 0.72 }, duration: 260, yoyo: true, repeat: -1 });
+    this.counterLabel = lbl;
     if (this.counterHintShown < 2) {
       this.counterHintShown++;
-      this.scene.showBanner("노란 원 — 지금 공격해 균형을 무너뜨려라!");
+      this.scene.showBanner("노란 원이 보이면 — 창이 닫히기 전에 보스를 1번 때려라! (성공 시 기절+피해 ×1.6)");
     }
     this.scene.sfxRoar();
   }
@@ -995,6 +1009,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     }
     this.teleRings = this.teleRings.filter((r) => r !== this.counterRing);
     this.counterRing = null;
+    /* v1.4.30 (#15) — 라벨도 같이 정리 */
+    if (this.counterLabel && this.counterLabel.active) {
+      this.scene.tweens.killTweensOf(this.counterLabel);
+      this.counterLabel.destroy();
+    }
+    this.counterLabel = null;
   }
 
   private fireOrb(angle: number, speed: number, dmgOverride?: number) {
@@ -1033,8 +1053,29 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* v1.4.16 — 원소 반응 쿨다운 (보스도 같은 규칙 적용 — CC는 면역) */
   private lastReactAt = 0;
 
+  /* v1.4.30 (#7 이터널 실성능) — "시간의 잠금": 보스가 받는 유일한 CC.
+   *  일반 몹의 applyStun과 달리 보스는 최대 1.4초의 경직(staggered, 피해 ×1.6)으로
+   *  완화되어 들어간다 — 이터널 영원의 고리·영겁극의 시간 정지가 보스전에서도 의미를 갖는다.
+   *  반격 카운터 대기 중에는 카운터 창을 지키기 위해 무시한다. */
+  applyStun(ms: number) {
+    if (!this.alive) return;
+    if (this.mode === "counterTele") return;
+    const clamp = Math.min(1400, Math.max(600, ms));
+    this.mode = "staggered";
+    this.modeTimer = clamp;
+    this.setTint(0x8a7aff);
+    this.setVelocity(0, 0);
+    this.scene.spawnPickupText?.(this.x, this.y - 56, "시간의 잠금!", "#d8ccff");
+    this.scene.spawnBurstAt(this.x, this.y, 12, 0xb0a0ff);
+    EventBus.emit("boss:update", { hp: Math.max(0, this.hp), maxHp: this.maxHp });
+  }
+
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
+    /* v1.4.30 (#2 사냥/보스 밸런스) — 보스 특화 직업(전사·데드아이·아크로드·섀도우로드 등)
+     *  체인 합산 bossDmgPct만큼 보스에게 주는 피해 증가 */
+    const spec = this.scene.playerRef ? (this.scene.playerRef as unknown as { bossDmgBonus?: number }).bossDmgBonus ?? 0 : 0;
+    dmg = Math.max(1, Math.round(dmg * (1 + spec / 100)));
     /* v3.0.15 (#16) — 보스도 챕터 테마 원소를 가진다 (상성 배율 적용) */
     const atkElem = this.scene.playerRef?.attackElem ?? "none";
     const adv = elemAdvantage(atkElem, this.elem);
@@ -1166,6 +1207,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.teleRings = [];
     this.zoneRings = [];
     this.counterRing = null;
+    /* v1.4.30 (#15) — 반격 라벨도 정리 */
+    if (this.counterLabel && this.counterLabel.active) this.counterLabel.destroy();
+    this.counterLabel = null;
   }
 }
 

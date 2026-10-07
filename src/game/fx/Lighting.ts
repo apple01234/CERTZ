@@ -31,8 +31,11 @@ const CHAPTER_AMBIENT: Record<string, { color: number; alpha: number; light?: { 
   hel: { color: 0x161016, alpha: 0.38, light: { scale: 1.55, alpha: 0.52 } },        // 9장 헬 (v1.4.13 0.42→0.38)
   abyss: { color: 0x0b0918, alpha: 0.4, light: { scale: 1.55, alpha: 0.52 } },      // 10장 세계수의 뿌리 — 심연 (v1.4.13 0.44→0.40)
   /* v1.4.13 (#6 셰이더 약화) — 니플헤임(눈 맵) 암전 0.28→0.18, 횃불 광원 알파 0.66→0.5:
-   * "눈오는 곳 셰이더 너무 강해" 유저 지시 — 암전을 더 얕게, 시야 가독성 확보. */
-  niflheim: { color: 0x0c1626, alpha: 0.18, light: { scale: 1.55, alpha: 0.5 } },   // 6장 니플헤임 — 얼음의 성전
+   * "눈오는 곳 셰이더 너무 강해" 유저 지시 — 암전을 더 얕게, 시야 가독성 확보.
+   * v1.4.30 (#11 니플헤임 눈부심) — 반대 피드백 "니플헤임 너무 밝아서 눈아파": 암전 0.18→0.38로
+   * 복원(헬·심연 수준)하고 흰 눈바닥 틴트(WorldScene GROUND_TINT)로 전체 톤 다운.
+   * 횃불 광원은 1.6/0.55로 확대해 어두워진 만큼 시야는 확보된다. */
+  niflheim: { color: 0x0c1626, alpha: 0.38, light: { scale: 1.6, alpha: 0.55 } },   // 6장 니플헤임 — 얼음의 성전
 };
 
 export type AmbientProfile = { color: number; alpha: number; light?: { scale: number; alpha: number } } | null;

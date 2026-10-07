@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 135;
+const LATEST_CODE = 136;
 const VERSION_NOTE =
   "v1.0.5-beta (vc135) — 파티·멀티 입구 복원(HUD 파티 버튼·공동 토벌전·시너지·미션)·채팅 기록 50개 스크롤 뷰·APK 다운로드 안내 페이지 최신화";
 const APK_MIRROR =

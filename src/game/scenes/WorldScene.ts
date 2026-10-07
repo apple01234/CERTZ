@@ -40,6 +40,7 @@ import {
   type InfSave, type TrialMod,
 } from "../infinite"; // v1.0.8 — 무한 콘텐츠 10종 · v1.0.18 — 몬스터 파크
 import { loadUnion, unionEffects, activeBuffValues } from "../union"; // v1.0.18 — 유니온 시스템
+import * as classroom from "../classroom"; // v1.4.30 (#9 클래스룸 — 교실 모드 합산 카운터)
 import { loadSlots } from "../slots"; // v1.0.18 — 캐릭터 슬롯
 import { loadFx } from "../config"; // v1.0.18 — 셰이더 강도 설정
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
@@ -267,7 +268,8 @@ export class WorldScene extends Phaser.Scene {
   private playerToon: unknown[] | null = null;
   private bossToon: unknown[] | null = null;
   /** v1.0.2 (#자동강화) — 목표 강화 자동 루프 상태 (1틱=1강화, 목표 도달/재화 부족/최고치에서 종료) */
-  private autoUpSlot: "weapon" | "armor" | null = null;
+  /* v1.4.30 (#4 장신구 자동강화) — weapon/armor만 지원하던 autoUpSlot을 장신구 키까지 일반화 */
+  private autoUpSlot: string | null = null;
   private autoUpTarget = 0;
   private autoUpTimer: Phaser.Time.TimerEvent | null = null;
   /** 각성 대사 종료 후 수호자 소환 예약 (resumeFromDialogue에서 소비) */
@@ -328,6 +330,8 @@ export class WorldScene extends Phaser.Scene {
   /* v1.0.7 — 일일 파밍/보스 카운터 (일일 퀘스트 5종 확장) */
   private dailyFarms = 0;
   private dailyBosses = 0;
+  /* v1.4.30 (#3) — 공동 토벌전 하루 1회 입장 카운터 */
+  private dailyPraid = 0;
   private dailyClaimed: string[] = [];
   private dailyAds = 0; // v4.1.0 — 오늘 본 광고 보상 횟수 (일 5회 제한)
   private purchRestoreDone = false; // v1.0.1-beta — 부팅 결제 복구 1회 가드
@@ -944,7 +948,12 @@ export class WorldScene extends Phaser.Scene {
       this.buildInterior(stageKey);
     } else {
     const groundTex = theme.ground;
-    this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
+    /* v1.4.30 (#11 니플헤임 눈부심) — 흰 눈바닥 타일이 화면을 압도하므로 챕터별 지면 틴트 도입.
+     *  흰색 타일을 청회색으로 곱해 전체 톤 다운 (암전과 별개로 원본 자체가 밝은 타일 보정). */
+    const CH_GROUND_TINT: Record<string, number> = { niflheim: 0x9db4d0 };
+    const gTint = CH_GROUND_TINT[parseStage(stageKey).ch];
+    const groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
+    if (gTint) groundTs.setTint(gTint);
     // v3.0.14 — 도로 표시 완전 제거: 가로/세로 일자 도로가 단조롭다는 피드백 ("길이 일자로만 되어있어")
     //  지형은 테마 바닥 타일링만 남기고, 빈 지형은 placeDecor의 나무·바위·장식 배치로 자연감을 채운다.
     // v3.0.13 — 지면 변형 스캐터(gvar) 완전 제거: 타 세트 색상의 64px 사각형이
@@ -1218,6 +1227,7 @@ export class WorldScene extends Phaser.Scene {
       this.dailyCloset = savedPlayer.daily?.closet ?? 0;
       this.dailyFarms = savedPlayer.daily?.farms ?? 0; // v1.0.7
       this.dailyBosses = savedPlayer.daily?.bosses ?? 0; // v1.0.7
+      this.dailyPraid = savedPlayer.daily?.praid ?? 0; // v1.4.30 — 공동토벌전 일 1회
       this.dailyClaimed = [...(savedPlayer.daily?.claimed ?? [])];
       this.dailyAds = savedPlayer.daily?.ads ?? 0;
       this.dailyAdChest = savedPlayer.daily?.adsChest ?? 0;
@@ -2256,7 +2266,7 @@ export class WorldScene extends Phaser.Scene {
          *  플레이어 횃불+근접 횃불로 시야 확보가 충분하다 */
         for (let n = 0; n < 3 && opens.length > 0; n++) {
           const c = cellCenterOf(lay1, opens[Math.floor(Math.random() * opens.length)]);
-          this.lighting.addLight(c.x, c.y - 6, { tint, scale: 0.7, alpha: 0.26, flicker: 0.09 });
+          this.lighting.addLight(c.x, c.y - 6, { tint, scale: 0.7, alpha: 0.22, flicker: 0.09 });
         }
       }
       /* v1.0.12 (#횃불장치) — 근접 점등 횃불 장치: 맵 곳곳에 꺼진 횃불이 서 있고,
@@ -2284,7 +2294,8 @@ export class WorldScene extends Phaser.Scene {
      *  v1.0.13 — 마을 벚꽃 날림 제거 (유저 지시: "벚꽃 그냥 없애").
      *  카메라 상단 폭 emitZone — 파티클은 월드 좌표에 떨어져 스크롤과 자연스럽게 어긋난다.
      *  v1.4.13 (#6 셰이더 약화) — 눈 맵 셰이더 너무 강함: 파티클 빈도 130→240ms, 알파 0.8→0.42,
-     *  속도/스케일 축소로 "눈보라 너무 강해" 체감 완화 (분위기는 유지, 가독성 향상). */
+     *  속도/스케일 축소로 "눈보라 너무 강해" 체감 완화 (분위기는 유지, 가독성 향상).
+     *  v1.4.30 (#11) — 니플헤임 눈부심 완화에 맞춰 눈보라 알파 0.42→0.30으로 추가 축소. */
     {
       const chNow = parseStage(stageKey).ch;
       if (chNow === "niflheim") {
@@ -2295,7 +2306,7 @@ export class WorldScene extends Phaser.Scene {
           speedY: { min: 18, max: 42 },
           speedX: { min: -18, max: 4 },
           scale: { min: 0.04, max: 0.1 },
-          alpha: { start: 0.42, end: 0.18 },
+          alpha: { start: 0.3, end: 0.14 },
           rotate: { min: 0, max: 360 },
           quantity: 1,
           frequency: 240,
@@ -2531,6 +2542,15 @@ export class WorldScene extends Phaser.Scene {
     opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }
   ) {
     if (this.transitioning) return;
+    /* v1.4.30 (#12 보스전 포탈 차단) — 보스전(스토리·재림·GM 체험·공동토벌전) 도중에는
+     *  모든 구역 전환을 차단한다. 전진/복귀 포탈·부적 워프·친구 따라가기·공동토벌전
+     *  입장·긴급귀환이 전부 startTransition 단일 통로를 지나므로 여기서 한 번만 막으면
+     *  커버된다 — 보스를 두고 다른 맵으로 도망가는 사례를 원천 차단. */
+    if (this.bossFightActive()) {
+      audio.sfx.deny();
+      this.showBanner("보스 전투 중에는 이동할 수 없어요!");
+      return;
+    }
     this.transitioning = true;
     this.portalActive = false;
     this.returnActive = false;
@@ -4259,6 +4279,7 @@ export class WorldScene extends Phaser.Scene {
       this.spawnPickupText(this.player.x, this.player.y - 52 + (this.comboStreak % 2) * 12, `연속킬 x${this.comboStreak}! EXP +${pct}%`, "#ffd76a");
     }
     this.killTotals[key] = (this.killTotals[key] ?? 0) + 1;
+    classroom.trackKill(); // v1.4.30 (#9) — 교실 모드 합산 킬 카운터
     /* v3.0.16 — 몬스터 컬렉션 등록 (최초 처치 시) */
     this.registerCollection(key, ENEMIES[key].name);
     /* v3.0.16 — 멀티킬 연출 (1.5초 내 다중 처치 등급 표시 — 메이플 멀티킬) */
@@ -4532,6 +4553,7 @@ export class WorldScene extends Phaser.Scene {
       this.dailyCloset = 0;
       this.dailyFarms = 0; // v1.0.7
       this.dailyBosses = 0; // v1.0.7
+      this.dailyPraid = 0; // v1.4.30 — 공동토벌전 일 1회 리셋
       this.dailyClaimed = [];
       this.dailyAds = 0;
       this.dailyAdChest = 0; // v4.5.0 — 광고 무료 상자/버프 카운터 리셋
@@ -5047,7 +5069,7 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(90)
       .setScrollFactor(0);
     this.add
-      .text(this.cameras.main.width / 2, 96, partyN > 1 ? `파티 ${partyN}인 동시 토벌 — 보스 HP ×${hpMul.toFixed(2)} · 보상 ×${hpMul.toFixed(2)} · 에메랄드 +${3 + partyN}` : "파티 없이 단독 도전 — 파티원과 함께 잡으면 보상이 커진다", { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 96, partyN > 1 ? `보스 HP ×${(hpMul * 6).toFixed(1)} · 보상 ×${hpMul.toFixed(2)} · 에메랄드 +${3 + partyN} · 하루 1회` : "단독 도전 · 하루 1회 — 파티원과 함께 잡으면 HP·보상이 커진다", { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(96)
       .setScrollFactor(0);
@@ -5057,13 +5079,16 @@ export class WorldScene extends Phaser.Scene {
       this.tweens.add({ targets: rune, angle: 360, duration: 16000, repeat: -1 });
     }
 
-    /* 레이드 보스 — 심연의 감시자 (심연의 군주 스펙 변형) */
+    /* 레이드 보스 — 심연의 감시자 (심연의 군주 스펙 변형)
+     *  v1.4.30 (#3) — 유저 지시 "공동토벌전 보스 ㅈㄴ 약해 (딜은 약해도 체력 ㅈㄴ 많이해)":
+     *  HP ×6로 대폭 상향(솔로 ~6.4만 / 4인 ~13만) · 공격 계수 1.15→1.0으로 하향 —
+     *  여러 명이 오래 때려야 잡는 '협동 체력 레이스'로 재조정. */
     const base = BOSS_DEFS.abysslord;
     const def: BossDef = {
       ...base,
       name: partyN > 1 ? `심연의 감시자 (파티 ${partyN}인)` : "심연의 감시자",
-      hp: Math.round(base.hp * 1.25 * hpMul),
-      atk: Math.round(base.atk * 1.15 * (1 + (partyN - 1) * 0.08)),
+      hp: Math.round(base.hp * 1.25 * hpMul * 6),
+      atk: Math.round(base.atk * (1 + (partyN - 1) * 0.06)),
       speed: Math.round(base.speed * 0.92), // 협동전 — 추격 살짝 완만 (각자 패턴 대응 여유)
       exp: Math.round(base.exp * hpMul * 1.2),
       gold: Math.round(base.gold * hpMul * 1.2),
@@ -5099,11 +5124,20 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** 공동 토벌전 입장 (파티 위젯 → rpg:partyRaid) */
+  /** 공동 토벌전 입장 (파티 위젯 → rpg:partyRaid)
+   *  v1.4.30 (#3) — 하루 1회 입장 제한 + 보스 대폭 상향 (딜은 약해도 체력 ㅈㄴ 많이) */
   private enterPartyRaid() {
     if (!this.player || this.transitioning) return;
     if (this.stageDef.key === "praid") return;
+    this.ensureDaily();
+    if (this.dailyPraid >= 1) {
+      audio.sfx.deny();
+      this.showBanner("공동 토벌전은 하루 1회만 입장할 수 있어요 — 내일 다시 도전!");
+      return;
+    }
     const partyN = Math.max(1, net.netLastParty()?.members.length ?? 1);
+    this.dailyPraid = 1; // 입장 시점 기록 — 중도 퇴장 후 재입장 방지
+    this.save();
     this.praidFrom = this.stageDef.key;
     audio.sfx.portal();
     EventBus.emit("ui:panel", { panel: null });
@@ -6688,7 +6722,12 @@ export class WorldScene extends Phaser.Scene {
          *  v1.4.13 (#6 셰이더 약화) — 보스전 셰이더 너무 강함: blendAmount 0.46/0.5 → 0.24/0.30,
          *  비네트 강도 0.14 → 0.06, blurSteps 4 → 3. 강렬한 순간은 살리고 눈부심 완화. */
         const fxk = loadFx().intensity <= 0 ? 0 : Math.min(1.5, loadFx().intensity / 55);
-        if (fxk > 0) {
+        /* v1.4.30 (#1 무스펠 프리즈) — 화염 챕터(무스펠헤임)는 용암 균열 글로우·잉걸불·
+         *  지형 ADD 블렌드가 전 챕터 중 가장 많다. 여기에 보스전 카메라 블룸(프레임버퍼
+         *  이중 패스)이 겹치면 저사양 기기에서 GPU 컨텍스트 유실→렌더 프리즈가
+         *  집중 발생 — 무스펠헤임 보스전은 블룸을 건너뛴다 (보스라이트·비네트·잉걸불 유지). */
+        const bloomSkip = parseStage(this.stageDef.key).ch === "muspelheim";
+        if (fxk > 0 && !bloomSkip) {
           const bloom = Phaser.Actions.AddEffectBloom(cam, {
             threshold: 0.68,
             blurRadius: 1,
@@ -7096,35 +7135,65 @@ export class WorldScene extends Phaser.Scene {
     const autoUpTick = () => {
       if (!this.player || !this.autoUpSlot) return stopAutoUpgrade();
       const slot = this.autoUpSlot;
-      const cur = this.player.upgrades[slot];
-      if (cur >= this.autoUpTarget) return stopAutoUpgrade(`자동 강화 완료! ${slot === "weapon" ? "무기" : "방어구"} ★${cur}`);
+      /* v1.4.30 (#4) — 무기/방어구는 upgrades, 장신구 키는 accUp을 읽는다 */
+      const isEq = slot === "weapon" || slot === "armor";
+      const label = isEq ? (slot === "weapon" ? "무기" : "방어구") : (ITEMS[slot as ItemKey]?.name ?? "장신구");
+      const cur = isEq ? this.player.upgrades[slot as "weapon" | "armor"] : (this.player.accUp[slot] ?? 0);
+      if (cur >= this.autoUpTarget) return stopAutoUpgrade(`자동 강화 완료! ${label} ★${cur}`);
       if (cur >= this.player.upMax) return stopAutoUpgrade(`최고 강화 도달 — 자동 강화 종료 (★${cur})`);
-      const r = this.player.tryUpgrade(slot);
+      const r = isEq ? this.player.tryUpgrade(slot as "weapon" | "armor") : this.player.tryUpgradeAcc(slot as ItemKey);
       this.syncUpgradeGlow();
       if (r === "poor") return stopAutoUpgrade("골드가 부족해 자동 강화를 멈췄다");
       if (r === "max") return stopAutoUpgrade(`최고 강화 도달 — 자동 강화 종료`);
-      if (r === "ok" || r === "fail")
-        EventBus.emit("rpg:upgradeResult", { slot, result: r, up: this.player.upgrades[slot] });
+      if (r === "none") return stopAutoUpgrade("강화할 수 없는 아이템이다");
+      if (r === "ok" || r === "fail") {
+        if (isEq) EventBus.emit("rpg:upgradeResult", { slot, result: r, up: this.player.upgrades[slot as "weapon" | "armor"] });
+      }
       this.save();
       this.emitRpgState();
       this.emitHud();
     };
-    const onAutoUpgrade = (v: { slot: "weapon" | "armor"; target: number }) => {
+    const onAutoUpgrade = (v: { slot: string; target: number }) => {
       if (!this.player || this.dialoguing) return;
       if (this.autoUpTimer) return EventBus.emit("banner:show", { text: "자동 강화가 이미 진행 중이다" });
+      const slot = String(v?.slot || "");
+      if (slot !== "weapon" && slot !== "armor") {
+        const it = ITEMS[slot as ItemKey];
+        if (!it || it.kind !== "accessory") return;
+        if (!(this.player.accessories ?? []).includes(slot as ItemKey)) {
+          EventBus.emit("banner:show", { text: "장착 중인 장신구만 자동 강화할 수 있다" });
+          return;
+        }
+      }
       const target = Math.max(1, Math.min(15, Math.floor(v.target || 0)));
-      const cur = this.player.upgrades[v.slot];
+      const cur = slot === "weapon" || slot === "armor" ? this.player.upgrades[slot as "weapon" | "armor"] : (this.player.accUp[slot] ?? 0);
       if (target <= cur) {
         EventBus.emit("banner:show", { text: `목표가 현재 강화(★${cur})보다 높아야 한다` });
         return;
       }
-      this.autoUpSlot = v.slot;
+      this.autoUpSlot = slot;
       this.autoUpTarget = target;
       EventBus.emit("banner:show", { text: `자동 강화 시작 — ★${cur} → ★${target}` });
       this.autoUpTimer = this.time.addEvent({ delay: 330, loop: true, callback: autoUpTick });
     };
     EventBus.on("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 목표 자동 강화
     EventBus.on("rpg:autoUpgradeStop", () => stopAutoUpgrade("자동 강화를 취소했다"));
+    /* v1.4.30 (#9 클래스룸) — 교실 활동 성공 보상 지급 (classroom.ts 완료 판정 → window 이벤트)
+     *  협동 보상: 에메랄드 2 + 골드 500 (경쟁전 우승은 5+2000) — 각 클라가 스스로 수령 */
+    const onClassReward = (ev: Event) => {
+      const d = (ev as CustomEvent<{ label: string; mode: string; rank: number }>).detail;
+      if (!d || !this.player) return;
+      const emerald = d.mode === "race" ? (d.rank === 1 ? 5 : 1) : 2;
+      const gold = d.mode === "race" ? (d.rank === 1 ? 2000 : 500) : 500;
+      this.player.emerald += emerald;
+      this.player.addGold(gold);
+      audio.sfx.reward();
+      this.showBanner(`${d.label} — 보상: 에메랄드 ${emerald}·골드 ${gold.toLocaleString()}`);
+      this.save();
+      this.emitHud();
+    };
+    window.addEventListener("sertz:class-reward", onClassReward);
+    this.events.once("shutdown", () => window.removeEventListener("sertz:class-reward", onClassReward));
     // 채팅 입력 포커스 — 게임 키 입력 완전 차단 (v1.7 멀티플레이 채팅)
     const onChatFocus = (v: { focus: boolean }) => {
       this.chatFocused = v.focus;
@@ -12211,7 +12280,7 @@ export class WorldScene extends Phaser.Scene {
         gateStars: [...this.gateStars],
         freeGachaIn: Math.max(0, 600000 - (Date.now() - this.freeGachaAt)),
         attend: { last: this.attendLast, count: this.attendCount },
-        daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop, farms: this.dailyFarms, bosses: this.dailyBosses },
+        daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop, farms: this.dailyFarms, bosses: this.dailyBosses, praid: this.dailyPraid },
         tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset },
         extSummary: (() => {
           const e = this.player.extBonus;
@@ -12425,7 +12494,7 @@ export class WorldScene extends Phaser.Scene {
       constel: [...this.constel],
       coupons: [...this.couponsUsed],
       attend: { last: this.attendLast, count: this.attendCount },
-      daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop, farms: this.dailyFarms, bosses: this.dailyBosses },
+      daily: { date: this.dailyDate, hunts: this.dailyHunts, gate: this.dailyGate, closet: this.dailyCloset, claimed: [...this.dailyClaimed], ads: this.dailyAds, adsChest: this.dailyAdChest, adsDrop: this.dailyAdDrop, farms: this.dailyFarms, bosses: this.dailyBosses, praid: this.dailyPraid },
       tickets: { date: this.ticketDate, gate: this.ticketGate, closet: this.ticketCloset, refills: this.ticketRefills },
       achClaimed: [...this.achClaimed],
       /* v4.5.0 — 시즌 패스 + 구독 + 스타터팩 */
@@ -12873,6 +12942,12 @@ export class WorldScene extends Phaser.Scene {
   /* ================= 정리 ================= */
 
   private cleanup() {
+    /* v1.4.30 (#1 프리즈 방지) — 씬 shutdown 시 보스 풀/타이머를 명시 소멸.
+     *  destroyPool은 사망 경로(Boss.die)에서만 돌던 코드였는데, 보스전 도중
+     *  씬 재시작(사망 귀환/포탈 이동)이 겹치면 volleyTimer 등이 파괴된 스프라이트를
+     *  계속 건드려 렌더 정지가 발생할 수 있다 — destroyPool()은 어디서도 호출되지
+     *  않는 죽은 코드였던 것을 shutdown 훅으로 살린다. */
+    try { (this.boss as unknown as { destroyPool?: () => void })?.destroyPool?.(); } catch { /* 이중 정리 무시 */ }
     this.questTimer?.remove();
     this.scale.off("resize", this.applyCameraZoom, this);
     /* v1.4.26-w2 (#포탈줌) — 씬 정리 시 줌 추적 상태 초기화.

@@ -17,6 +17,8 @@ import { UnionPanel } from "./UnionPanel"; // v1.0.18 — 유니온 패널
 // ServerConnect(서버주소 설정창)는 철거 유지 — 릴레이는 별도 설정 불필요.
 import { ChatBox } from "./ChatBox";
 import { PartyWidget } from "./PartyWidget";
+/* v1.4.30 (#9 클래스룸) — 수업용 대규모 협동 미니게임 (MQTT 합산 — 서버 불필요) */
+import { ClassroomPanel } from "./ClassroomPanel";
 import { FriendsWidget } from "./FriendsWidget";
 import { AuthPanel } from "./AuthPanel"; // v4.9.0 — 자체/SNS 계정 + 클라우드 세이브
 import * as audio from "@/game/audio";
@@ -191,6 +193,8 @@ export default function GameRoot() {
              *  멀티 아이콘·ServerConnect는 철거 유지 — 파티는 더보기 메뉴/Y키. */}
             <ChatBox />
             <PartyWidget />
+            {/* v1.4.30 (#9) — 클래스룸 (교실 모드·더보기/L키) */}
+            <ClassroomPanel />
             {/* 친구 위젯 (v2.1 — 친구코드·고유번호) */}
             <FriendsWidget />
             {/* 계정 위젯 (v4.9.0 — 자체 회원가입/로그인 + SNS 연동 + 클라우드 세이브) */}

@@ -7,7 +7,7 @@ import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
 import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, UsersRound, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, UsersRound, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle, GraduationCap } from "lucide-react";
 import { EventBus } from "./EventBus";
 import * as audio from "@/game/audio"; // v1.4.8 — 더보기 소셜 버튼 클릭음
 
@@ -376,6 +376,15 @@ export function HUD({
             >
               <UsersRound size={17} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-sky-300/90">파티</span>
+            </button>
+            {/* v1.4.30 (#9 클래스룸) — 수업용 대규모 협동 미니게임 입구 (L키 단축키 동일) */}
+            <button
+              onClick={() => { audio.sfx.uiClick(); EventBus.emit("classroom:toggle"); }}
+              aria-label="클래스룸(교실 모드) 열기 (L)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#8fe8b0] active:scale-95"
+            >
+              <GraduationCap size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">교실</span>
             </button>
             <button
               onClick={onOpenRank}

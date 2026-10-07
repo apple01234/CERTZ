@@ -982,9 +982,15 @@ function attachAccountsBefore(handleNext) {
       return;
     }
     if (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") || u === "/api/support") {
-      handle(req, res).catch((e) => {
+      /* v1.4.30 (#10 구글 로그인 검증 실패 근본 수정) — handle()이 false를 반환하면
+       *  (미매칭 경로 — 예: Next 라우트인 /api/auth/google) 응답자가 없어 요청이
+       *  영원히 hangs → 클라 fetch 타임아웃이 "구글 로그인 검증에 실패했어요"로
+       *  표시됐다. 미매칭 시 Next 핸들러로 반드시 전달한다 (headersSent 가드 포함). */
+      handle(req, res).then((done) => {
+        if (!done && !res.headersSent && !res.writableEnded) handleNext(req, res);
+      }).catch((e) => {
         console.error("[SERTZ-accounts] 가로채기 실패 — Next로 전달", e);
-        handleNext(req, res);
+        if (!res.headersSent && !res.writableEnded) handleNext(req, res);
       });
       return;
     }

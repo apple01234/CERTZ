@@ -93,6 +93,12 @@ export type ClassDef = {
   cdMult: number;
   /** 스킬 피해 배율 (곱 누적) */
   skillMult: number;
+  /* v1.4.30 (#2 사냥/보스 밸런스) — 직업 특화 피해 가산 (%p, 체인 합산)
+   *  보스 특화(전사·스나이퍼-데드아이·아크메이지-아크로드·어세신-섀도우로드)는
+   *  bossDmgPct, 사냥 특화(윈드러너-스카이로드·세이지-이터널·스와시버클러-블레이드마스터)는
+   *  mobDmgPct가 높다 — 라인별 정체성 부여. */
+  bossDmgPct: number;
+  mobDmgPct: number;
   desc: string;
 };
 
@@ -103,6 +109,7 @@ const WARRIOR: ClassDef = {
   name: "전사", title: "검사",
   color: "#ff9a8a", hex: 0xff9a8a,
   atkPct: 18, critAdd: 0, defAdd: 0, hpAdd: 120, mpAdd: 0, speedPct: 0,
+  bossDmgPct: 8, mobDmgPct: 0,
   cdMult: 1, skillMult: 1,
   desc: "끈질긴 생명력과 무모한 화력. 앞에 서는 자의 길.",
 };
@@ -111,6 +118,7 @@ const RANGER: ClassDef = {
   name: "궁수", title: "궁도",
   color: "#7dffa8", hex: 0x7dffa8,
   atkPct: 8, critAdd: 12, defAdd: 0, hpAdd: 60, mpAdd: 20, speedPct: 15,
+  bossDmgPct: 0, mobDmgPct: 8,
   cdMult: 1, skillMult: 1,
   desc: "치명타와 기동성의 대가. 붓처럼 지도를 달린다.",
 };
@@ -119,6 +127,7 @@ const MAGE: ClassDef = {
   name: "마법사", title: "주술사",
   color: "#a5b9ff", hex: 0xa5b9ff,
   atkPct: 30, critAdd: 4, defAdd: 0, hpAdd: 30, mpAdd: 60, speedPct: 0,
+  bossDmgPct: 0, mobDmgPct: 6,
   cdMult: 1, skillMult: 1,
   desc: "세계의 마나를 화력으로 바꾼다. 유리 대포. — \"마법은 지혜가 곧 힘이다.\"",
 };
@@ -128,6 +137,7 @@ const THIEF: ClassDef = {
   name: "도적", title: "그림자 검객",
   color: "#e8c0ff", hex: 0xe8c0ff,
   atkPct: 10, critAdd: 16, defAdd: 0, hpAdd: 70, mpAdd: 20, speedPct: 20,
+  bossDmgPct: 6, mobDmgPct: 2,
   cdMult: 0.9, skillMult: 1,
   desc: "그림자처럼 다가와 단검으로 목을 후린다. 치명타와 회피의 달인. — \"보물은 스스로 걸어온다. 내가 훔칠 뿐.\"",
 };
@@ -139,6 +149,7 @@ const BERSERKER: ClassDef = {
   name: "버서커", title: "광전사",
   color: "#ff7a5c", hex: 0xff7a5c,
   atkPct: 18, critAdd: 6, defAdd: 0, hpAdd: 80, mpAdd: 0, speedPct: 0,
+  bossDmgPct: 12, mobDmgPct: 0,
   cdMult: 1, skillMult: 1.05,
   desc: "공격에 공격을 더한다. 방어는 사치.",
 };
@@ -147,6 +158,7 @@ const GUARDIAN: ClassDef = {
   name: "가디언", title: "수호자",
   color: "#ffb08a", hex: 0xffb08a,
   atkPct: 6, critAdd: 0, defAdd: 8, hpAdd: 160, mpAdd: 0, speedPct: 5,
+  bossDmgPct: 8, mobDmgPct: 0,
   cdMult: 1, skillMult: 1,
   desc: "아군의 방패. 무너지지 않는 성벽.",
 };
@@ -155,6 +167,7 @@ const SNIPER: ClassDef = {
   name: "스나이퍼", title: "매의 눈",
   color: "#5cff8f", hex: 0x5cff8f,
   atkPct: 10, critAdd: 18, defAdd: 0, hpAdd: 40, mpAdd: 0, speedPct: 0,
+  bossDmgPct: 10, mobDmgPct: 4,
   cdMult: 1, skillMult: 1.05,
   desc: "한 발로 끝낸다. 치명타의 신.",
 };
@@ -163,6 +176,7 @@ const WINDRUNNER: ClassDef = {
   name: "윈드러너", title: "질풍",
   color: "#9dffc4", hex: 0x9dffc4,
   atkPct: 6, critAdd: 6, defAdd: 0, hpAdd: 60, mpAdd: 20, speedPct: 10,
+  bossDmgPct: 0, mobDmgPct: 12,
   cdMult: 0.9, skillMult: 1,
   desc: "바람보다 빠른 연사와 기동.",
 };
@@ -171,6 +185,7 @@ const ARCHMAGE: ClassDef = {
   name: "아크메이지", title: "대마법사",
   color: "#8fa6ff", hex: 0x8fa6ff,
   atkPct: 22, critAdd: 0, defAdd: 0, hpAdd: 20, mpAdd: 40, speedPct: 0,
+  bossDmgPct: 10, mobDmgPct: 4,
   cdMult: 1, skillMult: 1.15,
   desc: "한 방의 화력을 세계 끝까지.",
 };
@@ -179,7 +194,8 @@ const SAGE: ClassDef = {
   name: "세이지", title: "현자",
   color: "#c3cfff", hex: 0xc3cfff,
   atkPct: 10, critAdd: 4, defAdd: 3, hpAdd: 60, mpAdd: 80, speedPct: 0,
-  cdMult: 0.85, skillMult: 1,
+  bossDmgPct: 2, mobDmgPct: 8,
+  cdMult: 0.85, skillMult: 1.05, // v1.4.30 (#7) — 세이지 1→1.05 (이터널 라인 화력 지원)
   desc: "무한 마나와 짧은 회전. 지혜의 전투.",
 };
 
@@ -190,6 +206,7 @@ const WARLORD: ClassDef = {
   name: "워로드", title: "전장의 지배자",
   color: "#ff5c3c", hex: 0xff5c3c,
   atkPct: 20, critAdd: 8, defAdd: 0, hpAdd: 100, mpAdd: 0, speedPct: 5,
+  bossDmgPct: 12, mobDmgPct: 0,
   cdMult: 1, skillMult: 1.1,
   desc: "전장 그 자체가 무기. 최전선의 절대자.",
 };
@@ -198,6 +215,7 @@ const PALADIN: ClassDef = {
   name: "팔라딘", title: "성기사",
   color: "#ffd29a", hex: 0xffd29a,
   atkPct: 8, critAdd: 4, defAdd: 12, hpAdd: 200, mpAdd: 20, speedPct: 5,
+  bossDmgPct: 8, mobDmgPct: 2,
   cdMult: 1, skillMult: 1,
   desc: "빛의 맹세로 서는 자. 불굴의 성벽.",
 };
@@ -206,6 +224,7 @@ const EAGLEEYE: ClassDef = {
   name: "이글아이", title: "절대 명중",
   color: "#3cff7a", hex: 0x3cff7a,
   atkPct: 12, critAdd: 20, defAdd: 0, hpAdd: 60, mpAdd: 20, speedPct: 5,
+  bossDmgPct: 14, mobDmgPct: 4,
   cdMult: 0.95, skillMult: 1.1,
   desc: "매는 두 번 쏘지 않는다.",
 };
@@ -214,6 +233,7 @@ const TEMPEST: ClassDef = {
   name: "템페스트", title: "폭풍의 화신",
   color: "#b9ffe0", hex: 0xb9ffe0,
   atkPct: 8, critAdd: 8, defAdd: 0, hpAdd: 80, mpAdd: 40, speedPct: 10,
+  bossDmgPct: 0, mobDmgPct: 14,
   cdMult: 0.85, skillMult: 1.05,
   desc: "폭풍처럼 몰아치는 화망.",
 };
@@ -222,6 +242,7 @@ const STORMBRINGER: ClassDef = {
   name: "스톰브링어", title: "폭풍소환자",
   color: "#6f8cff", hex: 0x6f8cff,
   atkPct: 25, critAdd: 4, defAdd: 0, hpAdd: 40, mpAdd: 50, speedPct: 0,
+  bossDmgPct: 12, mobDmgPct: 6,
   cdMult: 0.95, skillMult: 1.2,
   desc: "하늘의 분노를 부리는 종단의 마법사.",
 };
@@ -229,8 +250,9 @@ const CHRONICLE: ClassDef = {
   key: "chronicle", tier: 3, parent: "sage",
   name: "크로니컬", title: "서사의 기록자",
   color: "#e2e8ff", hex: 0xe2e8ff,
-  atkPct: 12, critAdd: 6, defAdd: 6, hpAdd: 100, mpAdd: 100, speedPct: 5,
-  cdMult: 0.8, skillMult: 1.05,
+  atkPct: 14, critAdd: 6, defAdd: 6, hpAdd: 100, mpAdd: 100, speedPct: 5,
+  bossDmgPct: 4, mobDmgPct: 10,
+  cdMult: 0.8, skillMult: 1.12, // v1.4.30 (#7) — 크로니컬 1.05→1.12
   desc: "모든 마법의 순환을 통괄하는 현자의 정점.",
 };
 
@@ -241,6 +263,7 @@ const ASSASSIN: ClassDef = {
   name: "어세신", title: "암살자",
   color: "#d89aff", hex: 0xd89aff,
   atkPct: 14, critAdd: 14, defAdd: 0, hpAdd: 40, mpAdd: 10, speedPct: 10,
+  bossDmgPct: 12, mobDmgPct: 0,
   cdMult: 0.85, skillMult: 1.1,
   desc: "한 방의 치명타. 그림자 속의 죽음.",
 };
@@ -249,6 +272,7 @@ const SWASHBUCKLER: ClassDef = {
   name: "스와시버클러", title: "검객",
   color: "#f0c8ff", hex: 0xf0c8ff,
   atkPct: 12, critAdd: 8, defAdd: 4, hpAdd: 90, mpAdd: 20, speedPct: 10,
+  bossDmgPct: 2, mobDmgPct: 8,
   cdMult: 0.9, skillMult: 1,
   desc: "화려한 연타로 적을 농락한다. 바다의 검객.",
 };
@@ -257,6 +281,7 @@ const NIGHTBLADE: ClassDef = {
   name: "나이트블레이드", title: "야경의 칼날",
   color: "#c08aff", hex: 0xc08aff,
   atkPct: 18, critAdd: 16, defAdd: 0, hpAdd: 60, mpAdd: 30, speedPct: 10,
+  bossDmgPct: 14, mobDmgPct: 2,
   cdMult: 0.8, skillMult: 1.15,
   desc: "어둠이 곧 무기. 베이고 나서 보이지 않는다.",
 };
@@ -265,6 +290,7 @@ const DUELIST: ClassDef = {
   name: "듀얼리스트", title: "결투의 정점",
   color: "#ffd8ff", hex: 0xffd8ff,
   atkPct: 16, critAdd: 10, defAdd: 6, hpAdd: 120, mpAdd: 30, speedPct: 10,
+  bossDmgPct: 8, mobDmgPct: 6,
   cdMult: 0.85, skillMult: 1.1,
   desc: "일대일 결투에서 무적. 쌍단검의 화신.",
 };
@@ -276,6 +302,7 @@ const WARBRINGER: ClassDef = {
   name: "워브링어", title: "전쟁의 화신",
   color: "#ff3c1c", hex: 0xff3c1c,
   atkPct: 30, critAdd: 10, defAdd: 5, hpAdd: 300, mpAdd: 0, speedPct: 5,
+  bossDmgPct: 18, mobDmgPct: 4,
   cdMult: 0.9, skillMult: 1.25,
   desc: "전쟁 그 자체. 세계를 가르는 일격.",
 };
@@ -284,6 +311,7 @@ const CRUSADER: ClassDef = {
   name: "크루세이더", title: "심판의 빛",
   color: "#ffe29a", hex: 0xffe29a,
   atkPct: 15, critAdd: 8, defAdd: 20, hpAdd: 400, mpAdd: 40, speedPct: 5,
+  bossDmgPct: 12, mobDmgPct: 6,
   cdMult: 0.9, skillMult: 1.15,
   desc: "불굴의 성벽이 심판의 검을 든다.",
 };
@@ -292,6 +320,7 @@ const DEADEYE: ClassDef = {
   name: "데드아이", title: "신의 시선",
   color: "#1cff5c", hex: 0x1cff5c,
   atkPct: 20, critAdd: 30, defAdd: 0, hpAdd: 120, mpAdd: 40, speedPct: 10,
+  bossDmgPct: 18, mobDmgPct: 6,
   cdMult: 0.85, skillMult: 1.25,
   desc: "모든 화살은 신의 심판이 된다.",
 };
@@ -300,6 +329,7 @@ const SKYLORD: ClassDef = {
   name: "스카이로드", title: "하늘의 지배자",
   color: "#ccffe8", hex: 0xccffe8,
   atkPct: 15, critAdd: 12, defAdd: 0, hpAdd: 160, mpAdd: 80, speedPct: 20,
+  bossDmgPct: 2, mobDmgPct: 18,
   cdMult: 0.75, skillMult: 1.2,
   desc: "바람이 그의 명령을 기다린다.",
 };
@@ -308,6 +338,7 @@ const ARCLORD: ClassDef = {
   name: "아크로드", title: "마나의 절대자",
   color: "#5c7cff", hex: 0x5c7cff,
   atkPct: 35, critAdd: 8, defAdd: 0, hpAdd: 100, mpAdd: 120, speedPct: 0,
+  bossDmgPct: 16, mobDmgPct: 8,
   cdMult: 0.85, skillMult: 1.35,
   desc: "한 발의 마법이 지평선을 지운다.",
 };
@@ -315,8 +346,11 @@ const ETERNAL: ClassDef = {
   key: "eternal", tier: 4, parent: "chronicle",
   name: "이터널", title: "시간을 초월한 자",
   color: "#ffffff", hex: 0xffffff,
-  atkPct: 18, critAdd: 10, defAdd: 10, hpAdd: 220, mpAdd: 200, speedPct: 10,
-  cdMult: 0.7, skillMult: 1.2,
+  atkPct: 24, critAdd: 10, defAdd: 10, hpAdd: 220, mpAdd: 200, speedPct: 10,
+  /* v1.4.30 (#7 이터널 실성능 강화) — skillMult 1.2→1.4·atkPct 18→24:
+   *  특화는 사냥(mob)+보스 골고루 — 지속전 강점(짧은 쿨·CC·힐)이 실제 화력으로 이어지게. */
+  bossDmgPct: 14, mobDmgPct: 14,
+  cdMult: 0.7, skillMult: 1.4, // v1.4.30 (#7) — 이터널 1.2→1.4 (실성능 강화 핵심 레버)
   desc: "모든 마법이 그의 이름 앞에 무릎 꿇는다.",
 };
 const SHADOWLORD: ClassDef = {
@@ -324,6 +358,7 @@ const SHADOWLORD: ClassDef = {
   name: "섀도우로드", title: "그림자 군주",
   color: "#a86aff", hex: 0xa86aff,
   atkPct: 25, critAdd: 25, defAdd: 0, hpAdd: 150, mpAdd: 60, speedPct: 15,
+  bossDmgPct: 18, mobDmgPct: 2,
   cdMult: 0.7, skillMult: 1.3,
   desc: "그림자가 그를 따라 세계를 덮는다.",
 };
@@ -332,6 +367,7 @@ const BLADEMASTER: ClassDef = {
   name: "블레이드마스터", title: "검의 극한",
   color: "#ffaaff", hex: 0xffaaff,
   atkPct: 22, critAdd: 18, defAdd: 8, hpAdd: 220, mpAdd: 60, speedPct: 15,
+  bossDmgPct: 8, mobDmgPct: 10,
   cdMult: 0.75, skillMult: 1.25,
   desc: "단검 두 자루로 신을 벤다.",
 };
@@ -402,13 +438,15 @@ export type ClassBonus = {
   speedPct: number;
   cdMult: number;
   skillMult: number;
+  bossDmgPct: number;
+  mobDmgPct: number;
 };
 
 /** 경로 누적 보너스 — 합산은 합, 배율은 곱 */
 export function bonusOf(key?: string | null): ClassBonus {
   const acc: ClassBonus = {
     atkPct: 0, critAdd: 0, defAdd: 0, hpAdd: 0, mpAdd: 0, speedPct: 0,
-    cdMult: 1, skillMult: 1,
+    cdMult: 1, skillMult: 1, bossDmgPct: 0, mobDmgPct: 0,
   };
   for (const d of chainOf(key)) {
     acc.atkPct += d.atkPct;
@@ -419,6 +457,8 @@ export function bonusOf(key?: string | null): ClassBonus {
     acc.speedPct += d.speedPct;
     acc.cdMult *= d.cdMult;
     acc.skillMult *= d.skillMult;
+    acc.bossDmgPct += d.bossDmgPct;
+    acc.mobDmgPct += d.mobDmgPct;
   }
   return acc;
 }

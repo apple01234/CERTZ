@@ -184,8 +184,9 @@ export type SaveData = {
   coupons?: string[];
   /** 출석부 { 마지막 출석일, 사이클 카운트 } */
   attend?: { last: string; count: number };
-  /** 일일 퀘스트 { 날짜, 토벌, 게이트, 던전, 수령 완료, 광고 시청 } */
-  daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number; adsChest?: number; adsDrop?: number; farms?: number; bosses?: number };
+  /** 일일 퀘스트 { 날짜, 토벌, 게이트, 던전, 수령 완료, 광고 시청 }
+   *  v1.4.30 — praid: 공동 토벌전 하루 1회 입장 제한 카운터 */
+  daily?: { date: string; hunts: number; gate: number; closet: number; claimed: string[]; ads?: number; adsChest?: number; adsDrop?: number; farms?: number; bosses?: number; praid?: number };
   /** 일일 입장 티켓 { 날짜, 게이트 잔여, 던전 잔여, 재충전 횟수 } */
   tickets?: { date: string; gate: number; closet: number; refills?: number };
   /** 수령 완료 업적 */
@@ -364,6 +365,7 @@ export function loadSave(): SaveData | null {
     if (!d.daily || typeof d.daily !== "object") d.daily = { date: "", hunts: 0, gate: 0, closet: 0, claimed: [] };
     if (!Array.isArray(d.daily.claimed)) d.daily.claimed = [];
     if (typeof d.daily.ads !== "number") d.daily.ads = 0;
+    if (typeof d.daily.praid !== "number") d.daily.praid = 0; // v1.4.30 — 공동토벌전 일 1회
     if (!d.tickets || typeof d.tickets !== "object") d.tickets = { date: "", gate: 0, closet: 0 };
     if (!Array.isArray(d.achClaimed)) d.achClaimed = [];
     if (typeof d.gateBest !== "number") d.gateBest = 0;

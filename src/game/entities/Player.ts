@@ -471,7 +471,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const empowered = this.nextAtkEmpowered; // v3.0.6 — 그림자 숨기 강화 소모
     this.nextAtkEmpowered = false;
-    const dmgMul = (warrior ? 1.1 : 1.0) + 0.05 * t + (empowered ? 0.5 : 0);
+    const dmgMul = (warrior ? 1.1 : 1.0) + 0.08 * t + (empowered ? 0.5 : 0); // v1.4.30 (#2) 사다리 0.05→0.08
     const reach = warrior ? 176 : 160; // 전사 — 전방 판정 확대
     const knock = warrior ? 320 : 280;
 
@@ -571,7 +571,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const showFlash = t >= 2 || isDeadeye || isSkylord;
 
     const fireOne = (i: number) => {
-      const { dmg, crit } = this.rollDamage(0.95 + 0.04 * t + (i === 0 && empowered ? 0.5 : 0), i > 0);
+      const { dmg, crit } = this.rollDamage(0.95 + 0.07 * t + (i === 0 && empowered ? 0.5 : 0), i > 0); // v1.4.30 (#2) 0.04→0.07
       if (crit) this.scene.sfxCrit();
       this.scene.firePlayerProj({
         x: this.x, y: this.y - 8,
@@ -633,7 +633,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       for (let i = 0; i < shots; i++) {
         this.scene.time.delayedCall(i * 90, () => {
           if (this.state === "dead") return;
-          const { dmg, crit } = this.rollDamage(1.0 + 0.04 * t + (i === 0 ? (empowered ? 0.5 : 0) : 0), true);
+          const { dmg, crit } = this.rollDamage(1.0 + 0.07 * t + (i === 0 ? (empowered ? 0.5 : 0) : 0), true); // v1.4.30 (#2) 0.04→0.07
           this.scene.firePlayerProj({
             x: this.x, y: this.y - 10,
             angle: angle + (shots > 1 ? (i - (shots - 1) / 2) * 0.09 : 0),
@@ -687,7 +687,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       // v3.0.6 (지시 #3): 표창 발수 — 3차+ 2발 / 4차+ 3발 부채꼴
       const n = t >= 4 ? 3 : t >= 3 ? 2 : 1;
       for (let i = 0; i < n; i++) {
-        const { dmg, crit } = this.rollDamage(1.05 + 0.05 * t + (i === 0 ? (empowered ? 0.5 : 0) : 0), true);
+        const { dmg, crit } = this.rollDamage(1.05 + 0.08 * t + (i === 0 ? (empowered ? 0.5 : 0) : 0), true); // v1.4.30 (#2) 0.05→0.08
         this.scene.firePlayerProj({
           x: this.x, y: this.y - 8,
           angle: angle + (n > 1 ? (i - (n - 1) / 2) * 0.1 : 0),
@@ -863,12 +863,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  GameStudio(Gameworks) 3D VFX를 전직 단계에 비례해 합성 — v1.0.13 재설계:
    *  모든 직업이 자기 계열색 마법진 시그니처 보유 / 2·3차는 절제판(알파·크기 축소) /
    *  4차 룬 마법진+크리티컬 플래시 풀 / 5차 폭발+화염 풀. 미전직·1차는 기존 연출 유지 */
-  private tierFlair() {
+  private tierFlair(major = false) {
     const t = this.sTier;
     if (t < 2) return;
     const fam = familyOf(this.cls) as FamKey;
     const aim = this.aimDir();
-    spawnTierFlair(this.scene, this.x, this.y, this.clsHex(), t, fam, aim.lengthSq() > 0.01 ? aim.angle() : 0);
+    /* v1.4.30 (#6 5차 공통 이펙트 축소) — major=true(중요 스킬: 4차기 B)만 전체 패키지,
+     *  Z/C/V 주력기는 3차 수준 경량판만 — 5차 스킬마다 폭발+화염이 겹치던 과잉 연출 완화 */
+    spawnTierFlair(this.scene, this.x, this.y, this.clsHex(), t, fam, aim.lengthSq() > 0.01 ? aim.angle() : 0, major);
   }
 
   /** v1.0.11 — 튜토리얼 알림 (월드 튜토리얼 컨트롤러에 이벤트 전달 — 스킬/물약 학습 판정) */
@@ -923,7 +925,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* v4.1.3 (#1차전사차별화) — 1차(t=1) 전사 대미지 보정 +0.25 (1.9→2.15, 미전직 1.6 대비 +34%).
      *  지시 #9 "1차 전사가 기본캐릭이랑 같아 보인다" — 수치 체감 + 전용 연출(하단)으로 분리.
      *  2차+(t>=2)는 기존 곡선 유지. bleed(버서커 판)도 영향 없음 */
-    const dmgMul = 1.6 + 0.3 * t + (t === 1 ? 0.25 : 0);
+    const dmgMul = 1.6 + 0.42 * t + (t === 1 ? 0.25 : 0); // v1.4.30 (#2) 사다리 0.3→0.42 — 5차 회전베기 3.7배
     const radius = 118 + 16 * t;
     /* v4.3.0 — 직업별 사운드: 전사 회전베기=대검 참격음(bigsword) — 기본공격음과 스왑 (유저 지시)
      *  버서커(bleed)=bigsword 저피치 유지 */
@@ -1110,7 +1112,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8); // v3.0.2 — 시전 이펙트
     const t = this.sTier;
     if (t >= 4) this.scene.spawnPillar(this.x + aim.x * 14, this.y - 12 + aim.y * 8, 0xa5b9ff, 90); // 4차 강화 시전 이펙트
-    const { dmg, crit } = this.rollDamage(2.0 + 0.35 * t, true);
+    const { dmg, crit } = this.rollDamage(2.0 + 0.5 * t, true); // v1.4.30 (#2) 사다리 0.35→0.5
     if (crit) this.scene.sfxCrit();
     this.scene.firePlayerProj({
       x: this.x, y: this.y - 10,
@@ -1187,7 +1189,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.sfxSkill("quake"); // v3.0.24 — 가디언 성벽 강타 (지진음)
     this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 1.5, hex);
     // 방어 버프 — 성벽 정체성 (전장의 함성 공격 버프와 별개 축)
-    this.selfDefBuff = { add: 8 + 2 * t, until: this.scene.time.now + 6000 };
+    /* v1.4.30 (#2) — 지속시간도 n차에 비례해 길어진다 (5s + 0.5s×t) */
+    this.selfDefBuff = { add: 8 + 2 * t, until: this.scene.time.now + 5000 + 500 * t };
     const smash = (delay: number, mul: number) => {
       this.scene.time.delayedCall(delay, () => {
         if (this.state === "dead") return;
@@ -1251,7 +1254,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const perp = rel.clone().subtract(closest);
       if (perp.length() <= halfW + 18) {
         hits++;
-        const { dmg, crit } = this.rollDamage(2.4 + 0.25 * t, true);
+        const { dmg, crit } = this.rollDamage(2.4 + 0.4 * t, true); // v1.4.30 (#2) 사다리 0.25→0.4
         if (crit) this.scene.sfxCrit();
         e.takeDamage(dmg, dirv, 260, crit);
       }
@@ -1303,7 +1306,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.play(this.bodyKey("hero-atk"));
     this.scene.sfxSkill("electron"); // v3.0.24 — 아크메이지 아크 볼트 (전자음)
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8);
-    const { dmg, crit } = this.rollDamage(2.4 + 0.3 * t, true);
+    const { dmg, crit } = this.rollDamage(2.4 + 0.45 * t, true); // v1.4.30 (#2) 사다리 0.3→0.45
     this.scene.fireExplodingBolt({
       x: this.x, y: this.y - 10, angle, speed: 440,
       dmg, crit, pierce: 2 + t, hex,
@@ -1401,7 +1404,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         this.setFlipX(lastDir.x > 0); // v1.0.16 — 좌향 네이티브 통일 (점멸 직후 참격 정면화)
         this.scene.spawnSlash(this.x, this.y, lastDir, i % 2 === 0, 1.2, hex);
-        const { dmg, crit } = this.rollDamage(3.0 + 0.25 * t, true);
+        const { dmg, crit } = this.rollDamage(3.0 + 0.4 * t, true); // v1.4.30 (#2) 사다리 0.25→0.4
         if (crit) this.scene.sfxCrit();
         e.takeDamage(dmg, lastDir, 240, crit);
         // 출혈 추가타
@@ -1680,7 +1683,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           // 버서커 — 종착 분노 폭발 + 공격 버프 (전사 충격파와 분리)
           this.scene.spawnBurstAt(this.x, this.y, 18 + 2 * t, 0xff5c3c);
           this.scene.spawnCrack?.(this.x, this.y);
-          this.selfAtkBuff = { mult: 1.15 + 0.03 * t, until: this.scene.time.now + 5000 };
+          this.selfAtkBuff = { mult: 1.15 + 0.03 * t, until: this.scene.time.now + 4000 + 500 * t }; // v1.4.30 (#2) 지속 티어 스케일
           burst(110 + 10 * t, 1.1 + 0.1 * t, 300);
           this.scene.spawnPickupText(this.x, this.y - 44, "분노!", "#ff7a5c");
           break;
@@ -1688,7 +1691,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         case "bulwarkdash": {
           // 가디언 — 종착 지진파 + 방어 버프 (성벽 강타의 방어 버프와 축 공유, 수치 별도)
           this.scene.spawnBurstAt(this.x, this.y, 14 + 2 * t, 0xffd29a);
-          this.selfDefBuff = { add: 10 + 2 * t, until: this.scene.time.now + 6000 };
+          this.selfDefBuff = { add: 10 + 2 * t, until: this.scene.time.now + 5000 + 500 * t }; // v1.4.30 (#2) 지속 티어 스케일
           burst(100 + 10 * t, 0.8 + 0.1 * t, 380);
           this.scene.spawnPickupText(this.x, this.y - 44, "불굴!", "#ffd29a");
           break;
@@ -1814,6 +1817,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     switch (kind) {
       /* 워로드 — 전장의 함성: 광역 외침 + 공격력 버프 (v3.0.4 — 임팩트 대폭 상향) */
       case "warcry": {
+        const t = this.sTier; // v1.4.30 — 지속시간 티어 스케일용
         this.scene.spawnSpinSlash(this.x, this.y, 1);
         this.scene.spawnBurstAt(this.x, this.y, 26, hex);
         this.scene.spawnCrack?.(this.x, this.y);
@@ -1825,7 +1829,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (crit) this.scene.sfxCrit();
           e.takeDamage(dmg, away, 380, crit);
         }
-        this.selfAtkBuff = { mult: 1.35, until: this.scene.time.now + 10000 };
+        this.selfAtkBuff = { mult: 1.35, until: this.scene.time.now + 8000 + 800 * t }; // v1.4.30 (#2) 지속 티어 스케일
         this.scene.spawnPickupText(this.x, this.y - 44, "전장의 함성! 공격력 크게 증가", "#ff9a8a");
         break;
       }
@@ -1954,6 +1958,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* ════════ v3.0.4 — 4차 전용 고유 3차기 (기존 3차 스킬과 완전 별개 — 겹침 0) ════════ */
       /* 워브링어 — 피의 격노: 광역 출혈 + 공격력·신속 동시 버프 */
       case "bloodrage": {
+        const t = this.sTier; // v1.4.30 — 지속시간 티어 스케일용
         this.scene.spawnSpinSlash(this.x, this.y, 1);
         this.scene.spawnBurstAt(this.x, this.y, 26, 0xff2d2d);
         this.scene.cameras.main.shake(130, 0.008);
@@ -1973,7 +1978,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
           }
         }
-        this.selfAtkBuff = { mult: 1.45, until: this.scene.time.now + 9000 };
+        this.selfAtkBuff = { mult: 1.45, until: this.scene.time.now + 8000 + 600 * t }; // v1.4.30 (#2) 지속 티어 스케일
         this.selfSpdBuff = { mult: 1.25, until: this.scene.time.now + 9000 };
         this.recalcSpeed();
         this.scene.spawnPickupText(this.x, this.y - 44, "피의 격노! 공격·신속 상승 + 광역 출혈", "#ff5c3c");
@@ -2093,13 +2098,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.cameras.main.flash(80, 170, 210, 255);
         break;
       }
-      /* 이터널 — 중력 붕괴: 적을 한 점으로 끌어모은 뒤 대폭발 (시간 왜곡과 완전 별개) */
+      /* 이터널 — 중력 붕괴: 적을 한 점으로 끌어모은 뒤 대폭발 (시간 왜곡과 완전 별개)
+       *  v1.4.30 (#7) — 폭발 계수 2.8 고정 → 2.8+0.25·t 사다리 (5차 4.05배) + 끌어당김 반경 확대 */
       case "gravity": {
+        const t = this.sTier;
         const aim = this.aimDirFree().normalize();
         const wb = this.scene.physics.world.bounds;
         const cx = Phaser.Math.Clamp(this.x + aim.x * 120, 60, wb.width - 60);
         const cy = Phaser.Math.Clamp(this.y + aim.y * 120, 60, wb.height - 60);
-        const victims = this.getAllTargetsIn(320);
+        const victims = this.getAllTargetsIn(320 + 24 * t);
         // 4단계 끌어당김 — 90ms 간격 35%씩 중심으로
         for (const e of victims) {
           const eb = e;
@@ -2121,9 +2128,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnBurstAt(cx, cy, 30, hex);
           this.scene.cameras.main.shake(150, 0.01);
           this.scene.cameras.main.flash(100, 200, 180, 255);
-          for (const e of this.getAllTargetsIn(190)) {
+          for (const e of this.getAllTargetsIn(190 + 10 * t)) {
             const away = new Phaser.Math.Vector2(e.x - cx, e.y - cy).normalize();
-            const { dmg, crit } = this.rollDamage(2.8, true);
+            const { dmg, crit } = this.rollDamage(2.8 + 0.25 * t, true);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 300, crit);
           }
@@ -2228,6 +2235,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hitSet.clear();
     this.setVelocity(0, 0);
     this.netEmitAction("s4"); // v4.1.0
+    this.tierFlair(true); // v1.4.30 (#6) — 4차기(중요 스킬)만 풀 패키지 기존 연출
     const hex = this.clsHex();
     const now = this.scene.time.now;
     /* v3.0.24 — 4차기 8종 직업별 사운드 (필살기 임팩트 배치) */
@@ -2378,8 +2386,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnPickupText(this.x, this.y - 44, `마나 붕괴! MP ${spent} 소모`, "#c3cfff");
         break;
       }
-      /* 이터널 — 영원의 고리: 광역 기절(시간 정지) — v3.0.4 임팩트 상향 */
+      /* 이터널 — 영원의 고리: 광역 기절(시간 정지) — v3.0.4 임팩트 상향
+       *  v1.4.30 (#7) — 계수 2.6 고정 → 4.4+0.3·t 사다리 (전 4차기 꼴찌 2.6배가 4차 5.6배로).
+       *  보스도 시간 잠금(최대 1.4초 경직 — Boss.applyStun)이 먹어 보스전 실성능 확보. */
       case "eternalloop": {
+        const t = this.sTier;
         this.scene.spawnField({
           x: this.x, y: this.y + 10, radius: 380, dur: 1100,
           dps: 0, kind: "time", owner: "player",
@@ -2387,7 +2398,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         for (const e of this.getAllTargetsIn(380)) {
           (e as Enemy).applyStun?.(3200);
           const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-          const { dmg } = this.rollDamage(2.6, true);
+          const { dmg } = this.rollDamage(4.4 + 0.3 * t, true);
           e.takeDamage(dmg, away, 60, false);
         }
         /* v3.0.7 — 영원(크로니컬 계열) 힐러 정점: 시간 정지 동안 자신 HP 25% + MP 50% 즉시 회복 */
@@ -2819,7 +2830,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       }
 
-      /* 이터널 — 영겁극: 시간 정지 + 7중 잔상 폭발 (잔상이 두 번 울린다) */
+      /* 이터널 — 영겁극: 시간 정지 + 7중 잔상 폭발 (잔상이 두 번 울린다)
+       *  v1.4.30 (#7) — 기둥 3.4→4.0 · 잔상 1.7→2.2(상시) · 종결 6.4→8.0 —
+       *  데드아이 신시극(68배)에 필적하는 63배급 종결기로 재조정. */
       case "eternal": {
         /* 시간 정지 — 전장의 적 전원 3.2초 기절 + 시간 필드 */
         this.scene.spawnField({
@@ -2845,13 +2858,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 210) continue;
               const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
-              const { dmg, crit } = this.rollDamage(3.4, true);
+              const { dmg, crit } = this.rollDamage(4.0, true);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 400, crit);
-              /* 잔상 — 같은 피해가 두 번 울린다 (50%) */
+              /* 잔상 — 같은 피해가 두 번 울린다 (상시) */
               this.scene.time.delayedCall(170, () => {
                 if (!e.active) return;
-                const { dmg: echo } = this.rollDamage(1.7, true);
+                const { dmg: echo } = this.rollDamage(2.2, true);
                 e.takeDamage(echo, away, 120, false);
               });
             }
@@ -2871,7 +2884,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(580)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(6.4, true);
+            const { dmg, crit } = this.rollDamage(8.0, true); // v1.4.30 (#7) 6.4→8.0
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
           }
@@ -3261,7 +3274,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.expBonusPct) gain = Math.round(gain * (1 + this.expBonusPct() / 100));
     this.exp += gain;
     let leveled = false;
-    while (this.exp >= this.expNext()) {
+    /* v1.4.30 (#1 프리즈 방지) — 대량 EXP(파티 레이드 보상 등)가 한 번에 들어오면
+     *  while 루프가 수백 회 돌며 같은 프레임에서 sfx/FX를 수백 번 트리거해
+     *  저사양 기기에서 렌더 정지처럼 보이는 사례 방지. 레벨당 1회 연산으로 보장하고
+     *  루프 상한(200회)을 둔다 — 잔여 EXP는 남아 다음 처치 때 이어서 레벨업된다. */
+    let guard = 0;
+    while (this.exp >= this.expNext() && guard++ < 200) {
       this.exp -= this.expNext();
       this.lv++;
       leveled = true;
@@ -3801,9 +3819,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  v4.0.0 — 게이트 인런 카드 스킬 피해 배율 */
     const fifth = isSkill && this.isFifth ? FIFTH_SKILL_MULT : 1;
     const runSkl = isSkill && this.runBuffs.skillPct > 0 ? 1 + this.runBuffs.skillPct / 100 : 1;
-    const m = (isSkill ? mult * this.clsBonus.skillMult * fifth * runSkl : mult) * rage;
+    /* v1.4.30 (#2) — n차 스킬 사다리: 거듭할수록 스킬이 훨씬 쎄진다 (전 스킬 공통 ×계수)
+     *  1차 ×1.0 / 2차 ×1.12 / 3차 ×1.24 / 4차 ×1.36 / 5차 ×1.48 —
+     *  전직이 스킬 배율 사다리(dmgMul = base + k·t)와 곱해져 후반 격차를 크게 벌린다. */
+    const tierScl = isSkill ? 1 + 0.12 * Math.max(0, this.sTier - 1) : 1;
+    const m = (isSkill ? mult * this.clsBonus.skillMult * fifth * runSkl * tierScl : mult) * rage;
     return { dmg: Math.round(this.atkTotal * m * (crit ? this.critDmg : 1)), crit };
   }
+
+  /* v1.4.30 (#2 사냥/보스 밸런스) — 직업 특화 피해 가산 (Enemy/Boss.takeDamage에서 참조)
+   *  보스 특화 직업은 보스전, 사냥 특화 직업은 필드 사냥에서 체감 차등이 생긴다 */
+  get bossDmgBonus(): number { return this.clsBonus.bossDmgPct ?? 0; }
+  get mobDmgBonus(): number { return this.clsBonus.mobDmgPct ?? 0; }
 
   /** 피격 판정 — v3.0.6: pierce(0~1)만큼 방어력을 무시 (보스 공격 전용 — 방어 스택으로 보스가 무력화되는 것 방지) */
   applyDefense(raw: number, pierce = 0): number {
