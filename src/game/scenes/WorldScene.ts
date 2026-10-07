@@ -1325,12 +1325,11 @@ export class WorldScene extends Phaser.Scene {
       this.huntCount = 0;
     }
     this.playerRef = this.player;
-    /* v3.0.18 — 카메라 추적 lerp 0.12→0.18: 캐릭터가 카메라를 "끌고 가는" 둔감한
-     *  여운(걸리는 느낌의 시각적 원인) 축소. 0.2 이상은 화면 흔들림 유발 — 0.18 채택 */
-    this.cameras.main.startFollow(this.player, true, 0.18, 0.18);
-    /* v4.10.0 — startFollow는 followOffset을 0으로 리셋하므로(엔진 startFollow 858행)
-     *  줌 보정값을 다시 적용해야 진짜 중앙 추적이 된다 */
-    this.applyFollowZoomOffset();
+    /* v3.0.18 — 카메라 추적 lerp 0.12→0.18 체감은 applyManualCameraFollow의 k=0.18로 승계.
+     * v5.0.1 — 엔진 follow 완전 폐지 → 수동 추적 전환 (applyManualCameraFollow 주석 참조).
+     *  startFollow를 호출하지 않는다 — preRender follow가 매 프레임 스크롤을 덮어써
+     *  PC 웹 줌 환경(1.5~2.5)에서 캐릭터가 가장자리에 붙거나 시야에서 밀려나는 원인
+     *  (1080p 실측: 캐릭터 부재·720p 실측: 좌측 절반 클리핑 — v4.10.0 보정에도 잔존) */
     this.physics.add.collider(this.player, this.solidGroup);
     /* v2.6 — 육식 식물 접촉 데미지 등록 (플레이어 생성 후) */
     for (const plant of this.plantHazards)
@@ -1720,32 +1719,53 @@ export class WorldScene extends Phaser.Scene {
   private zoomLastW = 0;
   private zoomTimer: Phaser.Time.TimerEvent | null = null;
 
-  /* ================= v4.10.0 (유저 지시 "맵이 지금 위치에서 x축이 화면 정 가운데에 있어야지") =================
-   *  Phaser 4.2.1 카메라 follow 줌 누락 + clamp 특이 공식 보정.
-   *
-   *  [원인 실측 — 라이브 3뷰포트, desired/clamp 공식과 전부 일치해 확정]
-   *  엔진 preRender의 follow는 desired scroll을 `follow.x - width * 0.5`로 계산한다
-   *  (originX = width × origin — displayWidth(/zoom)이 아님 → 줌 미반영).
-   *  clampX는 `bx = bounds.x + (displayWidth - width)/2` 특이 공식으로 정확히 같은 폭만큼
-   *  좌측 초과 스크롤을 허용하고 우측은 `bounds.right - displayWidth + (width-dw)/2`까지라
-   *  맵 우측 끝이 화면에 도달하지 않는다.
-   *  → 줌 1(앱)에선 모든 식이 우연히 정확해 무증상, PC 웹(줌 1.5~2.5)에서 처음 발현:
-   *    캐릭터가 항상 화면 x ~87%에 고정 + 맵 좌측 가장자리 공백 + 맵 우측 도달 불가.
-   *
-   *  [보정]
-   *   ① followOffset = -width×(z-1)/(2z) → desired = follow.x - displayWidth/2 (진짜 정중앙)
-   *   ② clampX/Y를 인스턴스에서 정석 범위로 교체 — 맵≥뷰: [0, world-view] (가장자리 밀착·공백 0),
-   *      맵<뷰: (world-view)/2 고정 (4K 마을·실내처럼 맵이 화면보다 작으면 맵 x축을 화면 정중앙에).
-   *  줌은 applyCameraZoom에서 변하므로 followOffset도 매 줌 적용마다 재계산.
-   *  앱(줌=1)은 보정값 0 — 기존 동작 무영향. cam.midPoint는 followOffset의 영향을 받지만
-   *  게임 코드는 midPoint를 사용하지 않아(전수 확인) 안전. */
+  /* v5.0.1 — 맵전환·보스 인트로 팬(pan) 시네마틱 중 수동 추적 보류 플래그 */
+  private camCinema = false;
+
+  /* v5.0.1 — 카메라 수동 추적: update에서 매 프레임 스크롤을 직접 계산한다.
+   *  [배경] Phaser 4.2.1 preRender follow는 desired scroll을 follow.x - width/2로 계산(줌 미반영)하고
+   *  clampX 특이 공식과 맞물려 줌>1에서 캐릭터가 화면 가장자리에 붙거나(v4.10.0 이전 87% 고정)
+   *  followOffset 보정으로도 720p 좌측 클리핑·1080p 시야 이탈이 실측됐다.
+   *  [방식] 엔진 follow를 아예 걷어내고(월드 씬 startFollow 호출부 제거) 매 프레임 산술 확정:
+   *    캐릭터 화면 정중앙 + 맵≥뷰 가장자리 밀착 + 맵<뷰 중앙 고정.
+   *  스무딩은 프레임률 무관 지수 감쇠(k = 1-(1-0.18)^(dt/16.67))로 기존 lerp 0.18@60fps 체감 승계.
+   *  팬 시네마틱 중엔 camCinema로 보류 — 팬 완료 해제 시 현재 스크롤에서 자연 이어받는다.
+   *  앱(줌 1)도 동일 공식 — 정중앙 추적으로 체감 동일, 무영향. */
+  private applyManualCameraFollow(dt: number) {
+    const cam = this.cameras?.main;
+    if (!cam || this.camCinema || !this.player?.active) return;
+    const z = cam.zoom || 1;
+    const vw = cam.width / z;
+    const vh = cam.height / z;
+    /* 원하는 뷰 좌상단(월드): 캐릭터 화면 정중앙 + 맵≥뷰 가장자리 밀착 + 맵<뷰 중앙 고정 */
+    const vx = this.stageW > vw ? Phaser.Math.Clamp(this.player.x - vw / 2, 0, this.stageW - vw) : (this.stageW - vw) / 2;
+    const vy = this.stageH > vh ? Phaser.Math.Clamp(this.player.y - vh / 2, 0, this.stageH - vh) : (this.stageH - vh) / 2;
+    /* P4 렌더 보정: screen = origin + z×(world - scroll - origin)
+     *  → 뷰 좌상단 = scroll + origin×(1-1/z) → scroll = 뷰좌상단 - origin×(1-1/z) */
+    const shx = (cam.width * 0.5) * (1 - 1 / z);
+    const shy = (cam.height * 0.5) * (1 - 1 / z);
+    const tx = vx - shx;
+    const ty = vy - shy;
+    /* 프레임률 무관 지수 감쇠 — 기존 lerp 0.18@60fps 체감 승계 */
+    const k = 1 - Math.pow(1 - 0.18, Math.min(dt, 100) / 16.667);
+    cam.scrollX += (tx - cam.scrollX) * k;
+    cam.scrollY += (ty - cam.scrollY) * k;
+  }
+
+  /* ================= v5.0.1 — 카메라 수동 추적 (v4.10.0 보정 전면 대체) =================
+   *  [근본 원인 — Phaser 4.2.1 소스 + 실측 확정]
+   *  P4 렌더 변환: screen = origin + zoom × (world - scroll - origin)
+   *  → 뷰(실제 보이는 월드 영역) 좌상단 = scroll + origin×(1 - 1/zoom)
+   *  scroll은 "중심월드좌표 - width/2" semantics이지 뷰 좌상단이 아니다 (centerOnX 소스 참조).
+   *  v4.10.0은 이 모델을 몰라 clampX를 좌상단 semantics로 교체 → 뷰가 맵 기준 +origin×(1-1/z)
+   *  만큼 오른쪽으로 밀려 스폰지점이 시야 밖(1080p 캐릭터 부재·720p 좌측 클리핑) — PC 웹만 증상.
+   *  [해결] 엔진 follow/clamp 전면 배제, update에서 매 프레임:
+   *    원하는 뷰 좌상단 vx(캐릭터 정중앙 + 맵 밀착) → scroll = vx - origin×(1 - 1/zoom)
+   *  worldView·컬링은 엔진이 scroll에서 재계산하므로 자동 정합. useBounds는 엔진 clampX가
+   *  구 semantics로 팔을 수 있어 false — 경계 처리는 본 함수가 전담.
+   *  팬 시네마틱 중엔 camCinema로 보류. 앱(줌 1)은 shift=0이라 기존 체감과 동일. */
   private setupCameraClampFix() {
-    const cam = this.cameras.main;
-    const clampAxis = (v: number, view: number, world: number) =>
-      world > view ? Phaser.Math.Clamp(v, 0, world - view) : (world - view) / 2;
-    cam.clampX = (x: number) => clampAxis(x, cam.width / (cam.zoom || 1), this.stageW);
-    cam.clampY = (y: number) => clampAxis(y, cam.height / (cam.zoom || 1), this.stageH);
-    this.applyFollowZoomOffset();
+    this.cameras.main.useBounds = false;
   }
 
   private applyFollowZoomOffset() {
@@ -6579,6 +6599,7 @@ export class WorldScene extends Phaser.Scene {
       /* v1.0.10 — 시네마틱 동안 팔로우 정지: 팬 종료 시점에 팔로우가 개입해 순간 스냅되던
        *  카메라 점프 근본 제거 (복귀는 restoreBossIntroCam의 팬 완료 콜백에서 재개) */
       cam.stopFollow();
+      this.camCinema = true; // v5.0.1 — 팬 중 수동 추적 보류
       /* v1.0.2 (#보스컷씬) — ① 보스 정확히 바라보기(중앙 고정 팬) ② 대사가 끝날 때까지 카메라 보스 유지.
        *  기존: 820ms 후 플레이어 복귀 팬 → 대사 도중 시점 복귀 + 대사 종료 전 컷씬 종료 느낌.
        *  복귀는 resumeFromDialogue(대사 완료 이벤트)에서 restoreBossIntroCam()으로 보간 처리 */
@@ -6615,12 +6636,11 @@ export class WorldScene extends Phaser.Scene {
         /* v1.0.10 — 복귀 팬 완료 콜백에서 팔로우 재개: 팬 도중 팔로우 개입으로 카메라가
          *  순간 스냅되던 근본 수정 (보스 인트로 종료 후 뚝 끊기는 느낌 해소) */
         cam.pan(this.player.x, this.player.y, 620, "Sine.easeInOut", true, () => {
-          if (this.player) cam.startFollow(this.player, true, 0.18, 0.18);
-          this.applyFollowZoomOffset(); // v4.10.0 — startFollow의 followOffset 리셋 재보정
+          /* v5.0.1 — 팔로우 재개 폐지: 팬 완료 후 수동 추적 재개 (현재 스크롤에서 자연 이어받음) */
+          this.camCinema = false;
         });
       } else if (this.player) {
-        cam.startFollow(this.player, true, 0.18, 0.18);
-        this.applyFollowZoomOffset(); // v4.10.0 — 동일 재보정
+        this.camCinema = false; // v5.0.1 — 팬 없이 즉시 수동 추적 복귀
       }
     } catch (err) {
       console.warn("[SERTZ] 보스 인트로 카메라 복귀 실패 — 무시", err);
@@ -8404,6 +8424,10 @@ export class WorldScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
+
+    /* v5.0.1 — 카메라 수동 추적 (엔진 follow 폐지 — applyManualCameraFollow 주석 참조).
+     *  대화 중에도 갱신 — 내부에서 camCinema(팬 시네마틱)만 존중 */
+    this.applyManualCameraFollow(dt);
 
     /* v1.4.0 (Task 3-2) — 이스터에그 600ms 틱 — v1.4.11 제거 (eggs.ts 삭제와 세트) */
 
