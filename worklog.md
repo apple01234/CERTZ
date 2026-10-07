@@ -3621,3 +3621,21 @@ Stage Summary:
 - 산출물: vc133 APK(139,235,761B)/AAB(141,189,972B)/매핑 — https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
 - 유저 테스트: ①PC 웹 새로고침 → 캐릭터 화면 정중앙·시야 밖 이탈 소멸 ②APK 재설치 → 보스 4종 신규 아트+풀애니 ③기존 세이브 호환
 - 잔여: 요르문간드 외 나머지 보스(화염드래곤·해적선·봉황·악마·천사기사 등) 시트 추가 제공 시 동일 파이프라인으로 순차 교체 (slice_user_sheets.py에 시트 블록 추가만 하면 됨)
+
+---
+Task ID: fix-vc134-mobile-map + google-web-login + web-multiplayer
+Agent: Super Z (main)
+Task: 유저 제보 3건 — ①"모바일 기준 맵이 오른쪽에 있음" ②"구글 로그인 검증 안됨" ③"웹에서 서로 안보임" → vc134 빌드·릴리스
+
+Work Log:
+- [①맵 치우침] 스크린샷(2400x1080) 픽셀 분석: 좌측 0~80px만 순수 검정·우측은 끝까지 렌더 + LV배지 x=102(WebView 80px 인셋+8px 마진 모델과 정확 일치) → 브라우저 동일 해상도(1200x540@2x) 재현에선 캔버스 풀폭·scrollX=0으로 게임 코드 무죄 확정. 원인 = Capacitor 8.5 내장 SystemBars 플러그인이 Android 15+에서 WebView 부모에 systemBars+displayCutout 인셋을 패딩으로 강제 주입(insetsHandling 기본 "css") — 가로모드 좌측 펀치홀 컷아웃(~40dp)만큼 WebView가 우측 밀림. viewport-fit=cover는 이미 있었으나 passthrough 조건(WebView≥140+onDOMReady)이 기기에서 미발동. 수정: capacitor.config.ts plugins.SystemBars.insetsHandling="disable" → 인셋 리스너 자체 미설치, 진짜 풀스크린(APK 전용 버그 — 웹 무관)
+- [②구글 로그인] 서버·설정 전수 검증: 라이브 /api/auth/google 정상 응답, google-services.json 클라이언트 2종=fbverify 화이트리스트 일치, 릴리즈 키스토어 SHA-1 2E:AD:70..=콘솔 등록값 일치, Identity Toolkit 공개 조회로 승인 도메인 sertz.vercel.app 등록 확인, CERTZ-DB 복호화로 오늘 00:32 g_ 계정 토큰 발급(검증 성공) 확인 → 서버 검증 자체는 정상. 미커버 구간 = 모바일 웹 팝업 단일 경로(삼성 인터넷 등에서 popup 차단/미지원). 수정: src/lib/googleAuth.ts 신설(모바일 브라우저 signInWithRedirect·PC popup+차단 시 리다이렉트 폴백·AuthPanel 마운트 시 getRedirectResult 회수)+fbverify exp ±60초 시계 오차 허용+APK 오류 메시지에 원시 코드 병기
+- [③멀티 안보임] 근본 원인 2겹: (a) Vercel serverless는 소켓 서버 불가 — resolveServerUrl null=완전 오프라인(플레이어 동기화는 relay 폴백조차 없었음 — 채팅·파티만 있었음) (b) 라이브 실측로 추가 발견: WorldScene initNet의 delayedCall(650) 1회성 netJoin이 느린 로딩 시 player null로 영원히 스킵. 수정: ①src/game/mpMqtt.ts 신설 — 공개 MQTT 브로커(wss://broker.emqx.io:8084/mqtt, 폴백 eclipse) 기반 프레즌스 트랜스포트(stage AOI 토픽 state/act/hi·presence 하트비트 5초·LWT 즉시 퇴장·7초 원격 TTL·페이로드 세탁·gm 미중계(스푸핑 방지)·sertz.mp.force 진단 스위치) ②net.ts — url null 시 MQTT 버스 반환(씬 코드 무수정), netTransport()으로 파티/랭킹/채팅은 기존 relay 경로 유지, netOnParty MQTT 폴백 ③WorldScene — netJoinRetry(400ms×60회 스폰 대기 재시도) ④mqtt 5.16.0 의존 추가
+- 디버그 여정: 스니퍼로 발신 단절 특정(presence는 흐르고 st 없음) → 버스 카운터(sentSt/recvSt)로 A 222건 vs B 2건 확정 → B 페이지 dialoguing 재개방(신규캐릭터 지연 트리거 대화)=st 정지 원인 → 루프 카운터로 게임 루프 생존 확인 → 스마트 대화 배출(입력 채움+확인 클릭+Space/Enter)로 해소. 실유저는 플레이 중 대화가 닫혀 st가 항상 흐르므로 영향 없음
+- 검증: MQTT E2E 6/6(로컬 강제 경로)·소켓 회귀 6/6·tsc 0·라이브(sertz.vercel.app) 자연 MQTT 활성+양방향 상호 가시성+실시간 이동 동기화(180→280px) 확인·페이지 에러 0
+- 빌드/릴리스: 게이트 134 승격 4종(build.gradle·server.js·route.ts·매핑 개명) — JDK/SDK 재구축(세션 리셋 4회차) 후 APK 139,347,277B·AAB 141,301,483B, aapt2 versionCode=134·apksigner SHA-256 cc774f34 동일, APK 내 capacitor.config.json insetsHandling=disable·broker.emqx.io 번들 확인. 커밋 48fb08e+7d0c479 푸시 → Vercel code:134 · Release 403446266 자산 교체(204×3→201×3)·다운로드 사이즈 일치
+
+Stage Summary:
+- vc134 = 모바일 맵 컷아웃 인셋 수정(APK 재설치 필요)·웹 멀티플레이 복원(공개 브로커 릴레이 — 웹 즉시 반영·APK도 동시 적용)·모바일 웹 구글 로그인 리다이렉트 플로우(웹 즉시 반영)
+- 유저 테스트 포인트: ①APK 덮어설치 → 좌측 검은 띠 소멸·맵 풀폭 ②웹 브라우저 2대 동시 접속 → 서로 캐릭터·이름표 실시간 표시(수백 ms 지연) ③모바일 브라우저 구글 로그인 → 구글 페이지 이동 후 자동 복귀 로그인
+- 한계 문서화: 파티·랭킹 소켓 기능은 기존 relay(GitHub-DB) 경로 유지·GM 이름표는 MQTT 경로 미표시(스푸핑 방지)·공개 브로커 특성상 매우 드물게 외부 방해 가능(페이로드 세탁으로 피해 범위 제한)
