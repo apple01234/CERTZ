@@ -20,6 +20,7 @@ import {
 } from "@/game/account";
 import { SAVE_KEY } from "@/game/config";
 import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리: 정적 배포에서 원격 서버 OAuth 시작
+import { googleWebSignIn, googleWebRedirectToken } from "@/lib/googleAuth"; // v1.0.5-beta (vc134) — 웹 구글 로그인 안정화(모바일 리다이렉트)
 
 /**
  * v4.9.0 — 계정 패널 (유저 지시 #4)
@@ -52,6 +53,17 @@ export function AuthPanel() {
     consumeAuthTokenFromHash(); // v1.0.7 — SNS 콜백 토큰을 저장 후 /me 가 즉시 인식
     authMe().then(setUser).catch(() => {});
     fetchSnsProviders().then(setProviders).catch(() => {});
+    /* v1.0.5-beta (vc134) — 구글 리다이렉트 복귀 처리 (모바일 브라우저 플로우):
+     *  accounts.google.com에서 돌아온 직후 이 이펙트가 자격증명을 회수해 서버 검증·세션 발급까지 마친다. */
+    void googleWebRedirectToken().then(async (t) => {
+      if (!t) return;
+      setBusy(true);
+      try {
+        await finishGoogleLogin(t);
+      } finally {
+        setBusy(false);
+      }
+    });
     /* v1.1.1 (#8 거래소) — 패널 안에서 바로 계정창을 열 수 있는 외부 오픈 이벤트
      *  (기존엔 우측 위 계정 버튼이 유일한 진입로라 "거래소 사용 불가"로 느껴졌다) */
     const onOpen = () => setOpen(true);
@@ -161,8 +173,22 @@ export function AuthPanel() {
   /* ═══ v1.0.2-beta — 구글 로그인 실연동 (Firebase Auth) ═══
    *  · 앱(Capacitor): @capacitor-firebase/authentication signInWithGoogle → 네이티브 구글 계정 선택창
    *    (동작 조건: android/app/google-services.json 투입 + Firebase Console에서 구글 공급자 활성화 + SHA-1 등록)
-   *  · 웹(브라우저): Firebase JS SDK signInWithPopup
-   *  · 획득한 ID 토큰을 /api/auth/google로 보내 서버 검증 → 기존 세션 체계와 동일하게 로그인 */
+   *  · 웹(브라우저): Firebase JS SDK — v1.0.5-beta (vc134)부터 모바일 브라우저는
+   *    signInWithRedirect(전체 페이지 이동), PC는 popup(+차단 시 리다이렉트 폴백).
+   *    팝업 단일 경로 시절 삼성 인터넷 등 모바일 브라우저에서 "팝업 차단/지원 안 됨"으로 실패하던 문제 수정.
+ *  · 획득한 ID 토큰을 /api/auth/google로 보내 서버 검증 → 기존 세션 체계와 동일하게 로그인 */
+  const finishGoogleLogin = async (idToken: string) => {
+    const r = await authGoogle(idToken);
+    if (!r.ok) {
+      setMsg(String(r.data.error ?? "구글 로그인에 실패했어요"));
+      return;
+    }
+    setUser((r.data.user as AuthUser) ?? null);
+    setMsg("");
+    EventBus.emit("banner:show", { text: `${(r.data.user as AuthUser)?.name ?? ""} 님, 구글 계정으로 로그인! — 클라우드 세이브 사용 가능` });
+    EventBus.emit("auth:changed");
+  };
+
   const googleLogin = async () => {
     if (busy) return;
     setMsg("");
@@ -175,24 +201,17 @@ export function AuthPanel() {
         const res = await FirebaseAuthentication.signInWithGoogle();
         idToken = res.credential?.idToken ?? ""; // OIDC 자격증명의 ID 토큰 (구글)
       } else {
-        const { initializeApp, getApps } = await import("firebase/app");
-        const { getAuth, GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
-        const app = getApps()[0] ?? initializeApp({ apiKey: "AIzaSyDQqPSeG3zLINfpynVF3dVxNTVSVD6nE2g", authDomain: "sertz-681eb.firebaseapp.com", projectId: "sertz-681eb" }); /* v1.0.5-beta — 웹키를 sertz-681eb 소속 키로 교체(구키 AIzaSyD8bX...는 타 프로젝트 1085081106426 소속 실측 — identitytoolkit 403) */
-        const cred = await signInWithPopup(getAuth(app), new GoogleAuthProvider());
-        idToken = await cred.user.getIdToken();
+        /* vc134 — 모바일 브라우저는 리다이렉트 플로우. 리다이렉트가 시작되면 "" 반환 —
+         *  페이지가 곧 accounts.google.com으로 이동하므로 여기서 조용히 종료한다.
+         *  복귀 후 AuthPanel 마운트 시 googleWebRedirectToken()이 자격증명을 회수해 로그인한다. */
+        idToken = await googleWebSignIn();
+        if (!idToken) return; // 리다이렉트 이동 중 — finally에서 busy만 해제
       }
       if (!idToken) {
         setMsg("구글 로그인 토큰을 받지 못했어요 — 다시 시도해 주세요");
         return;
       }
-      const r = await authGoogle(idToken);
-      if (!r.ok) {
-        setMsg(String(r.data.error ?? "구글 로그인에 실패했어요"));
-        return;
-      }
-      setUser((r.data.user as AuthUser) ?? null);
-      EventBus.emit("banner:show", { text: `${(r.data.user as AuthUser)?.name ?? ""} 님, 구글 계정으로 로그인! — 클라우드 세이브 사용 가능` });
-      EventBus.emit("auth:changed");
+      await finishGoogleLogin(idToken);
     } catch (e) {
       const msg = String((e as { message?: string })?.message ?? e ?? "").toLowerCase();
       if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("popup_closed")) {
@@ -202,8 +221,8 @@ export function AuthPanel() {
          *  ("plugin is not implemented" = google-services.json 부재로 네이티브 플러그인이
          *   등록되지 않은 상태 — FirebaseAuth.getInstance()가 IllegalStateException을 내고
          *   Bridge가 조용히 스킵) = 전부 Firebase 콘솔 설정 미완료가 원인.
-         *  유저가 "왜 안 되는지" 바로 알 수 있게 원인을 명시한다. */
-        setMsg("구글 로그인 서버 설정이 아직 완료되지 않았어요 (운영자: Firebase 콘솔 Google 공급자 활성화 + Android 앱 SHA-1 등록 + google-services.json) — 자체 계정을 이용해 주세요");
+         *  유저가 "왜 안 되는지" 바로 알 수 있게 원인을 명시한다. vc134 — 원시 코드 말미 병기(진단용). */
+        setMsg(`구글 로그인 서버 설정이 아직 완료되지 않았어요 (운영자: Firebase 콘솔 Google 공급자 활성화 + Android 앱 SHA-1 등록 + google-services.json) [${msg.slice(0, 40)}] — 자체 계정을 이용해 주세요`);
       } else if (msg.includes("configuration-not-found") || msg.includes("operation-not-allowed") || msg.includes("api key") || msg.includes("firebaseapp") || msg.includes("not configured") || msg.includes("identitytoolkit") || msg.includes("permission_denied")) {
         setMsg("구글 로그인이 아직 서버에서 활성화되지 않았어요 (Firebase 설정 준비 중) — 자체 계정을 이용해 주세요");
       } else {

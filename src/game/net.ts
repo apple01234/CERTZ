@@ -22,6 +22,9 @@ import {
   relayPartyCreate, relayPartyJoin, relayPartyLeave,
   type RelayPartySnapshot,
 } from "./relay";
+/* v1.0.5-beta (vc134) — "웹에서 서로 안보임" 수정: 소켓 서버가 없는 배포(Vercel 웹·APK 기본)에서
+ *  공개 MQTT 브로커(wss)로 플레이어 프레즌스를 실시간 동기화한다. 채팅·파티는 기존 relay 경로 유지. */
+import { mpConnect, mpForce, type MqttBus } from "./mpMqtt";
 
 /** v3.0.8 — Electron(EXE 데스크톱) 감지: UA에 Electron 포함.
  *  EXE는 자체 로컬 서버(same-origin)를 내장하므로 웹과 동일하게 동작하되,
@@ -52,9 +55,21 @@ export type NetChatMsg = {
   t: number;
 };
 
-let socket: Socket | null = null;
+let socket: Socket | MqttBus | null = null;
 /* v4.0.0 — 마지막 파티 스냅샷 (게이트 팀워크 버프 판정용) */
 let lastParty: NetParty | null = null;
+
+/** v1.0.5-beta (vc134) — 현재 멀티플레이 트랜스포트 종류
+ *  "socket" = socket.io 서버(space-z/셀프호스트/미리보기) · "mqtt" = 공개 브로커 릴레이 · "none" = 오프라인.
+ *  파티·랭킹·GM 검증 같은 서버 로직이 필요한 기능은 "socket"에서만 동작한다. */
+export function netTransport(): "socket" | "mqtt" | "none" {
+  if (!socket) return "none";
+  return isMqtt(socket) ? "mqtt" : "socket";
+}
+
+function isMqtt(s: Socket | MqttBus): s is MqttBus {
+  return (s as { __mqtt?: boolean }).__mqtt === true;
+}
 
 /**
  * 접속 대상 서버 URL 결정:
@@ -95,12 +110,26 @@ export function resolveServerUrl(): string | null | undefined {
   return GAME_SERVER ? GAME_SERVER : null; // v1.4.22 — 미지정 = 오프라인
 }
 
-export function netConnect(): Socket | null {
+export function netConnect(): Socket | MqttBus | null {
   if (typeof window === "undefined") return null;
   try {
     if (!socket) {
       const url = resolveServerUrl();
-      if (url === null) return null; // APK 오프라인 모드
+      const force = mpForce(); // "mqtt" | "off" | "" — 진단/E2E 오버라이드
+      /* v1.0.5-beta (vc134) — 소켓 서버가 없는 배포(Vercel 웹·APK 기본)는 더 이상 완전 오프라인이 아니다:
+       *  공개 MQTT 브로커 릴레이로 플레이어 동기화를 계속한다(웹에서 서로 안 보이던 문제 수정).
+       *  force="off"면 기존처럼 오프라인 확정, force="mqtt"면 소켓 서버가 있어도 MQTT 강제(진단용). */
+      if ((url === null || force === "mqtt") && force !== "off") {
+        socket = mpConnect();
+        if (socket) {
+          (socket as unknown as { __mqtt?: boolean }).__mqtt = true;
+          (window as unknown as { __SERTZ_NET__?: unknown }).__SERTZ_NET__ = socket;
+          console.info("[SERTZ] 멀티 릴레이(MQTT 공개 브로커) 경로로 접속 시도 — 웹 멀티플레이 활성");
+          return socket;
+        }
+        return null; // 브로커 생성 실패 — 오프라인
+      }
+      if (url === null) return null; // APK 오프라인 모드(force=off)
       /* v3.3.0 (지시 #7 — "멀티 안되는 버그" 근본 수정):
        *  기존 transports: ["websocket", "polling"] (웹소켓 우선)에서는 배포 환경의
        *  FC/게이트웨이가 "가짜 101 업그레이드"(어떤 경로든 101 응답 후 프레임 전달 없음)를
@@ -150,7 +179,7 @@ export function netJoined(): boolean {
 export function netStatus(): { connected: boolean; hasServer: boolean; native: boolean } {
   const native = (typeof window !== "undefined" && Capacitor.isNativePlatform()) || isElectron();
   let hasServer = true; // 웹/EXE = same-origin 서버 항상 존재
-  if (Capacitor.isNativePlatform()) hasServer = resolveServerUrl() != null;
+  if (Capacitor.isNativePlatform()) hasServer = resolveServerUrl() != null || !!socket?.connected; // vc134 — MQTT 릴레이 연결도 서버 있음으로 표시
   return { connected: !!socket?.connected, hasServer, native };
 }
 
@@ -236,7 +265,8 @@ export function netState(st: NetState) {
 }
 
 export function netSendChat(text: string) {
-  if (socket?.connected) { socket.emit("chat", text); return; }
+  /* vc134 — MQTT 릴레이 모드에선 채팅을 버스로 보내지 않는다(무시됨) → 기존 relay 경로 유지 */
+  if (socket?.connected && netTransport() === "socket") { socket.emit("chat", text); return; }
   /* v1.4.27-w1 — 소켓 없는 배포: 릴레이 POST로 발송 (전송 직후 즉시 폴링 수신) */
   void relaySendChat(text);
 }
@@ -294,22 +324,23 @@ function relaySnapshotToNet(p: RelayPartySnapshot | null): NetParty | null {
 }
 
 export function netPartyCreate() {
-  if (socket?.connected) { socket.emit("party:create"); return; }
+  /* vc134 — 파티는 서버 상태(GitHub-DB relay) 관리 — MQTT 모드에선 소켓 이벤트 대신 relay 경로 */
+  if (socket?.connected && netTransport() === "socket") { socket.emit("party:create"); return; }
   void relayPartyCreate().then((code) => { if (!code) relayPartyCb?.(null); });
 }
 
 export function netPartyJoin(partyId: string) {
-  if (socket?.connected) { socket.emit("party:join", partyId); return; }
+  if (socket?.connected && netTransport() === "socket") { socket.emit("party:join", partyId); return; }
   void relayPartyJoin(partyId).then((ok) => { if (!ok) relayPartyCb?.(null); });
 }
 
 export function netPartyLeave() {
-  if (socket?.connected) { socket.emit("party:leave"); return; }
+  if (socket?.connected && netTransport() === "socket") { socket.emit("party:leave"); return; }
   void relayPartyLeave();
 }
 
 export function netPartyChat(text: string) {
-  if (socket?.connected) { socket.emit("party:chat", text); return; }
+  if (socket?.connected && netTransport() === "socket") { socket.emit("party:chat", text); return; }
   /* v1.4.27-w1 — 릴레이 파티 채널로 발송 (relay 내부의 현재 파티 코드 사용) */
   void relaySendChat(text, true);
 }
@@ -320,14 +351,15 @@ export function netOnParty(cb: (p: NetParty | null) => void): () => void {
     cb(p);
   };
   const s = netConnect();
-  if (!s) {
+  /* vc134 — MQTT 릴레이 모드에서도 파티는 GitHub-DB relay로 동작 (버스는 "party" 이벤트를 발생하지 않음) */
+  if (!s || netTransport() === "mqtt") {
     /* v1.4.27-w1 — 소켓 없는 배포: 릴레이 폴링으로 스냅샷 수신 */
     relayPartyCb = wrapped;
     relayEnsurePartyPoll((p) => relayPartyCb?.(relaySnapshotToNet(p)));
     return () => { relayPartyCb = null; };
   }
-  s.on("party", wrapped);
-  return () => s.off("party", wrapped);
+  s.on("party", wrapped as never);
+  return () => s.off("party", wrapped as never);
 }
 
 /** v4.0.0 — 마지막 파티 스냅샷 조회 (미파티 null) */

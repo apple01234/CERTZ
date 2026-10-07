@@ -89,7 +89,8 @@ async function verifyFirebase(parts: string[], header: { kid?: string; alg?: str
   const iss = `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`;
   if (payload.iss !== iss) { console.warn("[SERTZ-fb] iss 불일치", payload.iss); return null; }
   if (payload.aud !== FIREBASE_PROJECT_ID) { console.warn("[SERTZ-fb] aud 불일치", payload.aud); return null; }
-  if (typeof payload.exp !== "number" || payload.exp < now) return null;
+  /* vc134 — ±60초 시계 오차 허용 (Vercel·기기 간 NTP 미세 차이로 정상 토큰이 만료로 쳐지는 것 방지) */
+  if (typeof payload.exp !== "number" || payload.exp < now - 60) return null;
   if (typeof payload.auth_time === "number" && payload.auth_time > now + 60) return null;
   return identityFromPayload(payload);
 }
@@ -118,7 +119,8 @@ async function verifyGoogleOidc(parts: string[], header: { kid?: string; alg?: s
   if (!cryptoVerify("RSA-SHA256", data, key, sig)) { console.warn("[SERTZ-fb] 구글 서명 불일치"); return null; }
 
   const now = Math.floor(Date.now() / 1000);
-  if (typeof payload.exp !== "number" || payload.exp < now) { console.warn("[SERTZ-fb] 구글 토큰 만료"); return null; }
+  /* vc134 — ±60초 시계 오차 허용 */
+  if (typeof payload.exp !== "number" || payload.exp < now - 60) { console.warn("[SERTZ-fb] 구글 토큰 만료"); return null; }
   const ident = identityFromPayload(payload);
   if (!ident) { console.warn("[SERTZ-fb] 구글 sub 없음"); return null; }
   /* email_verified인 경우에만 신뢰 가능하나, 구글 계정 idToken은 가입 이메일 검증이 강제되므로 그대로 수용 */

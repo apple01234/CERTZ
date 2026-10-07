@@ -212,7 +212,7 @@ export function rankListFor(db: DbShape, me: UserRec | null) {
     rebirths: Number((e.data.inf as Record<string, unknown> || {})?.rebirths || 0),
     tower: Number((e.data.inf as Record<string, unknown> || {})?.towerBest || 0),
   }));
-  let mine = null;
+  let mine: { rank: number; total: number; name?: string; lv?: number; rebirths?: number; tower?: number; note?: string } | null = null;
   if (me) {
     const idx = all.findIndex((e) => e.uid === me.id);
     if (idx >= 0) {

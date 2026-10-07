@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 133;
+const LATEST_CODE = 134;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc133) — 보스 아트 유저 제공 시트 1차 교체(니드호그·요르문간드·펜리르·수르트)+PC 카메라 근본 수정";
+  "v1.0.5-beta (vc134) — 모바일 맵 좌측 검은 여백(컷아웃 인셋) 수정·웹 멀티플레이 서로 보기 복원(공개 릴레이)·모바일 웹 구글 로그인 안정화";
 const APK_MIRROR =
   "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
 
