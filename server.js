@@ -65,9 +65,9 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.0.5-beta";
-  const LATEST_CODE = 132;
+  const LATEST_CODE = 133;
   const VERSION_NOTE =
-  "v1.0.5-beta (vc132) — PC 카메라 근본 수정: Phaser 4 렌더 변환 재해석 — 줌>1 캐릭터 시야 이탈/클리핑 해소+보스 전면 리메이크 v5.0(신규 스프라이트 11종·12FPS 풀애니)";
+  "v1.0.5-beta (vc133) — 보스 아트 유저 제공 시트 1차 교체(니드호그·요르문간드·펜리르·수르트)+PC 카메라 근본 수정";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

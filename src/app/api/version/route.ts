@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 132;
+const LATEST_CODE = 133;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc132) — PC 카메라 근본 수정: Phaser 4 렌더 변환 재해석 — 줌>1 캐릭터 시야 이탈/클리핑 해소+보스 전면 리메이크 v5.0(신규 스프라이트 11종·12FPS 풀애니)";
+  "v1.0.5-beta (vc133) — 보스 아트 유저 제공 시트 1차 교체(니드호그·요르문간드·펜리르·수르트)+PC 카메라 근본 수정";
 const APK_MIRROR =
   "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
 
