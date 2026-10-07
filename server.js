@@ -67,7 +67,7 @@ app.prepare().then(() => {
   const LATEST_VERSION = "1.0.5-beta";
   const LATEST_CODE = 136;
   const VERSION_NOTE =
-  "v1.0.5-beta (vc135) — 파티·멀티 입구 복원(HUD 파티 버튼·공동 토벌전·시너지·미션)·채팅 기록 50개 스크롤 뷰·APK 다운로드 안내 페이지 최신화";
+  "v1.0.5-beta (vc136) — v1.4.30: 무스펠 프리즈 방지·n차 스킬 밸런스+직업 특화·공동토벌전 일1회+HPx6·장신구 자동강화·주문서 에메랄드 전용·5차 이펙트 축소·이터널 강화·모험가 시작·클래스룸(교실 모드)·구글 로그인 근본 수정·니플헤임 조광·보스전 포탈 차단·랭킹 30초 갱신·반격 UX";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
