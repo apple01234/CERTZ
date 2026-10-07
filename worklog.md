@@ -3639,3 +3639,37 @@ Stage Summary:
 - vc134 = 모바일 맵 컷아웃 인셋 수정(APK 재설치 필요)·웹 멀티플레이 복원(공개 브로커 릴레이 — 웹 즉시 반영·APK도 동시 적용)·모바일 웹 구글 로그인 리다이렉트 플로우(웹 즉시 반영)
 - 유저 테스트 포인트: ①APK 덮어설치 → 좌측 검은 띠 소멸·맵 풀폭 ②웹 브라우저 2대 동시 접속 → 서로 캐릭터·이름표 실시간 표시(수백 ms 지연) ③모바일 브라우저 구글 로그인 → 구글 페이지 이동 후 자동 복귀 로그인
 - 한계 문서화: 파티·랭킹 소켓 기능은 기존 relay(GitHub-DB) 경로 유지·GM 이름표는 MQTT 경로 미표시(스푸핑 방지)·공개 브로커 특성상 매우 드물게 외부 방해 가능(페이로드 세탁으로 피해 범위 제한)
+---
+Task ID: v1.4.29-party-entrance+chat-log50+apk-guide
+Agent: Super Z (main)
+Task: 유저 지시 3건 — ①"파티(멀티) 기능 및 컨텐츠 어디감?" ②"최근 채팅기록 50개까지 스크롤 확인" ③"웹페이지 APK 다운로드 링크 업데이트" → vc135 빌드·릴리스
+
+Work Log:
+- [①파티 입구 원인] 기능 전부 생존(PartyWidget·공동 토벌전·시너지·미션 보드 — vc134 MQTT 멀티 복원)이나 v1.4.24 당시 "멀티서버 미지원"으로 HUD 더보기에서 파티 버튼이 철거된 채 방치 → 입구만 소실. 복원: HUD.tsx 더보기 행(거래소↔랭킹 사이)에 파티 버튼 재추가(EventBus party:toggle — Y키 동일, UsersRound 아이콘)
+- [②채팅 기록 50] 제약 발견: TouchControls 조이스틱이 좌하단 46%×55% 영역 점유 — 부유 목록을 pointer-events-auto로 바꾸면 이동 조작이 죽음 → 안전 설계: 보관 41→50개 상향(CHAT_RETAIN) + 채팅 행에 [기록] 버튼 신설 → 중앙 모달(PartyWidget 동일 패턴 z-[45])에서 최근 50개 전문(줄바꿈·truncate 해제) 스크롤 열람. 하단 근처(<60px)일 때만 새 메시지 자동 추적, 위 기록 읽는 중엔 시선 보존
+- [③APK 가이드] apk-guide.html이 v1.0.1-beta(vc122)에 정체 + "웹 플레이 종료" 폐지 안내(웹 부활과 모순) → 전면 갱신: v1.0.5-beta(vc134) 표기·다운로드 링크(릴리스 실측 139,347,277B·md5 ffae0369..·sha1 dfc7b419..)·vc131~134 변경점 신설·gofile v3.1.0 미러 철거→릴리스 페이지 안내·타이틀 배지 문구 v1.4.23→v1.0.5-beta("실시간 멀티는 오프라인 모드" 폐지 문구 교정)
+- 검증: tsc 0 · npm run build 성공 · scripts/e2e_vc135_web.js 20/20 PASS(가이드 5종·HUD 파티 입구 4종·채팅 기록 뷰 8종 — 55개 주입→50개 보관(6번부터 존재·1번 소실)·스크롤 실측(sh>ch·overflow auto)·하단 자동 추적·시선 보존·실에셋 404 0·페이지 에러 0) + 인게임 스크린샷으로 파티 버튼·기록 버튼 렌더 확인
+- 게이트 135 승격 3종+매핑 개명(build.gradle versionCode·server.js LATEST_CODE+NOTE·route.ts+NOTE — node --check 통과 · SERTZ-vc134-mapping.txt→vc135 git mv) · JDK/SDK 재구축 5회차(rebuild_jdk.sh+rebuild_sdk.sh 병렬 — Temurin 21.0.12.1·build-tools 35/36) · local.properties 재생성
+- 커밋 1dff012 푸시(원격 백업 2건 리베이스 후) → Vercel 자동 배포
+
+Stage Summary:
+- 웹 즉시 반영: HUD 파티 입구 복원 + 채팅 기록 뷰 50개 스크롤 + APK 가이드 최신화
+- 유저 테스트 포인트: ①웹 새로고침 → 더보기(⋯)에 파티 버튼 → 창설/참여·공동 토벌전·시너지·미션 이용 가능 ②채팅 행 [기록] 버튼 → 최근 50개 스크롤(위로 올리면 옛 기록, 새 메시지 오면 하단 추적) ③/apk-guide.html에서 v1.0.5-beta(vc134) APK 139MB 다운로드 정상
+- vc135 = 본 내용의 APK 반영 빌드(진행 중) — 완료 시 Release 자산 교체 예정
+---
+Task ID: v1.4.29-vc135-build-release (후속)
+Agent: Super Z (main)
+Task: vc135 APK/AAB 빌드·릴리스 완료 — v1.4.29 3건(파티 입구·채팅 기록 50·APK 가이드)의 APK 반영
+
+Work Log:
+- build_apk.sh BUILD SUCCESSFUL(7m)·build_aab.sh(SKIP_SYNC=1, 4m2s) — JDK/SDK 재구축 5회차(Temurin 21.0.12.1·build-tools 36/35)·local.properties 재생성
+- 실측: aapt2 versionCode='135'/1.0.5-beta · apksigner SHA-256 cc774f34(릴리즈 키 동일) · APK 번들에 신규 UI 문자열 확인("파티 창 열기"·"채팅 기록"·빈 기록 안내 각 1건+) · APK 139,347,389B / AAB 141,301,605B
+- 커밋 179fcc1 푸시(게이트 135 승격+매핑 개명) → Vercel /api/version code:135 라이브 확인
+- Release 403446266 자산 교체: APK/AAB/매핑 3종 vc135로 교체 완료(태그 v1.0.5-beta 유지 — 다운로드 URL 불변) · 릴리스 제목/본문 vc135 갱신(파티 입구 복원·채팅 기록 50·APK 가이드 최신화)
+- 깃허브 API 특이사항 기록: 릴리스 자산 DELETE가 token 인증+Content-Type 없이는 404 — "Authorization: Bearer + Accept: application/vnd.github+json" 헤더로 204 확정(release_vc135.sh 참고)
+- 로컬 서버 재기동(build_apk.sh가 종료) — GET / 200
+
+Stage Summary:
+- vc135 = 파티 입구 복원+채팅 기록 50개 스크롤+APK 가이드 최신화 빌드 — 웹 자동 반영 + APK/AAB 릴리스 완료
+- 유저 테스트 포인트: ①APK 덮어설치 → 더보기(⋯)에 [파티] 버튼 → 창설/참여·공동 토벌전·시너지·미션 ②채팅 행 [기록] → 최근 50개 스크롤 ③/apk-guide.html → v1.0.5-beta APK 139MB 다운로드(139,347,389B 일치 확인)
+- Play 업로드 잔무: vc135 AAB(141,301,605B) 업로드 — versionCode 135 단조 충족
