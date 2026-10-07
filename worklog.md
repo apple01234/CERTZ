@@ -3600,3 +3600,24 @@ Stage Summary:
 - 유저 테스트 포인트: ①APK 재설치(덮어설치) 후 보스전 진입 — 11종 신규 스프라이트·특수기술(sp1~3) 애니 12FPS 확인 ②사망 애니(die) 확인 ③스콜&하티 '교만의 얼음 봉황' 인트로 표기 ④기존 세이브 무중단 호환
 - Play 업로드 잔무: vc131 AAB(140,253,756B) 그대로 업로드 — versionCode 131 단조 충족
 - 참고: 보스 텍스처 키 = boss(guardian)·boss_nidhog·boss_jorm·boss_fenrir·boss2(behemoth)·boss_surt·boss_skoll·boss_gram·boss_nagr·boss3(abysslord)·boss_abudditos·boss_vord
+
+---
+Task ID: fix-pc-camera + boss-user-sheets-1
+Agent: Super Z (main)
+Task: 유저 제보 "Pc화면 이상함" 진단·수정 + 유저 제공 보스 시트 4종 교체 (vc132/133)
+
+Work Log:
+- [PC 진단] Playwright 1920x1080/1280x720 라이브 실측 11차원 — 404는 favicon뿐·텍스처·로직 전부 정상이나 플레이어 미렌더 확정 → 격자 매직 배치로 렌더 변환 역산: 실렌더 = screen=origin+zoom×(world-scroll-origin), 뷰 좌상단 = scroll+origin×(1-1/zoom) — vc130 보정(clamp 좌상단 semantics 교체)이 뷰를 맵 기준 +480px 밀어 스폰지점(198,475)이 뷰[480,1440] 밖 → 컬링(1080p 부재·720p 절반 클리핑) 확정
+- [카메라 수정] 엔진 follow/clamp 전면 폐지 → update에서 매 프레임 수동 추적: 뷰 좌상단=캐릭터 정중앙+맵 밀착, scroll=뷰좌상단-origin×(1-1/zoom), useBounds=false, camCinema(팬 시네마틱 게이트), 프레임률 무관 지수 감쇠 k — 1080p/720p 텔레포트·이동 추적 검증(중앙 960/640 도달)+보스 E2E 10/10
+- 환경 재구축 2회(JDK/SDK/JDK — 세션 리셋마다 소실) + .secrets 토큰 재추출(user:token 형식 주의)
+- [보스 시트] 유저 제공 5장 파싱: drak_a(니드호그 8열×7행)·drak_b(요르문간드 6×6)·wolf(펜리르)·golem(수르트)·vfx(색판 배경이라 미사용) — black/green/red 그라데이션 배경 제거 파이프라인 4세대 완성(bg_est 링 추정→성분 기반 matte+홀 채움→griddata 글로우 모델링(comp)/미적용(comp0)→소프트(펜리르/수르트) 시트별 분기)
+- 매핑: 니드호그=drak_a·요르문간드=drak_b(박쥐날개) — stages.ts jorm tex: boss_nidhog→boss_jorm 독립 + BootScene 프리로드 2프레임 추가
+- 슬라이서 시행착오: v2 적응형 폭 bbox 폭발(scale 0.52 붕괴)→v3 크롭폭 pitch 고정+t_hi 48/55 역효과(반투명 유령)→v4 성분 matte(니드호그 유실 0.107)→griddata 분리로 최종 확정(니드호그 0.319·전종 솔리드)
+- 수르트 좌우반전 오 Apply→픽셀 무게중심 실측(원본 이미 우향)→flip 해제
+- 검증: 보스 E2E 10/10×2회 + tsc 0 + 인게임 스크린샷(니드호그 신규 아트+플레이어 정중앙)
+- 릴리스: vc132(카메라)→vc133(보스+카메라) 통합 — Release 자산 3종 교체·live code:133
+
+Stage Summary:
+- 산출물: vc133 APK(139,235,761B)/AAB(141,189,972B)/매핑 — https://github.com/apple01234/CERTZ/releases/tag/v1.0.5-beta
+- 유저 테스트: ①PC 웹 새로고침 → 캐릭터 화면 정중앙·시야 밖 이탈 소멸 ②APK 재설치 → 보스 4종 신규 아트+풀애니 ③기존 세이브 호환
+- 잔여: 요르문간드 외 나머지 보스(화염드래곤·해적선·봉황·악마·천사기사 등) 시트 추가 제공 시 동일 파이프라인으로 순차 교체 (slice_user_sheets.py에 시트 블록 추가만 하면 됨)
