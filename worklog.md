@@ -3702,3 +3702,25 @@ Stage Summary:
 - vc136 = 유저 지시 15건 전부 반영 (웹 Vercel 즉시 반영 + APK/AAB 릴리스 교체 완료)
 - 핵심 신기능: 클래스룸(교실 모드) — 서버 없이 공개 MQTT만으로 10~100인 협동 미니게임, 수행평가용
 - 유저 테스트 포인트: ①무스펠헤임 장시간 사냥(멈춤 여부) ②전직 후 스킬 체감(사냥/보스 직업 차등) ③공동토벌전 재입장 차단+보스 체력 ④가방 장신구 [자동 강화] ⑤캐시상점 주문서 30💎 ⑥5차 스킬 이펙트 절제 확인 ⑦이터널 보스전 딜링 ⑧신규 캐릭터 → 모험가 → 마을 퀘스트 → 전직관(K) ⑨더보기→교실→코드 공유→단체 활동 ⑩PC 구글 로그인 ⑪니플헤임 ⑫보스전 중 포탈 차단 ⑬랭킹창 30초 갱신 ⑮노란 링 라벨
+---
+Task ID: v1.4.31-vc137-7items
+Agent: Super Z (main)
+Task: 유저 지시 7건(다운로드 정리·토벌전 HP·교실 파티 게임·보스 개편 아틀라스·니플헤임 멈춤·니플헤임 밝기·전체 최적화) → vc137 빌드·릴리스
+
+Work Log:
+- [①다운로드 정리] download/ 루트에 최신 것만 유지(vc137 매핑·APK 안내·OAuth 가이드·체크리스트·README), 구문서 7종+roblox_prompt(67MB)→archive/ 이동
+- [②토벌전 HP] buildPartyRaid hp ×6→×30(솔로 ~32만/4인 ~65만)·HUD 배너 ×(hpMul×30) 표기 갱신
+- [③교실 확장] classroom.ts — ClassMode 4종→7종(team/treasure/quiz 추가)·st에 ek(정예킬)/tm(팀해시) 필드·ans 메시지 신설(1인 1회)·cfg에 q/ch(퀴즈 문제·선택지)·QUIZ_BANK 12문항·classAnswer API·scaleGoal 상향(hunt ×20→×50·boss 3천+900→8천+2500·team ×40·treasure ×8)·checkCompletion 6종 판정(win/lose 분기) / ClassroomPanel — 활동 버튼 6종+QuizPicker(퀴즈 뱅크 펼침 선택)·팀 킬전 뷰(레드vs블루 대결 바+명단 팀색 점)·보물 사냥 뷰·퀴즈 뷰(답안 버튼·실시간 집계 바·정답 공개)·loadSave 실레벨 반영(lv:1 하드코딩 수정) / WorldScene — 정예 킬 trackKill("elite") 훅·보상표 확장(team 승3💎800G/패1💎300G·treasure 3💎800G·quiz 정답 2💎600G) / Boss.takeDamage에 trackDamage 추가(보스 대상 피해도 교실 딜 합산 — 기존 블라인드스팟 제거)
+- [④보스 개편] 유저 업로드 마스터 시트(1639×959, 3×3블록) 파이프라인: 실측 빈 밴드 블록 경계(XBANDS/YBANDS)→체커보드 무채색 명도 판정+경계 플러드필+조건부 팽창 2회 배경 제거→행 밴드 밀도 기반 거터 검출(7행/6행 자동·균일그리드 폴백)→행별 열 거터+중앙값 피치 분할(10~12열 자동·광폭 스팬 균등분할)→하단 중앙 정렬 바닥선 일치→최대 단일 프레임 콘텐츠 기준 균일 스케일(TARGET 300px·×4~8)→보스당 1장 아틀라스 webp(q82)+초상화 bossport_*.webp(220px)
+  · 매핑: guardian→스바르트 흑마수·behemoth/vord→미드가르드 해적선·nidhog→알프헤임 수목룡·surt→무스펠 골렘·fenrir→설원 백랑·abysslord→헬 악마·skoll→얼음봉황·hati(트윈)→화염 늑대·nagr→발할라 천사기사(전용아트 신설 — boss_abudditos 재사용 해제) / gram·abudditos·jorm은 기존 유지
+  · 코드: textures.ts BOSS_ATLAS(9종 fw/fh 실측값)+BOSS_ATLAS_ROWS(행별 프레임 수)+registerBossAtlasAnims(7종 풀애니 idle12/walk12/atk14/sp/sp/die10)+bossSourceFrame+bossPortraitUrl / BootScene — atl_* 9종 spritesheet preload+ASSET_LIST에서 아틀라스 보스 idle0/1 철수+buildAllAnims 폴백 가드+부팅 즉시 애니 등록 / Boss.ts — bossSourceFrame 생성자+twinPrefix(하티 전용 텍스처·무틴트·displayWidth 비례 오프셋)+잔상 frame.name+hitW/H displayWidth 기준+loadBossFrames 스킵 / DialogueBox·Panels — bossport 초상화 분기
+  · 최적화: 구 AI 보스 프레임 341종 삭제(522→181·보스당 요청 42→1)
+- [⑤니플헤임 멈춤] 보스전 bloomSkip에 niflheim 추가(무스펠과 동일 계열 프리즈)+평시 앰비언트 블룸 스킵(니플헤임·무스펠)+눈보라 파티클 저사양 480ms 게이팅
+- [⑥니플헤임 밝기] 암전 0.38→0.52(전 챕터 최고)+GROUND_TINT 0x9db4d0→0x70819c+벽 0x8ab8d8→0x66809e+눈보라 알파 0.22
+- [검증] tsc 0·npm run build 성공·아틀라스 9종 실측 크기=설정 일치(12열×6/7행)·e2e_vc137.js 14/14(아틀라스 로드/84프레임/풀애니 7종/인게임 렌더 4종 300px급/교실 생성/파티 게임 입구 3종/기존 3종 유지/퀴즈 뱅크-진행-답안/팀 뷰/보물 뷰/페이지에러 0)+인게임 스크린샷(수르트·스콜·발할라 대형 렌더 확인)
+- [빌드/릴리스] JDK/SDK 재구축(Temurin 21.0.12.1·build-tools 35/36·local.properties 재생성)·build_aab.sh 재작성(SKIP_SYNC 지원)·APK 138,928,932B(versionCode 137·SHA-256 cc774f34 동일)·AAB 140,806,485B·매핑 29,998,108B — 커밋 f5c049c 푸시(리베이스 후)·Release 403446266 자산 3종 교체+본문 vc137 갱신·Vercel /api/version code:137 라이브·atl_*.webp 200(526KB)·구에셋 404 확인
+
+Stage Summary:
+- vc137 = 보스 전면 개편(유저 제공 9보스 아틀라스 — 대형화·배경제거·12프레임 풀애니)+토벌전 HP ×30+교실 파티 게임 3종+니플헤임 멈춤/밝기 수정+에셋 최적화 — 웹 즉시 반영+APK/AAB 릴리스 완료
+- 유저 테스트 포인트: ①각 챕터 보스 새 아트+크기 체감(특히 4장 니드호그·8장 스콜&하티 쌍두) ②공동토벌전 체력 ②교실→팀 킬전/보물 사냥/퀴즈쇼 ③니플헤임 장시간 사냥(멈춤 여부)+어두워진 톤 ④APK 덮어설치(vc137)
+- 잔무: 발할라 아이콘 시트(업로드 1번 파일)는 보스 스킬 아이콘 소재로 미사용 — 필요 시 별도 적용
