@@ -54,8 +54,11 @@ const nextConfig: NextConfig = isStaticExport
       // v4.0.0 — APK 링크는 전부 GitHub 릴리스 직접 다운로드로 (CDN 즉시 시작, 404/대기 없음)
       // gofile은 콜드스토리지 첫 응답 ~1분 지연 때문에 apk-guide의 백업 경로로만 안내
       async redirects() {
+        /* vc138 — v1.0.3-beta 하드코딩이 잔존해 /SERTZ-*.apk 경유 링크가 구버전 APK로
+         *  리다이렉트되던 잠복 버그 수정 (server.js 정규식은 beta 미포함이라 이쪽이 개입).
+         *  APK_MIRROR(server.js·route.ts)와 수동 싱크 유지. */
         const APK_DL =
-          "https://github.com/apple01234/CERTZ/releases/download/v1.0.3-beta/SERTZ-v1.0.3-beta.apk";
+          "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc138.apk";
         return [
           {
             /* v4.1.0 — 모든 버전의 /SERTZ-vX.apk 경로를 한 규칙으로 처리

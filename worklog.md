@@ -3724,3 +3724,28 @@ Stage Summary:
 - vc137 = 보스 전면 개편(유저 제공 9보스 아틀라스 — 대형화·배경제거·12프레임 풀애니)+토벌전 HP ×30+교실 파티 게임 3종+니플헤임 멈춤/밝기 수정+에셋 최적화 — 웹 즉시 반영+APK/AAB 릴리스 완료
 - 유저 테스트 포인트: ①각 챕터 보스 새 아트+크기 체감(특히 4장 니드호그·8장 스콜&하티 쌍두) ②공동토벌전 체력 ②교실→팀 킬전/보물 사냥/퀴즈쇼 ③니플헤임 장시간 사냥(멈춤 여부)+어두워진 톤 ④APK 덮어설치(vc137)
 - 잔무: 발할라 아이콘 시트(업로드 1번 파일)는 보스 스킬 아이콘 소재로 미사용 — 필요 시 별도 적용
+---
+Task ID: fix-vc138-3bugs
+Agent: Super Z (main)
+Task: 유저 제보 3건 — ①"세이브 복원 안되는 버그" ②"서버가 구글 인증서를 조회하지 못하는 버그" ③"게임 멈춤 버그" → vc138 빌드·릴리스
+
+Work Log:
+- [①세이브 복원 — 근본 원인] AuthPanel.doRestore가 레거시 키(sertz_save_v2)에만 기록 → 멀티캐릭터(v1.0.18~)가 실제로 읽는 활성 캐릭터 키(sertz_char_<id>)에 반영 안 됨 + 다음 writeSave가 구세이브를 레거시 키에 재미러링해 복원분 즉시 소실 — "복원 안됨"의 완전한 설명. migrateLegacy는 slots 최초 생성 1회뿐이라 기존 기기 편입 경로 부재
+  · slots.ts importCloudSave 신설 — ①동일 이름 캐릭터 교체(이름은 슬롯 체계에서 유일) ②활성 캐릭터 교체(게임 중 복원) ③신규 슬롯 편입(새 기기) 3경로 + 슬롯 풀 가드 + 레거시 미러 유지
+  · AuthPanel doRestore 전면 교체 + 수동 백업·3분 자동 백업 조회 키를 activeSaveKey() 우선으로
+- [②구글 인증서 — 근본 원인] fbverify.ts FB_CERTS_URL 오타 "robots/v1/metadata/x509" — 실측 404 (정상은 robot 단수형). 웹(파이어베이스) 로그인 전부 "서버가 구글 인증서를 조회하지 못했어요"로 실패. OIDC(APK) 경로는 JWKS를 쓰므로 정상이었음
+  · URL 교정 + JWKS 폴백 엔드포인트(service_accounts/v1/jwk) 이중화 + fetch 6초 타임아웃(AbortSignal) + publicKeyFrom(PEM/JWK JSON 문자열 양분 지원)
+  · 실측 검증 scripts/verify_fbverify_v138.mjs 9/9 — robots 404·robot 200·JWKS 200·kid 교집합 5종·createPublicKey 양 포맷 성공
+- [③게임 멈춤] 보스전 카메라 블룸(프레임버퍼 이중 패스) GPU 프리즈가 v1.4.30(무스펠)·v1.4.31(니플헤임) 챕터 화이트리스트로만 차단 → 동종 프리즈가 다른 챕터에서도 제보
+  · WorldScene isLowPerfEnv() 신설(모바일 UA·maxTouchPoints≥2, 캐시) — 저사양 환경은 챕터 무관 앰비언트+보스전 블룸 생략(보스라이트·비네트·잉걸불·툰 림라이트 유지), PC 기존 화질 유지
+  · 대안 검증: 물리 pause 자가치유·렌더 워치독·대사 붙임 자가치유는 기존에 존재 — 블룸이 유일한 미커버 프리즈원
+- [오진 배제] 헤드리스 크롬 모바일 에뮬레이션에서 BootScene 정지(scenes:[]) 발견 → git stash로 수정 전 빌드 동일 증상 확인 = 에뮬레이션 고유 이슈(실기기 무관) 확정 후 PC UA E2E로 전환
+- [검증] tsc 0 · npm run build 성공 · test_slots_v138.ts(tsx+localStorage 모의) 10/10 — 동일이름/활성/신규/형식불량/슬롯풀 + 미러 · e2e_vc138.js 10/10(부팅·월드 진입·캐릭터 키 체계·슬롯 메타·/api/auth/google 400ms 원인코드 응답·인증서 메시지 소멸·번들 정적 히트·pageerror 0)
+- [빌드/릴리스] 게이트 138 승격 3종(build.gradle·server.js·route.ts + NOTE 갱신·node --check) · 타이틀 배지·apk-guide.html vc138 갱신 · JDK/SDK 생존 확인 · APK 138,929,536B(versionCode 138·SHA-256 cc774f34 동일)·AAB 140,807,152B · 매핑 29,998,108B 재생성 · APK 번들 정적 히트(maxTouchPoints×2·sertz_char_×2)
+- 커밋 3403372+245452e 푸시 → Vercel /api/version code:138 라이브 확인
+- GitHub Release 자산 교체 중 DELETE 404 장애(vc136 500 장애와 동일 계열 — GET·스코프 정상) → release_vc138_loop.sh 백그라운드 재시도 루프(3분 간격·최대 25회) 설치, 복구 감지 시 자동 교체+릴리스명/본문 PATCH
+
+Stage Summary:
+- 웹 즉시 반영 완료(Vercel code:138) · APK/AAB는 루프가 릴리스 자산 교체 완료 시(태그 v1.0.5-beta 유지 — 다운로드 URL 불변)
+- 유저 테스트 포인트: ①계정창 → 세이브 복원 → 로비에서 복원된 캐릭터 확인(같은 이름이면 교체, 새 기기면 신규 슬롯) ②웹 구글 로그인 ③모바일 보스전 장시간(멈춤 여부 — 블룸 제거로 체감 화질 소폭 다운은 정상)
+- 잔무: 릴리스 루프 완료 로그 확인(/tmp/release_vc138_loop.log) · Play 업로드 잔무: vc138 AAB(140,807,152B)

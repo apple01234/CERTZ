@@ -82,8 +82,10 @@ app.prepare().then(() => {
     }));
     return;
   }
-  /* v4.0.0 — 어떤 버전의 APK 링크든 즉시 다운로드 경로로 연결 (404 원천 차단) */
-    if (/^\/SERTZ-v[\d.]+\.apk$/i.test(url)) {
+  /* v4.0.0 — 어떤 버전의 APK 링크든 즉시 다운로드 경로로 연결 (404 원천 차단)
+   *  vc138 — 정규식이 beta 접미사를 놓쳐 /SERTZ-v1.0.5-beta.apk가 Next의 구버전
+   *  리다이렉트로 새던 문제 수정 ([\w.-]+ 로 확대 — server.js가 먼저 307 처리) */
+    if (/^\/SERTZ-v[\w.-]+\.apk$/i.test(url)) {
       res.writeHead(307, { Location: APK_MIRROR }).end();
       return;
     }
