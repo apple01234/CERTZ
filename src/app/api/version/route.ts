@@ -13,7 +13,8 @@ const LATEST_CODE = 138;
 const VERSION_NOTE =
   "v1.0.5-beta (vc138) — v1.4.32 버그 수정 3건: 세이브 복원(멀티캐릭터 슬롯 반영 — 복원이 무시되던 버그)·구글 로그인(서버 인증서 조회 URL 수정 — 웹 로그인 실패)·게임 멈춤(모바일 보스전 블룸 프리즈 전 챕터 차단)";
 const APK_MIRROR =
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
+  /* vc138 — API DELETE 장애 기간 안전 경로 (server.js 주석 참조) */
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc138.apk";
 
 export async function GET() {
   return NextResponse.json({
