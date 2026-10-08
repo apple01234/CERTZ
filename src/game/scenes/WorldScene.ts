@@ -16,6 +16,7 @@ import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerN
 import { loadKeyMap, type KeyMap, type GameAction } from "../keymap";
 import {
   classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST, chainOf, FIFTH_LEVEL,
+  resolveSkill1Of, resolveSkill2Of, SKILL3_KIND, SKILL4_KIND,
   type ClassKey,
 } from "../classes";
 import * as net from "../net";
@@ -9650,56 +9651,387 @@ export class WorldScene extends Phaser.Scene {
       /* 계열별 기본 공격 실루엣 — 근접 참격 / 궁수 활 / 마법 시전 */
       if (fam === "ranger") {
         this.spawnBow(x + dir.x * 10, y - 8, flip ? 0 : Math.PI);
-        this.fireRemoteProj(x, y, flip, 0x9adf6a, 1);
+        this.fireRemoteProj(x, y - 8, flip ? 0 : Math.PI, 540, { tint: 0x9adf6a });
       } else if (fam === "mage") {
         this.spawnCast(x + dir.x * 12, y - 12);
-        this.fireRemoteProj(x, y, flip, 0x6fc8ff, 1);
+        this.fireRemoteProj(x, y - 10, flip ? 0 : Math.PI, 430, { anim: "fx-arcane", scale: 1.15, rot: true });
       } else {
         this.spawnSlash(x, y, dir, false, 1, undefined);
       }
       return;
     }
-    /* 스킬 — 클래스색 버스트 링 + 발사체 (등급이 클수록 크게) */
-    const scale = a.kind === "s5" ? 2.6 : a.kind === "s4" ? 2.0 : a.kind === "s3" ? 1.55 : 1.2;
-    const ring = this.add.circle(x, y, 26 * scale)
-      .setStrokeStyle(3, hex, 0.85)
-      .setDepth(12)
-      .setBlendMode(Phaser.BlendModes.ADD);
-    this.tweens.add({ targets: ring, scale: 1.9, alpha: 0, duration: 460, ease: "Cubic.out", onComplete: () => ring.destroy() });
-    this.spawnBurstAt(x, y, a.kind === "s5" ? 14 : 8, hex);
-    const shots = a.kind === "s5" ? 5 : a.kind === "s4" ? 3 : 2;
-    /* vc140 — 원격 스프라이트가 아직 없어도(입장 직후·원격 유실) 신고 좌표(a.x/a.y)로 발사.
-     *  기존엔 r이 없으면 즉시 return해 스킬 발사체가 전혀 안 보였다("스킬 안보임"의 절반). */
-    const px = () => (r ? r.sp.x : x);
-    const py = () => (r ? r.sp.y : y);
-    for (let i = 0; i < shots; i++) {
-      this.time.delayedCall(i * 70, () => {
-        this.fireRemoteProj(px(), py(), flip, hex, scale);
-      });
-    }
-    if (a.kind === "s5") {
-      this.cameras.main.flash(120, 200, 170, 255);
-      this.doShake(200, 0.004);
-    }
+    /* vc141 — 스킬은 범용 링이 아니라 각 스킬의 실제 로컬 연출을 원격에서도 재생한다.
+     *  ("내가 쓰는 스킬 ≠ 상대가 보는 스킬" 해소 — 데미지/판정 없는 순수 코스메틱 재현)
+     *  r 미동기(입장 직후·원격 유실)여도 위 x/y가 신고 좌표 폴백이라 발사는 유지된다. */
+    this.playRemoteSkillFx(a.kind, cls, x, y, flip, hex, fam);
   }
 
-  /** 원격 플레이어의 보기용 발사체 — 판정 없이 직진 후 소멸 */
-  private fireRemoteProj(x: number, y: number, flip: boolean, tint: number, scale: number) {
-    const img = this.add.image(x, y - 8, "x2_arrow")
-      .setDepth(11)
-      .setTint(tint)
-      .setScale(0.9 * scale)
-      .setFlipX(!flip);
-    const vx = (flip ? 1 : -1) * (360 + Math.random() * 60);
-    this.tweens.add({
-      targets: img,
-      x: img.x + vx * 0.5,
-      y: img.y + Phaser.Math.Between(-26, 26),
-      alpha: 0,
-      duration: 500,
-      ease: "Linear",
-      onComplete: () => img.destroy(),
+  /* ================= vc141 — 원격 스킬 FX 재생기 (코스메틱 전용) =================
+   *  로컬 Player의 useSkillN이 그리는 연출을 같은 씬 FX 헬퍼로 근사 재생.
+   *  슬롯 s3/s4/s5는 미해금 클래스면 하위 슬롯 강화판으로 폴백(로컬 규칙과 동일).
+   *  판정·데미지는 각자 로컬 — 여기선 보여주기만 한다. */
+
+  /** 슬롯 배율 — 상위 슬롯일수록 크게 (로컬 강화 연출 비례) */
+  private remoteSlotScale(kind: string): number {
+    return kind === "s5" ? 1.9 : kind === "s4" ? 1.55 : kind === "s3" ? 1.3 : kind === "s2" ? 1.1 : 1.0;
+  }
+
+  /** 원격 확산 링 — 보조 악센트 공용 */
+  private remoteRing(x: number, y: number, hex: number, scale = 1, delay = 0, grow = 2.0) {
+    this.time.delayedCall(delay, () => {
+      const ring = this.add.circle(x, y, 26 * scale)
+        .setStrokeStyle(3, hex, 0.85)
+        .setDepth(12)
+        .setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: ring, scale: grow, alpha: 0, duration: 460, ease: "Cubic.out", onComplete: () => ring.destroy() });
     });
+  }
+
+  /** 원격 코스메틱 투사체 — 각도 기반 직진 후 소멸 (판정 없음). tex 또는 anim 지정 */
+  private fireRemoteProj(
+    x: number, y: number, angle: number, speed: number,
+    opts?: { tex?: string; anim?: string; tint?: number; scale?: number; blend?: "add" | "normal"; rot?: boolean; life?: number },
+  ) {
+    const { tex, anim, tint = 0xffffff, scale = 0.9, blend = "normal", rot = false, life = 620 } = opts ?? {};
+    const o: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite = anim
+      ? this.add.sprite(x, y, "orb")
+      : this.add.image(x, y, tex || "x2_arrow");
+    o.setDepth(11).setTint(tint).setScale(scale);
+    o.setBlendMode(blend === "add" ? Phaser.BlendModes.ADD : Phaser.BlendModes.NORMAL);
+    if (anim && this.anims.exists(anim)) (o as Phaser.GameObjects.Sprite).play(anim);
+    if (rot) o.setRotation(angle);
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+    this.tweens.add({
+      targets: o,
+      x: x + vx * (life / 1000),
+      y: y + vy * (life / 1000),
+      alpha: 0,
+      duration: life,
+      ease: "Linear",
+      onComplete: () => o.destroy(),
+    });
+  }
+
+  /** 원격 코스메틱 토네이도 (회오리 계열 공용) */
+  private remoteTornado(x: number, y: number, angle: number, hex: number, scale = 1.1, life = 900) {
+    const g = this.add.sprite(x, y, "fx_tornado", 0)
+      .setDepth(13)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(hex)
+      .setScale(scale)
+      .setAlpha(0.92);
+    if (this.anims.exists("fx-tornado")) g.play("fx-tornado");
+    const vx = Math.cos(angle) * 200;
+    const vy = Math.sin(angle) * 200;
+    this.tweens.add({ targets: g, x: g.x + vx * (life / 1000), y: g.y + vy * (life / 1000), alpha: 0, duration: life, ease: "Linear", onComplete: () => g.destroy() });
+  }
+
+  /** 원격 낙뢰/빛기둥 — 하늘에서 수직 기둥 */
+  private remotePillar(x: number, y: number, hex: number, delay = 0, height = 120) {
+    this.time.delayedCall(delay, () => this.spawnPillar(x, y, hex, height));
+  }
+
+  private playRemoteSkillFx(kind: "s1" | "s2" | "s3" | "s4" | "s5", cls: string | null, x: number, y: number, flip: boolean, hex: number, fam: FamilyKey | null) {
+    const s = this.remoteSlotScale(kind);
+    const face = flip ? 1 : -1;
+    const ang = flip ? 0 : Math.PI; // 수평 조준각 (netFacingFlip: 오른쪽=true)
+    /* 슬롯별 스킬 종류 리졸브 — 로컬과 동일 규칙 */
+    const k1 = kind === "s1" || kind === "s5" ? resolveSkill1Of(cls) : null;
+    const k2 = kind === "s2" ? resolveSkill2Of(cls) : null;
+    const k3 = kind === "s3" ? (cls ? SKILL3_KIND[cls as ClassKey] : undefined) : undefined;
+    const k4 = kind === "s4" ? (cls ? SKILL4_KIND[cls as ClassKey] : undefined) : undefined;
+
+    /* ---------- 5차 궁극기 — 계열별 대연출 (s5) ---------- */
+    if (kind === "s5") {
+      try { this.cameras.main.flash(140, 220, 200, 255); } catch { /* 무시 */ }
+      this.doShake(260, 0.005);
+      if (fam === "ranger") {
+        /* 천강 — 하늘에서 화살비 + 부채꼴 연사 */
+        for (let i = 0; i < 10; i++) {
+          this.time.delayedCall(i * 90, () => {
+            const ox = (Math.random() - 0.5) * 220 * s;
+            this.fireRemoteProj(x + ox, y - 190, Math.PI / 2, 460, { tint: hex, scale: 1.0, rot: true, life: 420 });
+          });
+        }
+        for (let i = 0; i < 5; i++) this.time.delayedCall(120 + i * 80, () => this.fireRemoteProj(x, y - 8, ang + (i - 2) * 0.12, 620, { tint: hex, scale: 1.1, rot: true }));
+        this.remoteRing(x, y, hex, 2.2 * s, 200, 2.6);
+      } else if (fam === "mage") {
+        /* 종막 — 운석 낙하(아케인 볼트 수직) + 3중 폭발 */
+        for (let i = 0; i < 4; i++) this.time.delayedCall(i * 130, () => this.fireRemoteProj(x + (i - 1.5) * 60 * s, y - 200, Math.PI / 2, 520, { anim: "fx-arcane", scale: 1.4 * s, rot: true, life: 380 }));
+        for (let i = 0; i < 3; i++) { this.remoteRing(x + (i - 1) * 50 * s, y, hex, 1.8 * s, 320 + i * 140, 2.4); this.spawnBurstAt(x + (i - 1) * 50 * s, y, 10, hex); }
+        this.remotePillar(x, y, hex, 120, 140 * s);
+      } else if (fam === "thief") {
+        /* 심연 — 그림자 참수 연타 + 심연 폭발 */
+        for (let i = 0; i < 5; i++) this.time.delayedCall(i * 90, () => { this.spawnSlash(x + (Math.random() - 0.5) * 90, y + (Math.random() - 0.5) * 60, new Phaser.Math.Vector2(face, 0), i % 2 === 0, 1.2 * s, 0x7a4aff); });
+        this.spawnBurstAt(x, y, 18, 0x3a1860);
+        this.remoteRing(x, y, 0x7a4aff, 2.4 * s, 480, 3.0);
+        this.remoteRing(x, y, 0x120530, 2.0 * s, 560, 2.6);
+      } else {
+        /* 천멸(전사 계열) — 초거대 참격 연속 + 종결 일격 */
+        for (let i = 0; i < 4; i++) this.time.delayedCall(i * 110, () => this.spawnSlashArc(x, y, face, 0xd6e6ff, 3.0 * s, 300, 0.95, -0.9 + i * 0.5));
+        this.time.delayedCall(520, () => { this.spawnBurstAt(x, y, 20, 0xd6e6ff); this.remoteRing(x, y, 0xffffff, 2.6 * s, 0, 3.2); });
+        this.spawnSpinSlash(x, y, face);
+      }
+      return;
+    }
+
+    /* ---------- 1차 주력기 (s1) — 12종 고유 메커니즘 ---------- */
+    if (k1) {
+      switch (k1) {
+        case "spin":
+        case "ragespin": {
+          /* 전사/버서커 — 360° 회전베기 (+버서커 붉은 광기) */
+          const spinCol = k1 === "ragespin" ? 0xff5c3c : hex;
+          this.spawnSpinSlash(x, y, face);
+          this.spawnSlashArc(x, y, face, spinCol, 2.6 * s, 300, 0.95);
+          this.spawnBurstAt(x, y, 12, spinCol);
+          if (k1 === "ragespin") {
+            this.spawnSpinSlash(x + face * 52, y, -face);
+            this.remoteRing(x, y, 0xff5c3c, 1.4, 60, 1.9);
+          }
+          break;
+        }
+        case "volley": {
+          /* 궁수 — 부채꼴 관통 화살 */
+          this.spawnBow(x + face * 10, y - 8, ang);
+          for (let i = 0; i < 4; i++) this.time.delayedCall(i * 90, () => this.fireRemoteProj(x, y - 8, ang + (i % 2 === 0 ? 1 : -1) * (0.06 + 0.05 * Math.floor(i / 2)), 600, { tint: hex, scale: 1.0, rot: true }));
+          break;
+        }
+        case "bolt": {
+          /* 마법사 — 대관통 매직 볼트 */
+          this.spawnCast(x + face * 14, y - 12);
+          this.fireRemoteProj(x, y - 10, ang, 430, { anim: "fx-arcane", scale: 1.35 * s, rot: true });
+          this.remoteRing(x + face * 14, y - 10, hex, 0.9, 40, 1.6);
+          break;
+        }
+        case "bladestorm": {
+          /* 도적 — 전방 다연발 단검 부채꼴 */
+          for (let i = 0; i < 5; i++) this.time.delayedCall(60 + i * 55, () => this.fireRemoteProj(x, y - 8, ang + (i - 2) * 0.124, 560, { tex: "x3_shuriken", tint: 0xd8c8ff, scale: 0.85, rot: true }));
+          break;
+        }
+        case "wallsmash": {
+          /* 가디언 — 전방 대참격 + 지진파 */
+          this.spawnSlash(x + face * 34, y, new Phaser.Math.Vector2(face, 0), false, 1.9 * s, hex);
+          this.spawnSlashArc(x + face * 20, y, face, hex, 2.2 * s, 280, 0.9);
+          this.spawnBurstAt(x + face * 50, y + 10, 14, hex);
+          this.doShake(120, 0.003);
+          break;
+        }
+        case "snipe": {
+          /* 스나이퍼 — 즉발 관통 저격 라인 */
+          this.spawnSnipeBeam(x, y - 8, x + Math.cos(ang) * 520, y - 8 + Math.sin(ang) * 520, hex);
+          this.spawnBurstAt(x + face * 20, y - 8, 4, hex);
+          break;
+        }
+        case "gustarrow": {
+          /* 윈드러너 — 회오리 화살 */
+          this.remoteTornado(x + face * 20, y - 6, ang, hex, 1.15, 900);
+          for (let i = 0; i < 3; i++) this.time.delayedCall(100 + i * 120, () => this.spawnWindStreak(x + face * 20, y - 6, new Phaser.Math.Vector2(face, 0), hex));
+          break;
+        }
+        case "arcbolt": {
+          /* 아크메이지 — 대형 볼트 + 착탄 광역 폭발 예고 */
+          this.spawnCast(x + face * 14, y - 12);
+          this.fireRemoteProj(x, y - 10, ang, 380, { anim: "fx-arcane", scale: 1.9 * s, rot: true, life: 520 });
+          this.remoteRing(x, y, hex, 1.6, 380, 2.4);
+          this.time.delayedCall(460, () => this.spawnBurstAt(x + face * 170, y - 10, 12, hex));
+          break;
+        }
+        case "purify": {
+          /* 세이지 — 정화의 파동 (확산 링 2겹) */
+          this.remoteRing(x, y, 0xfff3c2, 1.4 * s, 0, 2.3);
+          this.remoteRing(x, y, 0xffffff, 1.1 * s, 150, 2.0);
+          this.spawnBurstAt(x, y, 8, 0xfff3c2);
+          break;
+        }
+        case "shadowexec": {
+          /* 어세신 — 그림자 점멸 + 참수 강타 */
+          this.spawnBurstAt(x, y, 10, 0x7a4aff);
+          this.remoteRing(x, y, 0x7a4aff, 1.2, 0, 1.8);
+          this.time.delayedCall(140, () => this.spawnSlash(x + face * 44, y, new Phaser.Math.Vector2(face, 0), false, 1.4 * s, 0x7a4aff));
+          break;
+        }
+        case "flurrydance": {
+          /* 스와시버클러 — 전방 5연속 속공 */
+          for (let i = 0; i < 5; i++) this.time.delayedCall(i * 70, () => this.spawnSlash(x + face * (18 + i * 6), y, new Phaser.Math.Vector2(face, 0), i % 2 === 0, 1.15 * s, hex));
+          break;
+        }
+      }
+      return;
+    }
+
+    /* ---------- 2차 기동기 (s2) — 12종 돌진/점멸 계열 ---------- */
+    if (k2) {
+      const isBlink = k2 === "blink" || k2 === "grandblink" || k2 === "cycleblink";
+      if (isBlink) {
+        /* 마법 계열 점멸 — 룬 링 + 양단 마나 폭발 (grandblink는 반경 1.5배) */
+        const r = k2 === "grandblink" ? 1.5 : 1.0;
+        this.spawnRuneRing(x, y, hex);
+        this.remoteRing(x, y, hex, 1.3 * r * s, 120, 2.2);
+        this.spawnBurstAt(x, y, 10, hex);
+        if (k2 !== "blink") { this.remoteRing(x, y, hex, 1.8 * r * s, 240, 2.6); this.spawnBurstAt(x, y, 14, hex); }
+      } else {
+        /* 돌진 계열 — 진행 방향 잔상 궤적 + 종착 폭발 (직업별 색/특색) */
+        const trailCol = k2 === "savagerush" ? 0xff5c3c : k2 === "ambushdash" || k2 === "shadowveil" ? 0x7a4aff : hex;
+        const dist = k2 === "savagerush" || k2 === "bulwarkdash" ? 150 : 120;
+        for (let i = 0; i < 6; i++) {
+          this.time.delayedCall(i * 26, () => {
+            const gx = x + face * (dist * ((i + 1) / 6));
+            if (fam === "warrior") this.spawnDashDust(gx, y, trailCol);
+            else if (fam === "ranger") this.spawnWindStreak(gx, y, new Phaser.Math.Vector2(face, 0), 0x9dffc4);
+            else this.spawnBurstAt(gx, y, 2, trailCol);
+          });
+        }
+        this.time.delayedCall(190, () => {
+          this.spawnBurstAt(x + face * dist, y, 10, trailCol);
+          this.remoteRing(x + face * dist, y, trailCol, 1.2 * s, 0, 1.9);
+          if (k2 === "windstep" || k2 === "falconwind") { /* 종착 후퇴사격/부채꼴 저격 */
+            for (let i = 0; i < 3; i++) this.time.delayedCall(60 + i * 80, () => this.fireRemoteProj(x + face * dist, y - 8, ang + (i - 1) * 0.16, 620, { tint: hex, scale: 1.0, rot: true }));
+          }
+        });
+      }
+      return;
+    }
+
+    /* ---------- 3차기 (s3) — 16종 고유 ---------- */
+    if (k3) {
+      switch (k3) {
+        case "warcry": /* 전장의 함성 — 광역 확산 링 */
+          for (let i = 0; i < 3; i++) this.remoteRing(x, y, i === 0 ? 0xffb03a : hex, (1.4 + i * 0.3) * s, i * 130, 2.5);
+          this.spawnBurstAt(x, y, 12, 0xffb03a);
+          this.doShake(110, 0.0025);
+          break;
+        case "sanctuary": /* 성역 — 빛의 결계 필드 */
+          this.remoteRing(x, y, 0xffe29a, 2.0 * s, 0, 2.2);
+          this.remotePillar(x, y, 0xffe9a0, 90, 120);
+          this.spawnBurstAt(x, y, 10, 0xffe29a);
+          break;
+        case "trueshot": /* 절사명중 — 관통 저격선 2연사 */
+          for (let i = 0; i < 2; i++) this.time.delayedCall(i * 140, () => this.spawnSnipeBeam(x, y - 8 + i * 6, x + Math.cos(ang) * 560, y - 8 + i * 6, hex));
+          break;
+        case "tornado": /* 폭풍의 눈 — 회오리 투사체 다수 */
+          for (let i = 0; i < 2; i++) this.remoteTornado(x + face * 20, y - 6, ang + (i === 0 ? 0.18 : -0.18), hex, 1.25 * s, 900);
+          break;
+        case "thunder": /* 낙뢰 — 하늘에서 수직 기둥 3개 */
+          for (let i = 0; i < 3; i++) this.remotePillar(x + (i - 1) * 52, y, hex, i * 120, 150 * s);
+          this.doShake(140, 0.003);
+          break;
+        case "timewarp": /* 시간 왜곡 — 감속 필드 */
+          for (let i = 0; i < 2; i++) this.remoteRing(x, y, 0xc8b0ff, (1.6 + i * 0.4) * s, i * 200, 2.0);
+          this.spawnBurstAt(x, y, 8, 0xc8b0ff);
+          break;
+        case "shadowblad": /* 그림자 칼날 — 회전 오비트 */
+          for (let i = 0; i < 3; i++) this.time.delayedCall(i * 160, () => this.spawnSpinSlash(x, y, i % 2 === 0 ? face : -face));
+          this.remoteRing(x, y, 0x7a4aff, 1.5 * s, 0, 2.2);
+          break;
+        case "flurry": /* 연격 무도 — 연속 급습 */
+          for (let i = 0; i < 4; i++) this.time.delayedCall(i * 80, () => this.spawnSlash(x + face * (16 + i * 8), y, new Phaser.Math.Vector2(face, 0), i % 2 === 0, 1.25 * s, hex));
+          break;
+        case "bloodrage": /* 피의 격노 — 광역 출혈 폭발 */
+          this.spawnBurstAt(x, y, 16, 0xff3d2e);
+          for (let i = 0; i < 2; i++) this.remoteRing(x, y, 0xff3d2e, (1.5 + i * 0.4) * s, i * 120, 2.4);
+          this.spawnSlashArc(x, y, face, 0xff3d2e, 2.4 * s, 320, 0.9);
+          break;
+        case "holynova": /* 성흔 폭발 — 즉발 빛 대폭발 */
+          this.spawnBurstAt(x, y, 18, 0xfff3c2);
+          this.remoteRing(x, y, 0xffe29a, 2.2 * s, 0, 2.8);
+          this.remoteRing(x, y, 0xffffff, 1.6 * s, 120, 2.4);
+          this.remotePillar(x, y, 0xffe9a0, 60, 130 * s);
+          break;
+        case "arrowrain": /* 화살 폭우 — 조준 지점 하늘에서 쏟아짐 */
+          for (let i = 0; i < 7; i++) this.time.delayedCall(i * 90, () => this.fireRemoteProj(x + (Math.random() - 0.5) * 200 * s, y - 180, Math.PI / 2, 470, { tint: hex, scale: 0.95, rot: true, life: 400 }));
+          break;
+        case "cyclone": /* 폭풍 소용돌이 — 대형 회오리 2기 */
+          for (let i = 0; i < 2; i++) this.remoteTornado(x + face * (20 + i * 40), y - 8, ang, hex, 1.7 * s, 1000);
+          break;
+        case "chainlight": /* 연쇄 번개 — 도약하는 번개 궤적 */
+          for (let i = 0; i < 3; i++) this.time.delayedCall(i * 110, () => {
+            const sx = x + face * i * 70;
+            this.spawnSnipeBeam(sx, y - 14, sx + face * 90, y - 4, 0xcfe8ff);
+            this.spawnBurstAt(sx + face * 90, y, 4, 0xcfe8ff);
+          });
+          this.remotePillar(x, y, 0xcfe8ff, 0, 120);
+          break;
+        case "gravity": /* 중력 붕괴 — 끌어당김 후 폭발 */
+          this.time.delayedCall(0, () => {
+            const ring = this.add.circle(x, y, 80 * s).setStrokeStyle(3, hex, 0.7).setDepth(12).setBlendMode(Phaser.BlendModes.ADD);
+            this.tweens.add({ targets: ring, scale: 0.15, alpha: 0.9, duration: 380, ease: "Cubic.in", onComplete: () => ring.destroy() });
+          });
+          this.time.delayedCall(420, () => { this.spawnBurstAt(x, y, 18, hex); this.remoteRing(x, y, hex, 2.2 * s, 0, 2.9); });
+          break;
+        case "shadowmine": /* 그림자 지뢰 — 전방 3기 설치 */
+          for (let i = 0; i < 3; i++) this.time.delayedCall(i * 100, () => {
+            const mx = x + face * (40 + i * 44);
+            const c = this.add.circle(mx, y + 14, 12, 0x1a0830, 0.75).setDepth(9).setStrokeStyle(2, 0x7a4aff, 0.8);
+            this.tweens.add({ targets: c, alpha: 0, scale: 1.5, duration: 1400, ease: "Quad.in", onComplete: () => c.destroy() });
+            this.spawnBurstAt(mx, y + 14, 3, 0x7a4aff);
+          });
+          break;
+        case "swordaura": /* 파동 검기 — 전방 관통 거대 검기 */
+          this.spawnSlashArc(x + face * 20, y, face, hex, 3.0 * s, 340, 0.95);
+          this.spawnSnipeBeam(x, y - 10, x + Math.cos(ang) * 420, y - 10, hex);
+          this.spawnBurstAt(x + face * 60, y, 10, hex);
+          break;
+      }
+      return;
+    }
+
+    /* ---------- 4차기 (s4) — 8종 궁극기 ---------- */
+    if (k4) {
+      switch (k4) {
+        case "doomsday": /* 종언의 일격 — 돌진 후 대폭발 */
+          for (let i = 0; i < 5; i++) this.time.delayedCall(i * 26, () => this.spawnDashDust(x + face * (150 * ((i + 1) / 5)), y, 0xff3d2e));
+          this.time.delayedCall(180, () => {
+            this.spawnBurstAt(x + face * 150, y, 22, 0xff3d2e);
+            this.remoteRing(x + face * 150, y, 0xff5c3c, 2.6 * s, 0, 3.0);
+            this.doShake(200, 0.005);
+          });
+          break;
+        case "judgment": /* 심판의 빛기둥 — 다수 성스러운 기둥 */
+          for (let i = 0; i < 3; i++) this.remotePillar(x + (i - 1) * 56, y, 0xffe9a0, i * 110, 160 * s);
+          this.remoteRing(x, y, 0xffe29a, 2.0 * s, 80, 2.5);
+          break;
+        case "godarrow": /* 신의 화살비 — 유도 화살 8발 */
+          this.spawnBow(x + face * 10, y - 8, ang);
+          for (let i = 0; i < 8; i++) this.time.delayedCall(i * 70, () => this.fireRemoteProj(x, y - 8, ang + Math.sin(i * 2.4) * 0.5, 540, { tint: 0xffe9b0, scale: 1.05, rot: true, life: 700 }));
+          break;
+        case "skystorm": /* 천공의 폭풍 — 나선 회오리 + 대형 중심 */
+          for (let i = 0; i < 3; i++) this.remoteTornado(x + face * (16 + i * 36), y - 6, ang + (i - 1) * 0.25, hex, 1.0 * s, 800);
+          this.remoteTornado(x + face * 40, y - 10, ang, hex, 1.9 * s, 1100);
+          this.remoteRing(x, y, hex, 1.8 * s, 300, 2.4);
+          break;
+        case "manaburst": /* 마나 붕괴 — 대폭발 */
+          this.spawnBurstAt(x, y, 20, 0x8fa6ff);
+          for (let i = 0; i < 3; i++) this.remoteRing(x, y, 0x8fa6ff, (1.6 + i * 0.5) * s, i * 110, 2.8);
+          this.doShake(180, 0.004);
+          break;
+        case "eternalloop": /* 영원의 고리 — 시간 정지 3중 링 */
+          for (let i = 0; i < 3; i++) this.remoteRing(x, y, 0xd8e8ff, (1.5 + i * 0.45) * s, i * 170, 2.2);
+          this.spawnBurstAt(x, y, 12, 0xd8e8ff);
+          break;
+        case "shadowclon": /* 그림자 군주 — 분신 자폭 3기 */
+          for (let i = 0; i < 3; i++) this.time.delayedCall(i * 150, () => {
+            const cx = x + face * (40 + i * 50);
+            this.spawnBurstAt(cx, y, 12, 0x2a1040);
+            this.remoteRing(cx, y, 0x7a4aff, 1.6 * s, 0, 2.2);
+          });
+          break;
+        case "bladedance": /* 검무 — 점멸 연타 */
+          for (let i = 0; i < 6; i++) this.time.delayedCall(i * 90, () => {
+            const dx = x + (Math.random() - 0.5) * 120;
+            this.spawnBurstAt(dx, y + (Math.random() - 0.5) * 40, 4, hex);
+            this.spawnSlash(dx, y, new Phaser.Math.Vector2(Math.random() > 0.5 ? 1 : -1, 0), i % 2 === 0, 1.2 * s, hex);
+          });
+          this.remoteRing(x, y, hex, 1.9 * s, 540, 2.5);
+          break;
+      }
+      return;
+    }
+
+    /* ---------- 폴백 — 리졸브 실패 시 클래스색 강화 링 ---------- */
+    this.remoteRing(x, y, hex, 1.4 * s, 0, 2.2);
+    this.spawnBurstAt(x, y, 10, hex);
   }
 
   /* ================= v4.1.0 — 긴급 귀환 (유저 지시 #3 — 설정창 배치) ================= */

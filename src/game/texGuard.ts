@@ -180,6 +180,17 @@ export async function repairTextures(scene: Phaser.Scene, keys: string[]): Promi
     }
   });
   const fixed = rebindChildren(scene, new Set(keys));
+  /* vc141 — 보스 아틀라스 수복 시 LINEAR 필터 재적용.
+   *  pixelArt:true 환경에서 재로드된 텍스처는 NEAREST로 초기화되므로
+   *  BootScene의 보스 화질 오버라이드(vc140)를 여기서도 유지해야 한다. */
+  for (const k of keys) {
+    if (k.startsWith("atl_boss")) {
+      const t = scene.textures.get(k);
+      if (t && t.key !== "__MISSING") {
+        try { t.setFilter(Phaser.Textures.FilterMode.LINEAR); } catch { /* 무시 */ }
+      }
+    }
+  }
   if (fixed > 0) console.log(`[SERTZ] 텍스처 수복 — 재결합 오브제 ${fixed}개`);
   return queued;
 }
