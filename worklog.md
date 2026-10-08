@@ -3757,3 +3757,23 @@ Stage Summary (후속 — 릴리스 교체 + 잠복 버그 2건):
 - APK_MIRROR(server.js·route.ts) → SERTZ-vc138.apk 전환 + apk-guide 다운로드 링크·해시 갱신(md5 5d3af3c7..·sha1 d66b9058..·138,929,536B)
 - 라이브 실측: Vercel code:138·apk SERTZ-vc138.apk·/SERTZ-v1.0.5-beta.apk 307→vc138·/api/auth/google 401 1.43s(검증 경로 정상)·vc138 APK/AAB 직접 다운로드 206
 - 커밋 9732345 푸시
+
+---
+Task ID: vc139-boss-quality
+Agent: Super Z (main)
+Task: 유저 제보 "보스 화질 ㅈ구림 — 원래대로 하던지 화질 좀 많이 좋게" → 보스 아틀라스 화질 전면 복구 → vc139 빌드·릴리스
+
+Work Log:
+- [원인 진단] vc137 슬라이서가 저해상도 마스터 시트(1639×959, 3×3블록 — 프레임 ~48px)를 NEAREST ×6~8 비정수 확대 + webp q82로 저장 → 픽셀 격자 일그러짐+압축 뭉개짐. 또한 고해상 소스가 업로드 폴더에 존재함에도 미사용(bsw_* 시트 셀 256×171 = 마스터 대비 ~5배 해상도)
+- [소스 조사] upload/ 전수 조사: file_dbf882(골렘 1536×1024)·file_3b6882(백랑 1224×1285)·file_7c8c82(수목룡 식물 1536×1024)·file_f04c82(9보스 라벨 명세 시트)·file_7f2482(8보스 라벨 시트) 확인 — 라벨 시트가 12FPS·7행 공식 디자인 명세임을 확인. bsw_* 12종은 유저 업로드 시트의 크롭·합성물(원칙 준수)
+- [신규 파이프라인] scripts/boss_atlas_quality.py — ①HD 4종 교체: surt←bsw_surt(6열×7행 256×171)·fenrir←bsw_fenrir(실측 행박스 — 고정높이 크롭의 인접행 침범 제거)·boss2←bsw_behemoth 유령선(해적선 정체성 복원)·nidhog←식물시트(그리드라인 피팅 11열×7행 77프레임, 인셋 3px로 시트 격자선 제거) ②마스터 5종(boss·boss3·skoll·nagr·hati): vc137 기하 보존 + NEAREST→LANCZOS+언샵+q78 + 프리멀티지 알파 리사이즈(체커보드 오염 제거) ③초상화 9종 재생성(LANCZOS 220px) ④BSW 행순서 리맵 [idle,walk,atk,death,sp1,sp2,sp3]→게임순 [idle,walk,atk,sp1,sp2,sp3,die]
+- [기술 메모] webp method=6은 대형 캔버스에서 인코딩 수십 배 느림(아틀라스당 ~2분) → method=5(속도 25배·크기 +1.7%). scipy.ndimage.label로 플러드필 BFS 치환(수백 배). HD 업스케일 상한 1.5×(TARGET 320px)
+- [결과물] 아틀라스 9종: surt 330×224/42fr·fenrir 304×274/42fr·boss2 330×212/42fr·nidhog 226×232/77fr(11열×7행 — sp3 행 발견으로 6행→7행 승격)·boss 268×234·boss3 286×234·skoll 274×234·nagr 286×240(빈 프레임 12→11 트리밍)·hati 280×258. 총 ~10MB(vc137 3.9MB 대비 증가 — 화질 우선)
+- [검증] 매니페스트↔textures.ts 교차 실측 일치·tsc 0·npm run build 성공·e2e_vc139.js 4/4(9종 프레임 크기/카운트·신규 애니 6종(surt-die·boss2-sp3·nidhog-sp3 등)·인게임 9종 렌더 displayWidth 실측·pageerror 0)+9종 동시 스크린샷(atlas_preview/ingame_vc139_9boss.png — 백랑 털결·식물 디테일 선명 확인)
+- [빌드/릴리스] 게이트 5종 승격(build.gradle versionCode 139·server.js LATEST_CODE+APK_MIRROR·route.ts·next.config.ts APK_DL·apk-guide.html) — 리베이스 후 푸시, Vercel /api/version code:139 라이브 확인. APK는 백그라운드 빌드 후 SERTZ-vc139.* 별도 이름 업로드(vc138 DELETE 장애 계열 회피)
+
+Stage Summary:
+- vc139 = 보스 화질 전면 복구 — 유저가 제공한 원본 중 최고 해상도 소스로 재슬라이스(웹 즉시 반영·APK는 릴리스 후)
+- 근본 개선: NEAREST 비정수 확대 폐지 → LANCZOS+언샵+프리멀티지 알파 표준 파이프라인 확립(재발 방지)
+- 유저 테스트 포인트: ①수르트/펜리르/보스2(배)/니드호그 전투 시 디테일 체감 ②대화창·도감 초상화 ③APK 덮어설치(vc139)
+- 비고: 니드호그가 7행 구조로 승격되어 sp3 애니 신설·보스2가 유령선(배) 아트로 교체됨 — 마스터 시트에 배/천사기사 외 디자인 혼재 확인
