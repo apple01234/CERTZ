@@ -34,8 +34,10 @@ const CHAPTER_AMBIENT: Record<string, { color: number; alpha: number; light?: { 
    * "눈오는 곳 셰이더 너무 강해" 유저 지시 — 암전을 더 얕게, 시야 가독성 확보.
    * v1.4.30 (#11 니플헤임 눈부심) — 반대 피드백 "니플헤임 너무 밝아서 눈아파": 암전 0.18→0.38로
    * 복원(헬·심연 수준)하고 흰 눈바닥 틴트(WorldScene GROUND_TINT)로 전체 톤 다운.
-   * 횃불 광원은 1.6/0.55로 확대해 어두워진 만큼 시야는 확보된다. */
-  niflheim: { color: 0x0c1626, alpha: 0.38, light: { scale: 1.6, alpha: 0.55 } },   // 6장 니플헤임 — 얼음의 성전
+   * 횃불 광원은 1.6/0.55로 확대해 어두워진 만큼 시야는 확보된다.
+   * v1.4.31 (#6) — 유저 재지시 "여전히 너무 밝음": 암전 0.38→0.52 (전 챕터 최고 암전 —
+   * 빛 반사율 높은 눈 지형 특성상 동일 알파도 체감 밝기가 높다). 횃불 1.6/0.55 유지로 시야 확보. */
+  niflheim: { color: 0x0c1626, alpha: 0.52, light: { scale: 1.6, alpha: 0.55 } },   // 6장 니플헤임 — 얼음의 성전
 };
 
 export type AmbientProfile = { color: number; alpha: number; light?: { scale: number; alpha: number } } | null;

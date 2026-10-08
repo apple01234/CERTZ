@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 136;
+const LATEST_CODE = 137;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc135) — 파티·멀티 입구 복원(HUD 파티 버튼·공동 토벌전·시너지·미션)·채팅 기록 50개 스크롤 뷰·APK 다운로드 안내 페이지 최신화";
+  "v1.0.5-beta (vc137) — v1.4.31: 보스 개편(유저 제공 9보스 아틀라스 — 대형화·배경제거·풀애니)·토벌전 HP x30·니플헤임 암전 강화+프리즈 완화·교실 파티 게임 3종(팀 킬전·보물 사냥·퀴즈쇼)+목표 대폭 상향";
 const APK_MIRROR =
   "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
 

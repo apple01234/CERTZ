@@ -950,7 +950,7 @@ export class WorldScene extends Phaser.Scene {
     const groundTex = theme.ground;
     /* v1.4.30 (#11 니플헤임 눈부심) — 흰 눈바닥 타일이 화면을 압도하므로 챕터별 지면 틴트 도입.
      *  흰색 타일을 청회색으로 곱해 전체 톤 다운 (암전과 별개로 원본 자체가 밝은 타일 보정). */
-    const CH_GROUND_TINT: Record<string, number> = { niflheim: 0x9db4d0 };
+    const CH_GROUND_TINT: Record<string, number> = { niflheim: 0x70819c }; // v1.4.31 (#6) — 0x9db4d0→0x70819c 추가 암화
     const gTint = CH_GROUND_TINT[parseStage(stageKey).ch];
     const groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
     if (gTint) groundTs.setTint(gTint);
@@ -1023,7 +1023,11 @@ export class WorldScene extends Phaser.Scene {
       });
       /* v1.0.10 (#GameStudio FX) — 앰비언트 블룸: 보스전 전용이던 쉐이더를 평시 전투에도.
        *  스킬 이펙트/파티클/참격이 카메라 블룸으로 발광 — “보스전에만 적용” 버그 해소 */
-      if (this.bossFilters.length === 0) this.ambientFilters = addAmbientBloom(this.cameras.main);
+      /*  v1.4.31 (#5) — 니플헤임 평시 앰비언트 블룸도 스킵 (눈보라+암전+광원 다중 ADD 레이어
+       *  위 블룸 프레임버퍼 패스가 프리즈 유발 — 무스펠 프리즈와 동일 계열). */
+      const ambSkipCh = parseStage(stageKey).ch;
+      if (this.bossFilters.length === 0 && ambSkipCh !== "niflheim" && ambSkipCh !== "muspelheim")
+        this.ambientFilters = addAmbientBloom(this.cameras.main);
     }
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
     this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
@@ -1828,7 +1832,7 @@ export class WorldScene extends Phaser.Scene {
       kingdom: 0xa89878,
       alfheim: 0x8a7ac8,
       muspelheim: 0xa85a38,
-      niflheim: 0x8ab8d8,
+      niflheim: 0x66809e, // v1.4.31 (#6) — 0x8ab8d8→0x66809e 암화 (눈부심 완화)
       cave: 0x9a7a58,
       nidavellir: 0xb8a068,
       hel: 0x8a5aaa,
@@ -2295,7 +2299,9 @@ export class WorldScene extends Phaser.Scene {
      *  카메라 상단 폭 emitZone — 파티클은 월드 좌표에 떨어져 스크롤과 자연스럽게 어긋난다.
      *  v1.4.13 (#6 셰이더 약화) — 눈 맵 셰이더 너무 강함: 파티클 빈도 130→240ms, 알파 0.8→0.42,
      *  속도/스케일 축소로 "눈보라 너무 강해" 체감 완화 (분위기는 유지, 가독성 향상).
-     *  v1.4.30 (#11) — 니플헤임 눈부심 완화에 맞춰 눈보라 알파 0.42→0.30으로 추가 축소. */
+     *  v1.4.30 (#11) — 니플헤임 눈부심 완화에 맞춰 눈보라 알파 0.42→0.30으로 추가 축소.
+     *  v1.4.31 (#6 어둡게 + #5 프리즈) — 알파 0.30→0.22 추가 축소, 저사양(fxLevel 0)에선
+     *  발생 빈도 2배 완화(480ms)로 파티클 부하 절반 — 니플헤임 프리즈 완화. */
     {
       const chNow = parseStage(stageKey).ch;
       if (chNow === "niflheim") {
@@ -2306,10 +2312,10 @@ export class WorldScene extends Phaser.Scene {
           speedY: { min: 18, max: 42 },
           speedX: { min: -18, max: 4 },
           scale: { min: 0.04, max: 0.1 },
-          alpha: { start: 0.3, end: 0.14 },
+          alpha: { start: 0.22, end: 0.1 },
           rotate: { min: 0, max: 360 },
           quantity: 1,
-          frequency: 240,
+          frequency: this.fxLevel === 0 ? 480 : 240,
         }).setDepth(54);
       }
     }
@@ -4279,7 +4285,9 @@ export class WorldScene extends Phaser.Scene {
       this.spawnPickupText(this.player.x, this.player.y - 52 + (this.comboStreak % 2) * 12, `연속킬 x${this.comboStreak}! EXP +${pct}%`, "#ffd76a");
     }
     this.killTotals[key] = (this.killTotals[key] ?? 0) + 1;
-    classroom.trackKill(); // v1.4.30 (#9) — 교실 모드 합산 킬 카운터
+    /* v1.4.31 (#3) — 정예 킬은 보물 사냥(교실) 카운터에도 합산 */
+    const isEliteKill = !!(ref && !(ref instanceof Boss) && (ref as Enemy).displayName?.startsWith("정예"));
+    classroom.trackKill(isEliteKill ? "elite" : undefined); // v1.4.30 (#9) — 교실 모드 합산 킬 카운터
     /* v3.0.16 — 몬스터 컬렉션 등록 (최초 처치 시) */
     this.registerCollection(key, ENEMIES[key].name);
     /* v3.0.16 — 멀티킬 연출 (1.5초 내 다중 처치 등급 표시 — 메이플 멀티킬) */
@@ -5069,7 +5077,7 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(90)
       .setScrollFactor(0);
     this.add
-      .text(this.cameras.main.width / 2, 96, partyN > 1 ? `보스 HP ×${(hpMul * 6).toFixed(1)} · 보상 ×${hpMul.toFixed(2)} · 에메랄드 +${3 + partyN} · 하루 1회` : "단독 도전 · 하루 1회 — 파티원과 함께 잡으면 HP·보상이 커진다", { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 96, partyN > 1 ? `보스 HP ×${(hpMul * 30).toFixed(0)} · 보상 ×${hpMul.toFixed(2)} · 에메랄드 +${3 + partyN} · 하루 1회` : "단독 도전 · 하루 1회 — 파티원과 함께 잡으면 HP·보상이 커진다", { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(96)
       .setScrollFactor(0);
@@ -5082,12 +5090,14 @@ export class WorldScene extends Phaser.Scene {
     /* 레이드 보스 — 심연의 감시자 (심연의 군주 스펙 변형)
      *  v1.4.30 (#3) — 유저 지시 "공동토벌전 보스 ㅈㄴ 약해 (딜은 약해도 체력 ㅈㄴ 많이해)":
      *  HP ×6로 대폭 상향(솔로 ~6.4만 / 4인 ~13만) · 공격 계수 1.15→1.0으로 하향 —
-     *  여러 명이 오래 때려야 잡는 '협동 체력 레이스'로 재조정. */
+     *  여러 명이 오래 때려야 잡는 '협동 체력 레이스'로 재조정.
+     *  v1.4.31 (#2) — 유저 지시 "토벌전 보스 체력이 너무너무너무 적음": ×6 → ×30 추가 대폭 상향
+     *  (솔로 ~32만 / 4인 ~65만) — 레이드 보스답게 파티 전체 화력으로도 오랜 전투가 이어진다. */
     const base = BOSS_DEFS.abysslord;
     const def: BossDef = {
       ...base,
       name: partyN > 1 ? `심연의 감시자 (파티 ${partyN}인)` : "심연의 감시자",
-      hp: Math.round(base.hp * 1.25 * hpMul * 6),
+      hp: Math.round(base.hp * 1.25 * hpMul * 30),
       atk: Math.round(base.atk * (1 + (partyN - 1) * 0.06)),
       speed: Math.round(base.speed * 0.92), // 협동전 — 추격 살짝 완만 (각자 패턴 대응 여유)
       exp: Math.round(base.exp * hpMul * 1.2),
@@ -6726,7 +6736,10 @@ export class WorldScene extends Phaser.Scene {
          *  지형 ADD 블렌드가 전 챕터 중 가장 많다. 여기에 보스전 카메라 블룸(프레임버퍼
          *  이중 패스)이 겹치면 저사양 기기에서 GPU 컨텍스트 유실→렌더 프리즈가
          *  집중 발생 — 무스펠헤임 보스전은 블룸을 건너뛴다 (보스라이트·비네트·잉걸불 유지). */
-        const bloomSkip = parseStage(this.stageDef.key).ch === "muspelheim";
+        /*  v1.4.31 (#5) — 니플헤임도 동일 적용: 눈보라 파티클 + 암전 + 7~8개 ADD 광원 +
+         *  앰비언트 블룸까지 겹치는 챕터라 보스전 블룸 이중 패스에서 같은 프리즈가 발생했다. */
+        const raidCh = parseStage(this.stageDef.key).ch;
+        const bloomSkip = raidCh === "muspelheim" || raidCh === "niflheim";
         if (fxk > 0 && !bloomSkip) {
           const bloom = Phaser.Actions.AddEffectBloom(cam, {
             threshold: 0.68,
@@ -7181,14 +7194,21 @@ export class WorldScene extends Phaser.Scene {
     /* v1.4.30 (#9 클래스룸) — 교실 활동 성공 보상 지급 (classroom.ts 완료 판정 → window 이벤트)
      *  협동 보상: 에메랄드 2 + 골드 500 (경쟁전 우승은 5+2000) — 각 클라가 스스로 수령 */
     const onClassReward = (ev: Event) => {
-      const d = (ev as CustomEvent<{ label: string; mode: string; rank: number }>).detail;
+      const d = (ev as CustomEvent<{ label: string; mode: string; rank: number; win?: boolean }>).detail;
       if (!d || !this.player) return;
-      const emerald = d.mode === "race" ? (d.rank === 1 ? 5 : 1) : 2;
-      const gold = d.mode === "race" ? (d.rank === 1 ? 2000 : 500) : 500;
-      this.player.emerald += emerald;
-      this.player.addGold(gold);
-      audio.sfx.reward();
-      this.showBanner(`${d.label} — 보상: 에메랄드 ${emerald}·골드 ${gold.toLocaleString()}`);
+      /* v1.4.31 (#3) — 신설 3종 보상 표 (팀전/퀴즈는 지면·오답 시 참가 보상) */
+      let emerald = 2;
+      let gold = 500;
+      if (d.mode === "race") { emerald = d.rank === 1 ? 5 : 1; gold = d.rank === 1 ? 2000 : 500; }
+      else if (d.mode === "team") { emerald = d.win ? 3 : 1; gold = d.win ? 800 : 300; }
+      else if (d.mode === "treasure") { emerald = 3; gold = 800; }
+      else if (d.mode === "quiz") { emerald = d.win ? 2 : 0; gold = d.win ? 600 : 0; }
+      if (emerald > 0) this.player.emerald += emerald;
+      if (gold > 0) this.player.addGold(gold);
+      if (emerald > 0 || gold > 0) audio.sfx.reward();
+      this.showBanner(emerald > 0 || gold > 0
+        ? `${d.label} — 보상: 에메랄드 ${emerald}·골드 ${gold.toLocaleString()}`
+        : d.label);
       this.save();
       this.emitHud();
     };

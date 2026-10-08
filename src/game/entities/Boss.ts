@@ -3,7 +3,8 @@ import type { WorldScene } from "../scenes/WorldScene";
 import type { BossDef, BossAttackKind, BossDiffKey } from "../data";
 import { elemAdvantage, elementReaction, ELEM_REACTION_META, ELEMENT_META, type ElemKey, CHAPTER_ELEM } from "../data";
 import { parseStage } from "../stages";
-import { registerBossAnims, loadBossFrames } from "../textures";
+import { registerBossAnims, loadBossFrames, bossSourceFrame, BOSS_ATLAS } from "../textures";
+import { trackDamage } from "../classroom"; // v1.4.31 — 교실 공유 보스 딜 합산 (보스 대상 피해도 카운트)
 import { EventBus } from "../../components/game/EventBus";
 
 /**
@@ -98,8 +99,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private orbPool: Phaser.Physics.Arcade.Image[] = [];
   private orbIdx = 0;
 
+  /** v1.4.31 (#4) — 트윈(하티)이 본체와 다른 텍스처를 쓸 때의 애니 프리픽스 (boss_skoll → boss_hati) */
+  private twinPrefix: string | null = null;
+
   constructor(scene: WorldScene, x: number, y: number, def: BossDef, diffKey: BossDiffKey = "normal") {
-    super(scene, x, y, `${def.tex}_idle0`);
+    /* v1.4.31 (#4 보스 개편) — 아틀라스 보스는 시트 frame 0, 구형은 개별 idle0 이미지 */
+    const src = bossSourceFrame(def.tex);
+    super(scene, x, y, src.key, src.frame);
     this.def = def;
     this.chaos = diffKey === "chaos"; // v4.1.4 — 카오스 전용 메커니즘 플래그
     this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "dark"; // v3.0.15 (#16) 챕터 테마 원소
@@ -113,24 +119,35 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const bh = Math.round(this.height * 0.6);
     this.body!.setSize(bw, bh);
     this.body!.setOffset((this.width - bw) / 2, this.height - bh - 6);
-    this.hitW = Math.round(this.width * 0.92);
-    this.hitH = Math.round(this.height * 0.92);
+    /* v1.4.31 (#4) — 아틀라스 프레임은 300px급 대형화 — 근접 판정도 표시 크기(displayWidth) 기준 */
+    this.hitW = Math.round(this.displayWidth * 0.92);
+    this.hitH = Math.round(this.displayHeight * 0.92);
     // 돌진/넉백으로 아레나 밖으로 나가지 않도록 경계 충돌
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
-    this.play(`${def.tex}-idle`);
     /* v5.0 보스 전면 리메이크 — 12FPS 풀애니(idle/walk/atk/die/sp1~3):
-     *  캐시된 프레임 즉시 애니 등록 + 나머지 프레임 지연 로드 후 애니 승격(무결성 폴백) */
+     *  캐시된 프레임 즉시 애니 등록 + 나머지 프레임 지연 로드 후 애니 승격(무결성 폴백)
+     *  v1.4.31 (#4) — 애니 등록을 play보다 먼저 (아틀라스 보스는 부팅 폴백 애니가 없다) */
     registerBossAnims(scene, def.tex);
-    void loadBossFrames(scene, def.tex);
+    if (!BOSS_ATLAS[def.tex]) void loadBossFrames(scene, def.tex); // 아틀라스 보스는 전 프레임 시트 포함 — 지연 로드 불필요
+    this.play(`${def.tex}-idle`);
 
-    /* v1.0.12 — 하티 스폰: 스콜(금양 — orbTint 0xffd97a) 옆에 달빛 실버 늑대가 나란히 달린다.
-     *  히트박스/판정은 보스 본체 그대로(밸런스 불변) — 순수 비주얼 쌍두 표현. */
+    /* v1.0.12 — 하티 스폰: 스콜 옆에 나란히 달린다.
+     *  v1.4.31 (#4) — 아틀라스 시대: 본체=얼음 봉황(스콜), 트윈=화염 늑대(하티 전용 아트·무틴트).
+     *  구형 아트는 기존대로 동일 텍스처+은빛 틴트. 히트박스/판정은 보스 본체 그대로(밸런스 불변). */
     if (def.key === "skoll") {
-      this.twin = scene.add.sprite(this.x, this.y, this.texture.key)
-        .setDepth(this.depth - 1)
-        .setTint(0x9fb8ff)
-        .setAlpha(0); // v1.4.9 — 낙하 등장 중 비표시, 착지 시 0.95로 복원
-      this.twin.play(`${def.tex}-idle`);
+      if (BOSS_ATLAS[def.tex]) {
+        this.twinPrefix = "boss_hati";
+        this.twin = scene.add.sprite(this.x, this.y, "atl_boss_hati", 0)
+          .setDepth(this.depth - 1)
+          .setAlpha(0); // v1.4.9 — 낙하 등장 중 비표시, 착지 시 0.95로 복원
+        this.twin.play("boss_hati-idle");
+      } else {
+        this.twin = scene.add.sprite(this.x, this.y, this.texture.key)
+          .setDepth(this.depth - 1)
+          .setTint(0x9fb8ff)
+          .setAlpha(0);
+        this.twin.play(`${def.tex}-idle`);
+      }
       this.twin.setFlipX(true);
     }
 
@@ -233,7 +250,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const want = a.exists(key) ? key : `${this.def.tex}-idle`;
     if (!a.exists(want) || this.anims.currentAnim?.key === want) return;
     this.play(want);
-    this.twin?.play(want); // 하티 동기화
+    /* v1.4.31 (#4) — 트윈이 다른 텍스처(하티)면 대응 애니키로 치환해 동기화 */
+    if (this.twin) {
+      const twinWant = this.twinPrefix && want.startsWith(`${this.def.tex}-`)
+        ? `${this.twinPrefix}-${want.slice(this.def.tex.length + 1)}`
+        : want;
+      if (a.exists(twinWant)) this.twin.play(twinWant);
+    }
   }
 
   /** v1.0.12 — 하티 동기화: 프레임마다 보스 뒤 오프셋에 붙어 같이 달린다 (tick 흐름과 무관)
@@ -241,7 +264,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
     if (this.twin?.active) {
-      this.twin.setPosition(this.x + (this.flipX ? -52 : 52), this.y + 2);
+      /* v1.4.31 (#4) — 오프셋을 표시 폭 비례로 (아틀라스 300px급 프레임 대응) */
+      const off = Math.round(this.displayWidth * 0.22);
+      this.twin.setPosition(this.x + (this.flipX ? -off : off), this.y + 2);
       this.twin.setFlipX(!this.flipX);
       this.twin.setDepth(this.depth - 1);
     }
@@ -1091,6 +1116,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const R = reacted && reactKey ? ELEM_REACTION_META[reactKey] : null;
     let dealt = R ? Math.max(1, Math.round(dmg * adv * R.dmgMul))
       : adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
+    /* v1.4.31 — 교실 모드 공유 보스 레이드: 보스에 넣은 피해도 합산 (기존은 일반 몬스터만 카운트되는
+     *  블라인드스팟 — Enemy.takeDamage의 trackDamage와 짝을 이룬다. 교실 밖 no-op) */
+    trackDamage(dealt);
 
     // v4.1.4 — 반격 카운터: 창(노란 링) 안에 한 대라도 맞추면 카운터 성공 → 기절 + 취약
     if (this.mode === "counterTele") {
@@ -1142,10 +1170,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       {
         const gx = this.x, gy = this.y;
         const gtex = this.texture.key;
+        const gframe = this.frame.name; // v1.4.31 — 아틀라스 보스 잔상은 현재 프레임 유지 (__BASE는 구형)
         const gfl = this.flipX;
         const gsx = this.scaleX, gsy = this.scaleY;
         for (let i = 0; i < 3; i++) {
-          const ghost = this.scene.add.image(gx, gy, gtex)
+          const ghost = this.scene.add.image(gx, gy, gtex, gframe)
             .setDepth(10)
             .setTint(this.def.orbTint)
             .setBlendMode(Phaser.BlendModes.ADD)

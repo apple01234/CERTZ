@@ -565,7 +565,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   nagr: {
     key: "nagr", name: "재림의 종언 나그라파르",
     hp: 30000, atk: 62, speed: 108, exp: 2600, gold: 1400,
-    tex: "boss_abudditos", orbTint: 0xffd76a, introDialogue: "bossIntroAbudditos",
+    /* v1.4.31 (#4 보스 개편) — 발할라 천사기사 전용 아트 아틀라스 적용 (기존 아부디토스 재사용 해제) */
+    tex: "boss_nagr", orbTint: 0xffd76a, introDialogue: "bossIntroAbudditos",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 spiral · 성향 0.8 */
     sig: "spiral",
     aggr: 0.8,

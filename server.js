@@ -65,9 +65,9 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.0.5-beta";
-  const LATEST_CODE = 136;
+  const LATEST_CODE = 137;
   const VERSION_NOTE =
-  "v1.0.5-beta (vc136) — v1.4.30: 무스펠 프리즈 방지·n차 스킬 밸런스+직업 특화·공동토벌전 일1회+HPx6·장신구 자동강화·주문서 에메랄드 전용·5차 이펙트 축소·이터널 강화·모험가 시작·클래스룸(교실 모드)·구글 로그인 근본 수정·니플헤임 조광·보스전 포탈 차단·랭킹 30초 갱신·반격 UX";
+  "v1.0.5-beta (vc137) — v1.4.31: 보스 개편(유저 제공 9보스 아틀라스 — 대형화·배경제거·풀애니)·토벌전 HP x30·니플헤임 암전 강화+프리즈 완화·교실 파티 게임 3종(팀 킬전·보물 사냥·퀴즈쇼)+목표 대폭 상향";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
 import { getPlayerName } from "@/game/config";
 import { BOSS_DEFS } from "@/game/data";
+import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 아틀라스 초상화 분기
 import * as audio from "@/game/audio"; // v1.4.8 — 대화 진행 클릭음
 
 /**
@@ -50,10 +51,10 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "저택 집사 무르": { tex: "spum_butler", tone: "#d0a8ff" },
   "폐허 학자 테일": { tex: "spum_mage", tone: "#b09aff" },
   "마지막 항해사": { tex: "spum_fisher", tone: "#b09aff" },
-  "종언의 마룡 아부디토스": { tex: "boss_nidhog_idle0", tone: "#fda4af" }, // v4.1.3 고증 표기 통일 — 없는 파일(boss_nidhog) 대신 실제 프레임 파일명
+  "종언의 마룡 아부디토스": { tex: "boss_abudditos_idle0", tone: "#fda4af" }, // v1.4.31 — 구형 프레임 경로 유지 (아부디토스는 미아틀라스)
   "{name}": { tex: "hero_idle0", tone: "#86efac" }, // 플레이어
   // v1.0.2 (#초상화) — 매핑 누락 화자 보강 (가름은 bossPortrait 토큰 매칭으로도 자동 해결, 여기선 명시 우선)
-  "헬의 문지기 가름": { tex: "boss_gram_idle0", tone: "#8affc0" },
+  "헬의 문지기 가름": { tex: "boss_gram_idle0", tone: "#8affc0" }, // 구형 프레임 경로 (가름은 미아틀라스)
   "전사 계열의 시조 '강철의 마르테'": { tex: "spum_knight", tone: "#fbbf24" },
   "궁수 계열의 시조 '바람의 세이렌'": { tex: "spum_elf", tone: "#a7f3d0" },
   "마법사 계열의 시조 '만개한 세이렌'": { tex: "spum_mage", tone: "#c4b5fd" },
@@ -65,13 +66,20 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
  *  기본명(boss_nidhog.png 등)은 404 → 전원 이미지가 깨졌다. 첫 idle 프레임을 초상화로 사용 */
 function bossPortrait(speaker: string): { tex: string; tone: string } | null {
   /* v1.0.2 (#초상화) — 토큰 매칭 추가: "헬의 문지기 가름"처럼 수식어가 다른 화자도
-   *  마지막 고유명사(가름) 일치로 보스 스프라이트 자동 매핑 (speakerId 자동 매핑) */
+   *  마지막 고유명사(가름) 일치로 보스 스프라이트 자동 매핑 (speakerId 자동 매핑)
+   * v1.4.31 (#4) — bossPortraitUrl(): 아틀라스 보스는 전용 초상화(bossport_*.webp),
+   *  구형은 idle0 프레임 — tex 키에 확장자/경로 없는 순수 키를 반환한다 */
   const tok = (speaker.replace(/[‘’'"』]/g, "").split(/\s+/).pop() ?? "").trim();
   for (const def of Object.values(BOSS_DEFS)) {
-    if (def.name === speaker) return { tex: `${def.tex}_idle0`, tone: "#fda4af" };
-    if (tok.length >= 2 && def.name.endsWith(tok)) return { tex: `${def.tex}_idle0`, tone: "#fda4af" };
+    if (def.name === speaker) return { tex: bossPortraitKey(def.tex), tone: "#fda4af" };
+    if (tok.length >= 2 && def.name.endsWith(tok)) return { tex: bossPortraitKey(def.tex), tone: "#fda4af" };
   }
   return null;
+}
+
+/** 초상화 키 — 아틀라스 보스는 bossport_ 접두사 전용 파일, 구형은 idle0 프레임 */
+function bossPortraitKey(tex: string): string {
+  return BOSS_ATLAS[tex] ? `bossport_${tex}` : `${tex}_idle0`;
 }
 
 function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: string } | null {

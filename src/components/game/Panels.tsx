@@ -13,6 +13,7 @@ import {
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
 import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
+import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
 import { getPlayerName, loadSave, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도
 import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
@@ -2542,7 +2543,8 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
         {/* 보스 도감 */}
         <p className="mb-1 text-[11px] font-bold text-white/50">보스 몬스터 ({bossKeys.filter((k) => (kills[`boss_${k}`] ?? 0) > 0).length}/{bossKeys.length})</p>
         <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-6">
-          {bossKeys.map((k) => card(`boss_${k}`, BOSS_DEFS[k].name, `/assets/${BOSS_DEFS[k].tex}_idle0.webp`))}
+          {/* v1.4.31 (#4) — 아틀라스 보스는 전용 초상화(bossport_*), 구형은 idle0 프레임 */}
+          {bossKeys.map((k) => card(`boss_${k}`, BOSS_DEFS[k].name, `/assets/${BOSS_ATLAS[BOSS_DEFS[k].tex] ? `bossport_${BOSS_DEFS[k].tex}` : `${BOSS_DEFS[k].tex}_idle0`}.webp`))}
         </div>
 
         <p className="mt-2 text-center text-[10px] text-white/40">M키로 열기 · 등록 보너스는 모든 구역에서 항상 적용됩니다 · ESC로 닫기</p>

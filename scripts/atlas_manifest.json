@@ -1,0 +1,230 @@
+{
+  "atl_boss_nidhog": {
+    "fw": 390,
+    "fh": 322,
+    "nrows": 7,
+    "rowNames": [
+      "idle",
+      "walk",
+      "atk",
+      "sp1",
+      "sp2",
+      "sp3",
+      "die"
+    ],
+    "rowCounts": [
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11
+    ],
+    "kb": 515,
+    "desc": "니드호그=알프헤임 수목룡",
+    "scale": 7.59
+  },
+  "atl_boss_fenrir": {
+    "fw": 436,
+    "fh": 298,
+    "nrows": 7,
+    "rowNames": [
+      "idle",
+      "walk",
+      "atk",
+      "sp1",
+      "sp2",
+      "sp3",
+      "die"
+    ],
+    "rowCounts": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+    ],
+    "kb": 425,
+    "desc": "펜리르=설원 백랑(빙결)",
+    "scale": 6.98
+  },
+  "atl_boss_hati": {
+    "fw": 370,
+    "fh": 340,
+    "nrows": 7,
+    "rowNames": [
+      "idle",
+      "walk",
+      "atk",
+      "sp1",
+      "sp2",
+      "sp3",
+      "die"
+    ],
+    "rowCounts": [
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11
+    ],
+    "kb": 498,
+    "desc": "하티=스콜 트윈(화염)",
+    "scale": 7.5
+  },
+  "atl_boss2": {
+    "fw": 374,
+    "fh": 382,
+    "nrows": 7,
+    "rowNames": [
+      "idle",
+      "walk",
+      "atk",
+      "sp1",
+      "sp2",
+      "sp3",
+      "die"
+    ],
+    "rowCounts": [
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11
+    ],
+    "kb": 501,
+    "desc": "베히모스=미드가르드 해적선",
+    "scale": 7.89
+  },
+  "atl_boss_surt": {
+    "fw": 346,
+    "fh": 290,
+    "nrows": 7,
+    "rowNames": [
+      "idle",
+      "walk",
+      "atk",
+      "sp1",
+      "sp2",
+      "sp3",
+      "die"
+    ],
+    "rowCounts": [
+      10,
+      10,
+      11,
+      11,
+      11,
+      11,
+      10
+    ],
+    "kb": 440,
+    "desc": "수르트=무스펠 용암골렘",
+    "scale": 7.14
+  },
+  "atl_boss_skoll": {
+    "fw": 372,
+    "fh": 318,
+    "nrows": 7,
+    "rowNames": [
+      "idle",
+      "walk",
+      "atk",
+      "sp1",
+      "sp2",
+      "sp3",
+      "die"
+    ],
+    "rowCounts": [
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11
+    ],
+    "kb": 532,
+    "desc": "스콜=얼음 봉황",
+    "scale": 7.69
+  },
+  "atl_boss3": {
+    "fw": 388,
+    "fh": 318,
+    "nrows": 6,
+    "rowNames": [
+      "idle",
+      "walk",
+      "atk",
+      "sp1",
+      "sp2",
+      "die"
+    ],
+    "rowCounts": [
+      11,
+      11,
+      11,
+      11,
+      11,
+      11
+    ],
+    "kb": 410,
+    "desc": "심연의 군주=헬 악마",
+    "scale": 7.69
+  },
+  "atl_boss_nagr": {
+    "fw": 366,
+    "fh": 308,
+    "nrows": 6,
+    "rowNames": [
+      "idle",
+      "walk",
+      "atk",
+      "sp1",
+      "sp2",
+      "die"
+    ],
+    "rowCounts": [
+      10,
+      10,
+      11,
+      10,
+      11,
+      12
+    ],
+    "kb": 321,
+    "desc": "발할라 천사기사",
+    "scale": 7.23
+  },
+  "atl_boss": {
+    "fw": 378,
+    "fh": 330,
+    "nrows": 6,
+    "rowNames": [
+      "idle",
+      "walk",
+      "atk",
+      "sp1",
+      "sp2",
+      "die"
+    ],
+    "rowCounts": [
+      11,
+      11,
+      11,
+      11,
+      11,
+      11
+    ],
+    "kb": 361,
+    "desc": "심연의 수호자=스바르트 흑마수",
+    "scale": 8.0
+  }
+}

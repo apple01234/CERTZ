@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { buildAllAnims } from "../textures";
+import { buildAllAnims, registerBossAnims, BOSS_ATLAS } from "../textures";
 import { CORE_BODY_PREFIXES } from "../data";
 import { BGM_PRELOAD_TRACKS, SKILL_SFX_TRACKS } from "../audio";
 import { hookLoaderForGuard, runTexGuardCycle, getTexGuardStats, installEngineFrameGuard } from "../texGuard";
@@ -158,15 +158,10 @@ const ASSET_LIST = [
   "runegolem_run0", "runegolem_run1", "runegolem_run2", "runegolem_run3",
   "helhound_idle0", "helhound_idle1",
   "helhound_run0", "helhound_run1", "helhound_run2", "helhound_run3",
-  "boss_idle0", "boss_idle1",
-  "boss2_idle0", "boss2_idle1",
-  "boss3_idle0", "boss3_idle1",
-  // v2.0 아뜰란티스 신규 보스 (니드호그/수르트/펜리르/스콜&하티/가름[구 그람]/아부디토스)
-  "boss_nidhog_idle0", "boss_nidhog_idle1",
+  /* v1.4.31 (#4 보스 개편) — 아틀라스 보스(boss/boss2/boss3·nidhog/surt/fenrir/skoll)는
+   *  개별 idle0/1 이미지 철수 → atl_* 스프라이트시트 1장으로 대체 (preload 후반 로드).
+   *  구형 유지 보스(jorm/gram/abudditos)는 개별 프레임 경로 유지 */
   "boss_jorm_idle0", "boss_jorm_idle1",
-  "boss_surt_idle0", "boss_surt_idle1",
-  "boss_fenrir_idle0", "boss_fenrir_idle1",
-  "boss_skoll_idle0", "boss_skoll_idle1",
   "boss_gram_idle0", "boss_gram_idle1",
   "boss_abudditos_idle0", "boss_abudditos_idle1",
   // 퀘스트/이펙트 소스
@@ -473,6 +468,11 @@ export class BootScene extends Phaser.Scene {
     this.buildLoadingUi();
     this.load.setPath("assets");
     for (const key of ASSET_LIST) this.load.image(key, `${key}.webp`);
+    /* v1.4.31 (#4 보스 개편) — 유저 제공 9보스 아틀라스 (보스당 1장 · 부팅 직접 로드).
+     *  프레임 크기는 슬라이서 실측값 — BOSS_ATLAS 설정과 정확히 일치 (textures.ts) */
+    for (const { key, file, fw, fh } of Object.values(BOSS_ATLAS)) {
+      this.load.spritesheet(key, file, { frameWidth: fw, frameHeight: fh });
+    }
     /* v1.1.0 (#1/#19/#21/#22) — 외형 시스템: 여성(chf)/피부(chm) 변형 11종 + SPUM식 코스튬 완전교체(cost_*) 10종 × 28프레임
      *  + 어태치 장식 5종 (scripts/gen_char_system.py 산출). 구 outfit_* 재색상 오버레이는 폐기(미로드)
      *  v1.2.1 (#4 최적화 x3) — 부팅 분할 로드: 기본 성별/피부 시트(11종·308프레임)만 즉시 로드.
@@ -603,6 +603,9 @@ export class BootScene extends Phaser.Scene {
     this.bootUi?.destroy();
     this.bootUi = undefined;
     buildAllAnims(this);
+    /* v1.4.31 (#4) — 아틀라스 보스 9종 풀애니 부팅 즉시 등록 (시트가 preload에 포함되어 바로 가능 —
+     *  기존은 Boss 스폰 시점 등록이라 E2E·첫 스폰 직전까지 애니 부재). 구형 폴백 애니는 등록하지 않는다. */
+    for (const tex of Object.keys(BOSS_ATLAS)) registerBossAnims(this, tex);
     /* v4.1.5 — Galmuri 픽셀 폰트 로딩 대기 (최대 2.5초 폴백).
      *  Phaser 캔버스 텍스트(데미지 숫자/배너/월드 라벨)가 Galmuri로 렌더되려면
      *  씬 시작 전 document.fonts 로드 완료가 필요하다. 실패해도 sans-serif 폴백. */

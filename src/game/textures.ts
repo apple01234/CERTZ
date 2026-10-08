@@ -178,9 +178,11 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "wraith-idle", ...fr("wraith_idle", 2, 3, -1) });
   a.create({ key: "wraith-run", ...fr("wraith_run", 4, 7, -1) });
   // 보스 3종 (guardian / behemoth / abysslord)
-  a.create({ key: "boss-idle", ...fr("boss_idle", 2, 2, -1) });
-  a.create({ key: "boss2-idle", ...fr("boss2_idle", 2, 2, -1) });
-  a.create({ key: "boss3-idle", ...fr("boss3_idle", 2, 2, -1) });
+  /* v1.4.31 (#4) — 아틀라스 보스(boss/boss2/boss3·nidhog/surt/fenrir/skoll)는 개별 idle0 이미지가
+   *  철수되었으므로 2프레임 폴백을 만들지 않는다 — registerBossAnims가 시트에서 즉시 풀애니 등록 */
+  if (!BOSS_ATLAS["boss"]) a.create({ key: "boss-idle", ...fr("boss_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss2"]) a.create({ key: "boss2-idle", ...fr("boss2_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss3"]) a.create({ key: "boss3-idle", ...fr("boss3_idle", 2, 2, -1) });
   // v2.0 아뜰란티스 확장 몬스터 (v1.5 이관)
   a.create({ key: "swampbeast-idle", ...fr("swampbeast_idle", 2, 2, -1) });
   a.create({ key: "swampbeast-run", ...fr("swampbeast_run", 4, 7, -1) });
@@ -193,10 +195,10 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "helhound-idle", ...fr("helhound_idle", 2, 2, -1) });
   a.create({ key: "helhound-run", ...fr("helhound_run", 4, 10, -1) });
   // v2.0 아뜰란티스 신규 보스
-  a.create({ key: "boss_nidhog-idle", ...fr("boss_nidhog_idle", 2, 2, -1) });
-  a.create({ key: "boss_surt-idle", ...fr("boss_surt_idle", 2, 2, -1) });
-  a.create({ key: "boss_fenrir-idle", ...fr("boss_fenrir_idle", 2, 2, -1) });
-  a.create({ key: "boss_skoll-idle", ...fr("boss_skoll_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_nidhog"]) a.create({ key: "boss_nidhog-idle", ...fr("boss_nidhog_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_surt"]) a.create({ key: "boss_surt-idle", ...fr("boss_surt_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_fenrir"]) a.create({ key: "boss_fenrir-idle", ...fr("boss_fenrir_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_skoll"]) a.create({ key: "boss_skoll-idle", ...fr("boss_skoll_idle", 2, 2, -1) });
   a.create({ key: "boss_gram-idle", ...fr("boss_gram_idle", 2, 2, -1) });
   a.create({ key: "boss_abudditos-idle", ...fr("boss_abudditos_idle", 2, 2, -1) });
   // 배치1 — 마을 모닥불 (Serene_Village campfire 32x32 4프레임)
@@ -233,6 +235,50 @@ export function buildAllAnims(scene: Phaser.Scene) {
   }
 }
 
+/* ═════════ v1.4.31 (#4 보스 개편) — 유저 제공 9보스 아틀라스 ═════════
+ *  12열×6~7행 통합 시트(유저 업로드 마스터)를 배경 제거·셀 분할해 보스당 1장 스프라이트시트로 적용.
+ *  행 구성: 0 Idle(호흡) / 1 Run / 2 Attack / 3 Sp1 / 4 Sp2 / 5 Sp3(6행 시트는 생략) / 6(5) Died
+ *  · 기존 42장 개별 프레임(idle0~5·walk0~5·… 240×180 AI 에셋)을 완전 대체 — 요청 수 1/42
+ *  · 프레임은 슬라이서 실측 크기(시트별 상이) — BOSS_ATLAS의 fw/fh와 정확히 일치해야 한다
+ *  · 프로그램 키는 기존과 동일(tex-idle·tex-walk·…) — Boss.ts 로직 무수정 호환 */
+export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number; fh: number }> = {
+  boss:        { key: "atl_boss",        file: "atl_boss.webp",        fw: 378, fh: 330 }, // 심연의 수호자 — 스바르트 흑마수
+  boss2:       { key: "atl_boss2",       file: "atl_boss2.webp",       fw: 374, fh: 382 }, // 눈보라의 거수·파수꾼 — 미드가르드 해적선
+  boss3:       { key: "atl_boss3",       file: "atl_boss3.webp",       fw: 388, fh: 318 }, // 심연의 군주 — 헬 악마
+  boss_nidhog: { key: "atl_boss_nidhog", file: "atl_boss_nidhog.webp", fw: 390, fh: 322 }, // 니드호그 — 알프헤임 수목룡
+  boss_surt:   { key: "atl_boss_surt",   file: "atl_boss_surt.webp",   fw: 346, fh: 290 }, // 수르트 — 무스펠 용암골렘
+  boss_fenrir: { key: "atl_boss_fenrir", file: "atl_boss_fenrir.webp", fw: 436, fh: 298 }, // 펜리르 — 설원 백량
+  boss_skoll:  { key: "atl_boss_skoll",  file: "atl_boss_skoll.webp",  fw: 372, fh: 318 }, // 스콜 — 얼음 봉황
+  boss_nagr:   { key: "atl_boss_nagr",   file: "atl_boss_nagr.webp",   fw: 366, fh: 308 }, // 발할라 천사기사 (재림 15)
+  boss_hati:   { key: "atl_boss_hati",   file: "atl_boss_hati.webp",   fw: 370, fh: 340 }, // 하티 — 스콜 트윈(화염)
+};
+
+/** 아틀라스 행별 유효 프레임 수 (슬라이서 실측 — 뒤쪽 빈 프레임 트리밍).
+ *  6행 시트는 sp3가 없다 (Boss.animFor의 beamTele → setBossAnim 폴백으로 idle 동작). */
+export const BOSS_ATLAS_ROWS: Record<string, number[]> = {
+  boss:        [11, 11, 11, 11, 11, 11],           // idle walk atk sp1 sp2 die
+  boss2:       [11, 11, 11, 11, 11, 11, 11],       // idle walk atk sp1 sp2 sp3 die
+  boss3:       [11, 11, 11, 11, 11, 11],
+  boss_nidhog: [11, 11, 11, 11, 11, 11, 11],
+  boss_surt:   [10, 10, 11, 11, 11, 11, 10],
+  boss_fenrir: [10, 10, 10, 10, 10, 10, 10],
+  boss_hati:   [11, 11, 11, 11, 11, 11, 11],
+  boss_skoll:  [11, 11, 11, 11, 11, 11, 11],
+  boss_nagr:   [10, 10, 11, 10, 11, 12],
+};
+
+/** 보스 초기 텍스처/프레임 — 아틀라스 보스는 시트 frame 0, 구형은 개별 idle0 이미지 */
+export function bossSourceFrame(tex: string): { key: string; frame?: number } {
+  const at = BOSS_ATLAS[tex];
+  if (at) return { key: at.key, frame: 0 };
+  return { key: `${tex}_idle0` };
+}
+
+/** 대화창·도감 초상화 URL — 아틀라스 보스는 슬라이서가 뽑은 전용 초상화 파일 */
+export function bossPortraitUrl(tex: string): string {
+  return BOSS_ATLAS[tex] ? `/assets/bossport_${tex}.webp` : `/assets/${tex}_idle0.webp`;
+}
+
 /* ═════════ v5.0 — 보스 전면 리메이크: 12FPS 풀애니 (idle/walk/atk/die/sp1~3) ═════════
  *  설계도 스펙(12FPS · 각 애니 6프레임 · 특수기술 3종)에 맞춘 보스 전용 애니 등록.
  *  - 부팅 시 idle0/1만 로드된 상태에선 기존 2프레임 애니가 폴백으로 동작
@@ -241,6 +287,34 @@ export function buildAllAnims(scene: Phaser.Scene) {
 export function registerBossAnims(scene: Phaser.Scene, tex: string) {
   if (!tex) return;
   const a = scene.anims;
+  /* v1.4.31 (#4) — 아틀라스 보스: 시트 프레임에서 7종 풀애니 즉시 등록 (지연 로드 불필요) */
+  const at = BOSS_ATLAS[tex];
+  if (at) {
+    if (!scene.textures.exists(at.key)) return;
+    const a0 = scene.anims;
+    /* 부팅 등록분이 이미 있으면 재생성 스킵 (Boss 스폰 시 중복 등록 방지) */
+    if (a0.exists(`${tex}-idle`) && a0.exists(`${tex}-die`)) return;
+    const counts = BOSS_ATLAS_ROWS[tex] ?? [];
+    const six = counts.length === 6; // sp3 없음
+    const plan: Array<[string, number, number]> = [
+      ["idle", 12, -1], ["walk", 12, -1], ["atk", 14, 0], ["sp1", 12, 0], ["sp2", 12, 0],
+    ];
+    if (!six) plan.push(["sp3", 12, 0]);
+    plan.push(["die", 10, 0]);
+    plan.forEach(([nm, rate, rep], row) => {
+      const n = Math.min(counts[row] ?? 0, 12);
+      if (n < 2) return;
+      const key = `${tex}-${nm}`;
+      if (a.exists(key)) a.remove(key);
+      a.create({
+        key,
+        frames: Array.from({ length: n }, (_, i) => ({ key: at.key, frame: row * 12 + i })),
+        frameRate: rate,
+        repeat: rep,
+      });
+    });
+    return;
+  }
   const countSeq = (prefix: string) => {
     let n = 0;
     while (scene.textures.exists(`${prefix}${n}`)) n++;
