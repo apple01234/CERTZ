@@ -3797,3 +3797,25 @@ Work Log:
 Stage Summary:
 - vc140 = 멀티 서로 안보임 근본 수정(죽은 폴백 브로커 교체+로테이션)+보스 화질 2차 복구(LINEAR 필터)+원격 스킬 폴백 — 웹 즉시 반영(code:140 라이브)·APK 릴리스 진행
 - 유저 테스트 포인트: ①두 기기(또는 웹+APK) 동시 접속 후 서로 캐릭터/스킬 보임 확인(특히 몇 분 이상 플레이 후 재접속 시나리오) ②보스전 확대 시 그림체 부드러움 ③교실 모드 카운터 합산
+
+---
+Task ID: vc141-remote-skill-fx
+Agent: Super Z (main)
+Task: 유저 제보 ①"내가 쓰는 스킬과 상대에게 보이는 스킬이 전부 다름" ②"vercel deployment 저장소 꽉 참 — 최신 2개만 남기고 삭제" → vc141
+
+Work Log:
+- [중복 작업 발견·수정 계획 재조정] 브로커 교체+보스 LINEAR는 직전 세션이 vc140(v1.4.34, 87a3de7)으로 이미 배포 완료(라이브 실측 code:140 확인) → 로컬을 origin/main으로 리셋 후 **미적용 고유분만** vc141로 적용
+- [원격 스킬 FX 풀 재생기] playRemoteAction의 범용 링+화살 근사 → playRemoteSkillFx(cls·slot 기반) 신설: s1 12종(spin/ragespin=회전베기+궤적·volley=부채꼴·bolt=아케인 볼트·bladestorm=표창 5연발·wallsmash=대참격+지진·snipe=저격 빔·gustarrow=토네이도·arcbolt=대형볼트+착탄·purify=파동 링·shadowexec=점멸 강타·flurrydance=5연속) + s2 12종(돌진 계열=궤적 잔상+종착 폭발·blink 계열=룬 링) + s3 16종(thunder=수직 낙뢰 기둥·tornado/cyclone=토네이도·arrowrain=천공 화우·chainlight=도약 번개·gravity=수축 링+폭발·shadowmine=지뢰 설치·swordaura=거대 검기 등) + s4 8종(doomsday=돌진+대폭발·godarrow=유도 8발 등) + s5 계열 궁극기 대연출(화면 플래시·셰이크). 헬퍼: fireRemoteProj(각도 기반 코스메틱 투사체 — tex/anim 지원)·remoteTornado·remotePillar·remoteRing 신설. 데미지/판정 0 — 순수 코스메틱. 리졸브는 로컬과 동일 규칙(resolveSkill1Of/2Of·SKILL3_KIND/4_KIND — 미해금은 하위 슬롯 폴백)
+- [texGuard 필터 유지] repairTextures가 텍스처 재로드하면 pixelArt 환경에선 NEAREST로 초기화됨 → 수복 완료 후 atl_boss* 키에 setFilter(LINEAR) 재적용 — vc140 화질 복구분이 장기 플레이 중 수복 사이클을 거치면 다시 뭉개지는 구멍 차단
+- [잠복 버그 정정] server.js VERSION_NOTE가 vc139 텍스트로 잔존(vc140 커밋에서 미갱신) → vc141 노트로 정정
+- [게이트 vc141 승격 5종] server.js(LATEST_CODE 141·NOTE·APK_MIRROR)·route.ts·next.config.ts(APK_DL)·build.gradle(versionCode 141)·apk-guide.html(헤더·불릿·stale versionCode 138 표기 정정·이전 버전 vc140 섹션 추가)
+- [검증] tsc 0 · npm run build 성공 · e2e 9/9(아틀라스 9종 프레임 기하 유지·hero NEAREST 대조 유지·9종 인게임 렌더·MQTT 버스 force=mqtt 기동·번들 내 이클립스 브로커 0건·hivemq 포함·pageerror 0)
+- [배포] 리베이스 충돌(직전 세션 vc140과 동일 파일) 해소 후 커밋 33307f9 푸시 → Vercel /api/version code:141 라이브 확인(폴링 3회차)
+- [APK] scripts/vc141_apk_pipeline.sh 백그라운드 가동(SDK 설치→build_apk→build_aab→릴리스 신규 이름 업로드 SERTZ-vc141.* — 5회 재시도 루프) · 로그 /tmp/vc141_apk.log
+- [보류 — 유저 요청 ② Vercel 구배포 정리] .secrets/vercel_token이 컨테이너 리셋으로 소실(워크로그 2828·3019행 전례와 동일) → REST API 접근 불가. git 푸시 배포 경로는 정상이므로 서비스 영향 없음. **토큰 재제공 필요** — 받는 즉시 scripts/vercel_api.sh 패턴으로 최신 2개 외 전부 DELETE 예정
+
+Stage Summary:
+- vc141 = "내가 쓰는 스킬 ≠ 상대 화면" 해소 — 전 직업 48종 스킬의 실제 연출이 원격에서도 재생됨(웹 라이브 완료)
+- 멀티 가시성(브로커)·보스 화질(LINEAR)은 vc140에서 이미 처리 완료 — vc141은 그 위에 시각 동일화+수복 구멍 차단
+- 유저 테스트 포인트: ①두 기기 동시 접속 → 한쪽이 스킬 사용 시 다른 쪽 화면에 같은 스킬 연출(회전베기/화살비/낙뢰/토네이도 등) ②장기 플레이 후에도 보스 화질 유지 ③APK는 SERTZ-vc141.apk 업로드 완료 후 덮어설치
+- 잔무: ①APK 파이프라인 완료 로그 확인 ②Vercel 토큰 재제공 시 구배포 일괄 삭제(최신 2개 유지)
