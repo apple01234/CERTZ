@@ -3,8 +3,9 @@
 # 절차: node kill(OOM방지) → serverless 라우트 격리 → cap sync(SKIP_SYNC=1로 생략 가능) → gradle bundleRelease
 set -uo pipefail
 export PROJECT_ROOT=/home/z/my-project
-export JAVA_HOME=/home/z/jdk
-export ANDROID_HOME=/home/z/.android-sdk
+export JAVA_HOME="${JAVA_HOME:-/home/z/jdk}"
+[ -x "$JAVA_HOME/bin/java" ] || export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+export ANDROID_HOME="${ANDROID_HOME:-/home/z/.android-sdk}"
 export PATH="$JAVA_HOME/bin:$PATH"
 cd "$PROJECT_ROOT"
 

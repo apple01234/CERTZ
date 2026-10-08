@@ -3777,3 +3777,23 @@ Stage Summary:
 - 근본 개선: NEAREST 비정수 확대 폐지 → LANCZOS+언샵+프리멀티지 알파 표준 파이프라인 확립(재발 방지)
 - 유저 테스트 포인트: ①수르트/펜리르/보스2(배)/니드호그 전투 시 디테일 체감 ②대화창·도감 초상화 ③APK 덮어설치(vc139)
 - 비고: 니드호그가 7행 구조로 승격되어 sp3 애니 신설·보스2가 유령선(배) 아트로 교체됨 — 마스터 시트에 배/천사기사 외 디자인 혼재 확인
+---
+Task ID: vc140-mp-visibility-boss-quality
+Agent: Super Z (main)
+Task: 유저 제보 2건 — ①"서로 스킬 및 캐릭터 안보임"(멀티플레이) ②"보스 화질 ㅈ구림"(vc139 이후 재제보) → 근본 수정 → vc140 빌드·릴리스
+
+Work Log:
+- [①멀티 서로 안보임 — 근본 원인] MQTT 폴백 브로커 후보 목록의 mqtt.eclipseprojects.io가 실측 사망(connack timeout 8s — Node mqtt 클라 실측 3회 일관). emqx에서 일시 미연결되어 폴백으로 떨어진 클라이언트는 영원히 오프라인 → 상대만 emqx에 살아있으면 서로 안 보이는 분열. 교실 모드(classroom.ts)도 동일 목록 공유라 같은 리스크
+  · BROKERS 교체: [emqx 8084, broker.hivemq.com 8884] — HiveMQ 실측 연결 866ms + 2클라 st 라운드트립 OK / mosquitto 8081도 실측 FAIL라 제외
+  · 세션 중 브로커 사망 대비 재접속 로테이션 신설: connectedOnce 이후 close 연속 4회(≈16초)면 end(true) 후 다음 브로커로 순환 — 기존엔 죽은 브로커에 영원히 매달림
+- [②보스 화질 — 엔진 측 근본 원인] PhaserGame config pixelArt:true(+antialias:false)가 모든 텍스처를 NEAREST로 업로드(Phaser4 TextureSource업로드 시 game.config.antialias=false → setFilter(1)) — 그림체 고해상 보스 아트가 카메라 줌(1.25~2.5배) 확대에서 계단 픽셀·격자 뭉개짐. vc139는 소스 재슬라이싱만 하고 엔진 필터는 미처리
+  · BootScene.create에서 보스 아틀라스 9종만 Texture.setFilter(LINEAR=0) 오버라이드 — hero_idle0 등 픽셀아트는 NEAREST(1) 유지(E2E 실측: 9종 scaleMode=0, hero=1)
+  · 소스 측 상한 확인: assets_src/boss_sheets의 bsw_guardian/nagr/abysslord/vord/jorm/abudditos 6종은 평균 RGB 8~45의 흑색 계열 다른 디자인(현재 보스 아트 정체성과 불일치) — 마스터 5종(boss/boss3/skoll/nagr/hati)은 소스 한계 유지가 정답
+- [③원격 스킬 FX] playRemoteAction — 원격 스프라이트가 remotes 맵에 없으면(입장 직후·원격 유실) 스킬 발사체가 즉시 return으로 소실 → 신고 좌표(a.x/a.y) 폴백 발사로 수정
+- [검증] tsc 0 · npm run build 성공 · e2e_vc140.js 9/9(보스 9종 LINEAR·hero NEAREST 유지·프레임 기하 vc139 동일·9종 인게임 렌더·MQTT 버스 force=mqtt 기동+emqx 선택·번들 이클립스 0건+HiveMQ 포함·pageerror 0) · 스크린샷 ingame_vc140_9boss.png(LINEAR로 털결/경계 부드러워짐 확인)
+- [빌드 환경 재구축] 세션 환경 초기화로 Android SDK·JDK 소실 → cmdline-tools 11076708 + platforms;android-36 + build-tools;36.0.0 재설치(/home/z/.android-sdk) · Temurin 21.0.12.1(/home/z/jdk — JRE-only 시스템 자바로 gradle javac 불가 해소) · build_apk.sh/build_aab.sh JAVA_HOME 자동 탐지 패치
+- [빌드/릴리스] 게이트 5종 승격(build.gradle 140·server.js LATEST_CODE+APK_MIRROR·route.ts·next.config.ts APK_DL·apk-guide.html) — 커밋 87a3de7 푸시, Vercel /api/version code:140 라이브 확인 · APK 빌드(백그라운드) 후 SERTZ-vc140.* 별도 이름 업로드 예정
+
+Stage Summary:
+- vc140 = 멀티 서로 안보임 근본 수정(죽은 폴백 브로커 교체+로테이션)+보스 화질 2차 복구(LINEAR 필터)+원격 스킬 폴백 — 웹 즉시 반영(code:140 라이브)·APK 릴리스 진행
+- 유저 테스트 포인트: ①두 기기(또는 웹+APK) 동시 접속 후 서로 캐릭터/스킬 보임 확인(특히 몇 분 이상 플레이 후 재접속 시나리오) ②보스전 확대 시 그림체 부드러움 ③교실 모드 카운터 합산

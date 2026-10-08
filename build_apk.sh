@@ -3,8 +3,10 @@
 # 절차: node kill(OOM방지) → serverless 라우트 격리(trap 절대경로 복원) → next export build → cap sync → gradle assembleRelease
 set -uo pipefail
 export PROJECT_ROOT=/home/z/my-project
-export JAVA_HOME=/home/z/jdk
-export ANDROID_HOME=/home/z/.android-sdk
+# vc140 — 환경 재구축 대응: 시스템 OpenJDK 21 경로 자동 탐지(/home/z/jdk 소실 대비)
+export JAVA_HOME="${JAVA_HOME:-/home/z/jdk}"
+[ -x "$JAVA_HOME/bin/java" ] || export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+export ANDROID_HOME="${ANDROID_HOME:-/home/z/.android-sdk}"
 export PATH="$JAVA_HOME/bin:$PATH"
 cd "$PROJECT_ROOT"
 
