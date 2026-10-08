@@ -3749,3 +3749,11 @@ Stage Summary:
 - 웹 즉시 반영 완료(Vercel code:138) · APK/AAB는 루프가 릴리스 자산 교체 완료 시(태그 v1.0.5-beta 유지 — 다운로드 URL 불변)
 - 유저 테스트 포인트: ①계정창 → 세이브 복원 → 로비에서 복원된 캐릭터 확인(같은 이름이면 교체, 새 기기면 신규 슬롯) ②웹 구글 로그인 ③모바일 보스전 장시간(멈춤 여부 — 블룸 제거로 체감 화질 소폭 다운은 정상)
 - 잔무: 릴리스 루프 완료 로그 확인(/tmp/release_vc138_loop.log) · Play 업로드 잔무: vc138 AAB(140,807,152B)
+
+Stage Summary (후속 — 릴리스 교체 + 잠복 버그 2건):
+- GitHub API 자산 DELETE가 404 지속(개별 자산 GET도 404 — API 인덱스만 깨짐, 자산·다운로드 CDN은 정상 206) → 플랜 B 실행: 별도 이름 자산으로 vc138 APK/AAB 업로드 완료(201×2 — SERTZ-vc138.apk 138,929,536B · SERTZ-vc138.aab 140,807,152B + 매핑) → 동일 이름 교체 루프(release_vc138_loop.sh·setsid)는 DELETE 복구 시 기존 URL도 vc138로 갱신하는 백업으로 계속 가동
+- [잠복 버그 ①] next.config.ts redirects의 APK_DL이 v1.0.3-beta 하드코딩 — /SERTZ-*.apk 경유 링크가 전부 구버전 APK로 리다이렉트되던 문제 수정(SERTZ-vc138.apk로)
+- [잠복 버그 ②] server.js APK 정규식 [\d.]+ 가 "beta" 접미사를 매칭하지 못해 위 리다이렉트가 개입하던 문제 — [\w.-]+로 확대(server.js가 먼저 307 APK_MIRROR 처리)
+- APK_MIRROR(server.js·route.ts) → SERTZ-vc138.apk 전환 + apk-guide 다운로드 링크·해시 갱신(md5 5d3af3c7..·sha1 d66b9058..·138,929,536B)
+- 라이브 실측: Vercel code:138·apk SERTZ-vc138.apk·/SERTZ-v1.0.5-beta.apk 307→vc138·/api/auth/google 401 1.43s(검증 경로 정상)·vc138 APK/AAB 직접 다운로드 206
+- 커밋 9732345 푸시
