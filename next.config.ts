@@ -58,7 +58,7 @@ const nextConfig: NextConfig = isStaticExport
          *  리다이렉트되던 잠복 버그 수정 (server.js 정규식은 beta 미포함이라 이쪽이 개입).
          *  APK_MIRROR(server.js·route.ts)와 수동 싱크 유지. */
         const APK_DL =
-          "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc138.apk";
+          "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc139.apk";
         return [
           {
             /* v4.1.0 — 모든 버전의 /SERTZ-vX.apk 경로를 한 규칙으로 처리

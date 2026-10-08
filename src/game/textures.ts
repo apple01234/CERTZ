@@ -242,29 +242,29 @@ export function buildAllAnims(scene: Phaser.Scene) {
  *  · 프레임은 슬라이서 실측 크기(시트별 상이) — BOSS_ATLAS의 fw/fh와 정확히 일치해야 한다
  *  · 프로그램 키는 기존과 동일(tex-idle·tex-walk·…) — Boss.ts 로직 무수정 호환 */
 export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number; fh: number }> = {
-  boss:        { key: "atl_boss",        file: "atl_boss.webp",        fw: 378, fh: 330 }, // 심연의 수호자 — 스바르트 흑마수
-  boss2:       { key: "atl_boss2",       file: "atl_boss2.webp",       fw: 374, fh: 382 }, // 눈보라의 거수·파수꾼 — 미드가르드 해적선
-  boss3:       { key: "atl_boss3",       file: "atl_boss3.webp",       fw: 388, fh: 318 }, // 심연의 군주 — 헬 악마
-  boss_nidhog: { key: "atl_boss_nidhog", file: "atl_boss_nidhog.webp", fw: 390, fh: 322 }, // 니드호그 — 알프헤임 수목룡
-  boss_surt:   { key: "atl_boss_surt",   file: "atl_boss_surt.webp",   fw: 346, fh: 290 }, // 수르트 — 무스펠 용암골렘
-  boss_fenrir: { key: "atl_boss_fenrir", file: "atl_boss_fenrir.webp", fw: 436, fh: 298 }, // 펜리르 — 설원 백량
-  boss_skoll:  { key: "atl_boss_skoll",  file: "atl_boss_skoll.webp",  fw: 372, fh: 318 }, // 스콜 — 얼음 봉황
-  boss_nagr:   { key: "atl_boss_nagr",   file: "atl_boss_nagr.webp",   fw: 366, fh: 308 }, // 발할라 천사기사 (재림 15)
-  boss_hati:   { key: "atl_boss_hati",   file: "atl_boss_hati.webp",   fw: 370, fh: 340 }, // 하티 — 스콜 트윈(화염)
+  boss:        { key: "atl_boss",        file: "atl_boss.webp",        fw: 268, fh: 234 }, // 심연의 수호자 — 스바르트 흑마수 (v1.4.32 LANCZOS 개선)
+  boss2:       { key: "atl_boss2",       file: "atl_boss2.webp",       fw: 330, fh: 212 }, // 눈보라의 거수·파수꾼 — 미드가르드 해적선 (v1.4.32 유령선 고해상)
+  boss3:       { key: "atl_boss3",       file: "atl_boss3.webp",       fw: 286, fh: 234 }, // 심연의 군주 — 헬 악마 (v1.4.32 LANCZOS 개선)
+  boss_nidhog: { key: "atl_boss_nidhog", file: "atl_boss_nidhog.webp", fw: 226, fh: 232 }, // 니드호그 — 알프헤임 수목룡 (v1.4.32 고해상 11프레임)
+  boss_surt:   { key: "atl_boss_surt",   file: "atl_boss_surt.webp",   fw: 330, fh: 224 }, // 수르트 — 무스펠 용암골렘 (v1.4.32 고해상)
+  boss_fenrir: { key: "atl_boss_fenrir", file: "atl_boss_fenrir.webp", fw: 304, fh: 274 }, // 펜리르 — 설원 백량 (v1.4.32 고해상)
+  boss_skoll:  { key: "atl_boss_skoll",  file: "atl_boss_skoll.webp",  fw: 274, fh: 234 }, // 스콜 — 얼음 봉황 (v1.4.32 LANCZOS 개선)
+  boss_nagr:   { key: "atl_boss_nagr",   file: "atl_boss_nagr.webp",   fw: 286, fh: 240 }, // 발할라 천사기사 (재림 15) (v1.4.32 LANCZOS 개선)
+  boss_hati:   { key: "atl_boss_hati",   file: "atl_boss_hati.webp",   fw: 280, fh: 258 }, // 하티 — 스콜 트윈(화염) (v1.4.32 LANCZOS 개선)
 };
 
 /** 아틀라스 행별 유효 프레임 수 (슬라이서 실측 — 뒤쪽 빈 프레임 트리밍).
  *  6행 시트는 sp3가 없다 (Boss.animFor의 beamTele → setBossAnim 폴백으로 idle 동작). */
 export const BOSS_ATLAS_ROWS: Record<string, number[]> = {
   boss:        [11, 11, 11, 11, 11, 11],           // idle walk atk sp1 sp2 die
-  boss2:       [11, 11, 11, 11, 11, 11, 11],       // idle walk atk sp1 sp2 sp3 die
+  boss2:       [6, 6, 6, 6, 6, 6, 6],              // idle walk atk sp1 sp2 sp3 die (v1.4.32 고해상 유령선)
   boss3:       [11, 11, 11, 11, 11, 11],
-  boss_nidhog: [11, 11, 11, 11, 11, 11, 11],
-  boss_surt:   [10, 10, 11, 11, 11, 11, 10],
-  boss_fenrir: [10, 10, 10, 10, 10, 10, 10],
+  boss_nidhog: [11, 11, 11, 11, 11, 11, 11],       // (v1.4.32 고해상 — 7행 유지)
+  boss_surt:   [6, 6, 6, 6, 6, 6, 6],              // (v1.4.32 고해상)
+  boss_fenrir: [6, 6, 6, 6, 6, 6, 6],              // (v1.4.32 고해상)
   boss_hati:   [11, 11, 11, 11, 11, 11, 11],
   boss_skoll:  [11, 11, 11, 11, 11, 11, 11],
-  boss_nagr:   [10, 10, 11, 10, 11, 12],
+  boss_nagr:   [10, 10, 11, 10, 11, 11],
 };
 
 /** 보스 초기 텍스처/프레임 — 아틀라스 보스는 시트 frame 0, 구형은 개별 idle0 이미지 */
