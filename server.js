@@ -34,7 +34,7 @@ app.prepare().then(() => {
   /* vc138 — GitHub API 자산 DELETE 일시 장애로 동일 이름 교체가 막힌 기간의 안전 경로:
    *  vc138 자산을 별도 이름으로 업로드하고 이쪽을 가리킴. 루프가 동일 이름 교체에 성공하면
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc139.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc140.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -68,7 +68,7 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.0.5-beta";
-  const LATEST_CODE = 139;
+  const LATEST_CODE = 140;
   const VERSION_NOTE =
   "v1.0.5-beta (vc139) — v1.4.33 보스 화질 전면 복구: 고해상 원본 4종 교체(수르트 골렘·펜리르 백랑·보스2 유령선·니드호그 수목룡 — 유저 업로드 원본 크롭)+나머지 5종 LANCZOS 고품질 재처리(NEAREST ×8 확대·q82 뭉개짐 제거)+초상화 9종 재생성";
   if (url === "/api/version") {

@@ -22,11 +22,18 @@
  */
 import mqtt from "mqtt";
 
-/* 공개 브로커 후보 — 순차 폴백(첫 번째가 8초 내 연결 실패 시 다음) */
+/* 공개 브로커 후보 — 순차 폴백(첫 번째가 8초 내 연결 실패 시 다음)
+ * vc140 실측(2026-10-08): eclipseprojects.io는 connack 타임아웃으로 완전 사망 —
+ *  여기에 폴백하면 그 클라이언트만 영원히 오프라인 → "서로 캐릭터/스킬 안보임" 재발의 원인.
+ *  HiveMQ 공개 브로커(WSS 8884) 실측 연결 866ms + st 라운드트립 OK로 교체했다.
+ *  emqx↔hivemq 두 브로커 모두 살아있는 한 세션 중단 시 로테이션으로 자가복귀한다(아래 open 참조). */
 const BROKERS = [
   "wss://broker.emqx.io:8084/mqtt",
-  "wss://mqtt.eclipseprojects.io:443/mqtt",
+  "wss://broker.hivemq.com:8884/mqtt",
 ];
+/** vc140 — 세션 중 브로커가 죽었을 때 재접속 실패 누적 회수(이 횟수 초과 시 다음 브로커로 로테이션).
+ *  reconnectPeriod 4s이므로 4회 ≈ 16초 — 죽은 브로커에 영원히 매달리지 않는다. */
+const RECONNECT_ROTATE_AT = 4;
 const ROOT = "sertz/mp/v2/";
 /** 원격 유실 판정(ms) — 이동 상태가 이보다 오래 안 오면 화면에서 제거 */
 const PEER_TTL_MS = 7000;
@@ -188,8 +195,11 @@ class MqttBusImpl implements MqttBus {
       });
       this.client = c;
       let connectedOnce = false;
+      /* vc140 — 재접속 실패 누적 카운터(브로커 로테이션 트리거) */
+      let closeFails = 0;
       c.on("connect", () => {
         connectedOnce = true;
+        closeFails = 0;
         this.connected = true;
         this.subscribedStage = "";
         this.syncStageSub();
@@ -197,7 +207,22 @@ class MqttBusImpl implements MqttBus {
         if (this.lastState) this.sendState(true);
         this.fire("connect");
       });
-      c.on("close", () => { this.connected = false; });
+      c.on("close", () => {
+        this.connected = false;
+        /* vc140 — 세션 중단 후 재접속이 RECONNECT_ROTATE_AT회 연속 실패하면 다음 브로커로.
+         *  기존엔 같은 브로커에 영원히 재시도 — 브로커가 죽으면 그 클라이언트만 영구 오프라인이었고,
+         *  새로 접속한 상대는 다른(살아있는) 브로커에 붙어 서로 안 보이는 분열이 생겼다. */
+        if (connectedOnce && this.client === c) {
+          closeFails++;
+          if (closeFails >= RECONNECT_ROTATE_AT) {
+            try { c.end(true); } catch { /* 무시 */ }
+            if (this.client === c) {
+              this.client = null;
+              this.open((idx + 1) % BROKERS.length); // 순환 — 두 브로커 중 살아있는 쪽을 계속 찾는다
+            }
+          }
+        }
+      });
       c.on("offline", () => { this.connected = false; });
       c.on("error", () => { /* reconnectPeriod로 자동 재시도 */ });
       c.on("message", (topic, payload) => this.onMessage(topic, payload));

@@ -9668,10 +9668,13 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: ring, scale: 1.9, alpha: 0, duration: 460, ease: "Cubic.out", onComplete: () => ring.destroy() });
     this.spawnBurstAt(x, y, a.kind === "s5" ? 14 : 8, hex);
     const shots = a.kind === "s5" ? 5 : a.kind === "s4" ? 3 : 2;
+    /* vc140 — 원격 스프라이트가 아직 없어도(입장 직후·원격 유실) 신고 좌표(a.x/a.y)로 발사.
+     *  기존엔 r이 없으면 즉시 return해 스킬 발사체가 전혀 안 보였다("스킬 안보임"의 절반). */
+    const px = () => (r ? r.sp.x : x);
+    const py = () => (r ? r.sp.y : y);
     for (let i = 0; i < shots; i++) {
       this.time.delayedCall(i * 70, () => {
-        if (!r) return;
-        this.fireRemoteProj(r.sp.x, r.sp.y, flip, hex, scale);
+        this.fireRemoteProj(px(), py(), flip, hex, scale);
       });
     }
     if (a.kind === "s5") {

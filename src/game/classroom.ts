@@ -35,7 +35,9 @@
  */
 import mqtt from "mqtt";
 
-const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://mqtt.eclipseprojects.io:443/mqtt"];
+/* vc140 실측(2026-10-08) — eclipseprojects.io connack 타임아웃(완전 사망) → HiveMQ로 교체.
+ *  교실이 이 브로커에 폴백하면 카운터 합산이 영원히 안 도는 문제의 원인. */
+const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt"];
 const ROOT = "sertz/mp/v2/class/";
 const ST_MS = 3000;          // 자기 카운터 발행 주기
 const PEER_TTL_MS = 12000;   // 무신호 참가자 제거

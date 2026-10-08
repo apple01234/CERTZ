@@ -9,12 +9,12 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 139;
+const LATEST_CODE = 140;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc139) — v1.4.33 보스 화질 전면 복구: 고해상 원본 4종 교체(수르트 골렘·펜리르 백랑·보스2 유령선·니드호그 수목룡 — 유저 업로드 원본 크롭)+나머지 5종 LANCZOS 고품질 재처리(NEAREST ×8 확대·q82 뭉개짐 제거)+초상화 9종 재생성";
+  "v1.0.5-beta (vc140) — v1.4.34 멀티 서로 안보임 근본 수정(MQTT 폴백 브로커를 실측 사망한 이클립스→HiveMQ로 교체+세션 중단 시 브로커 로테이션)+보스 화질 2차 복구(아틀라스 9종 LINEAR 필터 — 그림체 확대 계단 픽셀 제거)+원격 스킬 FX 좌표 폴백";
 const APK_MIRROR =
   /* vc138 — API DELETE 장애 기간 안전 경로 (server.js 주석 참조) */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc139.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc140.apk";
 
 export async function GET() {
   return NextResponse.json({

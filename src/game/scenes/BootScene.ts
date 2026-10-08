@@ -603,6 +603,14 @@ export class BootScene extends Phaser.Scene {
     this.bootUi?.destroy();
     this.bootUi = undefined;
     buildAllAnims(this);
+    /* vc140 — 보스 화질 복구 2차(엔진 측): pixelArt:true(antialias:false)는 모든 텍스처를
+     *  NEAREST(1)로 업로드한다 — 그림체 고해상 보스 아트가 카메라 줌(1.25~2.5배) 확대 시
+     *  계단 픽셀·격자 뭉개짐이 됐다("보스 화질 ㅈ구림"의 엔진 측 근본 원인).
+     *  보스 아틀라스 9종만 LINEAR(0)로 오버라이드 — 캐릭터/타일 등 픽셀아트는 기존 NEAREST 유지.
+     *  Phaser 문서 기준: "Use LINEAR for smooth scaling of high-resolution artwork". */
+    for (const { key } of Object.values(BOSS_ATLAS)) {
+      if (this.textures.exists(key)) this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    }
     /* v1.4.31 (#4) — 아틀라스 보스 9종 풀애니 부팅 즉시 등록 (시트가 preload에 포함되어 바로 가능 —
      *  기존은 Boss 스폰 시점 등록이라 E2E·첫 스폰 직전까지 애니 부재). 구형 폴백 애니는 등록하지 않는다. */
     for (const tex of Object.keys(BOSS_ATLAS)) registerBossAnims(this, tex);
