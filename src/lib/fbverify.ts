@@ -18,8 +18,13 @@ import { createPublicKey, verify as cryptoVerify } from "node:crypto";
 
 export const FIREBASE_PROJECT_ID = process.env.SERTZ_FIREBASE_PROJECT_ID || "sertz-681eb";
 
-/* Firebase ID 토큰 서명키 (RS256 X.509) */
-const FB_CERTS_URL = "https://www.googleapis.com/robots/v1/metadata/x509/securetoken@system.gserviceaccount.com";
+/* Firebase ID 토큰 서명키 (RS256 X.509)
+ *  v1.4.32 (#구글로그인 버그) — 기존 URL이 robots(복수형) 오타로 404를 반환해
+ *  웹(파이어베이스) 로그인이 전부 "서버가 구글 인증서를 조회하지 못했어요"로 실패했다.
+ *  실측: robots→404 · robot(단수)→200 (2026-10 기준). */
+const FB_CERTS_URL = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
+/* v1.4.32 — 동일 서명키의 JWKS 표현 (X509 엔드포인트 장애 시 폴백) */
+const FB_JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 /* 구글 OIDC ID 토큰 서명키 (RS256 JWKS) */
 const GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
 
@@ -30,23 +35,54 @@ const GOOGLE_CLIENT_IDS = (process.env.SERTZ_GOOGLE_CLIENT_IDS ||
 ).split(",").map((s) => s.trim()).filter(Boolean);
 
 const CERT_TTL_MS = 60 * 60 * 1000;
+/* v1.4.32 — 인증서 조회 타임아웃: 네트워크 블랙홀 시 로그인 요청이 무한 대기하지 않게 */
+const CERT_FETCH_TIMEOUT_MS = 6000;
+
+async function fetchJson(url: string): Promise<unknown> {
+  const r = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(CERT_FETCH_TIMEOUT_MS) });
+  if (!r.ok) throw new Error(`인증서 조회 실패 (${r.status})`);
+  return r.json();
+}
 
 let certCache: { certs: Record<string, string>; at: number } | null = null;
 async function loadCerts(bypassCache = false): Promise<Record<string, string>> {
   if (!bypassCache && certCache && Date.now() - certCache.at < CERT_TTL_MS) return certCache.certs;
-  const r = await fetch(FB_CERTS_URL, { cache: "no-store" });
-  if (!r.ok) throw new Error(`인증서 조회 실패 (${r.status})`);
-  const certs = (await r.json()) as Record<string, string>;
-  if (!certs || !Object.keys(certs).length) throw new Error("인증서 응답이 비어 있어요");
-  certCache = { certs, at: Date.now() };
-  return certs;
+  /* 1차 — X509 (정식 URL, kid → PEM) */
+  let lastErr: unknown = null;
+  try {
+    const certs = (await fetchJson(FB_CERTS_URL)) as Record<string, string>;
+    if (certs && Object.keys(certs).length) {
+      certCache = { certs, at: Date.now() };
+      return certs;
+    }
+  } catch (e) { lastErr = e; }
+  /* v1.4.32 폴백 — JWKS 엔드포인트(동일 서명키): kid → JWK(JSON 문자열).
+   *  createPublicKey는 publicKeyFrom()에서 JWK 분기로 처리한다. */
+  try {
+    const body = (await fetchJson(FB_JWKS_URL)) as { keys?: Jwk[] };
+    if (body.keys?.length) {
+      const certs: Record<string, string> = {};
+      for (const k of body.keys) if (k.kid && k.n && k.e) certs[k.kid] = JSON.stringify(k);
+      if (Object.keys(certs).length) {
+        certCache = { certs, at: Date.now() };
+        return certs;
+      }
+    }
+  } catch (e) { lastErr = e; }
+  throw lastErr ?? new Error("인증서 응답이 비어 있어요");
+}
+
+/** v1.4.32 — PEM 또는 JWK(JSON 문자열) 모두 수용 (JWKS 폴백 경로 대응) */
+function publicKeyFrom(v: string) {
+  try { return createPublicKey(v); } catch { /* PEM 파싱 실패 → JWK 시도 */ }
+  return createPublicKey({ key: JSON.parse(v) as unknown as JsonWebKey, format: "jwk" });
 }
 
 type Jwk = { kid?: string; kty?: string; alg?: string; use?: string; n?: string; e?: string };
 let jwksCache: { keys: Jwk[]; at: number } | null = null;
 async function loadGoogleJwks(bypassCache = false): Promise<Jwk[]> {
   if (!bypassCache && jwksCache && Date.now() - jwksCache.at < CERT_TTL_MS) return jwksCache.keys;
-  const r = await fetch(GOOGLE_JWKS_URL, { cache: "no-store" });
+  const r = await fetch(GOOGLE_JWKS_URL, { cache: "no-store", signal: AbortSignal.timeout(CERT_FETCH_TIMEOUT_MS) });
   if (!r.ok) throw new Error(`구글 JWKS 조회 실패 (${r.status})`);
   const body = (await r.json()) as { keys?: Jwk[] };
   if (!body.keys?.length) throw new Error("구글 JWKS가 비어 있어요");
@@ -93,7 +129,7 @@ async function verifyFirebase(parts: string[], header: { kid?: string; alg?: str
   }
   if (!certs) return { ident: null, reason: "서버가 구글 인증서를 조회하지 못했어요" };
   if (!certs[header.kid]) { console.warn("[SERTZ-fb] Firebase 서명키 kid 없음", header.kid); return { ident: null, reason: "토큰 서명키(kid)를 인식하지 못했어요" }; }
-  const key = createPublicKey(certs[header.kid]);
+  const key = publicKeyFrom(certs[header.kid]);
   const data = Buffer.from(`${parts[0]}.${parts[1]}`);
   const sig = Buffer.from(parts[2], "base64url");
   /* v1.4.30 — 서명 실패도 이제 warn이 남는다 (기존 블라인드스팟) */

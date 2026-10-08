@@ -88,6 +88,25 @@ for (const key of Object.keys(AURA_ANIM)) {
   AURA_LUT[key] = lut;
 }
 
+/* v1.4.32 (#게임멈춤) — 저사양 환경(모바일 브라우저·APK 웹뷰) 판정.
+ *  보스전 카메라 블룸(프레임버퍼 이중 패스)이 유발하는 GPU 프리즈는 무스펠(v1.4.30)·
+ *  니플헤임(v1.4.31)에서 챕터 화이트리스트로 막았지만, 동일 계열 프리즈가 다른 챕터
+ *  (발할라·알프헤임·심연 등)에서도 계속 제보됐다 — 기기 문제지 챕터 문제가 아니다.
+ *  이제 저사양 환경에서는 챕터 무관하게 카메라 블룸(앰비언트·보스전 모두)을 생략한다.
+ *  보스라이트·비네트·잉걸불·툰 림라이트는 유지 — 분위기 손실 최소화. PC는 기존과 동일. */
+let lowPerfEnvCache: boolean | null = null;
+function isLowPerfEnv(): boolean {
+  if (lowPerfEnvCache === null) {
+    try {
+      const ua = navigator.userAgent || "";
+      lowPerfEnvCache = /Android|iPhone|iPad|Mobile/i.test(ua) || navigator.maxTouchPoints >= 2;
+    } catch {
+      lowPerfEnvCache = false;
+    }
+  }
+  return lowPerfEnvCache;
+}
+
 /**
  * 메인 플레이 씬.
  *  F1: 꽃/장식 배치를 정의된 소수로만 배치
@@ -1026,7 +1045,8 @@ export class WorldScene extends Phaser.Scene {
       /*  v1.4.31 (#5) — 니플헤임 평시 앰비언트 블룸도 스킵 (눈보라+암전+광원 다중 ADD 레이어
        *  위 블룸 프레임버퍼 패스가 프리즈 유발 — 무스펠 프리즈와 동일 계열). */
       const ambSkipCh = parseStage(stageKey).ch;
-      if (this.bossFilters.length === 0 && ambSkipCh !== "niflheim" && ambSkipCh !== "muspelheim")
+      /* v1.4.32 (#게임멈춤) — 저사양 환경(모바일/APK)은 챕터 무관 앰비언트 블룸 생략 */
+      if (this.bossFilters.length === 0 && ambSkipCh !== "niflheim" && ambSkipCh !== "muspelheim" && !isLowPerfEnv())
         this.ambientFilters = addAmbientBloom(this.cameras.main);
     }
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
@@ -6739,7 +6759,9 @@ export class WorldScene extends Phaser.Scene {
         /*  v1.4.31 (#5) — 니플헤임도 동일 적용: 눈보라 파티클 + 암전 + 7~8개 ADD 광원 +
          *  앰비언트 블룸까지 겹치는 챕터라 보스전 블룸 이중 패스에서 같은 프리즈가 발생했다. */
         const raidCh = parseStage(this.stageDef.key).ch;
-        const bloomSkip = raidCh === "muspelheim" || raidCh === "niflheim";
+        /* v1.4.32 (#게임멈춤) — 저사양 환경(모바일/APK)은 챕터 무관 보스전 블룸 생략:
+         *  화염·설원 외 챕터(발할라·심연 등)에서 동종 GPU 프리즈가 계속 제보됐다. */
+        const bloomSkip = raidCh === "muspelheim" || raidCh === "niflheim" || isLowPerfEnv();
         if (fxk > 0 && !bloomSkip) {
           const bloom = Phaser.Actions.AddEffectBloom(cam, {
             threshold: 0.68,

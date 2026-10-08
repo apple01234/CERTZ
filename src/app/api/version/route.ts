@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 137;
+const LATEST_CODE = 138;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc137) — v1.4.31: 보스 개편(유저 제공 9보스 아틀라스 — 대형화·배경제거·풀애니)·토벌전 HP x30·니플헤임 암전 강화+프리즈 완화·교실 파티 게임 3종(팀 킬전·보물 사냥·퀴즈쇼)+목표 대폭 상향";
+  "v1.0.5-beta (vc138) — v1.4.32 버그 수정 3건: 세이브 복원(멀티캐릭터 슬롯 반영 — 복원이 무시되던 버그)·구글 로그인(서버 인증서 조회 URL 수정 — 웹 로그인 실패)·게임 멈춤(모바일 보스전 블룸 프리즈 전 챕터 차단)";
 const APK_MIRROR =
   "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-v1.0.5-beta.apk";
 

@@ -18,7 +18,8 @@ import {
   type AuthUser,
   type SnsProviders,
 } from "@/game/account";
-import { SAVE_KEY } from "@/game/config";
+import { SAVE_KEY, activeSaveKey, type SaveData } from "@/game/config";
+import { importCloudSave } from "@/game/slots"; // v1.4.32 (#세이브복원) — 멀티캐릭터 슬롯 체계 편입 복원
 import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리: 정적 배포에서 원격 서버 OAuth 시작
 import { googleWebSignIn, googleWebRedirectToken } from "@/lib/googleAuth"; // v1.0.5-beta (vc134) — 웹 구글 로그인 안정화(모바일 리다이렉트)
 
@@ -72,11 +73,21 @@ export function AuthPanel() {
   }, []);
 
   // 게임 진입 시 자동 백업 (3분 주기, 로그인 중일 때만)
+  // v1.4.32 (#세이브복원) — 활성 캐릭터 키(sertz_char_<id>) 우선 조회.
+  //  기존엔 레거시 키만 읽었다 — 미러가 곧바로 동기화되어 동일했지만,
+  //  멀티캐릭터 라우팅의 진실 원천은 캐릭터 키이므로 순서를 명확히 한다.
+  const readCurrentSaveRaw = (): string | null => {
+    try {
+      return localStorage.getItem(activeSaveKey()) ?? localStorage.getItem(SAVE_KEY);
+    } catch {
+      return null;
+    }
+  };
   useEffect(() => {
     if (!user) return;
     const t = window.setInterval(() => {
       try {
-        const raw = localStorage.getItem(SAVE_KEY);
+        const raw = readCurrentSaveRaw();
         if (raw) cloudSaveUpload(JSON.parse(raw)).catch(() => {});
       } catch { /* 세이브 파싱 실패 무시 */ }
     }, 3 * 60 * 1000);
@@ -85,7 +96,7 @@ export function AuthPanel() {
 
   const refreshSaveInfo = async () => {
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
+      const raw = readCurrentSaveRaw();
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -151,13 +162,16 @@ export function AuthPanel() {
       setMsg(r.error ?? "클라우드에 백업된 세이브가 없어요");
       return;
     }
-    if (!window.confirm("클라우드 세이브로 이 기기를 덮어쓸까요? 현재 기기의 세이브가 교체돼요.")) return;
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(r.data));
-      window.location.reload();
-    } catch {
-      setMsg("복원 실패 — 저장 공간을 확인해 주세요");
+    if (!window.confirm("클라우드 세이브로 이 기기를 덮어쓸까요? 같은 이름 캐릭터가 교체되고, 없으면 새 캐릭터로 들어와요.")) return;
+    /* v1.4.32 (#세이브복원 버그) — 기존엔 레거시 키(sertz_save_v2)에만 기록해
+     *  멀티캐릭터(v1.0.18~)가 읽는 sertz_char_<id>에는 반영되지 않았다(복원 무시 +
+     *  다음 저장에 즉시 덮어침). importCloudSave가 활성/동일이름/신규 슬롯으로 편입한다. */
+    const imp = importCloudSave(r.data as SaveData);
+    if (!imp.ok) {
+      setMsg(imp.reason);
+      return;
     }
+    window.location.reload();
   };
 
   const snsStart = (key: string) => {

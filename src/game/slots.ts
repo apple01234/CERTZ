@@ -9,7 +9,7 @@
  *  구 세이브(sertz_save_v2)는 첫 부팅 시 1번 캐릭터로 자동 마이그레이션되며
  *  원본은 삭제하지 않는다 (구버전 APK 롤백 안전망).
  */
-import { loadSave, writeSave, registerSaveHook, setActiveCharId, type SaveData } from "./config";
+import { loadSave, writeSave, registerSaveHook, setActiveCharId, SAVE_KEY, type SaveData } from "./config";
 
 export const SLOTS_KEY = "sertz_slots_v1";
 export const BASE_SLOTS = 8;
@@ -192,6 +192,60 @@ export function readCharSave(id: string): SaveData | null {
   } catch {
     return null;
   }
+}
+
+/** v1.4.32 (#세이브복원 버그) — 클라우드 세이브를 슬롯 체계로 안전 편입.
+ *
+ *  [기존 버그] AuthPanel.doRestore가 레거시 키(sertz_save_v2)에만 기록했다. 멀티캐릭터
+ *  도입(v1.0.18) 후 loadSave는 활성 캐릭터 키(sertz_char_<id>)를 읽으므로 ①복원 데이터가
+ *  영영 읽히지 않고 ②다음 writeSave가 구세이브를 레거시 키에 다시 미러링해 복원분이
+ *  즉시 지워졌다 — "세이브 복원 안됨"의 근본 원인. (migrateLegacy는 slots 최초 생성
+ *  1회뿐이라 기존 기기에서는 절대 편입되지 않았다.)
+ *
+ *  [편입 규칙] ① 클라우드 세이브와 같은 이름의 캐릭터가 있으면 그 캐릭터를 교체
+ *  (같은 캐릭터의 복원 — 이름은 슬롯 체계에서 유일하므로 동일성 판정으로 충분)
+ *  ② 없고 활성 캐릭터가 있으면(게임 중 복원) 활성 캐릭터 교체
+ *  ③ 둘 다 없으면(새 기기) 신규 캐릭터 슬롯으로 편입 — 로비 목록 맨 위(최근)에 표시
+ *  레거시 키에도 미러링해 구버전 APK 롤백 안전망을 유지한다. */
+export function importCloudSave(
+  data: SaveData,
+): { ok: true; id: string; mode: "name" | "active" | "new" } | { ok: false; reason: string } {
+  if (typeof window === "undefined") return { ok: false, reason: "브라우저 환경이 아니에요" };
+  if (!data || typeof data.stage !== "string") return { ok: false, reason: "세이브 형식이 올바르지 않아요" };
+  const store = loadSlots();
+  const name = String(data.playerName ?? "").trim();
+  const byName = name ? Object.values(store.chars).find((c) => c.name === name) : undefined;
+  const active = activeId ?? store.activeId;
+  const target = byName?.id ?? (active && store.chars[active] ? active : null);
+  if (!target && Object.keys(store.chars).length >= store.slots) {
+    return { ok: false, reason: "캐릭터 슬롯이 부족해요 — 슬롯 하나를 삭제한 뒤 복원해 주세요" };
+  }
+  const id = target ?? `c${Date.now().toString(36)}${Math.floor(Math.random() * 36).toString(36)}`;
+  try {
+    window.localStorage.setItem(`sertz_char_${id}`, JSON.stringify(data));
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(data)); // 롤백 안전망 미러 (기존 doRestore 동작 유지)
+  } catch {
+    return { ok: false, reason: "저장 공간에 기록할 수 없어요" };
+  }
+  const now = Date.now();
+  const meta = store.chars[id];
+  store.chars[id] = {
+    id,
+    name: name || meta?.name || "세르츠",
+    cls: data.startCls ?? data.cls ?? meta?.cls ?? null,
+    lv: data.lv ?? meta?.lv ?? 1,
+    stage: data.stage ?? meta?.stage ?? "village",
+    cleared: !!data.cleared,
+    lastSeen: now,
+    createdAt: meta?.createdAt ?? now,
+    rebirths: data.inf?.rebirths ?? meta?.rebirths ?? 0,
+    lookTint: data.lookTint ?? meta?.lookTint ?? null,
+    gender: data.gender ?? meta?.gender ?? "m",
+    skinIdx: data.skinIdx ?? meta?.skinIdx ?? 2,
+  };
+  store.activeId = id;
+  writeSlots(store);
+  return { ok: true, id, mode: byName ? "name" : target ? "active" : "new" };
 }
 
 /** 슬롯 확장 — 유니온 코인 소모 (union.ts에서 차감 후 호출) */
