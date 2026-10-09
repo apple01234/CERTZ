@@ -93,7 +93,14 @@ else:
       echo "[$i] $ST"
       case "$ST" in READY*|ERROR*|CANCELED*) break;; esac
     done
-    case "$ST" in READY*) echo "✓ 배포 완료 — 별칭 재할당됨";; *) echo "✗ 배포 실패/정체 — deployments 명령으로 확인"; exit 1;; esac
+    case "$ST" in
+      READY*)
+        echo "✓ 배포 완료 — 별칭 재할당됨"
+        echo "→ 배포 이력 자동 정리 (최신+직전버전 2개 유지)..."
+        python3 "$ROOT/scripts/vercel_cleanup.py" run --yes | tail -3 || echo "(정리 스크립트 실패 — 무시하고 진행)"
+        ;;
+      *) echo "✗ 배포 실패/정체 — deployments 명령으로 확인"; exit 1;;
+    esac
     ;;
   alias)
     api GET "/v4/aliases?teamId=$TEAM&projectId=$PROJECT_ID" | python3 -c "

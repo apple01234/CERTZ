@@ -3819,3 +3819,24 @@ Stage Summary:
 - 멀티 가시성(브로커)·보스 화질(LINEAR)은 vc140에서 이미 처리 완료 — vc141은 그 위에 시각 동일화+수복 구멍 차단
 - 유저 테스트 포인트: ①두 기기 동시 접속 → 한쪽이 스킬 사용 시 다른 쪽 화면에 같은 스킬 연출(회전베기/화살비/낙뢰/토네이도 등) ②장기 플레이 후에도 보스 화질 유지 ③APK는 SERTZ-vc141.apk 업로드 완료 후 덮어설치
 - 잔무: ①APK 파이프라인 완료 로그 확인 ②Vercel 토큰 재제공 시 구배포 일괄 삭제(최신 2개 유지)
+
+---
+Task ID: vc141-vercel-cleanup
+Agent: Super Z (main)
+Task: 유저 토큰 재제공(vcp_1C0w...) → Vercel 구배포 일괄 삭제(최신+직전버전 2개 유지) + vc141 APK 잔무 확인/재빌드
+
+Work Log:
+- [토큰 저장] .secrets/vercel_token 신규 저장(60B, chmod 600) — 컨테이너 리셋으로 소실했던 토큰 유저가 채팅으로 재제공
+- [정리 스크립트 신설] scripts/vercel_cleanup.py — 전체 배포 페이지네이션 조회(v6/deployments, until 커서) → KEEP/DELETE 선정 → v13 DELETE (429 백오프 재시도 포함). list=미리보기 / run [--yes]=실행
+- [KEEP 선정 로직 2차 보정] ①초안: 최신 2개 → accounts backup 자동배포 2개(동일 코드 vc141)가 잡혀 롤백 가치 0 ②보정: "코드 실질 변경" 기반 — git diff --quiet <배포SHA> <라이브SHA> -- ':(exclude)db-backup' ':(exclude)backups' ':(exclude)download' ':(exclude)scripts' ':(exclude)worklog.md' ':(exclude)*.md' 로 판정 ③fetch origin 선행 필요(라이브 백업 커밋이 로컬에 없어 SHA 판정 실패했던 케이스 해소)
+- [최종 결과] 61개 → 2개: KEEP=라이브(accounts backup 10-09, code:141) + vc140 핫픽스(10-08 06:48, 롤백 타깃) / DELETE=59개 전부 성공(실패 0). 삭제 후 라이브 /api/version code:141 정상 확인
+- [근본 원인 확인] 배포 누적의 주범 = 유저 로컬 PC의 자동 백업 커밋("accounts backup <ts>", db-backup/accounts.enc 1파일)이 main 푸시 때마다 Vercel 프로덕션 빌드 유발(워크로그 2810행 전례 동일)
+- [Ignored Build Step 시도 → 불가] PATCH /v9/projects commandForIgnoringBuildSkip → 400(bad_request, additional property) — API로 설정 불가 플랜/버전. 대안: vercel_api.sh wait 성공 시 vercel_cleanup.py run --yes 자동 체인(배포→정리 항상 세트) 패치 완료
+- [vc141 APK 잔무 발견·재빌드] /api/version의 apk URL(SERTZ-vc141.apk) 404 확인 — 직전 세션 백그라운드 파이프라인이 로그 소실 사이 실패했었음(/tmp/vc141_apk.log 리셋 소실). 릴리스에는 vc140 APK만 존재(206). scripts/vc141_apk_pipeline.sh 재가동(백그라운드, /tmp/vc141_apk.log) — SDK(/home/z/android-sdk platforms;android-36 존재) + 시스템 Java 21.0.12.1
+- [유의] git push 배포는 정상이므로 웹 서비스 무영향. APK는 vc140 사용자가 vc141로 업데이트하려면 이번 재빌드 완료분 필요
+
+Stage Summary:
+- Vercel 저장소 정리 완료: 61→2개(라이브 vc141 + 롤백용 vc140) — 유저 요구 "최신버전과 그전버전 빼고 항상 전부 삭제" 충족
+- 향후 자동화: vercel_api.sh wait 성공 시마다 정리 자동 실행 + 수동 실행은 python3 scripts/vercel_cleanup.py run --yes
+- 진행중: vc141 APK 재빌드+릴리스 업로드(백그라운드) — 완료 시 /api/version apk 링크 복구
+- 잔무: APK 파이프라인 완료 로그 확인 → 유저에게 [skip ci] 커밋 메시지 옵션 안내(로컬 백업 자동화에 추가하면 빌드 유발 자체가 차단됨)
