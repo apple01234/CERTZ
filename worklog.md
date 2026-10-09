@@ -3840,3 +3840,21 @@ Stage Summary:
 - 향후 자동화: vercel_api.sh wait 성공 시마다 정리 자동 실행 + 수동 실행은 python3 scripts/vercel_cleanup.py run --yes
 - 진행중: vc141 APK 재빌드+릴리스 업로드(백그라운드) — 완료 시 /api/version apk 링크 복구
 - 잔무: APK 파이프라인 완료 로그 확인 → 유저에게 [skip ci] 커밋 메시지 옵션 안내(로컬 백업 자동화에 추가하면 빌드 유발 자체가 차단됨)
+
+---
+Task ID: vc141-apk-rebuild-cleanup-e2e
+Agent: Super Z (main)
+Task: vc141 APK 재빌드·릴리스 복구 + Vercel 정리 E2E 검증 (동일 세션 후속)
+
+Work Log:
+- [백그라운드 빌드 반복 사망 → 동기식 전환] 파이프라인 3회 재시도 모두 외부 리퍼 추정 사망(nohup/setsid/외부재시도루프 전부 무효 — 사망 지점 비일관: pkill 직후/gradle DL 90%/next build 중) → gradle 부분파일(.part 222MB/224MB)을 curl -C -로 1.8MB 이어받아 래퍼 캐시에 수동 설치(zip+unzip+.ok) → build_apk.sh 단계를 툴콜 포그라운드로 수동 청크 실행(격리→next build→cap sync→gradle)으로 전환, 이후 전 단계 무사고
+- [JRE-only 재발] 시스템 java-21에 javac 부재(Toolchain does not provide JAVA_COMPILER) → Temurin 21.0.12.1을 /home/z/jdk에 재설치(이전 세션과 동일 버전·동일 해소법)
+- [빌드·업로드 완료] assembleRelease 5m29s SUCCESS → SERTZ-vc141.apk(137.8MB) 릴리스 업로드 201 → 다운로드 URL HTTP 206 확인(기존 404 해소) → bundleRelease 4m10s SUCCESS → SERTZ-vc141.aab(140MB)·SERTZ-vc141-mapping.txt(29MB) 업로드 201×2
+- [라우트 무사고 복원] 빌드 후 .apk-hold 7라우트 수동 복원 + .apk-hold 제거 — git status 오염 0(vc140 핫픽스 전례 재발 방지)
+- [정리 E2E 검증] 툴링 커밋(f10e4e9→리베이스 c4deb37) 푸시 → 유발 배포 READY 확인 → vercel_cleanup.py run으로 3→2개 수습 — KEEP 자동 갱신(신규 라이브+vc140 롤백) 확인, 스크립트가 반복 운용 가능함을 실증
+- [최종 상태] 라이브 code:141 정상 / 배포 2개(라이브+vc140) / 릴리스 자산 3종(apk·aab·mapping) 완비
+
+Stage Summary:
+- vc141 APK 링크 사망 잔무 완전 해소 — APK 유저 업데이트 경로 복구(SERTZ-vc141.apk 206)
+- Vercel 정리 정책 확립: "최신 라이브 + 직전 버전 롤백 타깃" 2개 유지, 자동 코드실질변경 판정 — 수동 실행 python3 scripts/vercel_cleanup.py run --yes, vercel_api.sh wait 성공 시 자동 체인
+- 빌드 환경 요약(차기 세션용): gradle 8.14.3 래퍼캐시 수동설치법 + JDK는 반드시 /home/z/jdk(Temurin 21.0.12.1) + 백그라운드 장시간 빌드는 리퍼에 죽으므로 툴콜 포그라운드 청크 실행 권장
