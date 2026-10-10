@@ -3858,3 +3858,20 @@ Stage Summary:
 - vc141 APK 링크 사망 잔무 완전 해소 — APK 유저 업데이트 경로 복구(SERTZ-vc141.apk 206)
 - Vercel 정리 정책 확립: "최신 라이브 + 직전 버전 롤백 타깃" 2개 유지, 자동 코드실질변경 판정 — 수동 실행 python3 scripts/vercel_cleanup.py run --yes, vercel_api.sh wait 성공 시 자동 체인
 - 빌드 환경 요약(차기 세션용): gradle 8.14.3 래퍼캐시 수동설치법 + JDK는 반드시 /home/z/jdk(Temurin 21.0.12.1) + 백그라운드 장시간 빌드는 리퍼에 죽으므로 툴콜 포그라운드 청크 실행 권장
+
+---
+Task ID: download-cleanup
+Agent: Super Z (main)
+Task: 유저 재지시 "Download 폴더 정리하라닌까?? 사진등등" — 다운로드 폴더 실질 정리
+
+Work Log:
+- [원인] vc137의 정리가 archive/로 "복사"만 하고 최상위 원본을 방치 → 이중 구조로 계속 지저분(최상위 28개 항목·563MB)
+- [삭제] 구매핑 12개(v127~v139, 348MB)·Capture/ 스크린샷 29MB("사진등등" 본체)·최상위 roblox_prompt 67MB(archive 사본 존재)·최상위 gdrive_file(사본 모음)·중복 가이드 6종(archive 사본 존재)
+- [이동] 사본 없는 SNS_OAuth_키발급_적용_가이드.txt·출시_체크리스트.txt → archive/
+- [유지] SERTZ-vc140/vc141-mapping.txt(최신 2개 정책 — Vercel 정리와 동일 철학)·APK_다운로드_안내.txt(실사용)·README.md(새 구조 문서화)·archive/(지난 문서 보관)
+- [결과] 563MB → 125MB, 최상위 5개 항목. git 추적 파일 삭제/이동분 커밋 반영
+- [참고] 오늘 만든 SERTZ-vc141.apk/aab 로컬 사본은 유저/플랫폼 측에서 이미 제거됨 — GitHub 릴리스 본체(206 검증됨)에 영향 없음
+
+Stage Summary:
+- 다운로드 폴더 = "최신 산출물 + 보관함(archive)" 구조로 확정. 유저 불만 해소(사진·중복 제거)
+- 정리 규칙 README에 명시: 최신 2개 유지, 수시 삭제
