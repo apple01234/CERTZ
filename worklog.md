@@ -3891,3 +3891,25 @@ Work Log:
 Stage Summary:
 - 원격(origin/main)이 항상 신뢰 원본 — 로컬 불일치 시 reset origin/main + 작업트리 재커밋 패턴 확립
 - 다운로드 정리 커밋(5420e4c) 푸시 → 유발 배포 READY → 정리 스크립트로 4건 수습 → 2개 유지 확인, 라이브 code:141
+
+---
+Task ID: vc142-boss-redesign
+Agent: Super Z (main)
+Task: 유저 지시 "이 스프라이트 아틀라스들을 가지고 보스 디자인 바꿔. 12fps이고 위에서부터 한줄씩 idle, run, attack, died, 스킬 총 3개" → 유저 제공 아틀라스 5종으로 보스 6종 디자인 교체 → vc142 웹+APK 배포
+
+Work Log:
+- [소스 분석] upload/ 신규 5종: 스콜&하티(1535x1024 8열x7행, 좌4열=얼음늑대/우4열=화염늑대, 6~7행=합동기)·요툰헤임(수정골렘)·헬(자색 마녀)·file_c8fc82(니플헤임 얼음수)·file_4a5482(잎날개 녹룡 6행) + 재업로드 4종(구 소스/마스터/설계도 라벨시트 2종)
+- [매핑 확정 근거] ①설계도 슬롯번호(v2 시트 2/9 드래곤·3/9 설원·7/9 니플헤임=stages.ts 주석 교차검증) ②guardian 대사 "결정의 빛을 든 자여"=수정골렘 ③guardian 시그니처 slam=골렘 3행 점프공격 ④니플헤임 지역=6챕터 보스 펜리르 ⑤jorm 현 AI 아트=녹룡 동일 디자인(AI폐기 원칙) → boss=요툰헤임 / boss3=헬 / skoll+hati=쌍랑시트 / fenrir=얼음수 / jorm=녹룡
+- [슬라이서] scripts/vc142_boss_slicer.py — 행밴드 검출(병합밴드 내부최소값 분할)·셀/거터 하이브리드(jorm은 프레임 186~255px로 셀 192px 초과→거터검출)·프레임단위 방향처리(소스 늑대는 우향이라 미러 불가—정량비교 gen vs flipped 15.75로 검증)·엣지 스리버 트림·12열 고정 그리드+행순서 리맵(die→끝)·바닥정렬 배치·LANCZOS 1.15~1.52배+언샵
+- [산출] 아틀라스 6종: boss 304x269 8fr·boss3 303x248 8fr·skoll/hati 303~304x257 4fr(시트 절반)·fenrir 303x227 8fr·jorm 304x201 6행(sp3 없음, counts=[3,6,6,6,6,6]) + 초상화 6종 220px
+- [코드] BOSS_ATLAS/ROWS 갱신+jorm 신설 / 스콜 명칭 "교만의 쌍랑 스콜&하티" 복원(구: 얼음 봉황)+인트로 대사 수정 / Boss.ts 주석
+- [사고→복구] 작업 완료 직후 플랫폼 동기화가 작업트리를 69a259d 스냅샷으로 되감아 산출물·코드·스크립트 전량 소실(worklog 재발 패턴) → upload/ 소스는 보존 영역이라 무사 → origin/main reset --hard 베이스 복구+vercel 토큰 재복원(.secrets 소실 3번째) → 파이프라인 전체 재실행 후 **즉시 커밋** 철칙으로 0682cf2 푸시 — 이후 정상
+- [게이트] server.js(LATEST_CODE 142·NOTE·APK_MIRROR)·route.ts(APK_MIRROR+**LATEST_CODE/NOTE 2차 정정** — 초기 누락으로 라이브 code:141 잔존했던 것 폴링으로 발견·59fc969 정정)·next.config.ts·build.gradle 142·apk-guide.html(헤더/불릿/링크/해시)
+- [검증] tsc 0 · npm run build 성공 · e2e_vc142.js 12/12 PASS(10종 LINEAR+기하 실측·skoll/hati 4fr 애니·jorm idle 3fr/die 6fr/sp3 부재 폴백·12FPS·10종 인게임 렌더 200~360px·초상화 6종 200·pageerror 0) — chromium 1243→1248 경로 갱신(컨테이너 리셋 소실)
+- [빌드/릴리스] JDK(/home/z/jdk Temurin 21.0.12.1)·SDK(android-36+build-tools 36.0.0) 재구축 · 라우트 격리→APK_EXPORT next build→cap sync→gradle 7m20s SUCCESS · aapt versionCode 142·서명 cc774f34 동일(덮어설치 호환) · 릴리스 3종 업로드 201×3+다운로드 206 검증(apk 145,604,531B md5 052ce775.. / aab 147,475,654B / mapping 29,998,108B) · AAB 3m50s
+- [배포] Vercel 라이브 code:142+SERTZ-vc142.apk 폴링 확인 · 정리 체인 2회(5삭제+1삭제 — KEEP 2 유지) · download/ 매핑 최신 2개 정책(vc142 추가·vc140 삭제) · 로컬 서버 production 재기동 200
+
+Stage Summary:
+- vc142 = 보스 6종 디자인 전면 교체(수정골렘·헬·쌍랑 늑대×2·얼음수·녹룡) — 웹 라이브 완료·APK 릴리스 완비
+- 유저 테스트 포인트: ①2챕터 수호자전(수정골렘) ⑦챕터 심연의 군주전(헬) ⑧챕터 스콜&하티전(쌍랑—본체 얼음늑대+트윈 화염늑대, 합동 스킬 2종) ⑥챕터 펜리르전(얼음수) 재림10 요르문간드(녹룡) + 도감 초상화
+- 잔무: APK 덮어설치 테스트 대기 · 다음 백로그(토벌전 보스 HP 대폭 상향 3회 요청·교실 퀘스트 개선—기존 절대 삭제 금지·파티 게임 추가)
