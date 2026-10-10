@@ -132,7 +132,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.play(`${def.tex}-idle`);
 
     /* v1.0.12 — 하티 스폰: 스콜 옆에 나란히 달린다.
-     *  v1.4.31 (#4) — 아틀라스 시대: 본체=얼음 봉황(스콜), 트윈=화염 늑대(하티 전용 아트·무틴트).
+     *  vc142 — 아틀라스 시대: 본체=얼음 늑대(스콜), 트윈=화염 늑대(하티 전용 아트·무틴트).
      *  구형 아트는 기존대로 동일 텍스처+은빛 틴트. 히트박스/판정은 보스 본체 그대로(밸런스 불변). */
     if (def.key === "skoll") {
       if (BOSS_ATLAS[def.tex]) {

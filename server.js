@@ -34,7 +34,7 @@ app.prepare().then(() => {
   /* vc138 — GitHub API 자산 DELETE 일시 장애로 동일 이름 교체가 막힌 기간의 안전 경로:
    *  vc138 자산을 별도 이름으로 업로드하고 이쪽을 가리킴. 루프가 동일 이름 교체에 성공하면
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc141.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc142.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -68,9 +68,9 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.0.5-beta";
-  const LATEST_CODE = 141;
+  const LATEST_CODE = 142;
   const VERSION_NOTE =
-  "v1.0.5-beta (vc141) — 원격 스킬 실제 연출 재생: 상대가 보는 내 스킬이 범용 링이 아니라 클래스별 실제 스킬 이펙트(회전베기·부채꼴 화살·볼트·돌진 궤적·저격선·낙뢰·토네이도·궁극기 등 48종 전원)로 재생 + 보스 아틀라스 수복 시 LINEAR 필터 유지(화질 재저하 방지)";
+  "v1.0.5-beta (vc142) — 보스 디자인 전면 교체: 유저 제공 아틀라스 5종 적용 — 심연의 수호자=요툰헤임 수정골렘·심연의 군주=헬 고해상·스콜&하티=쌍랑(얼음+화염 늑대)·펜리르=니플헤임 얼음수·요르문간드=잎날개 녹룡(신규 아틀라스) — 12FPS 풀애니+초상화 6종 재생성";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

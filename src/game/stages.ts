@@ -481,13 +481,13 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
   },
   skoll: {
-    key: "skoll", name: "교만의 얼음 봉황 스콜&하티", /* v5.0 보스 리메이크 — 설계도 7/9 니플헤임 얼음 봉황 반영(구: 쌍랑) */
+    key: "skoll", name: "교만의 쌍랑 스콜&하티", /* vc142 보스 디자인 교체 — 유저 제공 쌍랑 아틀라스(얼음 늑대 스콜+화염 늑대 하티) 반영 (구 표기: 교만의 얼음 봉황) */
     hp: 8600, atk: 39, speed: 100, exp: 720, gold: 420,
     tex: "boss_skoll", orbTint: 0xffd97a, introDialogue: "bossIntroSkoll",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 blink · 성향 0.9 */
     sig: "blink",
     aggr: 0.9,
-    /* 태양을 쫓던 쌍두 봉황 — 3연속 교차 돌진(최종 페이즈 3회) + 스윕 빔 */
+    /* 태양과 달을 쫓던 쌍랑 — 3연속 교차 돌진(최종 페이즈 3회) + 스윕 빔 */
     chargeChain: 2,
     patterns: {
       p1: ["volley", "charge", "slam"],

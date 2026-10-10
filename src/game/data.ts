@@ -1796,10 +1796,10 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   bossIntroSkoll: {
-    speaker: "교만의 얼음 봉황 스콜&하티",
+    speaker: "교만의 쌍랑 스콜&하티",
     lines: [
       "얼어붙은 하늘 아래 — 해와 달도 궁어졌다!",
-      "얼음 날개로 하늘을 삼킨 우리에게 — 작은 인간 따위가 굴복하랴!",
+      "해와 달을 쫓아 하늘을 삼킨 우리에게 — 작은 인간 따위가 굴복하랴!",
       "교만은 꺾이지 않아. 부서져라!",
     ],
   },
