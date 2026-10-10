@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 141;
+const LATEST_CODE = 142;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc141) — 원격 스킬 실제 연출 재생: 상대가 보는 내 스킬이 범용 링이 아니라 클래스별 실제 스킬 이펙트(회전베기·부채꼴 화살·볼트·돌진 궤적·저격선·낙뢰·토네이도·궁극기 등 48종 전원)로 재생 + 보스 아틀라스 수복 시 LINEAR 필터 유지(화질 재저하 방지)";
+  "v1.0.5-beta (vc142) — 보스 디자인 전면 교체: 유저 제공 아틀라스 5종 적용 — 심연의 수호자=요툰헤임 수정골렘·심연의 군주=헬 고해상·스콜&하티=쌍랑(얼음+화염 늑대)·펜리르=니플헤임 얼음수·요르문간드=잎날개 녹룡(신규 아틀라스) — 12FPS 풀애니+초상화 6종 재생성";
 const APK_MIRROR =
   /* vc138 — API DELETE 장애 기간 안전 경로 (server.js 주석 참조) */
   "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc142.apk";
