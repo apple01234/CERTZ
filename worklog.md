@@ -3875,3 +3875,19 @@ Work Log:
 Stage Summary:
 - 다운로드 폴더 = "최신 산출물 + 보관함(archive)" 구조로 확정. 유저 불만 해소(사진·중복 제거)
 - 정리 규칙 README에 명시: 최신 2개 유지, 수시 삭제
+
+---
+Task ID: download-cleanup-gitfix
+Agent: Super Z (main)
+Task: 다운로드 정리 커밋 푸시 중 발각된 로컬 브랜치 되감기 수습 + 발견사항 기록
+
+Work Log:
+- [로컬 브랜치 되감기 사건] 내 푸시 성공(c4deb37·08b2563 원격 존재 확인) 후에도 로컬 main이 69a259d(플랫폼 UUID 자동커밋)로 되감김 → 커밋했던 vercel_api.sh가 M·vercel_cleanup.py가 ??로 재등장. 원인 추정: 플랫폼 워크스페이스 동기화가 자기 스냅샷 기준으로 로컬 git을 재정렬. 수습: fetch → git reset origin/main(mixed, 작업트리 보존) → 디스크 상태 재커밋(5420e4c) → 푸시 성공
+- [.secrets 소실 재발] .secrets/vercel_token이 같은 동기화 과정에서 소실 → 유저 제공 토큰으로 재복원. 향후 세션 시작 시 .secrets 존재 여부 필수 점검(토큰 없으면 유저에게 요청)
+- [미추적 다수 파일 발각] public/assets/boss*_*.webp·bsw_*.webp 수십 개 + src/middleware.ts + src/app/api/route.ts가 미추적으로 존재. src 전체 grep 결과 보스 프레임 개별 파일은 게임 코드 참조 0건(textures.ts는 atl_boss* 9종만 사용) → 빌드/슬라이싱 중간산출물로 판정, 커밋하지 않고 방치. middleware.ts·api/route.ts는 출처 불명(이전 세션 플랫폼 복원분 추정) — 배포 빌드는 git 기준이라 미포함이며 현 라이브 정상. 차기 세션에서 삭제 또는 커밋 판단 필요
+- [푸시 습습] 파이프라인에서 `git pull --rebase | tail` 구조는 실패를 삼켜 push까지 시도됨 — 앞으로 pull/rebase 실패 시 즉시 중단 처리할 것
+- [db-backup/accounts.enc] 게임 데이터 파일이 상시 M 상태(로컬 서버 갱신) — stash/checkout으로 정리 후 무충돌 확인(928B, 마커 없음)
+
+Stage Summary:
+- 원격(origin/main)이 항상 신뢰 원본 — 로컬 불일치 시 reset origin/main + 작업트리 재커밋 패턴 확립
+- 다운로드 정리 커밋(5420e4c) 푸시 → 유발 배포 READY → 정리 스크립트로 4건 수습 → 2개 유지 확인, 라이브 code:141
