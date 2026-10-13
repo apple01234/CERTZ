@@ -2,7 +2,7 @@ name: iOS Build (SERTZ)
 
 # SERTZ iOS 빌드 — Linux에서 Xcode 컴파일 불가라 GitHub macOS 러너 사용.
 #  · 트리거: 수동(workflow_dispatch) 또는 ios/**·본 파일 푸시
-#  · 산출물: SERTZ-vc142-ios-unsigned.ipa (사인 없음 — AltStore/Sideloadly/TrollStore 등으로
+#  · 산출물: SERTZ-vc146-ios-unsigned.ipa (사인 없음 — AltStore/Sideloadly/TrollStore 등으로
 #    사이드로드하거나 본인 인증서로 codesign 후 설치)
 #  · 빌드 플로우는 Android(scripts/build_apk.sh)와 동일: 라우트 격리 → APK_EXPORT 정적
 #    export(.next-apk) → cap sync ios → xcodebuild (SPM — CocoaPods 불필요)
@@ -85,20 +85,20 @@ jobs:
           echo "APP: $APP_PATH"
           mkdir Payload
           cp -r "$APP_PATH" Payload/
-          zip -qry SERTZ-vc142-ios-unsigned.ipa Payload
-          ls -lh SERTZ-vc142-ios-unsigned.ipa
+          zip -qry SERTZ-vc146-ios-unsigned.ipa Payload
+          ls -lh SERTZ-vc146-ios-unsigned.ipa
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SERTZ-vc142-ios-unsigned
-          path: SERTZ-vc142-ios-unsigned.ipa
+          name: SERTZ-vc146-ios-unsigned
+          path: SERTZ-vc146-ios-unsigned.ipa
           retention-days: 30
 
-      - name: Attach to GitHub Release (v1.0.5-beta)
+      - name: Attach to GitHub Release (v1.0.6)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload v1.0.5-beta SERTZ-vc142-ios-unsigned.ipa --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload v1.0.6 SERTZ-vc146-ios-unsigned.ipa --clobber --repo "$GITHUB_REPOSITORY"
           echo "--- release assets ---"
-          gh release view v1.0.5-beta --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
+          gh release view v1.0.6 --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
