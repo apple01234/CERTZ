@@ -25,8 +25,12 @@
     ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "icon.png",
       "artifactName": "SERTZ-vc146-win.${ext}"
@@ -40,7 +44,9 @@
       "artifactName": "SERTZ-vc146-win.${ext}"
     },
     "linux": {
-      "target": ["dir"],
+      "target": [
+        "dir"
+      ],
       "icon": "icon.png",
       "category": "Game"
     }

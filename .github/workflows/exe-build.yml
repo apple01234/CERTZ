@@ -1,0 +1,77 @@
+name: EXE Build (SERTZ)
+
+# SERTZ Windows 데스크톱 빌드 — windows 러너 네이티브(rcedit 네이티브 동작 — 아이콘·버전·언인스톨러 완전판).
+#  · 트리거: 수동(workflow_dispatch) 또는 electron/**·본 파일 푸시
+#  · 산출물: SERTZ-vc146-win-setup.exe(NSIS 설치기) + SERTZ-vc146-win.exe(portable)
+#    → GitHub 릴리스 v1.0.6 자동 첨부(--clobber)
+#  · 게임 본체: APK와 동일한 정적 export(.next-apk)를 electron/game에 스테이징
+#    내장 서버가 정적 서빙 + /api/* 는 Vercel 프록시(main.js 참조)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "electron/**"
+      - ".github/workflows/exe-build.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static export (APK_EXPORT=1) — serverless 라우트 7개 격리
+        shell: bash
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          set -e
+          ROUTE_DIRS="admin auth market rank support chat party"
+          mkdir -p .apk-hold/api-routes
+          for d in $ROUTE_DIRS; do
+            if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" ".apk-hold/api-routes/"; fi
+          done
+          restore() {
+            for d in $ROUTE_DIRS; do
+              if [ -d ".apk-hold/api-routes/$d" ]; then mv ".apk-hold/api-routes/$d" "src/app/api/$d"; fi
+            done
+            rm -rf .apk-hold
+          }
+          trap restore EXIT
+          APK_EXPORT=1 npx next build
+          test -f .next-apk/index.html || { echo "export 실패 — index.html 없음"; exit 1; }
+
+      - name: Stage electron/game (정적 게임 본체)
+        shell: bash
+        run: |
+          set -e
+          rm -rf electron/game
+          mkdir -p electron/game
+          cp -r .next-apk/. electron/game/
+          test -f electron/game/index.html
+
+      - name: Build EXE (nsis setup + portable, x64)
+        run: |
+          cd electron
+          npx electron-builder --win nsis portable --x64
+
+      - name: Attach to GitHub Release (v1.0.6)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload v1.0.6 electron/dist/SERTZ-vc146-win.exe electron/dist/SERTZ-vc146-win-setup.exe --clobber --repo "$GITHUB_REPOSITORY"
+          echo "--- release assets ---"
+          gh release view v1.0.6 --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
