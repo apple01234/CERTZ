@@ -50,6 +50,15 @@ function rebootLedger(): number[] {
 }
 function safeReload(reason: string) {
   const now = Date.now();
+  /* vc143 (#눈맵튕김) — 크래시 브레드크럼: 재부팅 이유+순간 성능 스냅샷을 세션에 남겨
+   *  "자꾸 튕긴다" 리포트의 원인 파악 가시성 확보 (기존엔 콘솔 외 흔적이 없었다) */
+  try {
+    const perf = (window as unknown as { __SERTZ_PERF__?: { fps?: number; mode?: string; enemies?: number } }).__SERTZ_PERF__;
+    sessionStorage.setItem(
+      "sertz.lastcrash",
+      JSON.stringify({ reason, at: now, fps: perf?.fps ?? null, mode: perf?.mode ?? null, enemies: perf?.enemies ?? null }),
+    );
+  } catch { /* 스토리지 불가 환경 무시 */ }
   const list = rebootLedger().filter((t) => now - t < REBOOT_WINDOW_MS);
   if (list.length >= REBOOT_MAX) {
     console.error(`[SERTZ] 재부팅 예산 초과(${reason}) — 자동 재부팅 중단, 수동 복구 대기`);

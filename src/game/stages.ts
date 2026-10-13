@@ -245,7 +245,7 @@ export const CHAPTERS: ChapterSpec[] = [
     beats: [
       { sub: 2, dialogue: "", quest: { id: "a0", type: "hunt", title: "하수인 소탕", desc: "니드호그가 부린 심연의 하수인 13마리를 처치해 성전의 길을 열자.", need: 13, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(80 * G), expReward: 65 } },
       { sub: 3, dialogue: "", quest: { id: "a1", type: "collect", title: "여왕의 가호", desc: "하수인들이 숨겨둔 결정의 조각을 회수해 여왕에게 바쳐라.", targetLabel: "결정의 흔적", reward: Math.round(80 * G), expReward: 55 } },
-      { sub: 6, dialogue: "minionPurgeDone", quest: { id: "a2", type: "hunt", title: "성전 지키기", desc: "니드호그를 부르는 의식을 막자 — 하수인 30마리 처치!", need: 30, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(150 * G), expReward: 140 } },
+      { sub: 6, dialogue: "minionPurgeDone", quest: { id: "a2", type: "hunt", title: "성전 지키기", desc: "니드호그를 부르는 의식을 막자 — 하수인 80마리 처치!", need: 80, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(400 * G), expReward: 370 } },
     ],
     repeat: { need: 20, gold: Math.round(95 * G), exp: 95, title: "[반복] 성전 순찰 의뢰", desc: "요정 여왕의 의뢰 — 하수인을 계속 처치해 훈련해라." },
     lvGate: { enter: 14, mid: 16 },
@@ -258,10 +258,10 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 3 }, { key: "golem", count: 3 }, { key: "x2_firebird", count: 3 }, { key: "x3_tinyzombie", count: 3 }, { key: "x3_wogol", count: 3 }],
     main: "emberwolf",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "m0", type: "hunt", title: "불꽃 늑대 사냥", desc: "네바다를 내달리는 불꽃 늑대 15마리를 처치해라.", need: 15, targetKey: "emberwolf", targetLabel: "불꽃 늑대", reward: Math.round(150 * G), expReward: 140 } },
-      { sub: 4, dialogue: "", quest: { id: "m1", type: "hunt", title: "화염 정령 진압", desc: "열이 가장 강한 날 — 화염 정령 13마리를 처치해라.", need: 13, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(170 * G), expReward: 150 } },
+      { sub: 2, dialogue: "", quest: { id: "m0", type: "hunt", title: "불꽃 늑대 사냥", desc: "네바다를 내달리는 불꽃 늑대 100마리를 처치해라.", need: 100, targetKey: "emberwolf", targetLabel: "불꽃 늑대", reward: Math.round(1000 * G), expReward: 930 } },
+      { sub: 4, dialogue: "", quest: { id: "m1", type: "hunt", title: "화염 정령 진압", desc: "열이 가장 강한 날 — 화염 정령 110마리를 처치해라.", need: 110, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(1440 * G), expReward: 1270 } },
       { sub: 5, dialogue: "", quest: { id: "m2", type: "collect", title: "화염 속의 빛", desc: "용암 사이에서 결정의 조각이 반짝인다. 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(100 * G), expReward: 95 } },
-      { sub: 7, dialogue: "spiritPurgeDone", quest: { id: "m3", type: "hunt", title: "호족촌 구원", desc: "엘렌을 도와 — 지하도시를 노리는 화염 정령 25마리를 처치해라!", need: 25, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(220 * G), expReward: 200 } },
+      { sub: 7, dialogue: "spiritPurgeDone", quest: { id: "m3", type: "hunt", title: "호족촌 구원", desc: "엘렌을 도와 — 지하도시를 노리는 화염 정령 120마리를 처치해라!", need: 120, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(1060 * G), expReward: 960 } },
     ],
     repeat: { need: 20, gold: Math.round(130 * G), exp: 130, title: "[반복] 화산 지대 순찰 의뢰", desc: "호족촌 의뢰 — 불꽃 늑대를 계속 사냥해라." },
     lvGate: { enter: 20, mid: 23 },
@@ -274,10 +274,10 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
     main: "frostwolf",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "n0", type: "hunt", title: "서리 늑대 사냥", desc: "설원을 유랑하는 서리 늑대 15마리를 처치해라.", need: 15, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(130 * G), expReward: 120 } },
-      { sub: 4, dialogue: "", quest: { id: "n1", type: "hunt", title: "얼음 골렘 격파", desc: "성전 길을 얼리고 있는 얼음 골렘 10기를 격파해라.", need: 10, targetKey: "icegolem", targetLabel: "얼음 골렘", reward: Math.round(170 * G), expReward: 150 } },
+      { sub: 2, dialogue: "", quest: { id: "n0", type: "hunt", title: "서리 늑대 사냥", desc: "설원을 유랑하는 서리 늑대 110마리를 처치해라.", need: 110, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(950 * G), expReward: 880 } },
+      { sub: 4, dialogue: "", quest: { id: "n1", type: "hunt", title: "얼음 골렘 격파", desc: "성전 길을 얼리고 있는 얼음 골렘 100기를 격파해라.", need: 100, targetKey: "icegolem", targetLabel: "얼음 골렘", reward: Math.round(1700 * G), expReward: 1500 } },
       { sub: 6, dialogue: "", quest: { id: "n2", type: "collect", title: "얼음 속의 결정", desc: "얼음 결정 사이에서 세계의 빛이 반짝인다.", targetLabel: "결정의 흔적", reward: Math.round(100 * G), expReward: 90 } },
-      { sub: 7, dialogue: "frostRoutDone", quest: { id: "n3", type: "hunt", title: "설원 정화", desc: "펜리르의 권속인 서리 늑대 30마리를 처치해라!", need: 30, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(210 * G), expReward: 190 } },
+      { sub: 7, dialogue: "frostRoutDone", quest: { id: "n3", type: "hunt", title: "설원 정화", desc: "펜리르의 권속인 서리 늑대 130마리를 처치해라!", need: 130, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(910 * G), expReward: 820 } },
     ],
     repeat: { need: 24, gold: Math.round(145 * G), exp: 145, title: "[반복] 설원 순찰 의뢰", desc: "니플헤임 정찰 의뢰 — 서리 늑대를 계속 사냥해라." },
     lvGate: { enter: 27, mid: 30 },
@@ -291,9 +291,9 @@ export const CHAPTERS: ChapterSpec[] = [
     main: "spider",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "c0", type: "collect", title: "지하 깊은 곳의 빛", desc: "어둠 요정들의 지하 어딘가에서 결정의 조각이 빛나고 있다.", targetLabel: "결정의 흔적", reward: Math.round(60 * G), expReward: 65 } },
-      { sub: 3, dialogue: "", quest: { id: "c1", type: "hunt", title: "동굴 거미 소탕", desc: "어둠에 물든 동굴 거미 15마리를 처치해라.", need: 15, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(90 * G), expReward: 80 } },
-      { sub: 5, dialogue: "", quest: { id: "c2", type: "hunt", title: "수정 골렘 파괴", desc: "거미들을 조종하는 수정 골렘 10기를 부숴 버려라.", need: 10, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(130 * G), expReward: 110 } },
-      { sub: 7, dialogue: "spiderDone", quest: { id: "c3", type: "hunt", title: "지하 정화", desc: "거미 둥지를 완전히 태우자 — 거미 25마리 처치!", need: 25, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(160 * G), expReward: 150 } },
+      { sub: 3, dialogue: "", quest: { id: "c1", type: "hunt", title: "동굴 거미 소탕", desc: "어둠에 물든 동굴 거미 120마리를 처치해라.", need: 120, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(720 * G), expReward: 640 } },
+      { sub: 5, dialogue: "", quest: { id: "c2", type: "hunt", title: "수정 골렘 파괴", desc: "거미들을 조종하는 수정 골렘 110기를 부숴 버려라.", need: 110, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(1430 * G), expReward: 1210 } },
+      { sub: 7, dialogue: "spiderDone", quest: { id: "c3", type: "hunt", title: "지하 정화", desc: "거미 둥지를 완전히 태우자 — 거미 140마리 처치!", need: 140, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(900 * G), expReward: 840 } },
       { sub: 8, dialogue: "", quest: { id: "c4", type: "collect", title: "여왕의 두 번째 부탁", desc: "어둠 요정 여왕의 마지막 부탁 — 뿌리 사이의 잔광을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(70 * G), expReward: 70 } },
     ],
     repeat: { need: 20, gold: Math.round(115 * G), exp: 115, title: "[반복] 지하 정화 의뢰", desc: "어둠 요정 여왕의 의뢰 — 거미를 계속 사냥해라." },
@@ -307,10 +307,10 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "runegolem", count: 4 }, { key: "golem", count: 3 }, { key: "spider", count: 3 }, { key: "x2_stonegolem", count: 3 }, { key: "x3_ogre", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
     main: "runegolem",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "d0", type: "hunt", title: "룬 골렘 정지", desc: "폭주한 룬 골렘 13기를 정지시켜라.", need: 13, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(200 * G), expReward: 180 } },
+      { sub: 2, dialogue: "", quest: { id: "d0", type: "hunt", title: "룬 골렘 정지", desc: "폭주한 룬 골렘 130기를 정지시켜라.", need: 130, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(2000 * G), expReward: 1800 } },
       { sub: 4, dialogue: "", quest: { id: "d1", type: "collect", title: "룬 각인 판", desc: "광산 깊은 곳의 결정 조각 — 룬 각인판을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(120 * G), expReward: 110 } },
-      { sub: 6, dialogue: "runePurgeDone", quest: { id: "d2", type: "hunt", title: "광산 탈환", desc: "난쟁이 마을을 되돌리자 — 룬 골렘 25기 처치!", need: 25, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(260 * G), expReward: 230 } },
-      { sub: 8, dialogue: "", quest: { id: "d3", type: "hunt", title: "수정 골렘 정리", desc: "광산을 어지럽히는 수정 골렘 10기를 부수자.", need: 10, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(220 * G), expReward: 200 } },
+      { sub: 6, dialogue: "runePurgeDone", quest: { id: "d2", type: "hunt", title: "광산 탈환", desc: "난쟁이 마을을 되돌리자 — 룬 골렘 150기 처치!", need: 150, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(1560 * G), expReward: 1380 } },
+      { sub: 8, dialogue: "", quest: { id: "d3", type: "hunt", title: "수정 골렘 정리", desc: "광산을 어지럽히는 수정 골렘 120기를 부수자.", need: 120, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(2640 * G), expReward: 2400 } },
     ],
     repeat: { need: 20, gold: Math.round(150 * G), exp: 150, title: "[반복] 광산 경비 의뢰", desc: "난쟁이 광산 조합 의뢰 — 룬 골렘을 계속 처치해라." },
     lvGate: { enter: 42, mid: 46 },
@@ -323,10 +323,10 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "helhound", count: 4 }, { key: "wraith", count: 3 }, { key: "golem", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "x3_chort", count: 3 }, { key: "x3_maskedorc", count: 3 }],
     main: "helhound",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "h0", type: "hunt", title: "헬 하운드 사냥", desc: "절벽을 지키는 헬 하운드 15마리를 처치해라.", need: 15, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(260 * G), expReward: 240 } },
+      { sub: 2, dialogue: "", quest: { id: "h0", type: "hunt", title: "헬 하운드 사냥", desc: "절벽을 지키는 헬 하운드 150마리를 처치해라.", need: 150, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(2600 * G), expReward: 2400 } },
       { sub: 3, dialogue: "", quest: { id: "h1", type: "collect", title: "대지의 결정", desc: "절벽 아래 대지의 결정 — 결정의 흔적을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(150 * G), expReward: 140 } },
-      { sub: 5, dialogue: "houndPurgeDone", quest: { id: "h2", type: "hunt", title: "절벽 열기", desc: "헬 하운드 30마리를 처치해 저택의 문을 열어라!", need: 30, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(320 * G), expReward: 290 } },
-      { sub: 7, dialogue: "", quest: { id: "h3", type: "hunt", title: "심연 유령 소탕", desc: "힐다 할머니의 조사 일지를 지키는 심연 유령 15마리를 처치해라.", need: 15, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(280 * G), expReward: 260 } },
+      { sub: 5, dialogue: "houndPurgeDone", quest: { id: "h2", type: "hunt", title: "절벽 열기", desc: "헬 하운드 180마리를 처치해 저택의 문을 열어라!", need: 180, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(1920 * G), expReward: 1740 } },
+      { sub: 7, dialogue: "", quest: { id: "h3", type: "hunt", title: "심연 유령 소탕", desc: "힐다 할머니의 조사 일지를 지키는 심연 유령 160마리를 처치해라.", need: 160, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(2990 * G), expReward: 2770 } },
     ],
     repeat: { need: 20, gold: Math.round(175 * G), exp: 175, title: "[반복] 절벽 정찰 의뢰", desc: "헬의 기운이 강해지고 있다 — 하운드를 계속 처치해라." },
     lvGate: { enter: 50, mid: 54 },
@@ -339,9 +339,9 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "wraith", count: 4 }, { key: "minion", count: 4 }, { key: "helhound", count: 3 }, { key: "x2_reeffish", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x3_bigzombie", count: 3 }],
     main: "wraith",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "y0", type: "hunt", title: "뿌리의 유령 소탕", desc: "왕좌를 지키는 심연 유령 10마리를 처치해라.", need: 10, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(150 * G), expReward: 140 } },
+      { sub: 2, dialogue: "", quest: { id: "y0", type: "hunt", title: "뿌리의 유령 소탕", desc: "왕좌를 지키는 심연 유령 160마리를 처치해라.", need: 160, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(2400 * G), expReward: 2240 } },
       { sub: 4, dialogue: "", quest: { id: "y1", type: "collect", title: "빼앗긴 빛의 흔적", desc: "아부디토스가 삼키지 못한 결정의 흔적을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(120 * G), expReward: 110 } },
-      { sub: 6, dialogue: "wraithDone", quest: { id: "y2", type: "hunt", title: "왕좌 앞길 열기", desc: "심연 유령 25마리를 처치해 왕좌의 문을 열어라!", need: 25, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(240 * G), expReward: 220 } },
+      { sub: 6, dialogue: "wraithDone", quest: { id: "y2", type: "hunt", title: "왕좌 앞길 열기", desc: "심연 유령 200마리를 처치해 왕좌의 문을 열어라!", need: 200, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(1920 * G), expReward: 1760 } },
     ],
     repeat: { need: 24, gold: Math.round(165 * G), exp: 165, title: "[반복] 뿌리 정찰 의뢰", desc: "뿌리의 기운이 강해지고 있다 — 유령을 계속 처치해라." },
     lvGate: { enter: 58, mid: 62 },
@@ -482,7 +482,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   },
   skoll: {
     key: "skoll", name: "교만의 쌍랑 스콜&하티", /* vc142 보스 디자인 교체 — 유저 제공 쌍랑 아틀라스(얼음 늑대 스콜+화염 늑대 하티) 반영 (구 표기: 교만의 얼음 봉황) */
-    hp: 8600, atk: 39, speed: 100, exp: 720, gold: 420,
+    /* vc143 (#2 후반 보스 대폭 상향) — 8장 스콜 HP 8600→12000 · ATK 39→42 */
+    hp: 12000, atk: 42, speed: 100, exp: 720, gold: 420,
     tex: "boss_skoll", orbTint: 0xffd97a, introDialogue: "bossIntroSkoll",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 blink · 성향 0.9 */
     sig: "blink",
@@ -498,7 +499,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   },
   gram: {
     key: "gram", name: "혈안의 문지기 가름", /* v4.1.3 (#신화고증) — 구 표기 "대지의 괴물 그람": 그람(Gram)은 시구르드의 검이다. 헬의 대문을 지키는 존재는 사냥개 가름(Garmr) */
-    hp: 10600, atk: 42, speed: 86, exp: 860, gold: 480,
+    /* vc143 (#2 후반 보스 대폭 상향) — 9장 가름 HP 10600→20000 · ATK 42→48 */
+    hp: 20000, atk: 48, speed: 86, exp: 860, gold: 480,
     tex: "boss_gram", orbTint: 0x8affc0, introDialogue: "bossIntroGram",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 counter · 성향 1.0 */
     sig: "counter",
@@ -513,7 +515,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   },
   abudditos: {
     key: "abudditos", name: "종언의 마룡 아부디토스", /* v4.1.3 (#신화고증) — 구 표기 "니드그림"을 세계관 근원인 아부디토스로 통일 */
-    hp: 14500, atk: 46, speed: 100, exp: 1200, gold: 650,
+    /* vc143 (#2 후반 보스 대폭 상향) — 10장 아부디토스 HP 14500→34000 · ATK 46→54 */
+    hp: 34000, atk: 54, speed: 100, exp: 1200, gold: 650,
     tex: "boss_abudditos", orbTint: 0xff3a6a, introDialogue: "bossIntroAbudditos",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 ring · 성향 0.8 */
     sig: "ring",
@@ -532,7 +535,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
    *  이름·색조·패턴 구성을 다르게 해 별개의 적으로 기능한다. */
   vord: {
     key: "vord", name: "재림의 파수꾼 베오르드",
-    hp: 16800, atk: 50, speed: 92, exp: 1500, gold: 800,
+    /* vc143 (#2 후반 보스 대폭 상향) — 재림 r5 베오르드 HP 16800→42000 · ATK 50→58 */
+    hp: 42000, atk: 58, speed: 92, exp: 1500, gold: 800,
     tex: "boss2", orbTint: 0xffb05a, introDialogue: "bossIntroAbudditos",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 quake · 성향 1.0 */
     sig: "quake",
@@ -547,7 +551,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   },
   jorm: {
     key: "jorm", name: "세계수를 먹는 뱀 요르문간드",
-    hp: 21500, atk: 55, speed: 104, exp: 1900, gold: 980,
+    /* vc143 (#2 후반 보스 대폭 상향) — 재림 r10 요르문간드 HP 21500→60000 · ATK 55→64 */
+    hp: 60000, atk: 64, speed: 104, exp: 1900, gold: 980,
     /* v5.0.1 — 유저 제공 시트(박쥐날개 황금뿔 드래곤)로 boss_jorm 독립 (nidhog 공유 해제) */
     tex: "boss_jorm", orbTint: 0x9affd0, introDialogue: "bossIntroAbudditos",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 beam · 성향 0.9 */
@@ -564,7 +569,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   },
   nagr: {
     key: "nagr", name: "재림의 종언 나그라파르",
-    hp: 30000, atk: 62, speed: 108, exp: 2600, gold: 1400,
+    /* vc143 (#2 후반 보스 대폭 상향) — 재림 r15 나그라파르 HP 30000→95000 · ATK 62→72 */
+    hp: 95000, atk: 72, speed: 108, exp: 2600, gold: 1400,
     /* v1.4.31 (#4 보스 개편) — 발할라 천사기사 전용 아트 아틀라스 적용 (기존 아부디토스 재사용 해제) */
     tex: "boss_nagr", orbTint: 0xffd76a, introDialogue: "bossIntroAbudditos",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 spiral · 성향 0.8 */
@@ -614,14 +620,16 @@ export function chapterSpec(key: StageKey): ChapterSpec | null {
 }
 
 /** v1.4.0 (Task 1-6 — 유저 지시 #14) — 레벨 구간별 퀘스트 요구 마릿수 곡선
- *  1~20: 5~8 · 21~40: 10~15 · 41~60: 18~25 · 61~80: 30~40 · 81~100: 45~60 */
+ *  vc143 (#3 유저 지시 “요구 마릿수가 너무 적어 중반부터 100~200단위”) — 곡선 전면 재조정:
+ *  1~20: 5~8 (초반 체감 유지) · 21~40: 60~110 · 41~60: 110~170 · 61~80: 170~210 · 81+: 200~260
+ *  보상은 각 소비처(자동 토벌·반복 의뢰)에서 요구량 증가분만큼 곱연산 상향된다 */
 export function questNeedByLv(lv: number): number {
   const l = Math.min(100, Math.max(1, Math.round(lv))); // 순수 Math — stages.ts는 Phaser 미임포트(모듈 초기화 순서 보호)
   if (l <= 20) return Math.round(5 + ((l - 1) / 19) * 3);
-  if (l <= 40) return Math.round(10 + ((l - 21) / 19) * 5);
-  if (l <= 60) return Math.round(18 + ((l - 41) / 19) * 7);
-  if (l <= 80) return Math.round(30 + ((l - 61) / 19) * 10);
-  return Math.round(45 + ((l - 81) / 19) * 15);
+  if (l <= 40) return Math.round(60 + ((l - 21) / 19) * 50);
+  if (l <= 60) return Math.round(110 + ((l - 41) / 19) * 60);
+  if (l <= 80) return Math.round(170 + ((l - 61) / 19) * 40);
+  return Math.round(200 + ((l - 81) / 19) * 60);
 }
 
 /** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스)
@@ -737,8 +745,8 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
   const main = labels[zoneMon];
   if (quests.length < 2) {
     // 자동 토벌 퀘스트 — v1.4.0 (Task 1-6 — 유저 지시 #14): 스킬이 강해질수록 요구 마릿수도 성장
-    //   1~20렙 5~8 · 21~40 10~15 · 41~60 18~25 · 61~80 30~40 · 81+ 45~60 (챕터 입장 게이트 레벨 기준)
-    //   보상도 동일 곡선 배율로 상향 — 시간당 보상 급락 방지
+    //   vc143 (#3) — 곡선 재조정(중반부터 100~200단위) + 구역 스타일 로테이션 다양화:
+    //   sub%3==2 구역은 “단일종 집중 사냥”(최다 종만 카운트, 요구량 ×0.6) — 전종 합산과 번갈아 나온다
     const lvRef = spec.lvGate.enter + (sub - 1) * 2;
     const n = questNeedByLv(lvRef);
     /* v3.0.28 (#퀘스트이름) — 토벌 대상을 "이 구역에 실제 스폰되는 몬스터 전체"로 확장(targetKeys).
@@ -752,20 +760,26 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       mixKeys.push(beatHereQ.quest.targetKey);
     }
     if (!mixKeys.includes(spec.main)) mixKeys.push(spec.main);
+    /* vc143 (#3 퀘스트 다양화) — 구역 스타일 로테이션: 3번째 구역마다 단일종 집중 사냥
+     *  (최다 종만 카운트 — 사냥 대상을 골라 잡는 다른 플레이 스타일 제공) */
+    const focusMode = sub % 3 === 2 && mixKeys.length > 1;
+    const nf = focusMode ? Math.max(6, Math.round(n * 0.6)) : n;
     quests.push({
       id: `${prefix}-auto-hunt`,
       type: "hunt",
-      title: `${main} ${verbs[sub % verbs.length]}`,
+      title: focusMode ? `${main} 집중 사냥` : `${main} ${verbs[sub % verbs.length]}`,
       /* v4.1.3 (#퀘스트카운트) — "요구 몬스터 ≠ 카운트 몬스터" 혼란 해소 (지시 #4):
        *  이 퀘스트는 구역 스폰 몬스터 전체(targetKeys)를 합산 카운트한다. 그 사실을
        *  설명에 명시해 "고블린 소탕인데 개구리를 잡았더니 카운트된다?"를 사전에 제거. */
-      desc: `${spec.title} 구역의 몬스터 ${n}마리를 처치해라. — 무엇을 잡아도 카운트된다 (${mixKeys.map((k) => labels[k]).join(" · ")})`,
-      need: n,
+      desc: focusMode
+        ? `${spec.title} 구역의 ${main} ${nf}마리를 사냥해라. — ${main}만 카운트된다`
+        : `${spec.title} 구역의 몬스터 ${nf}마리를 처치해라. — 무엇을 잡아도 카운트된다 (${mixKeys.map((k) => labels[k]).join(" · ")})`,
+      need: nf,
       targetKey: zoneMon, // v3.0.2 — 하위 호환(어시스트·히스테리시스 참조): 구역 최다 종
-      targetKeys: mixKeys, // v3.0.28 — 카운트·판정은 구역 스폰 몬스터 전체 합산
-      targetLabel: `${main} 등 구역 몬스터`,
-      reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G * Math.max(1, n / 8)), // 마릿수 증가분만큼 골드 보상 동반 상향
-      expReward: Math.round((60 + sub * 14) * CH_EXP[spec.num - 2] * 0.9 * Math.max(1, n / 8)),
+      targetKeys: focusMode ? [zoneMon] : mixKeys, // v3.0.28 — 카운트·판정은 구역 스폰 몬스터 전체 합산
+      targetLabel: focusMode ? main : `${main} 등 구역 몬스터`,
+      reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G * Math.max(1, nf / 8)), // 마릿수 증가분만큼 골드 보상 동반 상향
+      expReward: Math.round((60 + sub * 14) * CH_EXP[spec.num - 2] * 0.9 * Math.max(1, nf / 8)),
     });
   }
   if (sub === 9) {
@@ -855,6 +869,13 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
       }
     }
   }
+  /* vc143 (#3) — 반복 의뢰: 중반(5장·lv20+)부터 요구량을 곡선값 그대로(60~210)로 인상하고
+   *  보상도 요구량 증가분만큼 상향(×0.6 댐핑 — 시간당 보상 급등 방지). 초반 1~4장은 기존 공식 유지 */
+  const repNeed =
+    spec.lvGate.enter >= 20
+      ? questNeedByLv(spec.lvGate.enter)
+      : Math.min(Math.round(spec.repeat.need * 1.5), Math.round((spec.repeat.need + sub) * Math.max(1, questNeedByLv(spec.lvGate.enter) / 8)));
+  const repMul = Math.max(1, (repNeed / Math.max(1, spec.repeat.need)) * 0.6);
   const def: StageDef = {
     key,
     name: `제${spec.num}장 ${spec.title}`,
@@ -871,10 +892,10 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
     bossKey: boss ? spec.boss : undefined,
     repeat: {
       targetKey: spec.main,
-      /* v1.4.0 (Task 1-6) — 반복 의뢰 요구량도 레벨 곡선 연동(기존 need+sub 대비 최대 ×1.5 상한) */
-      need: Math.min(Math.round(spec.repeat.need * 1.5), Math.round((spec.repeat.need + sub) * Math.max(1, questNeedByLv(spec.lvGate.enter) / 8))),
-      gold: Math.round(spec.repeat.gold * stageScale(key).gold * 0.9),
-      exp: Math.round(spec.repeat.exp * stageScale(key).exp * 0.9),
+      /* v1.4.0 (Task 1-6) — 반복 의뢰 요구량도 레벨 곡선 연동 → vc143 중반 100~200단위 인상 */
+      need: repNeed,
+      gold: Math.round(spec.repeat.gold * stageScale(key).gold * 0.9 * repMul),
+      exp: Math.round(spec.repeat.exp * stageScale(key).exp * 0.9 * repMul),
       title: spec.repeat.title,
       desc: spec.repeat.desc,
     },

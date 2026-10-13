@@ -338,6 +338,17 @@ class MqttBusImpl implements MqttBus {
       });
       return;
     }
+    /* vc143 (#4 공유 보스 체력) — bdmg(딜 릴레이)/bhp(호스트 권위 HP 브로드캐스트) */
+    if (k === "bdmg" || k === "bhp") {
+      this.fire("boss", {
+        id: pid,
+        n: k === "bdmg" ? num(m.n, 0, 999999999) : undefined,
+        hp: k === "bhp" ? num(m.hp, 0, 999999999) : undefined,
+        max: k === "bhp" ? num(m.max, 1, 999999999) : undefined,
+        dead: k === "bhp" ? !!m.dead : undefined,
+      });
+      return;
+    }
   }
 
   /* ---------- 발신 (net.ts emit 진입점) ---------- */
@@ -392,6 +403,18 @@ class MqttBusImpl implements MqttBus {
         this.lastActKind = kind;
         this.lastSentAt = now;
         this.publish({ k: "act", pid: this.id, kind, x: num(a.x, -9999, 99999), y: num(a.y, -9999, 99999), flip: !!a.flip, cls: this.me.cls, t: now }, ROOT + "stage/" + this.stage);
+        break;
+      }
+      /* vc143 (#4 공유 보스 체력) — n 있으면 딜 릴레이(bdmg), 없으면 호스트 HP 브로드캐스트(bhp).
+       *  act와 별개 스로틀 — 딜 릴레이는 WorldScene에서 200ms 합산 전송, bhp는 250ms 주기 */
+      case "boss": {
+        const m = (args[0] ?? {}) as Record<string, unknown>;
+        const now = Date.now();
+        if (m.n != null) {
+          this.publish({ k: "bdmg", pid: this.id, n: num(m.n, 0, 999999999), t: now }, ROOT + "stage/" + this.stage);
+        } else {
+          this.publish({ k: "bhp", pid: this.id, hp: num(m.hp, 0, 999999999), max: num(m.max, 1, 999999999), dead: m.dead ? 1 : 0, t: now }, ROOT + "stage/" + this.stage);
+        }
         break;
       }
       default:

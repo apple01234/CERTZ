@@ -1078,6 +1078,17 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* v1.4.16 — 원소 반응 쿨다운 (보스도 같은 규칙 적용 — CC는 면역) */
   private lastReactAt = 0;
 
+  /* ============ vc143 (#4 공유 보스 체력) ============
+   *  공동 토벌전·파티 보스전에서 파티원이 같은 보스 HP를 공유한다.
+   *  · 호스트: 로컬 딜 + 원격 bdmg 합산 → 250ms bhp 브로드캐스트 (사망 권한)
+   *  · 비호스트: 딜 연출만, HP는 호스트 bhp로 스냅 — 사망은 호스트 dead 통지로만
+   *  WorldScene.setupBossShare()이 스폰 직후 세팅한다 */
+  sharedMode = false;
+  sharedIsHost = false;
+  sharedHp = 0;
+  /** 피격 확정분 통보 훅 — 호스트는 합산, 비호스트는 릴레이 (WorldScene 주입) */
+  onSharedDamage?: (dealt: number) => void;
+
   /* v1.4.30 (#7 이터널 실성능) — "시간의 잠금": 보스가 받는 유일한 CC.
    *  일반 몹의 applyStun과 달리 보스는 최대 1.4초의 경직(staggered, 피해 ×1.6)으로
    *  완화되어 들어간다 — 이터널 영원의 고리·영겁극의 시간 정지가 보스전에서도 의미를 갖는다.
@@ -1135,7 +1146,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     }
     if (this.mode === "staggered") dealt = Math.max(1, Math.round(dealt * 1.6)); // 취약 상태
 
-    this.hp -= dealt;
+    /* vc143 (#4 공유 체력) — 비호스트는 HP 권한이 없다: 연출만 수행하고 HP 감소·사망 판정은
+     *  생략한다. 권위 HP는 호스트의 bhp 브로드캐스트로 동기된다 */
+    const hpAuthority = !(this.sharedMode && !this.sharedIsHost);
+    if (this.sharedMode) this.onSharedDamage?.(dealt);
+
+    if (hpAuthority) this.hp -= dealt;
     this.knockVec.set(dir.x * knock * 0.12, dir.y * knock * 0.12); // 보스는 넉백 거의 안 됨
     this.squash(0.035, -0.035); // v1.4.9 — 피격 미세 진동
     // 타격감: 화이트 플래시 — 카운터/기절 상태의 틴트는 유지
@@ -1152,9 +1168,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.spawnHitSpark(this.x, this.y - 30);
     /* v4.8.0 — 보스에게 먹힌 크리티컬은 더 큰 충격파로 (격판 강조, WebGL 전용) */
     if (crit) { this.scene.spawnShockwave(this.x, this.y - 24, 0xffd76a, 1.3, 400); this.scene.spawnCritSplat(this.x, this.y - 20, 0xffd76a); }
-    EventBus.emit("boss:update", { hp: Math.max(0, this.hp), maxHp: this.maxHp });
+    EventBus.emit("boss:update", { hp: Math.max(0, this.sharedMode && !this.sharedIsHost ? Math.round(this.sharedHp) : this.hp), maxHp: this.maxHp });
 
-    if (this.hp <= 0) {
+    if (hpAuthority && this.hp <= 0) {
       this.hp = 0;
       this.alive = false;
       this.mode = "dead";
@@ -1220,6 +1236,14 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.scene.onBossDead();
       this.scene.time.delayedCall(900, () => this.destroy());
     }
+  }
+
+  /** vc143 (#4 공유 체력) — 공유 HP 기준 사망 강제.
+   *  호스트: 합산 HP 0 도달 시 / 비호스트: 호스트 dead 통지 수신 시 호출.
+   *  남은 HP 전량을 takeDamage로 통과시켜 기존 사망 연출·보상 경로(onBossDead)를 그대로 재사용 */
+  forceSharedDeath() {
+    if (!this.alive) return;
+    this.takeDamage(Math.max(1, this.hp), new Phaser.Math.Vector2(0, 1), 0, false);
   }
 
   destroyPool() {

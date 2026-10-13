@@ -3913,3 +3913,26 @@ Stage Summary:
 - vc142 = 보스 6종 디자인 전면 교체(수정골렘·헬·쌍랑 늑대×2·얼음수·녹룡) — 웹 라이브 완료·APK 릴리스 완비
 - 유저 테스트 포인트: ①2챕터 수호자전(수정골렘) ⑦챕터 심연의 군주전(헬) ⑧챕터 스콜&하티전(쌍랑—본체 얼음늑대+트윈 화염늑대, 합동 스킬 2종) ⑥챕터 펜리르전(얼음수) 재림10 요르문간드(녹룡) + 도감 초상화
 - 잔무: APK 덮어설치 테스트 대기 · 다음 백로그(토벌전 보스 HP 대폭 상향 3회 요청·교실 퀘스트 개선—기존 절대 삭제 금지·파티 게임 추가)
+
+---
+Task ID: vc142-ios-build
+Agent: Super Z (main)
+Task: 유저 지시 "ios 빌드해줘" → Capacitor iOS 플랫폼 신설 + GitHub Actions macOS 러너 unsigned IPA 파이프라인 구축·릴리스 첨부
+
+Work Log:
+- [환경 제약 확정] Linux(Xcode 불가) → 로컬 컴파일 불가 → GitHub Actions macOS 러너(macos-15) 경유로 설계. 저장소 public 확인 = 무료 macOS 러너 사용 가능
+- [로컬 정렬] 플랫폼 동기화 되감기 재발(HEAD 69a259d) → mixed reset origin/main(7ac75ff) 복구 — vc142 커밋분 전부 origin 존재 확인
+- [iOS 플랫폼] npm i @capacitor/ios@^8.5.0 + npx cap add ios(Linux에서 템플릿 생성 OK — Capacitor 8은 CocoaPods 없는 SPM 방식, node_modules 상대경로 Package.swift 자동 생성) — 3개 플러그인(admob·firebase-auth·native-purchases) 전부 SPM 지원 확인
+- [설정] bundle com.sertz.myapp 자동 적용·iOS 15+ / Info.plist 전면 재작성: 가로 고정(Android sensorLandscape 미러링)·arm64·UIRequiresFullScreen·GADApplicationIdentifier(안드로이드 ID ca-app-pub-5675573589406258~2954033564 임시 미러링 — GAD 누락 시 즉시크래시 전례 v4.1.1 동일 방지)·SKAdNetworkItems 12종 / GoogleService-Info.plist 신설(google-services.json 실값 미러링 — 프로젝트 sertz-681eb·API키·sender. iOS 전용 앱 등록 후 교체 권장 주석) + pbxproj 리소스 등록 스크립트(scripts/vc142_ios_pbxproj.py — PBXBuildFile/FileReference/Group/Resources 4부분+버전변수 1.0.5/142, 괄호균형 검증)
+- [아이콘] electron/icon.png는 템플릿 Z로고(무관) → Android 런처 192px를 1024px LANCZOS+언샵 확대·다크배경 합성(알파 제거) → AppIcon-512@2x.png 교체(scripts/vc142_ios_icon.py)
+- [스킴] 템플릿에 공유스킴 없음 → App.xcscheme 신설(BlueprintIdentifier 504EC3031FED79650016851F — CLI xcodebuild 필수)
+- [워크플로] .github/workflows/ios-build.yml: checkout→Node 22→npm ci→라우트 7개+middleware 격리→APK_EXPORT=1 next build(index.html 게이트)→restore→cap sync ios→xcodebuild unsigned(CODE_SIGNING_ALLOWED=NO·generic/platform=iOS)→Payload zip→artifact 30일+gh release upload v1.0.5-beta --clobber. 트리거: dispatch+push(ios/**·본파일)
+- [1차 실패→수정] "The Capacitor CLI requires NodeJS >=22.0.0" — 워크플로 Node 20 → 22 수정(36fe4e0) 후 재트리거
+- [2차 성공] run 38334667781 전 스텝 PASS — export→sync→xcodebuild(SPM으로 Firebase/AdMob/StoreKit 해석·컴파일)→IPA 패키징→릴리스 첨부 완료
+- [무결성 검증] SERTZ-vc142-ios-unsigned.ipa 140.9MB 다운로드 → zip 4,612엔트리·Payload/App.app·bundle com.sertz.myapp·1.0.5(142)·GAD ID·가로 2방향·웹에셋 4,321파일(atl_boss vc142 아틀라스 포함)·GoogleService plist·아이콘 변형(Xcode 자동 생성) 전부 확인
+- [.secrets 소실 4번째] vercel_token 재소실 → Vercel 배포 모니터링/정리 체인 미실행. 푸시(09ddc03·36fe4e0)로 Vercel 빌드는 유발됐을 것 — 토큰 재제공 시 정리 체인 실행 필요
+
+Stage Summary:
+- SERTZ iOS 첫 빌드 성공 — SERTZ-vc142-ios-unsigned.ipa(140.9MB)가 GitHub 릴리스 v1.0.5-beta에 자동 첨부됨
+- 이후 웹 수정 후 iOS 재빌드는 무자동화: ios/가 포함된 커밋 푸시 시 Actions가 자동 재빌드·릴리스 갱신(--clobber), 수동은 Actions 탭에서 workflow_dispatch
+- iOS 잔무: ①unsigned라 사이드로드 도구(AltStore/Sideloadly/TrollStore) 또는 본인 인증서 codesign 필요 ②iOS 전용 AdMob 앱 ID(AdMob 콘솔) ③Firebase Console iOS 앱 등록 → 정식 GoogleService-Info.plist 교체 시 네이티브 구글 로그인 활성화 ④Vercel 토큰 재제공 시 정리 체인

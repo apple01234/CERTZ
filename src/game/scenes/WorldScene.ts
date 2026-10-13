@@ -442,6 +442,21 @@ export class WorldScene extends Phaser.Scene {
   private autoHunt = false;
   /** 자동사냥 이동 벡터 — update에서 계산해 move로 주입 */
   private autoHuntMove = new Phaser.Math.Vector2();
+  /** vc143 (#9) — 자동전투 포탈 차단 안내 배너 마지막 출력 시각 (6초 스로틀) */
+  private autoPortalHintAt = -9999;
+  /* ============ vc143 (#4 공유 보스 체력) ============
+   *  공동 토벌전·파티 보스전에서 파티원이 같은 보스 HP 바를 본다.
+   *  호스트(동일 구역 세션 id 최소값)가 권위 HP를 보유·브로드캐스트하고,
+   *  비호스트는 딜을 릴레이만 한다(사망 권한도 호스트). */
+  private bossShareActive = false;
+  private bossShareHost = false;
+  private bossShareHp = 0;
+  private bossShareMax = 0;
+  private bossShareDead = false;
+  private bossShareBcastAt = 0;
+  private bossShareDmgAcc = 0;
+  private bossShareDmgSentAt = 0;
+  private bossShareElectAt = 0;
   /* ----- v3.0.14 — 자동사냥 장애물 회피/끼임 탈출 ----- */
   /** 이동 명령 중 제자리(막힘) 지속 시간 (ms) */
   private autoStuckMs = 0;
@@ -1045,9 +1060,10 @@ export class WorldScene extends Phaser.Scene {
        *  스킬 이펙트/파티클/참격이 카메라 블룸으로 발광 — “보스전에만 적용” 버그 해소 */
       /*  v1.4.31 (#5) — 니플헤임 평시 앰비언트 블룸도 스킵 (눈보라+암전+광원 다중 ADD 레이어
        *  위 블룸 프레임버퍼 패스가 프리즈 유발 — 무스펠 프리즈와 동일 계열). */
-      const ambSkipCh = parseStage(stageKey).ch;
-      /* v1.4.32 (#게임멈춤) — 저사양 환경(모바일/APK)은 챕터 무관 앰비언트 블룸 생략 */
-      if (this.bossFilters.length === 0 && ambSkipCh !== "niflheim" && ambSkipCh !== "muspelheim" && !isLowPerfEnv())
+      /* vc143 (#눈맵튕김) — 허용 판정을 ambientBloomAllowed() 단일 소스로 통일
+       *  (재림 눈/용암 구역 r2/r8·r4 등은 parseStage가 village를 반환해 챕터 게이트를
+       *   우회하던 구멍 — groundTex 기반으로 잡는다) */
+      if (this.bossFilters.length === 0 && this.ambientBloomAllowed())
         this.ambientFilters = addAmbientBloom(this.cameras.main);
     }
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
@@ -2485,11 +2501,17 @@ export class WorldScene extends Phaser.Scene {
     (this.portal.body as Phaser.Physics.Arcade.Body).setSize(34, 44).setOffset(15, 10);
     this.physics.add.overlap(this.player, this.portal, () => {
       if (!this.portalActive || !this.portal?.active) return;
-      /* v4.3.0 — 자동사냥 중에도 전진 차원문 탑승 허용 (유저 지시 "자동전투 시에도 포탈 탈수있게").
-       *  검은 화면 재발 방지 안전 가드: 주변 260px에 생존 적이 있으면(전투 중 관성 겹침) 무시,
-       *  비어 있을 때만 진입 — 전환은 startTransition 단일 통로(1회 게이트+4초 워치독)로 처리.
-       *  복귀 차원문은 자동 무한 루프 방지를 위해 기존 게이트 유지. */
-      if (this.autoHunt && this.liveEnemiesNear(260)) return;
+      /* vc143 (#9 자동전투 포탈 차단) — 자동전투 중엔 전진 차원문 진입 금지.
+       *  v4.3.0에 “자동전투 시에도 포탈 탈수있게” 허용했으나, 자동전투가 의도와 무관하게
+       *  차원문에 탑승해 구역을 이탈하는 민원으로 정책 반전 (최신 지시가 우선).
+       *  자동전투 중 이동은 ⑧에서 허용한 키보드 수동 이동으로 충분 — 안내는 6초 스로틀 */
+      if (this.autoHunt) {
+        if (this.time.now - this.autoPortalHintAt > 6000) {
+          this.autoPortalHintAt = this.time.now;
+          this.showBanner("자동전투 중에는 포탈을 탈 수 없다 — 이동하려면 자동전투를 먼저 끄자");
+        }
+        return;
+      }
       this.enterPortal();
     });
   }
@@ -2620,7 +2642,8 @@ export class WorldScene extends Phaser.Scene {
 
   /** v1.4.12 (#13) — 복귀 차원문 자동 게이트 폐지로 안내 배너 불필요 (메서드 제거) */
 
-  /** v4.3.0 — 반경 r 내 생존 적 존재 여부 (자동 포탈 진입 안전 가드) */
+  /** vc143 (#9 자동전투 포탈 차단) — 반경 r 내 생존 적 존재 여부 (안전 가드 잔존분).
+   *  v4.3.0 자동 포탈 진입 경로 제거로 직접 호출처는 없지만 자가치유 진단 훅으로 유지 */
   private liveEnemiesNear(r: number): boolean {
     if (!this.player) return true;
     for (const e of this.enemies) {
@@ -2713,10 +2736,15 @@ export class WorldScene extends Phaser.Scene {
     this.returnPortal.play("portal-spin");
     this.physics.add.overlap(this.player, this.returnPortal, () => {
       if (!this.returnActive || !this.returnPortal?.active) return;
-      /* v1.4.12 (#13 유저 지시 "자동전투 중에도 포탈 전부 탈수있게") — 복귀 차원문
-       *  자동 게이트 폐지. 기존엔 자동 무한 루프(자동→복귀→자동…) 방지를 위해 막았지만
-       *  유저가 의도적으로 돌아가려는 경우가 더 많다 — 이제 자동사냥 중에도 자유 이용.
-       *  (전진 차원문은 v4.3.0부터 이미 허용 — 이제 전·복귀 모두 자동 탑승 가능) */
+      /* v1.4.12 (#13) — 복귀 차원문 자동 게이트 폐지 → vc143 (#9) 정책 재반전:
+       *  자동전투 중엔 전진/복귀 모두 차단 (의도치 않은 구역 이탈 방지 — 전진 포탈과 동일 규약) */
+      if (this.autoHunt) {
+        if (this.time.now - this.autoPortalHintAt > 6000) {
+          this.autoPortalHintAt = this.time.now;
+          this.showBanner("자동전투 중에는 포탈을 탈 수 없다 — 이동하려면 자동전투를 먼저 끄자");
+        }
+        return;
+      }
       this.enterPrevStage();
     });
     // 청록 비컨 — 전진 포탈(보라)과 시각 구분
@@ -3387,7 +3415,8 @@ export class WorldScene extends Phaser.Scene {
           });
         }
         if (this.boss?.active && this.bossFilters.length === 0) this.applyBossPostFX(this.bossChaos);
-        else if (this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL) {
+        else if (this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL && this.ambientBloomAllowed()) {
+          /* vc143 (#눈맵튕김) — 적응형 복원 경로도 허용 판정 통과 필수 (눈맵 재부착 금지) */
           this.ambientFilters = addAmbientBloom(this.cameras.main);
         }
         try { this.cosmeticEmitter?.start(); } catch { /* 무시 */ }
@@ -3480,14 +3509,19 @@ export class WorldScene extends Phaser.Scene {
       this.fxLowStreak = 0;
       if (fps > 56) {
         this.fxHighStreak++;
-        /* v1.0.8 — 복원 대기 6회(15s) → 3회(7.5s): 셰이더 복귀 단축 */
-        if (this.fxHighStreak >= 3 && this.fxLevel === 0) {
+        /* v1.0.8 — 복원 대기 6회(15s) → 3회(7.5s): 셰이더 복귀 단축
+         *  vc143 (#최적화) — 고부하 구역(눈/용암·저사양)은 복원 판정을 6회(15s)로 강화:
+         *  fps 경계에서 축소↔복원이 수 초 간격으로 플래핑하며 필터 재구성 GC/부하를
+         *  반복하는 것을 막는다 (눈맵 프리즈 연료 제거) */
+        const needStreak = this.ambientBloomAllowed() ? 3 : 6;
+        if (this.fxHighStreak >= needStreak && this.fxLevel === 0) {
           this.fxLevel = 1;
           this.fxHighStreak = 0;
           console.info("[SERTZ] 적응형 품질 — FX 복원");
           /* v4.9.0 — 복원: 보스전이면 블룸 재적용, 평시면 앰비언트 블룸 복원 (v1.0.10) */
           if (this.boss?.active && this.bossFilters.length === 0) this.applyBossPostFX(this.bossChaos);
-          else if (this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL) {
+          else if (this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL && this.ambientBloomAllowed()) {
+            /* vc143 (#눈맵튕김) — 품질 복원 경로 동일 게이트 (블룸 플래핑 루프 차단) */
             this.ambientFilters = addAmbientBloom(this.cameras.main);
           }
           /* v1.0.2 (#툰셰이더) — 복원 시 플레이어 툰 림라이트 재부착 */
@@ -5144,6 +5178,8 @@ export class WorldScene extends Phaser.Scene {
         this.spawnBossRunic(bx, by, false);
         this.applyBossPostFX(false);
         this.physics.add.collider(this.boss, this.solidGroup);
+        this.setupBossShare(); // vc143 (#4) — 파티 공유 체력 진입
+        this.spawnBossExitNpc(bx, by); // vc143 (#10) — 퇴장 관리인
         EventBus.emit("boss:show", { name: def.name, hp: this.boss.hp, maxHp: this.boss.maxHp });
         audio.playStageBGM(this.stageDef.key, true);
         this.bossIntroCinematic(bx, by, def.introDialogue);
@@ -5153,6 +5189,110 @@ export class WorldScene extends Phaser.Scene {
         this.physics.world.resume();
       }
     });
+  }
+
+  /* ============ vc143 (#4 공유 보스 체력) ============
+   *  공동 토벌전(praid)·파티 보스전(스토리/재림/GM)에서 파티원이 같은 보스 HP를 공유한다.
+   *  ① 호스트 선출 — 동일 구역에 보이는 세션(자신+원격) id 최소값. 전원이 같은 규칙을
+   *     계산하므로 합의(리더 선거)가 깨지지 않는다.
+   *  ② 호스트 — 로컬 딜 + 원격 bdmg 합산 → 250ms bhp 브로드캐스트, 0 도달 시 사망 판정권
+   *  ③ 비호스트 — 딜량을 200ms 합산 릴레이, HP바는 호스트 값으로 스냅, 사망은 dead 통지로만 */
+
+  /** 보스 스폰 직후 공유 모드 진입 시도 (스토리/재림/공동토벌전/GM 스폰 4곳에서 호출) */
+  private setupBossShare() {
+    if (!this.boss) return;
+    this.bossShareDead = false;
+    this.bossShareDmgAcc = 0;
+    this.bossShareHp = this.boss.hp;
+    this.bossShareMax = this.boss.maxHp;
+    this.boss.onSharedDamage = (d) => this.onBossSharedDamage(d);
+    this.recomputeBossShareHost();
+  }
+
+  /** 호스트 재선출 — 1.5s 주기 (파티원 진입/이탈 수렴). 단독 플레이면 공유 해제 */
+  private recomputeBossShareHost() {
+    const b = this.boss;
+    const partyN = net.netLastParty()?.members.length ?? 1;
+    if (partyN < 2 || !b || !b.alive) {
+      this.bossShareActive = false;
+      if (b) b.sharedMode = false;
+      return;
+    }
+    const myId = net.netSelfId() ?? "";
+    let minId = myId;
+    for (const k of this.remotes.keys()) {
+      if (k < minId) minId = k;
+    }
+    const wasHost = this.bossShareHost;
+    this.bossShareActive = true;
+    b.sharedMode = true;
+    this.bossShareHost = myId !== "" && myId <= minId;
+    b.sharedIsHost = this.bossShareHost;
+    if (this.bossShareHost && !wasHost) {
+      /* 새 호스트 승계 — 내 로컬 HP를 권위값으로 승격 (이탈한 구호스트 값 유실 흡수) */
+      this.bossShareHp = b.hp;
+    }
+    if (!this.bossShareHost) {
+      /* 승계 전 비호스트 구간엔 일단 현재 공유값 유지 — 다음 bhp 수신에서 스냅된다 */
+      b.sharedHp = this.bossShareHp;
+    }
+  }
+
+  /** Boss.takeDamage 훅 — 확정 피해를 공유 상태에 반영 */
+  private onBossSharedDamage(dealt: number) {
+    if (!this.boss || !this.bossShareActive) return;
+    if (this.bossShareHost) {
+      this.bossShareHp = Math.max(0, this.bossShareHp - dealt);
+      this.boss.sharedHp = this.bossShareHp;
+    } else {
+      this.bossShareDmgAcc += dealt; // tickBossShare에서 200ms 합산 릴레이
+    }
+  }
+
+  /** 원격 보스 메시지 수신 (net.netOnBoss) */
+  private onRemoteBossMsg(m: net.NetBossMsg) {
+    if (!this.boss || !this.bossShareActive) return;
+    if (m.n != null) {
+      if (this.bossShareHost) {
+        this.bossShareHp = Math.max(0, this.bossShareHp - m.n);
+        this.boss.sharedHp = this.bossShareHp;
+      }
+      return;
+    }
+    if (m.hp != null && !this.bossShareHost) {
+      this.bossShareHp = m.hp;
+      this.boss.sharedHp = m.hp;
+      this.boss.hp = Math.max(1, m.hp); // 패턴 임계값(격노 등)도 권위값 기준으로
+      if (m.dead && !this.bossShareDead) {
+        this.bossShareDead = true;
+        if (this.boss.alive) this.boss.forceSharedDeath(); // 기존 사망·보상 경로 재사용
+      }
+    }
+  }
+
+  /** update 훅 — 250ms 브로드캐스트 / 200ms 딜 릴레이 / 1.5s 호스트 재선출 */
+  private tickBossShare(time: number) {
+    if (!this.boss || !this.bossShareActive || !this.boss.alive) return;
+    if (time - this.bossShareElectAt > 1500) {
+      this.bossShareElectAt = time;
+      this.recomputeBossShareHost();
+    }
+    if (!this.bossShareActive) return;
+    if (this.bossShareHost) {
+      if (time - this.bossShareBcastAt >= 250) {
+        this.bossShareBcastAt = time;
+        net.netBossMsg({ hp: Math.round(this.bossShareHp), max: this.bossShareMax, dead: this.bossShareDead });
+      }
+      if (this.bossShareHp <= 0 && !this.bossShareDead) {
+        this.bossShareDead = true;
+        net.netBossMsg({ hp: 0, max: this.bossShareMax, dead: true });
+        this.boss.forceSharedDeath();
+      }
+    } else if (this.bossShareDmgAcc > 0 && time - this.bossShareDmgSentAt >= 200) {
+      net.netBossMsg({ n: Math.round(this.bossShareDmgAcc) });
+      this.bossShareDmgAcc = 0;
+      this.bossShareDmgSentAt = time;
+    }
   }
 
   /** 공동 토벌전 입장 (파티 위젯 → rpg:partyRaid)
@@ -6147,7 +6287,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** v3.0.22 (#43) — 동적 단발 대사 (DIALOGUES 테이블 밖 — 결정 수확 랜덤 멘트) */
-  private showDialogueRaw(d: { speaker: string; lines: string[] }) {
+  private showDialogueRaw(d: { speaker: string; lines: string[]; choices?: { label: string; id: string }[] }) {
     if (!this.player) return;
     this.activeNpcId = null;
     this.dialoguing = true;
@@ -6545,6 +6685,8 @@ export class WorldScene extends Phaser.Scene {
     this.spawnBossRunic(bx, by, false); /* v4.1.7 — 유료 팩 룬 마법진 */
     this.applyBossPostFX(false); /* v4.1.5 — 보스전 블룸 */
     this.physics.add.collider(this.boss, this.solidGroup);
+    this.setupBossShare(); // vc143 (#4) — 파티 보스전 체력 공유
+    this.spawnBossExitNpc(bx, by); // vc143 (#10) — 퇴장 관리인
     EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
     // 파티 보스 토벌 공지 (v2.0 — 지시 #5)
     net.netAnnounceBoss(def.name, STAGE_SHORT[this.stageDef.key] ?? this.stageDef.key);
@@ -6605,6 +6747,8 @@ export class WorldScene extends Phaser.Scene {
     this.spawnBossRunic(bx, by, lv === "chaos"); /* v4.1.7 — 룬 마법진 (카오스는 붉은룬) */
     this.applyBossPostFX(lv === "chaos"); /* v4.1.5 — 카오스: 블룸+비네트+잉걸불 오라 */
     this.physics.add.collider(this.boss, this.solidGroup);
+    this.setupBossShare(); // vc143 (#4) — 재림판도 파티 체력 공유
+    this.spawnBossExitNpc(bx, by); // vc143 (#10) — 퇴장 관리인
     EventBus.emit("boss:show", { name: `[${dif.label}] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
     // 재도전 전투곡 — 일반 보스전과 동일 오버라이드
     audio.playStageBGM(this.stageDef.key, true);
@@ -6642,6 +6786,8 @@ export class WorldScene extends Phaser.Scene {
     this.spawnBossRunic(bx, by, false);
     this.applyBossPostFX(false);
     this.physics.add.collider(this.boss, this.solidGroup);
+    this.setupBossShare(); // vc143 (#4) — GM 체험 보스도 파티 체력 공유
+    this.spawnBossExitNpc(bx, by); // vc143 (#10) — 퇴장 관리인
     EventBus.emit("boss:show", { name: `[GM] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
     audio.playStageBGM(this.stageDef.key, true);
     this.bossIntroCinematic(bx, by, def.introDialogue);
@@ -6802,6 +6948,20 @@ export class WorldScene extends Phaser.Scene {
 
   /* v4.9.0 — 적응형 품질 ↔ 보스 블룸 연동용 상태 */
   private bossChaos = false;
+
+  /* vc143 (#눈맵튕김) — 앰비언트 블룸 허용 판정 (단일 소스).
+   *  니플헤임·무스펠헤임 + 눈(tile_snow)/용암(tile_magma) 지면 재림 구역(r2·r8 등 —
+   *  parseStage가 village를 반환해 챕터 게이트를 우회하던 구멍) + 저사양 환경에서는
+   *  프레임버퍼 블룸 패스를 금지한다. 재부착 3경로(applyFxMode·tickFxQuality 복원·
+   *  clearBossPostFX)가 전부 이 헬퍼를 거친다 — "눈 맵에서 자꾸 튕김"의 근본 차단:
+   *  블룸 풀가동 GPU 과부하 → webglcontextlost 4회 → Canvas 폴백 재부팅 / 프리즈 워치독 루프 */
+  private ambientBloomAllowed(): boolean {
+    const ch = parseStage(this.stageDef.key).ch;
+    if (ch === "niflheim" || ch === "muspelheim") return false;
+    const gt = (this.stageDef as { groundTex?: string }).groundTex;
+    if (gt === "tile_snow" || gt === "tile_magma") return false;
+    return !isLowPerfEnv();
+  }
   /** v1.0.18 — 보스 라이트가 보스를 추적 중인지 */
   private bossLightFollow = false;
 
@@ -6818,8 +6978,10 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.2 (#툰셰이더) — 보스 스프라이트 툰 필터도 함께 해제 */
     if (this.boss) clearToonStyle(this.boss as unknown as Parameters<typeof clearToonStyle>[0]);
     this.bossToon = null;
-    /* v1.0.10 — 보스전 종료 후 평시 앰비언트 블룸으로 복귀 (fxLevel 유지 시) */
-    if (this.fxLevel >= 1 && this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL) {
+    /* v1.0.10 — 보스전 종료 후 평시 앰비언트 블룸으로 복귀 (fxLevel 유지 시)
+     *  vc143 (#눈맵튕김) — 보스를 죽일 때마다 발동하는 이 경로가 무가드라
+     *  눈 맵에서 매 보스 격파마다 블룸 재부착 → GPU 과부하 재부팅 루프의 주범이었다 */
+    if (this.fxLevel >= 1 && this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL && this.ambientBloomAllowed()) {
       this.ambientFilters = addAmbientBloom(this.cameras.main);
     }
     this.bossEmber?.destroy();
@@ -6830,6 +6992,7 @@ export class WorldScene extends Phaser.Scene {
 
   onBossDead() {
     this.clearBossPostFX(); /* v4.1.5 — 보스전 포스트FX/오라 해제 */
+    this.despawnBossExitNpc(); /* vc143 (#10) — 퇴장 관리인 철수 */
     const def = this.bossDef;
     audio.sfx.bossDie();
     /* v1.0.8 — ① 탑 보스층 격파: 스토리/재림 경로와 완전 분리 (층 클리어 처리만) */
@@ -7065,6 +7228,10 @@ export class WorldScene extends Phaser.Scene {
     const onS5 = () => this.player?.useSkill5(); // v3.2.0 — 궁극기 (모바일 버튼 공용)
     const onRespawn = () => this.respawnPlayer();
     const onDialogueDone = () => this.resumeFromDialogue();
+    /* vc143 (#10) — 선택형 대화 (보스전 퇴장 관리인) */
+    const onDialogueChoice = (p: { id?: string } | undefined) => {
+      if (p?.id === "bossleave") this.leaveBossBattle();
+    };
     const onInteract = () => this.tryInteract();
     const onKeymapChanged = (m: KeyMap) => {
       this.keymap = m;
@@ -7918,6 +8085,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:upgrade", onUpgrade);
     EventBus.on("respawn", onRespawn);
     EventBus.on("dialogue:done", onDialogueDone);
+    EventBus.on("dialogue:choice", onDialogueChoice);
     EventBus.on("chat:focus", onChatFocus);
     EventBus.on("chat:send", onChatSend);
     EventBus.on("rpg:escapeHome", onEscapeHome); // v4.1.0 — 설정창 긴급 귀환
@@ -8465,6 +8633,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:upgrade", onUpgrade);
       EventBus.off("respawn", onRespawn);
       EventBus.off("dialogue:done", onDialogueDone);
+      EventBus.off("dialogue:choice", onDialogueChoice);
       EventBus.off("chat:focus", onChatFocus);
       EventBus.off("chat:send", onChatSend);
       EventBus.off("rpg:escapeHome", onEscapeHome); // v4.1.0
@@ -8586,6 +8755,7 @@ export class WorldScene extends Phaser.Scene {
 
     /* v4.1.0 — 적응형 품질/포탈 가이드/긴급귀환 쿨다운 */
     this.tickFxQuality(dt);
+    this.tickBossShare(this.time.now); // vc143 (#4) — 공유 보스 릴레이·브로드캐스트·호스트 재선출
     this.updatePortalGuides();
     this.escapeCd = Math.max(0, this.escapeCd - dt);
     /* v1.4.3 (작업4) — 파티 보드: 파티 순찰 시간 (1분마다 +1, 파티 중일 때만) */
@@ -8705,7 +8875,10 @@ export class WorldScene extends Phaser.Scene {
     // v3.0.14 — 끼임 탈출: 이동 명령 중 제자리면 측면 탈출로 autoHuntMove 덮어씀
     this.tickAutoUnstuck(dt);
     let move = useTouch ? this.touchMove : mv;
-    if (this.autoHunt && !useTouch) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
+    /* vc143 (#8 PC 자동전투 이동) — 자동전투 중에도 화살표 키를 누르면 수동 이동 우선.
+     *  기존엔 자동전투가 키보드 입력을 완전히 덮어써 PC에서 자동 켜놓으면 꼼짝 못 했다.
+     *  키를 떼면 자동 이동이 자연 복귀된다 — 토글 재시작 불필요 */
+    if (this.autoHunt && !useTouch && mv.lengthSq() === 0) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
 
     // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
@@ -9016,13 +9189,8 @@ export class WorldScene extends Phaser.Scene {
      *  (기존 #47 자동 여행은 포탈 앞 정지·장거리 왕복 체감이 나빠 삭제 — #1 요청 반영) */
     const targets = this.getAllTargets();
     if (targets.length === 0) {
-      /* v4.3.0 — 적 전멸 + 전진 차원문 활성 → 자동 탑승 (유저 지시 "자동전투 시에도 포탈 탈수있게").
-       *  접근은 autoApproach(BFS 경로) — 실제 전환은 overlap 가드 + startTransition 단일 통로라
-       *  검은 화면 경합이 재발하지 않는다. */
-      if (this.portalActive && this.portal?.active) {
-        this.autoApproach({ x: this.portal.x, y: this.portal.y });
-        return;
-      }
+      /* vc143 (#9 자동전투 포탈 차단) — 전진 차원문 자동 탑승 제거 (v4.3.0 경로).
+       *  자동전투는 현 구역 안에서만 사냥 — 구역 이동은 유저가 수동으로 (포탈 overlap도 차단됨) */
       this.autoWanderTick(); // v3.0.25 — 적 없음: 제자리 대신 구역 내 배회 (리스폰 탐색)
       return;
     }
@@ -9587,7 +9755,8 @@ export class WorldScene extends Phaser.Scene {
       const offChat = net.netOnChat((m) => EventBus.emit("chat:msg", m));
       const offFriends = net.netOnFriends((list) => EventBus.emit("friends:online", list));
       const offAct = net.netOnAction((a) => this.playRemoteAction(a)); // v4.1.0 — 파티원 공격/스킬 표시
-      this.netOffs = [offPlayers, offChat, offFriends, offAct];
+      const offBoss = net.netOnBoss((m) => this.onRemoteBossMsg(m)); // vc143 (#4) — 공유 보스 체력 수신
+      this.netOffs = [offPlayers, offChat, offFriends, offAct, offBoss];
       this.events.once("shutdown", () => this.shutdownNet());
       // 소켓 연결 안정화 후 입장 방송 (v2.0 — netJoin이 connect 전이면 대기열 후 자동 발송)
       /* v1.0.5-beta (vc134) — 650ms 1회성 발송 → 플레이어 스폰 대기 재시도로 교체(위 netJoinRetry 주석 참조) */
@@ -11088,12 +11257,91 @@ export class WorldScene extends Phaser.Scene {
       /* v1.3.0 (지시 #9) 신설 → v1.4.3 유적 철거 후에도 보물상자(하루 1회)로 생존 */
       this.openKeepChest();
     } else if (it.kind === "talk" && it.dlg) {
+      /* vc143 (#10) — 보스전 퇴장 관리인: 선택형 대화 (나가기/계속) */
+      if (it.dlg === "bossExit") {
+        this.showBossExitDialogue();
+        return;
+      }
       /* v1.2.0 (#4) — 환생 n차수별 NPC 대사 변화: 환생 1~3차마다 NPC가 기억하고 다르게 반응한다.
        *  `${dlg}_rb${n}` 변형이 존재하면 우선 재생 (n = min(rebirths, 3)) — 없으면 원본 대사. */
       const rbN = Math.min(3, Math.max(0, this.inf?.rebirths ?? 0));
       const rbKey = rbN > 0 ? `${it.dlg}_rb${rbN}` : it.dlg;
       this.showDialogue(DIALOGUES[rbKey] ? rbKey : it.dlg, it.npcId ?? null);
     }
+  }
+
+  /* ============ vc143 (#10 보스전 퇴장 관리인) ============
+   *  유저 지시 “보스 전투 중에 보스 전용 NPC에게 말을 걸어 나갈꾼지 말꾼지 선택”.
+   *  보스 스폰 시 관리인이 함께 등장하고, 대화 선택으로 중도 이탈(복귀 구역 전환) 또는
+   *  계속 전투를 고른다. 보스 격파/이탈/전환 시 자동 철수. */
+
+  private bossExitNpc: Phaser.GameObjects.Sprite | null = null;
+  private bossExitChip: Phaser.GameObjects.Text | null = null;
+
+  /** 보스 근처에 퇴장 관리인 배치 (스토리/재림/공동토벌전/GM 스폰 4곳에서 호출) */
+  private spawnBossExitNpc(bx: number, by: number) {
+    this.despawnBossExitNpc();
+    const tex = this.textures.exists("spum_butler") ? "spum_butler" : this.textures.exists("npc_merchant") ? "npc_merchant" : "hero_idle0";
+    const nx = bx + 104;
+    const ny = by + 64;
+    this.bossExitNpc = this.add.sprite(nx, ny, tex).setDepth(11).setTint(0xa8ccff).setScale(0.92);
+    this.bossExitChip = this.add
+      .text(nx, ny - 58, "퇴장 문의", {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "10px",
+        color: "#bfe0ff",
+        stroke: "#0a2030",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(60);
+    this.tweens.add({ targets: this.bossExitChip, y: ny - 64, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.interactables.push({ x: nx, y: ny, kind: "talk", dlg: "bossExit", npcId: "bossExit", label: "퇴장 관리인과 대화" });
+  }
+
+  /** 퇴장 관리인 철수 — 보스 격파/이탈/구역 전환 공통 */
+  private despawnBossExitNpc() {
+    if (this.bossExitChip) { this.tweens.killTweensOf(this.bossExitChip); this.bossExitChip.destroy(); this.bossExitChip = null; }
+    this.bossExitNpc?.destroy();
+    this.bossExitNpc = null;
+    if (this.interactables.some((it) => it.dlg === "bossExit")) {
+      this.interactables = this.interactables.filter((it) => it.dlg !== "bossExit");
+    }
+  }
+
+  /** 퇴장 관리인 대화 — 선택지: 나가기 / 계속 */
+  private showBossExitDialogue() {
+    const isPraid = this.stageDef.key === "praid";
+    this.showDialogueRaw({
+      speaker: "심연의 퇴장 관리인",
+      lines: isPraid
+        ? ["토벌전을 중도 이탈하겠나? 이탈하면 이번 전리품은 받을 수 없다.", "신중히 결정하라."]
+        : ["보스전을 중도 이탈하겠나? 이탈하면 전투는 처음부터 다시 시작된다.", "신중히 결정하라."],
+      choices: [
+        { label: "전투를 포기하고 나가기", id: "bossleave" },
+        { label: "계속 싸우기", id: "bosstay" },
+      ],
+    });
+  }
+
+  /** 중도 이탈 확정 — 보스 정리 후 복귀 구역으로 전환 (공동토벌전은 입장 전 구역) */
+  private leaveBossBattle() {
+    this.despawnBossExitNpc();
+    if (this.boss) {
+      try { this.boss.destroyPool(); } catch { /* 이미 정리됨 */ }
+      this.boss.destroy();
+      this.boss = null;
+    }
+    this.clearBossPostFX();
+    EventBus.emit("boss:hide");
+    const key = this.stageDef.key;
+    const prev: StageKey =
+      key === "praid" ? (STAGES[this.praidFrom] ? this.praidFrom : "village")
+      : key === "tower" ? (STAGES[this.towerFrom] ? this.towerFrom : "village")
+      : PREV_STAGE[key] ?? "village";
+    this.showBanner("전투를 이탈다 — 복귀 구역으로 이동합니다");
+    this.startTransition(prev, { delay: 240 });
   }
 
   /* ================= 실내(여관/내 집) + 취침 연출 (v2.2 — 사용자 지시) ================= */
@@ -13288,6 +13536,11 @@ export class WorldScene extends Phaser.Scene {
    *  충격파 링 위에 터지는 방사형 스플랫 데칼 — 타격감 3중 구성(링+플래시+스플랫)의 마무리 */
   spawnCritSplat(x: number, y: number, hex = 0xffd76a) {
     if (!this.textures.exists("wx_splat")) return;
+    /* vc143 (#최적화) — 동시 스플랫 예산 8장: 연속 크리 난사(광역 스킬) 시 크리당
+     *  2 image + 트윈 2개가 create/destroy 되며 GC 스파이크 → 프리즈 워치독 오타작의
+     *  연료였다. 예산 초과분은 조용히 스킵(타격감 링/플래시는 별도 풀이라 유지) */
+    if (this.critSplatLive >= 8) return;
+    this.critSplatLive++;
     const im = this.add.image(x, y - 6, "wx_splat")
       .setDepth(22)
       .setBlendMode(Phaser.BlendModes.ADD)
@@ -13295,7 +13548,7 @@ export class WorldScene extends Phaser.Scene {
       .setScale(0.38)
       .setRotation(Math.random() * Math.PI * 2)
       .setAlpha(0.85);
-    this.tweens.add({ targets: im, scale: 1.0, alpha: 0, duration: 300, ease: "Cubic.out", onComplete: () => im.destroy() });
+    this.tweens.add({ targets: im, scale: 1.0, alpha: 0, duration: 300, ease: "Cubic.out", onComplete: () => { this.critSplatLive--; im.destroy(); } });
     /* v1.4.11 — MG 5-Crit 크리티컬 버스트 오버레이 (크리 타격감 상향) */
     if (this.textures.exists("mg_crit")) {
       const cr = this.add.image(x, y - 10, "mg_crit")
@@ -13304,9 +13557,12 @@ export class WorldScene extends Phaser.Scene {
         .setTint(hex)
         .setScale(0.34)
         .setAlpha(0.95);
-      this.tweens.add({ targets: cr, scale: 0.9, alpha: 0, duration: 340, ease: "Quad.out", onComplete: () => cr.destroy() });
+      this.tweens.add({ targets: cr, scale: 0.9, alpha: 0, duration: 340, ease: "Quad.out", onComplete: () => { this.critSplatLive--; cr.destroy(); } });
     }
   }
+
+  /** vc143 (#최적화) — 활성 크리 스플랫 수 (spawnCritSplat 예산용) */
+  private critSplatLive = 0;
   /** 강화 성공 — 퀘스트 차임 저피치 (무게감) */
   sfxUpgradeOk() {
     audio.sfx.upgradeOk();

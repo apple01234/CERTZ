@@ -9,12 +9,12 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-static";
 
 const LATEST_VERSION = "1.0.5-beta";
-const LATEST_CODE = 142;
+const LATEST_CODE = 143;
 const VERSION_NOTE =
-  "v1.0.5-beta (vc142) — 보스 디자인 전면 교체: 유저 제공 아틀라스 5종 적용 — 심연의 수호자=요툰헤임 수정골렘·심연의 군주=헬 고해상·스콜&하티=쌍랑(얼음+화염 늑대)·펜리르=니플헤임 얼음수·요르문간드=잎날개 녹룡(신규 아틀라스) — 12FPS 풀애니+초상화 6종 재생성";
+  "v1.0.5-beta (vc143) — 피드백 9종: 눈맵 프리즈 근본 수정·후반 보스 대폭 상향·퀘스트 다양화+마릿수 100~200·공동토벌전/파티 보스전 체력 공유·최적화·아이콘 화면 크기 대응·자동전투 키보드 이동·자동전투 포탈 차단·보스전 퇴장 관리인";
 const APK_MIRROR =
   /* vc138 — API DELETE 장애 기간 안전 경로 (server.js 주석 참조) */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc142.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc143.apk";
 
 export async function GET() {
   return NextResponse.json({

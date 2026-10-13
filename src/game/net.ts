@@ -301,6 +301,36 @@ export function netOnAction(cb: (a: NetAction) => void): () => void {
   return () => s.off("act", wrapped);
 }
 
+/* ================= vc143 (#4 공유 보스 체력 릴레이) =================
+ *  공동 토벌전(praid)·파티 보스전에서 파티원들이 같은 보스 HP를 본다.
+ *  · bdmg — 비호스트가 자기 딜량을 릴레이 (스테이지 토픽)
+ *  · bhp  — 호스트가 권위 있는 HP 상태를 4Hz 브로드캐스트 (dead 플래그로 격파 통지)
+ *  호스트 선출: 동일 구역에 보이는 세션 id 중 최소값 (모두가 동일하게 계산 → 합의) */
+
+export type NetBossMsg = { id: string; n?: number; hp?: number; max?: number; dead?: boolean };
+
+export function netBossMsg(m: { n?: number; hp?: number; max?: number; dead?: boolean }) {
+  const s = netConnect();
+  if (!s || !s.connected) return;
+  s.emit("boss", m);
+}
+
+export function netOnBoss(cb: (m: NetBossMsg) => void): () => void {
+  const s = netConnect();
+  if (!s) return () => {};
+  const wrapped = (m: NetBossMsg) => cb(m);
+  s.on("boss", wrapped as never);
+  return () => s.off("boss", wrapped as never);
+}
+
+/** vc143 (#4) — 자기 세션 ID (소켓/MQTT 공통). netId()는 소켓 전용이라 MQTT 모드에서
+ *  null을 반환해 호스트 선출 합의가 깨진다 — MQTT 버스 id까지 커버하는 통합 조회 */
+export function netSelfId(): string | null {
+  if (socket?.id) return socket.id;
+  const b = mpConnect();
+  return b ? b.id : null;
+}
+
 /* ================= 파티 (v2.0 — 지시 #5 파티 & 보스 토벌) ================= */
 
 export type NetParty = {

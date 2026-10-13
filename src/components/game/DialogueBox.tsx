@@ -95,7 +95,7 @@ function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: 
 export function DialogueBox({
   dialogue,
 }: {
-  dialogue: { speaker: string; lines: string[] } | null;
+  dialogue: { speaker: string; lines: string[]; choices?: { label: string; id: string }[] } | null;
 }) {
   const [idx, setIdx] = useState(0);
   const [shown, setShown] = useState("");
@@ -256,6 +256,26 @@ export function DialogueBox({
             {shown}
             <span className="animate-pulse text-[#ffd98a]">{shown.length < line.length ? "▌" : ""}</span>
           </p>
+          {/* vc143 (#10) — 선택형 대화: 마지막 줄 완료 시 선택지 버튼 (보스전 퇴장 관리인 등).
+           *  클릭 시 dialogue:choice 발신 + dialogue:done으로 종료 — 컨테이너 홀드 진행과 충돌 없게 stopPropagation */}
+          {dialogue.choices && dialogue.choices.length > 0 && idx >= dialogue.lines.length - 1 && shown.length >= line.length && (
+            <div className="mt-2 flex flex-col gap-1.5" onPointerDown={(e) => e.stopPropagation()}>
+              {dialogue.choices.map((c) => (
+                <button
+                  key={c.id}
+                  className="game-btn px-3 py-1.5 text-left text-[12px] font-black text-[#ffe9b0] transition-transform active:scale-95 sm:text-[13px]"
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    audio.sfx.uiClick();
+                    EventBus.emit("dialogue:choice", { id: c.id });
+                    EventBus.emit("dialogue:done");
+                  }}
+                >
+                  ▸ {c.label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="mt-1 text-right text-[10px] font-bold text-white/50 sm:text-[11px]">
             {shown.length < line.length
               ? "스페이스·탭으로 건너뛰기 (꾹 누르면 빠르게)"

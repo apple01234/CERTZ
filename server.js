@@ -34,7 +34,7 @@ app.prepare().then(() => {
   /* vc138 — GitHub API 자산 DELETE 일시 장애로 동일 이름 교체가 막힌 기간의 안전 경로:
    *  vc138 자산을 별도 이름으로 업로드하고 이쪽을 가리킴. 루프가 동일 이름 교체에 성공하면
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc142.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.5-beta/SERTZ-vc143.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -68,9 +68,9 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.0.5-beta";
-  const LATEST_CODE = 142;
+  const LATEST_CODE = 143;
   const VERSION_NOTE =
-  "v1.0.5-beta (vc142) — 보스 디자인 전면 교체: 유저 제공 아틀라스 5종 적용 — 심연의 수호자=요툰헤임 수정골렘·심연의 군주=헬 고해상·스콜&하티=쌍랑(얼음+화염 늑대)·펜리르=니플헤임 얼음수·요르문간드=잎날개 녹룡(신규 아틀라스) — 12FPS 풀애니+초상화 6종 재생성";
+  "v1.0.5-beta (vc143) — 피드백 9종 반영: ①눈맵 프리즈 근본 수정(눈/용암 구역 블룸 재부착 3경로 차단+브레드크럼) ②후반 보스 대폭 상향(스콜~나그라파르 HP 최대 ×3.2·ATK 상향) ③퀘스트 다양화+중반부터 요구 마릿수 100~200단위(곡선·반복·스토리 전체 재조정) ④공동토벌전·파티 보스전 체력 공유(MQTT 호스트 권위 HP) ⑤최적화(크리 스플랫 예산·FX 복원 히스테리시스) ⑦화면 크기 대응 아이콘 확대 ⑧자동전투 중 키보드 이동 허용 ⑨자동전투 중 포탈 차단 ⑩보스전 퇴장 관리인(나가기/계속 선택)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

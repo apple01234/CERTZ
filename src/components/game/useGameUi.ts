@@ -29,7 +29,8 @@ export function useGameUi() {
   const [hud, setHud] = useState<HudState>(emptyHud);
   const [quest, setQuest] = useState<QuestState>(emptyQuest);
   const [skills, setSkills] = useState<Skills>({ mp: 60, s1Cd: 0, s1Max: 4000, s2Cd: 0, s2Max: 6000, s3Cd: 0, s3Max: 9000, s4Cd: 0, s4Max: 14000, s3Unlocked: false, s4Unlocked: false, s5Cd: 0, s5Max: 60000, s5Unlocked: false });
-  const [dialogue, setDialogue] = useState<{ speaker: string; lines: string[] } | null>(null);
+  /* vc143 (#10) — choices: 선택형 대화(보스전 퇴장 관리인 등) — DialogueBox가 버튼 렌더 */
+  const [dialogue, setDialogue] = useState<{ speaker: string; lines: string[]; choices?: { label: string; id: string }[] } | null>(null);
   const [boss, setBoss] = useState<{ name: string; hp: number; maxHp: number } | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
   const [end, setEnd] = useState<EndState | null>(null);

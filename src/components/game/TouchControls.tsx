@@ -10,6 +10,19 @@ import { loadKeyMap } from "@/game/keymap"; // v1.0.4 — 물약 키 힌트를 �
  *  (기존 52px는 손가락이 조금만 쉬어도 실질 60~85% 속도 — "이속이 느림" 체감의 주원인) */
 const JOY_RADIUS = 64;
 
+/* vc143 (#7 화면 크기 대응 아이콘) — 유저 지시 “PC에서나 기기 화면 크기에 맞게 아이콘 크기도 키워”.
+ *  화면이 클수록 조작 버튼·조이스틱을 배율 확대 (모바일 1.0 유지 — 기존 체감 보존).
+ *  PC 전체화면(1920)에서 공격 버튼 100→150px · 스킬 56→84px · 조이스틱 64→96px 반경 */
+function uiScaleOf(): number {
+  if (typeof window === "undefined") return 1;
+  const w = window.innerWidth;
+  if (w >= 1600) return 1.5;
+  if (w >= 1280) return 1.35;
+  if (w >= 1024) return 1.22;
+  if (w >= 768) return 1.12;
+  return 1;
+}
+
 /* ═══ v1.0.2-beta — 조작 UI 배치 복귀 (유저 지시 "배치만 옛날처럼") ═══
  *  v1.4.12~v1.4.28의 와일드리프트식 아크(부채꼴) 배치를 철거하고, 그 이전의
  *  우하단 flex 행 [자동+물약 세로열] [스킬그리드] [공격] 구조로 되돌린다.
@@ -77,12 +90,15 @@ export function TouchControls({
    *  겹침 판정: 컨테이너 left = W - 클러스터폭 < 0.46W 구간.
    *  겹침 시 [자동+물약] 클러스터를 행 위쪽 가로열로 플로팅한다. */
   const [clusterFloat, setClusterFloat] = useState(() => typeof window !== "undefined" && window.innerWidth < 576);
+  /* vc143 (#7) — 화면 배율 상태 (resize 반영) */
+  const [uiScale, setUiScale] = useState(() => (typeof window === "undefined" ? 1 : uiScaleOf()));
 
   useEffect(() => {
     const reevaluate = () => {
       const coarse = window.matchMedia("(pointer: coarse)").matches;
       setIsTouch(coarse || window.innerWidth < 900);
       setClusterFloat(window.innerWidth < 576);
+      setUiScale(uiScaleOf());
     };
     reevaluate();
     const onTouch = () => setIsTouch(true);
@@ -107,14 +123,14 @@ export function TouchControls({
     const base = joyBaseRef.current;
     if (base) {
       base.style.display = "block";
-      base.style.left = `${joyOriginRef.current.x - JOY_RADIUS}px`;
-      base.style.top = `${joyOriginRef.current.y - JOY_RADIUS}px`;
+      base.style.left = `${joyOriginRef.current.x - joyR}px`;
+      base.style.top = `${joyOriginRef.current.y - joyR}px`;
     }
     const knob = joyKnobRef.current;
     if (knob) {
       knob.style.display = "block";
-      knob.style.left = `${joyOriginRef.current.x - 26}px`;
-      knob.style.top = `${joyOriginRef.current.y - 26}px`;
+      knob.style.left = `${joyOriginRef.current.x - knobR}px`;
+      knob.style.top = `${joyOriginRef.current.y - knobR}px`;
     }
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
@@ -126,21 +142,21 @@ export function TouchControls({
     let dx = e.clientX - rect.left - origin.x;
     let dy = e.clientY - rect.top - origin.y;
     const len = Math.hypot(dx, dy);
-    if (len > JOY_RADIUS) {
-      dx = (dx / len) * JOY_RADIUS;
-      dy = (dy / len) * JOY_RADIUS;
+    if (len > joyR) {
+      dx = (dx / len) * joyR;
+      dy = (dy / len) * joyR;
     }
     /* v3.0.18 — 노브 표시는 setState 없이 직접 DOM 이동 (리렌더 0 = 입력 지연 0) */
     const knob = joyKnobRef.current;
     if (knob) {
-      knob.style.left = `${origin.x + dx - 26}px`;
-      knob.style.top = `${origin.y + dy - 26}px`;
+      knob.style.left = `${origin.x + dx - knobR}px`;
+      knob.style.top = `${origin.y + dy - knobR}px`;
     }
     /* v3.0.18 — 무단속 연속 커브: 기존 14% 데드존 경계에서 속도 0→30% "계단 점프"가
      *  미세 조작 시 뚝뚝 끊기는(걸리는) 체감의 물리적 원인. 신규 곡선은 계단 없이
      *  8% 데드존(5px)부터 부드럽게 가속 — 42%(27px) 밀면 100% 최속 도달.
      *  실측: raw=9%→13%, 15%→40%, 25%→67%, 35%→88%, 42%+→100% */
-    const raw = Math.min(1, len / JOY_RADIUS);
+    const raw = Math.min(1, len / joyR);
     const t = Math.max(0, Math.min(1, (raw - 0.08) / 0.34));
     const boosted = t <= 0 ? 0 : Math.pow(t, 0.58);
     if (boosted > 0 && len > 0.001) {
@@ -148,7 +164,7 @@ export function TouchControls({
        *  반경(64px) 초과 시 dx·dy를 클램프한 뒤 [원본 len]으로 나눠서
        *  방향 벡터 크기가 R/len(<1)로 줄어들었다 (128px 당김 = 정확히 반속).
        *  수정: 클램프 [후] 길이(min(len, R))로 정규화 — 어떻게 당겨도 풀속 유지 */
-      const outLen = Math.hypot(dx, dy) || 1; // 클램프 후 길이 = min(len, JOY_RADIUS)
+      const outLen = Math.hypot(dx, dy) || 1; // 클램프 후 길이 = min(len, joyR)
       sendMove((dx / outLen) * boosted, (dy / outLen) * boosted);
     } else {
       sendMove(0, 0);
@@ -179,9 +195,13 @@ export function TouchControls({
   const s5Pct = (skills.s5Cd ?? 0) > 0 ? ((skills.s5Cd ?? 0) / Math.max(1, skills.s5Max ?? 60000)) * 100 : 0;
 
   const sm = !isTouch; // PC(넓은 화면)에선 살짝 큰 크기
-  /* v1.4.18 (#4) — 공격 버튼 100 (모바일) / 112 (PC) · v1.4.14 — 스킬 56/66 (현행 크기 유지) */
-  const ATK = sm ? 112 : 100; // 공격 버튼 지름
-  const SK = sm ? 66 : 56; // 스킬 버튼 지름
+  /* v1.4.18 (#4) — 공격 버튼 100 (모바일) / 112 (PC) · v1.4.14 — 스킬 56/66 (현행 크기 유지)
+   * vc143 (#7) — 화면 배율 곱연산: 넓은 화면(PC 전체화면 등)에서 버튼이 화면에 맞게 커진다 */
+  const ATK = Math.round((sm ? 112 : 100) * uiScale); // 공격 버튼 지름
+  const SK = Math.round((sm ? 66 : 56) * uiScale); // 스킬 버튼 지름
+  /* vc143 (#7) — 조이스틱 반경/노브도 화면 배율 따라 확대 */
+  const joyR = Math.round(JOY_RADIUS * uiScale);
+  const knobR = Math.round(26 * uiScale);
 
   const unlocked = [
     { key: "s1", name: s1Name || "회전베기", mp: 15, ready: s1Ready, cd: s1Pct, icon: skills.s1Icon, emit: "input:skill1" },
@@ -254,12 +274,12 @@ export function TouchControls({
         <div
           ref={joyBaseRef}
           className="pointer-events-none absolute hidden rounded-full border-2 border-white/35 bg-white/10"
-          style={{ width: JOY_RADIUS * 2, height: JOY_RADIUS * 2 }}
+          style={{ width: joyR * 2, height: joyR * 2 }}
         />
         <div
           ref={joyKnobRef}
           className="pointer-events-none absolute hidden rounded-full border-2 border-white/70 bg-white/40 shadow-lg"
-          style={{ width: 52, height: 52 }}
+          style={{ width: knobR * 2, height: knobR * 2 }}
         />
       </div>
       )}
