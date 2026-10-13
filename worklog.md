@@ -3995,3 +3995,33 @@ Stage Summary:
 - 유저 테스트 포인트: ①두 기기로 같은 맵 접속 → 거래소→1:1 거래→요청/수락/확정 흐름 ②탑 5층 진입 시 보스 로테이션과 "처치 N/M" HUD ③설정(O)에서 툰 셰이딩 끔/켬 비교 ④쿠소디아 3장 진입(챕터카드 후 멈춤 재발 여부)
 - 비고: three.js 의존 추가(번역 ~150KB gzip), APK 용량 159→146MB(그래도 대형 — 에셋 누적), 3D 오버레이는 모바일 APK에선 적응형 비활성(모바일 UA) — 2D 이펙트는 전부 유지
 ---
+
+---
+Task ID: vc145-feedback-16
+Agent: Super Z (main)
+Task: 유저 피드백 16종 전량 구현 (vc145) — 웹 라이브 + APK/AAB 릴리스
+
+Work Log:
+- [⑯ 긴급 스타포스] 근원: upgrades{weapon,armor}가 슬롯 단위 저장이라 장비 교체 시 이전 장비의 성이 그대로 적용. starMap(아이템키→성) 신설 + weaponStars/armorStars 게터 + setStars 단일 쓰기 경로. equip()에서 새 장비 자체 성으로 미러 갱신+syncStarHp(방어구 HP 마일스톤 누수도 차단). 구세이브 upWea/upArm → 장착 중 아이템으로 1회 마이그레이션, 세이브에 starMap 신규 저장(upWea/upArm은 호환 미러 유지). 거래 시 건 아이템의 starMap/potentials/accUp 소멸(accUp 동일 정책)
+- [⑭ 거래 크래시] 근원: Trade2Panel↔WorldScene이 EventBus "trade:nearby" 동일 채널로 요청/응답 → 동기 재귀 무한루프 → 스택 오버플로 "Application error". 응답 채널 "trade:nearby:list" 분리 + Array.isArray 가드
+- [⑩④ B키/친구] 근원: FriendsWidget이 B키 하드코딩(keymap 무관 window 낚아챔) — 자동전투 B와 충돌. keymap에 friends 액션 신설(기본 R, 자유 재배치·스왑), FriendsWidget이 키맵을 읽게 일원화, HUD 친구 배지/aria 동적 표기. 구 저장맵 B 잔재는 R로 자동 복원
+- [⑨ 스킬 강화] rollDamage에 SKILL_PWR ×1.25(전 스킬 공통) + 차수 사다리 0.12→0.22/tier — 1차 ×1.25~5차 ×2.36(×skillMult). 동일 배율 기준 스킬>평타 실측(48>38)
+- [⑫ 궁수 너프] critDmg에서 overflow 제거(1.7 고정+유니온 가산만), critOverflowAtk 신설 → atkTotal에 평가산(크리 135% → +35 ATK)
+- [⑪③ 쉐이더] applyToonCamera가 loadFx().intensity를 읽게 연동(기존 무시 — 조절바 무반응 근원). 기본 55 기준 대비 1.045/채도 1.10(기존 1.09/1.22에서 완화), 강도 0=부착 안함, 강도 <30은 Blocky 생략. 스프라이트 림 2.2→1.5·distance 10→8. 슬라이더 onChange → EventBus fx:changed → WorldScene 즉시 재부착(툰+앰비언트), shutdown off 정리
+- [⑮ 검은 네모] 잔여 2곳: Boss.vxWarnRing(vx_ring NORMAL)·니드호그 vx_puddle(NORMAL) → ADD 블렌드 강제. vx_/hv2_ 직접 add.image 7곳 전수 감사 — 전부 ADD 확인
+- [① 랭킹 갱신] 근원: 클라우드 업로드가 AuthPanel 3분 인터벌 의존 — 5분 자동저장은 로컬만. 자동저장 콜백에 auth:cloudPush 이벤트 → AuthPanel 즉시 업로드(로그인 시) + 업로드 주기 3분→90초
+- [② 랭킹 100위] rankListFor slice 50→100 + 패널 리스트 max-h-56→46svh
+- [⑤ PC UI 확대] HUD 우상단 컨테이너 고정 zoom 0.85 → 반응형(≥1024 1.08/≥1280 1.18/≥1600 1.28, 모바일 유지) — 더보기 그리드·배지 전체 확대
+- [⑥ 위치 라벨] redrawMinimap 말미에 locLabel(스크롤팩터 0·depth 96) — "3-2 · 쿠소디아" 형식, 줌/리사이즈 자동 추적. 마을은 이름형 표기
+- [⑧ 캐릭터 바로가기] HUD 상단행에 "캐릭" 아이콘(UserRoundPen) 신설 → rpg:exitMenu {lobby:true} — 설정 우회 즉시 로비
+- [⑦ RPG UI 팩] ui2(SharpUI)가 v1.4.19 Tailwind 전환 때 전량 철거된 상태였던 것이 원인. border-image 9-슬라이스로 재적용(스트레치 블러 해소): .game-panel(panel.webp 10px)·h2(header.webp)·.game-btn(button.webp 5px)·.game-btn-ghost/.game-tab·.game-input(input.webp)·.sertz-listrow(list/list_sel 4px). Tailwind 팔레트/폰트는 유지
+- [⑬ 식인초] 스폰 9→16회 시도+앞 8회 위험식물 확정(최대 6그루 보장), 히트박스 56×44→68×54, tickPlantHazards 거리 판정 폴백을 update()에 추가(물리 오버랩 미발화 보강). E2E 실측: kingdom1 스폰 6그루·워프 시 HP 154→94 감소
+- [검증] tsc 0 · npm run build 성공 · scripts/e2e_vc145.js 신설 34/34 PASS(pageerror 0 — ADD블렌드/푸시훅/Top100/툰완화/R·B키/zoom1.18/캐릭아이콘/ui2프레임/위치라벨/스킬>평타/크리오버플로/식인초/거래크래시차단/툰필터 0↔2/스타포스 4건). 초반 7 FAIL은 전부 프로브 결함(마을 라벨 정규식·줌 부모 선택자·대화 중 워프 타이밍·적응형 강등 개입·크리 단일굴림) — 스크립트 보정 후 올패스. /api/rank 로컬 응답 len 0(계정 DB 미시드) — 구조 검증으로 대체
+- [게이트] server.js·route.ts LATEST_CODE 145+NOTE 신규문구 · next.config.ts·server.js APK_MIRROR → vc145 · build.gradle 145 · apk-guide.html+안내.txt md5 e383a8bc../sha1 98c3ce92.. 갱신
+- [빌드/릴리스] 라우트 7종 격리→APK_EXPORT export→cap sync→gradle assembleRelease 146,099,673B · aapt versionCode 145·서명 cc774f34(동일 키 — 덮어설치 호환) · bundleRelease 147,974,027B · 릴리스 3종 업로드(apk/aab/mapping) + 다운로드 무결성 검증(md5 일치) · download/ vc144+vc145 유지 정책 준수
+- [배포] 9d820bb6 푸시 → Vercel 라이브 code:145 폴링 확인 · 정리 체인 10삭제(KEEP 2) — 진행 중이던 가이드 배포까지 삭제되는 부작용 1건 → 빈 커밋 1d5ecd6d 재배포로 복구(live apk-guide vc145 확인)
+
+Stage Summary:
+- vc145 = 피드백 16종 전량(웹 라이브 code:145 · SERTZ-vc145.apk/aab/mapping 릴리스 완비·덮어설치 호환)
+- 유저 테스트 포인트: ①랭킹창(90초 내 갱신·100위 스크롤) ③⑪설정(O)에서 셰이더 강도 조절바 — 즉시 반영+기본 강도 완화 체감 ④R키 친구창·B키 자동전투 분리 ⑤PC 우상단 UI 확대 ⑥미니맵 위 "3-2" 라벨 ⑦패널/버튼 ui2 프레임 ⑧우상단 "캐릭" 아이콘 ⑨스킬 데미지 체감 ⑫궁수 크리 130%+ 육성 시 밸런스 ⑬쿠소디아 식인초 밟기 ⑭두 기기 1:1 거래 ⑮보스전 검은 네모 소멸 ⑯장비 갈아끼우고 스탯창 강화 수치 확인(핵심!)
+- 주의: 스타포스 마이그레이션은 "starMap 없는 구세이브 최초 로드 1회" — 기존 upWea/upArm이 현재 장착 아이템에 귀속됨
