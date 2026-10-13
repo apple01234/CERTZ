@@ -85,13 +85,21 @@ export function AuthPanel() {
   };
   useEffect(() => {
     if (!user) return;
-    const t = window.setInterval(() => {
+    /* vc145 (#1 랭킹 갱신) — 3분 → 90초 단축 + 자동저장 훅(auth:cloudPush) 즉시 업로드.
+     *  랭킹은 클라우드 세이브(db.saves) 실시간 파생이라 업로드 주기가 곧 랭킹 신선도다. */
+    const push = () => {
       try {
         const raw = readCurrentSaveRaw();
         if (raw) cloudSaveUpload(JSON.parse(raw)).catch(() => {});
       } catch { /* 세이브 파싱 실패 무시 */ }
-    }, 3 * 60 * 1000);
-    return () => window.clearInterval(t);
+    };
+    const t = window.setInterval(push, 90 * 1000);
+    const onCloudPush = () => push();
+    EventBus.on("auth:cloudPush", onCloudPush);
+    return () => {
+      window.clearInterval(t);
+      EventBus.off("auth:cloudPush", onCloudPush);
+    };
   }, [user]);
 
   const refreshSaveInfo = async () => {

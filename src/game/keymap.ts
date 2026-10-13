@@ -22,14 +22,17 @@ export type GameAction =
   | "quest"
   | "opt"
   | "collection"
-  | "autohunt";
+  | "autohunt"
+  | "friends";
 
 export type KeyMap = Record<GameAction, string>; // 값은 Phaser KeyCode 문자열 (예: "X")
 
 const KEYMAP_STORAGE = "sertz_keymap_v2"; // v1.0.4 — 이동 체계 변경으로 저장 맵 리셋
 
 /** 기본 배치 — v1.0.4: 이동 화살표 전용, 전투 키는 Z X C V + A S D F 클러스터 (유저 지시)
- *  Z=스킬1 X=공격 C=스킬2 V=스킬3 (기존 유지) / A=스킬4 S=스킬5 D=HP물약 F=MP물약 */
+ *  Z=스킬1 X=공격 C=스킬2 V=스킬3 (기존 유지) / A=스킬4 S=스킬5 D=HP물약 F=MP물약
+ *  vc145 (#4) — 친구 창 기본 단축키 R 신설. 기존 FriendsWidget의 B 하드코딩은
+ *  자동전투(B)와 충돌하는 버그(#10)의 근원 — 키맵 체계로 일원화해 해지 */
 export const DEFAULT_KEYMAP: KeyMap = {
   attack: "X",
   skill1: "Z",
@@ -49,6 +52,8 @@ export const DEFAULT_KEYMAP: KeyMap = {
   collection: "M",
   /* vc142 (#1) — PC 자동전투 토글 단축키 (모바일 버튼과 동일 이벤트 rpg:autohunt) */
   autohunt: "B",
+  /* vc145 (#4) — 친구 창 토글 (FriendsWidget이 키맵을 읽어 처리) */
+  friends: "R",
 };
 
 /** 액션 한글 라벨 (설정 UI 표시) */
@@ -70,6 +75,7 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   opt: "설정 (키 매핑)",
   collection: "몬스터 컬렉션",
   autohunt: "자동전투 토글",
+  friends: "친구 창",
 };
 
 /** 설정 UI에서 쓸 수 있는 키 후보 — v1.0.4: 이동이 화살표 전용이라 알파벳 전체 자유 배치 */
@@ -92,6 +98,9 @@ export function loadKeyMap(): KeyMap {
         out[k] = v;
       }
     }
+    /* vc145 (#10) — 구 저장 맵에 friends가 없던 시절: 저장값이 B(구 하드코딩 잔재·자동전투와 충돌)면
+     *  기본 R로 되돌린다. B는 이제 자동전투 전용. */
+    if (out.friends === "B" && !parsed.friends) out.friends = "R";
     return out;
   } catch {
     return { ...DEFAULT_KEYMAP };

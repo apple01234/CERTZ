@@ -2779,14 +2779,16 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
 
   useEffect(() => {
     const onState = (s: unknown) => setSnap(s as TradeSnap);
-    const onNearby = (l: unknown) => setNearby((l as NearbyPlayer[]) ?? []);
+    /* vc145 (#14 크래시 수정) — 응답 채널 분리(trade:nearby:list) + 배열 가드.
+     *  기존엔 요청/응답이 같은 채널이라 동기 재귀 무한루프 → Application error 크래시. */
+    const onNearby = (l: unknown) => setNearby(Array.isArray(l) ? (l as NearbyPlayer[]) : []);
     EventBus.on("trade:state", onState as never);
-    EventBus.on("trade:nearby", onNearby as never);
+    EventBus.on("trade:nearby:list", onNearby as never);
     EventBus.emit("trade:nearby", {});
     const iv = setInterval(() => EventBus.emit("trade:nearby", {}), 2500);
     return () => {
       EventBus.off("trade:state", onState as never);
-      EventBus.off("trade:nearby", onNearby as never);
+      EventBus.off("trade:nearby:list", onNearby as never);
       clearInterval(iv);
     };
   }, []);
@@ -3524,7 +3526,9 @@ function KingdomRankTab() {
           <button onClick={load} className="mt-2 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1.5 text-[10px] font-black text-white/70 hover:bg-white/[0.12]">다시 시도</button>
         </div>
       ) : (
-        <div className="sertz-scroll max-h-56 overflow-y-auto rounded-lg border border-white/10 bg-black/40">
+        <>
+          {/* vc145 (#2) — 랭킹 100위 표시: 리스트 높이 확대 (기존 max-h-56은 6~7명만 보임) */}
+          <div className="sertz-scroll max-h-[46svh] overflow-y-auto rounded-lg border border-white/10 bg-black/40">
           {(state?.list?.length ?? 0) === 0 ? (
             <p className="py-6 text-center text-[10px] font-bold text-white/35">아직 등록된 랭커가 없어요 — 첫 랭커가 되어보세요!</p>
           ) : (
@@ -3538,7 +3542,8 @@ function KingdomRankTab() {
               </div>
             ))
           )}
-        </div>
+          </div>
+        </>
       )}
 
       {/* 랭커 전용 상점 — Top10 전용 BM 소비 코너 */}
@@ -4498,6 +4503,9 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
                 const v = parseInt(e.target.value, 10) || 0;
                 writeFx({ ...loadFx(), intensity: v });
                 setFxLabel(v);
+                /* vc145 (#11 조절바 버그) — localStorage만 쓰지 않고 즉시 재적용 이벤트 발신.
+                 *  기존엔 구역 이동 전까지 화면에 반영되지 않아 "조절바 작동 안함" 리포트. */
+                EventBus.emit("fx:changed", {});
               }}
               className="h-1.5 flex-1 accent-sky-400"
               aria-label="셰이더 효과 강도"
@@ -4513,7 +4521,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
             />
             <span className="text-[11px] font-bold text-white/70">플리커 완화 모드 (광원 깜빡임 제거)</span>
           </label>
-          <p className="mt-1 text-[9px] font-bold text-white/35">일부 발광 효과는 구역 이동·보스전 재진입 후 새 강도로 적용된다</p>
+          <p className="mt-1 text-[9px] font-bold text-white/35">즉시 적용 — 툰 셰이딩·발광 강도가 함께 조절됩니다 (0 = 셰이더 완전 끔)</p>
         </div>
 
 

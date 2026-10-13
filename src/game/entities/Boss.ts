@@ -818,10 +818,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     return this.bossFx(tex, x, y, { tint, scale, alpha: 0.92, dur: 320, depth: 24 });
   }
 
-  /** VX 예고 링 — 반투명 확장 링 (피해 판정 전 위치 예고) */
+  /** VX 예고 링 — 반투명 확장 링 (피해 판정 전 위치 예고)
+   *  vc145 (#15) — ADD 블렌드 강제: vx_* 팩은 가산용(흑색 배경) 텍스처라 NORMAL로 그리면
+   *  검은 네모가 노출된다 (hv2_crater와 동일 사고). */
   private vxWarnRing(x: number, y: number, tint: number, target = 1.0, dur = 720) {
     if (!this.scene.textures.exists("vx_ring")) return null;
-    const r = this.scene.add.image(x, y, "vx_ring").setDepth(6).setTint(tint).setAlpha(0.0).setScale(target * 0.3);
+    const r = this.scene.add.image(x, y, "vx_ring").setDepth(6).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setAlpha(0.0).setScale(target * 0.3);
     this.scene.tweens.add({ targets: r, alpha: 0.75, scaleX: target, scaleY: target, duration: dur, ease: "Quad.out" });
     this.scene.time.delayedCall(dur + 120, () => {
       this.scene.tweens.add({ targets: r, alpha: 0, duration: 160, onComplete: () => r.destroy() });
@@ -974,7 +976,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           const zx = Phaser.Math.Clamp(player.x + Math.cos(ang) * r, 60, this.scene.stageW - 60);
           const zy = Phaser.Math.Clamp(player.y + Math.sin(ang) * r, 60, this.scene.stageH - 60);
           if (!this.scene.textures.exists("vx_puddle")) break;
-          const img = this.scene.add.image(zx, zy, "vx_puddle").setDepth(4).setTint(0x5adf7a).setAlpha(0).setScale(1.5);
+          /* vc145 (#15) — ADD 블렌드 강제 (검은 네모 제거 — vxWarnRing과 동일 사유) */
+          const img = this.scene.add.image(zx, zy, "vx_puddle").setDepth(4).setBlendMode(Phaser.BlendModes.ADD).setTint(0x5adf7a).setAlpha(0).setScale(1.5);
           this.scene.tweens.add({ targets: img, alpha: 0.42, duration: 260 });
           this.scene.time.delayedCall(6000, () => {
             if (!img.active) return;

@@ -7,7 +7,7 @@ import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
 import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, UsersRound, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle, GraduationCap } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, UsersRound, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle, GraduationCap, UserRoundPen } from "lucide-react";
 import { EventBus } from "./EventBus";
 import * as audio from "@/game/audio"; // v1.4.8 — 더보기 소셜 버튼 클릭음
 
@@ -208,10 +208,12 @@ export function HUD({
         </div>
       </div>
 
-      {/* 우상단: 사운드/가방 + 퀘스트 — v1.4.0 (#17/#18) zoom .85 + 2선 버튼 더보기 접기 · v1.4.9 — 우측 마진 축소(오른쪽 끝 정렬) */}
+      {/* 우상단: 사운드/가방 + 퀘스트 — v1.4.0 (#17/#18) 2선 버튼 더보기 접기 · v1.4.9 — 우측 마진 축소(오른쪽 끝 정렬)
+       *  vc145 (#5) — PC(넓은 화면)에서 UI 확대: 고정 zoom 0.85 철거 → 화면폭 반응형 스케일
+       *  (≥1024 1.08 / ≥1280 1.18 / ≥1600 1.28, 모바일은 기존 0.85~0.92 유지) */}
       <div
         className="absolute right-[max(0.25rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-1 sm:top-3"
-        style={{ zoom: 0.85 }}
+        style={{ zoom: typeof window !== "undefined" ? (window.innerWidth >= 1600 ? 1.28 : window.innerWidth >= 1280 ? 1.18 : window.innerWidth >= 1024 ? 1.08 : window.innerWidth >= 640 ? 0.92 : 0.85) : 1 }}
       >
         <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
           {/* v1.1.0 (#2) — 퀘스트창 on/off 버튼: 접기가 아니라 아예 숨김/표시 (유저 지시) */}
@@ -296,6 +298,15 @@ export function HUD({
           >
             <Ellipsis size={17} />
             <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${moreOpen ? "text-amber-200" : "text-white/50"}`}>더보기</span>
+          </button>
+          {/* vc145 (#8) — 캐릭터 선택 바로가기: 설정을 거치지 않고 게임 화면에서 즉시 로비(캐릭터 선택)로 이동 */}
+          <button
+            onClick={() => { audio.sfx.uiClick(); EventBus.emit("rpg:exitMenu", { lobby: true }); }}
+            aria-label="캐릭터 선택 화면으로 바로 이동"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
+          >
+            <UserRoundPen size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">캐릭</span>
           </button>
           <button
             onClick={onOpenOpt}
@@ -396,7 +407,7 @@ export function HUD({
             </button>
             <button
               onClick={() => { audio.sfx.uiClick(); EventBus.emit("friends:toggle"); }}
-              aria-label="친구 창 열기 (B)"
+              aria-label={`친구 창 열기 (${km.friends})`}
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9fe8c0] active:scale-95"
             >
               <UserRound size={17} />

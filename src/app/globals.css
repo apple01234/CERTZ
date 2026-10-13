@@ -321,4 +321,52 @@ html, body {
 
 /* v1.4.19 — v1.4.13 책 패널(.game-panel-book) 삭제: v1.4.12에서 컴포넌트 사용이
  *  철거됐던 데드 CSS. Tailwind 전환과 함께 잔존 ui2/book_*.webp 참조 제거. */
+
+/* ═══════════ vc145 (#7) — 유저 제공 RPG UI 팩(ui2/ SharpUI) 재적용 ═══════════
+ *  유저 지시 "내가 준 RPG UI 왜 적용 안함??" — v1.4.19 Tailwind 전환 때 철거됐던
+ *  비트맵 스킨을 border-image 9-슬라이스로 복귀한다.
+ *  기존 철거 사유였던 "확대 시 흐려짐"은 9-슬라이스(모서리 고정·가장자리 늘림)로 해소:
+ *  코너는 원본 해상도 그대로, 가운데는 균일 패턴이라 스트레치 티가 나지 않는다.
+ *  Tailwind 시스템(팔레트·폰트·애니메이션)은 유지하고 프레임/버튼 질감만 교체. */
+.game-panel {
+  border: 10px solid transparent;
+  border-image: url("/assets/ui2/panel.webp") 14 fill / 10px stretch;
+  border-radius: 0; /* 비트맵 프레임이 자체 라운드 코너를 그린다 */
+}
+.game-panel h2 {
+  border-left-width: 0; /* 비트맵 헤더 배너와 이중 선 방지 */
+  background: url("/assets/ui2/header.webp") center / 100% 100% no-repeat,
+    linear-gradient(to right, rgba(120, 53, 15, 0.55), transparent);
+}
+.game-btn {
+  border: 5px solid transparent;
+  border-image: url("/assets/ui2/button.webp") 12 fill / 5px stretch;
+  border-radius: 0;
+}
+.game-btn-ghost {
+  border: 5px solid transparent;
+  border-image: url("/assets/ui2/panel.webp") 14 fill / 5px stretch;
+  border-radius: 0;
+}
+.game-tab {
+  border: 4px solid transparent;
+  border-image: url("/assets/ui2/panel.webp") 14 fill / 4px stretch;
+  border-radius: 0;
+}
+/* 입력창 — ui2 input 프레임 */
+.game-input {
+  border: 5px solid transparent;
+  border-image: url("/assets/ui2/input.webp") 14 fill / 5px stretch;
+  border-radius: 0;
+}
+/* 리스트 행 — ui2 list / list_sel (선택행은 앰버 테두리 버전) */
+.sertz-listrow {
+  border: 4px solid transparent;
+  border-image: url("/assets/ui2/list.webp") 12 fill / 4px stretch;
+}
+.sertz-listrow-sel {
+  border: 4px solid transparent;
+  border-image: url("/assets/ui2/list_sel.webp") 12 fill / 4px stretch;
+}
+
 /* v1.0.20 build trigger */

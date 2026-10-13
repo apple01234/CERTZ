@@ -204,7 +204,8 @@ export function rankListFor(db: DbShape, me: UserRec | null) {
     all.push({ uid, data: d, name: String(d.playerName || (u ? u.name : "이름없음") || "이름없음").slice(0, 8) });
   }
   all.sort((a, b) => (rankBetter(a, b) ? -1 : rankBetter(b, a) ? 1 : 0));
-  const top = all.slice(0, 50).map((e, i) => ({
+  /* vc145 (#2) — Top 50 → 100위 확장 (유저 지시 "랭킹 100위까지 스크롤 가능하게") */
+  const top = all.slice(0, 100).map((e, i) => ({
     rank: i + 1,
     name: e.name,
     lv: Number(e.data.lv || 0),

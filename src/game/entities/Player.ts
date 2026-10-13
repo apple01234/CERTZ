@@ -59,7 +59,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v2.9 (#12) — 과금 화폐 에메랄드 (상점 코스메틱/편의 구매용 시드) */
   emerald = 0;
   owned: ItemKey[] = ["weapon_1", "armor_1"];
-  upgrades: { weapon: number; armor: number } = { weapon: 0, armor: 0 }; // 강화 단계 (+0~+5)
+  upgrades: { weapon: number; armor: number } = { weapon: 0, armor: 0 }; // [호환 미러] 장착 중 아이템의 강화 단계 (실 저장은 starMap)
+  /** vc145 (#16 긴급) — 장비 스타포스를 **아이템 단위**로 저장 (itemKey → 성 0~15).
+   *  기존 upgrades{weapon,armor}는 슬롯 단위라 다른 장비를 장착해도 이전 장비의 성이 그대로
+   *  적용되는 심각 버그의 근원. 이제 성은 아이템에 소속되며, upgrades는 세이브 호환용 미러로만 유지 */
+  starMap: Record<string, number> = {};
   /** v3.0.7 — 장신구 스타포스 (itemKey → 성 0~15) — 장착/미장착 무관 보유 단위 유지 */
   accUp: Record<string, number> = {};
   /** v3.0.7 — 강화 주문서 충전 수 (다음 강화 성공률 +15%p/장, 최대 3) */
@@ -99,6 +103,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** 기본 크리티컬 확률 (%) — 장신구로 증가 */
   private static readonly BASE_CRIT = 8;
   private static readonly CRIT_MULT = 1.7;
+  /** vc145 (#9) — 전 스킬 공통 화력 계수 (평타 대비 스킬 우위 보장, 기본공격엔 미적용) */
+  private static readonly SKILL_PWR = 1.25;
   /* v3.0.6 (지시 #4 — 그림자 숨기) — 다음 기본공격 강화 플래그 */
   nextAtkEmpowered = false;
   /** v1.0.18 — 유니온 버프 경험치 % 훅 (씬이 주입 — null이면 미적용) */
@@ -3489,7 +3495,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  "강화 및 스텟을 올려야 빨라진다" — 성장 재화의 가치 확대
      *  v4.0.0 — 배지 이속 + 게이트 인런 카드 이속 */
     const dexPct = Math.min(60, this.stats.dex * 0.5);
-    const starPct = Math.min(15, ((this.upgrades.weapon ?? 0) + (this.upgrades.armor ?? 0)) * 0.5);
+    const starPct = Math.min(15, (this.weaponStars + this.armorStars) * 0.5);
     this.speed = Math.round(Player.BASE_SPEED * (1 + (this.clsBonus.speedPct + dexPct + starPct + this.extBonus.speedPct + this.runBuffs.speedPct) / 100) * buff * sky * slow);
   }
 
@@ -3503,7 +3509,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* v3.0.15 (#13) — 무기 잠재옵션 공격력 합산 */
     const potAtk = sumPotLines([this.potentials[this.weapon]]).atk;
     /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +2 + 무기 기본 공격력의 8% (마일스톤은 별도) */
-    const perStar = starPerStarAtk(ITEMS[this.weapon].atk ?? 0) * this.upgrades.weapon;
+    const perStar = starPerStarAtk(ITEMS[this.weapon].atk ?? 0) * this.weaponStars;
     /* v1.3.1 (#3) — 장신구 스타포스 atk 가산 (atk 장신구도 별이 실제 공격력을 올린다) */
     let accStarAtk = 0;
     for (const k of this.accessories) accStarAtk += starAccBonus(this.accUp[k] ?? 0, ITEMS[k]).atk;
@@ -3526,8 +3532,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const mainStatAtk = mainStatVal * 0.8;
     const base =
       this.atk + (ITEMS[this.weapon].atk ?? 0) * tierMul + perStar + accStarAtk +
-      starWeaponBonus(this.upgrades.weapon).atk + this.stats.str * 0.3 + mainStatAtk + potAtk +
-      this.extBonus.atk; // v4.0.0 — 피규어/배지/룬 flat 공격
+      starWeaponBonus(this.weaponStars).atk + this.stats.str * 0.3 + mainStatAtk + potAtk +
+      this.extBonus.atk + this.critOverflowAtk; // vc145 (#12) — 크리 100% 초과분만큼 공격력 평가산
     const buff = this.hasBuff("buff_atk") || this.hasBuff("buff_king") ? 1.25 : 1;
     const king = this.hasBuff("buff_king") ? 1.3 / 1.25 : 1; // v3.0.6 — 왕의 가호 공격 +30%
     /* v3.0.16 — 세트 아이템 효과 + 몬스터 컬렉션 공격 % 보너스
@@ -3559,13 +3565,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const blessDef = this.worldtreeBlessing ? WORLDTREE_BLESSING.def : 0;
     /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +1 + 기본 방어의 6%
      *  v4.0.0 — 등급업 배율 + 피규어/배지/룬/성좌/스킨 flat 방어 */
-    const perStar = starPerStarDef(ITEMS[this.armor].def ?? 0).def * this.upgrades.armor;
+    const perStar = starPerStarDef(ITEMS[this.armor].def ?? 0).def * this.armorStars;
     /* v1.3.1 (#3) — 장신구 스타포스 def 가산 (def 장신구도 별이 실제 방어력을 올린다) */
     let accStarDef = 0;
     for (const k of this.accessories) accStarDef += starAccBonus(this.accUp[k] ?? 0, ITEMS[k]).def;
     return ((
       (ITEMS[this.armor].def ?? 0) * this.tierUpMult("armor") + perStar + accStarDef +
-      starArmorBonus(this.upgrades.armor).def + this.clsBonus.defAdd + buff + potDef + setDef + blessDef +
+      starArmorBonus(this.armorStars).def + this.clsBonus.defAdd + buff + potDef + setDef + blessDef +
       this.extBonus.def
     )) + kingDef;
   }
@@ -3682,7 +3688,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** 마일스톤 방어구 HP 보너스를 maxHp에 동기화 (로드/강화 후 호출)
    *  v3.0.20 (#8) — 본당 HP +12도 동기화 대상 */
   syncStarHp() {
-    const target = starArmorBonus(this.upgrades.armor).hp + starPerStarDef(ITEMS[this.armor].def ?? 0).hp * this.upgrades.armor;
+    const target = starArmorBonus(this.armorStars).hp + starPerStarDef(ITEMS[this.armor].def ?? 0).hp * this.armorStars;
     const delta = target - this.sfHpApplied;
     if (delta === 0) return;
     this.maxHp = Math.max(60, this.maxHp + delta);
@@ -3775,7 +3781,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     for (const k of this.accessories) {
       acc += (ITEMS[k].crit ?? 0) + starAccBonus(this.accUp[k] ?? 0, ITEMS[k]).crit;
     }
-    acc += starWeaponBonus(this.upgrades.weapon).crit;
+    acc += starWeaponBonus(this.weaponStars).crit;
     /* v3.0.15 (#13) — 장착 장비 잠재옵션 치명 합산 (무기/방어구/장신구) */
     acc += sumPotLines([
       this.potentials[this.weapon], this.potentials[this.armor],
@@ -3803,16 +3809,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** 데미지 굴림 — 크리티컬 판정 포함 (스킬은 skillMult 곱, 전장의 함성 공증 반영 v3.0.3)
-   *  v3.0.6 (지시 #5) — 크리티컬 확률 100% 초과분은 크리티컬 데미지로 1:1 전환:
-   *  예: 크리 확률 130% → 항상 크리 + 크리 데미지 +30% (1.7 → 2.0배)
+   *  v3.0.6 — 크리티컬 확률 100% 캡 (초과분 확률 미반영)
+   *  vc145 (#12 궁수 너프) — 크리 100% 초과분의 크리뎀% 전환 폐지:
+   *  초과분은 atkTotal의 평공격력 가산(critOverflowAtk)으로 변경 — 예: 크리 135% → +35 공격력
    *  v1.0.19 (B-2 유니온) — 유니온 도적 계열 크리티컬 데미지 보너스(extBonus.critDmg %p) 가산 */
   get critDmg(): number {
-    const overflow = Math.max(0, this.critRate - 100);
-    return Player.CRIT_MULT + overflow / 100 + (this.extBonus.critDmg ?? 0) / 100;
+    return Player.CRIT_MULT + (this.extBonus.critDmg ?? 0) / 100;
+  }
+
+  /** vc145 (#12) — 크리 확률 100% 초과분 → 공격력 평가산 (135%면 +35 ATK).
+   *  %뎀 무증식 대신 스탯 수치로 환산 — 후반 크리 스택(궁수) 과도 기대값 절제 */
+  get critOverflowAtk(): number {
+    return Math.max(0, this.critRate - 100);
   }
 
   private rollDamage(mult: number, isSkill = false, forceCrit = false): { dmg: number; crit: boolean } {
-    const chance = Math.min(this.critRate, 100); // 초과분은 확률에 불반영 — 크뎀으로 전환
+    const chance = Math.min(this.critRate, 100); // 초과분은 확률에 불반영 — vc145 (#12) 공격력 평가산으로 전환
     const crit = forceCrit || Math.random() * 100 < chance;
     const rage = this.selfAtkBuff ? this.selfAtkBuff.mult : 1;
     /* v3.3.0 (지시 #1) — 5차 각성 시 스킬 피해 +12% (기본공격 제외 — 스킬 강화 컨셉)
@@ -3820,9 +3832,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const fifth = isSkill && this.isFifth ? FIFTH_SKILL_MULT : 1;
     const runSkl = isSkill && this.runBuffs.skillPct > 0 ? 1 + this.runBuffs.skillPct / 100 : 1;
     /* v1.4.30 (#2) — n차 스킬 사다리: 거듭할수록 스킬이 훨씬 쎄진다 (전 스킬 공통 ×계수)
-     *  1차 ×1.0 / 2차 ×1.12 / 3차 ×1.24 / 4차 ×1.36 / 5차 ×1.48 —
-     *  전직이 스킬 배율 사다리(dmgMul = base + k·t)와 곱해져 후반 격차를 크게 벌린다. */
-    const tierScl = isSkill ? 1 + 0.12 * Math.max(0, this.sTier - 1) : 1;
+     *  vc145 (#9 스킬 강화) — 계수 0.12 → 0.22로 상향 + 전 스킬 공통 ×1.25 (SKILL_PWR):
+     *  "높은 차수 스킬이 평타보다 약하다" 해소 — 평타 대비 스킬 격차를 차수마다 확대
+     *  1차 ×1.25 / 2차 ×1.53 / 3차 ×1.80 / 4차 ×2.08 / 5차 ×2.36 (×skillMult 곱) */
+    const tierScl = isSkill ? (1 + 0.22 * Math.max(0, this.sTier - 1)) * Player.SKILL_PWR : 1;
     const m = (isSkill ? mult * this.clsBonus.skillMult * fifth * runSkl * tierScl : mult) * rage;
     return { dmg: Math.round(this.atkTotal * m * (crit ? this.critDmg : 1)), crit };
   }
@@ -3998,8 +4011,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (!item || !this.owned.includes(key)) return false;
     if (item.kind === "weapon") {
       this.weapon = key;
+      /* vc145 (#16 긴급) — 새 무기의 자체 성으로 미러 갱신 (이전 무기의 성 유출 차단) */
+      this.upgrades.weapon = this.weaponStars;
     } else if (item.kind === "armor") {
       this.armor = key;
+      /* vc145 (#16) — 새 방어구의 자체 성 미러 갱신 + HP 마일스톤 재동기화
+       *  (기존엔 장착 시 syncStarHp가 없어 이전 방어구의 HP 보너스가 유지됐다) */
+      this.upgrades.armor = this.armorStars;
+      this.syncStarHp();
     } else if (item.kind === "accessory") {
       /* v2.9 (#8) — 중복 장착: 반지 4개/펜던트 2개 슬롯.
        * v1.0.3 (#반지중첩) — 유저 지시 "고대왕의 반지 2개 사니까 효과가 2배로 중첩되는 버그":
@@ -4527,20 +4546,43 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   readonly upMax = UPGRADE_MAX; // v2.0 — +12 (메이플 스타포스식, 구 세이브 +5 호환)
 
+  /* ================= vc145 (#16 긴급) — 아이템 단위 스타포스 =================
+   *  weaponStars/armorStars는 "현재 장착 중인 아이템의 성". 장비를 갈아끼우면
+   *  새 아이템 자신의 성(없으면 0)이 적용된다 — 이전 장비의 성 유출 원천 차단.
+   *  upgrades{weapon,armor}는 아래 미러 갱신 헬퍼로 항상 동기화된다(구 코드/세이브 호환). */
+  get weaponStars(): number {
+    const v = this.starMap[this.weapon] ?? 0;
+    return Math.max(0, Math.min(this.upMax, typeof v === "number" && isFinite(v) ? Math.floor(v) : 0));
+  }
+  get armorStars(): number {
+    const v = this.starMap[this.armor] ?? 0;
+    return Math.max(0, Math.min(this.upMax, typeof v === "number" && isFinite(v) ? Math.floor(v) : 0));
+  }
+  starsOfSlot(slot: "weapon" | "armor"): number {
+    return slot === "weapon" ? this.weaponStars : this.armorStars;
+  }
+  /** 성 변경 + upgrades 미러 동기화 (유일한 쓰기 경로 — tryUpgrade/세이브 마이그레이션/거래) */
+  private setStars(slot: "weapon" | "armor", v: number) {
+    const key = slot === "weapon" ? this.weapon : this.armor;
+    const clamped = Math.max(0, Math.min(this.upMax, Math.floor(v)));
+    this.starMap[key] = clamped;
+    this.upgrades[slot] = clamped; // 구 세이브 필드(upWea/upArm) 호환 미러
+  }
+
   /** 다음 강화 비용 — 단계별 눈덩이 곡선 (v2.0 밸런스) */
   upgradeCost(slot: "weapon" | "armor"): number {
-    return upgradeCost(slot, this.upgrades[slot]);
+    return upgradeCost(slot, this.starsOfSlot(slot));
   }
 
   /** 다음 강화 성공률 (%) */
   upgradeRate(slot: "weapon" | "armor"): number {
-    return UPGRADE_RATES[this.upgrades[slot]] ?? 0;
+    return UPGRADE_RATES[this.starsOfSlot(slot)] ?? 0;
   }
 
   /** 강화 시도 — 결과 타입 반환 (골드는 성공/실패 모두 소모)
    *  v3.0.5 — 스타포스: 티어별 연출 + ★5/10/15 돌파 대형 연출 + 마일스톤 HP 동기화 */
   tryUpgrade(slot: "weapon" | "armor"): "ok" | "fail" | "max" | "poor" {
-    const cur = this.upgrades[slot];
+    const cur = this.starsOfSlot(slot); // vc145 (#16) — 장착 중 아이템 자신의 성 기준
     if (cur >= this.upMax) return "max";
     const cost = this.upgradeCost(slot);
     if (this.gold < cost) return "poor";
@@ -4559,7 +4601,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const blessTag = bless > 0 ? ` · 주문서 +${bless * STAR_BLESS_RATE}%p` : "";
     const pityTag = pity > 0 ? ` · 실패가산 +${pity}%p` : "";
     if (ok) {
-      this.upgrades[slot] = cur + 1;
+      this.setStars(slot, cur + 1); // vc145 (#16) — 성은 아이템에 기록 + upgrades 미러 동기
       const next = cur + 1;
       const milestone = (STAR_MILESTONES as readonly number[]).includes(next);
       this.scene.sfxUpgradeOk();
@@ -4567,13 +4609,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnStarForceBreakthrough(this.x, this.y, slot, next);
         this.scene.spawnPickupText(this.x, this.y - 58, `${slotName} ★${next} 돌파!${blessTag}${pityTag}`, "#ffd76a");
       } else {
-        this.scene.spawnStarForceBurst(this.x, this.y, this.upgrades[slot], true);
+        this.scene.spawnStarForceBurst(this.x, this.y, cur + 1, true);
         this.scene.spawnPickupText(this.x, this.y - 44, `강화 성공! ★${next}${blessTag}${pityTag}`, "#ffd76a");
       }
       if (slot === "armor") this.syncStarHp();
     } else if (cur >= UPGRADE_FALLBACK_FROM) {
       // +9 이상 실패 시 1성 하락 (스타포스식 리스크)
-      this.upgrades[slot] = cur - 1;
+      this.setStars(slot, cur - 1); // vc145 (#16) — 하락분도 해당 아이템에 기록
       this.scene.sfxUpgradeFail();
       this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
       this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… ★${cur - 1} 하락${blessTag}${pityTag}`, "#ff9a9a");

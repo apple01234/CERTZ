@@ -562,6 +562,8 @@ export class WorldScene extends Phaser.Scene {
   private merchantLabel: Phaser.GameObjects.Text | null = null;
   private nearShop = false;
   private minimap: Phaser.GameObjects.Graphics | null = null;
+  /** vc145 (#6) — 맵 위 현재 위치 라벨 (예: "3-2") */
+  private locLabel: Phaser.GameObjects.Text | null = null;
   private lastRpgSig = "";
 
   /* ----- v4.1.5 — 동적 조명 + 보스 포스트FX + 신규 파티클 ----- */
@@ -1119,8 +1121,18 @@ export class WorldScene extends Phaser.Scene {
       this.player.armor = (savedPlayer.armor ?? "armor_1") as ItemKey;
       this.player.owned = (savedPlayer.owned ?? ["weapon_1", "armor_1"]) as ItemKey[];
       // 강화/장신구 복원 (구 세이브는 loadSave()가 기본값 채움)
-      this.player.upgrades.weapon = savedPlayer.upWea ?? 0;
-      this.player.upgrades.armor = savedPlayer.upArm ?? 0;
+      /* vc145 (#16 긴급) — 스타포스 아이템 단위 복원 + 구세이브(upWea/upArm) 1회 마이그레이션:
+       *  starMap이 비어 있고 구 슬롯 강화치가 있으면, 현재 장착 중 아이템에 그 성을 귀속시킨다.
+       *  (기존 세이브에선 슬롯 강화 = 장착중 아이템의 강화로 유지돼 왔으므로 가장 자연스러운 이관) */
+      const legacyWea = savedPlayer.upWea ?? 0;
+      const legacyArm = savedPlayer.upArm ?? 0;
+      this.player.starMap = { ...(savedPlayer.starMap ?? {}) };
+      if (Object.keys(this.player.starMap).length === 0 && (legacyWea > 0 || legacyArm > 0)) {
+        if (legacyWea > 0) this.player.starMap[this.player.weapon] = legacyWea;
+        if (legacyArm > 0) this.player.starMap[this.player.armor] = legacyArm;
+      }
+      this.player.upgrades.weapon = this.player.weaponStars; // 미러 동기 (이후 읽기 전원 호환)
+      this.player.upgrades.armor = this.player.armorStars;
       /* v3.0.5 — 스타포스 마일스톤 HP 복원 (가산 이력 선복원 → 델타만 반영) */
       this.player.restoreStarHp(savedPlayer.sfHp ?? 0);
       this.player.syncStarHp();
@@ -1610,6 +1622,10 @@ export class WorldScene extends Phaser.Scene {
         if (!this.scene.isActive() || this.dialoguing || this.transitioning) return;
         try {
           this.save();
+          /* vc145 (#1 랭킹 갱신) — 자동저장 시 클라우드 백업도 즉시 푸시.
+           *  기존엔 클라우드 업로드가 계정 패널의 3분 인터벌에만 의존해
+           *  랭킹(클라우드 세이브 파생)이 영원히 갱신되지 않는 체감이었다. */
+          EventBus.emit("auth:cloudPush", {});
           this.spawnPickupText(this.player.x, this.player.y - 60, "자동 저장 완료", "#9ee084");
         } catch (e) {
           console.warn("[SERTZ] 자동저장 실패(무시)", e);
@@ -2293,7 +2309,10 @@ export class WorldScene extends Phaser.Scene {
     // 쿠소디아/아뜰란티스 — 육한 식물·바위·뼈 (Cursed Land, CC0 — v1.5 배치1 이관)
     /* v2.6 수정 — 육식 식물류(cl_jawsplant 등)는 장식이 아니라 '위험 오브젝트'.
      *  (※ 능대 swampbeast는 몬스터명 — 이 오브젝트와는 별개)
-     *  밟으면 챕터 배율에 비례한 접촉 데미지 + 씹기 연출 (버그: 닿아도 데미지 없음) */
+     *  밟으면 챕터 배율에 비례한 접촉 데미지 + 씹기 연출 (버그: 닿아도 데미지 없음)
+     *  vc145 (#13) — "식인초 작동안함" 보강: ①스폰 시도 9→16회 + 앞 8회는 위험식물 확정 선택
+     *  (기존 6종 균등 선택 + 좁은 배치 조건 조합으로 0~1그루만 나오거나 멀리 나던 것 개선)
+     *  ②히트박스 56×44→68×54 확대 ③물리 오버랩과 별개 거리 기반 판정 폴백(tickPlantHazards) */
     if (ch === "kingdom" || ch === "abyss") {
       const rng6 = new Phaser.Math.RandomDataGenerator(["cursed-plants"]);
       const hazardPlants = ["cl_jawsplant", "cl_eyeplant", "cl_manyeyes"];
@@ -2301,19 +2320,22 @@ export class WorldScene extends Phaser.Scene {
        *  "배치가 이상하다"의 원인. 나머지 식물·바위 소품은 128² 이하라 유지 */
       const passiveProps = ["cl_mflower", "cl_pustules", "cl_rock"];
       const allProps = [...hazardPlants, ...passiveProps];
-      for (let i = 0; i < 9; i++) {
+      let hazardPlaced = 0;
+      for (let i = 0; i < 16 && hazardPlaced < 6; i++) {
         const px6 = rng6.between(120, this.stageW - 120);
         const py6 = rng6.between(70, this.stageH - 70);
         if (Math.abs(py6 - this.stageH / 2) < 85) continue;
         if (blocked(px6, py6)) continue;
         if (!this.inOpenArea(px6, py6)) continue;
-        const tex6 = rng6.pick(allProps);
+        /* 앞 8회는 위험식물 확정 (지정 마릿수 보장), 이후 장식 섞임 */
+        const tex6 = i < 8 ? rng6.pick(hazardPlants) : rng6.pick(allProps);
         const p6 = this.add.image(px6, py6, tex6).setDepth(1);
         if (hazardPlants.includes(tex6)) {
           // 육식 식물 — 목록 적재만 (오버랩은 플레이어 생성 후 일괄 등록)
           this.physics.add.existing(p6, true);
-          (p6.body as Phaser.Physics.Arcade.StaticBody).setSize(56, 44); // center=true — 식물 중앙 배치
+          (p6.body as Phaser.Physics.Arcade.StaticBody).setSize(68, 54); // center=true — 식물 중앙 배치 (vc145 확대)
           this.plantHazards.push(p6);
+          hazardPlaced++;
           this.tweens.add({ targets: p6, scaleX: 1.06, scaleY: 0.96, duration: 900 + (i % 4) * 130, yoyo: true, repeat: -1, ease: "Sine.inOut" });
         }
       }
@@ -2412,6 +2434,21 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: plant, angle: { from: -9, to: 9 }, yoyo: true, duration: 70, repeat: 1, onComplete: () => plant.setAngle(0) });
     plant.setTint(0xff9a8a);
     this.time.delayedCall(220, () => plant.clearTint());
+  }
+
+  /** vc145 (#13) — 식인초 거리 기반 판정 폴백 (물리 오버랩 보완).
+   *  플레이어 중심이 식물 중심에서 40px 이내(=확대 히트박스 68×54 실질 반경)면 데미지.
+   *  physics.add.overlap이 어떤 이유로 발화하지 않아도 "밟으면 번다"가 보장된다. */
+  private tickPlantHazards() {
+    if (this.plantHazards.length === 0 || !this.player) return;
+    if (this.player.state === "dead" || this.dialoguing || this.transitioning) return;
+    for (const plant of this.plantHazards) {
+      if (!plant.active) continue;
+      if (Math.abs(plant.x - this.player.x) < 40 && Math.abs(plant.y - this.player.y) < 36) {
+        this.hitPlantHazard(plant);
+        if ((this.player.state as string) === "dead") break; // takeDamage가 런타임에 dead 전이 가능
+      }
+    }
   }
 
   private spawnFragment(x: number, y: number) {
@@ -3981,6 +4018,25 @@ export class WorldScene extends Phaser.Scene {
     const py = my(this.player.y);
     mm.fillStyle(0xffffff, 1).fillCircle(px, py, 2.6 / z);
     mm.lineStyle(1 / z, 0xffffff, 0.45).strokeCircle(px, py, 4.6 / z);
+    /* vc145 (#6) — 미니맵 위 현재 위치 라벨 (예: "3-2 · 쿠소디아").
+     *  줌/리사이즈마다 redrawMinimap이 도니 위치/크기가 자동 추적된다. */
+    const locTxt = `${STAGE_SHORT[this.stageDef.key] ?? ""}${this.stageDef.name ? " · " + this.stageDef.name : ""}`;
+    if (!this.locLabel || !this.locLabel.scene) {
+      this.locLabel = this.add
+        .text(cx, 0, locTxt, {
+          fontFamily: "Galmuri11, sans-serif",
+          fontSize: `${13 / z}px`,
+          color: "#ffe49a",
+          stroke: "#000000",
+          strokeThickness: 3.5 / z,
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(96)
+        .setScrollFactor(0);
+    } else {
+      this.locLabel.setText(locTxt).setFontSize(13 / z).setStroke("#000000", 3.5 / z);
+    }
+    this.locLabel.setPosition(cx, cy - gh / 2 - 7 / z).setAlpha(0.95);
   }
 
   /**
@@ -8691,6 +8747,20 @@ export class WorldScene extends Phaser.Scene {
       this.showBanner(next ? "툰 셰이딩 ON — 셀룰룩 화면" : "툰 셰이딩 OFF — 기본 화면");
     };
     EventBus.on("rpg:toon", onToonToggle);
+    /* vc145 (#11 조절바 버그) — 설정 "효과 강도" 슬라이더 변경 시 툰/앰비언트 후처리를 즉시 재적용.
+     *  기존엔 writeFx만 하고 재부착이 없어 슬라이더를 움직여도 화면이 변하지 않았다. */
+    const onFxChanged = () => {
+      try {
+        (this.cameras.main as unknown as { filters?: { external?: { clear?: () => void } } }).filters?.external?.clear?.();
+      } catch { /* 무시 */ }
+      this.toonCamFilters = null;
+      this.ambientFilters = [];
+      if (this.fxLevel === 1 && this.game.renderer.type === Phaser.WEBGL && !isLowPerfEnv()) {
+        this.toonCamFilters = applyToonCamera(this.cameras.main); // 강도 0이면 내부에서 null — 자동 해제
+        if (loadFx().intensity > 0) this.ambientFilters = addAmbientBloom(this.cameras.main);
+      }
+    };
+    EventBus.on("fx:changed", onFxChanged as never);
     /* ================= vc142 (#3) — 1:1 플레이어 거래 ================= */
     initTrade({
       myName: () => getPlayerName(),
@@ -8714,6 +8784,8 @@ export class WorldScene extends Phaser.Scene {
           if (i >= 0) p.owned.splice(i, 1);
           delete p.potentials[k];
           delete p.accUp[k];
+          /* vc145 (#16) — 장비 스타포스도 아이템과 함께 소멸 (accUp 동일 정책 — 수령측 부활 방지) */
+          delete p.starMap[k];
         }
         /* vc142 — addGold는 탐욕 버프 ×1.4가 붙으므로 거래에선 직접 대입 (버프 오증봉 방지) */
         p.gold = Math.max(0, p.gold - mine.gold);
@@ -8737,7 +8809,10 @@ export class WorldScene extends Phaser.Scene {
         out.push({ id, name: r.name, lv: r.lv });
         if (out.length >= 20) break;
       }
-      EventBus.emit("trade:nearby", out);
+      /* vc145 (#14 크래시 수정) — 요청(trade:nearby)과 응답(trade:nearby:list) 채널 분리.
+       *  기존엔 같은 채널로 emit→핸들러→재emit 동기 재귀가 무한 루프를 돌아
+       *  "1:1 거래 버튼 클릭 시 Application error" (스택 오버플로)가 발생했다. */
+      EventBus.emit("trade:nearby:list", out);
     };
     const onTradeInvite = (v: { id: string; name: string }) => {
       if (typeof v?.id === "string") tradeInvite(v.id, String(v.name ?? "").slice(0, 8));
@@ -8835,6 +8910,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:autohunt", onAutoHunt);
       EventBus.off("rpg:gm", onGm);
       EventBus.off("rpg:toon", onToonToggle); // vc142 — 툰 셰이딩 토글
+      EventBus.off("fx:changed", onFxChanged as never); // vc145 — 셰이더 강도 슬라이더 실시간 재적용
       EventBus.off("trade:nearby", onTradeNearby as never); // vc142 — 1:1 거래
       EventBus.off("rpg:tradeInvite", onTradeInvite as never);
       EventBus.off("rpg:tradeAct", onTradeAct as never);
@@ -8879,6 +8955,10 @@ export class WorldScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
+
+    /* vc145 (#13) — 식인초 거리 판정 폴백: 물리 오버랩이 조건(스케일 트윈·스태틱바디 리프레시
+     *  타이밍 등)에서 놓치는 프레임을 거리 체크가 보완한다. 식물 6그루 × 거리식 = 프레임 비용 무시 수준. */
+    this.tickPlantHazards();
 
     /* vc142 (#9) — Three.js 3D VFX 오버레이가 Phaser 카메라와 동기화 (유휴 시 no-op) */
     if (this.vfx3dActive) Vfx3D.sync(this.cameras.main);
@@ -12996,6 +13076,7 @@ export class WorldScene extends Phaser.Scene {
       emerald: this.player.emerald,
       upWea: this.player.upgrades.weapon,
       upArm: this.player.upgrades.armor,
+      starMap: { ...this.player.starMap }, // vc145 (#16) — 아이템 단위 스타포스 (진짜 원천)
       sfHp: this.player.starHpApplied,
       accUp: { ...this.player.accUp },
       starBless: this.player.starBless,
@@ -13232,6 +13313,7 @@ export class WorldScene extends Phaser.Scene {
       owned: [...this.player.owned],
       upWea: this.player.upgrades.weapon,
       upArm: this.player.upgrades.armor,
+      starMap: { ...this.player.starMap }, // vc145 (#16) — 아이템 단위 스타포스 (진짜 원천)
       sfHp: this.player.starHpApplied,
       accUp: { ...this.player.accUp },
       starBless: this.player.starBless,

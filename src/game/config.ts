@@ -70,6 +70,10 @@ export type SaveData = {
   /* ↓ RPG 2차 확장: 강화/장신구 (구 세이브 호환) */
   upWea?: number;
   upArm?: number;
+  /** vc145 (#16 긴급) — 장비 스타포스 아이템 단위 저장 (itemKey → 성 0~15).
+   *  upWea/upArm은 구버전 호환 미러(장착 중 아이템 성) — 신규 저장의 진짜 원천은 이 필드.
+   *  로드 시 starMap 부재면 upWea/upArm을 장착 중 아이템 키로 1회 마이그레이션한다. */
+  starMap?: Record<string, number>;
   /* v3.0.5 — 스타포스 마일스톤 HP 보너스 (이미 maxHp에 가산된 총액 — 중복 가산 방지) */
   sfHp?: number;
   /* v3.0.7 — 장신구 스타포스 (itemKey → 성) + 강화 주문서 충전 수 */
@@ -282,6 +286,8 @@ export function loadSave(): SaveData | null {
     // 강화/장신구 (구버전 세이브 호환)
     if (typeof d.upWea !== "number") d.upWea = 0;
     if (typeof d.upArm !== "number") d.upArm = 0;
+    // vc145 (#16) — 장비 스타포스 아이템 단위 맵 (구버전 세이브 호환: 빈 객체)
+    if (!d.starMap || typeof d.starMap !== "object" || Array.isArray(d.starMap)) d.starMap = {};
     // v3.0.7 — 장신구 스타포스/강화 주문서 (구버전 세이브 호환)
     if (!d.accUp || typeof d.accUp !== "object") d.accUp = {};
     if (typeof d.starBless !== "number") d.starBless = 0;

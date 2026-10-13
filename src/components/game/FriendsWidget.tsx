@@ -45,11 +45,19 @@ export function FriendsWidget() {
   }, []);
 
   useEffect(() => {
+    /* vc145 (#4/#10) — 친구 창 단축키를 키맵(기본 R)으로 일원화.
+     *  기존 B 하드코딩은 자동전투 단축키(B)와 충돌해 "B를 누르면 친구창이 뜨는" 버그(#10)의 근원.
+     *  키맵에서 현재 배정키를 읽어 처리하며, 설정에서 재배치해도 즉시 따라간다. */
+    let friendsKey = "r";
+    try {
+      const km = JSON.parse(localStorage.getItem("sertz_keymap_v2") || "null") as Record<string, string> | null;
+      if (km && typeof km.friends === "string" && /^[A-Z]$/.test(km.friends)) friendsKey = km.friends.toLowerCase();
+    } catch { /* 기본 R 유지 */ }
     const onKey = (e: KeyboardEvent) => {
       const el = document.activeElement;
       const typing = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
       if (typing) return;
-      if (e.key.toLowerCase() === "b") setOpen((v) => !v); // v1.0.4 — F는 MP물약과 충돌 → B(buddy)
+      if (e.key.toLowerCase() === friendsKey) setOpen((v) => !v);
     };
     window.addEventListener("keydown", onKey);
     /* v1.4.8 — HUD 더보기 "친구" 버튼 진입로 */
