@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CAPACITOR_DEBUG</key>
+	<string>$(CAPACITOR_DEBUG)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>SERTZ</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UIStatusBarHidden</key>
+	<true/>
+	<!-- vc142 — Android sensorLandscape 미러링: 가로 고정 (세로 지원 제거) -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+	<!-- vc142 — @capacitor-community/admob: GADApplicationIdentifier 누락 시
+	     Google Mobile Ads SDK 자동초기화에서 즉시 크래시(안드로이드 v4.1.1 전례 동일).
+	     현재 안드로이드용 앱 ID를 임시 미러링 — iOS 전용 앱 ID는 AdMob 콘솔 등록 후 교체 권장.
+	     광고 단위 실ID는 src/game/ads.ts ADMOB_REWARDED_ID에서 관리 -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-5675573589406258~2954033564</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<string>skadnetwork.com.google</string>
+		<string>cstr6suwn9.skadnetwork</string>
+		<string>4fzdc2evr5.skadnetwork</string>
+		<string>2fnua5tdw4.skadnetwork</string>
+		<string>ydx93a7ass.skadnetwork</string>
+		<string>p78axxw29g.skadnetwork</string>
+		<string>v72qych5uu.skadnetwork</string>
+		<string>ludvb6z3bs.skadnetwork</string>
+		<string>cp8zw746q7.skadnetwork</string>
+		<string>3sh42y64q3.skadnetwork</string>
+		<string>c6k4g5qg8m.skadnetwork</string>
+		<string>s39g8k73mm.skadnetwork</string>
+	</array>
+</dict>
+</plist>

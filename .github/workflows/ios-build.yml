@@ -1,0 +1,104 @@
+name: iOS Build (SERTZ)
+
+# SERTZ iOS 빌드 — Linux에서 Xcode 컴파일 불가라 GitHub macOS 러너 사용.
+#  · 트리거: 수동(workflow_dispatch) 또는 ios/**·본 파일 푸시
+#  · 산출물: SERTZ-vc142-ios-unsigned.ipa (사인 없음 — AltStore/Sideloadly/TrollStore 등으로
+#    사이드로드하거나 본인 인증서로 codesign 후 설치)
+#  · 빌드 플로우는 Android(scripts/build_apk.sh)와 동일: 라우트 격리 → APK_EXPORT 정적
+#    export(.next-apk) → cap sync ios → xcodebuild (SPM — CocoaPods 불필요)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-build.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static export (APK_EXPORT=1) — 서버리스 라우트 7개+middleware 격리
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          set -e
+          ROUTE_DIRS="admin auth market rank support chat party"
+          mkdir -p .apk-hold/api-routes
+          for d in $ROUTE_DIRS; do
+            if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" ".apk-hold/api-routes/"; fi
+          done
+          MIDDLEWARE_FILES="src/middleware.ts src/middleware.js src/proxy.ts src/proxy.js"
+          for f in $MIDDLEWARE_FILES; do
+            if [ -f "$f" ]; then mv "$f" ".apk-hold/"; fi
+          done
+          restore() {
+            for d in $ROUTE_DIRS; do
+              if [ -d ".apk-hold/api-routes/$d" ]; then mv ".apk-hold/api-routes/$d" "src/app/api/$d"; fi
+            done
+            for f in middleware.ts middleware.js proxy.ts proxy.js; do
+              if [ -f ".apk-hold/$f" ]; then mv ".apk-hold/$f" "src/$f"; fi
+            done
+          }
+          trap restore EXIT
+          APK_EXPORT=1 npx next build
+          test -f .next-apk/index.html || { echo "export 실패 — index.html 없음"; exit 1; }
+
+      - name: Capacitor sync iOS
+        run: npx cap sync ios
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Build unsigned .app (device, arm64)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath ios/build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            -quiet 2>&1 | tee ios/build.log | tail -60
+
+      - name: Package unsigned IPA
+        run: |
+          APP_PATH=$(find ios/build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          test -n "$APP_PATH" || { echo ".app 미검출"; exit 1; }
+          echo "APP: $APP_PATH"
+          mkdir Payload
+          cp -r "$APP_PATH" Payload/
+          zip -qry SERTZ-vc142-ios-unsigned.ipa Payload
+          ls -lh SERTZ-vc142-ios-unsigned.ipa
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SERTZ-vc142-ios-unsigned
+          path: SERTZ-vc142-ios-unsigned.ipa
+          retention-days: 30
+
+      - name: Attach to GitHub Release (v1.0.5-beta)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload v1.0.5-beta SERTZ-vc142-ios-unsigned.ipa --clobber --repo "$GITHUB_REPOSITORY"
+          echo "--- release assets ---"
+          gh release view v1.0.5-beta --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'

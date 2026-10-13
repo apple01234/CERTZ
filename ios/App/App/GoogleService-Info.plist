@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- vc142 — iOS 빌드용 GoogleService-Info.plist (임시).
+	     값은 android/app/google-services.json에서 미러링한 실제 Firebase 프로젝트(sertz-681eb).
+	     GOOGLE_APP_ID는 Android 전용 ID를 임시 사용 — 부팅 안전(FirebaseApp.configure는
+	     plist 파싱만 하고 서버 검증 없음). iOS 전용 Google 로그인 활성화를 위해서는
+	     Firebase Console에서 iOS 앱 등록 후 받은 정식 GoogleService-Info.plist로
+	     이 파일을 교체할 것 (등록 시 BUNDLE_ID com.sertz.myapp 사용). -->
+	<key>CLIENT_ID</key>
+	<string>650738641826-29c196sq1db27re7hrat5b0e8qcoionj.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.650738641826-29c196sq1db27re7hrat5b0e8qcoionj</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDQqPSeG3zLINfpynVF3dVxNTVSVD6nE2g</string>
+	<key>GCM_SENDER_ID</key>
+	<string>650738641826</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.sertz.myapp</string>
+	<key>PROJECT_ID</key>
+	<string>sertz-681eb</string>
+	<key>STORAGE_BUCKET</key>
+	<string>sertz-681eb.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:650738641826:android:c17c0b5f995f3b2d0d20fb</string>
+</dict>
+</plist>
