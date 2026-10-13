@@ -44,6 +44,10 @@ ROUTE_DIRS="admin auth market rank support chat party"
 for d in $ROUTE_DIRS; do
   if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" "$PROJECT_ROOT/.apk-hold/api-routes/"; fi
 done
+# vc143 — src/app/api/route.ts(파일형 루트)도 output:export 카피에서 EISDIR 유발 — 격리 대상에 추가
+for rf in route.ts; do
+  if [ -f "src/app/api/$rf" ]; then mv "src/app/api/$rf" "$PROJECT_ROOT/.apk-hold/api-routes/$rf"; fi
+done
 echo "[0.7/5] middleware 임시 격리 (output:export 비호환 — trap EXIT 복원)"
 MIDDLEWARE_FILES="src/middleware.ts src/middleware.js src/proxy.ts src/proxy.js"
 for f in $MIDDLEWARE_FILES; do
@@ -53,6 +57,10 @@ restore_routes() {
   # v1.4.25 버그 수정: trap은 스크립트 끝(cd android 이후)에 실행되므로 상대경로면 실패 — 절대경로 필수
   for d in $ROUTE_DIRS; do
     if [ -d "$PROJECT_ROOT/.apk-hold/api-routes/$d" ]; then mv "$PROJECT_ROOT/.apk-hold/api-routes/$d" "$PROJECT_ROOT/src/app/api/$d"; fi
+  done
+  # vc143 — 파일형 루트(route.ts) 복원
+  for rf in route.ts; do
+    if [ -f "$PROJECT_ROOT/.apk-hold/api-routes/$rf" ]; then mv "$PROJECT_ROOT/.apk-hold/api-routes/$rf" "$PROJECT_ROOT/src/app/api/$rf"; fi
   done
   # 웹 플레이 차단 middleware 복원 (export 빌드 전 격리분)
   for f in middleware.ts middleware.js proxy.ts proxy.js; do
