@@ -4025,3 +4025,28 @@ Stage Summary:
 - vc145 = 피드백 16종 전량(웹 라이브 code:145 · SERTZ-vc145.apk/aab/mapping 릴리스 완비·덮어설치 호환)
 - 유저 테스트 포인트: ①랭킹창(90초 내 갱신·100위 스크롤) ③⑪설정(O)에서 셰이더 강도 조절바 — 즉시 반영+기본 강도 완화 체감 ④R키 친구창·B키 자동전투 분리 ⑤PC 우상단 UI 확대 ⑥미니맵 위 "3-2" 라벨 ⑦패널/버튼 ui2 프레임 ⑧우상단 "캐릭" 아이콘 ⑨스킬 데미지 체감 ⑫궁수 크리 130%+ 육성 시 밸런스 ⑬쿠소디아 식인초 밟기 ⑭두 기기 1:1 거래 ⑮보스전 검은 네모 소멸 ⑯장비 갈아끼우고 스탯창 강화 수치 확인(핵심!)
 - 주의: 스타포스 마이그레이션은 "starMap 없는 구세이브 최초 로드 1회" — 기존 upWea/upArm이 현재 장착 아이템에 귀속됨
+
+---
+Task ID: vc146-feedback-10
+Agent: Super Z (main)
+Task: 유저 피드백 10종 전량 구현 + 첫 정식 릴리스(1.0.6) 빌드 — 웹 라이브 + APK/AAB 릴리스
+
+Work Log:
+- [① GM 무한 엘릭서] 근원: usePotion에서 gmInfinite여도 보유(have)면 consumeConsumable이 도는 경로 — [GM] 완전 엘릭서를 퀵슬롯/자동물약으로 마실 때마다 소모. usePotion·useConsumablePotion 양쪽에 `!gmInfinite` 가드로 차감 금지(비GM 정상 차감 유지). E2E 실측: GM 3경로 소모 0, 비GM 정상 차감
+- [② 5차 제2궁극기] classes.ts SKILL5B_INFO 12종(계열 4+세부직업 8) 신설 + Player.skill5bCd/Max=120000·useSkill5b 12변형 전면 구현(워브링어 대지분쇄·크루세이더 천국의 문 8초 무적 성역·데드아이 시간정지 100련사·스카이로드 대기권 돌파·아크로드 마성 오버로드·이터널 시간 역행=recentDmgLog 6초 합×2 재현·섀도우로드 그림자 왕국·블레이드마스터 만검의 진 + 계열 4종) · MP 150 · netEmitAction "s5b"+mpMqtt/net 화이트리스트+원격 s5급 연출 · keymap skill5b 기본 Q · TouchControls 보라 ult2 버튼(1차 궁극기 옆) · 설정 라벨. E2E: 해금·이름·쿨 120000·MP 150 소모·Q키 바인딩 실측
+- [③ 쉐이더 밝기] applyToonCamera에 ColorMatrix.brightness(1-0.22k) 추가 — 기본 강도 55→감광 22%(0.78), 하한 0.62. 대비/채도/Blocky 툰 감성 유지, 화면만 어둡게
+- [④ 정식 릴리스] build.gradle versionName "1.0.6"(베타 제거)·versionCode 146 + server.js/route.ts LATEST_CODE 146·VERSION_NOTE·APK_MIRROR(v1.0.6/SERTZ-vc146.apk) + next.config.ts 미러 + apk-guide 전면 갱신(스태일 vc143 본문 교체→vc146 10종+vc145 16종 이력 복원)
+- [⑤ 2.5D 카메라] ①시점 상승(applyManualCameraFollow vy 캐릭터 위 9% — JRPG 프레이밍) ②y-depth 정렬(80ms 스로틀, depth 9~10 밴드 — 플레이어/적/보스/원격, 가까운 엔티티가 앞을 가림) ③심도 안개(상단 24% 캔버스 그라데이션, depth 88, 포인터 투과) · localStorage sertz_persp 기본 켬 + 설정 패널 "2.5D 카메라(의사 원근)" 토글(fx:changed 공용 이벤트 즉시 재적용, 끄면 고정 depth 복원). E2E: 켬/끔/재부착·depth 밴드 실측
+- [⑥ 무릉도장 실시간 피해량] addDojangScore가 최고 일격+최근 3초 롤링 로그 적산, HUD 텍스트에 "누적 | DPS | 최고 일격" 100ms 실시간 표기 + 종료 보상 팝업에 DPS·최고 일격 라인 추가. E2E: DPS 5,259·최고 일격 7,777 실측
+- [⑦ 우측 구석 유령 이펙트] 근원: Vfx3D.sync가 Phaser P4 렌더 보정항 origin×(1-1/zoom)을 빼먹어 PC(줌≈2)에서 3D 이펙트가 실제 위치보다 최대 (w/2)(1-1/z)·(h/2)(1-1/z)px 우하단 어긋남 — 보스 격파 폭발 등이 "오른쪽 구석"에 떴던 원인. P4 origin 보정 적용 + NaN 좌표 스폰 가드
+- [⑧ 챕터 레벨 게이트 상향] lvGate 곡선: kingdom 8/10→12/15 · alfheim 14→22/26 · muspelheim 20→34/39 · niflheim 27→48/54 · cave 34→64/70 · nidavellir 42→84/92 · hel 50→104/114 · abyss 58→126/136 (forest 1/5는 신규 유저 교착 방지로 유지)
+- [⑨ 거래소 전품목] 서버 MARKET_LISTABLE을 보스드롭 9종 고정 → ITEMS 전체 동적 구성(gmOnly만 제외) + ownsListableItem에 장착 무기/방어구 차단 추가(장신구 정책 확장) · 클라 MarketBoard 등록 풀을 보유 전체(gmOnly/장착/등록중 제외, 등급순 정렬)로 확대+권장가 일반품목 상점가 기반 + 안내 문구 갱신
+- [⑩ 크래시 안정화] Vfx3D.sync가 매 프레임 renderer.setSize로 그리기 버퍼를 재할당하던 GPU 메모리 churn 제거(크기 변경 시에만) — "게임이 자꾸 꺼져"의 직접 후보 + rAF 루프 개별 이펙트 예외 격리+렌더 try/catch + crashGuard(기존) 유지
+- [검증] tsc 0 · npm run build 성공 · scripts/e2e_vc146.js 신설 36/36 PASS(pageerror 0 — GM엘릭서 3경로/제2궁극기 시전·쿨·MP/2.5D 토글/도장 DPS/버전게이트 146) · e2e_vc145 회귀 34/34 PASS
+- [빌드/릴리스] 라우트 격리→APK_EXPORT export→cap sync→assembleRelease 4m07s 146,104,861B · aapt versionCode 146·versionName **1.0.6** · 서명 cc774f34(동일 키 — 덮어설치 호환) · bundleRelease 147,979,226B · GitHub 정식 릴리스 v1.0.6(prerelease=false) 업로드 — 스태일 9월 자산 SERTZ-v1.0.6.apk(105MB·2026-09-09) 발견→삭제(204) + 릴리스 제목/본문 공식 노트로 갱신 · 3종 무결성 검증(HTTP 200+md5 일치: apk 466d01c9.. aab 33b01091.. map b1ce59c1..) · apk-guide 해시 갱신
+- [배포] 커밋 0174e3ee 푸시(리베이스 — 원격 accounts backup 위) → Vercel READY code:146 폴링 확인 + 정리 체인 4삭제(KEEP 2) · download/ 최신 2개 정책(vc145+vc146)
+
+Stage Summary:
+- vc146 = 피드백 10종 전량 + **첫 정식 릴리스 v1.0.6**(웹 라이브 code:146 · SERTZ-vc146.apk/aab/mapping — 덮어설치 호환)
+- 유저 테스트 포인트: ①[GM] 엘릭서 계속 마시기(사라짐 0) ②Lv200/GM 5차에서 Q키·보라 버튼 — 제2궁극기 12종 체감 ③화면 밝기 하향 체감 ④APK 버전 1.0.6 표기 ⑤2.5D 시점(설정 O에서 끔/켬 비교) ⑥무릉도장 DPS 표시 ⑦PC 보스 격파 3D 폭발이 이제 올바른 위치에 뜸 ⑧챕터 진입 게이트 상향 체감 ⑨거래소에서 엘릭서·장비 등록 ⑩장시간 플레이 강종 빈도
+- 비고: 릴리스 v1.0.6 태그는 9월 실험분이 이미 존재했음(스태일 APK 동봉) — 정리 완료. 이터널 제2궁극기(시간 역행)는 rollDamage 로그 기반이라 다른 궁극기와 중첩 시 천문학적 피해 가능(설계 의도 — "거스르는 시간")
