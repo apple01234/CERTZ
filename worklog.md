@@ -3964,3 +3964,34 @@ Stage Summary:
 - 유저 테스트 포인트: ①설원(니플헤임 6장·재림 r2/r8)에서 장시간 플레이 시 튕김 소멸 확인 ②8장 스콜&하티 이후 보스 체감 ③중반 퀘스트 마릿수 100~200+단일종 집중 사냥 ④파티 맺고 공동토벌전 — 보스 HP바 공유 확인 ⑦PC 넓은 화면 버튼 크기 ⑧⑨자동전투 중 이동/포탈 ⑩보스 옆 퇴장 관리인 대화
 - iOS는 유저 요청으로 보류 — Actions 워크플로는 유지(ios/ 커밋 시 자동 빌드·릴리스 첨부)
 - 잔무: 미스터리 2종(middleware.ts·api/route.ts) 디스크 보존 중 — 유저 확인 후 폐기/커밋 결정 · APK 덮어설치 테스트 대기 · 백로그(세이브 복원·서버 구글 인증서·교실 퀘스트 개선—파티 게임 추가·기존 퀘스트 절대 삭제 금지)
+---
+Task ID: vc144-feedback-12
+Agent: Super Z (main)
+Task: 유저 피드백 12종 전량 구현 (vc144) + 이전 세션 잔무(Vercel 토큰 등록·구배포 정리) + APK/AAB 릴리스
+
+Work Log:
+- [병렬 세션 정합] 착수 직후 origin에 병렬 세션의 vc143(이전 백로그 9종) 착지 확인 → 내 12종 작업분을 vc143 위로 리베이스(충돌 1건 — skoll 코멘트) 후 버전 게이트를 vc142 계획→vc144로 상향. wip 커밋에 gdrive 원본 8,859파일/토큰이 섞였다가 .gitignore 추가 후 재커밋으로 제거(원칙: 크롭본만 커밋)
+- [① PC 자동전투 단축키] keymap.ts GameAction에 autohunt 신설(기본 B키 — T는 stat 점유)·ACTION_LABELS "자동전투 토글" + WorldScene update()에서 keyFor("autohunt")→rpg:autohunt 이벤트(모바일 버튼과 동일 경로). 설정 UI에서 재배치 가능
+- [② 완전 엘릭서 자동물약] Panels.tsx isPot 필터 확장: `s.k.startsWith("potion_") || it.healFull === true` — gm_elixir/potion_elixir가 HP/MP 퀵슬롯 등록 가능 → tickAutoUse/usePotion(healFull=restoreAll) 경로로 자동 사용
+- [③ 1:1 플레이어 거래] 신규 src/game/trade.ts(367줄 상태머신: idle→outgoing/incoming→open→done, 요청 30초/세션 180초 타임아웃) + mpMqtt.ts 거래 개인토픽 trade/<pid>(treq/tacc/tdeny/toff/tlock/tcancel — items≤12·골드/에메랄드 클램프 세탁) + Trade2Panel(패널 trade2 — 근처 플레이어 500px 목록→요청→양측 오버 편집→이중 확정 잠금→교환). 검증: 각 클라이언트 로컬(보유수량·tradeLock/gmOnly/장착중 제외·잔액). 확정 후 상대 오버 변경 시 잠금 해제(이중확인). potentials/accUp 부가상태 이전, addGold 탐욕버프 ×1.4 오증봉 방지(직접 대입). 진입: 거래소 패널 헤더 "1:1 거래" 버튼
+- [④ 심연의 탑 리워크] infinite.ts — towerKillNeed(1층 6→18층 상한, 보스층=보스 1기)·towerSpawnCount(할당+4 여유)·towerSpeedScale(층당 +1.5%, 상한 +60% — 체력/공격 배율과 병행 "파워 배율")·TOWER_BOSSES 12보스 고정 로테이션(5층 guardian→10층 behemoth→…60층 guardian 순환)·TOWER_TIERS 10밴드×4종 확대+층별 회전 오프셋. WorldScene — spawnTowerFloor 전면 재작성(abs:true 절대치 스폰+spd 배율), 사망 훅을 "남은 적 0" → towerOnKill 할당 카운터로 교체(일반+보스 경로), 층 클리어 시 잔여 몬스터 정리, HUD "처치 N/M" 표기
+- [⑤ 후반 몬스터 HP×10] stages.ts stageScale — LATE_HP_CHAPTERS(cave/nidavellir/hel/abyss = 7~10장) 4구역부터 HP ×10 (구역 1~3 진입 완충 유지, ATK/EXP/GOLD 곡선 불변)
+- [⑥ 보스 고유 패턴+이펙트] Boss.ts VX 패턴 시스템(vxTele/vxCast 모드 + startVx/doVx 7종): firepillars(수르트 sig — 추적 화염기둥 3연속)·frostnova(스콜/펜리르/베헤모스 — 2겹 확장 빙결신성)·thunderfall(나그라파르 — 추적 낙뢰 4연속)·poisonfield(니드호그 sig/요르문간드 — 맹독 장판 3개 6초 도트)·holymantle(아부디토스 — 마룡 성역 대폭발)·crystalburst(심연군주/베오르드/가디언 — 결정 8방향 산개)·blinkslash(가름 — 점멸 3연 참격). 12보스 전원 최소 1개 VX 보유(E2E 실측). BossAttackKind 7종 확장
+- [⑦ 검은 네모 삭제] 근원 특정: hv2_crater.webp가 알파 유실 순흑 불투명 384²(원본 CraterFree1.png도 가산블렌드용 흑색 — NORMAL 블렌드로 그려 검은 사각형이 됨) → Boss doSlam/doQuake의 crater() 호출 2곳 제거(shockHeavy로 대체) + DriveFX.crater는 ADD 블렌드 강제로 잔여 호환
+- [⑧ 5분 자동저장] WorldScene create에 time.addEvent 300000ms 루프 — 대사/전환 중 스킵, "자동 저장 완료" 픽업 텍스트
+- [⑨ Three.js 3D VFX] three 0.186 설치 + 신규 src/game/fx/Vfx3D.ts — Phaser 캔버스 위 투명 WebGL 오버레이(포인터 차단), 오쏘 카메라가 Phaser 카메라와 매 프레임 동기화, 유저 에셋 텍스처 빌보드 프리셋 4종(boom/pillar/ring/spiral). 트리거: 보스 격파 대폭발·수르트 화염기둥·낙뢰·빙결신성·마룡성역·탑 층 클리어. 안전장치: 모바일/2코어 이하 자동 비활성 + ?vfx3d=1 강제 플래그, 동시 6개 상한, 이펙트 없으면 rAF 정지(유휴 0)
+- [⑩ 쿠소디아 프리즈] 근원 2종: ①showChapterCard가 dialogueSince 미세팅 → 20초 watchdog 우회(트윈 체인 유실 시 physics.pause() 영구 잠금) → dialogueSince 세팅+4초 하드 타임아웃 이중 안전망 ②Enemy opts.hp를 절대값으로 넘기던 탑/황금몬스터가 base.hp×절대값=수만HP 괴물로 스폰("멈춤" 체감) → Enemy.abs 플래그 신설로 절대치 직접 적용
+- [⑪ 툰 셰이딩] ToonFX.ts 확장 — applyToonCamera(Blocky size2 포스터라이즈 + ColorMatrix 대비1.09/채도1.22 = Toon Shaders Pro HLSL의 셀룰룩 결과를 Phaser 4 내장 필터로 재현, 커스텀 셰이더 리스크 0) + localStorage sertz_toon 토글 + 설정 패널 "툰 셰이딩(켬/끔)" 카드 + fxLevel 0 강등 시 자동 해제. 기존 캐릭터/보스 Glow 림라이트와 병행
+- [⑫ 에셋 최대 활용] scripts/conv_vc142_assets.py — UNI VFX·Hovl Studio·Cartoon FX Remaster·GameVFX 4팩에서 플립북 9종(vx_smoke 8fr/expcore/fire 3x3/elec 7x2/bolt 4x2/smokecloud/petal/fly/debris 3x3) + 단일 24종(vx_slash/magiccircle/techcircle/crystal/snow/ring/aura 등) = 33종 webp 변환(합계 ~300KB, AI 생성 0 — 전부 유저 원본 크롭). BootScene 로드+애니 등록
+- [검증] tsc 0 · npm run build 성공 · scripts/e2e_vc144.js 신규 23/23 PASS(pageerror 0 — 에셋 33종 HTTP200/부팅/3D 오버레이 캔버스/설정 라벨 2종/B키/자동저장/watchdog/crater제거/VX 12보스 전원/sig 2종/HP×10/탑/abs/healFull/trade/MQTT/Vx3D) · e2e_vc143 회귀 10/11(유일 FAIL "선택형 대화"은 격리 재현 시 버튼+이벤트 수신 정상 확인 — 2코어 환경의 테스트 시퀀스 플레이크, 기능 이상 없음)
+- [잔무 해소] 유저 제공 Vercel 토큰 .secrets/vercel_token 등록(chmod 600) → vercel_api.sh 동작 확인 → vercel_cleanup.py run --yes로 구배포 5개 삭제(KEEP 라이브+롤백 2개)
+- [배포] 커밋 f8c29782·fbfad179 푸시 → Vercel /api/version code:144 라이브 확인. apk-guide md5/sha1 갱신
+- [빌드환경] 컨테이너 리셋으로 JDK/SDK 소실 → Temurin 21.0.12.1(/home/z/jdk)·cmdline-tools 11076708+platform-tools+android-36+build-tools 36.0.0(/home/z/android-sdk) 재설치, local.properties 생성
+- [릴리스] APK BUILD SUCCESSFUL(6m39s) → versionCode 144·서명 cc774f34(기존 키 동일·덮어설치 호환)·APK 내 vx_ 33종 검출 · SERTZ-vc144.apk(146.1MB)/SERTZ-vc144.aab(148.0MB)/SERTZ-vc144-mapping.txt 릴리스 v1.0.5-beta 업로드 완료
+
+Stage Summary:
+- vc144 = 피드백 12종 전량(웹 라이브 code:144 · APK/AAB 릴리스 완료)
+- 핵심 체감: ①거래소→"1:1 거래"로 근처 유저와 아이템/골드/에메랄드 교환 ②탑이 "층별 지정 마릿수 처치제"로 바뀌고 5층마다 보스가 12종 순환 ③7~10장 4구역부터 몬스터 HP 10배 ④수르트/니드호그/스콜/나그라파르 등 보스마다 전혀 다른 신규 패턴 ⑤화면 전체 툰 셀룰룩(설정에서 끔 가능) ⑥보스 격파 시 3D 폭발 연출(고사양 PC) ⑦B키로 자동전투 on/off ⑧5분마다 자동저장
+- 유저 테스트 포인트: ①두 기기로 같은 맵 접속 → 거래소→1:1 거래→요청/수락/확정 흐름 ②탑 5층 진입 시 보스 로테이션과 "처치 N/M" HUD ③설정(O)에서 툰 셰이딩 끔/켬 비교 ④쿠소디아 3장 진입(챕터카드 후 멈춤 재발 여부)
+- 비고: three.js 의존 추가(번역 ~150KB gzip), APK 용량 159→146MB(그래도 대형 — 에셋 누적), 3D 오버레이는 모바일 APK에선 적응형 비활성(모바일 UA) — 2D 이펙트는 전부 유지
+---
