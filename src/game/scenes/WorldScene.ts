@@ -953,12 +953,14 @@ export class WorldScene extends Phaser.Scene {
     /* v4.8.0 — 충격파 링 풀 (WebGL 전용 — Canvas 폴백은 풀이 비어 no-op) */
     this.shockFX = new ShockwaveFX(this);
     this.slashArcFx = new SlashArcFX(this); // v4.9.0
-    /* vc142 (#9) — Three.js 3D VFX 오버레이 초기화 (고사양 WebGL만 — 실패 시 자동 스킵) */
+    /* vc142 (#9) — Three.js 3D VFX 오버레이 초기화 (고사양 WebGL만 — 실패 시 자동 스킵).
+     *  ?vfx3d=1 쿼리로 강제 활성 (진단/E2E용 — 적응형 게이트 우회) */
     if (this.game.renderer.type === Phaser.WEBGL) {
       try {
+        const vfxForce = (() => { try { return new URLSearchParams(window.location.search).get("vfx3d") === "1"; } catch { return false; } })();
         if (Vfx3D.ensure(this.game.canvas as HTMLCanvasElement)) {
           Vfx3D.wireEvents();
-          this.vfx3dActive = this.fxLevel === 1 && !isLowPerfEnv();
+          this.vfx3dActive = vfxForce || (this.fxLevel === 1 && !isLowPerfEnv());
         }
       } catch (e) {
         console.warn("[SERTZ] Vfx3D 미탑재(무시)", e);

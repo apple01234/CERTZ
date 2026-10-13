@@ -408,11 +408,11 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     /* v1.4.12 (#20 보스 정체성) — 시그니처 slam · 성향 1.05 */
     sig: "slam",
     aggr: 1.05,
-    /* 수호자 = 지진 — 마지막 페이즈에서 연속 낙뢰(심연 지진) 개방 */
+    /* 수호자 = 지진 — 마지막 페이즈에서 연속 낙뢰(심연 지진) 개방 + vc144 심연 결정 산개 */
     patterns: {
       p1: ["slam", "charge", "volley"],
-      p2: ["slam", "charge", "volley", "ring", "zones"],
-      p3: ["slam", "charge", "volley", "ring", "zones", "quake"],
+      p2: ["slam", "charge", "volley", "ring", "zones", "crystalburst"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "quake", "crystalburst"],
     },
   },
   behemoth: {

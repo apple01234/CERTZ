@@ -23,12 +23,14 @@ type Preset = "boom" | "pillar" | "ring" | "spiral";
 const MAX_LIVE = 6;
 const TINT = 0xffffff;
 
-/** 절전/저사양 판정 — WorldScene의 isLowPerfEnv와 동일 기준(모바일 UA + 낮은 코어) */
+/** 절전/저사양 판정 — 모바일 UA 또는 초저코스 기기만 (데스크톱 4코어도 허용).
+ *  ?vfx3d=1 쿼리로 강제 활성 (진단/E2E용) */
 function lowPerf(): boolean {
   try {
+    if (new URLSearchParams(window.location.search).get("vfx3d") === "1") return false;
     const cores = navigator.hardwareConcurrency ?? 4;
     const mobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
-    return mobile || cores <= 4;
+    return mobile || cores <= 2;
   } catch {
     return false;
   }
