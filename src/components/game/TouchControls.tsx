@@ -201,6 +201,8 @@ export function TouchControls({
   const s5bPct = (skills.s5bCd ?? 0) > 0 ? ((skills.s5bCd ?? 0) / Math.max(1, skills.s5bMax ?? 120000)) * 100 : 0;
 
   const sm = !isTouch; // PC(넓은 화면)에선 살짝 큰 크기
+  /* vc147 (#11) — 스킬/공격 버튼에 단축키 키탭 표시 (키맵 재배치 따라감) */
+  const km = loadKeyMap();
   /* v1.4.18 (#4) — 공격 버튼 100 (모바일) / 112 (PC) · v1.4.14 — 스킬 56/66 (현행 크기 유지)
    * vc143 (#7) — 화면 배율 곱연산: 넓은 화면(PC 전체화면 등)에서 버튼이 화면에 맞게 커진다 */
   const ATK = Math.round((sm ? 112 : 100) * uiScale); // 공격 버튼 지름
@@ -210,10 +212,10 @@ export function TouchControls({
   const knobR = Math.round(26 * uiScale);
 
   const unlocked = [
-    { key: "s1", name: s1Name || "회전베기", mp: 15, ready: s1Ready, cd: s1Pct, icon: skills.s1Icon, emit: "input:skill1" },
-    { key: "s2", name: s2Name || "돌진베기", mp: 20, ready: s2Ready, cd: s2Pct, icon: skills.s2Icon, emit: "input:skill2" },
-    { key: "s3", name: s3Name ?? "", mp: 25, ready: s3Ready, cd: s3Pct, icon: skills.s3Icon, emit: "input:skill3" },
-    { key: "s4", name: s4Name ?? "", mp: 40, ready: s4Ready, cd: s4Pct, icon: skills.s4Icon, emit: "input:skill4" },
+    { key: "s1", name: s1Name || "회전베기", mp: 15, ready: s1Ready, cd: s1Pct, icon: skills.s1Icon, emit: "input:skill1", hint: km.skill1 },
+    { key: "s2", name: s2Name || "돌진베기", mp: 20, ready: s2Ready, cd: s2Pct, icon: skills.s2Icon, emit: "input:skill2", hint: km.skill2 },
+    { key: "s3", name: s3Name ?? "", mp: 25, ready: s3Ready, cd: s3Pct, icon: skills.s3Icon, emit: "input:skill3", hint: km.skill3 },
+    { key: "s4", name: s4Name ?? "", mp: 40, ready: s4Ready, cd: s4Pct, icon: skills.s4Icon, emit: "input:skill4", hint: km.skill4 },
   ].filter((s) => s.name); // 미해금(빈 이름) 스킬은 그리드에서 제외
   const hasUlt = !!s5Name;
   /* vc146 (#2) — 제2궁극기 버튼 표시 조건 */
@@ -315,7 +317,7 @@ export function TouchControls({
          *  살짝 큰 황금 버튼(현행 스타일). 미해금 스킬은 그리드에서 제외 */}
         <div
           className="pointer-events-auto flex flex-wrap-reverse items-end justify-end gap-1.5"
-          style={{ maxWidth: SK * 2 + 14 }}
+          style={{ maxWidth: SK * 2 + 26 }}
         >
           {unlocked.map((s) => (
             <div key={s.key} style={{ width: SK, height: SK }}>
@@ -326,6 +328,7 @@ export function TouchControls({
                 mp={s.mp}
                 icon={s.icon}
                 compact={!!sm}
+                keyHint={s.hint}
                 onDown={() => EventBus.emit(s.emit as "input:skill1")}
               />
             </div>
@@ -340,13 +343,16 @@ export function TouchControls({
                 icon={skills.s5Icon}
                 ult
                 compact={!!sm}
+                keyHint={km.skill5}
                 onDown={() => EventBus.emit("input:skill5")}
               >
                 <Star size={18} />
               </SkillButton>
             </div>
           )}
-          {/* vc146 (#2) — 제2궁극기 보라 금강 버튼 (쿨 2분 · MP 150) */}
+          {/* vc146 (#2) — 제2궁극기 보라 금강 버튼 (쿨 2분 · MP 150)
+           *  vc147 (#3) — 그리드 maxWidth를 2SK+14→2SK+26으로 확대: 궁극기 행(2×(SK+6)+간격6=2SK+18)이
+           *  기존 폭보다 넓어 s5b가 s5 옆이 아닌 새 줄로 밀려나던 배치 버그 수정 — 이제 1차 궁극기 바로 옆 */}
           {hasUlt2 && (
             <div style={{ width: SK + 6, height: SK + 6 }}>
               <SkillButton
@@ -357,6 +363,7 @@ export function TouchControls({
                 icon={skills.s5Icon}
                 ult2
                 compact={!!sm}
+                keyHint={km.skill5b}
                 onDown={() => EventBus.emit("input:skill5b")}
               >
                 <Sparkles size={18} />
@@ -378,6 +385,10 @@ export function TouchControls({
             <Swords size={26} />
             <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
           </div>
+          {/* vc147 (#11) — 기본공격 단축키 키탭 */}
+          <span className="pointer-events-none absolute left-2 top-2 rounded bg-slate-900/80 px-1 text-[9px] font-black leading-[13px] text-rose-100">
+            {km.attack}
+          </span>
         </button>
         {/* clusterFloat(좁은 세로 화면) — [자동+물약]을 행 위쪽 가로열로 피난:
          *  배치 복귀와 무관하게 조이스틱(화면 좌하단 46%)과의 겹침만 막는 안전장치(v1.4.18 계승) */}
@@ -457,6 +468,7 @@ function SkillButton({
   ult,
   ult2,
   compact,
+  keyHint,
 }: {
   children?: React.ReactNode;
   label: string;
@@ -471,6 +483,8 @@ function SkillButton({
   ult2?: boolean;
   /** v1.4.12 (#8) — 컨테이너가 크기를 결정하므로 버튼은 h-full w-full */
   compact?: boolean;
+  /** vc147 (#11) — 버튼 좌상단 단축키 키탭 (키맵 재배치 따라감) */
+  keyHint?: string;
 }) {
   /* v3.0.27 — 아이콘 로드 실패 시 lucide 폴백 (웹뷰 캐시 오류 등 어떤 환경에서도 버튼이 깨지지 않게)
      전직 등으로 icon 경로가 바뀌면 렌더 중 상태 조정 패턴으로 에러 플래그 리셋 */
@@ -510,6 +524,12 @@ function SkillButton({
         />
       ) : (
         children
+      )}
+      {/* vc147 (#11) — 단축키 키탭 (버튼 내부 좌상단 — overflow-hidden이라 외부 음수 오프셋 불가) */}
+      {keyHint && (
+        <span className="pointer-events-none absolute left-1 top-1 rounded bg-slate-900/85 px-1 text-[8px] font-black leading-[12px] text-amber-200">
+          {keyHint}
+        </span>
       )}
       <span className={`max-w-[42px] truncate text-[7px] font-bold leading-tight sm:max-w-none sm:text-[8px] ${ult ? "text-amber-100" : ult2 ? "text-fuchsia-100" : ""}`}>{label}</span>
       <span className={`text-[7px] font-bold sm:text-[8px] ${ult ? "text-amber-200" : ult2 ? "text-fuchsia-200" : "text-[#a8c0ff]"}`}>{mp}MP</span>

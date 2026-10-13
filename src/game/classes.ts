@@ -855,8 +855,14 @@ export const SKILL5B_INFO: Record<Skill5BKey, { name: string; desc: string }> = 
  *  · 스킬 이름 뒤에 "·극" 접미어 (Player 이름 getter에서 처리) */
 export const FIFTH_SKILL_MULT = 1.12;
 export const FIFTH_CD_MULT = 0.85;
-/** 5차 각성 요구 레벨 (궁극기 해금 레벨과 동일 — 최종 레벨 캡) */
+/** 5차 각성 요구 레벨 (1차 궁극기 해금 레벨) */
 export const FIFTH_LEVEL = 200;
+/* vc147 (#18) — 궁극기 고정 피해 배율 (유저 지시 "5차 1번째 스킬은 데미지 300% 배율, 2번쨰는 500% 배율"):
+ *  1차 궁극기(SKILL5_INFO)는 ×300%, 제2궁극기(SKILL5B_INFO)는 ×500%.
+ *  궁극기 시전 중 rollDamage는 이 배율 하나로 계산된다 (기존 n차 사다리×SKILL_PWR×FIFTH_SKILL_MULT
+ *  중복 적용을 대체 — 요구치 그대로 3.0배/5.0배가 되도록 단일 배율로 승화). */
+export const FIFTH1_MULT = 3.0;
+export const FIFTH2_MULT = 5.0;
 
 /** HUD 표기용 — "전사 · 검사" / 2차 이상 "버서커" */
 export function classLabel(key?: string | null): string {

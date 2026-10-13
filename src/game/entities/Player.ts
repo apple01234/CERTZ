@@ -12,12 +12,12 @@ import {
   classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf, tier2RootOf,
   resolveSkill1Of, resolveSkill2Of, resolveSkill5Of,
   type ClassKey, type ClassBonus, SKILL_LABELS, SKILL3_KIND, SKILL4_KIND,
-  SKILL5_INFO, SKILL5B_INFO, FIFTH_SKILL_MULT, FIFTH_CD_MULT, FIFTH_LEVEL,
+  SKILL5_INFO, SKILL5B_INFO, FIFTH_SKILL_MULT, FIFTH_CD_MULT, FIFTH_LEVEL, FIFTH1_MULT, FIFTH2_MULT,
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
-import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnTierFlair, spawnUltFlourish, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처
+import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
 import type { Enemy } from "./Enemy";
@@ -191,9 +191,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   get skill5Unlocked(): boolean {
     return this.lv >= FIFTH_LEVEL || this.fifth;
   }
-  /** vc146 (#2) — 제2궁극기 해금 — 1차 궁극기와 동일 조건 (Lv.200 / 각성 시련 / GM) */
+  /** vc146 (#2) — 제2궁극기 해금 — vc147 (#19): Lv.200 동시 해금 폐지.
+   *  · 스토리 퀘스트 "각성의 대가"(fifth2.ts, 12단계) 완료 시 해금 — 수주 조건 Lv.220
+   *  · 각성 시련 완료/GM 부여(fifth)는 기존대로 전부 해금 (테스트/GM 편의 유지) */
   get skill5bUnlocked(): boolean {
-    return this.lv >= FIFTH_LEVEL || this.fifth;
+    return this.fifth2Done || this.fifth;
   }
   get skill5bName(): string {
     if (!this.skill5bUnlocked) return "";
@@ -203,6 +205,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   get isFifth(): boolean {
     return this.lv >= FIFTH_LEVEL || this.fifth;
   }
+  /* vc147 (#19) — "각성의 대가" 스토리 퀘스트 진행 상태 (fifth2.ts — 세이브 저장 대상)
+   *  step: 0=미수주, 1~12=진행, 12 초과=완료 · count: 현재 단계 카운터 */
+  fifth2Step = 0;
+  fifth2Count = 0;
+  fifth2Done = false;
+  /* vc147 (#18) — 궁극기 시전 중 슬롯 표시 (1=1차 궁극기 ×300%, 2=제2궁극기 ×500%).
+   *  useSkill5/useSkill5b 내부의 rd() 래퍼가 설정하고 rollDamage가 소비한다 (동기 호출 단위). */
+  private ultSlot: 0 | 1 | 2 = 0;
   /** v3.3.0 — 스킬 강화 티어: 5차 각성 시 5 (기존 공식 사다리가 한 칸 더 연장된다) */
   get sTier(): number {
     return this.isFifth ? 5 : this.tier;
@@ -2586,8 +2596,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  · 계열(warrior/ranger/mage/thief)별 전용 연출 — 4차 궁극기의 2배 이상 피해
    *  · 시퀀스 전체에 화면 플래시/쉐이크/기둥/폭발/필드를 겹쳐 "궁극기"급 임팩트
    * v3.3.0 (지시 #2) — 4차 세부직업 8종 전부 "고유 궁극기"로 분리 (겹침 0).
-   *  4차 미달 플레이어는 기존 계열 궁극기 폴백. */
-  useSkill5() {
+   *  4차 미달 플레이어는 기존 계열 궁극기 폴백. */  useSkill5() {
     if (this.state !== "idle" || !this.skill5Unlocked || this.skill5Cd > 0 || this.mp < 100) return;
     this.mp -= 100;
     this.skill5Cd = this.skill5Max; // 60초 고정 (cdMult 미적용)
@@ -2600,13 +2609,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const info = SKILL5_INFO[key5];
     const now = this.scene.time.now;
 
+    /* vc147 (#18) — 1차 궁극기 피해 ×300% (FIFTH1_MULT): 궁극기 시전 중 rollDamage에
+     *  슬롯 계수를 태워 n차 사다리/FIFTH_SKILL_MULT 중복 대신 요구치 그대로 3.0배 단일 배율 적용 */
+    const rd = (m: number, forceCrit = false) => { this.ultSlot = 1; const r = this.rollDamage(m, true, forceCrit); this.ultSlot = 0; return r; };
+
     /* 공통 인트로 — 시간 정지 + 차원 균열 + 궁극기 발동 안내 */
     this.scene.sfxSkill("timestop", 1.06);
     this.scene.cameras.main.flash(140, 255, 255, 255);
     this.scene.spawnPickupText(this.x, this.y - 58, `★ ${info.name} ★`, "#ffe66a");
     /* v1.0.10 — GameStudio FX 궁극기 인트로: 프리렌더 3D 마법진(클래스 컬러 스핀)+이중 확장 링+
      *  임팩트 코어+4방향 스파크 합성 — "4차·5차 밋밋함" 지시의 대표 개선점 */
-    spawnUltimateIntro(this.scene, this.x, this.y, hex);
+    /* v1.0.10 — GameStudio FX 궁극기 인트로 · vc147 (#14) — 지면 연출 계열 분화:
+     *  마법사만 마법진, 전사=대지 균열 / 궁수=화살 부채꼴 / 도적=공허 섬광 / 해적=대폭발
+     *  (전 직업 동일 펜타클 "마법진 우려먹기" 해소) */
+    spawnUltIntroSig(this.scene, this.x, this.y, hex, (familyOf(this.cls) ?? "default") as FamKey | "pirate" | "default");
     /* v1.4.0 (Task 3-1 — 유저 지시 #13) — 직업별 고유 VFX2 시그니처 연출 (8직업 1:1 매핑) */
     spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
     const ring = this.scene.add.circle(this.x, this.y, 34)
@@ -2629,7 +2645,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("bigsword", 0.9 + (i % 4) * 0.06);
             for (const e of this.getAllTargetsIn(440)) {
               const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-              const { dmg, crit } = this.rollDamage(2.6, true);
+              const { dmg, crit } = rd(2.6);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 440, crit);
               this.applyEnemyStatus("bleed", Math.max(6, Math.round(this.atkTotal * 0.012)), 5000); // 전장에 출혈이 끊이지 않는다
@@ -2651,7 +2667,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(620)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(7.4, true);
+            const { dmg, crit } = rd(7.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
           }
@@ -2676,7 +2692,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 200) continue;
               const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
-              const { dmg, crit } = this.rollDamage(3.2, true);
+              const { dmg, crit } = rd(3.2);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 440, crit);
             }
@@ -2697,7 +2713,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(580)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(6.2, true);
+            const { dmg, crit } = rd(6.2);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
           }
@@ -2705,6 +2721,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.hp = this.maxHp;
           this.mp = Math.min(this.maxMp, this.mp + 50);
           this.scene.spawnHealFx(this.x, this.y, 0xffe9a0);
+          this.scene.driveFx?.healPuff(this.x, this.y - 8); // vc147 (#7) — Drive 팩 힐 이펙트 활성화
           this.scene.spawnPickupText(this.x, this.y - 70, `완전 회복 +${Math.round(this.maxHp - before)}`, "#ffe9a0");
           this.selfDefBuff = { add: 40, until: this.scene.time.now + 10000 };
         });
@@ -2719,7 +2736,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const t = this.nearestTargets(1, 820)[0];
             if (!t) return;
             const ang = Math.atan2(t.y - this.y, t.x - this.x) + (Math.random() - 0.5) * 0.85;
-            const { dmg, crit } = this.rollDamage(1.7, true, true); // 확정 크리티컬 — 절사명중
+            const { dmg, crit } = rd(1.7, true); // 확정 크리티컬 — 절사명중
             this.scene.firePlayerProj({
               x: this.x, y: this.y - 8, angle: ang, speed: 950, pierce: 3,
               dmg, crit, tint: 0xffe08a, knock: 260, scale: 1.9,
@@ -2743,7 +2760,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(1400)) {
               const rel = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y);
               if (rel.normalize().dot(dir) < 0.92) continue; // 저격선 근처만
-              const { dmg, crit } = this.rollDamage(4.6, true, true);
+              const { dmg, crit } = rd(4.6, true);
               e.takeDamage(dmg, dir, 420, true);
             }
           });
@@ -2760,7 +2777,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const base = t
               ? Math.atan2(t.y - this.y, t.x - this.x)
               : Math.random() * Math.PI * 2;
-            const { dmg, crit } = this.rollDamage(1.9, true);
+            const { dmg, crit } = rd(1.9);
             this.scene.fireCyclone({
               x: this.x, y: this.y - 10, angle: base + (i - 7) * 0.16, speed: 520,
               dmg, crit, hex, pull: 150, radius: 120, life: 1500, scale: 2.1,
@@ -2784,7 +2801,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.cameras.main.shake(110, 0.011);
               this.scene.sfxSkill("thunder", 0.82 + (i % 3) * 0.08);
               const away = new Phaser.Math.Vector2(0, 0.1).normalize();
-              const { dmg, crit } = this.rollDamage(3.4, true);
+              const { dmg, crit } = rd(3.4);
               if (crit) this.scene.sfxCrit();
               t.takeDamage(dmg, away, 420, crit);
             });
@@ -2814,7 +2831,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(310)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 200) continue;
               const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
-              const { dmg, crit } = this.rollDamage(3.0, true);
+              const { dmg, crit } = rd(3.0);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
             }
@@ -2843,7 +2860,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.8);
           for (const e of this.getAllTargetsIn(650)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(6.0 + 3.0 * ratio, true); // MP 비례 최대 +3.0배
+            const { dmg, crit } = rd(6.0 + 3.0 * ratio); // MP 비례 최대 +3.0배
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
           }
@@ -2879,13 +2896,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 210) continue;
               const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
-              const { dmg, crit } = this.rollDamage(4.0, true);
+              const { dmg, crit } = rd(4.0);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 400, crit);
               /* 잔상 — 같은 피해가 두 번 울린다 (상시) */
               this.scene.time.delayedCall(170, () => {
                 if (!e.active) return;
-                const { dmg: echo } = this.rollDamage(2.2, true);
+                const { dmg: echo } = rd(2.2);
                 e.takeDamage(echo, away, 120, false);
               });
             }
@@ -2905,7 +2922,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(580)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(8.0, true); // v1.4.30 (#7) 6.4→8.0
+            const { dmg, crit } = rd(8.0); // v1.4.30 (#7) 6.4→8.0
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
           }
@@ -2924,7 +2941,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSlash(t.x, t.y, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 2.9, 0x1a1030);
             this.scene.spawnBurstAt(t.x, t.y, 18, 0x8a4aff);
             this.scene.sfxSkill("iainuki", 0.9 + (i % 4) * 0.05);
-            const { dmg, crit } = this.rollDamage(3.4, true);
+            const { dmg, crit } = rd(3.4);
             if (crit) this.scene.sfxCrit();
             t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 300, crit);
           });
@@ -2953,7 +2970,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.8);
           for (const e of this.getAllTargetsIn(560)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(6.9, true);
+            const { dmg, crit } = rd(6.9);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 600, crit);
             this.applyEnemyStatus("bleed", Math.max(8, Math.round(this.atkTotal * 0.014)), 6000);
@@ -2975,7 +2992,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSlash(t.x, t.y - 6, new Phaser.Math.Vector2(-Math.cos(ang), -Math.sin(ang)), i % 2 === 1, 1.8, 0xffffff);
             this.scene.spawnBurstAt(t.x, t.y, 12, hex);
             this.scene.sfxSkill("iainuki", 0.95 + (i % 5) * 0.04);
-            const { dmg, crit } = this.rollDamage(2.6, true);
+            const { dmg, crit } = rd(2.6);
             if (crit) this.scene.sfxCrit();
             t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 240, crit);
           });
@@ -2999,7 +3016,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(560)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(7.0, true);
+            const { dmg, crit } = rd(7.0);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
           }
@@ -3021,7 +3038,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("bigsword", 0.9 + i * 0.05);
             for (const e of this.getAllTargetsIn(400)) {
               const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-              const { dmg, crit } = this.rollDamage(2.4, true);
+              const { dmg, crit } = rd(2.4);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 420, crit);
             }
@@ -3038,7 +3055,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(560)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(6.5, true);
+            const { dmg, crit } = rd(6.5);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
           }
@@ -3055,7 +3072,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const t = this.nearestTargets(1, 760)[0];
             if (!t) return;
             const ang = Math.atan2(t.y - this.y, t.x - this.x) + (Math.random() - 0.5) * 0.7;
-            const { dmg, crit } = this.rollDamage(1.75, true);
+            const { dmg, crit } = rd(1.75);
             if (crit) this.scene.sfxCrit();
             this.scene.firePlayerProj({
               x: this.x, y: this.y - 8, angle: ang, speed: 900, pierce: 3,
@@ -3071,7 +3088,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           const base = Math.atan2(this.aimDirFree().y, this.aimDirFree().x);
           for (let i = 0; i < 12; i++) {
-            const { dmg, crit } = this.rollDamage(2.2, true);
+            const { dmg, crit } = rd(2.2);
             this.scene.firePlayerProj({
               x: this.x, y: this.y - 8, angle: base + (i - 5.5) * 0.24, speed: 1050, pierce: 99,
               dmg, crit, tint: 0xffd76a, knock: 420, scale: 2.2,
@@ -3106,7 +3123,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 190) continue;
               const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
-              const { dmg, crit } = this.rollDamage(2.9, true);
+              const { dmg, crit } = rd(2.9);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
             }
@@ -3128,7 +3145,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(600)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(7.5, true);
+            const { dmg, crit } = rd(7.5);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
           }
@@ -3148,7 +3165,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSlash(t.x, t.y, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 2.6, 0x1a1030);
             this.scene.spawnBurstAt(t.x, t.y, 16, 0x8a4aff);
             this.scene.sfxSkill("iainuki", 0.92 + (i % 4) * 0.05);
-            const { dmg, crit } = this.rollDamage(3.3, true);
+            const { dmg, crit } = rd(3.3);
             if (crit) this.scene.sfxCrit();
             t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 300, crit);
           });
@@ -3165,7 +3182,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(540)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(6.8, true);
+            const { dmg, crit } = rd(6.8);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 600, crit);
           }
@@ -3199,12 +3216,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const key5 = resolveSkill5Of(this.cls);
     const info = SKILL5B_INFO[key5];
 
+    /* vc147 (#18) — 제2궁극기 피해 ×500% (FIFTH2_MULT) — 1차(rd×300%)와 동일 메커니즘 */
+    const rd = (m: number, forceCrit = false) => { this.ultSlot = 2; const r = this.rollDamage(m, true, forceCrit); this.ultSlot = 0; return r; };
+
     /* 공통 인트로 — 제2의 궁극기: 붉은보라 차원 균열 + 이중 마법진 */
     this.scene.sfxSkill("timestop", 0.92);
     this.scene.cameras.main.flash(170, 220, 160, 255);
     this.scene.spawnPickupText(this.x, this.y - 58, `★★ ${info.name} ★★`, "#e0a8ff");
-    spawnUltimateIntro(this.scene, this.x, this.y, 0xb06aff);
-    spawnPentacle(this.scene, this.x, this.y, 0xd8a0ff, { scale: 2.4, duration: 950, spin: true });
+    /* 공통 인트로 — 제2의 궁극기: 붉은보라 차원 균열 + 계열별 지면 시그니처 (vc147 #14) */
+    spawnUltIntroSig(this.scene, this.x, this.y, 0xb06aff, (familyOf(this.cls) ?? "default") as FamKey | "pirate" | "default");
+    if (familyOf(this.cls) === "mage") spawnPentacle(this.scene, this.x, this.y, 0xd8a0ff, { scale: 2.4, duration: 950, spin: true });
     const ring = this.scene.add.circle(this.x, this.y, 34)
       .setStrokeStyle(3, 0xc08aff, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.scene.tweens.add({ targets: ring, scale: 3.8, alpha: 0, duration: 760, ease: "Cubic.out", onComplete: () => ring.destroy() });
@@ -3229,7 +3250,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("bigsword", 0.82 + (i % 3) * 0.07);
             for (const e of this.getAllTargetsIn(260)) {
               const away = dir;
-              const { dmg, crit } = this.rollDamage(4.2, true);
+              const { dmg, crit } = rd(4.2);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 420, crit);
               this.applyEnemyStatus("bleed", Math.max(7, Math.round(this.atkTotal * 0.013)), 5000);
@@ -3249,7 +3270,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.76);
           for (const e of this.getAllTargetsIn(760)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(12.0, true);
+            const { dmg, crit } = rd(12.0);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 680, crit);
             (e as Enemy).applyStun?.(2000);
@@ -3278,7 +3299,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(320)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 210) continue;
               const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
-              const { dmg, crit } = this.rollDamage(3.6, true);
+              const { dmg, crit } = rd(3.6);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
             }
@@ -3296,7 +3317,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(640)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(8.4, true);
+            const { dmg, crit } = rd(8.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
           }
@@ -3310,7 +3331,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       }
 
-      /* 데드아이 — 신시전격: 시간 정지 2.6초 + 무음 저격 100련 + 탄착 일제 폭발 */
+      /* 데드아이 — 신시전격: 시간 정지 2.6초 + 무음 저격 100련 + 탄착 일제 폭발
+       *  vc147 (#8) — "이펙트 안보임(화살 안보임)" 수정: 기존엔 데미지 판정만 있고
+       *  화살 시각이 전혀 없었다. 매 탄 발사 위치→목표 저격 트레이서(초록 발광 화살,
+       *  ADD 블렌드)를 쏘고 5연발마다 머즐 플래시 — 발사 라인이 눈에 보인다. */
       case "deadeye": {
         const struck = new Set<Enemy | Boss>();
         this.scene.spawnField({ x: this.x, y: this.y + 10, radius: 480, dur: 1200, dps: 0, kind: "time", owner: "player" });
@@ -3321,7 +3345,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const t = this.nearestTargets(1, 860)[0];
             if (!t) return;
             struck.add(t);
-            const { dmg, crit } = this.rollDamage(1.15, true, true); // 전 탄 확정 크리 — 시간이 멈춘 사이
+            /* vc147 (#8) — 저격 트레이서: 발사→탄착 90ms 직선 비행 (동시 노출 ~4발 예산) */
+            {
+              const sx = this.x + (Math.random() - 0.5) * 14;
+              const sy = this.y - 10 + (Math.random() - 0.5) * 10;
+              const ang = Math.atan2(t.y - 8 - sy, t.x - sx);
+              const arr = this.scene.add.image(sx, sy, "x2_arrow_green")
+                .setRotation(ang).setDepth(12).setBlendMode(Phaser.BlendModes.ADD)
+                .setScale(1.5).setTint(0x9dffc4);
+              this.scene.tweens.add({
+                targets: arr,
+                x: t.x, y: t.y - 8,
+                alpha: 0.25,
+                duration: 90,
+                ease: "Linear",
+                onComplete: () => arr.destroy(),
+              });
+              if (i % 5 === 0) this.scene.spawnBurstAt(sx, sy, 3, 0x7dffb0);
+            }
+            const { dmg, crit } = rd(1.15, true); // 전 탄 확정 크리 — 시간이 멈춘 사이
             t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 60, crit);
             if (i % 10 === 9) {
               this.scene.spawnHitSpark(t.x, t.y - 8);
@@ -3342,7 +3384,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnBurstAt(t.x, t.y, 20, 0xffd76a);
             this.scene.spawnShockwave(t.x, t.y, 0xffd76a, 1.0);
             const away = new Phaser.Math.Vector2(t.x - this.x, t.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(3.2, true, true);
+            const { dmg, crit } = rd(3.2, true);
             t.takeDamage(dmg, away, 480, crit);
             n++;
             if (n >= 12) break; // 연출 예산 — 최대 12기
@@ -3358,7 +3400,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 900)[0];
             const base = t ? Math.atan2(t.y - this.y, t.x - this.x) : Math.random() * Math.PI * 2;
-            const { dmg, crit } = this.rollDamage(2.2, true);
+            const { dmg, crit } = rd(2.2);
             this.scene.fireCyclone({
               x: this.x, y: this.y - 10, angle: base + (i - 6) * 0.19, speed: 560,
               dmg, crit, hex, pull: 210, radius: 130, life: 1600, scale: 2.4,
@@ -3377,7 +3419,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(110, 0.011);
             this.scene.sfxSkill("thunder", 0.8 + (b % 3) * 0.08);
             const away = new Phaser.Math.Vector2(0, 0.1).normalize();
-            const { dmg, crit } = this.rollDamage(3.8, true);
+            const { dmg, crit } = rd(3.8);
             if (crit) this.scene.sfxCrit();
             t.takeDamage(dmg, away, 440, crit);
           });
@@ -3388,7 +3430,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const t = this.nearestTargets(1, 800)[0];
           const cx = t ? t.x : this.x;
           const cy = t ? t.y : this.y;
-          const { dmg, crit } = this.rollDamage(5.6, true);
+          const { dmg, crit } = rd(5.6);
           this.scene.fireCyclone({ x: cx, y: cy, angle: 0, speed: 0, dmg, crit, hex, pull: 320, radius: 220, life: 3200, scale: 4.2 });
           this.scene.spawnField({ x: cx, y: cy, radius: 260, dur: 6000, dps: Math.max(20, Math.round(this.atkTotal * 1.6)), kind: "light", owner: "player" });
           spawnRingPop(this.scene, cx, cy, "vf_ring", 0xaed8ff, 5.6, 860);
@@ -3398,7 +3440,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.8);
           for (const e of this.getAllTargetsIn(560)) {
             const away = new Phaser.Math.Vector2(e.x - cx, e.y - cy).normalize();
-            const { dmg: d2, crit: c2 } = this.rollDamage(7.2, true);
+            const { dmg: d2, crit: c2 } = rd(7.2);
             if (c2) this.scene.sfxCrit();
             e.takeDamage(d2, away, 600, c2);
           }
@@ -3423,7 +3465,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 220) continue;
               const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
-              const { dmg, crit } = this.rollDamage(4.4, true);
+              const { dmg, crit } = rd(4.4);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
             }
@@ -3447,7 +3489,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.74);
           for (const e of this.getAllTargetsIn(700)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(7.5 + 3.5 * ratio, true);
+            const { dmg, crit } = rd(7.5 + 3.5 * ratio);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 660, crit);
           }
@@ -3513,7 +3555,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSlash(t.x, t.y, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 3.1, 0x1a1030);
             this.scene.spawnBurstAt(t.x, t.y, 18, 0x8a4aff);
             this.scene.sfxSkill("iainuki", 0.86 + (i % 4) * 0.05);
-            const { dmg, crit } = this.rollDamage(3.9, true);
+            const { dmg, crit } = rd(3.9);
             if (crit) this.scene.sfxCrit();
             t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 320, crit);
           });
@@ -3533,7 +3575,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.74);
           for (const e of this.getAllTargetsIn(600)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(9.6, true);
+            const { dmg, crit } = rd(9.6);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
             this.applyEnemyStatus("bleed", Math.max(9, Math.round(this.atkTotal * 0.016)), 6500);
@@ -3556,7 +3598,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(430)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, cx, cy) > 130) continue;
               const away = dir;
-              const { dmg, crit } = this.rollDamage(1.5, true);
+              const { dmg, crit } = rd(1.5);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 160, crit);
             }
@@ -3579,7 +3621,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.76);
           for (const e of this.getAllTargetsIn(600)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(9.4, true);
+            const { dmg, crit } = rd(9.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
           }
@@ -3603,7 +3645,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(280)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 200) continue;
               const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
-              const { dmg, crit } = this.rollDamage(5.2, true);
+              const { dmg, crit } = rd(5.2);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
             }
@@ -3623,7 +3665,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.72);
           for (const e of this.getAllTargetsIn(700)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(10.5, true);
+            const { dmg, crit } = rd(10.5);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 660, crit);
           }
@@ -3641,7 +3683,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               const t = this.nearestTargets(1, 820)[0];
               if (!t) return;
               const ang = Math.atan2(t.y - this.y, t.x - this.x) + (a - 1.5) * 0.2;
-              const { dmg, crit } = this.rollDamage(1.4, true);
+              const { dmg, crit } = rd(1.4);
               this.scene.firePlayerProj({
                 x: this.x, y: this.y - 8, angle: ang, speed: 920, pierce: 1,
                 dmg, crit, tint: 0xffe08a, knock: 240, scale: 1.8,
@@ -3657,7 +3699,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           const base = Math.atan2(this.aimDirFree().y, this.aimDirFree().x);
           for (let i = 0; i < 5; i++) {
-            const { dmg, crit } = this.rollDamage(4.6, true, true);
+            const { dmg, crit } = rd(4.6, true);
             this.scene.firePlayerProj({
               x: this.x, y: this.y - 8, angle: base + (i - 2) * 0.14, speed: 1150, pierce: 99,
               dmg, crit, tint: 0xffffff, knock: 480, scale: 2.5,
@@ -3689,7 +3731,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               const d = toC.length();
               if (d > 30) {
                 toC.normalize();
-                const { dmg } = this.rollDamage(1.3, true);
+                const { dmg } = rd(1.3);
                 e.takeDamage(dmg, toC, 150, false); // knock 방향 = 균열 쪽 → 끌려들어감
               }
             }
@@ -3710,7 +3752,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.72);
           for (const e of this.getAllTargetsIn(680)) {
             const away = new Phaser.Math.Vector2(e.x - bx, e.y - by).normalize();
-            const { dmg, crit } = this.rollDamage(9.8, true);
+            const { dmg, crit } = rd(9.8);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 680, crit);
           }
@@ -3736,7 +3778,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSlash(t.x, t.y, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 3.0, 0x1a1030);
             this.scene.spawnBurstAt(t.x, t.y, 18, 0x8a4aff);
             this.scene.sfxSkill("iainuki", 0.9 + (i % 4) * 0.05);
-            const { dmg, crit } = this.rollDamage(5.5, true, true); // 각인된 대상은 반드시 벤다
+            const { dmg, crit } = rd(5.5, true); // 각인된 대상은 반드시 벤다
             t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 340, crit);
           });
         });
@@ -3753,7 +3795,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.78);
           for (const e of this.getAllTargetsIn(580)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = this.rollDamage(8.8, true);
+            const { dmg, crit } = rd(8.8);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
             this.applyEnemyStatus("bleed", Math.max(8, Math.round(this.atkTotal * 0.015)), 6000);
@@ -4434,15 +4476,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const crit = forceCrit || Math.random() * 100 < chance;
     const rage = this.selfAtkBuff ? this.selfAtkBuff.mult : 1;
     /* v3.3.0 (지시 #1) — 5차 각성 시 스킬 피해 +12% (기본공격 제외 — 스킬 강화 컨셉)
-     *  v4.0.0 — 게이트 인런 카드 스킬 피해 배율 */
-    const fifth = isSkill && this.isFifth ? FIFTH_SKILL_MULT : 1;
+     *  v4.0.0 — 게이트 인런 카드 스킬 피해 배율
+     *  vc147 (#18) — 궁극기 시전 중(ultSlot)엔 고정 배율(×300%/×500%) 하나로 계산:
+     *  기존 FIFTH_SKILL_MULT+n차 사다리×SKILL_PWR의 다중 중첩(약 ×3.2)을 대체해 요구치 그대로 3.0/5.0배 */
+    const isUlt = this.ultSlot > 0;
+    const fifth = isSkill && this.isFifth && !isUlt ? FIFTH_SKILL_MULT : 1;
+    const ultMult = this.ultSlot === 1 ? FIFTH1_MULT : this.ultSlot === 2 ? FIFTH2_MULT : 1;
     const runSkl = isSkill && this.runBuffs.skillPct > 0 ? 1 + this.runBuffs.skillPct / 100 : 1;
     /* v1.4.30 (#2) — n차 스킬 사다리: 거듭할수록 스킬이 훨씬 쎄진다 (전 스킬 공통 ×계수)
      *  vc145 (#9 스킬 강화) — 계수 0.12 → 0.22로 상향 + 전 스킬 공통 ×1.25 (SKILL_PWR):
      *  "높은 차수 스킬이 평타보다 약하다" 해소 — 평타 대비 스킬 격차를 차수마다 확대
      *  1차 ×1.25 / 2차 ×1.53 / 3차 ×1.80 / 4차 ×2.08 / 5차 ×2.36 (×skillMult 곱) */
-    const tierScl = isSkill ? (1 + 0.22 * Math.max(0, this.sTier - 1)) * Player.SKILL_PWR : 1;
-    const m = (isSkill ? mult * this.clsBonus.skillMult * fifth * runSkl * tierScl : mult) * rage;
+    const tierScl = isSkill && !isUlt ? (1 + 0.22 * Math.max(0, this.sTier - 1)) * Player.SKILL_PWR : 1;
+    const m = (isSkill ? mult * this.clsBonus.skillMult * fifth * runSkl * tierScl * ultMult : mult) * rage;
     const dmg = Math.round(this.atkTotal * m * (crit ? this.critDmg : 1));
     /* vc146 (#2) — 시간 역행 로그 적산 (최근 6초 유지 — 이터널 제2궁극기가 재현 배수로 사용) */
     const now = this.scene.time.now;

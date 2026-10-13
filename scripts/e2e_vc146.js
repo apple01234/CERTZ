@@ -55,7 +55,7 @@ const fs = require("fs");
   /* ── 1) 부팅 + 월드 진입 ── */
   const browser = await chromium.launch({
     args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
-    executablePath: "/home/z/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome",
+    executablePath: "/home/z/.cache/ms-playwright/chromium-1200/chrome-linux64/chrome",
   });
   const p = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   p.setDefaultTimeout(40000);

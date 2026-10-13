@@ -169,6 +169,11 @@ export type SaveData = {
    *  fifth=true면 레벨 무관하게 궁극기 해금 + 전 스킬 강화 적용 */
   fifth?: boolean;
   fifthStoryDone?: boolean;
+  /* vc147 (#19) — 제2궁극기 스토리 퀘스트 "각성의 대가" 진행 (fifth2.ts)
+   *  step 0=미수주 · 1~12=진행 단계 · count=현재 단계 카운터 · done=완료(해금) */
+  fifth2Step?: number;
+  fifth2Count?: number;
+  fifth2Done?: boolean;
   /* ----- v4.0.0 바르가 업데이트 (균열 수비전·수집형 성장) ----- */
   /** 피규어 도감 (보유 키 목록 — 보유만으로 보너스) */
   figures?: string[];

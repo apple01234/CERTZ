@@ -135,8 +135,6 @@ export default function GameRoot() {
                 muted={muted}
                 canJob={rpg.canJob}
                 jobAvail={(rpg.canJob || rpg.cls !== null) && !panel} /* 클래스 보유 시 언제든 트리 열람·자유전직 */
-                canAutoHunt={rpg.canAutoHunt}
-                autoHunt={rpg.autoHunt}
                 onToggleMute={() => {
                   audio.sfx.uiClick(); // v1.4.8 — 토글 피드백음 (뮤트 전 재생 → 켜기 시 바로 들림)
                   const next = !muted;
@@ -208,6 +206,16 @@ export default function GameRoot() {
             <TitleScreen />
             {/* v1.4.24 — 서버주소 설정창 제거 (#멀티정리): 멀티서버 중단으로 무용 + "서버주소 = https://sertz.vercel.app/" 표시 보고의 근원이던 UI. 멀티 재개 시 복원.
             <ServerConnect /> */}
+            {/* vc147 (#20) — 게임 시작 화면부터 로그인: 타이틀에서 계정 로그인/회원가입 가능.
+               로그인하면 클라우드 세이브 자동 백업(90초)이 즉시 시작되고 랭킹에도 등록된다. */}
+            <AuthPanel />
+            <button
+              onClick={() => EventBus.emit("ui:authOpen", {})}
+              aria-label="계정 로그인"
+              className="absolute left-2 top-2 z-30 flex h-9 items-center gap-1.5 rounded-lg border-2 border-amber-200/50 bg-slate-900/85 px-2.5 text-[12px] font-black text-amber-100 shadow-lg transition active:scale-95 hover:border-amber-200/90 sm:left-3 sm:top-3"
+            >
+              🔑 로그인 / 계정
+            </button>
             {/* v1.0.18 — 캐릭터 선택·생성 로비 (타이틀 위에 표시) */}
             {lobbyOpen && <Lobby onExit={() => setLobbyOpen(false)} />}
           </div>

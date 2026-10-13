@@ -96,9 +96,11 @@ export function towerKillNeed(floor: number): number {
   if (isTowerBossFloor(floor)) return 1; // 보스층은 보스 1기가 할당 전부
   return Math.min(18, 6 + Math.floor((floor - 1) * 0.55));
 }
-/** 실제 스폰수 — 할당보다 여유분을 깔아서 "전부 잡기"가 아니라도 되게 한다 */
+/** 실제 스폰수 — 할당보다 여유분을 깔아서 "전부 잡기"가 아니라도 되게 한다.
+ *  vc147 (#15) — 동시 스폰 상한 20마리: 18층(할당 18)+여유 4 = 22마리로 "한 번에 20 초과"
+ *  생성되던 빈틈 봉합. 부족분은 층 내 처치마다 리스폰(20 캡)으로 목표 마릿수까지 반복 충원된다. */
 export function towerSpawnCount(floor: number): number {
-  return towerKillNeed(floor) + 4;
+  return Math.min(20, towerKillNeed(floor) + 4);
 }
 /** vc142 (#4) — 5의 배수층 보스: 12보스 전원이 층수에 따라 "각각 다르게" 배치되는 고정 로테이션 */
 export const TOWER_BOSSES: BossKey[] = [

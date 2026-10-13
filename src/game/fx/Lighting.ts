@@ -37,7 +37,12 @@ const CHAPTER_AMBIENT: Record<string, { color: number; alpha: number; light?: { 
    * 횃불 광원은 1.6/0.55로 확대해 어두워진 만큼 시야는 확보된다.
    * v1.4.31 (#6) — 유저 재지시 "여전히 너무 밝음": 암전 0.38→0.52 (전 챕터 최고 암전 —
    * 빛 반사율 높은 눈 지형 특성상 동일 알파도 체감 밝기가 높다). 횃불 1.6/0.55 유지로 시야 확보. */
-  niflheim: { color: 0x0c1626, alpha: 0.52, light: { scale: 1.6, alpha: 0.55 } },   // 6장 니플헤임 — 얼음의 성전
+  /* vc147 (#21) — "니플헤임 너무 어두움 (눈 지형 느낌이 안남)":
+   *  v1.4.31의 0.52(전 챕터 최고 암전)는 vc146 전역 감광(삭제됨)과 겹쳐 눈 지형이
+   *  밤바다처럼 보이던 원인. 암전 0.30(헬·심연 이하 수준)으로 완화하고 색도 남색→
+   *  청백 얼음톤으로 바꿔 "눈 지형" 체감을 살린다. 횃불 광원 2.0/0.65로 확대해
+   *  시야 확보 + 지면 틴트(WorldScene 0xc4d6ea)와 함께 밝은 설원 톤 완성. */
+  niflheim: { color: 0x16283e, alpha: 0.3, light: { scale: 2.0, alpha: 0.65 } },    // 6장 니플헤임 — 얼음의 성전
 };
 
 export type AmbientProfile = { color: number; alpha: number; light?: { scale: number; alpha: number } } | null;

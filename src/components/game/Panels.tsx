@@ -22,6 +22,7 @@ import { GEM_SKUS, fetchStorePrices } from "@/game/ads"; // v4.1.0 — 구글 �
 import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS } from "@/game/pass"; // v4.5.0 — 시즌 패스 + v1.0.1 시즌 미션
 import { Trophy } from "lucide-react";
 import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, fetchRanking, fetchRank, claimRankReward, rankCacheAgeSec, getApiServerHost, type RankBoard, type MarketState, type AuthUser, type RankState, type RankRow } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화 · v1.3.0 랭킹 · v1.4.0 랭킹 캐시 표기
+import { requestTradeSnapshot } from "@/game/trade"; // vc147 (#5) — 거래 패널 마운트 시 현재 상태 스냅샷 복원
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
 import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
 import { chestOdds, eertOdds, POT_PITY_MAX, STAR_PITY_FROM, STAR_PITY_STEP, STAR_PITY_MAX } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법) · v1.0.8 천장 공시
@@ -2802,6 +2803,11 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
     const onNearby = (l: unknown) => setNearby(Array.isArray(l) ? (l as NearbyPlayer[]) : []);
     EventBus.on("trade:state", onState as never);
     EventBus.on("trade:nearby:list", onNearby as never);
+    /* vc147 (#5) — 마운트 완료 후 현재 거래 상태 스냅샷 재요청.
+     *  treq 수신 → ui:panel → publish() 순서로 이벤트가 패널 마운트보다 먼저 터져
+     *  수신자 패널이 idle(근처 목록·'거래 요청' 버튼)로 남던 버그 수정 —
+     *  이제 열리는 즉시 incoming이면 '거래 수락/거절', open이면 오버 화면이 뜬다. */
+    requestTradeSnapshot();
     EventBus.emit("trade:nearby", {});
     const iv = setInterval(() => EventBus.emit("trade:nearby", {}), 2500);
     return () => {
@@ -3146,7 +3152,7 @@ function GuidePanel({ onClose }: { onClose: () => void }) {
  *  ① 심연의 탑 (무한 층수) · ② 심층 균열 (무한 티어) · ③ 일일 시련 (수정자 던전)
  *  ④ 연금 제작대 · ⑤ 심연 상점 · ⑥ 환생 + 펫 육성 — 총 10종 신규 무한 콘텐츠의 진입 허브
  * ===================================================================== */
-type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth" | "park" | "dojang" | "rank";
+type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth" | "park" | "dojang"; // vc147 (#17) — "rank" 제거 (독립 랭킹창과 중복)
 
 export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
@@ -3170,7 +3176,8 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
     { id: "craft", label: "제작대", on: "bg-sky-400 text-slate-900" },
     { id: "abyss", label: "심연 상점", on: "bg-violet-400 text-slate-900" },
     { id: "rebirth", label: "환생·펫", on: "bg-amber-400 text-slate-900" },
-    { id: "rank", label: "랭킹", on: "bg-yellow-300 text-slate-900" },
+    // vc147 (#17) — 콘텐츠 허브 내 "랭킹" 탭 철거: HUD 더보기 독립 랭킹창과 같은 컴포넌트 중복.
+    //  랭킹은 더보기 메뉴(🏆 랭킹)로 통일.
   ];
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
@@ -3422,8 +3429,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
           </div>
         )}
 
-        {/* v1.3.0 (지시 #7) — 랭킹 탭: 전체 랭킹 + 내 순위 + 랭커 전용 상점 (BM 유도) */}
-        {tab === "rank" && <KingdomRankTab />}
+        {/* vc147 (#17) — rank 탭 철거: 독립 랭킹창(HUD 더보기)과 동일 컴포넌트 중복 */}
       </div>
     </div>
   )
@@ -3489,15 +3495,28 @@ function KingdomRankTab() {
     });
   };
   useEffect(load, []);
-  /* v1.4.30 (#13 랭킹 자동 갱신) — 마운트 1회 로드만 하던 것을 30초 폴링으로 교체.
-   *  클라우드 세이브 업로드(3분 주기) 이후에도 패널을 다시 열 때까지 순위가 안 바뀌던
-   *  "랭킹 자동 갱신 안됨" 체감 해소 — 패널이 열려 있는 동안 주기적으로 새로고침한다. */
+  /* vc147 (#12) — 마운트 시에도 즉시 업로드 훅 → 서버 반영 후 1.2s 뒤 재조회 (열자마자 최신화) */
+  useEffect(() => {
+    EventBus.emit("auth:cloudPush", {});
+    const t = window.setTimeout(load, 1200);
+    return () => window.clearTimeout(t);
+  }, []);
+  /* vc147 (#12 랭킹 갱신 근본 강화) — 기존 문제: 랭킹 서버는 클라우드 세이브의 "파생 데이터"라
+   *  내 최신 레벨/기록이 90초 업로드 주기 + 30초 폴링을 순차 기다려야 반영됐다.
+   *  이제 ①패널을 열면 즉시 내 세이브를 서버로 밀어 올리고(auth:cloudPush) ②업로드가
+   *  도착한 뒤(1.2s) 랭킹을 다시 당겨와 "열자마자 최신 내 순위"가 보이며 ③폴링도 15초로
+   *  단축하고 ④수동 [새로고침] 버튼으로도 push+fetch를 즉시 재실행할 수 있다. */
+  const refreshHard = () => {
+    EventBus.emit("auth:cloudPush", {}); // 내 최신 세이브 즉시 업로드 (로그인 중일 때만 동작)
+    window.setTimeout(() => load(), 1200); // 서버 반영 후 재조회
+    load(); // 일단 캐시라도 즉시 표시 (빈 화면 방지)
+  };
   useEffect(() => {
     const iv = setInterval(() => {
       fetchRanking().then((r) => {
         if (r.ok && r.state) setState(r.state);
       });
-    }, 30000);
+    }, 15000);
     return () => clearInterval(iv);
   }, []);
   const myRank = state?.me?.rank ?? 0;
@@ -3513,8 +3532,15 @@ function KingdomRankTab() {
         <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">환생 · 심연의 탑 기록 · 레벨 순으로 명예의 전당이 결정된다. 계정 패널에서 클라우드 백업(3분 자동)이 켜져 있으면 자동 등록!</p>
         {/* v1.4.0 (Task 0-3) — 조회 실패 시 캐시 데이터 표기: 빈 화면 대신 “n초 전 기준” 안내 */}
         {rankCacheAgeSec() !== null && (
-          <p className="mt-0.5 text-[9px] font-bold text-yellow-200/70">⏱ {rankCacheAgeSec()}초 전 기준 — 열려 있는 동안 30초마다 자동 갱신돼요</p>
+          <p className="mt-0.5 text-[9px] font-bold text-yellow-200/70">⏱ {rankCacheAgeSec()}초 전 기준 — 열려 있는 동안 15초마다 자동 갱신 · 열 때 내 기록 즉시 등록</p>
         )}
+        {/* vc147 (#12) — 수동 강제 갱신: 내 최신 세이브 업로드 + 랭킹 재조회 */}
+        <button
+          onClick={refreshHard}
+          className="mt-1.5 rounded-md border-2 border-yellow-300/60 bg-yellow-400/15 px-2.5 py-1 text-[10px] font-black text-yellow-100 active:scale-95"
+        >
+          ↻ 지금 갱신 (내 기록 즉시 등록)
+        </button>
       </div>
 
       {/* 내 순위 */}
@@ -4433,6 +4459,30 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
           <p className="mt-1 text-[9px] leading-snug text-white/35">
             셰이더가 사라졌다면 → "항상 높음" 선택. 프레임 보호용 자동 축소가 켜진 것입니다.
           </p>
+        </div>
+
+        {/* vc147 (#29) — 30FPS 절전 모드: 기기 발열/배터리/프리즈 대책.
+         *  프레임 상한 30으로 절반 — 모바일 저발열·장시간 안정 (게임은 턴식 전투라 30FPS로도 조작감 유지) */}
+        <div className="mt-2 rounded-lg border border-emerald-300/25 bg-emerald-400/[0.06] px-2.5 py-2.5">
+          <p className="text-[12px] font-black text-emerald-200">절전 모드 (30FPS)</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/50">
+            프레임을 30으로 제한해 발열·배터리 소모·기기 멈춤을 크게 줄입니다. 게임이 자주 멈추거나 뜨거워지면 켜세요.
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            {([["on", "절전 켜기 (30FPS)", "border-emerald-300/70 bg-emerald-500/20 text-emerald-200"], ["off", "끄기 (60FPS)", "border-sky-300/70 bg-sky-500/20 text-sky-200"]] as const).map(([m, label, css]) => {
+              const cur = (() => { try { return window.localStorage.getItem("sertz_fps30") === "1" ? "on" : "off"; } catch { return "off"; } })();
+              const active = cur === m;
+              return (
+                <button
+                  key={m}
+                  onClick={() => EventBus.emit("fx:battery", m === "on")}
+                  className={`rounded-md border-2 px-1 py-1.5 text-[11px] font-black transition ${active ? css : "border-white/15 bg-black/40 text-white/55 hover:border-white/40"}`}
+                >
+                  {label}{active ? " ✓" : ""}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* vc142 (#11) — 툰 셰이딩 on/off (화면 전체 셀룰룩 후처리) */}

@@ -44,9 +44,9 @@ export function applyToonStyle(obj: Filterable, opts: ToonOpts = {}): unknown[] 
   const created: unknown[] = [];
   try {
     const cm = list.addColorMatrix();
-    /* vc145 (#3) — 강도 완화: 대비 1.06→1.035 / 채도 1.18→1.08 / 림 2.2→1.5 (유저 피드백 "강도가 너무 강해") */
-    cm.colorMatrix.contrast(opts.contrast ?? 1.035);
-    cm.colorMatrix.saturate(opts.saturate ?? 1.08);
+    /* vc147 (#1 툰 효과 강화) — 스프라이트 림라이트도 기본 강화 (vc145 완화분 되돌림+증폭) */
+    cm.colorMatrix.contrast(opts.contrast ?? 1.07);
+    cm.colorMatrix.saturate(opts.saturate ?? 1.16);
     created.push(cm);
   } catch {
     return created.length ? created : null;
@@ -54,9 +54,9 @@ export function applyToonStyle(obj: Filterable, opts: ToonOpts = {}): unknown[] 
   try {
     const glow = list.addGlow({
       color: opts.rim ?? 0x9fd8ff,
-      outerStrength: opts.rimStrength ?? 1.5,
-      innerStrength: 0.35,
-      distance: 8,
+      outerStrength: opts.rimStrength ?? 2.0,
+      innerStrength: 0.5,
+      distance: 9,
       quality: 4, // 모바일 예산 — 낮은 품질 고정
     });
     created.push(glow);
@@ -103,10 +103,8 @@ type CamFilterable = { filters?: { external?: FilteredList & { addBlocky?: (cfg?
  *  vc145 (#3 강도 완화 + #11 조절바 연동):
  *  - 설정 "효과 강도" 슬라이더(loadFx().intensity 0~100)가 툰 후처리 강도를 결정한다 (기존엔 무시 → 조절바 무반응 버그)
  *  - 강도 0 = 셰이더 완전 끔 → 부착하지 않음 (패널 문구와 동일 동작)
- *  - 기본값 55 기준: 대비 1.04 / 채도 1.10 — 기존 1.09/1.22에서 눈에 띄게 완화
- *  vc146 (#3 밝기 하향): 툰 느낌(대비/채도/Blocky)은 그대로 유지하고 밝기만 크게 낮춘다 —
- *  brightness 1 - 0.22k (기본 강도 55 → 0.78 · 강도 100 → 0.71 · 하한 0.62).
- *  ColorMatrix.brightness는 원본 행렬에 밝기 스케일을 곱하므로 대비/채도 연출은 손상되지 않는다. */
+ *  vc147 (#1/#2): 밝기 감광 폐지(기본 1.0 복원) + 대비/채도/밝기 전부 정방향 강화 —
+ *  슬라이더를 올리면 더 밝고 더 툰닝된다 (기본 55 기준 대비 1.09·채도 1.22). */
 export function applyToonCamera(camera: unknown): unknown[] | null {
   const intensity = loadFx().intensity;
   if (intensity <= 0) return null; // 슬라이더 0 = 셰이더 완전 끔
@@ -120,19 +118,23 @@ export function applyToonCamera(camera: unknown): unknown[] | null {
   const created: unknown[] = [];
   try {
     /* Blocky(포스터라이즈)는 강도 낮을 땐 생략 — 픽셀 뭉개짐 최소화 */
-    if (list.addBlocky && k >= 0.55) {
+    if (list.addBlocky && k >= 0.45) {
       const blocky = list.addBlocky({ size: 2 });
       created.push(blocky);
     }
   } catch { /* Blocky 미지원 — ColorMatrix만이라도 */ }
   try {
     const cm = list.addColorMatrix();
-    cm.colorMatrix.contrast(1 + 0.045 * k);
-    cm.colorMatrix.saturate(1 + 0.10 * k);
-    /* vc146 (#3) — 밝기 대폭 하향 (툰 감성 유지 · 화면만 어둡게):
-     *  "쉐이더 느낌은 그대로 유지하고 밝기만 좀 많이 낮춰" — 기본 0.78 (22% 감광) */
-    const bright = Math.max(0.62, 1 - 0.22 * k);
-    (cm.colorMatrix as unknown as { brightness: (v: number, m?: boolean) => unknown }).brightness(bright);
+    /* vc147 (#1 툰 강화 + #2 역방향 수정):
+     *  - vc146의 `brightness(1-0.22k)`는 슬라이더를 올릴수록 화면이 "더 어두워지는"
+     *    역방향 동작이었다(유저 제보 "쉐이더 강도 조절기능 반대로 되있음"의 근원).
+     *  - 이제 밝기/대비/채도 전부 정방향(강도↑ = 더 밝고 더 툰닝)이며 기본 밝기 1.0 복원.
+     *  - 툰 체감 강화: 대비 1+0.09k(기본 1.09)·채도 1+0.22k(기본 1.22). */
+    cm.colorMatrix.contrast(1 + 0.09 * k);
+    cm.colorMatrix.saturate(1 + 0.22 * k);
+    (cm.colorMatrix as unknown as { brightness: (v: number, m?: boolean) => unknown }).brightness(
+      Math.min(1.08, 0.94 + 0.06 * k),
+    );
     created.push(cm);
   } catch {
     return created.length ? created : null;

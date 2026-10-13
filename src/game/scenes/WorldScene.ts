@@ -40,7 +40,9 @@ import {
   PET, petEvoStage, petBonus, PET_EVO_NAMES, GOLDEN, ABYSS_SHOP, orbBonus, weeklyRaidBoss, infBonus, todayKey,
   PARK_DIFFS, PARK_DURATION, PARK_TICKETS,
   type InfSave, type TrialMod,
-} from "../infinite"; // v1.0.8 — 무한 콘텐츠 10종 · v1.0.18 — 몬스터 파크
+} from "../infinite";
+/* vc147 (#19) — 각성의 대가(제2궁극기 스토리 퀘스트) 체인 */
+import { FIFTH2_CHAIN, fifth2Offerable, fifth2Active, fifth2Current, fifth2Event, fifth2ProgressText, type Fifth2State, type Fifth2EvKind } from "../fifth2"; // v1.0.8 — 무한 콘텐츠 10종 · v1.0.18 — 몬스터 파크
 import { loadUnion, unionEffects, activeBuffValues } from "../union"; // v1.0.18 — 유니온 시스템
 import * as classroom from "../classroom"; // v1.4.30 (#9 클래스룸 — 교실 모드 합산 카운터)
 import { loadSlots } from "../slots"; // v1.0.18 — 캐릭터 슬롯
@@ -1017,7 +1019,7 @@ export class WorldScene extends Phaser.Scene {
     const groundTex = theme.ground;
     /* v1.4.30 (#11 니플헤임 눈부심) — 흰 눈바닥 타일이 화면을 압도하므로 챕터별 지면 틴트 도입.
      *  흰색 타일을 청회색으로 곱해 전체 톤 다운 (암전과 별개로 원본 자체가 밝은 타일 보정). */
-    const CH_GROUND_TINT: Record<string, number> = { niflheim: 0x70819c }; // v1.4.31 (#6) — 0x9db4d0→0x70819c 추가 암화
+    const CH_GROUND_TINT: Record<string, number> = { niflheim: 0xc4d6ea }; // vc147 (#21) — 0x70819c→밝은 설원톤 (눈 지형 체감 복원)
     const gTint = CH_GROUND_TINT[parseStage(stageKey).ch];
     const groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
     if (gTint) groundTs.setTint(gTint);
@@ -1086,7 +1088,7 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.2 (#툰셰이더) — 플레이어 툰 림라이트 (WebGL+fxLevel 게이트, 실패 시 무시) */
     if (this.game.renderer.type === Phaser.WEBGL && this.fxLevel >= 1) {
       this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
-        rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
+        rim: 0x9fd8ff, rimStrength: 2.5, contrast: 1.1, saturate: 1.22, // vc147 (#1) 툰 강화
       });
       /* v1.0.10 (#GameStudio FX) — 앰비언트 블룸: 보스전 전용이던 쉐이더를 평시 전투에도.
        *  스킬 이펙트/파티클/참격이 카메라 블룸으로 발광 — “보스전에만 적용” 버그 해소 */
@@ -1296,6 +1298,12 @@ export class WorldScene extends Phaser.Scene {
       /* v3.3.0 — 5차 각성/시련 완료 플래그 복원 */
       this.player.fifth = savedPlayer.fifth ?? false;
       this.player.fifthStoryDone = savedPlayer.fifthStoryDone ?? false;
+      /* vc147 (#19) — 각성의 대가 진행 복원 */
+      this.player.fifth2Step = savedPlayer.fifth2Step ?? 0;
+      this.player.fifth2Count = savedPlayer.fifth2Count ?? 0;
+      this.player.fifth2Done = savedPlayer.fifth2Done ?? false;
+      /* 답사형(reach) 단계 판정 — 진행 상태 복원 후 판정해야 현재 구역이 카운트된다 */
+      this.fifth2Progress({ kind: "reach", key: stageKey });
       /* ----- v4.0.0 — 바르가 업데이트 복원 ----- */
       this.figures = (savedPlayer.figures ?? []).filter((k) => k in FIGURE_MAP);
       this.shards = savedPlayer.shards ?? 0;
@@ -2024,7 +2032,7 @@ export class WorldScene extends Phaser.Scene {
       kingdom: 0xa89878,
       alfheim: 0x8a7ac8,
       muspelheim: 0xa85a38,
-      niflheim: 0x66809e, // v1.4.31 (#6) — 0x8ab8d8→0x66809e 암화 (눈부심 완화)
+      niflheim: 0xa9c4e0, // vc147 (#21) — 0x66809e→밝은 빙설 톤 (눈부심 아니라 가시성 목적)
       cave: 0x9a7a58,
       nidavellir: 0xb8a068,
       hel: 0x8a5aaa,
@@ -3598,7 +3606,7 @@ export class WorldScene extends Phaser.Scene {
       } else {
         if (this.player && !this.playerToon && this.game.renderer.type === Phaser.WEBGL) {
           this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
-            rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
+            rim: 0x9fd8ff, rimStrength: 2.5, contrast: 1.1, saturate: 1.22, // vc147 (#1) 툰 강화
           });
         }
         /* vc142 (#11) — 카메라 툰 셰이딩 복원 (설정 on + 고사양만) */
@@ -3718,7 +3726,7 @@ export class WorldScene extends Phaser.Scene {
           /* v1.0.2 (#툰셰이더) — 복원 시 플레이어 툰 림라이트 재부착 */
           if (this.player && !this.playerToon) {
             this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
-              rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
+              rim: 0x9fd8ff, rimStrength: 2.5, contrast: 1.1, saturate: 1.22, // vc147 (#1) 툰 강화
             });
           }
         }
@@ -3830,8 +3838,10 @@ export class WorldScene extends Phaser.Scene {
     this.fwEmitterY?.explode(14, x, y - 10);
     const star = this.add.image(x, y - 14, "pfx_star").setDepth(32).setBlendMode(Phaser.BlendModes.ADD).setScale(0.3).setAlpha(0);
     this.tweens.add({ targets: star, scale: 1.5, alpha: 1, duration: 180, yoyo: true, hold: 90, onComplete: () => star.destroy() });
-    /* v1.3.0 (#에셋통합) — Drive 팩 네온 도형 불꽃놀이(하트/별/달/미소) 추가 폭발 + 원소 축하음 */
+    /* v1.3.0 (#에셋통합) — Drive 팩 네온 도형 불꽃놀이(하트/별/달/미소) 추가 폭발 + 원소 축하음
+     *  vc147 (#7) — Drive 팩 미사용 메서드 적극 활용: 트윙클 반짝임 추가 */
     this.driveFx?.fireworks(x, y - 12);
+    this.driveFx?.twinkle(x, y - 16);
     audio.sfx.aoeBurst("heal");
   }
 
@@ -3917,20 +3927,60 @@ export class WorldScene extends Phaser.Scene {
    *  사냥터 정보 NPC: 챕터별 정찰병/생존자가 필드 입구 근처에서 챕터 공략 힌트를 준다.
    *  이상한 소품(ep_·kd_ 계열) 철거의 대안 — 이제 필드의 모든 사람 그림은 말을 건다. */
   private spawnFieldNpc(stageKey: StageKey) {
-    const ch = parseStage(stageKey).ch;
-    const SPEC: Record<string, { tex: string; name: string; dlg: string }> = {
-      forest: { tex: "spum_villager_m", name: "숲의 사냥꾼", dlg: "fieldNpc_forest" },
-      kingdom: { tex: "spum_villager_f", name: "능지 생존자", dlg: "fieldNpc_kingdom" },
-      cave: { tex: "spum_villager_m", name: "광산 노동자", dlg: "fieldNpc_cave" },
-      niflheim: { tex: "spum_villager_f", name: "설원 수렵꾼", dlg: "fieldNpc_niflheim" },
-      muspelheim: { tex: "spum_villager_m", name: "화산 광부", dlg: "fieldNpc_muspelheim" },
-      alfheim: { tex: "spum_villager_f", name: "요정 정찰병", dlg: "fieldNpc_alfheim" },
-      nidavellir: { tex: "spum_villager_m", name: "대장장이 견습", dlg: "fieldNpc_nidavellir" },
-      hel: { tex: "spum_villager_f", name: "묘지 관리인", dlg: "fieldNpc_hel" },
-      abyss: { tex: "spum_villager_m", name: "심연 생존자", dlg: "fieldNpc_abyss" },
+    const ps = parseStage(stageKey);
+    const ch = ps.ch;
+    /* vc147 (#30) — 맵별 NPC 다양화: 챕터당 1종 → 구역(sub)마다 다른 NPC가 서고,
+     *  각자 사연 한 줄 + 반복 의뢰(토벌)를 맡긴다. "한 챕터의 맵마다 NPC가 다 같애" 해소. */
+    const SPEC: Record<string, { tex: string; name: string; dlg: string; story: string }[]> = {
+      forest: [
+        { tex: "spum_villager_m", name: "숲의 사냥꾼", dlg: "fieldNpc_forest", story: "아내가 아픈데 약재를 구하러 갔다가 늑대만 삼족을 마주쳤지. 부탁이다, 숲을 좀 안전하게 해다오." },
+        { tex: "spum_villager_f", name: "약초 할멈", dlg: "fieldNpc_forest", story: "이 근방 약초는 늑대 밥이 되기 전에 내가 다 주워 모았지. 그 대신 할멈 부탁 하나 들어주게." },
+        { tex: "spum_villager_m", name: "떠돌이 꼬마", dlg: "fieldNpc_forest", story: "아빠가 숲에 사라진 지 3년째... 나도 언젠가는 사냥꾼이 될 거라오." },
+      ],
+      kingdom: [
+        { tex: "spum_villager_f", name: "능지 생존자", dlg: "fieldNpc_kingdom", story: "성벽이 무너진 날, 나는 시체 더미에서 기어 나왔어. 그날 이후 아무것도 무섭지 않아." },
+        { tex: "spum_villager_m", name: "해골 문지기", dlg: "fieldNpc_kingdom", story: "이 문장(紋章)은 왕국 마지막 근위대의 유물일세. 소중히 여겨주게." },
+        { tex: "spum_villager_f", name: "고아 소녀", dlg: "fieldNpc_kingdom", story: "빵을 훔치다 걸린 게 처음이었어. 잡히지 않는 법을 지금은 잘 알지." },
+      ],
+      cave: [
+        { tex: "spum_villager_m", name: "광산 노동자", dlg: "fieldNpc_cave", story: "동료들이 갱도 안에서 안 나왔어. 조용히... 너무 조용한 게 문제라우." },
+        { tex: "spum_villager_f", name: "램프 아주머니", dlg: "fieldNpc_cave", story: "램프 기름이 떨어지면 그곳은 이미 지옥이지. 심장을 꾹 누르고 걸었담." },
+        { tex: "spum_villager_m", name: "은퇴 광부", dlg: "fieldNpc_cave", story: "30년을 캤지만 정작 보석 앞에 서면 무릎이 떨렸다네. 인간은 욕심이 무서운 법이지." },
+      ],
+      niflheim: [
+        { tex: "spum_villager_f", name: "설원 수렵꾼", dlg: "fieldNpc_niflheim", story: "눈보라가 온종일 몰아친 날, 아들이 사냥터에서 돌아오지 않았어. 그 눈 속에서 기다렸담." },
+        { tex: "spum_villager_m", name: "고독한 배웅자", dlg: "fieldNpc_niflheim", story: "언데드도 불쌍하다. 살 때의 기억으로 이 눈보라를 헤매는 거니까." },
+        { tex: "spum_villager_f", name: "얼음 조각가", dlg: "fieldNpc_niflheim", story: "얼음은 기억을 담아. 그래서 이 설원엔 수천 년 된 슬픔이 묻혀 있지." },
+      ],
+      muspelheim: [
+        { tex: "spum_villager_m", name: "화산 광부", dlg: "fieldNpc_muspelheim", story: "용암이 닿기 전 세 걸음까지는 뛸 수 있었지. 뒤를 돌아본 건 도착하고 나서였어." },
+        { tex: "spum_villager_m", name: "대장장이 장인", dlg: "fieldNpc_muspelheim", story: "쇠는 정직하지. 두드린 만큼만 단단해지지 — 인간과 다르지." },
+        { tex: "spum_villager_f", name: "물 긷는 아이", dlg: "fieldNpc_muspelheim", story: "여긴 물이 제일 비싸. 그럼에도 나는 매일 우물가를 지킨다." },
+      ],
+      alfheim: [
+        { tex: "spum_villager_f", name: "요정 정찰병", dlg: "fieldNpc_alfheim", story: "숲의 노래가 잡혔어. 나무들이 도움을 청하는 걸, 나만 들을 수 있는 건 아니거든." },
+        { tex: "spum_villager_m", name: "숲의 현자", dlg: "fieldNpc_alfheim", story: "세계수의 꿈속에서 우리는 모두 한 잎사귀일 뿐이지. 겸손하게 사려게." },
+        { tex: "spum_villager_f", name: "꽃잎 몰이꾼", dlg: "fieldNpc_alfheim", story: "꽃잎이 흩어지는 계절이면 반드시 누군가는 떠난다. 그래서 나는 배웅을 배웠지." },
+      ],
+      nidavellir: [
+        { tex: "spum_villager_m", name: "대장장이 견습", dlg: "fieldNpc_nidavellir", story: "사부님은 못 망친 적이 없어. 나는 열 번을 망쳤고, 열한 번째에 처음 떨렸지." },
+        { tex: "spum_villager_m", name: "룬 감정사", dlg: "fieldNpc_nidavellir", story: "룬은 거짓말을 안 해. 다만 듣는 귀가 게을렀을 뿐." },
+        { tex: "spum_villager_f", name: "지하 상인", dlg: "fieldNpc_nidavellir", story: "어둠 속에서의 거래는 목숨을 담보로 해. 그래서 내 품질은 보장된다 하하." },
+      ],
+      hel: [
+        { tex: "spum_villager_f", name: "묘지 관리인", dlg: "fieldNpc_hel", story: "무덤은 말이 없지만 잔디는 자라. 내 일은 그 둘 사이의 이야기를 지켜주는 거지." },
+        { tex: "spum_villager_m", name: "촛불 우편배달부", dlg: "fieldNpc_hel", story: "이승 사람들이 붙인 촛불 편지를 무덤가에 옮겨 심는다. 배달 도중 울지 않는 게 관례라오." },
+        { tex: "spum_villager_f", name: "재의 무희", dlg: "fieldNpc_hel", story: "헬의 왕은 춤을 좋아한다더라. 그래서 나는 망자들을 위해 춤춘다." },
+      ],
+      abyss: [
+        { tex: "spum_villager_m", name: "심연 생존자", dlg: "fieldNpc_abyss", story: "위로 올라가는 법은 잊었어. 대신 내려가는 길은 999개쯤 알지." },
+        { tex: "spum_villager_f", name: "세계수 수액 채집가", dlg: "fieldNpc_abyss", story: "뿌리의 수액은 달다. 대가로 꿈을 조금씩 가져가지만." },
+        { tex: "spum_villager_m", name: "등불 드리프터", dlg: "fieldNpc_abyss", story: "심연에선 등불이 꺼진 방향이 곧 바다다. 나는 그 바다를 건너왔지." },
+      ],
     };
-    const s = SPEC[ch];
-    if (!s) return; // 재림/특수 구역은 제외
+    const list = SPEC[ch];
+    if (!list) return; // 재림/특수 구역은 제외
+    const s = list[((ps.sub ?? 1) - 1 + list.length) % list.length];
     /* 위치: 입구 근처 열린 지점 (포탈·스폰 보호 170px 안이면 재추첨) */
     let px = this.entryHome.x + 96;
     let py = this.entryHome.y - 96;
@@ -3951,7 +4001,118 @@ export class WorldScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(Math.floor(py / 10));
-    this.interactables.push({ x: px, y: py, kind: "talk", dlg: s.dlg, npcId: s.dlg, label: `${s.name}와 대화` });
+    /* vc147 (#30) — NPC 반복 의뢰: fieldreq|프로토콜로 대화창에서 수주/보고 */
+    this.interactables.push({ x: px, y: py, kind: "talk", dlg: `fieldreq|${s.dlg}|${s.name}|${encodeURIComponent(s.story)}`, npcId: s.dlg, label: `${s.name}와 대화` });
+    this.fieldReqNpcPos = { x: px, y: py };
+    this.refreshFieldReqLabel();
+  }
+
+  /* ================= vc147 (#30) — 필드 NPC 반복 의뢰 (수주/완료) =================
+   *  · NPC 대화 → [의뢰 받기]: 그 맵 토착 몬스터 토벌 (수요는 구역별 랜덤 8~13마리)
+   *  · 완료 후 NPC에게 말 걸어 보고 → 골드/경험치 지급, 다음 의뢰는 +2마리씩 상승(상한 24)
+   *  · 구역 이동 시 초기화 (구역 단위 반복 컨텐츠 — 파밍 루트의 뼈대) */
+  private fieldReq: { mob: string; mobName: string; need: number; count: number; gold: number; exp: number; npcName: string } | null = null;
+  private fieldReqNpcPos: { x: number; y: number } | null = null;
+  private fieldReqBonus = 0;
+
+  /** 의뢰 상태를 NPC 상호작용 라벨에 반영 ("!" 수주 가능 / "..." 진행 / "↩ 보고") */
+  private refreshFieldReqLabel() {
+    if (!this.fieldReqNpcPos) return;
+    const it = this.interactables.find((v) => v.kind === "talk" && typeof v.dlg === "string" && v.dlg.startsWith("fieldreq|"));
+    if (!it) return;
+    const name = it.label?.replace(/^[^ ]+ (와 대화|에게 보고|· 의뢰 진행)$/, "").trim() || "NPC";
+    const base = it.label?.split(" ")[0] ?? "NPC";
+    if (!this.fieldReq) it.label = `${base} · 의뢰 받기`;
+    else if (this.fieldReq.count >= this.fieldReq.need) it.label = `${base} · 보고하기`;
+    else it.label = `${base} · ${this.fieldReq.count}/${this.fieldReq.need}`;
+    void name;
+  }
+
+  /** 토벌 카운트 — 적 사망 훅에서 호출 */
+  private fieldReqProgress(enemyKey: string) {
+    if (!this.fieldReq || this.fieldReq.mob !== enemyKey) return;
+    this.fieldReq.count++;
+    if (this.fieldReq.count === this.fieldReq.need) {
+      audio.sfx.questDone();
+      this.showBanner(`${this.fieldReq.npcName}의 의뢰 완료! —에게 보고하자 (${this.fieldReq.mobName} ${this.fieldReq.need}마리)`);
+    } else if (this.fieldReq.count < this.fieldReq.need && this.fieldReq.count % 5 === 0) {
+      this.spawnPickupText(this.player.x, this.player.y - 88, `의뢰 ${this.fieldReq.count}/${this.fieldReq.need}`, "#ffe9a0");
+    }
+    this.refreshFieldReqLabel();
+  }
+
+  /** NPC 대화 진입점 — 수주/보고/사연 분기 */
+  private openFieldNpcRequest(baseDlg: string, npcName: string, story: string) {
+    const close = () => {};
+    void close;
+    if (this.fieldReq && this.fieldReq.count >= this.fieldReq.need) {
+      /* 보고 — 보상 지급 */
+      const r = this.fieldReq;
+      this.player.addGold(r.gold);
+      this.player.gainExp(r.exp);
+      EventBus.emit("reward:show", {
+        title: `${r.npcName}의 의뢰 완료!`,
+        lines: [
+          { text: `${r.mobName} ${r.need}마리 토벌 보고`, color: "#bfe9ff" },
+          { text: `골드 +${r.gold} G`, color: "#ffd76a" },
+          { text: `경험치 +${r.exp} EXP`, color: "#8fe84a" },
+        ] satisfies RewardPopupState["lines"],
+      });
+      audio.sfx.reward();
+      this.fieldReqBonus = Math.min(24, this.fieldReqBonus + 2);
+      this.fieldReq = null;
+      this.refreshFieldReqLabel();
+      this.emitRpgState();
+      this.save();
+      return;
+    }
+    if (this.fieldReq) {
+      this.showDialogueRaw({
+        speaker: npcName,
+        lines: [`아직이야... ${this.fieldReq.mobName} ${this.fieldReq.count}/${this.fieldReq.need}. 조심하고!`],
+      });
+      return;
+    }
+    /* 수주 — 목표는 이 맵 토착 몬스터 최다종 */
+    const pool = this.stageDef?.enemies ?? [];
+    const top = pool.slice().sort((a, b) => b.count - a.count)[0];
+    if (!top) {
+      this.showDialogue(DIALOGUES[baseDlg] ? baseDlg : baseDlg, npcName === "" ? null : null);
+      return;
+    }
+    const mobName = ENEMIES[top.key]?.name ?? top.key;
+    const need = 8 + this.fieldReqBonus + Phaser.Math.Between(0, 4);
+    const lv = this.player.lv;
+    const dlg = DIALOGUES[baseDlg];
+    this.showDialogueRaw({
+      speaker: npcName,
+      lines: [
+        story,
+        ...(dlg ? dlg.lines.slice(0, 1) : []),
+        `[의뢰] ${mobName} ${need}마리 — 보고하면 골드 ${40 + lv * 8}G · EXP ${30 + lv * 10}`,
+      ],
+      choices: [
+        { label: "[의뢰 받기]", id: "fieldreq_accept" },
+        { label: "나중에", id: "fieldreq_later" },
+      ],
+    });
+    const onChoice = (v: { id?: string }) => {
+      EventBus.off("dialogue:choice", onChoice as never);
+      if (v?.id !== "fieldreq_accept") return;
+      this.fieldReq = {
+        mob: top.key,
+        mobName,
+        need,
+        count: 0,
+        gold: 40 + lv * 8,
+        exp: 30 + lv * 10,
+        npcName,
+      };
+      audio.sfx.questAccept();
+      this.showBanner(`[의뢰 수주] ${mobName} ${need}마리 토벌 — 완료 후 NPC에게 보고`);
+      this.refreshFieldReqLabel();
+    };
+    EventBus.on("dialogue:choice", onChoice as never);
   }
 
   private acquireDrop(): Drop | null {
@@ -4009,10 +4170,14 @@ export class WorldScene extends Phaser.Scene {
       this.player.addPotion("hp");
       audio.sfx.pickup();
       this.spawnPickupText(x, y - 14, viaPet ? "+HP 물약 (펫)" : "+HP 물약", "#ff8a8a");
+      /* vc147 (#19) — 각성의 대가: 수집형 단계 카운트 */
+      this.fifth2Progress({ kind: "collect", key: "potion_hp" });
     } else if (kind === "potion_mp") {
       this.player.addPotion("mp");
       audio.sfx.pickup();
       this.spawnPickupText(x, y - 14, viaPet ? "+MP 물약 (펫)" : "+MP 물약", "#7dc0ff");
+      /* vc147 (#19) — 각성의 대가: 수집형 단계 카운트 */
+      this.fifth2Progress({ kind: "collect", key: "potion_mp" });
     } else {
       /* v3.0.6 (지시 #9) — 보스 전용 드롭 아이템: 인벤토리 지급
        *  상점 판매 금지(tradeLock) — 추후 유저 거래소에서 사고팔 예정 */
@@ -4022,6 +4187,8 @@ export class WorldScene extends Phaser.Scene {
       audio.sfx.pickup();
       this.spawnPickupText(x, y - 14, viaPet ? `${it.name} (펫)` : `${it.name} 획득!`, "#ffd76a");
       this.showBanner(`${it.name} 획득! — 보스 전용 아이템 (상점 판매 금지 · 거래소 예정)`);
+      /* vc147 (#19) — 각성의 대가: 수집형 단계 카운트 */
+      this.fifth2Progress({ kind: "collect", key: kind });
       this.emitRpgState();
     }
   }
@@ -4056,17 +4223,17 @@ export class WorldScene extends Phaser.Scene {
     if (!mm || !mm.scene || !this.player) return;
     const cam = this.cameras.main;
     const z = cam.zoom || 1;
-    const gw = 156 / z;
-    const gh = 88 / z;
+    /* vc147 (#4) — 모바일 맵 우측 치우침 수정: v1.4.12가 가로폭 700~900px 기기에서
+     *  채팅박스 회피를 위해 미니맵을 중앙에서 +44px 우측으로 밀었는데, 유저 지시
+     *  "모바일에서 맵이 밑에서 정가운데가 아닌 오른쪽으로 치우쳐 있다"의 정체였다.
+     *  → 전 폭에서 하단 정중앙 복귀. 좁은 화면(<700px) 채팅박스 겹침은 기존처럼
+     *  입력바 위(56px)로 올려 회피하고, 700~900px 대역은 미니맵을 소폭 축소해
+     *  채팅 입력바(하단 44vw)와의 가로 겹침을 흡수한다. */
+    const gw = cam.width < 900 ? 128 / z : 156 / z;
+    const gh = cam.width < 900 ? 72 / z : 88 / z;
     const cx0 = cam.width / 2;
-    /* v1.4.8 (#3 겹침) — 좌하단 ChatBox(하단 44vw)와 미니맵(하단 중앙) 좌하단 가림 해소:
-     *  좁은 화면(모바일 가로)에서는 채팅 입력바 위(56px)로 미니맵을 올리고, 넓은 화면은 하단 유지
-     * v1.4.12 (#11 유저 지시 "맵 지도 UI가 너무 위에 있어 좀 아래로 내려") — 가로폭 700~900px
-     *  기기(가로 모드 폰)에서 56px 리프트가 맵을 중공에 떠 있게 보이는 원인.
-     *  ①이 구간에선 하단 14px까지 내리고 ②채팅박스(하단 44vw) 회피를 위해 중앙에서 44px 우측 이동.
-     *  매우 좁은 화면(<700px, 세로 모드)은 채팅/조이스틱/스킬 아크와 충돌해 기존 56px 유지. */
-    const mmBottom = cam.width < 900 ? (cam.width < 700 ? 56 : 14) : 12;
-    const cx = cam.width < 900 && cam.width >= 700 ? cx0 + 44 : cx0;
+    const mmBottom = cam.width < 700 ? 56 : 14;
+    const cx = cx0;
     const cy = cam.height / 2 + (cam.height - mmBottom - gh * z * 0.5 - cam.height / 2) / z;
     mm.clear();
     /* v1.1.0 (#7) — 어두운 맵(암전 챕터/카오스 보스전)에서도 지도가 잘 보이게:
@@ -4562,6 +4729,10 @@ export class WorldScene extends Phaser.Scene {
       this.spawnPickupText(this.player.x + 18, this.player.y - 66 + (this.multiKillCount % 2) * 10, mk.label, mk.color);
       if (this.multiKillCount >= 5) this.doShake(140, 0.004);
     }
+    /* vc147 (#19) — 각성의 대가: 토벌형 단계 카운트 (전 콘텐츠 공통 — 어디서 잡아도 인정) */
+    this.fifth2Progress({ kind: "hunt", key });
+    /* vc147 (#30) — 필드 NPC 의뢰 토벌 카운트 */
+    this.fieldReqProgress(key);
     // 리스폰 예약 — v2.3 단축: 9~13초 → 3.2~4.8초 (지시 #2 — 리젠이 너무 길어 사냥이 끊긴다)
     // v3.1.0 (#전직시련) — 시험 상대는 리스폰하지 않는다. 기존엔 시련 상대(golem 기반)를
     //  잡으면 일반 몬스터 리스폰 큐에 등록돼 "시련 후 약한 몬스터가 계속 소환"되었다.
@@ -4569,6 +4740,14 @@ export class WorldScene extends Phaser.Scene {
       /* 시련 상대 — 재소환 금지 (재도전은 카이엔에게 말 걸기) */
     } else if (this.gateActive || this.closetActive) {
       /* v4.0.0 — 게이트/던전 몬스터는 웨이브 소환이다 — 필드 리스폰 금지 */
+    } else if (this.parkActive) {
+      /* vc147 (#16) — 파크 몹도 필드 리스폰 금지: tickPark 상시 소환과 합쳐지면
+       *  동시 마릿수가 통제 없이 불어난다. 파크는 tickPark의 50캡 검사를 거친 소환만. */
+    } else if (this.towerActive) {
+      /* vc147 (#15) — 탑은 리스폰으로 목표 마릿수까지 반복 충원 (단 respawnEnemy의 20캡 검사를 거친다) */
+      this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
+        this.respawnEnemy(key, spawnX, spawnY, 0)
+      );
     } else {
       this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
         this.respawnEnemy(key, spawnX, spawnY, 0)
@@ -5615,6 +5794,10 @@ export class WorldScene extends Phaser.Scene {
     const boss = this.gateWave % 5 === 0;
     let count = Math.min(24, 4 + Math.round(this.gateWave * 1.7));
     if (boss) count = Math.min(14, Math.ceil(count * 0.55));
+    /* vc147 (#16) — 한 맵 50마리 캡: 웨이브 소환도 전체 생존수 50을 넘지 않게 절삭 */
+    const room = 50 - this.mobAliveCount();
+    if (room <= 0) return;
+    count = Math.min(count, room);
     this.gateAlive = count;
     for (let i = 0; i < count; i++) {
       const side = i % 4;
@@ -5901,7 +6084,9 @@ export class WorldScene extends Phaser.Scene {
     const pool = towerPool(f);
     this.towerKills = 0;
     this.towerNeed = towerKillNeed(f);
-    const n = towerSpawnCount(f);
+    /* vc147 (#15) — 한 번에 20마리 캡 (towerSpawnCount 자체도 20 캡 — 이중 안전망).
+     *  목표 마릿수 채우는 건 층 내 리스폰(20캡 검사) 반복 충원으로 이어진다. */
+    const n = Math.min(20, towerSpawnCount(f));
     for (let i = 0; i < n; i++) {
       const key = pool[i % pool.length];
       const def = ENEMIES[key];
@@ -6076,7 +6261,10 @@ export class WorldScene extends Phaser.Scene {
       const lv = this.player.lv;
       const pool: EnemyKey[] = ["x3_goblin", "x2_frog", "wolf", "x2_rat", "x2_bat", "x2_firebird", "spider"];
       const n = 1 + (wave >= 2 ? 1 : 0);
-      for (let i = 0; i < n; i++) {
+      /* vc147 (#16) — 한 맵 50마리 캡: 파크 상시 소환도 전체 생존수 50을 넘지 않게 한다
+       *  (기존엔 무검사 소환이라 지옥 웨이브에선 수백 마리까지 불어나 프리즈 유발) */
+      const room = Math.max(0, 50 - this.mobAliveCount());
+      for (let i = 0; i < Math.min(n, room); i++) {
         const key = pool[Math.floor(Math.random() * pool.length)];
         const def = ENEMIES[key];
         const sp = this.safeSpawnXY(Phaser.Math.Between(80, this.stageW - 80), Phaser.Math.Between(80, this.stageH - 80)); // v1.1.0 (#9)
@@ -6703,17 +6891,66 @@ export class WorldScene extends Phaser.Scene {
     this.spawnBurstAt(x, y, 20, 0xff6a7a);
   }
 
+  /** vc147 (#15/#16) — 현재 살아있는 몬스터 총수 (잡몹+정예+보스).
+   *  탑 20캡 / 전 맵 50캡 검사의 단일 소스. */
+  private mobAliveCount(): number {
+    let n = 0;
+    for (const e of this.enemies) if (e.active && e.alive) n++;
+    if (this.eliteEnemy?.active && this.eliteEnemy.alive) n++;
+    if (this.boss?.active && this.boss.alive) n++;
+    return n;
+  }
+
+  /* ================= vc147 (#19) — 각성의 대가(제2궁극기 스토리 퀘스트) ================= */
+
+  /** 각성의 대가 이벤트 진입 — matched일 때만 상태 반영 + 연출 + 세이브.
+   *  hunt(적 처치)/boss(보스 격파)/collect(아이템 수집)/reach(스테이지 도달)/talk(카이엔 대화) */
+  private fifth2Progress(ev: { kind: Fifth2EvKind; key: string }) {
+    const st: Fifth2State = { step: this.player.fifth2Step, count: this.player.fifth2Count, done: this.player.fifth2Done };
+    if (!fifth2Active(st)) return;
+    const r = fifth2Event(st, ev);
+    if (!r.matched) return;
+    this.player.fifth2Step = st.step;
+    this.player.fifth2Count = st.count;
+    this.player.fifth2Done = st.done;
+    this.spawnPickupText(this.player.x, this.player.y - 96, r.message, "#c8a0ff");
+    if (r.completed) {
+      /* 최종 완료 — 제2궁극기 해금 팬파레 */
+      audio.sfx.reward();
+      this.cameras.main.flash(260, 225, 170, 255);
+      this.spawnBurstAt(this.player.x, this.player.y - 10, 46, 0xc8a0ff);
+      EventBus.emit("reward:show", {
+        title: "각성의 대가 — 완료!",
+        lines: [
+          { text: "12개의 기억, 하나의 문을 열었다", color: "#e0a8ff" },
+          { text: "제2궁극기 해금 — Q키 · 보라 버튼", color: "#ffd76a" },
+          { text: FIFTH2_CHAIN[FIFTH2_CHAIN.length - 1].after, color: "#a8ecff" },
+        ] satisfies RewardPopupState["lines"],
+      });
+    } else if (r.advanced) {
+      audio.sfx.questAccept();
+      const nxt = FIFTH2_CHAIN[st.step - 1];
+      if (nxt) this.showBanner(`[각성의 대가] ${nxt.title} — ${nxt.story[nxt.story.length - 1]}`);
+    }
+    this.emitRpgState();
+    this.save();
+  }
+
+  /** 각성의 대가 현재 안내 문구 (빈 문자열 = 비활성) */
+  private fifth2HudText(): string {
+    const st: Fifth2State = { step: this.player.fifth2Step, count: this.player.fifth2Count, done: this.player.fifth2Done };
+    return fifth2Active(st) ? fifth2ProgressText(st) : "";
+  }
+
   private respawnEnemy(key: EnemyKey, x: number, y: number, tries: number) {
     if (!this.scene.isActive() || this.player.state === "dead") {
       return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
     }
     /* v3.0 (사용자 지시 #6) — 동시 몬스터 상한 20마리: 이미 가득하면 리스폰 보류
      * v3.0.2 — 정예/보스도 총량에 포함 (잡몹 20 + 정예/보스로 21~22마리 되던 빈틈 봉합)
-     * v1.3.1 (#9 최적화) — 절전 모드(fxLevel 0)에선 상한 14마리로 축소 (FSM/충돌/렌더 부하 절반) */
-    const aliveMobs = this.enemies.filter((e) => e.active && e.alive).length;
-    const eliteAlive = this.eliteEnemy?.active && this.eliteEnemy.alive ? 1 : 0;
-    const bossAlive = this.boss?.active && this.boss.alive ? 1 : 0;
-    if (aliveMobs + eliteAlive + bossAlive >= (this.fxLevel === 0 ? 14 : 20)) {
+     * v1.3.1 (#9 최적화) — 절전 모드(fxLevel 0)에선 상한 14마리로 축소 (FSM/충돌/렌더 부하 절반)
+     * vc147 (#15/#16) — mobAliveCount 단일 소스로 통일 (탑/파크/게이트 포함 전 맵 공통) */
+    if (this.mobAliveCount() >= (this.fxLevel === 0 ? 14 : 20)) {
       /* v4.2.0 — 2400→1400ms (피로도 완화: 리젠 대기 단축) */
       this.time.delayedCall(1400, () => this.respawnEnemy(key, x, y, tries));
       return;
@@ -7124,7 +7361,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.fxLevel >= 1 && this.game.renderer.type === Phaser.WEBGL && this.boss?.active) {
       clearToonStyle(this.boss as unknown as Parameters<typeof clearToonStyle>[0]);
       this.bossToon = applyToonStyle(this.boss as unknown as Parameters<typeof applyToonStyle>[0], {
-        rim: chaos ? 0xff7a7a : 0xbfd8ff, rimStrength: 2.6, contrast: 1.07, saturate: 1.2,
+        rim: chaos ? 0xff7a7a : 0xbfd8ff, rimStrength: 3.0, contrast: 1.1, saturate: 1.26, // vc147 (#1) 툰 강화
       });
     }
     try {
@@ -7251,6 +7488,8 @@ export class WorldScene extends Phaser.Scene {
     this.clearBossPostFX(); /* v4.1.5 — 보스전 포스트FX/오라 해제 */
     this.despawnBossExitNpc(); /* vc143 (#10) — 퇴장 관리인 철수 */
     const def = this.bossDef;
+    /* vc147 (#19) — 각성의 대가: 보스 격파형 단계 카운트 (탑 보스도 인정) */
+    if (def?.key) this.fifth2Progress({ kind: "boss", key: def.key });
     audio.sfx.bossDie();
     /* v1.0.8 — ① 탑 보스층 격파: 스토리/재림 경로와 완전 분리 (층 클리어 처리만) */
     if (this.towerActive) {
@@ -10185,13 +10424,22 @@ export class WorldScene extends Phaser.Scene {
    *  데미지 판정은 각 클라 자기 자신 — 여기선 보기용 연출만 재생 (경량). */
 
   private lastRemoteActAt = 0;
+  /* vc147 (#6) — 스로틀을 원격별(id)로 분리: 기존 전역 80ms 스로틀은 여러 유저가 동시에
+   *  공격/스킬을 쓰면 서로의 액션을 유실시켰다("내 화면과 상대 화면이 다름" 재제보의 한 축). */
+  private lastRemoteActById = new Map<string, number>();
 
   private playRemoteAction(a: net.NetAction) {
     if (!a || a.id === net.netId()) return;
-    /* 스로틀 — 다수 원격이 몰려있을 때 FX 도폭 방지 (최적화 #12) */
+    /* 스로틀 — 동일 유저 연타 도폭 방지(90ms) + 전체 도폭 상한(25ms) 이중 컷 (최적화 #12) */
     const now = this.time.now;
-    if (now - this.lastRemoteActAt < 80) return;
+    const prevAt = a.id ? (this.lastRemoteActById.get(a.id) ?? 0) : 0;
+    if (now - prevAt < 90) return;
+    if (now - this.lastRemoteActAt < 25) return;
     this.lastRemoteActAt = now;
+    if (a.id) {
+      this.lastRemoteActById.set(a.id, now);
+      if (this.lastRemoteActById.size > 48) this.lastRemoteActById.clear(); // 메모리 상한
+    }
     const r = a.id ? this.remotes.get(a.id) : undefined;
     const x = r ? r.sp.x : a.x;
     const y = r ? r.sp.y : a.y;
@@ -11608,8 +11856,47 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("ui:panel", { panel: "shop" });
       }
     } else if (it.kind === "job") {
-      // 전직 교관 — 상담 대사 후 전직 패널 자동 오픈 (v1.9)
-      this.showDialogue("jobMaster", "jobmaster");
+      /* vc147 (#19) — 각성의 대가: 카이엔이 수주/진행 보고 창구 (220렙+ 미수주 → 수주 대사,
+       *  진행 중 talk 단계 → 보고 진행, 그 외 → 기존 전직 상담) */
+      const f2st: Fifth2State = { step: this.player.fifth2Step, count: this.player.fifth2Count, done: this.player.fifth2Done };
+      if (fifth2Offerable(f2st, this.player.lv)) {
+        const step0 = FIFTH2_CHAIN[0];
+        this.showDialogueRaw({
+          speaker: "카이엔",
+          lines: step0.story,
+          choices: [
+            { label: "[수주하기] 각성의 대가를 치르겠다", id: "fifth2_accept" },
+            { label: "나중에", id: "fifth2_later" },
+          ],
+        });
+        const onChoice = (v: { id?: string }) => {
+          if (v?.id === "fifth2_accept") {
+            this.player.fifth2Step = 1;
+            this.player.fifth2Count = 0;
+            audio.sfx.questAccept();
+            const cur = FIFTH2_CHAIN[0];
+            this.showBanner(`[각성의 대가] ${cur.title} — ${cur.story[cur.story.length - 1]}`);
+            this.emitRpgState();
+            this.save();
+          }
+          EventBus.off("dialogue:choice", onChoice as never);
+        };
+        EventBus.on("dialogue:choice", onChoice as never);
+      } else if (fifth2Active(f2st)) {
+        const cur = fifth2Current(f2st)!;
+        if (cur.type === "talk" && cur.target === "jobmaster") {
+          this.showDialogueRaw({ speaker: "카이엔", lines: cur.story });
+          this.fifth2Progress({ kind: "talk", key: "jobmaster" });
+        } else {
+          this.showDialogueRaw({
+            speaker: "카이엔",
+            lines: [`카이엔: ${fifth2ProgressText(f2st)}`, `카이엔: ${cur.story[cur.story.length - 1]}`],
+          });
+        }
+      } else {
+        // 전직 교관 — 상담 대사 후 전직 패널 자동 오픈 (v1.9)
+        this.showDialogue("jobMaster", "jobmaster");
+      }
     } else if (it.kind === "gm") {
       /* v1.0.2 (#GM서버검증) — GM 패널 진입은 서버 롤 재확인 후 허용 (매 상호작용 시 신선한 검증) */
       if (this.gmCheckBusy) return;
@@ -11640,6 +11927,10 @@ export class WorldScene extends Phaser.Scene {
     } else if (it.kind === "keepchest") {
       /* v1.3.0 (지시 #9) 신설 → v1.4.3 유적 철거 후에도 보물상자(하루 1회)로 생존 */
       this.openKeepChest();
+    } else if (it.kind === "talk" && it.dlg?.startsWith("fieldreq|")) {
+      /* vc147 (#30) — 필드 NPC 의뢰: 수주/보고/사연 대화 */
+      const [, baseDlg, npcName, story] = it.dlg.split("|");
+      this.openFieldNpcRequest(baseDlg, npcName, decodeURIComponent(story));
     } else if (it.kind === "talk" && it.dlg) {
       /* vc143 (#10) — 보스전 퇴장 관리인: 선택형 대화 (나가기/계속) */
       if (it.dlg === "bossExit") {
@@ -12376,7 +12667,9 @@ export class WorldScene extends Phaser.Scene {
       chest.play(`chest-open-${row}`);
       chest.once("animationcomplete", () => {
         if (!chest.active) return;
-        const fx = this.add.sprite(chest.x, chest.y - 8, "cfxr_star", 0).setDepth(32).setScale(0.5).setAlpha(0.9);
+        /* vc147 (#10) — cfxr_star는 가산 블렌드용 시트(불투명 검정 62%) — 블렌드 미지정 시
+         *  보물상자를 열 때마다 "검은 상자"가 그대로 노출되던 잔여 결함 (vc144/145의 후속) */
+        const fx = this.add.sprite(chest.x, chest.y - 8, "cfxr_star", 0).setDepth(32).setScale(0.5).setAlpha(0.9).setBlendMode(Phaser.BlendModes.ADD);
         this.tweens.add({ targets: fx, scale: 1.1, alpha: 0, duration: 300, ease: "Cubic.out", onComplete: () => fx.destroy() });
         chest.destroy();
       });
@@ -13499,6 +13792,10 @@ export class WorldScene extends Phaser.Scene {
       /* v3.3.0 — 5차 각성 상태 (GM 임시 전직 or 각성 시련 완료) */
       fifth: this.player.fifth,
       fifthStoryDone: this.player.fifthStoryDone,
+      /* vc147 (#19) — 각성의 대가 진행 저장 */
+      fifth2Step: this.player.fifth2Step,
+      fifth2Count: this.player.fifth2Count,
+      fifth2Done: this.player.fifth2Done,
       /* ----- v4.0.0 — 바르가 업데이트 ----- */
       figures: [...this.figures],
       shards: this.shards,

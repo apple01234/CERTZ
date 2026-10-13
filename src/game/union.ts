@@ -153,9 +153,9 @@ export type FamilyKey = "warrior" | "ranger" | "mage" | "thief" | "pirate";
 export type PlaceGrade = "B" | "A" | "S" | "SS";
 export const PLACE_GRADES: { grade: PlaceGrade; minLv: number; mult: number; color: string }[] = [
   { grade: "B", minLv: 60, mult: 1.0, color: "#9fb3d9" },
-  { grade: "A", minLv: 100, mult: 1.6, color: "#8fe8d8" },
-  { grade: "S", minLv: 150, mult: 2.4, color: "#ffd76a" },
-  { grade: "SS", minLv: 200, mult: 3.2, color: "#ff8ab0" },
+  { grade: "A", minLv: 100, mult: 2.0, color: "#8fe8d8" },   // vc147 (#26) 1.6→2.0
+  { grade: "S", minLv: 150, mult: 3.0, color: "#ffd76a" },   // vc147 (#26) 2.4→3.0
+  { grade: "SS", minLv: 200, mult: 4.5, color: "#ff8ab0" },  // vc147 (#26) 3.2→4.5
 ];
 
 /** 캐릭터 레벨 → 배치 등급 (60 미만은 배치 불가) */
@@ -167,13 +167,15 @@ export function placeGradeOf(lv: number): { grade: PlaceGrade; mult: number; col
 }
 
 /** 계열별 1인당 효과 (B등급 기준 수치 — 상수 한 곳에서 밸런스 조정)
+ *  vc147 (#26) — 유니온 영향력 대폭 상향 (약 ×2.5): 여러 캐릭터 키우는 이득을
+ *  명확히 체감할 수 있게 1인당 효과를 증폭했다 (A등급 이상으론 효과가 2배 이상 벌어짐).
  *  해적 계열은 현직 4직업(전사/궁수/마법사/도적)이 없어 미사용 — 표는 규칙 완결성을 위해 유지 */
 export const FAMILY_EFFECTS: Record<FamilyKey, { def: number; hp: number; atkPct: number; crit: number; critDmg: number; buffPct: number; label: string; color: string }> = {
-  warrior: { def: 6, hp: 120, atkPct: 0, crit: 0, critDmg: 0, buffPct: 0, label: "전사 계열 — 방어력·HP", color: "#ff9d8a" },
-  ranger: { def: 0, hp: 0, atkPct: 1.6, crit: 0, critDmg: 0, buffPct: 0, label: "궁수 계열 — 공격력%", color: "#a8ecff" },
-  mage: { def: 0, hp: 0, atkPct: 1.4, crit: 0, critDmg: 0, buffPct: 0, label: "마법사 계열 — 마력%", color: "#c9a8ff" },
-  thief: { def: 0, hp: 0, atkPct: 0, crit: 0.9, critDmg: 2.5, buffPct: 0, label: "도적 계열 — 크리확률·크리뎀", color: "#b8ffb8" },
-  pirate: { def: 0, hp: 150, atkPct: 0, crit: 0, critDmg: 0, buffPct: 1.5, label: "해적 계열 — HP·버프 효과", color: "#ffd76a" },
+  warrior: { def: 15, hp: 300, atkPct: 0, crit: 0, critDmg: 0, buffPct: 0, label: "전사 계열 — 방어력·HP", color: "#ff9d8a" },
+  ranger: { def: 0, hp: 0, atkPct: 4.0, crit: 0, critDmg: 0, buffPct: 0, label: "궁수 계열 — 공격력%", color: "#a8ecff" },
+  mage: { def: 0, hp: 0, atkPct: 3.5, crit: 0, critDmg: 0, buffPct: 0, label: "마법사 계열 — 마력%", color: "#c9a8ff" },
+  thief: { def: 0, hp: 0, atkPct: 0, crit: 2.2, critDmg: 6.0, buffPct: 0, label: "도적 계열 — 크리확률·크리뎀", color: "#b8ffb8" },
+  pirate: { def: 0, hp: 375, atkPct: 0, crit: 0, critDmg: 0, buffPct: 3.5, label: "해적 계열 — HP·버프 효과", color: "#ffd76a" },
 };
 
 /* ================= 아티팩트 ================= */
@@ -324,18 +326,26 @@ export function unionEffects(u: UnionStore, slots: SlotsStore): UnionEffects {
     if (y.critDmg) parts.push(`크리뎀 +${(y.critDmg * n).toFixed(1)}%p`);
     eff.lines.push({ label: y.label, value: `${n}명 · ${parts.join(" · ")}`, color: y.color });
   });
-  /* ③ 유니온 등급 보너스 — 등급 idx당 전체 공격력% +0.4 */
+  /* ③ 유니온 등급 보너스 — 등급 idx당 전체 공격력% +1.0 (vc147 (#26) 0.4→1.0)
+   *  + 유니온 레벨(부캐 기여 레벨 합) 비례 보너스 — 레벨 100당 공격력 +2% (상한 +30%):
+   *  "유니온의 영향을 크게 — 여러 캐릭터 키우도록 유도"의 핵심 축 */
   const uLv = unionLevelOf(slots);
   const { idx } = unionGradeOf(uLv);
-  eff.atkPct += idx * 0.4;
-  /* ④ 아티팩트 */
+  eff.atkPct += idx * 1.0;
+  const lvBonus = Math.min(30, Math.floor(uLv / 100) * 2);
+  if (lvBonus > 0) {
+    eff.atkPct += lvBonus;
+    eff.hp += Math.floor(uLv / 100) * 150;
+    eff.lines.push({ label: "유니온 레벨 보너스", value: `유니온 Lv.${uLv.toLocaleString()} · 공격력 +${lvBonus}% · HP +${Math.floor(uLv / 100) * 150}`, color: "#ffe9a0" });
+  }
+  /* ④ 아티팩트 — vc147 (#26) 개당 효과 ×2 상향 */
   const art = u.artifacts;
-  eff.atk += (art.art_atk ?? 0) * 3;
-  eff.hp += (art.art_hp ?? 0) * 90;
-  eff.crit += (art.art_crit ?? 0) * 0.6;
-  eff.goldPct += (art.art_gold ?? 0) * 3;
-  eff.def += (art.art_def ?? 0) * 4;
-  eff.speedPct += (art.art_speed ?? 0) * 0.8;
+  eff.atk += (art.art_atk ?? 0) * 6;
+  eff.hp += (art.art_hp ?? 0) * 200;
+  eff.crit += (art.art_crit ?? 0) * 1.2;
+  eff.goldPct += (art.art_gold ?? 0) * 5;
+  eff.def += (art.art_def ?? 0) * 8;
+  eff.speedPct += (art.art_speed ?? 0) * 1.5;
   return eff;
 }
 

@@ -10,7 +10,8 @@ import * as stagesMod from "./stages";
 import * as dataMod from "./data";
 import { ACC_ANCHORS } from "./acc_anchors"; // v1.2.1 (#1) — E2E 앵커 실측용
 import * as partyContentMod from "./partyContent"; // v1.4.3 — 파티 콘텐츠 (E2E 시너지/보드 검증)
-import { showRecoveryOverlay } from "../components/game/crashGuard"; // v1.4.5 — 재부팅 루프 차단 수동 복구
+import { showRecoveryOverlay } from "../components/game/crashGuard";
+import { EventBus } from "../components/game/EventBus"; // vc147 (#29) — 절전 모드 토글 이벤트 // v1.4.5 — 재부팅 루프 차단 수동 복구
 import { SFX_THROTTLE_MS, SFX_MAX_CONCURRENT, BGM_VOLUME, SFX_VOLUMES, playBGM, playStageBGM, stageTrack, bgmDebugState, bgmAdvanceForTest, BGM_PLAYLISTS, getBgmVolume, getSfxVolume } from "./audio";
 
 const audioDebug = { throttle: SFX_THROTTLE_MS, cap: SFX_MAX_CONCURRENT, bgm: BGM_VOLUME, volumes: SFX_VOLUMES, getBgmVolume, getSfxVolume };
@@ -257,6 +258,21 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   (window as unknown as { __SERTZ__?: unknown }).__SERTZ__ = { game };
   /* v1.3.1 (#9) — 부팅 판정 노출 (모바일 절전 기본 — 월드 진입 없이도 E2E 검증 가능) */
   (window as unknown as { __SERTZ_BOOT__?: unknown }).__SERTZ_BOOT__ = { fxMode: WorldScene.DEFAULT_FX_MODE };
+
+  /* vc147 (#29) — 30FPS 절전 모드: 프레임 상한을 런타임에 전환한다.
+   *  기기 발열 → GPU 서멀 스로틀 → 프리즈의 직접 대책. 설정 패널에서 토글. */
+  const applyFpsCap = (on: boolean) => {
+    try { window.localStorage.setItem("sertz_fps30", on ? "1" : "0"); } catch { /* 무시 */ }
+    try {
+      const loop = (game as unknown as { loop?: { targetFps?: number } }).loop;
+      if (loop && typeof loop.targetFps === "number") {
+        loop.targetFps = on ? 30 : 60;
+        console.info(`[SERTZ] 절전 모드: 프레임 상한 ${on ? 30 : 60}FPS`);
+      }
+    } catch { /* 루프 미지원 환경 무시 */ }
+  };
+  applyFpsCap((() => { try { return window.localStorage.getItem("sertz_fps30") === "1"; } catch { return false; } })());
+  EventBus.on("fx:battery", (on: boolean) => applyFpsCap(!!on));
   // v3.0.6 — E2E 정적 검증용 모듈 노출 (클래스/사운드/스테이지/아이템 테이블)
   // v3.0.23 — BGM 고정배치 검증 훅 (구역→트랙 매핑 실측)
   (window as unknown as { __SERTZ_DEBUG__?: unknown }).__SERTZ_DEBUG__ = {

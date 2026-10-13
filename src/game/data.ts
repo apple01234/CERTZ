@@ -148,6 +148,9 @@ export type ItemKey =
   | "sfw_nidavellir" | "sfa_nidavellir" | "sfr_nidavellir"
   | "sfw_hel" | "sfa_hel" | "sfr_hel"
   | "sfw_abyss" | "sfa_abyss" | "sfr_abyss"
+  /* vc147 (#25) — 신화 등급 장비: 세트(에픽) 상위 최종 스펙업층. 카오스 보스 체력 대비
+   *  스펙업 요소 부족 해소 — 고가 골드 싱크 + 대폭 스탯 점프로 장기 성장 목표 제공 */
+  | "mythic_weapon" | "mythic_armor" | "mythic_ring" | "mythic_pendant"
   /* v4.3.0 — BM 대확장 (유저 지시: BM 수익 구조·도파민 100+ 기획/제작)
    *  물약 8티어 ×2 · 장신구 12 · 가챠 상자 4 · 패키지 6 (신규 아이템 46종 + 펫 6 + 치장 6 + 버프 3 = 61종) */
   | "potion_hp3" | "potion_hp4" | "potion_hp5" | "potion_hp6" | "potion_hp7" | "potion_hp8" | "potion_hp9" | "potion_hp10"
@@ -524,6 +527,13 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   sfw_abyss: { key: "sfw_abyss", kind: "weapon", name: "종언 마룡의 검", icon: "i_sfw_abyss", price: 24000, tier: "epic", atk: 82 },
   sfa_abyss: { key: "sfa_abyss", kind: "armor", name: "종언 마룡의 갑주", icon: "i_sfa_abyss", price: 20500, tier: "epic", def: 33 },
   sfr_abyss: { key: "sfr_abyss", kind: "accessory", name: "종언 마룡의 반지", icon: "i_sfr_abyss", price: 22000, tier: "epic", crit: 23, maxHp: 180, slot: "ring" },
+  /* vc147 (#25) — 신화 등급 (최종 스펙업층): 종언 세트 대비 무기 +59%·방어 +64%·장신구 대폭 상향.
+   *  카오스 후반 보스(체력 34k~95k) 상대 딜 사이클을 실제로 끌어올리는 유일 상위층.
+   *  일반상점 최상위 진열 — 장기 골드 파밍 목표 (스펙업 요소 확충 지시) */
+  mythic_weapon: { key: "mythic_weapon", kind: "weapon", name: "위그드라실의 심장검", icon: "item_mythic_weapon", price: 96000, tier: "legend", atk: 130 },
+  mythic_armor: { key: "mythic_armor", kind: "armor", name: "위그드라실의 울린갑주", icon: "item_mythic_armor", price: 88000, tier: "legend", def: 54, maxHp: 400 },
+  mythic_ring: { key: "mythic_ring", kind: "accessory", name: "노른의 계약반지", icon: "item_mythic_ring", price: 80000, tier: "legend", crit: 34, atk: 22, slot: "ring" },
+  mythic_pendant: { key: "mythic_pendant", kind: "accessory", name: "발홀의 문장 펜던트", icon: "item_mythic_pendant", price: 76000, tier: "legend", maxHp: 520, def: 12, slot: "pendant" },
 };
 
 /* v3.0.6 (지시 — "나중가면 플레이어가 너무 쌔닌까 보스 및 몬스터가 체력% 고정 데미지를 주게해"):
@@ -799,6 +809,8 @@ export const SHOP_STOCK: ItemKey[] = [
   "sfw_nidavellir", "sfa_nidavellir", "sfr_nidavellir",
   "sfw_hel", "sfa_hel", "sfr_hel",
   "sfw_abyss", "sfa_abyss", "sfr_abyss",
+  /* vc147 (#25) — 신화 등급 최종 장비 상점 진열 (스펙업 확충) */
+  "mythic_weapon", "mythic_armor", "mythic_ring", "mythic_pendant",
 ];
 
 /** v3.0.6 (지시 #4) — 아이템 판매가 (상점가의 40%, 최소 1G · 보스 전용은 고정가)

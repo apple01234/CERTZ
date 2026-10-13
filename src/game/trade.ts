@@ -100,6 +100,15 @@ function publish(): void {
   EventBus.emit("trade:state", S.snapshot());
 }
 
+/* vc147 (#5) — 패널 마운트 시 현재 스냅샷 재요청 채널.
+ *  기존엔 treq 수신 즉시 publish()가 터지지만 그 시점엔 Trade2Panel이 아직 마운트 전이라
+ *  리스너가 없어 이벤트를 놓친다 → 패널이 snap=null(idle)로 열려 수신자에게 "거래 수락"이
+ *  아니라 근처 목록의 "거래 요청" 버튼이 보이던 버그. 패널이 마운트 완료 후 스냅샷을
+ *  다시 요청해 incoming/open 상태를 복원한다. */
+export function requestTradeSnapshot(): void {
+  publish();
+}
+
 function send(k: string, offer?: TradeOffer): void {
   const bus = mpActive() ? mpConnect() : null;
   if (!bus || !S.partnerId) return;

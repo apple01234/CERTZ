@@ -4086,3 +4086,40 @@ Work Log:
 Stage Summary:
 - 최종 체제: 웹 sertz.vercel.app code:146(1.0.6) · 릴리스 v1.0.6 자산 4종(SERTZ-vc146.apk 146,105,829B md5 2a15a7fe.. / .aab / mapping / SERTZ-vc146-ios-unsigned.ipa 148,295,077B md5 d947425b.. **1.0.6(146)**)
 - iOS 빌드 방법 확정: ①Actions 탭→iOS Build→Run workflow(수동) ②ios/** 포함 커밋 푸시 시 자동 ③산출물은 릴리스 v1.0.6에 자동 첨부 ④설치는 Sideloadly(무료 7일 재서명)/TrollStore(iOS 16.6.1 이하)/본인 p12+zsign
+
+---
+Task ID: vc147-feedback-30
+Agent: Super Z (main)
+Task: 유저 지시 "npx rea-agents setup + 피드백 30종 전부" → vc147 (1.0.7)
+
+Work Log:
+- [rea-agents] npx rea-agents setup --yes --skill → REA 리버스엔지니어링 스킬 설치(~/.agents/skills/reverse-engineer-anything, 170툴 v37) — Ghidra/IDA 프로바이더는 미설정(옵션)
+- [동기화] 로컬이 vc141에 뒤처져 있어 origin/main(c4101d2)으로 reset 후 착수
+- [①②쉐이더] ToonFX applyToonCamera의 brightness(1-0.22k)가 슬라이더 올릴수록 어두워지는 역방향이던 것 → 정방향 0.94+0.06k로 수리 + 대비 1+0.09k·채도 1+0.22k·Blocky 임계 0.45로 툰 강화. 스프라이트 림 기본 2.0/0.5·거리 9. WorldScene 4호출부 rim 2.5/대비 1.10/채도 1.22(보스 3.0/1.26)
+- [③s5b 배치] 그리드 maxWidth 2SK+14→2SK+26 — 궁극기 행(2SK+18)이 폭 초과로 s5b가 줄바꿈되던 배치 버그 수정
+- [④미니맵] v1.4.12의 +44px 우측 치우침(채팅 회피) 철거 → 하단 정중앙 복귀, <900px는 128×72 축소로 겹침 흡수
+- [⑤거래] treq 수신 시 publish()가 패널 마운트 전에 터져 수신자가 idle(거래 요청 버튼)로 보이던 버그 → requestTradeSnapshot() 마운트 시 재요청 채널 신설
+- [⑥원격 FX] 전역 80ms 스로틀 → 원격별 id 스로틀 90ms+전역 25ms — 다수 유저 동시 액션 유실 차단
+- [⑦⑭마법진] spawnGroundSig/spawnUltIntroSig 신설 — 마법사만 마법진 유지, 전사=gw_crack 균열/궁수=vf_arrow 부채꼴/도적=vf_ring_void 섬광/해적=mg_explode 폭발 + DriveFX twinkle/healPuff 활성화
+- [⑧데드아이] s5b 100련에 x2_arrow_green 저격 트레이서 90ms 비행+머즐 플래시 추가
+- [⑨아이콘] 업로드 YGGDRASIL 아이콘(1254²) → android mipmap 5종×3(launcher/round/foreground)·electron 512·iOS 1024·웹 favicon/apple-touch/icon-192/512·app router icon
+- [⑩검은상자] 전수 감사 — 보물상자 cfxr_star(불투명 검정 62%) 블렌드 누락 발견·ADD 적용 (vc144/145 후속 마무리)
+- [⑪키탭] SkillButton/PotionButton/공격 버튼에 키맵 연동 단축키 배지
+- [⑫⑬랭킹] 패널 열면 auth:cloudPush 즉시 업로드+1.2s 후 재조회+15초 폴링+[지금 갱신] 버튼 · 100위/46svh는 vc145 유지 확인
+- [⑭⑮⑯궁극기] FIFTH1_MULT 3.0/FIFTH2_MULT 5.0 — useSkill5/5b 내 rd() 래퍼 49개 호출부 치환(ultSlot 단일 배율로 사다리/FIFTH_SKILL_MULT 중복 대체)
+- [⑰fifth2] src/game/fifth2.ts 신설 — "각성의 대가" 12단계 체인(talk/hunt/collect/reach/boss), Lv220 수주, 카이엔이 창구. s5b 해금=fifth2Done||fifth. 세이브 fifth2Step/Count/Done. 훅 5종(사망/보스/수집/구역진입/대화)
+- [⑱타이틀 로그인] GameRoot title 블록에 AuthPanel+🔑 로그인 버튼(ui:authOpen)
+- [⑲니플헤임] 암전 0.52→0.30·색 0x16283e·광원 2.0/0.65·지면틴트 0xc4d6ea·벽 0xa9c4e0
+- [⑳로봇] HUD 우상단 자동 버튼 철거(B키+좌하단 버튼으로 통일)
+- [㉑얼굴] 투구/후드 7슈트(lily nightblade paladin sylvan valkyrie warlord witch) idle/walk 56프레임 픽셀 복원(스킨+눈) — scripts/vc147_face_fix.py
+- [㉒최적화] 30FPS 절전 모드(설정 토글→loop.targetFps 30/60, sertz_fps30) — 발열/서멀 프리즈 대책
+- [㉓유니온] 계열효과 ×2.5·등급배율 A2.0/S3.0/SS4.5·등급 idx당 atk% 1.0·유니온 레벨 100당 atk+2%/HP+150(상한+30%)·아티팩트 ×2
+- [㉔신화장비] mythic_weapon/armor/ring/pendant(atk130·def54+HP400·crit34+atk22·HP520+def12) — 상점 최상위 진열
+- [㉕퀘스트] 9챕터에 [사연]/[기믹] 비트 18종 추가(체인 말미 append — 인덱스 보존)
+- [㉖NPC] 챕터당 NPC 3종 다양화(구역별 로테이션+사연 한 줄)+필드 NPC 반복 의뢰(수주→토벌→보고 보상, +2씩 상승 상한 24)
+- [게이트] server.js/route.ts 147·1.0.7·APK_MIRROR v1.0.7/SERTZ-vc147.apk · next.config.ts · build.gradle 147/1.0.7 · apk-guide v1.0.7 갱신
+- [검증] tsc 0 · npm run build 성공 · e2e_vc147.js 신설 32/32 PASS(pageerror 0) · e2e_vc146 회귀 32pass/4fail — 전부 의도된 변경(게이트 147·감광 제거)
+- [비고] s5b는 이제 220렙+각성의 대가 완료 필요 — 기존 200렙 유저는 퀘스트로 전환(의도). exe 빌드는 유저 지시대로 다음 세션 보류
+
+Stage Summary:
+- vc147 = 피드백 30종 전량(텍스트) + rea-agents 셋업 — 웹 배포·APK 빌드는 이어지는 세션 로그 참조

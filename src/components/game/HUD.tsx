@@ -7,7 +7,7 @@ import { classDef, classLabel } from "@/game/classes";
 import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
 import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
-import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Bot, Crown, Gift, Swords, Users, UsersRound, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle, GraduationCap, UserRoundPen } from "lucide-react";
+import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Crown, Gift, Swords, Users, UsersRound, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle, GraduationCap, UserRoundPen } from "lucide-react";
 import { EventBus } from "./EventBus";
 import * as audio from "@/game/audio"; // v1.4.8 — 더보기 소셜 버튼 클릭음
 
@@ -73,8 +73,6 @@ export function HUD({
   muted,
   canJob,
   jobAvail,
-  canAutoHunt,
-  autoHunt,
   onToggleMute,
   onOpenInv,
   onOpenJob,
@@ -97,8 +95,6 @@ export function HUD({
   /** 전직 패널 접근 가능 (승격 가능 or 2차 이상 자유전직) */
   jobAvail: boolean;
   /** v2.5 자동사냥 (펫 보유 시) */
-  canAutoHunt: boolean;
-  autoHunt: boolean;
   onToggleMute: () => void;
   onOpenInv: () => void;
   onOpenJob: () => void;
@@ -226,21 +222,8 @@ export function HUD({
           >
             <ScrollText size={17} />
           </button>
-          {/* v2.5 — 자동사냥 토글 (펫 보유 시만 표시) · v1.0.20 flex-wrap: 375px 세로에서 버튼행 넘침 방지 */}
-          {canAutoHunt && (
-            <button
-              onClick={() => EventBus.emit("rpg:autohunt", {})}
-              aria-label={autoHunt ? "자동사냥 끄기" : "자동사냥 켜기"}
-              className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
-                autoHunt
-                  ? "animate-pulse rounded-lg border-2 border-lime-300/80 bg-gradient-to-b from-lime-600/90 to-emerald-800/90 text-lime-100"
-                  : "game-chip text-white/80"
-              }`}
-            >
-              <Bot size={17} />
-              <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${autoHunt ? "text-lime-200" : "text-white/60"}`}>자동</span>
-            </button>
-          )}
+          {/* vc147 (#22) — 우상단 자동전투(로봇) 버튼 철거: TouchControls 자동 버튼·B키와 삼중 중복.
+           *  자동전투 진입점은 좌하단 클러스터 버튼 + B키(키맵 재배치 가능)로 통일. */}
           <button
             onClick={onToggleMute}
             aria-label={muted ? "소리 켜기" : "소리 끄기"}

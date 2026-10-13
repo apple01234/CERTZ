@@ -148,6 +148,105 @@ export function spawnUltimateIntro(scene: SceneLike, x: number, y: number, tint:
   }
 }
 
+/* ═══════════════ vc147 (#14) — 계열별 지면 시그니처 (마법진 우려먹기 개선) ═══════════════
+ *  유저 지시: "마법진 우려먹지마!! 마법사만 거의 마법진 사용하고 나머지는 내가 준 200가지
+ *  이상의 고급 에셋을 적극 사용해" — 전 직업 궁극기 인트로가 같은 펜타클을 썼던 것을
+ *  계열별 고유 지면 연출로 분화한다. 마법사만 마법진을 유지.
+ *  · warrior  — 대지 균열(gw_crack 데칼) + Guz 충격링(gw_shock) + 공헌 균열 링
+ *  · ranger   — 화살 부채꼴(vf_arrow 3방향) + 질주 잔상(gw_dash) + 바람 아크(gw_arc)
+ *  · thief    — 공허 링(vf_ring_void) + 섬광(gw_flash) + 결정 파편(gw_crystal 5방)
+ *  · pirate   — 대폭발 코어(mg_explode) + 골드 스파크(gw_spark 6방) + 충격링(gw_shock)
+ *  · mage/기타 — 기존 마법진(vf_pentacle) 유지 */
+export function spawnGroundSig(scene: SceneLike, x: number, y: number, fam: FamKey | "pirate" | "default", tint: number, scale = 1) {
+  if (fam === "warrior") {
+    const crack = vfImage(scene, "gw_crack", x, y + 8, 0xffb090);
+    if (crack) {
+      crack.setAlpha(0).setScale(0.4 * scale);
+      scene.tweens.add({ targets: crack, alpha: 0.85, scale: 1.1 * scale, duration: 260, ease: "Cubic.out" });
+      scene.tweens.add({ targets: crack, alpha: 0, scale: 1.3 * scale, delay: 620, duration: 420, onComplete: () => crack.destroy() });
+    }
+    spawnRingPop(scene, x, y, "gw_shock", tint, 2.6 * scale, 620);
+    spawnRingPop(scene, x, y, "vf_ring_void", 0xff8050, 1.5 * scale, 480);
+  } else if (fam === "ranger") {
+    for (let i = 0; i < 3; i++) {
+      const ang = -Math.PI / 2 + (i - 1) * 0.55;
+      const a = vfImage(scene, "vf_arrow", x, y, tint);
+      if (!a) break;
+      a.setAlpha(0.9).setScale(0.9 * scale).setRotation(ang + Math.PI / 2);
+      scene.tweens.add({
+        targets: a, x: x + Math.cos(ang) * 70 * scale, y: y + Math.sin(ang) * 70 * scale,
+        alpha: 0, duration: 460, delay: i * 60, ease: "Cubic.out", onComplete: () => a.destroy(),
+      });
+    }
+    const dash = vfImage(scene, "gw_dash", x, y, 0xffffff);
+    if (dash) {
+      dash.setAlpha(0.75).setScale(0.7 * scale);
+      scene.tweens.add({ targets: dash, alpha: 0, scale: 1.5 * scale, duration: 420, onComplete: () => dash.destroy() });
+    }
+    spawnRingPop(scene, x, y, "gw_arc", tint, 2.2 * scale, 560);
+  } else if (fam === "thief") {
+    spawnRingPop(scene, x, y, "vf_ring_void", 0xb08aff, 2.6 * scale, 700);
+    const fl = vfImage(scene, "gw_flash", x, y - 6, 0xcabaff);
+    if (fl) {
+      fl.setAlpha(0.95).setScale(0.5 * scale);
+      scene.tweens.add({ targets: fl, alpha: 0, scale: 1.4 * scale, duration: 300, ease: "Cubic.out", onComplete: () => fl.destroy() });
+    }
+    for (let i = 0; i < 5; i++) {
+      const ang = (Math.PI * 2 * i) / 5 + 0.5;
+      const c = vfImage(scene, "gw_crystal", x, y, 0xa88aff);
+      if (!c) break;
+      c.setAlpha(0.9).setScale(0.3 * scale).setRotation(ang);
+      scene.tweens.add({
+        targets: c, x: x + Math.cos(ang) * 62 * scale, y: y + Math.sin(ang) * 46 * scale,
+        alpha: 0, scale: 0.08, rotation: ang + 1.4, duration: 520, ease: "Quad.out", onComplete: () => c.destroy(),
+      });
+    }
+  } else if (fam === "pirate") {
+    const ex = vfImage(scene, "mg_explode", x, y, 0xffe0a0);
+    if (ex) {
+      ex.setAlpha(0.9).setScale(0.5 * scale);
+      scene.tweens.add({ targets: ex, alpha: 0, scale: 1.35 * scale, duration: 480, ease: "Cubic.out", onComplete: () => ex.destroy() });
+    }
+    spawnRingPop(scene, x, y, "gw_shock", 0xffd76a, 2.4 * scale, 600);
+    for (let i = 0; i < 6; i++) {
+      const ang = (Math.PI * 2 * i) / 6;
+      const s = vfImage(scene, "gw_spark", x, y, 0xffd76a);
+      if (!s) break;
+      s.setAlpha(0.95).setScale(0.34 * scale);
+      scene.tweens.add({
+        targets: s, x: x + Math.cos(ang) * 78 * scale, y: y + Math.sin(ang) * 56 * scale,
+        alpha: 0, scale: 0.06, duration: 500, ease: "Cubic.out", onComplete: () => s.destroy(),
+      });
+    }
+  } else {
+    /* mage/default — 마법진 유지 (마법사의 정체성) */
+    spawnPentacle(scene, x, y, tint, { scale: 1.25 * scale, duration: 1000, spin: true, alpha: 0.62 });
+  }
+}
+
+/** 계열별 궁극기 인트로 — 공통 링/코어/스파크는 유지하되 지면 연출만 계열 시그니처로 교체.
+ *  (vc147 #14 — 전 직업 동일 펜타클 "마법진 우려먹기" 해소) */
+export function spawnUltIntroSig(scene: SceneLike, x: number, y: number, tint: number, fam: FamKey | "pirate" | "default") {
+  spawnGroundSig(scene, x, y, fam, tint, 1.0);
+  spawnRingPop(scene, x, y, "vf_ring", tint, 2.4, 720);
+  spawnRingPop(scene, x, y, "vf_ring", 0xffffff, 1.6, 520);
+  spawnFlarePop(scene, x, y - 4, "vf_impact", { tint, scale: 0.9, duration: 560 });
+  for (let i = 0; i < 4; i++) {
+    const ang = (Math.PI / 2) * i + 0.4;
+    const dist = Phaser.Math.Between(64, 88);
+    const sx = x + Math.cos(ang) * 18;
+    const sy = y - 4 + Math.sin(ang) * 18;
+    const sp = vfImage(scene, "vf_star", sx, sy, 0xffffff);
+    if (!sp) break;
+    sp.setAlpha(0.95).setScale(0.22);
+    scene.tweens.add({
+      targets: sp, x: sx + Math.cos(ang) * dist, y: sy + Math.sin(ang) * dist,
+      alpha: 0, scale: 0.05, duration: 520, ease: "Cubic.out", onComplete: () => sp.destroy(),
+    });
+  }
+}
+
+
 /* ═══════════════ v1.0.11 — Gameworks 프리셋 (유저 업로드 Unity 팩) ═══════════════
  *  Hovl Studio Magic effects · Matthew Guz Slash Effects 프리렌더 텍스처 (Petal Particles는 v1.0.13 철수).
  *  용도: ① N차마다 기존 스킬 강화(1차~3차 주력/기동/3차기) ② 튜토리얼 축하 연출 ③ 축제 이펙트 */
