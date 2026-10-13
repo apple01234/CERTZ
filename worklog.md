@@ -3936,3 +3936,31 @@ Stage Summary:
 - SERTZ iOS 첫 빌드 성공 — SERTZ-vc142-ios-unsigned.ipa(140.9MB)가 GitHub 릴리스 v1.0.5-beta에 자동 첨부됨
 - 이후 웹 수정 후 iOS 재빌드는 무자동화: ios/가 포함된 커밋 푸시 시 Actions가 자동 재빌드·릴리스 갱신(--clobber), 수동은 Actions 탭에서 workflow_dispatch
 - iOS 잔무: ①unsigned라 사이드로드 도구(AltStore/Sideloadly/TrollStore) 또는 본인 인증서 codesign 필요 ②iOS 전용 AdMob 앱 ID(AdMob 콘솔) ③Firebase Console iOS 앱 등록 → 정식 GoogleService-Info.plist 교체 시 네이티브 구글 로그인 활성화 ④Vercel 토큰 재제공 시 정리 체인
+
+---
+Task ID: vc143-feedback-9
+Agent: Super Z (main)
+Task: 유저 지시 "ios 빌드는 다음에 하자!!" + 피드백 9종(5번=Vercel 토큰 재제공) → vc143 웹+APK 배포
+
+Work Log:
+- [토큰 복원 5번째] .secrets/vercel_token 재복원(60B·chmod 600) — vercel_api.sh status 정상 동작 확인, 이후 정리 체인 자동 실행됨
+- [①눈맵 튕김 근본 원인] Explore 탐색 결과 — 니플헤임/무스펠 앰비언트 블룸 스킵(v1.4.31/32)에도 재부착 무가드 경로 3곳 발견(applyFxMode 복원·clearBossPostFX 보스 격파 시·tickFxQuality 품질 복원) + 재림 눈/용암 구역(r2/r8)은 parseStage가 village를 반환해 챕터 게이트 우회 → GPU 과부하 → webglcontextlost 4회 Canvas 폴백 재부팅/프리즈 워치독 루프 = "자꾸 튕김"
+- [①수정] ambientBloomAllowed() 단일 게이트 신설(챕터 niflheim/muspelheim + groundTex tile_snow/tile_magma + isLowPerfEnv) — 부착 4경로 전부 통일 + tickFxQuality 고부하 구역 복원 스텍 3→6회(플래핑 차단) + safeReload 크래시 브레드크럼(sessionStorage sertz.lastcrash: reason·fps·enemies)
+- [②후반 보스] skoll 8600→12000·gram 10600→20000·abudditos 14500→34000·vord 16800→42000·jorm 21500→60000·nagr 30000→95000, ATK 39→42/42→48/46→54/50→58/55→64/62→72
+- [③퀘스트] questNeedByLv 곡선 재조정(21~40:60~110·41~60:110~170·61~80:170~210·81+:200~260, 1~20 유지) + 자동토벌 퀘스트 3번째 구역 단일종 집중 사냥 로테이션(요구×0.6·targetKeys=[최다종]) + 반복의뢰 lv20+ 곡선 직결(repMul 보상 연동) + 스토리 hunt 18건 100~200 인상(보상·EXP 비례, desc 수치 동기)
+- [④체력 공유] mpMqtt bdmg/bhp 메시지 신설 + net.ts netBossMsg/netOnBoss/netSelfId(MQTT id 커버) + Boss sharedMode/sharedHp/onSharedDamage 훅(비호스트 HP 권한 없음 — 연출만) + WorldScene setupBossShare/recomputeBossShareHost(1.5s 선거: 동일구역 세션 id 최소값)/tickBossShare(호스트 250ms 브로드캐스트·비호스트 200ms 딜 릴레이) + 스폰 4개 지점(스토리/재림/praid/GM) 하네스 + forceSharedDeath로 기존 사망·보상 경로 재사용
+- [⑥최적화] spawnCritSplat 동시 8장 예산(연속 크리 GC 스파이크 → 프리즈 워치독 오타작 차단) + FX 복원 히스테리시스
+- [⑦아이콘] uiScaleOf() 신설(768+:1.12·1024+:1.22·1280+:1.35·1600+:1.5) — 공격/스킬 버튼·조이스틱 반경·노브 전부 배율, 모바일 1.0 유지
+- [⑧] 자동전투 중 화살표 입력 시 수동 이동 우선(mv.lengthSq()>0 → autoHuntMove 미적용), 키 떼면 자동 복귀
+- [⑨] 자동전투 중 전진/복귀 포탈 전부 차단(정책 반전 — v4.3.0/v1.4.12 허용분 폐기) + 6초 스로틀 안내 배너 + tickAutoHunt 포탈 자동 접근 제거
+- [⑩] DialogueBox choices 신설(마지막 줄 타이핑 완료 시 버튼, dialogue:choice 발신) + 보스전 퇴장 관리인(spum_butler 틴트·퇴장 문의 칩·interactables bossExit) 4개 보스 스폰 지점 배치, 선택 [전투를 포기하고 나가기]=leaveBossBattle(praid는 입장 전 구역 복귀·PREV_STAGE 폴백) / [계속 싸우기], onBossDead·이탈 시 철수
+- [사고 2건 수습] ①git add src/에서 출처 불명 미추적 2종(middleware.ts=웹 플레이 차단 정책파일·api/route.ts) 실수 커밋 → 9ea4825로 레포 제외(라이브 패리티 유지 — 활성화 시 웹 엔트리가 apk-guide로 리다이렉트되는 사고 예방) ②route.ts 잔존분이 APK export에서 EISDIR 사고 → 격리 후 재빌드 + build_apk.sh 격리·복원 목록에 route.ts 추가
+- [E2E] scripts/e2e_vc143.js 11/11 PASS — ①forest1 마릿수 5 유지·hel1 auto/repeat 138 ②niflheim1 블룸 미부착+복원 사이클 후에도 0·대조군 forest1 정상 부착 ③공유 릴레이 emit 무예외 ④선택 대화 버튼 렌더+dialogue:choice e2e_leave 수신 ⑤1920 공격버튼 168px/390 100px ⑥pageerror 0 (선택지 타이퍼 대기 20s로 보강 — fps 16 환경 타이핑 지연)
+- [빌드/배포] JDK(/home/z/jdk 21.0.12.1)·SDK(android-36+build-tools 35) rebuild_toolchain.sh 재구축 · 라우트 격리→APK_EXPORT export→cap sync→gradle assembleRelease 6m21s→aapt versionCode 143·1.0.5-beta 확인 · bundleRelease 4m · 릴리스 3종 업로드 201×3(apk 159,101,902B md5 c2e55bdd.. sha1 987ab063..)·다운로드 200 검증 · apk-guide 해시 갱신 · Vercel 라이브 code:143 + 정리 체인 2회(10삭제+1삭제 — KEEP 2 유지) · download 매핑 최신 2개 정책(vc142·143 유지, vc127~141 디스크 잔존분 삭제)
+- [git 이력] 플랫폼 자동커밋×백업 커밋 rebase 충돌(worklog 전례) → abort 후 mixed reset origin/main + 디스크 재커밋 패턴 수습(58d5e7a→39d65f7) · 최종 5515c58
+
+Stage Summary:
+- vc143 = 피드백 9종(①~④⑥~⑩+토큰) 전량 구현 — 웹 라이브 code:143·APK SERTZ-vc143.apk 릴리스 완비(덮어설치 호환)
+- 유저 테스트 포인트: ①설원(니플헤임 6장·재림 r2/r8)에서 장시간 플레이 시 튕김 소멸 확인 ②8장 스콜&하티 이후 보스 체감 ③중반 퀘스트 마릿수 100~200+단일종 집중 사냥 ④파티 맺고 공동토벌전 — 보스 HP바 공유 확인 ⑦PC 넓은 화면 버튼 크기 ⑧⑨자동전투 중 이동/포탈 ⑩보스 옆 퇴장 관리인 대화
+- iOS는 유저 요청으로 보류 — Actions 워크플로는 유지(ios/ 커밋 시 자동 빌드·릴리스 첨부)
+- 잔무: 미스터리 2종(middleware.ts·api/route.ts) 디스크 보존 중 — 유저 확인 후 폐기/커밋 결정 · APK 덮어설치 테스트 대기 · 백로그(세이브 복원·서버 구글 인증서·교실 퀘스트 개선—파티 게임 추가·기존 퀘스트 절대 삭제 금지)
