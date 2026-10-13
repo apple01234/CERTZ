@@ -164,3 +164,7 @@ server.log
 *.log
 vercel-deploy.log
 download/Capture/
+
+# vc142 — 구글드라이브 원본 에셋팩 (원칙: 크롭본만 public/assets에 커밋)
+download/gdrive_vfx/
+.secrets/

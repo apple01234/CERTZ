@@ -275,6 +275,12 @@ class MqttBusImpl implements MqttBus {
     if (!pid || pid === this.id) return; // 자기 메시지 무시
     const k = String(m.k ?? "");
 
+    /* vc142 (#3) — 1:1 거래 개인 토픽 */
+    if (topic === ROOT + "trade/" + this.id) {
+      this.onTradeMessage(m, pid);
+      return;
+    }
+
     if (topic === ROOT + "presence") {
       if (k === "bye") {
         this.friends.delete(pid);
@@ -458,6 +464,44 @@ class MqttBusImpl implements MqttBus {
       if (out.length >= 300) break;
     }
     return out;
+  }
+
+  /* ================= vc142 (#3) — 1:1 플레이어 거래 (MQTT) =================
+   *  · 토픽: trade/<상대pid>  — 거래 상대에게만 보내는 1:1 채널
+   *  · 메시지: treq(요청)·tacc(수락)·tdeny(거절)·toff(오버 갱신)·tlock(확정)·tcancel(취소)
+   *  · 검증은 각 클라이언트가 로컬 세이브 기준으로 수행 (브로커는 중계만) */
+
+  private tradeSubbed = false;
+
+  private ensureTradeSub() {
+    if (!this.client || !this.connected || this.tradeSubbed) return;
+    try {
+      this.client.subscribe(ROOT + "trade/" + this.id, { qos: 0 });
+      this.tradeSubbed = true;
+    } catch { /* 무시 */ }
+  }
+
+  /** 거래 메시지 전송 — 상대 개인 토픽으로 */
+  tradeSend(to: string, msg: Record<string, unknown>) {
+    const t = clean(to, 40);
+    if (!t) return;
+    this.ensureTradeSub();
+    this.publish({ ...msg, pid: this.id, to: t, t: Date.now() }, ROOT + "trade/" + t);
+  }
+
+  private onTradeMessage(m: Record<string, unknown>, pid: string) {
+    const k = String(m.k ?? "");
+    if (!["treq", "tacc", "tdeny", "toff", "tlock", "tcancel"].includes(k)) return;
+    /* 오버 갱신: items(≤12 · key 24자)·gold·emerald 세탁 */
+    const offer = (() => {
+      const raw = Array.isArray(m.items) ? (m.items as unknown[]).slice(0, 12) : [];
+      return {
+        items: raw.map((s) => clean(s, 24)).filter((s) => /^[a-z0-9_]{2,24}$/.test(s)),
+        gold: num(m.gold, 0, 999999999),
+        emerald: num(m.emerald, 0, 999999),
+      };
+    })();
+    this.fire("trade", { k, from: pid, name: clean(m.name, 8), offer });
   }
 
   private emitPlayers() {

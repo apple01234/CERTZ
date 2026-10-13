@@ -111,7 +111,15 @@ export const BOSS_DIFF_ORDER: BossDiffKey[] = ["easy", "normal", "hard", "chaos"
  *  방관하면 대폭발) */
 export type BossAttackKind =
   | "slam" | "charge" | "volley" | "ring" | "zones" | "summon"
-  | "spiral" | "beam" | "blink" | "quake" | "counter";
+  | "spiral" | "beam" | "blink" | "quake" | "counter"
+  /* vc142 (#6) — 보스 고유 VX 패턴 (유저 에셋 FX — 보스마다 전부 다른 공격) */
+  | "firepillars" // 수르트 — 추적 화염기둥 3연속
+  | "frostnova" // 베헤모스·스콜 — 빙결 신성 2겹
+  | "thunderfall" // 나그라파르 — 추적 낙뢰 4연속
+  | "poisonfield" // 니드호그·요르문간드 — 맹독 장판
+  | "holymantle" // 아부디토스 — 마룡 성역 대폭발
+  | "crystalburst" // 심연군주·베오르드 — 결정 8방향 산개
+  | "blinkslash"; // 가름 — 점멸 3연 참격
 
 export type BossDef = {
   key: BossKey;
@@ -414,11 +422,11 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     /* v1.4.12 (#20 보스 정체성) — 시그니처 spiral · 성향 0.95 */
     sig: "spiral",
     aggr: 0.95,
-    /* 눈보라의 화신 — 나선 탄막(블리자드 스톰) 시그니처 */
+    /* 눈보라의 화신 — vc142: 빙결 신성(frostnova) 추가 — 눈보라 정체성 강화 */
     patterns: {
       p1: ["slam", "volley", "zones"],
-      p2: ["slam", "charge", "volley", "zones", "spiral"],
-      p3: ["slam", "charge", "volley", "zones", "ring", "spiral", "quake"],
+      p2: ["slam", "charge", "volley", "zones", "spiral", "frostnova"],
+      p3: ["slam", "charge", "volley", "zones", "ring", "spiral", "quake", "frostnova"],
     },
   },
   abysslord: {
@@ -428,11 +436,11 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     /* v1.4.12 (#20 보스 정체성) — 시그니처 summon · 성향 1.0 */
     sig: "summon",
     aggr: 1.0,
-    /* 심연의 전술가 — 나선 탄막 + 최초의 반격 카운터 개방(2페이즈) */
+    /* vc142 — 결정 산개(crystalburst) 추가 — 심연의 결정 정체성 */
     patterns: {
       p1: ["volley", "charge", "slam"],
-      p2: ["volley", "charge", "ring", "zones", "spiral", "counter"],
-      p3: ["volley", "charge", "ring", "zones", "summon", "spiral", "counter"],
+      p2: ["volley", "charge", "ring", "zones", "spiral", "counter", "crystalburst"],
+      p3: ["volley", "charge", "ring", "zones", "summon", "spiral", "counter", "crystalburst"],
     },
     summonKey: "wraith",
   },
@@ -440,14 +448,13 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "nidhog", name: "탐식의 드래곤 니드호그",
     hp: 3600, atk: 26, speed: 90, exp: 380, gold: 260,
     tex: "boss_nidhog", orbTint: 0x7dff9a, introDialogue: "bossIntroNidhog",
-    /* v1.4.12 (#20 보스 정체성) — 시그니처 beam · 성향 0.95 */
-    sig: "beam",
+    /* v1.4.12 (#20 보스 정체성) — vc142: 시그니처 beam → 맹독 장판으로 교체 (탐식 독 드래곤) */
+    sig: "poisonfield",
     aggr: 0.95,
-    /* 드래곤 — 독 브레스 스윕 빔 시그니처(2페이즈부터) */
     patterns: {
       p1: ["slam", "charge", "volley"],
-      p2: ["slam", "charge", "volley", "ring", "beam"],
-      p3: ["slam", "charge", "volley", "ring", "zones", "beam", "summon"],
+      p2: ["slam", "charge", "volley", "ring", "beam", "poisonfield"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "beam", "summon", "poisonfield"],
     },
     summonKey: "swampbeast",
   },
@@ -455,14 +462,13 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "surt", name: "화염의 거인 수르트",
     hp: 5400, atk: 33, speed: 88, exp: 560, gold: 340,
     tex: "boss_surt", orbTint: 0xffa05a, introDialogue: "bossIntroSurt",
-    /* v1.4.12 (#20 보스 정체성) — 시그니처 zones · 성향 0.9 */
-    sig: "zones",
+    /* v1.4.12 (#20 보스 정체성) — vc142: 시그니처 zones → 추적 화염기둥으로 교체 (화염의 거인) */
+    sig: "firepillars",
     aggr: 0.9,
-    /* 라그나로스 — 화염 스윕 빔 + 최후 연속 낙뢰(용암 분출) */
     patterns: {
-      p1: ["slam", "volley", "zones"],
-      p2: ["slam", "charge", "volley", "zones", "beam"],
-      p3: ["slam", "charge", "volley", "zones", "ring", "beam", "quake"],
+      p1: ["slam", "volley", "zones", "firepillars"],
+      p2: ["slam", "charge", "volley", "zones", "beam", "firepillars"],
+      p3: ["slam", "charge", "volley", "zones", "ring", "beam", "quake", "firepillars"],
     },
   },
   fenrir: {
@@ -477,7 +483,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     patterns: {
       p1: ["charge", "volley", "ring"],
       p2: ["slam", "charge", "volley", "zones", "blink"],
-      p3: ["slam", "charge", "volley", "zones", "ring", "blink"],
+      p3: ["slam", "charge", "volley", "zones", "ring", "blink", "frostnova"],
     },
   },
   skoll: {
@@ -488,12 +494,12 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     /* v1.4.12 (#20 보스 정체성) — 시그니처 blink · 성향 0.9 */
     sig: "blink",
     aggr: 0.9,
-    /* 태양과 달을 쫓던 쌍랑 — 3연속 교차 돌진(최종 페이즈 3회) + 스윕 빔 */
+    /* 태양과 달을 쫓던 쌍랑 — 3연속 교차 돌진(최종 페이즈 3회) + 스윕 빔 + vc144 빙결 신성 */
     chargeChain: 2,
     patterns: {
       p1: ["volley", "charge", "slam"],
-      p2: ["volley", "charge", "ring", "zones", "beam", "blink"],
-      p3: ["volley", "charge", "ring", "zones", "summon", "beam", "blink"],
+      p2: ["volley", "charge", "ring", "zones", "beam", "blink", "frostnova"],
+      p3: ["volley", "charge", "ring", "zones", "summon", "beam", "blink", "frostnova"],
     },
     summonKey: "runegolem",
   },
@@ -505,11 +511,11 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     /* v1.4.12 (#20 보스 정체성) — 시그니처 counter · 성향 1.0 */
     sig: "counter",
     aggr: 1.0,
-    /* 헬의 문지기 — 반격 카운터(창을 놓치면 문이 닫힌다) + 그림자 급습 */
+    /* 헬의 문지기 — 반격 카운터(창을 놓치면 문이 닫힌다) + 그림자 급습 + vc142 점멸 3연 참격 */
     patterns: {
       p1: ["slam", "charge", "volley", "zones"],
-      p2: ["slam", "charge", "volley", "ring", "zones", "counter", "blink"],
-      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "counter", "blink", "quake"],
+      p2: ["slam", "charge", "volley", "ring", "zones", "counter", "blink", "blinkslash"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "counter", "blink", "quake", "blinkslash"],
     },
     summonKey: "helhound",
   },
@@ -521,12 +527,12 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     /* v1.4.12 (#20 보스 정체성) — 시그니처 ring · 성향 0.8 */
     sig: "ring",
     aggr: 0.8,
-    /* 종언의 마룡 — 모든 시그니처 패턴의 종합 세트(마룡의 전례 없는 재앙) */
+    /* 종언의 마룡 — 모든 시그니처 패턴의 종합 세트 + vc142 마룡 성역(holymantle) */
     chargeChain: 2,
     patterns: {
       p1: ["volley", "charge", "ring", "beam"],
-      p2: ["volley", "charge", "ring", "zones", "summon", "beam", "spiral", "blink"],
-      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "blink", "quake", "counter"],
+      p2: ["volley", "charge", "ring", "zones", "summon", "beam", "spiral", "blink", "holymantle"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "blink", "quake", "counter", "holymantle", "firepillars"],
     },
     summonKey: "helhound",
   },
@@ -541,11 +547,11 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     /* v1.4.12 (#20 보스 정체성) — 시그니처 quake · 성향 1.0 */
     sig: "quake",
     aggr: 1.0,
-    /* 대지를 지키는 파수꾼 — 연속 낙뢰(지진) + 반격 카운터 */
+    /* 대지를 지키는 파수꾼 — 연속 낙뢰(지진) + 반격 카운터 + vc142 결정 산개 */
     patterns: {
       p1: ["slam", "charge", "volley", "zones"],
-      p2: ["slam", "charge", "ring", "zones", "quake", "counter"],
-      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "quake", "counter"],
+      p2: ["slam", "charge", "ring", "zones", "quake", "counter", "crystalburst"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "quake", "counter", "crystalburst"],
     },
     summonKey: "x3_orcwarrior",
   },
@@ -558,12 +564,12 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     /* v1.4.12 (#20 보스 정체성) — 시그니처 beam · 성향 0.9 */
     sig: "beam",
     aggr: 0.9,
-    /* 세계수를 감는 뱀 — 스윕 빔 + 나선 탄막 + 2연속 돌진 */
+    /* 세계수를 감는 뱀 — 스윕 빔 + 나선 탄막 + 2연속 돌진 + vc142 맹독 장판 */
     chargeChain: 2,
     patterns: {
       p1: ["volley", "charge", "beam"],
-      p2: ["volley", "charge", "ring", "zones", "beam", "spiral"],
-      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "blink"],
+      p2: ["volley", "charge", "ring", "zones", "beam", "spiral", "poisonfield"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "blink", "poisonfield"],
     },
     summonKey: "x2_reeffish",
   },
@@ -576,12 +582,12 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     /* v1.4.12 (#20 보스 정체성) — 시그니처 spiral · 성향 0.8 */
     sig: "spiral",
     aggr: 0.8,
-    /* 종언을 먹는 존재 — 재림 지역 최종 보스, 전 패턴 종합 + 카오스급 구성 */
+    /* 종언을 먹는 존재 — 재림 지역 최종 보스, 전 패턴 종합 + 카오스급 구성 + vc142 뇌우/성역 */
     chargeChain: 2,
     patterns: {
       p1: ["volley", "charge", "ring", "spiral"],
-      p2: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "counter"],
-      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "blink", "quake", "counter"],
+      p2: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "counter", "thunderfall"],
+      p3: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "blink", "quake", "counter", "thunderfall", "holymantle"],
     },
     summonKey: "x3_necromancer",
   },
@@ -632,6 +638,13 @@ export function questNeedByLv(lv: number): number {
   return Math.round(200 + ((l - 81) / 19) * 60);
 }
 
+/** vc142 (#5) — 후반 몬스터 HP ×10: 유저 지시 "후반만 4스테이지 쯤 부터 몬스터 체력좀 10배 씩 정도 늘려".
+ *  후반 4개 챕터(7 스바르트알프헤임 · 8 니다벨리르 · 9 헬 · 10 세계수의 뿌리)의 4구역부터 적용
+ *  (구역 1~3은 진입 완충 유지). 공격력/경험치/골드 곡선은 현행 유지 — 체력만 상향. */
+const LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss"];
+const LATE_HP_FROM_SUB = 4;
+const LATE_HP_MUL = 10;
+
 /** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스)
  *  v1.0.19 (A-3) — 신규 스테이지(scaleMul 보유)는 전용 배율 우선, 기존 챕터는 기존 곡선 유지 */
 export function stageScale(key: StageKey): { hp: number; atk: number; exp: number; gold: number } {
@@ -643,8 +656,10 @@ export function stageScale(key: StageKey): { hp: number; atk: number; exp: numbe
   const i = spec.num - 2;
   /* v3.0.22 (#50) — 구역 진행 배율 상향: 구역당 HP +7.5%·ATK +6% (기존 5.5/4.5%) */
   const subMul = 1 + (sub - 1) * 0.075;
+  /* vc142 (#5) — 후반 4챕터 구역 4+ HP ×10 */
+  const lateMul = LATE_HP_CHAPTERS.includes(spec.key) && sub >= LATE_HP_FROM_SUB ? LATE_HP_MUL : 1;
   return {
-    hp: CH_HP[i] * subMul,
+    hp: CH_HP[i] * subMul * lateMul,
     atk: CH_ATK[i] * (1 + (sub - 1) * 0.06),
     exp: CH_EXP[i] * subMul,
     gold: (1 + i * 0.42) * subMul,

@@ -21,7 +21,8 @@ export type GameAction =
   | "stat"
   | "quest"
   | "opt"
-  | "collection";
+  | "collection"
+  | "autohunt";
 
 export type KeyMap = Record<GameAction, string>; // 값은 Phaser KeyCode 문자열 (예: "X")
 
@@ -46,6 +47,8 @@ export const DEFAULT_KEYMAP: KeyMap = {
   quest: "J",
   opt: "O",
   collection: "M",
+  /* vc142 (#1) — PC 자동전투 토글 단축키 (모바일 버튼과 동일 이벤트 rpg:autohunt) */
+  autohunt: "B",
 };
 
 /** 액션 한글 라벨 (설정 UI 표시) */
@@ -66,6 +69,7 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   quest: "퀘스트 로그",
   opt: "설정 (키 매핑)",
   collection: "몬스터 컬렉션",
+  autohunt: "자동전투 토글",
 };
 
 /** 설정 UI에서 쓸 수 있는 키 후보 — v1.0.4: 이동이 화살표 전용이라 알파벳 전체 자유 배치 */

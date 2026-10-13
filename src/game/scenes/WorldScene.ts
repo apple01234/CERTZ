@@ -35,6 +35,7 @@ import { showRewardedAd, purchaseGems, purchaseStorePack, GEM_SKUS, restorePendi
 import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft, weekKey, missionsByHook, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS, type MissionHook } from "../pass"; // v4.5.0 — 시즌 패스/구독 + v1.0.1 시즌 미션
 import {
   infMerge, towerFloorScale, isTowerBossFloor, towerFloorReward, towerPool, TOWER, closetTierScale, closetTierAbyss,
+  towerKillNeed, towerSpawnCount, towerSpeedScale, towerBossFor,
   todayTrial, trialReward, rebirthReqLv, rebirthBonus, REBIRTH_ABYSS, MAT_CHANCES, CRAFT_RECIPES, canCraft,
   PET, petEvoStage, petBonus, PET_EVO_NAMES, GOLDEN, ABYSS_SHOP, orbBonus, weeklyRaidBoss, infBonus, todayKey,
   PARK_DIFFS, PARK_DURATION, PARK_TICKETS,
@@ -48,7 +49,9 @@ import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
 import { DriveFX } from "../fx/DriveFX"; // v1.3.0 — Drive 팩 VFX 통합 (참격/크리/폭발/낙뢰/불꽃놀이)
-import { applyToonStyle, clearToonStyle } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일)
+import { applyToonStyle, clearToonStyle, applyToonCamera, toonEnabled, setToonEnabled } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일) · vc142 — 화면 전체 툰 셰이딩
+import { Vfx3D } from "../fx/Vfx3D"; // vc142 (#9) — Three.js 3D VFX 오버레이 (phas3d식)
+import { initTrade, tradeInvite, tradeAccept, tradeDeny, tradeCancel, tradeAddItem, tradeRemoveItem, tradeSetCurrency, tradeLock } from "../trade"; // vc142 (#3) — 1:1 플레이어 거래
 import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
 import * as partyContent from "../partyContent"; // v1.4.3 (작업4) — 파티 시너지/파티 퀘스트 보드
@@ -285,6 +288,10 @@ export class WorldScene extends Phaser.Scene {
   /** GM NPC 비주얼 — 관리자 확인 시에만 표시 */
   private gmNpcVisuals: (Phaser.GameObjects.Image | Phaser.GameObjects.Text)[] = [];
   /** v1.0.2 (#툰셰이더) — 플레이어/보스 툰 필터 컨트롤러 (fxLevel 복원/해제 관리) */
+  /** vc142 (#11) — 카메라 툰 셰이딩 필터 (Blocky+ColorMatrix) */
+  private toonCamFilters: unknown[] | null = null;
+  /** vc142 (#9) — Three.js 3D VFX 오버레이 활성 여부 (WebGL+고사양만) */
+  private vfx3dActive = false;
   private playerToon: unknown[] | null = null;
   private bossToon: unknown[] | null = null;
   /** v1.0.2 (#자동강화) — 목표 강화 자동 루프 상태 (1틱=1강화, 목표 도달/재화 부족/최고치에서 종료) */
@@ -410,6 +417,9 @@ export class WorldScene extends Phaser.Scene {
   private towerFrom: StageKey = "village";
   private towerText: Phaser.GameObjects.Text | null = null;
   private towerBossRef: Boss | null = null;
+  /* vc142 (#4 탑 리워크) — 할당제: 층별 지정 처치 마릿수 카운터 */
+  private towerKills = 0;
+  private towerNeed = 0;
   /* v1.4.3 (#멀티콘텐츠) — 파티 공동 토벌전(praid) 복귀지 기록 */
   private praidFrom: StageKey = "village";
   /** ② 심층 균열 — 이번 입장 티어 (0=기본) */
@@ -943,6 +953,17 @@ export class WorldScene extends Phaser.Scene {
     /* v4.8.0 — 충격파 링 풀 (WebGL 전용 — Canvas 폴백은 풀이 비어 no-op) */
     this.shockFX = new ShockwaveFX(this);
     this.slashArcFx = new SlashArcFX(this); // v4.9.0
+    /* vc142 (#9) — Three.js 3D VFX 오버레이 초기화 (고사양 WebGL만 — 실패 시 자동 스킵) */
+    if (this.game.renderer.type === Phaser.WEBGL) {
+      try {
+        if (Vfx3D.ensure(this.game.canvas as HTMLCanvasElement)) {
+          Vfx3D.wireEvents();
+          this.vfx3dActive = this.fxLevel === 1 && !isLowPerfEnv();
+        }
+      } catch (e) {
+        console.warn("[SERTZ] Vfx3D 미탑재(무시)", e);
+      }
+    }
     /* v4.9.0 — 돌진 잔상 고스트 풀 6장 (플레이어 depth 10 아래, 엔티티 뒤 궤적) */
     for (let i = 0; i < 6; i++) {
       const g = this.add.image(0, -9999, "hero_idle0").setDepth(9).setBlendMode(Phaser.BlendModes.ADD).setActive(false).setVisible(false);
@@ -1065,6 +1086,9 @@ export class WorldScene extends Phaser.Scene {
        *   우회하던 구멍 — groundTex 기반으로 잡는다) */
       if (this.bossFilters.length === 0 && this.ambientBloomAllowed())
         this.ambientFilters = addAmbientBloom(this.cameras.main);
+      /* vc142 (#11) — 화면 전체 툰 셰이딩 (Blocky 포스터라이즈 + ColorMatrix 셀룰룩 명암).
+       *  유저 지시 Toon Shaders Pro 재현 — localStorage sertz_toon으로 on/off, 저사양 자동 해제. */
+      if (toonEnabled() && !isLowPerfEnv()) this.toonCamFilters = applyToonCamera(this.cameras.main);
     }
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
     this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
@@ -1572,6 +1596,22 @@ export class WorldScene extends Phaser.Scene {
         this.portalHoldSince = 0;
         if (!this.portal) this.spawnPortal(this.portalHome.x, this.portalHome.y);
         this.activatePortal();
+      },
+    });
+
+    /* vc142 (#8) — 5분마다 자동저장: 세이브가 이벤트 의존적이라 크래시/브라우저 종료 시
+     * 직전 이벤트 이후 진행분이 유실되던 것을 주기적 하드 저장으로 방어. 대사/전환 중엔 건너뛴다. */
+    this.time.addEvent({
+      delay: 300000,
+      loop: true,
+      callback: () => {
+        if (!this.scene.isActive() || this.dialoguing || this.transitioning) return;
+        try {
+          this.save();
+          this.spawnPickupText(this.player.x, this.player.y - 60, "자동 저장 완료", "#9ee084");
+        } catch (e) {
+          console.warn("[SERTZ] 자동저장 실패(무시)", e);
+        }
       },
     });
 
@@ -3396,11 +3436,22 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
+  /** vc142 (#9) — 3D VFX 프리셋 스폰 (게이트: vfx3dActive). Boss.ts 등에서도 호출 */
+  vfx3dFx(kind: "boom" | "pillar" | "ring" | "spiral", x: number, y: number, tint: number, scale = 1) {
+    if (!this.vfx3dActive) return;
+    try { Vfx3D.spawn(kind, x, y, tint, scale); } catch { /* 렌더 실패 무시 */ }
+  }
+
   private applyFxMode(level: 0 | 1) {
     try {
       if (level === 0) {
         if (this.bossFilters.length > 0) this.clearBossPostFX();
         if (this.ambientFilters.length > 0) detachAmbientBloom(this.cameras.main, this.ambientFilters);
+        /* vc142 (#11) — 절전 모드: 카메라 툰 셰이딩 해제 */
+        if (this.toonCamFilters) {
+          try { (this.cameras.main as unknown as { filters?: { external?: { clear?: () => void } } }).filters?.external?.clear?.(); } catch { /* 무시 */ }
+          this.toonCamFilters = null;
+        }
         if (this.playerToon && this.player) {
           clearToonStyle(this.player as unknown as Parameters<typeof clearToonStyle>[0]);
           this.playerToon = null;
@@ -3413,6 +3464,10 @@ export class WorldScene extends Phaser.Scene {
           this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
             rim: 0x9fd8ff, rimStrength: 2.0, contrast: 1.05, saturate: 1.15,
           });
+        }
+        /* vc142 (#11) — 카메라 툰 셰이딩 복원 (설정 on + 고사양만) */
+        if (!this.toonCamFilters && this.game.renderer.type === Phaser.WEBGL && toonEnabled() && !isLowPerfEnv()) {
+          this.toonCamFilters = applyToonCamera(this.cameras.main);
         }
         if (this.boss?.active && this.bossFilters.length === 0) this.applyBossPostFX(this.bossChaos);
         else if (this.ambientFilters.length === 0 && this.game.renderer.type === Phaser.WEBGL && this.ambientBloomAllowed()) {
@@ -4244,10 +4299,9 @@ export class WorldScene extends Phaser.Scene {
     }
     /* ---------- v1.0.8 — 무한 콘텐츠 훅 ---------- */
     if (this.towerActive) {
-      /* ① 심연의 탑 — 남은 적 갱신, 전멸 시 다음 층 */
+      /* ① 심연의 탑 — vc142 할당제: 처치 마릿수 누적, 할당 채우면 다음 층 (전멸 불필요) */
       if (this.towerBossRef && ref === this.towerBossRef) this.towerBossRef = null;
-      this.updateTowerText();
-      if (this.enemies.filter((e) => e.alive).length === 0 && !this.towerBossRef) this.towerFloorCleared();
+      this.towerOnKill(false);
     } else if (this.closetActive && this.trialMod) {
       /* ③ 일일 시련 — titan 수정자: 처치 시 심연 코인 추가 */
       const am = this.trialMod.abyssMul ?? 0;
@@ -5595,7 +5649,8 @@ export class WorldScene extends Phaser.Scene {
     this.towerFrom = this.stageDef.key;
     this.towerActive = true;
     this.towerFloor = 1;
-    this.showBanner("심연의 탑 입장 — 층을 오를수록 강해진다. 5층마다 보스가 기다린다!");
+    /* vc142 (#4 탑 리워크) — 할당제 안내 */
+    this.showBanner(`심연의 탑 입장 — 층별 지정 마릿수를 처치해 다음 층으로! 5층마다 보스가 기다린다.`);
     this.save();
     this.gotoStage("tower");
   }
@@ -5662,33 +5717,40 @@ export class WorldScene extends Phaser.Scene {
     return best ?? { x: this.player?.x ?? x, y: this.player?.y ?? y };
   }
 
-  /** 현재 층 스폰 — 층 스케일 적용, 보스층은 보스 1기 + 잡몹 소수 */
+  /** 현재 층 스폰 — vc142 (#4 탑 리워크): 전멸식 → 할당제.
+   *  층별 지정 마릿수(towerKillNeed) + 여유분을 스폰하고, 지정 마릿수만 잡으면 다음 층.
+   *  파워 배율(체력·속도·공격력) 층마다 증가. 보스층(5의 배수)은 12보스 고정 로테이션. */
   private spawnTowerFloor() {
     const f = this.towerFloor;
     const lv = this.player.lv;
     const sc = towerFloorScale(f);
+    const spd = towerSpeedScale(f);
     const bossFloor = isTowerBossFloor(f);
     const pool = towerPool(f);
-    const n = bossFloor ? 4 : Phaser.Math.Clamp(5 + Math.floor(f / 3), 5, 14);
+    this.towerKills = 0;
+    this.towerNeed = towerKillNeed(f);
+    const n = towerSpawnCount(f);
     for (let i = 0; i < n; i++) {
-      const key = pool[Math.floor(Math.random() * pool.length)];
+      const key = pool[i % pool.length];
       const def = ENEMIES[key];
       const px = Phaser.Math.Between(80, this.stageW - 80);
       const py = Phaser.Math.Between(80, this.stageH - 80);
       const sp = this.safeSpawnXY(px, py); // v1.1.0 (#9) — 벽 안 스폰 금지
+      /* vc142 — abs:true 절대값 스폰 (기존 base.hp×절대값 오류 해소) + 파워 배율(HP·ATK·속도) */
       const e = new Enemy(this, sp.x, sp.y, key, {
-        hp: Math.round((22 + lv * 2.8 + def.hp * 0.5) * sc),
-        atk: Math.round((5 + lv * 0.45) * (1 + (f - 1) * TOWER.atkPerFloor)),
-        exp: Math.round((20 + lv * 2) * (1 + (f - 1) * TOWER.expPerFloor)),
+        abs: true,
+        hp: Math.round((30 + lv * 3.2 + def.hp * 1.2) * sc),
+        atk: Math.round((4 + lv * 0.42 + def.atk * 0.35) * (1 + (f - 1) * TOWER.atkPerFloor) * 10) / 10,
+        spd,
+        exp: Math.round((18 + lv * 2) * (1 + (f - 1) * TOWER.expPerFloor)),
         gold: 0,
       });
       this.enemies.push(e);
       this.physics.add.collider(e, this.solidGroup);
     }
     if (bossFloor) {
-      /* 보스층 — 전 챕터 보스 로테이션 (5층 간격으로 순환), 층 스케일 적용 */
-      const rot: BossKey[] = ["guardian", "behemoth", "nidhog", "surt", "fenrir", "skoll", "gram", "abysslord", "abudditos"];
-      const bkey = rot[(Math.floor(f / TOWER.bossEvery) - 1) % rot.length];
+      /* 보스층 — vc142: 12보스 전원이 5의 배수층마다 각각 다르게 배치되는 고정 로테이션 */
+      const bkey = towerBossFor(f);
       const base = BOSS_DEFS[bkey];
       const def: BossDef = {
         ...base,
@@ -5709,12 +5771,23 @@ export class WorldScene extends Phaser.Scene {
     this.updateTowerText();
   }
 
+  /** vc142 (#4) — 적 사망 시 할당 카운트. 할당을 채우면 층 클리어 (전멸 불필요) */
+  private towerOnKill(bossKill: boolean) {
+    if (!this.towerActive || this.towerNeed <= 0) return;
+    this.towerKills++;
+    if (bossKill) {
+      /* 보스층 — 보스 처치가 할당 전부를 채운다 (남은 잡몹 무관) */
+      this.towerKills = Math.max(this.towerKills, this.towerNeed);
+    }
+    this.updateTowerText();
+    if (this.towerKills >= this.towerNeed) this.towerFloorCleared();
+  }
+
   private updateTowerText() {
     const f = this.towerFloor;
-    const alive = this.enemies.filter((e) => e.alive).length;
-    const bossAlive = this.towerBossRef ? 1 : 0;
     const bossTag = isTowerBossFloor(f) ? " [BOSS]" : "";
-    this.towerText?.setText(`${f}층${bossTag}  |  남은 적 ${alive + bossAlive}  |  최고 기록 ${this.inf.towerBest}층`);
+    /* vc142 (#4) — 할당제: 처치 N/M 표기 */
+    this.towerText?.setText(`${f}층${bossTag}  |  처치 ${Math.min(this.towerKills, this.towerNeed)}/${this.towerNeed}  |  최고 기록 ${this.inf.towerBest}층`);
     this.towerText?.setX(this.cameras.main.width / 2);
   }
 
@@ -5730,6 +5803,8 @@ export class WorldScene extends Phaser.Scene {
     if (record) this.inf.towerBest = f;
     this.spawnPickupText(this.player.x, this.player.y - 74, `${f}층 클리어! +${rw.abyss} 심연 코인${record ? " — 신기록!" : ""}`, "#c08aff");
     audio.sfx.reward();
+    /* vc142 (#9) — 층 클리어 3D 링 (Three.js 오버레이) */
+    this.vfx3dFx("ring", this.player.x, this.player.y, 0xc08aff, 1.4);
     if (f % 10 === 0) {
       /* 10층마다 에메랄드 보너스 — 장기 목표 */
       this.player.emerald += 3;
@@ -5738,9 +5813,18 @@ export class WorldScene extends Phaser.Scene {
     this.towerFloor++;
     this.emitRpgState();
     this.save();
+    /* vc142 (#4) — 할당제: 할당을 못 채운 잔여 몬스터는 다음 층 스폰 전에 조용히 정리
+     * (탈출 전멸이 아니므로 잔여분이 남는다 — 새 층에서 오개산 방지) */
+    for (const e of this.enemies) {
+      if (e.active && e.alive) {
+        e.alive = false;
+        e.destroy();
+      }
+    }
+    this.enemies = this.enemies.filter((e) => e.alive);
     this.time.delayedCall(650, () => {
       if (this.towerActive && this.scene.isActive()) {
-        this.showBanner(`${this.towerFloor}층 — 더 깊이 내려간다…`);
+        this.showBanner(`${this.towerFloor}층 — 지정 마릿수 ${towerKillNeed(this.towerFloor)}마리 처치!`);
         this.spawnTowerFloor();
       }
     });
@@ -7005,8 +7089,8 @@ export class WorldScene extends Phaser.Scene {
       this.addPassXp(PASS_XP_RULES.boss);
       this.trackMission("boss");
       this.doShake(300, 0.008);
-      this.updateTowerText();
-      if (this.enemies.filter((e) => e.alive).length === 0) this.towerFloorCleared();
+      /* vc142 (#4) — 보스 처치가 보스층 할당 전부 → 즉시 클리어 (잔여 잡몹 무관) */
+      this.towerOnKill(true);
       return;
     }
     /* v1.0.8 — ⑨ 주간 보스 레이드: 요일 보스 처치 시 심연 코인 +3 (드롭 2배는 스토리 경로 하단) */
@@ -7022,6 +7106,8 @@ export class WorldScene extends Phaser.Scene {
     /* v4.8.0 — 보스 격파 대형 충격파 (오브 색상 — 스토리/재림/GM 경로 공통, WebGL 전용) */
     if (this.boss?.active) {
       this.spawnShockwave(this.boss.x, this.boss.y, def?.orbTint ?? 0x9d7aff, 2.4, 520, 0.6); // v1.0.7 — 알파 명시 축소
+      /* vc142 (#9) — Three.js 3D 폭발 (고사양 오버레이 — 2D 연출 위에 겹침) */
+      this.vfx3dFx("boom", this.boss.x, this.boss.y, def?.orbTint ?? 0x9d7aff, 2.6);
       /* v1.0.7 — 프리렌더 3D VFX (UNI 폭발 충격파 + Hovl 플래시) — 보스 격파의 결정적 순간 연출 */
       if (this.textures.exists("uni_boom")) {
         const boom = this.add.image(this.boss.x, this.boss.y + 8, "uni_boom").setDepth(27).setBlendMode(Phaser.BlendModes.ADD).setTint(def?.orbTint ?? 0x9d7aff).setScale(0.15).setAlpha(0);
@@ -8587,6 +8673,87 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:autoset", onAutoSet);
     EventBus.on("rpg:autohunt", onAutoHunt);
     EventBus.on("rpg:gm", onGm);
+    /* vc142 (#11) — 툰 셰이딩 토글 (설정 패널 버튼) */
+    const onToonToggle = () => {
+      const next = !toonEnabled();
+      setToonEnabled(next);
+      try {
+        (this.cameras.main as unknown as { filters?: { external?: { clear?: () => void } } }).filters?.external?.clear?.();
+      } catch { /* 무시 */ }
+      this.toonCamFilters = null;
+      this.ambientFilters = [];
+      if (next && this.fxLevel === 1 && this.game.renderer.type === Phaser.WEBGL && !isLowPerfEnv()) {
+        this.toonCamFilters = applyToonCamera(this.cameras.main);
+        this.ambientFilters = addAmbientBloom(this.cameras.main);
+      }
+      this.showBanner(next ? "툰 셰이딩 ON — 셀룰룩 화면" : "툰 셰이딩 OFF — 기본 화면");
+    };
+    EventBus.on("rpg:toon", onToonToggle);
+    /* ================= vc142 (#3) — 1:1 플레이어 거래 ================= */
+    initTrade({
+      myName: () => getPlayerName(),
+      canOffer: (key) => {
+        const it = ITEMS[key as ItemKey];
+        if (!it) return { ok: false, why: "존재하지 않는 아이템이에요" };
+        if (it.tradeLock || it.gmOnly) return { ok: false, why: "거래할 수 없는 아이템이에요" };
+        const p = this.player;
+        if (p.weapon === key || p.armor === key || p.accessories.includes(key as ItemKey)) return { ok: false, why: "장착 중인 아이템은 거래할 수 없어요" };
+        if (!p.owned.includes(key as ItemKey)) return { ok: false, why: "보유하지 않은 아이템이에요" };
+        return { ok: true, why: "" };
+      },
+      countOwned: (key) => this.player.owned.filter((k) => k === key).length,
+      gold: () => this.player.gold,
+      emerald: () => this.player.emerald,
+      apply: (mine, theirs) => {
+        const p = this.player;
+        /* 내가 건 것 제거 (잠재/스타포스 부가상태도 함께 소멸 — 상대 클라이언트에서 동일 적용) */
+        for (const k of mine.items) {
+          const i = p.owned.lastIndexOf(k as ItemKey);
+          if (i >= 0) p.owned.splice(i, 1);
+          delete p.potentials[k];
+          delete p.accUp[k];
+        }
+        /* vc142 — addGold는 탐욕 버프 ×1.4가 붙으므로 거래에선 직접 대입 (버프 오증봉 방지) */
+        p.gold = Math.max(0, p.gold - mine.gold);
+        p.emerald = Math.max(0, p.emerald - mine.emerald);
+        /* 상대가 건 것 수령 */
+        for (const k of theirs.items) p.owned.push(k as ItemKey);
+        p.gold += theirs.gold;
+        p.emerald += theirs.emerald;
+        this.emitRpgState();
+        this.emitHud();
+        this.save();
+      },
+      notify: (t) => this.showBanner(t),
+    });
+    const onTradeNearby = () => {
+      /* 근처 원격 플레이어 목록 (500px 이내) */
+      const out: { id: string; name: string; lv: number }[] = [];
+      for (const [id, r] of this.remotes) {
+        if (!r.sp.active) continue;
+        if (Phaser.Math.Distance.Between(this.player.x, this.player.y, r.sp.x, r.sp.y) > 500) continue;
+        out.push({ id, name: r.name, lv: r.lv });
+        if (out.length >= 20) break;
+      }
+      EventBus.emit("trade:nearby", out);
+    };
+    const onTradeInvite = (v: { id: string; name: string }) => {
+      if (typeof v?.id === "string") tradeInvite(v.id, String(v.name ?? "").slice(0, 8));
+    };
+    EventBus.on("trade:nearby", onTradeNearby as never);
+    EventBus.on("rpg:tradeInvite", onTradeInvite as never);
+    const onTradeAct = (v: { act: string; key?: string; gold?: number; emerald?: number }) => {
+      switch (v?.act) {
+        case "add": if (v.key) tradeAddItem(v.key); break;
+        case "remove": if (v.key) tradeRemoveItem(v.key); break;
+        case "currency": tradeSetCurrency(Number(v.gold) || 0, Number(v.emerald) || 0); break;
+        case "lock": tradeLock(); break;
+        case "cancel": tradeCancel(); EventBus.emit("ui:panel", { panel: null }); break;
+        case "accept": tradeAccept(); break;
+        case "deny": tradeDeny(); EventBus.emit("ui:panel", { panel: null }); break;
+      }
+    };
+    EventBus.on("rpg:tradeAct", onTradeAct as never);
     /* v1.0.6 — 세션 중 로그인/로그아웃 시 GM NPC·관리자 플래그 즉시 갱신
      *  (기존엔 마을 빌드 시 1회만 조회라, 마을 로드 뒤 admin으로 가입/로그인하면
      *   재입장 전까지 GM NPC가 안 떴다 — 유저 "GM 로그인 어케함?"의 실질 원인) */
@@ -8665,6 +8832,11 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:autoset", onAutoSet);
       EventBus.off("rpg:autohunt", onAutoHunt);
       EventBus.off("rpg:gm", onGm);
+      EventBus.off("rpg:toon", onToonToggle); // vc142 — 툰 셰이딩 토글
+      EventBus.off("trade:nearby", onTradeNearby as never); // vc142 — 1:1 거래
+      EventBus.off("rpg:tradeInvite", onTradeInvite as never);
+      EventBus.off("rpg:tradeAct", onTradeAct as never);
+      tradeCancel(true);
       EventBus.off("rpg:tradeBuy", onTradeBuy);
       EventBus.off("rpg:tradeSell", onTradeSell);
       EventBus.off("rpg:missionClaim", onMissionClaim);
@@ -8705,6 +8877,9 @@ export class WorldScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
+
+    /* vc142 (#9) — Three.js 3D VFX 오버레이가 Phaser 카메라와 동기화 (유휴 시 no-op) */
+    if (this.vfx3dActive) Vfx3D.sync(this.cameras.main);
 
     /* v5.0.1 — 카메라 수동 추적 (엔진 follow 폐지 — applyManualCameraFollow 주석 참조).
      *  대화 중에도 갱신 — 내부에서 camCinema(팬 시네마틱)만 존중 */
@@ -8911,6 +9086,8 @@ export class WorldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("opt"))) EventBus.emit("ui:panel", { panel: "opt" });
     /* v3.0.16 — 몬스터 컬렉션 패널 (M키) */
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
+    /* vc142 (#1) — PC 자동전투 토글 단축키 (기본 B · 설정에서 재배치 가능) */
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("autohunt"))) EventBus.emit("rpg:autohunt", {});
 
     // E키 상호작용 감지 — 가장 가까운 NPC/상점 프롬프트 갱신
     this.updateInteractPrompt();
@@ -13178,6 +13355,10 @@ export class WorldScene extends Phaser.Scene {
     const vw = cam.width;
     const vh = cam.height;
     this.dialoguing = true;
+    /* vc142 (쿠소디아 프리즈 ①) — 챕터카드가 dialogueSince를 세팅하지 않아 대사 붙임
+     * 자가치유 watchdog(20s)이 발동하지 않는 구멍. 트윈 체인이 컨텍스트 롱스프링 등으로
+     * 끊기면 physics.world.pause() 영구 잠금 = "왕국에서 멈춤". watchdog 등록 + 강제 해제 이중 안전망. */
+    this.dialogueSince = this.time.now;
     this.player.setVelocity(0, 0);
     this.physics.world.pause();
     audio.sfx.ach();
@@ -13225,13 +13406,17 @@ export class WorldScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(depth + 1)
       .setAlpha(0);
+    let cardDone = false;
     const cleanup = () => {
+      if (cardDone) return;
+      cardDone = true;
       veil.destroy();
       rule.destroy();
       tCh.destroy();
       tTitle.destroy();
       tSub.destroy();
       this.dialoguing = false;
+      this.dialogueSince = 0;
       this.physics.world.resume();
       cb?.();
     };
@@ -13241,6 +13426,10 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: tSub, alpha: 1, delay: 160, duration: 460, ease: "Sine.easeOut" });
     this.time.delayedCall(2050, () => {
       this.tweens.add({ targets: [veil, rule, tCh, tTitle, tSub], alpha: 0, duration: 420, ease: "Sine.easeIn", onComplete: cleanup });
+    });
+    /* vc142 — 4초 하드 타임아웃: 페이드아웃 체인이 어떤 이유로든 완료되지 않아도 강제 복구 */
+    this.time.delayedCall(4000, () => {
+      if (!cardDone && this.dialoguing) cleanup();
     });
   }
 

@@ -31,7 +31,10 @@ type BossMode =
   | "blinkTele" // 그림자 급습(순간이동 준비)
   | "counterTele" // 반격 카운터 창(로스트아크식)
   | "staggered" // 카운터 성공 → 기절/취약
-  | "quakeCast"; // 연속 낙뢰 시전
+  | "quakeCast" // 연속 낙뢰 시전
+  // vc142 (#6) — 보스 고유 VX 패턴 (유저 에셋팩 FX — 보스마다 전부 다른 공격)
+  | "vxTele" // VX 패턴 공용 예고
+  | "vxCast"; // VX 패턴 연출/연타 중 (피해 판정은 delayedCall 체인)
 
 export class Boss extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
@@ -81,6 +84,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private quakeTimer: Phaser.Time.TimerEvent | null = null;
   /** 페이즈 3 카오스 지원군 타이머 */
   private supportTimer: Phaser.Time.TimerEvent | null = null;
+  /* ---- vc142 (#6) — 보스 고유 VX 패턴 상태 ---- */
+  private vxKind: BossAttackKind | null = null;
+  private vxStep = 0;
+  /** 독 장판 (nidhog/jorm poisonfield) — 밟으면 도트 피해 */
+  private poisonZones: { x: number; y: number; until: number; img: Phaser.GameObjects.Image; last: number }[] = [];
   /** 카운터 창 텔레그래프 링 */
   private counterRing: Phaser.GameObjects.Image | null = null;
   /* v1.4.30 (#15) — 반격 창 라벨 (startCounter에서 생성, destroyCounterRing에서 소멸) */
@@ -320,6 +328,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     // v3.0.6 — 격노 시 추격 속도 상승
     const chaseMul = this.enraged ? 1.18 : 1;
 
+    /* vc142 (#6) — 독 장판 도트 판정 (poisonfield 지속 중) */
+    this.tickPoisonZones(player);
+
     switch (this.mode) {
       case "idle": {
         // 추격하며 접근 — v3.0.6: 페이즈별 속도 (격노 1.18배)
@@ -399,6 +410,16 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       case "counterTele": {
         this.setVelocity(this.knockVec.x, this.knockVec.y);
         if (this.modeTimer <= 0) this.doCounterPunish(player);
+        break;
+      }
+      /* ---- vc142 (#6) — 보스 고유 VX 패턴 ---- */
+      case "vxTele": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        if (this.modeTimer <= 0) this.doVx(player);
+        break;
+      }
+      case "vxCast": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
         break;
       }
       case "staggered": {
@@ -539,6 +560,16 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       case "counter":
         this.startCounter();
         break;
+      /* ---- vc142 (#6) — 보스 고유 VX 패턴 (유저 에셋 FX) ---- */
+      case "firepillars":
+      case "frostnova":
+      case "thunderfall":
+      case "poisonfield":
+      case "holymantle":
+      case "crystalburst":
+      case "blinkslash":
+        this.startVx(kind, player);
+        break;
     }
   }
 
@@ -575,8 +606,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.scene.cameras.main.shake(90, 0.006);
       this.scene.spawnSlamBurst(tx, ty);
       this.scene.spawnCrack(tx, ty);
-      /* v1.4.11 — 강타 지균 데칼 (hv2_crater — 바닥에 새겨지는 충격 흔적) */
-      this.scene.driveFx?.crater(tx, ty, 0x181008, 1.0, 2600);
+      /* vc142 (#7) — hv2_crater 지균 데칼 제거: 가산 블렌드용 순흑 텍스처가 NORMAL로 그려져
+       * "검은 네모가 터지는" 이질 연출이 됨 (유저 지시 — 삭제). 대신 두꺼운 임팩트 링으로 착지감 유지 */
+      this.scene.driveFx?.shockHeavy(tx, ty, 0xffc890, 1.15);
       if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 118) {
         const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
         player.takeDamage(Math.round(this.def.atk * 1.35), dir, 0.5, 0.12); // v3.0.6 — 관통 + 강타 maxHP % 하한
@@ -769,6 +801,286 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.endAttack(1700);
   }
 
+  /* ================= vc142 (#6) — 보스 고유 VX 패턴 (유저 에셋팩 FX) =================
+   * 보스마다 전부 다른 공격: 수르트=화염기둥 추적, 니드호그/요르문간드=맹독 장판,
+   * 베헤모스/스콜=빙결 신성, 나그라파르=뇌우, 아부디토스=성역, 심연군주/베오르드=결정 산개,
+   * 가름=점멸 참격. 전부 유저 제공 UNI VFX·Hovl·Cartoon FX 텍스처 크롭분으로 연출한다. */
+
+  /** VX 플립북 1회 재생 (텍스처/애니 부재 시 무시 — 구버전 캐시 호환) */
+  private vxAnimAt(x: number, y: number, anim: string | null, tex: string, tint: number, scale = 1, rot = 0) {
+    if (!this.scene.textures.exists(tex)) return;
+    if (anim && this.scene.anims.exists(anim)) {
+      const s = this.scene.add.sprite(x, y, tex, 0).setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(scale * 0.55).setRotation(rot);
+      s.play(anim);
+      s.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => s.destroy());
+      return s;
+    }
+    return this.bossFx(tex, x, y, { tint, scale, alpha: 0.92, dur: 320, depth: 24 });
+  }
+
+  /** VX 예고 링 — 반투명 확장 링 (피해 판정 전 위치 예고) */
+  private vxWarnRing(x: number, y: number, tint: number, target = 1.0, dur = 720) {
+    if (!this.scene.textures.exists("vx_ring")) return null;
+    const r = this.scene.add.image(x, y, "vx_ring").setDepth(6).setTint(tint).setAlpha(0.0).setScale(target * 0.3);
+    this.scene.tweens.add({ targets: r, alpha: 0.75, scaleX: target, scaleY: target, duration: dur, ease: "Quad.out" });
+    this.scene.time.delayedCall(dur + 120, () => {
+      this.scene.tweens.add({ targets: r, alpha: 0, duration: 160, onComplete: () => r.destroy() });
+    });
+    return r;
+  }
+
+  /** VX 예고 단계 — 종류별 예고 이펙트 + 몸 색 변화 (780ms 후 doVx) */
+  private startVx(kind: BossAttackKind, player: PlayerLike2) {
+    this.vxKind = kind;
+    this.vxStep = 0;
+    this.setMode("vxTele", 780);
+    switch (kind) {
+      case "firepillars": // 수르트 — 화염 기둥이 플레이어를 3회 추적
+        this.setTint(0xffb090);
+        this.vxWarnRing(player.x, player.y, 0xff7a3a, 0.95);
+        break;
+      case "frostnova": // 눈보라의 거수/얼음 봉황 — 확장 빙결 신성
+        this.setTint(0x9ad8ff);
+        this.bossFx("vx_circlehazy", this.x, this.y + 8, { tint: 0x9ad8ff, scale: 1.7, alpha: 0.7, dur: 700, depth: 8 });
+        this.vxWarnRing(this.x, this.y, 0x8ad4ff, 2.0);
+        break;
+      case "thunderfall": // 나그라파르 — 추적 낙뢰 4연속
+        this.setTint(0xffe08a);
+        this.bossFx("vx_glowball", player.x, player.y, { tint: 0xffe08a, scale: 1.2, alpha: 0.75, dur: 740, depth: 8 });
+        break;
+      case "poisonfield": // 니드호그/요르문간드 — 맹독 장판 3개
+        this.setTint(0x9aff9a);
+        this.bossFx("vx_puddle", player.x, player.y, { tint: 0x7dff9a, scale: 1.1, alpha: 0.45, dur: 740, depth: 7 });
+        break;
+      case "holymantle": // 아부디토스 — 마룡 성역 대폭발
+        this.setTint(0xffd0d8);
+        this.bossFx("vx_magiccircle", this.x, this.y + 8, { tint: 0xff3a6a, scale: 1.8, alpha: 0.85, dur: 760, depth: 8 });
+        this.vxWarnRing(this.x, this.y, 0xff3a6a, 2.35);
+        break;
+      case "crystalburst": // 심연의 군주/베오르드 — 8방향 결정 산개
+        this.setTint(0x9ad0ff);
+        this.bossFx("vx_crystal", this.x, this.y - 20, { tint: 0x8ad4ff, scale: 1.0, alpha: 0.85, dur: 720, depth: 9 });
+        break;
+      case "blinkslash": // 가름 — 점멸 3연 참격
+        this.setTint(0xa0ffd8);
+        this.bossFx("vx_slash", player.x, player.y - 12, { tint: 0x8affc0, scale: 1.0, alpha: 0.8, dur: 740, depth: 20 });
+        break;
+      default:
+        this.vxKind = null;
+        this.mode = "idle";
+    }
+  }
+
+  /** VX 실행 단계 — 종류별 판정/연출 */
+  private doVx(player: PlayerLike2) {
+    const kind = this.vxKind;
+    this.vxKind = null;
+    this.clearTint();
+    if (!kind) { this.endAttack(900); return; }
+    const atk = this.def.atk;
+    const tint = this.def.orbTint;
+    switch (kind) {
+      case "firepillars": {
+        /* 수르트 — 플레이어 추적 화염 기둥 3연속 (vx_expcore 분출 + vx_fire 잔불) */
+        this.setMode("vxCast", 2200);
+        let n = 0;
+        const strike = () => {
+          if (!this.alive || player.hp <= 0 || n >= 3) { this.endAttack(1100); return; }
+          n++;
+          const tx = player.x, ty = player.y;
+          this.vxWarnRing(tx, ty, 0xff7a3a, 0.9, 420);
+          this.scene.time.delayedCall(420, () => {
+            if (!this.alive) return;
+            this.vxAnimAt(tx, ty, "vx-expcore", "vx_expcore", tint, 1.5);
+            this.vxAnimAt(tx, ty - 18, "vx-fire", "vx_fire", 0xffa05a, 1.35);
+            this.scene.spawnSlamBurst(tx, ty);
+            /* vc142 (#9) — 3D 빛기둥 + 폭발 (Three.js 오버레이) */
+            this.scene.vfx3dFx("pillar", tx, ty, tint, 1.2);
+            this.scene.cameras.main.shake(70, 0.004);
+            if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 92) {
+              const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
+              player.takeDamage(Math.round(atk * 1.15), dir, 0.5, 0.10);
+            }
+            this.scene.time.delayedCall(230, strike);
+          });
+        };
+        strike();
+        break;
+      }
+      case "frostnova": {
+        /* 눈보라의 거수/얼음 봉황 — 2겹 확장 링 + 눈송이 산개 (200px 판정) */
+        this.setMode("vxCast", 900);
+        const nova = (delay: number, dmgMul: number, radius: number) => {
+          this.scene.time.delayedCall(delay, () => {
+            if (!this.alive) return;
+            const g = this.scene.add.image(this.x, this.y, "vx_ring").setDepth(23).setBlendMode(Phaser.BlendModes.ADD).setTint(0x9ad8ff).setScale(0.4).setAlpha(0.95);
+            this.scene.tweens.add({ targets: g, scale: radius / 38, alpha: 0, duration: 420, ease: "Quad.out", onComplete: () => g.destroy() });
+            /* vc142 (#9) — 3D 확장 링 (빙결 신성) */
+            this.scene.vfx3dFx("ring", this.x, this.y, 0x9ad8ff, 1.6);
+            for (let i = 0; i < 10; i++) {
+              const a = (Math.PI * 2 * i) / 10 + Math.random() * 0.4;
+              const sx = this.scene.add.image(this.x, this.y, "vx_snow").setDepth(22).setBlendMode(Phaser.BlendModes.ADD).setTint(0xbde8ff).setScale(0.5 + Math.random() * 0.4);
+              this.scene.tweens.add({ targets: sx, x: this.x + Math.cos(a) * radius * 1.15, y: this.y + Math.sin(a) * radius * 1.15, alpha: 0, scale: 0.2, duration: 520, ease: "Quad.out", onComplete: () => sx.destroy() });
+            }
+            this.scene.cameras.main.shake(90, 0.005);
+            if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < radius) {
+              const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
+              player.takeDamage(Math.round(atk * dmgMul), dir, 0.5, 0.09);
+            }
+          });
+        };
+        nova(60, 0.85, 200);
+        nova(300, 0.6, 205); // 2겹 — 첫 링 회피 후 이중 판정
+        this.scene.sfxRoar();
+        this.endAttack(1300);
+        break;
+      }
+      case "thunderfall": {
+        /* 나그라파르 — 추적 낙뢰 4연속 (vx-bolt 낙하 + vx_elec 착탄) */
+        this.setMode("vxCast", 2500);
+        let n = 0;
+        const drop = () => {
+          if (!this.alive || player.hp <= 0 || n >= 4) { this.endAttack(1000); return; }
+          n++;
+          const tx = player.x, ty = player.y;
+          this.scene.time.delayedCall(340, () => {
+            if (!this.alive) return;
+            this.vxAnimAt(tx, ty - 80, "vx-bolt", "vx_bolt", 0xffe08a, 1.15);
+            this.scene.time.delayedCall(120, () => {
+              if (!this.alive) return;
+              this.vxAnimAt(tx, ty, "vx-elec", "vx_elec", 0xfff2c0, 1.2);
+              this.scene.spawnBurstAt(tx, ty, 8, 0xffe08a);
+              /* vc142 (#9) — 3D 낙뢰 빛기둥 */
+              this.scene.vfx3dFx("pillar", tx, ty, 0xffe08a, 1.0);
+              this.scene.cameras.main.shake(60, 0.004);
+              if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 86) {
+                const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
+                player.takeDamage(Math.round(atk * 0.95), dir, 0.5, 0.09);
+              }
+              this.scene.time.delayedCall(220, drop);
+            });
+          });
+        };
+        drop();
+        break;
+      }
+      case "poisonfield": {
+        /* 니드호그/요르문간드 — 맹독 장판 3개 (6초 지속, 밟으면 도트) */
+        this.setMode("vxCast", 700);
+        const until = this.scene.time.now + 6000;
+        for (let i = 0; i < 3; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const r = i === 0 ? 0 : Phaser.Math.Between(70, 150);
+          const zx = Phaser.Math.Clamp(player.x + Math.cos(ang) * r, 60, this.scene.stageW - 60);
+          const zy = Phaser.Math.Clamp(player.y + Math.sin(ang) * r, 60, this.scene.stageH - 60);
+          if (!this.scene.textures.exists("vx_puddle")) break;
+          const img = this.scene.add.image(zx, zy, "vx_puddle").setDepth(4).setTint(0x5adf7a).setAlpha(0).setScale(1.5);
+          this.scene.tweens.add({ targets: img, alpha: 0.42, duration: 260 });
+          this.scene.time.delayedCall(6000, () => {
+            if (!img.active) return;
+            this.scene.tweens.add({ targets: img, alpha: 0, duration: 420, onComplete: () => img.destroy() });
+          });
+          this.poisonZones.push({ x: zx, y: zy, until, img, last: 0 });
+        }
+        this.vxAnimAt(player.x, player.y, "vx-petal", "vx_petal", 0x7dff9a, 0.9);
+        this.scene.spawnBurstAt(player.x, player.y, 10, 0x7dff9a);
+        this.endAttack(1100);
+        break;
+      }
+      case "holymantle": {
+        /* 아부디토스 — 마룡 성역: 560ms 기믹 후 240px 대폭발 (vx_aura+vx_magiccircle) */
+        this.setMode("vxCast", 800);
+        this.bossFx("vx_magiccircle", this.x, this.y + 8, { tint, scale: 2.2, alpha: 0.9, dur: 620, depth: 8 });
+        this.bossFx("vx_aura", this.x, this.y - 6, { tint: 0xffffff, scale: 1.6, alpha: 0.8, dur: 620, depth: 22 });
+        this.scene.time.delayedCall(560, () => {
+          if (!this.alive) return;
+          const g = this.scene.add.image(this.x, this.y, "vx_ring").setDepth(23).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.5).setAlpha(0.95);
+          this.scene.tweens.add({ targets: g, scale: 6.4, alpha: 0, duration: 460, ease: "Quad.out", onComplete: () => g.destroy() });
+          this.vxAnimAt(this.x, this.y, "vx-expcore", "vx_expcore", 0xffffff, 2.0);
+          /* vc142 (#9) — 마룡 성역 대폭발 (3D) */
+          this.scene.vfx3dFx("boom", this.x, this.y, tint, 2.2);
+          this.scene.cameras.main.shake(220, 0.009);
+          if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 244) {
+            const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
+            player.takeDamage(Math.round(atk * 1.3), dir, 0.5, 0.12);
+          }
+        });
+        this.endAttack(1500);
+        break;
+      }
+      case "crystalburst": {
+        /* 심연의 군주/베오르드 — 결정 파편 8방향 산개 (vx_crystal 비행 판정) */
+        this.setMode("vxCast", 1100);
+        for (let i = 0; i < 8; i++) {
+          const ang = (Math.PI * 2 * i) / 8 + Math.random() * 0.3;
+          if (!this.scene.textures.exists("vx_crystal")) break;
+          const img = this.scene.add.image(this.x, this.y - 10, "vx_crystal").setDepth(22).setBlendMode(Phaser.BlendModes.ADD).setTint(0x8ad4ff).setScale(0.38);
+          let hit = false;
+          this.scene.tweens.add({
+            targets: img,
+            x: this.x + Math.cos(ang) * 265, y: this.y + Math.sin(ang) * 265,
+            scale: 0.68, alpha: 0.9, duration: 620, ease: "Quad.out",
+            onUpdate: () => {
+              if (hit || !img.active) return;
+              if (Phaser.Math.Distance.Between(img.x, img.y, player.x, player.y) < 42) {
+                hit = true;
+                player.takeDamage(Math.round(atk * 0.7), new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), 0.4, 0);
+                img.destroy();
+              }
+            },
+            onComplete: () => img.destroy(),
+          });
+        }
+        this.scene.sfxSwing();
+        this.endAttack(1250);
+        break;
+      }
+      case "blinkslash": {
+        /* 가름 — 점멸 3연 참격 (보스가 플레이어 주위로 순간이동하며 벤다) */
+        this.setMode("vxCast", 1500);
+        let n = 0;
+        const swing = () => {
+          if (!this.alive || player.hp <= 0 || n >= 3) { this.endAttack(950); return; }
+          n++;
+          const ang = Math.random() * Math.PI * 2;
+          const nx = Phaser.Math.Clamp(player.x + Math.cos(ang) * 72, 60, this.scene.stageW - 60);
+          const ny = Phaser.Math.Clamp(player.y + Math.sin(ang) * 72, 60, this.scene.stageH - 60);
+          this.vxAnimAt(this.x, this.y - 10, "vx-smoke", "vx_smoke", 0x8affc0, 0.9);
+          this.setPosition(nx, ny);
+          const rot = Math.random() * Math.PI - Math.PI / 2;
+          this.vxAnimAt(player.x, player.y - 12, null, "vx_slash", 0x8affc0, 1.25, rot);
+          this.scene.cameras.main.shake(60, 0.004);
+          this.scene.sfxSwing();
+          if (Phaser.Math.Distance.Between(nx, ny, player.x, player.y) < 118) {
+            const dir = new Phaser.Math.Vector2(player.x - nx, player.y - ny).normalize();
+            player.takeDamage(Math.round(atk * 0.95), dir, 0.5, 0.09);
+          }
+          this.scene.time.delayedCall(320, swing);
+        };
+        swing();
+        break;
+      }
+      default:
+        this.endAttack(900);
+    }
+  }
+
+  /** 독 장판 판정 (tick에서 호출 — 밟으면 0.7초마다 도트) */
+  private tickPoisonZones(player: PlayerLike2) {
+    if (this.poisonZones.length === 0) return;
+    const now = this.scene.time.now;
+    for (const z of this.poisonZones) {
+      if (!z.img.active) continue;
+      if (now > z.until) continue;
+      if (now - z.last > 700 && Phaser.Math.Distance.Between(z.x, z.y, player.x, player.y) < 80) {
+        z.last = now;
+        player.takeDamage(Math.max(1, Math.round(this.def.atk * 0.3)), new Phaser.Math.Vector2(0, 1), 0.3, 0);
+        this.vxAnimAt(player.x, player.y, null, "vx_splat", 0x7dff9a, 0.7);
+      }
+    }
+    this.poisonZones = this.poisonZones.filter((z) => now <= z.until || z.img.active === false);
+  }
+
   /* ================= v4.1.4 — 보스별 시그니처 패턴 ================= */
 
   /* ---------- 나선 탄막 (behemoth 눈보라 / abysslord 심연 / abudditos 종언) ----------
@@ -931,9 +1243,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.scene.time.delayedCall(600, () => {
           if (!ring.active) return;
           this.scene.spawnSlamBurst(ring.x, ring.y);
-          /* v1.4.11 — 낙뢰 섬광 + 지균 데칼 (hv2_electro·hv2_crater — 지진 임팩트) */
+          /* v1.4.11 — 낙뢰 섬광 (hv2_electro — 지진 임팩트)
+           * vc142 (#7) — hv2_crater 데칼 제거 (검은 네모 이질 연출 — 유저 지시) */
           this.bossFx("hv2_electro", ring.x, ring.y, { tint: 0xffd28a, scale: 1.25, alpha: 0.95, dur: 200, depth: 27 });
-          this.scene.driveFx?.crater(ring.x, ring.y, 0x1a1208, 0.85, 2200);
+          this.scene.driveFx?.shockHeavy(ring.x, ring.y, 0xffc890, 0.95);
           this.scene.cameras.main.shake(80, 0.004);
           const p = this.scene.playerRef;
           if (p && Phaser.Math.Distance.Between(ring.x, ring.y, p.x, p.y) < 88) {

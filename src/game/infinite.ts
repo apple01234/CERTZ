@@ -16,6 +16,7 @@
  * ===================================================================== */
 
 import type { EnemyKey } from "./data";
+import type { BossKey } from "./stages";
 
 /* ================= 저장 스냅샷 (SaveData.inf + RpgState.inf) ================= */
 
@@ -64,9 +65,12 @@ export function infMerge(p?: Partial<InfSave> | null): InfSave {
 /* ================= ① 심연의 탑 (무한 층수) ================= */
 
 export const TOWER = {
-  /** 층 스케일: 적 HP/ATK ×(1 + 0.17×(층-1)) — 무한 증가 */
+  /** 층 스케일: 적 HP ×(1 + 0.17×(층-1)) — 무한 증가 */
   hpPerFloor: 0.17,
   atkPerFloor: 0.12,
+  /** vc142 (#4 탑 리워크) — 파워(속도) 배율: 층마다 +1.5%, 상한 +60% (체력·공격력과 함께 점점 증가) */
+  spdPerFloor: 0.015,
+  spdCap: 0.6,
   goldBase: 55,
   goldPerFloor: 0.24,
   expBase: 26,
@@ -80,8 +84,30 @@ export const TOWER = {
 export function towerFloorScale(floor: number): number {
   return 1 + Math.max(0, floor - 1) * TOWER.hpPerFloor;
 }
+/** vc142 — 파워 배율(속도): 층이 오를수록 몬스터가 빨라진다 (체력·공격력 배율과 병행) */
+export function towerSpeedScale(floor: number): number {
+  return 1 + Math.min(TOWER.spdCap, Math.max(0, floor - 1) * TOWER.spdPerFloor);
+}
 export function isTowerBossFloor(floor: number): boolean {
   return floor % TOWER.bossEvery === 0;
+}
+/** vc142 (#4) — 층별 지정 처치 마릿수: 전멸식이 아닌 할당제. 1층 6마리 → 18마리까지 완만 상승 */
+export function towerKillNeed(floor: number): number {
+  if (isTowerBossFloor(floor)) return 1; // 보스층은 보스 1기가 할당 전부
+  return Math.min(18, 6 + Math.floor((floor - 1) * 0.55));
+}
+/** 실제 스폰수 — 할당보다 여유분을 깔아서 "전부 잡기"가 아니라도 되게 한다 */
+export function towerSpawnCount(floor: number): number {
+  return towerKillNeed(floor) + 4;
+}
+/** vc142 (#4) — 5의 배수층 보스: 12보스 전원이 층수에 따라 "각각 다르게" 배치되는 고정 로테이션 */
+export const TOWER_BOSSES: BossKey[] = [
+  "guardian", "behemoth", "nidhog", "surt", "fenrir", "skoll",
+  "abysslord", "gram", "abudditos", "vord", "jorm", "nagr",
+];
+export function towerBossFor(floor: number): BossKey {
+  const slot = Math.max(0, Math.floor(floor / TOWER.bossEvery) - 1);
+  return TOWER_BOSSES[slot % TOWER_BOSSES.length];
 }
 /** 층 클리어 보상 — 층수에 무한 스케일 */
 export function towerFloorReward(floor: number, lv: number): { gold: number; exp: number; abyss: number } {
@@ -90,20 +116,26 @@ export function towerFloorReward(floor: number, lv: number): { gold: number; exp
   const exp = Math.round((TOWER.expBase + lv * 2) * (1 + (floor - 1) * TOWER.expPerFloor) * (boss ? 3 : 1));
   return { gold, exp, abyss: TOWER.abyssFloor * (boss ? 5 : 1) };
 }
-/** 층별 등장 몬스터 풀 — 층수가 오를수록 강한 종 추가 (무한 반복 재활용) */
+/** 층별 등장 몬스터 풀 — vc142 리워드: 밴드 폭 확대(3종→4종) + 10밴드로 다양화.
+ *  층이 오를수록 강한 종이 섞이고, 같은 밴드 안에서도 매 층 조합이 달라진다. */
 const TOWER_TIERS: EnemyKey[][] = [
-  ["wolf", "x2_frog", "x2_rat"],
-  ["spider", "x3_goblin", "x2_bat"],
-  ["swampbeast", "golem", "x3_swampy"],
-  ["minion", "wraith", "x3_imp"],
-  ["frostwolf", "icegolem", "x3_icezombie"],
-  ["emberwolf", "firespirit", "x3_wogol"],
-  ["runegolem", "helhound", "x3_orcwarrior"],
-  ["x3_ogre", "x3_chort", "x3_bigzombie"],
+  ["wolf", "x2_frog", "x2_rat", "x3_goblin"],
+  ["spider", "x2_bat", "x3_swampy", "x3_goblin"],
+  ["swampbeast", "golem", "x3_imp", "x2_firebird"],
+  ["minion", "wraith", "x3_tinyzombie", "x2_frostfly"],
+  ["frostwolf", "icegolem", "x3_icezombie", "x3_orcshaman"],
+  ["emberwolf", "firespirit", "x3_wogol", "x2_snail"],
+  ["runegolem", "helhound", "x3_orcwarrior", "x2_stonegolem"],
+  ["x3_ogre", "x3_chort", "x2_darkhound", "x2_reeffish"],
+  ["x3_bigzombie", "x3_maskedorc", "x3_necromancer", "wraith"],
+  ["x3_ogre", "x3_chort", "x3_necromancer", "x2_stonegolem"],
 ];
 export function towerPool(floor: number): EnemyKey[] {
-  const idx = Math.max(0, Math.min(TOWER_TIERS.length - 1, Math.floor((floor - 1) / 8)));
-  return TOWER_TIERS[idx] ?? TOWER_TIERS[0];
+  const band = Math.min(TOWER_TIERS.length - 1, Math.floor((floor - 1) / 8));
+  const tier = TOWER_TIERS[band] ?? TOWER_TIERS[0];
+  /* 같은 밴드 안에서도 층마다 순환이 달라 종류가 섞이게 — 회전 오프셋 */
+  const off = (floor - 1) % tier.length;
+  return [...tier.slice(off), ...tier.slice(0, off)];
 }
 
 /* ================= ② 심층 균열 (무한 티어) ================= */

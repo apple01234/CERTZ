@@ -68,3 +68,57 @@ export function clearToonStyle(obj: Filterable) {
     (obj as Filterable | undefined)?.filters?.external?.clear?.();
   } catch { /* 무시 */ }
 }
+
+/* ================= vc142 (#11) — 화면 전체 툰 셰이딩 파이프라인 =================
+ *  유저 지시: "내가 준 에셋에서 Toon 쉐이더 관련 에셋이 있거든? 그거를 바탕으로 이 게임에 쉐이더 적용해"
+ *  Toon Shaders Pro는 Unity HLSL이라 직접 이식 불가 → 동일한 툰 렌더링 결과를 Phaser 4 내장
+ *  필터 조합으로 재현한다 (커스텀 셰이더 리스크 0, 모바일 성능 안전):
+ *   1) Blocky(size 2)  — 프레임 버퍼를 2px 블록 단위로 평탄화 = 포스터라이즈(셀룰룩 색 단계)
+ *   2) ColorMatrix     — 대비/채도 상향 = 명암 단계 강조 (툰 셰이딩의 이2단계 톤 체감)
+ *   3) (스프라이트) Glow 림라이트 — applyToonStyle이 기존에 담당 (캐릭터/보스 외곽선)
+ *  설정: localStorage "sertz_toon" (기본 켬 — fxLevel 0(적응형 저사양)/Canvas에서는 자동 해제) */
+
+const TOON_KEY = "sertz_toon";
+
+export function toonEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(TOON_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+export function setToonEnabled(on: boolean) {
+  try {
+    window.localStorage.setItem(TOON_KEY, on ? "1" : "0");
+  } catch { /* 무시 */ }
+}
+
+type CamFilterable = { filters?: { external?: FilteredList & { addBlocky?: (cfg?: Record<string, unknown>) => unknown } } | null; enableFilters?: () => unknown } | null;
+
+/** 메인 카메라에 툰 셰이딩 부착 — 실패 시 null (기존 렌더 유지) */
+export function applyToonCamera(camera: unknown): unknown[] | null {
+  const cam = camera as CamFilterable;
+  if (cam && !cam.filters && typeof cam.enableFilters === "function") {
+    try { cam.enableFilters(); } catch { /* WebGL 미지원 */ }
+  }
+  const list = cam?.filters?.external;
+  if (!list) return null;
+  const created: unknown[] = [];
+  try {
+    if (list.addBlocky) {
+      const blocky = list.addBlocky({ size: 2 });
+      created.push(blocky);
+    }
+  } catch { /* Blocky 미지원 — ColorMatrix만이라도 */ }
+  try {
+    const cm = list.addColorMatrix();
+    cm.colorMatrix.contrast(1.09);
+    cm.colorMatrix.saturate(1.22);
+    created.push(cm);
+  } catch {
+    return created.length ? created : null;
+  }
+  return created.length ? created : null;
+}

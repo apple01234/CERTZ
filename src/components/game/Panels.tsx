@@ -989,6 +989,13 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
           </div>
           <div className="flex items-center gap-2">
             <EmeraldChip emerald={rpg.emerald} />
+            {/* vc142 (#3) — 1:1 플레이어 거래 진입 */}
+            <button
+              onClick={() => EventBus.emit("ui:panel", { panel: "trade2" })}
+              className="rounded-md border-2 border-amber-300/60 bg-amber-500/15 px-2 py-1 text-[10px] font-black text-amber-200 hover:bg-amber-500/25"
+            >
+              1:1 거래
+            </button>
             <button
               onClick={onClose}
               aria-label="거래소 닫기"
@@ -1914,7 +1921,10 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 const it = ITEMS[s.k as ItemKey];
                 const tierChip = <span className={`rounded bg-white/10 px-1 py-px text-[9px] font-black ${TIER_STYLE[it.tier].name}`}>{TIER_STYLE[it.tier].label}</span>;
                 const isBasicPot = s.k === "potion_hp" || s.k === "potion_mp";
-                const isPot = s.k.startsWith("potion_");
+                /* vc142 (#2) — 완전 회복 계열(엘릭서·[GM]완전 엘릭서 등 healFull)도 HP/MP 퀵슬롯
+                 * 등록(=자동물약) 가능하게 확장. 기존엔 potion_ 접두사만 허용해 gm_elixir가
+                 * 자동물약 등록 불가였다. usePotion은 healFull을 restoreAll로 처리하므로 호환. */
+                const isPot = s.k.startsWith("potion_") || it.healFull === true;
                 if (it.kind === "weapon" || it.kind === "armor") {
                   const equipped = rpg.weapon === s.k || rpg.armor === s.k;
                   const up = it.kind === "weapon" ? rpg.upWea : rpg.upArm;
@@ -2743,6 +2753,234 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
   );
 }
 
+/* =====================================================================
+ * vc142 (#3) — 1:1 플레이어 거래 패널
+ *  근처 플레이어에게 요청 → 수락 시 양쪽이 아이템/골드/에메랄드를 걸고
+ *  양쪽 모두 확정하면 교환. tradeLock/GM 아이템·장착 중 아이템은 제외.
+ * ===================================================================== */
+type TradeSnap = {
+  phase: "idle" | "outgoing" | "incoming" | "open" | "done";
+  partnerId: string;
+  partnerName: string;
+  mine: { items: string[]; gold: number; emerald: number };
+  theirs: { items: string[]; gold: number; emerald: number };
+  meLocked: boolean;
+  theyLocked: boolean;
+  note: string;
+};
+type NearbyPlayer = { id: string; name: string; lv: number };
+
+function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const [snap, setSnap] = useState<TradeSnap | null>(null);
+  const [nearby, setNearby] = useState<NearbyPlayer[]>([]);
+  const [goldTxt, setGoldTxt] = useState("");
+  const [emTxt, setEmTxt] = useState("");
+
+  useEffect(() => {
+    const onState = (s: unknown) => setSnap(s as TradeSnap);
+    const onNearby = (l: unknown) => setNearby((l as NearbyPlayer[]) ?? []);
+    EventBus.on("trade:state", onState as never);
+    EventBus.on("trade:nearby", onNearby as never);
+    EventBus.emit("trade:nearby", {});
+    const iv = setInterval(() => EventBus.emit("trade:nearby", {}), 2500);
+    return () => {
+      EventBus.off("trade:state", onState as never);
+      EventBus.off("trade:nearby", onNearby as never);
+      clearInterval(iv);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (snap?.phase === "open") {
+      setGoldTxt(snap.mine.gold ? String(snap.mine.gold) : "");
+      setEmTxt(snap.mine.emerald ? String(snap.mine.emerald) : "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snap?.phase]);
+
+  const act = (v: Record<string, unknown>) => EventBus.emit("rpg:tradeAct", v as never);
+
+  /* 내 보유 목록 (거래 가능한 것만 — 장착/거래잠금 제외 표시) */
+  const ownedKeys = Array.from(new Set(rpg.owned ?? [])).filter((k) => {
+    const it = ITEMS[k as ItemKey];
+    return it && !it.tradeLock && !it.gmOnly;
+  });
+  const equipped = new Set([rpg.weapon, rpg.armor, ...(rpg.accessories ?? [])].filter(Boolean));
+  const offerable = ownedKeys.filter((k) => !equipped.has(k as ItemKey));
+  const countOf = (k: string) => (rpg.owned ?? []).filter((x) => x === k).length;
+
+  const itemName = (k: string) => ITEMS[k as ItemKey]?.name ?? k;
+  const phase = snap?.phase ?? "idle";
+
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
+      <div
+        className="game-panel max-h-[min(88svh,620px)] w-[min(94vw,560px)] overflow-y-auto p-3.5 shadow-2xl"
+        style={{ zoom: typeof window !== "undefined" && window.innerWidth < 430 ? 0.8 : window.innerWidth < 640 ? 0.9 : 1 }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-black text-amber-200">1:1 거래</p>
+            <p className="text-[10px] text-white/45">근처 플레이어와 아이템·골드·에메랄드를 교환 (양쪽 확정 필수)</p>
+          </div>
+          <button onClick={onClose} aria-label="거래 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+        </div>
+
+        {phase === "idle" && (
+          <div>
+            <p className="mb-1.5 text-[11px] font-bold text-white/60">근처 플레이어 (같은 구역 · 500px 이내)</p>
+            {nearby.length === 0 ? (
+              <p className="rounded-lg border border-white/10 bg-black/30 px-3 py-6 text-center text-[11px] text-white/40">
+                근처에 거래할 플레이어가 없어요. 멀티 접속(같은 맵) 상태에서 다시 확인해 주세요.
+              </p>
+            ) : (
+              <div className="grid gap-1.5">
+                {nearby.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-2.5 py-2">
+                    <span className="text-[12px] font-bold text-white/85">{p.name} <span className="text-white/40">Lv.{p.lv}</span></span>
+                    <button
+                      className="rounded-md border-2 border-amber-300/70 bg-amber-500/20 px-2.5 py-1 text-[11px] font-black text-amber-200 hover:bg-amber-500/30"
+                      onClick={() => EventBus.emit("rpg:tradeInvite", { id: p.id, name: p.name })}
+                    >
+                      거래 요청
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {snap?.note && <p className="mt-2 text-[10px] text-white/40">{snap.note}</p>}
+          </div>
+        )}
+
+        {phase === "incoming" && (
+          <div className="rounded-lg border border-sky-300/30 bg-sky-500/10 p-3 text-center">
+            <p className="text-[13px] font-black text-sky-200">{snap?.partnerName}님의 거래 요청!</p>
+            <div className="mt-2.5 grid grid-cols-2 gap-2">
+              <button className="rounded-md border-2 border-emerald-300/70 bg-emerald-500/20 px-2 py-2 text-[12px] font-black text-emerald-200" onClick={() => act({ act: "accept" })}>수락</button>
+              <button className="rounded-md border-2 border-red-300/60 bg-red-500/20 px-2 py-2 text-[12px] font-black text-red-200" onClick={() => act({ act: "deny" })}>거절</button>
+            </div>
+          </div>
+        )}
+
+        {phase === "outgoing" && (
+          <div className="rounded-lg border border-amber-300/30 bg-amber-500/10 p-4 text-center">
+            <p className="text-[12px] font-bold text-amber-200">{snap?.partnerName}님의 수락 대기 중…</p>
+            <p className="mt-1 text-[10px] text-white/40">30초 안에 수락하지 않으면 자동 취소돼요.</p>
+            <button className="mt-2.5 rounded-md border-2 border-white/25 bg-black/40 px-3 py-1.5 text-[11px] font-black text-white/70" onClick={() => act({ act: "cancel" })}>요청 취소</button>
+          </div>
+        )}
+
+        {phase === "open" && snap && (
+          <div>
+            <p className="mb-1.5 text-center text-[11px] font-bold text-sky-200">{snap.partnerName}님과의 거래 {snap.meLocked && snap.theyLocked ? "— 교환 중!" : snap.meLocked ? "— 내 확정 완료, 상대 대기" : snap.theyLocked ? "— 상대 확정 완료, 내 확정 필요" : ""}</p>
+            <div className="grid grid-cols-2 gap-2">
+              {/* 내가 거는 것 */}
+              <div className="rounded-lg border border-emerald-300/25 bg-emerald-500/[0.06] p-2">
+                <p className="text-[11px] font-black text-emerald-200">내가 거는 것</p>
+                <div className="mt-1 min-h-[72px] grid gap-1">
+                  {snap.mine.items.length === 0 && <p className="text-[10px] text-white/30">아래 목록에서 아이템을 눌러 추가</p>}
+                  {snap.mine.items.map((k, i) => (
+                    <div key={`${k}-${i}`} className="flex items-center justify-between rounded bg-black/40 px-1.5 py-1">
+                      <span className="text-[10px] text-white/80">{itemName(k)}</span>
+                      {!snap.meLocked && (
+                        <button className="text-[10px] font-black text-red-300" onClick={() => act({ act: "remove", key: k })}>✕</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-1.5 grid grid-cols-2 gap-1 text-[10px]">
+                  <div className="rounded bg-black/40 px-1.5 py-1 text-amber-200">골드 {snap.mine.gold.toLocaleString()}</div>
+                  <div className="rounded bg-black/40 px-1.5 py-1 text-sky-200">에메랄드 {snap.mine.emerald}</div>
+                </div>
+              </div>
+              {/* 상대가 거는 것 */}
+              <div className="rounded-lg border border-sky-300/25 bg-sky-500/[0.06] p-2">
+                <p className="text-[11px] font-black text-sky-200">{snap.partnerName}님이 거는 것</p>
+                <div className="mt-1 min-h-[72px] grid gap-1">
+                  {snap.theirs.items.length === 0 && <p className="text-[10px] text-white/30">아직 없음</p>}
+                  {snap.theirs.items.map((k, i) => (
+                    <div key={`${k}-${i}`} className="rounded bg-black/40 px-1.5 py-1 text-[10px] text-white/80">{itemName(k)}</div>
+                  ))}
+                </div>
+                <div className="mt-1.5 grid grid-cols-2 gap-1 text-[10px]">
+                  <div className="rounded bg-black/40 px-1.5 py-1 text-amber-200">골드 {snap.theirs.gold.toLocaleString()}</div>
+                  <div className="rounded bg-black/40 px-1.5 py-1 text-sky-200">에메랄드 {snap.theirs.emerald}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* 골드/에메랄드 입력 */}
+            {!snap.meLocked && (
+              <div className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-1.5">
+                <input
+                  value={goldTxt}
+                  onChange={(e) => setGoldTxt(e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder={`골드 (보유 ${rpg.gold.toLocaleString()})`}
+                  inputMode="numeric"
+                  className="rounded-md border border-white/15 bg-black/40 px-2 py-1.5 text-[11px] text-white/85 outline-none focus:border-amber-300/60"
+                />
+                <input
+                  value={emTxt}
+                  onChange={(e) => setEmTxt(e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder={`에메랄드 (보유 ${rpg.emerald})`}
+                  inputMode="numeric"
+                  className="rounded-md border border-white/15 bg-black/40 px-2 py-1.5 text-[11px] text-white/85 outline-none focus:border-sky-300/60"
+                />
+                <button
+                  className="rounded-md border-2 border-white/25 bg-black/40 px-2.5 py-1.5 text-[11px] font-black text-white/75"
+                  onClick={() => act({ act: "currency", gold: Number(goldTxt || 0), emerald: Number(emTxt || 0) })}
+                >등록</button>
+              </div>
+            )}
+
+            {/* 거래 가능 인벤 */}
+            {!snap.meLocked && (
+              <div className="mt-2 max-h-[150px] overflow-y-auto rounded-lg border border-white/10 bg-black/30 p-1.5">
+                <div className="grid grid-cols-2 gap-1">
+                  {offerable.length === 0 && <p className="col-span-2 py-3 text-center text-[10px] text-white/35">거래 가능한 아이템이 없어요</p>}
+                  {offerable.map((k) => (
+                    <button
+                      key={k}
+                      className="flex items-center justify-between rounded bg-black/40 px-1.5 py-1 text-left hover:bg-black/60"
+                      onClick={() => act({ act: "add", key: k })}
+                    >
+                      <span className="truncate text-[10px] text-white/80">{itemName(k)}</span>
+                      <span className="ml-1 shrink-0 text-[9px] text-white/40">×{countOf(k)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button
+                disabled={snap.meLocked}
+                className={`rounded-md border-2 px-2 py-2 text-[12px] font-black ${snap.meLocked ? "border-white/10 bg-black/30 text-white/30" : "border-emerald-300/70 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30"}`}
+                onClick={() => act({ act: "lock" })}
+              >
+                {snap.meLocked ? "확정 완료 ✓" : snap.theyLocked ? "최종 확정 (교환!)" : "확정 (잠금)"}
+              </button>
+              <button className="rounded-md border-2 border-red-300/50 bg-red-500/15 px-2 py-2 text-[12px] font-black text-red-200" onClick={() => act({ act: "cancel" })}>취소</button>
+            </div>
+            <p className="mt-1.5 text-center text-[9px] leading-snug text-white/35">
+              확정 후 상대가 제안을 바꾸면 잠금이 풀려요 (이중 확인). 거래 잠금·GM 아이템·장착 중 아이템은 걸 수 없어요.
+            </p>
+          </div>
+        )}
+
+        {(phase === "done") && (
+          <div className="rounded-lg border border-emerald-300/40 bg-emerald-500/10 p-5 text-center">
+            <p className="text-[14px] font-black text-emerald-200">거래 완료!</p>
+            <button className="mt-3 rounded-md border-2 border-white/25 bg-black/40 px-3 py-1.5 text-[11px] font-black text-white/75" onClick={onClose}>닫기</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function GamePanels({
   panel,
   rpg,
@@ -2759,6 +2997,7 @@ export function GamePanels({
   if (panel === "shop") return <ShopPanel rpg={rpg} onClose={onClose} />;
   if (panel === "bmshop") return <BmShopPanel rpg={rpg} onClose={onClose} />; // v3.0.6 — BM 상점
   if (panel === "trade") return <TradePanel rpg={rpg} onClose={onClose} />; // v3.0.7 — 유저 거래소
+  if (panel === "trade2") return <Trade2Panel rpg={rpg} onClose={onClose} />; // vc142 — 1:1 플레이어 거래
   if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} />;
   if (panel === "warp") return <WarpPanel rpg={rpg} onClose={onClose} />;
   if (panel === "job") return <JobPanel rpg={rpg} onClose={onClose} />;
@@ -4171,6 +4410,32 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
           <p className="mt-1 text-[9px] leading-snug text-white/35">
             셰이더가 사라졌다면 → "항상 높음" 선택. 프레임 보호용 자동 축소가 켜진 것입니다.
           </p>
+        </div>
+
+        {/* vc142 (#11) — 툰 셰이딩 on/off (화면 전체 셀룰룩 후처리) */}
+        <div className="mt-2 rounded-lg border border-fuchsia-300/25 bg-fuchsia-400/[0.06] px-2.5 py-2.5">
+          <p className="text-[12px] font-black text-fuchsia-200">툰 셰이딩 (셀룰룩 화면)</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/50">
+            색을 평탄화해 만화 같은 셀 셰이딩 느낌을 줍니다. 끄면 원본 화면.
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            {([
+              { on: true, label: "켬 (기본)", css: "border-fuchsia-300/70 bg-fuchsia-500/20 text-fuchsia-200" },
+              { on: false, label: "끔", css: "border-amber-300/70 bg-amber-500/20 text-amber-200" },
+            ] as const).map((o) => {
+              const cur = (() => { try { return window.localStorage.getItem("sertz_toon") !== "0"; } catch { return true; } })();
+              const active = cur === o.on;
+              return (
+                <button
+                  key={String(o.on)}
+                  onClick={() => EventBus.emit("rpg:toon", {})}
+                  className={`rounded-md border-2 px-1 py-1.5 text-[11px] font-black transition ${active ? o.css : "border-white/15 bg-black/40 text-white/55 hover:border-white/40"}`}
+                >
+                  {o.label}{active ? " ✓" : ""}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* v1.2.1 (#4 최적화 x3) — 성능 모니터: 실시간 FPS + 현재 최적화 상태 표시 */}

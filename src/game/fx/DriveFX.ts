@@ -235,16 +235,18 @@ export class DriveFX {
 
   /* ============ v1.4.11 — Drive 신규 팩 2차 통합 (hv2_·mg_·tn_·cp_·pk_ 시리즈) ============ */
 
-  /** 지균 데칼 — Hovl CraterFree (강타/낙뢰 착지). NORMAL 블렌드로 바닥에 새긴 뒤 천천히 사라진다 */
+  /** 지균 데칼 — Hovl CraterFree (강타/낙뢰 착지). vc142 (#7): 원본이 가산 블렌드용 순흑 텍스처라
+   *  NORMAL로 그리면 검은 사각형이 된다(유저 신고 "검은 네모") → ADD 블렌드로 강제해 검정=투명 처리 */
   crater(x: number, y: number, tint = 0x181008, scale = 1, dur = 2400) {
     if (!this.scene.textures.exists("hv2_crater")) return;
     const c = this.scene.add
       .image(x, y + 2, "hv2_crater")
       .setDepth(4)
+      .setBlendMode(Phaser.BlendModes.ADD)
       .setTint(tint)
       .setScale(0.5 * scale)
       .setAlpha(0);
-    this.scene.tweens.add({ targets: c, alpha: 0.6, scaleX: scale, scaleY: scale, duration: 130, ease: "Quad.out" });
+    this.scene.tweens.add({ targets: c, alpha: 0.5, scaleX: scale, scaleY: scale, duration: 130, ease: "Quad.out" });
     this.scene.tweens.add({ targets: c, alpha: 0, duration: 400, delay: Math.max(0, dur - 400), onComplete: () => c.destroy() });
   }
 

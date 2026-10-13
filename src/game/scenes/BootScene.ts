@@ -590,6 +590,20 @@ export class BootScene extends Phaser.Scene {
     for (const k of V1411) this.load.image(k, `${k}.webp`);
     this.load.spritesheet("cp_petal", "cp_petal.webp", { frameWidth: 176, frameHeight: 266 });
     this.load.image("cp_bg", "cp_bg.webp");
+    /* vc142 (#9/#12) — UNI VFX · Hovl Studio · Cartoon FX Remaster · GameVFX 3차 통합 34종
+     *  (scripts/conv_vc142_assets.py — 유저 제공 원본 크롭). 보스 고유 패턴 FX + 3D 오버레이 공용 */
+    const VX142_SHEETS: [string, number, number][] = [
+      ["vx_smoke", 128, 128], ["vx_expcore", 256, 256], ["vx_fire", 128, 128],
+      ["vx_elec", 128, 128], ["vx_bolt", 128, 128], ["vx_smokecloud", 192, 192],
+      ["vx_petal", 192, 192], ["vx_fly", 96, 96], ["vx_debris", 128, 128],
+    ];
+    for (const [k, w, h] of VX142_SHEETS) this.load.spritesheet(k, `${k}.webp`, { frameWidth: w, frameHeight: h });
+    for (const k of [
+      "vx_slash", "vx_magiccircle", "vx_techcircle", "vx_crystal", "vx_snow", "vx_star",
+      "vx_splat", "vx_crack", "vx_flash", "vx_flare", "vx_glowh", "vx_ring", "vx_hex",
+      "vx_twinkle", "vx_glowball", "vx_lensflare", "vx_aura", "vx_firecircle", "vx_puddle",
+      "vx_spikes", "vx_shockwave", "vx_circlehazy", "vx_flarexo", "vx_trailghost",
+    ]) this.load.image(k, `${k}.webp`);
   }
 
   async create() {
@@ -614,6 +628,22 @@ export class BootScene extends Phaser.Scene {
     /* v1.4.31 (#4) — 아틀라스 보스 9종 풀애니 부팅 즉시 등록 (시트가 preload에 포함되어 바로 가능 —
      *  기존은 Boss 스폰 시점 등록이라 E2E·첫 스폰 직전까지 애니 부재). 구형 폴백 애니는 등록하지 않는다. */
     for (const tex of Object.keys(BOSS_ATLAS)) registerBossAnims(this, tex);
+    /* vc142 (#9/#12) — vx_ 플립북 애니 등록 (유저 에셋팩 크롭분 — 보스 고유 패턴/3D 오버레이 공용) */
+    const VX_ANIMS: [string, string, number, number, number][] = [
+      ["vx-fire", "vx_fire", 0, 8, 14],
+      ["vx-elec", "vx_elec", 0, 13, 20],
+      ["vx-bolt", "vx_bolt", 0, 7, 16],
+      ["vx-smoke", "vx_smoke", 0, 7, 12],
+      ["vx-expcore", "vx_expcore", 0, 3, 12],
+      ["vx-smokecloud", "vx_smokecloud", 0, 3, 10],
+      ["vx-petal", "vx_petal", 0, 3, 8],
+      ["vx-debris", "vx_debris", 0, 8, 16],
+    ];
+    for (const [key, tex, from, to, rate] of VX_ANIMS) {
+      if (!this.textures.exists(tex)) continue;
+      if (this.anims.exists(key)) continue;
+      this.anims.create({ key, frames: this.anims.generateFrameNumbers(tex, { start: from, end: to }), frameRate: rate, repeat: 0 });
+    }
     /* v4.1.5 — Galmuri 픽셀 폰트 로딩 대기 (최대 2.5초 폴백).
      *  Phaser 캔버스 텍스트(데미지 숫자/배너/월드 라벨)가 Galmuri로 렌더되려면
      *  씬 시작 전 document.fonts 로드 완료가 필요하다. 실패해도 sans-serif 폴백. */

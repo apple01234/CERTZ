@@ -87,6 +87,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private slowUntil = 0;
   private slowMult = 1;
   private stunUntil = 0;
+  /* vc142 (#4 탑 리워크) — 파워(속도) 배율: 층이 오를수록 몬스터 이속 증가 */
+  private spdMul = 1;
   /* v1.4.16 — 원소 반응 쿨다운 (같은 적 1.6초 — 연타 폭발 방지) */
   private lastReactAt = 0;
   /** 돌진형 전용 — 돌진 방향 캐시 */
@@ -103,7 +105,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   /** 감속 반영 실효 속도 */
   private get effSpeed(): number {
-    return this.def.speed * (this.scene.time.now < this.slowUntil ? this.slowMult : 1);
+    return this.def.speed * this.spdMul * (this.scene.time.now < this.slowUntil ? this.slowMult : 1);
   }
 
   private modeTimer = 0;
@@ -153,7 +155,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     x: number,
     y: number,
     key: EnemyKey,
-    opts?: { hp?: number; atk?: number; exp?: number; gold?: number; scale?: number; tint?: number; displayName?: string; dummy?: boolean }
+    opts?: { hp?: number; atk?: number; exp?: number; gold?: number; scale?: number; tint?: number; displayName?: string; dummy?: boolean; abs?: boolean; spd?: number }
   ) {
     super(scene, x, y, `${key}_idle0`);
     const base = ENEMIES[key];
@@ -161,17 +163,33 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "none";
     /* v3.3.0 (지시 #6) — 허수아비 모드: AI/사망/넉백 전부 비활성 */
     if (opts?.dummy) this.dummy = true;
+    /* vc142 (#4 탑 리워크) — 파워(속도) 배율 적용 (0.5~2.0 클램프) */
+    if (opts?.spd) this.spdMul = Phaser.Math.Clamp(opts.spd, 0.5, 2);
+    /* vc142 (쿠소디아 프리즈 ②·탑 밸런스) — abs 플래그: hp/atk/exp/gold를 절대값으로 직접 사용.
+     * 기존엔 opts.hp를 무조건 base.hp의 배수로 해석해 탑/황금몬스터가 절대값을 넘기면
+     * base.hp × 절대값 = 수만 HP 괴물이 spawn → "게임이 멈춘 것처럼" 보였다. */
     if (opts && (opts.hp !== undefined || opts.atk !== undefined || opts.exp !== undefined || opts.gold !== undefined)) {
-      this.def = {
-        ...base,
-        hp: Math.round(base.hp * (opts.hp ?? 1)),
-        atk: Math.round(base.atk * (opts.atk ?? 1) * 10) / 10,
-        exp: Math.round(base.exp * (opts.exp ?? 1)),
-        gold: [
-          Math.max(1, Math.round(base.gold[0] * (opts.gold ?? 1))),
-          Math.max(1, Math.round(base.gold[1] * (opts.gold ?? 1))),
-        ],
-      };
+      this.def = opts.abs
+        ? {
+            ...base,
+            hp: Math.max(1, Math.round(opts.hp ?? base.hp)),
+            atk: Math.round((opts.atk ?? base.atk) * 10) / 10,
+            exp: Math.max(0, Math.round(opts.exp ?? base.exp)),
+            gold: [
+              Math.max(1, Math.round(opts.gold ?? base.gold[0])),
+              Math.max(1, Math.round((opts.gold ?? base.gold[1]) * 1.4)),
+            ],
+          }
+        : {
+            ...base,
+            hp: Math.round(base.hp * (opts.hp ?? 1)),
+            atk: Math.round(base.atk * (opts.atk ?? 1) * 10) / 10,
+            exp: Math.round(base.exp * (opts.exp ?? 1)),
+            gold: [
+              Math.max(1, Math.round(base.gold[0] * (opts.gold ?? 1))),
+              Math.max(1, Math.round(base.gold[1] * (opts.gold ?? 1))),
+            ],
+          };
     } else {
       this.def = base;
     }
