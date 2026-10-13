@@ -4050,3 +4050,39 @@ Stage Summary:
 - vc146 = 피드백 10종 전량 + **첫 정식 릴리스 v1.0.6**(웹 라이브 code:146 · SERTZ-vc146.apk/aab/mapping — 덮어설치 호환)
 - 유저 테스트 포인트: ①[GM] 엘릭서 계속 마시기(사라짐 0) ②Lv200/GM 5차에서 Q키·보라 버튼 — 제2궁극기 12종 체감 ③화면 밝기 하향 체감 ④APK 버전 1.0.6 표기 ⑤2.5D 시점(설정 O에서 끔/켬 비교) ⑥무릉도장 DPS 표시 ⑦PC 보스 격파 3D 폭발이 이제 올바른 위치에 뜸 ⑧챕터 진입 게이트 상향 체감 ⑨거래소에서 엘릭서·장비 등록 ⑩장시간 플레이 강종 빈도
 - 비고: 릴리스 v1.0.6 태그는 9월 실험분이 이미 존재했음(스태일 APK 동봉) — 정리 완료. 이터널 제2궁극기(시간 역행)는 rollDamage 로그 기반이라 다른 궁극기와 중첩 시 천문학적 피해 가능(설계 의도 — "거스르는 시간")
+
+---
+Task ID: vc146-web-apk-ios
+Agent: Super Z (main)
+Task: 유저 지시 "1. 웹빌드&apk(aab 제외) 빌드하기 2. ios 빌드방법" — 웹 라이브 검증·APK 재빌드 릴리스·iOS 파이프라인 vc146 전환+재빌드
+
+Work Log:
+- [환경] 컨테이너 상태 양호 — JDK(/home/z/jdk 21.0.12.1)·SDK(android-36)·node_modules·.secrets/vercel_token 전부 생존, HEAD=e29ad837(작업트리 클린, origin 일치)에서 착수
+- [웹] 라이브 이미 code:146(1.0.6) READY 확인 — 커밋 푸시 체인으로 apk-guide 신해시 배포(dpl_GDWKoWzPbTPPJTw9 READY)·라이브 가이드 md5 2a15a7fe 실측·/api/version 1.0.6/146 응답 확인
+- [APK 재빌드] nohup 백그라운드 시도가 즉사(로그 1행, 이전 세션 "동기식 포그라운드 청크" 철칙 재확인) → 3청크 포그라운드로 전환: ①라우트 7종 격리+APK_EXPORT next build(성공) ②cap sync android 0.755s ③gradle assembleRelease 4m06s BUILD SUCCESSFUL
+- [APK 검증] versionCode 146·versionName 1.0.6·146,105,829B·서명 cc774f34...(기존 키 동일 — 덮어설치 호환)·md5 2a15a7feffb536b53121071bc0393e9c/sha1 ded1ee0054459ee9452aa1ae48d4448b6d0fbafc
+- [릴리스] scripts/vc146_reupload_apk.py 신설(urllib 업로드+무결성) — 기존 자산 DELETE 204→업로드 201→다운로드 md5 대조 PASS·v1.0.6 릴리스 자산 4종 체제(ipa 포함)·download/SERTZ-vc146.apk 신빌드로 동기화
+- [apk-guide] 웹 권위본 해시 갱신(466d01c9→2a15a7fe·146104861→146105829B) — APK 내장 가이드는 구조상 한 빌드 뒤(자기 해시 기재 불가 역설)라 웹본만 갱신이 정답
+- [iOS 파이프라인 갱신] ios-build.yml의 vc142 잔존분 전부 vc146으로 전환(산출물명·아티팩트명·릴리스 첨부 태그 v1.0.5-beta→v1.0.6) — grep 잔존 0건 확인 후 커밋 4f5e6856 푸시 → push paths 매칭으로 iOS 빌드 #3 자동 트리거
+- [iOS #3 성공→결함 발견] IPA 148,295,040B 첨부 완료·zip 4,645엔트리·웹에셋 4,354·GAD/GS plist OK — 그러나 Info.plist 파싱에서 CFBundleShortVersionString **1.0.5**·CFBundleVersion **142** 검출(pbxproj 버전 변수가 vc142 이후 무갱신 — 3회 iOS 빌드 전부 구버전 표기였던 누적 결함)
+- [정정] pbxproj MARKETING_VERSION 1.0.6·CURRENT_PROJECT_VERSION 146(2处씩 4행) 수정 → 커밋 ee765f09 푸시 → iOS 빌드 #4 자동 트리거(올바른 1.0.6(146) IPA로 릴리스 --clobber 예정)
+- [Vercel 정리] 다음 세션 토큰 생존 시 vercel_cleanup.py 실행 권장(현재 배포 3개 누적)
+
+Stage Summary:
+- 웹 code:146 라이브 · SERTZ-vc146.apk(146,105,829B·md5 2a15a7fe..) 재빌드 릴리스 완료(AAB는 유저 지시대로 기존분 유지·미재빌드) · iOS 빌드 방법: Actions 탭→iOS Build→Run workflow(또는 ios/** 푸시 자동)→릴리스 v1.0.6 자동 첨부→Sideloadly/TrollStore/AltStore 사이드로드
+- 핵심 발견·수리: iOS pbxproj 버전 변수 142→146 정정(1.0.5(142) IPA 3회 연속 빌드 결함 근원 차단) — 빌드 #4로 정식 1.0.6(146) IPA 교체 진행 중
+- 유저 안내 필요: iOS IPA는 unsigned — 설치 방법 3종(Sideloadly 무료 7일/TrollStore iOS≤16.6.1/본인 p12+zsign) 안내 예정
+
+---
+Task ID: vc146-web-apk-ios (후속 완료)
+Agent: Super Z (main)
+Task: iOS 빌드 #4 완료 검증 + Vercel 정리 — vc146-web-apk-ios 태스크 종결
+
+Work Log:
+- [Vercel 정리] vercel_cleanup.py run --yes → 3개 삭제(KEEP 라이브+롤백 2개 유지) — 토큰 생존 세션에서 정리 체인 정상 가동
+- [iOS #4] run 38392155384 성공(~6분) — 정정 pbxproj(ee765f09)로 재빌드·릴리스 --clobber 업로드(148,295,077B·11:48:35)
+- [IPA 최종 검증] 다운로드 후 plistlib 파싱 — CFBundleShortVersionString **1.0.6**·CFBundleVersion **146**·bundle com.sertz.myapp·웹에셋 4,354·엔트리 4,645·GAD ID 확인 — 임시파일 정리
+
+Stage Summary:
+- 최종 체제: 웹 sertz.vercel.app code:146(1.0.6) · 릴리스 v1.0.6 자산 4종(SERTZ-vc146.apk 146,105,829B md5 2a15a7fe.. / .aab / mapping / SERTZ-vc146-ios-unsigned.ipa 148,295,077B md5 d947425b.. **1.0.6(146)**)
+- iOS 빌드 방법 확정: ①Actions 탭→iOS Build→Run workflow(수동) ②ios/** 포함 커밋 푸시 시 자동 ③산출물은 릴리스 v1.0.6에 자동 첨부 ④설치는 Sideloadly(무료 7일 재서명)/TrollStore(iOS 16.6.1 이하)/본인 p12+zsign
