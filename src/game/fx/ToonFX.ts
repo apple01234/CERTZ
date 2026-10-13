@@ -103,7 +103,10 @@ type CamFilterable = { filters?: { external?: FilteredList & { addBlocky?: (cfg?
  *  vc145 (#3 강도 완화 + #11 조절바 연동):
  *  - 설정 "효과 강도" 슬라이더(loadFx().intensity 0~100)가 툰 후처리 강도를 결정한다 (기존엔 무시 → 조절바 무반응 버그)
  *  - 강도 0 = 셰이더 완전 끔 → 부착하지 않음 (패널 문구와 동일 동작)
- *  - 기본값 55 기준: 대비 1.04 / 채도 1.10 — 기존 1.09/1.22에서 눈에 띄게 완화 */
+ *  - 기본값 55 기준: 대비 1.04 / 채도 1.10 — 기존 1.09/1.22에서 눈에 띄게 완화
+ *  vc146 (#3 밝기 하향): 툰 느낌(대비/채도/Blocky)은 그대로 유지하고 밝기만 크게 낮춘다 —
+ *  brightness 1 - 0.22k (기본 강도 55 → 0.78 · 강도 100 → 0.71 · 하한 0.62).
+ *  ColorMatrix.brightness는 원본 행렬에 밝기 스케일을 곱하므로 대비/채도 연출은 손상되지 않는다. */
 export function applyToonCamera(camera: unknown): unknown[] | null {
   const intensity = loadFx().intensity;
   if (intensity <= 0) return null; // 슬라이더 0 = 셰이더 완전 끔
@@ -126,6 +129,10 @@ export function applyToonCamera(camera: unknown): unknown[] | null {
     const cm = list.addColorMatrix();
     cm.colorMatrix.contrast(1 + 0.045 * k);
     cm.colorMatrix.saturate(1 + 0.10 * k);
+    /* vc146 (#3) — 밝기 대폭 하향 (툰 감성 유지 · 화면만 어둡게):
+     *  "쉐이더 느낌은 그대로 유지하고 밝기만 좀 많이 낮춰" — 기본 0.78 (22% 감광) */
+    const bright = Math.max(0.62, 1 - 0.22 * k);
+    (cm.colorMatrix as unknown as { brightness: (v: number, m?: boolean) => unknown }).brightness(bright);
     created.push(cm);
   } catch {
     return created.length ? created : null;

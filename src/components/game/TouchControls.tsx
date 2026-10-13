@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
-import { Swords, Bot, Pause, Star } from "lucide-react";
+import { Swords, Bot, Pause, Star, Sparkles } from "lucide-react";
 import type { Skills } from "./useGameUi";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.4 — 물약 키 힌트를 키맵 따라 표시
 
@@ -48,6 +48,7 @@ export function TouchControls({
   s3Name,
   s4Name,
   s5Name,
+  s5bName,
   canAutoHunt,
   autoHunt,
 }: {
@@ -65,6 +66,8 @@ export function TouchControls({
   s4Name?: string;
   /** v3.2.0 — 5차 궁극기 (Lv.200 해금, 쿨타임 60초) */
   s5Name?: string;
+  /** vc146 (#2) — 5차 제2궁극기 (Lv.200 해금, 쿨타임 120초) */
+  s5bName?: string;
   canAutoHunt?: boolean;
   autoHunt?: boolean;
 }) {
@@ -193,6 +196,9 @@ export function TouchControls({
   /* v3.2.0 — 5차 궁극기 (MP 100, 쿨타임 60초) */
   const s5Ready = (skills.s5Cd ?? 0) <= 0 && skills.mp >= 100;
   const s5Pct = (skills.s5Cd ?? 0) > 0 ? ((skills.s5Cd ?? 0) / Math.max(1, skills.s5Max ?? 60000)) * 100 : 0;
+  /* vc146 (#2) — 제2궁극기 쿨다운/준비 (MP 150) */
+  const s5bReady = (skills.s5bCd ?? 0) <= 0 && skills.mp >= 150;
+  const s5bPct = (skills.s5bCd ?? 0) > 0 ? ((skills.s5bCd ?? 0) / Math.max(1, skills.s5bMax ?? 120000)) * 100 : 0;
 
   const sm = !isTouch; // PC(넓은 화면)에선 살짝 큰 크기
   /* v1.4.18 (#4) — 공격 버튼 100 (모바일) / 112 (PC) · v1.4.14 — 스킬 56/66 (현행 크기 유지)
@@ -210,6 +216,8 @@ export function TouchControls({
     { key: "s4", name: s4Name ?? "", mp: 40, ready: s4Ready, cd: s4Pct, icon: skills.s4Icon, emit: "input:skill4" },
   ].filter((s) => s.name); // 미해금(빈 이름) 스킬은 그리드에서 제외
   const hasUlt = !!s5Name;
+  /* vc146 (#2) — 제2궁극기 버튼 표시 조건 */
+  const hasUlt2 = !!s5bName;
 
   const autoBtn = canAutoHunt ? (
     <button
@@ -338,6 +346,23 @@ export function TouchControls({
               </SkillButton>
             </div>
           )}
+          {/* vc146 (#2) — 제2궁극기 보라 금강 버튼 (쿨 2분 · MP 150) */}
+          {hasUlt2 && (
+            <div style={{ width: SK + 6, height: SK + 6 }}>
+              <SkillButton
+                ready={s5bReady}
+                cdPct={s5bPct}
+                label={s5bName || ""}
+                mp={150}
+                icon={skills.s5Icon}
+                ult2
+                compact={!!sm}
+                onDown={() => EventBus.emit("input:skill5b")}
+              >
+                <Sparkles size={18} />
+              </SkillButton>
+            </div>
+          )}
         </div>
         {/* [공격] — 행 끝 대형 원형 버튼 (현행 스타일·크기 유지) */}
         <button
@@ -430,6 +455,7 @@ function SkillButton({
   onDown,
   icon,
   ult,
+  ult2,
   compact,
 }: {
   children?: React.ReactNode;
@@ -441,6 +467,8 @@ function SkillButton({
   icon?: string;
   /** v3.2.0 — 궁극기 전용 황금 스타일 */
   ult?: boolean;
+  /** vc146 (#2) — 제2궁극기 전용 보라·진홍 스타일 (쿨 2분) */
+  ult2?: boolean;
   /** v1.4.12 (#8) — 컨테이너가 크기를 결정하므로 버튼은 h-full w-full */
   compact?: boolean;
 }) {
@@ -461,7 +489,9 @@ function SkillButton({
         ready
           ? ult
             ? "border-amber-100/90 bg-gradient-to-b from-amber-300 via-amber-500 to-orange-700 shadow-[0_0_14px_rgba(255,190,60,0.65)]"
-            : "border-[#e8c064]/80 bg-gradient-to-b from-[#2c3f6e] to-[#101827] shadow-[inset_0_1px_0_rgba(232,192,100,0.35),0_3px_0_rgba(0,0,0,0.45)]"
+            : ult2
+              ? "border-fuchsia-100/90 bg-gradient-to-b from-fuchsia-400 via-purple-600 to-indigo-900 shadow-[0_0_16px_rgba(200,120,255,0.7)]"
+              : "border-[#e8c064]/80 bg-gradient-to-b from-[#2c3f6e] to-[#101827] shadow-[inset_0_1px_0_rgba(232,192,100,0.35),0_3px_0_rgba(0,0,0,0.45)]"
           : "border-white/20 bg-slate-700/70 opacity-60"
       }`}
       onPointerDown={(e) => {
@@ -481,8 +511,8 @@ function SkillButton({
       ) : (
         children
       )}
-      <span className={`max-w-[42px] truncate text-[7px] font-bold leading-tight sm:max-w-none sm:text-[8px] ${ult ? "text-amber-100" : ""}`}>{label}</span>
-      <span className={`text-[7px] font-bold sm:text-[8px] ${ult ? "text-amber-200" : "text-[#a8c0ff]"}`}>{mp}MP</span>
+      <span className={`max-w-[42px] truncate text-[7px] font-bold leading-tight sm:max-w-none sm:text-[8px] ${ult ? "text-amber-100" : ult2 ? "text-fuchsia-100" : ""}`}>{label}</span>
+      <span className={`text-[7px] font-bold sm:text-[8px] ${ult ? "text-amber-200" : ult2 ? "text-fuchsia-200" : "text-[#a8c0ff]"}`}>{mp}MP</span>
       {cdPct > 0 && (
         <div
           className="pointer-events-none absolute inset-0 bg-black/60"

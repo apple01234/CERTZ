@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { scryptSync, randomBytes, timingSafeEqual } from "node:crypto";
 import type { DbShape, UserRec, ListingRec } from "./ghdb";
+import { ITEMS } from "@/game/data"; // vc146 (#9) — 거래 가능 품목 동적 구성 (gmOnly만 제외)
 
 export const COOKIE = "sertz_auth";
 export const TOKEN_TTL_MS = 30 * 24 * 3600 * 1000; // 30일
@@ -18,11 +19,14 @@ export const ADMIN_USERS = (process.env.SERTZ_ADMIN_USERS || "admin,apple01234")
   .split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
 export const MARKET_FEE_PCT = 10;
 export const MARKET_MAX_LISTINGS = 3;
-/* v1.0.6 계승 — 등록 가능 아이템 화이트리스트(보스 전용 드롭) */
-export const MARKET_LISTABLE = new Set([
-  "bd_guardian", "bd_behemoth", "bd_nidhog", "bd_surt", "bd_fenrir",
-  "bd_skoll", "bd_gram", "bd_abysslord", "bd_abudditos",
-]);
+/* v1.0.6 계승 — 등록 가능 아이템 화이트리스트.
+ *  vc146 (#9) — 유저 지시 "유저 거래소에서 대부분의 물건 거래 가능하게(엘릭서 등 포함)":
+ *  보스 드롭 9종 고정 화이트리스트를 폐지하고, ITEMS 전체에서 GM 전용(gmOnly)만 제외한
+ *  전체 목록을 동적으로 구성한다 — 무기/방어구/장신구/물약/엘릭서/스크롤 등 대부분 등록 가능.
+ *  장착 중(무기/방어구/장신구)·미보유는 ownsListableItem에서 실보유 검증으로 차단 (기존 유지). */
+export const MARKET_LISTABLE: Set<string> = new Set(
+  Object.keys(ITEMS).filter((k) => !ITEMS[k as keyof typeof ITEMS]?.gmOnly)
+);
 
 /* ---------------- CORS (계승: originAllowed + suffixes) ---------------- */
 const CORS_ALLOWED_ORIGINS = new Set([
@@ -173,13 +177,16 @@ export function marketSnapshot(db: DbShape, uid: string | null) {
 
 /** v1.0.6 계승 — 등록자 실보유 검증(클라우드 세이브 owned + 장착 accessories) */
 export function ownsListableItem(db: DbShape, uid: string, itemKey: string): { ok: boolean; error?: string } {
-  if (!MARKET_LISTABLE.has(itemKey)) return { ok: false, error: "보스 전용 드롭(전설)만 등록할 수 있어요" };
+  if (!MARKET_LISTABLE.has(itemKey)) return { ok: false, error: "거래할 수 없는 아이템이에요 (GM 전용 제외 전체 등록 가능)" };
   const save = db.saves[uid]?.data;
   if (!save || typeof save !== "object") return { ok: false, error: "클라우드 세이브 동기화 후 등록할 수 있어요 — 로그인 상태로 잠시 플레이하거나 계정 패널에서 백업해 주세요" };
   const owned = Array.isArray(save.owned) ? save.owned : [];
   if (!owned.includes(itemKey)) return { ok: false, error: "보유하지 않은 아이템은 등록할 수 없어요" };
   const acc = Array.isArray(save.accessories) ? save.accessories : [];
   if (acc.includes(itemKey)) return { ok: false, error: "장착 중인 장비는 해제한 뒤 등록하세요" };
+  /* vc146 (#9) — 무기/방어구 장착 중 등록 차단 (장신구와 동일 정책) */
+  const sv = save as Record<string, unknown>;
+  if (sv.weapon === itemKey || sv.armor === itemKey) return { ok: false, error: "장착 중인 장비는 해제한 뒤 등록하세요" };
   return { ok: true };
 }
 

@@ -46,6 +46,8 @@ class Vfx3DImpl {
   private failed = false;
   private texCache = new Map<string, THREE.Texture>();
   private canvas: HTMLCanvasElement | null = null;
+  private lastW = 0;
+  private lastH = 0;
 
   /** 오버레이 초기화 — Phaser 캔버스 부모에 투명 캔버스 얹기 */
   ensure(gameCanvas: HTMLCanvasElement): boolean {
@@ -74,6 +76,13 @@ class Vfx3DImpl {
     if (!this.renderer || !this.canvas) return;
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
+    /* vc146 (#10 크래시) — 같은 크기면 setSize를 건너뛴다.
+     *  기존엔 sync()에서 매 프레임 setSize를 호출해 그리기 버퍼를 재할당했고, 이 GPU 메모리
+     *  churn이 장시간 플레이 시 탭/앱 크래시("게임이 자꾸 꺼져")의 직접 후보다.
+     *  캔버스 실제 리사이즈 시에만 재할당한다. */
+    if (this.lastW === w && this.lastH === h) return;
+    this.lastW = w;
+    this.lastH = h;
     this.renderer.setSize(w, h, false);
   }
 
@@ -90,13 +99,21 @@ class Vfx3DImpl {
     }
   }
 
-  /** Phaser 카메라와 동기화 — 월드 좌표 → 오버레이 오쏘 좌표 */
+  /** Phaser 카메라와 동기화 — 월드 좌표 → 오버레이 오쏘 좌표
+   *  vc146 (#7 우측 구석 유령 이펙트) — 근본 수정:
+   *  Phaser P4 렌더 변환은 screen = origin + z×(world - scroll - origin)이므로 실제 보이는
+   *  뷰 중심 = scroll + origin×(1 - 1/z) + vw/2. 기존 sync는 보정항 origin×(1-1/z)를 빼먹어
+   *  PC(줌≈2)에서 3D 이펙트가 실제 위치보다 최대 ~(w/2)(1-1/z), (h/2)(1-1/z)px 우하단으로
+   *  어긋났다 — 보스 격파 폭발·수르트 불기둥 등이 "오른쪽 구석"에 떠던 원인. */
   sync(cam: { scrollX: number; scrollY: number; width: number; height: number; zoom: number }) {
     if (!this.ok || !this.renderer) return;
-    const vw = cam.width / cam.zoom;
-    const vh = cam.height / cam.zoom;
-    const cx = cam.scrollX + vw / 2;
-    const cy = cam.scrollY + vh / 2;
+    const z = cam.zoom || 1;
+    const vw = cam.width / z;
+    const vh = cam.height / z;
+    const ox = (cam.width * 0.5) * (1 - 1 / z); // P4 origin 보정 (WorldScene.applyManualCameraFollow와 동일 모델)
+    const oy = (cam.height * 0.5) * (1 - 1 / z);
+    const cx = cam.scrollX + ox + vw / 2;
+    const cy = cam.scrollY + oy + vh / 2;
     this.camera.left = -vw / 2;
     this.camera.right = vw / 2;
     this.camera.top = vh / 2;
@@ -112,17 +129,23 @@ class Vfx3DImpl {
       this.rafId = 0;
       if (!this.ok || !this.renderer) return;
       const now = performance.now();
-      for (const fx of this.live) fx.update(now);
+      /* vc146 (#10) — 개별 이펙트 update 예외가 rAF 체인·렌더를 죽이지 않게 격리 */
+      for (const fx of this.live) {
+        try { fx.update(now); } catch { /* 다음 프레임에 정상 복귀 */ }
+      }
       this.live = this.live.filter((fx) => now < fx.until);
-      this.renderer.render(this.scene, this.camera);
+      try { this.renderer.render(this.scene, this.camera); } catch { /* 컨텍스트 일시 유실 — 무시 */ }
       if (this.live.length > 0) this.rafId = requestAnimationFrame(loop);
     };
     this.rafId = requestAnimationFrame(loop);
   }
 
-  /** 프리셋 스폰 — x/y는 Phaser 월드 좌표, tint는 0xRRGGBB */
+  /** 프리셋 스폰 — x/y는 Phaser 월드 좌표, tint는 0xRRGGBB
+   *  vc146 (#7 방어) — 유한 좌표 가드: 파괴된 엔티티의 NaN 좌표로 스폰되면
+   *  화면 구석에 유령 이펙트가 뜨는 것을 원천 차단 */
   spawn(kind: Preset, x: number, y: number, tint = TINT, scale = 1) {
     if (!this.ok) return;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     if (this.live.length >= MAX_LIVE) return;
     const now = performance.now();
     const dur = kind === "boom" ? 900 : kind === "pillar" ? 700 : kind === "ring" ? 800 : 1000;
@@ -247,6 +270,8 @@ class Vfx3DImpl {
     this.renderer = null;
     this.canvas?.remove();
     this.canvas = null;
+    this.lastW = 0;
+    this.lastH = 0;
     this.texCache.clear();
   }
 }

@@ -12,6 +12,7 @@ export type GameAction =
   | "skill3"
   | "skill4"
   | "skill5"
+  | "skill5b"
   | "potHp"
   | "potMp"
   | "interact"
@@ -40,6 +41,8 @@ export const DEFAULT_KEYMAP: KeyMap = {
   skill3: "V",
   skill4: "A",
   skill5: "S",
+  /* vc146 (#2) — 제2궁극기 기본 Q (Z X C V + A S D F 클러스터 인접 · 미사용 키) */
+  skill5b: "Q",
   potHp: "D",
   potMp: "F",
   interact: "E",
@@ -64,6 +67,7 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   skill3: "스킬 3 (3차기)",
   skill4: "스킬 4 (4차기)",
   skill5: "스킬 5 (궁극기 · Lv.200)",
+  skill5b: "스킬 6 (제2궁극기 · 쿨 2분)",
   potHp: "HP 물약",
   potMp: "MP 물약",
   interact: "대화/상호작용",

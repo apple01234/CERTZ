@@ -173,6 +173,7 @@ export default function GameRoot() {
                   s3Name={skills.s3Name}
                   s4Name={skills.s4Name}
                   s5Name={skills.s5Name}
+                  s5bName={skills.s5bName}
                   canAutoHunt={rpg.canAutoHunt}
                   autoHunt={rpg.autoHunt}
                 />

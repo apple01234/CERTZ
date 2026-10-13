@@ -276,7 +276,7 @@ export function netSendChat(text: string) {
 
 export type NetAction = {
   id?: string; // 서버가 채움 (보낸 사람 sock id)
-  kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5";
+  kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5" | "s5b"; // vc146 — s5b = 제2궁극기
   x: number;
   y: number;
   flip: boolean;

@@ -224,7 +224,8 @@ export const CHAPTERS: ChapterSpec[] = [
     repeat: { need: 16, gold: Math.round(70 * G), exp: 70, title: "[반복] 늑대 토벌 의뢰", desc: "마을 토벌 의뢰 — 늑대를 계속 사냥해 골드와 경험치를 얻자." },
     /* v1.4.3 (작업2) — enter 3→1: 신규 유저가 마을에서 1-1로 바로 나갈 수 있게 완화.
      *  기존 Lv3 게이트가 시작 지점을 막아버리는 교착(레벨 올릴 곳 부재)의 핵심 원인.
-     *  대신 마을 훈련장+초보 퀘스트로 자연스러운 1→3 루트를 제공하고, mid 게이트(구역4·Lv5)는 유지. */
+     *  대신 마을 훈련장+초보 퀘스트로 자연스러운 1→3 루트를 제공하고, mid 게이트(구역4·Lv5)는 유지.
+     *  vc146 (#8) — 첫 진입 교착 방지분(enter 1·mid 5)만 유지 — 나머지 챕터는 전부 상향 */
     lvGate: { enter: 1, mid: 5 },
   },
   {
@@ -241,7 +242,8 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 7, dialogue: "swampDone", quest: { id: "k3", type: "hunt", title: "왕국의 위협 제거", desc: "능지의 어둠이 짙어진다 — 능대 25마리를 처치해라!", need: 25, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(170 * G), expReward: 160 } },
     ],
     repeat: { need: 20, gold: Math.round(100 * G), exp: 100, title: "[반복] 늪지 정화 의뢰", desc: "쿠소디아 기사단 의뢰 — 능대를 계속 사냥해라." },
-    lvGate: { enter: 8, mid: 10 },
+    /* vc146 (#8) — 챕터 레벨 제한 상향 (유저 지시 "챕터마다 레벨 제한이 너무 작음"): 8→12/15 */
+    lvGate: { enter: 12, mid: 15 },
   },
   {
     key: "alfheim", num: 4, title: "알프헤임", subtitle: "요정의 성전 · 빛의 결정",
@@ -256,7 +258,8 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 6, dialogue: "minionPurgeDone", quest: { id: "a2", type: "hunt", title: "성전 지키기", desc: "니드호그를 부르는 의식을 막자 — 하수인 80마리 처치!", need: 80, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(400 * G), expReward: 370 } },
     ],
     repeat: { need: 20, gold: Math.round(95 * G), exp: 95, title: "[반복] 성전 순찰 의뢰", desc: "요정 여왕의 의뢰 — 하수인을 계속 처치해 훈련해라." },
-    lvGate: { enter: 14, mid: 16 },
+    /* vc146 (#8) — 챕터 레벨 제한 상향: 14→22/26 */
+    lvGate: { enter: 22, mid: 26 },
   },
   {
     key: "muspelheim", num: 5, title: "무스펠헤임", subtitle: "극열의 해역 · 화산 지대",
@@ -272,7 +275,8 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 7, dialogue: "spiritPurgeDone", quest: { id: "m3", type: "hunt", title: "호족촌 구원", desc: "엘렌을 도와 — 지하도시를 노리는 화염 정령 120마리를 처치해라!", need: 120, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(1060 * G), expReward: 960 } },
     ],
     repeat: { need: 20, gold: Math.round(130 * G), exp: 130, title: "[반복] 화산 지대 순찰 의뢰", desc: "호족촌 의뢰 — 불꽃 늑대를 계속 사냥해라." },
-    lvGate: { enter: 20, mid: 23 },
+    /* vc146 (#8) — 챕터 레벨 제한 상향: 20→34/39 */
+    lvGate: { enter: 34, mid: 39 },
   },
   {
     key: "niflheim", num: 6, title: "니플헤임", subtitle: "극한의 해역 · 얼음의 성전",
@@ -288,7 +292,8 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 7, dialogue: "frostRoutDone", quest: { id: "n3", type: "hunt", title: "설원 정화", desc: "펜리르의 권속인 서리 늑대 130마리를 처치해라!", need: 130, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(910 * G), expReward: 820 } },
     ],
     repeat: { need: 24, gold: Math.round(145 * G), exp: 145, title: "[반복] 설원 순찰 의뢰", desc: "니플헤임 정찰 의뢰 — 서리 늑대를 계속 사냥해라." },
-    lvGate: { enter: 27, mid: 30 },
+    /* vc146 (#8) — 챕터 레벨 제한 상향: 27→48/54 */
+    lvGate: { enter: 48, mid: 54 },
   },
   {
     key: "cave", num: 7, title: "스바르트알프헤임", subtitle: "어둠 요정들의 해역 · 수정 광맥",
@@ -305,7 +310,8 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 8, dialogue: "", quest: { id: "c4", type: "collect", title: "여왕의 두 번째 부탁", desc: "어둠 요정 여왕의 마지막 부탁 — 뿌리 사이의 잔광을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(70 * G), expReward: 70 } },
     ],
     repeat: { need: 20, gold: Math.round(115 * G), exp: 115, title: "[반복] 지하 정화 의뢰", desc: "어둠 요정 여왕의 의뢰 — 거미를 계속 사냥해라." },
-    lvGate: { enter: 34, mid: 38 },
+    /* vc146 (#8) — 챕터 레벨 제한 상향: 34→64/70 */
+    lvGate: { enter: 64, mid: 70 },
   },
   {
     key: "nidavellir", num: 8, title: "니다벨리르", subtitle: "난쟁이들의 해역 · 룬 광산",
@@ -321,7 +327,8 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 8, dialogue: "", quest: { id: "d3", type: "hunt", title: "수정 골렘 정리", desc: "광산을 어지럽히는 수정 골렘 120기를 부수자.", need: 120, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(2640 * G), expReward: 2400 } },
     ],
     repeat: { need: 20, gold: Math.round(150 * G), exp: 150, title: "[반복] 광산 경비 의뢰", desc: "난쟁이 광산 조합 의뢰 — 룬 골렘을 계속 처치해라." },
-    lvGate: { enter: 42, mid: 46 },
+    /* vc146 (#8) — 챕터 레벨 제한 상향: 42→84/92 */
+    lvGate: { enter: 84, mid: 92 },
   },
   {
     key: "hel", num: 9, title: "헬", subtitle: "절벽 너머의 해역 · 대전쟁의 땅",
@@ -337,7 +344,8 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 7, dialogue: "", quest: { id: "h3", type: "hunt", title: "심연 유령 소탕", desc: "힐다 할머니의 조사 일지를 지키는 심연 유령 160마리를 처치해라.", need: 160, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(2990 * G), expReward: 2770 } },
     ],
     repeat: { need: 20, gold: Math.round(175 * G), exp: 175, title: "[반복] 절벽 정찰 의뢰", desc: "헬의 기운이 강해지고 있다 — 하운드를 계속 처치해라." },
-    lvGate: { enter: 50, mid: 54 },
+    /* vc146 (#8) — 챕터 레벨 제한 상향: 50→104/114 */
+    lvGate: { enter: 104, mid: 114 },
   },
   {
     key: "abyss", num: 10, title: "세계수의 뿌리", subtitle: "심연의 근원 · 종언의 왕좌",
@@ -352,7 +360,8 @@ export const CHAPTERS: ChapterSpec[] = [
       { sub: 6, dialogue: "wraithDone", quest: { id: "y2", type: "hunt", title: "왕좌 앞길 열기", desc: "심연 유령 200마리를 처치해 왕좌의 문을 열어라!", need: 200, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(1920 * G), expReward: 1760 } },
     ],
     repeat: { need: 24, gold: Math.round(165 * G), exp: 165, title: "[반복] 뿌리 정찰 의뢰", desc: "뿌리의 기운이 강해지고 있다 — 유령을 계속 처치해라." },
-    lvGate: { enter: 58, mid: 62 },
+    /* vc146 (#8) — 챕터 레벨 제한 상향: 58→126/136 */
+    lvGate: { enter: 126, mid: 136 },
   },
 ];
 

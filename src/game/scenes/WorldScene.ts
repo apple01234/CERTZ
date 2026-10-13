@@ -313,6 +313,10 @@ export class WorldScene extends Phaser.Scene {
   private dojangFrom: StageKey = "village";
   private dojangText: Phaser.GameObjects.Text | null = null;
   private dojangTextAcc = 0;
+  /* vc146 (#6) — 무릉도장 실시간 피해량: 최근 3초 롤링 DPS + 최고 일격 */
+  private dojangRecent: { t: number; v: number }[] = [];
+  private dojangMaxHit = 0;
+  private dojangDps = 0;
   /* ================= v4.0.0 — 바르가 업데이트 상태 ================= */
   /* 게이트 디펜스 (웨이브) */
   private gateActive = false;
@@ -826,6 +830,9 @@ export class WorldScene extends Phaser.Scene {
     this.dojangFrom = "village";
     this.dojangText = null;
     this.dojangTextAcc = 0;
+    this.dojangRecent = [];
+    this.dojangMaxHit = 0;
+    this.dojangDps = 0;
     /* v4.0.0 — 게이트/균열 던전 상태 리셋 */
     this.gateActive = false;
     this.gateWave = 0;
@@ -1094,6 +1101,9 @@ export class WorldScene extends Phaser.Scene {
        *  유저 지시 Toon Shaders Pro 재현 — localStorage sertz_toon으로 on/off, 저사양 자동 해제. */
       if (toonEnabled() && !isLowPerfEnv()) this.toonCamFilters = applyToonCamera(this.cameras.main);
     }
+    /* vc146 (#5) — 2.5D 카메라 초기화 (심도 안개 + y-depth 정렬. 설정에서 끌 수 있음) */
+    this.perspOn = this.loadPerspSetting();
+    if (this.perspOn) this.buildPerspFog();
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
     this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
     if (savedPlayer) {
@@ -1831,6 +1841,16 @@ export class WorldScene extends Phaser.Scene {
   /* v5.0.1 — 맵전환·보스 인트로 팬(pan) 시네마틱 중 수동 추적 보류 플래그 */
   private camCinema = false;
 
+  /* ================= vc146 (#5) — 2.5D 카메라 (의사 원근) =================
+   *  유저 지시 "카메라를 약간 2,5D 느낌으로". 3요소:
+   *   ① 시점 상승 — 캐릭터가 화면 중심보다 ~9% 아래에 앉는 JRPG 프레이밍 (전방 시야 확보)
+   *   ② y-depth 정렬 — 아래(가까운) 엔티티가 위(먼) 엔티티 앞을 가린다 (depth 9~10 밴드 내 보간)
+   *   ③ 심도 안개 — 화면 상단에 미묘한 청보라 안개 그라데이션 (대기 원근감)
+   *  localStorage "sertz_persp" 토글 (기본 켬) · 설정 패널에서 끔/켬 */
+  perspOn = true;
+  private perspFog: Phaser.GameObjects.Image | null = null;
+  private perspDepthAcc = 0;
+
   /* v5.0.1 — 카메라 수동 추적: update에서 매 프레임 스크롤을 직접 계산한다.
    *  [배경] Phaser 4.2.1 preRender follow는 desired scroll을 follow.x - width/2로 계산(줌 미반영)하고
    *  clampX 특이 공식과 맞물려 줌>1에서 캐릭터가 화면 가장자리에 붙거나(v4.10.0 이전 87% 고정)
@@ -1846,9 +1866,12 @@ export class WorldScene extends Phaser.Scene {
     const z = cam.zoom || 1;
     const vw = cam.width / z;
     const vh = cam.height / z;
+    /* vc146 (#5) — 2.5D 시점 상승: 시야 중심을 캐릭터 위로 ~9% 올려 캐릭터가 화면 하단부에
+     *  앉는 JRPG 프레이밍 (토글 끄면 기존 정중앙 추적 유지) */
+    const lift = this.perspOn ? vh * 0.09 : 0;
     /* 원하는 뷰 좌상단(월드): 캐릭터 화면 정중앙 + 맵≥뷰 가장자리 밀착 + 맵<뷰 중앙 고정 */
     const vx = this.stageW > vw ? Phaser.Math.Clamp(this.player.x - vw / 2, 0, this.stageW - vw) : (this.stageW - vw) / 2;
-    const vy = this.stageH > vh ? Phaser.Math.Clamp(this.player.y - vh / 2, 0, this.stageH - vh) : (this.stageH - vh) / 2;
+    const vy = this.stageH > vh ? Phaser.Math.Clamp(this.player.y - lift - vh / 2, 0, this.stageH - vh) : (this.stageH - vh) / 2;
     /* P4 렌더 보정: screen = origin + z×(world - scroll - origin)
      *  → 뷰 좌상단 = scroll + origin×(1-1/z) → scroll = 뷰좌상단 - origin×(1-1/z) */
     const shx = (cam.width * 0.5) * (1 - 1 / z);
@@ -1875,6 +1898,80 @@ export class WorldScene extends Phaser.Scene {
    *  팬 시네마틱 중엔 camCinema로 보류. 앱(줌 1)은 shift=0이라 기존 체감과 동일. */
   private setupCameraClampFix() {
     this.cameras.main.useBounds = false;
+  }
+
+  /* ================= vc146 (#5) — 2.5D 카메라 구현부 ================= */
+
+  /** 2.5D 설정 로드 — localStorage "sertz_persp" (기본 켬) */
+  private loadPerspSetting(): boolean {
+    try { return window.localStorage.getItem("sertz_persp") !== "0"; } catch { return true; }
+  }
+
+  /** 심도 안개 오버레이 — 화면 상단 24%에 청보라 그라데이션 (대기 원근감). 스크린 고정 · 포인터 비차단 */
+  private buildPerspFog() {
+    if (!this.textures.exists("persp_fog")) {
+      try {
+        const c = document.createElement("canvas");
+        c.width = 32;
+        c.height = 128;
+        const g = c.getContext("2d");
+        if (!g) return;
+        const grad = g.createLinearGradient(0, 0, 0, 128);
+        grad.addColorStop(0, "rgba(12,10,30,0.85)");
+        grad.addColorStop(0.55, "rgba(12,10,30,0.28)");
+        grad.addColorStop(1, "rgba(12,10,30,0)");
+        g.fillStyle = grad;
+        g.fillRect(0, 0, 32, 128);
+        this.textures.addCanvas("persp_fog", c);
+      } catch { /* Canvas 미지원 무시 */ }
+    }
+    if (!this.textures.exists("persp_fog")) return;
+    this.perspFog?.destroy();
+    const cam = this.cameras.main;
+    this.perspFog = this.add
+      .image(cam.width / 2, 0, "persp_fog")
+      .setScrollFactor(0)
+      .setDepth(88)
+      .setOrigin(0.5, 0)
+      .setDisplaySize(cam.width, cam.height * 0.24)
+      .setAlpha(0.5);
+  }
+
+  /** 매 프레임(80ms 스로틀) — y-depth 정렬 + 안개 크기 유지 */
+  private tickPersp(dt: number) {
+    this.perspDepthAcc += dt;
+    if (this.perspDepthAcc < 80) return;
+    this.perspDepthAcc = 0;
+    if (!this.perspOn) return;
+    const h = Math.max(1, this.stageH);
+    const dOf = (y: number) => 9 + Phaser.Math.Clamp(y / h, 0, 1);
+    if (this.player?.active) this.player.setDepth(dOf(this.player.y));
+    for (const e of this.enemies) if (e.active) e.setDepth(dOf(e.y));
+    if (this.boss?.active) this.boss.setDepth(dOf(this.boss.y));
+    for (const r of this.remotes.values()) if (r.sp?.active) r.sp.setDepth(dOf(r.sp.y));
+    if (this.perspFog?.scene) {
+      const cam = this.cameras.main;
+      this.perspFog.setX(cam.width / 2);
+      this.perspFog.setDisplaySize(cam.width, cam.height * 0.24);
+    }
+  }
+
+  /** 2.5D 토글 적용 (설정 패널 → fx:changed 공용 이벤트에서 호출) */
+  private applyPerspSetting() {
+    const next = this.loadPerspSetting();
+    if (next === this.perspOn) return;
+    this.perspOn = next;
+    if (next) {
+      this.buildPerspFog();
+    } else {
+      this.perspFog?.destroy();
+      this.perspFog = null;
+      // 기존 고정 depth로 복원
+      if (this.player?.active) this.player.setDepth(10);
+      for (const e of this.enemies) if (e.active) e.setDepth(9);
+      if (this.boss?.active) this.boss.setDepth(11);
+      for (const r of this.remotes.values()) if (r.sp?.active) r.sp.setDepth(9);
+    }
   }
 
   private applyFollowZoomOffset() {
@@ -4614,16 +4711,25 @@ export class WorldScene extends Phaser.Scene {
     this.dojangActive = true;
     this.dojangScore = 0;
     this.dojangEndsAt = this.time.now + 90000;
+    this.dojangRecent = [];
+    this.dojangMaxHit = 0;
+    this.dojangDps = 0;
     this.dojangTextAcc = 0;
     this.showBanner("무릉도장 입장! 90초 동안 허수아비에게 최대 피해를 기록하라");
   }
 
-  /** 허수아비 피해 누적 — Enemy.takeDamage(dummy)에서 호출 */
+  /** 허수아비 피해 누적 — Enemy.takeDamage(dummy)에서 호출.
+   *  vc146 (#6) — 최고 일격 + 최근 3초 로그까지 기록해 실시간 DPS 계산의 재료로 쓴다 */
   addDojangScore(v: number) {
-    if (this.dojangActive) this.dojangScore += v;
+    if (!this.dojangActive) return;
+    this.dojangScore += v;
+    if (v > this.dojangMaxHit) this.dojangMaxHit = v;
+    this.dojangRecent.push({ t: this.time.now, v });
+    while (this.dojangRecent.length > 0 && this.time.now - this.dojangRecent[0].t > 3000) this.dojangRecent.shift();
   }
 
-  /** 무릉도장 진행 (update에서 매 프레임 — UI는 100ms 스로틀) */
+  /** 무릉도장 진행 (update에서 매 프레임 — UI는 100ms 스로틀)
+   *  vc146 (#6) — 화면에 피해량을 실시간 표시: 누적 · 롤링 DPS(최근 3초) · 최고 일격 */
   private tickDojang(dt: number) {
     /* v4.1.0 — 화면 고정 UI는 카메라 뷰 기준 중앙 유지 (리사이즈/줌 대응) */
     this.dojangText?.setX(this.cameras.main.width / 2);
@@ -4631,8 +4737,13 @@ export class WorldScene extends Phaser.Scene {
     if (this.dojangTextAcc >= 100) {
       this.dojangTextAcc = 0;
       const remain = Math.max(0, this.dojangEndsAt - this.time.now);
+      const now = this.time.now;
+      while (this.dojangRecent.length > 0 && now - this.dojangRecent[0].t > 3000) this.dojangRecent.shift();
+      const recentSum = this.dojangRecent.reduce((s, r) => s + r.v, 0);
+      const dps = Math.round(recentSum / 3);
+      this.dojangDps = dps;
       this.dojangText?.setText(
-        `무릉도장  ${Math.ceil(remain / 1000)}초  |  기록: ${this.dojangScore.toLocaleString()}`
+        `무릉도장  ${Math.ceil(remain / 1000)}초   |   누적 ${this.dojangScore.toLocaleString()}   |   DPS ${dps.toLocaleString()}   |   최고 일격 ${this.dojangMaxHit.toLocaleString()}`
       );
     }
     if (this.time.now >= this.dojangEndsAt) this.finishDojang(false);
@@ -4643,6 +4754,8 @@ export class WorldScene extends Phaser.Scene {
     if (!this.dojangActive) return;
     this.dojangActive = false;
     const score = this.dojangScore;
+    const dps = this.dojangDps;
+    const maxHit = this.dojangMaxHit;
     const KEY = "sertz.dojang.best";
     let best = 0;
     try { best = Number(localStorage.getItem(KEY) ?? "0") || 0; } catch { best = 0; }
@@ -4659,6 +4772,7 @@ export class WorldScene extends Phaser.Scene {
       title: early ? "무릉도장 — 훈련 중단" : "무릉도장 — 훈련 종료!",
       lines: [
         { text: `누적 피해: ${score.toLocaleString()}`, color: "#ffe66a" },
+        { text: `종료 직전 DPS: ${dps.toLocaleString()} · 최고 일격: ${maxHit.toLocaleString()}`, color: "#a8ecff" },
         { text: record ? "신기록 달성!" : `최고 기록: ${Math.max(best, score).toLocaleString()}`, color: record ? "#7dffa8" : "#a8ecff" },
         { text: reward > 0 ? `훈련 보상 +${reward.toLocaleString()} G` : "보상 없음 — 더 세게 때려라!", color: "#ffd76a" },
       ] satisfies RewardPopupState["lines"],
@@ -6358,6 +6472,7 @@ export class WorldScene extends Phaser.Scene {
     p.fifth = true;
     p.healFull();
     p.skill5Cd = 0;
+    p.skill5bCd = 0; // vc146 — 제2궁극기 쿨 리셋
     audio.sfx.levelup();
     this.spawnLevelUpFx(p.x, p.y);
     this.spawnPillar(p.x, p.y, 0xffe66a, 300);
@@ -7370,6 +7485,7 @@ export class WorldScene extends Phaser.Scene {
     const onS3 = () => this.player?.useSkill3();
     const onS4 = () => this.player?.useSkill4();
     const onS5 = () => this.player?.useSkill5(); // v3.2.0 — 궁극기 (모바일 버튼 공용)
+    const onS5b = () => this.player?.useSkill5b(); // vc146 (#2) — 제2궁극기 (쿨 2분)
     const onRespawn = () => this.respawnPlayer();
     const onDialogueDone = () => this.resumeFromDialogue();
     /* vc143 (#10) — 선택형 대화 (보스전 퇴장 관리인) */
@@ -8215,6 +8331,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("input:skill3", onS3);
     EventBus.on("input:skill4", onS4);
     EventBus.on("input:skill5", onS5);
+    EventBus.on("input:skill5b", onS5b); // vc146 (#2)
     EventBus.on("input:interact", onInteract);
     EventBus.on("name:set", onNameSet);
     EventBus.on("keymap:changed", onKeymapChanged);
@@ -8759,6 +8876,8 @@ export class WorldScene extends Phaser.Scene {
         this.toonCamFilters = applyToonCamera(this.cameras.main); // 강도 0이면 내부에서 null — 자동 해제
         if (loadFx().intensity > 0) this.ambientFilters = addAmbientBloom(this.cameras.main);
       }
+      /* vc146 (#5) — 2.5D 카메라 토글도 동일 이벤트로 즉시 반영 */
+      this.applyPerspSetting();
     };
     EventBus.on("fx:changed", onFxChanged as never);
     /* ================= vc142 (#3) — 1:1 플레이어 거래 ================= */
@@ -8863,6 +8982,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("input:skill3", onS3);
       EventBus.off("input:skill4", onS4);
       EventBus.off("input:skill5", onS5);
+      EventBus.off("input:skill5b", onS5b); // vc146 (#2)
       EventBus.off("input:interact", onInteract);
       EventBus.off("name:set", onNameSet);
       EventBus.off("keymap:changed", onKeymapChanged);
@@ -8966,6 +9086,9 @@ export class WorldScene extends Phaser.Scene {
     /* v5.0.1 — 카메라 수동 추적 (엔진 follow 폐지 — applyManualCameraFollow 주석 참조).
      *  대화 중에도 갱신 — 내부에서 camCinema(팬 시네마틱)만 존중 */
     this.applyManualCameraFollow(dt);
+
+    /* vc146 (#5) — 2.5D 카메라: y-depth 정렬 + 심도 안개 유지 (80ms 스로틀) */
+    this.tickPersp(dt);
 
     /* v1.4.0 (Task 3-2) — 이스터에그 600ms 틱 — v1.4.11 제거 (eggs.ts 삭제와 세트) */
 
@@ -9147,6 +9270,8 @@ export class WorldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill4"))) this.player.useSkill4();
     /* v3.2.0 — 5차 궁극기(S): Lv.200 해금, 쿨타임 60초 (v1.0.4 키맵 N→S) */
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5"))) this.player.useSkill5();
+    /* vc146 (#2) — 제2궁극기(Q 기본·재배치 가능): 쿨타임 120초 */
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5b"))) this.player.useSkill5b();
 
     // 수면 연출 중 — 입력 봉인 (v2.2)
     if (this.sleeping) {
@@ -10101,7 +10226,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** 슬롯 배율 — 상위 슬롯일수록 크게 (로컬 강화 연출 비례) */
   private remoteSlotScale(kind: string): number {
-    return kind === "s5" ? 1.9 : kind === "s4" ? 1.55 : kind === "s3" ? 1.3 : kind === "s2" ? 1.1 : 1.0;
+    return kind === "s5" || kind === "s5b" ? 1.9 : kind === "s4" ? 1.55 : kind === "s3" ? 1.3 : kind === "s2" ? 1.1 : 1.0; // vc146 — s5b = 제2궁극기(s5급 연출)
   }
 
   /** 원격 확산 링 — 보조 악센트 공용 */
@@ -10160,18 +10285,18 @@ export class WorldScene extends Phaser.Scene {
     this.time.delayedCall(delay, () => this.spawnPillar(x, y, hex, height));
   }
 
-  private playRemoteSkillFx(kind: "s1" | "s2" | "s3" | "s4" | "s5", cls: string | null, x: number, y: number, flip: boolean, hex: number, fam: FamilyKey | null) {
+  private playRemoteSkillFx(kind: "s1" | "s2" | "s3" | "s4" | "s5" | "s5b", cls: string | null, x: number, y: number, flip: boolean, hex: number, fam: FamilyKey | null) {
     const s = this.remoteSlotScale(kind);
     const face = flip ? 1 : -1;
     const ang = flip ? 0 : Math.PI; // 수평 조준각 (netFacingFlip: 오른쪽=true)
     /* 슬롯별 스킬 종류 리졸브 — 로컬과 동일 규칙 */
-    const k1 = kind === "s1" || kind === "s5" ? resolveSkill1Of(cls) : null;
+    const k1 = kind === "s1" || kind === "s5" || kind === "s5b" ? resolveSkill1Of(cls) : null;
     const k2 = kind === "s2" ? resolveSkill2Of(cls) : null;
     const k3 = kind === "s3" ? (cls ? SKILL3_KIND[cls as ClassKey] : undefined) : undefined;
     const k4 = kind === "s4" ? (cls ? SKILL4_KIND[cls as ClassKey] : undefined) : undefined;
 
-    /* ---------- 5차 궁극기 — 계열별 대연출 (s5) ---------- */
-    if (kind === "s5") {
+    /* ---------- 5차 궁극기 — 계열별 대연출 (s5·vc146 s5b 제2궁극기 공용) ---------- */
+    if (kind === "s5" || kind === "s5b") {
       try { this.cameras.main.flash(140, 220, 200, 255); } catch { /* 무시 */ }
       this.doShake(260, 0.005);
       if (fam === "ranger") {
@@ -13008,6 +13133,11 @@ export class WorldScene extends Phaser.Scene {
       s5Unlocked: this.player.skill5Unlocked,
       s5Name: this.player.skill5Name,
       s5Icon: "/assets/skillicon/ultimate_s5.webp",
+      /* vc146 (#2) — 제2궁극기 (Lv.200 · 쿨 120초) */
+      s5bCd: Math.round(this.player.skill5bCd),
+      s5bMax: this.player.skill5bMax,
+      s5bUnlocked: this.player.skill5bUnlocked,
+      s5bName: this.player.skill5bName,
       /* v2.5 — 계열별 스킬 라벨 (기본공격 포함 3슬롯 교체 표기) */
       atkName: this.player.attackName,
       s1Name: this.player.skill1Name,

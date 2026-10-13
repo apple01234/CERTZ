@@ -333,7 +333,7 @@ class MqttBusImpl implements MqttBus {
     }
     if (k === "act") {
       const kind = String(m.kind ?? "");
-      if (!["atk", "s1", "s2", "s3", "s4", "s5"].includes(kind)) return;
+      if (!["atk", "s1", "s2", "s3", "s4", "s5", "s5b"].includes(kind)) return;
       this.fire("act", {
         id: pid,
         kind,
@@ -402,7 +402,7 @@ class MqttBusImpl implements MqttBus {
       case "act": {
         const a = (args[0] ?? {}) as Record<string, unknown>;
         const kind = String(a.kind ?? "");
-        if (!["atk", "s1", "s2", "s3", "s4", "s5"].includes(kind)) return;
+        if (!["atk", "s1", "s2", "s3", "s4", "s5", "s5b"].includes(kind)) return;
         /* 도폭 방지 250ms 스로틀 */
         const now = Date.now();
         if (now - this.lastSentAt < 250 && this.lastActKind === kind) return;

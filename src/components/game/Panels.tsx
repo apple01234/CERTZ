@@ -984,7 +984,7 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
             <img src="/assets/item_ring_guard.webp" alt="" className="h-8 w-8" style={{ imageRendering: "pixelated" }} />
             <div>
               <p className="text-sm font-black text-teal-200">유저 거래소</p>
-              <p className="text-[10px] text-white/60">보스 전용 드롭은 여기서만 사고팔 수 있어요</p>
+              <p className="text-[10px] text-white/60">보유 대부분의 아이템(엘릭서·장비 등)을 골드로 사고팔아요</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1149,10 +1149,27 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
     return () => { clearTimeout(t); EventBus.off("auth:changed", onAuth); };
   }, []);
 
-  /* 등록 가능: 보유 전설 중 미등록·미장착 — v1.0.3 mk/listings 전 접근을 ?./?? 로 방어 */
+  /* 등록 가능: 보유 전설 중 미등록·미장착 — v1.0.3 mk/listings 전 접근을 ?./?? 로 방어
+   *  vc146 (#9) — 보스 드롭 9종 → GM 전용(gmOnly) 제외 전체 보유 품목으로 확대
+   *  (무기/방어구/장신구/물약/엘릭서/스크롤 등 — 서버 MARKET_LISTABLE과 동일 규칙).
+   *  장착 중(무기·방어구·장신구)·이미 등록한 품목은 제외. 전설 정렬 후 가나다. */
   const listings = mk?.listings ?? [];
   const mineKeys = listings.filter((l) => l.mine).map((l) => l.itemKey);
-  const listable = TRADE_STOCK.filter((k) => rpg.owned.includes(k) && !mineKeys.includes(k) && !rpg.accessories.includes(k));
+  const equippedSet = new Set<string>([rpg.weapon, rpg.armor, ...rpg.accessories]);
+  const listable = Array.from(new Set(rpg.owned))
+    .filter((k) => {
+      const it = ITEMS[k as ItemKey];
+      if (!it || it.gmOnly) return false;
+      if (mineKeys.includes(k)) return false;
+      if (equippedSet.has(k)) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const ta = ITEMS[a as ItemKey].tier, tb = ITEMS[b as ItemKey].tier;
+      const ord = { legend: 0, epic: 1, rare: 2, common: 3 } as Record<string, number>;
+      if (ord[ta] !== ord[tb]) return ord[ta] - ord[tb];
+      return ITEMS[a as ItemKey].name.localeCompare(ITEMS[b as ItemKey].name, "ko");
+    });
   const slotsLeft = (mk?.maxListings ?? 3) - mineKeys.length;
 
   const doList = async (key: string, up: number) => {
@@ -1249,19 +1266,20 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
       </div>
 
       {/* 등록 섹션 */}
-      <p className="text-[11px] font-bold text-white/50">내 전설 등록 — 판매 ({slotsLeft}칸 남음 · 최대 {mk?.maxListings ?? 3})</p>
+      <p className="text-[11px] font-bold text-white/50">내 보유 아이템 등록 — 판매 ({slotsLeft}칸 남음 · 최대 {mk?.maxListings ?? 3})</p>
       {listable.length === 0 ? (
         <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/40">
-          등록 가능한 전설이 없어요 — 보스 전용 드롭을 획득하거나, 장착 중인 장비는 해제하세요
+          등록 가능한 아이템이 없어요 — 보유 아이템을 획듭하거나, 장착 중인 장비는 해제하세요
         </p>
       ) : slotsLeft <= 0 ? (
         <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/40">등록 칸이 가득 찼어요 — 판매/취소 후 다시 등록하세요</p>
       ) : (
-        <div className="flex max-h-[22vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
+        <div className="flex max-h-[30vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
           {listable.map((k) => {
             const item = ITEMS[k];
             const up = rpg.accUp?.[k] ?? 0;
-            const defPrice = (TRADE_PRICES[k] ?? 8) * 5000;
+            /* vc146 (#9) — 권장가: 보스 드롭은 기존 시세 ×5000, 일반 품목은 상점가 기반 */
+            const defPrice = TRADE_PRICES[k] ? TRADE_PRICES[k] * 5000 : Math.max(50, Math.round((item.price || 10) * 6));
             return (
               <div key={k} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
                 <ItemIcon icon={item.icon} tier={item.tier} />
@@ -4434,6 +4452,36 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
                 <button
                   key={String(o.on)}
                   onClick={() => EventBus.emit("rpg:toon", {})}
+                  className={`rounded-md border-2 px-1 py-1.5 text-[11px] font-black transition ${active ? o.css : "border-white/15 bg-black/40 text-white/55 hover:border-white/40"}`}
+                >
+                  {o.label}{active ? " ✓" : ""}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* vc146 (#5) — 2.5D 카메라 토글 (의사 원근: 시점 상승 + y-depth 정렬 + 심도 안개) */}
+        <div className="mt-2 rounded-lg border border-violet-300/25 bg-violet-400/[0.06] px-2.5 py-2.5">
+          <p className="text-[12px] font-black text-violet-200">2.5D 카메라 (의사 원근)</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/50">
+            시점이 살짝 위로 올라가 캐릭터가 화면 하단에 앉고, 아래쪽(가까운) 오브젝트가 위쪽(먼)
+            오브젝트를 가리며, 화면 위쪽에 미묘한 심도 안개가 깔립니다. 끄면 기존 정면 시점.
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            {([
+              { on: true, label: "켬 (기본)", css: "border-violet-300/70 bg-violet-500/20 text-violet-200" },
+              { on: false, label: "끔", css: "border-amber-300/70 bg-amber-500/20 text-amber-200" },
+            ] as const).map((o) => {
+              const cur = (() => { try { return window.localStorage.getItem("sertz_persp") !== "0"; } catch { return true; } })();
+              const active = cur === o.on;
+              return (
+                <button
+                  key={String(o.on)}
+                  onClick={() => {
+                    try { window.localStorage.setItem("sertz_persp", o.on ? "1" : "0"); } catch { /* 무시 */ }
+                    EventBus.emit("fx:changed", {}); // 월드 씬 즉시 재적용 (툰/앰비언트 재부착 포함)
+                  }}
                   className={`rounded-md border-2 px-1 py-1.5 text-[11px] font-black transition ${active ? o.css : "border-white/15 bg-black/40 text-white/55 hover:border-white/40"}`}
                 >
                   {o.label}{active ? " ✓" : ""}
