@@ -4217,3 +4217,8 @@ Stage Summary:
 - vc151 = 시련의탑 개편(20마리 캡·초당 5마리·층 동시 상승 차단) + 릴리스 체인 정상화(손상된 v1.0.5-beta 의존 제거)
 - 유저 테스트 포인트: ①탑 입장 → 스폰이 초당 5마리로 착착 찍히는지 ②광역기로 잡몹 한 번에 쓸어도 층이 1개씩만 오르는지 ③APK는 SERTZ-vc151.apk(v1.0.9 릴리스)
 - 잔무: APK vc151 빌드·업로드(진행 예정)
+
+Stage Summary (후속 — vc151 릴리스 완료):
+- v1.0.9 릴리스 자산 교체 완료: SERTZ-vc151.apk(152,510,987B·탑 수정 포함)+mapping+AAB 업로드(201×3), 구 vc150 자산 DELETE(204×3) — multipart 업로드 방식으로 v1.0.5-beta 손상 회피
+- 다운로드 206 실측 · 미러 SERTZ-vc151.apk · Vercel code:151 라이브
+- scripts/vc151_upload.sh — multipart 릴리스 업로드 표준 템플릿(차기 세션 재사용: raw 업로드는 GitHub가 "Multipart form data required"로 거부, v1.0.5-beta 릴리스는 multipart도 Bad Size — 신규 릴리스 사용할 것)
