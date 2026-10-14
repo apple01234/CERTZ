@@ -1,5 +1,5 @@
 #!/bin/bash
-# SERTZ EXE 빌드 — Next standalone + socket.io + Electron 래퍼 → Windows portable exe
+# SERTZ SETUP EXE 빌드 — Next standalone + socket.io + Electron 래퍼 → Windows NSIS 인스톨러 (v1.0.6 — portable 폐지, setup(NSIS)만 생산)
 # 사용: bash /home/z/my-project/scripts/build_exe.sh   (사전에 APK_EXPORT=1 npx next build 선행)
 set -e
 cd /home/z/my-project
@@ -22,16 +22,16 @@ npm install socket.io@4.8.1 --omit=dev --no-save --no-audit --no-fund --ignore-s
 node -e "require('socket.io'); console.log('socket.io server OK')"
 cd /home/z/my-project
 
-echo "[4/6] electron-builder 실행 (Windows portable x64)"
+echo "[4/6] electron-builder 실행 (Windows NSIS setup x64)"
 cd electron
 test -d node_modules || (cd /home/z/my-project && npm i -D electron electron-builder --no-audit --no-fund --loglevel=error)
-npx electron-builder --win portable --x64
+npx electron-builder --win nsis --x64
 
 echo "[5/6] 산출물 복사"
 cd /home/z/my-project
 ls -la electron/dist/
-EXE=$(ls electron/dist/SERTZ-*-win.exe | head -1)
-cp -f "$EXE" download/SERTZ-v3.0.8-win.exe
+EXE=$(ls electron/dist/SERTZ-*-setup.exe | head -1)
+cp -f "$EXE" download/SERTZ-v1.0.9-setup.exe
 
-echo "[6/6] 완료 → download/SERTZ-v3.0.8-win.exe"
-ls -la download/SERTZ-v3.0.8-win.exe
+echo "[6/6] 완료 → download/SERTZ-v1.0.9-setup.exe"
+ls -la download/SERTZ-v1.0.9-setup.exe

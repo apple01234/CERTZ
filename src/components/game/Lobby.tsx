@@ -19,7 +19,7 @@ import { EventBus } from "./EventBus";
 import { loadUnion, buySlotExpand } from "@/game/union";
 import { loadSlots, writeSlots, createCharacter, deleteCharacter, readCharSave, setActiveChar, getActiveCharId, BASE_SLOTS, type CharMeta } from "@/game/slots";
 import { loadSave, writeSave } from "@/game/config";
-import { authMe } from "@/game/account"; // v1.2.0 (#7) — GM 외형 옵션은 admin 롤에만 노출
+import { authMe, nameTaken, claimName, releaseName } from "@/game/account"; // v1.2.0 (#7) — GM 외형 옵션은 admin 롤에만 노출 · v1.0.6 — 닉네임 중복 방지
 import { classDef, isClassKey, classLabel, familyOf, type ClassKey } from "@/game/classes";
 import type { SaveData } from "@/game/config";
 
@@ -117,20 +117,57 @@ export function Lobby({ onExit }: { onExit: () => void }) {
     setMsg(null);
   };
 
-  const doCreate = () => {
-    const r = createCharacter(nameInput, null, null, { gender: lookGender, skinIdx: lookSkin, gmSkin: lookGm && gmOk }); // v1.4.30 (#8) 모험가 시작
-    if (!r.ok) {
-      setMsg(r.reason);
-      setStep(0); // 이름 문제일 수 있으니 1단계로
-      return;
-    }
-    setCreating(false);
-    setNameInput("");
-    setLookGender("m");
-    setLookSkin(2);
-    setSelId(r.id);
-    setMsg(null);
+  /* v1.0.6 (신3) — 이름 확인/등록 진행 중 플래그 (이중 클릭 방지 + 서버 검증 대기 표시) */
+  const [nameChecking, setNameChecking] = useState(false);
+
+  /* v1.0.6 (신3) — 캐릭터 삭제 시 서버에 이름 반납 (전역 중복 방지 레지스트리 해제) */
+  const deleteCharAndRelease = (id: string) => {
+    const meta = store.chars[id];
+    deleteCharacter(id);
+    setDelId(null);
+    setSelId(null);
     refresh();
+    if (meta?.name) void releaseName(meta.name).catch(() => {}); // 오프라인 무시
+  };
+
+  /* v1.0.6 (신3) — 캐릭터 이름 전역 중복 방지:
+   *  ① 서버에 이름 사용 여부 확인 (도달 불가면 기기 내 중복만으로 진행 — 오프라인 플레이 보호)
+   *  ② 사용 가능하면 claim 등록 후 생성, 생성 실패 시 반납
+   *  ③ 중복이면 1단계로 되돌려 안내 */
+  const doCreate = async () => {
+    const trimmed = nameInput.trim();
+    if (!trimmed || nameChecking) return;
+    setNameChecking(true);
+    try {
+      const taken = await nameTaken(trimmed);
+      if (taken) {
+        setMsg("이미 다른 모험가가 사용 중인 이름이에요 — 다른 이름을 정해 주세요");
+        setStep(0);
+        return;
+      }
+      const claimed = await claimName(trimmed, "char");
+      if (!claimed.ok && claimed.status === 409) {
+        setMsg("이미 다른 모험가가 사용 중인 이름이에요 — 다른 이름을 정해 주세요");
+        setStep(0);
+        return;
+      }
+      const r = createCharacter(trimmed, null, null, { gender: lookGender, skinIdx: lookSkin, gmSkin: lookGm && gmOk }); // v1.4.30 (#8) 모험가 시작
+      if (!r.ok) {
+        if (claimed.ok) void releaseName(trimmed).catch(() => {}); // 생성 실패 — 방금 claim 반납
+        setMsg(r.reason);
+        setStep(0); // 이름 문제일 수 있으니 1단계로
+        return;
+      }
+      setCreating(false);
+      setNameInput("");
+      setLookGender("m");
+      setLookSkin(2);
+      setSelId(r.id);
+      setMsg(null);
+      refresh();
+    } finally {
+      setNameChecking(false);
+    }
   };
 
   const expand = () => {
@@ -300,10 +337,10 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                     {msg && <p className="mt-1 text-[10px] font-black text-[#ff9a8a]">{msg}</p>}
                     <button
                       onClick={() => { if (nameOk) { setMsg(null); setStep(1); } }}
-                      disabled={!nameOk}
-                      className="game-btn mt-2 flex w-full items-center justify-center gap-1 px-3 py-2.5 text-[12px] font-black active:scale-95"
+                      disabled={!nameOk || nameChecking}
+                      className="game-btn mt-2 flex w-full items-center justify-center gap-1 px-3 py-2.5 text-[12px] font-black active:scale-95 disabled:opacity-40"
                     >
-                      다음 — 외형 선택
+                      {nameChecking ? "이름 확인 중…" : "다음 — 외형 선택"}
                       <ChevronRight size={14} />
                     </button>
                   </div>
@@ -381,9 +418,10 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                       </button>
                       <button
                         onClick={doCreate}
-                        className="game-btn px-3 py-2.5 text-[12px] font-black active:scale-95"
+                        disabled={nameChecking}
+                        className="game-btn px-3 py-2.5 text-[12px] font-black active:scale-95 disabled:opacity-40"
                       >
-                        모험가로 생성!
+                        {nameChecking ? "이름 확인 중…" : "모험가로 생성!"}
                       </button>
                     </div>
                   </div>
@@ -477,10 +515,8 @@ export function Lobby({ onExit }: { onExit: () => void }) {
               </button>
               <button
                 onClick={() => {
-                  deleteCharacter(delId);
-                  setDelId(null);
-                  setSelId(null);
-                  refresh();
+                  /* v1.0.6 (신3) — 서버 이름 레지스트리 반납까지 일괄 처리 */
+                  deleteCharAndRelease(delId);
                 }}
                 className="game-btn-danger px-3 py-2.5 text-[11px] font-black active:scale-95"
               >

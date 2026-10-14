@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EventBus, type PanelKind, type RpgState, type HudState, type QuestLogState } from "./EventBus";
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, upgradeCost, autoAllocPlan,
@@ -56,6 +56,63 @@ function useEscClose(close: () => void) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [close]);
+}
+
+/* ═══ v1.0.6 — NPC 선택지 키보드 조작 (신1 — "NPC 에게서 선택지를 정할때 방향키 위아래로 선택하고 E키로 선택하게 해") ═══
+ *  상점·전직관처럼 NPC에게서 열리는 선택 목록을 ↑/↓로 훑고 E키로 확정한다.
+ *  패널이 열려 있는 동안 "ui:panelKeys"를 켜 WorldScene 게임 키보드를 잠가
+ *  방향키 이동·E 상호작용·공격키와 충돌하지 않게 한다.
+ *  반환: [선택 인덱스, 강제 지정 함수] — 목록 행에 하이라이트를 입히는 데 쓴다. */
+function useListNav(count: number, onConfirm: (idx: number) => void, enabled = true): [number, (i: number) => void] {
+  const [idx, setIdx] = useState(0);
+  const confirmRef = useRef(onConfirm);
+  const idxRef = useRef(0);
+  confirmRef.current = onConfirm;
+  idxRef.current = idx;
+
+  /* 패널 게이트 — 마운트 동안 게임 키보드 차단 */
+  useEffect(() => {
+    if (!enabled) return;
+    EventBus.emit("ui:panelKeys", { active: true });
+    return () => {
+      EventBus.emit("ui:panelKeys", { active: false });
+    };
+  }, [enabled]);
+
+  /* 목록 길이 변화(재고 갱신 등) 시 인덱스 클램프 */
+  useEffect(() => {
+    setIdx((i) => (count <= 0 ? 0 : Math.min(i, count - 1)));
+  }, [count]);
+
+  useEffect(() => {
+    if (!enabled || count <= 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      /* 텍스트 입력 포커스 중엔 무시 (수량 입력·쿠폰 등) */
+      const el = document.activeElement;
+      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setIdx((i) => (i + 1) % count);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setIdx((i) => (i - 1 + count) % count);
+      } else if (e.key === "e" || e.key === "E") {
+        e.preventDefault();
+        confirmRef.current(idxRef.current);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [enabled, count]);
+
+  /* 선택 행이 목록 밖이면 부드럽게 따라 스크롤 (data-navsel 마커 행) */
+  useEffect(() => {
+    if (!enabled) return;
+    const el = document.querySelector('[data-navsel="1"]');
+    el?.scrollIntoView({ block: "nearest" });
+  }, [idx, enabled]);
+
+  return [Math.min(idx, Math.max(0, count - 1)), setIdx];
 }
 
 /* ================= v3.1.0 (#판매포기) — 수량 입력 + MAX 전량 판매 =================
@@ -751,6 +808,42 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
       EventBus.off("rpg:upgradeResult", on);
     };
   }, []);
+
+  /* v1.0.6 (신1) — NPC 선택지 키보드 조작: 상점 목록을 ↑/↓로 훑고 E로 구매.
+   *  섹션별 필터를 적용한 "실제 표시 행"의 평면 리스트를 먼저 계산해 내비게이션과 공유한다. */
+  const shopSections = useMemo(() => {
+    const unlocked = new Set(rpg.unlockedSets ?? []);
+    const isSetGear = (k: string) => k.startsWith("sfw_") || k.startsWith("sfa_") || k.startsWith("sfr_");
+    return ([
+      { label: "회복 물약", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "consumable" && !!(it.heal || it.restore || it.healFull) },
+      { label: "기타 소모품", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "consumable" && !(it.heal || it.restore || it.healFull) },
+      { label: "장비", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "weapon" || it.kind === "armor" || it.kind === "accessory" },
+      { label: "버프 물약", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "buff" },
+      { label: "펫", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "pet" },
+      { label: "치장", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "cosmetic" },
+    ] as const).map((section) => ({
+      label: section.label,
+      rows: rpg.shopStock.filter((k) => {
+        if (!ITEMS[k as ItemKey] || !section.test(ITEMS[k as ItemKey])) return false;
+        if (isSetGear(k)) {
+          const ch = k.split("_")[1];
+          return unlocked.has(ch);
+        }
+        return true;
+      }),
+    })).filter((s) => s.rows.length > 0);
+  }, [rpg.shopStock, rpg.unlockedSets]);
+  const flatRows = useMemo(() => shopSections.flatMap((s) => s.rows), [shopSections]);
+  /* E키 확정 — 해당 행의 구매 버튼과 동일 동작 (구매 불가 행은 무시) */
+  const [navIdx] = useListNav(flatRows.length, (i) => {
+    const k = flatRows[i];
+    if (!k) return;
+    const item = ITEMS[k as ItemKey];
+    const st = shopState(rpg, k as ItemKey);
+    const stackable = item.kind === "consumable" || item.kind === "buff";
+    if (st !== "buyable") return;
+    EventBus.emit("rpg:buy", { key: k as ItemKey, qty: stackable ? qtyOf(k) : 1 });
+  }, flatRows.length > 0);
   return (
     <div
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
@@ -796,34 +889,15 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           </div>
         </div>
 
-        {/* 상점 섹션 — 물약·장비 / 버프 / 펫 / 치장 (v1.9 BM) */}
+        {/* 상점 섹션 — 물약·장비 / 버프 / 펫 / 치장 (v1.9 BM)
+            v1.0.6 — 섹션 리스트를 useMemo로 선계산해 키보드 내비게이션(↑/↓·E)과 공유.
+            선택 행은 금테 하이라이트 + ▶ 마커로 강조된다 (NPC 선택지 키보드 조작). */}
         <div className="flex max-h-[52vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
-          {([
-            /* v1.0.2 (#물약상점) — 카테고리 세분화: 회복 물약이 15종으로 늘어 "물약·장비" 한 섹션에
-             * 섞이면 스크롤 탐색이 어려워져 회복/기타/장비로 분리 (유저 지시 — 이해하기 쉬운 분류) */
-            { label: "회복 물약", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "consumable" && !!(it.heal || it.restore || it.healFull) },
-            { label: "기타 소모품", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "consumable" && !(it.heal || it.restore || it.healFull) },
-            { label: "장비", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "weapon" || it.kind === "armor" || it.kind === "accessory" },
-            { label: "버프 물약", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "buff" },
-            { label: "펫", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "pet" },
-            { label: "치장", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "cosmetic" },
-          ] as const).map((section) => {
-            /* v3.0.15 (#11) — 챕터 테마 세트 장비: 해금된 세트만 표시 */
-            const unlocked = new Set(rpg.unlockedSets ?? []);
-            const isSetGear = (k: string) => k.startsWith("sfw_") || k.startsWith("sfa_") || k.startsWith("sfr_");
-            const rows = rpg.shopStock.filter((k) => {
-              if (!ITEMS[k as ItemKey] || !section.test(ITEMS[k as ItemKey])) return false;
-              if (isSetGear(k)) {
-                const ch = k.split("_")[1];
-                return unlocked.has(ch);
-              }
-              return true;
-            });
-            if (rows.length === 0) return null;
+          {shopSections.map((section) => {
             return (
               <div key={section.label} className="flex flex-col gap-1.5">
                 <p className="mt-1 text-[10px] font-black tracking-wide text-white/45">{section.label}</p>
-                {rows.map((k) => {
+                {section.rows.map((k) => {
                   const item = ITEMS[k as ItemKey];
                   const st = shopState(rpg, k as ItemKey);
                   const count = item.kind === "buff" ? (rpg.buffItems[k] ?? 0) : undefined;
@@ -831,11 +905,19 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                   const qty = qtyOf(k);
                   const showQty = stackable && st === "buyable";
                   const total = item.price * (stackable ? qty : 1);
+                  const sel = flatRows.indexOf(k) === navIdx; // v1.0.6 — 키보드 선택 행
                   return (
-                    <div key={k} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
+                    <div
+                      key={k}
+                      data-navsel={sel ? "1" : undefined}
+                      className={`flex items-center gap-2.5 rounded-lg border px-2.5 py-2 transition-colors ${
+                        sel ? "border-amber-300/80 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.04]"
+                      }`}
+                    >
                       <ItemIcon icon={item.icon} tier={item.tier} />
                       <div className="min-w-0 flex-1">
                         <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
+                          {sel && <span className="mr-1 text-amber-300">▶</span>}
                           {item.name}
                           {typeof count === "number" && count > 0 && <span className="ml-1 text-white/60">×{count}</span>}
                           <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">
@@ -3754,6 +3836,7 @@ function JobCard({
   btnText,
   onPick,
   dim,
+  navSel,
 }: {
   d: ClassDef;
   locked: boolean;
@@ -3761,15 +3844,21 @@ function JobCard({
   btnText: string;
   onPick: () => void;
   dim?: boolean;
+  /** v1.0.6 — 키보드 내비게이션 선택 표시 (↑/↓로 훑는 행) */
+  navSel?: boolean;
 }) {
+  /* v1.0.6 — 키보드 내비게이션 선택 행(▶ 마커·금테) 표시 */
+  const selected = navSel === true;
   return (
     <div
-      className="rounded-lg border bg-white/[0.04] px-3 py-2.5"
-      style={{ borderColor: `${d.color}44`, opacity: dim ? 0.55 : 1 }}
+      data-navsel={selected ? "1" : undefined}
+      className={`rounded-lg border bg-white/[0.04] px-3 py-2.5 transition-colors ${selected ? "border-amber-300/90" : ""}`}
+      style={{ borderColor: selected ? undefined : `${d.color}44`, opacity: dim ? 0.55 : 1 }}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[13px] font-black" style={{ color: d.color }}>
+            {navSel && <span className="mr-1 text-amber-300">▶</span>}
             {d.name} <span className="text-[10px] font-bold text-white/45">— {d.title}</span>
           </p>
           <p className="mt-0.5 truncate text-[10px] text-white/55">{d.desc}</p>
@@ -3803,6 +3892,28 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   const need = nextJobLevel(rpg.cls);
   const locked = !rpg.canJob;
   const fin = chain.length >= 3; // 3차 완료
+
+  /* v1.0.6 (신1) — NPC 선택지 키보드 조작: 전직 카드 목록을 ↑/↓로 훑고 E로 확정.
+   *  자유 전직(alt) 카드는 목록 맨 끝에 포함 — 같은 방식으로 전환 가능. */
+  const navList = useMemo(() => {
+    const main = chain.length === 0 ? CLASS_LIST : opts;
+    return alt && chain.length >= 2 ? [...main, alt] : main;
+  }, [chain.length, opts, alt]);
+  const [navIdx] = useListNav(
+    navList.length,
+    (i) => {
+      const d = navList[i];
+      if (!d || locked) return;
+      if (alt && i === navList.length - 1 && chain.length >= 2) {
+        EventBus.emit("job:switch", { key: d.key });
+        onClose();
+        return;
+      }
+      EventBus.emit("job:select", { key: d.key });
+      onClose();
+    },
+    navList.length > 0,
+  );
 
   return (
     <div
@@ -3869,13 +3980,14 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
         )}
 
         <div className="flex flex-col gap-2">
-          {(chain.length === 0 ? CLASS_LIST : opts).map((d) => (
+          {(chain.length === 0 ? CLASS_LIST : opts).map((d, i) => (
             <JobCard
               key={d.key}
               d={d}
               locked={locked}
               lockText={`Lv ${need} 필요`}
               btnText={chain.length >= 2 ? "승격" : chain.length === 0 ? "시련 시작" : "전직"}
+              navSel={i === navIdx}
               onPick={() => {
                 EventBus.emit("job:select", { key: d.key });
                 onClose();

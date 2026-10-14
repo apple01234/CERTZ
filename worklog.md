@@ -4222,3 +4222,23 @@ Stage Summary (후속 — vc151 릴리스 완료):
 - v1.0.9 릴리스 자산 교체 완료: SERTZ-vc151.apk(152,510,987B·탑 수정 포함)+mapping+AAB 업로드(201×3), 구 vc150 자산 DELETE(204×3) — multipart 업로드 방식으로 v1.0.5-beta 손상 회피
 - 다운로드 206 실측 · 미러 SERTZ-vc151.apk · Vercel code:151 라이브
 - scripts/vc151_upload.sh — multipart 릴리스 업로드 표준 템플릿(차기 세션 재사용: raw 업로드는 GitHub가 "Multipart form data required"로 거부, v1.0.5-beta 릴리스는 multipart도 Bad Size — 신규 릴리스 사용할 것)
+---
+Task ID: vc152-new3-final
+Agent: Super Z (main)
+Task: 리모트 정합성 복구 후 신규 3건 잔여분(신1 NPC키보드·신3 닉네임중복·신6 이펙트배경) 완결 + setup-exe 전환 → vc152 (웹+APK+setup-exe)
+
+Work Log:
+- [리모트 정합성] 로컬 vc142 작업 중 리모트가 vc143~151로 선행 배포된 것 발견 — backup-vc142-local 브랜치 보존 후 origin/main으로 리셋. 원격 커버리지 전수 감사: 구1~9+신2·신5·신7은 원격(vc149/150/151)이 이미 구현(일부 상이한 접근 — 구5 flee+abs/spd·구7 툰필터 강도 회복·구9 importCharsFromCloud+고아 재편입) → 잔여 실갭은 신1·신3·신6 3건 + setup-exe 정책만 확인
+- [잠복 버그 무해화] rg -rn 플래그 오류(-r n = replace)로 원격 소스에 "n" 문자열 치환처럼 보이던 오탐 — 실제 코드 정상 확인
+- [신1 NPC 선택지 키보드] backup에서 이식: useListNav 훅(↑/↓ 순회·E 확정·텍스트입력 포커스 무시·data-navsel 자동 스크롤·count 클램프)+ShopPanel(shopSections useMemo 평면리스트 공유·선택행 금테+▶·E구매는 buyable만)+JobPanel(navList(자유전직 alt 포함)·JobCard navSel)+WorldScene panelNavOpen 게이트(ui:panelKeys 수신 — 패널 개방 중 게임 키보드 잠금+touchMove 리셋, chat:focus 합산 판정)
+- [신3 닉네임 중복 금지] account.ts nameTaken/claimName/releaseName 이식+accounts/index.js charNames 레지스트리·nametaken GET(60/min)·claimname POST(로그인 30/5min·계정명 중복 금지)·releasename POST(소유자만)·회원가입 중복 409 가드+Lobby doCreate 비동기화(서버 검증→claim→생성→실패 시 반납)+삭제 시 반납(deleteCharAndRelease)+nameChecking UI(이중클릭 방지)
+- [신6 이펙트 배경 제거] strip_vfx_bg_v106.py 재실행 — vfx2 PNG 33종+시트 5종(elec/tri/cfx1/boom(반전)/blood) 38종 루미넌스 키 처리. 전수 재검증: 이펙트 본체 보존 38/38(완전 소실 0)·전 파일 코너 알파 0
+- [setup-exe 전환] 유저 지시 "exe 파일은 빌드하지 말고 setup-exe, apk, 웹 빌드만 해": electron/package.json win.target nsis 단일+version vc152(산출물 SERTZ-vc152-setup.exe)+nsis 프리셋(oneClick·바탕화면/시작메뉴 바로가기)+exe-build.yml --win nsis 단일·setup만 업로드+build_exe.sh NSIS 전환
+- [게이트 vc152 승격] server.js(1.0.10/152/NOTE/APK_MIRROR)·route.ts(중복 VERSION_NOTE 잔존 버그 정정)·next.config.ts·build.gradle 152·package.json 1.0.10·apk-guide(이번 버전 5불릿+vc152 링크)
+- [환경 수리] node_modules three 소실(리셋 후) 재설치 — Vfx3D.ts TS2307 해소
+- [검증] tsc 0 · node --check 0 · npm run build 성공 · e2e_vc150 12/12 · e2e_vc150_features 27/27(황금 도주형·다수의뢰 2~4·퀘스트 토글·물약 아이콘·툰필터 전부 원격 구현 유지 확인) · e2e_vc141 8/9(1 FAIL은 구식 프레임 기하 기대값 — vc150 승격 아틀라스와 불일치, e2e_vc150이 대체) · nametaken/claimname API 실측(미로그인 401 설계대로) · /api/version code:152 로컬 확인
+
+Stage Summary:
+- vc152 = 원격 vc151 위에 신규 3건(신1·신3·신6) 완결 + setup-exe 정책 전환
+- 유저 테스트 포인트: ①상점/전직관에서 방향키 ↑/↓+E ②다른 계정과 같은 닉네임 가입/생성 차단 ③이펙트 검은 네모 소멸 ④PC setup 설치기(SERTZ-vc152-setup.exe)
+- 잔무: 커밋 푸시(웹 자동배포) → APK 3단계 빌드 → setup-exe 빌드 → v1.0.9 릴리스 자산 업로드(SERTZ-vc152.apk+setup)

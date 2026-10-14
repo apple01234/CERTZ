@@ -26,7 +26,7 @@ const KEYS = Object.keys(EXPECT);
 
   const browser = await chromium.launch({
     args: ["--no-sandbox"],
-    executablePath: "/home/z/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+    executablePath: "/home/z/.cache/ms-playwright/chromium-1200/chrome-linux64/chrome",
   });
   const p = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   p.setDefaultTimeout(40000);

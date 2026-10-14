@@ -619,6 +619,8 @@ export class WorldScene extends Phaser.Scene {
   >();
   private netOffs: (() => void)[] = [];
   private chatFocused = false;
+  /* v1.0.6 — NPC 선택지 키보드 내비게이션 게이트 (상점/전직관 패널 개방 중 게임 키 양보) */
+  private panelNavOpen = false;
   private netAcc = 0;
 
   /* ----- 플레이어 투사체 (v1.8 — 궁수 관통 화살 / 마법사 매직 볼트) ----- */
@@ -8080,7 +8082,19 @@ export class WorldScene extends Phaser.Scene {
        *    입력 상태를 완전 리셋한다. */
       try {
         const km = this.input.keyboard;
-        if (km?.manager) km.manager.enabled = !v.focus;
+        if (km?.manager) km.manager.enabled = !v.focus && !this.panelNavOpen;
+      } catch { /* 키보드 미지원 환경 무시 */ }
+      this.resetInputState();
+    };
+    /* v1.0.6 (신1) — NPC 선택지 키보드 조작 게이트: 상점·전직관 패널이 열려 있는 동안
+     *  게임 키보드(이동/공격/E 상호작용)를 잠그고 React 쪽 ↑/↓·E 내비게이션에 양보한다.
+     *  chat:focus와 동일한 차단 방식 — 해제 시 입력 상태까지 리셋해 고착을 막는다. */
+    const onPanelKeys = (v: { active: boolean }) => {
+      this.panelNavOpen = !!v.active;
+      if (v.active) this.touchMove.set(0, 0);
+      try {
+        const km = this.input.keyboard;
+        if (km?.manager) km.manager.enabled = !v.active && !this.chatFocused;
       } catch { /* 키보드 미지원 환경 무시 */ }
       this.resetInputState();
     };
@@ -8751,6 +8765,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("dialogue:done", onDialogueDone);
     EventBus.on("dialogue:choice", onDialogueChoice);
     EventBus.on("chat:focus", onChatFocus);
+    EventBus.on("ui:panelKeys", onPanelKeys); // v1.0.6 — NPC 선택지 키보드 조작 게이트
     EventBus.on("chat:send", onChatSend);
     EventBus.on("rpg:escapeHome", onEscapeHome); // v4.1.0 — 설정창 긴급 귀환
     EventBus.on("rpg:exitMenu", onExitMenu); // v1.2.1 (#6) — 메뉴 화면(타이틀/캐릭터 선택)으로 나가기
@@ -9402,6 +9417,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("dialogue:done", onDialogueDone);
       EventBus.off("dialogue:choice", onDialogueChoice);
       EventBus.off("chat:focus", onChatFocus);
+      EventBus.off("ui:panelKeys", onPanelKeys); // v1.0.6 — 패널 키보드 게이트 정리
       EventBus.off("chat:send", onChatSend);
       EventBus.off("rpg:escapeHome", onEscapeHome); // v4.1.0
       EventBus.off("rpg:exitMenu", onExitMenu); // v1.2.1 (#6)

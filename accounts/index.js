@@ -85,6 +85,7 @@ function loadDb() {
     db.market.listings ||= {};
     db.payouts ||= {}; // v1.0.1 — 판매 정산금 ledger
     db.rank ||= {}; // v1.0.8 — 랭킹 보드 (레벨/전투력/무한의 탑 기록)
+    db.charNames ||= {}; // v1.0.6 — 닉네임 중복 방지 레지스트리 (이름(소문자) → { by, at, kind })
     // v1.0.2 — env 관리자 목록 동기화 (이미 가입된 계정도 롤 자동 승격/회수)
     for (const [uid, u] of Object.entries(db.users)) {
       /* env 매칭은 아이디 + 닉네임 둘 다 허용 (가입 시 role 부여는 아이디 기준과 동일 유지) */
@@ -825,6 +826,68 @@ async function handle(req, res) {
       return true;
     }
 
+    /* v1.0.6 — 닉네임 중복 판정 공용: 계정 이름 + 캐릭터 이름 레지스트리 통합 검색 (대소문자 무시).
+     *  excludeBy를 넘기면 해당 유저가 소유한 등록분은 "내 것"으로 취급해 사용 가능으로 판정한다. */
+    const nickTaken = (raw, excludeBy = null) => {
+      const key = String(raw || "").trim().toLowerCase();
+      if (!key) return false;
+      for (const u of Object.values(db.users)) {
+        if (String(u.name || "").trim().toLowerCase() === key && u.id !== excludeBy) return true;
+      }
+      const reg = db.charNames[key];
+      if (reg && reg.by !== excludeBy) return true;
+      return false;
+    };
+
+    /* v1.0.6 — 닉네임 중복 확인 (공개 GET — 회원가입/캐릭터 생성/이름 변경 화면에서 실시간 확인) */
+    if (url.startsWith("/api/auth/nametaken") && method === "GET") {
+      if (!rateLimit(req, res, "nametaken", 60, 60 * 1000)) return true;
+      const q = new URL(req.url, "http://x").searchParams;
+      const name = String(q.get("name") || "").trim();
+      const me = currentUser(req);
+      const taken = nickTaken(name, me?.id ?? null);
+      sendJson(res, 200, { taken, name: name.slice(0, 8) });
+      return true;
+    }
+
+    /* v1.0.6 — 캐릭터 이름 등록 (로그인 유저 — 중복 방지 레지스트리에 claim).
+     *  오프라인/미로그인 게임도 동작해야 하므로 클라는 실패해도 게임은 계속된다(서버 도달 시만 전역 검증). */
+    if (url === "/api/auth/claimname" && method === "POST") {
+      const me = currentUser(req);
+      if (!me) return sendJson(res, 401, { error: "로그인이 필요해요 (미로그인은 기기 내 중복만 검사됩니다)" });
+      if (!rateLimit(req, res, "claimname", 30, 5 * 60 * 1000)) return true;
+      const b = await readBody(req);
+      const name = String(b.name || "").replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028\u2029]/g, "").trim().slice(0, 8);
+      if (!name) return sendJson(res, 400, { error: "이름을 입력해 주세요" });
+      const key = name.toLowerCase();
+      const reg = db.charNames[key];
+      if (reg && reg.by !== me.id) return sendJson(res, 409, { error: "이미 다른 모험가가 사용 중인 이름이에요" });
+      /* 내 계정 이름과도 중복 금지 (캐릭터≠계정 이름 구분 유지) */
+      if (String(me.name || "").trim().toLowerCase() === key) return sendJson(res, 409, { error: "계정 이름과 같은 이름은 쓸 수 없어요" });
+      db.charNames[key] = { by: me.id, at: Date.now(), kind: String(b.kind || "char") };
+      persistDb();
+      audit("claimname", { uid: me.id, name: key });
+      sendJson(res, 200, { ok: true, name });
+      return true;
+    }
+
+    /* v1.0.6 — 캐릭터 이름 반납 (캐릭터 삭제/이름 변경 시 이전 이름 해제 — 내가 claim한 것만) */
+    if (url === "/api/auth/releasename" && method === "POST") {
+      const me = currentUser(req);
+      if (!me) return sendJson(res, 401, { error: "로그인이 필요해요" });
+      if (!rateLimit(req, res, "releasename", 60, 5 * 60 * 1000)) return true;
+      const b = await readBody(req);
+      const key = String(b.name || "").trim().toLowerCase();
+      const reg = db.charNames[key];
+      if (reg && reg.by === me.id) {
+        delete db.charNames[key];
+        persistDb();
+        audit("releasename", { uid: me.id, name: key });
+      }
+      sendJson(res, 200, { ok: true });
+      return true;
+    }
+
     /* 자체 회원가입 */
     if (url === "/api/auth/register" && method === "POST") {
       if (!rateLimit(req, res, "register", 10, 5 * 60 * 1000)) return true; // v1.0.2 — 무차별 가입 차단
@@ -836,6 +899,8 @@ async function handle(req, res) {
       if (!/^[a-z0-9_]{3,20}$/.test(id)) return sendJson(res, 400, { error: "아이디는 영문 소문자/숫자/_ 3~20자" });
       if (pw.length < 6) return sendJson(res, 400, { error: "비밀번호는 6자 이상" });
       if (db.users[id]) return sendJson(res, 409, { error: "이미 존재하는 아이디예요" });
+      /* v1.0.6 — 닉네임 중복 방지: 계정 이름 + 캐릭터 이름 레지스트리 통합 검사 (지시 #3) */
+      if (typeof nickTaken === "function" && nickTaken(name)) return sendJson(res, 409, { error: "이미 사용 중인 이름이에요 — 다른 이름을 정해 주세요" });
       const salt = randomBytes(16).toString("hex");
       /* v1.0.2 — 관리자 목록(env)에 있으면 role=admin (서버가 유일한 권한 발급처) */
       const role = ADMIN_USERS.includes(id) ? "admin" : "user";

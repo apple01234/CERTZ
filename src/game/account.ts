@@ -138,6 +138,28 @@ export async function authRegister(id: string, pw: string, name: string) {
   return r;
 }
 
+/* ═══ v1.0.6 — 닉네임 중복 방지 (유저 지시 #3 — 캐릭터/유저 닉네임 전역 유니크) ═══
+ *  서버(accounts/index.js)가 계정 이름 + 캐릭터 이름 레지스트리(db.charNames)로
+ *  전역 중복을 판정한다. 미로그인/오프라인이면 claim이 실패하므로 클라는
+ *  "서버 도달 시에만 전역 검증, 실패해도 게임은 계속" 전략을 쓴다. */
+
+/** 전역 닉네임 사용 여부 확인 — true면 누군가 쓰고 있다 (서버 미도달 시 null = 판정 불가) */
+export async function nameTaken(name: string): Promise<boolean | null> {
+  const r = await get(`/api/auth/nametaken?name=${encodeURIComponent(name.trim())}`);
+  if (!r.ok || typeof r.data.taken !== "boolean") return null; // 서버 미도달/구버전
+  return r.data.taken as boolean;
+}
+
+/** 닉네임 등록(claim) — 로그인 유저만 성공. ok=false면 이미 사용 중 */
+export async function claimName(name: string, kind: "char" | "rename" = "char") {
+  return post("/api/auth/claimname", { name: name.trim(), kind });
+}
+
+/** 닉네임 반납 — 캐릭터 삭제/이름 변경 시 이전 이름 해제 (내가 claim한 것만) */
+export async function releaseName(name: string) {
+  return post("/api/auth/releasename", { name: name.trim() });
+}
+
 export async function authLogin(id: string, pw: string) {
   const r = await post("/api/auth/login", { id, pw });
   if (r.ok && typeof r.data.token === "string") setToken(r.data.token); // v1.0.7 — Bearer 세션 저장

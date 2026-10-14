@@ -34,7 +34,7 @@ app.prepare().then(() => {
   /* vc138 — GitHub API 자산 DELETE 일시 장애로 동일 이름 교체가 막힌 기간의 안전 경로:
    *  vc138 자산을 별도 이름으로 업로드하고 이쪽을 가리킴. 루프가 동일 이름 교체에 성공하면
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.9/SERTZ-vc151.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.9/SERTZ-vc152.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -67,10 +67,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.0.9";
-  const LATEST_CODE = 151;
+  const LATEST_VERSION = "1.0.10";
+  const LATEST_CODE = 152;
     const VERSION_NOTE =
-  "v1.0.9 (vc151) — 신규 9건 재적용·완결: ①고급 물약 아이콘 실경로 로드(ITEMS.icon 조회 — 캐시버스팅으로 못 고치던 404 근본 수정) ②모바일 교실 UI 스크롤(max-h+overflow) ③퀘스트 토글 완결: 창이 더보기 버튼행 밑에 위치+튜토리얼 게이트 오버라이드(토글 안 먹힘 근본 수정)+닫힘 시 재오픈 칩 ④황금 몬스터 도주형 개편(공격X·도주 AI·속도 1.6배·크기 1.62·황금색 0xffc832) ⑤반복 의뢰 다수 개편(구역 종족 2~4개 고마릿수 ×2.5·종족 중복 없음·사이클 +2 계승·구세이브 마이그레이션·퀘스트창 개별 진행도 목록) ⑥툰셰이더 체감 회복(대비 1.14/채도 1.32/림 2.8·강도 연동)+저사양 경량 앰비언트 블룸 복원 ⑦아크로드 5차 마법진 8장 방산 피해(경로 50/100% 판정·1.8배·넉백) ⑧좀비 몬스터 2초 스위퍼(체력바·스프라이트 잔존 안전망) ⑨거래소 30초 폴링(상대 등록물 실시간 표시)"
+  "v1.0.10 (vc152) — 신규 3종 마무리: ①NPC 선택지 키보드 조작 — 상점·전직관 목록을 방향키 ↑/↓로 훑고 E키로 확정(패널 개방 중 게임 키 자동 잠금·선택행 금테+▶ 마커·자동 스크롤) ②닉네임 중복 금지 — 계정·캐릭터 이름 전역 유니크(회원가입·캐릭터 생성 실시간 검사·삭제 시 반납) ③이펙트 검은 네모 배경 제거 — vfx2 팩 38종 루미넌스 키 처리(이펙트만 남기고 투명화) + setup-exe 전환(NSIS 설치기만 생산 — portable 폐지)"
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
