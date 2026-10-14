@@ -430,6 +430,11 @@ export class WorldScene extends Phaser.Scene {
   private towerFrom: StageKey = "village";
   private towerText: Phaser.GameObjects.Text | null = null;
   private towerBossRef: Boss | null = null;
+  /* vc151 (#시련의탑) — 층 전환 가드 + 페이스드 스폰 이벤트.
+   *  멀티킬(광역기)로 한 프레임에 여러 처치 이벤트가 몰리면 towerFloorCleared가
+   *  중복 호출돼 층이 "한 번에 여러 개" 올라가던 버그의 근본 차단장 */
+  private towerTransition = false;
+  private towerSpawnEv: Phaser.Time.TimerEvent | null = null;
   /* vc142 (#4 탑 리워크) — 할당제: 층별 지정 처치 마릿수 카운터 */
   private towerKills = 0;
   private towerNeed = 0;
@@ -863,6 +868,9 @@ export class WorldScene extends Phaser.Scene {
     this.towerActive = false;
     this.towerBossRef = null;
     this.towerText = null;
+    this.towerTransition = false; // vc151
+    this.towerSpawnEv?.remove();
+    this.towerSpawnEv = null;
     /* v1.0.18 — 파크 상태 리셋 (씬 재시작 이월 방지) */
     this.parkActive = false;
     this.parkText = null;
@@ -6159,11 +6167,17 @@ export class WorldScene extends Phaser.Scene {
     const pool = towerPool(f);
     this.towerKills = 0;
     this.towerNeed = towerKillNeed(f);
-    /* vc147 (#15) — 한 번에 20마리 캡 (towerSpawnCount 자체도 20 캡 — 이중 안전망).
+    /* vc150 (#시련의탑) — 동시 마릿수 20마리 상한 + 초당 5마리 페이스드 스폰 (유저 지시).
+     *  기존엔 층 시작에 20마리가 한 프레임에 몰려 스폰돼 프레임 드랍·부하가 컸다.
+     *  200ms 간격 1마리씩 소환하고, 매 틱 살아있는 몬스터 20마리 상한을 재검사한다.
      *  목표 마릿수 채우는 건 층 내 리스폰(20캡 검사) 반복 충원으로 이어진다. */
     const n = Math.min(20, towerSpawnCount(f));
-    for (let i = 0; i < n; i++) {
-      const key = pool[i % pool.length];
+    this.towerSpawnEv?.remove();
+    let spawned = 0;
+    const spawnOne = () => {
+      /* 상한 재검사 — 리스폰 충원분과 합쳐도 동시 20마리 초과 금지 */
+      if (this.enemies.filter((e) => e.active && e.alive).length >= 20) return;
+      const key = pool[spawned % pool.length];
       const def = ENEMIES[key];
       const px = Phaser.Math.Between(80, this.stageW - 80);
       const py = Phaser.Math.Between(80, this.stageH - 80);
@@ -6179,6 +6193,18 @@ export class WorldScene extends Phaser.Scene {
       });
       this.enemies.push(e);
       this.physics.add.collider(e, this.solidGroup);
+      spawned++;
+    };
+    /* 첫 마리는 즉시(빈 층 공백 최소화) — 나머지는 초당 5마리 페이스 */
+    spawnOne();
+    if (n > 1) {
+      this.towerSpawnEv = this.time.addEvent({
+        delay: 200, repeat: n - 2,
+        callback: () => {
+          if (!this.towerActive || !this.scene.isActive()) return;
+          spawnOne();
+        },
+      });
     }
     if (bossFloor) {
       /* 보스층 — vc142: 12보스 전원이 5의 배수층마다 각각 다르게 배치되는 고정 로테이션 */
@@ -6205,7 +6231,8 @@ export class WorldScene extends Phaser.Scene {
 
   /** vc142 (#4) — 적 사망 시 할당 카운트. 할당을 채우면 층 클리어 (전멸 불필요) */
   private towerOnKill(bossKill: boolean) {
-    if (!this.towerActive || this.towerNeed <= 0) return;
+    /* vc150 (#시련의탑) — 층 전환 중엔 처치 카운트를 무시한다 (여러 층 동시 상승 차단) */
+    if (!this.towerActive || this.towerNeed <= 0 || this.towerTransition) return;
     this.towerKills++;
     if (bossKill) {
       /* 보스층 — 보스 처치가 할당 전부를 채운다 (남은 잡몹 무관) */
@@ -6225,6 +6252,15 @@ export class WorldScene extends Phaser.Scene {
 
   /** 층 전멸 시 호출 — 보상 지급 후 다음 층 스폰 */
   private towerFloorCleared() {
+    /* vc150 (#시련의탑) — 재진입 가드: 광역기로 한 프레임에 할당을 초과해 처치하면
+     *  두 번째 이후의 클리어 호출이 그대로 다음 층으로 넘어갔다 ("한번에 여러층 올라감").
+     *  첫 호출만 통과시키고 카운터를 즉시 잠가 잔여 킬 이벤트를 무력화한다. */
+    if (this.towerTransition) return;
+    this.towerTransition = true;
+    this.towerKills = 0;
+    this.towerNeed = 0;
+    this.towerSpawnEv?.remove();
+    this.towerSpawnEv = null;
     const f = this.towerFloor;
     const rw = towerFloorReward(f, this.player.lv);
     this.player.addGold(rw.gold);
@@ -6259,6 +6295,7 @@ export class WorldScene extends Phaser.Scene {
         this.showBanner(`${this.towerFloor}층 — 지정 마릿수 ${towerKillNeed(this.towerFloor)}마리 처치!`);
         this.spawnTowerFloor();
       }
+      this.towerTransition = false; // 다음 층 카운트 개시
     });
   }
 
@@ -6266,6 +6303,9 @@ export class WorldScene extends Phaser.Scene {
   private exitTower() {
     if (!this.towerActive) return;
     this.towerActive = false;
+    this.towerTransition = false;
+    this.towerSpawnEv?.remove(); // vc150 — 페이스드 스폰 잔여 틱 제거
+    this.towerSpawnEv = null;
     this.towerBossRef = null;
     this.towerText?.destroy();
     this.towerText = null;

@@ -4196,3 +4196,24 @@ Stage Summary:
 - vc150 = 신규 9건 원격 완결 — 웹 code:150 라이브, APK는 릴리스 후 덮어설치
 - 유저 테스트 포인트: ①고급 물약 장착 시 아이콘 표시 ②모바일 교실 스크롤 ③퀘스트창 토글(더보기 버튼 밑 위치·✕/아이콘 토글·닫아도 다시 열림) ④황금 몬스터 도주 ⑤수주 후 의뢰 2~4개 목록 ⑥설정에서 셰이더 강도 200 올려 툰 느낌 비교 ⑦아크로드 5차 마법진 방산 ⑧계정 123456 세이브 복원 → 궁수(데드아이 253) 로비 편입 확인
 - 잔무: APK vc150 빌드·릴리스 업로드(SERTZ-vc150.apk)
+
+---
+Task ID: vc151-tower-fix
+Agent: Super Z (main)
+Task: 유저 제보 ①"왜 멈춤??"(APK 모니터링 도구 끊김 — 빌드 자체는 정상 진행 확인) ②시련의탑 동시 마릿수 20 캡+초당 5마리 페이스드 스폰+여러층 동시 상승 버그 → vc151
+
+Work Log:
+- [원인 ② 여러층 동시 상승] towerOnKill이 처치 이벤트마다 호출되는데, 광역기로 한 프레임에 할당 마릿수를 초과해 처치하면 towerFloorCleared가 그 횟수만큼 연쇄 호출 → towerFloor++ 중복 실행. 전환 가드가 전혀 없었음
+  · towerTransition 가드 신설 — 첫 클리어 호출만 통과, 카운터(towerKills/towerNeed) 즉시 0 잠금으로 잔여 킬 이벤트 무력화, 650ms 후속 스폰 후 해제
+  · towerOnKill/exitTower/리셋 블록에도 가드·정리 적용
+- [원인 ② 보조] towerSpawnEv(페이스드 스폰 타이머)를 층 전환·탈출·리셋에서 remove — 잔여 스폰 틱이 다음 층 개산을 오염시키던 구멍 차단
+- [수정 ② 페이스드 스폰] spawnTowerFloor의 "한 프레임 20마리 몰이" → 첫 마리 즉시 + 200ms 간격 1마리(초당 5마리), 매 틱 생존 몬스터 20마리 상한 재검사(리스폰 충원분과 합쳐도 초과 금지). 유저 지시 "동시 마릿수 20마리 이하 + 초당 5마리씩 소환" 정확 이행
+- [빌드 체인] 세션 컨테이너 리셋으로 JDK/SDK 소실 → Temurin 21(/home/z/jdk) 재설치·기존 /home/z/android-sdk 재사용
+- [릴리스 장애 정정] GitHub uploads API가 raw 업로드를 "Multipart form data required"로 거부 + v1.0.5-beta 릴리스는 multipart도 "Bad Size" 422(vc138 장애 유산 — 릴리스 자체 손상) → ①multipart 방식 확정(201 검증) ②정상 릴리스 v1.0.9(id 385985773)에 SERTZ-vc150.apk/mapping/aab 업로드 완료(206 다운로드 검증) — vc146~149가 미러링하던 손상 릴리스 의존 해소
+- [게이트 vc151 승격 5종] server.js(LATEST_CODE 151·미러 SERTZ-vc151.apk)·route.ts·next.config.ts·build.gradle 151·apk-guide — 탑 수정분 포함 재빌드용
+- [검증] tsc 0(소스) · E2E는 vc150 분 재사용 예정 — 탑 로직은 가드·페이스 코드 리뷰로 검증(단위 시뮬레이션: 다중 towerOnKill 호출 → 1회만 클리어)
+
+Stage Summary:
+- vc151 = 시련의탑 개편(20마리 캡·초당 5마리·층 동시 상승 차단) + 릴리스 체인 정상화(손상된 v1.0.5-beta 의존 제거)
+- 유저 테스트 포인트: ①탑 입장 → 스폰이 초당 5마리로 착착 찍히는지 ②광역기로 잡몹 한 번에 쓸어도 층이 1개씩만 오르는지 ③APK는 SERTZ-vc151.apk(v1.0.9 릴리스)
+- 잔무: APK vc151 빌드·업로드(진행 예정)
