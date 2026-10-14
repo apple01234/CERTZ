@@ -4170,3 +4170,29 @@ Stage Summary:
 - [웹 라이브] sertz.vercel.app /api/version → 1.0.9/149 확인. apk-guide 신해시(md5 40e90c82·sha1 b93b6cd2·152509185B) 커밋 4e5aec3
 - [26항목 완결] ①계정 복구 체계(고아 재편입·슬롯 이중백업·클라우드 전캐릭터 백업/복원) ②캐릭터 소실 근본치료 ③타이틀 로그인·PC 온라인(exe 프록시 수리 재배포) ④단축키 기기별 ⑤⑤PC온라인 ⑥물약 20종 인상 ⑦미니맵 NPC 노란점 ⑧아이콘 재시도 ⑨에메랄드 스케일링 ⑩현재 직업 표기 ⑪아크로드 종결 강화 ⑫2궁 30초 여운 ⑬이터널 강화 ⑭GameVFX 81종+마법진 계열 대체 ⑮더보기 이동 ⑯퀘스트 토글 이동 ⑰더보기-설정 인접 ⑱단축키 정확 표기 ⑲계정123456 복구(클라우드 세이브 확인 완료 — 유저 재부팅 시 자동 복원) ⑳거래 수신 수정 ㉑유령바 제거 ㉒랭킹 스크롤 ㉓NPC 말투 ㉔GM엘릭서(vc146 검증 유지) ㉕타이머 분산 ㉖IPA 빌드 0 (금지 준수)
 - [검증] tsc 0 · npm run build 성공 · e2e_vc149.js 정적 24종 + e2e_vc149_live.js 라이브 4종(월드진입·gv81종 로드·pageerror 0) 전부 PASS
+
+---
+Task ID: vc150-new9-reapply
+Agent: Super Z (main)
+Task: 유저 신규 9건 + 이월 26항목 — 원격 vc149 리베이스 후 누락분 재적용·완결 (vc150)
+
+Work Log:
+- [세션 정리] 직전 세션(vc142~vc149)이 26항목 대부분을 이미 배포한 상태로 확인(원격 90eac40). 로컬 단독 작업분(vc142-local-backup 브랜치 보존)과 대조 후 원격에 누락된 신규 9건만 추려 재적용
+- [①물약 아이콘] 원격 TouchControls가 여전히 `item_${itemKey}.webp` 문자열 조합(캐시버스팅 재시도만 존재 — 404는 해결 불가) → ITEMS[itemKey].icon 실경로 조회로 교체 (i_potion_hp3~10·mp3~10·gm_elixir 전부 로드)
+- [②교실 스크롤] ClassroomPanel 내부 패널 max-h-[min(90svh,640px)]+overflow-y-auto (QuestLogPanel 패턴)
+- [③퀘스트 토글 완결] 원격은 창 헤더 토글+최상단 배치까지 완료했으나 ①tutActive 게이트가 토글을 잠그는 버그 잔존(tutOverride 오버라이드 추가) ②트래커가 더보기 버튼행 "위"에 있었음(유저 지시는 "밑") — 버튼행 아래로 이동 ③닫힘 시 재오픈 수단 부재 — 열기 칩 신설
+- [④황금 몬스터] 원격 Enemy에 spdMul(0.5~2 clamp) 이미 존재 → flee 필드+FSM 도주 분기(사인 지그재그·공격 전이 차단)만 추가. spawnGolden opts flee+spd1.6+scale1.62+tint 0xffc832+배너 문구
+- [⑤의뢰 2~4개] 원격 미구현분 — stages.ts buildStage에 구역 종족 2~4종 개별 고마릿수(×2.5·5단위) bounties 생성+StageDef 타입 확장 / WorldScene에 repeatBounties·repeatCycle·setupRepeatBounties·repeatNeedOf·completeRepeatBounty·currentQuest 신스(n/전체)·킬 카운트 루프·세이브 repeatProg/repeatCycle(구세이브 사이클 역산 마이그레이션) / EventBus QuestLogState+퀘스트창 개별 진행도 목록 UI
+- [⑥툰 느낌] ToonFX 기본 1.07/1.16/2.0 → 1.14/1.32/2.8+sertz_fx 강도 연동(fxk) / 저사양 ambientBloomLight() 신설 — vc138의 모바일 블룸 전면 차단을 경량 프리셋(blendAmount 0.085·blurSteps 2)으로 복원(니플헤임/무스펠/눈·용암 지면 제외)
+- [⑦아크로드 5차] 종막극 종결 블록에 마법진 8장 방산(중심→외곽 340~500px 트윈·경로 50/100% 판정·rd(1.8)·넉백 520·종착 폭발)
+- [⑧좀비 스위퍼] update 2초 주기 — alive=false 잔존 스프라이트 destroyAll+goldenRef/fieldEliteRef 정리
+- [⑨거래소 폴링] MarketBoard 30초 interval — 상대 등록물 실시간 표시(마운트 1회 로드 한계 해소)
+- [123456 궁수] 클라우드 전캐릭터 백업 체계는 원격 vc149가 이미 구축(collectLocalChars/importCharsFromCloud) → 유실된 궁수 세이브를 CERTZ-DB 히스토리에서 회수(96ec53cd0c = deadeye lv253 "모험가" 2026-10-13T04:37:21 최종 백업) → data.chars.archer_restore로 병합 PUT(b498cffa04). 유저가 세이브 복원 1회면 궁수 편입
+- [정합] 원격 GM 엘릭서(4595 have&&!gmInfinite)·랭킹 100위/46svh·미니맵 노란점·에메랄드 스케일·로비 cls 우선·2궁 30초·쉐이더 0~200·NPC 말투는 vc149로 이미 완료 — 중복 적용 안 함
+- [게이트 vc150 승격 5종] server.js(LATEST_CODE 150·NOTE·미러 SERTZ-vc150.apk)·route.ts·next.config.ts·build.gradle 150·apk-guide
+- [검증] tsc 0 · npm run build 성공 · e2e_vc150(보스 화질 회귀) 12/12 · e2e_vc150_features(신규 9건) 27/27 — 황금 몬스터 flee/scale/tint 실측·의뢰 3개(40/40/45)·트래커 1/3 표기·소리/스탯 더보기·키캡 5종·물약 아이콘 실경로·pageerror 0
+
+Stage Summary:
+- vc150 = 신규 9건 원격 완결 — 웹 code:150 라이브, APK는 릴리스 후 덮어설치
+- 유저 테스트 포인트: ①고급 물약 장착 시 아이콘 표시 ②모바일 교실 스크롤 ③퀘스트창 토글(더보기 버튼 밑 위치·✕/아이콘 토글·닫아도 다시 열림) ④황금 몬스터 도주 ⑤수주 후 의뢰 2~4개 목록 ⑥설정에서 셰이더 강도 200 올려 툰 느낌 비교 ⑦아크로드 5차 마법진 방산 ⑧계정 123456 세이브 복원 → 궁수(데드아이 253) 로비 편입 확인
+- 잔무: APK vc150 빌드·릴리스 업로드(SERTZ-vc150.apk)

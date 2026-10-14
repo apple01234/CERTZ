@@ -127,10 +127,16 @@ export function HUD({
   /* v1.4.0 (#17) — 모바일 버튼 과밀 해소: 2선 버튼(보스/혜택/콘텐츠/유니온/거래소/랭킹/퀘스트로그)을
    *  “더보기” 토글로 접는다 — 주 사용 버튼(가방/스탯/설정/소리/자동/퀘스트)만 상시 노출 */
   const [moreOpen, setMoreOpen] = React.useState(false);
+  /* vc150 (#신규4) — 토글이 실제로 안 먹히던 원인 수정:
+   *  tutActive(튜토리얼 오버레이)가 켜져 있으면 trackerOpen을 아무리 켜도 화면에 안 나타났다
+   *  ("퀘스트창 끄고 키는거 안됨"의 직접 원인) — 유저가 명시적으로 켜면 튜토리얼 중에도 표시 */
+  const [tutOverride, setTutOverride] = React.useState(false);
   const toggleTracker = () => {
     setTrackerOpen((v) => {
-      localStorage.setItem("sertz.trackerOpen", v ? "0" : "1");
-      return !v;
+      const next = !v;
+      localStorage.setItem("sertz.trackerOpen", next ? "1" : "0");
+      if (next) setTutOverride(true);
+      return next;
     });
   };
   /* v1.1.1 (#1 가림) — 튜토리얼 진행 중엔 퀘스트 트래커를 숨긴다.
@@ -211,66 +217,6 @@ export function HUD({
         className="absolute right-[max(0.25rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-1 sm:top-3"
         style={{ zoom: typeof window !== "undefined" ? (window.innerWidth >= 1600 ? 1.28 : window.innerWidth >= 1280 ? 1.18 : window.innerWidth >= 1024 ? 1.08 : window.innerWidth >= 640 ? 0.92 : 0.85) : 1 }}
       >
-        {/* vc149 (#15) — 퀘스트 창을 최상단으로 이동 + 창 헤더에 on/off 토글 (#16)
-         *  v1.4.8 (#2 공간) — 트래커 축소 · v1.1.0 (#2) — 토글로 완전 숨김/표시 */}
-        {trackerOpen && !tutActive && (
-          <div className="game-panel pointer-events-auto w-full max-w-[260px] px-2.5 py-1.5 sm:px-3 sm:py-2">
-            <div className="flex items-center gap-1.5">
-              <ScrollText size={13} className="shrink-0 text-amber-300" />
-              <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
-              {/* vc149 (#16) — 퀘스트 on/off 토글을 퀘스트 창 안 헤더로 이동 */}
-              <button
-                onClick={toggleTracker}
-                aria-label="퀘스트창 끄기"
-                className="shrink-0 rounded bg-black/40 px-1 py-0.5 text-amber-200/80 active:scale-90"
-              >
-                <ScrollText size={11} />
-              </button>
-              {quest.pending && (
-                <span className="shrink-0 rounded bg-amber-400/25 px-1 py-px text-[8px] font-black text-amber-200">수락 대기</span>
-              )}
-            </div>
-            <>
-              {quest.desc && (
-              <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/70 sm:text-[11px]">{quest.desc}</p>
-            )}
-            <div className="mt-1 flex items-center justify-between gap-2">
-              {quest.target > 1 && (
-                <span className="text-[10px] font-bold text-emerald-300 sm:text-[11px]">
-                  {quest.current} / {quest.target}
-                </span>
-              )}
-              {quest.distance !== null && (
-                <span className="ml-auto rounded bg-emerald-900/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200 sm:text-[11px]">
-                  목표까지 {quest.distance}m
-                </span>
-              )}
-            </div>
-            {quest.jobStory && (
-              /* v4.1.3 (#전직조건표시) — 단계 수행 방법·진행도·힌트를 전부 노출 (지시 #6):
-               *  기존 한 줄 배지("1/3 — 첫 수련")만으로는 완료 조건을 알 수 없었다 */
-              <div className="mt-1 rounded bg-violet-500/15 px-1.5 py-1">
-                <p className="truncate text-[9px] font-bold text-violet-200 sm:text-[10px]">
-                  ✦ 전직 스토리 {quest.jobStory.step}/{quest.jobStory.total} — {quest.jobStory.stepTitle}
-                  {quest.jobStory.need > 1 && (
-                    <span className="ml-1 text-amber-300">
-                      [{quest.jobStory.current}/{quest.jobStory.need}]
-                    </span>
-                  )}
-                </p>
-                {quest.jobStory.stepDesc && (
-                  <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-violet-100/85 sm:text-[10px]">
-                    {quest.jobStory.stepDesc}
-                  </p>
-                )}
-                {quest.jobStory.hint && (
-                  <p className="mt-0.5 text-[9px] font-bold text-amber-300/95 sm:text-[10px]">→ {quest.jobStory.hint}</p>
-                )}
-              </div>
-            )}
-            </>
-          </div>
-        )}
         <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
           {/* vc147 (#22) — 우상단 자동전투(로봇) 버튼 철거: TouchControls 자동 버튼·B키와 삼중 중복.
            *  자동전투 진입점은 좌하단 클러스터 버튼 + B키(키맵 재배치 가능)로 통일. */}
@@ -457,6 +403,76 @@ export function HUD({
               <KeyRound size={17} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-violet-300/90">계정</span>
             </button>
+          </div>
+        )}
+        {/* vc149 (#15) 창 헤더 토글(#16) → vc150 (#신규4) — 퀘스트 창은 더보기 버튼행 "밑"에 위치 (유저 지시)
+         *  v1.4.8 (#2 공간) — 트래커 축소 · v1.1.0 (#2) — 토글로 완전 숨김/표시 */}
+        {/* vc150 (#신규4) — 퀘스트창이 닫혀 있으면 다시 열 버튼이 화면에 없었다 — 열기 칩 신설 */}
+        {!trackerOpen && (
+          <button
+            onClick={toggleTracker}
+            aria-label="퀘스트창 켜기"
+            className="game-chip pointer-events-auto flex h-8 w-8 items-center justify-center text-amber-200/80 active:scale-90"
+          >
+            <ScrollText size={15} />
+          </button>
+        )}
+        {trackerOpen && (!tutActive || tutOverride) && (
+          <div className="game-panel pointer-events-auto w-full max-w-[260px] px-2.5 py-1.5 sm:px-3 sm:py-2">
+            <div className="flex items-center gap-1.5">
+              <ScrollText size={13} className="shrink-0 text-amber-300" />
+              <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
+              {/* vc149 (#16) — 퀘스트 on/off 토글을 퀘스트 창 안 헤더로 이동 */}
+              <button
+                onClick={toggleTracker}
+                aria-label="퀘스트창 끄기"
+                className="shrink-0 rounded bg-black/40 px-1 py-0.5 text-amber-200/80 active:scale-90"
+              >
+                <ScrollText size={11} />
+              </button>
+              {quest.pending && (
+                <span className="shrink-0 rounded bg-amber-400/25 px-1 py-px text-[8px] font-black text-amber-200">수락 대기</span>
+              )}
+            </div>
+            <>
+              {quest.desc && (
+              <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/70 sm:text-[11px]">{quest.desc}</p>
+            )}
+            <div className="mt-1 flex items-center justify-between gap-2">
+              {quest.target > 1 && (
+                <span className="text-[10px] font-bold text-emerald-300 sm:text-[11px]">
+                  {quest.current} / {quest.target}
+                </span>
+              )}
+              {quest.distance !== null && (
+                <span className="ml-auto rounded bg-emerald-900/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200 sm:text-[11px]">
+                  목표까지 {quest.distance}m
+                </span>
+              )}
+            </div>
+            {quest.jobStory && (
+              /* v4.1.3 (#전직조건표시) — 단계 수행 방법·진행도·힌트를 전부 노출 (지시 #6):
+               *  기존 한 줄 배지("1/3 — 첫 수련")만으로는 완료 조건을 알 수 없었다 */
+              <div className="mt-1 rounded bg-violet-500/15 px-1.5 py-1">
+                <p className="truncate text-[9px] font-bold text-violet-200 sm:text-[10px]">
+                  ✦ 전직 스토리 {quest.jobStory.step}/{quest.jobStory.total} — {quest.jobStory.stepTitle}
+                  {quest.jobStory.need > 1 && (
+                    <span className="ml-1 text-amber-300">
+                      [{quest.jobStory.current}/{quest.jobStory.need}]
+                    </span>
+                  )}
+                </p>
+                {quest.jobStory.stepDesc && (
+                  <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-violet-100/85 sm:text-[10px]">
+                    {quest.jobStory.stepDesc}
+                  </p>
+                )}
+                {quest.jobStory.hint && (
+                  <p className="mt-0.5 text-[9px] font-bold text-amber-300/95 sm:text-[10px]">→ {quest.jobStory.hint}</p>
+                )}
+              </div>
+            )}
+            </>
           </div>
         )}
       </div>

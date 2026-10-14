@@ -1147,7 +1147,10 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
     /* v1.1.1 (#8) — 로그인/로그아웃 직후 거래판 즉시 갱신 (기존엔 로그인해도 새로고침 전까지 게스트 상태 유지) */
     const onAuth = () => { void refresh(); };
     EventBus.on("auth:changed", onAuth);
-    return () => { clearTimeout(t); EventBus.off("auth:changed", onAuth); };
+    /* vc150 (#26번항목20) — 거래판 30초 자동 갱신 (유저 지시 "1대1 거래 신청했는데 상대에게 안보임"):
+     *  마운트 1회 로드뿐이던 것을 폴링으로 — 상대 등록물이 판을 다시 열기 전까지 안 보이던 문제 해소 */
+    const iv = setInterval(() => { void refresh(); }, 30000);
+    return () => { clearTimeout(t); clearInterval(iv); EventBus.off("auth:changed", onAuth); };
   }, []);
 
   /* 등록 가능: 보유 전설 중 미등록·미장착 — v1.0.3 mk/listings 전 접근을 ?./?? 로 방어
@@ -4174,6 +4177,30 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
             <div className={`rounded-lg border px-2.5 py-2 ${questLog.repeatActive ? "border-sky-300/25 bg-sky-500/[0.06]" : "border-dashed border-white/15 bg-transparent opacity-60"}`}>
               <p className="text-[12px] font-bold text-sky-100">{questLog.repeat.title}</p>
               <p className="mt-0.5 text-[10px] text-white/55">{questLog.repeat.desc}</p>
+              {/* vc150 (#신규6) — 다수 의뢰(2~4개) 개별 진행도 목록 (유저 지시 "많은 마릿수의 의뢰 2~4개") */}
+              {questLog.repeat.bounties && questLog.repeat.bounties.length > 0 && (
+                <div className="mt-1.5 flex flex-col gap-1">
+                  {questLog.repeat.bounties.map((b, i) => {
+                    const done = b.count >= b.need;
+                    const pct = Math.min(100, Math.round((b.count / Math.max(1, b.need)) * 100));
+                    return (
+                      <div key={`${b.label}-${i}`} className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-[11px] font-bold ${done ? "text-emerald-300" : "text-white/85"}`}>
+                            {done ? "✓" : "◆"} {b.label} 토벌
+                          </span>
+                          <span className={`shrink-0 text-[10px] font-black ${done ? "text-emerald-300" : "text-sky-200"}`}>
+                            {b.count} / {b.need}
+                          </span>
+                        </div>
+                        <div className="mt-1 h-[3px] overflow-hidden rounded-full bg-black/60">
+                          <div className={`h-full rounded-full ${done ? "bg-emerald-400" : "bg-sky-400"}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               {!questLog.repeatActive && (
                 <p className="mt-1 text-[10px] font-bold text-amber-200/90">
                   {questLog.repeatUnlocked

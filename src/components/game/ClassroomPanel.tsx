@@ -61,7 +61,7 @@ export function ClassroomPanel() {
 
   return (
     <div className="pointer-events-auto absolute inset-0 z-[45] flex items-center justify-center bg-black/55 p-3" onPointerDown={() => setOpen(false)}>
-      <div className="game-panel w-full max-w-md p-4" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="game-panel sertz-scroll max-h-[min(90svh,640px)] w-full max-w-md overflow-y-auto p-4" onPointerDown={(e) => e.stopPropagation()}>
         {/* 헤더 */}
         <div className="mb-2 flex items-center justify-between">
           <p className="flex items-center gap-1.5 text-sm font-black text-emerald-200">

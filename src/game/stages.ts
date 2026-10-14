@@ -163,7 +163,11 @@ export type StageDef = {
   isVillage?: boolean;
   /** 구역 5 정예 몬스터 (미드 보스급 단일 스폰) */
   elite?: { key: EnemyKey; hpMult: number; atkMult: number; name: string };
-  repeat?: { targetKey: EnemyKey; need: number; gold: number; exp: number; title: string; desc: string };
+  repeat?: {
+    targetKey: EnemyKey; need: number; gold: number; exp: number; title: string; desc: string;
+    /* vc150 (#신규6) — 다수 의뢰 개편: 구역 종족 2~4종 개별 고마릿수 의뢰 (targetKey/need는 호환용 단일분) */
+    bounties?: { targetKey: EnemyKey; label: string; need: number }[];
+  };
   /** v1.0.19 (A-3 신규 스테이지) — 스테이지별 고유 배율 (stageScale 오버라이드.
    *  기존 챕터 스테이지는 이 필드가 없어 기존 곡선 그대로 유지 — 회귀 없음) */
   scaleMul?: { hp: number; atk: number; exp: number; gold: number };
@@ -928,6 +932,17 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
       ? questNeedByLv(spec.lvGate.enter)
       : Math.min(Math.round(spec.repeat.need * 1.5), Math.round((spec.repeat.need + sub) * Math.max(1, questNeedByLv(spec.lvGate.enter) / 8)));
   const repMul = Math.max(1, (repNeed / Math.max(1, spec.repeat.need)) * 0.6);
+  /* vc150 (#신규6) — 반복 의뢰 다수 개편 (유저 지시 "많은 마릿수의 의뢰 2~4개"):
+   *  구역 종족 중 2~4종을 뽑아 개별 고마릿수(기존 ×2.5, 5마리 단위) 의뢰를 생성한다.
+   *  종족별 중복 없이 배정 — 한 번의 처치가 여러 의뢰에 동시 카운트되지 않는다. */
+  const species: EnemyKey[] = [spec.main];
+  for (const en of spec.enemies) if (!species.includes(en.key)) species.push(en.key);
+  const bountyN = Math.min(4, Math.max(2, species.length));
+  const bounties = species.slice(0, bountyN).map((k) => ({
+    targetKey: k,
+    label: ENEMIES[k].name,
+    need: Math.max(25, Math.round((repNeed * 2.5) / 5) * 5),
+  }));
   const def: StageDef = {
     key,
     name: `제${spec.num}장 ${spec.title}`,
@@ -950,6 +965,7 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
       exp: Math.round(spec.repeat.exp * stageScale(key).exp * 0.9 * repMul),
       title: spec.repeat.title,
       desc: spec.repeat.desc,
+      bounties,
     },
   };
   if (sub === 5) {

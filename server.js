@@ -34,7 +34,7 @@ app.prepare().then(() => {
   /* vc138 — GitHub API 자산 DELETE 일시 장애로 동일 이름 교체가 막힌 기간의 안전 경로:
    *  vc138 자산을 별도 이름으로 업로드하고 이쪽을 가리킴. 루프가 동일 이름 교체에 성공하면
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.8/SERTZ-vc149.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.9/SERTZ-vc150.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -68,9 +68,9 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.0.9";
-  const LATEST_CODE = 149;
+  const LATEST_CODE = 150;
     const VERSION_NOTE =
-  "v1.0.9 (vc149) — 피드백 26종 반영: 계정123456 복구(고아 캐릭터 자동 재편입·슬롯 이중백업·클라우드 전 캐릭터 백업/복원)·1:1 거래 수신 토픽 미구독 수정·물약 20종 회복량 인상·보스 에메랄드 챕터 스케일링(2→16)·미니맵 NPC 노란 점·HUD 개편(소리·스탯→더보기/퀘스트 최상단+창 내 토글/더보기-설정 인접)·단축키 배지 기기별 표기·캐릭터 선택창 현재 직업·아이콘 캐시버스팅·쉐이더 0~200·랭킹 터치 스크롤 복구·아크로드 종막극 강화·제2궁극기 30초 여운·이터널 시간정지 강화·GameVFX 3D 팩 81종 통합·비마법 마법진 전면 대체(불서클/부채꼴/심연)·NPC 대사 구어체 6종 확장·유령 체력바 제거·UI 타이머 분산 최적화·exe 프록시 https 재배포"
+  "v1.0.9 (vc150) — 신규 9건 재적용·완결: ①고급 물약 아이콘 실경로 로드(ITEMS.icon 조회 — 캐시버스팅으로 못 고치던 404 근본 수정) ②모바일 교실 UI 스크롤(max-h+overflow) ③퀘스트 토글 완결: 창이 더보기 버튼행 밑에 위치+튜토리얼 게이트 오버라이드(토글 안 먹힘 근본 수정)+닫힘 시 재오픈 칩 ④황금 몬스터 도주형 개편(공격X·도주 AI·속도 1.6배·크기 1.62·황금색 0xffc832) ⑤반복 의뢰 다수 개편(구역 종족 2~4개 고마릿수 ×2.5·종족 중복 없음·사이클 +2 계승·구세이브 마이그레이션·퀘스트창 개별 진행도 목록) ⑥툰셰이더 체감 회복(대비 1.14/채도 1.32/림 2.8·강도 연동)+저사양 경량 앰비언트 블룸 복원 ⑦아크로드 5차 마법진 8장 방산 피해(경로 50/100% 판정·1.8배·넉백) ⑧좀비 몬스터 2초 스위퍼(체력바·스프라이트 잔존 안전망) ⑨거래소 30초 폴링(상대 등록물 실시간 표시)"
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

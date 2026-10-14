@@ -220,6 +220,13 @@ export class WorldScene extends Phaser.Scene {
   private bossDef: BossDef | null = null;
   // 반복 토벌 의뢰 — 사이클별 목표 수 (완료할수록 +2)
   private repeatNeed = 0;
+  /* vc150 (#신규6) — 다수 반복 의뢰(2~4개): 종족별 고마릿수 의뢰와 진행도.
+   *  비어 있으면 구세이브 단일 의뢰 모드(repeatNeed/huntCount)로 폴백 — 세이브 호환 */
+  private repeatBounties: { key: EnemyKey; label: string; need: number; count: number }[] = [];
+  /** vc150 — 완료 사이클 수 (완료할수록 전 의뢰 목표 +2 — 기존 무한 확장 계승) */
+  private repeatCycle = 0;
+  /* vc150 (#26번항목21) — 좀비 몬스터 청소 누적기 */
+  private zombieSweepAt = 0;
 
   /* ----- v3.0.16 — 몬스터 컬렉션 (메이플 몬스터 컬렉션) ----- */
   /** 영구 컬렉션 처치 기록 (id → 처치 수). 최초 처치 시 컬렉션 등록 + 마일스톤 스탯 상승 */
@@ -766,6 +773,8 @@ export class WorldScene extends Phaser.Scene {
     this.autoBlacklist.clear();
     this.autoAvoidLastSign = 0;
     this.repeatNeed = 0;
+    this.repeatBounties = []; // vc150 (#신규6) — 스테이지 전환 시 다수 의뢰 상태 리셋
+    this.repeatCycle = 0;
     this.keymap = loadKeyMap();
     this.keyObjs = {};
     this.pet = null;
@@ -1099,6 +1108,8 @@ export class WorldScene extends Phaser.Scene {
        *   우회하던 구멍 — groundTex 기반으로 잡는다) */
       if (this.bossFilters.length === 0 && this.ambientBloomAllowed())
         this.ambientFilters = addAmbientBloom(this.cameras.main);
+      else if (this.bossFilters.length === 0 && this.ambientBloomLight())
+        this.ambientFilters = addAmbientBloom(this.cameras.main, { blendAmount: 0.085 }); // 저사양 가벼운 프리셋
       /* vc142 (#11) — 화면 전체 툰 셰이딩 (Blocky 포스터라이즈 + ColorMatrix 셀룰룩 명암).
        *  유저 지시 Toon Shaders Pro 재현 — localStorage sertz_toon으로 on/off, 저사양 자동 해제. */
       if (toonEnabled() && !isLowPerfEnv()) this.toonCamFilters = applyToonCamera(this.cameras.main);
@@ -1268,8 +1279,17 @@ export class WorldScene extends Phaser.Scene {
        *  같은 구역 세이브에서만 복원 — 다른 구역이면 신규 시작 */
       const savedRepeatStage = (savedPlayer as { repeatStage?: string }).repeatStage;
       if (savedRepeatStage === this.stageDef.key) {
-        this.repeatNeed = (savedPlayer as { repeatNeed?: number }).repeatNeed ?? this.stageDef.repeat?.need ?? 0;
+        const savedRN = (savedPlayer as { repeatNeed?: number }).repeatNeed ?? this.stageDef.repeat?.need ?? 0;
+        this.repeatNeed = savedRN;
         this.huntCount = (savedPlayer as { huntCount?: number }).huntCount ?? 0;
+        /* vc150 (#신규6) — 다수 의뢰 진행도 복원 (신규 필드 우선, 구세이브는 마이그레이션) */
+        const legacyBase = this.stageDef.repeat?.need ?? 0;
+        this.setupRepeatBounties({
+          prog: (savedPlayer as { repeatProg?: number[] }).repeatProg,
+          cycle: (savedPlayer as { repeatCycle?: number }).repeatCycle,
+          legacyCount: this.huntCount,
+          legacyCycle: Math.max(0, Math.round((savedRN - legacyBase) / 2)),
+        });
       }
       // v2.5 — 방문 기록 복원 + 자동사냥 (v3.0.15 #5: 펫 조건 제거)
       this.visited = new Set(savedPlayer.visited ?? []);
@@ -1430,6 +1450,7 @@ export class WorldScene extends Phaser.Scene {
     if (!((savedPlayer as { repeatStage?: string } | undefined)?.repeatStage === this.stageDef.key)) {
       this.repeatNeed = this.stageDef.repeat?.need ?? 0;
       this.huntCount = 0;
+      this.setupRepeatBounties({}); // vc150 (#신규6) — 신규 진입: 의뢰 2~4개 0부터
     }
     this.playerRef = this.player;
     /* v3.0.18 — 카메라 추적 lerp 0.12→0.18 체감은 applyManualCameraFollow의 k=0.18로 승계.
@@ -4776,7 +4797,19 @@ export class WorldScene extends Phaser.Scene {
         /* v3.0.15 (#8) — 미수락 토벌 퀘스트는 카운트하지 않는다 */
       } else if (this.repeatActive()) {
         // 반복 토벌 의뢰 — 메인 체인 종료 후 무한 파밍 (사이클별 카운트)
-        if (q.targetKey === key) {
+        /* vc150 (#신규6) — 다수 의뢰(2~4개): 처치 종족과 일치하는 의뢰를 카운트한다.
+         *  의뢰는 종족별 중복 없이 배정되므로 한 처치가 여러 의뢰에 겹치지 않는다.
+         *  다수 의뢰 미구축(구세이브)이면 기존 단일 카운터로 폴백 */
+        if (this.repeatBounties.length > 0) {
+          let hitBounty = false;
+          this.repeatBounties.forEach((b, i) => {
+            if (b.key !== key) return;
+            hitBounty = true;
+            b.count++;
+            if (b.count >= this.repeatNeedOf(i)) this.completeRepeatBounty(i);
+          });
+          if (hitBounty) this.emitQuest();
+        } else if (q.targetKey === key) {
           this.huntCount++;
           if (this.huntCount >= this.repeatNeed) this.completeRepeat();
           else this.emitQuest();
@@ -4828,6 +4861,31 @@ export class WorldScene extends Phaser.Scene {
    *  마을 상인에게 말을 걸어 수주해야 [반복] 토벌 의뢰가 퀘스트창에 뜬다 */
   private repeatActive(): boolean {
     return this.repeatOn && this.questIdx >= this.stageDef.quests.length && !!this.stageDef.repeat;
+  }
+
+  /* ================= vc150 (#신규6) — 다수 반복 의뢰(2~4개) ================= */
+
+  /** 다수 의뢰 상태 구축 (스테이지 로드 시 1회). stageDef.repeat.bounties(2~4개)를
+   *  진행도와 함께 세팅한다. 구세이브 단일 카운터는 첫 의뢰 진행도 + 사이클로 마이그레이션. */
+  private setupRepeatBounties(opts?: { legacyCount?: number; legacyCycle?: number; prog?: number[]; cycle?: number }) {
+    const r = this.stageDef.repeat;
+    if (!r || !r.bounties || r.bounties.length === 0) {
+      this.repeatBounties = [];
+      return;
+    }
+    this.repeatBounties = r.bounties.map((b, i) => ({
+      key: b.targetKey,
+      label: b.label || ENEMIES[b.targetKey].name,
+      need: b.need,
+      count: Math.max(0, opts?.prog?.[i] ?? (i === 0 ? opts?.legacyCount ?? 0 : 0)),
+    }));
+    this.repeatCycle = Math.max(0, opts?.cycle ?? opts?.legacyCycle ?? 0);
+  }
+
+  /** 의뢰 i의 현재 목표 수 — 사이클 완료분만큼 증가 (기존 "완료할수록 +2" 계승) */
+  private repeatNeedOf(i: number): number {
+    const b = this.repeatBounties[i];
+    return b ? b.need + this.repeatCycle * 2 : 0;
   }
 
   /** 반복 의뢰 시스템 수주 가능 여부 — v3.0.26 (#76): 일퀘(라고스 의뢰)는
@@ -6474,17 +6532,21 @@ export class WorldScene extends Phaser.Scene {
       atk: Math.round((4 + this.player.lv * 0.4) * GOLDEN.atkMul),
       exp: Math.round((20 + this.player.lv * 2) * GOLDEN.expMul),
       gold: 0,
+      /* vc150 (#신규5) — 황금 몬스터 행동 개편 (유저 지시): ①공격 X 도주형 ②빠른 도주(×1.6)
+       *  ③대형화(1.28→1.62) ④진한 황금색(0xffd76a→0xffc832) */
+      flee: true,
+      spd: 1.6,
+      scale: 1.62,
+      tint: 0xffc832,
     });
     /* 황금 변이 연출 — 황금 틴트 + 확대 + 반짝임 */
-    e.setTint(0xffd76a);
-    e.setScale(1.28);
-    const glow = this.add.image(e.x, e.y - 4, "glow").setDepth(9).setScale(1.4).setAlpha(0.5).setTint(0xffd76a).setBlendMode(Phaser.BlendModes.ADD);
+    const glow = this.add.image(e.x, e.y - 4, "glow").setDepth(9).setScale(1.8).setAlpha(0.55).setTint(0xffd76a).setBlendMode(Phaser.BlendModes.ADD);
     this.tweens.add({ targets: glow, alpha: 0.18, scale: 1.8, yoyo: true, repeat: -1, duration: 640 });
     e.once("destroy", () => glow.destroy());
     this.goldenRef = e;
     this.enemies.push(e);
     this.physics.add.collider(e, this.solidGroup);
-    this.showBanner("✨ 황금 몬스터 출현! 잡으면 대량의 골드!");
+    this.showBanner("✨ 황금 몬스터 출현! 도망간다 — 잡으면 대량의 골드!");
     audio.sfx.roar();
   }
 
@@ -6802,6 +6864,35 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     return null;
+  }
+
+  /** vc150 (#신규6) — 다수 의뢰: 의뢰 i 단위 완료 처리. 의뢰마다 보상 1회 지급 + 사이클 +1 */
+  private completeRepeatBounty(i: number) {
+    const r = this.stageDef.repeat!;
+    const b = this.repeatBounties[i];
+    if (!b) return;
+    const doneNeed = this.repeatNeedOf(i);
+    audio.sfx.reward();
+    this.player.addGold(r.gold);
+    this.player.gainExp(r.exp);
+    this.spawnPickupText(this.player.x, this.player.y - 44, `토벌 완료 +${r.gold}G`, "#ffd76a");
+    EventBus.emit("reward:show", {
+      title: `반복 토벌 의뢰 완료! (${i + 1}/${this.repeatBounties.length})`,
+      lines: [
+        { text: `${b.label} ${doneNeed}마리 토벌 달성`, color: "#cfe8ff" },
+        { text: `골드 +${r.gold} G`, color: "#ffd76a" },
+        { text: `경험치 +${r.exp} EXP`, color: "#8fe84a" },
+        { text: "에메랄드 +1", color: "#7de8ff" },
+      ],
+    } satisfies RewardPopupState);
+    b.count = 0;
+    this.repeatCycle += 1;
+    this.player.emerald += 1;
+    this.spawnPickupText(this.player.x, this.player.y - 58, "+1 에메랄드", "#7de8ff");
+    this.save();
+    this.emitRpgState();
+    this.emitQuest();
+    this.emitRpgState();
   }
 
   /** 반복 토벌 완료 — 보상 지급 후 목표 +2 (무한 확장) */
@@ -7472,6 +7563,16 @@ export class WorldScene extends Phaser.Scene {
     const gt = (this.stageDef as { groundTex?: string }).groundTex;
     if (gt === "tile_snow" || gt === "tile_magma") return false;
     return !isLowPerfEnv();
+  }
+  /** vc150 (#신규7 툰 느낌 복원) — 저사양에서도 "가벼운" 앰비언트 블룸은 허용한다.
+   *  vc138의 전면 차단이 "예전 툰셰이더 느낌이 안 난다" 체감의 주원인 —
+   *  blurSteps 2·blend ×0.6으로 비용을 낮춘 단일 패스만 복원 (프리즈 원인은 이중 패스 과부하). */
+  private ambientBloomLight(): boolean {
+    const ch = parseStage(this.stageDef.key).ch;
+    if (ch === "niflheim" || ch === "muspelheim") return false;
+    const gt = (this.stageDef as { groundTex?: string }).groundTex;
+    if (gt === "tile_snow" || gt === "tile_magma") return false;
+    return isLowPerfEnv();
   }
   /** v1.0.18 — 보스 라이트가 보스를 추적 중인지 */
   private bossLightFollow = false;
@@ -9456,6 +9557,18 @@ export class WorldScene extends Phaser.Scene {
     if (this.parkActive) this.tickPark(dt); // v1.0.18 — 몬스터 파크
     /* v1.0.8 — ⑦ 황금 몬스터 러시: 일반 필드 구역에서만 랜덤 스폰 (평균 60~100초) */
     this.tickGolden(dt);
+    /* vc150 (#26번항목21) — 좀비 몬스터 청소 (2초 주기): 사망 처리됐는데 스프라이트가
+     *  파괴되지 못하고 맵에 남는 케이스(사망 delayedCall 취소/예외 등 엣지)를 강제 수거 */
+    if (this.time.now - this.zombieSweepAt > 2000) {
+      this.zombieSweepAt = this.time.now;
+      let swept = false;
+      for (const e of this.enemies) {
+        if (!e.alive && e.active) { e.destroyAll(); swept = true; }
+      }
+      if (swept) this.enemies = this.enemies.filter((e) => e.alive);
+      if (this.goldenRef && !this.goldenRef.alive) this.goldenRef = null;
+      if (this.fieldEliteRef && !this.fieldEliteRef.alive) this.fieldEliteRef = null;
+    }
 
     // 원격 플레이어 보간 — 대화/채팅/사망과 무관하게 항상 갱신 (v1.7 멀티플레이)
     // v1.4.3 (작업3 최적화) — 화면 밖 원격(1700px+)은 보간만 하고 애니/이름표/오라 갱신 생략
@@ -13250,6 +13363,20 @@ export class WorldScene extends Phaser.Scene {
   currentQuest(): QuestDef | null {
     if (this.repeatActive()) {
       const r = this.stageDef.repeat!;
+      /* vc150 (#신규6) — 다수 의뢰: 미완료 의뢰를 순서대로 트래커에 노출 (n/전체 표기) */
+      const idx = this.repeatBounties.findIndex((b, i) => b.count < this.repeatNeedOf(i));
+      if (idx >= 0) {
+        const b = this.repeatBounties[idx];
+        return {
+          id: "repeat",
+          type: "hunt",
+          title: `${r.title} ${idx + 1}/${this.repeatBounties.length}`,
+          desc: `${r.desc} — 의뢰 ${this.repeatBounties.length}개 중 ${idx + 1}번째 (${b.label})`,
+          need: this.repeatNeedOf(idx),
+          targetKey: b.key,
+          targetLabel: b.label,
+        };
+      }
       return {
         id: "repeat",
         type: "hunt",
@@ -13720,7 +13847,14 @@ export class WorldScene extends Phaser.Scene {
       stageName: `${this.stageDef.name} — ${this.stageDef.subtitle}`,
       list,
       /* v3.0.26 (#76) — 스토리 미완료 시 반복 의뢰 섹션 자체를 숨김 ("스토리 다 완료 후 창이 뜨게") */
-      repeat: this.cleared && r ? { title: r.title, desc: r.desc } : null,
+      /* vc150 (#신규6) — 다수 의뢰(2~4개)를 개별 진행도와 함께 목록으로 노출 */
+      repeat: this.cleared && r ? {
+        title: r.title,
+        desc: r.desc,
+        bounties: this.repeatBounties.length > 0
+          ? this.repeatBounties.map((b, i) => ({ label: b.label, count: b.count, need: this.repeatNeedOf(i) }))
+          : null,
+      } : null,
       repeatActive: this.repeatActive(),
       repeatUnlocked: this.repeatOn,
       trackedList: tracked,
@@ -13802,6 +13936,9 @@ export class WorldScene extends Phaser.Scene {
       /* v3.0.6 — 반복 의뢰 진행도 (재입장 시 카운트 유지) */
       repeatNeed: this.repeatNeed,
       huntCount: this.huntCount,
+      /* vc150 (#신규6) — 다수 의뢰 진행도 (종족별 카운트 + 사이클) */
+      repeatProg: this.repeatBounties.length > 0 ? this.repeatBounties.map((b) => b.count) : undefined,
+      repeatCycle: this.repeatCycle,
       repeatStage: this.stageDef.key,
       autoUse: { ...this.player.autoUse },
       seen: [...this.seenSet].slice(-160),

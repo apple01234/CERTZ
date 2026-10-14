@@ -103,6 +103,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.stunUntil = Math.max(this.stunUntil, this.scene.time.now + durMs);
   }
 
+  /* vc150 (#신규5) — 도주형 개체 (황금 몬스터): 공격하지 않고 플레이어로부터 빠른 속도로 도망간다 */
+  flee = false;
+
   /** 감속 반영 실효 속도 */
   private get effSpeed(): number {
     return this.def.speed * this.spdMul * (this.scene.time.now < this.slowUntil ? this.slowMult : 1);
@@ -155,7 +158,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     x: number,
     y: number,
     key: EnemyKey,
-    opts?: { hp?: number; atk?: number; exp?: number; gold?: number; scale?: number; tint?: number; displayName?: string; dummy?: boolean; abs?: boolean; spd?: number }
+    opts?: { hp?: number; atk?: number; exp?: number; gold?: number; scale?: number; tint?: number; displayName?: string; dummy?: boolean; abs?: boolean; spd?: number; flee?: boolean }
   ) {
     super(scene, x, y, `${key}_idle0`);
     const base = ENEMIES[key];
@@ -165,6 +168,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (opts?.dummy) this.dummy = true;
     /* vc142 (#4 탑 리워크) — 파워(속도) 배율 적용 (0.5~2.0 클램프) */
     if (opts?.spd) this.spdMul = Phaser.Math.Clamp(opts.spd, 0.5, 2);
+    /* vc150 (#신규5) — 도주형 플래그 */
+    if (opts?.flee) this.flee = true;
     /* vc142 (쿠소디아 프리즈 ②·탑 밸런스) — abs 플래그: hp/atk/exp/gold를 절대값으로 직접 사용.
      * 기존엔 opts.hp를 무조건 base.hp의 배수로 해석해 탑/황금몬스터가 절대값을 넘기면
      * base.hp × 절대값 = 수만 HP 괴물이 spawn → "게임이 멈춘 것처럼" 보였다. */
@@ -235,6 +240,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       name: "wander", // LONG — 어그로 밖: 배회
       update: (c) => {
         const e = c.enemy;
+        /* vc150 (#신규5) — 도주형(황금 몬스터): 어그로와 무관하게 항상 도주, 절대 공격 안 함.
+         *  벽에 안 몰리게 플레이어 반대방향 + 사인 지그재그를 섞는다 */
+        if (e.flee && c.player.hp > 0) {
+          const sway = Math.sin(this.scene.time.now / 260) * 0.45;
+          const dx = -c.toPlayer.x + -c.toPlayer.y * sway;
+          const dy = -c.toPlayer.y + c.toPlayer.x * sway;
+          const len = Math.max(0.0001, Math.hypot(dx, dy));
+          const spd = e.effSpeed * 1.35;
+          c.vx = (dx / len) * spd;
+          c.vy = (dy / len) * spd;
+          return undefined; // 어떤 상태로도 전이하지 않는다 (공격 불가)
+        }
         if (e.modeTimer <= 0) {
           e.modeTimer = Phaser.Math.Between(900, 2200);
           if (Math.random() < 0.45) e.wanderDir.set(0, 0);
@@ -252,6 +269,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       name: "chase", // MID — 어그로 이내: 추격
       update: (c) => {
         const e = c.enemy;
+        /* vc150 (#신규5) — 도주형은 추격 대신 계속 도주 (공격 전이 차단) */
+        if (e.flee && c.player.hp > 0) {
+          const spd = e.effSpeed * 1.35;
+          c.vx = -c.toPlayer.x * spd;
+          c.vy = -c.toPlayer.y * spd;
+          return undefined;
+        }
         const rng = prof?.ranged;
         if (rng) {
           /* 원거리 캐스터 — 사거리 내 접근 시 시전, 너무 붙으면 뒤로 키팅 */

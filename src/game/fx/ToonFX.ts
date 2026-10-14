@@ -42,11 +42,21 @@ export function applyToonStyle(obj: Filterable, opts: ToonOpts = {}): unknown[] 
   const list = o?.filters?.external;
   if (!list?.addColorMatrix || !list.addGlow) return null;
   const created: unknown[] = [];
+  /* vc150 (#신규7) — 설정 강도(sertz_fx.intensity, 기본 55)를 비례 반영해
+   *  툰 명암/림라이트가 강도 슬라이더를 따라가게 — 강도를 올리면 툰셰이더 체감도 커진다 */
+  let fxk = 1;
+  try {
+    const raw = typeof window !== "undefined" ? window.localStorage.getItem("sertz_fx") : null;
+    if (raw) {
+      const it = (JSON.parse(raw) as { intensity?: number }).intensity;
+      fxk = Math.max(0.2, Math.min(3.0, (typeof it === "number" ? it : 55) / 55));
+    }
+  } catch { /* 무시 — 기본값 */ }
   try {
     const cm = list.addColorMatrix();
-    /* vc147 (#1 툰 효과 강화) — 스프라이트 림라이트도 기본 강화 (vc145 완화분 되돌림+증폭) */
-    cm.colorMatrix.contrast(opts.contrast ?? 1.07);
-    cm.colorMatrix.saturate(opts.saturate ?? 1.16);
+    /* vc147 (#1) 강화 → vc150 (#신규7) 추가 증폭 — 예전 툰셰이더 체감 회복 */
+    cm.colorMatrix.contrast(opts.contrast ?? 1.14);
+    cm.colorMatrix.saturate(opts.saturate ?? 1.32);
     created.push(cm);
   } catch {
     return created.length ? created : null;
@@ -54,8 +64,8 @@ export function applyToonStyle(obj: Filterable, opts: ToonOpts = {}): unknown[] 
   try {
     const glow = list.addGlow({
       color: opts.rim ?? 0x9fd8ff,
-      outerStrength: opts.rimStrength ?? 2.0,
-      innerStrength: 0.5,
+      outerStrength: (opts.rimStrength ?? 2.8) * fxk, // 2.0→2.8 + 강도 연동 (vc150)
+      innerStrength: 0.6,
       distance: 9,
       quality: 4, // 모바일 예산 — 낮은 품질 고정
     });

@@ -227,7 +227,8 @@ export type QuestState = {
 export type QuestLogState = {
   stageName: string;
   list: { title: string; desc: string; state: "done" | "active" | "locked"; canAccept?: boolean; accepted?: boolean }[];
-  repeat: { title: string; desc: string } | null;
+  /* vc150 (#신규6) — 다수 의뢰(2~4개) 목록 추가 */
+  repeat: { title: string; desc: string; bounties?: { label: string; count: number; need: number }[] | null } | null;
   /* v2.3 — 반복 의뢰 수주 여부 (미수주 시 NPC 수주 안내 표시) */
   repeatActive?: boolean;
   /* v3.0.15 (#3) — 반복 의뢰 수주 해금 여부 */

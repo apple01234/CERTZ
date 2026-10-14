@@ -2855,6 +2855,50 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnPentacle(this.scene, this.x, this.y, 0x8ab0ff, { tex: "vf_penta_elec", scale: 2.8, duration: 1000 });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xaec6ff, 5.4, 820);
           spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_elec", { scale: 2.4, duration: 620 });
+          /* vc150 (#신규8) — 마법진 8장 방사: 붕괴의 충격으로 마법진들이 중심에서 주변으로
+           *  튕겨 나가며 비행 경로(중간 50%+종착 100%)에서 적에게 피해를 준다 (유저 지시
+           *  "아크로드 5차가 터질때 마법진들이 주변으로 튕겨 나가면서 딜이 들어가야함") */
+          const arclordTargets = this.scene.getAllTargets();
+          for (let ci = 0; ci < 8; ci++) {
+            const cAng = (ci / 8) * Math.PI * 2 + Math.random() * 0.35;
+            const cDist = 340 + Math.random() * 160;
+            const cx = this.x + Math.cos(cAng) * cDist;
+            const cy = this.y + Math.sin(cAng) * cDist;
+            const circle = this.scene.add.image(this.x, this.y, "vf_penta_elec")
+              .setTint(0x8ab0ff)
+              .setBlendMode(Phaser.BlendModes.ADD)
+              .setDepth(60)
+              .setScale(0.85)
+              .setRotation(Math.random() * Math.PI);
+            this.scene.tweens.add({
+              targets: circle,
+              x: cx, y: cy, scale: 1.6, rotation: circle.rotation + 2.6, alpha: { from: 1, to: 0.85 },
+              duration: 560,
+              ease: "Cubic.easeOut",
+              onComplete: () => {
+                this.scene.spawnBurstAt(circle.x, circle.y, 22, 0x8ab0ff);
+                this.scene.tweens.add({
+                  targets: circle, alpha: 0, scale: 2.1, duration: 230,
+                  onComplete: () => circle.destroy(),
+                });
+              },
+            });
+            for (const frac of [0.5, 1]) {
+              this.scene.time.delayedCall(560 * frac + 30, () => {
+                if (this.state === "dead") return;
+                const hx = this.x + Math.cos(cAng) * cDist * frac;
+                const hy = this.y + Math.sin(cAng) * cDist * frac;
+                for (const e of arclordTargets) {
+                  if (!e.active) continue;
+                  if (Phaser.Math.Distance.Between(hx, hy, e.x, e.y) > 140) continue;
+                  const away = new Phaser.Math.Vector2(e.x - hx, e.y - hy).normalize();
+                  const { dmg, crit } = rd(1.8); // 마법진 1장당 피해
+                  if (crit) this.scene.sfxCrit();
+                  e.takeDamage(dmg, away, 520, crit);
+                }
+              });
+            }
+          }
           this.scene.driveFx?.gvCore(this.x, this.y, 0xcfe0ff, 2.4);
           this.scene.driveFx?.gvStreaks(this.x, this.y, 0xaec6ff, 2.2);
           this.scene.driveFx?.gvShock(this.x, this.y, 0x8ab0ff, 2.6, 860);

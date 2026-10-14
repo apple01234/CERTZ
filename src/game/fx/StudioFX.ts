@@ -28,7 +28,7 @@ type SceneLike = Phaser.Scene & { textures: Phaser.Textures.TextureManager };
  *  낮은 강도는 blendAmount를 비례 축소해 눈 피로도를 낮춘다 (기본 강도 = 55).
  *  v1.4.13 (#6 셰이더 약화) — 평시 앰비언트 블룸도 눈에 띄게 약화: blendAmount 0.32 → 0.14,
  *  threshold 0.74 → 0.82, blurSteps 3 → 2. 챕터 진입 시 "너무 강해" 체감 해소. */
-export function addAmbientBloom(cam: CamLike): unknown[] {
+export function addAmbientBloom(cam: CamLike, opts?: { blurSteps?: number; blendAmount?: number }): unknown[] {
   const out: unknown[] = [];
   try {
     if (!cam.filters) return out;
@@ -41,8 +41,8 @@ export function addAmbientBloom(cam: CamLike): unknown[] {
     const bloom = Phaser.Actions.AddEffectBloom(cam as unknown as Phaser.Cameras.Scene2D.Camera, {
       threshold: 0.82 + (1 - Math.min(1, k)) * 0.06,
       blurRadius: 1,
-      blurSteps: 2,
-      blendAmount: 0.14 * k,
+      blurSteps: opts?.blurSteps ?? 2,
+      blendAmount: (opts?.blendAmount ?? 0.14) * k,
     });
     if (bloom[0]) out.push(bloom[0].threshold, bloom[0].blur, bloom[0].parallelFilters);
   } catch { /* 필터 미지원 무시 */ }

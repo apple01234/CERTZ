@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
 import { Swords, Bot, Pause, Star, Sparkles } from "lucide-react";
 import type { Skills } from "./useGameUi";
-import { loadKeyMap } from "@/game/keymap"; // v1.0.4 — 물약 키 힌트를 키맵 따라 표시
+import { loadKeyMap } from "@/game/keymap";
+import { ITEMS } from "@/game/data"; // vc150 (#신규1) — 장착 물약 아이콘 실경로 조회 // v1.0.4 — 물약 키 힌트를 키맵 따라 표시
 
 /* v3.0.18 — 52→64px: 스틱 반경 확대로 미세 조작 정밀도 향상 + 풀 기울임이 쉬워짐
  *  (기존 52px는 손가락이 조금만 쉬어도 실질 60~85% 속도 — "이속이 느림" 체감의 주원인) */
@@ -427,10 +428,11 @@ function PotionButton({
     () => typeof window !== "undefined" && (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900)
   );
   const kmHint = loadKeyMap();
-  const iconSrc =
-    itemKey && itemKey !== "potion_hp" && itemKey !== "potion_mp"
-      ? `/assets/item_${itemKey}.webp`
-      : `/assets/item_potion_${kind}.webp`;
+  /* vc150 (#신규1) — 장착 물약의 실제 아이콘은 ITEMS[itemKey].icon으로 조회한다.
+   *  기존엔 `item_${itemKey}.webp` 문자열을 조합해 potion_hp3~hp10/mp3~mp10/gm_elixir 같은
+   *  고급 물약이 전부 404(깨진 이미지)였다 — 캐시 버스팅 재시도로도 해결 안 되는 근본 원인. */
+  const def = (ITEMS as Record<string, { icon?: string }>)[itemKey ?? ""];
+  const iconSrc = def?.icon ? `/assets/${def.icon}.webp` : `/assets/item_potion_${kind}.webp`;
   return (
     <button
       aria-label={kind === "hp" ? "HP 물약" : "MP 물약"}
