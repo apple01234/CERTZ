@@ -4163,3 +4163,10 @@ Stage Summary:
 - 사고·복구: 릴리스 자산 정리 중 iOS IPA 오삭제 → Actions 아티팩트에서 완전 복구(무결성 PASS). 교훈: 릴리스 자산 DELETE 전 워크플로 자동첨부분 식별 필수
 - EXE 빌드 완료 시 유저 테스트: SERTZ-vc148-win.exe(포터블)/win-setup.exe(설치기) — 로그인/멀티는 Vercel API 프록시 경유
 - [긴급 복구] 세션 사이 로컬 워크스페이스가 vc141 스냅샷으로 롤백(자동 UUID 커밋 69a259d) → origin/main c3358cc로 hard reset해 vc148 트리 전체 복구. 탐색 에이전트 3종이 구버전 트리를 보고했으므로 라인번호 참조는 재검증 필수
+
+Stage Summary:
+- [빌드 체인] EXE run 38513181346 success(90eac40) — SERTZ-vc149-win.exe 257,275,886B + win-setup.exe 257,709,117B 자동첨부. APK 3청크 완결 — 단, 컨테이너 리셋으로 JDK javac·Android SDK 소실 → OpenJDK 21.0.2(/home/z/jdk) + cmdline-tools 재설치(platforms;android-35·build-tools;35.0.0·local.properties 재작성) 후 BUILD SUCCESSFUL(5m14s)
+- [릴리스 v1.0.9] SERTZ-vc149.apk 152,509,185B·149/1.0.9·md5 40e90c82 PASS + EXE 2종 + 구 잔존자산 SERTZ-v1.0.9.apk(9/10자 105MB) DELETE + 릴리스 이름/노트 vc149로 재작성 + make_latest. 스크립트 scripts/vc149_release.py
+- [웹 라이브] sertz.vercel.app /api/version → 1.0.9/149 확인. apk-guide 신해시(md5 40e90c82·sha1 b93b6cd2·152509185B) 커밋 4e5aec3
+- [26항목 완결] ①계정 복구 체계(고아 재편입·슬롯 이중백업·클라우드 전캐릭터 백업/복원) ②캐릭터 소실 근본치료 ③타이틀 로그인·PC 온라인(exe 프록시 수리 재배포) ④단축키 기기별 ⑤⑤PC온라인 ⑥물약 20종 인상 ⑦미니맵 NPC 노란점 ⑧아이콘 재시도 ⑨에메랄드 스케일링 ⑩현재 직업 표기 ⑪아크로드 종결 강화 ⑫2궁 30초 여운 ⑬이터널 강화 ⑭GameVFX 81종+마법진 계열 대체 ⑮더보기 이동 ⑯퀘스트 토글 이동 ⑰더보기-설정 인접 ⑱단축키 정확 표기 ⑲계정123456 복구(클라우드 세이브 확인 완료 — 유저 재부팅 시 자동 복원) ⑳거래 수신 수정 ㉑유령바 제거 ㉒랭킹 스크롤 ㉓NPC 말투 ㉔GM엘릭서(vc146 검증 유지) ㉕타이머 분산 ㉖IPA 빌드 0 (금지 준수)
+- [검증] tsc 0 · npm run build 성공 · e2e_vc149.js 정적 24종 + e2e_vc149_live.js 라이브 4종(월드진입·gv81종 로드·pageerror 0) 전부 PASS
