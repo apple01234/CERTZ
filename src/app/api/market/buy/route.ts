@@ -27,13 +27,19 @@ export async function POST(req: NextRequest) {
       const l = fdb.market.listings[id];
       if (!l) return { status: 404, body: { error: "이미 판매된 등록이에요 — 새로고침해 주세요" } };
       if (l.seller === me.id) return { status: 403, body: { error: "내 등록은 구매할 수 없어요" } };
-      const item = { itemKey: l.itemKey, up: l.up ?? 0, price: l.price, sellerName: l.sellerName };
-      delete fdb.market.listings[id];
+      /* vc153 (#신규8) — 다수 등록분 부분 구매: 1클릭 = 1개. qty가 남으면 등록 유지, 0이면 소멸 */
+      const units = Math.max(1, Math.min(99, parseInt(String((b as Record<string, unknown>).qty), 10) || 1));
+      const avail = l.qty ?? 1;
+      if (avail < units) return { status: 409, body: { error: `남은 수량이 부족해요 (잔여 ${avail}개)` } };
+      const item = { itemKey: l.itemKey, up: l.up ?? 0, price: l.price, qty: units, sellerName: l.sellerName };
+      const left = avail - units;
+      if (left <= 0) delete fdb.market.listings[id];
+      else l.qty = left;
       fdb.payouts[l.seller] ||= { gold: 0, count: 0 };
-      fdb.payouts[l.seller].gold += Math.floor((l.price * (100 - MARKET_FEE_PCT)) / 100);
-      fdb.payouts[l.seller].count += 1;
+      fdb.payouts[l.seller].gold += Math.floor((l.price * units * (100 - MARKET_FEE_PCT)) / 100);
+      fdb.payouts[l.seller].count += units;
       success = { status: 200, body: { ok: true, item, ...marketSnapshot(fdb, me.id) } };
-      audit("market_buy", { ip: "serverless", uid: me.id, listingId: l.id, itemKey: l.itemKey, price: l.price, seller: l.seller });
+      audit("market_buy", { ip: "serverless", uid: me.id, listingId: l.id, itemKey: l.itemKey, price: l.price, units, seller: l.seller });
       return null; // 쓰기
     });
     const out = success && r.status === 200 ? success : r;

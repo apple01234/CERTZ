@@ -8,7 +8,7 @@ import {
   TRADE_PRICES, tradeValue, TRADE_STOCK, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
   CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue, dailyDeals, DAILY_DEAL_OFF,
   POT_GRADE_META, potLineText, SET_GEAR, POT_STAT_LABEL,
-  ENEMIES, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, collectionBonus, nextCollectionGoal, COLLECTION_MILESTONES,
+  ENEMIES, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, collectionBonus, nextCollectionGoal, COLLECTION_MILESTONES,
   closetThemeOf, CLOSET_THEMES, isPremiumPet, // v1.2.1 (#3) — 프리미엄 펫 특전 판정
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
@@ -1210,6 +1210,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
   const [mk, setMk] = useState<MarketState | null>(null);
   const [msg, setMsg] = useState("");
   const [prices, setPrices] = useState<Record<string, string>>({});
+  const [qtys, setQtys] = useState<Record<string, string>>({}); // vc153 (#신규8) — 등록 수량 (상점처럼 숫자 입력·MAX)
   const [busy, setBusy] = useState(false);
   const [netFail, setNetFail] = useState(false); // v1.1.1 (#8) — 서버 연결 실패 상태 (재시도 버튼)
 
@@ -1258,27 +1259,28 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
     });
   const slotsLeft = (mk?.maxListings ?? 3) - mineKeys.length;
 
-  const doList = async (key: string, up: number) => {
+  const doList = async (key: string, up: number, qty = 1) => {
     const p = parseInt(prices[key] ?? "", 10);
     if (!Number.isFinite(p) || p < 1) { setMsg("가격을 1G 이상 입력하세요"); return; }
     setBusy(true);
     /* v1.0.6 — 서버가 클라우드 세이브로 실보유를 검증하므로, 등록 직전 최신 세이브를 선업로드
      *  (방금 획득한 보스 드롭도 3분 주기 백업을 기다리지 않고 즉시 등록 가능). 실패해도 계속 진행. */
     try { const save = loadSave(); if (save) await cloudSaveUpload(save); } catch { /* 선동기화 실패 무시 */ }
-    const r = await marketList(key, up, p);
+    const r = await marketList(key, up, p, qty);
     setBusy(false);
     if (!r.ok) { setMsg(String(r.data.error ?? "등록 실패")); return; }
-    EventBus.emit("rpg:marketList", { key, up });
+    EventBus.emit("rpg:marketList", { key, up, qty });
     setMk(takeMarketSnapshot(r.data));
     setPrices((s) => ({ ...s, [key]: "" }));
+    setQtys((s) => ({ ...s, [key]: "" }));
     setMsg("");
   };
-  const doCancel = async (id: string, itemKey: string, up: number) => {
+  const doCancel = async (id: string, itemKey: string, up: number, qty = 1) => {
     setBusy(true);
     const r = await marketCancel(id);
     setBusy(false);
     if (!r.ok) { setMsg(String(r.data.error ?? "취소 실패")); return; }
-    EventBus.emit("rpg:marketCancel", { itemKey, up });
+    EventBus.emit("rpg:marketCancel", { itemKey, up, qty });
     setMk(takeMarketSnapshot(r.data));
     setMsg("");
   };
@@ -1364,13 +1366,17 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
           {listable.map((k) => {
             const item = ITEMS[k];
             const up = rpg.accUp?.[k] ?? 0;
+            /* vc153 (#신규8) — 보유 개수(멀티셋): 등록 수량 상한 (상점처럼 MAX·숫자 입력) */
+            const ownCount = rpg.owned.filter((o) => o === k).length;
+            const q = Math.max(1, Math.min(ownCount || 1, parseInt(qtys[k] ?? "", 10) || 1));
+            const setQ = (n: number) => setQtys((s) => ({ ...s, [k]: String(Math.max(1, Math.min(ownCount || 1, n))) }));
             /* vc146 (#9) — 권장가: 보스 드롭은 기존 시세 ×5000, 일반 품목은 상점가 기반 */
             const defPrice = TRADE_PRICES[k] ? TRADE_PRICES[k] * 5000 : Math.max(50, Math.round((item.price || 10) * 6));
             return (
               <div key={k} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
                 <ItemIcon icon={item.icon} tier={item.tier} />
                 <div className="min-w-0 flex-1">
-                  <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{displayName(item.name, up)}</p>
+                  <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>{displayName(item.name, up)}{ownCount > 1 && <span className="ml-1 text-[9px] font-black text-sky-200/80">보유 {ownCount}개</span>}</p>
                   <input
                     {...swallowKeys}
                     inputMode="numeric"
@@ -1379,10 +1385,44 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
                     placeholder={`${defPrice.toLocaleString()}G 권장`}
                     className="mt-0.5 w-full rounded border border-white/15 bg-black/40 px-1.5 py-1 text-[10px] font-bold text-white placeholder:text-white/25 focus:border-amber-300/60 focus:outline-none"
                   />
+                  {/* vc153 (#신규8) — 수량 지정 행 (상점처럼 − / 숫자 / + / MAX) */}
+                  <div className="mt-0.5 flex items-center gap-1">
+                    <button
+                      onClick={() => setQ(q - 1)}
+                      className="h-5 w-5 rounded border border-white/15 bg-black/40 text-[11px] font-black text-white/80 hover:bg-white/10 active:scale-90"
+                      aria-label="수량 감소"
+                    >
+                      −
+                    </button>
+                    <input
+                      {...swallowKeys}
+                      inputMode="numeric"
+                      value={qtys[k] ?? "1"}
+                      onChange={(e) => setQtys((s) => ({ ...s, [k]: e.target.value.replace(/[^0-9]/g, "").slice(0, 2) }))}
+                      className="h-5 w-9 rounded border border-white/15 bg-black/40 text-center text-[10px] font-black text-sky-100 focus:border-sky-300/60 focus:outline-none"
+                      aria-label="등록 수량"
+                    />
+                    <button
+                      onClick={() => setQ(q + 1)}
+                      className="h-5 w-5 rounded border border-white/15 bg-black/40 text-[11px] font-black text-white/80 hover:bg-white/10 active:scale-90"
+                      aria-label="수량 증가"
+                    >
+                      +
+                    </button>
+                    <button
+                      onClick={() => setQtys((s) => ({ ...s, [k]: String(ownCount || 1) }))}
+                      disabled={ownCount <= 1}
+                      className={`h-5 rounded px-1.5 text-[9px] font-black active:scale-90 ${ownCount > 1 ? "border border-sky-300/40 bg-sky-400/15 text-sky-200 hover:bg-sky-400/30" : "cursor-not-allowed border border-white/10 bg-white/[0.04] text-white/25"}`}
+                      aria-label="보유 전량 등록"
+                    >
+                      MAX
+                    </button>
+                    <span className="text-[9px] font-bold text-white/35">개 등록 · 총 {(defPrice && parseInt(prices[k] ?? "", 10) >= 1 ? parseInt(prices[k]!, 10) * q : 0).toLocaleString()}G</span>
+                  </div>
                 </div>
                 <button
                   disabled={busy || !(parseInt(prices[k] ?? "", 10) >= 1)}
-                  onClick={() => doList(k, up)}
+                  onClick={() => doList(k, up, q)}
                   className={`shrink-0 rounded-md px-2 py-1.5 text-[11px] font-black active:scale-95 ${parseInt(prices[k] ?? "", 10) >= 1 ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-white/[0.06] text-white/30"}`}
                 >
                   등록
@@ -1409,6 +1449,8 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
                 <div className="min-w-0 flex-1">
                   <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>
                     {displayName(item.name, l.up)}
+                    {/* vc153 (#신규8) — 다수 등록 수량 표시 */}
+                    {(l.qty ?? 1) > 1 && <span className="ml-1 rounded bg-sky-400/20 px-1 py-px text-[9px] font-black text-sky-200">×{l.qty}</span>}
                     <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">{seller}</span>
                   </p>
                   <p className="text-[10px] text-white/50">{itemEffect(item, l.up)}</p>
@@ -1416,7 +1458,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
                 {l.mine ? (
                   <button
                     disabled={busy}
-                    onClick={() => doCancel(l.id, l.itemKey, l.up)}
+                    onClick={() => doCancel(l.id, l.itemKey, l.up, l.qty ?? 1)}
                     className="shrink-0 rounded-md bg-white/15 px-2 py-1.5 text-[11px] font-black text-white/75 hover:bg-white/25 active:scale-95"
                   >
                     취소
@@ -1428,6 +1470,8 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
                     className={`shrink-0 rounded-md px-2 py-1.5 text-[11px] font-black active:scale-95 ${rpg.gold >= l.price ? "bg-teal-400 text-slate-900 hover:bg-teal-300" : "cursor-not-allowed bg-slate-700/50 text-white/35"}`}
                   >
                     {l.price.toLocaleString()}G
+                    {/* vc153 (#신규8) — 다수 등록분은 "1개 구매" 임을 명시 */}
+                    {(l.qty ?? 1) > 1 && <span className="ml-0.5 text-[8.5px] font-black opacity-70">×1</span>}
                   </button>
                 )}
               </div>
@@ -4206,6 +4250,42 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
           </button>
         )}
 
+        {/* vc153 (#신규4) — 5차전직 2차각성 스토리 퀘스트 "각성의 대가" 섹션.
+         *  기존엔 이 퀘스트가 퀘스트 로그에 전혀 표시되지 않았다 (220렙 도달 시 노출) */}
+        {questLog.fifth2 && (
+          <div
+            className={`mb-2.5 rounded-lg border px-2.5 py-2 ${
+              questLog.fifth2.state === "done" ? "border-emerald-300/30 bg-emerald-500/[0.07]"
+              : questLog.fifth2.state === "active" ? "border-fuchsia-300/35 bg-fuchsia-500/[0.07]"
+              : "border-dashed border-amber-300/30 bg-amber-400/[0.05]"
+            }`}
+          >
+            <p className="text-[12px] font-black text-fuchsia-200">
+              {questLog.fifth2.state === "done" ? "✦ " : "❖ "}
+              {questLog.fifth2.title}
+              {questLog.fifth2.state === "active" && (
+                <span className="ml-1.5 text-[10px] font-bold text-white/50">
+                  ({questLog.fifth2.step}/{questLog.fifth2.totalSteps}단계)
+                </span>
+              )}
+            </p>
+            <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">{questLog.fifth2.desc}</p>
+            {questLog.fifth2.state === "active" && (
+              <>
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-fuchsia-400 to-violet-400 transition-[width] duration-300"
+                    style={{ width: `${Math.min(100, (questLog.fifth2.count / Math.max(1, questLog.fifth2.need)) * 100)}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-right text-[10px] font-black text-fuchsia-200/80">
+                  {questLog.fifth2.count}/{questLog.fifth2.need}
+                </p>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-col gap-1.5">
           {questLog.list.map((q, i) => {
             const done = q.state === "done";
@@ -4393,7 +4473,8 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
           <span className="mx-0.5" style={{ color: dif.color }}>[{dif.label}]</span>가 곱해진다
           <br />
           보상: 골드·경험치 ×3 기준 <span style={{ color: dif.color }}>· 난이도 배율 ×{dif.reward}</span> +{" "}
-          <span className="text-emerald-300">에메랄드 +{dif.emerald}</span>
+          <span className="text-emerald-300">에메랄드 +{dif.emerald} 기준</span>
+          <span className="text-white/40"> (vc153 개편 — 보스가 강할수록 더 많이 지급: 보스마다 차등)</span>
         </p>
         {/* v3.0.28 — 난이도 선택 (메이플식) */}
         <BossDiffChips value={diff} onPick={setDiff} />
@@ -4420,6 +4501,10 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
                 <p className={`truncate text-[9px] font-bold ${cleared ? "text-rose-200/90" : "text-white/25"}`}>
                   {cleared ? BOSS_DEFS[bk].name : "스토리 진행 필요"}
                 </p>
+                {/* vc153 (#신규9) — 보스별 에메랄드 미리보기 (보스마다 차등) */}
+                {cleared && (
+                  <p className="truncate text-[8.5px] font-black text-emerald-300/80">💎 +{bossEmeraldOf(bk, diff)}</p>
+                )}
               </button>
             );
           })}
@@ -4456,6 +4541,10 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
                       <p className={`truncate text-[9px] font-bold ${cleared ? "text-violet-200/90" : "text-white/25"}`}>
                         {cleared ? BOSS_DEFS[bk].name : "재림 보스 처치 필요"}
                       </p>
+                      {/* vc153 (#신규9) — 보스별 에메랄드 미리보기 */}
+                      {cleared && (
+                        <p className="truncate text-[8.5px] font-black text-emerald-300/80">💎 +{bossEmeraldOf(bk, diff)}</p>
+                      )}
                     </button>
                   );
                 })}

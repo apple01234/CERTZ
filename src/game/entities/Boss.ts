@@ -34,7 +34,10 @@ type BossMode =
   | "quakeCast" // 연속 낙뢰 시전
   // vc142 (#6) — 보스 고유 VX 패턴 (유저 에셋팩 FX — 보스마다 전부 다른 공격)
   | "vxTele" // VX 패턴 공용 예고
-  | "vxCast"; // VX 패턴 연출/연타 중 (피해 판정은 delayedCall 체인)
+  | "vxCast" // VX 패턴 연출/연타 중 (피해 판정은 delayedCall 체인)
+  // vc153 — 스바르트알프헤임 보스 개편 (애니 사양표 상태머신)
+  | "vanished" // Vanish — 투명화 후 재배치 대기
+  | "shieldHold"; // ShieldCast — 방어막 상태유지 (무적 → 종료 시 마력 폭발 반격)
 
 export class Boss extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
@@ -87,6 +90,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---- vc142 (#6) — 보스 고유 VX 패턴 상태 ---- */
   private vxKind: BossAttackKind | null = null;
   private vxStep = 0;
+  /* vc153 — 스바르트알프헤임 보스 개편 상태 */
+  private shieldInvuln = false; // ShieldCast 상태유지 중 피해 무효
+  private shieldAura: Phaser.GameObjects.Image | null = null; // 방어막 오라 (정리 보장 대상)
   /** 독 장판 (nidhog/jorm poisonfield) — 밟으면 도트 피해 */
   private poisonZones: { x: number; y: number; until: number; img: Phaser.GameObjects.Image; last: number }[] = [];
   /** 카운터 창 텔레그래프 링 */
@@ -407,6 +413,20 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         if (this.modeTimer <= 0) this.doBlink(player);
         break;
       }
+      /* ---- vc153 — 스바르트알프헤임 보스 개편 (애니 사양표 상태머신) ---- */
+      case "vanished": {
+        /* Vanish(Once) → 투명 유지 — 타이머 만료 시 다른 위치에서 재등장 (PortalTeleport 연출 공유) */
+        this.setVelocity(0, 0);
+        if (this.modeTimer <= 0) this.doReappear(player);
+        break;
+      }
+      case "shieldHold": {
+        /* ShieldCast(Once→상태유지) — 무적 방어막 유지, 타이머 만료 시 마력 폭발 반격 */
+        this.setVelocity(0, 0);
+        this.shieldAura?.setPosition(this.x, this.y - 6); // 오라 추적
+        if (this.modeTimer <= 0) this.doShieldBurst(player);
+        break;
+      }
       case "counterTele": {
         this.setVelocity(this.knockVec.x, this.knockVec.y);
         if (this.modeTimer <= 0) this.doCounterPunish(player);
@@ -467,6 +487,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     if (!this.alive) return;
     this.volleyTimer?.remove();
     this.clearTint();
+    /* vc153 — 스바르트알프헤임 방어막/투명화 잔존 정리 (페이즈 전환 시에도 상태 유출 금지) */
+    this.cleanupSvartStates();
+    if (this.mode === "vanished" || this.mode === "shieldHold") this.endAttack(900);
     this.mode = "idle";
     this.nextAttackCd = 900;
     if (this.phase === 3) {
@@ -560,6 +583,16 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       case "counter":
         this.startCounter();
         break;
+      /* ---- vc153 — 스바르트알프헤임 보스 개편 (애니 사양표 상태머신) ---- */
+      case "greenslash":
+        this.startGreenSlash(player);
+        break;
+      case "vanish":
+        this.startVanish();
+        break;
+      case "shieldcast":
+        this.startShieldCast();
+        break;
       /* ---- vc142 (#6) — 보스 고유 VX 패턴 (유저 에셋 FX) ---- */
       case "firepillars":
       case "frostnova":
@@ -568,6 +601,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       case "holymantle":
       case "crystalburst":
       case "blinkslash":
+      case "magicburst":
+      case "portalteleport":
         this.startVx(kind, player);
         break;
     }
@@ -1063,6 +1098,37 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         swing();
         break;
       }
+      case "portalteleport": {
+        /* vc153 사양표 ⑦ PortalTeleport(Once) — 포탈 2기 소환 → 현재 위치 소멸 → 다른 포탈에서 재등장 + 녹색 참격 */
+        this.setMode("vxCast", 1250);
+        const ang = Math.random() * Math.PI * 2;
+        const d = Phaser.Math.Between(220, 330);
+        const px = Phaser.Math.Clamp(player.x + Math.cos(ang) * d, 60, this.scene.stageW - 60);
+        const py = Phaser.Math.Clamp(player.y + Math.sin(ang) * d, 60, this.scene.stageH - 60);
+        /* 출발/도착 포탈 — 룬 마법진 + 확장 링 */
+        this.bossFx("hv2_magiccircle2", this.x, this.y + 8, { tint, scale: 1.4, alpha: 0.9, dur: 640, depth: 8 });
+        this.bossFx("hv2_magiccircle2", px, py + 8, { tint: 0x8ad4ff, scale: 1.4, alpha: 0.9, dur: 900, depth: 8 });
+        this.scene.vfx3dFx("ring", px, py, 0x8ad4ff, 1.5);
+        this.scene.sfxDash();
+        /* 전이 — Vanish 재활용 (투명 → 재배치 → 포탈 팝) */
+        this.scene.time.delayedCall(560, () => {
+          if (!this.alive) return;
+          this.setAlpha(0);
+          this.scene.spawnBurstAt(this.x, this.y, 12, tint);
+        });
+        this.scene.time.delayedCall(1150, () => {
+          if (!this.alive) return;
+          this.setPosition(px, py);
+          this.setAlpha(1);
+          this.scene.spawnBurstAt(px, py, 16, 0x8ad4ff);
+          this.squash(0.1, -0.1);
+          this.setBossAnim(`${this.def.tex}-idle`);
+          this.endAttack(950);
+          /* 재등장 즉시 사양표 ③ GreenSlash로 연계 */
+          this.startGreenSlash(player);
+        });
+        break;
+      }
       default:
         this.endAttack(900);
     }
@@ -1193,6 +1259,142 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.bossFx("hv2_smoke", this.x, this.y - 8, { tint: 0xb08aff, scale: 0.9, alpha: 0.8, dur: 380, depth: 11 }); // v1.4.11 — 재등장 연기
     // 짧은 강타 — 보라색 링(일반 강타와 구분)
     this.startShadowSlam(player);
+  }
+
+  /* ================= vc153 — 스바르트알프헤임 보스 개편 (애니 사양표 상태머신) =================
+   *  유저 제공 애니 사양표: ①Idle(Loop) ②Move(Loop) ③GreenSlash(Once) ④Vanish(Once)
+   *  ⑤ShieldCast(Once 또는 상태유지) ⑥MagicBurst(Once) ⑦PortalTeleport(Once).
+   *  6행 시트(atl_boss3: idle/walk/atk/sp1/sp2/die) 매핑 — atk=GreenSlash · sp1=Vanish · sp2=ShieldCast.
+   *  MagicBurst/PortalTeleport는 VX 에셋(vx_expcore/vx_magiccircle)으로 시각 보강. */
+
+  /** ③ GreenSlash(Once) — 근접 녹색 참격 2연 베기 (전방 150px 판정) */
+  private startGreenSlash(player: PlayerLike2) {
+    this.setMode("vxCast", 950);
+    this.setBossAnim(`${this.def.tex}-atk`); // GreenSlash 행 (Once)
+    this.scene.time.delayedCall(900, () => this.alive && this.setBossAnim(`${this.def.tex}-idle`));
+    const tint = 0x6aff9a; // 녹색 참격
+    const strike = (delay: number, mul: number) => {
+      this.scene.time.delayedCall(delay, () => {
+        if (!this.alive) return;
+        const ang = Math.atan2(player.y - this.y, player.x - this.x);
+        this.scene.spawnSlash(this.x + Math.cos(ang) * 46, this.y + Math.sin(ang) * 46, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), true, 2.6, tint);
+        this.scene.spawnSlash(this.x + Math.cos(ang) * 78, this.y + Math.sin(ang) * 78, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), false, 2.2, tint);
+        this.scene.spawnBurstAt(this.x + Math.cos(ang) * 52, this.y + Math.sin(ang) * 52, 12, tint);
+        this.scene.sfxSwing();
+        this.scene.cameras.main.shake(90, 0.005);
+        if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 170) {
+          const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
+          player.takeDamage(Math.round(this.def.atk * mul), dir, 0.5, 0.08);
+        }
+      });
+    };
+    strike(240, 0.85);
+    strike(560, 1.05);
+    this.endAttack(1450);
+  }
+
+  /** ④ Vanish(Once) → 투명화 — 1.1s 후 재배치 (유저 사양: 소멸 후 재등장)
+   *  주의: endAttack을 즉시 호출하면 mode가 idle로 복귀되어 vanished 유지가 깨진다 → doReappear에서 호출 */
+  private startVanish() {
+    this.setMode("vanished", 1100);
+    this.setBossAnim(`${this.def.tex}-sp1`); // Vanish 행 (Once)
+    this.scene.time.delayedCall(360, () => {
+      if (!this.alive || (this.mode !== "vanished")) return;
+      this.setAlpha(0);
+      this.scene.spawnBurstAt(this.x, this.y, 16, this.def.orbTint);
+      this.scene.driveFx?.deathPuff(this.x, this.y - 10, 0xff8ab0);
+      this.scene.sfxDash();
+    });
+  }
+
+  /** ⑦ 재등장 — Vanish/PortalTeleport 공용: 포탈 링 + 팝 등장 */
+  private doReappear(player: PlayerLike2) {
+    this.setAlpha(1);
+    const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    const d = Phaser.Math.Between(150, 210);
+    this.setPosition(
+      Phaser.Math.Clamp(player.x + Math.cos(ang) * d, 60, this.scene.stageW - 60),
+      Phaser.Math.Clamp(player.y + Math.sin(ang) * d, 60, this.scene.stageH - 60)
+    );
+    /* 포탈 텔레포트 연출 — 룬 링이 열리고 솟아난다 (사양표 ⑦) */
+    this.bossFx("hv2_magiccircle2", this.x, this.y + 8, { tint: this.def.orbTint, scale: 1.3, alpha: 0.85, dur: 560, depth: 8 });
+    this.scene.spawnBurstAt(this.x, this.y, 16, this.def.orbTint);
+    this.scene.vfx3dFx("ring", this.x, this.y, this.def.orbTint, 1.3);
+    this.scene.sfxDash();
+    this.squash(0.1, -0.1);
+    this.setBossAnim(`${this.def.tex}-idle`);
+    /* 재등장 직후 즉보 — 사양표 ③로 연결 */
+    this.startGreenSlash(player);
+  }
+
+  /** ⑤ ShieldCast(Once→상태유지) — 무적 방어막 3.2s → ⑥ MagicBurst 반격 */
+  private startShieldCast() {
+    this.setMode("shieldHold", this.chaos ? 2600 : 3200);
+    this.setBossAnim(`${this.def.tex}-sp2`); // ShieldCast 행 (Once → 마지막 프레임 상태유지)
+    this.shieldInvuln = true;
+    /* 방어막 오라 — 청록 결정 링 (상태유지 시각화) */
+    this.shieldAura = this.scene.add.image(this.x, this.y - 6, "vx_ring")
+      .setDepth(23).setBlendMode(Phaser.BlendModes.ADD).setTint(0x8ad4ff).setScale(1.4).setAlpha(0.8);
+    this.scene.tweens.add({ targets: this.shieldAura, scale: 1.8, alpha: 0.45, duration: 700, yoyo: true, repeat: -1 });
+    this.setTint(0x9ad8ff);
+    this.scene.showBanner(`${this.def.name} — 심연의 결정 방어막! (피해 무효)`);
+    this.scene.sfxSkill("shield", 0.8);
+  }
+
+  /** 방어막 종료 → ⑥ MagicBurst(Once) 반격 — 추적 기둥 3연 + 종결 대폭발 */
+  private doShieldBurst(player: PlayerLike2) {
+    this.shieldInvuln = false;
+    this.shieldAura?.destroy();
+    this.shieldAura = null;
+    this.clearTint();
+    this.setMode("vxCast", 2100);
+    this.setBossAnim(`${this.def.tex}-atk`);
+    this.scene.time.delayedCall(900, () => this.alive && this.setBossAnim(`${this.def.tex}-idle`));
+    this.scene.showBanner(`${this.def.name} — 방어막이 폭발한다!`);
+    const atk = this.def.atk;
+    const tint = this.def.orbTint;
+    let n = 0;
+    const strike = () => {
+      if (!this.alive || n >= 3) {
+        /* 종결 대폭발 — MagicBurst 클라이맥스 */
+        this.scene.time.delayedCall(160, () => {
+          if (!this.alive) return;
+          const g = this.scene.add.image(this.x, this.y, "vx_ring").setDepth(23).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.5).setAlpha(0.95);
+          this.scene.tweens.add({ targets: g, scale: 6.0, alpha: 0, duration: 460, ease: "Quad.out", onComplete: () => g.destroy() });
+          this.vxAnimAt(this.x, this.y, "vx-expcore", "vx_expcore", 0xffffff, 1.9);
+          this.scene.vfx3dFx("boom", this.x, this.y, tint, 2.0);
+          this.scene.cameras.main.shake(240, 0.011);
+          if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 250) {
+            const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
+            player.takeDamage(Math.round(atk * 1.3), dir, 0.5, 0.12);
+          }
+          this.endAttack(1200);
+        });
+        return;
+      }
+      n++;
+      const tx = player.x, ty = player.y;
+      this.vxWarnRing(tx, ty, 0x8ad4ff, 0.9, 400);
+      this.scene.time.delayedCall(400, () => {
+        if (!this.alive) return;
+        this.vxAnimAt(tx, ty, "vx-expcore", "vx_expcore", tint, 1.4);
+        this.scene.spawnSlamBurst(tx, ty);
+        this.scene.cameras.main.shake(70, 0.004);
+        if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 92) {
+          const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
+          player.takeDamage(Math.round(atk * 1.0), dir, 0.5, 0.09);
+        }
+        strike();
+      });
+    };
+    strike();
+  }
+
+  /** 방어막/투명화 잔존 정리 — 사망·페이즈 전환 시 호출 보장 */
+  private cleanupSvartStates() {
+    this.shieldInvuln = false;
+    if (this.shieldAura) { this.shieldAura.destroy(); this.shieldAura = null; }
+    this.setAlpha(1);
   }
 
   /** blink 직속 강타 — 일반 강타보다 텔레그래프가 짧고(500ms) 보라색 */
@@ -1424,6 +1626,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
+    /* vc153 — 스바르트알프헤임 방어막: ShieldCast 상태유지 중 피해 무효 (사양표 ⑤) */
+    if (this.shieldInvuln) {
+      this.scene.spawnPickupText?.(this.x, this.y - 60, "무효", "#8ad4ff");
+      return;
+    }
     /* v1.4.30 (#2 사냥/보스 밸런스) — 보스 특화 직업(전사·데드아이·아크로드·섀도우로드 등)
      *  체인 합산 bossDmgPct만큼 보스에게 주는 피해 증가 */
     const spec = this.scene.playerRef ? (this.scene.playerRef as unknown as { bossDmgBonus?: number }).bossDmgBonus ?? 0 : 0;
@@ -1498,6 +1705,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.supportTimer?.remove();
       this.scene.tweens.killTweensOf(this); // v4.1.4 — 카오스 오라 펄스 정지
       this.setAlpha(1);
+      this.cleanupSvartStates(); // vc153 — 방어막 오라/무적 잔존 정리 (사망 시에도)
       /* v1.4.9 — 사망 연출 강화: 오라색 잔상 3겹 확산 + 본체 소멸 트윈 + 2중 충격파 */
       {
         const gx = this.x, gy = this.y;

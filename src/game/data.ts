@@ -26,6 +26,8 @@ export {
   /* v3.0.28 — 보스 난이도 (이지/노말/하드/카오스) */
   BOSS_DIFFS,
   BOSS_DIFF_ORDER,
+  /* vc153 (#신규9) — 보스 강함 기반 에메랄드 차등 */
+  bossEmeraldOf,
   parseStage,
   chapterSpec,
   stageScale,

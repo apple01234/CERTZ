@@ -105,6 +105,22 @@ export const BOSS_DIFFS: Record<
 
 export const BOSS_DIFF_ORDER: BossDiffKey[] = ["easy", "normal", "hard", "chaos"];
 
+/* vc153 (#신규9) — 재림 보스 에메랄드 차등 지급.
+ *  기존: 난이도 고정(이지2/노말5/하드9/카오스30)이라 수르트도 나그라파르도 카오스 30개로 동일 —
+ *  유저 지적 "카오스 보스도 보스마다 난이도가 다를텐데 왜 전부 30개??".
+ *  개편: 난이도 기본치 × 보스 가중치(0.45~2.2) — 보스 기본 exp(320~2600)로 강함 계층화.
+ *  예) 카오스: 심연의 수호자 14 · 수르트 19 · 펜리르 22 · 가름 26 · 아부디토스 34 · 나그라파르 66 */
+export function bossEmeraldOf(bossKey: BossKey, diff: BossDiffKey): number {
+  const b = BOSS_DEFS[bossKey];
+  const d = BOSS_DIFFS[diff];
+  if (!d) return 5;
+  if (!b) return d.emerald;
+  const minExp = 320, maxExp = 2600; // guardian(최약) ~ nagr(최강) 스펙트럼
+  const t = Math.min(1, Math.max(0, (b.exp - minExp) / (maxExp - minExp)));
+  const w = 0.45 + t * 1.75; // 0.45~2.2
+  return Math.max(1, Math.round(d.emerald * w));
+}
+
 /* v4.1.4 (#보스개성) — 6종 공용 패턴에서 탈피: 보스별 시그니처 패턴 5종 추가.
  *  spiral: 나선 탄막(눈보라/심연) · beam: 회전 스윕 빔(용 브레스/화염) · blink: 그림자 급습(늑대계)
  *  quake: 연속 낙뢰(거인계) · counter: 반격 카운터(로스트아크식 — 창이 노란 링, 공격 1회 이상 시 기절,
@@ -119,7 +135,13 @@ export type BossAttackKind =
   | "poisonfield" // 니드호그·요르문간드 — 맹독 장판
   | "holymantle" // 아부디토스 — 마룡 성역 대폭발
   | "crystalburst" // 심연군주·베오르드 — 결정 8방향 산개
-  | "blinkslash"; // 가름 — 점멸 3연 참격
+  | "blinkslash" // 가름 — 점멸 3연 참격
+  /* vc153 — 스바르트알프헤임 보스 개편 (유저 제공 애니 사양표: Idle/Move Loop · GreenSlash/Vanish/ShieldCast/MagicBurst/PortalTeleport Once) */
+  | "greenslash" // 녹색 참격 — 근접 2연 베기
+  | "vanish" // 소멸 — 투명화 후 재배치
+  | "shieldcast" // 방어막 시전 — 무적 상태유지 → 마력 폭발 반격
+  | "magicburst" // 마력 폭발 — 추적 기둥 3연 + 종결 대발발
+  | "portalteleport"; // 포탈 텔레포트 — 포탈 2기 소환 후 다른 포탈로 전이
 
 export type BossDef = {
   key: BossKey;
@@ -473,14 +495,16 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "abysslord", name: "심연의 군주",
     hp: 8500, atk: 38, speed: 98, exp: 800, gold: 420,
     tex: "boss3", orbTint: 0xff5a7a, introDialogue: "bossIntroLord",
-    /* v1.4.12 (#20 보스 정체성) — 시그니처 summon · 성향 1.0 */
-    sig: "summon",
-    aggr: 1.0,
-    /* vc142 — 결정 산개(crystalburst) 추가 — 심연의 결정 정체성 */
+    /* vc153 — 스바르트알프헤임 보스 개편: 시그니처 greenslash · 성향 1.05 */
+    sig: "greenslash",
+    aggr: 1.05,
+    /* vc153 애니 사양표 매핑 — ①Idle(Loop) ②Move(Loop) ③GreenSlash(Once) ④Vanish(Once)
+     *  ⑤ShieldCast(Once→상태유지) ⑥MagicBurst(Once) ⑦PortalTeleport(Once).
+     *  6행 시트(atl_boss3: idle/walk/atk/sp1/sp2/die)에서 atk=GreenSlash · sp1=Vanish · sp2=ShieldCast 행을 재생 */
     patterns: {
-      p1: ["volley", "charge", "slam"],
-      p2: ["volley", "charge", "ring", "zones", "spiral", "counter", "crystalburst"],
-      p3: ["volley", "charge", "ring", "zones", "summon", "spiral", "counter", "crystalburst"],
+      p1: ["volley", "greenslash", "charge", "slam"],
+      p2: ["volley", "charge", "ring", "greenslash", "vanish", "shieldcast", "crystalburst"],
+      p3: ["volley", "charge", "ring", "zones", "summon", "magicburst", "vanish", "shieldcast", "portalteleport", "crystalburst"],
     },
     summonKey: "wraith",
   },

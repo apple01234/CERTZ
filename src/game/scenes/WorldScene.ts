@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
@@ -7083,6 +7083,8 @@ export class WorldScene extends Phaser.Scene {
       if (nxt) this.showBanner(`[각성의 대가] ${nxt.title} — ${nxt.story[nxt.story.length - 1]}`);
     }
     this.emitRpgState();
+    /* vc153 (#신규4) — 퀘스트 로그가 열려 있으면 5차 2차각성 진행도가 즉시 반영되게 */
+    this.emitQuestLog();
     this.save();
   }
 
@@ -7371,7 +7373,9 @@ export class WorldScene extends Phaser.Scene {
     };
     this.bossDef = def;
     this.replayBossActive = true;
-    this.replayBossEmerald = dif.emerald; // v3.0.28 — 난이도별 에메랄드 (2/5/9/30)
+    /* vc153 (#신규9) — 에메랄드를 보스 강함에 비례해 차등 지급 (기존: 난이도 고정 2/5/9/30).
+     *  유저 지적: "카오스 보스도 보스마다 난이도가 다를텐데 왜 전부 30개??" — 보스 exp 계층 가중치 적용 */
+    this.replayBossEmerald = bossEmeraldOf(base.key, lv);
     const bx = this.portalHome.x;
     const by = this.portalHome.y - 10;
     audio.sfx.roar();
@@ -7969,10 +7973,14 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
     };
     const onCosmeticSet = (v: { key: CosmeticKey | null; slot?: "aura" | "outfit" | "hair" | "acc" }) => {
-      if (!this.player || this.dialoguing) return;
-      /* v1.1.0 (#4 해제 버그) — UI가 클릭한 아이템의 슬롯을 함께 전달: 원하는 슬롯만 정확히 해제 */
+      if (!this.player) return;
+      /* vc153 (#신규5) — 왕관 등 치장 착용은 대화 중에도 허용.
+       *  기존엔 dialoguing 게이트가 대화 중 착용을 무음 차단해 "각성 퀘스트 중 왕관이 안 쓰인다"로 보였다
+       *  (5차 2차각성은 카이엔 대화 보고가 잦아 체감 빈도가 컸다). 치장 착용은 물리/전투 상태와 무관하므로 안전.
+       *  실패(미보유 등) 시에도 조용히 끝나지 않게 배너로 알린다. */
       const ok = v.slot ? this.player.setCosmeticSlot(v.key, v.slot) : this.player.setCosmetic(v.key);
       if (ok) this.save();
+      else if (v.key) EventBus.emit("banner:show", { text: `${ITEMS[v.key as ItemKey]?.name ?? "치장"}을(를) 착용할 수 없다 — 보유 여부를 확인하세요` });
       this.emitRpgState();
     };
     const onUpgrade = (v: { slot: "weapon" | "armor" }) => {
@@ -9033,16 +9041,20 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.1 — 시즌 미션 보상 수령 (패스 패널) */
     const onMissionClaim = (v: { kind: "daily" | "weekly"; id: string }) => this.claimMission(v);
     /* v1.0.1 — 유저 거래판: 서버 처리 성공 후 세이브 반영 (TradePanel이 서버 응답 검증 후 emit) */
-    const onMarketList = (v: { key: string; up: number }) => {
+    const onMarketList = (v: { key: string; up: number; qty?: number }) => {
       if (!this.player || this.dialoguing) return;
       /* v1.0.2 (#GM아이템) — GM 전용 아이템은 거래판 등록 불가 */
       if (ITEMS[v.key as ItemKey]?.gmOnly) {
         EventBus.emit("banner:show", { text: "GM 전용 아이템은 거래할 수 없다" });
         return;
       }
-      const idx = this.player.owned.indexOf(v.key as ItemKey);
-      if (idx < 0) return;
-      this.player.owned.splice(idx, 1);
+      /* vc153 (#신규8) — 다수 등록: 보유 목록에서 qty개 제거 */
+      const n = Math.max(1, Math.min(99, v.qty ?? 1));
+      for (let i = 0; i < n; i++) {
+        const idx = this.player.owned.indexOf(v.key as ItemKey);
+        if (idx < 0) break;
+        this.player.owned.splice(idx, 1);
+      }
       if (v.up > 0) delete this.player.accUp?.[v.key]; // 강화 수치는 서버 등록분으로 이전
       this.trackMission("market"); // 주간 미션 "거래소 이용"
       this.save();
@@ -9067,9 +9079,11 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
       this.emitHud();
     };
-    const onMarketCancel = (v: { itemKey: string; up: number }) => {
+    const onMarketCancel = (v: { itemKey: string; up: number; qty?: number }) => {
       if (!this.player) return;
-      this.player.owned.push(v.itemKey as ItemKey);
+      /* vc153 (#신규8) — 다수 등록 취소: 수량만큼 보유 복원 */
+      const n = Math.max(1, Math.min(99, v.qty ?? 1));
+      for (let i = 0; i < n; i++) this.player.owned.push(v.itemKey as ItemKey);
       if (v.up > 0) {
         if (!this.player.accUp) this.player.accUp = {};
         this.player.accUp[v.itemKey] = v.up;
@@ -10755,10 +10769,42 @@ export class WorldScene extends Phaser.Scene {
         for (let i = 0; i < 3; i++) { this.remoteRing(x + (i - 1) * 50 * s, y, hex, 1.8 * s, 320 + i * 140, 2.4); this.spawnBurstAt(x + (i - 1) * 50 * s, y, 10, hex); }
         this.remotePillar(x, y, hex, 120, 140 * s);
       } else if (fam === "thief") {
-        /* 심연 — 그림자 참수 연타 + 심연 폭발 */
-        for (let i = 0; i < 5; i++) this.time.delayedCall(i * 90, () => { this.spawnSlash(x + (Math.random() - 0.5) * 90, y + (Math.random() - 0.5) * 60, new Phaser.Math.Vector2(face, 0), i % 2 === 0, 1.2 * s, 0x7a4aff); });
-        this.spawnBurstAt(x, y, 18, 0x3a1860);
-        this.remoteRing(x, y, 0x7a4aff, 2.4 * s, 480, 3.0);
+        /* 심연 — 그림자 참수 연타 + 심연 폭발
+         *  vc153 (#신규10) — s5b(제2궁극기)면 「사(死)의 일섬」 원격 근사: 붉은 死 플래시 + 붉은 참격 3연 */
+        if (kind === "s5b") {
+          try {
+            const p = (this.game.canvas.parentElement ?? document.body) as HTMLElement;
+            const g = document.createElement("div");
+            g.textContent = "死";
+            g.style.cssText = [
+              "position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) scale(0.3)",
+              "pointer-events:none;z-index:8",
+              "font-family:'Noto Serif SC','Noto Serif KR',serif;font-weight:900",
+              "font-size:min(40vh,40vw);line-height:1;color:#ff1a1a",
+              "text-shadow:0 0 18px #ff2a2a,0 0 42px #c80000,6px 4px 2px #4a0000",
+              "opacity:0",
+            ].join(";");
+            p.appendChild(g);
+            window.setTimeout(() => {
+              g.style.transition = "transform 520ms cubic-bezier(0.16,1.3,0.3,1), opacity 200ms ease-out";
+              g.style.opacity = "0.9";
+              g.style.transform = "translate(-50%,-50%) scale(1.25)";
+              this.cameras.main.shake(420, 0.012);
+            }, 30);
+            window.setTimeout(() => {
+              g.style.transition = "opacity 480ms ease-out";
+              g.style.opacity = "0";
+            }, 900);
+            window.setTimeout(() => { try { g.remove(); } catch { /* 무시 */ } }, 1500);
+          } catch { /* DOM 이펙트 실패 무시 — 2D 참격은 계속 */ }
+          for (let i = 0; i < 3; i++) this.time.delayedCall(700 + i * 110, () => this.spawnSlash(x + (Math.random() - 0.5) * 70, y + (Math.random() - 0.5) * 50, new Phaser.Math.Vector2(face, 0), i % 2 === 0, 1.6 * s, 0xff2a2a));
+          this.spawnBurstAt(x, y, 24, 0xff2a2a);
+          this.remoteRing(x, y, 0xff2a2a, 2.6 * s, 520, 2.8);
+        } else {
+          for (let i = 0; i < 5; i++) this.time.delayedCall(i * 90, () => { this.spawnSlash(x + (Math.random() - 0.5) * 90, y + (Math.random() - 0.5) * 60, new Phaser.Math.Vector2(face, 0), i % 2 === 0, 1.2 * s, 0x7a4aff); });
+          this.spawnBurstAt(x, y, 18, 0x3a1860);
+          this.remoteRing(x, y, 0x7a4aff, 2.4 * s, 480, 3.0);
+        }
         this.remoteRing(x, y, 0x120530, 2.0 * s, 560, 2.6);
       } else {
         /* 천멸(전사 계열) — 초거대 참격 연속 + 종결 일격 */
@@ -13914,8 +13960,36 @@ export class WorldScene extends Phaser.Scene {
       repeatActive: this.repeatActive(),
       repeatUnlocked: this.repeatOn,
       trackedList: tracked,
+      /* vc153 (#신규4) — 5차전직 2차각성 퀘스트 "각성의 대가"를 퀘스트 로그에 표시.
+       *  기존엔 스테이지 체인+반복 의뢰만 노출돼 유저가 진행 상황을 전혀 볼 수 없었다.
+       *  220렙 미만(수주 자격 없음)이면 null — 로그에 섹션 자체를 숨긴다 */
+      fifth2: this.player.lv < 220 ? null : this.fifth2LogEntry(),
     };
     EventBus.emit("questlog", payload);
+  }
+
+  /** vc153 (#신규4) — fifth2 퀘스트 로그 엔트리 생성 (emitQuestLog 전용) */
+  private fifth2LogEntry(): QuestLogState["fifth2"] {
+    const st: Fifth2State = { step: this.player.fifth2Step, count: this.player.fifth2Count, done: this.player.fifth2Done };
+    if (st.done) {
+      return { state: "done", title: "각성의 대가 — 완료", desc: "제2궁극기(Q) 해금 완료. 카이엔에게 각성의 대가를 치렀다.", count: 1, need: 1, step: FIFTH2_CHAIN.length, totalSteps: FIFTH2_CHAIN.length };
+    }
+    if (fifth2Offerable(st, this.player.lv)) {
+      return { state: "offerable", title: "각성의 대가 (수주 가능)", desc: `Lv.${220} 도달 — 전직 교관 카이엔과 대화해 스토리 퀘스트를 수주하세요.`, count: 0, need: 1, step: 0, totalSteps: FIFTH2_CHAIN.length };
+    }
+    const cur = fifth2Current(st);
+    if (!cur) return null;
+    const act = cur.type === "hunt" ? "처치" : cur.type === "collect" ? "수집" : cur.type === "boss" ? "격파" : cur.type === "reach" ? "도달" : "대화";
+    const tgt = cur.type === "talk" ? "카이엔 교관" : cur.target;
+    return {
+      state: "active",
+      title: cur.title,
+      desc: `${cur.story[cur.story.length - 1]}${cur.type === "talk" ? "" : ` (${tgt} ${act})`}`,
+      count: Math.min(st.count, cur.need),
+      need: cur.need,
+      step: st.step,
+      totalSteps: FIFTH2_CHAIN.length,
+    };
   }
 
   private save() {

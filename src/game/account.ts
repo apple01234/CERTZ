@@ -239,7 +239,7 @@ export async function claimRankReward(): Promise<{ ok: boolean; emeralds?: numbe
  *  서버: /api/market (accounts/index.js) — 로그인 쿠키 세션 기반.
  *  등록/구매/취소/수령 성공 시 클라이언트가 세이브(골드/보유)를 조작한다 — 서버는 ledger만. */
 
-export type MarketListing = { id: string; seller: string | null; mine: boolean; itemKey: string; up: number; price: number; ts: number };
+export type MarketListing = { id: string; seller: string | null; mine: boolean; itemKey: string; up: number; price: number; qty?: number; ts: number };
 export type MarketState = {
   listings: MarketListing[];
   pending: { gold: number; count: number };
@@ -258,8 +258,9 @@ export async function marketGet(): Promise<{ ok: boolean; error?: string; state?
   return { ok: true, state: d as MarketState };
 }
 
-export async function marketList(itemKey: string, up: number, price: number) {
-  return post("/api/market/list", { itemKey, up, price });
+export async function marketList(itemKey: string, up: number, price: number, qty = 1) {
+  /* vc153 (#신규8) — 다수 등록: 상점처럼 개수 지정 (1~99) */
+  return post("/api/market/list", { itemKey, up, price, qty });
 }
 
 export async function marketCancel(id: string) {

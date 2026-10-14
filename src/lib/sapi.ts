@@ -159,7 +159,7 @@ export function marketSnapshot(db: DbShape, uid: string | null) {
   const all = Object.values(db.market.listings).sort((a: ListingRec, b: ListingRec) => a.ts - b.ts);
   if (!uid) {
     return {
-      listings: all.map((l) => ({ id: l.id, seller: l.sellerName, mine: false, itemKey: l.itemKey, up: l.up ?? 0, price: l.price, ts: l.ts })),
+      listings: all.map((l) => ({ id: l.id, seller: l.sellerName, mine: false, itemKey: l.itemKey, up: l.up ?? 0, price: l.price, qty: l.qty ?? 1, ts: l.ts })),
       pending: { gold: 0, count: 0 },
       feePct: MARKET_FEE_PCT,
       maxListings: MARKET_MAX_LISTINGS,
@@ -168,11 +168,19 @@ export function marketSnapshot(db: DbShape, uid: string | null) {
   }
   const pay = db.payouts[uid] || { gold: 0, count: 0 };
   return {
-    listings: all.map((l) => ({ id: l.id, seller: l.seller === uid ? null : l.sellerName, mine: l.seller === uid, itemKey: l.itemKey, up: l.up ?? 0, price: l.price, ts: l.ts })),
+    listings: all.map((l) => ({ id: l.id, seller: l.seller === uid ? null : l.sellerName, mine: l.seller === uid, itemKey: l.itemKey, up: l.up ?? 0, price: l.price, qty: l.qty ?? 1, ts: l.ts })),
     pending: { gold: pay.gold || 0, count: pay.count || 0 },
     feePct: MARKET_FEE_PCT,
     maxListings: MARKET_MAX_LISTINGS,
   };
+}
+
+/** vc153 (#신규8) — 클라우드 세이브 owned(멀티셋)에서 itemKey 보유 개수 */
+export function ownedCountOf(db: DbShape, uid: string, itemKey: string): number {
+  const save = db.saves[uid]?.data;
+  if (!save || typeof save !== "object") return 0;
+  const owned = Array.isArray(save.owned) ? save.owned : [];
+  return owned.filter((k) => k === itemKey).length;
 }
 
 /** v1.0.6 계승 — 등록자 실보유 검증(클라우드 세이브 owned + 장착 accessories) */

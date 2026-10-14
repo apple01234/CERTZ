@@ -552,7 +552,8 @@ function marketSnapshot(uid) {
   const all = Object.values(db.market.listings).sort((a, b) => a.ts - b.ts);
   const pay = db.payouts[uid] || { gold: 0, count: 0 };
   return {
-    listings: all.map((l) => ({ id: l.id, seller: l.seller === uid ? null : l.sellerName, mine: l.seller === uid, itemKey: l.itemKey, up: l.up ?? 0, price: l.price, ts: l.ts })),
+    /* vc153 (#신규8) — listings에 qty 추가 (다수 등록) */
+    listings: all.map((l) => ({ id: l.id, seller: l.seller === uid ? null : l.sellerName, mine: l.seller === uid, itemKey: l.itemKey, up: l.up ?? 0, price: l.price, qty: l.qty ?? 1, ts: l.ts })),
     pending: { gold: pay.gold || 0, count: pay.count || 0 },
     feePct: MARKET_FEE_PCT,
     maxListings: MARKET_MAX_LISTINGS,
@@ -639,17 +640,23 @@ async function handleMarket(req, res, url, method) {
     const itemKey = String(b.itemKey || "").slice(0, 40);
     const up = Math.max(0, Math.min(15, parseInt(b.up, 10) || 0));
     const price = parseInt(b.price, 10);
+    /* vc153 (#신규8) — 다수 등록: 상점처럼 개수 지정(1~99) */
+    const qty = Math.max(1, Math.min(99, parseInt(b.qty, 10) || 1));
     if (!itemKey) return sendJson(res, 400, { error: "아이템 정보가 올바르지 않아요" });
     if (!Number.isFinite(price) || price < 1 || price > 10000000) return sendJson(res, 400, { error: "가격은 1G ~ 10,000,000G 사이" });
     const own = ownsListableItem(user.id, itemKey); // v1.0.6 — 화이트리스트 + 실보유(클라우드 세이브) 검증
     if (!own.ok) return sendJson(res, 403, { error: own.error });
     const mine = Object.values(db.market.listings).filter((l) => l.seller === user.id);
     if (mine.length >= MARKET_MAX_LISTINGS) return sendJson(res, 409, { error: `등록 칸이 가득 찼어요 (최대 ${MARKET_MAX_LISTINGS}칸)` });
-    if (mine.some((l) => l.itemKey === itemKey)) return sendJson(res, 409, { error: "같은 아이템을 동시에 여러 칸에 등록할 수 없어요" });
+    if (mine.some((l) => l.itemKey === itemKey)) return sendJson(res, 409, { error: "같은 아이템은 한 칸에 수량을 늘려 등록하세요 (이미 등록됨)" });
+    /* vc153 (#신규8) — 수량 실보유 검증 (owned 멀티셋) */
+    const save = db.saves[user.id]?.data;
+    const have = save && Array.isArray(save.owned) ? save.owned.filter((k) => k === itemKey).length : 0;
+    if (have < qty) return sendJson(res, 403, { error: `보유 수량이 부족해요 (${have}개 보유 — ${qty}개 등록 요청)` });
     const id = `m${db.market.nextId++}`;
-    db.market.listings[id] = { id, seller: user.id, sellerName: user.name, itemKey, up, price, ts: Date.now() };
+    db.market.listings[id] = { id, seller: user.id, sellerName: user.name, itemKey, up, price, qty, ts: Date.now() };
     persistDb();
-    audit("market_list", { ip: clientIp(req), uid: user.id, itemKey, price }); // v1.0.2
+    audit("market_list", { ip: clientIp(req), uid: user.id, itemKey, price, qty }); // v1.0.2
     return sendJson(res, 200, { ok: true, id, ...marketSnapshot(user.id) });
   }
 
@@ -666,19 +673,24 @@ async function handleMarket(req, res, url, method) {
     return sendJson(res, 200, { ok: true, item, ...marketSnapshot(user.id) });
   }
 
-  /* 구매 — 본인 물건 금지, 판매자 정산 90% */
+  /* 구매 — 본인 물건 금지, 판매자 정산 90% · vc153 (#신규8) 부분 구매(1클릭=1개) */
   if (url === "/api/market/buy" && method === "POST") {
     const b = await readBody(req);
     const l = db.market.listings[String(b.id || "")];
     if (!l) return sendJson(res, 404, { error: "이미 판매된 등록이에요 — 새로고침해 주세요" });
     if (l.seller === user.id) return sendJson(res, 403, { error: "내 등록은 구매할 수 없어요" });
-    const item = { itemKey: l.itemKey, up: l.up ?? 0, price: l.price, sellerName: l.sellerName };
-    delete db.market.listings[l.id];
+    const units = Math.max(1, Math.min(99, parseInt(b.qty, 10) || 1));
+    const avail = l.qty ?? 1;
+    if (avail < units) return sendJson(res, 409, { error: `남은 수량이 부족해요 (잔여 ${avail}개)` });
+    const item = { itemKey: l.itemKey, up: l.up ?? 0, price: l.price, qty: units, sellerName: l.sellerName };
+    const left = avail - units;
+    if (left <= 0) delete db.market.listings[l.id];
+    else l.qty = left;
     db.payouts[l.seller] ||= { gold: 0, count: 0 };
-    db.payouts[l.seller].gold += Math.floor((l.price * (100 - MARKET_FEE_PCT)) / 100);
-    db.payouts[l.seller].count += 1;
+    db.payouts[l.seller].gold += Math.floor((l.price * units * (100 - MARKET_FEE_PCT)) / 100);
+    db.payouts[l.seller].count += units;
     persistDb();
-    audit("market_buy", { ip: clientIp(req), uid: user.id, listingId: l.id, itemKey: l.itemKey, price: l.price, seller: l.seller }); // v1.0.2
+    audit("market_buy", { ip: clientIp(req), uid: user.id, listingId: l.id, itemKey: l.itemKey, price: l.price, units, seller: l.seller }); // v1.0.2
     return sendJson(res, 200, { ok: true, item, ...marketSnapshot(user.id) });
   }
 

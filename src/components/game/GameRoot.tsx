@@ -212,7 +212,10 @@ export default function GameRoot() {
             <button
               onClick={() => EventBus.emit("ui:authOpen", {})}
               aria-label="계정 로그인"
-              className="absolute left-2 top-2 z-30 flex h-9 items-center gap-1.5 rounded-lg border-2 border-amber-200/50 bg-slate-900/85 px-2.5 text-[12px] font-black text-amber-100 shadow-lg transition active:scale-95 hover:border-amber-200/90 sm:left-3 sm:top-3"
+              /* vc153 (#신규7) — z-30 → z-[60]: 타이틀 스크롤 오버레이(sertz-scroll z-40)가 버튼을 덮어
+               *  클릭이 전부 오버레이로 흡수돼 "로그인&회원가입 버튼 클릭안됨"(= 123456 로그인 안됨으로 체감) 버그.
+               *  실측 elementsFromPoint: BUTTON(z-30) 위에 DIV.sertz-scroll(z-40)이 깔려 클릭 도달 불능이었다. */
+              className="absolute left-2 top-2 z-[60] flex h-9 items-center gap-1.5 rounded-lg border-2 border-amber-200/50 bg-slate-900/85 px-2.5 text-[12px] font-black text-amber-100 shadow-lg transition active:scale-95 hover:border-amber-200/90 sm:left-3 sm:top-3"
             >
               🔑 로그인 / 계정
             </button>

@@ -18,6 +18,7 @@ import {
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
+import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
 import type { Enemy } from "./Enemy";
@@ -213,6 +214,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* vc147 (#18) — 궁극기 시전 중 슬롯 표시 (1=1차 궁극기 ×300%, 2=제2궁극기 ×500%).
    *  useSkill5/useSkill5b 내부의 rd() 래퍼가 설정하고 rollDamage가 소비한다 (동기 호출 단위). */
   private ultSlot: 0 | 1 | 2 = 0;
+  /* vc153 — 3D 시네마틱(사(死)의 일섬) 재생 중 경직 유용 플래그 — 공통 마무리(300ms)가 잠금을 풀지 못하게 */
+  cineLock = false;
   /** v3.3.0 — 스킬 강화 티어: 5차 각성 시 5 (기존 공식 사다리가 한 칸 더 연장된다) */
   get sTier(): number {
     return this.isFifth ? 5 : this.tier;
@@ -3833,45 +3836,85 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       /* 도적 계열 — 심연이격: 처형 각인 + 그림자 사슬 끌어오기 + 연속 처형 종결 */
       default: {
-        const marked = this.getAllTargetsIn(820);
-        for (const e of marked) {
-          (e as Enemy).applyStun?.(1200);
-          const r = this.scene.add.circle(e.x, e.y, 16).setStrokeStyle(2, 0xc08aff, 0.9).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
-          this.scene.tweens.add({ targets: r, scale: 0.4, alpha: 0, duration: 900, onComplete: () => r.destroy() });
-        }
-        this.scene.spawnPickupText(this.x, this.y - 70, `처형 각인 ×${marked.length}`, "#c08aff");
-        const seq = marked.length > 0 ? marked : [];
-        seq.slice(0, 8).forEach((t, i) => {
-          this.scene.time.delayedCall(340 + i * 260, () => {
-            if (this.state === "dead" || !t.active) return;
-            const ang = Math.random() * Math.PI * 2;
-            this.setPosition(t.x - Math.cos(ang) * 26, t.y - Math.sin(ang) * 26);
-            this.scene.spawnSlash(t.x, t.y, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 3.0, 0x1a1030);
-            this.scene.spawnBurstAt(t.x, t.y, 18, 0x8a4aff);
-            this.scene.sfxSkill("iainuki", 0.9 + (i % 4) * 0.05);
-            const { dmg, crit } = rd(5.5, true); // 각인된 대상은 반드시 벤다
-            t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 340, crit);
-          });
-        });
-        /* 종결 — 심연 소화기 */
-        this.scene.time.delayedCall(340 + Math.min(seq.length, 8) * 260 + 160, () => {
-          if (this.state === "dead") return;
-          this.scene.spawnPillar(this.x, this.y, 0x8a4aff, 290);
-          this.scene.spawnBurstAt(this.x, this.y, 78, 0x8a4aff);
-          this.scene.spawnCrack(this.x, this.y);
-          spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xffffff, 5.4, 840);
-          this.scene.cameras.main.flash(180, 90, 40, 160);
-          this.scene.cameras.main.shake(520, 0.024);
-          this.scene.sfxSkill("dark", 0.64);
-          this.scene.sfxSkill("superhit", 0.78);
-          for (const e of this.getAllTargetsIn(580)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = rd(8.8);
-            if (crit) this.scene.sfxCrit();
-            e.takeDamage(dmg, away, 620, crit);
-            this.applyEnemyStatus("bleed", Math.max(8, Math.round(this.atkTotal * 0.015)), 6000);
+        /* vc153 (#신규10 + 3D필살기) — 도적 계열 제2궁극기 개편: 「사(死)의 일섬」 3D 시네마틱.
+         *  기존 "처형 각인제" 연전을 대체 — 붉은 한자 死 → 투명 Three.js 캔버스 독립 씬(낮은 기문 돌진·발도·초고속 참격·hitstop)
+         *  → 즉발 450% 공격력 + 출혈 25% 공격력/1초 ×5초 (전부 DEATH_SLASH_CFG에서 설정 가능).
+         *  · 피해는 기존 전투 시스템(rollDamage→takeDamage) 그대로 — 가짜 HP/적 복제 없음
+         *  · 연출과 피해 분리: onStrike 콜백 1회(공격 고유 ID) — 연출 중단돼도 피해 데이터 불변
+         *  · 종료 시 위치/HP/출혈 상태 유지 + 입력 해제 (예외 시 안전 복구 — DeathSlash.ts 자체 처리) */
+        if (familyOf(this.cls) === "thief") {
+          /* 시네마틱 동안 경직 유지 — 공통 마무리(300ms)가 먼저 풀지 못하게 잠금 */
+          this.cineLock = true;
+          const atk = this.atkTotal;
+          const strike = () => {
+            /* 유저 스펙 ④ — 즉발 450%(forceCrit: 큰 피해 숫자+크리티컬) + 출혈 장판(기존 필드 시스템 재사용) */
+            for (const e of this.getAllTargetsIn(560)) {
+              if (!e.active) continue;
+              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const { dmg, crit } = this.rollDamage(DEATH_SLASH_CFG.instantMult, true, true);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 560, crit); // 하드히트 — 넉백 560
+              /* 출혈 — 25% ATK / 1초 간격 × 5초 (필드 0.5초 틱 × 절반치 = 초당 25%와 동일 총량) */
+              this.scene.spawnField({
+                x: e.x, y: e.y, radius: 62,
+                dur: DEATH_SLASH_CFG.bleedTicks * DEATH_SLASH_CFG.bleedIntervalMs,
+                dps: Math.max(6, Math.round(atk * DEATH_SLASH_CFG.bleedMult)),
+                kind: "fire", owner: "player",
+              });
+              this.scene.spawnBurstAt(e.x, e.y, 20, 0xff2a2a);
+            }
+          };
+          runDeathSlashCinematic(
+            { x: this.x, y: this.y, scene: this.scene, flipX: this.flipX },
+            strike,
+            () => {
+              /* 유저 스펙 ⑤ — 복귀: 위치/HP/출혈 상태는 시네마틱이 건드리지 않았으므로 그대로. 입력 해제
+               *  (세이브는 씬 주기 저장/다음 전투 이벤트에서 반영 — save는 씬 전용) */
+              this.cineLock = false;
+              if (this.state === "attack") this.state = "idle";
+            }
+          );
+        } else {
+          const marked = this.getAllTargetsIn(820);
+          for (const e of marked) {
+            (e as Enemy).applyStun?.(1200);
+            const r = this.scene.add.circle(e.x, e.y, 16).setStrokeStyle(2, 0xc08aff, 0.9).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
+            this.scene.tweens.add({ targets: r, scale: 0.4, alpha: 0, duration: 900, onComplete: () => r.destroy() });
           }
-        });
+          this.scene.spawnPickupText(this.x, this.y - 70, `처형 각인 ×${marked.length}`, "#c08aff");
+          const seq = marked.length > 0 ? marked : [];
+          seq.slice(0, 8).forEach((t, i) => {
+            this.scene.time.delayedCall(340 + i * 260, () => {
+              if (this.state === "dead" || !t.active) return;
+              const ang = Math.random() * Math.PI * 2;
+              this.setPosition(t.x - Math.cos(ang) * 26, t.y - Math.sin(ang) * 26);
+              this.scene.spawnSlash(t.x, t.y, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 3.0, 0x1a1030);
+              this.scene.spawnBurstAt(t.x, t.y, 18, 0x8a4aff);
+              this.scene.sfxSkill("iainuki", 0.9 + (i % 4) * 0.05);
+              const { dmg, crit } = rd(5.5, true); // 각인된 대상은 반드시 벤다
+              t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 340, crit);
+            });
+          });
+          /* 종결 — 심연 소화기 */
+          this.scene.time.delayedCall(340 + Math.min(seq.length, 8) * 260 + 160, () => {
+            if (this.state === "dead") return;
+            this.scene.spawnPillar(this.x, this.y, 0x8a4aff, 290);
+            this.scene.spawnBurstAt(this.x, this.y, 78, 0x8a4aff);
+            this.scene.spawnCrack(this.x, this.y);
+            spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xffffff, 5.4, 840);
+            this.scene.cameras.main.flash(180, 90, 40, 160);
+            this.scene.cameras.main.shake(520, 0.024);
+            this.scene.sfxSkill("dark", 0.64);
+            this.scene.sfxSkill("superhit", 0.78);
+            for (const e of this.getAllTargetsIn(580)) {
+              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const { dmg, crit } = rd(8.8);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 620, crit);
+              this.applyEnemyStatus("bleed", Math.max(8, Math.round(this.atkTotal * 0.015)), 6000);
+            }
+          });
+        }
         break;
       }
     }
@@ -3891,9 +3934,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.spawnPickupText(this.x, this.y - 92, "여운 — 잔존 필드 30초", "#e0a8ff");
     });
 
-    /* 공통 마무리 — 시전 후 경직 해제 (1차 궁극기와 동일 게이트) */
+    /* 공통 마무리 — 시전 후 경직 해제 (1차 궁극기와 동일 게이트)
+     *  vc153 — 3D 시네마틱(사(死)의 일섬) 재생 중엔 cineLock이 해제를 막는다 (종료 시 onEnd에서 해제) */
     this.scene.time.delayedCall(300, () => {
-      if (this.state === "attack") this.state = "idle";
+      if (this.state === "attack" && !this.cineLock) this.state = "idle";
     });
     this.scene.emitHud();
   }

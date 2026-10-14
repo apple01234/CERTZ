@@ -235,6 +235,19 @@ export type QuestLogState = {
   repeatUnlocked?: boolean;
   /* v3.0.15 (#8) — 전 구역 수락 퀘스트 목록 (메이플식 퀘스트 선택/추적) */
   trackedList?: { stage: string; stageName: string; title: string; desc: string; isCurrent: boolean; isTracked: boolean; state: "done" | "active" | "move" }[];
+  /* vc153 (#신규4) — 5차전직 2차각성 스토리 퀘스트 "각성의 대가" 진행 상황
+   *  기존엔 퀘스트 로그가 스테이지 메인 체인+반복 의뢰만 그려서 5차 2차각성 퀘스트가 로그에 안 보였다 */
+  fifth2?: {
+    /** offerable(수주 가능) | active(진행 중) | done(완료) — 미도달(220렙 미만)이면 undefined */
+    state: "offerable" | "active" | "done";
+    title: string;
+    desc: string;
+    /** 진행도 n/need (talk 단계는 need=1) */
+    count: number;
+    need: number;
+    step: number;
+    totalSteps: number;
+  } | null;
 };
 
 export type EndState = {
