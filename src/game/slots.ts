@@ -12,6 +12,8 @@
 import { loadSave, writeSave, registerSaveHook, setActiveCharId, SAVE_KEY, type SaveData } from "./config";
 
 export const SLOTS_KEY = "sertz_slots_v1";
+/** vc149 (#2) — 슬롯 메타 이중 백업 키 — 본 키 파손/유실 시 복구용 */
+export const SLOTS_BAK_KEY = "sertz_slots_bak_v1";
 export const BASE_SLOTS = 8;
 export const MAX_SLOTS = 16;
 /** 슬롯 확장 비용 — 유니온 코인 (계정 공유 재화, 유니온 상점에서 구매) */
@@ -52,7 +54,17 @@ function rawSlots(): SlotsStore | null {
     if (d.activeId === undefined) d.activeId = null;
     return d;
   } catch {
-    return null;
+    /* vc149 (#2) — 메타 파손 시 이중 백업 키에서 구조 시도 (아래 loadSlots에서 이어짐) */
+    try {
+      const bak = window.localStorage.getItem(SLOTS_BAK_KEY);
+      if (!bak) return null;
+      const d = JSON.parse(bak) as SlotsStore;
+      if (!d || d.v !== 1 || typeof d.slots !== "number") return null;
+      if (!d.chars || typeof d.chars !== "object") d.chars = {};
+      return d;
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -81,15 +93,64 @@ export function loadSlots(): SlotsStore {
   if (!store) {
     store = { v: 1, slots: BASE_SLOTS, activeId: null, chars: {} };
     migrateLegacy(store);
-    writeSlots(store);
   }
+  /* vc149 (#2/#19) — 고아 캐릭터 자동 재편입: 메타(sertz_slots_v1)가 어떤 이유로든
+   *  유실/파손돼도 캐릭터 본체(sertz_char_*)는 로컬에 남는다. 부팅마다 고아 키를
+   *  전수 스캔해 슬롯 목록에 재편입한다 — “업데이트 후 1캐릭만 남는” 데이터 유실의
+   *  근본 치료. 재편입 분은 이름/직업/레벨을 본체에서 복원. */
+  readoptOrphans(store);
+  writeSlots(store);
   return store;
+}
+
+/** vc149 (#2/#19) — 고아 sertz_char_* 본체 재편입 (매 부팅 실행, 변화 없으면 무기록) */
+function readoptOrphans(store: SlotsStore) {
+  if (typeof window === "undefined") return;
+  let adopted = 0;
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (!k || !k.startsWith("sertz_char_")) continue;
+      const id = k.slice("sertz_char_".length);
+      if (!id || store.chars[id]) continue;
+      const save = readCharSave(id);
+      if (!save || typeof save.stage !== "string") continue;
+      store.chars[id] = {
+        id,
+        name: save.playerName || "세르츠",
+        cls: save.cls ?? (save as { startCls?: string | null }).startCls ?? null,
+        lv: save.lv ?? 1,
+        stage: save.stage ?? "village",
+        cleared: !!save.cleared,
+        lastSeen: save.lastSeen ?? Date.now(),
+        createdAt: Date.now(),
+        rebirths: save.inf?.rebirths ?? 0,
+        lookTint: save.lookTint ?? null,
+        gender: save.gender ?? "m",
+        skinIdx: save.skinIdx ?? 2,
+      };
+      adopted++;
+    }
+  } catch {
+    /* 스캔 실패 무시 */
+  }
+  if (adopted > 0) {
+    // 활성 캐릭터가 유실 상태면 최근 캐릭터로 복원 (로비 진입 가능 보장)
+    if (!store.activeId || !store.chars[store.activeId]) {
+      const recent = Object.values(store.chars).sort((a, b) => b.lastSeen - a.lastSeen)[0];
+      if (recent) store.activeId = recent.id;
+    }
+    try { window.dispatchEvent(new CustomEvent("sertz:charReadopted", { detail: { count: adopted } })); } catch {}
+  }
 }
 
 export function writeSlots(s: SlotsStore) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(SLOTS_KEY, JSON.stringify(s));
+    const json = JSON.stringify(s);
+    window.localStorage.setItem(SLOTS_KEY, json);
+    /* vc149 (#2) — 이중 백업: 본 키가 파손돼도 직전 정상분에서 복구 가능 */
+    window.localStorage.setItem(SLOTS_BAK_KEY, json);
   } catch {
     /* 저장 실패 무시 */
   }
@@ -248,6 +309,60 @@ export function importCloudSave(
   return { ok: true, id, mode: byName ? "name" : target ? "active" : "new" };
 }
 
+/** vc149 (#2/#19) — 클라우드 백업의 전 캐릭터 편입 (이름 → 세이브).
+ *  로컬에 없는 캐릭터만 새 슬롯으로 편입한다(있는 것은 로컬이 최신이므로 유지).
+ *  반환: 신규 편입 캐릭터 수. 활성 캐릭터는 importCloudSave가 담당하므로 건드리지 않는다. */
+export function importCharsFromCloud(chars: Record<string, unknown>): number {
+  if (typeof window === "undefined") return 0;
+  if (!chars || typeof chars !== "object") return 0;
+  const store = loadSlots();
+  const names = new Set(Object.values(store.chars).map((c) => c.name));
+  let added = 0;
+  for (const [rawName, v] of Object.entries(chars)) {
+    if (!v || typeof v !== "object") continue;
+    const data = v as SaveData;
+    if (typeof data.stage !== "string") continue;
+    const name = String(data.playerName ?? rawName).trim().slice(0, 8) || "세르츠";
+    if (names.has(name)) continue; // 이미 있음 — 로컬 유지
+    const id = `c${Date.now().toString(36)}${Math.floor(Math.random() * 36).toString(36)}${added}`;
+    try {
+      window.localStorage.setItem(`sertz_char_${id}`, JSON.stringify(data));
+    } catch { continue; }
+    store.chars[id] = {
+      id, name,
+      cls: data.cls ?? (data as { startCls?: string | null }).startCls ?? null,
+      lv: data.lv ?? 1,
+      stage: data.stage ?? "village",
+      cleared: !!data.cleared,
+      lastSeen: Date.now(),
+      createdAt: Date.now(),
+      rebirths: data.inf?.rebirths ?? 0,
+      lookTint: data.lookTint ?? null,
+      gender: data.gender ?? "m",
+      skinIdx: data.skinIdx ?? 2,
+    };
+    names.add(name);
+    added++;
+    if (Object.keys(store.chars).length >= Math.max(store.slots, 16)) break; // 상한 방어
+  }
+  if (added > 0) writeSlots(store);
+  return added;
+}
+
+/** vc149 (#2) — 로컬 전 캐릭터 스냅샷 (클라우드 백업 페이로드용 — 이름 → 세이브) */
+export function collectLocalChars(): Record<string, SaveData> {
+  const out: Record<string, SaveData> = {};
+  if (typeof window === "undefined") return out;
+  try {
+    const store = loadSlots();
+    for (const meta of Object.values(store.chars)) {
+      const save = readCharSave(meta.id);
+      if (save) out[meta.name] = save;
+    }
+  } catch { /* 무시 */ }
+  return out;
+}
+
 /** 슬롯 확장 — 유니온 코인 소모 (union.ts에서 차감 후 호출) */
 export function expandSlots(): boolean {
   const store = loadSlots();
@@ -282,7 +397,9 @@ export function syncCharMeta(save: SaveData) {
     meta.cleared = !!save.cleared;
     meta.lastSeen = Date.now();
     meta.rebirths = save.inf?.rebirths ?? meta.rebirths;
-    const sc = (save as { startCls?: string | null }).startCls ?? save.cls ?? null;
+    /* vc149 (#10) — 현재 직업 표시: startCls(시작 1차)보다 save.cls(현재 전직 직업) 우선.
+     *  기존엔 startCls가 이겨서 전직해도 슬롯 카드가 1차 직업으로만 보였다. */
+    const sc = save.cls ?? (save as { startCls?: string | null }).startCls ?? null;
     if (sc) meta.cls = sc;
     /* v1.0.19 (B-1) — 외형 색조 동기화 (세이브에 기록된 값 우선) */
     const lt = (save as { lookTint?: number | null }).lookTint;

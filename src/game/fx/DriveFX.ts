@@ -431,4 +431,197 @@ export class DriveFX {
       onComplete: () => p.destroy(),
     });
   }
+
+  /* ==================== vc149 — 유저 제공 GameVFX 3D 팩 (gv_*) ====================
+   *  Unity GameVFX Buff Collection + UNI VFX + Cartoon FX Remaster 원본 PNG에서
+   *  추출한 고급 파티클 텍스처 81종 (scripts/vc149_gvfx_convert.py → assets/vfx3/).
+   *  텍스처 부재 안전 (textures.exists 가드) · fxLevel 0에서 수량 절반. */
+
+  private gvTex(key: string): boolean {
+    return this.scene.textures.exists(key);
+  }
+
+  /** gv 확장 링 — fiery shockwave가 커지며 사라진다 (종결 연출 공용) */
+  gvShock(x: number, y: number, tint = 0xffb070, scale = 1.4, dur = 700) {
+    if (!this.gvTex("gv_uni_shockwave_fiery")) return;
+    const im = this.scene.add.image(x, y, "gv_uni_shockwave_fiery")
+      .setDepth(30).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.2 * scale).setAlpha(0.95);
+    this.scene.tweens.add({ targets: im, scale: 1.35 * scale, alpha: 0, duration: dur, ease: "Cubic.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 코어 플래시 — 폭발 심장 (gv_uni_exp_core) */
+  gvCore(x: number, y: number, tint = 0xffe0b0, scale = 1) {
+    if (!this.gvTex("gv_uni_exp_core")) return;
+    const im = this.scene.add.image(x, y, "gv_uni_exp_core")
+      .setDepth(29).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.2 * scale).setAlpha(1);
+    this.scene.tweens.add({ targets: im, scale: 1.1 * scale, alpha: 0, duration: 420, ease: "Quad.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 화이트 플래시 — FlashFree 즉발 섬광 */
+  gvFlash(x: number, y: number, tint = 0xffffff, scale = 1) {
+    const k = this.gvTex("gv_flashfree2") ? "gv_flashfree2" : this.gvTex("gv_flashfree1") ? "gv_flashfree1" : "";
+    if (!k) return;
+    const im = this.scene.add.image(x, y, k)
+      .setDepth(31).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.3 * scale).setAlpha(1);
+    this.scene.tweens.add({ targets: im, scale: 1.2 * scale, alpha: 0, duration: 300, ease: "Quad.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 에너지 웹 — 마법 소용돌이 오버레이 (이터널/마나 계열 상징) */
+  gvEnergyWeb(x: number, y: number, tint = 0xb0a0ff, scale = 1, dur = 1400) {
+    if (!this.gvTex("gv_uni_energyweb")) return;
+    const im = this.scene.add.image(x, y, "gv_uni_energyweb")
+      .setDepth(28).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.3 * scale).setAlpha(0.9);
+    this.scene.tweens.add({ targets: im, scale: 1.15 * scale, angle: 180, alpha: 0, duration: dur, ease: "Sine.inOut", onComplete: () => im.destroy() });
+  }
+
+  /** gv 별하늘 오버레이 — 시간 정지/영겁 연출 (이터널 전용 분위기) */
+  gvStarry(x: number, y: number, scale = 1, dur = 2000) {
+    if (!this.gvTex("gv_uni_tile_starry")) return;
+    const im = this.scene.add.image(x, y, "gv_uni_tile_starry")
+      .setDepth(27).setBlendMode(Phaser.BlendModes.ADD).setTint(0xd8ccff).setScale(0.4 * scale).setAlpha(0);
+    this.scene.tweens.add({ targets: im, alpha: 0.85, scale: 0.75 * scale, duration: dur * 0.4, yoyo: true, hold: dur * 0.2, ease: "Sine.inOut", onComplete: () => im.destroy() });
+  }
+
+  /** gv 에너지 볼트 — 무작위 방향 번개 편향 */
+  gvBolts(x: number, y: number, tint = 0x9ad8ff, n = 4, spread = 90) {
+    if (!this.gvTex("gv_uni_energybolts")) return;
+    const N = this.lowFx ? Math.ceil(n / 2) : n;
+    for (let i = 0; i < N; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const d = spread * (0.4 + Math.random() * 0.6);
+      const im = this.scene.add.image(x + Math.cos(a) * d * 0.3, y + Math.sin(a) * d * 0.3, "gv_uni_energybolts")
+        .setDepth(28).setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
+        .setRotation(a).setScale(0.5 + Math.random() * 0.5).setAlpha(1);
+      this.scene.tweens.add({ targets: im, x: im.x + Math.cos(a) * d, y: im.y + Math.sin(a) * d, alpha: 0, duration: 320 + Math.random() * 220, ease: "Quad.out", onComplete: () => im.destroy() });
+    }
+  }
+
+  /** gv 스펙스 분산 — 반짝이 입자 산개 (종결 화면 채움) */
+  gvSpecks(x: number, y: number, tint = 0xffe9a0, n = 10, spread = 150) {
+    if (!this.gvTex("gv_uni_specks")) return;
+    const N = this.lowFx ? Math.ceil(n / 2) : n;
+    for (let i = 0; i < N; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const d = spread * (0.3 + Math.random() * 0.7);
+      const im = this.scene.add.image(x, y, "gv_uni_specks")
+        .setDepth(27).setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
+        .setScale(0.12 + Math.random() * 0.16).setAlpha(0.95);
+      this.scene.tweens.add({ targets: im, x: x + Math.cos(a) * d, y: y + Math.sin(a) * d - 30, alpha: 0, duration: 700 + Math.random() * 600, ease: "Cubic.out", onComplete: () => im.destroy() });
+    }
+  }
+
+  /** gv 스테이크 버스트 — 방사형 광선 (종결기 마무리) */
+  gvStreaks(x: number, y: number, tint = 0xfff0c0, scale = 1) {
+    if (!this.gvTex("gv_uni_streaks_horizontal")) return;
+    const im = this.scene.add.image(x, y, "gv_uni_streaks_horizontal")
+      .setDepth(30).setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
+      .setScale(0.2 * scale).setAlpha(0.95).setRotation(Math.random() * Math.PI);
+    this.scene.tweens.add({ targets: im, scale: 1.2 * scale, alpha: 0, angle: im.angle + 30, duration: 520, ease: "Cubic.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 근접 참격 — cfxr sword trail (경사 아크) */
+  gvSwordTrail(x: number, y: number, angle: number, tint = 0xdfe8ff, big = false) {
+    if (!this.gvTex("gv_cfxr_sword_trail_mask_light")) return;
+    const im = this.scene.add.image(x, y, "gv_cfxr_sword_trail_mask_light")
+      .setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
+      .setRotation(angle).setScale(big ? 1.3 : 0.8).setAlpha(0.95);
+    this.scene.tweens.add({ targets: im, scale: big ? 1.7 : 1.05, alpha: 0, duration: 260, ease: "Quad.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 타격 삼각 — cfxr hit triangle 임팩트 */
+  gvHitTri(x: number, y: number, angle: number, tint = 0xffe0a0, scale = 1) {
+    if (!this.gvTex("gv_cfxr_hit_triangle")) return;
+    const im = this.scene.add.image(x, y, "gv_cfxr_hit_triangle")
+      .setDepth(27).setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
+      .setRotation(angle).setScale(0.35 * scale).setAlpha(1);
+    this.scene.tweens.add({ targets: im, scale: 0.75 * scale, alpha: 0, duration: 240, ease: "Quad.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 해골 — 저주/사망 연출 (섀도우 계열) */
+  gvSkull(x: number, y: number, tint = 0xc090ff, scale = 1) {
+    if (!this.gvTex("gv_cfxr_skull_2")) return;
+    const im = this.scene.add.image(x, y - 20, "gv_cfxr_skull_2")
+      .setDepth(28).setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
+      .setScale(0.25 * scale).setAlpha(0.95);
+    this.scene.tweens.add({ targets: im, y: y - 70, scale: 0.55 * scale, alpha: 0, duration: 700, ease: "Quad.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 원소 링 — ice/elec 확장 링 (계열 지면 연출 대체) */
+  gvRing(x: number, y: number, kind: "ice" | "elec", tint = 0xffffff, scale = 1) {
+    const k = kind === "ice" ? "gv_cfxr_ring_ice" : "gv_cfxr_ring_electric";
+    if (!this.gvTex(k)) return;
+    const im = this.scene.add.image(x, y, k)
+      .setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.25 * scale).setAlpha(0.95);
+    this.scene.tweens.add({ targets: im, scale: 1.1 * scale, alpha: 0, duration: 560, ease: "Cubic.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 불 서클 지면 연출 — 전사/성기사 계열 (마법진 대체) */
+  gvFireCircle(x: number, y: number, tint = 0xffb070, dur = 900, scale = 1) {
+    if (!this.gvTex("gv_cfxr_fire_circle_drawn")) return;
+    const im = this.scene.add.image(x, y, "gv_cfxr_fire_circle_drawn")
+      .setDepth(12).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.5 * scale).setAlpha(0.9);
+    this.scene.tweens.add({ targets: im, scale: 1.0 * scale, alpha: 0, duration: dur, ease: "Quad.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 바람 부채꼴 — 궁수 계열 (마법진 대체) */
+  gvCone(x: number, y: number, angle: number, tint = 0xaef0c0, scale = 1) {
+    if (!this.gvTex("gv_uni_cone_long")) return;
+    const im = this.scene.add.image(x, y, "gv_uni_cone_long")
+      .setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
+      .setRotation(angle).setScale(0.6 * scale, 0.8 * scale).setAlpha(0.9);
+    this.scene.tweens.add({ targets: im, scaleX: 1.3 * scale, alpha: 0, duration: 380, ease: "Quad.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 그림자 균열 — 도적 계열 (마법진 대체) */
+  gvVoidSpike(x: number, y: number, tint = 0xb08aff, scale = 1) {
+    const k = this.gvTex("gv_cfxr_ring_spikes_revert") ? "gv_cfxr_ring_spikes_revert" : "";
+    if (!k) return;
+    const im = this.scene.add.image(x, y, k)
+      .setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.3 * scale).setAlpha(0.95);
+    this.scene.tweens.add({ targets: im, scale: 1.0 * scale, alpha: 0, duration: 520, ease: "Cubic.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 마법사 전용 룬 — gv_rune_big(+글로우). 마법 계열만 호출할 것 */
+  gvMageRune(x: number, y: number, tint = 0xb08aff, dur = 1000, scale = 1) {
+    if (!this.gvTex("gv_rune_big")) return;
+    const im = this.scene.add.image(x, y, "gv_rune_big")
+      .setDepth(12).setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
+      .setScale(0.4 * scale).setAlpha(0.95);
+    if (this.gvTex("gv_rune_glow")) {
+      const g = this.scene.add.image(x, y, "gv_rune_glow")
+        .setDepth(11).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.5 * scale).setAlpha(0.7);
+      this.scene.tweens.add({ targets: g, scale: 1.1 * scale, alpha: 0, duration: dur, onComplete: () => g.destroy() });
+    }
+    this.scene.tweens.add({ targets: im, angle: 90, scale: 0.9 * scale, alpha: 0, duration: dur, ease: "Sine.in", onComplete: () => im.destroy() });
+  }
+
+  /** gv 크리스탈 파편 팝 — 얼음/보석 계열 */
+  gvCrystal(x: number, y: number, tint = 0x8ad4ff, n = 3) {
+    if (!this.gvTex("gv_crystalfree1")) return;
+    const N = this.lowFx ? 1 : n;
+    for (let i = 0; i < N; i++) {
+      const a = -Math.PI / 2 + Phaser.Math.FloatBetween(-0.9, 0.9);
+      const im = this.scene.add.image(x, y, "gv_crystalfree1")
+        .setDepth(27).setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
+        .setScale(0.22 + Math.random() * 0.14).setAlpha(1).setRotation(Math.random() * Math.PI);
+      this.scene.tweens.add({ targets: im, x: x + Math.cos(a) * 90, y: y + Math.sin(a) * 90 + 40, alpha: 0, rotation: im.rotation + 1.6, duration: 520 + Math.random() * 220, ease: "Quad.out", onComplete: () => im.destroy() });
+    }
+  }
+
+  /** gv 물 튀김 — 물/정화 계열 */
+  gvSplash(x: number, y: number, tint = 0x9ad8ff, scale = 1) {
+    if (!this.gvTex("gv_cfxr_water_small_splash_stretch")) return;
+    const im = this.scene.add.image(x, y, "gv_cfxr_water_small_splash_stretch")
+      .setDepth(27).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.4 * scale).setAlpha(0.95);
+    this.scene.tweens.add({ targets: im, y: y - 26, scale: 0.7 * scale, alpha: 0, duration: 420, ease: "Quad.out", onComplete: () => im.destroy() });
+  }
+
+  /** gv 오라 레이 — 버프/각성 순간 (플레이어 주위 회전 광선) */
+  gvAura(x: number, y: number, tint = 0xffe9a0, dur = 1600, scale = 1) {
+    if (!this.gvTex("gv_cfxr_aura_rays")) return;
+    const im = this.scene.add.image(x, y, "gv_cfxr_aura_rays")
+      .setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.3 * scale).setAlpha(0);
+    this.scene.tweens.add({ targets: im, alpha: 0.9, scale: 0.55 * scale, duration: dur * 0.35, yoyo: true, hold: dur * 0.15, ease: "Sine.inOut", onComplete: () => im.destroy() });
+    this.scene.tweens.add({ targets: im, angle: 60, duration: dur, ease: "Linear" });
+  }
 }

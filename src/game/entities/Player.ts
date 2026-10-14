@@ -2296,10 +2296,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnCrack?.(this.x, this.y);
           this.scene.spawnBurstAt(this.x, this.y, 46, hex);
           this.scene.spawnPillar(this.x, this.y, hex, 170);
-          /* v1.0.10 — GameStudio FX: 종언 대폭발 3중 합성 (화염 링+코어 플레어+마법진) */
+          /* v1.0.10 — GameStudio FX: 종언 대폭발 3중 합성 (화염 링+코어 플레어)
+           *  vc149 (#14) — 마법진 금지(전사 계열): gv 불 서클 지면 연출로 대체 */
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_fire", 0xffffff, 3.6, 560);
           spawnFlarePop(this.scene, this.x, this.y - 6, "vf_flare_fire", { scale: 1.6, duration: 520 });
-          spawnPentacle(this.scene, this.x, this.y, 0xff6a3a, { tex: "vf_penta_fire", scale: 1.5, duration: 760 });
+          this.scene.driveFx?.gvFireCircle(this.x, this.y, 0xff8a4a, 820, 1.1);
           this.scene.cameras.main.shake(200, 0.014);
           this.scene.cameras.main.flash(120, 255, 90, 50);
           for (const e of this.getAllTargetsIn(300)) {
@@ -2322,8 +2323,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (!e.active || this.state === "dead") return;
             this.scene.spawnPillar(e.x, e.y, 0xffe9a0, 220);
             this.scene.spawnBurstAt(e.x, e.y, 12, 0xffe9a0);
-            /* v1.0.10 — GameStudio FX: 기둥 하단 마법진+골드 링 (심판의 무게감) */
-            spawnPentacle(this.scene, e.x, e.y, 0xffe9a0, { scale: 0.9, duration: 620 });
+            /* v1.0.10 — GameStudio FX: 기둥 하단 골드 링 (심판의 무게감)
+             *  vc149 (#14) — 마법진 금지(전사 계열): gv 타격 삼각+화이트 플래시로 대체 */
+            this.scene.driveFx?.gvHitTri(e.x, e.y, -Math.PI / 2, 0xffe9a0, 1.4);
+            this.scene.driveFx?.gvFlash(e.x, e.y, 0xfff0c0, 0.9);
             spawnRingPop(this.scene, e.x, e.y, "vf_ring", 0xffe9a0, 2.2, 440);
             const { dmg, crit } = this.rollDamage(4.2, true);
             if (crit) this.scene.sfxCrit();
@@ -2354,8 +2357,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         this.scene.spawnBurstAt(this.x, this.y, 16, hex);
-        /* v1.0.10 — GameStudio FX: 시전 마법진+코어 플레어 (신의 화살비 발동 무게감) */
-        spawnPentacle(this.scene, this.x, this.y, hex, { scale: 1.15, duration: 840, spin: true });
+        /* v1.0.10 — GameStudio FX: 시전 코어 플레어 (신의 화살비 발동 무게감)
+         *  vc149 (#14) — 마법진 금지(궁수 계열): gv 바람 부채꼴로 대체 */
+        this.scene.driveFx?.gvCone(this.x, this.y, this.aimDirFree().angle(), 0xffe9a0, 1.4);
         spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_elec", { scale: 1.1, duration: 480 });
         this.scene.cameras.main.shake(80, 0.004);
         break;
@@ -2385,7 +2389,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.recalcSpeed();
         this.scene.spawnBurstAt(this.x, this.y, 22, hex);
         /* v1.0.10 — GameStudio FX: 폭풍의 눈에 자연 엠블럼(소용돌이)+플레어 궤도 */
-        spawnPentacle(this.scene, this.x, this.y - 4, 0x7ade8a, { tex: "vf_emb_nature", scale: 2.1, duration: 1500, spin: true });
+        this.scene.driveFx?.gvRing(this.x, this.y - 4, "elec", 0x7ade8a, 1.6); this.scene.driveFx?.gvCone(this.x, this.y, this.aimDirFree().angle(), 0x7ade8a, 1.6); /* vc149 #14 마법진→gv 링(궁수) */
         for (let k = 0; k < 3; k++) {
           const a = (Math.PI * 2 * k) / 3;
           spawnFlarePop(this.scene, this.x + Math.cos(a) * 52, this.y - 8 + Math.sin(a) * 36, "vf_flare_nature", { scale: 0.75, duration: 900, angle: a });
@@ -2470,7 +2474,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (e.active && this.state !== "dead") {
               this.scene.fireShadowClone(e, hex, 3.0);
               /* v1.0.10 — GameStudio FX: 분신 소환 보이드 문양+암흑 플레어 */
-              spawnPentacle(this.scene, e.x, e.y, 0xb08aff, { tex: "vf_emb_void", scale: 0.85, duration: 700 });
+              this.scene.driveFx?.gvVoidSpike(e.x, e.y, 0xb08aff, 0.9); /* vc149 #14 마법진→gv 그림자균열(도적) */
               spawnFlarePop(this.scene, e.x, e.y - 6, "vf_flare_dark", { scale: 0.95, duration: 460 });
             }
           });
@@ -2661,7 +2665,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           /* v1.0.10 — GameStudio FX 종결 강화: 화염 링+대형 플레어+전투 엠블럼 (천멸의 각인) */
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_fire", 0xffffff, 5.2, 720);
           spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_fire", { scale: 2.3, duration: 640 });
-          spawnPentacle(this.scene, this.x, this.y, 0xffd0a0, { tex: "vf_emb_fire", scale: 2.6, duration: 900 });
+          this.scene.driveFx?.gvFireCircle(this.x, this.y, 0xffa060, 950, 1.5); this.scene.driveFx?.gvCore(this.x, this.y, 0xffd0a0, 1.6); /* vc149 #14 마법진→gv 불서클(전사) */
           this.scene.cameras.main.shake(460, 0.022);
           this.scene.cameras.main.flash(170, 255, 110, 50);
           this.scene.sfxSkill("superhit", 0.82);
@@ -2705,7 +2709,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPurifyRing(this.x, this.y, 560, 0xffe9a0);
           this.scene.spawnBurstAt(this.x, this.y, 80, 0xffe9a0);
           /* v1.0.10 — GameStudio FX 종결 강화: 대형 골드 마법진 스핀+정화 링 */
-          spawnPentacle(this.scene, this.x, this.y, 0xffe9a0, { scale: 3.0, duration: 1100, spin: true, alpha: 0.95 });
+          this.scene.driveFx?.gvFireCircle(this.x, this.y, 0xffe9a0, 1150, 1.8); this.scene.driveFx?.gvAura(this.x, this.y, 0xffe9a0, 1500, 1.6); /* vc149 #14 마법진→gv 성역(전사) */
           spawnRingPop(this.scene, this.x, this.y, "vf_ring", 0xffe9a0, 5.0, 800);
           this.scene.cameras.main.flash(200, 255, 245, 200);
           this.scene.cameras.main.shake(460, 0.02);
@@ -2845,10 +2849,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xffffff, 320);
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnBurstAt(this.x, this.y, 90, hex);
-          /* v1.0.10 — GameStudio FX 종결 강화: 전기 마법진+보이드 링 3중 합성 (마나 붕괴) */
+          /* v1.0.10 — GameStudio FX 종결 강화: 전기 마법진+보이드 링 3중 합성 (마나 붕괴)
+           *  vc149 (#11) — 밋밋했던 마지막 한 방 강화: gv 코어+스테이크+스펙스+쇼크 4중 합성
+           *  + 백색 섬광으로 '마나 붕괴' 종결 임팩트를 확실히 전달 */
           spawnPentacle(this.scene, this.x, this.y, 0x8ab0ff, { tex: "vf_penta_elec", scale: 2.8, duration: 1000 });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xaec6ff, 5.4, 820);
           spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_elec", { scale: 2.4, duration: 620 });
+          this.scene.driveFx?.gvCore(this.x, this.y, 0xcfe0ff, 2.4);
+          this.scene.driveFx?.gvStreaks(this.x, this.y, 0xaec6ff, 2.2);
+          this.scene.driveFx?.gvShock(this.x, this.y, 0x8ab0ff, 2.6, 860);
+          this.scene.driveFx?.gvFlash(this.x, this.y, 0xffffff, 2.2);
+          this.scene.driveFx?.gvSpecks(this.x, this.y, 0xcfe0ff, 18, 300);
           this.scene.spawnField({
             x: this.x, y: this.y, radius: 250, dur: 6000,
             dps: Math.max(18, Math.round(this.atkTotal * 1.7)),
@@ -2870,15 +2881,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       /* 이터널 — 영겁극: 시간 정지 + 7중 잔상 폭발 (잔상이 두 번 울린다)
        *  v1.4.30 (#7) — 기둥 3.4→4.0 · 잔상 1.7→2.2(상시) · 종결 6.4→8.0 —
-       *  데드아이 신시극(68배)에 필적하는 63배급 종결기로 재조정. */
+       *  데드아이 신시극(68배)에 필적하는 63배급 종결기로 재조정.
+       *  vc149 (#13) — 이터널 개성 강화: 별하늘 오버레이 + 에너지 웹 + 기절 3.2→4.5초
+       *  (시간의 신 테마를 gv_* 3D 팩 텍스처로 체감 — 별이 흐르는 정지된 세계) */
       case "eternal": {
-        /* 시간 정지 — 전장의 적 전원 3.2초 기절 + 시간 필드 */
+        this.scene.driveFx?.gvStarry(this.x, this.y, 2.6, 3400);
+        this.scene.driveFx?.gvEnergyWeb(this.x, this.y, 0xb0a0ff, 2.2, 1600);
+        /* 시간 정지 — 전장의 적 전원 4.5초 기절 + 시간 필드 */
         this.scene.spawnField({
-          x: this.x, y: this.y + 10, radius: 460, dur: 1300,
+          x: this.x, y: this.y + 10, radius: 460, dur: 2600,
           dps: 0, kind: "time", owner: "player",
         });
         for (const e of this.getAllTargetsIn(460)) {
-          (e as Enemy).applyStun?.(3200);
+          (e as Enemy).applyStun?.(4500);
         }
         this.scene.cameras.main.flash(200, 200, 190, 255);
         this.scene.spawnPickupText(this.x, this.y - 66, "시간이 붕괴된다...", "#d8ccff");
@@ -2914,9 +2929,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnPillar(this.x, this.y, 0xd8ccff, 300);
           this.scene.spawnBurstAt(this.x, this.y, 76, 0xb0a0ff);
-          /* v1.0.10 — GameStudio FX 종결 강화: 영겁의 균열 — 시간 마법진 스핀+보이드 링 */
+          /* v1.0.10 — GameStudio FX 종결 강화: 영겁의 균열 — 시간 마법진 스핀+보이드 링
+           *  vc149 (#13) — gv 충격파+스펙스로 균열 잔향 강화 */
           spawnPentacle(this.scene, this.x, this.y, 0xb0a0ff, { scale: 2.8, duration: 1150, spin: true });
           spawnRingPop(this.scene, this.x, this.y + 6, "vf_ring_void", 0xffffff, 5.0, 860);
+          this.scene.driveFx?.gvShock(this.x, this.y, 0xd8ccff, 2.4, 800);
+          this.scene.driveFx?.gvSpecks(this.x, this.y, 0xe8e0ff, 16, 260);
+          this.scene.driveFx?.gvCore(this.x, this.y, 0xd8ccff, 2.0);
           this.scene.cameras.main.flash(200, 216, 204, 255);
           this.scene.cameras.main.shake(480, 0.02);
           this.scene.sfxSkill("superhit", 0.84);
@@ -2961,7 +2980,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnBurstAt(this.x, this.y, 80, 0x8a4aff);
           this.scene.spawnCrack(this.x, this.y);
           /* v1.0.10 — GameStudio FX 종결 강화: 심연 각인 (보이드 엠블럼+암흑 플레어+보이드 링) */
-          spawnPentacle(this.scene, this.x, this.y, 0xc090ff, { tex: "vf_emb_void", scale: 2.6, duration: 950 });
+          this.scene.driveFx?.gvVoidSpike(this.x, this.y, 0xc090ff, 1.8); this.scene.driveFx?.gvSkull(this.x, this.y, 0xc090ff, 1.4); /* vc149 #14 마법진→gv 심연(도적) */
           spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_dark", { scale: 2.2, duration: 640 });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xffffff, 4.8, 780);
           this.scene.cameras.main.flash(190, 90, 40, 160);
@@ -3264,7 +3283,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, hex, 320);
           this.scene.spawnBurstAt(this.x, this.y, 88, hex);
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_fire", 0xffffff, 5.6, 760);
-          spawnPentacle(this.scene, this.x, this.y, 0xffb080, { tex: "vf_emb_fire", scale: 3.0, duration: 1000 });
+          this.scene.driveFx?.gvFireCircle(this.x, this.y, 0xffa060, 1050, 1.8); this.scene.driveFx?.gvCore(this.x, this.y, 0xffb080, 1.8); /* vc149 #14 마법진→gv 불서클(전사) */
           this.scene.cameras.main.shake(520, 0.026);
           this.scene.cameras.main.flash(180, 255, 120, 60);
           this.scene.sfxSkill("superhit", 0.76);
@@ -3310,7 +3329,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffffff, 320);
           this.scene.spawnPurifyRing(this.x, this.y, 560, 0xffffff);
-          spawnPentacle(this.scene, this.x, this.y, 0xffe9a0, { scale: 3.2, duration: 1150, spin: true, alpha: 0.95 });
+          this.scene.driveFx?.gvFireCircle(this.x, this.y, 0xffe9a0, 1150, 1.9); this.scene.driveFx?.gvAura(this.x, this.y, 0xffe9a0, 1600, 1.7); /* vc149 #14 마법진→gv 성역(전사) */
           this.scene.cameras.main.flash(200, 255, 245, 200);
           this.scene.cameras.main.shake(480, 0.022);
           this.scene.sfxSkill("holy", 0.7);
@@ -3482,6 +3501,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnPentacle(this.scene, this.x, this.y, 0x8ab0ff, { tex: "vf_penta_elec", scale: 3.2, duration: 1100 });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xaec6ff, 5.8, 860);
           spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_elec", { scale: 2.7, duration: 660 });
+          /* vc149 (#11) — 오버로드 합체 폭발 gv 강화 (코어+충격파+광선+입자) */
+          this.scene.driveFx?.gvCore(this.x, this.y, 0xcfe0ff, 2.8);
+          this.scene.driveFx?.gvShock(this.x, this.y, 0x8ab0ff, 3.0, 900);
+          this.scene.driveFx?.gvStreaks(this.x, this.y, 0xaec6ff, 2.6);
+          this.scene.driveFx?.gvSpecks(this.x, this.y, 0xcfe0ff, 20, 340);
           this.scene.spawnField({ x: this.x, y: this.y, radius: 270, dur: 8000, dps: Math.max(22, Math.round(this.atkTotal * 1.9)), kind: "light", owner: "player" });
           this.scene.cameras.main.flash(220, 220, 200, 255);
           this.scene.cameras.main.shake(560, 0.026);
@@ -3497,10 +3521,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       }
 
-      /* 이터널 — 영겁전격: 시간 역행(HP/MP 복원) + 최근 6초 피해 ×2 재현 종결 */
+      /* 이터널 — 영겁전격: 시간 역행(HP/MP 복원) + 최근 6초 피해 ×2 재현 종결
+       *  vc149 (#13) — 별하늘+에너지 웹 오버레이로 '시간이 거스르는' 공간감 강화 */
       case "eternal": {
-        this.scene.spawnField({ x: this.x, y: this.y + 10, radius: 470, dur: 1300, dps: 0, kind: "time", owner: "player" });
-        for (const e of this.getAllTargetsIn(470)) (e as Enemy).applyStun?.(2800);
+        this.scene.driveFx?.gvStarry(this.x, this.y, 2.8, 3200);
+        this.scene.driveFx?.gvEnergyWeb(this.x, this.y, 0xb0a0ff, 2.4, 1500);
+        this.scene.spawnField({ x: this.x, y: this.y + 10, radius: 470, dur: 2600, dps: 0, kind: "time", owner: "player" });
+        for (const e of this.getAllTargetsIn(470)) (e as Enemy).applyStun?.(4200);
         this.scene.spawnPickupText(this.x, this.y - 66, "시간이 거스르기 시작한다...", "#d8ccff");
         /* 시간 역행 — 상처를 되돌린다 */
         const healed = Math.round(this.maxHp * 0.3);
@@ -3538,7 +3565,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 섀도우로드 — 심연전격: 그림자 왕국 성역(분신 6기 10초) + 연속 참수 + 심연 처형 */
       case "shadowlord": {
         this.scene.spawnField({ x: this.x, y: this.y, radius: 250, dur: 10000, dps: Math.max(16, Math.round(this.atkTotal * 1.2)), kind: "light", owner: "player" });
-        spawnPentacle(this.scene, this.x, this.y, 0xc090ff, { tex: "vf_emb_void", scale: 3.0, duration: 4200, spin: true });
+        this.scene.driveFx?.gvVoidSpike(this.x, this.y, 0xc090ff, 2.0); this.scene.driveFx?.gvSkull(this.x, this.y, 0xc090ff, 1.6); /* vc149 #14 마법진→gv 심연(도적) */
         for (let c = 0; c < 6; c++) {
           this.scene.time.delayedCall(300 + c * 480, () => {
             if (this.state === "dead") return;
@@ -3566,7 +3593,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0x8a4aff, 310);
           this.scene.spawnBurstAt(this.x, this.y, 86, 0x8a4aff);
           this.scene.spawnCrack(this.x, this.y);
-          spawnPentacle(this.scene, this.x, this.y, 0xc090ff, { tex: "vf_emb_void", scale: 3.0, duration: 1000 });
+          this.scene.driveFx?.gvVoidSpike(this.x, this.y, 0xc090ff, 1.9); this.scene.driveFx?.gvSkull(this.x, this.y, 0xc090ff, 1.5); /* vc149 #14 마법진→gv 심연(도적) */
           spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_dark", { scale: 2.6, duration: 680 });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xffffff, 5.2, 820);
           this.scene.cameras.main.flash(190, 90, 40, 160);
@@ -3720,7 +3747,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "mage": {
         const bx = this.x;
         const by = this.y;
-        spawnPentacle(this.scene, bx, by, 0xb06aff, { scale: 3.4, duration: 5200, spin: true });
+        this.scene.driveFx?.gvVoidSpike(bx, by, 0xb06aff, 2.2); this.scene.driveFx?.gvAura(bx, by, 0xb06aff, 2600, 1.9); /* vc149 #14 마법진→gv 만검 거점(도적) */
         this.scene.spawnField({ x: bx, y: by, radius: 260, dur: 5200, dps: Math.max(20, Math.round(this.atkTotal * 1.5)), kind: "light", owner: "player" });
         /* 끌어당김 — 220ms마다 주위 적을 균열 중심으로 끌고 와 피해 */
         for (let i = 0; i < 22; i++) {
@@ -3804,6 +3831,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       }
     }
+
+    /* vc149 (#12) — 제2궁극기 여운: 전 직업 공통 30초 잔존 필드.
+     *  '지속딜이면 30초 이상' 피드백 반영 — 발화형이라도 잔여 검기/마나가 30초간
+     *  남아 지속 딜링 + 존재감을 보장한다 (계열별 필드 속성 상이). */
+    this.scene.time.delayedCall(1500, () => {
+      if (this.state === "dead") return;
+      const fam = familyOf(this.cls);
+      const kind = fam === "warrior" ? "fire" : fam === "mage" ? "time" : fam === "thief" ? "poison" : "light";
+      this.scene.spawnField({
+        x: this.x, y: this.y, radius: 240, dur: 30000,
+        dps: Math.max(12, Math.round(this.atkTotal * 0.55)), kind, owner: "player",
+      });
+      this.scene.driveFx?.gvAura(this.x, this.y, hex, 2600, 1.5);
+      this.scene.spawnPickupText(this.x, this.y - 92, "여운 — 잔존 필드 30초", "#e0a8ff");
+    });
 
     /* 공통 마무리 — 시전 후 경직 해제 (1차 궁극기와 동일 게이트) */
     this.scene.time.delayedCall(300, () => {

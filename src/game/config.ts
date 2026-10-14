@@ -471,7 +471,7 @@ export function loadFx(): FxSettings {
     if (raw) {
       const d = JSON.parse(raw) as Partial<FxSettings>;
       return {
-        intensity: Math.max(0, Math.min(100, typeof d.intensity === "number" ? d.intensity : 55)),
+        intensity: Math.max(0, Math.min(200, typeof d.intensity === "number" ? d.intensity : 55)), // vc149 #3 범위 확대 0~200
         noFlicker: !!d.noFlicker,
       };
     }

@@ -37,7 +37,7 @@ export function addAmbientBloom(cam: CamLike): unknown[] {
     /* 보스 블룸(threshold 0.68/blend 0.24~0.30)보다 눈에 덜 띄는 서브틀 프리셋 —
      * 프레임버퍼 패스 1개 추가분이라 모바일 비용은 보스전 대비 가볍다
      * v1.4.13 — 평시 블룸 반강도 (0.14)로 눈부심 없는 서브틀로 축소 */
-    const k = Math.min(1.6, fx.intensity / 55); // 55(기본)=1.0, 100=1.82→1.6 캡
+    const k = Math.min(3.0, fx.intensity / 55); // 55(기본)=1.0 · vc149 #3 상한 1.6→3.0 (200에서 3.0 캡)
     const bloom = Phaser.Actions.AddEffectBloom(cam as unknown as Phaser.Cameras.Scene2D.Camera, {
       threshold: 0.82 + (1 - Math.min(1, k)) * 0.06,
       blurRadius: 1,

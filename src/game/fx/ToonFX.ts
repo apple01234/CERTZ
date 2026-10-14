@@ -108,7 +108,7 @@ type CamFilterable = { filters?: { external?: FilteredList & { addBlocky?: (cfg?
 export function applyToonCamera(camera: unknown): unknown[] | null {
   const intensity = loadFx().intensity;
   if (intensity <= 0) return null; // 슬라이더 0 = 셰이더 완전 끔
-  const k = Math.max(0.2, Math.min(1.6, intensity / 55)); // 55 기준 1.0 배율, 100에서 1.6 상한
+  const k = Math.max(0.2, Math.min(3.0, intensity / 55)); // 55 기준 1.0 배율 · vc149 #3 상한 3.0
   const cam = camera as CamFilterable;
   if (cam && !cam.filters && typeof cam.enableFilters === "function") {
     try { cam.enableFilters(); } catch { /* WebGL 미지원 */ }

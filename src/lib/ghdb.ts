@@ -22,7 +22,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 /* ---------------- 데이터 형태 (accounts/index.js 파일 DB와 동일) ---------------- */
 export type UserRec = { id: string; name: string; provider: string; salt: string; hash: string; createdAt: number; role?: string };
 export type TokenRec = { userId: string; expiresAt: number };
-export type SaveRec = { data: Record<string, unknown>; updatedAt: number };
+export type SaveRec = { data: Record<string, unknown>; updatedAt: number; chars?: Record<string, Record<string, unknown>> };
 export type ListingRec = { id: string; seller: string; sellerName: string; itemKey: string; up: number; price: number; ts: number };
 export type PayoutRec = { gold: number; count: number };
 export type DbShape = {

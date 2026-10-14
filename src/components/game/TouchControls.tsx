@@ -328,7 +328,7 @@ export function TouchControls({
                 mp={s.mp}
                 icon={s.icon}
                 compact={!!sm}
-                keyHint={s.hint}
+                keyHint={isTouch ? undefined : s.hint} /* vc149 #4 터치 기기엔 키보드 힌트 무의미 */
                 onDown={() => EventBus.emit(s.emit as "input:skill1")}
               />
             </div>
@@ -343,7 +343,7 @@ export function TouchControls({
                 icon={skills.s5Icon}
                 ult
                 compact={!!sm}
-                keyHint={km.skill5}
+                keyHint={isTouch ? undefined : km.skill5}
                 onDown={() => EventBus.emit("input:skill5")}
               >
                 <Star size={18} />
@@ -363,7 +363,7 @@ export function TouchControls({
                 icon={skills.s5Icon}
                 ult2
                 compact={!!sm}
-                keyHint={km.skill5b}
+                keyHint={isTouch ? undefined : km.skill5b}
                 onDown={() => EventBus.emit("input:skill5b")}
               >
                 <Sparkles size={18} />
@@ -421,7 +421,11 @@ function PotionButton({
   onDown: () => void;
 }) {
   const shown = itemCount ?? count;
-  /* v1.0.4 — PC 키 힌트 하드코딩(Q/R) 제거: 키맵 기본값(D/F)·재배치를 따라감 */
+  /* v1.0.4 — PC 키 힌트 하드코딩(Q/R) 제거: 키맵 기본값(D/F)·재배치를 따라감
+   *  vc149 (#4) — 터치 기기에서는 키보드 힌트를 숨긴다 (기기에 맞는 표기) */
+  const [isTouchPotion] = useState(
+    () => typeof window !== "undefined" && (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900)
+  );
   const kmHint = loadKeyMap();
   const iconSrc =
     itemKey && itemKey !== "potion_hp" && itemKey !== "potion_mp"
@@ -444,15 +448,18 @@ function PotionButton({
         src={iconSrc}
         alt=""
         draggable={false}
+        onError={(e) => { const img = e.currentTarget; if (!img.dataset.r) { img.dataset.r = "1"; img.src = img.src + (img.src.includes("?") ? "&" : "?") + "r=" + Date.now(); } }} /* vc149 #8 캐시 버스팅 1회 재시도 */
         className="h-5 w-5"
         style={{ imageRendering: "pixelated" }}
       />
       <span className="absolute -bottom-0.5 right-0.5 rounded bg-slate-900/90 px-1 text-[8px] font-black leading-[13px] text-white">
         {shown}
       </span>
-      <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/70">
-        {kind === "hp" ? kmHint.potHp : kmHint.potMp}
-      </span>
+      {!isTouchPotion && (
+        <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/70">
+          {kind === "hp" ? kmHint.potHp : kmHint.potMp}
+        </span>
+      )}
     </button>
   );
 }

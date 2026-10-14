@@ -211,26 +211,70 @@ export function HUD({
         className="absolute right-[max(0.25rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-1 sm:top-3"
         style={{ zoom: typeof window !== "undefined" ? (window.innerWidth >= 1600 ? 1.28 : window.innerWidth >= 1280 ? 1.18 : window.innerWidth >= 1024 ? 1.08 : window.innerWidth >= 640 ? 0.92 : 0.85) : 1 }}
       >
+        {/* vc149 (#15) — 퀘스트 창을 최상단으로 이동 + 창 헤더에 on/off 토글 (#16)
+         *  v1.4.8 (#2 공간) — 트래커 축소 · v1.1.0 (#2) — 토글로 완전 숨김/표시 */}
+        {trackerOpen && !tutActive && (
+          <div className="game-panel pointer-events-auto w-full max-w-[260px] px-2.5 py-1.5 sm:px-3 sm:py-2">
+            <div className="flex items-center gap-1.5">
+              <ScrollText size={13} className="shrink-0 text-amber-300" />
+              <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
+              {/* vc149 (#16) — 퀘스트 on/off 토글을 퀘스트 창 안 헤더로 이동 */}
+              <button
+                onClick={toggleTracker}
+                aria-label="퀘스트창 끄기"
+                className="shrink-0 rounded bg-black/40 px-1 py-0.5 text-amber-200/80 active:scale-90"
+              >
+                <ScrollText size={11} />
+              </button>
+              {quest.pending && (
+                <span className="shrink-0 rounded bg-amber-400/25 px-1 py-px text-[8px] font-black text-amber-200">수락 대기</span>
+              )}
+            </div>
+            <>
+              {quest.desc && (
+              <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/70 sm:text-[11px]">{quest.desc}</p>
+            )}
+            <div className="mt-1 flex items-center justify-between gap-2">
+              {quest.target > 1 && (
+                <span className="text-[10px] font-bold text-emerald-300 sm:text-[11px]">
+                  {quest.current} / {quest.target}
+                </span>
+              )}
+              {quest.distance !== null && (
+                <span className="ml-auto rounded bg-emerald-900/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200 sm:text-[11px]">
+                  목표까지 {quest.distance}m
+                </span>
+              )}
+            </div>
+            {quest.jobStory && (
+              /* v4.1.3 (#전직조건표시) — 단계 수행 방법·진행도·힌트를 전부 노출 (지시 #6):
+               *  기존 한 줄 배지("1/3 — 첫 수련")만으로는 완료 조건을 알 수 없었다 */
+              <div className="mt-1 rounded bg-violet-500/15 px-1.5 py-1">
+                <p className="truncate text-[9px] font-bold text-violet-200 sm:text-[10px]">
+                  ✦ 전직 스토리 {quest.jobStory.step}/{quest.jobStory.total} — {quest.jobStory.stepTitle}
+                  {quest.jobStory.need > 1 && (
+                    <span className="ml-1 text-amber-300">
+                      [{quest.jobStory.current}/{quest.jobStory.need}]
+                    </span>
+                  )}
+                </p>
+                {quest.jobStory.stepDesc && (
+                  <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-violet-100/85 sm:text-[10px]">
+                    {quest.jobStory.stepDesc}
+                  </p>
+                )}
+                {quest.jobStory.hint && (
+                  <p className="mt-0.5 text-[9px] font-bold text-amber-300/95 sm:text-[10px]">→ {quest.jobStory.hint}</p>
+                )}
+              </div>
+            )}
+            </>
+          </div>
+        )}
         <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
-          {/* v1.1.0 (#2) — 퀘스트창 on/off 버튼: 접기가 아니라 아예 숨김/표시 (유저 지시) */}
-          <button
-            onClick={toggleTracker}
-            aria-label={trackerOpen ? "퀘스트창 끄기" : "퀘스트창 켜기"}
-            className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
-              trackerOpen ? "game-chip text-amber-200" : "game-chip text-white/45"
-            }`}
-          >
-            <ScrollText size={17} />
-          </button>
           {/* vc147 (#22) — 우상단 자동전투(로봇) 버튼 철거: TouchControls 자동 버튼·B키와 삼중 중복.
            *  자동전투 진입점은 좌하단 클러스터 버튼 + B키(키맵 재배치 가능)로 통일. */}
-          <button
-            onClick={onToggleMute}
-            aria-label={muted ? "소리 켜기" : "소리 끄기"}
-            className="game-chip pointer-events-auto flex h-9 w-9 items-center justify-center text-white/90 active:scale-95"
-          >
-            {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
-          </button>
+          {/* vc149 (#15) — 소리 버튼 더보기 안으로 이동 */}
           {/* v1.3.0 (#2) — HUD ☰ 버튼 제거 (유저 지시 "선 3개 짜리 ui저거 없애").
            *  메뉴 나가기 기능은 설정(⚙) → 메뉴 화면 카드로 이동 — 기능 유지, UI 간소화 */}
           <button
@@ -255,21 +299,18 @@ export function HUD({
               <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${canJob ? "text-amber-200" : "text-white/50"}`}>전직</span>
             </button>
           )}
-          {/* v1.9: 스탯/퀘스트 로그/설정 — v1.0.5 키맵 연동 배지 */}
+          {/* vc149 (#15) — 스탯 버튼 더보기 안으로 이동 */}
+          {/* vc145 (#8) — 캐릭터 선택 바로가기 (vc149 #17 — 더보기가 설정 바로 왼쪽) */}
           <button
-            onClick={onOpenStat}
-            aria-label={`스탯 창 열기 (${km.stat})`}
-            className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
-              hud.ap > 0
-                ? "animate-pulse rounded-lg border-2 border-lime-300/70 bg-gradient-to-b from-lime-500/80 to-emerald-700/80 text-lime-100"
-                : "game-chip text-white/70"
-            }`}
+            onClick={() => { audio.sfx.uiClick(); EventBus.emit("rpg:exitMenu", { lobby: true }); }}
+            aria-label="캐릭터 선택 화면으로 바로 이동"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
           >
-            <Gauge size={17} />
-            <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>{km.stat}</span>
+            <UserRoundPen size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">캐릭</span>
           </button>
           {/* v1.4.0 (#17) — 퀘스트 로그(J)·보스·혜택·콘텐츠·유니온·거래소·랭킹은 “더보기” 안으로 이동 */}
-          {/* v1.4.0 — 더보기 토글 */}
+          {/* v1.4.0 — 더보기 토글 (vc149 #17 — 설정 바로 왼쪽) */}
           <button
             onClick={() => setMoreOpen((v) => !v)}
             aria-label={moreOpen ? "부가 창 접기" : "부가 창 더보기"}
@@ -281,15 +322,6 @@ export function HUD({
           >
             <Ellipsis size={17} />
             <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${moreOpen ? "text-amber-200" : "text-white/50"}`}>더보기</span>
-          </button>
-          {/* vc145 (#8) — 캐릭터 선택 바로가기: 설정을 거치지 않고 게임 화면에서 즉시 로비(캐릭터 선택)로 이동 */}
-          <button
-            onClick={() => { audio.sfx.uiClick(); EventBus.emit("rpg:exitMenu", { lobby: true }); }}
-            aria-label="캐릭터 선택 화면으로 바로 이동"
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
-          >
-            <UserRoundPen size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">캐릭</span>
           </button>
           <button
             onClick={onOpenOpt}
@@ -303,6 +335,27 @@ export function HUD({
         {/* v1.4.0 (#17) — 접힌 2선 창 버튼 행 (더보기 열림 시만) */}
         {moreOpen && (
           <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5 rounded-lg border border-amber-200/20 bg-black/45 p-1">
+            {/* vc149 (#15) — 소리/스탯을 더보기 안으로 이동 (우상단 버튼 행 간소화) */}
+            <button
+              onClick={onToggleMute}
+              aria-label={muted ? "소리 켜기" : "소리 끄기"}
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/90 active:scale-95"
+            >
+              {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">소리</span>
+            </button>
+            <button
+              onClick={onOpenStat}
+              aria-label={`스탯 창 열기 (${km.stat})`}
+              className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
+                hud.ap > 0
+                  ? "animate-pulse rounded-lg border-2 border-lime-300/70 bg-gradient-to-b from-lime-500/80 to-emerald-700/80 text-lime-100"
+                  : "game-chip text-white/70"
+              }`}
+            >
+              <Gauge size={17} />
+              <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>{km.stat}</span>
+            </button>
             <button
               onClick={onOpenQuest}
               aria-label={`퀘스트 로그 열기 (${km.quest})`}
@@ -405,59 +458,6 @@ export function HUD({
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-violet-300/90">계정</span>
             </button>
           </div>
-        )}
-        {/* v1.4.8 (#2 공간) — 트래커 축소: 부유 위젯 스택 철거로 mt-20 강제 간격 불필요 → 흐름 배치(mt-2),
-         *  폭도 46vw 전체 → 최대 260px로 캡 (우상단 점유 축소)
-         *  v1.1.0 (#2) — "접는 형식 말고 버튼으로 아예 키고 끌 수 있게": 트래커 전체를 버튼 토글로 완전히 숨김/표시 */}
-        {trackerOpen && !tutActive && (
-        <div className="game-panel pointer-events-auto mt-2 w-full max-w-[260px] px-2.5 py-1.5 sm:mt-1 sm:px-3 sm:py-2">
-          <div className="flex items-center gap-1.5">
-            <ScrollText size={13} className="shrink-0 text-amber-300" />
-            <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
-            {quest.pending && (
-              <span className="shrink-0 rounded bg-amber-400/25 px-1 py-px text-[8px] font-black text-amber-200">수락 대기</span>
-            )}
-          </div>
-          <>
-              {quest.desc && (
-                <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/70 sm:text-[11px]">{quest.desc}</p>
-              )}
-              <div className="mt-1 flex items-center justify-between gap-2">
-                {quest.target > 1 && (
-                  <span className="text-[10px] font-bold text-emerald-300 sm:text-[11px]">
-                    {quest.current} / {quest.target}
-                  </span>
-                )}
-                {quest.distance !== null && (
-                  <span className="ml-auto rounded bg-emerald-900/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200 sm:text-[11px]">
-                    목표까지 {quest.distance}m
-                  </span>
-                )}
-              </div>
-              {quest.jobStory && (
-                /* v4.1.3 (#전직조건표시) — 단계 수행 방법·진행도·힌트를 전부 노출 (지시 #6):
-                 *  기존 한 줄 배지("1/3 — 첫 수련")만으로는 완료 조건을 알 수 없었다 */
-                <div className="mt-1 rounded bg-violet-500/15 px-1.5 py-1">
-                  <p className="truncate text-[9px] font-bold text-violet-200 sm:text-[10px]">
-                    ✦ 전직 스토리 {quest.jobStory.step}/{quest.jobStory.total} — {quest.jobStory.stepTitle}
-                    {quest.jobStory.need > 1 && (
-                      <span className="ml-1 text-amber-300">
-                        [{quest.jobStory.current}/{quest.jobStory.need}]
-                      </span>
-                    )}
-                  </p>
-                  {quest.jobStory.stepDesc && (
-                    <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-violet-100/85 sm:text-[10px]">
-                      {quest.jobStory.stepDesc}
-                    </p>
-                  )}
-                  {quest.jobStory.hint && (
-                    <p className="mt-0.5 text-[9px] font-bold text-amber-300/95 sm:text-[10px]">→ {quest.jobStory.hint}</p>
-                  )}
-                </div>
-              )}
-            </>
-        </div>
         )}
       </div>
     </>

@@ -203,6 +203,12 @@ class MqttBusImpl implements MqttBus {
         this.connected = true;
         this.subscribedStage = "";
         this.syncStageSub();
+        /* vc149 (#20) — 접속 즉시 내 개인 거래 토픽 구독.
+         *  기존엔 tradeSend(보내기) 시에만 구독됐다 → 거래를 '받기만' 하는 쪽은
+         *  자기 토픽을 구독한 적이 없어 treq가 도착해도 수신 불가 = "거래 신청했는데
+         *  상대에게 안 보인다"의 근본 원인. 재접속 시에도 tradeSubbed를 초기화해 재구독. */
+        this.tradeSubbed = false;
+        this.ensureTradeSub();
         this.publishPresence();
         if (this.lastState) this.sendState(true);
         this.fire("connect");

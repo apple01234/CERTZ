@@ -312,8 +312,18 @@ html, body {
   font-family: Galmuri11, "Noto Sans KR", sans-serif;
 }
 
-/* v1.0.8 — 컴팩트 패널 내부 스크롤바 (로그인 창 잘림 수정·콘텐츠 허브) */
-.sertz-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.28) transparent; }
+/* v1.0.8 — 컴팩트 패널 내부 스크롤바 (로그인 창 잘림 수정·콘텐츠 허브)
+ *  vc149 (#22) — 모바일 터치 스크롤 복구: 게임 캔버스가 터치를 가로채 랭킹 100위까지
+ *  스크롤이 안 되던 문제. touch-action: pan-y로 세로 스크롤 허용을 명시하고
+ *  overscroll-behavior: contain으로 스크롤 체인(페이지 바운스) 차단. */
+.sertz-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.28) transparent;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  pointer-events: auto;
+}
 .sertz-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
 .sertz-scroll::-webkit-scrollbar-track { background: transparent; }
 .sertz-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 999px; }

@@ -44,6 +44,93 @@ const X2_SPELLS: [string, number, number][] = [
   ["x2_sp_sparks", 96, 16],
 ];
 
+/** vc149 (#14) — 유저 제공 GameVFX 3D 팩 추출산출 81종 (public/assets/vfx3/).
+ *  UNI VFX·Cartoon FX Remaster·GameVFX Buff Collection — scripts/vc149_gvfx_convert.py.
+ *  gv_rune_* 2종은 마법 계열 전용 룬. */
+export const GVFX3_LIST = [
+  "gv_cfxr_aura_rays",
+  "gv_cfxr_aura_runic",
+  "gv_cfxr_electric_arc_anim_x4",
+  "gv_cfxr_electric_arcs_x4",
+  "gv_cfxr_ember_blur",
+  "gv_cfxr_fire_circle_drawn",
+  "gv_cfxr_flamme_crisp",
+  "gv_cfxr_heart",
+  "gv_cfxr_hit_triangle",
+  "gv_cfxr_hit_triangle_dissolve",
+  "gv_cfxr_magic_star",
+  "gv_cfxr_puddle",
+  "gv_cfxr_ring_electric",
+  "gv_cfxr_ring_ice",
+  "gv_cfxr_ring_spikes_revert",
+  "gv_cfxr_skull_2",
+  "gv_cfxr_smoke_cloud_x4_white",
+  "gv_cfxr_star_blurred",
+  "gv_cfxr_stretch_ray_blur",
+  "gv_cfxr_stretch_sipkes_x2",
+  "gv_cfxr_stretch_spike_fade",
+  "gv_cfxr_sword_trail_mask_light",
+  "gv_cfxr_sword_trail_mask_lines",
+  "gv_cfxr_water_small_splash_stretch",
+  "gv_circle",
+  "gv_circle2",
+  "gv_crack",
+  "gv_craterfree1",
+  "gv_crystalfree1",
+  "gv_electric_splat_hit_02",
+  "gv_electro03",
+  "gv_flare02_white",
+  "gv_flashfree1",
+  "gv_flashfree2",
+  "gv_flashfree3",
+  "gv_glow_blue_01",
+  "gv_glow_yellow_01",
+  "gv_glowblurry",
+  "gv_glowfree1",
+  "gv_gradient2",
+  "gv_hexagon_01",
+  "gv_lightning02_01_blue",
+  "gv_poison_smoke_pink",
+  "gv_projectilefree1",
+  "gv_ring02",
+  "gv_rune_big",
+  "gv_rune_glow",
+  "gv_smoke26",
+  "gv_smoke_pink2",
+  "gv_smokefree1",
+  "gv_snowflake",
+  "gv_splat",
+  "gv_sprite_lensflare",
+  "gv_star",
+  "gv_star4",
+  "gv_stylizedtrail03",
+  "gv_techcircle2",
+  "gv_trail_pink",
+  "gv_twink_01",
+  "gv_twinkle_b",
+  "gv_uni_circle_aggressive",
+  "gv_uni_circle_hazy",
+  "gv_uni_cone_long",
+  "gv_uni_energybolts",
+  "gv_uni_energynoise",
+  "gv_uni_energyweb",
+  "gv_uni_exp_core",
+  "gv_uni_flare_xo",
+  "gv_uni_glow",
+  "gv_uni_linelong",
+  "gv_uni_shockwave_fiery",
+  "gv_uni_smoke",
+  "gv_uni_spark",
+  "gv_uni_specks",
+  "gv_uni_streaks_horizontal",
+  "gv_uni_tile_fiery",
+  "gv_uni_tile_spiky",
+  "gv_uni_tile_starry",
+  "gv_uni_trail_ghost",
+  "gv_uni_trail_wave",
+  "gv_wispysmoke03b_8x8",
+] as const;
+
 /** v1.3.0 (#에셋통합) — 유저 Drive 팩 변환산출 VFX 텍스처 58종 (public/assets/vfx2/).
  *  전투 타격감(참격/크리/폭발)·오라 링·번개·마법진·불꽃놀이·원소 이펙트.
  *  scripts/prep_drive_assets.py — Matthew Guz Slash·GameVFX Buff·Vefects Anime·
@@ -604,6 +691,11 @@ export class BootScene extends Phaser.Scene {
       "vx_twinkle", "vx_glowball", "vx_lensflare", "vx_aura", "vx_firecircle", "vx_puddle",
       "vx_spikes", "vx_shockwave", "vx_circlehazy", "vx_flarexo", "vx_trailghost",
     ]) this.load.image(k, `${k}.webp`);
+    /* vc149 (#14) — 유저 제공 GameVFX 3D 팩 4차 통합 81종 (scripts/vc149_gvfx_convert.py →
+     *  public/assets/vfx3/). UNI VFX·Cartoon FX Remaster·GameVFX Buff Collection 원본 PNG 추출.
+     *  gv_rune_* 2종은 마법 계열 전용 룬 — 타 계열 지면 연출은 gv_ 계열별 대체 FX 사용 */
+    this.load.setPath("assets/vfx3");
+    for (const k of GVFX3_LIST) this.load.image(k, `${k}.webp`);
   }
 
   async create() {

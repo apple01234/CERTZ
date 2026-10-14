@@ -168,17 +168,18 @@ export async function fetchSnsProviders(): Promise<SnsProviders> {
 }
 
 /** 클라우드 세이브 백업 — 게임 세이브 객체를 그대로 저장 */
-export async function cloudSaveUpload(data: unknown): Promise<{ ok: boolean; error?: string; updatedAt?: number }> {
-  const r = await post("/api/auth/cloud-save", { data });
+export async function cloudSaveUpload(data: unknown, chars?: Record<string, unknown>): Promise<{ ok: boolean; error?: string; updatedAt?: number }> {
+  const r = await post("/api/auth/cloud-save", chars ? { data, chars } : { data });
   if (!r.ok) return { ok: false, error: String(r.data.error ?? "백업 실패") };
   return { ok: true, updatedAt: r.data.updatedAt as number };
 }
 
-/** 클라우드 세이브 복원 — 저장된 세이브 객체 반환 (없으면 null) */
-export async function cloudSaveDownload(): Promise<{ ok: boolean; data: unknown; error?: string }> {
+/** 클라우드 세이브 복원 — 저장된 세이브 객체 반환 (없으면 null)
+ *  vc149 (#2) — chars: 전 캐릭터 백업분 (이름 → 세이브) 동시 반환 */
+export async function cloudSaveDownload(): Promise<{ ok: boolean; data: unknown; chars?: Record<string, unknown>; error?: string }> {
   const r = await get("/api/auth/cloud-save");
   if (!r.ok) return { ok: false, data: null, error: String(r.data.error ?? "복원 실패") };
-  return { ok: true, data: r.data.data ?? null };
+  return { ok: true, data: r.data.data ?? null, chars: (r.data.chars as Record<string, unknown>) ?? undefined };
 }
 
 /* ================= v1.3.0 (#7 랭킹창) — 유저 지시 "랭킹창 및 랭커들을 위한 기능 및 컨텐츠(BM 유도)"

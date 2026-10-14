@@ -1792,7 +1792,9 @@ export class WorldScene extends Phaser.Scene {
     // 프롤로그 유예 — 입장 대사 종료 후 몬스터 즉시 공격 방지 (v2.0)
     this.agroHoldUntil = this.time.now + 2600;
 
-    // F2: 거리 실시간 갱신 (300ms 주기 — 프레임 부담 없음) + 미니맵/RPG 상태/퀘스트 로그
+    // F2: 거리 실시간 갱신 — vc149 (#25 최적화): 300ms 만능 타이머를 두 갈래로 분산.
+    //  HP/MP/쿨다운(300ms)은 조작감 유지, 퀘스트 로그/미니맵(600ms)은 시각적 차이가
+    //  없는 주기로 낮춰 React 재렌더 + Graphics 재생성 부담을 절반으로 줄인다.
     this.questTimer = this.time.addEvent({
       delay: 300,
       loop: true,
@@ -1800,6 +1802,12 @@ export class WorldScene extends Phaser.Scene {
         this.emitQuest();
         this.emitSkills();
         this.emitRpgState();
+      },
+    });
+    this.time.addEvent({
+      delay: 600,
+      loop: true,
+      callback: () => {
         this.emitQuestLog();
         this.redrawMinimap();
       },
@@ -4266,6 +4274,15 @@ export class WorldScene extends Phaser.Scene {
       mm.fillStyle(0x7dffa8, 0.95);
       mm.fillCircle(mx(this.merchant.x), my(this.merchant.y), 2.4 / z);
     }
+    // vc149 (#7) — NPC 위치 (노란 점) — 대화/상점/전직/GM/의뢰 NPC만 (출입구·집·상자 제외)
+    {
+      mm.fillStyle(0xffe066, 0.95);
+      for (const it of this.interactables) {
+        if (it.kind !== "talk" && it.kind !== "shop" && it.kind !== "job" && it.kind !== "gm" && it.kind !== "innkeeper") continue;
+        mm.fillCircle(mx(it.x), my(it.y), 2.4 / z);
+      }
+      if (this.jobNpc?.active) mm.fillCircle(mx(this.jobNpc.x), my(this.jobNpc.y), 2.6 / z);
+    }
     // 퀘스트 목표 (금색)
     const t = this.questTargetPos();
     if (t) {
@@ -5901,7 +5918,7 @@ export class WorldScene extends Phaser.Scene {
     const waves = this.gateWave;
     /* 잔여 적 정리 */
     for (const e of this.enemies) {
-      if (e.alive) { e.alive = false; e.destroy(); }
+      if (e.alive) { e.alive = false; e.destroyAll(); } /* vc149 #21 유령 체력바 방지 */
     }
     this.enemies = [];
     this.player.clearRunBuffs();
@@ -6293,7 +6310,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.parkActive) return;
     this.parkActive = false;
     for (const e of this.enemies) {
-      if (e.alive) { e.alive = false; e.destroy(); }
+      if (e.alive) { e.alive = false; e.destroyAll(); } /* vc149 #21 유령 체력바 방지 */
     }
     this.enemies = [];
     const d = PARK_DIFFS[this.parkDiff];
@@ -6362,7 +6379,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.closetActive) return;
     this.closetActive = false;
     for (const e of this.enemies) {
-      if (e.alive) { e.alive = false; e.destroy(); }
+      if (e.alive) { e.alive = false; e.destroyAll(); } /* vc149 #21 유령 체력바 방지 */
     }
     this.enemies = [];
     const th = this.closetTheme;
@@ -7392,7 +7409,7 @@ export class WorldScene extends Phaser.Scene {
          *  v1.0.18 — 셰이더 효과 강도 설정 반영 (기본 55 → 강도 비례 축소, 0이면 생략)
          *  v1.4.13 (#6 셰이더 약화) — 보스전 셰이더 너무 강함: blendAmount 0.46/0.5 → 0.24/0.30,
          *  비네트 강도 0.14 → 0.06, blurSteps 4 → 3. 강렬한 순간은 살리고 눈부심 완화. */
-        const fxk = loadFx().intensity <= 0 ? 0 : Math.min(1.5, loadFx().intensity / 55);
+        const fxk = loadFx().intensity <= 0 ? 0 : Math.min(3.0, loadFx().intensity / 55); // vc149 #3 상한 확대
         /* v1.4.30 (#1 무스펠 프리즈) — 화염 챕터(무스펠헤임)는 용암 균열 글로우·잉걸불·
          *  지형 ADD 블렌드가 전 챕터 중 가장 많다. 여기에 보스전 카메라 블룸(프레임버퍼
          *  이중 패스)이 겹치면 저사양 기기에서 GPU 컨텍스트 유실→렌더 프리즈가
@@ -7580,9 +7597,15 @@ export class WorldScene extends Phaser.Scene {
     this.addPassXp(PASS_XP_RULES.boss); // v4.5.0 — 스토리 보스 패스 XP +30
     this.trackMission("boss"); // v1.0.1 — 시즌 미션 보스 카운트
     if (this.boss?.chaos) this.chaosKillCount++;
-    /* v3.0.6 (지시 #1) — 보스 처치 시 에메랄드 +2 (BM 상점 재화) */
-    this.player.emerald += 2;
-    this.spawnPickupText(this.player.x, this.player.y - 60, "+2 에메랄드", "#7de8ff");
+    /* v3.0.6 (지시 #1) — 보스 처치 시 에메랄드 지급 (BM 상점 재화)
+     *  vc149 (#9) — 후반 보스일수록 많이 주는 챕터 스케일링: 초반 2 → 9챕터 16
+     *  (공식: 2 + (챕터-1) × 2 · 재림 보스는 기존 난이도별 지급 유지) */
+    {
+      const ch = this.player.stageCh || 1;
+      const em = 2 + (Math.max(1, Math.min(9, ch)) - 1) * 2;
+      this.player.emerald += em;
+      this.spawnPickupText(this.player.x, this.player.y - 60, `+${em} 에메랄드`, "#7de8ff");
+    }
     /* v3.0.16 — 보스 컬렉션 등록 (최초 처치 시) */
     this.registerCollection(`boss_${def?.key ?? "guardian"}`, def?.name ?? "보스");
     this.emitRpgState();

@@ -34,7 +34,7 @@ app.prepare().then(() => {
   /* vc138 — GitHub API 자산 DELETE 일시 장애로 동일 이름 교체가 막힌 기간의 안전 경로:
    *  vc138 자산을 별도 이름으로 업로드하고 이쪽을 가리킴. 루프가 동일 이름 교체에 성공하면
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.8/SERTZ-vc148.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.8/SERTZ-vc149.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -67,10 +67,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.0.8";
-  const LATEST_CODE = 148;
-  const VERSION_NOTE =
-  "v1.0.8 (vc148) — 보스 그리드 긴급 수리: 유저 제보 '보스 그리드를 이상하게 짤랐다' — vc137 잔재 3종 보스(종언의 마룡 아부디토스·재림의 파수꾼 베오르드·혈안의 문지기 가름)이 이질 아트 혼합(컬러 전방+흑룡 실루엣 특수기/보라 악마+붉은 늑대)과 프레임 잘림 상태였던 것을 bsw_ HD 원본의 유저 뷰어 격자(8열×7행 192.5×147 / 6열×7행 204×184) 그대로 재슬라이싱 — 전 보스 12종이 전부 유저 원본 HD 아틀라스로 통일. 베오르드는 boss2 유령선 공유를 해제하고 전용 흑룡 아트 부여. · 동봉: vc147 피드백 30종(쉐이더 정방향/툰강화·s5b 배치·미니맵 중앙·거래 수락 버그·계열별 지면 FX·데드아이 트레이서·YGGDRASIL 아이콘·검은 상자 잔여·키탭·랭킹 즉시 갱신·탑 20/맵 50 캡·궁극기 300/500%·220 각성의 대가 12단계·타이틀 로그인·니플헤임 설원톤·치장 얼굴 복원 7종·30FPS 절전·유니온 x2.5·신화 장비·사연 퀘스트 18종·NPC 의뢰)";
+  const LATEST_VERSION = "1.0.9";
+  const LATEST_CODE = 149;
+    const VERSION_NOTE =
+  "v1.0.9 (vc149) — 피드백 26종 반영: 계정123456 복구(고아 캐릭터 자동 재편입·슬롯 이중백업·클라우드 전 캐릭터 백업/복원)·1:1 거래 수신 토픽 미구독 수정·물약 20종 회복량 인상·보스 에메랄드 챕터 스케일링(2→16)·미니맵 NPC 노란 점·HUD 개편(소리·스탯→더보기/퀘스트 최상단+창 내 토글/더보기-설정 인접)·단축키 배지 기기별 표기·캐릭터 선택창 현재 직업·아이콘 캐시버스팅·쉐이더 0~200·랭킹 터치 스크롤 복구·아크로드 종막극 강화·제2궁극기 30초 여운·이터널 시간정지 강화·GameVFX 3D 팩 81종 통합·비마법 마법진 전면 대체(불서클/부채꼴/심연)·NPC 대사 구어체 6종 확장·유령 체력바 제거·UI 타이머 분산 최적화·exe 프록시 https 재배포"
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

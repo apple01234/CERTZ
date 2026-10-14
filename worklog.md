@@ -4162,3 +4162,4 @@ Stage Summary:
 - 릴리스 v1.0.8 자산 체제: SERTZ-vc148.apk(150,930,704B·148/1.0.8·cc774f34) + SERTZ-vc148-ios-unsigned.ipa(157,922,988B·1.0.8(148)) + EXE 2종(빌드 진행 중 자동첨부 예정) · 웹 라이브 code:148 · apk-guide 신해시
 - 사고·복구: 릴리스 자산 정리 중 iOS IPA 오삭제 → Actions 아티팩트에서 완전 복구(무결성 PASS). 교훈: 릴리스 자산 DELETE 전 워크플로 자동첨부분 식별 필수
 - EXE 빌드 완료 시 유저 테스트: SERTZ-vc148-win.exe(포터블)/win-setup.exe(설치기) — 로그인/멀티는 Vercel API 프록시 경유
+- [긴급 복구] 세션 사이 로컬 워크스페이스가 vc141 스냅샷으로 롤백(자동 UUID 커밋 69a259d) → origin/main c3358cc로 hard reset해 vc148 트리 전체 복구. 탐색 에이전트 3종이 구버전 트리를 보고했으므로 라인번호 참조는 재검증 필수

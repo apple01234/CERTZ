@@ -19,7 +19,7 @@ import {
   type SnsProviders,
 } from "@/game/account";
 import { SAVE_KEY, activeSaveKey, type SaveData } from "@/game/config";
-import { importCloudSave } from "@/game/slots"; // v1.4.32 (#세이브복원) — 멀티캐릭터 슬롯 체계 편입 복원
+import { importCloudSave, importCharsFromCloud, collectLocalChars, SLOTS_KEY } from "@/game/slots"; // v1.4.32 — 슬롯 편입 복원 · vc149 (#2) — 전 캐릭터 백업/복원
 import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리: 정적 배포에서 원격 서버 OAuth 시작
 import { googleWebSignIn, googleWebRedirectToken } from "@/lib/googleAuth"; // v1.0.5-beta (vc134) — 웹 구글 로그인 안정화(모바일 리다이렉트)
 
@@ -90,7 +90,8 @@ export function AuthPanel() {
     const push = () => {
       try {
         const raw = readCurrentSaveRaw();
-        if (raw) cloudSaveUpload(JSON.parse(raw)).catch(() => {});
+        /* vc149 (#2) — 활성 캐릭터 + 전 캐릭터 스냅샷 동시 백업 (캐릭터 유실 방지) */
+        if (raw) cloudSaveUpload(JSON.parse(raw), collectLocalChars()).catch(() => {});
       } catch { /* 세이브 파싱 실패 무시 */ }
     };
     const t = window.setInterval(push, 90 * 1000);
@@ -156,9 +157,10 @@ export function AuthPanel() {
       return;
     }
     setBusy(true);
-    const r = await cloudSaveUpload(data);
+    /* vc149 (#2) — 활성 캐릭터 + 전 캐릭터 동시 백업 */
+    const r = await cloudSaveUpload(data, collectLocalChars());
     setBusy(false);
-    setMsg(r.ok ? "클라우드 백업 완료! 어느 기기에서든 복원할 수 있어요" : (r.error ?? "백업 실패"));
+    setMsg(r.ok ? "클라우드 백업 완료! 전 캐릭터가 저장됐어요 — 어느 기기에서든 복원할 수 있어요" : (r.error ?? "백업 실패"));
   };
 
   const doRestore = async () => {
@@ -179,6 +181,9 @@ export function AuthPanel() {
       setMsg(imp.reason);
       return;
     }
+    /* vc149 (#2/#19) — 백업된 나머지 캐릭터도 전부 편입 (로컬에 없는 것만 — 있으면 유지) */
+    let extra = 0;
+    try { extra = importCharsFromCloud((r.chars ?? {}) as Record<string, unknown>); } catch { /* 무시 */ }
     window.location.reload();
   };
 

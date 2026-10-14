@@ -4586,7 +4586,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
         <div className="mt-2.5 rounded-lg border border-sky-300/30 bg-sky-400/[0.06] px-2.5 py-2">
           <p className="text-[12px] font-black text-sky-200">셰이더 · 화면 편안함</p>
           <p className="mt-0.5 text-[10px] leading-snug text-white/55">
-            발광 효과 강도를 낮추면 눈 피로도가 줄어든다. 0으로 두면 셰이더를 완전히 끈다.
+            발광 효과 강도를 크게 올릴수록 화면이 화려해진다 (최대 200). 0으로 두면 셰이더를 완전히 끈다.
             플리커 완화 모드는 횃불·광원의 깜빡임을 제거한다 (빛 자체는 유지).
           </p>
           <div className="mt-2 flex items-center gap-2">
@@ -4594,8 +4594,8 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
             <input
               type="range"
               min={0}
-              max={100}
-              step={5}
+              max={200}
+              step={10}
               defaultValue={loadFx().intensity}
               onChange={(e) => {
                 const v = parseInt(e.target.value, 10) || 0;
