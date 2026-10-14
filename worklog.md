@@ -4242,3 +4242,28 @@ Stage Summary:
 - vc152 = 원격 vc151 위에 신규 3건(신1·신3·신6) 완결 + setup-exe 정책 전환
 - 유저 테스트 포인트: ①상점/전직관에서 방향키 ↑/↓+E ②다른 계정과 같은 닉네임 가입/생성 차단 ③이펙트 검은 네모 소멸 ④PC setup 설치기(SERTZ-vc152-setup.exe)
 - 잔무: 커밋 푸시(웹 자동배포) → APK 3단계 빌드 → setup-exe 빌드 → v1.0.9 릴리스 자산 업로드(SERTZ-vc152.apk+setup)
+
+---
+Task ID: vc153-user-reports
+Agent: Super Z (main)
+Task: 유저 대량 제보 — ①123456 로그인 불가(+궁수) ②5차 2차각성 퀘스트 로그 미표시 ③왕관 착용 불가 ④거래소 다수 등록 ⑤카오스 보스 에메랄드 전부 30개 ⑥도적 2차 궁극기 개편 + 3D필살기 시네마틱(死) ⑦스바르트알프헤임 보스 개편 ⑧releases 정리·Supabase 확인 · EXE 빌드 확인 → vc153 (1.0.11)
+
+Work Log:
+- [EXE 빌드 실패(var vc152) — 선확인] run #8(2d10702 핫픽스·version 1.0.10) 이미 success — SERTZ-vc152-setup.exe 첨부 확인. 유저가 받은 실패 알림은 run #7(347cbd6) 시절 것
+- [①123456 로그인 — 근본 원인 실측] 서버·CERTZ-DB·계정 데이터 전부 정상(라이브 API 123456/123456 로그인 200 실측) → agent-browser 실측에서 타이틀 '로그인/계정' 버튼(z-30)이 TitleScreen 스크롤 오버레이 .sertz-scroll(z-40·inset-0)에 완전히 덮여 elementsFromPoint 최상위가 오버레이 — 클릭이 전부 흡수(=시작화면 로그인&회원가입 버튼 클릭안됨의 동일 버그). z-[60] 승격 → 라이브 E2E로 123456 로그인 성공(로그아웃 버튼 노출) 스크린샷 저장(download/vc153_login_ok.png)
+- [②퀘스트 로그] emitQuestLog가 5차 2차각성(fifth2)을 전혀 노출하지 않던 구멍 — QuestLogState.fifth2 신설(offerable/active/done·진행도·12단계 중 몇 단계) + fifth2LogEntry() + fifth2Progress에서 emitQuestLog 즉시 갱신 + QuestLogPanel 보라 섹션(진행도 바) — 220렙 미만은 섹션 숨김
+- [③왕관] onCosmeticSet의 dialoguing 게이트가 대화 중 치장 착용을 무음 차단(각성 퀘스트는 카이엔 보고가 잦아 체감 큼) — 게이트 제거(치장은 물리·전투 무관) + 실패 시 배너 안내 신설
+- [④거래소 다수 등록] qty 스택 전층: ListingRec.qty?·marketSnapshot qty 노출·ownedCountOf(owned 멀티셋 개수)·list 라우트(1~99·보유 실검증·동일 품목 1칸 원칙)·buy 라우트 부분구매(1클릭=1개·qty 잔여 유지·정산 units 반영)·accounts/index.js 미러·MarketBoard UI(−/숫자입력/+/MAX·보유 N개·총합·×N 표기)·WorldScene onMarketList/Cancel qty 루프
+- [⑤카오스 에메랄드] bossEmeraldOf(bossKey, diff) 신설 — 보스 기본 exp(320 guardian~2600 nagr) 계층 t → 가중치 0.45~2.2 × 난이도 기본치. 카오스: 수호자 14·수르트 19·펜리르 22·스콜 23·가름 26·아부디토스 34·베오르드 41·요르문간드 50·나그라파르 66. 재도전 창에 보스별 💎 미리보기
+- [⑥도적 제2궁극기 개편+3D 시네마틱] src/game/fx/DeathSlash.ts 신설 — 유저 스펙 전항 이행: ①검은 veil+붉은 「死」 붓글씨 폭발 확대(세리프+다중 text-shadow 잉크번짐)+미세진동 ②투명 Three.js 캔버스(z-6) 독립 씬 — 낮은 기문 카메라 돌진·사무라이 프리미티브 실루엣(GLB 교체 지점 DEATH_SLASH_GLB_URL)·붉은 rim light ③CatmullRomCurve3 튜브 궤적 3연·THREE.Points 불티·hitstop 70ms(전체 동결)·플래시+사선 컷 3개 ④피해는 Player에 위임(onStrike 콜백 1회·공격 고유 ID) — rollDamage(4.5) 즉발 450% 강제크리 + spawnField 출혈 25%ATK/1초×5초(기존 필드 시스템 재사용 — 가짜 HP 0) ⑤T_END 3150ms 복구+cineLock 해제·safetyTimeout 12s 강제복구·rAF는 시네마틱 중만 가동·traverse dispose. SKILL5B_INFO.thief → 「심연이격 — 사(死)의 일섬」. 원격 s5b는 死 DOM 플래시+붉은 참격 3연 근사. 유의: useSkill5b 공통 마무리(300ms idle 복귀)가 시네마틱을 깨지 않게 cineLock 플래그 추가
+- [⑦스바르트알프헤임 보스] 유저 애니 사양표 이행: BossAttackKind 5종(greenslash/vanish/shieldcast/magicburst/portalteleport)+BossMode(vanished/shieldHold). 6행 시트(atl_boss3) 매핑 atk=GreenSlash·sp1=Vanish·sp2=ShieldCast. GreenSlash=근접 녹색 2연·Vanish=투명화→재배치→포탈 링 재등장→GreenSlash 연계·ShieldCast=무적 방어막 3.2s(청록 오라·takeDamage 무효 게이트)→MagicBurst 반격(추적 기둥 3연+종결 대폭발)·PortalTeleport=포탈 2기+전이. 사망·페이즈 전환 cleanupSvartStates 정리. abysslord sig=summon→greenslash·패턴 풀 재편
+- [⑧기타 확인] GitHub releases는 v1.0.9(최신)+v2.6(최초) 2개뿐 — 유저 규칙(최신+최초 유지) 이미 충족. Supabase는 코드 전역 0건 — 이미 CERTZ-DB(SZBK1 암호화·GitHub Contents API) 체계로 이관 완료 상태. Vercel 구배포 정리는 .secrets/vercel_token 소실로 불가(토큰 재제공 필요 — 전회 동일 잔무)
+- [빌드 체인] 컨테이너 리셋으로 Android SDK 소실 → cmdline-tools 11076708+platforms;android-36+build-tools;36.0.0 재설치(/home/z/.android-sdk·local.properties 재작성) · 시스템 자바 JRE-only(javac 불가) → Temurin 21.0.12.1(/home/z/jdk) 재설치 · gradle assembleRelease BUILD SUCCESSFUL
+- [릴리스] SERTZ-vc153.apk(152,742,133B·versionCode 153·md5 dc810096) multipart 201 업로드+206 다운로드 검증 · EXE workflow_dispatch run #9 success(05aa858) → 자산명 SERTZ-vc152-setup.exe→SERTZ-vc153-setup.exe(257.9MB) PATCH 정정
+- [게이트 vc153 승격 5종] server.js(1.0.11/153/NOTE/APK_MIRROR)·route.ts·next.config.ts·build.gradle 153·package.json 1.0.11·apk-guide(이번 버전 7불릿) — Vercel code:153 라이브 확인(폴링 2회차) · 로컬 서버 재시작 code:153 확인
+- [검증] tsc 0 · npm run build 성공 ×2 · e2e_vc153 44/44(정적 40+라이브 로그인·게이트·pageerror) · e2e_vc150_features 27/27 · e2e_vc150 12/12
+
+Stage Summary:
+- vc153 = 로그인 차단 버그(시작화면 버튼이 오버레이에 덮임) 근본 수리 + 거래소 상점식 다수 등록 + 카오스 보스 보상 차등 + 도적 제2궁극기 3D 시네마틱 개편 + 스바르트알프헤임 보스 상태머신 개편
+- 유저 테스트 포인트: ①타이틀에서 🔑 로그인 → 123456 로그인 ②퀘스트 로그(J)에서 각성의 대가 진행도 ③각성 퀘스트 중 인벤 왕관 착용 ④거래소 등록 시 수량 −/+/MAX ⑤카오스 재림 보스별 에메랄드(나그라파르 66) ⑥도적 계열 Q키 — 死 연출·450%+출혈 ⑦심연의 군주(7장) Vanish/ShieldCast/PortalTeleport 패턴
+- 잔무: Vercel 구배포 삭제(토큰 필요) · Standing CG 신규 에셋은 유저 업로드 필요(AI 생성 금지 원칙)
