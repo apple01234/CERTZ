@@ -100,6 +100,9 @@ tmp_design/
 download/*.apk
 # v3.0.26 — 141MB APK 분할 파트도 git 제외 (대용량 바이너리 → 서버 직결 다운로드로만 배포)
 download/*.apk.part*
+# vc148 — IPA도 GitHub 100MB 제한 대상 (릴리스 자산으로만 배포, 저장소 미추적)
+download/*.ipa
+download/*.aab
 
 # platform sandbox dirs
 tool-results/
