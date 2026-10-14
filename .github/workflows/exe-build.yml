@@ -2,8 +2,8 @@ name: EXE Build (SERTZ)
 
 # SERTZ Windows 데스크톱 빌드 — windows 러너 네이티브(rcedit 네이티브 동작 — 아이콘·버전·언인스톨러 완전판).
 #  · 트리거: 수동(workflow_dispatch) 또는 electron/**·본 파일 푸시
-#  · 산출물: SERTZ-vc146-win-setup.exe(NSIS 설치기) + SERTZ-vc146-win.exe(portable)
-#    → GitHub 릴리스 v1.0.6 자동 첨부(--clobber)
+#  · 산출물: SERTZ-vc148-win-setup.exe(NSIS 설치기) + SERTZ-vc148-win.exe(portable)
+#    → GitHub 릴리스 v1.0.8 자동 첨부(--clobber)
 #  · 게임 본체: APK와 동일한 정적 export(.next-apk)를 electron/game에 스테이징
 #    내장 서버가 정적 서빙 + /api/* 는 Vercel 프록시(main.js 참조)
 on:
@@ -67,11 +67,11 @@ jobs:
           cd electron
           npx electron-builder --win nsis portable --x64
 
-      - name: Attach to GitHub Release (v1.0.6)
+      - name: Attach to GitHub Release (v1.0.8)
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload v1.0.6 electron/dist/SERTZ-vc146-win.exe electron/dist/SERTZ-vc146-win-setup.exe --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload v1.0.8 electron/dist/SERTZ-vc148-win.exe electron/dist/SERTZ-vc148-win-setup.exe --clobber --repo "$GITHUB_REPOSITORY"
           echo "--- release assets ---"
-          gh release view v1.0.6 --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
+          gh release view v1.0.8 --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'

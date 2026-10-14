@@ -1,5 +1,5 @@
 /**
- * SERTZ Desktop (v1.0.6 / vc146) — Electron 메인 프로세스
+ * SERTZ Desktop (v1.0.8 / vc148) — Electron 메인 프로세스
  *  · APK와 동일한 정적 export(.next-apk 산출물)를 electron/game/ 에 내장
  *  · 내장 HTTP 서버가 game/ 을 서빙 + /api/* 는 https://sertz.vercel.app 로 투명 프록시
  *    (게임 코드 수정 0 — server.ts resolveApiBase()는 Electron UA면 same-origin을 사용)
