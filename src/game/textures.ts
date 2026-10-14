@@ -199,8 +199,9 @@ export function buildAllAnims(scene: Phaser.Scene) {
   if (!BOSS_ATLAS["boss_surt"]) a.create({ key: "boss_surt-idle", ...fr("boss_surt_idle", 2, 2, -1) });
   if (!BOSS_ATLAS["boss_fenrir"]) a.create({ key: "boss_fenrir-idle", ...fr("boss_fenrir_idle", 2, 2, -1) });
   if (!BOSS_ATLAS["boss_skoll"]) a.create({ key: "boss_skoll-idle", ...fr("boss_skoll_idle", 2, 2, -1) });
-  a.create({ key: "boss_gram-idle", ...fr("boss_gram_idle", 2, 2, -1) });
-  a.create({ key: "boss_abudditos-idle", ...fr("boss_abudditos_idle", 2, 2, -1) });
+  /* vc148 (#보스그리드) — 3종 아틀라스 전환: 레거시 2프레임 폴백은 아틀라스가 있으면 스킵 */
+  if (!BOSS_ATLAS["boss_gram"]) a.create({ key: "boss_gram-idle", ...fr("boss_gram_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_abudditos"]) a.create({ key: "boss_abudditos-idle", ...fr("boss_abudditos_idle", 2, 2, -1) });
   // 배치1 — 마을 모닥불 (Serene_Village campfire 32x32 4프레임)
   a.create({
     key: "sv-campfire",
@@ -252,6 +253,11 @@ export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number;
   boss_nagr:   { key: "atl_boss_nagr",   file: "atl_boss_nagr.webp",   fw: 286, fh: 240 }, // 발할라 천사기사 (재림 15) (v1.4.32 LANCZOS 개선)
   boss_hati:   { key: "atl_boss_hati",   file: "atl_boss_hati.webp",   fw: 304, fh: 257 }, // 하티 — 화염 늑대 (vc142 유저 아틀라스 4프레임×7행)
   boss_jorm:   { key: "atl_boss_jorm",   file: "atl_boss_jorm.webp",   fw: 304, fh: 201 }, // 요르문간드 — 잎날개 녹룡 (vc142 유저 아틀라스 신설 6행)
+  /* vc148 (#보스그리드) — vc137 잔재 3종 HD 재슬라이싱: 이질 아트 혼합(컬러 전방+흑룡 실루엣 특수기/
+   *  보라 악마+붉은 늑대) + 프레임 잘림 수리 — bsw_ 원본 그리드(8열×7행 192.5×147 / 6열×7행 204×184) 그대로 */
+  boss_abudditos: { key: "atl_boss_abudditos", file: "atl_boss_abudditos.webp", fw: 298, fh: 220 }, // 종언의 마룡 아부디토스 — 흑룡 8열×7행
+  boss_vord:      { key: "atl_boss_vord",      file: "atl_boss_vord.webp",      fw: 298, fh: 220 }, // 재림의 파수꾼 베오르드 — 흑룡 (기존 boss2 유령선 공유 해제)
+  boss_gram:      { key: "atl_boss_gram",      file: "atl_boss_gram.webp",      fw: 304, fh: 274 }, // 혈안의 문지기 가름 — 지옥견 늑대 (신화 고증 Garmr)
 };
 
 /** 아틀라스 행별 유효 프레임 수 (슬라이서 실측 — 뒤쪽 빈 프레임 트리밍).
@@ -267,6 +273,10 @@ export const BOSS_ATLAS_ROWS: Record<string, number[]> = {
   boss_skoll:  [4, 4, 4, 4, 4, 4, 4],              // vc142 얼음늑대 4프레임×7행
   boss_nagr:   [10, 10, 11, 10, 11, 11],
   boss_jorm:   [3, 6, 6, 6, 6, 6],                 // vc142 녹룡 6행 (sp3 없음 — die 폴백 idle)
+  /* vc148 (#보스그리드) — 슬라이서 실측 행별 프레임 수 */
+  boss_abudditos: [8, 8, 7, 8, 8, 8, 8],           // 흑룡 7행 (atk 7프레임)
+  boss_vord:      [8, 8, 7, 8, 8, 8, 8],           // 흑룡 7행
+  boss_gram:      [6, 6, 6, 6, 6, 6, 6],           // 지옥견 7행
 };
 
 /** 보스 초기 텍스처/프레임 — 아틀라스 보스는 시트 frame 0, 구형은 개별 idle0 이미지 */

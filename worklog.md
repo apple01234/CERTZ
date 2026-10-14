@@ -4123,3 +4123,21 @@ Work Log:
 
 Stage Summary:
 - vc147 = 피드백 30종 전량(텍스트) + rea-agents 셋업 — 웹 배포·APK 빌드는 이어지는 세션 로그 참조
+
+---
+Task ID: vc148-boss-grid
+Agent: Super Z (main)
+Task: 유저 제보 "보스 그리드를 이상하게 짤랐잖아" → 레거시 보스 3종 HD 아틀라스 재슬라이싱 → vc148 (1.0.8)
+
+Work Log:
+- [vc147 잔무 완결] 릴리스 v1.0.7에 9월 실험분 구자산(web.zip/aab/apk 105MB) 잔존 + 신규 APK 미업로드 상태였음 → 구자산 3종 DELETE, SERTZ-vc147.apk(147,167,185B) 업로드 201, 릴리스 노트 vc147로 교체, 다운로드 md5 bf28c52d PASS. IPA 1.0.7(147) 검증. 라이브 apk-guide 신해시/게이트 147 확인. 업로드 스크립트 버그(req()가 절대 URL에 api.github.com 베이스 중복 부착) 수리
+- [원인 규명] 유저 첨부 이미지 = bsw_ 소스 시트의 유저 뷰어 격자 표시. 현재 인게임 레거시 3종이 이질 아트 혼합: boss_abudditos=idle/walk/atk는 컬러 화룡(240×180 구 에셋)+sp1~3/die는 bsw 흑룡 실루엣(잘림), boss_gram=보라 악마 기사+붉은 늑대 혼합, boss_vord=boss2 유령선 공유
+- [격자 실측] bsw_abudditos/vord 1540×1029 = 8열×7행(열 192.5·행 147 — 컨텐츠 스팬 전수 대조로 정합 확인), bsw_gram 1224×1288 = 6열×7행(204×184). BSW 행순서 [idle,walk,atk,death,sp1,sp2,sp3]→게임순 리맵
+- [재슬라이싱] scripts/vc148_dragon_atlas.py (vc139 파이프라인 재사용: premul LANCZOS+언샵·하단중앙정렬·q80) → atl_boss_abudditos 298×220(8-8-7-8-8-8-8)·atl_boss_vord 298×220(동일)·atl_boss_gram 304×274(6×7) + 초상화 3종 + manifest. 12보스 전부 유저 원본 HD 아틀라스로 통일 완수
+- [연결] textures.ts BOSS_ATLAS/ROWS 3종 추가, 레거시 2프레임 폴백 가드, stages.ts vord tex boss2→boss_vord(전용 흑룡 — 유령선 공유 해제)
+- [게이트] server.js/route.ts 148·1.0.8·미러 v1.0.8/SERTZ-vc148.apk · build.gradle 148/1.0.8 · pbxproj 1.0.8(148) · ios 워크플로 vc148 · apk-guide v1.0.8
+- [검증] tsc 0 · npm run build 성공 · e2e_vc148.js 18/18 PASS(아틀라스 로드·프레임 기하 298×220/304×274·풀애니 idle/sp3/die·vord 전용 전환·게이트 148·pageerror 0)
+
+Stage Summary:
+- vc148 = 보스 그리드 긴급 수리 — 마지막 레거시 슬라이싱 잔재 3종 소거, 12보스 전원 유저 원본 HD 아틀라스
+- 유저 테스트 포인트: ①아부디토스(10장 보스)·가름(9장)·베오르드(재림 r5) 전투 — 프레임 잘림/이질 아트 전환 소멸 확인 ②가름이 붉은 지옥견(Garmr 신화 고증)으로 통일

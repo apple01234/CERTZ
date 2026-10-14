@@ -579,7 +579,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "vord", name: "재림의 파수꾼 베오르드",
     /* vc143 (#2 후반 보스 대폭 상향) — 재림 r5 베오르드 HP 16800→42000 · ATK 50→58 */
     hp: 42000, atk: 58, speed: 92, exp: 1500, gold: 800,
-    tex: "boss2", orbTint: 0xffb05a, introDialogue: "bossIntroAbudditos",
+    /* vc148 (#보스그리드) — tex boss2(유령선) 공유 → 전용 흑룡 아틀라스 (bsw_vord 8열×7행 재슬라이싱) */
+    tex: "boss_vord", orbTint: 0xffb05a, introDialogue: "bossIntroAbudditos",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 quake · 성향 1.0 */
     sig: "quake",
     aggr: 1.0,

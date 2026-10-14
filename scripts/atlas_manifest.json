@@ -1,234 +1,315 @@
 {
-  "atl_boss_nidhog": {
-    "fw": 226,
-    "fh": 232,
-    "nrows": 7,
-    "rowNames": [
-      "idle",
-      "walk",
-      "atk",
-      "sp1",
-      "sp2",
-      "sp3",
-      "die"
-    ],
-    "rowCounts": [
-      11,
-      11,
-      11,
-      11,
-      11,
-      11,
-      11
-    ],
-    "kb": 1329,
-    "desc": "니드호그 — 알프헤임 수목룡(고해상)",
-    "scale": 1.5,
-    "src": "file_000000007c8c8206.png"
-  },
-  "atl_boss_fenrir": {
-    "fw": 304,
-    "fh": 274,
-    "nrows": 7,
-    "rowNames": [
-      "idle",
-      "walk",
-      "atk",
-      "sp1",
-      "sp2",
-      "sp3",
-      "die"
-    ],
-    "rowCounts": [
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6
-    ],
-    "kb": 1513,
-    "desc": "펜리르 — 설원 백랑(고해상)",
-    "scale": 1.5,
-    "src": "bsw_fenrir.webp"
-  },
-  "atl_boss_hati": {
-    "fw": 280,
-    "fh": 258,
-    "nrows": 7,
-    "rowNames": [
-      "idle",
-      "walk",
-      "atk",
-      "sp1",
-      "sp2",
-      "sp3",
-      "die"
-    ],
-    "rowCounts": [
-      11,
-      11,
-      11,
-      11,
-      11,
-      11,
-      11
-    ],
-    "kb": 1092,
-    "desc": "하티 — 스콜 트윈 화염 늑대(LANCZOS 개선)",
-    "scale": 5.6
-  },
-  "atl_boss2": {
-    "fw": 330,
-    "fh": 212,
-    "nrows": 7,
-    "rowNames": [
-      "idle",
-      "walk",
-      "atk",
-      "sp1",
-      "sp2",
-      "sp3",
-      "die"
-    ],
-    "rowCounts": [
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6
-    ],
-    "kb": 505,
-    "desc": "베히모스 — 미드가르드 해적선(고해상 유령선)",
-    "scale": 1.25,
-    "src": "bsw_behemoth.webp"
-  },
-  "atl_boss_surt": {
-    "fw": 330,
-    "fh": 224,
-    "nrows": 7,
-    "rowNames": [
-      "idle",
-      "walk",
-      "atk",
-      "sp1",
-      "sp2",
-      "sp3",
-      "die"
-    ],
-    "rowCounts": [
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6
-    ],
-    "kb": 1142,
-    "desc": "수르트 — 무스펠 용암골렘(고해상)",
-    "scale": 1.31,
-    "src": "bsw_surt.webp"
-  },
-  "atl_boss_skoll": {
-    "fw": 274,
-    "fh": 234,
-    "nrows": 7,
-    "rowNames": [
-      "idle",
-      "walk",
-      "atk",
-      "sp1",
-      "sp2",
-      "sp3",
-      "die"
-    ],
-    "rowCounts": [
-      11,
-      11,
-      11,
-      11,
-      11,
-      11,
-      11
-    ],
-    "kb": 1074,
-    "desc": "스콜 — 얼음 봉황(LANCZOS 개선)",
-    "scale": 5.6
-  },
-  "atl_boss3": {
-    "fw": 286,
-    "fh": 234,
-    "nrows": 6,
-    "rowNames": [
-      "idle",
-      "walk",
-      "atk",
-      "sp1",
-      "sp2",
-      "die"
-    ],
-    "rowCounts": [
-      11,
-      11,
-      11,
-      11,
-      11,
-      11
-    ],
-    "kb": 913,
-    "desc": "심연의 군주 — 헬 악마(LANCZOS 개선)",
-    "scale": 5.6
-  },
-  "atl_boss_nagr": {
-    "fw": 286,
-    "fh": 240,
-    "nrows": 6,
-    "rowNames": [
-      "idle",
-      "walk",
-      "atk",
-      "sp1",
-      "sp2",
-      "die"
-    ],
-    "rowCounts": [
-      10,
-      10,
-      11,
-      10,
-      11,
-      11
-    ],
-    "kb": 916,
-    "desc": "발할라 천사기사(LANCZOS 개선)",
-    "scale": 5.6
-  },
-  "atl_boss": {
-    "fw": 268,
-    "fh": 234,
-    "nrows": 6,
-    "rowNames": [
-      "idle",
-      "walk",
-      "atk",
-      "sp1",
-      "sp2",
-      "die"
-    ],
-    "rowCounts": [
-      11,
-      11,
-      11,
-      11,
-      11,
-      11
-    ],
-    "kb": 861,
-    "desc": "심연의 수호자 — 스바르트 흑마수(LANCZOS 개선)",
-    "scale": 5.6
-  }
+ "atl_boss_nidhog": {
+  "fw": 226,
+  "fh": 232,
+  "nrows": 7,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "sp3",
+   "die"
+  ],
+  "rowCounts": [
+   11,
+   11,
+   11,
+   11,
+   11,
+   11,
+   11
+  ],
+  "kb": 1329,
+  "desc": "니드호그 — 알프헤임 수목룡(고해상)",
+  "scale": 1.5,
+  "src": "file_000000007c8c8206.png"
+ },
+ "atl_boss_fenrir": {
+  "fw": 304,
+  "fh": 274,
+  "nrows": 7,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "sp3",
+   "die"
+  ],
+  "rowCounts": [
+   6,
+   6,
+   6,
+   6,
+   6,
+   6,
+   6
+  ],
+  "kb": 1513,
+  "desc": "펜리르 — 설원 백랑(고해상)",
+  "scale": 1.5,
+  "src": "bsw_fenrir.webp"
+ },
+ "atl_boss_hati": {
+  "fw": 280,
+  "fh": 258,
+  "nrows": 7,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "sp3",
+   "die"
+  ],
+  "rowCounts": [
+   11,
+   11,
+   11,
+   11,
+   11,
+   11,
+   11
+  ],
+  "kb": 1092,
+  "desc": "하티 — 스콜 트윈 화염 늑대(LANCZOS 개선)",
+  "scale": 5.6
+ },
+ "atl_boss2": {
+  "fw": 330,
+  "fh": 212,
+  "nrows": 7,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "sp3",
+   "die"
+  ],
+  "rowCounts": [
+   6,
+   6,
+   6,
+   6,
+   6,
+   6,
+   6
+  ],
+  "kb": 505,
+  "desc": "베히모스 — 미드가르드 해적선(고해상 유령선)",
+  "scale": 1.25,
+  "src": "bsw_behemoth.webp"
+ },
+ "atl_boss_surt": {
+  "fw": 330,
+  "fh": 224,
+  "nrows": 7,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "sp3",
+   "die"
+  ],
+  "rowCounts": [
+   6,
+   6,
+   6,
+   6,
+   6,
+   6,
+   6
+  ],
+  "kb": 1142,
+  "desc": "수르트 — 무스펠 용암골렘(고해상)",
+  "scale": 1.31,
+  "src": "bsw_surt.webp"
+ },
+ "atl_boss_skoll": {
+  "fw": 274,
+  "fh": 234,
+  "nrows": 7,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "sp3",
+   "die"
+  ],
+  "rowCounts": [
+   11,
+   11,
+   11,
+   11,
+   11,
+   11,
+   11
+  ],
+  "kb": 1074,
+  "desc": "스콜 — 얼음 봉황(LANCZOS 개선)",
+  "scale": 5.6
+ },
+ "atl_boss3": {
+  "fw": 286,
+  "fh": 234,
+  "nrows": 6,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "die"
+  ],
+  "rowCounts": [
+   11,
+   11,
+   11,
+   11,
+   11,
+   11
+  ],
+  "kb": 913,
+  "desc": "심연의 군주 — 헬 악마(LANCZOS 개선)",
+  "scale": 5.6
+ },
+ "atl_boss_nagr": {
+  "fw": 286,
+  "fh": 240,
+  "nrows": 6,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "die"
+  ],
+  "rowCounts": [
+   10,
+   10,
+   11,
+   10,
+   11,
+   11
+  ],
+  "kb": 916,
+  "desc": "발할라 천사기사(LANCZOS 개선)",
+  "scale": 5.6
+ },
+ "atl_boss": {
+  "fw": 268,
+  "fh": 234,
+  "nrows": 6,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "die"
+  ],
+  "rowCounts": [
+   11,
+   11,
+   11,
+   11,
+   11,
+   11
+  ],
+  "kb": 861,
+  "desc": "심연의 수호자 — 스바르트 흑마수(LANCZOS 개선)",
+  "scale": 5.6
+ },
+ "atl_boss_abudditos": {
+  "fw": 298,
+  "fh": 220,
+  "nrows": 7,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "sp3",
+   "die"
+  ],
+  "rowCounts": [
+   8,
+   8,
+   7,
+   8,
+   8,
+   8,
+   8
+  ],
+  "kb": 1007,
+  "desc": "마룡 아부디토스 — 흑룡 8열×7행 (vc148 그리드 재슬라이싱)",
+  "scale": 1.5,
+  "src": "bsw_abudditos.webp"
+ },
+ "atl_boss_vord": {
+  "fw": 298,
+  "fh": 220,
+  "nrows": 7,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "sp3",
+   "die"
+  ],
+  "rowCounts": [
+   8,
+   8,
+   7,
+   8,
+   8,
+   8,
+   8
+  ],
+  "kb": 1250,
+  "desc": "베오르드 — 흑룡 8열×7행 (vc148 그리드 재슬라이싱)",
+  "scale": 1.5,
+  "src": "bsw_vord.webp"
+ },
+ "atl_boss_gram": {
+  "fw": 304,
+  "fh": 274,
+  "nrows": 7,
+  "rowNames": [
+   "idle",
+   "walk",
+   "atk",
+   "sp1",
+   "sp2",
+   "sp3",
+   "die"
+  ],
+  "rowCounts": [
+   6,
+   6,
+   6,
+   6,
+   6,
+   6,
+   6
+  ],
+  "kb": 1366,
+  "desc": "가름 — 지옥견 늑대 6열×7행 (vc148 그리드 재슬라이싱)",
+  "scale": 1.5,
+  "src": "bsw_gram.webp"
+ }
 }
