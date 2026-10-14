@@ -4141,3 +4141,24 @@ Work Log:
 Stage Summary:
 - vc148 = 보스 그리드 긴급 수리 — 마지막 레거시 슬라이싱 잔재 3종 소거, 12보스 전원 유저 원본 HD 아틀라스
 - 유저 테스트 포인트: ①아부디토스(10장 보스)·가름(9장)·베오르드(재림 r5) 전투 — 프레임 잘림/이질 아트 전환 소멸 확인 ②가름이 붉은 지옥견(Garmr 신화 고증)으로 통일
+
+---
+Task ID: vc148-release-chain
+Agent: Super Z (main)
+Task: "30가지 작업 + 보스 그리드 버그 계속 진행" — vc148 릴리스 체인 완결 (APK export 빌드 중단분 재개 → 릴리스 v1.0.8)
+
+Work Log:
+- [상태 파악] HEAD=fb7b3db(vc148 커밋·푸시·웹 배포 완료 — 라이브 1.0.8/148). 작업트리에 라우트 격리만 실행(18파일 D 홀드)되고 .next-apk 미생성 상태 — APK 빌드 중단분. 릴리스 v1.0.8 미생성(웹 version API가 가리키는 APK 링크 죽어있음)
+- [APK 재개] 3청크 포그라운드: ①APK_EXPORT next build(21.5s, 7페이지 export) ②cap sync android 0.855s ③gradle assembleRelease 3m57s BUILD SUCCESSFUL
+- [APK 검증] 150,930,704B · versionCode 148 · versionName 1.0.8 · 서명 cc774f34(기존 키 동일 — 덮어설치 호환) · md5 dd9e59eeb32a9ab9077240c49c036492 · sha1 0e9115fba1e94fc9e41497e0f5c6e31d6ecc2f8c. 비고: ANDROID_HOME 환경차 — 실제 SDK는 /home/z/.android-sdk(android/local.properties sdk.dir), aapt 35.0.0으로 badging 실측
+- [릴리스] scripts/vc148_release.py — v1.0.8 릴리스가 이미 존재(385706758) 확인. 자산 정리 중 **iOS 워크플로 자동첨부 IPA(SERTZ-vc148-ios-unsigned.ipa)를 실수 삭제** → Actions run 38490735380(fb7b3db, success)의 아티팩트 11862286072를 curl -L 다운로드해 복구 → scripts/vc148_ipa_reupload.py로 재업로드 201 + md5 5bdeaf86 PASS. plistlib 검증 1.0.8(148)·com.sertz.myapp. 최종 자산: IPA 157,922,988B + APK 150,930,704B
+- [apk-guide] 웹 권위본 해시 갱신(bf28c52d→dd9e59ee·d3d2b8e5→0e9115fb·147167185B→150930704B·~147MB→~151MB) 커밋 b80871f 푸시
+- [라우트 복원] .apk-hold/api-routes 7종 mv 복원 — admin은 중첩 꼬임(admin/admin/summary) 수리 + 미추적 스테일 admin/route.ts(v140 격리 유출 시절 잔재·트래킹 이력 0·라이브 404·프론트 호출부 없음) 제거 → 트리 클린
+- [서버] node server.js 재시작 — 로컬 /api/version 1.0.8/148 응답 확인
+- [EXE 워크플로] vc147 푸시 때 이미 성공 빌드 존재(run 38486155960, 산출물 v1.0.6 첨부) 확인 → electron/package.json·main.js·exe-build.yml vc146→vc148/v1.0.8 전환 + **트리거 결함 `branches: ain]` 수리([main])** — push 자동트리거 불능 원인(수동실행만 가동됐음). 커밋 128c015 푸시 → EXE 빌드 run 38493105649 자동 트리거
+- [download/] vc147+vc148 정책 유지(vc145 mapping archive 이동 커밋) + SERTZ-vc148-ios-unsigned.ipa 배치(미추적)
+
+Stage Summary:
+- 릴리스 v1.0.8 자산 체제: SERTZ-vc148.apk(150,930,704B·148/1.0.8·cc774f34) + SERTZ-vc148-ios-unsigned.ipa(157,922,988B·1.0.8(148)) + EXE 2종(빌드 진행 중 자동첨부 예정) · 웹 라이브 code:148 · apk-guide 신해시
+- 사고·복구: 릴리스 자산 정리 중 iOS IPA 오삭제 → Actions 아티팩트에서 완전 복구(무결성 PASS). 교훈: 릴리스 자산 DELETE 전 워크플로 자동첨부분 식별 필수
+- EXE 빌드 완료 시 유저 테스트: SERTZ-vc148-win.exe(포터블)/win-setup.exe(설치기) — 로그인/멀티는 Vercel API 프록시 경유
