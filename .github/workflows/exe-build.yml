@@ -2,7 +2,7 @@ name: EXE Build (SERTZ)
 
 # SERTZ Windows 데스크톱 빌드 — windows 러너 네이티브(rcedit 네이티브 동작 — 아이콘·버전·언인스톨러 완전판).
 #  · 트리거: 수동(workflow_dispatch) 또는 electron/**·본 파일 푸시
-#  · 산출물: SERTZ-vc154-setup.exe(NSIS 설치기) — v1.0.6 유저 지시 "exe 파일은 빌드하지 말고 setup-exe만": portable 폐지
+#  · 산출물: SERTZ-vc{code}-setup.exe(NSIS 설치기 — build.gradle에서 자동 파싱) — v1.0.6 유저 지시 "exe 파일은 빌드하지 말고 setup-exe만": portable 폐지
 #    ※ 산출물명 동기 포인트 3곳: electron/package.json version + artifactName 2곳(win/nsis) + 본 파일 업로드 경로 (vc153까지 하드코딩·사후PATCH 부채 → vc154부터 근본 정리)
 #    → GitHub 릴리스 v1.0.9 자동 첨부(--clobber)
 #  · 게임 본체: APK와 동일한 정적 export(.next-apk)를 electron/game에 스테이징
@@ -24,6 +24,19 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
+      # v1.0.13 — 버전 자동 파싱 (build.gradle 단일 진실 공급원 — iOS 빌드와 동일 패턴)
+      - name: Parse version (build.gradle → versionName/versionCode)
+        shell: bash
+        run: |
+          set -e
+          VERSION=$(grep -oE 'versionName "[^"]+"' android/app/build.gradle | head -1 | sed 's/versionName "//; s/"$//')
+          CODE=$(grep -oE 'versionCode [0-9]+' android/app/build.gradle | head -1 | sed 's/versionCode //')
+          VERSION="${VERSION:-1.0.13}"
+          CODE="${CODE:-155}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "CODE=$CODE" >> "$GITHUB_ENV"
+          echo "버전 파싱 결과: v${VERSION} (vc${CODE})"
 
       - uses: actions/setup-node@v4
         with:
@@ -63,6 +76,16 @@ jobs:
           cp -r .next-apk/. electron/game/
           test -f electron/game/index.html
 
+      # v1.0.13 — electron 버전·artifactName 동기화 (vc 하드코딩 사고 클래스 근본 차단)
+      - name: Sync version → electron/package.json (version + artifactName ×2)
+        shell: bash
+        run: |
+          set -e
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${VERSION}\"/" electron/package.json
+          sed -i "s/SERTZ-vc[0-9]*-setup\.\${ext}/SERTZ-vc${CODE}-setup.\${ext}/g" electron/package.json
+          echo "--- 동기화 확인 ---"
+          grep -nE '"version"|artifactName' electron/package.json
+
       - name: Build EXE (nsis setup only, x64) — v1.0.6 portable 폐지
         run: |
           cd electron
@@ -74,6 +97,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release view v1.0.9 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create v1.0.9 --title "SERTZ v1.0.9 (vc149)" --notes "피드백 26종 반영 — 캐릭터 복구·거래 수신 수정·HUD 개편·VFX 통합" --repo "$GITHUB_REPOSITORY"
-          gh release upload v1.0.9 electron/dist/SERTZ-vc154-setup.exe --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload v1.0.9 "electron/dist/SERTZ-vc${CODE}-setup.exe" --clobber --repo "$GITHUB_REPOSITORY"
           echo "--- release assets ---"
           gh release view v1.0.9 --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
