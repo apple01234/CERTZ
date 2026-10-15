@@ -386,10 +386,11 @@ export function TouchControls({
             <Swords size={26} />
             <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
           </div>
-          {/* vc147 (#11) — 기본공격 단축키 키탭 */}
-          <span className="pointer-events-none absolute left-2 top-2 rounded bg-slate-900/80 px-1 text-[9px] font-black leading-[13px] text-rose-100">
-            {km.attack}
-          </span>
+          {/* vc154 (지시 #1) — 기본공격 단축키 키탭 제거 (유저 지시 "기본공격 단축키 X 아이콘 없애").
+           *  vc147에서 버튼에 키탭을 붙였을 때 attack 버튼에 relative가 없어 키탭이 클러스터
+           *  컨테이너(좌상단=자동 버튼 위)를 기준으로 배치돼, 어디서 왔는지 모를 유령 "X" 칩이
+           *  자동 버튼 위에 떠 있었다. 키탭 자체를 제거해 근본 해결 — 스킬 버튼 키탭(Z/C/V/A/S)은
+           *  relative 버튼 내부에 정상 렌더되므로 유지한다. */}
         </button>
         {/* clusterFloat(좁은 세로 화면) — [자동+물약]을 행 위쪽 가로열로 피난:
          *  배치 복귀와 무관하게 조이스틱(화면 좌하단 46%)과의 겹침만 막는 안전장치(v1.4.18 계승) */}

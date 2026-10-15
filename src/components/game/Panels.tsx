@@ -90,13 +90,19 @@ function useListNav(count: number, onConfirm: (idx: number) => void, enabled = t
       /* 텍스트 입력 포커스 중엔 무시 (수량 입력·쿠폰 등) */
       const el = document.activeElement;
       if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return;
-      if (e.key === "ArrowDown") {
+      /* vc154 (지시 #2) — E키 확정이 안 되는 버그 근본 수정:
+       *  기존엔 e.key === "e"|"E"로 비교했는데, 한글 2벌식 IME가 켜져 있으면
+       *  물리 E키의 e.key가 "ㄷ"가 되어 확정이 영원히 안 들어왔다 (방향키는
+       *  ArrowUp/Down이라 IME와 무관하게 잘 됐다 — "화살표는 되고 E만 안 된다"는
+       *  제보 증상과 정확히 일치). e.code(물리 키 코드)는 IME와 무관하므로
+       *  KeyE로 판정하고, e.key 비교는 과거 키맵 호환용으로 병행한다. */
+      if (e.code === "ArrowDown" || e.key === "ArrowDown") {
         e.preventDefault();
         setIdx((i) => (i + 1) % count);
-      } else if (e.key === "ArrowUp") {
+      } else if (e.code === "ArrowUp" || e.key === "ArrowUp") {
         e.preventDefault();
         setIdx((i) => (i - 1 + count) % count);
-      } else if (e.key === "e" || e.key === "E") {
+      } else if (e.code === "KeyE" || e.key === "e" || e.key === "E") {
         e.preventDefault();
         confirmRef.current(idxRef.current);
       }
