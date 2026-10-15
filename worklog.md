@@ -4290,3 +4290,4 @@ Stage Summary:
 - vc154 = 제보 3건 근본 수리(X 키탭·IME E키·저FPS 오버레이)+블레이드마스터 궁극기 백연타 개편 — 웹 즉시 반영(code:154)
 - 유저 테스트 포인트: ①자동 버튼 위 유령 X 소실 ②한글 IME 켠 상태에서 상점/전직관 ↑/↓+E 확정 ③블레이드마스터(Lv200+) 궁극기 — 가속 100베기+死 블룸+100 HIT
 - 잔무: ①Vercel 토큰 재제공 시 구배포 일괄 삭제 ②SERTZ-vc154.apk 빌드·릴리스 업로드
+- [배포 완료] 커밋 b2b60a2 → Vercel success (check_deploy_status.js 실측) → route.ts LATEST_VERSION 잔존 정정(9bf4436) 재배포 success → 라이브 /api/version **code:154 · latest 1.0.12** 최종 확인. 잔무: Vercel 토큰(.secrets/vercel_token) 재제공 시 구배포 일괄 삭제 + SERTZ-vc154.apk 빌드·릴리스 업로드
