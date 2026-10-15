@@ -4255,25 +4255,26 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /* ---------- 미니맵 (하단 중앙, 줌 보정) ---------- */
+  /* ---------- 미니맵 (vc155: 화면 최상단 중앙 — 유저 지시 "맵 레이어가 맨 위로") ---------- */
 
   private redrawMinimap() {
     const mm = this.minimap;
     if (!mm || !mm.scene || !this.player) return;
     const cam = this.cameras.main;
     const z = cam.zoom || 1;
-    /* vc147 (#4) — 모바일 맵 우측 치우침 수정: v1.4.12가 가로폭 700~900px 기기에서
-     *  채팅박스 회피를 위해 미니맵을 중앙에서 +44px 우측으로 밀었는데, 유저 지시
-     *  "모바일에서 맵이 밑에서 정가운데가 아닌 오른쪽으로 치우쳐 있다"의 정체였다.
-     *  → 전 폭에서 하단 정중앙 복귀. 좁은 화면(<700px) 채팅박스 겹침은 기존처럼
-     *  입력바 위(56px)로 올려 회피하고, 700~900px 대역은 미니맵을 소폭 축소해
-     *  채팅 입력바(하단 44vw)와의 가로 겹침을 흡수한다. */
+    /* vc155 — 유저 지시 "맵 레이어가 맨 위로 오게": 미니맵을 하단 중앙 → 최상단 중앙으로 이동.
+     *  하단은 조이스틱/스킬/포션 버튼(Rock DOM이 캔버스 위에 항상 렌더)과 겹쳐 모바일에서
+     *  포션 버튼이 미니맵 우단을 덮는 실측(probe_map_layer)까지 확인됐다. 상단은 비어 있다.
+     *  단, 보스바/균열문 HUD(돔 z-30/40, 최상단 중앙)와 겹치므로 활성 중에는 그 아래로
+     *  자동 물러난다(보스바 컴팩트 ≈46px·일반 ≈60px 높이 실측 반영). */
     const gw = cam.width < 900 ? 128 / z : 156 / z;
     const gh = cam.width < 900 ? 72 / z : 88 / z;
     const cx0 = cam.width / 2;
-    const mmBottom = cam.width < 700 ? 56 : 14;
+    const bossUp = !!(this.boss?.active && this.boss.alive);
+    const mmShift = bossUp || this.gateActive ? (cam.height < 560 ? 54 : 74) : 0;
+    const mmTop = 8 + mmShift;
     const cx = cx0;
-    const cy = cam.height / 2 + (cam.height - mmBottom - gh * z * 0.5 - cam.height / 2) / z;
+    const cy = cam.height / 2 + (mmTop + gh * z * 0.5 - cam.height / 2) / z;
     mm.clear();
     /* v1.1.0 (#7) — 어두운 맵(암전 챕터/카오스 보스전)에서도 지도가 잘 보이게:
      *  반투명 0.78 → 사실상 불투명 판(0.96) + 두꺼운 금테 + 외곽 그림자. 카메라 포스트FX가 전체 프레임을
@@ -4348,7 +4349,8 @@ export class WorldScene extends Phaser.Scene {
     } else {
       this.locLabel.setText(locTxt).setFontSize(13 / z).setStroke("#000000", 3.5 / z);
     }
-    this.locLabel.setPosition(cx, cy - gh / 2 - 7 / z).setAlpha(0.95);
+    /* vc155 — 최상단 배치로 전환하며 라벨을 판 아래로 뒤집음(위는 화면 밖/보스바 영역) */
+    this.locLabel.setPosition(cx, cy + gh / 2 + 9 / z).setAlpha(0.95);
   }
 
   /**
