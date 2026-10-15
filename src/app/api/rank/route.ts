@@ -3,7 +3,9 @@
  *  클라우드 세이브 파생 랭킹(환생·탑기록·레벨·exp) — 비로그인도 목록 공개, 로그인 시 내 순위 동봉.
  *  v1.0.13 피드백#7/#16 — 캐릭터별 랭킹(활성+chars 백업분) 확장.
  *   · ?me=<캐릭터명> — "내 순위" 매칭에 현재 캐릭터 이름을 보탠다 (선택)
- *   · ?job=<클래스키> — 직업별 랭킹 필터 (선택)
+ *   · ?job=<계열키> — 직업별 랭킹 필터 (선택)
+ *     v1.0.14 피드백#2 — 8계열(2차 루트: berserker/guardian/sniper/windrunner/archmage/sage/
+ *     assassin/swashbuckler) 기준. 3·4차 클래스키가 와도 같은 계열로 정규화해 집계한다.
  *  (구 fetchRank용 /api/rank/claim은 서버 구현이 없던 레거시 — 계승 생략, 404 동일)
  */
 import { NextRequest } from "next/server";
@@ -16,7 +18,7 @@ export async function GET(req: NextRequest) {
   try {
     const { db } = await loadDb(false);
     const me = currentUser(db, req);
-    /* v1.0.13 피드백#7 — 쿼리 파싱: me(내 캐릭터명)·job(직업 필터) — 없으면 기존 동작 */
+    /* v1.0.13 피드백#7 — 쿼리 파싱: me(내 캐릭터명)·job(계열 필터, v1.0.14#2 8계열 정규화) — 없으면 기존 동작 */
     const meName = (req.nextUrl.searchParams.get("me") || "").slice(0, 8);
     const job = (req.nextUrl.searchParams.get("job") || "").slice(0, 24);
     return json(req, 200, rankListFor(db, me, meName, job));

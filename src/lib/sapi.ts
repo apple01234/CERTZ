@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { scryptSync, randomBytes, timingSafeEqual } from "node:crypto";
 import type { DbShape, UserRec, ListingRec } from "./ghdb";
 import { ITEMS } from "@/game/data"; // vc146 (#9) — 거래 가능 품목 동적 구성 (gmOnly만 제외)
+import { clsToBranch } from "@/game/classes"; // v1.0.14 피드백#2 — 클래스키 → 계열(8 기본 직업) 정규화
 
 export const COOKIE = "sertz_auth";
 export const TOKEN_TTL_MS = 30 * 24 * 3600 * 1000; // 30일
@@ -214,7 +215,9 @@ function rankBetter(a: { data: Record<string, unknown> }, b: { data: Record<stri
  *  · db.saves[uid].data(활성 세이브) + db.saves[uid].chars(캐릭터 백업분, cloud-save 최대 24캐릭)를
  *    캐릭터 단위로 모두 수집 — 한 계정이 여러 캐릭터로 랭킹에 오른다.
  *  · 중복 제거: chars의 캐릭터가 활성 세이브와 playerName+lv가 같으면(활성 캐릭이 chars에도 백업된 케이스) 1회만.
- *  · job(클래스키) 지정 시 cls가 일치하는 캐릭터만 — 직업별 랭킹.
+ *  · v1.0.14 피드백#2 — job(계열키) 지정 시 캐릭터 cls를 "계열(8 기본 직업)"로 정규화해 비교:
+ *    전직 차수(3·4차) 키로 필터해도 같은 계열로 묶인다 (warbringer → berserker 계열 등).
+ *    계열로 정규되지 않는 키(1차 키 등)는 기존처럼 cls 완전 일치 폴백 — v1.0.13 링크 호환.
  *  · 하위호환: chars가 없는 세이브는 기존과 동일하게 단일 엔트리.
  *  · me 매칭: 내 계정 엔트리(uid 일치) 또는 현재 캐릭터 이름(meName) 일치 — 정렬상 첫 매치(내 최고 캐릭).
  */
@@ -240,8 +243,17 @@ export function rankListFor(db: DbShape, me: UserRec | null, meName = "", job = 
       }
     }
   }
+  /* v1.0.14 피드백#2 — ?job=는 이제 8계열 키(berserker/guardian/sniper/windrunner/archmage/sage/
+   *  assassin/swashbuckler). 양변을 계열로 정규화해 비교 — 3·4차 캐릭도 소속 계열 랭킹에 합산된다.
+   *  계열 정규가 안 되는 job(1차 키·미지 키)은 원문 그대로 cls 완전 일치 폴백(구버전 링크 호환). */
   const jobKey = String(job || "").trim().toLowerCase();
-  const filtered = jobKey ? all.filter((e) => String(e.data.cls || "").toLowerCase() === jobKey) : all;
+  const jobBranch = jobKey ? (clsToBranch(jobKey) ?? jobKey) : "";
+  const filtered = jobKey
+    ? all.filter((e) => {
+        const cls = String(e.data.cls || "").toLowerCase();
+        return (clsToBranch(cls) ?? cls) === jobBranch;
+      })
+    : all;
   filtered.sort((a, b) => (rankBetter(a, b) ? -1 : rankBetter(b, a) ? 1 : 0));
   /* vc145 (#2) — Top 50 → 100위 확장 (유저 지시 "랭킹 100위까지 스크롤 가능하게") */
   const top = filtered.slice(0, 100).map((e, i) => ({

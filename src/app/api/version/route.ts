@@ -8,13 +8,13 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.0.13";
-const LATEST_CODE = 155;
+const LATEST_VERSION = "1.0.14";
+const LATEST_CODE = 156;
 const VERSION_NOTE =
-  "v1.0.13 (vc155) — 유저 피드백 20건 일괄 반영: ①심연의탑 리스폰 몬스터에 층 배율 미적용 버그 근본 수정 ②심연의탑/몬스터파크 보상 nerf ③퀘스트 완료 경험치 대폭 상향 ④블레이드마스터 궁극기 「무한 검무」 50연타 재편+화력 상향 ⑤공동 토벌전 보스 대폭 강화 ⑥보스 체력 공유 파티 한정 ⑦일일 상자·긴급귀환 캐릭터당 분리 ⑧캐릭터별 랭킹+직업별 랭킹 탭 ⑨닉네임 전역 중복 방지 ⑩MQTT [GM] 표시 ⑪상대 정보창+1:1 거래 ⑫파티원 스킬 표시 수리 ⑬캐릭터 선택창 로그인 버튼 숨김 ⑭퀘스트 트래커 상단 정렬 ⑮기능 아이콘 기능명 통일 ⑯튜토리얼 이그니 하이라이트 ⑰오라 6종+수집 펫 2종 ⑱iOS unsigned IPA 워크플로 자동화";
+  "v1.0.14 (vc156) — 유저 피드백 11건: ①PC 온라인 전면 장애 복구(Vercel DB 토큰 만료 — 로그인·채팅·랭킹·거래소 전체) ②admin 비번 복구 경로 재확보 ③직업별 랭킹 전직차수→8계열 기준 개편(버서커·가디언·스나이퍼·윈드러너·아크메이지·세이지·어세신·스와시버클러) ④퀘스트·콘텐츠 아이콘 더보기→가방 옆 상단 배치 ⑤퀘스트 창 더보기 아래 배치 ⑥미니맵 하단 중앙 복귀(렌더 최상위 유지) ⑦유령 체력바 검은 네모 제거+사망 잔존(스프라이트·HP바) 3중 방어 ⑧시련의 탑(심연의 탑) 보스 오엔딩 버그 수정 ⑨BM 궁극기 블랙아웃 시네마 연출(절개·종결 암전) ⑩死 한자 옆 콤보 카운터 표시+종료 후 미소멸 버그 근본 수리(5중 클린업) ⑪게이트 웨이브=바르가 수비전 입장 버튼 복원+조각 상점 UI 복원+룬 안내 정정";
 const APK_MIRROR =
   /* vc138 — API DELETE 장애 기간 안전 경로 (server.js 주석 참조) */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.9/SERTZ-vc155.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.9/SERTZ-vc156.apk";
 
 export async function GET() {
   return NextResponse.json({

@@ -429,6 +429,33 @@ export function tier2RootOf(key?: string | null): ClassKey | null {
   return chain[1].key;
 }
 
+/* ================= v1.0.14 피드백#2 — 계열(8 기본 직업) 매핑 =================
+ *  유저 지시: "직업 별로 기준이 전직 차수 직업 포함이 아니라 계열 즉 총 8개의 직업들 중 랭킹을 계산해"
+ *  이 게임의 계열 = 2차 직업 8종이 각각 루트인 전직 라인 (3·4차는 2차의 승계 — tier2RootOf와 동일 구조):
+ *    berserker(버서커)   ← berserker · warlord · warbringer
+ *    guardian(가디언)    ← guardian · paladin · crusader
+ *    sniper(스나이퍼)    ← sniper · eagleeye · deadeye
+ *    windrunner(윈드러너) ← windrunner · tempest · skylord
+ *    archmage(아크메이지) ← archmage · stormbringer · arclord
+ *    sage(세이지)        ← sage · chronicle · eternal
+ *    assassin(어세신)    ← assassin · nightblade · shadowlord
+ *    swashbuckler(스와시버클러) ← swashbuckler · duelist · blademaster
+ *  1차(전사/궁수/마법사/도적)·무직은 아직 계열을 선택 전 — null (직업별 랭킹에서는 "전체"로만 조회). */
+
+/** 8계열 루트(2차) 클래스키 — 직업별 랭킹 필터 칩 목록 (?job= 값) */
+export const BRANCH_KEYS: ClassKey[] = [
+  "berserker", "guardian", "sniper", "windrunner",
+  "archmage", "sage", "assassin", "swashbuckler",
+];
+
+/** 클래스키 → 소속 계열(2차 루트) 정규화. 1차/무직/미지 키는 null.
+ *  예) warbringer → "berserker", eternal → "sage", warrior → null */
+export function clsToBranch(key?: string | null): ClassKey | null {
+  const chain = chainOf(key);
+  if (chain.length < 2) return null;
+  return chain[1].key;
+}
+
 export type ClassBonus = {
   atkPct: number;
   critAdd: number;

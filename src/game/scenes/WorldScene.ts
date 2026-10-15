@@ -4259,26 +4259,23 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /* ---------- 미니맵 (vc155: 화면 최상단 중앙 — 유저 지시 "맵 레이어가 맨 위로") ---------- */
+  /* ---------- 미니맵 (하단 중앙 · depth 95 최상위 레이어 — v1.0.14 #4 정정) ---------- */
 
   private redrawMinimap() {
     const mm = this.minimap;
     if (!mm || !mm.scene || !this.player) return;
     const cam = this.cameras.main;
     const z = cam.zoom || 1;
-    /* vc155 — 유저 지시 "맵 레이어가 맨 위로 오게": 미니맵을 하단 중앙 → 최상단 중앙으로 이동.
-     *  하단은 조이스틱/스킬/포션 버튼(Rock DOM이 캔버스 위에 항상 렌더)과 겹쳐 모바일에서
-     *  포션 버튼이 미니맵 우단을 덮는 실측(probe_map_layer)까지 확인됐다. 상단은 비어 있다.
-     *  단, 보스바/균열문 HUD(돔 z-30/40, 최상단 중앙)와 겹치므로 활성 중에는 그 아래로
-     *  자동 물러난다(보스바 컴팩트 ≈46px·일반 ≈60px 높이 실측 반영). */
+    /* v1.0.14 피드백#4 — 유저 정정 "맵 레이어가 맨 위에 있어야 하는 거지, 맵 위치는 맨아래여야 함":
+     *  vc155가 '레이어(렌더 순위)를 맨 위로'를 '화면 최상단 배치'로 오해해 미니맵을 상단 중앙에
+     *  올렸다. 정정 — depth 95(캔버스 최상위 레이어 유지 — 맵 UI가 가장 위 레이어로 렌더)는 그대로
+     *  두고 위치만 하단 중앙으로 복귀. 하단은 조이스틱/스킬/포션 버튼(돔)과 겹칠 수 있어 좁은
+     *  화면(<700px)은 채팅 입력바 위 56px로 리프트, 그 외 14px 하단 마진 (vc147 #4 실측값). */
     const gw = cam.width < 900 ? 128 / z : 156 / z;
     const gh = cam.width < 900 ? 72 / z : 88 / z;
-    const cx0 = cam.width / 2;
-    const bossUp = !!(this.boss?.active && this.boss.alive);
-    const mmShift = bossUp || this.gateActive ? (cam.height < 560 ? 54 : 74) : 0;
-    const mmTop = 8 + mmShift;
-    const cx = cx0;
-    const cy = cam.height / 2 + (mmTop + gh * z * 0.5 - cam.height / 2) / z;
+    const cx = cam.width / 2;
+    const mmBottom = cam.width < 700 ? 56 : 14;
+    const cy = cam.height / 2 + (cam.height - mmBottom - gh * z * 0.5 - cam.height / 2) / z;
     mm.clear();
     /* v1.1.0 (#7) — 어두운 맵(암전 챕터/카오스 보스전)에서도 지도가 잘 보이게:
      *  반투명 0.78 → 사실상 불투명 판(0.96) + 두꺼운 금테 + 외곽 그림자. 카메라 포스트FX가 전체 프레임을
@@ -4353,8 +4350,8 @@ export class WorldScene extends Phaser.Scene {
     } else {
       this.locLabel.setText(locTxt).setFontSize(13 / z).setStroke("#000000", 3.5 / z);
     }
-    /* vc155 — 최상단 배치로 전환하며 라벨을 판 아래로 뒤집음(위는 화면 밖/보스바 영역) */
-    this.locLabel.setPosition(cx, cy + gh / 2 + 9 / z).setAlpha(0.95);
+    /* v1.0.14 #4 — 하단 복귀에 맞춰 위치 라벨을 판 위로 복원 (vc145 #6 원래 위치 — 판과 겹침 방지) */
+    this.locLabel.setPosition(cx, cy - gh / 2 - 7 / z).setAlpha(0.95);
   }
 
   /**
@@ -6323,10 +6320,15 @@ export class WorldScene extends Phaser.Scene {
     this.save();
     /* vc142 (#4) — 할당제: 할당을 못 채운 잔여 몬스터는 다음 층 스폰 전에 조용히 정리
      * (탈출 전멸이 아니므로 잔여분이 남는다 — 새 층에서 오개산 방지) */
+    /* v1.0.14 피드백#6/#7 — 잔여 몬스터 정리 시 유령 체력바(검은 네모) 잔존 수정:
+     *  e.destroy()는 스프라이트만 파괴하고 별도 오브젝트인 hpBar/hpBarBg(어두운 판+빨강 바)를
+     *  그대로 남긴다. vc149 #21 "유령 체력바 방지"가 finishGate/finishPark/좀비 스위퍼에는
+     *  destroyAll()로 적용됐는데 이곳만 누락 — 탑은 층 전환이 잦아 어두운 네모가 계속 쌓였다.
+     *  destroyAll()로 통일 + Enemy.destroy() 훅(이중 안전망)으로 재발 차단. */
     for (const e of this.enemies) {
       if (e.active && e.alive) {
         e.alive = false;
-        e.destroy();
+        e.destroyAll();
       }
     }
     this.enemies = this.enemies.filter((e) => e.alive);
@@ -7814,10 +7816,17 @@ export class WorldScene extends Phaser.Scene {
         audio.sfx.bossDrop(); // v1.4.8 — 포효 재활용 해제 (보스 등장음과 구분)
       });
     }
-    // 최종 보스(심연의 군주)만 클리어 — 이전 보스는 차원문으로 다음 지역 진행
-    const final = NEXT_STAGE[this.stageDef.key] === null;
+    /* v1.0.14 피드백#8 — 특수 구역(탑/균열·시련/게이트/무릉/파크/토벌전) 보스는 스토리 판정과 분리.
+     *  이 구역들은 전부 NEXT_STAGE가 null(예: NEXT_STAGE.tower = null — 무한 콘텐츠 스테이지 특성)이라,
+     *  탑 중도 퇴장 직후처럼 콘텐츠 플래그(towerActive)가 꺼진 상태에서 층 보스를 잡으면
+     *  아래 "최종 보스 클리어" 판정(NEXT_STAGE[stage]===null)에 걸려 시련의 탑에서 엔딩이 발화했다.
+     *  → 특수 구역 보스는 보상(위 경로)만 지급하고 클리어 플래그/엔딩/퀘스트 진행은 하지 않는다. */
+    const specialZone =
+      this.stageDef.key === "tower" || this.stageDef.key === "closet" || this.stageDef.key === "gate" ||
+      this.stageDef.key === "dojang" || this.stageDef.key === "park" || this.stageDef.key === "praid";
+    const final = !specialZone && NEXT_STAGE[this.stageDef.key] === null;
     this.cleared = final;
-    this.advanceQuest(); // 보스 퀘스트 완료 — 골드/경험치 보상 포함
+    if (!specialZone) this.advanceQuest(); // 보스 퀘스트 완료 — 골드/경험치 보상 포함 (특수 구역 보스는 제외)
     this.save();
     if (final) {
       this.time.delayedCall(1200, () => {
@@ -7835,8 +7844,9 @@ export class WorldScene extends Phaser.Scene {
           });
         });
       });
-    } else {
+    } else if (!specialZone) {
       // 다음 지역 안내 대사 + 차원문 개방은 afterAdvance가 일반 처리 (1200ms 유예)
+      // v1.0.14 #8 — 특수 구역 보스는 다음 지역 개방/안내도 스킵 (탑 복귀 포탈은 이미 존재)
       this.time.delayedCall(1200, () => this.afterAdvance());
     }
   }
@@ -10014,10 +10024,14 @@ export class WorldScene extends Phaser.Scene {
     } catch { /* 키맵 미초기화 단계 무시 */ }
   }
 
+  /* v1.0.14 (#14 최적화) — 프레임당 Vector2 할당 제거: update에서 매 프레임 호출되는 스크래치 재사용.
+   *  호출측(update/Player.update/tickIntro)은 전부 값만 읽고 참조를 저장하지 않음을 확인했다. */
+  private dirVecScratch = new Phaser.Math.Vector2(0, 0);
+
   /** 방향키 우선순위 결정 — 같은 축에서 마지막으로 누른 키가 이김 (지시 #16)
    *  예: ← 를 누른 채 → 를 누르면 → 로 이동, → 를 떼면 다시 ← 로 이동 */
   private resolveDirVec(): Phaser.Math.Vector2 {
-    const mv = new Phaser.Math.Vector2(0, 0);
+    const mv = this.dirVecScratch.set(0, 0);
     // 입력 순서 스택 갱신
     const track = (key: string, axis: "x" | "y", dir: number) => {
       const k = this.keys[key];
@@ -10047,6 +10061,10 @@ export class WorldScene extends Phaser.Scene {
    *  이동은 autoHuntMove 주입(조이스틱 터치 중이면 무시), 공격은 attackQueued로 자연 연결
    *  v3.0.1 — 직업별 스킬 최적화: 조준 보정 / 원거리 카이팅+이탈 점멸 / 근접 돌진 갭클로저 /
    *  광역기(회전베기·관통 화살)는 군집·보스 한정, 마법사 볼트는 쿨마다 */
+  /* v1.0.14 (#14 최적화) — 자동전투 타깃 스캔 스크래치 버퍼 (자동전투 중 프레임마다 filter 배열 할당 제거).
+   *  getAllTargets()가 프레임 캐시를 반환하므로 스크래치도 한 틱 안에서만 유효하면 충분하다. */
+  private autoLiveScratch: (Enemy | Boss)[] = [];
+
   private tickAutoHunt() {
     this.autoHuntMove.set(0, 0);
     // v3.0.15 (#5) — 펫 없이도 자동전투 가능 (펫 게이트 제거)
@@ -10075,7 +10093,10 @@ export class WorldScene extends Phaser.Scene {
         if (this.time.now >= until || !k.active) this.autoBlacklist.delete(k);
       }
     }
-    const live = targets.filter((e) => e.active && !this.autoBlacklist.has(e));
+    /* v1.0.14 (#14 최적화) — targets.filter() 프레임당 배열 할당 → 스크래치 버퍼 재사용 */
+    const live = this.autoLiveScratch;
+    live.length = 0;
+    for (const e of targets) if (e.active && !this.autoBlacklist.has(e)) live.push(e);
     if (live.length === 0) {
       this.autoWanderTick();
       return;
@@ -10815,24 +10836,45 @@ export class WorldScene extends Phaser.Scene {
         /* v1.0.13 피드백#14 — BM 원격 궁극기 분기 복구(fam 오류로 dead code였음) + 50연타 동기화.
          *  familyOf("blademaster")==="thief"라 기존 `fam==="warrior"&&cls==="blademaster"` 분기는
          *  도달 불가(dead code)였고, 계열 공용 도적 연출로 대체돼 있었다.
-         *  계열 도적 분기보다 먼저 cls로 판정해야 한다. 로컬 궁극기 50연타 개편과 동일 리듬 동기화. */
+         *  계열 도적 분기보다 먼저 cls로 판정해야 한다. 로컬 궁극기 50연타 개편과 동일 리듬 동기화.
+         *  v1.0.14 (#11/#13) — 로컬 개편 동기화: 개전 풀 블랙아웃 200ms → 死 한자+대형 콤보 절개,
+         *  종결 직전 순간 암전(140ms)→붉은 섬광. 콤보는 원격 근사(컷마다 증가 — 판정 동기화 없음). */
         /* 블레이드마스터 — 무한 검무 50연타 근사:
-         *  가속 리듬 96→20ms · 50컷 코스메틱 · 死 한자 유령 — 판정 없음 */
-        const CUTS = 50, IV_START = 96, IV_MIN = 20;
+         *  가속 리듬 96→20ms · 50컷 코스메틱 · 死 한자 유령 — 판정 없음
+         *  LEAD 240 = 로컬 시전 전주(240ms)와 동일 — 원격 컷·종결 타임라인이 로컬과 일치 */
+        const CUTS = 50, IV_START = 96, IV_MIN = 20, LEAD = 240;
         const decay = (IV_START - IV_MIN) / (CUTS - 1);
         let racc = 0;
+        /* #13 — 콤보 카운터 (死 한자 옆 대형, 로컬과 동일 위치·톤) */
+        let rCombo: HTMLDivElement | null = null;
+        /* #11 — 개전 풀 블랙아웃 (Phaser Rectangle, 스크롤 고정 = 카메라 고정, depth 최상단) */
+        let rBlack: Phaser.GameObjects.Rectangle | null = null;
+        try {
+          const cam = this.cameras.main;
+          rBlack = this.add.rectangle(cam.width / 2, cam.height / 2, cam.width + 8, cam.height + 8, 0x000000)
+            .setScrollFactor(0).setDepth(9000).setAlpha(1);
+        } catch { rBlack = null; /* 암전 실패 — 연출만 생략 */ }
         for (let i = 0; i < CUTS; i++) {
           const t0 = racc;
           racc += Math.max(IV_MIN, IV_START - decay * i);
-          this.time.delayedCall(t0, () => {
+          this.time.delayedCall(t0 + LEAD, () => {
             const ox = (Math.random() - 0.5) * 150 * s, oy = (Math.random() - 0.5) * 90 * s;
             const a2 = Math.random() * Math.PI * 2;
             this.spawnSlash(x + ox, y + oy, new Phaser.Math.Vector2(Math.cos(a2), Math.sin(a2)), i % 2 === 0, 1.7 * s, i % 3 === 0 ? 0xff5a5a : hex);
             if (i % 4 === 0) this.spawnBurstAt(x + ox, y + oy, 6, hex);
             if (i % 12 === 0) this.doShake(60, 0.002 + (i / CUTS) * 0.004);
+            /* #13 — 콤보 갱신 — 컷마다 증가 + 펄스 (로컬과 동일 리듬) */
+            if (rCombo) {
+              rCombo.innerHTML = `${i + 1}<span style="font-size:38%;letter-spacing:1px"> HIT</span>`;
+              rCombo.style.transition = "none";
+              rCombo.style.opacity = "1";
+              rCombo.style.transform = "translate(-50%,-50%) scale(1.16)";
+              window.setTimeout(() => { if (rCombo?.isConnected) { rCombo.style.transition = "transform 150ms ease-out"; rCombo.style.transform = "translate(-50%,-50%) scale(1)"; } }, 110);
+            }
           });
         }
-        /* 死 한자 유령 — 절제 톤 (로컬과 동일 톤) */
+        /* 死 한자 유령 + 콤보 카운터 — 절제 톤 (로컬과 동일 톤·위치)
+         *  #11 — 블룸을 절개 시점(200ms)으로 이동: 블랙아웃이 걷히며 한자·콤보가 함께 뜬다 */
         try {
           const par = this.game.canvas.parentElement;
           if (par) {
@@ -10840,13 +10882,39 @@ export class WorldScene extends Phaser.Scene {
             g.textContent = "死";
             g.style.cssText = "position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(0.5);pointer-events:none;z-index:6;font-family:'Noto Serif SC','Noto Serif KR',serif;font-weight:900;font-size:min(26vh,26vw);line-height:1;color:#e01818;text-shadow:0 0 9px #ff2a2a,0 0 20px #c80000;opacity:0;transition:transform 420ms ease-out,opacity 280ms ease-out;";
             par.appendChild(g);
-            requestAnimationFrame(() => { g.style.opacity = "0.3"; g.style.transform = "translate(-50%,-50%) scale(1.04)"; });
-            window.setTimeout(() => { g.style.opacity = "0"; g.style.transform = "translate(-50%,-50%) scale(1.25)"; }, racc + 200);
-            window.setTimeout(() => { try { g.remove(); } catch { /* 무시 */ } }, racc + 900);
+            rCombo = document.createElement("div");
+            rCombo.style.cssText = "position:absolute;left:calc(50% + min(23vh,23vw));top:42%;transform:translate(-50%,-50%);pointer-events:none;z-index:6;text-align:center;font-family:'Noto Serif KR',serif;font-weight:900;font-size:min(11vh,11vw);line-height:1;color:#ff4a4a;text-shadow:0 0 12px #ff2a2a,0 0 26px #c80000,0 2px 3px #000;opacity:0;";
+            par.appendChild(rCombo);
+            window.setTimeout(() => {
+              g.style.opacity = "0.3"; g.style.transform = "translate(-50%,-50%) scale(1.04)";
+              if (rCombo) rCombo.style.opacity = "1";
+            }, 200);
+            /* 소산 — 로컬 타임라인과 동일 (한자: 종결=racc+410에 소산, 콤보: 종결+900에 소산) */
+            window.setTimeout(() => { g.style.opacity = "0"; g.style.transform = "translate(-50%,-50%) scale(1.25)"; }, racc + 410);
+            window.setTimeout(() => { try { g.remove(); } catch { /* 무시 */ } }, racc + 1300);
+            window.setTimeout(() => { if (rCombo) { rCombo.style.transition = "opacity 420ms ease-out"; rCombo.style.opacity = "0"; } }, racc + 1310);
+            window.setTimeout(() => { try { rCombo?.remove(); } catch { /* 무시 */ } rCombo = null; }, racc + 1800);
+            /* #13 — 씬 셔다운 시 DOM 즉시 수거 (맵이동 유령 방지 — 로컬과 같은 정리 경로) */
+            this.events.once("shutdown", () => {
+              try { g.remove(); } catch { /* 무시 */ }
+              try { rCombo?.remove(); } catch { /* 무시 */ }
+              rCombo = null;
+            });
           }
         } catch { /* DOM 이펙트 실패 무시 */ }
-        /* 종결 — 교차 쌍검 근사 */
-        this.time.delayedCall(racc + 60, () => {
+        /* #11 — 절개: 블랙아웃 걷힘(게임 시간 트윈, 로컬과 동일 200ms) + 최종 수거(scene.time — 씬 정리와 운명 공유) */
+        if (rBlack) {
+          this.tweens.add({ targets: rBlack, alpha: 0, duration: 240, ease: "Quad.easeOut", delay: 200 });
+          this.time.delayedCall(racc + 900, () => { try { rBlack?.destroy(); } catch { /* 무시 */ } });
+        }
+        /* #11 — 종결 직전 순간 암전(컷to 블랙, ≈140ms) → 종결과 함께 섬광 */
+        this.time.delayedCall(racc + 270, () => { if (rBlack) rBlack.setAlpha(1); });
+        /* 종결 — 교차 쌍검 근사 (로컬 종결 시점 racc+410과 동일) */
+        this.time.delayedCall(racc + 410, () => {
+          if (rBlack) {
+            this.tweens.add({ targets: rBlack, alpha: 0, duration: 150, ease: "Quad.easeOut", onComplete: () => { try { rBlack?.destroy(); } catch { /* 무시 */ } } });
+          }
+          try { this.cameras.main.flash(180, 255, 60, 60); } catch { /* 무시 */ }
           this.spawnSlashArc(x, y, face, 0xffe0e0, 3.4 * s, 320, 0.95);
           this.spawnSpinSlash(x, y, face);
           this.spawnBurstAt(x, y, 26, hex);

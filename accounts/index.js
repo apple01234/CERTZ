@@ -606,11 +606,35 @@ function rankEntries() {
   out.sort((a, b) => rankBetter(a, b) ? -1 : rankBetter(b, a) ? 1 : 0);
   return out;
 }
+/* v1.0.14 피드백#2 — 클래스키 → 계열(8 기본 직업, 2차 루트) 매핑.
+ *  src/game/classes.ts clsToBranch()의 JS 미러 (본 서버는 TS 임포트 불가 — 정적 테이블로 동기 유지).
+ *  유저 지시: 직업별 랭킹은 전직 차수(3·4차)가 아니라 계열 8개 기준 — warbringer도 berserker 계열에 합산.
+ *  1차(warrior/ranger/mage/thief)·무직은 계열 미선택(null) — 계열 필터에서 제외(전체에서만 조회). */
+const CLS_BRANCH = {
+  warrior: null, ranger: null, mage: null, thief: null,
+  berserker: "berserker", warlord: "berserker", warbringer: "berserker",
+  guardian: "guardian", paladin: "guardian", crusader: "guardian",
+  sniper: "sniper", eagleeye: "sniper", deadeye: "sniper",
+  windrunner: "windrunner", tempest: "windrunner", skylord: "windrunner",
+  archmage: "archmage", stormbringer: "archmage", arclord: "archmage",
+  sage: "sage", chronicle: "sage", eternal: "sage",
+  assassin: "assassin", nightblade: "assassin", shadowlord: "assassin",
+  swashbuckler: "swashbuckler", duelist: "swashbuckler", blademaster: "swashbuckler",
+};
+function clsToBranch(cls) {
+  const k = String(cls || "").trim().toLowerCase();
+  return Object.prototype.hasOwnProperty.call(CLS_BRANCH, k) ? CLS_BRANCH[k] : null;
+}
+
 function rankListFor(me, meName = "", job = "") {
   const all0 = rankEntries();
-  /* v1.0.13 피드백#16 — 직업별 랭킹: job(클래스키) 일치 캐릭터만 (미지정 시 전체) */
+  /* v1.0.13 피드백#16 → v1.0.14 피드백#2 — 직업별 랭킹:
+   *  ?job=는 8계열 키(2차 루트). 양변(cls·job)을 계열로 정규화해 비교하므로
+   *  3·4차 클래스키가 와도 같은 계열로 묶인다. 계열 정규가 안 되는 job(1차 키·미지 키)은
+   *  원문 그대로 cls 완전 일치 폴백 — v1.0.13 링크 호환. */
   const jk = String(job || "").trim().toLowerCase();
-  const all = jk ? all0.filter((e) => String(e.data.cls || "").toLowerCase() === jk) : all0;
+  const jb = jk ? (clsToBranch(jk) || jk) : "";
+  const all = jk ? all0.filter((e) => (clsToBranch(e.data.cls) || String(e.data.cls || "").toLowerCase()) === jb) : all0;
   const top = all.slice(0, 100).map((e, i) => ({
     rank: i + 1,
     name: e.name,

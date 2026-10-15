@@ -219,10 +219,213 @@ export function HUD({
         className="absolute right-[max(0.25rem,env(safe-area-inset-right))] top-[max(0.25rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-1 sm:top-2"
         style={{ zoom: typeof window !== "undefined" ? (window.innerWidth >= 1600 ? 1.28 : window.innerWidth >= 1280 ? 1.18 : window.innerWidth >= 1024 ? 1.08 : window.innerWidth >= 640 ? 0.92 : 0.85) : 1 }}
       >
-        {/* v1.0.13 피드백#13 — 퀘스트 트래커(+재오픈 칩)를 컬럼 첫 자식으로 이동 (버튼행보다 위)
-         *  vc149 (#15) 창 헤더 토글(#16) → vc150 (#신규4) — 퀘스트창 토글
+        {/* v1.0.14 피드백#5 — 퀘스트 트래커(+재오픈 칩)를 "더보기 버튼 아래"로 이동:
+         *  v1.0.13 피드백#13에서 컬럼 첫 자식(버튼행보다 위)으로 올렸더니
+         *  유저 지시 "퀘스트 창도 왜 더보기 위에 있음?? 더보기 밑에 있어야지??" — 버튼행·더보기
+         *  메뉴 아래(컬럼 마지막)로 재배치. 표시 조건(트래커 토글·튜토리얼 중 숨김/override)은 기존 유지.
          *  v1.4.8 (#2 공간) — 트래커 축소 · v1.1.0 (#2) — 토글로 완전 숨김/표시
          *  vc150 (#신규4) — 퀘스트창이 닫혀 있으면 다시 열 버튼이 화면에 없었다 — 열기 칩 신설 */}
+        <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
+          {/* vc147 (#22) — 우상단 자동전투(로봇) 버튼 철거: TouchControls 자동 버튼·B키와 삼중 중복.
+           *  자동전투 진입점은 좌하단 클러스터 버튼 + B키(키맵 재배치 가능)로 통일. */}
+          {/* vc149 (#15) — 소리 버튼 더보기 안으로 이동 */}
+          {/* v1.3.0 (#2) — HUD ☰ 버튼 제거 (유저 지시 "선 3개 짜리 ui저거 없애").
+           *  메뉴 나가기 기능은 설정(⚙) → 메뉴 화면 카드로 이동 — 기능 유지, UI 간소화 */}
+          <button
+            onClick={onOpenInv}
+            aria-label={`가방 열기 (${km.bag})`}
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8e0ff] active:scale-95"
+          >
+            <Backpack size={17} />
+            {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 (aria-label엔 키가 이미 포함됨) */}
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">가방</span>
+          </button>
+          {/* v1.0.14 피드백#3 — 퀘스트·콘텐츠 아이콘을 더보기 안에서 꺼내 가방 오른쪽 상단 상시 노출
+           *  (유저 지시 "퀘스트, 콘텐츠 아이콘 더보기 안에가 아닌 위에(가방 아이콘 오른쪽) 배치해")
+           *  v1.0.13 피드백#18 — 단축키→기능명 배지 컨벤션 유지. 좁은 화면은 기존 flex-wrap이
+           *  자동 줄바꿈하므로 앵커/zoom 시스템 변경 없이 겹침 없이 수용된다 */}
+          <button
+            onClick={onOpenQuest}
+            aria-label={`퀘스트 로그 열기 (${km.quest})`}
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
+          >
+            <ListChecks size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">퀘스트</span>
+          </button>
+          <button
+            onClick={onOpenContent}
+            aria-label="콘텐츠 열기 (심연의 탑/일일 시련/제작/심연 상점/환생)"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d0b0ff] active:scale-95"
+          >
+            <Swords size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-purple-300/80">콘텐츠</span>
+          </button>
+          {jobAvail && (
+            <button
+              onClick={onOpenJob}
+              aria-label={`전직 열기 (${km.job})`}
+              className={`pointer-events-auto relative flex h-9 items-center justify-center transition-transform active:scale-95 ${
+                canJob
+                  ? "game-btn w-9"
+                  : "game-chip w-9 text-white/70"
+              }`}
+            >
+              <Sparkles size={17} />
+              <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${canJob ? "text-amber-200" : "text-white/50"}`}>전직</span>
+            </button>
+          )}
+          {/* vc149 (#15) — 스탯 버튼 더보기 안으로 이동 */}
+          {/* vc145 (#8) — 캐릭터 선택 바로가기 (vc149 #17 — 더보기가 설정 바로 왼쪽) */}
+          <button
+            onClick={() => { audio.sfx.uiClick(); EventBus.emit("rpg:exitMenu", { lobby: true }); }}
+            aria-label="캐릭터 선택 화면으로 바로 이동"
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
+          >
+            <UserRoundPen size={17} />
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">캐릭</span>
+          </button>
+          {/* v1.4.0 (#17) — 보스·혜택·유니온·거래소·랭킹 등 2선 버튼은 “더보기” 안
+           *  (v1.0.14 피드백#3 — 퀘스트 로그·콘텐츠는 가방 오른쪽 상단 행으로 재이동) */}
+          {/* v1.4.0 — 더보기 토글 (vc149 #17 — 설정 바로 왼쪽) */}
+          <button
+            onClick={() => setMoreOpen((v) => !v)}
+            aria-label={moreOpen ? "부가 창 접기" : "부가 창 더보기"}
+            className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
+              moreOpen
+                ? "rounded-lg border-2 border-amber-300/70 bg-gradient-to-b from-amber-500/80 to-amber-700/80 text-amber-100"
+                : "game-chip text-white/70"
+            }`}
+          >
+            <Ellipsis size={17} />
+            <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${moreOpen ? "text-amber-200" : "text-white/50"}`}>더보기</span>
+          </button>
+          <button
+            onClick={onOpenOpt}
+            aria-label={`설정/키 매핑 열기 (${km.opt})`}
+            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
+          >
+            <Settings size={17} />
+            {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 */}
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">설정</span>
+          </button>
+        </div>
+        {/* v1.4.0 (#17) — 접힌 2선 창 버튼 행 (더보기 열림 시만)
+         *  v1.0.14 피드백#3 — 퀘스트·콘텐츠는 더보기 밖(가방 오른쪽)으로 이동 */}
+        {moreOpen && (
+          <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5 rounded-lg border border-amber-200/20 bg-black/45 p-1">
+            {/* vc149 (#15) — 소리/스탯을 더보기 안으로 이동 (우상단 버튼 행 간소화) */}
+            <button
+              onClick={onToggleMute}
+              aria-label={muted ? "소리 켜기" : "소리 끄기"}
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/90 active:scale-95"
+            >
+              {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">소리</span>
+            </button>
+            <button
+              onClick={onOpenStat}
+              aria-label={`스탯 창 열기 (${km.stat})`}
+              className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
+                hud.ap > 0
+                  ? "animate-pulse rounded-lg border-2 border-lime-300/70 bg-gradient-to-b from-lime-500/80 to-emerald-700/80 text-lime-100"
+                  : "game-chip text-white/70"
+              }`}
+            >
+              <Gauge size={17} />
+              {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 */}
+              <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>스탯</span>
+            </button>
+            {/* v1.0.14 피드백#3 — 퀘스트 로그 버튼은 가방 오른쪽 상단 행으로 이동 (위 참조) */}
+            {/* v1.4.12 (#16) — 이그니의 UI 안내: 각 UI가 무슨 기능을 하는지 궁금할 때 */}
+            <button
+              onClick={onOpenGuide}
+              aria-label="이그니의 UI 기능 안내 열기"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8f0d0] active:scale-95"
+            >
+              <HelpCircle size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">도움</span>
+            </button>
+            <button
+              onClick={onOpenBoss}
+              aria-label="보스 재도전 창 열기"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffb0b0] active:scale-95"
+            >
+              <Crown size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-rose-300/80">보스</span>
+            </button>
+            <button
+              onClick={onOpenBenefit}
+              aria-label="혜택 열기 (출석부/일일 퀘스트/쿠폰)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#b8f0a0] active:scale-95"
+            >
+              <Gift size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/80">혜택</span>
+            </button>
+            {/* v1.0.14 피드백#3 — 콘텐츠 버튼은 가방 오른쪽 상단 행으로 이동 (위 참조) */}
+            <button
+              onClick={onOpenUnion}
+              aria-label="유니온 열기 (캐릭터 배치/상점/레이드)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
+            >
+              <Users size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-indigo-300/90">유니온</span>
+            </button>
+            <button
+              onClick={onOpenTrade}
+              aria-label="유저 거래소 열기 (보스 드롭 사고팔기)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9be8dd] active:scale-95"
+            >
+              <Repeat size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
+            </button>
+            {/* v1.4.29 (#멀티입구복원) — v1.4.24에 철거됐던 파티 입구 복원:
+             *  vc134(공개 릴레이 멀티 복원)로 채팅·파티·공동 토벌전이 다시 동작하므로
+             *  죽은 기능의 입구가 아니라 실제 동작하는 멀티 콘텐츠 입구 (Y키 단축키 동일) */}
+            <button
+              onClick={() => { audio.sfx.uiClick(); EventBus.emit("party:toggle"); }}
+              aria-label="파티 창 열기 (Y)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8c8ff] active:scale-95"
+            >
+              <UsersRound size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-sky-300/90">파티</span>
+            </button>
+            {/* v1.4.30 (#9 클래스룸) — 수업용 대규모 협동 미니게임 입구 (L키 단축키 동일) */}
+            <button
+              onClick={() => { audio.sfx.uiClick(); EventBus.emit("classroom:toggle"); }}
+              aria-label="클래스룸(교실 모드) 열기 (L)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#8fe8b0] active:scale-95"
+            >
+              <GraduationCap size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">교실</span>
+            </button>
+            <button
+              onClick={onOpenRank}
+              aria-label="랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffe08a] active:scale-95"
+            >
+              <Trophy size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
+            </button>
+            <button
+              onClick={() => { audio.sfx.uiClick(); EventBus.emit("friends:toggle"); }}
+              aria-label={`친구 창 열기 (${km.friends})`}
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9fe8c0] active:scale-95"
+            >
+              <UserRound size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">친구</span>
+            </button>
+            <button
+              onClick={() => { audio.sfx.uiClick(); EventBus.emit("ui:authOpen", {}); }}
+              aria-label="계정 창 열기 (클라우드 세이브)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d3c4ff] active:scale-95"
+            >
+              <KeyRound size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-violet-300/90">계정</span>
+            </button>
+          </div>
+        )}
+        {/* v1.0.14 피드백#5 — 퀘스트 트래커(+재오픈 칩): 더보기 버튼이 있는 버튼행·더보기 메뉴
+         *  "아래"에 위치 (컬럼 마지막 자식). 위 주석 참조 */}
         {!trackerOpen && (
           <button
             onClick={toggleTracker}
@@ -290,199 +493,6 @@ export function HUD({
             </>
           </div>
         )}
-        <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
-          {/* vc147 (#22) — 우상단 자동전투(로봇) 버튼 철거: TouchControls 자동 버튼·B키와 삼중 중복.
-           *  자동전투 진입점은 좌하단 클러스터 버튼 + B키(키맵 재배치 가능)로 통일. */}
-          {/* vc149 (#15) — 소리 버튼 더보기 안으로 이동 */}
-          {/* v1.3.0 (#2) — HUD ☰ 버튼 제거 (유저 지시 "선 3개 짜리 ui저거 없애").
-           *  메뉴 나가기 기능은 설정(⚙) → 메뉴 화면 카드로 이동 — 기능 유지, UI 간소화 */}
-          <button
-            onClick={onOpenInv}
-            aria-label={`가방 열기 (${km.bag})`}
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8e0ff] active:scale-95"
-          >
-            <Backpack size={17} />
-            {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 (aria-label엔 키가 이미 포함됨) */}
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">가방</span>
-          </button>
-          {jobAvail && (
-            <button
-              onClick={onOpenJob}
-              aria-label={`전직 열기 (${km.job})`}
-              className={`pointer-events-auto relative flex h-9 items-center justify-center transition-transform active:scale-95 ${
-                canJob
-                  ? "game-btn w-9"
-                  : "game-chip w-9 text-white/70"
-              }`}
-            >
-              <Sparkles size={17} />
-              <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${canJob ? "text-amber-200" : "text-white/50"}`}>전직</span>
-            </button>
-          )}
-          {/* vc149 (#15) — 스탯 버튼 더보기 안으로 이동 */}
-          {/* vc145 (#8) — 캐릭터 선택 바로가기 (vc149 #17 — 더보기가 설정 바로 왼쪽) */}
-          <button
-            onClick={() => { audio.sfx.uiClick(); EventBus.emit("rpg:exitMenu", { lobby: true }); }}
-            aria-label="캐릭터 선택 화면으로 바로 이동"
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
-          >
-            <UserRoundPen size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">캐릭</span>
-          </button>
-          {/* v1.4.0 (#17) — 퀘스트 로그(J)·보스·혜택·콘텐츠·유니온·거래소·랭킹은 “더보기” 안으로 이동 */}
-          {/* v1.4.0 — 더보기 토글 (vc149 #17 — 설정 바로 왼쪽) */}
-          <button
-            onClick={() => setMoreOpen((v) => !v)}
-            aria-label={moreOpen ? "부가 창 접기" : "부가 창 더보기"}
-            className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
-              moreOpen
-                ? "rounded-lg border-2 border-amber-300/70 bg-gradient-to-b from-amber-500/80 to-amber-700/80 text-amber-100"
-                : "game-chip text-white/70"
-            }`}
-          >
-            <Ellipsis size={17} />
-            <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${moreOpen ? "text-amber-200" : "text-white/50"}`}>더보기</span>
-          </button>
-          <button
-            onClick={onOpenOpt}
-            aria-label={`설정/키 매핑 열기 (${km.opt})`}
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
-          >
-            <Settings size={17} />
-            {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 */}
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">설정</span>
-          </button>
-        </div>
-        {/* v1.4.0 (#17) — 접힌 2선 창 버튼 행 (더보기 열림 시만) */}
-        {moreOpen && (
-          <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5 rounded-lg border border-amber-200/20 bg-black/45 p-1">
-            {/* vc149 (#15) — 소리/스탯을 더보기 안으로 이동 (우상단 버튼 행 간소화) */}
-            <button
-              onClick={onToggleMute}
-              aria-label={muted ? "소리 켜기" : "소리 끄기"}
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/90 active:scale-95"
-            >
-              {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">소리</span>
-            </button>
-            <button
-              onClick={onOpenStat}
-              aria-label={`스탯 창 열기 (${km.stat})`}
-              className={`pointer-events-auto relative flex h-9 w-9 items-center justify-center transition-colors active:scale-95 ${
-                hud.ap > 0
-                  ? "animate-pulse rounded-lg border-2 border-lime-300/70 bg-gradient-to-b from-lime-500/80 to-emerald-700/80 text-lime-100"
-                  : "game-chip text-white/70"
-              }`}
-            >
-              <Gauge size={17} />
-              {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 */}
-              <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>스탯</span>
-            </button>
-            <button
-              onClick={onOpenQuest}
-              aria-label={`퀘스트 로그 열기 (${km.quest})`}
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
-            >
-              <ListChecks size={17} />
-              {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 */}
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">퀘스트</span>
-            </button>
-            {/* v1.4.12 (#16) — 이그니의 UI 안내: 각 UI가 무슨 기능을 하는지 궁금할 때 */}
-            <button
-              onClick={onOpenGuide}
-              aria-label="이그니의 UI 기능 안내 열기"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8f0d0] active:scale-95"
-            >
-              <HelpCircle size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">도움</span>
-            </button>
-            <button
-              onClick={onOpenBoss}
-              aria-label="보스 재도전 창 열기"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffb0b0] active:scale-95"
-            >
-              <Crown size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-rose-300/80">보스</span>
-            </button>
-            <button
-              onClick={onOpenBenefit}
-              aria-label="혜택 열기 (출석부/일일 퀘스트/쿠폰)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#b8f0a0] active:scale-95"
-            >
-              <Gift size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/80">혜택</span>
-            </button>
-            <button
-              onClick={onOpenContent}
-              aria-label="콘텐츠 열기 (심연의 탑/일일 시련/제작/심연 상점/환생)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d0b0ff] active:scale-95"
-            >
-              <Swords size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-purple-300/80">콘텐츠</span>
-            </button>
-            <button
-              onClick={onOpenUnion}
-              aria-label="유니온 열기 (캐릭터 배치/상점/레이드)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
-            >
-              <Users size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-indigo-300/90">유니온</span>
-            </button>
-            <button
-              onClick={onOpenTrade}
-              aria-label="유저 거래소 열기 (보스 드롭 사고팔기)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9be8dd] active:scale-95"
-            >
-              <Repeat size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
-            </button>
-            {/* v1.4.29 (#멀티입구복원) — v1.4.24에 철거됐던 파티 입구 복원:
-             *  vc134(공개 릴레이 멀티 복원)로 채팅·파티·공동 토벌전이 다시 동작하므로
-             *  죽은 기능의 입구가 아니라 실제 동작하는 멀티 콘텐츠 입구 (Y키 단축키 동일) */}
-            <button
-              onClick={() => { audio.sfx.uiClick(); EventBus.emit("party:toggle"); }}
-              aria-label="파티 창 열기 (Y)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8c8ff] active:scale-95"
-            >
-              <UsersRound size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-sky-300/90">파티</span>
-            </button>
-            {/* v1.4.30 (#9 클래스룸) — 수업용 대규모 협동 미니게임 입구 (L키 단축키 동일) */}
-            <button
-              onClick={() => { audio.sfx.uiClick(); EventBus.emit("classroom:toggle"); }}
-              aria-label="클래스룸(교실 모드) 열기 (L)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#8fe8b0] active:scale-95"
-            >
-              <GraduationCap size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">교실</span>
-            </button>
-            <button
-              onClick={onOpenRank}
-              aria-label="랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffe08a] active:scale-95"
-            >
-              <Trophy size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
-            </button>
-            <button
-              onClick={() => { audio.sfx.uiClick(); EventBus.emit("friends:toggle"); }}
-              aria-label={`친구 창 열기 (${km.friends})`}
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9fe8c0] active:scale-95"
-            >
-              <UserRound size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">친구</span>
-            </button>
-            <button
-              onClick={() => { audio.sfx.uiClick(); EventBus.emit("ui:authOpen", {}); }}
-              aria-label="계정 창 열기 (클라우드 세이브)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d3c4ff] active:scale-95"
-            >
-              <KeyRound size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-violet-300/90">계정</span>
-            </button>
-          </div>
-        )}
-        {/* v1.0.13 피드백#13 — 퀘스트 트래커는 컬럼 첫 자식으로 이동 (위 참조) */}
       </div>
     </>
   );

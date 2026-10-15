@@ -324,7 +324,9 @@ async function getWithRetry(path: string): Promise<{ ok: boolean; status: number
 export async function fetchRanking(opts?: { job?: string }): Promise<{ ok: boolean; error?: string; state?: RankState }> {
   /* v1.0.13 피드백#7/#16 — 캐릭터별 랭킹:
    *  · me=<현재 캐릭터명> 동봉 → 서버가 캐릭터 단위 목록에서 "내 순위"를 정확히 매칭
-   *  · job=<클래스키> → 직업별 랭킹 (미지정 시 전체 — 구버전 서버도 쿼리 무시하며 호환) */
+   *  · job=<계열키> → 직업별 랭킹 (미지정 시 전체 — 구버전 서버도 쿼리 무시하며 호환)
+   *    v1.0.14 피드백#2 — job은 8계열 키(berserker/guardian/sniper/windrunner/archmage/sage/
+   *    assassin/swashbuckler). 서버가 cls를 계열로 정규화하므로 3·4차 캐릭도 계열 랭킹에 합산. */
   const qs: string[] = [];
   try {
     /* 현재 캐릭터 이름 — 활성 세이브의 playerName 우선, 없으면 전역 이름.

@@ -604,7 +604,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setScale(sx * 1.16, sy * 0.84);
     this.scene.tweens.add({ targets: this, scaleX: sx, scaleY: sy, duration: 110, ease: "Back.out" });
     if (this.hpBarBg === null) {
-      this.hpBarBg = this.scene.add.rectangle(this.x, this.y, 26, 4, 0x22262e).setDepth(20);
+      /* v1.0.14 (#6) — 체력바 판(어두운 네모) 살짝 반투명화: 불투명 판이 몬스터 위에
+       *  "스티커"처럼 붙어 보이던 이질감 완화 (유령 판 잔존 자체는 destroy 훅으로 원천 차단) */
+      this.hpBarBg = this.scene.add.rectangle(this.x, this.y, 26, 4, 0x22262e).setDepth(20).setAlpha(0.88);
       this.hpBar = this.scene.add.rectangle(this.x, this.y, 24, 2, 0xe84a5a).setDepth(21);
     }
     if (this.hp <= 0) this.die();
@@ -643,8 +645,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const scene = this.scene;
     scene.time.delayedCall(60, () => {
       if (!scene.scene.isActive()) return;
-      scene.onEnemyKilled(this.def.key, exp, sx, sy, this); // v3.0.22 (#46) — 죽은 개체 참조 전달
-      this.destroy();
+      /* v1.0.14 (#7) — onEnemyKilled이 어떤 예외를 던져도 시체가 남지 않게 finally 보장.
+       *  기존엔 킬 처리 도중 예외 시 this.destroy()가 스킵돼 스프라이트가 alive=false 채로
+       *  화면에 영구 잔존했다 ("몬스터를 죽이고 스프라이트가 남아있는" 버그). */
+      try {
+        scene.onEnemyKilled(this.def.key, exp, sx, sy, this); // v3.0.22 (#46) — 죽은 개체 참조 전달
+      } catch (e) {
+        console.error("[SERTZ] onEnemyKilled 처리 예외 — 시체 정리는 계속", e);
+      } finally {
+        this.destroy();
+      }
     });
   }
 
@@ -658,9 +668,26 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.clearTint();
   }
 
+  /* v1.0.14 (#6/#7) — 파괴 시 HP바 동반 정리 (이중 안전망).
+   *  hpBar/hpBarBg는 스프라이트와 별개 씬 오브젝트라 destroy()만으로는 안 없어진다.
+   *  이 오버라이드로 "어떤 경로로 파괴되든" 유령 체력바(어두운 판 26×4 = 유저가 본
+   *  "검은색 네모 이펙트")가 남는 일을 원천 차단한다. die()의 선정리와 중복돼도
+   *  null 가드로 무해 (이중 destroy는 Phaser가 no-op 처리). */
+  destroy(fromScene?: boolean) {
+    if (this.hpBar) {
+      this.hpBar.destroy();
+      this.hpBar = null;
+    }
+    if (this.hpBarBg) {
+      this.hpBarBg.destroy();
+      this.hpBarBg = null;
+    }
+    super.destroy(fromScene);
+  }
+
+  /* v1.0.14 (#7) — 즉시 정리 통로. HP바 정리는 destroy() 오버라이드로 일원화돼
+   *  이 메서드는 그냥 destroy() 위임 — WorldScene의 웨이브/층 정리 4곳이 쓰는 표면. */
   destroyAll() {
-    if (this.hpBar) this.hpBar.destroy();
-    if (this.hpBarBg) this.hpBarBg.destroy();
     this.destroy();
   }
 }

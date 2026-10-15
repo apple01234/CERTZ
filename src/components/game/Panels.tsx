@@ -12,7 +12,7 @@ import {
   closetThemeOf, CLOSET_THEMES, isPremiumPet, // v1.2.1 (#3) — 프리미엄 펫 특전 판정
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
-import { CLASS_LIST, CLASSES, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
+import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
 import { getPlayerName, loadSave, mutateFriends, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도 / v1.0.13 피드백#12 — 친구 추가( FriendsWidget 동일 스토어 API)
@@ -2815,7 +2815,7 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-black/50">
             <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-200 transition-[width]" style={{ width: `${Math.min(100, (p.lvXp / PASS_LV_XP) * 100)}%` }} />
           </div>
-          <p className="mt-1 text-[9px] text-white/40">XP 획득: 토벌 +1 · 보스 +30 · 일일 퀘스트 수령 +40 · 게이트 웨이브×2 · 시즌 미션 수령</p>
+          <p className="mt-1 text-[9px] text-white/40">XP 획득: 토벌 +1 · 보스 +30 · 일일 퀘스트 수령 +40 · 바르가 수비전(게이트) 웨이브×2 · 시즌 미션 수령</p>
         </div>
 
         {/* v1.0.1 — 시즌 미션 (일일/주간 리텐션 보드 — 수령 시 패스 XP) */}
@@ -3398,7 +3398,7 @@ const GUIDE_SECTIONS: { area: string; icon: string; items: { name: string; desc:
     area: "게임 안의 오브젝트",
     icon: "🗺️",
     items: [
-      { name: "미니맵 (상단 중앙)", desc: "빈 점=나, 빨간 점=적, 금색 점=퀘스트 목표, 보라 점=차원문." },
+      { name: "미니맵 (하단 중앙)", desc: "빈 점=나, 빨간 점=적, 금색 점=퀘스트 목표, 보라 점=차원문." },
       { name: "차원문 (소용돌이)", desc: "다음 지역으로 이동. 보라가 전진, 청록이 복귀 — 자동전투 중에도 탈 수 있어." },
       { name: "상인 라고스", desc: "마을 상점 NPC. 물약·장비 구매와 잡템 판매가 가능해." },
       { name: "샘물 우물", desc: "가까이 가면 HP/MP가 완전히 회복된다. 마을의 무료 회복 지점!" },
@@ -3779,12 +3779,15 @@ export function RankingPanel({ onClose }: { rpg: RpgState; onClose: () => void }
   );
 }
 
-/* v1.0.13 피드백#16 — 직업별 랭킹 필터 목록 (전체 + 전체 클래스키 → 한글명).
- *  classes.ts CLASSES를 재사용(이미 임포트 — 번들 추가 비용 0). cls 필드값 = 클래스키 그대로라
- *  서버 ?job=<키> 완전 일치 필터와 1:1 대응된다. */
+/* v1.0.14 피드백#2 — 직업별 랭킹 필터를 "계열(8 기본 직업)" 기준으로 재정의.
+ *  유저 지시: "직업 별로 기준이 전직 차수 직업 포함이 아니라 계열 즉 총 8개의 직업들 중 랭킹을 계산해" —
+ *  기존의 전직 차수(3·4차) 클래스 칩 25종을 폐지하고 8계열(2차 루트) 칩만 노출한다.
+ *  서버(sapi.ts rankListFor·accounts/index.js)가 캐릭터 cls를 계열로 정규화해 집계하므로
+ *  워로드/워브링어 같은 상위 전직 캐릭도 소속 계열(예: 버서커) 랭킹에 함께 표시된다.
+ *  칩 key = ?job= 값 (classes.ts BRANCH_KEYS — 1차/미전직은 계열 미선택이라 "전체"에서만 조회). */
 const JOB_FILTERS: { key: string; name: string }[] = [
   { key: "", name: "전체" },
-  ...Object.values(CLASSES).map((c) => ({ key: String(c.key), name: c.name })),
+  ...BRANCH_KEYS.map((k) => ({ key: String(k), name: CLASSES[k].name })),
 ];
 
 function KingdomRankTab() {
@@ -3859,7 +3862,8 @@ function KingdomRankTab() {
         </button>
       </div>
 
-      {/* v1.0.13 피드백#16 — 직업별 랭킹 선택행 (전체 + 클래스키·한글명) — 전환 시 ?job= 재조회 */}
+      {/* v1.0.14 피드백#2 — 직업별 랭킹 선택행 (전체 + 8계열·한글명) — 전환 시 ?job= 재조회
+       *  (리스트 배지는 캐릭터의 실제 클래스 한글명 — 계열 필터 안에서도 전직 차수 식별 가능) */}
       <div className="mb-2 flex flex-wrap items-center justify-end gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-1.5 py-1.5">
         {JOB_FILTERS.map((jf) => (
           <button
@@ -5230,7 +5234,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                 );
               })}
             </div>
-            <p className="mt-2 text-[10px] text-white/40">뽑기권 획득: 출석부 · 일일 퀘스트 · 게이트 정산 · GM 무료 뽑기(10분)</p>
+            <p className="mt-2 text-[10px] text-white/40">뽑기권 획득: 출석부 · 일일 퀘스트 · 바르가 수비전 정산 · GM 무료 뽑기(10분)</p>
           </div>
         )}
 
@@ -5270,6 +5274,9 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
         {tab === "rune" && (
           <div>
             <p className="mb-2 text-[11px] font-bold text-white/60">룬 슬롯 4개 — 같은 룬 {RUNE_SYNTH_COST}개를 합성하면 상위 티어</p>
+            {/* v1.0.14 피드백#12 — 룬 획득 경로를 "게이트 웨이브"라는 낯선 이름 대신
+             *  실제 콘텐츠명(바르가 수비전) + 실제 입장 위치(혜택 패널 티켓 카드)로 정확히 안내 */}
+            <p className="mb-2 text-[10px] leading-relaxed text-white/45">룬 획득: 바르가 수비전 웨이브 클리어 드롭(확률) · 조각 상점 교환(하단) — 수비전 입장은 혜택(🎁) 패널의 티켓 카드에서!</p>
             <div className="mb-2 grid grid-cols-4 gap-1.5">
               {[0, 1, 2, 3].map((s) => {
                 const k = ik?.runeSlots?.[s] ?? null;
@@ -5295,13 +5302,41 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                   <span className="text-base">{RUNE_META[kind].icon}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-black" style={{ color: RUNE_META[kind].color }}>{RUNE_META[kind].name} <span className="text-white/40">({RUNE_META[kind].stat === "atk" ? "공격" : RUNE_META[kind].stat === "def" ? "방어" : RUNE_META[kind].stat === "crit" ? "크리" : "HP"})</span></p>
-                    <p className="truncate text-[9px] text-white/45">{tiers.length ? tiers.map((x) => `T${x.t}×${x.n}`).join(" · ") : "보유 없음 — 게이트 웨이브 보상/조각 상점"}</p>
+                    <p className="truncate text-[9px] text-white/45">{tiers.length ? tiers.map((x) => `T${x.t}×${x.n}`).join(" · ") : "보유 없음 — 바르가 수비전 웨이브 드롭(확률) · 조각 상점(하단)"}</p>
                   </div>
                   <button onClick={() => EventBus.emit("rpg:isekai", { action: "runeSynth", key: kind })} className={`rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${canSynth ? "border-purple-300/60 bg-purple-400/20 text-purple-100" : "border-white/10 bg-white/[0.03] text-white/35"}`}>합성</button>
                   <button onClick={() => EventBus.emit("rpg:isekai", { action: "runeEquip", key: kind + "#" + (tiers.length ? Math.max(...tiers.filter((x) => x.n > 0).map((x) => x.t)) : 1), slot: (ik?.runeSlots ?? [null, null, null, null]).indexOf(null) >= 0 ? (ik?.runeSlots ?? []).indexOf(null) : 0 })} className="rounded-lg border border-white/15 bg-white/[0.05] px-2 py-1 text-[10px] font-black text-white/80 active:scale-95">장착</button>
                 </div>
               );
             })}
+
+            {/* v1.0.14 피드백#12 — 조각 상점 UI 복원:
+             *  룬 안내가 "조각 상점"을 가리키고 있었는데 정작 상점 UI는 유실되어 있었다
+             *  (WorldScene shardBuy 핸들러는 멀쩡히 존재 — rpg:isekai { action:"shardBuy", id })
+             *  룬 획득 경로 중 하나인 만큼 룬 탭 하단에 원래 의도대로 복원한다 */}
+            <div className="mt-2.5 rounded-lg border border-amber-300/25 bg-amber-400/[0.06] px-2.5 py-2">
+              <p className="text-[11px] font-black text-amber-200">조각 상점 <span className="ml-1 text-[9px] font-bold text-white/50">피규어 조각 {shards}개 보유</span></p>
+              <div className="mt-1.5 grid gap-1">
+                {SHARD_SHOP.map((s) => {
+                  const can = shards >= s.cost;
+                  return (
+                    <div key={s.id} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[10px] font-black text-white">{s.name}</p>
+                        <p className="truncate text-[8.5px] text-white/45">{s.desc}</p>
+                      </div>
+                      <button
+                        disabled={!can}
+                        onClick={() => EventBus.emit("rpg:isekai", { action: "shardBuy", id: s.id })}
+                        className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-black active:scale-95 ${can ? "border-amber-300/60 bg-amber-400/20 text-amber-100" : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/30"}`}
+                      >
+                        조각 {s.cost}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
@@ -5538,29 +5573,54 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
           })}
         </div>
 
-        {/* 티켓 현황 + 콘텐츠 입구 — v1.0.1 재충전 버튼 추가 */}
+        {/* 티켓 현황 + 콘텐츠 입구 — v1.0.1 재충전 버튼 추가
+         *  v1.0.14 피드백#12 — 진입로 수리: "게이트 웨이브 보상으로 룬을 얻을 수 있다는데 게이트 웨이브가 어디있음??"
+         *  → 바르가 수비전(게이트 웨이브) 콘텐츠는 실존(WorldScene buildGate/spawnGateWave — 웨이브 클리어시
+         *    40% 확률로 룬 T1 드롭)하는데 일반 유저용 입장 버튼이 없었었다(GM 패널 전용).
+         *  티켓 카드에 [입장] 버튼을 추가해 유일하게 연결된 enterGate()/enterCloset() 경로(rpg:gm gate/closet —
+         *  씬이 티켓 소모·중복 입장 방지까지 자체 검증)를 그대로 열어준다. WorldScene 수정 없는 UI-only 수리. */}
         <div className="mb-2.5 grid grid-cols-2 gap-1.5">
           <div className="rounded-lg border border-violet-300/30 bg-violet-400/10 px-2 py-1.5 text-center">
             <p className="text-[9px] font-bold text-white/50">바르가 수비전 티켓</p>
             <p className="text-sm font-black text-violet-200">{ik?.tickets?.gate ?? 0}/3 남음</p>
-            <button
-              disabled={(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3}
-              onClick={() => EventBus.emit("rpg:ticketRefill", { kind: "gate" })}
-              className={`mt-1 w-full rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-violet-400 text-slate-900 hover:bg-violet-300"}`}
-            >
-              재충전 +1 (3💎 · {(rpg.ticketRefillsLeft ?? 0)}회)
-            </button>
+            <div className="mt-1 flex gap-1">
+              <button
+                disabled={(ik?.tickets?.gate ?? 0) <= 0}
+                onClick={() => EventBus.emit("rpg:gm", { type: "gate" })}
+                title={(ik?.tickets?.gate ?? 0) <= 0 ? "오늘 티켓 소진 — 재충전하거나 내일 다시!" : "바르가 수비전(웨이브 디펜스) 입장 — 웨이브 클리어마다 룬 드롭 기회!"}
+                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(ik?.tickets?.gate ?? 0) <= 0 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-violet-400 text-slate-900 hover:bg-violet-300"}`}
+              >
+                🚪 입장
+              </button>
+              <button
+                disabled={(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3}
+                onClick={() => EventBus.emit("rpg:ticketRefill", { kind: "gate" })}
+                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-violet-400 text-slate-900 hover:bg-violet-300"}`}
+              >
+                재충전 (3💎 · {(rpg.ticketRefillsLeft ?? 0)}회)
+              </button>
+            </div>
           </div>
           <div className="rounded-lg border border-lime-300/30 bg-lime-400/10 px-2 py-1.5 text-center">
             <p className="text-[9px] font-bold text-white/50">균열 던전 티켓</p>
             <p className="text-sm font-black text-lime-200">{ik?.tickets?.closet ?? 0}/2 남음</p>
-            <button
-              disabled={(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3}
-              onClick={() => EventBus.emit("rpg:ticketRefill", { kind: "closet" })}
-              className={`mt-1 w-full rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-lime-400 text-slate-900 hover:bg-lime-300"}`}
-            >
-              재충전 +1 (3💎 · {(rpg.ticketRefillsLeft ?? 0)}회)
-            </button>
+            <div className="mt-1 flex gap-1">
+              <button
+                disabled={(ik?.tickets?.closet ?? 0) <= 0}
+                onClick={() => EventBus.emit("rpg:gm", { type: "closet" })}
+                title={(ik?.tickets?.closet ?? 0) <= 0 ? "오늘 티켓 소진 — 재충전하거나 내일 다시!" : "균열 던전(60초 파밍) 입장"}
+                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(ik?.tickets?.closet ?? 0) <= 0 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-lime-400 text-slate-900 hover:bg-lime-300"}`}
+              >
+                👕 입장
+              </button>
+              <button
+                disabled={(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3}
+                onClick={() => EventBus.emit("rpg:ticketRefill", { kind: "closet" })}
+                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-lime-400 text-slate-900 hover:bg-lime-300"}`}
+              >
+                재충전 (3💎 · {(rpg.ticketRefillsLeft ?? 0)}회)
+              </button>
+            </div>
           </div>
         </div>
 
