@@ -25,6 +25,11 @@ export type TokenRec = { userId: string; expiresAt: number };
 export type SaveRec = { data: Record<string, unknown>; updatedAt: number; chars?: Record<string, Record<string, unknown>> };
 export type ListingRec = { id: string; seller: string; sellerName: string; itemKey: string; up: number; price: number; qty?: number; ts: number };
 export type PayoutRec = { gold: number; count: number };
+/** v1.0.13 피드백#8 — 전역 닉네임 레지스트리 레코드.
+ *  주의: node 서버(accounts/index.js)와 같은 SZBK1 백업 파일(db-backup/accounts.enc)을 공유하므로
+ *  값 형태를 node({by, at, kind})와 다르게 쓰면 node의 nickTaken(reg.by)이 오판한다.
+ *  읽기 정규화에서 구형/이형 값(문자열 uid)은 node 호환 형태로 흡수한다. */
+export type CharNameRec = { by: string; at: number; kind?: string };
 export type DbShape = {
   users: Record<string, UserRec>;
   tokens: Record<string, TokenRec>;
@@ -32,10 +37,12 @@ export type DbShape = {
   market: { nextId: number; listings: Record<string, ListingRec> };
   payouts: Record<string, PayoutRec>;
   rank: Record<string, unknown>;
+  /** v1.0.13 피드백#8 — 닉네임 중복 방지 (이름(소문자) → 소유 레코드). node db.charNames와 동일 */
+  charNames?: Record<string, CharNameRec>;
 };
 
 function emptyDb(): DbShape {
-  return { users: {}, tokens: {}, saves: {}, market: { nextId: 1, listings: {} }, payouts: {}, rank: {} };
+  return { users: {}, tokens: {}, saves: {}, market: { nextId: 1, listings: {} }, payouts: {}, rank: {}, charNames: {} };
 }
 
 /* ---------------- 환경 ---------------- */
@@ -135,6 +142,18 @@ function normalizeDb(db: DbShape): DbShape {
   db.market.listings ||= {};
   db.payouts ||= {};
   db.rank ||= {};
+  /* v1.0.13 피드백#8 — 닉네임 레지스트리 기본값 + node 호환 형태 정규화.
+   *  문자열 uid(이형 값)는 {by, at, kind}로 승격, 소유자 없는 항목은 제거. */
+  db.charNames ||= {};
+  for (const [k, raw] of Object.entries(db.charNames)) {
+    const v = raw as unknown;
+    if (typeof v === "string") {
+      if (v) db.charNames[k] = { by: v, at: 0, kind: "char" };
+      else delete db.charNames[k];
+    } else if (!v || typeof (v as CharNameRec).by !== "string" || !(v as CharNameRec).by) {
+      delete db.charNames[k];
+    }
+  }
   /* v1.0.2 계승 — env 관리자 목록 동기화(롤 자동 승격/회수) */
   for (const u of Object.values(db.users)) {
     const shouldAdmin = ADMIN_USERS.includes(String(u.id || "").toLowerCase()) || ADMIN_USERS.includes(String(u.name || "").toLowerCase());

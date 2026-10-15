@@ -71,10 +71,11 @@ export const TOWER = {
   /** vc142 (#4 탑 리워크) — 파워(속도) 배율: 층마다 +1.5%, 상한 +60% (체력·공격력과 함께 점점 증가) */
   spdPerFloor: 0.015,
   spdCap: 0.6,
-  goldBase: 55,
-  goldPerFloor: 0.24,
-  expBase: 26,
-  expPerFloor: 0.22,
+  /* v1.0.13 피드백#1 — 탑 보상 nerf: 층 보상 골드/EXP 성장 과속 완화 (55/0.24 · 26/0.22 → 35/0.12 · 15/0.10) */
+  goldBase: 35,
+  goldPerFloor: 0.12,
+  expBase: 15,
+  expPerFloor: 0.1,
   /** 보스층 간격 */
   bossEvery: 5,
   /** 층 클리어 심연 코인 (보스층 5배) */
@@ -355,11 +356,12 @@ export function todayKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** v1.0.18 — 몬스터 파크 난이도 (일반/어려움/지옥) */
+/** v1.0.18 — 몬스터 파크 난이도 (일반/어려움/지옥)
+ *  v1.0.13 피드백#1 — 파크 코인 nerf: 킬당 코인 과다 지급 완화 (어려움 3→2 · 지옥 8→5, 일반 1 유지) */
 export const PARK_DIFFS = [
   { name: "일반", minLv: 15, hpMul: 1, atkMul: 1, coin: 1, spawnMs: 950, color: "#8fe84a" },
-  { name: "어려움", minLv: 40, hpMul: 2.4, atkMul: 1.7, coin: 3, spawnMs: 800, color: "#a8ecff" },
-  { name: "지옥", minLv: 80, hpMul: 6, atkMul: 3, coin: 8, spawnMs: 620, color: "#ff8ab0" },
+  { name: "어려움", minLv: 40, hpMul: 2.4, atkMul: 1.7, coin: 2, spawnMs: 800, color: "#a8ecff" },
+  { name: "지옥", minLv: 80, hpMul: 6, atkMul: 3, coin: 5, spawnMs: 620, color: "#ff8ab0" },
 ] as const;
 /** 파크 한 세션 길이 (ms) */
 export const PARK_DURATION = 90000;

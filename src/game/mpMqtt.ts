@@ -15,12 +15,23 @@
  *   · LWT          — 접속 끊김 즉시 퇴장 통지(bye)
  *
  *  [정책]
- *   · gm 플래그는 중계하지 않는다(공개 브로커라 스푸핑 가능 — GM 표시는 소켓 서버 전용).
+ *   · v1.0.13 피드백#11 — GM 플래그는 "검증된 GM"만 중계한다(기존 "미중계" 정책 교체):
+ *      - 발신: 로그인 세션 토큰(localStorage sertz.auth.token)을 가진 관리자(캐시 role=admin)만
+ *        join/st 프레즌스에 gm:true + gmu(아이디) + gmv(SHA-256(token) 앞 16자)를 붙인다.
+ *        토큰 원문은 공개 브로커에 절대 노출하지 않는다.
+ *      - 수신: 원격이 보낸 gm/gmv/gmu는 그대로 믿지 않고, /api/auth/gmcheck?uid&proof 로
+ *        (uid,proof) 1회 검증 — 서버가 "실제 admin 세션 토큰의 해시 단편"인지 확인.
+ *        검증 실패/미도달은 gm=false 유지 → 스푸핑 무의미. 검증 전엔 일반 유저로 렌더링되고
+ *        통과 시 그때 [GM]으로 승격된다(WorldScene 동적 승격).
  *   · 페이로드는 multiplayer/index.js와 동일하게 세탁(길이 절단·수치 클램프).
  *   · 7초 무신호 원격은 목록에서 자동 제거, 16초 무신호 친구는 오프라인 처리.
  *   · 브로커 불안정/차단 시 connected=false → 게임은 지금까지와 동일하게 무영향.
  */
 import mqtt from "mqtt";
+/* v1.0.13 피드백#11 — 로컬 관리자 판정(캐시 유저)·토큰 읽기: account.ts 공용 헬퍼 재사용.
+ *  gmcheck 베이스 URL은 server.ts resolveApiBase(계정 API와 동일 출처 해석)를 쓴다. */
+import { getCachedUser, getAuthToken } from "./account";
+import { resolveApiBase } from "./server";
 
 /* 공개 브로커 후보 — 순차 폴백(첫 번째가 8초 내 연결 실패 시 다음)
  * vc140 실측(2026-10-08): eclipseprojects.io는 connack 타임아웃으로 완전 사망 —
@@ -66,6 +77,12 @@ type PeerState = {
   stage: string;
   code: string;
   t: number;
+  /* v1.0.13 피드백#11 — 원격 GM 증명(수신 원문) + 검증 완료 플래그.
+   *  gmRaw/gmv/gmu는 수신 그대로(미검증), gm은 gmcheck 통과 시에만 true. */
+  gmRaw?: boolean;
+  gmv?: string;
+  gmu?: string;
+  gm?: boolean;
 };
 
 type Listener = Set<(...args: never[]) => void>;
@@ -94,6 +111,56 @@ const num = (v: unknown, lo: number, hi: number): number =>
   Math.max(lo, Math.min(hi, Math.round(Number(v) || 0)));
 const stageKey = (s: unknown): string => clean(s, 24).toLowerCase().replace(/[^a-z0-9_-]/g, "") || "village";
 
+/* ---------------- v1.0.13 피드백#11 — 로컬 GM 증명 (검증된 관리자만 전파) ----------------
+ *  · 증명 = sha16(token): SHA-256(세션 토큰) 앞 16 hex — Web Crypto로 1회 계산 후 캐시.
+ *  · 자기선언 gm:true만으로는 스푸핑이 가능하므로, 수신 측은 반드시 /api/auth/gmcheck로
+ *    "서버에 살아있는 admin 세션 토큰의 해시 단편"임을 확인한다 (아래 verifyGmPeer).
+ *  · 모든 await는 fire-and-forget — 멀티플레이 어느 경로도 gmcheck를 기다리지 않는다. */
+type GmSelf = { gm: boolean; gmu: string; gmv: string };
+let gmSelf: GmSelf = { gm: false, gmu: "", gmv: "" };
+let gmShaCache: { tok: string; sha: string } | null = null;
+
+/** SHA-256(token) 앞 16자 (Web Crypto — 비동기, 1회 계산 후 캐시) */
+async function sha16OfToken(tok: string): Promise<string> {
+  if (gmShaCache?.tok === tok) return gmShaCache.sha;
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(tok));
+  const sha = Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 16);
+  gmShaCache = { tok, sha };
+  return sha;
+}
+
+/** 로컬 관리자 증명 갱신 — 캐시 유저(role=admin) + 세션 토큰이 있을 때만 gm:true.
+ *  접속/조인 시점에 호출하고, 해시는 도착하는 대로 채워진다(다음 st 프레즌스부터 전파). */
+function refreshGmSelf(): void {
+  try {
+    const u = getCachedUser();
+    const tok = getAuthToken();
+    if (!u || u.role !== "admin" || !tok) {
+      gmSelf = { gm: false, gmu: "", gmv: "" };
+      return;
+    }
+    const gmu = clean(u.id, 40);
+    gmSelf = { gm: true, gmu, gmv: "" };
+    void sha16OfToken(tok)
+      .then((sha) => {
+        if (gmSelf.gmu === gmu && sha) gmSelf.gmv = sha; // 로그아웃/계정 전환 시 폐기
+      })
+      .catch(() => {
+        gmSelf = { gm: false, gmu: "", gmv: "" };
+      });
+  } catch {
+    gmSelf = { gm: false, gmu: "", gmv: "" };
+  }
+}
+
+/** 내 gm 증명이 준비됐을 때만 공개 페이로드에 첨부 (증명 없는 gm:true는 전파하지 않는다) */
+function gmPayloadFields(): Record<string, unknown> {
+  return gmSelf.gm && gmSelf.gmv && gmSelf.gmu ? { gm: true, gmu: gmSelf.gmu, gmv: gmSelf.gmv } : {};
+}
+
 let bus: MqttBus | null = null;
 
 export function mpActive(): boolean {
@@ -105,6 +172,8 @@ export function mpConnect(): MqttBus | null {
   if (bus) return bus;
   if (typeof window === "undefined") return null;
   try {
+    /* v1.0.13 피드백#11 — 접속 시점에 로컬 GM 증명 선계산 (조인 전 해시 준비) */
+    refreshGmSelf();
     bus = new MqttBusImpl();
     return bus;
   } catch {
@@ -312,6 +381,11 @@ class MqttBusImpl implements MqttBus {
     /* stage/<key> 토픽 */
     if (k === "hi" || k === "st") {
       const prev = this.peers.get(pid);
+      /* v1.0.13 피드백#11 — 원격 GM 증명 수신(미검증 원문 보관).
+       *  형식 세탁: gmv는 16자 hex, gmu는 40자 식별자만 통과 — 이상치는 gm 미첨부와 동일 취급. */
+      const gmvRaw = clean(m.gmv, 32).toLowerCase();
+      const gmuRaw = clean(m.gmu, 40);
+      const gmValid = !!m.gm && /^[0-9a-f]{16}$/.test(gmvRaw) && gmuRaw.length >= 3;
       const rec: PeerState = {
         id: pid,
         name: clean(m.name, 8) || prev?.name || "이름없음",
@@ -324,9 +398,14 @@ class MqttBusImpl implements MqttBus {
         stage: stageKey(m.stage),
         code: clean(m.code, 12).toUpperCase() || prev?.code || "",
         t: Date.now(),
+        gmRaw: gmValid ? true : false,
+        gmv: gmValid ? gmvRaw : undefined,
+        gmu: gmValid ? gmuRaw : undefined,
+        gm: gmValid ? prev?.gm ?? false : false, // 검증 전엔 일반 유저로 렌더 (증명이 바뀌면 재검증)
       };
       this.peers.set(pid, rec);
       if (k === "st") this.recvSt++;
+      if (gmValid) this.verifyGmPeer(pid); // fire-and-forget — 결과는 다음 players emit에 반영
       /* hi는 프레즌스에도 반영 — 상태 하트비트 전에 이름표가 뜨도록 */
       const f = this.friends.get(pid);
       if (f) { f.name = rec.name; f.lv = rec.lv; f.cls = rec.cls; f.stage = rec.stage; f.t = Date.now(); }
@@ -368,13 +447,16 @@ class MqttBusImpl implements MqttBus {
     switch (ev) {
       case "join": {
         const info = (args[0] ?? {}) as Record<string, unknown>;
+        /* v1.0.13 피드백#11 — 조인 시 로컬 GM 증명 갱신 (관리자 로그인/로그아웃 반영).
+         *  gm은 자기선언을 그대로 믿지 않는다 — 증명(gmu/gmv)이 붙을 때만 전파되고,
+         *  수신 측이 gmcheck로 최종 검증한다. */
+        refreshGmSelf();
         this.me = {
           name: clean(info.name, 8) || "이름없음",
           lv: num(info.lv, 1, 9999),
           cls: typeof info.cls === "string" && info.cls ? info.cls.slice(0, 16) : null,
           code: clean(info.code, 12).toUpperCase(),
-          /* gm은 공개 브로커 특성상 중계하지 않음(스푸핑 방지) — GM 표시는 소켓 서버 전용 */
-          gm: false,
+          gm: gmSelf.gm,
         };
         this.stage = stageKey(info.stage);
         this.syncStageSub();
@@ -442,7 +524,8 @@ class MqttBusImpl implements MqttBus {
   sentHi = 0;
 
   private mePublic(): Record<string, unknown> {
-    return { name: this.me.name, lv: this.me.lv, cls: this.me.cls, code: this.me.code, stage: this.stage };
+    /* v1.0.13 피드백#11 — 검증 증명이 준비된 관리자만 gm/gmu/gmv 첨부 (없으면 기존과 동일) */
+    return { name: this.me.name, lv: this.me.lv, cls: this.me.cls, code: this.me.code, stage: this.stage, ...gmPayloadFields() };
   }
 
   private sendState(force: boolean) {
@@ -510,16 +593,55 @@ class MqttBusImpl implements MqttBus {
     this.fire("trade", { k, from: pid, name: clean(m.name, 8), offer });
   }
 
+  /* ================= v1.0.13 피드백#11 — 원격 GM 검증 (gmcheck, 1회 캐시) =================
+   *  · (uid,proof)당 1회만 서버에 묻고 결과를 캐시 — 프레즌스마다 재요청하지 않는다.
+   *  · fetch 실패/타임아웃/서버 오류는 전부 "검증 실패" = gm 유지(false). 절대 블로킹 없음. */
+  private gmChecks = new Map<string, boolean>();
+  private gmInflight = new Set<string>();
+
+  private verifyGmPeer(pid: string): void {
+    const p = this.peers.get(pid);
+    if (!p || !p.gmu || !p.gmv || !p.gmRaw) return;
+    const key = `${p.gmu}:${p.gmv}`;
+    const cached = this.gmChecks.get(key);
+    if (cached !== undefined) {
+      p.gm = cached; // 캐시 결과 즉시 반영 (다음 emitPlayers에서 전파)
+      return;
+    }
+    if (this.gmInflight.has(key)) return; // 진행 중 — 완료 시 일괄 반영
+    this.gmInflight.add(key);
+    void (async () => {
+      let ok = false;
+      try {
+        const base = resolveApiBase();
+        const url = `${base}/api/auth/gmcheck?uid=${encodeURIComponent(p.gmu || "")}&proof=${encodeURIComponent(p.gmv || "")}`;
+        const r = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(6000) });
+        if (r.ok) {
+          const d = (await r.json().catch(() => ({}))) as { gm?: unknown };
+          ok = d.gm === true;
+        }
+      } catch { /* 미도달/타임아웃 — 검증 실패 처리 */ }
+      this.gmChecks.set(key, ok);
+      this.gmInflight.delete(key);
+      /* 검증 완료 — 증명이 일치하는 모든 원격에 반영 (프레즌스가 갱신돼도 동일 증명 재사용) */
+      for (const q of this.peers.values()) {
+        if (q.gmu === p.gmu && q.gmv === p.gmv) q.gm = ok && !!q.gmRaw;
+      }
+    })();
+  }
+
   private emitPlayers() {
     if (!this.connected) return;
     const list: Record<string, unknown>[] = [];
-    /* 내 상태 포함(서버 players 맵과 동일 — 씬에서 자기 id 필터) */
+    /* 내 상태 포함(서버 players 맵과 동일 — 씬에서 자기 id 필터).
+     *  v1.0.13 피드백#11 — 내 gm은 로컬 관리자 세션 기준(셀프 렌더는 씬에서 필터되므로 표시 영향 없음) */
     if (this.lastState) {
-      list.push({ id: this.id, ...this.mePublic(), ...this.lastState, gm: false });
+      list.push({ id: this.id, ...this.mePublic(), ...this.lastState, gm: gmSelf.gm });
     }
     for (const p of this.peers.values()) {
       if (p.stage !== this.stage) continue;
-      list.push({ id: p.id, name: p.name, lv: p.lv, cls: p.cls, x: p.x, y: p.y, flip: p.flip, moving: p.moving, gm: false });
+      /* v1.0.13 피드백#11 — gm은 gmcheck 검증을 통과한 원격에게만 true (검증 전 false → 통과 시 승격) */
+      list.push({ id: p.id, name: p.name, lv: p.lv, cls: p.cls, x: p.x, y: p.y, flip: p.flip, moving: p.moving, gm: !!p.gm });
       if (list.length >= 60) break;
     }
     this.fire("players", list);

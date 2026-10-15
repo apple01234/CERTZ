@@ -5,20 +5,26 @@
 
 ## 현재 상태
 
-**v3.0.29 멀티플레이 서버 복구 (2026-09-05, Task 34).** "멀티 안됨" 근본 수정: FC 배포가
-standalone 자동생성 server.js로 구동되어 socket.io가 실행되지 않던 문제를 빌드 단계 주입으로 해결
-(multiplayer/index.js 모듈 + scripts/fc-server/postbuild.js — Bun.build 단일 번들, 래퍼 멱등).
-standalone 2클라이언트 E2E 9/9 PASS · verify_v3028 32/32 · tsc/eslint 0에러.
-APK v3.0.29(versionCode 43) 빌드·배포: gofile.io/d/1DhtfhUZ + download/ 패널.
+**v1.0.13 (vc155) 유저 피드백 20건 일괄 반영 (2026-10-15).** 탐색 에이전트 4종으로 20건 전수 코드 매핑 후
+수정 에이전트 4종 병렬 투입 → 21파일 수정 + API 라우트 4개 신설. tsc --noEmit 0에러 · eslint 신규 0
+(기존 4건은 HEAD 베이스라인과 동일) · node --check(server.js/accounts) 통과 · validate_data 통과.
+버전 싱크 6곳 완료(VC155_NOTE). 핵심: 심연의탑 리스폰 배율 버그(층 배율 미적용 — respawnEnemy 무옵션) 근본 수정,
+탑/파크 보상 nerf + 파크코인→경험치책 환산 4배 인상, 퀘스트 EXP 2배 상향, BM 궁극기 50연타(47.5배),
+토벌전 보스 HP×60·ATK1.5배, 보스HP공유 호스트 파티원 한정, 일일상자/긴급귀환 캐릭터당,
+랭킹 캐릭터별+직업별 탭, 닉네임 전역 유니크(serverless 라우트 신설), MQTT 검증형 [GM] 표시(gmcheck 라우트),
+상대 클릭→정보창+1:1거래, 원격 BM 궁극기 dead code 복구, 로비 로그인 버튼 !lobbyOpen 게이트,
+튜토리얼 이그니 화자화+DOM 하이라이트, 오라 6종+펫 2종, ios-build.yml 버전 자동 파싱.
 
 ## 다음 할 일 (우선순위 순)
 
-1. Complete 배포 후 라이브 서버(sertz1234.space-z.ai) /socket.io 핸드셰이크 재실측
-2. (잔여 피드백) 지역 이동 주문서·보스 재전투 검은 화면, 이그니 1차 전직 안내, 브금 그룹핑, 모바일 대사 스킵, RPC 전환(netAtk 복구)
-3. (선택) v1.2 후보: 스테이지별 미니맵 보스 아이콘, 업적, 사운드 설정 세분화
+1. APK/AAB 빌드 (scripts/build_apk.sh — JAVA_HOME=/home/z/jdk 필요) + GitHub 릴리스 vc155 업로드
+2. `gh workflow run ios-build.yml` → unsigned IPA 재개 (피드백 #20 — IPA 금지 지시 해제된 상태)
+3. 라이브 배포 후 멀티 실측: MQTT [GM] gmcheck 검증 흐름 · 보스HP공유 파티 호스트 선출 · 캐릭터별 랭킹 반영
+4. (잔여) 클라우드 세이브 per-캐릭터 승격(chars 1급 시민화 — 현재 data 1칸 덮어쓰기), 파티 초대(코드 참여만 존재)
 
 ## 진행 로그 (최신이 아래로)
 
+- 2026-10-15 (fb20) **v1.0.13 (vc155) 피드백 20건 일괄 반영** — 4탐색+4수정 에이전트 병합 파이프라인. 세부 내역은 위 "현재 상태" 및 worklog.md Task 2-a~2-d 참조. tsc/eslint/node-check/validate_data 통과, 버전 싱크 6곳(VC155_NOTE·gradle·server.js·next.config.ts·apk-guide.html·APK_다운로드_안내.txt). APK 빌드는 다음 사이클.
 - 2026-08-28 (stage-1) **스토리 연장 3스테이지 + 진엔딩** — 동굴(파편2·거미6·포탈)/니플헤임(서리늑대6·보스 behemoth 920HP·포탈)/왕좌(유령4·최종보스 abysslord 1300HP·엔딩) 전 체인 E2E 실측. 몬스터 5종·보스 2종 신규 스프라이트(기존 CC0 틴트/trim 재활용), 스테이지 테마 타일/데코, 장비 4티어 상점 추가. 보스 격파→대사 종료 후 포탈 활성화(유예 600ms), 구 v1.0 클리어 세이브(alfheim q=2)→포탈 복구→동굴 이어가기 실측. 보스전 중 이어하기(니플 q=1→보스 자동등장) 실측. tsc/eslint/클린로드 콘솔 0에러
 - 2026-08-28 (loop-0 / 4b6ed95) 루프 지시서/기획/상태 문서 확정 — 합격기준·규칙·검사 명령 채움, 남은 작업 5건 확정
 - 2026-08-28 (loop-1 / db7c063) 몬스터 리스폰 구현·실측 — 9~13초 원 스폰점 재생성(dist 0), 근접 지연 가드(13s 보류→이동 후 발화) 확인, tsc/eslint/콘솔 0에러. + Player anims.isPlaying 타입에러 수정

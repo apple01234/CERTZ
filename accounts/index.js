@@ -580,6 +580,10 @@ function rankBetter(a, b) {
   }
   return 0;
 }
+/* v1.0.13 피드백#7/#16 — 캐릭터별 랭킹 확장:
+ *  기존 계정당 1엔트리(db.saves[uid].data)에서 → 활성 세이브 + chars 백업분 전부 캐릭터 단위 엔트리.
+ *  · 중복 제거: chars 캐릭터가 활성 세이브와 playerName+lv 일치(활성 캐릭 이중 백업)하면 1회만
+ *  · 하위호환: chars가 없는 세이브는 기존과 동일한 단일 엔트리 */
 function rankEntries() {
   const out = [];
   for (const [uid, s] of Object.entries(db.saves)) {
@@ -587,27 +591,43 @@ function rankEntries() {
     if (!Number(s.data.lv)) continue;
     const u = db.users[uid];
     if (u && u.role === "admin") continue; // GM/관리자는 랭킹 제외 (운영 계정 공정성)
-    out.push({ uid, data: s.data, name: String(s.data.playerName || (u ? u.name : "이름없음") || "이름없음").slice(0, 8) });
+    const activeName = String(s.data.playerName || (u ? u.name : "이름없음") || "이름없음").slice(0, 8);
+    out.push({ uid, cid: "active", data: s.data, name: activeName });
+    if (s.chars && typeof s.chars === "object") {
+      for (const [cid, cs] of Object.entries(s.chars)) {
+        if (!cs || typeof cs !== "object" || Array.isArray(cs)) continue;
+        if (!Number(cs.lv)) continue;
+        const cname = String(cs.playerName || "이름없음").slice(0, 8);
+        if (cname === activeName && Number(cs.lv) === Number(s.data.lv)) continue; // 활성 중복
+        out.push({ uid, cid: String(cid).slice(0, 24), data: cs, name: cname });
+      }
+    }
   }
   out.sort((a, b) => rankBetter(a, b) ? -1 : rankBetter(b, a) ? 1 : 0);
   return out;
 }
-function rankListFor(me) {
-  const all = rankEntries();
-  const top = all.slice(0, 50).map((e, i) => ({
+function rankListFor(me, meName = "", job = "") {
+  const all0 = rankEntries();
+  /* v1.0.13 피드백#16 — 직업별 랭킹: job(클래스키) 일치 캐릭터만 (미지정 시 전체) */
+  const jk = String(job || "").trim().toLowerCase();
+  const all = jk ? all0.filter((e) => String(e.data.cls || "").toLowerCase() === jk) : all0;
+  const top = all.slice(0, 100).map((e, i) => ({
     rank: i + 1,
     name: e.name,
     lv: Number(e.data.lv || 0),
     cls: String(e.data.cls || ""),
     rebirths: Number(e.data.inf?.rebirths || 0),
     tower: Number(e.data.inf?.towerBest || 0),
+    cid: e.cid, // v1.0.13 — 캐릭터 식별 ("active" | 백업 캐릭터 키)
   }));
   let mine = null;
   if (me) {
-    const idx = all.findIndex((e) => e.uid === me.id);
+    /* 내 순위: 내 계정 엔트리(uid 일치) 또는 현재 캐릭터 이름 일치 — 정렬상 첫 매치(내 최고 캐릭) */
+    const mn = String(meName || "").trim().slice(0, 8).toLowerCase();
+    const idx = all.findIndex((e) => e.uid === me.id || (mn && String(e.name).toLowerCase() === mn));
     if (idx >= 0) {
       const e = all[idx];
-      mine = { rank: idx + 1, total: all.length, name: e.name, lv: Number(e.data.lv || 0), rebirths: Number(e.data.inf?.rebirths || 0), tower: Number(e.data.inf?.towerBest || 0) };
+      mine = { rank: idx + 1, total: all.length, name: e.name, lv: Number(e.data.lv || 0), rebirths: Number(e.data.inf?.rebirths || 0), tower: Number(e.data.inf?.towerBest || 0), cid: e.cid };
     } else {
       mine = { rank: 0, total: all.length, note: "클라우드 백업(3분 자동)이 켜지면 랭킹에 등록돼요" };
     }
@@ -851,6 +871,32 @@ async function handle(req, res) {
       return false;
     };
 
+    /* v1.0.13 피드백#11 — MQTT 경로 GM 검증 (서버리스 /api/auth/gmcheck와 동일 프로토콜).
+     *  공개 브로커 프레즌스의 gm:true는 자기선언이라 스푸핑 가능 — 각 클라이언트가 원격의
+     *  증명 proof = SHA-256(세션 토큰) 앞 16 hex를 이 엔드포인트로 대조한다.
+     *  토큰 원문은 전송/저장하지 않고 판정 결과 { gm }만 돌려준다. */
+    if (url === "/api/auth/gmcheck" && method === "GET") {
+      if (!rateLimit(req, res, "gmcheck", 120, 60 * 1000)) return true;
+      const q = new URL(req.url, "http://x").searchParams;
+      const uid = String(q.get("uid") || "").trim().toLowerCase().slice(0, 40);
+      const proof = String(q.get("proof") || "").trim().toLowerCase();
+      if (!uid || !/^[0-9a-f]{16}$/.test(proof)) {
+        sendJson(res, 400, { gm: false, error: "잘못된 요청" });
+        return true;
+      }
+      let ok = false;
+      const u = db.users[uid];
+      if (u && u.role === "admin") {
+        const now = Date.now();
+        for (const [tok, rec] of Object.entries(db.tokens)) {
+          if (!rec || rec.userId !== uid || rec.expiresAt < now) continue; // 만료 토큰 불인정
+          if (createHash("sha256").update(tok).digest("hex").slice(0, 16) === proof) { ok = true; break; }
+        }
+      }
+      sendJson(res, 200, { gm: ok });
+      return true;
+    }
+
     /* v1.0.6 — 닉네임 중복 확인 (공개 GET — 회원가입/캐릭터 생성/이름 변경 화면에서 실시간 확인) */
     if (url.startsWith("/api/auth/nametaken") && method === "GET") {
       if (!rateLimit(req, res, "nametaken", 60, 60 * 1000)) return true;
@@ -1048,7 +1094,9 @@ function attachAccountsBefore(handleNext) {
       if (url === "/api/rank" && method === "GET") {
         try {
           const me = currentUser(req);
-          sendJson(res, 200, rankListFor(me));
+          /* v1.0.13 피드백#7/#16 — ?me=<캐릭터명>(내 순위 정밀 매칭) · ?job=<클래스키>(직업별 랭킹) */
+          const q = new URL(req.url, "http://x").searchParams;
+          sendJson(res, 200, rankListFor(me, q.get("me") || "", q.get("job") || ""));
         } catch (e) {
           console.error("[SERTZ-rank] 조회 실패", e);
           try { sendJson(res, 500, { error: "서버 오류" }); } catch { /* 무시 */ }

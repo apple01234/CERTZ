@@ -208,34 +208,60 @@ function rankBetter(a: { data: Record<string, unknown> }, b: { data: Record<stri
   for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) return sa[i] > sb[i];
   return false;
 }
-export function rankListFor(db: DbShape, me: UserRec | null) {
-  const all: { uid: string; data: Record<string, unknown>; name: string }[] = [];
+
+/**
+ * v1.0.13 피드백#7/#16 — 캐릭터별 랭킹 + 직업별 필터 (기존 계정 단위 집계 확장).
+ *  · db.saves[uid].data(활성 세이브) + db.saves[uid].chars(캐릭터 백업분, cloud-save 최대 24캐릭)를
+ *    캐릭터 단위로 모두 수집 — 한 계정이 여러 캐릭터로 랭킹에 오른다.
+ *  · 중복 제거: chars의 캐릭터가 활성 세이브와 playerName+lv가 같으면(활성 캐릭이 chars에도 백업된 케이스) 1회만.
+ *  · job(클래스키) 지정 시 cls가 일치하는 캐릭터만 — 직업별 랭킹.
+ *  · 하위호환: chars가 없는 세이브는 기존과 동일하게 단일 엔트리.
+ *  · me 매칭: 내 계정 엔트리(uid 일치) 또는 현재 캐릭터 이름(meName) 일치 — 정렬상 첫 매치(내 최고 캐릭).
+ */
+export function rankListFor(db: DbShape, me: UserRec | null, meName = "", job = "") {
+  type Entry = { uid: string; cid: string; data: Record<string, unknown>; name: string };
+  const all: Entry[] = [];
   for (const [uid, s] of Object.entries(db.saves)) {
     if (!s?.data || typeof s.data !== "object") continue;
     if (!Number((s.data as Record<string, unknown>).lv)) continue;
     const u = db.users[uid];
     if (u && u.role === "admin") continue; // GM/관리자 제외 (운영 공정성)
     const d = s.data as Record<string, unknown>;
-    all.push({ uid, data: d, name: String(d.playerName || (u ? u.name : "이름없음") || "이름없음").slice(0, 8) });
+    const activeName = String(d.playerName || (u ? u.name : "이름없음") || "이름없음").slice(0, 8);
+    all.push({ uid, cid: "active", data: d, name: activeName });
+    /* v1.0.13 피드백#7 — chars 백업분 (이름 → 세이브) 캐릭터별 엔트리 확장 */
+    if (s.chars && typeof s.chars === "object") {
+      for (const [cid, cs] of Object.entries(s.chars)) {
+        if (!cs || typeof cs !== "object" || Array.isArray(cs)) continue;
+        if (!Number((cs as Record<string, unknown>).lv)) continue;
+        const cname = String((cs as Record<string, unknown>).playerName || "이름없음").slice(0, 8);
+        if (cname === activeName && Number((cs as Record<string, unknown>).lv) === Number(d.lv)) continue; // 활성 중복
+        all.push({ uid, cid: String(cid).slice(0, 24), data: cs as Record<string, unknown>, name: cname });
+      }
+    }
   }
-  all.sort((a, b) => (rankBetter(a, b) ? -1 : rankBetter(b, a) ? 1 : 0));
+  const jobKey = String(job || "").trim().toLowerCase();
+  const filtered = jobKey ? all.filter((e) => String(e.data.cls || "").toLowerCase() === jobKey) : all;
+  filtered.sort((a, b) => (rankBetter(a, b) ? -1 : rankBetter(b, a) ? 1 : 0));
   /* vc145 (#2) — Top 50 → 100위 확장 (유저 지시 "랭킹 100위까지 스크롤 가능하게") */
-  const top = all.slice(0, 100).map((e, i) => ({
+  const top = filtered.slice(0, 100).map((e, i) => ({
     rank: i + 1,
     name: e.name,
     lv: Number(e.data.lv || 0),
     cls: String(e.data.cls || ""),
     rebirths: Number((e.data.inf as Record<string, unknown> || {})?.rebirths || 0),
     tower: Number((e.data.inf as Record<string, unknown> || {})?.towerBest || 0),
+    cid: e.cid, // v1.0.13 — 캐릭터 식별 ("active" | 캐릭터 백업 키)
   }));
-  let mine: { rank: number; total: number; name?: string; lv?: number; rebirths?: number; tower?: number; note?: string } | null = null;
+  let mine: { rank: number; total: number; name?: string; lv?: number; rebirths?: number; tower?: number; cid?: string; note?: string } | null = null;
   if (me) {
-    const idx = all.findIndex((e) => e.uid === me.id);
+    const myName = String(meName || "").trim().slice(0, 8).toLowerCase();
+    const idx = filtered.findIndex((e) => e.uid === me.id || (!!myName && e.name.toLowerCase() === myName));
     if (idx >= 0) {
-      const e = all[idx];
-      mine = { rank: idx + 1, total: all.length, name: e.name, lv: Number(e.data.lv || 0), rebirths: Number((e.data.inf as Record<string, unknown>)?.rebirths || 0), tower: Number((e.data.inf as Record<string, unknown>)?.towerBest || 0) };
+      const e = filtered[idx];
+      mine = { rank: idx + 1, total: filtered.length, name: e.name, lv: Number(e.data.lv || 0), rebirths: Number((e.data.inf as Record<string, unknown>)?.rebirths || 0), tower: Number((e.data.inf as Record<string, unknown>)?.towerBest || 0), cid: e.cid };
     } else {
-      mine = { rank: 0, total: all.length, note: "클라우드 백업(3분 자동)이 켜지면 랭킹에 등록돼요" };
+      mine = { rank: 0, total: filtered.length, note: "클라우드 백업(3분 자동)이 켜지면 랭킹에 등록돼요" };
     }
   }
   return { list: top, me: mine };

@@ -3045,15 +3045,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       }
 
-      /* 블레이드마스터 — 극의: 무한 검무 백연타 (vc154 개편 — 유저 지시 "스킬 데모 참고해서 수정, 점점 빠르게 베고 100번까지 베기")
+      /* 블레이드마스터 — 극의: 무한 검무 오십연타 (v1.0.13 피드백#4 — 유저 지시 "무한 검무 50연타로 바꾸고 좀더 강하게")
        *  · 데모(死 스킬 데모) 연출 차용: 붉은 死 한자 블룸 + 가속 연타 + HIT 카운터 + 시네마 레터박스
-       *  · 가속 리듬: 시작 96ms 간격 → 베기마다 ~0.77ms씩 단축 → 마지막 20ms (100베기 총 ≈5.8초)
-       *  · 화력 보존: 기존 14연타(2.6×14) + 종결 7.0 ≈ 43.4배 → 100×0.36 + 7.0 = 43.0배
+       *  · 가속 리듬: 시작 96ms 간격 → 베기마다 ~1.55ms씩 단축 → 마지막 20ms (50베기 총 ≈3.1초)
+       *  · 화력 상향: 기존 100×0.36 + 7.0 = 43.0배 → 50×0.80 + 7.5 = 47.5배 (≈ +10% — 타수는 절반, 한 컷 한 컷은 크게)
        *  · 한자 블룸은 DeathSlash 본 연출보다 절제 톤(투명도 0.38·발광 반폭) — "한자 블룸이 너무 찐해" 반영 */
       case "blademaster": {
         const targets = this.nearestTargets(14, 820);
         const seq = targets.length > 0 ? targets : [];
-        const CUTS = 100;
+        const CUTS = 50;
         const IV_START = 96, IV_MIN = 20;
         const decay = (IV_START - IV_MIN) / (CUTS - 1);
         /* 컷별 시작 시각 사전 계산 (가속 리듬) */
@@ -3133,7 +3133,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               kanji.style.transform = "translate(-50%,-50%) scale(1.3)";
               window.setTimeout(() => { try { kanji?.remove(); } catch { /* 무시 */ } }, 560);
             }
-            /* vc154 — "100 HIT"는 종결 플래시 동안 잔류 (hitKeep) — 즉시 소산 아님 */
+            /* vc154 — "50 HIT"는 종결 플래시 동안 잔류 (hitKeep) — 즉시 소산 아님 */
             if (hitBox && !hitKeep) {
               hitBox.style.transition = "opacity 320ms ease-out";
               hitBox.style.opacity = "0";
@@ -3141,8 +3141,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           } catch { /* 무시 */ }
         };
-        /* ── 100베기 예약 ── */
-        let hitKeep = false; // vc154 — 종결 플래시 동안 "100 HIT" 잔류 (테스트 관측창 + 연출 만족감)
+        /* ── 50베기 예약 ── */
+        let hitKeep = false; // vc154 — 종결 플래시 동안 "50 HIT" 잔류 (테스트 관측창 + 연출 만족감)
         for (let i = 0; i < CUTS; i++) {
           this.scene.time.delayedCall(starts[i], () => {
             if (this.state === "dead") return;
@@ -3155,7 +3155,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.spawnSlash(tgt.x, tgt.y, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 2.1, hex);
               this.scene.spawnSlash(tgt.x, tgt.y - 6, new Phaser.Math.Vector2(-Math.cos(ang), -Math.sin(ang)), i % 2 === 1, 1.5, 0xffffff);
               this.scene.spawnBurstAt(tgt.x, tgt.y, i % 2 === 0 ? 10 : 6, hex);
-              const { dmg, crit } = rd(0.36);
+              const { dmg, crit } = rd(0.80);
               if (crit) this.scene.sfxCrit();
               tgt.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 240, crit);
             } else {
@@ -3167,8 +3167,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (i % 3 === 0) this.scene.sfxSkill("iainuki", 0.92 + Math.min(0.55, i * 0.0055));
             /* 카메라 — 후반으로 갈수록 미세 진동 강화 */
             if (i % 12 === 0) this.scene.doShake(70, 0.002 + (i / CUTS) * 0.004);
-            /* 마일스톤 — 25/50/75베기: 링 팝 + 한자 펄스 */
-            if (i === 25 || i === 50 || i === 75) {
+            /* 마일스톤 — 15/30/45베기: 링 팝 + 한자 펄스 */
+            if (i === 15 || i === 30 || i === 45) {
               spawnRingPop(this.scene, this.x, this.y, "vf_ring", hex, 2.4 + i * 0.012, 420);
               if (kanji) {
                 kanji.style.transition = "transform 130ms ease-out";
@@ -3176,7 +3176,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 ovAt(140, () => { if (kanji) { kanji.style.transform = "translate(-50%,-50%) scale(1.06)"; } });
               }
             }
-            /* HIT 카운터 — 10베기마다 갱신 (10·20·…·100 HIT) */
+            /* HIT 카운터 — 10베기마다 갱신 (10·20·…·50 HIT) */
             if ((i + 1) % 10 === 0 && hitBox) {
               hitBox.textContent = `${i + 1} HIT`;
               hitBox.style.transition = "none";
@@ -3187,9 +3187,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
 
-        /* 종결 — 교차하는 쌍검 극의 일격 (100베기 정점 직후) */
+        /* 종결 — 교차하는 쌍검 극의 일격 (50베기 정점 직후) */
         this.scene.time.delayedCall(totalMs + 170, () => {
-          hitKeep = true; // "100 HIT" 잔류 → 종결 연출 후 소산
+          hitKeep = true; // "50 HIT" 잔류 → 종결 연출 후 소산
           ovCleanup(); // 레터박스/한자 소산 → 종결 플래시
           ovAt(2400, () => {
             if (hitBox) {
@@ -3215,7 +3215,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(560)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = rd(7.0);
+            const { dmg, crit } = rd(7.5);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
           }

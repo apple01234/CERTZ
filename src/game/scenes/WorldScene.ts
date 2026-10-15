@@ -615,6 +615,8 @@ export class WorldScene extends Phaser.Scene {
       /** v1.0.16 — GM 계정: 금색 이름표 [GM] + 황금 오라 (syncRemotes에서 세팅) */
       gm: boolean;
       aura: Phaser.GameObjects.Image | null;
+      /** v1.0.13 피드백#12 — 상대 클릭 → 정보창: 친구 코드 (join 페이로드 code, 없으면 null) */
+      code: string | null;
     }
   >();
   private netOffs: (() => void)[] = [];
@@ -3060,7 +3062,9 @@ export class WorldScene extends Phaser.Scene {
     const chestY = ky;
     const chest = this.add.sprite(chestX, chestY, "map_chest_f", 0).setOrigin(0.5, 1).setScale(0.9).setDepth(Math.floor(chestY / 10));
     this.keepChestSprite = chest;
-    this.keepChestKey = `sertz.keep.chest.${todayKey()}`;
+    /* v1.0.13 피드백#15 — 일일 상자/긴급귀환 캐릭터당 분리 (활성 캐릭터 id 없으면 "default" — 구 동작 폴백).
+     *  캐릭터 전환은 씬 생성 전에 끝나므로 씬 빌드 시점 산출로 충분 */
+    this.keepChestKey = `sertz.keep.chest.${getActiveCharId() ?? "default"}.${todayKey()}`;
     this.interactables.push({ x: chestX, y: chestY, kind: "keepchest", label: "보물 상자 — 열기 (하루 1회)" });
 
     /* 안내 표지판 — 유적 철거 후 상자 정체성 유지용 */
@@ -4679,9 +4683,10 @@ export class WorldScene extends Phaser.Scene {
       const am = this.trialMod.abyssMul ?? 0;
       if (am > 0) this.inf.abyss += am;
     } else if (this.parkActive) {
-      /* v1.0.18 — 몬스터 파크 — 처치마다 파크 코인 지급 (웨이브 비례) */
+      /* v1.0.18 — 몬스터 파크 — 처치마다 파크 코인 지급 (웨이브 비례)
+       *  v1.0.13 피드백#1 — 파크 코인 웨이브 배율 nerf (0.5 → 0.3) */
       const wave = this.parkWaveNow();
-      const c = Math.max(1, Math.round(PARK_DIFFS[this.parkDiff].coin * (1 + (wave - 1) * 0.5)));
+      const c = Math.max(1, Math.round(PARK_DIFFS[this.parkDiff].coin * (1 + (wave - 1) * 0.3)));
       this.parkCoinsEarned += c;
       this.parkKills += 1;
       if (Math.random() < 0.3) this.spawnPickupText(this.player.x, this.player.y - 70, `파크 코인 +${c}`, "#ffd76a");
@@ -4794,10 +4799,24 @@ export class WorldScene extends Phaser.Scene {
       /* vc147 (#16) — 파크 몹도 필드 리스폰 금지: tickPark 상시 소환과 합쳐지면
        *  동시 마릿수가 통제 없이 불어난다. 파크는 tickPark의 50캡 검사를 거친 소환만. */
     } else if (this.towerActive) {
-      /* vc147 (#15) — 탑은 리스폰으로 목표 마릿수까지 반복 충원 (단 respawnEnemy의 20캡 검사를 거친다) */
-      this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
-        this.respawnEnemy(key, spawnX, spawnY, 0)
-      );
+      /* vc147 (#15) — 탑은 리스폰으로 목표 마릿수까지 반복 충원 (단 respawnEnemy의 20캡 검사를 거친다)
+       *  v1.0.13 피드백#3 — 탑 리스폰 배율 버그 수정: 옵션 없이 재생성하면 spawnTowerFloor의
+       *  층 배율(절대 HP/ATK/속도/EXP)이 적용 안 돼 기본 스탯 몬스터로 리스폰됐다.
+       *  동일 절대 스탯을 opts로 전달한다 (exp 수치는 피드백#1 nerf와 동기화). */
+      this.time.delayedCall(Phaser.Math.Between(3200, 4800), () => {
+        if (!this.towerActive) return; // 탑 종료/층 전환 후 예약 리스폰 폐기
+        const f = this.towerFloor;
+        const lv = this.player.lv;
+        const sc = towerFloorScale(f);
+        this.respawnEnemy(key, spawnX, spawnY, 0, {
+          abs: true,
+          hp: Math.round((30 + lv * 3.2 + ENEMIES[key].hp * 1.2) * sc),
+          atk: Math.round((4 + lv * 0.42 + ENEMIES[key].atk * 0.35) * (1 + (f - 1) * TOWER.atkPerFloor) * 10) / 10,
+          spd: towerSpeedScale(f),
+          exp: Math.round((12 + lv * 1.2) * (1 + (f - 1) * TOWER.expPerFloor)),
+          gold: 0,
+        });
+      });
     } else {
       this.time.delayedCall(Phaser.Math.Between(3200, 4800), () =>
         this.respawnEnemy(key, spawnX, spawnY, 0)
@@ -5624,7 +5643,7 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(90)
       .setScrollFactor(0);
     this.add
-      .text(this.cameras.main.width / 2, 96, partyN > 1 ? `보스 HP ×${(hpMul * 30).toFixed(0)} · 보상 ×${hpMul.toFixed(2)} · 에메랄드 +${3 + partyN} · 하루 1회` : "단독 도전 · 하루 1회 — 파티원과 함께 잡으면 HP·보상이 커진다", { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(this.cameras.main.width / 2, 96, partyN > 1 ? `보스 HP ×${(hpMul * 60).toFixed(0)} · 보상 ×${hpMul.toFixed(2)} · 에메랄드 +${3 + partyN} · 하루 1회` : "단독 도전 · 하루 1회 — 파티원과 함께 잡으면 HP·보상이 커진다", { fontFamily: "Galmuri11, sans-serif", fontSize: "14px", color: "#ffe66a", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(96)
       .setScrollFactor(0);
@@ -5638,17 +5657,19 @@ export class WorldScene extends Phaser.Scene {
      *  v1.4.30 (#3) — 유저 지시 "공동토벌전 보스 ㅈㄴ 약해 (딜은 약해도 체력 ㅈㄴ 많이해)":
      *  HP ×6로 대폭 상향(솔로 ~6.4만 / 4인 ~13만) · 공격 계수 1.15→1.0으로 하향 —
      *  여러 명이 오래 때려야 잡는 '협동 체력 레이스'로 재조정.
-     *  v1.4.31 (#2) — 유저 지시 "토벌전 보스 체력이 너무너무너무 적음": ×6 → ×30 추가 대폭 상향
-     *  (솔로 ~32만 / 4인 ~65만) — 레이드 보스답게 파티 전체 화력으로도 오랜 전투가 이어진다. */
+     *  v1.4.31 (#2) — 유저 지시 "토벌전 보스 체력이 너무너무너무 적음": ×6 → ×30 추가 대폭 상향.
+     *  v1.0.13 피드백#5 — 토벌전 보스 재강화: HP ×30→×60 (솔로 ~63.8만 / 4인 ~130만),
+     *  공격 계수 ×1.5 · 파티원 1명당 +6%→+12% — 체력 레이스에 걸맞은 위협.
+     *  추격 감속(×0.92) 제거 — speed는 base 그대로. 보상도 난이도 비례 ×1.2→×1.5. */
     const base = BOSS_DEFS.abysslord;
     const def: BossDef = {
       ...base,
       name: partyN > 1 ? `심연의 감시자 (파티 ${partyN}인)` : "심연의 감시자",
-      hp: Math.round(base.hp * 1.25 * hpMul * 30),
-      atk: Math.round(base.atk * (1 + (partyN - 1) * 0.06)),
-      speed: Math.round(base.speed * 0.92), // 협동전 — 추격 살짝 완만 (각자 패턴 대응 여유)
-      exp: Math.round(base.exp * hpMul * 1.2),
-      gold: Math.round(base.gold * hpMul * 1.2),
+      hp: Math.round(base.hp * 1.25 * hpMul * 60), // v1.0.13 피드백#5 — 30→60
+      atk: Math.round(base.atk * 1.5 * (1 + (partyN - 1) * 0.12)), // v1.0.13 피드백#5 — 계수 1.5·+12%/인
+      /* speed — v1.0.13 피드백#5: 기존 ×0.92 감속 제거 (...base 스프레드 값 그대로 사용) */
+      exp: Math.round(base.exp * hpMul * 1.5), // v1.0.13 피드백#5 — 1.2→1.5
+      gold: Math.round(base.gold * hpMul * 1.5), // v1.0.13 피드백#5 — 1.2→1.5
       orbTint: 0x5a8aff,
     };
     this.bossDef = def;
@@ -5704,16 +5725,30 @@ export class WorldScene extends Phaser.Scene {
   /** 호스트 재선출 — 1.5s 주기 (파티원 진입/이탈 수렴). 단독 플레이면 공유 해제 */
   private recomputeBossShareHost() {
     const b = this.boss;
-    const partyN = net.netLastParty()?.members.length ?? 1;
+    const party = net.netLastParty();
+    const partyN = party?.members.length ?? 1;
     if (partyN < 2 || !b || !b.alive) {
       this.bossShareActive = false;
       if (b) b.sharedMode = false;
       return;
     }
+    /* v1.0.13 피드백#6 — 호스트 선출을 파티원 한정으로 (비파티 유저 id 오염 시 bhp 뮤트 소프트락 방지)
+     *  기존엔 같은 구역의 모든 원격 세션 id 최소값이 호스트라, 파티가 아닌 유저의 id가 더 작으면
+     *  그 유저가 호스트가 됐는데 bossShareActive=false라 bhp를 브로드캐스트하지 않았다.
+     *  파티 정보가 있으면 (파티원 id ∩ 현재 구역 접속) ∪ 내 id 만 후보로 한정한다.
+     *  파티 정보가 없으면 기존 동작 폴백 (단, 상단 partyN<2 가드로 실제 도달은 없음). */
     const myId = net.netSelfId() ?? "";
+    const candidates = new Set<string>(myId ? [myId] : []);
+    if (party) {
+      for (const m of party.members) {
+        if (m?.id && this.remotes.has(m.id)) candidates.add(m.id);
+      }
+    } else {
+      for (const k of this.remotes.keys()) candidates.add(k);
+    }
     let minId = myId;
-    for (const k of this.remotes.keys()) {
-      if (k < minId) minId = k;
+    for (const k of candidates) {
+      if (k && k < minId) minId = k;
     }
     const wasHost = this.bossShareHost;
     this.bossShareActive = true;
@@ -6192,7 +6227,8 @@ export class WorldScene extends Phaser.Scene {
         hp: Math.round((30 + lv * 3.2 + def.hp * 1.2) * sc),
         atk: Math.round((4 + lv * 0.42 + def.atk * 0.35) * (1 + (f - 1) * TOWER.atkPerFloor) * 10) / 10,
         spd,
-        exp: Math.round((18 + lv * 2) * (1 + (f - 1) * TOWER.expPerFloor)),
+        /* v1.0.13 피드백#1 — 탑 몬스터 킬 EXP nerf (18+lv×2 → 12+lv×1.2) */
+        exp: Math.round((12 + lv * 1.2) * (1 + (f - 1) * TOWER.expPerFloor)),
         gold: 0,
       });
       this.enemies.push(e);
@@ -6390,7 +6426,8 @@ export class WorldScene extends Phaser.Scene {
         const e = new Enemy(this, sp.x, sp.y, key, {
           hp: Math.round((20 + lv * 2.6 + def.hp * 0.45) * d.hpMul * (1 + (wave - 1) * 0.35)),
           atk: Math.round((4 + lv * 0.42) * d.atkMul * (1 + (wave - 1) * 0.2)),
-          exp: Math.round((24 + lv * 2.4) * (1 + (wave - 1) * 0.25)),
+          /* v1.0.13 피드백#1 — 파크 몬스터 킬 EXP nerf (24+lv×2.4 → 14+lv×1.2) */
+          exp: Math.round((14 + lv * 1.2) * (1 + (wave - 1) * 0.25)),
           gold: 0,
         });
         this.enemies.push(e);
@@ -7096,7 +7133,9 @@ export class WorldScene extends Phaser.Scene {
     return fifth2Active(st) ? fifth2ProgressText(st) : "";
   }
 
-  private respawnEnemy(key: EnemyKey, x: number, y: number, tries: number) {
+  /* v1.0.13 피드백#3 — opts 전달 추가: 탑 리스폰이 spawnTowerFloor와 동일한 층 배율 절대 스탯을
+   *  유지하게 한다 (미지정이면 기존 동작 그대로 — 정의 기본 스탯 + 정예 배율). */
+  private respawnEnemy(key: EnemyKey, x: number, y: number, tries: number, opts?: ConstructorParameters<typeof Enemy>[4]) {
     if (!this.scene.isActive() || this.player.state === "dead") {
       return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
     }
@@ -7106,27 +7145,28 @@ export class WorldScene extends Phaser.Scene {
      * vc147 (#15/#16) — mobAliveCount 단일 소스로 통일 (탑/파크/게이트 포함 전 맵 공통) */
     if (this.mobAliveCount() >= (this.fxLevel === 0 ? 14 : 20)) {
       /* v4.2.0 — 2400→1400ms (피로도 완화: 리젠 대기 단축) */
-      this.time.delayedCall(1400, () => this.respawnEnemy(key, x, y, tries));
+      this.time.delayedCall(1400, () => this.respawnEnemy(key, x, y, tries, opts));
       return;
     }
     const nearPlayer = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 140;
     if (nearPlayer && tries < 24) {
       // v2.3 — 재시도 간격 2.5초 → 1.2초 (리젠 단축에 맞춰 스폰 지점 대기도 짧게)
-      this.time.delayedCall(1200, () => this.respawnEnemy(key, x, y, tries + 1));
+      this.time.delayedCall(1200, () => this.respawnEnemy(key, x, y, tries + 1, opts));
       return;
     }
     /* v3.0.16 — 필드 정예 출현 (메이플 엘리트/챔피언): 전투 구역 4.5%, 동시 1마리, 보스 부재 시.
      *  3.2배 HP / 1.45배 ATK / 4배 EXP / 3배 골드 + 처치 시 에메랄드 +1 확정 */
     /* v1.4.3 (작업2) — 훈련용 늑대 스폰 지점 판정 — v1.4.12 (#3) 훈련장 철거로 삭제.
      *  이제 모든 리스폰은 일반 규칙을 따른다. */
-    const eliteOk = !this.fieldEliteRef && !this.boss?.active && !this.stageDef.isVillage && !this.isInterior;
+    /* v1.0.13 피드백#3 — 옵션 지정(탑 층 배율) 리스폰은 정예 배율과 절대 스탯이 충돌하므로 정예 제외 */
+    const eliteOk = !opts && !this.fieldEliteRef && !this.boss?.active && !this.stageDef.isVillage && !this.isInterior;
     const spawnElite = eliteOk && Math.random() < 0.045;
     const e = spawnElite
       ? new Enemy(this, x, y, key, {
           hp: 3.2, atk: 1.45, exp: 5, gold: 4, scale: 1.35, tint: 0xffd76a,
           displayName: `정예 ${ENEMIES[key].name}`,
         })
-      : new Enemy(this, x, y, key);
+      : new Enemy(this, x, y, key, opts);
     if (spawnElite) {
       this.fieldEliteRef = e;
       this.showBanner("정예 몬스터 출현!");
@@ -9196,7 +9236,8 @@ export class WorldScene extends Phaser.Scene {
         park_pot_hp: { name: "HP 물약 ×5", cost: 6, give: () => { this.player.potions.hp += 5; } },
         park_pot_mp: { name: "MP 물약 ×5", cost: 6, give: () => { this.player.potions.mp += 5; } },
         park_scroll: { name: "강화 주문서", cost: 12, give: () => { this.player.starBless = Math.min(3, this.player.starBless + 1); } },
-        park_book: { name: "경험치 책 ×2", cost: 10, give: () => { this.player.owned.push("exp_book", "exp_book"); } },
+        /* v1.0.13 피드백#1 — 파크북 환산 nerf: 10코인 2권 → 40코인 1권 (경험치 책 남발 주범) */
+        park_book: { name: "경험치 책 ×1", cost: 40, give: () => { this.player.owned.push("exp_book"); } },
         park_emerald: { name: "에메랄드 +2", cost: 24, give: () => { this.player.emerald += 2; } },
       };
       const it = SHOP[v?.id ?? ""];
@@ -10770,6 +10811,48 @@ export class WorldScene extends Phaser.Scene {
         for (let i = 0; i < 4; i++) this.time.delayedCall(i * 130, () => this.fireRemoteProj(x + (i - 1.5) * 60 * s, y - 200, Math.PI / 2, 520, { anim: "fx-arcane", scale: 1.4 * s, rot: true, life: 380 }));
         for (let i = 0; i < 3; i++) { this.remoteRing(x + (i - 1) * 50 * s, y, hex, 1.8 * s, 320 + i * 140, 2.4); this.spawnBurstAt(x + (i - 1) * 50 * s, y, 10, hex); }
         this.remotePillar(x, y, hex, 120, 140 * s);
+      } else if (cls === "blademaster") {
+        /* v1.0.13 피드백#14 — BM 원격 궁극기 분기 복구(fam 오류로 dead code였음) + 50연타 동기화.
+         *  familyOf("blademaster")==="thief"라 기존 `fam==="warrior"&&cls==="blademaster"` 분기는
+         *  도달 불가(dead code)였고, 계열 공용 도적 연출로 대체돼 있었다.
+         *  계열 도적 분기보다 먼저 cls로 판정해야 한다. 로컬 궁극기 50연타 개편과 동일 리듬 동기화. */
+        /* 블레이드마스터 — 무한 검무 50연타 근사:
+         *  가속 리듬 96→20ms · 50컷 코스메틱 · 死 한자 유령 — 판정 없음 */
+        const CUTS = 50, IV_START = 96, IV_MIN = 20;
+        const decay = (IV_START - IV_MIN) / (CUTS - 1);
+        let racc = 0;
+        for (let i = 0; i < CUTS; i++) {
+          const t0 = racc;
+          racc += Math.max(IV_MIN, IV_START - decay * i);
+          this.time.delayedCall(t0, () => {
+            const ox = (Math.random() - 0.5) * 150 * s, oy = (Math.random() - 0.5) * 90 * s;
+            const a2 = Math.random() * Math.PI * 2;
+            this.spawnSlash(x + ox, y + oy, new Phaser.Math.Vector2(Math.cos(a2), Math.sin(a2)), i % 2 === 0, 1.7 * s, i % 3 === 0 ? 0xff5a5a : hex);
+            if (i % 4 === 0) this.spawnBurstAt(x + ox, y + oy, 6, hex);
+            if (i % 12 === 0) this.doShake(60, 0.002 + (i / CUTS) * 0.004);
+          });
+        }
+        /* 死 한자 유령 — 절제 톤 (로컬과 동일 톤) */
+        try {
+          const par = this.game.canvas.parentElement;
+          if (par) {
+            const g = document.createElement("div");
+            g.textContent = "死";
+            g.style.cssText = "position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(0.5);pointer-events:none;z-index:6;font-family:'Noto Serif SC','Noto Serif KR',serif;font-weight:900;font-size:min(26vh,26vw);line-height:1;color:#e01818;text-shadow:0 0 9px #ff2a2a,0 0 20px #c80000;opacity:0;transition:transform 420ms ease-out,opacity 280ms ease-out;";
+            par.appendChild(g);
+            requestAnimationFrame(() => { g.style.opacity = "0.3"; g.style.transform = "translate(-50%,-50%) scale(1.04)"; });
+            window.setTimeout(() => { g.style.opacity = "0"; g.style.transform = "translate(-50%,-50%) scale(1.25)"; }, racc + 200);
+            window.setTimeout(() => { try { g.remove(); } catch { /* 무시 */ } }, racc + 900);
+          }
+        } catch { /* DOM 이펙트 실패 무시 */ }
+        /* 종결 — 교차 쌍검 근사 */
+        this.time.delayedCall(racc + 60, () => {
+          this.spawnSlashArc(x, y, face, 0xffe0e0, 3.4 * s, 320, 0.95);
+          this.spawnSpinSlash(x, y, face);
+          this.spawnBurstAt(x, y, 26, hex);
+          this.remoteRing(x, y, 0xffffff, 2.8 * s, 0, 3.2);
+          this.doShake(300, 0.012);
+        });
       } else if (fam === "thief") {
         /* 심연 — 그림자 참수 연타 + 심연 폭발
          *  vc153 (#신규10) — s5b(제2궁극기)면 「사(死)의 일섬」 원격 근사: 붉은 死 플래시 + 붉은 참격 3연 */
@@ -10808,44 +10891,6 @@ export class WorldScene extends Phaser.Scene {
           this.remoteRing(x, y, 0x7a4aff, 2.4 * s, 480, 3.0);
         }
         this.remoteRing(x, y, 0x120530, 2.0 * s, 560, 2.6);
-      } else if (fam === "warrior" && cls === "blademaster") {
-        /* 블레이드마스터 — 무한 검무 백연타 근사 (vc154 — 로컬 100연타 개편 동기화:
-         *  가속 리듬 96→20ms · 100컷 코스메틱 · HIT 카운터 · 死 한자 유령 — 판정 없음) */
-        const CUTS = 100, IV_START = 96, IV_MIN = 20;
-        const decay = (IV_START - IV_MIN) / (CUTS - 1);
-        let racc = 0;
-        for (let i = 0; i < CUTS; i++) {
-          const t0 = racc;
-          racc += Math.max(IV_MIN, IV_START - decay * i);
-          this.time.delayedCall(t0, () => {
-            const ox = (Math.random() - 0.5) * 150 * s, oy = (Math.random() - 0.5) * 90 * s;
-            const a2 = Math.random() * Math.PI * 2;
-            this.spawnSlash(x + ox, y + oy, new Phaser.Math.Vector2(Math.cos(a2), Math.sin(a2)), i % 2 === 0, 1.7 * s, i % 3 === 0 ? 0xff5a5a : hex);
-            if (i % 4 === 0) this.spawnBurstAt(x + ox, y + oy, 6, hex);
-            if (i % 12 === 0) this.doShake(60, 0.002 + (i / CUTS) * 0.004);
-          });
-        }
-        /* 死 한자 유령 — 절제 톤 (로컬과 동일 톤) */
-        try {
-          const par = this.game.canvas.parentElement;
-          if (par) {
-            const g = document.createElement("div");
-            g.textContent = "死";
-            g.style.cssText = "position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(0.5);pointer-events:none;z-index:6;font-family:'Noto Serif SC','Noto Serif KR',serif;font-weight:900;font-size:min(26vh,26vw);line-height:1;color:#e01818;text-shadow:0 0 9px #ff2a2a,0 0 20px #c80000;opacity:0;transition:transform 420ms ease-out,opacity 280ms ease-out;";
-            par.appendChild(g);
-            requestAnimationFrame(() => { g.style.opacity = "0.3"; g.style.transform = "translate(-50%,-50%) scale(1.04)"; });
-            window.setTimeout(() => { g.style.opacity = "0"; g.style.transform = "translate(-50%,-50%) scale(1.25)"; }, racc + 200);
-            window.setTimeout(() => { try { g.remove(); } catch { /* 무시 */ } }, racc + 900);
-          }
-        } catch { /* DOM 이펙트 실패 무시 */ }
-        /* 종결 — 교차 쌍검 근사 */
-        this.time.delayedCall(racc + 60, () => {
-          this.spawnSlashArc(x, y, face, 0xffe0e0, 3.4 * s, 320, 0.95);
-          this.spawnSpinSlash(x, y, face);
-          this.spawnBurstAt(x, y, 26, hex);
-          this.remoteRing(x, y, 0xffffff, 2.8 * s, 0, 3.2);
-          this.doShake(300, 0.012);
-        });
       } else {
         /* 천멸(전사 계열) — 초거대 참격 연속 + 종결 일격 */
         for (let i = 0; i < 4; i++) this.time.delayedCall(i * 110, () => this.spawnSlashArc(x, y, face, 0xd6e6ff, 3.0 * s, 300, 0.95, -0.9 + i * 0.5));
@@ -11117,13 +11162,19 @@ export class WorldScene extends Phaser.Scene {
 
   private escapeCd = 0;
 
-  /* v1.2.0 (#3 악용 방지) — 긴급 귀환 하루 3회 제한 (로컬 날짜 기준, 자정 리셋) */
+  /* v1.2.0 (#3 악용 방지) — 긴급 귀환 하루 3회 제한 (로컬 날짜 기준, 자정 리셋)
+   *  v1.0.13 피드백#15 — 일일 상자/긴급귀환 캐릭터당 분리 (키에 활성 캐릭터 id 포함) */
   private static readonly ESCAPE_DAILY_KEY = "sertz.escape.daily";
   private static readonly ESCAPE_DAILY_MAX = 3;
 
+  /** 캐릭터별 긴급 귀환 일일 카운터 키 (활성 캐릭터 id 없으면 "default" — 구 동작 폴백) */
+  private escapeDailyKey(): string {
+    return `${WorldScene.ESCAPE_DAILY_KEY}.${getActiveCharId() ?? "default"}`;
+  }
+
   private escapeUsesToday(): number {
     try {
-      const raw = window.localStorage.getItem(WorldScene.ESCAPE_DAILY_KEY);
+      const raw = window.localStorage.getItem(this.escapeDailyKey());
       if (!raw) return 0;
       const d = JSON.parse(raw) as { date: string; count: number };
       const today = new Date().toISOString().slice(0, 10);
@@ -11136,7 +11187,7 @@ export class WorldScene extends Phaser.Scene {
   private bumpEscapeUse() {
     try {
       const today = new Date().toISOString().slice(0, 10);
-      window.localStorage.setItem(WorldScene.ESCAPE_DAILY_KEY, JSON.stringify({ date: today, count: this.escapeUsesToday() + 1 }));
+      window.localStorage.setItem(this.escapeDailyKey(), JSON.stringify({ date: today, count: this.escapeUsesToday() + 1 }));
     } catch {
       /* 저장 불가 환경 — 제한 없이 진행 */
     }
@@ -11236,13 +11287,21 @@ export class WorldScene extends Phaser.Scene {
         const aura = isGm
           ? this.add.image(p.x, p.y + 6, "glow").setDepth(8).setTint(0xffd76a).setScale(1.5).setAlpha(0.4).setBlendMode(Phaser.BlendModes.ADD)
           : null;
-        r = { sp, tag, tx: p.x, ty: p.y, flip: p.flip, moving: p.moving, cls: p.cls, lv: p.lv, name: p.name, gm: isGm, aura };
+        r = { sp, tag, tx: p.x, ty: p.y, flip: p.flip, moving: p.moving, cls: p.cls, lv: p.lv, name: p.name, gm: isGm, aura, code: p.code ?? null };
         this.remotes.set(p.id, r);
+        /* v1.0.13 피드백#12 — 상대 클릭 → 정보창(1:1 거래 진입): 스프라이트·이름표 클릭 시
+         *  ui:playerInfo 발행 (React 정보창 패널이 수신 — 이 씬은 발행만 담당) */
+        const rr = r;
+        sp.setInteractive({ useHandCursor: true });
+        sp.on("pointerdown", () => EventBus.emit("ui:playerInfo", { id: p.id, name: rr.name, lv: rr.lv, cls: rr.cls, gm: rr.gm, code: rr.code }));
+        tag.setInteractive({ useHandCursor: true });
+        tag.on("pointerdown", () => EventBus.emit("ui:playerInfo", { id: p.id, name: rr.name, lv: rr.lv, cls: rr.cls, gm: rr.gm, code: rr.code }));
       }
       r.tx = p.x;
       r.ty = p.y;
       r.flip = p.flip;
       r.moving = p.moving;
+      r.code = p.code ?? null; // v1.0.13 피드백#12 — 친구 코드 최신 유지
       if (r.cls !== p.cls || r.lv !== p.lv || r.name !== p.name || r.gm !== (p.gm === true)) {
         r.cls = p.cls;
         r.lv = p.lv;

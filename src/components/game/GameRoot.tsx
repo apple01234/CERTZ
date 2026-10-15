@@ -10,7 +10,7 @@ import { DialogueBox } from "./DialogueBox";
 import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel, RewardPopup, GateCardOverlay, GateHud, ExitMenuOverlay } from "./Overlays";
 // v1.4.24 — ServerConnect 제거 (#멀티정리 — 서버주소 설정창 철거)
 // import { ServerConnect } from "./ServerConnect";
-import { GamePanels } from "./Panels";
+import { GamePanels, stashPlayerInfo } from "./Panels";
 import { Lobby } from "./Lobby"; // v1.0.18 — 캐릭터 선택·생성 로비
 import { UnionPanel } from "./UnionPanel"; // v1.0.18 — 유니온 패널
 // v1.4.27-w1 (#멀티릴레이) — ChatBox/PartyWidget 복원: socket.io 대신 서버리스 릴레이(net.ts 위임)로 동작.
@@ -119,6 +119,20 @@ export default function GameRoot() {
     };
   }, []);
 
+  /* v1.0.13 피드백#12 — 상대 정보창: WorldScene이 쏜 ui:playerInfo(payload)를
+   *  패널 라우팅(playerinfo)으로 변환 (trade2와 동일한 ui:panel 패턴).
+   *  페이로드는 stash 후 패널이 마운트되며 복원 — 이벤트→마운트 순서 문제 회피. */
+  useEffect(() => {
+    const onInfo = (v: unknown) => {
+      stashPlayerInfo(v);
+      setPanel("playerinfo");
+    };
+    EventBus.on("ui:playerInfo", onInfo);
+    return () => {
+      EventBus.off("ui:playerInfo", onInfo);
+    };
+  }, []);
+
   return (
     <div className="game-root fixed inset-0 select-none overflow-hidden bg-[#05070d]">
       {/* Phaser 캔버스가 들어갈 부모 — FIT 스케일이 이 영역을 채움 */}
@@ -209,16 +223,21 @@ export default function GameRoot() {
             {/* vc147 (#20) — 게임 시작 화면부터 로그인: 타이틀에서 계정 로그인/회원가입 가능.
                로그인하면 클라우드 세이브 자동 백업(90초)이 즉시 시작되고 랭킹에도 등록된다. */}
             <AuthPanel />
-            <button
-              onClick={() => EventBus.emit("ui:authOpen", {})}
-              aria-label="계정 로그인"
-              /* vc153 (#신규7) — z-30 → z-[60]: 타이틀 스크롤 오버레이(sertz-scroll z-40)가 버튼을 덮어
-               *  클릭이 전부 오버레이로 흡수돼 "로그인&회원가입 버튼 클릭안됨"(= 123456 로그인 안됨으로 체감) 버그.
-               *  실측 elementsFromPoint: BUTTON(z-30) 위에 DIV.sertz-scroll(z-40)이 깔려 클릭 도달 불능이었다. */
-              className="absolute left-2 top-2 z-[60] flex h-9 items-center gap-1.5 rounded-lg border-2 border-amber-200/50 bg-slate-900/85 px-2.5 text-[12px] font-black text-amber-100 shadow-lg transition active:scale-95 hover:border-amber-200/90 sm:left-3 sm:top-3"
-            >
-              🔑 로그인 / 계정
-            </button>
+            {/* v1.0.13 피드백#9 — 로비가 열려 있으면 버튼 숨김: z-[60] 버튼이 Lobby(z-40) 위로
+               떠서 로비 화면 좌상단에 떠 있던 버그. (z-[60] 자체는 타이틀 스크롤 오버레이
+               z-40 대응에 필요 — 유지) */}
+            {!lobbyOpen && (
+              <button
+                onClick={() => EventBus.emit("ui:authOpen", {})}
+                aria-label="계정 로그인"
+                /* vc153 (#신규7) — z-30 → z-[60]: 타이틀 스크롤 오버레이(sertz-scroll z-40)가 버튼을 덮어
+                 *  클릭이 전부 오버레이로 흡수돼 "로그인&회원가입 버튼 클릭안됨"(= 123456 로그인 안됨으로 체감) 버그.
+                 *  실측 elementsFromPoint: BUTTON(z-30) 위에 DIV.sertz-scroll(z-40)이 깔려 클릭 도달 불능이었다. */
+                className="absolute left-2 top-2 z-[60] flex h-9 items-center gap-1.5 rounded-lg border-2 border-amber-200/50 bg-slate-900/85 px-2.5 text-[12px] font-black text-amber-100 shadow-lg transition active:scale-95 hover:border-amber-200/90 sm:left-3 sm:top-3"
+              >
+                🔑 로그인 / 계정
+              </button>
+            )}
             {/* v1.0.18 — 캐릭터 선택·생성 로비 (타이틀 위에 표시) */}
             {lobbyOpen && <Lobby onExit={() => setLobbyOpen(false)} />}
           </div>

@@ -164,6 +164,9 @@ export type ItemKey =
   | "pet_wisp" | "pet_ember" | "pet_frost" | "pet_golem" | "pet_unicorn" | "pet_reaper"
   | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow"
   | "cos_rose" | "cos_toxic" | "cos_magma" | "cos_lunar" | "cos_deep" | "cos_galaxy" // v1.0.16 — +6
+  /* v1.0.13 피드백#19 — 씹덕&오타쿠 확장: 수집형 틴트 펫 2종 + 신규 오라 6종 */
+  | "pet_sakura" | "pet_mermaid"
+  | "cos_sakura" | "cos_heart" | "cos_starlight" | "cos_melonsoda" | "cos_jade" | "cos_neon"
   /* v1.0.8 무한 콘텐츠 — 연금 제작대 재료 3종 (필드/던전 적 처치 시 확률 드롭) */
   | "mat_mana" | "mat_heart" | "mat_mithril";
 
@@ -460,6 +463,10 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   pet_golem: { key: "pet_golem", kind: "pet", name: "철석 슬라임", icon: "i_pet_golem", price: 80000, bmPrice: 32, bmOnly: true, tier: "epic" },
   pet_unicorn: { key: "pet_unicorn", kind: "pet", name: "빛의 요정 유니", icon: "i_pet_unicorn", price: 100000, bmPrice: 40, bmOnly: true, tier: "legend" },
   pet_reaper: { key: "pet_reaper", kind: "pet", name: "심연의 별 정령 리퍼", icon: "i_pet_reaper", price: 140000, bmPrice: 55, bmOnly: true, tier: "legend" },
+  /* v1.0.13 피드백#19 — 수집형 틴트 펫 2종 (BM 구매 경로 — PetDef 본체는 위 PET_DEFS)
+   *  지시에 따라 골드 보너스를 5~8%로 절제 — 수집·외형 가치 중심의 입문 펫 (아이콘은 요정 스프라이트 재활용) */
+  pet_sakura: { key: "pet_sakura", kind: "pet", name: "벚꽃 요정 사쿠라", icon: "pet_pixie", price: 18000, bmPrice: 8, bmOnly: true, tier: "rare" },
+  pet_mermaid: { key: "pet_mermaid", kind: "pet", name: "심해의 인어", icon: "pet_pixie", price: 24000, bmPrice: 12, bmOnly: true, tier: "epic" },
   /* v4.3.0 — 신규 치장 6종 (ITEMS 등록: BM 구매 경로 — CosmeticDef 본체는 위 COSMETIC_DEFS) */
   cos_frost: { key: "cos_frost", kind: "cosmetic", name: "서리 오라", icon: "i_cos_frost", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
   cos_flame: { key: "cos_flame", kind: "cosmetic", name: "화염 오라", icon: "i_cos_flame", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
@@ -479,6 +486,13 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   cos_lunar: { key: "cos_lunar", kind: "cosmetic", name: "달빛 오라", icon: "i_cos_frost", price: 36000, bmPrice: 20, bmOnly: true, tier: "epic" },
   cos_deep: { key: "cos_deep", kind: "cosmetic", name: "심해 오라", icon: "i_cos_flame", price: 42000, bmPrice: 24, bmOnly: true, tier: "epic" },
   cos_galaxy: { key: "cos_galaxy", kind: "cosmetic", name: "은하수 오라", icon: "i_cos_rainbow", price: 52000, bmPrice: 28, bmOnly: true, tier: "legend" },
+  /* v1.0.13 피드백#19 — 신규 오라 6종 (BM 판매 — v1.0.16과 동일하게 기존 패밀리 아이콘 텍스처 재활용) */
+  cos_sakura: { key: "cos_sakura", kind: "cosmetic", name: "벚꽃빛 오라", icon: "cos_dawn", price: 28000, bmPrice: 16, bmOnly: true, tier: "rare" },
+  cos_heart: { key: "cos_heart", kind: "cosmetic", name: "하트 오라", icon: "i_cos_rainbow", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
+  cos_starlight: { key: "cos_starlight", kind: "cosmetic", name: "별빛 오라", icon: "cos_dawn", price: 36000, bmPrice: 20, bmOnly: true, tier: "epic" },
+  cos_melonsoda: { key: "cos_melonsoda", kind: "cosmetic", name: "메론소다 오라", icon: "cos_aurora", price: 32000, bmPrice: 18, bmOnly: true, tier: "rare" },
+  cos_jade: { key: "cos_jade", kind: "cosmetic", name: "비취 오라", icon: "cos_aurora", price: 36000, bmPrice: 20, bmOnly: true, tier: "epic" },
+  cos_neon: { key: "cos_neon", kind: "cosmetic", name: "사이버 네온 오라", icon: "i_cos_rainbow", price: 52000, bmPrice: 28, bmOnly: true, tier: "legend" },
   /* v1.1.0 (#19) — 프리미엄 완전 교체 코스튬 6종 (캐시상점 — 고가 고퀄 도트) */
   outfit_silver: { key: "outfit_silver", kind: "cosmetic", name: "은월의 검희", icon: "cost_silver_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_crimson: { key: "outfit_crimson", kind: "cosmetic", name: "진홍의 마녀", icon: "cost_crimson_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
@@ -557,10 +571,12 @@ export const UPGRADE_BONUS = { weaponAtk: 2, armorDef: 1 } as const;
 export type BuffKey = "buff_atk" | "buff_def" | "buff_spd" | "buff_exp" | "buff_king"
   | "buff_crit" | "buff_gold" | "buff_luck"; // v4.3.0 — 신규 BM 버프 3종 (질풍/탐욕/행운)
 export type PetKey = "pet_slime" | "pet_pixie" | "pet_atlas"
-  | "pet_wisp" | "pet_ember" | "pet_frost" | "pet_golem" | "pet_unicorn" | "pet_reaper"; // v4.3.0 — +6
+  | "pet_wisp" | "pet_ember" | "pet_frost" | "pet_golem" | "pet_unicorn" | "pet_reaper" // v4.3.0 — +6
+  | "pet_sakura" | "pet_mermaid"; // v1.0.13 피드백#19 — +2 (수집형 틴트 펫)
 export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | "cos_aurora" | "cos_isekai" | "cos_pixel"
   | "cos_frost" | "cos_flame" | "cos_shadow" | "cos_holy" | "cos_storm" | "cos_rainbow" // v4.3.0 — +6
   | "cos_rose" | "cos_toxic" | "cos_magma" | "cos_lunar" | "cos_deep" | "cos_galaxy" // v1.0.16 — +6 (유저 지시 "치장템을 차라리 늘려")
+  | "cos_sakura" | "cos_heart" | "cos_starlight" | "cos_melonsoda" | "cos_jade" | "cos_neon" // v1.0.13 피드백#19 — +6 (씹덕&오타쿠 확장)
   /* v1.0.7 — SPUM식 코스튬 4종 (v1.2.0 — 포니테일 헤어는 유저 지시로 완전 제거) */
   | "outfit_royal" | "outfit_shadow" | "outfit_spring" | "outfit_navy"
   /* v1.1.0 (#19 프리미엄) — SPUM식 완전 교체 코스튬 6종 (머리+피부+의상 전부 다른 캐릭터로 변신) */
@@ -624,6 +640,10 @@ export const PET_DEFS: Record<PetKey, PetDef> = {
   pet_golem: { key: "pet_golem", name: "철석 슬라임", icon: "pet_slime", tint: 0xb8b8c8, desc: "드롭 자동 줍기 · 골드 +50%", bonusGoldPct: 50, price: 0 },
   pet_unicorn: { key: "pet_unicorn", name: "빛의 요정 유니", icon: "pet_pixie", tint: 0xffe8ff, desc: "드롭 자동 줍기 · 골드 +55%", bonusGoldPct: 55, price: 0 },
   pet_reaper: { key: "pet_reaper", name: "심연의 별 정령 리퍼", icon: "pet_atlas", tint: 0xb070ff, desc: "맵 전체 드롭 즉시 흡수 · 골드 +65%", bonusGoldPct: 65, price: 0 },
+  /* v1.0.13 피드백#19 — 수집형 틴트 펫 2종 (pet_pixie 스프라이트 재활용 — 벚꽃 연분홍/심해 아쿠아 틴트).
+   *  기존 레더(35~65%)와 달리 골드 보너스를 지시대로 5~8%로 절제한 수집·입문용 펫 */
+  pet_sakura: { key: "pet_sakura", name: "벚꽃 요정 사쿠라", icon: "pet_pixie", tint: 0xffb7d5, desc: "드롭 자동 줍기 · 골드 +5%", bonusGoldPct: 5, price: 0 },
+  pet_mermaid: { key: "pet_mermaid", name: "심해의 인어", icon: "pet_pixie", tint: 0x4de0d0, desc: "드롭 자동 줍기 · 골드 +8%", bonusGoldPct: 8, price: 0 },
 };
 
 /** 치장 아이템 — 플레이어 뒤에 따라붙는 오라 연출 (전투 능력 없음, 순수 치장) */
@@ -664,6 +684,15 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_lunar: { key: "cos_lunar", name: "달빛 오라", icon: "cos_dawn", desc: "차가운 월광 서릿 후광", price: 0, tint: 0xd8e8ff },
   cos_deep: { key: "cos_deep", name: "심해 오라", icon: "cos_aurora", desc: "깊은 바닷빛 심연 후광", price: 0, tint: 0x3aa8d8 },
   cos_galaxy: { key: "cos_galaxy", name: "은하수 오라", icon: "cos_aurora", desc: "별이 흐르는 은하빛 후광 — 파랑↔보라로 맥동", price: 0, tint: 0xb08aff },
+  /* v1.0.13 피드백#19 — 신규 오라 6종 (씹덕&오타쿠 감성 — 텍스처 재활용, v1.0.16과 동일 구조).
+   *  WorldScene 공용 오라 렌더러(glow+vfx_ring+본체 오버레이 틴트)가 그대로 지원하는 필드만 사용 —
+   *  아이콘은 v1.0.16 선례대로 기존 패밀리 텍스처 재활용(1:1 키 강제 아님 — 신규 바이너리 에셋 0) */
+  cos_sakura: { key: "cos_sakura", name: "벚꽃빛 오라", icon: "cos_dawn", desc: "벚꽃잎이 흩날리는 연분홍 봄 후광", price: 0, tint: 0xffc2dc },
+  cos_heart: { key: "cos_heart", name: "하트 오라", icon: "i_cos_rainbow", desc: "두근두근 발그레한 하트 핑크 후광", price: 0, tint: 0xff5a76 },
+  cos_starlight: { key: "cos_starlight", name: "별빛 오라", icon: "cos_dawn", desc: "조용히 반짝이는 은백 별빛 후광", price: 0, tint: 0xf0ecff },
+  cos_melonsoda: { key: "cos_melonsoda", name: "메론소다 오라", icon: "cos_aurora", desc: "탄산처럼 반짝이는 메론소다 민트 후광", price: 0, tint: 0xa8ffd8 },
+  cos_jade: { key: "cos_jade", name: "비취 오라", icon: "cos_aurora", desc: "동양 판타지 비취 푸른빛 후광", price: 0, tint: 0x4ae8b8 },
+  cos_neon: { key: "cos_neon", name: "사이버 네온 오라", icon: "i_cos_rainbow", desc: "사이버펑크 전기 네온 청록 후광", price: 0, tint: 0x4dffff },
   /* v1.1.0 (#1) — 코스튬 = 스프라이트 "완전 교체" (겹치기 폐지).
    *  cost_* 28프레임 시트로 본체 자체가 다른 캐릭터로 변신한다 (SPUM NPC 방식).
    *  scripts/gen_char_system.py — 머리카락/피부/의상 전부 새 팔레트로 재탄생 */
@@ -912,6 +941,9 @@ export const BM_STOCK: ItemKey[] = [
   "cos_frost", "cos_flame", "cos_shadow", "cos_holy", "cos_storm", "cos_rainbow", "cos_wings", "cos_aurora",
   /* v1.0.16 — 신규 치장 6종 (캐시상점 합류) */
   "cos_rose", "cos_toxic", "cos_magma", "cos_lunar", "cos_deep", "cos_galaxy",
+  /* v1.0.13 피드백#19 — 신규 오라 6종 + 수집형 펫 2종 (캐시상점 합류) */
+  "cos_sakura", "cos_heart", "cos_starlight", "cos_melonsoda", "cos_jade", "cos_neon",
+  "pet_sakura", "pet_mermaid",
   /* v1.0.7 — 코스튬/헤어 (캐시상점 신규 착장 치장) */
   /* v1.1.0 (#19/#1) — 프리미엄 코스튬 6종 + 어태치 장식 5종 */
   "outfit_silver", "outfit_crimson", "outfit_seraph", "outfit_abyss", "outfit_nightmare", "outfit_gilded",

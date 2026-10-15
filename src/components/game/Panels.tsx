@@ -12,10 +12,10 @@ import {
   closetThemeOf, CLOSET_THEMES, isPremiumPet, // v1.2.1 (#3) — 프리미엄 펫 특전 판정
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
-import { CLASS_LIST, CLASSES, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
+import { CLASS_LIST, CLASSES, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
 import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
-import { getPlayerName, loadSave, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도
+import { getPlayerName, loadSave, mutateFriends, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도 / v1.0.13 피드백#12 — 친구 추가( FriendsWidget 동일 스토어 API)
 import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
 import { GEM_SKUS, fetchStorePrices } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품 / v1.0.1-beta — 스토어 실가격
@@ -3142,6 +3142,167 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   );
 }
 
+/* =====================================================================
+ * v1.0.13 피드백#12 — 상대 정보창 (메이플스토리식 캐릭터 정보 UI)
+ *  WorldScene(다른 에이전트 소유)이 원격 플레이어 클릭 시 EventBus "ui:playerInfo"로
+ *  {id,name,lv,cls,gm,code}를 발사하면 GameRoot가 패널 라우팅(playerinfo)으로 열고
+ *  이 패널이 표시한다. 페이로드는 모듈 캐시에 stash — 패널 마운트가 이벤트보다
+ *  늦어도(Trade2Panel의 treq 케이스와 동일) 유실되지 않는다.
+ *  · [1:1 거래] → 기존 rpg:tradeInvite 재사용 · [친구 추가] → FriendsWidget 동일
+ *    mutateFriends 스토어 API (친구코드 미공개 시 disabled)
+ * ===================================================================== */
+type PlayerInfoData = { id: string; name: string; lv: number; cls: string | null; gm: boolean; code: string | null };
+let lastPlayerInfo: PlayerInfoData | null = null;
+
+function parsePlayerInfo(v: unknown): PlayerInfoData | null {
+  if (!v || typeof v !== "object") return null;
+  const d = v as Partial<PlayerInfoData>;
+  const id = String(d.id ?? "").slice(0, 40);
+  if (!id) return null;
+  return {
+    id,
+    name: String(d.name ?? "").slice(0, 8) || "이름없음",
+    lv: Math.max(1, Math.min(9999, Math.round(Number(d.lv) || 1))),
+    cls: typeof d.cls === "string" && d.cls ? d.cls.slice(0, 16) : null,
+    gm: !!d.gm,
+    code: typeof d.code === "string" && d.code ? d.code.toUpperCase().slice(0, 12) : null,
+  };
+}
+
+/** 최신 ui:playerInfo 페이로드 stash — GameRoot가 패널을 열기 직전 호출 (마운트 전 유실 방지) */
+export function stashPlayerInfo(v: unknown): void {
+  try {
+    lastPlayerInfo = parsePlayerInfo(v);
+  } catch {
+    lastPlayerInfo = null;
+  }
+}
+
+export function PlayerInfoPanel({ onClose }: { onClose: () => void }) {
+  useEscClose(onClose);
+  /* 마운트 시점 캐시 복원 + 이후 갱신 리스너 (Trade2Panel 마운트 라이프사이클과 동일 패턴) */
+  const [info, setInfo] = useState<PlayerInfoData | null>(() => lastPlayerInfo);
+  useEffect(() => {
+    const onInfo = (v: unknown) => {
+      stashPlayerInfo(v);
+      setInfo(lastPlayerInfo);
+    };
+    EventBus.on("ui:playerInfo", onInfo as never);
+    return () => {
+      EventBus.off("ui:playerInfo", onInfo as never);
+    };
+  }, []);
+  if (!info) return null;
+  const cd = info.cls ? classDef(info.cls) : null;
+  const initial = (info.name || "?").slice(0, 1).toUpperCase();
+  /* 친구 중복 추가 방지 — FriendsWidget과 동일 세이브 소스(loadSave().friends) 기준 */
+  const alreadyAdded = (() => {
+    try {
+      return !!info.code && (loadSave()?.friends ?? []).some((f) => f.code === info.code);
+    } catch {
+      return false;
+    }
+  })();
+  const addFriend = () => {
+    if (!info.code || alreadyAdded) return;
+    try {
+      mutateFriends((list) => (list.some((f) => f.code === info.code) ? list : [...list, { code: info.code as string, name: info.name }]));
+    } catch { /* 세이브 접근 불가 — 조용히 무시 */ }
+  };
+  return (
+    <div
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+      onPointerDown={onClose}
+    >
+      <div
+        className="game-panel w-[min(92vw,340px)] p-3.5 shadow-2xl"
+        style={{ zoom: typeof window !== "undefined" && window.innerWidth < 430 ? 0.9 : 1 }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[13px] font-black text-amber-200">캐릭터 정보</p>
+          <button onClick={onClose} aria-label="정보창 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+        </div>
+
+        {/* 대형 이니셜 아바타 원 (직업색 틴트) */}
+        <div
+          className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-4"
+          style={{
+            borderColor: cd?.color ?? "#8ea0c0",
+            background: `radial-gradient(circle at 50% 32%, ${(cd?.color ?? "#8ea0c0")}38, rgba(0,0,0,0.7))`,
+            boxShadow: `0 0 14px ${(cd?.color ?? "#8ea0c0")}30`,
+          }}
+        >
+          <span className="text-4xl font-black [text-shadow:0_2px_4px_#000]" style={{ color: cd?.color ?? "#ffffff" }}>{initial}</span>
+        </div>
+
+        {/* 이름 + [GM] 배지 */}
+        <p className="mt-2 text-center text-[15px] font-black text-white">
+          {info.name}
+          {info.gm && <span className="ml-1.5 rounded bg-amber-400 px-1.5 py-0.5 align-middle text-[9px] font-black text-slate-900 shadow">[GM]</span>}
+        </p>
+
+        {/* 정보 행 */}
+        <div className="mt-2 space-y-1 rounded-lg border border-white/10 bg-black/30 px-2.5 py-2 text-[11px]">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-white/45">레벨</span>
+            <span className="font-black text-white">Lv. {info.lv}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-white/45">직업</span>
+            <span className="font-black" style={{ color: cd?.color ?? "rgba(255,255,255,0.7)" }}>{cd ? cd.name : "무직"}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-white/45">상태</span>
+            <span className="flex items-center gap-1 font-black text-emerald-300">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_#34d399]" />
+              온라인
+            </span>
+          </div>
+          {info.code && (
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-white/45">친구 코드</span>
+              <span className="font-mono font-black tracking-widest text-amber-200">{info.code}</span>
+            </div>
+          )}
+        </div>
+
+        {/* 버튼 행 — 1:1 거래(기존 트레이드 초대 재사용) / 친구 추가 / 닫기 */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button
+            className="rounded-md border-2 border-amber-300/70 bg-amber-500/20 px-2 py-2 text-[12px] font-black text-amber-200 hover:bg-amber-500/30"
+            onClick={() => {
+              EventBus.emit("rpg:tradeInvite", { id: info.id, name: info.name });
+              onClose();
+            }}
+          >
+            1:1 거래
+          </button>
+          <button
+            disabled={!info.code || alreadyAdded}
+            title={info.code ? (alreadyAdded ? "이미 추가한 친구예요" : "친구로 추가합니다") : "친구 코드 미공개"}
+            className={`rounded-md border-2 px-2 py-2 text-[12px] font-black ${
+              !info.code || alreadyAdded
+                ? "cursor-not-allowed border-white/10 bg-white/[0.04] text-white/30"
+                : "border-emerald-300/70 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30"
+            }`}
+            onClick={addFriend}
+          >
+            {alreadyAdded ? "추가됨 ✓" : "친구 추가"}
+          </button>
+        </div>
+        <button
+          className="mt-2 w-full rounded-md border-2 border-white/25 bg-black/40 px-2 py-1.5 text-[11px] font-black text-white/75"
+          onClick={onClose}
+        >
+          닫기
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function GamePanels({
   panel,
   rpg,
@@ -3159,6 +3320,7 @@ export function GamePanels({
   if (panel === "bmshop") return <BmShopPanel rpg={rpg} onClose={onClose} />; // v3.0.6 — BM 상점
   if (panel === "trade") return <TradePanel rpg={rpg} onClose={onClose} />; // v3.0.7 — 유저 거래소
   if (panel === "trade2") return <Trade2Panel rpg={rpg} onClose={onClose} />; // vc142 — 1:1 플레이어 거래
+  if (panel === "playerinfo") return <PlayerInfoPanel onClose={onClose} />; // v1.0.13 피드백#12 — 상대 정보창
   if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} />;
   if (panel === "warp") return <WarpPanel rpg={rpg} onClose={onClose} />;
   if (panel === "job") return <JobPanel rpg={rpg} onClose={onClose} />;
@@ -3617,23 +3779,42 @@ export function RankingPanel({ onClose }: { rpg: RpgState; onClose: () => void }
   );
 }
 
+/* v1.0.13 피드백#16 — 직업별 랭킹 필터 목록 (전체 + 전체 클래스키 → 한글명).
+ *  classes.ts CLASSES를 재사용(이미 임포트 — 번들 추가 비용 0). cls 필드값 = 클래스키 그대로라
+ *  서버 ?job=<키> 완전 일치 필터와 1:1 대응된다. */
+const JOB_FILTERS: { key: string; name: string }[] = [
+  { key: "", name: "전체" },
+  ...Object.values(CLASSES).map((c) => ({ key: String(c.key), name: c.name })),
+];
+
 function KingdomRankTab() {
   const [state, setState] = useState<RankState | null>(null);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
-  const load = () => {
+  /* v1.0.13 피드백#16 — 직업별 랭킹 필터 ("" = 전체). ref로 폴링에서도 최신값 사용 */
+  const [job, setJob] = useState("");
+  const jobRef = useRef("");
+  const load = (j?: string) => {
+    const useJob = j ?? jobRef.current;
     setLoading(true);
-    fetchRanking().then((r) => {
+    fetchRanking({ job: useJob }).then((r) => {
       if (r.ok && r.state) setState(r.state);
       else setErr(r.error ?? "랭킹을 불러올 수 없어요");
       setLoading(false);
     });
   };
+  /* v1.0.13 피드백#16 — 직업 전환 즉시 재조회 */
+  const pickJob = (k: string) => {
+    if (k === jobRef.current) return;
+    jobRef.current = k;
+    setJob(k);
+    load(k);
+  };
   useEffect(load, []);
   /* vc147 (#12) — 마운트 시에도 즉시 업로드 훅 → 서버 반영 후 1.2s 뒤 재조회 (열자마자 최신화) */
   useEffect(() => {
     EventBus.emit("auth:cloudPush", {});
-    const t = window.setTimeout(load, 1200);
+    const t = window.setTimeout(() => load(), 1200);
     return () => window.clearTimeout(t);
   }, []);
   /* vc147 (#12 랭킹 갱신 근본 강화) — 기존 문제: 랭킹 서버는 클라우드 세이브의 "파생 데이터"라
@@ -3648,7 +3829,7 @@ function KingdomRankTab() {
   };
   useEffect(() => {
     const iv = setInterval(() => {
-      fetchRanking().then((r) => {
+      fetchRanking({ job: jobRef.current }).then((r) => {
         if (r.ok && r.state) setState(r.state);
       });
     }, 15000);
@@ -3678,6 +3859,24 @@ function KingdomRankTab() {
         </button>
       </div>
 
+      {/* v1.0.13 피드백#16 — 직업별 랭킹 선택행 (전체 + 클래스키·한글명) — 전환 시 ?job= 재조회 */}
+      <div className="mb-2 flex flex-wrap items-center justify-end gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-1.5 py-1.5">
+        {JOB_FILTERS.map((jf) => (
+          <button
+            key={jf.key || "all"}
+            onClick={() => pickJob(jf.key)}
+            aria-label={`직업별 랭킹 — ${jf.name}`}
+            className={`rounded px-1.5 py-0.5 text-[9px] font-black transition-colors active:scale-95 ${
+              job === jf.key
+                ? "bg-amber-400/90 text-slate-900"
+                : "bg-black/40 text-white/55 hover:bg-black/60 hover:text-white/85"
+            }`}
+          >
+            {jf.name}
+          </button>
+        ))}
+      </div>
+
       {/* 내 순위 */}
       {state?.me && (
         <div className={`mb-2 rounded-lg border px-2.5 py-2 ${isRanker ? "border-amber-300/60 bg-amber-400/15" : "border-white/10 bg-white/[0.04]"}`}>
@@ -3685,6 +3884,8 @@ function KingdomRankTab() {
             <>
               <p className="text-[11px] font-black text-white">
                 내 순위 <span className={isRanker ? "text-amber-300" : "text-yellow-200"}>#{myRank}</span>
+                {/* v1.0.13 피드백#7 — 캐릭터별 랭킹: 내 최고 캐릭터 기준 순위 (캐릭명 병기) */}
+                {state.me.name && <span className="ml-1 text-[9px] font-bold text-white/50">({state.me.name})</span>}
                 <span className="ml-1 text-[9px] text-white/40">/ {state.me.total}명 중</span>
                 {myRank <= 3 && <span className="ml-1.5 rounded bg-amber-400 px-1 text-[8px] font-black text-slate-900">TOP3</span>}
               </p>
@@ -3702,7 +3903,7 @@ function KingdomRankTab() {
       ) : err ? (
         <div className="py-4 text-center">
           <p className="text-[11px] font-bold text-rose-300">{err}</p>
-          <button onClick={load} className="mt-2 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1.5 text-[10px] font-black text-white/70 hover:bg-white/[0.12]">다시 시도</button>
+          <button onClick={() => load()} className="mt-2 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1.5 text-[10px] font-black text-white/70 hover:bg-white/[0.12]">다시 시도</button>
         </div>
       ) : (
         <>
@@ -3712,9 +3913,16 @@ function KingdomRankTab() {
             <p className="py-6 text-center text-[10px] font-bold text-white/35">아직 등록된 랭커가 없어요 — 첫 랭커가 되어보세요!</p>
           ) : (
             (state?.list ?? []).map((e) => (
-              <div key={e.rank} className={`flex items-center gap-2 border-b border-white/[0.05] px-2.5 py-1.5 last:border-0 ${e.rank <= 3 ? "bg-amber-400/[0.06]" : ""}`}>
+              <div key={`${e.rank}-${e.name}-${e.cid ?? ""}`} className={`flex items-center gap-2 border-b border-white/[0.05] px-2.5 py-1.5 last:border-0 ${e.rank <= 3 ? "bg-amber-400/[0.06]" : ""}`}>
                 <span className={`w-7 shrink-0 text-center text-[11px] font-black ${e.rank === 1 ? "text-amber-300" : e.rank === 2 ? "text-slate-200" : e.rank === 3 ? "text-orange-300" : "text-white/45"}`}>{e.rank === 1 ? "👑1" : e.rank === 2 ? "🥈2" : e.rank === 3 ? "🥉3" : e.rank}</span>
                 <span className="min-w-0 flex-1 truncate text-[11px] font-black text-white/90">{e.name}</span>
+                {/* v1.0.13 피드백#16 — 직업 배지 (한글명 · 클래스 컬러) */}
+                {(() => {
+                  const cd = classDef(e.cls);
+                  return cd ? (
+                    <span className="shrink-0 rounded bg-white/[0.06] px-1 text-[8px] font-black" style={{ color: cd.color }}>{cd.name}</span>
+                  ) : null;
+                })()}
                 <span className="shrink-0 text-[9px] font-bold text-white/45">Lv{e.lv}</span>
                 <span className="shrink-0 rounded bg-purple-400/15 px-1 text-[8px] font-black text-purple-200">환생{e.rebirths}</span>
                 <span className="shrink-0 rounded bg-violet-400/15 px-1 text-[8px] font-black text-violet-200">탑{e.tower}</span>

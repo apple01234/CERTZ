@@ -242,13 +242,13 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "wolf", count: 4 }, { key: "spider", count: 4 }, { key: "swampbeast", count: 4 }, { key: "x2_frog", count: 3 }, { key: "x3_swampy", count: 3 }, { key: "x3_goblin", count: 3 }],
     main: "wolf",
     beats: [
-      { sub: 2, dialogue: "fragment", quest: { id: "f0", type: "collect", title: "결정의 흔적 찾기", desc: "숲 어딘가 빛을 내는 결정의 흔적을 찾아 주워라. 이그니가 기다린다.", targetLabel: "결정의 흔적", reward: Math.round(40 * G), expReward: 35 } },
-      { sub: 3, dialogue: "", quest: { id: "f1", type: "hunt", title: "숲의 거미 소탕", desc: "신전으로 가는 길을 막는 숲의 거미 13마리를 처치해라.", need: 13, targetKey: "spider", targetLabel: "숲의 거미", reward: Math.round(60 * G), expReward: 40 } },
-      { sub: 6, dialogue: "wolfRoutDone", quest: { id: "f2", type: "hunt", title: "능대 무리 소멸", desc: "어둠에 미친 능대 무리 25마리를 더 처치해라!", need: 25, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(110 * G), expReward: 90 } },
-      { sub: 8, dialogue: "", quest: { id: "f3", type: "collect", title: "능대들이 지키던 결정", desc: "능대들이 지키던 곳에서 또 하나의 빛이 느껴진다.", targetLabel: "결정의 흔적", reward: Math.round(60 * G), expReward: 45 } },
+      { sub: 2, dialogue: "fragment", quest: { id: "f0", type: "collect", title: "결정의 흔적 찾기", desc: "숲 어딘가 빛을 내는 결정의 흔적을 찾아 주워라. 이그니가 기다린다.", targetLabel: "결정의 흔적", reward: Math.round(40 * G), expReward: 70 } },
+      { sub: 3, dialogue: "", quest: { id: "f1", type: "hunt", title: "숲의 거미 소탕", desc: "신전으로 가는 길을 막는 숲의 거미 13마리를 처치해라.", need: 13, targetKey: "spider", targetLabel: "숲의 거미", reward: Math.round(60 * G), expReward: 80 } },
+      { sub: 6, dialogue: "wolfRoutDone", quest: { id: "f2", type: "hunt", title: "능대 무리 소멸", desc: "어둠에 미친 능대 무리 25마리를 더 처치해라!", need: 25, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(110 * G), expReward: 180 } },
+      { sub: 8, dialogue: "", quest: { id: "f3", type: "collect", title: "능대들이 지키던 결정", desc: "능대들이 지키던 곳에서 또 하나의 빛이 느껴진다.", targetLabel: "결정의 흔적", reward: Math.round(60 * G), expReward: 90 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 (기존 인덱스 보존 — 체인 말미에만 추가) */
-      { sub: 9, dialogue: "", quest: { id: "f4", type: "collect", title: "[사연] 약초 할멈의 기승전결", desc: "약초 할멈이 말한 '빛나는 약초'는 사실 결정의 조각이었다. 하나 찾아오자 숲의 진실이 보인다.", targetLabel: "결정의 흔적", reward: Math.round(70 * G), expReward: 55 } },
-      { sub: 10, dialogue: "", quest: { id: "f5", type: "hunt", title: "[기믹] 이끼 골렘 소굴 청소", desc: "신전 뒤편 이끼 골렘 10마리가 결정을 집어 삼켰다. 토해내게 하자.", need: 10, targetKey: "golem", targetLabel: "이끼 골렘", reward: Math.round(120 * G), expReward: 95 } },
+      { sub: 9, dialogue: "", quest: { id: "f4", type: "collect", title: "[사연] 약초 할멈의 기승전결", desc: "약초 할멈이 말한 '빛나는 약초'는 사실 결정의 조각이었다. 하나 찾아오자 숲의 진실이 보인다.", targetLabel: "결정의 흔적", reward: Math.round(70 * G), expReward: 110 } },
+      { sub: 10, dialogue: "", quest: { id: "f5", type: "hunt", title: "[기믹] 이끼 골렘 소굴 청소", desc: "신전 뒤편 이끼 골렘 10마리가 결정을 집어 삼켰다. 토해내게 하자.", need: 10, targetKey: "golem", targetLabel: "이끼 골렘", reward: Math.round(120 * G), expReward: 190 } },
     ],
     repeat: { need: 16, gold: Math.round(70 * G), exp: 70, title: "[반복] 늑대 토벌 의뢰", desc: "마을 토벌 의뢰 — 늑대를 계속 사냥해 골드와 경험치를 얻자." },
     /* v1.4.3 (작업2) — enter 3→1: 신규 유저가 마을에서 1-1로 바로 나갈 수 있게 완화.
@@ -265,13 +265,13 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "swampbeast", count: 5 }, { key: "wolf", count: 4 }, { key: "golem", count: 3 }, { key: "x2_rat", count: 2 }, { key: "x3_imp", count: 3 }, { key: "x3_goblin", count: 2 }],
     main: "swampbeast",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "k1", type: "collect", title: "능지 속 결정의 조각", desc: "능대들이 품고 있던 결정의 조각을 되찾아라.", targetLabel: "결정의 흔적", reward: Math.round(80 * G), expReward: 70 } },
-      { sub: 3, dialogue: "", quest: { id: "k0", type: "hunt", title: "능지의 능대 소탕", desc: "결정의 기운을 먹고 미쳐 버린 늪의 능대 15마리를 처치해라.", need: 15, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(90 * G), expReward: 80 } },
-      { sub: 5, dialogue: "", quest: { id: "k2", type: "hunt", title: "왕국 신뢰 얻기", desc: "기사단을 도와 능대 무리 20마리를 더 베어 내라!", need: 20, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(140 * G), expReward: 130 } },
-      { sub: 7, dialogue: "swampDone", quest: { id: "k3", type: "hunt", title: "왕국의 위협 제거", desc: "능지의 어둠이 짙어진다 — 능대 25마리를 처치해라!", need: 25, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(170 * G), expReward: 160 } },
+      { sub: 2, dialogue: "", quest: { id: "k1", type: "collect", title: "능지 속 결정의 조각", desc: "능대들이 품고 있던 결정의 조각을 되찾아라.", targetLabel: "결정의 흔적", reward: Math.round(80 * G), expReward: 140 } },
+      { sub: 3, dialogue: "", quest: { id: "k0", type: "hunt", title: "능지의 능대 소탕", desc: "결정의 기운을 먹고 미쳐 버린 늪의 능대 15마리를 처치해라.", need: 15, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(90 * G), expReward: 160 } },
+      { sub: 5, dialogue: "", quest: { id: "k2", type: "hunt", title: "왕국 신뢰 얻기", desc: "기사단을 도와 능대 무리 20마리를 더 베어 내라!", need: 20, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(140 * G), expReward: 260 } },
+      { sub: 7, dialogue: "swampDone", quest: { id: "k3", type: "hunt", title: "왕국의 위협 제거", desc: "능지의 어둠이 짙어진다 — 능대 25마리를 처치해라!", need: 25, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(170 * G), expReward: 320 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "k5", type: "collect", title: "[사연] 근위대의 마지막 문장", desc: "해골 문지기의 문장(紋章)에 반응하는 결정 — 왕국 최후의 기록이 새겨져 있다.", targetLabel: "결정의 흔적", reward: Math.round(150 * G), expReward: 120 } },
-      { sub: 10, dialogue: "", quest: { id: "k6", type: "hunt", title: "[기믹] 고아 소녀의 복수극", desc: "소녀의 가족을 삼킨 늪의 축제광(임프) 18마리. 복수는 그녀의 몫이 아니라 우리의 몫이다.", need: 18, targetKey: "x3_imp", targetLabel: "늪의 축제광", reward: Math.round(200 * G), expReward: 150 } },
+      { sub: 9, dialogue: "", quest: { id: "k5", type: "collect", title: "[사연] 근위대의 마지막 문장", desc: "해골 문지기의 문장(紋章)에 반응하는 결정 — 왕국 최후의 기록이 새겨져 있다.", targetLabel: "결정의 흔적", reward: Math.round(150 * G), expReward: 240 } },
+      { sub: 10, dialogue: "", quest: { id: "k6", type: "hunt", title: "[기믹] 고아 소녀의 복수극", desc: "소녀의 가족을 삼킨 늪의 축제광(임프) 18마리. 복수는 그녀의 몫이 아니라 우리의 몫이다.", need: 18, targetKey: "x3_imp", targetLabel: "늪의 축제광", reward: Math.round(200 * G), expReward: 300 } },
     ],
     repeat: { need: 20, gold: Math.round(100 * G), exp: 100, title: "[반복] 늪지 정화 의뢰", desc: "쿠소디아 기사단 의뢰 — 능대를 계속 사냥해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향 (유저 지시 "챕터마다 레벨 제한이 너무 작음"): 8→12/15 */
@@ -285,12 +285,12 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "minion", count: 4 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_bat", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_orcshaman", count: 3 }],
     main: "minion",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "a0", type: "hunt", title: "하수인 소탕", desc: "니드호그가 부린 심연의 하수인 13마리를 처치해 성전의 길을 열자.", need: 13, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(80 * G), expReward: 65 } },
-      { sub: 3, dialogue: "", quest: { id: "a1", type: "collect", title: "여왕의 가호", desc: "하수인들이 숨겨둔 결정의 조각을 회수해 여왕에게 바쳐라.", targetLabel: "결정의 흔적", reward: Math.round(80 * G), expReward: 55 } },
-      { sub: 6, dialogue: "minionPurgeDone", quest: { id: "a2", type: "hunt", title: "성전 지키기", desc: "니드호그를 부르는 의식을 막자 — 하수인 80마리 처치!", need: 80, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(400 * G), expReward: 370 } },
+      { sub: 2, dialogue: "", quest: { id: "a0", type: "hunt", title: "하수인 소탕", desc: "니드호그가 부린 심연의 하수인 13마리를 처치해 성전의 길을 열자.", need: 13, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(80 * G), expReward: 130 } },
+      { sub: 3, dialogue: "", quest: { id: "a1", type: "collect", title: "여왕의 가호", desc: "하수인들이 숨겨둔 결정의 조각을 회수해 여왕에게 바쳐라.", targetLabel: "결정의 흔적", reward: Math.round(80 * G), expReward: 110 } },
+      { sub: 6, dialogue: "minionPurgeDone", quest: { id: "a2", type: "hunt", title: "성전 지키기", desc: "니드호그를 부르는 의식을 막자 — 하수인 80마리 처치!", need: 80, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(400 * G), expReward: 740 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "a4", type: "collect", title: "[사연] 노래하는 결정", desc: "숲의 노래가 잡힌 결정 — 정찰병은 이 소리를 듣고 자리를 지켰다. 그 노래를 끝까지 들어주자.", targetLabel: "결정의 흔적", reward: Math.round(220 * G), expReward: 170 } },
-      { sub: 10, dialogue: "", quest: { id: "a5", type: "hunt", title: "[기믹] 덩굴에 움켜쥔 빛", desc: "빛의 결정을 둘러싼 미니언 20마리를 정화하면 숲의 노래가 돌아온다.", need: 20, targetKey: "minion", targetLabel: "어둠의 하수인", reward: Math.round(280 * G), expReward: 210 } },
+      { sub: 9, dialogue: "", quest: { id: "a4", type: "collect", title: "[사연] 노래하는 결정", desc: "숲의 노래가 잡힌 결정 — 정찰병은 이 소리를 듣고 자리를 지켰다. 그 노래를 끝까지 들어주자.", targetLabel: "결정의 흔적", reward: Math.round(220 * G), expReward: 340 } },
+      { sub: 10, dialogue: "", quest: { id: "a5", type: "hunt", title: "[기믹] 덩굴에 움켜쥔 빛", desc: "빛의 결정을 둘러싼 미니언 20마리를 정화하면 숲의 노래가 돌아온다.", need: 20, targetKey: "minion", targetLabel: "어둠의 하수인", reward: Math.round(280 * G), expReward: 420 } },
     ],
     repeat: { need: 20, gold: Math.round(95 * G), exp: 95, title: "[반복] 성전 순찰 의뢰", desc: "요정 여왕의 의뢰 — 하수인을 계속 처치해 훈련해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 14→22/26 */
@@ -304,13 +304,13 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 3 }, { key: "golem", count: 3 }, { key: "x2_firebird", count: 3 }, { key: "x3_tinyzombie", count: 3 }, { key: "x3_wogol", count: 3 }],
     main: "emberwolf",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "m0", type: "hunt", title: "불꽃 늑대 사냥", desc: "네바다를 내달리는 불꽃 늑대 100마리를 처치해라.", need: 100, targetKey: "emberwolf", targetLabel: "불꽃 늑대", reward: Math.round(1000 * G), expReward: 930 } },
-      { sub: 4, dialogue: "", quest: { id: "m1", type: "hunt", title: "화염 정령 진압", desc: "열이 가장 강한 날 — 화염 정령 110마리를 처치해라.", need: 110, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(1440 * G), expReward: 1270 } },
-      { sub: 5, dialogue: "", quest: { id: "m2", type: "collect", title: "화염 속의 빛", desc: "용암 사이에서 결정의 조각이 반짝인다. 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(100 * G), expReward: 95 } },
-      { sub: 7, dialogue: "spiritPurgeDone", quest: { id: "m3", type: "hunt", title: "호족촌 구원", desc: "엘렌을 도와 — 지하도시를 노리는 화염 정령 120마리를 처치해라!", need: 120, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(1060 * G), expReward: 960 } },
+      { sub: 2, dialogue: "", quest: { id: "m0", type: "hunt", title: "불꽃 늑대 사냥", desc: "네바다를 내달리는 불꽃 늑대 100마리를 처치해라.", need: 100, targetKey: "emberwolf", targetLabel: "불꽃 늑대", reward: Math.round(1000 * G), expReward: 1860 } },
+      { sub: 4, dialogue: "", quest: { id: "m1", type: "hunt", title: "화염 정령 진압", desc: "열이 가장 강한 날 — 화염 정령 110마리를 처치해라.", need: 110, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(1440 * G), expReward: 2540 } },
+      { sub: 5, dialogue: "", quest: { id: "m2", type: "collect", title: "화염 속의 빛", desc: "용암 사이에서 결정의 조각이 반짝인다. 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(100 * G), expReward: 190 } },
+      { sub: 7, dialogue: "spiritPurgeDone", quest: { id: "m3", type: "hunt", title: "호족촌 구원", desc: "엘렌을 도와 — 지하도시를 노리는 화염 정령 120마리를 처치해라!", need: 120, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(1060 * G), expReward: 1920 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "m4", type: "collect", title: "[사연] 대장장이 장인의 미완성 검", desc: "장인이 평생 두드린 검의 최종 재료는 '타지 않는 결정'. 이제 그 이유를 안다.", targetLabel: "결정의 흔적", reward: Math.round(320 * G), expReward: 240 } },
-      { sub: 10, dialogue: "", quest: { id: "m5", type: "hunt", title: "[기믹] 용광로 재점화", desc: "용암 조류 22마리의 열기로 식어버린 용광로를 다시 달군다.", need: 22, targetKey: "x2_firebird", targetLabel: "용암 조류", reward: Math.round(400 * G), expReward: 300 } },
+      { sub: 9, dialogue: "", quest: { id: "m4", type: "collect", title: "[사연] 대장장이 장인의 미완성 검", desc: "장인이 평생 두드린 검의 최종 재료는 '타지 않는 결정'. 이제 그 이유를 안다.", targetLabel: "결정의 흔적", reward: Math.round(320 * G), expReward: 480 } },
+      { sub: 10, dialogue: "", quest: { id: "m5", type: "hunt", title: "[기믹] 용광로 재점화", desc: "용암 조류 22마리의 열기로 식어버린 용광로를 다시 달군다.", need: 22, targetKey: "x2_firebird", targetLabel: "용암 조류", reward: Math.round(400 * G), expReward: 600 } },
     ],
     repeat: { need: 20, gold: Math.round(130 * G), exp: 130, title: "[반복] 화산 지대 순찰 의뢰", desc: "호족촌 의뢰 — 불꽃 늑대를 계속 사냥해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 20→34/39 */
@@ -324,13 +324,13 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
     main: "frostwolf",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "n0", type: "hunt", title: "서리 늑대 사냥", desc: "설원을 유랑하는 서리 늑대 110마리를 처치해라.", need: 110, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(950 * G), expReward: 880 } },
-      { sub: 4, dialogue: "", quest: { id: "n1", type: "hunt", title: "얼음 골렘 격파", desc: "성전 길을 얼리고 있는 얼음 골렘 100기를 격파해라.", need: 100, targetKey: "icegolem", targetLabel: "얼음 골렘", reward: Math.round(1700 * G), expReward: 1500 } },
-      { sub: 6, dialogue: "", quest: { id: "n2", type: "collect", title: "얼음 속의 결정", desc: "얼음 결정 사이에서 세계의 빛이 반짝인다.", targetLabel: "결정의 흔적", reward: Math.round(100 * G), expReward: 90 } },
-      { sub: 7, dialogue: "frostRoutDone", quest: { id: "n3", type: "hunt", title: "설원 정화", desc: "펜리르의 권속인 서리 늑대 130마리를 처치해라!", need: 130, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(910 * G), expReward: 820 } },
+      { sub: 2, dialogue: "", quest: { id: "n0", type: "hunt", title: "서리 늑대 사냥", desc: "설원을 유랑하는 서리 늑대 110마리를 처치해라.", need: 110, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(950 * G), expReward: 1760 } },
+      { sub: 4, dialogue: "", quest: { id: "n1", type: "hunt", title: "얼음 골렘 격파", desc: "성전 길을 얼리고 있는 얼음 골렘 100기를 격파해라.", need: 100, targetKey: "icegolem", targetLabel: "얼음 골렘", reward: Math.round(1700 * G), expReward: 3000 } },
+      { sub: 6, dialogue: "", quest: { id: "n2", type: "collect", title: "얼음 속의 결정", desc: "얼음 결정 사이에서 세계의 빛이 반짝인다.", targetLabel: "결정의 흔적", reward: Math.round(100 * G), expReward: 180 } },
+      { sub: 7, dialogue: "frostRoutDone", quest: { id: "n3", type: "hunt", title: "설원 정화", desc: "펜리르의 권속인 서리 늑대 130마리를 처치해라!", need: 130, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(910 * G), expReward: 1640 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "n4", type: "collect", title: "[사연] 얼음 속 아들의 기억", desc: "수렵꾼의 아들은 얼음 결정 속에서 기다리고 있었다. 결정을 가져오면 마지막 겨울이 말해준다.", targetLabel: "결정의 흔적", reward: Math.round(460 * G), expReward: 340 } },
-      { sub: 10, dialogue: "", quest: { id: "n5", type: "hunt", title: "[기믹] 눈보라의 길잡이", desc: "눈보라를 헤매는 언데드 24마리를 보내드려 길을 만들자 — 배웅자의 부탁이다.", need: 24, targetKey: "x3_icezombie", targetLabel: "얼음 좀비", reward: Math.round(560 * G), expReward: 420 } },
+      { sub: 9, dialogue: "", quest: { id: "n4", type: "collect", title: "[사연] 얼음 속 아들의 기억", desc: "수렵꾼의 아들은 얼음 결정 속에서 기다리고 있었다. 결정을 가져오면 마지막 겨울이 말해준다.", targetLabel: "결정의 흔적", reward: Math.round(460 * G), expReward: 680 } },
+      { sub: 10, dialogue: "", quest: { id: "n5", type: "hunt", title: "[기믹] 눈보라의 길잡이", desc: "눈보라를 헤매는 언데드 24마리를 보내드려 길을 만들자 — 배웅자의 부탁이다.", need: 24, targetKey: "x3_icezombie", targetLabel: "얼음 좀비", reward: Math.round(560 * G), expReward: 840 } },
     ],
     repeat: { need: 24, gold: Math.round(145 * G), exp: 145, title: "[반복] 설원 순찰 의뢰", desc: "니플헤임 정찰 의뢰 — 서리 늑대를 계속 사냥해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 27→48/54 */
@@ -344,14 +344,14 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "spider", count: 4 }, { key: "minion", count: 4 }, { key: "golem", count: 3 }, { key: "x2_snail", count: 3 }, { key: "x3_imp", count: 3 }, { key: "x3_maskedorc", count: 2 }],
     main: "spider",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "c0", type: "collect", title: "지하 깊은 곳의 빛", desc: "어둠 요정들의 지하 어딘가에서 결정의 조각이 빛나고 있다.", targetLabel: "결정의 흔적", reward: Math.round(60 * G), expReward: 65 } },
-      { sub: 3, dialogue: "", quest: { id: "c1", type: "hunt", title: "동굴 거미 소탕", desc: "어둠에 물든 동굴 거미 120마리를 처치해라.", need: 120, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(720 * G), expReward: 640 } },
-      { sub: 5, dialogue: "", quest: { id: "c2", type: "hunt", title: "수정 골렘 파괴", desc: "거미들을 조종하는 수정 골렘 110기를 부숴 버려라.", need: 110, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(1430 * G), expReward: 1210 } },
-      { sub: 7, dialogue: "spiderDone", quest: { id: "c3", type: "hunt", title: "지하 정화", desc: "거미 둥지를 완전히 태우자 — 거미 140마리 처치!", need: 140, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(900 * G), expReward: 840 } },
-      { sub: 8, dialogue: "", quest: { id: "c4", type: "collect", title: "여왕의 두 번째 부탁", desc: "어둠 요정 여왕의 마지막 부탁 — 뿌리 사이의 잔광을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(70 * G), expReward: 70 } },
+      { sub: 2, dialogue: "", quest: { id: "c0", type: "collect", title: "지하 깊은 곳의 빛", desc: "어둠 요정들의 지하 어딘가에서 결정의 조각이 빛나고 있다.", targetLabel: "결정의 흔적", reward: Math.round(60 * G), expReward: 130 } },
+      { sub: 3, dialogue: "", quest: { id: "c1", type: "hunt", title: "동굴 거미 소탕", desc: "어둠에 물든 동굴 거미 120마리를 처치해라.", need: 120, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(720 * G), expReward: 1280 } },
+      { sub: 5, dialogue: "", quest: { id: "c2", type: "hunt", title: "수정 골렘 파괴", desc: "거미들을 조종하는 수정 골렘 110기를 부숴 버려라.", need: 110, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(1430 * G), expReward: 2420 } },
+      { sub: 7, dialogue: "spiderDone", quest: { id: "c3", type: "hunt", title: "지하 정화", desc: "거미 둥지를 완전히 태우자 — 거미 140마리 처치!", need: 140, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(900 * G), expReward: 1680 } },
+      { sub: 8, dialogue: "", quest: { id: "c4", type: "collect", title: "여왕의 두 번째 부탁", desc: "어둠 요정 여왕의 마지막 부탁 — 뿌리 사이의 잔광을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(70 * G), expReward: 140 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "c4", type: "collect", title: "[사연] 갱도의 마지막 등불", desc: "램프 아주머니의 남편이 마지막으로 들고 들어간 결정 등불 — 아직 어딘가에서 빛나고 있다.", targetLabel: "결정의 흔적", reward: Math.round(640 * G), expReward: 470 } },
-      { sub: 10, dialogue: "", quest: { id: "c5", type: "hunt", title: "[기믹] 지지대를 갉는 자들", desc: "갱도 지지대를 갉아먹는 거미 26마리 — 두 번째 붕괴는 없다.", need: 26, targetKey: "spider", targetLabel: "갱도 거미", reward: Math.round(760 * G), expReward: 560 } },
+      { sub: 9, dialogue: "", quest: { id: "c4", type: "collect", title: "[사연] 갱도의 마지막 등불", desc: "램프 아주머니의 남편이 마지막으로 들고 들어간 결정 등불 — 아직 어딘가에서 빛나고 있다.", targetLabel: "결정의 흔적", reward: Math.round(640 * G), expReward: 940 } },
+      { sub: 10, dialogue: "", quest: { id: "c5", type: "hunt", title: "[기믹] 지지대를 갉는 자들", desc: "갱도 지지대를 갉아먹는 거미 26마리 — 두 번째 붕괴는 없다.", need: 26, targetKey: "spider", targetLabel: "갱도 거미", reward: Math.round(760 * G), expReward: 1120 } },
     ],
     repeat: { need: 20, gold: Math.round(115 * G), exp: 115, title: "[반복] 지하 정화 의뢰", desc: "어둠 요정 여왕의 의뢰 — 거미를 계속 사냥해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 34→64/70 */
@@ -365,13 +365,13 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "runegolem", count: 4 }, { key: "golem", count: 3 }, { key: "spider", count: 3 }, { key: "x2_stonegolem", count: 3 }, { key: "x3_ogre", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
     main: "runegolem",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "d0", type: "hunt", title: "룬 골렘 정지", desc: "폭주한 룬 골렘 130기를 정지시켜라.", need: 130, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(2000 * G), expReward: 1800 } },
-      { sub: 4, dialogue: "", quest: { id: "d1", type: "collect", title: "룬 각인 판", desc: "광산 깊은 곳의 결정 조각 — 룬 각인판을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(120 * G), expReward: 110 } },
-      { sub: 6, dialogue: "runePurgeDone", quest: { id: "d2", type: "hunt", title: "광산 탈환", desc: "난쟁이 마을을 되돌리자 — 룬 골렘 150기 처치!", need: 150, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(1560 * G), expReward: 1380 } },
-      { sub: 8, dialogue: "", quest: { id: "d3", type: "hunt", title: "수정 골렘 정리", desc: "광산을 어지럽히는 수정 골렘 120기를 부수자.", need: 120, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(2640 * G), expReward: 2400 } },
+      { sub: 2, dialogue: "", quest: { id: "d0", type: "hunt", title: "룬 골렘 정지", desc: "폭주한 룬 골렘 130기를 정지시켜라.", need: 130, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(2000 * G), expReward: 3600 } },
+      { sub: 4, dialogue: "", quest: { id: "d1", type: "collect", title: "룬 각인 판", desc: "광산 깊은 곳의 결정 조각 — 룬 각인판을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(120 * G), expReward: 220 } },
+      { sub: 6, dialogue: "runePurgeDone", quest: { id: "d2", type: "hunt", title: "광산 탈환", desc: "난쟁이 마을을 되돌리자 — 룬 골렘 150기 처치!", need: 150, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(1560 * G), expReward: 2760 } },
+      { sub: 8, dialogue: "", quest: { id: "d3", type: "hunt", title: "수정 골렘 정리", desc: "광산을 어지럽히는 수정 골렘 120기를 부수자.", need: 120, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(2640 * G), expReward: 4800 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "d4", type: "collect", title: "[사연] 사부님의 마지막 룬", desc: "견습이 열한 번째에 떨린 이유 — 사부의 유언이 담긴 룬 결정이 채굴장에 남아 있다.", targetLabel: "결정의 흔적", reward: Math.round(880 * G), expReward: 660 } },
-      { sub: 10, dialogue: "", quest: { id: "d5", type: "hunt", title: "[기믹] 룬 도굴꾼 소탕", desc: "룬 각인 도굴꾼 오우거 28마리 — 드워프의 망치가 복수를 대신한다.", need: 28, targetKey: "x3_ogre", targetLabel: "룬 도굴꾼", reward: Math.round(1000 * G), expReward: 760 } },
+      { sub: 9, dialogue: "", quest: { id: "d4", type: "collect", title: "[사연] 사부님의 마지막 룬", desc: "견습이 열한 번째에 떨린 이유 — 사부의 유언이 담긴 룬 결정이 채굴장에 남아 있다.", targetLabel: "결정의 흔적", reward: Math.round(880 * G), expReward: 1320 } },
+      { sub: 10, dialogue: "", quest: { id: "d5", type: "hunt", title: "[기믹] 룬 도굴꾼 소탕", desc: "룬 각인 도굴꾼 오우거 28마리 — 드워프의 망치가 복수를 대신한다.", need: 28, targetKey: "x3_ogre", targetLabel: "룬 도굴꾼", reward: Math.round(1000 * G), expReward: 1520 } },
     ],
     repeat: { need: 20, gold: Math.round(150 * G), exp: 150, title: "[반복] 광산 경비 의뢰", desc: "난쟁이 광산 조합 의뢰 — 룬 골렘을 계속 처치해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 42→84/92 */
@@ -385,13 +385,13 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "helhound", count: 4 }, { key: "wraith", count: 3 }, { key: "golem", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "x3_chort", count: 3 }, { key: "x3_maskedorc", count: 3 }],
     main: "helhound",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "h0", type: "hunt", title: "헬 하운드 사냥", desc: "절벽을 지키는 헬 하운드 150마리를 처치해라.", need: 150, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(2600 * G), expReward: 2400 } },
-      { sub: 3, dialogue: "", quest: { id: "h1", type: "collect", title: "대지의 결정", desc: "절벽 아래 대지의 결정 — 결정의 흔적을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(150 * G), expReward: 140 } },
-      { sub: 5, dialogue: "houndPurgeDone", quest: { id: "h2", type: "hunt", title: "절벽 열기", desc: "헬 하운드 180마리를 처치해 저택의 문을 열어라!", need: 180, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(1920 * G), expReward: 1740 } },
-      { sub: 7, dialogue: "", quest: { id: "h3", type: "hunt", title: "심연 유령 소탕", desc: "힐다 할머니의 조사 일지를 지키는 심연 유령 160마리를 처치해라.", need: 160, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(2990 * G), expReward: 2770 } },
+      { sub: 2, dialogue: "", quest: { id: "h0", type: "hunt", title: "헬 하운드 사냥", desc: "절벽을 지키는 헬 하운드 150마리를 처치해라.", need: 150, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(2600 * G), expReward: 4800 } },
+      { sub: 3, dialogue: "", quest: { id: "h1", type: "collect", title: "대지의 결정", desc: "절벽 아래 대지의 결정 — 결정의 흔적을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(150 * G), expReward: 280 } },
+      { sub: 5, dialogue: "houndPurgeDone", quest: { id: "h2", type: "hunt", title: "절벽 열기", desc: "헬 하운드 180마리를 처치해 저택의 문을 열어라!", need: 180, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(1920 * G), expReward: 3480 } },
+      { sub: 7, dialogue: "", quest: { id: "h3", type: "hunt", title: "심연 유령 소탕", desc: "힐다 할머니의 조사 일지를 지키는 심연 유령 160마리를 처치해라.", need: 160, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(2990 * G), expReward: 5540 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "h4", type: "collect", title: "[사연] 촛불 편지의 주인", desc: "관리인이 30년간 옮겨 심은 촛불 편지 — 마지막 한 통의 결정이 이승의 이름을 부른다.", targetLabel: "결정의 흔적", reward: Math.round(1200 * G), expReward: 900 } },
-      { sub: 10, dialogue: "", quest: { id: "h5", type: "hunt", title: "[기믹] 무덤을 파는 자들", desc: "무덤을 훼손하는 원한의 망령 30마리 — 재의 무희가 춤을 멈추지 않게.", need: 30, targetKey: "wraith", targetLabel: "원한의 망령", reward: Math.round(1400 * G), expReward: 1050 } },
+      { sub: 9, dialogue: "", quest: { id: "h4", type: "collect", title: "[사연] 촛불 편지의 주인", desc: "관리인이 30년간 옮겨 심은 촛불 편지 — 마지막 한 통의 결정이 이승의 이름을 부른다.", targetLabel: "결정의 흔적", reward: Math.round(1200 * G), expReward: 1800 } },
+      { sub: 10, dialogue: "", quest: { id: "h5", type: "hunt", title: "[기믹] 무덤을 파는 자들", desc: "무덤을 훼손하는 원한의 망령 30마리 — 재의 무희가 춤을 멈추지 않게.", need: 30, targetKey: "wraith", targetLabel: "원한의 망령", reward: Math.round(1400 * G), expReward: 2100 } },
     ],
     repeat: { need: 20, gold: Math.round(175 * G), exp: 175, title: "[반복] 절벽 정찰 의뢰", desc: "헬의 기운이 강해지고 있다 — 하운드를 계속 처치해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 50→104/114 */
@@ -405,12 +405,12 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "wraith", count: 4 }, { key: "minion", count: 4 }, { key: "helhound", count: 3 }, { key: "x2_reeffish", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x3_bigzombie", count: 3 }],
     main: "wraith",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "y0", type: "hunt", title: "뿌리의 유령 소탕", desc: "왕좌를 지키는 심연 유령 160마리를 처치해라.", need: 160, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(2400 * G), expReward: 2240 } },
-      { sub: 4, dialogue: "", quest: { id: "y1", type: "collect", title: "빼앗긴 빛의 흔적", desc: "아부디토스가 삼키지 못한 결정의 흔적을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(120 * G), expReward: 110 } },
-      { sub: 6, dialogue: "wraithDone", quest: { id: "y2", type: "hunt", title: "왕좌 앞길 열기", desc: "심연 유령 200마리를 처치해 왕좌의 문을 열어라!", need: 200, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(1920 * G), expReward: 1760 } },
+      { sub: 2, dialogue: "", quest: { id: "y0", type: "hunt", title: "뿌리의 유령 소탕", desc: "왕좌를 지키는 심연 유령 160마리를 처치해라.", need: 160, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(2400 * G), expReward: 4480 } },
+      { sub: 4, dialogue: "", quest: { id: "y1", type: "collect", title: "빼앗긴 빛의 흔적", desc: "아부디토스가 삼키지 못한 결정의 흔적을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(120 * G), expReward: 220 } },
+      { sub: 6, dialogue: "wraithDone", quest: { id: "y2", type: "hunt", title: "왕좌 앞길 열기", desc: "심연 유령 200마리를 처치해 왕좌의 문을 열어라!", need: 200, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(1920 * G), expReward: 3520 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "b4", type: "collect", title: "[사연] 등불 드리프터의 바다", desc: "등불이 꺼진 방향이 바다였다는 말의 진짜 뜻 — 결정 안에 심연의 별이 묻혀 있다.", targetLabel: "결정의 흔적", reward: Math.round(1800 * G), expReward: 1350 } },
-      { sub: 10, dialogue: "", quest: { id: "b5", type: "hunt", title: "[기믹] 뿌리를 갉는 종언", desc: "세계수 뿌리를 갉는 대좀비 32마리 — 뿌리가 아프다고 울고 있다.", need: 32, targetKey: "x3_bigzombie", targetLabel: "대좀비", reward: Math.round(2100 * G), expReward: 1600 } },
+      { sub: 9, dialogue: "", quest: { id: "b4", type: "collect", title: "[사연] 등불 드리프터의 바다", desc: "등불이 꺼진 방향이 바다였다는 말의 진짜 뜻 — 결정 안에 심연의 별이 묻혀 있다.", targetLabel: "결정의 흔적", reward: Math.round(1800 * G), expReward: 2700 } },
+      { sub: 10, dialogue: "", quest: { id: "b5", type: "hunt", title: "[기믹] 뿌리를 갉는 종언", desc: "세계수 뿌리를 갉는 대좀비 32마리 — 뿌리가 아프다고 울고 있다.", need: 32, targetKey: "x3_bigzombie", targetLabel: "대좀비", reward: Math.round(2100 * G), expReward: 3200 } },
     ],
     repeat: { need: 24, gold: Math.round(165 * G), exp: 165, title: "[반복] 뿌리 정찰 의뢰", desc: "뿌리의 기운이 강해지고 있다 — 유령을 계속 처치해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 58→126/136 */
@@ -778,6 +778,7 @@ function subEnemyMix(spec: ChapterSpec, sub: number): { key: EnemyKey; count: nu
   ]; // 9구역 4종 20마리
 }
 
+/* v1.0.13 피드백#2 — 퀘스트 완료 경험치 상향 (사냥 위주 성장 → 퀘스트 병행 성장 유도) */
 function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[] {
   const quests: QuestDef[] = [];
   /* v2.4 레벨 게이트 (사용자 지시 — "5레벨을 찍자!!" 식의 명확한 동기부여):
@@ -786,7 +787,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
    *  보상 exp는 게이트 달성 직후 다음 목표로 자연스럽게 이어지도록 챕터 배율 반영 */
   const gateLv = sub === 1 ? spec.lvGate.enter : sub === 4 ? spec.lvGate.mid : null;
   if (gateLv != null) {
-    const gateExp = Math.round((70 + gateLv * 6) * CH_EXP[spec.num - 2] * 0.55);
+    const gateExp = Math.round((70 + gateLv * 6) * CH_EXP[spec.num - 2] * 1.15);
     quests.push({
       id: `${prefix}-lv-gate`,
       type: "level",
@@ -859,7 +860,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       targetKeys: focusMode ? [zoneMon] : mixKeys, // v3.0.28 — 카운트·판정은 구역 스폰 몬스터 전체 합산
       targetLabel: focusMode ? main : `${main} 등 구역 몬스터`,
       reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G * Math.max(1, nf / 8)), // 마릿수 증가분만큼 골드 보상 동반 상향
-      expReward: Math.round((60 + sub * 14) * CH_EXP[spec.num - 2] * 0.9 * Math.max(1, nf / 8)),
+      expReward: Math.round((60 + sub * 14) * CH_EXP[spec.num - 2] * 1.5 * Math.max(1, nf / 8)),
     });
   }
   if (sub === 9) {
@@ -871,7 +872,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       desc: `${spec.title}의 심장부 — 결정의 흔적이 강하게 빛나고 있다.`,
       targetLabel: "결정의 흔적",
       reward: Math.round(140 * CH_EXP[spec.num - 2] * 0.7 * G),
-      expReward: Math.round(120 * CH_EXP[spec.num - 2]),
+      expReward: Math.round(200 * CH_EXP[spec.num - 2]),
     });
   }
   if (sub === 10 && spec.boss) {
@@ -882,7 +883,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       desc: `${spec.title}의 주인 — ${BOSS_DEFS[spec.boss].name}를 처치해라!`,
       targetLabel: BOSS_DEFS[spec.boss].name,
       reward: Math.round(320 * CH_EXP[spec.num - 2] * 0.7 * G),
-      expReward: Math.round(260 * CH_EXP[spec.num - 2]),
+      expReward: Math.round(420 * CH_EXP[spec.num - 2]),
     });
     // 챕터 최종 — 다음 챕터로 나가는 차원문
     quests.push({
@@ -986,7 +987,7 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
       /* v1.4.0 (Task 1-6) — 반복 의뢰 요구량도 레벨 곡선 연동 → vc143 중반 100~200단위 인상 */
       need: repNeed,
       gold: Math.round(spec.repeat.gold * stageScale(key).gold * 0.9 * repMul),
-      exp: Math.round(spec.repeat.exp * stageScale(key).exp * 0.9 * repMul),
+      exp: Math.round(spec.repeat.exp * stageScale(key).exp * 1.3 * repMul),
       title: spec.repeat.title,
       desc: spec.repeat.desc,
       bounties,

@@ -212,11 +212,84 @@ export function HUD({
 
       {/* 우상단: 사운드/가방 + 퀘스트 — v1.4.0 (#17/#18) 2선 버튼 더보기 접기 · v1.4.9 — 우측 마진 축소(오른쪽 끝 정렬)
        *  vc145 (#5) — PC(넓은 화면)에서 UI 확대: 고정 zoom 0.85 철거 → 화면폭 반응형 스케일
-       *  (≥1024 1.08 / ≥1280 1.18 / ≥1600 1.28, 모바일은 기존 0.85~0.92 유지) */}
+       *  (≥1024 1.08 / ≥1280 1.18 / ≥1600 1.28, 모바일은 기존 0.85~0.92 유지)
+       *  v1.0.13 피드백#13 — 컨테이너 상단 여백 축소(0.5rem→0.25rem) + 퀘스트 트래커를 버튼행 위(첫 자식)로 이동:
+       *  기존엔 트래커가 버튼행 아래에 있어 퀘스트·콘텐츠 버튼이 화면 최상단에 안 보였다 */}
       <div
-        className="absolute right-[max(0.25rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-1 sm:top-3"
+        className="absolute right-[max(0.25rem,env(safe-area-inset-right))] top-[max(0.25rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-1 sm:top-2"
         style={{ zoom: typeof window !== "undefined" ? (window.innerWidth >= 1600 ? 1.28 : window.innerWidth >= 1280 ? 1.18 : window.innerWidth >= 1024 ? 1.08 : window.innerWidth >= 640 ? 0.92 : 0.85) : 1 }}
       >
+        {/* v1.0.13 피드백#13 — 퀘스트 트래커(+재오픈 칩)를 컬럼 첫 자식으로 이동 (버튼행보다 위)
+         *  vc149 (#15) 창 헤더 토글(#16) → vc150 (#신규4) — 퀘스트창 토글
+         *  v1.4.8 (#2 공간) — 트래커 축소 · v1.1.0 (#2) — 토글로 완전 숨김/표시
+         *  vc150 (#신규4) — 퀘스트창이 닫혀 있으면 다시 열 버튼이 화면에 없었다 — 열기 칩 신설 */}
+        {!trackerOpen && (
+          <button
+            onClick={toggleTracker}
+            aria-label="퀘스트창 켜기"
+            className="game-chip pointer-events-auto flex h-8 w-8 items-center justify-center text-amber-200/80 active:scale-90"
+          >
+            <ScrollText size={15} />
+          </button>
+        )}
+        {trackerOpen && (!tutActive || tutOverride) && (
+          <div className="game-panel pointer-events-auto w-full max-w-[260px] px-2.5 py-1.5 sm:px-3 sm:py-2">
+            <div className="flex items-center gap-1.5">
+              <ScrollText size={13} className="shrink-0 text-amber-300" />
+              <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
+              {/* vc149 (#16) — 퀘스트 on/off 토글을 퀘스트 창 안 헤더로 이동 */}
+              <button
+                onClick={toggleTracker}
+                aria-label="퀘스트창 끄기"
+                className="shrink-0 rounded bg-black/40 px-1 py-0.5 text-amber-200/80 active:scale-90"
+              >
+                <ScrollText size={11} />
+              </button>
+              {quest.pending && (
+                <span className="shrink-0 rounded bg-amber-400/25 px-1 py-px text-[8px] font-black text-amber-200">수락 대기</span>
+              )}
+            </div>
+            <>
+              {quest.desc && (
+              <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/70 sm:text-[11px]">{quest.desc}</p>
+            )}
+            <div className="mt-1 flex items-center justify-between gap-2">
+              {quest.target > 1 && (
+                <span className="text-[10px] font-bold text-emerald-300 sm:text-[11px]">
+                  {quest.current} / {quest.target}
+                </span>
+              )}
+              {quest.distance !== null && (
+                <span className="ml-auto rounded bg-emerald-900/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200 sm:text-[11px]">
+                  목표까지 {quest.distance}m
+                </span>
+              )}
+            </div>
+            {quest.jobStory && (
+              /* v4.1.3 (#전직조건표시) — 단계 수행 방법·진행도·힌트를 전부 노출 (지시 #6):
+               *  기존 한 줄 배지("1/3 — 첫 수련")만으로는 완료 조건을 알 수 없었다 */
+              <div className="mt-1 rounded bg-violet-500/15 px-1.5 py-1">
+                <p className="truncate text-[9px] font-bold text-violet-200 sm:text-[10px]">
+                  ✦ 전직 스토리 {quest.jobStory.step}/{quest.jobStory.total} — {quest.jobStory.stepTitle}
+                  {quest.jobStory.need > 1 && (
+                    <span className="ml-1 text-amber-300">
+                      [{quest.jobStory.current}/{quest.jobStory.need}]
+                    </span>
+                  )}
+                </p>
+                {quest.jobStory.stepDesc && (
+                  <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-violet-100/85 sm:text-[10px]">
+                    {quest.jobStory.stepDesc}
+                  </p>
+                )}
+                {quest.jobStory.hint && (
+                  <p className="mt-0.5 text-[9px] font-bold text-amber-300/95 sm:text-[10px]">→ {quest.jobStory.hint}</p>
+                )}
+              </div>
+            )}
+            </>
+          </div>
+        )}
         <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
           {/* vc147 (#22) — 우상단 자동전투(로봇) 버튼 철거: TouchControls 자동 버튼·B키와 삼중 중복.
            *  자동전투 진입점은 좌하단 클러스터 버튼 + B키(키맵 재배치 가능)로 통일. */}
@@ -229,7 +302,8 @@ export function HUD({
             className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8e0ff] active:scale-95"
           >
             <Backpack size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">{km.bag}</span>
+            {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 (aria-label엔 키가 이미 포함됨) */}
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">가방</span>
           </button>
           {jobAvail && (
             <button
@@ -275,7 +349,8 @@ export function HUD({
             className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
           >
             <Settings size={17} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.opt}</span>
+            {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 */}
+            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">설정</span>
           </button>
         </div>
         {/* v1.4.0 (#17) — 접힌 2선 창 버튼 행 (더보기 열림 시만) */}
@@ -300,7 +375,8 @@ export function HUD({
               }`}
             >
               <Gauge size={17} />
-              <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>{km.stat}</span>
+              {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 */}
+              <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>스탯</span>
             </button>
             <button
               onClick={onOpenQuest}
@@ -308,7 +384,8 @@ export function HUD({
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
             >
               <ListChecks size={17} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">{km.quest}</span>
+              {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 */}
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">퀘스트</span>
             </button>
             {/* v1.4.12 (#16) — 이그니의 UI 안내: 각 UI가 무슨 기능을 하는지 궁금할 때 */}
             <button
@@ -405,76 +482,7 @@ export function HUD({
             </button>
           </div>
         )}
-        {/* vc149 (#15) 창 헤더 토글(#16) → vc150 (#신규4) — 퀘스트 창은 더보기 버튼행 "밑"에 위치 (유저 지시)
-         *  v1.4.8 (#2 공간) — 트래커 축소 · v1.1.0 (#2) — 토글로 완전 숨김/표시 */}
-        {/* vc150 (#신규4) — 퀘스트창이 닫혀 있으면 다시 열 버튼이 화면에 없었다 — 열기 칩 신설 */}
-        {!trackerOpen && (
-          <button
-            onClick={toggleTracker}
-            aria-label="퀘스트창 켜기"
-            className="game-chip pointer-events-auto flex h-8 w-8 items-center justify-center text-amber-200/80 active:scale-90"
-          >
-            <ScrollText size={15} />
-          </button>
-        )}
-        {trackerOpen && (!tutActive || tutOverride) && (
-          <div className="game-panel pointer-events-auto w-full max-w-[260px] px-2.5 py-1.5 sm:px-3 sm:py-2">
-            <div className="flex items-center gap-1.5">
-              <ScrollText size={13} className="shrink-0 text-amber-300" />
-              <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
-              {/* vc149 (#16) — 퀘스트 on/off 토글을 퀘스트 창 안 헤더로 이동 */}
-              <button
-                onClick={toggleTracker}
-                aria-label="퀘스트창 끄기"
-                className="shrink-0 rounded bg-black/40 px-1 py-0.5 text-amber-200/80 active:scale-90"
-              >
-                <ScrollText size={11} />
-              </button>
-              {quest.pending && (
-                <span className="shrink-0 rounded bg-amber-400/25 px-1 py-px text-[8px] font-black text-amber-200">수락 대기</span>
-              )}
-            </div>
-            <>
-              {quest.desc && (
-              <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/70 sm:text-[11px]">{quest.desc}</p>
-            )}
-            <div className="mt-1 flex items-center justify-between gap-2">
-              {quest.target > 1 && (
-                <span className="text-[10px] font-bold text-emerald-300 sm:text-[11px]">
-                  {quest.current} / {quest.target}
-                </span>
-              )}
-              {quest.distance !== null && (
-                <span className="ml-auto rounded bg-emerald-900/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200 sm:text-[11px]">
-                  목표까지 {quest.distance}m
-                </span>
-              )}
-            </div>
-            {quest.jobStory && (
-              /* v4.1.3 (#전직조건표시) — 단계 수행 방법·진행도·힌트를 전부 노출 (지시 #6):
-               *  기존 한 줄 배지("1/3 — 첫 수련")만으로는 완료 조건을 알 수 없었다 */
-              <div className="mt-1 rounded bg-violet-500/15 px-1.5 py-1">
-                <p className="truncate text-[9px] font-bold text-violet-200 sm:text-[10px]">
-                  ✦ 전직 스토리 {quest.jobStory.step}/{quest.jobStory.total} — {quest.jobStory.stepTitle}
-                  {quest.jobStory.need > 1 && (
-                    <span className="ml-1 text-amber-300">
-                      [{quest.jobStory.current}/{quest.jobStory.need}]
-                    </span>
-                  )}
-                </p>
-                {quest.jobStory.stepDesc && (
-                  <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-violet-100/85 sm:text-[10px]">
-                    {quest.jobStory.stepDesc}
-                  </p>
-                )}
-                {quest.jobStory.hint && (
-                  <p className="mt-0.5 text-[9px] font-bold text-amber-300/95 sm:text-[10px]">→ {quest.jobStory.hint}</p>
-                )}
-              </div>
-            )}
-            </>
-          </div>
-        )}
+        {/* v1.0.13 피드백#13 — 퀘스트 트래커는 컬럼 첫 자식으로 이동 (위 참조) */}
       </div>
     </>
   );

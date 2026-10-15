@@ -45,6 +45,9 @@ export type NetPlayer = {
   moving: boolean;
   /** v1.0.16 — GM 계정 표시: 이름표 금색 [GM] 접두사 + 캐릭터 황금 오라 (코스메틱 전용 플래그) */
   gm?: boolean;
+  /** v1.0.13 피드백#12 — 친구 코드 (netJoin 페이로드의 code 릴레이 — 상대 클릭 정보창용.
+   *  전송 경로/서버 구현에 따라 없을 수 있어 옵셔널) */
+  code?: string;
 };
 
 export type NetChatMsg = {

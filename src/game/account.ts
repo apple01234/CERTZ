@@ -26,6 +26,8 @@ import { Capacitor } from "@capacitor/core";
 /* v1.4.20 — 멀티서버 분리: API 베이스 해석을 server.ts 공용 모듈로 일원화
  *  (웹 same-origin은 기존대로, Vercel 등 정적 배포는 원격 게임 서버 자동 지정) */
 import { resolveApiBase } from "./server";
+/* v1.0.13 피드백#7 — 랭킹 요청에 현재 캐릭터 이름 동봉 (me 파라미터) — 클라이언트 세이프 모듈 */
+import { DEFAULT_NAME, getPlayerName, loadSave } from "./config";
 
 /* v1.0.7 — Bearer 세션 토큰 저장소 (APK 웹뷰 쿠키 불가 대응; 웹은 쿠키가 우선이라 없어도 됨) */
 const TOKEN_KEY = "sertz.auth.token";
@@ -34,6 +36,11 @@ const TOKEN_KEY = "sertz.auth.token";
 const USER_KEY = "sertz.auth.user";
 function getToken(): string {
   try { return window.localStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
+}
+/** v1.0.13 피드백#11 — MQTT GM 검증 증명용 세션 토큰 읽기 (mpMqtt.ts 전용).
+ *  토큰 자체는 브로커로 절대 전송하지 않고 SHA-256 단편(gmv)만 증명으로 쓴다. */
+export function getAuthToken(): string {
+  return getToken();
 }
 function setToken(t: string) {
   try {
@@ -279,7 +286,7 @@ export async function marketCollect() {
  *  서버: /api/rank (accounts/index.js) — 클라우드 세이브에서 파생한 랭킹.
  *  비로그인도 목록은 공개, 로그인 시 내 순위(me) 동봉. */
 
-export type RankEntry = { rank: number; name: string; lv: number; cls: string; rebirths: number; tower: number };
+export type RankEntry = { rank: number; name: string; lv: number; cls: string; rebirths: number; tower: number; /** v1.0.13 피드백#7 — 캐릭터 식별 ("active" | 백업 캐릭터 키) */ cid?: string };
 export type RankMe = { rank: number; total?: number; name?: string; lv?: number; rebirths?: number; tower?: number; note?: string };
 export type RankState = { list: RankEntry[]; me: RankMe | null };
 
@@ -314,8 +321,21 @@ async function getWithRetry(path: string): Promise<{ ok: boolean; status: number
   return lastErr;
 }
 
-export async function fetchRanking(): Promise<{ ok: boolean; error?: string; state?: RankState }> {
-  const r = await getWithRetry("/api/rank");
+export async function fetchRanking(opts?: { job?: string }): Promise<{ ok: boolean; error?: string; state?: RankState }> {
+  /* v1.0.13 피드백#7/#16 — 캐릭터별 랭킹:
+   *  · me=<현재 캐릭터명> 동봉 → 서버가 캐릭터 단위 목록에서 "내 순위"를 정확히 매칭
+   *  · job=<클래스키> → 직업별 랭킹 (미지정 시 전체 — 구버전 서버도 쿼리 무시하며 호환) */
+  const qs: string[] = [];
+  try {
+    /* 현재 캐릭터 이름 — 활성 세이브의 playerName 우선, 없으면 전역 이름.
+     *  세이브도 없고 기본 이름이면 미전송(타 캐릭과의 이름 우연 일치 오매칭 방지). */
+    const sv = loadSave();
+    const n = String(sv?.playerName || "").trim() || getPlayerName();
+    if (n && (sv || n !== DEFAULT_NAME)) qs.push(`me=${encodeURIComponent(n.slice(0, 8))}`);
+  } catch { /* 무시 */ }
+  const job = String(opts?.job || "").trim().slice(0, 24);
+  if (job) qs.push(`job=${encodeURIComponent(job)}`);
+  const r = await getWithRetry(qs.length ? `/api/rank?${qs.join("&")}` : "/api/rank");
   if (!r.ok) {
     // v1.4.0 — 3회 실패 시에도 캐시가 있으면 캐시 반환(빈 화면 금지), ageSec로 표기
     if (rankCache) return { ok: true, state: rankCache.state };

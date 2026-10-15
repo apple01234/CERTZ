@@ -1,13 +1,25 @@
 name: iOS Build (SERTZ)
 
+# v1.0.13 피드백#20 — 버전 자동 파싱 + pbxproj 동기화 (TrollStore용 unsigned IPA)
 # SERTZ iOS 빌드 — Linux에서 Xcode 컴파일 불가라 GitHub macOS 러너 사용.
 #  · 트리거: 수동(workflow_dispatch) 또는 ios/**·본 파일 푸시
-#  · 산출물: SERTZ-vc148-ios-unsigned.ipa (사인 없음 — AltStore/Sideloadly/TrollStore 등으로
-#    사이드로드하거나 본인 인증서로 codesign 후 설치)
+#  · 버전: android/app/build.gradle의 versionName/versionCode를 정규식 파싱해
+#    env로 추출(기본값 폴백 허용) → xcodebuild 전에 ios pbxproj의
+#    CURRENT_PROJECT_VERSION/MARKETING_VERSION을 sed 동기화 →
+#    vc148/v1.0.8 하드코딩 사고 클래스(스테일 버전 IPA) 근본 차단
+#  · 산출물: SERTZ-v{version}-vc{code}-ios-unsigned.ipa (사인 없음 — AltStore/Sideloadly/
+#    TrollStore 등으로 사이드로드하거나 본인 인증서로 codesign 후 설치)
+#  · 릴리스 업로드: workflow_dispatch.inputs.tag(기본 v{version})에 --clobber 업로드.
+#    태그 릴리스가 없으면 APK/AAB 없이 IPA 전용으로 gh release create (하단 주석 참조)
 #  · 빌드 플로우는 Android(scripts/build_apk.sh)와 동일: 라우트 격리 → APK_EXPORT 정적
 #    export(.next-apk) → cap sync ios → xcodebuild (SPM — CocoaPods 불필요)
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "릴리스 업로드 태그 (비우면 v{versionName} 자동 — 예: v1.0.12)"
+        required: false
+        default: ""
   push:
     branches: [main]
     paths:
@@ -23,6 +35,31 @@ jobs:
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
+
+      # v1.0.13 피드백#20 — 버전 자동 파싱 (android/app/build.gradle 기준 — 단일 진실 공급원)
+      - name: Parse version (build.gradle → versionName/versionCode)
+        run: |
+          set -e
+          VERSION=$(grep -oE 'versionName "[^"]+"' android/app/build.gradle | head -1 | sed 's/versionName "//; s/"$//')
+          CODE=$(grep -oE 'versionCode [0-9]+' android/app/build.gradle | head -1 | sed 's/versionCode //')
+          # 폴백 기본값 — 파싱 실패 시에도 빌드가 막히지 않게 (기존 하드코딩 값과 무관한 현재 값)
+          VERSION="${VERSION:-1.0.12}"
+          CODE="${CODE:-154}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "CODE=$CODE" >> "$GITHUB_ENV"
+          echo "버전 파싱 결과: v${VERSION} (vc${CODE})"
+
+      # v1.0.13 피드백#20 — pbxproj 동기화: xcodebuild 전에 스테일 버전(148/1.0.8) 교체.
+      #  macOS(BSD) sed이므로 -i '' 사용. cap sync ios는 pbxproj 버전 변수를 건드리지 않으므로
+      #  여기서 동기화하면 산출물 Info.plist까지 반영된다.
+      - name: Sync version → iOS pbxproj (CURRENT_PROJECT_VERSION / MARKETING_VERSION)
+        run: |
+          set -e
+          PBX=ios/App/App.xcodeproj/project.pbxproj
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = ${CODE};/g" "$PBX"
+          sed -i '' "s/MARKETING_VERSION = [0-9.]*;/MARKETING_VERSION = ${VERSION};/g" "$PBX"
+          echo "--- 동기화 확인 ---"
+          grep -nE "CURRENT_PROJECT_VERSION|MARKETING_VERSION" "$PBX"
 
       - uses: actions/setup-node@v4
         with:
@@ -85,20 +122,34 @@ jobs:
           echo "APP: $APP_PATH"
           mkdir Payload
           cp -r "$APP_PATH" Payload/
-          zip -qry SERTZ-vc148-ios-unsigned.ipa Payload
-          ls -lh SERTZ-vc148-ios-unsigned.ipa
+          IPA="SERTZ-v${VERSION}-vc${CODE}-ios-unsigned.ipa"
+          zip -qry "$IPA" Payload
+          ls -lh "$IPA"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SERTZ-vc148-ios-unsigned
-          path: SERTZ-vc148-ios-unsigned.ipa
+          name: SERTZ-v${{ env.VERSION }}-vc${{ env.CODE }}-ios-unsigned
+          path: SERTZ-v${{ env.VERSION }}-vc${{ env.CODE }}-ios-unsigned.ipa
           retention-days: 30
 
-      - name: Attach to GitHub Release (v1.0.8)
+      # v1.0.13 피드백#20 — 릴리스 태그를 입력으로 받는다(기본 v{version}).
+      #  기존 gh release upload --clobber 패턴 유지. 릴리스가 아예 없으면 IPA 전용으로
+      #  gh release create로 생성 (APK/AAB는 안드로이드 워크플로가 자기 태그에 붙임 — 여기선 재업로드하지 않음).
+      - name: Attach to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ inputs.tag }}
         run: |
-          gh release upload v1.0.8 SERTZ-vc148-ios-unsigned.ipa --clobber --repo "$GITHUB_REPOSITORY"
+          set -e
+          TAG="${INPUT_TAG:-}"
+          if [ -z "$TAG" ]; then TAG="v${VERSION}"; fi
+          IPA="SERTZ-v${VERSION}-vc${CODE}-ios-unsigned.ipa"
+          echo "릴리스 태그: $TAG · 업로드: $IPA"
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "릴리스 없음 → IPA 전용 신규 생성"
+            gh release create "$TAG" --title "$TAG" --notes "SERTZ iOS unsigned IPA (${IPA})" --repo "$GITHUB_REPOSITORY"
+          fi
+          gh release upload "$TAG" "$IPA" --clobber --repo "$GITHUB_REPOSITORY"
           echo "--- release assets ---"
-          gh release view v1.0.8 --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'

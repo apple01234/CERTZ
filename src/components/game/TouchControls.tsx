@@ -97,6 +97,20 @@ export function TouchControls({
   /* vc143 (#7) — 화면 배율 상태 (resize 반영) */
   const [uiScale, setUiScale] = useState(() => (typeof window === "undefined" ? 1 : uiScaleOf()));
 
+  /* v1.0.13 피드백#17 — 튜토리얼 대상 DOM 버튼 하이라이트
+   *  Tutorial.ts가 ⑤스킬/⑥물약 단계 진입·완료 시 { key: "skill"|"potion", on } 을 발사하면
+   *  대응 버튼(첫 스킬 버튼/HP 물약 버튼)에 pulsing ring을 씌운다. 언마운트 시 구독 해제. */
+  const [tutDom, setTutDom] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    const onTutDom = (p: { key: string; on: boolean }) => {
+      setTutDom((prev) => (prev[p.key] === p.on ? prev : { ...prev, [p.key]: p.on }));
+    };
+    EventBus.on("tut:dom", onTutDom);
+    return () => {
+      EventBus.off("tut:dom", onTutDom);
+    };
+  }, []);
+
   useEffect(() => {
     const reevaluate = () => {
       const coarse = window.matchMedia("(pointer: coarse)").matches;
@@ -248,6 +262,7 @@ export function TouchControls({
       itemKey={quickPots?.hp ?? "potion_hp"}
       itemCount={potCount?.(quickPots?.hp ?? "potion_hp") ?? hpPot}
       tint="from-rose-500 to-rose-700 border-rose-200/70"
+      tutGlow={!!tutDom.potion} /* v1.0.13 피드백#17 — 튜토리얼 ⑥ 대상 버튼 */
       onDown={() => EventBus.emit("rpg:use", { kind: "hp" })}
     />
   );
@@ -329,6 +344,7 @@ export function TouchControls({
                 mp={s.mp}
                 icon={s.icon}
                 compact={!!sm}
+                tutGlow={s.key === "s1" && !!tutDom.skill} /* v1.0.13 피드백#17 — 튜토리얼 ⑤는 첫 스킬(회전베기) 대상 */
                 keyHint={isTouch ? undefined : s.hint} /* vc149 #4 터치 기기엔 키보드 힌트 무의미 */
                 onDown={() => EventBus.emit(s.emit as "input:skill1")}
               />
@@ -412,6 +428,7 @@ function PotionButton({
   itemKey,
   itemCount,
   tint,
+  tutGlow,
   onDown,
 }: {
   kind: "hp" | "mp";
@@ -420,6 +437,8 @@ function PotionButton({
   itemKey?: string;
   itemCount?: number;
   tint: string;
+  /** v1.0.13 피드백#17 — 튜토리얼 ⑥(물약 사용) 대상 하이라이트 (tut:dom → pulsing ring) */
+  tutGlow?: boolean;
   onDown: () => void;
 }) {
   const shown = itemCount ?? count;
@@ -440,7 +459,7 @@ function PotionButton({
       disabled={shown <= 0}
       className={`relative flex h-10 w-10 touch-none select-none items-center justify-center rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 sm:h-12 sm:w-12 ${
         shown > 0 ? `bg-gradient-to-b ${tint}` : "border-white/20 bg-slate-700/70 opacity-50"
-      }`}
+      } ${tutGlow ? "ring-4 ring-amber-300/90 animate-pulse" : ""}`}
       onPointerDown={(e) => {
         e.preventDefault();
         if (shown > 0) onDown();
@@ -479,6 +498,7 @@ function SkillButton({
   ult2,
   compact,
   keyHint,
+  tutGlow,
 }: {
   children?: React.ReactNode;
   label: string;
@@ -495,6 +515,8 @@ function SkillButton({
   compact?: boolean;
   /** vc147 (#11) — 버튼 좌상단 단축키 키탭 (키맵 재배치 따라감) */
   keyHint?: string;
+  /** v1.0.13 피드백#17 — 튜토리얼 ⑤(스킬 사용) 대상 하이라이트 (tut:dom → pulsing ring) */
+  tutGlow?: boolean;
 }) {
   /* v3.0.27 — 아이콘 로드 실패 시 lucide 폴백 (웹뷰 캐시 오류 등 어떤 환경에서도 버튼이 깨지지 않게)
      전직 등으로 icon 경로가 바뀌면 렌더 중 상태 조정 패턴으로 에러 플래그 리셋 */
@@ -517,7 +539,7 @@ function SkillButton({
               ? "border-fuchsia-100/90 bg-gradient-to-b from-fuchsia-400 via-purple-600 to-indigo-900 shadow-[0_0_16px_rgba(200,120,255,0.7)]"
               : "border-[#e8c064]/80 bg-gradient-to-b from-[#2c3f6e] to-[#101827] shadow-[inset_0_1px_0_rgba(232,192,100,0.35),0_3px_0_rgba(0,0,0,0.45)]"
           : "border-white/20 bg-slate-700/70 opacity-60"
-      }`}
+      } ${tutGlow ? "ring-4 ring-amber-300/90 animate-pulse" : ""}`}
       onPointerDown={(e) => {
         e.preventDefault();
         if (ready) onDown();
