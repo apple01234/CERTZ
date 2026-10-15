@@ -4291,3 +4291,24 @@ Stage Summary:
 - 유저 테스트 포인트: ①자동 버튼 위 유령 X 소실 ②한글 IME 켠 상태에서 상점/전직관 ↑/↓+E 확정 ③블레이드마스터(Lv200+) 궁극기 — 가속 100베기+死 블룸+100 HIT
 - 잔무: ①Vercel 토큰 재제공 시 구배포 일괄 삭제 ②SERTZ-vc154.apk 빌드·릴리스 업로드
 - [배포 완료] 커밋 b2b60a2 → Vercel success (check_deploy_status.js 실측) → route.ts LATEST_VERSION 잔존 정정(9bf4436) 재배포 success → 라이브 /api/version **code:154 · latest 1.0.12** 최종 확인. 잔무: Vercel 토큰(.secrets/vercel_token) 재제공 시 구배포 일괄 삭제 + SERTZ-vc154.apk 빌드·릴리스 업로드
+
+---
+Task ID: vc154-apk-release-chain
+Agent: Super Z (main)
+Task: vc154 잔무 완결 — ①Vercel 구배포 일괄 삭제(토큰 재제공) ②SERTZ-vc154.apk 빌드·릴리스 업로드 ③EXE 게이트 vc154 승격·자동빌드 트리거
+
+Work Log:
+- [①Vercel 구배포 삭제] 유저가 Vercel 토큰 재제공 → /v2/user 검증(계정 fantasticpie) 후 전수 조사: 총 71개 배포 누적(10-14~10-15 밤새 vc153/154 빌드 반복분) → 최신 라이브 1개(dpl_3qKREf8RsomZ — vc154 핫픽스)만 KEEP, 나머지 70개 전부 DELETE(실패 0) → 저장소 정리 완료
+- [정리 자동화 복구] scripts/vercel_cleanup.py — 이전 세션 원본(토큰 .secrets/vercel_token 참조 + list/run --yes CLI + 429 백오프)으로 복구 후 정책 갱신: 구정책 "라이브+직전버전 2개 유지" → 유저 최신 지시 "최신 1개만 유지"로 pick_keepers 단순화(롤백타깃 선정·코드 diff 판정 제거). vercel_api.sh wait 연동 규약 유지
+- [토큰 영속화] .secrets/vercel_token 재생성(chmod 600·gitignore L119 확인) — 컨테이너 리셋마다 토큰 소실로 잔무가 되던 패턴 방지 (단, 컨테이너 리셋 시 .secrets도 소실되므로 유저 재제공 필요성은 여전 존재)
+- [②APK 빌드] 세션 리셋으로 JDK/SDK 소실 → rebuild_jdk.sh(Temurin 21 → /home/z/jdk) + install_android_sdk.sh(cmdline-tools 11076708 + platforms;android-36 + build-tools;36.0.0 → /home/z/android-sdk) 재설치 + android/local.properties 재작성 → build_apk.sh BUILD SUCCESSFUL(6m36s)
+- [APK 검증] download/SERTZ-vc154.apk 152,743,609B · versionCode 154 · versionName 1.0.12 · 서명 cc774f34(기존 키 동일 — 덮어설치 호환) · md5 bb7f8ff4
+- [릴리스] SERTZ-vc154.apk + SERTZ-vc154-mapping.txt multipart 201 업로드 → 구자산 7종 DELETE(~1.16GB 절감: vc149.apk·vc151.apk·vc153.apk·vc151-mapping·vc151.aab·vc149-win.exe·vc149-win-setup.exe) → 릴리스명 "SERTZ v1.0.12 (vc154)" + 노트 전면 갱신 → 다운로드 URL 206 실측
+- [③EXE 게이트] vc153까지의 부채(워크플로 하드코딩 SERTZ-vc152-setup.exe + electron/package.json version 1.0.10 낙후 + vc153 사후 PATCH) 근본 정리: electron/package.json 1.0.12(vc154) + exe-build.yml 업로드 경로 SERTZ-vc154-setup.exe — workflow 파일 자체 푸시는 paths 트리거에 걸려 자동빌드 발동
+- [라이브] sertz.vercel.app /api/version → latest 1.0.12 · code 154 유지 확인
+
+Stage Summary:
+- vc154 릴리스 체인 완결: 웹(code:154 라이브) + APK(v1.0.9 릴리스 SERTZ-vc154.apk·154/1.0.12·cc774f34) + EXE(자동빌드 진행 — 완료 시 SERTZ-vc154-setup.exe 자동첨부)
+- 저장공간 정리: Vercel 70배포 삭제 + 릴리스 구자산 1.16GB 삭제
+- 유저 테스트 포인트: ①APK 덮어설치(154) → 자동 버튼 위 유령 X 소실·한글 IME에서 상점 ↑/↓+E 확정·블레이드마스터(Lv200+) 궁극기 가속 100베기+死 블룸+100 HIT ②EXE는 Actions 완료 후 SERTZ-vc154-setup.exe
+- 비고: vc153-setup.exe는 vc154 EXE 자동첨부 확인 후 삭제 예정(유지 중)

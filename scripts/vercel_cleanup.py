@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
 vercel_cleanup.py — Vercel 배포 이력 정리 (반복 실행 가능)
-정책: 유저 요구 — "최신버전과 그전버전 빼고는 항상 전부 지워"
-  · KEEP  : 현재 라이브(별칭 연결) 프로덕션 배포 1개 + 그 바로 이전 프로덕션 배포 1개 (롤백 타깃)
-            (사이에 끼인 accounts-backup 자동배포 등 중간 배포는 코드가 라이브와 동일하므로 삭제)
-  · DELETE: 위 2개를 제외한 나머지 전부 (구 프로덕션 + 프리뷰 전부)
+정책: 유저 요구 — "vercel 최신 depolyments 뺴고는 다 없애" (저장공간 부족 · 2026-10-15 갱신)
+  · KEEP  : 현재 라이브(별칭 연결) 프로덕션 배포 1개만 유지
+  · DELETE: 라이브 1개를 제외한 나머지 전부 (구 프로덕션 + 프리뷰 전부)
 사용법:
   python3 scripts/vercel_cleanup.py list          # 전체 배포 나열 + KEEP/DELETE 미리보기
   python3 scripts/vercel_cleanup.py run [--yes]   # 실제 삭제 실행 (--yes면 확인 프롬프트 생략)
@@ -114,8 +113,7 @@ def _has_code_diff(sha_a, sha_b):
 
 
 def pick_keepers(deps):
-    """KEEP 선정: (1) 라이브 배포, (2) 라이브와 '코드가 실질로 다른' 가장 최근 프로덕션(=직전 버전, 롤백 타깃).
-    코드 미변경 배포(백업 자동배포 등)는 아무리 최신이어도 KEEP에서 제외 — 유저 기준 '버전'은 코드 변경분."""
+    """KEEP 선정: 라이브(별칭 연결) 프로덕션 배포 1개만 유지 — 나머지 전부 삭제 대상."""
     prod = [d for d in deps if d.get("target") == "production"
             and d.get("state") == "READY" and d.get("readyState") == "READY"]
     # 라이브 배포 uid = 별칭 매핑에서 가져옴
@@ -135,22 +133,6 @@ def pick_keepers(deps):
     if live:
         keep.append(live)
         keep_uids.add(live["uid"])
-        live_sha = (live.get("meta") or {}).get("githubCommitSha", "")
-        # 롤백 타깃: 라이브보다 오래된 프로덕션 중 '코드 실질 변경'이 있는 첫 배포
-        for d in prod:
-            if d["uid"] in keep_uids:
-                continue
-            m = d.get("meta") or {}
-            msg = m.get("githubCommitMessage", "")
-            sha = m.get("githubCommitSha", "")
-            if _is_noise_msg(msg):
-                continue  # 코드 미변경 자동배포 → 롤백 가치 없음
-            diff = _has_code_diff(sha, live_sha) if (sha and live_sha) else None
-            if diff is False:
-                continue  # 메시지는 버전이지만 코드가 라이브와 동일(예: 직전 버전이 현재와 같은 경우)
-            keep.append(d)
-            keep_uids.add(d["uid"])
-            break
     return keep, keep_uids
 
 
@@ -202,7 +184,7 @@ def main():
         time.sleep(0.5)
     print(f"\n완료: 삭제 {ok} / 실패 {fail}")
     if fail == 0:
-        print("✓ 저장소 정리 완료 — KEEP 2개(라이브+롤백)만 남김")
+        print("✓ 저장소 정리 완료 — 라이브 1개만 남김")
 
 
 if __name__ == "__main__":
