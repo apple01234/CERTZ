@@ -33,7 +33,7 @@
         }
       ],
       "icon": "icon.png",
-      "artifactName": "SERTZ-vc152-setup.${ext}"
+      "artifactName": "SERTZ-vc154-setup.${ext}"
     },
     "nsis": {
       "oneClick": true,
@@ -42,7 +42,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "SERTZ",
-      "artifactName": "SERTZ-vc152-setup.${ext}"
+      "artifactName": "SERTZ-vc154-setup.${ext}"
     },
     "linux": {
       "target": [
