@@ -4312,3 +4312,19 @@ Stage Summary:
 - 저장공간 정리: Vercel 70배포 삭제 + 릴리스 구자산 1.16GB 삭제
 - 유저 테스트 포인트: ①APK 덮어설치(154) → 자동 버튼 위 유령 X 소실·한글 IME에서 상점 ↑/↓+E 확정·블레이드마스터(Lv200+) 궁극기 가속 100베기+死 블룸+100 HIT ②EXE는 Actions 완료 후 SERTZ-vc154-setup.exe
 - 비고: vc153-setup.exe는 vc154 EXE 자동첨부 확인 후 삭제 예정(유지 중)
+
+---
+Task ID: vc154-apk-release-chain (후속 — EXE 첨부 정정·완결)
+Agent: Super Z (main)
+Task: EXE 자동빌드 첨부 실패 정정 → SERTZ-vc154-setup.exe 완결
+
+Work Log:
+- [1차 EXE 실행 실패 원인] run 38683240600(4a149a5) — 빌드 전 단계 성공, "Attach to GitHub Release"만 실패: electron/package.json artifactName 2곳(win/nsis)에 `SERTZ-vc152-setup.${ext}` 잔존 하드코딩 → 산출물이 SERTZ-vc152-setup.exe로 나와 워크플로 업로드 glob(SERTZ-vc154-setup.exe) 불일치("no matches found"). vc153 때 사후 PATCH로 덮은 부채의 나머지 절반
+- [정정] artifactName 2곳 vc152→vc154 + 워크플로 주석에 동기 포인트 3곳 명기(version + artifactName×2 + 업로드 경로) → 커밋 0e40101 푸시 → paths 트리거로 run 38683802021 자동 재실행 → success
+- [릴리스 최종] SERTZ-vc154-setup.exe(257,926,543B) 자동첨부 확인 → 잔존 vc153-setup.exe DELETE(204) → 다운로드 206 실측
+- [Vercel] 0e40101 배포 READY 후 vercel_cleanup run — 라이브 1개(dpl_8UVq15hVS5cJ8a9DbzYvwZXTrN6N)만 유지. 라이브 /api/version 직접 curl은 Vercel Security Checkpoint 봇 방어 페이지로 간헐 차단(서버 이상 아님 — 실사용자 영향 없음, API readyState로 검증 대체)
+- [최종 자산] 릴리스 v1.0.12(vc154): SERTZ-vc154.apk 152,743,843B + SERTZ-vc154-setup.exe 257,926,543B + SERTZ-vc154-mapping.txt 29,998,321B — 총 3개(~440MB, 정리 전 ~1.6GB)
+
+Stage Summary:
+- vc154 전 체인 완결: 웹(라이브 code:154)·APK(versionCode 154·cc774f34 덮어설치 호환)·EXE(setup only) 3종 모두 vc154 동기화
+- 저장공간: Vercel 배포 71→1개, 릴리스 자산 8→3개 — 유저 제보 "저장공간 부족" 두 축 모두 정리 완료
