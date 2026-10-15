@@ -2,7 +2,10 @@
 # CERTZ APK release build (v1.4.26/vc118 — build_apk.sh 표준 복원판)
 # 절차: node kill(OOM방지) → serverless 라우트 격리(trap 절대경로 복원) → next export build → cap sync → gradle assembleRelease
 set -uo pipefail
-export PROJECT_ROOT=/home/z/my-project
+# v1.0.13 최적화 — PROJECT_ROOT 하드코딩 제거: 스크립트 위치(저장소 루트) 자동 감지.
+#  저장소가 하위 디렉터리(예: /home/z/my-project/CERTZ)에 클론돼도 동작. 외부에서
+#  PROJECT_ROOT 환경변수로 덮어쓸 수도 있다.
+export PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)}"
 # vc140 — 환경 재구축 대응: 시스템 OpenJDK 21 경로 자동 탐지(/home/z/jdk 소실 대비)
 export JAVA_HOME="${JAVA_HOME:-/home/z/jdk}"
 [ -x "$JAVA_HOME/bin/java" ] || export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
