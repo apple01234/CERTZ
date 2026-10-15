@@ -32,6 +32,19 @@ cleanup() {
 trap cleanup EXIT
 
 echo "[1] serverless 라우트 격리 → .apk-hold"
+# v1.0.13 가드 — 이전 빌드가 격리 직후 사망(SIGKILL/OOM 등)해 trap 복원 없이 끝난 경우
+#  .apk-hold에 라우트가 남는다. 이 상태로 격리를 재실행하면 src에서 라우트가 소실된 채
+#  커밋·배포될 수 있으므로, 시작 시 잔존분을 먼저 원복한다 (실제 사건 581b8c0).
+if [ -d "$HOLD" ]; then
+  echo "  [가드] 잔존 .apk-hold 발견 → 원복 후 진행"
+  for r in $ROUTES; do
+    [ -d "$HOLD/$r" ] && rm -rf "$PROJECT_ROOT/src/app/api/$r" && mv "$HOLD/$r" "$PROJECT_ROOT/src/app/api/$r"
+  done
+  for f in middleware.ts middleware.js proxy.ts proxy.js; do
+    [ -f "$HOLD/$f" ] && mv "$HOLD/$f" "$PROJECT_ROOT/src/$f"
+  done
+  rm -rf "$HOLD"
+fi
 mkdir -p "$HOLD"
 for r in $ROUTES; do
   mv "$PROJECT_ROOT/src/app/api/$r" "$HOLD/$r"
