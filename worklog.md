@@ -4328,3 +4328,25 @@ Work Log:
 Stage Summary:
 - vc154 전 체인 완결: 웹(라이브 code:154)·APK(versionCode 154·cc774f34 덮어설치 호환)·EXE(setup only) 3종 모두 vc154 동기화
 - 저장공간: Vercel 배포 71→1개, 릴리스 자산 8→3개 — 유저 제보 "저장공간 부족" 두 축 모두 정리 완료
+
+---
+Task ID: 7 (v1.0.15 / vc157 — 유저 피드백 6건)
+Agent: Super Z (main)
+Task: 심연의탑 밸런스 2건 + 버그 3건 + 씹덕요소 복원 — 구현·배포
+
+Work Log:
+- [경험치표 확보] 나무위키 "메이플스토리/레벨" 문서 page_reader fetch 성공 → 4.1(1~200)·4.2(200~260)·4.3(260~300) 표 파싱. 각주 마커([11] 등) 값 오염 정정 + 누적 검증합 일차 확인 → 1~299레벨 299개 값 확보 (2026-03-19 업데이트 기준, 초반 9~14 평평 밴드·구간별 ×1.2 계단·190+ 급등)
+- [#1 경험치 곡선] 신규 src/game/expTable.ts (299개 테이블 + 300+ ×1.1 연장) → Player.expNext()의 v3.0.2 자체 공식(40×lv^1.45) 폐기, 테이블 lookup으로 교체 — 심연의탑 과속 레벨업 근본 차단
+- [#2 탑 난이도] infinite.ts: bossEvery 5→10 + towerDepthMul(10층마다 ×2)·towerAtkDepthMul(×1.5) 신설 → WorldScene spawnTowerFloor 잡몹/보스 + onEnemyKilled 리스폰 3곳 모두 적용 (HP ×2, ATK ×1.5 — 원킬 방지 완만 공격 배율)
+- [#3 쿨타임] 신규 src/game/cooldownMemo.ts (모듈 싱글톤) → gotoStage(유일 전환 통로)에서 memoSkillCooldowns(), 새 Player 생성자에서 복원 (skill1~5b·pot) — 맵 이동해도 쿨타임 이어짐, 타이틀/전직 리셋은 의도대로 유지
+- [#4 게이트 AI] Enemy에 gateTarget 필드 + tick() 전단 진군 로직 신설 (원거리 스로틀보다 앞 — 화면 밖도 진군, 어그로 내 진입 시 기존 FSM 교전) + spawnGateWave에서 코어 좌표 부여 + tickGate의 340px 무력 보정(매 프레임 FSM에 덮이던 원인) 제거
+- [#5 퀘스트 EXP] stages.ts에 QUEST_EXP_MUL=12 신설(데이터 원본 유지·지급 시 승수) → advanceQuest + completeRepeatBounty + completeRepeat 3곳 적용 — 사냥(×1.35) 대비 퀘스트가 명백히 이득
+- [#6 씹덕요소] 감정표현 단축키 Y♥/U♪/H！/N💢(WorldScene update)·펫 9~16초 랜덤 감정(드롭 줍면 하트)·레벨업 "LEVEL UP!!" 바운스 문구+★버블·처치 14% 하트/음표 팝·NPC 대사 5종 카오모지(villageIntro/villager1/villager2/introNamed/fieldNpc_abyss)
+- [표기 정리] "5층마다 보스" 3곳(Panels 탑 소개·stages 주석·infinite 헤더) → 10층
+- [버전] 1.0.14/156 → 1.0.15/157 (package.json·electron version+artifactName×2+description·server.js LATEST/NOTE·route.ts LATEST/NOTE/APK_MIRROR·build.gradle versionCode/Name+이력 주석·apk-guide 신규 6건 블록+이전 버전 보존)
+- [검증] bun run build 2회 성공(정적 export+API+fc postbuild) → 커밋 fe012dbb 푸시(16파일, +301/-61) → Vercel dpl_CtdWKyBZ READY → 라이브 /api/version 실측 latest 1.0.15·code 157 + 홈 200
+
+Stage Summary:
+- 유저 피드백 6건 전부 구현·배포 완료 (웹 즉시 반영 — sertz.vercel.app)
+- 핵심 의사결정: ①경험치표는 나무위키 원문 그대로(299레벨) ②ATK 심층 배율은 ×1.5로 완만(HP는 지시대로 ×2) ③게이트 AI는 어그로 내 교전 유지(완전 무시 아님) ④퀘스트 EXP 승수 ×12(사냥 대비 ~2.2배 체감)
+- 다음 빌드 시: APK/IPA/EXE는 각 CI 워크플로우 실행으로 vc157 산출물 생성 가능 (버전 파싱 자동화 유지)
