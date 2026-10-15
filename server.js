@@ -34,7 +34,7 @@ app.prepare().then(() => {
   /* vc138 — GitHub API 자산 DELETE 일시 장애로 동일 이름 교체가 막힌 기간의 안전 경로:
    *  vc138 자산을 별도 이름으로 업로드하고 이쪽을 가리킴. 루프가 동일 이름 교체에 성공하면
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.9/SERTZ-vc153.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.9/SERTZ-vc154.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -67,10 +67,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.0.11";
-  const LATEST_CODE = 153;
+  const LATEST_VERSION = "1.0.12";
+  const LATEST_CODE = 154;
     const VERSION_NOTE =
-  "v1.0.11 (vc153) — 유저 제보 일괄: ①123456 로그인 불가 근본 수정 — 타이틀 화면 '로그인/계정' 버튼이 스크롤 오버레이(z-40)에 덮여 클릭이 전부 흡수되던 버그(z-[60] 승격, 라이브 E2E로 123456 로그인 성공 검증) ②5차전직 2차각성 퀘스트 '각성의 대가'를 퀘스트 로그에 신설 섹션으로 표시(진행도 바·단계 표기·수주 가능/완료 상태) ③각성 퀘스트 중 왕관 등 치장 착용이 대화 중 무음 차단되던 것 허용+실패 배너 ④거래소 다수 등록 — 상점처럼 −/숫자입력/+/MAX로 개수 지정(1~99, 보유 수량 서버 실검증·부분 구매·수량 표기) ⑤카오스 보스 에메랄드 보스마다 차등(수르트 19~나그라파르 66 — 보스 exp 계층 가중치, 재도전 창에 보스별 미리보기) ⑥도적 계열 제2궁극기 개편 「사(死)의 일섬」 3D 시네마틱(붉은 死 연출·Three.js 발도 참격·hitstop·즉발450%+출혈25%×5초·원격 死 근사) ⑦스바르트알프헤임 보스 개편(GreenSlash/Vanish/ShieldCast/MagicBurst/PortalTeleport 상태머신)"
+  "v1.0.12 (vc154) — 유저 제보 일괄+궁극기 개편: ①기본공격 X 키탭 제거(자동 버튼 위에 떠 있던 유령 X 아이콘 근본 수리 — 공격 버튼에 relative 누락돼 키탭이 클러스터 좌상단 기준으로 배치된 것이 원인) ②NPC 선택지 E키 확정 한글 IME 수리(한글 2벌식에서 물리 E키의 e.key가 'ㄷ'가 되어 확정이 안 들어가던 버그 — e.code KeyE 판정으로 교정, 상점·전직관 ↑/↓ 이동+E 확정+▶ 커서 실측) ③블레이드마스터 궁극기 개편 「극의 — 무한 검무 백연타」 — 무한 검무 100연타로 점점 빠르게 베기(시작 0.096초 간격→베기마다 단축→마지막 0.02초, 총 ~5.8초)+붉은 死 한자 블룸(절제 톤 — 투명도 0.38·발광 반폭)+HIT 카운터(10베기마다 갱신·종결 플래시 동안 잔류)+시네마 레터박스, 종결은 교차 쌍검 극의 일격 유지(화력 총량 보존 43.0배), 원격 유저에게도 100연타 근사+死 유령 동기화 ④사(死)의 일섬 한자 블룸 절제(발광 반경 25% 축소·확대 정점 1.35→1.22 — 유저 피드백 '한자 블룸이 너무 찐해') ⑤오버레이 시퀀스 타이밍 게임 시간 통일(컷 예약은 게임 시간인데 안전망만 실시간이면 저FPS에서 연출 도중 강제 해제되던 근본 수리 — 헤들리스 9FPS 실측 재현·수리) · E2E 10/10"
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

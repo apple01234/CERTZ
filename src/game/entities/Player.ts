@@ -3045,26 +3045,159 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       }
 
-      /* 블레이드마스터 — 극의: 무한 검무 14연타 + 교차 쌍검 극의 일격 */
+      /* 블레이드마스터 — 극의: 무한 검무 백연타 (vc154 개편 — 유저 지시 "스킬 데모 참고해서 수정, 점점 빠르게 베고 100번까지 베기")
+       *  · 데모(死 스킬 데모) 연출 차용: 붉은 死 한자 블룸 + 가속 연타 + HIT 카운터 + 시네마 레터박스
+       *  · 가속 리듬: 시작 96ms 간격 → 베기마다 ~0.77ms씩 단축 → 마지막 20ms (100베기 총 ≈5.8초)
+       *  · 화력 보존: 기존 14연타(2.6×14) + 종결 7.0 ≈ 43.4배 → 100×0.36 + 7.0 = 43.0배
+       *  · 한자 블룸은 DeathSlash 본 연출보다 절제 톤(투명도 0.38·발광 반폭) — "한자 블룸이 너무 찐해" 반영 */
       case "blademaster": {
         const targets = this.nearestTargets(14, 820);
         const seq = targets.length > 0 ? targets : [];
-        seq.forEach((t, i) => {
-          this.scene.time.delayedCall(240 + i * 150, () => {
-            if (this.state === "dead" || !t.active) return;
+        const CUTS = 100;
+        const IV_START = 96, IV_MIN = 20;
+        const decay = (IV_START - IV_MIN) / (CUTS - 1);
+        /* 컷별 시작 시각 사전 계산 (가속 리듬) */
+        const starts: number[] = [];
+        let acc = 240;
+        for (let i = 0; i < CUTS; i++) {
+          starts.push(acc);
+          acc += Math.max(IV_MIN, IV_START - decay * i);
+        }
+        const totalMs = acc; // 마지막 컷 종료 시각
+
+        /* ── 시네마 오버레이 (DOM — DeathSlash와 동일 패턴, 절제 톤) ── */
+        const ovParent = this.scene.game.canvas.parentElement;
+        let kanji: HTMLDivElement | null = null;
+        let hitBox: HTMLDivElement | null = null;
+        const bars: HTMLDivElement[] = [];
+        const ovTimers: number[] = [];
+        /* vc154 — 오버레이 시퀀스 타이밍은 전부 게임 시간(scene.time)으로 통일:
+         *  컷 예약은 게임 시간인데 안전망·소산만 실시간(setTimeout)이면 저FPS 환경에서
+         *  게임 시간이 늦어진 만큼 연출 도중 안전망이 먼저 뜯어진다 (헤들리스 9FPS 실측 재현).
+         *  window 실시간 타이머는 최후 유출 방지 백스톱(30초)만 둔다. */
+        const ovAt = (ms: number, f: () => void) => {
+          /* 게임 시간 기반 스케줄 — 씬이 죽으면 함께 정리된다 (유출 없음) */
+          this.scene.time.delayedCall(ms, () => { try { f(); } catch { /* 오버레이 실패는 전투에 영향 없음 */ } });
+        };
+        /* 최후 백스톱 — 어떤 경우에도 DOM 유출 없게 (실시간 30초) */
+        ovTimers.push(window.setTimeout(() => { try { ovCleanup(); } catch { /* 무시 */ } }, 30000));
+        try {
+          if (ovParent) {
+            /* 레터박스 — 상하 블랙바 (데모 연출, vc154) */
+            for (const side of ["top", "bottom"]) {
+              const bar = document.createElement("div");
+              bar.style.cssText = `position:absolute;left:0;${side}:0;width:100%;height:0;background:#000;opacity:0.82;pointer-events:none;z-index:7;transition:height 300ms ease-out;`;
+              ovParent.appendChild(bar);
+              bars.push(bar);
+            }
+            requestAnimationFrame(() => bars.forEach((b) => { b.style.height = "42px"; }));
+            /* 붉은 死 한자 — 절제 블룸 (블러 반폭·투명도 0.38 — DeathSlash 1.0 대비 소프트) */
+            kanji = document.createElement("div");
+            kanji.textContent = "死";
+            kanji.style.cssText = [
+              "position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(0.5)",
+              "pointer-events:none;z-index:7",
+              "font-family:'Noto Serif SC','Noto Serif KR',serif;font-weight:900",
+              "font-size:min(30vh,30vw);line-height:1;color:#e01818",
+              "text-shadow:0 0 10px #ff2a2a,0 0 22px #c80000",
+              "opacity:0",
+              "will-change:transform,opacity",
+            ].join(";");
+            ovParent.appendChild(kanji);
+            requestAnimationFrame(() => {
+              if (!kanji) return;
+              kanji.style.transition = "transform 460ms cubic-bezier(0.16,1.2,0.3,1), opacity 300ms ease-out";
+              kanji.style.opacity = "0.38";
+              kanji.style.transform = "translate(-50%,-50%) scale(1.06)";
+            });
+            /* HIT 카운터 — 우상단 세리프 (데모의 "N HIT") */
+            hitBox = document.createElement("div");
+            hitBox.style.cssText = [
+              "position:absolute;right:6%;top:74px",
+              "pointer-events:none;z-index:7;text-align:right",
+              "font-family:'Noto Serif KR',serif;font-weight:900;font-size:30px",
+              "color:#ffd7d7;text-shadow:0 0 12px #f00,0 0 3px #000",
+              "opacity:0",
+            ].join(";");
+            ovParent.appendChild(hitBox);
+          }
+        } catch { /* 오버레이 미지원 환경 — 연출 없이 전투만 */ }
+        const ovCleanup = () => {
+          for (const t of ovTimers) { try { window.clearTimeout(t); } catch { /* 무시 */ } }
+          ovTimers.length = 0;
+          try {
+            for (const b of bars) { b.style.height = "0"; window.setTimeout(() => { try { b.remove(); } catch { /* 무시 */ } }, 380); }
+            if (kanji) {
+              kanji.style.transition = "opacity 480ms ease-out, transform 480ms ease-out";
+              kanji.style.opacity = "0";
+              kanji.style.transform = "translate(-50%,-50%) scale(1.3)";
+              window.setTimeout(() => { try { kanji?.remove(); } catch { /* 무시 */ } }, 560);
+            }
+            /* vc154 — "100 HIT"는 종결 플래시 동안 잔류 (hitKeep) — 즉시 소산 아님 */
+            if (hitBox && !hitKeep) {
+              hitBox.style.transition = "opacity 320ms ease-out";
+              hitBox.style.opacity = "0";
+              window.setTimeout(() => { try { hitBox?.remove(); } catch { /* 무시 */ } }, 400);
+            }
+          } catch { /* 무시 */ }
+        };
+        /* ── 100베기 예약 ── */
+        let hitKeep = false; // vc154 — 종결 플래시 동안 "100 HIT" 잔류 (테스트 관측창 + 연출 만족감)
+        for (let i = 0; i < CUTS; i++) {
+          this.scene.time.delayedCall(starts[i], () => {
+            if (this.state === "dead") return;
+            /* 대상 순환 — 죽었으면 살아있는 다음 대상으로 넘어간다 */
+            let tgt = seq.length > 0 ? seq[i % seq.length] : null;
+            if (tgt && !(tgt.active && tgt.alive)) tgt = seq.find((x) => x.active && x.alive) ?? null;
             const ang = Math.random() * Math.PI * 2;
-            this.setPosition(t.x - Math.cos(ang) * 22, t.y - Math.sin(ang) * 22);
-            this.scene.spawnSlash(t.x, t.y, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 2.5, hex);
-            this.scene.spawnSlash(t.x, t.y - 6, new Phaser.Math.Vector2(-Math.cos(ang), -Math.sin(ang)), i % 2 === 1, 1.8, 0xffffff);
-            this.scene.spawnBurstAt(t.x, t.y, 12, hex);
-            this.scene.sfxSkill("iainuki", 0.95 + (i % 5) * 0.04);
-            const { dmg, crit } = rd(2.6);
-            if (crit) this.scene.sfxCrit();
-            t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 240, crit);
+            if (tgt) {
+              this.setPosition(tgt.x - Math.cos(ang) * 22, tgt.y - Math.sin(ang) * 22);
+              this.scene.spawnSlash(tgt.x, tgt.y, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 2.1, hex);
+              this.scene.spawnSlash(tgt.x, tgt.y - 6, new Phaser.Math.Vector2(-Math.cos(ang), -Math.sin(ang)), i % 2 === 1, 1.5, 0xffffff);
+              this.scene.spawnBurstAt(tgt.x, tgt.y, i % 2 === 0 ? 10 : 6, hex);
+              const { dmg, crit } = rd(0.36);
+              if (crit) this.scene.sfxCrit();
+              tgt.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 240, crit);
+            } else {
+              /* 대상 부재 — 주변 공중 베기 (검무 자체는 유지) */
+              const px = this.x + Math.cos(ang) * 46, py = this.y + Math.sin(ang) * 26;
+              this.scene.spawnSlash(px, py, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 1.8, hex);
+            }
+            /* 검격음 — 3컷마다 1회, 가속하며 피치 상승 (도플러 질감) */
+            if (i % 3 === 0) this.scene.sfxSkill("iainuki", 0.92 + Math.min(0.55, i * 0.0055));
+            /* 카메라 — 후반으로 갈수록 미세 진동 강화 */
+            if (i % 12 === 0) this.scene.doShake(70, 0.002 + (i / CUTS) * 0.004);
+            /* 마일스톤 — 25/50/75베기: 링 팝 + 한자 펄스 */
+            if (i === 25 || i === 50 || i === 75) {
+              spawnRingPop(this.scene, this.x, this.y, "vf_ring", hex, 2.4 + i * 0.012, 420);
+              if (kanji) {
+                kanji.style.transition = "transform 130ms ease-out";
+                kanji.style.transform = "translate(-50%,-50%) scale(1.18)";
+                ovAt(140, () => { if (kanji) { kanji.style.transform = "translate(-50%,-50%) scale(1.06)"; } });
+              }
+            }
+            /* HIT 카운터 — 10베기마다 갱신 (10·20·…·100 HIT) */
+            if ((i + 1) % 10 === 0 && hitBox) {
+              hitBox.textContent = `${i + 1} HIT`;
+              hitBox.style.transition = "none";
+              hitBox.style.opacity = "1";
+              hitBox.style.transform = "scale(1.28)";
+              ovAt(120, () => { if (hitBox) { hitBox.style.transition = "transform 140ms ease-out"; hitBox.style.transform = "scale(1)"; } });
+            }
           });
-        });
-        /* 종결 — 교차하는 쌍검 극의 일격 */
-        this.scene.time.delayedCall(240 + seq.length * 150 + 160, () => {
+        }
+
+        /* 종결 — 교차하는 쌍검 극의 일격 (100베기 정점 직후) */
+        this.scene.time.delayedCall(totalMs + 170, () => {
+          hitKeep = true; // "100 HIT" 잔류 → 종결 연출 후 소산
+          ovCleanup(); // 레터박스/한자 소산 → 종결 플래시
+          ovAt(2400, () => {
+            if (hitBox) {
+              hitBox.style.transition = "opacity 420ms ease-out";
+              hitBox.style.opacity = "0";
+              window.setTimeout(() => { try { hitBox?.remove(); } catch { /* 무시 */ } }, 480);
+            }
+          });
           if (this.state === "dead") return;
           const dir = this.aimDirFree().normalize();
           this.scene.spawnSlash(this.x + dir.x * 40, this.y, dir, false, 4.2, hex);
@@ -3076,7 +3209,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnFlarePop(this.scene, this.x + dir.x * 44, this.y - 6, "vf_slash", { tint: hex, scale: 2.6, duration: 560, angle: dir.angle() });
           spawnFlarePop(this.scene, this.x + dir.x * 44, this.y - 6, "vf_slash", { tint: 0xffffff, scale: 2.2, duration: 500, angle: dir.angle() + 0.5 });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring", hex, 4.6, 700);
-          this.scene.cameras.main.flash(180, 255, 255, 255);
+          this.scene.cameras.main.flash(180, 255, 60, 60); // vc154 — 종결은 붉게 (死 한자 톤과 수렴)
           this.scene.cameras.main.shake(440, 0.021);
           this.scene.sfxSkill("iainuki", 0.6);
           this.scene.sfxSkill("superhit", 0.82);
@@ -3087,6 +3220,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             e.takeDamage(dmg, away, 620, crit);
           }
         });
+        /* 안전망 — 어떤 경우에도 오버레이가 남지 않게 (종결이 안 불려도 해제) */
+        ovAt(totalMs + 4000, () => ovCleanup());
         break;
       }
 

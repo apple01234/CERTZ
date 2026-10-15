@@ -131,8 +131,9 @@ export function runDeathSlashCinematic(
       "position:absolute;left:50%;top:44%;transform:translate(-50%,-50%)",
       "pointer-events:none;z-index:8",
       "font-family:'Noto Serif SC','Noto Serif KR',serif;font-weight:900",
-      "font-size:min(46vh,46vw);line-height:1;color:#ff1a1a",
-      "text-shadow:0 0 18px #ff2a2a,0 0 42px #c80000,0 0 90px #7a0000,6px 4px 2px #4a0000",
+      "font-size:min(40vh,40vw);line-height:1;color:#ff1a1a",
+      /* vc154 — 유저 피드백 "한자 블룸이 너무 찐해": 발광 반경 25% 축소 (18/42/90→14/32/64) */
+      "text-shadow:0 0 14px #ff2a2a,0 0 32px #c80000,0 0 64px #7a0000,6px 4px 2px #4a0000",
       "opacity:0;transition:none",
       "will-change:transform,opacity",
     ].join(";");
@@ -156,7 +157,8 @@ export function runDeathSlashCinematic(
     requestAnimationFrame(() => {
       glyph.style.transition = "transform 620ms cubic-bezier(0.16,1.3,0.3,1), opacity 180ms ease-out";
       glyph.style.opacity = "1";
-      glyph.style.transform = "translate(-50%,-50%) scale(1.35)";
+      /* vc154 — 확대 정점도 1.35→1.22로 절제 (블룸 톤다운 수반) */
+      glyph.style.transform = "translate(-50%,-50%) scale(1.22)";
       ink.style.transition = "opacity 700ms ease-out";
       ink.style.opacity = "0.85";
       /* 붓 터치 미세 진동 — 카메라 쉐이크 */
@@ -166,7 +168,7 @@ export function runDeathSlashCinematic(
     /* 확대 후 붓눌러 자리잡기 */
     window.setTimeout(() => {
       glyph.style.transition = "transform 240ms ease-in";
-      glyph.style.transform = "translate(-50%,-50%) scale(1.12)";
+      glyph.style.transform = "translate(-50%,-50%) scale(1.05)";
     }, 640);
 
     /* ═══ 2단계: Three.js 투명 캔버스 + 시네마틱 씬 ═══ */

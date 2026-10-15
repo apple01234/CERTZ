@@ -4267,3 +4267,26 @@ Stage Summary:
 - vc153 = 로그인 차단 버그(시작화면 버튼이 오버레이에 덮임) 근본 수리 + 거래소 상점식 다수 등록 + 카오스 보스 보상 차등 + 도적 제2궁극기 3D 시네마틱 개편 + 스바르트알프헤임 보스 상태머신 개편
 - 유저 테스트 포인트: ①타이틀에서 🔑 로그인 → 123456 로그인 ②퀘스트 로그(J)에서 각성의 대가 진행도 ③각성 퀘스트 중 인벤 왕관 착용 ④거래소 등록 시 수량 −/+/MAX ⑤카오스 재림 보스별 에메랄드(나그라파르 66) ⑥도적 계열 Q키 — 死 연출·450%+출혈 ⑦심연의 군주(7장) Vanish/ShieldCast/PortalTeleport 패턴
 - 잔무: Vercel 구배포 삭제(토큰 필요) · Standing CG 신규 에셋은 유저 업로드 필요(AI 생성 금지 원칙)
+
+---
+Task ID: vc154-user-reports
+Agent: Super Z (main)
+Task: 유저 제보 5건 — ①기본공격 X 아이콘 제거 ②선택지 화살표/E키 버그 ③Vercel 구배포 정리 ④블레이드마스터 궁극기 데모 참고 개편(가속 100베기+한자 블룸) ⑤레퍼런스 사이트 디자인 적용 → vc154
+
+Work Log:
+- [세션 복구] 로컬이 vc141(33307f9)로 정체 — origin/main이 107커밋 앞섬(vc153=20a9507 배포본) 확인 → reset --hard로 동기화. 이전 세션 요약(Supabase→Vercel Blob 마이그레이션)은 낡은 컨텍스트였고 실제 코드베이스는 GitHub-as-DB(ghdb)로 이미 진행 완료 상태였음. DeathSlash(three.js) 신규 의존성 설치
+- [①X 키탭 — 근본 원인 실측] 정적 검색으로 안 잡혀 런타임 프로브 3종 작성(probe_x_mobile/cluster/field) → 740×360 모바일 뷰포트에서 재현 성공: vc147 (#11)이 attack 버튼에 키탭을 붙일 때 **relative 클래스 누락**으로 absolute 키탭이 클러스터 컨테이너(좌상단=자동 버튼 위) 기준으로 배치 → 유저 스크린샷의 "자동 버튼 위 유령 X"와 완전 일치. 유저 지시대로 키탭 자체 제거(TouchControls.tsx). 스킬 버튼 키탭(Z/C/V/A/S)은 relative 내부라 정상 — 유지
+- [②E키 확정 — 근본 원인] useListNav(vc152 신설)이 e.key==="e"|"E"로 판정 → **한글 2벌식 IME에서 물리 E키의 e.key가 "ㄷ"**가 되어 확정 불가(방향키는 ArrowUp/Down이라 IME 무관하게 동작 — "화살표는 되고 E만 안 된다"는 제보와 정확히 일치). e.code==="KeyE" 판정으로 교정(Panels.tsx useListNav)
+- [④블레이드마스터 백연타] 업로드된 「死 스킬 데모.html」 역설계 완료(8연타 타임라인·死 캔버스 블룸 shadowBlur60·카메라 포즈 8종·슬래시 셰이더·적 분할 셰이더) → Player.ts blademaster case 전면 개편: 100베기 가속 리듬(96ms→20ms·총~5.8s)+死 한자 블룸(DOM 오버레이·절제 톤 opacity 0.38·발광 반폭)+HIT 카운터(10베기마다·종결 플래시 동안 잔류)+레터박스+마일스톤 링(25/50/75)+종결 붉은 플래시. 화력 총량 보존(43.4→43.0배). classes.ts 스킬 설명 갱신. 원격(playRemoteSkillFx)에 100연타 근사+死 유령 동기화 추가(cls==="blademaster" 분기)
+- [④한자 블룸 피드백] "한자 블룸이 너무 찐해" — 사(死)의 일섬(DeathSlash.ts) 발광 반경 25% 축소(18/42/90→14/32/64)+확대 정점 1.35→1.22. 신규 백연타 한자도 처음부터 절제 톤으로 설계
+- [⑤디자인 레퍼런스 적용] 유저 제공 README(OpenGameArt·itch.io·RPG Maker·Kenney 등) 중 RPG Maker식 선택 커서(▶ 하이라이트 — 기존 구현 유지 확인)와 데모의 시네마틱 문법(레터박스·HIT 카운터·한자 블룸)을 ②④에 통합 적용
+- [④잠복 버그 발견·수리] 오버레이 안전망이 window.setTimeout(실시간)인데 컷 예약은 scene.time(게임 시간) → 저FPS에서 게임 시간이 늦어지면 연출 도중 안전망이 먼저 뜯기는 근본 버그(헤들리스 9FPS 실측 재현 — "10 HIT"에서 정지) → 오버레이 시퀀스 전부 게임 시간으로 통일+실시간 30초 백스톱만 잔존
+- [검증] tsc 0 · next build 성공 · scripts/e2e_vc154.js **10/10 PASS**(①X 소실+Z/C 유지 ②상점 ↑/↓ 이동+E(IME ㄷ) 확정 → 실구매 골드 5030→5005 ③死 블룸+레터박스+HIT 100 도달+오버레이 완전 소산+pageerror 0)
+- [게이트 vc154 승격 5종] server.js(LATEST_CODE 154·1.0.12·NOTE·APK vc154)·route.ts·next.config.ts·build.gradle(versionCode 154·versionName 1.0.12)·apk-guide.html(헤더+불릿) — 로컬 /api/version code:154 라이브 확인
+- [③Vercel 구배포 정리 — 보류] .secrets/vercel_token 컨테이너 리셋으로 소실(전 세션 vc141과 동일 장애) → REST API 접근 불가. **토큰 재제공 필요** — 받는 즉시 scripts/vercel_api.sh 패턴으로 최신 1개 외 전부 DELETE 예정
+- [APK] 미빌드 — 웹 푸시 우선, APK는 다음 사이클(SERTZ-vc154.apk 게이트 URL 선반영됨)
+
+Stage Summary:
+- vc154 = 제보 3건 근본 수리(X 키탭·IME E키·저FPS 오버레이)+블레이드마스터 궁극기 백연타 개편 — 웹 즉시 반영(code:154)
+- 유저 테스트 포인트: ①자동 버튼 위 유령 X 소실 ②한글 IME 켠 상태에서 상점/전직관 ↑/↓+E 확정 ③블레이드마스터(Lv200+) 궁극기 — 가속 100베기+死 블룸+100 HIT
+- 잔무: ①Vercel 토큰 재제공 시 구배포 일괄 삭제 ②SERTZ-vc154.apk 빌드·릴리스 업로드

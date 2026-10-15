@@ -10806,6 +10806,44 @@ export class WorldScene extends Phaser.Scene {
           this.remoteRing(x, y, 0x7a4aff, 2.4 * s, 480, 3.0);
         }
         this.remoteRing(x, y, 0x120530, 2.0 * s, 560, 2.6);
+      } else if (fam === "warrior" && cls === "blademaster") {
+        /* 블레이드마스터 — 무한 검무 백연타 근사 (vc154 — 로컬 100연타 개편 동기화:
+         *  가속 리듬 96→20ms · 100컷 코스메틱 · HIT 카운터 · 死 한자 유령 — 판정 없음) */
+        const CUTS = 100, IV_START = 96, IV_MIN = 20;
+        const decay = (IV_START - IV_MIN) / (CUTS - 1);
+        let racc = 0;
+        for (let i = 0; i < CUTS; i++) {
+          const t0 = racc;
+          racc += Math.max(IV_MIN, IV_START - decay * i);
+          this.time.delayedCall(t0, () => {
+            const ox = (Math.random() - 0.5) * 150 * s, oy = (Math.random() - 0.5) * 90 * s;
+            const a2 = Math.random() * Math.PI * 2;
+            this.spawnSlash(x + ox, y + oy, new Phaser.Math.Vector2(Math.cos(a2), Math.sin(a2)), i % 2 === 0, 1.7 * s, i % 3 === 0 ? 0xff5a5a : hex);
+            if (i % 4 === 0) this.spawnBurstAt(x + ox, y + oy, 6, hex);
+            if (i % 12 === 0) this.doShake(60, 0.002 + (i / CUTS) * 0.004);
+          });
+        }
+        /* 死 한자 유령 — 절제 톤 (로컬과 동일 톤) */
+        try {
+          const par = this.game.canvas.parentElement;
+          if (par) {
+            const g = document.createElement("div");
+            g.textContent = "死";
+            g.style.cssText = "position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(0.5);pointer-events:none;z-index:6;font-family:'Noto Serif SC','Noto Serif KR',serif;font-weight:900;font-size:min(26vh,26vw);line-height:1;color:#e01818;text-shadow:0 0 9px #ff2a2a,0 0 20px #c80000;opacity:0;transition:transform 420ms ease-out,opacity 280ms ease-out;";
+            par.appendChild(g);
+            requestAnimationFrame(() => { g.style.opacity = "0.3"; g.style.transform = "translate(-50%,-50%) scale(1.04)"; });
+            window.setTimeout(() => { g.style.opacity = "0"; g.style.transform = "translate(-50%,-50%) scale(1.25)"; }, racc + 200);
+            window.setTimeout(() => { try { g.remove(); } catch { /* 무시 */ } }, racc + 900);
+          }
+        } catch { /* DOM 이펙트 실패 무시 */ }
+        /* 종결 — 교차 쌍검 근사 */
+        this.time.delayedCall(racc + 60, () => {
+          this.spawnSlashArc(x, y, face, 0xffe0e0, 3.4 * s, 320, 0.95);
+          this.spawnSpinSlash(x, y, face);
+          this.spawnBurstAt(x, y, 26, hex);
+          this.remoteRing(x, y, 0xffffff, 2.8 * s, 0, 3.2);
+          this.doShake(300, 0.012);
+        });
       } else {
         /* 천멸(전사 계열) — 초거대 참격 연속 + 종결 일격 */
         for (let i = 0; i < 4; i++) this.time.delayedCall(i * 110, () => this.spawnSlashArc(x, y, face, 0xd6e6ff, 3.0 * s, 300, 0.95, -0.9 + i * 0.5));
