@@ -1,0 +1,137 @@
+name: Android Build (SERTZ)
+
+# v1.0.13 — Android 빌드 GitHub Actions 이관
+#  · 계기: 로컬(4GB RAM) 빌드가 gradle 데몬 단계에서 반복 사망 → 7GB 러너로 이관.
+#    iOS(ios-build.yml)와 동일 패턴: 버전 자동 파싱 → 정적 export → cap sync → assembleRelease
+#  · 사인: 저장소 내 sertz-release.keystore (기존 로컬 빌드와 동일 서명 — 기존 설치본 위 덮어쓰기 업데이트 호환)
+#  · 산출물: SERTZ-vc{code}.apk — server.js APK_MIRROR·next.config.ts APK_DL이 참조하는 이름 규격 그대로
+#  · R8 mapping.txt 동반 업로드 (크래시 디옵퓨스케이션 — vc154-mapping.txt 까지의 관행 유지)
+#  · 트리거: 수동(workflow_dispatch, inputs.tag 기본 v{versionName}) 또는 android/** 푸시
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "릴리스 업로드 태그 (비우면 v{versionName} 자동 — 예: v1.0.13)"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - ".github/workflows/android-build.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse version (build.gradle → versionName/versionCode)
+        run: |
+          set -e
+          VERSION=$(grep -oE 'versionName "[^"]+"' android/app/build.gradle | head -1 | sed 's/versionName "//; s/"$//')
+          CODE=$(grep -oE 'versionCode [0-9]+' android/app/build.gradle | head -1 | sed 's/versionCode //')
+          # 폴백 기본값 — 파싱 실패 시에도 빌드가 막히지 않게
+          VERSION="${VERSION:-1.0.13}"
+          CODE="${CODE:-155}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "CODE=$CODE" >> "$GITHUB_ENV"
+          echo "버전 파싱 결과: v${VERSION} (vc${CODE})"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static export (APK_EXPORT=1) — 서버리스 라우트 7개+middleware 격리
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          set -e
+          ROUTE_DIRS="admin auth market rank support chat party"
+          mkdir -p .apk-hold/api-routes
+          for d in $ROUTE_DIRS; do
+            if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" ".apk-hold/api-routes/"; fi
+          done
+          MIDDLEWARE_FILES="src/middleware.ts src/middleware.js src/proxy.ts src/proxy.js"
+          for f in $MIDDLEWARE_FILES; do
+            if [ -f "$f" ]; then mv "$f" ".apk-hold/"; fi
+          done
+          restore() {
+            for d in $ROUTE_DIRS; do
+              if [ -d ".apk-hold/api-routes/$d" ]; then mv ".apk-hold/api-routes/$d" "src/app/api/$d"; fi
+            done
+            for f in middleware.ts middleware.js proxy.ts proxy.js; do
+              if [ -f ".apk-hold/$f" ]; then mv ".apk-hold/$f" "src/$f"; fi
+            done
+          }
+          trap restore EXIT
+          APK_EXPORT=1 npx next build
+          test -f .next-apk/index.html || { echo "export 실패 — index.html 없음"; exit 1; }
+
+      - name: Capacitor sync Android
+        run: npx cap sync android
+
+      - name: Gradle assembleRelease
+        run: |
+          set -o pipefail
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease 2>&1 | tee build.log | tail -40
+
+      - name: Collect artifacts (APK + mapping)
+        run: |
+          set -e
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          test -f "$APK" || { echo "APK 미검출"; exit 1; }
+          cp "$APK" "SERTZ-vc${CODE}.apk"
+          MAP=android/app/build/outputs/mapping/release/mapping.txt
+          if [ -f "$MAP" ]; then cp "$MAP" "SERTZ-vc${CODE}-mapping.txt"; fi
+          ls -lh SERTZ-vc${CODE}*
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SERTZ-vc${{ env.CODE }}-android
+          path: SERTZ-vc${{ env.CODE }}*.apk
+          retention-days: 30
+
+      - name: Upload mapping artifact
+        uses: actions/upload-artifact@v4
+        if: hashFiles('SERTZ-vc*-mapping.txt') != ''
+        with:
+          name: SERTZ-vc${{ env.CODE }}-mapping
+          path: SERTZ-vc${{ env.CODE }}-mapping.txt
+          retention-days: 90
+
+      - name: Attach to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -e
+          TAG="${INPUT_TAG:-}"
+          if [ -z "$TAG" ]; then TAG="v${VERSION}"; fi
+          echo "릴리스 태그: $TAG · 업로드: SERTZ-vc${CODE}.apk"
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "릴리스 없음 → 신규 생성"
+            gh release create "$TAG" --title "$TAG" --notes "SERTZ Android APK — v${VERSION} (vc${CODE})" --repo "$GITHUB_REPOSITORY"
+          fi
+          gh release upload "$TAG" "SERTZ-vc${CODE}.apk" --clobber --repo "$GITHUB_REPOSITORY"
+          if [ -f "SERTZ-vc${CODE}-mapping.txt" ]; then
+            gh release upload "$TAG" "SERTZ-vc${CODE}-mapping.txt" --clobber --repo "$GITHUB_REPOSITORY"
+          fi
+          echo "--- release assets ---"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
