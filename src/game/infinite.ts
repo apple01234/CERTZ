@@ -1,6 +1,6 @@
 /* =====================================================================
  * v1.0.8 "무한 콘텐츠 패치" — 10종 신규 무한 콘텐츠 (유저 지시 "무한 컨텐츠 10가지 이상")
- *  ① 심연의 탑 — 무한 층수 탑등반 (층마다 강해지는 적 · 5층마다 보스 · 층 보상)
+ *  ① 심연의 탑 — 무한 층수 탑등반 (층마다 강해지는 적 · 10층마다 보스 · 층 보상)
  *  ② 심층 균열 — 균열 던전 무한 티어 (티어마다 적/보상 무한 스케일 + 티어 기록)
  *  ③ 일일 시련 — 매일 바뀌는 수정자 던전 (7종 수정자 로테이션)
  *  ④ 환생 — Lv 달성 시 무한 성장 루프 (영구 스탯 % + 환생 코인)
@@ -76,8 +76,13 @@ export const TOWER = {
   goldPerFloor: 0.12,
   expBase: 15,
   expPerFloor: 0.1,
-  /** 보스층 간격 */
-  bossEvery: 5,
+  /** 보스층 간격 — v1.0.15 (피드백 #2): 5층 → 10층마다 보스가 나온다 */
+  bossEvery: 10,
+  /** v1.0.15 (피드백 #2) — 심층 배율 구간: 10층마다 몬스터가 2배씩 강해진다
+   *  (1~10층 ×1 · 11~20층 ×2 · 21~30층 ×4 · 31~40층 ×8 … — 유저 딜이 세도 심층은 계속 위협) */
+  depthEvery: 10,
+  /** 심층 공격력 배율 — 체력 ×2에 비해 완만한 ×1.5 (한 방 컷 방지 · 체감 난이도는 보장) */
+  atkDepthFactor: 1.5,
   /** 층 클리어 심연 코인 (보스층 5배) */
   abyssFloor: 1,
 } as const;
@@ -92,7 +97,16 @@ export function towerSpeedScale(floor: number): number {
 export function isTowerBossFloor(floor: number): boolean {
   return floor % TOWER.bossEvery === 0;
 }
-/** vc142 (#4) — 층별 지정 처치 마릿수: 전멸식이 아닌 할당제. 1층 6마리 → 18마리까지 완만 상승 */
+/** v1.0.15 (피드백 #2) — 심층 체력 배율: 10층마다 ×2 (지수 증가) */
+export function towerDepthMul(floor: number): number {
+  return Math.pow(2, Math.floor((floor - 1) / TOWER.depthEvery));
+}
+/** v1.0.15 (피드백 #2) — 심층 공격력 배율: 10층마다 ×1.5 (체력보다 완만 — 원 킬 방지) */
+export function towerAtkDepthMul(floor: number): number {
+  return Math.pow(TOWER.atkDepthFactor, Math.floor((floor - 1) / TOWER.depthEvery));
+}
+/** vc142 (#4) — 층별 지정 처치 마릿수: 전멸식이 아닌 할당제. 1층 6마리 → 18마리까지 완만 상승
+ *  v1.0.15 — 보스층 간격이 10층으로 변경돼도 할당 로직은 동일 (보스층은 보스 1기가 할당 전부) */
 export function towerKillNeed(floor: number): number {
   if (isTowerBossFloor(floor)) return 1; // 보스층은 보스 1기가 할당 전부
   return Math.min(18, 6 + Math.floor((floor - 1) * 0.55));
@@ -103,7 +117,8 @@ export function towerKillNeed(floor: number): number {
 export function towerSpawnCount(floor: number): number {
   return Math.min(20, towerKillNeed(floor) + 4);
 }
-/** vc142 (#4) — 5의 배수층 보스: 12보스 전원이 층수에 따라 "각각 다르게" 배치되는 고정 로테이션 */
+/** vc142 (#4) — 보스층 로테이션: 12보스 전원이 보스층마다 "각각 다르게" 배치되는 고정 로테이션
+ *  v1.0.15 (피드백 #2) — 보스층이 10의 배수로 변경 (bossEvery=10) — slot 계산 자동 동기 */
 export const TOWER_BOSSES: BossKey[] = [
   "guardian", "behemoth", "nidhog", "surt", "fenrir", "skoll",
   "abysslord", "gram", "abudditos", "vord", "jorm", "nagr",

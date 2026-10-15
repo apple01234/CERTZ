@@ -3495,7 +3495,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
           <div>
             <div className="mb-2 rounded-lg border border-purple-300/40 bg-purple-400/10 px-2.5 py-2">
               <p className="text-[11px] font-black text-purple-100">심연의 탑 — 무한 층수 등반</p>
-              <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">층을 오를수록 적이 강해지고 보상도 커진다. 5층마다 보스가 막고, 10층마다 에메랄드 +3. 층 클리어마다 심연 코인 획득!</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">층을 오를수록 적이 강해지고 보상도 커진다. 10층마다 보스가 막고(심층 10층마다 몬스터 ×2!), 10층마다 에메랄드 +3. 층 클리어마다 심연 코인 획득!</p>
             </div>
             <div className="mb-2 grid grid-cols-2 gap-1.5 text-center">
               <div className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2">

@@ -76,6 +76,13 @@ export type QuestDef = {
   dialogue?: string;
 };
 
+/* v1.0.15 (피드백 #5) — 퀘스트 경험치 리밸런싱 승수.
+ *  기존 expReward는 사냥 경험치(전역 ×1.35·콤보 포함)의 ~30% 수준이라
+ *  "퀘스트보다 사냥이 더 이득"인 역전 버그였다. 원작 메이플처럼 퀘스트가
+ *  성장의 주 수단이 되도록 지급 시 ×12를 곱한다 (세이브·데이터는 원본 유지,
+ *  지급 시점 advanceQuest/completeRepeat에서 일괄 적용). */
+export const QUEST_EXP_MUL = 12;
+
 export type BossKey =
   | "guardian" | "behemoth" | "abysslord"
   | "nidhog" | "surt" | "fenrir" | "skoll" | "gram" | "abudditos"
@@ -1215,7 +1222,7 @@ PREV_STAGE.praid = "village"; // 폴백 — 실제 복귀지는 입장 시 기�
 STAGE_SHORT.praid = "공동 토벌전";
 
 /* ================= v1.0.8 — 심연의 탑 (무한 층수 탑등반 — 무한 콘텐츠 ①) =================
- *  콘텐츠 패널에서 입장 — 층을 오를수록 강해지는 적, 5층마다 보스, 층 클리어 보상.
+ *  콘텐츠 패널에서 입장 — 층을 오를수록 강해지는 적, 10층마다 보스, 층 클리어 보상.
  *  체인 분리 — 전진 포탈 없음, 복귀 포탈은 입장 전 구역. */
 STAGES.tower = {
   key: "tower",

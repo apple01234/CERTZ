@@ -12,6 +12,8 @@ import { PET_DEFS } from "../data";
 export class Pet extends Phaser.GameObjects.Image {
   declare scene: WorldScene;
   key: PetKey;
+  /** v1.0.15 (피드백 #6 씽덕요소) — 랜덤 감정표현 타이머 누적 */
+  private emoteAcc = Phaser.Math.Between(6000, 12000);
 
   constructor(scene: WorldScene, key: PetKey, x: number, y: number) {
     super(scene, x, y, PET_DEFS[key].icon);
@@ -54,5 +56,13 @@ export class Pet extends Phaser.GameObjects.Image {
     this.y += (ty - this.y) * step * 0.9;
     // 방향 전환 (드롭 쪽을 볼 때만)
     if (drop) this.setFlipX(drop.x < this.x);
+    /* v1.0.15 (피드백 #6 씽덕요소) — 펫이 9~16초마다 랜덤 감정표현 (♥/♪/zZ)
+     *  드롭을 주우면 하트로 기뻐하고, 평소엔 노래·졸음 연출 — 동반자의 생기를 살린다 */
+    this.emoteAcc -= dt;
+    if (this.emoteAcc <= 0) {
+      this.emoteAcc = Phaser.Math.Between(9000, 16000);
+      const kind = drop ? "heart" : Phaser.Math.RND.pick(["heart", "note", "sleep"] as const);
+      this.scene.emote(kind, this.x, this.y - 18);
+    }
   }
 }

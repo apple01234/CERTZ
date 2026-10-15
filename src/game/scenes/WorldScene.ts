@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
@@ -35,7 +35,7 @@ import { showRewardedAd, purchaseGems, purchaseStorePack, GEM_SKUS, restorePendi
 import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft, weekKey, missionsByHook, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS, type MissionHook } from "../pass"; // v4.5.0 — 시즌 패스/구독 + v1.0.1 시즌 미션
 import {
   infMerge, towerFloorScale, isTowerBossFloor, towerFloorReward, towerPool, TOWER, closetTierScale, closetTierAbyss,
-  towerKillNeed, towerSpawnCount, towerSpeedScale, towerBossFor,
+  towerKillNeed, towerSpawnCount, towerSpeedScale, towerBossFor, towerDepthMul, towerAtkDepthMul,
   todayTrial, trialReward, rebirthReqLv, rebirthBonus, REBIRTH_ABYSS, MAT_CHANCES, CRAFT_RECIPES, canCraft,
   PET, petEvoStage, petBonus, PET_EVO_NAMES, GOLDEN, ABYSS_SHOP, orbBonus, weeklyRaidBoss, infBonus, todayKey,
   PARK_DIFFS, PARK_DURATION, PARK_TICKETS,
@@ -2786,6 +2786,9 @@ export class WorldScene extends Phaser.Scene {
   private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }, force = false) {
     if (this.transitioning && !force) return;
     this.transitioning = true;
+    /* v1.0.15 (피드백 #3) — 맵 이동 시 스킬 쿨타임 유지: restart로 Player가 재생성되기 전에
+     *  남은 쿨타임을 메모에 기록하고, 새 맵의 Player 생성자에서 복원한다 (맵을 건너도 쿨타임이 이어짐) */
+    this.player?.memoSkillCooldowns();
     // ⚠️ 다음 스테이지에 현재 스탯/소지품을 그대로 넘긴다
     //   (restart에 save를 안 넘기면 기본값 플레이어로 시작 — 골드/레벨/장비 소실 버그)
     // v3.2.0 (#흑화) — 세이브 직렬화/기록 실패가 씬 전환을 막아 검은 화면·멈춤으로
@@ -3875,6 +3878,22 @@ export class WorldScene extends Phaser.Scene {
     this.magicEmitter?.explode(8, x, y - 10);
     /* v1.4.11 — pk_star 별 파편 산개 (Particle Kit 활성화) */
     this.driveFx?.starBurst(x, y - 10);
+    /* v1.0.15 (피드백 #6 씽덕요소) — 레벨업 축하 강화: ★ 감정버블 + 통통 튀는 "LEVEL UP!!" 문구 */
+    this.emote("star", x, y - 50);
+    const lvTxt = this.add
+      .text(x, y - 66, "LEVEL UP!!", {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "17px",
+        color: "#ffe66a",
+        stroke: "#c0409a",
+        strokeThickness: 6,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(9999)
+      .setScale(0.2);
+    this.tweens.add({ targets: lvTxt, scale: 1.12, duration: 150, ease: "Back.out", yoyo: true, repeat: 3 });
+    this.tweens.add({ targets: lvTxt, y: y - 100, alpha: 0, delay: 660, duration: 420, onComplete: () => lvTxt.destroy() });
     /* v4.1.7 — 유료 팩(FireworksEffect2D) 네온 별 불꽃놀이 2색 동시 폭발
      *  + 중앙 백색 스타 플래시 (CFR star) */
     this.fwEmitterB?.explode(14, x, y - 10);
@@ -4773,6 +4792,8 @@ export class WorldScene extends Phaser.Scene {
     classroom.trackKill(isEliteKill ? "elite" : undefined); // v1.4.30 (#9) — 교실 모드 합산 킬 카운터
     /* v3.0.16 — 몬스터 컬렉션 등록 (최초 처치 시) */
     this.registerCollection(key, ENEMIES[key].name);
+    /* v1.0.15 (피드백 #6 씽덕요소) — 처치 자리에 가끔 하트/음표 팝 (귀여운 사냥감 연출) */
+    if (Math.random() < 0.14) this.emote(Math.random() < 0.5 ? "heart" : "note", spawnX, spawnY - 20);
     /* v3.0.16 — 멀티킬 연출 (1.5초 내 다중 처치 등급 표시 — 메이플 멀티킬) */
     this.multiKillCount = nowMs < this.multiKillUntil ? this.multiKillCount + 1 : 1;
     this.multiKillUntil = nowMs + 1500;
@@ -4805,10 +4826,12 @@ export class WorldScene extends Phaser.Scene {
         const f = this.towerFloor;
         const lv = this.player.lv;
         const sc = towerFloorScale(f);
+        const dm = towerDepthMul(f); // v1.0.15 (#2) — 스폰 심층 배율과 동기화
+        const am = towerAtkDepthMul(f);
         this.respawnEnemy(key, spawnX, spawnY, 0, {
           abs: true,
-          hp: Math.round((30 + lv * 3.2 + ENEMIES[key].hp * 1.2) * sc),
-          atk: Math.round((4 + lv * 0.42 + ENEMIES[key].atk * 0.35) * (1 + (f - 1) * TOWER.atkPerFloor) * 10) / 10,
+          hp: Math.round((30 + lv * 3.2 + ENEMIES[key].hp * 1.2) * sc * dm),
+          atk: Math.round((4 + lv * 0.42 + ENEMIES[key].atk * 0.35) * (1 + (f - 1) * TOWER.atkPerFloor) * am * 10) / 10,
           spd: towerSpeedScale(f),
           exp: Math.round((12 + lv * 1.2) * (1 + (f - 1) * TOWER.expPerFloor)),
           gold: 0,
@@ -5872,11 +5895,11 @@ export class WorldScene extends Phaser.Scene {
         this.doShake(120, 0.006);
         e.takeDamage(999999, new Phaser.Math.Vector2(0, -1), 0);
         if (this.gateCoreHp <= 0) { this.finishGate("fail"); return; }
-      } else if (dist > 340) {
-        /* 플레이어가 멀면 코어를 향해 직진 (AI 보정 — 유인 불가 방지) */
-        const v = 52;
-        e.setVelocity(((core.x - e.x) / dist) * v, ((core.y - e.y) / dist) * v);
       }
+      /* v1.0.15 (피드백 #4) — 340px 밖 코어 직진 보정 제거:
+       *  기존엔 이곳에서 setVelocity로 코어 방향을 밀어줘도 같은 프레임 뒤 적 AI 루프
+       *  (Enemy.tick → FSM setVelocity)가 덮어써 몬스터가 게이트로 달려오지 않았다.
+       *  이제 Enemy FSM 앞단의 gateTarget 진군 로직이 담당한다 (어그로 밖 몬스터는 코어 직진). */
     }
     /* UI 100ms 스로틀 */
     this.gateTextAcc2 += dt;
@@ -5935,6 +5958,9 @@ export class WorldScene extends Phaser.Scene {
         tint: isBossUnit ? 0xc07aff : undefined,
         displayName: isBossUnit ? `게이트 수호 마왕` : undefined,
       });
+      /* v1.0.15 (피드백 #4) — 게이트 방어 몬스터는 코어를 향해 진군한다.
+       *  어그로 반경 내 플레이어와 조우하면 그때만 교전, 벗어나면 다시 게이트로 직진. */
+      e.gateTarget = { x: this.gateCorePos.x, y: this.gateCorePos.y };
       this.enemies.push(e);
       this.physics.add.collider(e, this.solidGroup);
     }
@@ -6124,7 +6150,7 @@ export class WorldScene extends Phaser.Scene {
     this.towerActive = true;
     this.towerFloor = 1;
     /* vc142 (#4 탑 리워크) — 할당제 안내 */
-    this.showBanner(`심연의 탑 입장 — 층별 지정 마릿수를 처치해 다음 층으로! 5층마다 보스가 기다린다.`);
+    this.showBanner(`심연의 탑 입장 — 층별 지정 마릿수를 처치해 다음 층으로! 10층마다 보스가 기다린다.`);
     this.save();
     this.gotoStage("tower");
   }
@@ -6193,11 +6219,14 @@ export class WorldScene extends Phaser.Scene {
 
   /** 현재 층 스폰 — vc142 (#4 탑 리워크): 전멸식 → 할당제.
    *  층별 지정 마릿수(towerKillNeed) + 여유분을 스폰하고, 지정 마릿수만 잡으면 다음 층.
-   *  파워 배율(체력·속도·공격력) 층마다 증가. 보스층(5의 배수)은 12보스 고정 로테이션. */
+   *  파워 배율(체력·속도·공격력) 층마다 증가. 보스층(10의 배수·v1.0.15)은 12보스 고정 로테이션.
+   *  v1.0.15 (피드백 #2) — 심층 배율: 10층마다 체력 ×2 · 공격력 ×1.5 (지수 증가) */
   private spawnTowerFloor() {
     const f = this.towerFloor;
     const lv = this.player.lv;
     const sc = towerFloorScale(f);
+    const dm = towerDepthMul(f); // v1.0.15 (#2) — 10층마다 ×2
+    const am = towerAtkDepthMul(f); // v1.0.15 (#2) — 10층마다 ×1.5
     const spd = towerSpeedScale(f);
     const bossFloor = isTowerBossFloor(f);
     const pool = towerPool(f);
@@ -6218,11 +6247,12 @@ export class WorldScene extends Phaser.Scene {
       const px = Phaser.Math.Between(80, this.stageW - 80);
       const py = Phaser.Math.Between(80, this.stageH - 80);
       const sp = this.safeSpawnXY(px, py); // v1.1.0 (#9) — 벽 안 스폰 금지
-      /* vc142 — abs:true 절대값 스폰 (기존 base.hp×절대값 오류 해소) + 파워 배율(HP·ATK·속도) */
+      /* vc142 — abs:true 절대값 스폰 (기존 base.hp×절대값 오류 해소) + 파워 배율(HP·ATK·속도)
+       *  v1.0.15 (#2) — 심층 배율 dm(체력 ×2/10층)·am(공격력 ×1.5/10층) 곱산 */
       const e = new Enemy(this, sp.x, sp.y, key, {
         abs: true,
-        hp: Math.round((30 + lv * 3.2 + def.hp * 1.2) * sc),
-        atk: Math.round((4 + lv * 0.42 + def.atk * 0.35) * (1 + (f - 1) * TOWER.atkPerFloor) * 10) / 10,
+        hp: Math.round((30 + lv * 3.2 + def.hp * 1.2) * sc * dm),
+        atk: Math.round((4 + lv * 0.42 + def.atk * 0.35) * (1 + (f - 1) * TOWER.atkPerFloor) * am * 10) / 10,
         spd,
         /* v1.0.13 피드백#1 — 탑 몬스터 킬 EXP nerf (18+lv×2 → 12+lv×1.2) */
         exp: Math.round((12 + lv * 1.2) * (1 + (f - 1) * TOWER.expPerFloor)),
@@ -6244,14 +6274,15 @@ export class WorldScene extends Phaser.Scene {
       });
     }
     if (bossFloor) {
-      /* 보스층 — vc142: 12보스 전원이 5의 배수층마다 각각 다르게 배치되는 고정 로테이션 */
+      /* 보스층 — vc142: 12보스 전원이 보스층마다 각각 다르게 배치되는 고정 로테이션
+       *  v1.0.15 (#2) — 보스도 심층 배율 적용 (체력 ×2/10층 · 공격력 ×1.5/10층) */
       const bkey = towerBossFor(f);
       const base = BOSS_DEFS[bkey];
       const def: BossDef = {
         ...base,
         name: `${base.name} T${f}`,
-        hp: Math.round(base.hp * sc * 0.9),
-        atk: Math.round(base.atk * (1 + (f - 1) * TOWER.atkPerFloor)),
+        hp: Math.round(base.hp * sc * 0.9 * dm),
+        atk: Math.round(base.atk * (1 + (f - 1) * TOWER.atkPerFloor) * am),
         exp: Math.round(base.exp * (1 + (f - 1) * TOWER.expPerFloor)),
         gold: 0,
       };
@@ -6957,14 +6988,16 @@ export class WorldScene extends Phaser.Scene {
     const doneNeed = this.repeatNeedOf(i);
     audio.sfx.reward();
     this.player.addGold(r.gold);
-    this.player.gainExp(r.exp);
+    /* v1.0.15 (피드백 #5) — 반복 토벌 의뢰 경험치도 ×12 리밸런싱 (메인 퀘스트와 동일 승수) */
+    const expGain = Math.round(r.exp * QUEST_EXP_MUL);
+    this.player.gainExp(expGain);
     this.spawnPickupText(this.player.x, this.player.y - 44, `토벌 완료 +${r.gold}G`, "#ffd76a");
     EventBus.emit("reward:show", {
       title: `반복 토벌 의뢰 완료! (${i + 1}/${this.repeatBounties.length})`,
       lines: [
         { text: `${b.label} ${doneNeed}마리 토벌 달성`, color: "#cfe8ff" },
         { text: `골드 +${r.gold} G`, color: "#ffd76a" },
-        { text: `경험치 +${r.exp} EXP`, color: "#8fe84a" },
+        { text: `경험치 +${expGain} EXP`, color: "#8fe84a" },
         { text: "에메랄드 +1", color: "#7de8ff" },
       ],
     } satisfies RewardPopupState);
@@ -6983,14 +7016,16 @@ export class WorldScene extends Phaser.Scene {
     const r = this.stageDef.repeat!;
     audio.sfx.reward();
     this.player.addGold(r.gold);
-    this.player.gainExp(r.exp);
+    /* v1.0.15 (피드백 #5) — 반복 토벌 의뢰 경험치도 ×12 리밸런싱 */
+    const expGain = Math.round(r.exp * QUEST_EXP_MUL);
+    this.player.gainExp(expGain);
     this.spawnPickupText(this.player.x, this.player.y - 44, `토벌 완료 +${r.gold}G`, "#ffd76a");
     /* v3.0.16 — 반복 의뢰 보상 수령 팝업 */
     EventBus.emit("reward:show", {
       title: "반복 토벌 의뢰 완료!",
       lines: [
         { text: `골드 +${r.gold} G`, color: "#ffd76a" },
-        { text: `경험치 +${r.exp} EXP`, color: "#8fe84a" },
+        { text: `경험치 +${expGain} EXP`, color: "#8fe84a" },
         { text: "에메랄드 +1", color: "#7de8ff" },
       ],
     } satisfies RewardPopupState);
@@ -9770,6 +9805,17 @@ export class WorldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5"))) this.player.useSkill5();
     /* vc146 (#2) — 제2궁극기(Q 기본·재배치 가능): 쿨타임 120초 */
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5b"))) this.player.useSkill5b();
+
+    /* v1.0.15 (피드백 #6 씽덕요소) — 감정표현 단축키: Y=♥ 하트 · U=♪ 노래 · H=！ 인사 · N=💢 분노.
+     *  메이플식 감정표현 — 캐릭터 머리 위 귀여운 말풍선. 대화/수면 중엔 무시한다. */
+    if (!this.dialoguing && !this.sleeping && !this.transitioning) {
+      const ex = this.player.x;
+      const ey = this.player.y - 42;
+      if (Phaser.Input.Keyboard.JustDown(this.keys.Y)) this.emote("heart", ex, ey);
+      else if (Phaser.Input.Keyboard.JustDown(this.keys.U)) this.emote("note", ex, ey);
+      else if (Phaser.Input.Keyboard.JustDown(this.keys.H)) this.emote("excl", ex, ey);
+      else if (Phaser.Input.Keyboard.JustDown(this.keys.N)) this.emote("anger", ex, ey);
+    }
 
     // 수면 연출 중 — 입력 봉인 (v2.2)
     if (this.sleeping) {
@@ -13671,15 +13717,19 @@ export class WorldScene extends Phaser.Scene {
       this.player.addGold(done.reward);
       this.spawnPickupText(this.player.x, this.player.y - 44, `퀘스트 보상 +${done.reward}G`, "#ffd76a");
     }
-    if (done?.expReward) {
-      this.player.gainExp(done.expReward);
-      this.spawnPickupText(this.player.x, this.player.y - 62, `경험치 +${done.expReward}`, "#8fe84a");
+    /* v1.0.15 (피드백 #5) — 퀘스트 경험치 ×12 리밸런싱: 사냥보다 퀘스트가 크게 이득이도록
+     *  (원작 메이플처럼 퀘스트가 성장의 주 수단 — QUEST_EXP_MUL은 stages.ts 참조) */
+    const expGain = done?.expReward ? Math.round(done.expReward * QUEST_EXP_MUL) : 0;
+    if (expGain > 0) {
+      this.player.gainExp(expGain);
+      this.spawnPickupText(this.player.x, this.player.y - 62, `경험치 +${expGain}`, "#8fe84a");
+      this.emote("star", this.player.x, this.player.y - 44); // v1.0.15 (#6 씽덕요소) — 퀘스트 완료 기뻐하기
     }
     /* v3.0.16 — 퀘스트 보상 수령 팝업 (메이플식 보상 내역 창 — 지급 내역을 명확히 안내) */
     if (done && (done.reward || done.expReward)) {
       const lines: { text: string; color?: string }[] = [];
       if (done.reward) lines.push({ text: `골드 +${done.reward} G`, color: "#ffd76a" });
-      if (done.expReward) lines.push({ text: `경험치 +${done.expReward} EXP`, color: "#8fe84a" });
+      if (expGain) lines.push({ text: `경험치 +${expGain} EXP`, color: "#8fe84a" });
       EventBus.emit("reward:show", { title: `퀘스트 완료 — ${done.title}`, lines } satisfies RewardPopupState);
     }
     this.emitQuest();

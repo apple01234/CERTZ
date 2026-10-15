@@ -143,6 +143,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** v3.3.0 (지시 #6) — 무릉도장 훈련용 허수아비:
    *  AI 없음(정지), 죽지 않음(HP 사실상 무한), 넉백 없음, 피해는 씬 기록에 누적 */
   dummy = false;
+  /** v1.0.15 (피드백 #4) — 게이트 방어 진군 타깃.
+   *  지정되면 플레이어 어그로 반경 밖에서는 FSM을 우회해 이 좌표(게이트 코어)로 직진한다.
+   *  어그로 반경 내에 플레이어가 있으면 기존 전투 FSM으로 교전한다. */
+  gateTarget: { x: number; y: number } | null = null;
   /** v1.0.2 (#허수아비) — 스쿼시 복귀 기준 스케일 (생성 시점 고정 — 누적 왜곡 차단) */
   private baseSX = 1;
   private baseSY = 1;
@@ -468,6 +472,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     c.toPlayer.set(player.x - this.x, player.y - this.y).normalize();
     c.vx = 0;
     c.vy = 0;
+
+    /* v1.0.15 (피드백 #4) — 게이트 방어 진군: 코어를 향해 달려온다.
+     *  기존에는 어그로 밖 몬스터가 제자리 배회만 해 "몬스터가 게이트로 안 달려오는" 버그였다
+     *  (tickGate의 340px 보정은 같은 프레임 FSM 속도에 덮여 무력).
+     *  FSM 원거리 스로틀보다 앞단에서 처리해 화면 밖 몬스터도 멈추지 않고 진군한다.
+     *  플레이어가 어그로 반경 내로 다가오면 그때는 기존 전투 FSM으로 교전한다. */
+    if (this.gateTarget && c.dist > this.def.aggro) {
+      const gdx = this.gateTarget.x - this.x;
+      const gdy = this.gateTarget.y - this.y;
+      const gd = Math.hypot(gdx, gdy) || 0.0001;
+      if (gd > 64) {
+        /* 진군 속도 — 기본 이동속도의 1.2배 (게이트를 향한 꾸준한 압박) */
+        c.vx = (gdx / gd) * this.effSpeed * 1.2;
+        c.vy = (gdy / gd) * this.effSpeed * 1.2;
+        if (this.runAnimKey && this.anims.currentAnim?.key !== this.runAnimKey) this.play(this.runAnimKey, true);
+      } else {
+        /* 코어 바로 앞 도달 — 자폭 판정(tickGate dist<78)을 기다리며 정지 */
+        if (this.idleAnimKey && this.anims.currentAnim?.key !== this.idleAnimKey) this.play(this.idleAnimKey, true);
+      }
+      this.setVelocity(c.vx + this.knockVec.x, c.vy + this.knockVec.y);
+      this.syncHpBar();
+      return;
+    }
 
     /* v3.2.0 (#최적화) — 원거리 적 AI 스로틀:
      *  플레이어에서 950px 밖(화면 밖)인 적은 FSM을 5Hz로만 갱신한다.

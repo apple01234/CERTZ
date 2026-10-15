@@ -24,6 +24,8 @@ import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기
 import type { Enemy } from "./Enemy";
 import type { Boss } from "./Boss";
 import { ZERO_EXT, expBookExp, type ExtBonus, type GateCard } from "../isekai";
+import { expToNext } from "../expTable"; // v1.0.15 (피드백 #1) — 메이플 공식 레벨별 경험치표
+import { memoCooldowns, restoreCooldowns } from "../cooldownMemo"; // v1.0.15 (피드백 #3) — 맵 이동 간 쿨타임 유지
 
 /**
  * 주인공 세르츠.
@@ -274,6 +276,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     (this.body as Phaser.Physics.Arcade.Body).pushable = false;
     this.play(this.bodyKey("hero-idle"));
+    /* v1.0.15 (피드백 #3) — 맵 이동 직전에 기록된 스킬 쿨타임 복원.
+     *  scene.restart로 Player가 재생성돼도 남은 쿨타임이 이어진다 (1회성 — 복원 후 메모 비움). */
+    const cdMemo = restoreCooldowns();
+    this.skill1Cd = cdMemo.skill1 ?? 0;
+    this.skill2Cd = cdMemo.skill2 ?? 0;
+    this.skill3Cd = cdMemo.skill3 ?? 0;
+    this.skill4Cd = cdMemo.skill4 ?? 0;
+    this.skill5Cd = cdMemo.skill5 ?? 0;
+    this.skill5bCd = cdMemo.skill5b ?? 0;
+    this.potCd = cdMemo.pot ?? 0;
+  }
+
+  /** v1.0.15 (피드백 #3) — 맵 전환 직전 현재 남은 스킬/물약 쿨타임을 메모에 기록.
+   *  WorldScene.gotoStage(유일한 맵 이동 통로)에서 호출된다. */
+  memoSkillCooldowns() {
+    memoCooldowns({
+      skill1: this.skill1Cd,
+      skill2: this.skill2Cd,
+      skill3: this.skill3Cd,
+      skill4: this.skill4Cd,
+      skill5: this.skill5Cd,
+      skill5b: this.skill5bCd,
+      pot: this.potCd,
+    });
   }
 
   /* ---------------- 메인 업데이트 ---------------- */
@@ -4279,12 +4305,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   expNext() {
-    /* v3.0.2 (사용자 지시 #13 — "레벨을 올릴수록 올리기 힘들어야지"):
-     *  초반(v3.0 완화 곡선) 유지 + Lv20부터 눈에 띄게 가팔라지는 누진 계수 도입.
-     *  Lv10: 1,128 (동일) / Lv30: 6,479 (+12%) / Lv50: 18,990 (+66%) / Lv80: 54,830 (+166%)
-     *  → 초반 빠른 성장 유지, 후반 갈수록 체감 난이도 상승 */
-    const steep = 1 + Math.max(0, this.lv - 20) * 0.022;
-    return Math.round(40 * Math.pow(this.lv, 1.45) * steep);
+    /* v1.0.15 (피드백 #1 — "심연의탑 경험치 아직도 너무 잘올라"):
+     *  나무위키 "메이플스토리/레벨" 문서 4.1~4.3 목차의 레벨별 경험치표
+     *  (2026-03-19 업데이트 이후 기준, 1~299레벨 전 구간)를 그대로 적용.
+     *  v3.0.2 자체 공식(40×lv^1.45·누진 폐기) 대신 원작처럼 레벨이 오를수록
+     *  요구 경험치가 계단식 누진한다 — 초반 9~14평평 밴드 → 구간별 ×1.2 → 190+ 급등.
+     *  테이블은 expTable.ts 참고, 300레벨 이후는 ×1.1 연장. */
+    return expToNext(this.lv);
   }
 
   /* ---------------- 전직 (v1.8 다차원 트리 — 메이플 모험가 구조 참고) ---------------- */
