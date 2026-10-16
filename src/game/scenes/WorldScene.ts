@@ -1021,6 +1021,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.3 — 씬 재시작 시 물리 월드 일시정지 상태가 이월되는 문제 방지:
      *  대사 중 씬 재시작(포탈/사망 등)이 일어나면 구 씬의 world.pause()가
      *  새 씬에서도 유지되어 캐릭터·몬스터가 완전히 멈춘다. 재시작마다 강제 resume. */
+    this.hitStopUntil = 0; // v1.0.16 — 히트스톱 타임스탬프도 이월 금지(새 씬 time.now는 0부터 시작해 자가치유를 막는다)
     this.physics.world.resume();
     const data = this.registry.get("initData") as {
       stage?: StageKey;
@@ -9741,9 +9742,13 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     /* v3.3.0 (#흑화) — 물리 월드 자가치유: 대사/취침/사망도 아닌데 정지돼 있으면
-     *  (보스 시네마틱 도중 예외, 복구 경로 실패 등) 즉시 복원해 조작 불능을 막는다 */
+     *  (보스 시네마틱 도중 예외, 복구 경로 실패 등) 즉시 복원해 조작 불능을 막는다.
+     *  v1.0.16 — **히트스톱을 존중한다.** 종전엔 이 블록이 isPaused만 보고 즉시 resume해
+     *  v1.2.0의 히트스톱(일반 26ms·크리 55ms·격파 70ms)을 다음 프레임(≈16ms)에 잘라버렸다.
+     *  히트스톱이 끝나면(hitStopUntil 경과) 이 블록이 정상 복원하므로 자가치유 기능은 유지된다. */
     if (
-      this.physics.world.isPaused && !this.dialoguing && !this.sleeping &&
+      this.physics.world.isPaused && this.time.now >= this.hitStopUntil &&
+      !this.dialoguing && !this.sleeping &&
       this.player && this.player.state !== "dead"
     ) {
       this.physics.world.resume();
