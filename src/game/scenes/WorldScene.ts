@@ -78,6 +78,15 @@ const AURA_ANIM: Record<string, { sp: number; s: number; l: number; min: number;
   cos_galaxy: { sp: 0.05, s: 0.6, l: 0.7, min: 0.55, max: 0.85 },
 };
 
+/** v1.0.16 — 보상형 광고 실패 사유 → 안내 문구 (호출부 3곳 공용).
+ *  종전엔 세 곳이 동일한 2분기 삼항식을 복사해 쓰고 있었다. */
+function adFailText(reason?: string): string {
+  if (reason === "web") return "광고 보상은 폰 버전(APK)에서 볼 수 있어";
+  if (reason === "offline") return "인터넷이 끊겨 있어 — 연결한 뒤 다시 시도하자";
+  if (reason === "no-reward") return "보상이 확인되지 않았다 — 다시 시도하자";
+  return "광고를 못 봤다 — 다시 시도하자";
+}
+
 /** v1.0.16 — 타격 스파크 플립북 3종. 매 타격마다 배열 리터럴을 만들지 않도록 모듈 상수로 둔다. */
 const HIT_FLIPBOOK = ["fx2-hit1", "fx2-hit3", "fx2-hit5"];
 
@@ -8243,7 +8252,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
       const r = await showRewardedAd();
       if (!r.ok) {
-        EventBus.emit("banner:show", { text: r.reason === "web" ? "광고 보상은 폰 버전(APK)에서 볼 수 있어" : "광고를 못 봤다 — 다시 시도하자" });
+        EventBus.emit("banner:show", { text: adFailText(r.reason) });
         return;
       }
       /* v4.5.0 — 구독자 광고 보상 2배 (💎+2 · 골드+1,000) */
@@ -8422,7 +8431,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
       const r = await showRewardedAd();
       if (!r.ok) {
-        EventBus.emit("banner:show", { text: r.reason === "web" ? "광고 보상은 폰 버전(APK)에서 볼 수 있어" : "광고를 못 봤다 — 다시 시도하자" });
+        EventBus.emit("banner:show", { text: adFailText(r.reason) });
         return;
       }
       this.dailyAdChest++;
@@ -8443,7 +8452,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
       const r = await showRewardedAd();
       if (!r.ok) {
-        EventBus.emit("banner:show", { text: r.reason === "web" ? "광고 보상은 폰 버전(APK)에서 볼 수 있어" : "광고를 못 봤다 — 다시 시도하자" });
+        EventBus.emit("banner:show", { text: adFailText(r.reason) });
         return;
       }
       this.dailyAdDrop++;

@@ -136,7 +136,11 @@ export async function showRewardedAd(): Promise<{ ok: boolean; reason?: string }
     return { ok: true };
   } catch (e) {
     console.warn("[SERTZ] 광고 시청 실패", e);
-    return { ok: false, reason: "error" };
+    /* v1.0.16 — 실패 사유 분기. 오프라인은 사용자가 즉시 조치할 수 있는 유일한 원인이라 구분한다
+     *  (결제 흐름은 이미 web/busy/cancelled/pending/unavailable로 나뉘어 있는데 광고만 "error" 하나였다).
+     *  no-fill 등 나머지는 플러그인이 코드를 노출하지 않아 "error"로 묶는다. */
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    return { ok: false, reason: offline ? "offline" : "error" };
   }
 }
 
