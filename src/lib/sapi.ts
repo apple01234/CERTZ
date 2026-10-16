@@ -119,8 +119,12 @@ export function currentUser(db: DbShape, req: NextRequest): UserRec | null {
   return db.users[t.userId] || null;
 }
 
+/* v1.0.15 보안 — 관리자 판정은 저장된 role과 env 관리자 **아이디**로만 한다.
+ *  종전엔 표시 이름(name)도 비교했는데, register 라우트가 이름을 검증하지 않아
+ *  name="admin"으로 가입하면 관리자 권한을 얻는 권한 상승 경로가 있었다.
+ *  이름은 유저가 자유롭게 정할 수 있으므로 권한 판정에 절대 쓰지 않는다. */
 export function isAdminUser(u: UserRec | null): boolean {
-  return !!u && (u.role === "admin" || ADMIN_USERS.includes(String(u.name || "").toLowerCase()));
+  return !!u && (u.role === "admin" || ADMIN_USERS.includes(String(u.id || "").toLowerCase()));
 }
 
 export function issueToken(db: DbShape, user: UserRec): { token: string; cookie: string } {

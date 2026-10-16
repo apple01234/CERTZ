@@ -61,10 +61,8 @@ loop/STOP
 loop/loop.pid
 loop/loop.lock
 loop/loop-console.log
-# 빌드 산출물 (APK 등)
+# 빌드 산출물 (APK 등) — 배포는 GitHub 릴리스 자산으로만 (저장소 미추적)
 *.apk
-# 배포용 APK는 예외 — download/ 동기화
-!download/*.apk
 *.aab
 android/app/build/
 backups/
@@ -114,6 +112,11 @@ server.log
 .apk-hold/
 jdk17/
 .android-sdk/jdk21/
+
+# v1.0.15 보안 — 계정 백업 DB는 절대 추적하지 않는다.
+#  공개 저장소에 커밋되면 복호화 키가 소스에 있으므로(ghdb.ts/accounts) 계정·세션 토큰이
+#  그대로 노출된다. 백업은 CERTZ-DB(private)로만 간다.
+db-backup/
 
 # local secrets (NEVER commit) — AdMob OAuth service account / API keys
 .secrets/

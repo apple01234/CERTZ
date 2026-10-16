@@ -67,7 +67,10 @@ function audit(event, detail = {}) {
   } catch { /* 감사 로그 실패가 서비스를 막지 않게 */ }
 }
 function isAdminUser(u) {
-  return !!u && (u.role === "admin" || ADMIN_USERS.includes(String(u.name || "").toLowerCase()));
+  /* v1.0.15 보안 — 관리자 판정은 role과 env 관리자 **아이디**로만 한다.
+   *  종전엔 닉네임(name)도 비교했는데 닉네임은 유저가 정하는 값이라,
+   *  name="admin"으로 가입한 일반 계정이 관리자로 승격되는 권한 상승 경로가 있었다. */
+  return !!u && (u.role === "admin" || ADMIN_USERS.includes(String(u.id || "").toLowerCase()));
 }
 
 /* ---------------- 파일 DB (디바운드 저장) ---------------- */
@@ -88,8 +91,8 @@ function loadDb() {
     db.charNames ||= {}; // v1.0.6 — 닉네임 중복 방지 레지스트리 (이름(소문자) → { by, at, kind })
     // v1.0.2 — env 관리자 목록 동기화 (이미 가입된 계정도 롤 자동 승격/회수)
     for (const [uid, u] of Object.entries(db.users)) {
-      /* env 매칭은 아이디 + 닉네임 둘 다 허용 (가입 시 role 부여는 아이디 기준과 동일 유지) */
-      const shouldAdmin = ADMIN_USERS.includes(String(uid || "").toLowerCase()) || ADMIN_USERS.includes(String(u.name || "").toLowerCase());
+      /* v1.0.15 보안 — 아이디만으로 판정(종전엔 닉네임도 허용 → 권한 상승 경로) */
+      const shouldAdmin = ADMIN_USERS.includes(String(uid || "").toLowerCase());
       if (shouldAdmin && u.role !== "admin") u.role = "admin";
       else if (!shouldAdmin && u.role === "admin") u.role = "user";
     }
@@ -314,7 +317,8 @@ async function restoreFromGithubIfFresh() {
     db.payouts ||= {}; db.rank ||= {};
     /* 복원 후에도 롤 동기화 + 오토시드(원격에 관리자가 없을 경우 대비) 재실행 */
     for (const [uid, u] of Object.entries(db.users)) {
-      const shouldAdmin = ADMIN_USERS.includes(String(uid || "").toLowerCase()) || ADMIN_USERS.includes(String(u.name || "").toLowerCase());
+      /* v1.0.15 보안 — 아이디만으로 판정(종전엔 닉네임도 허용 → 권한 상승 경로) */
+      const shouldAdmin = ADMIN_USERS.includes(String(uid || "").toLowerCase());
       if (shouldAdmin && u.role !== "admin") u.role = "admin";
       else if (!shouldAdmin && u.role === "admin") u.role = "user";
     }

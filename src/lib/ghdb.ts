@@ -66,8 +66,20 @@ function ghHeaders(extra: Record<string, string> = {}): Record<string, string> {
 }
 
 /* ---------------- SZBK1 암복호화 (accounts/index.js와 바이트 호환) ---------------- */
+/* v1.0.15 보안 경고 — 기본 상수 키로 동작 중이면 1회 경고한다.
+ *  이 상수는 소스에 있으므로, 백업 DB가 공개 저장소에 커밋되면 누구나 복호화할 수 있다.
+ *  운영 환경에는 반드시 SERTZ_BACKUP_KEY를 설정한다(회전 시 기존 백업도 재암호화 필요). */
+let warnedDefaultKey = false;
 function backupKey(): Buffer {
-  return createHash("sha256").update(process.env.SERTZ_BACKUP_KEY || "sertz-accounts-backup::v1").digest();
+  const env = process.env.SERTZ_BACKUP_KEY;
+  if (!env && !warnedDefaultKey) {
+    warnedDefaultKey = true;
+    console.warn(
+      "[SERTZ-db] 경고: SERTZ_BACKUP_KEY 미설정 — 소스에 공개된 기본 키로 계정 백업을 암복호화하고 있습니다. " +
+        "운영 환경에서는 반드시 별도 키를 설정하세요."
+    );
+  }
+  return createHash("sha256").update(env || "sertz-accounts-backup::v1").digest();
 }
 function backupEncrypt(json: string): string {
   const iv = randomBytes(12);
@@ -154,9 +166,11 @@ function normalizeDb(db: DbShape): DbShape {
       delete db.charNames[k];
     }
   }
-  /* v1.0.2 계승 — env 관리자 목록 동기화(롤 자동 승격/회수) */
+  /* v1.0.2 계승 — env 관리자 목록 동기화(롤 자동 승격/회수)
+   *  v1.0.15 보안 — 판정 기준을 아이디로만 좁혔다. 이름까지 비교하면 name="admin"으로
+   *  가입한 일반 계정이 롤 승격되는 권한 상승 경로가 된다(normalizeDb는 로드마다 실행). */
   for (const u of Object.values(db.users)) {
-    const shouldAdmin = ADMIN_USERS.includes(String(u.id || "").toLowerCase()) || ADMIN_USERS.includes(String(u.name || "").toLowerCase());
+    const shouldAdmin = ADMIN_USERS.includes(String(u.id || "").toLowerCase());
     if (shouldAdmin && u.role !== "admin") u.role = "admin";
     else if (!shouldAdmin && u.role === "admin") u.role = "user";
   }

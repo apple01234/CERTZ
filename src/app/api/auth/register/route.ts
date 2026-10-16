@@ -23,6 +23,9 @@ export async function POST(req: NextRequest) {
     const name = String(b.name || "").replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028\u2029]/g, "").trim().slice(0, 8) || id.slice(0, 8);
     if (!/^[a-z0-9_]{3,20}$/.test(id)) return json(req, 400, { error: "아이디는 영문 소문자/숫자/_ 3~20자" });
     if (pw.length < 6) return json(req, 400, { error: "비밀번호는 6자 이상" });
+    /* v1.0.15 보안 — 관리자 예약 이름 차단. 관리자 판정은 이제 아이디 기준이지만,
+     *  닉네임으로 운영자를 사칭(채팅·이름표)하는 것을 막기 위해 예약어를 거부한다. */
+    if (ADMIN_USERS.includes(name.toLowerCase())) return json(req, 400, { error: "사용할 수 없는 이름이에요" });
 
     let success: Resp | null = null;
     const r = await mutateDb((db) => {

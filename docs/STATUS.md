@@ -5,26 +5,37 @@
 
 ## 현재 상태
 
-**v1.0.13 (vc155) 유저 피드백 20건 일괄 반영 (2026-10-15).** 탐색 에이전트 4종으로 20건 전수 코드 매핑 후
-수정 에이전트 4종 병렬 투입 → 21파일 수정 + API 라우트 4개 신설. tsc --noEmit 0에러 · eslint 신규 0
-(기존 4건은 HEAD 베이스라인과 동일) · node --check(server.js/accounts) 통과 · validate_data 통과.
-버전 싱크 6곳 완료(VC155_NOTE). 핵심: 심연의탑 리스폰 배율 버그(층 배율 미적용 — respawnEnemy 무옵션) 근본 수정,
-탑/파크 보상 nerf + 파크코인→경험치책 환산 4배 인상, 퀘스트 EXP 2배 상향, BM 궁극기 50연타(47.5배),
-토벌전 보스 HP×60·ATK1.5배, 보스HP공유 호스트 파티원 한정, 일일상자/긴급귀환 캐릭터당,
-랭킹 캐릭터별+직업별 탭, 닉네임 전역 유니크(serverless 라우트 신설), MQTT 검증형 [GM] 표시(gmcheck 라우트),
-상대 클릭→정보창+1:1거래, 원격 BM 궁극기 dead code 복구, 로비 로그인 버튼 !lobbyOpen 게이트,
-튜토리얼 이그니 화자화+DOM 하이라이트, 오라 6종+펫 2종, ios-build.yml 버전 자동 파싱.
+**v1.0.15 (vc157) + 버전 싱크·보안 정비 (2026-10-16).** 기준 HEAD는 `v1.0.15 (vc157)` 릴리스다
+(직전 STATUS가 vc155에 2사이클 지연돼 있어 함께 정정). 이번 사이클은 **기능 추가 없이 정합성·보안만** 손댔다.
+
+- **버전 싱크 복구**: 서버·라우트·가이드·안내문이 서로 다른 버전을 가리키고 있었다.
+  · 정정: `server.js` APK_MIRROR · `next.config.ts` APK_DL · `src/app/api/version/route.ts` APK_MIRROR
+    · `public/apk-guide.html`(표제 v1.0.11→v1.0.15, versionCode 155→157)
+    · `download/APK_다운로드_안내.txt`(v1.0.14/vc156→v1.0.15/vc157)
+    · `src/components/game/Overlays.tsx` 타이틀 배지는 하드코딩(v1.0.5-beta)을 폐지하고 `pkg.version` 참조로 전환(재발 방지)
+  · **URL 태그 오류 발견·수정**: `vc157` APK는 릴리스 태그 `v1.0.15`에 있는데 세 곳이 `v1.0.9` 태그를 가리켜
+    404였다(그 태그는 vc156까지만 보유). 세 곳 모두 `v1.0.15`로 정정.
+- **보안(권한 상승) 근본 수정**: 관리자 판정이 **닉네임(name)** 까지 비교하고 있었고 가입 라우트는 이름을 검증하지 않아,
+  `name="admin"`으로 가입하면 관리자가 되는 경로가 있었다. 판정을 **아이디 기준으로만** 축소
+  (`src/lib/sapi.ts`, `src/lib/ghdb.ts`, `accounts/index.js` 3곳) + 가입 시 관리자 예약 이름 거부.
+- **보안(계정 DB 노출) 차단**: `db-backup/accounts.enc`가 공개 저장소에 추적되고 있었고 복호화 기본 키가
+  소스에 있어 누구나 열 수 있었다. 추적 해제 + `.gitignore` 등록 + 미설정 시 경고 로그.
+  **잔여: 키 회전과 히스토리 정리는 운영 조치가 필요하다(아래 "다음 할 일" 1번).**
 
 ## 다음 할 일 (우선순위 순)
 
-1. APK/AAB 빌드 (scripts/build_apk.sh — JAVA_HOME=/home/z/jdk 필요) + GitHub 릴리스 vc155 업로드
-2. `gh workflow run ios-build.yml` → unsigned IPA 재개 (피드백 #20 — IPA 금지 지시 해제된 상태)
-3. 라이브 배포 후 멀티 실측: MQTT [GM] gmcheck 검증 흐름 · 보스HP공유 파티 호스트 선출 · 캐릭터별 랭킹 반영
-4. (잔여) 클라우드 세이브 per-캐릭터 승격(chars 1급 시민화 — 현재 data 1칸 덮어쓰기), 파티 초대(코드 참여만 존재)
+1. **[보안·운영] 계정 백업 키 회전 — 코드만으로는 끝나지 않는다.**
+   `SERTZ_BACKUP_KEY`를 새 값으로 설정한 뒤 기존 백업을 재암호화해야 한다. 순서를 지킬 것:
+   ① Vercel(및 FC 서버)에 `SERTZ_BACKUP_KEY=<새 값>` 등록 → ② 새 키로 백업 재암호화
+   → ③ 그 다음 `db-backup/accounts.enc`를 **히스토리에서도** 제거(현재는 HEAD에서만 빠졌고 과거 커밋에 남아 있다).
+   키를 먼저 바꾸면 기존 백업을 못 읽어 전 계정이 초기화되므로 순서를 바꾸지 말 것.
+2. APK/AAB 빌드 (`scripts/build_apk.sh` — JAVA_HOME=/home/z/jdk) + 이번 정합성 수정분 릴리스 반영
+3. README/가이드의 "SERTZ" 표기와 디렉터리명 `CERTZ` 불일치 정리(문서 혼선)
+4. (잔여) 클라우드 세이브 per-캐릭터 승격, 파티 초대(코드 참여만 존재)
 
 ## 진행 로그 (최신이 아래로)
 
-- 2026-10-15 (fb20) **v1.0.13 (vc155) 피드백 20건 일괄 반영** — 4탐색+4수정 에이전트 병합 파이프라인. 세부 내역은 위 "현재 상태" 및 worklog.md Task 2-a~2-d 참조. tsc/eslint/node-check/validate_data 통과, 버전 싱크 6곳(VC155_NOTE·gradle·server.js·next.config.ts·apk-guide.html·APK_다운로드_안내.txt). APK 빌드는 다음 사이클.
+- 2026-10-16 (maintenance) **버전 싱크 4곳 복구 + APK URL 태그 404 수정 + 권한 상승·계정DB 노출 차단** — 기능 변경 없음. HEAD `89290a8b`(v1.0.15/vc157) 기준. 상세는 위 "현재 상태". `tsc --noEmit`·`node --check`로 검증.
 - 2026-08-28 (stage-1) **스토리 연장 3스테이지 + 진엔딩** — 동굴(파편2·거미6·포탈)/니플헤임(서리늑대6·보스 behemoth 920HP·포탈)/왕좌(유령4·최종보스 abysslord 1300HP·엔딩) 전 체인 E2E 실측. 몬스터 5종·보스 2종 신규 스프라이트(기존 CC0 틴트/trim 재활용), 스테이지 테마 타일/데코, 장비 4티어 상점 추가. 보스 격파→대사 종료 후 포탈 활성화(유예 600ms), 구 v1.0 클리어 세이브(alfheim q=2)→포탈 복구→동굴 이어가기 실측. 보스전 중 이어하기(니플 q=1→보스 자동등장) 실측. tsc/eslint/클린로드 콘솔 0에러
 - 2026-08-28 (loop-0 / 4b6ed95) 루프 지시서/기획/상태 문서 확정 — 합격기준·규칙·검사 명령 채움, 남은 작업 5건 확정
 - 2026-08-28 (loop-1 / db7c063) 몬스터 리스폰 구현·실측 — 9~13초 원 스폰점 재생성(dist 0), 근접 지연 가드(13s 보류→이동 후 발화) 확인, tsc/eslint/콘솔 0에러. + Player anims.isPlaying 타입에러 수정

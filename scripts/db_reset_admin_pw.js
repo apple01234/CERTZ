@@ -1,8 +1,8 @@
 /**
  * CERTZ-DB 관리자 비밀번호 리셋
  *  - 대상: admin, apple01234 (role=admin)
- *  - 새 비밀번호: process.env.NEW_PW || "admin123"  (hashPw와 동일 — scryptSync(pw, salt, 64))
- *  - 포맷: SZBK1(iv12+tag16+data) AES-256-GCM, key=sha256("sertz-accounts-backup::v1") — ghdb.ts와 바이트 호환
+ *  - 새 비밀번호: process.env.NEW_PW 필수 (v1.0.15 보안 — 알려진 기본값 제거)
+ *  - 포맷: SZBK1(iv12+tag16+data) AES-256-GCM, key=sha256(SERTZ_BACKUP_KEY || 기본상수) — ghdb.ts와 바이트 호환
  *  - 쓰기: fresh GET(sha) → mutate → PUT(sha 낙관 잠금)
  */
 const { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } = require("node:crypto");
@@ -16,7 +16,12 @@ if (!TOKEN) {
 }
 const REPO = "apple01234/CERTZ-DB";
 const PATH = "db-backup/accounts.enc";
-const NEW_PW = process.env.NEW_PW || "admin123";
+const NEW_PW = process.env.NEW_PW || "";
+/* v1.0.15 보안 — 기본 비밀번호로 리셋하지 않는다(전 관리자 계정이 알려진 값이 되는 사고 방지). */
+if (NEW_PW.length < 10) {
+  console.error("[!] NEW_PW 환경변수에 10자 이상 새 비밀번호를 지정하세요. 예: NEW_PW='...' node scripts/db_reset_admin_pw.js");
+  process.exit(1);
+}
 const TARGETS = ["admin", "apple01234"];
 
 function backupKey() {
@@ -75,7 +80,7 @@ function gh(path, opts = {}) {
       }),
     });
     if (put.status === 200 || put.status === 201) {
-      console.log(`[OK] 리셋 완료 (시도 ${attempt}) — ${TARGETS.join(", ")} → "${NEW_PW}"`);
+      console.log(`[OK] 리셋 완료 (시도 ${attempt}) — ${TARGETS.join(", ")}`); // v1.0.15 — 비밀번호는 출력하지 않는다(로그 유출 방지)
       process.exit(0);
     }
     console.log(`[retry] PUT ${put.status} — 재시도 ${attempt}/4`);

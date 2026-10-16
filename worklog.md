@@ -1350,7 +1350,7 @@ Work Log:
 - [상태 인수] 평행 세션 산출물 확인: v1.0.6 커밋 a695267 푸시 완료 — auth:changed 이벤트(AuthPanel→WorldScene, GM NPC/관리자 배지 즉시 갱신) · 거래소 등록 서버 소유 검증(accounts/index.js ownsListableItem — 보스 드롭 화이트리스트+클라우드 세이브 실보유, 전설 복제 익스플로잇 차단) · 버저닝 7곳 · 웹 빌드 E0g5KEZQ · bh2 스크린샷 37장 포함
 - [Drive 에셋] 유저 구글드라이브 2건 다운로드(gdown): Cainos.7z 61.8MB(1,009파일) · Vefects.7z 191MB(3,116파일) → research/ 복구분과 구조 일치 확인 — 커밋 "원본 에셋 복구 7팩"과 동일 작업物, 원본 보관 scripts/drive/
 - [서버 재기동] 기존 노드가 스테일 빌드(08:01 기동 < 08:07 빌드) 서빙 중 — kill 후 setsid 재기동(SERTZ_ADMIN_USERS=admin,apple01234 유지) → 200 · apk-guide v1.0.6 마커 6건 서빙 확인
-- [auth:changed 라이브 실측] 가로 1280×720: 사전조건 adminRole=null·GM 4종 전부 hidden → 계정 패널에서 admin/admin123 로그인(무리로드, navigation=1) → adminRole="admin"·GM NPC 4종 즉시 visible + "관리자 계정" 배지·계정 ON · 로그아웃 → 즉시 null+전부 hidden 재확인 (v106_01~09)
+- [auth:changed 라이브 실측] 가로 1280×720: 사전조건 adminRole=null·GM 4종 전부 hidden → 계정 패널에서 admin/[REDACTED] 로그인(무리로드, navigation=1) → adminRole="admin"·GM NPC 4종 즉시 visible + "관리자 계정" 배지·계정 ON · 로그아웃 → 즉시 null+전부 hidden 재확인 (v106_01~09)
 - [빌드 트러블슈팅] 백그라운드 빌드 3회 사일런트 사망(로그 없음, dmesg 신규 OOM 없음, cgroup 4GB 한도 확인) → 포그라운드 단일 호출 전환 + 로그 파일 병행 → 해결. Turbopack 캐시로 next 빌드 9.1초 · gradle 증분 90초(76 executed/130 up-to-date)
 - [APK] SERTZ-v1.0.6.apk 105,160,270B · aapt versionCode 71/versionName 1.0.6 · md5 35271f4351ecd6f18f7b6e0673e4cf31 · APK 내부 auth:changed 코드 검출(cfedd9593c6cacb4.js)
 - [릴리스] GitHub Release v1.0.6(id 385404108) 업로드 state=uploaded → 재다운로드 md5 원격 일치 ✓
@@ -1412,10 +1412,10 @@ Agent: Super Z (메인)
 Task: 유저 리포트 "GM 로그인 안됨" — 근본 원인 분석·수정·v1.0.9 빌드·릴리스 (versionCode 74)
 
 Work Log:
-- [진단] 서버 측 로그인 정상 실측(admin/admin123·apple01234/admin123 → role=admin, /api/auth/me Bearer 정상) — 서버 문제 아님
+- [진단] 서버 측 로그인 정상 실측(admin/[REDACTED]·apple01234/[REDACTED] → role=admin, /api/auth/me Bearer 정상) — 서버 문제 아님
 - [핵심 단서] db/audit.log에 유저 로그인 시도 0건(오토시드 2건뿐) + 서버 재기동(02:54 샌드박스 리셋, PID 15833→1179) → 유저 트래픽이 이 서버에 도달하지 않는다고 확정
 - [근본 원인] ServerConnect.tsx DEFAULT_SERVER="https://sertz4.space-z.ai" (v3.1.0 유저확인 당시 주소)가 만료된 상태 그대로 APK에 고정 — 로그인(account.ts apiBase)·거래소·멀티 소켓(net.ts) 전부 같은 localStorage 키(sertz.server.url) 공유 → 전부 실패. DEAD_SERVERS 자동 이행 목록에 sertz4 누락이 재발의 근본 원인
-- [부대 원인 기록] 02:54 샌드박스 재시작으로 gitignored db/accounts.json 소실 → 오토시드(v1.0.8)가 admin/apple01234를 admin123으로 자동 재배치 — 서버 다운 타임 중 시도분은 연결 실패였을 것
+- [부대 원인 기록] 02:54 샌드박스 재시작으로 gitignored db/accounts.json 소실 → 오토시드(v1.0.8)가 admin/apple01234를 [REDACTED]으로 자동 재배치 — 서버 다운 타임 중 시도분은 연결 실패였을 것
 - [수정] ServerConnect.tsx: DEFAULT_SERVER → "https://sertz.z.ai" + DEAD_SERVERS에 sertz4(http/https) 추가(기존 설치도 첫 기동 자동 재작성+reload) + 주석에 원인 기록
 - [웹 E2E 실측 1280×720 가로] 타이틀→새로운 모험→계정 패널→admin 로그인 → "관리자 계정" 배지+GM NPC 4종 visible [true×4] · adminRole="admin" (v109_01~04)
 - [버저닝 7곳] build.gradle 74/1.0.9 · package.json · Overlays 배지 · server.js APK_MIRROR · next.config.ts APK_DL · apk-guide.html(제목/h1/notice 본문 교체+변경점/footer) · APK_다운로드_안내.txt — apk-guide에 "구버전 즉시 해결법(🌐 버튼→sertz.z.ai 수동 입력)" 안내 추가
@@ -2166,7 +2166,7 @@ Task: 유저 지시 3건 — ①스킬·물약·자동전투 UI 오른쪽 이동
 Work Log:
 - [작업실 롤백 복구] 세션 재시작 사이 작업실이 v1.4.4 시절(14ce9d5)로 롤백되어 있었음 — git fetch 후 origin/main(90a0221=v1.4.8+계정백업 13:19)으로 reset --hard 복구, 서버 재기동·/api/version 1.4.8 검증
 - [①UI 우측 이동] TouchControls.tsx:203 우하단 클러스터(자동·물약열+스킬2×2+공격) right 0.5rem→0.25rem·sm:right-5→sm:right-1, HUD.tsx:210 우상단 열(자동 토글 포함) right 0.5rem→0.25rem·sm:right-3→sm:right-1 — E2E 실측 우측여백 4px(HUD 3.39px zoom보정)
-- [②admin] accounts/index.js에 syncAdminPassword() 신설 — SERTZ_ADMIN_PASSWORD env 설정 부팅 시 admin 계정(한정) 해시 강제 갱신(loadDb+원격복원 경로 양쪽 호출), 복원 경로에 잔존하던 구기본비번 admin123 시드 제거(무작위 12자+로그 1회 출력으로 통일) — 서버를 SERTZ_ADMIN_PASSWORD='Sertz!2026'로 재기동, POST /api/auth/login 실측 200 role=admin 토큰 발급 확인
+- [②admin] accounts/index.js에 syncAdminPassword() 신설 — SERTZ_ADMIN_PASSWORD env 설정 부팅 시 admin 계정(한정) 해시 강제 갱신(loadDb+원격복원 경로 양쪽 호출), 복원 경로에 잔존하던 구기본비번 [REDACTED] 시드 제거(무작위 12자+로그 1회 출력으로 통일) — 서버를 SERTZ_ADMIN_PASSWORD='[REDACTED]'로 재기동, POST /api/auth/login 실측 200 role=admin 토큰 발급 확인
 - [③보스 아트] z-ai image CLI로 9종 전부 신규 일러스트 생성(1024×1024 흰배경) → scripts/boss_art.py 후처리: 경계 중위값 자동적응 흰배경 플러드필 제거(1차 시도 배경 236회색 미스→자동적응으로 수정)·알파 페더·원본과 동일 픽셀 규격 리사이즈(fit_pad 전체실루엣 보존 — 크롭으로 펜리르·스콜 머리 잘림 사고 → 패딩 방식으로 재작성)·idle1=밝기+7% 2프레임 — 히트박스/판정 100% 불변, webp 용량 구버전 대비 8~40배(264~498B→3~11KB)
 - [③보스 애니] Boss.ts — ①등장: 하늘 y-150 낙하(Bounce.easeOut 540ms)→착지 시 body.reset+오라색 충격파+먼지+진동+착지 스쿼시(착지 전 body 비활성·entranceDone 게이트로 행동 정지, 하티 twin 알파 0→착지 후 0.95) ②상시: preUpdate 호흡 ±2.2%(부피보존 scaleX 역상관)+baseS 기준 상대 스케일 ③공격 예동 squash(x,y) 지수감쇠(반감기 200ms): 강타 젖혔다 내려찍기·돌진 웅크림→러닝·볼리/링/나선 기모으기·브레스 들이마심→분출 반동·blink 수축→재등장 팝·소환 채널링·카운터 자세·파동 펄스 ④피격 미세진동 0.035 ⑤페이즈 포효 자세(-0.1,+0.16) ⑥사망: 오라색 ADD 잔상 3겹 확산+본체 Cubic 소멸 트윈+2중 충격파(160/340ms) — 카오스 알파 펄스는 착지 후 개시로 이동(등장 페이드 충돌 제거)
 - [버전체인] package.json 1.4.9·build.gradle vc101+히스토리·server.js(APK_MIRROR/LATEST 1.4.9/101/NOTE)·apk-guide.html(v1.4.9 블록+footer)·APK_다운로드_안내.txt v1.4.9 블록·PPT 프롬프트 txt 버전 표기 갱신
@@ -2179,7 +2179,7 @@ Work Log:
 Stage Summary:
 - v1.4.9 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.9/SERTZ-v1.4.9.apk (versionCode 101, 118,084,234B, md5 fca0e8245900eddea5b393ba0750dc11)
 - 보스 9종(스토리) 전부 신규 일러스트+전면 애니 강화 — 재림 보스 3종(vord/jorm/nagr)도 텍스처 재활용 구조라 자동 적용
-- admin 계정: 아이디 admin / 비밀번호 Sertz!2026 (SERTZ_ADMIN_PASSWORD env 동기화 — 비번 변경은 env 수정 후 서버 재시작)
+- admin 계정: 아이디 admin / 비밀번호 [REDACTED] (SERTZ_ADMIN_PASSWORD env 동기화 — 비번 변경은 env 수정 후 서버 재시작)
 - 전투 UI(스킬·물약·자동) 화면 오른쪽 끝 정렬(4px) 완료
 - 운영 교훈: ①작업실 세션 롤백 재발 — 복구 기준은 항상 git fetch+origin/main ②흰배경 AI 생성물의 배경은 경계 중위값 자동적응 판정이 안전(순백 가정 금지) ③원본과 다른 비율 아트는 크롭 금지·fit_pad(투명패딩)로 실루엣 보존이 판정/실루엣 안전
 
@@ -2243,7 +2243,7 @@ Stage Summary:
 - v1.4.11 배포 완료: https://github.com/apple01234/CERTZ/releases/download/v1.4.11/SERTZ-v1.4.11.apk (versionCode 103, 135,610,665B, md5 1dd88577437b9df9de3bbad09c012a84, applicationId com.sertz.myapp)
 - 유저 지시 6건 전부 해결: Drive 팩 ~140종 적극 통합(신규 56+잠자던 기존 84)·보스 9종 애니 셀셰이드 전면 교체+9패턴 이펙트·자동전투 진동 5종 근본 수정·신규 코스튬 2종·appId 일원화·ARG 최종 봉쇄
 - 운영 교훈: ①주석 안의 와일드카드(hv2_*/mg_*)는 */로 주석을 조기 종료시킨다 — 주석에 파일그롭 쓰면 안 됨 ②MultiEdit 실패 시 원자성이 버전마다 다를 수 있으니 적용 후 grep으로 상태 확인 필수 ③Playwright는 초기 HTML script만 검색 — lazy 청크 판정은 .next/static/chunks fs grep 폴백이 정답(v1.4.10 재확인) ④보스 아트 프롬프트에 "no text"를 넣어도 텍스트 유입 가능 — 생성 후 육안 검증 전수 필수
-- 잔여: Play Console 데이터 보안 폼·서명 키 등록·API33 AD_ID 확인은 유저 측 작업 / admin 계정: admin / Sertz!2026 (SERTZ_ADMIN_PASSWORD env 동기화)
+- 잔여: Play Console 데이터 보안 폼·서명 키 등록·API33 AD_ID 확인은 유저 측 작업 / admin 계정: admin / [REDACTED] (SERTZ_ADMIN_PASSWORD env 동기화)
 
 ---
 Task ID: V1412
@@ -2283,7 +2283,7 @@ Stage Summary:
 - 유저 지시 22건 전부 반영: 게임 내 AI 생성물 0(보스·여캐 전부 실 에셋), UI는 유저 제공 ui2 세트로 통일
 - GM 로그인·랭킹 실패의 근원은 "기본 접속 서버 sertz4가 구버전" — 클라에 원인 안내를 추가했으니 근본 해결은 유저가 서버 연결에서 최신 서버 주소로 변경하거나 sertz4를 최신 서버로 갱신해야 함
 - 운영 교훈: ①E2E는 빌드 체인을 &로 백그라운드화하면 미완성 상태를 검증한다 — 빌드→재기동→검증은 반드시 순차 실행 ②무손실 webp 픽셀아트는 200~500B가 정상 — 파일 크기 기준 판정 금지, 내용 실측(opaque 픽셀 수)이 정답 ③minify 후 프로퍼티는 aggr:.8 형태로 축약 — 번들 grep은 다형식 허용
-- 잔여: Play Console 데이터 보안 폼·서명 키 등록은 유저 측 작업 / admin 계정: admin / Sertz!2026 (본 워크스페이스 서버 기준 — sertz4는 별도)
+- 잔여: Play Console 데이터 보안 폼·서명 키 등록은 유저 측 작업 / admin 계정: admin / [REDACTED] (본 워크스페이스 서버 기준 — sertz4는 별도)
 
 ---
 Task ID: V1413
@@ -2294,17 +2294,17 @@ Work Log:
 - [이슈1 download 정리] download 폴더에서 불필요한 생성 프롬프트/대형 아키텍처 문서 제거 — 2D탑다운-MMORPG-기술아키텍처-설계서-001-100.docx(280KB)+.pdf(4.6MB), SERTZ_BGM/로블록스/학교PPT/고객문의/웹성능 감사 5종, join_apk.sh/.bat, README 제거 → 95KB로 축소(필수 문서 5종만 남김: APK_다운로드_안내·PLAY_CONSOLE_등록가이드·SNS_OAuth_가이드·출시_체크리스트·플레이스토어_베타출시_가이드)
 - [이슈2 책 모양 GUI] scripts/gen_book_panel.py — PIL로 1024×768 "열린 책" 텍스처 3종 생성: book_panel.webp(갈색 가죽 표지+양피지 양 페이지+가운데 제본선+금색 테두리+모서리 장식), book_panel_plain.webp(표지 없는 버전), book_header.webp(롤 시트지 네임플레이트). globals.css에 .game-panel-book 클래스 추가(book_panel.webp 배경, 양피지 가독성을 위한 글자 색 보정 포함). Panels.tsx InventoryPanel/StatPanel 최상위 div에 game-panel-book 클래스 추가
 - [이슈3 여캐 6종 재생성] gen_v1412 SPUM 합성 결과가 "이상하다"는 유저 지시 → gen_v1413_female_bodies.py 신규 작성. 남캐 베이스(chm0~5)에서 색 매핑(바지→드레스 하단/상의→드레스 상단/머리→헤어/금속→트림) 후 여성화 처리: 롱헤어(머리 양옆 3픽셀씩 4픽셀 아래로 연장 → 어깨 너머 흘러내림), A라인 스커트(바지 하단에서 좌우로 1/2/3픽셀씩 확장 → 3행에 걸쳐 점진적 넓어짐), 헤어 하이라이트(광택 점 3픽셀). 6종 색 팔레트: chf0=진홍전사(붉은 드레스+흑갈 머리)/chf1=보라마법사(보라 로브+백발)/chf2=숲궁수(녹색 튜닉+갈색 머리)/chf3=백은성직자(흰 로브+금발)/chf4=흑의도적(검은 복장+흑발)/chf5=하늘왕녀(하늘 드레스+따뜻한 은발). VLM 2차 검증 — 1차는 "여성으로 안 보임" → 롱헤어/스커트 강도 상향 → 2차 전부 "distinctly female" 판정. chf5 sky_princess는 "undead 같다"는 피드백 → 은발을 약간 따뜻한 톤(210→226)으로 조정
-- [이슈4 admin 로그인] 근본 원인: 커스텀 server.js는 Next.js 런타임을 거치지 않으므로 .env 파일이 자동 로드되지 않아 SERTZ_ADMIN_PASSWORD 환경변수가 전달되지 않음 → admin 계정이 무작위 비밀번호로 시드되어 "admin/Sertz!2026" 지정해도 실제론 다른 비밀번호. 수정: .env에 SERTZ_ADMIN_PASSWORD=Sertz!2026 + SERTZ_ADMIN_USERS=admin,apple01234 추가, server.js 최상단에 @next/env.loadEnvConfig(__dirname)로 .env 명시 로드(try/catch로 폴백). 실측: POST /api/auth/login {admin, Sertz!2026} → 200 role:admin token 발급 확인
+- [이슈4 admin 로그인] 근본 원인: 커스텀 server.js는 Next.js 런타임을 거치지 않으므로 .env 파일이 자동 로드되지 않아 SERTZ_ADMIN_PASSWORD 환경변수가 전달되지 않음 → admin 계정이 무작위 비밀번호로 시드되어 "admin/[REDACTED]" 지정해도 실제론 다른 비밀번호. 수정: .env에 SERTZ_ADMIN_PASSWORD=[REDACTED] + SERTZ_ADMIN_USERS=admin,apple01234 추가, server.js 최상단에 @next/env.loadEnvConfig(__dirname)로 .env 명시 로드(try/catch로 폴백). 실측: POST /api/auth/login {admin, [REDACTED]} → 200 role:admin token 발급 확인
 - [이슈5 퍼포먼스 최적화] PhaserGame.ts render.batchSize 2000(기본)→4096(드로우콜 감소), maxTextures:16, desynchronized:true(캔버스 2D 백엔드 입력-렌더 지연 단축), physics.arcade.useTree:true(공간 분할 — 적 많을 때 충돌 체크 O(n²)→O(n log n)). smoothStep은 Phaser 4 타입이 boolean이라 제거(린트 통과)
 - [이슈6 셰이더 약화] WorldScene.ts — ①눈 맵(niflheim) 파티클: frequency 130→240ms, lifespan 11000→9000ms, speedY 26-60→18-42, scale 0.05-0.14→0.04-0.1, alpha 0.8→0.42(start)/0.3→0.18(end) → 눈보라 밀도 절반 이하 ②보스 블룸: blendAmount 0.46→0.24 (카오스 0.5→0.30), threshold 0.6→0.68, blurSteps 4→3 ③비네트: 0.14→0.06 (거의 희미) ④보스 라이트: 알파 0.34→0.18, 스케일 1.6→1.25. StudioFX.ts 앰비언트 블룸: blendAmount 0.32→0.14, threshold 0.74→0.82, blurSteps 3→2. Lighting.ts CHAPTER_AMBIENT — niflheim 알파 0.28→0.18, 라이트 알파 0.66→0.5 (다른 어두운 챕터도 동급 축소: cave/nidavellir/hel/abyss)
 - [버전체인 5곳] package.json 1.4.12→1.4.13, build.gradle versionCode 104→105+versionName 1.4.13+히스토리, server.js(APK_MIRROR/LATEST_VERSION/CODE/NOTE 전부 1.4.13/105), Overlays 배지 v1.4.8→v1.4.13
-- 검증: tsc 0오류(1차 smoothStep 타입 에러 수정 후), API 실측 — /api/version 1.4.13/105 ✓, /api/auth/login admin/Sertz!2026 200 role:admin ✓, /assets/ui2/book_panel.webp 200 ✓, /assets/chf0_idle0.webp 200 ✓, / 200 ✓
+- 검증: tsc 0오류(1차 smoothStep 타입 에러 수정 후), API 실측 — /api/version 1.4.13/105 ✓, /api/auth/login admin/[REDACTED] 200 role:admin ✓, /assets/ui2/book_panel.webp 200 ✓, /assets/chf0_idle0.webp 200 ✓, / 200 ✓
 - 스크립트: gen_book_panel.py(책 패널 생성), gen_v1413_female_bodies.py(여캐 재생성) — scripts/에 보관, 추후 수정 시 재실행 가능
 - 커밋/푸시 대기 — 워크스페이스 dev 서버 bun run dev로 구동(setsid+exec로 백그라운드화)
 
 Stage Summary:
-- v1.4.13: 유저 지시 6건 전부 해소 — download 5.3MB→95KB, 책 모양 GUI(book_panel 텍스처+CSS), 여캐 6종 chibi 재생성(VLM "distinctly female" 검증), admin 비번 Sertz!2026 자동 동기화(@next/env), Phaser 퍼포먼스 최적화(batchSize/desync/useTree), 셰이더 6종 약화(눈 파티클/보스 블룸/앰비언트 블룸/비네트/보스 라이트/암전)
-- admin 계정: admin / Sertz!2026 (.env + @next/env 부팅 동기화 — env 수정 후 서버 재시작 시 자동 반영)
+- v1.4.13: 유저 지시 6건 전부 해소 — download 5.3MB→95KB, 책 모양 GUI(book_panel 텍스처+CSS), 여캐 6종 chibi 재생성(VLM "distinctly female" 검증), admin 비번 [REDACTED] 자동 동기화(@next/env), Phaser 퍼포먼스 최적화(batchSize/desync/useTree), 셰이더 6종 약화(눈 파티클/보스 블룸/앰비언트 블룸/비네트/보스 라이트/암전)
+- admin 계정: admin / [REDACTED] (.env + @next/env 부팅 동기화 — env 수정 후 서버 재시작 시 자동 반영)
 - 다음 후보: APK 빌드(scripts/build_apk.sh) 후 GitHub Release 업로드 — 필요 시 안내
 
 ---
@@ -2340,9 +2340,9 @@ Work Log:
 - [확인] /home/z/my-project/ (배포 루트) 안에 /home/z/my-project/CERTZ/ 하위 폴더로 모든 프로젝트 파일이 들어있었음 — 배포 플랫폼이 루트의 package.json을 찾지만 실제론 CERTZ/package.json에 있어서 빌드 실패
 - [루트 stub 제거] /home/z/my-project/.git, .env, .gitignore (빈 workspace stub) 제거 + tool-results/ 제거 + download/README.md 제거
 - [CERTZ/* → 루트로 이동] shopt dotglob로 숨김파일(.git, .env, .gitignore, .apk-hold, .next, .next-apk, .zscripts) 포함 전부 이동. skills/는 플랫폼 관리 폴더라 충돌 시 CERTZ/skills는 제거 (이미 git에서 untrack됨)
-- [검증] 핵심 파일 모두 루트에 존재: package.json 1.4.13, server.js, .env (admin/Sertz!2026 포함), .gitignore, src/, public/, android/, scripts/, accounts/, multiplayer/
+- [검증] 핵심 파일 모두 루트에 존재: package.json 1.4.13, server.js, .env (admin/[REDACTED] 포함), .gitignore, src/, public/, android/, scripts/, accounts/, multiplayer/
 - [서버 재기동] cd /home/z/my-project && node server.js → 포트 3000 정상 LISTEN
-- [엔드포인트 실측] /api/version 1.4.13/105, /api/auth/login admin/Sertz!2026 200 role:admin, / 200 OK, /assets/ui2/book_panel.webp 200, /assets/chf0_idle0.webp 200, /SERTZ-v1.4.13.apk 307 redirect
+- [엔드포인트 실측] /api/version 1.4.13/105, /api/auth/login admin/[REDACTED] 200 role:admin, / 200 OK, /assets/ui2/book_panel.webp 200, /assets/chf0_idle0.webp 200, /SERTZ-v1.4.13.apk 307 redirect
 - [git 상태] working tree clean — git는 cwd 기준으로 동작하므로 파일 위치 이동이 tracked 상태에 영향 없음. push 불필요 (이미 121dc5b로 최신 상태 동기화됨)
 
 Stage Summary:
@@ -2366,7 +2366,7 @@ Work Log:
 - [⑦모바일 인벤 납작해짐] Panels.tsx — InventoryPanel과 StatPanel(및 동일 className 5개 패널 전부)에 style={{ zoom: ... }} 추가. innerWidth < 430 → 0.78배 / < 640 → 0.88배 / 그 외 1. w-[min(94vw,444px)]가 그대로지만 zoom으로 인해 화면에 맞춰 작아짐 → 텍스트/버튼 비율 유지, 납작해지지 않음
 - [⑧PPT 프롬프트] download/SERTZ_PPT_시연영상_에셋소개_프롬프트.txt (14KB) — 14장 슬라이드 구조(표지/요약/세계관/직업/스크린샷×2/시연영상×3/에셋쇼케이스×3/기술스택/마무리) + 디자인 가이드(컬러/타이포/레이아웃/애니메이션) + HTML5 video 삽입 가이드 + 복부장 단일 프롬프트 + 제작 체크리스트. 비디오 파일은 별도 준비 후 /assets/trailer_part{1,2,3}.mp4 경로에 배치 안내
 - [버전체인 4곳] package.json 1.4.14·build.gradle vc106+versionName 1.4.14+히스토리·server.js(APK_MIRROR/LATEST_VERSION/CODE/NOTE 1.4.14/106)·Overlays 배지 v1.4.14
-- 검증: tsc 0오류·API 실측 — /api/version 1.4.14/106 ✓, /api/auth/login admin/Sertz!2026 200 role:admin ✓, / 200 OK ✓, /assets/chf0_idle0.webp 200 OK (재생성 여캐) ✓, PPT 프롬프트 파일 download/ 서빙 200 OK ✓
+- 검증: tsc 0오류·API 실측 — /api/version 1.4.14/106 ✓, /api/auth/login admin/[REDACTED] 200 role:admin ✓, / 200 OK ✓, /assets/chf0_idle0.webp 200 OK (재생성 여캐) ✓, PPT 프롬프트 파일 download/ 서빙 200 OK ✓
 - 스크립트: gen_v1414_female_bodies.py(3차 여캐 — chibi 직접 드로잉) scripts/에 보관
 
 Stage Summary:
@@ -2920,14 +2920,14 @@ Agent: main (Super Z)
 Task: 사용자 문의 — admin 아이디/비번 안내
 
 Work Log:
-- CERTZ-DB(apple01234/CERTZ-DB) 복호화 조회: admin(role=admin), apple01234(role=admin) 계정 존재 확인(신규 등록분, 구 admin123 이력과 불일치로 추정)
-- 라이브 로그인 실측: admin/admin123, apple01234/admin123 모두 실패 — 기존 비밀번호 원문 복구 불가(scrypt 해시)
+- CERTZ-DB(apple01234/CERTZ-DB) 복호화 조회: admin(role=admin), apple01234(role=admin) 계정 존재 확인(신규 등록분, 구 [REDACTED] 이력과 불일치로 추정)
+- 라이브 로그인 실측: admin/[REDACTED], apple01234/[REDACTED] 모두 실패 — 기존 비밀번호 원문 복구 불가(scrypt 해시)
 - scripts/db_reset_admin_pw.js 신설: SZBK1(AES-256-GCM) 복호화 → admin·apple01234 salt 재생성 + scryptSync(pw,salt,64) 재해시 → sha 낙관잠금 PUT (1회 성공)
 - 토큰 로딩 경로 보강: .secrets/github_token 소실 상태 → git remote URL 내장 토큰 폴백(db_check_admin.js 동일)
-- 라이브 재검증: admin/admin123 → role=admin + token 발급 ✓, apple01234/admin123 → role=admin + token ✓
+- 라이브 재검증: admin/[REDACTED] → role=admin + token 발급 ✓, apple01234/[REDACTED] → role=admin + token ✓
 
 Stage Summary:
-- 최종 관리자 자격증명: admin / admin123, apple01234 / admin123 (둘 다 role=admin, 라이브 Vercel API 실측 통과)
+- 최종 관리자 자격증명: admin / [REDACTED], apple01234 / [REDACTED] (둘 다 role=admin, 라이브 Vercel API 실측 통과)
 - .secrets/github_token 소실 확인 — 이후 세션은 git remote URL 폴백 사용하거나 재생성 필요
 - GM NPC·관리자 UI는 이 계정 로그인 시 즉시 활성화(authMe 롤 기준)
 
@@ -4350,3 +4350,24 @@ Stage Summary:
 - 유저 피드백 6건 전부 구현·배포 완료 (웹 즉시 반영 — sertz.vercel.app)
 - 핵심 의사결정: ①경험치표는 나무위키 원문 그대로(299레벨) ②ATK 심층 배율은 ×1.5로 완만(HP는 지시대로 ×2) ③게이트 AI는 어그로 내 교전 유지(완전 무시 아님) ④퀘스트 EXP 승수 ×12(사냥 대비 ~2.2배 체감)
 - 다음 빌드 시: APK/IPA/EXE는 각 CI 워크플로우 실행으로 vc157 산출물 생성 가능 (버전 파싱 자동화 유지)
+
+---
+Task ID: maintenance-2026-10-16 (v1.0.15 / vc157)
+Agent: DSH (유지보수 세션 — 기능 추가 없음)
+Task: 정합성·보안 정비 — 버전 싱크 복구 + APK 다운로드 URL 404 수정 + 관리자 권한 상승 차단 + 계정 백업 DB 공개 노출 차단
+
+Work Log:
+- [버전 싱크 5곳 복구] server.js APK_MIRROR·next.config.ts APK_DL·route.ts APK_MIRROR·apk-guide.html 표제(v1.0.11→v1.0.15, versionCode 155→157)·APK_다운로드_안내.txt(v1.0.14/vc156→v1.0.15/vc157). Overlays.tsx 타이틀 배지는 하드코딩(v1.0.5-beta)을 폐지하고 pkg.version 참조로 전환 — 재발 자체를 불가능하게 만듦
+- [URL 태그 404 근본 수정] vc157 APK는 릴리스 태그 v1.0.15에 있는데 3곳(server.js·next.config.ts·route.ts)이 v1.0.9 태그를 가리켜 404였다(v1.0.9 태그는 vc156까지만 보유). 3곳 모두 v1.0.15로 정정 — 즉 /api/version의 apk 필드가 죽은 링크였고, 구버전 게이트가 "설치 불가 링크"를 안내하던 상태
+- [해시 실측] vc157 APK 직접 다운로드(126,228,772B, 234s) → md5 75672a4e·sha1 3146fec8·sha256 8daf63e0. sha256이 GitHub API 자산 digest와 완전 일치(무결성 검증). apk-guide의 구버전 md5/sha1(vc149 기준)을 실측값으로 교체
+- [보안 ①권한 상승 차단] 관리자 판정이 닉네임(name)까지 비교하고 있었고 가입 라우트는 이름을 검증하지 않아, name="admin"으로 가입하면 관리자가 되는 경로가 있었다. 판정을 아이디 기준으로만 축소 — src/lib/sapi.ts(isAdminUser)·src/lib/ghdb.ts(normalizeDb)·accounts/index.js 3곳(isAdminUser L69·정규화 L92·복원 L317). + 가입 시 관리자 예약 이름 거부(register/route.ts)
+- [보안 ②계정 DB 노출 차단] db-backup/accounts.enc가 공개 저장소(apple01234/CERTZ, public)에 추적 중이었고 복호화 기본 키가 소스에 있어 누구나 열람 가능한 상태였다. git rm --cached로 추적 해제 + .gitignore 등록 + 미설정 시 경고 로그(ghdb.ts). 파일 자체는 보존
+- [보안 ③자격증명 정리] worklog.md 평문 관리자 비밀번호 25건 마스킹(구 기본 비밀번호 12건 + 실사용 비밀번호 13건 — 줄 수·Task 194건 구조 보존). scripts/db_reset_admin_pw.js의 알려진 기본값 제거(NEW_PW 필수·10자 이상) + 리셋 후 비밀번호 stdout 출력 제거
+- [.gitignore 정합성] `!download/*.apk`(L67) 뒤에 `download/*.apk`(L100)가 와서 무효가 되던 자기모순 해소 — 배포는 릴리스 자산으로만 하므로 예외 자체를 제거
+- [docs] STATUS.md를 vc155 기준에서 vc157로 갱신(2사이클 지연 해소) + 보안 잔여 작업(키 회전 순서)을 최우선 항목으로 명시. download/README.md의 v1.0.5-beta/vc141 표기 정정
+- [검증] node --check 3종(server.js·accounts/index.js·db_reset_admin_pw.js) 통과. TS/TSX 6종 구문검사 통과(임시 typescript 설치 후 컴파일러 API parse — 프로젝트 node_modules 부재로 tsc 전체 검사는 미실시)
+
+Stage Summary:
+- 산출물: 없음(기능 변경 0) — 정합성·보안 수정만. 커밋은 로컬에만 하고 push는 보류(운영 배포 판단 필요)
+- 미완(운영 조치 필요): **계정 백업 키 회전**. 코드만으로는 끝나지 않는다 — ①SERTZ_BACKUP_KEY 설정 → ②기존 백업 재암호화 → ③그 다음 히스토리에서 accounts.enc 제거. 순서를 바꾸면 전 계정 초기화. 히스토리 재작성만으로는 해결되지 않는다(GitHub은 옛 blob을 SHA로 계속 제공하고 포크에도 남는다) — 키 회전이 본질적 조치
+- 남은 정리 후보: 죽은 tests/ 3종(.zscripts 부재로 실행 불가) · mapping.txt 4종 동일 blob ~120MB 중복 · 폰트 이중 추적
