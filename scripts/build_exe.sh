@@ -31,7 +31,12 @@ echo "[5/6] 산출물 복사"
 cd /home/z/my-project
 ls -la electron/dist/
 EXE=$(ls electron/dist/SERTZ-*-setup.exe | head -1)
-cp -f "$EXE" download/SERTZ-v1.0.9-setup.exe
+test -n "$EXE" || { echo "오류: electron/dist에 *-setup.exe 없음"; exit 1; }
+# v1.0.16 — 종전엔 v1.0.9로 하드코딩돼 있어 electron-builder가 만든 최신 산출물이
+#  구버전 이름으로 복사됐다(exe-build.yml과 같은 종류의 버그). 버전을 파싱해 그대로 쓴다.
+VER="$(sed -n 's/.*versionName "\([^"]*\)".*/\1/p' android/app/build.gradle | head -1)"
+OUT="download/$(basename "$EXE")"
+cp -f "$EXE" "$OUT"
 
-echo "[6/6] 완료 → download/SERTZ-v1.0.9-setup.exe"
-ls -la download/SERTZ-v1.0.9-setup.exe
+echo "[6/6] 완료 → $OUT (versionName ${VER:-?})"
+ls -la "$OUT"

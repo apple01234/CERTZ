@@ -4533,3 +4533,26 @@ Stage Summary:
 - **R4는 실측 검증됨** — 이제 CI가 타입 오류를 통과시키지 않는다
 - **S8은 부분 해결** — 사칭은 막았으나 cid 위조는 남았다. 무리하게 고치면 APK 파티가 죽으므로 순서를 문서화하고 보류
 - 세션 누적 커밋 9건(미push). push 전 Android Secret 4종 등록 필요(669c386)
+---
+Task ID: improve-10-2026-10-16 (보스 아트 전면 교체)
+Agent: DSH (보완 세션 10차 — 유저 업로드 보스 시트 9장 적용)
+
+Task: 유저 지시 "보스 아틀라스 이상하니 이것들로 바꿔" — 업로드 시트 9장 → 게임 아틀라스 교체
+
+Work Log:
+- [시트 실측] 9장의 크기·모드·그리드를 실측. 6열×6행(초록드래곤·화산골렘·설원늑대), 8열×7행(수정왕·얼음늑대룡·악령여왕·얼음골렘·쌍둥이늑대), 라벨형(니플헤임 마녀). 배경이 **체커보드로 구워진 RGB 시트 3장**(악령여왕·얼음골렘·쌍둥이늑대) 확인
+- [행 순서 규명] 시트는 `[idle, run, atk, die, sp1, sp2(, sp3)]` 순서인데 게임 규약은 `[idle, walk, atk, sp1, sp2(, sp3), die]`다. **라벨 시트(마녀)가 결정적 단서** — 3행 Attack / 4행 Died / 5~7행 Special 1~3 라벨이 명시돼 있어 순서를 확정할 수 있었다. remap `6행:[0,1,2,4,5,3]`, `7행:[0,1,2,4,5,6,3]`
+- [빌더] `_boss_work/build_atlas.py` — 체커보드 가장자리 flood fill 제거(스프라이트 내부 흰색 보존), 셀 **원본 그대로 보존**(bbox 재센터링 금지 — 프레임마다 실루엣이 변하는 달리기/공격에서 정렬이 흔들려 떨림이 생긴다), 행 remap, 12열 하드코딩 제거
+- [코드] `textures.ts BOSS_ATLAS`에 `cols` 추가(구 아틀라스 12열 / 신규 6·8열). `registerBossAnims`의 `row*12+i` → `row*(at.cols??12)+i` — 프레임 인덱스가 텍스처 자신의 열 수 기준이어야 한다
+- [초상화] 도감·대화창 초상화 8종을 새 아틀라스의 idle 대표 프레임에서 재생성 — 아트와 초상화가 어긋나면 다른 캐릭터가 보인다
+- [매핑] 테마 기준: boss=수정왕, boss_surt=화산골렘, boss_fenrir=설원늑대, boss_jorm=초록드래곤, boss_skoll=얼음늑대룡, boss_hati=쌍둥이늑대(좌우 쌍둥이 구성이 하티=스콜 쌍둥이와 일치), boss3=악령여왕, boss_nagr=얼음골렘. **마녀 시트는 제외** — 악령여왕과 동일 캐릭터의 저해상 라벨 참조본(공격 구성 일치)
+- [검증 ①] `verify_atlas.py` — BOSS_ATLAS 선언(fw/fh/cols) ↔ 실제 webp 치수 교차검증 **13/13 OK**
+- [검증 ②] `anim_check.py` — `registerBossAnims`의 plan을 그대로 재현해 프레임 인덱스가 범위 내이고 비어 있지 않은지 확인 **13/13 ALL FRAMES VALID** (die 포함 7종 전부)
+- [검증 ③] `tsc --noEmit` exit 0 · `eslint src/game/textures.ts --max-warnings 0` exit 0 · 프리뷰 이미지로 셀 경계·행 순서 육안 확인
+- [정정] 검증 중 "6행 시트에 die가 없다"는 오탐을 냈으나, `registerBossAnims`가 6행일 때 sp3를 빼고 die를 index 5에 넣는 것이 정답이었다 — **검증 스크립트가 틀렸고 코드는 정상**이었다. plan 로직을 그대로 재현하도록 스크립트를 고쳐 재확인
+
+Stage Summary:
+- 산출물: 보스 아틀라스 8종 + 초상화 8종 교체, 코드 호환 수정(열 수 가변)
+- 기존 아틀라스·초상화는 `_boss_work/backup_atlases/`에 백업(되돌리기 가능)
+- **미적용**: `atl_boss2`(유령선)·`atl_boss_abudditos`·`atl_boss_vord`·`atl_boss_gram`·`atl_boss_nidhog` — 대응 신규 시트가 없어 기존 아트 유지
+- 셀 크기가 191×146~256×214로 기존(268×234~330×224)보다 작아졌다. 보스 스케일은 `displayWidth` 기반 자동 보정이라 별도 배율 상수는 불필요하나, **실기기에서 크기 체감 확인 필요**

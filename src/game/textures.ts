@@ -242,17 +242,17 @@ export function buildAllAnims(scene: Phaser.Scene) {
  *  · 기존 42장 개별 프레임(idle0~5·walk0~5·… 240×180 AI 에셋)을 완전 대체 — 요청 수 1/42
  *  · 프레임은 슬라이서 실측 크기(시트별 상이) — BOSS_ATLAS의 fw/fh와 정확히 일치해야 한다
  *  · 프로그램 키는 기존과 동일(tex-idle·tex-walk·…) — Boss.ts 로직 무수정 호환 */
-export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number; fh: number }> = {
-  boss:        { key: "atl_boss",        file: "atl_boss.webp",        fw: 304, fh: 269 }, // 심연의 수호자 — 요툰헤임 수정골렘 (vc142 유저 아틀라스)
+export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number; fh: number; cols?: number }> = {
+  boss:        { key: "atl_boss",        file: "atl_boss.webp",        fw: 191, fh: 146, cols: 8 }, // 수정 왕 — 스바르트알프헤임 (v1.0.16 신규 시트 8열×7행)
   boss2:       { key: "atl_boss2",       file: "atl_boss2.webp",       fw: 330, fh: 212 }, // 눈보라의 거수·파수꾼 — 미드가르드 해적선 (v1.4.32 유령선 고해상)
-  boss3:       { key: "atl_boss3",       file: "atl_boss3.webp",       fw: 303, fh: 248 }, // 심연의 군주 — 헬 (vc142 유저 아틀라스 고해상)
+  boss3:       { key: "atl_boss3",       file: "atl_boss3.webp",       fw: 191, fh: 146, cols: 8 }, // 심연의 군주 — 헬 악령 여왕 (v1.0.16 신규 시트 8열×7행)
   boss_nidhog: { key: "atl_boss_nidhog", file: "atl_boss_nidhog.webp", fw: 226, fh: 232 }, // 니드호그 — 알프헤임 수목룡 (v1.4.32 고해상 11프레임)
-  boss_surt:   { key: "atl_boss_surt",   file: "atl_boss_surt.webp",   fw: 330, fh: 224 }, // 수르트 — 무스펠 용암골렘 (v1.4.32 고해상)
-  boss_fenrir: { key: "atl_boss_fenrir", file: "atl_boss_fenrir.webp", fw: 303, fh: 227 }, // 펜리르 — 니플헤임 얼음수 (vc142 유저 아틀라스)
-  boss_skoll:  { key: "atl_boss_skoll",  file: "atl_boss_skoll.webp",  fw: 303, fh: 257 }, // 스콜 — 얼음 늑대 (vc142 유저 아틀라스 4프레임×7행)
-  boss_nagr:   { key: "atl_boss_nagr",   file: "atl_boss_nagr.webp",   fw: 286, fh: 240 }, // 발할라 천사기사 (재림 15) (v1.4.32 LANCZOS 개선)
-  boss_hati:   { key: "atl_boss_hati",   file: "atl_boss_hati.webp",   fw: 304, fh: 257 }, // 하티 — 화염 늑대 (vc142 유저 아틀라스 4프레임×7행)
-  boss_jorm:   { key: "atl_boss_jorm",   file: "atl_boss_jorm.webp",   fw: 304, fh: 201 }, // 요르문간드 — 잎날개 녹룡 (vc142 유저 아틀라스 신설 6행)
+  boss_surt:   { key: "atl_boss_surt",   file: "atl_boss_surt.webp",   fw: 256, fh: 170, cols: 6 }, // 수르트 — 무스펠 용암골렘 (v1.0.16 신규 시트 6열×6행)
+  boss_fenrir: { key: "atl_boss_fenrir", file: "atl_boss_fenrir.webp", fw: 204, fh: 214, cols: 6 }, // 펜리르 — 니플헤임 설원 백랑 (v1.0.16 신규 시트 6열×6행)
+  boss_skoll:  { key: "atl_boss_skoll",  file: "atl_boss_skoll.webp",  fw: 191, fh: 146, cols: 8 }, // 스콜 — 얼음 늑대룡 (v1.0.16 신규 시트 8열×7행)
+  boss_nagr:   { key: "atl_boss_nagr",   file: "atl_boss_nagr.webp",   fw: 192, fh: 146, cols: 8 }, // 요툰헤임 얼음 골렘 (v1.0.16 신규 시트 8열×7행)
+  boss_hati:   { key: "atl_boss_hati",   file: "atl_boss_hati.webp",   fw: 191, fh: 146, cols: 8 }, // 하티 — 쌍둥이 늑대(좌 얼음/우 화염) (v1.0.16 신규 시트 8열×7행)
+  boss_jorm:   { key: "atl_boss_jorm",   file: "atl_boss_jorm.webp",   fw: 256, fh: 170, cols: 6 }, // 요르문간드 — 잎날개 녹룡 (v1.0.16 신규 시트 6열×6행)
   /* vc148 (#보스그리드) — vc137 잔재 3종 HD 재슬라이싱: 이질 아트 혼합(컬러 전방+흑룡 실루엣 특수기/
    *  보라 악마+붉은 늑대) + 프레임 잘림 수리 — bsw_ 원본 그리드(8열×7행 192.5×147 / 6열×7행 204×184) 그대로 */
   boss_abudditos: { key: "atl_boss_abudditos", file: "atl_boss_abudditos.webp", fw: 298, fh: 220 }, // 종언의 마룡 아부디토스 — 흑룡 8열×7행
@@ -261,18 +261,20 @@ export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number;
 };
 
 /** 아틀라스 행별 유효 프레임 수 (슬라이서 실측 — 뒤쪽 빈 프레임 트리밍).
- *  6행 시트는 sp3가 없다 (Boss.animFor의 beamTele → setBossAnim 폴백으로 idle 동작). */
+ *  6행 시트는 sp3가 없다 (Boss.animFor의 beamTele → setBossAnim 폴백으로 idle 동작).
+ *  v1.0.16 — 신규 시트는 소스 순서 [idle,run,atk,die,sp1,sp2(,sp3)]를 게임 규약
+ *  [idle,walk,atk,sp1,sp2(,sp3),die]로 재배치한 결과다(빌더가 remap 수행). */
 export const BOSS_ATLAS_ROWS: Record<string, number[]> = {
-  boss:        [8, 8, 8, 8, 8, 8, 8],              // vc142 수정골렘 8프레임×7행
+  boss:        [8, 8, 8, 8, 8, 8, 8],              // v1.0.16 수정 왕 8프레임×7행
   boss2:       [6, 6, 6, 6, 6, 6, 6],              // idle walk atk sp1 sp2 sp3 die (v1.4.32 고해상 유령선)
-  boss3:       [8, 8, 8, 8, 8, 8, 8],              // vc142 헬 8프레임×7행
+  boss3:       [8, 8, 8, 8, 8, 8, 8],              // v1.0.16 악령 여왕 8프레임×7행
   boss_nidhog: [11, 11, 11, 11, 11, 11, 11],       // (v1.4.32 고해상 — 7행 유지)
-  boss_surt:   [6, 6, 6, 6, 6, 6, 6],              // (v1.4.32 고해상)
-  boss_fenrir: [8, 8, 8, 8, 8, 8, 8],              // vc142 얼음수 8프레임×7행
-  boss_hati:   [4, 4, 4, 4, 4, 4, 4],              // vc142 화염늑대 4프레임×7행
-  boss_skoll:  [4, 4, 4, 4, 4, 4, 4],              // vc142 얼음늑대 4프레임×7행
-  boss_nagr:   [10, 10, 11, 10, 11, 11],
-  boss_jorm:   [3, 6, 6, 6, 6, 6],                 // vc142 녹룡 6행 (sp3 없음 — die 폴백 idle)
+  boss_surt:   [6, 6, 6, 6, 6, 6],                 // v1.0.16 용암골렘 6프레임×6행 (sp3 없음)
+  boss_fenrir: [6, 6, 6, 6, 6, 6],                 // v1.0.16 설원백랑 6프레임×6행 (sp3 없음)
+  boss_hati:   [8, 8, 8, 8, 8, 8, 8],              // v1.0.16 쌍둥이 늑대 8프레임×7행
+  boss_skoll:  [8, 8, 8, 8, 8, 8, 8],              // v1.0.16 얼음 늑대룡 8프레임×7행
+  boss_nagr:   [8, 8, 8, 8, 8, 8, 8],              // v1.0.16 얼음 골렘 8프레임×7행
+  boss_jorm:   [3, 6, 6, 6, 6, 6],                 // v1.0.16 녹룡 6행 (idle 3프레임 · sp3 없음)
   /* vc148 (#보스그리드) — 슬라이서 실측 행별 프레임 수 */
   boss_abudditos: [8, 8, 7, 8, 8, 8, 8],           // 흑룡 7행 (atk 7프레임)
   boss_vord:      [8, 8, 7, 8, 8, 8, 8],           // 흑룡 7행
@@ -320,7 +322,10 @@ export function registerBossAnims(scene: Phaser.Scene, tex: string) {
       if (a.exists(key)) a.remove(key);
       a.create({
         key,
-        frames: Array.from({ length: n }, (_, i) => ({ key: at.key, frame: row * 12 + i })),
+        /* v1.0.16 — 열 수는 아틀라스마다 다르다(구 아틀라스 12열, 신규 시트 6/8열).
+         *  Phaser 스프라이트시트 프레임 인덱스는 텍스처 자신의 열 수 기준 행우선이므로
+         *  row*cols 를 써야 한다 — 종전엔 12로 하드코딩돼 있었다. */
+        frames: Array.from({ length: n }, (_, i) => ({ key: at.key, frame: row * (at.cols ?? 12) + i })),
         frameRate: rate,
         repeat: rep,
       });
