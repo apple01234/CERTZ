@@ -653,7 +653,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
           onClick={() => setOdds((v) => !v)}
           className="mt-1.5 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-[11px] font-black text-white/70 hover:bg-black/60 active:scale-[0.99]"
         >
-          {odds ? "▲" : "▼"} 뽑기 확률 표 열람
+          {odds ? "▲" : "▼"} 뽑기·강화 확률 표 열람
         </button>
         {odds && (
           <div className="mt-1.5 rounded-lg border border-white/15 bg-black/50 p-2.5">
@@ -692,6 +692,23 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
               <p className="mt-1 text-[8px] leading-snug text-white/35">
                 유니크 미달 연속 {POT_PITY_MAX - 1}회 도달 시 다음 추첨은 유니크 이상 확정 (천장).
                 강화는 ★{STAR_PITY_FROM} 이상 실패 시 다음 시도 +{STAR_PITY_STEP}%p씩 가산 (최대 +{STAR_PITY_MAX}%p, 성공 시 초기화).
+              </p>
+            </div>
+            {/* v1.0.16 — 스타포스 강화 성공률 공시. 강화 주문서(scroll_star)는 에메랄드로 구매하는
+                유료 재화인데 종전 패널엔 천장 문구만 있고 단계별 성공률 표가 없었다. */}
+            <div className="mt-2 rounded-md bg-white/[0.03] px-2 py-1.5">
+              <p className="text-[10px] font-black text-white/75">스타포스 강화 — 단계별 성공률 (무기·방어구·장신구 공통)</p>
+              <div className="mt-0.5 grid grid-cols-3 gap-x-2">
+                {UPGRADE_RATES.map((r, i) => (
+                  <p key={i} className="flex justify-between text-[9px] leading-snug text-white/55">
+                    <span>★{i}→★{i + 1}</span>
+                    <span className="font-bold text-white/75">{r}%</span>
+                  </p>
+                ))}
+              </div>
+              <p className="mt-1 text-[8px] leading-snug text-white/35">
+                ★{UPGRADE_FALLBACK_FROM} 이상에서 실패하면 1성 하락합니다. 강화 주문서 1장당 +{STAR_BLESS_RATE}%p
+                (최대 {STAR_BLESS_MAX}장 = +{STAR_BLESS_RATE * STAR_BLESS_MAX}%p)가 가산되며, 주문서는 성공·실패와 무관하게 소모됩니다.
               </p>
             </div>
           </div>
