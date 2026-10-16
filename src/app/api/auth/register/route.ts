@@ -30,8 +30,16 @@ export async function POST(req: NextRequest) {
     let success: Resp | null = null;
     const r = await mutateDb((db) => {
       if (db.users[id]) return { status: 409, body: { error: "이미 존재하는 아이디예요" } };
+      /* v1.0.16 보안 — 관리자 예약 ID 선점 차단. 종전엔 db.users에 그 id가 없으면
+       *  ADMIN_USERS 목록의 아이디로 가입하는 것만으로 role=admin을 받았다
+       *  (계정이 삭제·개명된 빈틈에서 권한 상승). 관리자가 이미 하나라도 있으면
+       *  예약 ID 가입을 거부하고, 관리자가 전무한 최초 부트스트랩에서만 허용한다. */
+      const reserved = ADMIN_USERS.includes(id);
+      if (reserved && Object.values(db.users).some((u) => u.role === "admin")) {
+        return { status: 403, body: { error: "사용할 수 없는 아이디예요" } };
+      }
       const salt = randomBytes(16).toString("hex");
-      const role = ADMIN_USERS.includes(id) ? "admin" : "user";
+      const role = reserved ? "admin" : "user";
       const user = { id, name, provider: "local", salt, hash: hashPw(pw, salt), createdAt: Date.now(), role };
       db.users[id] = user;
       const { token, cookie } = issueToken(db, user);

@@ -101,6 +101,9 @@ download/*.apk.part*
 # vc148 — IPA도 GitHub 100MB 제한 대상 (릴리스 자산으로만 배포, 저장소 미추적)
 download/*.ipa
 download/*.aab
+# v1.0.16 — mapping.txt도 릴리스 자산으로만 배포한다 (28.9MB 정본 1벌이 저장소에 남아 있었다).
+#  CI가 매 빌드마다 SERTZ-vc<CODE>-mapping.txt로 생성해 릴리스에 업로드한다(android-build.yml).
+download/*-mapping.txt
 
 # platform sandbox dirs
 tool-results/

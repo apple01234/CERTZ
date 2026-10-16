@@ -182,6 +182,9 @@ export class WorldScene extends Phaser.Scene {
   private burstEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   // F4: 데미지 텍스트 풀
   private dmgPool: Phaser.GameObjects.Text[] = [];
+  /** v1.0.16 — 획득/보상 텍스트 전용 풀. 종전엔 데미지 풀(12장)을 공유해
+   *  파밍 중 골드 코인 2~5개가 먼저 굶기면 데미지 숫자부터 표시되지 않았다. */
+  private pickPool: Phaser.GameObjects.Text[] = [];
   /* v1.4.16 — 원소 반응명 텍스트 3장 고정 풀 (폭발/결빙/융해/소멸) */
   private reactTextPool: Phaser.GameObjects.Text[] = [];
   // F4: 참격 이펙트 풀 (외부 에셋 애니 스프라이트)
@@ -1986,6 +1989,11 @@ export class WorldScene extends Phaser.Scene {
       .setAlpha(0.5);
   }
 
+  /** v1.0.16 — 2.5D y-depth. 종전엔 tickPersp 안에서 틱마다 화살표 함수를 새로 만들었다. */
+  private perspDepthOf(y: number, h: number): number {
+    return 9 + Phaser.Math.Clamp(y / h, 0, 1);
+  }
+
   /** 매 프레임(80ms 스로틀) — y-depth 정렬 + 안개 크기 유지 */
   private tickPersp(dt: number) {
     this.perspDepthAcc += dt;
@@ -1993,11 +2001,10 @@ export class WorldScene extends Phaser.Scene {
     this.perspDepthAcc = 0;
     if (!this.perspOn) return;
     const h = Math.max(1, this.stageH);
-    const dOf = (y: number) => 9 + Phaser.Math.Clamp(y / h, 0, 1);
-    if (this.player?.active) this.player.setDepth(dOf(this.player.y));
-    for (const e of this.enemies) if (e.active) e.setDepth(dOf(e.y));
-    if (this.boss?.active) this.boss.setDepth(dOf(this.boss.y));
-    for (const r of this.remotes.values()) if (r.sp?.active) r.sp.setDepth(dOf(r.sp.y));
+    if (this.player?.active) this.player.setDepth(this.perspDepthOf(this.player.y, h));
+    for (const e of this.enemies) if (e.active) e.setDepth(this.perspDepthOf(e.y, h));
+    if (this.boss?.active) this.boss.setDepth(this.perspDepthOf(this.boss.y, h));
+    for (const r of this.remotes.values()) if (r.sp?.active) r.sp.setDepth(this.perspDepthOf(r.sp.y, h));
     if (this.perspFog?.scene) {
       const cam = this.cameras.main;
       this.perspFog.setX(cam.width / 2);
@@ -3289,6 +3296,8 @@ export class WorldScene extends Phaser.Scene {
     //   (파괴된 텍스트 재사용 → setText 크래시 원인)
     for (const d of this.dmgPool) d.destroy();
     this.dmgPool = [];
+    for (const p of this.pickPool) p.destroy();
+    this.pickPool = [];
     for (const s of this.slashPool) s.destroy();
     this.slashPool = [];
     for (const s of this.starPool) s.destroy();
@@ -3380,6 +3389,23 @@ export class WorldScene extends Phaser.Scene {
         .setActive(false)
         .setVisible(false);
       this.dmgPool.push(t);
+    }
+
+    /* v1.0.16 — 획득/보상 텍스트 8장 전용 풀 (데미지 풀과 분리해 서로 굶기지 않게) */
+    for (let i = 0; i < 8; i++) {
+      const pt = this.add
+        .text(0, 0, "", {
+          fontFamily: "Galmuri11, sans-serif",
+          fontSize: "22px",
+          color: "#ffffff",
+          stroke: "#1a1020",
+          strokeThickness: 4,
+          fontStyle: "bold",
+        })
+        .setDepth(56)
+        .setActive(false)
+        .setVisible(false);
+      this.pickPool.push(pt);
     }
 
     /* v1.4.16 — 원소 반응명 텍스트 풀 (반응 연출 전용 — 데미지 풀과 분리해 겹침 방지) */
@@ -4255,9 +4281,9 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** 획득/보상 안내 텍스트 — 데미지 텍스트 풀 재사용 (F4 규칙) */
+  /** 획득/보상 안내 텍스트 — v1.0.16: 전용 풀 사용 (데미지 숫자와 서로 굶기지 않는다) */
   spawnPickupText(x: number, y: number, msg: string, color: string) {
-    const t = this.dmgPool.find((d) => d.scene && !d.active);
+    const t = this.pickPool.find((d) => d.scene && !d.active);
     if (!t) return;
     t.setText(msg).setColor(color);
     t.setPosition(x, y)

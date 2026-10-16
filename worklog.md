@@ -4393,3 +4393,21 @@ Stage Summary:
 - **미완(운영 조치 필수)**: ① 관리자 비밀번호 회전 ② `db.tokens` 전량 삭제(유출 스냅샷 세션 무효화) ③ **릴리스 서명 키 로테이션** — `android/sertz-release.keystore`가 public 저장소에 추적 중이고 `build.gradle:33-39`에 비밀번호가 평문이며 `.gitignore:83`의 `!` 부정 규칙이 예외를 만든 상태다. CI가 이 파일을 직접 읽으므로(`build.gradle:35`) 추적 해제만 하면 APK 빌드가 깨진다 — secret 이전이 선행되어야 한다 ④ git 이력 재작성(`filter-repo`)
 - 미착수(기획서 Phase 2~4): 거래소 구매 잔액 검증 · 채팅/파티 세션 인증 · 영수증 서버 검증 · 구매 확인 시트 · 수량 상한 단일화 · 스타포스 확률 공시 · 텍스트 풀 분리 · 접근성(터치 44px·대비·모달 시맨틱)
 - 원칙 준수: 밸런스 수치 무변경(유저 피드백 없이 손대면 콘텐츠가 죽는다) · 새 이펙트 무추가 · `WorldScene.ts`/`Panels.tsx` 분할 미실행(동작 위험 대비 이득 낮음)
+---
+Task ID: improve-2-2026-10-16 (v1.0.15 / vc157)
+Agent: DSH (보완 세션 2차 — 보안 P1 + 최적화 + 저장소 정리)
+
+Task: 기획서 Phase 1 잔여(보안) · Phase 3(최적화) · Phase 4(정리) 중 저위험 항목 구현
+
+Work Log:
+- [보안·권한 상승] register 라우트가 관리자 예약 ID로 가입하면 role=admin을 부여하던 경로 차단 — db.users에 그 id가 없기만 하면 누구나 `admin`을 선점할 수 있었다(계정 개명·삭제 시 빈틈). 관리자가 이미 하나라도 있으면 예약 ID 가입을 403으로 거부하고, 관리자 전무한 최초 부트스트랩에서만 허용(`auth/register/route.ts`). mutateDb 안에서 판정하므로 동시 가입 경합도 sha 잠금이 직렬화한다
+- [최적화] `tickPersp`가 80ms마다 화살표 함수 `dOf`를 새로 생성하던 것을 `perspDepthOf()` 메서드로 승격 — 4개 호출부 전부 교체(`WorldScene.ts`)
+- [최적화·가시성] 획득/보상 텍스트가 데미지 텍스트와 **같은 12장 풀**을 공유하던 문제 — 골드는 코인 2~5개로 분산 드롭이라 파밍 중 데미지 숫자가 먼저 굶었다. `pickPool` 8장을 따로 만들어 `spawnPickupText` 45개 호출부가 전용 풀을 쓰게 분리. 풀 리셋(씬 재시작 누적 방지)에도 포함(`WorldScene.ts`)
+- [저장소] `download/SERTZ-vc151-mapping.txt` 28.9MB 추적 해제 + `.gitignore`에 `download/*-mapping.txt` 추가. 현재 매핑은 CI가 매 빌드 생성해 릴리스 자산으로만 배포한다(android-build.yml:134). 파일은 디스크에 보존, `download/README.md` 폴더 설명도 갱신
+- [정합성] `package-lock.json` version 1.0.11 → 1.0.15 (bump 스크립트 7종이 package.json만 갱신해 생긴 4버전 표류)
+- [검증] `npx tsc --noEmit` — 기존 오류 1건(`src/lib/db.ts` Prisma 사문 코드)만, 신규 0건. `npx eslint <변경 2파일> --max-warnings 0` exit 0. `git status --ignored`로 mapping·.env·db 무시 확인
+
+Stage Summary:
+- 산출물: 권한 상승 차단 1건 + 최적화 2건 + 저장소 28.9MB 감축 + lockfile 정합 1건
+- 검증 한계: 실제 브라우저/기기에서 프레임 변화를 측정하지 않았다(프로파일러 미실행). 이번 최적화는 "할당 제거"가 근거이며 FPS 개선폭은 미측정
+- 여전히 미착수: 거래소 잔액 검증(S5, 골드가 클라 권위라 서버 장부 신설이 선행돼야 함) · 채팅/파티 인증(S8, 비로그인 유저 플레이를 막을 수 있어 정책 판단 필요) · 영수증 서버 검증(B3) · 접근성(F1~F4)
