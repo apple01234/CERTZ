@@ -16,7 +16,7 @@ import {
   type RelayPartyFile, type RelayParty, type RelayPartyMember,
 } from "@/lib/relaydb";
 /* v1.4.27-w1 픽스 — audit/json/options/rateLimit은 sapi 소속 (relaydb 오 import로 Vercel 빌드 실패했던 원인) */
-import { audit, json, options, rateLimit } from "@/lib/sapi";
+import { ADMIN_USERS, audit, json, options, rateLimit } from "@/lib/sapi";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -75,6 +75,11 @@ export async function POST(req: NextRequest) {
     const cid = clean(b.cid, 64);
     if (!/^[A-Za-z0-9_-]{6,64}$/.test(cid)) return json(req, 400, { error: "잘못된 요청이에요" });
     const name = clean(b.name, 8) || "이름없음";
+    /* v1.0.16 보안 — 관리자 사칭 차단. 파티 명단의 이름표도 클라이언트 입력이라
+     *  채팅과 같은 경로로 운영자 사칭이 가능했다(채팅 라우트와 동일 방침). */
+    if (ADMIN_USERS.includes(name.toLowerCase())) {
+      return json(req, 403, { error: "사용할 수 없는 이름이에요" });
+    }
     const lv = Math.max(1, Math.min(9999, Number(b.lv) || 1));
     const cls = clean(b.cls, 16);
     const code = clean(b.code, 8).toUpperCase();

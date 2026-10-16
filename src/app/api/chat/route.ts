@@ -13,7 +13,7 @@ import {
   type RelayChatFile, type RelayChatMsg,
 } from "@/lib/relaydb";
 /* v1.4.27-w1 픽스 — audit/json/options/rateLimit은 sapi 소속 (relaydb 오 import로 Vercel 빌드 실패했던 원인) */
-import { audit, json, options, rateLimit } from "@/lib/sapi";
+import { ADMIN_USERS, audit, json, options, rateLimit } from "@/lib/sapi";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -47,7 +47,14 @@ export async function POST(req: NextRequest) {
       return json(req, 429, { error: "채팅을 너무 빠르게 보내고 있어요" });
     }
     const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-    const name = clean(b.name, 8);
+    /* v1.0.16 보안 — 관리자 사칭 차단. 종전엔 name이 완전한 클라이언트 입력이라
+     *  누구나 관리자 닉네임으로 채팅할 수 있었다(register가 name 예약어를 막아도
+     *  이 라우트는 그 검증을 거치지 않는다). 예약 이름은 거부한다. */
+    const rawName = clean(b.name, 8);
+    if (rawName && ADMIN_USERS.includes(rawName.toLowerCase())) {
+      return json(req, 403, { error: "사용할 수 없는 이름이에요" });
+    }
+    const name = rawName;
     const text = clean(b.text, 80);
     const cid = clean(b.cid, 64);
     const cls = clean(b.cls, 16);

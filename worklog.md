@@ -4514,3 +4514,22 @@ Stage Summary:
 - 산출물: O7 최적화 1건 + S5 보류 근거 확정
 - 세션 누적(1~8차) 커밋 8건: 보안 5 · BM 2 · 최적화 5 · 게임플레이 버그 1 · 저장소 28.9MB · 문서/CS 4 · 광고 UX 1
 - **남은 항목 대부분이 사용자 판단이나 실기기 검증을 요구한다** — 코드만으로 안전하게 진행할 수 있는 항목이 줄었다
+---
+Task ID: improve-9-2026-10-16 (v1.0.15 / vc157)
+Agent: DSH (보완 세션 9차 — R4 타입 게이트 복구 + S8 부분 차단)
+
+Task: 사용자 지시 2건 — R4(ignoreBuildErrors 제거) · S8(채팅·파티 인증)
+
+Work Log:
+- [R4 원인] `next.config.ts:18,23`의 `typescript.ignoreBuildErrors: true`가 2곳. 유일한 차단 요인은 `src/lib/db.ts`가 `@prisma/client`의 `PrismaClient`를 못 찾는 것 — Prisma Client 미생성이었다(사문 코드가 아니라 **생성 누락**이었음)
+- [R4 해결] `npx prisma generate`로 해소(생성물은 node_modules 안이라 커밋 불필요). 재발 방지를 위해 **빌드 파이프라인에 선행 배선**: `package.json`의 build/build:next + 워크플로 3종(android/ios/exe)의 `npm ci` 직후에 `prisma generate` 단계 추가. 그 후 `ignoreBuildErrors` 2곳 제거
+- [R4 검증] **정적 export 빌드 실측** — CI와 동일하게 서버리스 라우트 7종+middleware를 `.apk-hold`로 격리하고 `APK_EXPORT=1 npx next build` 실행 → **exit 0**, `Running TypeScript` 통과, 정적 페이지 7/7 생성. 라우트 복원까지 확인. `tsc --noEmit`도 **exit 0**(세션 최초로 기존 오류 0)
+- [S8 범위 판단] 채팅·파티의 `name`이 완전한 클라이언트 입력이라 관리자 닉네임 사칭이 가능했다(register가 이름 예약어를 막아도 이 두 라우트는 그 검증을 거치지 않음). **관리자 예약 이름을 403으로 차단**(채팅·파티 공통, `ADMIN_USERS` 재사용)
+- [S8 미해결·문서화] `party`의 `leave`가 클라이언트 `cid`를 그대로 믿어 **남의 파티 강퇴**가 가능하다. 세션 강제는 쿠키가 필요한데 클라 fetch에 `credentials`가 없어 APK→Vercel 교차 오리진에서 쿠키가 실리지 않는다(`relay.ts:88,114`) → **인증을 강제하면 APK 채팅·파티가 즉시 죽는다.** `cid`를 세션 파생값으로 바꾸면 기존 파티가 전부 깨진다. 근본 수정 순서(①credentials+CORS ②cid 마이그레이션 ③본인만 조작)를 기획서 부록 B에 명시하고 이번엔 사칭 차단만 적용
+- [검증] `npx tsc --noEmit` exit 0 · `npx eslint <변경 4파일> --max-warnings 0` exit 0
+
+Stage Summary:
+- 산출물: 타입 게이트 복구(빌드 파이프라인 배선 포함) + 관리자 사칭 차단
+- **R4는 실측 검증됨** — 이제 CI가 타입 오류를 통과시키지 않는다
+- **S8은 부분 해결** — 사칭은 막았으나 cid 위조는 남았다. 무리하게 고치면 APK 파티가 죽으므로 순서를 문서화하고 보류
+- 세션 누적 커밋 9건(미push). push 전 Android Secret 4종 등록 필요(669c386)

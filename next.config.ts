@@ -15,12 +15,13 @@ const nextConfig: NextConfig = isStaticExport
       output: "export",
       ...(isApkExport ? { distDir: ".next-apk" } : {}),
       images: { unoptimized: true },
-      typescript: { ignoreBuildErrors: true },
+      /* v1.0.16 — typescript.ignoreBuildErrors 제거. CI가 타입 오류를 통과시키고 있었다.
+       *  유일한 차단 요인이던 src/lib/db.ts(Prisma Client 미생성)는 `prisma generate`로 해소되고,
+       *  빌드 파이프라인(워크플로 3종 + package.json build)이 이를 선행하도록 배선했다. */
       reactStrictMode: false,
     }
   : {
       output: "standalone",
-      typescript: { ignoreBuildErrors: true },
       reactStrictMode: false,
       /* v4.1.6 성능 최적화 — gzip 압축 명시 (기본값 true 의존 제거).
        *  HTML/JS/CSS/JSON/SVG 등 텍스트 응답에만 적용되며 이미지·오디오는 건너뛴다. */

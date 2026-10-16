@@ -55,6 +55,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # v1.0.16 — ignoreBuildErrors 제거로 Prisma Client 부재가 곧 타입 오류가 된다.
+      #  next build 전에 반드시 생성한다(생성물은 node_modules 안이라 커밋되지 않는다).
+      - name: Prisma generate
+        run: npx prisma generate
+
       - name: Static export (APK_EXPORT=1) — 서버리스 라우트 7개+middleware 격리
         env:
           NODE_OPTIONS: --max-old-space-size=4096
