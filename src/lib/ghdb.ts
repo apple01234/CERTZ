@@ -65,39 +65,87 @@ function ghHeaders(extra: Record<string, string> = {}): Record<string, string> {
   };
 }
 
-/* ---------------- SZBK1 암복호화 (accounts/index.js와 바이트 호환) ---------------- */
-/* v1.0.15 보안 경고 — 기본 상수 키로 동작 중이면 1회 경고한다.
- *  이 상수는 소스에 있으므로, 백업 DB가 공개 저장소에 커밋되면 누구나 복호화할 수 있다.
- *  운영 환경에는 반드시 SERTZ_BACKUP_KEY를 설정한다(회전 시 기존 백업도 재암호화 필요). */
+/* ---------------- SZBK1 암복호화 (accounts/index.js와 바이트 호환) ----------------
+ * v1.0.15 — 키 회전(rotation) 지원.
+ *  · 암호화는 항상 현재 키(SERTZ_BACKUP_KEY, 미설정 시 기본 상수)로만 한다.
+ *  · 복호화는 현재 키 → 이전 키(SERTZ_BACKUP_KEY_PREV) 순으로 시도한다. 이전 키는 **읽기 전용**이다.
+ *  이 구조 덕분에 키 교체가 무중단·순서무관이 된다:
+ *    ① 새 코드 배포 → ② SERTZ_BACKUP_KEY=새키 + _PREV=기존키 설정 → ③ 첫 쓰기 때 새 키로 자동 재암호화
+ *    → ④ 쓰기가 한 번 지나간 뒤 _PREV 제거.
+ *  종전엔 순서를 틀리면(키 먼저 교체) 기존 백업을 못 읽어 로그인·거래소·랭킹이 전부 500이 됐다.
+ *  기본 상수는 소스에 공개돼 있으므로, 백업 DB가 공개 저장소에 커밋되면 누구나 복호화할 수 있다.
+ *  운영 환경에는 반드시 SERTZ_BACKUP_KEY를 설정한다. */
+const DEFAULT_KEY_SECRET = "sertz-accounts-backup::v1";
+
 let warnedDefaultKey = false;
-function backupKey(): Buffer {
+let warnedPrevKey = false;
+
+function deriveKey(secret: string): Buffer {
+  return createHash("sha256").update(secret).digest();
+}
+
+/** 암호화에 쓰는 현재 키. 미설정이면 소스에 공개된 기본 상수로 폴백하고 1회 경고한다. */
+function currentKeySecret(): string {
   const env = process.env.SERTZ_BACKUP_KEY;
-  if (!env && !warnedDefaultKey) {
+  if (env) return env;
+  if (!warnedDefaultKey) {
     warnedDefaultKey = true;
     console.warn(
       "[SERTZ-db] 경고: SERTZ_BACKUP_KEY 미설정 — 소스에 공개된 기본 키로 계정 백업을 암복호화하고 있습니다. " +
         "운영 환경에서는 반드시 별도 키를 설정하세요."
     );
   }
-  return createHash("sha256").update(env || "sertz-accounts-backup::v1").digest();
+  return DEFAULT_KEY_SECRET;
 }
+
+/** 복호화에 시도할 키 목록 — 현재 키가 먼저, 이전 키가 다음(읽기 전용). */
+function decryptSecrets(): string[] {
+  const current = currentKeySecret();
+  const prev = (process.env.SERTZ_BACKUP_KEY_PREV || "").trim();
+  return prev && prev !== current ? [current, prev] : [current];
+}
+
+function backupKey(): Buffer {
+  return deriveKey(currentKeySecret());
+}
+
 function backupEncrypt(json: string): string {
   const iv = randomBytes(12);
   const c = createCipheriv("aes-256-gcm", backupKey(), iv);
   const enc = Buffer.concat([c.update(json, "utf8"), c.final()]);
   return Buffer.concat([Buffer.from("SZBK1"), iv, c.getAuthTag(), enc]).toString("base64");
 }
+
+/** SZBK1 컨테이너를 분해해 키 후보를 차례로 시도한다. 모두 실패하면 null. */
 function backupDecrypt(b64: string): string | null {
+  let raw: Buffer;
   try {
-    const raw = Buffer.from(String(b64), "base64");
-    if (raw.length < 33 || raw.subarray(0, 5).toString() !== "SZBK1") return null;
-    const iv = raw.subarray(5, 17), tag = raw.subarray(17, 33), data = raw.subarray(33);
-    const d = createDecipheriv("aes-256-gcm", backupKey(), iv);
-    d.setAuthTag(tag);
-    return Buffer.concat([d.update(data), d.final()]).toString("utf8");
+    raw = Buffer.from(String(b64), "base64");
   } catch {
     return null;
   }
+  if (raw.length < 33 || raw.subarray(0, 5).toString() !== "SZBK1") return null;
+  const iv = raw.subarray(5, 17), tag = raw.subarray(17, 33), data = raw.subarray(33);
+
+  const secrets = decryptSecrets();
+  for (let i = 0; i < secrets.length; i++) {
+    try {
+      const d = createDecipheriv("aes-256-gcm", deriveKey(secrets[i]), iv);
+      d.setAuthTag(tag);
+      const json = Buffer.concat([d.update(data), d.final()]).toString("utf8");
+      /* i > 0 = 이전 키로 성공 → 첫 쓰기에서 새 키로 재암호화된다 */
+      if (i > 0 && !warnedPrevKey) {
+        warnedPrevKey = true;
+        console.warn(
+          "[SERTZ-db] 이전 키(SERTZ_BACKUP_KEY_PREV)로 복호화했습니다 — 첫 쓰기에서 새 키로 재암호화됩니다. 이후 _PREV를 제거하세요."
+        );
+      }
+      return json;
+    } catch {
+      /* 이 키로는 복호화 불가 — 다음 후보로 */
+    }
+  }
+  return null;
 }
 
 /* ---------------- GitHub Contents API ---------------- */

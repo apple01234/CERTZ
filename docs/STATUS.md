@@ -24,11 +24,16 @@
 
 ## 다음 할 일 (우선순위 순)
 
-1. **[보안·운영] 계정 백업 키 회전 — 코드만으로는 끝나지 않는다.**
-   `SERTZ_BACKUP_KEY`를 새 값으로 설정한 뒤 기존 백업을 재암호화해야 한다. 순서를 지킬 것:
-   ① Vercel(및 FC 서버)에 `SERTZ_BACKUP_KEY=<새 값>` 등록 → ② 새 키로 백업 재암호화
-   → ③ 그 다음 `db-backup/accounts.enc`를 **히스토리에서도** 제거(현재는 HEAD에서만 빠졌고 과거 커밋에 남아 있다).
-   키를 먼저 바꾸면 기존 백업을 못 읽어 전 계정이 초기화되므로 순서를 바꾸지 말 것.
+1. **[보안·운영] 계정 백업 키 회전 — dual-key 지원이 들어가 무중단·순서무관이 됐다.**
+   `ghdb.ts`·`accounts/index.js`가 복호화를 **현재 키 → 이전 키(_PREV)** 순으로 시도하고,
+   암호화는 항상 현재 키로만 한다. 그래서 첫 쓰기가 지나가면 백업이 자동으로 새 키로 재암호화된다.
+   ① 이 커밋을 배포(코드가 먼저다 — 없으면 아래 ②에서 즉시 500이 난다)
+   ② Vercel + FC 서버에 `SERTZ_BACKUP_KEY=<새 값>` **과** `SERTZ_BACKUP_KEY_PREV=sertz-accounts-backup::v1` 등록
+   ③ 로그인/세이브 등 쓰기 1회 발생 → 로그에 "이전 키(_PREV)로 복호화했습니다" 경고 1회가 뜨면 재암호화 완료 신호
+   ④ 그 뒤 `SERTZ_BACKUP_KEY_PREV` 제거 (이 시점부터 옛 기본키로는 아무것도 못 읽는다)
+   ⑤ 마지막으로 `db-backup/accounts.enc`를 **히스토리에서도** 제거(현재는 HEAD에서만 빠졌고 과거 커밋에 남아 있다)
+   검증: `node scripts/verify_dbkey_rotation.mjs` (컨테이너 규약 + 두 파일 배선 확인)
+   주의: 운영 스크립트 `scripts/db_*.js` 7종은 아직 키를 상수로 고정하고 있어 회전 후 따로 손봐야 한다.
 2. APK/AAB 빌드 (`scripts/build_apk.sh` — JAVA_HOME=/home/z/jdk) + 이번 정합성 수정분 릴리스 반영
 3. README/가이드의 "SERTZ" 표기와 디렉터리명 `CERTZ` 불일치 정리(문서 혼선)
 4. (잔여) 클라우드 세이브 per-캐릭터 승격, 파티 초대(코드 참여만 존재)

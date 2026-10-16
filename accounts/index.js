@@ -201,8 +201,33 @@ function ghRepo() {
   } catch { /* 무시 */ }
   return "apple01234/CERTZ";
 }
+/* v1.0.15 — 키 회전 지원 (ghdb.ts와 동일 규약).
+ *  암호화는 현재 키(SERTZ_BACKUP_KEY, 미설정 시 기본 상수)로만.
+ *  복호화는 현재 키 → 이전 키(SERTZ_BACKUP_KEY_PREV, 읽기 전용) 순.
+ *  덕분에 키 교체가 무중단·순서무관이 된다(첫 쓰기에서 새 키로 자동 재암호화). */
+const DEFAULT_KEY_SECRET = "sertz-accounts-backup::v1";
+let warnedDefaultKey = false;
+let warnedPrevKey = false;
+
+function deriveKey(secret) {
+  return createHash("sha256").update(secret).digest();
+}
+function currentKeySecret() {
+  const env = process.env.SERTZ_BACKUP_KEY;
+  if (env) return env;
+  if (!warnedDefaultKey) {
+    warnedDefaultKey = true;
+    console.warn("[SERTZ-accounts] 경고: SERTZ_BACKUP_KEY 미설정 — 소스에 공개된 기본 키로 계정 백업을 암복호화하고 있습니다.");
+  }
+  return DEFAULT_KEY_SECRET;
+}
+function decryptSecrets() {
+  const current = currentKeySecret();
+  const prev = (process.env.SERTZ_BACKUP_KEY_PREV || "").trim();
+  return prev && prev !== current ? [current, prev] : [current];
+}
 function backupKey() {
-  return createHash("sha256").update(process.env.SERTZ_BACKUP_KEY || "sertz-accounts-backup::v1").digest();
+  return deriveKey(currentKeySecret());
 }
 function backupEncrypt(json) {
   const iv = randomBytes(12);
@@ -211,14 +236,25 @@ function backupEncrypt(json) {
   return Buffer.concat([Buffer.from("SZBK1"), iv, c.getAuthTag(), enc]).toString("base64");
 }
 function backupDecrypt(b64) {
+  let raw;
   try {
-    const raw = Buffer.from(String(b64), "base64");
-    if (raw.length < 33 || raw.subarray(0, 5).toString() !== "SZBK1") return null;
-    const iv = raw.subarray(5, 17), tag = raw.subarray(17, 33), data = raw.subarray(33);
-    const d = createDecipheriv("aes-256-gcm", backupKey(), iv);
-    d.setAuthTag(tag);
-    return Buffer.concat([d.update(data), d.final()]).toString("utf8");
-  } catch { /* 변조/키 불일치 — GCM 인증 실패는 throw라서 여기서 흡수 */ }
+    raw = Buffer.from(String(b64), "base64");
+  } catch { return null; }
+  if (raw.length < 33 || raw.subarray(0, 5).toString() !== "SZBK1") return null;
+  const iv = raw.subarray(5, 17), tag = raw.subarray(17, 33), data = raw.subarray(33);
+  const secrets = decryptSecrets();
+  for (let i = 0; i < secrets.length; i++) {
+    try {
+      const d = createDecipheriv("aes-256-gcm", deriveKey(secrets[i]), iv);
+      d.setAuthTag(tag);
+      const json = Buffer.concat([d.update(data), d.final()]).toString("utf8");
+      if (i > 0 && !warnedPrevKey) {
+        warnedPrevKey = true;
+        console.warn("[SERTZ-accounts] 이전 키(_PREV)로 복호화했습니다 — 첫 쓰기에서 새 키로 재암호화됩니다. 이후 _PREV를 제거하세요.");
+      }
+      return json;
+    } catch { /* 이 키로는 실패 — 다음 후보 (GCM 인증 실패는 throw라 여기서 흡수) */ }
+  }
   return null;
 }
 async function ghGetFile() {
