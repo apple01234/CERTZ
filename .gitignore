@@ -80,7 +80,11 @@ android/local.properties
 android/capacitor-cordova-android-plugins
 android/app/src/main/assets
 *.keystore
-!android/sertz-release.keystore
+*.jks
+# v1.0.16 보안 — 서명 키·비밀번호는 저장소에 두지 않는다.
+#  종전 `!android/sertz-release.keystore` 부정 규칙이 커밋을 허용하고 있었다(public 저장소에 키 노출).
+#  로컬 빌드: android/keystore.properties (템플릿 keystore.properties.example) · CI: GitHub Secrets
+android/keystore.properties
 tool-results/
 
 tmp/

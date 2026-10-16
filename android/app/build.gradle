@@ -30,12 +30,28 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    /* v1.0.16 보안 — 서명 정보를 소스에서 제거한다.
+     *  종전엔 공개 저장소에 키스토어 파일과 비밀번호 평문이 함께 커밋돼 있었다(누구나 같은 키로
+     *  서명한 APK를 만들어 기존 설치본을 업데이트할 수 있는 상태).
+     *  우선순위: ① 환경변수(GitHub Actions Secrets / 로컬 셸) ② android/keystore.properties(gitignore)
+     *  템플릿: android/keystore.properties.example
+     *  값이 없으면 경고만 남기고 진행한다 — debug 빌드를 막지 않기 위해서다. release 서명에서 실패한다. */
     signingConfigs {
         release {
-            storeFile file('../sertz-release.keystore')
-            storePassword 'sertz2020'
-            keyAlias 'sertz'
-            keyPassword 'sertz2020'
+            def kp = new Properties()
+            def kpFile = rootProject.file('keystore.properties')
+            if (kpFile.exists()) kpFile.withInputStream { kp.load(it) }
+            def envOr = { String envKey, String propKey -> System.getenv(envKey) ?: kp.getProperty(propKey) }
+            def storePw = envOr('SERTZ_KEYSTORE_PASSWORD', 'storePassword')
+            def keyPw = envOr('SERTZ_KEY_PASSWORD', 'keyPassword')
+            if (!storePw || !keyPw) {
+                logger.lifecycle('[SERTZ] 릴리스 서명 정보 없음 — SERTZ_KEYSTORE_PASSWORD·SERTZ_KEY_PASSWORD ' +
+                    '환경변수 또는 android/keystore.properties 를 설정하세요 (android/keystore.properties.example 참고).')
+            }
+            storeFile file(envOr('SERTZ_KEYSTORE_PATH', 'storeFile') ?: '../sertz-release.keystore')
+            storePassword storePw
+            keyAlias envOr('SERTZ_KEY_ALIAS', 'keyAlias') ?: 'sertz'
+            keyPassword keyPw
         }
     }
     buildTypes {

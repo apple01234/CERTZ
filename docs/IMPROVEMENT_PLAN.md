@@ -42,7 +42,7 @@
 
 | ID | 문제 | 근거 | 조치 |
 |---|---|---|---|
-| **S1** | **릴리스 서명 키 + 비밀번호가 public 저장소에 커밋됨.** 이 키로 Play 업로드가 가능하다 | `android/sertz-release.keystore` 추적 중, `android/app/build.gradle:33-39` 평문, `.gitignore:82-83`의 `!` 부정 규칙이 의도적 예외 | 추적 해제 + CI secret 분리 + **키 로테이션**(운영) |
+| **S1** | **릴리스 서명 키 + 비밀번호가 public 저장소에 커밋됨.** 이 키로 Play 업로드가 가능하다 | `android/sertz-release.keystore` 추적 중, `android/app/build.gradle:33-39` 평문, `.gitignore:82-83`의 `!` 부정 규칙이 의도적 예외 | ✅ **코드·CI 이전 완료**(추적 해제 · 평문 제거 · build.gradle이 env/properties 참조 · CI가 Secret에서 복원) / ❌ **키 로테이션은 운영 조치** |
 | **S2** | **암호화 계정 DB가 git 이력에 잔존 + 복호화 키가 소스에 공개.** 세션 토큰이 DB에 원문 저장이라 복호화만으로 세션 탈취 가능 | `db-backup/accounts.enc` 이력 164커밋, `ghdb.ts:78`, `accounts/index.js:208` | 키 회전(완료) + **`db.tokens` 전량 삭제** + 이력 정리(운영) |
 | **S3** | **관리자 비밀번호 평문 노출** — 이력 `.env`, `scripts/e2e_v149.js:25`, `scripts/release_v1413.py:61`, `server.js:10`의 값이 서로 동일함을 비교 검증 | 위 4곳 | 비밀번호 회전 + 소스/스크립트/worklog에서 제거 |
 | **S4** | 세션 토큰을 DB에 **원문 저장**, TTL 30일, 3중 추출(Bearer/쿠키/`?token=`) | `sapi.ts:117-119,130-138,86-96` | 해시 저장 + TTL 단축 + 쿼리 토큰 제거 |
@@ -247,6 +247,8 @@ AGENTS.md 철칙: **"스킬에만 화려한 이펙트. 기본공격·적 처치 
 | 4 | R7 lockfile 버전 정합 | ✅ |
 | 4 | R3 EXE 릴리스 태그 동적화 | ✅ |
 | 4 | R4 `ignoreBuildErrors` 제거 | ⏸ `src/lib/db.ts`(미사용 Prisma 사문)가 유일한 차단 요인 |
+| 4 | **S1 서명 키 CI Secret 이전** | ✅ 추적 해제 · 평문 제거 · env/properties 참조 · CI Secret 복원 단계 |
+| 4 | S1 키 **로테이션** | ❌ 운영 조치(신규 키 생성 + Play 앱 서명 전환) |
 | 6 | F5 광고 실패 사유 분기 | ✅ 오프라인 구분 + 호출부 3곳 공용 헬퍼 |
 | 6 | F5 광고 프리로드 | ⏸ 네이티브 동작 미검증 — 실기기 확인 필요 |
 | 6 | F6 지원센터 결제·환불 FAQ | ✅ |

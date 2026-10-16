@@ -4459,3 +4459,25 @@ Work Log:
 Stage Summary:
 - 산출물: 광고 실패 사유 분기 1건 + 3곳 중복 제거
 - 세션 누적(1~5차) 커밋 5건: 보안 5 · BM 2 · 최적화 4 · 저장소 28.9MB · 문서/CS 4 · 광고 UX 1 — tsc/eslint 전부 통과
+---
+Task ID: improve-6-2026-10-16 (v1.0.15 / vc157)
+Agent: DSH (보완 세션 6차 — 서명 키 CI Secret 이전)
+
+Task: 기획서 S1 — 릴리스 서명 키·비밀번호를 소스와 저장소에서 제거하고 Secret 기반으로 전환
+
+Work Log:
+- [현황] `android/app/build.gradle:35-38`에 키 경로·비밀번호 평문, `.gitignore:83`의 `!android/sertz-release.keystore` 부정 규칙이 커밋을 허용, CI(`android-build.yml`)는 저장소 파일에 의존. 즉 **누구나 같은 키로 서명한 APK를 만들어 기존 설치본을 업데이트할 수 있는 상태**였다
+- [build.gradle] 서명 정보를 소스에서 제거 — 우선순위 ① 환경변수 ② `android/keystore.properties`(gitignore). 값이 없으면 `logger.lifecycle` 경고만 남기고 진행하고 release 서명에서 실패하게 했다(debug 빌드를 막지 않기 위해 — 설정 시점 throw는 모든 gradle 태스크를 죽인다)
+- [CI] `Materialize release keystore from Secrets` 단계를 Gradle 빌드 **직전**에 신설 — `SERTZ_KEYSTORE_BASE64`를 디코드해 `android/sertz-release.keystore`로 복원하고 비밀번호 3종을 `$GITHUB_ENV`로 전달. Secret이 없으면 gradle에 도달하기 전에 `::error::`로 명확히 실패시킨다
+- [gitignore] `!android/sertz-release.keystore` 부정 규칙 삭제 + `*.jks`·`android/keystore.properties` 추가. 키스토어는 `git rm --cached`로 추적만 해제(파일은 디스크 보존)
+- [문서] `android/keystore.properties.example` 신설(로컬 빌드 템플릿) · `PLAY_CONSOLE_v143_등록가이드.txt`의 "저장소에 백업 보관 필수!" 낡은 안내를 Secret 보관 방식으로 정정 · 워크플로 상단 주석 갱신
+- [검증] 워크플로 3종 YAML 파싱 정상 + keystore 단계가 `Gradle assembleRelease` 직전(index 7)에 위치함을 확인. **추적 파일·워크스페이스 전체에서 `sertz2020` 평문 0건**(`git grep` + 파일 스캔)
+- [주의] Gradle 클로저의 기본 인자값은 지원이 불확실해 사용하지 않고 `?:` 폴백으로 작성했다(빌드 전체를 깨뜨릴 위험 회피)
+
+Stage Summary:
+- 산출물: 서명 키 소스 제거 + CI Secret 전환 + 추적 해제 + 로컬 템플릿
+- **사용자 조치 필요(이 커밋을 push하기 전에)**: GitHub 저장소에 Secret 4종 등록 —
+  `SERTZ_KEYSTORE_BASE64`(`base64 -w0 sertz-release.keystore`) · `SERTZ_KEYSTORE_PASSWORD` · `SERTZ_KEY_PASSWORD` · `SERTZ_KEY_ALIAS`.
+  미등록 상태로 push하면 Android 빌드가 의도적으로 실패한다(모호한 gradle 오류 대신 명확한 메시지).
+- **로테이션은 여전히 필요**: 추적 해제는 HEAD에서만 지운다 — 이 키는 git 이력에 영구히 남아 이미 유출로 간주해야 한다. 신규 키 생성 + Play 앱 서명 전환이 본질적 조치
+- 로컬 커밋만(미push) — GitHub CI는 사용자가 push하기 전까지 영향 없다

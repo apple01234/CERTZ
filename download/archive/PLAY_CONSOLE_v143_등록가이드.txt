@@ -19,9 +19,14 @@ SERTZ v1.4.5 — Google Play Console 등록 가이드
 ■ 1. 서명키 등록 (Play App Signing)
 ────────────────────────────────────────────────────────────────
 APK는 아래 릴리스 키스토어로 서명되어 있습니다.
-  파일: android/sertz-release.keystore (저장소에 백업 보관 필수!)
+  파일: android/sertz-release.keystore
   별칭(alias): sertz
   유효기간: 2054-01-15까지
+
+  ⚠ v1.0.16부터 이 파일은 저장소에 두지 않습니다(공개 저장소 노출 이력 있음 — 로테이션 필요).
+     보관: 비밀번호 관리자 + GitHub Actions Secrets 4종(SERTZ_KEYSTORE_BASE64 /
+     SERTZ_KEYSTORE_PASSWORD / SERTZ_KEY_PASSWORD / SERTZ_KEY_ALIAS).
+     로컬 빌드는 android/keystore.properties(템플릿 keystore.properties.example)를 씁니다.
 
 ▶ Play Console 등록 방법:
   1) Play Console → 해당 앱 → 테스트/프로덕션 → 새 버전 만들기
