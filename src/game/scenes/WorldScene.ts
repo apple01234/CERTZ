@@ -183,6 +183,8 @@ export class WorldScene extends Phaser.Scene {
 
   private moveVec = new Phaser.Math.Vector2();
   private touchMove = new Phaser.Math.Vector2();
+  /** v1.0.16 — 장판 넉백 방향 재사용 버퍼 (틱마다 대상 수만큼 Vector2를 만들던 것 제거) */
+  private fieldAwayVec = new Phaser.Math.Vector2();
   private attackQueued = false;
   /** v1.3.1 (#8) — 앱 전환 복귀 자가치유 핸들러 (cleanup에서 해제) */
   private onVisChange: (() => void) | null = null;
@@ -12109,7 +12111,9 @@ export class WorldScene extends Phaser.Scene {
         for (const e of this.getAllTargets()) {
           if (!e.active) continue;
           if (Phaser.Math.Distance.Between(f.x, f.y, e.x, e.y) > f.radius) continue;
-          const away = new Phaser.Math.Vector2(e.x - f.x, e.y - f.y).normalize();
+          /* v1.0.16 — 장판 틱마다 대상 수만큼 Vector2를 새로 만들던 것을 재사용 버퍼로 교체.
+           *  takeDamage가 away를 보관하지 않고 즉시 normalize한 값만 쓰므로 공유해도 안전하다. */
+          const away = this.fieldAwayVec.set(e.x - f.x, e.y - f.y).normalize();
           e.takeDamage(dmgTick, away, 40, false);
           const now = this.time.now;
           if (f.slow) (e as Enemy).applySlow?.(0.45, 1200);
