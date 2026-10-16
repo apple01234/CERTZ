@@ -8911,11 +8911,16 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       const it = ITEMS[v.key as ItemKey];
       if (!it) return;
+      /* v1.0.16 — 일일 특가 단가를 상자/패키지 분기보다 **먼저** 계산한다.
+       *  종전엔 특가 품목이 상자·패키지일 때 패널은 30% 할인가를 표시하고 핸들러는 정가를
+       *  청구해 표시가≠청구가였다 (DAILY_DEAL_POOL에 chest_silver/gold/legend 포함). */
+      const deal = dailyDeals(this.today()).includes(v.key as ItemKey);
+      const unitPay = deal && it.bmPrice ? Math.max(1, Math.round(it.bmPrice * (1 - DAILY_DEAL_OFF))) : undefined;
       /* v4.3.0 — 가챠 상자/패키지: 구매 즉시 개봉·지급 (도파민 즉시성 — 창고 경유 없음).
        *  상자는 CHEST_TABLES 가중치 롤, 패키지는 PACK_CONTENTS 전부 지급. */
       if (v.key.startsWith("chest_") || v.key.startsWith("pack_")) {
         const n = Math.max(1, Math.min(10, Math.floor(v.qty ?? 1)));
-        const cost = (it.bmPrice ?? 0) * n;
+        const cost = (unitPay ?? it.bmPrice ?? 0) * n;
         if (this.player.emerald < cost) {
           EventBus.emit("banner:show", { text: "에메랄드가 부족합니다" });
           return;
@@ -8936,8 +8941,6 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       /* v4.3.0 — 일일 특가: 오늘의 3종은 30% 할인가 (buyBm에 단가 오버라이드) */
-      const deal = dailyDeals(this.today()).includes(v.key as ItemKey);
-      const unitPay = deal && it.bmPrice ? Math.max(1, Math.round(it.bmPrice * (1 - DAILY_DEAL_OFF))) : undefined;
       const qty = Math.max(1, Math.min(99, Math.floor(v.qty ?? 1)));
       const cost = (unitPay ?? it.bmPrice ?? 0) * (it.kind === "consumable" || it.kind === "buff" ? qty : 1);
       const okBuy = this.player.buyBm(v.key as ItemKey, qty, unitPay);

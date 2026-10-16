@@ -91,12 +91,12 @@ jobs:
           cd electron
           npx electron-builder --win nsis --x64
 
-      - name: Attach to GitHub Release (v1.0.9)
+      - name: Attach to GitHub Release (v${{ env.VERSION }})
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view v1.0.9 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create v1.0.9 --title "SERTZ v1.0.9 (vc149)" --notes "피드백 26종 반영 — 캐릭터 복구·거래 수신 수정·HUD 개편·VFX 통합" --repo "$GITHUB_REPOSITORY"
-          gh release upload v1.0.9 "electron/dist/SERTZ-vc${CODE}-setup.exe" --clobber --repo "$GITHUB_REPOSITORY"
+          gh release view "v${VERSION}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "v${VERSION}" --title "SERTZ v${VERSION} (vc${CODE})" --notes "EXE 빌드 자동 첨부 (vc${CODE})" --repo "$GITHUB_REPOSITORY"
+          gh release upload "v${VERSION}" "electron/dist/SERTZ-vc${CODE}-setup.exe" --clobber --repo "$GITHUB_REPOSITORY"
           echo "--- release assets ---"
-          gh release view v1.0.9 --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
+          gh release view "v${VERSION}" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'

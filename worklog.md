@@ -4371,3 +4371,25 @@ Stage Summary:
 - 산출물: 없음(기능 변경 0) — 정합성·보안 수정만. 커밋은 로컬에만 하고 push는 보류(운영 배포 판단 필요)
 - 미완(운영 조치 필요): **계정 백업 키 회전**. 코드만으로는 끝나지 않는다 — ①SERTZ_BACKUP_KEY 설정 → ②기존 백업 재암호화 → ③그 다음 히스토리에서 accounts.enc 제거. 순서를 바꾸면 전 계정 초기화. 히스토리 재작성만으로는 해결되지 않는다(GitHub은 옛 blob을 SHA로 계속 제공하고 포크에도 남는다) — 키 회전이 본질적 조치
 - 남은 정리 후보: 죽은 tests/ 3종(.zscripts 부재로 실행 불가) · mapping.txt 4종 동일 blob ~120MB 중복 · 폰트 이중 추적
+---
+Task ID: improve-2026-10-16 (v1.0.15 / vc157)
+Agent: DSH (보완 세션 — 4개 영역 병렬 감사 + 기획서 + P0/P1 일부 구현)
+
+Task: 게임 보완 (최적화·보안·이펙트·기능·밸런스·BM) — 감사 → 기획서 → 구현
+
+Work Log:
+- [감사] 4개 영역 병렬 분석: 게임 코어(src/game 45,000줄) · 백엔드 보안(api 24라우트) · BM·UI · 빌드/저장소. 결과를 `docs/IMPROVEMENT_PLAN.md`로 통합 (근거는 전부 파일:줄)
+- [스킬 설치] `skills/ponytail`(MIT, lazy senior dev 사다리) · `skills/rea`(reverse-engineer-anything). `.gitignore:151` `/skills/`로 미추적 유지
+- [데이터 손실 차단] cloud-save POST가 `chars` 미포함 요청에서 기존 캐릭터 백업을 통째로 삭제하던 문제 수정 — 미포함이면 기존 chars 보존(`auth/cloud-save/route.ts`)
+- [BM 표시가≠청구가] 일일 특가 품목이 상자·패키지일 때 패널은 30% 할인가를 표시하고 핸들러는 정가를 청구하던 문제 수정 — `deal`/`unitPay` 계산을 상자 분기 **앞으로** 이동(`WorldScene.ts onBmBuy`). DAILY_DEAL_POOL에 chest_silver/gold/legend 포함이 근거
+- [자격증명 제거] `server.js:10` 주석의 관리자 비밀번호 평문 삭제 · `download/archive/출시_체크리스트.txt:19` keystore 비밀번호 평문 삭제
+- [추적 해제] `.env`·`db/custom.db` — public 저장소에 추적 중이었고 `.gitignore`(`.env*` L34, `db/` L139)가 이미 무시 규칙을 갖고 있었으나 추적 파일에는 적용되지 않던 상태. `git rm --cached`로 규칙을 유효화
+- [최적화] `Player.rollDamage`의 최근 6초 피해 로그를 고정 링 버퍼(2048)로 전환 — 매 타격 push+shift의 객체 할당·배열 이동 제거. cap이 6초 창 도달 불가 크기라 합산 결과 동일
+- [CI] `exe-build.yml`이 릴리스 태그를 `v1.0.9`로 하드코딩해 v1.0.15 EXE가 구버전 릴리스에 첨부되던 문제 수정 — build.gradle에서 파싱한 `VERSION`으로 동적 태그
+- [검증] `npx tsc --noEmit` — 기존 오류 1건(`src/lib/db.ts`, Prisma 미생성 사문 코드)만, 신규 0건. `npx eslint <변경 3파일> --max-warnings 0` exit 0. `git status`로 추적 해제 확인(`!! .env`, `!! db/`)
+
+Stage Summary:
+- 산출물: `docs/IMPROVEMENT_PLAN.md`(기획서) + 데이터 손실 차단 1건 + BM 청구 버그 1건 + 자격증명 평문 2건 제거 + 추적 해제 2건 + 최적화 1건 + CI 태그 1건
+- **미완(운영 조치 필수)**: ① 관리자 비밀번호 회전 ② `db.tokens` 전량 삭제(유출 스냅샷 세션 무효화) ③ **릴리스 서명 키 로테이션** — `android/sertz-release.keystore`가 public 저장소에 추적 중이고 `build.gradle:33-39`에 비밀번호가 평문이며 `.gitignore:83`의 `!` 부정 규칙이 예외를 만든 상태다. CI가 이 파일을 직접 읽으므로(`build.gradle:35`) 추적 해제만 하면 APK 빌드가 깨진다 — secret 이전이 선행되어야 한다 ④ git 이력 재작성(`filter-repo`)
+- 미착수(기획서 Phase 2~4): 거래소 구매 잔액 검증 · 채팅/파티 세션 인증 · 영수증 서버 검증 · 구매 확인 시트 · 수량 상한 단일화 · 스타포스 확률 공시 · 텍스트 풀 분리 · 접근성(터치 44px·대비·모달 시맨틱)
+- 원칙 준수: 밸런스 수치 무변경(유저 피드백 없이 손대면 콘텐츠가 죽는다) · 새 이펙트 무추가 · `WorldScene.ts`/`Panels.tsx` 분할 미실행(동작 위험 대비 이득 낮음)

@@ -171,8 +171,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   skill5bCd = 0;
   readonly skill5bMax = 120000;
   /** vc146 (#2) — 영겁전격 "시간 역행" 재현 로그: 최근 6초 rollDamage 합산
-   *  (제2궁극기 중 이터널 전용 — “최근에 입힌 피해가 2배가 되어 재현”의 근거 데이터) */
+   *  (제2궁극기 중 이터널 전용 — “최근에 입힌 피해가 2배가 되어 재현”의 근거 데이터)
+   *  v1.0.16 — 고정 링 버퍼. 매 타격 push+shift(객체 할당 + 배열 이동)를 제거한다.
+   *  cap은 6초 창에서 도달 불가능한 크기(2048 ≈ 341타/초)라 합산 결과는 종전과 동일하다. */
   recentDmgLog: { t: number; v: number }[] = [];
+  private dmgLogIdx = 0;
+  private static readonly DMG_LOG_CAP = 2048;
   readonly skill3Max = 9000;
   readonly skill4Max = 14000;
   get skill3MaxEff(): number {
@@ -4844,10 +4848,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const tierScl = isSkill && !isUlt ? (1 + 0.22 * Math.max(0, this.sTier - 1)) * Player.SKILL_PWR : 1;
     const m = (isSkill ? mult * this.clsBonus.skillMult * fifth * runSkl * tierScl * ultMult : mult) * rage;
     const dmg = Math.round(this.atkTotal * m * (crit ? this.critDmg : 1));
-    /* vc146 (#2) — 시간 역행 로그 적산 (최근 6초 유지 — 이터널 제2궁극기가 재현 배수로 사용) */
+    /* vc146 (#2) — 시간 역행 로그 적산 (최근 6초 유지 — 이터널 제2궁극기가 재현 배수로 사용)
+     *  v1.0.16 — 링 버퍼 기록 (cap 도달 전까지는 growth, 이후 슬롯 재사용 — 할당 0) */
     const now = this.scene.time.now;
-    this.recentDmgLog.push({ t: now, v: dmg });
-    while (this.recentDmgLog.length > 0 && now - this.recentDmgLog[0].t > 6000) this.recentDmgLog.shift();
+    const log = this.recentDmgLog;
+    if (log.length < Player.DMG_LOG_CAP) {
+      log.push({ t: now, v: dmg });
+      this.dmgLogIdx = log.length % Player.DMG_LOG_CAP;
+    } else {
+      const slot = log[this.dmgLogIdx];
+      slot.t = now;
+      slot.v = dmg;
+      this.dmgLogIdx = (this.dmgLogIdx + 1) % Player.DMG_LOG_CAP;
+    }
     return { dmg, crit };
   }
 

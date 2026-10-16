@@ -7,7 +7,7 @@
  *    standalone 서버에 multiplayer 모듈을 주입해 라이브 서버에서도 멀티가 동작한다.
  *  - v1.4.13 (#4 admin 로그인) — 커스텀 서버는 Next 런타임을 거치지 않으므로 .env 파일이
  *    자동 로드되지 않았다 → SERTZ_ADMIN_PASSWORD 등 환경변수가 계정 모듈에 전달되지 않아
- *    "admin/Sertz!2026" 으로 지정해도 실제론 무작위 비밀번호로 시드되는 문제. 부팅 시
+ *    관리자 비밀번호를 지정해도 실제론 무작위 비밀번호로 시드되는 문제. 부팅 시
  *    @next/env.loadEnvConfig 로 .env를 명시적으로 읽어 process.env에 주입한다.
  */
 try {

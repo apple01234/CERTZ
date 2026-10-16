@@ -73,9 +73,12 @@ export async function POST(req: NextRequest) {
     const r = await mutateDb((fdb) => {
       if (!fdb.users[user.id]) return { status: 401, body: { error: "로그인이 필요해요" } };
       updatedAt = Date.now();
+      /* v1.0.16 보안 — chars 미포함 요청(거래소 등록 전 선동기화 등)이 기존 캐릭터 백업을
+       *  통째로 지우던 데이터 손실을 막는다. 미포함이면 기존 chars를 그대로 보존한다. */
+      const prev = fdb.saves[user.id];
       fdb.saves[user.id] = chars
         ? { data: d as Record<string, unknown>, chars, updatedAt }
-        : { data: d as Record<string, unknown>, updatedAt };
+        : { data: d as Record<string, unknown>, ...(prev?.chars ? { chars: prev.chars } : {}), updatedAt };
       return null; // 쓰기
     });
     if (r.status !== 200) return json(req, r.status, r.body);

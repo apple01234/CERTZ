@@ -16,7 +16,7 @@ SERTZ 구글 플레이 스토어 출시 체크리스트 (v4.6.0 기준)
 ■ 개발자가 직접 해야 할 항목 (플레이 콘솔)
 1. 플레이 콘솔 (play.google.com/console) 개발자 계정 $25 등록
 2. 앱 생성 → 업로드 키 관리
-   - 이번 AAB는 기존 keystore(sertz-release.keystore / 비밀번호 sertz2020)로 서명됨
+   - 이번 AAB는 기존 keystore(sertz-release.keystore)로 서명됨 — 비밀번호는 비밀번호 관리자에 보관하고 저장소·문서에 기재하지 않는다
    - 플레이 앱 서명 사용 시: 콘솔 안내에 따라 keystore 내보내기(PEPK) 후 업로드
    - ⚠ keystore 분실 시 업데이트 불가 — 안전 보관 필수
 3. 스토어 등록 정보
