@@ -242,10 +242,14 @@ export async function loadDb(force = false): Promise<{ db: DbShape; sha: string 
   if (!force && cache && Date.now() - cache.at < CACHE_TTL_MS) return { db: cache.db, sha: cache.sha };
   if (!ghToken()) throw new Error("GITHUB_TOKEN 미설정 — 서버 설정 오류");
   let raw: RawFile | null = null;
+  let primaryFailed = false;
   try {
     raw = await ghGetFrom(DB_REPO);
   } catch (e) {
-    /* 전용 저장소 조회 실패 시 구 백업 폴백(읽기만) — 이식 전 전환 안전망 */
+    /* 전용 저장소 조회 실패 시 구 백업 폴백(읽기만) — 이식 전 전환 안전망.
+     *  v1.0.15 — 공개 저장소의 db-backup/accounts.enc는 보안상 추적 해제됐으므로
+     *  이 폴백은 이제 사실상 비어 있다(404). 그래서 아래 가드가 그 자리를 대신한다. */
+    primaryFailed = true;
     console.error(`[SERTZ-db] ${DB_REPO} 조회 실패 → ${FALLBACK_REPO} 폴백`, e);
     raw = await ghGetFrom(FALLBACK_REPO).catch(() => null);
   }
@@ -257,6 +261,14 @@ export async function loadDb(force = false): Promise<{ db: DbShape; sha: string 
       if (put.ok) raw = { sha: put.sha, enc: legacy.enc };
       else raw = legacy; // 쓰기 실패해도 읽기는 진행
     }
+  }
+  /* v1.0.15 — 일시 오류를 빈 DB로 둔갑시키지 않는다.
+   *  종전엔 전용 저장소 조회가 오류여도 폴백까지 비면 parseDbRaw(null) → emptyDb()가 되어
+   *  "계정이 사라진 것처럼" 보였다(로그인 실패 → 재가입 유혹). 쓰기는 sha 없는 PUT이라
+   *  GitHub이 422로 거부하므로 데이터 유실은 아니지만, 사용자에게는 똑같이 참혹하다.
+   *  부트스트랩(파일이 아직 없는 404 = primaryFailed 아님)은 그대로 emptyDb()로 진행한다. */
+  if (primaryFailed && (!raw || !raw.enc)) {
+    throw new Error("DB 로드 실패 — GitHub 조회 일시 오류(빈 DB로 진행하지 않음)");
   }
   const out = parseDbRaw(raw);
   cache = { db: out.db, sha: out.sha, at: Date.now() };
