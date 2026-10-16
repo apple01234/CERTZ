@@ -24,16 +24,21 @@
 
 ## 다음 할 일 (우선순위 순)
 
-1. **[보안·운영] 계정 백업 키 회전 — dual-key 지원이 들어가 무중단·순서무관이 됐다.**
-   `ghdb.ts`·`accounts/index.js`가 복호화를 **현재 키 → 이전 키(_PREV)** 순으로 시도하고,
-   암호화는 항상 현재 키로만 한다. 그래서 첫 쓰기가 지나가면 백업이 자동으로 새 키로 재암호화된다.
-   ① 이 커밋을 배포(코드가 먼저다 — 없으면 아래 ②에서 즉시 500이 난다)
-   ② Vercel + FC 서버에 `SERTZ_BACKUP_KEY=<새 값>` **과** `SERTZ_BACKUP_KEY_PREV=sertz-accounts-backup::v1` 등록
-   ③ 로그인/세이브 등 쓰기 1회 발생 → 로그에 "이전 키(_PREV)로 복호화했습니다" 경고 1회가 뜨면 재암호화 완료 신호
-   ④ 그 뒤 `SERTZ_BACKUP_KEY_PREV` 제거 (이 시점부터 옛 기본키로는 아무것도 못 읽는다)
-   ⑤ 마지막으로 `db-backup/accounts.enc`를 **히스토리에서도** 제거(현재는 HEAD에서만 빠졌고 과거 커밋에 남아 있다)
-   검증: `node scripts/verify_dbkey_rotation.mjs` (컨테이너 규약 + 두 파일 배선 확인)
-   주의: 운영 스크립트 `scripts/db_*.js` 7종은 아직 키를 상수로 고정하고 있어 회전 후 따로 손봐야 한다.
+1. **[보안·운영] 계정 백업 키 회전 — 완료됨 (2026-10-16).** dual-key 지원을 배포한 뒤 실제로 회전했다.
+   - Vercel `sertz` 프로젝트에 `SERTZ_BACKUP_KEY`(새 키) 설정 → 라이브 DB를 새 키로 재암호화(sha `722ac74e867e`) → `SERTZ_BACKUP_KEY_PREV` 제거.
+   - **옛 기본 키(`sertz-accounts-backup::v1`)로는 이제 아무것도 열리지 않는다.** 공개 저장소에 남은 과거 사본은 무력화됨.
+   - 새 키 사본: 저장소 밖 `C:\coding\CERTZ\.env.local`(gitignore 확인됨). **반드시 비밀번호 관리자로 옮기고 그 파일은 지울 것.**
+   - ⚠ **잔여 위험**: 유출된 옛 사본에 **미만료 세션 토큰 34개**가 들어 있다. 키를 회전해도 토큰 자체는 유효하므로,
+     완전 차단하려면 `db.tokens`를 비워 전 세션을 무효화해야 한다(전원 로그아웃 — 사용자 영향 있음, 별도 판단 필요).
+2. **[긴급·해결됨] Vercel `GITHUB_TOKEN` 만료로 계정 시스템이 죽어 있었다.** vc156에서 한 번 고쳤던 그 장애의 재발이다.
+   - 증상: DB 읽는 모든 라우트가 죽음. 공개 폴백 파일이 있던 동안에는 **낡은 사본을 읽어 "그럴듯하게" 동작**했고,
+     폴백을 추적 해제하자 **계정이 통째로 빈 것처럼** 보였다(로그인 실패 → 재가입 유혹). 가드를 넣은 뒤에야 500으로 드러났다.
+   - 조치: 유효 토큰으로 교체 → 재배포 → `/api/rank`·`/api/market`이 실제 데이터를 반환함을 확인(교차검증: `nametaken` taken=true/false).
+   - ⚠ **지금 Vercel에 들어간 토큰은 소유자의 개인 PAT(광범위 권한)다.** `CERTZ-DB`만 Contents:Read/Write 하는
+     **전용 fine-grained 토큰**으로 교체하고, 개인 PAT는 즉시 revoke 할 것. 교체 전에 revoke 하면 서비스가 다시 죽는다.
+   - `GITHUB_TOKEN`(development) 항목은 아직 옛 만료 토큰이다(로컬 개발용 — 급하지 않음).
+3. APK/AAB 빌드 (`scripts/build_apk.sh` — JAVA_HOME=/home/z/jdk) + 이번 수정분 릴리스 반영
+4. README/가이드의 "SERTZ" 표기와 디렉터리명 `CERTZ` 불일치 정리(문서 혼선)
 2. APK/AAB 빌드 (`scripts/build_apk.sh` — JAVA_HOME=/home/z/jdk) + 이번 정합성 수정분 릴리스 반영
 3. README/가이드의 "SERTZ" 표기와 디렉터리명 `CERTZ` 불일치 정리(문서 혼선)
 4. (잔여) 클라우드 세이브 per-캐릭터 승격, 파티 초대(코드 참여만 존재)
