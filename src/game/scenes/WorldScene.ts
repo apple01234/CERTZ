@@ -78,6 +78,9 @@ const AURA_ANIM: Record<string, { sp: number; s: number; l: number; min: number;
   cos_galaxy: { sp: 0.05, s: 0.6, l: 0.7, min: 0.55, max: 0.85 },
 };
 
+/** v1.0.16 — 타격 스파크 플립북 3종. 매 타격마다 배열 리터럴을 만들지 않도록 모듈 상수로 둔다. */
+const HIT_FLIPBOOK = ["fx2-hit1", "fx2-hit3", "fx2-hit5"];
+
 /* v1.4.3 (작업3 최적화) — 오라 색 LUT(64단계) 사전 계산:
  *  매 프레임 HSLToColor + Color 객체 할당(GC 압박)을 제거하고 테이블 조회로 대체.
  *  기존 hue 곡선(min/max 범위 + 코사인 왕복)을 그대로 재현 — 퀄리티 동일. */
@@ -3519,7 +3522,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.8 디자인 개편 — Warped Hits 플립북 오버레이 (3종 랜덤, ADD 블렌드) */
     const fx = this.hitFxPool.find((s) => s.scene && !s.active);
     if (fx) {
-      const anim = Phaser.Utils.Array.GetRandom(["fx2-hit1", "fx2-hit3", "fx2-hit5"]);
+      const anim = Phaser.Utils.Array.GetRandom(HIT_FLIPBOOK);
       fx.setPosition(x, y - 4)
         .setScale(0.48) // v1.0.7 — 0.55→0.48 가림 축소
         .setActive(true)
