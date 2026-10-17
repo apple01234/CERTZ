@@ -269,7 +269,7 @@ function VolumeSliders() {
         />
         <span className="w-9 text-right text-[10px] font-black text-white/60">{sfx}%</span>
       </label>
-      <p className="mt-1.5 text-[10px] leading-snug text-white/40">설정은 자동 저장 — 효과음이 BGM보다 크게 느껴지면 슬라이더로 균형을 맞춰 보세요</p>
+      <p className="mt-1.5 text-[10px] leading-snug text-white/55">설정은 자동 저장 — 효과음이 BGM보다 크게 느껴지면 슬라이더로 균형을 맞춰 보세요</p>
     </div>
   );
 }
@@ -581,7 +581,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
               <span className="block text-[12px] font-black text-amber-200">시즌 패스 — {rpg.pass.season} · 남은 {rpg.pass.daysLeft}일</span>
               <span className="block truncate text-[10px] text-white/50">현재 Lv.{rpg.pass.lv}/30 · {rpg.pass.prem ? "프리미엄 보유 중" : `프리미엄 해금 ${30}💎 — 도달분 소급 수령`}</span>
             </span>
-            <span className="text-white/40">›</span>
+            <span className="text-white/55">›</span>
           </button>
         )}
 
@@ -601,7 +601,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
 
         {/* v4.3.0 — 일일 특가 스트립 (자정 리셋 — FOMO 루프) */}
         <div className="mb-1.5 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] px-2.5 py-2">
-          <p className="text-[12px] font-black text-amber-200">⚡ 오늘의 특가 — 30%↓ <span className="ml-1 font-normal text-white/40">매일 자정 교체</span></p>
+          <p className="text-[12px] font-black text-amber-200">⚡ 오늘의 특가 — 30%↓ <span className="ml-1 font-normal text-white/55">매일 자정 교체</span></p>
           <div className="mt-1.5 grid grid-cols-3 gap-1.5">
             {DEALS.map((k) => {
               const it = ITEMS[k];
@@ -614,7 +614,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                 >
                   <ItemIcon icon={it.icon} tier={it.tier} size={26} />
                   <span className="w-full truncate text-center text-[10px] font-bold text-white/85">{it.name}</span>
-                  <span className="text-[10px] font-black text-amber-200">{dp} 💎 <s className="font-normal text-white/35">{it.bmPrice}</s></span>
+                  <span className="text-[10px] font-black text-amber-200">{dp} 💎 <s className="font-normal text-white/55">{it.bmPrice}</s></span>
                 </button>
               );
             })}
@@ -654,7 +654,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                     {(item.kind === "consumable" && (rpg.owned.filter((o) => o === k).length > 0)) && (
                       <span className="ml-1 text-white/60">×{rpg.owned.filter((o) => o === k).length}</span>
                     )}
-                    <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">{TIER_STYLE[item.tier].label}</span>
+                    <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/55">{TIER_STYLE[item.tier].label}</span>
                   </p>
                   <p className="text-[11px] text-cyan-200/80">{item.kind === "pet" ? PET_DEFS[k as PetKey]?.desc : item.kind === "buff" ? BUFF_DEFS[k as BuffKey]?.desc : itemEffect(item)}</p>
                 </div>
@@ -666,7 +666,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                     st === "equipped" ? "cursor-default bg-emerald-700/40 text-emerald-300"
                       : st === "owned" ? "cursor-default bg-slate-700/50 text-white/50"
                       : st === "buyable" ? "bg-cyan-400 text-slate-900 hover:bg-cyan-300"
-                      : "cursor-not-allowed bg-slate-700/50 text-white/35"
+                      : "cursor-not-allowed bg-slate-700/50 text-white/55"
                   }`}
                 >
                   {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : showQty && qty > 1 ? `${total} 💎` : `${price} 💎`}
@@ -688,7 +688,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
         {odds && (
           <div className="mt-1.5 rounded-lg border border-white/15 bg-black/50 p-2.5">
             <p className="text-[11px] font-black text-cyan-200">뽑기 확률 — 겉치레 없이 그대로 보여준다</p>
-            <p className="mt-0.5 text-[9px] leading-relaxed text-white/40">아래 표가 곧 게임 속 확률입니다. 일일 특가는 가격만 할인되고 확률은 변하지 않습니다.</p>
+            <p className="mt-0.5 text-[9px] leading-relaxed text-white/55">아래 표가 곧 게임 속 확률입니다. 일일 특가는 가격만 할인되고 확률은 변하지 않습니다.</p>
             {["chest_iron", "chest_silver", "chest_gold", "chest_legend"].map((k) => (
               <div key={k} className="mt-2 rounded-md bg-white/[0.03] px-2 py-1.5">
                 <p className="text-[10px] font-black text-white/75">{ITEMS[k as ItemKey].name}</p>
@@ -708,7 +708,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                   <span className="font-bold text-white/75">{FIGURE_GRADE_META[g].weight}%</span>
                 </p>
               ))}
-              <p className="mt-1 text-[8px] text-white/35">중복 피규어는 피규어 조각으로 변환됩니다 (노말 5 / 레어 15 / 에픽 40 / 전설 100)</p>
+              <p className="mt-1 text-[8px] text-white/55">중복 피규어는 피규어 조각으로 변환됩니다 (노말 5 / 레어 15 / 에픽 40 / 전설 100)</p>
             </div>
             {/* v1.0.8 — eert 큐브 잠재옵션 확률 공시 (메이플 큐브 논란 대응 — 가중치 단일 출처) */}
             <div className="mt-2 rounded-md bg-white/[0.03] px-2 py-1.5">
@@ -719,7 +719,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                   <span className="shrink-0 font-bold text-white/75">{o.pct}%</span>
                 </p>
               ))}
-              <p className="mt-1 text-[8px] leading-snug text-white/35">
+              <p className="mt-1 text-[8px] leading-snug text-white/55">
                 유니크 미달 연속 {POT_PITY_MAX - 1}회 도달 시 다음 추첨은 유니크 이상 확정 (천장).
                 강화는 ★{STAR_PITY_FROM} 이상 실패 시 다음 시도 +{STAR_PITY_STEP}%p씩 가산 (최대 +{STAR_PITY_MAX}%p, 성공 시 초기화).
               </p>
@@ -736,7 +736,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                   </p>
                 ))}
               </div>
-              <p className="mt-1 text-[8px] leading-snug text-white/35">
+              <p className="mt-1 text-[8px] leading-snug text-white/55">
                 ★{UPGRADE_FALLBACK_FROM} 이상에서 실패하면 1성 하락합니다. 강화 주문서 1장당 +{STAR_BLESS_RATE}%p
                 (최대 {STAR_BLESS_MAX}장 = +{STAR_BLESS_RATE * STAR_BLESS_MAX}%p)가 가산되며, 주문서는 성공·실패와 무관하게 소모됩니다.
               </p>
@@ -794,7 +794,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                 );
               })}
             </div>
-            <p className="mt-1 px-0.5 text-[9px] font-bold leading-snug text-white/40">결제는 Google Play 결제로 진행됩니다 (웹에서는 스토어 연동 전까지 미지원)</p>
+            <p className="mt-1 px-0.5 text-[9px] font-bold leading-snug text-white/55">결제는 Google Play 결제로 진행됩니다 (웹에서는 스토어 연동 전까지 미지원)</p>
           </div>
         )}
 
@@ -822,7 +822,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
               광고 보고 버프 물약 ({rpg.isekai?.daily?.adsDrop ?? 0}/2)
             </button>
           </div>
-          <p className="mt-0.5 text-[10px] text-white/40">짧은 광고를 끝까지 보면 바로 지급 — 폰 버전(APK) 기준 · 구독자는 보상 2배+8회</p>
+          <p className="mt-0.5 text-[10px] text-white/55">짧은 광고를 끝까지 보면 바로 지급 — 폰 버전(APK) 기준 · 구독자는 보상 2배+8회</p>
           <div className="mt-2 grid grid-cols-4 gap-1.5">
             {GEM_SKUS.map((s) => (
               <button
@@ -835,11 +835,11 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
               </button>
             ))}
           </div>
-          <p className="mt-1 text-[10px] text-white/40">구글 플레이 결제 — Play Console 상품 등록 후 폰 버전에서 구매 가능</p>
-          <p className="mt-0.5 text-[10px] text-white/40">웹샵(자체 결제) 오픈 예정 — 웹 결제 시 에메랄드 +10% 보너스</p>
+          <p className="mt-1 text-[10px] text-white/55">구글 플레이 결제 — Play Console 상품 등록 후 폰 버전에서 구매 가능</p>
+          <p className="mt-0.5 text-[10px] text-white/55">웹샵(자체 결제) 오픈 예정 — 웹 결제 시 에메랄드 +10% 보너스</p>
         </div>
 
-        <p className="mt-2 text-center text-[10px] text-white/40">에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1 · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/55">에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1 · ESC로 닫기</p>
 
         {/* v1.0.16 (B2) — 구매 확인. 배경 탭은 취소, 확인을 눌러야만 지출된다.
             inner 패널 안쪽에 두어 stopPropagation(위 :528)이 함께 적용된다 — 확인 중 상점이 닫히지 않는다. */}
@@ -867,7 +867,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                     if (c) EventBus.emit("rpg:bmBuy", { key: c.key, qty: c.qty });
                   }}
                   className={`px-3 py-2.5 text-[11px] font-black ${
-                    rpg.emerald < confirmBuy.cost ? "cursor-not-allowed rounded-lg bg-slate-700/50 text-white/40" : "game-btn active:scale-95"
+                    rpg.emerald < confirmBuy.cost ? "cursor-not-allowed rounded-lg bg-slate-700/50 text-white/55" : "game-btn active:scale-95"
                   }`}
                 >
                   {rpg.emerald < confirmBuy.cost ? "에메랄드 부족" : `${confirmBuy.cost} 💎 구매`}
@@ -985,7 +985,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           {shopSections.map((section) => {
             return (
               <div key={section.label} className="flex flex-col gap-1.5">
-                <p className="mt-1 text-[10px] font-black tracking-wide text-white/45">{section.label}</p>
+                <p className="mt-1 text-[10px] font-black tracking-wide text-white/55">{section.label}</p>
                 {section.rows.map((k) => {
                   const item = ITEMS[k as ItemKey];
                   const st = shopState(rpg, k as ItemKey);
@@ -1009,7 +1009,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                           {sel && <span className="mr-1 text-amber-300">▶</span>}
                           {item.name}
                           {typeof count === "number" && count > 0 && <span className="ml-1 text-white/60">×{count}</span>}
-                          <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">
+                          <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/55">
                             {TIER_STYLE[item.tier].label}
                           </span>
                         </p>
@@ -1026,7 +1026,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                               ? "cursor-default bg-slate-700/50 text-white/50"
                               : st === "buyable"
                                 ? "bg-amber-400 text-slate-900 hover:bg-amber-300"
-                                : "cursor-not-allowed bg-slate-700/50 text-white/35"
+                                : "cursor-not-allowed bg-slate-700/50 text-white/55"
                         }`}
                       >
                         {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : showQty && qty > 1 ? `${total} G` : `${item.price} G`}
@@ -1044,7 +1044,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           <div className="mb-1.5 flex items-center gap-1.5">
             <img src="/assets/icon_hammer.webp" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
             <p className="text-[12px] font-black text-amber-200">스타포스 강화</p>
-            <p className="text-[10px] text-white/45">최대 ★{UPGRADE_MAX} · ★{UPGRADE_FALLBACK_FROM} 이상 실패 시 1성 하락</p>
+            <p className="text-[10px] text-white/55">최대 ★{UPGRADE_MAX} · ★{UPGRADE_FALLBACK_FROM} 이상 실패 시 1성 하락</p>
             {/* v3.0.7 — 강화 주문서 충전 현황 */}
             {(rpg.starBless ?? 0) > 0 && (
               <span className="ml-auto rounded-md border border-purple-300/50 bg-purple-400/15 px-1.5 py-0.5 text-[9px] font-black text-purple-200">
@@ -1095,7 +1095,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                   <div className="min-w-0 flex-1">
                     <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>
                       {displayName(item.name, up)}
-                      <span className="ml-1 text-[10px] font-normal text-white/40">
+                      <span className="ml-1 text-[10px] font-normal text-white/55">
                         {slot === "weapon" ? "무기" : "방어구"}
                       </span>
                     </p>
@@ -1107,7 +1107,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                     </div>
                     <p className="mt-0.5 text-[10px] text-emerald-300/90">
                       {itemEffect(item, up)}
-                      {!maxed && <span className="ml-1 text-white/35">({statLine})</span>}
+                      {!maxed && <span className="ml-1 text-white/55">({statLine})</span>}
                     </p>
                   </div>
                   <button
@@ -1118,7 +1118,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                         ? "cursor-default bg-purple-800/40 text-purple-300"
                         : affordable
                           ? "bg-amber-400 text-slate-900 hover:bg-amber-300"
-                          : "cursor-not-allowed bg-slate-700/50 text-white/35"
+                          : "cursor-not-allowed bg-slate-700/50 text-white/55"
                     }`}
                   >
                     {maxed ? "최대" : `${cost.toLocaleString()} G · ${rate}%${bless > 0 ? ` (+${bless * STAR_BLESS_RATE})` : ""}`}
@@ -1129,7 +1129,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           </div>
         </div>
 
-        <p className="mt-2 text-center text-[10px] text-white/40">장비는 구매 시 즉시 장착됩니다 · 반지 4개/펜던트 2개 중복 장착 가능 · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/55">장비는 구매 시 즉시 장착됩니다 · 반지 4개/펜던트 2개 중복 장착 가능 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -1211,7 +1211,7 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
                         <div className="min-w-0 flex-1">
                           <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
                             {displayName(item.name, up)}
-                            <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">전설</span>
+                            <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/55">전설</span>
                           </p>
                           <p className="text-[11px] text-emerald-300/90">{itemEffect(item, up)}{worn ? " · 장착 중" : ""}</p>
                         </div>
@@ -1242,7 +1242,7 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
                     <div className="min-w-0 flex-1">
                       <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
                         {item.name}
-                        <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">전설</span>
+                        <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/55">전설</span>
                       </p>
                       <p className="text-[11px] text-emerald-300/90">{itemEffect(item)}</p>
                     </div>
@@ -1254,7 +1254,7 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
                           ? "cursor-default bg-emerald-700/40 text-emerald-300"
                           : affordable
                             ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
-                            : "cursor-not-allowed bg-slate-700/50 text-white/35"
+                            : "cursor-not-allowed bg-slate-700/50 text-white/55"
                       }`}
                     >
                       {owned ? "보유함" : `${price} 에메랄드`}
@@ -1264,7 +1264,7 @@ export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
               })}
             </div>
 
-            <p className="mt-2 text-center text-[10px] text-white/40">
+            <p className="mt-2 text-center text-[10px] text-white/55">
               판매가는 구매가의 60%입니다 · 에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1
             </p>
           </>
@@ -1411,7 +1411,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
         >
           지금 계정 로그인하기
         </button>
-        <p className="mt-1.5 text-[9px] text-white/40">회원가입은 아이디+비밀번호만 있으면 10초 · 구글/카카오/네이버 로그인 지원</p>
+        <p className="mt-1.5 text-[9px] text-white/55">회원가입은 아이디+비밀번호만 있으면 10초 · 구글/카카오/네이버 로그인 지원</p>
       </div>
     );
   }
@@ -1436,7 +1436,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
         <button
           disabled={busy || (mk?.pending.gold ?? 0) <= 0}
           onClick={doCollect}
-          className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black active:scale-95 ${(mk?.pending.gold ?? 0) > 0 ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-white/[0.06] text-white/30"}`}
+          className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black active:scale-95 ${(mk?.pending.gold ?? 0) > 0 ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-white/[0.06] text-white/55"}`}
         >
           수령
         </button>
@@ -1445,11 +1445,11 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
       {/* 등록 섹션 */}
       <p className="text-[11px] font-bold text-white/50">내 보유 아이템 등록 — 판매 ({slotsLeft}칸 남음 · 최대 {mk?.maxListings ?? 3})</p>
       {listable.length === 0 ? (
-        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/40">
+        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/55">
           등록 가능한 아이템이 없어요 — 보유 아이템을 획듭하거나, 장착 중인 장비는 해제하세요
         </p>
       ) : slotsLeft <= 0 ? (
-        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/40">등록 칸이 가득 찼어요 — 판매/취소 후 다시 등록하세요</p>
+        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/55">등록 칸이 가득 찼어요 — 판매/취소 후 다시 등록하세요</p>
       ) : (
         <div className="flex max-h-[30vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
           {listable.map((k) => {
@@ -1472,7 +1472,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
                     value={prices[k] ?? ""}
                     onChange={(e) => setPrices((s) => ({ ...s, [k]: e.target.value.replace(/[^0-9]/g, "").slice(0, 8) }))}
                     placeholder={`${defPrice.toLocaleString()}G 권장`}
-                    className="mt-0.5 w-full rounded border border-white/15 bg-black/40 px-1.5 py-1 text-[10px] font-bold text-white placeholder:text-white/25 focus:border-amber-300/60 focus:outline-none"
+                    className="mt-0.5 w-full rounded border border-white/15 bg-black/40 px-1.5 py-1 text-[10px] font-bold text-white placeholder:text-white/55 focus:border-amber-300/60 focus:outline-none"
                   />
                   {/* vc153 (#신규8) — 수량 지정 행 (상점처럼 − / 숫자 / + / MAX) */}
                   <div className="mt-0.5 flex items-center gap-1">
@@ -1501,18 +1501,18 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
                     <button
                       onClick={() => setQtys((s) => ({ ...s, [k]: String(ownCount || 1) }))}
                       disabled={ownCount <= 1}
-                      className={`h-5 rounded px-1.5 text-[9px] font-black active:scale-90 ${ownCount > 1 ? "border border-sky-300/40 bg-sky-400/15 text-sky-200 hover:bg-sky-400/30" : "cursor-not-allowed border border-white/10 bg-white/[0.04] text-white/25"}`}
+                      className={`h-5 rounded px-1.5 text-[9px] font-black active:scale-90 ${ownCount > 1 ? "border border-sky-300/40 bg-sky-400/15 text-sky-200 hover:bg-sky-400/30" : "cursor-not-allowed border border-white/10 bg-white/[0.04] text-white/55"}`}
                       aria-label="보유 전량 등록"
                     >
                       MAX
                     </button>
-                    <span className="text-[9px] font-bold text-white/35">개 등록 · 총 {(defPrice && parseInt(prices[k] ?? "", 10) >= 1 ? parseInt(prices[k]!, 10) * q : 0).toLocaleString()}G</span>
+                    <span className="text-[9px] font-bold text-white/55">개 등록 · 총 {(defPrice && parseInt(prices[k] ?? "", 10) >= 1 ? parseInt(prices[k]!, 10) * q : 0).toLocaleString()}G</span>
                   </div>
                 </div>
                 <button
                   disabled={busy || !(parseInt(prices[k] ?? "", 10) >= 1)}
                   onClick={() => doList(k, up, q)}
-                  className={`shrink-0 rounded-md px-2 py-1.5 text-[11px] font-black active:scale-95 ${parseInt(prices[k] ?? "", 10) >= 1 ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-white/[0.06] text-white/30"}`}
+                  className={`shrink-0 rounded-md px-2 py-1.5 text-[11px] font-black active:scale-95 ${parseInt(prices[k] ?? "", 10) >= 1 ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-white/[0.06] text-white/55"}`}
                 >
                   등록
                 </button>
@@ -1525,7 +1525,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
       {/* 판매 목록 */}
       <p className="text-[11px] font-bold text-white/50">판매 등록물 {listings.length}건</p>
       {listings.length === 0 ? (
-        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/40">아직 등록물이 없어요 — 첫 판매자가 되어보세요!</p>
+        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[10px] text-white/55">아직 등록물이 없어요 — 첫 판매자가 되어보세요!</p>
       ) : (
         <div className="flex max-h-[30vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
           {listings.map((l) => {
@@ -1540,7 +1540,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
                     {displayName(item.name, l.up)}
                     {/* vc153 (#신규8) — 다수 등록 수량 표시 */}
                     {(l.qty ?? 1) > 1 && <span className="ml-1 rounded bg-sky-400/20 px-1 py-px text-[9px] font-black text-sky-200">×{l.qty}</span>}
-                    <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/45">{seller}</span>
+                    <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/55">{seller}</span>
                   </p>
                   <p className="text-[10px] text-white/50">{itemEffect(item, l.up)}</p>
                 </div>
@@ -1556,7 +1556,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
                   <button
                     disabled={busy || rpg.gold < l.price}
                     onClick={() => doBuy(l)}
-                    className={`shrink-0 rounded-md px-2 py-1.5 text-[11px] font-black active:scale-95 ${rpg.gold >= l.price ? "bg-teal-400 text-slate-900 hover:bg-teal-300" : "cursor-not-allowed bg-slate-700/50 text-white/35"}`}
+                    className={`shrink-0 rounded-md px-2 py-1.5 text-[11px] font-black active:scale-95 ${rpg.gold >= l.price ? "bg-teal-400 text-slate-900 hover:bg-teal-300" : "cursor-not-allowed bg-slate-700/50 text-white/55"}`}
                   >
                     {l.price.toLocaleString()}G
                     {/* vc153 (#신규8) — 다수 등록분은 "1개 구매" 임을 명시 */}
@@ -1570,7 +1570,7 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
       )}
 
       {msg && <p className="rounded-md border border-rose-300/40 bg-rose-400/10 px-2 py-1.5 text-center text-[10px] font-bold text-rose-200">{msg}</p>}
-      <p className="text-center text-[10px] text-white/40">
+      <p className="text-center text-[10px] text-white/55">
         등록 즉시 보유 목록에서 빠지고, 취소하면 돌아와요 · 수수료 10%는 거래판 운영비입니다
       </p>
     </div>
@@ -1823,7 +1823,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
         <div className="flex shrink-0 items-center justify-between border-b-2 border-[#211c17] bg-gradient-to-b from-[#4c443a] to-[#3b352d] px-3 py-2">
           <p className="text-[13px] font-black tracking-wide text-amber-100">
             인벤토리
-            <span className="ml-1.5 text-[8px] font-bold tracking-[0.2em] text-white/35">EQUIPMENT / INVENTORY</span>
+            <span className="ml-1.5 text-[8px] font-bold tracking-[0.2em] text-white/55">EQUIPMENT / INVENTORY</span>
           </p>
           <button onClick={onClose} aria-label="인벤토리 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">
             ✕
@@ -1837,7 +1837,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               key={tb.id}
               onClick={() => pick(tb.id)}
               className={`flex-1 rounded-t-md border-2 border-b-0 px-1 py-1.5 text-[12px] font-black transition-colors ${
-                tab === tb.id ? tb.on : "border-[#57504a] bg-[#453f37] text-white/45 hover:text-white/75"
+                tab === tb.id ? tb.on : "border-[#57504a] bg-[#453f37] text-white/55 hover:text-white/75"
               }`}
             >
               {tb.label}
@@ -1850,7 +1850,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
           {tab === "equip" && (
             <>
               <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-amber-100/50">
-                장착 슬롯 <span className="font-bold text-white/30">반지 4 · 펜던트 2 — 눌러서 해제</span>
+                장착 슬롯 <span className="font-bold text-white/55">반지 4 · 펜던트 2 — 눌러서 해제</span>
               </p>
               <div className="mb-2 grid grid-cols-6 gap-1">
                 {accWorn.map((k, i) => {
@@ -1868,7 +1868,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                       {it ? (
                         <img src={`/assets/${it.icon}.webp`} alt="" draggable={false} className="h-[76%] w-[76%]" style={{ imageRendering: "pixelated" }} />
                       ) : (
-                        <span className="text-[8px] font-bold text-white/30">{pendant ? "펜던트" : "반지"}</span>
+                        <span className="text-[8px] font-bold text-white/55">{pendant ? "펜던트" : "반지"}</span>
                       )}
                     </button>
                   );
@@ -1876,10 +1876,10 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               </div>
 
               <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-amber-100/50">
-                장비 <span className="font-bold text-white/30">{equipSlots.length}종 · 무기/방어구/장신구</span>
+                장비 <span className="font-bold text-white/55">{equipSlots.length}종 · 무기/방어구/장신구</span>
               </p>
               {equipSlots.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-5 text-center text-[11px] text-white/35">
+                <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-5 text-center text-[11px] text-white/55">
                   장비가 없습니다 — 상인 라고스에게서 구매할 수 있어요
                 </p>
               ) : (
@@ -1895,7 +1895,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                       <p className={`text-[11px] font-black ${as ? "text-amber-200" : "text-white/60"}`}>{as ? `세트 효과 활성 — ${as.title}` : "세트 효과"}</p>
                       {as && <span className="rounded bg-amber-400/25 px-1.5 py-0.5 text-[9px] font-black text-amber-200">ON</span>}
                     </div>
-                    <p className={`mt-0.5 text-[10px] leading-snug ${as ? "font-bold text-amber-100/90" : "text-white/40"}`}>
+                    <p className={`mt-0.5 text-[10px] leading-snug ${as ? "font-bold text-amber-100/90" : "text-white/55"}`}>
                       {as ? as.lines.join(" · ") : "같은 챕터 테마 장비 세트(무기 + 방어구 + 반지)를 모두 착용하면 활성화됩니다"}
                     </p>
                   </div>
@@ -1910,17 +1910,17 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 onClick={() => EventBus.emit("ui:panel", { panel: "bmshop" })}
                 className="mb-2 w-full rounded-lg border-2 border-cyan-300/50 bg-gradient-to-b from-cyan-400/20 to-sky-500/15 px-3 py-2 text-[12px] font-black text-cyan-100 hover:from-cyan-400/30 active:translate-y-[1px]"
               >
-                💎 캐시상점 열기 <span className="font-bold text-white/40">— 에메랄드 상점</span>
+                💎 캐시상점 열기 <span className="font-bold text-white/55">— 에메랄드 상점</span>
               </button>
               {buffSlots.length + petSlots.length + cosSlots.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-6 text-center text-[11px] text-white/35">
+                <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-6 text-center text-[11px] text-white/55">
                   캐시 아이템이 없습니다 — 캐시상점에서 큐브/펫/치장을 구매해보세요
                 </p>
               ) : (
                 <>
                   {buffSlots.length > 0 && (
                     <>
-                      <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-cyan-100/50">버프 물약 <span className="font-bold text-white/30">{buffSlots.length}종</span></p>
+                      <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-cyan-100/50">버프 물약 <span className="font-bold text-white/55">{buffSlots.length}종</span></p>
                       <div className="mb-2">
                         <InvGrid slots={buffSlots} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} min={10} />
                       </div>
@@ -1928,7 +1928,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   )}
                   {petSlots.length > 0 && (
                     <>
-                      <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-cyan-100/50">펫 <span className="font-bold text-white/30">{petSlots.length}종</span></p>
+                      <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-cyan-100/50">펫 <span className="font-bold text-white/55">{petSlots.length}종</span></p>
                       <div className="mb-2">
                         <InvGrid slots={petSlots} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} min={10} />
                       </div>
@@ -1936,7 +1936,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   )}
                   {cosSlots.length > 0 && (
                     <>
-                      <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-cyan-100/50">치장 (오라) <span className="font-bold text-white/30">{cosSlots.length}종</span></p>
+                      <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-cyan-100/50">치장 (오라) <span className="font-bold text-white/55">{cosSlots.length}종</span></p>
                       <InvGrid slots={cosSlots} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} min={10} />
                     </>
                   )}
@@ -1951,7 +1951,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   기존엔 소모품 그리드 아래 깊숙이 있어 "자동 물약·버프 어디감?" 제기 → 열자마자 보이는 자리로 */}
               <div className="mb-2 rounded-lg border-2 border-[#211c17] bg-[#2a241e] p-2.5">
                 <p className="mb-1.5 text-[11px] font-black text-amber-100/80">
-                  ⚙️ 자동 물약 · 버프 <span className="font-bold text-white/35">— 전투 중 자동으로 사용됩니다</span>
+                  ⚙️ 자동 물약 · 버프 <span className="font-bold text-white/55">— 전투 중 자동으로 사용됩니다</span>
                 </p>
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between rounded-md bg-white/[0.04] px-2.5 py-1.5">
@@ -1972,7 +1972,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                       {(auto.mpPct ?? 0) === 0 ? (auto.mpOn ? "25% 이하" : "끄기") : `${auto.mpPct}% 이하`}
                     </button>
                   </div>
-                  <p className="mt-0.5 text-[10px] text-white/40">자동 버프 — 보유 중인 물약을 자동으로 사용 (중복 선택 가능)</p>
+                  <p className="mt-0.5 text-[10px] text-white/55">자동 버프 — 보유 중인 물약을 자동으로 사용 (중복 선택 가능)</p>
                   <div className="grid grid-cols-2 gap-1.5">
                     {(["buff_atk", "buff_def", "buff_spd", "buff_exp", "buff_king", "buff_crit", "buff_gold", "buff_luck"] as BuffKey[]).map((b) => {
                       const on = (auto.buffs ?? []).includes(b);
@@ -1996,7 +1996,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                           }`}
                         >
                           {buffNames[b]}
-                          {!have && <span className="ml-1 text-white/35">(보유 없음)</span>}
+                          {!have && <span className="ml-1 text-white/55">(보유 없음)</span>}
                         </button>
                       );
                     })}
@@ -2005,7 +2005,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               </div>
 
               <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-violet-100/50">
-                소모품 <span className="font-bold text-white/30">물약은 HP/MP 슬롯 버튼에 장착 — 터치 버튼·<QuickKeyHint slot="potHp"/>/<QuickKeyHint slot="potMp"/> 키로 사용</span>
+                소모품 <span className="font-bold text-white/55">물약은 HP/MP 슬롯 버튼에 장착 — 터치 버튼·<QuickKeyHint slot="potHp"/>/<QuickKeyHint slot="potMp"/> 키로 사용</span>
               </p>
               <InvGrid slots={etcSlots} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} />
             </>
@@ -2025,7 +2025,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 >
                   ▶ 광고 보고 보상 받기 — 에메랄드 +1 · 골드 +500
                 </button>
-                <p className="mt-1 text-[10px] text-white/40">짧은 광고를 끝까지 보면 바로 지급 — 폰 버전(APK) 기준 · 일 5회</p>
+                <p className="mt-1 text-[10px] text-white/55">짧은 광고를 끝까지 보면 바로 지급 — 폰 버전(APK) 기준 · 일 5회</p>
               </div>
 
               {/* 에메랄드 충전 (v4.1.0 — 유지) */}
@@ -2043,7 +2043,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                     </button>
                   ))}
                 </div>
-                <p className="mt-1 text-[10px] text-white/40">Play Console 상품 등록 후 폰 버전에서 구매 가능</p>
+                <p className="mt-1 text-[10px] text-white/55">Play Console 상품 등록 후 폰 버전에서 구매 가능</p>
               </div>
 
               <div className="mt-2 rounded-lg border-2 border-[#211c17] bg-[#2a241e] p-2.5">
@@ -2087,7 +2087,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         <InvBtn tone="sky" disabled={s.count <= 0} onClick={() => EventBus.emit("rpg:useBuff", { key: s.k as BuffKey })}>
                           사용
                         </InvBtn>
-                        <span className="text-[10px] font-bold text-white/40">보유 {s.count}개</span>
+                        <span className="text-[10px] font-bold text-white/55">보유 {s.count}개</span>
                       </div>
                     </>
                   );
@@ -2229,7 +2229,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         {equipped && it.tier !== "legend" && (rpg.tierCube ?? 0) <= 0 && (
                           <span className="rounded-md bg-violet-400/10 px-2.5 py-1.5 text-[10px] font-bold text-violet-200/60">등급업(티어↑) 큐브 없음</span>
                         )}
-                        {!equipped && <span className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[10px] font-bold text-white/40">장착 후 가방에서 강화</span>}
+                        {!equipped && <span className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[10px] font-bold text-white/55">장착 후 가방에서 강화</span>}
                         {eqFlash && (
                           <span className={`text-[11px] font-black ${eqFlash === "ok" ? "text-amber-300" : "text-rose-300"}`}>
                             {eqFlash === "ok" ? "강화 성공!" : "강화 실패…"}
@@ -2264,7 +2264,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         <div className="min-w-0 flex-1">
                           <p className="flex items-center gap-1.5 truncate text-[13px] font-black text-white">
                             {displayName(it.name, up)} {tierChip}
-                            {wornN > 0 && <span className="text-[10px] font-bold text-white/45">장착 {wornN}/{ownedN}</span>}
+                            {wornN > 0 && <span className="text-[10px] font-bold text-white/55">장착 {wornN}/{ownedN}</span>}
                           </p>
                           <p className="truncate text-[11px] font-bold text-emerald-300/90">
                             {itemEffect(it)}
@@ -2293,7 +2293,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                           <span className="rounded-md bg-emerald-700/50 px-2.5 py-1.5 text-[11px] font-black text-emerald-200">장착 중</span>
                         )}
                         {wornN >= 1 && ownedN > wornN && (
-                          <span className="rounded-md bg-white/[0.06] px-2 py-1.5 text-[10px] font-bold text-white/40">중복 장착 불가 (같은 반지 1개만)</span>
+                          <span className="rounded-md bg-white/[0.06] px-2 py-1.5 text-[10px] font-bold text-white/55">중복 장착 불가 (같은 반지 1개만)</span>
                         )}
                         {!accMaxed && (
                           <InvBtn tone="amber" disabled={rpg.gold < accCost} onClick={() => EventBus.emit("rpg:upgradeAcc", { key: it.key })}>
@@ -2424,7 +2424,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                           <InvBtn tone="violet" disabled={!armUpable} onClick={() => EventBus.emit("rpg:isekai", { action: "tierUp", slot: "armor" })} title={armUpable ? "착용 중인 방어구 등급 승급" : "방어구를 착용하거나 이미 전설 등급입니다"}>
                             방어구 등급업
                           </InvBtn>
-                          {!rpg.weapon && !rpg.armor && <span className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[10px] font-bold text-white/40">장비를 먼저 착용하세요</span>}
+                          {!rpg.weapon && !rpg.armor && <span className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[10px] font-bold text-white/55">장비를 먼저 착용하세요</span>}
                         </>
                       )}
                       {sellValue(it) > 0 && (
@@ -2441,7 +2441,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 );
               })()
             ) : (
-              <p className="py-4 text-center text-[11px] font-bold text-white/35">아이템을 선택하면 정보와 버튼이 여기에 나타납니다</p>
+              <p className="py-4 text-center text-[11px] font-bold text-white/55">아이템을 선택하면 정보와 버튼이 여기에 나타납니다</p>
             )}
           </div>
         )}
@@ -2453,7 +2453,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
             <EmeraldChip emerald={rpg.emerald} />
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold text-white/30">ESC 닫기</span>
+            <span className="text-[9px] font-bold text-white/55">ESC 닫기</span>
             <button
               onClick={() => EventBus.emit("rpg:sortInv")}
               className="rounded-md border-2 border-amber-200/70 bg-gradient-to-b from-amber-300 to-orange-500 px-3.5 py-1.5 text-[12px] font-black text-white shadow-[0_2px_0_#92400e] hover:brightness-110 active:translate-y-[2px] active:shadow-none"
@@ -2506,7 +2506,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
         <div className="mb-3 flex flex-col gap-2">
           {byTier.map((list) => (
             <div key={list[0]?.tier}>
-              <p className="mb-1 text-[10px] font-bold text-white/35">{tierLabel(list[0]?.tier ?? 1)} ({list.length})</p>
+              <p className="mb-1 text-[10px] font-bold text-white/55">{tierLabel(list[0]?.tier ?? 1)} ({list.length})</p>
               <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                 {list.map((d) => (
                   <button
@@ -2516,7 +2516,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
                     style={{ borderColor: `${d.color}44`, background: `linear-gradient(135deg, ${d.color}14, rgba(0,0,0,0.4))` }}
                   >
                     <span className="truncate text-[11px] font-black" style={{ color: d.color }}>{d.name}</span>
-                    <span className="w-full truncate text-[9px] text-white/45">
+                    <span className="w-full truncate text-[9px] text-white/55">
                       {d.tier === 1 ? GM_FAM_LABEL[d.key] ?? "" : d.title}
                     </span>
                   </button>
@@ -2658,7 +2658,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
                 className="flex flex-col items-start rounded-lg border border-rose-300/35 bg-gradient-to-br from-rose-400/15 to-slate-900/40 px-2 py-1.5 text-left transition-transform active:scale-95 hover:border-rose-300/60"
               >
                 <span className="w-full truncate text-[10px] font-black text-rose-100">⚔ {d.name}</span>
-                <span className="text-[9px] font-bold text-white/40">HP {d.hp.toLocaleString()} · ATK {d.atk}</span>
+                <span className="text-[9px] font-bold text-white/55">HP {d.hp.toLocaleString()} · ATK {d.atk}</span>
               </button>
             );
           })}
@@ -2666,7 +2666,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
         <p className="mt-1.5 rounded-lg border border-rose-300/20 bg-rose-400/5 px-2.5 py-1.5 text-[10px] leading-relaxed text-rose-200/70">
           보스 구역으로 이동해 스토리 스펙 그대로 즉시 전투합니다. 처치 시 보상 지급 — 스토리 진행/포탈 판정에는 영향이 없습니다.
         </p>
-        <p className="mt-2 text-center text-[10px] text-white/40">ESC로 닫기 · 변경 사항은 즉시 세이브에 반영</p>
+        <p className="mt-2 text-center text-[10px] text-white/55">ESC로 닫기 · 변경 사항은 즉시 세이브에 반영</p>
       </div>
     </div>
   );
@@ -2705,10 +2705,10 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
           className={`h-9 w-9 ${got ? "" : "opacity-20 grayscale"}`}
           style={{ imageRendering: "pixelated" }}
         />
-        <p className={`w-full truncate text-center text-[8.5px] font-bold leading-tight ${got ? "text-white" : "text-white/30"}`}>
+        <p className={`w-full truncate text-center text-[8.5px] font-bold leading-tight ${got ? "text-white" : "text-white/55"}`}>
           {got ? name : "???"}
         </p>
-        <p className={`text-[8px] font-black ${got ? "text-emerald-300" : "text-white/25"}`}>{got ? `×${n}` : "미등록"}</p>
+        <p className={`text-[8px] font-black ${got ? "text-emerald-300" : "text-white/55"}`}>{got ? `×${n}` : "미등록"}</p>
       </div>
     );
   };
@@ -2771,7 +2771,7 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
                 <span
                   key={m.n}
                   className={`rounded px-1.5 py-0.5 text-[9px] font-black ${
-                    on ? "bg-emerald-500/25 text-emerald-200" : "bg-white/[0.05] text-white/35"
+                    on ? "bg-emerald-500/25 text-emerald-200" : "bg-white/[0.05] text-white/55"
                   }`}
                 >
                   {on ? "✓" : m.n}종 {m.label}
@@ -2794,7 +2794,7 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
           {bossKeys.map((k) => card(`boss_${k}`, BOSS_DEFS[k].name, `/assets/${BOSS_ATLAS[BOSS_DEFS[k].tex] ? `bossport_${BOSS_DEFS[k].tex}` : `${BOSS_DEFS[k].tex}_idle0`}.webp`))}
         </div>
 
-        <p className="mt-2 text-center text-[10px] text-white/40">M키로 열기 · 등록 보너스는 모든 구역에서 항상 적용됩니다 · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/55">M키로 열기 · 등록 보너스는 모든 구역에서 항상 적용됩니다 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -2873,7 +2873,7 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
         {/* 진행 카드 */}
         <div className="mb-2 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] px-2.5 py-2">
           <div className="flex items-baseline justify-between">
-            <p className="text-[13px] font-black text-amber-100">현재 Lv.{lvNow}<span className="ml-1 text-[10px] font-normal text-white/45">/{PASS_MAX_LV}</span></p>
+            <p className="text-[13px] font-black text-amber-100">현재 Lv.{lvNow}<span className="ml-1 text-[10px] font-normal text-white/55">/{PASS_MAX_LV}</span></p>
             <p className="text-[10px] text-white/50">{lvNow >= PASS_MAX_LV ? "시즌 만렙!" : `다음 레벨까지 ${PASS_LV_XP - p.lvXp} XP`}</p>
           </div>
           {/* v1.0.2 (#패스일괄수령) — 도달 레벨의 미수령 보상 전부 지급 (프리미엄은 해금 시에만) */}
@@ -2898,7 +2898,7 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-black/50">
             <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-200 transition-[width]" style={{ width: `${Math.min(100, (p.lvXp / PASS_LV_XP) * 100)}%` }} />
           </div>
-          <p className="mt-1 text-[9px] text-white/40">XP 획득: 토벌 +1 · 보스 +30 · 일일 퀘스트 수령 +40 · 바르가 수비전(게이트) 웨이브×2 · 시즌 미션 수령</p>
+          <p className="mt-1 text-[9px] text-white/55">XP 획득: 토벌 +1 · 보스 +30 · 일일 퀘스트 수령 +40 · 바르가 수비전(게이트) 웨이브×2 · 시즌 미션 수령</p>
         </div>
 
         {/* v1.0.1 — 시즌 미션 (일일/주간 리텐션 보드 — 수령 시 패스 XP) */}
@@ -2922,13 +2922,13 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                         <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
                           <div className={`h-full rounded-full ${reach ? "bg-amber-400" : "bg-sky-400/70"}`} style={{ width: `${Math.min(100, (prog / m.target) * 100)}%` }} />
                         </div>
-                        <span className="text-[8px] font-bold text-white/45">{Math.min(prog, m.target)}/{m.target} · +{m.xp}XP</span>
+                        <span className="text-[8px] font-bold text-white/55">{Math.min(prog, m.target)}/{m.target} · +{m.xp}XP</span>
                       </div>
                     </div>
                     <button
                       disabled={claimed || !reach}
                       onClick={() => EventBus.emit("rpg:missionClaim", { kind: tag === "일일" ? "daily" : "weekly", id: m.id })}
-                      className={`shrink-0 rounded-md px-1.5 py-1 text-[9px] font-black active:scale-95 ${claimed ? "text-emerald-200" : reach ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-white/[0.06] text-white/30"}`}
+                      className={`shrink-0 rounded-md px-1.5 py-1 text-[9px] font-black active:scale-95 ${claimed ? "text-emerald-200" : reach ? "bg-amber-400 text-slate-900 hover:bg-amber-300" : "cursor-not-allowed bg-white/[0.06] text-white/55"}`}
                     >
                       {claimed ? "수령 완료" : "수령"}
                     </button>
@@ -2936,7 +2936,7 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                 );
               })}
             </div>
-            <p className="mt-1 text-[9px] text-white/35">일일 미션은 매일 00시 · 주간 미션은 월요일 00시 초기화</p>
+            <p className="mt-1 text-[9px] text-white/55">일일 미션은 매일 00시 · 주간 미션은 월요일 00시 초기화</p>
           </div>
         )}
 
@@ -2959,7 +2959,7 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
               const reached = lv <= lvNow;
               return (
                 <div key={lv} className="flex w-12 shrink-0 flex-col items-center gap-1">
-                  <span className={`text-[9px] font-black ${reached ? "text-amber-200" : "text-white/35"}`}>{lv}</span>
+                  <span className={`text-[9px] font-black ${reached ? "text-amber-200" : "text-white/55"}`}>{lv}</span>
                   {t.free && (
                     <PassCell
                       g={t.free}
@@ -2980,11 +2980,11 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
             })}
           </div>
         </div>
-        <div className="mt-1.5 flex items-center justify-between text-[9px] text-white/40">
+        <div className="mt-1.5 flex items-center justify-between text-[9px] text-white/55">
           <span>위: 무료 트랙 · 아래: 프리미엄 트랙 (금색)</span>
           <span>탭하면 즉시 수령</span>
         </div>
-        <p className="mt-2 text-center text-[10px] text-white/40">시즌 종료 시 미수령 보상은 소멸된다 — 매월 1일 리셋 · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/55">시즌 종료 시 미수령 보상은 소멸된다 — 매월 1일 리셋 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -3067,7 +3067,7 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
         <div className="mb-2 flex items-center justify-between">
           <div>
             <p className="text-sm font-black text-amber-200">1:1 거래</p>
-            <p className="text-[10px] text-white/45">근처 플레이어와 아이템·골드·에메랄드를 교환 (양쪽 확정 필수)</p>
+            <p className="text-[10px] text-white/55">근처 플레이어와 아이템·골드·에메랄드를 교환 (양쪽 확정 필수)</p>
           </div>
           <button onClick={onClose} aria-label="거래 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
         </div>
@@ -3076,14 +3076,14 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
           <div>
             <p className="mb-1.5 text-[11px] font-bold text-white/60">근처 플레이어 (같은 구역 · 500px 이내)</p>
             {nearby.length === 0 ? (
-              <p className="rounded-lg border border-white/10 bg-black/30 px-3 py-6 text-center text-[11px] text-white/40">
+              <p className="rounded-lg border border-white/10 bg-black/30 px-3 py-6 text-center text-[11px] text-white/55">
                 근처에 거래할 플레이어가 없어요. 멀티 접속(같은 맵) 상태에서 다시 확인해 주세요.
               </p>
             ) : (
               <div className="grid gap-1.5">
                 {nearby.map((p) => (
                   <div key={p.id} className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-2.5 py-2">
-                    <span className="text-[12px] font-bold text-white/85">{p.name} <span className="text-white/40">Lv.{p.lv}</span></span>
+                    <span className="text-[12px] font-bold text-white/85">{p.name} <span className="text-white/55">Lv.{p.lv}</span></span>
                     <button
                       className="rounded-md border-2 border-amber-300/70 bg-amber-500/20 px-2.5 py-1 text-[11px] font-black text-amber-200 hover:bg-amber-500/30"
                       onClick={() => EventBus.emit("rpg:tradeInvite", { id: p.id, name: p.name })}
@@ -3094,7 +3094,7 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                 ))}
               </div>
             )}
-            {snap?.note && <p className="mt-2 text-[10px] text-white/40">{snap.note}</p>}
+            {snap?.note && <p className="mt-2 text-[10px] text-white/55">{snap.note}</p>}
           </div>
         )}
 
@@ -3111,7 +3111,7 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
         {phase === "outgoing" && (
           <div className="rounded-lg border border-amber-300/30 bg-amber-500/10 p-4 text-center">
             <p className="text-[12px] font-bold text-amber-200">{snap?.partnerName}님의 수락 대기 중…</p>
-            <p className="mt-1 text-[10px] text-white/40">30초 안에 수락하지 않으면 자동 취소돼요.</p>
+            <p className="mt-1 text-[10px] text-white/55">30초 안에 수락하지 않으면 자동 취소돼요.</p>
             <button className="mt-2.5 rounded-md border-2 border-white/25 bg-black/40 px-3 py-1.5 text-[11px] font-black text-white/70" onClick={() => act({ act: "cancel" })}>요청 취소</button>
           </div>
         )}
@@ -3124,7 +3124,7 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
               <div className="rounded-lg border border-emerald-300/25 bg-emerald-500/[0.06] p-2">
                 <p className="text-[11px] font-black text-emerald-200">내가 거는 것</p>
                 <div className="mt-1 min-h-[72px] grid gap-1">
-                  {snap.mine.items.length === 0 && <p className="text-[10px] text-white/30">아래 목록에서 아이템을 눌러 추가</p>}
+                  {snap.mine.items.length === 0 && <p className="text-[10px] text-white/55">아래 목록에서 아이템을 눌러 추가</p>}
                   {snap.mine.items.map((k, i) => (
                     <div key={`${k}-${i}`} className="flex items-center justify-between rounded bg-black/40 px-1.5 py-1">
                       <span className="text-[10px] text-white/80">{itemName(k)}</span>
@@ -3143,7 +3143,7 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
               <div className="rounded-lg border border-sky-300/25 bg-sky-500/[0.06] p-2">
                 <p className="text-[11px] font-black text-sky-200">{snap.partnerName}님이 거는 것</p>
                 <div className="mt-1 min-h-[72px] grid gap-1">
-                  {snap.theirs.items.length === 0 && <p className="text-[10px] text-white/30">아직 없음</p>}
+                  {snap.theirs.items.length === 0 && <p className="text-[10px] text-white/55">아직 없음</p>}
                   {snap.theirs.items.map((k, i) => (
                     <div key={`${k}-${i}`} className="rounded bg-black/40 px-1.5 py-1 text-[10px] text-white/80">{itemName(k)}</div>
                   ))}
@@ -3183,7 +3183,7 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
             {!snap.meLocked && (
               <div className="mt-2 max-h-[150px] overflow-y-auto rounded-lg border border-white/10 bg-black/30 p-1.5">
                 <div className="grid grid-cols-2 gap-1">
-                  {offerable.length === 0 && <p className="col-span-2 py-3 text-center text-[10px] text-white/35">거래 가능한 아이템이 없어요</p>}
+                  {offerable.length === 0 && <p className="col-span-2 py-3 text-center text-[10px] text-white/55">거래 가능한 아이템이 없어요</p>}
                   {offerable.map((k) => (
                     <button
                       key={k}
@@ -3191,7 +3191,7 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                       onClick={() => act({ act: "add", key: k })}
                     >
                       <span className="truncate text-[10px] text-white/80">{itemName(k)}</span>
-                      <span className="ml-1 shrink-0 text-[9px] text-white/40">×{countOf(k)}</span>
+                      <span className="ml-1 shrink-0 text-[9px] text-white/55">×{countOf(k)}</span>
                     </button>
                   ))}
                 </div>
@@ -3201,14 +3201,14 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
             <div className="mt-2 grid grid-cols-2 gap-2">
               <button
                 disabled={snap.meLocked}
-                className={`rounded-md border-2 px-2 py-2 text-[12px] font-black ${snap.meLocked ? "border-white/10 bg-black/30 text-white/30" : "border-emerald-300/70 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30"}`}
+                className={`rounded-md border-2 px-2 py-2 text-[12px] font-black ${snap.meLocked ? "border-white/10 bg-black/30 text-white/55" : "border-emerald-300/70 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30"}`}
                 onClick={() => act({ act: "lock" })}
               >
                 {snap.meLocked ? "확정 완료 ✓" : snap.theyLocked ? "최종 확정 (교환!)" : "확정 (잠금)"}
               </button>
               <button className="rounded-md border-2 border-red-300/50 bg-red-500/15 px-2 py-2 text-[12px] font-black text-red-200" onClick={() => act({ act: "cancel" })}>취소</button>
             </div>
-            <p className="mt-1.5 text-center text-[9px] leading-snug text-white/35">
+            <p className="mt-1.5 text-center text-[9px] leading-snug text-white/55">
               확정 후 상대가 제안을 바꾸면 잠금이 풀려요 (이중 확인). 거래 잠금·GM 아이템·장착 중 아이템은 걸 수 없어요.
             </p>
           </div>
@@ -3329,15 +3329,15 @@ export function PlayerInfoPanel({ onClose }: { onClose: () => void }) {
         {/* 정보 행 */}
         <div className="mt-2 space-y-1 rounded-lg border border-white/10 bg-black/30 px-2.5 py-2 text-[11px]">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-white/45">레벨</span>
+            <span className="font-bold text-white/55">레벨</span>
             <span className="font-black text-white">Lv. {info.lv}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="font-bold text-white/45">직업</span>
+            <span className="font-bold text-white/55">직업</span>
             <span className="font-black" style={{ color: cd?.color ?? "rgba(255,255,255,0.7)" }}>{cd ? cd.name : "무직"}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="font-bold text-white/45">상태</span>
+            <span className="font-bold text-white/55">상태</span>
             <span className="flex items-center gap-1 font-black text-emerald-300">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_#34d399]" />
               온라인
@@ -3345,7 +3345,7 @@ export function PlayerInfoPanel({ onClose }: { onClose: () => void }) {
           </div>
           {info.code && (
             <div className="flex items-center justify-between">
-              <span className="font-bold text-white/45">친구 코드</span>
+              <span className="font-bold text-white/55">친구 코드</span>
               <span className="font-mono font-black tracking-widest text-amber-200">{info.code}</span>
             </div>
           )}
@@ -3367,7 +3367,7 @@ export function PlayerInfoPanel({ onClose }: { onClose: () => void }) {
             title={info.code ? (alreadyAdded ? "이미 추가한 친구예요" : "친구로 추가합니다") : "친구 코드 미공개"}
             className={`rounded-md border-2 px-2 py-2 text-[12px] font-black ${
               !info.code || alreadyAdded
-                ? "cursor-not-allowed border-white/10 bg-white/[0.04] text-white/30"
+                ? "cursor-not-allowed border-white/10 bg-white/[0.04] text-white/55"
                 : "border-emerald-300/70 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30"
             }`}
             onClick={addFriend}
@@ -3582,16 +3582,16 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
             </div>
             <div className="mb-2 grid grid-cols-2 gap-1.5 text-center">
               <div className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2">
-                <p className="text-[9px] font-bold text-white/45">최고 기록</p>
+                <p className="text-[9px] font-bold text-white/55">최고 기록</p>
                 <p className="text-base font-black text-purple-200">{inf.towerBest}층</p>
               </div>
               <div className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2">
-                <p className="text-[9px] font-bold text-white/45">보유 심연 코인</p>
+                <p className="text-[9px] font-bold text-white/55">보유 심연 코인</p>
                 <p className="text-base font-black text-violet-200">{inf.abyss.toLocaleString()}</p>
               </div>
             </div>
             <button onClick={() => EventBus.emit("rpg:infTower")} className="w-full rounded-xl border-2 border-purple-200/70 bg-gradient-to-b from-purple-400 to-purple-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">탑 입장</button>
-            <p className="mt-1.5 text-[9px] text-white/35">복귀 포탈로 중간 퇴장 가능 · 기록은 자동 저장되고 랭킹에 등록된다 (원정대 → 랭킹 탭)</p>
+            <p className="mt-1.5 text-[9px] text-white/55">복귀 포탈로 중간 퇴장 가능 · 기록은 자동 저장되고 랭킹에 등록된다 (원정대 → 랭킹 탭)</p>
           </div>
         )}
 
@@ -3603,11 +3603,11 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
               <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">훈련용 허수아비에게 90초 동안 누적 피해를 기록하는 훈련장. 스킬 사이클을 점검하고 최고 기록에 도전! 누적 피해에 비례한 훈련 보상도 지급된다.</p>
             </div>
             <div className="mb-2 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2 text-center">
-              <p className="text-[9px] font-bold text-white/45">내 최고 기록 (누적 피해)</p>
+              <p className="text-[9px] font-bold text-white/55">내 최고 기록 (누적 피해)</p>
               <p className="text-base font-black text-orange-200">{(() => { try { return (Number(localStorage.getItem("sertz.dojang.best") ?? "0") || 0).toLocaleString(); } catch { return "0"; } })()}</p>
             </div>
             <button onClick={() => EventBus.emit("rpg:dojangEnter")} className="w-full rounded-xl border-2 border-orange-200/70 bg-gradient-to-b from-orange-400 to-orange-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">도장 입장</button>
-            <p className="mt-1.5 text-[9px] text-white/35">입장 티켓 없음 · 언제든 무료로 도전 · 기록은 자동 저장되고 랭킹에 등록된다</p>
+            <p className="mt-1.5 text-[9px] text-white/55">입장 티켓 없음 · 언제든 무료로 도전 · 기록은 자동 저장되고 랭킹에 등록된다</p>
           </div>
         )}
 
@@ -3620,7 +3620,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
                 {trialCleared && <span className="rounded bg-emerald-400/25 px-1.5 py-0.5 text-[8px] font-black text-emerald-100">보상 수령 완료</span>}
               </div>
               <p className="mt-0.5 text-[10px] leading-relaxed text-white/65">{trial.desc}</p>
-              <p className="mt-1 text-[9px] text-white/40">60초 생존 — 1일 1회 심연 코인 보상 (재도전 무료, 보상은 내일)</p>
+              <p className="mt-1 text-[9px] text-white/55">60초 생존 — 1일 1회 심연 코인 보상 (재도전 무료, 보상은 내일)</p>
             </div>
             <button onClick={() => EventBus.emit("rpg:infTrial")} className="mb-3 w-full rounded-xl border-2 px-4 py-2 text-[12px] font-black text-slate-900 transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95" style={{ borderColor: `${trial.color}aa`, background: trial.color }}>일일 시련 입장</button>
 
@@ -3636,7 +3636,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
               {inf.closetTier >= 10 && <span className="text-[9px] font-bold text-violet-300">T{inf.closetTier}+ 해금!</span>}
             </div>
             <button onClick={() => EventBus.emit("rpg:infClosetTier", { tier: tierPick + 1 })} className="w-full rounded-xl border-2 border-violet-200/70 bg-gradient-to-b from-violet-400 to-violet-600 px-4 py-2.5 text-[13px] font-black text-slate-900 transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">심층 균열 T{tierPick + 1} 입장 (티켓 1장)</button>
-            <p className="mt-1.5 text-[9px] text-white/35">현재 해금: T{inf.closetTier}까지 · 기본 균열에서 2,600G 이상 획득 시 T1 해금</p>
+            <p className="mt-1.5 text-[9px] text-white/55">현재 해금: T{inf.closetTier}까지 · 기본 균열에서 2,600G 이상 획득 시 T1 해금</p>
           </div>
         )}
 
@@ -3656,15 +3656,15 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
               </div>
               <div className="mb-2 grid grid-cols-3 gap-1.5 text-center">
                 <div className="rounded-lg border border-white/10 bg-white/[0.04] px-1 py-2">
-                  <p className="text-[9px] font-bold text-white/45">보유 코인</p>
+                  <p className="text-[9px] font-bold text-white/55">보유 코인</p>
                   <p className="text-sm font-black text-amber-200">{park.coins}</p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-white/[0.04] px-1 py-2">
-                  <p className="text-[9px] font-bold text-white/45">입장권</p>
+                  <p className="text-[9px] font-bold text-white/55">입장권</p>
                   <p className="text-sm font-black text-emerald-200">{park.tickets}/2</p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-white/[0.04] px-1 py-2">
-                  <p className="text-[9px] font-bold text-white/45">지옥 최다</p>
+                  <p className="text-[9px] font-bold text-white/55">지옥 최다</p>
                   <p className="text-sm font-black text-rose-200">{park.best}</p>
                 </div>
               </div>
@@ -3728,9 +3728,9 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
                   <div key={r.id} className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 ${ok ? "border-sky-300/40 bg-sky-400/10" : "border-white/10 bg-white/[0.02]"}`}>
                     <div className="min-w-0 flex-1">
                       <p className={`text-[11px] font-black ${ok ? "text-sky-100" : "text-white/55"}`}>{r.name}</p>
-                      <p className="truncate text-[9px] text-white/45">{r.desc}</p>
+                      <p className="truncate text-[9px] text-white/55">{r.desc}</p>
                     </div>
-                    <button onClick={() => EventBus.emit("rpg:infCraft", { id: r.id })} disabled={!ok} className={`shrink-0 rounded-lg px-3 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${ok ? "bg-sky-400 text-slate-900" : "bg-white/10 text-white/35"}`}>제작</button>
+                    <button onClick={() => EventBus.emit("rpg:infCraft", { id: r.id })} disabled={!ok} className={`shrink-0 rounded-lg px-3 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${ok ? "bg-sky-400 text-slate-900" : "bg-white/10 text-white/55"}`}>제작</button>
                   </div>
                 );
               })}
@@ -3752,9 +3752,9 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
                   <div key={it.id} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-[11px] font-black text-violet-100">{it.name}{cnt > 0 && <span className="ml-1 rounded bg-violet-400/25 px-1 text-[8px] text-violet-100">×{cnt}</span>}</p>
-                      <p className="truncate text-[9px] text-white/45">{it.desc}</p>
+                      <p className="truncate text-[9px] text-white/55">{it.desc}</p>
                     </div>
-                    <button onClick={() => EventBus.emit("rpg:infAbyss", { id: it.id })} disabled={inf.abyss < it.cost} className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${inf.abyss >= it.cost ? "bg-violet-400 text-slate-900" : "bg-white/10 text-white/35"}`}>{it.cost} 코인</button>
+                    <button onClick={() => EventBus.emit("rpg:infAbyss", { id: it.id })} disabled={inf.abyss < it.cost} className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${inf.abyss >= it.cost ? "bg-violet-400 text-slate-900" : "bg-white/10 text-white/55"}`}>{it.cost} 코인</button>
                   </div>
                 );
               })}
@@ -3774,7 +3774,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
               {inf.rebirths > 0 && (
                 <p className="mt-1 text-[10px] font-black text-amber-200">현재 영구 보너스: 공격 +{rebirthBonus(inf.rebirths).atkPct}% · HP +{rebirthBonus(inf.rebirths).hp} · 골드 +{rebirthBonus(inf.rebirths).goldPct}%</p>
               )}
-              {inf.rebirthEss > 0 && <p className="mt-0.5 text-[9px] text-white/45">환생의 정수 ×{inf.rebirthEss} — 요구 레벨 −5씩 감소 (현재 Lv {rebirthReqLv(inf.rebirthEss)})</p>}
+              {inf.rebirthEss > 0 && <p className="mt-0.5 text-[9px] text-white/55">환생의 정수 ×{inf.rebirthEss} — 요구 레벨 −5씩 감소 (현재 Lv {rebirthReqLv(inf.rebirthEss)})</p>}
             </div>
             <button onClick={() => EventBus.emit("rpg:infRebirth")} className="mb-3 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95">환생하기 (요구 Lv {rebirthReqLv(inf.rebirthEss)})</button>
 
@@ -3789,7 +3789,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
                     </p>
                   ))}
                 </div>
-                <p className="mt-1 text-[8px] font-bold text-white/30">환생 시 시작 캐릭터(생성 시 선택한 1차 직업)로 돌아온다</p>
+                <p className="mt-1 text-[8px] font-bold text-white/55">환생 시 시작 캐릭터(생성 시 선택한 1차 직업)로 돌아온다</p>
               </div>
             )}
 
@@ -3803,9 +3803,9 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
               <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/50">
                 <div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-300" style={{ width: `${Math.min(100, (inf.petExp / Math.max(1, inf.petExpNeed)) * 100)}%` }} />
               </div>
-              <p className="mt-0.5 text-right text-[9px] text-white/40">EXP {inf.petExp}/{inf.petExpNeed} · 현재 보너스 공격 +{petBonus(inf.petLv).atkPct.toFixed(1)}% · HP +{petBonus(inf.petLv).hp}</p>
+              <p className="mt-0.5 text-right text-[9px] text-white/55">EXP {inf.petExp}/{inf.petExpNeed} · 현재 보너스 공격 +{petBonus(inf.petLv).atkPct.toFixed(1)}% · HP +{petBonus(inf.petLv).hp}</p>
             </div>
-            <p className="text-[9px] text-white/35">심연 상점의 치장 상자·전설 상자도 함께 노려보자 — 주간 레이드 보스(오늘: {rpg.raidBossToday ?? "—"}) 처치 시 보스 드롭 2배!</p>
+            <p className="text-[9px] text-white/55">심연 상점의 치장 상자·전설 상자도 함께 노려보자 — 주간 레이드 보스(오늘: {rpg.raidBossToday ?? "—"}) 처치 시 보스 드롭 2배!</p>
           </div>
         )}
 
@@ -3826,12 +3826,12 @@ const CONTENT_RANK_MODES: [RankMode, string][] = [
 
 function RankListRows({ rows, metric }: { rows: RankRow[]; metric: "lv" | "power" }) {
   if (rows.length === 0)
-    return <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/40">아직 등록된 기록이 없어요 — 계정 패널에서 클라우드 백업 후 플레이하면 자동 등록됩니다</p>;
+    return <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/55">아직 등록된 기록이 없어요 — 계정 패널에서 클라우드 백업 후 플레이하면 자동 등록됩니다</p>;
   return (
     <div className="flex flex-col gap-1">
       {rows.map((r, i) => (
         <div key={`${r.name}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${i < 3 ? "border-amber-300/40 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
-          <span className={`w-6 text-center text-[11px] font-black ${i === 0 ? "text-amber-300" : i < 3 ? "text-amber-200/90" : "text-white/40"}`}>{i + 1}</span>
+          <span className={`w-6 text-center text-[11px] font-black ${i === 0 ? "text-amber-300" : i < 3 ? "text-amber-200/90" : "text-white/55"}`}>{i + 1}</span>
           <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white">{r.name}</span>
           <span className="text-[10px] text-white/50">Lv{r.lv}</span>
           <span className="w-14 text-right text-[10px] font-black text-sky-200">{(metric === "lv" ? r.lv : (r.power ?? 0)).toLocaleString()}</span>
@@ -3973,10 +3973,10 @@ function KingdomRankTab() {
                 내 순위 <span className={isRanker ? "text-amber-300" : "text-yellow-200"}>#{myRank}</span>
                 {/* v1.0.13 피드백#7 — 캐릭터별 랭킹: 내 최고 캐릭터 기준 순위 (캐릭명 병기) */}
                 {state.me.name && <span className="ml-1 text-[9px] font-bold text-white/50">({state.me.name})</span>}
-                <span className="ml-1 text-[9px] text-white/40">/ {state.me.total}명 중</span>
+                <span className="ml-1 text-[9px] text-white/55">/ {state.me.total}명 중</span>
                 {myRank <= 3 && <span className="ml-1.5 rounded bg-amber-400 px-1 text-[8px] font-black text-slate-900">TOP3</span>}
               </p>
-              <p className="mt-0.5 text-[9px] text-white/45">Lv {state.me.lv} · 환생 {state.me.rebirths}회 · 탑 {state.me.tower}층</p>
+              <p className="mt-0.5 text-[9px] text-white/55">Lv {state.me.lv} · 환생 {state.me.rebirths}회 · 탑 {state.me.tower}층</p>
             </>
           ) : (
             <p className="text-[10px] font-bold text-white/55">{state.me.note ?? "랭킹 등록 대기 중"}</p>
@@ -3986,7 +3986,7 @@ function KingdomRankTab() {
 
       {/* 랭킹 리스트 */}
       {loading ? (
-        <p className="py-6 text-center text-[11px] font-bold text-white/40">랭킹을 불러오는 중…</p>
+        <p className="py-6 text-center text-[11px] font-bold text-white/55">랭킹을 불러오는 중…</p>
       ) : err ? (
         <div className="py-4 text-center">
           <p className="text-[11px] font-bold text-rose-300">{err}</p>
@@ -3997,11 +3997,11 @@ function KingdomRankTab() {
           {/* vc145 (#2) — 랭킹 100위 표시: 리스트 높이 확대 (기존 max-h-56은 6~7명만 보임) */}
           <div className="sertz-scroll max-h-[46svh] overflow-y-auto rounded-lg border border-white/10 bg-black/40">
           {(state?.list?.length ?? 0) === 0 ? (
-            <p className="py-6 text-center text-[10px] font-bold text-white/35">아직 등록된 랭커가 없어요 — 첫 랭커가 되어보세요!</p>
+            <p className="py-6 text-center text-[10px] font-bold text-white/55">아직 등록된 랭커가 없어요 — 첫 랭커가 되어보세요!</p>
           ) : (
             (state?.list ?? []).map((e) => (
               <div key={`${e.rank}-${e.name}-${e.cid ?? ""}`} className={`flex items-center gap-2 border-b border-white/[0.05] px-2.5 py-1.5 last:border-0 ${e.rank <= 3 ? "bg-amber-400/[0.06]" : ""}`}>
-                <span className={`w-7 shrink-0 text-center text-[11px] font-black ${e.rank === 1 ? "text-amber-300" : e.rank === 2 ? "text-slate-200" : e.rank === 3 ? "text-orange-300" : "text-white/45"}`}>{e.rank === 1 ? "👑1" : e.rank === 2 ? "🥈2" : e.rank === 3 ? "🥉3" : e.rank}</span>
+                <span className={`w-7 shrink-0 text-center text-[11px] font-black ${e.rank === 1 ? "text-amber-300" : e.rank === 2 ? "text-slate-200" : e.rank === 3 ? "text-orange-300" : "text-white/55"}`}>{e.rank === 1 ? "👑1" : e.rank === 2 ? "🥈2" : e.rank === 3 ? "🥉3" : e.rank}</span>
                 <span className="min-w-0 flex-1 truncate text-[11px] font-black text-white/90">{e.name}</span>
                 {/* v1.0.13 피드백#16 — 직업 배지 (한글명 · 클래스 컬러) */}
                 {(() => {
@@ -4010,7 +4010,7 @@ function KingdomRankTab() {
                     <span className="shrink-0 rounded bg-white/[0.06] px-1 text-[8px] font-black" style={{ color: cd.color }}>{cd.name}</span>
                   ) : null;
                 })()}
-                <span className="shrink-0 text-[9px] font-bold text-white/45">Lv{e.lv}</span>
+                <span className="shrink-0 text-[9px] font-bold text-white/55">Lv{e.lv}</span>
                 <span className="shrink-0 rounded bg-purple-400/15 px-1 text-[8px] font-black text-purple-200">환생{e.rebirths}</span>
                 <span className="shrink-0 rounded bg-violet-400/15 px-1 text-[8px] font-black text-violet-200">탑{e.tower}</span>
               </div>
@@ -4026,7 +4026,7 @@ function KingdomRankTab() {
           <p className="text-[12px] font-black text-amber-200">랭커 전용 상점</p>
           <span className={`rounded px-1.5 py-0.5 text-[8px] font-black ${isRanker ? "bg-amber-400 text-slate-900" : "bg-white/10 text-white/50"}`}>{isRanker ? "랭커 인증 완료" : "TOP10 전용"}</span>
         </div>
-        <p className="mt-0.5 text-[9px] leading-snug text-white/45">
+        <p className="mt-0.5 text-[9px] leading-snug text-white/55">
           {isRanker
             ? `축하해요! 현재 ${myRank}위 — 랭커만 채울 수 있는 증표를 에메랄드로 구매할 수 있어요.`
             : "랭킹 10위 안에 들면 챔피언의 증표를 구매할 수 있어요. 명예를 쟁취하라!"}
@@ -4036,12 +4036,12 @@ function KingdomRankTab() {
             <div key={ri.key} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[11px] font-black text-white">{ri.name}</p>
-                <p className="truncate text-[9px] text-white/45">{ri.desc}</p>
+                <p className="truncate text-[9px] text-white/55">{ri.desc}</p>
               </div>
               <button
                 disabled={!isRanker}
                 onClick={() => EventBus.emit("rpg:rankBuy", { key: ri.key })}
-                className={`shrink-0 rounded-md border-2 px-2 py-1 text-[10px] font-black transition-transform active:scale-95 ${isRanker ? "border-amber-300/70 bg-amber-500/25 text-amber-100 hover:bg-amber-500/40" : "cursor-not-allowed border-white/10 bg-white/[0.04] text-white/35"}`}
+                className={`shrink-0 rounded-md border-2 px-2 py-1 text-[10px] font-black transition-transform active:scale-95 ${isRanker ? "border-amber-300/70 bg-amber-500/25 text-amber-100 hover:bg-amber-500/40" : "cursor-not-allowed border-white/10 bg-white/[0.04] text-white/55"}`}
               >
                 {ri.price}💎
               </button>
@@ -4120,7 +4120,7 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
         )}
 
         {empty ? (
-          <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/40">
+          <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/55">
             아직 기록된 방문 구역이 없습니다 — 구역에 한 번이라도 도착하면 여기에 기록되고, 부적으로 이동할 수 있어요.
           </p>
         ) : (
@@ -4138,7 +4138,7 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                         className={`rounded-lg border px-2.5 py-2 text-left text-[11px] font-bold transition-colors ${
                           hasScroll
                             ? "border-white/15 bg-white/[0.05] text-white hover:border-violet-300/60 hover:bg-violet-500/15 active:scale-95"
-                            : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/35"
+                            : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/55"
                         }`}
                       >
                         {s.name}
@@ -4150,7 +4150,7 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
             )}
           </div>
         )}
-        <p className="mt-2.5 text-center text-[10px] text-white/40">이동 1회당 지역 이동 부적 1장 소모 · ESC로 닫기</p>
+        <p className="mt-2.5 text-center text-[10px] text-white/55">이동 1회당 지역 이동 부적 1장 소모 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -4204,7 +4204,7 @@ function JobCard({
         <div className="min-w-0">
           <p className="text-[13px] font-black" style={{ color: d.color }}>
             {navSel && <span className="mr-1 text-amber-300">▶</span>}
-            {d.name} <span className="text-[10px] font-bold text-white/45">— {d.title}</span>
+            {d.name} <span className="text-[10px] font-bold text-white/55">— {d.title}</span>
           </p>
           <p className="mt-0.5 truncate text-[10px] text-white/55">{d.desc}</p>
           <p className="mt-1 flex flex-wrap gap-x-2 text-[10px] font-bold text-emerald-300/90">
@@ -4286,7 +4286,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
         {/* 현재 경로 — 메이플식 계열 트리 표기 */}
         <p className="mb-3 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-bold text-white/70">
           {chain.length === 0 ? (
-            <>현재: <span className="text-white/45">모험가 (공통직업 — 마을 퀘스트 완료 후 1차 선택)</span></>
+            <>현재: <span className="text-white/55">모험가 (공통직업 — 마을 퀘스트 완료 후 1차 선택)</span></>
           ) : (
             <>
               현재: {chain.map((c, i) => (
@@ -4347,7 +4347,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
             <p className="mb-1.5 text-[11px] font-black text-sky-200/90">
               ⇄ 자유 전직 <span className="ml-1 rounded bg-white/10 px-1 text-[9px] font-black text-white/50">{FREE_JOB_COST}G</span>
             </p>
-            <p className="mb-2 text-[10px] text-white/45">
+            <p className="mb-2 text-[10px] text-white/55">
               같은 계열의 반대 길로 갈아탑니다 (메소 대신 골드). 횟수 제한 없음.
             </p>
             <JobCard
@@ -4363,7 +4363,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
           </div>
         ) : null}
 
-        <p className="mt-2 text-center text-[10px] text-white/40">K키로 열기 · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/55">K키로 열기 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -4443,7 +4443,7 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
             </div>
           ))}
         </div>
-        <p className="mb-2.5 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[10px] leading-relaxed text-white/45">
+        <p className="mb-2.5 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[10px] leading-relaxed text-white/55">
           공격력 = 기본 + 무기/강화 + 힘 스탯 + 클래스 경로 보너스 (+ 버프) · 크리티컬 = 기본 + 장신구 + 민첩 + 클래스 · v3.0.24 — 이동속도 = 기본(225) + 민첩 0.5%/점 + 강화 별 합계 0.5%/성 (강화·스텟에 투자하면 빨라진다)
         </p>
 
@@ -4467,11 +4467,11 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
               disabled={rpg.ap < 1}
               onClick={autoAlloc}
               aria-label="AP 자동 배분"
-              className="rounded-md border border-amber-300/50 bg-amber-500/25 px-2.5 py-1 text-[11px] font-black text-amber-100 enabled:hover:bg-amber-500/40 enabled:active:scale-95 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-white/35"
+              className="rounded-md border border-amber-300/50 bg-amber-500/25 px-2.5 py-1 text-[11px] font-black text-amber-100 enabled:hover:bg-amber-500/40 enabled:active:scale-95 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-white/55"
             >
               ✨ 자동 배분
             </button>
-            <span className={`rounded-md px-2 py-0.5 text-[11px] font-black ${rpg.ap > 0 ? "bg-lime-500/25 text-lime-200" : "bg-white/10 text-white/40"}`}>
+            <span className={`rounded-md px-2 py-0.5 text-[11px] font-black ${rpg.ap > 0 ? "bg-lime-500/25 text-lime-200" : "bg-white/10 text-white/55"}`}>
               남은 AP {rpg.ap}
             </span>
           </div>
@@ -4481,21 +4481,21 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
             <div key={m.key} className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
               <div className="w-20 shrink-0">
                 <p className="text-[12px] font-black" style={{ color: m.color }}>{m.label}</p>
-                <p className="text-[9px] text-white/45">{m.effect}</p>
+                <p className="text-[9px] text-white/55">{m.effect}</p>
               </div>
               <span className="w-10 text-center text-[15px] font-black text-white">{rpg.stats[m.key]}</span>
               <div className="ml-auto flex gap-1">
                 <button
                   disabled={rpg.ap < 1}
                   onClick={() => allocate(m.key, 1)}
-                  className="rounded-md bg-lime-500 px-2.5 py-1.5 text-[11px] font-black text-slate-900 enabled:hover:bg-lime-400 enabled:active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-700/50 disabled:text-white/35"
+                  className="rounded-md bg-lime-500 px-2.5 py-1.5 text-[11px] font-black text-slate-900 enabled:hover:bg-lime-400 enabled:active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-700/50 disabled:text-white/55"
                 >
                   +1
                 </button>
                 <button
                   disabled={rpg.ap < 5}
                   onClick={() => allocate(m.key, 5)}
-                  className="rounded-md bg-emerald-600 px-2.5 py-1.5 text-[11px] font-black text-white enabled:hover:bg-emerald-500 enabled:active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-700/50 disabled:text-white/35"
+                  className="rounded-md bg-emerald-600 px-2.5 py-1.5 text-[11px] font-black text-white enabled:hover:bg-emerald-500 enabled:active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-700/50 disabled:text-white/55"
                 >
                   +5
                 </button>
@@ -4503,7 +4503,7 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
             </div>
           ))}
         </div>
-        <p className="mt-2 text-center text-[10px] text-white/40">레벨업마다 AP +5 지급 · "레벨업 자동 ON"이면 레벨업마다 계열 권장 비율로 즉시 배분 · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/55">레벨업마다 AP +5 지급 · "레벨업 자동 ON"이면 레벨업마다 계열 권장 비율로 즉시 배분 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -4527,7 +4527,7 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
         <div className="mb-2 flex items-center justify-between">
           <div>
             <p className="text-sm font-black text-amber-200">퀘스트 로그</p>
-            <p className="text-[10px] text-white/45">{questLog.stageName || "—"}</p>
+            <p className="text-[10px] text-white/55">{questLog.stageName || "—"}</p>
           </div>
           <button
             onClick={onClose}
@@ -4545,9 +4545,9 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
             className="mb-2.5 w-full rounded-lg border border-rose-300/35 bg-rose-400/[0.06] px-2.5 py-2 text-left transition-colors hover:bg-rose-400/[0.12] active:scale-[0.99]"
           >
             <p className="text-[12px] font-black text-rose-200">
-              ⚔ 보스 재도전 — 재림 <span className="ml-1 text-[10px] font-bold text-white/45">전용 창 열기 ▸</span>
+              ⚔ 보스 재도전 — 재림 <span className="ml-1 text-[10px] font-bold text-white/55">전용 창 열기 ▸</span>
             </p>
-            <p className="mt-0.5 text-[10px] font-bold text-white/45">정복한 챕터의 보스가 다시 태어났다 — 스토리판보다 훨씬 강력하다</p>
+            <p className="mt-0.5 text-[10px] font-bold text-white/55">정복한 챕터의 보스가 다시 태어났다 — 스토리판보다 훨씬 강력하다</p>
           </button>
         )}
 
@@ -4605,7 +4605,7 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
                 }`}
               >
                 <div className="flex items-center gap-1.5">
-                  <span className={`text-[10px] font-black ${active ? "text-amber-300" : done ? "text-emerald-300" : "text-white/35"}`}>
+                  <span className={`text-[10px] font-black ${active ? "text-amber-300" : done ? "text-emerald-300" : "text-white/55"}`}>
                     {done ? "✓" : active ? "▶" : "🔒"}
                   </span>
                   <p className="truncate text-[12px] font-bold text-white">{q.title}</p>
@@ -4704,7 +4704,7 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
             </div>
           </div>
         )}
-        <p className="mt-2 text-center text-[10px] text-white/40">우측 상단 추적기가 현재 목표를 안내합니다 · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/55">우측 상단 추적기가 현재 목표를 안내합니다 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -4732,7 +4732,7 @@ function BossDiffChips({ value, onPick }: { value: BossDiffKey; onPick: (lv: Bos
             <p className="text-[11px] font-black" style={{ color: d.color }}>
               {d.label}
             </p>
-            <p className="text-[8.5px] font-bold leading-tight text-white/45">HP ×{d.hp}</p>
+            <p className="text-[8.5px] font-bold leading-tight text-white/55">HP ×{d.hp}</p>
           </button>
         );
       })}
@@ -4759,7 +4759,7 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
         <div className="mb-2 flex items-center justify-between">
           <div>
             <p className="text-sm font-black text-rose-200">⚔ 보스 재도전 — 재림</p>
-            <p className="text-[10px] text-white/45">정복한 챕터의 보스가 다시 태어났다</p>
+            <p className="text-[10px] text-white/55">정복한 챕터의 보스가 다시 태어났다</p>
           </div>
           <button
             onClick={onClose}
@@ -4775,7 +4775,7 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
           <br />
           보상: 골드·경험치 ×3 기준 <span style={{ color: dif.color }}>· 난이도 배율 ×{dif.reward}</span> +{" "}
           <span className="text-emerald-300">에메랄드 +{dif.emerald} 기준</span>
-          <span className="text-white/40"> (vc153 개편 — 보스가 강할수록 더 많이 지급: 보스마다 차등)</span>
+          <span className="text-white/55"> (vc153 개편 — 보스가 강할수록 더 많이 지급: 보스마다 차등)</span>
         </p>
         {/* v3.0.28 — 난이도 선택 (메이플식) */}
         <BossDiffChips value={diff} onPick={setDiff} />
@@ -4796,10 +4796,10 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
                     : "cursor-not-allowed border-white/10 bg-white/[0.03]"
                 }`}
               >
-                <p className={`truncate text-[10px] font-black ${cleared ? "text-rose-100" : "text-white/35"}`}>
+                <p className={`truncate text-[10px] font-black ${cleared ? "text-rose-100" : "text-white/55"}`}>
                   {ch.num}장 {ch.title}
                 </p>
-                <p className={`truncate text-[9px] font-bold ${cleared ? "text-rose-200/90" : "text-white/25"}`}>
+                <p className={`truncate text-[9px] font-bold ${cleared ? "text-rose-200/90" : "text-white/55"}`}>
                   {cleared ? BOSS_DEFS[bk].name : "스토리 진행 필요"}
                 </p>
                 {/* vc153 (#신규9) — 보스별 에메랄드 미리보기 (보스마다 차등) */}
@@ -4821,7 +4821,7 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
           return (
             <>
               <p className="mb-1 mt-2.5 border-t border-white/10 pt-2.5 text-[11px] font-black text-violet-200/90">
-                재림의 땅 — 지역 보스 <span className="text-white/40">(해당 보스를 처치한 적 있을 때 도전)</span>
+                재림의 땅 — 지역 보스 <span className="text-white/55">(해당 보스를 처치한 적 있을 때 도전)</span>
               </p>
               <div className="grid grid-cols-3 gap-1">
                 {RB_BOSSES.map(({ ch, bk, label }) => {
@@ -4838,8 +4838,8 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
                           : "cursor-not-allowed border-white/10 bg-white/[0.03]"
                       }`}
                     >
-                      <p className={`truncate text-[10px] font-black ${cleared ? "text-violet-100" : "text-white/35"}`}>{label}</p>
-                      <p className={`truncate text-[9px] font-bold ${cleared ? "text-violet-200/90" : "text-white/25"}`}>
+                      <p className={`truncate text-[10px] font-black ${cleared ? "text-violet-100" : "text-white/55"}`}>{label}</p>
+                      <p className={`truncate text-[9px] font-bold ${cleared ? "text-violet-200/90" : "text-white/55"}`}>
                         {cleared ? BOSS_DEFS[bk].name : "재림 보스 처치 필요"}
                       </p>
                       {/* vc153 (#신규9) — 보스별 에메랄드 미리보기 */}
@@ -4853,7 +4853,7 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
             </>
           );
         })()}
-        <p className="mt-2.5 text-center text-[10px] text-white/40">스토리 클리어(토벌)한 챕터의 보스만 도전할 수 있습니다 · ESC로 닫기</p>
+        <p className="mt-2.5 text-center text-[10px] text-white/55">스토리 클리어(토벌)한 챕터의 보스만 도전할 수 있습니다 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -4877,7 +4877,7 @@ function PerfCard() {
     }, 500);
     return () => window.clearInterval(t);
   }, []);
-  const fpsColor = !perf ? "text-white/40" : perf.fps >= 55 ? "text-emerald-300" : perf.fps >= 40 ? "text-amber-300" : "text-rose-300";
+  const fpsColor = !perf ? "text-white/55" : perf.fps >= 55 ? "text-emerald-300" : perf.fps >= 40 ? "text-amber-300" : "text-rose-300";
   return (
     <div className="mt-2.5 rounded-lg border border-emerald-300/25 bg-emerald-400/[0.06] px-2.5 py-2.5">
       <div className="flex items-center justify-between">
@@ -4946,7 +4946,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
         <div className="mb-2 flex items-center justify-between">
           <div>
             <p className="text-sm font-black text-sky-200">설정 — 키 매핑</p>
-            <p className="text-[10px] text-white/45">키를 눌러 새 키를 지정 (같은 키는 서로 교체)</p>
+            <p className="text-[10px] text-white/55">키를 눌러 새 키를 지정 (같은 키는 서로 교체)</p>
           </div>
           <button
             onClick={onClose}
@@ -4985,7 +4985,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
               );
             })}
           </div>
-          <p className="mt-1 text-[9px] leading-snug text-white/35">
+          <p className="mt-1 text-[9px] leading-snug text-white/55">
             셰이더가 사라졌다면 → "항상 높음" 선택. 프레임 보호용 자동 축소가 켜진 것입니다.
           </p>
         </div>
@@ -5148,7 +5148,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
             />
             <span className="text-[11px] font-bold text-white/70">플리커 완화 모드 (광원 깜빡임 제거)</span>
           </label>
-          <p className="mt-1 text-[9px] font-bold text-white/35">즉시 적용 — 툰 셰이딩·발광 강도가 함께 조절됩니다 (0 = 셰이더 완전 끔)</p>
+          <p className="mt-1 text-[9px] font-bold text-white/55">즉시 적용 — 툰 셰이딩·발광 강도가 함께 조절됩니다 (0 = 셰이더 완전 끔)</p>
         </div>
 
 
@@ -5202,7 +5202,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
         >
           기본값으로 초기화
         </button>
-        <p className="mt-2 text-center text-[10px] text-white/40">설정은 자동 저장 · ESC로 닫기</p>
+        <p className="mt-2 text-center text-[10px] text-white/55">설정은 자동 저장 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -5290,7 +5290,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
               <button
                 disabled={tickets <= 0}
                 onClick={() => EventBus.emit("rpg:isekai", { action: "gacha" })}
-                className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-black active:scale-95 ${tickets > 0 ? "border-purple-300/60 bg-purple-400/20 text-purple-100 hover:bg-purple-400/30" : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/30"}`}
+                className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-black active:scale-95 ${tickets > 0 ? "border-purple-300/60 bg-purple-400/20 text-purple-100 hover:bg-purple-400/30" : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/55"}`}
               >
                 뽑기 ×1 (보유 {tickets})
               </button>
@@ -5317,7 +5317,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                 );
               })}
             </div>
-            <p className="mt-2 text-[10px] text-white/40">뽑기권 획득: 출석부 · 일일 퀘스트 · 바르가 수비전 정산 · GM 무료 뽑기(10분)</p>
+            <p className="mt-2 text-[10px] text-white/55">뽑기권 획득: 출석부 · 일일 퀘스트 · 바르가 수비전 정산 · GM 무료 뽑기(10분)</p>
           </div>
         )}
 
@@ -5330,7 +5330,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                 const k = ik?.badgeSlots?.[s] ?? null;
                 const b = k ? BADGE_MAP[k] : null;
                 return (
-                  <button key={s} disabled={!b} onClick={() => b && EventBus.emit("rpg:isekai", { action: "badgeUnequip", slot: s })} className={`rounded-lg border px-2 py-2.5 text-center text-[10px] font-bold ${b ? "border-amber-300/50 bg-amber-400/10 text-amber-100" : "border-dashed border-white/15 bg-white/[0.02] text-white/30"}`}>
+                  <button key={s} disabled={!b} onClick={() => b && EventBus.emit("rpg:isekai", { action: "badgeUnequip", slot: s })} className={`rounded-lg border px-2 py-2.5 text-center text-[10px] font-bold ${b ? "border-amber-300/50 bg-amber-400/10 text-amber-100" : "border-dashed border-white/15 bg-white/[0.02] text-white/55"}`}>
                     {b ? b.name : `슬롯 ${s + 1}`}
                     {b && <span className="mt-0.5 block text-[8px] text-white/50">{[b.bonus.atk && `공+${b.bonus.atk}`, b.bonus.def && `방+${b.bonus.def}`, b.bonus.hp && `HP+${b.bonus.hp}`, b.bonus.crit && `크리+${b.bonus.crit}`, b.bonus.goldPct && `골드+${b.bonus.goldPct}%`, b.bonus.speedPct && `이속+${b.bonus.speedPct}%`].filter(Boolean).join(" ")}</span>}
                   </button>
@@ -5345,7 +5345,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                 return (
                   <button key={b.key} disabled={!owned || equipped} onClick={() => EventBus.emit("rpg:isekai", { action: "badgeEquip", key: b.key, slot: (ik?.badgeSlots ?? [null, null, null]).indexOf(null) })} className={`rounded-lg border px-2 py-1.5 text-left transition-colors ${equipped ? "border-emerald-300/40 bg-emerald-400/10" : owned ? "border-white/15 bg-white/[0.05] hover:border-amber-300/50" : "border-white/10 bg-white/[0.02] opacity-45"}`}>
                     <p className="truncate text-[10px] font-black text-white">{equipped ? "✔ " : ""}{b.name}</p>
-                    <p className="truncate text-[8.5px] text-white/45">{owned ? b.desc : `획득: ${b.src}`}</p>
+                    <p className="truncate text-[8.5px] text-white/55">{owned ? b.desc : `획득: ${b.src}`}</p>
                   </button>
                 );
               })}
@@ -5359,7 +5359,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
             <p className="mb-2 text-[11px] font-bold text-white/60">룬 슬롯 4개 — 같은 룬 {RUNE_SYNTH_COST}개를 합성하면 상위 티어</p>
             {/* v1.0.14 피드백#12 — 룬 획득 경로를 "게이트 웨이브"라는 낯선 이름 대신
              *  실제 콘텐츠명(바르가 수비전) + 실제 입장 위치(혜택 패널 티켓 카드)로 정확히 안내 */}
-            <p className="mb-2 text-[10px] leading-relaxed text-white/45">룬 획득: 바르가 수비전 웨이브 클리어 드롭(확률) · 조각 상점 교환(하단) — 수비전 입장은 혜택(🎁) 패널의 티켓 카드에서!</p>
+            <p className="mb-2 text-[10px] leading-relaxed text-white/55">룬 획득: 바르가 수비전 웨이브 클리어 드롭(확률) · 조각 상점 교환(하단) — 수비전 입장은 혜택(🎁) 패널의 티켓 카드에서!</p>
             <div className="mb-2 grid grid-cols-4 gap-1.5">
               {[0, 1, 2, 3].map((s) => {
                 const k = ik?.runeSlots?.[s] ?? null;
@@ -5384,10 +5384,10 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                 <div key={kind} className="mb-1.5 flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5">
                   <span className="text-base">{RUNE_META[kind].icon}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-black" style={{ color: RUNE_META[kind].color }}>{RUNE_META[kind].name} <span className="text-white/40">({RUNE_META[kind].stat === "atk" ? "공격" : RUNE_META[kind].stat === "def" ? "방어" : RUNE_META[kind].stat === "crit" ? "크리" : "HP"})</span></p>
-                    <p className="truncate text-[9px] text-white/45">{tiers.length ? tiers.map((x) => `T${x.t}×${x.n}`).join(" · ") : "보유 없음 — 바르가 수비전 웨이브 드롭(확률) · 조각 상점(하단)"}</p>
+                    <p className="text-[10px] font-black" style={{ color: RUNE_META[kind].color }}>{RUNE_META[kind].name} <span className="text-white/55">({RUNE_META[kind].stat === "atk" ? "공격" : RUNE_META[kind].stat === "def" ? "방어" : RUNE_META[kind].stat === "crit" ? "크리" : "HP"})</span></p>
+                    <p className="truncate text-[9px] text-white/55">{tiers.length ? tiers.map((x) => `T${x.t}×${x.n}`).join(" · ") : "보유 없음 — 바르가 수비전 웨이브 드롭(확률) · 조각 상점(하단)"}</p>
                   </div>
-                  <button onClick={() => EventBus.emit("rpg:isekai", { action: "runeSynth", key: kind })} className={`rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${canSynth ? "border-purple-300/60 bg-purple-400/20 text-purple-100" : "border-white/10 bg-white/[0.03] text-white/35"}`}>합성</button>
+                  <button onClick={() => EventBus.emit("rpg:isekai", { action: "runeSynth", key: kind })} className={`rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${canSynth ? "border-purple-300/60 bg-purple-400/20 text-purple-100" : "border-white/10 bg-white/[0.03] text-white/55"}`}>합성</button>
                   <button onClick={() => EventBus.emit("rpg:isekai", { action: "runeEquip", key: kind + "#" + (tiers.length ? Math.max(...tiers.filter((x) => x.n > 0).map((x) => x.t)) : 1), slot: (ik?.runeSlots ?? [null, null, null, null]).indexOf(null) >= 0 ? (ik?.runeSlots ?? []).indexOf(null) : 0 })} className="rounded-lg border border-white/15 bg-white/[0.05] px-2 py-1 text-[10px] font-black text-white/80 active:scale-95">장착</button>
                 </div>
               );
@@ -5406,12 +5406,12 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                     <div key={s.id} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[10px] font-black text-white">{s.name}</p>
-                        <p className="truncate text-[8.5px] text-white/45">{s.desc}</p>
+                        <p className="truncate text-[8.5px] text-white/55">{s.desc}</p>
                       </div>
                       <button
                         disabled={!can}
                         onClick={() => EventBus.emit("rpg:isekai", { action: "shardBuy", id: s.id })}
-                        className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-black active:scale-95 ${can ? "border-amber-300/60 bg-amber-400/20 text-amber-100" : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/30"}`}
+                        className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-black active:scale-95 ${can ? "border-amber-300/60 bg-amber-400/20 text-amber-100" : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/55"}`}
                       >
                         조각 {s.cost}
                       </button>
@@ -5491,7 +5491,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                 return (
                   <div key={a.id} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${claimed ? "border-emerald-300/40 bg-emerald-400/[0.07]" : claimable ? "border-amber-300/70 bg-amber-400/[0.10] shadow-[0_0_8px_rgba(252,211,77,0.25)]" : "border-white/10 bg-white/[0.03]"}`}>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[10px] font-black text-white">{a.name} <span className="font-normal text-white/40">— {a.desc}</span></p>
+                      <p className="truncate text-[10px] font-black text-white">{a.name} <span className="font-normal text-white/55">— {a.desc}</span></p>
                       <div className="mt-1 flex items-center gap-1.5">
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/50">
                           <div className={`h-full rounded-full ${claimed ? "bg-emerald-400" : claimable ? "bg-gradient-to-r from-amber-400 to-amber-200" : "bg-sky-400/70"}`} style={{ width: `${claimed ? 100 : pct}%` }} />
@@ -5502,7 +5502,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                     <button
                       disabled={claimed}
                       onClick={() => EventBus.emit("rpg:isekai", { action: "achClaim", id: a.id })}
-                      className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${claimed ? "border-emerald-300/40 text-emerald-200" : claimable ? "border-amber-300 bg-amber-400 text-slate-900 hover:bg-amber-300" : "border-white/15 bg-white/[0.05] text-white/45"}`}
+                      className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${claimed ? "border-emerald-300/40 text-emerald-200" : claimable ? "border-amber-300 bg-amber-400 text-slate-900 hover:bg-amber-300" : "border-white/15 bg-white/[0.05] text-white/55"}`}
                     >
                       {claimed ? "수령 완료" : claimable ? `보상 받기 +${a.shards}` : `조각 +${a.shards}`}
                     </button>
@@ -5539,14 +5539,14 @@ function RankTab({ ik }: { ik: NonNullable<RpgState["isekai"]> | undefined }) {
       </div>
       <p className="mb-1.5 rounded-lg border border-sky-300/20 bg-sky-400/5 px-2 py-1.5 text-[10px] text-white/60">내 최고 기록: <span className="font-black text-sky-200">{localBest.toLocaleString()}</span> {mode === "dojang" ? "(누적 피해)" : mode === "gate" ? "(웨이브)" : "(골드)"} · 기록은 멀티 서버에 자동 등록</p>
       {list.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/40">아직 서버 랭킹이 없습니다 — 멀티 서버 접속 후 기록을 세워보자!</p>
+        <p className="rounded-lg border border-dashed border-white/15 px-2.5 py-3 text-[11px] text-white/55">아직 서버 랭킹이 없습니다 — 멀티 서버 접속 후 기록을 세워보자!</p>
       ) : (
         <div className="flex flex-col gap-1">
           {list.map((e, i) => (
             <div key={`${e.name}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${i < 3 ? "border-amber-300/40 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
-              <span className={`w-6 text-center text-[11px] font-black ${i < 3 ? "text-amber-300" : "text-white/40"}`}>{i + 1}</span>
+              <span className={`w-6 text-center text-[11px] font-black ${i < 3 ? "text-amber-300" : "text-white/55"}`}>{i + 1}</span>
               <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white">{e.name}</span>
-              <span className="text-[10px] text-white/40">Lv{e.lv}</span>
+              <span className="text-[10px] text-white/55">Lv{e.lv}</span>
               <span className="text-[11px] font-black text-sky-200">{e.score.toLocaleString()}</span>
             </div>
           ))}
@@ -5644,13 +5644,13 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
             return (
               <div key={q.id} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${done ? "border-emerald-300/40 bg-emerald-400/[0.07]" : "border-white/10 bg-white/[0.03]"}`}>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-white">{q.name} <span className="ml-1 font-normal text-white/40">{q.desc}</span></p>
+                  <p className="text-[10px] font-black text-white">{q.name} <span className="ml-1 font-normal text-white/55">{q.desc}</span></p>
                   <p className="text-[9px] text-white/50">진행 {Math.min(q.prog, q.goal)}/{q.goal} · 보상 {q.reward}</p>
                   <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                     <div className="h-full rounded-full bg-emerald-400/70" style={{ width: `${Math.min(100, (q.prog / q.goal) * 100)}%` }} />
                   </div>
                 </div>
-                <button disabled={done || !reach} onClick={() => EventBus.emit("rpg:isekai", { action: "dailyClaim", id: q.id })} className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${done ? "border-emerald-300/40 text-emerald-200" : reach ? "border-amber-300/50 bg-amber-400/15 text-amber-200 hover:bg-amber-400/25" : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/30"}`}>{done ? "수령 완료" : "수령"}</button>
+                <button disabled={done || !reach} onClick={() => EventBus.emit("rpg:isekai", { action: "dailyClaim", id: q.id })} className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${done ? "border-emerald-300/40 text-emerald-200" : reach ? "border-amber-300/50 bg-amber-400/15 text-amber-200 hover:bg-amber-400/25" : "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/55"}`}>{done ? "수령 완료" : "수령"}</button>
               </div>
             );
           })}
@@ -5671,14 +5671,14 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
                 disabled={(ik?.tickets?.gate ?? 0) <= 0}
                 onClick={() => EventBus.emit("rpg:gm", { type: "gate" })}
                 title={(ik?.tickets?.gate ?? 0) <= 0 ? "오늘 티켓 소진 — 재충전하거나 내일 다시!" : "바르가 수비전(웨이브 디펜스) 입장 — 웨이브 클리어마다 룬 드롭 기회!"}
-                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(ik?.tickets?.gate ?? 0) <= 0 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-violet-400 text-slate-900 hover:bg-violet-300"}`}
+                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(ik?.tickets?.gate ?? 0) <= 0 ? "cursor-not-allowed bg-white/[0.06] text-white/55" : "bg-violet-400 text-slate-900 hover:bg-violet-300"}`}
               >
                 🚪 입장
               </button>
               <button
                 disabled={(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3}
                 onClick={() => EventBus.emit("rpg:ticketRefill", { kind: "gate" })}
-                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-violet-400 text-slate-900 hover:bg-violet-300"}`}
+                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3 ? "cursor-not-allowed bg-white/[0.06] text-white/55" : "bg-violet-400 text-slate-900 hover:bg-violet-300"}`}
               >
                 재충전 (3💎 · {(rpg.ticketRefillsLeft ?? 0)}회)
               </button>
@@ -5692,14 +5692,14 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
                 disabled={(ik?.tickets?.closet ?? 0) <= 0}
                 onClick={() => EventBus.emit("rpg:gm", { type: "closet" })}
                 title={(ik?.tickets?.closet ?? 0) <= 0 ? "오늘 티켓 소진 — 재충전하거나 내일 다시!" : "균열 던전(60초 파밍) 입장"}
-                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(ik?.tickets?.closet ?? 0) <= 0 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-lime-400 text-slate-900 hover:bg-lime-300"}`}
+                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(ik?.tickets?.closet ?? 0) <= 0 ? "cursor-not-allowed bg-white/[0.06] text-white/55" : "bg-lime-400 text-slate-900 hover:bg-lime-300"}`}
               >
                 👕 입장
               </button>
               <button
                 disabled={(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3}
                 onClick={() => EventBus.emit("rpg:ticketRefill", { kind: "closet" })}
-                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3 ? "cursor-not-allowed bg-white/[0.06] text-white/30" : "bg-lime-400 text-slate-900 hover:bg-lime-300"}`}
+                className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(rpg.ticketRefillsLeft ?? 0) <= 0 || rpg.emerald < 3 ? "cursor-not-allowed bg-white/[0.06] text-white/55" : "bg-lime-400 text-slate-900 hover:bg-lime-300"}`}
               >
                 재충전 (3💎 · {(rpg.ticketRefillsLeft ?? 0)}회)
               </button>
@@ -5715,7 +5715,7 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
             {CLOSET_THEMES.map((t) => (
               <span
                 key={t.dow}
-                className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-black ${t.dow === closetThemeOf().dow ? "bg-white/20 text-white" : "bg-white/[0.06] text-white/45"}`}
+                className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-black ${t.dow === closetThemeOf().dow ? "bg-white/20 text-white" : "bg-white/[0.06] text-white/55"}`}
                 style={{ color: t.dow === closetThemeOf().dow ? t.color : undefined }}
               >
                 {"일월화수목금토"[t.dow]} {t.name}
@@ -5740,12 +5740,12 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="예: HELLOSERTZ"
             maxLength={20}
-            className="min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-2.5 py-2 text-[11px] font-bold text-white placeholder:text-white/25 focus:border-emerald-300/50 focus:outline-none"
+            className="min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-2.5 py-2 text-[11px] font-bold text-white placeholder:text-white/55 focus:border-emerald-300/50 focus:outline-none"
           />
           <button onClick={() => { if (code.trim()) { EventBus.emit("rpg:isekai", { action: "coupon", code: code.trim() }); setCode(""); } }} className="shrink-0 rounded-lg border border-emerald-300/60 bg-emerald-400/20 px-3 py-2 text-[11px] font-black text-emerald-100 hover:bg-emerald-400/30 active:scale-95">사용</button>
         </div>
-        <p className="mt-1.5 text-[10px] text-white/40">힌트: HELLOSERTZ · GATEOPEN · SERTZV4</p>
-        <p className="mt-2 text-center text-[10px] text-white/40">ESC로 닫기 · 출석/수령은 즉시 세이브에 반영</p>
+        <p className="mt-1.5 text-[10px] text-white/55">힌트: HELLOSERTZ · GATEOPEN · SERTZV4</p>
+        <p className="mt-2 text-center text-[10px] text-white/55">ESC로 닫기 · 출석/수령은 즉시 세이브에 반영</p>
       </div>
     </div>
   );

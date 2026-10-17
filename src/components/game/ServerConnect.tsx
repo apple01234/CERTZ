@@ -240,7 +240,7 @@ export function ServerConnect() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://sertz.vercel.app"
-            className="w-full rounded-lg border border-white/15 bg-black/40 px-2.5 py-2 text-[11px] text-white placeholder:text-white/25 focus:border-amber-300/60 focus:outline-none"
+            className="w-full rounded-lg border border-white/15 bg-black/40 px-2.5 py-2 text-[11px] text-white placeholder:text-white/55 focus:border-amber-300/60 focus:outline-none"
             spellCheck={false}
             inputMode="url"
             autoCapitalize="off"

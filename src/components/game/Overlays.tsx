@@ -135,7 +135,7 @@ export function TitleScreen() {
               clearSave();
               setSave(null);
             }}
-            className="mx-auto text-[11px] font-bold text-white/40 underline underline-offset-2 hover:text-white/70"
+            className="mx-auto text-[11px] font-bold text-white/55 underline underline-offset-2 hover:text-white/70"
           >
             마지막 플레이 세이브 삭제 (로비에서 개별 캐릭터 삭제 가능)
           </button>
@@ -161,7 +161,7 @@ export function TitleScreen() {
         <p className="game-chip px-2.5 py-1 text-[10px] font-bold text-[#cbb88a] [@media(max-height:540px)]:hidden">
           이동: 방향키 / 왼쪽 화면 드래그 · 공격: X · 스킬: Z, C, V, A, S · 물약: D, F
         </p>
-        <p className="max-w-[min(94vw,760px)] text-[8px] leading-relaxed text-white/30 sm:text-[9px]">
+        <p className="max-w-[min(94vw,760px)] text-[8px] leading-relaxed text-white/55 sm:text-[9px]">
           Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by
           williamthompsonj (CC-BY) · Sotrak by gilgaphoenixignis (CC-BY) · SPUM · Cartoon FX Remaster & Fantasy UI SFX (Unity Asset Store 유료 라이선스) · Music: Kevin MacLeod (incompetech.com, CC-BY 4.0) · SFX: Rubberduck (CC0)
         </p>
@@ -553,7 +553,7 @@ export function RewardPopup() {
             </p>
           ))}
         </div>
-        <p className="mt-1 text-right text-[9px] font-bold text-white/40">보상이 인벤토리에 지급되었습니다</p>
+        <p className="mt-1 text-right text-[9px] font-bold text-white/55">보상이 인벤토리에 지급되었습니다</p>
       </div>
     </div>
   );
@@ -617,9 +617,9 @@ export function NamePanel() {
             }
           }}
           placeholder="1~8자 (한글/영문/숫자)"
-          className="game-input w-full px-3 py-3 text-lg font-black tracking-wider placeholder:text-white/30"
+          className="game-input w-full px-3 py-3 text-lg font-black tracking-wider placeholder:text-white/55"
         />
-        <div className="mt-1 text-right text-[10px] font-bold text-white/40">{val.length}/8</div>
+        <div className="mt-1 text-right text-[10px] font-bold text-white/55">{val.length}/8</div>
         <button
           onClick={confirm}
           disabled={!val.trim()}

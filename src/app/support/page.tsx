@@ -252,7 +252,7 @@ export default function SupportPage() {
             onChange={(e) => setName(e.target.value)}
             placeholder="게임 닉네임 (선택)"
             maxLength={24}
-            className="rounded-lg border border-white/15 bg-black/50 px-3 py-2 text-[13px] font-bold text-white placeholder:text-white/30"
+            className="rounded-lg border border-white/15 bg-black/50 px-3 py-2 text-[13px] font-bold text-white placeholder:text-white/55"
           />
           <input
             value={contact}
@@ -260,7 +260,7 @@ export default function SupportPage() {
             placeholder="답변 받을 이메일 (선택)"
             maxLength={80}
             type="email"
-            className="rounded-lg border border-white/15 bg-black/50 px-3 py-2 text-[13px] font-bold text-white placeholder:text-white/30"
+            className="rounded-lg border border-white/15 bg-black/50 px-3 py-2 text-[13px] font-bold text-white placeholder:text-white/55"
           />
           <textarea
             value={message}
@@ -268,7 +268,7 @@ export default function SupportPage() {
             placeholder="무슨 일이 있었나요? 최대한 자세히 적어주세요 (필수)"
             rows={5}
             maxLength={2000}
-            className="rounded-lg border border-white/15 bg-black/50 px-3 py-2 text-[13px] font-bold text-white placeholder:text-white/30"
+            className="rounded-lg border border-white/15 bg-black/50 px-3 py-2 text-[13px] font-bold text-white placeholder:text-white/55"
           />
           {err && <p className="text-[12px] font-bold text-rose-300">{err}</p>}
           {sent && <p className="text-[12px] font-bold text-emerald-300">{sent}</p>}
@@ -282,7 +282,7 @@ export default function SupportPage() {
         </div>
       </section>
 
-      <footer className="mt-10 text-center text-[10px] leading-relaxed text-white/35">
+      <footer className="mt-10 text-center text-[10px] leading-relaxed text-white/55">
         SERTZ — 이그드라실: 아홉 왕국 · v1.4.5<br />
         이 페이지는 게임과 같은 서버에서 동작합니다. 문의 데이터는 서버에만 저장되며 전송은 HTTPS로 암호화됩니다.
       </footer>

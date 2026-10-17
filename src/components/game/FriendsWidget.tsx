@@ -131,7 +131,7 @@ export function FriendsWidget() {
             <div className="flex items-center gap-1.5">
               <span
                 className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
-                  conn.connected ? "bg-emerald-400/20 text-emerald-200" : "bg-white/10 text-white/45"
+                  conn.connected ? "bg-emerald-400/20 text-emerald-200" : "bg-white/10 text-white/55"
                 }`}
               >
                 {conn.connected ? "온라인" : conn.hasServer ? "연결 중…" : "오프라인"}
@@ -167,7 +167,7 @@ export function FriendsWidget() {
                     <span className="min-w-0 flex-1 truncate font-bold">{o?.name || f.name || f.code}</span>
                     {o ? (
                       <>
-                        <span className="shrink-0 text-[9px] text-white/45">
+                        <span className="shrink-0 text-[9px] text-white/55">
                           Lv.{o.lv} · {stageLabel(o.stage)}
                         </span>
                         <button
@@ -179,12 +179,12 @@ export function FriendsWidget() {
                         </button>
                       </>
                     ) : (
-                      <span className="shrink-0 text-[9px] text-white/35">오프라인</span>
+                      <span className="shrink-0 text-[9px] text-white/55">오프라인</span>
                     )}
                     <button
                       onClick={() => remove(f.code)}
                       aria-label={`${f.code} 친구 삭제`}
-                      className="shrink-0 text-white/30 hover:text-rose-300"
+                      className="shrink-0 text-white/55 hover:text-rose-300"
                     >
                       <X size={11} />
                     </button>
@@ -193,7 +193,7 @@ export function FriendsWidget() {
               })}
             </ul>
           ) : (
-            <p className="mb-2 rounded bg-white/[0.04] px-2 py-2 text-[10px] leading-snug text-white/40">
+            <p className="mb-2 rounded bg-white/[0.04] px-2 py-2 text-[10px] leading-snug text-white/55">
               아직 친구가 없습니다 — 친구의 코드를 추가하면 접속 중일 때 구역이 표시되고 바로 이동할 수 있어요.
             </p>
           )}
@@ -210,7 +210,7 @@ export function FriendsWidget() {
               placeholder="친구 코드 입력"
               maxLength={12}
               aria-label="친구 코드"
-              className="min-w-0 flex-1 rounded-lg border border-white/20 bg-black/70 px-2 py-1 font-mono text-[11px] font-bold tracking-wider text-white outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-white/30"
+              className="min-w-0 flex-1 rounded-lg border border-white/20 bg-black/70 px-2 py-1 font-mono text-[11px] font-bold tracking-wider text-white outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-white/55"
             />
             <button
               onClick={add}
@@ -220,7 +220,7 @@ export function FriendsWidget() {
             </button>
           </div>
           {err && <p className="mt-1 text-[10px] font-bold text-rose-300">{err}</p>}
-          <p className="mt-1.5 text-[10px] leading-snug text-white/40">
+          <p className="mt-1.5 text-[10px] leading-snug text-white/55">
             친구끼리 코드를 서로 등록하면 접속 시 자동으로 온라인 표시됩니다.
           </p>
         </div>

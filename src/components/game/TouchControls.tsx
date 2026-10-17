@@ -292,7 +292,7 @@ export function TouchControls({
         {/* 대기 중 안내 패드 — v3.0.15 (#10): 이동표시를 살짝 아래로 내림 (bottom-20→bottom-15) */}
         {!dragging && (
           <div className="pointer-events-none absolute bottom-15 left-6 flex h-[104px] w-[104px] items-center justify-center rounded-full border-2 border-dashed border-white/30 bg-black/25 sm:bottom-19 sm:left-10">
-            <span className="text-[10px] font-black tracking-widest text-white/45">이동</span>
+            <span className="text-[10px] font-black tracking-widest text-white/55">이동</span>
           </div>
         )}
         {/* v3.0.18 — 항상 마운트 + ref 직접 스타일 갱신 (드래그 중 리렌더 0).

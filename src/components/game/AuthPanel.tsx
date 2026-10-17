@@ -261,7 +261,7 @@ export function AuthPanel() {
   };
 
   const inputCls =
-    "w-full rounded-lg border border-white/20 bg-slate-900/90 px-3 py-2 text-[13px] font-bold text-white outline-none placeholder:text-white/30 focus:border-amber-300/70";
+    "w-full rounded-lg border border-white/20 bg-slate-900/90 px-3 py-2 text-[13px] font-bold text-white outline-none placeholder:text-white/55 focus:border-amber-300/70";
 
   return (
     <>
@@ -286,7 +286,7 @@ export function AuthPanel() {
               <>
                 <div className="rounded-xl border border-emerald-300/25 bg-emerald-400/10 p-3">
                   <p className="text-[13px] font-black text-emerald-100">{user.name}</p>
-                  <p className="mt-0.5 text-[10px] font-bold text-white/45">
+                  <p className="mt-0.5 text-[10px] font-bold text-white/55">
                     {user.id} · {user.provider === "local" ? "자체 가입" : `${SNS_META[user.provider]?.label ?? user.provider} 연동`}
                   </p>
                 </div>
@@ -305,7 +305,7 @@ export function AuthPanel() {
                     <br />접속 서버: {getApiServerHost()}
                   </p>
                 )}
-                <p className="mt-2 text-[9px] font-bold leading-relaxed text-white/40">
+                <p className="mt-2 text-[9px] font-bold leading-relaxed text-white/55">
                   백업은 3분마다 자동 실행돼요 · 복원하면 이 기기의 세이브가 교체돼요
                 </p>
                 <button onClick={doLogout} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-[12px] font-black text-white/70 hover:bg-white/10 active:scale-95">
@@ -329,11 +329,11 @@ export function AuthPanel() {
                   </svg>
                   구글로 로그인
                 </button>
-                <p className="mt-1.5 rounded-lg border border-white/15 bg-black/30 px-2.5 py-2 text-[9px] font-bold leading-relaxed text-white/45">
+                <p className="mt-1.5 rounded-lg border border-white/15 bg-black/30 px-2.5 py-2 text-[9px] font-bold leading-relaxed text-white/55">
                   🔒 카카오·네이버 로그인은 일시 중단 중이에요 — 구글·자체 계정을 이용해 주세요
                 </p>
 
-                <div className="my-2 flex items-center gap-2 text-[9px] font-black text-white/30">
+                <div className="my-2 flex items-center gap-2 text-[9px] font-black text-white/55">
                   <span className="h-px flex-1 bg-white/15" /> 자체 계정 <span className="h-px flex-1 bg-white/15" />
                 </div>
 

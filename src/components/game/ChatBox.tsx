@@ -216,7 +216,7 @@ export function ChatBox() {
               placeholder="메시지 입력… (Enter 전송 · ESC 취소)"
               maxLength={80}
               aria-label="전체 채팅 입력"
-              className="min-w-0 flex-1 rounded-md border border-white/25 bg-black/75 px-2 py-1.5 text-xs font-bold text-white shadow-lg outline-none backdrop-blur-sm placeholder:text-white/35 focus:border-amber-300/60"
+              className="min-w-0 flex-1 rounded-md border border-white/25 bg-black/75 px-2 py-1.5 text-xs font-bold text-white shadow-lg outline-none backdrop-blur-sm placeholder:text-white/55 focus:border-amber-300/60"
             />
             {/* v2.3 전송 버튼 — 모바일 가상 키보드에서 Enter 대신 누를 수 있게 */}
             <button
@@ -288,7 +288,7 @@ export function ChatBox() {
             </div>
             <div ref={logListRef} className="sertz-scroll min-h-0 flex-1 overflow-y-auto pr-0.5">
               {msgs.length === 0 && (
-                <p className="py-6 text-center text-[11px] font-bold text-white/35">
+                <p className="py-6 text-center text-[11px] font-bold text-white/55">
                   아직 채팅 기록이 없어요 — 채팅을 보내면 여기에 쌓입니다
                 </p>
               )}
@@ -312,7 +312,7 @@ export function ChatBox() {
                 ))}
               </div>
             </div>
-            <p className="mt-1.5 text-center text-[9px] font-bold text-white/30">위로 스크롤해 이전 기록 확인 · 최대 {CHAT_RETAIN}개까지 보관</p>
+            <p className="mt-1.5 text-center text-[9px] font-bold text-white/55">위로 스크롤해 이전 기록 확인 · 최대 {CHAT_RETAIN}개까지 보관</p>
           </div>
         </div>
       )}

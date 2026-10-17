@@ -88,7 +88,7 @@ export function ClassroomPanel() {
                 onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
                 placeholder="참여 코드 6자리"
                 maxLength={6}
-                className="game-input w-full px-3 py-2.5 text-center text-[14px] font-black tracking-[0.3em] placeholder:tracking-normal placeholder:text-white/25"
+                className="game-input w-full px-3 py-2.5 text-center text-[14px] font-black tracking-[0.3em] placeholder:tracking-normal placeholder:text-white/55"
               />
               <button onClick={doJoin} disabled={code.trim().length < 4} className="game-btn shrink-0 px-4 py-2.5 text-[12px] font-black active:scale-95 disabled:opacity-40">
                 참여
@@ -158,13 +158,13 @@ export function ClassroomPanel() {
 
             {/* 참가자 명단 */}
             <div className="sertz-scroll max-h-36 space-y-1 overflow-y-auto rounded-lg border border-white/10 bg-black/30 p-1.5">
-              {snap!.peers.length === 0 && <p className="px-1 py-2 text-center text-[10px] font-bold text-white/35">참가자를 기다리는 중…</p>}
+              {snap!.peers.length === 0 && <p className="px-1 py-2 text-center text-[10px] font-bold text-white/55">참가자를 기다리는 중…</p>}
               {[...snap!.peers].sort((a, b) => b.kills - a.kills).slice(0, 100).map((p, i) => (
                 <div key={p.id} className="flex items-center gap-2 px-1 py-0.5 text-[11px] font-bold">
-                  <span className="w-5 text-right text-white/35">{i + 1}</span>
+                  <span className="w-5 text-right text-white/55">{i + 1}</span>
                   <span className="flex-1 truncate text-white/80">{p.name}{p.id === snap!.id ? " (나)" : ""}</span>
                   {snap!.mode === "team" && <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${p.tm === 0 ? "bg-rose-400" : "bg-sky-400"}`} />}
-                  <span className="text-white/40">Lv.{p.lv}</span>
+                  <span className="text-white/55">Lv.{p.lv}</span>
                   <span className="w-12 text-right text-amber-200/90">{p.kills}킬</span>
                 </div>
               ))}
@@ -188,7 +188,7 @@ function ActivityBtn({ icon, title, desc, onClick }: { icon: React.ReactNode; ti
         <span className="block text-[12px] font-black text-white">{title}</span>
         <span className="block text-[9px] font-bold text-white/50">{desc}</span>
       </span>
-      <Play size={12} className="ml-auto text-white/40" />
+      <Play size={12} className="ml-auto text-white/55" />
     </button>
   );
 }
@@ -204,7 +204,7 @@ function QuizPicker({ onStart }: { onStart: (qz: { q: string; ch: string[]; a: n
           <span className="block text-[12px] font-black text-white">퀴즈쇼</span>
           <span className="block text-[9px] font-bold text-white/50">게임 지식 퀴즈 출제 — 학생 전원 패널 투표 · 30초</span>
         </span>
-        <span className="text-[10px] font-black text-white/40">{open ? "▲" : "▼"}</span>
+        <span className="text-[10px] font-black text-white/55">{open ? "▲" : "▼"}</span>
       </button>
       {open && (
         <div className="sertz-scroll max-h-40 space-y-1 overflow-y-auto border-t border-white/10 p-1.5">
@@ -214,7 +214,7 @@ function QuizPicker({ onStart }: { onStart: (qz: { q: string; ch: string[]; a: n
               onClick={() => { onStart(qz); setOpen(false); }}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] font-bold text-white/80 transition-colors hover:bg-emerald-400/10"
             >
-              <span className="w-4 text-white/35">{i + 1}</span>
+              <span className="w-4 text-white/55">{i + 1}</span>
               <span className="flex-1 truncate">{qz.q}</span>
               <Play size={10} className="text-emerald-300" />
             </button>

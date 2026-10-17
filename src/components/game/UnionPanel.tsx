@@ -255,7 +255,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
         {/* 등급 진행 바 */}
         <div className="mb-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
           <div className="flex items-center justify-between text-[10px] font-bold text-white/60">
-            <span>유니온 레벨 <b className="text-amber-200">{unionLv.toLocaleString()}</b> <span className="text-white/40">(캐릭터 레벨 합산 — 60까지 100%·초과분 10레벨당 1)</span></span>
+            <span>유니온 레벨 <b className="text-amber-200">{unionLv.toLocaleString()}</b> <span className="text-white/55">(캐릭터 레벨 합산 — 60까지 100%·초과분 10레벨당 1)</span></span>
             <span>{next ? `다음 등급 ${next.name} — ${nextNeed.toLocaleString()}` : "최고 등급 달성!"}</span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-black/60">
@@ -271,7 +271,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
               합계 — 공격 +{eff.atk.toFixed(0)} · HP +{eff.hp.toFixed(0)} · 방어 +{eff.def.toFixed(0)} · 크리 +{eff.crit.toFixed(1)}%p · 크리뎀 +{eff.critDmg.toFixed(1)}%p · 공격력 +{eff.atkPct.toFixed(1)}% · 골드 +{eff.goldPct.toFixed(1)}% · 이동 +{eff.speedPct.toFixed(1)}%
             </span>
           </div>
-          <p className="mt-1 text-[9px] font-bold text-white/35">유니온 효과는 계정의 모든 캐릭터에 즉시 적용된다 · 배치 인원 {placedCount}/{cap} · 등급업 시 그리드 인원 +1</p>
+          <p className="mt-1 text-[9px] font-bold text-white/55">유니온 효과는 계정의 모든 캐릭터에 즉시 적용된다 · 배치 인원 {placedCount}/{cap} · 등급업 시 그리드 인원 +1</p>
         </div>
 
         {/* 탭 */}
@@ -374,13 +374,13 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                     style={{ borderColor: `${FAM_COLOR[fam]}55`, background: `${FAM_COLOR[fam]}14` }}
                   >
                     <p className="truncate text-[9px] font-black" style={{ color: FAM_COLOR[fam] }}>{m.name}</p>
-                    <p className="text-[8px] font-bold text-white/45">Lv{m.lv} · {FAM_LABEL[fam]}</p>
+                    <p className="text-[8px] font-bold text-white/55">Lv{m.lv} · {FAM_LABEL[fam]}</p>
                     {/* v1.0.19 (B-2) — 배치 등급 배지 (레벨 구간 → B/A/S/SS, 등급 배율만큼 효과 증폭) */}
                     {pg && <p className="text-[8px] font-black" style={{ color: pg.color }}>{pg.grade}등급 ×{pg.mult}</p>}
                   </button>
                 );
               })}
-              {unplaced.length === 0 && <p className="col-span-6 py-2 text-center text-[10px] font-bold text-white/35">모든 캐릭터가 배치되어 있다</p>}
+              {unplaced.length === 0 && <p className="col-span-6 py-2 text-center text-[10px] font-bold text-white/55">모든 캐릭터가 배치되어 있다</p>}
             </div>
             {roster.length === 0 && (
               <div className="mt-2 rounded-lg border border-amber-300/40 bg-amber-400/10 px-2.5 py-2">
@@ -418,7 +418,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                     <b className="truncate text-[11px] text-white">{it.name}</b>
                     <b className="shrink-0 text-[10px] text-amber-200">{it.cost}C</b>
                   </span>
-                  <span className="mt-0.5 block text-[9px] font-bold leading-snug text-white/45">{it.desc}</span>
+                  <span className="mt-0.5 block text-[9px] font-bold leading-snug text-white/55">{it.desc}</span>
                 </span>
               </button>
             ))}
@@ -444,13 +444,13 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                       <b className="truncate text-[11px] text-white">{b.name}</b>
                       <b className="shrink-0 text-[10px] text-amber-200">{b.cost}C</b>
                     </span>
-                    <span className="mt-0.5 block text-[9px] font-bold text-white/45">{b.minutes}분 · {b.desc}</span>
+                    <span className="mt-0.5 block text-[9px] font-bold text-white/55">{b.minutes}분 · {b.desc}</span>
                     {active && <span className="mt-0.5 block text-[9px] font-black text-emerald-300">발동 중 — {remainMin}분 남음 (전 캐릭터 적용)</span>}
                   </span>
                 </button>
               );
             })}
-            <p className="col-span-2 mt-1 text-[9px] font-bold text-white/35">유니온 버프는 계정의 모든 캐릭터에 적용된다 · 같은 버프 재구매 시 남은 시간에 추가</p>
+            <p className="col-span-2 mt-1 text-[9px] font-bold text-white/55">유니온 버프는 계정의 모든 캐릭터에 적용된다 · 같은 버프 재구매 시 남은 시간에 추가</p>
           </div>
         )}
 
@@ -488,12 +488,12 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                       <div className="mt-0.5 flex items-center gap-1">
                         <span className="rounded border px-1 py-px text-[8px] font-black" style={{ borderColor: `${gr.color}88`, color: gr.color, background: `${gr.color}14` }}>{gr.label}</span>
                         {lv > 0 && nextGr.label !== gr.label && (
-                          <span className="text-[8px] font-bold text-white/30">→ {nextGr.label} (Lv{lv >= 9 ? 10 : lv >= 6 ? 9 : lv >= 3 ? 6 : 3})</span>
+                          <span className="text-[8px] font-bold text-white/55">→ {nextGr.label} (Lv{lv >= 9 ? 10 : lv >= 6 ? 9 : lv >= 3 ? 6 : 3})</span>
                         )}
                       </div>
                     </div>
                   </div>
-                  <p className="mt-1 text-[9px] font-bold text-white/45">{lv > 0 ? a.desc(lv) : "미 개방 — 성장시켜 계정 영구 보너스 획득"}</p>
+                  <p className="mt-1 text-[9px] font-bold text-white/55">{lv > 0 ? a.desc(lv) : "미 개방 — 성장시켜 계정 영구 보너스 획득"}</p>
                   <button
                     disabled={maxed}
                     onClick={() => {
@@ -506,14 +506,14 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                         refresh();
                       } else EventBus.emit("banner:show", { text: `코인이 부족하다 (${cost} 필요)` });
                     }}
-                    className={`mt-1.5 w-full rounded-md px-2 py-1 text-[10px] font-black transition-transform active:scale-95 ${maxed ? "border border-white/10 bg-white/5 text-white/30" : "bg-violet-400 text-slate-900"}`}
+                    className={`mt-1.5 w-full rounded-md px-2 py-1 text-[10px] font-black transition-transform active:scale-95 ${maxed ? "border border-white/10 bg-white/5 text-white/55" : "bg-violet-400 text-slate-900"}`}
                   >
                     {maxed ? "최대 성장" : `성장 — ${cost}C`}
                   </button>
                 </div>
               );
             })}
-            <p className="col-span-2 mt-1 text-[9px] font-bold text-white/35">아티팩트는 코인으로만 성장하는 계정 단위 영구 성장 요소 — 성장 단계(일반→희귀→영웅→전설)마다 프레임이 변한다</p>
+            <p className="col-span-2 mt-1 text-[9px] font-bold text-white/55">아티팩트는 코인으로만 성장하는 계정 단위 영구 성장 요소 — 성장 단계(일반→희귀→영웅→전설)마다 프레임이 변한다</p>
           </div>
         )}
 
@@ -547,7 +547,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                         />
                         <p className="text-[11px] font-black" style={{ color: d.color }}>{d.name}</p>
                         <p className="mt-0.5 truncate text-[9px] font-bold text-white/60">{d.boss}</p>
-                        <p className="mt-0.5 text-[8px] font-bold text-white/40">배치 {d.req}명 이상 · 코인 +{d.coin}</p>
+                        <p className="mt-0.5 text-[8px] font-bold text-white/55">배치 {d.req}명 이상 · 코인 +{d.coin}</p>
                         {done !== null && <p className="mt-0.5 text-[8px] font-black text-emerald-300">금일 클리어</p>}
                       </button>
                     );
@@ -561,7 +561,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
                         {a.name} Lv{a.lv} ({FAM_LABEL[a.fam ?? "warrior"]})
                       </span>
                     ))}
-                    {raidPower(u, slots).allies.length === 0 && <span className="text-[9px] font-bold text-white/35">배치된 캐릭터가 없다 — 배치 탭에서 배치하자</span>}
+                    {raidPower(u, slots).allies.length === 0 && <span className="text-[9px] font-bold text-white/55">배치된 캐릭터가 없다 — 배치 탭에서 배치하자</span>}
                   </div>
                 </div>
               </>

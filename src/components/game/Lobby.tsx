@@ -219,7 +219,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
             <Users size={18} className="text-[#ffd98a]" />
             <div>
               <p className="text-sm font-black tracking-wide text-[#ffd98a]">캐릭터 선택</p>
-              <p className="text-[9px] font-bold text-white/40">더블클릭으로 바로 입장 · 캐릭터마다 레벨·장비·진행도가 개별 저장된다</p>
+              <p className="text-[9px] font-bold text-white/55">더블클릭으로 바로 입장 · 캐릭터마다 레벨·장비·진행도가 개별 저장된다</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -268,7 +268,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                           </span>
                         </div>
                         <p className="mt-0.5 text-[10px] font-black text-amber-200">Lv. {m.lv}{m.rebirths > 0 ? ` · 환생 ${m.rebirths}회` : ""}</p>
-                        <p className="mt-0.5 flex items-center gap-0.5 text-[8px] font-bold text-white/40">
+                        <p className="mt-0.5 flex items-center gap-0.5 text-[8px] font-bold text-white/55">
                           <Clock size={8} />
                           {relTime(m.lastSeen)}
                         </p>
@@ -288,7 +288,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                   <p className="text-[10px] font-black">캐릭터 생성</p>
                 </button>
               ) : (
-                <div className="game-chip flex min-h-[92px] flex-col items-center justify-center gap-1 border-dashed text-white/25">
+                <div className="game-chip flex min-h-[92px] flex-col items-center justify-center gap-1 border-dashed text-white/55">
                   <Lock size={16} />
                   <p className="text-[9px] font-bold">슬롯 확장 필요</p>
                 </div>
@@ -314,10 +314,10 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                 <div className="mb-2 flex items-center gap-1">
                   {STEP_LABELS.map((lb, i) => (
                     <div key={lb} className="flex flex-1 items-center gap-1">
-                      <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black ${i === step ? "bg-amber-400 text-slate-900" : i < step ? "bg-emerald-400/80 text-slate-900" : "border border-white/20 bg-black/40 text-white/40"}`}>
+                      <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black ${i === step ? "bg-amber-400 text-slate-900" : i < step ? "bg-emerald-400/80 text-slate-900" : "border border-white/20 bg-black/40 text-white/55"}`}>
                         {i < step ? "✓" : i + 1}
                       </span>
-                      <span className={`text-[9px] font-black ${i === step ? "text-amber-200" : "text-white/40"}`}>{lb}</span>
+                      <span className={`text-[9px] font-black ${i === step ? "text-amber-200" : "text-white/55"}`}>{lb}</span>
                       {i < STEP_LABELS.length - 1 && <div className={`h-px flex-1 ${i < step ? "bg-emerald-400/60" : "bg-white/15"}`} />}
                     </div>
                   ))}
@@ -332,7 +332,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                       onChange={(e) => setNameInput(e.target.value)}
                       maxLength={8}
                       placeholder="캐릭터 이름 (최대 8자)"
-                      className="game-input mt-2 w-full px-3 py-2.5 text-[13px] font-bold placeholder:text-white/25"
+                      className="game-input mt-2 w-full px-3 py-2.5 text-[13px] font-bold placeholder:text-white/55"
                     />
                     {msg && <p className="mt-1 text-[10px] font-black text-[#ff9a8a]">{msg}</p>}
                     <button
@@ -405,7 +405,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                             className={`flex flex-col items-center gap-0.5 rounded-lg border-2 px-1 py-1 transition-transform active:scale-95 ${on ? "border-amber-300 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"}`}
                           >
                             <img src={lookSprite(lookGender, s.idx)} alt={s.name} style={{ width: 32, height: 32, imageRendering: "pixelated", objectFit: "cover", objectPosition: "35% 78%" }} draggable={false} />
-                            <span className={`text-[8px] font-black ${on ? "text-amber-200" : "text-white/45"}`}>{s.name}</span>
+                            <span className={`text-[8px] font-black ${on ? "text-amber-200" : "text-white/55"}`}>{s.name}</span>
                           </button>
                         );
                       })}
@@ -447,22 +447,22 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                   <Play size={15} />
                   이 캐릭터로 시작
                 </button>
-                <p className="mt-1 text-center text-[8px] font-bold text-white/30">카드를 더블클릭해도 바로 시작된다</p>
+                <p className="mt-1 text-center text-[8px] font-bold text-white/55">카드를 더블클릭해도 바로 시작된다</p>
                 <div className="mt-2 grid grid-cols-2 gap-1 text-center">
                   <div className="game-chip py-1.5">
-                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Swords size={8} />공격력</p>
+                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/55"><Swords size={8} />공격력</p>
                     <p className="text-[11px] font-black text-[#ffd98a]">{selSave?.atk ?? "?"}</p>
                   </div>
                   <div className="game-chip py-1.5">
-                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Shield size={8} />최대 HP</p>
+                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/55"><Shield size={8} />최대 HP</p>
                     <p className="text-[11px] font-black text-[#ffb0b0]">{selSave?.maxHp ?? "?"}</p>
                   </div>
                   <div className="game-chip py-1.5">
-                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Zap size={8} />골드</p>
+                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/55"><Zap size={8} />골드</p>
                     <p className="text-[11px] font-black text-[#ffe49a]">{(selSave?.gold ?? 0).toLocaleString()}</p>
                   </div>
                   <div className="game-chip py-1.5">
-                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/40"><Gauge size={8} />마지막 구역</p>
+                    <p className="flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/55"><Gauge size={8} />마지막 구역</p>
                     <p className="truncate text-[11px] font-black text-[#cbb88a]">{sel.stage}</p>
                   </div>
                 </div>
@@ -481,7 +481,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                 })()}
                 <button
                   onClick={() => setDelId(sel.id)}
-                  className="mx-auto mt-1 flex items-center gap-1 text-[10px] font-bold text-white/35 underline underline-offset-2 hover:text-[#ff9a8a]"
+                  className="mx-auto mt-1 flex items-center gap-1 text-[10px] font-bold text-white/55 underline underline-offset-2 hover:text-[#ff9a8a]"
                 >
                   <Trash2 size={11} />
                   캐릭터 삭제
@@ -490,7 +490,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
               </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-2 py-8 text-center">
-                <UserPlus size={26} className="text-white/25" />
+                <UserPlus size={26} className="text-white/55" />
                 <p className="text-[11px] font-black text-white/50">첫 캐릭터를 만들어 모험을 시작하자</p>
                 <button onClick={openCreate} className="game-btn px-4 py-2.5 text-[11px] font-black">
                   캐릭터 생성

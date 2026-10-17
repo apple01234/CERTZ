@@ -150,12 +150,12 @@ export function PartyWidget() {
                   >
                     {m.name === party.leader && <Crown size={11} className="text-amber-300" />}
                     <span className="font-bold">{m.name}</span>
-                    <span className="text-white/45">Lv.{m.lv}</span>
-                    {m.online === false && <span className="ml-auto text-[9px] font-bold text-white/35">오프라인</span>}
+                    <span className="text-white/55">Lv.{m.lv}</span>
+                    {m.online === false && <span className="ml-auto text-[9px] font-bold text-white/55">오프라인</span>}
                   </li>
                 ))}
               </ul>
-              <p className="mb-1.5 text-[10px] text-white/40">
+              <p className="mb-1.5 text-[10px] text-white/55">
                 파티 코드 <span className="font-black text-amber-200">{party.id}</span> — 친구에게 공유!
               </p>
 
@@ -163,7 +163,7 @@ export function PartyWidget() {
               <div className="mb-2 rounded-lg border border-violet-300/25 bg-violet-500/[0.08] px-2 py-1.5">
                 <p className="mb-1 text-[10px] font-black text-violet-200">⚔ 파티 시너지 {synergies.length > 0 ? `— ${synergies.length}종 발동` : "(2인부터 발동)"}</p>
                 {synergies.length === 0 && (
-                  <p className="text-[9px] font-bold leading-snug text-white/40">
+                  <p className="text-[9px] font-bold leading-snug text-white/55">
                     서로 다른 직업 계열을 모으면 보너스가 커진다! (현재 {party.members.length}인)
                   </p>
                 )}
@@ -208,7 +208,7 @@ export function PartyWidget() {
                   placeholder="코드 입력"
                   maxLength={8}
                   aria-label="파티 코드"
-                  className="min-w-0 flex-1 rounded-lg border border-white/20 bg-black/70 px-2 py-1 text-[11px] font-bold text-white outline-none placeholder:text-white/30"
+                  className="min-w-0 flex-1 rounded-lg border border-white/20 bg-black/70 px-2 py-1 text-[11px] font-bold text-white outline-none placeholder:text-white/55"
                 />
                 <button
                   onClick={join}
@@ -218,7 +218,7 @@ export function PartyWidget() {
                 </button>
               </div>
               {err && <p className="mt-1 text-[10px] font-bold text-rose-300">{err}</p>}
-              <p className="mt-1.5 text-[10px] leading-snug text-white/40">
+              <p className="mt-1.5 text-[10px] leading-snug text-white/55">
                 파티원과 같은 구역에 보이고, 보스 출현이 파티 전체에 공지됩니다. 혼자 사냥하면 <b className="text-emerald-300">EXP +{SOLO_BLESS_EXP_PCT}%</b>(단독 가호)가 붙습니다.
                 <br />
                 <span className="font-bold text-indigo-200/80">공동 토벌전</span>에서 파티원 수만큼 보스 HP·보상이 커집니다.
@@ -230,10 +230,10 @@ export function PartyWidget() {
           <div className="mt-2 rounded-lg border border-emerald-300/25 bg-emerald-500/[0.07] px-2 py-1.5">
             <p className="flex items-center gap-1 text-[10px] font-black text-emerald-200">
               <Swords size={10} /> 오늘의 파티 미션
-              <span className="ml-auto text-[8px] font-bold text-white/35">갱신 {resetMin}분 전</span>
+              <span className="ml-auto text-[8px] font-bold text-white/55">갱신 {resetMin}분 전</span>
             </p>
             {!inParty && (
-              <p className="mt-0.5 text-[9px] font-bold leading-snug text-white/40">
+              <p className="mt-0.5 text-[9px] font-bold leading-snug text-white/55">
                 파티 중일 때만 카운트된다! 수령은 혼자도 가능(보상 50%)
               </p>
             )}
@@ -245,7 +245,7 @@ export function PartyWidget() {
                 return (
                   <li key={m.id} className="rounded-md border border-white/10 bg-black/40 px-1.5 py-1">
                     <div className="flex items-center justify-between gap-1">
-                      <b className={`truncate text-[10px] ${claimed ? "text-white/30 line-through" : done ? "text-emerald-200" : "text-white/85"}`}>{m.title}</b>
+                      <b className={`truncate text-[10px] ${claimed ? "text-white/55 line-through" : done ? "text-emerald-200" : "text-white/85"}`}>{m.title}</b>
                       <span className="shrink-0 text-[9px] font-black text-white/50">{prog}/{m.need}{m.unit}</span>
                     </div>
                     <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-white/10">
@@ -254,7 +254,7 @@ export function PartyWidget() {
                     <div className="mt-1 flex items-center justify-between gap-1">
                       <span className="text-[8px] font-bold text-amber-200/80">{m.gold.toLocaleString()}G · EXP {m.exp}{inParty ? "" : " (솔로 50%)"}</span>
                       {claimed ? (
-                        <span className="flex items-center gap-0.5 text-[9px] font-black text-white/30"><CheckCircle2 size={9} /> 수령 완료</span>
+                        <span className="flex items-center gap-0.5 text-[9px] font-black text-white/55"><CheckCircle2 size={9} /> 수령 완료</span>
                       ) : done ? (
                         <button
                           onClick={() => { EventBus.emit("rpg:partyClaim", { id: m.id }); setTimeout(refresh, 120); }}
@@ -263,7 +263,7 @@ export function PartyWidget() {
                           <Gift size={9} /> 수령
                         </button>
                       ) : (
-                        <span className="text-[8px] font-bold text-white/25">진행 중</span>
+                        <span className="text-[8px] font-bold text-white/55">진행 중</span>
                       )}
                     </div>
                   </li>
