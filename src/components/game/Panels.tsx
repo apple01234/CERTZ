@@ -530,6 +530,13 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
   };
   /* v1.0.3 (#0르쯔) — 이중 방어: bmPrice(에메랄드 가격)가 없는 아이템은 데이터에 남아있어도 진열하지 않는다 */
   const stock = BM_STOCK.filter((k) => (ITEMS[k]?.bmPrice ?? 0) > 0 && (cat === "all" || catOf(k) === cat));
+  /* v1.0.16 (F1) — 캐시상점 키보드 내비. 골드상점·전직에만 있던 useListNav를 여기에도 붙인다.
+   *  같은 훅을 재사용하므로 방향키 순회·E 확정·자동 스크롤·게임 키 차단이 그대로 동작한다.
+   *  확정은 B2의 확인 모달(askBuy)을 거치므로 E 연타로도 즉시 결제되지 않는다. */
+  const [navIdx, setNavIdx] = useListNav(stock.length, (i) => {
+    const k = stock[i];
+    if (k) askBuy(k, 1);
+  }, stock.length > 0);
   const CATS: { id: string; label: string }[] = [
     { id: "all", label: "전체" },
     { id: "gacha", label: "가챠·패키지" },
@@ -629,7 +636,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
 
         {/* BM 아이템 */}
         <div className="flex flex-col gap-1.5">
-          {stock.map((k) => {
+          {stock.map((k, si) => {
             const item = ITEMS[k as ItemKey];
             const st = bmState(k as ItemKey);
             const price = item.bmPrice ?? 0;
@@ -637,8 +644,9 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
             const qty = qtyOf(k);
             const showQty = stackable && st === "buyable";
             const total = price * (stackable ? qty : 1);
+            const sel = si === navIdx; // v1.0.16 (F1) — 키보드 선택 하이라이트
             return (
-              <div key={k} className="flex items-center gap-2.5 rounded-lg border border-cyan-300/20 bg-cyan-300/[0.05] px-2.5 py-2">
+              <div key={k} data-navsel={sel ? "1" : undefined} className={`flex items-center gap-2.5 rounded-lg border px-2.5 py-2 transition-colors ${sel ? "border-amber-300/80 bg-amber-400/[0.08]" : "border-cyan-300/20 bg-cyan-300/[0.05]"}`}>
                 <ItemIcon icon={item.icon} tier={item.tier} />
                 <div className="min-w-0 flex-1">
                   <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
