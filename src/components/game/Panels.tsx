@@ -506,7 +506,28 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
   const DEALS = dailyDeals(dayKey);
   const [cat, setCat] = useState("all");
   const [odds, setOdds] = useState(false); // v4.5.0 — 확률 공시 펼침
+  /* v1.0.16 (B2) — 구매 확인 단계. 종전엔 버튼 1탭에 에메랄드가 즉시 차감됐고,
+   *  이 패널의 배경 레이어가 onPointerDown으로 닫히는데(onClose) 버튼이 가장자리에 있어
+   *  오탭 한 번이 곧 결제였다. 되돌릴 수 없는 지출이므로 2단계로 나눈다.
+   *  (Lobby.tsx의 캐릭터 삭제 확인 모달과 동일 패턴 — 새 컴포넌트를 만들지 않는다) */
+  const [confirmBuy, setConfirmBuy] = useState<{ key: ItemKey; qty: number; cost: number; label: string } | null>(null);
   const catOf = (k: ItemKey) => (k.startsWith("chest_") || k.startsWith("pack_") ? "gacha" : ITEMS[k].kind);
+  /* v1.0.16 (B2) — 청구액을 여기서 한 번만 계산해 확인 모달에 그대로 보여준다.
+   *  WorldScene.onBmBuy의 청구식과 **같은 규칙**을 쓴다(특가 30%↓ · 수량 상한도 동일).
+   *  표시가와 청구가가 갈라지면 B1(표시가=청구가)이 다시 깨지므로 상한까지 맞춘다.
+   *  현재 UI에선 상자/패키지에 수량 스테퍼가 뜨지 않아(qty=1 고정) 상한 차이가 드러나지
+   *  않지만, 계산식을 갈라 두면 나중에 스테퍼를 붙이는 순간 조용히 어긋난다. */
+  const askBuy = (k: ItemKey, qty: number) => {
+    const it = ITEMS[k];
+    if (!it?.bmPrice) return;
+    const unit = DEALS.includes(k) ? Math.max(1, Math.round(it.bmPrice * (1 - DAILY_DEAL_OFF))) : it.bmPrice;
+    const isBox = k.startsWith("chest_") || k.startsWith("pack_");
+    const n = isBox
+      ? Math.max(1, Math.min(10, Math.floor(qty || 1)))
+      : Math.max(1, Math.min(99, Math.floor(qty || 1)));
+    const stack = isBox || it.kind === "consumable" || it.kind === "buff";
+    setConfirmBuy({ key: k, qty: stack ? n : 1, cost: unit * (stack ? n : 1), label: it.name });
+  };
   /* v1.0.3 (#0르쯔) — 이중 방어: bmPrice(에메랄드 가격)가 없는 아이템은 데이터에 남아있어도 진열하지 않는다 */
   const stock = BM_STOCK.filter((k) => (ITEMS[k]?.bmPrice ?? 0) > 0 && (cat === "all" || catOf(k) === cat));
   const CATS: { id: string; label: string }[] = [
@@ -523,8 +544,9 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       onPointerDown={onClose}
     >
+      {/* v1.0.16 (B2) — relative: 구매 확인 오버레이의 기준 컨테이너 */}
       <div
-        className="max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
+        className="relative max-h-[min(88svh,640px)] w-[min(92vw,430px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex items-center justify-between">
@@ -562,7 +584,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
             <p className="text-[12px] font-black text-amber-200">🎒 신규 용사 추천 — 스타터팩</p>
             <p className="mt-0.5 text-[10px] text-white/55">HP 물약 ×5 + 상급 HP ×3 + 엘릭서 ×1 + 골드 2,000G — 첫 성장 한세트</p>
             <button
-              onClick={() => EventBus.emit("rpg:bmBuy", { key: "pack_starter" })}
+              onClick={() => askBuy("pack_starter", 1)}
               className="mt-1.5 w-full rounded-lg bg-amber-400 px-3 py-1.5 text-[12px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
             >
               스타터팩 열기 — {ITEMS.pack_starter.bmPrice ?? 12}💎
@@ -580,7 +602,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
               return (
                 <button
                   key={k}
-                  onClick={() => EventBus.emit("rpg:bmBuy", { key: k })}
+                  onClick={() => askBuy(k, 1)}
                   className="flex flex-col items-center gap-1 rounded-lg border border-amber-300/40 bg-amber-400/10 px-1 py-1.5 hover:bg-amber-400/20 active:scale-95"
                 >
                   <ItemIcon icon={it.icon} tier={it.tier} size={26} />
@@ -631,7 +653,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                 {showQty && <QtyStepper qty={qty} onChange={(n) => setQtyMap((m) => ({ ...m, [k]: n }))} />}
                 <button
                   disabled={st === "owned" || st === "equipped" || st === "poor"}
-                  onClick={() => EventBus.emit("rpg:bmBuy", { key: k as ItemKey, qty: stackable ? qty : 1 })}
+                  onClick={() => askBuy(k as ItemKey, stackable ? qty : 1)}
                   className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${
                     st === "equipped" ? "cursor-default bg-emerald-700/40 text-emerald-300"
                       : st === "owned" ? "cursor-default bg-slate-700/50 text-white/50"
@@ -810,6 +832,42 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
         </div>
 
         <p className="mt-2 text-center text-[10px] text-white/40">에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1 · ESC로 닫기</p>
+
+        {/* v1.0.16 (B2) — 구매 확인. 배경 탭은 취소, 확인을 눌러야만 지출된다.
+            inner 패널 안쪽에 두어 stopPropagation(위 :528)이 함께 적용된다 — 확인 중 상점이 닫히지 않는다. */}
+        {confirmBuy && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/75 p-3" onPointerDown={(e) => { e.stopPropagation(); setConfirmBuy(null); }}>
+            <div className="game-panel w-full max-w-[300px] p-3.5" onPointerDown={(e) => e.stopPropagation()}>
+              <p className="text-[13px] font-black text-amber-200">정말 구매하시겠습니까?</p>
+              <p className="mt-1 text-[11px] font-bold leading-relaxed text-white/65">
+                <b className="text-white">{confirmBuy.label}</b>
+                {confirmBuy.qty > 1 ? ` ×${confirmBuy.qty}` : ""} — <b className="text-cyan-200">{confirmBuy.cost} 💎</b>가 차감됩니다.
+                <br />
+                현재 보유 <b className="text-white">{rpg.emerald} 💎</b>
+                {rpg.emerald < confirmBuy.cost && <span className="text-rose-300"> (부족)</span>}
+                {DEALS.includes(confirmBuy.key) && <span className="text-amber-200"> · 오늘의 특가 30%↓ 적용</span>}
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-1.5">
+                <button onClick={() => setConfirmBuy(null)} className="game-btn-ghost px-3 py-2.5 text-[11px] font-black active:scale-95">
+                  취소
+                </button>
+                <button
+                  disabled={rpg.emerald < confirmBuy.cost}
+                  onClick={() => {
+                    const c = confirmBuy;
+                    setConfirmBuy(null);
+                    if (c) EventBus.emit("rpg:bmBuy", { key: c.key, qty: c.qty });
+                  }}
+                  className={`px-3 py-2.5 text-[11px] font-black ${
+                    rpg.emerald < confirmBuy.cost ? "cursor-not-allowed rounded-lg bg-slate-700/50 text-white/40" : "game-btn active:scale-95"
+                  }`}
+                >
+                  {rpg.emerald < confirmBuy.cost ? "에메랄드 부족" : `${confirmBuy.cost} 💎 구매`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
