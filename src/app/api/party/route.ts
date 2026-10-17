@@ -10,6 +10,7 @@
  *  파일: relay-parties.json (relaydb 참조 — 계정 DB와 잠금 분리)
  */
 import { NextRequest } from "next/server";
+import { randomBytes } from "node:crypto";
 import {
   mutateRelay, loadRelay, emptyParties, RelayAccessError,
   PARTY_PATH, PARTY_STALE_MS, PARTY_ONLINE_MS, PARTY_MAX,
@@ -22,6 +23,12 @@ export function OPTIONS(req: NextRequest) { return options(req); }
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 혼동 문자(I,O,0,1) 제외
 
+/* v1.0.16 보안(S8) — 본인 증명용 좌석 비밀. 추측 불가해야 하므로 CSPRNG를 쓴다.
+ *  cid(공개)와 달리 응답으로 나가지 않으므로, 이 값을 모르면 남의 좌석을 조작할 수 없다. */
+function randomSeat(): string {
+  return randomBytes(24).toString("base64url");
+}
+
 function clean(s: unknown, max: number): string {
   return String(s ?? "")
     .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028\u2029]/g, "")
@@ -29,12 +36,32 @@ function clean(s: unknown, max: number): string {
     .slice(0, max);
 }
 
+/* v1.0.16 보안(S8) — 남의 파티 강제 탈퇴 차단.
+ *  종전엔 snapshot()이 멤버의 cid를 그대로 내보냈고, leave/beat가 cid만 보고 본인이라 판단했다.
+ *  cid는 localStorage 랜덤 문자열이라 비밀이 아니다 → 아무 파티에 들어가 남의 cid를 읽은 뒤
+ *  그 값으로 leave를 보내면 남을 파티에서 축출할 수 있었다.
+ *  수정: 응답에서 cid를 완전히 제거(leader는 이름, 멤버 id는 표시용 슬롯)하고,
+ *  본인 작업 증명은 서버가 발급한 비밀 seat로 한다. seat은 파티별로 다르다. */
+function memberSlot(code: string, index: number) {
+  return `${code}#${index}`;
+}
 function snapshot(p: RelayParty, now: number) {
   const members = Object.entries(p.members)
     .filter(([, m]) => now - m.seenAt < PARTY_ONLINE_MS * 3) // 15분 초과 무활동 명단 비표시
-    .map(([cid, m]) => ({ id: cid, name: m.name, lv: m.lv, cls: m.cls, online: now - m.seenAt < PARTY_ONLINE_MS, joinedAt: m.joinedAt }))
-    .sort((a, b) => a.joinedAt - b.joinedAt);
-  return { id: p.code, leader: p.leader, max: PARTY_MAX, members };
+    .sort((a, z) => a[1].joinedAt - z[1].joinedAt)
+    .map(([cid, m], i) => ({
+      id: memberSlot(p.code, i),          // 표시용 슬롯 — 실제 cid 아님
+      name: m.name,
+      lv: m.lv,
+      cls: m.cls,
+      online: now - m.seenAt < PARTY_ONLINE_MS,
+      joinedAt: m.joinedAt,
+      leader: cid === p.leader,           // 리더 여부는 불리언으로만 노출
+    }));
+  /* leader는 이름으로 반환 — 클라(PartyWidget)가 m.name === party.leader로 왕관을 그린다.
+   *  종전엔 cid를 넘겨 이름 비교가 항상 실패했고, 결과적으로 왕관이 뜨지 않았다. */
+  const leaderName = p.members[p.leader]?.name ?? "";
+  return { id: p.code, leader: leaderName, max: PARTY_MAX, members };
 }
 
 /** 파티 청소 — 전 멤버 24시간 무활동 파티 제거 */
@@ -79,6 +106,7 @@ export async function POST(req: NextRequest) {
     const action = clean(b.action, 10);
     const cid = clean(b.cid, 64);
     if (!/^[A-Za-z0-9_-]{6,64}$/.test(cid)) return json(req, 400, { error: "잘못된 요청이에요" });
+    const seat = clean(b.seat, 64);
     const name = clean(b.name, 8) || "이름없음";
     /* v1.0.16 보안 — 관리자 사칭 차단. 파티 명단의 이름표도 클라이언트 입력이라
      *  채팅과 같은 경로로 운영자 사칭이 가능했다(채팅 라우트와 동일 방침). */
@@ -101,6 +129,10 @@ export async function POST(req: NextRequest) {
         const p = d.parties[code];
         const m = p?.members[cid];
         if (!p || !m) return { status: 404, body: { error: "파티가 없어요" } };
+        /* v1.0.16 보안(S8) — seat이 있으면 일치해야 본인. seat 없는 구(舊)멤버는
+         *  하위호환을 위해 통과시키지 않는다: cid만으로 통과시키면 취약점이 그대로 남는다.
+         *  (배포 직후 기존 파티는 재입장 시 seat이 발급된다) */
+        if (!m.seat || m.seat !== seat) return { status: 403, body: { error: "본인 확인에 실패했어요 — 파티에 다시 입장해 주세요" } };
         m.seenAt = now;
         m.name = name || m.name;
         m.lv = lv || m.lv;
@@ -112,6 +144,7 @@ export async function POST(req: NextRequest) {
     if (action === "create") {
       if (!rateLimit(req, "party-create", 3, 60 * 1000)) return json(req, 429, { error: "요청이 너무 많아요" });
       let newCode = "";
+      let newSeat = "";
       const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (raw) => {
         const d = (raw && typeof raw === "object" ? raw : {}) as RelayPartyFile;
         if (!d.parties || typeof d.parties !== "object") d.parties = {};
@@ -120,7 +153,8 @@ export async function POST(req: NextRequest) {
         for (const [c, p] of Object.entries(d.parties)) {
           if (p.members[cid]) { delete p.members[cid]; if (Object.keys(p.members).length === 0) delete d.parties[c]; }
         }
-        const member: RelayPartyMember = { name, lv, cls, seenAt: now, joinedAt: now };
+        newSeat = randomSeat();
+        const member: RelayPartyMember = { name, lv, cls, seenAt: now, joinedAt: now, seat: newSeat };
         for (let i = 0; i < 8; i++) {
           let c = "";
           for (let j = 0; j < 4; j++) c += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
@@ -131,12 +165,14 @@ export async function POST(req: NextRequest) {
         return null;
       });
       if (r.status === 200) audit("party:create", { uid: cid.slice(0, 8), code: newCode });
-      return json(req, r.status, r.status === 200 ? { ok: true, code: newCode } : r.body);
+      /* seat은 생성자에게만 1회 반환 — 이후 leave/beat의 본인 증명에 쓴다 */
+      return json(req, r.status, r.status === 200 ? { ok: true, code: newCode, seat: newSeat } : r.body);
     }
 
     if (action === "join") {
       if (!rateLimit(req, "party-join", 6, 60 * 1000)) return json(req, 429, { error: "요청이 너무 많아요" });
       if (!/^[A-Z0-9]{4,8}$/.test(code)) return json(req, 400, { error: "코드 형식이 틀렸어요" });
+      let joinSeat = "";
       const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (raw) => {
         const d = (raw && typeof raw === "object" ? raw : {}) as RelayPartyFile;
         if (!d.parties || typeof d.parties !== "object") d.parties = {};
@@ -153,11 +189,13 @@ export async function POST(req: NextRequest) {
             if (Object.keys(op.members).length === 0) delete d.parties[c];
           }
         }
-        p.members[cid] = { name, lv, cls, seenAt: now, joinedAt: p.members[cid]?.joinedAt || now };
+        /* 재입장 포함 매번 새 seat 발급 — 이전 seat은 무효화된다 */
+        joinSeat = randomSeat();
+        p.members[cid] = { name, lv, cls, seenAt: now, joinedAt: p.members[cid]?.joinedAt || now, seat: joinSeat };
         return null;
       });
       if (r.status === 200) audit("party:join", { uid: cid.slice(0, 8), code });
-      return json(req, r.status, r.status === 200 ? { ok: true, code } : r.body);
+      return json(req, r.status, r.status === 200 ? { ok: true, code, seat: joinSeat } : r.body);
     }
 
     if (action === "leave") {
@@ -166,6 +204,11 @@ export async function POST(req: NextRequest) {
         if (!d.parties || typeof d.parties !== "object") return { status: 404, body: { error: "파티가 없어요" } };
         for (const [c, p] of Object.entries(d.parties)) {
           if (!p.members[cid]) continue;
+          /* v1.0.16 보안(S8) — 본인 확인. cid는 노출되는 공개 식별자라 증명이 못 된다 */
+          const m = p.members[cid];
+          if (!m.seat || m.seat !== seat) {
+            return { status: 403, body: { error: "본인 확인에 실패했어요 — 파티에 다시 입장해 주세요" } };
+          }
           delete p.members[cid];
           if (Object.keys(p.members).length === 0) { delete d.parties[c]; break; }
           if (p.leader === cid) {

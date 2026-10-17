@@ -141,6 +141,9 @@ export type RelayPartyMember = {
   cls: string;
   seenAt: number;
   joinedAt: number;
+  /* v1.0.16 보안(S8) — 서버 발급 비밀. 본인 작업(leave·beat) 증명에 쓴다.
+   *  응답으로는 절대 내보내지 않는다(snapshot 참조). 없으면 본인 확인 불가로 간주. */
+  seat?: string;
 };
 export type RelayParty = {
   code: string;

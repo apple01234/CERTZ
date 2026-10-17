@@ -11,6 +11,8 @@ import { Capacitor } from "@capacitor/core";
 import { resolveApiBase } from "./server";
 
 export type RelayChatMsg = { id: string; name: string; text: string; sys?: boolean; t: number };
+/* v1.0.16 보안(S8) — leader는 '이름'이다(과거엔 cid를 담아 보냈으나 클라가 이름으로 비교해
+ *  왕관이 뜨지 않았고, cid가 노출됐다). members[].id도 표시용 슬롯이며 실제 cid가 아니다. */
 export type RelayPartySnapshot = { id: string; leader: string; max: number; members: { id: string; name: string; lv: number; cls: string | null; online: boolean }[] };
 
 let cid = "";
@@ -142,6 +144,17 @@ export function relayPartyCode(): string {
   return partyCode;
 }
 
+/* v1.0.16 보안(S8) — 좌석 비밀(seat). 서버가 create/join 응답으로 1회 발급하며,
+ *  leave·beat의 본인 증명에 쓴다. cid는 파티 스냅샷에 공개되므로 증명이 못 된다.
+ *  파티를 떠나면 즉시 폐기한다(재입장 시 새로 발급). */
+let partySeat = "";
+function setPartySeat(s: unknown) {
+  partySeat = String(s ?? "");
+}
+function clearPartySeat() {
+  partySeat = "";
+}
+
 async function partyTick() {
   if (!partyCode || document.hidden) return;
   try {
@@ -153,6 +166,7 @@ async function partyTick() {
       else {
         /* 파티 소멸(전원 이탈/청소) — 해제 통보 */
         partyCode = "";
+        clearPartySeat();
         relaySetPartyCode("");
         onParty?.(null);
         return;
@@ -167,12 +181,19 @@ async function partyTick() {
 async function beatTick() {
   if (!partyCode || document.hidden) return;
   try {
-    await fetch(`${base()}/api/party`, {
+    const r = await fetch(`${base()}/api/party`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "beat", cid: ensureCid(), name: me.name, lv: me.lv, cls: me.cls || "", code: partyCode }),
+      body: JSON.stringify({ action: "beat", cid: ensureCid(), seat: partySeat, name: me.name, lv: me.lv, cls: me.cls || "", code: partyCode }),
       signal: AbortSignal.timeout(8000),
     });
+    /* v1.0.16 — seat 불일치(403)면 하트비트가 조용히 거부되어 15분 뒤 명단에서 사라진다.
+     *  화면상 "파티에 있음"과 어긋나므로 즉시 재입장해 새 seat을 받는다.
+     *  (R9 교훈: 실패를 삼키면 사용자는 정상으로 보이고 서버만 어긋난다) */
+    if (r.status === 403 || r.status === 404) {
+      const code = partyCode;
+      void relayPartyJoin(code);
+    }
   } catch { /* 무시 */ }
   finally {
     if (partyHooked && partyCode) beatTimer = setTimeout(beatTick, 90 * 1000);
@@ -205,7 +226,7 @@ export async function relayPartyCreate(): Promise<string | null> {
       signal: AbortSignal.timeout(10000),
     }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
     const code = r?.code ? String(r.code) : null;
-    if (code) { partyCode = code; relaySetPartyCode(code); startPartyLoops(); }
+    if (code) { partyCode = code; setPartySeat(r?.seat); relaySetPartyCode(code); startPartyLoops(); }
     return code;
   } catch {
     return null;
@@ -223,6 +244,7 @@ export async function relayPartyJoin(code: string): Promise<boolean> {
     }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
     if (r?.ok) {
       partyCode = c;
+      setPartySeat(r?.seat);
       relaySetPartyCode(c);
       startPartyLoops();
       /* 즉시 스냅샷 1회 */
@@ -237,7 +259,9 @@ export async function relayPartyJoin(code: string): Promise<boolean> {
 
 export async function relayPartyLeave(): Promise<void> {
   const c = partyCode;
+  const s = partySeat; // 전송 전에 확보 — 아래에서 즉시 폐기한다
   partyCode = "";
+  clearPartySeat();
   relaySetPartyCode("");
   stopPartyLoops();
   onParty?.(null);
@@ -246,7 +270,7 @@ export async function relayPartyLeave(): Promise<void> {
     await fetch(`${base()}/api/party`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "leave", cid: ensureCid(), code: c }),
+      body: JSON.stringify({ action: "leave", cid: ensureCid(), seat: s, code: c }),
       signal: AbortSignal.timeout(8000),
     });
   } catch { /* 무시 */ }
