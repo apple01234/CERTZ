@@ -7,7 +7,12 @@ import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
 import { RotateCw, Play, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles, Smartphone } from "lucide-react";
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0
 import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리
-import pkg from "../../../package.json"; // v1.0.17 — 클라 자체 버전 (단일 소스 = package.json)
+/* v1.0.16 (F8) — 종전엔 `import pkg from "../../../package.json"`으로 버전을 읽었는데,
+ *  번들러가 JSON 전체를 인라인해 의존성 목록·npm 스크립트까지 게임 번들에 실렸다(청크 3.08MB 실측).
+ *  next.config.ts가 package.json의 version만 NEXT_PUBLIC_APP_VERSION으로 주입한다 —
+ *  단일 소스(package.json)는 그대로고, 나머지 필드는 번들에 들어가지 않는다.
+ *  주입은 standalone·정적 export 두 경로 모두에 배선돼 있어 폴백이 필요 없다. */
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
 
 /** 세이브 이어하기 라벨용 스테이지 표기명 (v2.0 — 구역 체인 대응) */
 const STAGE_LABEL: Record<string, string> = {
@@ -57,7 +62,7 @@ export function TitleScreen() {
       .then((r) => (r.ok ? r.json() : null))
       .then((j: { latest?: string; note?: string; guide?: string } | null) => {
         if (dead || !j?.latest) return;
-        if (compareVer(j.latest, pkg.version) > 0) {
+        if (compareVer(j.latest, APP_VERSION) > 0) {
           setUpdate({ latest: j.latest, note: j.note ?? "", guide: j.guide ?? "/apk-guide.html" });
         }
       })
@@ -88,7 +93,7 @@ export function TitleScreen() {
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v{pkg.version} — 1:1 거래 · 심연의 탑 리워크 · 보스 고유 패턴 · 3D VFX · 툰 셰이딩 · 5분 자동저장</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v{APP_VERSION} — 1:1 거래 · 심연의 탑 리워크 · 보스 고유 패턴 · 3D VFX · 툰 셰이딩 · 5분 자동저장</span>
           </p>
         </div>
 

@@ -4642,3 +4642,23 @@ Stage Summary:
 - 검증: tsc exit 0 · eslint 제 변경분 0건(기존 4건은 R8 기록분) · 실브라우저 모달 동작 확인 · B1 정합 882건 불일치 0
 - 검증 한계: 잔액 0 상태에서는 버튼이 disabled라 구매 확정(차감)까지는 실측하지 못했다. 모달·차단·취소·금액표시는 확인됨
 - 검증 환경 주의: 로컬 standalone 서버는 `.next/static`과 `public`을 `.next/standalone/` 아래로 복사해야 정적 자산이 뜬다(안 하면 404로 무한 로딩). 검증 후 제거함
+
+---
+Task ID: improve-14-2026-10-18 (v1.0.16)
+Agent: DSH (보완 세션 14차 — F8 미사용 코드 정리)
+
+Task: shadcn 템플릿 잔재 정리 + 번들에 실리던 package.json 제거 (기획서 F8)
+
+Work Log:
+- [기획서 오진 정정] F8은 "hooks/use-toast·use-mobile이 미사용"이라 적혀 있었으나 **오진**이었다. 둘은 components/ui/toaster.tsx·sidebar.tsx가 import한다. 실제 규모는 훨씬 컸다 — components/ui **48개 전부** 게임에서 미참조(shadcn 템플릿 잔재, 160KB)
+- [조사 중 오진 3건 — 부록 C에 상세 기록] ①번들 청크에서 recharts·embla·cmdk·sonner 문자열을 보고 "미사용 라이브러리가 3MB를 차지한다"고 판단 → 실제로는 **package.json 전문이 인라인**된 것이었고 내가 본 건 의존성 이름 목록이었다. 구현 심볼로 재검사하니 전부 없음(tree-shaking 정상). 3.08MB의 정체는 게임 본체(Phaser·three.js·@capacitor·firebase) ②"package.json 유출이 3MB" → 실제 **약 3KB**(0.1%) ③"tailwind content 경로가 루트 기준이라 스캔 안 됨" → 이 프로젝트는 **Tailwind v4**(@import "tailwindcss")라 content를 쓰지 않는다. 실측으로 .flex/.rounded-lg/.z-40 모두 생성 확인 → 수정 무효, **원복**
+- [실제 수정 ①] src/components/ui 48개 + src/hooks 2개 삭제(게임 참조 0건 확인). 무거운 라이브러리 8종(recharts·embla·react-day-picker·cmdk·vaul·sonner·input-otp·react-hook-form)의 유일한 import 지점이 이 파일들이었다
+- [실제 수정 ②] Overlays.tsx가 `import pkg from "../../../package.json"`으로 버전 하나를 읽어 **의존성 83개 목록·npm 스크립트·devDependencies 전문**을 번들에 싣고 있었다. next.config.ts가 version만 NEXT_PUBLIC_APP_VERSION으로 주입하도록 바꿔 단일 소스(package.json)는 유지하고 나머지 필드는 번들에서 제거
+- [package.json은 건드리지 않음] 미사용 의존성 61개가 나왔으나 react-dom·typescript·electron-builder·socket.io 등 **오탐이 섞여** 위험. ui 제거만으로 무거운 라이브러리 import 지점이 사라지므로 의존성 정리는 별건으로 남긴다
+- [검증] tsc exit 0 · 웹(standalone) 빌드 exit 0 · APK 정적 export exit 0(index.html 생성, 라우트 복원) · Playwright 부팅 검증: 타이틀 렌더·로비 진입·pageerror 0·CSS 적용(display:flex, font-weight:900) 확인 · 번들에 1.0.15 상수 주입 확인(`let me="1.0.15"`)
+- [사고] PowerShell `Set-Content`로 치환하다 Overlays.tsx를 손상시켰다(따옴표·역슬래시). `git checkout`으로 복원 후 **edit 도구만** 사용해 재작업했다
+
+Stage Summary:
+- 산출물: 삭제 50개 + 수정 3개(next.config.ts·Overlays.tsx·tailwind.config.ts)
+- **정직한 성과 평가**: "3MB 절감"은 아니었다. 초기 로드(538KB)는 변하지 않았고 번들 총량도 4.68→4.67MB다. 실제 이득은 ①게임이 안 쓰는 160KB 소스 제거 ②번들에서 의존성 목록·npm 스크립트 제거(정보 노출 차단) ③무거운 라이브러리의 import 지점 제거로 우발적 포함 위험 소멸
+- 교훈: 번들에서 라이브러리 **이름**이 보이는 것과 그 **코드**가 있는 것은 다르다. 구현 심볼로 확인해야 한다

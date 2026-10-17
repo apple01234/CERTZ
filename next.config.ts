@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { readFileSync } from "node:fs";
 
 /**
  * APK_EXPORT=1 → Capacitor용 정적 export (distDir .next-apk 분리로 dev .next 보호 — webDir)
@@ -10,6 +11,13 @@ const isApkExport = process.env.APK_EXPORT === "1";
 const isVercelExport = process.env.STATIC_EXPORT === "1";
 const isStaticExport = isApkExport || isVercelExport;
 
+/* v1.0.16 (F8) — 클라이언트에 버전 문자열 하나를 주려고 Overlays.tsx가 package.json을
+ *  통째로 import하고 있었다. 번들러는 JSON 전체를 인라인하므로 **의존성 83개 목록·npm 스크립트·
+ *  devDependencies 전문이 게임 번들에 그대로 실려 청크 하나가 3.08MB가 됐다**(실측).
+ *  여기서 version만 뽑아 빌드 타임 상수로 주입하면 단일 소스(package.json)는 유지되고
+ *  나머지 필드는 번들에 들어가지 않는다. */
+const pkgVersion = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")).version as string;
+
 const nextConfig: NextConfig = isStaticExport
   ? {
       output: "export",
@@ -19,10 +27,12 @@ const nextConfig: NextConfig = isStaticExport
        *  유일한 차단 요인이던 src/lib/db.ts(Prisma Client 미생성)는 `prisma generate`로 해소되고,
        *  빌드 파이프라인(워크플로 3종 + package.json build)이 이를 선행하도록 배선했다. */
       reactStrictMode: false,
+      env: { NEXT_PUBLIC_APP_VERSION: pkgVersion },
     }
   : {
       output: "standalone",
       reactStrictMode: false,
+      env: { NEXT_PUBLIC_APP_VERSION: pkgVersion },
       /* v4.1.6 성능 최적화 — gzip 압축 명시 (기본값 true 의존 제거).
        *  HTML/JS/CSS/JSON/SVG 등 텍스트 응답에만 적용되며 이미지·오디오는 건너뛴다. */
       compress: true,

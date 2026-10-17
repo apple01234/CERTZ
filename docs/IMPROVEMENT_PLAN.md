@@ -312,6 +312,7 @@ seat 없는 구(舊)멤버는 통과시키지 않으므로 **배포 직후 기�
 | 4 | **S1 서명 키 CI Secret 이전** | ✅ 추적 해제 · 평문 제거 · env/properties 참조 · CI Secret 복원 단계 |
 | 1 | **R9 실패 은폐 수정** | ✅ `RelayAccessError` + 503 — 무효 토큰이 "빈 목록"으로 위장하지 않는다 |
 | 2 | **B2 구매 확인 단계** | ✅ 되돌릴 수 없는 지출에 2단계 확인 — 오탭 1회 결제 차단 |
+| 6 | **F8 미사용 코드 정리** | ✅ shadcn 잔재 48개+hooks 2개 제거 · package.json 번들 유출 차단 |
 | — | **Vercel 장애 복구** | ✅ GITHUB_TOKEN 교체 + 재배포 — 라이브 5/5 200, 채팅 50건 복구 |
 | 4 | S1 키 **로테이션** | ❌ 운영 조치(신규 키 생성 + Play 앱 서명 전환) |
 | 6 | F5 광고 실패 사유 분기 | ✅ 오프라인 구분 + 호출부 3곳 공용 헬퍼 |
@@ -339,3 +340,34 @@ seat 없는 구(舊)멤버는 통과시키지 않으므로 **배포 직후 기�
 | "AD_ID 미사용" | 매니페스트에 AD_ID 선언 | `privacy/page.tsx:39` ↔ `AndroidManifest.xml:62` |
 | 결제 서버 검증 "다음 사이클" | 여전히 미구현 | `결제_광고_연동_가이드.txt:75-77` |
 | 세이브 접점 3곳 | 실제 4곳 | AGENTS.md ↔ `WorldScene.ts:1134-1330` |
+
+
+---
+
+## 부록 C — F8 조사에서 정정한 오진 (2026-10-18)
+
+이 항목은 **조사 중 세 번 잘못 판단하고 정정**했다. 기록해 둔다.
+
+**오진 ①: "미사용 라이브러리가 3MB를 차지한다"**
+번들 청크(3.15MB)에서 `recharts`·`embla`·`cmdk`·`sonner` 문자열을 찾고 "미사용 라이브러리가 포함됐다"고 판단했다.
+실제로는 그 청크가 **`package.json` 전문을 인라인**한 것이었고, 내가 본 것은 **의존성 이름 목록**이었다.
+구현 심볼(`ResponsiveContainer`·`EmblaCarousel`·`DayPicker` 등)로 다시 검사하니 **전부 없음** — tree-shaking은 정상이었다.
+3.08MB의 정체는 게임 본체다: Phaser · three.js(872KB 지점) · @capacitor(2330KB 지점) · firebase(3032KB 지점).
+
+**오진 ②: "package.json 유출이 3MB다"**
+유출은 사실이지만 크기는 **약 3KB**였다(3.08MB의 0.1%). 제거할 가치는 있으나 "3MB 절감"은 과장이었다.
+
+**오진 ③: "tailwind content 경로가 루트 기준이라 아무것도 스캔되지 않는다"**
+루트에 `pages/``components/``app/`가 없는 것은 사실이고 shadcn 템플릿 기본값이 남은 것도 사실이나,
+이 프로젝트는 **Tailwind v4**(`@import "tailwindcss"` + `@tailwindcss/postcss`)라 `content` 설정을 쓰지 않는다.
+실측으로 `.flex``.rounded-lg``.text-[11px]``.z-40` 모두 생성됨을 확인했다 — **수정은 무효**여서 원복했다.
+
+**실제 성과**
+| 항목 | 내용 |
+|---|---|
+| 삭제 | `src/components/ui` 48개(160KB) + `src/hooks` 2개 — 게임 참조 0건 |
+| 번들 유출 차단 | `Overlays.tsx`의 `import pkg from package.json` 제거 → 의존성 목록·npm 스크립트가 더 이상 번들에 실리지 않는다 |
+| 버전 단일 소스 | 유지 — `next.config.ts`가 `version`만 `NEXT_PUBLIC_APP_VERSION`으로 주입(실측: 번들에 `1.0.15` 상수 확인) |
+| 검증 | tsc exit 0 · 웹 빌드 exit 0 · APK 정적 export exit 0 · 브라우저 부팅(pageerror 0, 타이틀·로비 렌더, CSS 적용) |
+
+**교훈**: 번들에서 라이브러리 "이름"이 보이는 것과 그 "코드"가 있는 것은 다르다. 구현 심볼로 확인해야 한다.
