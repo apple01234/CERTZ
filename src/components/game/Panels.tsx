@@ -58,6 +58,27 @@ function useEscClose(close: () => void) {
   }, [close]);
 }
 
+/* v1.0.16 (F2) — 모달 시맨틱. 이 패널들은 화면을 덮는 배경 + 중앙 카드 구조인데
+ *  role/aria-modal이 전혀 없어 보조기기가 그냥 div로 읽었다(전수 조사: 12개 패널 중 0곳).
+ *  Esc 닫기는 useEscClose로 이미 동작하므로 여기서는 시맨틱과 초기 포커스만 보강한다.
+ *  · role="dialog" + aria-modal="true" → 모달로 인식
+ *  · aria-label → 패널 이름(화면에 보이는 제목을 그대로 넘긴다)
+ *  · 열릴 때 카드로 포커스 이동 → Tab이 배경이 아니라 모달 안에서 시작
+ *  반환값을 패널 최상위 div에 spread 한다. */
+function useModal(label: string) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    /* 카드(첫 자식 div)로 포커스를 옮긴다. tabIndex=-1이라 Tab 순서에는 끼지 않는다. */
+    const card = ref.current?.firstElementChild as HTMLElement | null;
+    if (!card) return;
+    if (!card.hasAttribute("tabindex")) card.setAttribute("tabindex", "-1");
+    const prev = document.activeElement as HTMLElement | null;
+    card.focus({ preventScroll: true });
+    return () => prev?.focus?.({ preventScroll: true });
+  }, []);
+  return { ref, role: "dialog" as const, "aria-modal": true as const, "aria-label": label };
+}
+
 /* ═══ v1.0.6 — NPC 선택지 키보드 조작 (신1 — "NPC 에게서 선택지를 정할때 방향키 위아래로 선택하고 E키로 선택하게 해") ═══
  *  상점·전직관처럼 NPC에게서 열리는 선택 목록을 ↑/↓로 훑고 E키로 확정한다.
  *  패널이 열려 있는 동안 "ui:panelKeys"를 켜 WorldScene 게임 키보드를 잠가
@@ -461,6 +482,7 @@ function displayName(name: string, up: number): string {
  *  자동 물약(HP 임계값/MP)과 자동 버프(여러 개)를 여기서 설정한다. */
 export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  const modal = useModal("캐시상점"); // v1.0.16 (F2)
   const auto = rpg.autoUse ?? { hpPct: 0, mpPct: 0, mpOn: false, buffs: [] };
   const buffs: BuffKey[] = ["buff_atk", "buff_def", "buff_spd", "buff_exp", "buff_king", "buff_crit", "buff_gold", "buff_luck"]; // v4.3.0 — 신규 3종 포함
   const buffNames: Record<string, string> = {
@@ -548,6 +570,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
   ];
   return (
     <div
+      {...modal}
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       onPointerDown={onClose}
     >
@@ -883,6 +906,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
 
 export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  const modal = useModal("상점"); // v1.0.16 (F2)
   /* v3.0.5 — 스타포스 강화 결과 플래시 (성공 금빛 링 / 실패 붉은 흔들림) */
   const [flash, setFlash] = useState<{ slot: "weapon" | "armor"; result: "ok" | "fail"; seq: number } | null>(null);
   /* v3.0.24 (#수량) — 소모품/버프 수량 지정 구매 (아이템키별) */
@@ -935,6 +959,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
   }, flatRows.length > 0);
   return (
     <div
+      {...modal}
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       onPointerDown={onClose}
     >
@@ -1140,10 +1165,12 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
  *  서버 /api/market ledger, 판매 정산 시 10% 수수료 = BM 수익, 로그인 유저만 이용) */
 export function TradePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  const modal = useModal("유저 거래소"); // v1.0.16 (F2)
   const [tab, setTab] = useState<"npc" | "user">("npc");
   const ownedBd = TRADE_STOCK.filter((k) => rpg.owned.includes(k));
   return (
     <div
+      {...modal}
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       onPointerDown={onClose}
     >
@@ -1676,6 +1703,7 @@ function InvBtn({ children, onClick, disabled, tone = "amber", title }: { childr
 
 export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  const modal = useModal("가방"); // v1.0.16 (F2)
   const [tab, setTab] = useState<InvTab>("equip");
   const [sel, setSel] = useState<InvSel | null>(null);
   /* v4.6.0 — 가방 스타포스 강화 결과 플래시 (상점 강화와 동일 이벤트 재사용, 2.5초 후 자동 소멸) */
@@ -1808,6 +1836,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
 
   return (
     <div
+      {...modal}
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       onPointerDown={onClose}
     >
@@ -2475,11 +2504,13 @@ const GM_FAM_LABEL: Record<string, string> = {
 
 export function GmPanel({ onClose }: { onClose: () => void }) {
   useEscClose(onClose);
+  const modal = useModal("GM 도구"); // v1.0.16 (F2)
   const tierLabel = (t: number) => (t === 1 ? "1차" : t === 2 ? "2차" : t === 3 ? "3차" : "4차");
   const all = Object.values(CLASSES);
   const byTier = [1, 2, 3, 4].map((t) => all.filter((d) => d.tier === t));
   return (
     <div
+      {...modal}
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       onPointerDown={onClose}
     >
@@ -2844,10 +2875,12 @@ function PassCell({ g, state, onClick, goldRow }: { g: BmGrant; state: PassCellS
 
 export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  const modal = useModal("시즌 패스"); // v1.0.16 (F2)
   const p = rpg.pass;
   if (!p) {
     return (
-      <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50" onPointerDown={onClose}>
+      <div {...modal}
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50" onPointerDown={onClose}>
         <div className="game-panel p-4 text-center text-[12px] text-white/70" onPointerDown={(e) => e.stopPropagation()}>
           월드 진입 후 이용할 수 있다
           <button onClick={onClose} className="mt-2 block w-full rounded-lg bg-amber-400 px-3 py-1.5 text-[12px] font-black text-slate-900">닫기</button>
@@ -3263,6 +3296,7 @@ export function stashPlayerInfo(v: unknown): void {
 
 export function PlayerInfoPanel({ onClose }: { onClose: () => void }) {
   useEscClose(onClose);
+  const modal = useModal("플레이어 정보"); // v1.0.16 (F2)
   /* 마운트 시점 캐시 복원 + 이후 갱신 리스너 (Trade2Panel 마운트 라이프사이클과 동일 패턴) */
   const [info, setInfo] = useState<PlayerInfoData | null>(() => lastPlayerInfo);
   useEffect(() => {
@@ -3294,6 +3328,7 @@ export function PlayerInfoPanel({ onClose }: { onClose: () => void }) {
   };
   return (
     <div
+      {...modal}
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       onPointerDown={onClose}
     >
@@ -3536,12 +3571,14 @@ type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth" | "park" | "
 
 export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  const modal = useModal("콘텐츠"); // v1.0.16 (F2)
   const inf = rpg.inf;
   const [tab, setTab] = useState<ContentTab>("tower");
   const [tierPick, setTierPick] = useState(0);
   if (!inf) {
     return (
-      <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50" onPointerDown={onClose}>
+      <div {...modal}
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50" onPointerDown={onClose}>
         <div className="game-panel p-4 text-[12px] font-bold text-white/70">게임 시작 후 이용할 수 있어요</div>
       </div>
     );
@@ -4057,6 +4094,7 @@ function KingdomRankTab() {
 
 export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
+  const modal = useModal("이동"); // v1.0.16 (F2)
   // 방문 기록 — 세이브에서 직접 조회 (씬이 구역 도착 시 저장)
   const [visited, setVisited] = useState<string[]>(() => loadSave()?.visited ?? []);
   useEffect(() => {
@@ -4094,6 +4132,7 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
 
   return (
     <div
+      {...modal}
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       onPointerDown={onClose}
     >

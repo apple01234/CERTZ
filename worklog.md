@@ -4724,3 +4724,22 @@ Stage Summary:
 - **교훈**: 접근성 대비는 **선언된 색 + 실제 배경**으로 계산해야 한다. 픽셀 샘플링은 안티에일리어싱·그라디언트·이미지 배경에서 오판한다. 네 번 틀리고 나서야 정확한 방법에 도달했다
 - 남은 것: 8~10px 소형 폰트는 크기 자체의 문제(가독성)이며 대비와 별개. 게임 UI 관례상 의도된 크기로 보여 이번엔 손대지 않았다
 - 검증 한계: 데스크톱 Chrome 기준. 실기기 고DPI 화면 확인 권장
+
+---
+Task ID: improve-18-2026-10-18 (v1.0.16)
+Agent: DSH (보완 세션 18차 — F2 모달 시맨틱 + 기획서 정리)
+
+Task: 패널 모달 접근성 시맨틱(role/aria-modal/포커스) 보강 (기획서 F2)
+
+Work Log:
+- [전수 조사] `role="dialog"` **0곳**, `aria-modal` **0곳**, 포커스 트랩 없음. 기획서는 "1곳뿐"이라 했으나 실제로는 0곳이었다. Esc 닫기는 `useEscClose`가 8곳에 이미 있었다
+- [훅 신설] `useModal(label)` — role="dialog" + aria-modal + aria-label + 열릴 때 카드로 포커스 이동(tabIndex=-1 부여, 닫을 때 이전 포커스 복원). 기존 `useEscClose` 옆에 두어 재사용
+- [적용] 패널 12개 중 **9곳**에 spread(BmShop·Shop·Trade·Inventory·Gm·Pass·PlayerInfo·Content·Warp). 나머지 3곳(Ranking·GamePanels·stashPlayerInfo)은 모달 컨테이너가 아니거나 유틸 함수
+- [시행착오 2회] ①함수 본문 위치를 계산해 삽입하는 스크립트가 들여쓰기·개행(\r\n) 차이로 문법을 깨뜨려 tsc 오류 8건 → `git checkout`으로 복원 ②정확한 문자열 치환 방식으로 재작업해 통과. **위치 계산보다 문자열 매칭이 안전**하다
+- [검증] 실브라우저 — "가방"·"캐시상점" 모두 role=dialog / aria-modal=true / aria-label 정상, **포커스가 모달 카드 안**에 위치(tabindex=-1), pageerror 0. tsc exit 0 · 빌드 exit 0
+- [기획서 정리] 부록 B의 중복 행 `F1~F4·F7·F8`(개별 행이 모두 존재하는 묶음 잔재)을 제거하고 F2 행을 추가
+
+Stage Summary:
+- 산출물: Panels.tsx에 useModal 훅 + 9개 패널 적용, 기획서 정리
+- 남은 항목 8개는 전부 **유저 조치 또는 의도적 보류**다 — S5(서버 장부 선행), S1 로테이션(운영), O6·O7~O12(이득 대비 손실), R5, F5 광고 프리로드(실기기 확인), B4·O1(오탐)
+- 검증 한계: 스크린리더 실기 확인은 하지 않았다(시맨틱 속성·포커스 위치까지 확인)
