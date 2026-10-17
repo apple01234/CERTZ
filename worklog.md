@@ -4556,3 +4556,23 @@ Stage Summary:
 - 기존 아틀라스·초상화는 `_boss_work/backup_atlases/`에 백업(되돌리기 가능)
 - **미적용**: `atl_boss2`(유령선)·`atl_boss_abudditos`·`atl_boss_vord`·`atl_boss_gram`·`atl_boss_nidhog` — 대응 신규 시트가 없어 기존 아트 유지
 - 셀 크기가 191×146~256×214로 기존(268×234~330×224)보다 작아졌다. 보스 스케일은 `displayWidth` 기반 자동 보정이라 별도 배율 상수는 불필요하나, **실기기에서 크기 체감 확인 필요**
+
+---
+Task ID: improve-11-2026-10-17 (v1.0.15 / vc157)
+Agent: DSH (보완 세션 11차 — Vercel 장애 복구 + 은폐 결함 수정)
+
+Task: 운영 장애(Vercel GITHUB_TOKEN 무효) 진단·복구 + 원인을 숨긴 설계 결함 수정
+
+Work Log:
+- [장애 발견] 라이브 점검에서 /api/rank·/api/market·/api/auth/nametaken이 500, /api/chat은 200인데 0건이었다. GitHub CERTZ-DB에는 같은 시각 relay-chat.json 50건·relay-parties.json 3파티가 실재했다
+- [오진 정정] 처음엔 "Vercel GITHUB_TOKEN이 1112자라 토큰 형식이 아니다"라고 판단했으나 **오진**이었다. Vercel API는 decrypt=true로도 실값 대신 암호화 블롭(1112~1320자)을 반환한다 — 그 블롭을 토큰으로 테스트한 것이 원인
+- [근본 원인 확정] **Vercel의 GITHUB_TOKEN이 무효**했다. 근거: GitHub 파일에는 50건이 있는데 Vercel /api/chat은 0건, /api/party?code=LZ3A는 null(실제로는 파티 존재). 두 모듈이 같은 토큰·저장소를 쓰는데 relaydb는 실패를 빈 값으로 삼키고 ghdb는 vc157 가드로 500을 냈다 — **그 가드가 없었으면 장애를 못 찾았다**
+- [복구] Vercel GITHUB_TOKEN 교체(기존 삭제 → 새 값 201) + 재배포(dpl_8hdheLjdfsMAKdUaQ7FXQRJj9E13). 검증: rank/market/nametaken/chat/party **5/5 200**, 채팅 **0→50건** 복구, 닉네임 판타스틱파이 점유 확인으로 계정 데이터 무손실 확인
+- [설계 결함 수정] relaydb에 RelayAccessError 도입 — 404(파일 미생성=정상 부트스트랩)는 계속 null 진행, 그 외(401/403/5xx)는 예외로 구분. chat·party GET이 그 예외를 **503 + 사유**로 반환한다. 클라이언트는 이미 r.ok ? r.json() : null이라(relay.ts:84,88) **게임 폴링 동작은 불변이고 외부 점검에서만 실패가 드러난다**
+- [검증] 로컬 standalone 서버를 잘못된 토큰으로 기동 → /api/chat **503** {"list":[],"error":"채팅 저장소에 접근할 수 없어요"}, /api/party **503**, 로그에 RelayAccessError: relay GET ... 401. 정상 토큰으로는 200 + 실제 데이터. 프로덕션은 건드리지 않았다
+
+Stage Summary:
+- 산출물: 장애 복구(서버측) + 은폐 결함 수정(코드)
+- **교훈**: 무효 토큰이 "빈 목록"으로 위장하면 며칠이고 숨는다. 실패를 삼키는 폴백은 사용자에게 관대하지만 운영자에게는 거짓말이다 — vc157의 "정직한 실패" 가드가 실제로 장애를 잡아냈다
+- **검증 한계**: 로컬 standalone으로 503을 확인했고 프로덕션 배포는 별도 확인 필요. src/ 변경은 android/ios/exe 워크플로를 트리거하지 않는다(경로 필터) — Vercel만 재배포된다
+- 미해결: Vercel에 들어간 토큰은 여전히 **광범위 권한 개인 PAT**다. CERTZ-DB Contents:Read/Write만 갖는 전용 fine-grained 토큰으로 교체 권장

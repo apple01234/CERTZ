@@ -186,6 +186,7 @@ v3.3.0의 물리 자가치유 블록(`update()` 안)이 `physics.world.isPaused`
 | **R6** | 무효 `.gitignore` 규칙 — `db/`(`:139`)·`.env*`(`:34`)가 각각 `db/custom.db`·`.env`를 무시하지 못함(추적 중) | 실측 |
 | **R7** | `package-lock.json` version `1.0.11` — 4버전 뒤처짐 | 실측 |
 | **R8** | **저장소가 자체 린트 게이트를 통과하지 못한다.** `DESIGN.md:36`은 `npx eslint src --max-warnings 0`을 검사 명령으로 못박았는데 `Panels.tsx`에 오류 3건이 있다 — `:70,:71` ref를 렌더 중 대입(`react-hooks/refs`, latest-ref 패턴), `:3833` 이펙트 내 setState(`react-hooks/set-state-in-effect`), `:2977` 불필요한 eslint-disable. **동작하는 코드이고 `useEffect`로 옮기면 타이밍이 바뀌므로 이번 사이클엔 손대지 않았다** | 실측(`eslint --format json`) |
+| **R9** | **실패를 삼키는 폴백이 장애를 며칠 숨긴다.** `relaydb`는 저장소 조회 실패를 `data:null`로 반환하고 `chat`·`party` GET이 그걸 200 + 빈 목록으로 내보내서, GITHUB_TOKEN이 무효해도 "아직 채팅이 없다"와 구분되지 않았다. 실제로 2026-10-17 토큰 무효 장애가 이 위장에 가려졌고, `ghdb`만 500으로 드러나 발견됐다 | ✅ 수정: `RelayAccessError`로 404(부트스트랩)와 401/403/5xx를 구분, 후자는 **503 + 사유**로 반환. 클라이언트는 `r.ok` 검사로 이미 비200을 건너뛰므로 게임 동작 불변 |
 
 **버전 싱크는 6곳 모두 일치**(1.0.15/vc157). 7번째 `src/app/api/version/route.ts:11-12`도 일치. 이 항목은 정상이다.
 
@@ -292,6 +293,8 @@ v3.3.0의 물리 자가치유 블록(`update()` 안)이 `physics.world.isPaused`
 | 4 | R4 `ignoreBuildErrors` 제거 | ✅ `prisma generate` 선행 배선(빌드 스크립트 + 워크플로 3종) 후 제거 — 정적 export 빌드 실측 통과 |
 | 3 | R5 fast-refresh 등 잔여 | ⏸ |
 | 4 | **S1 서명 키 CI Secret 이전** | ✅ 추적 해제 · 평문 제거 · env/properties 참조 · CI Secret 복원 단계 |
+| 1 | **R9 실패 은폐 수정** | ✅ `RelayAccessError` + 503 — 무효 토큰이 "빈 목록"으로 위장하지 않는다 |
+| — | **Vercel 장애 복구** | ✅ GITHUB_TOKEN 교체 + 재배포 — 라이브 5/5 200, 채팅 50건 복구 |
 | 4 | S1 키 **로테이션** | ❌ 운영 조치(신규 키 생성 + Play 앱 서명 전환) |
 | 6 | F5 광고 실패 사유 분기 | ✅ 오프라인 구분 + 호출부 3곳 공용 헬퍼 |
 | 6 | F5 광고 프리로드 | ⏸ 네이티브 동작 미검증 — 실기기 확인 필요 |

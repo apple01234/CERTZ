@@ -29,6 +29,20 @@ function ghHeaders(extra: Record<string, string> = {}): Record<string, string> {
 
 type PutResult = { ok: true; sha: string } | { ok: false; conflict: boolean; status: number };
 
+/* v1.0.16 — 저장소 접근 실패를 "데이터 없음"과 구분한다.
+ *  종전엔 loadRelay가 어떤 실패든 data:null을 돌려주고 라우트가 그걸 빈 목록으로 반환해서,
+ *  GITHUB_TOKEN이 죽어도 화면상 "채팅이 아직 없다"와 구분되지 않았다.
+ *  실제로 2026-10-17 토큰 무효 장애가 하루 동안 이 위장에 가려졌다(ghdb만 500으로 드러남).
+ *  파일이 아직 없는 404(부트스트랩)는 정상 상태이므로 계속 null로 진행한다. */
+export class RelayAccessError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "RelayAccessError";
+    this.status = status;
+  }
+}
+
 async function relayGet(path: string): Promise<{ sha: string | null; json: unknown } | null> {
   const r = await fetch(`https://api.github.com/repos/${DB_REPO}/contents/${path}?ref=${BRANCH}`, {
     headers: ghHeaders(),
@@ -36,7 +50,7 @@ async function relayGet(path: string): Promise<{ sha: string | null; json: unkno
     cache: "no-store",
   });
   if (r.status === 404) return { sha: null, json: null };
-  if (!r.ok) throw new Error(`relay GET ${r.status}`);
+  if (!r.ok) throw new RelayAccessError(`relay GET ${path} ${r.status}`, r.status);
   const j = (await r.json()) as { sha?: string; content?: string };
   let json: unknown = null;
   if (j.content) {

@@ -8,7 +8,7 @@
  */
 import { NextRequest } from "next/server";
 import {
-  mutateRelay, loadRelay, emptyChat,
+  mutateRelay, loadRelay, emptyChat, RelayAccessError,
   CHAT_PATH, CHAT_KEEP, PARTY_CHAT_KEEP, PARTY_CHAT_TTL_MS,
   type RelayChatFile, type RelayChatMsg,
 } from "@/lib/relaydb";
@@ -37,7 +37,14 @@ export async function GET(req: NextRequest) {
     return json(req, 200, { list }, { "Cache-Control": "public, s-maxage=5, stale-while-revalidate=20" });
   } catch (e) {
     console.error("[SERTZ-api] chat GET 실패", e);
-    return json(req, 200, { list: [] }); // 채팅은 실패해도 빈 목록으로 폴링 유지
+    /* v1.0.16 — 저장소 접근 실패는 503으로 알린다. 종전엔 200 + 빈 목록이라
+     *  GITHUB_TOKEN 무효 장애가 "아직 채팅이 없다"와 구분되지 않았다.
+     *  클라이언트는 !ok면 json을 읽지 않고 건너뛰므로(relay.ts) 폴링 동작은 동일하고,
+     *  외부 점검(업타임/curl)에서만 실패가 드러난다. */
+    if (e instanceof RelayAccessError) {
+      return json(req, 503, { list: [], error: "채팅 저장소에 접근할 수 없어요" });
+    }
+    return json(req, 200, { list: [] }); // 그 외 일시 오류는 빈 목록으로 폴링 유지
   }
 }
 

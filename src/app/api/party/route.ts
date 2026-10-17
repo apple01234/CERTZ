@@ -11,7 +11,7 @@
  */
 import { NextRequest } from "next/server";
 import {
-  mutateRelay, loadRelay, emptyParties,
+  mutateRelay, loadRelay, emptyParties, RelayAccessError,
   PARTY_PATH, PARTY_STALE_MS, PARTY_ONLINE_MS, PARTY_MAX,
   type RelayPartyFile, type RelayParty, type RelayPartyMember,
 } from "@/lib/relaydb";
@@ -64,6 +64,11 @@ export async function GET(req: NextRequest) {
       { "Cache-Control": "public, s-maxage=4, stale-while-revalidate=15" });
   } catch (e) {
     console.error("[SERTZ-api] party GET 실패", e);
+    /* v1.0.16 — 저장소 접근 실패는 503. party:null(파티 없음)과 구분해야
+     *  "파티가 사라졌다"로 오인되지 않는다(2026-10-17 토큰 무효 장애가 이 위장에 가려졌다). */
+    if (e instanceof RelayAccessError) {
+      return json(req, 503, { party: null, error: "파티 저장소에 접근할 수 없어요" });
+    }
     return json(req, 200, { party: null });
   }
 }
