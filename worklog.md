@@ -4743,3 +4743,32 @@ Stage Summary:
 - 산출물: Panels.tsx에 useModal 훅 + 9개 패널 적용, 기획서 정리
 - 남은 항목 8개는 전부 **유저 조치 또는 의도적 보류**다 — S5(서버 장부 선행), S1 로테이션(운영), O6·O7~O12(이득 대비 손실), R5, F5 광고 프리로드(실기기 확인), B4·O1(오탐)
 - 검증 한계: 스크린리더 실기 확인은 하지 않았다(시맨틱 속성·포커스 위치까지 확인)
+
+---
+
+Task ID: content-v1.0.16 (미배포 · 로컬 전용)
+Agent: DSH (자율 콘텐츠 세션)
+Task: 유저 지시 "내가 올때까지 sertz 게임(이 프로젝트)을 너가 다 기획해서 컨텐츠 보충해줘" — 데이터 실측으로 빈 곳을 찾아 적 개성 21종 + 재림 보스 전리품 3종 보충, 보스 아틀라스 결함 진단
+
+Work Log:
+- [격차 발견 방법 — 추측 배제] ENEMIES 를 파싱해 profile 키 유무를 기계 검사(13종만 보유/21종 누락), BOSS_DEFS(12) 와 BOSS_DROP_ITEMS(9)·TRADE_PRICES(9) 키 집합 대조(vord/jorm/nagr 누락). 소비 코드로 실제 영향 확정 — Enemy.ts:242 는 profile 이 undefined 면 근접 FSM 만 돌고, WorldScene.ts:7840 은 `if (dropKey && this.boss)` 라 드롭 블록 전체를 조용히 건너뛴다(무음 실패)
+- [적 고유 개성 21종] stages.ts ENEMIES — 초반 3챕터 적들이 대부분 비어 있어 전투가 단조로웠다. ranged/charge/apply/fieldOnDeath 4종을 종 정체성에 맞게 부여하되 수치는 기존 13종의 실제 사용값 범위 안에서만 선택(새 밸런스 곡선 미생성). projAnim 은 등록된 4종(fx-fireball/fx-icelance/fx-darkbolt/fx-magicorb)만, apply.kind 는 bleed/poison/slow, fieldOnDeath.kind 는 poison/fire 만(타입 제약)
+  · 늑대=돌진(첫 조우에서 예고 후 돌진 학습) · 거미=독+사망장판(좁은 굴 회피 유도) · 얼음골렘=원거리(느린 근접의 약점을 사거리로 보완) · 유령=원거리(통과불가 적의 원거리 역할) · 불꽃늑대=돌진+사망화염(죽여도 안심 못함) · 헬하운드=돌진+출혈(후반 늑대 계열 상위 정체성) · 서리날도요=원거리+감속(카이팅 방해) · 장벽돌골렘=느린 대형 돌진("장벽" 컨셉) 등
+- [검증] ENEMIES 34종 전종 profile 보유 / 분포 ranged=10 charge=11 apply=18 fieldOnDeath=6 / projAnim·apply.kind·field.kind·charge 필드 유효성 전부 통과
+- [재림 보스 전리품 3종] 재림 지역만 전용 드롭이 없었다 — bd_vord(파수꾼의 지진핵 def4·hp160 ring / 거래가 36) · bd_jorm(세계수의 독니 crit16·atk12 ring / 42) · bd_nagr(종언의 천사인장 crit20·hp150·def3 pendant / 52). 수치는 기존 9종 강함 계층(스콜 crit8·hp80 → 아부디토스 crit18·hp130)을 이어받아 보스 HP 순(42000<60000<95000)으로 배치, 거래가는 기존 최고가 30 위로 계단식. 아이콘은 i_bd_guardian/i_bd_nidhog/i_bd_abudditos 재활용(신규 에셋 0), tradeLock+bossDrop 툴팁으로 상점 차단
+- [5곳 싱크] ItemKey L122 · ITEMS L382-384 · TRADE_PRICES L885-887 · TRADE_STOCK L901 · BOSS_DROP_ITEMS L1156-1158 — 하나라도 빠지면 무음 실패라 grep 으로 5건 확인
+- [타입 검사] node_modules 부재로 임시 설치한 typescript 로 `tsc --noEmit --ignoreConfig src/game/stages.ts src/game/data.ts` → exit 0, 오류 0
+- [보스 아틀라스 진단 — 유저 지시 "보스 아틀라스 안 맞음"] Pillow 로 BOSS_ATLAS 13종 실측. ①boss_vord 가 boss_abudditos 와 3576x1540/298x220/7행 동일하고 48x48 썸네일 평균절대오차 10.88/255 = 사실상 같은 그림(주석은 "흑룡, boss2 공유 해제"라 적혀 있으나 실제는 아부디토스 복제 → 베오르드가 아부디토스로 보임) ②boss/boss3/boss_fenrir/boss_skoll/boss_hati/boss_jorm 6종은 프레임 알파가 셀 경계에 접촉(잘림) ③13종 전부 fh×행수=이미지높이 정확 → 행 설정은 맞고 그림만 문제(행 수를 건드리면 회귀)
+- [미해결 — 이미지 생성 불가] GOOGLE_API_KEY 가 User/Machine/프로세스 전부 미설정이라 교체·재생성 불가. dsh google.baseURL 도 루트라 POST /chat/completions 가 404(정확 경로는 /v1beta/openai — POST 시 400 = 경로 존재, 인증만 필요)
+- [기획 문서] docs/CONTENT_v1.0.16.md 신설 — 작업 범위·격차 발견 방법·개성 배분 원칙·수치 범위·전리품 표·아틀라스 3종 결함 실측·검증 기록·남은 일·지킨 원칙
+- [드라이브 자료 3건] 유저 제공 링크 내려받기 완료(f1 406.8MB ZIP = BGM 27곡 WAV / f2 67.6MB 7z / f3 269.9MB ZIP = Unity VFX 팩 9222항목). 게임 반영은 미착수 — 어느 씬에 어떤 곡을 매핑할지 지시 필요(임의 배치는 기존 사운드 설계를 덮어씀)
+
+Stage Summary:
+- 적 21종에 고유 개성 부여(34/34 완비) + 재림 보스 전리품 3종 신설(5곳 싱크) — 아이템 191→194종. tsc 0, 무음 실패 2건 해소
+- **커밋·푸시하지 않음** — main 푸시가 Vercel 프로덕션 자동배포를 유발하므로 로컬에만 보존(src/game/data.ts·stages.ts 수정, docs/CONTENT_v1.0.16.md 신규)
+- 유저 확인 필요: ①Gemini API 키(GOOGLE_API_KEY) — 보스 아틀라스 교체·NPC 128x128 도트 18종 생성의 유일한 선행조건 ②드라이브 BGM 27곡 씬 매핑 지시 ③빌드 범위 확정(웹만이라도 하려면 node_modules 설치 필요, APK는 Java·Android SDK 툴체인 필요, IPA는 macOS 필수)
+- 유저 테스트 포인트: ①초반 3챕터 몬스터가 종마다 다르게 움직이는지(돌진 예고·원거리 투사체·상태이상·사망 장판) ②재림 보스(베오르드/요르문간드/나그라파르) 처치 시 전용 전리품 드롭 + 거래소 등록- [라운드4 — 전 영역 교차 검증] 목표가 나열한 7개 영역 전부를 기계 검사. 버프 3-way(ITEMS↔BUFF_DEFS↔BuffKey) 8/8/8 일치 · 펫 11/11/11 일치 · 치장 54/56/56(차이 2건은 이세카이 전용 경로로 정상) · ITEMS↔ItemKey 전수성 194↔194 누락0 여분0 · 아이콘 파일 실존 누락0 · 9챕터 정합 4종(SET_GEAR/SET_BONUS/FRAGMENT_META/CHAPTER_VILLAGE_NPC) 각 9/9 · SET_GEAR→ITEMS 참조 누락0 · BOSS_DROP_ITEMS→ITEMS 누락0 · TRADE_PRICES↔TRADE_STOCK 12↔12 일치+가격 단조증가(8→52) · DAILY_DEAL_POOL 18종 전부 실존
+- [cos_isekai/cos_pixel — 격차 아님 확정] COSMETIC_DEFS 에는 있고 ItemKey·ITEMS 에는 없어 고아로 보였으나, isekai.ts:217-218(스탯 atk10/hp120 · atk6/crit2) + isekai.ts:509-510(cost 90, grant 직접 해금) + data.ts:589(CosmeticKey 별도 유니온) 확인 → 인벤토리를 거치지 않는 이세카이 상점 전용 지급 경로. 의도된 분리이므로 수정 대상 아님
+- [측정 오류 3건 자체 정정] ①cos_isekai/cos_pixel "고아"=정규식 오탐(tsc exit 0 이 이미 전수성 위반 아님을 보장) ②TRADE_PRICES 의 'tier' 가짜 항목=슬라이스 경계를 export const tradeValue 로 잡았으나 실제는 export function tradeValue 라 파일 끝까지 스캔 ③TRADE_STOCK 0건=배열인데 객체 파서 적용. 교훈: 정합성 검사는 tsc 를 먼저 돌리고 파서가 컴파일러와 모순되면 파서를 의심
+- [커밋 전 보안 점검] .env.local(SERTZ_BACKUP_KEY 64자) 실제 값으로 diff·신규문서·worklog 대조 → 포함 False. ghp_/vcp_/AIza/github_pat_ 패턴 스캔 4파일 전부 clean. .gitignore L34 `.env*` 로 .env.local 차단 확인. tsc --noEmit --ignoreConfig 재확인 exit 0
+- [커밋/푸시 — 유저 지시] 유저 지시 "다른곳에서 작업 할꺼니까 커밋 및 푸시해" 에 따라 docs/CONTENT_v1.0.16.md(기획서, 9장 전영역 교차검증 포함) + src/game/data.ts + src/game/stages.ts + worklog.md 를 main 에 커밋·푸시 → Vercel 프로덕션 자동배포

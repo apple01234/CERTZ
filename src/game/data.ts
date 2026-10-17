@@ -116,6 +116,10 @@ export type ItemKey =
   | "bd_gram"
   | "bd_abysslord"
   | "bd_abudditos"
+  /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종 전용 드롭.
+   *  기존 9종(BOSS_DROP_ITEMS)에서 vord/jorm/nagr만 누락되어 있어,
+   *  재림 보스를 잡아도 전용 전리품이 나오지 않던 구멍을 메운다. */
+  | "bd_vord" | "bd_jorm" | "bd_nagr"
   | "gm_sword" | "gm_armor" | "gm_ring" | "gm_elixir" // v1.0.2 — GM 전용
   /* v3.0.6 — BM 상점 (에메랄드 전용 — 상점과 분리) */
   | "pet_atlas"
@@ -371,6 +375,13 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "i_bd_gram", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "가름 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_abysslord: { key: "bd_abysslord", kind: "accessory", name: "심연의 군주의 관", icon: "i_bd_abysslord", price: 0, tier: "legend", crit: 14, maxHp: 100, slot: "pendant", tradeLock: true, bossDrop: "심연의 군주 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "아부디토스 드롭 — 최고 보스 전리품 · 거래소 예정" },
+  /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종 전용 드롭.
+   *  수치는 기존 9종의 강함 계층(스콜 8/80 → 아부디토스 18/130)을 이어받아 배치:
+   *  vord(HP 42000) < jorm(60000) < nagr(95000) 순으로 강화. 슬롯은 ring/pendant 교차로
+   *  기존 유물과 세트를 맞출 때 선택지가 생기게 했다. 아이콘은 기존 i_bd_* 재활용(신규 에셋 0). */
+  bd_vord: { key: "bd_vord", kind: "accessory", name: "파수꾼의 지진핵", icon: "i_bd_guardian", price: 0, tier: "legend", def: 4, maxHp: 160, slot: "ring", tradeLock: true, bossDrop: "재림의 파수꾼 베오르드 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_jorm: { key: "bd_jorm", kind: "accessory", name: "세계수의 독니", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 16, atk: 12, slot: "ring", tradeLock: true, bossDrop: "요르문간드 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_nagr: { key: "bd_nagr", kind: "accessory", name: "종언의 천사인장", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 20, maxHp: 150, def: 3, slot: "pendant", tradeLock: true, bossDrop: "나그라파르 드롭 — 재림 최종 전리품 · 거래소 예정" },
   /* ================= v1.0.2 (#GM아이템) — 관리자 전용 테스트 장비 =================
    *  일반 유저는 어떤 경로로도 획득 불가 (상품 목록/드롭 테이블 미포함 + gmOnly 거래 차단).
    *  지급은 GM 패널(서버 롤 검증 통과자)에서만. tradeLock으로 골드 판매도 차단. */
@@ -869,6 +880,11 @@ export const TRADE_PRICES: Record<string, number> = {
   bd_gram: 20,      // 가름 (구 그람 — 신화 고증: 헬의 문지기 Garmr)
   bd_abysslord: 24, // 심연의 군주
   bd_abudditos: 30, // 아부디토스 (최종 보스 — 텍스처 키 bd_abudditos 유지)
+  /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종: 기존 9종 최고가(30) 위로 계단식 배치.
+   *  보스 HP 계층(42000 / 60000 / 95000)에 맞춰 36 / 42 / 52. */
+  bd_vord: 36,      // 재림의 파수꾼 베오르드 (재림 r5)
+  bd_jorm: 42,      // 요르문간드 (재림 r10)
+  bd_nagr: 52,      // 나그라파르 (재림 r15 — 재림 지역 최종)
 };
 
 /** 거래소 판매가 (에메랄드) — 구매가의 60%, 최소 1 */
@@ -881,6 +897,8 @@ export function tradeValue(key: ItemKey): number {
 export const TRADE_STOCK: ItemKey[] = [
   "bd_guardian", "bd_behemoth", "bd_nidhog", "bd_surt", "bd_fenrir",
   "bd_skoll", "bd_gram", "bd_abysslord", "bd_abudditos",
+  /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종 (가격 오름차순 유지) */
+  "bd_vord", "bd_jorm", "bd_nagr",
 ];
 
 /* v1.4.3 (유저 리포트 ④ 보스 유물·일부 아이템 이미지 로드 실패) — 전 아이템 아이콘 키.
@@ -1134,6 +1152,10 @@ export const BOSS_DROP_ITEMS: Record<string, ItemKey> = {
   gram: "bd_gram",
   abysslord: "bd_abysslord",
   abudditos: "bd_abudditos",
+  /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종 누락분 보충 (WorldScene 보스 처치 드롭 경로) */
+  vord: "bd_vord",
+  jorm: "bd_jorm",
+  nagr: "bd_nagr",
 };
 
 /* ================= v3.0.15 (#16) — 원소 데미지 시스템 (원신 참고) =================
