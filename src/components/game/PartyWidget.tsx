@@ -122,7 +122,7 @@ export function PartyWidget() {
               <Users size={13} /> 파티 (최대 4인)
               {party && <span className="rounded bg-sky-400/25 px-1 text-[9px] text-sky-100">{party.members.length}명</span>}
             </p>
-            <button aria-label="파티 창 닫기" onClick={() => setOpen(false)} className="flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
+            <button aria-label="파티 창 닫기" onClick={() => setOpen(false)} className="tap-safe flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
               <X size={13} />
             </button>
           </div>

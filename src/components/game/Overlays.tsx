@@ -541,7 +541,7 @@ export function RewardPopup() {
           <button
             onClick={() => setSt(null)}
             aria-label="보상 팝업 닫기"
-            className="game-chip flex h-6 w-6 shrink-0 items-center justify-center text-white/70"
+            className="tap-safe game-chip flex h-6 w-6 shrink-0 items-center justify-center text-white/70"
           >
             ✕
           </button>

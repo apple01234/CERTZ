@@ -136,7 +136,7 @@ export function FriendsWidget() {
               >
                 {conn.connected ? "온라인" : conn.hasServer ? "연결 중…" : "오프라인"}
               </span>
-              <button aria-label="친구 창 닫기" onClick={() => setOpen(false)} className="flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
+              <button aria-label="친구 창 닫기" onClick={() => setOpen(false)} className="tap-safe flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
                 <X size={13} />
               </button>
             </div>

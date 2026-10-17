@@ -281,7 +281,7 @@ export function ChatBox() {
               <button
                 onClick={() => setLogOpen(false)}
                 aria-label="채팅 기록 닫기"
-                className="flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70"
+                className="tap-safe flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70"
               >
                 <X size={13} />
               </button>

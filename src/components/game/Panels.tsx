@@ -414,7 +414,7 @@ function QtyStepper({
           setDraft(null);
           onChange(Math.max(1, qty - 1));
         }}
-        className="h-6 w-6 text-[13px] font-black text-white/80 hover:bg-white/10 active:scale-90"
+        className="tap-safe h-6 w-6 text-[13px] font-black text-white/80 hover:bg-white/10 active:scale-90"
       >
         −
       </button>
@@ -442,7 +442,7 @@ function QtyStepper({
           setDraft(null);
           onChange(Math.min(99, qty + 1));
         }}
-        className="h-6 w-6 text-[13px] font-black text-white/80 hover:bg-white/10 active:scale-90"
+        className="tap-safe h-6 w-6 text-[13px] font-black text-white/80 hover:bg-white/10 active:scale-90"
       >
         +
       </button>

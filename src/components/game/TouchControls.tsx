@@ -551,7 +551,7 @@ function SkillButton({
           src={icon}
           alt=""
           onError={() => setIconErr(true)}
-          className={compact ? "h-7 w-7 rounded-sm" : "h-6 w-6 rounded-sm sm:h-7 sm:w-7"}
+          className={`tap-safe ${compact ? "h-7 w-7" : "h-6 w-6 sm:h-7 sm:w-7"} rounded-sm`}
           style={{ imageRendering: "pixelated" }}
         />
       ) : (

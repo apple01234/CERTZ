@@ -119,6 +119,11 @@ export function HUD({
   /** v1.4.12 (#16) — 이그니의 UI 기능 안내 */
   onOpenGuide: () => void;
 }) {
+  /* v1.0.16 (F3) — 우측 버튼 컬럼의 zoom 배율. 화면 폭에 따라 커지므로 계산을 한 곳에 모은다.
+   *  같은 값을 --tap-zoom으로도 넘겨 .tap-safe 히트 영역이 zoom을 역보정하게 한다. */
+  const hudZoom = typeof window !== "undefined"
+    ? (window.innerWidth >= 1600 ? 1.28 : window.innerWidth >= 1280 ? 1.18 : window.innerWidth >= 1024 ? 1.08 : window.innerWidth >= 640 ? 0.92 : 0.85)
+    : 1;
   /* v1.0.5 — 키맵 재배치 시 HUD 키 배지·aria도 함께 갱신 (I/T/J/K/O 하드코딩 제거) */
   const km = loadKeyMap();
   const expPct = Math.min(100, (hud.exp / Math.max(1, hud.expNext)) * 100);
@@ -150,10 +155,11 @@ export function HUD({
   }, []);
   return (
     <>
-      {/* 좌상단: 상태 — v1.0.20 게임형 LV 플레이트 · v1.4.0 (#18) zoom .85 전역 축소 (#15) 스탯칩 고정+버프 행은 그 아래 */}
+      {/* 좌상단: 상태 — v1.0.20 게임형 LV 플레이트 · v1.4.0 (#18) zoom .85 전역 축소 (#15) 스탯칩 고정+버프 행은 그 아래
+       *  v1.0.16 (F3) — --tap-zoom: 자식 .tap-safe 히트 영역이 이 배율을 역보정한다 */}
       <div
         className="pointer-events-none absolute left-[max(0.5rem,env(safe-area-inset-left))] top-[max(0.5rem,env(safe-area-inset-top))] flex items-start gap-2 sm:left-3 sm:top-3"
-        style={{ zoom: 0.85 }}
+        style={{ zoom: 0.85, "--tap-zoom": "0.85" } as React.CSSProperties}
       >
         <div className="game-chip flex h-10 w-10 shrink-0 flex-col items-center justify-center sm:h-12 sm:w-12">
           <span className="text-[8px] font-bold leading-none text-[#cbb88a]">LV</span>
@@ -215,9 +221,11 @@ export function HUD({
        *  (≥1024 1.08 / ≥1280 1.18 / ≥1600 1.28, 모바일은 기존 0.85~0.92 유지)
        *  v1.0.13 피드백#13 — 컨테이너 상단 여백 축소(0.5rem→0.25rem) + 퀘스트 트래커를 버튼행 위(첫 자식)로 이동:
        *  기존엔 트래커가 버튼행 아래에 있어 퀘스트·콘텐츠 버튼이 화면 최상단에 안 보였다 */}
+      {/* v1.0.16 (F3) — --tap-zoom: 자식 .tap-safe의 히트 영역을 이 배율로 역보정한다.
+       *  zoom 안에서는 44px가 44×zoom으로 렌더되므로, CSS가 같은 값을 알아야 정확히 44px가 된다. */}
       <div
         className="absolute right-[max(0.25rem,env(safe-area-inset-right))] top-[max(0.25rem,env(safe-area-inset-top))] flex max-w-[46%] flex-col items-end gap-1.5 sm:right-1 sm:top-2"
-        style={{ zoom: typeof window !== "undefined" ? (window.innerWidth >= 1600 ? 1.28 : window.innerWidth >= 1280 ? 1.18 : window.innerWidth >= 1024 ? 1.08 : window.innerWidth >= 640 ? 0.92 : 0.85) : 1 }}
+        style={{ zoom: hudZoom, "--tap-zoom": String(hudZoom) } as React.CSSProperties}
       >
         {/* v1.0.14 피드백#5 — 퀘스트 트래커(+재오픈 칩)를 "더보기 버튼 아래"로 이동:
          *  v1.0.13 피드백#13에서 컬럼 첫 자식(버튼행보다 위)으로 올렸더니
@@ -440,11 +448,14 @@ export function HUD({
             <div className="flex items-center gap-1.5">
               <ScrollText size={13} className="shrink-0 text-amber-300" />
               <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-amber-100 sm:text-xs">{quest.title}</span>
-              {/* vc149 (#16) — 퀘스트 on/off 토글을 퀘스트 창 안 헤더로 이동 */}
+              {/* vc149 (#16) — 퀘스트 on/off 토글을 퀘스트 창 안 헤더로 이동
+               *  v1.0.16 (F3) — tap-safe: 이 버튼은 아이콘(11px)만 있어 실측 17×14px였다.
+               *  WCAG 2.2 SC 2.5.8의 24px에도 못 미쳐 사실상 누를 수 없었다.
+               *  ::after로 히트 영역만 44px까지 넓힌다(시각 크기·레이아웃 불변). */}
               <button
                 onClick={toggleTracker}
                 aria-label="퀘스트창 끄기"
-                className="shrink-0 rounded bg-black/40 px-1 py-0.5 text-amber-200/80 active:scale-90"
+                className="tap-safe shrink-0 rounded bg-black/40 px-1 py-0.5 text-amber-200/80 active:scale-90"
               >
                 <ScrollText size={11} />
               </button>

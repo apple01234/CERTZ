@@ -277,7 +277,7 @@ export function AuthPanel() {
                 <KeyRound size={16} className="text-sky-300" />
                 <span className="text-sm font-black text-sky-200">계정</span>
               </div>
-              <button aria-label="계정 창 닫기" onClick={() => setOpen(false)} className="flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
+              <button aria-label="계정 창 닫기" onClick={() => setOpen(false)} className="tap-safe flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/70 hover:bg-black/70">
                 <X size={13} />
               </button>
             </div>
