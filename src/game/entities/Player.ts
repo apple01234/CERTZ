@@ -2558,11 +2558,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.emitHud();
   }
 
-  /** 반경 내 대상 목록 — 3차/4차 광역 스킬 판정용 */
+  /* v1.0.16 (O9) — 스킬 판정마다 새 배열을 만들던 것을 스크래치 버퍼 재사용으로 바꾼다.
+   *  getAllTargets()는 이미 프레임 캐시를 반환하므로(WorldScene), 남은 비용은 filter가 만드는
+   *  중간 배열이었다. 스킬 판정 48곳에서 호출되고 전부 for...of로 즉시 소비하므로
+   *  한 틱 안에서 버퍼를 재사용해도 안전하다(자동전투 autoLiveScratch와 같은 방식).
+   *  ⚠️ 반환 배열을 보관하거나 다음 호출 뒤에 쓰면 덮어써진다 — 이번 틱에서만 유효. */
+  private targetScratch: (Enemy | Boss)[] = [];
+
+  /** 반경 내 대상 목록 — 3차/4차 광역 스킬 판정용 (반환 배열은 다음 호출까지 유효) */
   getAllTargetsIn(radius: number): (Enemy | Boss)[] {
-    return this.scene
-      .getAllTargets()
-      .filter((e) => e.active && Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) <= radius);
+    const out = this.targetScratch;
+    out.length = 0;
+    const cx = this.x, cy = this.y;
+    const r2 = radius * radius; // 제곱 비교로 sqrt 제거
+    for (const e of this.scene.getAllTargets()) {
+      if (!e.active) continue;
+      const dx = e.x - cx, dy = e.y - cy;
+      if (dx * dx + dy * dy <= r2) out.push(e);
+    }
+    return out;
   }
 
   /* ---------------- v3.0.3 — 상태이상 (출혈/독/감속) ---------------- */
@@ -4109,7 +4123,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.tweens.add({ targets: r, scale: 0.4, alpha: 0, duration: 900, onComplete: () => r.destroy() });
           }
           this.scene.spawnPickupText(this.x, this.y - 70, `처형 각인 ×${marked.length}`, "#c08aff");
-          const seq = marked.length > 0 ? marked : [];
+          /* v1.0.16 (O9) — getAllTargetsIn이 스크래치 버퍼를 반환하므로, delayedCall 클로저에서
+           *  나중에 참조할 값은 반드시 복사해 둔다(안 하면 다른 스킬 호출이 버퍼를 덮어써 오염). */
+          const seq = marked.slice(0, 8);
           seq.slice(0, 8).forEach((t, i) => {
             this.scene.time.delayedCall(340 + i * 260, () => {
               if (this.state === "dead" || !t.active) return;

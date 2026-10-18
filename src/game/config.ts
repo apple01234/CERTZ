@@ -405,10 +405,14 @@ export function writeSave(data: SaveData) {
   if (typeof window === "undefined") return;
   try {
     const key = activeSaveKey();
-    window.localStorage.setItem(key, JSON.stringify(data));
+    /* v1.0.16 (O12) — 종전엔 활성 캐릭터가 있으면 같은 데이터를 두 번 직렬화했다
+     *  (char_<id> 키 + 레거시 미러 키). 세이브는 스테이지 전환마다 불리므로 낭비가 컸다.
+     *  한 번만 문자열로 만들고 두 키에 같은 값을 쓴다. */
+    const json = JSON.stringify(data);
+    window.localStorage.setItem(key, json);
     /* v1.0.18 — 로비 멀티캐릭터: 활성 캐릭터가 있으면 레거시 키에도 미러링
      *  (구버전 APK 롤백 시 "마지막 플레이 캐릭터" 이어하기 보장 — 원본은 char_<id>가 진실) */
-    if (activeCharId) window.localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    if (activeCharId && key !== SAVE_KEY) window.localStorage.setItem(SAVE_KEY, json);
     for (const fn of saveHooks) {
       try {
         fn(data);

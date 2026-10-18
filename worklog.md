@@ -4813,3 +4813,21 @@ Stage Summary:
 - 산출물: android-build.yml lint 단계 + package.json lint:strict
 - **효과**: AGENTS.md의 "비자명한 로직에는 실행 가능한 체크 1개" 요건이 이제 CI에서 자동 강제된다. 린트 위반이 쌓여 게이트가 무력화되던 상태(R8)가 재발하지 않는다
 - 검증 한계: 실제 GitHub Actions 러너에서의 실행은 이 커밋의 push로 확인된다(워크플로 파일이 트리거 경로)
+
+---
+Task ID: improve-21-2026-10-18 (v1.0.16)
+Agent: DSH (보완 세션 21차 — O9·O12 최적화)
+
+Task: 스킬 판정 배열 재할당과 세이브 중복 직렬화 제거 (기획서 O9·O12)
+
+Work Log:
+- [O9 조사] `getAllTargetsIn()`이 호출마다 `getAllTargets().filter(...)`로 새 배열을 만들고 있었다(호출 48곳). 다만 `getAllTargets()`는 이미 **프레임 캐시**를 반환하므로(L10159 주석) 큰 비용은 이미 해결돼 있었고, 남은 것은 filter의 중간 배열이었다
+- [O9 구현] 자동전투 `autoLiveScratch`(v1.0.14 #14)와 **같은 방식**의 스크래치 버퍼 재사용 + `Phaser.Math.Distance.Between`(sqrt 포함)을 제곱거리 비교로 교체
+- [O9 안전성 검사] 반환 배열 보관 여부를 전수 확인 — 즉시 소비 46건, 변수 할당 2건. `victims`는 for...of로 즉시 소비, `marked`는 `seq`로 넘어가는데 **delayedCall 클로저에서 나중에 참조**하고 있었다 → 그 1곳만 `slice(0,8)`로 복사해 오염 차단
+- [O12 구현] `writeSave`가 활성 캐릭터일 때 같은 데이터를 두 키에 쓰며 `JSON.stringify`를 **2회** 호출했다. 1회로 통일하고, 키가 같으면 미러 쓰기 자체를 생략
+- [검증] tsc exit 0 · eslint 게이트 exit 0 · 빌드 exit 0 · 실브라우저: Z/C/V 스킬 pageerror 0, **반복 스킬 20회 스트레스에서도 pageerror 0**(버퍼 재사용 안전 확인), 세이브 두 키 내용 동일(2226 bytes) 확인, 세이브 파싱 정상(104필드)
+
+Stage Summary:
+- 산출물: Player.ts(getAllTargetsIn·buf) + config.ts(writeSave)
+- **주의점**: 이번 최적화는 반환 배열의 수명 계약을 바꾼다(스크래치 버퍼 — 다음 호출까지 유효). 호출부가 배열을 보관하면 오염되므로, 나중에 호출부를 추가할 때 반드시 복사해야 한다. 주석에 명시했다
+- 남은 O 항목: O6(스파클 풀 — 초당 3개라 이득 낮음), O7(O7 완료), O8(hitStop delayedCall), O10(투사체 O(n²)), O11(filter 1줄→6줄 루프는 가독성 손실). 전부 이득이 작거나 리스크가 커 보류

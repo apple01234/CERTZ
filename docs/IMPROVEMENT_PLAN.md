@@ -95,10 +95,10 @@
 | **O6** | 스타포스 스파클만 풀 미사용(`add.image` + `destroy`). 같은 파일에 8/4/6장 풀이 이미 존재 | `WorldScene.ts:10011-10023` | 소 |
 | **O7** | 장판 틱마다 `new Vector2` | `WorldScene.ts:12066` | 소 |
 | **O8** | `hitStop`이 매 타격 `delayedCall` 생성 | `WorldScene.ts:3479` | 중 |
-| **O9** | `getAllTargetsIn()`이 스킬 판정마다 새 배열(호출 60곳+) | `Player.ts:2558-2562` | 중 |
+| **O9** | `getAllTargetsIn()`이 스킬 판정마다 새 배열(호출 48곳) | ✅ 스크래치 버퍼 재사용 + 제곱거리 비교(sqrt 제거). `getAllTargets()`는 이미 프레임 캐시라 남은 비용은 filter 배열이었다. delayedCall 클로저에서 참조하는 1곳은 `slice()`로 복사 |
 | **O10** | 투사체 연쇄 판정 O(n²) | `WorldScene.ts:11935-11951` | 중 |
 | **O11** | 처치마다 `enemies.filter()` 배열 재할당 | `WorldScene.ts:4625` | 중 |
-| **O12** | `writeSave`가 스테이지 전환마다 전체 JSON 직렬화(활성 캐릭터면 2회) | `WorldScene.ts:2800-2801`, `config.ts:411` | 중 |
+| **O12** | `writeSave`가 활성 캐릭터면 같은 데이터를 2회 직렬화 | ✅ `JSON.stringify` 1회로 통일 + 키가 같으면 미러 쓰기 생략 |
 
 ---
 
@@ -310,6 +310,8 @@ seat 없는 구(舊)멤버는 통과시키지 않으므로 **배포 직후 기�
 | 4 | R4 `ignoreBuildErrors` 제거 | ✅ `prisma generate` 선행 배선(빌드 스크립트 + 워크플로 3종) 후 제거 — 정적 export 빌드 실측 통과 |
 | 3 | R5 fast-refresh 등 잔여 | ✅ **R8 lint 게이트 해소** — `eslint src --max-warnings 0` **exit 0** (종전 오류 4 + 경고 7). 오류는 effect 불필요 패턴 3건·렌더 중 ref 1건을 파생값/이유 명시 disable로 정리 |
 | 4 | **R8 CI 강제** | ✅ Android 빌드에 `Lint gate (eslint src --max-warnings 0)` 단계 추가 · `package.json`에 `lint:strict` 스크립트 |
+| 3 | **O9 스킬 판정 배열** | ✅ 스크래치 버퍼 재사용 + sqrt 제거 (48곳) |
+| 3 | **O12 세이브 직렬화** | ✅ stringify 1회 통일 + 중복 미러 쓰기 생략 |
 | 4 | **S1 서명 키 CI Secret 이전** | ✅ 추적 해제 · 평문 제거 · env/properties 참조 · CI Secret 복원 단계 |
 | 1 | **R9 실패 은폐 수정** | ✅ `RelayAccessError` + 503 — 무효 토큰이 "빈 목록"으로 위장하지 않는다 |
 | 2 | **B2 구매 확인 단계** | ✅ 되돌릴 수 없는 지출에 2단계 확인 — 오탭 1회 결제 차단 |
