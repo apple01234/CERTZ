@@ -4,7 +4,7 @@
  */
 import { NextRequest } from "next/server";
 import { mutateDb } from "@/lib/ghdb";
-import { clearCookie, extractToken, json, options } from "@/lib/sapi";
+import { clearCookie, extractToken, json, options, tokenHash } from "@/lib/sapi";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const token = extractToken(req);
     if (!token) return json(req, 200, { ok: true }, { "Set-Cookie": clearCookie() });
     const r = await mutateDb((db) => {
-      delete db.tokens[token];
+      delete db.tokens[tokenHash(token)]; // v1.0.16 (S4) — 키가 해시로 저장됨
       return null;
     });
     if (r.status !== 200) return json(req, r.status, r.body);

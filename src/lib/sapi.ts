@@ -3,18 +3,30 @@
  *  accounts/index.js의 프로토콜을 그대로 계승한다:
  *   · CORS 화이트리스트(APK 웹뷰 https://localhost + *.vercel.app + *.space-z.ai + SERTZ_ORIGIN)
  *   · 토큰 3중 경로: Authorization Bearer → 쿠키(sertz_auth) → ?token= 쿼리(네이티브 프리플라이트 회피)
- *   · scrypt 솔트 해시(기존 계정 해시 그대로 검증 가능) · 30일 세션 · 관리자 롤(env)
+ *   · scrypt 솔트 해시(기존 계정 해시 그대로 검증 가능) · 14일 세션 · 관리자 롤(env)
+ *   · v1.0.16 (S4) — 세션 토큰은 DB에 SHA-256 해시로만 저장(원문 저장 폐기). 클라 응답 형식 불변.
  *   · 레이트리밋(인스턴스 단위 — 베스트에포트, 플랫폼 DDoS 방어와 병행)
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { scryptSync, randomBytes, timingSafeEqual } from "node:crypto";
+import { scryptSync, randomBytes, timingSafeEqual, createHash } from "node:crypto";
 import type { DbShape, UserRec, ListingRec } from "./ghdb";
 import { ITEMS } from "@/game/data"; // vc146 (#9) — 거래 가능 품목 동적 구성 (gmOnly만 제외)
 import { clsToBranch } from "@/game/classes"; // v1.0.14 피드백#2 — 클래스키 → 계열(8 기본 직업) 정규화
 
 export const COOKIE = "sertz_auth";
-export const TOKEN_TTL_MS = 30 * 24 * 3600 * 1000; // 30일
+/* v1.0.16 (S4) — 세션 TTL 30일 → 14일 단축. 해시 저장과 함께 토큰 유출 시의 실효 창을 절반으로 줄인다. */
+export const TOKEN_TTL_MS = 14 * 24 * 3600 * 1000; // 14일
+
+/** v1.0.16 (S4) — 세션 토큰 DB 저장 키. 원문을 절대 저장하지 않고 SHA-256 hex 64자로만 보관한다.
+ *  · 클라는 여전히 원문 토큰을 받아 Bearer/쿠키/?token= 으로 제시하고, 서버가 검증 시점에 해시해 대조한다
+ *    — 응답 형식·발급 흐름은 전혀 바뀌지 않는다(클라 호환 100%).
+ *  · 효과: CERTZ-DB 덤프만으로는 세션 탈취가 불가능하다(256bit 원문 복원 불가). S2의 "토큰 원문 저장"
+ *    리스크를 저장소 단에서 제거한다. 쿼리 토큰 경로는 APK 프리플라이트 회피용으로 유지한다.
+ *  · 이전 배포의 원문 토큰은 해시 키와 대조되지 않아 자동 무효 — 재로그인 1회 필요(DB 부트스트랩 직후라 비용 최소). */
+export function tokenHash(raw: string): string {
+  return createHash("sha256").update(String(raw)).digest("hex");
+}
 /* v1.0.2 계승 — 관리자 아이디 목록 (env, 쉼표 구분. 기본 admin·apple01234) */
 export const ADMIN_USERS = (process.env.SERTZ_ADMIN_USERS || "admin,apple01234")
   .split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
@@ -114,7 +126,7 @@ export function publicUser(u: UserRec | null) {
 export function currentUser(db: DbShape, req: NextRequest): UserRec | null {
   const token = extractToken(req);
   if (!token) return null;
-  const t = db.tokens[token];
+  const t = db.tokens[tokenHash(token)]; // v1.0.16 (S4) — 키가 해시로 바뀐 것 외 동일
   if (!t || t.expiresAt < Date.now()) return null; // 만료 정리는 쓰기 경로에서 일괄
   return db.users[t.userId] || null;
 }
@@ -129,7 +141,7 @@ export function isAdminUser(u: UserRec | null): boolean {
 
 export function issueToken(db: DbShape, user: UserRec): { token: string; cookie: string } {
   const token = randomBytes(32).toString("hex");
-  db.tokens[token] = { userId: user.id, expiresAt: Date.now() + TOKEN_TTL_MS };
+  db.tokens[tokenHash(token)] = { userId: user.id, expiresAt: Date.now() + TOKEN_TTL_MS }; // v1.0.16 (S4) — 해시 키 저장
   if (Object.keys(db.tokens).length > 4000) {
     const now = Date.now();
     for (const k of Object.keys(db.tokens)) if (db.tokens[k].expiresAt < now) delete db.tokens[k];

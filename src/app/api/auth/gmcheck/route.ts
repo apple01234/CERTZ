@@ -7,7 +7,6 @@
  *  · 200은 "판정 완료", 4xx/5xx는 "판정 불가" — 클라는 후자를 gm=false로 처리한다.
  */
 import { NextRequest } from "next/server";
-import { createHash } from "node:crypto";
 import { loadDb } from "@/lib/ghdb";
 import { json, options, rateLimit } from "@/lib/sapi";
 
@@ -28,10 +27,12 @@ export async function GET(req: NextRequest) {
     const u = db.users[uid];
     if (!u || u.role !== "admin") return json(req, 200, { gm: false });
     const now = Date.now();
-    /* ghdb 토큰 테이블: 키=원문 토큰, 값={userId, expiresAt} — 만료 토큰은 증명 불인정 */
+    /* v1.0.16 (S4) — ghdb 토큰 테이블 키가 원문 → SHA-256(원문) 해시로 바뀌었다.
+     *  클라 증명 gmv = SHA-256(원문 토큰) 앞 16 hex ≡ 해시 키의 앞 16자 — 접두사 비교로 단순화.
+     *  만료 토큰은 여전히 증명 불인정. 증명은 서버 내부 키에 대한 64bit 단편이라 외부 유출 면 없음. */
     for (const [tok, rec] of Object.entries(db.tokens)) {
       if (rec.userId !== uid || rec.expiresAt < now) continue;
-      if (createHash("sha256").update(tok).digest("hex").slice(0, 16) === proof) {
+      if (tok.startsWith(proof)) {
         return json(req, 200, { gm: true });
       }
     }

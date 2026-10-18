@@ -34,9 +34,9 @@ app.prepare().then(() => {
   /* vc138 — GitHub API 자산 DELETE 일시 장애로 동일 이름 교체가 막힌 기간의 안전 경로:
    *  vc138 자산을 별도 이름으로 업로드하고 이쪽을 가리킴. 루프가 동일 이름 교체에 성공하면
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
-  /* vc157 — APK는 릴리스 태그 v1.0.15에 있다(v1.0.9 태그는 vc156까지만 보유).
+  /* vc157 — APK는 릴리스 태그 v1.0.16에 있다(이전 태그는 vc157까지 보유).
    *  태그를 v1.0.9로 두면 SERTZ-vc157.apk가 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.15/SERTZ-vc157.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.0.16/SERTZ-vc158.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,10 +69,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.0.15";
-  const LATEST_CODE = 157;
+  const LATEST_VERSION = "1.0.16";
+  const LATEST_CODE = 158;
     const VERSION_NOTE =
-  "v1.0.15 (vc157) — 유저 피드백 6건: ①레벨별 요구 경험치 메이플 공식표 적용(나무위키 메이플스토리/레벨 4.1~4.3 — 2026-03-19 업데이트 기준 1~299레벨 전 구간) — 심연의탑 과속 레벨업 근본 차단 ②심연의탑 난이도 개편: 몬스터 10층마다 체력 ×2·공격력 ×1.5 심층 배율 + 보스 10층마다 등장 ③맵 이동 시 스킬 쿨타임 초기화 버그 근본 수정(전환 직전 기록→새 맵 복원) ④바르가 수비전 몬스터가 게이트로 안 달려오던 버그 수정(코어 진군 AI 신설) ⑤퀘스트 경험치 ×12 리밸런싱(사냥 역전 해소 — 원작처럼 퀘스트가 성장의 주 수단) ⑥씹덕요소 복원: 감정표현 단축키(Y♥·U♪·H！·N💢)·펫 랜덤 감정표현·레벨업 LEVEL UP!! 연출·처치 하트 팝·NPC 대사 카오모지";
+  "v1.0.16 (vc158) — 보완 기획서 사이클(보안·최적화·접근성·BM·빌드 일괄): ①세션 토큰 SHA-256 해시 저장 전환(원문 저장 폐기 — DB 유출로도 세션 탈취 불가)+세션 TTL 30일→14일 — 기존 세션은 1회 재로그인 필요 ②클라우드세이브 chars 백업 소실 방지 ③채팅·파티 인증 강화(cid 위조 강퇴·관리자 사칭 차단) ④admin 예약 ID 선점 차단 ⑤소스 평문 자격증명 제거 ⑥릴리스 서명 키 저장소 제거→CI Secret 복원 ⑦API 실패 은폐 수정(무효 토큰이 빈 목록으로 위장하지 않음 — 503 사유 반환) ⑧일일특가 표시가=청구가 정합 ⑨구매 2단계 확인 모달(오탭 결제 차단) ⑩스타포스 확률 공시(15단계 성공률·하락·주문서) ⑪최적화: 획득 텍스트 풀 분리·피해로그 링버퍼·클로저 승격·히트스파크 상수화·장판 Vector2 재사용·스킬 판정 스크래치 버퍼(48곳)·세이브 직렬화 1회 통일 ⑫히트스톱이 자가치유에 잘리던 버그 수정(타격감 복원) ⑬접근성: 캐시상점 키보드 내비·모달 role/aria 시맨틱·터치 타깃 히트 영역 확장·텍스트 대비 WCAG AA 상향(255곳)·광고 실패 사유 분기·결제/환불 FAQ·shadcn 잔재 48개 제거+번들 유출 차단 ⑭빌드: ignoreBuildErrors 제거(타입 강제)·lint 게이트 CI 강제·EXE 릴리스 태그 동적화·lockfile 버전 정합 ⑮콘텐츠: 적 고유 개성 21종 보충+재림 보스 전리품 3종(vord·jorm·nagr)";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
