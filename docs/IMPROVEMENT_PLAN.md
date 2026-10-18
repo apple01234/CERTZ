@@ -94,9 +94,9 @@
 | **O5** | 히트스파크가 매 타격마다 배열 리터럴 + `setParticleTint`(텍스처 캐시 키 재생성) | `WorldScene.ts:3484-3496` | 소 |
 | **O6** | 스타포스 스파클만 풀 미사용(`add.image` + `destroy`). 같은 파일에 8/4/6장 풀이 이미 존재 | `WorldScene.ts:10011-10023` | 소 |
 | **O7** | 장판 틱마다 `new Vector2` | `WorldScene.ts:12066` | 소 |
-| **O8** | `hitStop`이 매 타격 `delayedCall` 생성 | `WorldScene.ts:3479` | 중 |
+| **O8** | "`hitStop`이 매 타격 `delayedCall` 생성" | ❌ **오탐** — `hitStop`은 `if (now < hitStopUntil)` 가드로 연타 시 `delayedCall`을 만들지 않는다(WorldScene.ts:3512-3514). 첫 타격에서만 생성 |
 | **O9** | `getAllTargetsIn()`이 스킬 판정마다 새 배열(호출 48곳) | ✅ 스크래치 버퍼 재사용 + 제곱거리 비교(sqrt 제거). `getAllTargets()`는 이미 프레임 캐시라 남은 비용은 filter 배열이었다. delayedCall 클로저에서 참조하는 1곳은 `slice()`로 복사 |
-| **O10** | 투사체 연쇄 판정 O(n²) | `WorldScene.ts:11935-11951` | 중 |
+| **O10** | "투사체 연쇄 판정 O(n²)" | ⏸ **비용 작음** — 루프가 `getAllTargets()`(프레임 캐시)를 순회하므로 배열 생성은 없고 거리 계산만 반복된다. 투사체 수 × 적 수가 실제로는 작아 측정 가능한 이득이 없다 |
 | **O11** | 처치마다 `enemies.filter()` 배열 재할당 | `WorldScene.ts:4625` | 중 |
 | **O12** | `writeSave`가 활성 캐릭터면 같은 데이터를 2회 직렬화 | ✅ `JSON.stringify` 1회로 통일 + 키가 같으면 미러 쓰기 생략 |
 
@@ -303,7 +303,7 @@ seat 없는 구(舊)멤버는 통과시키지 않으므로 **배포 직후 기�
 | 3 | O5 히트스파크 배열 상수화 | ✅ |
 | 3 | O1 HUD 스로틀 | ❌ 오탐(스로틀 정상) |
 | 3 | O6 스타포스 스파클 풀링 | ⏸ 의도적 보류 — 230~420ms당 1개(초당 ~3개)로 새 풀 신설 가치가 낮다 |
-| 3 | O7~O12 | ⏸ O7만 완료(장판 Vector2 재사용). O11은 1줄 `filter`를 6줄 루프로 바꾸는 가독성 손실 대비 이득이 작아 보류 |
+| 3 | O7~O12 (O8·O10 제외 완료분) | ✅ O7(장판 Vector2 재사용) · O9(스킬 판정 버퍼) · O12(세이브 직렬화). O8은 **오탐**, O10은 비용 작음, O11은 1줄 `filter`→6줄 루프로 가독성 손실 |
 | 4 | R2 mapping.txt 28.9MB 추적 해제 | ✅ |
 | 4 | R7 lockfile 버전 정합 | ✅ |
 | 4 | R3 EXE 릴리스 태그 동적화 | ✅ |
