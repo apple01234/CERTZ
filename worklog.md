@@ -4795,3 +4795,21 @@ Stage Summary:
 - **R8 해소**: 저장소가 이제 자체 lint 게이트를 통과한다. AGENTS.md의 "비자명한 로직에는 실행 가능한 체크 1개" 요건을 CI에서 강제할 수 있게 됨
 - 교훈: `--fix`는 안전해 보이지만 **억제돼 있던 오류를 드러낼 수 있다**. 적용 후 반드시 tsc·빌드·런타임을 다시 확인해야 한다
 - 검증 한계: 데스크톱 Chrome + 터치 에뮬레이션. 실기기 회전 동작 확인 권장
+
+---
+Task ID: improve-20-2026-10-18 (v1.0.16)
+Agent: DSH (보완 세션 20차 — R8 CI 강제)
+
+Task: 린트 게이트를 CI에 묶어 회귀를 막는다 (R8 후속)
+
+Work Log:
+- [문제] R8에서 `eslint src --max-warnings 0`을 통과시켰지만 **회귀를 막는 장치가 없었다**. 세 워크플로(android/exe/ios) 어디에도 lint·tsc 단계가 없었고, `package.json`의 `lint`는 `eslint .`이라 경고를 통과시켜 게이트로 부적합했다
+- [추가] `android-build.yml`의 Prisma generate 직후에 `Lint gate (eslint src --max-warnings 0)` 단계. 이 워크플로 파일 자신이 트리거 경로라 푸시하면 즉시 검증된다
+- [추가] `package.json`에 `lint:strict` 스크립트 — CI와 같은 명령을 로컬에서 재현. `lint`(eslint .)는 편의용으로 유지
+- [설계 판단] 세 워크플로 모두 `next build`를 돌리고 ignoreBuildErrors는 R4에서 제거됐으므로 **타입 검사는 이미 세 곳 모두 강제**된다. lint만 비어 있었으니 한 곳이면 충분하고, 세 곳에 넣으면 CI 시간만 삼중이 된다
+- [검증] PyYAML로 세 워크플로 문법 파싱(단계 수 15/10/13, lint 단계 정확히 1곳) · `eslint src --max-warnings 0` exit 0 · 기존 `eslint .`도 exit 0 · tsc exit 0 · 빌드 exit 0 · lockfile 버전 정합(1.0.15) 유지
+
+Stage Summary:
+- 산출물: android-build.yml lint 단계 + package.json lint:strict
+- **효과**: AGENTS.md의 "비자명한 로직에는 실행 가능한 체크 1개" 요건이 이제 CI에서 자동 강제된다. 린트 위반이 쌓여 게이트가 무력화되던 상태(R8)가 재발하지 않는다
+- 검증 한계: 실제 GitHub Actions 러너에서의 실행은 이 커밋의 push로 확인된다(워크플로 파일이 트리거 경로)

@@ -309,6 +309,7 @@ seat 없는 구(舊)멤버는 통과시키지 않으므로 **배포 직후 기�
 | 4 | R3 EXE 릴리스 태그 동적화 | ✅ |
 | 4 | R4 `ignoreBuildErrors` 제거 | ✅ `prisma generate` 선행 배선(빌드 스크립트 + 워크플로 3종) 후 제거 — 정적 export 빌드 실측 통과 |
 | 3 | R5 fast-refresh 등 잔여 | ✅ **R8 lint 게이트 해소** — `eslint src --max-warnings 0` **exit 0** (종전 오류 4 + 경고 7). 오류는 effect 불필요 패턴 3건·렌더 중 ref 1건을 파생값/이유 명시 disable로 정리 |
+| 4 | **R8 CI 강제** | ✅ Android 빌드에 `Lint gate (eslint src --max-warnings 0)` 단계 추가 · `package.json`에 `lint:strict` 스크립트 |
 | 4 | **S1 서명 키 CI Secret 이전** | ✅ 추적 해제 · 평문 제거 · env/properties 참조 · CI Secret 복원 단계 |
 | 1 | **R9 실패 은폐 수정** | ✅ `RelayAccessError` + 503 — 무효 토큰이 "빈 목록"으로 위장하지 않는다 |
 | 2 | **B2 구매 확인 단계** | ✅ 되돌릴 수 없는 지출에 2단계 확인 — 오탭 1회 결제 차단 |
@@ -447,3 +448,23 @@ export const BGM_PRELOAD_TRACKS: string[] = ["bgm_title1"];  // 타이틀 1곡�
 4. **대비 3.89~4.15로 과소평가** — 알파 색을 **검정 위에** 합성해 비교했다. WCAG는 **선언색을 실제 배경 위에** 합성한다. 지정색 기준으로는 5.05~5.15로 통과.
 
 **교훈**: 접근성 측정은 **선언된 색 + 실제 배경**으로 계산해야 한다. 픽셀 샘플링은 안티에일리어싱·그라디언트·이미지 배경에서 오판한다.
+
+
+### R8 후속 — lint를 CI에 강제로 묶었다 (2026-10-18)
+
+R8에서 게이트를 통과시켰지만 **회귀를 막는 장치가 없었다.** 세 워크플로(android/exe/ios) 어디에도
+lint·tsc 단계가 없었고, `package.json`의 `lint`는 `eslint .`이라 경고를 통과시켜 게이트로 부적합했다.
+
+**추가한 것**
+- `android-build.yml`의 `Prisma generate` 직후에 `Lint gate (eslint src --max-warnings 0)` 단계
+  (해당 워크플로 파일 자신이 트리거 경로라 이 커밋을 푸시하면 즉시 검증된다)
+- `package.json`에 `lint:strict` 스크립트 — CI와 같은 명령을 로컬에서 재현
+  (`lint`는 `eslint .` 그대로 두어 편의용으로 유지)
+
+**왜 한 곳만인가**: 세 워크플로 모두 `next build`를 돌리고 `ignoreBuildErrors`는 R4에서 제거됐으므로
+**타입 검사는 이미 세 곳 모두에서 강제**된다. lint만 비어 있었으므로 한 곳에 넣으면 충분하고,
+세 곳에 넣으면 CI 시간만 삼중이 된다.
+
+**검증**: PyYAML로 세 워크플로 문법 파싱 통과(단계 수 15/10/13, lint 단계 정확히 1곳) ·
+`eslint src --max-warnings 0` exit 0 · 기존 `eslint .`도 exit 0 · tsc exit 0 · 빌드 exit 0 ·
+lockfile 버전 정합(1.0.15) 유지.

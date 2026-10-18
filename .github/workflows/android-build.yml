@@ -60,6 +60,13 @@ jobs:
       - name: Prisma generate
         run: npx prisma generate
 
+      # v1.0.16 (R8/R5) — 저장소 자체 린트 게이트. DESIGN.md가 검사 명령으로 못박은
+      #  `eslint src --max-warnings 0`인데 지금까지 CI가 돌리지 않아 위반이 쌓여 있었다.
+      #  next build가 타입은 이미 검사하므로 여기서는 lint만 강제한다.
+      #  (package.json의 `lint`는 `eslint .`이라 경고를 통과시키므로 쓰지 않는다)
+      - name: Lint gate (eslint src --max-warnings 0)
+        run: npx eslint src --max-warnings 0
+
       - name: Static export (APK_EXPORT=1) — 서버리스 라우트 7개+middleware 격리
         env:
           NODE_OPTIONS: --max-old-space-size=4096
