@@ -88,8 +88,13 @@ function useListNav(count: number, onConfirm: (idx: number) => void, enabled = t
   const [idx, setIdx] = useState(0);
   const confirmRef = useRef(onConfirm);
   const idxRef = useRef(0);
-  confirmRef.current = onConfirm;
-  idxRef.current = idx;
+  /* v1.0.16 (R5) — 렌더 중 ref 대입은 React 19 lint가 금지한다(react-hooks/refs).
+   *  동시성 렌더에서 중간 렌더의 값이 ref에 남아 키 입력이 옛 콜백을 부를 수 있다.
+   *  effect에서 동기화하면 커밋된 렌더의 값만 반영된다. */
+  useEffect(() => {
+    confirmRef.current = onConfirm;
+    idxRef.current = idx;
+  });
 
   /* 패널 게이트 — 마운트 동안 게임 키보드 차단 */
   useEffect(() => {
@@ -100,10 +105,10 @@ function useListNav(count: number, onConfirm: (idx: number) => void, enabled = t
     };
   }, [enabled]);
 
-  /* 목록 길이 변화(재고 갱신 등) 시 인덱스 클램프 */
-  useEffect(() => {
-    setIdx((i) => (count <= 0 ? 0 : Math.min(i, count - 1)));
-  }, [count]);
+  /* v1.0.16 (R5) — 종전엔 effect에서 setIdx로 클램프했는데, React 19 lint가 지적하는
+   *  "effect 불필요" 패턴이다(목록 길이가 줄면 인덱스가 범위를 벗어난다).
+   *  렌더 중 파생값으로 표현하면 상태를 한 번 더 쓰지 않고도 항상 유효 범위가 보장된다. */
+  const navIdx = count <= 0 ? 0 : Math.min(idx, count - 1);
 
   useEffect(() => {
     if (!enabled || count <= 0) return;
@@ -137,9 +142,9 @@ function useListNav(count: number, onConfirm: (idx: number) => void, enabled = t
     if (!enabled) return;
     const el = document.querySelector('[data-navsel="1"]');
     el?.scrollIntoView({ block: "nearest" });
-  }, [idx, enabled]);
+  }, [navIdx, enabled]);
 
-  return [Math.min(idx, Math.max(0, count - 1)), setIdx];
+  return [navIdx, setIdx];
 }
 
 /* ================= v3.1.0 (#판매포기) — 수량 입력 + MAX 전량 판매 =================
@@ -3068,13 +3073,18 @@ function Trade2Panel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (snap?.phase === "open") {
-      setGoldTxt(snap.mine.gold ? String(snap.mine.gold) : "");
-      setEmTxt(snap.mine.emerald ? String(snap.mine.emerald) : "");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [snap?.phase]);
+  /* v1.0.16 (R5) — 종전엔 effect에서 setGoldTxt/setEmTxt로 채웠는데 React 19 lint가 지적하는
+   *  "effect 불필요" 패턴이었다(원래 eslint-disable로 억제돼 있던 코드).
+   *  거래가 열린 순간에만 입력칸을 상대 값으로 초기화하고, 이후 사용자가 고친 값은 유지해야 하므로
+   *  "어느 phase에 대해 초기화했는가"를 기억해 파생값으로 판정한다. */
+  const [touchedPhase, setTouchedPhase] = useState<string | null>(null);
+  if (snap?.phase === "open" && touchedPhase !== "open") {
+    setTouchedPhase("open");
+    setGoldTxt(snap.mine.gold ? String(snap.mine.gold) : "");
+    setEmTxt(snap.mine.emerald ? String(snap.mine.emerald) : "");
+  } else if (snap?.phase !== "open" && touchedPhase !== null) {
+    setTouchedPhase(null);
+  }
 
   const act = (v: Record<string, unknown>) => EventBus.emit("rpg:tradeAct", v as never);
 
@@ -3933,7 +3943,14 @@ function KingdomRankTab() {
     setJob(k);
     load(k);
   };
-  useEffect(load, []);
+  /* v1.0.16 (R5) — 종전 `useEffect(load, [])`는 마운트 시 setLoading(true)를 동기 호출해
+   *  React 19 lint(react-hooks/set-state-in-effect)에 걸렸다. 의도(마운트 시 1회 조회)는 그대로 두고
+   *  첫 setState를 마이크로태스크로 미뤄 커밋 직후 연쇄 렌더를 피한다. */
+  useEffect(() => {
+    let alive = true;
+    void Promise.resolve().then(() => { if (alive) load(); });
+    return () => { alive = false; };
+  }, []);
   /* vc147 (#12) — 마운트 시에도 즉시 업로드 훅 → 서버 반영 후 1.2s 뒤 재조회 (열자마자 최신화) */
   useEffect(() => {
     EventBus.emit("auth:cloudPush", {});

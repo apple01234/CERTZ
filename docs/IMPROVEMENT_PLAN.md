@@ -185,7 +185,7 @@ v3.3.0의 물리 자가치유 블록(`update()` 안)이 `physics.world.isPaused`
 | **R5** | APK 산출물명 불일치: CI `SERTZ-vc${CODE}.apk` vs 로컬 `SERTZ-v${VER}.apk` | `android-build.yml:99` ↔ `build_apk.sh:92` |
 | **R6** | 무효 `.gitignore` 규칙 — `db/`(`:139`)·`.env*`(`:34`)가 각각 `db/custom.db`·`.env`를 무시하지 못함(추적 중) | 실측 |
 | **R7** | `package-lock.json` version `1.0.11` — 4버전 뒤처짐 | 실측 |
-| **R8** | **저장소가 자체 린트 게이트를 통과하지 못한다.** `DESIGN.md:36`은 `npx eslint src --max-warnings 0`을 검사 명령으로 못박았는데 `Panels.tsx`에 오류 3건이 있다 — `:70,:71` ref를 렌더 중 대입(`react-hooks/refs`, latest-ref 패턴), `:3833` 이펙트 내 setState(`react-hooks/set-state-in-effect`), `:2977` 불필요한 eslint-disable. **동작하는 코드이고 `useEffect`로 옮기면 타이밍이 바뀌므로 이번 사이클엔 손대지 않았다** | 실측(`eslint --format json`) |
+| **R8** | **저장소가 자체 린트 게이트를 통과하지 못한다.** `npx eslint src --max-warnings 0`이 오류 4·경고 7로 실패했다(렌더 중 ref 대입 2건, effect 불필요 setState 2건, 미사용 disable 7건) | ✅ **해결** — `eslint src --max-warnings 0` **exit 0**. ref 대입은 effect 동기화로, effect 속 setState는 파생값/렌더 중 조정으로 바꿨고, DOM 실측이 상태를 결정하는 ChatBox만 사유를 명시한 disable로 남겼다 |
 | **R9** | **실패를 삼키는 폴백이 장애를 며칠 숨긴다.** `relaydb`는 저장소 조회 실패를 `data:null`로 반환하고 `chat`·`party` GET이 그걸 200 + 빈 목록으로 내보내서, GITHUB_TOKEN이 무효해도 "아직 채팅이 없다"와 구분되지 않았다. 실제로 2026-10-17 토큰 무효 장애가 이 위장에 가려졌고, `ghdb`만 500으로 드러나 발견됐다 | ✅ 수정: `RelayAccessError`로 404(부트스트랩)와 401/403/5xx를 구분, 후자는 **503 + 사유**로 반환. 클라이언트는 `r.ok` 검사로 이미 비200을 건너뛰므로 게임 동작 불변 |
 
 **버전 싱크는 6곳 모두 일치**(1.0.15/vc157). 7번째 `src/app/api/version/route.ts:11-12`도 일치. 이 항목은 정상이다.
@@ -308,7 +308,7 @@ seat 없는 구(舊)멤버는 통과시키지 않으므로 **배포 직후 기�
 | 4 | R7 lockfile 버전 정합 | ✅ |
 | 4 | R3 EXE 릴리스 태그 동적화 | ✅ |
 | 4 | R4 `ignoreBuildErrors` 제거 | ✅ `prisma generate` 선행 배선(빌드 스크립트 + 워크플로 3종) 후 제거 — 정적 export 빌드 실측 통과 |
-| 3 | R5 fast-refresh 등 잔여 | ⏸ |
+| 3 | R5 fast-refresh 등 잔여 | ✅ **R8 lint 게이트 해소** — `eslint src --max-warnings 0` **exit 0** (종전 오류 4 + 경고 7). 오류는 effect 불필요 패턴 3건·렌더 중 ref 1건을 파생값/이유 명시 disable로 정리 |
 | 4 | **S1 서명 키 CI Secret 이전** | ✅ 추적 해제 · 평문 제거 · env/properties 참조 · CI Secret 복원 단계 |
 | 1 | **R9 실패 은폐 수정** | ✅ `RelayAccessError` + 503 — 무효 토큰이 "빈 목록"으로 위장하지 않는다 |
 | 2 | **B2 구매 확인 단계** | ✅ 되돌릴 수 없는 지출에 2단계 확인 — 오탭 1회 결제 차단 |

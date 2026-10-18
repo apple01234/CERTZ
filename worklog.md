@@ -4772,3 +4772,26 @@ Stage Summary:
 - [측정 오류 3건 자체 정정] ①cos_isekai/cos_pixel "고아"=정규식 오탐(tsc exit 0 이 이미 전수성 위반 아님을 보장) ②TRADE_PRICES 의 'tier' 가짜 항목=슬라이스 경계를 export const tradeValue 로 잡았으나 실제는 export function tradeValue 라 파일 끝까지 스캔 ③TRADE_STOCK 0건=배열인데 객체 파서 적용. 교훈: 정합성 검사는 tsc 를 먼저 돌리고 파서가 컴파일러와 모순되면 파서를 의심
 - [커밋 전 보안 점검] .env.local(SERTZ_BACKUP_KEY 64자) 실제 값으로 diff·신규문서·worklog 대조 → 포함 False. ghp_/vcp_/AIza/github_pat_ 패턴 스캔 4파일 전부 clean. .gitignore L34 `.env*` 로 .env.local 차단 확인. tsc --noEmit --ignoreConfig 재확인 exit 0
 - [커밋/푸시 — 유저 지시] 유저 지시 "다른곳에서 작업 할꺼니까 커밋 및 푸시해" 에 따라 docs/CONTENT_v1.0.16.md(기획서, 9장 전영역 교차검증 포함) + src/game/data.ts + src/game/stages.ts + worklog.md 를 main 에 커밋·푸시 → Vercel 프로덕션 자동배포
+
+Task ID: improve-19-2026-10-18 (v1.0.16)
+Agent: DSH (보완 세션 19차 — R5/R8 lint 게이트 해소)
+
+Task: 저장소가 자체 린트 게이트(`eslint src --max-warnings 0`)를 통과하도록 정리 (기획서 R5·R8)
+
+Work Log:
+- [출발점] `eslint src --max-warnings 0` → 오류 4 + 경고 7로 실패. R8에 "저장소가 자체 게이트를 못 통과한다"고 기록돼 있던 상태
+- [오류 2건 — useListNav] `confirmRef.current = onConfirm` 식의 **렌더 중 ref 대입**(react-hooks/refs). 동시성 렌더에서 중간 렌더 값이 남아 옛 콜백을 부를 수 있는 실제 위험. effect로 동기화하도록 변경
+- [오류 1건 — RankingPanel] `useEffect(load, [])`가 마운트 동기 setState. 의도(1회 조회)는 유지하고 첫 setState를 마이크로태스크로 미룸
+- [오류 1건 — GameRoot RotatePrompt] effect에서 `setRotateDismissed(false)`로 리셋하던 "effect 불필요" 패턴. React 문서가 권하는 **렌더 중 상태 조정**(이전 값과 비교)으로 교체
+- [경고 7건] 미사용 `eslint-disable` 지시문 — `--fix`로 제거
+- [**--fix가 드러낸 것**] 미사용 disable을 지우자 그 뒤에 가려져 있던 실제 오류 2건이 추가로 나타났다(ChatBox 2, TradePanel 1). 즉 원래 6개였고 2개가 억제돼 있었다
+  · TradePanel: snap.phase 변화 시 입력칸 초기화 → '어느 phase에 초기화했는가'를 기억해 파생값으로 판정
+  · ChatBox: **DOM 높이 실측이 상태를 결정**하는 수렴 루프라 파생 불가 → 사유를 명시한 disable로 남김(React 규칙의 정당한 예외)
+- [**내가 만든 버그를 잡음**] RotatePrompt를 '어느 orientation에서 닫았는가'만 기억하는 방식으로 바꿨더니, **세로에서 닫은 뒤 다시 세로로 오면 영구히 억제**됐다(회전 리셋 소실). 이전 값과 비교하는 '렌더 중 상태 조정'으로 고쳐 4단계 전부 통과 확인
+- [검증] tsc exit 0 · **eslint src --max-warnings 0 exit 0** · 웹 빌드 exit 0 · 실브라우저: RotatePrompt 4단계(가로→세로 표시, 닫기, 회전 후 재표시) 통과 · useListNav 방향키 4개 항목 순회 + E 확인 모달 · ChatBox 접기/펼치기 토글 · pageerror 0
+
+Stage Summary:
+- 산출물: 6개 파일 7곳 수정 + 미사용 disable 7건 제거
+- **R8 해소**: 저장소가 이제 자체 lint 게이트를 통과한다. AGENTS.md의 "비자명한 로직에는 실행 가능한 체크 1개" 요건을 CI에서 강제할 수 있게 됨
+- 교훈: `--fix`는 안전해 보이지만 **억제돼 있던 오류를 드러낼 수 있다**. 적용 후 반드시 tsc·빌드·런타임을 다시 확인해야 한다
+- 검증 한계: 데스크톱 Chrome + 터치 에뮬레이션. 실기기 회전 동작 확인 권장

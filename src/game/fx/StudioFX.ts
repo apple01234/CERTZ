@@ -15,7 +15,7 @@ import { loadFx } from "../config";
 type CamLike = {
   filters?: {
     external?: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       remove: (filter: any, forceDestroy?: boolean) => unknown;
     };
   } | null;

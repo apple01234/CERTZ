@@ -58,16 +58,22 @@ export function ChatBox() {
   const [visible, setVisible] = useState(CHAT_MAX_VISIBLE);
   const listRef = useRef<HTMLDivElement>(null);
 
-  /* #5 — 렌더 후 실측 → 초과 시 위부터 축소 (상태→렌더→실측 수렴 루프, 1프레임당 1개씩) */
+  /* #5 — 렌더 후 실측 → 초과 시 위부터 축소 (상태→렌더→실측 수렴 루프, 1프레임당 1개씩)
+   *  v1.0.16 (R5) — React 19 lint는 effect 안 setState를 권하지 않지만, 여기서는 **DOM 실측값**이
+   *  상태를 결정하므로 렌더 중 파생으로 바꿀 수 없다(측정 대상이 렌더 결과물이다).
+   *  종전엔 이유 없는 disable이었고 --fix가 지우면서 오류로 드러났다. 사유를 명시해 남긴다. */
   useLayoutEffect(() => {
     const el = listRef.current;
     if (!el || collapsed) return;
     if (el.clientHeight > CHAT_MAX_H) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- DOM 높이 실측이 상태를 결정한다(파생 불가)
       setVisible((v) => Math.max(CHAT_MIN_VISIBLE, v - 1));
     }
   }, [msgs, visible, collapsed]);
 
-  /* #5 — 새 메시지 도착 시 여유(28px)가 있으면 다시 확장 (오래된 메시지 복귀) */
+  /* #5 — 새 메시지 도착 시 여유(28px)가 있으면 다시 확장 (오래된 메시지 복귀)
+   *  v1.0.16 (R5) — 이쪽은 setState가 콜백 안(함수형 갱신)이라 lint가 통과시킨다.
+   *  위 useLayoutEffect 쪽만 실측 직후 동기 setState라 disable이 필요하다. */
   useEffect(() => {
     if (collapsed) return;
     setVisible((v) => {
@@ -76,7 +82,6 @@ export function ChatBox() {
       if (!el) return v;
       return el.clientHeight <= CHAT_MAX_H - 28 ? Math.min(CHAT_MAX_VISIBLE, v + 1) : v;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [msgs.length]);
 
   useEffect(() => {

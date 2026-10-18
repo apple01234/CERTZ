@@ -84,7 +84,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
   const [delId, setDelId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null); // v1.1.0 — 구문 오류 복구 (v1.0.20 커밋분)
 
-  const store = useMemo(() => loadSlots(), [selId, creating, delId, msg]); // eslint-disable-line react-hooks/exhaustive-deps
+  const store = useMemo(() => loadSlots(), [selId, creating, delId, msg]);  
   const coins = loadUnion().coins;
   const chars = Object.values(store.chars).sort((a, b) => b.lastSeen - a.lastSeen);
   const used = chars.length;

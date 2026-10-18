@@ -67,8 +67,8 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
   /* 레이드 시뮬 상태 */
   const [raid, setRaid] = useState<{ diff: RaidDiff; hp: number; maxHp: number; dmg: Record<string, number>; done: null | "win" | "lose"; t: number } | null>(null);
 
-  const slots = useMemo(() => loadSlots(), [tab, raid, hoverCell, dragId]); // eslint-disable-line react-hooks/exhaustive-deps
-  const u = useMemo(() => loadUnion(), [tab, raid, hoverCell, dragId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const slots = useMemo(() => loadSlots(), [tab, raid, hoverCell, dragId]);  
+  const u = useMemo(() => loadUnion(), [tab, raid, hoverCell, dragId]);  
 
   /* v1.0.19 (B-2) — 유니온 레벨 = 전체 캐릭터 기여 레벨 합산 (60까지 100% + 초과분 10레벨당 1) */
   const unionLv = useMemo(() => unionLevelOf(slots), [slots]);
@@ -211,7 +211,7 @@ export function UnionPanel({ onClose }: { onClose: () => void }) {
       });
     }, 600);
     return () => window.clearInterval(iv);
-  }, [raid?.diff, raid?.done, refresh]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [raid?.diff, raid?.done, refresh]);  
 
   /* ---------- 렌더 ---------- */
 

@@ -46,13 +46,19 @@ export default function GameRoot() {
   const [portraitMobile, setPortraitMobile] = useState(false);
   /* v1.0.19 (A-2 반응형) — 가로 유도 프롬프트를 유저가 닫으면 세로로도 플레이 허용.
    *  기존엔 세로 모바일을 강제로 가렸지만(Scale.FIT이라 실제로는 플레이 가능) AC "375×812에서
-   *  인게임 화면 표시"를 충족하려면 닫기 가능해야 한다. 회전하면 해제 상태 리셋. */
+   *  인게임 화면 표시"를 충족하려면 닫기 가능해야 한다. **회전하면 해제 상태를 리셋**한다.
+   *  v1.0.16 (R5) — 종전엔 effect에서 setRotateDismissed(false)로 리셋했는데 React 19 lint가
+   *  지적하는 "effect 불필요" 패턴이었다. React 문서가 권하는 **렌더 중 상태 조정**으로 바꾼다.
+   *  (orientation 값만 기억하는 방식은 틀렸다 — 세로에서 닫은 뒤 다시 세로로 오면 여전히
+   *   그 값과 일치해 영구히 억제된다. '전환'을 감지해야 하므로 이전 값과 비교한다.) */
   const [rotateDismissed, setRotateDismissed] = useState(false);
+  const [prevPortrait, setPrevPortrait] = useState(portraitMobile);
+  if (prevPortrait !== portraitMobile) {
+    setPrevPortrait(portraitMobile);
+    setRotateDismissed(false); // 회전/크기 변화 시 다시 유도
+  }
   /* v1.2.1 (#6) — 메뉴 나가기 확인 오버레이 (HUD ☰ 버튼) */
   const [exitMenuOpen, setExitMenuOpen] = useState(false);
-  useEffect(() => {
-    setRotateDismissed(false); // 회전/크기 변화 시 다시 유도
-  }, [portraitMobile]);
 
   // 부팅 시 저장된 음소거/볼륨을 오디오 시스템에 적용 (v3.1.0 — BGM/SFX 개별 볼륨 복원)
   useEffect(() => {
