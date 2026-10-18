@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
 import { Swords, Bot, Pause, Star, Sparkles } from "lucide-react";
 import type { Skills } from "./useGameUi";
-import { loadKeyMap } from "@/game/keymap";
+import { loadKeyMap, keyLabel } from "@/game/keymap";
 import { ITEMS } from "@/game/data"; // vc150 (#신규1) — 장착 물약 아이콘 실경로 조회 // v1.0.4 — 물약 키 힌트를 키맵 따라 표시
 
 /* v3.0.18 — 52→64px: 스틱 반경 확대로 미세 조작 정밀도 향상 + 풀 기울임이 쉬워짐
@@ -345,7 +345,7 @@ export function TouchControls({
                 icon={s.icon}
                 compact={!!sm}
                 tutGlow={s.key === "s1" && !!tutDom.skill} /* v1.0.13 피드백#17 — 튜토리얼 ⑤는 첫 스킬(회전베기) 대상 */
-                keyHint={isTouch ? undefined : s.hint} /* vc149 #4 터치 기기엔 키보드 힌트 무의미 */
+                keyHint={isTouch ? undefined : keyLabel(s.hint)} /* vc149 #4 터치 기기엔 키보드 힌트 무의미 · v1.0.17 화살표 코드 기호 표기 */
                 onDown={() => EventBus.emit(s.emit as "input:skill1")}
               />
             </div>
@@ -360,7 +360,7 @@ export function TouchControls({
                 icon={skills.s5Icon}
                 ult
                 compact={!!sm}
-                keyHint={isTouch ? undefined : km.skill5}
+                keyHint={isTouch ? undefined : keyLabel(km.skill5)}
                 onDown={() => EventBus.emit("input:skill5")}
               >
                 <Star size={18} />
@@ -380,7 +380,7 @@ export function TouchControls({
                 icon={skills.s5Icon}
                 ult2
                 compact={!!sm}
-                keyHint={isTouch ? undefined : km.skill5b}
+                keyHint={isTouch ? undefined : keyLabel(km.skill5b)}
                 onDown={() => EventBus.emit("input:skill5b")}
               >
                 <Sparkles size={18} />
@@ -479,7 +479,7 @@ function PotionButton({
       </span>
       {!isTouchPotion && (
         <span className="absolute -top-1 left-0.5 rounded bg-slate-900/80 px-0.5 text-[8px] font-black text-white/70">
-          {kind === "hp" ? kmHint.potHp : kmHint.potMp}
+          {keyLabel(kind === "hp" ? kmHint.potHp : kmHint.potMp)}
         </span>
       )}
     </button>

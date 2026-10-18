@@ -7,6 +7,7 @@ import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
 import { RotateCw, Play, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles, Smartphone } from "lucide-react";
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0
 import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리
+import { loadKeyMap, loadMoveScheme, keyLabel } from "@/game/keymap"; // v1.0.17 — 조작 안내줄이 키맵·스킨을 따라가도록
 /* v1.0.16 (F8) — 종전엔 `import pkg from "../../../package.json"`으로 버전을 읽었는데,
  *  번들러가 JSON 전체를 인라인해 의존성 목록·npm 스크립트까지 게임 번들에 실렸다(청크 3.08MB 실측).
  *  next.config.ts가 package.json의 version만 NEXT_PUBLIC_APP_VERSION으로 주입한다 —
@@ -157,9 +158,14 @@ export function TitleScreen() {
        *  v1.0.19 (A-1) — absolute → flow(mt-auto): 스크롤 컨테이너에서 absolute bottom이
        *  첫 화면 하단에 고정되어 콘텐츠와 겹치던 문제 수정 — 내용이 짧으면 하단, 길면 흐름 따름 */}
       <div className="mt-auto flex flex-col items-center gap-1 px-3 pb-3 pt-8 text-center">
-        {/* v1.0.3 — 저높이(가로 폰)에서는 키 안내줄이 APK 링크와 겹치므로 숨김 (터치 유저에게 불필요) */}
+        {/* v1.0.3 — 저높이(가로 폰)에서는 키 안내줄이 APK 링크와 겹치므로 숨김 (터치 유저에게 불필요)
+         *  v1.0.17 — 하드코딩 제거: 실제 키맵·이동 스킨을 읽어 표시 (WASD 스킨 지원) */}
         <p className="game-chip px-2.5 py-1 text-[10px] font-bold text-[#cbb88a] [@media(max-height:540px)]:hidden">
-          이동: 방향키 / 왼쪽 화면 드래그 · 공격: X · 스킬: Z, C, V, A, S · 물약: D, F
+          {(() => {
+            const km = loadKeyMap();
+            const move = loadMoveScheme() === "wasd" ? "W A S D" : "방향키";
+            return `이동: ${move} / 왼쪽 화면 드래그 · 공격: ${keyLabel(km.attack)} · 스킬: ${keyLabel(km.skill1)}, ${keyLabel(km.skill2)}, ${keyLabel(km.skill3)}, ${keyLabel(km.skill4)}, ${keyLabel(km.skill5)} · 물약: ${keyLabel(km.potHp)}, ${keyLabel(km.potMp)}`;
+          })()}
         </p>
         <p className="max-w-[min(94vw,760px)] text-[8px] leading-relaxed text-white/55 sm:text-[9px]">
           Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by

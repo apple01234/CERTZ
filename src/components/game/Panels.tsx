@@ -14,7 +14,7 @@ import {
 } from "@/game/data";
 import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
-import { loadKeyMap, applyKeyBinding, resetKeyMap, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap } from "@/game/keymap";
+import { loadKeyMap, applyKeyBinding, resetKeyMap, loadMoveScheme, writeMoveScheme, keyLabel, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap, type MoveScheme } from "@/game/keymap";
 import { getPlayerName, loadSave, mutateFriends, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도 / v1.0.13 피드백#12 — 친구 추가( FriendsWidget 동일 스토어 API)
 import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
@@ -122,10 +122,13 @@ function useListNav(count: number, onConfirm: (idx: number) => void, enabled = t
        *  ArrowUp/Down이라 IME와 무관하게 잘 됐다 — "화살표는 되고 E만 안 된다"는
        *  제보 증상과 정확히 일치). e.code(물리 키 코드)는 IME와 무관하므로
        *  KeyE로 판정하고, e.key 비교는 과거 키맵 호환용으로 병행한다. */
-      if (e.code === "ArrowDown" || e.key === "ArrowDown") {
+      /* v1.0.17 — WASD 이동 스킴에선 W/S도 목록 탐색 키로 병행 (방향키 없이 오른손만으로 조작).
+       *  패널이 열려 있으면 ui:panelKeys로 게임 이동이 잠기므로 이동 키와 충돌하지 않는다. */
+      const wasdNav = loadMoveScheme() === "wasd";
+      if (e.code === "ArrowDown" || e.key === "ArrowDown" || (wasdNav && e.code === "KeyS")) {
         e.preventDefault();
         setIdx((i) => (i + 1) % count);
-      } else if (e.code === "ArrowUp" || e.key === "ArrowUp") {
+      } else if (e.code === "ArrowUp" || e.key === "ArrowUp" || (wasdNav && e.code === "KeyW")) {
         e.preventDefault();
         setIdx((i) => (i - 1 + count) % count);
       } else if (e.code === "KeyE" || e.key === "e" || e.key === "E") {
@@ -4958,35 +4961,52 @@ function PerfCard() {
 function KeymapPanel({ onClose }: { onClose: () => void }) {
   useEscClose(onClose);
   const [km, setKm] = useState<KeyMap>(() => loadKeyMap());
+  /* v1.0.17 — 이동 스킴 (방향키/WASD). 전환 시 전투 키 프리셋도 함께 적용된다 */
+  const [scheme, setScheme] = useState<MoveScheme>(() => loadMoveScheme());
   const [recording, setRecording] = useState<GameAction | null>(null);
   /* v1.0.18 — 셰이더 효과 강도 표시값 */
   const [fxLabel, setFxLabel] = useState(() => loadFx().intensity);
 
   // 키 캡처 — 기록 모드에서 아무 키나 누르면 해당 액션에 배정
+  // v1.0.17 — 화살표 입력 정규화 + 스킴별 허용(wasd 스킴에선 화살표도 배정 가능,
+  //           스킴의 이동 전용 키는 applyKeyBinding이 차단한다)
   useEffect(() => {
     if (!recording) return;
     const onKey = (e: KeyboardEvent) => {
       e.preventDefault();
-      const k = e.key.toUpperCase();
+      const upper = e.key.toUpperCase();
+      const k = upper === "ARROWUP" ? "UP" : upper === "ARROWDOWN" ? "DOWN"
+        : upper === "ARROWLEFT" ? "LEFT" : upper === "ARROWRIGHT" ? "RIGHT" : upper;
       if (k === "ESCAPE") {
         e.stopImmediatePropagation(); // 패널 닫기가 아니라 기록 취소만
         setRecording(null);
         return;
       }
-      if (!/^[A-Z]$/.test(k)) return;
-      const next = applyKeyBinding(km, recording, k);
+      if (!/^(UP|DOWN|LEFT|RIGHT|[A-Z])$/.test(k)) return;
+      const next = applyKeyBinding(km, recording, k, scheme);
       setKm(next);
       EventBus.emit("keymap:changed", next);
       setRecording(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [recording, km]);
+  }, [recording, km, scheme]);
 
   const doReset = () => {
-    const next = resetKeyMap();
+    const next = resetKeyMap(scheme); // v1.0.17 — 현재 스킴 프리셋으로 초기화
     setKm(next);
     EventBus.emit("keymap:changed", next);
+  };
+
+  /* v1.0.17 — 이동 스킴 전환: 해당 스킴의 전투 키 프리셋(좌/우 클러스터)을 함께 적용한다.
+   *  커스텀 배치는 프리셋으로 덮이지만, 전환 후 언제든 다시 자유 배정할 수 있다. */
+  const applyScheme = (s: MoveScheme) => {
+    writeMoveScheme(s);
+    const next = resetKeyMap(s);
+    setKm(next);
+    setScheme(s);
+    EventBus.emit("keymap:changed", next);
+    EventBus.emit("movescheme:changed", s);
   };
 
   return (
@@ -5011,6 +5031,34 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
           >
             ✕
           </button>
+        </div>
+
+        {/* v1.0.17 — 이동 키 배치 (방향키 ↔ WASD 전환): WASD 선택 시 스킬이 오른손 클러스터로 이동 */}
+        <div className="mt-2 rounded-lg border border-fuchsia-300/25 bg-fuchsia-400/[0.06] px-2.5 py-2.5">
+          <p className="text-[12px] font-black text-fuchsia-200">이동 키 배치</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/50">
+            방향키 이동은 오른손 방향키 + 왼손 스킬(Z X C V), WASD 이동은 왼손 WASD + 오른손 스킬(J K L I U O) 배치예요.
+            전환하면 전투 키 프리셋이 함께 바뀌고, 이후 이 창에서 자유 재배치할 수 있어요.
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            {([
+              { s: "arrows" as const, label: "방향키 이동 (기본)", sub: "이동 ← ↑ ↓ → · 스킬 Z X C V + A S D F" },
+              { s: "wasd" as const, label: "WASD 이동", sub: "이동 W A S D · 스킬 J K L I U O P" },
+            ]).map((o) => {
+              const active = scheme === o.s;
+              return (
+                <button
+                  key={o.s}
+                  onClick={() => { if (!active) applyScheme(o.s); }}
+                  aria-pressed={active}
+                  className={`rounded-md border-2 px-1 py-1.5 text-[11px] font-black transition ${active ? "border-fuchsia-300/70 bg-fuchsia-500/20 text-fuchsia-200" : "border-white/15 bg-black/40 text-white/55 hover:border-white/40"}`}
+                >
+                  {o.label}{active ? " ✓" : ""}
+                  <span className="mt-0.5 block text-[9px] font-bold leading-tight text-white/45">{o.sub}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* v3.1.0 (#볼륨UI) — BGM/효과음 개별 볼륨 슬라이더 */}
@@ -5220,7 +5268,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
                     : "border-white/20 bg-black/50 text-white hover:border-sky-300/60"
                 }`}
               >
-                {recording === a ? "키 입력…" : km[a]}
+                {recording === a ? "키 입력…" : keyLabel(km[a])}
               </button>
             </div>
           ))}
@@ -5228,7 +5276,11 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
 
         <div className="mt-2.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
           <p className="text-[10px] leading-relaxed text-white/50">
-            이동은 방향키 고정 · SPACE는 항상 공격 · ESC는 창 닫기 고정입니다. (v1.0.4 — WASD 이동 제거, 전투 키는 Z X C V + A S D F)
+            이동 키는 위 “이동 키 배치”에서 방향키/WASD 중 고를 수 있어요. SPACE는 항상 공격 · ESC는 창 닫기 고정입니다.
+            <br />
+            {scheme === "wasd"
+              ? "WASD 이동 중 — W/A/S/D는 이동 전용(액션 배정 불가), 대신 화살표를 스킬에 배정할 수 있어요."
+              : "방향키 이동 중 — 화살표는 이동 전용(액션 배정 불가), W/A/S/D를 포함한 알파벳을 자유 배정할 수 있어요."}
             <br />
             모바일은 터치 컨트롤을 사용하므로 영향을 받지 않아요.
           </p>

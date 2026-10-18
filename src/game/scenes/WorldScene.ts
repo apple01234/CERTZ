@@ -13,7 +13,7 @@ import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 —
 import { Pet } from "../entities/Pet";
 import { EventBus, type QuestState, type InteractState, type QuestLogState, type RewardPopupState } from "../../components/game/EventBus";
 import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
-import { loadKeyMap, type KeyMap, type GameAction } from "../keymap";
+import { loadKeyMap, loadMoveScheme, moveKeysFor, type KeyMap, type GameAction, type MoveScheme } from "../keymap";
 import {
   classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST, chainOf, FIFTH_LEVEL,
   resolveSkill1Of, resolveSkill2Of, SKILL3_KIND, SKILL4_KIND,
@@ -671,6 +671,8 @@ export class WorldScene extends Phaser.Scene {
 
   /* ----- v1.9: 키 매핑 / 펫 / 치장 오라 / 강화 오라 ----- */
   private keymap: KeyMap = loadKeyMap();
+  /* v1.0.17 — 이동 스킴 부팅 로드 (설정에서 WASD 전환 시 이동 키가 화살표→WASD로 교체된다) */
+  private moveScheme: MoveScheme = loadMoveScheme();
   private keyObjs: Record<string, Phaser.Input.Keyboard.Key> = {};
   private pet: Pet | null = null;
   /** 플레이어 추적 오브젝트 (치장 오라/강화 오라/날개 입자) */
@@ -802,6 +804,7 @@ export class WorldScene extends Phaser.Scene {
     this.repeatBounties = []; // vc150 (#신규6) — 스테이지 전환 시 다수 의뢰 상태 리셋
     this.repeatCycle = 0;
     this.keymap = loadKeyMap();
+    this.moveScheme = loadMoveScheme(); // v1.0.17 — 부팅 시 저장된 이동 스킴 복원
     this.keyObjs = {};
     this.pet = null;
     this.cosmeticAura = null;
@@ -8033,6 +8036,12 @@ export class WorldScene extends Phaser.Scene {
     const onKeymapChanged = (m: KeyMap) => {
       this.keymap = m;
     };
+    /* v1.0.17 — 이동 스킴 전환(설정 패널): 이동 키 세트 교체 + 방향 스택 비움(스킴 간 잔존 방지) */
+    const onMoveSchemeChanged = (s: MoveScheme) => {
+      this.moveScheme = s;
+      this.dirOrder.x.length = 0;
+      this.dirOrder.y.length = 0;
+    };
     const onNameSet = (v: { name: string }) => {
       if (this.introStep === 2) {
         this.finishIntro(v.name);
@@ -8888,6 +8897,7 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("input:interact", onInteract);
     EventBus.on("name:set", onNameSet);
     EventBus.on("keymap:changed", onKeymapChanged);
+    EventBus.on("movescheme:changed", onMoveSchemeChanged); // v1.0.17 — 이동 스킴 실시간 전환
     EventBus.on("rpg:buy", onBuy);
     EventBus.on("rpg:equip", onEquip);
     EventBus.on("rpg:unequip", onUnequip);
@@ -9550,6 +9560,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("input:interact", onInteract);
       EventBus.off("name:set", onNameSet);
       EventBus.off("keymap:changed", onKeymapChanged);
+      EventBus.off("movescheme:changed", onMoveSchemeChanged); // v1.0.17
       EventBus.off("rpg:buy", onBuy);
       EventBus.off("rpg:equip", onEquip);
       EventBus.off("rpg:unequip", onUnequip);
@@ -10123,9 +10134,12 @@ export class WorldScene extends Phaser.Scene {
   private dirVecScratch = new Phaser.Math.Vector2(0, 0);
 
   /** 방향키 우선순위 결정 — 같은 축에서 마지막으로 누른 키가 이김 (지시 #16)
-   *  예: ← 를 누른 채 → 를 누르면 → 로 이동, → 를 떼면 다시 ← 로 이동 */
+   *  예: ← 를 누른 채 → 를 누르면 → 로 이동, → 를 떼면 다시 ← 로 이동
+   *  v1.0.17 — 이동 스킴에 따라 키 이름만 교체된다(arrows: 화살표 / wasd: W A S D).
+   *  스택 로직·마지막 입력 우선 규칙은 스킴과 무관하게 동일하다. */
   private resolveDirVec(): Phaser.Math.Vector2 {
     const mv = this.dirVecScratch.set(0, 0);
+    const mk = moveKeysFor(this.moveScheme);
     // 입력 순서 스택 갱신
     const track = (key: string, axis: "x" | "y", dir: number) => {
       const k = this.keys[key];
@@ -10140,14 +10154,14 @@ export class WorldScene extends Phaser.Scene {
       }
       void dir;
     };
-    track("LEFT", "x", -1); track("RIGHT", "x", 1); // v1.0.4 — 이동은 화살표 전용 (WASD 이동 제거)
-    track("UP", "y", -1); track("DOWN", "y", 1);
+    track(mk.left, "x", -1); track(mk.right, "x", 1);
+    track(mk.up, "y", -1); track(mk.down, "y", 1);
     const lastX = this.dirOrder.x[this.dirOrder.x.length - 1];
     const lastY = this.dirOrder.y[this.dirOrder.y.length - 1];
-    if (lastX === "LEFT") mv.x = -1;
-    else if (lastX === "RIGHT") mv.x = 1;
-    if (lastY === "UP") mv.y = -1;
-    else if (lastY === "DOWN") mv.y = 1;
+    if (lastX === mk.left) mv.x = -1;
+    else if (lastX === mk.right) mv.x = 1;
+    if (lastY === mk.up) mv.y = -1;
+    else if (lastY === mk.down) mv.y = 1;
     return mv;
   }
 
@@ -13043,7 +13057,7 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(51)
       .setBlendMode(Phaser.BlendModes.ADD)
       .play("sparkle");
-    this.showBanner("방향키 또는 조이스틱으로 이동해 보자!");
+    this.showBanner(loadMoveScheme() === "wasd" ? "WASD 또는 조이스틱으로 이동해 보자!" : "방향키 또는 조이스틱으로 이동해 보자!");
   }
 
   private tickIntro(dt: number, move: Phaser.Math.Vector2) {
@@ -14596,7 +14610,9 @@ export class WorldScene extends Phaser.Scene {
     // (v1.0.4 — 하드코딩 X/Z/C/E 대신 등록된 전 행동 키를 소비해 키맵과 무관하게 동작)
     if (this.keys) {
       Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
-      for (const k of Object.values(this.keyObjs)) Phaser.Input.Keyboard.JustDown(k);
+      /* v1.0.17 — keyObjs(알파벳)에서 this.keys 전체로 확장: WASD 스킴에선 화살표가
+       *  액션 키로 배정될 수 있어 잔여 justDown이 스킬을 새는 것을 함께 차단한다. */
+      for (const k of Object.values(this.keys)) Phaser.Input.Keyboard.JustDown(k);
     }
     // v2.2 — 여관주인 대사 종료 → 취침 연출로 자연스럽게 이어짐
     if (this.sleepPending) {
