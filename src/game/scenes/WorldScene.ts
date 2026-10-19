@@ -8013,8 +8013,12 @@ export class WorldScene extends Phaser.Scene {
       "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,Q,E,R,T,Y,U,I,O,P,F,G,H,J,K,L,V,B,N,M,Z,X,C";
     const raw = kb.addKeys(allKeys) as Record<string, Phaser.Input.Keyboard.Key>;
     this.keys = raw;
+    /* v1.0.19 (#회피) — SPACE·화살표처럼 여러 글자인 코드도 keyObjs에 등록해야
+     *  keyFor("dodge")가 실제 Key 객체를 얻는다. 기존엔 length===1만 담아
+     *  SPACE가 keys에만 있고 keyObjs 조회는 undefined가 됐다. */
     for (const letter of allKeys.split(",")) {
       if (letter.length === 1) this.keyObjs[letter] = raw[letter];
+      else if (letter === "SPACE") this.keyObjs[letter] = raw[letter];
     }
 
     const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);
@@ -8026,6 +8030,10 @@ export class WorldScene extends Phaser.Scene {
     const onS4 = () => this.player?.useSkill4();
     const onS5 = () => this.player?.useSkill5(); // v3.2.0 — 궁극기 (모바일 버튼 공용)
     const onS5b = () => this.player?.useSkill5b(); // vc146 (#2) — 제2궁극기 (쿨 2분)
+    /* v1.0.19 (#회피) — Space로 구르기. 이동 입력이 있으면 그 방향, 없으면 바라보는 방향.
+     * 모바일은 input:dodge 이벤트로 같은 경로를 탄다 (터치 버튼은 별도 배선). */
+    const onDodge = () => this.player?.useDodge(this.currentMoveVec().clone());
+    EventBus.on("input:dodge", onDodge);
     const onRespawn = () => this.respawnPlayer();
     const onDialogueDone = () => this.resumeFromDialogue();
     /* vc143 (#10) — 선택형 대화 (보스전 퇴장 관리인) */
@@ -9557,6 +9565,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("input:skill4", onS4);
       EventBus.off("input:skill5", onS5);
       EventBus.off("input:skill5b", onS5b); // vc146 (#2)
+      EventBus.off("input:dodge", onDodge); // v1.0.19 (#회피)
       EventBus.off("input:interact", onInteract);
       EventBus.off("name:set", onNameSet);
       EventBus.off("keymap:changed", onKeymapChanged);
@@ -9898,6 +9907,8 @@ export class WorldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
     /* vc142 (#1) — PC 자동전투 토글 단축키 (기본 B · 설정에서 재배치 가능) */
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("autohunt"))) EventBus.emit("rpg:autohunt", {});
+    /* v1.0.19 (#회피) — Space 회피. 스킬과 독립된 키라 전투 중 언제든 즉답한다. */
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("dodge"))) EventBus.emit("input:dodge", {});
 
     // E키 상호작용 감지 — 가장 가까운 NPC/상점 프롬프트 갱신
     this.updateInteractPrompt();

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EventBus } from "./EventBus";
-import { Swords, Bot, Pause, Star, Sparkles } from "lucide-react";
+import { Swords, Bot, Pause, Star, Sparkles, Wind } from "lucide-react";
 import type { Skills } from "./useGameUi";
 import { loadKeyMap, keyLabel } from "@/game/keymap";
 import { ITEMS } from "@/game/data"; // vc150 (#신규1) — 장착 물약 아이콘 실경로 조회 // v1.0.4 — 물약 키 힌트를 키맵 따라 표시
@@ -388,6 +388,21 @@ export function TouchControls({
             </div>
           )}
         </div>
+        {/* [회피] v1.0.19 — 공격 버튼 왼쪽의 중형 원형 버튼. 보스전에서 패턴을 피하는
+         *  유일한 수단이라 손이 가장 빨리 닿는 공격 버튼 바로 옆에 둔다.
+         *  쿨다운은 Player가 관리하므로 버튼은 상시 활성(짧은 쿨이라 게이지까지 그리지 않는다). */}
+        <button
+          aria-label="회피"
+          className="pointer-events-auto flex touch-none select-none flex-col items-center justify-center rounded-full border-[3px] border-sky-200/70 bg-gradient-to-b from-sky-500/90 to-sky-700/90 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
+          style={{ width: Math.round(ATK * 0.72), height: Math.round(ATK * 0.72), marginRight: 8 }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            EventBus.emit("input:dodge");
+          }}
+        >
+          <Wind size={Math.round(ATK * 0.26)} />
+          <span className="mt-0.5 text-[10px] font-black tracking-wide">회피</span>
+        </button>
         {/* [공격] — 행 끝 대형 원형 버튼 (현행 스타일·크기 유지) */}
         <button
           aria-label="공격"

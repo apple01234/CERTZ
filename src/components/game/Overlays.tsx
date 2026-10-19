@@ -93,8 +93,11 @@ export function TitleScreen() {
               이그드라실 : 아홉 왕국
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
-             *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프 */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v{APP_VERSION} — 1:1 거래 · 심연의 탑 리워크 · 보스 고유 패턴 · 3D VFX · 툰 셰이딩 · 5분 자동저장</span>
+             *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프
+             *  v1.0.19 (#문구정리) — 패치노트를 타이틀에 늘어놓던 문구를 게임 소개 한 줄로 교체.
+             *  "3D VFX · 툰 셰이딩 · 30 FPS · 5분 자동저장" 같은 개발자 체크리스트는 첫 화면에서
+             *  완성도가 아니라 프로토타입 인상을 줬다. 기능 나열은 설정/패치노트로 보낸다. */}
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v{APP_VERSION} — 아홉 왕국을 건너, 세계수의 뿌리까지</span>
           </p>
         </div>
 
@@ -164,13 +167,23 @@ export function TitleScreen() {
           {(() => {
             const km = loadKeyMap();
             const move = loadMoveScheme() === "wasd" ? "W A S D" : "방향키";
-            return `이동: ${move} / 왼쪽 화면 드래그 · 공격: ${keyLabel(km.attack)} · 스킬: ${keyLabel(km.skill1)}, ${keyLabel(km.skill2)}, ${keyLabel(km.skill3)}, ${keyLabel(km.skill4)}, ${keyLabel(km.skill5)} · 물약: ${keyLabel(km.potHp)}, ${keyLabel(km.potMp)}`;
+            return `이동: ${move} / 왼쪽 화면 드래그 · 공격: ${keyLabel(km.attack)} · 회피: ${keyLabel(km.dodge)} · 스킬: ${keyLabel(km.skill1)}, ${keyLabel(km.skill2)}, ${keyLabel(km.skill3)}, ${keyLabel(km.skill4)}, ${keyLabel(km.skill5)} · 물약: ${keyLabel(km.potHp)}, ${keyLabel(km.potMp)}`;
           })()}
         </p>
-        <p className="max-w-[min(94vw,760px)] text-[8px] leading-relaxed text-white/55 sm:text-[9px]">
-          Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by
-          williamthompsonj (CC-BY) · Sotrak by gilgaphoenixignis (CC-BY) · SPUM · Cartoon FX Remaster & Fantasy UI SFX (Unity Asset Store 유료 라이선스) · Music: Kevin MacLeod (incompetech.com, CC-BY 4.0) · SFX: Rubberduck (CC0)
-        </p>
+        {/* v1.0.18 (#크레딧분리) — 라이선스 원문 3줄이 타이틀 하단 10%를 상시 점유해
+         *  "에셋 크레딧 페이지"처럼 보이던 문제. 첫 화면에는 요약 한 줄만 두고
+         *  전문은 접이식(<details>)으로 옮긴다. CC-BY 표기 의무는 그대로 유지된다
+         *  (요약줄에 저작자·라이선스가 남아 있고, 펼치면 전체 출처가 보인다). */}
+        <details className="group w-full max-w-[min(94vw,760px)]">
+          <summary className="mx-auto flex w-fit cursor-pointer list-none items-center gap-1 rounded px-2 py-0.5 text-[9px] font-bold text-white/45 transition-colors hover:text-white/70">
+            <span className="transition-transform group-open:rotate-90">▶</span>
+            아트·음악 출처 (CC-BY)
+          </summary>
+          <p className="mt-1 max-w-[min(94vw,760px)] text-[8px] leading-relaxed text-white/55 sm:text-[9px]">
+            Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by
+            williamthompsonj (CC-BY) · Sotrak by gilgaphoenixignis (CC-BY) · SPUM · Cartoon FX Remaster & Fantasy UI SFX (Unity Asset Store 유료 라이선스) · Music: Kevin MacLeod (incompetech.com, CC-BY 4.0) · SFX: Rubberduck (CC0)
+          </p>
+        </details>
       </div>
       </div>
     </div>

@@ -16,6 +16,7 @@ export type GameAction =
   | "skill4"
   | "skill5"
   | "skill5b"
+  | "dodge"
   | "potHp"
   | "potMp"
   | "interact"
@@ -38,8 +39,8 @@ export type MoveScheme = "arrows" | "wasd";
 const KEYMAP_STORAGE = "sertz_keymap_v2"; // v1.0.4 — 이동 체계 변경으로 저장 맵 리셋
 const MOVE_SCHEME_STORAGE = "sertz_movescheme_v1"; // v1.0.17 — 이동 스킴 저장
 
-/** 단일 알파벳 또는 화살표 코드만 허용 (v1.0.17 — 화살표 추가) */
-const BIND_CODE_RE = /^(UP|DOWN|LEFT|RIGHT|[A-Z])$/;
+/** 단일 알파벳 또는 화살표/스페이스 코드만 허용 (v1.0.17 — 화살표 추가, v1.0.19 — 회피용 SPACE) */
+const BIND_CODE_RE = /^(UP|DOWN|LEFT|RIGHT|SPACE|[A-Z])$/;
 
 /** 기본 배치 — v1.0.4: 이동 화살표 전용, 전투 키는 Z X C V + A S D F 클러스터 (유저 지시)
  *  Z=스킬1 X=공격 C=스킬2 V=스킬3 (기존 유지) / A=스킬4 S=스킬5 D=HP물약 F=MP물약
@@ -54,6 +55,9 @@ export const DEFAULT_KEYMAP: KeyMap = {
   skill5: "S",
   /* vc146 (#2) — 제2궁극기 기본 Q (Z X C V + A S D F 클러스터 인접 · 미사용 키) */
   skill5b: "Q",
+  /* v1.0.19 (#회피) — 구르기 기본 Space. 스킬과 달리 무자원·짧은 쿨이라
+   *  가장 누르기 쉬운 위치(엄지/스페이스)에 둔다. WASD 스킴에서도 동일. */
+  dodge: "SPACE",
   potHp: "D",
   potMp: "F",
   interact: "E",
@@ -83,6 +87,7 @@ export const WASD_KEYMAP: KeyMap = {
   skill4: "U",
   skill5: "O",
   skill5b: "P",
+  dodge: "SPACE",
   potHp: "N",
   potMp: "M",
   interact: "E",
@@ -125,6 +130,7 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   skill4: "스킬 4 (4차기)",
   skill5: "스킬 5 (궁극기 · Lv.200)",
   skill5b: "스킬 6 (제2궁극기 · 쿨 2분)",
+  dodge: "회피 (구르기 · 짧은 무적)",
   potHp: "HP 물약",
   potMp: "MP 물약",
   interact: "대화/상호작용",
@@ -156,6 +162,8 @@ export function keyLabel(code: string): string {
   if (code === "DOWN") return "↓";
   if (code === "LEFT") return "←";
   if (code === "RIGHT") return "→";
+  /* v1.0.19 — 회피 기본키 표기 (설정 UI에 "SPACE"가 그대로 노출되지 않게) */
+  if (code === "SPACE") return "Space";
   return code;
 }
 

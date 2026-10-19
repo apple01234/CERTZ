@@ -67,6 +67,12 @@ export function getSfxVolume(): number {
   return sfxVol;
 }
 
+/** 현재 재생 중인 트랙의 실제 출력 볼륨 (사용자 설정값 × 곡별 정규화 게인).
+ *  v1.0.17 — 게인을 곱하지 않은 bgmVol을 그대로 setVolume하면 곡별 음량 보정이 덮어써진다. */
+function trackVolume(): number {
+  return Math.min(1, bgmVol * bgmGain(bgmKey ?? ""));
+}
+
 /** BGM 볼륨 설정 (0~1) — 재생 중인 트랙에 즉시 반영 + localStorage 저장 */
 export function setBgmVolume(v: number) {
   bgmVol = Math.min(1, Math.max(0, v));
@@ -75,7 +81,7 @@ export function setBgmVolume(v: number) {
   } catch {
     /* 무시 */
   }
-  if (bgmSound) asVol(bgmSound)?.setVolume(bgmVol);
+  if (bgmSound) asVol(bgmSound)?.setVolume(trackVolume());
 }
 
 /** 효과음 볼륨 설정 (0~1) — 이후 재생되는 모든 SFX에 배율 적용 + localStorage 저장 */
@@ -142,6 +148,63 @@ export const BGM_PLAYLISTS: Record<BGMKind, string[]> = {
    *  (BGM_ALL_TRACKS 자산 목록/E2E 훅이 자동으로 9곡을 인식한다) */
   boss: ["bgm_boss1", "bgm_boss2", "bgm_boss3", "bgm_boss4", "bgm_boss5", "bgm_boss6", "bgm_boss7", "bgm_boss8", "bgm_boss9"],
 };
+/* ================= v1.0.17 (#BGM음량정규화) — 곡별 RMS 실측 보정 =================
+ *  문제: 44곡의 RMS가 -18.1dB ~ -12.8dB로 5.3dB 편차였다(전곡 WebAudio 디코드 실측).
+ *  필드→마을→보스로 넘어갈 때마다 체감 음량이 달라져 "브금이 갑자기 커졌다/작아졌다"로
+ *  들렸고, 전환 자체가 거칠게 느껴졌다. 원본 파일은 건드리지 않고 재생 시 게인만 곱한다.
+ *  값 = 10^((목표 -15.8dB - 실측RMS)/20), ±4dB로 클램프 (과증폭 왜곡 방지).
+ *  곡을 교체하면 이 표의 해당 값도 다시 재야 한다 (측정: WebAudio decodeAudioData → RMS). */
+const BGM_GAIN_DB: Record<string, number> = {
+  bgm_abyss1: 0.841,   // -1.5dB ← RMS -14.3dB
+  bgm_abyss2: 0.944,   // -0.5dB ← RMS -15.3dB
+  bgm_abyss3: 0.881,   // -1.1dB ← RMS -14.7dB
+  bgm_abyss4: 0.923,   // -0.7dB ← RMS -15.1dB
+  bgm_abyss5: 0.912,   // -0.8dB ← RMS -15.0dB
+  bgm_alfheim1: 1.122,   // +1.0dB ← RMS -16.8dB
+  bgm_alfheim2: 1.084,   // +0.7dB ← RMS -16.5dB
+  bgm_alfheim3: 1.288,   // +2.2dB ← RMS -18.0dB
+  bgm_alfheim4: 1.109,   // +0.9dB ← RMS -16.7dB
+  bgm_alfheim5: 0.966,   // -0.3dB ← RMS -15.5dB
+  bgm_boss1: 0.841,   // -1.5dB ← RMS -14.3dB
+  bgm_boss2: 0.861,   // -1.3dB ← RMS -14.5dB
+  bgm_boss3: 0.708,   // -3.0dB ← RMS -12.8dB
+  bgm_boss4: 0.902,   // -0.9dB ← RMS -14.9dB
+  bgm_boss5: 1.059,   // +0.5dB ← RMS -16.3dB
+  bgm_boss6: 0.841,   // -1.5dB ← RMS -14.3dB
+  bgm_boss7: 0.871,   // -1.2dB ← RMS -14.6dB
+  bgm_boss8: 0.724,   // -2.8dB ← RMS -13.0dB
+  bgm_boss9: 0.902,   // -0.9dB ← RMS -14.9dB
+  bgm_cave1: 0.881,   // -1.1dB ← RMS -14.7dB
+  bgm_cave2: 1.047,   // +0.4dB ← RMS -16.2dB
+  bgm_cave3: 0.891,   // -1.0dB ← RMS -14.8dB
+  bgm_cave4: 0.804,   // -1.9dB ← RMS -13.9dB
+  bgm_cave5: 0.804,   // -1.9dB ← RMS -13.9dB
+  bgm_field1: 0.750,   // -2.5dB ← RMS -13.3dB
+  bgm_field2: 0.902,   // -0.9dB ← RMS -14.9dB
+  bgm_field3: 0.966,   // -0.3dB ← RMS -15.5dB
+  bgm_field4: 1.202,   // +1.6dB ← RMS -17.4dB
+  bgm_field5: 1.072,   // +0.6dB ← RMS -16.4dB
+  bgm_snow1: 0.794,   // -2.0dB ← RMS -13.8dB
+  bgm_snow2: 0.871,   // -1.2dB ← RMS -14.6dB
+  bgm_snow3: 1.084,   // +0.7dB ← RMS -16.5dB
+  bgm_snow4: 1.047,   // +0.4dB ← RMS -16.2dB
+  bgm_snow5: 1.072,   // +0.6dB ← RMS -16.4dB
+  bgm_title1: 0.955,   // -0.4dB ← RMS -15.4dB
+  bgm_title2: 1.122,   // +1.0dB ← RMS -16.8dB
+  bgm_title3: 0.841,   // -1.5dB ← RMS -14.3dB
+  bgm_title4: 1.303,   // +2.3dB ← RMS -18.1dB
+  bgm_title5: 1.216,   // +1.7dB ← RMS -17.5dB
+  bgm_village1: 0.871,   // -1.2dB ← RMS -14.6dB
+  bgm_village2: 0.902,   // -0.9dB ← RMS -14.9dB
+  bgm_village3: 0.871,   // -1.2dB ← RMS -14.6dB
+  bgm_village4: 0.902,   // -0.9dB ← RMS -14.9dB
+  bgm_village5: 0.933,   // -0.6dB ← RMS -15.2dB
+};
+/** 곡별 정규화 게인 (표에 없으면 1.0 — 신규 곡은 보정 없이 원음) */
+function bgmGain(key: string): number {
+  return BGM_GAIN_DB[key] ?? 1;
+}
+
 /** 40트랙 전체 자산 목록 (모든 곡이 구역 배치에 사용됨 — v3.0.24부터 지연 로딩) */
 export const BGM_ALL_TRACKS: string[] = Object.values(BGM_PLAYLISTS).flat();
 /** v3.0.24 — BootScene 프리로드 BGM: 타이틀 1곡만 (나머지 39곡은 구역 진입 시 지연 로딩) */
@@ -167,17 +230,23 @@ const CHAPTER_TRACKS: Record<string, string[]> = {
   hel: ["bgm_abyss1", "bgm_abyss2", "bgm_boss1", "bgm_boss2", "bgm_boss3"],
   abyss: ["bgm_abyss1", "bgm_abyss2", "bgm_abyss4", "bgm_boss1", "bgm_boss5"],
 };
-/** v4.1.3 — 챕터 대표 테마곡 (필드 구역 1~9 전부 이 한 곡) — 인접 챕터끼리 곡이 겹치지 않게 선정 */
+/** v1.0.17 (#BGM재배치) — 챕터 대표 테마곡 (필드 구역 1~9 전부 이 한 곡).
+ *  이전 배치의 실측 결함 2건을 교정:
+ *   ① kingdom(쿠소디아) 필드가 「타이틀 곡(bgm_title2)」이었다 — 유저가 타이틀에서 방금 들은
+ *      곡이 필드에서 그대로 나와 "다른 게임에 온 느낌"이 났다. 챕터 전용 필드곡으로 교체.
+ *   ② 44곡 중 14곡(alfheim2~5, cave5, field2~5, snow3~5, title5, village4)이 어느 배치에도
+ *      없어 한 번도 재생되지 않았다(170분 중 약 45분 미사용). 이제 챕터별 고유곡으로 전부 배치.
+ *  원칙: 인접 챕터끼리 곡이 겹치지 않게, 지역 정체성(숲/왕국/설원/동굴/심연)을 우선 */
 const CHAPTER_THEME: Record<string, string> = {
-  forest: "bgm_field1",
-  kingdom: "bgm_title2",
-  alfheim: "bgm_alfheim1",
-  muspelheim: "bgm_abyss3",
-  niflheim: "bgm_snow1",
-  cave: "bgm_cave1",
-  nidavellir: "bgm_cave3",
-  hel: "bgm_abyss1",
-  abyss: "bgm_abyss4",
+  forest: "bgm_field1",       // 제2장 숲 — 맑은 필드
+  kingdom: "bgm_field2",      // 제3장 쿠소디아 — 타이틀곡 재사용 폐지, 밝은 왕국 필드
+  alfheim: "bgm_alfheim1",    // 제4장 알프헤임 — 성광
+  muspelheim: "bgm_abyss3",   // 제5장 무스펠헤임 — 화염
+  niflheim: "bgm_snow1",      // 제6장 니플헤임 — 설원
+  cave: "bgm_cave1",          // 제7장 동굴
+  nidavellir: "bgm_cave3",    // 제8장 룬 광산
+  hel: "bgm_abyss1",          // 제9장 저승
+  abyss: "bgm_abyss4",        // 제10장 세계수 뿌리
 };
 const VILLAGE_TRACKS = ["bgm_village1", "bgm_village2", "bgm_village3", "bgm_village4", "bgm_village5"];
 /* v1.0.2 (#BGM다양화) — 챕터 마을 전용 트랙 표. 기존 chIdx%5 순환은 본마을=cave마을(마을1),
@@ -188,7 +257,7 @@ const VILLAGE_OF: Record<string, string> = {
    *  반환하는데 표에 없어 VILLAGE_TRACKS[-1 % 5] = undefined가 나와 본마을 BGM이 깨졌다
    *  (침묵 또는 이전 트랙 잔존 → "마을마다 브금이 같다"로 느껴진 원인). */
   village: "bgm_village1",    // 본마을 — 익숙한 주제곡 (시작 마을)
-  forest: "bgm_village1",     // 본마을 — 익숙한 주제곡
+  forest: "bgm_village4",     // v1.0.17 — 본마을과 중복 제거: 숲 마을은 별도 곡(기존엔 village1 공유)
   kingdom: "bgm_village2",    // 쿠소디아 왕국
   alfheim: "bgm_village3",    // 알프헤임 성전 마을
   muspelheim: "bgm_abyss2",   // 화산 촌락 — 무겁고 뜨거운 분위기
@@ -482,7 +551,8 @@ async function startTrack(key: string, retried = 0) {
     bgmSound = snd;
     asVol(bgmSound)?.setVolume(0);
     bgmSound.play();
-    fadeBgm(bgmVol, 1200);
+    /* v1.0.17 — 곡별 정규화 게인 반영 (bgmVol 단독 사용 시 5.3dB 편차가 그대로 노출됨) */
+    fadeBgm(trackVolume(), 1200);
   } catch {
     // 브라우저 자동재생 정책(사용자 입력 전) — 첫 입력에서 initAudio 후 재개됨
     bgmSound = null;

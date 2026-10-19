@@ -260,6 +260,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v3.0.6 — 현재 기동기 종류 (종착 효과 분기용) */
   private dashKind: string = "dash";
 
+  /* ================= v1.0.19 (#회피) — 구르기 =================
+   *  배경: 이 게임은 필드 자동사냥 + 보스전 수동인데, 보스전에서 플레이어가 쓸 수 있는
+   *  방어 행동이 "맞고 물약 먹기"뿐이었다(회피·무적기 입력 자체가 없었음 — 코드 전체 검색
+   *  결과 "회피"는 직업 설명 텍스트에만 등장). 즉 보스 패턴을 읽고 피하는 능동적 결정이
+   *  불가능해 전투가 "체력 싸움"으로 수렴했다. 이 게 GET 재미의 핵심 결손을 메운다.
+   *  설계: 무자원(MP 소모 없음) · 짧은 쿨(1.1s) · 짧은 무적(280ms) · 이동거리 150px.
+   *  기동기(C)와 달리 피해가 없고 쿨도 짧아 "회피 전용"으로 역할이 겹치지 않는다. */
+  private dodgeReadyAt = 0;
+  /** 회피 무적 창(ms) — 구르기 시작과 함께 부여 */
+  private static readonly DODGE_IFRAME_MS = 280;
+  private static readonly DODGE_COOLDOWN_MS = 1100;
+  private static readonly DODGE_SPEED = 760;
+  private static readonly DODGE_MS = 200;
+
   /** 대시 속도 — 계열별 차등 (마법사 점멸은 짧고 즉발) */
   private dashSpeed = 640;
   /** 공격 미세 러지 — "살짝 돌진" 타격감 (예전 360 상시 돌진보다 작고 빠르게 감쇠) */
@@ -1519,6 +1533,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.state === "attack") this.state = "idle";
     });
     this.scene.emitHud();
+  }
+
+  /* ================= v1.0.19 (#회피) — 구르기 =================
+   *  보스전에서 "패턴을 보고 피한다"는 능동적 결정을 만들기 위한 무자원 기동.
+   *  · MP 소모 없음 → 자원 관리 실패로 회피 자체가 봉쇄되지 않는다
+   *  · 쿨 1.1s / 무적 280ms → 남발하면 손해(쿨), 잘 쓰면 이득(무적)이 되는 리듬
+   *  · 기동기(C, useSkill2)는 피해·MP·긴 쿨을 가진 공격기라 역할이 다르다
+   *  @param dir 이동 입력 방향. 없으면 바라보는 방향으로 구른다. */
+  useDodge(dir?: Phaser.Math.Vector2) {
+    if (this.state === "dead" || this.state === "dash" || this.state === "attack") return;
+    const now = this.scene.time.now;
+    if (now < this.dodgeReadyAt) return;
+    const d = dir && dir.lengthSq() > 0.01 ? dir.clone().normalize() : this.aimDir();
+    this.dodgeReadyAt = now + Player.DODGE_COOLDOWN_MS;
+    this.state = "dash";
+    this.dashKind = "dodge";
+    this.dashDir.copy(d);
+    this.dashSpeed = Player.DODGE_SPEED;
+    this.dashTime = Player.DODGE_MS;
+    this.hitSet.clear();
+    this.setFlipX(d.x > 0);
+    /* 회피 무적 — takeDamage의 첫 가드(iframes > 0)가 이 값을 보고 피해를 무시한다.
+     * 기존 피격 무적(600ms)보다 짧게 두어 "구르면 안 맞는다"는 확신만 준다. */
+    this.iframes = Math.max(this.iframes, Player.DODGE_IFRAME_MS);
+    this.scene.sfxDash?.();
+    /* 잔상 — 회피했음을 눈으로 확인시켜 주는 최소 피드백 (fxLevel 1에서만) */
+    if (this.scene.fxLevel === 1) {
+      this.scene.spawnDashGhost(this.x, this.y, this.texture.key, this.frame?.name, this.flipX, this.clsHex(), this.scaleX);
+    }
   }
 
   useSkill2() {
