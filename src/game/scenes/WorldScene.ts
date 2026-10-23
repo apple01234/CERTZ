@@ -186,6 +186,9 @@ export class WorldScene extends Phaser.Scene {
   /** v1.0.16 — 장판 넉백 방향 재사용 버퍼 (틱마다 대상 수만큼 Vector2를 만들던 것 제거) */
   private fieldAwayVec = new Phaser.Math.Vector2();
   private attackQueued = false;
+  /** v1.1.4 (#개편 입력버퍼링) — 대기 중인 스킬 발동. update에서 idle이 되는 순간 실행된다.
+   *  setupInput이 실제 구현을 주입한다(입력 이벤트는 거기서 등록되므로 버퍼 상태를 그 스코프에 둔다). */
+  private flushBufferedSkill: () => void = () => {};
   /** v1.3.1 (#8) — 앱 전환 복귀 자가치유 핸들러 (cleanup에서 해제) */
   private onVisChange: (() => void) | null = null;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -8042,13 +8045,44 @@ export class WorldScene extends Phaser.Scene {
 
     const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);
     const onAtk = () => (this.attackQueued = true);
-    const onS1 = () => this.player?.useSkill1();
-    const onS2 = () => this.player?.useSkill2();
+    /* v1.1.4 (#개편 입력버퍼링) — 스킬 입력 버퍼.
+     *  종전엔 스킬을 즉시 호출했고 Player.useSkillN이 `state !== "idle"`이면 그냥 return했다.
+     *  즉 공격 모션(약 300~700ms) 중에 스킬 키를 누르면 **입력이 완전히 사라졌다**.
+     *  액션 게임에서 이건 "키가 씹힌다"로 느껴지는 대표적 조작감 결함이다.
+     *  해결: 누른 스킬을 300ms 동안 보관했다가 idle이 되는 순간 자동 발동한다.
+     *  (공격과 같은 방식 — attackQueued가 이미 그렇게 동작한다)
+     *  대기 중 다른 스킬을 누르면 최신 입력이 이전 입력을 대체한다(의도한 행동 우선). */
+    const SKILL_BUFFER_MS = 300;
+    let bufferedSkill: { id: "s1" | "s2" | "s3" | "s4" | "s5" | "s5b"; at: number } | null = null;
+    const queueSkill = (id: "s1" | "s2" | "s3" | "s4" | "s5" | "s5b") => {
+      bufferedSkill = { id, at: this.time.now };
+      this.flushBufferedSkill();
+    };
+    const onS1 = () => queueSkill("s1");
+    const onS2 = () => queueSkill("s2");
     /* v3.0.4 (지시 #7) — 모바일 3/4차기 버튼이 발행하는 input:skill3/4 미수신으로 안 쓰이던 버그 수정 */
-    const onS3 = () => this.player?.useSkill3();
-    const onS4 = () => this.player?.useSkill4();
-    const onS5 = () => this.player?.useSkill5(); // v3.2.0 — 궁극기 (모바일 버튼 공용)
-    const onS5b = () => this.player?.useSkill5b(); // vc146 (#2) — 제2궁극기 (쿨 2분)
+    const onS3 = () => queueSkill("s3");
+    const onS4 = () => queueSkill("s4");
+    const onS5 = () => queueSkill("s5"); // v3.2.0 — 궁극기 (모바일 버튼 공용)
+    const onS5b = () => queueSkill("s5b"); // vc146 (#2) — 제2궁극기 (쿨 2분)
+    /** 버퍼에 담긴 스킬을 지금 발동 가능하면 실행하고 비운다 */
+    this.flushBufferedSkill = () => {
+      if (!bufferedSkill || !this.player) return;
+      if (this.time.now - bufferedSkill.at > SKILL_BUFFER_MS) {
+        bufferedSkill = null; // 만료 — 낡은 입력은 버린다
+        return;
+      }
+      const p = this.player;
+      if (p.state !== "idle") return; // 아직 모션 중 — 다음 프레임에 재시도
+      const id = bufferedSkill.id;
+      bufferedSkill = null;
+      if (id === "s1") p.useSkill1();
+      else if (id === "s2") p.useSkill2();
+      else if (id === "s3") p.useSkill3();
+      else if (id === "s4") p.useSkill4();
+      else if (id === "s5") p.useSkill5();
+      else p.useSkill5b();
+    };
     const onRespawn = () => this.respawnPlayer();
     const onDialogueDone = () => this.resumeFromDialogue();
     /* vc143 (#10) — 선택형 대화 (보스전 퇴장 관리인) */
@@ -9921,6 +9955,8 @@ export class WorldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
     /* vc142 (#1) — PC 자동전투 토글 단축키 (기본 B · 설정에서 재배치 가능) */
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("autohunt"))) EventBus.emit("rpg:autohunt", {});
+    /* v1.1.4 (#개편 입력버퍼링) — 공격/스킬 모션이 끝나면 대기 중인 스킬을 발동한다. */
+    this.flushBufferedSkill();
 
     // E키 상호작용 감지 — 가장 가까운 NPC/상점 프롬프트 갱신
     this.updateInteractPrompt();

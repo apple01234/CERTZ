@@ -76,6 +76,39 @@ function useModal(label: string) {
     card.focus({ preventScroll: true });
     return () => prev?.focus?.({ preventScroll: true });
   }, []);
+  /* v1.1.3 (#개편 접근성) — Tab 포커스 트랩.
+   *  종전엔 모달을 열어도 Tab을 누르면 포커스가 뒤쪽 HUD/버튼으로 빠져나가
+   *  "보이지 않는 곳에 포커스가 있는" 상태가 됐다(키보드만 쓰는 유저는 조작 불가).
+   *  모달 내부의 포커스 가능 요소를 순환시킨다. ESC는 각 패널의 useEscClose가 처리. */
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const focusables = root.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      const inside = !!active && root.contains(active);
+      if (!inside) {
+        e.preventDefault();
+        first.focus();
+        return;
+      }
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    root.addEventListener("keydown", onKeyDown);
+    return () => root.removeEventListener("keydown", onKeyDown);
+  }, []);
   return { ref, role: "dialog" as const, "aria-modal": true as const, "aria-label": label };
 }
 
