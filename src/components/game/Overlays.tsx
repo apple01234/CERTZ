@@ -167,7 +167,7 @@ export function TitleScreen() {
           {(() => {
             const km = loadKeyMap();
             const move = loadMoveScheme() === "wasd" ? "W A S D" : "방향키";
-            return `이동: ${move} / 왼쪽 화면 드래그 · 공격: ${keyLabel(km.attack)} · 회피: ${keyLabel(km.dodge)} · 스킬: ${keyLabel(km.skill1)}, ${keyLabel(km.skill2)}, ${keyLabel(km.skill3)}, ${keyLabel(km.skill4)}, ${keyLabel(km.skill5)} · 물약: ${keyLabel(km.potHp)}, ${keyLabel(km.potMp)}`;
+            return `이동: ${move} / 왼쪽 화면 드래그 · 공격: ${keyLabel(km.attack)} · 스킬: ${keyLabel(km.skill1)}, ${keyLabel(km.skill2)}, ${keyLabel(km.skill3)}, ${keyLabel(km.skill4)}, ${keyLabel(km.skill5)} · 물약: ${keyLabel(km.potHp)}, ${keyLabel(km.potMp)}`;
           })()}
         </p>
         {/* v1.0.18 (#크레딧분리) — 라이선스 원문 3줄이 타이틀 하단 10%를 상시 점유해

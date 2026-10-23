@@ -123,69 +123,95 @@ function play(key: string, vol: number, rate = 1) {
 
 export type BGMKind = "field" | "boss" | "title" | "village" | "alfheim" | "cave" | "snow" | "abyss";
 
-/* v1.1.0 (#BGM전면교체) — kind 기반 대표곡. 전부 새 AI 테마곡으로 교체 */
+/* v1.1.1 — kind 기반 대표곡 (타이틀·훅용). 실제 구역 재생은 stageTrack 담당 */
 const THEME_TRACKS: Record<BGMKind, string> = {
   title: "bgm_title",
-  village: "bgm_village_home",
-  field: "bgm_field_forest",
-  alfheim: "bgm_field_alfheim",
-  cave: "bgm_field_cave",
-  snow: "bgm_field_niflheim",
-  abyss: "bgm_field_abyss",
-  boss: "bgm_boss_q",
+  village: "bgm_village_village",
+  field: "bgm_forest_1",
+  alfheim: "bgm_alfheim_1",
+  cave: "bgm_cave_1",
+  snow: "bgm_niflheim_1",
+  abyss: "bgm_abyss_1",
+  boss: "bgm_forest_boss",
 };
 
-/* v1.1.0 — 테마별 5곡 플레이리스트 (E2E 훅·프리로드가 참조).
- *  실제 재생은 stageTrack이 슬롯별 고정곡을 고르고, 이 표는 자산 목록 역할이다. */
+/* v1.1.1 — 자산 목록(E2E 훅·프리로드 참조). 구역별 실제 곡은 STAGE_BGM/VILLAGE_OF/BOSS_OF. */
 export const BGM_PLAYLISTS: Record<BGMKind, string[]> = {
   title: ["bgm_title", "bgm_title2"],
-  village: ["bgm_village_home", "bgm_village_forest", "bgm_village_kingdom", "bgm_village_alfheim", "bgm_village_muspelheim", "bgm_village_niflheim"],
-  field: ["bgm_field_forest", "bgm_field_kingdom", "bgm_field_alfheim", "bgm_field_muspelheim", "bgm_field_niflheim"],
-  alfheim: ["bgm_field_alfheim", "bgm_cave_water"],
-  cave: ["bgm_field_cave", "bgm_cave_water"],
-  snow: ["bgm_field_niflheim", "bgm_field_cave"],
-  abyss: ["bgm_field_hel", "bgm_field_abyss", "bgm_interior_home"],
-  boss: ["bgm_boss_q", "bgm_boss_rush", "bgm_boss_final", "bgm_boss_final2", "bgm_boss_final3"],
+  village: ["bgm_village_village", "bgm_village_forest", "bgm_village_kingdom", "bgm_village_alfheim",
+            "bgm_village_muspelheim", "bgm_village_niflheim", "bgm_village_cave",
+            "bgm_village_nidavellir", "bgm_village_hel", "bgm_village_abyss"],
+  field: ["bgm_forest_1", "bgm_forest_2", "bgm_forest_3", "bgm_kingdom_1", "bgm_kingdom_2", "bgm_kingdom_3",
+          "bgm_alfheim_1", "bgm_alfheim_2", "bgm_alfheim_3", "bgm_muspelheim_1", "bgm_muspelheim_2", "bgm_muspelheim_3",
+          "bgm_niflheim_1", "bgm_niflheim_2", "bgm_niflheim_3", "bgm_cave_1", "bgm_cave_2", "bgm_cave_3",
+          "bgm_nidavellir_1", "bgm_nidavellir_2", "bgm_nidavellir_3", "bgm_hel_1", "bgm_hel_2", "bgm_hel_3",
+          "bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3"],
+  alfheim: ["bgm_alfheim_1", "bgm_alfheim_2", "bgm_alfheim_3"],
+  cave: ["bgm_cave_1", "bgm_cave_2", "bgm_cave_3", "bgm_cave_water"],
+  snow: ["bgm_niflheim_1", "bgm_niflheim_2", "bgm_niflheim_3"],
+  abyss: ["bgm_hel_1", "bgm_hel_2", "bgm_hel_3", "bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3"],
+  boss: ["bgm_forest_boss", "bgm_kingdom_boss", "bgm_alfheim_boss", "bgm_muspelheim_boss",
+         "bgm_niflheim_boss", "bgm_cave_boss", "bgm_nidavellir_boss", "bgm_hel_boss", "bgm_abyss_boss"],
 };
 
-/* ================= v1.1.0 (#BGM전면교체) — 곡별 RMS 실측 보정 =================
- *  새 AI 테마곡 32슬롯을 ffmpeg volumedetect로 실측한 결과 -20.0 ~ -14.4dB(편차 5.6dB)였다.
- *  AI 생성 곡은 테마마다 마스터 레벨이 달라 그대로 쓰면 구역 전환마다 음량이 튄다.
- *  값 = 10^((목표 -16.5dB - 실측RMS)/20), -4 ~ +6dB 클램프(과증폭 왜곡 방지).
- *  곡을 교체하면 이 표도 다시 재야 한다: ffmpeg -i <f> -af volumedetect -f null - */
+
+/* ================= v1.1.1 — 곡별 RMS 실측 보정 =================
+ *  새 BGM 55슬롯을 ffmpeg volumedetect로 실측: -20.0 ~ -13.0dB(편차 7.0dB).
+ *  AI 생성곡은 테마마다 마스터 레벨이 달라 그대로 쓰면 구역 전환마다 음량이 튄다.
+ *  값 = 10^((목표 -16.5dB - 실측RMS)/20), -4 ~ +6dB 클램프.
+ *  곡 교체 시 재측정: ffmpeg -i <f> -af volumedetect -f null - */
 const BGM_GAIN_DB: Record<string, number> = {
-  bgm_battle: 0.966,   // -0.3dB ← RMS -16.2dB
-  bgm_boss_final: 0.871,   // -1.2dB ← RMS -15.3dB
-  bgm_boss_final2: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_boss_final3: 1.496,   // +3.5dB ← RMS -20.0dB
-  bgm_boss_q: 0.794,   // -2.0dB ← RMS -14.5dB
-  bgm_boss_rush: 1.429,   // +3.1dB ← RMS -19.6dB
-  bgm_cave_water: 0.891,   // -1.0dB ← RMS -15.5dB
-  bgm_field_abyss: 1.175,   // +1.4dB ← RMS -17.9dB
-  bgm_field_alfheim: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_field_cave: 0.955,   // -0.4dB ← RMS -16.1dB
-  bgm_field_forest: 1.135,   // +1.1dB ← RMS -17.6dB
-  bgm_field_hel: 1.161,   // +1.3dB ← RMS -17.8dB
-  bgm_field_kingdom: 0.955,   // -0.4dB ← RMS -16.1dB
-  bgm_field_muspelheim: 1.023,   // +0.2dB ← RMS -16.7dB
-  bgm_field_nidavellir: 0.785,   // -2.1dB ← RMS -14.4dB
-  bgm_field_niflheim: 0.841,   // -1.5dB ← RMS -15.0dB
-  bgm_interior_home: 1.122,   // +1.0dB ← RMS -17.5dB
-  bgm_interior_inn: 1.161,   // +1.3dB ← RMS -17.8dB
-  bgm_kitchen: 1.0,   // +0.0dB ← RMS -16.5dB
-  bgm_lobby: 1.189,   // +1.5dB ← RMS -18.0dB
-  bgm_shop: 0.989,   // -0.1dB ← RMS -16.4dB
-  bgm_title: 0.804,   // -1.9dB ← RMS -14.6dB
-  bgm_village_abyss: 0.902,   // -0.9dB ← RMS -15.6dB
-  bgm_village_alfheim: 0.881,   // -1.1dB ← RMS -15.4dB
-  bgm_village_cave: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_village_forest: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_village_hel: 0.881,   // -1.1dB ← RMS -15.4dB
-  bgm_village_home: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_village_kingdom: 1.0,   // +0.0dB ← RMS -16.5dB
-  bgm_village_muspelheim: 0.902,   // -0.9dB ← RMS -15.6dB
-  bgm_village_nidavellir: 1.0,   // +0.0dB ← RMS -16.5dB
-  bgm_village_niflheim: 0.891,   // -1.0dB ← RMS -15.5dB
+  bgm_abyss_1: 1.012,   // +0.1dB ← RMS -16.6dB
+  bgm_abyss_2: 1.109,   // +0.9dB ← RMS -17.4dB
+  bgm_abyss_3: 1.135,   // +1.1dB ← RMS -17.6dB
+  bgm_abyss_boss: 0.759,   // -2.4dB ← RMS -14.1dB
+  bgm_alfheim_1: 1.035,   // +0.3dB ← RMS -16.8dB
+  bgm_alfheim_2: 1.012,   // +0.1dB ← RMS -16.6dB
+  bgm_alfheim_3: 1.012,   // +0.1dB ← RMS -16.6dB
+  bgm_alfheim_boss: 1.216,   // +1.7dB ← RMS -18.2dB
+  bgm_cave_1: 1.012,   // +0.1dB ← RMS -16.6dB
+  bgm_cave_2: 0.871,   // -1.2dB ← RMS -15.3dB
+  bgm_cave_3: 0.989,   // -0.1dB ← RMS -16.4dB
+  bgm_cave_boss: 0.785,   // -2.1dB ← RMS -14.4dB
+  bgm_cave_water: 1.023,   // +0.2dB ← RMS -16.7dB
+  bgm_forest_1: 1.135,   // +1.1dB ← RMS -17.6dB
+  bgm_forest_2: 1.189,   // +1.5dB ← RMS -18.0dB
+  bgm_forest_3: 1.035,   // +0.3dB ← RMS -16.8dB
+  bgm_forest_boss: 0.741,   // -2.6dB ← RMS -13.9dB
+  bgm_hel_1: 0.977,   // -0.2dB ← RMS -16.3dB
+  bgm_hel_2: 1.047,   // +0.4dB ← RMS -16.9dB
+  bgm_hel_3: 1.012,   // +0.1dB ← RMS -16.6dB
+  bgm_hel_boss: 1.245,   // +1.9dB ← RMS -18.4dB
+  bgm_interior_home: 1.012,   // +0.1dB ← RMS -16.6dB
+  bgm_interior_inn: 1.059,   // +0.5dB ← RMS -17.0dB
+  bgm_kingdom_1: 1.059,   // +0.5dB ← RMS -17.0dB
+  bgm_kingdom_2: 0.841,   // -1.5dB ← RMS -15.0dB
+  bgm_kingdom_3: 1.012,   // +0.1dB ← RMS -16.6dB
+  bgm_kingdom_boss: 0.785,   // -2.1dB ← RMS -14.4dB
+  bgm_muspelheim_1: 0.668,   // -3.5dB ← RMS -13.0dB
+  bgm_muspelheim_2: 0.902,   // -0.9dB ← RMS -15.6dB
+  bgm_muspelheim_3: 0.933,   // -0.6dB ← RMS -15.9dB
+  bgm_muspelheim_boss: 0.832,   // -1.6dB ← RMS -14.9dB
+  bgm_nidavellir_1: 0.923,   // -0.7dB ← RMS -15.8dB
+  bgm_nidavellir_2: 0.851,   // -1.4dB ← RMS -15.1dB
+  bgm_nidavellir_3: 0.841,   // -1.5dB ← RMS -15.0dB
+  bgm_nidavellir_boss: 0.841,   // -1.5dB ← RMS -15.0dB
+  bgm_niflheim_1: 1.109,   // +0.9dB ← RMS -17.4dB
+  bgm_niflheim_2: 1.135,   // +1.1dB ← RMS -17.6dB
+  bgm_niflheim_3: 1.148,   // +1.2dB ← RMS -17.7dB
+  bgm_niflheim_boss: 1.109,   // +0.9dB ← RMS -17.4dB
+  bgm_title: 0.861,   // -1.3dB ← RMS -15.2dB
+  bgm_title2: 0.944,   // -0.5dB ← RMS -16.0dB
+  bgm_village_abyss: 1.109,   // +0.9dB ← RMS -17.4dB
+  bgm_village_alfheim: 0.966,   // -0.3dB ← RMS -16.2dB
+  bgm_village_cave: 0.891,   // -1.0dB ← RMS -15.5dB
+  bgm_village_forest: 1.084,   // +0.7dB ← RMS -17.2dB
+  bgm_village_hel: 1.175,   // +1.4dB ← RMS -17.9dB
+  bgm_village_kingdom: 0.881,   // -1.1dB ← RMS -15.4dB
+  bgm_village_muspelheim: 1.0,   // +0.0dB ← RMS -16.5dB
+  bgm_village_nidavellir: 0.989,   // -0.1dB ← RMS -16.4dB
+  bgm_village_niflheim: 1.109,   // +0.9dB ← RMS -17.4dB
+  bgm_village_village: 1.072,   // +0.6dB ← RMS -17.1dB
 };
 /** 곡별 정규화 게인 (표에 없으면 1.0 — 신규 곡은 보정 없이 원음) */
 function bgmGain(key: string): number {
@@ -206,77 +232,73 @@ export const BGM_PRELOAD_TRACKS: string[] = ["bgm_title"];
  *  풀 배열은 자산 목록(E2E 훅) 참조용으로 유지. */
 const CHAPTER_ORDER = ["forest", "kingdom", "alfheim", "muspelheim", "niflheim", "cave", "nidavellir", "hel", "abyss"] as const;
 
-const CHAPTER_TRACKS: Record<string, string[]> = {
-  /* v1.1.0 — 옛 5곡 순환 풀은 폐기. 이제 챕터당 고정 1곡(CHAPTER_THEME)이고,
-   *  이 표는 E2E/자산 목록용으로 "그 챕터가 실제 쓸 수 있는 곡"만 남긴다. */
-  forest: ["bgm_field_forest"],
-  kingdom: ["bgm_field_kingdom"],
-  alfheim: ["bgm_field_alfheim"],
-  muspelheim: ["bgm_field_muspelheim"],
-  niflheim: ["bgm_field_niflheim"],
-  cave: ["bgm_field_cave"],
-  nidavellir: ["bgm_field_nidavellir"],
-  hel: ["bgm_field_hel"],
-  abyss: ["bgm_field_abyss"],
+/* ================= v1.1.1 (#스테이지BGM) — 3스테이지마다 교체 =================
+ *  유저 지적 2건을 구조로 고친다:
+ *   "어두운 마을들에 왜 밝은 분위기의 BGM을 씀?" → 챕터 '정서'를 먼저 정하고 그 정서의
+ *     곡만 쓴다. 어두운 챕터(니플헤임·스바르트·니다벨리르·헬·뿌리)에는 느리고 어두운 풀
+ *     (underwater/cyber/lofi/investigation/alchemist/forge)만 배정하고 밝은 풀
+ *     (lobby/electro/casino/circus/aero/morning/kitchen)은 절대 쓰지 않는다.
+ *   "10스테이지 중 3스테이지마다 브금이 바뀌어야지" → 구역 1~3 / 4~6 / 7~9 를 서로 다른
+ *     곡으로 나누고, 구역 10(보스)은 전용 전투곡. 즉 한 챕터에서 최대 4곡이 흐른다.
+ *  poolOf()는 (챕터, 구간) → 곡 키를 돌려주고, 실패 시 챕터 대표곡으로 폴백한다. */
+const STAGE_BGM: Record<string, [string, string, string]> = {
+  /* 챕터: [구역1~3, 구역4~6, 구역7~9] */
+  forest: ["bgm_forest_1", "bgm_forest_2", "bgm_forest_3"],
+  kingdom: ["bgm_kingdom_1", "bgm_kingdom_2", "bgm_kingdom_3"],
+  alfheim: ["bgm_alfheim_1", "bgm_alfheim_2", "bgm_alfheim_3"],
+  muspelheim: ["bgm_muspelheim_1", "bgm_muspelheim_2", "bgm_muspelheim_3"],
+  niflheim: ["bgm_niflheim_1", "bgm_niflheim_2", "bgm_niflheim_3"],
+  cave: ["bgm_cave_1", "bgm_cave_2", "bgm_cave_3"],
+  nidavellir: ["bgm_nidavellir_1", "bgm_nidavellir_2", "bgm_nidavellir_3"],
+  hel: ["bgm_hel_1", "bgm_hel_2", "bgm_hel_3"],
+  abyss: ["bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3"],
 };
-/** v1.0.17 (#BGM재배치) — 챕터 대표 테마곡 (필드 구역 1~9 전부 이 한 곡).
- *  이전 배치의 실측 결함 2건을 교정:
- *   ① kingdom(쿠소디아) 필드가 「타이틀 곡(bgm_title2)」이었다 — 유저가 타이틀에서 방금 들은
- *      곡이 필드에서 그대로 나와 "다른 게임에 온 느낌"이 났다. 챕터 전용 필드곡으로 교체.
- *   ② 44곡 중 14곡(alfheim2~5, cave5, field2~5, snow3~5, title5, village4)이 어느 배치에도
- *      없어 한 번도 재생되지 않았다(170분 중 약 45분 미사용). 이제 챕터별 고유곡으로 전부 배치.
- *  원칙: 인접 챕터끼리 곡이 겹치지 않게, 지역 정체성(숲/왕국/설원/동굴/심연)을 우선 */
+/** 챕터 대표곡(폴백·목록용) — 구간 배정의 첫 곡 */
 const CHAPTER_THEME: Record<string, string> = {
-  /* v1.1.0 (#BGM전면교체) — 유저 지시 "초반 스테이지 브금들이 대부분 별로니 바꿔" +
-   *  "유튜브 채널(어항 앞에 마우스) AI 곡 사용". 기존 Kevin MacLeod 44곡을 전부 걷어내고
-   *  테마별 AI 플레이리스트(19테마 × 5곡)에서 곡을 뽑아 재배치했다.
-   *  챕터 정체성에 맞는 테마를 골라 배정: 숲/왕국/알프헤임=Stage1(밝은 필드),
-   *  무스펠헤임/니다벨리르=Molten Forge(대장간), 니플헤임=Underwater/Cyber(차가운 톤),
-   *  동굴=Underwater, 헬/뿌리=Lo-fi Night(어둡고 느린 톤). */
-  forest: "bgm_field_forest",
-  kingdom: "bgm_field_kingdom",
-  alfheim: "bgm_field_alfheim",
-  muspelheim: "bgm_field_muspelheim",
-  niflheim: "bgm_field_niflheim",
-  cave: "bgm_field_cave",
-  nidavellir: "bgm_field_nidavellir",
-  hel: "bgm_field_hel",
-  abyss: "bgm_field_abyss",
+  forest: "bgm_forest_1",
+  kingdom: "bgm_kingdom_1",
+  alfheim: "bgm_alfheim_1",
+  muspelheim: "bgm_muspelheim_1",
+  niflheim: "bgm_niflheim_1",
+  cave: "bgm_cave_1",
+  nidavellir: "bgm_nidavellir_1",
+  hel: "bgm_hel_1",
+  abyss: "bgm_abyss_1",
 };
 const VILLAGE_TRACKS = ["bgm_village_forest", "bgm_village_kingdom", "bgm_village_alfheim",
   "bgm_village_muspelheim", "bgm_village_niflheim"];
 const VILLAGE_OF: Record<string, string> = {
-  /* 본마을은 「Cozy Everyday」 테마 1번(The Long Way Back) — 귀환의 정서.
-   *  9챕터 마을은 5곡을 순환하되 인접 챕터가 같은 곡이 되지 않게 배치(5주기). */
-  village: "bgm_village_home",
+  /* v1.1.1 — 마을도 챕터 정서를 따른다(지적 2번). 화산 촌락은 대장간 톤, 설원 마을은
+   *  차가운 톤, 어둠 요정 마을은 연금술 톤, 저승 마을은 lo-fi 톤 — 밝은 마을곡 금지. */
+  village: "bgm_village_village",
   forest: "bgm_village_forest",
   kingdom: "bgm_village_kingdom",
   alfheim: "bgm_village_alfheim",
   muspelheim: "bgm_village_muspelheim",
   niflheim: "bgm_village_niflheim",
-  cave: "bgm_village_forest",
-  nidavellir: "bgm_village_kingdom",
-  hel: "bgm_village_alfheim",
-  abyss: "bgm_village_muspelheim",
+  cave: "bgm_village_cave",
+  nidavellir: "bgm_village_nidavellir",
+  hel: "bgm_village_hel",
+  abyss: "bgm_village_abyss",
 };
-const BOSS_TRACKS = ["bgm_boss_q", "bgm_boss_rush", "bgm_boss_final", "bgm_boss_final2", "bgm_boss_final3"];
-/* v1.1.0 (#BGM전면교체) — 보스 4테마(Quirky/Final Standoff/RPG Battle/Climactic)에서 뽑은 5곡.
- *  기존엔 boss6~9가 원곡의 피치 변형이라 "보스마다 브금이 같다"는 인상이 남았다.
- *  이제 5곡 전부 서로 다른 원곡이다. */
+const BOSS_TRACKS = ["bgm_forest_boss", "bgm_kingdom_boss", "bgm_alfheim_boss",
+  "bgm_muspelheim_boss", "bgm_niflheim_boss"];
+/* v1.1.1 — 챕터별 보스곡. 각 곡은 그 챕터의 정서 풀에서 뽑았다(설원=얼어붙은 결전,
+ *  룬 광산=기계적 결전, 저승=죽음의 정적 …). 같은 곡 재사용 없이 9챕터 전부 다르다. */
 const BOSS_OF: Record<string, string> = {
-  forest: "bgm_boss_q",         // 괴이형 보스 — Quirky(Boss)
-  kingdom: "bgm_boss_rush",     // 격전 — RPG Battle
-  alfheim: "bgm_boss_final2",   // 니드호그 — Final Standoff
-  muspelheim: "bgm_boss_rush",  // 수르트 — 격전
-  niflheim: "bgm_boss_q",       // 펜리르 — 괴이
-  cave: "bgm_boss_final",       // 심연의 군주 — 최종결전
-  nidavellir: "bgm_boss_final3",// 스콜&하티 — Climactic
-  hel: "bgm_boss_final",        // 가름 — 최종결전
-  abyss: "bgm_boss_final3",     // 아부디토스 — Climactic(최종)
+  forest: "bgm_forest_boss",
+  kingdom: "bgm_kingdom_boss",
+  alfheim: "bgm_alfheim_boss",
+  muspelheim: "bgm_muspelheim_boss",
+  niflheim: "bgm_niflheim_boss",
+  cave: "bgm_cave_boss",
+  nidavellir: "bgm_nidavellir_boss",
+  hel: "bgm_hel_boss",
+  abyss: "bgm_abyss_boss",
 };
 /** 재림 보스 — splitStage("r5")는 ch="r", zone=5/10/15로 파싱된다 */
-const REBIRTH_BOSS_OF: Record<number, string> = { 5: "bgm_boss_rush", 10: "bgm_boss_final", 15: "bgm_boss_final3" };
-/** 챕터/재림 공용 보스 트랙 선택 (미지의 챕터 → boss1 폴백) */
+const REBIRTH_BOSS_OF: Record<number, string> = { 5: "bgm_kingdom_boss", 10: "bgm_hel_boss", 15: "bgm_abyss_boss" };
+/** 챕터/재림 공용 보스 트랙 선택 (미지의 챕터 → 첫 보스곡 폴백) */
 function bossTrackOfCh(ch: string, zone: number): string {
   if (ch === "r") return REBIRTH_BOSS_OF[zone] ?? BOSS_TRACKS[0];
   return BOSS_OF[ch] ?? BOSS_TRACKS[0];
@@ -293,22 +315,29 @@ function splitStage(stage: string): { ch: string; zone: number; isVillageStage: 
   return { ch: stage, zone: 0, isVillageStage: false };
 }
 
+/** 구역(1~9) → 구간 인덱스(0/1/2). 3스테이지마다 곡이 바뀐다. */
+function zoneSlot(zone: number): 0 | 1 | 2 {
+  if (zone <= 3) return 0;
+  if (zone <= 6) return 1;
+  return 2;
+}
+
 function chIndexOf(ch: string): number {
   const i = (CHAPTER_ORDER as readonly string[]).indexOf(ch);
   return i < 0 ? 0 : i;
 }
 
-/** 실내/실외 관계없이 스테이지 → 고정 트랙 (v3.0.23 — stageBgm 대체)
- *  v4.1.3 (#브금빈도) — 필드 구역 1~9는 챕터 대표 테마곡 1곡 고정 (구역 순환 제거) */
+/** 실내/실외 관계없이 스테이지 → 고정 트랙
+ *  v1.1.1 — 구역 1~3/4~6/7~9에서 곡이 바뀐다(3스테이지마다 교체). 구역 10은 보스곡. */
 export function stageTrack(stage: string): string {
-  /* v1.0.2 (#BGM다양화) — 실내는 전용 트랙(타이틀 앨범의 잔잔한 곡 재활용) — 마을 곡과 완전 분리 */
   if (stage === "interior_inn") return "bgm_interior_inn";
   if (stage === "interior_home") return "bgm_interior_home";
   const { ch, zone } = splitStage(stage);
-  /* v1.4.10 — 보스 구역: BOSS_OF 명시적 챕터 매핑 (기존 chIdx%5 순환 대체) */
   if (zone === 10) return bossTrackOfCh(ch, zone); // 보스 구역 — 챕터 전용 전투곡
-  if (zone <= 0) return VILLAGE_OF[ch] ?? VILLAGE_TRACKS[Math.max(0, chIndexOf(ch)) % VILLAGE_TRACKS.length]; // v1.0.12 — 음수 인덱스 가드 (미지의 챕터 마을 폴백)
-  return CHAPTER_THEME[ch] ?? FALLBACK_TRACKS[0]; // v4.1.3 — 챕터 테마 1곡
+  if (zone <= 0) return VILLAGE_OF[ch] ?? VILLAGE_TRACKS[Math.max(0, chIndexOf(ch)) % VILLAGE_TRACKS.length];
+  const slots = STAGE_BGM[ch];
+  if (slots) return slots[zoneSlot(zone)];
+  return CHAPTER_THEME[ch] ?? FALLBACK_TRACKS[0];
 }
 
 /** 보스 조우 중 오버라이드 트랙 (구역 일반곡과 별개 — 전투곡)
