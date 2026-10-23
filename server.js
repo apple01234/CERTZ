@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc157 — APK는 릴리스 태그 v1.0.16에 있다(이전 태그는 vc157까지 보유).
    *  태그를 v1.0.9로 두면 SERTZ-vc157.apk가 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.0.18/SERTZ-vc160.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.1.0/SERTZ-vc161.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,10 +69,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.0.18";
-  const LATEST_CODE = 160;
+  const LATEST_VERSION = "1.1.0";
+  const LATEST_CODE = 161;
     const VERSION_NOTE =
-  "v1.0.18 (vc160) — 재미·디자인·BGM 3축 개선: ①회피(구르기) 신설 — Space 키/모바일 회피 버튼. MP 소모 없는 짧은 쿨 기동으로 무적 280ms가 붙어 보스 패턴을 보고 피하는 능동 전투가 가능해졌다(기존엔 회피 입력 자체가 없어 '맞고 물약'으로 수렴). ②BGM 재배치 — 44곡 중 14곡이 미재생이었고 쿠소디아 필드가 타이틀곡을 재사용했다. 챕터 필드곡을 전부 고유곡으로 교체(필드 중복 0). ③BGM 음량 정규화 — 44곡 RMS 실측 편차 5.3dB를 곡별 게인으로 보정(구역 전환 시 음량이 튀던 문제). ④타이틀 정리 — 라이선스 원문 3줄을 접이식 1줄로, 버전 배지의 기능 나열을 게임 소개 문구로 교체";
+  "v1.1.0 (vc161) — BGM 전면 교체: 유튜브 「어항 앞에 마우스」의 AI 테마 플레이리스트에서 곡을 선별해 게임 전체 BGM을 새로 채웠다. 필드 9챕터 고유곡·마을 6곡 순환·보스 5곡(전부 다른 원곡, 기존 피치 변형 폐기)·타이틀/실내/수중/전투 전용곡까지 25슬롯. 곡마다 음량을 실측해 게인을 맞춰(편차 5.6dB→0) 구역 전환 시 음량이 튀지 않는다. 기존 Kevin MacLeod 51곡은 제거(BGM 용량 160MB→61MB).";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
