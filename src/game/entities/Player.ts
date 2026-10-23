@@ -4266,6 +4266,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.iframes = 600;
     this.scene.sfxHurt();
     this.scene.cameras.main.shake(70, 0.004);
+    /* v1.1.3 (#개편 연출) — 피격 방향 표시.
+     *  화면 전체가 흔들리기만 하면 "어디서 맞았는지"를 모른다. 특히 자동사냥 중이거나
+     *  몬스터가 뒤에서 붙었을 때 대응이 늦는다. 화면 가장자리에 붉은 호를 띄워 알린다.
+     *  주의: fromDir은 넉백 방향(맞은 반대쪽)이다 — 공격자는 그 반대편에 있으므로
+     *  각도에 π를 더해 표시한다. 오브젝트 풀 없이 원호 1개만 그리고 즉시 소멸. */
+    try {
+      const cam = this.scene.cameras.main;
+      const ang = Math.atan2(fromDir.y, fromDir.x) + Math.PI; // 공격자가 있는 방향
+      const cx = cam.width / 2, cy = cam.height / 2;
+      const radius = Math.min(cam.width, cam.height) * 0.42;
+      const gfx = this.scene.add.graphics().setDepth(8800).setScrollFactor(0);
+      gfx.lineStyle(9, 0xff3b3b, 0.85);
+      gfx.beginPath();
+      gfx.arc(cx, cy, radius, ang - 0.42, ang + 0.42, false);
+      gfx.strokePath();
+      this.scene.tweens.add({
+        targets: gfx,
+        alpha: 0,
+        duration: 340,
+        ease: "Quad.out",
+        onComplete: () => gfx.destroy(),
+      });
+    } catch { /* 연출 실패는 피해 처리에 영향 없음 */ }
     /* v1.4.8 (#5 그래픽) — 위험 피격 연출: HP 30% 이하 피격 시 암적색 플래시로 위험 상태를 즉각 인지 */
     if (this.hp > 0 && this.hp / Math.max(1, this.maxHp) <= 0.3) this.scene.cameras.main.flash(160, 70, 0, 0);
     this.setVelocity(fromDir.x * 200, fromDir.y * 200);

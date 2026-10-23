@@ -510,6 +510,20 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.sfxRoar();
     this.scene.cameras.main.shake(220, this.phase === 3 ? 0.01 : 0.007);
     this.scene.spawnBurstAt(this.x, this.y, 20, this.def.orbTint);
+    /* v1.1.3 (#개편 연출) — 페이즈 전환 0.18초 슬로우모션.
+     *  종전엔 흔들림+플래시만 있어 전투가 계속 굴러가는 느낌이었다. 짧게 시간을 늦추면
+     *  "지금 뭔가 바뀌었다"가 몸으로 전달된다. timeScale은 원상복구를 반드시 예약한다
+     *  (보스가 이 사이 죽어도 복구 타이머는 씬이 살아 있는 한 실행된다).
+     *  fxLevel 0(저사양 절전)에서는 생략 — 느린 화면이 오히려 렉으로 보이기 때문. */
+    if (this.scene.fxLevel === 1) {
+      const prevScale = this.scene.time.timeScale;
+      this.scene.time.timeScale = 0.35;
+      this.scene.tweens.timeScale = 0.35;
+      this.scene.time.delayedCall(180 * 0.35 + 20, () => {
+        this.scene.time.timeScale = prevScale;
+        this.scene.tweens.timeScale = 1;
+      });
+    }
     /* v1.4.11 — 페이즈 전환 대형 플래시 + 룬진 펄스 (hv2_flash2·hv2_magiccircle2) */
     this.bossFx("hv2_flash2", this.x, this.y - 20, { tint: 0xffffff, scale: 2.1, alpha: 0.7, dur: 320, depth: 29 });
     this.bossFx("hv2_magiccircle2", this.x, this.y + 8, { tint: this.def.orbTint, scale: 1.5, alpha: 0.8, dur: 620, depth: 8 });

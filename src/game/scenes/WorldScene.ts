@@ -3486,14 +3486,35 @@ export class WorldScene extends Phaser.Scene {
     // 크리티컬: 금색 큰 글씨 + 느낌표 (타격감 강조) · 약점: 원소색
     // v1.0.7 — 크리티컬 가시성 확보: 스케일 1.75→1.42 · 지속 740→600ms (유저 지시)
     // v1.4.0 (규칙 1-1) — 표시 수치는 전역 포맷터로 소수 둘째 자리 반올림
-    const c = color ?? (crit ? "#ffd76a" : "#ffffff");
+    /* v1.1.3 (#개편 타격감) — 피해량 구간별 색/크기 차등.
+     *  종전엔 일반 타격이 전부 흰색 1.08배라 30 데미지와 3000 데미지가 똑같아 보였다.
+     *  "내가 지금 세게 때렸나"를 숫자를 읽지 않고 색으로 알 수 있어야 한다.
+     *  주의: 호출부가 color를 지정한 경우(원소 약점)엔 그 색을 존중하고 크기만 조정한다. */
+    const playerAtk = this.player ? Math.max(1, this.player.atkTotal ?? 1) : 0;
+    const ratio = playerAtk > 0 ? val / playerAtk : 1; // 내 공격력 대비 배율
+    let tierColor = "#ffffff";
+    let tierScale = 1.0;
+    if (ratio >= 3) {
+      tierColor = "#ff6b6b"; // 압도적 — 적색
+      tierScale = 1.32;
+    } else if (ratio >= 2) {
+      tierColor = "#ffa94d"; // 강타 — 주황
+      tierScale = 1.2;
+    } else if (ratio >= 1.2) {
+      tierColor = "#c8f7c5"; // 평타 이상 — 연녹
+      tierScale = 1.08;
+    } else if (ratio < 0.6) {
+      tierColor = "#b8c4d9"; // 경타 — 회청(배경에 묻히지 않게 채도 유지)
+      tierScale = 0.94;
+    }
+    const c = color ?? (crit ? "#ffd76a" : tierColor);
     const label = `${prefix ? prefix + " " : ""}${fmt(val)}${crit ? "!" : ""}`;
     t.setText(label).setColor(c);
     t.setPosition(x, y)
       .setActive(true)
       .setVisible(true)
       .setAlpha(1)
-      .setScale(crit ? 1.42 : 1.08);
+      .setScale(crit ? 1.42 : tierScale);
     this.tweens.add({
       targets: t,
       y: y - (crit ? 46 : 36),
@@ -14016,6 +14037,16 @@ export class WorldScene extends Phaser.Scene {
       buffs: this.player.buffs.map((b) => ({ key: b.key, remain: b.remain, total: b.total })),
       ap: this.player.ap,
       speed: Math.round(this.player.speed * 10) / 10,
+      /* v1.1.3 (#개편) — 상태이상 HUD 노출. Player.dots는 내부 필드라 여기서 형태를 맞춰 넘긴다. */
+      dots: (() => {
+        const d = this.player.dots;
+        const now = this.time.now;
+        const out: { kind: "poison" | "bleed" | "slow"; remain: number; total: number }[] = [];
+        if (d.poison) out.push({ kind: "poison", remain: Math.max(0, d.poison.until - now), total: 5000 });
+        if (d.bleed) out.push({ kind: "bleed", remain: Math.max(0, d.bleed.until - now), total: 5000 });
+        if (d.slow) out.push({ kind: "slow", remain: Math.max(0, d.slow.until - now), total: 4000 });
+        return out;
+      })(),
     });
     this.emitRpgState();
   }

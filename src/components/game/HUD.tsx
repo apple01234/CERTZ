@@ -213,6 +213,31 @@ export function HUD({
               ))}
             </div>
           )}
+          {/* v1.1.3 (#개편) — 상태이상 표시. 중독/출혈/감속에 걸려도 화면에 아무 표시가 없어
+           *  "체력이 왜 계속 줄지"를 알 수 없었다. 버프와 구분되게 붉은 테두리+남은 초로 그린다. */}
+          {hud.dots && hud.dots.length > 0 && (
+            <div className="mt-0.5 flex items-center gap-1">
+              {hud.dots.map((d) => {
+                const meta =
+                  d.kind === "poison" ? { icon: "💀", label: "중독", color: "#9ade8a" }
+                    : d.kind === "bleed" ? { icon: "🩸", label: "출혈", color: "#ff8a8a" }
+                      : { icon: "🐌", label: "감속", color: "#8ab6ff" };
+                const pct = d.total > 0 ? Math.max(0, Math.min(100, (d.remain / d.total) * 100)) : 0;
+                return (
+                  <div
+                    key={d.kind}
+                    title={`${meta.label} ${Math.ceil(d.remain / 1000)}초`}
+                    className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-md border border-rose-400/70 bg-black/70 text-[13px] leading-none"
+                  >
+                    <span>{meta.icon}</span>
+                    <div className="absolute inset-x-0 bottom-0 h-[3px] bg-black/70">
+                      <div className="h-full" style={{ width: `${pct}%`, background: meta.color }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

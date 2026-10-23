@@ -227,10 +227,12 @@ export function TouchControls({
   const knobR = Math.round(26 * uiScale);
 
   const unlocked = [
-    { key: "s1", name: s1Name || "회전베기", mp: 15, ready: s1Ready, cd: s1Pct, icon: skills.s1Icon, emit: "input:skill1", hint: km.skill1 },
-    { key: "s2", name: s2Name || "돌진베기", mp: 20, ready: s2Ready, cd: s2Pct, icon: skills.s2Icon, emit: "input:skill2", hint: km.skill2 },
-    { key: "s3", name: s3Name ?? "", mp: 25, ready: s3Ready, cd: s3Pct, icon: skills.s3Icon, emit: "input:skill3", hint: km.skill3 },
-    { key: "s4", name: s4Name ?? "", mp: 40, ready: s4Ready, cd: s4Pct, icon: skills.s4Icon, emit: "input:skill4", hint: km.skill4 },
+    /* v1.1.3 (#개편) — cdMax를 함께 넘겨 "남은 초"를 표시한다. 종전엔 어두운 오버레이만
+     *  있어서 쿨이 얼마나 남았는지 눈금으로만 가늠해야 했다(궁극기 60초처럼 긴 쿨은 특히 불편). */
+    { key: "s1", name: s1Name || "회전베기", mp: 15, ready: s1Ready, cd: s1Pct, cdMax: skills.s1Max, icon: skills.s1Icon, emit: "input:skill1", hint: km.skill1 },
+    { key: "s2", name: s2Name || "돌진베기", mp: 20, ready: s2Ready, cd: s2Pct, cdMax: skills.s2Max, icon: skills.s2Icon, emit: "input:skill2", hint: km.skill2 },
+    { key: "s3", name: s3Name ?? "", mp: 25, ready: s3Ready, cd: s3Pct, cdMax: skills.s3Max, icon: skills.s3Icon, emit: "input:skill3", hint: km.skill3 },
+    { key: "s4", name: s4Name ?? "", mp: 40, ready: s4Ready, cd: s4Pct, cdMax: skills.s4Max, icon: skills.s4Icon, emit: "input:skill4", hint: km.skill4 },
   ].filter((s) => s.name); // 미해금(빈 이름) 스킬은 그리드에서 제외
   const hasUlt = !!s5Name;
   /* vc146 (#2) — 제2궁극기 버튼 표시 조건 */
@@ -340,6 +342,7 @@ export function TouchControls({
               <SkillButton
                 ready={s.ready}
                 cdPct={s.cd}
+                cdMax={s.cdMax}
                 label={s.name}
                 mp={s.mp}
                 icon={s.icon}
@@ -492,6 +495,7 @@ function SkillButton({
   mp,
   ready,
   cdPct,
+  cdMax,
   onDown,
   icon,
   ult,
@@ -505,6 +509,8 @@ function SkillButton({
   mp: number;
   ready: boolean;
   cdPct: number;
+  /** v1.1.3 — 쿨 전체 길이(ms). 남은 초 표시용 (없으면 초를 숨긴다) */
+  cdMax?: number;
   onDown: () => void;
   icon?: string;
   /** v3.2.0 — 궁극기 전용 황금 스타일 */
@@ -566,10 +572,22 @@ function SkillButton({
       <span className={`max-w-[42px] truncate text-[7px] font-bold leading-tight sm:max-w-none sm:text-[8px] ${ult ? "text-amber-100" : ult2 ? "text-fuchsia-100" : ""}`}>{label}</span>
       <span className={`text-[7px] font-bold sm:text-[8px] ${ult ? "text-amber-200" : ult2 ? "text-fuchsia-200" : "text-[#a8c0ff]"}`}>{mp}MP</span>
       {cdPct > 0 && (
-        <div
-          className="pointer-events-none absolute inset-0 bg-black/60"
-          style={{ clipPath: `inset(${100 - cdPct}% 0 0 0)` }}
-        />
+        <>
+          <div
+            className="pointer-events-none absolute inset-0 bg-black/60"
+            style={{ clipPath: `inset(${100 - cdPct}% 0 0 0)` }}
+          />
+          {/* v1.1.3 (#개편) — 남은 쿨다운 초. 1초 이상이면 정수, 1초 미만이면 소수 한 자리.
+              숫자가 있어야 "언제 누를 수 있는지"를 세지 않고 알 수 있다. */}
+          {cdMax !== undefined && cdMax > 0 && (
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[11px] font-black text-white [text-shadow:0_1px_3px_#000,0_0_4px_#000]">
+              {(() => {
+                const remain = (cdMax * (100 - cdPct)) / 100 / 1000;
+                return remain >= 10 ? Math.ceil(remain) : remain.toFixed(1);
+              })()}
+            </span>
+          )}
+        </>
       )}
     </button>
   );

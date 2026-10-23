@@ -475,6 +475,31 @@ function QtyStepper({
       >
         +
       </button>
+      {/* v1.1.3 (#개편) — 다중 구매 프리셋. 99까지 −/+로만 올리면 물약 50개 사는 데
+       *  49번을 눌러야 했다. 10·MAX 단축으로 대량 구매를 한 번에 끝낸다.
+       *  MAX는 스택 상한(99)이다 — 에메랄드가 모자라면 확인창에서 "부족"으로 한 번 더 막는다. */}
+      <button
+        aria-label="10개"
+        onClick={(e) => {
+          e.stopPropagation();
+          setDraft(null);
+          onChange(Math.min(99, 10));
+        }}
+        className="tap-safe h-6 border-l border-white/15 px-1.5 text-[9px] font-black text-cyan-200/90 hover:bg-white/10 active:scale-90"
+      >
+        10
+      </button>
+      <button
+        aria-label="최대 수량"
+        onClick={(e) => {
+          e.stopPropagation();
+          setDraft(null);
+          onChange(99);
+        }}
+        className="tap-safe h-6 border-l border-white/15 px-1.5 text-[9px] font-black text-amber-200/90 hover:bg-white/10 active:scale-90"
+      >
+        MAX
+      </button>
     </div>
   );
 }
@@ -872,10 +897,14 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
 
         <p className="mt-2 text-center text-[10px] text-white/55">에메랄드 획득: 보스 +2 · 정예 +1 · 반복 의뢰 사이클 +1 · ESC로 닫기</p>
 
-        {/* v1.0.16 (B2) — 구매 확인. 배경 탭은 취소, 확인을 눌러야만 지출된다.
-            inner 패널 안쪽에 두어 stopPropagation(위 :528)이 함께 적용된다 — 확인 중 상점이 닫히지 않는다. */}
+        {/* v1.1.3 (#상점확정창버그) — 유저 리포트: "구매 확정창이 맨 위에 뜨고 스크롤을 내리면
+            창은 따라오지 않는다". 원인은 이 오버레이가 `absolute`인데 부모가
+            `overflow-y-auto`인 스크롤 컨테이너라, 오버레이가 '스크롤되는 내용'의 일부가 되어
+            inset-0이 패널의 전체 스크롤 높이를 기준으로 잡혔다 → 처음 위치(맨 위)에 깔리고
+            스크롤하면 화면 밖으로 밀려났다.
+            해결: `fixed`로 뷰포트 고정(scroll 컨테이너 밖 기준). 배경 탭 취소·구분선은 유지. */}
         {confirmBuy && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/75 p-3" onPointerDown={(e) => { e.stopPropagation(); setConfirmBuy(null); }}>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-3" onPointerDown={(e) => { e.stopPropagation(); setConfirmBuy(null); }}>
             <div className="game-panel w-full max-w-[300px] p-3.5" onPointerDown={(e) => e.stopPropagation()}>
               <p className="text-[13px] font-black text-amber-200">정말 구매하시겠습니까?</p>
               <p className="mt-1 text-[11px] font-bold leading-relaxed text-white/65">

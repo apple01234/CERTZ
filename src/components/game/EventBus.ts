@@ -33,6 +33,9 @@ export type HudState = {
   ap: number;
   /** 최종 이동 속도 (스탯 창 표시용) */
   speed: number;
+  /** v1.1.3 (#개편) — 현재 걸린 상태이상(중독/출혈/감속). 종전엔 화면에 표시가 전혀 없어
+   *  "왜 체력이 계속 줄지"를 알 수 없었다. 남은 시간(ms)을 함께 보내 HUD가 게이지를 그린다. */
+  dots?: { kind: "poison" | "bleed" | "slow"; remain: number; total: number }[];
 };
 
 /** 인벤토리/상점 패널 상태 */

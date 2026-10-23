@@ -501,9 +501,10 @@ export function Lobby({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      {/* 삭제 확인 모달 */}
+      {/* 삭제 확인 모달 — v1.1.3 (#모달스크롤버그) 루트가 overflow-y-auto 스크롤 컨테이너라
+          absolute면 스크롤과 함께 밀려난다. fixed로 뷰포트 고정. */}
       {delId && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70" onPointerDown={() => setDelId(null)}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70" onPointerDown={() => setDelId(null)}>
           <div className="game-panel w-[min(92vw,340px)] p-4" onPointerDown={(e) => e.stopPropagation()}>
             <p className="text-[13px] font-black text-[#ff9a8a]">정말 삭제하시겠습니까?</p>
             <p className="mt-1 text-[11px] font-bold leading-relaxed text-white/60">

@@ -8,13 +8,13 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.1.2";
-const LATEST_CODE = 163;
+const LATEST_VERSION = "1.1.3";
+const LATEST_CODE = 164;
 const VERSION_NOTE =
-  "v1.1.2 (vc163) — BGM 분위기 매칭 2차 정밀화: 채널의 테마 70개에서 1,602곡을 확보한 뒤, 챕터 정서에 정확히 맞는 전용 테마를 직접 매칭했다(마왕성=Dark Fantasy, 동굴=Cave Exploration, 저택=Mystery Manor, 비 도시=Lofi Night City, 고대 유적=Ruins RPG, 최종결전=Final Battle). 어두운 챕터(설원·동굴·룬광산·저승·세계수뿌리)에 밝은 곡이 배정된 건 0건이며, 10구역 중 3구역마다 곡이 바뀌는 규칙은 유지된다. 회피 기능은 제거된 상태.";
+  "v1.1.3 (vc164) — ①상점 구매 확정창이 스크롤을 내리면 화면 밖으로 밀리던 버그를 고쳤다(스크롤 컨테이너 안 absolute → 뷰포트 fixed, 로비 캐릭터 삭제창도 동일 원인이라 함께 수정). ②디자인·게임성 개편: 스킬 버튼에 남은 쿨다운 초 표시, 피해량 구간별 색·크기 차등(약/평/강/압도), 보스 페이즈 전환 0.18초 슬로우모션, 피격 시 화면 가장자리에 공격 방향 호 표시, 중독·출혈·감속 상태이상을 HUD에 남은 시간 게이지로 표시, 상점 수량 10/MAX 단축 버튼, 로딩 팁 5→24개.";
 const APK_MIRROR =
   /* vc159 — APK는 릴리스 태그 v1.0.17에 있다(이전 태그는 vc158까지 보유). */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.1.2/SERTZ-vc163.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.1.3/SERTZ-vc164.apk";
 
 export async function GET() {
   return NextResponse.json({
