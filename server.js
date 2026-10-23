@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc157 — APK는 릴리스 태그 v1.0.16에 있다(이전 태그는 vc157까지 보유).
    *  태그를 v1.0.9로 두면 SERTZ-vc157.apk가 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.1.1/SERTZ-vc162.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.1.2/SERTZ-vc163.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,10 +69,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.1.1";
-  const LATEST_CODE = 162;
+  const LATEST_VERSION = "1.1.2";
+  const LATEST_CODE = 163;
     const VERSION_NOTE =
-  "v1.1.1 (vc162) — 유저 지시 4건 반영: ①회피(구르기) 기능을 완전히 제거했다(Space 키·모바일 버튼·키 설정 항목 포함). ②어두운 지역에 밝은 BGM이 나오던 배정 오류를 고쳤다 — 이제 챕터 정서를 먼저 정하고 그 정서의 곡만 쓴다(설원·동굴·룬광산·저승·세계수뿌리에는 느리고 어두운 곡만, 밝은 로비·서커스·아침 곡은 배제). ③10구역 중 3구역마다 BGM이 바뀐다(1~3/4~6/7~9 각각 다른 곡 + 10구역 보스 전용). ④BGM 51슬롯을 스테이지 분위기에 맞춰 전면 재배정했다. 곡별 RMS 실측(-20.0~-13.0dB) 게인 보정 유지.";
+  "v1.1.2 (vc163) — BGM 분위기 매칭 2차 정밀화: 채널의 테마 70개에서 1,602곡을 확보한 뒤, 챕터 정서에 정확히 맞는 전용 테마를 직접 매칭했다(마왕성=Dark Fantasy, 동굴=Cave Exploration, 저택=Mystery Manor, 비 도시=Lofi Night City, 고대 유적=Ruins RPG, 최종결전=Final Battle). 어두운 챕터(설원·동굴·룬광산·저승·세계수뿌리)에 밝은 곡이 배정된 건 0건이며, 10구역 중 3구역마다 곡이 바뀌는 규칙은 유지된다. 회피 기능은 제거된 상태.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

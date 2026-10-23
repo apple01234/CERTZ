@@ -155,62 +155,65 @@ export const BGM_PLAYLISTS: Record<BGMKind, string[]> = {
 };
 
 
-/* ================= v1.1.1 — 곡별 RMS 실측 보정 =================
- *  새 BGM 55슬롯을 ffmpeg volumedetect로 실측: -20.0 ~ -13.0dB(편차 7.0dB).
- *  AI 생성곡은 테마마다 마스터 레벨이 달라 그대로 쓰면 구역 전환마다 음량이 튄다.
- *  값 = 10^((목표 -16.5dB - 실측RMS)/20), -4 ~ +6dB 클램프.
- *  곡 교체 시 재측정: ffmpeg -i <f> -af volumedetect -f null - */
+/* ================= v1.1.2 — 곡별 RMS 실측 보정 =================
+ *  BGM 55슬롯 실측: -21.3 ~ -14.0dB(편차 7.3dB). AI 곡은 테마마다 마스터 레벨이 달라
+ *  그대로 쓰면 구역 전환(3스테이지마다 교체)에서 음량이 튄다.
+ *  값 = 10^((목표 -16.5dB - 실측RMS)/20), -4 ~ +7dB 클램프. */
 const BGM_GAIN_DB: Record<string, number> = {
   bgm_abyss_1: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_abyss_2: 1.109,   // +0.9dB ← RMS -17.4dB
-  bgm_abyss_3: 1.135,   // +1.1dB ← RMS -17.6dB
-  bgm_abyss_boss: 0.759,   // -2.4dB ← RMS -14.1dB
-  bgm_alfheim_1: 1.035,   // +0.3dB ← RMS -16.8dB
-  bgm_alfheim_2: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_alfheim_3: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_alfheim_boss: 1.216,   // +1.7dB ← RMS -18.2dB
-  bgm_cave_1: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_cave_2: 0.871,   // -1.2dB ← RMS -15.3dB
-  bgm_cave_3: 0.989,   // -0.1dB ← RMS -16.4dB
-  bgm_cave_boss: 0.785,   // -2.1dB ← RMS -14.4dB
-  bgm_cave_water: 1.023,   // +0.2dB ← RMS -16.7dB
-  bgm_forest_1: 1.135,   // +1.1dB ← RMS -17.6dB
-  bgm_forest_2: 1.189,   // +1.5dB ← RMS -18.0dB
-  bgm_forest_3: 1.035,   // +0.3dB ← RMS -16.8dB
-  bgm_forest_boss: 0.741,   // -2.6dB ← RMS -13.9dB
-  bgm_hel_1: 0.977,   // -0.2dB ← RMS -16.3dB
-  bgm_hel_2: 1.047,   // +0.4dB ← RMS -16.9dB
-  bgm_hel_3: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_hel_boss: 1.245,   // +1.9dB ← RMS -18.4dB
+  bgm_abyss_2: 0.891,   // -1.0dB ← RMS -15.5dB
+  bgm_abyss_3: 1.0,   // +0.0dB ← RMS -16.5dB
+  bgm_abyss_boss: 0.977,   // -0.2dB ← RMS -16.3dB
+  bgm_alfheim_1: 0.977,   // -0.2dB ← RMS -16.3dB
+  bgm_alfheim_2: 1.084,   // +0.7dB ← RMS -17.2dB
+  bgm_alfheim_3: 1.349,   // +2.6dB ← RMS -19.1dB
+  bgm_alfheim_boss: 1.334,   // +2.5dB ← RMS -19.0dB
+  bgm_battle: 0.912,   // -0.8dB ← RMS -15.7dB
+  bgm_cave_1: 1.738,   // +4.8dB ← RMS -21.3dB
+  bgm_cave_2: 0.933,   // -0.6dB ← RMS -15.9dB
+  bgm_cave_3: 1.38,   // +2.8dB ← RMS -19.3dB
+  bgm_cave_boss: 1.023,   // +0.2dB ← RMS -16.7dB
+  bgm_cave_water: 0.955,   // -0.4dB ← RMS -16.1dB
+  bgm_forest_1: 1.059,   // +0.5dB ← RMS -17.0dB
+  bgm_forest_2: 1.023,   // +0.2dB ← RMS -16.7dB
+  bgm_forest_3: 0.977,   // -0.2dB ← RMS -16.3dB
+  bgm_forest_boss: 1.096,   // +0.8dB ← RMS -17.3dB
+  bgm_hel_1: 1.084,   // +0.7dB ← RMS -17.2dB
+  bgm_hel_2: 0.902,   // -0.9dB ← RMS -15.6dB
+  bgm_hel_3: 0.955,   // -0.4dB ← RMS -16.1dB
+  bgm_hel_boss: 1.148,   // +1.2dB ← RMS -17.7dB
   bgm_interior_home: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_interior_inn: 1.059,   // +0.5dB ← RMS -17.0dB
-  bgm_kingdom_1: 1.059,   // +0.5dB ← RMS -17.0dB
-  bgm_kingdom_2: 0.841,   // -1.5dB ← RMS -15.0dB
-  bgm_kingdom_3: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_kingdom_boss: 0.785,   // -2.1dB ← RMS -14.4dB
-  bgm_muspelheim_1: 0.668,   // -3.5dB ← RMS -13.0dB
-  bgm_muspelheim_2: 0.902,   // -0.9dB ← RMS -15.6dB
-  bgm_muspelheim_3: 0.933,   // -0.6dB ← RMS -15.9dB
-  bgm_muspelheim_boss: 0.832,   // -1.6dB ← RMS -14.9dB
-  bgm_nidavellir_1: 0.923,   // -0.7dB ← RMS -15.8dB
-  bgm_nidavellir_2: 0.851,   // -1.4dB ← RMS -15.1dB
-  bgm_nidavellir_3: 0.841,   // -1.5dB ← RMS -15.0dB
-  bgm_nidavellir_boss: 0.841,   // -1.5dB ← RMS -15.0dB
-  bgm_niflheim_1: 1.109,   // +0.9dB ← RMS -17.4dB
-  bgm_niflheim_2: 1.135,   // +1.1dB ← RMS -17.6dB
-  bgm_niflheim_3: 1.148,   // +1.2dB ← RMS -17.7dB
-  bgm_niflheim_boss: 1.109,   // +0.9dB ← RMS -17.4dB
-  bgm_title: 0.861,   // -1.3dB ← RMS -15.2dB
-  bgm_title2: 0.944,   // -0.5dB ← RMS -16.0dB
-  bgm_village_abyss: 1.109,   // +0.9dB ← RMS -17.4dB
-  bgm_village_alfheim: 0.966,   // -0.3dB ← RMS -16.2dB
-  bgm_village_cave: 0.891,   // -1.0dB ← RMS -15.5dB
-  bgm_village_forest: 1.084,   // +0.7dB ← RMS -17.2dB
+  bgm_interior_inn: 1.084,   // +0.7dB ← RMS -17.2dB
+  bgm_kingdom_1: 1.122,   // +1.0dB ← RMS -17.5dB
+  bgm_kingdom_2: 1.047,   // +0.4dB ← RMS -16.9dB
+  bgm_kingdom_3: 1.274,   // +2.1dB ← RMS -18.6dB
+  bgm_kingdom_boss: 0.933,   // -0.6dB ← RMS -15.9dB
+  bgm_kitchen: 0.813,   // -1.8dB ← RMS -14.7dB
+  bgm_lobby: 0.977,   // -0.2dB ← RMS -16.3dB
+  bgm_muspelheim_1: 1.148,   // +1.2dB ← RMS -17.7dB
+  bgm_muspelheim_2: 0.861,   // -1.3dB ← RMS -15.2dB
+  bgm_muspelheim_3: 1.122,   // +1.0dB ← RMS -17.5dB
+  bgm_muspelheim_boss: 0.933,   // -0.6dB ← RMS -15.9dB
+  bgm_nidavellir_1: 0.841,   // -1.5dB ← RMS -15.0dB
+  bgm_nidavellir_2: 1.023,   // +0.2dB ← RMS -16.7dB
+  bgm_nidavellir_3: 0.902,   // -0.9dB ← RMS -15.6dB
+  bgm_nidavellir_boss: 0.977,   // -0.2dB ← RMS -16.3dB
+  bgm_niflheim_1: 1.084,   // +0.7dB ← RMS -17.2dB
+  bgm_niflheim_2: 0.813,   // -1.8dB ← RMS -14.7dB
+  bgm_niflheim_3: 0.966,   // -0.3dB ← RMS -16.2dB
+  bgm_niflheim_boss: 0.861,   // -1.3dB ← RMS -15.2dB
+  bgm_shop: 1.0,   // +0.0dB ← RMS -16.5dB
+  bgm_title: 1.072,   // +0.6dB ← RMS -17.1dB
+  bgm_title2: 1.109,   // +0.9dB ← RMS -17.4dB
+  bgm_village_abyss: 1.023,   // +0.2dB ← RMS -16.7dB
+  bgm_village_alfheim: 1.047,   // +0.4dB ← RMS -16.9dB
+  bgm_village_cave: 1.245,   // +1.9dB ← RMS -18.4dB
+  bgm_village_forest: 1.429,   // +3.1dB ← RMS -19.6dB
   bgm_village_hel: 1.175,   // +1.4dB ← RMS -17.9dB
-  bgm_village_kingdom: 0.881,   // -1.1dB ← RMS -15.4dB
-  bgm_village_muspelheim: 1.0,   // +0.0dB ← RMS -16.5dB
-  bgm_village_nidavellir: 0.989,   // -0.1dB ← RMS -16.4dB
-  bgm_village_niflheim: 1.109,   // +0.9dB ← RMS -17.4dB
+  bgm_village_kingdom: 1.059,   // +0.5dB ← RMS -17.0dB
+  bgm_village_muspelheim: 0.75,   // -2.5dB ← RMS -14.0dB
+  bgm_village_nidavellir: 0.881,   // -1.1dB ← RMS -15.4dB
+  bgm_village_niflheim: 1.161,   // +1.3dB ← RMS -17.8dB
   bgm_village_village: 1.072,   // +0.6dB ← RMS -17.1dB
 };
 /** 곡별 정규화 게인 (표에 없으면 1.0 — 신규 곡은 보정 없이 원음) */
