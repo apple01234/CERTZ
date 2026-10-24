@@ -256,6 +256,8 @@ export type SaveData = {
   inf?: import("./infinite").InfSave;
   /* v1.1.8 (#개편 A46) — 낚시. 물고기 도감(caught)과 누적 기록만 저장한다.
    *  실제 타이밍 게임은 필드에서 즉석 진행되므로 진행 상태는 저장할 필요가 없다. */
+  /* v1.1.9 (#개편 A48) — 채집 재료 보유량 (GatherKey → 개수). 요리/제작 재료. */
+  gatherBag?: Record<string, number>;
   fishing?: {
     /** 잡은 물고기 키 목록 (도감 — 중복 없이) */
     caught: string[];

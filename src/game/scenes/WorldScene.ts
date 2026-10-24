@@ -54,6 +54,16 @@ import { DriveFX } from "../fx/DriveFX"; // v1.3.0 — Drive 팩 VFX 통합 (참
 import { applyToonStyle, clearToonStyle, applyToonCamera, toonEnabled, setToonEnabled } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일) · vc142 — 화면 전체 툰 셰이딩
 import { Vfx3D } from "../fx/Vfx3D"; // vc142 (#9) — Three.js 3D VFX 오버레이 (phas3d식)
 import { initTrade, tradeInvite, tradeAccept, tradeDeny, tradeCancel, tradeAddItem, tradeRemoveItem, tradeSetCurrency, tradeLock } from "../trade"; // vc142 (#3) — 1:1 플레이어 거래
+/** v1.1.9 (#개편 A48) — 채집 노드 */
+type GatherNode = {
+  x: number;
+  y: number;
+  key: GatherKey;
+  sprite: Phaser.GameObjects.Image;
+  readyAt: number;
+};
+
+import { gatherPoolFor, GATHER_BY_KEY, COOK_RECIPES, COOK_BY_KEY, canCook, applyCook, dishBuffText, COOK_PERFECT_CHANCE, type GatherKey } from "../gathering"; // v1.1.9 (#개편 A47·A48)
 import { rollFish, rollWeight, makeCatch, FISH_TIER_META, type FishingZone } from "../fishing"; // v1.1.8 (#개편 A46) 낚시
 import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
@@ -1429,6 +1439,9 @@ export class WorldScene extends Phaser.Scene {
         totalMiss: Math.max(0, Math.round(fs2?.totalMiss ?? 0)),
         bestWeight: Math.max(0, Number(fs2?.bestWeight ?? 0)),
       };
+      /* v1.1.9 (#개편 A48) — 채집 재료 복원 */
+      this.player.gatherBag = savedPlayer.gatherBag && typeof savedPlayer.gatherBag === "object"
+        ? { ...savedPlayer.gatherBag } : {};
       /* v1.1.5 (#개편 통계) — 누적 기록 복원 (구 세이브는 undefined → 0/1) */
       const ps = savedPlayer.playStats;
       this.statSavedSec = Math.max(0, Math.round(ps?.playSec ?? 0));
@@ -1734,6 +1747,8 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 미니맵 (2D MMORPG 기본 요소) ---------- */
     this.minimap = this.add.graphics().setDepth(95).setScrollFactor(0).setAlpha(0.85);
     this.redrawMinimap();
+    /* v1.1.9 (#개편 A48) — 지역별 채집 노드 배치 (필드에만) */
+    if (!this.stageDef.isVillage) this.spawnGatherNodes();
 
     /* v3.0.24 (#보스재도전) — 클리어 챕터 보스 재도전: 보스 구역 도착 직후 재림 보스 스폰 */
     if (this.pendingReplayBoss) {
@@ -7450,6 +7465,23 @@ export class WorldScene extends Phaser.Scene {
   onLevelUp() {
     /* v1.2.0 (#8) — 레벨업 ★ 감정 버블 (씹덕 감성) */
     if (this.player) this.emote("star", this.player.x, this.player.y - 40);
+    /* v1.1.9 (#개편 B25) — 레벨업 카메라 줌인.
+     *  레벨업은 이 게임에서 가장 빈번한 긍정 이벤트인데 연출이 텍스트뿐이었다.
+     *  짧게 당겼다 복귀(150ms)시켜 "성장했다"는 감각을 만든다.
+     *  fxLevel 0(연출 끔)이면 생략. */
+    if (this.player && this.fxLevel > 0) {
+      const cam = this.cameras.main;
+      const base = cam.zoom;
+      this.tweens.add({
+        targets: cam,
+        zoom: base * 1.06,
+        duration: 150,
+        yoyo: true,
+        ease: "Quad.easeOut",
+        onComplete: () => { cam.zoom = base; },
+      });
+      this.spawnShockwave(this.player.x, this.player.y, 0xffe29a, 0.9, 380, 0.5);
+    }
     this.tryCompleteLevel();
     if (this.autoAlloc && this.player.ap > 0) {
       if (this.player.allocateAutoPoints()) {
@@ -7825,6 +7857,30 @@ export class WorldScene extends Phaser.Scene {
     /* vc147 (#19) — 각성의 대가: 보스 격파형 단계 카운트 (탑 보스도 인정) */
     if (def?.key) this.fifth2Progress({ kind: "boss", key: def.key });
     audio.sfx.bossDie();
+    /* v1.1.9 (#개편 B24) — 보스 사망 슬로우모션.
+     *  보스 격파는 한 판의 클라이맥스인데 연출이 일반 몹과 같았다(폭발+소리).
+     *  0.28배속으로 620ms 늘려 "끝났다"를 체감시킨 뒤 원복. 암전도 함께.
+     *  fxLevel 0이면 생략(연출 끈 유저 배려). */
+    if (this.fxLevel > 0 && def) {
+      this.time.timeScale = 0.28;
+      this.tweens.timeScale = 0.28;
+      const veil = this.add
+        .rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0)
+        .setOrigin(0)
+        .setScrollFactor(0)
+        .setDepth(9500);
+      this.tweens.add({ targets: veil, fillAlpha: 0.42, duration: 220 });
+      this.time.delayedCall(220 * 0.28, () => {
+        this.tweens.add({
+          targets: veil,
+          fillAlpha: 0,
+          duration: 380,
+          onComplete: () => veil.destroy(),
+        });
+        this.time.timeScale = 1;
+        this.tweens.timeScale = 1;
+      });
+    }
     /* v1.0.8 — ① 탑 보스층 격파: 스토리/재림 경로와 완전 분리 (층 클리어 처리만) */
     if (this.towerActive) {
       this.towerBossRef = null;
@@ -8135,7 +8191,10 @@ export class WorldScene extends Phaser.Scene {
     const onDialogueChoice = (p: { id?: string } | undefined) => {
       if (p?.id === "bossleave") this.leaveBossBattle();
     };
-    const onInteract = () => this.tryInteract();
+    /* v1.1.9 (#개편 A48) — E키: 채집 노드가 가까우면 채집이 우선, 없으면 기존 상호작용 */
+    const onInteract = () => {
+      if (!this.tryGather()) this.tryInteract();
+    };
     const onKeymapChanged = (m: KeyMap) => {
       this.keymap = m;
     };
@@ -9048,6 +9107,10 @@ export class WorldScene extends Phaser.Scene {
     };
     EventBus.on("rpg:lockItem", onLockItem);
 
+    /* v1.1.9 (#개편 A47) — 요리 제작 */
+    const onCook = (v: { key: string }) => { this.cookDish(v.key); };
+    EventBus.on("rpg:cook", onCook);
+
     const onSell = (v: { key: string; qty?: number }) => {
       if (!this.player || this.dialoguing) return;
       /* v1.1.7 (#개편 A87) — 잠근 아이템은 판매 불가. 실수로 좋은 장비를 파는 사고 방지. */
@@ -9718,6 +9781,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:warp", onWarp);
       EventBus.off("rpg:bossReplay", onBossReplay);
       EventBus.off("rpg:sell", onSell);
+      EventBus.off("rpg:cook", onCook);
       EventBus.off("rpg:lockItem", onLockItem);
       EventBus.off("rpg:sellPotion", onSellPotion);
       EventBus.off("rpg:bmBuy", onBmBuy);
@@ -9964,6 +10028,8 @@ export class WorldScene extends Phaser.Scene {
     const useTouch = this.touchMove.lengthSq() > 0.01;
     // v2.5 — 자동사냥 (펫 보유 시): 가장 가까운 적 추적·공격 — 조이스틱/키보드 입력 시 수동 우선
     this.tickAutoHunt();
+    /* v1.1.9 (#개편 A48) — 채집 노드 리스폰/근접 판정 */
+    this.tickGatherNodes(this.time.now);
     /* v1.4.12 (#15 유저 지시 "자동전투시 식인초를 피해서 가게 해줘") — 식인초 회피 후처리 */
     this.autoPlantAvoid();
     // v3.0.14 — 끼임 탈출: 이동 명령 중 제자리면 측면 탈출로 autoHuntMove 덮어씀
@@ -14175,6 +14241,7 @@ export class WorldScene extends Phaser.Scene {
       /* v1.1.5 (#개편 통계) — 스탯 창 실시간 표시 */
       lockedItems: [...this.player.lockedItems], // v1.1.7 (#개편 A87)
       fishing: { ...this.player.fishSave, caught: [...this.player.fishSave.caught] }, // v1.1.8 (#개편 A46)
+      gatherBag: { ...this.player.gatherBag }, // v1.1.9 (#개편 A48)
       playStats: {
         playSec: Math.round(this.statSavedSec + Math.max(0, (this.time.now - this.startTime) / 1000)),
         kills: this.totalKills,
@@ -15067,6 +15134,112 @@ export class WorldScene extends Phaser.Scene {
     const ch = key.replace(/\d+$/, "").replace(/v$/, "");
     const valid: FishingZone[] = ["forest", "kingdom", "alfheim", "muspelheim", "niflheim", "cave", "nidavellir", "hel", "abyss"];
     return (valid.includes(ch as FishingZone) ? ch : "forest") as FishingZone;
+  }
+
+  /* ================= v1.1.9 (#개편 A48) — 채집 =================
+   *  필드에 지역별 채집 노드가 흩어져 있고, 다가가 E키(상호작용)로 캔다.
+   *  노드는 일정 시간 뒤 리스폰 — 사냥하다 눈에 걸리면 줍는 리듬을 의도했다.
+   *  재료는 요리(A47)와 제작대에서 쓰인다. */
+  private gatherNodes: GatherNode[] = [];
+  private gatherAccum = 0;
+
+  /** 스테이지 진입 시 노드 배치 (지역 풀에서 6~9개) */
+  private spawnGatherNodes() {
+    for (const n of this.gatherNodes) { try { n.sprite.destroy(); } catch { /* 이미 파괴 */ } }
+    this.gatherNodes = [];
+    const zone = this.currentFishingZone();
+    const pool = gatherPoolFor(zone);
+    if (pool.length === 0) return;
+    const n = 6 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < n; i++) {
+      const def = pool[Math.floor(Math.random() * pool.length)];
+      const x = this.player.x + (Math.random() - 0.5) * 760;
+      const y = this.player.y + (Math.random() - 0.5) * 520;
+      const spr = this.add
+        .image(x, y, "item_coin")
+        .setDepth(7)
+        .setTint(parseInt(def.color.slice(1), 16))
+        .setScale(0.55)
+        .setAlpha(0.95);
+      // 은은한 맥동 — 눈에 띄되 시야를 방해하지 않게
+      this.tweens.add({ targets: spr, alpha: 0.55, duration: 900, yoyo: true, repeat: -1 });
+      this.gatherNodes.push({ x, y, key: def.key, sprite: spr, readyAt: 0 });
+    }
+  }
+
+  /** 매 프레임: 리스폰 처리 + 근접 안내 */
+  private tickGatherNodes(now: number) {
+    this.gatherAccum += 1;
+    if (this.gatherAccum % 30 !== 0) return; // 0.5초 간격이면 충분
+    for (const n of this.gatherNodes) {
+      if (n.readyAt > 0 && now >= n.readyAt) {
+        n.readyAt = 0;
+        n.sprite.setVisible(true).setAlpha(0.95);
+      }
+    }
+  }
+
+  /** 가까운 채집 노드 — E키 상호작용보다 우선 */
+  private nearestGatherNode(): { node: GatherNode; dist: number } | null {
+    let best: GatherNode | null = null;
+    let bestD = 76; // 사거리
+    for (const n of this.gatherNodes) {
+      if (n.readyAt > 0) continue;
+      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, n.x, n.y);
+      if (d < bestD) { bestD = d; best = n; }
+    }
+    return best ? { node: best, dist: bestD } : null;
+  }
+
+  /** 채집 실행 */
+  tryGather(): boolean {
+    const found = this.nearestGatherNode();
+    if (!found) return false;
+    const { node } = found;
+    const def = GATHER_BY_KEY[node.key];
+    if (!def) return false;
+    const amount = def.yield[0] + Math.floor(Math.random() * (def.yield[1] - def.yield[0] + 1));
+    const bag = this.player!.gatherBag;
+    bag[node.key] = (bag[node.key] ?? 0) + amount;
+    node.readyAt = this.time.now + def.respawn;
+    node.sprite.setVisible(false);
+    this.spawnPickupText(node.x, node.y - 20, `+${amount} ${def.name}`, def.color);
+    audio.sfx.pickup();
+    this.emitRpgState();
+    this.save();
+    return true;
+  }
+
+  /** 요리 제작 — 재료 확인 후 버프 적용. 성공 시 true. */
+  cookDish(recipeKey: string): boolean {
+    const r = COOK_BY_KEY[recipeKey];
+    if (!r || !this.player) return false;
+    const have: Record<string, number> = { ...this.player.gatherBag };
+    // 물고기도 재료로 쓸 수 있게 도감(잡은 개수) 대신 별도 카운트가 필요하지만,
+    // 현재 구조상 낚시는 즉시 골드화되므로 물고기 재료는 "잡은 적 있으면 1개 소모"로 처리한다.
+    for (const n of r.need) {
+      if (n.item.startsWith("fish_")) {
+        if (!this.player.fishSave.caught.includes(n.item)) return false;
+      }
+    }
+    if (!canCook(r, have) && !r.need.every((n) => n.item.startsWith("fish_"))) {
+      // 물고기 외 재료가 부족하면 실패
+      const onlyFishOk = r.need.every((n) => n.item.startsWith("fish_") || (have[n.item] ?? 0) >= n.n);
+      if (!onlyFishOk) {
+        this.showBanner("재료가 부족합니다");
+        return false;
+      }
+    }
+    const perfect = Math.random() < COOK_PERFECT_CHANCE;
+    this.player.gatherBag = applyCook(r, have);
+    this.player.applyDishBuff(r.buff, r.power, Math.round(r.duration * (perfect ? 1.5 : 1)));
+    this.spawnPickupText(this.player.x, this.player.y - 60, `${r.name}${perfect ? " ★" : ""}`, "#9af0c8");
+    this.showBanner(`${dishBuffText(r, perfect)}`);
+    audio.sfx.levelup();
+    this.emitRpgState();
+    this.emitHud();
+    this.save();
+    return true;
   }
 
   showBanner(text: string) {

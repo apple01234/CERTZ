@@ -67,6 +67,54 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v1.1.8 (#개편 A46) — 낚시 도감/기록 (세이브 미러) */
   fishSave: { caught: string[]; totalCatch: number; totalMiss: number; bestWeight: number } =
     { caught: [], totalCatch: 0, totalMiss: 0, bestWeight: 0 };
+  /** v1.1.9 (#개편 A48) — 채집 재료 보유량 (요리/제작 재료) */
+  gatherBag: Record<string, number> = {};
+
+  /** v1.1.9 (#개편 A47) — 요리 버프 적용. 기존 buffs 배열에 "dish_*" 키로 얹는다
+   *  (새 시스템을 만들지 않고 기존 버프 렌더/만료 로직을 그대로 재사용).
+   *  atk/def/spd/exp/gold/crit 각각의 실제 배율 반영은 tickBuffs 계열에서 처리한다. */
+  applyDishBuff(kind: "atk" | "def" | "spd" | "exp" | "gold" | "crit", power: number, durMs: number) {
+    const key = `dish_${kind}`;
+    const exist = this.buffs.find((b) => b.key === key);
+    if (exist) {
+      exist.remain = Math.max(exist.remain, durMs);
+      exist.total = Math.max(exist.total, durMs);
+      this.dishBuffPower[key] = power;
+    } else {
+      this.buffs.push({ key, remain: durMs, total: durMs } as never);
+      this.dishBuffPower[key] = power;
+    }
+    this.recalcDishBuffs();
+  }
+
+  /** 요리 버프 강도 저장 (키별) */
+  private dishBuffPower: Record<string, number> = {};
+
+  /** 요리 버프들을 실제 스탯 배율로 반영 */
+  recalcDishBuffs() {
+    let atk = 0, def = 0, spd = 0, crit = 0;
+    for (const b of this.buffs) {
+      const k = b.key as string;
+      if (!k.startsWith("dish_")) continue;
+      if (b.remain <= 0) continue;
+      const p = this.dishBuffPower[k] ?? 0;
+      if (k === "dish_atk") atk += p;
+      else if (k === "dish_def") def += p;
+      else if (k === "dish_spd") spd += p;
+      else if (k === "dish_crit") crit += p;
+    }
+    this.dishAtkPct = atk;
+    this.dishDefAdd = def;
+    this.dishSpdPct = spd;
+    this.dishCritAdd = crit;
+    this.recalcSpeed();
+  }
+
+  /** 요리 버프 반영값 */
+  dishAtkPct = 0;
+  dishDefAdd = 0;
+  dishSpdPct = 0;
+  dishCritAdd = 0;
   upgrades: { weapon: number; armor: number } = { weapon: 0, armor: 0 }; // [호환 미러] 장착 중 아이템의 강화 단계 (실 저장은 starMap)
   /** vc145 (#16 긴급) — 장비 스타포스를 **아이템 단위**로 저장 (itemKey → 성 0~15).
    *  기존 upgrades{weapon,armor}는 슬롯 단위라 다른 장비를 장착해도 이전 장비의 성이 그대로
@@ -4534,11 +4582,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const expired = this.buffs.filter((b) => b.remain <= 0);
     this.buffs = this.buffs.filter((b) => b.remain > 0);
     if (expired.length > 0) {
+      let dishExpired = false;
       for (const b of expired) {
         if (b.key === "buff_spd") this.recalcSpeed();
+        /* v1.1.9 (#개편 A47) — 요리 버프는 BUFF_DEFS에 없으므로 별도 처리.
+         *  종전 코드는 def.name을 읽어 요리 키에서 TypeError가 났다. */
+        if ((b.key as string).startsWith("dish_")) {
+          dishExpired = true;
+          delete this.dishBuffPower[b.key as string];
+          const k = Math.round((b.total ?? 0) / 1000);
+          this.scene.spawnPickupText(this.x, this.y - 30, `요리 효과 종료 (${k}초)`, "#9af0c8");
+          continue;
+        }
         const def = BUFF_DEFS[b.key];
-        this.scene.spawnPickupText(this.x, this.y - 30, `${def.name} 효과 종료`, "#ffffff");
+        if (def) this.scene.spawnPickupText(this.x, this.y - 30, `${def.name} 효과 종료`, "#ffffff");
       }
+      if (dishExpired) this.recalcDishBuffs();
       this.scene.emitHud();
     } else if (before > 0) {
       // 남은 시간 HUD 갱신 — 초 단위 변화 시에만 emit (프레임 부담 절감)
@@ -4608,7 +4667,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const colPct = collectionBonus(this.collectionRegistered).atkPct;
     const blessFlat = this.worldtreeBlessing ? WORLDTREE_BLESSING.atk : 0;
     const blessPct = this.worldtreeBlessing ? WORLDTREE_BLESSING.atkPct : 0;
-    return Math.round((base + blessFlat) * (1 + (this.clsBonus.atkPct + setPct + colPct + blessPct + this.extBonus.atkPct + this.runBuffs.atkPct) / 100) * buff * king);
+    /* v1.1.9 (#개편 A47) — 요리 공격 버프 반영(곱연산 아님, % 가산) */
+    return Math.round((base + blessFlat) * (1 + (this.clsBonus.atkPct + setPct + colPct + blessPct + this.extBonus.atkPct + this.runBuffs.atkPct + this.dishAtkPct * 100) / 100) * buff * king);
   }
 
   /* ---------------- v3.0.16 — 세트 아이템 효과 (메이플 세트 아이템) ---------------- */
@@ -4859,7 +4919,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     acc += this.extBonus.crit + this.runBuffs.crit;
     /* v4.3.0 — 질풍의 물약 (BM 버프): 치명 +12%p */
     if (this.hasBuff("buff_crit")) acc += 12;
-    return Math.round((Player.BASE_CRIT + acc + this.clsBonus.critAdd + this.stats.dex * 0.4) * 10) / 10;
+    return Math.round((Player.BASE_CRIT + acc + this.clsBonus.critAdd + this.stats.dex * 0.4) * 10) / 10 + this.dishCritAdd;
   }
 
   /** v3.0.15 (#16) — 공격 원소 (계열 고정: 전사 화염/궁수 자연/마법사 냉기/도적 어둠, 미전직 무속성) */

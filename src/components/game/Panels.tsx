@@ -12,7 +12,8 @@ import {
   closetThemeOf, CLOSET_THEMES, isPremiumPet, // v1.2.1 (#3) — 프리미엄 펫 특전 판정
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
-import { FISH_DEFS, FISH_TIER_META, fishCollectionPct } from "@/game/fishing"; // v1.1.8 (#개편 A46) 낚시 도감
+import { FISH_DEFS, FISH_TIER_META, fishCollectionPct } from "@/game/fishing";
+import { GATHER_DEFS, COOK_RECIPES } from "@/game/gathering"; // v1.1.9 (#개편 A47·A48) // v1.1.8 (#개편 A46) 낚시 도감
 import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
 import { loadKeyMap, applyKeyBinding, resetKeyMap, loadMoveScheme, writeMoveScheme, keyLabel, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap, type MoveScheme } from "@/game/keymap";
@@ -2966,6 +2967,60 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
             </div>
           );
         })()}
+
+        {/* v1.1.9 (#개편 A47·A48) — 요리. 채집/낚시 재료로 전투 버프를 만든다. */}
+        {rpg.gatherBag && (
+          <div className="mb-2 rounded-lg border border-emerald-300/30 bg-emerald-400/[0.06] p-2.5">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-black text-emerald-200">🍳 요리</p>
+              <span className="text-[9px] font-bold text-white/50">재료를 모아 버프를 만든다</span>
+            </div>
+            {/* 보유 재료 */}
+            <div className="mt-1 flex flex-wrap gap-1">
+              {GATHER_DEFS.filter((g) => (rpg.gatherBag?.[g.key] ?? 0) > 0).map((g) => (
+                <span
+                  key={g.key}
+                  className="rounded border border-white/15 bg-black/40 px-1.5 py-0.5 text-[9px] font-black"
+                  style={{ color: g.color }}
+                  title={g.desc}
+                >
+                  {g.name} ×{rpg.gatherBag?.[g.key]}
+                </span>
+              ))}
+              {GATHER_DEFS.every((g) => (rpg.gatherBag?.[g.key] ?? 0) === 0) && (
+                <span className="text-[9px] font-bold text-white/40">
+                  아직 모은 재료가 없다 — 필드에서 E키로 채집하자
+                </span>
+              )}
+            </div>
+            {/* 레시피 */}
+            <div className="mt-1.5 space-y-1">
+              {COOK_RECIPES.map((r) => {
+                const bag = rpg.gatherBag ?? {};
+                const fishOk = r.need.every((n) => !n.item.startsWith("fish_") || (rpg.fishing?.caught ?? []).includes(n.item));
+                const matOk = r.need.every((n) => n.item.startsWith("fish_") || (bag[n.item] ?? 0) >= n.n);
+                const ok = fishOk && matOk;
+                return (
+                  <div key={r.key} className="flex items-center gap-1.5 rounded border border-white/10 bg-white/[0.03] px-1.5 py-1">
+                    <div className="min-w-0 flex-1">
+                      <p className={`truncate text-[10px] font-black ${ok ? "text-emerald-200" : "text-white/45"}`}>{r.name}</p>
+                      <p className="truncate text-[8px] font-bold text-white/45">{r.desc}</p>
+                    </div>
+                    <button
+                      disabled={!ok}
+                      onClick={() => EventBus.emit("rpg:cook", { key: r.key })}
+                      className={`shrink-0 rounded px-2 py-1 text-[9px] font-black ${
+                        ok ? "bg-emerald-500 text-slate-900 hover:bg-emerald-400 active:scale-95" : "cursor-not-allowed bg-slate-700/50 text-white/40"
+                      }`}
+                    >
+                      {ok ? "요리" : "재료부족"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* v3.0.22 (#43/#44/#50) — 세계수 결정 수집 현황 (챕터마다 다른 결정 + 완전 수집 시 영구 가호) */}
         <div className={`mb-2 rounded-lg border p-2.5 ${rpg.blessing ? "border-sky-300/60 bg-sky-400/[0.1]" : "border-white/15 bg-white/[0.04]"}`}>

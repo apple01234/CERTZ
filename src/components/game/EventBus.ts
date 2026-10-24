@@ -118,6 +118,8 @@ export type RpgState = {
   collection?: { registered: number; total: number; kills: Record<string, number> };
   /** v1.1.8 (#개편 A46) — 낚시 도감/기록 */
   fishing?: { caught: string[]; totalCatch: number; totalMiss: number; bestWeight: number };
+  /** v1.1.9 (#개편 A48) — 채집 재료 보유량 */
+  gatherBag?: Record<string, number>;
   /** 활성 세트 효과 (인벤토리/스탯창 표시) */
   activeSet?: { title: string; lines: string[] } | null;
   /* ----- v4.0.0 — 바르가 업데이트 ----- */

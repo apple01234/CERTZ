@@ -571,7 +571,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
       this.scene.spawnDamageText(this.x, this.y - 20, dealtD, crit);
       this.scene.spawnHitSpark(this.x, this.y);
-      if (crit) { this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.05); this.scene.spawnCritSplat(this.x, this.y); }
+      if (crit) {
+        this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.05);
+        this.scene.spawnCritSplat(this.x, this.y);
+        /* v1.1.9 (#개편 B22) — 치명타 히트스톱 연장.
+         *  종전엔 크리티컬도 일반 타격과 같은 26ms(=기본) 정지였다.
+         *  크리는 이 게임에서 "맛"의 핵심인데 손맛이 구분되지 않았다.
+         *  55ms로 늘리고 약한 흔들림을 더해 확실히 구분되게 한다. */
+        this.scene.hitStop?.(55);
+        this.scene.doShake?.(70, 0.0016);
+      }
       /* v1.0.2 (#허수아비) — 고정 기준(baseSX/SY) 기준으로만 스쿼시: 아무리 연타해도 기준선 불변 */
       const sxD = this.baseSX;
       const syD = this.baseSY;
