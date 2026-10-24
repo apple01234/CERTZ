@@ -314,12 +314,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const ms = dt;
 
     this.atkCooldown = Math.max(0, this.atkCooldown - ms);
+    /* v1.1.6 (#개편 B44) — 스킬 쿨 준비 완료 감지.
+     *  종전엔 쿨이 끝나도 버튼 오버레이가 사라질 뿐 시선을 끌지 못해, 전투 중
+     *  "이제 눌러도 된다"를 놓쳤다. 0으로 떨어지는 순간에만 짧은 링+사운드를 낸다.
+     *  궁극기(60/120초)는 별도로 강조 — 가장 놓치기 쉬운 쿨이다. */
+    const cdBefore = [this.skill1Cd, this.skill2Cd, this.skill3Cd, this.skill4Cd, this.skill5Cd, this.skill5bCd];
     this.skill1Cd = Math.max(0, this.skill1Cd - ms);
     this.skill2Cd = Math.max(0, this.skill2Cd - ms);
     this.skill3Cd = Math.max(0, this.skill3Cd - ms);
     this.skill4Cd = Math.max(0, this.skill4Cd - ms);
     this.skill5Cd = Math.max(0, this.skill5Cd - ms); // v3.2.0 — 5차 궁극기 쿨다운
     this.skill5bCd = Math.max(0, this.skill5bCd - ms); // vc146 (#2) — 제2궁극기 쿨다운
+    {
+      const cdAfter = [this.skill1Cd, this.skill2Cd, this.skill3Cd, this.skill4Cd, this.skill5Cd, this.skill5bCd];
+      for (let i = 0; i < cdAfter.length; i++) {
+        if (cdBefore[i] > 0 && cdAfter[i] === 0) {
+          const ult = i >= 4; // s5 / s5b
+          this.scene.onSkillReady?.(ult);
+        }
+      }
+    }
     this.iframes = Math.max(0, this.iframes - ms);
     this.potCd = Math.max(0, this.potCd - ms);
     this.tickBuffs(ms);

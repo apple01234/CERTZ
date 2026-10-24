@@ -438,8 +438,17 @@ export function writeSave(data: SaveData) {
         /* 훅 실패는 저장 본체에 영향 없음 */
       }
     }
-  } catch {
-    /* 저장 실패는 무시 */
+  } catch (err) {
+    /* v1.1.6 (#개편 C39) — 저장 실패를 조용히 삼키면 유저는 진행이 저장된 줄 안다.
+     *  용량 초과(QuotaExceeded)나 사파리 프라이빗 모드에서 실제로 발생하며,
+     *  그대로 두면 몇 시간 플레이가 통째로 날아간 뒤에야 알게 된다.
+     *  실패를 콘솔에 남기고 전역 이벤트로 알려 UI가 경고를 띄우게 한다.
+     *  (이벤트 발신 자체가 실패할 수 있으므로 2중 try) */
+    console.error("[SERTZ] 세이브 저장 실패", err);
+    try {
+      const quota = err instanceof Error && /quota|exceed/i.test(err.name + err.message);
+      window.dispatchEvent(new CustomEvent("sertz:save-failed", { detail: { quota } }));
+    } catch { /* 이벤트 불가 환경 */ }
   }
 }
 

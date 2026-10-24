@@ -72,7 +72,32 @@ export default function GameRoot() {
       if (!Number.isNaN(v)) {
         document.documentElement.style.fontSize = `${Math.min(140, Math.max(100, v))}%`;
       }
+      // v1.1.6 (#개편 B77) — 고대비 모드 복원
+      if (window.localStorage.getItem("sertz_contrast") === "high") {
+        document.documentElement.setAttribute("data-contrast", "high");
+      }
     } catch { /* 저장값 없음/차단 — 기본 100% 유지 */ }
+  }, []);
+
+  /* v1.1.6 (#개편 C39) — 세이브 저장 실패 경고.
+   *  writeSave가 실패하면 이벤트가 오고, 여기서 배너로 알린다.
+   *  같은 경고가 반복되지 않도록 세션당 1회만 띄운다(스테이지 전환마다 저장이 불리므로). */
+  const [saveWarn, setSaveWarn] = useState<string | null>(null);
+  useEffect(() => {
+    let shown = false;
+    const onFail = (e: Event) => {
+      if (shown) return;
+      shown = true;
+      const quota = !!(e as CustomEvent<{ quota?: boolean }>).detail?.quota;
+      setSaveWarn(
+        quota
+          ? "저장 공간이 가득 찼습니다 — 진행이 저장되지 않고 있어요. 브라우저 데이터를 정리한 뒤 다시 시도해 주세요."
+          : "진행 저장에 실패했습니다 — 잠시 후 다시 시도해 주세요. 계속 실패하면 설정에서 클라우드 백업을 사용하세요.",
+      );
+      setTimeout(() => setSaveWarn(null), 12000);
+    };
+    window.addEventListener("sertz:save-failed", onFail);
+    return () => window.removeEventListener("sertz:save-failed", onFail);
   }, []);
 
   /* v1.0.20 — 크래시 가드: 미처리 예외가 검은 화면 대신 복구 오버레이를 띄우게 한다 */
@@ -280,6 +305,19 @@ export default function GameRoot() {
 
         {/* v1.0.19 (A-2) — 가로 유지 프롬프트: 닫기 가능 (세로 플레이 허용) */}
         <RotatePrompt active={portraitMobile && !rotateDismissed} onDismiss={() => setRotateDismissed(true)} />
+
+        {/* v1.1.6 (#개편 C39) — 세이브 저장 실패 경고. 놓치면 진행이 날아가므로
+            화면 하단에 고정하고 12초간 유지한다(탭하면 닫힘). */}
+        {saveWarn && (
+          <div
+            role="alert"
+            className="pointer-events-auto absolute inset-x-2 bottom-2 z-[70] mx-auto max-w-[560px] cursor-pointer rounded-lg border border-rose-400/60 bg-rose-950/95 px-3 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.6)]"
+            onClick={() => setSaveWarn(null)}
+          >
+            <p className="text-[12px] font-black text-rose-100">⚠ 저장 경고</p>
+            <p className="mt-0.5 text-[11px] font-bold leading-snug text-rose-100/85">{saveWarn}</p>
+          </div>
+        )}
 
         {/* v1.2.1 (#6) — 메뉴 나가기 확인 (캐릭터 선택/게임 시작 화면) */}
         <ExitMenuOverlay open={exitMenuOpen} onClose={() => setExitMenuOpen(false)} />

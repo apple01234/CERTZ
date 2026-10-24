@@ -5118,6 +5118,14 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
   /* v1.0.18 — 셰이더 효과 강도 표시값 */
   const [fxLabel, setFxLabel] = useState(() => loadFx().intensity);
   /* v1.1.4 — UI 확대 비율(%). 저장값을 그대로 읽어 슬라이더 위치를 복원한다. */
+  /* v1.1.6 (#개편 B77) — 고대비 모드 (html[data-contrast]) */
+  const [highContrast, setHighContrast] = useState(() => {
+    try {
+      return window.localStorage.getItem("sertz_contrast") === "high";
+    } catch {
+      return false;
+    }
+  });
   const [uiPct, setUiPct] = useState(() => {
     try {
       const v = parseInt(window.localStorage.getItem("sertz_ui_zoom") ?? "", 10);
@@ -5444,6 +5452,23 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
           <p className="mt-1 text-[9px] font-bold text-white/55">
             글자·버튼이 함께 커집니다 (게임 화면 크기는 그대로). 100%가 기본입니다.
           </p>
+          {/* v1.1.6 (#개편 B77) — 고대비 모드. 보조 텍스트 대비를 올려 밝은 환경에서도 읽힌다. */}
+          <label className="mt-2 flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={highContrast}
+              onChange={(e) => {
+                const on = e.target.checked;
+                setHighContrast(on);
+                try {
+                  window.localStorage.setItem("sertz_contrast", on ? "high" : "normal");
+                  document.documentElement.setAttribute("data-contrast", on ? "high" : "normal");
+                } catch { /* 저장 실패 무시 */ }
+              }}
+              className="h-4 w-4 accent-amber-400"
+            />
+            <span className="text-[11px] font-bold text-white/70">고대비 모드 (밝은 환경에서 글자 잘 보이게)</span>
+          </label>
         </div>
 
 

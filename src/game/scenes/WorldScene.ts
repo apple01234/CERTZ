@@ -7968,6 +7968,21 @@ export class WorldScene extends Phaser.Scene {
 
   /** v1.1.5 (#개편 통계) — 적/보스가 받은 피해를 받아 단일 최고 타격을 갱신한다.
    *  Enemy.takeDamage와 Boss.takeDamage가 각각 호출한다(모든 피해 경로의 공통 지점). */
+  /** v1.1.6 (#개편 B44) — 스킬 쿨이 0이 된 순간 호출된다(Player.update에서 감지).
+   *  전투 중 시선을 끌지 않으면 쿨이 돌아온 걸 놓치므로, 발밑 링 + 짧은 사운드로 알린다.
+   *  궁극기(60/120초)는 금색 링을 크게, 일반기는 옅은 청색으로 구분한다.
+   *  연속 발동 시 소리 폭주를 막기 위해 120ms 스로틀을 둔다. */
+  private lastSkillReadyAt = 0;
+  onSkillReady(ultimate = false) {
+    const now = this.time.now;
+    if (now - this.lastSkillReadyAt < 120) return;
+    this.lastSkillReadyAt = now;
+    const p = this.player;
+    if (!p) return;
+    spawnRingPop(this, p.x, p.y + 6, "vf_ring", ultimate ? 0xffe66a : 0x86d9ff, ultimate ? 5.2 : 3.4, ultimate ? 620 : 420);
+    audio.sfx.uiClick();
+  }
+
   notePlayerHit(dmg: number) {
     if (!Number.isFinite(dmg)) return;
     if (dmg > this.statBestHit) this.statBestHit = Math.round(dmg);

@@ -32,6 +32,32 @@ function BuffChip({ buff }: { buff: HudState["buffs"][number] }) {
   );
 }
 
+/** v1.1.6 (#개편 B55) — 값이 바뀔 때 이전 값에서 새 값으로 굴러 올라가는 표시값.
+ *  골드가 15,000 → 32,400으로 튀면 "얼마나 늘었나"가 안 보인다. 400ms에 걸쳐
+ *  증가분을 굴리면 획득감이 생긴다(감소 시엔 즉시 반영 — 잔액 부족이 늦게 보이면 안 됨). */
+function useRollingNumber(target: number, ms = 400) {
+  const [shown, setShown] = React.useState(target);
+  const fromRef = React.useRef(target);
+  const rafRef = React.useRef<number | null>(null);
+  React.useEffect(() => {
+    if (target === shown) return;
+    if (target < shown) { fromRef.current = target; setShown(target); return; }
+    const from = fromRef.current;
+    const t0 = performance.now();
+    const tick = () => {
+      const k = Math.min(1, (performance.now() - t0) / ms);
+      const eased = 1 - (1 - k) * (1 - k);
+      setShown(Math.round(from + (target - from) * eased));
+      if (k < 1) rafRef.current = requestAnimationFrame(tick);
+      else fromRef.current = target;
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    // shown은 의도적으로 의존성에서 제외 — target 변화에만 반응해야 한다
+  }, [target, ms]);
+  return shown;
+}
+
 function Bar({
   value,
   max,
@@ -127,6 +153,8 @@ export function HUD({
   /* v1.0.5 — 키맵 재배치 시 HUD 키 배지·aria도 함께 갱신 (I/T/J/K/O 하드코딩 제거) */
   const km = loadKeyMap();
   const expPct = Math.min(100, (hud.exp / Math.max(1, hud.expNext)) * 100);
+  /* v1.1.6 — 골드 카운트업 (증가 시에만 굴림) */
+  const rollingGold = useRollingNumber(hud.gold);
   /* v3.0.2 (지시 #4/#5) — 퀘스트 트래커 축소/펼침 토글 (모바일에서 너무 큰 문제) */
   const [trackerOpen, setTrackerOpen] = React.useState(() => localStorage.getItem("sertz.trackerOpen") !== "0");
   /* v1.4.0 (#17) — 모바일 버튼 과밀 해소: 2선 버튼(보스/혜택/콘텐츠/유니온/거래소/랭킹/퀘스트로그)을
@@ -199,10 +227,15 @@ export function HUD({
             <Bar value={hud.hp} max={hud.maxHp} from="#c2273a" to="#ff7a68" label={`${hud.hp} / ${hud.maxHp}`} />
           </span>
           <Bar value={hud.mp} max={hud.maxMp} from="#1e6fb8" to="#5ec5ff" label={`${hud.mp} / ${hud.maxMp}`} height={10} />
-          {/* EXP 얇은 바 */}
-          <div className="sertz-gauge relative h-[7px] w-44 overflow-hidden rounded-full border border-black/60 bg-black/60 sm:w-56">
+          {/* EXP 얇은 바 — v1.1.6 (#개편 B54) 90% 이상이면 발광해 "곧 레벨업"을 알린다.
+           *  종전엔 폭만 늘어나 언제 오를지 감이 없었다. */}
+          <div
+            className={`sertz-gauge relative h-[7px] w-44 overflow-hidden rounded-full border bg-black/60 sm:w-56 transition-shadow ${
+              expPct >= 90 ? "border-lime-300/80 shadow-[0_0_8px_rgba(163,230,53,0.65)]" : "border-black/60"
+            }`}
+          >
             <div
-              className="h-full bg-gradient-to-b from-lime-300 to-green-600 transition-[width] duration-200"
+              className={`h-full bg-gradient-to-b from-lime-300 to-green-600 transition-[width] duration-200 ${expPct >= 90 ? "animate-pulse" : ""}`}
               style={{ width: `${expPct}%` }}
             />
           </div>
@@ -210,7 +243,7 @@ export function HUD({
           <div className="mt-0.5 flex items-center gap-1">
             <span className="game-chip flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-black text-[#ffd98a]">
               <img src="/assets/item_coin.webp" alt="" className="h-3.5 w-3.5" style={{ imageRendering: "pixelated" }} />
-              {fmtC(hud.gold)}
+              {fmtC(rollingGold)}
             </span>
             <span className="game-chip px-1.5 py-0.5 text-[11px] font-black text-[#ffb0b0]">
               공격 {fmt(hud.atkTotal)}

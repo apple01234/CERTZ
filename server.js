@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc157 — APK는 릴리스 태그 v1.0.16에 있다(이전 태그는 vc157까지 보유).
    *  태그를 v1.0.9로 두면 SERTZ-vc157.apk가 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.1.5/https://github.com/apple01234/CERTZ/releases/download/v1.1.5/SERTZ-vc167.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.1.5/https://github.com/apple01234/CERTZ/releases/download/v1.1.6/SERTZ-vc168.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,10 +69,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.1.5";
-  const LATEST_CODE = 167;
+  const LATEST_VERSION = "1.1.6";
+  const LATEST_CODE = 168;
     const VERSION_NOTE =
-  "v1.1.5 (vc167) — 누적 플레이 기록(스탯 창: 플레이시간·처치·보스·사망·최고타격·최고레벨, 세이브 저장), 인벤토리 장비 비교(장착템 대비 공/방/HP 차이), HUD HP 바 피격 흔들림, 설정 UI 확대 100~140%, 스킬 쿨타임 역방향 표시 버그 수정, 수량 +10 누적 버그 수정, 인벤토리 검색, 스킬 입력 버퍼링, 모달 포커스 트랩.";
+  "v1.1.6 (vc168) — 폴리시 개선: 스킬 쿨이 돌아오면 발밑에 링이 뜨고 소리가 나 알려준다(궁극기는 금색으로 강조). 경험치가 90%를 넘으면 바가 발광해 곧 레벨업임을 알린다. 골드가 늘면 숫자가 굴러 올라가 획득감이 생긴다. 설정·상점에서 Tab으로 이동할 때 포커스 위치가 보인다(키보드 접근성). 고대비 모드를 켜면 보조 텍스트가 밝아진다. 세이브 저장에 실패하면(용량 초과 등) 경고를 띄워 진행 손실을 미리 알린다.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

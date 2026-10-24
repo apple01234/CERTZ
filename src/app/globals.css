@@ -400,3 +400,30 @@ html, body {
 }
 
 /* v1.0.20 build trigger */
+
+/* ═══════════ v1.1.6 (#개편 B98) — 키보드 포커스 링 ═══════════
+ *  이 게임은 키보드로만 플레이가 가능하지만, 설정·상점 같은 패널 안에서는
+ *  Tab 이동 시 포커스가 어디 있는지 보이지 않았다(브라우저 기본 outline을
+ *  Tailwind preflight가 지우고 아무 대체도 없었음). 마우스 사용자에게는
+ *  링이 보이지 않도록 :focus-visible에만 적용한다. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid rgba(255, 217, 138, 0.95);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* 모달/패널 내부에서 링이 잘리지 않게 (overflow-hidden 컨테이너 대응) */
+.game-panel :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline-offset: 1px;
+}
+
+/* ═══════════ v1.1.6 (#개편 B77) — 고대비 모드 ═══════════
+ *  저시력/밝은 실외 환경에서 white/55~70 계열 보조 텍스트가 배경에 묻힌다.
+ *  설정에서 켜면(html[data-contrast="high"]) 보조 텍스트 불투명도를 끌어올리고
+ *  패널 테두리를 밝힌다. 게임 캔버스(Phaser)는 자체 팔레트라 영향 없음. */
+html[data-contrast="high"] .game-panel { border-color: rgba(255, 217, 138, 0.55); }
+html[data-contrast="high"] .game-chip { border-color: rgba(255, 217, 138, 0.5); }
+html[data-contrast="high"] [class*="text-white/4"],
+html[data-contrast="high"] [class*="text-white/5"],
+html[data-contrast="high"] [class*="text-white/6"] { color: rgba(255, 255, 255, 0.88) !important; }
+html[data-contrast="high"] [class*="text-white/7"] { color: rgba(255, 255, 255, 0.95) !important; }
+html[data-contrast="high"] .game-btn-ghost { border-color: rgba(255, 255, 255, 0.4); }
