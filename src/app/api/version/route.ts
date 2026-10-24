@@ -8,13 +8,13 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.1.3";
-const LATEST_CODE = 164;
+const LATEST_VERSION = "1.1.4";
+const LATEST_CODE = 165;
 const VERSION_NOTE =
-  "v1.1.3 (vc164) — ①상점 구매 확정창이 스크롤을 내리면 화면 밖으로 밀리던 버그를 고쳤다(스크롤 컨테이너 안 absolute → 뷰포트 fixed, 로비 캐릭터 삭제창도 동일 원인이라 함께 수정). ②디자인·게임성 개편: 스킬 버튼에 남은 쿨다운 초 표시, 피해량 구간별 색·크기 차등(약/평/강/압도), 보스 페이즈 전환 0.18초 슬로우모션, 피격 시 화면 가장자리에 공격 방향 호 표시, 중독·출혈·감속 상태이상을 HUD에 남은 시간 게이지로 표시, 상점 수량 10/MAX 단축 버튼, 로딩 팁 5→24개.";
+  "v1.1.4 (vc165) — ①스킬 쿨타임 표시가 진행시간으로 나오던 버그를 고쳤다(남은 1초가 3초로, 남은 3초가 1초로 표시되던 역방향 계산). 이제 쿨 시작 시 최대값에서 줄어든다. ②인벤토리에 아이템 이름 검색을 추가했다(195종 중 원하는 것 즉시 찾기). ③스킬 키 입력 버퍼링 — 공격 중에 누른 스킬이 씹히지 않고 동작이 끝난 뒤 발동한다. ④모달 Tab 포커스 트랩 — 모달이 열린 상태에서 뒤쪽 UI로 포커스가 새지 않는다. ⑤상점 구매 확정창이 스크롤에 따라 밀리던 버그 수정(고정 위치).";
 const APK_MIRROR =
   /* vc159 — APK는 릴리스 태그 v1.0.17에 있다(이전 태그는 vc158까지 보유). */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.1.3/SERTZ-vc164.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.1.4/SERTZ-vc165.apk";
 
 export async function GET() {
   return NextResponse.json({

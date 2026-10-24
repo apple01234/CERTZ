@@ -508,19 +508,20 @@ function QtyStepper({
       >
         +
       </button>
-      {/* v1.1.3 (#개편) — 다중 구매 프리셋. 99까지 −/+로만 올리면 물약 50개 사는 데
-       *  49번을 눌러야 했다. 10·MAX 단축으로 대량 구매를 한 번에 끝낸다.
-       *  MAX는 스택 상한(99)이다 — 에메랄드가 모자라면 확인창에서 "부족"으로 한 번 더 막는다. */}
+      {/* v1.1.4 (#수량버튼버그) — 다중 구매 단축.
+       *  ⚠️ 종전엔 "10"이 현재 수량을 10으로 '설정'했다(이미 10이면 눌러도 10).
+       *  유저 기대는 "누를 때마다 10씩 증가"이므로 +10 누적 버튼으로 고친다.
+       *  MAX는 스택 상한(99)으로 설정 — 에메랄드가 모자라면 확인창이 한 번 더 막는다. */}
       <button
-        aria-label="10개"
+        aria-label="10개 추가"
         onClick={(e) => {
           e.stopPropagation();
           setDraft(null);
-          onChange(Math.min(99, 10));
+          onChange(Math.min(99, qty + 10));
         }}
         className="tap-safe h-6 border-l border-white/15 px-1.5 text-[9px] font-black text-cyan-200/90 hover:bg-white/10 active:scale-90"
       >
-        10
+        +10
       </button>
       <button
         aria-label="최대 수량"
@@ -1775,6 +1776,8 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
   useEscClose(onClose);
   const modal = useModal("가방"); // v1.0.16 (F2)
   const [tab, setTab] = useState<InvTab>("equip");
+  /* v1.1.4 (#개편) — 아이템 검색어. 소문자 비교로 영문/한글 모두 부분 일치. */
+  const [q, setQ] = useState("");
   const [sel, setSel] = useState<InvSel | null>(null);
   /* v4.6.0 — 가방 스타포스 강화 결과 플래시 (상점 강화와 동일 이벤트 재사용, 2.5초 후 자동 소멸) */
   const [flash, setFlash] = useState<{ slot: "weapon" | "armor"; result: "ok" | "fail"; seq: number } | null>(null);
@@ -1800,7 +1803,16 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
     setTab(t);
     setSel(null);
   };
-  const quickTag = (k: string) => [qp.hp === k ? "HP" : "", qp.mp === k ? "MP" : ""].filter(Boolean).join("·") || undefined; // v1.0.5 — H/M→HP/MP (사용 키는 키맵 D/F)
+  const quickTag = (k: string) => [qp.hp === k ? "HP" : "", qp.mp === k ? "MP" : ""].filter(Boolean).join("·") || undefined;
+  /** v1.1.4 (#개편) — 검색어로 슬롯 목록을 좁힌다. 빈 검색어면 원본 그대로. */
+  const filt = (slots: InvSlot[]): InvSlot[] => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return slots;
+    return slots.filter((sl) => {
+      const name = ITEMS[sl.k as ItemKey]?.name ?? "";
+      return name.toLowerCase().includes(needle);
+    });
+  }; // v1.0.5 — H/M→HP/MP (사용 키는 키맵 D/F)
 
   /* ----- 장비 탭 슬롯 (무기/방어구/장신구 — 장착분 포함, owned 멀티셋 집계) ----- */
   const equipSlots: InvSlot[] = stackEquips(
@@ -1944,6 +1956,19 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
           ))}
         </div>
 
+        {/* v1.1.4 (#개편) — 아이템 검색.
+         *  아이템이 195종이라 탭을 넘기며 눈으로 찾아야 했다. 이름 일부로 즉시 좁힌다.
+         *  검색어가 있으면 장비/소비/기타 탭의 목록을 그대로 필터링한다(빈 결과 안내 포함). */}
+        <div className="mb-1.5 px-2.5">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="아이템 이름 검색…"
+            aria-label="아이템 검색"
+            className="w-full rounded-md border border-white/15 bg-black/45 px-2.5 py-1.5 text-[11px] font-bold text-white placeholder:text-white/35 outline-none focus:border-amber-300/60"
+          />
+        </div>
+
         {/* 본문 — 탭별 콘텐츠 */}
         <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
           {tab === "equip" && (
@@ -1982,7 +2007,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   장비가 없습니다 — 상인 라고스에게서 구매할 수 있어요
                 </p>
               ) : (
-                <InvGrid slots={equipSlots} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} />
+                <InvGrid slots={filt(equipSlots)} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} />
               )}
 
               {/* 세트 효과 (v3.0.16 — 유지) */}
@@ -2106,7 +2131,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
               <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-violet-100/50">
                 소모품 <span className="font-bold text-white/55">물약은 HP/MP 슬롯 버튼에 장착 — 터치 버튼·<QuickKeyHint slot="potHp"/>/<QuickKeyHint slot="potMp"/> 키로 사용</span>
               </p>
-              <InvGrid slots={etcSlots} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} />
+              <InvGrid slots={filt(etcSlots)} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} />
             </>
           )}
 

@@ -358,6 +358,7 @@ export function TouchControls({
               <SkillButton
                 ready={s5Ready}
                 cdPct={s5Pct}
+                cdMax={skills.s5Max ?? 60000}
                 label={s5Name || ""}
                 mp={100}
                 icon={skills.s5Icon}
@@ -378,6 +379,7 @@ export function TouchControls({
               <SkillButton
                 ready={s5bReady}
                 cdPct={s5bPct}
+                cdMax={skills.s5bMax ?? 120000}
                 label={s5bName || ""}
                 mp={150}
                 icon={skills.s5Icon}
@@ -577,13 +579,16 @@ function SkillButton({
             className="pointer-events-none absolute inset-0 bg-black/60"
             style={{ clipPath: `inset(${100 - cdPct}% 0 0 0)` }}
           />
-          {/* v1.1.3 (#개편) — 남은 쿨다운 초. 1초 이상이면 정수, 1초 미만이면 소수 한 자리.
-              숫자가 있어야 "언제 누를 수 있는지"를 세지 않고 알 수 있다. */}
+          {/* v1.1.4 (#쿨표시버그) — 남은 쿨다운 초.
+              ⚠️ cdPct는 이미 "남은 비율"이다(WorldScene이 skill1Cd=남은ms, s1Max=총ms을 보내고
+              부모가 cd/max*100을 넘긴다). 종전엔 (100-cdPct)로 계산해 남은 1초를 3초로,
+              남은 3초를 1초로 표시하던 역방향 버그가 있었다.
+              1초 이상은 정수(올림 — 0.2초 남았는데 0으로 보이면 누르게 되므로), 1초 미만은 소수. */}
           {cdMax !== undefined && cdMax > 0 && (
             <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[11px] font-black text-white [text-shadow:0_1px_3px_#000,0_0_4px_#000]">
               {(() => {
-                const remain = (cdMax * (100 - cdPct)) / 100 / 1000;
-                return remain >= 10 ? Math.ceil(remain) : remain.toFixed(1);
+                const remain = (cdMax * cdPct) / 100 / 1000;
+                return remain >= 1 ? Math.ceil(remain) : remain.toFixed(1);
               })()}
             </span>
           )}
