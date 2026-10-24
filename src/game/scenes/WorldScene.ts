@@ -9847,6 +9847,16 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:partyRaid", onPartyRaid);
       EventBus.off("rpg:gatePick", onGatePick);
       EventBus.off("rpg:gateShop", onGateShop);
+      /* v1.2.0 (C42 이벤트 리스너 해제 누락) — 위 6개 핸들러는 on만 있고 off가 없어
+       *  씬 재진입(마을 이동·재접속)마다 누적됐다. 누적되면 같은 구매/퀘스트 이벤트가
+       *  N번 실행되어 골드가 여러 번 빠지거나 퀘스트가 중복 수락된다.
+       *  on/off 개수를 세어 확인했다(on 97 / off 90 → 87). */
+      EventBus.off("rpg:buyStorePack", onBuyStorePack);
+      EventBus.off("rpg:autoAlloc", onAutoAlloc);
+      EventBus.off("rpg:quickpot", onQuickPot);
+      EventBus.off("rpg:eert", onEert);
+      EventBus.off("rpg:questAccept", onQuestAccept);
+      EventBus.off("rpg:questTrack", onQuestTrack);
     });
 
     /* ================= v3.1.0 (#흑화) — fadeIn/워치독은 create() 래퍼로 이동 (v3.2.0)

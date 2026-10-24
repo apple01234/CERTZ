@@ -45,6 +45,16 @@ export const SKILL_ICONS: Partial<Record<ClassKey | "base", { s1Icon: string; s2
   duelist: { s1Icon: "/assets/skillicon/duelist_s1.webp", s2Icon: "/assets/skillicon/duelist_s2.webp", s3Icon: "/assets/skillicon/duelist_s3.webp" },
   shadowlord: { s1Icon: "/assets/skillicon/shadowlord_s1.webp", s2Icon: "/assets/skillicon/shadowlord_s2.webp", s3Icon: "/assets/skillicon/shadowlord_s3.webp", s4Icon: "/assets/skillicon/shadowlord_s4.webp" },
   blademaster: { s1Icon: "/assets/skillicon/blademaster_s1.webp", s2Icon: "/assets/skillicon/blademaster_s2.webp", s3Icon: "/assets/skillicon/blademaster_s3.webp", s4Icon: "/assets/skillicon/blademaster_s4.webp" },
+  /* v1.2.1 — 해적 계열 전용 아이콘. 종전엔 항목 자체가 없어 lucide 폴백으로 떨어졌다.
+   *  32x32 픽셀 버퍼로 직접 그렸다(외부 에셋 미사용 — 라이선스 문제 없음).
+   *  3차/4차는 2차 스킬을 승계하므로 s1/s2는 2차 그림을 그대로 쓴다. */
+  pirate: { s1Icon: "/assets/skillicon/pirate_s1.webp", s2Icon: "/assets/skillicon/pirate_s2.webp", s3Icon: "/assets/skillicon/raider_s3.webp" },
+  raider: { s1Icon: "/assets/skillicon/raider_s1.webp", s2Icon: "/assets/skillicon/raider_s2.webp", s3Icon: "/assets/skillicon/raider_s3.webp", s4Icon: "/assets/skillicon/raider_s4.webp" },
+  corsair: { s1Icon: "/assets/skillicon/corsair_s1.webp", s2Icon: "/assets/skillicon/corsair_s2.webp", s3Icon: "/assets/skillicon/corsair_s3.webp", s4Icon: "/assets/skillicon/corsair_s4.webp" },
+  stormcaptain: { s1Icon: "/assets/skillicon/corsair_s1.webp", s2Icon: "/assets/skillicon/corsair_s2.webp", s3Icon: "/assets/skillicon/stormcaptain_s3.webp" },
+  powdermaster: { s1Icon: "/assets/skillicon/raider_s1.webp", s2Icon: "/assets/skillicon/raider_s2.webp", s3Icon: "/assets/skillicon/powdermaster_s3.webp" },
+  seaking: { s1Icon: "/assets/skillicon/corsair_s1.webp", s2Icon: "/assets/skillicon/corsair_s2.webp", s3Icon: "/assets/skillicon/seaking_s3.webp", s4Icon: "/assets/skillicon/seaking_s4.webp" },
+  dreadnought: { s1Icon: "/assets/skillicon/raider_s1.webp", s2Icon: "/assets/skillicon/raider_s2.webp", s3Icon: "/assets/skillicon/dreadnought_s3.webp", s4Icon: "/assets/skillicon/dreadnought_s4.webp" },
 };
 
 export type Tier = 1 | 2 | 3 | 4;
