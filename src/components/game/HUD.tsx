@@ -148,6 +148,18 @@ export function HUD({
    *  튜토리얼 패널(Phaser 캔버스 상단 중앙)과 트래커(우상단 DOM)가 모바일 가로에서 겹쳐
    *  "튜토리얼 UI가 다른 UI에 가려진다"는 지적의 주범. 트래커는 튜토리얼 끝나면 복귀. */
   const [tutActive, setTutActive] = React.useState(false);
+  /* v1.1.5 — 피격 감지(HP 감소) 시 0.34초간 흔들림 클래스를 준다. */
+  const [hpShake, setHpShake] = React.useState(false);
+  const prevHpRef = React.useRef(hud.hp);
+  React.useEffect(() => {
+    if (hud.hp < prevHpRef.current) {
+      setHpShake(true);
+      const t = setTimeout(() => setHpShake(false), 340);
+      prevHpRef.current = hud.hp;
+      return () => clearTimeout(t);
+    }
+    prevHpRef.current = hud.hp;
+  }, [hud.hp]);
   React.useEffect(() => {
     const onTut = (v: { active: boolean }) => setTutActive(!!v?.active);
     EventBus.on("tut:active", onTut);
@@ -180,7 +192,12 @@ export function HUD({
               </span>
             ) : null;
           })()}
-          <Bar value={hud.hp} max={hud.maxHp} from="#c2273a" to="#ff7a68" label={`${hud.hp} / ${hud.maxHp}`} />
+          {/* v1.1.5 (#개편 피드백) — 피격 시 HP 바 흔들림.
+           *  화면 전체 셰이크만으로는 "내 체력이 깎였다"가 늦게 인지된다. HP가 줄어든
+           *  순간에만 짧게 흔들어 시선이 HP 바로 가게 한다(회복/최대치 변화엔 반응하지 않음). */}
+          <span className={hpShake ? "inline-block animate-[sfshake_0.32s_ease-out]" : "inline-block"}>
+            <Bar value={hud.hp} max={hud.maxHp} from="#c2273a" to="#ff7a68" label={`${hud.hp} / ${hud.maxHp}`} />
+          </span>
           <Bar value={hud.mp} max={hud.maxMp} from="#1e6fb8" to="#5ec5ff" label={`${hud.mp} / ${hud.maxMp}`} height={10} />
           {/* EXP 얇은 바 */}
           <div className="sertz-gauge relative h-[7px] w-44 overflow-hidden rounded-full border border-black/60 bg-black/60 sm:w-56">
