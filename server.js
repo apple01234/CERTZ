@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc157 — APK는 릴리스 태그 v1.0.16에 있다(이전 태그는 vc157까지 보유).
    *  태그를 v1.0.9로 두면 SERTZ-vc157.apk가 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.1.5/https://github.com/apple01234/CERTZ/releases/download/v1.1.6/SERTZ-vc168.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.1.5/https://github.com/apple01234/CERTZ/releases/download/v1.1.7/SERTZ-vc169.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,10 +69,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.1.6";
-  const LATEST_CODE = 168;
+  const LATEST_VERSION = "1.1.7";
+  const LATEST_CODE = 169;
     const VERSION_NOTE =
-  "v1.1.6 (vc168) — 폴리시 개선: 스킬 쿨이 돌아오면 발밑에 링이 뜨고 소리가 나 알려준다(궁극기는 금색으로 강조). 경험치가 90%를 넘으면 바가 발광해 곧 레벨업임을 알린다. 골드가 늘면 숫자가 굴러 올라가 획득감이 생긴다. 설정·상점에서 Tab으로 이동할 때 포커스 위치가 보인다(키보드 접근성). 고대비 모드를 켜면 보조 텍스트가 밝아진다. 세이브 저장에 실패하면(용량 초과 등) 경고를 띄워 진행 손실을 미리 알린다.";
+  "v1.1.7 (vc169) — 안드로이드 뒤로가기를 누르면 앱이 바로 종료되던 문제를 고쳤다(이제 '메뉴로 나갈까요?' 확인이 뜬다). 패널을 여러 개 겹쳐 열었을 때 ESC가 전부 닫던 문제를 수정해 가장 위 패널만 닫힌다. PC에서 이동 방향이 스킬 방향 보조에 반영되지 않던 문제를 고쳤다(터치 우선, 키보드 차선). 탭 전환·목록 진입에 짧은 애니메이션을 넣어 끊김을 줄였다.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
