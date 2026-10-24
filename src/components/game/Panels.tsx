@@ -1983,8 +1983,10 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
           />
         </div>
 
-        {/* 본문 — 탭별 콘텐츠 */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
+        {/* 본문 — 탭별 콘텐츠
+            v1.1.6 (#개편 B56) — key={tab}으로 탭이 바뀔 때 컨테이너를 새로 마운트해
+            sertz-tab-in 애니메이션이 매번 재생되게 한다(같은 노드면 애니메이션이 안 돈다). */}
+        <div key={tab} className="sertz-tab-in min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
           {tab === "equip" && (
             <>
               <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-amber-100/50">

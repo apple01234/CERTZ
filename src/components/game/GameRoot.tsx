@@ -100,6 +100,29 @@ export default function GameRoot() {
     return () => window.removeEventListener("sertz:save-failed", onFail);
   }, []);
 
+  /* v1.1.6 (#개편 C62) — 안드로이드 하드웨어 뒤로가기 처리.
+   *  @capacitor/app 플러그인이 없어 네이티브 이벤트를 직접 받을 수 없으므로,
+   *  히스토리 엔트리를 하나 밀어두고 popstate를 가로채는 웹 표준 방식을 쓴다.
+   *  뒤로가기를 누르면 앱이 즉시 종료되는 대신 "메뉴로 나갈까요?" 확인을 띄운다.
+   *  (APK WebView에서도 popstate는 동일하게 동작한다.) */
+  useEffect(() => {
+    let armed = false;
+    const arm = () => {
+      if (armed) return;
+      armed = true;
+      try { window.history.pushState({ sertz: "guard" }, ""); } catch { /* 히스토리 불가 환경 */ }
+    };
+    arm();
+    const onPop = () => {
+      // 뒤로가기가 소비됨 — 확인 메뉴를 띄우고 가드를 다시 건다.
+      armed = false;
+      setExitMenuOpen(true);
+      arm();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   /* v1.0.20 — 크래시 가드: 미처리 예외가 검은 화면 대신 복구 오버레이를 띄우게 한다 */
   useEffect(() => {
     installCrashGuard();

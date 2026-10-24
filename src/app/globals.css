@@ -427,3 +427,26 @@ html[data-contrast="high"] [class*="text-white/5"],
 html[data-contrast="high"] [class*="text-white/6"] { color: rgba(255, 255, 255, 0.88) !important; }
 html[data-contrast="high"] [class*="text-white/7"] { color: rgba(255, 255, 255, 0.95) !important; }
 html[data-contrast="high"] .game-btn-ghost { border-color: rgba(255, 255, 255, 0.4); }
+
+/* ═══════════ v1.1.6 (#개편 B56·B65·B72) — 마이크로 인터랙션 ═══════════
+ *  탭 전환/목록 행 진입/드래그 대상에 짧은 전환을 넣어 "딱딱 끊기는" 느낌을 줄인다.
+ *  prefers-reduced-motion 사용자는 아래 전역 규칙에서 자동 비활성. */
+@keyframes sertzTabIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sertz-tab-in { animation: sertzTabIn 0.14s ease-out both; }
+
+@keyframes sertzRowIn {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.sertz-listrow { animation: sertzRowIn 0.12s ease-out both; }
+
+/* 드래그 중인 항목(유니온 배치 등) — 살짝 떠 보이게 */
+.sertz-drag { opacity: 0.7; transform: scale(1.04); cursor: grabbing; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sertz-tab-in, .sertz-listrow { animation: none; }
+  .sertz-drag { transform: none; }
+}
