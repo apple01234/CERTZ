@@ -5053,6 +5053,15 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
   const [recording, setRecording] = useState<GameAction | null>(null);
   /* v1.0.18 — 셰이더 효과 강도 표시값 */
   const [fxLabel, setFxLabel] = useState(() => loadFx().intensity);
+  /* v1.1.4 — UI 확대 비율(%). 저장값을 그대로 읽어 슬라이더 위치를 복원한다. */
+  const [uiPct, setUiPct] = useState(() => {
+    try {
+      const v = parseInt(window.localStorage.getItem("sertz_ui_zoom") ?? "", 10);
+      return Number.isNaN(v) ? 100 : Math.min(140, Math.max(100, v));
+    } catch {
+      return 100;
+    }
+  });
 
   // 키 캡처 — 기록 모드에서 아무 키나 누르면 해당 액션에 배정
   // v1.0.17 — 화살표 입력 정규화 + 스킴별 허용(wasd 스킴에선 화살표도 배정 가능,
@@ -5340,6 +5349,37 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
             <span className="text-[11px] font-bold text-white/70">플리커 완화 모드 (광원 깜빡임 제거)</span>
           </label>
           <p className="mt-1 text-[9px] font-bold text-white/55">즉시 적용 — 툰 셰이딩·발광 강도가 함께 조절됩니다 (0 = 셰이더 완전 끔)</p>
+        </div>
+
+        {/* v1.1.4 (#개편 접근성) — UI 확대.
+         *  이 게임의 HUD·패널 글자는 9~13px 픽셀 폰트라 작은 화면이나 시력이 약한 유저에게
+         *  읽기 어렵다. 지금까지 확대 수단이 전혀 없었다. 루트 폰트 크기를 키워 rem 기반
+         *  요소를 일괄 확대하고(localStorage 저장), Phaser 캔버스는 자체 배율을 쓰므로 영향 없다. */}
+        <div className="mt-2.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+          <p className="text-[11px] font-black text-white/80">UI 확대</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <input
+              type="range"
+              min={100}
+              max={140}
+              step={5}
+              value={uiPct}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                setUiPct(v);
+                try {
+                  window.localStorage.setItem("sertz_ui_zoom", String(v));
+                  document.documentElement.style.fontSize = `${v}%`;
+                } catch { /* 저장 실패 무시 */ }
+              }}
+              className="h-1.5 flex-1 accent-amber-400"
+              aria-label="UI 확대 비율"
+            />
+            <span className="w-10 shrink-0 text-right text-[11px] font-black text-amber-200">{uiPct}%</span>
+          </div>
+          <p className="mt-1 text-[9px] font-bold text-white/55">
+            글자·버튼이 함께 커집니다 (게임 화면 크기는 그대로). 100%가 기본입니다.
+          </p>
         </div>
 
 

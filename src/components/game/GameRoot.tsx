@@ -64,6 +64,15 @@ export default function GameRoot() {
   useEffect(() => {
     audio.loadVolumes();
     audio.setMuted(loadMuted());
+    /* v1.1.4 (#개편 접근성) — 저장된 UI 확대 비율을 부팅 시 복원.
+     *  설정에서 슬라이더를 움직일 때만 적용하면 새로고침 후 초기화되므로
+     *  여기서 루트 폰트 크기를 한 번 더 맞춘다. */
+    try {
+      const v = parseInt(window.localStorage.getItem("sertz_ui_zoom") ?? "", 10);
+      if (!Number.isNaN(v)) {
+        document.documentElement.style.fontSize = `${Math.min(140, Math.max(100, v))}%`;
+      }
+    } catch { /* 저장값 없음/차단 — 기본 100% 유지 */ }
   }, []);
 
   /* v1.0.20 — 크래시 가드: 미처리 예외가 검은 화면 대신 복구 오버레이를 띄우게 한다 */
