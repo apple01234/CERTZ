@@ -12,7 +12,7 @@ const zlib = require("zlib");
 const fs = require("fs");
 const path = require("path");
 
-const W = 32, H = 48;
+const W = 64, H = 96; // v1.2.4 — 2배 해상도(픽셀 부족 지적 반영)
 const OUTDIR = process.argv[2] || "/tmp/npc";
 
 /* 공통 팔레트 — 기존 NPC에서 추출한 톤 + 씹덕용 색 2~3개만 추가 */
@@ -45,9 +45,18 @@ function canvas() {
   return new Array(W * H).fill(null);
 }
 const idx = (x, y) => y * W + x;
+/* v1.2.4 — 32x48 좌표계로 그린 아트를 2배 해상도(64x96)에 찍는다.
+ *  각 도형 함수가 2x2 픽셀 블록을 채우므로 디테일(눈 하이라이트 등)이
+ *  뭉개지지 않으면서 해상도는 4배가 된다. */
+const SC = 2;
 function px(c, x, y, col) {
-  if (x < 0 || y < 0 || x >= W || y >= H) return;
-  if (col) c[idx(x, y)] = col;
+  if (!col) return;
+  const X = x * SC, Y = y * SC;
+  for (let dy = 0; dy < SC; dy++) for (let dx = 0; dx < SC; dx++) {
+    const nx = X + dx, ny = Y + dy;
+    if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+    c[idx(nx, ny)] = col;
+  }
 }
 function rect(c, x0, y0, w, h, col) {
   for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) px(c, x, y, col);

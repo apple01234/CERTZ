@@ -619,6 +619,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(65, () => {
       if (this.state !== "attack") return;
       this.swingDone = true;
+      /* v1.2.4 (버그 7) — "무기·방어구 착용 모습이 화면에 보이게 (아니면 기본공격 시
+       *  무기마다 효과가 다르던지)" → 후자를 택했다. 착용 외형 시트를 새로 그리는 대신,
+       *  계열별로 기본공격 자체를 다르게 만들어 무기가 바뀐 게 체감되게 한다.
+       *   · 해적: 총격(직선 탄환) — 근접 판정 없음
+       *   · 궁수: 화살 발사
+       *   · 마법사: 마법탄 발사
+       *   · 전사/도적: 근접 참격(기존 그대로) */
+      const fam = familyOf(this.cls);
+      if (fam === "pirate") {
+        this.scene.spawnBurstAt(this.x + dir.x * 26, this.y - 6 + dir.y * 26, 5, 0xffe9a8);
+        this.scene.sfxSkill("thunder", 0.95);
+        const { dmg, crit } = this.rollDamage(dmgMul * 1.15, false);
+        this.scene.firePlayerProj({
+          x: this.x + dir.x * 30, y: this.y - 6 + dir.y * 30,
+          angle: Math.atan2(dir.y, dir.x), speed: 880, pierce: 1,
+          dmg, crit, tint: 0xffe9a8, knock: 120, scale: 0.36, tex: "gw_proj", blend: "add",
+        });
+        this.scene.doShake?.(50, 0.0018);
+        return;
+      }
+      if (fam === "ranger" && this.sTier >= 1) {
+        const { dmg, crit } = this.rollDamage(dmgMul * 0.95, false);
+        this.scene.firePlayerProj({
+          x: this.x, y: this.y - 8, angle: Math.atan2(dir.y, dir.x), speed: 760,
+          pierce: 1, dmg, crit, tint: 0xa8f0c0, knock: 140, scale: 0.55, anim: "fx-arrow", rot: true,
+        } as never);
+        return;
+      }
       this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, warrior ? 1.15 : 1, slashTint);
       /* v3.0.24 — 도적(단검)=나이프음
        * v4.3.0 — 전사·미전직 기본공격음 = 회전베기음(카타나 연속 베기) 스왑 적용 (유저 지시:
@@ -1597,45 +1625,50 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  쏘아 다수를 한꺼번에 맞힌다. 연사력은 낮지만 범위가 압도적이라
    *  몰려오는 구간에서 다른 계열보다 확실히 강하다. */
   private skill1CannonBlast() {
+    /* v1.2.4 (버그 5 — "해적은 총을 써야지!") — 근접 포격 → 총격으로 재설계.
+     *  기존엔 착탄점 원형 폭발이라 다른 계열 근접기와 구분이 안 됐다.
+     *  이제 "총을 쏜다"는 정체성을 코드로 만든다:
+     *   · 즉발 히트스캔이 아니라 빠른 직선 탄환(관통) — 사거리가 길다
+     *   · 발사 시 반동으로 몸이 뒤로 밀리고 화면이 살짝 흔들린다
+     *   · 탄피가 튀고 총구 화염이 남는다
+     *   · 3차 이상은 3점사(연속 3발)로 진화 */
     const dir = this.aimDir();
     const t = this.sTier;
     const hex = this.clsHex();
     this.play(this.bodyKey("hero-atk"));
     this.setFlipX(dir.y === 0 && dir.x > 0);
-    this.scene.sfxSkill("thunder", 0.9); // 포성 — 낮은 피치로 둔중하게
-    /* 반동: 쏘는 순간 살짝 뒤로 밀린다 (무게감) */
-    this.setVelocity(-dir.x * 90, -dir.y * 90);
-    this.scene.time.delayedCall(90, () => { if (this.state !== "dead") this.setVelocity(0, 0); });
-    this.scene.doShake?.(120, 0.003);
-    /* 폭발탄 — 느리고 큰 투사체 + 착탄 광역 */
-    const reach = 210 + 16 * t;
-    const dmg = (2.4 + 0.25 * t);
-    this.scene.time.delayedCall(110, () => {
-      if (this.state === "dead") return;
-      const hx = this.x + dir.x * reach * 0.55;
-      const hy = this.y + dir.y * reach * 0.55;
-      this.scene.spawnShockwave(hx, hy, hex, 1.5 + 0.16 * t, 420, 0.8);
-      this.scene.spawnBurstAt(hx, hy, 16 + t * 3, hex);
-      /* 광역 판정 — 부채꼴(checkMeleeHit)이 아니라 착탄점 중심 원형으로 잡아
-       *  "쓸어버린다"는 계열 정체성을 실제 판정으로 만든다. */
-      const radius = 150 + 14 * t;
-      let n = 0;
-      for (const e of this.scene.getAllTargets()) {
-        if (!e.active || this.hitSet.has(e)) continue;
-        if (Phaser.Math.Distance.Between(hx, hy, e.x, e.y) > radius) continue;
-        this.hitSet.add(e);
-        n++;
-        const away = new Phaser.Math.Vector2(e.x - hx, e.y - hy).normalize();
-        const { dmg: d, crit } = this.rollDamage(dmg, true);
+    const shots = t >= 3 ? 3 : 1;
+    const spread = t >= 3 ? 0.07 : 0;
+    for (let i = 0; i < shots; i++) {
+      this.scene.time.delayedCall(i * 110, () => {
+        if (this.state === "dead") return;
+        const ang = Math.atan2(dir.y, dir.x) + (i - (shots - 1) / 2) * spread;
+        /* 총구 화염 + 탄피 */
+        this.scene.spawnBurstAt(this.x + Math.cos(ang) * 26, this.y - 6 + Math.sin(ang) * 26, 6, 0xffd76a);
+        this.scene.sfxSkill("thunder", 0.86); // 총성 — 낮은 피치
+        /* 반동 */
+        this.setVelocity(-Math.cos(ang) * 130, -Math.sin(ang) * 130);
+        this.scene.time.delayedCall(70, () => { if (this.state !== "dead") this.setVelocity(0, 0); });
+        this.scene.doShake?.(70, 0.0026);
+        /* 탄환 — 관통 3(5차 5), 빠르고 길게 */
+        const { dmg, crit } = this.rollDamage(2.6 + 0.22 * t, true);
+        this.scene.firePlayerProj({
+          x: this.x + Math.cos(ang) * 30,
+          y: this.y - 6 + Math.sin(ang) * 30,
+          angle: ang,
+          speed: 900,
+          pierce: t >= 4 ? 5 : 3,
+          dmg, crit,
+          tint: 0xffe9a8,
+          knock: 150,
+          scale: 0.5,
+          tex: "gw_proj",
+          blend: "add",
+        });
         if (crit) this.scene.sfxCrit();
-        e.takeDamage(d, away, 300, crit);
-      }
-      if (n > 0) {
-        this.scene.sfxSkill("explosion", 1.05);
-        this.scene.cameras.main.shake(150, 0.006); // 광역 명중 — 화면이 크게 흔들린다
-      }
-    });
-    this.scene.time.delayedCall(430, () => {
+      });
+    }
+    this.scene.time.delayedCall(shots * 110 + 260, () => {
       if (this.state === "attack") this.state = "idle";
     });
     this.scene.emitHud();
@@ -1645,24 +1678,59 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  레이더가 "한 방 넓게"라면 코세어는 "여러 번 넓게". 3연속 광범위 베기.
    *  마지막 타격은 배율을 크게 올려 마무리감을 준다. */
   private skill1CutlassDance() {
+    /* v1.2.4 (버그 5) — "스킬이 독특하지 않고 다 똑같아" 대응: 총검술로 차별화.
+     *  레이더(총격)가 "멀리서 쏜다"라면 코세어는 "쏘고 파고들어 벤다".
+     *  · 1~2타: 전방 사격(원거리 견제)
+     *  · 마지막 타: 돌진 베기(근접 마무리) — 두 거리를 한 스킬로 오간다
+     *  이 조합은 기존 16개 클래스 스킬 어디에도 없다. */
     const dir = this.aimDir();
     const t = this.sTier;
     const hex = this.clsHex();
     this.play(this.bodyKey("hero-atk"));
     this.setFlipX(dir.y === 0 && dir.x > 0);
-    this.scene.sfxSkill("swift", 1.02);
-    const sweeps = t >= 3 ? 4 : 3;
-    for (let i = 0; i < sweeps; i++) {
-      this.scene.time.delayedCall(60 + i * 120, () => {
+    const ang = Math.atan2(dir.y, dir.x);
+
+    /* 1) 원거리 사격 2발 */
+    for (let i = 0; i < 2; i++) {
+      this.scene.time.delayedCall(i * 100, () => {
         if (this.state === "dead") return;
-        const last = i === sweeps - 1;
-        /* 좌우로 번갈아 베어 시각적 리듬을 만든다 */
-        this.scene.spawnSlash(this.x, this.y, dir, i % 2 === 1, 1.15, hex);
-        this.checkMeleeHit(dir, 190 + 8 * t, 150 + 10 * t, last ? 2.0 : 0.9, last ? 340 : 110);
-        this.scene.sfxSkill("swift", i % 2 === 0 ? 0.95 : 1.1);
+        this.scene.spawnBurstAt(this.x + Math.cos(ang) * 26, this.y - 6 + Math.sin(ang) * 26, 5, hex);
+        this.scene.sfxSkill("thunder", 0.92 + i * 0.05);
+        const { dmg, crit } = this.rollDamage(1.25 + 0.1 * t, true);
+        this.scene.firePlayerProj({
+          x: this.x + Math.cos(ang) * 30, y: this.y - 6 + Math.sin(ang) * 30,
+          angle: ang, speed: 820, pierce: 2, dmg, crit, tint: hex, knock: 90,
+          scale: 0.42, tex: "gw_proj", blend: "add",
+        });
       });
     }
-    this.scene.time.delayedCall(60 + sweeps * 120 + 160, () => {
+
+    /* 2) 마무리 — 돌진 베기 */
+    this.scene.time.delayedCall(230, () => {
+      if (this.state === "dead") return;
+      const dash = 150 + 12 * t;
+      const nx = this.x + Math.cos(ang) * dash;
+      const ny = this.y + Math.sin(ang) * dash * 0.7;
+      this.scene.spawnSlash(nx, ny, dir, false, 1.5, hex);
+      this.scene.spawnSlash(this.x, this.y, dir, true, 1.2, hex);
+      this.scene.spawnBurstAt(nx, ny, 14, hex);
+      this.scene.sfxSkill("sword", 1.1);
+      this.scene.doShake?.(110, 0.004);
+      /* 이동 */
+      this.setPosition(nx, ny);
+      (this.body as Phaser.Physics.Arcade.Body).reset(nx, ny);
+      /* 근접 판정 */
+      const { dmg, crit } = this.rollDamage(2.4 + 0.2 * t, true);
+      for (const e of this.getAllTargetsIn(999)) {
+        const d = Phaser.Math.Distance.Between(nx, ny, e.x, e.y);
+        if (d > 120 + 6 * t) continue;
+        const away = new Phaser.Math.Vector2(e.x - nx, e.y - ny).normalize();
+        e.takeDamage(dmg, away, 260, crit);
+      }
+      if (crit) this.scene.sfxCrit();
+    });
+
+    this.scene.time.delayedCall(520, () => {
       if (this.state === "attack") this.state = "idle";
     });
     this.scene.emitHud();

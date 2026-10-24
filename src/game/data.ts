@@ -159,6 +159,9 @@ export type ItemKey =
   /* vc147 (#25) — 신화 등급 장비: 세트(에픽) 상위 최종 스펙업층. 카오스 보스 체력 대비
    *  스펙업 요소 부족 해소 — 고가 골드 싱크 + 대폭 스탯 점프로 장기 성장 목표 제공 */
   | "mythic_weapon" | "mythic_armor" | "mythic_ring" | "mythic_pendant"
+  /* v1.2.4 (버그 6) — 궁수·해적 전용 무기 */
+  | "bow_forest" | "bow_gale" | "bow_aurora"
+  | "gun_flint" | "gun_broadside" | "gun_abyss"
   /* v4.3.0 — BM 대확장 (유저 지시: BM 수익 구조·도파민 100+ 기획/제작)
    *  물약 8티어 ×2 · 장신구 12 · 가챠 상자 4 · 패키지 6 (신규 아이템 46종 + 펫 6 + 치장 6 + 버프 3 = 61종) */
   | "potion_hp3" | "potion_hp4" | "potion_hp5" | "potion_hp6" | "potion_hp7" | "potion_hp8" | "potion_hp9" | "potion_hp10"
@@ -297,6 +300,9 @@ export type ItemDef = {
   healFull?: boolean;
   /** v3.0.20 (#9) — 판매가 직접 지정 (eert 큐브 5000G 등 — 상점 구매가와 무관) */
   sellPrice?: number;
+  /** v1.2.4 (버그 6) — 이 장비를 쓸 수 있는 계열(없으면 전 직업 공용).
+   *  "직업별로 무기가 다르다"를 실제 규칙으로 만든다. */
+  clsOnly?: FamilyKey[];
   atk?: number; // 무기 공격력 보너스
   def?: number; // 방어구 방어력
   crit?: number; // 장신구 — 크리티컬 확률 증가 (%p)
@@ -329,13 +335,13 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
    *  골드 인플레로 주문서가 상시 상시 접근 가능해지던 것을 유료 화폐 쪽으로 재조정.
    *  균열 던전/뽑기/패키지 획득 경로는 유지 */
   scroll_star: { key: "scroll_star", kind: "consumable", name: "강화 주문서", icon: "item_scroll_star", price: 150, tier: "rare", bmPrice: 30, bmOnly: true },
-  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 10, tier: "common", atk: 0 },
-  weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 240, tier: "rare", atk: 6 },
-  weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 640, tier: "epic", atk: 14 },
-  weapon_4: { key: "weapon_4", kind: "weapon", name: "심연의 대검", icon: "item_weapon_4", price: 1400, tier: "epic", atk: 20 },
+  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 10, tier: "common", atk: 0 , clsOnly: ["thief"] },
+  weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 240, tier: "rare", atk: 6 , clsOnly: ["warrior"] },
+  weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 640, tier: "epic", atk: 14 , clsOnly: ["warrior"] },
+  weapon_4: { key: "weapon_4", kind: "weapon", name: "심연의 대검", icon: "item_weapon_4", price: 1400, tier: "epic", atk: 20 , clsOnly: ["warrior"] },
   /* v2.5 — 상위 장비 티어 (지시 #5 아이템 확장) */
-  weapon_5: { key: "weapon_5", kind: "weapon", name: "용인의 마검", icon: "item_weapon_5", price: 2800, tier: "epic", atk: 28 },
-  weapon_6: { key: "weapon_6", kind: "weapon", name: "심연룡의 절세검", icon: "item_weapon_6", price: 5600, tier: "epic", atk: 38 },
+  weapon_5: { key: "weapon_5", kind: "weapon", name: "용인의 마검", icon: "item_weapon_5", price: 2800, tier: "epic", atk: 28 , clsOnly: ["warrior"] },
+  weapon_6: { key: "weapon_6", kind: "weapon", name: "심연룡의 절세검", icon: "item_weapon_6", price: 5600, tier: "epic", atk: 38 , clsOnly: ["thief"] },
   armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 8, tier: "common", def: 0 },
   armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 210, tier: "rare", def: 3 },
   armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 580, tier: "epic", def: 7 },
@@ -529,36 +535,44 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   pack_daily: { key: "pack_daily", kind: "consumable", name: "일일 한정 상자", icon: "i_pack_daily", price: 9000, bmPrice: 6, bmOnly: true, sellPrice: 700, tier: "rare" },
   pack_weekly: { key: "pack_weekly", kind: "consumable", name: "주간 한정 패키지", icon: "i_pack_weekly", price: 46000, bmPrice: 29, bmOnly: true, sellPrice: 3200, tier: "epic" },
   /* ---- v3.0.15 (#11) — 챕터 테마 세트 장비 (상점에서 챕터 해금 시 노출) ---- */
-  sfw_forest: { key: "sfw_forest", kind: "weapon", name: "숲의 수호자 대검", icon: "i_sfw_forest", price: 380, tier: "rare", atk: 9 },
+  sfw_forest: { key: "sfw_forest", kind: "weapon", name: "숲의 수호자 대검", icon: "i_sfw_forest", price: 380, tier: "rare", atk: 9 , clsOnly: ["warrior"] },
   sfa_forest: { key: "sfa_forest", kind: "armor", name: "숲의 수호자 갑옷", icon: "i_sfa_forest", price: 340, tier: "rare", def: 4 },
   sfr_forest: { key: "sfr_forest", kind: "accessory", name: "숲의 수호자 반지", icon: "i_sfr_forest", price: 360, tier: "rare", crit: 5, maxHp: 20, slot: "ring" },
-  sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "쿠소디아 기사검", icon: "i_sfw_kingdom", price: 820, tier: "rare", atk: 15 },
+  sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "쿠소디아 기사검", icon: "i_sfw_kingdom", price: 820, tier: "rare", atk: 15 , clsOnly: ["warrior"] },
   sfa_kingdom: { key: "sfa_kingdom", kind: "armor", name: "쿠소디아 기사 갑옷", icon: "i_sfa_kingdom", price: 720, tier: "rare", def: 7 },
   sfr_kingdom: { key: "sfr_kingdom", kind: "accessory", name: "쿠소디아 기사 반지", icon: "i_sfr_kingdom", price: 760, tier: "rare", crit: 7, maxHp: 30, slot: "ring" },
-  sfw_alfheim: { key: "sfw_alfheim", kind: "weapon", name: "정령왕의 마검", icon: "i_sfw_alfheim", price: 1600, tier: "epic", atk: 21 },
+  sfw_alfheim: { key: "sfw_alfheim", kind: "weapon", name: "정령왕의 마검", icon: "i_sfw_alfheim", price: 1600, tier: "epic", atk: 21 , clsOnly: ["mage"] },
   sfa_alfheim: { key: "sfa_alfheim", kind: "armor", name: "정령왕의 갑주", icon: "i_sfa_alfheim", price: 1400, tier: "epic", def: 10 },
   sfr_alfheim: { key: "sfr_alfheim", kind: "accessory", name: "정령왕의 반지", icon: "i_sfr_alfheim", price: 1500, tier: "epic", crit: 9, maxHp: 40, slot: "ring" },
-  sfw_muspelheim: { key: "sfw_muspelheim", kind: "weapon", name: "화염의 군주 대검", icon: "i_sfw_muspelheim", price: 2700, tier: "epic", atk: 28 },
+  sfw_muspelheim: { key: "sfw_muspelheim", kind: "weapon", name: "화염의 군주 대검", icon: "i_sfw_muspelheim", price: 2700, tier: "epic", atk: 28 , clsOnly: ["warrior"] },
   sfa_muspelheim: { key: "sfa_muspelheim", kind: "armor", name: "화염의 군주 갑주", icon: "i_sfa_muspelheim", price: 2300, tier: "epic", def: 13 },
   sfr_muspelheim: { key: "sfr_muspelheim", kind: "accessory", name: "화염의 군주 반지", icon: "i_sfr_muspelheim", price: 2500, tier: "epic", crit: 11, maxHp: 55, slot: "ring" },
-  sfw_niflheim: { key: "sfw_niflheim", kind: "weapon", name: "서리바다의 검", icon: "i_sfw_niflheim", price: 4300, tier: "epic", atk: 36 },
+  sfw_niflheim: { key: "sfw_niflheim", kind: "weapon", name: "서리바다의 검", icon: "i_sfw_niflheim", price: 4300, tier: "epic", atk: 36 , clsOnly: ["mage"] },
   sfa_niflheim: { key: "sfa_niflheim", kind: "armor", name: "서리바다의 갑주", icon: "i_sfa_niflheim", price: 3700, tier: "epic", def: 16 },
   sfr_niflheim: { key: "sfr_niflheim", kind: "accessory", name: "서리바다의 반지", icon: "i_sfr_niflheim", price: 4000, tier: "epic", crit: 13, maxHp: 70, slot: "ring" },
-  sfw_cave: { key: "sfw_cave", kind: "weapon", name: "심연광의 대검", icon: "i_sfw_cave", price: 7000, tier: "epic", atk: 45 },
+  sfw_cave: { key: "sfw_cave", kind: "weapon", name: "심연광의 대검", icon: "i_sfw_cave", price: 7000, tier: "epic", atk: 45 , clsOnly: ["thief", "warrior"] },
   sfa_cave: { key: "sfa_cave", kind: "armor", name: "심연광의 갑주", icon: "i_sfa_cave", price: 6000, tier: "epic", def: 20 },
   sfr_cave: { key: "sfr_cave", kind: "accessory", name: "심연광의 반지", icon: "i_sfr_cave", price: 6400, tier: "epic", crit: 15, maxHp: 90, slot: "ring" },
-  sfw_nidavellir: { key: "sfw_nidavellir", kind: "weapon", name: "드워프 장인의 검", icon: "i_sfw_nidavellir", price: 10800, tier: "epic", atk: 56 },
+  sfw_nidavellir: { key: "sfw_nidavellir", kind: "weapon", name: "드워프 장인의 검", icon: "i_sfw_nidavellir", price: 10800, tier: "epic", atk: 56 , clsOnly: ["warrior"] },
   sfa_nidavellir: { key: "sfa_nidavellir", kind: "armor", name: "드워프 장인의 갑주", icon: "i_sfa_nidavellir", price: 9200, tier: "epic", def: 24 },
   sfr_nidavellir: { key: "sfr_nidavellir", kind: "accessory", name: "드워프 장인의 반지", icon: "i_sfr_nidavellir", price: 9800, tier: "epic", crit: 17, maxHp: 115, slot: "ring" },
-  sfw_hel: { key: "sfw_hel", kind: "weapon", name: "저승 파수꾼의 검", icon: "i_sfw_hel", price: 16200, tier: "epic", atk: 68 },
+  sfw_hel: { key: "sfw_hel", kind: "weapon", name: "저승 파수꾼의 검", icon: "i_sfw_hel", price: 16200, tier: "epic", atk: 68 , clsOnly: ["thief"] },
   sfa_hel: { key: "sfa_hel", kind: "armor", name: "저승 파수꾼의 갑주", icon: "i_sfa_hel", price: 13800, tier: "epic", def: 28 },
   sfr_hel: { key: "sfr_hel", kind: "accessory", name: "저승 파수꾼의 반지", icon: "i_sfr_hel", price: 14700, tier: "epic", crit: 19, maxHp: 140, slot: "ring" },
-  sfw_abyss: { key: "sfw_abyss", kind: "weapon", name: "종언 마룡의 검", icon: "i_sfw_abyss", price: 24000, tier: "epic", atk: 82 },
+  sfw_abyss: { key: "sfw_abyss", kind: "weapon", name: "종언 마룡의 검", icon: "i_sfw_abyss", price: 24000, tier: "epic", atk: 82 , clsOnly: ["warrior", "thief"] },
   sfa_abyss: { key: "sfa_abyss", kind: "armor", name: "종언 마룡의 갑주", icon: "i_sfa_abyss", price: 20500, tier: "epic", def: 33 },
   sfr_abyss: { key: "sfr_abyss", kind: "accessory", name: "종언 마룡의 반지", icon: "i_sfr_abyss", price: 22000, tier: "epic", crit: 23, maxHp: 180, slot: "ring" },
   /* vc147 (#25) — 신화 등급 (최종 스펙업층): 종언 세트 대비 무기 +59%·방어 +64%·장신구 대폭 상향.
    *  카오스 후반 보스(체력 34k~95k) 상대 딜 사이클을 실제로 끌어올리는 유일 상위층.
    *  일반상점 최상위 진열 — 장기 골드 파밍 목표 (스펙업 요소 확충 지시) */
+  /* v1.2.4 (버그 6) — 궁수·해적 전용 무기 (기존엔 검 계열만 있어 두 계열은
+   *  "자기 무기"가 없었다). 이름·수치는 기존 등급 곡선(atk 12→130)에 맞췄다. */
+  bow_forest: { key: "bow_forest", kind: "weapon", name: "숲의 단궁", icon: "item_weapon_1", price: 900, tier: "common", atk: 14, clsOnly: ["ranger"] },
+  bow_gale: { key: "bow_gale", kind: "weapon", name: "질풍의 장궁", icon: "item_weapon_2", price: 7400, tier: "rare", atk: 42, clsOnly: ["ranger"] },
+  bow_aurora: { key: "bow_aurora", kind: "weapon", name: "오로라 사수궁", icon: "item_weapon_3", price: 34000, tier: "epic", atk: 88, clsOnly: ["ranger"] },
+  gun_flint: { key: "gun_flint", kind: "weapon", name: "낡은 화승총", icon: "item_weapon_1", price: 900, tier: "common", atk: 15, clsOnly: ["pirate"] },
+  gun_broadside: { key: "gun_broadside", kind: "weapon", name: "현측 포격총", icon: "item_weapon_2", price: 7400, tier: "rare", atk: 44, clsOnly: ["pirate"] },
+  gun_abyss: { key: "gun_abyss", kind: "weapon", name: "심연의 포성", icon: "item_weapon_3", price: 34000, tier: "epic", atk: 92, clsOnly: ["pirate"] },
   mythic_weapon: { key: "mythic_weapon", kind: "weapon", name: "위그드라실의 심장검", icon: "item_mythic_weapon", price: 96000, tier: "legend", atk: 130 },
   mythic_armor: { key: "mythic_armor", kind: "armor", name: "위그드라실의 울린갑주", icon: "item_mythic_armor", price: 88000, tier: "legend", def: 54, maxHp: 400 },
   mythic_ring: { key: "mythic_ring", kind: "accessory", name: "노른의 계약반지", icon: "item_mythic_ring", price: 80000, tier: "legend", crit: 34, atk: 22, slot: "ring" },

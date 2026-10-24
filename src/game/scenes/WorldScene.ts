@@ -589,13 +589,18 @@ export class WorldScene extends Phaser.Scene {
   /** GM 체험 구역 방문 중 — 보루가 스토리 보스를 추가 스폰하는 것 방지 */
   private gmTrial = false;
 
+  /* v1.2.4 (버그 6) — 계열 한글명 (장착 불가 안내용) */
+  private static readonly FAM_KO: Record<string, string> = {
+    warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적", pirate: "해적",
+  };
+
   /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
   /* v1.4.3 (작업1) — 요새 유적(고대 유적) 2층 구조물 전면 삭제:
    *  3세대(v1.4.0~v1.4.2)에 걸쳐 반복된 타일맵 불만의 근원을 콘텐츠 자체로 제거하고,
    *  남는 자리는 마을 초행자 훈련장(작업2)으로 대체했다.
    *  buildLayeredKeep/유적 텍스처 로드는 제거 — tickKeepLayer(층 전환)도 함께 폐지.
    *  v1.4.4 — 유저 리포트 ②에 따라 하루 1회 보물상자(keepchest)만 부활(buildVillageChest). */
-  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest"; dlg?: string; npcId?: string; label: string }[] = [];
+  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest" | "chibi"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
   private activeNpcId: string | null = null;
   private talkedNpcs = new Set<string>();
@@ -1597,7 +1602,15 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- v1.0.8 — 심연의 탑 빌드 (무한 층수) ---------- */
     if (stageKey === "tower") this.buildTower();
     if (stageKey === "park") this.buildPark(); // v1.0.18 — 몬스터 파크
-    if (stageKey === "praid") this.buildPartyRaid(); // v1.4.3 (#멀티콘텐츠) — 파티 공동 토벌전
+    if (stageKey === "praid") {
+      this.buildPartyRaid(); // v1.4.3 (#멀티콘텐츠) — 파티 공동 토벌전
+      /* v1.2.4 (버그 1) — "공동 토벌전 끝나고 포탈이 안 타져서 못 나간다".
+       *  원인: praid는 stageDef.boss가 없어 아래 일반 경로의 포탈 스폰 조건
+       *  (!stageDef.boss && NEXT_STAGE[key])에서 제외됐다. 그래서 보스를 잡아도
+       *  귀환할 포탈이 아예 없었다. 복귀 포탈을 무조건 열어 준다. */
+      this.spawnPortal(this.portalHome.x, this.portalHome.y);
+      this.activatePortal(true);
+    }
 
     /* ---------- 퀘스트 오브젝트 (v2.2 — 실내는 포탈/퀘스트 오브젝트 없음) ---------- */
     if (this.isInterior) {
@@ -4077,6 +4090,16 @@ export class WorldScene extends Phaser.Scene {
    *  상점 상인과 겹치지 않게 스폰 지점 기준으로 방사형 배치하고,
    *  각자 살짝 다른 위상으로 숨쉬는 모션을 주어 "살아있는 마을" 느낌을 낸다.
    *  말풍선 대사는 기존 대화 시스템을 건드리지 않고 짧은 라벨만 붙였다(추후 확장 여지). */
+  /* v1.2.4 — 씹덕 NPC 대사 (NPC별 고유 2줄). 기존 DIALOGUES 테이블에 등록해
+   *  기존 대화창 시스템을 그대로 재사용한다(새 UI 안 만든다). */
+  private static readonly CHIBI_LINES: Record<string, string> = {
+    npc_guide_lily: "『여기가 시작 마을이야! 길 잃으면 나한테 물어봐.』",
+    npc_scholar_mio: "『기록에 따르면 이 아래에 고대 유적이 있었어. …지금은 없지만.』",
+    npc_mage_rin: "『실험 중이니까 조심해. 방금도 눈썹이 조금 탔어.』",
+    npc_merchant_nyan: "『좋은 물건 있어! …값은 물어보고 결정해.』",
+    npc_witch_nyx: "『저주? 아니야. 그냥 내 성격이 그래.』",
+    npc_fairy_aria: "『반짝이는 거 보여? 이게 진짜 빛이야.』",
+  };
   private spawnChibiNpcs() {
     const ox = this.layout ? this.entryHome.x : 400;
     const oy = this.layout ? this.entryHome.y : this.stageH / 2;
@@ -4095,10 +4118,31 @@ export class WorldScene extends Phaser.Scene {
       const x = ox + Math.cos(ang) * dist;
       const y = oy + Math.sin(ang) * dist * 0.55; // 세로 압축(2.5D 원근)
       const depth = Math.floor(y / 10);
-      const npc = this.add.image(x, y, key).setDepth(depth).setScale(1.25);
-      /* 발밑 그림자 */
-      const sh = this.add.ellipse(x, y + 20, 22, 7, 0x000000, 0.3).setDepth(depth - 1);
+      /* v1.2.4 (버그 3) — "씹덕 캐릭터가 다른 지형지물에 가린다".
+       *  원인: depth를 y/10으로만 잡아 나무·집보다 낮아지면 뒤로 묻혔다.
+       *  NPC는 항상 플레이어 바로 앞 레이어(80)에 두고, 그림자만 지형 depth를 따른다.
+       *  → 어떤 지형에서도 가려지지 않는다. */
+      const npc = this.add.image(x, y, key).setDepth(80).setScale(1.0).setOrigin(0.5, 0.78); // v1.2.4 (64x96) — 발 기준 정렬
+      const sh = this.add.ellipse(x, y + 14, 26, 8, 0x000000, 0.32).setDepth(79);
       void sh;
+
+      /* v1.2.4 (버그 3) — 상호작용 미동작 해소.
+       *  종전엔 장식 이미지만 놓아서 E키(nearInteract) 대상이 아니었다.
+       *  interactables에 등록해야 말풍선 대사가 실제로 뜬다. */
+      this.interactables.push({
+        x, y,
+        kind: "chibi",
+        label: `${name} — 대화`,
+        dlg: `chibi_${key}`,
+        npcId: key,
+      });
+      /* 대사 데이터 등록 (한 번만) */
+      if (!DIALOGUES[`chibi_${key}`]) {
+        DIALOGUES[`chibi_${key}`] = {
+          speaker: name,
+          lines: [WorldScene.CHIBI_LINES[key] ?? line],
+        };
+      }
       /* 숨쉬기 — 위상차를 주어 동시에 움직이지 않게 */
       this.tweens.add({
         targets: npc,
@@ -4111,7 +4155,7 @@ export class WorldScene extends Phaser.Scene {
       });
       /* 이름표 */
       this.add
-        .text(x, y - 40, name, {
+        .text(x, y - 52, name, {
           fontFamily: "Galmuri11, sans-serif",
           fontSize: "11px",
           color: "#ffe9b0",
@@ -4123,7 +4167,7 @@ export class WorldScene extends Phaser.Scene {
         .setDepth(21);
       /* 대사 — 3초 주기로 깜빡이며 표시 (항상 떠 있으면 시끄럽다) */
       const bubble = this.add
-        .text(x, y - 56, line, {
+        .text(x, y - 70, line, {
           fontFamily: "Galmuri11, sans-serif",
           fontSize: "10px",
           color: "#ffffff",
@@ -8119,13 +8163,33 @@ export class WorldScene extends Phaser.Scene {
    *  연속 발동 시 소리 폭주를 막기 위해 120ms 스로틀을 둔다. */
   private lastSkillReadyAt = 0;
   onSkillReady(ultimate = false) {
+    /* v1.2.4 (버그 2) — "쿨이 다 되면 이상한 폭발 vfx가 나온다" 제거.
+     *  원인: vf_ring(폭발 링)을 크게(3.4~5.2배) 띄워서 폭발처럼 보였다.
+     *  쿨 알림은 전투 방해가 목적이 아니라 "참고"여야 하므로,
+     *  폭발 대신 발밑의 작고 옅은 원형 글로우로 바꾸고 소리도 뺐다
+     *  (uiClick은 전투 중 딴 소리와 섞여 거슬린다는 피드백 반영). */
     const now = this.time.now;
-    if (now - this.lastSkillReadyAt < 120) return;
+    if (now - this.lastSkillReadyAt < 400) return;
     this.lastSkillReadyAt = now;
     const p = this.player;
     if (!p) return;
-    spawnRingPop(this, p.x, p.y + 6, "vf_ring", ultimate ? 0xffe66a : 0x86d9ff, ultimate ? 5.2 : 3.4, ultimate ? 620 : 420);
-    audio.sfx.uiClick();
+    const tint = ultimate ? 0xffe66a : 0x86d9ff;
+    const glow = this.add
+      .image(p.x, p.y + 10, "glow")
+      .setDepth(6)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(tint)
+      .setScale(0.5)
+      .setAlpha(0.0);
+    this.tweens.add({
+      targets: glow,
+      alpha: { from: 0, to: ultimate ? 0.5 : 0.32 },
+      scale: ultimate ? 0.85 : 0.68,
+      duration: 220,
+      yoyo: true,
+      ease: "Sine.inOut",
+      onComplete: () => glow.destroy(),
+    });
   }
 
   notePlayerHit(dmg: number) {
@@ -8312,6 +8376,18 @@ export class WorldScene extends Phaser.Scene {
     };
     const onEquip = (v: { key: ItemKey }) => {
       if (!this.player || this.dialoguing) return;
+      /* v1.2.4 (버그 6) — 직업별 무기 제한.
+       *  "직업별로 무기가 다른데 다른 직업 무기를 착용할 수 있다" 지적 반영.
+       *  ITEMS[].clsOnly가 있으면 현재 계열(familyOf)이 포함될 때만 장착한다. */
+      const def = ITEMS[v.key];
+      if (def?.clsOnly && def.clsOnly.length > 0) {
+        const fam = familyOf(this.player.cls);
+        if (!fam || !def.clsOnly.includes(fam)) {
+          const need = def.clsOnly.map((f) => WorldScene.FAM_KO[f] ?? f).join("·");
+          EventBus.emit("banner:show", { text: `${def.name}은(는) ${need} 전용 장비입니다` });
+          return;
+        }
+      }
       /* v1.0.3 (#반지중첩) — 장착 실패 안내: 같은 장신구 중복 장착 시도 등에 조용히 무시되지 않게 */
       if (!this.player.equip(v.key)) {
         const it = ITEMS[v.key];
@@ -12748,6 +12824,11 @@ export class WorldScene extends Phaser.Scene {
     const it = this.nearInteract;
     if (!it) return;
     this.tut?.notify("talk"); // v1.0.11 — 튜토리얼 대화 학습 판정
+    /* v1.2.4 (버그 3) — 씹덕 NPC 대화. 기존 showDialogue 경로를 그대로 쓴다. */
+    if (it.kind === "chibi") {
+      if (it.dlg) this.showDialogue(it.dlg, it.npcId ?? "guide");
+      return;
+    }
     if (it.kind === "shop") {
       // v2.3 (지시 #4) — 반복 의뢰 수주 가능하면 상점 대신 수주 대사부터
       if (this.repeatUnlockable()) {
