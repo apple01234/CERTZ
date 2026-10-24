@@ -4649,6 +4649,36 @@ function StatPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClos
             </div>
           ))}
         </div>
+        {/* v1.1.5 (#개편 통계) — 누적 플레이 기록. 종전엔 "이 캐릭터로 얼마나 했나"를
+            볼 수단이 전혀 없었다. 통계는 세이브에 저장되어 재접속해도 누적된다. */}
+        {hud.playStats && (() => {
+          const ps = hud.playStats;
+          const h = Math.floor(ps.playSec / 3600);
+          const m = Math.floor((ps.playSec % 3600) / 60);
+          const play = h > 0 ? `${h}시간 ${m}분` : `${m}분`;
+          const rows: [string, string][] = [
+            ["누적 플레이", play],
+            ["누적 처치", `${ps.kills.toLocaleString()}마리`],
+            ["보스 처치", `${ps.bossKills}회`],
+            ["사망", `${ps.deaths}회`],
+            ["최고 타격", ps.bestHit.toLocaleString()],
+            ["최고 레벨", `Lv.${ps.bestLv}`],
+          ];
+          return (
+            <div className="mt-2.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+              <p className="text-[11px] font-black text-white/80">기록</p>
+              <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5">
+                {rows.map(([k, v]) => (
+                  <p key={k} className="flex justify-between text-[10px] leading-snug">
+                    <span className="text-white/55">{k}</span>
+                    <span className="font-bold text-white/85">{v}</span>
+                  </p>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         <p className="mt-2 text-center text-[10px] text-white/55">레벨업마다 AP +5 지급 · "레벨업 자동 ON"이면 레벨업마다 계열 권장 비율로 즉시 배분 · ESC로 닫기</p>
       </div>
     </div>

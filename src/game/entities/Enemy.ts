@@ -560,6 +560,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false, noReact = false) {
     if (!this.alive) return;
+    this.scene.notePlayerHit?.(dmg); // v1.1.5 (#개편 통계) — 최고 타격 기록
     /* v3.3.0 (지시 #6) — 허수아비: 피해 누적만 하고 절대 죽지 않는다 (넉백/HP바 없음) */
     if (this.dummy) {
       const atkElemD = this.scene.playerRef?.attackElem ?? "none";

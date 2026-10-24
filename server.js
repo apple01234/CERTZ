@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc157 — APK는 릴리스 태그 v1.0.16에 있다(이전 태그는 vc157까지 보유).
    *  태그를 v1.0.9로 두면 SERTZ-vc157.apk가 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.1.4/SERTZ-vc165.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.1.5/SERTZ-vc166.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,10 +69,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.1.4";
-  const LATEST_CODE = 165;
+  const LATEST_VERSION = "1.1.5";
+  const LATEST_CODE = 166;
     const VERSION_NOTE =
-  "v1.1.4 (vc165) — ①스킬 쿨타임 표시가 진행시간으로 나오던 버그를 고쳤다(남은 1초가 3초로, 남은 3초가 1초로 표시되던 역방향 계산). 이제 쿨 시작 시 최대값에서 줄어든다. ②인벤토리에 아이템 이름 검색을 추가했다(195종 중 원하는 것 즉시 찾기). ③스킬 키 입력 버퍼링 — 공격 중에 누른 스킬이 씹히지 않고 동작이 끝난 뒤 발동한다. ④모달 Tab 포커스 트랩 — 모달이 열린 상태에서 뒤쪽 UI로 포커스가 새지 않는다. ⑤상점 구매 확정창이 스크롤에 따라 밀리던 버그 수정(고정 위치).";
+  "v1.1.5 (vc166) — 누적 플레이 기록을 추가했다. 스탯 창에서 이 캐릭터의 누적 플레이 시간·처치 수·보스 처치·사망·단일 최고 타격·최고 레벨을 볼 수 있고, 세이브에 저장되어 재접속해도 이어진다(기존엔 세션 메모리에 킬 수만 있어 기록이 남지 않았다). 설정에서 UI를 100~140%까지 확대할 수 있다(글자·버튼이 함께 커지고 게임 화면은 그대로). 직전 수정: 스킬 쿨타임이 진행시간으로 표시되던 역방향 버그, 수량 +10 버튼이 누적되지 않던 버그, 인벤토리 검색, 스킬 입력 버퍼링, 모달 포커스 트랩.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

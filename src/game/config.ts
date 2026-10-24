@@ -98,6 +98,24 @@ export type SaveData = {
   /* ↓ AP 스탯 (v1.9 — 구 세이브 호환: 기본 5/5/5/5 + 레벨만큼 AP 소급) */
   stats?: { str: number; dex: number; int: number; luk: number };
   ap?: number;
+  /* v1.1.5 (#개편 통계) — 누적 플레이 기록.
+   *  종전엔 킬 수(killTotals)만 세션 메모리에 있었고 사망·플레이시간·최고타격은
+   *  아예 기록되지 않았다. "이 캐릭터로 얼마나 했나"를 볼 수단이 없어 애착이 약했다.
+   *  구 세이브는 undefined → 로드 시 0으로 채운다(마이그레이션 불필요). */
+  playStats?: {
+    /** 누적 플레이 시간(초) — 세션 종료/저장 시 가산 */
+    playSec: number;
+    /** 누적 처치 수 */
+    kills: number;
+    /** 누적 사망 횟수 */
+    deaths: number;
+    /** 단일 최고 타격 피해 */
+    bestHit: number;
+    /** 최고 레벨 */
+    bestLv: number;
+    /** 보스 처치 누계 */
+    bossKills: number;
+  };
   /* ↓ BM (v1.9 — 버프 물약/펫/치장) */
   buffItems?: Record<string, number>;
   buffs?: { key: string; remain: number; total: number }[];

@@ -1640,6 +1640,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
+    this.scene.notePlayerHit?.(dmg); // v1.1.5 (#개편 통계) — 최고 타격 기록
     /* vc153 — 스바르트알프헤임 방어막: ShieldCast 상태유지 중 피해 무효 (사양표 ⑤) */
     if (this.shieldInvuln) {
       this.scene.spawnPickupText?.(this.x, this.y - 60, "무효", "#8ad4ff");

@@ -419,6 +419,12 @@ export class WorldScene extends Phaser.Scene {
   private achClaimed: string[] = [];
   /* v4.1.4 — 보스/카오스/침공 처치 누적 (도전과제 지표) + 침공 보스 참조 */
   private bossKillCount = 0;
+  /* v1.1.5 (#개편 통계) — 세션 누적 기록. buildSave에서 세이브 playStats에 합산한다.
+   *  deaths/bestHit는 세션 중 계속 갱신되고, playSec은 저장 시점의 경과분을 더한다. */
+  private statDeaths = 0;
+  private statBestHit = 0;
+  private statBestLv = 1;
+  private statSavedSec = 0; // 이전 세션까지 누적된 플레이 시간(초) — 로드 시 복원
   private chaosKillCount = 0;
   private invasionKillCount = 0;
   private invasionBoss: Enemy | null = null;
@@ -1412,6 +1418,12 @@ export class WorldScene extends Phaser.Scene {
       this.achClaimed = [...(savedPlayer.achClaimed ?? [])];
       /* v4.1.4 — 보스/카오스/침공 처치 누적 복원 */
       this.bossKillCount = savedPlayer.bossKills ?? 0;
+      /* v1.1.5 (#개편 통계) — 누적 기록 복원 (구 세이브는 undefined → 0/1) */
+      const ps = savedPlayer.playStats;
+      this.statSavedSec = Math.max(0, Math.round(ps?.playSec ?? 0));
+      this.statDeaths = Math.max(0, Math.round(ps?.deaths ?? 0));
+      this.statBestHit = Math.max(0, Math.round(ps?.bestHit ?? 0));
+      this.statBestLv = Math.max(1, Math.round(ps?.bestLv ?? 1));
       this.chaosKillCount = savedPlayer.chaosKills ?? 0;
       this.invasionKillCount = savedPlayer.invasionKills ?? 0;
       this.gateBest = savedPlayer.gateBest ?? 0;
@@ -7954,7 +7966,15 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** v1.1.5 (#개편 통계) — 적/보스가 받은 피해를 받아 단일 최고 타격을 갱신한다.
+   *  Enemy.takeDamage와 Boss.takeDamage가 각각 호출한다(모든 피해 경로의 공통 지점). */
+  notePlayerHit(dmg: number) {
+    if (!Number.isFinite(dmg)) return;
+    if (dmg > this.statBestHit) this.statBestHit = Math.round(dmg);
+  }
+
   onPlayerDead() {
+    this.statDeaths++; // v1.1.5 (#개편 통계)
     audio.sfx.playerDie(); // v1.4.8 — 사망 무음 해소 (어두운 붕괴음)
     audio.stopBGM();
     /* v1.4.10 — 사망 안내 (부연 설명 강화): 부활 규칙 + 패널티 없음을 미리 알려 좌절감 완화 */
@@ -14083,6 +14103,15 @@ export class WorldScene extends Phaser.Scene {
         if (d.slow) out.push({ kind: "slow", remain: Math.max(0, d.slow.until - now), total: 4000 });
         return out;
       })(),
+      /* v1.1.5 (#개편 통계) — 스탯 창 실시간 표시 */
+      playStats: {
+        playSec: Math.round(this.statSavedSec + Math.max(0, (this.time.now - this.startTime) / 1000)),
+        kills: this.totalKills,
+        deaths: this.statDeaths,
+        bestHit: Math.max(this.statBestHit, 0),
+        bestLv: Math.max(this.statBestLv, this.player.lv),
+        bossKills: this.bossKillCount,
+      },
     });
     this.emitRpgState();
   }
@@ -14138,6 +14167,17 @@ export class WorldScene extends Phaser.Scene {
       lookTint: this.player.lookTint,
       stats: { ...this.player.stats },
       ap: this.player.ap,
+      /* v1.1.5 (#개편 통계) — 누적 기록 저장. playSec은 "이전까지 누적 + 이번 세션 경과"로
+       *  계산한다(매 저장마다 세션 시작을 리셋하지 않으므로 이중 합산이 없다 —
+       *  statSavedSec은 로드 시점 값이고, 이번 세션분은 time.now - startTime으로 매번 새로 계산). */
+      playStats: {
+        playSec: Math.round(this.statSavedSec + Math.max(0, (this.time.now - this.startTime) / 1000)),
+        kills: this.totalKills,
+        deaths: this.statDeaths,
+        bestHit: this.statBestHit,
+        bestLv: Math.max(this.statBestLv, this.player.lv),
+        bossKills: this.bossKillCount,
+      },
       /* v2.5 — 자동사냥 상태 (v3.0.15 #5: 펫 조건 제거) */
       autoHunt: this.autoHunt,
       canAutoHunt: true, // v3.0.15 (#5) — 펫 없이도 자동전투 가능
