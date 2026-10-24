@@ -10816,7 +10816,13 @@ export class WorldScene extends Phaser.Scene {
   }
 
   currentMoveVec() {
-    return this.touchMove.lengthSq() > 0.01 ? this.touchMove.clone() : new Phaser.Math.Vector2();
+    /* v1.1.6 (#개편 C57) — 종전엔 터치 입력만 반환했다.
+     *  이 함수는 이동 방향을 참조하는 외부 호출(스킬 방향 보조, 자동 조준 등)에서 쓰이는데,
+     *  PC(키보드)로 플레이할 때 항상 (0,0)이 나와 "바라보는 방향"으로만 처리됐다.
+     *  update()의 이동 판정과 동일한 우선순위로 맞춘다: 터치 > 키보드. */
+    if (this.touchMove.lengthSq() > 0.01) return this.touchMove.clone();
+    const mv = this.resolveDirVec();
+    return mv.lengthSq() > 0 ? mv : new Phaser.Math.Vector2();
   }
 
   /* ================= 멀티플레이 (v1.7) ================= */

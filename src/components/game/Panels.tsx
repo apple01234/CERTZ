@@ -48,13 +48,27 @@ const TIER_STYLE: Record<ItemTier, { border: string; name: string; label: string
   legend: { border: "border-amber-300 shadow-[0_0_8px_rgba(252,211,77,0.45)]", name: "text-amber-200", label: "전설" },
 };
 
+/** v1.1.6 (#개편 C61) — ESC로 닫을 때 "가장 위 패널 하나만" 닫히게 한다.
+ *  종전엔 각 패널이 window keydown을 직접 듣고 무조건 close()를 호출해서,
+ *  인벤토리 위에 상점을 띄운 상태에서 ESC를 누르면 둘 다 닫혔다.
+ *  열린 순서를 스택으로 기억하고, 자신이 최상단일 때만 반응한다. */
+const escStack: symbol[] = [];
 function useEscClose(close: () => void) {
   useEffect(() => {
+    const id = Symbol("escLayer");
+    escStack.push(id);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key !== "Escape") return;
+      if (escStack[escStack.length - 1] !== id) return; // 내가 최상단이 아니면 무시
+      e.stopPropagation();
+      close();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      const i = escStack.indexOf(id);
+      if (i >= 0) escStack.splice(i, 1);
+      window.removeEventListener("keydown", onKey);
+    };
   }, [close]);
 }
 
