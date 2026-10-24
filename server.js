@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc157 — APK는 릴리스 태그 v1.0.16에 있다(이전 태그는 vc157까지 보유).
    *  태그를 v1.0.9로 두면 SERTZ-vc157.apk가 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.1.5/SERTZ-vc166.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.1.5/https://github.com/apple01234/CERTZ/releases/download/v1.1.5/SERTZ-vc167.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -70,9 +70,9 @@ app.prepare().then(() => {
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
   const LATEST_VERSION = "1.1.5";
-  const LATEST_CODE = 166;
+  const LATEST_CODE = 167;
     const VERSION_NOTE =
-  "v1.1.5 (vc166) — 누적 플레이 기록을 추가했다. 스탯 창에서 이 캐릭터의 누적 플레이 시간·처치 수·보스 처치·사망·단일 최고 타격·최고 레벨을 볼 수 있고, 세이브에 저장되어 재접속해도 이어진다(기존엔 세션 메모리에 킬 수만 있어 기록이 남지 않았다). 설정에서 UI를 100~140%까지 확대할 수 있다(글자·버튼이 함께 커지고 게임 화면은 그대로). 직전 수정: 스킬 쿨타임이 진행시간으로 표시되던 역방향 버그, 수량 +10 버튼이 누적되지 않던 버그, 인벤토리 검색, 스킬 입력 버퍼링, 모달 포커스 트랩.";
+  "v1.1.5 (vc167) — 누적 플레이 기록(스탯 창: 플레이시간·처치·보스·사망·최고타격·최고레벨, 세이브 저장), 인벤토리 장비 비교(장착템 대비 공/방/HP 차이), HUD HP 바 피격 흔들림, 설정 UI 확대 100~140%, 스킬 쿨타임 역방향 표시 버그 수정, 수량 +10 누적 버그 수정, 인벤토리 검색, 스킬 입력 버퍼링, 모달 포커스 트랩.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
