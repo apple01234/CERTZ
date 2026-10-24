@@ -181,3 +181,7 @@ download/Capture/
 # vc142 — 구글드라이브 원본 에셋팩 (원칙: 크롭본만 public/assets에 커밋)
 download/gdrive_vfx/
 .secrets/
+
+# v1.2.2 — SFX 정규화 원본 백업 (배포·커밋 대상 아님, 118MB)
+public/assets/audio/.orig/
+public/assets/audio/sfx/.orig/

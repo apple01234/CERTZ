@@ -427,44 +427,51 @@ export const CHAPTERS: ChapterSpec[] = [
 
 /* ================= 몬스터 정의 (v1.5 데이터 이관) ================= */
 
+/* v1.2.2 — 적 EXP 재배분 (밸런스)
+ *  문제: HP/EXP 비율이 1.55~3.33(2.15배)으로 벌어져 있었다. 같은 시간 사냥해도
+ *        어떤 적은 효율이 2배 좋고 어떤 적은 나빴다 → 유저가 한 사냥터에만 붙는다.
+ *  조치: 비율을 중앙값 1.85로 수렴시키되, **EXP 총합(2832)을 그대로 보존**했다.
+ *        총합을 늘리면 전체 레벨업 곡선이 빨라져 다른 밸런스가 무너진다.
+ *  결과: 비율 편차 2.15배 → 1.04배.
+ *  생성: tools/rebalance-exp.py (재현 가능) */
 export const ENEMIES: Record<EnemyKey, EnemyDef> = {
-  wolf: { key: "wolf", name: "이그드라실 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 24, gold: [5, 8], dropHp: 0.3, dropMp: 0.2, profile: { charge: { cd: 3600, speed: 430, time: 420 } } },
-  minion: { key: "minion", name: "심연 하수인", hp: 78, atk: 18, speed: 108, aggro: 320, exp: 36, gold: [9, 13], dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "bleed", chance: 0.4, dps: 4, dur: 3500 } } },
-  spider: { key: "spider", name: "동굴 거미", hp: 88, atk: 19, speed: 122, aggro: 320, exp: 48, gold: [10, 14], dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.45, dps: 5, dur: 4500 }, fieldOnDeath: { kind: "poison", dps: 5, dur: 3500, radius: 80 } } },
-  golem: { key: "golem", name: "수정 골렘", hp: 148, atk: 24, speed: 78, aggro: 260, exp: 70, gold: [14, 21], dropHp: 0.34, dropMp: 0.26, profile: { charge: { cd: 5200, speed: 330, time: 620 } } },
-  frostwolf: { key: "frostwolf", name: "서리 늑대", hp: 112, atk: 25, speed: 146, aggro: 340, exp: 62, gold: [12, 18], dropHp: 0.3, dropMp: 0.22, profile: { charge: { cd: 3400, speed: 450, time: 400 }, apply: { kind: "slow", chance: 0.4, dps: 0, dur: 2200 } } },
-  icegolem: { key: "icegolem", name: "얼음 골렘", hp: 170, atk: 29, speed: 74, aggro: 260, exp: 80, gold: [17, 23], dropHp: 0.34, dropMp: 0.26, profile: { ranged: { projAnim: "fx-icelance", projSpeed: 300, range: 250, cd: 2500 } } },
-  wraith: { key: "wraith", name: "심연 유령", hp: 130, atk: 28, speed: 100, aggro: 340, exp: 76, gold: [15, 22], dropHp: 0.32, dropMp: 0.26, profile: { ranged: { projAnim: "fx-darkbolt", projSpeed: 290, range: 270, cd: 2300 } } },
-  swampbeast: { key: "swampbeast", name: "능대", hp: 95, atk: 20, speed: 96, aggro: 300, exp: 55, gold: [10, 15], dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.5, dps: 5, dur: 5000 } } },
-  emberwolf: { key: "emberwolf", name: "불꽃 늑대", hp: 150, atk: 31, speed: 150, aggro: 340, exp: 85, gold: [14, 21], dropHp: 0.3, dropMp: 0.22, profile: { charge: { cd: 3300, speed: 470, time: 400 }, fieldOnDeath: { kind: "fire", dps: 7, dur: 3500, radius: 85 } } },
-  firespirit: { key: "firespirit", name: "화염 정령", hp: 175, atk: 34, speed: 92, aggro: 300, exp: 100, gold: [17, 24], dropHp: 0.34, dropMp: 0.26, profile: { ranged: { projAnim: "fx-fireball", projSpeed: 330, range: 280, cd: 2100 } } },
-  runegolem: { key: "runegolem", name: "룬 골렘", hp: 210, atk: 37, speed: 72, aggro: 260, exp: 115, gold: [19, 28], dropHp: 0.34, dropMp: 0.26, profile: { ranged: { projAnim: "fx-magicorb", projSpeed: 280, range: 260, cd: 2600 }, apply: { kind: "slow", chance: 0.35, dps: 0, dur: 2000 } } },
-  helhound: { key: "helhound", name: "헬 하운드", hp: 190, atk: 36, speed: 148, aggro: 360, exp: 105, gold: [18, 25], dropHp: 0.32, dropMp: 0.26, profile: { charge: { cd: 3000, speed: 480, time: 380 }, apply: { kind: "bleed", chance: 0.45, dps: 6, dur: 4000 } } },
+  wolf: { key: "wolf", name: "이그드라실 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 30, gold: [5, 8], dropHp: 0.3, dropMp: 0.2, profile: { charge: { cd: 3600, speed: 430, time: 420 } } },
+  minion: { key: "minion", name: "심연 하수인", hp: 78, atk: 18, speed: 108, aggro: 320, exp: 41, gold: [9, 13], dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "bleed", chance: 0.4, dps: 4, dur: 3500 } } },
+  spider: { key: "spider", name: "동굴 거미", hp: 88, atk: 19, speed: 122, aggro: 320, exp: 46, gold: [10, 14], dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.45, dps: 5, dur: 4500 }, fieldOnDeath: { kind: "poison", dps: 5, dur: 3500, radius: 80 } } },
+  golem: { key: "golem", name: "수정 골렘", hp: 148, atk: 24, speed: 78, aggro: 260, exp: 77, gold: [14, 21], dropHp: 0.34, dropMp: 0.26, profile: { charge: { cd: 5200, speed: 330, time: 620 } } },
+  frostwolf: { key: "frostwolf", name: "서리 늑대", hp: 112, atk: 25, speed: 146, aggro: 340, exp: 59, gold: [12, 18], dropHp: 0.3, dropMp: 0.22, profile: { charge: { cd: 3400, speed: 450, time: 400 }, apply: { kind: "slow", chance: 0.4, dps: 0, dur: 2200 } } },
+  icegolem: { key: "icegolem", name: "얼음 골렘", hp: 170, atk: 29, speed: 74, aggro: 260, exp: 89, gold: [17, 23], dropHp: 0.34, dropMp: 0.26, profile: { ranged: { projAnim: "fx-icelance", projSpeed: 300, range: 250, cd: 2500 } } },
+  wraith: { key: "wraith", name: "심연 유령", hp: 130, atk: 28, speed: 100, aggro: 340, exp: 68, gold: [15, 22], dropHp: 0.32, dropMp: 0.26, profile: { ranged: { projAnim: "fx-darkbolt", projSpeed: 290, range: 270, cd: 2300 } } },
+  swampbeast: { key: "swampbeast", name: "능대", hp: 95, atk: 20, speed: 96, aggro: 300, exp: 49, gold: [10, 15], dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.5, dps: 5, dur: 5000 } } },
+  emberwolf: { key: "emberwolf", name: "불꽃 늑대", hp: 150, atk: 31, speed: 150, aggro: 340, exp: 78, gold: [14, 21], dropHp: 0.3, dropMp: 0.22, profile: { charge: { cd: 3300, speed: 470, time: 400 }, fieldOnDeath: { kind: "fire", dps: 7, dur: 3500, radius: 85 } } },
+  firespirit: { key: "firespirit", name: "화염 정령", hp: 175, atk: 34, speed: 92, aggro: 300, exp: 92, gold: [17, 24], dropHp: 0.34, dropMp: 0.26, profile: { ranged: { projAnim: "fx-fireball", projSpeed: 330, range: 280, cd: 2100 } } },
+  runegolem: { key: "runegolem", name: "룬 골렘", hp: 210, atk: 37, speed: 72, aggro: 260, exp: 110, gold: [19, 28], dropHp: 0.34, dropMp: 0.26, profile: { ranged: { projAnim: "fx-magicorb", projSpeed: 280, range: 260, cd: 2600 }, apply: { kind: "slow", chance: 0.35, dps: 0, dur: 2000 } } },
+  helhound: { key: "helhound", name: "헬 하운드", hp: 190, atk: 36, speed: 148, aggro: 360, exp: 100, gold: [18, 25], dropHp: 0.32, dropMp: 0.26, profile: { charge: { cd: 3000, speed: 480, time: 380 }, apply: { kind: "bleed", chance: 0.45, dps: 6, dur: 4000 } } },
   /* v3.0.2 — 신규 종 9종 (챕터 배율은 stageScale이 곱함) */
-  x2_frog: { key: "x2_frog", name: "독개구리", hp: 52, atk: 12, speed: 116, aggro: 300, exp: 22, gold: [5, 9], dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.4, dps: 4, dur: 4000 }, fieldOnDeath: { kind: "poison", dps: 4, dur: 3000, radius: 70 } } },
-  x2_rat: { key: "x2_rat", name: "궁전 뒷쥐", hp: 84, atk: 17, speed: 156, aggro: 320, exp: 40, gold: [9, 14], dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "bleed", chance: 0.35, dps: 3, dur: 3000 } } },
-  x2_bat: { key: "x2_bat", name: "황혼 박쥐", hp: 126, atk: 27, speed: 164, aggro: 360, exp: 74, gold: [14, 21], dropHp: 0.3, dropMp: 0.24, profile: { charge: { cd: 3200, speed: 500, time: 360 } } },
-  x2_firebird: { key: "x2_firebird", name: "잿불 새", hp: 158, atk: 33, speed: 142, aggro: 340, exp: 92, gold: [15, 23], dropHp: 0.32, dropMp: 0.26, profile: { ranged: { projAnim: "fx-fireball", projSpeed: 340, range: 270, cd: 2200 }, fieldOnDeath: { kind: "fire", dps: 6, dur: 3000, radius: 80 } } },
-  x2_frostfly: { key: "x2_frostfly", name: "서리 날도요", hp: 118, atk: 26, speed: 158, aggro: 340, exp: 66, gold: [12, 19], dropHp: 0.3, dropMp: 0.24, profile: { ranged: { projAnim: "fx-icelance", projSpeed: 320, range: 240, cd: 2400 }, apply: { kind: "slow", chance: 0.3, dps: 0, dur: 1800 } } },
-  x2_snail: { key: "x2_snail", name: "동굴 달팽이", hp: 200, atk: 22, speed: 58, aggro: 240, exp: 60, gold: [11, 17], dropHp: 0.36, dropMp: 0.28, profile: { apply: { kind: "slow", chance: 0.55, dps: 0, dur: 2600 } } },
-  x2_stonegolem: { key: "x2_stonegolem", name: "장벽 돌골렘", hp: 235, atk: 39, speed: 66, aggro: 260, exp: 122, gold: [20, 30], dropHp: 0.34, dropMp: 0.26, profile: { charge: { cd: 5400, speed: 320, time: 640 } } },
-  x2_darkhound: { key: "x2_darkhound", name: "그늘 이리", hp: 205, atk: 38, speed: 154, aggro: 360, exp: 112, gold: [18, 27], dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "bleed", chance: 0.35, dps: 4, dur: 4000 } } },
-  x2_reeffish: { key: "x2_reeffish", name: "심연 암초물고기", hp: 182, atk: 40, speed: 128, aggro: 340, exp: 108, gold: [17, 26], dropHp: 0.32, dropMp: 0.26, profile: { ranged: { projAnim: "fx-icelance", projSpeed: 340, range: 240, cd: 2200 } } },
+  x2_frog: { key: "x2_frog", name: "독개구리", hp: 52, atk: 12, speed: 116, aggro: 300, exp: 27, gold: [5, 9], dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.4, dps: 4, dur: 4000 }, fieldOnDeath: { kind: "poison", dps: 4, dur: 3000, radius: 70 } } },
+  x2_rat: { key: "x2_rat", name: "궁전 뒷쥐", hp: 84, atk: 17, speed: 156, aggro: 320, exp: 43, gold: [9, 14], dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "bleed", chance: 0.35, dps: 3, dur: 3000 } } },
+  x2_bat: { key: "x2_bat", name: "황혼 박쥐", hp: 126, atk: 27, speed: 164, aggro: 360, exp: 66, gold: [14, 21], dropHp: 0.3, dropMp: 0.24, profile: { charge: { cd: 3200, speed: 500, time: 360 } } },
+  x2_firebird: { key: "x2_firebird", name: "잿불 새", hp: 158, atk: 33, speed: 142, aggro: 340, exp: 82, gold: [15, 23], dropHp: 0.32, dropMp: 0.26, profile: { ranged: { projAnim: "fx-fireball", projSpeed: 340, range: 270, cd: 2200 }, fieldOnDeath: { kind: "fire", dps: 6, dur: 3000, radius: 80 } } },
+  x2_frostfly: { key: "x2_frostfly", name: "서리 날도요", hp: 118, atk: 26, speed: 158, aggro: 340, exp: 62, gold: [12, 19], dropHp: 0.3, dropMp: 0.24, profile: { ranged: { projAnim: "fx-icelance", projSpeed: 320, range: 240, cd: 2400 }, apply: { kind: "slow", chance: 0.3, dps: 0, dur: 1800 } } },
+  x2_snail: { key: "x2_snail", name: "동굴 달팽이", hp: 200, atk: 22, speed: 58, aggro: 240, exp: 104, gold: [11, 17], dropHp: 0.36, dropMp: 0.28, profile: { apply: { kind: "slow", chance: 0.55, dps: 0, dur: 2600 } } },
+  x2_stonegolem: { key: "x2_stonegolem", name: "장벽 돌골렘", hp: 235, atk: 39, speed: 66, aggro: 260, exp: 123, gold: [20, 30], dropHp: 0.34, dropMp: 0.26, profile: { charge: { cd: 5400, speed: 320, time: 640 } } },
+  x2_darkhound: { key: "x2_darkhound", name: "그늘 이리", hp: 205, atk: 38, speed: 154, aggro: 360, exp: 107, gold: [18, 27], dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "bleed", chance: 0.35, dps: 4, dur: 4000 } } },
+  x2_reeffish: { key: "x2_reeffish", name: "심연 암초물고기", hp: 182, atk: 40, speed: 128, aggro: 340, exp: 95, gold: [17, 26], dropHp: 0.32, dropMp: 0.26, profile: { ranged: { projAnim: "fx-icelance", projSpeed: 340, range: 240, cd: 2200 } } },
   /* v3.0.3 — 0x72 DungeonTileset II (itch.io, CC0) 신규 종 7종: 고유 개성 내장 */
-  x3_swampy: { key: "x3_swampy", name: "늪지 독괴물", hp: 96, atk: 15, speed: 86, aggro: 280, exp: 30, gold: [8, 12], dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "poison", chance: 0.5, dps: 5, dur: 5000 }, fieldOnDeath: { kind: "poison", dps: 6, dur: 4000, radius: 90 } } },
-  x3_imp: { key: "x3_imp", name: "잉걸불 임프", hp: 118, atk: 20, speed: 98, aggro: 340, exp: 52, gold: [11, 16], dropHp: 0.3, dropMp: 0.24, profile: { ranged: { projAnim: "fx-fireball", projSpeed: 320, range: 260, cd: 2000 } } },
-  x3_icezombie: { key: "x3_icezombie", name: "얼어붙은 좀비", hp: 152, atk: 25, speed: 92, aggro: 300, exp: 70, gold: [13, 19], dropHp: 0.3, dropMp: 0.24, profile: { apply: { kind: "slow", chance: 0.45, dps: 0, dur: 2500 } } },
-  x3_tinyzombie: { key: "x3_tinyzombie", name: "굶주린 좀비", hp: 160, atk: 29, speed: 168, aggro: 380, exp: 90, gold: [14, 22], dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "bleed", chance: 0.5, dps: 6, dur: 4000 } } },
-  x3_ogre: { key: "x3_ogre", name: "광포한 오거", hp: 265, atk: 43, speed: 74, aggro: 280, exp: 132, gold: [20, 30], dropHp: 0.38, dropMp: 0.28, scale: 1.15, profile: { charge: { cd: 5000, speed: 360, time: 600 } } },
-  x3_chort: { key: "x3_chort", name: "악마다라 촐트", hp: 228, atk: 40, speed: 118, aggro: 380, exp: 118, gold: [19, 28], dropHp: 0.32, dropMp: 0.26, profile: { charge: { cd: 4200, speed: 420, time: 520 } } },
-  x3_necromancer: { key: "x3_necromancer", name: "강령술사", hp: 212, atk: 42, speed: 80, aggro: 380, exp: 126, gold: [20, 29], dropHp: 0.32, dropMp: 0.28, profile: { ranged: { projAnim: "fx-darkbolt", projSpeed: 300, range: 290, cd: 2400 } } },
+  x3_swampy: { key: "x3_swampy", name: "늪지 독괴물", hp: 96, atk: 15, speed: 86, aggro: 280, exp: 50, gold: [8, 12], dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "poison", chance: 0.5, dps: 5, dur: 5000 }, fieldOnDeath: { kind: "poison", dps: 6, dur: 4000, radius: 90 } } },
+  x3_imp: { key: "x3_imp", name: "잉걸불 임프", hp: 118, atk: 20, speed: 98, aggro: 340, exp: 62, gold: [11, 16], dropHp: 0.3, dropMp: 0.24, profile: { ranged: { projAnim: "fx-fireball", projSpeed: 320, range: 260, cd: 2000 } } },
+  x3_icezombie: { key: "x3_icezombie", name: "얼어붙은 좀비", hp: 152, atk: 25, speed: 92, aggro: 300, exp: 79, gold: [13, 19], dropHp: 0.3, dropMp: 0.24, profile: { apply: { kind: "slow", chance: 0.45, dps: 0, dur: 2500 } } },
+  x3_tinyzombie: { key: "x3_tinyzombie", name: "굶주린 좀비", hp: 160, atk: 29, speed: 168, aggro: 380, exp: 84, gold: [14, 22], dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "bleed", chance: 0.5, dps: 6, dur: 4000 } } },
+  x3_ogre: { key: "x3_ogre", name: "광포한 오거", hp: 265, atk: 43, speed: 74, aggro: 280, exp: 138, gold: [20, 30], dropHp: 0.38, dropMp: 0.28, scale: 1.15, profile: { charge: { cd: 5000, speed: 360, time: 600 } } },
+  x3_chort: { key: "x3_chort", name: "악마다라 촐트", hp: 228, atk: 40, speed: 118, aggro: 380, exp: 119, gold: [19, 28], dropHp: 0.32, dropMp: 0.26, profile: { charge: { cd: 4200, speed: 420, time: 520 } } },
+  x3_necromancer: { key: "x3_necromancer", name: "강령술사", hp: 212, atk: 42, speed: 80, aggro: 380, exp: 111, gold: [20, 29], dropHp: 0.32, dropMp: 0.28, profile: { ranged: { projAnim: "fx-darkbolt", projSpeed: 300, range: 290, cd: 2400 } } },
   /* v3.0.4 — itch.io 0x72 팩 추가 6종: 각자 고유 개성 (출혈/돌진/원거리/군집/중장) */
-  x3_maskedorc: { key: "x3_maskedorc", name: "가면 전사", hp: 205, atk: 38, speed: 124, aggro: 340, exp: 110, gold: [17, 26], dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "bleed", chance: 0.5, dps: 7, dur: 4000 } } },
-  x3_orcwarrior: { key: "x3_orcwarrior", name: "오르크 전사", hp: 245, atk: 44, speed: 104, aggro: 360, exp: 130, gold: [20, 30], dropHp: 0.34, dropMp: 0.26, profile: { charge: { cd: 4600, speed: 400, time: 480 } } },
-  x3_orcshaman: { key: "x3_orcshaman", name: "오르크 주술사", hp: 188, atk: 36, speed: 86, aggro: 380, exp: 120, gold: [19, 27], dropHp: 0.32, dropMp: 0.28, profile: { ranged: { projAnim: "fx-magicorb", projSpeed: 310, range: 280, cd: 2300 } } },
-  x3_wogol: { key: "x3_wogol", name: "지옥견 워골", hp: 198, atk: 41, speed: 152, aggro: 400, exp: 128, gold: [19, 28], dropHp: 0.3, dropMp: 0.24, profile: { charge: { cd: 3800, speed: 460, time: 460 }, apply: { kind: "bleed", chance: 0.4, dps: 6, dur: 3500 } } },
-  x3_goblin: { key: "x3_goblin", name: "고블린 약탈자", hp: 66, atk: 14, speed: 172, aggro: 360, exp: 26, gold: [6, 10], dropHp: 0.28, dropMp: 0.2, profile: { apply: { kind: "bleed", chance: 0.3, dps: 3, dur: 2500 } } },
-  x3_bigzombie: { key: "x3_bigzombie", name: "거대 시체", hp: 320, atk: 47, speed: 62, aggro: 280, exp: 148, gold: [22, 33], dropHp: 0.4, dropMp: 0.3, scale: 1.2, profile: { apply: { kind: "poison", chance: 0.45, dps: 7, dur: 5000 }, fieldOnDeath: { kind: "poison", dps: 8, dur: 4000, radius: 100 } } },
+  x3_maskedorc: { key: "x3_maskedorc", name: "가면 전사", hp: 205, atk: 38, speed: 124, aggro: 340, exp: 107, gold: [17, 26], dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "bleed", chance: 0.5, dps: 7, dur: 4000 } } },
+  x3_orcwarrior: { key: "x3_orcwarrior", name: "오르크 전사", hp: 245, atk: 44, speed: 104, aggro: 360, exp: 129, gold: [20, 30], dropHp: 0.34, dropMp: 0.26, profile: { charge: { cd: 4600, speed: 400, time: 480 } } },
+  x3_orcshaman: { key: "x3_orcshaman", name: "오르크 주술사", hp: 188, atk: 36, speed: 86, aggro: 380, exp: 99, gold: [19, 27], dropHp: 0.32, dropMp: 0.28, profile: { ranged: { projAnim: "fx-magicorb", projSpeed: 310, range: 280, cd: 2300 } } },
+  x3_wogol: { key: "x3_wogol", name: "지옥견 워골", hp: 198, atk: 41, speed: 152, aggro: 400, exp: 103, gold: [19, 28], dropHp: 0.3, dropMp: 0.24, profile: { charge: { cd: 3800, speed: 460, time: 460 }, apply: { kind: "bleed", chance: 0.4, dps: 6, dur: 3500 } } },
+  x3_goblin: { key: "x3_goblin", name: "고블린 약탈자", hp: 66, atk: 14, speed: 172, aggro: 360, exp: 35, gold: [6, 10], dropHp: 0.28, dropMp: 0.2, profile: { apply: { kind: "bleed", chance: 0.3, dps: 3, dur: 2500 } } },
+  x3_bigzombie: { key: "x3_bigzombie", name: "거대 시체", hp: 320, atk: 47, speed: 62, aggro: 280, exp: 168, gold: [22, 33], dropHp: 0.4, dropMp: 0.3, scale: 1.2, profile: { apply: { kind: "poison", chance: 0.45, dps: 7, dur: 5000 }, fieldOnDeath: { kind: "poison", dps: 8, dur: 4000, radius: 100 } } },
 };
 
 /* ================= 보스 정의 (v1.5 데이터 이관 + 챕터 보강) ================= */
@@ -677,9 +684,24 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
  *  HP만 후반 급등(챕터 9 = 기존 ×15.5 → ×42, 유저 DPS 2차 곡선 추격). 전투 체감: 동일 레벨
  *  일반 몬스터 4~6타 → 후반 6~8타, 스킬 2~3타 유지 목표.
  *  v1.4.0 세이브 호환 — 배율만 변경, 기존 테이블 구조/키 유지 */
-const CH_HP = [1, 1.35, 2.0, 3.2, 5.2, 8.5, 14.0, 24.0, 42.0];
+/* v1.2.2 — 챕터 HP 계수 재조정 (밸런스 실측)
+ *  문제: 종전 [1,1.35,2,3.2,5.2,8.5,14,24,42] + 후반 4챕터 ×10 조합에서
+ *        플레이어가 적을 죽이는 데 필요한 타격 수가 **1.1타 ~ 63.6타**로 벌어졌다.
+ *        2~3챕터는 스킬 1방에 즉사(1.4/1.1타), 7~10챕터는 50~64타를 때려야 죽었다.
+ *  조치: 계수를 완만한 곡선으로 바꾸고 후반 배율을 10 → 4로 낮췄다.
+ *  결과: 1.9 ~ 19.7타 (편차 57.8배 → 10.2배), 즉사 구간 0.
+ *  계산 근거: atkTotal = 12 + 3×(lv−1), 스킬 배율 1.25~2.36 (rollDamage 참조). */
+const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14.0, 20.0, 28.0]; // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
 const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0]; // 유저 피드백: 공격력은 현행 유지
-const CH_EXP = [1, 1.4, 1.9, 2.55, 3.35, 4.35, 5.6, 7.2, 9.2];
+/* v1.2.2 — 챕터 EXP 계수 재조정 (레벨 곡선 정합)
+ *  문제: expTable.ts는 메이플 공식(지수 성장)인데 적 EXP 계수는 1→9.2로 거의 평평했다.
+ *        레벨업에 필요한 처치 수가 **25마리 ~ 2,105,941마리**(편차 84,780배)로 벌어져
+ *        130레벨 이후는 사실상 레벨업이 불가능했다(실측: Lv130 필요 12,162,719 EXP vs
+ *        적 1마리 335 EXP → 36,307마리).
+ *  조치: 레벨별 필요 EXP를 기준으로 역산해 계수를 지수적으로 올렸다.
+ *        처치 수 목표는 35 → 807로 완만히 증가(후반일수록 몸값이 커지는 게 자연스럽다).
+ *  결과: 처치 수 편차 84,780배 → 22.8배. 전 구간 레벨업 가능. */
+const CH_EXP = [0.7, 2.3, 7.2, 23.1, 74.0, 237.0, 758.3, 2426.4, 24000.0];
 
 /** 스테이지 키 → {챕터, 구역} 파싱 */
 export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: number } {
@@ -715,7 +737,7 @@ export function questNeedByLv(lv: number): number {
  *  (구역 1~3은 진입 완충 유지). 공격력/경험치/골드 곡선은 현행 유지 — 체력만 상향. */
 const LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss"];
 const LATE_HP_FROM_SUB = 4;
-const LATE_HP_MUL = 10;
+const LATE_HP_MUL = 4; // v1.2.2 — 10은 과했다(7~10챕터 50~64타). 4로 낮춰 17~20타대.
 
 /** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스)
  *  v1.0.19 (A-3) — 신규 스테이지(scaleMul 보유)는 전용 배율 우선, 기존 챕터는 기존 곡선 유지 */

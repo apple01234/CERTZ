@@ -106,8 +106,15 @@ export function loadVolumes() {
   }
 }
 
+/* v1.2.2 — 볼륨 미지정 방어.
+ *  종전엔 play(key, vol)에서 vol이 undefined면 vol*sfxVol이 NaN이 되고,
+ *  Phaser는 NaN을 무시하고 기본값 1(최대)로 재생했다. SFX_VOLUMES에 없는 10개
+ *  사운드가 그렇게 "가장 크게" 터지고 있었다 — SFX 편차의 큰 원인. */
+const SFX_VOL_DEFAULT = 0.42;
+
 function play(key: string, vol: number, rate = 1) {
   if (!game || muted) return;
+  if (!Number.isFinite(vol)) vol = SFX_VOL_DEFAULT;
   const now = typeof performance !== "undefined" ? performance.now() : Date.now();
   if (lastPlayed[key] && now - lastPlayed[key] < SFX_THROTTLE_MS) return;
   if (activeSounds >= SFX_MAX_CONCURRENT) return;
@@ -673,6 +680,19 @@ export const SFX_VOLUMES: Record<string, number> = {
   sfx_aoe_cast: 0.48,
   sfx_aoe_burst: 0.54,
   sfx_smoke: 0.46,
+  /* v1.2.2 — 누락 보충: SFX_VOLUMES에 없는데 play()로 호출되던 10개.
+   *  종전엔 vol=undefined → NaN → Phaser 기본값 1(최대)로 재생돼 가장 크게 터졌다.
+   *  같은 계열(_burst=폭발 / _cast=시전)의 기존 값에 맞춘다. */
+  sfx_aoe_crystal_burst: 0.54,
+  sfx_aoe_fire_burst: 0.54,
+  sfx_aoe_heal_burst: 0.5,
+  sfx_aoe_heal_cast: 0.48,
+  sfx_aoe_light_burst: 0.54,
+  sfx_aoe_light_cast: 0.48,
+  sfx_aoe_magma_burst: 0.56,
+  sfx_aoe_nature_cast: 0.48,
+  sfx_smoke_dark: 0.34,
+  sfx_smoke_gold: 0.34,
 };
 
 /* ================= v3.0.24 — 직업별 스킬 전용 효과음 =================
