@@ -2305,6 +2305,40 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                             {displayName(it.name, up)} {tierChip}
                           </p>
                           <p className="truncate text-[11px] font-bold text-emerald-300/90">{itemEffect(it, up)}</p>
+                          {/* v1.1.5 (#개편 장비비교) — 장착 중인 장비와의 스탯 차이.
+                           *  종전엔 후보 장비의 수치만 보여줘 "지금 낀 것보다 좋은지"를
+                           *  유저가 직접 외우고 비교해야 했다. 같은 슬롯 장착템이 있고
+                           *  이 아이템이 미장착일 때만 Δ를 표시한다(장착템 자신은 비교 무의미). */}
+                          {(() => {
+                            const wornKey = it.kind === "weapon" ? rpg.weapon : rpg.armor;
+                            if (!wornKey || wornKey === s.k) return null;
+                            const worn = ITEMS[wornKey as ItemKey];
+                            if (!worn) return null;
+                            const dA = (it.atk ?? 0) - (worn.atk ?? 0);
+                            const dD = (it.def ?? 0) - (worn.def ?? 0);
+                            const dH = (it.maxHp ?? 0) - (worn.maxHp ?? 0);
+                            if (dA === 0 && dD === 0 && dH === 0) return null;
+                            const chip = (label: string, v: number, unit = "") => {
+                              if (v === 0) return null;
+                              const up2 = v > 0;
+                              return (
+                                <span
+                                  key={label}
+                                  className={`rounded px-1 py-px text-[9px] font-black ${up2 ? "bg-emerald-400/15 text-emerald-200" : "bg-rose-400/15 text-rose-200"}`}
+                                >
+                                  {label} {up2 ? "+" : ""}{v}{unit}
+                                </span>
+                              );
+                            };
+                            return (
+                              <span className="mt-0.5 flex flex-wrap items-center gap-1">
+                                <span className="text-[9px] font-bold text-white/45">장착 대비</span>
+                                {chip("공", dA)}
+                                {chip("방", dD)}
+                                {chip("HP", dH)}
+                              </span>
+                            );
+                          })()}
                           <PotViewLines pot={rpg.potentials?.[s.k]} />
                         </div>
                       </div>
