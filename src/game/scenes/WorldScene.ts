@@ -1418,6 +1418,8 @@ export class WorldScene extends Phaser.Scene {
       this.achClaimed = [...(savedPlayer.achClaimed ?? [])];
       /* v4.1.4 — 보스/카오스/침공 처치 누적 복원 */
       this.bossKillCount = savedPlayer.bossKills ?? 0;
+      /* v1.1.7 (#개편 A87) — 판매 잠금 목록 복원 (구 세이브는 undefined → 빈 배열) */
+      this.player.lockedItems = Array.isArray(savedPlayer.lockedItems) ? [...savedPlayer.lockedItems] : [];
       /* v1.1.5 (#개편 통계) — 누적 기록 복원 (구 세이브는 undefined → 0/1) */
       const ps = savedPlayer.playStats;
       this.statSavedSec = Math.max(0, Math.round(ps?.playSec ?? 0));
@@ -9024,8 +9026,26 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:bossReplay", onBossReplay); // v3.0.24 — 보스 재도전
     /* v3.1.0 — 스토리 보스 난이도 선택 이벤트는 제거됐다: 전용 난이도로 즉시 스폰 */
     /* v3.0.6 (지시 #4) — 아이템 판매 · v3.1.0 (#판매포기) — 수량 지정 판매 (MAX = 전량) */
+    /* v1.1.7 (#개편 A87) — 장비 판매 잠금 토글 */
+    const onLockItem = (v: { key: string }) => {
+      if (!this.player) return;
+      const has = this.player.lockedItems.includes(v.key);
+      this.player.lockedItems = has
+        ? this.player.lockedItems.filter((k) => k !== v.key)
+        : [...this.player.lockedItems, v.key];
+      this.save();
+      this.emitRpgState();
+      EventBus.emit("banner:show", { text: has ? "잠금 해제" : "잠금 — 이제 판매되지 않습니다" });
+    };
+    EventBus.on("rpg:lockItem", onLockItem);
+
     const onSell = (v: { key: string; qty?: number }) => {
       if (!this.player || this.dialoguing) return;
+      /* v1.1.7 (#개편 A87) — 잠근 아이템은 판매 불가. 실수로 좋은 장비를 파는 사고 방지. */
+      if (this.player.lockedItems.includes(v.key)) {
+        EventBus.emit("banner:show", { text: "잠근 아이템은 판매할 수 없습니다 — 잠금을 먼저 해제하세요" });
+        return;
+      }
       const qty = Math.max(1, Math.min(999, Math.floor(v.qty ?? 1)));
       const sold = this.player.sell(v.key as ItemKey, qty);
       if (sold > 0) {
@@ -9689,6 +9709,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:warp", onWarp);
       EventBus.off("rpg:bossReplay", onBossReplay);
       EventBus.off("rpg:sell", onSell);
+      EventBus.off("rpg:lockItem", onLockItem);
       EventBus.off("rpg:sellPotion", onSellPotion);
       EventBus.off("rpg:bmBuy", onBmBuy);
       EventBus.off("rpg:rankBuy", onRankBuy); // v1.3.0 — 랭커 상점
@@ -14125,6 +14146,7 @@ export class WorldScene extends Phaser.Scene {
         return out;
       })(),
       /* v1.1.5 (#개편 통계) — 스탯 창 실시간 표시 */
+      lockedItems: [...this.player.lockedItems], // v1.1.7 (#개편 A87)
       playStats: {
         playSec: Math.round(this.statSavedSec + Math.max(0, (this.time.now - this.startTime) / 1000)),
         kills: this.totalKills,
@@ -14149,6 +14171,7 @@ export class WorldScene extends Phaser.Scene {
       armor: this.player.armor,
       accessories: [...this.player.accessories],
       emerald: this.player.emerald,
+      lockedItems: [...this.player.lockedItems], // v1.1.7 (#개편 A87)
       upWea: this.player.upgrades.weapon,
       upArm: this.player.upgrades.armor,
       starMap: { ...this.player.starMap }, // vc145 (#16) — 아이템 단위 스타포스 (진짜 원천)

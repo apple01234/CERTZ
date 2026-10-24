@@ -52,6 +52,8 @@ export type RpgState = {
   accessories: string[];
   /** v2.9 (#12) — 과금 화폐 에메랄드 */
   emerald: number;
+  /** v1.1.7 (#개편 A87) — 판매 잠금된 아이템 키 목록 */
+  lockedItems?: string[];
   upWea: number;
   upArm: number;
   /* v3.0.7 — 장신구 스타포스 성(아이템별) + 강화 주문서 충전 수 + HP 가산 이력 */

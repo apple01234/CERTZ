@@ -2304,6 +2304,8 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 const isPot = s.k.startsWith("potion_") || it.healFull === true;
                 if (it.kind === "weapon" || it.kind === "armor") {
                   const equipped = rpg.weapon === s.k || rpg.armor === s.k;
+                  /* v1.1.7 (#개편 A87) — 이 아이템이 판매 잠금 상태인지 */
+                  const locked = (rpg.lockedItems ?? []).includes(s.k);
                   const up = it.kind === "weapon" ? rpg.upWea : rpg.upArm;
                   /* v4.6.0 — 모든 스타포스 강화를 가방에서: 상점 강화와 동일 이벤트(rpg:upgrade)·비용·성공률(주문서 가산 포함) */
                   const eqSlot: "weapon" | "armor" = it.kind === "weapon" ? "weapon" : "armor";
@@ -2412,7 +2414,15 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                         <InvBtn tone="gray" disabled={eertN <= 0} onClick={() => EventBus.emit("rpg:eert", { key: it.key })}>
                           EERT(잠재) {eertN > 0 ? `×${eertN}` : ""}
                         </InvBtn>
-                        {sellValue(it) > 0 && <SellQtyBox compact count={s.count} unitValue={sellValue(it)} ev="rpg:sell" keyName={s.k} />}
+                        {/* v1.1.7 (#개편 A87) — 판매 잠금 토글. 실수로 좋은 장비를 파는 사고 방지. */}
+                        <InvBtn
+                          tone={locked ? "amber" : "gray"}
+                          onClick={() => EventBus.emit("rpg:lockItem", { key: s.k })}
+                        >
+                          {locked ? "🔒 잠김" : "🔓 잠금"}
+                        </InvBtn>
+                        {sellValue(it) > 0 && !locked && <SellQtyBox compact count={s.count} unitValue={sellValue(it)} ev="rpg:sell" keyName={s.k} />}
+                        {sellValue(it) > 0 && locked && <span className="rounded-md bg-amber-400/10 px-1.5 py-1.5 text-[9px] font-bold text-amber-200/70">판매 잠김</span>}
                           <span
                             className="rounded-md bg-white/[0.06] px-1.5 py-1.5 text-[9px] font-bold text-amber-200/80"
                             title={`잠재 확률 — ${eertOdds().map((o) => `${o.name} ${o.pct}%`).join(" / ")} · 유니크 미달 연속 ${POT_PITY_MAX - 1}회 시 유니크+ 확정 (현재 ${rpg.potPity ?? 0}회)`}
