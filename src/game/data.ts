@@ -1196,6 +1196,10 @@ export const CHAPTER_ELEM: Record<string, ElemKey> = {
 /** 플레이어 계열별 공격 원소 (미전직은 무속성) */
 export const FAMILY_ELEM: Record<string, ElemKey> = {
   warrior: "fire", ranger: "nature", mage: "ice", thief: "dark",
+  /* v1.1.9 — 해적은 물/번개 계열. 뇌운(폭풍)과 화약 폭발 모티프라 번개로 잡았다. */
+  /* 해적은 번개 모티프지만 ElemKey에 thunder가 없고 원소 반응 9x9 테이블을
+   * 건드리면 기존 밸런스가 흔들린다. 폭풍·화약과 가장 가까운 "화염"으로 매핑. */
+  pirate: "fire",
 };
 
 /* ================= v1.4.16 — 원소 반응 시스템 (원신식 반응 연출) =================
@@ -2206,6 +2210,8 @@ const JOB_SPKR: Record<FamilyKey, string> = {
   ranger: "궁수 계열의 시조 '바람의 세이렌'",
   mage: "마법사 계열의 시조 '만개한 세이렌'",
   thief: "도적 계열의 시조 '그림자의 로크'",
+  /* v1.1.9 — 해적 계열 시조. 북유럽 신화의 바다 신 '니오르드'에서 이름만 차용(신화는 퍼블릭 도메인). */
+  pirate: "해적 계열의 시조 '조류의 니오르드'",
 };
 
 /* v3.0.2 (지시 #12 — "전직 스토리 퀘스트 어디감, 1차 10분 2차 20분 3차 30분 이런식으로"):
@@ -2213,7 +2219,7 @@ const JOB_SPKR: Record<FamilyKey, string> = {
  *  v1.0.12 (#4차전직퀘) — 4차도 시련 스토리를 거치도록 확장 (기존엔 3차까지만 있어 4차는 퀘스트 없이 바로 전직됐다)
  *  v1.0.12 (#문구청소) — 제목의 "(약 N분)" 개발 주석성 문구 제거 */
 function jobStory(family: FamilyKey, tier: 1 | 2 | 3 | 4): JobStoryDef {
-  const nameOf: Record<FamilyKey, string> = { warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적" };
+  const nameOf: Record<FamilyKey, string> = { warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적", pirate: "해적" };
   const stepBase = tier === 1 ? 8 : tier === 2 ? 10 : tier === 3 ? 14 : 18;
   const huntMid = tier === 1 ? 0 : tier === 2 ? 15 : tier === 3 ? 20 : 25;
   /* v1.3.1 (#4) — collect(보석의 흔적 회수) 전면 폐지 → travel(지정 맵 이동+사냥)로 교체.
@@ -2226,6 +2232,8 @@ function jobStory(family: FamilyKey, tier: 1 | 2 | 3 | 4): JobStoryDef {
     ranger: { t2: "궁수의 길은 거리다. 계승의 시험장으로 이동해 멀리서 정확히 사냥하자.", t4: "바람의 증명 — 다른 계승지에서 움직이며 정밀 사격을 가하라.", adj: 0 },
     mage: { t2: "마법사의 길은 마나다. 계승의 시험장으로 이동해 주문으로 마수를 정리하자.", t4: "심연의 증명 — 다른 계승지에서 마력으로 유산의 수호자를 쓰러뜨려라.", adj: -1 },
     thief: { t2: "도적의 길은 그림자다. 계승의 시험장으로 이동해 소리 없이 마수를 처리하자.", t4: "그림자의 증명 — 다른 계승지에서 흔적 없이 표적을 암살하라.", adj: -1 },
+    /* v1.1.9 — 해적은 "넓게 쓸어버린다"가 정체성이라 목표 수를 가장 많이 잡았다(adj +1). */
+    pirate: { t2: "해적의 길은 항로다. 계승의 시험장으로 이동해 범위로 밀어붙여라.", t4: "조류의 증명 — 다른 계승지에서 폭풍과 화약으로 전장을 정리하라.", adj: 1 },
   };
   const tn = Math.max(4, travelNeed + travelTone[family].adj);
   const titles: Record<FamilyKey, Record<1 | 2 | 3 | 4, string>> = {
@@ -2233,6 +2241,7 @@ function jobStory(family: FamilyKey, tier: 1 | 2 | 3 | 4): JobStoryDef {
     ranger: { 1: "바람의 씨앗", 2: "바람의 재능", 3: "천공의 사수", 4: "천을 꿰뚫는 화살" },
     thief: { 1: "그림자의 태동", 2: "그림자의 맹세", 3: "검의 그림자", 4: "그림자의 왕좌" },
     mage: { 1: "마나의 눈뜸", 2: "마나의 문", 3: "심연의 지혜", 4: "세계의 법칙" },
+    pirate: { 1: "돛의 태동", 2: "항로의 맹세", 3: "폭풍의 지휘", 4: "바다를 삼킨 자" },
   };
   const title = titles[family][tier];
   const steps: JobStoryDef["steps"] = [
@@ -2317,6 +2326,8 @@ export const JOBSTORY: Record<FamilyKey, Record<1 | 2 | 3 | 4, JobStoryDef>> = {
   ranger: { 1: jobStory("ranger", 1), 2: jobStory("ranger", 2), 3: jobStory("ranger", 3), 4: jobStory("ranger", 4) },
   mage: { 1: jobStory("mage", 1), 2: jobStory("mage", 2), 3: jobStory("mage", 3), 4: jobStory("mage", 4) },
   thief: { 1: jobStory("thief", 1), 2: jobStory("thief", 2), 3: jobStory("thief", 3), 4: jobStory("thief", 4) },
+  /* v1.1.9 — 해적 계열 전직 스토리 4차수 */
+  pirate: { 1: jobStory("pirate", 1), 2: jobStory("pirate", 2), 3: jobStory("pirate", 3), 4: jobStory("pirate", 4) },
 };
 
 /* 전직 스토리 대사 (계열 × 차수 × 단계) */
@@ -2349,6 +2360,13 @@ const T1_LINES: Record<FamilyKey, { start: string[]; s1: string[]; s2: string[];
     s3: ["『인정한다. 마지막으로 시험 상대를 뒤에서 놀려라!』"],
     done: ["『오늘부로 너는 도적이다. 그림자의 태동을 잊지 마라.』"],
   },
+  pirate: {
+    start: ["『…돛을 올릴 줄 아는 눈이군. 나는 조류의 니오르드 — 처음 바다를 건넌 자다.』", "『바다는 혼자 건너지 않는다. 넓게 쓸어버리며 나아가라!』"],
+    s1: ["『호오, 화약 냄새를 두려워하지 않는군.』", "『좋다. 손이 저리면 아직 살아있다는 뜻이다.』"],
+    s2: ["『그 흔적 — 조류가 너를 알아보는 증표다.』"],
+    s3: ["『인정한다. 마지막으로 시험 상대를 정면에서 밀어붙여라!』"],
+    done: ["『오늘부로 너는 해적이다. 돛의 태동을 잊지 마라!』"],
+  },
 };
 
 /* v1.0.12 (#4차전직퀘) — 4차 시련 대사: "초월" 테마 — 시조가 후예를 넘어서는 단계 */
@@ -2380,6 +2398,13 @@ const T4_LINES: Record<FamilyKey, { start: string[]; s1: string[]; s2: string[];
     s2: ["『…인장을 훔쳐왔군. 아니, '받아냈'다.』", "『그림자가 너를 왕으로 인정하기 시작했다!』"],
     s3: ["『왕좌의 문 앞에서도 숨결이 들리지 않았군.』", "『마지막이다 — 시험 상대를 무덤으로 보내라!』"],
     done: ["『인정한다. 오늘부로 너가 그림자이자 왕이다.』", "『앉아라, 어세신(스와시버클러). 그림자의 왕좌에!』"],
+  },
+  pirate: {
+    start: ["『…여기까지 항해해 올 줄은 몰랐다, 해적이여. 이제 조류가 너를 시험한다.』", "『넘어야 할 것은 폭풍 그 자체다 — 세계가 너를 다른 바다로 부른다!』"],
+    s1: ["『폭풍의 무게가 어깨에 익기 시작했군.』", "『좋다. 돛은 바람을 맞을수록 단단해진다!』"],
+    s2: ["『…조류의 인장이 네 손에 새겨졌군.』", "『그 손이 더는 떨리지 않는다면 — 통과다!』"],
+    s3: ["『초월의 문 앞에서도 화약이 젖지 않았군.』", "『이제 마지막이다. 시조의 이름을 걸고 시험 상대를 침몰시켜라!』"],
+    done: ["『인정한다. 오늘부로 너는 바다 그 자체다.』", "『서라, 씨킹(드레드노트). 너의 항로가 곧 세계다!』"],
   },
 };
 
@@ -2453,9 +2478,27 @@ const JS_LINES: Record<FamilyKey, Record<1 | 2 | 3, { start: string[]; s1: strin
       done: ["『이제 너의 이름은 어둠의 전설이 될 것이다.』", "『서라, 어세신(스와시버클러). 바다가 너를 기억한다!』"],
     },
   },
+  /* v1.1.9 — 해적 계열 2·3차 전직 대사 */
+  pirate: {
+    1: T1_LINES.pirate,
+    2: {
+      start: ["『…돛이 찢기고도 항구에 닿았군. 나는 조류의 니오르드다.』", "『이제 네 항해는 혼자의 것이 아니다. 넓게 쓸어버리는 법을 보여라!』"],
+      s1: ["『화약이 손에 익었군.』", "『좋다. 파도는 한 번에 밀려오지 않는다 — 계속 밀어붙여라!』"],
+      s2: ["『…조류의 잔향이 네 발걸음에 남았군.』", "『그 흐름을 읽을 수 있다면 — 통과다!』"],
+      s3: ["『인정한다. 마지막으로 시험 상대를 밀어붙여라!』"],
+      done: ["『오늘부로 너는 이름난 항해자다. 돛의 각오를 잊지 마라.』"],
+    },
+    3: {
+      start: ["『…폭풍의 한가운데서도 웃는구나, 해적이여.』", "『이제 바다가 너를 지휘관으로 부른다. 전장을 한 척의 배처럼 다뤄라!』"],
+      s1: ["『…조류가 너를 따르기 시작했군.』", "『좋다. 선장은 배를 끌지 않는다 — 방향만 정한다.』"],
+      s2: ["『폭풍의 인장이 네 깃발에 새겨졌군.』", "『그 깃발을 본 자들이 도망치지 않는다면 — 통과다!』"],
+      s3: ["『…심연의 해류도 네 앞에서는 잠잠해졌군.』", "『완성이다. 폭풍을 받아라!』"],
+      done: ["『이제 너의 이름은 바다의 전설이 될 것이다.』", "『서라, 스톰캡틴(파우더마스터). 폭풍이 너를 기억한다!』"],
+    },
+  },
 };
 
-for (const fam of ["warrior", "ranger", "mage", "thief"] as FamilyKey[]) {
+for (const fam of ["warrior", "ranger", "mage", "thief", "pirate"] as FamilyKey[]) {
   /* v1.0.12 — 4차 시련 대사 등록 (js{fam}4Start/Step1/Step2/Step3/Done) */
   const L4 = T4_LINES[fam];
   DIALOGUES[`js${fam}4Start`] = { speaker: JOB_SPKR[fam], lines: L4.start };
@@ -2481,6 +2524,7 @@ export const AUTO_ALLOC: Record<FamilyKey, { str: number; dex: number; int: numb
   ranger: { str: 1, dex: 4, int: 0, luk: 0 }, // 민첩 4 : 힘 1
   mage: { str: 0, dex: 0, int: 4, luk: 1 }, // 지력 4 : 행운 1
   thief: { str: 2, dex: 2, int: 0, luk: 1 }, // 힘 2 : 민첩 2 : 행운 1 (치명타 특화)
+  pirate: { str: 3, dex: 1, int: 0, luk: 1 }, // 힘 3 : 민첩 1 : 행운 1 (광역 딜 + 치명 보조)
 };
 
 /** AP를 계열 배분 비율로 나눠 담는다 (남는 AP는 주스탯에 몰아줌) */

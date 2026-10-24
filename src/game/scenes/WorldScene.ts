@@ -11487,6 +11487,38 @@ export class WorldScene extends Phaser.Scene {
           this.spawnSnipeBeam(x, y - 10, x + Math.cos(ang) * 420, y - 10, hex);
           this.spawnBurstAt(x + face * 60, y, 10, hex);
           break;
+        /* v1.1.9 — 해적 3차기 원격 연출 (로컬과 동일한 인상) */
+        case "stormcall": /* 뇌우 소환 — 광역 낙뢰 기둥 */
+          for (let i = 0; i < 5; i++) {
+            const a2 = Math.random() * Math.PI * 2;
+            const rr = 40 + Math.random() * 200 * s;
+            this.spawnPillar(x + Math.cos(a2) * rr, y + Math.sin(a2) * rr, 0x9fd8ff, 190);
+          }
+          this.spawnBurstAt(x, y, 14, 0x9fd8ff);
+          this.doShake(120, 0.003);
+          break;
+        case "minefield": /* 지뢰 부설 — 사방에 지뢰 표식 */
+          for (let i = 0; i < 4; i++) {
+            const a2 = (Math.PI * 2 * i) / 4;
+            this.remoteRing(x + Math.cos(a2) * 90 * s, y + Math.sin(a2) * 90 * s, 0xff9a5c, 0.7 * s, 0, 2.0);
+          }
+          this.spawnBurstAt(x, y, 10, 0xff9a5c);
+          break;
+        case "tidalwave": /* 만조 — 전방으로 밀려가는 해일 링 */
+          for (let i = 0; i < 5; i++) {
+            this.time.delayedCall(i * 90, () =>
+              this.remoteRing(x + Math.cos(ang) * (60 + i * 110) * s, y + Math.sin(ang) * (60 + i * 110) * s, 0x5fd4ff, 1.5 * s, 0, 2.2));
+          }
+          this.doShake(180, 0.004);
+          break;
+        case "broadside": /* 전탄 발사 — 3방향 폭발 */
+          for (let k = -1; k <= 1; k++) {
+            const a2 = ang + k * 0.42;
+            this.time.delayedCall((k + 1) * 70, () =>
+              this.spawnBurstAt(x + Math.cos(a2) * 230 * s, y + Math.sin(a2) * 230 * s, 14, 0xffb347));
+          }
+          this.doShake(140, 0.004);
+          break;
       }
       return;
     }
@@ -11538,6 +11570,32 @@ export class WorldScene extends Phaser.Scene {
             this.spawnSlash(dx, y, new Phaser.Math.Vector2(Math.random() > 0.5 ? 1 : -1, 0), i % 2 === 0, 1.2 * s, hex);
           });
           this.remoteRing(x, y, hex, 1.9 * s, 540, 2.5);
+          break;
+        /* v1.1.9 — 해적 4차 궁극기 원격 연출 */
+        case "maelstrom": /* 침몰의 종 — 수축하는 소용돌이 + 대폭발 */
+          for (let i = 0; i < 6; i++) {
+            this.time.delayedCall(i * 130, () =>
+              this.remoteRing(x, y, 0x5fd4ff, ((260 - i * 34) / 210) * s, 0, 2.0));
+          }
+          this.time.delayedCall(6 * 130 + 120, () => {
+            this.spawnPillar(x, y, 0xbfe9ff, 260);
+            this.spawnBurstAt(x, y, 36, 0x5fd4ff);
+            this.cameras.main.flash(200, 200, 240, 255);
+            this.doShake(240, 0.008);
+          });
+          break;
+        case "decksweep": /* 무쌍 포격 — 8방향 폭격 */
+          for (let i = 0; i < 8; i++) {
+            const a2 = (Math.PI * 2 * i) / 8;
+            const dd = (180 + (i % 2) * 90) * s;
+            this.time.delayedCall(i * 90, () => {
+              const px = x + Math.cos(a2) * dd;
+              const py = y + Math.sin(a2) * dd;
+              this.spawnPillar(px, py, 0xffb347, 220);
+              this.spawnBurstAt(px, py, 16, 0xff6a3d);
+              this.doShake(90, 0.004);
+            });
+          }
           break;
       }
       return;
@@ -13058,7 +13116,7 @@ export class WorldScene extends Phaser.Scene {
     const step = story?.steps[this.jobStory.step];
     if (!story || !step || step.type !== "travel") return null;
     if (this.jobStory.tst && STAGES[this.jobStory.tst as StageKey]) return this.jobStory.tst;
-    const famIdx: Record<FamilyKey, number> = { warrior: 0, ranger: 1, mage: 2, thief: 3 };
+    const famIdx: Record<FamilyKey, number> = { warrior: 0, ranger: 1, mage: 2, thief: 3, pirate: 4 }; // v1.1.9 — 해적 계열 추가
     const idxBase = famIdx[this.jobStory.fam] * 2 + (this.jobStory.tier - 1); // 계열×티어 고유 오프셋
     const visited = [...this.visited].filter((k) => {
       const d = STAGES[k as StageKey];

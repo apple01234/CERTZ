@@ -17,9 +17,9 @@ import {
 import { loadSlots, unionLevelOf, SLOT_EXPAND_COIN, type CharMeta } from "@/game/slots";
 import { EventBus } from "./EventBus";
 
-const FAM_LABEL: Record<string, string> = { warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적" };
-const FAM_COLOR: Record<string, string> = { warrior: "#ff8a70", ranger: "#7ddcff", mage: "#c9a0ff", thief: "#a0e8a0" };
-const FAM_HEX: Record<string, number> = { warrior: 0xff8a70, ranger: 0x7ddcff, mage: 0xc9a0ff, thief: 0xa0e8a0 };
+const FAM_LABEL: Record<string, string> = { warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적", pirate: "해적" }; // v1.1.9 해적 계열
+const FAM_COLOR: Record<string, string> = { warrior: "#ff8a70", ranger: "#7ddcff", mage: "#c9a0ff", thief: "#a0e8a0", pirate: "#ffd76a" }; // v1.1.9 해적 계열
+const FAM_HEX: Record<string, number> = { warrior: 0xff8a70, ranger: 0x7ddcff, mage: 0xc9a0ff, thief: 0xa0e8a0, pirate: 0xffd76a }; // v1.1.9 해적 계열
 
 /* v1.4.3 (작업5) — 유니온 전용 시각 에셋 매핑 (public/assets/ui/union/)
  *  기능만 있고 텍스트 UI만 있던 아티팩트 6종·시간제 버프 4종·레이드 보스 3종에

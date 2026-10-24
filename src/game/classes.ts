@@ -48,7 +48,7 @@ export const SKILL_ICONS: Partial<Record<ClassKey | "base", { s1Icon: string; s2
 };
 
 export type Tier = 1 | 2 | 3 | 4;
-export type FamilyKey = "warrior" | "ranger" | "mage" | "thief";
+export type FamilyKey = "warrior" | "ranger" | "mage" | "thief" | "pirate";
 export type ClassKey =
   | FamilyKey /* 1차 */
   | "berserker" | "guardian" /* 전사 2차 */
@@ -62,7 +62,13 @@ export type ClassKey =
   | "warbringer" | "crusader" /* 전사 4차 (Lv100) */
   | "deadeye" | "skylord" /* 궁수 4차 */
   | "arclord" | "eternal" /* 마법사 4차 */
-  | "shadowlord" | "blademaster"; /* 도적 4차 */
+  | "shadowlord" | "blademaster" /* 도적 4차 */
+  /* v1.1.9 — 5번째 계열: 해적(pirate). 바다·항해·화약 모티프.
+   *  계열 4종 구조(1차 1 + 2차 2 + 3차 2 + 4차 2)를 그대로 따른다.
+   *  이름은 메이플스토리에서 차용하지 않고 북유럽 신화(바다·항해·뇌운)에서 새로 지었다. */
+  | "raider" | "corsair" /* 해적 2차 */
+  | "stormcaptain" | "powdermaster" /* 해적 3차 */
+  | "seaking" | "dreadnought"; /* 해적 4차 */
 
 export type ClassDef = {
   key: ClassKey;
@@ -142,6 +148,21 @@ const THIEF: ClassDef = {
   desc: "그림자처럼 다가와 단검으로 목을 후린다. 치명타와 회피의 달인. — \"보물은 스스로 걸어온다. 내가 훔칠 뿐.\"",
 };
 
+/* v1.1.9 (#개편 — 계열 확장) — 5번째 계열: 해적.
+ *  설계 의도: 기존 4계열과 전투 리듬을 다르게 가져간다.
+ *   · 전사=맷집·근접 / 궁수=치명·기동 / 마법사=고화력·유리 / 도적=연타·암습
+ *   · 해적=**넓은 광역 + 아군 버프** — 혼자 강한 계열이 아니라 판을 키우는 계열.
+ *  이름은 북유럽 신화의 바다·항해·뇌운에서 따왔다(저작권 안전). */
+const PIRATE: ClassDef = {
+  key: "pirate", tier: 1, parent: null,
+  name: "해적", title: "항해자",
+  color: "#ffd76a", hex: 0xffd76a,
+  atkPct: 14, critAdd: 6, defAdd: 4, hpAdd: 90, mpAdd: 20, speedPct: 8,
+  bossDmgPct: 2, mobDmgPct: 10,
+  cdMult: 0.95, skillMult: 1.05,
+  desc: "배 한 척으로 세계를 떠도는 자. 넓게 쓸어버리고, 동료를 끌어올린다. — \"항구 없이도 살아남는 법을 안다.\"",
+};
+
 /* ================= 2차 — 세부 직업 선택 (Lv30, 계열별 2종) ================= */
 
 const BERSERKER: ClassDef = {
@@ -200,6 +221,28 @@ const SAGE: ClassDef = {
 };
 
 /* ================= 3차 — 승격 (Lv50, 2차 경로 자동 이어짐) ================= */
+
+/* ── 해적 2차 ─────────────────────────────────────────────── */
+/* 레이더 — 화약·포격 특화: 느리지만 넓게 터진다 */
+const RAIDER: ClassDef = {
+  key: "raider", tier: 2, parent: "pirate",
+  name: "레이더", title: "약탈자",
+  color: "#ffb347", hex: 0xffb347,
+  atkPct: 20, critAdd: 4, defAdd: 0, hpAdd: 60, mpAdd: 0, speedPct: 0,
+  bossDmgPct: 4, mobDmgPct: 16,
+  cdMult: 1, skillMult: 1.1,
+  desc: "화약 한 통이면 충분하다. 범위가 곧 화력.",
+};
+/* 코세어 — 선상 백병 특화: 근접 연타 + 기동 */
+const CORSAIR: ClassDef = {
+  key: "corsair", tier: 2, parent: "pirate",
+  name: "코세어", title: "선상 검객",
+  color: "#ffdf8a", hex: 0xffdf8a,
+  atkPct: 12, critAdd: 14, defAdd: 2, hpAdd: 80, mpAdd: 0, speedPct: 14,
+  bossDmgPct: 8, mobDmgPct: 6,
+  cdMult: 0.9, skillMult: 1,
+  desc: "흔들리는 갑판 위에서도 정확하다. 빠른 손이 곧 목숨.",
+};
 
 const WARLORD: ClassDef = {
   key: "warlord", tier: 3, parent: "berserker",
@@ -297,6 +340,28 @@ const DUELIST: ClassDef = {
 
 /* ================= 4차 — 각성 (Lv100, 사용자 지시 #9) ================= */
 
+/* ── 해적 3차 ─────────────────────────────────────────────── */
+/* 스톰캡틴 — 폭풍 항해: 광역 뇌우 + 아군 가속 */
+const STORMCAPTAIN: ClassDef = {
+  key: "stormcaptain", tier: 3, parent: "raider",
+  name: "스톰캡틴", title: "폭풍의 선장",
+  color: "#8fe8ff", hex: 0x8fe8ff,
+  atkPct: 26, critAdd: 6, defAdd: 4, hpAdd: 120, mpAdd: 40, speedPct: 8,
+  bossDmgPct: 10, mobDmgPct: 16,
+  cdMult: 0.9, skillMult: 1.2,
+  desc: "폭풍을 등지고 항해한다. 배가 지나간 자리에 뇌우가 남는다.",
+};
+/* 파우더마스터 — 화약의 정점: 설치형 지뢰 + 광범위 폭발 */
+const POWDERMASTER: ClassDef = {
+  key: "powdermaster", tier: 3, parent: "raider",
+  name: "파우더마스터", title: "화약 장인",
+  color: "#ff9a5c", hex: 0xff9a5c,
+  atkPct: 30, critAdd: 2, defAdd: 0, hpAdd: 90, mpAdd: 20, speedPct: 0,
+  bossDmgPct: 18, mobDmgPct: 12,
+  cdMult: 1, skillMult: 1.25,
+  desc: "터지는 순간만이 그의 작품이다.",
+};
+
 const WARBRINGER: ClassDef = {
   key: "warbringer", tier: 4, parent: "warlord",
   name: "워브링어", title: "전쟁의 화신",
@@ -372,6 +437,28 @@ const BLADEMASTER: ClassDef = {
   desc: "단검 두 자루로 신을 벤다.",
 };
 
+/* ── 해적 4차 ─────────────────────────────────────────────── */
+/* 씨킹 — 바다의 지배자: 광역 해일 + 아군 전체 버프(계열 정체성 완성) */
+const SEAKING: ClassDef = {
+  key: "seaking", tier: 4, parent: "stormcaptain",
+  name: "씨킹", title: "바다의 왕",
+  color: "#5fd4ff", hex: 0x5fd4ff,
+  atkPct: 28, critAdd: 10, defAdd: 8, hpAdd: 240, mpAdd: 120, speedPct: 12,
+  bossDmgPct: 20, mobDmgPct: 14,
+  cdMult: 0.78, skillMult: 1.35,
+  desc: "해일이 그의 손끝에서 시작된다. 함께 싸우는 자 모두가 강해진다.",
+};
+/* 드레드노트 — 무쌍 포격: 전장을 지우는 화력 */
+const DREADNOUGHT: ClassDef = {
+  key: "dreadnought", tier: 4, parent: "powdermaster",
+  name: "드레드노트", title: "무쌍 포격",
+  color: "#ff6a3d", hex: 0xff6a3d,
+  atkPct: 34, critAdd: 14, defAdd: 0, hpAdd: 180, mpAdd: 60, speedPct: 6,
+  bossDmgPct: 26, mobDmgPct: 8,
+  cdMult: 0.85, skillMult: 1.45,
+  desc: "한 발의 포성이 전장을 침묵시킨다.",
+};
+
 export const CLASSES: Record<ClassKey, ClassDef> = {
   warrior: WARRIOR, ranger: RANGER, mage: MAGE, thief: THIEF,
   berserker: BERSERKER, guardian: GUARDIAN,
@@ -386,10 +473,14 @@ export const CLASSES: Record<ClassKey, ClassDef> = {
   deadeye: DEADEYE, skylord: SKYLORD,
   arclord: ARCLORD, eternal: ETERNAL,
   shadowlord: SHADOWLORD, blademaster: BLADEMASTER,
+  /* v1.1.9 — 해적 계열 */
+  pirate: PIRATE, raider: RAIDER, corsair: CORSAIR,
+  stormcaptain: STORMCAPTAIN, powdermaster: POWDERMASTER,
+  seaking: SEAKING, dreadnought: DREADNOUGHT,
 };
 
 /** 1차 계열 4종 (초기 전직 선택지 — v2.9 도적 추가) */
-export const CLASS_LIST: ClassDef[] = [WARRIOR, RANGER, MAGE, THIEF];
+export const CLASS_LIST: ClassDef[] = [WARRIOR, RANGER, MAGE, THIEF, PIRATE];
 
 /* ================= 헬퍼 ================= */
 
@@ -545,7 +636,10 @@ export type Skill1Kind =
   | "arcbolt" /* archmage — 아크 볼트: 착탄 광역 폭발 대형 볼트 */
   | "purify" /* sage — 정화의 파동: 확산 파동 링, 타격당 자힐 */
   | "shadowexec" /* assassin — 그림자 참수: 최근접 적 점멸 + 출혈 강타 */
-  | "flurrydance"; /* swashbuckler — 연타 난무: 전방 5연속 속공 */
+  | "flurrydance" /* swashbuckler — 연타 난무: 전방 5연속 속공 */
+  /* v1.1.9 — 해적 계열. "넓게 쓸어버린다"가 계열 정체성. */
+  | "cannonblast" /* raider — 포격: 전방 대형 폭발탄 */
+  | "cutlassdance"; /* corsair — 커틀러스 난무: 전방 광범위 3연속 베기 */
 
 export type Skill2Kind =
   | "dash" /* warrior — 돌진 + 종착 충격파 */
@@ -559,7 +653,10 @@ export type Skill2Kind =
   | "grandblink" /* archmage — 대전이 점멸: 양단 대폭발 (반경 1.5배) */
   | "cycleblink" /* sage — 순환 점멸: MP 회복 + 경로 마나 흡수 */
   | "ambushdash" /* assassin — 암습 돌진: 경로상 적 출혈 부여 */
-  | "flashydash"; /* swashbuckler — 화려한 돌진: 경로 연타 + 화려한 검 잔상 */
+  | "flashydash" /* swashbuckler — 화려한 돌진: 경로 연타 + 화려한 검 잔상 */
+  /* v1.1.9 — 해적 계열 기동기 */
+  | "smokestep"   /* raider — 연막 측면: 짧은 도약 + 착지 폭발 */
+  | "grappleswing"; /* corsair — 갈고리 그네: 먼 거리 도약 + 경로 타격 */
 
 /* v3.0.6 — 1차+2차 12종 고유 정의 (3차/4차는 resolveSkill1Of가 계열 체인에서 승계) */
 export const SKILL1_KIND: Partial<Record<ClassKey, Skill1Kind>> = {
@@ -575,6 +672,9 @@ export const SKILL1_KIND: Partial<Record<ClassKey, Skill1Kind>> = {
   sage: "purify",
   assassin: "shadowexec",
   swashbuckler: "flurrydance",
+  /* v1.1.9 — 해적 */
+  raider: "cannonblast",
+  corsair: "cutlassdance",
 };
 
 export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
@@ -590,6 +690,9 @@ export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
   sage: "cycleblink",
   assassin: "ambushdash",
   swashbuckler: "flashydash",
+  /* v1.1.9 — 해적 */
+  raider: "smokestep",
+  corsair: "grappleswing",
 };
 
 /** 스킬 종류 승계 — 현재 클래스부터 루트까지 거슬러 처음 정의된 종류 (3차/4차는 2차기 강화판) */
@@ -668,7 +771,12 @@ export type Skill3Kind =
   | "chainlight"  /* arclord(4차) — 연쇄 번개: 적→적으로 도약하는 번개 */
   | "gravity"     /* eternal(4차) — 중력 붕괴: 적을 한 점으로 끌어당긴 뒤 폭발 */
   | "shadowmine"  /* shadowlord(4차) — 그림자 지뢰: 접촉 시 출혈 폭발 지뢰 설치 */
-  | "swordaura";  /* blademaster(4차) — 파동 검기: 전방 전부 관통하는 검기 파동 */
+  | "swordaura"   /* blademaster(4차) — 파동 검기: 전방 전부 관통하는 검기 파동 */
+  /* v1.1.9 — 해적 계열 3차·4차기 (기존 16종과 메커니즘 겹침 0) */
+  | "stormcall"   /* stormcaptain(3차) — 뇌우 소환: 광역 낙뢰 + 아군 가속 */
+  | "minefield"   /* powdermaster(3차) — 지뢰 부설: 접근하면 연쇄 폭발하는 지뢰 4기 */
+  | "tidalwave"   /* seaking(4차) — 만조: 전방을 쓸고 가는 거대 해일 */
+  | "broadside";  /* dreadnought(4차) — 전탄 발사: 양현 포격이 전장을 덮는다 */
 
 export type Skill4Kind =
   | "doomsday"    /* warbringer — 종언의 일격: 돌진 후 대폭발 */
@@ -678,7 +786,10 @@ export type Skill4Kind =
   | "manaburst"   /* arclord — 마나 붕괴: MP 소모 대폭발 */
   | "eternalloop" /* eternal — 영원의 고리: 광역 기절(시간 정지) */
   | "shadowclon"  /* shadowlord — 그림자 군주: 그림자 분신 자폭 */
-  | "bladedance"; /* blademaster — 검무: 적 사이 점멸 연격 */
+  | "bladedance" /* blademaster — 검무: 적 사이 점멸 연격 */
+  /* v1.1.9 — 해적 계열 4차 궁극 2종 */
+  | "maelstrom"   /* seaking — 침몰의 종: 거대 소용돌이가 전장을 삼킨다 */
+  | "decksweep";  /* dreadnought — 무쌍 포격: 8방향 동시 폭격 */
 
 /* v3.0.4 — 16개 상위직 전부 고유 메커니즘 (겹침 0) */
 export const SKILL3_KIND: Partial<Record<ClassKey, Skill3Kind>> = {
@@ -698,6 +809,11 @@ export const SKILL3_KIND: Partial<Record<ClassKey, Skill3Kind>> = {
   eternal: "gravity",
   shadowlord: "shadowmine",
   blademaster: "swordaura",
+  /* v1.1.9 — 해적 */
+  stormcaptain: "stormcall",
+  powdermaster: "minefield",
+  seaking: "tidalwave",
+  dreadnought: "broadside",
 };
 
 export const SKILL4_KIND: Partial<Record<ClassKey, Skill4Kind>> = {
@@ -709,6 +825,9 @@ export const SKILL4_KIND: Partial<Record<ClassKey, Skill4Kind>> = {
   eternal: "eternalloop",
   shadowlord: "shadowclon",
   blademaster: "bladedance",
+  /* v1.1.9 — 해적 */
+  seaking: "maelstrom",
+  dreadnought: "decksweep",
 };
 
 /** GM/전직 패널용 스킬 설명 — 3차기/4차기 (v3.0.4 — 16종 전부 고유) */
@@ -729,6 +848,11 @@ export const SKILL3_DESC: Record<Skill3Kind, string> = {
   gravity: "적을 한 점으로 끌어모아 폭발",
   shadowmine: "접촉 시 출혈 폭발하는 지뢰 3기 설치",
   swordaura: "전방을 전부 관통하는 거대 검기 파동",
+  /* v1.1.9 — 해적 */
+  stormcall: "광역 낙뢰 폭풍 + 자신 신속",
+  minefield: "접근하면 연쇄 폭발하는 지뢰 4기 부설",
+  tidalwave: "전방을 쓸고 가는 거대 해일 — 광범위 넉백",
+  broadside: "양현 전탄 발사 — 부채꼴 3방향 동시 폭격",
 };
 export const SKILL4_DESC: Record<Skill4Kind, string> = {
   doomsday: "돌진 후 종언의 대폭발",
@@ -739,6 +863,9 @@ export const SKILL4_DESC: Record<Skill4Kind, string> = {
   eternalloop: "시간 정지 — 광역 기절 · 자신 HP 25% + MP 50% 회복 (v3.0.7 힐러 정점)",
   shadowclon: "그림자 분신 자폭",
   bladedance: "적 사이를 점멸하는 검무",
+  /* v1.1.9 — 해적 */
+  maelstrom: "거대 소용돌이가 전장을 삼키고 적을 끌어당긴다",
+  decksweep: "8방향 동시 폭격 — 전장 전체를 지운다",
 };
 
 /* v3.2.0 — 5차 궁극기 (지시: "5차스킬(200렙), 쿨타임 1분, ㅈㄴ 강력하고 화려한 궁극기")
@@ -766,6 +893,11 @@ export const SKILL5_INFO: Record<Skill5Key, { name: string; desc: string }> = {
   mage: {
     name: "종막 — 아르카나 대폭발",
     desc: "운석 8발 낙하 + 만물의 원소 종막 폭발 — 피해량이 가장 높은 광역 마법",
+  },
+  /* v1.1.9 — 해적 계열 궁극기(계열 폴백). 4차 미달 해적이 200레벨에서 쓴다. */
+  pirate: {
+    name: "만조 — 대양 항로",
+    desc: "거대한 해일이 전장을 관통하고 뇌운에서 낙뢰가 쏟아진다 — 범위가 가장 넓은 계열 궁극기",
   },
   thief: {
     name: "심연 — 그림자 참수극",
@@ -834,6 +966,11 @@ export const SKILL5B_INFO: Record<Skill5BKey, { name: string; desc: string }> = 
   mage: {
     name: "종막이격 — 대균열 블랙홀",
     desc: "전장 중심에 대균열을 열어 모든 적을 빨아들이고, 균열이 붕괴하며 잿더미 없이 소멸시키는 종막급 폭발",
+  },
+  /* v1.1.9 — 해적 계열 제2궁극기 */
+  pirate: {
+    name: "폭풍항로 — 침몰의 종",
+    desc: "바다가 수직으로 갈라지고 침몰한 함대의 포성이 되돌아온다 — 광역 폭격이 8초간 이어진다",
   },
   thief: {
     /* vc153 (#신규10 + 3D필살기) — 도적 계열 제2궁극기 개편: 「사(死)의 일섬」 3D 시네마틱 */

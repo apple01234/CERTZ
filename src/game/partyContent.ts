@@ -30,13 +30,16 @@ export type PartySynergy = {
 };
 
 /** 직업 키 → 계열 (union.ts familyOfChar와 동일 규칙 — 순환 import 회피용 로컬 역산) */
-export function familyOfCls(cls: string | null): "warrior" | "ranger" | "mage" | "thief" | null {
+export function familyOfCls(cls: string | null): "warrior" | "ranger" | "mage" | "thief" | "pirate" | null {
   if (!cls) return null;
   if (cls === "warrior" || cls === "ranger" || cls === "mage" || cls === "thief") return cls;
   if (/^(berserker|guardian|warlord|paladin|warbringer|crusader)$/.test(cls)) return "warrior";
   if (/^(sniper|windrunner|eagleeye|tempest|deadeye|skylord)$/.test(cls)) return "ranger";
   if (/^(archmage|sage|stormbringer|chronicle|arclord|eternal)$/.test(cls)) return "mage";
   if (/^(rogue|ninja|assassin|phantom|shadowlord|blademaster)$/.test(cls)) return "thief";
+  /* v1.1.9 — 해적 계열 역산 추가 */
+  if (cls === "pirate") return "pirate";
+  if (/^(raider|corsair|stormcaptain|powdermaster|seaking|dreadnought)$/.test(cls)) return "pirate";
   return null;
 }
 

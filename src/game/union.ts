@@ -106,6 +106,9 @@ export function familyOfChar(meta: CharMeta | undefined): FamilyKey | null {
   if (/^(sniper|windrunner|eagleeye|tempest|deadeye|skylord)$/.test(cls)) return "ranger";
   if (/^(archmage|sage|stormbringer|chronicle|arclord|eternal)$/.test(cls)) return "mage";
   if (/^(assassin|swashbuckler|nightblade|duelist|shadowlord|blademaster)$/.test(cls)) return "thief";
+  /* v1.1.9 — 해적 계열 역산 추가 */
+  if (cls === "pirate") return "pirate";
+  if (/^(raider|corsair|stormcaptain|powdermaster|seaking|dreadnought)$/.test(cls)) return "pirate";
   return null;
 }
 

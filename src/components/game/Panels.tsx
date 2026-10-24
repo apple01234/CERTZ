@@ -2657,6 +2657,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
 
 const GM_FAM_LABEL: Record<string, string> = {
   warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적",
+  pirate: "해적", // v1.1.9 — 5번째 계열
 };
 
 export function GmPanel({ onClose }: { onClose: () => void }) {

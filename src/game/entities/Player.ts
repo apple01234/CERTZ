@@ -1043,6 +1043,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "purify": return this.skill1Purify();
       case "shadowexec": return this.skill1ShadowExec();
       case "flurrydance": return this.skill1FlurryDance();
+      /* v1.1.9 — 해적 계열 Z */
+      case "cannonblast": return this.skill1CannonBlast();
+      case "cutlassdance": return this.skill1CutlassDance();
       default: return this.skill1Spin(false);
     }
   }
@@ -1589,6 +1592,82 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.emitHud();
   }
 
+  /* v1.1.9 (#개편 — 계열 확장) — 해적 레이더 Z: 포격.
+   *  설계: 해적 계열의 정체성은 "한 방이 넓다". 전방에 느리게 날아가는 큰 폭발탄을
+   *  쏘아 다수를 한꺼번에 맞힌다. 연사력은 낮지만 범위가 압도적이라
+   *  몰려오는 구간에서 다른 계열보다 확실히 강하다. */
+  private skill1CannonBlast() {
+    const dir = this.aimDir();
+    const t = this.sTier;
+    const hex = this.clsHex();
+    this.play(this.bodyKey("hero-atk"));
+    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.scene.sfxSkill("thunder", 0.9); // 포성 — 낮은 피치로 둔중하게
+    /* 반동: 쏘는 순간 살짝 뒤로 밀린다 (무게감) */
+    this.setVelocity(-dir.x * 90, -dir.y * 90);
+    this.scene.time.delayedCall(90, () => { if (this.state !== "dead") this.setVelocity(0, 0); });
+    this.scene.doShake?.(120, 0.003);
+    /* 폭발탄 — 느리고 큰 투사체 + 착탄 광역 */
+    const reach = 210 + 16 * t;
+    const dmg = (2.4 + 0.25 * t);
+    this.scene.time.delayedCall(110, () => {
+      if (this.state === "dead") return;
+      const hx = this.x + dir.x * reach * 0.55;
+      const hy = this.y + dir.y * reach * 0.55;
+      this.scene.spawnShockwave(hx, hy, hex, 1.5 + 0.16 * t, 420, 0.8);
+      this.scene.spawnBurstAt(hx, hy, 16 + t * 3, hex);
+      /* 광역 판정 — 부채꼴(checkMeleeHit)이 아니라 착탄점 중심 원형으로 잡아
+       *  "쓸어버린다"는 계열 정체성을 실제 판정으로 만든다. */
+      const radius = 150 + 14 * t;
+      let n = 0;
+      for (const e of this.scene.getAllTargets()) {
+        if (!e.active || this.hitSet.has(e)) continue;
+        if (Phaser.Math.Distance.Between(hx, hy, e.x, e.y) > radius) continue;
+        this.hitSet.add(e);
+        n++;
+        const away = new Phaser.Math.Vector2(e.x - hx, e.y - hy).normalize();
+        const { dmg: d, crit } = this.rollDamage(dmg, true);
+        if (crit) this.scene.sfxCrit();
+        e.takeDamage(d, away, 300, crit);
+      }
+      if (n > 0) {
+        this.scene.sfxSkill("explosion", 1.05);
+        this.scene.cameras.main.shake(150, 0.006); // 광역 명중 — 화면이 크게 흔들린다
+      }
+    });
+    this.scene.time.delayedCall(430, () => {
+      if (this.state === "attack") this.state = "idle";
+    });
+    this.scene.emitHud();
+  }
+
+  /* v1.1.9 — 해적 코세어 Z: 커틀러스 난무.
+   *  레이더가 "한 방 넓게"라면 코세어는 "여러 번 넓게". 3연속 광범위 베기.
+   *  마지막 타격은 배율을 크게 올려 마무리감을 준다. */
+  private skill1CutlassDance() {
+    const dir = this.aimDir();
+    const t = this.sTier;
+    const hex = this.clsHex();
+    this.play(this.bodyKey("hero-atk"));
+    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.scene.sfxSkill("swift", 1.02);
+    const sweeps = t >= 3 ? 4 : 3;
+    for (let i = 0; i < sweeps; i++) {
+      this.scene.time.delayedCall(60 + i * 120, () => {
+        if (this.state === "dead") return;
+        const last = i === sweeps - 1;
+        /* 좌우로 번갈아 베어 시각적 리듬을 만든다 */
+        this.scene.spawnSlash(this.x, this.y, dir, i % 2 === 1, 1.15, hex);
+        this.checkMeleeHit(dir, 190 + 8 * t, 150 + 10 * t, last ? 2.0 : 0.9, last ? 340 : 110);
+        this.scene.sfxSkill("swift", i % 2 === 0 ? 0.95 : 1.1);
+      });
+    }
+    this.scene.time.delayedCall(60 + sweeps * 120 + 160, () => {
+      if (this.state === "attack") this.state = "idle";
+    });
+    this.scene.emitHud();
+  }
+
   useSkill2() {
     if (this.state !== "idle" || this.skill2Cd > 0 || this.mp < 20) return;
     const move = this.scene.currentMoveVec();
@@ -1888,6 +1967,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         case "flashydash":
           // 종착 폭발 없음 — 그림자 숨기(다음 공격 강화)/암습(경로 출혈)/질풍(경로 화살)/화려함(연타 스윕)은 이동 중 처리
           break;
+        /* v1.1.9 — 해적 계열 C(기동기) */
+        case "smokestep": {
+          /* 레이더 — 연막 측면: 착지 지점에 연막을 남겨 그 안의 적을 밀어낸다.
+           *  "화약" 정체성의 기동기 — 도망용이 아니라 자리 정리용. */
+          this.scene.spawnBurstAt(this.x, this.y, 20 + 2 * t, 0x6a6a78);
+          this.scene.spawnField?.({
+            x: this.x, y: this.y, radius: 130 + 10 * t, dur: 1400,
+            dps: Math.max(4, Math.round(this.atkTotal * 0.05)), kind: "poison", owner: "player",
+          });
+          burst(120 + 10 * t, 0.85 + 0.1 * t, 340);
+          break;
+        }
+        case "grappleswing": {
+          /* 코세어 — 갈고리 그네: 더 멀리 이동하고 경로상의 적을 벤다.
+           *  이동 거리가 길어 C를 "진입"에 쓸 수 있다(다른 계열 기동기와 차별). */
+          const aim2 = this.aimDir();
+          this.scene.spawnSlash?.(this.x, this.y, aim2, false, 1.5, 0xffdf8a);
+          burst(140 + 12 * t, 1.0 + 0.1 * t, 300);
+          break;
+        }
       }
     });
     this.scene.time.delayedCall(260, () => tick.remove());
@@ -1923,6 +2022,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocity(0, 0);
     this.netEmitAction("s3"); // v4.1.0
     const hex = this.clsHex();
+    const t = this.sTier; // v1.1.9 — 스킬 계수/범위 스케일용
     /* v3.0.24 — 3차기 16종 직업별 사운드 (전원 공용 없음 — 클래스 정체성 배치) */
     const SND3: Record<Skill3Kind, [string, number]> = {
       warcry: ["warcry", 1], // 워로드 — 전장의 함성
@@ -1941,6 +2041,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       gravity: ["gravity", 1], // 이터널 — 중력 붕괴
       shadowmine: ["dark", 1.2], // 섀도우로드 — 그림자 지뢰
       swordaura: ["bigsword", 1], // 블레이드마스터 — 파동 검기
+      /* v1.1.9 — 해적 3차·4차기 */
+      stormcall: ["thunder", 0.92], // 스톰캡틴 — 뇌우 소환
+      minefield: ["explosion", 1.1], // 파우더마스터 — 지뢰 부설
+      tidalwave: ["wind2", 0.85], // 씨킹 — 만조
+      broadside: ["explosion", 0.95], // 드레드노트 — 전탄 발사
     };
     this.scene.sfxSkill(...SND3[kind]);
     this.tutNotify("skill"); // v1.0.11 — 튜토리얼 스킬 학습 판정
@@ -2349,6 +2454,115 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnPickupText(this.x, this.y - 44, "파동 검기!", "#ffaaff");
         break;
       }
+      /* ═══ v1.1.9 — 해적 계열 3차·4차기 ═══ */
+      /* 스톰캡틴 — 뇌우 소환: 광역 낙뢰 3파 + 자신 신속.
+       *  낙뢰는 "하늘에서 떨어진다"가 핵심이라 착탄 전 예고 링을 먼저 띄운다
+       *  (맞고 나서 아는 게 아니라 보고 피할 수 있게 — 다만 범위가 넓어 회피는 어렵다). */
+      case "stormcall": {
+        this.scene.cameras.main.flash(120, 160, 200, 255);
+        /* 신속 버프 — 기존 selfSpdBuff 재사용(새 시스템 안 만든다) */
+        this.selfSpdBuff = { mult: 1.25 + 0.02 * t, until: this.scene.time.now + 3000 + 400 * t };
+        this.recalcSpeed();
+        for (let w = 0; w < 3; w++) {
+          this.scene.time.delayedCall(120 + w * 220, () => {
+            if (this.state === "dead") return;
+            for (let i = 0; i < 4 + t; i++) {
+              const ang = Math.random() * Math.PI * 2;
+              const rad = 40 + Math.random() * (200 + 30 * t);
+              const px = this.x + Math.cos(ang) * rad;
+              const py = this.y + Math.sin(ang) * rad;
+              this.scene.spawnPillar(px, py, 0x9fd8ff, 190); // 낙뢰 기둥
+              this.scene.spawnBurstAt(px, py, 8, 0x9fd8ff);
+              for (const e of this.getAllTargetsIn(999)) {
+                if (this.hitSet.has(e)) continue;
+                if (Phaser.Math.Distance.Between(px, py, e.x, e.y) > 90) continue;
+                this.hitSet.add(e);
+                const { dmg, crit } = this.rollDamage(1.4 + 0.12 * t, true);
+                if (crit) this.scene.sfxCrit();
+                e.takeDamage(dmg, new Phaser.Math.Vector2(0, -1), 60, crit);
+              }
+            }
+            this.scene.sfxSkill("thunder", 0.9 + Math.random() * 0.15);
+            this.scene.cameras.main.shake(90, 0.004);
+          });
+        }
+        break;
+      }
+      /* 파우더마스터 — 지뢰 부설: 발밑 주변에 지뢰 4기.
+       *  기존 spawnField(장판)를 재사용해 새 시스템을 만들지 않았다. */
+      case "minefield": {
+        this.scene.spawnBurstAt(this.x, this.y, 12, hex);
+        for (let i = 0; i < 4; i++) {
+          const ang = (Math.PI * 2 * i) / 4 + Math.random() * 0.4;
+          const rad = 70 + Math.random() * 90;
+          this.scene.spawnField({
+            x: this.x + Math.cos(ang) * rad,
+            y: this.y + Math.sin(ang) * rad,
+            radius: 78,
+            dur: 6000,
+            dps: Math.max(20, Math.round(this.atkTotal * (0.5 + 0.06 * t))),
+            kind: "fire",
+            owner: "player",
+          });
+        }
+        this.scene.spawnPickupText(this.x, this.y - 46, "지뢰 부설", "#ff9a5c");
+        this.scene.doShake?.(90, 0.003);
+        break;
+      }
+      /* 씨킹 — 만조: 전방을 쓸고 가는 거대 해일.
+       *  이동하는 파도 판정(0.35초 간격 5파)으로 "밀려온다"를 구현. */
+      case "tidalwave": {
+        const dir = this.aimDirFree().normalize();
+        this.scene.cameras.main.flash(140, 120, 200, 255);
+        for (let w = 0; w < 5; w++) {
+          this.scene.time.delayedCall(w * 90, () => {
+            if (this.state === "dead") return;
+            const px = this.x + dir.x * (60 + w * 110);
+            const py = this.y + dir.y * (60 + w * 110);
+            this.scene.spawnShockwave(px, py, 0x5fd4ff, 1.6 + 0.2 * w, 460, 0.75);
+            this.scene.spawnBurstAt(px, py, 10, 0x8fe8ff);
+            for (const e of this.getAllTargetsIn(999)) {
+              if (this.hitSet.has(e)) continue;
+              if (Phaser.Math.Distance.Between(px, py, e.x, e.y) > 130 + 10 * t) continue;
+              this.hitSet.add(e);
+              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const { dmg, crit } = this.rollDamage(2.1 + 0.12 * t, true);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 340, crit); // 강한 넉백 — 밀려나는 게 보이게
+            }
+          });
+        }
+        this.scene.sfxSkill("wind2", 0.8);
+        this.scene.doShake?.(220, 0.005);
+        break;
+      }
+      /* 드레드노트 — 전탄 발사: 부채꼴 3방향 동시 폭격. */
+      case "broadside": {
+        const base = Math.atan2(this.aimDirFree().y, this.aimDirFree().x);
+        for (let s2 = -1; s2 <= 1; s2++) {
+          const ang = base + s2 * 0.42;
+          const ex = this.x + Math.cos(ang) * 260;
+          const ey = this.y + Math.sin(ang) * 260;
+          this.scene.time.delayedCall(80 + (s2 + 1) * 70, () => {
+            if (this.state === "dead") return;
+            this.scene.spawnShockwave(ex, ey, 0xff8a3d, 1.5, 400, 0.85);
+            this.scene.spawnBurstAt(ex, ey, 16, 0xffb347);
+            this.scene.spawnPillar(ex, ey, 0xffb347, 150);
+            this.scene.sfxSkill("explosion", 1.0 + s2 * 0.06);
+            this.scene.cameras.main.shake(110, 0.006);
+            for (const e of this.getAllTargetsIn(999)) {
+              if (this.hitSet.has(e)) continue;
+              if (Phaser.Math.Distance.Between(ex, ey, e.x, e.y) > 120 + 8 * t) continue;
+              this.hitSet.add(e);
+              const away = new Phaser.Math.Vector2(e.x - ex, e.y - ey).normalize();
+              const { dmg, crit } = this.rollDamage(2.3 + 0.14 * t, true);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 280, crit);
+            }
+          });
+        }
+        break;
+      }
     }
     const dur = kind === "flurry" ? 6 * 130 + 120 : 280;
     this.scene.time.delayedCall(dur, () => {
@@ -2379,7 +2593,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       manaburst: ["manaburst", 1], // 아크로드 — 마나 붕괴
       eternalloop: ["timestop", 1], // 이터널 — 영원의 고리 (시간 정지)
       shadowclon: ["dark", 0.7], // 섀도우로드 — 그림자 군주
-      bladedance: ["swift", 1.2], // 블레이드마스터 — 검무
+      bladedance: ["swift", 1.2],
+      /* v1.1.9 — 해적 4차 궁극기 */
+      maelstrom: ["thunder", 0.85], // 씨킹 — 침몰의 종
+      decksweep: ["explosion", 0.9], // 드레드노트 — 무쌍 포격 // 블레이드마스터 — 검무
     };
     this.scene.sfxSkill(...SND4[kind]);
 
@@ -2616,6 +2833,79 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.time.delayedCall(targets.length * 160 + 120, () => {
           if (this.state === "attack") this.state = "idle";
         });
+        break;
+      }
+      /* v1.1.9 — 해적 4차 궁극기 2종 */
+      /* 씨킹 — 침몰의 종: 거대 소용돌이가 전장을 삼킨다.
+       *  적을 중심으로 끌어당긴 뒤(중력 붕괴와 다르게 "돌면서" 빨아들인다) 대폭발. */
+      case "maelstrom": {
+        this.scene.cameras.main.flash(160, 90, 170, 255);
+        this.scene.doShake?.(300, 0.007);
+        const cx = this.x, cy = this.y;
+        /* 3단계: 소용돌이 생성 → 흡입 → 종말 폭발 */
+        for (let w = 0; w < 6; w++) {
+          this.scene.time.delayedCall(w * 130, () => {
+            if (this.state === "dead") return;
+            const rad = 260 - w * 34;
+            this.scene.spawnShockwave(cx, cy, 0x5fd4ff, (rad / 210), 420, 0.6);
+            this.scene.spawnBurstAt(cx, cy, 10, 0x8fe8ff);
+            this.scene.sfxSkill("wind2", 0.75 + w * 0.05);
+            /* 흡입 — 적을 중심으로 끌어당긴다 */
+            for (const e of this.getAllTargetsIn(999)) {
+              const d = Phaser.Math.Distance.Between(cx, cy, e.x, e.y);
+              if (d > 320 || d < 12) continue;
+              const pull = new Phaser.Math.Vector2(cx - e.x, cy - e.y).normalize();
+              e.takeDamage(Math.round(this.atkTotal * 0.25), pull, 0, false);
+              /* 위치를 직접 당긴다(물리 없이) */
+              e.x += pull.x * 26;
+              e.y += pull.y * 26;
+            }
+          });
+        }
+        this.scene.time.delayedCall(6 * 130 + 120, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnPillar(cx, cy, 0xbfe9ff, 260);
+          this.scene.spawnShockwave(cx, cy, 0xffffff, 2.6, 620, 0.9);
+          this.scene.spawnBurstAt(cx, cy, 40, 0x5fd4ff);
+          this.scene.cameras.main.flash(200, 200, 240, 255);
+          this.scene.cameras.main.shake(280, 0.012);
+          this.scene.sfxSkill("explosion", 0.85);
+          for (const e of this.getAllTargetsIn(360)) {
+            const away = new Phaser.Math.Vector2(e.x - cx, e.y - cy).normalize();
+            const { dmg, crit } = this.rollDamage(6.5, true);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 500, crit);
+          }
+        });
+        break;
+      }
+      /* 드레드노트 — 무쌍 포격: 8방향 동시 폭격. 전장을 지운다. */
+      case "decksweep": {
+        this.scene.cameras.main.flash(140, 255, 180, 120);
+        this.scene.doShake?.(260, 0.006);
+        for (let i = 0; i < 8; i++) {
+          const ang = (Math.PI * 2 * i) / 8;
+          const dist = 180 + (i % 2) * 90;
+          const px = this.x + Math.cos(ang) * dist;
+          const py = this.y + Math.sin(ang) * dist;
+          this.scene.time.delayedCall(i * 90, () => {
+            if (this.state === "dead") return;
+            this.scene.spawnPillar(px, py, 0xffb347, 220);
+            this.scene.spawnShockwave(px, py, 0xff8a3d, 1.8, 460, 0.85);
+            this.scene.spawnBurstAt(px, py, 18, 0xff6a3d);
+            this.scene.sfxSkill("explosion", 0.9 + (i % 3) * 0.06);
+            this.scene.cameras.main.shake(100, 0.007);
+            for (const e of this.getAllTargetsIn(999)) {
+              if (this.hitSet.has(e)) continue;
+              if (Phaser.Math.Distance.Between(px, py, e.x, e.y) > 145) continue;
+              this.hitSet.add(e);
+              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const { dmg, crit } = this.rollDamage(4.2, true);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 420, crit);
+            }
+          });
+        }
         break;
       }
     }
