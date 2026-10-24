@@ -254,6 +254,18 @@ export type SaveData = {
   parkTickets?: { date: string; n: number };
   /** 무한 콘텐츠 상태 스냅샷 — 구조는 infinite.ts InfSave (infMerge로 안전 병합) */
   inf?: import("./infinite").InfSave;
+  /* v1.1.8 (#개편 A46) — 낚시. 물고기 도감(caught)과 누적 기록만 저장한다.
+   *  실제 타이밍 게임은 필드에서 즉석 진행되므로 진행 상태는 저장할 필요가 없다. */
+  fishing?: {
+    /** 잡은 물고기 키 목록 (도감 — 중복 없이) */
+    caught: string[];
+    /** 누적 낚시 성공 횟수 */
+    totalCatch: number;
+    /** 누적 실패(놓침) 횟수 */
+    totalMiss: number;
+    /** 최대 무게 기록 (kg) */
+    bestWeight: number;
+  };
 }
 
 /* 친구 고유번호 (6자리) — 혼동되는 문자(O/0, I/1 등) 제외한 세트 */

@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc157 — APK는 릴리스 태그 v1.0.16에 있다(이전 태그는 vc157까지 보유).
    *  태그를 v1.0.9로 두면 SERTZ-vc157.apk가 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.1.5/https://github.com/apple01234/CERTZ/releases/download/v1.1.7/SERTZ-vc169.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.1.5/https://github.com/apple01234/CERTZ/releases/download/v1.1.8/SERTZ-vc170.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,10 +69,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.1.7";
-  const LATEST_CODE = 169;
+  const LATEST_VERSION = "1.1.8";
+  const LATEST_CODE = 170;
     const VERSION_NOTE =
-  "v1.1.7 (vc169) — 안드로이드 뒤로가기를 누르면 앱이 바로 종료되던 문제를 고쳤다(이제 '메뉴로 나갈까요?' 확인이 뜬다). 패널을 여러 개 겹쳐 열었을 때 ESC가 전부 닫던 문제를 수정해 가장 위 패널만 닫힌다. PC에서 이동 방향이 스킬 방향 보조에 반영되지 않던 문제를 고쳤다(터치 우선, 키보드 차선). 탭 전환·목록 진입에 짧은 애니메이션을 넣어 끊김을 줄였다.";
+  "v1.1.8 (vc170) — 낚시를 추가했다. 필드에서 H키를 누르면 바늘이 좌우로 움직이고, 초록 성공 구간에서 공격 키로 멈추면 물고기를 잡는다. 물고기는 지역마다 다르다(설원=빙어·오로라송어, 화산=화염어·용암룡어, 심연=공허어·근원의 고기 등 20종). 5연속 성공하면 상위 등급 확률이 올라간다. 도감을 채우면 몬스터 컬렉션 창에서 확인할 수 있고, 첫 획득 시 심연 코인을 준다. 실패해도 미끼 외 손해가 없다. 이 게임의 첫 비전투 콘텐츠다.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

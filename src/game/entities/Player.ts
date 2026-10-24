@@ -64,6 +64,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   owned: ItemKey[] = ["weapon_1", "armor_1"];
   /** v1.1.7 (#개편 A87) — 판매 잠금 아이템 키. 실수 판매 방지용. */
   lockedItems: string[] = [];
+  /** v1.1.8 (#개편 A46) — 낚시 도감/기록 (세이브 미러) */
+  fishSave: { caught: string[]; totalCatch: number; totalMiss: number; bestWeight: number } =
+    { caught: [], totalCatch: 0, totalMiss: 0, bestWeight: 0 };
   upgrades: { weapon: number; armor: number } = { weapon: 0, armor: 0 }; // [호환 미러] 장착 중 아이템의 강화 단계 (실 저장은 starMap)
   /** vc145 (#16 긴급) — 장비 스타포스를 **아이템 단위**로 저장 (itemKey → 성 0~15).
    *  기존 upgrades{weapon,armor}는 슬롯 단위라 다른 장비를 장착해도 이전 장비의 성이 그대로

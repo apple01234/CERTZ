@@ -12,6 +12,7 @@ import {
   closetThemeOf, CLOSET_THEMES, isPremiumPet, // v1.2.1 (#3) — 프리미엄 펫 특전 판정
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
+import { FISH_DEFS, FISH_TIER_META, fishCollectionPct } from "@/game/fishing"; // v1.1.8 (#개편 A46) 낚시 도감
 import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
 import { loadKeyMap, applyKeyBinding, resetKeyMap, loadMoveScheme, writeMoveScheme, keyLabel, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap, type MoveScheme } from "@/game/keymap";
@@ -2925,6 +2926,46 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
             </button>
           </div>
         </div>
+
+        {/* v1.1.8 (#개편 A46) — 낚시 도감. 전투 외 수집 루프.
+            필드에서 H키로 낚시 → 성공 구간에서 멈추면 물고기 획득. 지역마다 다른 어종. */}
+        {rpg.fishing && (() => {
+          const fsx = rpg.fishing;
+          const pct = fishCollectionPct(fsx.caught);
+          const totalC = fsx.totalCatch + fsx.totalMiss;
+          const rate = totalC > 0 ? Math.round((fsx.totalCatch / totalC) * 100) : 0;
+          return (
+            <div className="mb-2 rounded-lg border border-cyan-300/30 bg-cyan-400/[0.06] p-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-black text-cyan-200">🎣 낚시 도감</p>
+                <span className="rounded bg-cyan-500/25 px-1.5 py-0.5 text-[10px] font-black text-cyan-100">
+                  {fsx.caught.length} / {FISH_DEFS.length} ({pct}%)
+                </span>
+              </div>
+              <p className="mt-0.5 text-[9px] font-bold text-white/55">
+                필드에서 <b className="text-cyan-200">H</b>키로 낚시 — 성공 구간에서 멈추면 획득 · 성공률 {rate}% · 최대 {fsx.bestWeight}kg
+              </p>
+              <div className="mt-1.5 grid grid-cols-4 gap-1">
+                {FISH_DEFS.map((f) => {
+                  const got = fsx.caught.includes(f.key);
+                  const tm = FISH_TIER_META[f.tier];
+                  return (
+                    <div
+                      key={f.key}
+                      title={got ? `${f.name} (${tm.label}) — ${f.desc}` : `미등록 — ${tm.label}`}
+                      className={`truncate rounded border px-1 py-1 text-center text-[9px] font-black ${
+                        got ? "border-cyan-300/50 bg-cyan-400/10" : "border-white/10 bg-white/[0.02] text-white/30"
+                      }`}
+                      style={got ? { color: tm.color } : undefined}
+                    >
+                      {got ? f.name : "???"}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* v3.0.22 (#43/#44/#50) — 세계수 결정 수집 현황 (챕터마다 다른 결정 + 완전 수집 시 영구 가호) */}
         <div className={`mb-2 rounded-lg border p-2.5 ${rpg.blessing ? "border-sky-300/60 bg-sky-400/[0.1]" : "border-white/15 bg-white/[0.04]"}`}>

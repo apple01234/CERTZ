@@ -116,6 +116,8 @@ export type RpgState = {
   /* ----- v3.0.16 ----- */
   /** 몬스터 컬렉션 — 등록 종수/전체 종수/처치 수 (컬렉션 패널) */
   collection?: { registered: number; total: number; kills: Record<string, number> };
+  /** v1.1.8 (#개편 A46) — 낚시 도감/기록 */
+  fishing?: { caught: string[]; totalCatch: number; totalMiss: number; bestWeight: number };
   /** 활성 세트 효과 (인벤토리/스탯창 표시) */
   activeSet?: { title: string; lines: string[] } | null;
   /* ----- v4.0.0 — 바르가 업데이트 ----- */

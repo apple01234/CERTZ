@@ -54,6 +54,7 @@ import { DriveFX } from "../fx/DriveFX"; // v1.3.0 — Drive 팩 VFX 통합 (참
 import { applyToonStyle, clearToonStyle, applyToonCamera, toonEnabled, setToonEnabled } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일) · vc142 — 화면 전체 툰 셰이딩
 import { Vfx3D } from "../fx/Vfx3D"; // vc142 (#9) — Three.js 3D VFX 오버레이 (phas3d식)
 import { initTrade, tradeInvite, tradeAccept, tradeDeny, tradeCancel, tradeAddItem, tradeRemoveItem, tradeSetCurrency, tradeLock } from "../trade"; // vc142 (#3) — 1:1 플레이어 거래
+import { rollFish, rollWeight, makeCatch, FISH_TIER_META, type FishingZone } from "../fishing"; // v1.1.8 (#개편 A46) 낚시
 import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
 import * as partyContent from "../partyContent"; // v1.4.3 (작업4) — 파티 시너지/파티 퀘스트 보드
@@ -1420,6 +1421,14 @@ export class WorldScene extends Phaser.Scene {
       this.bossKillCount = savedPlayer.bossKills ?? 0;
       /* v1.1.7 (#개편 A87) — 판매 잠금 목록 복원 (구 세이브는 undefined → 빈 배열) */
       this.player.lockedItems = Array.isArray(savedPlayer.lockedItems) ? [...savedPlayer.lockedItems] : [];
+      /* v1.1.8 (#개편 A46) — 낚시 도감 복원 (구 세이브는 빈 도감) */
+      const fs2 = savedPlayer.fishing;
+      this.player.fishSave = {
+        caught: Array.isArray(fs2?.caught) ? [...fs2.caught] : [],
+        totalCatch: Math.max(0, Math.round(fs2?.totalCatch ?? 0)),
+        totalMiss: Math.max(0, Math.round(fs2?.totalMiss ?? 0)),
+        bestWeight: Math.max(0, Number(fs2?.bestWeight ?? 0)),
+      };
       /* v1.1.5 (#개편 통계) — 누적 기록 복원 (구 세이브는 undefined → 0/1) */
       const ps = savedPlayer.playStats;
       this.statSavedSec = Math.max(0, Math.round(ps?.playSec ?? 0));
@@ -9965,6 +9974,22 @@ export class WorldScene extends Phaser.Scene {
      *  키를 떼면 자동 이동이 자연 복귀된다 — 토글 재시작 불필요 */
     if (this.autoHunt && !useTouch && mv.lengthSq() === 0) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
 
+    /* v1.1.8 (#개편 A46) — 낚시가 진행 중이면 공격 키는 "멈추기"로 소비된다.
+     *  낚시 중 공격/스킬이 발동되면 캐릭터가 튀어나가 손맛이 깨지므로 최우선 처리. */
+    if (this.fishingActive) {
+      this.tickFishing(dt);
+      if (
+        Phaser.Input.Keyboard.JustDown(this.keys.SPACE) ||
+        Phaser.Input.Keyboard.JustDown(this.keyFor("attack"))
+      ) {
+        this.resolveFishing();
+        return;
+      }
+      // 낚시 중에는 다른 입력을 막는다(이동은 허용하지 않음 — 자리 고정)
+      this.player.setVelocity(0, 0);
+      return;
+    }
+
     // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
       this.attackQueued = true;
@@ -10009,6 +10034,8 @@ export class WorldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("opt"))) EventBus.emit("ui:panel", { panel: "opt" });
     /* v3.0.16 — 몬스터 컬렉션 패널 (M키) */
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
+    /* v1.1.8 (#개편 A46) — 낚시 (기본 H). 필드에서만 동작한다. */
+    if (Phaser.Input.Keyboard.JustDown(this.keyFor("fishing"))) this.startFishing();
     /* vc142 (#1) — PC 자동전투 토글 단축키 (기본 B · 설정에서 재배치 가능) */
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("autohunt"))) EventBus.emit("rpg:autohunt", {});
     /* v1.1.4 (#개편 입력버퍼링) — 공격/스킬 모션이 끝나면 대기 중인 스킬을 발동한다. */
@@ -14147,6 +14174,7 @@ export class WorldScene extends Phaser.Scene {
       })(),
       /* v1.1.5 (#개편 통계) — 스탯 창 실시간 표시 */
       lockedItems: [...this.player.lockedItems], // v1.1.7 (#개편 A87)
+      fishing: { ...this.player.fishSave, caught: [...this.player.fishSave.caught] }, // v1.1.8 (#개편 A46)
       playStats: {
         playSec: Math.round(this.statSavedSec + Math.max(0, (this.time.now - this.startTime) / 1000)),
         kills: this.totalKills,
@@ -14914,6 +14942,131 @@ export class WorldScene extends Phaser.Scene {
     if (this.hintShown[key]) return;
     this.hintShown[key] = true;
     this.showBanner(text);
+  }
+
+  /* ================= v1.1.8 (#개편 A46) — 낚시 =================
+   *  전투 외 유일한 손맛 콘텐츠. 진행 방식:
+   *    1) 낚싯대를 던지면 "성공 구간"이 좌우로 움직이는 바가 화면 하단에 뜬다
+   *    2) 플레이어는 스페이스(공격키)로 멈춘다 — 구간 안이면 성공, 밖이면 실패
+   *    3) 성공하면 등급 추첨으로 물고기가 결정된다(숙련도가 높을수록 상위 확률↑)
+   *  실패 페널티 없음(미끼만 소모) — "한 번 더"를 유도하는 설계.
+   *  상태는 세이브에 저장되고, 도감을 모두 채우면 영구 골드 보너스가 붙는다. */
+  private fishingActive = false;
+  private fishingBar = 0; // 0~100 (좌우 왕복)
+  private fishingDir = 1;
+  private fishingZoneLo = 38;
+  private fishingZoneHi = 62;
+  private fishingGfx: Phaser.GameObjects.Graphics | null = null;
+  private fishingSkill = 0; // 연속 성공 (0~1 정규화)
+
+  /** 낚시 시작 — 필드에서만. 이미 진행 중이면 무시. */
+  startFishing() {
+    if (this.fishingActive || !this.player || this.dialoguing) return;
+    if (this.player.state === "dead") return;
+    this.fishingActive = true;
+    this.fishingBar = 0;
+    this.fishingDir = 1;
+    /* 성공 구간은 매번 다르게 — 좁을수록 상위 등급 기회(대신 성공률 낮음).
+     * 여기서는 난이도를 랜덤 폭 18~30%로 둔다. */
+    const half = 9 + Math.random() * 6;
+    const center = 30 + Math.random() * 40;
+    this.fishingZoneLo = Math.max(4, center - half);
+    this.fishingZoneHi = Math.min(96, center + half);
+    this.showBanner("물고기가 물었다! 공격 키로 멈춰라");
+    audio.sfx.pickup();
+  }
+
+  /** 낚시 취소 (지역 이동·사망 등) */
+  cancelFishing() {
+    if (!this.fishingActive) return;
+    this.fishingActive = false;
+    this.fishingGfx?.destroy();
+    this.fishingGfx = null;
+  }
+
+  /** 매 프레임 바 이동 + 렌더. 반환값은 없고, 공격 입력은 resolveFishing()이 처리. */
+  private tickFishing(dt: number) {
+    if (!this.fishingActive) return;
+    // 초당 78% 속도로 왕복 (약 1.3초에 한 번 끝→끝)
+    this.fishingBar += this.fishingDir * (dt / 1000) * 78;
+    if (this.fishingBar >= 100) { this.fishingBar = 100; this.fishingDir = -1; }
+    if (this.fishingBar <= 0) { this.fishingBar = 0; this.fishingDir = 1; }
+
+    const cam = this.cameras.main;
+    const w = Math.min(420, cam.width * 0.62);
+    const h = 26;
+    const x = cam.width / 2 - w / 2;
+    const y = cam.height - h - 96;
+    if (!this.fishingGfx) this.fishingGfx = this.add.graphics().setDepth(8900).setScrollFactor(0);
+    const g = this.fishingGfx;
+    g.clear();
+    // 트랙
+    g.fillStyle(0x000000, 0.72);
+    g.fillRect(x - 3, y - 3, w + 6, h + 6);
+    // 성공 구간
+    const zx = x + (w * this.fishingZoneLo) / 100;
+    const zw = (w * (this.fishingZoneHi - this.fishingZoneLo)) / 100;
+    g.fillStyle(0x34d399, 0.55);
+    g.fillRect(zx, y, zw, h);
+    // 바늘
+    const bx = x + (w * this.fishingBar) / 100;
+    g.fillStyle(0xffd98a, 1);
+    g.fillRect(bx - 3, y - 1, 6, h + 2);
+  }
+
+  /** 공격 키 입력 시 호출 — 구간 안이면 성공 */
+  resolveFishing() {
+    if (!this.fishingActive) return;
+    const hit = this.fishingBar >= this.fishingZoneLo && this.fishingBar <= this.fishingZoneHi;
+    this.fishingActive = false;
+    this.fishingGfx?.destroy();
+    this.fishingGfx = null;
+
+    const f = this.player?.fishSave ?? { caught: [], totalCatch: 0, totalMiss: 0, bestWeight: 0 };
+    if (!hit) {
+      f.totalMiss++;
+      this.player!.fishSave = f;
+      this.showBanner("놓쳤다… 다시 던져보자");
+      audio.sfx.uiClick();
+      this.save();
+      return;
+    }
+
+    const zone = this.currentFishingZone();
+    const skill = Math.min(1, this.fishingSkill / 5); // 5연속이면 최대
+    const fish = rollFish(zone, skill);
+    const weight = rollWeight(fish);
+    const isFirst = !f.caught.includes(fish.key);
+    const gain = makeCatch(fish, weight, isFirst);
+
+    f.totalCatch++;
+    if (weight > f.bestWeight) f.bestWeight = weight;
+    if (isFirst) f.caught = [...f.caught, fish.key];
+    this.player!.fishSave = f;
+    this.fishingSkill = Math.min(5, this.fishingSkill + 1);
+
+    this.player!.gold += gain.gold;
+    if (gain.firstAbyss > 0) {
+      this.inf.abyss = (this.inf.abyss ?? 0) + gain.firstAbyss;
+    }
+    const tierMeta = FISH_TIER_META[fish.tier];
+    this.showBanner(
+      `${isFirst ? "★ 신규 도감! " : ""}${fish.name} ${weight}kg — ${gain.gold}G${gain.firstAbyss > 0 ? ` +심연 ${gain.firstAbyss}` : ""}`,
+    );
+    this.spawnPickupText(this.player!.x, this.player!.y - 56, fish.name, tierMeta.color);
+    this.spawnCelebrateFX(this.player!.x, this.player!.y - 10, 10);
+    audio.sfx.questDone();
+    this.emitRpgState();
+    this.emitHud();
+    this.save();
+  }
+
+  /** 현재 스테이지 → 낚시 지역 */
+  private currentFishingZone(): FishingZone {
+    const key = this.stageDef.key;
+    const ch = key.replace(/\d+$/, "").replace(/v$/, "");
+    const valid: FishingZone[] = ["forest", "kingdom", "alfheim", "muspelheim", "niflheim", "cave", "nidavellir", "hel", "abyss"];
+    return (valid.includes(ch as FishingZone) ? ch : "forest") as FishingZone;
   }
 
   showBanner(text: string) {
