@@ -1138,6 +1138,7 @@ export class WorldScene extends Phaser.Scene {
 
     /* ---------- 상점 NPC (v3.0.15 #9 — 상인은 마을에만 배치. 필드 몬스터 구역에서 제거) ---------- */
     if (!this.isInterior && this.stageDef.isVillage) this.spawnMerchant();
+    if (!this.isInterior && this.stageDef.isVillage) this.spawnChibiNpcs(); // v1.2.3 — 씹덕 NPC 배치
 
     /* v1.4.12 (#14) — 사냥터 정보 NPC: 챕터별 대사를 가진 정찰병/생존자를 필드에 배치.
      *  "상호작용 안 되는 이상한 오브젝트"의 대안 — 만나면 챕터 공략 힌트를 준다. */
@@ -4072,6 +4073,78 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= 2D MMORPG 기본 요소 (골드/물약/장비/상점/미니맵) ================= */
 
+  /* v1.2.3 — 씹덕 스타일 NPC 6종 마을 배치.
+   *  상점 상인과 겹치지 않게 스폰 지점 기준으로 방사형 배치하고,
+   *  각자 살짝 다른 위상으로 숨쉬는 모션을 주어 "살아있는 마을" 느낌을 낸다.
+   *  말풍선 대사는 기존 대화 시스템을 건드리지 않고 짧은 라벨만 붙였다(추후 확장 여지). */
+  private spawnChibiNpcs() {
+    const ox = this.layout ? this.entryHome.x : 400;
+    const oy = this.layout ? this.entryHome.y : this.stageH / 2;
+    /* [텍스처, 이름, 대사, 각도(rad), 거리] — 마을 중앙을 비우고 바깥에 배치 */
+    const list: [string, string, string, number, number][] = [
+      ["npc_guide_lily", "안내원 리리", "어서 와요!", -2.2, 150],
+      ["npc_scholar_mio", "학자 미오", "기록은 정확히.", -1.2, 190],
+      ["npc_mage_rin", "마법사 린", "실험 중이야.", -0.35, 200],
+      ["npc_merchant_nyan", "상인 냥", "싸게 줄게~", 0.45, 195],
+      ["npc_witch_nyx", "마녀 닉스", "…거래할래?", 1.25, 185],
+      ["npc_fairy_aria", "요정 아리아", "반짝반짝!", 2.15, 165],
+    ];
+    for (let i = 0; i < list.length; i++) {
+      const [key, name, line, ang, dist] = list[i];
+      if (!this.textures.exists(key)) continue; // 텍스처 없으면 조용히 건너뛴다
+      const x = ox + Math.cos(ang) * dist;
+      const y = oy + Math.sin(ang) * dist * 0.55; // 세로 압축(2.5D 원근)
+      const depth = Math.floor(y / 10);
+      const npc = this.add.image(x, y, key).setDepth(depth).setScale(1.25);
+      /* 발밑 그림자 */
+      const sh = this.add.ellipse(x, y + 20, 22, 7, 0x000000, 0.3).setDepth(depth - 1);
+      void sh;
+      /* 숨쉬기 — 위상차를 주어 동시에 움직이지 않게 */
+      this.tweens.add({
+        targets: npc,
+        y: y - 2,
+        duration: 1100 + i * 130,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+        delay: i * 180,
+      });
+      /* 이름표 */
+      this.add
+        .text(x, y - 40, name, {
+          fontFamily: "Galmuri11, sans-serif",
+          fontSize: "11px",
+          color: "#ffe9b0",
+          stroke: "#1a1020",
+          strokeThickness: 3,
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5)
+        .setDepth(21);
+      /* 대사 — 3초 주기로 깜빡이며 표시 (항상 떠 있으면 시끄럽다) */
+      const bubble = this.add
+        .text(x, y - 56, line, {
+          fontFamily: "Galmuri11, sans-serif",
+          fontSize: "10px",
+          color: "#ffffff",
+          backgroundColor: "#1a1020cc",
+          padding: { x: 4, y: 2 },
+        })
+        .setOrigin(0.5)
+        .setDepth(22)
+        .setAlpha(0);
+      this.tweens.add({
+        targets: bubble,
+        alpha: { from: 0, to: 1 },
+        duration: 400,
+        yoyo: true,
+        hold: 2600,
+        repeat: -1,
+        delay: 1200 + i * 700,
+      });
+    }
+  }
+
   /** 상점 NPC — 스폰 근처 대기 (스테이지 공통) */
   private spawnMerchant() {
     /* v3.0 (#7) — 필드는 입구 셀 안에 상인 배치 (개미굴 벽에 묻히지 않게) */
@@ -4904,7 +4977,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.16 — 몬스터 컬렉션 등록 (최초 처치 시) */
     this.registerCollection(key, ENEMIES[key].name);
     /* v1.0.15 (피드백 #6 씽덕요소) — 처치 자리에 가끔 하트/음표 팝 (귀여운 사냥감 연출) */
-    if (Math.random() < 0.14) this.emote(Math.random() < 0.5 ? "heart" : "note", spawnX, spawnY - 20);
+    if (Math.random() < 0.04) this.emote(Math.random() < 0.5 ? "heart" : "note", spawnX, spawnY - 20); // v1.2.3 — 14%→4% (쿨다운과 함께 이중 제한)
     /* v3.0.16 — 멀티킬 연출 (1.5초 내 다중 처치 등급 표시 — 메이플 멀티킬) */
     this.multiKillCount = nowMs < this.multiKillUntil ? this.multiKillCount + 1 : 1;
     this.multiKillUntil = nowMs + 1500;
@@ -14879,9 +14952,24 @@ export class WorldScene extends Phaser.Scene {
   };
 
   /** 머리 위 감정 버블 — 말풍선 배경 + 이모트 글자, 팝+플로트+페이드 연출 */
+  /* v1.2.3 — 감정표현 빈도 제한.
+   *  종전엔 emote()에 어떤 제한도 없어서, 몬스터가 죽을 때마다 14% 확률로
+   *  하트/음표가 무제한으로 떴다(처치 직후 spawnX/Y로 이모지). 사냥 중에는
+   *  1초에 여러 개가 동시에 쌓여 화면이 시끄러웠다 — "이모지 사용 빈도가 너무 높다"의 원인.
+   *  → 최소 간격(1.6초) + 동시 표시 2개 상한을 둔다. 개별 연출은 그대로 두고 빈도만 조절. */
+  private static readonly EMOTE_MIN_GAP_MS = 1600;
+  private static readonly EMOTE_MAX_LIVE = 2;
+  private emoteLastAt = 0;
+  private emoteLive: Phaser.GameObjects.Container[] = [];
+
   emote(kind: keyof typeof WorldScene.EMOTE_CHARS, x: number, y: number, tint?: number) {
     const def = WorldScene.EMOTE_CHARS[kind];
     if (!def) return;
+    const nowMs = this.time.now;
+    if (nowMs - this.emoteLastAt < WorldScene.EMOTE_MIN_GAP_MS) return;
+    this.emoteLive = this.emoteLive.filter((b) => b.active);
+    if (this.emoteLive.length >= WorldScene.EMOTE_MAX_LIVE) return;
+    this.emoteLastAt = nowMs;
     const bubble = this.add.container(x, y).setDepth(9998);
     const bg = this.add.rectangle(0, 0, 22, 18, tint ?? 0x101422, 0.92)
       .setStrokeStyle(1.5, 0xffe9b0, 0.9);
@@ -14897,6 +14985,7 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: bubble, scale: 1, duration: 130, ease: "Back.out" });
     this.tweens.add({ targets: bubble, y: y - 14, duration: 900, ease: "Sine.out", delay: 120 });
     this.tweens.add({ targets: bubble, alpha: 0, delay: 820, duration: 200, onComplete: () => bubble.destroy() });
+    this.emoteLive.push(bubble);
     return bubble;
   }
 

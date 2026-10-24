@@ -290,6 +290,10 @@ const ASSET_LIST = [
   "item_weapon_1", "item_weapon_2", "item_weapon_3", "item_weapon_4",
   "item_armor_1", "item_armor_2", "item_armor_3", "item_armor_4",
   "npc_merchant",
+  /* v1.2.3 — 씹덕 스타일 NPC 6종 (32x48, tools/gen-npc.js로 생성).
+   *  기존 npc_merchant(32x32)·spum_* 과 같은 픽셀 밀도·SD 비율·1px 외곽선 규칙을 따른다. */
+  "npc_guide_lily", "npc_scholar_mio", "npc_mage_rin",
+  "npc_merchant_nyan", "npc_witch_nyx", "npc_fairy_aria",
   /* 시작 마을 (인간들의 마을) — v4.1.8: 무료 플레이스홀더 npc_villager1/2·npc_jobmaster 제거,
    *  Unity 에셋스토어 유료 SPUM 캐릭터(spum_*)로 전면 교체 (아래 목록 참조) */
   "house_a", "house_b", "well",
