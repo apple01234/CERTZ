@@ -134,6 +134,8 @@ export type RpgState = {
     runeSlots: (string | null)[];
     constel: string[];
     achClaimed: string[];
+    /** v1.2.0 (#개편 A23·A24) — 장착 중인 칭호 이름 */
+    myTitle?: string | null;
     /** v1.0.2 (#업적UI) — 업적별 진행도 (수령가능/진행중 표시) */
     achProg?: { id: string; prog: number; goal: number }[];
     gateBest: number;

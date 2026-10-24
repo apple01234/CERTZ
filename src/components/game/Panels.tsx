@@ -5660,6 +5660,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
 import {
   FIGURES, FIGURE_GRADE_META, BADGES, BADGE_MAP, RUNE_KINDS, RUNE_META, RUNE_SYNTH_COST, RUNE_MAX_TIER,
   runeKey, parseRuneKey, CONSTELLATIONS, CONSTEL_NODE_COST, ACHIEVEMENTS, SHARD_SHOP, ROLE_OF,
+  TITLES, // v1.2.0 (#개편 A23·A24) — 칭호 선택기
   figureBonus, badgeBonus, runeBonus, constellationBonus, cosmeticBonus,
 } from "@/game/isekai";
 import { netRankTop, netOnRank, type RankEntry, type RankMode } from "@/game/net";
@@ -5901,6 +5902,53 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
         {tab === "ach" && (
           <div>
             <p className="mb-1.5 text-[11px] font-bold text-white/60">업적 — 달성 시 피규어 조각 지급</p>
+            {/* v1.2.0 (#개편 A23·A24) — 칭호 선택기.
+                수령한 업적에만 칭호가 붙는다(수령 동선을 무의미하게 만들지 않기 위해).
+                스탯은 주지 않는다 — 자랑거리로만 두어 "칭호 안 달면 손해" 압박을 만들지 않는다. */}
+            {(() => {
+              const owned = TITLES.filter((t) => (ik?.achClaimed ?? []).includes(t.ach));
+              const cur = ik?.myTitle ?? null;
+              return (
+                <div className="mb-2 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] p-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-black text-amber-200">
+                      칭호 <span className="text-[9px] font-bold text-white/45">{owned.length}/{TITLES.length}</span>
+                    </p>
+                    {cur && (
+                      <button
+                        onClick={() => EventBus.emit("rpg:setTitle", { name: null })}
+                        className="rounded border border-white/15 bg-black/30 px-1.5 py-0.5 text-[9px] font-black text-white/60 hover:bg-white/10 active:scale-95"
+                      >
+                        해제
+                      </button>
+                    )}
+                  </div>
+                  {owned.length === 0 ? (
+                    <p className="mt-1 text-[9px] font-bold text-white/40">업적을 수령하면 칭호가 열린다</p>
+                  ) : (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {owned.map((t) => {
+                        const on = cur === t.name;
+                        return (
+                          <button
+                            key={t.name}
+                            onClick={() => EventBus.emit("rpg:setTitle", { name: t.name })}
+                            title={t.how}
+                            className={`rounded border px-1.5 py-0.5 text-[9px] font-black active:scale-95 ${
+                              on ? "border-amber-200 bg-amber-300/25" : "border-white/15 bg-black/30 hover:bg-white/10"
+                            }`}
+                            style={{ color: t.color }}
+                          >
+                            {on ? "✓ " : ""}
+                            {t.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             {/* v1.0.2 (#업적UI) — 상태 필터: 수령 가능한 업적이 묻히지 않게 탭으로 분리 */}
             <div className="mb-2 flex flex-wrap gap-1">
               {([

@@ -61,6 +61,9 @@ export type SaveData = {
   maxMp?: number;
   /* ↓ 플레이어 이름 (인트로 플레이 시퀀스에서 지정 — 구 세이브 호환 기본값) */
   playerName?: string;
+  /** v1.2.0 (#개편 A23·A24) — 장착 중인 칭호 이름. 업적 달성으로 해금된 것 중 하나.
+   *  업적 id가 아니라 "이름"을 저장한다 — 업적 id가 개편으로 바뀌어도 세이브가 깨지지 않게. */
+  title?: string | null;
   /* ↓ 2D MMORPG 기본 요소 (구 세이브 호환: 로드 시 기본값 채움) */
   gold?: number;
   potions?: { hp: number; mp: number };

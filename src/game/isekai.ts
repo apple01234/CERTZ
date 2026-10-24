@@ -469,6 +469,58 @@ export const ACHIEVEMENTS: AchDef[] = [
   { id: "ach_inv", name: "침공 차단자", desc: "침공 보스 5회 격퇴", shards: 35, prog: (s) => s.invasionKills, goal: 5 },
 ];
 
+/* ================= v1.2.0 — 칭호 시스템 =================
+ *  업적(A22 대장)과 1:1로 연결한다. 업적을 달성하면 그 업적의 칭호가 해금되고,
+ *  해금된 칭호 중 하나를 골라 캐릭터 이름표 앞에 붙일 수 있다.
+ *
+ *  왜 업적에 붙였나: 새 진행 시스템을 하나 더 만들면 유저가 "뭘 해야 하는지"를
+ *  또 배워야 한다. 업적은 이미 16종이 있고 달성 판정도 매 틱 돌고 있으므로,
+ *  칭호를 업적의 "보상 표시"로 얹으면 배울 것이 늘지 않는다.
+ *
+ *  설계 원칙: 칭호는 스탯을 주지 않는다. 수치 보상을 붙이면 "칭호 안 단 사람은
+ *  손해"라는 압박이 생겨 취향 선택이 강제가 된다. 여기선 자랑거리로만 둔다. */
+export type TitleDef = {
+  /** 업적 id (AchDef.id) — 이 업적을 달성하면 해금 */
+  ach: string;
+  /** 이름표에 표시될 칭호 (짧을수록 좋다 — 이름표 폭 제한) */
+  name: string;
+  /** 칭호 색 (css) */
+  color: string;
+  /** 획득 조건 요약 (UI 설명용) */
+  how: string;
+};
+
+/** 업적 id → 칭호. 업적 16종과 1:1. */
+export const TITLES: TitleDef[] = [
+  { ach: "ach_h1",  name: "사냥꾼",       color: "#c8e6a0", how: "몬스터 100마리 처치" },
+  { ach: "ach_h2",  name: "토벌자",       color: "#a8d878", how: "몬스터 1,000마리 처치" },
+  { ach: "ach_h3",  name: "살육의 화신",  color: "#ff6a6a", how: "몬스터 10,000마리 처치" },
+  { ach: "ach_lv",  name: "성장하는 자",  color: "#8fe8ff", how: "레벨 100 달성" },
+  { ach: "ach_g1",  name: "게이트 수호",  color: "#9fd8ff", how: "게이트 10웨이브 방어" },
+  { ach: "ach_g2",  name: "게이트의 전설", color: "#5fd4ff", how: "게이트 30웨이브 방어" },
+  { ach: "ach_c1",  name: "균열 파밍꾼",  color: "#ffd76a", how: "균열 던전 누적 10만 골드" },
+  { ach: "ach_u1",  name: "강화 장인",    color: "#ffb347", how: "장비 강화 합계 +20성" },
+  { ach: "ach_col", name: "도감 수집가",  color: "#c9a0ff", how: "몬스터 도감 20종 등록" },
+  { ach: "ach_fig", name: "피규어 대가",  color: "#ff9ad8", how: "피규어 8종 수집" },
+  { ach: "ach_con", name: "성좌 수집가",  color: "#b0a0ff", how: "성좌 노드 10개 개방" },
+  { ach: "ach_doj", name: "도장 돌파자",  color: "#ffaaff", how: "무릉도장 누적 30만 피해" },
+  { ach: "ach_b1",  name: "보스 사냥꾼",  color: "#ff8a5c", how: "보스 10회 처치" },
+  { ach: "ach_ch1", name: "카오스 입문",  color: "#ff5a4a", how: "카오스 보스 1회 처치" },
+  { ach: "ach_ch2", name: "카오스 정복자", color: "#ff3a2a", how: "카오스 보스 10회 처치" },
+  { ach: "ach_inv", name: "침공 차단자",  color: "#8fe8a0", how: "침공 보스 5회 격퇴" },
+];
+
+/** 업적 id로 칭호 찾기 (없으면 null) */
+export function titleOfAch(achId: string): TitleDef | null {
+  return TITLES.find((t) => t.ach === achId) ?? null;
+}
+
+/** 칭호 이름으로 정의 찾기 — 세이브엔 이름만 저장한다(업적 id는 바뀔 수 있음) */
+export function titleByName(name?: string | null): TitleDef | null {
+  if (!name) return null;
+  return TITLES.find((t) => t.name === name) ?? null;
+}
+
 /* ================= 15. 역할 시스템 (탱커/딜러/서포터 — 3인 협동 오마주) ================= */
 
 export type RoleKind = "tank" | "dealer" | "support";

@@ -23,6 +23,7 @@ import * as net from "../net";
 import {
   computeExtBonus, drawGateCards, rollFigure, GATE_STAR_WAVES, GATE_STAR_REWARD, SILVER_SHOP,
   COUPONS, ATTEND_REWARDS, ATTEND_CYCLE, DAILY_QUESTS, TICKETS_PER_DAY, ACHIEVEMENTS,
+  TITLES, titleByName, // v1.2.0 (#개편 A23·A24) — 칭호
   CONSTELLATIONS, CONSTEL_NODE_COST, SHARD_SHOP, BADGE_MAP, FIGURE_GRADE_META, FIGURE_MAP, FIGURES,
   RUNE_KINDS, RUNE_META, RUNE_SYNTH_COST, RUNE_MAX_TIER, runeKey, parseRuneKey,
   ROLE_OF, teamworkBuff, offlineReward, BADGE_SLOTS,
@@ -609,6 +610,8 @@ export class WorldScene extends Phaser.Scene {
   private introGuide: Phaser.GameObjects.Image | null = null;
   private introGuideSpark: Phaser.GameObjects.Sprite | null = null;
   private playerNameTag: Phaser.GameObjects.Text | null = null;
+  /** v1.2.0 (#개편 A23·A24) — 현재 장착 칭호 이름 (null이면 미장착) */
+  playerTitle: string | null = null;
   private queuedDialogue: string | null = null;
 
   /* ----- 2D MMORPG 기본 요소 ----- */
@@ -1242,6 +1245,8 @@ export class WorldScene extends Phaser.Scene {
         else if (this.player.startCls === null && this.pendingJobClass) this.player.startCls = this.pendingJobClass;
       }
       // v2.4 — 이어하기 시에도 이름표 유지 (클래스 복원 후 생성 — "이름 · 클래스" 표기)
+      /* v1.2.0 (#개편 A23) — 칭호 복원. 유효하지 않으면(개편으로 사라진 칭호) 무시한다. */
+      this.playerTitle = titleByName(savedPlayer.title)?.name ?? null;
       if (savedPlayer.playerName) this.ensurePlayerTag();
       // AP 스탯 복원 (v1.9 — 구 세이브는 loadSave()가 5/5/5/5 + 소급 AP 채움)
       // 지력/행운의 maxMp/maxHp 가산은 세이브 maxHp에 이미 포함 — 여기선 수치만 복원
@@ -9107,6 +9112,23 @@ export class WorldScene extends Phaser.Scene {
     };
     EventBus.on("rpg:lockItem", onLockItem);
 
+    /* v1.2.0 (#개편 A23·A24) — 칭호 장착/해제.
+     *  해금 조건은 "그 업적을 수령했는가"로 검사한다. 달성만 하고 수령하지 않은
+     *  업적의 칭호를 쓸 수 있게 하면 수령 동선(보상 받기)이 무의미해진다. */
+    const onSetTitle = (v: { name: string | null }) => {
+      if (!v.name) {
+        this.playerTitle = null;
+      } else {
+        const t = titleByName(v.name);
+        if (!t || !this.achClaimed.includes(t.ach)) return;
+        this.playerTitle = t.name;
+      }
+      this.refreshPlayerTag();
+      this.emitRpgState();
+      this.save();
+    };
+    EventBus.on("rpg:setTitle", onSetTitle);
+
     /* v1.1.9 (#개편 A47) — 요리 제작 */
     const onCook = (v: { key: string }) => { this.cookDish(v.key); };
     EventBus.on("rpg:cook", onCook);
@@ -9782,6 +9804,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:bossReplay", onBossReplay);
       EventBus.off("rpg:sell", onSell);
       EventBus.off("rpg:cook", onCook);
+      EventBus.off("rpg:setTitle", onSetTitle);
       EventBus.off("rpg:lockItem", onLockItem);
       EventBus.off("rpg:sellPotion", onSellPotion);
       EventBus.off("rpg:bmBuy", onBmBuy);
@@ -11797,7 +11820,14 @@ export class WorldScene extends Phaser.Scene {
     if (!this.playerNameTag || !this.player) return;
     const d = classDef(this.player.cls);
     const gm = this.adminRole === "admin";
-    this.playerNameTag.setText(gm ? `[GM] ${getPlayerName()}${d ? ` · ${d.name}` : ""}` : d ? `${getPlayerName()} · ${d.name}` : getPlayerName());
+    /* v1.2.0 (#개편 A24) — 칭호를 닉네임 앞에 붙인다. 길이 제한을 두는 이유:
+     *  칭호는 최대 7자("카오스 정복자")라 이름표가 화면을 넘길 수 있다. 앞 8자로 자른다. */
+    const tt = this.playerTitle ? `「${this.playerTitle.slice(0, 8)}」 ` : "";
+    this.playerNameTag.setText(
+      gm
+        ? `[GM] ${tt}${getPlayerName()}${d ? ` · ${d.name}` : ""}`
+        : `${tt}${getPlayerName()}${d ? ` · ${d.name}` : ""}`
+    );
     this.playerNameTag.setColor(gm ? "#ffd76a" : "#baf3ff");
     this.playerNameTag.setStroke(gm ? "#3a2400" : "#0a2030", 4);
     this.syncGmAura();
@@ -14418,6 +14448,8 @@ export class WorldScene extends Phaser.Scene {
           const snap = this.achSnapshot();
           return ACHIEVEMENTS.map((a) => ({ id: a.id, prog: Math.min(a.goal, a.prog(snap)), goal: a.goal }));
         })(),
+        /* v1.2.0 (#개편 A23·A24) — 장착 칭호 (UI가 선택 상태를 그린다) */
+        myTitle: this.playerTitle,
         /* v4.1.4 — 보스/카오스/침공 처치 누적 */
         bossKills: this.bossKillCount,
         chaosKills: this.chaosKillCount,
@@ -14624,6 +14656,7 @@ export class WorldScene extends Phaser.Scene {
       cls: this.player.cls,
       startCls: this.player.startCls, // v1.0.18 — 시작 클래스 (환생 복귀용)
       playerName: getPlayerName(),
+      title: this.playerTitle, // v1.2.0 (#개편 A23)
       /* v1.9 — AP 스탯 + BM */
       stats: { ...this.player.stats },
       ap: this.player.ap,
