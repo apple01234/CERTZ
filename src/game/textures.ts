@@ -367,6 +367,20 @@ export function registerBossAnims(scene: Phaser.Scene, tex: string) {
   }
 }
 
+/** vc178 — 집 꾸미기 가구 아이콘 지연 로드 (fire-and-forget).
+ *  FURNITURE_DEFS의 icon 텍스처가 부트 목록에 없어도 첫 배치 시점에 받는다.
+ *  3라운드 재시도 — loadBodyPrefix와 동일한 내구성. 완료 후 씬 오브제는
+ *  texGuard 동적 로드 체계가 재결합한다. */
+export async function ensureImages(scene: Phaser.Scene, keys: string[]): Promise<void> {
+  const unique = Array.from(new Set(keys)).filter((k) => k && !scene.textures.exists(k));
+  if (unique.length === 0) return;
+  let pending = unique;
+  for (let round = 0; round < 3 && pending.length > 0; round++) {
+    await Promise.all(pending.map((f) => loadImageRaw(scene, f, `assets/${f}.webp`, round > 0)));
+    pending = unique.filter((f) => !scene.textures.exists(f));
+  }
+}
+
 /** v5.0 — 보스 프레임 지연 로드 (idle2+ · walk · atk · die · sp1~3 = 최대 36장).
  *  Boss 생성자에서 발화(fire-and-forget) — 보스 인트로 연출(수 초) 동안 로드가 끝난다.
  *  완료 후 registerBossAnims로 12FPS 풀애니 승격. 실패해도 기존 idle 폴백 유지. */

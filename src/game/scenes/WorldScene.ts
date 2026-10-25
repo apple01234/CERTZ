@@ -4101,6 +4101,8 @@ export class WorldScene extends Phaser.Scene {
     npc_fairy_aria: "『반짝이는 거 보여? 이게 진짜 빛이야.』",
   };
   private spawnChibiNpcs() {
+    /* vc178 — 유저 지시 "씹덕캐릭 마을 당 1개만 배치해": 6종 전원 배치는 시끄럽다.
+     *  스테이지 키 해시로 6종 중 1명만 선정해 마을마다 다른 NPC가 서게 한다. */
     const ox = this.layout ? this.entryHome.x : 400;
     const oy = this.layout ? this.entryHome.y : this.stageH / 2;
     /* [텍스처, 이름, 대사, 각도(rad), 거리] — 마을 중앙을 비우고 바깥에 배치 */
@@ -4112,8 +4114,11 @@ export class WorldScene extends Phaser.Scene {
       ["npc_witch_nyx", "마녀 닉스", "…거래할래?", 1.25, 185],
       ["npc_fairy_aria", "요정 아리아", "반짝반짝!", 2.15, 165],
     ];
-    for (let i = 0; i < list.length; i++) {
-      const [key, name, line, ang, dist] = list[i];
+    /* vc178 — 마을당 1명: 스테이지 키 해시로 담당 NPC 1명만 선정 (시드 11 — 10마을에 6종 고르게 분배) */
+    const stageHash = Array.from(this.stageDef.key).reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 11);
+    const pick = list[stageHash % list.length];
+    for (let i = 0; i < 1; i++) {
+      const [key, name, line, ang, dist] = pick;
       if (!this.textures.exists(key)) continue; // 텍스처 없으면 조용히 건너뛴다
       const x = ox + Math.cos(ang) * dist;
       const y = oy + Math.sin(ang) * dist * 0.55; // 세로 압축(2.5D 원근)
@@ -4710,6 +4715,30 @@ export class WorldScene extends Phaser.Scene {
       scale: 0.85,
       duration: 170,
       onComplete: () => bow.destroy(),
+    });
+  }
+
+  /** vc178 — 총구 화염 (방향성 머즐 플래시): 해적 총격 전용.
+   *  pk_muzzle_02는 위쪽(−y)으로 분사하는 방향성 텍스처 → angle + PI/2로 진행 방향 정렬.
+   *  scale 0.09 — 512px 원본을 46px 정도로 축소 (총구 크기). 미로드 시 원형 버스트 폴백. */
+  spawnMuzzleFlash(x: number, y: number, angle: number) {
+    if (!this.textures.exists("pk_muzzle_02")) {
+      this.spawnBurstAt(x, y, 5, 0xffe9a8);
+      return;
+    }
+    const mz = this.add.image(x, y, "pk_muzzle_02")
+      .setDepth(12)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0xffe2a8)
+      .setRotation(angle + Math.PI / 2)
+      .setScale(0.09);
+    this.tweens.add({
+      targets: mz,
+      alpha: 0,
+      scale: 0.13,
+      duration: 140,
+      ease: "Quad.out",
+      onComplete: () => mz.destroy(),
     });
   }
 
@@ -11223,13 +11252,17 @@ export class WorldScene extends Phaser.Scene {
     const hex = Number(classDef(cls ?? undefined)?.color?.replace("#", "0x") ?? 0xffffff) || 0xffe9b0;
     const dir = new Phaser.Math.Vector2(flip ? 1 : -1, 0);
     if (a.kind === "atk") {
-      /* 계열별 기본 공격 실루엣 — 근접 참격 / 궁수 활 / 마법 시전 */
+      /* 계열별 기본 공격 실루엣 — 근접 참격 / 궁수 활 / 마법 시전 / 해적 총격(vc178) */
       if (fam === "ranger") {
         this.spawnBow(x + dir.x * 10, y - 8, flip ? 0 : Math.PI);
         this.fireRemoteProj(x, y - 8, flip ? 0 : Math.PI, 540, { tint: 0x9adf6a });
       } else if (fam === "mage") {
         this.spawnCast(x + dir.x * 12, y - 12);
         this.fireRemoteProj(x, y - 10, flip ? 0 : Math.PI, 430, { anim: "fx-arcane", scale: 1.15, rot: true });
+      } else if (fam === "pirate") {
+        /* vc178 — 해적 원격 연출: 방향성 머즐 + 탄환 (로컬과 동일 정체성) */
+        this.spawnMuzzleFlash(x + dir.x * 26, y - 6, flip ? 0 : Math.PI);
+        this.fireRemoteProj(x + dir.x * 30, y - 6, flip ? 0 : Math.PI, 880, { tint: 0xffe9a8, tex: "gw_proj", scale: 0.36, blend: "add", rot: true, life: 420 });
       } else {
         this.spawnSlash(x, y, dir, false, 1, undefined);
       }
@@ -11551,6 +11584,22 @@ export class WorldScene extends Phaser.Scene {
         case "flurrydance": {
           /* 스와시버클러 — 전방 5연속 속공 */
           for (let i = 0; i < 5; i++) this.time.delayedCall(i * 70, () => this.spawnSlash(x + face * (18 + i * 6), y, new Phaser.Math.Vector2(face, 0), i % 2 === 0, 1.15 * s, hex));
+          break;
+        }
+        /* vc178 — 해적 원격 s1 (로컬 연출 근사): 총격/총검술 */
+        case "cannonblast": {
+          this.spawnMuzzleFlash(x + face * 26, y - 6, ang);
+          for (let i = 0; i < 3; i++) this.time.delayedCall(i * 110, () => this.spawnMuzzleFlash(x + face * 26, y - 6, ang));
+          this.fireRemoteProj(x + face * 30, y - 6, ang, 900, { tint: 0xffe9a8, tex: "gw_proj", scale: 0.5, blend: "add", rot: true, life: 520 });
+          this.remoteRing(x + face * 40, y - 6, 0xffe9a8, 0.9, 120, 1.6);
+          break;
+        }
+        case "cutlassdance": {
+          for (let i = 0; i < 2; i++) {
+            this.time.delayedCall(i * 100, () => this.spawnMuzzleFlash(x + face * 26, y - 6, ang));
+          }
+          this.fireRemoteProj(x + face * 30, y - 6, ang, 820, { tint: hex, tex: "gw_proj", scale: 0.42, blend: "add", rot: true, life: 480 });
+          this.time.delayedCall(230, () => this.spawnSlash(x + face * 150, y, new Phaser.Math.Vector2(face, 0), false, 1.5 * s, 0xffdf8a));
           break;
         }
       }
@@ -12057,6 +12106,9 @@ export class WorldScene extends Phaser.Scene {
     blend?: "add" | "normal";
     /** angle로 스프라이트 회전 (화살 등 방향성 텍스처) */
     rot?: boolean;
+    /** vc178 — 텍스처 기준 방향 보정 (gw_proj 등 탄두가 왼쪽인 시트: Math.PI).
+     *  velocity는 angle 그대로, 스프라이트 회전만 angle+texRot — 판정·경로 무변경 */
+    texRot?: number;
     /** v3.0.3 — 유도 (데드아이 신의 화살비): 가장 가까운 적으로 진로 수정 */
     homing?: boolean;
     /** v3.0.16 (#4) — 비행 잔상(트레일) 색. 지정하면 진행 경로가 발광 잔상으로 남는다 */
@@ -12095,7 +12147,7 @@ export class WorldScene extends Phaser.Scene {
     }
     if (cfg.anim && this.anims.exists(cfg.anim)) p.play(cfg.anim);
     else if (cfg.anim) p.setTexture("orb");
-    p.setRotation(cfg.rot ? cfg.angle : 0);
+    p.setRotation(cfg.rot ? cfg.angle + (cfg.texRot ?? 0) : 0);
     p.setData("rot", cfg.rot === true); // v3.0.12 — 유도 중 회전 갱신용 플래그
     p.setData("dmg", cfg.dmg);
     p.setData("crit", cfg.crit);

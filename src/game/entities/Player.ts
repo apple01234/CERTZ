@@ -628,13 +628,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *   · 전사/도적: 근접 참격(기존 그대로) */
       const fam = familyOf(this.cls);
       if (fam === "pirate") {
-        this.scene.spawnBurstAt(this.x + dir.x * 26, this.y - 6 + dir.y * 26, 5, 0xffe9a8);
+        /* vc178 — 공격 방향 이펙트 수리: 총구 화염(방향성 머즐) + 탄환 회전.
+         *  기존엔 ①탄환이 방향성 텍스처(gw_proj 탄두=왼쪽)인데 rot 미지정이라
+         *  항상 0° 고정(위/아래로 쏴도 가로로 누워 있었다) ②총구 화염이 방향 없는
+         *  원형 파티클이라 어디로 쏴도 같은 모양이었다. */
+        this.scene.spawnMuzzleFlash(this.x + dir.x * 26, this.y - 6 + dir.y * 26, Math.atan2(dir.y, dir.x));
         this.scene.sfxSkill("thunder", 0.95);
         const { dmg, crit } = this.rollDamage(dmgMul * 1.15, false);
         this.scene.firePlayerProj({
           x: this.x + dir.x * 30, y: this.y - 6 + dir.y * 30,
           angle: Math.atan2(dir.y, dir.x), speed: 880, pierce: 1,
           dmg, crit, tint: 0xffe9a8, knock: 120, scale: 0.36, tex: "gw_proj", blend: "add",
+          rot: true, texRot: Math.PI, // 탄두가 왼쪽인 시트 — 진행 방향으로 탄두 정렬
         });
         this.scene.doShake?.(50, 0.0018);
         return;
@@ -1635,7 +1640,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const dir = this.aimDir();
     const t = this.sTier;
     const hex = this.clsHex();
-    this.play(this.bodyKey("hero-atk"));
+    /* vc178 — 공격 방향 이펙트 수리: 상/하 조준 시에도 atk-up/down 프레임으로 재생.
+     *  기존엔 측면(hero-atk) 고정이라 위/아래로 쏴도 옆을 향해 총을 쏘는 모양이었다. */
+    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
+    this.play(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0);
     const shots = t >= 3 ? 3 : 1;
     const spread = t >= 3 ? 0.07 : 0;
@@ -1643,14 +1651,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.time.delayedCall(i * 110, () => {
         if (this.state === "dead") return;
         const ang = Math.atan2(dir.y, dir.x) + (i - (shots - 1) / 2) * spread;
-        /* 총구 화염 + 탄피 */
-        this.scene.spawnBurstAt(this.x + Math.cos(ang) * 26, this.y - 6 + Math.sin(ang) * 26, 6, 0xffd76a);
+        /* 총구 화염 — vc178: 방향성 머즐 플래시 (기존 방향 없는 원형 파티클) */
+        this.scene.spawnMuzzleFlash(this.x + Math.cos(ang) * 26, this.y - 6 + Math.sin(ang) * 26, ang);
         this.scene.sfxSkill("thunder", 0.86); // 총성 — 낮은 피치
         /* 반동 */
         this.setVelocity(-Math.cos(ang) * 130, -Math.sin(ang) * 130);
         this.scene.time.delayedCall(70, () => { if (this.state !== "dead") this.setVelocity(0, 0); });
         this.scene.doShake?.(70, 0.0026);
-        /* 탄환 — 관통 3(5차 5), 빠르고 길게 */
+        /* 탄환 — 관통 3(5차 5), 빠르고 길게. vc178: 탄환 회전 (방향성 텍스처 탄두 정렬) */
         const { dmg, crit } = this.rollDamage(2.6 + 0.22 * t, true);
         this.scene.firePlayerProj({
           x: this.x + Math.cos(ang) * 30,
@@ -1664,6 +1672,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           scale: 0.5,
           tex: "gw_proj",
           blend: "add",
+          rot: true, texRot: Math.PI, // 탄두가 왼쪽인 시트 — 진행 방향으로 탄두 정렬
         });
         if (crit) this.scene.sfxCrit();
       });
@@ -1686,21 +1695,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const dir = this.aimDir();
     const t = this.sTier;
     const hex = this.clsHex();
-    this.play(this.bodyKey("hero-atk"));
+    /* vc178 — 공격 방향 이펙트 수리: 상/하 조준 시에도 atk-up/down 프레임으로 재생 */
+    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
+    this.play(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0);
     const ang = Math.atan2(dir.y, dir.x);
 
-    /* 1) 원거리 사격 2발 */
+    /* 1) 원거리 사격 2발 — vc178: 방향성 머즐 + 탄환 회전 */
     for (let i = 0; i < 2; i++) {
       this.scene.time.delayedCall(i * 100, () => {
         if (this.state === "dead") return;
-        this.scene.spawnBurstAt(this.x + Math.cos(ang) * 26, this.y - 6 + Math.sin(ang) * 26, 5, hex);
+        this.scene.spawnMuzzleFlash(this.x + Math.cos(ang) * 26, this.y - 6 + Math.sin(ang) * 26, ang);
         this.scene.sfxSkill("thunder", 0.92 + i * 0.05);
         const { dmg, crit } = this.rollDamage(1.25 + 0.1 * t, true);
         this.scene.firePlayerProj({
           x: this.x + Math.cos(ang) * 30, y: this.y - 6 + Math.sin(ang) * 30,
           angle: ang, speed: 820, pierce: 2, dmg, crit, tint: hex, knock: 90,
           scale: 0.42, tex: "gw_proj", blend: "add",
+          rot: true, texRot: Math.PI, // 탄두 정렬
         });
       });
     }
@@ -3886,6 +3898,83 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       }
 
+      /* vc178 — 해적 계열 — 만조: 대양 항로. 거대 해일 관통 + 낙뢰 세례.
+       *  v1.2.4까지 case "pirate"가 없어 도적 폴백(심연 참수극)으로 떨어졌다.
+       *  "범위가 가장 넓은 계열 궁극기"라는 SKILL5_INFO 설명을 코드로 만든다. */
+      case "pirate": {
+        /* 1단 — 거대 해일: 화면 가로 전체를 좌→우로 관통하는 물기둥 3연속 */
+        for (let w = 0; w < 3; w++) {
+          this.scene.time.delayedCall(280 + w * 420, () => {
+            if (this.state === "dead") return;
+            const wy = this.y - 10 + (w - 1) * 46;
+            /* 해일 본체 — 넓은 사각 물벽이 화면을 가로지른다 */
+            const wave = this.scene.add.rectangle(-80, wy, 120, 150 + w * 22, 0x3a8ad0, 0.42)
+              .setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
+            const foam = this.scene.add.rectangle(-80, wy - (75 + w * 11), 120, 8, 0xbfe8ff, 0.85)
+              .setDepth(15).setBlendMode(Phaser.BlendModes.ADD);
+            this.scene.tweens.add({ targets: [wave, foam], x: this.scene.scale.width + 120, duration: 780, ease: "Sine.inOut", onComplete: () => { wave.destroy(); foam.destroy(); } });
+            this.scene.sfxSkill("wave", 0.9 + w * 0.06);
+            this.scene.doShake?.(140, 0.005);
+            /* 관통 판정 — 해일 라인 근처의 적 전부 */
+            for (const e of this.getAllTargetsIn(999)) {
+              if (Math.abs(e.y - wy) > 110 + w * 14) continue;
+              const away = new Phaser.Math.Vector2(1, 0);
+              const { dmg, crit } = rd(2.4 + w * 0.25);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 520, crit);
+            }
+          });
+        }
+        /* 2단 — 뇌운 낙뢰: 전장 상공에 뇌운이 걷히고 8방향 낙뢰가 쏟아진다 */
+        this.scene.time.delayedCall(280 + 3 * 420 + 200, () => {
+          if (this.state === "dead") return;
+          this.scene.cameras.main.flash(150, 130, 190, 255);
+          for (let i = 0; i < 8; i++) {
+            this.scene.time.delayedCall(i * 150, () => {
+              if (this.state === "dead") return;
+              const t2 = this.nearestTargets(1, 720)[0];
+              const px = t2 ? t2.x + (Math.random() - 0.5) * 90 : this.x + (Math.random() - 0.5) * 520;
+              const py = t2 ? t2.y : this.y + (Math.random() - 0.5) * 220;
+              /* 낙뢰 기둥 — 하늘에서 바닥까지 */
+              const bolt = this.scene.add.rectangle(px, py - 110, 9, 230, 0xcfe8ff, 0.9)
+                .setDepth(15).setBlendMode(Phaser.BlendModes.ADD);
+              this.scene.tweens.add({ targets: bolt, alpha: 0, duration: 240, onComplete: () => bolt.destroy() });
+              this.scene.spawnBurstAt(px, py, 18, 0xa8d8ff);
+              this.scene.sfxSkill("thunder", 0.78 + (i % 3) * 0.08);
+              this.scene.doShake?.(90, 0.006);
+              for (const e of this.getAllTargetsIn(999)) {
+                if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 130) continue;
+                const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+                const { dmg, crit } = rd(3.1);
+                if (crit) this.scene.sfxCrit();
+                e.takeDamage(dmg, away, 480, crit);
+              }
+            });
+          }
+          /* 종결 — 대양이 잠잠해질 때의 만조 폭발 */
+          this.scene.time.delayedCall(8 * 150 + 260, () => {
+            if (this.state === "dead") return;
+            this.scene.spawnPillar(this.x, this.y, 0x5ab8ff, 260);
+            this.scene.spawnBurstAt(this.x, this.y, 70, 0x8ad0ff);
+            this.scene.spawnField({
+              x: this.x, y: this.y, radius: 250, dur: 6000,
+              dps: Math.max(16, Math.round(this.atkTotal * 1.4)),
+              kind: "light", owner: "player",
+            });
+            this.scene.cameras.main.flash(200, 140, 210, 255);
+            this.scene.cameras.main.shake(460, 0.02);
+            this.scene.sfxSkill("superhit", 0.86);
+            for (const e of this.getAllTargetsIn(560)) {
+              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const { dmg, crit } = rd(6.6);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 580, crit);
+            }
+          });
+        });
+        break;
+      }
+
       /* 도적 계열 — 심연: 그림자 참수극. 적 사이 점멸 참수 + 심연 폭발 */
       default: {
         const marks = this.nearestTargets(8, 720);
@@ -4494,6 +4583,74 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           for (const e of this.getAllTargetsIn(680)) {
             const away = new Phaser.Math.Vector2(e.x - bx, e.y - by).normalize();
             const { dmg, crit } = rd(9.8);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 680, crit);
+          }
+        });
+        break;
+      }
+
+      /* vc178 — 해적 계열 — 폭풍항로: 침몰의 종. 바다 수직 분열 + 침몰 함대 포성 8초 포격.
+       *  v1.2.4까지 case "pirate"가 없어 도적 폴백(사(死)의 일섬)으로 떨어졌다. */
+      case "pirate": {
+        /* 1단 — 바다가 수직으로 갈라진다: 화면 중앙 세로 균열 + 충격 */
+        this.scene.time.delayedCall(280, () => {
+          if (this.state === "dead") return;
+          this.scene.cameras.main.flash(160, 120, 190, 255);
+          const rift = this.scene.add.rectangle(this.x, this.scene.scale.height / 2, 26, this.scene.scale.height * 1.4, 0x9ad8ff, 0.55)
+            .setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
+          this.scene.tweens.add({ targets: rift, alpha: 0, scaleX: 0.2, duration: 1400, ease: "Cubic.in", onComplete: () => rift.destroy() });
+          this.scene.spawnCrack(this.x, this.y);
+          this.scene.doShake?.(420, 0.012);
+          this.scene.sfxSkill("thunder", 0.6);
+          /* 분열 순간 광역 타격 */
+          for (const e of this.getAllTargetsIn(999)) {
+            const away = new Phaser.Math.Vector2(e.x > this.x ? 1 : -1, 0);
+            const { dmg, crit } = rd(4.2);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 560, crit);
+          }
+        });
+        /* 2단 — 침몰한 함대의 포성이 되돌아온다: 8초간 광역 폭격 (설명 문구 그대로) */
+        const BARRAGE_MS = 8000, BARRAGE_N = 22;
+        for (let i = 0; i < BARRAGE_N; i++) {
+          this.scene.time.delayedCall(700 + (i * BARRAGE_MS) / BARRAGE_N, () => {
+            if (this.state === "dead") return;
+            const t2 = this.nearestTargets(3, 760)[i % 3];
+            const px = t2 ? t2.x + (Math.random() - 0.5) * 110 : this.x + (Math.random() - 0.5) * 560;
+            const py = t2 ? t2.y + (Math.random() - 0.5) * 80 : this.y + (Math.random() - 0.5) * 260;
+            /* 낙하 포탄 — 위에서 떨어져 터진다 */
+            const shell = this.scene.add.rectangle(px, py - 190, 7, 16, 0x2a2a38, 1).setDepth(15);
+            this.scene.tweens.add({ targets: shell, y: py, duration: 180, ease: "Quad.in", onComplete: () => {
+              shell.destroy();
+              this.scene.spawnBurstAt(px, py, 22, 0xffb86a);
+              this.scene.spawnPillar(px, py, 0xffd0a0, 150);
+              this.scene.sfxSkill("thunder", 0.7 + Math.random() * 0.2);
+              this.scene.doShake?.(110, 0.008);
+              for (const e of this.getAllTargetsIn(999)) {
+                if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 150) continue;
+                const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+                const { dmg, crit } = rd(2.6);
+                if (crit) this.scene.sfxCrit();
+                e.takeDamage(dmg, away, 420, crit);
+              }
+            } });
+          });
+        }
+        /* 종결 — 종말의 대포격: 남은 화약을 한 번에 (분열 지점 중심) */
+        this.scene.time.delayedCall(700 + BARRAGE_MS + 320, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnPillar(this.x, this.y, 0xffc08a, 320);
+          this.scene.spawnBurstAt(this.x, this.y, 90, 0xffa86a);
+          this.scene.spawnCrack(this.x, this.y);
+          this.scene.spawnField({ x: this.x, y: this.y, radius: 280, dur: 8000, dps: Math.max(24, Math.round(this.atkTotal * 2.0)), kind: "fire", owner: "player" });
+          this.scene.cameras.main.flash(230, 255, 210, 150);
+          this.scene.cameras.main.shake(600, 0.028);
+          this.scene.sfxSkill("superhit", 0.7);
+          this.scene.sfxSkill("manaburst", 0.8);
+          for (const e of this.getAllTargetsIn(700)) {
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = rd(8.2);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 680, crit);
           }

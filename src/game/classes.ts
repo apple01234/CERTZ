@@ -674,6 +674,10 @@ export const SKILL1_KIND: Partial<Record<ClassKey, Skill1Kind>> = {
   ranger: "volley",
   mage: "bolt",
   thief: "bladestorm",
+  /* vc178 — 1차 해적 전용기: 레이더(2차)의 총격을 1차에서 조기 승계.
+   *  v1.2.4에서 1차 해적이 테이블에 없어 resolveSkill1Of가 null → 전사 회전베기 폴백으로
+   *  "해적인데 검을 돌린다"가 됐다. 해적 정체성(총)을 1차부터 부여한다. */
+  pirate: "cannonblast",
   berserker: "ragespin",
   guardian: "wallsmash",
   sniper: "snipe",
@@ -692,6 +696,8 @@ export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
   ranger: "windstep",
   mage: "blink",
   thief: "shadowveil",
+  /* vc178 — 1차 해적 기동기: 레이더(2차)의 연막 측면 조기 승계 (1차 스킬과 세트). */
+  pirate: "smokestep",
   berserker: "savagerush",
   guardian: "bulwarkdash",
   sniper: "falconwind",
