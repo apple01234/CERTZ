@@ -134,6 +134,28 @@ function attachMultiplayer(httpServer) {
       if (!known) sysChat(`${players.get(sock.id).name} 님이 접속했습니다`);
     });
 
+    /* vc184 (액터 결정 문서 ③) — 상태 해시 검증.
+     *  클라가 주기적으로 보낸 해시를 들고 있는 값으로 다시 계산해 대조한다.
+     *  불일치는 "동기화가 어긋나고 있다"는 신호 — 되돌리지 않고 세기만 한다
+     *  (잘못된 되감기가 정상 상태를 망치는 게 desync 자체보다 위험).
+     *  FNV-1a 32bit — 클라 stateHash 와 동일 구현이어야 한다. */
+    const hashState = (p) => {
+      const norm = [Math.round(p.x), Math.round(p.y), Math.round(p.lv), p.cls ?? "-", p.stage ?? "-"].join("|");
+      let h = 0x811c9dc5;
+      for (let i = 0; i < norm.length; i++) {
+        h ^= norm.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return h >>> 0;
+    };
+    sock.on("hash:check", (raw = {}) => {
+      const p = players.get(sock.id);
+      if (!p) return;
+      const local = Number(raw.h) >>> 0;
+      const remote = hashState(p);
+      sock.emit("hash:ack", { h: remote, ok: local === remote });
+    });
+
     sock.on("state", (s = {}) => {
       const p = players.get(sock.id);
       if (!p) return;

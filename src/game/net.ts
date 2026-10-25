@@ -10,6 +10,7 @@
  *  - 미지정이면 연결 시도 자체를 생략(완전 오프라인 — 재접속 루프/배터리 낭비 없음).
  */
 import { Capacitor } from "@capacitor/core";
+import { stateHash, noteHashAck, desyncStats } from "./sim/stateHash"; // vc184 — 상태 해시 검증
 import { io, type Socket } from "socket.io-client";
 /* v1.4.20 — 멀티서버 분리: 게임 서버 해석 로직을 server.ts로 일원화 */
 import { GAME_SERVER, isGameServerHost, resolveEntryTarget, storedServerUrl } from "./server";
@@ -239,6 +240,10 @@ export function netJoin(info: JoinInfo) {
   pendingJoin = payload; // 최신 상태로 갱신 (리스폰/스테이지 이동 재합류 대응)
   if (s.connected) {
     s.emit("join", payload);
+    /* vc184 — 해시 응답 수신. 불일치는 세기만 하고 게임 상태를 되돌리지 않는다. */
+    s.on("hash:ack", (raw: { h?: number } = {}) => {
+      if (typeof raw?.h === "number") noteHashAck(desyncStats.lastLocal, raw.h);
+    });
     pendingJoin = null;
   }
 }
@@ -265,6 +270,20 @@ export type NetState = {
 
 export function netState(st: NetState) {
   if (socket?.connected) socket.emit("state", st);
+}
+
+/* vc184 (액터 결정 문서 ③) — 상태 해시 주기 전송.
+ *  서버가 같은 계산으로 대조해 ok/불일치를 돌려준다. 60틱(약 3초)마다 1회 —
+ *  매 프레임 보내면 패킷이 늘어 오히려 손해다. */
+export function netSendHash(st: { x: number; y: number; lv: number; cls: string | null; stage?: string }) {
+  if (socket?.connected) {
+    socket.emit("hash:check", { h: stateHash({ x: st.x, y: st.y, lv: st.lv, cls: st.cls, stage: st.stage }) });
+  }
+}
+
+/** desync 통계 조회 (디버그) */
+export function netDesync() {
+  return { ...desyncStats, rate: desyncStats.checks ? desyncStats.mismatches / desyncStats.checks : 0 };
 }
 
 export function netSendChat(text: string) {

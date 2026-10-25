@@ -3760,6 +3760,8 @@ export class WorldScene extends Phaser.Scene {
   /** vc183 — 적/보스 AI 전용 20Hz 고정 스텝 러너. 렌더(60fps)와 분리해
    *  기기 성능과 무관하게 몬스터 반응 속도를 일정하게 만든다. */
   private simAI = createSimRunner();
+  /** vc184 — 상태 해시 전송 누적기(ms). 3초마다 1회. */
+  private hashAcc = 0;
   /* v1.4.23 (#반짝임) — GPU 불안정 래치: WebGL 컨텍스트 반복 유실 세션에서
    *  블룸/툰 셰이더 프레임버퍼 경로를 즉시 제거한다 (유실 동안 렌더 스킵 =
    *  "이동/스킬 사용 시 검은 반짝임"의 정체). 씬 재시작과 무관하게 세션 동안 유지. */
@@ -10815,6 +10817,14 @@ export class WorldScene extends Phaser.Scene {
         cls: this.player.cls,
         stage: this.stageDef.key,
       });
+      /* vc184 (액터 결정 문서 ③) — 3초에 1회 상태 해시 대조.
+       *  서버가 같은 FNV-1a 로 재계산해 어긋남을 세고, 클라가 그 통계를 들고 있는다.
+       *  게임 진행에 영향 없음(판정만) — 잘못된 되감기가 정상 상태를 망치기 때문. */
+      this.hashAcc = (this.hashAcc ?? 0) + 120;
+      if (this.hashAcc >= 3000) {
+        this.hashAcc = 0;
+        net.netSendHash({ x: this.player.x, y: this.player.y, lv: this.player.lv, cls: this.player.cls, stage: this.stageDef.key });
+      }
     }
   }
 
