@@ -8,13 +8,13 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.3.6";
-const LATEST_CODE = 184;
+const LATEST_VERSION = "1.3.7";
+const LATEST_CODE = 185;
 const VERSION_NOTE =
-  "v1.3.6 (vc184) — ①여캐 헤어 차별화: 사이드뱅·옆머리·가슴앞 머리·리본·머리 명암·턱선 정리로 두상만 봐도 여성으로 구분된다(168프레임 전수, Vision 품질 7.5→8.8). ②상태 해시 검증: FNV-1a로 3초마다 서버와 상태를 대조해 동기화 이탈을 감지한다(되감지 않음 — 잘못된 되감기가 정상 상태를 망친다). 누적 수정: 적 방어력(체급별 정액+비율)·검은 사각형 VFX 알파 추출(12종)·20Hz 고정 틱 AI(18~19Hz 실측)·시드 결정론 난수(?seed 재현)·보스 아틀라스 7종 격자·WebGL 컨텍스트 유예 15초.";
+  "v1.3.7 (vc185) — ①4·5차 스킬 3D 연출을 직업별로 분리: 그동안 계열(5종)로만 골라 10개 4차 직업이 같은 연출을 공유했다. 이제 워브링어=대검연쇄·크루세이더=성광방벽·데드아이=관통궤적·스카이로드=회오리·아크로드=전격아크·이터널=시간고리·섀도우로드=낫+해골·블레이드마스터=쌍검부채·시킹=수압파도·드레드노트=포격탄막. ②5차 스킬 멈춤 수리: 카메라 줌 트윈이 매 프레임 누적되고 복귀 기준이 변형값이라 줌이 1.25로 고정됐다 — 프레임 313ms→75ms, 줌 정상 복귀. ③쉐이더·고대비 튜토리얼 추가(6→8단계, 설정에서 직접 조작해야 완료). ④유니온 보스 난이도 정상화: HP가 유저 화력의 21배였다 — 노말 6만→2,400. ⑤Vercel 부하 차단: 클라이언트가 no-store로 CDN 캐시를 무력화해 모든 폴링이 서버를 때리던 것을 수정(함수 호출 0, 폴링 40% 감소). ⑥파티/랭킹 아이콘 중복 분리.";
 const APK_MIRROR =
   /* vc179 — APK는 릴리스 태그 v1.3.1에 있다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.3.6/SERTZ-vc184.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.3.7/SERTZ-vc185.apk";
 
 export async function GET() {
   return NextResponse.json({
