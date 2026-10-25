@@ -557,6 +557,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const fam = familyOf(this.cls);
     if (fam === "ranger") return this.atkBow(this.aimDirFree());
     if (fam === "mage") return this.atkBolt(this.aimDirFree());
+    /* vc182 (지시 — "해적 대각선 공격 안됨") 수리:
+     *  해적은 위의 4방향 `dir`(aimDir)을 그대로 받아 총을 쐈다. aimDir은 근접
+     *  애니메이션 시트가 4방향이라 스냅한 값이라, 대각선으로 조준해도 상/하/좌/우
+     *  중 하나로 눌러 발사됐다(대각선 불가).
+     *  해적은 총을 쏘는 계열이므로 궁수·마법사와 같이 8방향 자유 조준을 쓴다.
+     *  애니메이션은 기존처럼 4방향 시트를 재생하되(총 자세), 탄환 각도는 자유 조준. */
+    if (fam === "pirate") {
+      const free = this.aimDirFree();
+      return this.atkSlash(free, free);
+    }
     /* v3.0.3 — 도적 표창: 기본공격 3회마다 단검 대신 표창 투척 (근/원거리 혼합 무기감) */
     if (fam === "thief") {
       this.atkCount++;
@@ -602,7 +612,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** 참격 (미전직 + 전사 공용 뼈대) — 전사는 2연타·확대 판정·강화 배율
    *  v3.0.6 (지시 #3 — 전직마다 기본공격 강화): 2차+ 3연타 / 3차+ 마지막 타 검기 파동 / 4차+ 대형 파동+출혈 */
-  private atkSlash(dir: Phaser.Math.Vector2) {
+  /* vc182 — 두 번째 인자(aim)는 "탄환 각도"용 자유 조준(8방향)이다.
+   *  첫 인자(dir)는 4방향 애니메이션 시트 선택용으로 남긴다(시트가 4방향뿐).
+   *  근접 계열은 aim을 넘기지 않으므로 기존 동작과 100% 동일하다. */
+  private atkSlash(dir: Phaser.Math.Vector2, aim?: Phaser.Math.Vector2) {
+    const fireDir = aim ?? dir;
     const fam = familyOf(this.cls);
     const warrior = fam === "warrior";
     const t = this.sTier;
@@ -639,12 +653,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
          *  원형 파티클이라 어디로 쏴도 같은 모양이었다.
          *  vc178b — "해적인데 검을 쓴다": 참격 스윕(spawnSlash)을 호출하지 않고
          *  총 자세(atkKey)만 재생한다. 상/하 조준 시에도 총을 그 방향으로 겨눈다. */
-        this.scene.spawnMuzzleFlash(this.x + dir.x * 26, this.y - 6 + dir.y * 26, Math.atan2(dir.y, dir.x));
+        /* vc182 — 발사 각도는 자유 조준(fireDir)을 쓴다. 대각선 조준 시
+         *  총구 화염·탄환·반동이 모두 그 방향으로 나간다. */
+        const ang = Math.atan2(fireDir.y, fireDir.x);
+        this.scene.spawnMuzzleFlash(this.x + fireDir.x * 26, this.y - 6 + fireDir.y * 26, ang);
         this.scene.sfxSkill("thunder", 0.95);
         const { dmg, crit } = this.rollDamage(dmgMul * 1.15, false);
         this.scene.firePlayerProj({
-          x: this.x + dir.x * 30, y: this.y - 6 + dir.y * 30,
-          angle: Math.atan2(dir.y, dir.x), speed: 880, pierce: 1,
+          x: this.x + fireDir.x * 30, y: this.y - 6 + fireDir.y * 30,
+          angle: ang, speed: 880, pierce: 1,
           dmg, crit, tint: 0xffe9a8, knock: 120, scale: 0.36, tex: "gw_proj", blend: "add",
           rot: true, texRot: Math.PI, // 탄두가 왼쪽인 시트 — 진행 방향으로 탄두 정렬
         });
@@ -1650,7 +1667,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *   · 발사 시 반동으로 몸이 뒤로 밀리고 화면이 살짝 흔들린다
      *   · 탄피가 튀고 총구 화염이 남는다
      *   · 3차 이상은 3점사(연속 3발)로 진화 */
+    /* vc182 (지시 — "해적 대각선 공격 안됨") — 애니메이션 프레임은 4방향 시트라
+     *  aimDir(스냅)로 고르고, **탄환 각도는 자유 조준**을 쓴다. 대각선으로 쏠 수 있다. */
     const dir = this.aimDir();
+    const fire = this.aimDirFree();
     const t = this.sTier;
     const hex = this.clsHex();
     /* vc178 — 공격 방향 이펙트 수리: 상/하 조준 시에도 atk-up/down 프레임으로 재생.
@@ -1663,7 +1683,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     for (let i = 0; i < shots; i++) {
       this.scene.time.delayedCall(i * 110, () => {
         if (this.state === "dead") return;
-        const ang = Math.atan2(dir.y, dir.x) + (i - (shots - 1) / 2) * spread;
+        const ang = Math.atan2(fire.y, fire.x) + (i - (shots - 1) / 2) * spread;
         /* 총구 화염 — vc178: 방향성 머즐 플래시 (기존 방향 없는 원형 파티클) */
         this.scene.spawnMuzzleFlash(this.x + Math.cos(ang) * 26, this.y - 6 + Math.sin(ang) * 26, ang);
         this.scene.sfxSkill("thunder", 0.86); // 총성 — 낮은 피치
@@ -2096,12 +2116,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  사방으로 탄이 퍼지고, 착탄마다 폭발이 남아 광역 딜이 들어간다. */
   private skill1Broadside() {
     const dir = this.aimDir();
+    const fire = this.aimDirFree(); // vc182 — 대각선 발사
     const t = this.sTier;
     const hex = this.clsHex();
     const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
     this.play(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0);
-    const base = Math.atan2(dir.y, dir.x);
+    const base = Math.atan2(fire.y, fire.x); // vc182 — 자유 조준
     /* 좌우 2열 × 3문 = 6발, 부채꼴로 퍼진다 */
     const shots = 6;
     for (let i = 0; i < shots; i++) {
@@ -2143,12 +2164,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  착탄마다 해일이 퍼져 연쇄 피해를 준다. */
   private skill1DreadVolley() {
     const dir = this.aimDir();
+    const free = this.aimDirFree(); // vc182 — 대각선 발사
     const t = this.sTier;
     const hex = this.clsHex();
     const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
     this.play(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0);
-    const base = Math.atan2(dir.y, dir.x);
+    const base = Math.atan2(free.y, free.x); // vc182 — 자유 조준
     /* 추적 3연 — 가장 가까운 적들을 향해 각각 발사, 없으면 정면 */
     const targets = this.nearestTargets(3, 420);
     for (let i = 0; i < 3; i++) {

@@ -227,18 +227,6 @@ export function HUD({
             <Bar value={hud.hp} max={hud.maxHp} from="#c2273a" to="#ff7a68" label={`${Math.min(Math.round(hud.hp), Math.round(hud.maxHp))} / ${Math.round(hud.maxHp)}`} />
           </span>
           <Bar value={hud.mp} max={hud.maxMp} from="#1e6fb8" to="#5ec5ff" label={`${Math.min(Math.round(hud.mp), Math.round(hud.maxMp))} / ${Math.round(hud.maxMp)}`} height={10} />
-          {/* EXP 얇은 바 — v1.1.6 (#개편 B54) 90% 이상이면 발광해 "곧 레벨업"을 알린다.
-           *  종전엔 폭만 늘어나 언제 오를지 감이 없었다. */}
-          <div
-            className={`sertz-gauge relative h-[7px] w-44 overflow-hidden rounded-full border bg-black/60 sm:w-56 transition-shadow ${
-              expPct >= 90 ? "border-lime-300/80 shadow-[0_0_8px_rgba(163,230,53,0.65)]" : "border-black/60"
-            }`}
-          >
-            <div
-              className={`h-full bg-gradient-to-b from-lime-300 to-green-600 transition-[width] duration-200 ${expPct >= 90 ? "animate-pulse" : ""}`}
-              style={{ width: `${expPct}%` }}
-            />
-          </div>
           {/* 골드 + 공격/방어/크리 (지시 #15 — 스탯창 고정) — v1.0.20 게임형 칩 */}
           <div className="mt-0.5 flex items-center gap-1">
             <span className="game-chip flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-black text-[#ffd98a]">
@@ -603,6 +591,34 @@ export function HUD({
             </>
           </div>
         )}
+      </div>
+
+      {/* vc182 (지시 — "경험치 바를 메이플 처럼 맨 밑에 길게") — 화면 하단 전체 폭 EXP 바.
+       *  종전엔 좌상단에 176~224px짜리 얇은 바가 있어 현재 경험치 비율이 눈에 안 들어왔다.
+       *  메이플처럼 하단에 길게 깔면 "얼마나 남았나"가 한눈에 보인다.
+       *  터치 조작(조이스틱·스킬 버튼)과 겹치지 않도록 z-index를 낮게 두고
+       *  pointer-events:none 으로 입력을 통과시킨다.
+       *  90% 이상이면 발광 + 남은 %를 숫자로 병기해 레벨업 임박을 알린다. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5]">
+        <div className="relative h-[14px] w-full overflow-hidden border-t border-black/70 bg-black/70 sm:h-[16px]">
+          <div
+            className={`h-full bg-gradient-to-b from-lime-300 via-green-500 to-green-700 transition-[width] duration-200 ${
+              expPct >= 90 ? "animate-pulse" : ""
+            }`}
+            style={{ width: `${expPct}%` }}
+          />
+          {/* 바 위 텍스트 — 가운데 정렬, 얇은 테두리로 가독성 확보 */}
+          <span className="absolute inset-0 flex items-center justify-center gap-1 text-[9px] font-black text-white [text-shadow:0_1px_2px_#000,0_0_3px_#000] sm:text-[10px]">
+            <span className="text-lime-200">EXP</span>
+            <span>{expPct.toFixed(1)}%</span>
+            <span className="text-white/60">({fmt(hud.exp)} / {fmt(hud.expNext)})</span>
+            {expPct >= 90 && <span className="ml-1 animate-pulse text-amber-300">곧 레벨업!</span>}
+          </span>
+          {/* 90% 이상 경계 발광 */}
+          {expPct >= 90 && (
+            <div className="pointer-events-none absolute inset-0 border-t-2 border-lime-300/80 shadow-[0_-2px_10px_rgba(163,230,53,0.7)]" />
+          )}
+        </div>
       </div>
     </>
   );
