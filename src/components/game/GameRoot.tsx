@@ -7,7 +7,7 @@ import { HUD } from "./HUD";
 import { EventBus } from "./EventBus"; // v1.0.18 — 로비 개폐 이벤트
 import { TouchControls } from "./TouchControls";
 import { DialogueBox } from "./DialogueBox";
-import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel, RewardPopup, GateCardOverlay, GateHud, ExitMenuOverlay } from "./Overlays";
+import { TitleScreen, Banner, BossBar, RotatePrompt, EndScreen, InteractPrompt, NamePanel, RewardPopup, GateCardOverlay, GateHud, ExitMenuOverlay, FeatureTutorialOverlay } from "./Overlays";
 // v1.4.24 — ServerConnect 제거 (#멀티정리 — 서버주소 설정창 철거)
 // import { ServerConnect } from "./ServerConnect";
 import { GamePanels, stashPlayerInfo } from "./Panels";
@@ -320,6 +320,7 @@ export default function GameRoot() {
 
         {/* 인트로 이름 짓기 패널 */}
         <NamePanel />
+        <FeatureTutorialOverlay />
 
         <GamePanels panel={panel} rpg={rpg} hud={hud} questLog={questLog} onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />
 

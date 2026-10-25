@@ -112,7 +112,11 @@ export function createGame(parent: HTMLElement): Phaser.Game {
      *  장면에서 WebGL 드로우콜 수 감소, 데스크톱/모바일 공통 안정. desynchronized:true로
      *  캔버스 래스터 동기화 우회 — 캔버스 2D 백엔드에서 입력-렌더 지연 단축. */
     render: {
-      powerPreference: "high-performance",
+      /* vc178 (#5 발열) — "high-performance"는 모바일에서 GPU를 최대 클럭으로 고정한다.
+       *  S20+ 같은 기기는 이 게임(2D 픽셀아트, 드로우콜 60~90, 백버퍼 28만 px)에
+       *  과분한 성능이라, 최대 클럭 요구가 곧 발열·배터리 소모로 이어졌다.
+       *  "default"로 두면 OS가 상황에 맞춰 클럭을 관리한다(체감 프레임 차이 없음). */
+      powerPreference: "default",
       antialias: false,
       batchSize: 4096,
       maxTextures: 16,
@@ -138,6 +142,14 @@ export function createGame(parent: HTMLElement): Phaser.Game {
       height: GAME_H,
       expandParent: true,
     },
+    /* vc178 (#5 발열) — 렌더 해상도 상한.
+     *  Scale.RESIZE + expandParent는 뷰포트를 1:1로 그린다. S20+(1440×3200)처럼
+     *  고밀도 기기에서는 460만 픽셀을 매 프레임 채우게 되는데, 이 게임은 16~64px
+     *  픽셀아트라 그 해상도가 시각적으로 의미가 없다(업스케일 낭비).
+     *  CSS 표시 크기는 그대로 두고 "백버퍼"만 상한을 둔다 — 발열·배터리의 최대 절감.
+     *  (render.resolution 은 Phaser가 창 크기에 곱하므로 1 미만으로 두고,
+     *   실제 축소는 scale manager 의 zoom 으로 처리한다.) */
+
     scene: [BootScene, TitleScene, WorldScene],
   });
 

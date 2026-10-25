@@ -14,6 +14,7 @@ import {
   closetThemeOf, CLOSET_THEMES, isPremiumPet, // v1.2.1 (#3) — 프리미엄 펫 특전 판정
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
+import { UNLOCKS, unlockLevel, unlockDef, type FeatureKey } from "@/game/unlocks"; // vc178 (지시 #1·#2) — 레벨 개방 표 + 튜토리얼 다시보기
 import { FISH_DEFS, FISH_TIER_META, fishCollectionPct } from "@/game/fishing";
 import { GATHER_DEFS, COOK_RECIPES } from "@/game/gathering"; // v1.1.9 (#개편 A47·A48) // v1.1.8 (#개편 A46) 낚시 도감
 import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
@@ -3691,6 +3692,47 @@ export function PlayerInfoPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+/* vc178 (지시 #1) — 패널 → 개방 기능 매핑. unlocks.ts의 레벨을 그대로 참조한다. */
+const LOCKED_PANELS = {
+  inv: "bag",
+  shop: "shop",
+  stat: "stat",
+  quest: "quest",
+  warp: "warp",
+  boss: "boss",
+  content: "content",
+  trade: "trade",
+  trade2: "trade",
+  bmshop: "bmshop",
+  rank: "rank",
+  union: "union",
+  pass: "pass",
+  isekai: "isekai",
+  home: "home",
+} satisfies Partial<Record<NonNullable<PanelKind>, FeatureKey>>;
+
+/* 잠긴 기능을 눌렀을 때의 안내 — "언제 열리는지"를 명시해 막다른 느낌을 없앤다 */
+function LockedPanelNotice({ name, lv, onClose }: { name: string; lv: number; onClose: () => void }) {
+  useEscClose(onClose);
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/70 px-6" onClick={onClose}>
+      <div className="w-[min(88vw,320px)] rounded-xl border border-white/20 bg-[#101a26] p-4 text-center" onClick={(e) => e.stopPropagation()}>
+        <p className="text-[13px] font-black text-white/85">{name} 잠김</p>
+        <p className="mt-1.5 text-[11px] leading-relaxed text-white/60">
+          레벨 <span className="font-black text-amber-300">Lv{lv}</span> 에 열립니다.<br />
+          지금은 사냥과 퀘스트로 레벨을 올려 보세요.
+        </p>
+        <button
+          onClick={onClose}
+          className="mt-3 w-full rounded-md bg-white/15 px-3 py-1.5 text-[11px] font-black text-white hover:bg-white/25"
+        >
+          확인
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function GamePanels({
   panel,
   rpg,
@@ -3704,6 +3746,19 @@ export function GamePanels({
   questLog: QuestLogState;
   onClose: () => void;
 }) {
+  /* vc178 (지시 #1) — 레벨 개방 게이트.
+   *  패널 라우터 최상단에서 한 번만 막으면 모든 기능이 같은 규칙을 따른다
+   *  (버튼마다 잠금 조건을 복사하지 않는다). 이미 열린 패널을 열어 둔 채
+   *  레벨이 오르는 경우는 있지만, 잠금은 "열기" 시점에만 판정하면 충분하다. */
+  const gate = panel ? LOCKED_PANELS[panel as keyof typeof LOCKED_PANELS] : undefined;
+  if (gate) {
+    const need = unlockLevel(gate);
+    if ((hud?.lv ?? 1) < need) {
+      const def = unlockDef(gate);
+      return <LockedPanelNotice name={def?.name ?? "기능"} lv={need} onClose={onClose} />;
+    }
+  }
+
   if (panel === "shop") return <ShopPanel rpg={rpg} onClose={onClose} />;
   if (panel === "bmshop") return <BmShopPanel rpg={rpg} onClose={onClose} />; // v3.0.6 — BM 상점
   if (panel === "trade") return <TradePanel rpg={rpg} onClose={onClose} />; // v3.0.7 — 유저 거래소
@@ -5377,6 +5432,8 @@ function PerfCard() {
 function KeymapPanel({ onClose }: { onClose: () => void }) {
   useEscClose(onClose);
   const [km, setKm] = useState<KeyMap>(() => loadKeyMap());
+  /* vc178 (지시 #2) — 본 기능 튜토리얼 목록 (설정창 다시보기 배지) */
+  const seenSet = useMemo(() => new Set(loadSave()?.tutSeen ?? []), []);
   /* v1.0.17 — 이동 스킴 (방향키/WASD). 전환 시 전투 키 프리셋도 함께 적용된다 */
   const [scheme, setScheme] = useState<MoveScheme>(() => loadMoveScheme());
   const [recording, setRecording] = useState<GameAction | null>(null);
@@ -5628,6 +5685,36 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
             >
               게임 시작 화면
             </button>
+          </div>
+        </div>
+
+        {/* vc178 (지시 #2) — 튜토리얼 다시보기: 기능별 스크립트를 언제든 재생 */}
+        <div className="mb-2.5 mt-3 rounded-lg border border-violet-300/30 bg-violet-400/[0.07] px-2.5 py-2.5">
+          <p className="text-[12px] font-black text-violet-200">튜토리얼 다시보기</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/55">
+            기능이 열릴 때 나오는 안내를 다시 볼 수 있다. 원하는 항목을 누르면 바로 재생된다.
+          </p>
+          <div className="mt-2 grid max-h-40 grid-cols-2 gap-1.5 overflow-y-auto pr-0.5">
+            {UNLOCKS.map((u) => {
+              const seen = seenSet.has(`feat_${u.key}`);
+              return (
+                <button
+                  key={u.key}
+                  onClick={() => {
+                    onClose();
+                    EventBus.emit("featTut:replay", { feature: u.key });
+                  }}
+                  className={`flex items-center justify-between gap-1 rounded-md border px-2 py-1.5 text-[10px] font-bold transition ${
+                    seen
+                      ? "border-violet-300/40 bg-violet-500/10 text-violet-100 hover:bg-violet-500/20"
+                      : "border-white/15 bg-black/30 text-white/60 hover:bg-white/10"
+                  }`}
+                >
+                  <span className="truncate">{u.name}</span>
+                  <span className="shrink-0 text-[9px] text-white/40">{seen ? "본 적 있음" : `Lv${u.lv}`}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

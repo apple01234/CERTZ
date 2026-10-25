@@ -71,6 +71,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   gatherBag: Record<string, number> = {};
   /** vc178 — 집 꾸미기: 배치된 가구 { 가구키, 격자 좌표 }. 보유는 owned(furn_*)로, 이 배열이 배치 상태. */
   homeDecor: { key: string; x: number; y: number }[] = [];
+  /** vc178 (지시 #2) — 이미 본 기능 튜토리얼 키 (자동 재생 1회 제한) */
+  tutSeen: string[] = [];
 
   /** v1.1.9 (#개편 A47) — 요리 버프 적용. 기존 buffs 배열에 "dish_*" 키로 얹는다
    *  (새 시스템을 만들지 않고 기존 버프 렌더/만료 로직을 그대로 재사용).
@@ -633,7 +635,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* vc178 — 공격 방향 이펙트 수리: 총구 화염(방향성 머즐) + 탄환 회전.
          *  기존엔 ①탄환이 방향성 텍스처(gw_proj 탄두=왼쪽)인데 rot 미지정이라
          *  항상 0° 고정(위/아래로 쏴도 가로로 누워 있었다) ②총구 화염이 방향 없는
-         *  원형 파티클이라 어디로 쏴도 같은 모양이었다. */
+         *  원형 파티클이라 어디로 쏴도 같은 모양이었다.
+         *  vc178b — "해적인데 검을 쓴다": 참격 스윕(spawnSlash)을 호출하지 않고
+         *  총 자세(atkKey)만 재생한다. 상/하 조준 시에도 총을 그 방향으로 겨눈다. */
         this.scene.spawnMuzzleFlash(this.x + dir.x * 26, this.y - 6 + dir.y * 26, Math.atan2(dir.y, dir.x));
         this.scene.sfxSkill("thunder", 0.95);
         const { dmg, crit } = this.rollDamage(dmgMul * 1.15, false);
@@ -665,8 +669,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
 
     /* v3.0.6 (지시 #3 — 전직마다 기본공격 강화) 티어 래더:
-     *  미전직 1타 → 1차+ 2연타 → 2차+ 3연타 → 3차+ 마지막 타 검기 파동 → 4차 대형 파동 */
-    if (t >= 1) {
+     *  미전직 1타 → 1차+ 2연타 → 2차+ 3연타 → 3차+ 마지막 타 검기 파동 → 4차 대형 파동
+     *  vc178b — 해적은 제외: 이 래더가 spawnSlash(검 휘두르기)를 호출해
+     *  "해적인데 검을 쓴다"는 증상의 실제 원인이었다. 해적은 위 총격 분기에서 끝난다. */
+    const isGunner = familyOf(this.cls) === "pirate";
+    if (t >= 1 && !isGunner) {
       this.scene.time.delayedCall(195, () => {
         if (this.state !== "attack") return;
         this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, 0.95, slashTint);
@@ -674,7 +681,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.checkMeleeHit(dir, reach, 116, dmgMul * 0.8, knock * 0.8);
       });
     }
-    if (t >= 2) {
+    if (t >= 2 && !isGunner) {
       this.scene.time.delayedCall(300, () => {
         if (this.state !== "attack") return;
         this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 0.9, slashTint);

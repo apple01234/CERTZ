@@ -646,7 +646,7 @@ export class BootScene extends Phaser.Scene {
         this.load.image(`${k}_${f}`, `${k}_${f}.webp`);
       }
     }
-    for (const k of ["x3_bow", "x3_staff", "x3_dagger", "x3_shuriken", "npc_gm"]) {
+    for (const k of ["x3_bow", "x3_staff", "x3_dagger", "x3_shuriken", "x3_gun", "npc_gm"]) {
       this.load.image(k, `${k}.webp`);
     }
     for (const [k, w, h] of X2_SPELLS) this.load.spritesheet(k, `${k}.webp`, { frameWidth: h, frameHeight: h });

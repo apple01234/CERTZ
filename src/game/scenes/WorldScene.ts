@@ -70,6 +70,8 @@ import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawn
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
 import * as partyContent from "../partyContent"; // v1.4.3 (작업4) — 파티 시너지/파티 퀘스트 보드
 import * as audio from "../audio";
+/* vc178 (지시 #1·#2) — 레벨 개방 표 + 기능별 튜토리얼 스크립트 */
+import { UNLOCKS, unlockDef, unlockLevel, tutSeenKey, TUTORIAL_SCRIPTS, type FeatureKey } from "../unlocks";
 import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
   type RoomLayout,
@@ -257,6 +259,15 @@ export class WorldScene extends Phaser.Scene {
   private repeatBounties: { key: EnemyKey; label: string; need: number; count: number }[] = [];
   /** vc150 — 완료 사이클 수 (완료할수록 전 의뢰 목표 +2 — 기존 무한 확장 계승) */
   private repeatCycle = 0;
+
+  /* vc178 (지시 #1·#2) — 기능 개방/튜토리얼 런타임 상태 */
+  private pendingFeatureTuts: FeatureKey[] = [];
+  private featureTutOpen = false;
+  private featureTutFeature: FeatureKey | null = null;
+  private featureTutPage = 0;
+  private featureTutDelay = 600;
+  /** vc178 — 구 세이브 튜토리얼 마이그레이션 발생 여부 (1회 안내용) */
+  private migratedTutSeen = false;
   /* vc150 (#26번항목21) — 좀비 몬스터 청소 누적기 */
   private zombieSweepAt = 0;
 
@@ -692,7 +703,7 @@ export class WorldScene extends Phaser.Scene {
 
   /* ----- v3.0.3: 무기 스프라이트 (활/지팡이/단검 — 손에 들고 다니는 장비 비주얼) ----- */
   private weaponImg: Phaser.GameObjects.Image | null = null;
-  private weaponKey: "x3_bow" | "x3_staff" | "x3_dagger" | null = null;
+  private weaponKey: "x3_bow" | "x3_staff" | "x3_dagger" | "x3_gun" | null = null;
 
   /* ----- v3.0.3: 그림자 칼날 오비트 (나이트블레이드/섀도우로드 3차기) ----- */
   private orbitBlades: { imgs: Phaser.GameObjects.Image[]; angle: number; until: number; dmgMul: number; tint: number; hitCd: Map<unknown, number> } | null = null;
@@ -1457,6 +1468,16 @@ export class WorldScene extends Phaser.Scene {
       this.player.homeDecor = Array.isArray(savedPlayer.homeDecor)
         ? savedPlayer.homeDecor.filter((d) => d && typeof d.key === "string" && Number.isFinite(d.x) && Number.isFinite(d.y))
         : [];
+      /* vc178 (지시 #2) — 본 기능 튜토리얼 기록 복원.
+       *  구 세이브(필드 없음)는 "이미 그 기능들을 쓰고 있던 유저"이므로 전부 본 것으로
+       *  간주한다. 그러지 않으면 고레벨 세이브 접속 시 15개 안내가 한꺼번에 쏟아진다.
+       *  새로 만든 캐릭터는 빈 배열로 시작해 Lv1 기능(가방·집)부터 자연스럽게 안내받는다. */
+      if (Array.isArray(savedPlayer.tutSeen)) {
+        this.player.tutSeen = savedPlayer.tutSeen.filter((k): k is string => typeof k === "string");
+      } else {
+        this.player.tutSeen = UNLOCKS.filter((u) => (savedPlayer.lv ?? 1) >= u.lv).map((u) => tutSeenKey(u.key));
+        this.migratedTutSeen = true;
+      }
       /* v1.1.5 (#개편 통계) — 누적 기록 복원 (구 세이브는 undefined → 0/1) */
       const ps = savedPlayer.playStats;
       this.statSavedSec = Math.max(0, Math.round(ps?.playSec ?? 0));
@@ -1855,6 +1876,10 @@ export class WorldScene extends Phaser.Scene {
       this.tutStep = 2;
       this.tutRetryMs = 1;
     }
+    /* vc178 (지시 #1·#2) — 이미 레벨이 오른 상태로 접속한 유저(구 세이브)도
+     *  안 본 개방 튜토리얼을 순서대로 받는다. 기존 인트로 튜토리얼과 겹치면
+     *  tickFeatureTutorial의 busy 게이트가 알아서 미룬다. */
+    this.queueUnlockTutorials();
 
     /* ---------- 오프닝 대사 (인트로 시퀀스 중이면 인트로가 인계 / 실내는 연출 생략) ----------
      *  v2.3 (지시 #1): 이미 본 대사는 재입장 시 재생하지 않는다 — 이전/다음 맵 왕복마다
@@ -3855,14 +3880,19 @@ export class WorldScene extends Phaser.Scene {
       if (this.fxLevel === 1) this.applyFxMode(this.fxLevel = 0);
       return;
     }
+    /* vc178 (#5·#6 발열/멈춤) — 적응형 품질 판정을 2.5초→1.0초 창으로 단축하고,
+     *  "2회 연속 저프레임(=최소 5초 방치)" 조건을 1회로 완화했다.
+     *  S20+ 같은 기기에서 체감되는 끊김은 5초 안에 이미 여러 번 발생한다.
+     *  강등은 되돌리기 쉬운 방향(이펙트만 줄임)이라 즉시 반응하는 편이 이득이다.
+     *  히스테리시스는 유지 — 55fps 이상이 3초 지속되면 복원한다(아래). */
     this.fxSampleAt += dt;
-    if (this.fxSampleAt < 2500) return;
+    if (this.fxSampleAt < 1000) return;
     this.fxSampleAt = 0;
     const fps = this.game.loop.actualFps;
-    if (fps < 42) {
+    if (fps < 48) {
       this.fxLowStreak++;
       this.fxHighStreak = 0;
-      if (this.fxLowStreak >= 2 && this.fxLevel === 1) {
+      if (this.fxLowStreak >= 1 && this.fxLevel === 1) {
         this.fxLevel = 0;
         console.info("[SERTZ] 적응형 품질 — FX 축소 모드", Math.round(fps));
         /* v1.0.8 — 축소 진입 공지: "쉐이더 어디감?" 방지 — 이유와 해제 경로를 안내 */
@@ -7260,16 +7290,21 @@ export class WorldScene extends Phaser.Scene {
         { text: `골드 +${r.gold} G`, color: "#ffd76a" },
         { text: `경험치 +${expGain} EXP`, color: "#8fe84a" },
         { text: "에메랄드 +1", color: "#7de8ff" },
+        { text: "다음 목표 +2 — 상인에게 다시 수주해야 새 목표가 열린다", color: "#a8b8d0" },
       ],
     } satisfies RewardPopupState);
-    b.count = 0;
+    /* vc178 (지시 #4) — "NPC 퀘스트 무한으로 의뢰 가능한 버그" 수리.
+     *  기존엔 b.count = 0으로 리셋해, 상인에게 재수주하지 않아도 같은 목표 수만
+     *  다시 채우면 보상이 무한 재지급됐다. 이제 카운트를 유지한 채 목표만 +2 올리고
+     *  repeatOn을 내려, 다음 보상은 "상인에게 다시 수주 → 새 목표 달성"으로만 나온다. */
     this.repeatCycle += 1;
+    this.repeatOn = false;
     this.player.emerald += 1;
     this.spawnPickupText(this.player.x, this.player.y - 58, "+1 에메랄드", "#7de8ff");
     this.save();
     this.emitRpgState();
     this.emitQuest();
-    this.emitRpgState();
+    this.emitQuestLog();
   }
 
   /** 반복 토벌 완료 — 보상 지급 후 목표 +2 (무한 확장) */
@@ -7638,12 +7673,29 @@ export class WorldScene extends Phaser.Scene {
       this.spawnShockwave(this.player.x, this.player.y, 0xffe29a, 0.9, 380, 0.5);
     }
     this.tryCompleteLevel();
+    /* vc178 (지시 #1·#2) — 레벨업으로 새 기능이 열렸으면 배너 + 튜토리얼 큐잉 */
+    this.checkUnlocksOnLevelUp();
     if (this.autoAlloc && this.player.ap > 0) {
       if (this.player.allocateAutoPoints()) {
         this.spawnPickupText(this.player.x, this.player.y - 70, "AP 자동 배분!", "#a8ff7d");
         this.emitHud();
       }
     }
+  }
+
+  /* vc178 (지시 #1) — 레벨업 순간 새로 열린 기능을 배너로 알리고 튜토리얼을 큐에 넣는다.
+   *  "레벨에 따라서 컨텐츠가 점차 개방"의 실제 트리거 지점. */
+  private checkUnlocksOnLevelUp() {
+    if (!this.player) return;
+    const lv = this.player.lv;
+    const opened = UNLOCKS.filter((u) => u.lv === lv);
+    if (opened.length === 0) return;
+    for (const u of opened) {
+      this.showBanner(`Lv${u.lv} 개방! — ${u.openText}`);
+      audio.sfx.questDone();
+    }
+    this.queueUnlockTutorials();
+    this.emitRpgState();
   }
 
   /* ================= 보스 ================= */
@@ -8404,7 +8456,7 @@ export class WorldScene extends Phaser.Scene {
         this.save();
         EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost}G)` });
       }
-      this.emitRpgState();
+      this.emitRpgState(true);
       this.emitHud();
     };
     const onEquip = (v: { key: ItemKey }) => {
@@ -8428,14 +8480,14 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: dup ? "같은 장신구는 1개만 장착할 수 있어요" : "장착할 수 없어요" });
         return;
       }
-      this.emitRpgState();
+      this.emitRpgState(true);
       this.save();
     };
     /* v2.9 (#8) — 장신구 슬롯 클릭 해제 */
     const onUnequip = (v: { key: ItemKey }) => {
       if (!this.player || this.dialoguing) return;
       this.player.unequipAccessory(v.key);
-      this.emitRpgState();
+      this.emitRpgState(true);
       this.save();
     };
     const onUse = (v: { kind: "hp" | "mp" }) => {
@@ -8445,18 +8497,18 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       this.player.useBuffItem(v.key);
       this.save();
-      this.emitRpgState();
+      this.emitRpgState(true);
     };
     const onAllocate = (v: { stat: "str" | "dex" | "int" | "luk"; n: number }) => {
       if (!this.player || this.dialoguing) return;
       if (this.player.allocateStat(v.stat, v.n)) this.save();
-      this.emitRpgState();
+      this.emitRpgState(true);
       this.emitHud();
     };
     const onPetSet = (v: { key: PetKey | null }) => {
       if (!this.player || this.dialoguing) return;
       if (this.player.setPet(v.key)) this.save();
-      this.emitRpgState();
+      this.emitRpgState(true);
     };
     const onCosmeticSet = (v: { key: CosmeticKey | null; slot?: "aura" | "outfit" | "hair" | "acc" }) => {
       if (!this.player) return;
@@ -8467,7 +8519,7 @@ export class WorldScene extends Phaser.Scene {
       const ok = v.slot ? this.player.setCosmeticSlot(v.key, v.slot) : this.player.setCosmetic(v.key);
       if (ok) this.save();
       else if (v.key) EventBus.emit("banner:show", { text: `${ITEMS[v.key as ItemKey]?.name ?? "치장"}을(를) 착용할 수 없다 — 보유 여부를 확인하세요` });
-      this.emitRpgState();
+      this.emitRpgState(true);
     };
     const onUpgrade = (v: { slot: "weapon" | "armor" }) => {
       if (!this.player || this.dialoguing) return;
@@ -8477,7 +8529,7 @@ export class WorldScene extends Phaser.Scene {
       if (r === "ok" || r === "fail")
         EventBus.emit("rpg:upgradeResult", { slot: v.slot, result: r, up: this.player.upgrades[v.slot] });
       this.save();
-      this.emitRpgState();
+      this.emitRpgState(true);
       this.emitHud();
     };
     /* v1.0.2 (#자동강화) — 목표 강화까지 자동 반복.
@@ -8490,7 +8542,7 @@ export class WorldScene extends Phaser.Scene {
       this.autoUpSlot = null;
       if (was) {
         this.save();
-        this.emitRpgState();
+        this.emitRpgState(true);
         if (msg) EventBus.emit("banner:show", { text: msg });
       }
     };
@@ -8512,7 +8564,7 @@ export class WorldScene extends Phaser.Scene {
         if (isEq) EventBus.emit("rpg:upgradeResult", { slot, result: r, up: this.player.upgrades[slot as "weapon" | "armor"] });
       }
       this.save();
-      this.emitRpgState();
+      this.emitRpgState(true);
       this.emitHud();
     };
     const onAutoUpgrade = (v: { slot: string; target: number }) => {
@@ -9253,6 +9305,13 @@ export class WorldScene extends Phaser.Scene {
     const onHomeRemove = (v: { key: ItemKey; idx: number }) => this.homeDecorRemove(v.idx);
     EventBus.on("rpg:homePlace", onHomePlace);
     EventBus.on("rpg:homeRemove", onHomeRemove);
+    /* vc178 (지시 #2) — 기능 튜토리얼 오버레이 ↔ 씬 연결 */
+    const onFeatNext = () => this.advanceFeatureTutorial();
+    const onFeatClose = () => this.closeFeatureTutorial();
+    const onFeatReplay = (v: { feature: FeatureKey }) => this.playFeatureTutorial(v.feature, false);
+    EventBus.on("featTut:next", onFeatNext);
+    EventBus.on("featTut:close", onFeatClose);
+    EventBus.on("featTut:replayReq", onFeatReplay);
     EventBus.on("rpg:equip", onEquip);
     EventBus.on("rpg:unequip", onUnequip);
     EventBus.on("rpg:use", onUse);
@@ -9956,6 +10015,9 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("movescheme:changed", onMoveSchemeChanged); // v1.0.17
       EventBus.off("rpg:buy", onBuy);
       EventBus.off("rpg:homePlace", onHomePlace);
+      EventBus.off("featTut:next", onFeatNext);
+      EventBus.off("featTut:close", onFeatClose);
+      EventBus.off("featTut:replayReq", onFeatReplay);
       EventBus.off("rpg:homeRemove", onHomeRemove);
       EventBus.off("rpg:equip", onEquip);
       EventBus.off("rpg:unequip", onUnequip);
@@ -10119,6 +10181,8 @@ export class WorldScene extends Phaser.Scene {
 
     /* v4.1.0 — 적응형 품질/포탈 가이드/긴급귀환 쿨다운 */
     this.tickFxQuality(dt);
+    /* vc178 (지시 #2) — 기능 개방 튜토리얼 큐 처리 (전투/대사 중엔 자동 연기) */
+    this.tickFeatureTutorial();
     this.tickBossShare(this.time.now); // vc143 (#4) — 공유 보스 릴레이·브로드캐스트·호스트 재선출
     this.updatePortalGuides();
     this.escapeCd = Math.max(0, this.escapeCd - dt);
@@ -12780,7 +12844,7 @@ export class WorldScene extends Phaser.Scene {
   private syncWeaponSprite() {
     if (!this.player) return;
     const fam = familyOf(this.player.cls);
-    const want = fam === "ranger" ? "x3_bow" : fam === "mage" ? "x3_staff" : fam === "thief" ? "x3_dagger" : null;
+    const want = fam === "ranger" ? "x3_bow" : fam === "mage" ? "x3_staff" : fam === "thief" ? "x3_dagger" : fam === "pirate" ? "x3_gun" : null;
     if (!want) {
       if (this.weaponImg) { this.weaponImg.setVisible(false); }
       return;
@@ -12811,6 +12875,15 @@ export class WorldScene extends Phaser.Scene {
       w.setRotation(aimingUp ? -0.35 : aimingDown ? 0.15 : 0.1);
       w.setPosition(p.x + (p.flipX ? -13 : 13), p.y - 10);
       w.setScale(0.58);
+    } else if (want === "x3_gun") {
+      /* vc178 — 해적 총: 조준 방향으로 들고 있는다 (검을 휘두르지 않는다).
+       *  총구(+x)가 조준 방향을 향하도록 각도 그대로 회전, 손 위치는 몸 앞쪽. */
+      const ang = Math.atan2(f.y, f.x);
+      w.setRotation(ang);
+      w.setPosition(p.x + f.x * 13, p.y - 7 + f.y * 8);
+      w.setScale(0.82);
+      // 위를 조준하면 총이 몸 뒤로 가려지지 않게 살짝 띄운다
+      w.setDepth(aimingUp ? 12 : 11);
     } else {
       // 단검 — 허리 옆 (역습 시 그림자연타 스윕과 함께)
       w.setRotation(p.flipX ? 2.4 : 0.7);
@@ -14652,6 +14725,7 @@ export class WorldScene extends Phaser.Scene {
       fishing: { ...this.player.fishSave, caught: [...this.player.fishSave.caught] }, // v1.1.8 (#개편 A46)
       gatherBag: { ...this.player.gatherBag }, // v1.1.9 (#개편 A48)
       homeDecor: this.player.homeDecor.map((d) => ({ ...d })), // vc178 — 집 꾸미기 배치 상태
+      tutSeen: [...this.player.tutSeen], // vc178 (지시 #2) — 본 기능 튜토리얼
       playStats: {
         playSec: Math.round(this.statSavedSec + Math.max(0, (this.time.now - this.startTime) / 1000)),
         kills: this.totalKills,
@@ -14665,8 +14739,30 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** 인벤토리/상점 패널 상태 브로드캐스트 (변경 시만) */
-  emitRpgState() {
+  /* vc178 (지시 #5·#6) — 발열/멈춤 대책: emitRpgState 스로틀.
+   *  기존엔 호출될 때마다(전투 처치·획득·스킬 등 127곳) 거대한 상태 객체를 만들고
+   *  JSON.stringify로 직렬화했다. S20+ 같은 고성능 기기에서도 처치가 몰리면
+   *  GC 폭풍 + 프레임 스파이크(체감 멈춤)와 CPU 발열이 생긴다.
+   *  → 최소 간격(80ms)을 두고, 그 안의 요청은 "다음 틱에 1회"로 합친다(마지막 상태 보존). */
+  private lastRpgEmitAt = 0;
+  private rpgEmitPending = false;
+  private static readonly RPG_EMIT_MIN_MS = 80;
+
+  emitRpgState(force = false) {
     if (!this.player) return;
+    const now = this.time.now;
+    if (!force && now - this.lastRpgEmitAt < WorldScene.RPG_EMIT_MIN_MS) {
+      /* 스로틀 구간 — 한 번만 예약해 최신 상태를 나중에 보낸다 */
+      if (!this.rpgEmitPending) {
+        this.rpgEmitPending = true;
+        this.time.delayedCall(WorldScene.RPG_EMIT_MIN_MS, () => {
+          this.rpgEmitPending = false;
+          this.emitRpgState(true);
+        });
+      }
+      return;
+    }
+    this.lastRpgEmitAt = now;
     const st = {
       gold: this.player.gold,
       hpPot: this.player.potions.hp,
@@ -14691,6 +14787,7 @@ export class WorldScene extends Phaser.Scene {
       shopStock: [...SHOP_STOCK],
       /* vc178 — 집 꾸미기: 보유 가구(owned furn_*) + 배치 상태 */
       homeDecor: this.player.homeDecor.map((d) => ({ ...d })),
+      tutSeen: [...this.player.tutSeen], // vc178 (지시 #2) — 본 튜토리얼 목록
       /* v1.0.5 — 서버 롤 기반 관리자 플래그 (혜택 패널 "GM 콘텐츠 입장" 게이트) */
       admin: this.adminRole === "admin",
       /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 (지시 #1/#5) */
@@ -15378,6 +15475,120 @@ export class WorldScene extends Phaser.Scene {
       this.pendingPortal = false;
       this.time.delayedCall(600, () => this.activatePortal());
     }
+  }
+
+  /* ═════════ vc178 (지시 #1·#2) — 레벨 개방 + 기능별 튜토리얼 ═════════
+   *  · UNLOCKS 표(level → feature)를 기준으로, 레벨이 오를 때 새로 열린 기능을 배너로 알린다.
+   *  · 그 기능의 튜토리얼을 처음 1회 자동 재생(Player.tutSeen 기록), 이후는 설정에서 다시보기.
+   *  · 개방 판정은 unlocks.ts의 순수 함수 — UI(잠금 표시)와 여기가 같은 표를 본다. */
+
+  /** 현재 레벨 기준으로 아직 안 본 개방 튜토리얼을 큐에 넣는다 */
+  private queueUnlockTutorials() {
+    if (!this.player) return;
+    const lv = this.player.lv;
+    for (const u of UNLOCKS) {
+      if (lv < u.lv) continue;
+      const key = tutSeenKey(u.key);
+      if (this.player.tutSeen.includes(key)) continue;
+      if (this.pendingFeatureTuts.includes(u.key)) continue;
+      this.pendingFeatureTuts.push(u.key);
+    }
+    /* 레벨 오름차순으로 재생 (표 순서가 이미 오름차순이므로 그대로) */
+    this.pendingFeatureTuts.sort((a, b) => unlockLevel(a) - unlockLevel(b));
+  }
+
+  /** 큐에 있는 개방 튜토리얼을 하나씩 재생 — 파티클/대사와 겹치지 않게 지연 */
+  private tickFeatureTutorial() {
+    if (!this.player) return;
+    if (this.featureTutOpen) return;
+    /* 인트로 튜토리얼(tut)이 진행 중이면 그게 끝날 때까지 양보한다.
+     *  단 대사(dialoguing)는 NPC 대화창이 열린 상태라, 닫히면 바로 이어지도록
+     *  지연만 걸고 큐는 유지한다. 예전엔 매 틱 900ms로 리셋돼 인트로 대사가
+     *  길어지면 개방 안내가 영영 나오지 않았다(실측으로 확인된 버그). */
+    if (this.tut) {
+      this.featureTutDelay = Math.max(this.featureTutDelay, 400);
+      return;
+    }
+    if (this.dialoguing || this.busyForTutorial()) {
+      this.featureTutDelay = Math.max(this.featureTutDelay, 300);
+      return;
+    }
+    if (this.pendingFeatureTuts.length === 0) return;
+    if (this.featureTutDelay > 0) {
+      this.featureTutDelay -= 16;
+      return;
+    }
+    const key = this.pendingFeatureTuts.shift()!;
+    this.playFeatureTutorial(key, true);
+  }
+
+  /** 튜토리얼을 방해하는 상태 (전투/보스/전환) */
+  private busyForTutorial(): boolean {
+    if (this.transitioning || this.isInterior) return false;
+    if (this.boss?.active) return true;
+    return this.enemies.some((e) => e.active && e.alive &&
+      Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < 220);
+  }
+
+  /** 기능 튜토리얼 재생 — auto=true면 자동(1회 기록), false면 다시보기 */
+  playFeatureTutorial(key: FeatureKey, auto = false) {
+    const def = unlockDef(key);
+    const pages = TUTORIAL_SCRIPTS[key];
+    if (!def || !pages || pages.length === 0) return;
+    /* 자동 재생은 본 기록을 남긴다 */
+    if (auto && !this.player.tutSeen.includes(tutSeenKey(key))) {
+      this.player.tutSeen.push(tutSeenKey(key));
+      this.save();
+      this.emitRpgState();
+    }
+    this.featureTutOpen = true;
+    this.featureTutFeature = key;
+    this.featureTutPage = 0;
+    audio.sfx.levelup();
+    spawnCelebrateBurst(this, this.player.x, this.player.y, 14);
+    /* React 오버레이로 스크립트 표시 (모바일/PC 공통, 캔버스 UI보다 가독성 우수) */
+    EventBus.emit("featTut:show", {
+      feature: key,
+      name: def.name,
+      page: 0,
+      total: pages.length,
+      title: pages[0].title,
+      body: pages[0].body,
+      where: pages[0].where ?? null,
+      auto,
+    });
+  }
+
+  /** 기능 튜토리얼 다음 장 — 마지막이면 닫는다 (React에서 호출) */
+  advanceFeatureTutorial() {
+    if (!this.featureTutOpen || !this.featureTutFeature) return;
+    const pages = TUTORIAL_SCRIPTS[this.featureTutFeature];
+    const next = this.featureTutPage + 1;
+    if (next >= pages.length) {
+      this.closeFeatureTutorial();
+      return;
+    }
+    this.featureTutPage = next;
+    const def = unlockDef(this.featureTutFeature);
+    EventBus.emit("featTut:show", {
+      feature: this.featureTutFeature,
+      name: def?.name ?? "",
+      page: next,
+      total: pages.length,
+      title: pages[next].title,
+      body: pages[next].body,
+      where: pages[next].where ?? null,
+      auto: false,
+    });
+  }
+
+  closeFeatureTutorial() {
+    if (!this.featureTutOpen) return;
+    this.featureTutOpen = false;
+    this.featureTutFeature = null;
+    this.featureTutPage = 0;
+    this.featureTutDelay = 700; // 다음 큐 항목까지 여유
+    EventBus.emit("featTut:show", null);
   }
 
   /* ═════════ v1.0.11 — 튜토리얼 지원 (Tutorial.ts 호출 API) ═════════ */

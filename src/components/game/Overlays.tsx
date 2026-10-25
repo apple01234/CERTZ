@@ -763,3 +763,85 @@ export function GateHud() {
     </div>
   );
 }
+
+
+/* =====================================================================
+ * vc178 (지시 #2) — 기능 개방 튜토리얼 오버레이
+ *  WorldScene이 featTut:show로 스크립트 한 장을 밀어주면 그대로 그린다.
+ *  다음/닫기는 WorldScene의 advanceFeatureTutorial/closeFeatureTutorial을 호출한다.
+ *  (캔버스 UI 대신 DOM 오버레이 — 모바일 가독성·접근성 확보)
+ * ===================================================================== */
+type FeatTutPayload = {
+  feature: string;
+  name: string;
+  page: number;
+  total: number;
+  title: string;
+  body: string;
+  where: string | null;
+  auto: boolean;
+};
+
+export function FeatureTutorialOverlay() {
+  const [cur, setCur] = useState<FeatTutPayload | null>(null);
+
+  useEffect(() => {
+    const onShow = (v: FeatTutPayload | null) => setCur(v);
+    const onReplay = (v: { feature: string }) => EventBus.emit("featTut:replayReq", v);
+    EventBus.on("featTut:show", onShow);
+    EventBus.on("featTut:replay", onReplay);
+    return () => {
+      EventBus.off("featTut:show", onShow);
+      EventBus.off("featTut:replay", onReplay);
+    };
+  }, []);
+
+  if (!cur) return null;
+
+  const next = () => EventBus.emit("featTut:next");
+  const close = () => EventBus.emit("featTut:close");
+  const isLast = cur.page >= cur.total - 1;
+
+  return (
+    <div className="pointer-events-auto absolute inset-x-0 bottom-24 z-[60] flex justify-center px-3">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${cur.name} 안내`}
+        className="w-[min(94vw,440px)] rounded-xl border border-cyan-300/40 bg-[#0a1420]/95 p-3.5 shadow-2xl backdrop-blur-sm"
+      >
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="truncate text-[12px] font-black text-cyan-200">
+            {cur.auto ? "새 기능 안내" : "다시보기"} · {cur.name}
+          </p>
+          <span className="shrink-0 rounded-md bg-cyan-400/15 px-1.5 py-0.5 text-[10px] font-bold text-cyan-200">
+            {cur.page + 1}/{cur.total}
+          </span>
+        </div>
+
+        <p className="mb-1 text-[13px] font-black text-white">{cur.title}</p>
+        <p className="text-[11px] leading-relaxed text-white/80">{cur.body}</p>
+        {cur.where && (
+          <p className="mt-1.5 rounded-md bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-amber-200">
+            위치: {cur.where}
+          </p>
+        )}
+
+        <div className="mt-2.5 flex items-center gap-1.5">
+          <button
+            onClick={next}
+            className="flex-1 rounded-md bg-cyan-400 px-3 py-1.5 text-[11px] font-black text-slate-900 hover:bg-cyan-300 active:scale-95"
+          >
+            {isLast ? "확인" : "다음"}
+          </button>
+          <button
+            onClick={close}
+            className="rounded-md border border-white/20 bg-black/40 px-3 py-1.5 text-[11px] font-bold text-white/70 hover:bg-black/60 active:scale-95"
+          >
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
