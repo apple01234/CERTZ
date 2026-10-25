@@ -5,6 +5,7 @@ import { DMG_PCT } from "../data";
 import { ENEMIES, type EnemyDef, type EnemyKey, CHAPTER_ELEM, elemAdvantage, elementReaction, ELEM_REACTION_META, ELEMENT_META, type ElemKey } from "../data";
 import { parseStage } from "../stages";
 import { mitigateEnemyDamage } from "../combat/defense"; // vc183 — 적 방어력
+import { actorStream, releaseActor } from "../sim/deterministic"; // vc183 — 액터별 결정론 난수
 import { FSM, type FSMState } from "../ai/FSM";
 /** 종별 물리/판정 크기 + 리스폰 버스트 색 */
 const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: number; burst: number }> = {
@@ -98,6 +99,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /* vc183 — 적 방어력 (EnemyDef.def / defPct). 보스 raid 규약과 동일한 이름을 쓴다. */
   private get defDef(): number { return this.def.def ?? 0; }
   private get defPctVal(): number { return (this.def as { defPct?: number }).defPct ?? 0; }
+
+  /* vc183 (액터 기반 결정 문서) — 이 개체 전용 난수 스트림.
+   *  전역 Math.random 을 쓰면 다른 적이 하나 더 스폰되는 것만으로 내 난수가 밀려
+   *  같은 상황 재현이 깨진다. 개체마다 독립 스트림을 가져야 결정론이 성립한다.
+   *  id 는 스폰 순번(인스턴스 고유) — 좌표를 쓰면 조금 움직이는 것만으로 스트림이 바뀐다. */
+  private static nextActorId = 1;
+  private readonly actorId = Enemy.nextActorId++;
+  private get rnd() { return actorStream(this.actorId); }
 
   applySlow(mult: number, durMs: number) {
     this.slowMult = Math.min(this.slowMult, mult);
@@ -284,7 +293,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
         if (e.modeTimer <= 0) {
           e.modeTimer = Phaser.Math.Between(900, 2200);
-          if (Math.random() < 0.45) e.wanderDir.set(0, 0);
+          if (e.rnd.chance(0.45)) e.wanderDir.set(0, 0);
           else e.wanderDir.set(Phaser.Math.Between(-1, 1), Phaser.Math.Between(-1, 1)).normalize();
         }
         c.vx = e.wanderDir.x * e.effSpeed * 0.35;
@@ -374,7 +383,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
           c.player.takeDamage(e.def.atk, c.toPlayer, 0, e.dmgPct); // v3.0.6 — maxHP % 하한
           /* v3.0.3 — 접촉 공격 상태이상 (출혈/독/감속) */
           const ap = prof?.apply;
-          if (ap && Math.random() < ap.chance) {
+          if (ap && e.rnd.chance(ap.chance)) {
             c.player.applyEnemyStatus(ap.kind, ap.dps, ap.dur);
           }
         }
@@ -398,7 +407,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (c.dist <= 40 && c.player.hp > 0) {
           c.player.takeDamage(e.def.atk * 1.3, e.chargeDir, 0, Math.min(0.09, e.dmgPct * 1.3)); // v3.0.6
           const ap = e.def.profile?.apply;
-          if (ap && Math.random() < ap.chance) c.player.applyEnemyStatus(ap.kind, ap.dps, ap.dur);
+          if (ap && e.rnd.chance(ap.chance)) c.player.applyEnemyStatus(ap.kind, ap.dps, ap.dur);
           e.modeTimer = 700;
           e.scene.spawnBurstAt(e.x, e.y, 8, e.burstTint);
           return "cooldown";
@@ -744,6 +753,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    *  "검은색 네모 이펙트")가 남는 일을 원천 차단한다. die()의 선정리와 중복돼도
    *  null 가드로 무해 (이중 destroy는 Phaser가 no-op 처리). */
   destroy(fromScene?: boolean) {
+    /* vc183 — 액터 난수 스트림 해제. 몬스터는 계속 스폰/소멸하므로
+     *  해제하지 않으면 Map 이 무한히 자란다. */
+    releaseActor(this.actorId);
     if (this.hpBar) {
       this.hpBar.destroy();
       this.hpBar = null;

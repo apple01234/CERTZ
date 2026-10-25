@@ -1,3 +1,4 @@
+import { startRun } from "./sim/deterministic"; // vc183 — 세션 시드
 import Phaser from "phaser";
 import { GAME_W, GAME_H } from "./config";
 import { BootScene } from "./scenes/BootScene";
@@ -80,6 +81,13 @@ function safeReload(reason: string) {
 }
 
 export function createGame(parent: HTMLElement): Phaser.Game {
+  /* vc183 (액터 기반 결정 문서) — 세션 시드 확정.
+   *  ?seed=1234 로 고정하면 같은 판을 100% 재현할 수 있다(버그 재추적·리플레이).
+   *  지정이 없으면 매번 새 시드 — qs 없이도 결정론 경로 자체는 항상 동작한다. */
+  try {
+    const q = new URLSearchParams(window.location.search).get("seed");
+    startRun(q ? Number(q) >>> 0 : undefined);
+  } catch { startRun(); }
   /* v1.4.16 (QA) — 렌더러 강제 오버라이드: ?renderer=canvas
    *  소프트웨어 GL(SwiftShader)에서 WebGL 파이프라인 컴파일이 메인 스레드를 수십 초
    *  블록하는 환경(QA 헤드리스·에뮬레이터·일부 저사양 GPU)에서 Canvas 백엔드로

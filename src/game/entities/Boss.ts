@@ -7,7 +7,8 @@ import { parseStage } from "../stages";
 import { registerBossAnims, loadBossFrames, bossSourceFrame, BOSS_ATLAS } from "../textures";
 import { trackDamage } from "../classroom"; // v1.4.31 — 교실 공유 보스 딜 합산 (보스 대상 피해도 카운트)
 import { EventBus } from "../../components/game/EventBus";
-import { mitigateEnemyDamage } from "../combat/defense"; // vc183 — 보스 방어력
+import { mitigateEnemyDamage } from "../combat/defense";
+import { rng, actorStream } from "../sim/deterministic"; // vc183 — 시드 기반 결정론 난수 // vc183 — 보스 방어력
 
 /**
  * 보스 (3종 — 스테이지별 정의 주입):
@@ -106,7 +107,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---- v1.4.9 — 보스 생동감 애니메이션 (호흡·예동·낙하 등장) ---- */
   private baseSX = 1;
   private baseSY = 1;
-  private breathT = Math.random() * 4000;
+  /* vc183 — 시작 타이머도 시드에서 뽑는다. Math.random 이면 같은 판을 재현할 수 없다. */
+  private breathT = rng().float(0, 4000);
   private squashX = 0;
   private squashY = 0;
   private entranceDone = false;
@@ -580,7 +582,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     if (sig && candidates.includes(sig)) {
       const weight = (k: BossAttackKind) => (k === sig ? 2.6 : 1);
       const total = candidates.reduce((s2, k) => s2 + weight(k), 0);
-      let roll = Math.random() * total;
+      /* vc183 — 보스 패턴 선택을 시드 기반으로. 같은 시드·같은 상황이면 같은 패턴이 나온다
+       *  (버그 재현·리플레이의 전제). */
+      let roll = rng().next() * total;
       kind = candidates[candidates.length - 1];
       for (const k of candidates) {
         roll -= weight(k);

@@ -14,6 +14,7 @@ import { Pet } from "../entities/Pet";
 import { EventBus, type QuestState, type InteractState, type QuestLogState, type RewardPopupState } from "../../components/game/EventBus";
 import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱 레이어
 import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
+import { createSimRunner, SIM_STEP_MS } from "../sim/fixedStep"; // vc183 — 20Hz 고정 틱 시뮬레이션
 import { loadKeyMap, loadMoveScheme, moveKeysFor, type KeyMap, type GameAction, type MoveScheme } from "../keymap";
 import {
   classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST, chainOf, FIFTH_LEVEL,
@@ -1410,6 +1411,9 @@ export class WorldScene extends Phaser.Scene {
      *  대사 중 씬 재시작(포탈/사망 등)이 일어나면 구 씬의 world.pause()가
      *  새 씬에서도 유지되어 캐릭터·몬스터가 완전히 멈춘다. 재시작마다 강제 resume. */
     this.hitStopUntil = 0; // v1.0.16 — 히트스톱 타임스탬프도 이월 금지(새 씬 time.now는 0부터 시작해 자가치유를 막는다)
+    /* vc183 — 고정 틱 누적기도 이월 금지. 이월되면 씬 진입 첫 프레임에
+     *  밀린 스텝이 몰려 몬스터가 한 번에 덮쳐온다. */
+    this.simAI.reset();
     this.physics.world.resume();
     const data = this.registry.get("initData") as {
       stage?: StageKey;
@@ -3753,6 +3757,9 @@ export class WorldScene extends Phaser.Scene {
 
   /* v4.9.0 — fxLevel을 public으로 (Player 돌진 잔상 게이트에서 직접 조회) */
   fxLevel: 0 | 1 = 1;
+  /** vc183 — 적/보스 AI 전용 20Hz 고정 스텝 러너. 렌더(60fps)와 분리해
+   *  기기 성능과 무관하게 몬스터 반응 속도를 일정하게 만든다. */
+  private simAI = createSimRunner();
   /* v1.4.23 (#반짝임) — GPU 불안정 래치: WebGL 컨텍스트 반복 유실 세션에서
    *  블룸/툰 셰이더 프레임버퍼 경로를 즉시 제거한다 (유실 동안 렌더 스킵 =
    *  "이동/스킬 사용 시 검은 반짝임"의 정체). 씬 재시작과 무관하게 세션 동안 유지. */
@@ -10645,12 +10652,18 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    // 적 AI
-    for (const e of this.enemies) {
-      if (e.active && e.alive) e.tick(dt, this.player);
-    }
-    // 보스 AI
-    this.boss?.tick(dt, this.player);
+    /* vc183 (액터 기반 결정적 시뮬 문서) — 적/보스 AI를 20Hz 고정 스텝으로 분리.
+     *  종전엔 매 프레임(dt 가변)이라 60fps 기기와 30fps 기기에서 몬스터 반응이
+     *  달랐고(저사양일수록 굼뜸), 프레임이 튀면 AI 판정이 한꺼번에 몰려 발열 스파이크가 났다.
+     *  이제 실제 시간을 모아 50ms 마다 한 번만 갱신한다 — 연산 1/3, 기기 무관 동일 속도.
+     *  플레이어 입력·충돌은 즉시 반응이 생명이므로 매 프레임 유지(여기 넣지 않는다). */
+    /* 주의: dt 는 이미 밀리초(Phaser delta, 상한 50ms). *1000 하면 20Hz 가 228Hz 가 된다(실측). */
+    this.simAI.update(dt, () => {
+      for (const e of this.enemies) {
+        if (e.active && e.alive) e.tick(SIM_STEP_MS, this.player);
+      }
+      if (this.boss) this.boss.tick(SIM_STEP_MS, this.player);
+    });
 
     // 드롭 아이템 (자석/픽업) — 펫이 소환 중이면 근처 드롭을 펫이 직접 줍는다 (v1.9)
     for (const d of this.drops) {
