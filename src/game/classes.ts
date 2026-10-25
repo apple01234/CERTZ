@@ -649,7 +649,12 @@ export type Skill1Kind =
   | "flurrydance" /* swashbuckler — 연타 난무: 전방 5연속 속공 */
   /* v1.1.9 — 해적 계열. "넓게 쓸어버린다"가 계열 정체성. */
   | "cannonblast" /* raider — 포격: 전방 대형 폭발탄 */
-  | "cutlassdance"; /* corsair — 커틀러스 난무: 전방 광범위 3연속 베기 */
+  | "cutlassdance" /* corsair — 커틀러스 난무: 전방 광범위 3연속 베기 */
+  /* vc179 (지시 #6·#10) — 해적 3·4차 고유기. 종전엔 3·4차가 SKILL1_KIND에 없어
+   *  2차 스킬로 폴백됐고, 그래서 "해적 스킬이 별로"였다. 계열 정체성(화약·함포·심해)을
+   *  단계별로 확장: 3차=광역 폭격, 4차=바다를 부수는 일격. */
+  | "manowar"     /* stormcaptain — 현측 전열포: 좌우 2열 함포 일제사격 + 폭발 */
+  | "dreadvolley"; /* seaking — 심해 포격진: 적을 추적하는 3연 포탄 + 해일 */
 
 export type Skill2Kind =
   | "dash" /* warrior — 돌진 + 종착 충격파 */
@@ -674,7 +679,7 @@ export const SKILL1_KIND: Partial<Record<ClassKey, Skill1Kind>> = {
   ranger: "volley",
   mage: "bolt",
   thief: "bladestorm",
-  /* vc178 — 1차 해적 전용기: 레이더(2차)의 총격을 1차에서 조기 승계.
+  /* vc179 — 1차 해적 전용기: 레이더(2차)의 총격을 1차에서 조기 승계.
    *  v1.2.4에서 1차 해적이 테이블에 없어 resolveSkill1Of가 null → 전사 회전베기 폴백으로
    *  "해적인데 검을 돌린다"가 됐다. 해적 정체성(총)을 1차부터 부여한다. */
   pirate: "cannonblast",
@@ -689,6 +694,11 @@ export const SKILL1_KIND: Partial<Record<ClassKey, Skill1Kind>> = {
   /* v1.1.9 — 해적 */
   raider: "cannonblast",
   corsair: "cutlassdance",
+  /* vc179 (지시 #6·#10) — 해적 3·4차: 종전엔 없어서 2차로 폴백(직업 구현 미완) */
+  stormcaptain: "manowar",
+  seaking: "dreadvolley",
+  powdermaster: "dreadvolley",
+  dreadnought: "manowar",
 };
 
 export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
@@ -709,9 +719,19 @@ export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
   /* v1.1.9 — 해적 */
   raider: "smokestep",
   corsair: "grappleswing",
+  /* vc179 (지시 #10) — 해적 3·4차 기동기 승계(없으면 2차 폴백 = 직업 미구현 체감) */
+  stormcaptain: "grappleswing",
+  powdermaster: "smokestep",
+  seaking: "grappleswing",
+  dreadnought: "smokestep",
 };
 
-/** 스킬 종류 승계 — 현재 클래스부터 루트까지 거슬러 처음 정의된 종류 (3차/4차는 2차기 강화판) */
+/** 스킬 종류 승계 — 현재 클래스부터 루트까지 거슬러 처음 정의된 종류 (3차/4차는 2차기 강화판)
+ *
+ *  vc179 (지시 #9) 조사 기록: 이 함수는 이미 올바르다. chainOf()가 unshift로
+ *  [루트 … 현재]를 만들므로 `length-1`부터 도는 것이 곧 "현재 → 루트"다.
+ *  1차/2차 스킬이 같아 보이는 실제 원인은 **전직이 적용되지 않는 것**(지시 #8)과
+ *  pirate=raider가 둘 다 "cannonblast"인 중복 매핑이었다. */
 export function resolveSkill1Of(key?: string | null): Skill1Kind | null {
   const chain = chainOf(key);
   for (let i = chain.length - 1; i >= 0; i--) {
@@ -763,6 +783,16 @@ export const SKILL_LABELS: Partial<Record<ClassKey, [string, string, string, str
   eternal: ["영겁의 마법탄", "이터널 볼트", "영원의 점멸", "중력 붕괴", "영원의 고리"],
   shadowlord: ["심연 연타", "암흑 회전베기", "그림자 돌진", "그림자 지뢰", "그림자 군주"],
   blademaster: ["신살 연타", "쌍검 회전베기", "극한 돌진", "파동 검기", "검무 — 극한"],
+  /* vc179 (지시 #6·#10) — 해적 7직업 라벨. 종전엔 해적이 이 표에 아예 없어서
+   *  전 슬롯이 계열 기본값으로 떨어져 "해적 스킬 구현이 덜 됐다"로 보였다.
+   *  Z=화약, C=기동, V=해적 고유 3차기, B=4차 궁극기 순. */
+  pirate: ["권총 사격", "포격", "연막 측면", "", ""],
+  raider: ["산탄 사격", "포격", "연막 측면", "", ""],
+  corsair: ["쌍권총 난사", "커틀러스 난무", "갈고리 사슬", "", ""],
+  stormcaptain: ["폭풍 사격", "현측 전열포", "닻 사슬", "뇌우 소환", ""],
+  powdermaster: ["화약 연사", "폭약 부설", "연막 측면", "지뢰 부설", ""],
+  seaking: ["해왕 사격", "심해 포격진", "갈고리 사슬", "만조", "침몰의 종"],
+  dreadnought: ["무쌍 포격", "전탄 발사", "연막 측면", "전탄 일제사격", "무쌍 포격 — 극"],
 };
 
 /* v3.0.3 — 클래스별 스킬 메커니즘 디스패치 키.

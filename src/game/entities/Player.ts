@@ -70,7 +70,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v1.1.9 (#개편 A48) — 채집 재료 보유량 (요리/제작 재료) */
   gatherBag: Record<string, number> = {};
   /** vc178 — 집 꾸미기: 배치된 가구 { 가구키, 격자 좌표 }. 보유는 owned(furn_*)로, 이 배열이 배치 상태. */
-  homeDecor: { key: string; x: number; y: number }[] = [];
+  homeDecor: { key: string; x: number; y: number; rot?: number }[] = [];
   /** vc178 (지시 #2) — 이미 본 기능 튜토리얼 키 (자동 재생 1회 제한) */
   tutSeen: string[] = [];
 
@@ -1088,6 +1088,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* v1.1.9 — 해적 계열 Z */
       case "cannonblast": return this.skill1CannonBlast();
       case "cutlassdance": return this.skill1CutlassDance();
+      /* vc179 (지시 #6·#10) — 해적 3·4차 고유기 */
+      case "manowar": return this.skill1Broadside();
+      case "dreadvolley": return this.skill1DreadVolley();
       default: return this.skill1Spin(false);
     }
   }
@@ -2080,6 +2083,108 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
     this.scene.time.delayedCall(260, () => tick.remove());
     this.scene.emitHud();
+  }
+
+  /* ══════════════ vc179 (지시 #6·#10) — 해적 3·4차 고유기 ══════════════
+   *  종전엔 stormcaptain/powdermaster/seaking/dreadnought 가 SKILL1_KIND 에 없어
+   *  2차 raider 의 cannonblast 로 폴백됐다. 즉 3·4차로 올라가도 스킬이 그대로 —
+   *  "해적 직업 구현이 덜 됐다"는 지적의 실체다. 단계별로 화약의 규모를 키운다. */
+
+  /** 3차 폭풍선장 — 현측 전열포(broadside): 좌우 2열 함포를 일제 사격해
+   *  전방 부채꼴을 쓸어버린다. 단발 cannonblast 와 달리 "배의 측면 포문" 컨셉이라
+   *  사방으로 탄이 퍼지고, 착탄마다 폭발이 남아 광역 딜이 들어간다. */
+  private skill1Broadside() {
+    const dir = this.aimDir();
+    const t = this.sTier;
+    const hex = this.clsHex();
+    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
+    this.play(atkKey);
+    this.setFlipX(dir.y === 0 && dir.x > 0);
+    const base = Math.atan2(dir.y, dir.x);
+    /* 좌우 2열 × 3문 = 6발, 부채꼴로 퍼진다 */
+    const shots = 6;
+    for (let i = 0; i < shots; i++) {
+      const side = i % 2 === 0 ? -1 : 1;           // 좌현/우현 교대
+      const row = Math.floor(i / 2);               // 3열
+      const ang = base + side * (0.16 + row * 0.1);
+      this.scene.time.delayedCall(i * 70, () => {
+        if (this.state === "dead") return;
+        const ox = this.x + Math.cos(ang) * 30 + side * Math.cos(base) * 10;
+        const oy = this.y - 6 + Math.sin(ang) * 30 + side * Math.sin(base) * 10;
+        this.scene.spawnMuzzleFlash(ox, oy, ang);
+        this.scene.sfxSkill("thunder", 0.8 + i * 0.02);
+        const { dmg, crit } = this.rollDamage(2.1 + 0.18 * t, true);
+        this.scene.firePlayerProj({
+          x: ox, y: oy, angle: ang,
+          speed: 760, pierce: 2, dmg, crit,
+          tint: 0xffd07a, knock: 170, scale: 0.62,
+          tex: "gw_proj", blend: "add", rot: true, texRot: Math.PI,
+        });
+      });
+    }
+    /* 함포 일제사격의 반동 — 몸이 뒤로 밀리고 화면이 크게 흔들린다 */
+    this.setVelocity(-Math.cos(base) * 190, -Math.sin(base) * 190);
+    this.scene.time.delayedCall(90, () => { if (this.state !== "dead") this.setVelocity(0, 0); });
+    this.scene.doShake?.(160, 0.006);
+    this.scene.spawnBurstAt(this.x, this.y - 6, 20, 0xffc46a);
+    /* vc179 (지시 #11) — 제공 VFX 팩: 함포 화염 + 연기 */
+    this.scene.spawnTexBurst?.(this.x, this.y - 6, "fx_flare", { scale: 1.6, life: 260, tint: 0xffd08a });
+    this.scene.spawnTexBurst?.(this.x, this.y - 10, "fx_smoke", { scale: 1.3, life: 520, alpha: 0.6, tint: 0xbfb4a8, rotate: true });
+    /* 포문 연기 — 화약 냄새 */
+    this.scene.spawnPillar?.(this.x, this.y, hex, 140);
+    this.scene.time.delayedCall(shots * 70 + 320, () => {
+      if (this.state === "attack") this.state = "idle";
+    });
+  }
+
+  /** 4차 해왕 — 심해 포격진(dreadvolley): 적을 추적하는 3연 포탄.
+   *  3차가 "부채꼴 일제사격"이라면 4차는 "조준 추적 폭격" — 회피가 어렵고
+   *  착탄마다 해일이 퍼져 연쇄 피해를 준다. */
+  private skill1DreadVolley() {
+    const dir = this.aimDir();
+    const t = this.sTier;
+    const hex = this.clsHex();
+    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
+    this.play(atkKey);
+    this.setFlipX(dir.y === 0 && dir.x > 0);
+    const base = Math.atan2(dir.y, dir.x);
+    /* 추적 3연 — 가장 가까운 적들을 향해 각각 발사, 없으면 정면 */
+    const targets = this.nearestTargets(3, 420);
+    for (let i = 0; i < 3; i++) {
+      this.scene.time.delayedCall(i * 150, () => {
+        if (this.state === "dead") return;
+        const tgt = targets[i] ?? targets[0] ?? null;
+        const ang = tgt
+          ? Math.atan2(tgt.y - this.y, tgt.x - this.x)
+          : base + (i - 1) * 0.12;
+        const ox = this.x + Math.cos(ang) * 30;
+        const oy = this.y - 6 + Math.sin(ang) * 30;
+        this.scene.spawnMuzzleFlash(ox, oy, ang);
+        this.scene.sfxSkill("thunder", 0.72);
+        const { dmg, crit } = this.rollDamage(2.9 + 0.2 * t, true);
+        this.scene.firePlayerProj({
+          x: ox, y: oy, angle: ang,
+          speed: 640, pierce: 4, dmg, crit,
+          tint: 0x9fe8ff, knock: 210, scale: 0.78,
+          tex: "gw_proj", blend: "add", rot: true, texRot: Math.PI,
+        });
+      });
+    }
+    this.scene.doShake?.(220, 0.008);
+    this.scene.spawnBurstAt(this.x, this.y - 6, 26, 0x7fd8ff);
+    /* vc179 (지시 #11) — 제공 VFX 팩: 심해 폭발 코어 + 충격파 */
+    this.scene.spawnTexBurst?.(this.x, this.y - 6, "fx_burst", { scale: 1.8, life: 380, tint: 0x9fe8ff });
+    this.scene.spawnTexBurst?.(this.x, this.y - 6, "fx_shockwave", { scale: 1.4, life: 340, tint: 0x7fd8ff, alpha: 0.8 });
+    this.scene.spawnPillar?.(this.x, this.y, hex, 220);
+    /* 해일 — 발밑에서 퍼지는 물결 링 2겹 */
+    for (let i = 0; i < 2; i++) {
+      this.scene.time.delayedCall(i * 180, () => {
+        this.scene.spawnSlashArc?.(this.x, this.y, 1, 0x8fe0ff, 2.2 + i * 0.5, 320, 0.7);
+      });
+    }
+    this.scene.time.delayedCall(3 * 150 + 380, () => {
+      if (this.state === "attack") this.state = "idle";
+    });
   }
 
   /* ================= v3.0.3 — 3차기(V) / 4차기(B): 상위직 고유 메커니즘 =================

@@ -780,19 +780,26 @@ type FeatTutPayload = {
   body: string;
   where: string | null;
   auto: boolean;
+  /* vc179 (지시 #2) — "직접 해 보기" 요구 + 완료 여부 */
+  do?: { kind: string; panel?: string } | null;
+  doDone?: boolean;
 };
 
 export function FeatureTutorialOverlay() {
   const [cur, setCur] = useState<FeatTutPayload | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
 
   useEffect(() => {
-    const onShow = (v: FeatTutPayload | null) => setCur(v);
+    const onShow = (v: FeatTutPayload | null) => { setCur(v); setHint(null); };
     const onReplay = (v: { feature: string }) => EventBus.emit("featTut:replayReq", v);
+    const onHint = (v: { text: string }) => setHint(v.text);
     EventBus.on("featTut:show", onShow);
     EventBus.on("featTut:replay", onReplay);
+    EventBus.on("featTut:hint", onHint);
     return () => {
       EventBus.off("featTut:show", onShow);
       EventBus.off("featTut:replay", onReplay);
+      EventBus.off("featTut:hint", onHint);
     };
   }, []);
 
@@ -801,17 +808,24 @@ export function FeatureTutorialOverlay() {
   const next = () => EventBus.emit("featTut:next");
   const close = () => EventBus.emit("featTut:close");
   const isLast = cur.page >= cur.total - 1;
+  const needDo = !!cur.do && !cur.doDone;
+  /* "직접 해 보기" — 해당 패널을 대신 열어 준다(패널형일 때) */
+  const openPanel = () => {
+    if (cur.do?.kind === "panel" && cur.do.panel) EventBus.emit("ui:panel", { panel: cur.do.panel });
+  };
 
   return (
-    <div className="pointer-events-auto absolute inset-x-0 bottom-24 z-[60] flex justify-center px-3">
+    <div className="pointer-events-none absolute inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-1.5 px-3">
       <div
         role="dialog"
         aria-modal="true"
         aria-label={`${cur.name} 안내`}
-        className="w-[min(94vw,440px)] rounded-xl border border-cyan-300/40 bg-[#0a1420]/95 p-3.5 shadow-2xl backdrop-blur-sm"
+        className={`pointer-events-auto w-[min(94vw,440px)] rounded-xl border p-3.5 shadow-2xl backdrop-blur-sm ${
+          needDo ? "border-amber-300/60 bg-[#1a1206]/95" : "border-cyan-300/40 bg-[#0a1420]/95"
+        }`}
       >
         <div className="mb-1.5 flex items-center justify-between gap-2">
-          <p className="truncate text-[12px] font-black text-cyan-200">
+          <p className={`truncate text-[12px] font-black ${needDo ? "text-amber-200" : "text-cyan-200"}`}>
             {cur.auto ? "새 기능 안내" : "다시보기"} · {cur.name}
           </p>
           <span className="shrink-0 rounded-md bg-cyan-400/15 px-1.5 py-0.5 text-[10px] font-bold text-cyan-200">
@@ -827,13 +841,42 @@ export function FeatureTutorialOverlay() {
           </p>
         )}
 
+        {/* vc179 — 직접 해 보기 상태 */}
+        {cur.do && (
+          <div className={`mt-2 rounded-md px-2 py-1.5 text-[10px] font-bold ${
+            cur.doDone ? "bg-emerald-400/15 text-emerald-200" : "bg-amber-400/15 text-amber-200"
+          }`}>
+            {cur.doDone
+              ? "잘했다! 곧 다음으로 넘어간다"
+              : cur.do.kind === "panel"
+                ? "지금 직접 그 창을 열어 보자 — 열면 자동으로 넘어간다"
+                : cur.do.kind === "skill"
+                  ? "지금 Z(스킬 버튼)를 눌러 보자 — 쓰면 자동으로 넘어간다"
+                  : cur.do.kind === "attack"
+                    ? "지금 공격 버튼을 눌러 보자 — 때리면 자동으로 넘어간다"
+                    : "지금 직접 움직여 보자 — 움직이면 자동으로 넘어간다"}
+          </div>
+        )}
+        {hint && <p className="mt-1 text-[10px] font-bold text-rose-300">{hint}</p>}
+
         <div className="mt-2.5 flex items-center gap-1.5">
-          <button
-            onClick={next}
-            className="flex-1 rounded-md bg-cyan-400 px-3 py-1.5 text-[11px] font-black text-slate-900 hover:bg-cyan-300 active:scale-95"
-          >
-            {isLast ? "확인" : "다음"}
-          </button>
+          {needDo && cur.do?.kind === "panel" ? (
+            <button
+              onClick={openPanel}
+              className="flex-1 rounded-md bg-amber-400 px-3 py-1.5 text-[11px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
+            >
+              지금 열어 보기
+            </button>
+          ) : (
+            <button
+              onClick={next}
+              className={`flex-1 rounded-md px-3 py-1.5 text-[11px] font-black text-slate-900 active:scale-95 ${
+                needDo ? "bg-amber-400/50 text-slate-900/60" : "bg-cyan-400 hover:bg-cyan-300"
+              }`}
+            >
+              {isLast ? "확인" : "다음"}
+            </button>
+          )}
           <button
             onClick={close}
             className="rounded-md border border-white/20 bg-black/40 px-3 py-1.5 text-[11px] font-bold text-white/70 hover:bg-black/60 active:scale-95"

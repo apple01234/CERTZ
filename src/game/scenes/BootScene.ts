@@ -345,6 +345,15 @@ const ASSET_LIST = [
   "furn_bench", "furn_table", "furn_chair", "furn_pots",
 ] as const;
 
+/* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 전투 이펙트 6종.
+ *  직접 그리지 않고 제공 에셋을 256px webp(총 58KB)로 경량 변환해 쓴다.
+ *  ASSET_LIST와 경로가 다르므로(assets/vfx/) 별도 목록으로 둔다. */
+const VFX_PACK_LIST = [
+  "fx_shockwave", "fx_impact", "fx_glow", "fx_burst", "fx_flare", "fx_smoke",
+  /* sertz.7z(GameVFX Buff Collection) 추가 추출분 — 원소/번개/육각 마법진/수중 */
+  "fx_electro", "fx_flarew", "fx_hex", "fx_glowblue", "fx_noise", "fx_caustic",
+] as const;
+
 const AUDIO_LIST: string[] = [
   /* v3.0.24 — BGM은 타이틀 1곡만 프리로드 (나머지 39트랙은 구역 진입 시 지연 로딩 —
    *  풀버전 q4 재인코딩과 함께: 부트 디코드 시간 단축 + WebAudio PCM 수 GB 크래시 방지) */
@@ -584,6 +593,9 @@ export class BootScene extends Phaser.Scene {
     this.buildLoadingUi();
     this.load.setPath("assets");
     for (const key of ASSET_LIST) this.load.image(key, `${key}.webp`);
+    /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 이펙트 6종.
+     *  ASSET_LIST는 `assets/<key>.webp` 평면 경로를 쓰므로 하위 폴더(vfx/)는 별도 로드. */
+    for (const k of VFX_PACK_LIST) this.load.image(k, `vfx/${k}.webp`);
     /* v1.4.31 (#4 보스 개편) — 유저 제공 9보스 아틀라스 (보스당 1장 · 부팅 직접 로드).
      *  프레임 크기는 슬라이서 실측값 — BOSS_ATLAS 설정과 정확히 일치 (textures.ts) */
     for (const { key, file, fw, fh } of Object.values(BOSS_ATLAS)) {

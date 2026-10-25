@@ -224,9 +224,9 @@ export function HUD({
            *  화면 전체 셰이크만으로는 "내 체력이 깎였다"가 늦게 인지된다. HP가 줄어든
            *  순간에만 짧게 흔들어 시선이 HP 바로 가게 한다(회복/최대치 변화엔 반응하지 않음). */}
           <span className={hpShake ? "inline-block animate-[sfshake_0.32s_ease-out]" : "inline-block"}>
-            <Bar value={hud.hp} max={hud.maxHp} from="#c2273a" to="#ff7a68" label={`${hud.hp} / ${hud.maxHp}`} />
+            <Bar value={hud.hp} max={hud.maxHp} from="#c2273a" to="#ff7a68" label={`${Math.min(Math.round(hud.hp), Math.round(hud.maxHp))} / ${Math.round(hud.maxHp)}`} />
           </span>
-          <Bar value={hud.mp} max={hud.maxMp} from="#1e6fb8" to="#5ec5ff" label={`${hud.mp} / ${hud.maxMp}`} height={10} />
+          <Bar value={hud.mp} max={hud.maxMp} from="#1e6fb8" to="#5ec5ff" label={`${Math.min(Math.round(hud.mp), Math.round(hud.maxMp))} / ${Math.round(hud.maxMp)}`} height={10} />
           {/* EXP 얇은 바 — v1.1.6 (#개편 B54) 90% 이상이면 발광해 "곧 레벨업"을 알린다.
            *  종전엔 폭만 늘어나 언제 오를지 감이 없었다. */}
           <div
@@ -255,6 +255,30 @@ export function HUD({
               크리 {fmt(hud.critRate)}%
             </span>
           </div>
+          {/* vc179 (지시 #5 DDD) — 연속킬 콤보 상시 표시.
+           *  남은 시간이 줄어드는 걸 보이게 하는 것만으로 "끊기기 전에 더 잡자"가 생긴다.
+           *  3연킬부터 색이 뜨거워지고, 10연킬은 금색으로 최고조. */}
+          {hud.combo && (
+            <div className="mt-1 flex items-center gap-1.5">
+              <span
+                className={`relative flex items-center gap-1 overflow-hidden rounded-md px-1.5 py-0.5 text-[11px] font-black ${
+                  hud.combo.n >= 10
+                    ? "bg-amber-400/25 text-amber-200 shadow-[0_0_8px_rgba(251,191,36,0.6)]"
+                    : hud.combo.n >= 5
+                      ? "bg-orange-500/25 text-orange-200"
+                      : "bg-white/10 text-white/85"
+                }`}
+              >
+                <span className="relative z-10">연속킬 x{hud.combo.n}</span>
+                <span className="relative z-10 text-[10px] text-lime-300">EXP +{hud.combo.pct}%</span>
+                {/* 남은 시간 게이지 */}
+                <span
+                  className="absolute inset-y-0 left-0 bg-white/15 transition-[width] duration-100"
+                  style={{ width: `${Math.max(0, Math.min(100, (hud.combo.remain / Math.max(1, hud.combo.total)) * 100))}%` }}
+                />
+              </span>
+            </div>
+          )}
           {/* 지시 #15 — 버프 아이콘 행을 스탯칩 “바로 아래”로 이동 (기존 EXP바 위 위치에서 전배) */}
           {hud.buffs.length > 0 && (
             <div className="mt-0.5 flex items-center gap-1">

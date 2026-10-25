@@ -262,7 +262,7 @@ export type SaveData = {
   /* v1.1.9 (#개편 A48) — 채집 재료 보유량 (GatherKey → 개수). 요리/제작 재료. */
   gatherBag?: Record<string, number>;
   /* vc178 — 집 꾸미기: 내 집 실내에 배치한 가구 { 가구키, 격자 x/y }. 구 세이브 undefined → 빈 집 */
-  homeDecor?: { key: string; x: number; y: number }[];
+  homeDecor?: { key: string; x: number; y: number; rot?: number }[];
   /* vc178 (지시 #1·#2) — 이미 본 기능 튜토리얼 키 목록 (중복 자동재생 방지).
    *  설정 → 튜토리얼 다시보기는 이 목록과 무관하게 언제든 재생 가능. */
   tutSeen?: string[];

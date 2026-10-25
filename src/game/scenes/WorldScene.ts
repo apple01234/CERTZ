@@ -266,6 +266,9 @@ export class WorldScene extends Phaser.Scene {
   private featureTutFeature: FeatureKey | null = null;
   private featureTutPage = 0;
   private featureTutDelay = 600;
+  /* vc179 (지시 #2) — 현재 장의 "직접 해 보기" 요구와 완료 여부 */
+  private featureTutDo: import("../unlocks").TutDo | null = null;
+  private featureTutDoDone = false;
   /** vc178 — 구 세이브 튜토리얼 마이그레이션 발생 여부 (1회 안내용) */
   private migratedTutSeen = false;
   /* vc150 (#26번항목21) — 좀비 몬스터 청소 누적기 */
@@ -4015,6 +4018,34 @@ export class WorldScene extends Phaser.Scene {
     /* v1.4.11 — Drive 팩 보강: MG 충격파 링 + Toon 먼지 (강타/낙뢰 착지 임팩트 2중화) */
     this.driveFx?.shockHeavy(x, y, 0xffc9a0, 1.3);
     this.driveFx?.dustPuff(x, y, 1.1);
+    /* vc179 (지시 #11) — 사용자 제공 UNI VFX 충격파 텍스처를 실제 착탄에 사용.
+     *  절차적 Graphics 링보다 밀도가 높고, 팩을 받아 두고도 안 쓰던 문제를 해소. */
+    this.spawnTexBurst(x, y, "fx_shockwave", { scale: 1.5, life: 320, tint: 0xffd0a0, alpha: 0.85 });
+  }
+
+  /** vc179 (지시 #11) — 텍스처 기반 확산 이펙트.
+   *  제공받은 VFX 팩(fx_*)을 임팩트/버스트에 쓴다. 텍스처가 없으면 조용히 스킵. */
+  spawnTexBurst(
+    x: number, y: number, key: string,
+    o: { scale?: number; life?: number; tint?: number; alpha?: number; rotate?: boolean } = {},
+  ) {
+    if (!this.textures.exists(key)) return;
+    if (this.fxScale < 0.75) return; // 절전 모드에선 생략 (발열 대책)
+    const img = this.add.image(x, y, key)
+      .setDepth(Math.max(20, Math.floor(y / 10) + 5))
+      .setScale((o.scale ?? 1) * 0.35)
+      .setAlpha(o.alpha ?? 1)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    if (o.tint !== undefined) img.setTint(o.tint);
+    if (o.rotate) img.setRotation(Math.random() * Math.PI * 2);
+    this.tweens.add({
+      targets: img,
+      scale: (o.scale ?? 1) * 1.15,
+      alpha: 0,
+      duration: o.life ?? 300,
+      ease: "Cubic.out",
+      onComplete: () => img.destroy(),
+    });
   }
 
   spawnEnrageBurst(x: number, y: number) {
@@ -4030,6 +4061,10 @@ export class WorldScene extends Phaser.Scene {
       duration: 500,
       onComplete: () => ring.destroy(),
     });
+    /* vc179 (지시 #11) — 제공 VFX 팩: 레벨업에 신성한 육각 마법진 + 백색 플레어.
+     *  절차적 링 하나로는 "각성"의 무게가 부족했다. */
+    this.spawnTexBurst(x, y, "fx_hex", { scale: 1.5, life: 620, tint: 0x9fd8ff, alpha: 0.9 });
+    this.spawnTexBurst(x, y - 10, "fx_flarew", { scale: 1.8, life: 420, tint: 0xffe9a8 });
     /* v4.1.5 — 레벨업 황금 별 폭발 + 마법 반짝임 (Kenney star/magic) */
     this.starEmitter?.setParticleTint(0xffe66a);
     this.starEmitter?.explode(16, x, y - 8);
@@ -4204,9 +4239,12 @@ export class WorldScene extends Phaser.Scene {
         })
         .setOrigin(0.5)
         .setDepth(21);
-      /* 대사 — 3초 주기로 깜빡이며 표시 (항상 떠 있으면 시끄럽다) */
+      /* 대사 — 3초 주기로 깜빡이며 표시 (항상 떠 있으면 시끄럽다)
+       *  vc179 (지시 #7) — 이름표(y-52)와 E원(y-58) 사이에 끼어 겹치던 문제.
+       *  대사는 이름표 위(y-78)로 확실히 분리하고, E원은 syncEBubble이
+       *  대사 보유 NPC에서 y-96으로 더 올려 서로 침범하지 않게 한다. */
       const bubble = this.add
-        .text(x, y - 70, line, {
+        .text(x, y - 78, line, {
           fontFamily: "Galmuri11, sans-serif",
           fontSize: "10px",
           color: "#ffffff",
@@ -4619,8 +4657,14 @@ export class WorldScene extends Phaser.Scene {
     mm.fillStyle(0xffffff, 1).fillCircle(px, py, 2.6 / z);
     mm.lineStyle(1 / z, 0xffffff, 0.45).strokeCircle(px, py, 4.6 / z);
     /* vc145 (#6) — 미니맵 위 현재 위치 라벨 (예: "3-2 · 쿠소디아").
-     *  줌/리사이즈마다 redrawMinimap이 도니 위치/크기가 자동 추적된다. */
-    const locTxt = `${STAGE_SHORT[this.stageDef.key] ?? ""}${this.stageDef.name ? " · " + this.stageDef.name : ""}`;
+     *  줌/리사이즈마다 redrawMinimap이 도니 위치/크기가 자동 추적된다.
+     *  vc179 (스크린샷 버그) — 마을은 STAGE_SHORT와 stageDef.name이 같은 문자열이라
+     *  "쿠스디아 마을 · 쿠스디아 마을"로 중복 출력됐다. 같으면 한 번만 쓴다. */
+    const shortName = STAGE_SHORT[this.stageDef.key] ?? "";
+    const longName = this.stageDef.name ?? "";
+    const locTxt = !longName || longName === shortName
+      ? (shortName || longName)
+      : `${shortName}${shortName ? " · " : ""}${longName}`;
     if (!this.locLabel || !this.locLabel.scene) {
       this.locLabel = this.add
         .text(cx, 0, locTxt, {
@@ -9305,6 +9349,9 @@ export class WorldScene extends Phaser.Scene {
     const onHomeRemove = (v: { key: ItemKey; idx: number }) => this.homeDecorRemove(v.idx);
     EventBus.on("rpg:homePlace", onHomePlace);
     EventBus.on("rpg:homeRemove", onHomeRemove);
+    /* vc179 (지시 #3) — 가구 돌리기 */
+    const onHomeRotate = (v: { idx: number }) => this.homeDecorRotate(v.idx);
+    EventBus.on("rpg:homeRotate", onHomeRotate);
     /* vc178 (지시 #2) — 기능 튜토리얼 오버레이 ↔ 씬 연결 */
     const onFeatNext = () => this.advanceFeatureTutorial();
     const onFeatClose = () => this.closeFeatureTutorial();
@@ -9312,6 +9359,18 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("featTut:next", onFeatNext);
     EventBus.on("featTut:close", onFeatClose);
     EventBus.on("featTut:replayReq", onFeatReplay);
+    /* vc179 (지시 #2) — 안내된 행동을 실제로 했는지 감지해 자동 진행.
+     *  패널 열기는 React가 ui:panel 로 발행하므로 여기서 받아 넘긴다. */
+    const onUiPanelForTut = (v: { panel?: string | null }) => {
+      if (v?.panel) this.notifyFeatureTutAction("panel", v.panel);
+    };
+    const onSkillForTut = () => this.notifyFeatureTutAction("skill");
+    const onAttackForTut = () => this.notifyFeatureTutAction("attack");
+    const onMoveForTut = () => this.notifyFeatureTutAction("move");
+    EventBus.on("ui:panel", onUiPanelForTut);
+    EventBus.on("input:skill1", onSkillForTut);
+    EventBus.on("input:attack", onAttackForTut);
+    EventBus.on("input:move", onMoveForTut);
     EventBus.on("rpg:equip", onEquip);
     EventBus.on("rpg:unequip", onUnequip);
     EventBus.on("rpg:use", onUse);
@@ -10018,7 +10077,12 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("featTut:next", onFeatNext);
       EventBus.off("featTut:close", onFeatClose);
       EventBus.off("featTut:replayReq", onFeatReplay);
+      EventBus.off("ui:panel", onUiPanelForTut);
+      EventBus.off("input:skill1", onSkillForTut);
+      EventBus.off("input:attack", onAttackForTut);
+      EventBus.off("input:move", onMoveForTut);
       EventBus.off("rpg:homeRemove", onHomeRemove);
+      EventBus.off("rpg:homeRotate", onHomeRotate);
       EventBus.off("rpg:equip", onEquip);
       EventBus.off("rpg:unequip", onUnequip);
       EventBus.off("rpg:use", onUse);
@@ -10731,8 +10795,11 @@ export class WorldScene extends Phaser.Scene {
     this.autoTarget = best;
     const bestD = Phaser.Math.Distance.Between(this.player.x, this.player.y, best.x, best.y); // v3.0.20 (#4) — 실거리 기준 판정 유지
     const fam = familyOf(this.player.cls);
-    const ranged = fam === "ranger" || fam === "mage";
-    const atkRange = ranged ? 250 : 56;
+    /* vc179 (지시 #1 — "해적 자동사냥시 근접 알고리즘 적용") 수리:
+     *  해적은 총을 쓰는 원거리 계열인데 ranged 판정에서 빠져 근접(56px)으로 접근했다.
+     *  직업별 실제 사거리를 쓰도록 pirate 를 포함한다. */
+    const ranged = fam === "ranger" || fam === "mage" || fam === "pirate";
+    const atkRange = fam === "pirate" ? 300 : ranged ? 250 : 56;
     /* v1.4.11 — 사거리 진입 시 이동 홀드 즉시 해제 (진동 근본 수정 ①).
      *  기존엔 접근 홀드(300~1100ms)가 사거리 안에서도 남아 계속 밀어붙여 적을
      *  통과해 반대편으로 나갔다가 다시 돌아오는 "제자리 왕복"이 재현됐다.
@@ -12927,7 +12994,13 @@ export class WorldScene extends Phaser.Scene {
     this.syncEBubble();
   }
 
-  /* E 말풍선 — NPC 이름표 위(위쪽)에 배치 (지시 #14: 이름과 겹침 해소) */
+  /* E 말풍선 — NPC 이름표 위(위쪽)에 배치 (지시 #14: 이름과 겹침 해소)
+   *  vc179 (지시 #4·#7) 수리:
+   *   ④ 동그라미가 위로 밀려 어긋남 — 트윈이 `y: "-=4"`(상대 이동)인데 syncEBubble이
+   *     매 프레임 setPosition으로 y를 되돌려, 두 힘이 매 프레임 경쟁하며 원이 점점
+   *     위로 흘러갔다. 트윈은 **알파만** 움직이고 위치는 코드가 단독 소유한다.
+   *   ⑦ NPC 대사 말풍선(y-70)과 E원(y-58)이 12px 차이라 겹쳤다 — 대사는 y-84,
+   *     E원은 y-58로 벌리고, 말풍선이 뜬 NPC에서는 E원을 더 위로 올린다. */
   private syncEBubble() {
     const it = this.nearInteract;
     if (!it) {
@@ -12946,11 +13019,20 @@ export class WorldScene extends Phaser.Scene {
         })
         .setOrigin(0.5)
         .setDepth(62);
-      this.tweens.add({ targets: this.eBubble, y: "-=4", duration: 620, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      /* 위치는 syncEBubble이 단독 소유 — 트윈은 알파(깜빡임)만 건드린다 */
+      this.tweens.add({
+        targets: this.eBubble,
+        alpha: { from: 1, to: 0.55 },
+        duration: 620,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
     }
-    // 이름표(-34~38)보다 충분히 위 — 겹침 없음
+    /* 대사 말풍선이 있는 NPC면 그 위로 더 올린다(겹침 방지) */
+    const hasLine = this.interactables.some((o) => o.x === it.x && o.y === it.y && o.dlg);
     const bx = it.x;
-    const by = it.y - 58;
+    const by = it.y - (hasLine ? 96 : 58);
     this.eBubble.setPosition(bx, by);
     this.eBubbleText?.setPosition(bx, by);
   }
@@ -13347,6 +13429,8 @@ export class WorldScene extends Phaser.Scene {
       if (!this.textures.exists(d.key)) continue; // 미로드 가구 — 조용히 스킵
       const img = this.add.image(this.homeCellX(d.x), this.homeCellY(d.y), d.key)
         .setOrigin(0.5, 0.9)
+        /* vc179 (지시 #3) — 돌리기: rot 0~3 = 0/90/180/270도 */
+        .setRotation(((d.rot ?? 0) % 4) * (Math.PI / 2))
         .setDepth(Math.floor(this.homeCellY(d.y) / 10));
       this.homeDecorImgs.push(img);
     }
@@ -13354,22 +13438,60 @@ export class WorldScene extends Phaser.Scene {
 
   /* vc178 — 가구 배치: 같은 칸 중복 금지 · 보유 수 상한 · 자동 저장.
    *  이미 배치된 같은 가구를 다른 칸에 두면 "이동"으로 처리 (기존 배치 제거). */
+  /** 가구 배치
+   *  vc179 (지시 #3 — "배치 시스템 이상함 + 돌리기 + 1개 제한 없애기"):
+   *   · 종전엔 보유 수를 넘으면 **기존 배치를 강제로 새 칸으로 끌고 갔다** → 유저가 놓은
+   *     가구가 사라진 것처럼 보였다. 이제 상한 초과면 조용히 무시(배치 실패)하고,
+   *     이미 놓인 칸에 또 놓으면 그 칸의 가구를 교체한다.
+   *   · 같은 가구를 여러 개 놓는 것(1개 제한)은 보유 수량만큼 허용 — 이미 그렇게 동작하지만
+   *     UI가 "1/1 배치"에서 막혀 보였다. 상한 계산을 보유 수량 기준으로 명확히 한다.
+   *   · 회전(rot 0~3)을 함께 저장해 가구를 돌려 놓을 수 있게 한다. */
   private homeDecorPlace(key: ItemKey, cx: number, cy: number) {
     if (!this.player) return;
-    if (!ITEMS[key]?.key.startsWith?.("furn_")) return;
+    if (!ITEMS[key]?.key?.startsWith?.("furn_")) return;
     const owned = this.player.owned.filter((k) => k === key).length;
     if (owned === 0) return; // 미보유 — 무시
-    const placed = this.player.homeDecor.filter((d) => d.key === key);
-    const existingIdx = this.player.homeDecor.findIndex((d) => d.key === key && d.x === cx && d.y === cy);
-    if (existingIdx >= 0) return; // 같은 칸 — 무변경
-    if (placed.length >= owned) {
-      // 보유분 전부 배치 상태 → 가장 오래된 배치를 새 칸으로 이동
-      const oldest = this.player.homeDecor.find((d) => d.key === key);
-      if (oldest) { oldest.x = cx; oldest.y = cy; }
-    } else {
-      this.player.homeDecor.push({ key, x: cx, y: cy });
+    const onCell = this.player.homeDecor.findIndex((d) => d.x === cx && d.y === cy);
+    if (onCell >= 0) {
+      /* 이미 놓인 칸 — 같은 가구면 회전만 갱신, 다른 가구면 교체 */
+      const cur = this.player.homeDecor[onCell];
+      if (cur.key === key) {
+        cur.rot = ((cur.rot ?? 0) + 1) % 4;
+      } else {
+        /* 남는 보유가 있어야 교체 가능 */
+        const placedOfNew = this.player.homeDecor.filter((d) => d.key === key).length;
+        if (placedOfNew >= owned) {
+          audio.sfx.uiClose();
+          return;
+        }
+        this.player.homeDecor[onCell] = { key, x: cx, y: cy, rot: 0 };
+      }
+      audio.sfx.uiClose();
+      this.renderHomeDecor();
+      this.save();
+      this.emitRpgState();
+      return;
     }
+    /* 빈 칸 — 보유 수량까지만 추가 (초과면 무시, 기존 배치는 건드리지 않는다) */
+    const placed = this.player.homeDecor.filter((d) => d.key === key).length;
+    if (placed >= owned) {
+      audio.sfx.uiClose();
+      return;
+    }
+    this.player.homeDecor.push({ key, x: cx, y: cy, rot: 0 });
     audio.sfx.uiClose();
+    this.renderHomeDecor();
+    this.save();
+    this.emitRpgState();
+  }
+
+  /** 배치된 가구 회전 (지시 #3 — 돌리기) */
+  private homeDecorRotate(idx: number) {
+    if (!this.player) return;
+    const d = this.player.homeDecor[idx];
+    if (!d) return;
+    d.rot = ((d.rot ?? 0) + 1) % 4;
+    audio.sfx.uiOpen();
     this.renderHomeDecor();
     this.save();
     this.emitRpgState();
@@ -13507,12 +13629,21 @@ export class WorldScene extends Phaser.Scene {
           this.time.delayedCall(1400, () => this.showBanner("카이엔과 대화하면 2차 전직 시련이 이어집니다"));
         }
       } else if (finTier === 2) {
-        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 2차 전직이 해금되었다`);
+        /* vc179 (지시 #8 — "전직 퀘스트 완료 후 캐릭터에 전직 적용되도록"):
+         *  종전엔 해금 배너만 띄우고 패널을 다시 열어야 전직됐다. 유저가 기대하는 건
+         *  "시련을 끝내면 그 자리에서 전직". 대기 중인 직업이 있으면 즉시 적용한다. */
+        if (!this.applyPendingJob(finTier)) {
+          this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 2차 전직이 해금되었다 (전직 창에서 선택)`);
+        }
       } else if (finTier === 3) {
-        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 3차 전직이 해금되었다`);
+        if (!this.applyPendingJob(finTier)) {
+          this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 3차 전직이 해금되었다 (전직 창에서 선택)`);
+        }
       } else if (finTier === 4) {
         /* v1.0.12 (#4차전직퀘) — 4차 시련 완료 배너 (기존엔 4차 스토리 자체가 없었다) */
-        this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 4차 전직이 해금되었다`);
+        if (!this.applyPendingJob(finTier)) {
+          this.showBanner(`전직 시련 완료! AP +${story.reward.ap} — 4차 전직이 해금되었다 (전직 창에서 선택)`);
+        }
       }
       this.emitRpgState();
     } else {
@@ -13529,6 +13660,32 @@ export class WorldScene extends Phaser.Scene {
     this.emitQuest(); // v4.1.3 (#전직조건표시) — 단계 완료 즉시 트래커 갱신 ([1/3]→[2/3])
     this.save();
     this.emitRpgState();
+  }
+
+  /** vc179 (지시 #8) — 시련 완료 시 대기 중인 직업을 실제로 적용한다.
+   *  1차는 종전 인라인 코드를 그대로 쓰고, 2·3·4차도 같은 경로를 타도록 공통화했다.
+   *  반환값: 실제로 전직이 적용됐으면 true (호출부는 false일 때만 안내 배너를 띄운다). */
+  private applyPendingJob(tier: number): boolean {
+    if (!this.player || !this.pendingJobClass) return false;
+    const def = classDef(this.pendingJobClass);
+    if (!def || def.tier !== tier) return false;
+    this.pendingJobClass = null;
+    if (!this.player.applyClass(def.key)) return false;
+    if (!this.player.startCls) this.player.startCls = def.key;
+    audio.sfx.levelup();
+    this.spawnLevelUpFx(this.player.x, this.player.y);
+    const jhex = def.hex;
+    this.spawnPillar(this.player.x, this.player.y, jhex, 200);
+    this.spawnBurstAt(this.player.x, this.player.y, 34, jhex);
+    this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
+    this.doShake(200, 0.008);
+    this.spawnPickupText(this.player.x, this.player.y - 56, `${def.name} 각성! 스킬 강화`, `#${jhex.toString(16).padStart(6, "0")}`);
+    EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
+    this.refreshPlayerTag();
+    net.netAnnounceJob(def.key);
+    this.emitRpgState();
+    this.save();
+    return true;
   }
 
   /** v1.3.1 (#4) — travel 단계 목적지 확정: 방문 기록(visited)의 전투 구역 중
@@ -14706,6 +14863,15 @@ export class WorldScene extends Phaser.Scene {
       /* v1.3.1 (#7 능력치 소수 정리) — 소수 둘째 자리에서 반올림해 표시 (크리티컬 %/이동속도) */
       critRate: Math.round(this.player.critRate * 10) / 10,
       cls: this.player.cls,
+      /* vc179 (지시 #5 DDD) — 연속킬(콤보)을 HUD에 상시 노출.
+       *  종전엔 킬 순간의 플로팅 텍스트뿐이라 "지금 콤보가 몇이고 몇 초 남았는지"를
+       *  알 수 없었다. DDD의 핵심은 유지 중인 보상 상태를 계속 보이게 하는 것이다. */
+      combo: this.comboStreak >= 2 ? {
+        n: this.comboStreak,
+        pct: Math.round(Math.min(0.5, (this.comboStreak - 1) * 0.05) * 100),
+        remain: Math.max(0, this.comboUntil - this.time.now),
+        total: 5000,
+      } : null,
       /* v1.9 — 버프 바 + AP 배지 + 속도 */
       buffs: this.player.buffs.map((b) => ({ key: b.key, remain: b.remain, total: b.total })),
       ap: this.player.ap,
@@ -15551,6 +15717,8 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.levelup();
     spawnCelebrateBurst(this, this.player.x, this.player.y, 14);
     /* React 오버레이로 스크립트 표시 (모바일/PC 공통, 캔버스 UI보다 가독성 우수) */
+    this.featureTutDo = pages[0].do ?? null;
+    this.featureTutDoDone = false;
     EventBus.emit("featTut:show", {
       feature: key,
       name: def.name,
@@ -15560,13 +15728,22 @@ export class WorldScene extends Phaser.Scene {
       body: pages[0].body,
       where: pages[0].where ?? null,
       auto,
+      /* vc179 (지시 #2) — 이 장에서 실제로 해 볼 행동 */
+      do: pages[0].do ?? null,
+      doDone: false,
     });
   }
 
   /** 기능 튜토리얼 다음 장 — 마지막이면 닫는다 (React에서 호출) */
-  advanceFeatureTutorial() {
+  advanceFeatureTutorial(force = false) {
     if (!this.featureTutOpen || !this.featureTutFeature) return;
     const pages = TUTORIAL_SCRIPTS[this.featureTutFeature];
+    /* vc179 (지시 #2) — "직접 해 보기" 장은 행동을 완료해야 넘어간다.
+     *  닫기(force)로는 언제든 탈출 가능 — 강제로 가두지 않는다. */
+    if (!force && this.featureTutDo && !this.featureTutDoDone) {
+      EventBus.emit("featTut:hint", { text: "위 안내대로 직접 해 보면 자동으로 넘어간다" });
+      return;
+    }
     const next = this.featureTutPage + 1;
     if (next >= pages.length) {
       this.closeFeatureTutorial();
@@ -15574,6 +15751,8 @@ export class WorldScene extends Phaser.Scene {
     }
     this.featureTutPage = next;
     const def = unlockDef(this.featureTutFeature);
+    this.featureTutDo = pages[next].do ?? null;
+    this.featureTutDoDone = false;
     EventBus.emit("featTut:show", {
       feature: this.featureTutFeature,
       name: def?.name ?? "",
@@ -15583,6 +15762,25 @@ export class WorldScene extends Phaser.Scene {
       body: pages[next].body,
       where: pages[next].where ?? null,
       auto: false,
+      do: pages[next].do ?? null,
+      doDone: false,
+    });
+  }
+
+  /** vc179 (지시 #2) — 플레이어가 안내된 행동을 실제로 했는지 감지해 자동 진행.
+   *  패널 열기/스킬/공격/이동을 모두 같은 경로로 받는다. */
+  notifyFeatureTutAction(kind: "panel" | "skill" | "attack" | "move", panel?: string) {
+    if (!this.featureTutOpen || !this.featureTutDo || this.featureTutDoDone) return;
+    const want = this.featureTutDo;
+    let hit = false;
+    if (want.kind === "panel") hit = kind === "panel" && (panel ?? "") === want.panel;
+    else hit = kind === want.kind;
+    if (!hit) return;
+    this.featureTutDoDone = true;
+    audio.sfx.reward();
+    /* 행동 완료 → 잠깐 뒤 자동으로 다음 장 */
+    this.time.delayedCall(520, () => {
+      if (this.featureTutOpen) this.advanceFeatureTutorial();
     });
   }
 

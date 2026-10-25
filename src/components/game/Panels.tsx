@@ -4440,6 +4440,8 @@ export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
   const modal = useModal("집 꾸미기");
   const [sel, setSel] = useState<ItemKey | null>(null);
   const decor = rpg.homeDecor ?? [];
+  /* vc179 (지시 #3) — 모바일 롱프레스 회전용 타이머 */
+  const longPressRef = useRef<number | null>(null);
 
   /* 가구별 보유/배치 현황 */
   const stat = useMemo(() => {
@@ -4526,6 +4528,26 @@ export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                 <button
                   key={i}
                   onClick={() => (d ? EventBus.emit("rpg:homeRemove", { key: d.key as ItemKey, idx }) : place(cx, cy))}
+                  onContextMenu={(e) => {
+                    /* vc179 (지시 #3) — 우클릭/롱프레스로 회전 (모바일은 길게 누르기) */
+                    if (!d) return;
+                    e.preventDefault();
+                    EventBus.emit("rpg:homeRotate", { idx });
+                  }}
+                  onPointerDown={() => {
+                    /* vc179 — 모바일 롱프레스(480ms) 회전. 짧은 탭은 배치/회수로 남긴다. */
+                    if (!d) return;
+                    longPressRef.current = window.setTimeout(() => {
+                      longPressRef.current = null;
+                      EventBus.emit("rpg:homeRotate", { idx });
+                    }, 480);
+                  }}
+                  onPointerUp={() => {
+                    if (longPressRef.current) { window.clearTimeout(longPressRef.current); longPressRef.current = null; }
+                  }}
+                  onPointerLeave={() => {
+                    if (longPressRef.current) { window.clearTimeout(longPressRef.current); longPressRef.current = null; }
+                  }}
                   aria-label={d ? `${ITEMS[d.key as ItemKey]?.name} 회수` : `빈 칸 ${cx},${cy}`}
                   className={`relative aspect-square rounded-sm ${
                     d ? "bg-amber-500/15 ring-1 ring-amber-300/50" : sel ? "bg-white/5 hover:bg-amber-400/25" : "bg-white/[0.03]"
@@ -4535,7 +4557,8 @@ export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                     <img
                       src={`assets/${ITEMS[d.key as ItemKey]?.icon ?? "furn_bucket"}.webp`}
                       alt=""
-                      className="pointer-events-none absolute inset-0 m-auto max-h-[80%] max-w-[80%] object-contain"
+                      style={{ transform: `rotate(${((d.rot ?? 0) % 4) * 90}deg)` }}
+                      className="pointer-events-none absolute inset-0 m-auto max-h-[80%] max-w-[80%] object-contain transition-transform"
                     />
                   )}
                 </button>
@@ -4545,7 +4568,8 @@ export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
         </div>
 
         <p className="text-[10px] leading-relaxed text-white/45">
-          배치된 가구를 누르면 회수된다. 가구는 라고스 상점에서 구매한다 (보유 수만큼 배치 가능).
+          빈 칸을 누르면 배치, 놓인 가구를 누르면 회수된다. <span className="font-bold text-amber-200">가구를 길게 누르거나 우클릭하면 90° 회전</span>.
+          가구는 라고스 상점에서 구매하며, <span className="font-bold text-amber-200">보유한 수량만큼 여러 개 배치</span>할 수 있다.
           배치는 저장되며 다시 들어와도 그대로다.
         </p>
       </div>
