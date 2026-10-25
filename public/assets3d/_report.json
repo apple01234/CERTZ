@@ -1,0 +1,971 @@
+{
+ "summary": {
+  "total": 76,
+  "ok": 70,
+  "failed": 6,
+  "totalVerts": 58929,
+  "totalPolys": 50854,
+  "animated": 2,
+  "glbBytes": 2914808
+ },
+ "items": [
+  {
+   "file": "sertz/sertz/GameVFX Buff Collection/Mesh/Cloud_Plane001.FBX",
+   "ok": false,
+   "stage": "import",
+   "err": "Error: ASCII FBX files are not supported '/root/workspace/assets_in/sertz/sertz/GameVFX Buff Collection/Mesh/Cloud_Plane001.FBX'\n"
+  },
+  {
+   "file": "sertz/sertz/GameVFX Buff Collection/Mesh/Plane_Line_01.FBX",
+   "ok": true,
+   "glb": "sertz__Plane_Line_01.glb",
+   "glb_bytes": 5020,
+   "meshes": 1,
+   "verts": 74,
+   "polys": 72,
+   "materials": [
+    "Material #28"
+   ],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/GameVFX Buff Collection/Mesh/daodantou.FBX",
+   "ok": true,
+   "glb": "sertz__daodantou.glb",
+   "glb_bytes": 17660,
+   "meshes": 1,
+   "verts": 289,
+   "polys": 288,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/GameVFX Buff Collection/Mesh/motion-dummy_male.fbx",
+   "ok": true,
+   "glb": "sertz__motion-dummy_male.glb",
+   "glb_bytes": 956200,
+   "meshes": 2,
+   "verts": 24167,
+   "polys": 20900,
+   "materials": [
+    "Motion_Dummy_Male_Pbr",
+    "Std_Eyelash_Pbr",
+    "Std_Nails_Pbr",
+    "Std_Skin_Arm_Pbr",
+    "Std_Skin_Body_Pbr",
+    "Std_Skin_Head_Pbr",
+    "Std_Skin_Leg_Pbr",
+    "Std_Tongue_Pbr"
+   ],
+   "actions": [
+    "Armature|0_T-Pose"
+   ],
+   "objects": 3
+  },
+  {
+   "file": "sertz/sertz/GameVFX Buff Collection/Mesh/pzplane.FBX",
+   "ok": true,
+   "glb": "sertz__pzplane.glb",
+   "glb_bytes": 2376,
+   "meshes": 1,
+   "verts": 25,
+   "polys": 16,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/GameVFX Buff Collection/Mesh/sphere_18pl.fbx",
+   "ok": false,
+   "stage": "import",
+   "err": "Error: Version 6100 unsupported, must be 7100 or later\n"
+  },
+  {
+   "file": "sertz/sertz/GameVFX Buff Collection/Mesh/sphere_24pl.fbx",
+   "ok": false,
+   "stage": "import",
+   "err": "Error: Version 6100 unsupported, must be 7100 or later\n"
+  },
+  {
+   "file": "sertz/sertz/Hovl Studio/Magic effects pack/Models/Crystal1.fbx",
+   "ok": true,
+   "glb": "sertz__Crystal1.glb",
+   "glb_bytes": 4960,
+   "meshes": 1,
+   "verts": 52,
+   "polys": 57,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/Hovl Studio/Magic effects pack/Models/Cylinder.fbx",
+   "ok": true,
+   "glb": "sertz__Cylinder.glb",
+   "glb_bytes": 3588,
+   "meshes": 1,
+   "verts": 64,
+   "polys": 32,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/Hovl Studio/Magic effects pack/Models/Slash.fbx",
+   "ok": true,
+   "glb": "sertz__Slash.glb",
+   "glb_bytes": 5584,
+   "meshes": 1,
+   "verts": 64,
+   "polys": 32,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/Hovl Studio/Magic effects pack/Models/Torus1.fbx",
+   "ok": true,
+   "glb": "sertz__Torus1.glb",
+   "glb_bytes": 21228,
+   "meshes": 1,
+   "verts": 144,
+   "polys": 144,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr electric_arc_circle.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_electric_arc_circle.glb",
+   "glb_bytes": 1740,
+   "meshes": 1,
+   "verts": 16,
+   "polys": 7,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr electric_barrier.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_electric_barrier.glb",
+   "glb_bytes": 14096,
+   "meshes": 4,
+   "verts": 128,
+   "polys": 56,
+   "materials": [],
+   "actions": [],
+   "objects": 4
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh disk.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_mesh_disk.glb",
+   "glb_bytes": 1844,
+   "meshes": 1,
+   "verts": 20,
+   "polys": 1,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh donut.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_mesh_donut.glb",
+   "glb_bytes": 9504,
+   "meshes": 1,
+   "verts": 168,
+   "polys": 168,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh foam.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_mesh_foam.glb",
+   "glb_bytes": 3076,
+   "meshes": 1,
+   "verts": 49,
+   "polys": 37,
+   "materials": [
+    "Material.001"
+   ],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh leave.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_mesh_leave.glb",
+   "glb_bytes": 2052,
+   "meshes": 1,
+   "verts": 25,
+   "polys": 16,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh ring.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_mesh_ring.glb",
+   "glb_bytes": 3848,
+   "meshes": 1,
+   "verts": 56,
+   "polys": 28,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh star4.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_mesh_star4.glb",
+   "glb_bytes": 1396,
+   "meshes": 1,
+   "verts": 8,
+   "polys": 2,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh star6.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_mesh_star6.glb",
+   "glb_bytes": 1544,
+   "meshes": 1,
+   "verts": 12,
+   "polys": 3,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh star8.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_mesh_star8.glb",
+   "glb_bytes": 1684,
+   "meshes": 1,
+   "verts": 16,
+   "polys": 4,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh sword_slashes.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_mesh_sword_slashes.glb",
+   "glb_bytes": 39656,
+   "meshes": 10,
+   "verts": 784,
+   "polys": 471,
+   "materials": [],
+   "actions": [],
+   "objects": 10
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr particle_electric_arc.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_particle_electric_arc.glb",
+   "glb_bytes": 4404,
+   "meshes": 4,
+   "verts": 32,
+   "polys": 12,
+   "materials": [],
+   "actions": [],
+   "objects": 4
+  },
+  {
+   "file": "sertz/sertz/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr particle_electric_arc_2.fbx",
+   "ok": true,
+   "glb": "sertz__cfxr_particle_electric_arc_2.glb",
+   "glb_bytes": 1580,
+   "meshes": 1,
+   "verts": 12,
+   "polys": 5,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_arc.fbx",
+   "ok": true,
+   "glb": "sertz__uni_arc.glb",
+   "glb_bytes": 4592,
+   "meshes": 1,
+   "verts": 65,
+   "polys": 48,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_hedgehog.fbx",
+   "ok": true,
+   "glb": "sertz__uni_hedgehog.glb",
+   "glb_bytes": 27724,
+   "meshes": 1,
+   "verts": 242,
+   "polys": 256,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_hitfan.fbx",
+   "ok": true,
+   "glb": "sertz__uni_hitfan.glb",
+   "glb_bytes": 3680,
+   "meshes": 1,
+   "verts": 48,
+   "polys": 24,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_hole.fbx",
+   "ok": true,
+   "glb": "sertz__uni_hole.glb",
+   "glb_bytes": 10112,
+   "meshes": 1,
+   "verts": 168,
+   "polys": 144,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_missile_blade.fbx",
+   "ok": true,
+   "glb": "sertz__uni_missile_blade.glb",
+   "glb_bytes": 1860,
+   "meshes": 1,
+   "verts": 9,
+   "polys": 8,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_onslaught.fbx",
+   "ok": true,
+   "glb": "sertz__uni_onslaught.glb",
+   "glb_bytes": 12040,
+   "meshes": 1,
+   "verts": 192,
+   "polys": 168,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_orb_swoosh.fbx",
+   "ok": true,
+   "glb": "sertz__uni_orb_swoosh.glb",
+   "glb_bytes": 3288,
+   "meshes": 1,
+   "verts": 40,
+   "polys": 28,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_razor_missile.fbx",
+   "ok": true,
+   "glb": "sertz__uni_razor_missile.glb",
+   "glb_bytes": 9044,
+   "meshes": 1,
+   "verts": 144,
+   "polys": 128,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_ring_warped.fbx",
+   "ok": true,
+   "glb": "sertz__uni_ring_warped.glb",
+   "glb_bytes": 8936,
+   "meshes": 1,
+   "verts": 152,
+   "polys": 120,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_scythe.fbx",
+   "ok": true,
+   "glb": "sertz__uni_scythe.glb",
+   "glb_bytes": 3556,
+   "meshes": 1,
+   "verts": 45,
+   "polys": 32,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_skull.fbx",
+   "ok": true,
+   "glb": "sertz__uni_skull.glb",
+   "glb_bytes": 14940,
+   "meshes": 1,
+   "verts": 168,
+   "polys": 289,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_skull2.fbx",
+   "ok": true,
+   "glb": "sertz__uni_skull2.glb",
+   "glb_bytes": 8976,
+   "meshes": 1,
+   "verts": 102,
+   "polys": 152,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "sertz/sertz/UNI VFX/Missiles & Explosions/Models/uni_streak.fbx",
+   "ok": true,
+   "glb": "sertz__uni_streak.glb",
+   "glb_bytes": 4964,
+   "meshes": 1,
+   "verts": 73,
+   "polys": 51,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/GameVFX Buff Collection/Mesh/Cloud_Plane001.FBX",
+   "ok": false,
+   "stage": "import",
+   "err": "Error: ASCII FBX files are not supported '/root/workspace/assets_in/uni/GameVFX Buff Collection/Mesh/Cloud_Plane001.FBX'\n"
+  },
+  {
+   "file": "uni/GameVFX Buff Collection/Mesh/Plane_Line_01.FBX",
+   "ok": true,
+   "glb": "uni__Plane_Line_01.glb",
+   "glb_bytes": 5020,
+   "meshes": 1,
+   "verts": 74,
+   "polys": 72,
+   "materials": [
+    "Material #28"
+   ],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/GameVFX Buff Collection/Mesh/daodantou.FBX",
+   "ok": true,
+   "glb": "uni__daodantou.glb",
+   "glb_bytes": 17660,
+   "meshes": 1,
+   "verts": 289,
+   "polys": 288,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/GameVFX Buff Collection/Mesh/motion-dummy_male.fbx",
+   "ok": true,
+   "glb": "uni__motion-dummy_male.glb",
+   "glb_bytes": 956200,
+   "meshes": 2,
+   "verts": 24167,
+   "polys": 20900,
+   "materials": [
+    "Motion_Dummy_Male_Pbr",
+    "Std_Eyelash_Pbr",
+    "Std_Nails_Pbr",
+    "Std_Skin_Arm_Pbr",
+    "Std_Skin_Body_Pbr",
+    "Std_Skin_Head_Pbr",
+    "Std_Skin_Leg_Pbr",
+    "Std_Tongue_Pbr"
+   ],
+   "actions": [
+    "Armature|0_T-Pose"
+   ],
+   "objects": 3
+  },
+  {
+   "file": "uni/GameVFX Buff Collection/Mesh/pzplane.FBX",
+   "ok": true,
+   "glb": "uni__pzplane.glb",
+   "glb_bytes": 2376,
+   "meshes": 1,
+   "verts": 25,
+   "polys": 16,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/GameVFX Buff Collection/Mesh/sphere_18pl.fbx",
+   "ok": false,
+   "stage": "import",
+   "err": "Error: Version 6100 unsupported, must be 7100 or later\n"
+  },
+  {
+   "file": "uni/GameVFX Buff Collection/Mesh/sphere_24pl.fbx",
+   "ok": false,
+   "stage": "import",
+   "err": "Error: Version 6100 unsupported, must be 7100 or later\n"
+  },
+  {
+   "file": "uni/Hovl Studio/Magic effects pack/Models/Crystal1.fbx",
+   "ok": true,
+   "glb": "uni__Crystal1.glb",
+   "glb_bytes": 4960,
+   "meshes": 1,
+   "verts": 52,
+   "polys": 57,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/Hovl Studio/Magic effects pack/Models/Cylinder.fbx",
+   "ok": true,
+   "glb": "uni__Cylinder.glb",
+   "glb_bytes": 3588,
+   "meshes": 1,
+   "verts": 64,
+   "polys": 32,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/Hovl Studio/Magic effects pack/Models/Slash.fbx",
+   "ok": true,
+   "glb": "uni__Slash.glb",
+   "glb_bytes": 5584,
+   "meshes": 1,
+   "verts": 64,
+   "polys": 32,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/Hovl Studio/Magic effects pack/Models/Torus1.fbx",
+   "ok": true,
+   "glb": "uni__Torus1.glb",
+   "glb_bytes": 21228,
+   "meshes": 1,
+   "verts": 144,
+   "polys": 144,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr electric_arc_circle.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_electric_arc_circle.glb",
+   "glb_bytes": 1740,
+   "meshes": 1,
+   "verts": 16,
+   "polys": 7,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr electric_barrier.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_electric_barrier.glb",
+   "glb_bytes": 14096,
+   "meshes": 4,
+   "verts": 128,
+   "polys": 56,
+   "materials": [],
+   "actions": [],
+   "objects": 4
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh disk.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_mesh_disk.glb",
+   "glb_bytes": 1844,
+   "meshes": 1,
+   "verts": 20,
+   "polys": 1,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh donut.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_mesh_donut.glb",
+   "glb_bytes": 9504,
+   "meshes": 1,
+   "verts": 168,
+   "polys": 168,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh foam.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_mesh_foam.glb",
+   "glb_bytes": 3076,
+   "meshes": 1,
+   "verts": 49,
+   "polys": 37,
+   "materials": [
+    "Material.001"
+   ],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh leave.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_mesh_leave.glb",
+   "glb_bytes": 2052,
+   "meshes": 1,
+   "verts": 25,
+   "polys": 16,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh ring.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_mesh_ring.glb",
+   "glb_bytes": 3848,
+   "meshes": 1,
+   "verts": 56,
+   "polys": 28,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh star4.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_mesh_star4.glb",
+   "glb_bytes": 1396,
+   "meshes": 1,
+   "verts": 8,
+   "polys": 2,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh star6.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_mesh_star6.glb",
+   "glb_bytes": 1544,
+   "meshes": 1,
+   "verts": 12,
+   "polys": 3,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh star8.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_mesh_star8.glb",
+   "glb_bytes": 1684,
+   "meshes": 1,
+   "verts": 16,
+   "polys": 4,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr mesh sword_slashes.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_mesh_sword_slashes.glb",
+   "glb_bytes": 39656,
+   "meshes": 10,
+   "verts": 784,
+   "polys": 471,
+   "materials": [],
+   "actions": [],
+   "objects": 10
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr particle_electric_arc.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_particle_electric_arc.glb",
+   "glb_bytes": 4404,
+   "meshes": 4,
+   "verts": 32,
+   "polys": 12,
+   "materials": [],
+   "actions": [],
+   "objects": 4
+  },
+  {
+   "file": "uni/JMO Assets/Cartoon FX Remaster/CFXR Assets/Meshes/cfxr particle_electric_arc_2.fbx",
+   "ok": true,
+   "glb": "uni__cfxr_particle_electric_arc_2.glb",
+   "glb_bytes": 1580,
+   "meshes": 1,
+   "verts": 12,
+   "polys": 5,
+   "materials": [],
+   "actions": [],
+   "objects": 1
+  },
+  {
+   "file": "uni/Toon Shaders Pro/Demo/Meshes/suzanne.fbx",
+   "ok": true,
+   "glb": "uni__suzanne.glb",
+   "glb_bytes": 69676,
+   "meshes": 1,
+   "verts": 507,
+   "polys": 500,
+   "materials": [],
+   "actions": [],
+   "objects": 3
+  },
+  {
+   "file": "uni/Toon Shaders Pro/Demo/Meshes/worm.fbx",
+   "ok": true,
+   "glb": "uni__worm.glb",
+   "glb_bytes": 411628,
+   "meshes": 13,
+   "verts": 3116,
+   "polys": 2756,
+   "materials": [],
+   "actions": [],
+   "objects": 15
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_arc.fbx",
+   "ok": true,
+   "glb": "uni__uni_arc.glb",
+   "glb_bytes": 4592,
+   "meshes": 1,
+   "verts": 65,
+   "polys": 48,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_hedgehog.fbx",
+   "ok": true,
+   "glb": "uni__uni_hedgehog.glb",
+   "glb_bytes": 27724,
+   "meshes": 1,
+   "verts": 242,
+   "polys": 256,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_hitfan.fbx",
+   "ok": true,
+   "glb": "uni__uni_hitfan.glb",
+   "glb_bytes": 3680,
+   "meshes": 1,
+   "verts": 48,
+   "polys": 24,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_hole.fbx",
+   "ok": true,
+   "glb": "uni__uni_hole.glb",
+   "glb_bytes": 10112,
+   "meshes": 1,
+   "verts": 168,
+   "polys": 144,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_missile_blade.fbx",
+   "ok": true,
+   "glb": "uni__uni_missile_blade.glb",
+   "glb_bytes": 1860,
+   "meshes": 1,
+   "verts": 9,
+   "polys": 8,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_onslaught.fbx",
+   "ok": true,
+   "glb": "uni__uni_onslaught.glb",
+   "glb_bytes": 12040,
+   "meshes": 1,
+   "verts": 192,
+   "polys": 168,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_orb_swoosh.fbx",
+   "ok": true,
+   "glb": "uni__uni_orb_swoosh.glb",
+   "glb_bytes": 3288,
+   "meshes": 1,
+   "verts": 40,
+   "polys": 28,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_razor_missile.fbx",
+   "ok": true,
+   "glb": "uni__uni_razor_missile.glb",
+   "glb_bytes": 9044,
+   "meshes": 1,
+   "verts": 144,
+   "polys": 128,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_ring_warped.fbx",
+   "ok": true,
+   "glb": "uni__uni_ring_warped.glb",
+   "glb_bytes": 8936,
+   "meshes": 1,
+   "verts": 152,
+   "polys": 120,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_scythe.fbx",
+   "ok": true,
+   "glb": "uni__uni_scythe.glb",
+   "glb_bytes": 3556,
+   "meshes": 1,
+   "verts": 45,
+   "polys": 32,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_skull.fbx",
+   "ok": true,
+   "glb": "uni__uni_skull.glb",
+   "glb_bytes": 14940,
+   "meshes": 1,
+   "verts": 168,
+   "polys": 289,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_skull2.fbx",
+   "ok": true,
+   "glb": "uni__uni_skull2.glb",
+   "glb_bytes": 8976,
+   "meshes": 1,
+   "verts": 102,
+   "polys": 152,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  },
+  {
+   "file": "uni/UNI VFX/Missiles & Explosions/Models/uni_streak.fbx",
+   "ok": true,
+   "glb": "uni__uni_streak.glb",
+   "glb_bytes": 4964,
+   "meshes": 1,
+   "verts": 73,
+   "polys": 51,
+   "materials": [
+    "techtex.vmat"
+   ],
+   "actions": [],
+   "objects": 2
+  }
+ ]
+}

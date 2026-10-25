@@ -393,7 +393,17 @@ for (const [k, w, h] of [
   ["sv_campfire", 32, 32], ["fx_tornado", 64, 64], ["chest_anim", 64, 64],
   ["map_chest_f", 64, 64], // v1.4.4 — 보물상자 부활(리포트 ②) — 유적 삭제 때 함께 빠졌던 시트 치수 복구
 ] as [string, number, number][]) SHEET_DIMS.set(k, { fw: w, fh: h });
-const AUDIO_KEYS = new Set<string>([...AUDIO_LIST, ...SFX3_LIST]);
+/* vc180 (지시: 제공 에셋 활용) — Sonniss GDC 2026 번들에서 판타지 RPG에 쓸 만한
+ *  10종만 선별·경량화(모노 44.1k, 앞 2.2초, ogg q4 → 총 187KB)했다.
+ *  자동차/모터사이클/공장 소음이 대부분이라 게임 맥락에 맞는 것만 골랐다.
+ *  AUDIO_LIST와 경로가 달라(assets/sfx2/) 별도 목록으로 둔다. */
+export const SFX2_LIST = [
+  "mob_beast_growl", "mob_beast_gurgle", "mob_beast_pain", "mob_insect_attack",
+  "metal_hit_low", "metal_screech", "metal_scrape",
+  "amb_rain_city", "amb_wind_strong", "pc_effort",
+] as const;
+
+const AUDIO_KEYS = new Set<string>([...AUDIO_LIST, ...SFX3_LIST, ...SFX2_LIST]);
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -689,6 +699,9 @@ export class BootScene extends Phaser.Scene {
     for (const key of VFX3_LIST) this.load.image(key, `${key}.png`);
     this.load.setPath("assets/audio/sfx");
     for (const key of SFX3_LIST) this.load.audio(key, `${key}.ogg`);
+    /* vc180 — Sonniss GDC 2026에서 선별한 10종 (assets/sfx2/) */
+    this.load.setPath("assets/sfx2");
+    for (const key of SFX2_LIST) this.load.audio(key, `${key}.ogg`);
     /* v1.4.3 (작업1 — 유적 삭제) — Cainos 유적 전용 텍스처 4종(map_torch_f/
      *  map_ground/map_props) 로드 제거 유지.
      *  v1.4.4 — 보물상자(map_chest_f·64px 7프레임 시트)만 재도입: 유적 철거 후에도

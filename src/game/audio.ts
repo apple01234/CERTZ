@@ -966,6 +966,25 @@ export const sfx = {
   playerDie() {
     play("sfx_smoke_dark", 0.55, 0.85);
   },
+  /* ═══ vc180 (지시: 제공 에셋 활용) — Sonniss GDC 2026 선별 10종 ═══
+   *  기존 효과음은 대부분 합성/피치변주였는데, 이 팩은 실제 녹음이라
+   *  괴수·금속·환경음의 질감이 다르다. 남용하면 시끄러우므로 호출부에서 확률을 건다. */
+  /** 괴수 등장/포효 — 보스·정예 스폰 */
+  beastGrowl() { play("mob_beast_growl", 0.5, 0.9 + Math.random() * 0.15); },
+  /** 괴수 피격 — 일반 몹 피격음 대체(낮은 확률) */
+  beastPain() { play("mob_beast_pain", 0.34, 0.95 + Math.random() * 0.1); },
+  /** 수중/점액 몹 — 늪지·수중 구역 전용 */
+  beastGurgle() { play("mob_beast_gurgle", 0.32, 0.9 + Math.random() * 0.15); },
+  /** 곤충형 몹 공격 */
+  insectAttack() { play("mob_insect_attack", 0.34, 1.0); },
+  /** 금속 타격 — 방어구 피격·강화 실패 */
+  metalHit() { play("metal_hit_low", 0.42, 1.0 + Math.random() * 0.08); },
+  /** 금속 신음 — 장비 강화 성공/파괴 연출 */
+  metalScreech() { play("metal_screech", 0.4, 1.0); },
+  /** 금속 긁힘 — 스크래치/연마 */
+  metalScrape() { play("metal_scrape", 0.36, 1.05); },
+  /** 플레이어 기합 — 스킬 발동(낮은 확률로 얹어 생동감) */
+  playerEffort() { play("pc_effort", 0.26, 0.95 + Math.random() * 0.1); },
 };
 
 /** v1.3.0 — 원소 → Drive 팩 AoE 사운드 파일 접두 매핑 */

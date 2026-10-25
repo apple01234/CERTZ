@@ -1618,6 +1618,8 @@ export class WorldScene extends Phaser.Scene {
       this.physics.add.collider(e, this.solidGroup);
       this.showBanner(`${el.name} 출현!`);
       audio.sfx.roar();
+      /* vc180 — 실제 녹음 괴수 포효를 겹쳐 보스 등장의 무게를 올린다 */
+      audio.sfx.beastGrowl();
       this.doShake(240, 0.007);
     }
 
