@@ -2826,7 +2826,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hex = this.clsHex();
     /* vc181 (지시 #1·#2) — 4차 스킬도 3D 검기 메시 + 측면 트래킹 카메라.
      *  궁극기보다 짧고 가볍게(1.1초) — 남발되는 슬롯이라 부담을 줄인다. */
-    void cine3d().play({ preset: "skill4", x: this.x, y: this.y, tint: hex, duration: 1100 });
+    void cine3d().play({ preset: "skill4", x: this.x, y: this.y, tint: hex, duration: 1100, fam: this.ultKeyFor3D() });
     /* vc179 (지시 #11) — 4차 궁극기는 제공 VFX를 크게 쓴다 (필살기의 무게) */
     {
       const fx = this.familyFx();
@@ -3299,7 +3299,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* vc181 (지시 #1·#2) — 3D 시네마틱: 궁극기 발동 순간 three.js 레이어가 올라와
      *  실제 GLB 메시(해골·고리·톱니)를 3D 카메라 워크로 보여준다.
      *  실패해도 2D 연출은 그대로 남으므로 게임 진행에 영향 없음. */
-    void cine3d().play({ preset: "ultimate", x: this.x, y: this.y, tint: hex, duration: 1750 });
+    void cine3d().play({ preset: "ultimate", x: this.x, y: this.y, tint: hex, duration: 1750, fam: this.ultKeyFor3D() });
     /* v1.4.0 (Task 3-1 — 유저 지시 #13) — 직업별 고유 VFX2 시그니처 연출 (8직업 1:1 매핑) */
     spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
     /* vc183 — 극딜 3단계 연출(암전 → 후면오라/지면룬/전면폭발 → 히트스톱·흔들림·줌).
@@ -4259,7 +4259,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.spawnBurstAt(this.x, this.y, 36, 0xb06aff);
     this.scene.vfx3dFx("spiral", this.x, this.y, 0xb06aff, 1.1);
     /* vc181 (지시 #1·#2) — 제2궁극기는 3D 나선 카메라 워크 (1차보다 길고 웅장하게) */
-    void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: 2400 });
+    void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: 2400, fam: this.ultKeyFor3D() });
     /* vc183 — 제2궁극기(120초)는 극딜의 정점: 암전·연출을 1차보다 강하게(scale 1.15) */
     playUltLayers(this.scene, this.x, this.y, 0xb06aff, key5, { scale: 1.15 });
 
@@ -5677,6 +5677,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  %뎀 무증식 대신 스탯 수치로 환산 — 후반 크리 스택(궁수) 과도 기대값 절제 */
   get critOverflowAtk(): number {
     return Math.max(0, this.critRate - 100);
+  }
+
+  /** vc185 (지시 #1·#4) — 3D 시네마틱 메시 선택 키.
+   *  4차 이상이면 그 직업 고유 메시(10종), 미만이면 계열 메시(5종).
+   *  종전엔 항상 계열만 보내 워브링어와 크루세이더가 같은 검기를 썼다. */
+  private ultKeyFor3D(): string | null {
+    if (this.tier >= 4 && this.cls) return this.cls;
+    return familyOf(this.cls) ?? null;
   }
 
   private rollDamage(mult: number, isSkill = false, forceCrit = false): { dmg: number; crit: boolean } {

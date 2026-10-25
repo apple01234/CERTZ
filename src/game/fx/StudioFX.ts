@@ -499,7 +499,19 @@ type UltKey = string;
 
 /** 클래스별 궁극기 고유 연출 — vfx2 팩 에셋 1:1 매핑 (텍스처 미로드 시 조용히 생략) */
 export function spawnUltFlourish(scene: SceneLike, x: number, y: number, key5: UltKey, tint: number) {
+  /* vc185 (지시 #2 — 5차 스킬 사용 시 게임 멈춤) — 동시 생성 캡.
+   *  이 함수는 한 번 호출에 오브젝트를 23개 만든다. 궁극기 직후 제2궁극기를 연달아 쓰면
+   *  70개 이상이 한 프레임에 몰려 300ms 넘는 스파이크가 났다(실측 max 313ms).
+   *  기기 성능과 무관하게 프레임이 튀지 않도록, 최근 1.6초 안에 이미 연출했으면
+   *  가벼운 버전(오브젝트 1/3)으로 대체한다. 연출이 아예 사라지지는 않는다. */
+  const g = globalThis as unknown as { __sertzLastFlourish?: number };
+  const now = (() => { try { return (scene as unknown as { time: { now: number } }).time.now; } catch { return 0; } })();
+  const throttled = typeof g.__sertzLastFlourish === "number" && now - g.__sertzLastFlourish < 1600;
+  g.__sertzLastFlourish = now;
+
   const orbit = (tex: string, count: number, radius: number, scale: number, alpha = 0.9, spinMs = 1500) => {
+    if (throttled) count = Math.max(1, Math.round(count / 3)); // 연속 시전 시 1/3로 감축
+
     const imgs: Phaser.GameObjects.Image[] = [];
     for (let i = 0; i < count; i++) {
       const im = scene.add.image(x, y, tex) as Phaser.GameObjects.Image;

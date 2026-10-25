@@ -9449,6 +9449,10 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:partyRaid", onPartyRaid);
     EventBus.on("rpg:gatePick", onGatePick);
     EventBus.on("rpg:gateShop", onGateShop);
+    /* vc185 (#3) — 설정 토글(쉐이더/고대비) 조작을 튜토리얼 완료로 연결.
+     *  React 설정 패널에서 발생하며, 실제로 그 토글을 만졌을 때만 온다. */
+    const onTutNotify = (v: { ev?: string }) => { if (v?.ev) this.tut?.notify(v.ev); };
+    EventBus.on("tut:notify", onTutNotify);
 
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
@@ -10295,6 +10299,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:partyRaid", onPartyRaid);
       EventBus.off("rpg:gatePick", onGatePick);
       EventBus.off("rpg:gateShop", onGateShop);
+    EventBus.off("tut:notify", onTutNotify);
       /* v1.2.0 (C42 이벤트 리스너 해제 누락) — 위 6개 핸들러는 on만 있고 off가 없어
        *  씬 재진입(마을 이동·재접속)마다 누적됐다. 누적되면 같은 구매/퀘스트 이벤트가
        *  N번 실행되어 골드가 여러 번 빠지거나 퀘스트가 중복 수락된다.

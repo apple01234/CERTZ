@@ -8,6 +8,7 @@ import { BUFF_DEFS, type BuffKey } from "@/game/data";
 import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키맵 재배치를 따라가도록
 import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Crown, Gift, Swords, Users, UsersRound, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle, GraduationCap, UserRoundPen } from "lucide-react";
+import { GameIcon } from "./GameIcon"; // vc185 (#7) — 사람이 그린 RPG 아이콘으로 교체
 import { EventBus } from "./EventBus";
 import * as audio from "@/game/audio"; // v1.4.8 — 더보기 소셜 버튼 클릭음
 
@@ -331,7 +332,7 @@ export function HUD({
             aria-label={`가방 열기 (${km.bag})`}
             className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8e0ff] active:scale-95"
           >
-            <Backpack size={17} />
+            <GameIcon name="bag" size={18} />
             {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 (aria-label엔 키가 이미 포함됨) */}
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/70">가방</span>
           </button>
@@ -344,7 +345,7 @@ export function HUD({
             aria-label={`퀘스트 로그 열기 (${km.quest})`}
             className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
           >
-            <ListChecks size={17} />
+            <GameIcon name="inventory" size={18} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">퀘스트</span>
           </button>
           <button
@@ -352,7 +353,7 @@ export function HUD({
             aria-label="콘텐츠 열기 (심연의 탑/일일 시련/제작/심연 상점/환생)"
             className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d0b0ff] active:scale-95"
           >
-            <Swords size={17} />
+            <GameIcon name="boss" size={18} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-purple-300/80">콘텐츠</span>
           </button>
           {jobAvail && (
@@ -365,7 +366,7 @@ export function HUD({
                   : "game-chip w-9 text-white/70"
               }`}
             >
-              <Sparkles size={17} />
+              <GameIcon name="skills" size={18} />
               <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${canJob ? "text-amber-200" : "text-white/50"}`}>전직</span>
             </button>
           )}
@@ -376,7 +377,7 @@ export function HUD({
             aria-label="캐릭터 선택 화면으로 바로 이동"
             className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
           >
-            <UserRoundPen size={17} />
+            <GameIcon name="profession" size={18} />
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">캐릭</span>
           </button>
           {/* v1.4.0 (#17) — 보스·혜택·유니온·거래소·랭킹 등 2선 버튼은 “더보기” 안
@@ -391,7 +392,7 @@ export function HUD({
                 : "game-chip text-white/70"
             }`}
           >
-            <Ellipsis size={17} />
+            <GameIcon name="menu" size={18} />
             <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${moreOpen ? "text-amber-200" : "text-white/50"}`}>더보기</span>
           </button>
           <button
@@ -399,7 +400,7 @@ export function HUD({
             aria-label={`설정/키 매핑 열기 (${km.opt})`}
             className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
           >
-            <Settings size={17} />
+            <GameIcon name="options" size={18} />
             {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 */}
             <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">설정</span>
           </button>
@@ -426,7 +427,7 @@ export function HUD({
                   : "game-chip text-white/70"
               }`}
             >
-              <Gauge size={17} />
+              <GameIcon name="equip" size={18} />
               {/* v1.0.13 피드백#18 — 단축키 표기 → 기능명 통일 */}
               <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>스탯</span>
             </button>
@@ -437,7 +438,7 @@ export function HUD({
               aria-label="이그니의 UI 기능 안내 열기"
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8f0d0] active:scale-95"
             >
-              <HelpCircle size={17} />
+              <GameIcon name="quest" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">도움</span>
             </button>
             <button
@@ -445,7 +446,7 @@ export function HUD({
               aria-label="보스 재도전 창 열기"
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffb0b0] active:scale-95"
             >
-              <Crown size={17} />
+              <GameIcon name="honor" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-rose-300/80">보스</span>
             </button>
             <button
@@ -453,7 +454,7 @@ export function HUD({
               aria-label="혜택 열기 (출석부/일일 퀘스트/쿠폰)"
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#b8f0a0] active:scale-95"
             >
-              <Gift size={17} />
+              <GameIcon name="greed" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/80">혜택</span>
             </button>
             {/* v1.0.14 피드백#3 — 콘텐츠 버튼은 가방 오른쪽 상단 행으로 이동 (위 참조) */}
@@ -462,7 +463,7 @@ export function HUD({
               aria-label="유니온 열기 (캐릭터 배치/상점/레이드)"
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
             >
-              <Users size={17} />
+              <GameIcon name="trade" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-indigo-300/90">유니온</span>
             </button>
             <button
@@ -470,7 +471,7 @@ export function HUD({
               aria-label="유저 거래소 열기 (보스 드롭 사고팔기)"
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9be8dd] active:scale-95"
             >
-              <Repeat size={17} />
+              <GameIcon name="inventory" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
             </button>
             {/* v1.4.29 (#멀티입구복원) — v1.4.24에 철거됐던 파티 입구 복원:
@@ -481,7 +482,7 @@ export function HUD({
               aria-label="파티 창 열기 (Y)"
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8c8ff] active:scale-95"
             >
-              <UsersRound size={17} />
+              <GameIcon name="skills" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-sky-300/90">파티</span>
             </button>
             {/* v1.4.30 (#9 클래스룸) — 수업용 대규모 협동 미니게임 입구 (L키 단축키 동일) */}
@@ -490,7 +491,7 @@ export function HUD({
               aria-label="클래스룸(교실 모드) 열기 (L)"
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#8fe8b0] active:scale-95"
             >
-              <GraduationCap size={17} />
+              <GameIcon name="skills" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">교실</span>
             </button>
             <button
@@ -498,7 +499,7 @@ export function HUD({
               aria-label="랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffe08a] active:scale-95"
             >
-              <Trophy size={17} />
+              <GameIcon name="skull" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
             </button>
             <button
@@ -506,7 +507,7 @@ export function HUD({
               aria-label={`친구 창 열기 (${km.friends})`}
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9fe8c0] active:scale-95"
             >
-              <UserRound size={17} />
+              <GameIcon name="equip" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">친구</span>
             </button>
             <button
@@ -514,7 +515,7 @@ export function HUD({
               aria-label="계정 창 열기 (클라우드 세이브)"
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d3c4ff] active:scale-95"
             >
-              <KeyRound size={17} />
+              <GameIcon name="runes" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-violet-300/90">계정</span>
             </button>
           </div>

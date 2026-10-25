@@ -5740,7 +5740,11 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
               return (
                 <button
                   key={String(o.on)}
-                  onClick={() => EventBus.emit("rpg:toon", {})}
+                  onClick={() => {
+                    EventBus.emit("rpg:toon", {});
+                    /* vc185 (#3) — 쉐이더 튜토리얼: 실제로 조작했을 때만 완료 처리 */
+                    EventBus.emit("tut:notify", { ev: "shader" });
+                  }}
                   className={`rounded-md border-2 px-1 py-1.5 text-[11px] font-black transition ${active ? o.css : "border-white/15 bg-black/40 text-white/55 hover:border-white/40"}`}
                 >
                   {o.label}{active ? " ✓" : ""}
@@ -5932,6 +5936,8 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
                   window.localStorage.setItem("sertz_contrast", on ? "high" : "normal");
                   document.documentElement.setAttribute("data-contrast", on ? "high" : "normal");
                 } catch { /* 저장 실패 무시 */ }
+                /* vc185 (#3) — 고대비 튜토리얼 */
+                EventBus.emit("tut:notify", { ev: "contrast" });
               }}
               className="h-4 w-4 accent-amber-400"
             />

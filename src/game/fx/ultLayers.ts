@@ -166,10 +166,33 @@ export function playUltLayers(
   try {
     scene.hitStop?.(p.hitStop);
     cam.shake(p.shake[0], p.shake[1] * s);
+    /* vc185 (지시 #2 — 5차 스킬 사용 시 게임 멈춤) — 줌 펀치를 콜백 재귀에서 delayedCall 로 교체.
+     *  종전엔 zoomTo 의 onUpdate 콜백 안에서 prog>=1 일 때 다시 zoomTo 를 호출했다.
+     *  Phaser 콜백은 조건이 참인 프레임마다 반복 호출되므로 복귀 트윈이 매 프레임 새로
+     *  생성됐고, 트윈 목록이 끝없이 늘어 카메라가 잠기며 게임이 멈췄다(5차 전용 증상).
+     *  DeathSlash.ts 가 쓰는 검증된 패턴(고정 지연 후 복귀)으로 바꾼다. */
     if (p.zoomPunch > 1) {
-      const base = cam.zoom;
-      cam.zoomTo(base * p.zoomPunch, 120, "Quad.out", false, (_c, prog) => {
-        if (prog >= 1) cam.zoomTo(base, 220, "Quad.in");
+      /* vc185 (지시 #2) — 복원 기준을 cam.zoom(=이미 변형된 값)이 아니라 **기준 줌**에서 잡는다.
+       *  종전엔 base = cam.zoom 이라, 레벨업 연출(WorldScene 7763) 등 다른 줌 연출이
+       *  겹치면 1.25 를 base 로 잡아 영구히 남았다(실측: 시전 후 zoom 1.25 고정).
+       *  기준값(absoluteBase)에서 복원하면 어떤 연출과 겹쳐도 원위치로 돌아온다. */
+      const absoluteBase = (() => {
+        try {
+          const sc = scene as unknown as { perspZoom?: number; cameras: { main: { zoom: number } } };
+          // 기준 줌을 알 수 있으면 그걸, 모르면 1.0 (Phaser 기본)
+          return typeof sc.perspZoom === "number" && sc.perspZoom > 0 ? sc.perspZoom : 1;
+        } catch { return 1; }
+      })();
+      const from = cam.zoom;
+      cam.zoomTo(from * p.zoomPunch, 120);
+      scene.time.delayedCall(160, () => {
+        try {
+          /* 1) 복귀 트윈 2) 최종 보정 — 다른 연출이 그 사이에 끼어들어도 원위치 보장 */
+          cam.zoomTo(absoluteBase, 240);
+          scene.time.delayedCall(300, () => {
+            try { cam.zoom = absoluteBase; } catch { /* 씬 종료 무시 */ }
+          });
+        } catch { /* 씬 종료 경합 무시 */ }
       });
     }
   } catch { /* 카메라 미지원 무시 */ }

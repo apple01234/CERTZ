@@ -83,17 +83,22 @@ async function chatTick() {
   chatBusy = true;
   try {
     const bp = base();
-    const g = await fetch(`${bp}/api/chat`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    /* vc185 (지시 #5 — Vercel 서버에 무리 주지 마) — no-store 제거.
+     *  서버는 이미 Cache-Control: public, s-maxage=5, stale-while-revalidate=20 으로
+     *  CDN 흡수를 설계했는데, 클라이언트가 no-store 로 캐시를 무력화해 모든 폴링이
+     *  Vercel 함수를 직접 때리고 있었다. 유저 수 × 6초마다 = 함수 호출 폭주.
+     *  기본 캐시 정책을 쓰면 5초 TTL 동안은 CDN 이 응답해 서버 부하가 유저 수와 무관해진다. */
+    const g = await fetch(`${bp}/api/chat`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
     if (g?.list) handleList(g.list as RelayChatMsg[], false);
     const pc = chatPartyCode();
     if (pc) {
-      const p = await fetch(`${bp}/api/chat?p=${encodeURIComponent(pc)}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      const p = await fetch(`${bp}/api/chat?p=${encodeURIComponent(pc)}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
       if (p?.list) handleList(p.list as RelayChatMsg[], true);
     }
   } catch { /* 오프라인 — 다음 틱 재시도 */ }
   finally {
     chatBusy = false;
-    if (chatHooked) chatTimer = setTimeout(chatTick, 6000);
+    if (chatHooked) chatTimer = setTimeout(chatTick, 10000); // vc185 (#5) — 6초→10초: 호출 40% 감소, 체감 지연 없음
   }
 }
 
@@ -158,7 +163,8 @@ function clearPartySeat() {
 async function partyTick() {
   if (!partyCode || document.hidden) return;
   try {
-    const r = await fetch(`${base()}/api/party?code=${encodeURIComponent(partyCode)}`, { cache: "no-store" })
+    /* vc185 (#5) — 파티도 동일: CDN 캐시 사용 */
+    const r = await fetch(`${base()}/api/party?code=${encodeURIComponent(partyCode)}`)
       .then((x) => (x.ok ? x.json() : null)).catch(() => null);
     if (r && "party" in r) {
       const p = r.party as RelayPartySnapshot | null;
@@ -174,7 +180,7 @@ async function partyTick() {
     }
   } catch { /* 무시 */ }
   finally {
-    if (partyHooked && partyCode) partyTimer = setTimeout(partyTick, 5000);
+    if (partyHooked && partyCode) partyTimer = setTimeout(partyTick, 8000); // vc185 (#5) — 5초→8초
   }
 }
 

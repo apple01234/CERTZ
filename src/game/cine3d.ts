@@ -37,18 +37,144 @@ type CineJob = {
   tint: number;
   /** ms */
   duration: number;
+  /** vc185 (#4) — 직업 계열. 주면 계열 전용 3D 메시 세트를 쓴다(직업 정체성). */
+  /** vc185 — 4차 leaf 직업키(10종) 또는 계열키(5종). 직업별로 다른 메시를 고른다. */
+  fam?: string | null;
 };
 
 const GLB_DIR = "assets3d";
 
 /** 프리셋 → 사용할 GLB 목록 (중복 없는 유니크 이름 기준) */
+/* vc185 (지시 #4 — "개짜치는 3d 효과 말고 좀 직업에 맞는 멋있는 3d효과") — 전면 재매핑.
+ *
+ *  종전 문제: 프리셋이 직업과 무관한 메시를 돌려썼다.
+ *    ultimate  = 해골(skull) + 도넛(donut) + 고리  → 마법사가 해골을, 전사가 도넛을 띄웠다
+ *    ultimate2 = 벌레(worm) + 검날 + 아크        → 직업 정체성 0
+ *
+ *  이제 **직업 계열 → 메시**로 매핑한다. 계열별 시각 언어:
+ *    전사(warrior) — 검날·충격파·균열. 무게와 타격.
+ *    궁수(ranger)  — 관통선·화살비·바람. 직선과 속도.
+ *    마법사(mage)  — 결정·전기 아크·별. 원소와 마법진.
+ *    도적(thief)   — 낫·연속 참격·잔상. 날카로움.
+ *    해적(pirate)  — 미사일·포격·수류. 화력.
+ *
+ *  5차 1차(ultimate) = 계열 상징을 크게 3개
+ *  5차 2차(ultimate2) = 계열 최종형 — 더 많고 웅장하게 4개
+ *  4차(skill4) = 가볍게 2개 (남발되는 슬롯이라 부담 최소화)
+ *
+ *  사용자가 준 GLB 팩만 쓴다(신규 생성 없음). */
+type Fam = "warrior" | "ranger" | "mage" | "thief" | "pirate";
+
+/* vc185 (지시 #1·#4 — "4차·5차 스킬 아직 안 바뀜" · "개짜치는 3d 효과 말고 직업에 맞는 멋있는 3d")
+ *
+ *  진단: 종전엔 계열(familyOf = 1차 직업 5종)로만 메시를 골랐다. 그래서 10개 4차 직업이
+ *  5가지 연출을 공유했다 — 워브링어와 크루세이더가 같은 검기, 아크로드와 이터널이 같은 수정.
+ *  "스킬이 안 바뀐다"는 체감의 정체가 이것이다.
+ *
+ *  해결: **4차 leaf 직업 10종 단위**로 메시 세트를 따로 준다. 같은 계열 안에서도
+ *  무기·속성이 다르므로 다른 메시를 쓴다(검/망치/저격/폭풍/수정/시간/그림자/쌍검/삼지창/대포).
+ *  제공된 GLB 34종만 사용한다 — 신규 생성 없음. */
+
+/** 4차 leaf 직업 + 계열(1~3차 폴백용) */
+type UltKey = Fam | "warbringer" | "crusader" | "deadeye" | "skylord" | "arclord" | "eternal" | "shadowlord" | "blademaster" | "seaking" | "dreadnought";
+
+/** 1차 궁극기 — 직업 상징 3종. 무기 형태가 한눈에 읽히게 고른다. */
+const ULT_1: Record<UltKey, string[]> = {
+  /* ── 계열 폴백 (1~3차) ── */
+  warrior: ["uni__cfxr_mesh_sword_slashes", "uni__uni_onslaught", "uni__cfxr_mesh_ring"],
+  ranger:  ["uni__uni_streak", "uni__uni_missile_blade", "uni__cfxr_mesh_star4"],
+  mage:    ["uni__Crystal1", "uni__cfxr_electric_arc_circle", "uni__cfxr_mesh_star6"],
+  thief:   ["uni__uni_scythe", "uni__Slash", "uni__uni_arc"],
+  pirate:  ["uni__uni_razor_missile", "uni__cfxr_mesh_donut", "uni__uni_hitfan"],
+  /* ── 전사 ── */
+  // 워브링어: 거대 대검 연쇄 참격 + 지면 충격
+  warbringer: ["uni__cfxr_mesh_sword_slashes", "uni__uni_onslaught", "uni__cfxr_mesh_disk"],
+  // 크루세이더: 황금 방벽 + 성광 고리 (수호·심판)
+  crusader:   ["uni__cfxr_electric_barrier", "uni__cfxr_mesh_ring", "uni__cfxr_mesh_star8"],
+  /* ── 궁수 ── */
+  // 데드아이: 일직선 관통 궤적 + 조준 별
+  deadeye:    ["uni__uni_streak", "uni__uni_missile_blade", "uni__cfxr_mesh_star4"],
+  // 스카이로드: 회오리 + 폭풍 잔상 (다중 히트)
+  skylord:    ["uni__uni_orb_swoosh", "uni__uni_arc", "uni__cfxr_mesh_star6"],
+  /* ── 마법사 ── */
+  // 아크로드: 수정 + 전격 아크 (원소 폭발)
+  arclord:    ["uni__Crystal1", "uni__cfxr_electric_arc_circle", "uni__cfxr_particle_electric_arc"],
+  // 이터널: 고리 + 시계톱니(시간) — 수정 대신 시간 상징
+  eternal:    ["uni__Torus1", "uni__cfxr_mesh_ring", "uni__uni_ring_warped"],
+  /* ── 도적 ── */
+  // 섀도우로드: 낫 + 해골 (그림자 왕국)
+  shadowlord: ["uni__uni_scythe", "uni__uni_skull", "uni__uni_arc"],
+  // 블레이드마스터: 쌍검 난무 + 참격 부채
+  blademaster:["uni__Slash", "uni__uni_hitfan", "uni__cfxr_mesh_sword_slashes"],
+  /* ── 해적 ── */
+  // 시킹: 삼지창 대신 예리한 미사일 + 파도 고리 (수압)
+  seaking:    ["uni__uni_razor_missile", "uni__cfxr_mesh_foam", "uni__cfxr_mesh_donut"],
+  // 드레드노트: 포격 탄막 + 충격파 (중포격)
+  dreadnought:["uni__uni_onslaught", "uni__cfxr_mesh_disk", "uni__uni_hitfan"],
+};
+
+/** 2차 궁극기(120초) — 4종으로 더 웅장하게. 1차와 다른 조합을 써서 "한 단계 위"가 보이게. */
+const ULT_2: Record<UltKey, string[]> = {
+  warrior: ["uni__cfxr_mesh_sword_slashes", "uni__uni_onslaught", "uni__Torus1", "uni__cfxr_mesh_star8"],
+  ranger:  ["uni__uni_streak", "uni__uni_missile_blade", "uni__cfxr_mesh_star6", "uni__uni_orb_swoosh"],
+  mage:    ["uni__Crystal1", "uni__cfxr_electric_arc_circle", "uni__cfxr_electric_barrier", "uni__cfxr_mesh_star8"],
+  thief:   ["uni__uni_scythe", "uni__Slash", "uni__uni_arc", "uni__cfxr_mesh_star4"],
+  pirate:  ["uni__uni_razor_missile", "uni__cfxr_mesh_donut", "uni__uni_hitfan", "uni__uni_onslaught"],
+  warbringer: ["uni__cfxr_mesh_sword_slashes", "uni__uni_onslaught", "uni__cfxr_mesh_star8", "uni__cfxr_mesh_donut"],
+  crusader:   ["uni__cfxr_electric_barrier", "uni__cfxr_mesh_star8", "uni__cfxr_mesh_ring", "uni__Torus1"],
+  deadeye:    ["uni__uni_missile_blade", "uni__uni_streak", "uni__cfxr_mesh_star4", "uni__uni_orb_swoosh"],
+  skylord:    ["uni__uni_orb_swoosh", "uni__cfxr_mesh_star6", "uni__uni_arc", "uni__cfxr_electric_arc_circle"],
+  arclord:    ["uni__Crystal1", "uni__cfxr_particle_electric_arc", "uni__cfxr_electric_arc_circle", "uni__cfxr_mesh_star8"],
+  eternal:    ["uni__Torus1", "uni__uni_ring_warped", "uni__cfxr_mesh_ring", "uni__cfxr_mesh_star6"],
+  shadowlord: ["uni__uni_scythe", "uni__uni_skull2", "uni__uni_arc", "uni__cfxr_mesh_star4"],
+  blademaster:["uni__uni_hitfan", "uni__cfxr_mesh_sword_slashes", "uni__uni_arc", "uni__Slash"],
+  seaking:    ["uni__uni_razor_missile", "uni__cfxr_mesh_foam", "uni__cfxr_mesh_donut", "uni__uni_orb_swoosh"],
+  dreadnought:["uni__uni_onslaught", "uni__cfxr_mesh_disk", "uni__uni_hitfan", "uni__cfxr_mesh_star8"],
+};
+
+/** 4차기 — 2종으로 가볍게(남발 슬롯). 직업 무기만 즉시 읽히게. */
+const ULT_S4: Record<UltKey, string[]> = {
+  warrior: ["uni__cfxr_mesh_sword_slashes", "uni__uni_hitfan"],
+  ranger:  ["uni__uni_streak", "uni__Slash"],
+  mage:    ["uni__Crystal1", "uni__cfxr_mesh_ring"],
+  thief:   ["uni__Slash", "uni__uni_arc"],
+  pirate:  ["uni__uni_razor_missile", "uni__uni_hitfan"],
+  warbringer: ["uni__cfxr_mesh_sword_slashes", "uni__uni_onslaught"],
+  crusader:   ["uni__cfxr_electric_barrier", "uni__cfxr_mesh_ring"],
+  deadeye:    ["uni__uni_streak", "uni__cfxr_mesh_star4"],
+  skylord:    ["uni__uni_orb_swoosh", "uni__uni_arc"],
+  arclord:    ["uni__cfxr_electric_arc_circle", "uni__Crystal1"],
+  eternal:    ["uni__cfxr_mesh_ring", "uni__Torus1"],
+  shadowlord: ["uni__uni_scythe", "uni__uni_arc"],
+  blademaster:["uni__uni_hitfan", "uni__Slash"],
+  seaking:    ["uni__uni_razor_missile", "uni__cfxr_mesh_foam"],
+  dreadnought:["uni__uni_onslaught", "uni__cfxr_mesh_disk"],
+};
+
+/** 보스 연출은 직업 무관 — 그대로 유지(위압감이 목적) */
 const PRESET_ASSETS: Record<CinematicPreset, string[]> = {
-  ultimate: ["sertz__uni_skull", "sertz__cfxr_mesh_donut", "sertz__uni_ring_warped"],
-  ultimate2: ["uni__worm", "sertz__cfxr_mesh_sword_slashes", "sertz__uni_arc"],
-  skill4: ["sertz__cfxr_mesh_sword_slashes", "sertz__Slash", "sertz__uni_scythe"],
+  ultimate: ULT_1.warrior,   // 폴백 — play()에서 직업으로 교체된다
+  ultimate2: ULT_2.warrior, // 폴백
+  skill4: ULT_S4.warrior,      // 폴백
   bossPattern: ["sertz__Crystal1", "sertz__uni_ring_warped", "sertz__Torus1"],
   bossIntro: ["sertz__uni_skull2", "sertz__uni_ring_warped"],
 };
+
+/**
+ * vc185 (#4) — 계열·프리셋으로 실제 메시 목록을 고른다.
+ * play() 가 fam 을 넘기면 그 계열 세트를, 없으면 프리셋 폴백을 쓴다.
+ */
+function assetsFor(preset: CinematicPreset, key?: string | null): string[] {
+  /* vc185 — key 는 4차 leaf 직업 우선, 없으면 계열(1~3차 폴백).
+   *  같은 계열이라도 4차 직업이 다르면 다른 메시를 쓴다. */
+  const k = key as UltKey | null | undefined;
+  if (k) {
+    if (preset === "ultimate") return ULT_1[k] ?? ULT_1.warrior;
+    if (preset === "ultimate2") return ULT_2[k] ?? ULT_2.warrior;
+    if (preset === "skill4") return ULT_S4[k] ?? ULT_S4.warrior;
+  }
+  return PRESET_ASSETS[preset] ?? PRESET_ASSETS.ultimate;
+}
 
 export class Cinematic3D {
   private renderer: THREE.WebGLRenderer | null = null;
@@ -157,7 +283,8 @@ export class Cinematic3D {
     if (!ok || !this.THREE || !this.scene || !this.canvas) return false;
 
     const THREE = this.THREE;
-    const names = PRESET_ASSETS[job.preset];
+    /* vc185 (#4) — 계열이 오면 그 계열 전용 메시 세트. 없으면 프리셋 폴백. */
+    const names = assetsFor(job.preset, job.fam);
 
     // 기존 연출 정리
     this.stop();

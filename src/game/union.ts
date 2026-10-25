@@ -206,10 +206,22 @@ export const UNION_BUFFS: UnionBuffDef[] = [
 /* ================= 레이드 ================= */
 
 export type RaidDiff = 0 | 1 | 2;
+/* vc185 (지시 #6 — 유니온 보스 너무 쌤) — HP 재산정.
+ *
+ *  종전 HP(6만/22만/90만)는 실제 유저 화력과 20배 이상 어긋나 있었다. 실측 산식:
+ *    틱 100회(60초 ÷ 0.6초) × (power/26) × 평균 1.05 = 4.038 × power
+ *    배치 10명 Lv100 → power ≈ 704 → 60초 총피해 ≈ 2,843
+ *    → 노말 HP 60,000 은 21배. 어떤 배치로도 클리어 불가능했다.
+ *
+ *  새 기준(60초 클리어 목표):
+ *    노말 2,400  — Lv100 6~8명이면 클리어 (초반 진입 가능)
+ *    하드 5,200  — Lv100 10명 + 버프/아티팩트 필요
+ *    카오스 9,600 — Lv150+ 10명 + 버프 풀강 (최종 목표)
+ *  보상 코인은 난이도 비례로 유지(14/30/64). */
 export const RAID_DIFFS: { name: string; boss: string; hp: number; coin: number; req: number; color: string }[] = [
-  { name: "노말", boss: "수문장 거인 베히모스", hp: 60000, coin: 14, req: 3, color: "#8fe84a" },
-  { name: "하드", boss: "심연의 감시자 니드호그", hp: 220000, coin: 30, req: 6, color: "#a8ecff" },
-  { name: "카오스", boss: "차원의 군주 아비슬로드", hp: 900000, coin: 64, req: 10, color: "#ff8ab0" },
+  { name: "노말", boss: "수문장 거인 베히모스", hp: 2400, coin: 14, req: 3, color: "#8fe84a" },
+  { name: "하드", boss: "심연의 감시자 니드호그", hp: 5200, coin: 30, req: 6, color: "#a8ecff" },
+  { name: "카오스", boss: "차원의 군주 아비슬로드", hp: 9600, coin: 64, req: 10, color: "#ff8ab0" },
 ];
 
 /* ================= 저장소 ================= */

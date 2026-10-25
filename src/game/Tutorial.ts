@@ -15,7 +15,7 @@ import Phaser from "phaser";
 import { EventBus } from "../components/game/EventBus"; // v1.1.1 — 상대경로 수정(세션 중단 커밋에서 잘못 기록됨)
 import type { WorldScene } from "./scenes/WorldScene";
 
-type TutStepId = "talk" | "portal" | "kill" | "pickup" | "skill" | "pot";
+type TutStepId = "talk" | "portal" | "kill" | "pickup" | "skill" | "pot" | "shader" | "contrast";
 
 interface TutStep {
   id: TutStepId;
@@ -74,6 +74,23 @@ const STEPS: TutStep[] = [
     goal: 1,
     marker: null,
   },
+  /* vc185 (지시 #3 — 쉐이더·고대비 튜토리얼) — 화면 품질 설정은 존재를 모르면
+   *  평생 기본값으로만 논다. 마지막 두 단계에서 실제로 켜 보게 만든다.
+   *  goal 1 = 설정에서 해당 토글을 한 번 조작하면 완료(WorldScene이 tut:notify 수신). */
+  {
+    id: "shader",
+    title: "[이그니] ⑦ 쉐이더 효과",
+    desc: "더보기(☰) → 설정을 열고 '툰 셰이더'를 눌러 봐! 캐릭터 테두리에 빛이 번지고 색이 또렷해져서 입체감이 확 살아난다구. 폰이 뜨거워지거나 버벅이면 다시 끄면 돼 — 언제든 바꿀 수 있으니까 부담 갖지 마!",
+    goal: 1,
+    marker: null,
+  },
+  {
+    id: "contrast",
+    title: "[이그니] ⑧ 고대비 모드",
+    desc: "같은 설정 화면에서 '고대비 모드'도 켜 봐! 밝은 낮 야외나 햇빛 아래에서 글자가 훨씬 또렷하게 읽힌다구. 눈이 편한 쪽으로 골라 쓰면 돼. 이제 준비 끝 — 진짜 모험을 떠나자!",
+    goal: 1,
+    marker: null,
+  },
 ];
 
 /* v1.4.10 — 상세 설명(2~3줄) 수용을 위해 패널 높이 62→80 확대
@@ -124,6 +141,7 @@ export class Tutorial {
    *  TouchControls가 구독해 해당 DOM 버튼(첫 스킬 버튼/HP 물약 버튼)에 링을 씌운다.
    *  key는 튜토리얼 step id가 아니라 DOM 버튼 식별자("skill"/"potion") — UI 계약 분리. */
   private domKeyOf(id: TutStepId): "skill" | "potion" | null {
+    /* vc185 (#3) — shader/contrast 는 DOM 버튼 링이 아니라 설정 패널 조작으로 완료된다. */
     return id === "skill" ? "skill" : id === "pot" ? "potion" : null;
   }
 
