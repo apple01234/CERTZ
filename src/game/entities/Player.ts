@@ -72,6 +72,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   gatherBag: Record<string, number> = {};
   /** vc178 — 집 꾸미기: 배치된 가구 { 가구키, 격자 좌표 }. 보유는 owned(furn_*)로, 이 배열이 배치 상태. */
   homeDecor: { key: string; x: number; y: number; rot?: number }[] = [];
+  /** vc182 (지시 #11) — 마을 필드 배치 가구 (월드 좌표, 집과 별개) */
+  fieldDecor: { key: string; x: number; y: number; rot?: number; stage?: string }[] = [];
   /** vc178 (지시 #2) — 이미 본 기능 튜토리얼 키 (자동 재생 1회 제한) */
   tutSeen: string[] = [];
 

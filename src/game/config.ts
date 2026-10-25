@@ -263,6 +263,9 @@ export type SaveData = {
   gatherBag?: Record<string, number>;
   /* vc178 — 집 꾸미기: 내 집 실내에 배치한 가구 { 가구키, 격자 x/y }. 구 세이브 undefined → 빈 집 */
   homeDecor?: { key: string; x: number; y: number; rot?: number }[];
+  /* vc182 (지시 #11) — 마을(필드)에 설치한 가구. 집(homeDecor)과 분리해 저장한다.
+   *  좌표는 월드 픽셀(정수) — 마을은 격자가 아니라 자유 배치라 실내 격자와 다르다. */
+  fieldDecor?: { key: string; x: number; y: number; rot?: number; stage?: string }[];
   /* vc178 (지시 #1·#2) — 이미 본 기능 튜토리얼 키 목록 (중복 자동재생 방지).
    *  설정 → 튜토리얼 다시보기는 이 목록과 무관하게 언제든 재생 가능. */
   tutSeen?: string[];

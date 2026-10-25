@@ -70,6 +70,8 @@ export type RpgState = {
   shopStock: string[];
   /* vc178 — 집 꾸미기: 보유 가구 + 배치 상태 (HomePanel이 그린다) */
   homeDecor?: { key: string; x: number; y: number; rot?: number }[];
+  /** vc182 (지시 #11) — 마을 필드에 설치한 가구 */
+  fieldDecor?: { key: string; x: number; y: number; rot?: number; stage?: string }[];
   /** v1.0.5 — 서버 롤 기반 관리자 여부 (GM 콘텐츠 입장 버튼 게이트 — 비관리자 노출 방지) */
   admin?: boolean;
   /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 */

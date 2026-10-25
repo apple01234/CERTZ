@@ -1472,6 +1472,10 @@ export class WorldScene extends Phaser.Scene {
       this.player.homeDecor = Array.isArray(savedPlayer.homeDecor)
         ? savedPlayer.homeDecor.filter((d) => d && typeof d.key === "string" && Number.isFinite(d.x) && Number.isFinite(d.y))
         : [];
+      /* vc182 (지시 #11) — 마을 필드 가구 복원 (구 세이브 undefined → 빈 배열) */
+      this.player.fieldDecor = Array.isArray(savedPlayer.fieldDecor)
+        ? savedPlayer.fieldDecor.filter((d) => d && typeof d.key === "string" && Number.isFinite(d.x) && Number.isFinite(d.y))
+        : [];
       /* vc178 (지시 #2) — 본 기능 튜토리얼 기록 복원.
        *  구 세이브(필드 없음)는 "이미 그 기능들을 쓰고 있던 유저"이므로 전부 본 것으로
        *  간주한다. 그러지 않으면 고레벨 세이브 접속 시 15개 안내가 한꺼번에 쏟아진다.
@@ -1649,6 +1653,8 @@ export class WorldScene extends Phaser.Scene {
     } else if (this.stageDef.isVillage) {
       /* v2.9 — 본마을 + 챕터 마을 공용 마을 빌드 (우물/여관/전직관/주민) */
       this.buildVillage();
+      /* vc182 (지시 #11) — 마을에 설치해 둔 가구 복원 렌더 */
+      this.renderFieldDecor();
       /* v1.0.2 (#GM서버검증) — 부팅 시 서버 롤 조회 → 관리자만 GM NPC 표시 (일반 유저에겐 부재)
        *  v1.0.16 — 롤 확정 후 이름표/황금 오라 재계산 (이름표가 롤 조회보다 먼저 생기는 케이스) */
       authMe()
@@ -9423,6 +9429,17 @@ export class WorldScene extends Phaser.Scene {
     const onHomeRemove = (v: { key: ItemKey; idx: number }) => this.homeDecorRemove(v.idx);
     EventBus.on("rpg:homePlace", onHomePlace);
     EventBus.on("rpg:homeRemove", onHomeRemove);
+    /* vc182 (지시 #11) — 마을 필드 가구 설치/회수 */
+    const onFieldPlace = (v: { key: ItemKey; x: number; y: number }) => this.fieldDecorPlace(v.key, v.x, v.y);
+    const onFieldRemove = (v: { idx: number }) => this.fieldDecorRemove(v.idx);
+    EventBus.on("rpg:fieldPlace", onFieldPlace);
+    EventBus.on("rpg:fieldRemove", onFieldRemove);
+    /* 패널에서 가구를 고르면 마을 바닥 클릭 대기로 들어간다 */
+    const onFieldPick = (e: Event) => {
+      const key = (e as CustomEvent<{ key: ItemKey }>).detail?.key;
+      if (key) this.beginFieldPlace(key);
+    };
+    window.addEventListener("sertz:field-pick", onFieldPick);
     /* vc179 (지시 #3) — 가구 돌리기 */
     const onHomeRotate = (v: { idx: number }) => this.homeDecorRotate(v.idx);
     EventBus.on("rpg:homeRotate", onHomeRotate);
@@ -10148,6 +10165,9 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("movescheme:changed", onMoveSchemeChanged); // v1.0.17
       EventBus.off("rpg:buy", onBuy);
       EventBus.off("rpg:homePlace", onHomePlace);
+      EventBus.off("rpg:fieldPlace", onFieldPlace);
+      EventBus.off("rpg:fieldRemove", onFieldRemove);
+      window.removeEventListener("sertz:field-pick", onFieldPick);
       EventBus.off("featTut:next", onFeatNext);
       EventBus.off("featTut:close", onFeatClose);
       EventBus.off("featTut:replayReq", onFeatReplay);
@@ -13524,6 +13544,90 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /* ═══════════ vc182 (지시 #11) — 마을(필드) 가구 설치 ═══════════
+   *  종전엔 집 실내에서만 가구를 놓을 수 있었다. 마을에서도 놓게 하되
+   *  · 좌표계가 다르다(실내=32px 격자 / 마을=월드 픽셀 자유 배치)
+   *  · 저장도 분리한다(fieldDecor) — 집 배치와 섞이면 indoor/outdoor 좌표가 뒤바뀐다
+   *  · 마을에서만 허용한다(사냥터에 가구를 놓으면 전투 동선을 막는다)
+   *  · 보유 수량 상한은 집과 **공유**한다(같은 가구를 두 곳에 무한 복제 방지). */
+  private fieldDecorImgs: Phaser.GameObjects.Image[] = [];
+  /** vc182 — 마을 설치 대기 중인 가구 키 (패널에서 고르면 세팅, 바닥 클릭 시 소비) */
+  private fieldPending: ItemKey | null = null;
+
+  /** 마을에 설치된 가구 렌더 (현재 스테이지 것만) */
+  private renderFieldDecor() {
+    for (const im of this.fieldDecorImgs) im.destroy();
+    this.fieldDecorImgs = [];
+    if (!this.player || this.isInterior) return;
+    const stage = this.stageDef.key;
+    for (const d of this.player.fieldDecor) {
+      if ((d.stage ?? "village") !== stage) continue;
+      if (!this.textures.exists(d.key)) continue;
+      const img = this.add.image(d.x, d.y, d.key)
+        .setOrigin(0.5, 0.9)
+        .setRotation(((d.rot ?? 0) % 4) * (Math.PI / 2))
+        .setDepth(Math.floor(d.y / 10));
+      this.fieldDecorImgs.push(img);
+    }
+  }
+
+  /** 필드에 가구 설치 — 마을에서만. 보유 수량은 집과 공유. */
+  private fieldDecorPlace(key: ItemKey, x: number, y: number) {
+    if (!this.player) return;
+    if (!ITEMS[key]?.key?.startsWith?.("furn_")) return;
+    if (this.stageDef.key !== "village") {
+      EventBus.emit("banner:show", { text: "가구는 마을에서만 설치할 수 있다" });
+      return;
+    }
+    const owned = this.player.owned.filter((k) => k === key).length;
+    const placedHome = this.player.homeDecor.filter((d) => d.key === key).length;
+    const placedField = this.player.fieldDecor.filter((d) => d.key === key).length;
+    if (owned === 0) return;
+    if (placedHome + placedField >= owned) {
+      EventBus.emit("banner:show", { text: "이미 보유한 만큼 다 놓았다 — 더 사거나 회수하자" });
+      return;
+    }
+    /* 플레이어 발밑과 너무 가까우면 겹쳐 보인다 — 최소 거리 확보 */
+    if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 24) return;
+    this.player.fieldDecor.push({ key, x: Math.round(x), y: Math.round(y), rot: 0, stage: this.stageDef.key });
+    audio.sfx.uiClose();
+    this.renderFieldDecor();
+    this.save();
+    this.emitRpgState();
+  }
+
+  /** vc182 — 마을 설치 대기 진입 (패널에서 가구를 고르면 호출) */
+  private beginFieldPlace(key: ItemKey) {
+    if (!this.player) return;
+    if (this.stageDef.key !== "village") {
+      EventBus.emit("banner:show", { text: "가구는 마을에서만 설치할 수 있다" });
+      return;
+    }
+    this.fieldPending = key;
+    const name = ITEMS[key]?.name ?? "가구";
+    EventBus.emit("banner:show", { text: `${name} — 마을 바닥을 눌러 설치` });
+    this.input.once("pointerdown", (ptr: Phaser.Input.Pointer) => {
+      if (!this.fieldPending) return;
+      const k2 = this.fieldPending;
+      this.fieldPending = null;
+      if (!this.player) return;
+      /* 화면 좌표 → 월드 좌표 (카메라 스크롤·줌 반영) */
+      const wp = this.cameras.main.getWorldPoint(ptr.x, ptr.y);
+      this.fieldDecorPlace(k2, wp.x, wp.y);
+    });
+  }
+
+  /** 필드 가구 회수 */
+  private fieldDecorRemove(idx: number) {
+    if (!this.player) return;
+    if (idx < 0 || idx >= this.player.fieldDecor.length) return;
+    this.player.fieldDecor.splice(idx, 1);
+    audio.sfx.pickup();
+    this.renderFieldDecor();
+    this.save();
+    this.emitRpgState();
+  }
+
   /* vc178 — 가구 배치: 같은 칸 중복 금지 · 보유 수 상한 · 자동 저장.
    *  이미 배치된 같은 가구를 다른 칸에 두면 "이동"으로 처리 (기존 배치 제거). */
   /** 가구 배치
@@ -14979,6 +15083,7 @@ export class WorldScene extends Phaser.Scene {
       fishing: { ...this.player.fishSave, caught: [...this.player.fishSave.caught] }, // v1.1.8 (#개편 A46)
       gatherBag: { ...this.player.gatherBag }, // v1.1.9 (#개편 A48)
       homeDecor: this.player.homeDecor.map((d) => ({ ...d })), // vc178 — 집 꾸미기 배치 상태
+      fieldDecor: this.player.fieldDecor.map((d) => ({ ...d })), // vc182 — 마을 배치 가구
       tutSeen: [...this.player.tutSeen], // vc178 (지시 #2) — 본 기능 튜토리얼
       playStats: {
         playSec: Math.round(this.statSavedSec + Math.max(0, (this.time.now - this.startTime) / 1000)),
@@ -15041,6 +15146,7 @@ export class WorldScene extends Phaser.Scene {
       shopStock: [...SHOP_STOCK],
       /* vc178 — 집 꾸미기: 보유 가구(owned furn_*) + 배치 상태 */
       homeDecor: this.player.homeDecor.map((d) => ({ ...d })),
+      fieldDecor: this.player.fieldDecor.map((d) => ({ ...d })), // vc182 — 마을 배치 가구
       tutSeen: [...this.player.tutSeen], // vc178 (지시 #2) — 본 튜토리얼 목록
       /* v1.0.5 — 서버 롤 기반 관리자 플래그 (혜택 패널 "GM 콘텐츠 입장" 게이트) */
       admin: this.adminRole === "admin",
@@ -15432,6 +15538,7 @@ export class WorldScene extends Phaser.Scene {
       /* vc178 — 집 꾸미기 배치 + 본 기능 튜토리얼 (이 두 필드가 빠져
        *  재접속 시 가구 배치와 "본 적 있음" 기록이 사라지고 있었다 — 실측으로 확인) */
       homeDecor: this.player.homeDecor.map((d) => ({ ...d })),
+      fieldDecor: this.player.fieldDecor.map((d) => ({ ...d })), // vc182 — 마을 배치 가구
       tutSeen: [...this.player.tutSeen],
     };
   }

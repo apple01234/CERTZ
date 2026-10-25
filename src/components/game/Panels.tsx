@@ -4442,6 +4442,16 @@ export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
   const decor = rpg.homeDecor ?? [];
   /* vc179 (지시 #3) — 모바일 롱프레스 회전용 타이머 */
   const longPressRef = useRef<number | null>(null);
+  /* vc182 (지시 #11) — 마을(필드) 설치 모드.
+   *  실내는 32px 격자 클릭 배치, 마을은 자유 좌표라 "들고 나가 바닥을 클릭" 방식이다.
+   *  여기서는 설치할 가구를 고르고 패널을 닫으면 마을 클릭 대기 상태가 된다. */
+  const [mode, setMode] = useState<"home" | "field">("home");
+  const fieldDecor = rpg.fieldDecor ?? [];
+  const fieldOwn = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const d of fieldDecor) m.set(d.key, (m.get(d.key) ?? 0) + 1);
+    return m;
+  }, [fieldDecor]);
 
   /* 가구별 보유/배치 현황 */
   const stat = useMemo(() => {
@@ -4482,6 +4492,86 @@ export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           </button>
         </div>
 
+        {/* vc182 (지시 #11) — 집 안 / 마을(필드) 탭 */}
+        <div className="mb-2.5 grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => setMode("home")}
+            className={`rounded-md px-2 py-1.5 text-[11px] font-black transition ${
+              mode === "home" ? "bg-amber-400 text-slate-900" : "border border-white/20 bg-black/40 text-white/70"
+            }`}
+          >
+            🏠 집 안 ({decor.length})
+          </button>
+          <button
+            onClick={() => setMode("field")}
+            className={`rounded-md px-2 py-1.5 text-[11px] font-black transition ${
+              mode === "field" ? "bg-amber-400 text-slate-900" : "border border-white/20 bg-black/40 text-white/70"
+            }`}
+          >
+            🌳 마을 ({fieldDecor.length})
+          </button>
+        </div>
+
+        {mode === "field" ? (
+          <>
+            {/* 마을 설치 — 실내 격자와 달리 자유 좌표라 "들고 나가 바닥 클릭" */}
+            <p className="mb-1.5 text-[11px] font-bold text-white/60">
+              가구를 고르면 패널이 닫히고, 마을 바닥을 눌러 설치한다
+            </p>
+            <div className="mb-3 grid grid-cols-4 gap-1.5">
+              {FURNITURE_CATALOG.map((k) => {
+                const it = ITEMS[k];
+                const have = stat.owned.get(k) ?? 0;
+                const inHome = stat.placed.get(k) ?? 0;
+                const inField = fieldOwn.get(k) ?? 0;
+                const free = Math.max(0, have - inHome - inField);
+                return (
+                  <button
+                    key={k}
+                    disabled={free === 0}
+                    onClick={() => {
+                      const ev = new CustomEvent("sertz:field-pick", { detail: { key: k } });
+                      window.dispatchEvent(ev);
+                      onClose();
+                    }}
+                    className={`flex flex-col items-center gap-1 rounded-lg border p-1.5 text-center transition ${
+                      free === 0
+                        ? "border-white/10 bg-black/30 opacity-40"
+                        : "border-white/20 bg-black/40 hover:border-amber-300/60"
+                    }`}
+                  >
+                    <img src={`assets/${it.icon}.webp`} alt={it.name} className="h-8 w-8 object-contain" />
+                    <span className="text-[9px] font-bold leading-tight text-white/85">{it.name}</span>
+                    <span className="text-[9px] text-white/45">
+                      {free > 0 ? `설치 가능 ${free}` : "여유 없음"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {fieldDecor.length > 0 && (
+              <div className="mb-2 rounded-md border border-white/15 bg-black/30 p-2">
+                <p className="mb-1 text-[10px] font-bold text-white/60">마을에 설치된 가구</p>
+                <div className="flex flex-wrap gap-1">
+                  {fieldDecor.map((d, idx) => (
+                    <button
+                      key={`${d.key}-${idx}`}
+                      onClick={() => EventBus.emit("rpg:fieldRemove", { idx })}
+                      className="rounded border border-white/20 bg-black/40 px-1.5 py-0.5 text-[9px] font-bold text-white/75 hover:border-rose-300/60 hover:text-rose-200"
+                      title="눌러서 회수"
+                    >
+                      {ITEMS[d.key as ItemKey]?.name ?? d.key} ✕
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="text-[10px] leading-relaxed text-white/45">
+              마을에서만 설치할 수 있다(사냥터는 전투 동선을 막아 제외). 보유 수량은 집과 합쳐서 계산된다.
+            </p>
+          </>
+        ) : (
+        <>
         {/* 보유 가구 트레이 — 클릭해 배치 좌표 선택 모드 */}
         <p className="mb-1.5 text-[11px] font-bold text-white/60">
           {sel ? "아래 방에 놓을 칸을 눌러라" : "가구를 눌러 배치할 칸을 고르자"}
@@ -4572,6 +4662,8 @@ export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           가구는 라고스 상점에서 구매하며, <span className="font-bold text-amber-200">보유한 수량만큼 여러 개 배치</span>할 수 있다.
           배치는 저장되며 다시 들어와도 그대로다.
         </p>
+        </>
+        )}
       </div>
     </div>
   );
