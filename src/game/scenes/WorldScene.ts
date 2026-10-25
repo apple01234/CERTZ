@@ -10832,7 +10832,13 @@ export class WorldScene extends Phaser.Scene {
        *     - 돌진기 가능 → 적 "통과" 돌진으로 반대편 탈출
        *     - 아니면 정면 반격 (공격+주력기) — 맞으면서라도 싸움
        *  ③ 열린 후퇴로가 있으면 이탈하되 즉시 조준·사격 유지 (카이팅) */
-      if (bestD < 150) {
+      /* vc179 (지시 #1 후속) — 후퇴 임계값을 하드코딩 150px에서 **사거리 비례**로 변경.
+       *  해적 사거리는 300px인데 임계가 150px라, 적이 150~300px 구간에 있으면
+       *  "사거리 밖"이라 접근하고 150px 안으로 들어온 뒤에야 후퇴를 시작했다.
+       *  결과적으로 항상 코앞(실측 중앙값 98px)에서 싸워 근접 직업과 구분이 없었다.
+       *  이제 사거리의 55% 이내로 들어오면 미리 물러나며 쏜다. */
+      const keepAway = Math.round(atkRange * 0.55);
+      if (bestD < keepAway) {
         const cornered = this.autoRetreatBlocked();
         aimAt();
         if (cornered) {
