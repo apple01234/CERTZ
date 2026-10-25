@@ -1025,6 +1025,346 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
+  /** vc182 (지시 #19 코드 최적화) — createInner에서 조명 초기화를 분리.
+   *  createInner가 1,011줄까지 비대해 한눈에 흐름을 잡기 어려웠다.
+   *  동작은 종전과 완전히 동일하고, 초기화 단계가 이름을 갖게 된다. */
+  /** vc182 (지시 #19) — 2.5D 원근 초기화 분리 (createInner 비대화 완화) */
+  /** vc182 (지시 #19 코드 최적화) — 세이브 복원을 createInner에서 분리.
+   *  createInner에 318줄짜리 if(savedPlayer){...} 블록이 인라인돼 있어
+   *  초기화 흐름을 읽기 어려웠다. 로직은 한 줄도 바꾸지 않고 그대로 옮겼다. */
+  private restoreFromSave(savedPlayer: SaveData, stageKey: StageKey) {
+    this.player.lv = savedPlayer.lv;
+    /* v3.0 (사용자 지시 #1) — 경험치 복원 누락 수정:
+     *  buildSave는 exp를 저장하면서 복원 경로엔 없어 포탈 이동(씬 재시작)마다
+     *  경험치가 0으로 초기화되는 버그. lv 복원 직후 함께 복원한다. */
+    this.player.exp = savedPlayer.exp ?? 0;
+    /* v1.0.2 (#무결성) — atk/maxHp 무가드 대입은 손상/불완전 세이브에서
+     *  undefined → HP "NaN/NaN"·공격 NaN으로 HUD가 깨졌다. 숫자 검증 후에만 복원한다. */
+    if (typeof savedPlayer.atk === "number" && savedPlayer.atk > 0) this.player.atk = savedPlayer.atk;
+    if (typeof savedPlayer.maxHp === "number" && savedPlayer.maxHp > 0) {
+      this.player.maxHp = savedPlayer.maxHp;
+      this.player.hp = this.player.maxHp;
+    }
+    // 레벨업 MP 성장 복원 (v1.9 — 구 세이브는 60 유지)
+    if (typeof savedPlayer.maxMp === "number") {
+      this.player.maxMp = Math.max(60, savedPlayer.maxMp);
+      this.player.mp = this.player.maxMp;
+    }
+    // RPG 자원 복원 (구 세이브는 loadSave()가 기본값 채움)
+    this.player.gold = savedPlayer.gold ?? 30;
+    this.player.potions = { hp: savedPlayer.potions?.hp ?? 2, mp: savedPlayer.potions?.mp ?? 1 };
+    this.player.weapon = (savedPlayer.weapon ?? "weapon_1") as ItemKey;
+    this.player.armor = (savedPlayer.armor ?? "armor_1") as ItemKey;
+    this.player.owned = (savedPlayer.owned ?? ["weapon_1", "armor_1"]) as ItemKey[];
+    // 강화/장신구 복원 (구 세이브는 loadSave()가 기본값 채움)
+    /* vc145 (#16 긴급) — 스타포스 아이템 단위 복원 + 구세이브(upWea/upArm) 1회 마이그레이션:
+     *  starMap이 비어 있고 구 슬롯 강화치가 있으면, 현재 장착 중 아이템에 그 성을 귀속시킨다.
+     *  (기존 세이브에선 슬롯 강화 = 장착중 아이템의 강화로 유지돼 왔으므로 가장 자연스러운 이관) */
+    const legacyWea = savedPlayer.upWea ?? 0;
+    const legacyArm = savedPlayer.upArm ?? 0;
+    this.player.starMap = { ...(savedPlayer.starMap ?? {}) };
+    if (Object.keys(this.player.starMap).length === 0 && (legacyWea > 0 || legacyArm > 0)) {
+      if (legacyWea > 0) this.player.starMap[this.player.weapon] = legacyWea;
+      if (legacyArm > 0) this.player.starMap[this.player.armor] = legacyArm;
+    }
+    this.player.upgrades.weapon = this.player.weaponStars; // 미러 동기 (이후 읽기 전원 호환)
+    this.player.upgrades.armor = this.player.armorStars;
+    /* v3.0.5 — 스타포스 마일스톤 HP 복원 (가산 이력 선복원 → 델타만 반영) */
+    this.player.restoreStarHp(savedPlayer.sfHp ?? 0);
+    this.player.syncStarHp();
+    /* v2.9 (#8) — 다중 장신구 마이그레이션 (구 세이브 accessory 1개 → 배열) */
+    this.player.accessories = ((savedPlayer.accessories as ItemKey[] | undefined) ??
+      (savedPlayer.accessory ? [savedPlayer.accessory as ItemKey] : [])) as ItemKey[];
+    /* v3.0.7 — 장신구 스타포스 복원 (성 + HP 가산 이력) */
+    this.player.accUp = { ...(savedPlayer.accUp ?? {}) };
+    this.player.starBless = savedPlayer.starBless ?? 0;
+    /* v1.0.8 — 확률 천장 카운터 복원 (강화 실패 가산 / 잠재 확정 카운트) */
+    this.player.starPity = savedPlayer.starPity ?? 0;
+    this.player.potPity = savedPlayer.potPity ?? 0;
+    this.player.restoreAccHp(savedPlayer.accHp ?? 0);
+    this.player.syncAccStarHp();
+    /* v4.6.0 — 음수 잔액 자동 복구: v4.5.0까지 구매 버그로 에메랄드가 음수인 세이브를 0으로 보정 */
+    this.player.emerald = Math.max(0, savedPlayer.emerald ?? 0);
+    // 퀘스트 진행 복원 (이어하기 — 파편/보상 중복 수령 방지)
+    this.savedQuestIdx = { ...(savedPlayer.questIdx ?? {}) };
+    this.questIdx = Phaser.Math.Clamp(this.savedQuestIdx[stageKey] ?? 0, 0, this.stageDef.quests.length);
+    // 플레이어 이름 복원 (인트로에서 지정)
+    if (savedPlayer.playerName) setPlayerName(savedPlayer.playerName);
+    // 전직 클래스 복원 (v1.7 — 구 세이브 null 호환)
+    this.player.applySavedClass(savedPlayer.cls);
+    /* v1.0.18 — 시작 클래스 복원 + 마이그레이션:
+     *  startCls 없는 구 세이브는 현재 cls 체인의 1차키로 역산해 자동 채운다 (환생 복귀 보장).
+     *  cls가 null인 구 세이브(시련 중)는 pendingJobClass를 시작 클래스로 채택한다. */
+    {
+      const sck = (savedPlayer as { startCls?: string | null }).startCls;
+      if (isClassKey(sck)) this.player.startCls = chainOf(sck)[0]?.key ?? null;
+      else if (isClassKey(savedPlayer.cls)) this.player.startCls = chainOf(savedPlayer.cls)[0]?.key ?? null;
+      else if (this.player.startCls === null && this.pendingJobClass) this.player.startCls = this.pendingJobClass;
+    }
+    // v2.4 — 이어하기 시에도 이름표 유지 (클래스 복원 후 생성 — "이름 · 클래스" 표기)
+    /* v1.2.0 (#개편 A23) — 칭호 복원. 유효하지 않으면(개편으로 사라진 칭호) 무시한다. */
+    this.playerTitle = titleByName(savedPlayer.title)?.name ?? null;
+    if (savedPlayer.playerName) this.ensurePlayerTag();
+    // AP 스탯 복원 (v1.9 — 구 세이브는 loadSave()가 5/5/5/5 + 소급 AP 채움)
+    // 지력/행운의 maxMp/maxHp 가산은 세이브 maxHp에 이미 포함 — 여기선 수치만 복원
+    const st = savedPlayer.stats ?? { str: 5, dex: 5, int: 5, luk: 5 };
+    this.player.stats = { ...st };
+    this.player.ap = savedPlayer.ap ?? 0;
+    // BM 복원 (v1.9)
+    this.player.buffItems = { ...(savedPlayer.buffItems ?? {}) } as Partial<Record<BuffKey, number>>;
+    this.player.buffs = (savedPlayer.buffs ?? [])
+      .filter((b) => b.key in BUFF_DEFS)
+      .map((b) => ({ key: b.key as BuffKey, remain: b.remain, total: b.total }));
+    this.player.pets = (savedPlayer.pets ?? []).filter((k) => k in PET_DEFS) as PetKey[];
+    this.player.pet = (savedPlayer.pet && savedPlayer.pet in PET_DEFS ? (savedPlayer.pet as PetKey) : null);
+    /* v1.2.0 (#1) — 포니테일 폐지 환수: 캐릭터 슬롯 경로는 loadSave 마이그레이션을 우회하므로
+     *  여기서(플레이어 로드) 1회 환수 처리 — 보유 목록에서 소실된 hair_ponytail을 감지하면
+     *  18 에메랄드 지급 + ponyRefund 플래그 기록(buildSave가 세이브에 유지 → 이중 환수 방지) */
+    const rawCosmetics = savedPlayer.cosmetics ?? [];
+    const hadPony = rawCosmetics.includes("hair_ponytail") || (savedPlayer as { hair?: string | null }).hair === "hair_ponytail";
+    this.player.ponyRefund = !!(savedPlayer as { ponyRefund?: boolean }).ponyRefund;
+    if (hadPony && !this.player.ponyRefund) {
+      this.player.ponyRefund = true;
+      this.pendingPonyRefund = true; // emerald 복원(961행) 후 가산하기 위해 보류
+    }
+    this.player.cosmetics = rawCosmetics.filter((k) => k in COSMETIC_DEFS) as CosmeticKey[];
+    this.player.cosmetic = (savedPlayer.cosmetic && savedPlayer.cosmetic in COSMETIC_DEFS ? (savedPlayer.cosmetic as CosmeticKey) : null);
+    /* v1.0.7 — 코스튬/헤어 슬롯 복원 (구 세이브는 undefined → null) */
+    this.player.outfit = (savedPlayer.outfit && savedPlayer.outfit in COSMETIC_DEFS ? (savedPlayer.outfit as CosmeticKey) : null);
+    /* v1.0.19 (B-1 외형) — 로비에서 고른 색조 복원 */
+    this.player.lookTint = (savedPlayer as { lookTint?: number | null }).lookTint ?? null;
+    this.player.applyLookTint();
+    this.player.hair = (savedPlayer.hair && savedPlayer.hair in COSMETIC_DEFS ? (savedPlayer.hair as CosmeticKey) : null);
+    /* v1.1.0 (#1/#21/#22) — 성별/피부/어태치 장식 복원 → 스프라이트 시트 전환(완전 교체) */
+    const savedLook = savedPlayer as { gender?: string; skinIdx?: number; accessory?: string | null; gmSkin?: boolean };
+    this.player.gender = savedLook.gender === "f" ? "f" : "m";
+    this.player.skinIdx = typeof savedLook.skinIdx === "number" ? Phaser.Math.Clamp(savedLook.skinIdx, 0, 5) : 2;
+    this.player.accessory = (savedLook.accessory && savedLook.accessory in COSMETIC_DEFS ? (savedLook.accessory as CosmeticKey) : null);
+    /* v1.2.0 (#7) — GM 외형 플래그 복원. 실제 렌더는 gmApproved(서버 롤 admin) 설정 후 applyBodyLook 재호출 시점 */
+    this.player.gmSkin = !!savedLook.gmSkin;
+    /* v1.2.0 (#1) — 포니테일 환수 플래그 복원 (buildSave 유지 필수 — 분실 시 재환생 이중 환수) */
+    this.player.gmApproved = this.adminRole === "admin";
+    /* v1.2.0 (#1) — 환수 정산 (emerald 복원 이후 +18) */
+    if (this.pendingPonyRefund) {
+      this.pendingPonyRefund = false;
+      this.player.emerald += 18;
+    }
+    this.player.applyBodyLook();
+    // 전직 스토리 복원 (v2.0 / v3.1.0 — fam 포함. 구 세이브는 cls 계열로 역산)
+    if (savedPlayer.jobStory && typeof savedPlayer.jobStory.tier === "number") {
+      const famSaved = (savedPlayer.jobStory as { fam?: string }).fam;
+      const famDerived = familyOf(savedPlayer.cls ?? "");
+      const jsFam: FamilyKey | undefined = (famSaved as FamilyKey | undefined) ?? famDerived ?? undefined;
+      if (jsFam) {
+        this.jobStory = {
+          tier: savedPlayer.jobStory.tier,
+          step: savedPlayer.jobStory.step,
+          hunt: savedPlayer.jobStory.hunt,
+          fam: jsFam,
+          /* v1.3.1 (#4) — travel 목적지 복원 (부재 시 트래커에서 확정) */
+          tst: (savedPlayer.jobStory as { tst?: string }).tst,
+        };
+      }
+    }
+    this.jobStoryDone = [...(savedPlayer.jobStoryDone ?? [])];
+    // v3.1.0 — 시련 스토리 중 선택해둔 1차 클래스 복원
+    if (
+      !savedPlayer.cls &&
+      typeof (savedPlayer as { pendingJobClass?: string | null }).pendingJobClass === "string" &&
+      isClassKey((savedPlayer as { pendingJobClass?: string | null }).pendingJobClass as string)
+    ) {
+      this.pendingJobClass = (savedPlayer as { pendingJobClass?: string | null }).pendingJobClass as ClassKey;
+    }
+    // v2.3 — 본 대사 기록 + 반복 의뢰 수주 해금 복원 (지시 #1/#4)
+    this.seenSet = new Set(savedPlayer.seen ?? []);
+    this.repeatOn = savedPlayer.repeatOn ?? false;
+    /* v3.0.26 (#76) — 스토리 클리어 플래그 복원: 기존엔 런타임 리셋(init false) 후
+     *  복원이 누락돼 재접속 시 cleared 상태가 유실됐다. 일퀘 해금 판정의 전제 */
+    this.cleared = savedPlayer.cleared ?? false;
+    /* v3.0.6 — 자동 물약/자동 버프 설정 복원 (지시 #5) */
+    if (savedPlayer.autoUse) {
+      this.player.autoUse = {
+        hpPct: savedPlayer.autoUse.hpPct ?? 0,
+        mpPct: savedPlayer.autoUse.mpPct ?? (savedPlayer.autoUse.mpOn ? 25 : 0), // v3.0.20 (#3) 기존 mpOn 마이그레이션
+        mpOn: savedPlayer.autoUse.mpOn ?? false,
+        buffs: (savedPlayer.autoUse.buffs ?? []) as BuffKey[],
+      };
+    }
+    /* v3.0.6 — 반복 의뢰 진행도 복원 (재입장 시 카운트 리셋 문제)
+     *  같은 구역 세이브에서만 복원 — 다른 구역이면 신규 시작 */
+    const savedRepeatStage = (savedPlayer as { repeatStage?: string }).repeatStage;
+    if (savedRepeatStage === this.stageDef.key) {
+      const savedRN = (savedPlayer as { repeatNeed?: number }).repeatNeed ?? this.stageDef.repeat?.need ?? 0;
+      this.repeatNeed = savedRN;
+      this.huntCount = (savedPlayer as { huntCount?: number }).huntCount ?? 0;
+      /* vc150 (#신규6) — 다수 의뢰 진행도 복원 (신규 필드 우선, 구세이브는 마이그레이션) */
+      const legacyBase = this.stageDef.repeat?.need ?? 0;
+      this.setupRepeatBounties({
+        prog: (savedPlayer as { repeatProg?: number[] }).repeatProg,
+        cycle: (savedPlayer as { repeatCycle?: number }).repeatCycle,
+        legacyCount: this.huntCount,
+        legacyCycle: Math.max(0, Math.round((savedRN - legacyBase) / 2)),
+      });
+    }
+    // v2.5 — 방문 기록 복원 + 자동사냥 (v3.0.15 #5: 펫 조건 제거)
+    this.visited = new Set(savedPlayer.visited ?? []);
+    this.autoHunt = savedPlayer.autoHunt ?? false;
+    /* ----- v3.0.15 복원 ----- */
+    this.autoAlloc = savedPlayer.autoAlloc ?? false;
+    if (savedPlayer.quickPots) this.player.quickPots = { ...savedPlayer.quickPots };
+    this.player.potentials = JSON.parse(JSON.stringify(savedPlayer.potentials ?? {}));
+    this.player.restorePotHp(savedPlayer.potHpApplied ?? 0);
+    this.player.syncPotentialsHp();
+    this.unlockedSets = new Set(savedPlayer.unlockedSets ?? []);
+    /* v3.0.15 (#8) — 퀘스트 수락/추적 상태 복원 */
+    this.acceptedQuests = { ...(savedPlayer.questAccepted ?? {}) };
+    this.trackedStage = savedPlayer.questTracked ?? null;
+    /* v3.0.16 — 몬스터 컬렉션 복원 + 등록 수 스탯 반영 */
+    this.monsterKills = { ...(savedPlayer.monsterKills ?? {}) };
+    this.player.setCollection(Object.keys(this.monsterKills).length);
+    /* v3.0.22 (#43/#44/#50) — 결정 수집 기록 + 세계수의 가호 복원 */
+    this.fragmentsFound = { ...(savedPlayer.fragmentsFound ?? {}) };
+    this.player.setWorldtreeBlessing(!!savedPlayer.worldtreeBlessing);
+    /* v3.0.28 (#보스난이도) — 진행 중이던 보스전 난이도 복원 (재접속 시 이지 선택 후 노말로 나오는 문제 방지) */
+    if (savedPlayer.bossDiff && savedPlayer.bossDiff in BOSS_DIFFS) {
+      this.bossDiff = savedPlayer.bossDiff as BossDiffKey;
+    }
+    this.player.recalcSpeedForLoad();
+    /* v3.3.0 — 5차 각성/시련 완료 플래그 복원 */
+    this.player.fifth = savedPlayer.fifth ?? false;
+    this.player.fifthStoryDone = savedPlayer.fifthStoryDone ?? false;
+    /* vc147 (#19) — 각성의 대가 진행 복원 */
+    this.player.fifth2Step = savedPlayer.fifth2Step ?? 0;
+    this.player.fifth2Count = savedPlayer.fifth2Count ?? 0;
+    this.player.fifth2Done = savedPlayer.fifth2Done ?? false;
+    /* 답사형(reach) 단계 판정 — 진행 상태 복원 후 판정해야 현재 구역이 카운트된다 */
+    this.fifth2Progress({ kind: "reach", key: stageKey });
+    /* ----- v4.0.0 — 바르가 업데이트 복원 ----- */
+    this.figures = (savedPlayer.figures ?? []).filter((k) => k in FIGURE_MAP);
+    this.shards = savedPlayer.shards ?? 0;
+    this.gachaTickets = savedPlayer.gachaTickets ?? 0;
+    this.badges = (savedPlayer.badges ?? []).filter((k) => k in BADGE_MAP);
+    this.badgeSlots = (savedPlayer.badgeSlots ?? [null, null, null]).slice(0, BADGE_SLOTS);
+    while (this.badgeSlots.length < BADGE_SLOTS) this.badgeSlots.push(null);
+    this.runes = { ...(savedPlayer.runes ?? {}) };
+    this.runeSlots = (savedPlayer.runeSlots ?? [null, null, null, null]).slice(0, 4);
+    while (this.runeSlots.length < 4) this.runeSlots.push(null);
+    this.constel = [...(savedPlayer.constel ?? [])];
+    this.couponsUsed = [...(savedPlayer.coupons ?? [])];
+    this.attendLast = savedPlayer.attend?.last ?? "";
+    this.attendCount = savedPlayer.attend?.count ?? 0;
+    this.dailyDate = savedPlayer.daily?.date ?? "";
+    this.dailyHunts = savedPlayer.daily?.hunts ?? 0;
+    this.dailyGate = savedPlayer.daily?.gate ?? 0;
+    this.dailyCloset = savedPlayer.daily?.closet ?? 0;
+    this.dailyFarms = savedPlayer.daily?.farms ?? 0; // v1.0.7
+    this.dailyBosses = savedPlayer.daily?.bosses ?? 0; // v1.0.7
+    this.dailyPraid = savedPlayer.daily?.praid ?? 0; // v1.4.30 — 공동토벌전 일 1회
+    this.dailyClaimed = [...(savedPlayer.daily?.claimed ?? [])];
+    this.dailyAds = savedPlayer.daily?.ads ?? 0;
+    this.dailyAdChest = savedPlayer.daily?.adsChest ?? 0;
+    this.dailyAdDrop = savedPlayer.daily?.adsDrop ?? 0;
+    /* v4.5.0 — 시즌 패스/구독 복원 (시즌 키가 다르면 신규 시즌 — XP/수령 기록 리셋) */
+    const sp = savedPlayer.pass;
+    if (sp && sp.season === seasonKey()) {
+      this.passSeason = sp.season;
+      this.passXp = sp.xp ?? 0;
+      this.passPrem = !!sp.prem;
+      this.passClaimedF = [...(sp.claimedF ?? [])];
+      this.passClaimedP = [...(sp.claimedP ?? [])];
+    } else {
+      this.passSeason = seasonKey();
+    }
+    this.subUntil = savedPlayer.sub?.until ?? 0;
+    this.starterPackBought = !!savedPlayer.starterPackBought;
+    this.ticketDate = savedPlayer.tickets?.date ?? "";
+    this.ticketGate = savedPlayer.tickets?.gate ?? 0;
+    this.ticketCloset = savedPlayer.tickets?.closet ?? 0;
+    this.ticketRefills = savedPlayer.tickets?.refills ?? 0; // v1.0.1 — 재충전 카운트 복원
+    /* v1.0.1 — 시즌 미션 복원 (ensureMissions가 day/week 검증) */
+    this.missionDay = savedPlayer.missions?.day ?? "";
+    this.missionWeek = savedPlayer.missions?.week ?? "";
+    this.missionD = { ...(savedPlayer.missions?.d ?? {}) };
+    this.missionW = { ...(savedPlayer.missions?.w ?? {}) };
+    this.missionCd = [...(savedPlayer.missions?.cd ?? [])];
+    this.missionCw = [...(savedPlayer.missions?.cw ?? [])];
+    this.achClaimed = [...(savedPlayer.achClaimed ?? [])];
+    /* v4.1.4 — 보스/카오스/침공 처치 누적 복원 */
+    this.bossKillCount = savedPlayer.bossKills ?? 0;
+    /* v1.1.7 (#개편 A87) — 판매 잠금 목록 복원 (구 세이브는 undefined → 빈 배열) */
+    this.player.lockedItems = Array.isArray(savedPlayer.lockedItems) ? [...savedPlayer.lockedItems] : [];
+    /* v1.1.8 (#개편 A46) — 낚시 도감 복원 (구 세이브는 빈 도감) */
+    const fs2 = savedPlayer.fishing;
+    this.player.fishSave = {
+      caught: Array.isArray(fs2?.caught) ? [...fs2.caught] : [],
+      totalCatch: Math.max(0, Math.round(fs2?.totalCatch ?? 0)),
+      totalMiss: Math.max(0, Math.round(fs2?.totalMiss ?? 0)),
+      bestWeight: Math.max(0, Number(fs2?.bestWeight ?? 0)),
+    };
+    /* v1.1.9 (#개편 A48) — 채집 재료 복원 */
+    this.player.gatherBag = savedPlayer.gatherBag && typeof savedPlayer.gatherBag === "object"
+      ? { ...savedPlayer.gatherBag } : {};
+    /* vc178 — 집 꾸미기 배치 상태 복원 (구 세이브 undefined → 빈 집) */
+    this.player.homeDecor = Array.isArray(savedPlayer.homeDecor)
+      ? savedPlayer.homeDecor.filter((d) => d && typeof d.key === "string" && Number.isFinite(d.x) && Number.isFinite(d.y))
+      : [];
+    /* vc182 (지시 #11) — 마을 필드 가구 복원 (구 세이브 undefined → 빈 배열) */
+    this.player.fieldDecor = Array.isArray(savedPlayer.fieldDecor)
+      ? savedPlayer.fieldDecor.filter((d) => d && typeof d.key === "string" && Number.isFinite(d.x) && Number.isFinite(d.y))
+      : [];
+    /* vc178 (지시 #2) — 본 기능 튜토리얼 기록 복원.
+     *  구 세이브(필드 없음)는 "이미 그 기능들을 쓰고 있던 유저"이므로 전부 본 것으로
+     *  간주한다. 그러지 않으면 고레벨 세이브 접속 시 15개 안내가 한꺼번에 쏟아진다.
+     *  새로 만든 캐릭터는 빈 배열로 시작해 Lv1 기능(가방·집)부터 자연스럽게 안내받는다. */
+    if (Array.isArray(savedPlayer.tutSeen)) {
+      this.player.tutSeen = savedPlayer.tutSeen.filter((k): k is string => typeof k === "string");
+    } else {
+      this.player.tutSeen = UNLOCKS.filter((u) => (savedPlayer.lv ?? 1) >= u.lv).map((u) => tutSeenKey(u.key));
+      this.migratedTutSeen = true;
+    }
+    /* v1.1.5 (#개편 통계) — 누적 기록 복원 (구 세이브는 undefined → 0/1) */
+    const ps = savedPlayer.playStats;
+    this.statSavedSec = Math.max(0, Math.round(ps?.playSec ?? 0));
+    this.statDeaths = Math.max(0, Math.round(ps?.deaths ?? 0));
+    this.statBestHit = Math.max(0, Math.round(ps?.bestHit ?? 0));
+    this.statBestLv = Math.max(1, Math.round(ps?.bestLv ?? 1));
+    this.chaosKillCount = savedPlayer.chaosKills ?? 0;
+    this.invasionKillCount = savedPlayer.invasionKills ?? 0;
+    this.gateBest = savedPlayer.gateBest ?? 0;
+    this.closetBest = savedPlayer.closetBest ?? 0;
+    /* v1.0.18 — 파크 재화/기록/입장권 복원 */
+    this.parkCoins = savedPlayer.parkCoins ?? 0;
+    this.parkBest = savedPlayer.parkBest ?? 0;
+    this.parkTickets = savedPlayer.parkTickets ?? { date: "", n: 2 };
+    this.gateStars = [...(savedPlayer.gateStars ?? [false, false, false])];
+    while (this.gateStars.length < 3) this.gateStars.push(false);
+    this.freeGachaAt = savedPlayer.freeGachaAt ?? 0;
+    this.lastSeenAt = savedPlayer.lastSeen ?? 0;
+    /* v1.0.8 — 무한 콘텐츠 상태 복원 (구 세이브는 infMerge 기본값) */
+    this.inf = infMerge(savedPlayer.inf);
+    this.syncExtBonus(); // 부여아/환생/펫 보너스 즉시 반영 (아래에서 다시 호출되지만 조기 반영)
+    this.player.tierUpTargets.weapon = savedPlayer.tierUpWea ?? 0;
+    this.player.tierUpTargets.armor = savedPlayer.tierUpArm ?? 0;
+    this.player.tierUpBoost = this.player.tierUpTargets.weapon + this.player.tierUpTargets.armor;
+    /* 외부 보너스(피규어/배지/룬/성좌/스킨) 주입 — HP 델타 동기화 포함 */
+    this.syncExtBonus();
+  }
+
+  private initPerspective() {
+    this.perspOn = this.loadPerspSetting();
+    if (this.perspOn) this.buildPerspFog();
+  }
+
+  private initLighting(stageKey: StageKey) {
+    /* v4.1.5 — 동적 조명: 챕터별 암전 + 플레이어 횃불 광원 (fx/Lighting.ts).
+     *  암전 챕터(동굴/헬/심연 등)에서는 어둠이 깔리고 광원이 시야를 만든다.
+     *  마을/실내/야외 밝은 챕터는 오버레이 없음(광원만 가능). */
+    this.lighting = new Lighting(this);
+    this.lighting.setupAmbient(parseStage(stageKey).ch, true);
+    /* v4.2.0 — 구역을 지날수록 횃불 광원 축소 (스테이지마다 줄어들어 보스전 회피 난이도 상승) */
+    this.lighting.setTorchStage(parseStage(stageKey).sub);
+  }
+
   private createInner() {
     /* v1.4.23 (#반짝임) — GPU 불안정 브레이커 수신:
      *  PhaserGame이 60초 창에 컨텍스트 유실 2회 이상을 감지하면 발행.
@@ -1086,13 +1426,8 @@ export class WorldScene extends Phaser.Scene {
     this.stageH = this.stageDef.height;
 
     /* v4.1.5 — 동적 조명: 챕터별 암전 + 플레이어 횃불 광원 (fx/Lighting.ts).
-     *  create() 최상단에서 초기화 — 이후 포탈/모닥불 등 장식 배치 경로가 광원을 등록한다.
-     *  암전 챕터(동굴/헬/심연 등)에서는 어둠이 깔리고 광원이 시야를 만든다.
-     *  마을/실내/야외 밝은 챕터는 오버레이 없음(광원만 가능). */
-    this.lighting = new Lighting(this);
-    this.lighting.setupAmbient(parseStage(stageKey).ch, true);
-    /* v4.2.0 — 구역을 지날수록 횃불 광원 축소 (유저 지시: 스테이지마다 줄어들어 보스전 회피 난이도 상승) */
-    this.lighting.setTorchStage(parseStage(stageKey).sub);
+     *  create() 최상단에서 초기화 — 이후 포탈/모닥불 등 장식 배치 경로가 광원을 등록한다. */
+    this.initLighting(stageKey);
 
     /* ---------- 바닥 (v2.0 — 10챕터 테마 테이블 / v2.2 실내 분기) ---------- */
     const theme = STAGE_THEME[stageKey] ?? STAGE_THEME.village;
@@ -1192,327 +1527,10 @@ export class WorldScene extends Phaser.Scene {
       if (toonEnabled() && !isLowPerfEnv()) this.toonCamFilters = applyToonCamera(this.cameras.main);
     }
     /* vc146 (#5) — 2.5D 카메라 초기화 (심도 안개 + y-depth 정렬. 설정에서 끌 수 있음) */
-    this.perspOn = this.loadPerspSetting();
-    if (this.perspOn) this.buildPerspFog();
+    this.initPerspective();
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
     this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
-    if (savedPlayer) {
-      this.player.lv = savedPlayer.lv;
-      /* v3.0 (사용자 지시 #1) — 경험치 복원 누락 수정:
-       *  buildSave는 exp를 저장하면서 복원 경로엔 없어 포탈 이동(씬 재시작)마다
-       *  경험치가 0으로 초기화되는 버그. lv 복원 직후 함께 복원한다. */
-      this.player.exp = savedPlayer.exp ?? 0;
-      /* v1.0.2 (#무결성) — atk/maxHp 무가드 대입은 손상/불완전 세이브에서
-       *  undefined → HP "NaN/NaN"·공격 NaN으로 HUD가 깨졌다. 숫자 검증 후에만 복원한다. */
-      if (typeof savedPlayer.atk === "number" && savedPlayer.atk > 0) this.player.atk = savedPlayer.atk;
-      if (typeof savedPlayer.maxHp === "number" && savedPlayer.maxHp > 0) {
-        this.player.maxHp = savedPlayer.maxHp;
-        this.player.hp = this.player.maxHp;
-      }
-      // 레벨업 MP 성장 복원 (v1.9 — 구 세이브는 60 유지)
-      if (typeof savedPlayer.maxMp === "number") {
-        this.player.maxMp = Math.max(60, savedPlayer.maxMp);
-        this.player.mp = this.player.maxMp;
-      }
-      // RPG 자원 복원 (구 세이브는 loadSave()가 기본값 채움)
-      this.player.gold = savedPlayer.gold ?? 30;
-      this.player.potions = { hp: savedPlayer.potions?.hp ?? 2, mp: savedPlayer.potions?.mp ?? 1 };
-      this.player.weapon = (savedPlayer.weapon ?? "weapon_1") as ItemKey;
-      this.player.armor = (savedPlayer.armor ?? "armor_1") as ItemKey;
-      this.player.owned = (savedPlayer.owned ?? ["weapon_1", "armor_1"]) as ItemKey[];
-      // 강화/장신구 복원 (구 세이브는 loadSave()가 기본값 채움)
-      /* vc145 (#16 긴급) — 스타포스 아이템 단위 복원 + 구세이브(upWea/upArm) 1회 마이그레이션:
-       *  starMap이 비어 있고 구 슬롯 강화치가 있으면, 현재 장착 중 아이템에 그 성을 귀속시킨다.
-       *  (기존 세이브에선 슬롯 강화 = 장착중 아이템의 강화로 유지돼 왔으므로 가장 자연스러운 이관) */
-      const legacyWea = savedPlayer.upWea ?? 0;
-      const legacyArm = savedPlayer.upArm ?? 0;
-      this.player.starMap = { ...(savedPlayer.starMap ?? {}) };
-      if (Object.keys(this.player.starMap).length === 0 && (legacyWea > 0 || legacyArm > 0)) {
-        if (legacyWea > 0) this.player.starMap[this.player.weapon] = legacyWea;
-        if (legacyArm > 0) this.player.starMap[this.player.armor] = legacyArm;
-      }
-      this.player.upgrades.weapon = this.player.weaponStars; // 미러 동기 (이후 읽기 전원 호환)
-      this.player.upgrades.armor = this.player.armorStars;
-      /* v3.0.5 — 스타포스 마일스톤 HP 복원 (가산 이력 선복원 → 델타만 반영) */
-      this.player.restoreStarHp(savedPlayer.sfHp ?? 0);
-      this.player.syncStarHp();
-      /* v2.9 (#8) — 다중 장신구 마이그레이션 (구 세이브 accessory 1개 → 배열) */
-      this.player.accessories = ((savedPlayer.accessories as ItemKey[] | undefined) ??
-        (savedPlayer.accessory ? [savedPlayer.accessory as ItemKey] : [])) as ItemKey[];
-      /* v3.0.7 — 장신구 스타포스 복원 (성 + HP 가산 이력) */
-      this.player.accUp = { ...(savedPlayer.accUp ?? {}) };
-      this.player.starBless = savedPlayer.starBless ?? 0;
-      /* v1.0.8 — 확률 천장 카운터 복원 (강화 실패 가산 / 잠재 확정 카운트) */
-      this.player.starPity = savedPlayer.starPity ?? 0;
-      this.player.potPity = savedPlayer.potPity ?? 0;
-      this.player.restoreAccHp(savedPlayer.accHp ?? 0);
-      this.player.syncAccStarHp();
-      /* v4.6.0 — 음수 잔액 자동 복구: v4.5.0까지 구매 버그로 에메랄드가 음수인 세이브를 0으로 보정 */
-      this.player.emerald = Math.max(0, savedPlayer.emerald ?? 0);
-      // 퀘스트 진행 복원 (이어하기 — 파편/보상 중복 수령 방지)
-      this.savedQuestIdx = { ...(savedPlayer.questIdx ?? {}) };
-      this.questIdx = Phaser.Math.Clamp(this.savedQuestIdx[stageKey] ?? 0, 0, this.stageDef.quests.length);
-      // 플레이어 이름 복원 (인트로에서 지정)
-      if (savedPlayer.playerName) setPlayerName(savedPlayer.playerName);
-      // 전직 클래스 복원 (v1.7 — 구 세이브 null 호환)
-      this.player.applySavedClass(savedPlayer.cls);
-      /* v1.0.18 — 시작 클래스 복원 + 마이그레이션:
-       *  startCls 없는 구 세이브는 현재 cls 체인의 1차키로 역산해 자동 채운다 (환생 복귀 보장).
-       *  cls가 null인 구 세이브(시련 중)는 pendingJobClass를 시작 클래스로 채택한다. */
-      {
-        const sck = (savedPlayer as { startCls?: string | null }).startCls;
-        if (isClassKey(sck)) this.player.startCls = chainOf(sck)[0]?.key ?? null;
-        else if (isClassKey(savedPlayer.cls)) this.player.startCls = chainOf(savedPlayer.cls)[0]?.key ?? null;
-        else if (this.player.startCls === null && this.pendingJobClass) this.player.startCls = this.pendingJobClass;
-      }
-      // v2.4 — 이어하기 시에도 이름표 유지 (클래스 복원 후 생성 — "이름 · 클래스" 표기)
-      /* v1.2.0 (#개편 A23) — 칭호 복원. 유효하지 않으면(개편으로 사라진 칭호) 무시한다. */
-      this.playerTitle = titleByName(savedPlayer.title)?.name ?? null;
-      if (savedPlayer.playerName) this.ensurePlayerTag();
-      // AP 스탯 복원 (v1.9 — 구 세이브는 loadSave()가 5/5/5/5 + 소급 AP 채움)
-      // 지력/행운의 maxMp/maxHp 가산은 세이브 maxHp에 이미 포함 — 여기선 수치만 복원
-      const st = savedPlayer.stats ?? { str: 5, dex: 5, int: 5, luk: 5 };
-      this.player.stats = { ...st };
-      this.player.ap = savedPlayer.ap ?? 0;
-      // BM 복원 (v1.9)
-      this.player.buffItems = { ...(savedPlayer.buffItems ?? {}) } as Partial<Record<BuffKey, number>>;
-      this.player.buffs = (savedPlayer.buffs ?? [])
-        .filter((b) => b.key in BUFF_DEFS)
-        .map((b) => ({ key: b.key as BuffKey, remain: b.remain, total: b.total }));
-      this.player.pets = (savedPlayer.pets ?? []).filter((k) => k in PET_DEFS) as PetKey[];
-      this.player.pet = (savedPlayer.pet && savedPlayer.pet in PET_DEFS ? (savedPlayer.pet as PetKey) : null);
-      /* v1.2.0 (#1) — 포니테일 폐지 환수: 캐릭터 슬롯 경로는 loadSave 마이그레이션을 우회하므로
-       *  여기서(플레이어 로드) 1회 환수 처리 — 보유 목록에서 소실된 hair_ponytail을 감지하면
-       *  18 에메랄드 지급 + ponyRefund 플래그 기록(buildSave가 세이브에 유지 → 이중 환수 방지) */
-      const rawCosmetics = savedPlayer.cosmetics ?? [];
-      const hadPony = rawCosmetics.includes("hair_ponytail") || (savedPlayer as { hair?: string | null }).hair === "hair_ponytail";
-      this.player.ponyRefund = !!(savedPlayer as { ponyRefund?: boolean }).ponyRefund;
-      if (hadPony && !this.player.ponyRefund) {
-        this.player.ponyRefund = true;
-        this.pendingPonyRefund = true; // emerald 복원(961행) 후 가산하기 위해 보류
-      }
-      this.player.cosmetics = rawCosmetics.filter((k) => k in COSMETIC_DEFS) as CosmeticKey[];
-      this.player.cosmetic = (savedPlayer.cosmetic && savedPlayer.cosmetic in COSMETIC_DEFS ? (savedPlayer.cosmetic as CosmeticKey) : null);
-      /* v1.0.7 — 코스튬/헤어 슬롯 복원 (구 세이브는 undefined → null) */
-      this.player.outfit = (savedPlayer.outfit && savedPlayer.outfit in COSMETIC_DEFS ? (savedPlayer.outfit as CosmeticKey) : null);
-      /* v1.0.19 (B-1 외형) — 로비에서 고른 색조 복원 */
-      this.player.lookTint = (savedPlayer as { lookTint?: number | null }).lookTint ?? null;
-      this.player.applyLookTint();
-      this.player.hair = (savedPlayer.hair && savedPlayer.hair in COSMETIC_DEFS ? (savedPlayer.hair as CosmeticKey) : null);
-      /* v1.1.0 (#1/#21/#22) — 성별/피부/어태치 장식 복원 → 스프라이트 시트 전환(완전 교체) */
-      const savedLook = savedPlayer as { gender?: string; skinIdx?: number; accessory?: string | null; gmSkin?: boolean };
-      this.player.gender = savedLook.gender === "f" ? "f" : "m";
-      this.player.skinIdx = typeof savedLook.skinIdx === "number" ? Phaser.Math.Clamp(savedLook.skinIdx, 0, 5) : 2;
-      this.player.accessory = (savedLook.accessory && savedLook.accessory in COSMETIC_DEFS ? (savedLook.accessory as CosmeticKey) : null);
-      /* v1.2.0 (#7) — GM 외형 플래그 복원. 실제 렌더는 gmApproved(서버 롤 admin) 설정 후 applyBodyLook 재호출 시점 */
-      this.player.gmSkin = !!savedLook.gmSkin;
-      /* v1.2.0 (#1) — 포니테일 환수 플래그 복원 (buildSave 유지 필수 — 분실 시 재환생 이중 환수) */
-      this.player.gmApproved = this.adminRole === "admin";
-      /* v1.2.0 (#1) — 환수 정산 (emerald 복원 이후 +18) */
-      if (this.pendingPonyRefund) {
-        this.pendingPonyRefund = false;
-        this.player.emerald += 18;
-      }
-      this.player.applyBodyLook();
-      // 전직 스토리 복원 (v2.0 / v3.1.0 — fam 포함. 구 세이브는 cls 계열로 역산)
-      if (savedPlayer.jobStory && typeof savedPlayer.jobStory.tier === "number") {
-        const famSaved = (savedPlayer.jobStory as { fam?: string }).fam;
-        const famDerived = familyOf(savedPlayer.cls ?? "");
-        const jsFam: FamilyKey | undefined = (famSaved as FamilyKey | undefined) ?? famDerived ?? undefined;
-        if (jsFam) {
-          this.jobStory = {
-            tier: savedPlayer.jobStory.tier,
-            step: savedPlayer.jobStory.step,
-            hunt: savedPlayer.jobStory.hunt,
-            fam: jsFam,
-            /* v1.3.1 (#4) — travel 목적지 복원 (부재 시 트래커에서 확정) */
-            tst: (savedPlayer.jobStory as { tst?: string }).tst,
-          };
-        }
-      }
-      this.jobStoryDone = [...(savedPlayer.jobStoryDone ?? [])];
-      // v3.1.0 — 시련 스토리 중 선택해둔 1차 클래스 복원
-      if (
-        !savedPlayer.cls &&
-        typeof (savedPlayer as { pendingJobClass?: string | null }).pendingJobClass === "string" &&
-        isClassKey((savedPlayer as { pendingJobClass?: string | null }).pendingJobClass as string)
-      ) {
-        this.pendingJobClass = (savedPlayer as { pendingJobClass?: string | null }).pendingJobClass as ClassKey;
-      }
-      // v2.3 — 본 대사 기록 + 반복 의뢰 수주 해금 복원 (지시 #1/#4)
-      this.seenSet = new Set(savedPlayer.seen ?? []);
-      this.repeatOn = savedPlayer.repeatOn ?? false;
-      /* v3.0.26 (#76) — 스토리 클리어 플래그 복원: 기존엔 런타임 리셋(init false) 후
-       *  복원이 누락돼 재접속 시 cleared 상태가 유실됐다. 일퀘 해금 판정의 전제 */
-      this.cleared = savedPlayer.cleared ?? false;
-      /* v3.0.6 — 자동 물약/자동 버프 설정 복원 (지시 #5) */
-      if (savedPlayer.autoUse) {
-        this.player.autoUse = {
-          hpPct: savedPlayer.autoUse.hpPct ?? 0,
-          mpPct: savedPlayer.autoUse.mpPct ?? (savedPlayer.autoUse.mpOn ? 25 : 0), // v3.0.20 (#3) 기존 mpOn 마이그레이션
-          mpOn: savedPlayer.autoUse.mpOn ?? false,
-          buffs: (savedPlayer.autoUse.buffs ?? []) as BuffKey[],
-        };
-      }
-      /* v3.0.6 — 반복 의뢰 진행도 복원 (재입장 시 카운트 리셋 문제)
-       *  같은 구역 세이브에서만 복원 — 다른 구역이면 신규 시작 */
-      const savedRepeatStage = (savedPlayer as { repeatStage?: string }).repeatStage;
-      if (savedRepeatStage === this.stageDef.key) {
-        const savedRN = (savedPlayer as { repeatNeed?: number }).repeatNeed ?? this.stageDef.repeat?.need ?? 0;
-        this.repeatNeed = savedRN;
-        this.huntCount = (savedPlayer as { huntCount?: number }).huntCount ?? 0;
-        /* vc150 (#신규6) — 다수 의뢰 진행도 복원 (신규 필드 우선, 구세이브는 마이그레이션) */
-        const legacyBase = this.stageDef.repeat?.need ?? 0;
-        this.setupRepeatBounties({
-          prog: (savedPlayer as { repeatProg?: number[] }).repeatProg,
-          cycle: (savedPlayer as { repeatCycle?: number }).repeatCycle,
-          legacyCount: this.huntCount,
-          legacyCycle: Math.max(0, Math.round((savedRN - legacyBase) / 2)),
-        });
-      }
-      // v2.5 — 방문 기록 복원 + 자동사냥 (v3.0.15 #5: 펫 조건 제거)
-      this.visited = new Set(savedPlayer.visited ?? []);
-      this.autoHunt = savedPlayer.autoHunt ?? false;
-      /* ----- v3.0.15 복원 ----- */
-      this.autoAlloc = savedPlayer.autoAlloc ?? false;
-      if (savedPlayer.quickPots) this.player.quickPots = { ...savedPlayer.quickPots };
-      this.player.potentials = JSON.parse(JSON.stringify(savedPlayer.potentials ?? {}));
-      this.player.restorePotHp(savedPlayer.potHpApplied ?? 0);
-      this.player.syncPotentialsHp();
-      this.unlockedSets = new Set(savedPlayer.unlockedSets ?? []);
-      /* v3.0.15 (#8) — 퀘스트 수락/추적 상태 복원 */
-      this.acceptedQuests = { ...(savedPlayer.questAccepted ?? {}) };
-      this.trackedStage = savedPlayer.questTracked ?? null;
-      /* v3.0.16 — 몬스터 컬렉션 복원 + 등록 수 스탯 반영 */
-      this.monsterKills = { ...(savedPlayer.monsterKills ?? {}) };
-      this.player.setCollection(Object.keys(this.monsterKills).length);
-      /* v3.0.22 (#43/#44/#50) — 결정 수집 기록 + 세계수의 가호 복원 */
-      this.fragmentsFound = { ...(savedPlayer.fragmentsFound ?? {}) };
-      this.player.setWorldtreeBlessing(!!savedPlayer.worldtreeBlessing);
-      /* v3.0.28 (#보스난이도) — 진행 중이던 보스전 난이도 복원 (재접속 시 이지 선택 후 노말로 나오는 문제 방지) */
-      if (savedPlayer.bossDiff && savedPlayer.bossDiff in BOSS_DIFFS) {
-        this.bossDiff = savedPlayer.bossDiff as BossDiffKey;
-      }
-      this.player.recalcSpeedForLoad();
-      /* v3.3.0 — 5차 각성/시련 완료 플래그 복원 */
-      this.player.fifth = savedPlayer.fifth ?? false;
-      this.player.fifthStoryDone = savedPlayer.fifthStoryDone ?? false;
-      /* vc147 (#19) — 각성의 대가 진행 복원 */
-      this.player.fifth2Step = savedPlayer.fifth2Step ?? 0;
-      this.player.fifth2Count = savedPlayer.fifth2Count ?? 0;
-      this.player.fifth2Done = savedPlayer.fifth2Done ?? false;
-      /* 답사형(reach) 단계 판정 — 진행 상태 복원 후 판정해야 현재 구역이 카운트된다 */
-      this.fifth2Progress({ kind: "reach", key: stageKey });
-      /* ----- v4.0.0 — 바르가 업데이트 복원 ----- */
-      this.figures = (savedPlayer.figures ?? []).filter((k) => k in FIGURE_MAP);
-      this.shards = savedPlayer.shards ?? 0;
-      this.gachaTickets = savedPlayer.gachaTickets ?? 0;
-      this.badges = (savedPlayer.badges ?? []).filter((k) => k in BADGE_MAP);
-      this.badgeSlots = (savedPlayer.badgeSlots ?? [null, null, null]).slice(0, BADGE_SLOTS);
-      while (this.badgeSlots.length < BADGE_SLOTS) this.badgeSlots.push(null);
-      this.runes = { ...(savedPlayer.runes ?? {}) };
-      this.runeSlots = (savedPlayer.runeSlots ?? [null, null, null, null]).slice(0, 4);
-      while (this.runeSlots.length < 4) this.runeSlots.push(null);
-      this.constel = [...(savedPlayer.constel ?? [])];
-      this.couponsUsed = [...(savedPlayer.coupons ?? [])];
-      this.attendLast = savedPlayer.attend?.last ?? "";
-      this.attendCount = savedPlayer.attend?.count ?? 0;
-      this.dailyDate = savedPlayer.daily?.date ?? "";
-      this.dailyHunts = savedPlayer.daily?.hunts ?? 0;
-      this.dailyGate = savedPlayer.daily?.gate ?? 0;
-      this.dailyCloset = savedPlayer.daily?.closet ?? 0;
-      this.dailyFarms = savedPlayer.daily?.farms ?? 0; // v1.0.7
-      this.dailyBosses = savedPlayer.daily?.bosses ?? 0; // v1.0.7
-      this.dailyPraid = savedPlayer.daily?.praid ?? 0; // v1.4.30 — 공동토벌전 일 1회
-      this.dailyClaimed = [...(savedPlayer.daily?.claimed ?? [])];
-      this.dailyAds = savedPlayer.daily?.ads ?? 0;
-      this.dailyAdChest = savedPlayer.daily?.adsChest ?? 0;
-      this.dailyAdDrop = savedPlayer.daily?.adsDrop ?? 0;
-      /* v4.5.0 — 시즌 패스/구독 복원 (시즌 키가 다르면 신규 시즌 — XP/수령 기록 리셋) */
-      const sp = savedPlayer.pass;
-      if (sp && sp.season === seasonKey()) {
-        this.passSeason = sp.season;
-        this.passXp = sp.xp ?? 0;
-        this.passPrem = !!sp.prem;
-        this.passClaimedF = [...(sp.claimedF ?? [])];
-        this.passClaimedP = [...(sp.claimedP ?? [])];
-      } else {
-        this.passSeason = seasonKey();
-      }
-      this.subUntil = savedPlayer.sub?.until ?? 0;
-      this.starterPackBought = !!savedPlayer.starterPackBought;
-      this.ticketDate = savedPlayer.tickets?.date ?? "";
-      this.ticketGate = savedPlayer.tickets?.gate ?? 0;
-      this.ticketCloset = savedPlayer.tickets?.closet ?? 0;
-      this.ticketRefills = savedPlayer.tickets?.refills ?? 0; // v1.0.1 — 재충전 카운트 복원
-      /* v1.0.1 — 시즌 미션 복원 (ensureMissions가 day/week 검증) */
-      this.missionDay = savedPlayer.missions?.day ?? "";
-      this.missionWeek = savedPlayer.missions?.week ?? "";
-      this.missionD = { ...(savedPlayer.missions?.d ?? {}) };
-      this.missionW = { ...(savedPlayer.missions?.w ?? {}) };
-      this.missionCd = [...(savedPlayer.missions?.cd ?? [])];
-      this.missionCw = [...(savedPlayer.missions?.cw ?? [])];
-      this.achClaimed = [...(savedPlayer.achClaimed ?? [])];
-      /* v4.1.4 — 보스/카오스/침공 처치 누적 복원 */
-      this.bossKillCount = savedPlayer.bossKills ?? 0;
-      /* v1.1.7 (#개편 A87) — 판매 잠금 목록 복원 (구 세이브는 undefined → 빈 배열) */
-      this.player.lockedItems = Array.isArray(savedPlayer.lockedItems) ? [...savedPlayer.lockedItems] : [];
-      /* v1.1.8 (#개편 A46) — 낚시 도감 복원 (구 세이브는 빈 도감) */
-      const fs2 = savedPlayer.fishing;
-      this.player.fishSave = {
-        caught: Array.isArray(fs2?.caught) ? [...fs2.caught] : [],
-        totalCatch: Math.max(0, Math.round(fs2?.totalCatch ?? 0)),
-        totalMiss: Math.max(0, Math.round(fs2?.totalMiss ?? 0)),
-        bestWeight: Math.max(0, Number(fs2?.bestWeight ?? 0)),
-      };
-      /* v1.1.9 (#개편 A48) — 채집 재료 복원 */
-      this.player.gatherBag = savedPlayer.gatherBag && typeof savedPlayer.gatherBag === "object"
-        ? { ...savedPlayer.gatherBag } : {};
-      /* vc178 — 집 꾸미기 배치 상태 복원 (구 세이브 undefined → 빈 집) */
-      this.player.homeDecor = Array.isArray(savedPlayer.homeDecor)
-        ? savedPlayer.homeDecor.filter((d) => d && typeof d.key === "string" && Number.isFinite(d.x) && Number.isFinite(d.y))
-        : [];
-      /* vc182 (지시 #11) — 마을 필드 가구 복원 (구 세이브 undefined → 빈 배열) */
-      this.player.fieldDecor = Array.isArray(savedPlayer.fieldDecor)
-        ? savedPlayer.fieldDecor.filter((d) => d && typeof d.key === "string" && Number.isFinite(d.x) && Number.isFinite(d.y))
-        : [];
-      /* vc178 (지시 #2) — 본 기능 튜토리얼 기록 복원.
-       *  구 세이브(필드 없음)는 "이미 그 기능들을 쓰고 있던 유저"이므로 전부 본 것으로
-       *  간주한다. 그러지 않으면 고레벨 세이브 접속 시 15개 안내가 한꺼번에 쏟아진다.
-       *  새로 만든 캐릭터는 빈 배열로 시작해 Lv1 기능(가방·집)부터 자연스럽게 안내받는다. */
-      if (Array.isArray(savedPlayer.tutSeen)) {
-        this.player.tutSeen = savedPlayer.tutSeen.filter((k): k is string => typeof k === "string");
-      } else {
-        this.player.tutSeen = UNLOCKS.filter((u) => (savedPlayer.lv ?? 1) >= u.lv).map((u) => tutSeenKey(u.key));
-        this.migratedTutSeen = true;
-      }
-      /* v1.1.5 (#개편 통계) — 누적 기록 복원 (구 세이브는 undefined → 0/1) */
-      const ps = savedPlayer.playStats;
-      this.statSavedSec = Math.max(0, Math.round(ps?.playSec ?? 0));
-      this.statDeaths = Math.max(0, Math.round(ps?.deaths ?? 0));
-      this.statBestHit = Math.max(0, Math.round(ps?.bestHit ?? 0));
-      this.statBestLv = Math.max(1, Math.round(ps?.bestLv ?? 1));
-      this.chaosKillCount = savedPlayer.chaosKills ?? 0;
-      this.invasionKillCount = savedPlayer.invasionKills ?? 0;
-      this.gateBest = savedPlayer.gateBest ?? 0;
-      this.closetBest = savedPlayer.closetBest ?? 0;
-      /* v1.0.18 — 파크 재화/기록/입장권 복원 */
-      this.parkCoins = savedPlayer.parkCoins ?? 0;
-      this.parkBest = savedPlayer.parkBest ?? 0;
-      this.parkTickets = savedPlayer.parkTickets ?? { date: "", n: 2 };
-      this.gateStars = [...(savedPlayer.gateStars ?? [false, false, false])];
-      while (this.gateStars.length < 3) this.gateStars.push(false);
-      this.freeGachaAt = savedPlayer.freeGachaAt ?? 0;
-      this.lastSeenAt = savedPlayer.lastSeen ?? 0;
-      /* v1.0.8 — 무한 콘텐츠 상태 복원 (구 세이브는 infMerge 기본값) */
-      this.inf = infMerge(savedPlayer.inf);
-      this.syncExtBonus(); // 부여아/환생/펫 보너스 즉시 반영 (아래에서 다시 호출되지만 조기 반영)
-      this.player.tierUpTargets.weapon = savedPlayer.tierUpWea ?? 0;
-      this.player.tierUpTargets.armor = savedPlayer.tierUpArm ?? 0;
-      this.player.tierUpBoost = this.player.tierUpTargets.weapon + this.player.tierUpTargets.armor;
-      /* 외부 보너스(피규어/배지/룬/성좌/스킨) 주입 — HP 델타 동기화 포함 */
-      this.syncExtBonus();
-    }
+    if (savedPlayer) this.restoreFromSave(savedPlayer, stageKey);
     /* v4.0.0 — 바르가 데일리 초기화 (출석부/일일 퀘스트/티켓/오프라인 보상) */
     this.initIsekaiDaily();
     /* v1.0.1-beta — 미지급 결제 부팅 복구 (결제 성공 직후 종료·크래시로 젬/패키지가
