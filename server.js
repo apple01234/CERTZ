@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc177 — APK는 릴리스 태그 v1.2.5에 있다(이전 태그는 vc176까지 보유).
    *  태그와 파일명이 어긋나면 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.2.5/SERTZ-vc177.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.3.0/SERTZ-vc178.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,10 +69,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.2.5";
-  const LATEST_CODE = 177;
+  const LATEST_VERSION = "1.3.0";
+  const LATEST_CODE = 178;
     const VERSION_NOTE =
-  "v1.2.5 (vc177) — v1.2.4 배포본 검증에서 발견된 회귀 3건을 수리했다. ①낡은 단검에 도적 전용 제한이 붙어 전사·마법사·궁수·해적이 자기 기본 무기를 장착하지 못하던 버그를 되돌렸다. ②새로 만든 궁수·해적 전용 무기 6종이 상점에 진열되지 않아 획득 방법이 없던 문제를 골드 상점 진열로 수리했다. ③상점에서 내가 쓸 수 없는 다른 직업 전용 무기가 보이던 문제를 고쳐 내 계열 전용 무기만 보인다.";
+  "v1.3.0 (vc178) — 지적 4건과 버그 2건을 고쳤다. ①씹덕 캐릭터가 공포영화 인형처럼 보이던 문제 — 턱 아래 어두운 띠(복화술 인형의 턱 절개선처럼 보였다)를 없애고 눈 하이라이트를 키웠으며 볼터치를 옅게 줄였다. ②씹덕 캐릭터를 마을마다 1명만 배치한다(마을 10곳에 6종이 고르게 나뉜다). ③해적 계열 스킬이 전부 안 되던 문제 — 1차 해적이 스킬표에 없어 전사 스킬이 나갔고 5차 궁극기 2종이 도적 스킬로 떨어졌다. 전용 스킬과 궁극기(만조·폭풍항로)를 새로 연결했다. ④집 꾸미기를 만들었다 — 마을 내 집에 들어가 우측 하단 꾸미기에서 가구 8종을 사서 배치·회수할 수 있고 배치는 저장된다. ⑤해적 기본공격·스킬이 조준 방향에 따라 이펙트가 안 바뀌던 버그 — 탄환이 회전하지 않아 위아래로 쏴도 가로로 누워 있었고 총구 화염도 방향이 없었다. 방향성 머즐과 탄환 회전을 넣었다.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

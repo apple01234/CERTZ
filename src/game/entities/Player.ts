@@ -69,6 +69,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     { caught: [], totalCatch: 0, totalMiss: 0, bestWeight: 0 };
   /** v1.1.9 (#개편 A48) — 채집 재료 보유량 (요리/제작 재료) */
   gatherBag: Record<string, number> = {};
+  /** vc178 — 집 꾸미기: 배치된 가구 { 가구키, 격자 좌표 }. 보유는 owned(furn_*)로, 이 배열이 배치 상태. */
+  homeDecor: { key: string; x: number; y: number }[] = [];
 
   /** v1.1.9 (#개편 A47) — 요리 버프 적용. 기존 buffs 배열에 "dish_*" 키로 얹는다
    *  (새 시스템을 만들지 않고 기존 버프 렌더/만료 로직을 그대로 재사용).
@@ -5840,6 +5842,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       else if (slot === "hair") this.hair = key as CosmeticKey;
       else if (slot === "acc") this.accessory = key as CosmeticKey;
       else this.cosmetic = key as CosmeticKey;
+      return true;
+    }
+    /* vc178 — 집 꾸미기 가구: 소유제이되 수량 누적 허용 (보유 수만큼 배치 가능).
+     *  아래 장비 분기의 \"이미 보유\" 차단을 타면 1개만 살 수 있어 별도 처리한다. */
+    if (key.startsWith("furn_")) {
+      const cost = item.price * n;
+      if (this.gold < cost) return false;
+      this.gold -= cost;
+      for (let i = 0; i < n; i++) this.owned.push(key);
       return true;
     }
     if (this.owned.includes(key)) return false; // 이미 보유한 장비

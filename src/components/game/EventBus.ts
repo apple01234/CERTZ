@@ -65,6 +65,8 @@ export type RpgState = {
   potPity?: number;
   nearShop: boolean;
   shopStock: string[];
+  /* vc178 — 집 꾸미기: 보유 가구 + 배치 상태 (HomePanel이 그린다) */
+  homeDecor?: { key: string; x: number; y: number }[];
   /** v1.0.5 — 서버 롤 기반 관리자 여부 (GM 콘텐츠 입장 버튼 게이트 — 비관리자 노출 방지) */
   admin?: boolean;
   /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 */
@@ -193,7 +195,7 @@ export type RpgState = {
 };
 
 /** v3.1.0 — "bossdiff" 제거: 스토리 보스는 전용 난이도 즉시 스폰 (선택은 보스 재도전 창 "boss") */
-export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "trade2" | "playerinfo" | "collection" | "boss" | "isekai" | "benefit" | "pass" | "content" | "union" | "rank" | "guide" | null; // v1.3.0 — +rank 랭킹창 · v1.4.12 — +guide 이그니 UI 안내 · vc142 — +trade2 1:1 플레이어 거래 · v1.0.13 피드백#12 — +playerinfo 상대 정보창
+export type PanelKind = "shop" | "inv" | "job" | "stat" | "quest" | "opt" | "warp" | "gm" | "bmshop" | "trade" | "trade2" | "playerinfo" | "collection" | "boss" | "isekai" | "benefit" | "pass" | "content" | "union" | "rank" | "guide" | "home" | null; // v1.3.0 — +rank 랭킹창 · v1.4.12 — +guide 이그니 UI 안내 · vc142 — +trade2 1:1 플레이어 거래 · v1.0.13 피드백#12 — +playerinfo 상대 정보창 · vc178 — +home 집 꾸미기
 
 /* ----- v4.0.0 — 바르가 수비전 오버레이 ----- */
 export type GateCardState = {

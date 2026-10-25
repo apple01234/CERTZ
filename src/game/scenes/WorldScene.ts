@@ -600,7 +600,7 @@ export class WorldScene extends Phaser.Scene {
    *  남는 자리는 마을 초행자 훈련장(작업2)으로 대체했다.
    *  buildLayeredKeep/유적 텍스처 로드는 제거 — tickKeepLayer(층 전환)도 함께 폐지.
    *  v1.4.4 — 유저 리포트 ②에 따라 하루 1회 보물상자(keepchest)만 부활(buildVillageChest). */
-  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest" | "chibi"; dlg?: string; npcId?: string; label: string }[] = [];
+  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest" | "chibi" | "decor"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
   private activeNpcId: string | null = null;
   private talkedNpcs = new Set<string>();
@@ -1453,6 +1453,10 @@ export class WorldScene extends Phaser.Scene {
       /* v1.1.9 (#개편 A48) — 채집 재료 복원 */
       this.player.gatherBag = savedPlayer.gatherBag && typeof savedPlayer.gatherBag === "object"
         ? { ...savedPlayer.gatherBag } : {};
+      /* vc178 — 집 꾸미기 배치 상태 복원 (구 세이브 undefined → 빈 집) */
+      this.player.homeDecor = Array.isArray(savedPlayer.homeDecor)
+        ? savedPlayer.homeDecor.filter((d) => d && typeof d.key === "string" && Number.isFinite(d.x) && Number.isFinite(d.y))
+        : [];
       /* v1.1.5 (#개편 통계) — 누적 기록 복원 (구 세이브는 undefined → 0/1) */
       const ps = savedPlayer.playStats;
       this.statSavedSec = Math.max(0, Math.round(ps?.playSec ?? 0));
@@ -8390,7 +8394,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       const qty = Math.max(1, Math.min(99, Math.floor(v.qty ?? 1))); // v3.0.24 — 수량 지정 구매
       const it = ITEMS[v.key];
-      const cost = (it?.price ?? 0) * (it?.kind === "consumable" || it?.kind === "buff" ? qty : 1);
+      const cost = (it?.price ?? 0) * (it?.kind === "consumable" || it?.kind === "buff" || v.key.startsWith("furn_") ? qty : 1); // vc178 — 가구 수량 구매 금액
       if (this.player.buy(v.key, qty)) {
         audio.sfx.shop();
         // BM 즉시 반영 — 펫 구매 시 스프라이트 교체, 치장 구매 시 오라 교체 (v1.9)
@@ -9244,6 +9248,11 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("keymap:changed", onKeymapChanged);
     EventBus.on("movescheme:changed", onMoveSchemeChanged); // v1.0.17 — 이동 스킴 실시간 전환
     EventBus.on("rpg:buy", onBuy);
+    /* vc178 — 집 꾸미기: 배치/이동/회수 (HomePanel에서 발행) */
+    const onHomePlace = (v: { key: ItemKey; cx: number; cy: number }) => this.homeDecorPlace(v.key, v.cx, v.cy);
+    const onHomeRemove = (v: { key: ItemKey; idx: number }) => this.homeDecorRemove(v.idx);
+    EventBus.on("rpg:homePlace", onHomePlace);
+    EventBus.on("rpg:homeRemove", onHomeRemove);
     EventBus.on("rpg:equip", onEquip);
     EventBus.on("rpg:unequip", onUnequip);
     EventBus.on("rpg:use", onUse);
@@ -9946,6 +9955,8 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("keymap:changed", onKeymapChanged);
       EventBus.off("movescheme:changed", onMoveSchemeChanged); // v1.0.17
       EventBus.off("rpg:buy", onBuy);
+      EventBus.off("rpg:homePlace", onHomePlace);
+      EventBus.off("rpg:homeRemove", onHomeRemove);
       EventBus.off("rpg:equip", onEquip);
       EventBus.off("rpg:unequip", onUnequip);
       EventBus.off("rpg:use", onUse);
@@ -12881,6 +12892,11 @@ export class WorldScene extends Phaser.Scene {
       if (it.dlg) this.showDialogue(it.dlg, it.npcId ?? "guide");
       return;
     }
+    /* vc178 — 집 꾸미기 패널 개방 (내 집 실내 우측 하단 꾸미기 지점) */
+    if (it.kind === "decor") {
+      EventBus.emit("ui:panel", { panel: "home" });
+      return;
+    }
     if (it.kind === "shop") {
       // v2.3 (지시 #4) — 반복 의뢰 수주 가능하면 상점 대신 수주 대사부터
       if (this.repeatUnlockable()) {
@@ -13231,9 +13247,98 @@ export class WorldScene extends Phaser.Scene {
       label: isInn ? "침대 — 쉬기 (20G)" : "침대 — 쉬기",
     });
 
+    // vc178 — 내 집: 배치된 가구 렌더 + 꾸미기 지점
+    if (!isInn) {
+      this.renderHomeDecor();
+      this.spawnDecorSpot();
+    }
+
     // 출구 문 (하단 중앙)
     this.add.image(W / 2, H - 34, "sv_door").setDepth(3);
     this.interactables.push({ x: W / 2, y: H - 44, kind: "exit", label: "밖으로 나가기" });
+  }
+
+  /* ================= vc178 — 집 꾸미기 (지시 #4) =================
+   *  내 집(interior_home) 실내에 소유한 가구를 자유 배치한다.
+   *  · 격자: 32px — 배치/이동/회수는 우측 하단 "꾸미기" 상호작용 → 인테리어 패널(ui:panel home)
+   *  · 보유: ITEMS의 furn_* (골드 상점 구매, 소유제) · 배치 상태는 Player.homeDecor
+   *  · 렌더: applyHomeDecor — depth y/10 (지형 뒤로 가려지는 자연스러운 2.5D) */
+  private homeDecorImgs: Phaser.GameObjects.Image[] = [];
+
+  /** 배치된 가구 전부 다시 그린다 (실내 진입 시 / 배치 변경 후) */
+  private renderHomeDecor() {
+    for (const im of this.homeDecorImgs) im.destroy();
+    this.homeDecorImgs = [];
+    if (!this.player) return;
+    for (const d of this.player.homeDecor) {
+      if (!this.textures.exists(d.key)) continue; // 미로드 가구 — 조용히 스킵
+      const img = this.add.image(this.homeCellX(d.x), this.homeCellY(d.y), d.key)
+        .setOrigin(0.5, 0.9)
+        .setDepth(Math.floor(this.homeCellY(d.y) / 10));
+      this.homeDecorImgs.push(img);
+    }
+  }
+
+  /* vc178 — 가구 배치: 같은 칸 중복 금지 · 보유 수 상한 · 자동 저장.
+   *  이미 배치된 같은 가구를 다른 칸에 두면 "이동"으로 처리 (기존 배치 제거). */
+  private homeDecorPlace(key: ItemKey, cx: number, cy: number) {
+    if (!this.player) return;
+    if (!ITEMS[key]?.key.startsWith?.("furn_")) return;
+    const owned = this.player.owned.filter((k) => k === key).length;
+    if (owned === 0) return; // 미보유 — 무시
+    const placed = this.player.homeDecor.filter((d) => d.key === key);
+    const existingIdx = this.player.homeDecor.findIndex((d) => d.key === key && d.x === cx && d.y === cy);
+    if (existingIdx >= 0) return; // 같은 칸 — 무변경
+    if (placed.length >= owned) {
+      // 보유분 전부 배치 상태 → 가장 오래된 배치를 새 칸으로 이동
+      const oldest = this.player.homeDecor.find((d) => d.key === key);
+      if (oldest) { oldest.x = cx; oldest.y = cy; }
+    } else {
+      this.player.homeDecor.push({ key, x: cx, y: cy });
+    }
+    audio.sfx.uiClose();
+    this.renderHomeDecor();
+    this.save();
+    this.emitRpgState();
+  }
+
+  /** 가구 회수 — 배치 인덱스로 제거 */
+  private homeDecorRemove(idx: number) {
+    if (!this.player) return;
+    if (idx < 0 || idx >= this.player.homeDecor.length) return;
+    this.player.homeDecor.splice(idx, 1);
+    audio.sfx.pickup();
+    this.renderHomeDecor();
+    this.save();
+    this.emitRpgState();
+  }
+
+  /** 집 격자 좌표 → 월드 좌표 (실내 832x832, 벽 여백 제외 32~800) */
+  private homeCellX(cx: number): number {
+    return 32 + Math.max(0, Math.min(23, Math.round(cx))) * 32 + 16;
+  }
+  private homeCellY(cy: number): number {
+    return 104 + Math.max(0, Math.min(21, Math.round(cy))) * 32 + 16;
+  }
+
+  /** 꾸미기 상호작용 지점 — 집 실내 우측 하단 */
+  private spawnDecorSpot() {
+    const W = this.stageW, H = this.stageH;
+    const gx = W - 84, gy = H - 96;
+    const glow = this.add.image(gx, gy + 10, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.8).setAlpha(0.22);
+    this.tweens.add({ targets: glow, alpha: 0.38, scale: 1.05, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.add
+      .text(gx, gy - 30, "꾸미기", {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "10px",
+        color: "#ffe9b0",
+        stroke: "#1a1020",
+        strokeThickness: 3,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(21);
+    this.interactables.push({ x: gx, y: gy, kind: "decor", label: "집 꾸미기" });
   }
 
   /* ================= 전직 스토리 (v2.0 — 지시 #13) ================= */
@@ -14546,6 +14651,7 @@ export class WorldScene extends Phaser.Scene {
       lockedItems: [...this.player.lockedItems], // v1.1.7 (#개편 A87)
       fishing: { ...this.player.fishSave, caught: [...this.player.fishSave.caught] }, // v1.1.8 (#개편 A46)
       gatherBag: { ...this.player.gatherBag }, // v1.1.9 (#개편 A48)
+      homeDecor: this.player.homeDecor.map((d) => ({ ...d })), // vc178 — 집 꾸미기 배치 상태
       playStats: {
         playSec: Math.round(this.statSavedSec + Math.max(0, (this.time.now - this.startTime) / 1000)),
         kills: this.totalKills,
@@ -14583,6 +14689,8 @@ export class WorldScene extends Phaser.Scene {
       potPity: this.player.potPity,
       nearShop: this.nearShop,
       shopStock: [...SHOP_STOCK],
+      /* vc178 — 집 꾸미기: 보유 가구(owned furn_*) + 배치 상태 */
+      homeDecor: this.player.homeDecor.map((d) => ({ ...d })),
       /* v1.0.5 — 서버 롤 기반 관리자 플래그 (혜택 패널 "GM 콘텐츠 입장" 게이트) */
       admin: this.adminRole === "admin",
       /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 (지시 #1/#5) */

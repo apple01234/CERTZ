@@ -340,6 +340,9 @@ const ASSET_LIST = [
   "spum_villager_m", "spum_villager_f", "spum_knight", "spum_elf", "spum_mage",
   "spum_skel", "spum_devil", "spum_smith", "spum_miner", "spum_fisher",
   "spum_forager", "spum_scout", "spum_mystic", "spum_butler",
+  /* vc178 — 집 꾸미기 가구 8종 (map_props.png에서 분리 — 인테리어 배치용) */
+  "furn_crate_big", "furn_crate_small", "furn_barrel", "furn_bucket",
+  "furn_bench", "furn_table", "furn_chair", "furn_pots",
 ] as const;
 
 const AUDIO_LIST: string[] = [

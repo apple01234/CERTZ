@@ -8,6 +8,8 @@ import {
   TRADE_PRICES, tradeValue, TRADE_STOCK, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
   CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue, dailyDeals, DAILY_DEAL_OFF,
   POT_GRADE_META, potLineText, SET_GEAR, POT_STAT_LABEL,
+  /* vc178 — 집 꾸미기 가구 카탈로그 */
+  FURNITURE_CATALOG,
   ENEMIES, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, collectionBonus, nextCollectionGoal, COLLECTION_MILESTONES,
   closetThemeOf, CLOSET_THEMES, isPremiumPet, // v1.2.1 (#3) — 프리미엄 펫 특전 판정
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
@@ -455,6 +457,8 @@ function shopState(rpg: RpgState, k: ItemKey): "equipped" | "owned" | "buyable" 
   const item = ITEMS[k];
   const affordable = rpg.gold >= item.price;
   if (item.kind === "consumable" || item.kind === "buff") return affordable ? "buyable" : "poor";
+  /* vc178 — 집 꾸미기 가구: 중복 보유 허용 (개수 누적) → 항상 구매 가능 판정 */
+  if (k.startsWith("furn_")) return affordable ? "buyable" : "poor";
   if (item.kind === "pet") return rpg.pets.includes(k) ? "owned" : affordable ? "buyable" : "poor";
   if (item.kind === "cosmetic") return rpg.cosmetics.includes(k) ? "owned" : affordable ? "buyable" : "poor";
   const owned = rpg.owned.includes(k);
@@ -746,7 +750,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
             const item = ITEMS[k as ItemKey];
             const st = bmState(k as ItemKey);
             const price = item.bmPrice ?? 0;
-            const stackable = item.kind === "consumable" || item.kind === "buff"; // v3.0.24 — 수량 지정 대상
+            const stackable = item.kind === "consumable" || item.kind === "buff" || k.startsWith("furn_"); // v3.0.24 — 수량 지정 대상 · vc178 가구 수량 구매
             const qty = qtyOf(k);
             const showQty = stackable && st === "buyable";
             const total = price * (stackable ? qty : 1);
@@ -1021,6 +1025,8 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
       { label: "버프 물약", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "buff" },
       { label: "펫", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "pet" },
       { label: "치장", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "cosmetic" },
+      /* vc178 — 집 꾸미기 가구 (kind는 material이지만 키 접두사로 분류) */
+      { label: "가구", test: (it: (typeof ITEMS)[ItemKey]) => it.key.startsWith("furn_") },
     ] as const).map((section) => ({
       label: section.label,
       rows: rpg.shopStock.filter((k) => {
@@ -1047,7 +1053,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
     if (!k) return;
     const item = ITEMS[k as ItemKey];
     const st = shopState(rpg, k as ItemKey);
-    const stackable = item.kind === "consumable" || item.kind === "buff";
+    const stackable = item.kind === "consumable" || item.kind === "buff" || k.startsWith("furn_"); // vc178 — 가구 수량 구매 (E키 확정 경로)
     if (st !== "buyable") return;
     EventBus.emit("rpg:buy", { key: k as ItemKey, qty: stackable ? qtyOf(k) : 1 });
   }, flatRows.length > 0);
@@ -1109,7 +1115,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                   const item = ITEMS[k as ItemKey];
                   const st = shopState(rpg, k as ItemKey);
                   const count = item.kind === "buff" ? (rpg.buffItems[k] ?? 0) : undefined;
-                  const stackable = item.kind === "consumable" || item.kind === "buff"; // v3.0.24
+                  const stackable = item.kind === "consumable" || item.kind === "buff" || k.startsWith("furn_"); // vc178 — 가구 수량 구매 (E키 확정 경로) // v3.0.24
                   const qty = qtyOf(k);
                   const showQty = stackable && st === "buyable";
                   const total = item.price * (stackable ? qty : 1);
@@ -3718,6 +3724,7 @@ export function GamePanels({
   if (panel === "rank") return <RankingPanel rpg={rpg} onClose={onClose} />; // v1.3.1 복원 — 랭킹창 + 랭커 특전 (93b3fbf에서 유실)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
   if (panel === "guide") return <GuidePanel onClose={onClose} />; // v1.4.12 (#16) — 이그니의 UI 기능 안내
+  if (panel === "home") return <HomePanel rpg={rpg} onClose={onClose} />; // vc178 — 집 꾸미기
   return null;
 }
 
@@ -4362,6 +4369,134 @@ function KingdomRankTab() {
 }
 
 /* ---------- 지역 이동 패널 (v2.5 — 지시 #7: 방문한 적 있는 구역으로 워프, 부적 1장 소모) ---------- */
+
+/* =====================================================================
+ * vc178 — 집 꾸미기 패널 (지시 #4)
+ *  내 집 실내에서 "꾸미기" 지점(E키)으로 연다.
+ *  · 보유 가구를 클릭 → 배치 좌표 선택 → rpg:homePlace 발행
+ *  · 배치된 가구는 클릭해 회수(rpg:homeRemove)
+ *  구매는 기존 상점 경로(SHOP_STOCK에 furn_* 진열)를 그대로 쓴다.
+ * ===================================================================== */
+const HOME_GRID_COLS = 8;
+const HOME_GRID_ROWS = 6;
+
+export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  useEscClose(onClose);
+  const modal = useModal("집 꾸미기");
+  const [sel, setSel] = useState<ItemKey | null>(null);
+  const decor = rpg.homeDecor ?? [];
+
+  /* 가구별 보유/배치 현황 */
+  const stat = useMemo(() => {
+    const owned = new Map<string, number>();
+    for (const k of rpg.owned) {
+      if (!k.startsWith("furn_")) continue;
+      owned.set(k, (owned.get(k) ?? 0) + 1);
+    }
+    const placed = new Map<string, number>();
+    for (const d of decor) placed.set(d.key, (placed.get(d.key) ?? 0) + 1);
+    return { owned, placed };
+  }, [rpg.owned, decor]);
+
+  const place = (cx: number, cy: number) => {
+    if (!sel) return;
+    EventBus.emit("rpg:homePlace", { key: sel, cx, cy });
+  };
+
+  return (
+    <div
+      {...modal}
+      className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+      onPointerDown={onClose}
+    >
+      <div
+        className="max-h-[min(88svh,600px)] w-[min(94vw,470px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4"
+        style={{ zoom: typeof window !== "undefined" && window.innerWidth < 430 ? 0.78 : window.innerWidth < 640 ? 0.88 : 1 }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="text-sm font-black text-amber-200">🏠 집 꾸미기</p>
+          <button
+            onClick={onClose}
+            aria-label="집 꾸미기 닫기"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* 보유 가구 트레이 — 클릭해 배치 좌표 선택 모드 */}
+        <p className="mb-1.5 text-[11px] font-bold text-white/60">
+          {sel ? "아래 방에 놓을 칸을 눌러라" : "가구를 눌러 배치할 칸을 고르자"}
+        </p>
+        <div className="mb-3 grid grid-cols-4 gap-1.5">
+          {FURNITURE_CATALOG.map((k) => {
+            const it = ITEMS[k];
+            const have = stat.owned.get(k) ?? 0;
+            const on = stat.placed.get(k) ?? 0;
+            const active = sel === k;
+            return (
+              <button
+                key={k}
+                disabled={have === 0}
+                onClick={() => setSel(active ? null : k)}
+                className={`flex flex-col items-center gap-1 rounded-lg border p-1.5 text-center transition ${
+                  active
+                    ? "border-amber-300 bg-amber-500/20"
+                    : have === 0
+                      ? "border-white/10 bg-black/30 opacity-40"
+                      : "border-white/20 bg-black/40 hover:border-amber-300/60"
+                }`}
+              >
+                <img src={`assets/${it.icon}.webp`} alt={it.name} className="h-8 w-8 object-contain" />
+                <span className="text-[9px] font-bold leading-tight text-white/85">{it.name}</span>
+                <span className="text-[9px] text-white/45">{have > 0 ? `${on}/${have} 배치` : "미보유"}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 방 바닥 격자 — 클릭 배치 / 배치 아이콘 클릭 회수 */}
+        <div className="mb-2 overflow-x-auto">
+          <div
+            className="mx-auto grid w-[356px] gap-px rounded-lg border border-white/15 bg-[#241609] p-1"
+            style={{ gridTemplateColumns: `repeat(${HOME_GRID_COLS}, 1fr)` }}
+          >
+            {Array.from({ length: HOME_GRID_COLS * HOME_GRID_ROWS }, (_, i) => {
+              const cx = i % HOME_GRID_COLS;
+              const cy = Math.floor(i / HOME_GRID_COLS);
+              const idx = decor.findIndex((d) => d.x === cx && d.y === cy);
+              const d = idx >= 0 ? decor[idx] : null;
+              return (
+                <button
+                  key={i}
+                  onClick={() => (d ? EventBus.emit("rpg:homeRemove", { key: d.key as ItemKey, idx }) : place(cx, cy))}
+                  aria-label={d ? `${ITEMS[d.key as ItemKey]?.name} 회수` : `빈 칸 ${cx},${cy}`}
+                  className={`relative aspect-square rounded-sm ${
+                    d ? "bg-amber-500/15 ring-1 ring-amber-300/50" : sel ? "bg-white/5 hover:bg-amber-400/25" : "bg-white/[0.03]"
+                  }`}
+                >
+                  {d && (
+                    <img
+                      src={`assets/${ITEMS[d.key as ItemKey]?.icon ?? "furn_bucket"}.webp`}
+                      alt=""
+                      className="pointer-events-none absolute inset-0 m-auto max-h-[80%] max-w-[80%] object-contain"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <p className="text-[10px] leading-relaxed text-white/45">
+          배치된 가구를 누르면 회수된다. 가구는 라고스 상점에서 구매한다 (보유 수만큼 배치 가능).
+          배치는 저장되며 다시 들어와도 그대로다.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);

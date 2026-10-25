@@ -289,6 +289,8 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     /* v1.4.0 — 이스터에그/ARG 트래커 (E2E 100종 데이터 검증용) */
     /* v1.4.3 — 파티 시너지/퀘스트 보드 (E2E 로직 검증용) */
     party: partyContentMod,
+    /* vc178 — 게임 인스턴스 (집 꾸미기 등 런타임 동작 실측용) */
+    game,
   };
   return game;
 }

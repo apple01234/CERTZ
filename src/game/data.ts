@@ -177,7 +177,16 @@ export type ItemKey =
   | "pet_sakura" | "pet_mermaid"
   | "cos_sakura" | "cos_heart" | "cos_starlight" | "cos_melonsoda" | "cos_jade" | "cos_neon"
   /* v1.0.8 무한 콘텐츠 — 연금 제작대 재료 3종 (필드/던전 적 처치 시 확률 드롭) */
-  | "mat_mana" | "mat_heart" | "mat_mithril";
+  | "mat_mana" | "mat_heart" | "mat_mithril"
+  /* vc178 — 집 꾸미기 가구 8종 (내 집 실내 배치 전용 — 소유제, 한 번 구매 후 재배치 무료) */
+  | "furn_crate_big" | "furn_crate_small" | "furn_barrel" | "furn_bucket"
+  | "furn_bench" | "furn_table" | "furn_chair" | "furn_pots";
+
+/** vc178 — 집 꾸미기 카탈로그: HomePanel이 이 순서대로 가구를 보여준다 */
+export const FURNITURE_CATALOG: ItemKey[] = [
+  "furn_table", "furn_chair", "furn_bench", "furn_pots",
+  "furn_crate_big", "furn_crate_small", "furn_barrel", "furn_bucket",
+];
 
 /** 아이템 등급 (클래식 MMORPG 관례 — 테두리/이름색 구분)
  *  v3.0.6 — "legend" 추가 (보스 전용 드롭 전용 등급) */
@@ -442,6 +451,16 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   exp_book_l: { key: "exp_book_l", kind: "consumable", name: "극한 성장의 책", icon: "i_exp_book_l", price: 0, bmPrice: 24, bmOnly: true, sellPrice: 18000, tier: "legend" },
   /* v1.0.8 무한 콘텐츠 — 제작 재료 3종 (연금 제작대 전용 — 상점 판매 없음, 적 처치 드롭) */
   mat_mana: { key: "mat_mana", kind: "material", name: "마나 결정", icon: "item_mat_mana", price: 36, tier: "common", sellPrice: 18 },
+  /* vc178 — 집 꾸미기 가구 8종: 내 집에서만 배치하는 소유제 인테리어.
+   *  아이콘=본체 텍스처 재활용(별도 아이콘 0). price는 골드 상점가. */
+  furn_crate_big: { key: "furn_crate_big", kind: "material", name: "튼튼한 나무 상자", icon: "furn_crate_big", price: 400, tier: "common", sellPrice: 160 },
+  furn_crate_small: { key: "furn_crate_small", kind: "material", name: "작은 나무 상자", icon: "furn_crate_small", price: 180, tier: "common", sellPrice: 70 },
+  furn_barrel: { key: "furn_barrel", kind: "material", name: "오크 술통", icon: "furn_barrel", price: 260, tier: "common", sellPrice: 100 },
+  furn_bucket: { key: "furn_bucket", kind: "material", name: "나무 양동이", icon: "furn_bucket", price: 90, tier: "common", sellPrice: 36 },
+  furn_bench: { key: "furn_bench", kind: "material", name: "목재 벤치", icon: "furn_bench", price: 520, tier: "rare", sellPrice: 210 },
+  furn_table: { key: "furn_table", kind: "material", name: "아침 식탁", icon: "furn_table", price: 880, tier: "rare", sellPrice: 350 },
+  furn_chair: { key: "furn_chair", kind: "material", name: "원목 의자", icon: "furn_chair", price: 340, tier: "common", sellPrice: 130 },
+  furn_pots: { key: "furn_pots", kind: "material", name: "화분 세트", icon: "furn_pots", price: 620, tier: "rare", sellPrice: 250 },
   mat_heart: { key: "mat_heart", kind: "material", name: "몬스터 심장", icon: "item_mat_heart", price: 60, tier: "rare", sellPrice: 30 },
   mat_mithril: { key: "mat_mithril", kind: "material", name: "미스릴 가루", icon: "item_mat_mithril", price: 120, tier: "epic", sellPrice: 60 },
   tier_cube: { key: "tier_cube", kind: "consumable", name: "등급업 큐브", icon: "i_tier_cube", price: 22000, bmPrice: 15, bmOnly: true, sellPrice: 12000, tier: "epic" },
@@ -865,6 +884,9 @@ export const SHOP_STOCK: ItemKey[] = [
   "cos_gold",
   "cos_abyss",
   "cos_wings",
+  /* vc178 — 집 꾸미기 가구 8종 (내 집 실내 배치용 — 골드 구매) */
+  "furn_crate_big", "furn_crate_small", "furn_barrel", "furn_bucket",
+  "furn_bench", "furn_table", "furn_chair", "furn_pots",
   /* v3.0.15 (#11) — 챕터 테마 세트 장비 (ShopPanel에서 unlockedSets 기반으로 미해금 숨김) */
   "sfw_forest", "sfa_forest", "sfr_forest",
   "sfw_kingdom", "sfa_kingdom", "sfr_kingdom",
