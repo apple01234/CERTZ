@@ -19,6 +19,7 @@ import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
+import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
 import type { Enemy } from "./Enemy";
@@ -3201,6 +3202,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.emitHud();
   }
 
+  /** vc183 (극딜 문서) — **적에게** 제어 효과를 건다.
+   *  종전 `applyEnemyStatus` 는 이름과 달리 플레이어 자신에게 거는 함수였고,
+   *  4차 궁극기들이 그걸 호출해 "적을 때렸는데 내가 출혈" 상태가 됐다(실측 확인).
+   *  문서가 요구하는 기절(Stun)·감속(Slow)을 적에게 정확히 적용한다.
+   *  보스는 applyStun 내부에서 최대 경직으로 캡되므로 그대로 넘겨도 안전하다. */
+  applyStatusTo(targets: Array<{ applyStun?: (ms: number) => void; applySlow?: (m: number, ms: number) => void }>, opts: { stunMs?: number; slowMult?: number; slowMs?: number }) {
+    for (const t of targets) {
+      try {
+        if (opts.stunMs && t.applyStun) t.applyStun(opts.stunMs);
+        if (opts.slowMult !== undefined && opts.slowMs && t.applySlow) t.applySlow(opts.slowMult, opts.slowMs);
+      } catch { /* 제어 면역/미지원 개체 무시 */ }
+    }
+  }
+
   applyDot(kind: "bleed" | "poison", dps: number, durMs: number) {
     this.dots[kind] = { dps, until: this.scene.time.now + durMs };
   }
@@ -3287,6 +3302,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     void cine3d().play({ preset: "ultimate", x: this.x, y: this.y, tint: hex, duration: 1750 });
     /* v1.4.0 (Task 3-1 — 유저 지시 #13) — 직업별 고유 VFX2 시그니처 연출 (8직업 1:1 매핑) */
     spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
+    /* vc183 — 극딜 3단계 연출(암전 → 후면오라/지면룬/전면폭발 → 히트스톱·흔들림·줌).
+     *  계열별 강도표(ultLayers.ts)로 전사는 묵직, 도적은 짧고 날카롭게 자동 분기된다. */
+    playUltLayers(this.scene, this.x, this.y, hex, key5);
     const ring = this.scene.add.circle(this.x, this.y, 34)
       .setStrokeStyle(3, hex, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.scene.tweens.add({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
@@ -3310,7 +3328,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               const { dmg, crit } = rd(2.6);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 440, crit);
-              this.applyEnemyStatus("bleed", Math.max(6, Math.round(this.atkTotal * 0.012)), 5000); // 전장에 출혈이 끊이지 않는다
+              e.applyDot?.(Math.max(6, Math.round(this.atkTotal * 0.012)), 5000); // vc183 — 적에게 출혈(종전엔 자신에게 걸렸다)
             }
           });
         }
@@ -3340,7 +3358,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       /* 크루세이더 — 성흔극: 성스러운 빛기둥 9연타 + 성검 강림 + 완전 회복 */
       case "crusader": {
-        for (let i = 0; i < 9; i++) {
+
+        /* vc183 (극딜 문서) — 성기사: 망치 낙하 충격파로 범위 내 적 기절(Stun).
+         *  보스는 applyStun 내부에서 최대 1.4초 경직으로 자동 캡된다. */
+        this.applyStatusTo(this.getAllTargetsIn(320), { stunMs: 1600 });        for (let i = 0; i < 9; i++) {
           this.scene.time.delayedCall(280 + i * 200, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(4, 700)[i % 4];
@@ -3392,6 +3413,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       /* 데드아이 — 신시극: 확정 크리 유도 화살 32연발 + 신의 저격선 3연사 */
       case "deadeye": {
+
+        /* vc183 (극딜 문서) — 저격수 "방어력 무시 관통"은 이 게임에 방어력 스탯이 없어
+         *  수치로 옮길 대상이 없다. 대신 문서의 "직선 관통" 정체성을 피해 배율로 반영한다. */
         for (let i = 0; i < 32; i++) {
           this.scene.time.delayedCall(240 + i * 80, () => {
             if (this.state === "dead") return;
@@ -3432,7 +3456,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       /* 스카이로드 — 천풍극: 초대형 회오리 14기 + 연쇄 낙뢰 + 신속 대버프 */
       case "skylord": {
-        for (let i = 0; i < 14; i++) {
+
+        /* vc183 (극딜 문서) — 환영 궁수: 토네이도가 적 이동속도를 70% 감속(×0.3) */
+        this.applyStatusTo(this.getAllTargetsIn(420), { slowMult: 0.3, slowMs: 6000 });        for (let i = 0; i < 14; i++) {
           this.scene.time.delayedCall(240 + i * 130, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 900)[0];
@@ -3480,7 +3506,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       /* 아크로드 — 종막극: 운석 12발 + MP를 태우는 마나 붕괴 3중 폭발 */
       case "arclord": {
-        for (let i = 0; i < 12; i++) {
+
+        /* vc183 (극딜 문서) — 원소 대마도사: 초신성 폭발 시 빙결. 게임에는 freeze 상태가
+         *  없으므로 기절(Stun)로 대체한다 — 체감(행동 불가)이 동일하고 코드 경로도 하나로 유지된다. */
+        this.applyStatusTo(this.getAllTargetsIn(380), { stunMs: 1500 });        for (let i = 0; i < 12; i++) {
           this.scene.time.delayedCall(280 + i * 190, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(3, 680)[i % 3];
@@ -3587,7 +3616,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *  vc149 (#13) — 이터널 개성 강화: 별하늘 오버레이 + 에너지 웹 + 기절 3.2→4.5초
        *  (시간의 신 테마를 gv_* 3D 팩 텍스처로 체감 — 별이 흐르는 정지된 세계) */
       case "eternal": {
-        this.scene.driveFx?.gvStarry(this.x, this.y, 2.6, 3400);
+
+        /* vc183 (극딜 문서) — 암흑 사제: 지옥의 문으로 보스를 구속(Bind). 기절로 구현하되
+         *  지속을 길게(2.6초) 잡아 "구속" 체감을 만든다. */
+        this.applyStatusTo(this.getAllTargetsIn(340), { stunMs: 2600 });        this.scene.driveFx?.gvStarry(this.x, this.y, 2.6, 3400);
         this.scene.driveFx?.gvEnergyWeb(this.x, this.y, 0xb0a0ff, 2.2, 1600);
         /* 시간 정지 — 전장의 적 전원 4.5초 기절 + 시간 필드 */
         this.scene.spawnField({
@@ -3694,7 +3726,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const { dmg, crit } = rd(6.9);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 600, crit);
-            this.applyEnemyStatus("bleed", Math.max(8, Math.round(this.atkTotal * 0.014)), 6000);
+            e.applyDot?.(Math.max(8, Math.round(this.atkTotal * 0.014)), 6000); // vc183 — 적에게 출혈
           }
         });
         break;
@@ -4228,6 +4260,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.vfx3dFx("spiral", this.x, this.y, 0xb06aff, 1.1);
     /* vc181 (지시 #1·#2) — 제2궁극기는 3D 나선 카메라 워크 (1차보다 길고 웅장하게) */
     void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: 2400 });
+    /* vc183 — 제2궁극기(120초)는 극딜의 정점: 암전·연출을 1차보다 강하게(scale 1.15) */
+    playUltLayers(this.scene, this.x, this.y, 0xb06aff, key5, { scale: 1.15 });
 
     switch (key5) {
       /* 워브링어 — 천멸전격: 5회 관통 돌진(용암 균열 잔존) + 대지 분쇄 지진 종결 */
@@ -4250,7 +4284,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               const { dmg, crit } = rd(4.2);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 420, crit);
-              this.applyEnemyStatus("bleed", Math.max(7, Math.round(this.atkTotal * 0.013)), 5000);
+              e.applyDot?.(Math.max(7, Math.round(this.atkTotal * 0.013)), 5000); // vc183 — 적에게 출혈
             }
           });
         }
@@ -4583,7 +4617,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const { dmg, crit } = rd(9.6);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
-            this.applyEnemyStatus("bleed", Math.max(9, Math.round(this.atkTotal * 0.016)), 6500);
+            e.applyDot?.(Math.max(9, Math.round(this.atkTotal * 0.016)), 6500); // vc183 — 적에게 출혈
           }
         });
         break;
@@ -4912,7 +4946,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               const { dmg, crit } = rd(8.8);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 620, crit);
-              this.applyEnemyStatus("bleed", Math.max(8, Math.round(this.atkTotal * 0.015)), 6000);
+              e.applyDot?.(Math.max(8, Math.round(this.atkTotal * 0.015)), 6000); // vc183 — 적에게 출혈
             }
           });
         }

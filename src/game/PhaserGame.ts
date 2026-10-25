@@ -190,8 +190,16 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   });
   window.setInterval(() => {
     if (ctxLostAt > 0 && Date.now() - ctxLostAt > 4000) {
-      console.error("[SERTZ] 컨텍스트 미복구 — 안전 새로고침");
-      safeReload("webgl-context");
+      /* vc182 (#2 보스전 멈춤) — 4초는 모바일 GPU 복구 시간보다 짧다.
+       *  S20+(Adreno 650)급에서도 컨텍스트 복구는 5~15초 걸린다. 4초에 새로고침하면
+       *  복구될 상황에서도 전투를 통째로 날려 "멈추고 튕긴다"로 체감된다.
+       *  유실 횟수에 따라 예산을 차등: 첫 유실은 15초까지 기다려 복구를 살린다.
+       *  반복 유실(2회+)은 GPU가 못 버티는 신호이므로 예전처럼 빠르게 재부팅한다. */
+      const grace = ctxLossTimes.length <= 1 ? 15000 : 6000;
+      if (Date.now() - ctxLostAt > grace) {
+        console.error("[SERTZ] 컨텍스트 미복구 — 안전 새로고침 (", Math.round(grace / 1000), "초 경과)");
+        safeReload("webgl-context");
+      }
     }
   }, 1000);
 

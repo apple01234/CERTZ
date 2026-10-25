@@ -1507,7 +1507,11 @@ export class WorldScene extends Phaser.Scene {
       this.entryPos?.y ?? (this.isInterior ? this.stageH - 70 : this.entryHome.y)
     );
     /* v1.0.2 (#툰셰이더) — 플레이어 툰 림라이트 (WebGL+fxLevel 게이트, 실패 시 무시) */
-    if (this.game.renderer.type === Phaser.WEBGL && this.fxLevel >= 1) {
+    /* vc182 (#2 보스전 멈춤) — 저사양(모바일)은 플레이어 툰도 생략.
+     *  플레이어는 화면에 항상 떠 있어 툰 셰이더 패스가 전투 내내 매 프레임 돈다.
+     *  보스전에서 ADD 파티클·광원과 겹칠 때 GPU 컨텍스트 유실의 주 원인이었다.
+     *  PC는 종전과 동일 (가장 눈에 띄는 시각 효과라 모바일에서만 양보). */
+    if (this.game.renderer.type === Phaser.WEBGL && this.fxLevel >= 1 && !isLowPerfEnv()) {
       this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
         rim: 0x9fd8ff, rimStrength: 2.5, contrast: 1.1, saturate: 1.22, // vc147 (#1) 툰 강화
       });
@@ -8005,10 +8009,18 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.2 (#툰셰이더) — 보스 툰 림라이트: 카오스는 붉은 림으로 위협 강조, 일반은 오브색 계열.
      *  카메라 블룸(전체 프레임버퍼)과 달리 스프라이트 단일 필터라 모바일 비용이 작다 */
     if (this.fxLevel >= 1 && this.game.renderer.type === Phaser.WEBGL && this.boss?.active) {
-      clearToonStyle(this.boss as unknown as Parameters<typeof clearToonStyle>[0]);
-      this.bossToon = applyToonStyle(this.boss as unknown as Parameters<typeof applyToonStyle>[0], {
-        rim: chaos ? 0xff7a7a : 0xbfd8ff, rimStrength: 3.0, contrast: 1.1, saturate: 1.26, // vc147 (#1) 툰 강화
-      });
+      /* vc182 (#2 보스전 멈춤) — 저사양(모바일)은 보스 툰 필터 생략.
+       *  툰은 보스 1개당 셰이더 패스가 추가되는데, 보스전은 ADD 블렌드 파티클·광원이
+       *  몰리는 구간이라 여기서 GPU 컨텍스트 유실이 잦았다(→ 4초 검은 화면 → 새로고침).
+       *  PC는 종전과 동일. */
+      if (isLowPerfEnv()) {
+        clearToonStyle(this.boss as unknown as Parameters<typeof clearToonStyle>[0]);
+      } else {
+        clearToonStyle(this.boss as unknown as Parameters<typeof clearToonStyle>[0]);
+        this.bossToon = applyToonStyle(this.boss as unknown as Parameters<typeof applyToonStyle>[0], {
+          rim: chaos ? 0xff7a7a : 0xbfd8ff, rimStrength: 3.0, contrast: 1.1, saturate: 1.26, // vc147 (#1) 툰 강화
+        });
+      }
     }
     try {
       const cam = this.cameras.main;

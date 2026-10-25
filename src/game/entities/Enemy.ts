@@ -4,6 +4,7 @@ import { trackDamage } from "../classroom"; // v1.4.30 (#9) — 교실 모드 �
 import { DMG_PCT } from "../data";
 import { ENEMIES, type EnemyDef, type EnemyKey, CHAPTER_ELEM, elemAdvantage, elementReaction, ELEM_REACTION_META, ELEMENT_META, type ElemKey } from "../data";
 import { parseStage } from "../stages";
+import { mitigateEnemyDamage } from "../combat/defense"; // vc183 — 적 방어력
 import { FSM, type FSMState } from "../ai/FSM";
 /** 종별 물리/판정 크기 + 리스폰 버스트 색 */
 const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: number; burst: number }> = {
@@ -94,6 +95,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** 돌진형 전용 — 돌진 방향 캐시 */
   private chargeDir = new Phaser.Math.Vector2();
 
+  /* vc183 — 적 방어력 (EnemyDef.def / defPct). 보스 raid 규약과 동일한 이름을 쓴다. */
+  private get defDef(): number { return this.def.def ?? 0; }
+  private get defPctVal(): number { return (this.def as { defPct?: number }).defPct ?? 0; }
+
   applySlow(mult: number, durMs: number) {
     this.slowMult = Math.min(this.slowMult, mult);
     this.slowUntil = Math.max(this.slowUntil, this.scene.time.now + durMs);
@@ -101,6 +106,27 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   applyStun(durMs: number) {
     this.stunUntil = Math.max(this.stunUntil, this.scene.time.now + durMs);
+  }
+
+  /* vc183 (극딜 문서) — 적 지속 피해(출혈/중독). 종전엔 적에게 도트를 거는 수단이
+   *  아예 없어, 4차 궁극기의 "출혈 중첩"이 플레이어 자신에게 걸리는 버그로 이어졌다.
+   *  dps 는 초당 피해, tick 은 500ms 고정(가독성 — 너무 잘게 쪼개면 데미지텍스트가 폭주). */
+  private dotUntil = 0;
+  private dotDps = 0;
+  private dotNext = 0;
+  applyDot(dps: number, durMs: number) {
+    this.dotDps = Math.max(this.dotDps, dps);   // 중첩은 강한 쪽으로 수렴(무한 폭주 방지)
+    this.dotUntil = Math.max(this.dotUntil, this.scene.time.now + durMs);
+  }
+  /** 도트 틱 처리 — preUpdate 에서 호출. 죽은 개체/만료는 즉시 무시. */
+  private tickDot(now: number) {
+    if (this.dotDps <= 0 || now > this.dotUntil) { this.dotDps = 0; return; }
+    if (now < this.dotNext) return;
+    this.dotNext = now + 500;
+    const dmg = Math.max(1, Math.round(this.dotDps * 0.5));
+    try {
+      this.takeDamage(dmg, new Phaser.Math.Vector2(0, 0), 0, false, true);
+    } catch { this.dotDps = 0; }
   }
 
   /* vc150 (#신규5) — 도주형 개체 (황금 몬스터): 공격하지 않고 플레이어로부터 빠른 속도로 도망간다 */
@@ -427,6 +453,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** 씬에서 매 프레임 호출 */
   tick(dt: number, player: PlayerLike) {
     if (!this.alive) return;
+    /* vc183 — 지속 피해(출혈/중독) 틱. 허수아비 포함 모든 개체에 적용된다. */
+    this.tickDot(this.scene.time.now);
     /* v3.3.0 (지시 #6) — 허수아비: AI 전면 비활성 (제자리 정지, 애니도 idle 고정) */
     if (this.dummy) {
       this.setVelocity(0, 0);
@@ -605,8 +633,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const reacted = !!reactKey && now - this.lastReactAt > 1600;
     if (reacted) this.lastReactAt = now;
     const R = reactKey ? ELEM_REACTION_META[reactKey] : null;
-    const dealt = reacted && R ? Math.max(1, Math.round(dmg * adv * R.dmgMul))
+    /* vc183 (지시 — 적에게도 방어력) — 원소 상성까지 반영한 뒤 적 방어력을 뺀다.
+     *  정액 감산 후 비율 감소 2단계: 초반엔 "딱딱한 놈"이 체감되고,
+     *  후반 공격력 인플레에도 defPct 가 비율로 계속 유효하다.
+     *  최소 1 보장 — 방어력이 공격력을 넘어 0피해(무적 벽)가 되는 것을 막는다. */
+    const raw = reacted && R ? Math.max(1, Math.round(dmg * adv * R.dmgMul))
       : adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
+    const dealt = mitigateEnemyDamage(raw, { def: this.defDef, defPct: this.defPctVal });
     trackDamage(dealt); // v1.4.30 (#9) — 교실 모드: 공유 보스 레이드 딜 합산 (교실 밖 no-op)
     this.hp -= dealt;
     this.hitFlash = 90;

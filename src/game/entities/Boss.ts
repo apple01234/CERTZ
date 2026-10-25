@@ -7,6 +7,7 @@ import { parseStage } from "../stages";
 import { registerBossAnims, loadBossFrames, bossSourceFrame, BOSS_ATLAS } from "../textures";
 import { trackDamage } from "../classroom"; // v1.4.31 — 교실 공유 보스 딜 합산 (보스 대상 피해도 카운트)
 import { EventBus } from "../../components/game/EventBus";
+import { mitigateEnemyDamage } from "../combat/defense"; // vc183 — 보스 방어력
 
 /**
  * 보스 (3종 — 스테이지별 정의 주입):
@@ -122,6 +123,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const src = bossSourceFrame(def.tex);
     super(scene, x, y, src.key, src.frame);
     this.def = def;
+    /* vc183 (지시 — 적에게도 방어력) — 보스 기본 방어력.
+     *  보스는 잡몹보다 단단해야 "체력이 많은 벽"이 아니라 "때려도 덜 박히는 벽"이 된다.
+     *  정액 25 + 비율 10%를 기본으로 주고, BossDef 에 값이 있으면 그쪽이 우선한다.
+     *  카오스는 한 단계 더 단단(비율 14%) — 난이도 선택이 실감나게. */
+    if (def.def === undefined) def.def = 25;
+    if (def.defPct === undefined) def.defPct = diffKey === "chaos" ? 0.14 : 0.10;
     this.chaos = diffKey === "chaos"; // v4.1.4 — 카오스 전용 메커니즘 플래그
     this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "dark"; // v3.0.15 (#16) 챕터 테마 원소
     this.hp = def.hp;
@@ -293,6 +300,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
    *  v1.4.9 — + 생동감 애니메이션: 호흡(±2.2% 부피 보존 펄스) + 예동 감쇠 적용 */
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
+    /* vc183 — 지속 피해 틱 */
+    if (this.alive) this.tickDot(time);
     if (this.twin?.active) {
       /* v1.4.31 (#4) — 오프셋을 표시 폭 비례로 (아틀라스 300px급 프레임 대응) */
       const off = Math.round(this.displayWidth * 0.22);
@@ -1644,6 +1653,26 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
    *  일반 몹의 applyStun과 달리 보스는 최대 1.4초의 경직(staggered, 피해 ×1.6)으로
    *  완화되어 들어간다 — 이터널 영원의 고리·영겁극의 시간 정지가 보스전에서도 의미를 갖는다.
    *  반격 카운터 대기 중에는 카운터 창을 지키기 위해 무시한다. */
+  /* vc183 (극딜 문서) — 보스 지속 피해(출혈/중독). 종전엔 보스에 도트를 거는 수단이 없어
+   *  4차 궁극기의 "출혈 중첩"이 보스전에서 아무 효과도 없었다.
+   *  보스는 도트 저항을 40% 갖는다(일반 몹 대비) — 즉사급 누적을 막으면서 의미는 유지. */
+  private dotUntil = 0;
+  private dotDps = 0;
+  private dotNext = 0;
+  applyDot(dps: number, durMs: number) {
+    if (!this.alive) return;
+    this.dotDps = Math.max(this.dotDps, dps * 0.6);
+    this.dotUntil = Math.max(this.dotUntil, this.scene.time.now + durMs);
+  }
+  private tickDot(now: number) {
+    if (this.dotDps <= 0 || now > this.dotUntil) { this.dotDps = 0; return; }
+    if (now < this.dotNext) return;
+    this.dotNext = now + 500;
+    try {
+      this.takeDamage(Math.max(1, Math.round(this.dotDps * 0.5)), new Phaser.Math.Vector2(0, 0), 0, false);
+    } catch { this.dotDps = 0; }
+  }
+
   applyStun(ms: number) {
     if (!this.alive) return;
     if (this.mode === "counterTele") return;
@@ -1682,8 +1711,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.scene.spawnElementReaction(this.x, this.y - 20, reactKey);
     }
     const R = reacted && reactKey ? ELEM_REACTION_META[reactKey] : null;
-    let dealt = R ? Math.max(1, Math.round(dmg * adv * R.dmgMul))
+    /* vc183 (지시 — 적에게도 방어력) — 보스도 정액+비율 방어력을 갖는다.
+     *  보스는 기본 비율 방어 8%를 적용해 "스킬이 그대로 꽂히는" 후반 인플레를 완화한다.
+     *  def/defPct 를 정의에서 지정하면 그 값이 우선한다(spawnBoss에서 기본값 주입). */
+    const raw = R ? Math.max(1, Math.round(dmg * adv * R.dmgMul))
       : adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
+    let dealt = mitigateEnemyDamage(raw, { def: this.def.def ?? 0, defPct: this.def.defPct ?? 0 });
     /* v1.4.31 — 교실 모드 공유 보스 레이드: 보스에 넣은 피해도 합산 (기존은 일반 몬스터만 카운트되는
      *  블라인드스팟 — Enemy.takeDamage의 trackDamage와 짝을 이룬다. 교실 밖 no-op) */
     trackDamage(dealt);
