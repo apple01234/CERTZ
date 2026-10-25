@@ -121,7 +121,16 @@ let adInitDone = false;
 
 /** 보상형 광고 시청 → 성공 시 true. 웹/미초기화 환경은 false + 이유 반환 */
 export async function showRewardedAd(): Promise<{ ok: boolean; reason?: string }> {
-  if (!isNativeApp()) return { ok: false, reason: "web" };
+  /* vc181 (지시 #10 — "PC 및 웹에서 광고 안봄") 수리:
+   *  종전엔 웹에서 즉시 reason:"web"으로 실패해, PC/웹 유저는 광고 보상을
+   *  아예 받을 수 없었다(버튼을 눌러도 "이 환경에서는 광고를 볼 수 없습니다").
+   *  → 웹은 **게임 내 하우스 광고 오버레이**로 대체한다. 실제 AdMob을 붙이려면
+   *    광고 네트워크 계정·심사가 필요하므로, 지금은 5초 카운트다운 + 닫기 버튼으로
+   *    동일한 사용자 경험(기다린 뒤 보상)을 제공하고 보상 로직은 그대로 탄다.
+   *    네이티브(APK)는 기존 AdMob 경로를 유지한다. */
+  if (!isNativeApp()) {
+    return showHouseAdOverlay();
+  }
   try {
     const { AdMob } = await import("@capacitor-community/admob");
     if (!adInitDone) {
@@ -302,4 +311,89 @@ export async function fetchStorePrices(ids: string[]): Promise<Record<string, st
   } catch {
     return {};
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * vc181 (지시 #10) — 웹/PC용 하우스 광고 오버레이
+ *
+ * 네이티브(APK)는 AdMob 보상형을 쓴다. PC·웹에는 광고 SDK가 없어
+ * 종전엔 "이 환경에서는 광고를 볼 수 없습니다"로 막혔다 — 유저가 광고 보상을
+ * 영영 못 받는 구조였다. 여기서는 5초 카운트다운 오버레이를 띄워
+ * 같은 경험(기다린 뒤 보상)을 제공하고, 보상 지급 로직은 호출부가 그대로 탄다.
+ *
+ * DOM을 직접 만드는 이유: 이 모듈은 Phaser/React 밖에서 호출되고,
+ * React 상태와 무관하게 한 번 뜨고 사라지는 UI라 컴포넌트로 만들 이유가 없다.
+ * ═══════════════════════════════════════════════════════════════════════ */
+function showHouseAdOverlay(durationSec = 5): Promise<{ ok: boolean; reason?: string }> {
+  if (typeof document === "undefined") return Promise.resolve({ ok: false, reason: "no-dom" });
+
+  return new Promise((resolve) => {
+    const wrap = document.createElement("div");
+    wrap.id = "sertz-house-ad";
+    wrap.style.cssText = [
+      "position:fixed", "inset:0", "z-index:99999",
+      "display:flex", "align-items:center", "justify-content:center",
+      "background:rgba(4,8,16,0.86)", "backdrop-filter:blur(3px)",
+      "font-family:Galmuri11,system-ui,sans-serif",
+    ].join(";");
+
+    const box = document.createElement("div");
+    box.style.cssText = [
+      "width:min(92vw,420px)", "padding:18px 20px", "border-radius:12px",
+      "background:linear-gradient(160deg,#101b2b,#0a1220)",
+      "border:1px solid rgba(125,232,255,0.35)",
+      "box-shadow:0 12px 40px rgba(0,0,0,0.6)", "text-align:center", "color:#e8f4ff",
+    ].join(";");
+
+    const title = document.createElement("p");
+    title.textContent = "광고 시청 중";
+    title.style.cssText = "margin:0 0 6px;font-size:15px;font-weight:900;color:#7de8ff;";
+
+    const sub = document.createElement("p");
+    sub.textContent = "잠시 후 보상이 지급됩니다";
+    sub.style.cssText = "margin:0 0 14px;font-size:11px;color:rgba(232,244,255,0.6);";
+
+    const barWrap = document.createElement("div");
+    barWrap.style.cssText = "height:6px;border-radius:99px;background:rgba(255,255,255,0.12);overflow:hidden;";
+    const bar = document.createElement("div");
+    bar.style.cssText = "height:100%;width:0%;background:linear-gradient(90deg,#7de8ff,#a8ff9d);transition:width 200ms linear;";
+    barWrap.appendChild(bar);
+
+    const count = document.createElement("p");
+    count.textContent = `${durationSec}초`;
+    count.style.cssText = "margin:10px 0 0;font-size:12px;font-weight:800;color:#ffd98a;";
+
+    const skip = document.createElement("button");
+    skip.textContent = "건너뛰기 (보상 없음)";
+    skip.style.cssText = [
+      "margin-top:14px", "padding:7px 12px", "border-radius:8px", "cursor:pointer",
+      "background:rgba(255,255,255,0.08)", "border:1px solid rgba(255,255,255,0.18)",
+      "color:rgba(232,244,255,0.7)", "font-size:11px", "font-weight:700",
+    ].join(";");
+
+    box.append(title, sub, barWrap, count, skip);
+    wrap.appendChild(box);
+    document.body.appendChild(wrap);
+
+    const started = Date.now();
+    let done = false;
+    const finish = (ok: boolean) => {
+      if (done) return;
+      done = true;
+      clearInterval(timer);
+      wrap.remove();
+      resolve(ok ? { ok: true } : { ok: false, reason: "cancelled" });
+    };
+
+    skip.onclick = () => finish(false);
+
+    const timer = window.setInterval(() => {
+      const elapsed = (Date.now() - started) / 1000;
+      const pct = Math.min(100, (elapsed / durationSec) * 100);
+      bar.style.width = `${pct}%`;
+      const left = Math.max(0, Math.ceil(durationSec - elapsed));
+      count.textContent = left > 0 ? `${left}초` : "완료!";
+      if (elapsed >= durationSec) finish(true);
+    }, 100);
+  });
 }
