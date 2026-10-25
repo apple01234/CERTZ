@@ -335,7 +335,10 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
    *  골드 인플레로 주문서가 상시 상시 접근 가능해지던 것을 유료 화폐 쪽으로 재조정.
    *  균열 던전/뽑기/패키지 획득 경로는 유지 */
   scroll_star: { key: "scroll_star", kind: "consumable", name: "강화 주문서", icon: "item_scroll_star", price: 150, tier: "rare", bmPrice: 30, bmOnly: true },
-  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 10, tier: "common", atk: 0 , clsOnly: ["thief"] },
+  /* v1.2.5 (회귀 수리) — weapon_1은 전 클래스 기본 지급 장비(Player 기본 weapon/owned)이므로
+   *  clsOnly를 두지 않는다. v1.2.4에서 ["thief"]가 붙어 비도적 클래스가 자기 기본 무기를
+   *  장착 불가로 판정받던 문제를 되돌린다. */
+  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 10, tier: "common", atk: 0 },
   weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 240, tier: "rare", atk: 6 , clsOnly: ["warrior"] },
   weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 640, tier: "epic", atk: 14 , clsOnly: ["warrior"] },
   weapon_4: { key: "weapon_4", kind: "weapon", name: "심연의 대검", icon: "item_weapon_4", price: 1400, tier: "epic", atk: 20 , clsOnly: ["warrior"] },
@@ -831,6 +834,11 @@ export const SHOP_STOCK: ItemKey[] = [
   "armor_5",
   "weapon_6",
   "armor_6",
+  /* v1.2.5 (회귀 수리) — v1.2.4 신규 궁수·해적 전용 무기 6종이 ITEMS에만 정의되고
+   *  상점·드롭·보스전리품 어디에도 없어 획득 불가였다. 골드 상점에 진열해 수리.
+   *  (가격 곡선은 v1.2.4 기획값 그대로 — 밸런스 조정은 별개 과제) */
+  "bow_forest", "bow_gale", "bow_aurora",
+  "gun_flint", "gun_broadside", "gun_abyss",
   "ring_power",
   "ring_vital",
   "ring_crit",

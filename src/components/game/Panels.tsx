@@ -1029,10 +1029,17 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           const ch = k.split("_")[1];
           return unlocked.has(ch);
         }
+        /* v1.2.5 (회귀 수리) — 타 계열 전용 무기는 진열에서 숨김 (장착 불가 구매 낭비 방지).
+         *  무기만 대상 — 방어구·장신구는 전 계열 공용. clsOnly 없는 무기(기본검·신화검)는 그대로 진열. */
+        const shopItem = ITEMS[k as ItemKey];
+        if (shopItem.kind === "weapon" && shopItem.clsOnly && shopItem.clsOnly.length > 0) {
+          const fam = familyOf(rpg.cls);
+          if (!fam || !shopItem.clsOnly.includes(fam)) return false;
+        }
         return true;
       }),
     })).filter((s) => s.rows.length > 0);
-  }, [rpg.shopStock, rpg.unlockedSets]);
+  }, [rpg.shopStock, rpg.unlockedSets, rpg.cls]);
   const flatRows = useMemo(() => shopSections.flatMap((s) => s.rows), [shopSections]);
   /* E키 확정 — 해당 행의 구매 버튼과 동일 동작 (구매 불가 행은 무시) */
   const [navIdx] = useListNav(flatRows.length, (i) => {
