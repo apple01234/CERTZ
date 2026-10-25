@@ -194,8 +194,12 @@ export function TitleScreen() {
 
 export function Banner({ text }: { text: string | null }) {
   if (!text) return null;
+  /* vc181 (지시 — "시간 지나면 꺼지는 창들은 인벤토리 같은 UI 위에 뜨게"):
+   *  종전 z-30 이라 패널(z-40)·모달(z-[60]) 아래로 깔려, 인벤토리를 연 채
+   *  획득/강화/오류 안내가 뜨면 보이지 않았다. 알림은 항상 최상단이어야 한다.
+   *  z-[80] — 패널(40)·보상팝업(70)·모달(60) 전부 위. pointer-events-none 유지. */
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[26%] z-30 flex justify-center">
+    <div className="pointer-events-none absolute inset-x-0 top-[26%] z-[80] flex justify-center">
       {/* v1.0.20 — 게임형 배너: 우드 프레임 + 금 텍스트 */}
       <div className="game-chip animate-[bannerPop_2.3s_ease-out_forwards] px-6 py-2.5">
         <p className="text-lg font-black tracking-wide text-[#ffd98a] [text-shadow:0_2px_0_#3a2508,0_3px_6px_#000] sm:text-xl">

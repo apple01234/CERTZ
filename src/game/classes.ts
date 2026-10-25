@@ -543,10 +543,13 @@ export function tier2RootOf(key?: string | null): ClassKey | null {
  *    swashbuckler(스와시버클러) ← swashbuckler · duelist · blademaster
  *  1차(전사/궁수/마법사/도적)·무직은 아직 계열을 선택 전 — null (직업별 랭킹에서는 "전체"로만 조회). */
 
-/** 8계열 루트(2차) 클래스키 — 직업별 랭킹 필터 칩 목록 (?job= 값) */
+/** 8계열 루트(2차) 클래스키 — 직업별 랭킹 필터 칩 목록 (?job= 값)
+ *  vc181 (지시 — "해적류 직업 랭킹 등록 안됨") — 해적 계열 2종(raider/corsair)이
+ *  이 목록에 없어 랭킹 필터 칩에도, 직업별 순위 집계에도 아예 등장하지 않았다. 추가. */
 export const BRANCH_KEYS: ClassKey[] = [
   "berserker", "guardian", "sniper", "windrunner",
   "archmage", "sage", "assassin", "swashbuckler",
+  "raider", "corsair", // 해적 2차 2갈래 (stormcaptain/powdermaster → raider, seaking/dreadnought → raider·corsair)
 ];
 
 /** 클래스키 → 소속 계열(2차 루트) 정규화. 1차/무직/미지 키는 null.

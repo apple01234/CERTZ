@@ -13,13 +13,22 @@ import type { BmGrant } from "./data";
  *  → 무료 트랙(전원) + 프리미엄 트랙(에메랄드 결제) 이중 구조, 소급 수령 허용. */
 
 /** 레벨 1당 필요 XP */
-export const PASS_LV_XP = 100;
+export const PASS_LV_XP = 260; // vc181 — 100→260 (시즌 완주가 며칠 만에 끝나던 문제)
 /** 시즌 최대 레벨 */
 export const PASS_MAX_LV = 30;
 /** 프리미엄 트랙 가격 (에메랄드 — GEM_SKUS 55💎 ₩5,500로 충전 가능) */
 export const PASS_PREMIUM_PRICE = 30;
-/** 시즌 패스 XP 규칙 (WorldScene 훅에서 사용) */
-export const PASS_XP_RULES = { hunt: 1, boss: 30, daily: 40, gateWave: 2 } as const;
+/** 시즌 패스 XP 규칙 (WorldScene 훅에서 사용)
+ *  vc181 (지시 #8 — "시즌 패스 경험치 너무 빨리 참") 재조정.
+ *  종전: hunt 1 / boss 30 / daily 40 → 30레벨 완주에 필요한 총 XP가 3,000이라
+ *   · 보스 100마리, 또는 일일퀘 75회, 또는 잡몹 3,000마리로 **시즌이 끝나 버렸다**.
+ *   한 달 시즌인데 며칠 만에 만렙이 되니 보상 트랙이 의미를 잃는다.
+ *  변경: 레벨당 XP를 100 → 260으로 올리고(총 7,800), 보스·일일 보상을 소폭 낮춘다.
+ *   · 보스 1마리 = 24XP → 완주 325마리
+ *   · 일일퀘 1회 = 30XP → 완주 260회(하루 1회면 시즌 내 불가능 — 다른 경로 병행 유도)
+ *   · 잡몹 1마리 = 1XP → 완주 7,800마리 (사냥 중심 플레이어의 현실적 목표)
+ *  세 경로를 섞어야 30레벨에 닿도록 설계한다. */
+export const PASS_XP_RULES = { hunt: 1, boss: 24, daily: 30, gateWave: 2 } as const;
 
 /** 시즌 키 — 달력 월 단위 (매월 1일 00시 리셋 = 예측 가능한 FOMO 사이클) */
 export function seasonKey(d = new Date()): string {

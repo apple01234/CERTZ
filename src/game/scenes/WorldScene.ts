@@ -3630,6 +3630,9 @@ export class WorldScene extends Phaser.Scene {
    *  맞은 순간 물리를 수십 ms 정지해 "얻어맞은 느낌"을 극대화 (애니메이션/파티클은 유지).
    *  일반 26ms · 크리티컬 55ms · 격파 70ms — 연타 스택 방지(최대 1회 연장) */
   private hitStopUntil = 0;
+  /** vc181 (지시 #2) — 보스 사망 슬로우모션 복원 워치독 기준 시각. 0이면 슬로우모션 아님.
+   *  timeScale이 0.28에 고정되면 게임이 "멈춘 것처럼" 보이므로 update에서 강제 복원한다. */
+  private slowmoUntil = 0;
 
   hitStop(ms = 26) {
     const now = this.time.now;
@@ -8133,16 +8136,35 @@ export class WorldScene extends Phaser.Scene {
         .setScrollFactor(0)
         .setDepth(9500);
       this.tweens.add({ targets: veil, fillAlpha: 0.42, duration: 220 });
-      this.time.delayedCall(220 * 0.28, () => {
+      /* vc181 (지시 #2 — "보스전시 게임 멈추는 상황 발생") 수리:
+       *  종전엔 delayedCall(220*0.28 = 61.6ms) 안에서 timeScale을 1로 되돌렸다.
+       *  문제 ① timeScale이 0.28인 상태라 그 61.6ms가 실제로는 220ms로 늘어나
+       *        복원 타이밍이 어긋났고,
+       *  문제 ② 그 사이 예외·씬 전환·백그라운드 복귀가 끼면 콜백이 유실돼
+       *        **timeScale이 0.28에 영구 고정** → 게임 전체가 3.5배 느려져 "멈춘 것처럼" 보였다.
+       *  이제 복원을 (a) 실제 시각 기준 setTimeout, (b) update의 워치독 두 경로로 보장한다. */
+      this.slowmoUntil = this.time.now + 2000; // 워치독 기준(정상 복원 시 무시됨)
+      const veilStart = Date.now();
+      const restore = () => {
+        if (this.time) this.time.timeScale = 1;
+        if (this.tweens) this.tweens.timeScale = 1;
+        this.slowmoUntil = 0;
+      };
+      this.time.delayedCall(62, () => {
         this.tweens.add({
           targets: veil,
           fillAlpha: 0,
           duration: 380,
           onComplete: () => veil.destroy(),
         });
-        this.time.timeScale = 1;
-        this.tweens.timeScale = 1;
+        restore();
       });
+      /* 안전망 — 씬 타이머가 굳어도 실제 시각으로 강제 복원 */
+      window.setTimeout(() => {
+        restore();
+        if (veil.active) veil.destroy();
+      }, 900);
+      void veilStart;
     }
     /* v1.0.8 — ① 탑 보스층 격파: 스토리/재림 경로와 완전 분리 (층 클리어 처리만) */
     if (this.towerActive) {
@@ -8251,7 +8273,15 @@ export class WorldScene extends Phaser.Scene {
     if (dropKey && this.boss) {
       const bx = this.boss.x;
       const by = this.boss.y;
-      const dropN = isRaidBoss ? 2 : 1; // v1.0.8 — 주간 레이드 보스 드롭 2배
+      /* vc181 (지시 #9 — "보스 장신구 확률에 따라 2개 이상 떨어뜨리는 버그") 수리:
+       *  종전엔 레이드 보스에서 `dropN = 2`로 **무조건** 2개를 뿌렸다. 확률 개념이 없어
+       *  "한 번 잡았는데 2개"가 항상 일어났고, 유저는 이를 확률 버그로 인식했다.
+       *  이제 기본 1개 + 난이도/레이드에 따른 **추가 1개 확률**로 바꾼다.
+       *   · 일반 보스: 1개 고정
+       *   · 레이드 보스: 1개 + 45% 확률로 1개 더 (최대 2개)
+       *   · 카오스 난이도: 위에 +20%p 가산 */
+      const extraChance = (isRaidBoss ? 0.45 : 0) + (this.bossChaos ? 0.2 : 0);
+      const dropN = 1 + (Math.random() < extraChance ? 1 : 0);
       this.time.delayedCall(420, () => {
         if (!this.scene.isActive()) return;
         for (let i = 0; i < dropN; i++) {
@@ -8342,10 +8372,34 @@ export class WorldScene extends Phaser.Scene {
     this.statDeaths++; // v1.1.5 (#개편 통계)
     audio.sfx.playerDie(); // v1.4.8 — 사망 무음 해소 (어두운 붕괴음)
     audio.stopBGM();
-    /* v1.4.10 — 사망 안내 (부연 설명 강화): 부활 규칙 + 패널티 없음을 미리 알려 좌절감 완화 */
+    /* vc181 (지시 #1 — "캐릭터 사망시 패널티 부여"):
+     *  종전엔 패널티가 전혀 없어(안내문에 "경험치·아이템은 그대로") 죽어도 잃는 게 없었다.
+     *  긴장이 사라져 물약을 안 챙기고 무리에 파고드는 플레이가 최적이 됐다.
+     *  → 메이플식 관용 패널티를 넣는다:
+     *   · 경험치: 현재 레벨 요구치의 5% 감소(레벨 다운은 없음 — 0에서 멈춤)
+     *   · 골드: 보유의 3% 감소(최대 50,000G까지만 — 고레벨 유저 과도한 손실 방지)
+     *   · 마을/실내 사망은 면제 (안전 지대에서 죽는 경우는 사실상 자살뿐)
+     *  아이템은 잃지 않는다 — 장비 손실은 모바일 RPG에서 이탈 요인이 크다. */
+    const safeZone = this.stageDef.isVillage || this.isInterior;
+    if (!safeZone && this.player) {
+      const p = this.player;
+      const expLoss = Math.min(p.exp, Math.round(p.expNext() * 0.05));
+      const goldLoss = Math.min(p.gold, 50000, Math.round(p.gold * 0.03));
+      p.exp = Math.max(0, p.exp - expLoss);
+      p.gold = Math.max(0, p.gold - goldLoss);
+      this.spawnPickupText(p.x, p.y - 40, `EXP -${expLoss.toLocaleString()}`, "#ff8a8a");
+      this.spawnPickupText(p.x, p.y - 60, `골드 -${goldLoss.toLocaleString()}`, "#ffc46a");
+      EventBus.emit("banner:show", {
+        text: `사망 패널티 — EXP -${expLoss.toLocaleString()}, 골드 -${goldLoss.toLocaleString()}`,
+      });
+      this.emitHud();
+      this.emitRpgState();
+    }
     this.hintOnce(
       "death",
-      "쓰러졌다! 잠시 후 가장 가까운 마을에서 부활한다 — 경험치·아이템은 그대로라 걱정 없다. 물약을 미리 챙기고 몬스터 무리에 파고들지 말자!"
+      safeZone
+        ? "쓰러졌다! 안전 지대였으므로 패널티는 없다. 잠시 후 그 자리에서 일어난다."
+        : "쓰러졌다! 경험치 5%와 골드 3%를 잃었다. 물약을 채우고 몬스터 무리에 파고들지 말자 — 장비는 잃지 않는다.",
     );
     this.cameras.main.fadeOut(600, 20, 0, 0);
     this.time.delayedCall(700, () => {
@@ -8528,6 +8582,14 @@ export class WorldScene extends Phaser.Scene {
           EventBus.emit("banner:show", { text: `${def.name}은(는) ${need} 전용 장비입니다` });
           return;
         }
+      }
+      /* vc181 (지시 #15) — 장착 요구 레벨. 상점 구매는 허용하되(미리 사 둘 수 있음)
+       *  장착은 레벨을 채워야 한다. 상위 등급 장비가 1렙에 바로 붙던 문제 차단. */
+      if ((def?.reqLv ?? 0) > this.player.lv) {
+        EventBus.emit("banner:show", {
+          text: `${def?.name ?? "장비"}은(는) Lv${def?.reqLv}부터 장착할 수 있어요 (현재 Lv${this.player.lv})`,
+        });
+        return;
       }
       /* v1.0.3 (#반지중첩) — 장착 실패 안내: 같은 장신구 중복 장착 시도 등에 조용히 무시되지 않게 */
       if (!this.player.equip(v.key)) {
@@ -10256,6 +10318,14 @@ export class WorldScene extends Phaser.Scene {
     }
 
     /* v4.1.0 — 적응형 품질/포탈 가이드/긴급귀환 쿨다운 */
+    /* vc181 (지시 #2) — 슬로우모션 워치독: 예외·씬전환·백그라운드 복귀로 복원 콜백이
+     *  유실되면 timeScale 0.28이 영구 고정되어 게임이 3.5배 느려진다(체감 "멈춤").
+     *  기준 시각을 넘기면 무조건 원복한다. */
+    if (this.slowmoUntil > 0 && Date.now() > this.slowmoUntil) {
+      this.time.timeScale = 1;
+      this.tweens.timeScale = 1;
+      this.slowmoUntil = 0;
+    }
     this.tickFxQuality(dt);
     /* vc178 (지시 #2) — 기능 개방 튜토리얼 큐 처리 (전투/대사 중엔 자동 연기) */
     this.tickFeatureTutorial();

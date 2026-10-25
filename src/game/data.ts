@@ -312,6 +312,10 @@ export type ItemDef = {
   /** v1.2.4 (버그 6) — 이 장비를 쓸 수 있는 계열(없으면 전 직업 공용).
    *  "직업별로 무기가 다르다"를 실제 규칙으로 만든다. */
   clsOnly?: FamilyKey[];
+  /** vc181 (지시 #15) — 장착 요구 레벨. 없으면 0(제한 없음).
+   *  상위 등급 장비가 1렙 캐릭터에게 즉시 장착되던 문제를 막는다.
+   *  판정: Player.lv >= reqLv. 상점 구매는 막지 않고(미리 사 둘 수 있음) 장착에서만 검사. */
+  reqLv?: number;
   atk?: number; // 무기 공격력 보너스
   def?: number; // 방어구 방어력
   crit?: number; // 장신구 — 크리티컬 확률 증가 (%p)
@@ -347,27 +351,33 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   /* v1.2.5 (회귀 수리) — weapon_1은 전 클래스 기본 지급 장비(Player 기본 weapon/owned)이므로
    *  clsOnly를 두지 않는다. v1.2.4에서 ["thief"]가 붙어 비도적 클래스가 자기 기본 무기를
    *  장착 불가로 판정받던 문제를 되돌린다. */
-  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 10, tier: "common", atk: 0 },
-  weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 240, tier: "rare", atk: 6 , clsOnly: ["warrior"] },
-  weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 640, tier: "epic", atk: 14 , clsOnly: ["warrior"] },
-  weapon_4: { key: "weapon_4", kind: "weapon", name: "심연의 대검", icon: "item_weapon_4", price: 1400, tier: "epic", atk: 20 , clsOnly: ["warrior"] },
+  weapon_1: { key: "weapon_1", kind: "weapon", name: "낡은 단검", icon: "item_weapon_1", price: 10, tier: "common", reqLv: 1, atk: 0 },
+  weapon_2: { key: "weapon_2", kind: "weapon", name: "강철 검", icon: "item_weapon_2", price: 240, tier: "rare", reqLv: 10, atk: 6 , clsOnly: ["warrior"] },
+  weapon_3: { key: "weapon_3", kind: "weapon", name: "기사단 대검", icon: "item_weapon_3", price: 640, tier: "epic", reqLv: 25, atk: 14 , clsOnly: ["warrior"] },
+  weapon_4: { key: "weapon_4", kind: "weapon", name: "심연의 대검", icon: "item_weapon_4", price: 1400, tier: "epic", reqLv: 25, atk: 20 , clsOnly: ["warrior"] },
   /* v2.5 — 상위 장비 티어 (지시 #5 아이템 확장) */
-  weapon_5: { key: "weapon_5", kind: "weapon", name: "용인의 마검", icon: "item_weapon_5", price: 2800, tier: "epic", atk: 28 , clsOnly: ["warrior"] },
-  weapon_6: { key: "weapon_6", kind: "weapon", name: "심연룡의 절세검", icon: "item_weapon_6", price: 5600, tier: "epic", atk: 38 , clsOnly: ["thief"] },
-  armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 8, tier: "common", def: 0 },
-  armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 210, tier: "rare", def: 3 },
-  armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 580, tier: "epic", def: 7 },
-  armor_4: { key: "armor_4", kind: "armor", name: "수호자의 갑옷", icon: "item_armor_4", price: 1250, tier: "epic", def: 10 },
-  armor_5: { key: "armor_5", kind: "armor", name: "용린 갑주", icon: "item_armor_5", price: 2400, tier: "epic", def: 14 },
-  armor_6: { key: "armor_6", kind: "armor", name: "심연룡의 비늘갑옷", icon: "item_armor_6", price: 4800, tier: "epic", def: 18 },
-  ring_power: { key: "ring_power", kind: "accessory", name: "힘의 반지", icon: "item_ring_power", price: 380, tier: "rare", crit: 7, slot: "ring" },
-  ring_vital: { key: "ring_vital", kind: "accessory", name: "생명의 반지", icon: "item_ring_vital", price: 340, tier: "rare", maxHp: 25, slot: "ring" },
+  weapon_5: { key: "weapon_5", kind: "weapon", name: "용인의 마검", icon: "item_weapon_5", price: 2800, tier: "epic", reqLv: 25, atk: 28 , clsOnly: ["warrior"] },
+  /* vc181 (지시 #14 — "종결무기 값이 너무 싸") — 5,600 → 42,000G.
+   *  종전 곡선(10→240→640→1400→2800→5600)은 마지막 단계만 2배라, 최종 무기가
+   *  중간 장비 2개 값이면 살 수 있었다. 종결 장비는 실질적 목표가 되어야 하므로
+   *  이전 단계 대비 7.5배로 끊는다(용인의 마검 2,800 → 42,000).
+   *  부수 수리: clsOnly:["thief"] 가 다시 붙어 있었다(v1.2.5에서 제거했던 회귀).
+   *  이 때문에 전사·궁수·마법사·해적은 이 검을 장착할 수 없었다 — 제거. */
+  weapon_6: { key: "weapon_6", kind: "weapon", name: "심연룡의 절세검", icon: "item_weapon_6", price: 42000, tier: "epic", reqLv: 25, atk: 38 },
+  armor_1: { key: "armor_1", kind: "armor", name: "여행자의 옷", icon: "item_armor_1", price: 8, tier: "common", reqLv: 1, def: 0 },
+  armor_2: { key: "armor_2", kind: "armor", name: "가죽 갑옷", icon: "item_armor_2", price: 210, tier: "rare", reqLv: 10, def: 3 },
+  armor_3: { key: "armor_3", kind: "armor", name: "기사단 갑옷", icon: "item_armor_3", price: 580, tier: "epic", reqLv: 25, def: 7 },
+  armor_4: { key: "armor_4", kind: "armor", name: "수호자의 갑옷", icon: "item_armor_4", price: 1250, tier: "epic", reqLv: 25, def: 10 },
+  armor_5: { key: "armor_5", kind: "armor", name: "용린 갑주", icon: "item_armor_5", price: 2400, tier: "epic", reqLv: 25, def: 14 },
+  armor_6: { key: "armor_6", kind: "armor", name: "심연룡의 비늘갑옷", icon: "item_armor_6", price: 4800, tier: "epic", reqLv: 25, def: 18 },
+  ring_power: { key: "ring_power", kind: "accessory", name: "힘의 반지", icon: "item_ring_power", price: 380, tier: "rare", reqLv: 10, crit: 7, slot: "ring" },
+  ring_vital: { key: "ring_vital", kind: "accessory", name: "생명의 반지", icon: "item_ring_vital", price: 340, tier: "rare", reqLv: 10, maxHp: 25, slot: "ring" },
   /* v2.5 — 상위 장신구 (지시 #5 아이템 확장) */
-  ring_crit: { key: "ring_crit", kind: "accessory", name: "매의 눈 반지", icon: "item_ring_crit", price: 1300, tier: "epic", crit: 12, slot: "ring" },
-  ring_guard: { key: "ring_guard", kind: "accessory", name: "수호 반지", icon: "item_ring_guard", price: 1200, tier: "epic", maxHp: 60, slot: "ring" },
+  ring_crit: { key: "ring_crit", kind: "accessory", name: "매의 눈 반지", icon: "item_ring_crit", price: 1300, tier: "epic", reqLv: 25, crit: 12, slot: "ring" },
+  ring_guard: { key: "ring_guard", kind: "accessory", name: "수호 반지", icon: "item_ring_guard", price: 1200, tier: "epic", reqLv: 25, maxHp: 60, slot: "ring" },
   /* v2.9 (#8) — 펜던트 (2개 중복 장착) */
-  pendant_vital: { key: "pendant_vital", kind: "accessory", name: "생명의 펜던트", icon: "item_pendant_vital", price: 900, tier: "rare", maxHp: 45, slot: "pendant" },
-  pendant_arcane: { key: "pendant_arcane", kind: "accessory", name: "신비의 펜던트", icon: "item_pendant_arcane", price: 1600, tier: "epic", crit: 10, slot: "pendant" },
+  pendant_vital: { key: "pendant_vital", kind: "accessory", name: "생명의 펜던트", icon: "item_pendant_vital", price: 900, tier: "rare", reqLv: 10, maxHp: 45, slot: "pendant" },
+  pendant_arcane: { key: "pendant_arcane", kind: "accessory", name: "신비의 펜던트", icon: "item_pendant_arcane", price: 1600, tier: "epic", reqLv: 25, crit: 10, slot: "pendant" },
   /* ---- BM (v1.9): 버프 물약 / 펫 / 치장 ---- */
   buff_atk: { key: "buff_atk", kind: "buff", name: "분노의 물약", icon: "item_buff_atk", price: 60, tier: "rare" },
   buff_def: { key: "buff_def", kind: "buff", name: "수호의 물약", icon: "item_buff_def", price: 55, tier: "rare" },
@@ -409,7 +419,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   gm_elixir: { key: "gm_elixir", kind: "consumable", name: "[GM] 완전 엘릭서", icon: "i_gm_elixir", price: 0, tier: "legend", healFull: true, sellPrice: 1, tradeLock: true, gmOnly: true },
   /* ---- v3.0.6 — BM 상점 (에메랄드 전용 — 골드 상점과 분리, 지시 #1) ---- */
   pet_atlas: { key: "pet_atlas", kind: "pet", name: "별의 정령 아틀라스", icon: "pet_atlas", price: 45000, bmPrice: 30, bmOnly: true, tier: "legend" },
-  ring_bless: { key: "ring_bless", kind: "accessory", name: "가호의 반지", icon: "ring_bless", price: 60000, bmPrice: 45, bmOnly: true, tier: "legend", crit: 15, maxHp: 100, slot: "ring" },
+  ring_bless: { key: "ring_bless", kind: "accessory", name: "가호의 반지", icon: "ring_bless", price: 60000, bmPrice: 45, bmOnly: true, tier: "legend", reqLv: 45, crit: 15, maxHp: 100, slot: "ring" },
   buff_king: { key: "buff_king", kind: "buff", name: "왕의 가호", icon: "buff_king", price: 15000, bmPrice: 15, bmOnly: true, tier: "legend" },
   buff_crit: { key: "buff_crit", kind: "buff", name: "질풍의 물약", icon: "i_buff_crit", price: 130, tier: "rare", sellPrice: 45 },
   buff_gold: { key: "buff_gold", kind: "buff", name: "탐욕의 물약", icon: "item_coin", price: 120, tier: "rare", sellPrice: 40 },
@@ -483,18 +493,18 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   potion_mp8: { key: "potion_mp8", kind: "consumable", name: "심연 MP 물약", icon: "i_potion_mp8", price: 3900, bmPrice: 12, bmOnly: true, sellPrice: 800, tier: "legend", restore: 2500 },
   potion_mp9: { key: "potion_mp9", kind: "consumable", name: "세계수 MP 물약", icon: "i_potion_mp9", price: 8500, bmPrice: 18, bmOnly: true, sellPrice: 1200, tier: "legend", restore: 3800 },
   potion_mp10: { key: "potion_mp10", kind: "consumable", name: "천멸 MP 물약", icon: "i_potion_mp10", price: 19000, bmPrice: 26, bmOnly: true, sellPrice: 1700, tier: "legend", restore: 5700 },
-  ring_might: { key: "ring_might", kind: "accessory", name: "무력의 반지", icon: "i_ring_might", price: 900, tier: "epic", atk: 18, slot: "ring", sellPrice: 320 },
-  ring_swift: { key: "ring_swift", kind: "accessory", name: "질풍의 반지", icon: "i_ring_swift", price: 1100, tier: "epic", atk: 12, crit: 6, slot: "ring", sellPrice: 400 },
-  ring_fortune: { key: "ring_fortune", kind: "accessory", name: "행운의 반지", icon: "i_ring_fortune", price: 30000, bmPrice: 12, bmOnly: true, tier: "epic", crit: 10, maxHp: 60, slot: "ring" },
-  ring_dragon: { key: "ring_dragon", kind: "accessory", name: "용심의 반지", icon: "i_ring_dragon", price: 65000, bmPrice: 26, bmOnly: true, tier: "legend", atk: 26, maxHp: 120, slot: "ring" },
-  ring_titan: { key: "ring_titan", kind: "accessory", name: "거인의 반지", icon: "i_ring_titan", price: 50000, bmPrice: 20, bmOnly: true, tier: "epic", def: 6, maxHp: 260, slot: "ring" },
-  ring_phantom: { key: "ring_phantom", kind: "accessory", name: "유령의 반지", icon: "i_ring_phantom", price: 75000, bmPrice: 30, bmOnly: true, tier: "legend", atk: 8, crit: 14, slot: "ring" },
-  ring_ancient: { key: "ring_ancient", kind: "accessory", name: "고대 왕의 반지", icon: "i_ring_ancient", price: 140000, bmPrice: 55, bmOnly: true, tier: "legend", atk: 30, crit: 8, maxHp: 150, slot: "ring" },
-  pendant_ward: { key: "pendant_ward", kind: "accessory", name: "수호의 부적", icon: "i_pendant_ward", price: 850, tier: "rare", def: 8, slot: "pendant", sellPrice: 300 },
-  pendant_blood: { key: "pendant_blood", kind: "accessory", name: "피의 부적", icon: "i_pendant_blood", price: 1500, tier: "epic", atk: 14, maxHp: 90, slot: "pendant", sellPrice: 520 },
-  pendant_moon: { key: "pendant_moon", kind: "accessory", name: "달빛 부적", icon: "i_pendant_moon", price: 40000, bmPrice: 16, bmOnly: true, tier: "epic", crit: 8, def: 4, slot: "pendant" },
-  pendant_sage: { key: "pendant_sage", kind: "accessory", name: "현자의 부적", icon: "i_pendant_sage", price: 55000, bmPrice: 22, bmOnly: true, tier: "epic", def: 5, maxHp: 200, slot: "pendant" },
-  pendant_star: { key: "pendant_star", kind: "accessory", name: "별의 부적", icon: "i_pendant_star", price: 110000, bmPrice: 45, bmOnly: true, tier: "legend", atk: 20, crit: 6, maxHp: 100, slot: "pendant" },
+  ring_might: { key: "ring_might", kind: "accessory", name: "무력의 반지", icon: "i_ring_might", price: 900, tier: "epic", reqLv: 25, atk: 18, slot: "ring", sellPrice: 320 },
+  ring_swift: { key: "ring_swift", kind: "accessory", name: "질풍의 반지", icon: "i_ring_swift", price: 1100, tier: "epic", reqLv: 25, atk: 12, crit: 6, slot: "ring", sellPrice: 400 },
+  ring_fortune: { key: "ring_fortune", kind: "accessory", name: "행운의 반지", icon: "i_ring_fortune", price: 30000, bmPrice: 12, bmOnly: true, tier: "epic", reqLv: 25, crit: 10, maxHp: 60, slot: "ring" },
+  ring_dragon: { key: "ring_dragon", kind: "accessory", name: "용심의 반지", icon: "i_ring_dragon", price: 65000, bmPrice: 26, bmOnly: true, tier: "legend", reqLv: 45, atk: 26, maxHp: 120, slot: "ring" },
+  ring_titan: { key: "ring_titan", kind: "accessory", name: "거인의 반지", icon: "i_ring_titan", price: 50000, bmPrice: 20, bmOnly: true, tier: "epic", reqLv: 25, def: 6, maxHp: 260, slot: "ring" },
+  ring_phantom: { key: "ring_phantom", kind: "accessory", name: "유령의 반지", icon: "i_ring_phantom", price: 75000, bmPrice: 30, bmOnly: true, tier: "legend", reqLv: 45, atk: 8, crit: 14, slot: "ring" },
+  ring_ancient: { key: "ring_ancient", kind: "accessory", name: "고대 왕의 반지", icon: "i_ring_ancient", price: 140000, bmPrice: 55, bmOnly: true, tier: "legend", reqLv: 45, atk: 30, crit: 8, maxHp: 150, slot: "ring" },
+  pendant_ward: { key: "pendant_ward", kind: "accessory", name: "수호의 부적", icon: "i_pendant_ward", price: 850, tier: "rare", reqLv: 10, def: 8, slot: "pendant", sellPrice: 300 },
+  pendant_blood: { key: "pendant_blood", kind: "accessory", name: "피의 부적", icon: "i_pendant_blood", price: 1500, tier: "epic", reqLv: 25, atk: 14, maxHp: 90, slot: "pendant", sellPrice: 520 },
+  pendant_moon: { key: "pendant_moon", kind: "accessory", name: "달빛 부적", icon: "i_pendant_moon", price: 40000, bmPrice: 16, bmOnly: true, tier: "epic", reqLv: 25, crit: 8, def: 4, slot: "pendant" },
+  pendant_sage: { key: "pendant_sage", kind: "accessory", name: "현자의 부적", icon: "i_pendant_sage", price: 55000, bmPrice: 22, bmOnly: true, tier: "epic", reqLv: 25, def: 5, maxHp: 200, slot: "pendant" },
+  pendant_star: { key: "pendant_star", kind: "accessory", name: "별의 부적", icon: "i_pendant_star", price: 110000, bmPrice: 45, bmOnly: true, tier: "legend", reqLv: 45, atk: 20, crit: 6, maxHp: 100, slot: "pendant" },
   chest_iron: { key: "chest_iron", kind: "consumable", name: "무쇠 상자", icon: "i_chest_iron", price: 8000, bmPrice: 5, bmOnly: true, sellPrice: 400, tier: "rare" },
   /* v4.3.0 — 신규 펫 6종 (ITEMS 등록: BM 구매 경로 — PetDef 본체는 위 PET_DEFS) */
   /* v1.0.3 (#펫이름) — PET_DEFS 표기명과 동일하게 싱크 (상점/인벤은 ITEMS명, 펫 출석은 PET_DEFS명) */
@@ -542,11 +552,11 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   outfit_nightmare: { key: "outfit_nightmare", kind: "cosmetic", name: "나이트메어 기사", icon: "cost_nightmare_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_gilded: { key: "outfit_gilded", kind: "cosmetic", name: "황금 백작", icon: "cost_gilded_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   /* v1.1.0 (#1) — 어태치 장식 5종 (캐릭터에 고정, 실시간 동기화) */
-  acc_crown: { key: "acc_crown", kind: "cosmetic", name: "왕가의 왕관", icon: "acc_crown", price: 64000, bmPrice: 24, bmOnly: true, tier: "epic" },
-  acc_ribbon: { key: "acc_ribbon", kind: "cosmetic", name: "진홍 리본", icon: "acc_ribbon", price: 42000, bmPrice: 16, bmOnly: true, tier: "rare" },
-  acc_halo: { key: "acc_halo", kind: "cosmetic", name: "성스러운 후광", icon: "acc_halo", price: 78000, bmPrice: 30, bmOnly: true, tier: "epic" },
-  acc_wings_devil: { key: "acc_wings_devil", kind: "cosmetic", name: "마왕의 날개", icon: "acc_wings_devil", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend" },
-  acc_wings_fairy: { key: "acc_wings_fairy", kind: "cosmetic", name: "요정의 날개", icon: "acc_wings_fairy", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend" },
+  acc_crown: { key: "acc_crown", kind: "cosmetic", name: "왕가의 왕관", icon: "acc_crown", price: 64000, bmPrice: 24, bmOnly: true, tier: "epic", reqLv: 25 },
+  acc_ribbon: { key: "acc_ribbon", kind: "cosmetic", name: "진홍 리본", icon: "acc_ribbon", price: 42000, bmPrice: 16, bmOnly: true, tier: "rare", reqLv: 10 },
+  acc_halo: { key: "acc_halo", kind: "cosmetic", name: "성스러운 후광", icon: "acc_halo", price: 78000, bmPrice: 30, bmOnly: true, tier: "epic", reqLv: 25 },
+  acc_wings_devil: { key: "acc_wings_devil", kind: "cosmetic", name: "마왕의 날개", icon: "acc_wings_devil", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend", reqLv: 45 },
+  acc_wings_fairy: { key: "acc_wings_fairy", kind: "cosmetic", name: "요정의 날개", icon: "acc_wings_fairy", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend", reqLv: 45 },
   chest_silver: { key: "chest_silver", kind: "consumable", name: "은 상자", icon: "i_chest_silver", price: 20000, bmPrice: 12, bmOnly: true, sellPrice: 1200, tier: "epic" },
   chest_gold: { key: "chest_gold", kind: "consumable", name: "금 상자", icon: "i_chest_gold", price: 42000, bmPrice: 25, bmOnly: true, sellPrice: 3000, tier: "epic" },
   chest_legend: { key: "chest_legend", kind: "consumable", name: "전설 상자", icon: "i_chest_legend", price: 80000, bmPrice: 48, bmOnly: true, sellPrice: 6000, tier: "legend" },

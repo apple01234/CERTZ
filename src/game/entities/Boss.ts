@@ -129,9 +129,24 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(11);
-    // 보스 스프라이트 크기에 비례한 히트박스/근접 판정 (94x144 / 110x180 / 117x140 대응)
-    const bw = Math.round(this.width * 0.66);
-    const bh = Math.round(this.height * 0.6);
+    /* vc181 (지시 #7 — "보스 크기 적용 안됨"):
+     *  종전엔 보스 스케일을 아무도 지정하지 않아 `scaleX || 1` = 항상 1배였다.
+     *  그런데 BOSS_ATLAS 프레임 크기가 보스마다 156×163 ~ 330×212 로 제각각이라
+     *  (nidhog는 작게, boss2는 크게) 화면에서 차지하는 크기가 들쭉날쭉했다.
+     *  → 목표 표시 높이(320px)로 정규화해 모든 보스가 같은 체급으로 보이게 한다.
+     *    (소스 프레임이 작은 보스는 확대, 큰 보스는 축소 — 판정도 displayWidth 기준이라 함께 맞는다) */
+    {
+      const TARGET_H = 320;
+      const srcH = this.height || 1;
+      const s = Phaser.Math.Clamp(TARGET_H / srcH, 0.55, 2.6);
+      this.setScale(s);
+    }
+    // 보스 스프라이트 크기에 비례한 히트박스/근접 판정
+    /* vc181 — 스케일 정규화 후에는 displayWidth/displayHeight(스케일 반영값)를 써야
+     *  판정이 그림과 일치한다. 종전엔 원본 width/height만 써서, 축소된 보스는
+     *  그림보다 판정이 크고 확대된 보스는 작았다. */
+    const bw = Math.round(this.displayWidth * 0.66);
+    const bh = Math.round(this.displayHeight * 0.6);
     this.body!.setSize(bw, bh);
     this.body!.setOffset((this.width - bw) / 2, this.height - bh - 6);
     /* v1.4.31 (#4) — 아틀라스 프레임은 300px급 대형화 — 근접 판정도 표시 크기(displayWidth) 기준 */

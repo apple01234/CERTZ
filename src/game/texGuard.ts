@@ -289,6 +289,42 @@ function installMissingTextureGuard(scene: Phaser.Scene): void {
     }
     return origSprite(x, y, key, frame);
   };
+
+  /* vc181 (지시 #6 — "개짜치는 검정색 배경의 네모 이펙트 빼랬지"):
+   *  종전 가드는 add.image / add.sprite 만 감시했다. 그런데 파티클 이미터
+   *  (add.particles(x,y,key,...)) 12개가 특정 텍스처에 의존하고, 그 텍스처가
+   *  없는 상태로 생성되면 Phaser 의 __MISSING 플레이스홀더(=검은 사각형)가
+   *  이펙트 자리에 그대로 그려졌다. 이펙트에서 나오는 검정 네모의 정체다.
+   *  → 파티클·타일스프라이트도 같은 감시 대상에 넣고, 없는 키면 **이미터 자체를
+   *    만들지 않는다**(검은 네모를 띄우느니 파티클이 없는 편이 낫다).
+   *    텍스처가 나중에 로드되면 다음 재시도에서 정상 생성된다. */
+  const factoryAny = factory as unknown as Record<string, unknown>;
+  const origParticles = (scene.add as unknown as {
+    particles: (x: number, y: number, key?: string, cfg?: unknown) => unknown;
+  }).particles?.bind(scene.add);
+  if (origParticles) {
+    factoryAny.particles = function (this: unknown, x: number, y: number, key?: string, cfg?: unknown) {
+      if (key && !scene.textures.exists(key)) {
+        DYNAMIC_LOAD_QUEUE.add(key);
+        scheduleDynamicLoad(scene);
+        /* 플레이스홀더 대신 "빈 이미터"를 돌려준다 — start()는 무시된다 */
+        const empty = {
+          explode: () => undefined,
+          start: () => undefined,
+          stop: () => undefined,
+          setParticleTint: () => undefined,
+          setDepth: () => empty,
+          setScrollFactor: () => empty,
+          destroy: () => undefined,
+          setPosition: () => empty,
+          setScale: () => empty,
+          setAlpha: () => empty,
+        };
+        return empty;
+      }
+      return origParticles(x, y, key, cfg);
+    };
+  }
 }
 
 function scheduleDynamicLoad(scene: Phaser.Scene): void {

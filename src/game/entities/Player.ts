@@ -5442,11 +5442,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.recalcSpeed();
   }
 
-  /** v4.0.0 — 경험치 책 사용 (레벨 스케일 경험치 지급) */
+  /** v4.0.0 — 경험치 책 사용 (레벨 스케일 경험치 지급)
+   *  vc181 (지시 — "경험치 책 효율 너무 안좋음") 수리:
+   *   종전엔 `expBookExp(lv) = 80 + lv*45` 고정식이었다. 그런데 레벨업 요구 경험치는
+   *   메이플 공식표라 레벨이 오를수록 지수적으로 폭증한다. 그래서 Lv100에서 책 한 권이
+   *   요구치의 0.1%도 안 돼 "5000G짜리 쓰레기"가 됐다(실측: Lv100 요구 약 2.2억, 지급 4580).
+   *   → 현재 레벨 필요 EXP의 40%로 바꿔 어느 레벨에서나 체감 가치가 일정하게 만든다.
+   *   (Lv1에서도 과하지 않게 최소값은 expBookExp 폴백으로 보장) */
   useExpBook(): number {
     if (!this.owned.includes("exp_book")) return 0;
     this.consumeConsumable("exp_book");
-    const exp = expBookExp(this.lv);
+    const need = this.expNext();
+    const exp = Math.max(expBookExp(this.lv), Math.round(need * 0.4));
     this.gainExp(exp);
     return exp;
   }

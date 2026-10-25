@@ -600,7 +600,7 @@ export function HUD({
        *  pointer-events:none 으로 입력을 통과시킨다.
        *  90% 이상이면 발광 + 남은 %를 숫자로 병기해 레벨업 임박을 알린다. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5]">
-        <div className="relative h-[14px] w-full overflow-hidden border-t border-black/70 bg-black/70 sm:h-[16px]">
+        <div className="relative h-[8px] w-full overflow-hidden bg-black/70 sm:h-[9px]">
           <div
             className={`h-full bg-gradient-to-b from-lime-300 via-green-500 to-green-700 transition-[width] duration-200 ${
               expPct >= 90 ? "animate-pulse" : ""
@@ -608,11 +608,11 @@ export function HUD({
             style={{ width: `${expPct}%` }}
           />
           {/* 바 위 텍스트 — 가운데 정렬, 얇은 테두리로 가독성 확보 */}
-          <span className="absolute inset-0 flex items-center justify-center gap-1 text-[9px] font-black text-white [text-shadow:0_1px_2px_#000,0_0_3px_#000] sm:text-[10px]">
+          <span className="absolute inset-0 flex items-center justify-center gap-1 text-[7px] font-black leading-none text-white [text-shadow:0_1px_2px_#000,0_0_2px_#000] sm:text-[8px]">
             <span className="text-lime-200">EXP</span>
             <span>{expPct.toFixed(1)}%</span>
             <span className="text-white/60">({fmt(hud.exp)} / {fmt(hud.expNext)})</span>
-            {expPct >= 90 && <span className="ml-1 animate-pulse text-amber-300">곧 레벨업!</span>}
+            {expPct >= 90 && <span className="ml-0.5 animate-pulse text-amber-300">▲</span>}
           </span>
           {/* 90% 이상 경계 발광 */}
           {expPct >= 90 && (
