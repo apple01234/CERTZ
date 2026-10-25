@@ -25,6 +25,7 @@ import type { Enemy } from "./Enemy";
 import type { Boss } from "./Boss";
 import { ZERO_EXT, expBookExp, type ExtBonus, type GateCard } from "../isekai";
 import { expToNext } from "../expTable"; // v1.0.15 (피드백 #1) — 메이플 공식 레벨별 경험치표
+import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱 레이어
 import { memoCooldowns, restoreCooldowns } from "../cooldownMemo"; // v1.0.15 (피드백 #3) — 맵 이동 간 쿨타임 유지
 
 /**
@@ -2798,6 +2799,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.netEmitAction("s4"); // v4.1.0
     this.tierFlair(true); // v1.4.30 (#6) — 4차기(중요 스킬)만 풀 패키지 기존 연출
     const hex = this.clsHex();
+    /* vc181 (지시 #1·#2) — 4차 스킬도 3D 검기 메시 + 측면 트래킹 카메라.
+     *  궁극기보다 짧고 가볍게(1.1초) — 남발되는 슬롯이라 부담을 줄인다. */
+    void cine3d().play({ preset: "skill4", x: this.x, y: this.y, tint: hex, duration: 1100 });
     /* vc179 (지시 #11) — 4차 궁극기는 제공 VFX를 크게 쓴다 (필살기의 무게) */
     {
       const fx = this.familyFx();
@@ -3253,6 +3257,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  마법사만 마법진, 전사=대지 균열 / 궁수=화살 부채꼴 / 도적=공허 섬광 / 해적=대폭발
      *  (전 직업 동일 펜타클 "마법진 우려먹기" 해소) */
     spawnUltIntroSig(this.scene, this.x, this.y, hex, (familyOf(this.cls) ?? "default") as FamKey | "pirate" | "default");
+    /* vc181 (지시 #1·#2) — 3D 시네마틱: 궁극기 발동 순간 three.js 레이어가 올라와
+     *  실제 GLB 메시(해골·고리·톱니)를 3D 카메라 워크로 보여준다.
+     *  실패해도 2D 연출은 그대로 남으므로 게임 진행에 영향 없음. */
+    void cine3d().play({ preset: "ultimate", x: this.x, y: this.y, tint: hex, duration: 1750 });
     /* v1.4.0 (Task 3-1 — 유저 지시 #13) — 직업별 고유 VFX2 시그니처 연출 (8직업 1:1 매핑) */
     spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
     const ring = this.scene.add.circle(this.x, this.y, 34)
@@ -4194,6 +4202,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.tweens.add({ targets: ring, scale: 3.8, alpha: 0, duration: 760, ease: "Cubic.out", onComplete: () => ring.destroy() });
     this.scene.spawnBurstAt(this.x, this.y, 36, 0xb06aff);
     this.scene.vfx3dFx("spiral", this.x, this.y, 0xb06aff, 1.1);
+    /* vc181 (지시 #1·#2) — 제2궁극기는 3D 나선 카메라 워크 (1차보다 길고 웅장하게) */
+    void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: 2400 });
 
     switch (key5) {
       /* 워브링어 — 천멸전격: 5회 관통 돌진(용암 균열 잔존) + 대지 분쇄 지진 종결 */

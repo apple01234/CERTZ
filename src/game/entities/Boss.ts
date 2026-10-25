@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
+import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱
 import type { BossDef, BossAttackKind, BossDiffKey } from "../data";
 import { elemAdvantage, elementReaction, ELEM_REACTION_META, ELEMENT_META, type ElemKey, CHAPTER_ELEM } from "../data";
 import { parseStage } from "../stages";
@@ -485,6 +486,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   private onPhaseChange() {
     if (!this.alive) return;
+    /* vc181 (지시 #1·#2) — 페이즈 전환은 보스전의 최대 고비다. 3D 파편/링이
+     *  사방으로 터지며 카메라가 풀백하는 연출을 얹어 "지금 뭔가 변했다"를 각인시킨다. */
+    void cine3d().play({ preset: "bossPattern", x: this.x, y: this.y, tint: this.phase === 3 ? 0xff4a3a : 0xffa24a, duration: 1300 });
     this.volleyTimer?.remove();
     this.clearTint();
     /* vc153 — 스바르트알프헤임 방어막/투명화 잔존 정리 (페이즈 전환 시에도 상태 유출 금지) */

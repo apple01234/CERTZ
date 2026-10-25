@@ -12,6 +12,7 @@ import { Lighting, ambientFor } from "../fx/Lighting";
 import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
 import { Pet } from "../entities/Pet";
 import { EventBus, type QuestState, type InteractState, type QuestLogState, type RewardPopupState } from "../../components/game/EventBus";
+import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱 레이어
 import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
 import { loadKeyMap, loadMoveScheme, moveKeysFor, type KeyMap, type GameAction, type MoveScheme } from "../keymap";
 import {
@@ -1961,7 +1962,12 @@ export class WorldScene extends Phaser.Scene {
       },
     });
 
-    this.events.once("shutdown", () => this.cleanup());
+    this.events.once("shutdown", () => {
+      /* vc181 — 3D 레이어 정리. WebGL 컨텍스트를 남기면 씬 재시작마다
+       *  컨텍스트가 누적돼(브라우저 한도 16개) 검은 화면이 된다. */
+      cine3d().stop();
+      this.cleanup();
+    });
 
     /* v1.3.1 (#8 게임 멈춤 수정) — 앱 전환 복귀 시 입력·물리 자가치유:
      *  백그라운드 중 놓친 keyup 고착(자동이동/멈춤), 히트스톱·전환 중 복귀로 물리 정지 잔존을 정리한다.
@@ -7770,7 +7776,11 @@ export class WorldScene extends Phaser.Scene {
     const bx = this.portalHome.x;
     const by = this.portalHome.y - 10;
     audio.sfx.roar();
+    audio.sfx.beastGrowl(); // vc180 — 실제 녹음 괴수 포효
     this.doShake(260, 0.008);
+    /* vc181 (지시 #1·#2) — 보스 등장 3D 카메라: 위에서 내려앉는 조감 워크.
+     *  보스의 실제 등장 연출(하늘 낙하)과 겹쳐 3D 레이어가 시점 전환을 담당한다. */
+    void cine3d().play({ preset: "bossIntro", x: bx, y: by, tint: 0xff5a6a, duration: 1600 });
     this.showBanner(`${def.name} 출현!`);
     /* v1.4.12 (#12 보스전 자동전투 금지) — 보스전 진입 시 자동전투 강제 해제 + 이유 안내:
      *  보스는 패턴 회피가 전부라 알고리즘 자동전투로는 읽지 못한다(즉사 루트). */
