@@ -15175,6 +15175,10 @@ export class WorldScene extends Phaser.Scene {
       questTracked: this.trackedStage,
       /* ----- v3.0.16 ----- */
       monsterKills: { ...this.monsterKills },
+      /* vc178 — 집 꾸미기 배치 + 본 기능 튜토리얼 (이 두 필드가 빠져
+       *  재접속 시 가구 배치와 "본 적 있음" 기록이 사라지고 있었다 — 실측으로 확인) */
+      homeDecor: this.player.homeDecor.map((d) => ({ ...d })),
+      tutSeen: [...this.player.tutSeen],
     };
   }
 
