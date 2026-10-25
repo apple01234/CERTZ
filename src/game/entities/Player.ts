@@ -2205,6 +2205,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return classDef(this.cls)?.hex ?? 0xffffff;
   }
 
+  /** vc179 (지시 #11) — 사용자 제공 VFX 팩을 계열 정체성에 맞춰 고른다.
+   *  직접 그린 도형 대신 이미 받아 둔 텍스처를 쓰라는 지시의 수리.
+   *  각 계열의 상징(전사=충격파, 마법사=번개, 도적=보라 파동, 궁수=바람, 해적=화약)에 대응. */
+  private familyFx(): { burst: string; aura: string } {
+    const fam = familyOf(this.cls);
+    switch (fam) {
+      case "mage": return { burst: "fx_lightning", aura: "fx_glowblue" };
+      case "thief": return { burst: "fx_purple", aura: "fx_noise" };
+      case "ranger": return { burst: "fx_caustic", aura: "fx_glow" };
+      case "pirate": return { burst: "fx_flare", aura: "fx_smoke" };
+      default: return { burst: "fx_shockwave", aura: "fx_glowyellow" };
+    }
+  }
+
   useSkill3() {
     if (this.state !== "idle" || !this.skill3Unlocked || this.skill3Cd > 0 || this.mp < 25) return;
     const kind = SKILL3_KIND[this.cls ?? ""] as Skill3Kind | undefined;
@@ -2217,6 +2231,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.netEmitAction("s3"); // v4.1.0
     const hex = this.clsHex();
     const t = this.sTier; // v1.1.9 — 스킬 계수/범위 스케일용
+    /* vc179 (지시 #11) — 3차기 발동에 계열별 제공 VFX를 얹는다.
+     *  같은 계열이라도 스킬마다 색만 다르고 형태가 같던 문제를 텍스처로 분리. */
+    {
+      const fx = this.familyFx();
+      this.scene.spawnTexBurst?.(this.x, this.y - 6, fx.burst, { scale: 1.3, life: 340, tint: hex, alpha: 0.9 });
+      this.scene.spawnTexBurst?.(this.x, this.y - 6, fx.aura, { scale: 1.6, life: 420, tint: hex, alpha: 0.6, rotate: true });
+    }
     /* v3.0.24 — 3차기 16종 직업별 사운드 (전원 공용 없음 — 클래스 정체성 배치) */
     const SND3: Record<Skill3Kind, [string, number]> = {
       warcry: ["warcry", 1], // 워로드 — 전장의 함성
@@ -2777,6 +2798,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.netEmitAction("s4"); // v4.1.0
     this.tierFlair(true); // v1.4.30 (#6) — 4차기(중요 스킬)만 풀 패키지 기존 연출
     const hex = this.clsHex();
+    /* vc179 (지시 #11) — 4차 궁극기는 제공 VFX를 크게 쓴다 (필살기의 무게) */
+    {
+      const fx = this.familyFx();
+      this.scene.spawnTexBurst?.(this.x, this.y - 6, "fx_flarebig", { scale: 2.2, life: 460, tint: hex, alpha: 0.95 });
+      this.scene.spawnTexBurst?.(this.x, this.y - 6, fx.burst, { scale: 1.9, life: 520, tint: hex, alpha: 0.9 });
+    }
     const now = this.scene.time.now;
     /* v3.0.24 — 4차기 8종 직업별 사운드 (필살기 임팩트 배치) */
     const SND4: Record<Skill4Kind, [string, number]> = {

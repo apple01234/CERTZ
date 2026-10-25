@@ -352,6 +352,8 @@ const VFX_PACK_LIST = [
   "fx_shockwave", "fx_impact", "fx_glow", "fx_burst", "fx_flare", "fx_smoke",
   /* sertz.7z(GameVFX Buff Collection) 추가 추출분 — 원소/번개/육각 마법진/수중 */
   "fx_electro", "fx_flarew", "fx_hex", "fx_glowblue", "fx_noise", "fx_caustic",
+  /* 3차 추출 — 감전/낙뢰/황금 광휘/오라/보라 파동/대형 플레어 */
+  "fx_electrichit", "fx_lightning", "fx_glowyellow", "fx_aura", "fx_purple", "fx_flarebig",
 ] as const;
 
 const AUDIO_LIST: string[] = [

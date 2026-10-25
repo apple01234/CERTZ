@@ -19,7 +19,8 @@ const { chromium } = require("playwright");
   const r = await p.evaluate(() => {
     const sc = window.__SERTZ_DEBUG__.game.scene.getScenes(true).find(s=>s&&s.player);
     const all = ["fx_shockwave","fx_impact","fx_glow","fx_burst","fx_flare","fx_smoke",
-                 "fx_electro","fx_flarew","fx_hex","fx_glowblue","fx_noise","fx_caustic"];
+                 "fx_electro","fx_flarew","fx_hex","fx_glowblue","fx_noise","fx_caustic",
+                 "fx_electrichit","fx_lightning","fx_glowyellow","fx_aura","fx_purple","fx_flarebig"];
     const res = {}; for (const k of all) res[k]=sc.textures.exists(k);
     const missing = all.filter(k=>!res[k]);
     return { total: all.length, loaded: all.length-missing.length, missing };
