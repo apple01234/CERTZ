@@ -1,8 +1,8 @@
 {
   "name": "sertz-desktop",
   "productName": "SERTZ",
-  "version": "1.3.1",
-  "description": "SERTZ (vc179) — Next.js+Phaser 게임 Windows 데스크톱 패키지 (정적 export 내장 + Vercel API 프록시)",
+  "version": "1.3.6",
+  "description": "SERTZ (vc184) — Next.js+Phaser 게임 Windows 데스크톱 패키지 (정적 export 내장 + Vercel API 프록시)",
   "author": "SERTZ <apple01234@users.noreply.github.com>",
   "license": "UNLICENSED",
   "private": true,
@@ -33,7 +33,7 @@
         }
       ],
       "icon": "icon.png",
-      "artifactName": "SERTZ-vc179-setup.${ext}"
+      "artifactName": "SERTZ-vc184-setup.${ext}"
     },
     "nsis": {
       "oneClick": true,
@@ -42,7 +42,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "SERTZ",
-      "artifactName": "SERTZ-vc179-setup.${ext}"
+      "artifactName": "SERTZ-vc184-setup.${ext}"
     },
     "linux": {
       "target": [
