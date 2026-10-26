@@ -199,11 +199,17 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   window.setInterval(() => {
     if (ctxLostAt > 0 && Date.now() - ctxLostAt > 4000) {
       /* vc182 (#2 보스전 멈춤) — 4초는 모바일 GPU 복구 시간보다 짧다.
-       *  S20+(Adreno 650)급에서도 컨텍스트 복구는 5~15초 걸린다. 4초에 새로고침하면
-       *  복구될 상황에서도 전투를 통째로 날려 "멈추고 튕긴다"로 체감된다.
-       *  유실 횟수에 따라 예산을 차등: 첫 유실은 15초까지 기다려 복구를 살린다.
-       *  반복 유실(2회+)은 GPU가 못 버티는 신호이므로 예전처럼 빠르게 재부팅한다. */
-      const grace = ctxLossTimes.length <= 1 ? 15000 : 6000;
+       *  S20+(Adreno 650)급에서도 컨텍스트 복구는 5~15초 걸린다.
+       *
+       * vc189 (P0) — 종전엔 2회째 유예를 6초로 **줄였다**. 근거는 "반복 유실은 GPU가
+       *  못 버티는 신호"였지만, 실측 콘솔은 정반대를 보여줬다:
+       *    손실 → 15초 유예 안에 스스로 복구됨 → 곧 다시 손실 → 6초 유예 → 새로고침
+       *  즉 2회째는 복구 중인데 예산이 짧아 잘라버렸다. 새로고침은 부팅 2,979요청을
+       *  다시 태우므로 발열을 키우고 손실을 부른다(악순환).
+       *  → 유예는 **단조 증가**시킨다. 반복될수록 더 기다린다(15s → 20s → 25s, 상한 30s).
+       *  재부팅이 정말 필요한 경우는 아래 프리즈 워치독이 6초 무프레임으로 잡는다. */
+      const n = ctxLossTimes.length;
+      const grace = Math.min(30000, 15000 + Math.max(0, n - 1) * 5000);
       if (Date.now() - ctxLostAt > grace) {
         console.error("[SERTZ] 컨텍스트 미복구 — 안전 새로고침 (", Math.round(grace / 1000), "초 경과)");
         safeReload("webgl-context");

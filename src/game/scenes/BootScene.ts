@@ -361,7 +361,10 @@ const VFX_PACK_LIST = [
  *  기존 fx_* 는 GameVFX Buff Collection 계열이라 참격/별/전격 계열이 없었다.
  *  스킬 연출에 직접 쓰는 것만 골랐다(경로: assets/vfx2/). */
 const VFX2_LIST = [
-  "star", "starblur", "magicstar", "sparkle",          // 별·반짝임 계열
+  /* vc189 (P0) — "star" 제거: public/assets/vfx2/star.webp 파일이 없는데 목록에 남아
+   *  매 부팅 404 를 유발했다(실측 2,979요청 중 유일한 실패). 실패 시 FAILED_TRIES_MAX=3
+   *  재시도 로직을 타 부팅이 지연됐다. 같은 계열 starblur/magicstar 로 대체 가능. */
+  "starblur", "magicstar", "sparkle",                  // 별·반짝임 계열
   "ringarc", "ringelec", "ringice", "ringspike",       // 링·충격파 계열
   "aurarays", "stretchrayblur",                        // 광선·오라
   "exsmoke", "smokewhite", "elecspark", "firecircle",  // 연기·전격·화염

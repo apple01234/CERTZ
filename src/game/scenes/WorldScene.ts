@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
+import { villageThemeOf, type VillageTheme } from "../villageThemes"; // vc189 (D4) — 챕터별 마을 테마
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
@@ -192,6 +193,8 @@ export class WorldScene extends Phaser.Scene {
   /** 전진 차원문/보스가 놓이는 최원거리 셀 중심 (포탈 보루 폴백 위치로도 사용) */
   private portalHome = new Phaser.Math.Vector2(0, 0);
   /** 입구 셀 중심 — 플레이어 스폰/복귀 차원문 기준점 */
+  /** vc189 (D4) — 챕터별 마을 테마 (buildVillage 진입 전에 설정) */
+  private _vTheme: VillageTheme | null = null;
   private entryHome = new Phaser.Math.Vector2(0, 0);
   private edgeArrow: Phaser.GameObjects.Image | null = null;
   private edgeLabel: Phaser.GameObjects.Text | null = null;
@@ -1441,13 +1444,58 @@ export class WorldScene extends Phaser.Scene {
     if (this.isInterior) {
       this.buildInterior(stageKey);
     } else {
-    const groundTex = theme.ground;
+    /* vc189 (D4) — 마을이면 챕터 테마 지면을 쓴다(STAGE_THEME 은 사냥터용).
+     *  종전엔 마을도 사냥터와 같은 지면 타일이라 바닥이 구분되지 않았다. */
+    const _chG = parseStage(stageKey).ch;
+    const _vth = villageThemeOf(_chG === "village" ? "kingdom" : _chG);
+    const groundTex = this.stageDef.isVillage ? _vth.ground : theme.ground;
+    const vGroundTint = this.stageDef.isVillage ? _vth.groundTint : undefined;
     /* v1.4.30 (#11 니플헤임 눈부심) — 흰 눈바닥 타일이 화면을 압도하므로 챕터별 지면 틴트 도입.
      *  흰색 타일을 청회색으로 곱해 전체 톤 다운 (암전과 별개로 원본 자체가 밝은 타일 보정). */
     const CH_GROUND_TINT: Record<string, number> = { niflheim: 0xc4d6ea }; // vc147 (#21) — 0x70819c→밝은 설원톤 (눈 지형 체감 복원)
-    const gTint = CH_GROUND_TINT[parseStage(stageKey).ch];
+    const gTint = vGroundTint ?? CH_GROUND_TINT[parseStage(stageKey).ch];
     const groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
     if (gTint) groundTs.setTint(gTint);
+
+    /* vc189 (지시 D4 — "맵들이 전부 비슷해. 타일맵 레이어를 이용해서 건물&던전 같이
+     *  모험하는 느낌을 줘야지") —
+     *  종전 지면은 **단일 타일 한 장**을 화면 전체에 반복해 깔았다. 그래서 9개 챕터가
+     *  색만 다르고 바닥 질감·지형 경계가 전혀 달라 보이지 않았다.
+     *  여기서 지면 위(depth 1~2)에 **타일셋 레이어**를 덧깐다:
+     *    · 마을/필드 외곽에 지형 경계 띠(edge_dn/up/lt/rt)를 깔아 "열린 공간" 인상
+     *    · 네 모서리에 bite_* 를 깔아 자연스러운 지형 침식 표현
+     *  충돌체가 아니라 순수 시각 레이어이므로 이동 판정에 영향이 없다. */
+    /* 마을이면 챕터 테마의 terrainSet, 사냥터면 세트 미지정(지면 타일만) */
+    const chForKey = parseStage(stageKey).ch;
+    const terrSet = this.isInterior
+      ? null
+      : (villageThemeOf(chForKey === "village" ? "kingdom" : chForKey).terrainSet ?? null);
+    if (terrSet) {
+      const TS = 64; // tx_* 타일 규격
+      const edge = (kind: string, x: number, y: number, sx = 1, sy = 1) => {
+        const key = `tx_${terrSet}_${kind}`;
+        if (!this.textures.exists(key)) return;
+        this.add.tileSprite(x, y, TS * sx, TS * sy, key).setOrigin(0).setDepth(1).setAlpha(0.95);
+      };
+      const W = this.stageW, H = this.stageH;
+      const cols = Math.ceil(W / TS);
+      const rows = Math.ceil(H / TS);
+      /* 위/아래 띠 */
+      for (let c = 0; c < cols; c++) {
+        edge("edge_up", c * TS, 0);
+        edge("edge_dn", c * TS, H - TS);
+      }
+      /* 좌/우 띠 */
+      for (let r = 1; r < rows - 1; r++) {
+        edge("edge_lt", 0, r * TS);
+        edge("edge_rt", W - TS, r * TS);
+      }
+      /* 네 모서리 침식 */
+      edge("bite_dn", 0, TS);
+      edge("bite_up", 0, H - TS * 2);
+      edge("bite_dn", W - TS, TS);
+      edge("bite_up", W - TS, H - TS * 2);
+    }
     // v3.0.14 — 도로 표시 완전 제거: 가로/세로 일자 도로가 단조롭다는 피드백 ("길이 일자로만 되어있어")
     //  지형은 테마 바닥 타일링만 남기고, 빈 지형은 placeDecor의 나무·바위·장식 배치로 자연감을 채운다.
     // v3.0.13 — 지면 변형 스캐터(gvar) 완전 제거: 타 세트 색상의 64px 사각형이
@@ -3290,12 +3338,16 @@ export class WorldScene extends Phaser.Scene {
     this.buildVillageChest(cx + 430, cy + 40);
 
     // 광장 우물 (중앙 랜드마크, 충돌 있음) — 접근 시 샘물 회복
-    const well = this.add.image(cx, cy, "well").setDepth(Math.floor(cy / 10));
+    /* vc189 (D4) — 광장(우물) 위치도 챕터 테마를 따른다.
+     *  종전엔 항상 맵 정중앙이라 9개 마을의 동선이 동일했다. */
+    const wx = this.stageW * (this._vTheme?.plaza.x ?? 0.5);
+    const wy = this.stageH * (this._vTheme?.plaza.y ?? 0.5);
+    const well = this.add.image(wx, wy, "well").setDepth(Math.floor(wy / 10));
     this.solidGroup.add(well);
     (well.body as Phaser.Physics.Arcade.StaticBody).setSize(68, 38).setOffset(14, 57); // v3.0.10 — 분수 72x72 하단 실측
-    this.wellPos = new Phaser.Math.Vector2(cx, cy);
+    this.wellPos = new Phaser.Math.Vector2(wx, wy);
     this.add
-      .text(cx, cy - 44, "샘물 우물", {
+      .text(wx, wy - 44, "샘물 우물", {
         fontFamily: "Galmuri11, sans-serif",
         fontSize: "11px",
         color: "#bfe8ff",
@@ -3303,7 +3355,7 @@ export class WorldScene extends Phaser.Scene {
         strokeThickness: 3,
       })
       .setOrigin(0.5)
-      .setDepth(Math.floor(cy / 10));
+      .setDepth(Math.floor(wy / 10));
 
     /* v1.4.7 (유저 지시 — 오류나는 페이지 철거) — 이상한 비석 완전 제거:
      *  비석 → /secret/ 웹페이지 개방이 APK WebView에서 게임 언로드→재부팅 루프의
@@ -3315,11 +3367,19 @@ export class WorldScene extends Phaser.Scene {
     const chKey = parseStage(this.stageDef.key).ch;
     const vSpec = chKey !== "village" ? CHAPTER_VILLAGE_NPC[chKey] : undefined;
     const chSpec = chapterSpec(this.stageDef.key);
-    const houses: { x: number; y: number; tex: string; flip?: boolean }[] = [
-      { x: cx - 400, y: cy - 170, tex: "house_a" },
-      { x: cx + 90, y: cy - 200, tex: "house_b" },
-      { x: cx - 190, y: cy + 215, tex: "house_a", flip: true },
-    ];
+    /* vc189 (지시 D4) — 챕터별 마을 테마.
+     *  종전에는 모든 챕터가 **같은 좌표**에 건물 3채를 놓고 houseTint 만 바꿨다.
+     *  그래서 9개 마을이 "색만 다른 같은 마을"이었다.
+     *  이제 villageThemes.ts 의 챕터별 배치(광장 위치·건물 개수/좌표/반전·지면·NPC 복장)를 쓴다.
+     *  좌표는 stageW/stageH 대비 -0.5~+0.5 비율이라 맵 크기가 달라도 유지된다. */
+    const vTheme: VillageTheme = villageThemeOf(chKey === "village" ? "kingdom" : chKey);
+    this._vTheme = vTheme;
+    const houses: { x: number; y: number; tex: string; flip?: boolean }[] = vTheme.buildings.map((b) => ({
+      x: cx + b.dx * this.stageW,
+      y: cy + b.dy * this.stageH,
+      tex: b.tex,
+      flip: b.flip,
+    }));
     for (const h of houses) {
       const img = this.add.image(h.x, h.y, h.tex).setDepth(Math.floor(h.y / 10));
       if (vSpec) img.setTint(vSpec.houseTint);
@@ -3345,12 +3405,13 @@ export class WorldScene extends Phaser.Scene {
     // v3.0 (#4) — 챕터마다 이름/대사가 다른 주민 배치 (본마을은 기존 주민)
     const villagers: { x: number; y: number; tex: string; name: string; dlg: string }[] = vSpec
       ? [
-          { x: cx + 210, y: cy + 120, tex: vSpec.npcA.tex, name: vSpec.npcA.name, dlg: vSpec.npcA.dlg },
-          { x: cx - 90, y: cy - 90, tex: vSpec.npcB.tex, name: vSpec.npcB.name, dlg: vSpec.npcB.dlg },
+          /* vc189 (D4) — 챕터 테마 복장·이름 우선 (vSpec 은 대사키만 계승) */
+          { x: cx + 210, y: cy + 120, tex: vTheme.villagerATex, name: vTheme.villagerAName, dlg: vSpec.npcA.dlg },
+          { x: cx - 90, y: cy - 90, tex: vTheme.villagerBTex, name: vTheme.villagerBName, dlg: vSpec.npcB.dlg },
         ]
       : [
-          { x: cx + 210, y: cy + 120, tex: "spum_villager_m", name: "주민", dlg: "villager1" },
-          { x: cx - 90, y: cy - 90, tex: "spum_villager_f", name: "마을 아이", dlg: "villager2" },
+          { x: cx + 210, y: cy + 120, tex: vTheme.villagerATex, name: vTheme.villagerAName, dlg: "villager1" },
+          { x: cx - 90, y: cy - 90, tex: vTheme.villagerBTex, name: vTheme.villagerBName, dlg: "villager2" },
         ];
     for (const v of villagers) {
       /* v4.1.8 — 유료 SPUM 캐릭터(96px 캔버스) 배율 보정: 32px 무료 NPC × 1.6과 동일 화면 크기 */
@@ -3370,12 +3431,15 @@ export class WorldScene extends Phaser.Scene {
     }
 
     // 직업 교관 카이엔 (v1.9 — 전직 NPC, E키 상담 후 전직 패널 열림) — 전직관 건물 앞 배치
-    const jx = cx + 90;
-    const jy = cy - 120;
+    /* vc189 (D4) — 전직관 카이엔도 챕터 테마 복장을 입는다.
+     *  위치도 두 번째 건물(전직관) 바로 앞으로 옮겨 배치가 챕터마다 달라진다. */
+    const jobBuilding = vTheme.buildings[1] ?? vTheme.buildings[0];
+    const jx = cx + (jobBuilding?.dx ?? 0.06) * this.stageW + 60;
+    const jy = cy + (jobBuilding?.dy ?? -0.28) * this.stageH + 120;
     const jglow = this.add.image(jx, jy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.8).setAlpha(0.22);
     this.tweens.add({ targets: jglow, alpha: 0.4, scale: 1.05, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     /* v4.1.8 — 카이엔: 유료 SPUM 기사 캐릭터 (무료 villager 금색 틴트 대체 — 갑옷 자체가 황금색) */
-    this.jobNpc = this.add.image(jx, jy, "spum_knight").setDepth(Math.floor(jy / 10)).setScale(0.66);
+    this.jobNpc = this.add.image(jx, jy, vTheme.jobMasterTex).setDepth(Math.floor(jy / 10)).setScale(0.66);
     this.tweens.add({ targets: this.jobNpc, y: jy - 3, duration: 1000, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(jx, jy - 38, "직업 교관 카이엔", {
@@ -4322,7 +4386,10 @@ export class WorldScene extends Phaser.Scene {
     const my = this.layout ? this.entryHome.y - 40 : this.stageH / 2 - 60;
     const glow = this.add.image(mx, my + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.9).setAlpha(0.25);
     this.tweens.add({ targets: glow, alpha: 0.42, scale: 1.15, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-    this.merchant = this.add.image(mx, my, "npc_merchant").setDepth(Math.floor(my / 10)).setScale(1.7);
+    /* vc189 (D4) — 상인 라고스도 챕터 테마 복장 (종전 고정 npc_merchant) */
+    const merchantTex = this._vTheme?.merchantTex ?? "npc_merchant";
+    const merchantScale = merchantTex.startsWith("npc_") ? 1.7 : 0.72; // spum_* 은 96px 캔버스
+    this.merchant = this.add.image(mx, my, merchantTex).setDepth(Math.floor(my / 10)).setScale(merchantScale);
     this.tweens.add({ targets: this.merchant, y: my - 3, duration: 1200, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.merchantLabel = this.add
       .text(mx, my - 36, "상인 라고스", {
