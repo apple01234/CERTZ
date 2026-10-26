@@ -67,6 +67,26 @@ jobs:
       - name: Lint gate (eslint src --max-warnings 0)
         run: npx eslint src --max-warnings 0
 
+      # vc187 — 게이트: API 라우트가 격리된 채 커밋되면 로그인/거래소/채팅이 통째로 죽는다.
+      #  실제로 .apk-hold/ 로 옮긴 라우트가 복원되지 않은 상태로 커밋돼
+      #  Vercel 에 /api/auth/* 가 사라졌고 PC·웹 로그인이 404 가 됐다.
+      #  빌드 전에 라우트 개수를 세어 20개 미만이면 즉시 실패시킨다.
+      - name: API route guard — 격리된 라우트가 커밋되지 않았는지
+        run: |
+          set -e
+          if [ -d ".apk-hold/api-routes" ]; then
+            echo "::error::.apk-hold/api-routes 가 남아 있습니다 — 정적 export 가 중단된 흔적입니다."
+            ls -R .apk-hold/api-routes
+            echo "scripts/restore-api-routes.sh 로 복원하세요."
+            exit 1
+          fi
+          n=$(find src/app/api -name route.ts | wc -l | tr -d ' ')
+          echo "API route.ts = $n"
+          if [ "$n" -lt 20 ]; then
+            echo "::error::API 라우트가 $n 개뿐입니다(기대 23). 로그인·거래소·채팅·파티가 죽습니다."
+            exit 1
+          fi
+
       - name: Static export (APK_EXPORT=1) — 서버리스 라우트 7개+middleware 격리
         env:
           NODE_OPTIONS: --max-old-space-size=4096
