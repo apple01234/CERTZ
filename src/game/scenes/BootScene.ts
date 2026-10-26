@@ -356,6 +356,17 @@ const VFX_PACK_LIST = [
   "fx_electrichit", "fx_lightning", "fx_glowyellow", "fx_aura", "fx_purple", "fx_flarebig",
 ] as const;
 
+/* vc187 (지시 #17 — "내가 준 VFX 팩에 있는 프리팹 에셋 및 애니메이션을 적용해야지!!")
+ *  Cartoon FX Remaster(JMO Assets) 의 프리팹이 쓰는 핵심 텍스처 13종을 추출했다.
+ *  기존 fx_* 는 GameVFX Buff Collection 계열이라 참격/별/전격 계열이 없었다.
+ *  스킬 연출에 직접 쓰는 것만 골랐다(경로: assets/vfx2/). */
+const VFX2_LIST = [
+  "star", "starblur", "magicstar", "sparkle",          // 별·반짝임 계열
+  "ringarc", "ringelec", "ringice", "ringspike",       // 링·충격파 계열
+  "aurarays", "stretchrayblur",                        // 광선·오라
+  "exsmoke", "smokewhite", "elecspark", "firecircle",  // 연기·전격·화염
+] as const;
+
 const AUDIO_LIST: string[] = [
   /* v3.0.24 — BGM은 타이틀 1곡만 프리로드 (나머지 39트랙은 구역 진입 시 지연 로딩 —
    *  풀버전 q4 재인코딩과 함께: 부트 디코드 시간 단축 + WebAudio PCM 수 GB 크래시 방지) */
@@ -608,6 +619,7 @@ export class BootScene extends Phaser.Scene {
     /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 이펙트 6종.
      *  ASSET_LIST는 `assets/<key>.webp` 평면 경로를 쓰므로 하위 폴더(vfx/)는 별도 로드. */
     for (const k of VFX_PACK_LIST) this.load.image(k, `vfx/${k}.webp`);
+    for (const k of VFX2_LIST) this.load.image(`cfx_${k}`, `vfx2/${k}.webp`);
     /* v1.4.31 (#4 보스 개편) — 유저 제공 9보스 아틀라스 (보스당 1장 · 부팅 직접 로드).
      *  프레임 크기는 슬라이서 실측값 — BOSS_ATLAS 설정과 정확히 일치 (textures.ts) */
     for (const { key, file, fw, fh } of Object.values(BOSS_ATLAS)) {

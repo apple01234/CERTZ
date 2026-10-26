@@ -2538,6 +2538,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnPillar(tx, ty, hex, 220);
             this.scene.spawnShockwave(tx, ty, hex, 1.5, 300, 0.9);
             this.scene.spawnBurstAt(tx, ty, 14, hex);
+            /* vc187 (#17) — 제공 팩의 전격 텍스처로 낙뢰 순간을 강조 */
+            spawnFlarePop(this.scene, tx, ty, "cfx_elecspark", { tint: hex, scale: 1.8, duration: 320 });
+            spawnFlarePop(this.scene, tx, ty, "cfx_ringelec", { tint: hex, scale: 2.2, duration: 380 });
             // 범위 피해 — 기둥 중심 반경 92 (전체 순회 1회, 거리로 컷)
             for (const e of this.scene.getAllTargets()) {
               if (e.state === "dead") continue;
@@ -2962,6 +2965,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             // 하늘에서 내리꽂히는 광선 기둥
             this.scene.spawnPillar(tx, ty, hex, 200);
             this.scene.spawnShockwave(tx, ty, hex, 1.1, 260, 0.8);
+            /* vc187 (#17) — 제공 팩의 광선(aurarays)으로 하늘 광주를 표현 */
+            spawnFlarePop(this.scene, tx, ty - 30, "cfx_aurarays", { tint: hex, scale: 1.6, duration: 300 });
             for (const e of this.scene.getAllTargets()) {
               if (e.state === "dead") continue;
               const dx = e.x - tx;
@@ -4764,45 +4769,81 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
 
       /* 블레이드마스터 — 극의전격: 만검의 진(하늘에서 검 100자루 — 25연 발동) + 교차 종결검 */
+      /* vc187 (지시 #12 — "블레이드 마스터 궁극기 연출 개선 + 궁극기 2개다 마음에 안듬") —
+       *  2번째 궁극기가 25발 산발 난타였다. 화면 아무 데나 칼날이 튀어 '만검의 진'
+       *  (한 점에 수렴하는 검) 컨셉과 정반대였고, 50연격 궁극기와도 역할이 겹쳤다.
+       *  → **일도양단**: 검기가 조준점 한 곳으로 모여들어(수렴 0.9초) 정지하고,
+       *    칼집에 넣는 듯한 정적 0.25초 뒤 한 번에 갈라진다. 산발 없음 = 컨셉 명확. */
       case "blademaster": {
-        for (let i = 0; i < 25; i++) {
-          this.scene.time.delayedCall(260 + i * 95, () => {
+        const aimd = this.aimDirFree().normalize();
+        const aimAng = Math.atan2(aimd.y, aimd.x);
+        // 목표점 — 가장 가까운 적, 없으면 전방 260
+        const tgt0 = this.nearestTargets(1, 900)[0];
+        const fx = tgt0 ? tgt0.x : this.x + aimd.x * 260;
+        const fy = tgt0 ? tgt0.y : this.y + aimd.y * 260;
+
+        // ① 수렴 — 8방향에서 검기가 목표점으로 빨려든다 (18발, 점점 빨라짐)
+        for (let i = 0; i < 18; i++) {
+          this.scene.time.delayedCall(i * 46, () => {
             if (this.state === "dead") return;
-            const cx = this.x + (Math.random() - 0.5) * 620;
-            const cy = this.y + (Math.random() - 0.5) * 500;
-            const dir = new Phaser.Math.Vector2(0, 1).rotate(Math.random() * Math.PI * 2);
-            this.scene.spawnSlash(cx, cy, dir, i % 2 === 0, 2.2, hex);
-            if (i % 3 === 0) this.scene.spawnBurstAt(cx, cy, 10, hex);
-            if (i % 5 === 0) this.scene.sfxSkill("iainuki", 1.0 + (i % 4) * 0.04);
-            for (const e of this.getAllTargetsIn(430)) {
-              if (Phaser.Math.Distance.Between(e.x, e.y, cx, cy) > 130) continue;
-              const away = dir;
-              const { dmg, crit } = rd(1.5);
-              if (crit) this.scene.sfxCrit();
-              e.takeDamage(dmg, away, 160, crit);
+            const a = (i / 18) * Math.PI * 2 + aimAng * 0.3;
+            const R = 300 - i * 9; // 반경이 줄며 수렴
+            const sx = fx + Math.cos(a) * R;
+            const sy = fy + Math.sin(a) * R * 0.78;
+            const d = new Phaser.Math.Vector2(fx - sx, fy - sy).normalize();
+            this.scene.spawnSlash(sx, sy, d, i % 2 === 0, 1.1 + i * 0.03, hex);
+            /* vc187 (#17) — 제공 VFX 팩의 4각 별로 수렴 입자를 밝힌다 */
+            if (i % 3 === 0) {
+              spawnFlarePop(this.scene, sx, sy, "cfx_star", { tint: hex, scale: 0.7, duration: 320, angle: Math.atan2(d.y, d.x) });
             }
+            if (i % 6 === 5) this.scene.sfxSkill("iainuki", 0.82 + i * 0.006);
           });
         }
-        /* 종결 — 교차하는 종결검: 만검의 진이 한 점으로 수렴 */
-        this.scene.time.delayedCall(260 + 25 * 95 + 150, () => {
+
+        // ② 정적 — 수렴 완료 후 0.25초 멈춤 (칼집에 넣는 순간). 이 정지가 임팩트를 만든다.
+        this.scene.time.delayedCall(18 * 46 + 60, () => {
           if (this.state === "dead") return;
-          const dir = this.aimDirFree().normalize();
-          this.scene.spawnSlash(this.x + dir.x * 40, this.y, dir, false, 4.8, hex);
-          this.scene.spawnSlash(this.x + dir.x * 40, this.y, dir, true, 4.8, 0xd8a0ff);
-          this.scene.spawnSpinSlash(this.x, this.y, 2);
-          this.scene.spawnCrack(this.x, this.y);
-          this.scene.spawnBurstAt(this.x, this.y, 76, hex);
-          spawnFlarePop(this.scene, this.x + dir.x * 44, this.y - 6, "vf_slash", { tint: hex, scale: 2.9, duration: 580, angle: dir.angle() });
-          spawnRingPop(this.scene, this.x, this.y, "vf_ring", hex, 5.0, 760);
-          this.scene.cameras.main.flash(180, 255, 255, 255);
-          this.scene.cameras.main.shake(480, 0.023);
-          this.scene.sfxSkill("iainuki", 0.56);
-          this.scene.sfxSkill("superhit", 0.76);
-          for (const e of this.getAllTargetsIn(600)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = rd(9.4);
+          // 수렴점 응축 — 작고 밝은 링만
+          spawnRingPop(this.scene, fx, fy, "vf_ring", 0xffffff, 1.5, 240);
+          /* vc187 (#17) — 응축 순간: 제공 팩의 스파이크 링이 안쪽으로 조여든다 */
+          spawnFlarePop(this.scene, fx, fy, "cfx_ringspike", { tint: 0xffffff, scale: 1.5, duration: 300 });
+          spawnFlarePop(this.scene, fx, fy, "cfx_magicstar", { tint: hex, scale: 1.1, duration: 260 });
+          this.scene.spawnPickupText(fx, fy - 40, "—", "#ffffff");
+        });
+
+        // ③ 발도 — 한 번의 수평 참격이 화면을 가른다
+        this.scene.time.delayedCall(18 * 46 + 60 + 250, () => {
+          if (this.state === "dead") return;
+          const cutDir = new Phaser.Math.Vector2(Math.cos(aimAng), Math.sin(aimAng));
+          // 화면 폭을 가로지르는 단일 참격
+          this.scene.spawnSlash(fx - cutDir.x * 380, fy - cutDir.y * 380, cutDir, false, 6.4, hex);
+          this.scene.spawnSlash(fx - cutDir.x * 380, fy - cutDir.y * 380, cutDir, true, 6.4, 0xffffff);
+          this.scene.spawnSpinSlash(fx, fy, 2);
+          this.scene.spawnShockwave(fx, fy, 0xffffff, 4.2, 420, 0.95);
+          this.scene.spawnCrack(fx, fy);
+          this.scene.spawnBurstAt(fx, fy, 84, hex);
+          spawnFlarePop(this.scene, fx, fy - 6, "vf_slash", { tint: 0xffffff, scale: 3.4, duration: 620, angle: aimAng });
+          spawnRingPop(this.scene, fx, fy, "vf_ring", hex, 6.0, 820);
+          /* vc187 (#17) — 발도 모먼트: 제공 팩의 광선(콘 빔)을 참격 방향으로 깔고
+           *  전격 링을 터뜨려 '칼이 화면을 갈랐다'는 인상을 만든다. */
+          spawnFlarePop(this.scene, fx - cutDir.x * 160, fy - 6 - cutDir.y * 160, "cfx_stretchrayblur",
+            { tint: 0xffffff, scale: 2.6, duration: 520, angle: aimAng, alpha: 0.95 });
+          spawnFlarePop(this.scene, fx, fy, "cfx_ringelec", { tint: hex, scale: 3.2, duration: 560 });
+          spawnFlarePop(this.scene, fx, fy, "cfx_starblur", { tint: 0xffffff, scale: 2.4, duration: 480 });
+          this.scene.cameras.main.flash(200, 255, 255, 255);
+          this.scene.cameras.main.shake(520, 0.026);
+          this.scene.sfxSkill("iainuki", 0.52);
+          this.scene.sfxSkill("superhit", 0.74);
+          // 피해 — 참격선 위의 적 (직선 거리 판정)
+          for (const e of this.getAllTargetsIn(760)) {
+            const away = new Phaser.Math.Vector2(e.x - fx, e.y - fy);
+            const along = Math.abs(away.x * cutDir.x + away.y * cutDir.y);
+            const perp = Math.abs(away.x * -cutDir.y + away.y * cutDir.x);
+            if (perp > 120 || along > 620) continue; // 참격선 폭 240, 길이 620
+            const { dmg, crit } = rd(11.8);
             if (crit) this.scene.sfxCrit();
-            e.takeDamage(dmg, away, 640, crit);
+            const knock = away.lengthSq() < 1 ? aimd : away.normalize();
+            e.takeDamage(dmg, knock, 720, crit);
           }
         });
         break;

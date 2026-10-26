@@ -278,7 +278,18 @@ export class Cinematic3D {
   }
 
   /** 연출 재생 — 이미 재생 중이면 교체(궁극기 연타 대비) */
+  /* vc187 (지시 #3·#11·#17) — 3D 컷신 전면 비활성.
+   *  유저 지시: "3d 컷씬 없어도 되니까 2d로 ... 스킬 좀 멋있게 수정해",
+   *            "3d 연출 개별로임 (차라리 빼고 아크로드 궁극기처럼 멋있게 만들어)",
+   *            "블렌더 에셋으로 만든 3d 컷씬 말고 내가 준 VFX 팩 ... 적용해야지!!"
+   *  세 지시가 같은 방향이다 — 3D 레이어를 쓰지 말고 2D VFX 로만 연출한다.
+   *  play() 진입점 한 곳에서 막으면 5개 프리셋(skill4/ultimate/ultimate2/…)이
+   *  전부 꺼지고, 호출부(Player.ts 3곳)는 손대지 않아도 된다.
+   *  (메시 매핑·로더 코드는 남겨 둔다 — 나중에 되살릴 때 그대로 쓴다.) */
+  static DISABLED = true;
+
   async play(job: CineJob): Promise<boolean> {
+    if (Cinematic3D.DISABLED) return false;
     const ok = await this.ensure();
     if (!ok || !this.THREE || !this.scene || !this.canvas) return false;
 
