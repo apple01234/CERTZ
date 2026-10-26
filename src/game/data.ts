@@ -1066,6 +1066,45 @@ export function isPremiumPet(k: string): boolean {
 export const CORE_BODY_PREFIXES = ["chm0", "chm1", "chm3", "chm4", "chm5", "chf0", "chf1", "chf2", "chf3", "chf4", "chf5"] as const;
 export const DEFERRED_BODY_PREFIXES = BODY_PREFIXES.filter((p) => !(CORE_BODY_PREFIXES as readonly string[]).includes(p));
 
+/* vc190 (P1-3 부팅 에셋 분할) — 3단계 로드.
+ *
+ *  왜: 실측(Resource Timing, 버퍼 20,000) 부팅 총 3,325건 / 37.3MB 중
+ *      본체 시트가 2,100건(63%)이었다. cost_/costm_ 1,344 + jobf_/jobm_ 448
+ *      + 기본 바디 308. 그런데 이 중 실제로 "지금 필요한" 것은 소수다.
+ *
+ *  문제: v1.2.1 의 2단계 분할(부팅=바디 11종, 타이틀=나머지 65종)은
+ *        타이틀에서 **65종 × 28프레임 = 1,820건을 전부** 받았다.
+ *        유저가 어떤 코스튬/직업을 쓰는지와 무관하게 전부다.
+ *
+ *  해결: 3단계로 나눈다.
+ *    ① BOOT     — 기본 바디 11종 (지금 그대로)
+ *    ② TITLE    — 지금 착용 중인 코스튬 + 현재 직업 시트만 (수십 건)
+ *    ③ ON DEMAND — 나머지 코스튬/직업은 실제로 그 외형을 입는 순간
+ *                  texGuard 의 동적 로드 큐가 받는다(이미 존재하는 경로).
+ *
+ *  호환: DEFERRED_BODY_PREFIXES 는 남겨둔다(다른 호출부가 참조 중).
+ *        새 코드는 TITLE_BODY_PREFIXES / ON_DEMAND_BODY_PREFIXES 를 쓴다.
+ */
+
+/** 코스튬/직업 접두사인가 — 기본 바디(chm/chf)와 구분한다 */
+export function isSkinPrefix(p: string): boolean {
+  return p.startsWith("cost_") || p.startsWith("costm_") || p.startsWith("jobf_") || p.startsWith("jobm_");
+}
+
+/** ② 타이틀에서 받을 접두사 — 현재 외형에 실제로 필요한 것만.
+ *  bodyPrefix 가 "" (기본 외형) 이면 코스튬은 하나도 받지 않는다.
+ *  jobPrefix 는 전직한 경우에만 값이 있다. */
+export function titleBodyPrefixes(bodyPrefix: string, jobPrefix: string): string[] {
+  const out: string[] = [];
+  /* 성별·피부 기본 바디는 부팅에서 이미 받았다 — 여기선 코스튬/직업만 */
+  if (bodyPrefix && isSkinPrefix(bodyPrefix)) out.push(bodyPrefix);
+  if (jobPrefix && isSkinPrefix(jobPrefix) && !out.includes(jobPrefix)) out.push(jobPrefix);
+  return out;
+}
+
+/** ③ 나머지 전부 — 실제로 그 외형을 입는 순간 동적 로드된다 */
+export const ON_DEMAND_BODY_PREFIXES = DEFERRED_BODY_PREFIXES.filter((p) => isSkinPrefix(p));
+
 /* ================= v4.3.0 — 도파민 시스템 (가챠 상자/패키지/일일 특가/출석 보상) =================
  *  유저 지시 "BM 수익 구조 및 dopamine driven development 100+ 기획+제작":
  *  가챠(변동 보상+등급 연출)·패키지(묶음 가치)·일일 특가(날짜 로테이션 FOMO)·출석(연속 보상) 루프. */

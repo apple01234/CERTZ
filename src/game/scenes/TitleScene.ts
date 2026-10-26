@@ -3,7 +3,8 @@ import { EventBus } from "../../components/game/EventBus";
 import { loadSave, type SaveData } from "../config";
 import { readCharSave, setActiveChar } from "../slots"; // v1.4.0 (#16) 자동 복귀
 import * as audio from "../audio";
-import { DEFERRED_BODY_PREFIXES, ALL_ITEM_ICONS } from "../data"; // v1.2.1 (#4 최적화) — 지연 로드 외형 시트 / v1.4.3 — 전 아이템 아이콘
+import { DEFERRED_BODY_PREFIXES, ALL_ITEM_ICONS, titleBodyPrefixes } from "../data"; // vc190 — titleBodyPrefixes 로 교체(3단계 로드)
+import { tier2RootOf } from "../classes"; // vc190 — 저장 cls → 직업 시트 접두사
 import { registerBodyAnims } from "../textures";
 import { hookLoaderForGuard } from "../texGuard"; // v1.4.2 — 지연 로드도 무결성 레지스트리에 수집
 
@@ -125,6 +126,19 @@ export class TitleScene extends Phaser.Scene {
      *  완료 시 애님 후등록 + deferDone 플래그. 유저가 시작 버튼을 누르는 시점엔 대부분 완료돼 있다. */
     if (!this.deferStarted) {
       this.deferStarted = true;
+      /* vc190 — 저장된 외형에서 접두사를 계산한다. 계산 규칙은
+       *  Player.applyBodyLook 과 **반드시 같아야** 한다(다르면 필요한 시트를 안 받아
+       *  첫 프레임이 빈 채로 뜬다). outfit 우선 → 직업 → 성별/피부 순. */
+      const sd = loadSave();
+      const sOutfit = sd?.outfit?.replace("outfit_", "") ?? null;
+      const sJobRoot = sd?.cls ? tier2RootOf(sd.cls) : null;
+      const sGender: "m" | "f" = sd?.gender === "f" ? "f" : "m";
+      const savedJobPrefix = sJobRoot ? (sGender === "m" ? `jobm_${sJobRoot}` : `jobf_${sJobRoot}`) : "";
+      const savedBodyPrefix = sOutfit
+        ? sGender === "m"
+          ? `costm_${sOutfit}`
+          : `cost_${sOutfit}`
+        : "";
       const heroFrames = ["idle0", "idle1", "idle2", "idle3", "walk0", "walk1", "walk2", "walk3", "walkside0", "walkside1", "walkside2", "walkside3", "walkup0", "walkup1", "walkup2", "walkup3", "atk0", "atk1", "atk2", "atk3", "atkdown0", "atkdown1", "atkdown2", "atkdown3", "atkup0", "atkup1", "atkup2", "atkup3"];
       /* v1.4.2 — 지연 로더도 무결성 레지스트리에 수집 (URL/키 — 월드 감시가 재사용) */
       hookLoaderForGuard(this.load, this.textures);
@@ -133,9 +147,23 @@ export class TitleScene extends Phaser.Scene {
        *  complete 시점에 setPath("") 후 재요청(최대 2라운드). 성공 시 애님 후등록. */
       const failed = new Map<string, { key: string; url: string; tries: number }>();
       this.load.setPath("assets");
-      for (const p of DEFERRED_BODY_PREFIXES) {
-        for (const f of heroFrames) this.load.image(`${p}_${f}`, `${p}_${f}.webp`);
+      /* vc190 (P1-3) — 종전엔 DEFERRED_BODY_PREFIXES 65종 × 28프레임 = 1,820건을
+       *  타이틀에서 전부 받았다. 유저가 실제로 쓰는 외형은 1~2종뿐인데도.
+       *  그 결과 부팅 총량이 3,325건 / 37.3MB(실측)까지 커졌다.
+       *
+       *  Player.applyBodyLook 은 이미 "미로드 외형이면 loadBodyPrefix 로 그 시트만
+       *  로드 후 재적용"을 구현해 두었다(v1.5.0 주석 참조 — 타이틀 일괄 로드 폐지가
+       *  원래 설계였다). 타이틀이 그걸 되돌려 놓은 상태였으므로 여기서 원복한다.
+       *
+       *  지금 착용 중인 코스튬 + 현재 직업 시트만 받는다. 나머지는 필요할 때 로드. */
+      const wantPrefixes = titleBodyPrefixes(savedBodyPrefix, savedJobPrefix);
+      for (const p of wantPrefixes) {
+        for (const f of heroFrames) {
+          if (this.textures.exists(`${p}_${f}`)) continue;
+          this.load.image(`${p}_${f}`, `${p}_${f}.webp`);
+        }
       }
+      console.log(`[SERTZ] 타이틀 본체 시트 ${wantPrefixes.length}종 로드 (종전 65종 일괄)`);
       /* v1.4.3 (유저 리포트 ④ 보스 유물·일부 아이템 이미지 로드 실패) — 전 아이템 아이콘 지연 로드.
        *  보스 드롭(bd_*)·큐브·책 등 아이콘이 Phaser 텍스처로 등록돼 있지 않아 Drop.spawnItem의
        *  setTexture(icon)이 빈 렌더를 냈다. 173종(32px 웹프 소용량)을 타이틀 대기 시간에 일괄 등록.
