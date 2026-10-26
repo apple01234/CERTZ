@@ -2839,9 +2839,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.netEmitAction("s4"); // v4.1.0
     this.tierFlair(true); // v1.4.30 (#6) — 4차기(중요 스킬)만 풀 패키지 기존 연출
     const hex = this.clsHex();
-    /* vc181 (지시 #1·#2) — 4차 스킬도 3D 검기 메시 + 측면 트래킹 카메라.
-     *  궁극기보다 짧고 가볍게(1.1초) — 남발되는 슬롯이라 부담을 줄인다. */
-    void cine3d().play({ preset: "skill4", x: this.x, y: this.y, tint: hex, duration: 1100, fam: this.ultKeyFor3D() });
+    /* vc187 (지시 #3·#11·#17) — 3D 컷신 제거.
+     *  "3d 컷씬 없어도 되닌까 2d로 … 스킬 좀 멋있게", "3d 연출 개별로임"
+     *  "블렌더 에셋으로 만든 3d 컷씬 말고 내가 준 VFX 팩 프리팹/애니메이션을 적용해야지"
+     *  → three.js 컷신을 끄고, 제공 VFX 팩 텍스처로 2D 연출을 채운다.
+     *  (cine3d 모듈 자체는 남겨둔다 — 되돌릴 수 있게. 여기서 호출만 하지 않는다.) */
+    spawnFlarePop(this.scene, this.x, this.y - 10, "cfx_magicstar", { tint: hex, scale: 2.4, duration: 420 });
+    spawnFlarePop(this.scene, this.x, this.y - 10, "cfx_aurarays", { tint: hex, scale: 2.0, duration: 480 });
+    spawnRingPop(this.scene, this.x, this.y, "vf_ring", hex, 2.2, 400);
     /* vc179 (지시 #11) — 4차 궁극기는 제공 VFX를 크게 쓴다 (필살기의 무게) */
     {
       const fx = this.familyFx();
@@ -3328,7 +3333,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* vc181 (지시 #1·#2) — 3D 시네마틱: 궁극기 발동 순간 three.js 레이어가 올라와
      *  실제 GLB 메시(해골·고리·톱니)를 3D 카메라 워크로 보여준다.
      *  실패해도 2D 연출은 그대로 남으므로 게임 진행에 영향 없음. */
-    void cine3d().play({ preset: "ultimate", x: this.x, y: this.y, tint: hex, duration: 1750, fam: this.ultKeyFor3D() });
+    /* vc187 (#3·#11·#17) — 3D 컷신 제거, 제공 VFX 2D 연출로 대체 */
+    spawnFlarePop(this.scene, this.x, this.y - 12, "cfx_aurarays", { tint: hex, scale: 3.2, duration: 620 });
+    spawnFlarePop(this.scene, this.x, this.y - 12, "cfx_magicstar", { tint: hex, scale: 2.8, duration: 560 });
+    for (let _r = 0; _r < 3; _r++) {
+      this.scene.time.delayedCall(_r * 110, () => {
+        if (this.state === "dead") return;
+        spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", hex, 3.0 + _r * 0.9, 520 - _r * 70);
+      });
+    }
     /* v1.4.0 (Task 3-1 — 유저 지시 #13) — 직업별 고유 VFX2 시그니처 연출 (8직업 1:1 매핑) */
     spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
     /* vc183 — 극딜 3단계 연출(암전 → 후면오라/지면룬/전면폭발 → 히트스톱·흔들림·줌).
@@ -4437,7 +4450,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.spawnBurstAt(this.x, this.y, 36, 0xb06aff);
     this.scene.vfx3dFx("spiral", this.x, this.y, 0xb06aff, 1.1);
     /* vc181 (지시 #1·#2) — 제2궁극기는 3D 나선 카메라 워크 (1차보다 길고 웅장하게) */
-    void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: 2400, fam: this.ultKeyFor3D() });
+    /* vc187 (#3·#11·#17) — 3D 컷신 제거. 2차 궁극기는 더 길고 무겁게(2.4초 감각) */
+    spawnFlarePop(this.scene, this.x, this.y - 12, "cfx_aurarays", { tint: hex, scale: 4.0, duration: 760 });
+    spawnFlarePop(this.scene, this.x, this.y - 12, "cfx_ringarc", { tint: hex, scale: 3.6, duration: 720 });
+    spawnFlarePop(this.scene, this.x, this.y - 12, "cfx_magicstar", { tint: hex, scale: 3.2, duration: 640 });
+    for (let _r = 0; _r < 4; _r++) {
+      this.scene.time.delayedCall(_r * 130, () => {
+        if (this.state === "dead") return;
+        spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", hex, 3.4 + _r * 1.0, 620 - _r * 70);
+      });
+    }
     /* vc183 — 제2궁극기(120초)는 극딜의 정점: 암전·연출을 1차보다 강하게(scale 1.15) */
     playUltLayers(this.scene, this.x, this.y, 0xb06aff, key5, { scale: 1.15 });
 
@@ -5072,61 +5094,85 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *  전 함포 일제 발화. 시킹(해일)과 완전히 다른 화력 정체성. */
       case "dreadnought": {
         const SW = this.scene.scale.width, SH = this.scene.scale.height;
-        /* 전 함포 일제 준비 — 화면이 붉게 물든다 */
-        this.scene.time.delayedCall(200, () => {
+        /* vc187 (지시 #8 재발 방지) — 1차 「레드 헤일」과 2차가 FX 시그니처가
+         *  완전히 동일했다(둘 다 붉은 격자 + 낙하 폭발 + 종결 폭발).
+         *  2차는 **함대 소집형**으로 정체성을 분리한다:
+         *   1차 = 락온 격자 → 융단 폭격 (개인 화력)
+         *   2차 = 신호탄 → 함대 일제사격 → 파도 밀어내기 (함대 화력)
+         *  제공 VFX 텍스처(ringarc/exsmoke/smokewhite/elecspark)로 연출을 채운다. */
+        /* 1단 — 신호탄: 하늘로 붉은 신호가 솟고 함대 링이 열린다 */
+        this.scene.time.delayedCall(120, () => {
           if (this.state === "dead") return;
-          this.scene.cameras.main.flash(300, 255, 90, 60);
-          for (let i = 0; i < 6; i++) {
-            const gy = (SH / 6) * i;
-            const bar = this.scene.add.rectangle(SW / 2, gy, SW, 3, 0xff4a2a, 0.75)
-              .setDepth(30).setBlendMode(Phaser.BlendModes.ADD).setScrollFactor(0);
-            this.scene.tweens.add({ targets: bar, alpha: 0, duration: 620, delay: i * 40, onComplete: () => bar.destroy() });
-          }
-          this.scene.sfxSkill("superhit", 0.6);
+          this.scene.cameras.main.flash(260, 255, 110, 70);
+          spawnFlarePop(this.scene, this.x, this.y - 30, "cfx_ringarc", { tint: 0xff6a3a, scale: 3.0, duration: 700 });
+          spawnFlarePop(this.scene, this.x, this.y - 70, "cfx_elecspark", { tint: 0xffa050, scale: 2.0, duration: 520 });
+          this.scene.spawnPickupText(this.x, this.y - 78, "함대 소집", "#ffa050");
+          this.scene.sfxSkill("superhit", 0.55);
         });
-        /* 일제사격 — 3파 14발, 화면 전체를 훑는다 */
-        const tg = this.getAllTargetsIn(999);
-        for (let wave = 0; wave < 3; wave++) {
-          for (let i = 0; i < 5; i++) {
-            this.scene.time.delayedCall(620 + wave * 620 + i * 110, () => {
-              if (this.state === "dead") return;
-              const px = this.x + (Math.random() - 0.5) * 620;
-              const py = this.y + (Math.random() - 0.5) * 360;
-              const shell = this.scene.add.rectangle(px, py - 260, 11, 26, 0x14141c, 1).setDepth(16);
-              this.scene.tweens.add({ targets: shell, y: py, duration: 190, ease: "Quad.in", onComplete: () => {
+        /* 2단 — 함대 일제사격: 화면 가장자리에서 포탄이 안쪽으로 수렴 (방향이 반대) */
+        const tg2 = this.getAllTargetsIn(999);
+        for (let i = 0; i < 12; i++) {
+          this.scene.time.delayedCall(560 + i * 150, () => {
+            if (this.state === "dead") return;
+            /* 발사 지점 = 화면 외곽 (가장자리에서 쏘아온다 — 1차의 낙하와 구분) */
+            const side = i % 4;
+            const edge = 120;
+            let sx: number, sy: number;
+            if (side === 0) { sx = this.x - SW * 0.55; sy = this.y - SH * 0.4; }
+            else if (side === 1) { sx = this.x + SW * 0.55; sy = this.y - SH * 0.4; }
+            else if (side === 2) { sx = this.x - SW * 0.55; sy = this.y + SH * 0.4; }
+            else { sx = this.x + SW * 0.55; sy = this.y + SH * 0.4; }
+            const tx = this.x + (Math.random() - 0.5) * 420;
+            const ty = this.y + (Math.random() - 0.5) * 260;
+            const ang = Math.atan2(ty - sy, tx - sx);
+            const shell = this.scene.add.rectangle(sx, sy, 14, 14, 0xffb070, 1).setDepth(17).setBlendMode(Phaser.BlendModes.ADD);
+            const dist = Phaser.Math.Distance.Between(sx, sy, tx, ty);
+            this.scene.tweens.add({
+              targets: shell, x: tx, y: ty, duration: Math.max(160, dist / 2.6), ease: "Quad.in",
+              onComplete: () => {
                 shell.destroy();
-                this.scene.spawnBurstAt(px, py, 40, 0xff7a30);
-                this.scene.spawnField({ x: px, y: py, radius: 100, dur: 2400, dps: Math.max(20, Math.round(this.atkTotal * 1.2)), kind: "fire", owner: "player" });
-                this.scene.doShake?.(130, 0.01);
-                for (const e of tg) {
-                  if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 150) continue;
-                  const { dmg, crit } = rd(4.0);
+                spawnFlarePop(this.scene, tx, ty, "cfx_exsmoke", { tint: 0xff8a4a, scale: 1.8, duration: 620 });
+                spawnFlarePop(this.scene, tx, ty, "cfx_smokewhite", { tint: 0xd8c8b8, scale: 1.4, duration: 720 });
+                this.scene.spawnBurstAt(tx, ty, 26, 0xff8a4a);
+                this.scene.doShake?.(120, 0.009);
+                /* 밀어내기 — 함포 충격이 적을 바깥으로 민다(1차와 다른 넉백 정체성) */
+                for (const e of tg2) {
+                  if (Phaser.Math.Distance.Between(e.x, e.y, tx, ty) > 170) continue;
+                  const { dmg, crit } = rd(3.6);
                   if (crit) this.scene.sfxCrit();
-                  e.takeDamage(dmg, new Phaser.Math.Vector2(e.x - px, e.y - py).normalize(), 500, crit);
+                  const away = new Phaser.Math.Vector2(e.x - tx, e.y - ty).normalize();
+                  e.takeDamage(dmg, away, 620, crit);
                 }
-              } });
+              },
             });
-          }
+            if (i % 4 === 3) this.scene.sfxSkill("thunder", 0.6);
+          });
         }
-        /* 종결 — 남은 화약 전부 */
-        this.scene.time.delayedCall(3200, () => {
+        /* 3단 — 종결 「함대의 노래」: 전 함포 동시 발사 후 연무가 걷힌다 */
+        this.scene.time.delayedCall(560 + 12 * 150 + 260, () => {
           if (this.state === "dead") return;
-          this.scene.cameras.main.flash(320, 255, 160, 90);
-          this.scene.cameras.main.shake(820, 0.034);
-          this.scene.spawnBurstAt(this.x, this.y, 110, 0xffa050);
-          this.scene.sfxSkill("superhit", 0.85);
-          for (const e of this.getAllTargetsIn(820)) {
+          this.scene.cameras.main.flash(340, 255, 170, 110);
+          this.scene.cameras.main.shake(880, 0.036);
+          spawnFlarePop(this.scene, this.x, this.y, "cfx_firecircle", { tint: 0xff7a3a, scale: 4.0, duration: 900 });
+          for (let c = 0; c < 3; c++) {
+            spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xffb070, 5.0 + c * 1.2, 700 - c * 100);
+          }
+          this.scene.spawnBurstAt(this.x, this.y, 120, 0xffa050);
+          this.scene.sfxSkill("superhit", 0.88);
+          this.scene.spawnPickupText(this.x, this.y - 80, "함대의 노래", "#ffb070");
+          for (const e of this.getAllTargetsIn(840)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = rd(11.8);
+            const { dmg, crit } = rd(12.2);
             if (crit) this.scene.sfxCrit();
-            e.takeDamage(dmg, away, 820, crit);
+            e.takeDamage(dmg, away, 860, crit);
           }
         });
         break;
       }
 
-      /* vc178 — 해적 계열 — 폭풍항로: 침몰의 종. 바다 수직 분열 + 침몰 함대 포성 8초 포격.
-       *  v1.2.4까지 case "pirate"가 없어 도적 폴백(사(死)의 일섬)으로 떨어졌다. */
+      /* vc178 — 해적 계열 — 폭풍항로: 침몰의 종. 바다 수직 분열 + 침몰 함대 포성.
+       *  (종전 주석 일부가 블록 교체 중 잘려 복원했다.)
+       *  case "pirate"가 없으면 도적 폴백(사(死)의 일섬)으로 떨어진다. */
       case "pirate": {
         /* 1단 — 바다가 수직으로 갈라진다: 화면 중앙 세로 균열 + 충격 */
         this.scene.time.delayedCall(280, () => {
