@@ -11,10 +11,10 @@ export const dynamic = "force-static";
 const LATEST_VERSION = "1.4.1";
 const LATEST_CODE = 190;
 const VERSION_NOTE =
-  "v1.3.8 (vc186) — ①스킬 아이콘 30개 교체: 4차 직업의 s3·s4 아이콘이 전부 단순 사각형 플레이스홀더였고 s5는 없었다. 제공 팩의 사람이 그린 skill_frame에 직업별 시그니처를 도트로 작화해 10직업×3슬롯=30개를 새로 만들었다(직업별 색 통일, Vision 9.8/10). ②5차 궁극기 아이콘이 모든 직업에서 동일했다 — s5Icon 하드코딩을 제거하고 직업별로 연결. 2차 궁극기 버튼이 1차 아이콘을 재사용하던 버그도 수정. 이전 사이클 누적: 4·5차 3D 연출 직업별 분화·5차 스킬 멈춤 수리(프레임 313→75ms)·쉐이더·고대비 튜토리얼(6→8단계)·유니온 보스 난이도(HP 21배 과다→정상)·Vercel CDN 캐시 복구(폴링 부하 40%↓).";
+  "v1.4.1 (vc190) — ①최적화가 퀄리티를 깎지 않도록 수리(사용자 지침): 코스튬을 온디맨드로 돌린 뒤 캐릭터가 1프레임에 얼어붙던 3중 버그를 잡았다 — tickBodyPending 호출부 0건(대화 중 게이트에 막힘)·loadBodyPrefix/applyBodyLook 이 idle0 한 장만 있어도 '로드 완료'로 오판해 나머지 27프레임을 영구 미로드. 이제 필요한 프레임이 전부 있어야 완료로 본다. 실측 3종 28/28·4/4·OK. ②부팅 에셋 3,325→1,525건(54%↓, 37.3→36.0MB): 타이틀이 65종×28프레임 1,820건을 일괄 로드하던 것을 착용 외형만 받도록 원복. 나머지는 그 외형을 입는 순간 로드. ③WorldScene 분할 3차(cameraFx·spawnPoints·fxAtoms) — 스모크 3종으로 회귀 0 확인. ④부팅 측정 함정 정정: performance Resource Timing 버퍼 기본 250개 — 안 키우면 '250건'이 측정치로 둔갑한다(20,000으로 확장 후 실측). 회귀: boot 5/5 · combat 6/6 · save 7/7 · tsc 0 · eslint 0.";
 const APK_MIRROR =
   /* vc179 — APK는 릴리스 태그 v1.3.1에 있다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.3.8/SERTZ-vc186.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.1/SERTZ-vc190.apk";
 
 export async function GET() {
   return NextResponse.json({
