@@ -10501,6 +10501,13 @@ export class WorldScene extends Phaser.Scene {
     const ae = document.activeElement as HTMLElement | null;
     const typing = !!ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable);
     if (typing) this.resetInputState();
+    /* vc190 — 동적 외형 로드 완료 감지. **이 return 보다 앞**에 둔다.
+     *  Player.tickBodyPending 은 "시트가 도착하면 bodyPrefix 를 적용하고 다시 그린다"는
+     *  폴링인데 호출부가 아예 없었고, 처음엔 이 return 뒤에 넣었다가 대화 중(dialoguing)
+     *  전혀 돌지 않아 코스튬 시트가 28/28 도착해도 기본 외형에 머물렀다.
+     *  외형 적용은 입력·대화 상태와 무관해야 하므로 게이트 앞으로 올린다.
+     *  (diag-cosload 실측: tickCalls 0 → dialoguing true 가 원인) */
+    if (this.player) this.player.tickBodyPending();
     if (this.chatFocused || this.dialoguing || typing || !this.player) return;
     if (this.player.state === "dead") return;
 

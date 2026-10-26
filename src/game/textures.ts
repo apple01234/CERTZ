@@ -13,7 +13,7 @@ import { BODY_PREFIXES } from "./data";
  *  buildAllAnims는 부팅 시점에 존재하는 시트만 등록하므로, cost_/jobf_/jobm_/gm_ 시트는
  *  로드 완료 후 이 함수로 애님을 만들어야 applyBodyLook 전환이 끊기지 않는다. */
 
-const BODY_FRAME_NAMES = [
+export const BODY_FRAME_NAMES = [
   "idle0", "idle1", "idle2", "idle3",
   "walk0", "walk1", "walk2", "walk3",
   "walkside0", "walkside1", "walkside2", "walkside3",
@@ -50,10 +50,15 @@ function loadImageRaw(scene: Phaser.Scene, key: string, url: string, bust = fals
  * 기존 타이틀의 37종 × 28프레임 일괄 요청을 제거해 입장 시 메인 스레드/네트워크
  * 압박을 크게 줄인다. */
 export async function loadBodyPrefix(scene: Phaser.Scene, prefix: string | null | undefined): Promise<void> {
-  if (!prefix || scene.textures.exists(`${prefix}_idle0`)) return;
-
-  const need = BODY_FRAME_NAMES.filter((f) => !scene.textures.exists(`${prefix}_${f}`));
-  if (need.length === 0) {
+  if (!prefix) return;
+  /* vc190 (퀄리티 수리) — 종전엔 `textures.exists(prefix_idle0)` 하나만 보고 조기 반환했다.
+   *  그런데 idle0 한 장만 로드된 상태(타이틀 부분 로드·캐시·이전 실패 잔존)에서도
+   *  "이미 있음"으로 판정해 **나머지 27프레임을 영원히 건너뛰었다.**
+   *  실측: cost_valkyrie / costm_warlord / cost_silver 전부 1/28 → 애니메이션이
+   *  1프레임에 얼어붙은 채 표시됐다(코스튬은 적용되는데 움직이지 않음).
+   *  → "idle0 이 있는가"가 아니라 "필요한 프레임이 전부 있는가"로 판정한다. */
+  const missingFirst = BODY_FRAME_NAMES.filter((f) => !scene.textures.exists(`${prefix}_${f}`));
+  if (missingFirst.length === 0) {
     registerBodyAnims(scene, [prefix]);
     return;
   }
@@ -62,7 +67,7 @@ export async function loadBodyPrefix(scene: Phaser.Scene, prefix: string | null 
    *  각 라운드는 "앞 라운드에서 실패한(미등록된) 프레임"만 다시 시도한다.
    *  업데이트 직후 WebView 캐시 오염으로 일부 프레임(특히 walk)이 무음 실패하던
    *  문제를 재시도+버스팅으로 수복한다. */
-  let pending = need;
+  let pending = missingFirst;
   for (let round = 0; round < 3 && pending.length > 0; round++) {
     await Promise.all(pending.map((f) => loadImageRaw(scene, `${prefix}_${f}`, `assets/${prefix}_${f}.webp`, round > 0)));
     pending = BODY_FRAME_NAMES.filter((f) => !scene.textures.exists(`${prefix}_${f}`));

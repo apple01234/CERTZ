@@ -69,8 +69,8 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.0";
-  const LATEST_CODE = 188;
+  const LATEST_VERSION = "1.4.1";
+  const LATEST_CODE = 190;
     const VERSION_NOTE =
       "v1.4.0 (vc188) — 로그인 전면 불통 수리: APK 정적 export 격리 중 API 라우트 22개가 복원되지 않은 채 커밋돼 Vercel 에서 /api/auth/* 가 사라졌다(PC·웹 로그인·회원가입·거래소·채팅·파티 전부 404). 라우트 전량 복원 + 재발 방지 3중 장치(static-export.sh trap 복원·restore-api-routes.sh·CI API route guard). 이번 사이클 누적: ①궁극기 멈춤 수리(오브젝트 22→12발·전체순회 캐시) ②5차 줌아웃 복귀 ③씨킹 아크로드급 재작성 ④드레드노트 두 궁극기 분화(현측 일제사격) ⑤계열별 무기 8종 ⑥해적 6계열 외형 336종 ⑦PC 구글 로그인 ⑧WASD+마우스 조준 ⑨NPC 초상화 20종 ⑩3D 컷신 폐기→제공 VFX 2D 연출 38곳.";
   if (url === "/api/version") {

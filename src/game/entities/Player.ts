@@ -16,7 +16,7 @@ import {
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
-import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
+import { loadBodyPrefix, BODY_FRAME_NAMES as BODY_FRAME_NAMES_SOME } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드 / vc190 — 부분 로드 판정
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
@@ -6814,7 +6814,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  로드 완료까지 bodyPrefix를 비워둔다 — bodyKey가 hero_*(부트 로드분)를 가리켜
      *  미로드 창 동안 setTexture(__MISSING) 깨짐 없이 기본 외형으로 안전하게 보인다.
      *  재적용은 preUpdate 폴링이 담당 (이벤트 경합 무관). */
-    if (this.bodyPrefix && !this.scene.textures.exists(`${this.bodyPrefix}_idle0`)) {
+    /* vc190 (퀄리티 수리) — 종전엔 `textures.exists(prefix_idle0)` 하나로 "시트 로드됨"을
+     *  판정했다. 그래서 idle0 한 장만 있는 상태(타이틀 부분 로드·캐시·이전 실패)에서는
+     *  bodyPending 을 만들지 않아 loadBodyPrefix 가 **한 번도 호출되지 않았고**,
+     *  결과적으로 28프레임 중 1장만 있는 시트로 애니메이션을 돌려 캐릭터가 1프레임에
+     *  얼어붙었다(실측: cost_valkyrie 1/28, bodyKickCount 0, bodyLoadTried null).
+     *  → 필요한 프레임이 하나라도 없으면 미완료로 본다. */
+    const needFrames = this.bodyPrefix
+      ? BODY_FRAME_NAMES_SOME.filter((f) => !this.scene.textures.exists(`${this.bodyPrefix}_${f}`))
+      : [];
+    if (this.bodyPrefix && needFrames.length > 0) {
       const wanted = this.bodyPrefix;
       this.bodyPrefix = "";
       this.bodyPending = wanted;
