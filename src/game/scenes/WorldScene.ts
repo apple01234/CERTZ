@@ -138,7 +138,12 @@ function isLowPerfEnv(): boolean {
   if (lowPerfEnvCache === null) {
     try {
       const ua = navigator.userAgent || "";
-      lowPerfEnvCache = /Android|iPhone|iPad|Mobile/i.test(ua) || navigator.maxTouchPoints >= 2;
+      const byUA = /Android|iPhone|iPad|Mobile/i.test(ua) || navigator.maxTouchPoints >= 2;
+      /* vc190 (컨텍스트 유실 수리) — UA 만 보면 데스크톱 UA 를 쓰는 소프트웨어 렌더러
+       *  환경(SwiftShader·llvmpipe)을 놓친다. 그런 환경은 셰이더 패스가 CPU 로 돌아
+       *  컨텍스트 유실이 잦으므로 저사양과 동일하게 취급한다.
+       *  판정 자체는 컨텍스트를 새로 만들지 않는다(isSoftwareGL 이 기존 캔버스 재사용). */
+      lowPerfEnvCache = byUA || WorldScene.isSoftwareGL();
     } catch {
       lowPerfEnvCache = false;
     }
@@ -1414,13 +1419,24 @@ export class WorldScene extends Phaser.Scene {
     this.shockFX = new ShockwaveFX(this);
     this.slashArcFx = new SlashArcFX(this); // v4.9.0
     /* vc142 (#9) — Three.js 3D VFX 오버레이 초기화 (고사양 WebGL만 — 실패 시 자동 스킵).
-     *  ?vfx3d=1 쿼리로 강제 활성 (진단/E2E용 — 적응형 게이트 우회) */
+     *  ?vfx3d=1 쿼리로 강제 활성 (진단/E2E용 — 적응형 게이트 우회)
+     *
+     *  vc190 (컨텍스트 유실 수리) — 종전엔 `Vfx3D.ensure()` 를 **게이트보다 먼저** 호출했다.
+     *  ensure() 는 `new THREE.WebGLRenderer(...)` 로 **WebGL 컨텍스트를 하나 더** 만드는데,
+     *  그 시점은 Phaser 가 자기 컨텍스트를 막 만든 직후다.
+     *  실측(diag-ctxloss4): 605ms webgl OK → 1129ms webgl2 OK(Phaser) →
+     *  **1147ms webgl LOST(18ms)** → chromium 이 페이지를
+     *  "Web page caused context loss and was blocked" 로 차단.
+     *  즉 vfx3d 를 쓰지 않는 기기에서도 컨텍스트만 소비하고 죽이고 있었다.
+     *  → 먼저 쓸지 결정하고, 쓸 때만 ensure() 한다. 컨텍스트 수를 줄이는 것이
+     *    유실의 근본 대책이다(모바일은 isLowPerfEnv 로 애초에 생성하지 않는다). */
     if (this.game.renderer.type === Phaser.WEBGL) {
       try {
         const vfxForce = (() => { try { return new URLSearchParams(window.location.search).get("vfx3d") === "1"; } catch { return false; } })();
-        if (Vfx3D.ensure(this.game.canvas as HTMLCanvasElement)) {
+        const wantVfx3d = vfxForce || (this.fxLevel === 1 && !isLowPerfEnv());
+        if (wantVfx3d && Vfx3D.ensure(this.game.canvas as HTMLCanvasElement)) {
           Vfx3D.wireEvents();
-          this.vfx3dActive = vfxForce || (this.fxLevel === 1 && !isLowPerfEnv());
+          this.vfx3dActive = true;
         }
       } catch (e) {
         console.warn("[SERTZ] Vfx3D 미탑재(무시)", e);
@@ -3795,16 +3811,31 @@ export class WorldScene extends Phaser.Scene {
   })();
 
   /** v1.4.15 (QA) — 현재 WebGL 컨텍스트가 소프트웨어 구현(SwiftShader 등)인지 판정.
-   *  WebGL 미지원(CANVAS 폴백)은 셰이더 자체가 없어 프리즈 원인이 아니므로 false. */
+   *  WebGL 미지원(CANVAS 폴백)은 셰이더 자체가 없어 프리즈 원인이 아니므로 false.
+   *
+   *  vc190 (컨텍스트 유실 수리) — 종전엔 **새 캔버스로 webgl2 컨텍스트를 직접 생성**해
+   *  렌더러 문자열을 읽었다. 이 함수는 DEFAULT_FX_MODE 정적 초기화에서 호출되는데,
+   *  그 시점은 Phaser 가 자기 WebGL 컨텍스트를 막 만드는 순간과 겹친다.
+   *  실측(diag-ctxloss4): 605ms webgl OK → 1129ms webgl2 OK(Phaser) →
+   *  **1147ms webgl LOST(18ms 만에)** → chromium 이 페이지를
+   *  "Web page caused context loss and was blocked" 로 차단.
+   *  즉 판정용 컨텍스트가 게임 컨텍스트를 죽이고 있었다.
+   *
+   *  → 판정용 컨텍스트를 **만들지 않는다.** 이미 존재하는 캔버스(Phaser 가 만든 것)의
+   *    컨텍스트를 재사용하고, 없으면 false 로 안전 종료한다. 판정 실패는
+   *    '소프트웨어 GL 아님'과 동일하게 취급되므로 동작 회귀가 없다. */
   static isSoftwareGL(): boolean {
     try {
-      const c = document.createElement("canvas");
-      const gl = (c.getContext("webgl2") || c.getContext("webgl")) as WebGLRenderingContext | null;
-      if (!gl) return false; // WebGL 부재 → Phaser가 Canvas로 폴백 — 셰이더 블록 없음
+      /* 재사용 우선순위: Phaser 렌더러의 캔버스 → DOM 의 첫 canvas.
+       *  새 컨텍스트를 만들지 않는 것이 핵심이다. */
+      const dbg = (window as unknown as { __SERTZ_DEBUG__?: { game?: { canvas?: HTMLCanvasElement } } }).__SERTZ_DEBUG__;
+      const host: HTMLCanvasElement | null =
+        dbg?.game?.canvas ?? (document.querySelector("canvas") as HTMLCanvasElement | null);
+      if (!host) return false;
+      const gl = (host.getContext("webgl2") ?? host.getContext("webgl")) as WebGLRenderingContext | null;
+      if (!gl) return false; // 컨텍스트 없음 → 셰이더 없음 → 프리즈 원인 아님
       const ext = gl.getExtension("WEBGL_debug_renderer_info");
-      const renderer = ext
-        ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || "")
-        : "";
+      const renderer = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || "") : "";
       return /swiftshader|llvmpipe|softpipe|softwarerender|software renderer|basic render/i.test(renderer);
     } catch {
       return false;

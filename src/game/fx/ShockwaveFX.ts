@@ -50,7 +50,25 @@ type WaveSlot = {
 export class ShockwaveFX {
   private slots: WaveSlot[] = [];
 
+  /* vc190 (컨텍스트 유실 수리) — 종전엔 생성자에서 곧바로 scene.add.shader 로
+   *  Shader GameObject size개를 만들었다. 그런데 WorldScene.create 가 이들을
+   *  즉시 생성하므로 **부팅 시점에 Phaser 본체 컨텍스트와 동시에** 셰이더 프로그램이
+   *  컴파일된다. 실측(diag-ctxloss4): 2613ms 에 webgl 컨텍스트 LOST →
+   *  chromium 이 "Web page caused context loss and was blocked" 로 페이지 차단.
+   *  → 첫 spawn 까지 생성을 미룬다. 쓰지 않으면 컨텍스트도 만들지 않는다. */
+  private poolReady = false;
+  private size: number;
+
   constructor(private scene: Phaser.Scene, size = 3) {
+    this.size = size;
+  }
+
+  /** 첫 사용 시 1회만 풀 생성 (지연) */
+  private ensurePool() {
+    if (this.poolReady) return;
+    this.poolReady = true;
+    const scene = this.scene;
+    const size = this.size;
     if (scene.game.renderer.type !== Phaser.WEBGL) return;
     for (let i = 0; i < size; i++) {
       try {
@@ -95,6 +113,7 @@ export class ShockwaveFX {
 
   /** 충격파 링 재생 — 풀 고갈 시 조용히 생략(강한 순간 과다 노출 방지) */
   spawn(x: number, y: number, tint = 0xffd76a, scale = 1, duration = 360, alpha = 0.85) {
+    this.ensurePool();
     const slot = this.slots.find((s) => !s.live);
     if (!slot) return;
     const c = Phaser.Display.Color.IntegerToColor(tint);

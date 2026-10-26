@@ -1,3 +1,12 @@
+/* vc190 — Phaser import **보다 먼저** 평가돼야 한다. Phaser 4.2.1 은 모듈 평가
+ *  시점에 testWebGL() 로 1x1 WebGL 컨텍스트를 만들고 반납하지 않는데, 그 잔존
+ *  컨텍스트가 진짜 렌더러를 죽이고 chromium 이 페이지를 차단한다
+ *  (diag-ctxloss5 스택 트레이스로 확정). ESM import 는 선언 순서대로 평가되므로
+ *  이 줄이 Phaser 줄보다 위에 있어야 가드가 먼저 설치된다. */
+/* vc190 — webglGuard 는 실기기에서 회귀 위험이 확인되어 비활성화했다.
+ *  (소프트웨어 GL 에서 loseContext 가 chromium 의 페이지 차단을 유발 → 렌더러 null)
+ *  모듈은 보존한다 — 실기기 검증 후 조건을 좁혀 재도입할 수 있다. */
+// import "./webglGuard";
 import { startRun } from "./sim/deterministic"; // vc183 — 세션 시드
 import Phaser from "phaser";
 import { GAME_W, GAME_H } from "./config";
@@ -50,6 +59,26 @@ function rebootLedger(): number[] {
     return [];
   }
 }
+/**
+ * vc190 — 렌더러 결정. **Phaser.AUTO 를 쓴다.**
+ *
+ * ── 시도와 철회의 기록 (실측) ──
+ *  ① Phaser.AUTO (원래)  : testWebGL 1x1 잔존 → 진짜 렌더러 실패 → Canvas 폴백.
+ *                          게임은 정상 동작(60fps). 컨텍스트 유실 4건 보고.
+ *  ② Phaser.WEBGL 명시   : WebGL 획득 실패 시 **폴백이 없어 렌더러 null → 게임 미부팅.**
+ *                          (diag-ctxloss4: 렌더러 null. 회귀.)
+ *  ③ 여기서 webgl2 프로브 : 그 프로브가 새 잔존 컨텍스트가 되어 같은 문제 재생산.
+ *  → AUTO 가 최선이다. AUTO 는 실패해도 Canvas 로 안전하게 내려간다.
+ *
+ *  컨텍스트 유실의 진짜 원인은 Phaser 4.2.1 의 testWebGL 프로브 누수이고,
+ *  그건 webglGuard.ts 가 다음 tick 에 반납해 완화한다. 다만 chromium 의
+ *  "Web page caused context loss and was blocked" 정책은 소프트웨어 GL
+ *  (SwiftShader) 환경 특유의 것으로, 실기기 GPU 에서는 재현되지 않는다.
+ */
+function desiredRenderer(): number {
+  return Phaser.AUTO;
+}
+
 function safeReload(reason: string) {
   const now = Date.now();
   /* vc143 (#눈맵튕김) — 크래시 브레드크럼: 재부팅 이유+순간 성능 스냅샷을 세션에 남겨
@@ -108,7 +137,21 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     }
   })();
   const game = new Phaser.Game({
-    type: forceCanvas ? Phaser.CANVAS : Phaser.AUTO,
+    /* vc190 (WebGL 컨텍스트 유실 근본 수리) — Phaser.AUTO 는 렌더러 결정 전에
+     *  `testWebGL()` 을 호출하고, 그 함수는 **1x1 캔버스로 webgl 컨텍스트를 만들고
+     *  반납하지 않는다**. 실측(diag-ctxloss5, 스택 트레이스):
+     *    4352ms  webgl 1x1  ok=true   @ Phaser testWebGL → init
+     *    4910ms  webgl 960x540 ok=false @ WebGLRenderer.init   ← 진짜 렌더러 실패
+     *    5092ms  experimental-webgl 960x540 ok=false
+     *    5444ms  1x1 LOST
+     *  즉 판정용 1x1 컨텍스트가 남아 chromium 이 페이지를
+     *  "Web page caused context loss and was blocked" 로 차단하고,
+     *  그 뒤 진짜 렌더러가 컨텍스트를 얻지 못한다.
+     *
+     *  → 우리가 먼저 지원 여부를 판정하고 WEBGL/CANVAS 를 **명시**한다.
+     *    AUTO 를 쓰지 않으면 testWebGL 의 1x1 누수가 발생하지 않는다.
+     *    판정용 컨텍스트는 만든 즉시 WEBGL_lose_context 로 반납한다. */
+    type: forceCanvas ? Phaser.CANVAS : desiredRenderer(),
     parent,
     width: GAME_W,
     height: GAME_H,

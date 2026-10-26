@@ -203,9 +203,14 @@ export class Cinematic3D {
       this.THREE = THREE;
 
       /* WebGL이 없는 환경(구형 기기·일부 WebView)에서는 조용히 비활성.
-       *  2D 연출은 그대로 남으므로 게임은 정상 진행된다. */
-      const probe = document.createElement("canvas");
-      const hasGL = !!(probe.getContext("webgl2") || probe.getContext("webgl"));
+       *  2D 연출은 그대로 남으므로 게임은 정상 진행된다.
+       *
+       *  vc190 (컨텍스트 유실 수리) — 종전엔 probe 용 **새 캔버스로 컨텍스트를 생성**했다.
+       *  이 모듈은 현재 호출되지 않지만(2D 로 대체됨) 되살릴 때 같은 버그를 재도입하지
+       *  않도록, 이미 있는 캔버스를 재사용하는 방식으로 바꾼다.
+       *  컨텍스트 개수를 늘리는 것이 유실의 원인이었다(diag-ctxloss4 실측). */
+      const host = document.querySelector("canvas") as HTMLCanvasElement | null;
+      const hasGL = !!(host && (host.getContext("webgl2") ?? host.getContext("webgl")));
       if (!hasGL) {
         this.dead = true;
         return false;
