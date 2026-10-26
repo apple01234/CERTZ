@@ -3445,20 +3445,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         /* vc183 (극딜 문서) — 저격수 "방어력 무시 관통"은 이 게임에 방어력 스탯이 없어
          *  수치로 옮길 대상이 없다. 대신 문서의 "직선 관통" 정체성을 피해 배율로 반영한다. */
-        for (let i = 0; i < 32; i++) {
-          this.scene.time.delayedCall(240 + i * 80, () => {
+        /* vc187 (#16) — 32발은 투사체 오브젝트를 32개 만들고 매발 nearestTargets(1,820)
+         *  전체 순회를 돌았다. 해적 궁극기와 같은 폭주 패턴(#1·#14 와 동일 원인).
+         *  18발로 줄이고 배율을 올려 총 피해를 유지, 연출은 강화한다. */
+        for (let i = 0; i < 18; i++) {
+          this.scene.time.delayedCall(240 + i * 140, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 820)[0];
             if (!t) return;
+            /* 조준선 — 저격수 정체성. 발사 전 1프레임 빨간 선이 그어진다 */
+            this.scene.spawnSnipeBeam(this.x, this.y - 8, t.x, t.y, 0xff8a5a);
             const ang = Math.atan2(t.y - this.y, t.x - this.x) + (Math.random() - 0.5) * 0.85;
-            const { dmg, crit } = rd(1.7, true); // 확정 크리티컬 — 절사명중
+            const { dmg, crit } = rd(2.4, true); // 확정 크리티컬 — 18발 보상 배율
             this.scene.firePlayerProj({
               x: this.x, y: this.y - 8, angle: ang, speed: 950, pierce: 3,
               dmg, crit, tint: 0xffe08a, knock: 260, scale: 1.9,
               tex: "x2_arrow", blend: "add", rot: true, homing: true,
               trail: 0xffd76a,
             });
-            if (i % 8 === 0) this.scene.sfxSkill("arrowpierce", 1.08);
+            if (i % 6 === 0) this.scene.sfxSkill("arrowpierce", 1.08);
           });
         }
         /* 종결 — 신의 저격선 3연사 (광역 관통) */
@@ -4136,53 +4141,78 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *  종전엔 pirate 폴백을 공유해 드레드노트와 연출이 완전히 같았다.
        *  #15 지적("파도가 너무 작고 퀄리티 별로")을 반영해 파도를 화면 폭 전체로 키우고
        *  다층(물벽·거품·용 오라)으로 쌓아 올린다. */
+      /* vc187 (지시 #3·#11·#15) — 씨킹 1차 궁극기 「해룡 승천 — 심해의 왕관」.
+       *  종전 문제: 사각형 도형 3개(물벽/거품/저류)만 늘어놓아 아크로드 궁극기와
+       *  비교하면 연출 밀도가 크게 떨어졌다. 파도 크기는 이미 화면 폭이었으나
+       *  **형태가 사각형**이라 파도로 읽히지 않았다.
+       *  수정: 제공 VFX 팩 텍스처(ringice/aurarays/sparkle/magicstar/ringarc)로
+       *  · 해룡 승천(수직 용기둥 + 비늘 링 5중)
+       *  · 다층 해일(비대칭 곡선 + 거품 입자 + 물보라)
+       *  · 심해의 왕관(종결 — 왕관 링 3중 + 수압 붕괴)
+       *  를 구성해 아크로드와 같은 급으로 올린다. */
       case "seaking": {
         const W = this.scene.scale.width;
-        /* 1단 — 해룡이 솟구친다: 캐릭터 중심에서 위로 솟는 용 형상 오라 */
-        this.scene.time.delayedCall(200, () => {
+        /* 1단 — 해룡 승천: 바닥에서 용기둥이 솟구치고 비늘 링이 5중으로 확산 */
+        this.scene.time.delayedCall(160, () => {
           if (this.state === "dead") return;
-          this.scene.spawnPillar(this.x, this.y, 0x5ad0ff, 300);
-          this.scene.cameras.main.flash(150, 140, 220, 255);
-          for (let i = 0; i < 3; i++) {
-            this.scene.time.delayedCall(i * 90, () => {
-              const r = this.scene.add.circle(this.x, this.y, 26 + i * 18, 0x9ae8ff, 0.35)
-                .setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
-              this.scene.tweens.add({ targets: r, scale: 4.2, alpha: 0, duration: 620, ease: "Cubic.out", onComplete: () => r.destroy() });
+          this.scene.spawnPillar(this.x, this.y, 0x5ad0ff, 360);
+          this.scene.cameras.main.flash(160, 140, 220, 255);
+          spawnFlarePop(this.scene, this.x, this.y - 40, "cfx_aurarays", { tint: 0x5ad0ff, scale: 3.4, duration: 900 });
+          for (let i = 0; i < 5; i++) {
+            this.scene.time.delayedCall(i * 80, () => {
+              if (this.state === "dead") return;
+              spawnRingPop(this.scene, this.x, this.y - i * 26, "vf_ring", 0x9ae8ff, 1.2 + i * 0.5, 520);
+              spawnFlarePop(this.scene, this.x, this.y - i * 30, "cfx_ringice", { tint: 0x8ae0ff, scale: 1.0 + i * 0.3, duration: 460 });
             });
           }
+          this.scene.driveFx?.gvShock(this.x, this.y, 0x9ae8ff, 2.6, 900);
         });
-        /* 2단 — 거대 파도: 화면 폭 전체를 덮는 다층 해일 3연속 (크기 대폭 확대) */
+        /* 2단 — 다층 해일: 화면 폭 전체를 덮는 비대칭 곡선 파도 3연속 */
         for (let w = 0; w < 3; w++) {
-          this.scene.time.delayedCall(520 + w * 380, () => {
+          this.scene.time.delayedCall(520 + w * 360, () => {
             if (this.state === "dead") return;
-            const wy = this.y - 20 + (w - 1) * 58;
-            /* 물벽 — 폭을 화면 전체로, 높이도 2배 이상 */
-            const wave = this.scene.add.rectangle(-W * 0.3, wy, W * 0.45, 260 + w * 40, 0x2f7fc4, 0.55)
+            const wy = this.y - 16 + (w - 1) * 62;
+            const waveH = 300 + w * 46;
+            /* 물벽 — 사각형 대신 둥근 곡선(타원+링)으로 파도 형태를 만든다 */
+            const body = this.scene.add.ellipse(-W * 0.25, wy, W * 0.5, waveH, 0x2f7fc4, 0.5)
               .setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
-            const foam = this.scene.add.rectangle(-W * 0.3, wy - (130 + w * 20), W * 0.45, 18, 0xd8f4ff, 0.95)
+            const crest = this.scene.add.ellipse(-W * 0.25, wy - waveH * 0.42, W * 0.52, 60, 0xd8f4ff, 0.92)
               .setDepth(15).setBlendMode(Phaser.BlendModes.ADD);
-            const undertow = this.scene.add.rectangle(-W * 0.3, wy + (120 + w * 18), W * 0.45, 26, 0x1a4a7a, 0.5)
+            const trough = this.scene.add.ellipse(-W * 0.25, wy + waveH * 0.38, W * 0.48, 44, 0x143a63, 0.45)
               .setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
+            /* 거품 입자 — 파도 마루를 따라 흩날린다 */
+            for (let k = 0; k < 7; k++) {
+              spawnFlarePop(this.scene, -W * 0.1 + k * (W * 0.07), wy - waveH * 0.4, "cfx_sparkle", {
+                tint: 0xd8f4ff, scale: 0.6 + (k % 3) * 0.25, duration: 420,
+              });
+            }
             this.scene.tweens.add({
-              targets: [wave, foam, undertow], x: W * 1.25, duration: 900, ease: "Sine.inOut",
-              onComplete: () => { wave.destroy(); foam.destroy(); undertow.destroy(); },
+              targets: [body, crest, trough], x: W * 1.3, duration: 880, ease: "Sine.inOut",
+              onComplete: () => { body.destroy(); crest.destroy(); trough.destroy(); },
             });
-            this.scene.doShake?.(220, 0.011);
+            this.scene.doShake?.(220, 0.012);
             this.scene.sfxSkill("thunder", 0.55 + w * 0.08);
-            /* 파도가 지나간 자리 광역 타격 */
-            for (const e of this.getAllTargetsIn(999)) {
+            /* 파도가 지나간 자리 광역 타격 — 순회 1회 캐시(#1·#14 와 동일 원칙) */
+            const hitList = this.getAllTargetsIn(999);
+            for (const e of hitList) {
               const { dmg, crit } = rd(4.6);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, new Phaser.Math.Vector2(1, 0), 520, crit);
             }
           });
         }
-        /* 3단 — 종결: 수압 폭발 + 넉백 */
-        this.scene.time.delayedCall(1720, () => {
+        /* 3단 — 종결 「심해의 왕관」: 왕관 링 3중 + 수압 붕괴 */
+        this.scene.time.delayedCall(1620, () => {
           if (this.state === "dead") return;
-          this.scene.spawnBurstAt(this.x, this.y, 70, 0x8ae0ff);
-          this.scene.cameras.main.shake(420, 0.02);
-          this.scene.sfxSkill("superhit", 0.75);
+          spawnFlarePop(this.scene, this.x, this.y, "cfx_magicstar", { tint: 0x8ae0ff, scale: 2.6, duration: 700 });
+          spawnFlarePop(this.scene, this.x, this.y, "cfx_ringarc", { tint: 0x5ad0ff, scale: 3.0, duration: 760 });
+          for (let c = 0; c < 3; c++) {
+            spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0x9ae8ff, 4.6 + c * 1.1, 620 - c * 90);
+          }
+          this.scene.spawnBurstAt(this.x, this.y, 76, 0x8ae0ff);
+          this.scene.cameras.main.shake(440, 0.021);
+          this.scene.sfxSkill("superhit", 0.72);
+          this.scene.spawnPickupText(this.x, this.y - 74, "심해의 왕관", "#9ae8ff");
           for (const e of this.getAllTargetsIn(620)) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.4);
@@ -4214,7 +4244,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           }
           this.scene.sfxSkill("thunder", 0.5);
         });
-        /* 2단 — 융단 폭격: 10발이 순차 낙하 */
+        /* 2단 — 융단 폭격: 10발이 순차 낙하
+         *  vc187 (#16) — 종전엔 getAllTargetsIn(999) 로 **전체 적을 10번 순회**했다
+         *  (폭발마다 재순회). #1·#14 해적 궁극기와 동일한 폭주 원인이라
+         *  시전 시점에 1회만 캐시하고 그 배열을 재사용한다. */
         const targets = this.getAllTargetsIn(999);
         for (let i = 0; i < 10; i++) {
           this.scene.time.delayedCall(760 + i * 260, () => {
