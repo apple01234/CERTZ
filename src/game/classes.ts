@@ -667,7 +667,16 @@ export type Skill1Kind =
    *  2차 스킬로 폴백됐고, 그래서 "해적 스킬이 별로"였다. 계열 정체성(화약·함포·심해)을
    *  단계별로 확장: 3차=광역 폭격, 4차=바다를 부수는 일격. */
   | "manowar"     /* stormcaptain — 현측 전열포: 좌우 2열 함포 일제사격 + 폭발 */
-  | "dreadvolley"; /* seaking — 심해 포격진: 적을 추적하는 3연 포탄 + 해일 */
+  | "dreadvolley" /* seaking — 심해 포격진: 적을 추적하는 3연 포탄 + 해일 */
+  /* vc191 (지시 #10 — "스킬 전면 개편이 반영되지 않았다")
+   *  원인: 3·4차 직업 16종이 SKILL1_KIND/SKILL2_KIND 에 **아예 없어서**
+   *  상위 차수로 전직해도 하위 차수 스킬로 폴백하고 있었다(개편이 반영될 자리가 없었음).
+   *  → 5차 직업 16종 전부에 고유 주력기를 배정한다. 신규 4종만 종류를 추가하고
+   *    나머지는 계열 정체성에 맞는 기존 종류를 승계해 중복 체감 없이 단계가 올라간다. */
+  | "judgment"   /* paladin/crusader — 심판의 빛: 전방 참격 + 자기 회복 (성기사 정체성) */
+  | "tempeststrike" /* tempest/skylord — 폭풍연격: 전방 다단 히트 + 감전 */
+  | "stormcall"  /* stormbringer/arclord — 뇌운 소환: 적 추적 낙뢰 + 광역 감전 */
+  | "chronobreak"; /* chronicle/eternal — 시간 절단: 전방 정지 + 지연 폭발 (시간 초월자) */
 
 export type Skill2Kind =
   | "dash" /* warrior — 돌진 + 종착 충격파 */
@@ -684,7 +693,10 @@ export type Skill2Kind =
   | "flashydash" /* swashbuckler — 화려한 돌진: 경로 연타 + 화려한 검 잔상 */
   /* v1.1.9 — 해적 계열 기동기 */
   | "smokestep"   /* raider — 연막 측면: 짧은 도약 + 착지 폭발 */
-  | "grappleswing"; /* corsair — 갈고리 그네: 먼 거리 도약 + 경로 타격 */
+  | "grappleswing" /* corsair — 갈고리 그네: 먼 거리 도약 + 경로 타격 */
+  /* vc191 (#10) — 5차 직업 기동기 2종 추가 */
+  | "lightspeed"  /* paladin/crusader — 성광 질주: 경로 정화 + 아군 치유 파동 */
+  | "timeslip";   /* chronicle/eternal — 시간 미끄러짐: 짧은 무적 이동 + 쿨 단축 */
 
 /* v3.0.6 — 1차+2차 12종 고유 정의 (3차/4차는 resolveSkill1Of가 계열 체인에서 승계) */
 export const SKILL1_KIND: Partial<Record<ClassKey, Skill1Kind>> = {
@@ -712,6 +724,23 @@ export const SKILL1_KIND: Partial<Record<ClassKey, Skill1Kind>> = {
   seaking: "dreadvolley",
   powdermaster: "dreadvolley",
   dreadnought: "manowar",
+  /* vc191 (#10) — 3·4차 16종. 각 계열의 단계 상승을 스킬 종류로도 드러낸다. */
+  warlord: "ragespin",        // 워로드 — 파괴의 회전베기 (광역 학살)
+  warbringer: "spin",         // 워브링어 — 4차 완성형 회전베기
+  paladin: "judgment",        // 팔라딘 — 심판의 빛
+  crusader: "judgment",       // 크루세이더 — 심판의 빛 강화
+  eagleeye: "snipe",          // 이글아이 — 매의 관통 사격
+  deadeye: "snipe",           // 데드아이 — 백발백중 저격
+  tempest: "tempeststrike",   // 템페스트 — 폭풍연격
+  skylord: "tempeststrike",   // 스카이로드 — 하늘을 가르는 폭풍연격
+  stormbringer: "stormcall",  // 스톰브링어 — 뇌운 소환
+  arclord: "stormcall",       // 아크로드 — 뇌제 강림
+  chronicle: "chronobreak",   // 크로니컬 — 시간 절단
+  eternal: "chronobreak",     // 이터널 — 영겁의 절단
+  nightblade: "shadowexec",   // 나이트블레이드 — 그림자 참수
+  shadowlord: "shadowexec",   // 섀도우로드 — 암흑 군주의 참수
+  duelist: "flurrydance",     // 듀얼리스트 — 연타 난무
+  blademaster: "flurrydance", // 블레이드마스터 — 검성의 난무
 };
 
 export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
@@ -737,6 +766,23 @@ export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
   powdermaster: "smokestep",
   seaking: "grappleswing",
   dreadnought: "smokestep",
+  /* vc191 (#10) — 3·4차 16종 기동기 */
+  warlord: "savagerush",       // 워로드 — 살상 돌진
+  warbringer: "savagerush",    // 워브링어 — 전장을 가르는 돌진
+  paladin: "lightspeed",       // 팔라딘 — 성광 질주
+  crusader: "lightspeed",      // 크루세이더 — 성광 질주 강화
+  eagleeye: "falconwind",      // 이글아이 — 매의 질풍
+  deadeye: "falconwind",       // 데드아이 — 사선 이탈 질풍
+  tempest: "windslash",        // 템페스트 — 질풍 가르기
+  skylord: "windslash",        // 스카이로드 — 하늘 가르기
+  stormbringer: "grandblink",  // 스톰브링어 — 대전이 점멸
+  arclord: "grandblink",       // 아크로드 — 번개 전이
+  chronicle: "timeslip",       // 크로니컬 — 시간 미끄러짐
+  eternal: "timeslip",         // 이터널 — 영겁의 미끄러짐
+  nightblade: "ambushdash",    // 나이트블레이드 — 암습 돌진
+  shadowlord: "ambushdash",    // 섀도우로드 — 그림자 강림
+  duelist: "flashydash",       // 듀얼리스트 — 화려한 돌진
+  blademaster: "flashydash",   // 블레이드마스터 — 검극의 돌진
 };
 
 /** 스킬 종류 승계 — 현재 클래스부터 루트까지 거슬러 처음 정의된 종류 (3차/4차는 2차기 강화판)

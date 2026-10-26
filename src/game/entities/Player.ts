@@ -1126,8 +1126,166 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* vc179 (지시 #6·#10) — 해적 3·4차 고유기 */
       case "manowar": return this.skill1Broadside();
       case "dreadvolley": return this.skill1DreadVolley();
+      /* vc191 (지시 #10) — 5차 직업 고유 주력기 */
+      case "judgment": return this.skill1Judgment();
+      case "tempeststrike": return this.skill1TempestStrike();
+      case "stormcall": return this.skill1StormCall();
+      case "chronobreak": return this.skill1ChronoBreak();
       default: return this.skill1Spin(false);
     }
+  }
+
+  /* ═══════════ vc191 (지시 #10) — 5차 직업 고유 주력기 4종 ═══════════
+   *  기존 16종(회전베기·볼트·저격 등)으로 표현되지 않는 계열 정체성만 새로 만든다.
+   *  각각 "이 직업이 무엇인지"가 한 번의 시전으로 읽히도록 연출을 분리했다. */
+
+  /** 팔라딘·크루세이더 — 심판의 빛: 전방 넓은 참격 + 명중한 수만큼 자신 회복 */
+  private skill1Judgment() {
+    const t = this.sTier;
+    const hex = this.clsHex();
+    const aim = this.aimDir();
+    this.faceAtk(aim);
+    this.play(this.bodyKey("hero-atk"));
+    this.scene.sfxSkill("holy", 1.0);
+    const ang = aim.lengthSq() > 0.01 ? aim.angle() : 0;
+    /* 빛의 부채꼴 — 참격 3연 (앞으로 밀려나가며 넓어진다) */
+    for (let i = 0; i < 3; i++) {
+      this.scene.time.delayedCall(70 * i, () => {
+        if (this.state === "dead") return;
+        const dist = 58 + i * 34;
+        const reach = 66 + 12 * t;
+        const cx = this.x + Math.cos(ang) * dist;
+        const cy = this.y + Math.sin(ang) * dist;
+        this.scene.spawnSlashArc?.(cx, cy, ang, hex, 1.1 + 0.08 * t);
+        let hitHeal = 0;
+        for (const e of this.scene.getAllTargets()) {
+          if (!e.active || this.hitSet.has(e)) continue;
+          if (Phaser.Math.Distance.Between(cx, cy, e.x, e.y) <= reach) {
+            this.hitSet.add(e);
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = this.rollDamage(1.15 + 0.1 * t, true);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 210, crit);
+            hitHeal++;
+          }
+        }
+        /* 성기사 정체성 — 때릴수록 회복한다 */
+        if (hitHeal > 0) {
+          this.hp = Math.min(this.maxHp, this.hp + Math.round(hitHeal * (4 + 2 * t)));
+          this.scene.spawnHealFx(this.x, this.y - 20, Math.round(hitHeal * (4 + 2 * t)));
+        }
+      });
+    }
+    this.state = "idle";
+  }
+
+  /** 템페스트·스카이로드 — 폭풍연격: 전방으로 5연속 돌풍 타격, 각 타격이 감전을 남긴다 */
+  private skill1TempestStrike() {
+    const t = this.sTier;
+    const hex = this.clsHex();
+    const aim = this.aimDir();
+    this.faceAtk(aim);
+    this.play(this.bodyKey("hero-atk"));
+    this.scene.sfxSkill("wind2", 1.0);
+    const ang = aim.lengthSq() > 0.01 ? aim.angle() : 0;
+    const N = 5;
+    for (let i = 0; i < N; i++) {
+      this.scene.time.delayedCall(58 * i, () => {
+        if (this.state === "dead") return;
+        /* 전방을 좌우로 흔들며 연격 — 바람 칼날이 교차한다 */
+        const spread = (i % 2 === 0 ? 1 : -1) * 0.22;
+        const a = ang + spread;
+        const cx = this.x + Math.cos(a) * (44 + i * 8);
+        const cy = this.y - 6 + Math.sin(a) * (44 + i * 8);
+        this.scene.spawnSlashArc?.(cx, cy, a, hex, 0.85 + 0.05 * t);
+        for (const e of this.scene.getAllTargets()) {
+          if (!e.active) continue;
+          if (Phaser.Math.Distance.Between(cx, cy, e.x, e.y) <= 62 + 6 * t) {
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = this.rollDamage(0.62 + 0.05 * t, true);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 120, crit);
+          }
+        }
+      });
+    }
+    this.state = "idle";
+  }
+
+  /** 스톰브링거·아크로드 — 뇌운 소환: 적을 추적하는 낙뢰 3기 + 광역 감전 */
+  private skill1StormCall() {
+    const t = this.sTier;
+    const hex = this.clsHex();
+    this.faceAtk(this.aimDir());
+    this.play(this.bodyKey("hero-atk"));
+    this.scene.sfxSkill("thunder", 1.0);
+    /* 가장 가까운 적부터 순차 낙뢰 — "뇌운이 적을 골라 친다" */
+    const targets = this.scene.getAllTargets().filter((e) => e.active);
+    targets.sort((a, b) =>
+      Phaser.Math.Distance.Between(this.x, this.y, a.x, a.y) - Phaser.Math.Distance.Between(this.x, this.y, b.x, b.y));
+    const n = Math.min(3, Math.max(1, targets.length));
+    for (let i = 0; i < n; i++) {
+      const tgt = targets[i];
+      if (!tgt) break;
+      this.scene.time.delayedCall(110 * i, () => {
+        if (this.state === "dead" || !tgt.active) return;
+        /* 낙뢰 — 하늘에서 내리꽂는 광선으로 표현 (기존 빔 FX 재사용) */
+        this.scene.spawnSnipeBeam(this.x, this.y - 260, tgt.x, tgt.y, hex);
+        this.scene.spawnBurstAt(tgt.x, tgt.y, 14, hex);
+        for (const e of this.scene.getAllTargets()) {
+          if (!e.active) continue;
+          if (Phaser.Math.Distance.Between(tgt.x, tgt.y, e.x, e.y) <= 78 + 8 * t) {
+            const away = new Phaser.Math.Vector2(e.x - tgt.x, e.y - tgt.y).normalize();
+            const { dmg, crit } = this.rollDamage(1.05 + 0.11 * t, true);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 180, crit);
+          }
+        }
+      });
+    }
+    this.state = "idle";
+  }
+
+  /** 크로니컬·이터널 — 시간 절단: 전방을 베어 짧게 멈춘 뒤 지연 폭발 (시간 초월자 정체성) */
+  private skill1ChronoBreak() {
+    const t = this.sTier;
+    const hex = this.clsHex();
+    const aim = this.aimDir();
+    this.faceAtk(aim);
+    this.play(this.bodyKey("hero-atk"));
+    this.scene.sfxSkill("mage2", 1.0);
+    const ang = aim.lengthSq() > 0.01 ? aim.angle() : 0;
+    const cx = this.x + Math.cos(ang) * 70;
+    const cy = this.y + Math.sin(ang) * 70;
+    const radius = 92 + 10 * t;
+    /* ① 시간 정지 — 대상 이동을 잠시 묶는다 */
+    const frozen: { e: { active: boolean; setVelocity?: (x: number, y: number) => void }; vx: number; vy: number }[] = [];
+    for (const e of this.scene.getAllTargets()) {
+      if (!e.active) continue;
+      if (Phaser.Math.Distance.Between(cx, cy, e.x, e.y) <= radius) {
+        const body = (e as unknown as { body?: { velocity: { x: number; y: number } } }).body;
+        frozen.push({ e: e as never, vx: body?.velocity.x ?? 0, vy: body?.velocity.y ?? 0 });
+      }
+    }
+    /* 시간 정지 연출 — 시계 룬 링이 퍼지며 대상이 묶인다 */
+    this.scene.spawnRuneRing(cx, cy, hex);
+    this.scene.spawnShockwave(cx, cy, hex, radius / 90, 420, 0.5);
+    /* ② 0.6초 뒤 지연 폭발 — 멈춘 시간이 터진다 */
+    this.scene.time.delayedCall(620, () => {
+      if (this.state === "dead") return;
+      this.scene.spawnBurstAt(cx, cy, 30, hex);
+      this.scene.spawnShockwave(cx, cy, hex, 1.5 + 0.1 * t);
+      for (const e of this.scene.getAllTargets()) {
+        if (!e.active) continue;
+        if (Phaser.Math.Distance.Between(cx, cy, e.x, e.y) <= radius) {
+          const away = new Phaser.Math.Vector2(e.x - cx, e.y - cy).normalize();
+          const { dmg, crit } = this.rollDamage(1.6 + 0.14 * t, true);
+          if (crit) this.scene.sfxCrit();
+          e.takeDamage(dmg, away, 240, crit);
+        }
+      }
+    });
+    this.state = "idle";
   }
 
   /** 전사 — 회전베기 360° (v3.0.4 — 전직마다 기존 스킬 강화: 배율/반경 대폭 상향 + 단계별 부가효과)
@@ -1835,6 +1993,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       cycleblink: ["worp", 1.15],
       ambushdash: ["ambush", 1],
       flashydash: ["dash2", 1.12],
+      /* vc191 (#10) — 5차 기동기 */
+      lightspeed: ["holy", 1.1],
+      timeslip: ["worp", 0.62],
     };
     const ds = DASH_SND[kind] ?? DASH_SND.dash;
     this.scene.sfxSkill(ds[0], ds[1]);
@@ -2107,6 +2268,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             dps: Math.max(4, Math.round(this.atkTotal * 0.05)), kind: "poison", owner: "player",
           });
           burst(120 + 10 * t, 0.85 + 0.1 * t, 340);
+          break;
+        }
+        case "lightspeed": {
+          /* vc191 (#10) 팔라딘·크루세이더 — 성광 질주: 경로를 정화하며 아군을 치유한다.
+           *  사거리는 중간, 착지 시 자신 HP 회복 + 주변 광휘 폭발. */
+          const a3 = this.aimDir();
+          this.scene.spawnSlash?.(this.x, this.y, a3, false, 1.35, 0xfff2c4);
+          burst(112 + 10 * t, 0.9 + 0.08 * t, 260);
+          this.hp = Math.min(this.maxHp, this.hp + Math.round(12 + 4 * t));
+          this.scene.spawnHealFx(this.x, this.y - 16, Math.round(12 + 4 * t));
+          break;
+        }
+        case "timeslip": {
+          /* vc191 (#10) 크로니컬·이터널 — 시간 미끄러짐: 짧고 즉각적인 이동 + 쿨 단축.
+           *  이동 거리는 짧지만 착지 후 skill2Cd 를 크게 깎아 연속 기동이 가능하다. */
+          burst(86 + 8 * t, 1.25 + 0.1 * t, 300);
+          this.skill2Cd = Math.max(0, this.skill2Cd - (2.2 + 0.3 * t) * 1000);
+          this.scene.spawnRuneRing(this.x, this.y, this.clsHex());
           break;
         }
         case "grappleswing": {
