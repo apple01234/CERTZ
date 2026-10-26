@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc177 — APK는 릴리스 태그 v1.2.5에 있다(이전 태그는 vc176까지 보유).
    *  태그와 파일명이 어긋나면 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.3.9/SERTZ-vc187.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.0/SERTZ-vc188.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,10 +69,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.3.9";
-  const LATEST_CODE = 187;
+  const LATEST_VERSION = "1.4.0";
+  const LATEST_CODE = 188;
     const VERSION_NOTE =
-      "v1.3.9 (vc187) — 21개 지시 일괄: ①궁극기 멈춤 근본 수리(오브젝트 폭주 22발→12발·전체순회 캐시·줌 재귀 제거) ②5차 줌아웃 복귀(시전직전 cam.zoom 캡처 복원) ③씨킹 궁극기 아크로드급 재작성(제공 VFX 팩 — 해룡승천·다층해일·심해의왕관) ④드레드노트 두 궁극기 분화(1차 수직 낙하 / 2차 전함 현측 일제사격) ⑤계열별 무기 8종 추가 + 타 직업 무기 착용 차단 ⑥해적 6계열 외형 336종 생성 ⑦PC 구글 로그인(외부 브라우저 인증) ⑧WASD 이동 + 마우스 조준 ⑨스카이로드 토네이도 중복 해소(심판의 낙뢰) ⑩창 전환 효과음 뭉침 수리 ⑪deadeye 투사체 32→18발 ⑫NPC 전용 초상화 20종(파츠 조합 256×256) ⑬3D 컷신 폐기 → 제공 VFX 2D 연출 38곳 ⑭GitHub deployment 429→1 정리.";
+      "v1.4.0 (vc188) — 로그인 전면 불통 수리: APK 정적 export 격리 중 API 라우트 22개가 복원되지 않은 채 커밋돼 Vercel 에서 /api/auth/* 가 사라졌다(PC·웹 로그인·회원가입·거래소·채팅·파티 전부 404). 라우트 전량 복원 + 재발 방지 3중 장치(static-export.sh trap 복원·restore-api-routes.sh·CI API route guard). 이번 사이클 누적: ①궁극기 멈춤 수리(오브젝트 22→12발·전체순회 캐시) ②5차 줌아웃 복귀 ③씨킹 아크로드급 재작성 ④드레드노트 두 궁극기 분화(현측 일제사격) ⑤계열별 무기 8종 ⑥해적 6계열 외형 336종 ⑦PC 구글 로그인 ⑧WASD+마우스 조준 ⑨NPC 초상화 20종 ⑩3D 컷신 폐기→제공 VFX 2D 연출 38곳.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
