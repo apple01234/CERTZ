@@ -508,7 +508,7 @@ export class BootScene extends Phaser.Scene {
       );
       container.add(
         this.add
-          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "이그드라실 : 아홉 왕국", {
+          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "라일락 : 다섯 왕국", {
             fontFamily: "Galmuri11, sans-serif",
             fontSize: `${Math.max(12, Math.round(W * 0.02))}px`,
             color: "#cbb88a",

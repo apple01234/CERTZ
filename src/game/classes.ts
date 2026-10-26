@@ -508,6 +508,12 @@ export function classDef(key?: string | null): ClassDef | null {
 }
 
 /** 루트(1차) 계열키 — 계열별 전투 방식 분기(스킬 등)에 사용 */
+/** vc191 (#5) — 계열 한글명. 장착/구매 불가 사유를 UI와 씬이 같은 문구로 보여주도록 한 곳에 둔다.
+ *  (기존엔 WorldScene.FAM_KO 에만 있어 React 쪽에서 쓸 수 없었다) */
+export const FAMILY_KO: Record<string, string> = {
+  warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적", pirate: "해적",
+};
+
 export function familyOf(key?: string | null): FamilyKey | null {
   const chain = chainOf(key);
   if (chain.length === 0) return null;

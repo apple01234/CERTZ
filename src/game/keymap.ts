@@ -74,11 +74,18 @@ export const DEFAULT_KEYMAP: KeyMap = {
 };
 
 /** v1.0.17 — WASD 이동 스킴 기본 배치. 이동이 왼손(WASD)으로 넘어가므로 전투 키는 오른손
- *  클러스터(J K L I U O P)로 이동한다 — 화살표 모드의 좌우 손 분업을 그대로 거울 대칭 이식.
+ *  클러스터(J K L U I O P)로 이동한다 — 화살표 모드의 좌우 손 분업을 그대로 거울 대칭 이식.
  *  공격=J(검지 홈) 스킬1=K 스킬2=L 스킬3=I 스킬4=U 궁극기=O 제2궁=P / 물약=N M (엄지 인접 하단)
- *  UI 키는 전투가 비켜난 왼손 알파벳(Z X C V F)으로 재배치해 오른손 부담을 없앤다.
- *  interact=E는 WASD 바로 옆 왼손 엄지 영역 — 이동 중 상호작용에 최적이라 양쪽 스킴 모두 유지. */
+ *  interact=E는 WASD 바로 옆 왼손 엄지 영역 — 이동 중 상호작용에 최적이라 양쪽 스킴 모두 유지.
+ *
+ *  vc191 (지시 #9 — "WASD 이동 방식에서 창 열기 단축키와 스킬 단축키가 겹친다")
+ *  원인: 종전엔 UI 단축키가 화살표 스킴 값을 그대로 물려받아 bag=X, job=C, quest=V,
+ *  opt=F, stat=T 로 남았다. 그중 T(설정)가 스킬4 U 바로 옆, C·V(직업·퀘스트)가
+ *  스킬3 I·왼손 이동 A·S·D 사이에 끼어 손가락 오타로 창이 열리며 스킬이 씹혔다.
+ *  → 오른손 열(J K L I U O P N M)은 **전투 전용**, 왼손 열(Q W A S D E R F G X Z C V B)은
+ *    **이동·상호작용·UI 전용**으로 구역을 분리한다. 두 구역에 같은 키가 겹치지 않는다. */
 export const WASD_KEYMAP: KeyMap = {
+  /* ── 오른손: 전투 전용 (J K L I U O P N M) ── */
   attack: "J",
   skill1: "K",
   skill2: "L",
@@ -88,13 +95,14 @@ export const WASD_KEYMAP: KeyMap = {
   skill5b: "P",
   potHp: "N",
   potMp: "M",
+  /* ── 왼손: 이동(W A S D) · 상호작용 · UI 전용 ── */
   interact: "E",
   bag: "X",
   shop: "G",
   job: "C",
-  stat: "T",
+  stat: "F",
   quest: "V",
-  opt: "F",
+  opt: "Y",
   collection: "Z",
   autohunt: "B",
   friends: "R",

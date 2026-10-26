@@ -61,10 +61,10 @@ export const FISH_DEFS: FishDef[] = [
   { key: "fish_magma", name: "용암룡어", tier: "epic", zones: ["muspelheim"], weight: [4.0, 9.0], gold: 3000, desc: "비늘 사이로 용암이 흐른다. 낚싯대가 타들어간다." },
 
   /* ── 전설 ── */
-  { key: "fish_yggdrasil", name: "세계수의 잎새", tier: "legend", zones: ["abyss"], weight: [0.1, 0.5], gold: 8000, firstAbyss: 5, desc: "물고기가 아니라 세계수에서 떨어진 잎. 뿌리 물에 떠내려왔다." },
-  { key: "fish_nidhogg", name: "니드호그의 비늘", tier: "legend", zones: ["cave", "nidavellir"], weight: [6.0, 14.0], gold: 7500, firstAbyss: 5, desc: "용의 비늘이 물속에 가라앉아 굳은 것. 아직 따뜻하다." },
+  { key: "fish_yggdrasil", name: "인피니트보석의 잎새", tier: "legend", zones: ["abyss"], weight: [0.1, 0.5], gold: 8000, firstAbyss: 5, desc: "물고기가 아니라 인피니트보석에서 떨어진 잎. 뿌리 물에 떠내려왔다." },
+  { key: "fish_nidhogg", name: "라시온의 비늘", tier: "legend", zones: ["cave", "nidavellir"], weight: [6.0, 14.0], gold: 7500, firstAbyss: 5, desc: "용의 비늘이 물속에 가라앉아 굳은 것. 아직 따뜻하다." },
   { key: "fish_aurora", name: "오로라송어", tier: "legend", zones: ["niflheim"], weight: [2.0, 5.0], gold: 7800, firstAbyss: 5, desc: "빛을 머금은 비늘이 오로라처럼 흐른다. 밤에만 잡힌다." },
-  { key: "fish_principle", name: "근원의 고기", tier: "legend", zones: ["abyss"], weight: [10.0, 30.0], gold: 9500, firstAbyss: 8, desc: "심연의 근원에서만 산다. 이걸 낚은 자는 세계수의 뿌리를 본 것이라 한다." },
+  { key: "fish_principle", name: "근원의 고기", tier: "legend", zones: ["abyss"], weight: [10.0, 30.0], gold: 9500, firstAbyss: 8, desc: "심연의 근원에서만 산다. 이걸 낚은 자는 무한의 탑 최심부를 본 것이라 한다." },
 ];
 
 export const FISH_TIER_META: Record<FishTier, { label: string; color: string; catchPct: number }> = {

@@ -17,7 +17,9 @@ import {
 import { UNLOCKS, unlockLevel, unlockDef, type FeatureKey } from "@/game/unlocks"; // vc178 (지시 #1·#2) — 레벨 개방 표 + 튜토리얼 다시보기
 import { FISH_DEFS, FISH_TIER_META, fishCollectionPct } from "@/game/fishing";
 import { GATHER_DEFS, COOK_RECIPES } from "@/game/gathering"; // v1.1.9 (#개편 A47·A48) // v1.1.8 (#개편 A46) 낚시 도감
-import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
+import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, FAMILY_KO, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
+/* vc191 (#6) — 집 꾸미기 격자 정의를 씬과 공유 (두 곳이 어긋나면 배치가 몰린다) */
+import { WorldScene } from "@/game/scenes/WorldScene";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
 import { loadKeyMap, applyKeyBinding, resetKeyMap, loadMoveScheme, writeMoveScheme, keyLabel, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap, type MoveScheme } from "@/game/keymap";
 import { getPlayerName, loadSave, mutateFriends, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도 / v1.0.13 피드백#12 — 친구 추가( FriendsWidget 동일 스토어 API)
@@ -454,9 +456,14 @@ function itemEffect(item: (typeof ITEMS)[ItemKey], up = 0): string {
 }
 
 /** 상점/가방 행의 버튼 라벨 — kind별 보유 판정이 달라서 분리 */
-function shopState(rpg: RpgState, k: ItemKey): "equipped" | "owned" | "buyable" | "poor" {
+function shopState(rpg: RpgState, k: ItemKey): "equipped" | "owned" | "buyable" | "poor" | "clsblock" {
   const item = ITEMS[k];
   const affordable = rpg.gold >= item.price;
+  /* vc191 (#5) — 현재 직업 계열이 아닌 전용 무기는 구매 자체를 막는다(사유는 행에서 표시). */
+  if (item.kind === "weapon" && item.clsOnly && item.clsOnly.length > 0) {
+    const fam = familyOf(rpg.cls);
+    if (!fam || !item.clsOnly.includes(fam)) return "clsblock";
+  }
   if (item.kind === "consumable" || item.kind === "buff") return affordable ? "buyable" : "poor";
   /* vc178 — 집 꾸미기 가구: 중복 보유 허용 (개수 누적) → 항상 구매 가능 판정 */
   if (k.startsWith("furn_")) return affordable ? "buyable" : "poor";
@@ -1036,13 +1043,10 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           const ch = k.split("_")[1];
           return unlocked.has(ch);
         }
-        /* v1.2.5 (회귀 수리) — 타 계열 전용 무기는 진열에서 숨김 (장착 불가 구매 낭비 방지).
-         *  무기만 대상 — 방어구·장신구는 전 계열 공용. clsOnly 없는 무기(기본검·신화검)는 그대로 진열. */
-        const shopItem = ITEMS[k as ItemKey];
-        if (shopItem.kind === "weapon" && shopItem.clsOnly && shopItem.clsOnly.length > 0) {
-          const fam = familyOf(rpg.cls);
-          if (!fam || !shopItem.clsOnly.includes(fam)) return false;
-        }
+        /* v1.2.5 — 타 계열 전용 무기는 진열에서 숨겼다.
+         *  vc191 (#5) — "구매도 막되 막힌 이유를 화면에 표시하라" 로 변경:
+         *  숨기면 어떤 무기가 있는지조차 알 수 없으므로 **진열하되 구매를 막고 사유를 노출**한다.
+         *  (차단은 아래 행 렌더의 구매 버튼 + 씬 rpg:buy 재검증 이중) */
         return true;
       }),
     })).filter((s) => s.rows.length > 0);
@@ -1140,6 +1144,12 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                           </span>
                         </p>
                         <p className="text-[11px] text-emerald-300/90">{itemEffect(item)}</p>
+                        {/* vc191 (#5) — 구매가 막힌 이유를 화면에 표시 */}
+                        {st === "clsblock" && (
+                          <p className="text-[10px] font-black text-rose-300">
+                            {item.clsOnly!.map((f) => FAMILY_KO[f] ?? f).join("·")} 전용 — 현재 직업으로 구매할 수 없습니다
+                          </p>
+                        )}
                       </div>
                       {showQty && <QtyStepper qty={qty} onChange={(n) => setQtyMap((m) => ({ ...m, [k]: n }))} />}
                       <button
@@ -1155,7 +1165,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                                 : "cursor-not-allowed bg-slate-700/50 text-white/55"
                         }`}
                       >
-                        {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : showQty && qty > 1 ? `${total} G` : `${item.price} G`}
+                        {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : st === "clsblock" ? "구매 불가" : showQty && qty > 1 ? `${total} G` : `${item.price} G`}
                       </button>
                     </div>
                   );
@@ -2330,6 +2340,15 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                   const eqRate = (UPGRADE_RATES[up] ?? 0) + Math.min(rpg.starBless ?? 0, STAR_BLESS_MAX) * STAR_BLESS_RATE + Math.min(rpg.starPity ?? 0, STAR_PITY_MAX);
                   const eqMaxed = up >= UPGRADE_MAX;
                   const eqFlash = flash && flash.slot === eqSlot ? flash.result : null;
+                  /* vc191 (지시 #5 — "현재 직업에 맞지 않는 무기는 구매와 장착을 모두 막아라.
+                   *  UI만 막지 말고 로직에서도 검증하고, 막힌 이유를 화면에 표시") */
+                  const clsFam = familyOf(rpg.cls);
+                  const clsBlocked =
+                    it.kind === "weapon" && !!it.clsOnly && it.clsOnly.length > 0 &&
+                    (!clsFam || !it.clsOnly.includes(clsFam));
+                  const clsNeedText = clsBlocked
+                    ? `${it.clsOnly!.map((f) => FAMILY_KO[f] ?? f).join("·")} 전용`
+                    : "";
                   return (
                     <>
                       <div className="flex items-start gap-2.5">
@@ -2379,6 +2398,14 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         {equipped ? (
                           <span className="rounded-md bg-emerald-700/50 px-2.5 py-1.5 text-[11px] font-black text-emerald-200">장착 중</span>
+                        ) : clsBlocked ? (
+                          /* vc191 (#5) — 직업 불일치: 버튼 비활성 + 이유 표시 (로직도 Player.equip 이 재검증) */
+                          <span
+                            className="rounded-md bg-rose-500/15 px-2.5 py-1.5 text-[10px] font-black text-rose-200"
+                            title={`${clsNeedText} — 현재 직업(${familyOf(rpg.cls) ? FAMILY_KO[familyOf(rpg.cls)!] ?? familyOf(rpg.cls) : "없음"})으로는 장착할 수 없습니다`}
+                          >
+                            장착 불가 · {clsNeedText}
+                          </span>
                         ) : (
                           <InvBtn onClick={() => EventBus.emit("rpg:equip", { key: it.key })}>장착</InvBtn>
                         )}
@@ -3037,16 +3064,16 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
           </div>
         )}
 
-        {/* v3.0.22 (#43/#44/#50) — 세계수 결정 수집 현황 (챕터마다 다른 결정 + 완전 수집 시 영구 가호) */}
+        {/* v3.0.22 (#43/#44/#50) — 인피니트보석 결정 수집 현황 (챕터마다 다른 결정 + 완전 수집 시 영구 가호) */}
         <div className={`mb-2 rounded-lg border p-2.5 ${rpg.blessing ? "border-sky-300/60 bg-sky-400/[0.1]" : "border-white/15 bg-white/[0.04]"}`}>
           <p className="text-[12px] font-black text-sky-200">
-            🌳 세계수 결정 — {rpg.fragFound ?? 0} / {rpg.fragTotal ?? 9} 챕터 수집
+            🌳 인피니트보석 결정 — {rpg.fragFound ?? 0} / {rpg.fragTotal ?? 9} 챕터 수집
             {rpg.blessing ? " · 가호 활성" : ""}
           </p>
           <p className="mt-0.5 text-[10px] font-bold text-white/50">
             {rpg.blessing
-              ? "아홉 왕국의 결정이 모두 모였다 — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)"
-              : "챕터마다 다른 결정이 숨어 있다. 전부 모으면 세계수의 가호를 얻는다 (ATK+20 · DEF+8 · HP+200 · 공격 +3%)"}
+              ? "다섯 왕국의 결정이 모두 모였다 — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)"
+              : "챕터마다 다른 결정이 숨어 있다. 전부 모으면 인피니트보석의 가호를 얻는다 (ATK+20 · DEF+8 · HP+200 · 공격 +3%)"}
           </p>
         </div>
 
@@ -3778,16 +3805,16 @@ export function GamePanels({
   if (panel === "content") return <ContentPanel rpg={rpg} onClose={onClose} />; // v1.0.8 — 무한 콘텐츠 허브
   if (panel === "rank") return <RankingPanel rpg={rpg} onClose={onClose} />; // v1.3.1 복원 — 랭킹창 + 랭커 특전 (93b3fbf에서 유실)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
-  if (panel === "guide") return <GuidePanel onClose={onClose} />; // v1.4.12 (#16) — 이그니의 UI 기능 안내
+  if (panel === "guide") return <GuidePanel onClose={onClose} />; // v1.4.12 (#16) — 라일락의 UI 기능 안내
   if (panel === "home") return <HomePanel rpg={rpg} onClose={onClose} />; // vc178 — 집 꾸미기
   return null;
 }
 
 /* =====================================================================
- * v1.4.12 (#16 유저 지시 "각각의 UI가 무슨기능을 하는지를 설명해줘(이그니가)")
- * — 이그니의 UI 기능 안내 패널.
+ * v1.4.12 (#16 유저 지시 "각각의 UI가 무슨기능을 하는지를 설명해줘(라일락가)")
+ * — 라일락의 UI 기능 안내 패널.
  *  긴 튜토리얼이 아니라 "각 UI가 무슨 기능을 하는지"를 화면 위치별로 한 줄씩 정리.
- *  화자는 룬 정령 이그니 — 게임 세계관 유지.
+ *  화자는 라일락 — 게임 세계관 유지.
  * ===================================================================== */
 const GUIDE_SECTIONS: { area: string; icon: string; items: { name: string; desc: string }[] }[] = [
   {
@@ -3859,7 +3886,7 @@ function GuidePanel({ onClose }: { onClose: () => void }) {
     <div className="pointer-events-auto fixed inset-0 z-40 flex items-center justify-center bg-black/55" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="game-panel flex max-h-[86vh] w-[min(560px,94vw)] flex-col p-4" style={{ zoom: 0.92 }}>
         <div className="flex items-center justify-between">
-          <h2 className="text-[15px] font-black">룬 정령 이그니의 UI 안내서</h2>
+          <h2 className="text-[15px] font-black">라일락의 UI 안내서</h2>
           <button onClick={onClose} className="rounded border border-white/20 bg-white/5 px-2 py-1 text-[11px] font-black text-white/70 hover:bg-white/10">닫기</button>
         </div>
         <p className="mt-1.5 rounded-lg border border-emerald-300/25 bg-emerald-400/10 px-2.5 py-2 text-[11px] font-bold leading-relaxed text-emerald-100">
@@ -4432,8 +4459,29 @@ function KingdomRankTab() {
  *  · 배치된 가구는 클릭해 회수(rpg:homeRemove)
  *  구매는 기존 상점 경로(SHOP_STOCK에 furn_* 진열)를 그대로 쓴다.
  * ===================================================================== */
-const HOME_GRID_COLS = 8;
-const HOME_GRID_ROWS = 6;
+/* vc191 (지시 #6 — "가구를 배치하면 집 전체가 아니라 1x1 그리드 한 칸에 몰려서 배치된다")
+ *  원인: 패널 격자는 8x6 인데 씬(homeCellX/Y)은 24x22 칸(32px)을 기대했다.
+ *  같은 (cx,cy) 라도 씬은 훨씬 큰 격자로 해석하므로 8x6 안의 모든 클릭이
+ *  방 좌상단 256x160px 한 구역에만 찍혔다 → "한 칸에 몰린다"로 보였다.
+ *
+ *  수리: 칸 수를 씬과 같은 값(WorldScene.HOME_GRID)에서 가져와 **비례 매핑**한다.
+ *  · 패널은 8x6(=48칸, 셀이 커서 누르기 쉽다)을 유지한다(모바일 터치 조작성).
+ *  · 클릭한 칸을 방 전체 격자로 환산해 보낸다 → 방 어디를 눌러도 그 위치에 놓인다.
+ *  · 이미 놓인 가구는 역산해 해당 칸에 표시한다. */
+const HOME_PANEL_COLS = 8;
+const HOME_PANEL_ROWS = 6;
+const HOME_GRID_COLS = WorldScene.HOME_GRID.cols;
+const HOME_GRID_ROWS = WorldScene.HOME_GRID.rows;
+/** 패널 칸 → 방 격자 칸 (방 전체에 고르게 분포) */
+const panelToRoom = (pc: number, pr: number): { cx: number; cy: number } => ({
+  cx: Math.min(HOME_GRID_COLS - 1, Math.round(((pc + 0.5) / HOME_PANEL_COLS) * HOME_GRID_COLS - 0.5)),
+  cy: Math.min(HOME_GRID_ROWS - 1, Math.round(((pr + 0.5) / HOME_PANEL_ROWS) * HOME_GRID_ROWS - 0.5)),
+});
+/** 방 격자 칸 → 패널 칸 (표시용 역산) */
+const roomToPanel = (cx: number, cy: number): { pc: number; pr: number } => ({
+  pc: Math.min(HOME_PANEL_COLS - 1, Math.max(0, Math.floor((cx / HOME_GRID_COLS) * HOME_PANEL_COLS))),
+  pr: Math.min(HOME_PANEL_ROWS - 1, Math.max(0, Math.floor((cy / HOME_GRID_ROWS) * HOME_PANEL_ROWS))),
+});
 
 export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
@@ -4603,21 +4651,27 @@ export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           })}
         </div>
 
-        {/* 방 바닥 격자 — 클릭 배치 / 배치 아이콘 클릭 회수 */}
+        {/* 방 바닥 격자 — 클릭 배치 / 배치 아이콘 클릭 회수
+         *  vc191 (#6) — 칸 수가 24x22 로 늘어 셀을 키우면 패널을 넘치므로 폭을 격자 비율에 맞춘다. */}
         <div className="mb-2 overflow-x-auto">
           <div
             className="mx-auto grid w-[356px] gap-px rounded-lg border border-white/15 bg-[#241609] p-1"
-            style={{ gridTemplateColumns: `repeat(${HOME_GRID_COLS}, 1fr)` }}
+            style={{ gridTemplateColumns: `repeat(${HOME_PANEL_COLS}, 1fr)` }}
           >
-            {Array.from({ length: HOME_GRID_COLS * HOME_GRID_ROWS }, (_, i) => {
-              const cx = i % HOME_GRID_COLS;
-              const cy = Math.floor(i / HOME_GRID_COLS);
-              const idx = decor.findIndex((d) => d.x === cx && d.y === cy);
+            {Array.from({ length: HOME_PANEL_COLS * HOME_PANEL_ROWS }, (_, i) => {
+              const pc = i % HOME_PANEL_COLS;
+              const pr = Math.floor(i / HOME_PANEL_COLS);
+              /* vc191 (#6) — 패널 칸 → 방 격자 칸 환산. 이 칸 영역에 놓인 가구를 찾아 표시한다. */
+              const cell = panelToRoom(pc, pr);
+              const idx = decor.findIndex((d) => {
+                const rp = roomToPanel(d.x, d.y);
+                return rp.pc === pc && rp.pr === pr;
+              });
               const d = idx >= 0 ? decor[idx] : null;
               return (
                 <button
                   key={i}
-                  onClick={() => (d ? EventBus.emit("rpg:homeRemove", { key: d.key as ItemKey, idx }) : place(cx, cy))}
+                  onClick={() => (d ? EventBus.emit("rpg:homeRemove", { key: d.key as ItemKey, idx }) : place(cell.cx, cell.cy))}
                   onContextMenu={(e) => {
                     /* vc179 (지시 #3) — 우클릭/롱프레스로 회전 (모바일은 길게 누르기) */
                     if (!d) return;
@@ -4638,7 +4692,7 @@ export function HomePanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
                   onPointerLeave={() => {
                     if (longPressRef.current) { window.clearTimeout(longPressRef.current); longPressRef.current = null; }
                   }}
-                  aria-label={d ? `${ITEMS[d.key as ItemKey]?.name} 회수` : `빈 칸 ${cx},${cy}`}
+                  aria-label={d ? `${ITEMS[d.key as ItemKey]?.name} 회수` : `빈 칸 ${cell.cx},${cell.cy}`}
                   className={`relative aspect-square rounded-sm ${
                     d ? "bg-amber-500/15 ring-1 ring-amber-300/50" : sel ? "bg-white/5 hover:bg-amber-400/25" : "bg-white/[0.03]"
                   }`}

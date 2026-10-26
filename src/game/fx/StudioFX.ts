@@ -344,6 +344,8 @@ export type FamKey = "warrior" | "ranger" | "mage" | "thief";
 export function spawnTierFlair(
   scene: SceneLike, x: number, y: number, hex: number, tier: number,
   fam?: FamKey, angle = 0, major = false,
+  /* vc191 (지시 #16) — 어느 슬롯의 시전인지. 마법사 계열이 슬롯마다 다른 연출을 쓰게 한다. */
+  slot: "s1" | "s2" | "s3" | "s4" = "s1",
 ) {
   if (tier < 2) return;
   /* v1.4.30 (#6 5차 공통 이펙트 축소) — major(중요 스킬: 4차기·필살기)일 때만 4·5차 풀 패키지.
@@ -355,18 +357,59 @@ export function spawnTierFlair(
   });
   /* 3차+ — 계열별 시그니처 (v1.0.16 — 유저 "다 너무 마법진 이펙트로 우려먹는 느낌" 해소:
    *  v1.0.13의 전 직업 공통 룬 마법진을 폐지하고 마법사만 마법진 정체성을 유지한다.
-   *  전사=대지 충격 링 / 궁수=질풍 링 / 도적=그림자 스트릭 / 마법사=룬 마법진.
+   *  전사=대지 충격 링 / 궁수=질풍 링 / 도적=그림자 스트릭 / 마법사=슬롯별 고유.
    *  4차 풀 규모 공통 연출(충격 링+궤도 스파크)은 계열색 그대로 유지) */
   if (tier >= 3) {
     if (fam === "mage") {
-      /* 마법사 — 유일하게 마법진 시그니처 유지 (절제판: 반투명 소형) */
-      spawnMagicCircleGW(scene, x, y, hex, {
-        tex: "gw_rune",
-        scale: full ? 1.3 : 0.72,
-        duration: full ? 840 : 560,
-        alpha: full ? 0.66 : 0.28,
-      });
-      if (!full) spawnShockGW(scene, x, y, hex, 1.5, 360, 0.3); // 얕은 링 — 절제판
+      /* vc191 (#16) — 마법사는 스킬마다 컨셉이 다르므로 연출도 슬롯별로 분리한다.
+       *  · s1(주력기)  = 원소 볼트: 전방으로 빛줄기 + 응축 광점 (마법진 없음)
+       *  · s2(기동기)  = 공간 도약: 잔상 스트릭 + 소멸 링 (마법진 없음)
+       *  · s3(3차기)   = 영역 전개: **마법진이 필요한 유일한 스킬** — 룬 마법진 + 확장 링
+       *  · s4(4차기)   = 각성 폭발: 충격 링 + 궤도 스파크 (마법진 없음, full에서 확대) */
+      if (slot === "s3") {
+        spawnMagicCircleGW(scene, x, y, hex, {
+          tex: "gw_rune",
+          scale: full ? 1.3 : 0.72,
+          duration: full ? 840 : 560,
+          alpha: full ? 0.66 : 0.28,
+        });
+        if (!full) spawnShockGW(scene, x, y, hex, 1.5, 360, 0.3); // 얕은 링 — 절제판
+      } else if (slot === "s1") {
+        /* 응축된 빛줄기 — 조준 방향으로 뻗는 원소 광선 (볼트 계열 시그니처) */
+        const beam = vfImage(scene, "gw_trail", x, y - 8, hex);
+        if (beam) {
+          beam.setRotation(angle).setAlpha(0).setScale(0.42, full ? 0.5 : 0.34);
+          scene.tweens.add({ targets: beam, alpha: full ? 0.72 : 0.42, scaleX: full ? 1.15 : 0.8, duration: 150, ease: "Cubic.out" });
+          scene.tweens.add({ targets: beam, alpha: 0, duration: 240, delay: 150, onComplete: () => beam.destroy() });
+        }
+        spawnFlarePop(scene, x + Math.cos(angle) * 26, y - 8 + Math.sin(angle) * 26, "gw_dot", {
+          tint: hex, scale: full ? 0.7 : 0.45, duration: 300, alpha: 0.6,
+        });
+      } else if (slot === "s2") {
+        /* 공간 도약 — 출발점 소멸 링 + 잔상 (순간이동 감각) */
+        spawnShockGW(scene, x, y, hex, full ? 1.5 : 1.05, full ? 420 : 300, full ? 0.55 : 0.3);
+        const ghost = vfImage(scene, "gw_dash", x, y - 6, hex);
+        if (ghost) {
+          ghost.setRotation(angle).setAlpha(0.5).setScale(full ? 0.9 : 0.62);
+          scene.tweens.add({ targets: ghost, alpha: 0, scale: full ? 1.1 : 0.78, duration: 280, onComplete: () => ghost.destroy() });
+        }
+      } else {
+        /* 4차기 각성 — 회오리로 모였다 터지는 폭발 (마법진 대신 나선 스파크) */
+        for (let i = 0; i < 4; i++) {
+          const a0 = (Math.PI * 2 * i) / 4;
+          const sp = vfImage(scene, "gw_spark", x + Math.cos(a0) * 30, y - 8 + Math.sin(a0) * 30, hex);
+          if (!sp) break;
+          sp.setAlpha(0.85).setScale(0.18);
+          scene.tweens.add({
+            targets: sp, x, y: y - 8, alpha: 0.2, scale: 0.05, duration: 220, ease: "Cubic.in",
+            onComplete: () => {
+              spawnFlarePop(scene, x, y - 10, "gw_flare", { tint: hex, scale: full ? 1.0 : 0.7, duration: 320 });
+              sp.destroy();
+            },
+          });
+        }
+        spawnShockGW(scene, x, y, hex, full ? 2.2 : 1.45, full ? 480 : 340, full ? 0.58 : 0.3);
+      }
     } else if (fam === "ranger") {
       /* 궁수 — 질풍 링 (바람이 원을 그리며 퍼지는 경쾌한 기동감) */
       spawnShockGW(scene, x, y, 0x9dffc4, full ? 2.1 : 1.45, full ? 470 : 340, full ? 0.55 : 0.3);

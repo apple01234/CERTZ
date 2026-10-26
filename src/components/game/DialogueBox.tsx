@@ -25,20 +25,20 @@ import * as audio from "@/game/audio"; // v1.4.8 — 대화 진행 클릭음
  *  256×256 전용 초상화를 만들고 여기에 매핑한다.
  *  생성기: tools/gen_portraits.py (오프셋·크롭은 실측으로 확정) */
 const AI_PORTRAITS: Record<string, string> = {
-  "룬 정령 이그니": "portrait/p_룬_정령_이그니.webp",
+  "라일락": "portrait/p_룬_정령_라일락.webp",
   "여관 주인 로안": "portrait/p_여관_주인_로안.webp",
   "마을 주민": "portrait/p_마을_주민.webp",
   "마을 아이": "portrait/p_마을_아이.webp",
   "호족 소녀 엘렌": "portrait/p_호족_소녀_엘렌.webp",
   "상인 라고스": "portrait/p_상인_라고스.webp",
   "직업 교관 카이엔": "portrait/p_직업_교관_카이엔.webp",
-  "쿠소디아 기사단장": "portrait/p_쿠소디아_기사단장.webp",
-  "라이언 드 쿠소디아 국왕": "portrait/p_라이언_드_쿠소디아_국왕.webp",
-  "알프헤임의 여왕 요정": "portrait/p_알프헤임의_여왕_요정.webp",
+  "에스테반 기사단장": "portrait/p_에스테반_기사단장.webp",
+  "라이언 드 에스테반 국왕": "portrait/p_라이언_드_에스테반_국왕.webp",
+  "에델리오나의 여왕 요정": "portrait/p_에델리오나의_여왕_요정.webp",
   "땅의 요정 여왕": "portrait/p_땅의_요정_여왕.webp",
   "난쟁이 광산 조합장": "portrait/p_난쟁이_광산_조합장.webp",
   "마법사 흐레스": "portrait/p_마법사_흐레스.webp",
-  "세계수 이그드라실": "portrait/p_세계수_이그드라실.webp",
+  "인피니트보석": "portrait/p_인피니트보석_인피니트보석.webp",
   "허브 채집가 베르": "portrait/p_허브_채집가_베르.webp",
   "신전 관리인 노아": "portrait/p_신전_관리인_노아.webp",
   "선원 롤프": "portrait/p_선원_롤프.webp",
@@ -48,20 +48,20 @@ const AI_PORTRAITS: Record<string, string> = {
 };
 
 const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
-  "룬 정령 이그니": { tex: "pet_pixie", tone: "#67e8f9" }, // 시안 — 룬 정령
+  "라일락": { tex: "pet_pixie", tone: "#67e8f9" }, // 시안 — 룬 정령
   "여관 주인 로안": { tex: "spum_mage", tone: "#fcd34d" },
   "마을 주민": { tex: "spum_villager_m", tone: "#fcd34d" },
   "마을 아이": { tex: "spum_villager_f", tone: "#fcd34d" },
   "호족 소녀 엘렌": { tex: "spum_villager_f", tone: "#fcd34d" },
   "상인 라고스": { tex: "npc_merchant", tone: "#fcd34d" },
   "직업 교관 카이엔": { tex: "spum_knight", tone: "#fbbf24" },
-  "쿠소디아 기사단장": { tex: "spum_knight", tone: "#fbbf24" },
-  "라이언 드 쿠소디아 국왕": { tex: "spum_knight", tone: "#fbbf24" },
-  "알프헤임의 여왕 요정": { tex: "spum_elf", tone: "#a7f3d0" },
+  "에스테반 기사단장": { tex: "spum_knight", tone: "#fbbf24" },
+  "라이언 드 에스테반 국왕": { tex: "spum_knight", tone: "#fbbf24" },
+  "에델리오나의 여왕 요정": { tex: "spum_elf", tone: "#a7f3d0" },
   "땅의 요정 여왕": { tex: "spum_elf", tone: "#a7f3d0" },
   "난쟁이 광산 조합장": { tex: "spum_miner", tone: "#fcd34d" },
   "마법사 흐레스": { tex: "npc_gm", tone: "#c4b5fd" },
-  "세계수 이그드라실": { tex: "tree", tone: "#7dd3fc" },
+  "인피니트보석": { tex: "tree", tone: "#7dd3fc" },
   // v4.1.8 — 챕터 마을 주민 (게임 내 SPUM NPC와 동일 비주얼)
   "허브 채집가 베르": { tex: "spum_forager", tone: "#b8f0a0" },
   "신전 관리인 노아": { tex: "spum_mage", tone: "#b8f0a0" },
@@ -81,7 +81,7 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "저택 집사 무르": { tex: "spum_butler", tone: "#d0a8ff" },
   "폐허 학자 테일": { tex: "spum_mage", tone: "#b09aff" },
   "마지막 항해사": { tex: "spum_fisher", tone: "#b09aff" },
-  "종언의 마룡 아부디토스": { tex: "boss_abudditos_idle0", tone: "#fda4af" }, // v1.4.31 — 구형 프레임 경로 유지 (아부디토스는 미아틀라스)
+  "어둠의 군주 스칼렛": { tex: "boss_abudditos_idle0", tone: "#fda4af" }, // v1.4.31 — 구형 프레임 경로 유지 (스칼렛는 미아틀라스)
   "{name}": { tex: "hero_idle0", tone: "#86efac" }, // 플레이어
   // v1.0.2 (#초상화) — 매핑 누락 화자 보강 (가름은 bossPortrait 토큰 매칭으로도 자동 해결, 여기선 명시 우선)
   "헬의 문지기 가름": { tex: "boss_gram_idle0", tone: "#8affc0" }, // 구형 프레임 경로 (가름은 미아틀라스)
@@ -260,8 +260,10 @@ export function DialogueBox({
                 프레임을 채우고(살짝 크롭 허용), 머리는 상단 고정 — 기존 강제 정사각형 스트레치 제거 */}
             <img
               key={portrait.tex}
-              /* vc187 (#21) — portraitOf 가 tex 에 "portrait/p_xxx" 를 넣어준다 */
-              src={`/assets/${portrait.tex}.webp`}
+              /* vc187 (#21) — portraitOf 가 tex 에 "portrait/p_xxx" 를 넣어준다
+               * vc191 (#2) — 매핑 값이 이미 ".webp" 를 포함하는데 여기서 또 붙여
+               *  "p_xxx.webp.webp" 로 404 가 나 초상화가 전부 숨겨졌다. 확장자 유무로 분기. */
+              src={portrait.tex.endsWith(".webp") ? `/assets/${portrait.tex}` : `/assets/${portrait.tex}.webp`}
               alt=""
               draggable={false}
               onLoad={() => setPortraitOk(true)}

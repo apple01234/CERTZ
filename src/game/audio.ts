@@ -374,42 +374,67 @@ let lifecycleAttached = false;
 function attachLifecycle(g: Phaser.Game) {
   if (lifecycleAttached || typeof document === "undefined") return;
   lifecycleAttached = true;
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      // 숨김 — 전체 정지 (트랙 키는 유지해 복귀 시 재개)
-      try {
-        g.sound.pauseAll();
-      } catch {
-        /* noop */
-      }
-      destroyBgm();
-    } else {
-      /* vc187 (지시 #13 — "PC에서 창 전환시 효과음이 뭉쳐서 나와서 소리 겁나 큰 버그") —
-       *  종전엔 resumeAll() 로 대기 중이던 **모든 효과음이 동시에** 터졌다.
-       *  창을 여러 번 오가면 그만큼 쌓여 소리가 뭉쳐 크게 났다.
-       *  복귀 시에는 효과음을 되살리지 않고 버린다 — 지나간 타격음은 의미가 없다.
-       *  BGM 만 재개한다(끊긴 배경음악은 이어지는 게 자연스럽다). */
-      try {
-        const sm = g.sound as unknown as {
-          sounds?: Array<{ key?: string; pendingRemove?: boolean; destroy?: () => void }>;
-          resumeAll?: () => void;
-        };
-        /* 대기 중 효과음 정리 — BGM(bgm_ 접두)은 남긴다 */
-        if (Array.isArray(sm.sounds)) {
-          for (const snd of sm.sounds) {
-            if (!snd) continue;
-            const k = String(snd.key ?? "");
-            if (k.startsWith("bgm_")) continue;
-            try { snd.destroy?.(); } catch { /* noop */ }
-          }
-        }
-        sm.resumeAll?.();
-      } catch {
-        /* noop */
-      }
-      // 복귀 — 음소거 아니고 트랙 지정이 있으면 재개
-      if (!muted && bgmKey && !bgmSound) startTrack(bgmKey);
+
+  /* vc191 (지시 #15 — "PC에서 Alt+Tab으로 창을 전환하면 효과음이 겹쳐서 크게 들린다")
+   *  vc187 은 visibilitychange 만 처리했는데, 데스크톱 브라우저의 Alt+Tab 은
+   *  보통 visibilitychange 를 **발생시키지 않는다**(탭 전환이 아니라 창 포커스 이동).
+   *  그래서 창을 오갈 때 정지가 안 걸리고, 그동안 스케줄된 효과음이 복귀 후 한꺼번에 터졌다.
+   *  → window blur/focus 를 함께 처리하고, 두 경로가 겹쳐도 한 번만 동작하도록 상태로 가드한다. */
+  let hiddenBy = 0; // 0=표시 중, 1=visibility, 2=blur (겹칠 때 먼저 온 쪽이 해제 담당)
+
+  const suspendAudio = (by: 1 | 2) => {
+    if (hiddenBy) return; // 이미 정지됨 — 중복 정지·중복 재개 방지
+    hiddenBy = by;
+    try {
+      g.sound.pauseAll();
+    } catch {
+      /* noop */
     }
+    destroyBgm();
+  };
+
+  const resumeAudio = () => {
+    if (!hiddenBy) return;
+    hiddenBy = 0;
+    /* vc187 (지시 #13 — "PC에서 창 전환시 효과음이 뭉쳐서 나와서 소리 겁나 큰 버그") —
+     *  종전엔 resumeAll() 로 대기 중이던 **모든 효과음이 동시에** 터졌다.
+     *  창을 여러 번 오가면 그만큼 쌓여 소리가 뭉쳐 크게 났다.
+     *  복귀 시에는 효과음을 되살리지 않고 버린다 — 지나간 타격음은 의미가 없다.
+     *  BGM 만 재개한다(끊긴 배경음악은 이어지는 게 자연스럽다). */
+    try {
+      const sm = g.sound as unknown as {
+        sounds?: Array<{ key?: string; pendingRemove?: boolean; destroy?: () => void }>;
+      };
+      /* 대기 중 효과음 정리 — BGM(bgm_ 접두)은 남긴다 */
+      if (Array.isArray(sm.sounds)) {
+        for (const snd of sm.sounds) {
+          if (!snd) continue;
+          const k = String(snd.key ?? "");
+          if (k.startsWith("bgm_")) continue;
+          try { snd.destroy?.(); } catch { /* noop */ }
+        }
+      }
+    } catch {
+      /* noop */
+    }
+    // 복귀 — 음소거 아니고 트랙 지정이 있으면 재개
+    if (!muted && bgmKey && !bgmSound) startTrack(bgmKey);
+  };
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) suspendAudio(1);
+    else resumeAudio();
+  });
+
+  window.addEventListener("blur", () => {
+    /* 창 포커스를 잃음 — Alt+Tab / 다른 앱 클릭 / 개발자도구 열기 */
+    if (document.hidden) return; // visibilitychange 가 이미 처리
+    suspendAudio(2);
+  });
+
+  window.addEventListener("focus", () => {
+    if (document.hidden) return;
+    resumeAudio();
   });
 }
 

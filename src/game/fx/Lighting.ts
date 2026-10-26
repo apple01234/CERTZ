@@ -26,8 +26,8 @@ import { loadFx } from "../config";
  *  v1.0.2 (#니플헤임) — 유저 피드백 "지나치게 어둡다": 암전 알파 완화 + 챕터별 횃불 광원 프로필(light) 신설.
  *  분위기(한기/어둠)는 유지하되 플레이어·NPC·적·아이템·지형이 명확히 보이도록 조정 */
 const CHAPTER_AMBIENT: Record<string, { color: number; alpha: number; light?: { scale: number; alpha: number } }> = {
-  cave: { color: 0x0d0b1e, alpha: 0.42, light: { scale: 1.55, alpha: 0.5 } },       // 7장 스바르트알프헤임 — 어둠 요정의 수정 광맥 (v1.4.13 alpha 0.46→0.42)
-  nidavellir: { color: 0x0d0b1e, alpha: 0.42, light: { scale: 1.5, alpha: 0.5 } }, // 8장 니다벨리르 — 룬 광산 (v1.4.13 0.48→0.42)
+  cave: { color: 0x0d0b1e, alpha: 0.42, light: { scale: 1.55, alpha: 0.5 } },       // 7장 이안페우스 — 생명이 변하는 곳 (어둠의 성전) (v1.4.13 alpha 0.46→0.42)
+  nidavellir: { color: 0x0d0b1e, alpha: 0.42, light: { scale: 1.5, alpha: 0.5 } }, // 8장 크렌렐브 — 대지의 광맥 (v1.4.13 0.48→0.42)
   hel: { color: 0x161016, alpha: 0.38, light: { scale: 1.55, alpha: 0.52 } },        // 9장 헬 (v1.4.13 0.42→0.38)
   abyss: { color: 0x0b0918, alpha: 0.4, light: { scale: 1.55, alpha: 0.52 } },      // 10장 세계수의 뿌리 — 심연 (v1.4.13 0.44→0.40)
   /* v1.4.13 (#6 셰이더 약화) — 니플헤임(눈 맵) 암전 0.28→0.18, 횃불 광원 알파 0.66→0.5:
@@ -42,7 +42,7 @@ const CHAPTER_AMBIENT: Record<string, { color: number; alpha: number; light?: { 
    *  밤바다처럼 보이던 원인. 암전 0.30(헬·심연 이하 수준)으로 완화하고 색도 남색→
    *  청백 얼음톤으로 바꿔 "눈 지형" 체감을 살린다. 횃불 광원 2.0/0.65로 확대해
    *  시야 확보 + 지면 틴트(WorldScene 0xc4d6ea)와 함께 밝은 설원 톤 완성. */
-  niflheim: { color: 0x16283e, alpha: 0.3, light: { scale: 2.0, alpha: 0.65 } },    // 6장 니플헤임 — 얼음의 성전
+  niflheim: { color: 0x16283e, alpha: 0.3, light: { scale: 2.0, alpha: 0.65 } },    // 6장 클로체스 — 혹한의 왕국
 };
 
 export type AmbientProfile = { color: number; alpha: number; light?: { scale: number; alpha: number } } | null;

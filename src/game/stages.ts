@@ -123,7 +123,7 @@ export const BOSS_DIFF_ORDER: BossDiffKey[] = ["easy", "normal", "hard", "chaos"
  *  기존: 난이도 고정(이지2/노말5/하드9/카오스30)이라 수르트도 나그라파르도 카오스 30개로 동일 —
  *  유저 지적 "카오스 보스도 보스마다 난이도가 다를텐데 왜 전부 30개??".
  *  개편: 난이도 기본치 × 보스 가중치(0.45~2.2) — 보스 기본 exp(320~2600)로 강함 계층화.
- *  예) 카오스: 심연의 수호자 14 · 수르트 19 · 펜리르 22 · 가름 26 · 아부디토스 34 · 나그라파르 66 */
+ *  예) 카오스: 심연의 수호자 14 · 수르트 19 · 펜리르 22 · 가름 26 · 스칼렛 34 · 나그라파르 66 */
 export function bossEmeraldOf(bossKey: BossKey, diff: BossDiffKey): number {
   const b = BOSS_DEFS[bossKey];
   const d = BOSS_DIFFS[diff];
@@ -146,11 +146,11 @@ export type BossAttackKind =
   | "firepillars" // 수르트 — 추적 화염기둥 3연속
   | "frostnova" // 베헤모스·스콜 — 빙결 신성 2겹
   | "thunderfall" // 나그라파르 — 추적 낙뢰 4연속
-  | "poisonfield" // 니드호그·요르문간드 — 맹독 장판
-  | "holymantle" // 아부디토스 — 마룡 성역 대폭발
+  | "poisonfield" // 라시온·요르문간드 — 맹독 장판
+  | "holymantle" // 스칼렛 — 마룡 성역 대폭발
   | "crystalburst" // 심연군주·베오르드 — 결정 8방향 산개
   | "blinkslash" // 가름 — 점멸 3연 참격
-  /* vc153 — 스바르트알프헤임 보스 개편 (유저 제공 애니 사양표: Idle/Move Loop · GreenSlash/Vanish/ShieldCast/MagicBurst/PortalTeleport Once) */
+  /* vc153 — 스바르트에델리오나 보스 개편 (유저 제공 애니 사양표: Idle/Move Loop · GreenSlash/Vanish/ShieldCast/MagicBurst/PortalTeleport Once) */
   | "greenslash" // 녹색 참격 — 근접 2연 베기
   | "vanish" // 소멸 — 투명화 후 재배치
   | "shieldcast" // 방어막 시전 — 무적 상태유지 → 마력 폭발 반격
@@ -251,7 +251,7 @@ const G = 0.8;
 
 export const CHAPTERS: ChapterSpec[] = [
   {
-    key: "forest", num: 2, title: "숲의 신전", subtitle: "미드가르드 서쪽 숲",
+    key: "forest", num: 2, title: "에크레디트 수림", subtitle: "라일락 월드 · 자연의 가문이 지키는 땅",
     intro: "intro", boss: "guardian", bossDone: "wolvesDone",
     width: 2400, height: 1350, groundTint: 0x9adf6a, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0a1408",
     flowers: 10, trees: 14, rocks: 8,
@@ -259,12 +259,12 @@ export const CHAPTERS: ChapterSpec[] = [
     enemies: [{ key: "wolf", count: 4 }, { key: "spider", count: 4 }, { key: "swampbeast", count: 4 }, { key: "x2_frog", count: 3 }, { key: "x3_swampy", count: 3 }, { key: "x3_goblin", count: 3 }],
     main: "wolf",
     beats: [
-      { sub: 2, dialogue: "fragment", quest: { id: "f0", type: "collect", title: "결정의 흔적 찾기", desc: "숲 어딘가 빛을 내는 결정의 흔적을 찾아 주워라. 이그니가 기다린다.", targetLabel: "결정의 흔적", reward: Math.round(40 * G), expReward: 70 } },
+      { sub: 2, dialogue: "fragment", quest: { id: "f0", type: "collect", title: "보석의 흔적 찾기", desc: "숲 어딘가 빛을 내는 보석의 흔적을 찾아 주워라. 라일락가 기다린다.", targetLabel: "보석의 흔적", reward: Math.round(40 * G), expReward: 70 } },
       { sub: 3, dialogue: "", quest: { id: "f1", type: "hunt", title: "숲의 거미 소탕", desc: "신전으로 가는 길을 막는 숲의 거미 13마리를 처치해라.", need: 13, targetKey: "spider", targetLabel: "숲의 거미", reward: Math.round(60 * G), expReward: 80 } },
       { sub: 6, dialogue: "wolfRoutDone", quest: { id: "f2", type: "hunt", title: "능대 무리 소멸", desc: "어둠에 미친 능대 무리 25마리를 더 처치해라!", need: 25, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(110 * G), expReward: 180 } },
-      { sub: 8, dialogue: "", quest: { id: "f3", type: "collect", title: "능대들이 지키던 결정", desc: "능대들이 지키던 곳에서 또 하나의 빛이 느껴진다.", targetLabel: "결정의 흔적", reward: Math.round(60 * G), expReward: 90 } },
+      { sub: 8, dialogue: "", quest: { id: "f3", type: "collect", title: "능대들이 지키던 결정", desc: "능대들이 지키던 곳에서 또 하나의 빛이 느껴진다.", targetLabel: "보석의 흔적", reward: Math.round(60 * G), expReward: 90 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 (기존 인덱스 보존 — 체인 말미에만 추가) */
-      { sub: 9, dialogue: "", quest: { id: "f4", type: "collect", title: "[사연] 약초 할멈의 기승전결", desc: "약초 할멈이 말한 '빛나는 약초'는 사실 결정의 조각이었다. 하나 찾아오자 숲의 진실이 보인다.", targetLabel: "결정의 흔적", reward: Math.round(70 * G), expReward: 110 } },
+      { sub: 9, dialogue: "", quest: { id: "f4", type: "collect", title: "[사연] 약초 할멈의 기승전결", desc: "약초 할멈이 말한 '빛나는 약초'는 사실 보석의 조각이었다. 하나 찾아오자 숲의 진실이 보인다.", targetLabel: "보석의 흔적", reward: Math.round(70 * G), expReward: 110 } },
       { sub: 10, dialogue: "", quest: { id: "f5", type: "hunt", title: "[기믹] 이끼 골렘 소굴 청소", desc: "신전 뒤편 이끼 골렘 10마리가 결정을 집어 삼켰다. 토해내게 하자.", need: 10, targetKey: "golem", targetLabel: "이끼 골렘", reward: Math.round(120 * G), expReward: 190 } },
     ],
     repeat: { need: 16, gold: Math.round(70 * G), exp: 70, title: "[반복] 늑대 토벌 의뢰", desc: "마을 토벌 의뢰 — 늑대를 계속 사냥해 골드와 경험치를 얻자." },
@@ -275,46 +275,46 @@ export const CHAPTERS: ChapterSpec[] = [
     lvGate: { enter: 1, mid: 5 },
   },
   {
-    key: "kingdom", num: 3, title: "쿠소디아", subtitle: "선박의 왕국 · 늪지대",
+    key: "kingdom", num: 3, title: "에스테반 수상도시", subtitle: "라일락 월드 · 바다의 왕국 · 상어전함",
     intro: "kingdomIntro", boss: "behemoth", bossDone: "kingdomDone",
     width: 2200, height: 1250, groundTint: 0x86c95e, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0d1808",
     flowers: 8, trees: 9, rocks: 6,
     enemies: [{ key: "swampbeast", count: 5 }, { key: "wolf", count: 4 }, { key: "golem", count: 3 }, { key: "x2_rat", count: 2 }, { key: "x3_imp", count: 3 }, { key: "x3_goblin", count: 2 }],
     main: "swampbeast",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "k1", type: "collect", title: "능지 속 결정의 조각", desc: "능대들이 품고 있던 결정의 조각을 되찾아라.", targetLabel: "결정의 흔적", reward: Math.round(80 * G), expReward: 140 } },
+      { sub: 2, dialogue: "", quest: { id: "k1", type: "collect", title: "능지 속 보석의 조각", desc: "능대들이 품고 있던 보석의 조각을 되찾아라.", targetLabel: "보석의 흔적", reward: Math.round(80 * G), expReward: 140 } },
       { sub: 3, dialogue: "", quest: { id: "k0", type: "hunt", title: "능지의 능대 소탕", desc: "결정의 기운을 먹고 미쳐 버린 늪의 능대 15마리를 처치해라.", need: 15, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(90 * G), expReward: 160 } },
       { sub: 5, dialogue: "", quest: { id: "k2", type: "hunt", title: "왕국 신뢰 얻기", desc: "기사단을 도와 능대 무리 20마리를 더 베어 내라!", need: 20, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(140 * G), expReward: 260 } },
       { sub: 7, dialogue: "swampDone", quest: { id: "k3", type: "hunt", title: "왕국의 위협 제거", desc: "능지의 어둠이 짙어진다 — 능대 25마리를 처치해라!", need: 25, targetKey: "swampbeast", targetLabel: "능대", reward: Math.round(170 * G), expReward: 320 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "k5", type: "collect", title: "[사연] 근위대의 마지막 문장", desc: "해골 문지기의 문장(紋章)에 반응하는 결정 — 왕국 최후의 기록이 새겨져 있다.", targetLabel: "결정의 흔적", reward: Math.round(150 * G), expReward: 240 } },
+      { sub: 9, dialogue: "", quest: { id: "k5", type: "collect", title: "[사연] 근위대의 마지막 문장", desc: "해골 문지기의 문장(紋章)에 반응하는 결정 — 왕국 최후의 기록이 새겨져 있다.", targetLabel: "보석의 흔적", reward: Math.round(150 * G), expReward: 240 } },
       { sub: 10, dialogue: "", quest: { id: "k6", type: "hunt", title: "[기믹] 고아 소녀의 복수극", desc: "소녀의 가족을 삼킨 늪의 축제광(임프) 18마리. 복수는 그녀의 몫이 아니라 우리의 몫이다.", need: 18, targetKey: "x3_imp", targetLabel: "늪의 축제광", reward: Math.round(200 * G), expReward: 300 } },
     ],
-    repeat: { need: 20, gold: Math.round(100 * G), exp: 100, title: "[반복] 늪지 정화 의뢰", desc: "쿠소디아 기사단 의뢰 — 능대를 계속 사냥해라." },
+    repeat: { need: 20, gold: Math.round(100 * G), exp: 100, title: "[반복] 늪지 정화 의뢰", desc: "에스테반 기사단 의뢰 — 능대를 계속 사냥해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향 (유저 지시 "챕터마다 레벨 제한이 너무 작음"): 8→12/15 */
     lvGate: { enter: 12, mid: 15 },
   },
   {
-    key: "alfheim", num: 4, title: "알프헤임", subtitle: "요정의 성전 · 빛의 결정",
+    key: "alfheim", num: 4, title: "에델리오나 공중성", subtitle: "라일락 월드 · 하늘로 올라간 빛의 왕국",
     intro: "alfheimIntro", boss: "nidhog", bossDone: "guardianDone",
     width: 1900, height: 1080, groundTint: 0x8f7fd8, groundTex: "tile_dark", pathTex: "tile_path", bg: "#0d0a1e",
     flowers: 6, trees: 10, rocks: 10,
     enemies: [{ key: "minion", count: 4 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_bat", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_orcshaman", count: 3 }],
     main: "minion",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "a0", type: "hunt", title: "하수인 소탕", desc: "니드호그가 부린 심연의 하수인 13마리를 처치해 성전의 길을 열자.", need: 13, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(80 * G), expReward: 130 } },
-      { sub: 3, dialogue: "", quest: { id: "a1", type: "collect", title: "여왕의 가호", desc: "하수인들이 숨겨둔 결정의 조각을 회수해 여왕에게 바쳐라.", targetLabel: "결정의 흔적", reward: Math.round(80 * G), expReward: 110 } },
-      { sub: 6, dialogue: "minionPurgeDone", quest: { id: "a2", type: "hunt", title: "성전 지키기", desc: "니드호그를 부르는 의식을 막자 — 하수인 80마리 처치!", need: 80, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(400 * G), expReward: 740 } },
+      { sub: 2, dialogue: "", quest: { id: "a0", type: "hunt", title: "하수인 소탕", desc: "라시온가 부린 심연의 하수인 13마리를 처치해 성전의 길을 열자.", need: 13, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(80 * G), expReward: 130 } },
+      { sub: 3, dialogue: "", quest: { id: "a1", type: "collect", title: "여왕의 가호", desc: "하수인들이 숨겨둔 보석의 조각을 회수해 여왕에게 바쳐라.", targetLabel: "보석의 흔적", reward: Math.round(80 * G), expReward: 110 } },
+      { sub: 6, dialogue: "minionPurgeDone", quest: { id: "a2", type: "hunt", title: "성전 지키기", desc: "라시온를 부르는 의식을 막자 — 하수인 80마리 처치!", need: 80, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(400 * G), expReward: 740 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "a4", type: "collect", title: "[사연] 노래하는 결정", desc: "숲의 노래가 잡힌 결정 — 정찰병은 이 소리를 듣고 자리를 지켰다. 그 노래를 끝까지 들어주자.", targetLabel: "결정의 흔적", reward: Math.round(220 * G), expReward: 340 } },
-      { sub: 10, dialogue: "", quest: { id: "a5", type: "hunt", title: "[기믹] 덩굴에 움켜쥔 빛", desc: "빛의 결정을 둘러싼 미니언 20마리를 정화하면 숲의 노래가 돌아온다.", need: 20, targetKey: "minion", targetLabel: "어둠의 하수인", reward: Math.round(280 * G), expReward: 420 } },
+      { sub: 9, dialogue: "", quest: { id: "a4", type: "collect", title: "[사연] 노래하는 결정", desc: "숲의 노래가 잡힌 결정 — 정찰병은 이 소리를 듣고 자리를 지켰다. 그 노래를 끝까지 들어주자.", targetLabel: "보석의 흔적", reward: Math.round(220 * G), expReward: 340 } },
+      { sub: 10, dialogue: "", quest: { id: "a5", type: "hunt", title: "[기믹] 덩굴에 움켜쥔 빛", desc: "빛의 조각을 둘러싼 미니언 20마리를 정화하면 숲의 노래가 돌아온다.", need: 20, targetKey: "minion", targetLabel: "어둠의 하수인", reward: Math.round(280 * G), expReward: 420 } },
     ],
     repeat: { need: 20, gold: Math.round(95 * G), exp: 95, title: "[반복] 성전 순찰 의뢰", desc: "요정 여왕의 의뢰 — 하수인을 계속 처치해 훈련해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 14→22/26 */
     lvGate: { enter: 22, mid: 26 },
   },
   {
-    key: "muspelheim", num: 5, title: "무스펠헤임", subtitle: "극열의 해역 · 화산 지대",
+    key: "muspelheim", num: 5, title: "라바이즈 용암도시", subtitle: "제로 세계의 잔재 · 인페르노의 불길",
     intro: "muspelIntro", boss: "surt", bossDone: "surtDone",
     width: 2200, height: 1250, groundTint: 0xd88a4a, groundTex: "tile_magma", pathTex: "tile_magma_path", bg: "#1c0d06",
     flowers: 0, trees: 4, rocks: 12,
@@ -323,10 +323,10 @@ export const CHAPTERS: ChapterSpec[] = [
     beats: [
       { sub: 2, dialogue: "", quest: { id: "m0", type: "hunt", title: "불꽃 늑대 사냥", desc: "네바다를 내달리는 불꽃 늑대 100마리를 처치해라.", need: 100, targetKey: "emberwolf", targetLabel: "불꽃 늑대", reward: Math.round(1000 * G), expReward: 1860 } },
       { sub: 4, dialogue: "", quest: { id: "m1", type: "hunt", title: "화염 정령 진압", desc: "열이 가장 강한 날 — 화염 정령 110마리를 처치해라.", need: 110, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(1440 * G), expReward: 2540 } },
-      { sub: 5, dialogue: "", quest: { id: "m2", type: "collect", title: "화염 속의 빛", desc: "용암 사이에서 결정의 조각이 반짝인다. 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(100 * G), expReward: 190 } },
+      { sub: 5, dialogue: "", quest: { id: "m2", type: "collect", title: "화염 속의 빛", desc: "용암 사이에서 보석의 조각이 반짝인다. 회수해라.", targetLabel: "보석의 흔적", reward: Math.round(100 * G), expReward: 190 } },
       { sub: 7, dialogue: "spiritPurgeDone", quest: { id: "m3", type: "hunt", title: "호족촌 구원", desc: "엘렌을 도와 — 지하도시를 노리는 화염 정령 120마리를 처치해라!", need: 120, targetKey: "firespirit", targetLabel: "화염 정령", reward: Math.round(1060 * G), expReward: 1920 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "m4", type: "collect", title: "[사연] 대장장이 장인의 미완성 검", desc: "장인이 평생 두드린 검의 최종 재료는 '타지 않는 결정'. 이제 그 이유를 안다.", targetLabel: "결정의 흔적", reward: Math.round(320 * G), expReward: 480 } },
+      { sub: 9, dialogue: "", quest: { id: "m4", type: "collect", title: "[사연] 대장장이 장인의 미완성 검", desc: "장인이 평생 두드린 검의 최종 재료는 '타지 않는 결정'. 이제 그 이유를 안다.", targetLabel: "보석의 흔적", reward: Math.round(320 * G), expReward: 480 } },
       { sub: 10, dialogue: "", quest: { id: "m5", type: "hunt", title: "[기믹] 용광로 재점화", desc: "용암 조류 22마리의 열기로 식어버린 용광로를 다시 달군다.", need: 22, targetKey: "x2_firebird", targetLabel: "용암 조류", reward: Math.round(400 * G), expReward: 600 } },
     ],
     repeat: { need: 20, gold: Math.round(130 * G), exp: 130, title: "[반복] 화산 지대 순찰 의뢰", desc: "호족촌 의뢰 — 불꽃 늑대를 계속 사냥해라." },
@@ -334,7 +334,7 @@ export const CHAPTERS: ChapterSpec[] = [
     lvGate: { enter: 34, mid: 39 },
   },
   {
-    key: "niflheim", num: 6, title: "니플헤임", subtitle: "극한의 해역 · 얼음의 성전",
+    key: "niflheim", num: 6, title: "클로체스 혹한왕국", subtitle: "제로 세계의 잔재 · 스노리카의 얼음",
     intro: "niflIntro", boss: "fenrir", bossDone: "fenrirDone",
     width: 2100, height: 1200, groundTint: 0xdfeaf8, groundTex: "tile_snow", pathTex: "tile_ice", bg: "#0c1826",
     flowers: 0, trees: 10, rocks: 10,
@@ -343,31 +343,31 @@ export const CHAPTERS: ChapterSpec[] = [
     beats: [
       { sub: 2, dialogue: "", quest: { id: "n0", type: "hunt", title: "서리 늑대 사냥", desc: "설원을 유랑하는 서리 늑대 110마리를 처치해라.", need: 110, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(950 * G), expReward: 1760 } },
       { sub: 4, dialogue: "", quest: { id: "n1", type: "hunt", title: "얼음 골렘 격파", desc: "성전 길을 얼리고 있는 얼음 골렘 100기를 격파해라.", need: 100, targetKey: "icegolem", targetLabel: "얼음 골렘", reward: Math.round(1700 * G), expReward: 3000 } },
-      { sub: 6, dialogue: "", quest: { id: "n2", type: "collect", title: "얼음 속의 결정", desc: "얼음 결정 사이에서 세계의 빛이 반짝인다.", targetLabel: "결정의 흔적", reward: Math.round(100 * G), expReward: 180 } },
+      { sub: 6, dialogue: "", quest: { id: "n2", type: "collect", title: "얼음 속의 결정", desc: "얼음 결정 사이에서 세계의 빛이 반짝인다.", targetLabel: "보석의 흔적", reward: Math.round(100 * G), expReward: 180 } },
       { sub: 7, dialogue: "frostRoutDone", quest: { id: "n3", type: "hunt", title: "설원 정화", desc: "펜리르의 권속인 서리 늑대 130마리를 처치해라!", need: 130, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(910 * G), expReward: 1640 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "n4", type: "collect", title: "[사연] 얼음 속 아들의 기억", desc: "수렵꾼의 아들은 얼음 결정 속에서 기다리고 있었다. 결정을 가져오면 마지막 겨울이 말해준다.", targetLabel: "결정의 흔적", reward: Math.round(460 * G), expReward: 680 } },
+      { sub: 9, dialogue: "", quest: { id: "n4", type: "collect", title: "[사연] 얼음 속 아들의 기억", desc: "수렵꾼의 아들은 얼음 결정 속에서 기다리고 있었다. 결정을 가져오면 마지막 겨울이 말해준다.", targetLabel: "보석의 흔적", reward: Math.round(460 * G), expReward: 680 } },
       { sub: 10, dialogue: "", quest: { id: "n5", type: "hunt", title: "[기믹] 눈보라의 길잡이", desc: "눈보라를 헤매는 언데드 24마리를 보내드려 길을 만들자 — 배웅자의 부탁이다.", need: 24, targetKey: "x3_icezombie", targetLabel: "얼음 좀비", reward: Math.round(560 * G), expReward: 840 } },
     ],
-    repeat: { need: 24, gold: Math.round(145 * G), exp: 145, title: "[반복] 설원 순찰 의뢰", desc: "니플헤임 정찰 의뢰 — 서리 늑대를 계속 사냥해라." },
+    repeat: { need: 24, gold: Math.round(145 * G), exp: 145, title: "[반복] 설원 순찰 의뢰", desc: "클로체스 정찰 의뢰 — 서리 늑대를 계속 사냥해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 27→48/54 */
     lvGate: { enter: 48, mid: 54 },
   },
   {
-    key: "cave", num: 7, title: "스바르트알프헤임", subtitle: "어둠 요정들의 해역 · 수정 광맥",
+    key: "cave", num: 7, title: "이안페우스 심부", subtitle: "생명이 변하는 곳 · 어둠의 성전",
     intro: "caveIntro", boss: "abysslord", bossDone: "caveDone",
     width: 2100, height: 1200, groundTint: 0x8a6a4a, groundTex: "tile_cave", pathTex: "tile_path_dark", bg: "#100a08",
     flowers: 0, trees: 0, rocks: 14,
     enemies: [{ key: "spider", count: 4 }, { key: "minion", count: 4 }, { key: "golem", count: 3 }, { key: "x2_snail", count: 3 }, { key: "x3_imp", count: 3 }, { key: "x3_maskedorc", count: 2 }],
     main: "spider",
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "c0", type: "collect", title: "지하 깊은 곳의 빛", desc: "어둠 요정들의 지하 어딘가에서 결정의 조각이 빛나고 있다.", targetLabel: "결정의 흔적", reward: Math.round(60 * G), expReward: 130 } },
+      { sub: 2, dialogue: "", quest: { id: "c0", type: "collect", title: "지하 깊은 곳의 빛", desc: "어둠 요정들의 지하 어딘가에서 보석의 조각이 빛나고 있다.", targetLabel: "보석의 흔적", reward: Math.round(60 * G), expReward: 130 } },
       { sub: 3, dialogue: "", quest: { id: "c1", type: "hunt", title: "동굴 거미 소탕", desc: "어둠에 물든 동굴 거미 120마리를 처치해라.", need: 120, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(720 * G), expReward: 1280 } },
       { sub: 5, dialogue: "", quest: { id: "c2", type: "hunt", title: "수정 골렘 파괴", desc: "거미들을 조종하는 수정 골렘 110기를 부숴 버려라.", need: 110, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(1430 * G), expReward: 2420 } },
       { sub: 7, dialogue: "spiderDone", quest: { id: "c3", type: "hunt", title: "지하 정화", desc: "거미 둥지를 완전히 태우자 — 거미 140마리 처치!", need: 140, targetKey: "spider", targetLabel: "동굴 거미", reward: Math.round(900 * G), expReward: 1680 } },
-      { sub: 8, dialogue: "", quest: { id: "c4", type: "collect", title: "여왕의 두 번째 부탁", desc: "어둠 요정 여왕의 마지막 부탁 — 뿌리 사이의 잔광을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(70 * G), expReward: 140 } },
+      { sub: 8, dialogue: "", quest: { id: "c4", type: "collect", title: "여왕의 두 번째 부탁", desc: "어둠 요정 여왕의 마지막 부탁 — 뿌리 사이의 잔광을 회수해라.", targetLabel: "보석의 흔적", reward: Math.round(70 * G), expReward: 140 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "c4", type: "collect", title: "[사연] 갱도의 마지막 등불", desc: "램프 아주머니의 남편이 마지막으로 들고 들어간 결정 등불 — 아직 어딘가에서 빛나고 있다.", targetLabel: "결정의 흔적", reward: Math.round(640 * G), expReward: 940 } },
+      { sub: 9, dialogue: "", quest: { id: "c4", type: "collect", title: "[사연] 갱도의 마지막 등불", desc: "램프 아주머니의 남편이 마지막으로 들고 들어간 결정 등불 — 아직 어딘가에서 빛나고 있다.", targetLabel: "보석의 흔적", reward: Math.round(640 * G), expReward: 940 } },
       { sub: 10, dialogue: "", quest: { id: "c5", type: "hunt", title: "[기믹] 지지대를 갉는 자들", desc: "갱도 지지대를 갉아먹는 거미 26마리 — 두 번째 붕괴는 없다.", need: 26, targetKey: "spider", targetLabel: "갱도 거미", reward: Math.round(760 * G), expReward: 1120 } },
     ],
     repeat: { need: 20, gold: Math.round(115 * G), exp: 115, title: "[반복] 지하 정화 의뢰", desc: "어둠 요정 여왕의 의뢰 — 거미를 계속 사냥해라." },
@@ -375,7 +375,7 @@ export const CHAPTERS: ChapterSpec[] = [
     lvGate: { enter: 64, mid: 70 },
   },
   {
-    key: "nidavellir", num: 8, title: "니다벨리르", subtitle: "난쟁이들의 해역 · 룬 광산",
+    key: "nidavellir", num: 8, title: "크렌렐브 광맥", subtitle: "라일락 월드 · 대지의 가문이 캐는 산맥",
     intro: "nidavellirIntro", boss: "skoll", bossDone: "skollDone",
     width: 2100, height: 1200, groundTint: 0x9a8a6a, groundTex: "tile_stone", pathTex: "tile_path_dark", bg: "#121008",
     flowers: 0, trees: 0, rocks: 16,
@@ -383,11 +383,11 @@ export const CHAPTERS: ChapterSpec[] = [
     main: "runegolem",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "d0", type: "hunt", title: "룬 골렘 정지", desc: "폭주한 룬 골렘 130기를 정지시켜라.", need: 130, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(2000 * G), expReward: 3600 } },
-      { sub: 4, dialogue: "", quest: { id: "d1", type: "collect", title: "룬 각인 판", desc: "광산 깊은 곳의 결정 조각 — 룬 각인판을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(120 * G), expReward: 220 } },
+      { sub: 4, dialogue: "", quest: { id: "d1", type: "collect", title: "룬 각인 판", desc: "광산 깊은 곳의 결정 조각 — 룬 각인판을 회수해라.", targetLabel: "보석의 흔적", reward: Math.round(120 * G), expReward: 220 } },
       { sub: 6, dialogue: "runePurgeDone", quest: { id: "d2", type: "hunt", title: "광산 탈환", desc: "난쟁이 마을을 되돌리자 — 룬 골렘 150기 처치!", need: 150, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(1560 * G), expReward: 2760 } },
       { sub: 8, dialogue: "", quest: { id: "d3", type: "hunt", title: "수정 골렘 정리", desc: "광산을 어지럽히는 수정 골렘 120기를 부수자.", need: 120, targetKey: "golem", targetLabel: "수정 골렘", reward: Math.round(2640 * G), expReward: 4800 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "d4", type: "collect", title: "[사연] 사부님의 마지막 룬", desc: "견습이 열한 번째에 떨린 이유 — 사부의 유언이 담긴 룬 결정이 채굴장에 남아 있다.", targetLabel: "결정의 흔적", reward: Math.round(880 * G), expReward: 1320 } },
+      { sub: 9, dialogue: "", quest: { id: "d4", type: "collect", title: "[사연] 사부님의 마지막 룬", desc: "견습이 열한 번째에 떨린 이유 — 사부의 유언이 담긴 룬 결정이 채굴장에 남아 있다.", targetLabel: "보석의 흔적", reward: Math.round(880 * G), expReward: 1320 } },
       { sub: 10, dialogue: "", quest: { id: "d5", type: "hunt", title: "[기믹] 룬 도굴꾼 소탕", desc: "룬 각인 도굴꾼 오우거 28마리 — 드워프의 망치가 복수를 대신한다.", need: 28, targetKey: "x3_ogre", targetLabel: "룬 도굴꾼", reward: Math.round(1000 * G), expReward: 1520 } },
     ],
     repeat: { need: 20, gold: Math.round(150 * G), exp: 150, title: "[반복] 광산 경비 의뢰", desc: "난쟁이 광산 조합 의뢰 — 룬 골렘을 계속 처치해라." },
@@ -395,7 +395,7 @@ export const CHAPTERS: ChapterSpec[] = [
     lvGate: { enter: 84, mid: 92 },
   },
   {
-    key: "hel", num: 9, title: "헬", subtitle: "절벽 너머의 해역 · 대전쟁의 땅",
+    key: "hel", num: 9, title: "영혼의 군도", subtitle: "죽은 자의 보물섬 · 폭풍과 함정",
     intro: "helIntro", boss: "gram", bossDone: "gramDone",
     width: 2100, height: 1200, groundTint: 0x4a3a5a, groundTex: "tile_hel", pathTex: "tile_path_dark", bg: "#0d0616",
     flowers: 0, trees: 6, rocks: 12,
@@ -403,11 +403,11 @@ export const CHAPTERS: ChapterSpec[] = [
     main: "helhound",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "h0", type: "hunt", title: "헬 하운드 사냥", desc: "절벽을 지키는 헬 하운드 150마리를 처치해라.", need: 150, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(2600 * G), expReward: 4800 } },
-      { sub: 3, dialogue: "", quest: { id: "h1", type: "collect", title: "대지의 결정", desc: "절벽 아래 대지의 결정 — 결정의 흔적을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(150 * G), expReward: 280 } },
+      { sub: 3, dialogue: "", quest: { id: "h1", type: "collect", title: "대지의 결정", desc: "절벽 아래 대지의 결정 — 보석의 흔적을 회수해라.", targetLabel: "보석의 흔적", reward: Math.round(150 * G), expReward: 280 } },
       { sub: 5, dialogue: "houndPurgeDone", quest: { id: "h2", type: "hunt", title: "절벽 열기", desc: "헬 하운드 180마리를 처치해 저택의 문을 열어라!", need: 180, targetKey: "helhound", targetLabel: "헬 하운드", reward: Math.round(1920 * G), expReward: 3480 } },
       { sub: 7, dialogue: "", quest: { id: "h3", type: "hunt", title: "심연 유령 소탕", desc: "힐다 할머니의 조사 일지를 지키는 심연 유령 160마리를 처치해라.", need: 160, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(2990 * G), expReward: 5540 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "h4", type: "collect", title: "[사연] 촛불 편지의 주인", desc: "관리인이 30년간 옮겨 심은 촛불 편지 — 마지막 한 통의 결정이 이승의 이름을 부른다.", targetLabel: "결정의 흔적", reward: Math.round(1200 * G), expReward: 1800 } },
+      { sub: 9, dialogue: "", quest: { id: "h4", type: "collect", title: "[사연] 촛불 편지의 주인", desc: "관리인이 30년간 옮겨 심은 촛불 편지 — 마지막 한 통의 결정이 이승의 이름을 부른다.", targetLabel: "보석의 흔적", reward: Math.round(1200 * G), expReward: 1800 } },
       { sub: 10, dialogue: "", quest: { id: "h5", type: "hunt", title: "[기믹] 무덤을 파는 자들", desc: "무덤을 훼손하는 원한의 망령 30마리 — 재의 무희가 춤을 멈추지 않게.", need: 30, targetKey: "wraith", targetLabel: "원한의 망령", reward: Math.round(1400 * G), expReward: 2100 } },
     ],
     repeat: { need: 20, gold: Math.round(175 * G), exp: 175, title: "[반복] 절벽 정찰 의뢰", desc: "헬의 기운이 강해지고 있다 — 하운드를 계속 처치해라." },
@@ -415,7 +415,7 @@ export const CHAPTERS: ChapterSpec[] = [
     lvGate: { enter: 104, mid: 114 },
   },
   {
-    key: "abyss", num: 10, title: "세계수의 뿌리", subtitle: "심연의 근원 · 종언의 왕좌",
+    key: "abyss", num: 10, title: "무한의 탑 최심부", subtitle: "다크니스보석 · 어둠의 왕좌",
     intro: "abyssIntro", boss: "abudditos", bossDone: "victory",
     width: 1800, height: 1050, groundTint: 0x3a2c52, groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#0d0616",
     flowers: 0, trees: 0, rocks: 12,
@@ -423,11 +423,11 @@ export const CHAPTERS: ChapterSpec[] = [
     main: "wraith",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "y0", type: "hunt", title: "뿌리의 유령 소탕", desc: "왕좌를 지키는 심연 유령 160마리를 처치해라.", need: 160, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(2400 * G), expReward: 4480 } },
-      { sub: 4, dialogue: "", quest: { id: "y1", type: "collect", title: "빼앗긴 빛의 흔적", desc: "아부디토스가 삼키지 못한 결정의 흔적을 회수해라.", targetLabel: "결정의 흔적", reward: Math.round(120 * G), expReward: 220 } },
+      { sub: 4, dialogue: "", quest: { id: "y1", type: "collect", title: "빼앗긴 빛의 흔적", desc: "스칼렛가 삼키지 못한 보석의 흔적을 회수해라.", targetLabel: "보석의 흔적", reward: Math.round(120 * G), expReward: 220 } },
       { sub: 6, dialogue: "wraithDone", quest: { id: "y2", type: "hunt", title: "왕좌 앞길 열기", desc: "심연 유령 200마리를 처치해 왕좌의 문을 열어라!", need: 200, targetKey: "wraith", targetLabel: "심연 유령", reward: Math.round(1920 * G), expReward: 3520 } },
       /* vc147 (#23) — 사연+기믹 확장 비트 */
-      { sub: 9, dialogue: "", quest: { id: "b4", type: "collect", title: "[사연] 등불 드리프터의 바다", desc: "등불이 꺼진 방향이 바다였다는 말의 진짜 뜻 — 결정 안에 심연의 별이 묻혀 있다.", targetLabel: "결정의 흔적", reward: Math.round(1800 * G), expReward: 2700 } },
-      { sub: 10, dialogue: "", quest: { id: "b5", type: "hunt", title: "[기믹] 뿌리를 갉는 종언", desc: "세계수 뿌리를 갉는 대좀비 32마리 — 뿌리가 아프다고 울고 있다.", need: 32, targetKey: "x3_bigzombie", targetLabel: "대좀비", reward: Math.round(2100 * G), expReward: 3200 } },
+      { sub: 9, dialogue: "", quest: { id: "b4", type: "collect", title: "[사연] 등불 드리프터의 바다", desc: "등불이 꺼진 방향이 바다였다는 말의 진짜 뜻 — 결정 안에 심연의 별이 묻혀 있다.", targetLabel: "보석의 흔적", reward: Math.round(1800 * G), expReward: 2700 } },
+      { sub: 10, dialogue: "", quest: { id: "b5", type: "hunt", title: "[기믹] 뿌리를 갉는 종언", desc: "인피니트보석 뿌리를 갉는 대좀비 32마리 — 뿌리가 아프다고 울고 있다.", need: 32, targetKey: "x3_bigzombie", targetLabel: "대좀비", reward: Math.round(2100 * G), expReward: 3200 } },
     ],
     repeat: { need: 24, gold: Math.round(165 * G), exp: 165, title: "[반복] 뿌리 정찰 의뢰", desc: "뿌리의 기운이 강해지고 있다 — 유령을 계속 처치해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 58→126/136 */
@@ -445,7 +445,7 @@ export const CHAPTERS: ChapterSpec[] = [
  *  결과: 비율 편차 2.15배 → 1.04배.
  *  생성: tools/rebalance-exp.py (재현 가능) */
 export const ENEMIES: Record<EnemyKey, EnemyDef> = {
-  wolf: { key: "wolf", name: "이그드라실 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 30, gold: [5, 8], def: 2, defPct: 0.02, dropHp: 0.3, dropMp: 0.2, profile: { charge: { cd: 3600, speed: 430, time: 420 } } },
+  wolf: { key: "wolf", name: "인피니트보석 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 30, gold: [5, 8], def: 2, defPct: 0.02, dropHp: 0.3, dropMp: 0.2, profile: { charge: { cd: 3600, speed: 430, time: 420 } } },
   minion: { key: "minion", name: "심연 하수인", hp: 78, atk: 18, speed: 108, aggro: 320, exp: 41, gold: [9, 13], def: 3, defPct: 0.03, dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "bleed", chance: 0.4, dps: 4, dur: 3500 } } },
   spider: { key: "spider", name: "동굴 거미", hp: 88, atk: 19, speed: 122, aggro: 320, exp: 46, gold: [10, 14], def: 3, defPct: 0.03, dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.45, dps: 5, dur: 4500 }, fieldOnDeath: { kind: "poison", dps: 5, dur: 3500, radius: 80 } } },
   golem: { key: "golem", name: "수정 골렘", hp: 148, atk: 24, speed: 78, aggro: 260, exp: 77, gold: [14, 21], def: 18, defPct: 0.1, dropHp: 0.34, dropMp: 0.26, profile: { charge: { cd: 5200, speed: 330, time: 620 } } },
@@ -470,8 +470,12 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
   /* v3.0.3 — 0x72 DungeonTileset II (itch.io, CC0) 신규 종 7종: 고유 개성 내장 */
   x3_swampy: { key: "x3_swampy", name: "늪지 독괴물", hp: 96, atk: 15, speed: 86, aggro: 280, exp: 50, gold: [8, 12], def: 3, defPct: 0.03, dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "poison", chance: 0.5, dps: 5, dur: 5000 }, fieldOnDeath: { kind: "poison", dps: 6, dur: 4000, radius: 90 } } },
   x3_imp: { key: "x3_imp", name: "잉걸불 임프", hp: 118, atk: 20, speed: 98, aggro: 340, exp: 62, gold: [11, 16], def: 6, defPct: 0.05, dropHp: 0.3, dropMp: 0.24, profile: { ranged: { projAnim: "fx-fireball", projSpeed: 320, range: 260, cd: 2000 } } },
-  x3_icezombie: { key: "x3_icezombie", name: "얼어붙은 좀비", hp: 152, atk: 25, speed: 92, aggro: 300, exp: 79, gold: [13, 19], def: 8, defPct: 0.06, dropHp: 0.3, dropMp: 0.24, profile: { apply: { kind: "slow", chance: 0.45, dps: 0, dur: 2500 } } },
-  x3_tinyzombie: { key: "x3_tinyzombie", name: "굶주린 좀비", hp: 160, atk: 29, speed: 168, aggro: 380, exp: 84, gold: [14, 22], def: 8, defPct: 0.06, dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "bleed", chance: 0.5, dps: 6, dur: 4000 } } },
+  /* vc191 (지시 #14) — 에델리오나의 해골 몬스터가 너무 작다는 지적.
+   *  실측: 이 스프라이트는 내용 31×35px 로 플레이어(25×41)보다 낮고, 마을에서 다른 NPC(스케일 0.62)와
+   *  섞이면 더 작게 읽혔다. 플레이어 키의 70~80% 수준이 되도록 1.35배로 올린다. */
+  x3_icezombie: { key: "x3_icezombie", name: "얼어붙은 좀비", hp: 152, atk: 25, speed: 92, aggro: 300, exp: 79, gold: [13, 19], def: 8, defPct: 0.06, dropHp: 0.3, dropMp: 0.24, scale: 1.35, profile: { apply: { kind: "slow", chance: 0.45, dps: 0, dur: 2500 } } },
+  /* vc191 (#14) — 낮게 기어다니는 자세라 높이가 20px 뿐이라 실제보다 작게 읽혔다. 자세 보정 +25%. */
+  x3_tinyzombie: { key: "x3_tinyzombie", name: "굶주린 좀비", hp: 160, atk: 29, speed: 168, aggro: 380, exp: 84, gold: [14, 22], def: 8, defPct: 0.06, dropHp: 0.3, dropMp: 0.22, scale: 1.25, profile: { apply: { kind: "bleed", chance: 0.5, dps: 6, dur: 4000 } } },
   x3_ogre: { key: "x3_ogre", name: "광포한 오거", hp: 265, atk: 43, speed: 74, aggro: 280, exp: 138, gold: [20, 30], def: 24, defPct: 0.11, dropHp: 0.38, dropMp: 0.28, scale: 1.15, profile: { charge: { cd: 5000, speed: 360, time: 600 } } },
   x3_chort: { key: "x3_chort", name: "악마다라 촐트", hp: 228, atk: 40, speed: 118, aggro: 380, exp: 119, gold: [19, 28], def: 10, defPct: 0.07, dropHp: 0.32, dropMp: 0.26, profile: { charge: { cd: 4200, speed: 420, time: 520 } } },
   x3_necromancer: { key: "x3_necromancer", name: "강령술사", hp: 212, atk: 42, speed: 80, aggro: 380, exp: 111, gold: [20, 29], def: 7, defPct: 0.06, dropHp: 0.32, dropMp: 0.28, profile: { ranged: { projAnim: "fx-darkbolt", projSpeed: 300, range: 290, cd: 2400 } } },
@@ -488,7 +492,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
 
 export const BOSS_DEFS: Record<BossKey, BossDef> = {
   guardian: {
-    key: "guardian", name: "심연의 수호자",
+    key: "guardian", name: "어둠의 피조물",
     hp: 3200, atk: 24, speed: 92, exp: 320, gold: 220,
     tex: "boss", orbTint: 0x9d7aff, introDialogue: "bossIntroGuardian",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 slam · 성향 1.05 */
@@ -502,7 +506,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
   },
   behemoth: {
-    key: "behemoth", name: "눈보라의 거수",
+    key: "behemoth", name: "저주받은 괴물 해롤드",
     hp: 5200, atk: 31, speed: 84, exp: 500, gold: 300,
     tex: "boss2", orbTint: 0x8ad4ff, introDialogue: "bossIntroBehemoth",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 spiral · 성향 0.95 */
@@ -516,10 +520,10 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
   },
   abysslord: {
-    key: "abysslord", name: "심연의 군주",
+    key: "abysslord", name: "암흑의 그림자 페르온",
     hp: 8500, atk: 38, speed: 98, exp: 800, gold: 420,
     tex: "boss3", orbTint: 0xff5a7a, introDialogue: "bossIntroLord",
-    /* vc153 — 스바르트알프헤임 보스 개편: 시그니처 greenslash · 성향 1.05 */
+    /* vc153 — 스바르트에델리오나 보스 개편: 시그니처 greenslash · 성향 1.05 */
     sig: "greenslash",
     aggr: 1.05,
     /* vc153 애니 사양표 매핑 — ①Idle(Loop) ②Move(Loop) ③GreenSlash(Once) ④Vanish(Once)
@@ -533,7 +537,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "wraith",
   },
   nidhog: {
-    key: "nidhog", name: "탐식의 드래곤 니드호그",
+    key: "nidhog", name: "어둠의 피조물에 잠식된 디오",
     hp: 3600, atk: 26, speed: 90, exp: 380, gold: 260,
     tex: "boss_nidhog", orbTint: 0x7dff9a, introDialogue: "bossIntroNidhog",
     /* v1.4.12 (#20 보스 정체성) — vc142: 시그니처 beam → 맹독 장판으로 교체 (탐식 독 드래곤) */
@@ -608,14 +612,14 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "helhound",
   },
   abudditos: {
-    key: "abudditos", name: "종언의 마룡 아부디토스", /* v4.1.3 (#신화고증) — 구 표기 "니드그림"을 세계관 근원인 아부디토스로 통일 */
-    /* vc143 (#2 후반 보스 대폭 상향) — 10장 아부디토스 HP 14500→34000 · ATK 46→54 */
+    key: "abudditos", name: "어둠의 군주 스칼렛", /* v4.1.3 (#신화고증) — 구 표기 "니드그림"을 세계관 근원인 스칼렛로 통일 */
+    /* vc143 (#2 후반 보스 대폭 상향) — 10장 스칼렛 HP 14500→34000 · ATK 46→54 */
     hp: 34000, atk: 54, speed: 100, exp: 1200, gold: 650,
     tex: "boss_abudditos", orbTint: 0xff3a6a, introDialogue: "bossIntroAbudditos",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 ring · 성향 0.8 */
     sig: "ring",
     aggr: 0.8,
-    /* 종언의 마룡 — 모든 시그니처 패턴의 종합 세트 + vc142 마룡 성역(holymantle) */
+    /* 어둠의 군주 — 모든 시그니처 패턴의 종합 세트 + vc142 마룡 성역(holymantle) */
     chargeChain: 2,
     patterns: {
       p1: ["volley", "charge", "ring", "beam"],
@@ -645,7 +649,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "x3_orcwarrior",
   },
   jorm: {
-    key: "jorm", name: "세계수를 먹는 뱀 요르문간드",
+    key: "jorm", name: "인피니트보석를 먹는 뱀 요르문간드",
     /* vc143 (#2 후반 보스 대폭 상향) — 재림 r10 요르문간드 HP 21500→60000 · ATK 55→64 */
     hp: 60000, atk: 64, speed: 104, exp: 1900, gold: 980,
     /* v5.0.1 — 유저 제공 시트(박쥐날개 황금뿔 드래곤)로 boss_jorm 독립 (nidhog 공유 해제) */
@@ -653,7 +657,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     /* v1.4.12 (#20 보스 정체성) — 시그니처 beam · 성향 0.9 */
     sig: "beam",
     aggr: 0.9,
-    /* 세계수를 감는 뱀 — 스윕 빔 + 나선 탄막 + 2연속 돌진 + vc142 맹독 장판 */
+    /* 인피니트보석를 감는 뱀 — 스윕 빔 + 나선 탄막 + 2연속 돌진 + vc142 맹독 장판 */
     chargeChain: 2,
     patterns: {
       p1: ["volley", "charge", "beam"],
@@ -666,7 +670,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "nagr", name: "재림의 종언 나그라파르",
     /* vc143 (#2 후반 보스 대폭 상향) — 재림 r15 나그라파르 HP 30000→95000 · ATK 62→72 */
     hp: 95000, atk: 72, speed: 108, exp: 2600, gold: 1400,
-    /* v1.4.31 (#4 보스 개편) — 발할라 천사기사 전용 아트 아틀라스 적용 (기존 아부디토스 재사용 해제) */
+    /* v1.4.31 (#4 보스 개편) — 발할라 천사기사 전용 아트 아틀라스 적용 (기존 스칼렛 재사용 해제) */
     tex: "boss_nagr", orbTint: 0xffd76a, introDialogue: "bossIntroAbudditos",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 spiral · 성향 0.8 */
     sig: "spiral",
@@ -743,7 +747,7 @@ export function questNeedByLv(lv: number): number {
 }
 
 /** vc142 (#5) — 후반 몬스터 HP ×10: 유저 지시 "후반만 4스테이지 쯤 부터 몬스터 체력좀 10배 씩 정도 늘려".
- *  후반 4개 챕터(7 스바르트알프헤임 · 8 니다벨리르 · 9 헬 · 10 세계수의 뿌리)의 4구역부터 적용
+ *  후반 4개 챕터(7 스바르트에델리오나 · 8 크렌렐브 · 9 헬 · 10 무한의 탑 최심부)의 4구역부터 적용
  *  (구역 1~3은 진입 완충 유지). 공격력/경험치/골드 곡선은 현행 유지 — 체력만 상향. */
 const LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss"];
 const LATE_HP_FROM_SUB = 4;
@@ -907,9 +911,9 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
     quests.push({
       id: `${prefix}-pre-boss-collect`,
       type: "collect",
-      title: "마지막 결정의 흔적",
-      desc: `${spec.title}의 심장부 — 결정의 흔적이 강하게 빛나고 있다.`,
-      targetLabel: "결정의 흔적",
+      title: "마지막 보석의 흔적",
+      desc: `${spec.title}의 심장부 — 보석의 흔적이 강하게 빛나고 있다.`,
+      targetLabel: "보석의 흔적",
       reward: Math.round(140 * CH_EXP[spec.num - 2] * 0.7 * G),
       expReward: Math.round(200 * CH_EXP[spec.num - 2]),
     });
@@ -1043,11 +1047,11 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
   return def;
 }
 
-/* 마을 (제1장 — 미드가르드 항구 마을) */
+/* 마을 (제1장 — 라일락 월드의 변경 마을. 이야기의 출발점) */
 const VILLAGE: StageDef = {
   key: "village",
-  name: "제1장 미드가르드",
-  subtitle: "항구 마을 — 모험의 시작",
+  name: "제1장 라일락 변경",
+  subtitle: "인피니트보석을 잃은 자들의 마을 — 모험의 시작",
   width: 1500,
   height: 950,
   groundTint: 0x9adf6a,
@@ -1090,7 +1094,7 @@ export const STAGES: Record<StageKey, StageDef> = { village: VILLAGE };
 export const NEXT_STAGE: Record<StageKey, StageKey | null> = { village: "forest1" };
 export const PREV_STAGE: Record<StageKey, StageKey | null> = { village: null };
 /** 구역 라벨 — "2-3" 형식 (복귀 차원문/HUD 표기) */
-export const STAGE_SHORT: Record<StageKey, string> = { village: "미드가르드 마을" };
+export const STAGE_SHORT: Record<StageKey, string> = { village: "라일락 변경 마을" };
 
 for (let ci = 0; ci < CHAPTERS.length; ci++) {
   const spec = CHAPTERS[ci];
@@ -1190,12 +1194,12 @@ PREV_STAGE.dojang = "village"; // 폴백 — 실제 복귀지는 입장 시 기�
 STAGE_SHORT.dojang = "무릉도장";
 
 /* ================= v4.0.0 — 바르가 수비전 (웨이브 디펜스 특별 구역) =================
- *  세계수 뿌리의 균열(바르가)을 몰려오는 몬스터 웨이브에서 지킨다.
+ *  인피니트보석 뿌리의 균열(바르가)을 몰려오는 몬스터 웨이브에서 지킨다.
  *  체인 분리 — 전진 포탈 없음, 복귀 포탈은 입장 전 구역. */
 STAGES.gate = {
   key: "gate",
   name: "바르가 수비전",
-  subtitle: "세계수 뿌리의 균열이 열렸다 — 웨이브를 막아라!",
+  subtitle: "인피니트보석 뿌리의 균열이 열렸다 — 웨이브를 막아라!",
   width: 1500,
   height: 920,
   groundTint: 0xffffff,
@@ -1388,7 +1392,7 @@ const REBIRTH_STAGES: RebirthSpec[] = [
     mul: { hp: 36, atk: 8.4, exp: 19.6, gold: 9.6 }, reward: { gold: 740, exp: 3050 },
   },
   {
-    key: "r10", name: "재림 10 — 뱀의 소용돌이", subtitle: "세계수를 감은 뱀이 기다린다",
+    key: "r10", name: "재림 10 — 뱀의 소용돌이", subtitle: "인피니트보석를 감은 뱀이 기다린다",
     groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#0e0618", groundTint: 0x5a4a7a, flowers: 0, trees: 0, rocks: 14,
     enemies: [{ key: "x2_darkhound", count: 8 }, { key: "helhound", count: 6 }, { key: "x3_chort", count: 4 }], main: "helhound",
     bossKey: "jorm",
@@ -1460,8 +1464,8 @@ function buildRebirthStage(spec: RebirthSpec): StageDef {
       id: `${spec.key}-collect`,
       type: "collect",
       title: "재림의 결정",
-      desc: "재림의 땅에 흩어진 결정의 흔적을 회수해라.",
-      targetLabel: "결정의 흔적",
+      desc: "재림의 땅에 흩어진 보석의 흔적을 회수해라.",
+      targetLabel: "보석의 흔적",
       reward: Math.round(spec.reward.gold * 0.6),
       expReward: Math.round(spec.reward.exp * 0.6),
     });

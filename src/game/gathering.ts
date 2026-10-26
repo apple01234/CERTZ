@@ -106,7 +106,7 @@ export const COOK_RECIPES: RecipeDef[] = [
   /* ── 최고급 (전설 재료) ── */
   { key: "dish_voidstew", name: "공허 스튜", need: [{ item: "fish_void", n: 1 }, { item: "herb_shadow", n: 2 }, { item: "ore_abyss", n: 1 }], buff: "atk", power: 0.40, duration: 180_000, desc: "공격력 +40% · 180초" },
   { key: "dish_aurorafeast", name: "오로라 만찬", need: [{ item: "fish_aurora", n: 1 }, { item: "herb_frost", n: 2 }, { item: "ore_crystal", n: 2 }], buff: "crit", power: 18, duration: 180_000, desc: "치명타 +18% · 180초" },
-  { key: "dish_yggfeast", name: "세계수 잎새 요리", need: [{ item: "fish_yggdrasil", n: 1 }, { item: "ore_abyss", n: 1 }, { item: "honey_drop", n: 2 }], buff: "exp", power: 0.60, duration: 200_000, desc: "경험치 +60% · 200초" },
+  { key: "dish_yggfeast", name: "인피니트보석 잎새 요리", need: [{ item: "fish_yggdrasil", n: 1 }, { item: "ore_abyss", n: 1 }, { item: "honey_drop", n: 2 }], buff: "exp", power: 0.60, duration: 200_000, desc: "경험치 +60% · 200초" },
 ];
 
 export const COOK_BY_KEY: Record<string, RecipeDef> = Object.fromEntries(COOK_RECIPES.map((r) => [r.key, r]));

@@ -1,16 +1,18 @@
 /**
  * SERTZ 게임 데이터 (v2.0)
  *  - 스테이지/몬스터/보스 정의는 stages.ts (9챕터 × 10구역 생성기)에서 재수출
- *  - v3.0.10 본게임 세계관 확정판 스토리 (이그드라실 9왕국 · 이그니 · 아부디토스)
+ *  - v3.0.10 본게임 세계관 확정판 스토리 (인피니트보석 5왕국 · 라일락 · 스칼렛)
  *  - v4.1.3 (#신화고증) — 보스 표기 고증 정리 (지시 #8):
- *    · 최종 보스 표기 니드그림 → 아부디토스 (키/세계관 근원인 아뜰란티스의 종언 존재)
- *    · 수르트: 정령 → 화염의 거인 (무스펠헤임을 다스리는 불의 거인 — 라그나로크 고증)
+ *    · 최종 보스 표기 니드그림 → 스칼렛 (키/세계관 근원인 아뜰란티스의 종언 존재)
+ *    · 수르트: 정령 → 화염의 거인 (라바이즈을 다스리는 불의 거인 — 라그나로크 고증)
  *    · 스콜&하티: 쌍두 → 쌍랑 (해와 달을 쫓는 쌍둥이 늑대 — 두 머리가 아님)
  *    · 헬 보스 그람 → 가름 (Garmr — 헬의 대문을 지키는 사냥개. 그람은 시구르드의 검이다)
  *  - v1.9 아이템/BM(버프·펫·치장) 유지 + 강화 12단계 확장 (메이플 스타포스식)
  */
 import { CHAPTERS, ENEMIES, type ChapterKey } from "./stages";
 import type { FamilyKey } from "./classes";
+/* vc191 — 원소 상성은 lore.ts 를 단일 기준으로 쓴다(기획서 9원소표) */
+import { elemMultiplier, type ElementKey } from "./lore";
 
 /* ================= 스테이지/전투 데이터 (stages.ts 생성기) ================= */
 
@@ -400,25 +402,25 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
    *  보스별 1종, 100% 드롭. 상점 에픽 대비 확실히 강한 수치. */
   bd_guardian: { key: "bd_guardian", kind: "accessory", name: "수호자의 문장", icon: "i_bd_guardian", price: 0, tier: "legend", maxHp: 90, crit: 5, slot: "ring", tradeLock: true, bossDrop: "심연의 수호자 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_behemoth: { key: "bd_behemoth", kind: "accessory", name: "눈보라의 심장", icon: "i_bd_behemoth", price: 0, tier: "legend", maxHp: 120, def: 2, slot: "pendant", tradeLock: true, bossDrop: "눈보라의 거수 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "니드호그 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "라시온 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_surt: { key: "bd_surt", kind: "accessory", name: "화염 정령의 인장", icon: "i_bd_surt", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "수르트 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_fenrir: { key: "bd_fenrir", kind: "accessory", name: "탐욕의 속니", icon: "i_bd_fenrir", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "펜리르 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_skoll: { key: "bd_skoll", kind: "accessory", name: "교만의 쌍랑 귀걸이", icon: "i_bd_skoll", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "스콜&하티 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "i_bd_gram", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "가름 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_abysslord: { key: "bd_abysslord", kind: "accessory", name: "심연의 군주의 관", icon: "i_bd_abysslord", price: 0, tier: "legend", crit: 14, maxHp: 100, slot: "pendant", tradeLock: true, bossDrop: "심연의 군주 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "아부디토스 드롭 — 최고 보스 전리품 · 거래소 예정" },
+  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "스칼렛 드롭 — 최고 보스 전리품 · 거래소 예정" },
   /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종 전용 드롭.
-   *  수치는 기존 9종의 강함 계층(스콜 8/80 → 아부디토스 18/130)을 이어받아 배치:
+   *  수치는 기존 9종의 강함 계층(스콜 8/80 → 스칼렛 18/130)을 이어받아 배치:
    *  vord(HP 42000) < jorm(60000) < nagr(95000) 순으로 강화. 슬롯은 ring/pendant 교차로
    *  기존 유물과 세트를 맞출 때 선택지가 생기게 했다. 아이콘은 기존 i_bd_* 재활용(신규 에셋 0). */
   bd_vord: { key: "bd_vord", kind: "accessory", name: "파수꾼의 지진핵", icon: "i_bd_guardian", price: 0, tier: "legend", def: 4, maxHp: 160, slot: "ring", tradeLock: true, bossDrop: "재림의 파수꾼 베오르드 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_jorm: { key: "bd_jorm", kind: "accessory", name: "세계수의 독니", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 16, atk: 12, slot: "ring", tradeLock: true, bossDrop: "요르문간드 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_jorm: { key: "bd_jorm", kind: "accessory", name: "인피니트보석의 독니", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 16, atk: 12, slot: "ring", tradeLock: true, bossDrop: "요르문간드 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_nagr: { key: "bd_nagr", kind: "accessory", name: "종언의 천사인장", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 20, maxHp: 150, def: 3, slot: "pendant", tradeLock: true, bossDrop: "나그라파르 드롭 — 재림 최종 전리품 · 거래소 예정" },
   /* ================= v1.0.2 (#GM아이템) — 관리자 전용 테스트 장비 =================
    *  일반 유저는 어떤 경로로도 획득 불가 (상품 목록/드롭 테이블 미포함 + gmOnly 거래 차단).
    *  지급은 GM 패널(서버 롤 검증 통과자)에서만. tradeLock으로 골드 판매도 차단. */
-  gm_sword: { key: "gm_sword", kind: "weapon", name: "[GM] 세계수의 대검", icon: "i_gm_sword", price: 0, tier: "legend", atk: 420, tradeLock: true, gmOnly: true },
-  gm_armor: { key: "gm_armor", kind: "armor", name: "[GM] 세계수의 갑주", icon: "i_gm_armor", price: 0, tier: "legend", def: 120, tradeLock: true, gmOnly: true },
+  gm_sword: { key: "gm_sword", kind: "weapon", name: "[GM] 인피니트보석의 대검", icon: "i_gm_sword", price: 0, tier: "legend", atk: 420, tradeLock: true, gmOnly: true },
+  gm_armor: { key: "gm_armor", kind: "armor", name: "[GM] 인피니트보석의 갑주", icon: "i_gm_armor", price: 0, tier: "legend", def: 120, tradeLock: true, gmOnly: true },
   gm_ring: { key: "gm_ring", kind: "accessory", name: "[GM] 운명의 반지", icon: "i_gm_ring", price: 0, tier: "legend", crit: 25, maxHp: 500, slot: "ring", tradeLock: true, gmOnly: true },
   gm_elixir: { key: "gm_elixir", kind: "consumable", name: "[GM] 완전 엘릭서", icon: "i_gm_elixir", price: 0, tier: "legend", healFull: true, sellPrice: 1, tradeLock: true, gmOnly: true },
   /* ---- v3.0.6 — BM 상점 (에메랄드 전용 — 골드 상점과 분리, 지시 #1) ---- */
@@ -487,7 +489,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   potion_hp6: { key: "potion_hp6", kind: "consumable", name: "용의 HP 물약", icon: "i_potion_hp6", price: 950, bmPrice: 6, bmOnly: true, sellPrice: 380, tier: "epic", heal: 1800 },
   potion_hp7: { key: "potion_hp7", kind: "consumable", name: "성스러운 HP 물약", icon: "i_potion_hp7", price: 2100, bmPrice: 10, bmOnly: true, sellPrice: 620, tier: "epic", heal: 2800 },
   potion_hp8: { key: "potion_hp8", kind: "consumable", name: "심연 HP 물약", icon: "i_potion_hp8", price: 4600, bmPrice: 15, bmOnly: true, sellPrice: 950, tier: "legend", heal: 4200 },
-  potion_hp9: { key: "potion_hp9", kind: "consumable", name: "세계수 HP 물약", icon: "i_potion_hp9", price: 10000, bmPrice: 22, bmOnly: true, sellPrice: 1400, tier: "legend", heal: 6400 },
+  potion_hp9: { key: "potion_hp9", kind: "consumable", name: "인피니트보석 HP 물약", icon: "i_potion_hp9", price: 10000, bmPrice: 22, bmOnly: true, sellPrice: 1400, tier: "legend", heal: 6400 },
   potion_hp10: { key: "potion_hp10", kind: "consumable", name: "천멸 HP 물약", icon: "i_potion_hp10", price: 22000, bmPrice: 32, bmOnly: true, sellPrice: 2000, tier: "legend", heal: 9600 },
   potion_mp3: { key: "potion_mp3", kind: "consumable", name: "고급 MP 물약", icon: "i_potion_mp3", price: 300, tier: "rare", restore: 700, sellPrice: 115 },
   potion_mp4: { key: "potion_mp4", kind: "consumable", name: "최고급 MP 물약", icon: "i_potion_mp4", price: 240, tier: "rare", restore: 450, sellPrice: 95 },
@@ -495,7 +497,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   potion_mp6: { key: "potion_mp6", kind: "consumable", name: "용의 MP 물약", icon: "i_potion_mp6", price: 800, bmPrice: 5, bmOnly: true, sellPrice: 320, tier: "epic", restore: 1100 },
   potion_mp7: { key: "potion_mp7", kind: "consumable", name: "성스러운 MP 물약", icon: "i_potion_mp7", price: 1800, bmPrice: 8, bmOnly: true, sellPrice: 520, tier: "epic", restore: 1650 },
   potion_mp8: { key: "potion_mp8", kind: "consumable", name: "심연 MP 물약", icon: "i_potion_mp8", price: 3900, bmPrice: 12, bmOnly: true, sellPrice: 800, tier: "legend", restore: 2500 },
-  potion_mp9: { key: "potion_mp9", kind: "consumable", name: "세계수 MP 물약", icon: "i_potion_mp9", price: 8500, bmPrice: 18, bmOnly: true, sellPrice: 1200, tier: "legend", restore: 3800 },
+  potion_mp9: { key: "potion_mp9", kind: "consumable", name: "인피니트보석 MP 물약", icon: "i_potion_mp9", price: 8500, bmPrice: 18, bmOnly: true, sellPrice: 1200, tier: "legend", restore: 3800 },
   potion_mp10: { key: "potion_mp10", kind: "consumable", name: "천멸 MP 물약", icon: "i_potion_mp10", price: 19000, bmPrice: 26, bmOnly: true, sellPrice: 1700, tier: "legend", restore: 5700 },
   ring_might: { key: "ring_might", kind: "accessory", name: "무력의 반지", icon: "i_ring_might", price: 900, tier: "epic", reqLv: 25, atk: 18, slot: "ring", sellPrice: 320 },
   ring_swift: { key: "ring_swift", kind: "accessory", name: "질풍의 반지", icon: "i_ring_swift", price: 1100, tier: "epic", reqLv: 25, atk: 12, crit: 6, slot: "ring", sellPrice: 400 },
@@ -574,9 +576,9 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   sfw_forest: { key: "sfw_forest", kind: "weapon", name: "숲의 수호자 대검", icon: "i_sfw_forest", price: 380, tier: "rare", atk: 9 , clsOnly: ["warrior"] },
   sfa_forest: { key: "sfa_forest", kind: "armor", name: "숲의 수호자 갑옷", icon: "i_sfa_forest", price: 340, tier: "rare", def: 4 },
   sfr_forest: { key: "sfr_forest", kind: "accessory", name: "숲의 수호자 반지", icon: "i_sfr_forest", price: 360, tier: "rare", crit: 5, maxHp: 20, slot: "ring" },
-  sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "쿠소디아 기사검", icon: "i_sfw_kingdom", price: 820, tier: "rare", atk: 15 , clsOnly: ["warrior"] },
-  sfa_kingdom: { key: "sfa_kingdom", kind: "armor", name: "쿠소디아 기사 갑옷", icon: "i_sfa_kingdom", price: 720, tier: "rare", def: 7 },
-  sfr_kingdom: { key: "sfr_kingdom", kind: "accessory", name: "쿠소디아 기사 반지", icon: "i_sfr_kingdom", price: 760, tier: "rare", crit: 7, maxHp: 30, slot: "ring" },
+  sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "에스테반 기사검", icon: "i_sfw_kingdom", price: 820, tier: "rare", atk: 15 , clsOnly: ["warrior"] },
+  sfa_kingdom: { key: "sfa_kingdom", kind: "armor", name: "에스테반 기사 갑옷", icon: "i_sfa_kingdom", price: 720, tier: "rare", def: 7 },
+  sfr_kingdom: { key: "sfr_kingdom", kind: "accessory", name: "에스테반 기사 반지", icon: "i_sfr_kingdom", price: 760, tier: "rare", crit: 7, maxHp: 30, slot: "ring" },
   /* vc187 (지시 #4 — "직업별 무기 없는 버그") — 계열별 무기 편중 해소.
    *  실측: warrior 8 / ranger 3 / mage 2 / thief 1 / pirate 3.
    *  도적은 전용 무기가 1종뿐이라 상점에 사실상 아무것도 없었다.
@@ -778,7 +780,7 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   /* v1.1.0 (#19) — 프리미엄 완전 교체 코스튬 6종 (서브컬처 도트) */
   outfit_silver: { key: "outfit_silver", name: "은월의 검희", icon: "cost_silver_idle0", desc: "은발에 얼음빛 검의 무희 — 설원을 걷는 귀갑 (남녀형)", price: 560, tint: 0xcfe4ff, slot: "outfit" },
   outfit_crimson: { key: "outfit_crimson", name: "진홍의 마녀", icon: "cost_crimson_idle0", desc: "적발의 마녀 — 심연의 마술을 다루는 자 (남녀형)", price: 560, tint: 0xff6a8a, slot: "outfit" },
-  outfit_seraph: { key: "outfit_seraph", name: "성녀 세라피나", icon: "cost_seraph_idle0", desc: "금발의 성녀 — 세계수의 가호를 받는 기도사 (남녀형)", price: 560, tint: 0xffe8b0, slot: "outfit" },
+  outfit_seraph: { key: "outfit_seraph", name: "성녀 세라피나", icon: "cost_seraph_idle0", desc: "금발의 성녀 — 인피니트보석의 가호를 받는 기도사 (남녀형)", price: 560, tint: 0xffe8b0, slot: "outfit" },
   outfit_abyss: { key: "outfit_abyss", name: "심해의 가곡", icon: "cost_abyss_idle0", desc: "청록 머리칼의 심해 술사 — 파도의 노래 (남녀형)", price: 560, tint: 0x5ad8d0, slot: "outfit" },
   outfit_nightmare: { key: "outfit_nightmare", name: "나이트메어 기사", icon: "cost_nightmare_idle0", desc: "백발의 암흑기사 — 악몽을 두르는 검은 갑주 (남녀형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
   outfit_gilded: { key: "outfit_gilded", name: "황금 백작", icon: "cost_gilded_idle0", desc: "황금빛 귀족 — 부와 권력을 몸에 두른 자 (남녀형)", price: 560, tint: 0xffd06a, slot: "outfit" },
@@ -947,13 +949,13 @@ export function sellValue(item: ItemDef): number {
 export const TRADE_PRICES: Record<string, number> = {
   bd_guardian: 8,   // 심연의 수호자 (1챕터)
   bd_behemoth: 10,  // 눈보라의 거수
-  bd_nidhog: 12,    // 니드호그
+  bd_nidhog: 12,    // 라시온
   bd_surt: 14,      // 수르트
   bd_fenrir: 16,    // 펜리르
   bd_skoll: 18,     // 스콜&하티
   bd_gram: 20,      // 가름 (구 그람 — 신화 고증: 헬의 문지기 Garmr)
   bd_abysslord: 24, // 심연의 군주
-  bd_abudditos: 30, // 아부디토스 (최종 보스 — 텍스처 키 bd_abudditos 유지)
+  bd_abudditos: 30, // 스칼렛 (최종 보스 — 텍스처 키 bd_abudditos 유지)
   /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종: 기존 9종 최고가(30) 위로 계단식 배치.
    *  보스 HP 계층(42000 / 60000 / 95000)에 맞춰 36 / 42 / 52. */
   bd_vord: 36,      // 재림의 파수꾼 베오르드 (재림 r5)
@@ -1274,28 +1276,34 @@ export const BOSS_DROP_ITEMS: Record<string, ItemKey> = {
 /* ================= v3.0.15 (#16) — 원소 데미지 시스템 (원신 참고) =================
  *  5원소 + 무속성. 3각 상성(화염>자연>냉기>화염) + 빛↔어둠 상호 강세.
  *  유리 상성 +25% / 불리 상성 -15%. 챕터 테마가 적 원소를 결정한다. */
-export type ElemKey = "none" | "fire" | "ice" | "nature" | "dark" | "light";
+/* vc191 (기획서 「원소 9종」) — 종전 6종(none/fire/ice/nature/dark/light)에
+ *  물·바람·전기·땅을 추가해 기획서의 9속성 체계로 맞춘다. 기존 저장/코드는
+ *  쓰던 키를 그대로 쓰므로 호환된다(추가만 함). */
+export type ElemKey =
+  | "none" | "fire" | "water" | "wind" | "electric" | "earth"
+  | "nature" | "ice" | "light" | "dark";
 export const ELEMENT_META: Record<ElemKey, { name: string; color: string; hex: number }> = {
   none: { name: "무속성", color: "#e8ecf2", hex: 0xe8ecf2 },
   fire: { name: "화염", color: "#ff8a5c", hex: 0xff8a5c },
+  water: { name: "물", color: "#5cb8ff", hex: 0x5cb8ff },
+  wind: { name: "바람", color: "#8ef0c0", hex: 0x8ef0c0 },
+  electric: { name: "전기", color: "#ffe14d", hex: 0xffe14d },
+  earth: { name: "땅", color: "#c08a4a", hex: 0xc08a4a },
   ice: { name: "냉기", color: "#7dd8ff", hex: 0x7dd8ff },
   nature: { name: "자연", color: "#7de86a", hex: 0x7de86a },
   dark: { name: "어둠", color: "#c08aff", hex: 0xc08aff },
   light: { name: "빛", color: "#ffe86a", hex: 0xffe86a },
 };
 
-/** 원소 상성 배율 — 유리 1.25 / 불리 0.85 / 나머지 1 */
+/** 원소 상성 배율 — 기획서 상성표(lore.ELEMENTS)를 단일 기준으로 쓴다.
+ *  vc191: 종전 4쌍 하드코딩(1.25/0.85) → 9원소 표 기반(1.5/0.7).
+ *  기존 밸런스와의 급격한 단절을 막기 위해 배율 폭은 종전 수준(1.25/0.85)으로 눌러 적용한다. */
 export function elemAdvantage(atk: ElemKey, def: ElemKey): number {
   if (atk === "none" || def === "none") return 1;
   if (atk === def) return atk === "dark" ? 0.85 : 1; // 어둠끼리는 서로 저항
-  if (atk === "fire" && def === "nature") return 1.25;
-  if (atk === "nature" && def === "ice") return 1.25;
-  if (atk === "ice" && def === "fire") return 1.25;
-  if (atk === "light" && def === "dark") return 1.25;
-  if (atk === "dark" && def === "light") return 1.25;
-  if (atk === "nature" && def === "fire") return 0.85;
-  if (atk === "ice" && def === "nature") return 0.85;
-  if (atk === "fire" && def === "ice") return 0.85;
+  const m = elemMultiplier(atk as ElementKey, def as ElementKey);
+  if (m > 1) return 1.25;
+  if (m < 1) return 0.85;
   return 1;
 }
 
@@ -1430,7 +1438,7 @@ export function sumPotLines(pots: (Potentials | undefined)[]): { atk: number; de
  *  수치는 해당 챕터 구간 최고급 장비보다 살짝 위 — 세트 가치 프리미엄. */
 export const SET_GEAR: Record<string, { ch: string; num: number; title: string; w: ItemKey; a: ItemKey; r: ItemKey }> = {
   forest: { ch: "forest", num: 2, title: "숲의 수호자 세트", w: "sfw_forest", a: "sfa_forest", r: "sfr_forest" },
-  kingdom: { ch: "kingdom", num: 3, title: "쿠소디아 기사단 세트", w: "sfw_kingdom", a: "sfa_kingdom", r: "sfr_kingdom" },
+  kingdom: { ch: "kingdom", num: 3, title: "에스테반 기사단 세트", w: "sfw_kingdom", a: "sfa_kingdom", r: "sfr_kingdom" },
   alfheim: { ch: "alfheim", num: 4, title: "정령왕 세트", w: "sfw_alfheim", a: "sfa_alfheim", r: "sfr_alfheim" },
   muspelheim: { ch: "muspelheim", num: 5, title: "화염의 군주 세트", w: "sfw_muspelheim", a: "sfa_muspelheim", r: "sfr_muspelheim" },
   niflheim: { ch: "niflheim", num: 6, title: "서리바다 세트", w: "sfw_niflheim", a: "sfa_niflheim", r: "sfr_niflheim" },
@@ -1507,22 +1515,22 @@ export function nextCollectionGoal(registered: number): CollectionMilestone | nu
   return COLLECTION_MILESTONES.find((m) => registered < m.n) ?? null;
 }
 
-/* ================= v3.0.22 (#43/#44) — 챕터별 세계수 결정(파편) =================
+/* ================= v3.0.22 (#43/#44) — 챕터별 인피니트보석 결정(파편) =================
  *  "챕터마다 조각이 달라야 되는데 다 같음" — 챕터마다 고유 이름/색/보너스/수확 멘트.
  *  atk 보너스는 챕터가 깊어질수록 커진다(후반 결정이 더 값지다). */
 export const FRAGMENT_META: Record<string, { name: string; color: number; atk: number; lines: string[] }> = {
-  forest: { name: "숲의 결정", color: 0x9df0ff, atk: 5, lines: ["촉촉한 초록빛 결정이다. 숲의 숨결이 손안에서 맴돈다.", "잎사귀 문양이 잠시 떠올랐다 사라진다.", "세계수의 가지가 스쳤던 흔적이 아직 따뜻하다."] },
-  kingdom: { name: "늪의 진주", color: 0x8fd8ff, atk: 8, lines: ["진주 표면에 늪의 안개가 흘러간다.", "쿠소디아 기사단의 문장이 비쳐 나온다.", "물속에서도 꺼지지 않는 빛이다."] },
-  alfheim: { name: "성전의 빛구슬", color: 0xfff3a8, atk: 11, lines: ["손안에서 종소리 같은 온기가 퍼진다.", "요정들의 노랫소리가 잠깐 들리는 것 같다.", "빛의 결정 — 세계수와 가장 가까운 조각."] },
-  muspelheim: { name: "화염의 심핵", color: 0xffa24a, atk: 14, lines: ["극열의 해역에서도 타오르는 심장 같은 결정.", "불티가 튀며 룬 문자가 타오른다.", "이 열기는 세계수를 지키는 불꽃이다."] },
+  forest: { name: "숲의 결정", color: 0x9df0ff, atk: 5, lines: ["촉촉한 초록빛 결정이다. 숲의 숨결이 손안에서 맴돈다.", "잎사귀 문양이 잠시 떠올랐다 사라진다.", "인피니트보석의 가지가 스쳤던 흔적이 아직 따뜻하다."] },
+  kingdom: { name: "늪의 진주", color: 0x8fd8ff, atk: 8, lines: ["진주 표면에 늪의 안개가 흘러간다.", "에스테반 기사단의 문장이 비쳐 나온다.", "물속에서도 꺼지지 않는 빛이다."] },
+  alfheim: { name: "성전의 빛구슬", color: 0xfff3a8, atk: 11, lines: ["손안에서 종소리 같은 온기가 퍼진다.", "요정들의 노랫소리가 잠깐 들리는 것 같다.", "빛의 조각 — 인피니트보석와 가장 가까운 조각."] },
+  muspelheim: { name: "화염의 심핵", color: 0xffa24a, atk: 14, lines: ["극열의 해역에서도 타오르는 심장 같은 결정.", "불티가 튀며 룬 문자가 타오른다.", "이 열기는 인피니트보석를 지키는 불꽃이다."] },
   niflheim: { name: "서리 결정", color: 0xbfe8ff, atk: 17, lines: ["서리꽃이 결정 위에서 피었다 진다.", "극한의 추위도 이 빛을 삼키지 못했다.", "차가운 표면 아래에서 숨결이 뛴다."] },
   cave: { name: "심연 수정", color: 0xc79aff, atk: 20, lines: ["보랏빛이 어둠을 삼키네.", "어둠 요정들의 비밀이 수정 안에 갇혀 있다.", "수정을 비추면 깊은 동굴이 비친다."] },
-  nidavellir: { name: "룬 광석의 눈", color: 0xffd76a, atk: 23, lines: ["룬 문자가 읽힌다 — '세계수를 지켜라'.", "난쟁이 장인들의 망치 소리가 울리는 것 같다.", "광맥 깊은 곳에서도 빛을 잃지 않는다."] },
+  nidavellir: { name: "룬 광석의 눈", color: 0xffd76a, atk: 23, lines: ["룬 문자가 읽힌다 — '인피니트보석를 지켜라'.", "난쟁이 장인들의 망치 소리가 울리는 것 같다.", "광맥 깊은 곳에서도 빛을 잃지 않는다."] },
   hel: { name: "전쟁의 잔광", color: 0xff8f6a, atk: 26, lines: ["수많은 용사들의 기억이 담긴 결정.", "대전쟁의 땅에서도 살아 있었어.", "잔광이 울부짖다 조용해진다."] },
-  abyss: { name: "세계수의 눈동자", color: 0x7de8ff, atk: 30, lines: ["마지막 조각 — 세계수가 직접 두었던 눈.", "아홉 왕국의 숨결이 손안에서 하나로 울린다.", "종언의 왕좌도 이 빛 앞에서는 조용하다."] },
+  abyss: { name: "인피니트보석의 눈동자", color: 0x7de8ff, atk: 30, lines: ["마지막 조각 — 인피니트보석가 직접 두었던 눈.", "다섯 왕국의 숨결이 손안에서 하나로 울린다.", "종언의 왕좌도 이 빛 앞에서는 조용하다."] },
 };
 
-/* ================= v3.0.22 (#50) — 세계수의 가호 (신규 기능) =================
+/* ================= v3.0.22 (#50) — 인피니트보석의 가호 (신규 기능) =================
  *  아홉 챕터의 결정을 모두 수집하면 해방되는 영구 스탯 보너스 + 스토리 대사. */
 export const WORLDTREE_BLESSING = { atk: 20, def: 8, hpAdd: 200, atkPct: 3 };
 /** 결정 수집 완료 판정에 필요한 챕터 수 = FRAGMENT_META 키 수 */
@@ -1532,8 +1540,8 @@ export type DialogueDef = { speaker: string; /** v1.0.2 (#초상화) — portrai
 
 /* ================= 스토리 대사 (v3.0.10 본게임 세계관 확정판) =================
  *  잠뜰 아뜰란티스 라인을 본게임 고유 세계관으로 통합·증축:
- *  세계수 이그드라실과 아홉 왕국 — 세계수의 가지로 빚은 룬 펜던트 속 정령 이그니,
- *  뿌리에서 깨어난 종언의 마룡 아부디토스, 흩어진 일곱 세계의 결정. */
+ *  인피니트보석과 다섯 왕국 — 인피니트보석의 가지로 빚은 룬 펜던트 속 정령 라일락,
+ *  뿌리에서 깨어난 어둠의 군주 스칼렛, 흩어진 일곱 세계의 결정. */
 
 export const DIALOGUES: Record<string, DialogueDef> = {
   /* ================= 공통 / 인트로 ================= */
@@ -1567,7 +1575,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   fieldNpc_niflheim: {
     speaker: "설원 수렵꾼",
     lines: [
-      "니플헤임의 눈보라는 방향을 가려. 미니맵을 자주 확인해.",
+      "클로체스의 눈보라는 방향을 가려. 미니맵을 자주 확인해.",
       "얼음 늑대는 둔화 걸어. 기동성이 목숨이다 — 붙으면 떼어라.",
       "보스 전에 마을 우물에서 HP/MP를 꽉 채워. 보스전에선 자동전투가 막혀 — 직접 싸워야 한다!",
     ],
@@ -1591,7 +1599,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   fieldNpc_nidavellir: {
     speaker: "대장장이 견습",
     lines: [
-      "니다벨리르 대장간에 온 걸 환영하지. 장비 강화는 여기가 본고장이야.",
+      "크렌렐브 대장간에 온 걸 환영하지. 장비 강화는 여기가 본고장이야.",
       "돌 골렘은 마법에 약해. 스킬 쿨을 돌려가며 두들겨 보렴.",
       "강화 실패해도 용 내지 말게 — 다음 주엔 성공 확률이 살짝 오르니까.",
     ],
@@ -1609,32 +1617,32 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     lines: [
       "…여기까지 온 건 네가 처음이 아니야. 그래도 살아서 보는 건 처음이지만.",
       "심연의 눈동자는 레이저를 쏘며 움직인다. 빔이 모이면 옆으로 — 그것만 기억해.",
-      "마룡 아부디토스는 마지막 보스. 재림한 개체는 전용 패턴을 쓰니 각오해. …그래도 응원할게 (ง •_•)ง",
+      "마룡 스칼렛는 마지막 보스. 재림한 개체는 전용 패턴을 쓰니 각오해. …그래도 응원할게 (ง •_•)ง",
     ],
   },
   introNamed: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "{name}. 나쁘지 않은 이름이야. 마음에 들어 ♥",
-      "힐다 할머니가 남긴 말 — '뒷산 폐허의 신전으로 가라.'",
-      "준비됐으면 가자. 모험은 기다려 주지 않아.",
+      "{name}. 나쁘지 않은 이름이야.",
+      "이 펜던트는 네게 맡길게. 위험할 때 너를 지켜 줄 거야.",
+      "기사단에 정식으로 들어오면 돌려줘. 그때 다시 만나자.",
     ],
   },
   villageIntro: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "나는 이그니. 네 룬 펜던트에 깃든 정령이야~ (｡•̀ᴗ-)✧",
-      "세계수 이그드라실의 열매였던 일곱 결정이 아홉 왕국에 흩어졌어.",
-      "결정이 전부 어둠에 삼켜지면 세계수도, 아홉 왕국도 끝이야… 무섭지만 (｡•́︿•̀｡)",
-      /* v3.0.26 (#75) — '동쪽 차원문 → 서쪽 숲' 방향 모순 제거 (실존 지역명 '숲의 신전'으로 통일) */
-      "동쪽 차원문을 지나면 숲의 신전이야. 출발 전에 라고스 아저씨에게 물약을 챙겨라. 응원할게 ♥",
+      "세상에는 세 가지 사람이 있어. 누군가를 죽이는 사람, 두려움에 도망치는 사람,",
+      "그리고 그 죽음에서 누군가를 살리는 사람. 나는 네가 마지막 사람이었으면 좋겠어.",
+      "라일락 월드에는 인피니트보석이 있어. 가진 자의 소원을 전부 들어준다는 보석 —",
+      "그 보석을 둘러싸고 다섯 왕국이 전쟁을 시작했어. 이제 어둠의 군주가 움직이고 있어.",
+      "동쪽 차원문을 지나면 에크레디트 수림이야. 출발 전에 라고스에게 물약을 챙겨라.",
     ],
   },
   villager1: {
     speaker: "마을 주민",
     lines: [
-      "어머, {name}! 힐다 할머니를 따라나서기로 했구나. 대단해 ♥",
-      "차원문 너머 숲엔 늑대들이 돌아다녀. 물약 꼭 챙기고 다녀오렴~ (´▽`)",
+      "어머, {name}! 기사단에 들어가기로 했구나. 대단해.",
+      "차원문 너머 숲엔 늑대들이 돌아다녀. 물약 꼭 챙기고 다녀오렴.",
       "…할머니는 좋은 분이었어. 신전에 간 뒤 소식이 끊기신 게 아직도 믿기지가 않아.",
     ],
   },
@@ -1643,7 +1651,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     lines: [
       "{name} 형아도 이제 진짜 모험가다! 부러워요~ (๑•̀ㅂ•́)و✧",
       "저는 마을 우물을 지키고 있을게요. 우물 물은 아프면 꼭 필요하답니다!",
-      "할머니가 자주 그랬어요. '세계수는 기억한다'라고… 무슨 뜻일까요? (・ω・)?",
+      "할머니가 자주 그랬어요. '인피니트보석는 기억한다'라고… 무슨 뜻일까요? (・ω・)?",
     ],
   },
   /* ================= v1.2.0 (#4) — 환생 n차수별 NPC 대사 변화 =================
@@ -1653,7 +1661,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     speaker: "마을 주민",
     lines: [
       "…어머나, {name}? 분명히 어제 늑대에게 당했다고 들었는데.",
-      "눈빛이 달라졌네. 세계수가 너를 다시 보냈나?",
+      "눈빛이 달라졌네. 인피니트보석가 너를 다시 보냈나?",
       "…환생자가 실제로 있다니. 할머니 말이 맞았구나.",
     ],
   },
@@ -1662,7 +1670,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     lines: [
       "두 번이나 세계를 건너왔다고? 이제 놀랍지도 않아.",
       "솔직히 말하면… 조금은 무서워. 그만큼 네게 얹힌 바람도 커졌다는 뜻이지만.",
-      "그래도 이 마을 사람들은 응원한다. 아홉 왕국의 운명, 네가 메고 있잖아.",
+      "그래도 이 마을 사람들은 응원한다. 다섯 왕국의 운명, 네가 메고 있잖아.",
     ],
   },
   villager1_rb3: {
@@ -1699,103 +1707,103 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   },
   /* ================= 제2장 숲의 신전 ================= */
   intro: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "저기 하늘로 빛 기둥이 솟았어 — 결정의 기운이야, {name}!",
-      "숲의 신전은 저쪽. 신전에 도착하면 네가 해야 할 일을 자세히 말해 줄게.",
+      "저기 하늘로 빛 기둥이 솟았어 — 인피니트보석의 조각이야, {name}.",
+      "에크레디트 수림은 저쪽. 도착하면 네가 해야 할 일을 자세히 말해 줄게.",
       "숲이 어두우니, 빛나는 기둥과 화살표를 따라가 보자.",
     ],
   },
   fragment: {
     speaker: "{name}",
     lines: [
-      "이게… 결정의 조각. 손안에서 뜨거워져.",
-      "이그니, 이게 진짜 결정이야?",
-      "조각이야. 진짜는 수호자들이 삼켰지. 그래도 좋은 시작이야, {name}.",
+      "이게… 보석의 조각. 손안에서 뜨거워져.",
+      "라일락, 이게 진짜 인피니트보석이야?",
+      "조각이야. 진짜는 어둠의 군주가 삼켰지. 그래도 좋은 시작이야, {name}.",
     ],
   },
   fragment2: {
     speaker: "{name}",
     lines: [
-      "또 하나의 조각… 몸속에서 세계수의 숨결이 느껴져.",
+      "또 하나의 조각… 몸속에서 보석의 숨결이 느껴져.",
       "이것도 어딘가의 결정이 삼킨 조각이야?",
       "그래. 조각이 모이면 진짜 결정의 위치가 드러나.",
     ],
   },
   /* v3.0.22 (#43/#44) — 챕터별 결정 첫 수확 스토리 대사 (9챕터 — 각 결정의 고유 이름 등장) */
   fragment_forest: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "숲의 결정. 세계수의 가지가 스치며 남긴 흔적이지.",
+      "숲의 결정. 인피니트보석의 가지가 스치며 남긴 흔적이지.",
       "초록빛이 아직 살아 있어. 이걸 좇으면 결정을 찾을 수 있어, {name}.",
     ],
   },
   fragment_kingdom: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "늪의 진주. 쿠소디아 기사들이 지키던 결정이다.",
+      "늪의 진주. 에스테반 기사들이 지키던 결정이다.",
       "물속에서도 빛을 잃지 않네. 숨결이 점점 짙어지고 있어.",
     ],
   },
   fragment_alfheim: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "성전의 빛구슬. 요정들이 천 년을 품어 온 결정이야.",
-      "…따뜻하네. 빛의 결정은 세계수와 가장 가까워.",
+      "…따뜻하네. 빛의 조각은 인피니트보석와 가장 가까워.",
     ],
   },
   fragment_muspelheim: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "화염의 심핵. 극열의 해역에서도 타오르는 결정이다.",
-      "조심해, 손대면 뜨거워. 그래도 이 열기는 세계수를 지키는 불꽃이야.",
+      "조심해, 손대면 뜨거워. 그래도 이 열기는 인피니트보석를 지키는 불꽃이야.",
     ],
   },
   fragment_niflheim: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "서리 결정. 얼음 아래에서도 숨을 쉬고 있어.",
       "이 극한의 추위조차 이 빛을 삼키지 못했어.",
     ],
   },
   fragment_cave: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "심연 수정. 어둠 요정들이 감춰 온 결정이야.",
       "보랏빛이 어둠을 삼키네. 조각이 하나씩 제 빛을 찾아가고 있어.",
     ],
   },
   fragment_nidavellir: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "룬 광석의 눈. 난쟁이 장인들이 룬을 새기다 남긴 결정이다.",
-      "룬 문자가 읽혀… '세계수를 지켜라'. 옛 맹세가 남아 있어.",
+      "룬 문자가 읽혀… '인피니트보석를 지켜라'. 옛 맹세가 남아 있어.",
     ],
   },
   fragment_hel: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "전쟁의 잔광. 대전쟁의 땅에서도 결정은 살아 있었어.",
       "수많은 용사들의 기억이 담겨 있네.",
     ],
   },
   fragment_abyss: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "…마지막 조각이야. 세계수의 눈동자.",
-      "이것으로 결정의 위치가 드러났어. 아홉 왕국의 숨결이 {name}의 손에 모였어.",
+      "…마지막 조각이야. 인피니트보석의 눈동자.",
+      "이것으로 결정의 위치가 드러났어. 다섯 왕국의 숨결이 {name}의 손에 모였어.",
     ],
   },
-  /* v3.0.22 (#50) — 세계수의 가호 (결정 전부 수집 보너스) */
+  /* v3.0.22 (#50) — 인피니트보석의 가호 (결정 전부 수집 보너스) */
   worldtreeBlessing: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "아홉 결정이 하나로 울렸어… {name}, 세계수가 너를 기억하고 있어.",
-      "『세계수의 가호』 — 이그드라실의 힘이 네 팔과 몸에 깃든다. 영구히.",
+      "아홉 결정이 하나로 울렸어… {name}, 인피니트보석가 너를 기억하고 있어.",
+      "『인피니트보석의 가호』 — 인피니트보석의 힘이 네 팔과 몸에 깃든다. 영구히.",
     ],
   },
   wolfRoutDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "능대 무리가 완전히 흩어졌어!",
       "…그런데 이상해. 무리의 왕이 없었어. 저마다 뭔가에 이끌리듯 동쪽으로 달려갔었지.",
@@ -1803,24 +1811,24 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   wolvesDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "숲의 신전이 조금씩 눈을 뜨고 있어! 저기 차원문이 열리고 있어!",
-      "저 문 너머는 쿠소디아 왕국 — 선박의 왕국이지. 왕을 만나면 더 깊은 왕국으로 건널 수 있어.",
-      "가자, {name}. 아홉 왕국 순행이 시작된다!",
+      "저 문 너머는 에스테반 왕국 — 선박의 왕국이지. 왕을 만나면 더 깊은 왕국으로 건널 수 있어.",
+      "가자, {name}. 다섯 왕국 순행이 시작된다!",
     ],
   },
-  /* ================= 제3장 쿠소디아 왕국 ================= */
+  /* ================= 제3장 에스테반 왕국 ================= */
   kingdomIntro: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "쿠소디아 왕국에 도착했어. 왕족은 알프헤임과 동맹을 맺은 유서 깊은 왕국이지.",
+      "에스테반 왕국에 도착했어. 왕족은 에델리오나과 동맹을 맺은 유서 깊은 왕국이지.",
       "…그런데 늪지대가 이상해. 결정의 기운을 먹고 자란 능대가 왕국을 위협하고 있어.",
       "기사단을 도우면 왕에게 갈 수 있을 거야. 대사 하나가 백 금자리지, {name}!",
     ],
   },
   swampDone: {
-    speaker: "쿠소디아 기사단장",
+    speaker: "에스테반 기사단장",
     lines: [
       "훌륭하다, 젊은 모험가여! 왕국의 은혜를 잊지 않겠다.",
       "왕께서 그대를 왕성에서 기다리신다. 저 차원문 너머 왕성으로 들어가게.",
@@ -1828,35 +1836,35 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   kingdomDone: {
-    speaker: "라이언 드 쿠소디아 국왕",
+    speaker: "라이언 드 에스테반 국왕",
     lines: [
-      "잘 왔네, 모험가. 나는 쿠소디아의 왕 라이언이다.",
-      "그대가 세계수에게 선택된 룬 지니는 자라는 것 — 나는 알고 있네. 옥새를 받아라.",
-      "이 옥새를 들고 샘에 서면, 요정들이 왕족으로 인식해 알프헤임으로 안내할 것이다.",
-      "폐하… 늪지의 동상이 니드호그로 변했다는 급보가! — 자, {name}. 서두르게!",
+      "잘 왔네, 모험가. 나는 에스테반의 왕 라이언이다.",
+      "그대가 인피니트보석에게 선택된 룬 지니는 자라는 것 — 나는 알고 있네. 옥새를 받아라.",
+      "이 옥새를 들고 샘에 서면, 요정들이 왕족으로 인식해 에델리오나으로 안내할 것이다.",
+      "폐하… 늪지의 동상이 라시온로 변했다는 급보가! — 자, {name}. 서두르게!",
     ],
   },
-  /* ================= 제4장 알프헤임 성전 ================= */
+  /* ================= 제4장 에델리오나 성전 ================= */
   alfheimIntro: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "알프헤임에 도착했어… 하지만 공기가 무거워.",
-      "니드호그 — 원래 알프헤임의 숲을 지키던 드래곤이었지. 지금은 탐식에 물들어 성전을 삼켰어.",
-      "니드호그는 뿌리에서 깨어난 아부디토스의 권속. 놈들의 의식이 결정을 부르고 있어.",
+      "에델리오나에 도착했어… 하지만 공기가 무거워.",
+      "라시온 — 원래 에델리오나의 숲을 지키던 드래곤이었지. 지금은 탐식에 물들어 성전을 삼켰어.",
+      "라시온는 뿌리에서 깨어난 스칼렛의 권속. 놈들의 의식이 결정을 부르고 있어.",
       "여왕 요정에게 룬 유물을 받을 수 있도록, 먼저 하수인들을 정리하자, {name}!",
     ],
   },
   minionPurgeDone: {
-    speaker: "알프헤임의 여왕 요정",
+    speaker: "에델리오나의 여왕 요정",
     lines: [
-      "어서 오게, 세계수에게 선택된 자여. 나는 이 왕국의 여왕이다.",
-      "이 검의 이름은 '숲결의 검' — 세계수의 가지로 빚은 일곱 룬 유물 중 하나다.",
-      "조심하게. 룬 유물은 세계수에게 인정받은 자만 발동시킬 수 있고… 발동하면 힘을 강제로 끌어당겨. 대가가 있을 테니.",
-      "니드호그는 저 성전 한가운데에서 '빛의 결정'과 함께 대기하고 있네. 준비되면 가게, {name}!",
+      "어서 오게, 인피니트보석에게 선택된 자여. 나는 이 왕국의 여왕이다.",
+      "이 검의 이름은 '숲결의 검' — 인피니트보석의 가지로 빚은 일곱 룬 유물 중 하나다.",
+      "조심하게. 룬 유물은 인피니트보석에게 인정받은 자만 발동시킬 수 있고… 발동하면 힘을 강제로 끌어당겨. 대가가 있을 테니.",
+      "라시온는 저 성전 한가운데에서 '빛의 조각'과 함께 대기하고 있네. 준비되면 가게, {name}!",
     ],
   },
   bossIntroNidhog: {
-    speaker: "탐식의 드래곤 니드호그",
+    speaker: "탐식의 드래곤 라시온",
     lines: [
       "…빛나는 것이 보이는군. 룬 펜던트… 좋아, 좋아!",
       "내 위장 속 결정이 네 것을 부러워하겠군. 탐식의 드래곤이 네게 뭐라 말해줬으면 좋겠느냐!",
@@ -1864,18 +1872,18 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   guardianDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "니드호그를 물리쳤어! 저기, 떨어진 빛 — 그게 '빛의 결정'이야!",
+      "라시온를 물리쳤어! 저기, 떨어진 빛 — 그게 '빛의 조각'이야!",
       "…그런데 {name}, 네 얼굴이 창백해. 숲결의 검이 수명을 끌어갔어… 룬 유물은 무겁다.",
-      "여왕이 성문을 열어 줬어. 다음은 극열의 왕국 무스펠헤임. 쉬어가며 가자!",
+      "여왕이 성문을 열어 줬어. 다음은 극열의 왕국 라바이즈. 쉬어가며 가자!",
     ],
   },
-  /* ================= 제5장 무스펠헤임 ================= */
+  /* ================= 제5장 라바이즈 ================= */
   muspelIntro: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "무스펠헤임 — 극열의 왕국이야. 1년 주기로 열이 변하는 땅이지.",
+      "라바이즈 — 극열의 왕국이야. 1년 주기로 열이 변하는 땅이지.",
       "하필 오늘이 열이 가장 강해지는 '극열의 날'이야. 화염 정령들이 네빌라를 뒤덮고 있어!",
       "저기 구조되어 있는 호족 소녀가 보여? 엘렌. 먼저 구해 주자, {name}!",
     ],
@@ -1897,7 +1905,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   surtDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "수르트가 무너졌어! '화염의 결정' — 겟토! …그런데… 저기 검은 화살이 뭔지?",
       "『결정을 내 놓아라.』",
@@ -1905,11 +1913,11 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "마을 친구… '카일'이라 자칭했어. 힐다 할머니의 제자 — 우리와 함께 모험을 시작했던 애야.",
     ],
   },
-  /* ================= 제6장 니플헤임 ================= */
+  /* ================= 제6장 클로체스 ================= */
   niflIntro: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "니플헤임이야… 숨만 쉴어도 몸이 얼어붙는 극한의 왕국.",
+      "클로체스이야… 숨만 쉴어도 몸이 얼어붙는 극한의 왕국.",
       "저 앞 얼음의 성전에 마법사가 있대. 서리의 결정을 지키고 있어서… 돕고 나면 정보를 얻을지도?",
       "그리고 조심해 — '탐욕의 늑대 펜리르'가 이 왕국을 배회하고 있어. 결정을 두 개나 삼킨 괴물이야!",
     ],
@@ -1926,13 +1934,13 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   bossIntroFenrir: {
     speaker: "탐욕의 늑대 펜리르",
     lines: [
-      "이것이… 네가 말한 운명이라는 것인가, 아부디토스…!",
+      "이것이… 네가 말한 운명이라는 것인가, 스칼렛…!",
       "결정 두 개의 힘을 지닌 나에게 — 인간이 무엇을 할 수 있겠느냐!",
       "네 펜던트까지 삼켜 주마, 선택받은 자여!!",
     ],
   },
   fenrirDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "펜리르가 쓰러졌어! 서리의 결정과 폭풍의 결정 — 두 개를 한 번에 되찾았어!",
       "…{name}, 저기 사람이 있어. …카일이야!",
@@ -1940,36 +1948,36 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "…{name}, 그 애의 눈동자가 완전히 어둠에 물려 있었어. 카일… 무슨 일이 생긴 게 분명해.",
     ],
   },
-  /* ================= 제7장 스바르트알프헤임 ================= */
+  /* ================= 제7장 스바르트에델리오나 ================= */
   caveIntro: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "스바르트알프헤임 — 알프헤임 아래에 숨은 어둠 요정들의 왕국이야.",
-      "여긴 옛날 세계수의 빛나던 수정을 캐던 곳이래.",
+      "스바르트에델리오나 — 에델리오나 아래에 숨은 어둠 요정들의 왕국이야.",
+      "여긴 옛날 인피니트보석의 빛나던 수정을 캐던 곳이래.",
       "지금은 어둠이 수정을 삼켰어. 물든 거미와 골렘이 돌아다녀. 여왕을 돕자, {name}!",
     ],
   },
   spiderDone: {
     speaker: "땅의 요정 여왕",
     lines: [
-      "지하가 다시 빛을 머금기 시작했네. 고맙다, 세계수에게 선택된 자여.",
-      "…들려주겠다. 헬 — 무스펠헤임과 니플헤임 사이의 절벽 너머.",
+      "지하가 다시 빛을 머금기 시작했네. 고맙다, 인피니트보석에게 선택된 자여.",
+      "…들려주겠다. 헬 — 라바이즈과 클로체스 사이의 절벽 너머.",
       "대전쟁의 유일한 생존자 두 모험가가 있었지. 하나는 힐다… 다른 하나는 그 동료 '무르'가 지키는 저택의 주인이야.",
       "힐다가 무엇을 추적하고 있었는지는… 스스로 확인하게. 난쟁이들의 왕국으로 가게.",
     ],
   },
   caveDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "지하 반대편 차원문이 열리고 있어!",
-      "저 문 너머는 니다벨리르 — 난쟁이들의 왕국이야. 스콜과 하티가 해와 달을 삼켰다던데…",
+      "저 문 너머는 크렌렐브 — 난쟁이들의 왕국이야. 스콜과 하티가 해와 달을 삼켰다던데…",
     ],
   },
-  /* ================= 제8장 니다벨리르 ================= */
+  /* ================= 제8장 크렌렐브 ================= */
   nidavellirIntro: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "이다벨리르… 아니, 니다벨리르 — 난쟁이들의 왕국이야. 룬 광산이 유명하지.",
+      "이다벨리르… 아니, 크렌렐브 — 난쟁이들의 왕국이야. 룬 광산이 유명하지.",
       "…하늘이 어두워. 해와 달의 기운이 사라졌어. 스콜과 하티 — 교만의 쌍랑 늑대가 깨어난 거야!",
       "광산 곳곳에 룬 골렘이 폭주하고 있어. 마을을 구하고, 유물 '룬의 지팡이'를 찾자!",
     ],
@@ -1991,16 +1999,16 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   skollDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "스콜과 하티가 소멸했어! …{name}, 봐! 하늘에 해와 달이 돌아왔어!",
       "저기 빛나는 것 — '천공의 결정'이야. 이제 여섯 개!",
-      "마지막 단서는 헬. …{name}, 이그니로서 네게 부탁할 게 있어. 무슨 일이 있어도… 나를 믿어 줘.",
+      "마지막 단서는 헬. …{name}, 라일락로서 네게 부탁할 게 있어. 무슨 일이 있어도… 나를 믿어 줘.",
     ],
   },
   /* ================= 제9장 헬 ================= */
   helIntro: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "헬의 절벽이야. 대전쟁의 최후 전장 — 그리고 힐다 할머니가 마지막으로 조사하던 땅이지.",
       "대전쟁 이후 아무도 여기 못 들어왔어. 절벽을 지키는 하운드들을 먼저 정리하자.",
@@ -2008,44 +2016,44 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   houndPurgeDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "절벽이 비었어! 저기 무르의 저택… 힐다 할머니의 조사 일지가 있어.",
-      "『…세계수의 뿌리에서 깨어난 그 존재의 이름은 아부디토스. 일곱 결정이 모이면 뿌리의 심연으로 가는 문이 열린다. 마지막 결정은… 룬 펜던트 속에…』",
-      "{name}, 듣자니 — 마지막 '세계수의 결정'은 네 펜던트 안에서 잠들어 있대. 아부디토스가 진짜 노린 건 그거야.",
+      "『…무한의 탑 최심부에서 깨어난 그 존재의 이름은 스칼렛. 일곱 결정이 모이면 뿌리의 심연으로 가는 문이 열린다. 마지막 결정은… 룬 펜던트 속에…』",
+      "{name}, 듣자니 — 마지막 '인피니트보석의 결정'은 네 펜던트 안에서 잠들어 있대. 스칼렛가 진짜 노린 건 그거야.",
       "그리고 저기 — 대지의 결정. '대지의 방패'와 함께 헬의 문지기 가름이 기다리고 있어.",
     ],
   },
   bossIntroGram: {
     speaker: "헬의 문지기 가름",
     lines: [
-      "…룬 펜던트. 세계수의 냄새다.",
+      "…룬 펜던트. 인피니트보석의 냄새다.",
       "나는 가름. 피에 물든 문지기 — 헬의 대문 앞에 묶인 가장 큰 사냥개다.",
       "…가라. 하지 않겠다면 — 갈라 놓겠다.",
     ],
   },
   gramDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "가름까지 쓰러뜨렸어! '대지의 결정' — 일곱 개를 전부 모았어, {name}!",
       "…그리고 이제, 진실을 말할 시간이야.",
-      "나는 그냥 소정령이 아니야. 세계수의 심장에서 태어난 룬 정령 — 아부디토스가 깨어나지 못하도록 나 일곱 결정과 함께 잠들어 있었지!",
-      "『마지막 결정 — 펜던트를 든 자여, 뿌리로 오라.』 …아부디토스가 너를 부르고 있어. 힐다 할머니도 분명 뿌리 아래에 있을 거야!",
-      "{name}, 이건… 나도 다 알고 있었던 게 아니야. 세계수의 뜻이 우리를 여기까지 이끈 거야. …가자, 마지막이야!",
+      "나는 그냥 소정령이 아니야. 인피니트보석의 심장에서 태어난 룬 정령 — 스칼렛가 깨어나지 못하도록 나 일곱 결정과 함께 잠들어 있었지!",
+      "『마지막 결정 — 펜던트를 든 자여, 뿌리로 오라.』 …스칼렛가 너를 부르고 있어. 힐다 할머니도 분명 뿌리 아래에 있을 거야!",
+      "{name}, 이건… 나도 다 알고 있었던 게 아니야. 인피니트보석의 뜻이 우리를 여기까지 이끈 거야. …가자, 마지막이야!",
     ],
   },
-  /* ================= 제10장 세계수의 뿌리 — 최종 ================= */
+  /* ================= 제10장 무한의 탑 최심부 — 최종 ================= */
   abyssIntro: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
-      "…{name}. 지면이 흔들리고 있어 — 세계수의 뿌리가 문을 열었어!",
+      "…{name}. 지면이 흔들리고 있어 — 무한의 탑 최심부가 문을 열었어!",
       "『…룬 펜던트를 든 자여. 일곱 결정이 모였으니 뿌리의 심연으로 오라. — 땅이 너희를 삼켜 주마. 왕좌로.』",
       "뿌리가 우리를 삼켰어… 어디로 가는 거지? …{name}, 잠깐. 저기 왕좌의 불빛…",
       "왕좌를 지키는 유령들을 정리하면 길이 열려. 마지막이야, {name}.",
     ],
   },
   wraithDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "왕좌 앞이 비었다… 이제 마지막 전투만 남았어.",
       "{name}, 손을 봐. 네가 모은 여섯 결정의 빛… 네 마음이 빛나고 있어.",
@@ -2054,21 +2062,21 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   bossIntroAbudditos: {
-    speaker: "종언의 마룡 아부디토스",
+    speaker: "어둠의 군주 스칼렛",
     lines: [
-      "『후후… 왔구나, 세계수의 아이여. 나의 일곱 힘이 모두 돌아왔다.』",
-      "『룬 정령? 이그니? 그래, 그게 내 전부를 봉인하던 열쇠였지. 세계수의 심장이란 이름이지.』",
-      "『룬 유물? 웃기지 마라. 세계수는 죽어가고. 가지로 빚은 검 따위 — 이미 시들었다.』",
+      "『후후… 왔구나, 인피니트보석의 아이여. 나의 일곱 힘이 모두 돌아왔다.』",
+      "『룬 정령? 라일락? 그래, 그게 내 전부를 봉인하던 열쇠였지. 인피니트보석의 심장이란 이름이지.』",
+      "『룬 유물? 웃기지 마라. 인피니트보석는 죽어가고. 가지로 빚은 검 따위 — 이미 시들었다.』",
       "『…아니. 네가 있구나. 힐다의 피를 이은 마지막 제자여 — 재미있게 구경해 주마!』",
     ],
   },
   victory: {
-    speaker: "세계수 이그드라실",
+    speaker: "인피니트보석",
     lines: [
-      "『…끝났다. 종언의 마룡 아부디토스의 어둠이 소멸했다.』",
+      "『…끝났다. 어둠의 군주 스칼렛의 어둠이 소멸했다.』",
       "『선택받은 자여. 일곱 결정의 빛이 하나가 되어, 마물들은 힘을 잃고 잠들 것이다.』",
-      "『아홉 왕국은 다시 교류를 시작하리라. 이 세계의 이름은 — 이그드라실로 불리게 되리라.』",
-      "『…이그니는 이제 내 심장으로 돌아간다. 아쉽냐? — 아니겠지. 새로운 모험이 시작됐으니.』",
+      "『다섯 왕국은 다시 교류를 시작하리라. 이 세계의 이름은 — 인피니트보석로 불리게 되리라.』",
+      "『…라일락는 이제 내 심장으로 돌아간다. 아쉽냐? — 아니겠지. 새로운 모험이 시작됐으니.』",
     ],
   },
   /* ================= 구 보스 (정의 유지 — 표기만 갱신) ================= */
@@ -2076,26 +2084,26 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     speaker: "심연의 수호자",
     lines: [
       "…결정의 빛을 든 자여. 여기서 끝장내 주지.",
-      "시들어가는 세계수처럼, 너의 세계도 어둠에 잠길 것이다!",
+      "시들어가는 인피니트보석처럼, 너의 세계도 어둠에 잠길 것이다!",
     ],
   },
   bossIntroBehemoth: {
     speaker: "눈보라의 거수",
     lines: [
       "…이 뿌리는 이제 심연의 것이다. 얼어붙어라!",
-      "세계수가 그랬던 것처럼, 너희의 숨결도 얼음 아래 가라앉힐 것이다!",
+      "인피니트보석가 그랬던 것처럼, 너희의 숨결도 얼음 아래 가라앉힐 것이다!",
     ],
   },
   bossIntroLord: {
     speaker: "심연의 군주",
     lines: [
       "작은 결정 수집가가 여기까지 왔군…",
-      "나는 뿌리의 원한이다. 세계수와 함께, 모든 것이 심연으로 귀할 것이다!",
+      "나는 뿌리의 원한이다. 인피니트보석와 함께, 모든 것이 심연으로 귀할 것이다!",
       "결정의 빛도, 이 세계도, 네 이름조차도 — 전부 잊히리라!",
     ],
   },
   behemothDone: {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "거수가 무너지자 얼어붙은 차원문이 녹아나고 있어!",
       "…그런데 저 마지막 문에서 느껴지는 기운은 달라. 왕좌로 가는 길이야.",
@@ -2138,7 +2146,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   merchantRepeat: {
     speaker: "상인 라고스",
     lines: [
-      "오, {name}! 아홉 왕국의 스토리를 전부 끝낸 진짜 모험가로군!",
+      "오, {name}! 다섯 왕국의 스토리를 전부 끝낸 진짜 모험가로군!",
       "의뢰판에 네 눈짐을 띤 특별 토벌 의뢰가 붙었어. 오늘부터 언제든 반복 수주할 수 있어!",
       "의뢰를 수주하면 퀘스트창에 [반복] 토벌 의뢰가 떠. 목표를 채울 때마다 골드와 경험치를 받지.",
       "자, 오늘의 의뢰 — 수주해 가게!",
@@ -2150,7 +2158,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
 /* ================= 구역 안내 대사 자동 생성 (구역별 탐험 분위기 대사) ================= */
 
 /* vc149 (#23) — NPC 말투 개편: 챕터당 3→6줄 확장(반복감 제거) + 사람 냄새 나는 구어체.
- *  이그니(반말·장난기), 시스템 안내문이 아니라 "동행이 떠드는" 느낌으로 정리했다. */
+ *  라일락(반말·장난기), 시스템 안내문이 아니라 "동행이 떠드는" 느낌으로 정리했다. */
 const WALK_AMBIENT: Record<ChapterKey, string[]> = {
   forest: [
     "숲의 신전 폐허가 가까워진다. 돌기둥 사이로 결정 기운이 새어 나오고 있어.",
@@ -2161,7 +2169,7 @@ const WALK_AMBIENT: Record<ChapterKey, string[]> = {
     "힐다 할머니도 이 길을 자주 걸으셨어. …걸음이 무거워지네, 미안.",
   ],
   kingdom: [
-    "쿠소디아 함대가 늪지 너머에 정박해 있어. 저 깃발 보이지?",
+    "에스테반 함대가 늪지 너머에 정박해 있어. 저 깃발 보이지?",
     "능대들이 성벽 쪽으로 번지고 있어. 시간 없다, 빨리 가자!",
     "기사단이 순찰 중이래. 잘하면 왕성 초대장이라도 받을지도?",
     "능지 발소리… 진짜 징그럽게도 빠르더라. 뒤 돌아보지 말고 직진!",
@@ -2169,7 +2177,7 @@ const WALK_AMBIENT: Record<ChapterKey, string[]> = {
     "왕국 사람들 말이야, 하루가 다르게 불안해. 네가 보여줘야 할 때지.",
   ],
   alfheim: [
-    "성전 기둥 불이 하나씩 꺼진다… 니드호그가 뒤척이는 소리 같아.",
+    "성전 기둥 불이 하나씩 꺼진다… 라시온가 뒤척이는 소리 같아.",
     "요정들의 노래, 아까까지 들렸는데 지금은 하수인 울림만 남았어.",
     "여왕의 가호가 널 보고 있어. 서두르자!",
     "그림자 요정은 사라졌다 나타나. 화면 끝 화살표가 진짜다, 잊지 마.",
@@ -2179,7 +2187,7 @@ const WALK_AMBIENT: Record<ChapterKey, string[]> = {
   muspelheim: [
     "발밑 뜨거워! 디딤돌 벗어나면 신발이 녹아.",
     "저기 첨탑 보이지? 엘렌이 갇혀 있다는 지하도시야.",
-    "용암이 부글부글… 무스펠헤임의 심장 소리야.",
+    "용암이 부글부글… 라바이즈의 심장 소리야.",
     "불꽃 정령 죽으면 폭발한다! 마지막 일격 뒤에 접근해, 진짜 아프다.",
     "여기 광부들은 하루 이틀에 화상으로 쓰러진대. 존경스러워… 그리고 무섭고.",
     "수르트가 숨을 들이켜는 소릴 들은 적 있어. 바람이 거꾸로 불 때.",
@@ -2217,10 +2225,10 @@ const WALK_AMBIENT: Record<ChapterKey, string[]> = {
     "차갑네… 이런 곳에서도 사람들은 잊지 않으려고 노력하고 있어.",
   ],
   abyss: [
-    "세계수가 흘린 피가 결정이 돼서 바닥마다 빛나고 있어.",
-    "왕좌의 불빛이 커진다… 아부디토스가 숨을 쉬고 있어.",
+    "인피니트보석가 흘린 피가 결정이 돼서 바닥마다 빛나고 있어.",
+    "왕좌의 불빛이 커진다… 스칼렛가 숨을 쉬고 있어.",
     "뿌리의 울림이 땅을 타고 와. …마지막이야, {name}.",
-    "발끝까지 세계수의 목소리가 느껴져. '부디'라고 말하고 있어.",
+    "발끝까지 인피니트보석의 목소리가 느껴져. '부디'라고 말하고 있어.",
     "여기까지 온 모험가는 네가 처음이 아니래. 돌아온 건 처음이지만.",
     "마지막 결정, 꼭 박고 돌아가자. 다들 마을에서 기다리고 있어.",
   ],
@@ -2230,12 +2238,12 @@ for (const spec of CHAPTERS) {
   const lines = WALK_AMBIENT[spec.key];
   for (let i = 0; i < 3; i++) {
     DIALOGUES[`ch${spec.num}Walk${i + 1}`] = {
-      speaker: "룬 정령 이그니",
+      speaker: "라일락",
       lines: [lines[i]],
     };
   }
   DIALOGUES[`eliteWarn${spec.num}`] = {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       "…{name}, 잠깐. 이 구역의 기운이 뒤틀리고 있어.",
       `정예 ${ENEMIES[spec.main].name} — 무리의 대장이 우리를 기다리고 있어.`,
@@ -2243,7 +2251,7 @@ for (const spec of CHAPTERS) {
     ],
   };
   DIALOGUES[`bossApproach${spec.num}`] = {
-    speaker: "룬 정령 이그니",
+    speaker: "라일락",
     lines: [
       `제${spec.num}장의 심장부 — ${spec.title}의 왕좌가 눈앞이야.`,
       "마지막 물약 확인, 장비 점검… 그리고 {name}, 긴장 풀어. 우리가 함께야.",
@@ -2256,23 +2264,23 @@ for (const spec of CHAPTERS) {
  *  지시서 A-3의 신규 스테이지에 기존 대사 시스템과 동일한 인트로를 제공한다.
  *  키: rebirthWalk1~3 (일반 구역) / rebirthBoss (보스 구역 r5·r10·r15) */
 DIALOGUES["rebirthWalk1"] = {
-  speaker: "룬 정령 이그니",
+  speaker: "라일락",
   lines: [
-    "세계수의 뿌리 너머… 죽은 땅이 다시 숨을 쉬기 시작했어. 여긴 '재림의 땅'.",
+    "무한의 탑 최심부 너머… 죽은 땅이 다시 숨을 쉬기 시작했어. 여긴 '재림의 땅'.",
     "심연이 완전히 죽진 않았어. 재림한 어둠이 예전보다 훨씬 짙게 번지고 있어.",
     "{name}, 여긴 제10장보다 훨씬 위험해. 장비 점검 확실히 하고 가자!",
   ],
 };
 DIALOGUES["rebirthWalk2"] = {
-  speaker: "룬 정령 이그니",
+  speaker: "라일락",
   lines: [
-    "이 땅의 결정은 제10장의 것과 다른 빛을 내… 세계수가 두 번 흔들린 자국이야.",
+    "이 땅의 결정은 제10장의 것과 다른 빛을 내… 인피니트보석가 두 번 흔들린 자국이야.",
     "강해진 만큼 보상도 커. 여기서 얻는 경험치는 이전 구역과 비교도 안 돼.",
     "밀리면 마을로 도망쳐. 복귀 차원문은 항상 열려 있으니까!",
   ],
 };
 DIALOGUES["rebirthWalk3"] = {
-  speaker: "룬 정령 이그니",
+  speaker: "라일락",
   lines: [
     "재림한 몬스터들은 예전과 같은 얼굴이 아니야. 패턴을 다시 읽어야 해.",
     "정예가 우뚝 서 있는 구역도 있어. 무리하면 물약부터 아껴.",
@@ -2280,7 +2288,7 @@ DIALOGUES["rebirthWalk3"] = {
   ],
 };
 DIALOGUES["rebirthBoss"] = {
-  speaker: "룬 정령 이그니",
+  speaker: "라일락",
   lines: [
     "재림의 심장부야… 이 땅의 수호자가 {name}를 기다리고 있어.",
     "지금까지와는 규모가 달라. 최상급 물약과 강화된 장비를 확인해!",
@@ -2705,7 +2713,7 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
   muspelheim: {
     houseTint: 0xffa878,
     signColor: "#ffb080",
-    /* v3.0.28 (#NPC대화) — dlg 키가 VLG 등록 규칙(vlg{챕터명}A/B)과 어긋나 무스펠헤임부터
+    /* v3.0.28 (#NPC대화) — dlg 키가 VLG 등록 규칙(vlg{챕터명}A/B)과 어긋나 라바이즈부터
      *  주민 대화가 표시되지 않던 버그 수정 (vlgMuspelA → vlgMuspelheimA) */
     npcA: { name: "대장장이 브라키", tex: "spum_smith", dlg: "vlgMuspelheimA" },
     npcB: { name: "용암 광부 코일", tex: "spum_miner", dlg: "vlgMuspelheimB" },
@@ -2760,7 +2768,7 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
     kingdom: {
       a: { sp: "선원 롤프", lines: [
         "배 밑바닥에 이상한 종양이 붙었다고, {name}. 뿌리에서 뭔가 자라나는 것 같아.",
-        "쿠소디아의 선박들은 모두 검은 늪을 건너야 해. 물길이 불안하단 말이지.",
+        "에스테반의 선박들은 모두 검은 늪을 건너야 해. 물길이 불안하단 말이지.",
         "네가 결정을 모은다니? 선원들의 미신으론 그게 유일한 희망이야.",
       ] },
       b: { sp: "늪지 어부 팰", lines: [
@@ -2772,8 +2780,8 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
     alfheim: {
       a: { sp: "요정 사절 리안", lines: [
         "요정왕의 명으로 이 마을을 돕고 있어, {name}. 네 룬 펜던트에서 고대의 냄새가 나네.",
-        "알프헤임의 빛이 흐려지고 있어. 심연 유령들이 성전을 침식하고 있어.",
-        "요정들은 네 펜던트를 오래전부터 알고 있었대. '세계수의 상징'이라고.",
+        "에델리오나의 빛이 흐려지고 있어. 심연 유령들이 성전을 침식하고 있어.",
+        "요정들은 네 펜던트를 오래전부터 알고 있었대. '인피니트보석의 상징'이라고.",
       ] },
       b: { sp: "성전 견습 기사", lines: [
         "성전 기사단 견습입니다! 아직 검이 무겁지만, 훈련은 매일 빠지지 않아요.",
@@ -2784,7 +2792,7 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
     muspelheim: {
       a: { sp: "대장장이 브라키", lines: [
         "화염 정령이 날로 거세진다, {name}. 용광로가 흔들리고 있어.",
-        "이 지옥 같은 열기에서도 우물은 차갑지. 세계수의 은혜라고나 할까.",
+        "이 지옥 같은 열기에서도 우물은 차갑지. 인피니트보석의 은혜라고나 할까.",
         "좋은 무기가 필요하면 상점을 가라. 내가 갈아놓은 물건들이다!",
       ] },
       b: { sp: "용암 광부 코일", lines: [
@@ -2801,7 +2809,7 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
       ] },
       b: { sp: "눈보라 정찰병", lines: [
         "정찰 보고 — 얼음 골렘이 남쪽 언덕에서 내려오고 있습니다, {name}.",
-        "니플헤임의 밤은 영원해. 하지만 사람들은 불을 지키며 살아가죠.",
+        "클로체스의 밤은 영원해. 하지만 사람들은 불을 지키며 살아가죠.",
         "네 펜던트… 흥미롭군요. 눈보라 속에서도 빛을 잃지 않아.",
       ] },
     },
@@ -2843,9 +2851,9 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
     },
     abyss: {
       a: { sp: "폐허 학자 테일", lines: [
-        "세계수의 뿌리 — 여긴 아홉 왕국의 근원이자 종막이지, {name}.",
-        "왕좌의 불빛이 커지고 있어. 종언의 마룡 아부디토스… 룬 정령과 같은 시대의 존재라니.",
-        "기록에 따르면 '세계수의 심장'은 둘일 수 없대. 그럼 펜던트 속 정령은…",
+        "무한의 탑 최심부 — 여긴 다섯 왕국의 근원이자 종막이지, {name}.",
+        "왕좌의 불빛이 커지고 있어. 어둠의 군주 스칼렛… 룬 정령과 같은 시대의 존재라니.",
+        "기록에 따르면 '인피니트보석의 심장'은 둘일 수 없대. 그럼 펜던트 속 정령은…",
       ] },
       b: { sp: "마지막 항해사", lines: [
         "뿌리가 땅을 감고 있어, {name}. 저 균열 위를 지날 수 있는 배는 없어.",

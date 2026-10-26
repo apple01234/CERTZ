@@ -61,7 +61,7 @@ export const FIFTH2_CHAIN: Fifth2Step[] = [
   {
     type: "reach", target: "muspelheim1", need: 1,
     title: "④ 화염의 대장간",
-    story: ["두 번째 기억은 불겁니다. 무스펠헤임의 대장간에서 각성의 문양을 담을 그릇을 벼려라. (무스펠헤임 1-1 도달)"],
+    story: ["두 번째 기억은 불겁니다. 라바이즈의 대장간에서 각성의 문양을 담을 그릇을 벼려라. (라바이즈 1-1 도달)"],
     after: "타오르는 도드람이 문양의 윤곽을 그렸다.",
   },
   {
@@ -94,7 +94,7 @@ export const FIFTH2_CHAIN: Fifth2Step[] = [
   {
     type: "reach", target: "niflheim1", need: 1,
     title: "⑨ 얼어붙은 기억의 호수",
-    story: ["네 번째 기억은 얼음 아래 잠들어 있다. 니플헤임의 설원에서 정화 의식을 치러라. (니플헤임 1-1 도달)"],
+    story: ["네 번째 기억은 얼음 아래 잠들어 있다. 클로체스의 설원에서 정화 의식을 치러라. (클로체스 1-1 도달)"],
     after: "얼음 아래의 기억이 눈보라 속에서 눈을 떴다.",
   },
   {

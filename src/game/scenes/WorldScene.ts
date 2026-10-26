@@ -5,7 +5,7 @@ import { playCutscene, loadSeenCutscenes, serializeSeenCutscenes } from "../cuts
 import { CameraFx, type CameraFxHost } from "../scene/cameraFx"; // vc189 — WorldScene 분할 1차(원근/줌)
 import { openPointRng as spOpenPointRng, openPointAny as spOpenPointAny, inOpenArea as spInOpenArea, nearSolidObstacle as spNearSolidObstacle, type SpawnPointHost } from "../scene/spawnPoints"; // vc189 — 분할 2차
 import { spawnBurstAt as fxBurstAt, spawnPillar as fxPillar, spawnPickupText as fxPickupText, type FxAtomHost } from "../scene/fxAtoms"; // vc189 — 분할 3차
-import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
+import { familyOf, FAMILY_KO, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
 import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
@@ -227,6 +227,8 @@ export class WorldScene extends Phaser.Scene {
   /** v1.0.16 — 장판 넉백 방향 재사용 버퍼 (틱마다 대상 수만큼 Vector2를 만들던 것 제거) */
   private fieldAwayVec = new Phaser.Math.Vector2();
   private attackQueued = false;
+  /* vc191 (지시 #9-b) — WASD 모드에서 마우스 왼쪽 버튼을 누르고 있는 동안 연사 */
+  private mouseAttackHeld = false;
   /** v1.1.4 (#개편 입력버퍼링) — 대기 중인 스킬 발동. update에서 idle이 되는 순간 실행된다.
    *  setupInput이 실제 구현을 주입한다(입력 이벤트는 거기서 등록되므로 버퍼 상태를 그 스코프에 둔다). */
   private flushBufferedSkill: () => void = () => {};
@@ -630,10 +632,8 @@ export class WorldScene extends Phaser.Scene {
   /** GM 체험 구역 방문 중 — 보루가 스토리 보스를 추가 스폰하는 것 방지 */
   private gmTrial = false;
 
-  /* v1.2.4 (버그 6) — 계열 한글명 (장착 불가 안내용) */
-  private static readonly FAM_KO: Record<string, string> = {
-    warrior: "전사", ranger: "궁수", mage: "마법사", thief: "도적", pirate: "해적",
-  };
+  /* v1.2.4 (버그 6) — 계열 한글명 (장착 불가 안내용)
+   *  vc191 (#5) — classes.FAMILY_KO 로 이관(React UI와 동일 문구 공유). */
 
   /* ----- E키 상호작용 (NPC 대화/상점/전직 교관 — 접근 자동 트리거 제거) ----- */
   /* v1.4.3 (작업1) — 요새 유적(고대 유적) 2층 구조물 전면 삭제:
@@ -1503,9 +1503,24 @@ export class WorldScene extends Phaser.Scene {
      *  충돌체가 아니라 순수 시각 레이어이므로 이동 판정에 영향이 없다. */
     /* 마을이면 챕터 테마의 terrainSet, 사냥터면 세트 미지정(지면 타일만) */
     const chForKey = parseStage(stageKey).ch;
+    /* vc191 (지시 #11 — "맵 바깥쪽 테두리 타일맵이 어색하고 맵 분위기와 맞지 않는다")
+     *  원인 ①: 테두리가 **마을에만** 깔렸다. 사냥터(던전)는 테두리가 없어 맵 끝에서 지면이
+     *          뚝 끊기고 카메라 밖 배경색과 만나 어색했다.
+     *  원인 ②: 세트가 테마당 1개로 고정이라 같은 챕터의 마을·던전이 동일 테두리를 반복했다.
+     *  → 테마별 기본 세트를 쓰되, 던전은 **1단계 어두운 세트**를 골라 마을과 구분하고
+     *    세트가 없으면 기본 세트로 폴백한다. */
+    const themeSetOf = (t: string | undefined | null): string | null => {
+      if (!t) return null;
+      return this.textures.exists(`tx_${t}_edge_up`) ? t : null;
+    };
+    /* 테마 세트 → 던전용 세트 (분위기 우선순위: 어두운 것부터) */
+    const DUNGEON_FALLBACK: Record<string, string> = { ap: "si", gp: "dp", cp: "dp", si: "dp", dp: "si" };
+    const villageSet = themeSetOf(villageThemeOf(chForKey === "village" ? "kingdom" : chForKey).terrainSet ?? null);
     const terrSet = this.isInterior
       ? null
-      : (villageThemeOf(chForKey === "village" ? "kingdom" : chForKey).terrainSet ?? null);
+      : this.stageDef.isVillage
+        ? villageSet
+        : (themeSetOf(DUNGEON_FALLBACK[villageSet ?? ""] ?? undefined) ?? villageSet);
     if (terrSet) {
       const TS = 64; // tx_* 타일 규격
       const edge = (kind: string, x: number, y: number, sx = 1, sy = 1) => {
@@ -1705,6 +1720,11 @@ export class WorldScene extends Phaser.Scene {
         const e = new Enemy(this, p.x, p.y, group.key, {
           /* v3.0 (#8) — 몬스터 경험치 +35% (레벨업 속도 개선, 곡선 완화와 합산) */
           hp: sc.hp, atk: sc.atk, exp: sc.exp * 1.35, gold: sc.gold,
+          /* vc191 (지시 #14 — "알프헤임 마을의 해골 몬스터가 너무 작다")
+           *  ENEMIES 에 scale 필드가 정의돼 있는데 **일반 스폰 경로가 이 값을 전달하지 않아**
+           *  개별 종의 크기 지정이 전부 무시되고 있었다(정예 스폰만 하드코딩 1.55).
+           *  데이터에 적힌 배율을 그대로 넘겨 종별 크기를 살린다. */
+          scale: ENEMIES[group.key]?.scale,
         });
         this.enemies.push(e);
         this.spawnRecords.push({ key: group.key, x: p.x, y: p.y });
@@ -3343,12 +3363,46 @@ export class WorldScene extends Phaser.Scene {
         }, this.seenCutscenes);
       } catch (e) { console.error("[SERTZ] 챕터 컷씬 실패(무시)", e); }
     });
-    // 건물 간판 + 기능 상호작용 — 여관(회복+저장), 내 집(무료 휴식), 전직관(카이엔 앞)
-    this.addBuildingSign(cx - 400, cy - 236, "여관 — 20G 회복+버프", "#7de8ff"); // v1.0.2 밸런스 분리
-    this.addBuildingSign(cx + 90, cy - 266, "전직관", "#ffd76a");
-    this.addBuildingSign(cx - 190, cy + 149, "내 집 — 무료 회복", "#9af0c8"); // v1.0.2 밸런스 분리
-    this.interactables.push({ x: cx - 400, y: cy - 140, kind: "inn", label: "여관 — 들어가기" });
-    this.interactables.push({ x: cx - 190, y: cy + 289, kind: "house", label: "내 집 — 들어가기" });
+    // 건물 간판 + 기능 상호작용 — 아래 vTheme.buildings 순회에서 모든 건물에 일괄 배치한다.
+    //  (vc191 #12-a — 테마 배치와 무관한 고정 좌표 입구 2개를 제거하고 전 건물로 확장)
+
+    /* vc191 (지시 #12-a — "집(건물) 오브젝트가 배치된 곳은 모두 들어갈 수 있게 해라.
+     *  입구가 없거나 진입이 안 되는 건물이 없어야 한다")
+     *  실측: 챕터 테마는 건물을 3~4채 배치하는데 입구는 여관·내 집 2개뿐이었다
+     *  (게다가 그 좌표는 테마 배치와 무관한 고정값). 나머지 건물은 충돌체만 있어
+     *  "들어갈 수 없는 집"으로 보였다.
+     *  → 테마 배치(vTheme.buildings)를 순회해 **모든 건물 입구 앞**에 상호작용을 만든다.
+     *    · 0번 건물 = 여관, 1번 = 전직관(카이엔), 2번 = 내 집, 3번 이후 = 마을별 부가 실내.
+     *    · 실내는 기존 2종(여관/내 집)을 테마 순번으로 돌려 배정한다(신규 맵 생성 없이 진입 보장).
+     *    · 좌표는 건물별 실제 위치(dx·dy)에서 계산하므로 테마가 달라도 어긋나지 않는다. */
+    const houseKinds = ["inn", "job_hall", "house", "extra"] as const;
+    vTheme.buildings.forEach((b, bi) => {
+      const hx = cx + b.dx * this.stageW;
+      const hy = cy + b.dy * this.stageH;
+      /* 건물 본체는 dy 기준 위쪽에 그려지고 충돌체는 하단 56px — 입구는 그 아래 지면 */
+      const doorY = hy + 52;
+      const kind = houseKinds[bi] ?? "extra";
+      if (kind === "inn") {
+        this.addBuildingSign(hx, hy - 96, "여관 — 20G 회복+버프", "#7de8ff");
+        this.interactables.push({ x: hx, y: doorY, kind: "inn", label: "여관 — 들어가기" });
+      } else if (kind === "house") {
+        this.addBuildingSign(hx, hy - 96, "내 집 — 무료 회복", "#9af0c8");
+        this.interactables.push({ x: hx, y: doorY, kind: "house", label: "내 집 — 들어가기" });
+      } else if (kind === "job_hall") {
+        /* 전직관 — 카이엔이 문 앞에 서므로 별도 입구는 두지 않는다(중복 방지) */
+        this.addBuildingSign(hx, hy - 96, "전직관", "#ffd76a");
+      } else {
+        /* 부가 건물 — 마을 순번에 따라 여관/내 집 실내를 재사용해 반드시 들어갈 수 있게 한다 */
+        const useInn = (vTheme.title.length + bi) % 2 === 0;
+        this.addBuildingSign(hx, hy - 96, useInn ? "마을 회관" : "쉼터", "#ffe9a8");
+        this.interactables.push({
+          x: hx,
+          y: doorY,
+          kind: useInn ? "inn" : "house",
+          label: useInn ? "마을 회관 — 들어가기" : "쉼터 — 들어가기",
+        });
+      }
+    });
 
     // 마을 주민 2인 — E키 상호작용 (접근 자동 트리거 제거, 바운스 애니 + 이름표 유지)
     // v3.0 (#4) — 챕터마다 이름/대사가 다른 주민 배치 (본마을은 기존 주민)
@@ -8643,7 +8697,7 @@ export class WorldScene extends Phaser.Scene {
       if (def?.clsOnly && def.clsOnly.length > 0) {
         const fam = familyOf(this.player.cls);
         if (!fam || !def.clsOnly.includes(fam)) {
-          const need = def.clsOnly.map((f) => WorldScene.FAM_KO[f] ?? f).join("·");
+          const need = def.clsOnly.map((f) => FAMILY_KO[f] ?? f).join("·");
           EventBus.emit("banner:show", { text: `${def.name}은(는) ${need} 전용 장비입니다` });
           return;
         }
@@ -9474,7 +9528,8 @@ export class WorldScene extends Phaser.Scene {
     const onTutNotify = (v: { ev?: string }) => { if (v?.ev) this.tut?.notify(v.ev); };
     EventBus.on("tut:notify", onTutNotify);
     /* vc187 (지시 #18) — WASD 모드에서 마우스 조준. 이동은 키보드, 조준은 마우스로 분리한다.
-     *  현재 위치 → 포인터 월드좌표 방향을 벡터로 넘겨 aimDirFree 가 우선 사용한다. */
+     *  현재 위치 → 포인터 월드좌표 방향을 벡터로 넘겨 aimDirFree 가 우선 사용한다.
+     *  vc191 (지시 #9-b) — 클릭 기본공격까지 이어 붙인다. 누르고 있으면 연속 공격. */
     const onAim = (ptr: Phaser.Input.Pointer) => {
       if (this.moveScheme !== "wasd" || !this.player) return;
       const wp = this.cameras.main.getWorldPoint(ptr.x, ptr.y);
@@ -9483,8 +9538,29 @@ export class WorldScene extends Phaser.Scene {
       if (dx * dx + dy * dy < 1) return; // 발밑 클릭은 무시
       this.player.mouseAim = new Phaser.Math.Vector2(dx, dy);
     };
+    /* vc191 (#9-b) — WASD 모드 마우스 공격.
+     *  · 캐릭터는 커서 방향을 바라보고(onAim), 왼쪽 버튼을 누르면 그 방향으로 기본공격.
+     *  · 누르고 있으면 공격 쿨다운에 맞춰 자동 연사 (아래 update 의 mouseAttackHeld 처리).
+     *  · UI(버튼·창·인벤토리) 위 클릭은 공격이 나가면 안 된다 → pointer.event.target 이
+     *    canvas 가 아닌 DOM 이면 무시. 방꾸미기·대화·상점/메뉴 열림도 함께 막는다.
+     *  · 기존 조작(화살표 스킴)과 모바일 터치는 건드리지 않는다 — moveScheme === "wasd" 게이트. */
+    const onPointerDownAttack = (ptr: Phaser.Input.Pointer) => {
+      if (!ptr.leftButtonDown()) return;
+      if (this.isUiClickTarget(ptr.event)) return;
+      onAim(ptr);
+      if (!this.mouseAttackAllowedNow()) return;
+      this.mouseAttackHeld = true;
+      this.attackQueued = true; // 즉시 1타 (홀드 중에는 update 가 쿨다운마다 재장전)
+    };
+    const onPointerUpAttack = () => { this.mouseAttackHeld = false; };
     this.input.on("pointermove", onAim);
     this.input.on("pointerdown", onAim);
+    this.input.on("pointerdown", onPointerDownAttack);
+    this.input.on("pointerup", onPointerUpAttack);
+    /* 창 밖으로 나가며 버튼을 떼면 pointerup 이 오지 않는다 — 홀드 해제 안전망 */
+    const onWinPointerUp = () => { this.mouseAttackHeld = false; };
+    window.addEventListener("pointerup", onWinPointerUp);
+    window.addEventListener("blur", onWinPointerUp);
 
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
@@ -10355,6 +10431,27 @@ export class WorldScene extends Phaser.Scene {
     return this.keyObjs[this.keymap[a]] ?? this.keys[this.keymap[a]];
   }
 
+  /** vc191 (지시 #9-b) — 이 클릭이 UI 위인가 (canvas 밖이면 UI) */
+  private isUiClickTarget(e: Event | undefined): boolean {
+    const t = e?.target as HTMLElement | null;
+    if (!t) return false;
+    return t.tagName !== "CANVAS";
+  }
+
+  /** vc191 (지시 #9-b) — 지금 마우스 공격을 내보내도 되는 상태인가.
+   *  방꾸미기·대화·상점/메뉴·텍스트 입력 중에는 공격이 나가면 안 된다. */
+  private mouseAttackAllowedNow(): boolean {
+    if (this.moveScheme !== "wasd") return false;
+    if (!this.player || this.player.state === "dead") return false;
+    if (this.dialoguing || this.sleeping || this.transitioning) return false;
+    if (this.panelNavOpen || this.chatFocused) return false;
+    if (this.fieldPending) return false; // 방꾸미기(마을 설치 대기)
+    if (this.isInterior) return false; // 집·여관 실내는 꾸미기 조작 우선
+    const ae = document.activeElement as HTMLElement | null;
+    if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable)) return false;
+    return true;
+  }
+
   update(_time: number, delta: number) {
     const dt = Math.min(delta, 50);
 
@@ -10596,6 +10693,13 @@ export class WorldScene extends Phaser.Scene {
     // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
       this.attackQueued = true;
+    /* vc191 (#9-b) — 마우스 홀드 연사. attackQueued 는 매 프레임 소비되므로,
+     *  버튼을 누르고 있는 동안 매 프레임 다시 세워도 Player 쪽 공격 쿨다운이
+     *  실제 발동 간격을 제한한다(연타 스팸과 동일한 결과). */
+    if (this.mouseAttackHeld) {
+      if (!this.mouseAttackAllowedNow()) this.mouseAttackHeld = false;
+      else this.attackQueued = true;
+    }
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
     if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
     /* v3.0.3 — 3차기(V) / 4차기(A): 해금 티어 미달/쿨/MP 무시하고 호출하면 내부에서 무시된다 (v1.0.4 키맵 B→A) */
@@ -13790,12 +13894,18 @@ export class WorldScene extends Phaser.Scene {
     this.emitRpgState();
   }
 
+  /* vc191 (#6) — 집 꾸미기 격자 정의를 한 곳으로 모은다. 패널(React)이 이 값을 직접 읽어
+   *  같은 칸 수로 그리므로, 격자와 씬 좌표가 어긋나 "한 칸에 몰리는" 일이 구조적으로 불가능해진다. */
+  static readonly HOME_GRID = { x0: 32, y0: 104, cell: 32, cols: 24, rows: 22 } as const;
+
   /** 집 격자 좌표 → 월드 좌표 (실내 832x832, 벽 여백 제외 32~800) */
   private homeCellX(cx: number): number {
-    return 32 + Math.max(0, Math.min(23, Math.round(cx))) * 32 + 16;
+    const g = WorldScene.HOME_GRID;
+    return g.x0 + Math.max(0, Math.min(g.cols - 1, Math.round(cx))) * g.cell + g.cell / 2;
   }
   private homeCellY(cy: number): number {
-    return 104 + Math.max(0, Math.min(21, Math.round(cy))) * 32 + 16;
+    const g = WorldScene.HOME_GRID;
+    return g.y0 + Math.max(0, Math.min(g.rows - 1, Math.round(cy))) * g.cell + g.cell / 2;
   }
 
   /** 꾸미기 상호작용 지점 — 집 실내 우측 하단 */
@@ -14115,10 +14225,10 @@ export class WorldScene extends Phaser.Scene {
    *  클릭/탭/스페이스로 넘기고, 건너뛰기 버튼 제공. 종료 시 인트로(플레이형)로 자연 연결 */
   private showPrologue(onDone: () => void) {
     const beats = [
-      "아홉 왕국을 지탱하던 세계수가\n지쳐 무너져 내렸다.",
+      "다섯 왕국을 지탱하던 인피니트보석이\n어둠에 잠식되어 갔다.",
       "어둠은 대지를 삼켰고,\n차원의 균열마다 마물이 흘러넘쳤다.",
       "그러나 별들은 예언했다.\n한 명의 아이가 빛을 되돌려 놓으리라고.",
-      "이그드라실 왕국의 마지막 희망.\n그 이야기가 지금, 시작된다.",
+      "라일락 월드의 마지막 희망.\n그 이야기가 지금, 시작된다.",
     ];
     this.dialoguing = true;
     this.physics.world.pause();
@@ -15872,7 +15982,7 @@ export class WorldScene extends Phaser.Scene {
             speaker: "카이엔",
             lines: [
               "...제법 서늘한 눈이 되었군. 그 힘이 등 뒤에서 속삭이고 있어.",
-              "레벨 200 — 이그드라실의 정점에 선 자만이 '다섯 번째 문'을 볼 수 있다.",
+              "레벨 200 — 라일락의 정점에 선 자만이 '다섯 번째 문'을 볼 수 있다.",
               "제5의 문이 열리면 모든 스킬이 '극'으로 재태어나고, 세부 직업마다 다른 궁극기가 손에 쥐어진다.",
               "준비됐나? 각성의 수호자를 쓰러뜨려 스스로를 증명해라!",
             ],

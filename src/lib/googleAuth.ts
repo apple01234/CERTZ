@@ -58,6 +58,26 @@ export function isMobileWeb(): boolean {
   }
 }
 
+/** Electron 데스크톱 클라이언트 판정 — main.js 가 심는 UA 토큰 우선, 없으면 프로세스 흔적 */
+function isElectronShell(): boolean {
+  if (typeof navigator === "undefined") return false;
+  try {
+    return /SERTZDesktop/i.test(navigator.userAgent) || /Electron/i.test(navigator.userAgent);
+  } catch {
+    return false;
+  }
+}
+
+/** 팝업 → ID 토큰. 사용자 취소는 그대로 던지고(오류 아님), 그 외는 원인을 보존해 던진다. */
+async function popupToken(
+  auth: never,
+  provider: unknown,
+  signInWithPopup: (a: never, p: never) => Promise<{ user: { getIdToken: () => Promise<string> } }>,
+): Promise<string> {
+  const cred = await signInWithPopup(auth, provider as never);
+  return await cred.user.getIdToken();
+}
+
 /** 팝업 실패 시 리다이렉트로 대체해도 되는(되어야 하는) Firebase 오류 코드 */
 const REDIRECT_FALLBACK_CODES = [
   "auth/popup-blocked",
@@ -75,10 +95,12 @@ export async function googleWebSignIn(): Promise<string> {
   const { GoogleAuthProvider, signInWithPopup, signInWithRedirect } = await import("firebase/auth");
   const provider = new GoogleAuthProvider();
 
-  if (isMobileWeb()) {
-    await signInWithRedirect(auth, provider);
-    return ""; // accounts.google.com으로 이동 — 복귀 후 googleWebRedirectToken()이 회수
-  }
+  /* vc191 (#1 — "PC에서 구글 로그인이 안 된다")
+   *  ① Electron(데스크톱 클라이언트)은 승인 도메인 문제를 main.js 의 auth 호스트 프록시로 해결했으므로
+   *    여기서 팝업을 그대로 쓴다. (예전엔 팝업을 외부 브라우저로 넘겼는데 되돌아올 경로가 없었다)
+   *  ② 로컬 dev 서버(localhost/127.0.0.1)는 승인 도메인에 등록돼 있지 않으면 popup 이 즉시
+   *    unauthorized-domain 으로 죽는다 → 이 경우는 리다이렉트로도 같은 오류라 원인을 명확히 알린다. */
+  if (isElectronShell()) return await popupToken(auth, provider, signInWithPopup);
 
   try {
     const cred = await signInWithPopup(auth, provider);
@@ -87,6 +109,9 @@ export async function googleWebSignIn(): Promise<string> {
     const code = String((e as { code?: string })?.code ?? "");
     /* 유저가 스스로 닫은 것(사용자 취소)은 오류 아님 — 그대로 위로 던져 기존 무시 로직이 처리 */
     if (code.includes("popup-closed-by-user") || code.includes("user-cancelled")) throw e;
+    if (code.includes("unauthorized-domain")) {
+      throw new Error("auth/unauthorized-domain — 이 도메인이 Firebase 승인 도메인에 없어요 (운영자: Firebase 콘솔 Authentication > Settings > 승인된 도메인에 현재 접속 도메인 추가)");
+    }
     if (REDIRECT_FALLBACK_CODES.some((k) => code.includes(k))) {
       await signInWithRedirect(auth, provider); // 팝업 차단/미지원 환경 → 전체 페이지 리다이렉트
       return "";

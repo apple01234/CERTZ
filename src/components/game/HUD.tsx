@@ -112,7 +112,7 @@ export function HUD({
   onOpenUnion,
   onOpenTrade,
   onOpenRank, // v1.3.0 (#7) — 랭킹창
-  onOpenGuide, // v1.4.12 (#16) — 이그니의 UI 기능 안내
+  onOpenGuide, // v1.4.12 (#16) — 라일락의 UI 기능 안내
 }: {
   hud: HudState;
   quest: QuestState;
@@ -143,7 +143,7 @@ export function HUD({
   onOpenTrade: () => void;
   /** v1.3.0 (#7) — 랭킹창 (레벨/전투력/콘텐츠 + 주간 랭커 보상) */
   onOpenRank: () => void;
-  /** v1.4.12 (#16) — 이그니의 UI 기능 안내 */
+  /** v1.4.12 (#16) — 라일락의 UI 기능 안내 */
   onOpenGuide: () => void;
 }) {
   /* v1.0.16 (F3) — 우측 버튼 컬럼의 zoom 배율. 화면 폭에 따라 커지므로 계산을 한 곳에 모은다.
@@ -432,10 +432,10 @@ export function HUD({
               <span className={`absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black ${hud.ap > 0 ? "text-lime-200" : "text-white/50"}`}>스탯</span>
             </button>
             {/* v1.0.14 피드백#3 — 퀘스트 로그 버튼은 가방 오른쪽 상단 행으로 이동 (위 참조) */}
-            {/* v1.4.12 (#16) — 이그니의 UI 안내: 각 UI가 무슨 기능을 하는지 궁금할 때 */}
+            {/* v1.4.12 (#16) — 라일락의 UI 안내: 각 UI가 무슨 기능을 하는지 궁금할 때 */}
             <button
               onClick={onOpenGuide}
-              aria-label="이그니의 UI 기능 안내 열기"
+              aria-label="라일락의 UI 기능 안내 열기"
               className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#a8f0d0] active:scale-95"
             >
               <GameIcon name="quest" size={18} />

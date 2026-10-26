@@ -8,7 +8,7 @@
  *  · v1.0.8a: proxyApi가 http 모듈로 https 프로토콜을 호출하던 ERR_INVALID_PROTOCOL 수리
  *    (http→https 모듈 선택 + hop-by-hop 헤더 제거) + 메인 프로세스 예외 다이얼로그 제거(로그 파일 기록)
  */
-const { app, BrowserWindow, Menu, dialog, shell } = require("electron");
+const { app, BrowserWindow, Menu, dialog } = require("electron");
 const http = require("node:http");
 const https = require("node:https");
 const path = require("node:path");
@@ -18,6 +18,24 @@ const PORT_CANDIDATES = [37815, 42117, 46223];
 const GAME_DIR = path.join(__dirname, "game");
 const API_UPSTREAM = "https://sertz.vercel.app";
 const READY_TIMEOUT_MS = 20_000;
+
+/* vc191 (지시 #1 — PC 구글 로그인) — 앱 내부 인증 팝업 창 옵션.
+ *  프레임은 로컬 오리진이지만 아래 host 프록시로 인증 요청의 출처가 서비스 도메인이 된다. */
+const AUTH_POPUP_OPTS = {
+  width: 520,
+  height: 650,
+  autoHideMenuBar: true,
+  webPreferences: { contextIsolation: true, nodeIntegration: false, spellcheck: false },
+};
+
+/* 요청 host → 대체 upstream. Firebase 인증 엔드포인트를 실제 서비스 도메인으로 보낸다.
+ *  (Google 계정 화면은 원래 host 그대로 — 로그인 세션 쿠키가 그 도메인에 있어야 한다) */
+const AUTH_HOST_MAP = {
+  "sertz-681eb.firebaseapp.com": API_UPSTREAM,
+  "identitytoolkit.googleapis.com": API_UPSTREAM,
+  "securetoken.googleapis.com": API_UPSTREAM,
+  "www.googleapis.com": API_UPSTREAM,
+};
 
 let server = null;
 let win = null;
@@ -180,23 +198,19 @@ function createWindow(port) {
       win.setFullScreen(!win.isFullScreen());
     }
   });
-  /* vc187 (지시 #7 — "PC에서 구글 로그인 안됨") —
-   *  원인: PC 클라이언트는 http://127.0.0.1:<port> 로컬 서버를 띄워 띄운다.
-   *        이 오리진은 Firebase 승인 도메인 목록에 넣을 수 없어(IP 오리진 거부)
-   *        signInWithPopup 이 auth/unauthorized-domain 으로 즉시 실패한다.
-   *  해결: 인증 팝업은 Electron 창이 아니라 **외부 기본 브라우저**로 넘긴다.
-   *        외부 브라우저는 실제 서비스 도메인(vercel)에서 열리므로 인증이 정상 동작하고,
-   *        로그인 후 발급된 토큰은 커스텀 프로토콜(sertz://auth?token=...)로 되돌려 받는다.
-   *  (loadURL 을 localhost 로 바꾸는 것만으로는 부족하다 — Firebase 는 localhost 만
-   *   승인 도메인에 추가할 수 있으나, 사용자가 승인 도메인을 직접 등록해야 해서
-   *   배포본에서는 여전히 실패한다. 외부 브라우저 경로가 유일하게 확실하다.) */
+  /* vc187 (지시 #7 — "PC에서 구글 로그인 안됨")
+   * vc191 (지시 #1) — 위 vc187 방식(외부 브라우저 + sertz:// 콜백)은 **미구현 상태로 남아 있었다**:
+   *  setAsDefaultProtocolClient 등록도, open-url/second-instance 에서 토큰을 회수하는 코드도 없어서
+   *  팝업이 외부 브라우저로 나간 뒤 앱으로 돌아오지 못했다 → PC 로그인 불가의 실제 원인.
+   *
+   *  그래서 외부 브라우저 우회를 걷어내고 **앱 내부 팝업창**으로 처리한다.
+   *  프레임 origin 은 여전히 http://127.0.0.1:<port> 라서 Firebase 승인 도메인 문제가 남는데,
+   *  이는 아래 will-attach-webview 가 아니라 세션 프록시로 해결한다 —
+   *  팝업의 identitytoolkit/securetoken 요청을 실제 서비스 도메인(sertz.vercel.app)으로
+   *  가로채 보내면, 인증 세션의 출처가 승인 도메인이 되어 unauthorized-domain 이 나지 않는다.
+   *  (서버 검증(/api/auth/google)은 기존처럼 같은 오리진 API 프록시를 그대로 탄다.) */
   win.webContents.setWindowOpenHandler(({ url }) => {
-    // 구글/Firebase 인증 관련 팝업은 외부 브라우저로 (승인 도메인에서 열려야 성공)
-    if (/accounts\.google\.com|firebaseapp\.com|__\/auth\//i.test(url)) {
-      shell.openExternal(url);
-      return { action: "deny" };
-    }
-    if (/^https?:/i.test(url)) shell.openExternal(url);
+    if (/^https?:/i.test(url)) return { action: "allow", overrideBrowserWindowOptions: AUTH_POPUP_OPTS };
     return { action: "deny" };
   });
   win.on("closed", () => { win = null; });
@@ -237,6 +251,39 @@ if (!gotLock) {
   });
 
   app.whenReady().then(async () => {
+    /* vc191 (#1) — 인증 요청 host 를 실제 서비스 도메인으로 프록시.
+     *  로컬 오리진(127.0.0.1)은 Firebase 승인 도메인에 넣을 수 없어(auth/unauthorized-domain)
+     *  PC 클라이언트에서 구글 로그인이 실패하던 문제를 네트워크 계층에서 없앤다. */
+    try {
+      const { session } = require("electron");
+      const ses = session.defaultSession;
+      ses.webRequest.onBeforeRequest((details, cb) => {
+        try {
+          const u = new URL(details.url);
+          const alt = AUTH_HOST_MAP[u.host];
+          if (alt && /^https?:$/.test(u.protocol)) {
+            const target = new URL(u.pathname + u.search, alt);
+            return cb({ redirectURL: target.toString() });
+          }
+        } catch { /* 파싱 실패는 원요청 유지 */ }
+        cb({});
+      });
+      /* 프록시된 응답의 CORS 헤더를 현재 오리진 기준으로 재작성 —
+       *  실제 도메인으로 나간 요청도 렌더러(127.0.0.1)에서 CORS 통과하도록. */
+      ses.webRequest.onHeadersReceived((details, cb) => {
+        try {
+          const st = details.responseHeaders || {};
+          const hasAcao = Object.keys(st).some((k) => k.toLowerCase() === "access-control-allow-origin");
+          if (hasAcao) {
+            for (const k of Object.keys(st)) if (k.toLowerCase() === "access-control-allow-origin") delete st[k];
+            st["Access-Control-Allow-Origin"] = ["*"];
+          }
+        } catch { /* 헤더 처리 실패 무시 */ }
+        cb({ responseHeaders: details.responseHeaders });
+      });
+    } catch (e) {
+      appendShellLog(`auth proxy setup failed: ${e && e.message ? e.message : String(e)}`);
+    }
     const port = await startServer();
     if (port) createWindow(port);
     else app.quit();

@@ -274,7 +274,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                         </p>
                       </div>
                     </div>
-                    {m.cleared && <p className="mt-1 text-[8px] font-black text-emerald-300">세계수 구원 완료</p>}
+                    {m.cleared && <p className="mt-1 text-[8px] font-black text-emerald-300">인피니트보석 구원 완료</p>}
                   </button>
                 );
               })}

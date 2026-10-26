@@ -1066,14 +1066,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  GameStudio(Gameworks) 3D VFX를 전직 단계에 비례해 합성 — v1.0.13 재설계:
    *  모든 직업이 자기 계열색 마법진 시그니처 보유 / 2·3차는 절제판(알파·크기 축소) /
    *  4차 룬 마법진+크리티컬 플래시 풀 / 5차 폭발+화염 풀. 미전직·1차는 기존 연출 유지 */
-  private tierFlair(major = false) {
+  /* vc191 (지시 #16 — "마법사 계열 직업의 모든 스킬에 마법진 이펙트가 반복 사용되고 있다.
+   *  스킬마다 컨셉과 이펙트가 서로 다르게 독창적으로 만들어라. 마법진은 꼭 필요한 스킬에만")
+   *  원인: 이 함수가 s1·s2(MOVE)·s3·s4 **모든 시전**에서 호출되고, 마법사 계열은 여기서
+   *  항상 같은 룬 마법진(gw_rune)을 그렸다 → 스킬이 무엇이든 연출이 동일했다.
+   *  수리: 어느 슬롯의 시전인지 넘겨, 마법사는 슬롯별로 다른 시그니처를 쓰고
+   *  **마법진은 '영역을 펼치는' s3(그리고 궁극기)에만** 남긴다. */
+  private tierFlair(major = false, slot: "s1" | "s2" | "s3" | "s4" = "s1") {
     const t = this.sTier;
     if (t < 2) return;
     const fam = familyOf(this.cls) as FamKey;
     const aim = this.aimDir();
     /* v1.4.30 (#6 5차 공통 이펙트 축소) — major=true(중요 스킬: 4차기 B)만 전체 패키지,
      *  Z/C/V 주력기는 3차 수준 경량판만 — 5차 스킬마다 폭발+화염이 겹치던 과잉 연출 완화 */
-    spawnTierFlair(this.scene, this.x, this.y, this.clsHex(), t, fam, aim.lengthSq() > 0.01 ? aim.angle() : 0, major);
+    spawnTierFlair(this.scene, this.x, this.y, this.clsHex(), t, fam, aim.lengthSq() > 0.01 ? aim.angle() : 0, major, slot);
   }
 
   /** v1.0.11 — 튜토리얼 알림 (월드 튜토리얼 컨트롤러에 이벤트 전달 — 스킬/물약 학습 판정) */
@@ -1091,7 +1097,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocity(0, 0);
     this.netEmitAction("s1"); // v4.1.0
     this.tutNotify("skill"); // v1.0.11 — 튜토리얼 스킬 학습 판정
-    this.tierFlair(); // v1.0.11 — N차 기존 스킬 강화 (전직 단계 비례 3D VFX)
+    this.tierFlair(false, "s1"); // v1.0.11 — N차 기존 스킬 강화 (전직 단계 비례 3D VFX)
     const kind = resolveSkill1Of(this.cls) ?? "spin";
     /* v3.0.11 — 3차/4차 주력기 진화감: 상위직은 클래스색 오라 링이 터지며 시전
      *  (2차기 승계라 이름만 바뀌어 보이던 문제를 시각적으로도 "강화판"임을 드러냄) */
@@ -1833,7 +1839,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const ds = DASH_SND[kind] ?? DASH_SND.dash;
     this.scene.sfxSkill(ds[0], ds[1]);
     this.tutNotify("skill"); // v1.0.11 — 튜토리얼 스킬 학습 판정
-    this.tierFlair(); // v1.0.11 — N차 기존 스킬 강화
+    this.tierFlair(false, "s2"); // v1.0.11 — N차 기존 스킬 강화
     /* v1.0.11 — 기동기 대시 궤적: 혜성 코마트(gw_trail)를 진행 방향으로 신장해 잔상 강화 (2차+) */
     if (this.sTier >= 2 && this.scene.textures.exists("gw_trail")) {
       const tr = this.scene.add.image(this.x, this.y - 6, "gw_trail")
@@ -2298,7 +2304,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     };
     this.scene.sfxSkill(...SND3[kind]);
     this.tutNotify("skill"); // v1.0.11 — 튜토리얼 스킬 학습 판정
-    this.tierFlair(); // v1.0.11 — N차 기존 스킬 강화
+    this.tierFlair(false, "s3"); // v1.0.11 — N차 기존 스킬 강화
 
     switch (kind) {
       /* 워로드 — 전장의 함성: 광역 외침 + 공격력 버프 (v3.0.4 — 임팩트 대폭 상향) */
@@ -2837,7 +2843,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hitSet.clear();
     this.setVelocity(0, 0);
     this.netEmitAction("s4"); // v4.1.0
-    this.tierFlair(true); // v1.4.30 (#6) — 4차기(중요 스킬)만 풀 패키지 기존 연출
+    this.tierFlair(true, "s4"); // v1.4.30 (#6) — 4차기(중요 스킬)만 풀 패키지 기존 연출
     const hex = this.clsHex();
     /* vc187 (지시 #3·#11·#17) — 3D 컷신 제거.
      *  "3d 컷씬 없어도 되닌까 2d로 … 스킬 좀 멋있게", "3d 연출 개별로임"
@@ -5376,6 +5382,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const prev = this.clsBonus;
     this.cls = key;
     this.clsBonus = bonusOf(key);
+    this.ensureClassFitWeapon(); // vc191 (#4) — GM 자유전직도 무기 정합 유지
     this.maxHp = Math.max(60, this.maxHp - prev.hpAdd + this.clsBonus.hpAdd);
     this.maxMp = Math.max(40, this.maxMp - prev.mpAdd + this.clsBonus.mpAdd);
     this.hp = this.maxHp;
@@ -5551,12 +5558,51 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (!next || d.tier !== next || d.parent !== this.cls) return false;
     this.cls = key;
     this.clsBonus = bonusOf(key);
+    this.ensureClassFitWeapon();
     this.maxHp += d.hpAdd;
     this.maxMp += d.mpAdd;
     this.hp = this.maxHp;
     this.mp = this.maxMp;
     this.recalcSpeed();
     this.scene.emitHud();
+    return true;
+  }
+
+  /* vc191 (지시 #4 — "직업을 바꿔도 무기 아이콘이 해당 직업 무기로 바뀌지 않는다")
+   *  원인: 장비창 아이콘은 착용 중인 아이템 키(rpg.weapon)를 그대로 그린다. 그런데 전직해도
+   *  weapon 은 이전 직업 것이 남아 있어(예: 전사→궁수) 아이콘이 활로 바뀌지 않았다.
+   *  손에 드는 무기 스프라이트는 계열(familyOf) 기준이라 정상이었고, UI 만 어긋났다.
+   *  → 전직 시점에 착용 무기가 새 직업 계열 장비가 아니면 그 계열 기본 무기로 교체한다.
+   *  교체 여부는 반환값으로 알려 씬이 배너로 안내한다(조용한 변경 금지). */
+  pickClassFitWeapon(): ItemKey | null {
+    const fam = familyOf(this.cls);
+    if (!fam) return null;
+    const cur = ITEMS[this.weapon];
+    if (cur && (!cur.clsOnly || cur.clsOnly.length === 0 || cur.clsOnly.includes(fam))) return null;
+    /* 계열 기본 무기 우선순위: clsOnly 정확 일치 → clsOnly 없음(공용) → weapon_1 */
+    const owns = (k: string) => (this.owned.includes(k as ItemKey) ? 1 : 0);
+    const pool = (Object.keys(ITEMS) as ItemKey[])
+      .filter((k) => {
+        const it = ITEMS[k];
+        return it.kind === "weapon" && it.clsOnly && it.clsOnly.length > 0 && it.clsOnly.includes(fam);
+      })
+      .sort((a, b) => {
+        const A = ITEMS[a];
+        const B = ITEMS[b];
+        return owns(b) - owns(a) || (A.reqLv ?? 1) - (B.reqLv ?? 1) || (A.atk ?? 0) - (B.atk ?? 0);
+      });
+    const best = pool[0];
+    if (best) return best;
+    /* 해당 계열 전용 무기가 데이터에 하나도 없을 때만 공용 기본검으로 폴백 */
+    return cur && (!cur.clsOnly || cur.clsOnly.length === 0) ? null : "weapon_1";
+  }
+
+  /** 전직 시 착용 무기 정합 — 교체했으면 true (씬이 배너로 알린다) */
+  ensureClassFitWeapon(): boolean {
+    const next = this.pickClassFitWeapon();
+    if (!next || next === this.weapon) return false;
+    this.weapon = next;
+    this.upgrades.weapon = this.weaponStars;
     return true;
   }
 
@@ -5569,6 +5615,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const d = classDef(key)!;
     this.cls = key;
     this.clsBonus = bonusOf(key);
+    this.ensureClassFitWeapon(); // vc191 (#4) — 직업에 맞지 않는 무기는 계열 기본 무기로
     this.maxHp += d.hpAdd - prev.hpAdd;
     this.maxMp += d.mpAdd - prev.mpAdd;
     this.hp = Math.min(this.hp, this.maxHp);
@@ -5594,6 +5641,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (first) {
       this.cls = first;
       this.clsBonus = bonusOf(first);
+      this.ensureClassFitWeapon(); // vc191 (#4) — 시작 직업과 무기 정합
     } else {
       this.cls = null;
       this.clsBonus = bonusOf(null);
@@ -6427,6 +6475,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // v3.0.6 (지시 #9) — 보스 전용 아이템은 상점 구매 불가 (유저 거래소 예정)
     // v3.0.6 (지시 #1) — BM 전용 아이템은 골드 상점 구매 불가
     if (!item || item.tradeLock || item.bmOnly) return false;
+    /* vc191 (지시 #5) — 현재 직업 계열이 아닌 전용 무기는 구매 자체를 막는다.
+     *  UI(상점 버튼)에서 1차 차단하고, 여기서 2차 검증한다 — 이벤트를 직접 쏘거나
+     *  다른 경로(거래소/우편/스크립트)로 들어와도 뚫리지 않게. */
+    if (item.kind === "weapon" && item.clsOnly && item.clsOnly.length > 0) {
+      const fam = familyOf(this.cls);
+      if (!fam || !item.clsOnly.includes(fam)) {
+        this.scene.spawnPickupText(this.x, this.y - 30, "이 직업은 구매할 수 없다", "#ff7a7a");
+        this.scene.sfxSkill?.("uiCancel", 0.7);
+        return false;
+      }
+    }
     const n = Math.max(1, Math.floor(qty));
     if (item.kind === "consumable") {
       const cost = item.price * n;

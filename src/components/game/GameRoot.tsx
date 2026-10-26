@@ -143,6 +143,35 @@ export default function GameRoot() {
     };
   }, []);
 
+  /* vc191 (지시 #7 — "모든 텍스트 입력란에서 영어 입력이 안 된다")
+   *  원인: 한글은 IME 조합 중이라 keyCode 229(프로세스 키)로 들어와 Phaser 가 무시했지만,
+   *  영어는 실제 키코드로 들어와 Phaser 키보드가 캡처·preventDefault 하고,
+   *  각 인풋에 붙은 onKeyDown stopPropagation 은 **React 합성 이벤트**만 막아
+   *  window 에 걸린 Phaser 의 네이티브 리스너에는 아무 효과가 없었다.
+   *  → 캡처 단계(window 최상단)에서 텍스트 입력 중이면 키 이벤트 전파를 끊는다.
+   *  capture 로 걸어야 Phaser 의 window 리스너보다 먼저 실행된다. */
+  useEffect(() => {
+    const isTextTarget = (t: EventTarget | null): boolean => {
+      const el = t as HTMLElement | null;
+      if (!el) return false;
+      const tag = el.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable === true;
+    };
+    const onKeyCapture = (e: KeyboardEvent) => {
+      if (!isTextTarget(e.target)) return;
+      /* 조합 중 이벤트도 그대로 통과시킨다 — IME 가 한글을 완성해야 한다 */
+      e.stopPropagation();
+    };
+    window.addEventListener("keydown", onKeyCapture, true);
+    window.addEventListener("keyup", onKeyCapture, true);
+    window.addEventListener("keypress", onKeyCapture, true);
+    return () => {
+      window.removeEventListener("keydown", onKeyCapture, true);
+      window.removeEventListener("keyup", onKeyCapture, true);
+      window.removeEventListener("keypress", onKeyCapture, true);
+    };
+  }, []);
+
   // 오디오는 첫 사용자 입력에서 초기화 (브라우저 정책)
   useEffect(() => {
     const init = () => audio.initAudio();

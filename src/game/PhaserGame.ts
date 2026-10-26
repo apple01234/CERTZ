@@ -76,7 +76,21 @@ function rebootLedger(): number[] {
  *  (SwiftShader) 환경 특유의 것으로, 실기기 GPU 에서는 재현되지 않는다.
  */
 function desiredRenderer(): number {
-  return Phaser.AUTO;
+  /* vc191 (#1 PC 로그인 검증 중 발견) — WebGL 을 못 잡는 환경(SwiftShader/GPU 차단/원격 세션)에서
+   *  AUTO 는 렌더러 생성 중 `Error: WebGL unsupported` 를 던지고, 그 예외가 GameRoot 의
+   *  useEffect 를 타고 올라가 **로비까지 포함한 React 트리 전체가 백지**가 됐다.
+   *  (실측: chromium + --use-angle=swiftshader → "Application error: a client-side exception")
+   *  판정을 우리가 먼저 하고, 실패하면 CANVAS 로 내려가 게임은 항상 뜨게 한다. */
+  try {
+    const c = document.createElement("canvas");
+    const gl = (c.getContext("webgl2") || c.getContext("webgl") || c.getContext("experimental-webgl")) as WebGLRenderingContext | null;
+    if (!gl) return Phaser.CANVAS;
+    /* 판정용 컨텍스트는 즉시 반납 — 남겨두면 chromium 이 페이지를 차단한다(vc190 실측) */
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return Phaser.AUTO;
+  } catch {
+    return Phaser.CANVAS;
+  }
 }
 
 function safeReload(reason: string) {

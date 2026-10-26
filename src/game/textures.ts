@@ -248,12 +248,12 @@ export function buildAllAnims(scene: Phaser.Scene) {
  *  · 프레임은 슬라이서 실측 크기(시트별 상이) — BOSS_ATLAS의 fw/fh와 정확히 일치해야 한다
  *  · 프로그램 키는 기존과 동일(tex-idle·tex-walk·…) — Boss.ts 로직 무수정 호환 */
 export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number; fh: number; cols?: number }> = {
-  boss:        { key: "atl_boss",        file: "atl_boss.webp",        fw: 191, fh: 146, cols: 8 }, // 수정 왕 — 스바르트알프헤임 (v1.0.16 신규 시트 8열×7행)
-  boss2:       { key: "atl_boss2",       file: "atl_boss2.webp",       fw: 330, fh: 212 }, // 눈보라의 거수·파수꾼 — 미드가르드 해적선 (v1.4.32 유령선 고해상)
+  boss:        { key: "atl_boss",        file: "atl_boss.webp",        fw: 191, fh: 146, cols: 8 }, // 수정 왕 — 이안페우스 (v1.0.16 신규 시트 8열×7행)
+  boss2:       { key: "atl_boss2",       file: "atl_boss2.webp",       fw: 330, fh: 212 }, // 해롤드·어둠의 피조물 — 라일락 변경 해적선 (v1.4.32 유령선 고해상)
   boss3:       { key: "atl_boss3",       file: "atl_boss3.webp",       fw: 191, fh: 146, cols: 8 }, // 심연의 군주 — 헬 악령 여왕 (v1.0.16 신규 시트 8열×7행)
-  boss_nidhog: { key: "atl_boss_nidhog", file: "atl_boss_nidhog.webp", fw: 156, fh: 162, cols: 11 }, // 니드호그 — 알프헤임 수목룡 (v1.4.32 고해상 11프레임)
+  boss_nidhog: { key: "atl_boss_nidhog", file: "atl_boss_nidhog.webp", fw: 156, fh: 162, cols: 11 }, // 라시온 — 에델리오나 수목룡 (v1.4.32 고해상 11프레임)
   boss_surt:   { key: "atl_boss_surt",   file: "atl_boss_surt.webp",   fw: 272, fh: 186, cols: 6 }, // 수르트 — 무스펠 용암골렘 (v1.0.16 신규 시트 6열×6행)
-  boss_fenrir: { key: "atl_boss_fenrir", file: "atl_boss_fenrir.webp", fw: 220, fh: 200, cols: 6 }, // 펜리르 — 니플헤임 설원 백랑 (v1.0.16 신규 시트 6열×6행)
+  boss_fenrir: { key: "atl_boss_fenrir", file: "atl_boss_fenrir.webp", fw: 220, fh: 200, cols: 6 }, // 펜리르 — 클로체스 설원 백랑 (v1.0.16 신규 시트 6열×6행)
   boss_skoll:  { key: "atl_boss_skoll",  file: "atl_boss_skoll.webp",  fw: 126, fh: 200, cols: 11 }, // 스콜 — 얼음 늑대룡 (v1.0.16 신규 시트 8열×7행)
   boss_nagr:   { key: "atl_boss_nagr",   file: "atl_boss_nagr.webp",   fw: 156, fh: 162, cols: 11 }, // 요툰헤임 얼음 골렘 (v1.0.16 신규 시트 8열×7행)
   boss_hati:   { key: "atl_boss_hati",   file: "atl_boss_hati.webp",   fw: 191, fh: 146, cols: 8 }, // 하티 — 쌍둥이 늑대(좌 얼음/우 화염) (v1.0.16 신규 시트 8열×7행)
