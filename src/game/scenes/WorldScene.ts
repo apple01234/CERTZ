@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { villageThemeOf, type VillageTheme } from "../villageThemes"; // vc189 (D4) — 챕터별 마을 테마
 import { playCutscene, loadSeenCutscenes, serializeSeenCutscenes } from "../cutscene"; // vc189 — 이벤트 컷씬
+import { CameraFx, type CameraFxHost } from "../scene/cameraFx"; // vc189 — WorldScene 분할 1차(원근/줌)
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
@@ -200,6 +201,15 @@ export class WorldScene extends Phaser.Scene {
   private seenCutscenes: Set<string> = new Set();
   /** vc189 — 컷씬 재생 중 플래그 (입력 봉인·중복 방지) */
   cutsceneBusy = false;
+  /** vc189 — 원근/줌 위임 (WorldScene 분할 1차).
+   *  주의: applyCameraZoom() 이 initPerspective() 보다 먼저 호출된다(실측 1554 vs 1604줄).
+   *  필드 초기화에서 바로 만들면 이 시점에 this 의 다른 필드가 아직 준비되지 않는다.
+   *  → getter 로 지연 생성한다. */
+  private _camFx: CameraFx | null = null;
+  private get camFx(): CameraFx {
+    if (!this._camFx) this._camFx = new CameraFx(this as unknown as CameraFxHost, viewZoom);
+    return this._camFx;
+  }
   private entryHome = new Phaser.Math.Vector2(0, 0);
   private edgeArrow: Phaser.GameObjects.Image | null = null;
   private edgeLabel: Phaser.GameObjects.Text | null = null;
@@ -1363,6 +1373,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private initPerspective() {
+    /* vc189 — 원근/줌을 CameraFx 로 위임(분할 1차). 인스턴스는 getter 가 지연 생성한다. */
     this.perspOn = this.loadPerspSetting();
     if (this.perspOn) this.buildPerspFog();
   }
@@ -2162,113 +2173,35 @@ export class WorldScene extends Phaser.Scene {
 
   /** 2.5D 설정 로드 — localStorage "sertz_persp" (기본 켬) */
   private loadPerspSetting(): boolean {
-    try { return window.localStorage.getItem("sertz_persp") !== "0"; } catch { return true; }
+    return this.camFx.loadPerspSetting();
   }
 
   /** 심도 안개 오버레이 — 화면 상단 24%에 청보라 그라데이션 (대기 원근감). 스크린 고정 · 포인터 비차단 */
   private buildPerspFog() {
-    if (!this.textures.exists("persp_fog")) {
-      try {
-        const c = document.createElement("canvas");
-        c.width = 32;
-        c.height = 128;
-        const g = c.getContext("2d");
-        if (!g) return;
-        const grad = g.createLinearGradient(0, 0, 0, 128);
-        grad.addColorStop(0, "rgba(12,10,30,0.85)");
-        grad.addColorStop(0.55, "rgba(12,10,30,0.28)");
-        grad.addColorStop(1, "rgba(12,10,30,0)");
-        g.fillStyle = grad;
-        g.fillRect(0, 0, 32, 128);
-        this.textures.addCanvas("persp_fog", c);
-      } catch { /* Canvas 미지원 무시 */ }
-    }
-    if (!this.textures.exists("persp_fog")) return;
-    this.perspFog?.destroy();
-    const cam = this.cameras.main;
-    this.perspFog = this.add
-      .image(cam.width / 2, 0, "persp_fog")
-      .setScrollFactor(0)
-      .setDepth(88)
-      .setOrigin(0.5, 0)
-      .setDisplaySize(cam.width, cam.height * 0.24)
-      .setAlpha(0.5);
+    this.camFx.buildPerspFog();
   }
 
   /** v1.0.16 — 2.5D y-depth. 종전엔 tickPersp 안에서 틱마다 화살표 함수를 새로 만들었다. */
   private perspDepthOf(y: number, h: number): number {
-    return 9 + Phaser.Math.Clamp(y / h, 0, 1);
+    return this.camFx.perspDepthOf(y, h);
   }
 
   /** 매 프레임(80ms 스로틀) — y-depth 정렬 + 안개 크기 유지 */
   private tickPersp(dt: number) {
-    this.perspDepthAcc += dt;
-    if (this.perspDepthAcc < 80) return;
-    this.perspDepthAcc = 0;
-    if (!this.perspOn) return;
-    const h = Math.max(1, this.stageH);
-    if (this.player?.active) this.player.setDepth(this.perspDepthOf(this.player.y, h));
-    for (const e of this.enemies) if (e.active) e.setDepth(this.perspDepthOf(e.y, h));
-    if (this.boss?.active) this.boss.setDepth(this.perspDepthOf(this.boss.y, h));
-    for (const r of this.remotes.values()) if (r.sp?.active) r.sp.setDepth(this.perspDepthOf(r.sp.y, h));
-    if (this.perspFog?.scene) {
-      const cam = this.cameras.main;
-      this.perspFog.setX(cam.width / 2);
-      this.perspFog.setDisplaySize(cam.width, cam.height * 0.24);
-    }
+    this.camFx.tick(dt);
   }
 
   /** 2.5D 토글 적용 (설정 패널 → fx:changed 공용 이벤트에서 호출) */
   private applyPerspSetting() {
-    const next = this.loadPerspSetting();
-    if (next === this.perspOn) return;
-    this.perspOn = next;
-    if (next) {
-      this.buildPerspFog();
-    } else {
-      this.perspFog?.destroy();
-      this.perspFog = null;
-      // 기존 고정 depth로 복원
-      if (this.player?.active) this.player.setDepth(10);
-      for (const e of this.enemies) if (e.active) e.setDepth(9);
-      if (this.boss?.active) this.boss.setDepth(11);
-      for (const r of this.remotes.values()) if (r.sp?.active) r.sp.setDepth(9);
-    }
+    this.camFx.applyPerspSetting();
   }
 
   private applyFollowZoomOffset() {
-    const cam = this.cameras.main;
-    const z = cam.zoom || 1;
-    cam.followOffset.set(
-      -(cam.width * (z - 1)) / (2 * z),
-      -(cam.height * (z - 1)) / (2 * z),
-    );
+    this.camFx.applyFollowZoomOffset();
   }
 
   private applyCameraZoom() {
-    const w = this.scale.gameSize.width;
-    const h = this.scale.gameSize.height;
-    const first = this.zoomLastH === 0;
-    const rotated = !first && w > h !== this.zoomLastW > this.zoomLastH;
-    const dh = Math.abs(h - this.zoomLastH);
-    this.zoomLastH = h;
-    this.zoomLastW = w;
-    /* v4.10.0 — 노이즈 게이트(96px 미만 무시)와 무관하게 follow 보정은 매 리사이즈 반영:
-     *  보정값은 width/height에 비례하므로 줌이 그대로여도 창 폭 변화를 따라가야 한다 */
-    this.applyFollowZoomOffset();
-    if (!first && dh < 96 && !rotated) return; // 주소창 토글 수준 노이즈 무시
-    const apply = () => {
-      // v2.3 — 실내(정사각 방 832×832)는 확대 줌으로 아늑한 한 방 연출 (지시 #6)
-      this.cameras.main.setZoom(this.isInterior ? Math.min(3, viewZoom() * 1.45) : viewZoom());
-      this.applyFollowZoomOffset(); // v4.10.0 — 줌이 바뀔 때마다 follow 보정 재계산
-      this.redrawMinimap();
-    };
-    if (first) {
-      apply();
-      return;
-    }
-    this.zoomTimer?.remove();
-    this.zoomTimer = this.time.delayedCall(300, apply);
+    this.camFx.applyCameraZoom();
   }
 
   /* ================= 배치 ================= */
