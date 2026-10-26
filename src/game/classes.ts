@@ -15,7 +15,11 @@ export const FREE_JOB_COST = 5000;
  *  없는 조합은 기존 lucide 아이콘 폴백 (기능 무영향).
  *  v3.0.10 — "base" 키 추가: 미전직(cls=null) 상태에서도 아이콘이 나오도록
  *  (기존엔 전직 전엔 lucide 폴백이라 "스킬 아이콘 적용 안 됨"으로 보였음) */
-export const SKILL_ICONS: Partial<Record<ClassKey | "base", { s1Icon: string; s2Icon: string; s3Icon?: string; s4Icon?: string }>> = {
+/* vc185 (지시 #1 — "4차·5차 스킬 아직 안 바뀜") — 5차 궁극기 아이콘도 직업별 필드로 편입.
+ *  종전엔 WorldScene 이 s5Icon 을 "/assets/skillicon/ultimate_s5.webp" 로 하드코딩해
+ *  **모든 직업이 같은 아이콘**을 썼다. 궁극기 이름·연출이 달라도 버튼 그림이 같으니
+ *  "스킬이 안 바뀐다"로 체감됐다. s5bIcon 도 함께 추가(2차 궁극기 버튼이 1차 아이콘을 재사용하던 버그). */
+export const SKILL_ICONS: Partial<Record<ClassKey | "base", { s1Icon: string; s2Icon: string; s3Icon?: string; s4Icon?: string; s5Icon?: string; s5bIcon?: string }>> = {
   base: { s1Icon: "/assets/skillicon/base_s1.webp", s2Icon: "/assets/skillicon/base_s2.webp" },
   warrior: { s1Icon: "/assets/skillicon/warrior_s1.webp", s2Icon: "/assets/skillicon/warrior_s2.webp" },
   berserker: { s1Icon: "/assets/skillicon/berserker_s1.webp", s2Icon: "/assets/skillicon/berserker_s2.webp" },
@@ -35,16 +39,16 @@ export const SKILL_ICONS: Partial<Record<ClassKey | "base", { s1Icon: string; s2
   chronicle: { s1Icon: "/assets/skillicon/chronicle_s1.webp", s2Icon: "/assets/skillicon/chronicle_s2.webp", s3Icon: "/assets/skillicon/chronicle_s3.webp" },
   assassin: { s1Icon: "/assets/skillicon/assassin_s1.webp", s2Icon: "/assets/skillicon/assassin_s2.webp" },
   swashbuckler: { s1Icon: "/assets/skillicon/swashbuckler_s1.webp", s2Icon: "/assets/skillicon/swashbuckler_s2.webp" },
-  warbringer: { s1Icon: "/assets/skillicon/warbringer_s1.webp", s2Icon: "/assets/skillicon/warbringer_s2.webp", s3Icon: "/assets/skillicon/warbringer_s3.webp", s4Icon: "/assets/skillicon/warbringer_s4.webp" },
-  crusader: { s1Icon: "/assets/skillicon/crusader_s1.webp", s2Icon: "/assets/skillicon/crusader_s2.webp", s3Icon: "/assets/skillicon/crusader_s3.webp", s4Icon: "/assets/skillicon/crusader_s4.webp" },
-  deadeye: { s1Icon: "/assets/skillicon/deadeye_s1.webp", s2Icon: "/assets/skillicon/deadeye_s2.webp", s3Icon: "/assets/skillicon/deadeye_s3.webp", s4Icon: "/assets/skillicon/deadeye_s4.webp" },
-  skylord: { s1Icon: "/assets/skillicon/skylord_s1.webp", s2Icon: "/assets/skillicon/skylord_s2.webp", s3Icon: "/assets/skillicon/skylord_s3.webp", s4Icon: "/assets/skillicon/skylord_s4.webp" },
-  arclord: { s1Icon: "/assets/skillicon/arclord_s1.webp", s2Icon: "/assets/skillicon/arclord_s2.webp", s3Icon: "/assets/skillicon/arclord_s3.webp", s4Icon: "/assets/skillicon/arclord_s4.webp" },
-  eternal: { s1Icon: "/assets/skillicon/eternal_s1.webp", s2Icon: "/assets/skillicon/eternal_s2.webp", s3Icon: "/assets/skillicon/eternal_s3.webp", s4Icon: "/assets/skillicon/eternal_s4.webp" },
+  warbringer: { s1Icon: "/assets/skillicon/warbringer_s1.webp", s2Icon: "/assets/skillicon/warbringer_s2.webp", s3Icon: "/assets/skillicon/warbringer_s3.webp", s4Icon: "/assets/skillicon/warbringer_s4.webp", s5Icon: "/assets/skillicon/warbringer_s5.webp", s5bIcon: "/assets/skillicon/warbringer_s4.webp" },
+  crusader: { s1Icon: "/assets/skillicon/crusader_s1.webp", s2Icon: "/assets/skillicon/crusader_s2.webp", s3Icon: "/assets/skillicon/crusader_s3.webp", s4Icon: "/assets/skillicon/crusader_s4.webp", s5Icon: "/assets/skillicon/crusader_s5.webp", s5bIcon: "/assets/skillicon/crusader_s4.webp" },
+  deadeye: { s1Icon: "/assets/skillicon/deadeye_s1.webp", s2Icon: "/assets/skillicon/deadeye_s2.webp", s3Icon: "/assets/skillicon/deadeye_s3.webp", s4Icon: "/assets/skillicon/deadeye_s4.webp", s5Icon: "/assets/skillicon/deadeye_s5.webp", s5bIcon: "/assets/skillicon/deadeye_s4.webp" },
+  skylord: { s1Icon: "/assets/skillicon/skylord_s1.webp", s2Icon: "/assets/skillicon/skylord_s2.webp", s3Icon: "/assets/skillicon/skylord_s3.webp", s4Icon: "/assets/skillicon/skylord_s4.webp", s5Icon: "/assets/skillicon/skylord_s5.webp", s5bIcon: "/assets/skillicon/skylord_s4.webp" },
+  arclord: { s1Icon: "/assets/skillicon/arclord_s1.webp", s2Icon: "/assets/skillicon/arclord_s2.webp", s3Icon: "/assets/skillicon/arclord_s3.webp", s4Icon: "/assets/skillicon/arclord_s4.webp", s5Icon: "/assets/skillicon/arclord_s5.webp", s5bIcon: "/assets/skillicon/arclord_s4.webp" },
+  eternal: { s1Icon: "/assets/skillicon/eternal_s1.webp", s2Icon: "/assets/skillicon/eternal_s2.webp", s3Icon: "/assets/skillicon/eternal_s3.webp", s4Icon: "/assets/skillicon/eternal_s4.webp", s5Icon: "/assets/skillicon/eternal_s5.webp", s5bIcon: "/assets/skillicon/eternal_s4.webp" },
   nightblade: { s1Icon: "/assets/skillicon/nightblade_s1.webp", s2Icon: "/assets/skillicon/nightblade_s2.webp", s3Icon: "/assets/skillicon/nightblade_s3.webp" },
   duelist: { s1Icon: "/assets/skillicon/duelist_s1.webp", s2Icon: "/assets/skillicon/duelist_s2.webp", s3Icon: "/assets/skillicon/duelist_s3.webp" },
-  shadowlord: { s1Icon: "/assets/skillicon/shadowlord_s1.webp", s2Icon: "/assets/skillicon/shadowlord_s2.webp", s3Icon: "/assets/skillicon/shadowlord_s3.webp", s4Icon: "/assets/skillicon/shadowlord_s4.webp" },
-  blademaster: { s1Icon: "/assets/skillicon/blademaster_s1.webp", s2Icon: "/assets/skillicon/blademaster_s2.webp", s3Icon: "/assets/skillicon/blademaster_s3.webp", s4Icon: "/assets/skillicon/blademaster_s4.webp" },
+  shadowlord: { s1Icon: "/assets/skillicon/shadowlord_s1.webp", s2Icon: "/assets/skillicon/shadowlord_s2.webp", s3Icon: "/assets/skillicon/shadowlord_s3.webp", s4Icon: "/assets/skillicon/shadowlord_s4.webp", s5Icon: "/assets/skillicon/shadowlord_s5.webp", s5bIcon: "/assets/skillicon/shadowlord_s4.webp" },
+  blademaster: { s1Icon: "/assets/skillicon/blademaster_s1.webp", s2Icon: "/assets/skillicon/blademaster_s2.webp", s3Icon: "/assets/skillicon/blademaster_s3.webp", s4Icon: "/assets/skillicon/blademaster_s4.webp", s5Icon: "/assets/skillicon/blademaster_s5.webp", s5bIcon: "/assets/skillicon/blademaster_s4.webp" },
   /* v1.2.1 — 해적 계열 전용 아이콘. 종전엔 항목 자체가 없어 lucide 폴백으로 떨어졌다.
    *  32x32 픽셀 버퍼로 직접 그렸다(외부 에셋 미사용 — 라이선스 문제 없음).
    *  3차/4차는 2차 스킬을 승계하므로 s1/s2는 2차 그림을 그대로 쓴다. */
@@ -53,8 +57,8 @@ export const SKILL_ICONS: Partial<Record<ClassKey | "base", { s1Icon: string; s2
   corsair: { s1Icon: "/assets/skillicon/corsair_s1.webp", s2Icon: "/assets/skillicon/corsair_s2.webp", s3Icon: "/assets/skillicon/corsair_s3.webp", s4Icon: "/assets/skillicon/corsair_s4.webp" },
   stormcaptain: { s1Icon: "/assets/skillicon/corsair_s1.webp", s2Icon: "/assets/skillicon/corsair_s2.webp", s3Icon: "/assets/skillicon/stormcaptain_s3.webp" },
   powdermaster: { s1Icon: "/assets/skillicon/raider_s1.webp", s2Icon: "/assets/skillicon/raider_s2.webp", s3Icon: "/assets/skillicon/powdermaster_s3.webp" },
-  seaking: { s1Icon: "/assets/skillicon/corsair_s1.webp", s2Icon: "/assets/skillicon/corsair_s2.webp", s3Icon: "/assets/skillicon/seaking_s3.webp", s4Icon: "/assets/skillicon/seaking_s4.webp" },
-  dreadnought: { s1Icon: "/assets/skillicon/raider_s1.webp", s2Icon: "/assets/skillicon/raider_s2.webp", s3Icon: "/assets/skillicon/dreadnought_s3.webp", s4Icon: "/assets/skillicon/dreadnought_s4.webp" },
+  seaking: { s1Icon: "/assets/skillicon/corsair_s1.webp", s2Icon: "/assets/skillicon/corsair_s2.webp", s3Icon: "/assets/skillicon/seaking_s3.webp", s4Icon: "/assets/skillicon/seaking_s4.webp", s5Icon: "/assets/skillicon/seaking_s5.webp", s5bIcon: "/assets/skillicon/seaking_s4.webp" },
+  dreadnought: { s1Icon: "/assets/skillicon/raider_s1.webp", s2Icon: "/assets/skillicon/raider_s2.webp", s3Icon: "/assets/skillicon/dreadnought_s3.webp", s4Icon: "/assets/skillicon/dreadnought_s4.webp", s5Icon: "/assets/skillicon/dreadnought_s5.webp", s5bIcon: "/assets/skillicon/dreadnought_s4.webp" },
 };
 
 export type Tier = 1 | 2 | 3 | 4;
