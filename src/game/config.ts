@@ -269,6 +269,8 @@ export type SaveData = {
   /* vc178 (지시 #1·#2) — 이미 본 기능 튜토리얼 키 목록 (중복 자동재생 방지).
    *  설정 → 튜토리얼 다시보기는 이 목록과 무관하게 언제든 재생 가능. */
   tutSeen?: string[];
+  /* vc189 — 재생한 이벤트 컷씬 id (1회성 보장). 없으면 첫 플레이로 간주 */
+  seenCutscenes?: string[];
   fishing?: {
     /** 잡은 물고기 키 목록 (도감 — 중복 없이) */
     caught: string[];

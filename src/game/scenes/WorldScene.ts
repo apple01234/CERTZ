@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { villageThemeOf, type VillageTheme } from "../villageThemes"; // vc189 (D4) — 챕터별 마을 테마
+import { playCutscene, loadSeenCutscenes, serializeSeenCutscenes } from "../cutscene"; // vc189 — 이벤트 컷씬
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
@@ -195,6 +196,10 @@ export class WorldScene extends Phaser.Scene {
   /** 입구 셀 중심 — 플레이어 스폰/복귀 차원문 기준점 */
   /** vc189 (D4) — 챕터별 마을 테마 (buildVillage 진입 전에 설정) */
   private _vTheme: VillageTheme | null = null;
+  /** vc189 — 재생한 이벤트 컷씬 id (세이브에 저장, 1회성 보장) */
+  private seenCutscenes: Set<string> = new Set();
+  /** vc189 — 컷씬 재생 중 플래그 (입력 봉인·중복 방지) */
+  cutsceneBusy = false;
   private entryHome = new Phaser.Math.Vector2(0, 0);
   private edgeArrow: Phaser.GameObjects.Image | null = null;
   private edgeLabel: Phaser.GameObjects.Text | null = null;
@@ -1321,6 +1326,8 @@ export class WorldScene extends Phaser.Scene {
      *  구 세이브(필드 없음)는 "이미 그 기능들을 쓰고 있던 유저"이므로 전부 본 것으로
      *  간주한다. 그러지 않으면 고레벨 세이브 접속 시 15개 안내가 한꺼번에 쏟아진다.
      *  새로 만든 캐릭터는 빈 배열로 시작해 Lv1 기능(가방·집)부터 자연스럽게 안내받는다. */
+    /* vc189 — 재생한 이벤트 컷씬 복원 (1회성 보장). 없으면 빈 셋 = 첫 플레이 */
+    this.seenCutscenes = loadSeenCutscenes((savedPlayer as { seenCutscenes?: unknown }).seenCutscenes);
     if (Array.isArray(savedPlayer.tutSeen)) {
       this.player.tutSeen = savedPlayer.tutSeen.filter((k): k is string => typeof k === "string");
     } else {
@@ -3394,6 +3401,20 @@ export class WorldScene extends Phaser.Scene {
     if (chSpec && vSpec) {
       this.addBuildingSign(cx, cy - 320, `${chSpec.title} 마을`, vSpec.signColor);
     }
+    /* vc189 — 챕터 첫 진입 이벤트 컷씬.
+     *  종전엔 "지역에 처음 들어왔다"는 사건에 어떤 연출도 없었다(cutscene 구현 0건 실측).
+     *  카메라가 마을을 훑고 타이틀 카드가 뜬다. 1회성(seenCutscenes)이며 입력으로 스킵된다.
+     *  타이밍은 게임 시간으로만 잡는다(저FPS 어긋남 방지). */
+    this.time.delayedCall(420, () => {
+      try {
+        playCutscene(this as never, {
+          kind: "chapter",
+          id: `chapter:${chKey}`,
+          title: chSpec ? chSpec.title : vTheme.title,
+          subtitle: vTheme.title,
+        }, this.seenCutscenes);
+      } catch (e) { console.error("[SERTZ] 챕터 컷씬 실패(무시)", e); }
+    });
     // 건물 간판 + 기능 상호작용 — 여관(회복+저장), 내 집(무료 휴식), 전직관(카이엔 앞)
     this.addBuildingSign(cx - 400, cy - 236, "여관 — 20G 회복+버프", "#7de8ff"); // v1.0.2 밸런스 분리
     this.addBuildingSign(cx + 90, cy - 266, "전직관", "#ffd76a");
@@ -7886,9 +7907,22 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.roar();
     audio.sfx.beastGrowl(); // vc180 — 실제 녹음 괴수 포효
     this.doShake(260, 0.008);
-    /* vc181 (지시 #1·#2) — 보스 등장 3D 카메라: 위에서 내려앉는 조감 워크.
-     *  보스의 실제 등장 연출(하늘 낙하)과 겹쳐 3D 레이어가 시점 전환을 담당한다. */
-    void cine3d().play({ preset: "bossIntro", x: bx, y: by, tint: 0xff5a6a, duration: 1600 });
+    /* vc181 (지시 #1·#2) — 보스 등장 3D 카메라.
+     * vc189 — 3D 컷신은 사용자 지시(#3·#11·#17)로 전면 폐기했다. 같은 자리를
+     *  2D 이벤트 컷씬이 대신한다: 암전 → 보스 클로즈업(줌인) → 흔들림 → 복귀.
+     *  intro=false(진행 복구 경로)면 재생하지 않는다 — 이어하기에서 연출을 반복하면
+     *  전투가 시작되지 않은 채 2~3초를 버리게 된다. */
+    if (intro) {
+      try {
+        playCutscene(this as never, {
+          kind: "boss",
+          id: `boss:${this.stageDef.key}`,
+          title: def.name,
+          subtitle: "강적 출현",
+          focus: { x: bx, y: by },
+        }, this.seenCutscenes);
+      } catch (e) { console.error("[SERTZ] 보스 컷씬 실패(무시)", e); }
+    }
     this.showBanner(`${def.name} 출현!`);
     /* v1.4.12 (#12 보스전 자동전투 금지) — 보스전 진입 시 자동전투 강제 해제 + 이유 안내:
      *  보스는 패턴 회피가 전부라 알고리즘 자동전투로는 읽지 못한다(즉사 루트). */
@@ -15680,6 +15714,8 @@ export class WorldScene extends Phaser.Scene {
       homeDecor: this.player.homeDecor.map((d) => ({ ...d })),
       fieldDecor: this.player.fieldDecor.map((d) => ({ ...d })), // vc182 — 마을 배치 가구
       tutSeen: [...this.player.tutSeen],
+      /* vc189 — 재생한 이벤트 컷씬 (1회성 보장). 최근 200개만 저장 — 세이브 비대화 방지 */
+      seenCutscenes: serializeSeenCutscenes(this.seenCutscenes),
     };
   }
 
