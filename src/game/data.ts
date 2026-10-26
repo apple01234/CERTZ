@@ -73,6 +73,10 @@ export type ItemKey =
   /* v3.0.20 (#7) — 엘릭서: HP/MP 한 번에 100% 회복 */
   | "potion_elixir"
   | "weapon_1"
+  /* vc187 (#4) — 계열별 신규 무기 */
+  | "dagger_shadow" | "dagger_venom" | "dagger_moon"
+  | "staff_frost" | "staff_star" | "bow_gale2"
+  | "gun_storm" | "gun_leviathan"
   | "weapon_2"
   | "weapon_3"
   | "weapon_4"
@@ -573,6 +577,18 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "쿠소디아 기사검", icon: "i_sfw_kingdom", price: 820, tier: "rare", atk: 15 , clsOnly: ["warrior"] },
   sfa_kingdom: { key: "sfa_kingdom", kind: "armor", name: "쿠소디아 기사 갑옷", icon: "i_sfa_kingdom", price: 720, tier: "rare", def: 7 },
   sfr_kingdom: { key: "sfr_kingdom", kind: "accessory", name: "쿠소디아 기사 반지", icon: "i_sfr_kingdom", price: 760, tier: "rare", crit: 7, maxHp: 30, slot: "ring" },
+  /* vc187 (지시 #4 — "직업별 무기 없는 버그") — 계열별 무기 편중 해소.
+   *  실측: warrior 8 / ranger 3 / mage 2 / thief 1 / pirate 3.
+   *  도적은 전용 무기가 1종뿐이라 상점에 사실상 아무것도 없었다.
+   *  각 계열에 2~3종씩 추가해 선택지를 맞춘다. */
+  dagger_shadow: { key: "dagger_shadow", kind: "weapon", name: "그림자 단검", icon: "item_weapon_1", price: 520, tier: "common", atk: 11, reqLv: 8, clsOnly: ["thief"] },
+  dagger_venom: { key: "dagger_venom", kind: "weapon", name: "맹독 쌍단검", icon: "item_weapon_2", price: 1900, tier: "rare", atk: 26, reqLv: 22, clsOnly: ["thief"] },
+  dagger_moon: { key: "dagger_moon", kind: "weapon", name: "월영 비수", icon: "item_weapon_3", price: 6800, tier: "epic", atk: 47, reqLv: 40, clsOnly: ["thief"] },
+  staff_frost: { key: "staff_frost", kind: "weapon", name: "서리 마도서", icon: "item_weapon_2", price: 1250, tier: "rare", atk: 22, reqLv: 18, clsOnly: ["mage"] },
+  staff_star: { key: "staff_star", kind: "weapon", name: "성운의 지팡이", icon: "item_weapon_3", price: 5200, tier: "epic", atk: 41, reqLv: 36, clsOnly: ["mage"] },
+  bow_gale2: { key: "bow_gale2", kind: "weapon", name: "질풍 장궁", icon: "item_weapon_2", price: 3400, tier: "rare", atk: 32, reqLv: 30, clsOnly: ["ranger"] },
+  gun_storm: { key: "gun_storm", kind: "weapon", name: "폭풍 산탄총", icon: "item_weapon_2", price: 4100, tier: "rare", atk: 35, reqLv: 32, clsOnly: ["pirate"] },
+  gun_leviathan: { key: "gun_leviathan", kind: "weapon", name: "리바이어던 포", icon: "item_weapon_3", price: 12000, tier: "epic", atk: 58, reqLv: 45, clsOnly: ["pirate"] },
   sfw_alfheim: { key: "sfw_alfheim", kind: "weapon", name: "정령왕의 마검", icon: "i_sfw_alfheim", price: 1600, tier: "epic", atk: 21 , clsOnly: ["mage"] },
   sfa_alfheim: { key: "sfa_alfheim", kind: "armor", name: "정령왕의 갑주", icon: "i_sfa_alfheim", price: 1400, tier: "epic", def: 10 },
   sfr_alfheim: { key: "sfr_alfheim", kind: "accessory", name: "정령왕의 반지", icon: "i_sfr_alfheim", price: 1500, tier: "epic", crit: 9, maxHp: 40, slot: "ring" },
@@ -853,6 +869,10 @@ export const SHOP_STOCK: ItemKey[] = [
   "potion_hp3", // v1.0.16 — 고급 물약이 사다리 최상위 (회복량 700/450으로 상향, 가격 조정)
   "potion_mp3",
   /* v1.4.30 (#5) — 강화 주문서 골드 상점 철수: 에메랄드 전용 판매로 이관 */
+  /* vc187 (#4) — 계열별 신규 무기 진열 (도적·마법사·궁수·해적 선택지 확보) */
+  "dagger_shadow", "dagger_venom", "dagger_moon",
+  "staff_frost", "staff_star", "bow_gale2",
+  "gun_storm", "gun_leviathan",
   "weapon_2",
   "armor_2",
   "weapon_3",

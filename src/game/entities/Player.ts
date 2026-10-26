@@ -4103,6 +4103,122 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       }
 
+      /* vc187 (지시 #8·#15) — 시킹 전용 1차 궁극기 「해룡 승천 — 심해의 왕관」.
+       *  종전엔 pirate 폴백을 공유해 드레드노트와 연출이 완전히 같았다.
+       *  #15 지적("파도가 너무 작고 퀄리티 별로")을 반영해 파도를 화면 폭 전체로 키우고
+       *  다층(물벽·거품·용 오라)으로 쌓아 올린다. */
+      case "seaking": {
+        const W = this.scene.scale.width;
+        /* 1단 — 해룡이 솟구친다: 캐릭터 중심에서 위로 솟는 용 형상 오라 */
+        this.scene.time.delayedCall(200, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnPillar(this.x, this.y, 0x5ad0ff, 300);
+          this.scene.cameras.main.flash(150, 140, 220, 255);
+          for (let i = 0; i < 3; i++) {
+            this.scene.time.delayedCall(i * 90, () => {
+              const r = this.scene.add.circle(this.x, this.y, 26 + i * 18, 0x9ae8ff, 0.35)
+                .setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
+              this.scene.tweens.add({ targets: r, scale: 4.2, alpha: 0, duration: 620, ease: "Cubic.out", onComplete: () => r.destroy() });
+            });
+          }
+        });
+        /* 2단 — 거대 파도: 화면 폭 전체를 덮는 다층 해일 3연속 (크기 대폭 확대) */
+        for (let w = 0; w < 3; w++) {
+          this.scene.time.delayedCall(520 + w * 380, () => {
+            if (this.state === "dead") return;
+            const wy = this.y - 20 + (w - 1) * 58;
+            /* 물벽 — 폭을 화면 전체로, 높이도 2배 이상 */
+            const wave = this.scene.add.rectangle(-W * 0.3, wy, W * 0.45, 260 + w * 40, 0x2f7fc4, 0.55)
+              .setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
+            const foam = this.scene.add.rectangle(-W * 0.3, wy - (130 + w * 20), W * 0.45, 18, 0xd8f4ff, 0.95)
+              .setDepth(15).setBlendMode(Phaser.BlendModes.ADD);
+            const undertow = this.scene.add.rectangle(-W * 0.3, wy + (120 + w * 18), W * 0.45, 26, 0x1a4a7a, 0.5)
+              .setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
+            this.scene.tweens.add({
+              targets: [wave, foam, undertow], x: W * 1.25, duration: 900, ease: "Sine.inOut",
+              onComplete: () => { wave.destroy(); foam.destroy(); undertow.destroy(); },
+            });
+            this.scene.doShake?.(220, 0.011);
+            this.scene.sfxSkill("thunder", 0.55 + w * 0.08);
+            /* 파도가 지나간 자리 광역 타격 */
+            for (const e of this.getAllTargetsIn(999)) {
+              const { dmg, crit } = rd(4.6);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, new Phaser.Math.Vector2(1, 0), 520, crit);
+            }
+          });
+        }
+        /* 3단 — 종결: 수압 폭발 + 넉백 */
+        this.scene.time.delayedCall(1720, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnBurstAt(this.x, this.y, 70, 0x8ae0ff);
+          this.scene.cameras.main.shake(420, 0.02);
+          this.scene.sfxSkill("superhit", 0.75);
+          for (const e of this.getAllTargetsIn(620)) {
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = rd(7.4);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 700, crit);
+          }
+        });
+        break;
+      }
+
+      /* vc187 (지시 #8) — 드레드노트 전용 1차 궁극기 「총력 포격 — 레드 헤일」.
+       *  붉은 락온 격자 → 함포 무차별 낙하 → 연막. 시킹과 완전히 다른 정체성. */
+      case "dreadnought": {
+        const SW = this.scene.scale.width, SH = this.scene.scale.height;
+        /* 1단 — 락온 격자: 화면 전체에 붉은 조준선이 그려진다 */
+        this.scene.time.delayedCall(140, () => {
+          if (this.state === "dead") return;
+          for (let i = 0; i < 7; i++) {
+            const gx = (SW / 7) * i;
+            const line = this.scene.add.rectangle(gx, SH / 2, 1.5, SH, 0xff3a3a, 0.5)
+              .setDepth(30).setBlendMode(Phaser.BlendModes.ADD).setScrollFactor(0);
+            this.scene.tweens.add({ targets: line, alpha: 0, delay: 700, duration: 300, onComplete: () => line.destroy() });
+          }
+          for (let i = 0; i < 5; i++) {
+            const gy = (SH / 5) * i;
+            const line = this.scene.add.rectangle(SW / 2, gy, SW, 1.5, 0xff3a3a, 0.5)
+              .setDepth(30).setBlendMode(Phaser.BlendModes.ADD).setScrollFactor(0);
+            this.scene.tweens.add({ targets: line, alpha: 0, delay: 700, duration: 300, onComplete: () => line.destroy() });
+          }
+          this.scene.sfxSkill("thunder", 0.5);
+        });
+        /* 2단 — 융단 폭격: 10발이 순차 낙하 */
+        const targets = this.getAllTargetsIn(999);
+        for (let i = 0; i < 10; i++) {
+          this.scene.time.delayedCall(760 + i * 260, () => {
+            if (this.state === "dead") return;
+            const t = targets[i % Math.max(1, targets.length)];
+            const px = t ? t.x + (Math.random() - 0.5) * 130 : this.x + (Math.random() - 0.5) * 520;
+            const py = t ? t.y + (Math.random() - 0.5) * 90 : this.y + (Math.random() - 0.5) * 320;
+            const shell = this.scene.add.rectangle(px, py - 240, 9, 22, 0x1a1a24, 1).setDepth(16);
+            this.scene.tweens.add({ targets: shell, y: py, duration: 200, ease: "Quad.in", onComplete: () => {
+              shell.destroy();
+              this.scene.spawnBurstAt(px, py, 34, 0xffa54a);
+              this.scene.spawnField({ x: px, y: py, radius: 92, dur: 2200, dps: Math.max(18, Math.round(this.atkTotal * 1.1)), kind: "fire", owner: "player" });
+              this.scene.doShake?.(120, 0.009);
+              for (const e of targets) {
+                if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 140) continue;
+                const { dmg, crit } = rd(3.4);
+                if (crit) this.scene.sfxCrit();
+                e.takeDamage(dmg, new Phaser.Math.Vector2(e.x - px, e.y - py).normalize(), 460, crit);
+              }
+            } });
+          });
+        }
+        /* 3단 — 연막: 치명타 증가 장판 */
+        this.scene.time.delayedCall(3600, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnField({ x: this.x, y: this.y, radius: 320, dur: 6000, dps: Math.max(22, Math.round(this.atkTotal * 1.4)), kind: "fire", owner: "player" });
+          this.scene.cameras.main.shake(500, 0.024);
+          this.scene.cameras.main.flash(240, 255, 190, 120);
+          this.scene.sfxSkill("superhit", 0.72);
+        });
+        break;
+      }
+
       /* vc178 — 해적 계열 — 만조: 대양 항로. 거대 해일 관통 + 낙뢰 세례.
        *  v1.2.4까지 case "pirate"가 없어 도적 폴백(심연 참수극)으로 떨어졌다.
        *  "범위가 가장 넓은 계열 궁극기"라는 SKILL5_INFO 설명을 코드로 만든다. */
@@ -4799,6 +4915,118 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       }
 
+      /* vc187 (지시 #8) — 시킹 전용 2차 궁극기 「만조 — 침몰의 종」.
+       *  종전 pirate 폴백 공유 → 드레드노트와 동일 연출. 이제 바다 분열 + 해일 3연타. */
+      case "seaking": {
+        const W = this.scene.scale.width;
+        this.scene.time.delayedCall(260, () => {
+          if (this.state === "dead") return;
+          this.scene.cameras.main.flash(180, 120, 200, 255);
+          /* 바다가 수직으로 갈라진다 */
+          const rift = this.scene.add.rectangle(this.x, this.scene.scale.height / 2, 34,
+            this.scene.scale.height * 1.5, 0x7ad0ff, 0.7)
+            .setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
+          this.scene.tweens.add({ targets: rift, alpha: 0, scaleX: 0.15, duration: 1600, ease: "Cubic.in", onComplete: () => rift.destroy() });
+          this.scene.spawnCrack(this.x, this.y);
+          this.scene.doShake?.(460, 0.015);
+          this.scene.sfxSkill("thunder", 0.55);
+        });
+        /* 해일 4연속 — 화면 폭 전체, 시킹 1차보다 더 크게 */
+        for (let w = 0; w < 4; w++) {
+          this.scene.time.delayedCall(700 + w * 460, () => {
+            if (this.state === "dead") return;
+            const wy = this.y - 30 + (w - 1.5) * 62;
+            const wave = this.scene.add.rectangle(-W * 0.35, wy, W * 0.5, 330 + w * 46, 0x2568a8, 0.6)
+              .setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
+            const foam = this.scene.add.rectangle(-W * 0.35, wy - (165 + w * 22), W * 0.5, 22, 0xe4f8ff, 0.95)
+              .setDepth(15).setBlendMode(Phaser.BlendModes.ADD);
+            this.scene.tweens.add({
+              targets: [wave, foam], x: W * 1.3, duration: 980, ease: "Sine.inOut",
+              onComplete: () => { wave.destroy(); foam.destroy(); },
+            });
+            this.scene.doShake?.(240, 0.013);
+            for (const e of this.getAllTargetsIn(999)) {
+              const { dmg, crit } = rd(5.2);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, new Phaser.Math.Vector2(1, 0), 560, crit);
+            }
+          });
+        }
+        /* 종결 — 심해가 삼킨다 */
+        this.scene.time.delayedCall(2900, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnPillar(this.x, this.y, 0x8ae0ff, 380);
+          this.scene.spawnBurstAt(this.x, this.y, 96, 0x6ad0ff);
+          this.scene.cameras.main.flash(260, 180, 240, 255);
+          this.scene.cameras.main.shake(700, 0.03);
+          this.scene.sfxSkill("superhit", 0.78);
+          for (const e of this.getAllTargetsIn(760)) {
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = rd(10.5);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 780, crit);
+          }
+        });
+        break;
+      }
+
+      /* vc187 (지시 #8) — 드레드노트 전용 2차 궁극기 「폭풍항로 — 종말의 일제사격」.
+       *  전 함포 일제 발화. 시킹(해일)과 완전히 다른 화력 정체성. */
+      case "dreadnought": {
+        const SW = this.scene.scale.width, SH = this.scene.scale.height;
+        /* 전 함포 일제 준비 — 화면이 붉게 물든다 */
+        this.scene.time.delayedCall(200, () => {
+          if (this.state === "dead") return;
+          this.scene.cameras.main.flash(300, 255, 90, 60);
+          for (let i = 0; i < 6; i++) {
+            const gy = (SH / 6) * i;
+            const bar = this.scene.add.rectangle(SW / 2, gy, SW, 3, 0xff4a2a, 0.75)
+              .setDepth(30).setBlendMode(Phaser.BlendModes.ADD).setScrollFactor(0);
+            this.scene.tweens.add({ targets: bar, alpha: 0, duration: 620, delay: i * 40, onComplete: () => bar.destroy() });
+          }
+          this.scene.sfxSkill("superhit", 0.6);
+        });
+        /* 일제사격 — 3파 14발, 화면 전체를 훑는다 */
+        const tg = this.getAllTargetsIn(999);
+        for (let wave = 0; wave < 3; wave++) {
+          for (let i = 0; i < 5; i++) {
+            this.scene.time.delayedCall(620 + wave * 620 + i * 110, () => {
+              if (this.state === "dead") return;
+              const px = this.x + (Math.random() - 0.5) * 620;
+              const py = this.y + (Math.random() - 0.5) * 360;
+              const shell = this.scene.add.rectangle(px, py - 260, 11, 26, 0x14141c, 1).setDepth(16);
+              this.scene.tweens.add({ targets: shell, y: py, duration: 190, ease: "Quad.in", onComplete: () => {
+                shell.destroy();
+                this.scene.spawnBurstAt(px, py, 40, 0xff7a30);
+                this.scene.spawnField({ x: px, y: py, radius: 100, dur: 2400, dps: Math.max(20, Math.round(this.atkTotal * 1.2)), kind: "fire", owner: "player" });
+                this.scene.doShake?.(130, 0.01);
+                for (const e of tg) {
+                  if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 150) continue;
+                  const { dmg, crit } = rd(4.0);
+                  if (crit) this.scene.sfxCrit();
+                  e.takeDamage(dmg, new Phaser.Math.Vector2(e.x - px, e.y - py).normalize(), 500, crit);
+                }
+              } });
+            });
+          }
+        }
+        /* 종결 — 남은 화약 전부 */
+        this.scene.time.delayedCall(3200, () => {
+          if (this.state === "dead") return;
+          this.scene.cameras.main.flash(320, 255, 160, 90);
+          this.scene.cameras.main.shake(820, 0.034);
+          this.scene.spawnBurstAt(this.x, this.y, 110, 0xffa050);
+          this.scene.sfxSkill("superhit", 0.85);
+          for (const e of this.getAllTargetsIn(820)) {
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = rd(11.8);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 820, crit);
+          }
+        });
+        break;
+      }
+
       /* vc178 — 해적 계열 — 폭풍항로: 침몰의 종. 바다 수직 분열 + 침몰 함대 포성 8초 포격.
        *  v1.2.4까지 case "pirate"가 없어 도적 폴백(사(死)의 일섬)으로 떨어졌다. */
       case "pirate": {
@@ -4820,8 +5048,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             e.takeDamage(dmg, away, 560, crit);
           }
         });
-        /* 2단 — 침몰한 함대의 포성이 되돌아온다: 8초간 광역 폭격 (설명 문구 그대로) */
-        const BARRAGE_MS = 8000, BARRAGE_N = 22;
+        /* 2단 — 침몰한 함대의 포성이 되돌아온다: 광역 폭격.
+         *  vc187 (지시 #1·#14 — "RTX 5070에서도 멈춘다", "해적류만 멈춘다") —
+         *  원인은 GPU가 아니라 오브젝트 폭주였다. spawnPillar 1회 = 오브젝트 4개 + 트윈 3개.
+         *  종전 22발 × 4개 = 오브젝트 88개 + 트윈 66개가 8초에 걸쳐 쏟아지고,
+         *  폭발마다 getAllTargetsIn(999)로 전체 적을 다시 순회했다(동기 루프).
+         *  → 발수와 지속을 줄이고, 전체 순회를 1회 캐시로 바꾼다. 위력은 배율로 보상. */
+        const BARRAGE_MS = 5200, BARRAGE_N = 12;
+        /* 폭격 대상은 시전 시점에 한 번만 수집 — 12발 내내 재사용 */
+        const barrageTargets = this.getAllTargetsIn(999);
         for (let i = 0; i < BARRAGE_N; i++) {
           this.scene.time.delayedCall(700 + (i * BARRAGE_MS) / BARRAGE_N, () => {
             if (this.state === "dead") return;
@@ -4833,13 +5068,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.tweens.add({ targets: shell, y: py, duration: 180, ease: "Quad.in", onComplete: () => {
               shell.destroy();
               this.scene.spawnBurstAt(px, py, 22, 0xffb86a);
-              this.scene.spawnPillar(px, py, 0xffd0a0, 150);
+              /* vc187 (#1) — spawnPillar 는 오브젝트 4개+트윈 3개를 만든다.
+               *  반복 폭격에서는 1개짜리 가벼운 폭발로 대체(육안 차이 없이 부하 1/4). */
+              this.scene.spawnBurstAt(px, py, 26, 0xffd0a0);
               this.scene.sfxSkill("thunder", 0.7 + Math.random() * 0.2);
               this.scene.doShake?.(110, 0.008);
-              for (const e of this.getAllTargetsIn(999)) {
+              /* vc187 (#1·#14) — 폭발마다 전체 적을 재순회하지 않고 1회 캐시 사용.
+               *  발수 감소(22→12)를 배율 1.8배로 보상해 총 피해량은 유지. */
+              for (const e of barrageTargets) {
                 if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 150) continue;
                 const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
-                const { dmg, crit } = rd(2.6);
+                const { dmg, crit } = rd(2.6 * 1.8);
                 if (crit) this.scene.sfxCrit();
                 e.takeDamage(dmg, away, 420, crit);
               }
@@ -5895,6 +6134,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   equip(key: ItemKey): boolean {
     const item = ITEMS[key];
     if (!item || !this.owned.includes(key)) return false;
+    /* vc187 (지시 #5 — "다른 직업이 전사 무기 등을 착용할 수 있는 버그") —
+     *  clsOnly 는 상점 진열 필터(Panels.tsx)에만 쓰이고 equip()에는 검사가 없었다.
+     *  그래서 가방에서 직접 장착하면 해적이 전사 대검을 낄 수 있었다.
+     *  이제 장착 시점에 계열을 검사한다 — 상점/가방/거래소 어느 경로든 동일하게 막힌다. */
+    if (item.clsOnly && item.clsOnly.length > 0) {
+      const fam = familyOf(this.cls);
+      if (!fam || !item.clsOnly.includes(fam)) {
+        this.scene.spawnPickupText(this.x, this.y - 30, "이 직업은 착용할 수 없다", "#ff7a7a");
+        this.scene.sfxSkill?.("uiCancel", 0.7);
+        return false;
+      }
+    }
     if (item.kind === "weapon") {
       this.weapon = key;
       /* vc145 (#16 긴급) — 새 무기의 자체 성으로 미러 갱신 (이전 무기의 성 유출 차단) */

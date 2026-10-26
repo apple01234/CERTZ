@@ -932,7 +932,11 @@ export const SKILL4_DESC: Record<Skill4Kind, string> = {
 export type Skill5Key =
   | FamilyKey
   | "warbringer" | "crusader" | "deadeye" | "skylord"
-  | "arclord" | "eternal" | "shadowlord" | "blademaster";
+  | "arclord" | "eternal" | "shadowlord" | "blademaster"
+  /* vc187 (지시 #8 — "씨킹 궁극기랑 드레드노트 궁극기랑 같은 버그") —
+   *  해적 4차 2종이 이 타입·TIER4_ULTIMATES 에서 빠져 있어 계열 폴백(pirate)으로
+   *  떨어졌다. 그래서 시킹과 드레드노트가 완전히 같은 연출을 썼다. */
+  | "seaking" | "dreadnought";
 export const SKILL5_INFO: Record<Skill5Key, { name: string; desc: string }> = {
   /* ── 계열 폴백 (1~3차에서 5차 해금 시) ── */
   warrior: {
@@ -989,10 +993,19 @@ export const SKILL5_INFO: Record<Skill5Key, { name: string; desc: string }> = {
     name: "극의 — 무한 검무",
     desc: "블레이드마스터 전용. 무한 검무 50연타로 전장을 텔레포트하며 점점 빠르게, 한 컷 한 컷 한층 깊게 베어 건너고(연타 화력 강화 — 시작 0.1초→마지막 0.02초), 정점에서 교차하는 쌍검 극의 일격으로 종결한다 — 붉은 死 기운이 검무를 따라든다",
   },
-};
+
+  /* vc187 (#8·#15) — 해적 4차 1차 궁극기 */
+  seaking: {
+    name: "해룡 승천 — 심해의 왕관",
+    desc: "시킹 전용. 거대한 해룡이 솟구쳐 전장을 감싸고, 내려치는 수압이 거대한 파도 고리로 사방을 쓸어낸다 — 범위가 가장 넓은 해양 궁극기",
+  },
+  dreadnought: {
+    name: "총력 포격 — 레드 헤일",
+    desc: "드레드노트 전용. 붉은 락온 격자가 화면을 덮은 뒤 대구경 함포가 무차별 낙하해 연기와 화염으로 전장을 태운다",
+  },};
 
 /** v3.3.0 — 5차 궁극기 종류 승계: 4차 세부직업이면 고유 궁극기, 아니면 계열 폴백 */
-const TIER4_ULTIMATES: readonly string[] = ["warbringer", "crusader", "deadeye", "skylord", "arclord", "eternal", "shadowlord", "blademaster"];
+const TIER4_ULTIMATES: readonly string[] = ["warbringer", "crusader", "deadeye", "skylord", "arclord", "eternal", "shadowlord", "blademaster", "seaking", "dreadnought"]; // vc187 (#8) — 해적 4차 2종 누락 수정
 export function resolveSkill5Of(key?: string | null): Skill5Key {
   const chain = chainOf(key);
   if (chain.length >= 4) {
@@ -1064,7 +1077,16 @@ export const SKILL5B_INFO: Record<Skill5BKey, { name: string; desc: string }> = 
     name: "절멸의 체인 쾌검",
     desc: "사슬 검사 계열 최종형. 가시 사슬을 양손으로 잡고 광범위 회전 난무 — 사슬 끝에서 마찰 스파크와 혈랑이 치솟으며 심각한 중첩 출혈을 남긴다 (7초·5.5m)",
   },
-};
+
+  /* vc187 (#8) — 해적 4차 제2궁극기 (종전 pirate 폴백 공유) */
+  seaking: {
+    name: "만조 — 침몰의 종",
+    desc: "시킹 전용. 바다가 수직으로 갈라지고 침몰한 함대의 포성이 되돌아온다 — 해일이 8초간 전장을 쓸어낸다",
+  },
+  dreadnought: {
+    name: "폭풍항로 — 종말의 일제사격",
+    desc: "드레드노트 전용. 전 함포가 일제히 발화해 화면 전체가 화염과 연기로 뒤덮인다 — 남은 화약을 한 번에 태우는 종결 포격",
+  },};
 
 /* v3.3.0 (지시 #1 — "5차에서도 스킬들 다 강화 되어야지!!"):
  *  5차 각성 시 스킬 1~4 전체가 강화된다.
