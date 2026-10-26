@@ -51,7 +51,7 @@ export const FISH_DEFS: FishDef[] = [
   { key: "fish_salmon", name: "은연어", tier: "rare", zones: ["forest", "niflheim"], weight: [1.5, 5.0], gold: 780, desc: "거슬러 오르는 강자. 살이 단단하다." },
   { key: "fish_crystal", name: "수정비늘", tier: "rare", zones: ["alfheim", "cave"], weight: [0.6, 2.4], gold: 950, desc: "비늘이 수정처럼 굳어 빛을 굴절시킨다." },
   { key: "fish_ember", name: "불씨鰓", tier: "rare", zones: ["muspelheim"], weight: [1.0, 3.5], gold: 880, desc: "아가미에서 불티가 떨어진다. 화로에 넣으면 불이 붙는다." },
-  { key: "fish_frost", name: "서리지느러미", tier: "rare", zones: ["niflheim"], weight: [1.2, 4.0], gold: 910, desc: "지느러미가 얼음 결정으로 덮여 있다." },
+  { key: "fish_frost", name: "서리지느러미", tier: "rare", zones: ["niflheim"], weight: [1.2, 4.0], gold: 910, desc: "지느러미가 얼음 보석으로 덮여 있다." },
   { key: "fish_rune", name: "룬비늘", tier: "rare", zones: ["nidavellir"], weight: [0.9, 2.8], gold: 870, desc: "비늘 하나하나에 룬이 새겨져 있다. 누가 새겼는지는 아무도 모른다." },
 
   /* ── 에픽 ── */

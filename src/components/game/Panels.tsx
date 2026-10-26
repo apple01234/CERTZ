@@ -3064,16 +3064,16 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
           </div>
         )}
 
-        {/* v3.0.22 (#43/#44/#50) — 인피니트보석 결정 수집 현황 (챕터마다 다른 결정 + 완전 수집 시 영구 가호) */}
+        {/* v3.0.22 (#43/#44/#50) — 인피니트보석 보석 수집 현황 (챕터마다 다른 보석 + 완전 수집 시 영구 가호) */}
         <div className={`mb-2 rounded-lg border p-2.5 ${rpg.blessing ? "border-sky-300/60 bg-sky-400/[0.1]" : "border-white/15 bg-white/[0.04]"}`}>
           <p className="text-[12px] font-black text-sky-200">
-            🌳 인피니트보석 결정 — {rpg.fragFound ?? 0} / {rpg.fragTotal ?? 9} 챕터 수집
+            🌳 인피니트보석 보석 — {rpg.fragFound ?? 0} / {rpg.fragTotal ?? 9} 챕터 수집
             {rpg.blessing ? " · 가호 활성" : ""}
           </p>
           <p className="mt-0.5 text-[10px] font-bold text-white/50">
             {rpg.blessing
-              ? "다섯 왕국의 결정이 모두 모였다 — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)"
-              : "챕터마다 다른 결정이 숨어 있다. 전부 모으면 인피니트보석의 가호를 얻는다 (ATK+20 · DEF+8 · HP+200 · 공격 +3%)"}
+              ? "다섯 왕국의 보석이 모두 모였다 — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)"
+              : "챕터마다 다른 보석이 숨어 있다. 전부 모으면 인피니트보석의 가호를 얻는다 (ATK+20 · DEF+8 · HP+200 · 공격 +3%)"}
           </p>
         </div>
 
@@ -4328,7 +4328,7 @@ function KingdomRankTab() {
     <div>
       <div className="mb-2 rounded-lg border border-yellow-300/40 bg-yellow-400/10 px-2.5 py-2">
         <p className="text-[11px] font-black text-yellow-100">왕국 랭킹 — 전설의 명예</p>
-        <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">환생 · 심연의 탑 기록 · 레벨 순으로 명예의 전당이 결정된다. 계정 패널에서 클라우드 백업(3분 자동)이 켜져 있으면 자동 등록!</p>
+        <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">환생 · 심연의 탑 기록 · 레벨 순으로 명예의 전당이 보석된다. 계정 패널에서 클라우드 백업(3분 자동)이 켜져 있으면 자동 등록!</p>
         {/* v1.4.0 (Task 0-3) — 조회 실패 시 캐시 데이터 표기: 빈 화면 대신 “n초 전 기준” 안내 */}
         {rankCacheAgeSec() !== null && (
           <p className="mt-0.5 text-[9px] font-bold text-yellow-200/70">⏱ {rankCacheAgeSec()}초 전 기준 — 열려 있는 동안 15초마다 자동 갱신 · 열 때 내 기록 즉시 등록</p>

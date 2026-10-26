@@ -47,7 +47,7 @@ export const GATHER_DEFS: GatherDef[] = [
   { key: "ore_iron", name: "철광석", zones: ["forest", "kingdom", "cave"], respawn: 40000, yield: [1, 2], desc: "흔한 광석. 대장간에서 쓰인다.", color: "#d4d4d8" },
   { key: "ore_crystal", name: "수정조각", zones: ["alfheim", "cave"], respawn: 50000, yield: [1, 1], desc: "빛을 굴절시키는 조각. 장신구 재료.", color: "#93c5fd" },
   { key: "ore_rune", name: "룬원석", zones: ["nidavellir"], respawn: 60000, yield: [1, 1], desc: "룬이 새겨진 원석. 난쟁이들의 보물.", color: "#fbbf24" },
-  { key: "ore_abyss", name: "심연결정", zones: ["hel", "abyss"], respawn: 70000, yield: [1, 1], desc: "심연의 기운이 응축된 결정. 만지면 손이 저리다.", color: "#a78bfa" },
+  { key: "ore_abyss", name: "심연보석", zones: ["hel", "abyss"], respawn: 70000, yield: [1, 1], desc: "심연의 기운이 응축된 보석. 만지면 손이 저리다.", color: "#a78bfa" },
 
   /* 부재료 */
   { key: "mush_red", name: "붉은버섯", zones: ["forest", "cave"], respawn: 28000, yield: [2, 3], desc: "독은 없지만 맛이 강하다. 요리의 감초.", color: "#f87171" },
