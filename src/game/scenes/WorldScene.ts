@@ -3,6 +3,7 @@ import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PR
 import { villageThemeOf, type VillageTheme } from "../villageThemes"; // vc189 (D4) — 챕터별 마을 테마
 import { playCutscene, loadSeenCutscenes, serializeSeenCutscenes } from "../cutscene"; // vc189 — 이벤트 컷씬
 import { CameraFx, type CameraFxHost } from "../scene/cameraFx"; // vc189 — WorldScene 분할 1차(원근/줌)
+import { openPointRng as spOpenPointRng, openPointAny as spOpenPointAny, inOpenArea as spInOpenArea, nearSolidObstacle as spNearSolidObstacle, type SpawnPointHost } from "../scene/spawnPoints"; // vc189 — 분할 2차
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
@@ -2294,45 +2295,22 @@ export class WorldScene extends Phaser.Scene {
     rng: Phaser.Math.RandomDataGenerator,
     opts?: { minDist?: number; avoidEntry?: boolean }
   ): { x: number; y: number } {
-    const lay = this.layout;
-    if (!lay) return { x: rng.between(240, this.stageW - 160), y: rng.between(120, this.stageH - 120) };
-    const idxs: number[] = [];
-    for (let i = 0; i < lay.open.length; i++) {
-      if (!lay.open[i]) continue;
-      if (opts?.avoidEntry && i === lay.entry && lay.open.filter(Boolean).length > 2) continue;
-      idxs.push(i);
-    }
-    if (idxs.length === 0) idxs.push(lay.entry);
-    const minDist = opts?.minDist ?? 0;
-    for (let tries = 0; tries < 24; tries++) {
-      const cell = idxs[rng.between(0, idxs.length - 1)];
-      const c = cellCenterOf(lay, cell);
-      const x = c.x + rng.realInRange(-lay.cellW * 0.26, lay.cellW * 0.26);
-      const y = c.y + rng.realInRange(-lay.cellH * 0.26, lay.cellH * 0.26);
-      if (minDist > 0 && this.player && Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < minDist) continue;
-      return { x, y };
-    }
-    return cellCenterOf(lay, idxs[rng.between(0, idxs.length - 1)]);
+    return spOpenPointRng(this as unknown as SpawnPointHost, rng, opts);
   }
 
   /** 실행 시점 무작위 개방 지점 (파편 등 — 재결정성 불필요) */
   private openPointAny(opts?: { minDist?: number }): { x: number; y: number } {
-    return this.openPointRng(new Phaser.Math.RandomDataGenerator([`${Date.now()}-${Phaser.Math.Between(0, 1e9)}`]), opts);
+    return spOpenPointAny(this as unknown as SpawnPointHost, opts);
   }
 
   /** 지점이 개방 영역인지 — 장식 배치 판정용 */
   private inOpenArea(x: number, y: number): boolean {
-    return !this.layout || isOpenXY(this.layout, x, y);
+    return spInOpenArea(this as unknown as SpawnPointHost, x, y);
   }
 
   /** v3.0.14 — 배치 겹침 방지: 지점이 기존 충돌 오브제(나무/바위) 중심에 너무 가까운지 */
   private nearSolidObstacle(x: number, y: number, minDist: number): boolean {
-    for (const go of this.solidGroup.getChildren()) {
-      if (!go.active || !go.getData("obstacle")) continue;
-      const s = go as Phaser.Physics.Arcade.Sprite;
-      if (Phaser.Math.Distance.Between(x, y, s.x, s.y) < minDist) return true;
-    }
-    return false;
+    return spNearSolidObstacle(this as unknown as SpawnPointHost, x, y, minDist);
   }
 
   private placeDecor(stageKey: StageKey) {
