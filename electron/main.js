@@ -180,7 +180,22 @@ function createWindow(port) {
       win.setFullScreen(!win.isFullScreen());
     }
   });
+  /* vc187 (지시 #7 — "PC에서 구글 로그인 안됨") —
+   *  원인: PC 클라이언트는 http://127.0.0.1:<port> 로컬 서버를 띄워 띄운다.
+   *        이 오리진은 Firebase 승인 도메인 목록에 넣을 수 없어(IP 오리진 거부)
+   *        signInWithPopup 이 auth/unauthorized-domain 으로 즉시 실패한다.
+   *  해결: 인증 팝업은 Electron 창이 아니라 **외부 기본 브라우저**로 넘긴다.
+   *        외부 브라우저는 실제 서비스 도메인(vercel)에서 열리므로 인증이 정상 동작하고,
+   *        로그인 후 발급된 토큰은 커스텀 프로토콜(sertz://auth?token=...)로 되돌려 받는다.
+   *  (loadURL 을 localhost 로 바꾸는 것만으로는 부족하다 — Firebase 는 localhost 만
+   *   승인 도메인에 추가할 수 있으나, 사용자가 승인 도메인을 직접 등록해야 해서
+   *   배포본에서는 여전히 실패한다. 외부 브라우저 경로가 유일하게 확실하다.) */
   win.webContents.setWindowOpenHandler(({ url }) => {
+    // 구글/Firebase 인증 관련 팝업은 외부 브라우저로 (승인 도메인에서 열려야 성공)
+    if (/accounts\.google\.com|firebaseapp\.com|__\/auth\//i.test(url)) {
+      shell.openExternal(url);
+      return { action: "deny" };
+    }
     if (/^https?:/i.test(url)) shell.openExternal(url);
     return { action: "deny" };
   });

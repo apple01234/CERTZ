@@ -849,6 +849,7 @@ export class WorldScene extends Phaser.Scene {
     this.repeatCycle = 0;
     this.keymap = loadKeyMap();
     this.moveScheme = loadMoveScheme(); // v1.0.17 — 부팅 시 저장된 이동 스킴 복원
+    if (this.player) this.player.mouseAim = null; // vc187 (#18) — 스킴 변경 시 조준 초기화
     this.keyObjs = {};
     this.pet = null;
     this.cosmeticAura = null;
@@ -9453,6 +9454,18 @@ export class WorldScene extends Phaser.Scene {
      *  React 설정 패널에서 발생하며, 실제로 그 토글을 만졌을 때만 온다. */
     const onTutNotify = (v: { ev?: string }) => { if (v?.ev) this.tut?.notify(v.ev); };
     EventBus.on("tut:notify", onTutNotify);
+    /* vc187 (지시 #18) — WASD 모드에서 마우스 조준. 이동은 키보드, 조준은 마우스로 분리한다.
+     *  현재 위치 → 포인터 월드좌표 방향을 벡터로 넘겨 aimDirFree 가 우선 사용한다. */
+    const onAim = (ptr: Phaser.Input.Pointer) => {
+      if (this.moveScheme !== "wasd" || !this.player) return;
+      const wp = this.cameras.main.getWorldPoint(ptr.x, ptr.y);
+      const dx = wp.x - this.player.x;
+      const dy = wp.y - this.player.y;
+      if (dx * dx + dy * dy < 1) return; // 발밑 클릭은 무시
+      this.player.mouseAim = new Phaser.Math.Vector2(dx, dy);
+    };
+    this.input.on("pointermove", onAim);
+    this.input.on("pointerdown", onAim);
 
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
@@ -10300,6 +10313,8 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:gatePick", onGatePick);
       EventBus.off("rpg:gateShop", onGateShop);
     EventBus.off("tut:notify", onTutNotify);
+    this.input.off("pointermove", onAim);
+    this.input.off("pointerdown", onAim);
       /* v1.2.0 (C42 이벤트 리스너 해제 누락) — 위 6개 핸들러는 on만 있고 off가 없어
        *  씬 재진입(마을 이동·재접속)마다 누적됐다. 누적되면 같은 구매/퀘스트 이벤트가
        *  N번 실행되어 골드가 여러 번 빠지거나 퀘스트가 중복 수락된다.

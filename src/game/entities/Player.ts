@@ -927,7 +927,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** v3.0 (사용자 지시 #2) — 자유 조준: facing 그대로 정규화해 반환
    *  원거리 계열(마법사 볼트/궁수 화살)은 4방향 스냅 없이 8방향+대각선(아날로그) 조준 */
+  /* vc187 (지시 #18 — "WASD 배치로 변경시 이동은 WASD로 하고 공격은 마우스로 조준하고
+   *  공격 가능하게 만들어") — 마우스 조준 벡터. WASD 모드에서만 활성.
+   *  WorldScene 이 pointermove 마다 갱신하며, 조준이 있으면 facing 보다 우선한다.
+   *  (이동은 키보드, 조준은 마우스 — 두 축을 분리해야 대각선 사격이 자연스럽다.) */
+  mouseAim: Phaser.Math.Vector2 | null = null;
+
   private aimDirFree(): Phaser.Math.Vector2 {
+    /* 마우스 조준이 있으면 그것을 최우선 사용 (WASD 조작 모드) */
+    if (this.mouseAim && this.mouseAim.lengthSq() > 0.001) return this.mouseAim.clone().normalize();
     const f = this.facing;
     if (f.lengthSq() < 0.001) return new Phaser.Math.Vector2(1, 0);
     return f.clone().normalize();
@@ -2509,37 +2517,41 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 스카이로드 — 하늘의 희망: 대형 토네이도 2기 + 잔풍 소용돌이 4기 (폭풍의 눈과 완전 별개)
    *  v3.0.11 — 매직볼트 → 진짜 토네이도(fx-tornado 회전 스프라이트):
    *  이동하며 적을 빨아들이고 S자로 꿈틀대고, 소멸 시 폭발 마무리 */
+      /* vc187 (지시 #10 — "스카이로드 스킬이 너무 토네이도를 우려먹는 느낌임") —
+       *  실측: 템페스트 tornado / 스카이로드 cyclone / 스카이로드 skystorm 3개가
+       *        전부 fireCyclone(회오리)이라 같은 스킬을 세 번 보는 느낌이었다.
+       *  스카이로드 1차(cyclone)를 **심판의 낙뢰**로 교체 — 회오리 대신 하늘에서
+       *  빛기둥이 3연속 내리꽂힌다(spawnPillar + 충격파). 날아가는 투사체가 아니라
+       *  '하늘' 컨셉에 맞는 수직 낙하 연출. 템페스트의 회오리는 그대로 둔다. */
       case "cyclone": {
         const aim = this.aimDirFree();
         const base = Math.atan2(aim.y, aim.x);
-        // 대형 토네이도 2기 — 좌우로 살짝 벌려 전진, 강한 빨아들이기
-        for (let i = 0; i < 2; i++) {
-          this.scene.time.delayedCall(i * 180, () => {
+        // 3연 낙뢰 — 조준 방향으로 3지점에 순차 강하
+        for (let i = 0; i < 3; i++) {
+          this.scene.time.delayedCall(i * 150, () => {
             if (this.state === "dead") return;
-            const { dmg, crit } = this.rollDamage(1.7, true);
-            this.scene.fireCyclone({
-              x: this.x, y: this.y - 8,
-              angle: base + (i === 0 ? 0.12 : -0.12), speed: 250,
-              dmg, crit, hex,
-              pull: 0.55, radius: 100, life: 2400, scale: 2.6,
-            });
+            const spread = (i - 1) * 74;
+            const tx = this.x + Math.cos(base) * 130 + Math.cos(base + Math.PI / 2) * spread;
+            const ty = this.y + Math.sin(base) * 130 + Math.sin(base + Math.PI / 2) * spread;
+            const { dmg, crit } = this.rollDamage(1.5, true);
+            // 하늘에서 내리꽂히는 빛기둥
+            this.scene.spawnPillar(tx, ty, hex, 220);
+            this.scene.spawnShockwave(tx, ty, hex, 1.5, 300, 0.9);
+            this.scene.spawnBurstAt(tx, ty, 14, hex);
+            // 범위 피해 — 기둥 중심 반경 92 (전체 순회 1회, 거리로 컷)
+            for (const e of this.scene.getAllTargets()) {
+              if (e.state === "dead") continue;
+              const dx = e.x - tx;
+              const dy = e.y - ty;
+              if (dx * dx + dy * dy > 92 * 92) continue;
+              const away = new Phaser.Math.Vector2(dx, dy);
+              if (away.lengthSq() < 1) away.set(0, -1);
+              e.takeDamage(dmg, away.normalize(), 280, crit);
+            }
           });
         }
-        // 잔풍 소용돌이 4기 — 작은 회오리가 부채꼴로 빠르게
-        for (let i = 0; i < 4; i++) {
-          this.scene.time.delayedCall(120 + i * 90, () => {
-            if (this.state === "dead") return;
-            const { dmg } = this.rollDamage(0.9, true);
-            this.scene.fireCyclone({
-              x: this.x, y: this.y - 8,
-              angle: base + (i - 1.5) * 0.3, speed: 330,
-              dmg, crit: false, hex,
-              pull: 0.3, radius: 56, life: 1200, scale: 1.2,
-            });
-          });
-        }
-        this.scene.cameras.main.shake(110, 0.006);
-        this.scene.spawnPickupText(this.x, this.y - 44, "하늘의 희망!", "#ccffe8");
+        this.scene.cameras.main.shake(160, 0.009);
+        this.scene.spawnPickupText(this.x, this.y - 44, "심판의 낙뢰!", "#ccffe8");
         break;
       }
       /* 아크로드 — 연쇄 번개: 적→적으로 최대 6회 도약 (낙뢰와 완전 별개) */
@@ -2934,25 +2946,37 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       /* 스카이로드 — 천공의 폭풍: 나선 미니 토네이도 12기 + 중심 대형 회오리 + 신속 버프
    *  v3.0.11 — 매직볼트 → 회오리 스프라이트 (시전 자리 대형 토네이도 = 폭풍의 눈) */
+      /* vc187 (지시 #10) — skystorm 도 회오리 12기였다. cyclone 이 낙뢰로 바뀌었으니
+       *  여기는 **천공 균열**로: 하늘에 금이 가고 그 틈에서 빛줄기가 12방향으로 쏟아진다.
+       *  회오리(템페스트) → 낙뢰(스카이로드1) → 광선 폭격(스카이로드2) 로 3단 차별화. */
       case "skystorm": {
+        // 하늘 균열 — 시전자 위에 금이 가고 광선이 순차 강하
         for (let i = 0; i < 12; i++) {
-          this.scene.time.delayedCall(i * 55, () => {
+          this.scene.time.delayedCall(i * 70, () => {
             if (this.state === "dead") return;
-            const ang = (i / 12) * Math.PI * 2 + Math.random() * 0.2;
-            const { dmg, crit } = this.rollDamage(1.8, true);
-            this.scene.fireCyclone({
-              x: this.x, y: this.y - 8, angle: ang, speed: 400,
-              dmg, crit, hex,
-              pull: 0.35, radius: 60, life: 1100, scale: 1.35,
-            });
+            const ang = (i / 12) * Math.PI * 2 + 0.26;
+            const dist = 90 + (i % 3) * 46;
+            const tx = this.x + Math.cos(ang) * dist;
+            const ty = this.y - 8 + Math.sin(ang) * dist * 0.72;
+            const { dmg, crit } = this.rollDamage(1.4, true);
+            // 하늘에서 내리꽂히는 광선 기둥
+            this.scene.spawnPillar(tx, ty, hex, 200);
+            this.scene.spawnShockwave(tx, ty, hex, 1.1, 260, 0.8);
+            for (const e of this.scene.getAllTargets()) {
+              if (e.state === "dead") continue;
+              const dx = e.x - tx;
+              const dy = e.y - ty;
+              if (dx * dx + dy * dy > 74 * 74) continue;
+              const away = new Phaser.Math.Vector2(dx, dy);
+              if (away.lengthSq() < 1) away.set(0, -1);
+              e.takeDamage(dmg, away.normalize(), 200, crit);
+            }
           });
         }
-        // 중심 대형 토네이도 — 발동 자리에 세워지는 폭풍의 눈
-        this.scene.fireCyclone({
-          x: this.x, y: this.y - 8, angle: Math.atan2(0, 1), speed: 0,
-          dmg: this.rollDamage(2.2, true).dmg, crit: true, hex,
-          pull: 0.6, radius: 130, life: 1800, scale: 3.0,
-        });
+        // 중심 — 거대 광기둥 + 신속 버프 (회오리 대신 수직 광주)
+        this.scene.spawnPillar(this.x, this.y - 8, hex, 320);
+        this.scene.spawnShockwave(this.x, this.y, hex, 3.0, 420, 0.9);
+        this.scene.spawnRuneRing(this.x, this.y, hex);
         this.selfSpdBuff = { mult: 1.3, until: now + 5000 };
         this.recalcSpeed();
         this.scene.spawnBurstAt(this.x, this.y, 22, hex);
