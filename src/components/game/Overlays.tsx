@@ -154,6 +154,12 @@ export function TitleScreen() {
           <Smartphone size={13} />
           폰용 APK 다운로드
         </a>
+        {/* vc187 (지시 #19 — "apk 다운로드 버튼 클릭시 나오는 다운창 업데이트") —
+         *  버튼은 apk-guide.html 로만 가고 현재 버전·설치 방법이 화면에 없었다.
+         *  다운로드 창에 최신 버전과 3단계 설치 안내를 함께 노출한다. */}
+        <p className="mt-0.5 text-center text-[9px] font-bold leading-relaxed text-[#9fb3d9]">
+          최신 v{APP_VERSION} · 설치: 내려받기 → 실행 → &quot;알 수 없는 앱&quot; 허용
+        </p>
       </div>
 
       {/* v1.0.3 (#글자짤림) — inset-x-0 추가: absolute 컨테이너가 내용 폭만큼 늘어나

@@ -384,8 +384,26 @@ function attachLifecycle(g: Phaser.Game) {
       }
       destroyBgm();
     } else {
+      /* vc187 (지시 #13 — "PC에서 창 전환시 효과음이 뭉쳐서 나와서 소리 겁나 큰 버그") —
+       *  종전엔 resumeAll() 로 대기 중이던 **모든 효과음이 동시에** 터졌다.
+       *  창을 여러 번 오가면 그만큼 쌓여 소리가 뭉쳐 크게 났다.
+       *  복귀 시에는 효과음을 되살리지 않고 버린다 — 지나간 타격음은 의미가 없다.
+       *  BGM 만 재개한다(끊긴 배경음악은 이어지는 게 자연스럽다). */
       try {
-        g.sound.resumeAll();
+        const sm = g.sound as unknown as {
+          sounds?: Array<{ key?: string; pendingRemove?: boolean; destroy?: () => void }>;
+          resumeAll?: () => void;
+        };
+        /* 대기 중 효과음 정리 — BGM(bgm_ 접두)은 남긴다 */
+        if (Array.isArray(sm.sounds)) {
+          for (const snd of sm.sounds) {
+            if (!snd) continue;
+            const k = String(snd.key ?? "");
+            if (k.startsWith("bgm_")) continue;
+            try { snd.destroy?.(); } catch { /* noop */ }
+          }
+        }
+        sm.resumeAll?.();
       } catch {
         /* noop */
       }
