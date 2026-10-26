@@ -4,6 +4,7 @@ import { villageThemeOf, type VillageTheme } from "../villageThemes"; // vc189 (
 import { playCutscene, loadSeenCutscenes, serializeSeenCutscenes } from "../cutscene"; // vc189 — 이벤트 컷씬
 import { CameraFx, type CameraFxHost } from "../scene/cameraFx"; // vc189 — WorldScene 분할 1차(원근/줌)
 import { openPointRng as spOpenPointRng, openPointAny as spOpenPointAny, inOpenArea as spInOpenArea, nearSolidObstacle as spNearSolidObstacle, type SpawnPointHost } from "../scene/spawnPoints"; // vc189 — 분할 2차
+import { spawnBurstAt as fxBurstAt, spawnPillar as fxPillar, spawnPickupText as fxPickupText, type FxAtomHost } from "../scene/fxAtoms"; // vc189 — 분할 3차
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
@@ -4042,12 +4043,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   spawnBurstAt(x: number, y: number, n: number, tint: number) {
-    /* v4.1.0 — 적응형 품질: FX 축소 모드에선 파티클 수를 줄인다
-     *  v1.4.3 — 풀 빌드 전 호출 방어 (create 초반 보스 스폰 경로 등 — null 크래시 차단) */
-    if (!this.burstEmitter) return;
-    const count = Math.max(3, Math.round(n * this.fxScale));
-    this.burstEmitter.setParticleTint(tint);
-    this.burstEmitter.explode(count, x, y);
+    fxBurstAt(this as unknown as FxAtomHost, x, y, n, tint);
   }
 
   spawnDeathBurst(x: number, y: number) {
@@ -4610,28 +4606,8 @@ export class WorldScene extends Phaser.Scene {
 
   /** 획득/보상 안내 텍스트 — v1.0.16: 전용 풀 사용 (데미지 숫자와 서로 굶기지 않는다) */
   spawnPickupText(x: number, y: number, msg: string, color: string) {
-    const t = this.pickPool.find((d) => d.scene && !d.active);
-    if (!t) return;
-    t.setText(msg).setColor(color);
-    t.setPosition(x, y)
-      .setActive(true)
-      .setVisible(true)
-      .setAlpha(1)
-      .setScale(1);
-    this.tweens.add({
-      targets: t,
-      y: y - 40,
-      alpha: 0,
-      duration: 750,
-      ease: "Quad.out",
-      onComplete: () => {
-        t.setColor("#ffffff");
-        t.setActive(false).setVisible(false);
-      },
-    });
+    fxPickupText(this as unknown as FxAtomHost, x, y, msg, color);
   }
-
-  /* ---------- 미니맵 (하단 중앙 · depth 95 최상위 레이어 — v1.0.14 #4 정정) ---------- */
 
   private redrawMinimap() {
     const mm = this.minimap;
@@ -13024,18 +13000,9 @@ export class WorldScene extends Phaser.Scene {
   /** 빛기둥 — 크루세이더 심판/낙뢰 공용 기둥 이펙트
    *  v3.3.0 (지시 #9) — 백색 코어 기둥 + 착지 플래시 추가 (더 웅장하게) */
   spawnPillar(x: number, y: number, tint = 0xffe9a0, height = 120) {
-    const pillar = this.add.rectangle(x, y - height / 2 + 14, 22, height, tint, 0.75).setDepth(25).setBlendMode(Phaser.BlendModes.ADD);
-    const core = this.add.rectangle(x, y - height / 2 + 14, 8, height * 0.92, 0xffffff, 0.9).setDepth(26).setBlendMode(Phaser.BlendModes.ADD);
-    const glow = this.add.image(x, y, "glow").setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(1.2).setAlpha(0.8);
-    const flash = this.add.image(x, y, "glow").setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffffff).setScale(0.9).setAlpha(0.95);
-    this.tweens.add({ targets: pillar, alpha: 0, scaleY: 0.2, duration: 320, ease: "Quad.in", onComplete: () => pillar.destroy() });
-    this.tweens.add({ targets: core, alpha: 0, scaleY: 0.12, duration: 260, ease: "Quad.in", onComplete: () => core.destroy() });
-    this.tweens.add({ targets: glow, alpha: 0, scale: 0.4, duration: 380, onComplete: () => glow.destroy() });
-    this.tweens.add({ targets: flash, alpha: 0, scale: 1.7, duration: 180, onComplete: () => flash.destroy() });
-    this.spawnBurstAt(x, y, 14, tint);
+    fxPillar(this as unknown as FxAtomHost, x, y, tint, height);
   }
 
-  /** 그림자 칼날 오비트 시작 — 나이트블레이드/섀도우로드 3차기 */
   startOrbitBlades(dmgMul: number, tint: number, durMs = 6000) {
     if (this.orbitBlades) {
       for (const im of this.orbitBlades.imgs) im.destroy();
