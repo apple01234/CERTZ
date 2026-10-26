@@ -17,6 +17,36 @@ import * as audio from "@/game/audio"; // v1.4.8 — 대화 진행 클릭음
 /** 화자 → 초상화 스프라이트 매핑 (public/assets/<키>.webp)
  *  v4.1.8 — 무료 플레이스홀더 npc_* 초상화 → 유료 SPUM 캐릭터 전면 교체 +
  *  챕터 마을 주민 17종 초상화 신설 (게임 내 NPC와 동일한 SPUM 스프라이트) */
+/* vc187 (지시 #21 — "Portrait/Face Chip 을 대사창 네모 박스에 AI 이미지를 생성해서 넣어줘
+ * (여캐는 모에화 시켜서)") —
+ *  종전엔 39명 화자 전원이 게임 스프라이트(48×64 도트)를 그대로 확대해 썼다.
+ *  도트를 56~80px 로 키우면 뭉개지고 표정이 없어 초상화로 읽히지 않았다.
+ *  제공 에셋 FantasyHeroes 의 얼굴 파츠(눈·입·눈썹·헤어·수염)를 조합해
+ *  256×256 전용 초상화를 만들고 여기에 매핑한다.
+ *  생성기: tools/gen_portraits.py (오프셋·크롭은 실측으로 확정) */
+const AI_PORTRAITS: Record<string, string> = {
+  "룬 정령 이그니": "portrait/p_룬_정령_이그니.webp",
+  "여관 주인 로안": "portrait/p_여관_주인_로안.webp",
+  "마을 주민": "portrait/p_마을_주민.webp",
+  "마을 아이": "portrait/p_마을_아이.webp",
+  "호족 소녀 엘렌": "portrait/p_호족_소녀_엘렌.webp",
+  "상인 라고스": "portrait/p_상인_라고스.webp",
+  "직업 교관 카이엔": "portrait/p_직업_교관_카이엔.webp",
+  "쿠소디아 기사단장": "portrait/p_쿠소디아_기사단장.webp",
+  "라이언 드 쿠소디아 국왕": "portrait/p_라이언_드_쿠소디아_국왕.webp",
+  "알프헤임의 여왕 요정": "portrait/p_알프헤임의_여왕_요정.webp",
+  "땅의 요정 여왕": "portrait/p_땅의_요정_여왕.webp",
+  "난쟁이 광산 조합장": "portrait/p_난쟁이_광산_조합장.webp",
+  "마법사 흐레스": "portrait/p_마법사_흐레스.webp",
+  "세계수 이그드라실": "portrait/p_세계수_이그드라실.webp",
+  "허브 채집가 베르": "portrait/p_허브_채집가_베르.webp",
+  "신전 관리인 노아": "portrait/p_신전_관리인_노아.webp",
+  "선원 롤프": "portrait/p_선원_롤프.webp",
+  "늪지 어부 팰": "portrait/p_늪지_어부_팰.webp",
+  "요정 사절 리안": "portrait/p_요정_사절_리안.webp",
+  "성전 견습 기사": "portrait/p_성전_견습_기사.webp",
+};
+
 const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "룬 정령 이그니": { tex: "pet_pixie", tone: "#67e8f9" }, // 시안 — 룬 정령
   "여관 주인 로안": { tex: "spum_mage", tone: "#fcd34d" },
@@ -83,7 +113,11 @@ function bossPortraitKey(tex: string): string {
 }
 
 function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: string } | null {
-  /* v1.0.2 (#초상화) — portraitId 명시 > 화자명 직접 매핑 > 보스 토큰 자동 매칭 순 */
+  /* v1.0.2 (#초상화) — portraitId 명시 > 화자명 직접 매핑 > 보스 토큰 자동 매칭 순
+   * vc187 (#21) — 전용 AI 초상화(AI_PORTRAITS)가 있으면 그쪽이 최우선이다.
+   *  tex 에 "portrait/..." 경로가 들어오므로 렌더 시 .webp 확장자 처리에 주의. */
+  const aiKey = portraitId ?? speaker;
+  if (AI_PORTRAITS[aiKey]) return { tex: AI_PORTRAITS[aiKey], tone: "#8fb4ff" };
   if (portraitId) {
     if (NPC_PORTRAITS[portraitId]) return NPC_PORTRAITS[portraitId];
     return { tex: portraitId, tone: "#e2e8f0" };
@@ -226,6 +260,7 @@ export function DialogueBox({
                 프레임을 채우고(살짝 크롭 허용), 머리는 상단 고정 — 기존 강제 정사각형 스트레치 제거 */}
             <img
               key={portrait.tex}
+              /* vc187 (#21) — portraitOf 가 tex 에 "portrait/p_xxx" 를 넣어준다 */
               src={`/assets/${portrait.tex}.webp`}
               alt=""
               draggable={false}
