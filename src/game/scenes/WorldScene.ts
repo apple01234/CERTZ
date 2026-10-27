@@ -133,7 +133,17 @@ function isLowPerfEnv(): boolean {
   if (lowPerfEnvCache === null) {
     try {
       const ua = navigator.userAgent || "";
-      lowPerfEnvCache = /Android|iPhone|iPad|Mobile/i.test(ua) || navigator.maxTouchPoints >= 2;
+      const byUA = /Android|iPhone|iPad|Mobile/i.test(ua) || navigator.maxTouchPoints >= 2;
+      /* vc196 (#WebGL 무한 재부팅) — UA 문자열만으로는 **headless 리눅스·에뮬레이터·
+       *  원격 데스크톱·GPU 드라이버 없는 VM** 을 "고사양"으로 오판한다. 그런 환경은
+       *  실제 GPU 대신 SwiftShader/llvmpipe 로 돌아가는데, 위 판정이 false 를 돌려주는
+       *  바람에 블룸(프레임버퍼 이중 패스)을 풀가동 → 컨텍스트 손실 2회 → 4회 → Canvas
+       *  폴백 재부팅 → 새로고침 루프에 갇혔다.
+       *
+       *  이미 같은 목적의 WorldScene.isSoftwareGL() 이 있었지만 DEFAULT_FX_MODE 에서만
+       *  쓰이고 이 함수와 연결돼 있지 않았다(두 판정이 서로 다른 답을 냄). 여기서 합친다.
+       *  판정 비용은 캐시되므로 부팅 시 1회뿐이다. */
+      lowPerfEnvCache = byUA || WorldScene.isSoftwareGL();
     } catch {
       lowPerfEnvCache = false;
     }

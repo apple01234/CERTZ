@@ -98,11 +98,23 @@ export function createGame(parent: HTMLElement): Phaser.Game {
       if (q === "canvas") return true;
       /* v1.4.23 (#반짝임) — ?renderer=webgl로 세션 폴백 해제 */
       if (q === "webgl") {
+        try { localStorage.removeItem("sertz.renderer"); } catch { /* 무시 */ }
         sessionStorage.removeItem("sertz.renderer");
         return false;
       }
-      /* v1.4.23 (#반짝임) — GPU 불안정으로 Canvas 폴백이 예약된 세션 */
-      return sessionStorage.getItem("sertz.renderer") === "canvas";
+      /* v1.4.23 (#반짝임) — GPU 불안정으로 Canvas 폴백이 예약된 세션.
+       * vc196 — sessionStorage → localStorage. 종전엔 새로고침마다 강등이 풀려
+       *  WebGL 재시도 → 컨텍스트 손실 → 안전 새로고침 → 다시 WebGL … 무한 루프였다. */
+      let stored = false;
+      try { stored = localStorage.getItem("sertz.renderer") === "canvas"; } catch { /* 무시 */ }
+      if (!stored) stored = sessionStorage.getItem("sertz.renderer") === "canvas";
+      if (stored) return true;
+      /* vc196 (#WebGL 무한 재부팅) — 저장된 강등이 없어도 **GPU가 소프트웨어 구현**이면
+       *  처음부터 Canvas 로 시작한다. 종전엔 이 판정이 WorldScene 안에만 있어서
+       *  로비/부팅 단계에서 이미 WebGL 이 죽었고(블룸 이전에 파이프라인 컴파일 부하),
+       *  WorldScene 게이트는 인게임에 도달하기도 전에 무의미했다.
+       *  ?renderer=webgl 로 강제 해제할 수 있으므로 탈출구는 유지된다. */
+      return WorldScene.isSoftwareGL();
     } catch {
       return false;
     }
@@ -186,6 +198,9 @@ export function createGame(parent: HTMLElement): Phaser.Game {
         window.dispatchEvent(new CustomEvent("sertz:gpu-unstable", { detail: { losses: ctxLossTimes.length } }));
       }
       if (ctxLossTimes.length >= 4) {
+        /* vc196 — localStorage 에도 기록한다. sessionStorage 만 쓰면 새로고침(안전
+         *  재부팅)마다 강등이 사라져 WebGL 재시도 → 손실 → 재부팅 무한 루프가 됐다. */
+        try { localStorage.setItem("sertz.renderer", "canvas"); } catch { /* 무시 */ }
         try { sessionStorage.setItem("sertz.renderer", "canvas"); } catch { /* 무시 */ }
         console.error("[SERTZ] 컨텍스트 반복 유실 — Canvas 백엔드 폴백 재부팅");
         safeReload("gpu-unstable");
