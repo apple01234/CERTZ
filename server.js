@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc177 — APK는 릴리스 태그 v1.2.5에 있다(이전 태그는 vc176까지 보유).
    *  태그와 파일명이 어긋나면 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.3.1/SERTZ-vc178.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.5/SERTZ-vc194.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,8 +69,8 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.3.8";
-  const LATEST_CODE = 186;
+  const LATEST_VERSION = "1.4.5";
+  const LATEST_CODE = 194;
     const VERSION_NOTE =
       "v1.3.8 (vc186) — ①스킬 아이콘 30개 교체: 4차 직업의 s3·s4 아이콘이 전부 단순 사각형 플레이스홀더였고 s5는 없었다. 제공 팩의 사람이 그린 skill_frame에 직업별 시그니처를 도트로 작화해 10직업×3슬롯=30개를 새로 만들었다(직업별 색 통일, Vision 9.8/10). ②5차 궁극기 아이콘이 모든 직업에서 동일했다 — s5Icon 하드코딩을 제거하고 직업별로 연결. 2차 궁극기 버튼이 1차 아이콘을 재사용하던 버그도 수정. 이전 사이클 누적: 4·5차 3D 연출 직업별 분화·5차 스킬 멈춤 수리(프레임 313→75ms)·쉐이더·고대비 튜토리얼(6→8단계)·유니온 보스 난이도(HP 21배 과다→정상)·Vercel CDN 캐시 복구(폴링 부하 40%↓).";
   if (url === "/api/version") {
