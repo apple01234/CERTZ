@@ -2775,6 +2775,19 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
           >
             AP +50
           </button>
+          {/* vc186b — 운영자 DLC 임시 해금 (세계 구원 없이 그랜드플래닛 게이트 개방) */}
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "dlc" })}
+            className="rounded-lg border border-violet-300/40 bg-violet-400/10 px-2 py-2 text-[11px] font-black text-violet-200 hover:bg-violet-400/20 active:scale-95"
+          >
+            DLC 임시 해금
+          </button>
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "dlc", value: "off" })}
+            className="rounded-lg border border-white/20 bg-black/40 px-2 py-2 text-[11px] font-black text-white/60 hover:bg-black/60 active:scale-95"
+          >
+            DLC 해금 취소
+          </button>
           {/* v3.0.6 — BM 상점 테스트용 에메랄드 지급 */}
           <button
             onClick={() => EventBus.emit("rpg:gm", { type: "em", value: 50 })}

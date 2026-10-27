@@ -9449,9 +9449,36 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
      *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가
      *  v4.0.0 — 바르가 수비전/균열 던전 입장 + 무료 뽑기 + 티켓 충전 */
-    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss" | "gmitems"; value?: number | string }) => {
+    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss" | "gmitems" | "dlc"; value?: number | string }) => {
       if (!this.player) return;
       const p = this.player;
+      if (v.type === "dlc") {
+        /* ═══ vc186b — 운영자(GM) DLC 임시 해금 ═══
+         *  사용자 지시: "운영자 임시해금"
+         *  아부디토스를 잡지 않아도 DLC 를 열어 테스트/운영 지원할 수 있게 한다.
+         *  cleared(세계 구원) 와 dlcTalked(NPC 대화) 를 동시에 켜고,
+         *  본마을이면 게이트를 즉시 세운다. 되돌리기는 "dlcOff". */
+        const on = v.value !== "off";
+        this.cleared = on ? true : this.cleared;
+        this.dlcTalked = on;
+        if (on && !this.isInterior && this.stageDef.isVillage) this.spawnDlcPortal();
+        if (!on) {
+          this.dlcPortal?.destroy();
+          this.dlcPortal = null;
+          this.dlcPortalGlow?.destroy();
+          this.dlcPortalGlow = null;
+          this.interactables = this.interactables.filter((it) => it.kind !== "dlcgate");
+        }
+        this.save();
+        EventBus.emit("banner:show", {
+          text: on
+            ? "GM — DLC 임시 해금 (그랜드플래닛 게이트가 열렸다)"
+            : "GM — DLC 해금 취소",
+        });
+        audio.sfx.portal();
+        this.emitRpgState();
+        return;
+      }
       if (v.type === "job" && typeof v.value === "string") {
         if (!isClassKey(v.value)) return;
         const ok = p.gmSetClass(v.value);
