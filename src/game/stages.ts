@@ -10,7 +10,13 @@
 
 export type ChapterKey =
   | "forest" | "kingdom" | "alfheim" | "muspelheim" | "niflheim"
-  | "cave" | "nidavellir" | "hel" | "abyss";
+  | "cave" | "nidavellir" | "hel" | "abyss"
+  /* vc192 — 기획서 2기 「그랜드플래닛」: 신의도시 세르니움으로 가는 길.
+   *  기획서 1064~: 프롤로그(스타게이트) → 제1행성 스타게이트 → 제2행성 프라이즈 프리즈마.
+   *  15가문 구조(그래스트·데스티니·페이트·카르리온·아리아노·플래임·리버스·오르페우스·셀리나·이그니션·질리언·페르티에스) */
+  | "stargate" | "prisma"
+  /* vc192 — 기획서 3기 「제로세계」: 클로체스(얼음)·라바이즈(용암)·도수관(도술) */
+  | "zeroice" | "zerolava";
 
 /** 스테이지 키 — "village" | "forest1".."abyss10" (구 세이브 키도 런타임 폴백 처리) */
 export type StageKey = string;
@@ -433,6 +439,100 @@ export const CHAPTERS: ChapterSpec[] = [
     /* vc146 (#8) — 챕터 레벨 제한 상향: 58→126/136 */
     lvGate: { enter: 126, mid: 136 },
   },
+
+  /* ══════════════════════════════════════════════════════════════════════
+   * vc192 — 기획서 2기 「그랜드플래닛」
+   *
+   *  1기(라일락 월드)를 끝낸 선발대가 신의도시 세르니움으로 가는 여정.
+   *  스칼렛이 지팡이로 게이트의 마법진 보석을 깨뜨려 두 세계의 경계가 무너지고,
+   *  선발대(리안·루시·도사·아리·제르)가 그랜드플래닛으로 넘어간다.  (기획서 1064~)
+   *
+   *  가문 체계(기획서 1911~): 그래스트(우주) · 데스티니(태양) · 페이트(달) ·
+   *   카르리온(어둠) · 아리아노(아트) · 플래임(불) · 리버스(반전) ·
+   *   오르페우스(주문과 주술) · 셀리나(무기) · 이그니션(도공) · 질리언(조종) · 페르티에스(지배)
+   * ══════════════════════════════════════════════════════════════════════ */
+  {
+    key: "stargate", num: 11, title: "제1행성 스타게이트", subtitle: "그랜드플래닛 · 별모양 행성의 문지기",
+    intro: "intro", boss: "nidhog", bossDone: "guardianDone",
+    width: 2000, height: 1120, groundTint: 0x5f6fd8, groundTex: "tile_dark", pathTex: "tile_path_dark", bg: "#070a1c",
+    flowers: 4, trees: 3, rocks: 10,
+    /* 기획서 1079~: 행성으로 변해 공격하는 문지기 · 장미가 동력원 · 지면이 뒤틀린다 */
+    enemies: [{ key: "wraith", count: 4 }, { key: "minion", count: 4 }, { key: "x2_frostfly", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "x3_necromancer", count: 2 }, { key: "golem", count: 3 }],
+    main: "wraith",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "sg1", type: "hunt", title: "행성의 파편 소탕", desc: "뒤틀린 지면에서 튀어나오는 파편들 — 유령 18마리를 처치해라.", need: 18, targetKey: "wraith", targetLabel: "행성의 유령", reward: Math.round(2400 * G), expReward: 3600 } },
+      { sub: 4, dialogue: "", quest: { id: "sg2", type: "collect", title: "장미의 파편", desc: "리틀스타의 장미가 행성의 동력원이다. 파편을 모아 약점을 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(2600 * G), expReward: 3900 } },
+      { sub: 6, dialogue: "", quest: { id: "sg3", type: "hunt", title: "감염된 별의 사냥개", desc: "우주를 떠도는 바이러스에 감염된 사냥개 22마리를 베어라.", need: 22, targetKey: "x2_darkhound", targetLabel: "감염된 사냥개", reward: Math.round(2900 * G), expReward: 4200 } },
+      { sub: 8, dialogue: "", quest: { id: "sg4", type: "hunt", title: "별을 지키는 골렘", desc: "행성의 핵을 지키는 골렘 14기를 부숴라.", need: 14, targetKey: "golem", targetLabel: "별의 골렘", reward: Math.round(3100 * G), expReward: 4600 } },
+      { sub: 9, dialogue: "", quest: { id: "sg5", type: "collect", title: "[사연] 문지기의 마지막 장미", desc: "리틀스타가 지키던 마지막 장미 한 송이를 되찾아라.", targetLabel: "보석의 흔적", reward: Math.round(3300 * G), expReward: 4800 } },
+      { sub: 10, dialogue: "", quest: { id: "sg6", type: "hunt", title: "[기믹] 네크로맨서의 별묘", desc: "죽은 별을 되살리려는 네크로맨서 12명을 처치해라.", need: 12, targetKey: "x3_necromancer", targetLabel: "별의 네크로맨서", reward: Math.round(3800 * G), expReward: 5400 } },
+    ],
+    repeat: { need: 26, gold: Math.round(190 * G), exp: 190, title: "[반복] 스타게이트 정찰", desc: "뒤틀린 지면이 계속 늘어난다 — 유령을 처치해 진로를 확보하자." },
+    lvGate: { enter: 136, mid: 146 },
+  },
+  {
+    key: "prisma", num: 12, title: "제2행성 프라이즈 프리즈마", subtitle: "그랜드플래닛 · 마법공학의 도시",
+    intro: "intro", boss: "surt", bossDone: "kingdomDone",
+    width: 2200, height: 1200, groundTint: 0x8f6fd8, groundTex: "tile_dark", pathTex: "tile_path_dark", bg: "#120a22",
+    flowers: 6, trees: 5, rocks: 12,
+    /* 기획서 1133~: 마법공학의 도시. 시장 제이드가 위험한 실험을 한다는 소문 */
+    enemies: [{ key: "runegolem", count: 4 }, { key: "x3_ogre", count: 3 }, { key: "x3_chort", count: 3 }, { key: "x2_stonegolem", count: 3 }, { key: "x3_orcshaman", count: 2 }, { key: "minion", count: 3 }],
+    main: "runegolem",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "pr1", type: "hunt", title: "공방의 폭주 기계", desc: "실험실에서 새어 나온 룬 골렘 16기를 멈춰라.", need: 16, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(4200 * G), expReward: 6000 } },
+      { sub: 4, dialogue: "", quest: { id: "pr2", type: "collect", title: "설계도의 파편", desc: "제이드의 실험 설계도 조각을 모아 계획을 밝혀라.", targetLabel: "보석의 흔적", reward: Math.round(4500 * G), expReward: 6300 } },
+      { sub: 6, dialogue: "", quest: { id: "pr3", type: "hunt", title: "거인의 작업장", desc: "마법 기계에 동력을 넣는 오거 20마리를 쓰러뜨려라.", need: 20, targetKey: "x3_ogre", targetLabel: "작업장 오거", reward: Math.round(4900 * G), expReward: 6900 } },
+      { sub: 8, dialogue: "", quest: { id: "pr4", type: "hunt", title: "석화된 수호자", desc: "도시를 지키던 돌 골렘 18기가 통제를 벗어났다.", need: 18, targetKey: "x2_stonegolem", targetLabel: "석화 수호자", reward: Math.round(5300 * G), expReward: 7500 } },
+      { sub: 9, dialogue: "", quest: { id: "pr5", type: "collect", title: "[사연] 시장의 서재", desc: "제이드의 서재에서 도공의 가문 이그니션의 기록을 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(5600 * G), expReward: 7800 } },
+      { sub: 10, dialogue: "", quest: { id: "pr6", type: "hunt", title: "[기믹] 주술 회로 폭주", desc: "오르크 주술사 15명이 회로를 역류시킨다 — 즉시 차단하라.", need: 15, targetKey: "x3_orcshaman", targetLabel: "회로 주술사", reward: Math.round(6300 * G), expReward: 8700 } },
+    ],
+    repeat: { need: 28, gold: Math.round(230 * G), exp: 230, title: "[반복] 프리즈마 순찰", desc: "마법공학의 도시는 밤에도 멈추지 않는다 — 룬 골렘을 정리하자." },
+    lvGate: { enter: 150, mid: 160 },
+  },
+
+  /* ══════════════════════════════════════════════════════════════════════
+   * vc192 — 기획서 3기 「제로세계」
+   *
+   *  기획서 1909~: 조선시대 사이버펑크 느낌. 가문 체계가 3세계로 나뉜다.
+   *   에버포스(번개) · 샌티널(모래) · 카르테르(저울과 체스) · 클로체스(얼음) ·
+   *   라바이즈(용암) · 석암(바위) · 풍추화설(바람) · 도수관(도술) · 이안페우스(조작)
+   * ══════════════════════════════════════════════════════════════════════ */
+  {
+    key: "zeroice", num: 13, title: "클로체스 혹한의 성", subtitle: "제로세계 · 차가운 얼음 결정만 남은 왕가의 성",
+    intro: "intro", boss: "vord", bossDone: "victory",
+    width: 2000, height: 1150, groundTint: 0x9fd8f0, groundTex: "tile_snow", pathTex: "tile_path", bg: "#0a1418",
+    flowers: 0, trees: 4, rocks: 14,
+    enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 4 }, { key: "x2_frostfly", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_bigzombie", count: 3 }, { key: "x2_bat", count: 3 }],
+    main: "frostwolf",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "zi1", type: "hunt", title: "얼어붙은 사냥개", desc: "혹한의 서리늑대 20마리를 처치해라.", need: 20, targetKey: "frostwolf", targetLabel: "서리늑대", reward: Math.round(7000 * G), expReward: 9800 } },
+      { sub: 4, dialogue: "", quest: { id: "zi2", type: "collect", title: "차가운 결정", desc: "왕국의 마지막 유산 — 얼음 결정 조각을 모아라.", targetLabel: "보석의 흔적", reward: Math.round(7500 * G), expReward: 10400 } },
+      { sub: 6, dialogue: "", quest: { id: "zi3", type: "hunt", title: "얼음 골렘의 행렬", desc: "성벽을 두드리는 얼음 골렘 18기를 부숴라.", need: 18, targetKey: "icegolem", targetLabel: "얼음 골렘", reward: Math.round(8200 * G), expReward: 11300 } },
+      { sub: 8, dialogue: "", quest: { id: "zi4", type: "hunt", title: "되살아난 얼음 시체", desc: "왕가의 무덤에서 일어난 얼음 좀비 24마리를 정화하라.", need: 24, targetKey: "x3_icezombie", targetLabel: "얼음 좀비", reward: Math.round(8900 * G), expReward: 12300 } },
+      { sub: 9, dialogue: "", quest: { id: "zi5", type: "collect", title: "[사연] 클로체스를 지킨 자", desc: "스노리카 왕가가 남긴 기록을 찾아 얼음 결정에 깃든다.", targetLabel: "보석의 흔적", reward: Math.round(9400 * G), expReward: 13000 } },
+      { sub: 10, dialogue: "", quest: { id: "zi6", type: "hunt", title: "[기믹] 거대 좀비의 왕관", desc: "왕관을 쓴 대좀비 14마리 — 왕국의 마지막 파수꾼이다.", need: 14, targetKey: "x3_bigzombie", targetLabel: "대좀비", reward: Math.round(10500 * G), expReward: 14500 } },
+    ],
+    repeat: { need: 30, gold: Math.round(270 * G), exp: 270, title: "[반복] 혹한의 정찰", desc: "얼음 결정이 아직 빛난다 — 서리늑대를 계속 처치하자." },
+    lvGate: { enter: 165, mid: 175 },
+  },
+  {
+    key: "zerolava", num: 14, title: "석암 바위의 도시", subtitle: "제로세계 · 종려의 가문이 지키는 바위 도시",
+    intro: "intro", boss: "surt", bossDone: "victory",
+    width: 2100, height: 1150, groundTint: 0xb89a6f, groundTex: "tile_stone", pathTex: "tile_path", bg: "#141008",
+    flowers: 0, trees: 0, rocks: 16,
+    enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 4 }, { key: "x2_firebird", count: 3 }, { key: "x3_imp", count: 3 }, { key: "x3_wogol", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
+    main: "emberwolf",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "zl1", type: "hunt", title: "불꽃 사냥개", desc: "용암 도시를 배회하는 불씨늑대 22마리를 처치해라.", need: 22, targetKey: "emberwolf", targetLabel: "불씨늑대", reward: Math.round(12000 * G), expReward: 16500 } },
+      { sub: 4, dialogue: "", quest: { id: "zl2", type: "collect", title: "피닉스의 깃", desc: "라바이즈 왕가의 상징 — 불사조의 깃털을 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(12800 * G), expReward: 17500 } },
+      { sub: 6, dialogue: "", quest: { id: "zl3", type: "hunt", title: "불의 정령", desc: "도시를 태우는 불 정령 20체를 진정시켜라.", need: 20, targetKey: "firespirit", targetLabel: "불 정령", reward: Math.round(13700 * G), expReward: 18800 } },
+      { sub: 8, dialogue: "", quest: { id: "zl4", type: "hunt", title: "용암의 임프", desc: "인페르노의 하수도에서 올라온 임프 26마리를 몰아내라.", need: 26, targetKey: "x3_imp", targetLabel: "용암 임프", reward: Math.round(14600 * G), expReward: 20000 } },
+      { sub: 9, dialogue: "", quest: { id: "zl5", type: "collect", title: "[사연] 인페르노의 마지막 화로", desc: "영주 가문이 지킨 마지막 화로에서 불씨를 얻어라.", targetLabel: "보석의 흔적", reward: Math.round(15400 * G), expReward: 21200 } },
+      { sub: 10, dialogue: "", quest: { id: "zl6", type: "hunt", title: "[기믹] 용암을 걷는 자", desc: "용암을 걸으며 도시를 부수는 워골 16마리를 베어라.", need: 16, targetKey: "x3_wogol", targetLabel: "용암 워골", reward: Math.round(17200 * G), expReward: 23600 } },
+    ],
+    repeat: { need: 32, gold: Math.round(310 * G), exp: 310, title: "[반복] 용암 도시 순찰", desc: "화산은 잠들지 않는다 — 불씨늑대를 계속 사냥하자." },
+    lvGate: { enter: 180, mid: 190 },
+  },
 ];
 
 /* ================= 몬스터 정의 (v1.5 데이터 이관) ================= */
@@ -705,8 +805,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
  *  조치: 계수를 완만한 곡선으로 바꾸고 후반 배율을 10 → 4로 낮췄다.
  *  결과: 1.9 ~ 19.7타 (편차 57.8배 → 10.2배), 즉사 구간 0.
  *  계산 근거: atkTotal = 12 + 3×(lv−1), 스킬 배율 1.25~2.36 (rollDamage 참조). */
-const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14.0, 20.0, 28.0]; // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
-const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0]; // 유저 피드백: 공격력은 현행 유지
+/* vc192 — 2기(그랜드플래닛)·3기(제로세계) 4챕터 추가분까지 확장. 후반은 지수적으로 올린다. */
+const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14.0, 20.0, 28.0, 42.0, 66.0, 105.0, 165.0]; // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
+const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0, 6.2, 7.8, 9.8, 12.5]; // 유저 피드백: 공격력은 현행 유지
 /* v1.2.2 — 챕터 EXP 계수 재조정 (레벨 곡선 정합)
  *  문제: expTable.ts는 메이플 공식(지수 성장)인데 적 EXP 계수는 1→9.2로 거의 평평했다.
  *        레벨업에 필요한 처치 수가 **25마리 ~ 2,105,941마리**(편차 84,780배)로 벌어져
@@ -715,7 +816,7 @@ const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0]; // 유저 피드
  *  조치: 레벨별 필요 EXP를 기준으로 역산해 계수를 지수적으로 올렸다.
  *        처치 수 목표는 35 → 807로 완만히 증가(후반일수록 몸값이 커지는 게 자연스럽다).
  *  결과: 처치 수 편차 84,780배 → 22.8배. 전 구간 레벨업 가능. */
-const CH_EXP = [0.7, 2.3, 7.2, 23.1, 74.0, 237.0, 758.3, 2426.4, 24000.0];
+const CH_EXP = [0.7, 2.3, 7.2, 23.1, 74.0, 237.0, 758.3, 2426.4, 24000.0, 75000.0, 240000.0, 760000.0, 2400000.0];
 
 /** 스테이지 키 → {챕터, 구역} 파싱 */
 export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: number } {
@@ -723,7 +824,7 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
   /* v2.9 — 챕터 마을(Xv)도 챕터 소속으로 파싱 */
   const v = /^([a-z]+)v$/.exec(key);
   if (v) return { ch: v[1] as ChapterKey, sub: 0 };
-  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss)([1-9]|10)$/.exec(key);
+  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss|stargate|prisma|zeroice|zerolava)([1-9]|10)$/.exec(key);
   if (!m) return { ch: "village", sub: 0 };
   return { ch: m[1] as ChapterKey, sub: parseInt(m[2], 10) };
 }
@@ -749,7 +850,7 @@ export function questNeedByLv(lv: number): number {
 /** vc142 (#5) — 후반 몬스터 HP ×10: 유저 지시 "후반만 4스테이지 쯤 부터 몬스터 체력좀 10배 씩 정도 늘려".
  *  후반 4개 챕터(7 스바르트에델리오나 · 8 크렌렐브 · 9 헬 · 10 무한의 탑 최심부)의 4구역부터 적용
  *  (구역 1~3은 진입 완충 유지). 공격력/경험치/골드 곡선은 현행 유지 — 체력만 상향. */
-const LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss"];
+const LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss", "stargate", "prisma", "zeroice", "zerolava"];
 const LATE_HP_FROM_SUB = 4;
 const LATE_HP_MUL = 4; // v1.2.2 — 10은 과했다(7~10챕터 50~64타). 4로 낮춰 17~20타대.
 
