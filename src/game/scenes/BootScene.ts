@@ -185,34 +185,8 @@ const ASSET_LIST = [
   "tile_path_dark",
   // v2.0 아뜰란티스 확장 타일 (v1.5 이관)
   "tile_magma", "tile_magma_path", "tile_stone", "tile_hel",
-  /* ══════════════════════════════════════════════════════════════════════════
-   * vc194 — 확장 타일 25종 (tools/gen_tiles.py 생성)
-   *
-   *  [중요] 이 목록에 없으면 Phaser 가 __MISSING 으로 폴백해
-   *  **검은 사각형 + 녹색 대각선** 글리치로 렌더된다.
-   *  (과거 kd_plant 누락 때와 동일한 증상)
-   *
-   *  목적: 종전엔 지형 타일이 8종뿐이라 DLC 행성에 가도 1기와 똑같은
-   *  지형이 나왔다(유저 지적 "DLC면 분위기가 전부 달라야"). 33종으로 확장.
-   * ══════════════════════════════════════════════════════════════════════════ */
-  // 1기 확장
-  "tile_grass_flower", "tile_forest", "tile_dirt", "tile_sand", "tile_cobble", "tile_brick",
-  // 냉기/설원
-  "tile_snow_deep", "tile_frost",
-  // 화산
-  "tile_ash", "tile_basalt",
-  // 동굴
-  "tile_cave_wet", "tile_mushroom",
-  // 심연/언데드
-  "tile_void", "tile_bone",
-  // 신전/황금
-  "tile_marble", "tile_gold", "tile_divine",
-  // 기계/도시
-  "tile_metal", "tile_rust", "tile_tech", "tile_concrete",
-  // 정원
-  "tile_garden", "tile_moss",
-  // 하늘/성운
-  "tile_starfield", "tile_nebula",
+  /* vc196 — 무료 타일맵(Kenney CC0) 128px 심리스 19종 */
+  "tile_amber", "tile_ash", "tile_blood", "tile_deep", "tile_desert", "tile_forest", "tile_garden", "tile_grass2", "tile_lava", "tile_morgue", "tile_moss", "tile_nebula", "tile_ruin", "tile_sand", "tile_vault",
   // v3.0.23 (#55) — 던전 벽 석벽 텍스처 (구 x2_bricks "검은 카펫" 교체)
   "wall_rock",
   // 장식

@@ -2488,6 +2488,14 @@ export class WorldScene extends Phaser.Scene {
         tile_grass: "gp", tile_path: "dp", tile_magma: "dp", tile_magma_path: "dp",
         tile_cave: "cp", tile_stone: "cp", tile_dark: "ap", tile_hel: "ap", tile_abyss: "ap",
         tile_snow: "si", tile_ice: "si",
+        /* vc196 — 무료 타일맵(Kenney CC0) 128px 세트. 위 11종은 256px 시절 키다.
+         *  지면 변형 스캐터는 "이 타일 위에 어울리는 pvar/gvar"를 골라 얹는 것이라
+         *  신규 타일도 계열(잔디·흙·동굴·심연·설원)만 맞으면 같은 변형을 쓴다.
+         *  여기 없으면 스캐터가 조용히 사라져 지형이 밋밋해진다(에러 없음). */
+        tile_forest: "gp", tile_grass2: "gp", tile_moss: "gp", tile_garden: "gp",
+        tile_desert: "dp", tile_sand: "dp", tile_amber: "dp", tile_lava: "dp",
+        tile_blood: "dp", tile_ash: "dp", tile_ruin: "cp", tile_morgue: "ap", tile_path_dark: "ap",
+        tile_deep: "ap", tile_nebula: "ap", tile_vault: "cp",
       };
       const txSet = TX_SET_OF[STAGE_THEME[stageKey]?.ground ?? "tile_grass"];
       if (txSet && this.layout) {
@@ -8233,11 +8241,22 @@ export class WorldScene extends Phaser.Scene {
    *  프레임버퍼 블룸 패스를 금지한다. 재부착 3경로(applyFxMode·tickFxQuality 복원·
    *  clearBossPostFX)가 전부 이 헬퍼를 거친다 — "눈 맵에서 자꾸 튕김"의 근본 차단:
    *  블룸 풀가동 GPU 과부하 → webglcontextlost 4회 → Canvas 폴백 재부팅 / 프리즈 워치독 루프 */
+  /* vc196 — 블룸 금지 지면(고휘도·자체발광성). 타일 이름 하드코딩 대신 집합으로 관리해
+   *  지형 세트를 갈아도 가드가 유지된다. */
+  private readonly highLumaGround = new Set<string>([
+    "tile_snow", "tile_ice", "tile_magma", "tile_magma_path",
+    "tile_lava", "tile_amber", "tile_vault", "tile_nebula",
+  ]);
   private ambientBloomAllowed(): boolean {
     const ch = parseStage(this.stageDef.key).ch;
     if (ch === "niflheim" || ch === "muspelheim") return false;
     const gt = (this.stageDef as { groundTex?: string }).groundTex;
-    if (gt === "tile_snow" || gt === "tile_magma") return false;
+    /* vc196 — 종전엔 타일 이름(tile_snow/tile_magma)으로만 판정했다. 무료 타일맵으로
+     *  지형 키를 바꾸자 무스펠헤임 지면이 tile_magma → tile_lava 가 되어 이 가드가
+     *  조용히 뚫렸다 = 용암맵에서 프레임버퍼 블룸 풀가동 = 컨텍스트 손실 4회 → Canvas
+     *  폴백 재부팅. 이름이 아니라 "밝은 지면인가"로 판정한다: 설원·용암·황금·성운처럼
+     *  자체 발광에 가까운 타일은 블룸을 얹으면 하이라이트가 포화된다. */
+    if (this.highLumaGround.has(gt ?? "")) return false;
     return !isLowPerfEnv();
   }
   /** vc150 (#신규7 툰 느낌 복원) — 저사양에서도 "가벼운" 앰비언트 블룸은 허용한다.
@@ -8247,7 +8266,7 @@ export class WorldScene extends Phaser.Scene {
     const ch = parseStage(this.stageDef.key).ch;
     if (ch === "niflheim" || ch === "muspelheim") return false;
     const gt = (this.stageDef as { groundTex?: string }).groundTex;
-    if (gt === "tile_snow" || gt === "tile_magma") return false;
+    if (this.highLumaGround.has(gt ?? "")) return false;
     return isLowPerfEnv();
   }
   /** v1.0.18 — 보스 라이트가 보스를 추적 중인지 */
@@ -14114,7 +14133,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** v1.3.1 (#4) — travel 단계 목적지 확정: 방문 기록(visited)의 전투 구역 중
-   *  계열별 고유 인덱스로 배정 — 4계열이 서로 다른 맵, 티어마다도 다른 맵.
+   *  계열별 고유 인덱스로 배정 — 5계열이 서로 다른 맵, 티어마다도 다른 맵.
    *  마을/실내/현재 구역 제외 → 항상 도달 가능한 곳만 후보. 후보 부족 시 현재 구역 폴백. */
   private ensureTravelTarget(): string | null {
     if (!this.jobStory) return null;

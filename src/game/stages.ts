@@ -309,7 +309,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "alfheim", num: 4, title: "알프헤임", subtitle: "요정의 성전 · 빛의 결정",
     intro: "alfheimIntro", boss: "nidhog", bossDone: "guardianDone",
-    width: 1900, height: 1080, groundTint: 0x8f7fd8, groundTex: "tile_grass_flower", pathTex: "tile_path", bg: "#0d0a1e",
+    width: 1900, height: 1080, groundTint: 0x8f7fd8, groundTex: "tile_grass2", pathTex: "tile_garden", bg: "#0d0a1e",
     flowers: 6, trees: 10, rocks: 10,
     enemies: [{ key: "minion", count: 4 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_bat", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_orcshaman", count: 3 }],
     main: "minion",
@@ -328,7 +328,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "muspelheim", num: 5, title: "무스펠헤임", subtitle: "극열의 해역 · 화산 지대",
     intro: "muspelIntro", boss: "surt", bossDone: "surtDone",
-    width: 2200, height: 1250, groundTint: 0xd88a4a, groundTex: "tile_magma", pathTex: "tile_magma_path", bg: "#1c0d06",
+    width: 2200, height: 1250, groundTint: 0xd88a4a, groundTex: "tile_lava", pathTex: "tile_blood", bg: "#1c0d06",
     flowers: 0, trees: 4, rocks: 12,
     enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 3 }, { key: "golem", count: 3 }, { key: "x2_firebird", count: 3 }, { key: "x3_tinyzombie", count: 3 }, { key: "x3_wogol", count: 3 }],
     main: "emberwolf",
@@ -368,7 +368,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "cave", num: 7, title: "스바르트알프헤임", subtitle: "어둠 요정들의 해역 · 수정 광맥",
     intro: "caveIntro", boss: "abysslord", bossDone: "caveDone",
-    width: 2100, height: 1200, groundTint: 0x8a6a4a, groundTex: "tile_cave", pathTex: "tile_path_dark", bg: "#100a08",
+    width: 2100, height: 1200, groundTint: 0x8a6a4a, groundTex: "tile_cave", pathTex: "tile_stone", bg: "#100a08",
     flowers: 0, trees: 0, rocks: 14,
     enemies: [{ key: "spider", count: 4 }, { key: "minion", count: 4 }, { key: "golem", count: 3 }, { key: "x2_snail", count: 3 }, { key: "x3_imp", count: 3 }, { key: "x3_maskedorc", count: 2 }],
     main: "spider",
@@ -389,7 +389,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "nidavellir", num: 8, title: "니다벨리르", subtitle: "난쟁이들의 해역 · 룬 광산",
     intro: "nidavellirIntro", boss: "skoll", bossDone: "skollDone",
-    width: 2100, height: 1200, groundTint: 0x9a8a6a, groundTex: "tile_metal", pathTex: "tile_tech", bg: "#121008",
+    width: 2100, height: 1200, groundTint: 0x9a8a6a, groundTex: "tile_ruin", pathTex: "tile_ash", bg: "#121008",
     flowers: 0, trees: 0, rocks: 16,
     enemies: [{ key: "runegolem", count: 4 }, { key: "golem", count: 3 }, { key: "spider", count: 3 }, { key: "x2_stonegolem", count: 3 }, { key: "x3_ogre", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
     main: "runegolem",
@@ -409,7 +409,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "hel", num: 9, title: "헬", subtitle: "절벽 너머의 해역 · 대전쟁의 땅",
     intro: "helIntro", boss: "gram", bossDone: "gramDone",
-    width: 2100, height: 1200, groundTint: 0x4a3a5a, groundTex: "tile_bone", pathTex: "tile_path_dark", bg: "#0d0616",
+    width: 2100, height: 1200, groundTint: 0x4a3a5a, groundTex: "tile_hel", pathTex: "tile_abyss", bg: "#0d0616",
     flowers: 0, trees: 6, rocks: 12,
     enemies: [{ key: "helhound", count: 4 }, { key: "wraith", count: 3 }, { key: "golem", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "x3_chort", count: 3 }, { key: "x3_maskedorc", count: 3 }],
     main: "helhound",
@@ -429,7 +429,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "abyss", num: 10, title: "세계수의 뿌리", subtitle: "심연의 근원 · 종언의 왕좌",
     intro: "abyssIntro", boss: "abudditos", bossDone: "victory",
-    width: 1800, height: 1050, groundTint: 0x3a2c52, groundTex: "tile_void", pathTex: "tile_path_dark", bg: "#0d0616",
+    width: 1800, height: 1050, groundTint: 0x3a2c52, groundTex: "tile_morgue", pathTex: "tile_deep", bg: "#0d0616",
     flowers: 0, trees: 0, rocks: 12,
     enemies: [{ key: "wraith", count: 4 }, { key: "minion", count: 4 }, { key: "helhound", count: 3 }, { key: "x2_reeffish", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x3_bigzombie", count: 3 }],
     main: "wraith",
@@ -464,7 +464,7 @@ export const CHAPTERS: ChapterSpec[] = [
     title: "DLC 1 — 제1행성 스타게이트",
     subtitle: "그랜드플래닛 · 세계를 구원한 자에게 열린 첫 번째 별",
     intro: "intro", boss: "nidhog", bossDone: "guardianDone",
-    width: 2000, height: 1120, groundTint: 0x5f6fd8, groundTex: "tile_starfield", pathTex: "tile_tech", bg: "#070a1c",
+    width: 2000, height: 1120, groundTint: 0x5f6fd8, groundTex: "tile_nebula", pathTex: "tile_stone", bg: "#070a1c",
     flowers: 4, trees: 3, rocks: 10,
     /* 기획서 1079~: 별모양 행성, 문지기 리틀스타, 장미가 행성의 동력원, 뒤틀린 지면 */
     enemies: [{ key: "wraith", count: 4 }, { key: "minion", count: 4 }, { key: "x2_frostfly", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "x3_necromancer", count: 2 }, { key: "golem", count: 3 }],
@@ -485,7 +485,7 @@ export const CHAPTERS: ChapterSpec[] = [
     title: "DLC 2 — 제2행성 프라이즈 프리즈마",
     subtitle: "그랜드플래닛 · 마법공학의 도시, 위험한 실험",
     intro: "intro", boss: "surt", bossDone: "kingdomDone",
-    width: 2200, height: 1200, groundTint: 0x8f6fd8, groundTex: "tile_gold", pathTex: "tile_metal", bg: "#120a22",
+    width: 2200, height: 1200, groundTint: 0x8f6fd8, groundTex: "tile_desert", pathTex: "tile_sand", bg: "#120a22",
     flowers: 6, trees: 5, rocks: 12,
     /* 기획서 1126~: 마법공학의 도시. 시장 제이드가 위험한 실험을 한다는 소문 */
     enemies: [{ key: "runegolem", count: 4 }, { key: "x3_ogre", count: 3 }, { key: "x3_chort", count: 3 }, { key: "x2_stonegolem", count: 3 }, { key: "x3_orcshaman", count: 2 }, { key: "minion", count: 3 }],
@@ -506,7 +506,7 @@ export const CHAPTERS: ChapterSpec[] = [
     title: "DLC 3 — 별빛속 바다 오션코멘",
     subtitle: "그랜드플래닛 · 꿈이 가라앉은 바다, 신의도시로 가는 마지막 길",
     intro: "intro", boss: "vord", bossDone: "victory",
-    width: 2100, height: 1150, groundTint: 0x3f7fd8, groundTex: "tile_frost", pathTex: "tile_ice", bg: "#06121e",
+    width: 2100, height: 1150, groundTint: 0x3f7fd8, groundTex: "tile_ice", pathTex: "tile_snow", bg: "#06121e",
     flowers: 3, trees: 2, rocks: 8,
     /* 기획서 12행 행성7 '별빛속 바다 오션코멘' + 유메(꿈의 지배자) 모티프 */
     enemies: [{ key: "x2_reeffish", count: 4 }, { key: "minion", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "helhound", count: 3 }],
@@ -538,7 +538,7 @@ export const CHAPTERS: ChapterSpec[] = [
     title: "DLC 4 — 리버스 사이버",
     subtitle: "그랜드플래닛 · 지하선로의 도시, 안개와 무법자들",
     intro: "intro", boss: "jorm", bossDone: "kingdomDone",
-    width: 2100, height: 1150, groundTint: 0x6a7d9c, groundTex: "tile_concrete", pathTex: "tile_rust", bg: "#0a0e16",
+    width: 2100, height: 1150, groundTint: 0x6a7d9c, groundTex: "tile_ash", pathTex: "tile_blood", bg: "#0a0e16",
     flowers: 0, trees: 0, rocks: 12,
     /* 기획서 1200~: 지하선로 필수 이동, 안전구역 밖은 브로커·갱, 세비지 플레이스, 드론·전투로봇 */
     enemies: [{ key: "minion", count: 4 }, { key: "x3_chort", count: 4 }, { key: "x2_rat", count: 3 }, { key: "x3_ogre", count: 3 }, { key: "runegolem", count: 3 }, { key: "x3_necromancer", count: 2 }],
@@ -559,7 +559,7 @@ export const CHAPTERS: ChapterSpec[] = [
     title: "DLC 5 — 네오시티",
     subtitle: "그랜드플래닛 · 컴퍼니가 만든 세계, 다섯 개의 부호",
     intro: "intro", boss: "nagr", bossDone: "kingdomDone",
-    width: 2200, height: 1200, groundTint: 0x4f6fd8, groundTex: "tile_tech", pathTex: "tile_starfield", bg: "#060a1a",
+    width: 2200, height: 1200, groundTint: 0x4f6fd8, groundTex: "tile_stone", pathTex: "tile_vault", bg: "#060a1a",
     flowers: 0, trees: 0, rocks: 10,
     /* 기획서 1326~: 다크 플래닛 컴퍼니가 만들고 통제하는 행성. 완전히 다른 세계.
      * 5부호: 힘·용기·지혜·운명·선택 (힘·생명·마법·시간·빛의 초월자를 모방) */
@@ -581,7 +581,7 @@ export const CHAPTERS: ChapterSpec[] = [
     title: "DLC 6 — 기계무덤 메카닉 블러드시티",
     subtitle: "그랜드플래닛 · 기계가 죽어 묻힌 도시",
     intro: "intro", boss: "abysslord", bossDone: "kingdomDone",
-    width: 2150, height: 1180, groundTint: 0x8a7a6a, groundTex: "tile_rust", pathTex: "tile_concrete", bg: "#14100a",
+    width: 2150, height: 1180, groundTint: 0x8a7a6a, groundTex: "tile_blood", pathTex: "tile_morgue", bg: "#14100a",
     flowers: 0, trees: 0, rocks: 16,
     enemies: [{ key: "golem", count: 4 }, { key: "runegolem", count: 4 }, { key: "x2_stonegolem", count: 3 }, { key: "x3_ogre", count: 3 }, { key: "minion", count: 3 }, { key: "x3_wogol", count: 2 }],
     main: "golem",
@@ -601,7 +601,7 @@ export const CHAPTERS: ChapterSpec[] = [
     title: "DLC 7 — 대공전함 다크스왈로해브니스",
     subtitle: "그랜드플래닛 · 하늘을 삼키는 전함",
     intro: "intro", boss: "fenrir", bossDone: "kingdomDone",
-    width: 2200, height: 1150, groundTint: 0x5a4a6a, groundTex: "tile_abyss", pathTex: "tile_bone", bg: "#0e0814",
+    width: 2200, height: 1150, groundTint: 0x5a4a6a, groundTex: "tile_deep", pathTex: "tile_hel", bg: "#0e0814",
     flowers: 0, trees: 0, rocks: 8,
     enemies: [{ key: "x2_bat", count: 4 }, { key: "minion", count: 4 }, { key: "x2_firebird", count: 3 }, { key: "x3_imp", count: 3 }, { key: "wraith", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
     main: "x2_bat",
@@ -621,7 +621,7 @@ export const CHAPTERS: ChapterSpec[] = [
     title: "DLC 8 — 오피니시아",
     subtitle: "그랜드플래닛 · 순력과 혼력의 대립점, 5대 가문의 도시",
     intro: "intro", boss: "skoll", bossDone: "kingdomDone",
-    width: 2200, height: 1200, groundTint: 0xc0a060, groundTex: "tile_marble", pathTex: "tile_gold", bg: "#141008",
+    width: 2200, height: 1200, groundTint: 0xc0a060, groundTex: "tile_amber", pathTex: "tile_desert", bg: "#141008",
     flowers: 6, trees: 5, rocks: 10,
     /* 기획서 1033~ 요약: 5대 가문(카르리온·아리아노·엘리자베스·오르페우스·셀리나).
      *  몰락한 카르리온과 자칭 오르페우스(페우스)의 계략. 왕 시니프의 실험(혼혈 웨폰마스터).
@@ -644,7 +644,7 @@ export const CHAPTERS: ChapterSpec[] = [
     title: "DLC 9 — 비밀의 화원 노벨 플로스",
     subtitle: "그랜드플래닛 · 아무도 모르는 정원",
     intro: "intro", boss: "gram", bossDone: "kingdomDone",
-    width: 2100, height: 1150, groundTint: 0xa8e0a0, groundTex: "tile_garden", pathTex: "tile_moss", bg: "#0a1408",
+    width: 2100, height: 1150, groundTint: 0xa8e0a0, groundTex: "tile_moss", pathTex: "tile_garden", bg: "#0a1408",
     flowers: 14, trees: 12, rocks: 6,
     enemies: [{ key: "x3_swampy", count: 4 }, { key: "x2_frog", count: 4 }, { key: "x3_goblin", count: 3 }, { key: "spider", count: 3 }, { key: "x2_snail", count: 3 }, { key: "x3_chort", count: 3 }],
     main: "x3_swampy",
@@ -664,7 +664,7 @@ export const CHAPTERS: ChapterSpec[] = [
     title: "DLC 10 — 신의도시 세르니움",
     subtitle: "그랜드플래닛 · 마지막 행성, 고향이자 종착점",
     intro: "intro", boss: "abudditos", bossDone: "kingdomDone",
-    width: 2300, height: 1250, groundTint: 0xd8c890, groundTex: "tile_divine", pathTex: "tile_gold", bg: "#1a1408",
+    width: 2300, height: 1250, groundTint: 0xd8c890, groundTex: "tile_vault", pathTex: "tile_amber", bg: "#1a1408",
     flowers: 8, trees: 6, rocks: 8,
     /* 기획서 1048~ 요약: 도착 — 리안 왕자 편 장로들은 환영, 황실은 냉담.
      *  아버지 왕이 병사하고 섭정이 왕좌를 찬탈. 제3의 세력(생명의 초월자)이 침공 예고.
