@@ -257,7 +257,7 @@ export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number;
    *  보라 악마+붉은 늑대) + 프레임 잘림 수리 — bsw_ 원본 그리드(8열×7행 192.5×147 / 6열×7행 204×184) 그대로 */
   boss_abudditos: { key: "atl_boss_abudditos", file: "atl_boss_abudditos.webp", fw: 156, fh: 162, cols: 11 }, // 종언의 마룡 아부디토스 — 흑룡 8열×7행
   boss_vord:      { key: "atl_boss_vord",      file: "atl_boss_vord.webp",      fw: 156, fh: 162, cols: 11 }, // 재림의 파수꾼 베오르드 — 흑룡 (기존 boss2 유령선 공유 해제)
-  boss_gram:      { key: "atl_boss_gram",      file: "atl_boss_gram.webp",      fw: 220, fh: 200 }, // 혈안의 문지기 가름 — 지옥견 늑대 (신화 고증 Garmr)
+  boss_gram:      { key: "atl_boss_gram",      file: "atl_boss_gram.webp",      fw: 220, fh: 200, cols: 6 }, // 혈안의 문지기 가름 — 지옥견 늑대 (신화 고증 Garmr)
 };
 
 /** 아틀라스 행별 유효 프레임 수 (슬라이서 실측 — 뒤쪽 빈 프레임 트리밍).
