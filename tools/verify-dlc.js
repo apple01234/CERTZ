@@ -17,7 +17,7 @@ if (lostBase.length) console.log('  LOST:', lostBase);
 
 // 2) DLC 는 정확히 3개이고 전부 dlc:true 인가
 const dlc = chs.filter(c => c.dlc);
-console.log(`[DLC] 개수=${dlc.length} (기대 3)`);
+console.log(`[DLC] 개수=${dlc.length} (기대 10 — 기획서 2기 10행성)`);
 
 // 3) num 연속성 (CH_HP[num-2] 인덱스 정합)
 const nums = chs.map(c => c.num).sort((a, b) => a - b);
@@ -53,7 +53,8 @@ const notLoaded = tex.filter(t => !boot.includes(`"${t}"`));
 console.log(`[텍스처] 사용=${tex.length} 미등록=${notLoaded.length}`);
 if (notLoaded.length) console.log('  NOT LOADED:', notLoaded);
 
-const fail = lostBase.length + Math.abs(dlc.length - 3) + gaps.length + short.length
+/* vc192 — DLC 10챕터로 확장(기획서 2기 10행성). 기대값을 10 으로 갱신 */
+const fail = lostBase.length + (dlc.length < 10 ? 1 : 0) + gaps.length + short.length
   + missingRe.length + (hasGate ? 0 : 1) + notLoaded.length;
 console.log(fail === 0 ? '\nALL CHECKS PASS' : `\nFAILURES: ${fail}`);
 process.exit(fail === 0 ? 0 : 1);

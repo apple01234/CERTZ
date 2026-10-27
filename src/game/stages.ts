@@ -14,7 +14,12 @@ export type ChapterKey =
   /* vc186b DLC — 세계 구원(아부디토스 격파) 이후 열리는 추가 스토리.
    *  기존 9챕터는 손대지 않고 **뒤에 덧붙이기만** 한다(회귀 방지).
    *  기획서 6행: "1기가 끝이나면 2기 그랜드플래닛으로 세계가 변경된다" */
-  | "dlcstargate" | "dlcprisma" | "dlcocean";
+  | "dlcstargate" | "dlcprisma" | "dlcocean"
+  /* vc192 — 기획서 18행 행성 순서의 나머지 7개.
+   *  "스타게이트,프라이즈프리즈마,리버스사이버,네오시티,기계무덤 메카닉블러드시티,
+   *   대공전함 다크스왈로해브니스,별빛속 바다 오션코멘, 순력과 혼력의 대립점 오피니시아,
+   *   비밀의 화원 노벨 플로스, 신의도시 세르니움" */
+  | "dlcreverse" | "dlcneocity" | "dlcmech" | "dlcswallow" | "dlcopinicia" | "dlcnovel" | "dlcsernium";
 
 /** 스테이지 키 — "village" | "forest1".."abyss10" (구 세이브 키도 런타임 폴백 처리) */
 export type StageKey = string;
@@ -517,6 +522,167 @@ export const CHAPTERS: ChapterSpec[] = [
     repeat: { need: 30, gold: Math.round(270 * G), exp: 270, title: "[반복] 오션코멘 정찰", desc: "바다가 다시 노래하기 시작했다 — 물고기를 계속 쫓아내자." },
     lvGate: { enter: 160, mid: 170 },
   },
+
+  /* ══════════════════════════════════════════════════════════════════════════
+   * vc192 — 기획서 2기 나머지 7행성 (세계 구원 후 DLC 후속)
+   *
+   * 근거: 기획서 18행 행성 순서
+   *  "스타게이트, 프라이즈프리즈마, 리버스사이버, 네오시티, 기계무덤 메카닉블러드시티,
+   *   대공전함 다크스왈로해브니스, 별빛속 바다 오션코멘, 순력과 혼력의 대립점 오피니시아,
+   *   비밀의 화원 노벨 플로스, 신의도시 세르니움"
+   *
+   * 각 행성의 적 구성·분위기·퀘스트는 기획서 본문(1200~1400행, 1024~1070행 요약)을 따랐다.
+   * ══════════════════════════════════════════════════════════════════════════ */
+  {
+    key: "dlcreverse", num: 14, dlc: true,
+    title: "DLC 4 — 리버스 사이버",
+    subtitle: "그랜드플래닛 · 지하선로의 도시, 안개와 무법자들",
+    intro: "intro", boss: "jorm", bossDone: "kingdomDone",
+    width: 2100, height: 1150, groundTint: 0x6a7d9c, groundTex: "tile_stone", pathTex: "tile_path_dark", bg: "#0a0e16",
+    flowers: 0, trees: 0, rocks: 12,
+    /* 기획서 1200~: 지하선로 필수 이동, 안전구역 밖은 브로커·갱, 세비지 플레이스, 드론·전투로봇 */
+    enemies: [{ key: "minion", count: 4 }, { key: "x3_chort", count: 4 }, { key: "x2_rat", count: 3 }, { key: "x3_ogre", count: 3 }, { key: "runegolem", count: 3 }, { key: "x3_necromancer", count: 2 }],
+    main: "minion",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "dr1", type: "hunt", title: "안개 속의 드론", desc: "지하선로를 순찰하는 기계 드론 20기를 격추해라.", need: 20, targetKey: "minion", targetLabel: "기계 드론", reward: Math.round(12000 * G), expReward: 17000 } },
+      { sub: 4, dialogue: "", quest: { id: "dr2", type: "collect", title: "출입칩 확보", desc: "메인 컨트롤타워에 들어가려면 직원 출입칩이 필요하다.", targetLabel: "보석의 흔적", reward: Math.round(12600 * G), expReward: 17800 } },
+      { sub: 6, dialogue: "", quest: { id: "dr3", type: "hunt", title: "세비지 플레이스의 갱", desc: "무법자 구역에서 습격해 오는 갱 22명을 몰아내라.", need: 22, targetKey: "x3_chort", targetLabel: "갱 조직원", reward: Math.round(13400 * G), expReward: 18900 } },
+      { sub: 8, dialogue: "", quest: { id: "dr4", type: "hunt", title: "전투로봇 제압", desc: "지하열차에서 쏟아진 전투로봇 18기를 부숴라.", need: 18, targetKey: "runegolem", targetLabel: "전투로봇", reward: Math.round(14200 * G), expReward: 20000 } },
+      { sub: 9, dialogue: "", quest: { id: "dr5", type: "collect", title: "[사연] 지하전력소의 일기장", desc: "전력소 연구실에서 떨어진 일기장을 회수하라 — 리버스사이버의 진실이 적혀 있다.", targetLabel: "보석의 흔적", reward: Math.round(15000 * G), expReward: 21200 } },
+      { sub: 10, dialogue: "", quest: { id: "dr6", type: "hunt", title: "[기믹] 독가스 연구실", desc: "초록 독가스로 가득한 제조기계를 지키는 오거 16마리를 처치하라.", need: 16, targetKey: "x3_ogre", targetLabel: "제조기계 수호자", reward: Math.round(16800 * G), expReward: 23600 } },
+    ],
+    repeat: { need: 32, gold: Math.round(330 * G), exp: 330, title: "[반복] 안개 순찰", desc: "안개가 걷히지 않는다 — 드론을 계속 격추하자." },
+    lvGate: { enter: 172, mid: 182 },
+  },
+  {
+    key: "dlcneocity", num: 15, dlc: true,
+    title: "DLC 5 — 네오시티",
+    subtitle: "그랜드플래닛 · 컴퍼니가 만든 세계, 다섯 개의 부호",
+    intro: "intro", boss: "nagr", bossDone: "kingdomDone",
+    width: 2200, height: 1200, groundTint: 0x4f6fd8, groundTex: "tile_dark", pathTex: "tile_path_dark", bg: "#060a1a",
+    flowers: 0, trees: 0, rocks: 10,
+    /* 기획서 1326~: 다크 플래닛 컴퍼니가 만들고 통제하는 행성. 완전히 다른 세계.
+     * 5부호: 힘·용기·지혜·운명·선택 (힘·생명·마법·시간·빛의 초월자를 모방) */
+    enemies: [{ key: "wraith", count: 4 }, { key: "x3_necromancer", count: 4 }, { key: "helhound", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "minion", count: 3 }, { key: "x3_bigzombie", count: 3 }],
+    main: "wraith",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "dn1", type: "hunt", title: "5부호의 시련 — 힘", desc: "힘의 부호를 지키는 유령 22체를 쓰러뜨려라.", need: 22, targetKey: "wraith", targetLabel: "힘의 수호자", reward: Math.round(17000 * G), expReward: 24000 } },
+      { sub: 4, dialogue: "", quest: { id: "dn2", type: "hunt", title: "5부호의 시련 — 용기", desc: "용기의 부호를 지키는 사냥개 20마리를 베어라.", need: 20, targetKey: "x2_darkhound", targetLabel: "용기의 수호자", reward: Math.round(17800 * G), expReward: 25200 } },
+      { sub: 6, dialogue: "", quest: { id: "dn3", type: "hunt", title: "5부호의 시련 — 지혜", desc: "지혜의 부호를 지키는 주술사 18명을 침묵시켜라.", need: 18, targetKey: "x3_necromancer", targetLabel: "지혜의 수호자", reward: Math.round(18800 * G), expReward: 26500 } },
+      { sub: 8, dialogue: "", quest: { id: "dn4", type: "hunt", title: "5부호의 시련 — 운명", desc: "운명의 부호를 지키는 심해 사냥개 20마리를 정화하라.", need: 20, targetKey: "helhound", targetLabel: "운명의 수호자", reward: Math.round(19800 * G), expReward: 28000 } },
+      { sub: 9, dialogue: "", quest: { id: "dn5", type: "collect", title: "[사연] 컴퍼니의 홀로그램 지도", desc: "지도에 없던 행성 — 컴퍼니가 만든 세계의 증거를 확보하라.", targetLabel: "보석의 흔적", reward: Math.round(20800 * G), expReward: 29500 } },
+      { sub: 10, dialogue: "", quest: { id: "dn6", type: "hunt", title: "[기믹] 5부호의 시련 — 선택", desc: "선택의 부호를 지키는 대좀비 16마리 — 마지막 시련이다.", need: 16, targetKey: "x3_bigzombie", targetLabel: "선택의 수호자", reward: Math.round(23400 * G), expReward: 33000 } },
+    ],
+    repeat: { need: 34, gold: Math.round(390 * G), exp: 390, title: "[반복] 네오시티 침투", desc: "컴퍼니의 감시가 끊이지 않는다 — 수호자를 계속 처치하자." },
+    lvGate: { enter: 188, mid: 198 },
+  },
+  {
+    key: "dlcmech", num: 16, dlc: true,
+    title: "DLC 6 — 기계무덤 메카닉 블러드시티",
+    subtitle: "그랜드플래닛 · 기계가 죽어 묻힌 도시",
+    intro: "intro", boss: "abysslord", bossDone: "kingdomDone",
+    width: 2150, height: 1180, groundTint: 0x8a7a6a, groundTex: "tile_stone", pathTex: "tile_path_dark", bg: "#14100a",
+    flowers: 0, trees: 0, rocks: 16,
+    enemies: [{ key: "golem", count: 4 }, { key: "runegolem", count: 4 }, { key: "x2_stonegolem", count: 3 }, { key: "x3_ogre", count: 3 }, { key: "minion", count: 3 }, { key: "x3_wogol", count: 2 }],
+    main: "golem",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "dm1", type: "hunt", title: "무덤의 골렘", desc: "기계무덤을 배회하는 골렘 20기를 부숴라.", need: 20, targetKey: "golem", targetLabel: "무덤 골렘", reward: Math.round(24000 * G), expReward: 34000 } },
+      { sub: 4, dialogue: "", quest: { id: "dm2", type: "collect", title: "기계의 심장", desc: "죽은 기계에서 아직 뛰는 심장을 회수하라.", targetLabel: "보석의 흔적", reward: Math.round(25000 * G), expReward: 35500 } },
+      { sub: 6, dialogue: "", quest: { id: "dm3", type: "hunt", title: "룬 골렘의 행렬", desc: "룬이 새겨진 골렘 22기를 멈춰라.", need: 22, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(26400 * G), expReward: 37300 } },
+      { sub: 8, dialogue: "", quest: { id: "dm4", type: "hunt", title: "돌로 굳은 수호자", desc: "석화된 수호자 18기를 정면으로 부숴라.", need: 18, targetKey: "x2_stonegolem", targetLabel: "석화 수호자", reward: Math.round(27800 * G), expReward: 39200 } },
+      { sub: 9, dialogue: "", quest: { id: "dm5", type: "collect", title: "[사연] 블러드시티의 마지막 기록", desc: "도시가 스스로를 묻은 이유를 기록에서 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(29200 * G), expReward: 41200 } },
+      { sub: 10, dialogue: "", quest: { id: "dm6", type: "hunt", title: "[기믹] 무덤을 지키는 거인", desc: "워골 16마리가 무덤의 문을 지킨다 — 길을 열어라.", need: 16, targetKey: "x3_wogol", targetLabel: "무덤 거인", reward: Math.round(32800 * G), expReward: 46000 } },
+    ],
+    repeat: { need: 36, gold: Math.round(450 * G), exp: 450, title: "[반복] 기계무덤 청소", desc: "죽은 기계가 다시 일어난다 — 계속 부수자." },
+    lvGate: { enter: 205, mid: 215 },
+  },
+  {
+    key: "dlcswallow", num: 17, dlc: true,
+    title: "DLC 7 — 대공전함 다크스왈로해브니스",
+    subtitle: "그랜드플래닛 · 하늘을 삼키는 전함",
+    intro: "intro", boss: "fenrir", bossDone: "kingdomDone",
+    width: 2200, height: 1150, groundTint: 0x5a4a6a, groundTex: "tile_dark", pathTex: "tile_path_dark", bg: "#0e0814",
+    flowers: 0, trees: 0, rocks: 8,
+    enemies: [{ key: "x2_bat", count: 4 }, { key: "minion", count: 4 }, { key: "x2_firebird", count: 3 }, { key: "x3_imp", count: 3 }, { key: "wraith", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
+    main: "x2_bat",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "dw1", type: "hunt", title: "전함의 갑판", desc: "하늘을 나는 박쥐 떼 22마리를 쓸어내라.", need: 22, targetKey: "x2_bat", targetLabel: "전함 박쥐", reward: Math.round(34000 * G), expReward: 48000 } },
+      { sub: 4, dialogue: "", quest: { id: "dw2", type: "collect", title: "전함의 항법석", desc: "다크스왈로해브니스의 항법석을 확보하라.", targetLabel: "보석의 흔적", reward: Math.round(35500 * G), expReward: 50000 } },
+      { sub: 6, dialogue: "", quest: { id: "dw3", type: "hunt", title: "포격 중인 임프", desc: "대포를 다루는 임프 20마리를 제압하라.", need: 20, targetKey: "x3_imp", targetLabel: "포격 임프", reward: Math.round(37200 * G), expReward: 52400 } },
+      { sub: 8, dialogue: "", quest: { id: "dw4", type: "hunt", title: "전함의 수호병", desc: "오르크 전사 20명이 갑판을 지킨다.", need: 20, targetKey: "x3_orcwarrior", targetLabel: "전함 수호병", reward: Math.round(39000 * G), expReward: 55000 } },
+      { sub: 9, dialogue: "", quest: { id: "dw5", type: "collect", title: "[사연] 함교의 일지", desc: "함교에서 전함이 삼킨 것들의 기록을 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(40800 * G), expReward: 57600 } },
+      { sub: 10, dialogue: "", quest: { id: "dw6", type: "hunt", title: "[기믹] 하늘을 삼키는 자", desc: "전함의 핵을 지키는 불새 16마리를 처치하라.", need: 16, targetKey: "x2_firebird", targetLabel: "전함의 불새", reward: Math.round(46000 * G), expReward: 64000 } },
+    ],
+    repeat: { need: 38, gold: Math.round(520 * G), exp: 520, title: "[반복] 갑판 정찰", desc: "전함은 멈추지 않는다 — 갑판을 계속 지켜라." },
+    lvGate: { enter: 222, mid: 232 },
+  },
+  {
+    key: "dlcopinicia", num: 18, dlc: true,
+    title: "DLC 8 — 오피니시아",
+    subtitle: "그랜드플래닛 · 순력과 혼력의 대립점, 5대 가문의 도시",
+    intro: "intro", boss: "skoll", bossDone: "kingdomDone",
+    width: 2200, height: 1200, groundTint: 0xc0a060, groundTex: "tile_grass", pathTex: "tile_path", bg: "#141008",
+    flowers: 6, trees: 5, rocks: 10,
+    /* 기획서 1033~ 요약: 5대 가문(카르리온·아리아노·엘리자베스·오르페우스·셀리나).
+     *  몰락한 카르리온과 자칭 오르페우스(페우스)의 계략. 왕 시니프의 실험(혼혈 웨폰마스터).
+     *  마스터학원에 잠입해 웨폰마스터 능력을 복제하는 자를 추적한다. */
+    enemies: [{ key: "x3_necromancer", count: 4 }, { key: "x3_orcshaman", count: 4 }, { key: "runegolem", count: 3 }, { key: "x3_maskedorc", count: 3 }, { key: "wraith", count: 3 }, { key: "x3_bigzombie", count: 3 }],
+    main: "x3_necromancer",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "di1", type: "hunt", title: "몰락 가문의 사주", desc: "일행을 노리는 자객 주술사 20명을 처치하라.", need: 20, targetKey: "x3_necromancer", targetLabel: "자객 주술사", reward: Math.round(48000 * G), expReward: 67000 } },
+      { sub: 4, dialogue: "", quest: { id: "di2", type: "collect", title: "궁전 연구실의 기록", desc: "시니프의 실험 기록을 회수하라 — 혼혈 웨폰마스터의 흔적.", targetLabel: "보석의 흔적", reward: Math.round(50000 * G), expReward: 70000 } },
+      { sub: 6, dialogue: "", quest: { id: "di3", type: "hunt", title: "마스터학원의 경비", desc: "학원에 잠입한 뒤 경비 주술사 18명을 조용히 처리하라.", need: 18, targetKey: "x3_orcshaman", targetLabel: "학원 경비", reward: Math.round(52500 * G), expReward: 73400 } },
+      { sub: 8, dialogue: "", quest: { id: "di4", type: "hunt", title: "페우스의 부하들", desc: "자칭 오르페우스(페우스)가 보낸 가면 오크 22명을 베어라.", need: 22, targetKey: "x3_maskedorc", targetLabel: "페우스의 부하", reward: Math.round(55000 * G), expReward: 77000 } },
+      { sub: 9, dialogue: "", quest: { id: "di5", type: "collect", title: "[사연] 엘리자베스의 편지", desc: "5대 가문 엘리자베스가 남긴 편지를 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(57500 * G), expReward: 80600 } },
+      { sub: 10, dialogue: "", quest: { id: "di6", type: "hunt", title: "[기믹] 순혈과 혼혈의 대립", desc: "혼혈 실험체 대좀비 16마리를 정화하라.", need: 16, targetKey: "x3_bigzombie", targetLabel: "혼혈 실험체", reward: Math.round(65000 * G), expReward: 89500 } },
+    ],
+    repeat: { need: 40, gold: Math.round(600 * G), exp: 600, title: "[반복] 가문 소요 진압", desc: "가문들의 암투가 계속된다 — 자객을 계속 막아라." },
+    lvGate: { enter: 240, mid: 250 },
+  },
+  {
+    key: "dlcnovel", num: 19, dlc: true,
+    title: "DLC 9 — 비밀의 화원 노벨 플로스",
+    subtitle: "그랜드플래닛 · 아무도 모르는 정원",
+    intro: "intro", boss: "gram", bossDone: "kingdomDone",
+    width: 2100, height: 1150, groundTint: 0xa8e0a0, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0a1408",
+    flowers: 14, trees: 12, rocks: 6,
+    enemies: [{ key: "x3_swampy", count: 4 }, { key: "x2_frog", count: 4 }, { key: "x3_goblin", count: 3 }, { key: "spider", count: 3 }, { key: "x2_snail", count: 3 }, { key: "x3_chort", count: 3 }],
+    main: "x3_swampy",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "dno1", type: "hunt", title: "화원의 수호 식물", desc: "정원을 지키는 늪괴물 22마리를 베어내라.", need: 22, targetKey: "x3_swampy", targetLabel: "수호 식물", reward: Math.round(68000 * G), expReward: 94000 } },
+      { sub: 4, dialogue: "", quest: { id: "dno2", type: "collect", title: "비밀의 씨앗", desc: "이 화원에만 피는 꽃의 씨앗을 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(71000 * G), expReward: 98000 } },
+      { sub: 6, dialogue: "", quest: { id: "dno3", type: "hunt", title: "개구리 떼", desc: "연못을 점령한 개구리 20마리를 쫓아내라.", need: 20, targetKey: "x2_frog", targetLabel: "연못 개구리", reward: Math.round(74500 * G), expReward: 102800 } },
+      { sub: 8, dialogue: "", quest: { id: "dno4", type: "hunt", title: "고블린 원예사", desc: "화원을 망치는 고블린 20마리를 처치하라.", need: 20, targetKey: "x3_goblin", targetLabel: "고블린 원예사", reward: Math.round(78000 * G), expReward: 107800 } },
+      { sub: 9, dialogue: "", quest: { id: "dno5", type: "collect", title: "[사연] 정원사의 마지막 편지", desc: "아무도 모르는 정원을 가꾼 자의 편지를 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(81500 * G), expReward: 112800 } },
+      { sub: 10, dialogue: "", quest: { id: "dno6", type: "hunt", title: "[기믹] 화원의 주인", desc: "화원의 심장을 지키는 거대 달팽이 16마리를 물리쳐라.", need: 16, targetKey: "x2_snail", targetLabel: "화원의 주인", reward: Math.round(92000 * G), expReward: 125000 } },
+    ],
+    repeat: { need: 42, gold: Math.round(680 * G), exp: 680, title: "[반복] 화원 가꾸기", desc: "정원이 다시 자란다 — 수호 식물을 계속 베자." },
+    lvGate: { enter: 258, mid: 268 },
+  },
+  {
+    key: "dlcsernium", num: 20, dlc: true,
+    title: "DLC 10 — 신의도시 세르니움",
+    subtitle: "그랜드플래닛 · 마지막 행성, 고향이자 종착점",
+    intro: "intro", boss: "abudditos", bossDone: "kingdomDone",
+    width: 2300, height: 1250, groundTint: 0xd8c890, groundTex: "tile_grass", pathTex: "tile_path", bg: "#1a1408",
+    flowers: 8, trees: 6, rocks: 8,
+    /* 기획서 1048~ 요약: 도착 — 리안 왕자 편 장로들은 환영, 황실은 냉담.
+     *  아버지 왕이 병사하고 섭정이 왕좌를 찬탈. 제3의 세력(생명의 초월자)이 침공 예고.
+     *  검의 성전 — 태양과 달의 두 검이 하나로 모일 때(솔루나 이클립스 페이티니소드) 진정한 힘.
+     *  제르(생명의 초월자)가 왕을 흡수, 스칼렛이 각성해 막고, 도사가 6단계 힘을 소진. */
+    enemies: [{ key: "wraith", count: 4 }, { key: "helhound", count: 4 }, { key: "x3_bigzombie", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "minion", count: 3 }],
+    main: "wraith",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "dse1", type: "hunt", title: "냉담한 황실", desc: "찬탈자에게 붙은 근위병 24명을 제압하라.", need: 24, targetKey: "wraith", targetLabel: "찬탈자 근위병", reward: Math.round(96000 * G), expReward: 132000 } },
+      { sub: 4, dialogue: "", quest: { id: "dse2", type: "collect", title: "검의 성전 — 두 개의 검", desc: "태양과 달의 검이 꽂힌 검의 성전을 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(100000 * G), expReward: 138000 } },
+      { sub: 6, dialogue: "", quest: { id: "dse3", type: "hunt", title: "제3의 세력", desc: "생명의 초월자가 보낸 침공군 22명을 막아라.", need: 22, targetKey: "x3_bigzombie", targetLabel: "침공군", reward: Math.round(105000 * G), expReward: 145000 } },
+      { sub: 8, dialogue: "", quest: { id: "dse4", type: "hunt", title: "폭주한 왕", desc: "주술의 힘에 삼켜진 자의 그림자 20체를 베어라.", need: 20, targetKey: "x3_necromancer", targetLabel: "폭주한 그림자", reward: Math.round(110000 * G), expReward: 152000 } },
+      { sub: 9, dialogue: "", quest: { id: "dse5", type: "collect", title: "[사연] 코스믹스타의 힘", desc: "진정한 왕가의 힘 — 코스믹스타의 파편을 회수하라.", targetLabel: "보석의 흔적", reward: Math.round(115000 * G), expReward: 159000 } },
+      { sub: 10, dialogue: "", quest: { id: "dse6", type: "hunt", title: "[기믹] 생명의 초월자", desc: "제르가 남긴 생명의 잔재 18체를 정화하라 — 라일락 월드로 돌아가는 길.", need: 18, targetKey: "x2_darkhound", targetLabel: "생명의 잔재", reward: Math.round(130000 * G), expReward: 178000 } },
+    ],
+    repeat: { need: 45, gold: Math.round(760 * G), exp: 760, title: "[반복] 세르니움 수복", desc: "도시가 다시 숨을 쉰다 — 남은 그림자를 계속 정화하자." },
+    lvGate: { enter: 276, mid: 286 },
+  },
 ];
 
 /* ================= 몬스터 정의 (v1.5 데이터 이관) ================= */
@@ -785,8 +951,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
  *  조치: 계수를 완만한 곡선으로 바꾸고 후반 배율을 10 → 4로 낮췄다.
  *  결과: 1.9 ~ 19.7타 (편차 57.8배 → 10.2배), 즉사 구간 0.
  *  계산 근거: atkTotal = 12 + 3×(lv−1), 스킬 배율 1.25~2.36 (rollDamage 참조). */
-const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14.0, 20.0, 28.0, 42.0, 66.0, 105.0]; // vc186b — DLC 3챕터 추가분 // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
-const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0, 6.2, 7.8, 9.8]; // vc186b — DLC 3챕터 추가분 // 유저 피드백: 공격력은 현행 유지
+const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14.0, 20.0, 28.0, 42.0, 66.0, 105.0, 165.0, 260.0, 410.0, 650.0, 1020.0, 1600.0, 2500.0]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
+const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0, 6.2, 7.8, 9.8, 12.5, 15.8, 20.0, 25.0, 31.0, 39.0, 49.0]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 유저 피드백: 공격력은 현행 유지
 /* v1.2.2 — 챕터 EXP 계수 재조정 (레벨 곡선 정합)
  *  문제: expTable.ts는 메이플 공식(지수 성장)인데 적 EXP 계수는 1→9.2로 거의 평평했다.
  *        레벨업에 필요한 처치 수가 **25마리 ~ 2,105,941마리**(편차 84,780배)로 벌어져
@@ -795,7 +961,7 @@ const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0, 6.2, 7.8, 9.8]; /
  *  조치: 레벨별 필요 EXP를 기준으로 역산해 계수를 지수적으로 올렸다.
  *        처치 수 목표는 35 → 807로 완만히 증가(후반일수록 몸값이 커지는 게 자연스럽다).
  *  결과: 처치 수 편차 84,780배 → 22.8배. 전 구간 레벨업 가능. */
-const CH_EXP = [0.7, 2.3, 7.2, 23.1, 74.0, 237.0, 758.3, 2426.4, 24000.0, 75000.0, 240000.0, 760000.0]; // vc186b — DLC 3챕터 추가분
+const CH_EXP = [0.7, 2.3, 7.2, 23.1, 74.0, 237.0, 758.3, 2426.4, 24000.0, 75000.0, 240000.0, 760000.0, 2400000.0, 7600000.0, 24000000.0, 75000000.0, 240000000.0, 750000000.0, 2400000000.0]; // vc186b — DLC 3챕터 + vc192 나머지 7행성
 
 /** 스테이지 키 → {챕터, 구역} 파싱 */
 export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: number } {
@@ -803,7 +969,7 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
   /* v2.9 — 챕터 마을(Xv)도 챕터 소속으로 파싱 */
   const v = /^([a-z]+)v$/.exec(key);
   if (v) return { ch: v[1] as ChapterKey, sub: 0 };
-  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss|dlcstargate|dlcprisma|dlcocean)([1-9]|10)$/.exec(key);
+  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss|dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech|dlcswallow|dlcopinicia|dlcnovel|dlcsernium)([1-9]|10)$/.exec(key);
   if (!m) return { ch: "village", sub: 0 };
   return { ch: m[1] as ChapterKey, sub: parseInt(m[2], 10) };
 }
@@ -829,7 +995,7 @@ export function questNeedByLv(lv: number): number {
 /** vc142 (#5) — 후반 몬스터 HP ×10: 유저 지시 "후반만 4스테이지 쯤 부터 몬스터 체력좀 10배 씩 정도 늘려".
  *  후반 4개 챕터(7 스바르트알프헤임 · 8 니다벨리르 · 9 헬 · 10 세계수의 뿌리)의 4구역부터 적용
  *  (구역 1~3은 진입 완충 유지). 공격력/경험치/골드 곡선은 현행 유지 — 체력만 상향. */
-const LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss", "dlcstargate", "dlcprisma", "dlcocean"];
+const LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss", "dlcstargate", "dlcprisma", "dlcocean", "dlcreverse", "dlcneocity", "dlcmech", "dlcswallow", "dlcopinicia", "dlcnovel", "dlcsernium"];
 const LATE_HP_FROM_SUB = 4;
 const LATE_HP_MUL = 4; // v1.2.2 — 10은 과했다(7~10챕터 50~64타). 4로 낮춰 17~20타대.
 
