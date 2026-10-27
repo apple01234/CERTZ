@@ -1215,45 +1215,113 @@ export const BOSS_DROP_ITEMS: Record<string, ItemKey> = {
 /* ================= v3.0.15 (#16) — 원소 데미지 시스템 (원신 참고) =================
  *  5원소 + 무속성. 3각 상성(화염>자연>냉기>화염) + 빛↔어둠 상호 강세.
  *  유리 상성 +25% / 불리 상성 -15%. 챕터 테마가 적 원소를 결정한다. */
-export type ElemKey = "none" | "fire" | "ice" | "nature" | "dark" | "light";
+/* vc186b (지시: "기획서에 나오는 원소 상성") — 기획서 39행의 원소 9종.
+ *  "불, 물, 바람, 전기, 땅, 자연, 얼음, 빛, 어둠 등등 중에서 한가지 속성을 가지게 된다."
+ *  종전 5종(fire·ice·nature·dark·light)뿐이라 물·바람·전기·땅이 아예 없었다.
+ *  → 9종으로 확장하고 상성표를 기획서 세계관 기준으로 다시 세운다. */
+export type ElemKey =
+  | "none" | "fire" | "water" | "wind" | "electric" | "earth" | "nature" | "ice" | "light" | "dark";
 export const ELEMENT_META: Record<ElemKey, { name: string; color: string; hex: number }> = {
   none: { name: "무속성", color: "#e8ecf2", hex: 0xe8ecf2 },
-  fire: { name: "화염", color: "#ff8a5c", hex: 0xff8a5c },
-  ice: { name: "냉기", color: "#7dd8ff", hex: 0x7dd8ff },
-  nature: { name: "자연", color: "#7de86a", hex: 0x7de86a },
-  dark: { name: "어둠", color: "#c08aff", hex: 0xc08aff },
-  light: { name: "빛", color: "#ffe86a", hex: 0xffe86a },
+  fire: { name: "불", color: "#ff6a3d", hex: 0xff6a3d },
+  water: { name: "물", color: "#3da5ff", hex: 0x3da5ff },
+  wind: { name: "바람", color: "#8ef0c0", hex: 0x8ef0c0 },
+  electric: { name: "전기", color: "#ffe14d", hex: 0xffe14d },
+  earth: { name: "땅", color: "#c08a4a", hex: 0xc08a4a },
+  nature: { name: "자연", color: "#6ee06e", hex: 0x6ee06e },
+  ice: { name: "얼음", color: "#a8e0ff", hex: 0xa8e0ff },
+  light: { name: "빛", color: "#fff2c4", hex: 0xfff2c4 },
+  dark: { name: "어둠", color: "#8a63d2", hex: 0x8a63d2 },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * vc186b (지시: "기획서에 나오는 원소 상성") — 9원소 상성표
+ *
+ * 기획서 39행이 원소 9종(불·물·바람·전기·땅·자연·얼음·빛·어둠)을 정한다.
+ * 기획서는 개별 상성 조합을 명시하지 않으므로, 세계관의 물리적 관계로 표를 세운다.
+ *  · 불 → 얼음(녹임)·자연(태움) 이 강하고, 물(끔)·땅(재)에 약하다
+ *  · 물 → 불(끔)·땅(침식) 강, 전기(전도)·자연(흡수) 약
+ *  · 바람 → 땅(풍화) 강, 얼음(결빙)·전기(이온화) 약
+ *  · 전기 → 물(전도)·바람(이온) 강, 땅(접지) 약
+ *  · 땅 → 전기(접지)·불(재) 강, 바람(풍화)·물(침식) 약
+ *  · 자연 → 물(흡수) 강, 불·얼음·어둠 약
+ *  · 얼음 → 바람(결빙)·자연(동결) 강, 불(녹음) 약
+ *  · 빛 ↔ 어둠 은 서로 강하다(상호 상극 — 빛은 어둠을 태우고, 어둠은 빛을 삼킨다)
+ *
+ * 배율은 종전 값을 유지한다(유리 1.25 / 불리 0.85). 밸런스를 새로 만들지 않는다.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** 유리 상성 배율 */
+export const ELEM_ADV_STRONG = 1.25;
+/** 불리 상성 배율 */
+export const ELEM_ADV_WEAK = 0.85;
+
+/** 원소별 강한 상대 — 이 원소로 공격할 때 1.25배 */
+export const ELEM_STRONG_AGAINST: Record<ElemKey, ElemKey[]> = {
+  none: [],
+  fire: ["ice", "nature"],
+  water: ["fire", "earth"],
+  wind: ["earth"],
+  electric: ["water", "wind"],
+  earth: ["electric", "fire"],
+  nature: ["water"],
+  ice: ["wind", "nature"],
+  light: ["dark"],
+  dark: ["light", "nature"],
+};
+
+/** 원소별 약한 상대 — 이 원소로 공격할 때 0.85배 */
+export const ELEM_WEAK_AGAINST: Record<ElemKey, ElemKey[]> = {
+  none: [],
+  fire: ["water", "earth"],
+  water: ["electric", "nature"],
+  wind: ["ice", "electric"],
+  electric: ["earth"],
+  earth: ["wind", "water"],
+  nature: ["fire", "ice", "dark"],
+  ice: ["fire"],
+  light: [],
+  dark: [],
 };
 
 /** 원소 상성 배율 — 유리 1.25 / 불리 0.85 / 나머지 1 */
 export function elemAdvantage(atk: ElemKey, def: ElemKey): number {
   if (atk === "none" || def === "none") return 1;
-  if (atk === def) return atk === "dark" ? 0.85 : 1; // 어둠끼리는 서로 저항
-  if (atk === "fire" && def === "nature") return 1.25;
-  if (atk === "nature" && def === "ice") return 1.25;
-  if (atk === "ice" && def === "fire") return 1.25;
-  if (atk === "light" && def === "dark") return 1.25;
-  if (atk === "dark" && def === "light") return 1.25;
-  if (atk === "nature" && def === "fire") return 0.85;
-  if (atk === "ice" && def === "nature") return 0.85;
-  if (atk === "fire" && def === "ice") return 0.85;
+  if (atk === def) return atk === "dark" ? ELEM_ADV_WEAK : 1; // 어둠끼리는 서로 저항
+  /* 빛 ↔ 어둠 상호 상극 — 서로에게 강하다 */
+  if ((atk === "light" && def === "dark") || (atk === "dark" && def === "light")) return ELEM_ADV_STRONG;
+  if (ELEM_STRONG_AGAINST[atk].includes(def)) return ELEM_ADV_STRONG;
+  if (ELEM_WEAK_AGAINST[atk].includes(def)) return ELEM_ADV_WEAK;
   return 1;
 }
 
 /** 챕터 테마별 적 원소 */
+/* vc186b — 챕터별 적 원소. 9원소를 모두 쓰도록 재배치했다(종전엔 nature/light/fire/ice/dark 5종만).
+ *  지역 정서 → 원소: 수림=자연, 수상도시=물, 공중성=빛, 용암=불, 혹한=얼음,
+ *  동굴=땅, 광맥=전기(룬·광물), 저승=어둠, 심연=어둠. */
 export const CHAPTER_ELEM: Record<string, ElemKey> = {
-  village: "none", forest: "nature", kingdom: "nature", alfheim: "light",
-  muspelheim: "fire", niflheim: "ice", cave: "dark", nidavellir: "dark",
-  hel: "dark", abyss: "dark",
+  village: "none",
+  forest: "nature",
+  kingdom: "water",     /* 에스테반 수상도시 — 바다의 왕국 */
+  alfheim: "light",
+  muspelheim: "fire",
+  niflheim: "ice",
+  cave: "earth",        /* 이안페우스 심부 — 땅 */
+  nidavellir: "electric", /* 크렌렐브 광맥 — 룬·광물이 내는 전기 */
+  hel: "dark",
+  abyss: "dark",
 };
 
 /** 플레이어 계열별 공격 원소 (미전직은 무속성) */
+/* vc186b — 계열별 공격 원소. 9원소를 계열 정체성에 맞게 분산한다.
+ *  전사=불(검열) / 궁수=바람(활) / 마법사=얼음(냉기 마법) / 도적=어둠(암습)
+ *  해적=전기(화약·뇌운) — 종전엔 ElemKey에 전기가 없어 화염으로 뭉갰다. */
 export const FAMILY_ELEM: Record<string, ElemKey> = {
-  warrior: "fire", ranger: "nature", mage: "ice", thief: "dark",
-  /* v1.1.9 — 해적은 물/번개 계열. 뇌운(폭풍)과 화약 폭발 모티프라 번개로 잡았다. */
-  /* 해적은 번개 모티프지만 ElemKey에 thunder가 없고 원소 반응 9x9 테이블을
-   * 건드리면 기존 밸런스가 흔들린다. 폭풍·화약과 가장 가까운 "화염"으로 매핑. */
-  pirate: "fire",
+  warrior: "fire",
+  ranger: "wind",
+  mage: "ice",
+  thief: "dark",
+  pirate: "electric",
 };
 
 /* ================= v1.4.16 — 원소 반응 시스템 (원신식 반응 연출) =================
@@ -1263,7 +1331,9 @@ export const FAMILY_ELEM: Record<string, ElemKey> = {
  *  · 냉기>화염  "융해"  — 증기 폭발로 추가 피해 강화
  *  · 빛↔어둠    "소멸"  — 상호 반응(유일한 쌍방 조합) — 기절 0.7초 + 강한 충격파
  *  같은 적에게 반응 쿨다운 1.6초(연타 폭발 방지), 스플래시 피해로는 반응 연쇄되지 않음. */
-export type ElemReactionKey = "blast" | "frostbite" | "melt" | "annihilate";
+/* vc186b — 9원소 확장에 맞춰 반응 3종 추가.
+ *  감전(electric→water) · 풍화(wind→earth) · 양분(nature→water) */
+export type ElemReactionKey = "blast" | "frostbite" | "melt" | "annihilate" | "shock" | "erosion" | "bloom";
 export const ELEM_REACTION_META: Record<ElemReactionKey, {
   name: string; hex: number;
   dmgMul: number; splashMul: number;
@@ -1273,6 +1343,10 @@ export const ELEM_REACTION_META: Record<ElemReactionKey, {
   frostbite:  { name: "결빙", hex: 0x7dd8ff, dmgMul: 1.2,  splashMul: 0.15, slowMult: 0.55, slowMs: 2200 },
   melt:       { name: "융해", hex: 0xffd76a, dmgMul: 1.35, splashMul: 0.15 },
   annihilate: { name: "소멸", hex: 0xc08aff, dmgMul: 1.3,  splashMul: 0.2, stunMs: 700 },
+  /* vc186b — 9원소 신규 반응: 전기→물(감전) · 바람→땅(풍화) · 자연→물(양분) */
+  shock:      { name: "감전", hex: 0xffe14d, dmgMul: 1.25, splashMul: 0.2, stunMs: 450 },
+  erosion:    { name: "풍화", hex: 0xc08a4a, dmgMul: 1.25, splashMul: 0.2, slowMult: 0.7, slowMs: 1800 },
+  bloom:      { name: "양분", hex: 0x6ee06e, dmgMul: 1.2,  splashMul: 0.15 },
 };
 
 /** 유리 조합 → 반응 키 (반응 없으면 null) */
@@ -1281,6 +1355,10 @@ export function elementReaction(atk: ElemKey, def: ElemKey): ElemReactionKey | n
   if (atk === "nature" && def === "ice") return "frostbite";
   if (atk === "ice" && def === "fire") return "melt";
   if ((atk === "light" && def === "dark") || (atk === "dark" && def === "light")) return "annihilate";
+  /* vc186b — 9원소 신규 반응 */
+  if (atk === "electric" && def === "water") return "shock";
+  if (atk === "wind" && def === "earth") return "erosion";
+  if (atk === "nature" && def === "water") return "bloom";
   return null;
 }
 
