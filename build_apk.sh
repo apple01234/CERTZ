@@ -58,7 +58,14 @@ npx cap sync android || { echo "BUILD FAIL: cap sync"; exit 1; }
 
 echo "[4] gradle assembleRelease"
 cd "$PROJECT_ROOT/android"
-./gradlew assembleRelease --no-daemon -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease || { echo "BUILD FAIL: gradle"; exit 1; }
+# vc186b — aapt2 는 x86-64 전용 바이너리다. aarch64 호스트에서만 qemu 래퍼를 넘긴다.
+#  x86_64(CI·일반 PC)에서는 넘기지 않는다 — /opt/aapt2 가 없어 빌드가 죽는다.
+AAPT2_ARGS=""
+if [ "$(uname -m)" = "aarch64" ] && [ -x /opt/aapt2/aapt2 ]; then
+  AAPT2_ARGS="-Pandroid.aapt2FromMavenOverride=/opt/aapt2/aapt2"
+  echo "    (aarch64 감지 — qemu aapt2 래퍼 사용)"
+fi
+./gradlew assembleRelease --no-daemon -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease $AAPT2_ARGS || { echo "BUILD FAIL: gradle"; exit 1; }
 
 echo "[5] 산출물"
 ls -la "$PROJECT_ROOT/android/app/build/outputs/apk/release/app-release.apk"

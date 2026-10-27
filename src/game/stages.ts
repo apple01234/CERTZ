@@ -10,7 +10,11 @@
 
 export type ChapterKey =
   | "forest" | "kingdom" | "alfheim" | "muspelheim" | "niflheim"
-  | "cave" | "nidavellir" | "hel" | "abyss";
+  | "cave" | "nidavellir" | "hel" | "abyss"
+  /* vc186b DLC — 세계 구원(아부디토스 격파) 이후 열리는 추가 스토리.
+   *  기존 9챕터는 손대지 않고 **뒤에 덧붙이기만** 한다(회귀 방지).
+   *  기획서 6행: "1기가 끝이나면 2기 그랜드플래닛으로 세계가 변경된다" */
+  | "dlcstargate" | "dlcprisma" | "dlcocean";
 
 /** 스테이지 키 — "village" | "forest1".."abyss10" (구 세이브 키도 런타임 폴백 처리) */
 export type StageKey = string;
@@ -244,6 +248,9 @@ type ChapterSpec = {
   repeat: { need: number; gold: number; exp: number; title: string; desc: string };
   /** v2.4 레벨 게이트 — 챕터 진입(sub1)·중간(sub4) 목표 레벨 ("N레벨 달성!" 동기부여 퀘스트) */
   lvGate: { enter: number; mid: number };
+  /** vc186b — DLC 챕터 여부. true 면 세계 구원 후에만 입장 가능하고
+   *  마지막 DLC 보스를 잡아도 '엔딩'을 재발화하지 않는다. */
+  dlc?: boolean;
 };
 
 /* 보상 밸런스 (사용자 지시 #6 — 골드 과다 지급 수정: 기존 기준 ×0.8) */
@@ -432,6 +439,83 @@ export const CHAPTERS: ChapterSpec[] = [
     repeat: { need: 24, gold: Math.round(165 * G), exp: 165, title: "[반복] 뿌리 정찰 의뢰", desc: "뿌리의 기운이 강해지고 있다 — 유령을 계속 처치해라." },
     /* vc146 (#8) — 챕터 레벨 제한 상향: 58→126/136 */
     lvGate: { enter: 126, mid: 136 },
+  },
+
+  /* ══════════════════════════════════════════════════════════════════════════
+   * vc186b — DLC 「세계 구원 이후」
+   *
+   * 사용자 지시: "그냥 9개의 바다는 놔두고 DLC(추가 스토리) 느낌으로
+   *              세계 구원후 기획서의 스토리 관련 게임이 이어지도록 만들어"
+   *
+   * 기획서 6행: "1기가 끝이나면 2기 그랜드플래닛으로 세계가 변경된다
+   *              이곳에서의 메인 테마는 윤지왕자와 유진으로 원래 고향 '신의도시 세르니움'이다"
+   * 기획서 12행 행성 순서: 스타게이트 → 프라이즈프리즈마 → … → 오션코멘 → … → 세르니움
+   *
+   * 위 9챕터(라일락 월드)는 **한 글자도 수정하지 않는다**. 아부디토스를 잡고
+   * 세계를 구원한 뒤에만 열리는 추가 스토리로 붙인다.
+   * ══════════════════════════════════════════════════════════════════════════ */
+  {
+    key: "dlcstargate", num: 11, dlc: true,
+    title: "DLC 1 — 제1행성 스타게이트",
+    subtitle: "그랜드플래닛 · 세계를 구원한 자에게 열린 첫 번째 별",
+    intro: "intro", boss: "nidhog", bossDone: "guardianDone",
+    width: 2000, height: 1120, groundTint: 0x5f6fd8, groundTex: "tile_dark", pathTex: "tile_path_dark", bg: "#070a1c",
+    flowers: 4, trees: 3, rocks: 10,
+    /* 기획서 1079~: 별모양 행성, 문지기 리틀스타, 장미가 행성의 동력원, 뒤틀린 지면 */
+    enemies: [{ key: "wraith", count: 4 }, { key: "minion", count: 4 }, { key: "x2_frostfly", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "x3_necromancer", count: 2 }, { key: "golem", count: 3 }],
+    main: "wraith",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "ds1", type: "hunt", title: "뒤틀린 지면의 유령", desc: "행성이 발밑에서 꿈틀거린다 — 유령 18마리를 처치해 길을 열어라.", need: 18, targetKey: "wraith", targetLabel: "행성의 유령", reward: Math.round(2400 * G), expReward: 3600 } },
+      { sub: 4, dialogue: "", quest: { id: "ds2", type: "collect", title: "장미의 파편", desc: "리틀스타의 장미가 이 행성의 동력원이다. 파편을 모아 약점을 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(2600 * G), expReward: 3900 } },
+      { sub: 6, dialogue: "", quest: { id: "ds3", type: "hunt", title: "감염된 사냥개", desc: "우주를 떠도는 바이러스에 감염된 사냥개 22마리를 베어라.", need: 22, targetKey: "x2_darkhound", targetLabel: "감염된 사냥개", reward: Math.round(2900 * G), expReward: 4200 } },
+      { sub: 8, dialogue: "", quest: { id: "ds4", type: "hunt", title: "별의 골렘", desc: "행성의 핵을 지키는 골렘 14기를 부숴라.", need: 14, targetKey: "golem", targetLabel: "별의 골렘", reward: Math.round(3100 * G), expReward: 4600 } },
+      { sub: 9, dialogue: "", quest: { id: "ds5", type: "collect", title: "[사연] 문지기의 마지막 장미", desc: "리틀스타가 지키던 마지막 장미 한 송이를 되찾아라.", targetLabel: "보석의 흔적", reward: Math.round(3300 * G), expReward: 4800 } },
+      { sub: 10, dialogue: "", quest: { id: "ds6", type: "hunt", title: "[기믹] 별의 묘지", desc: "죽은 별을 되살리려는 네크로맨서 12명을 처치해라.", need: 12, targetKey: "x3_necromancer", targetLabel: "별의 네크로맨서", reward: Math.round(3800 * G), expReward: 5400 } },
+    ],
+    repeat: { need: 26, gold: Math.round(190 * G), exp: 190, title: "[반복] 스타게이트 정찰", desc: "뒤틀린 지면이 계속 늘어난다 — 유령을 처치해 진로를 확보하자." },
+    lvGate: { enter: 130, mid: 140 },
+  },
+  {
+    key: "dlcprisma", num: 12, dlc: true,
+    title: "DLC 2 — 제2행성 프라이즈 프리즈마",
+    subtitle: "그랜드플래닛 · 마법공학의 도시, 위험한 실험",
+    intro: "intro", boss: "surt", bossDone: "kingdomDone",
+    width: 2200, height: 1200, groundTint: 0x8f6fd8, groundTex: "tile_dark", pathTex: "tile_path_dark", bg: "#120a22",
+    flowers: 6, trees: 5, rocks: 12,
+    /* 기획서 1126~: 마법공학의 도시. 시장 제이드가 위험한 실험을 한다는 소문 */
+    enemies: [{ key: "runegolem", count: 4 }, { key: "x3_ogre", count: 3 }, { key: "x3_chort", count: 3 }, { key: "x2_stonegolem", count: 3 }, { key: "x3_orcshaman", count: 2 }, { key: "minion", count: 3 }],
+    main: "runegolem",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "dp1", type: "hunt", title: "공방의 폭주 기계", desc: "실험실에서 새어 나온 룬 골렘 16기를 멈춰라.", need: 16, targetKey: "runegolem", targetLabel: "룬 골렘", reward: Math.round(4200 * G), expReward: 6000 } },
+      { sub: 4, dialogue: "", quest: { id: "dp2", type: "collect", title: "설계도의 파편", desc: "제이드의 실험 설계도 조각을 모아 계획을 밝혀라.", targetLabel: "보석의 흔적", reward: Math.round(4500 * G), expReward: 6300 } },
+      { sub: 6, dialogue: "", quest: { id: "dp3", type: "hunt", title: "거인의 작업장", desc: "마법 기계에 동력을 넣는 오거 20마리를 쓰러뜨려라.", need: 20, targetKey: "x3_ogre", targetLabel: "작업장 오거", reward: Math.round(4900 * G), expReward: 6900 } },
+      { sub: 8, dialogue: "", quest: { id: "dp4", type: "hunt", title: "석화된 수호자", desc: "도시를 지키던 돌 골렘 18기가 통제를 벗어났다.", need: 18, targetKey: "x2_stonegolem", targetLabel: "석화 수호자", reward: Math.round(5300 * G), expReward: 7500 } },
+      { sub: 9, dialogue: "", quest: { id: "dp5", type: "collect", title: "[사연] 시장의 서재", desc: "제이드의 서재에서 도공의 가문 기록을 찾아라.", targetLabel: "보석의 흔적", reward: Math.round(5600 * G), expReward: 7800 } },
+      { sub: 10, dialogue: "", quest: { id: "dp6", type: "hunt", title: "[기믹] 주술 회로 폭주", desc: "오르크 주술사 15명이 회로를 역류시킨다 — 즉시 차단하라.", need: 15, targetKey: "x3_orcshaman", targetLabel: "회로 주술사", reward: Math.round(6300 * G), expReward: 8700 } },
+    ],
+    repeat: { need: 28, gold: Math.round(230 * G), exp: 230, title: "[반복] 프리즈마 순찰", desc: "마법공학의 도시는 밤에도 멈추지 않는다 — 룬 골렘을 정리하자." },
+    lvGate: { enter: 145, mid: 155 },
+  },
+  {
+    key: "dlcocean", num: 13, dlc: true,
+    title: "DLC 3 — 별빛속 바다 오션코멘",
+    subtitle: "그랜드플래닛 · 꿈이 가라앉은 바다, 신의도시로 가는 마지막 길",
+    intro: "intro", boss: "vord", bossDone: "victory",
+    width: 2100, height: 1150, groundTint: 0x3f7fd8, groundTex: "tile_dark", pathTex: "tile_path_dark", bg: "#06121e",
+    flowers: 3, trees: 2, rocks: 8,
+    /* 기획서 12행 행성7 '별빛속 바다 오션코멘' + 유메(꿈의 지배자) 모티프 */
+    enemies: [{ key: "x2_reeffish", count: 4 }, { key: "minion", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "helhound", count: 3 }],
+    main: "x2_reeffish",
+    beats: [
+      { sub: 2, dialogue: "", quest: { id: "do1", type: "hunt", title: "별빛 산호의 물고기", desc: "꿈이 스며든 바다 — 산호 물고기 20마리를 쫓아내라.", need: 20, targetKey: "x2_reeffish", targetLabel: "산호 물고기", reward: Math.round(6800 * G), expReward: 9200 } },
+      { sub: 4, dialogue: "", quest: { id: "do2", type: "collect", title: "가라앉은 별의 조각", desc: "바다 밑에 잠든 별의 조각을 건져 올려라.", targetLabel: "보석의 흔적", reward: Math.round(7200 * G), expReward: 9800 } },
+      { sub: 6, dialogue: "", quest: { id: "do3", type: "hunt", title: "꿈을 삼킨 유령", desc: "잠든 자의 꿈을 삼키는 유령 22체를 정화하라.", need: 22, targetKey: "wraith", targetLabel: "꿈의 유령", reward: Math.round(7800 * G), expReward: 10600 } },
+      { sub: 8, dialogue: "", quest: { id: "do4", type: "hunt", title: "심해의 사냥개", desc: "바다 밑에서 올라온 사냥개 18마리를 베어라.", need: 18, targetKey: "helhound", targetLabel: "심해 사냥개", reward: Math.round(8400 * G), expReward: 11400 } },
+      { sub: 9, dialogue: "", quest: { id: "do5", type: "collect", title: "[사연] 오션코멘의 노래", desc: "바다가 부르는 노래의 마지막 소절을 기록해라.", targetLabel: "보석의 흔적", reward: Math.round(8900 * G), expReward: 12000 } },
+      { sub: 10, dialogue: "", quest: { id: "do6", type: "hunt", title: "[기믹] 꿈의 주술사", desc: "꿈과 현실의 경계를 무너뜨리는 주술사 14명을 처치하라.", need: 14, targetKey: "x3_necromancer", targetLabel: "꿈의 주술사", reward: Math.round(9800 * G), expReward: 13400 } },
+    ],
+    repeat: { need: 30, gold: Math.round(270 * G), exp: 270, title: "[반복] 오션코멘 정찰", desc: "바다가 다시 노래하기 시작했다 — 물고기를 계속 쫓아내자." },
+    lvGate: { enter: 160, mid: 170 },
   },
 ];
 
@@ -701,8 +785,8 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
  *  조치: 계수를 완만한 곡선으로 바꾸고 후반 배율을 10 → 4로 낮췄다.
  *  결과: 1.9 ~ 19.7타 (편차 57.8배 → 10.2배), 즉사 구간 0.
  *  계산 근거: atkTotal = 12 + 3×(lv−1), 스킬 배율 1.25~2.36 (rollDamage 참조). */
-const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14.0, 20.0, 28.0]; // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
-const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0]; // 유저 피드백: 공격력은 현행 유지
+const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14.0, 20.0, 28.0, 42.0, 66.0, 105.0]; // vc186b — DLC 3챕터 추가분 // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
+const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0, 6.2, 7.8, 9.8]; // vc186b — DLC 3챕터 추가분 // 유저 피드백: 공격력은 현행 유지
 /* v1.2.2 — 챕터 EXP 계수 재조정 (레벨 곡선 정합)
  *  문제: expTable.ts는 메이플 공식(지수 성장)인데 적 EXP 계수는 1→9.2로 거의 평평했다.
  *        레벨업에 필요한 처치 수가 **25마리 ~ 2,105,941마리**(편차 84,780배)로 벌어져
@@ -711,7 +795,7 @@ const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0]; // 유저 피드
  *  조치: 레벨별 필요 EXP를 기준으로 역산해 계수를 지수적으로 올렸다.
  *        처치 수 목표는 35 → 807로 완만히 증가(후반일수록 몸값이 커지는 게 자연스럽다).
  *  결과: 처치 수 편차 84,780배 → 22.8배. 전 구간 레벨업 가능. */
-const CH_EXP = [0.7, 2.3, 7.2, 23.1, 74.0, 237.0, 758.3, 2426.4, 24000.0];
+const CH_EXP = [0.7, 2.3, 7.2, 23.1, 74.0, 237.0, 758.3, 2426.4, 24000.0, 75000.0, 240000.0, 760000.0]; // vc186b — DLC 3챕터 추가분
 
 /** 스테이지 키 → {챕터, 구역} 파싱 */
 export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: number } {
@@ -719,7 +803,7 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
   /* v2.9 — 챕터 마을(Xv)도 챕터 소속으로 파싱 */
   const v = /^([a-z]+)v$/.exec(key);
   if (v) return { ch: v[1] as ChapterKey, sub: 0 };
-  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss)([1-9]|10)$/.exec(key);
+  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss|dlcstargate|dlcprisma|dlcocean)([1-9]|10)$/.exec(key);
   if (!m) return { ch: "village", sub: 0 };
   return { ch: m[1] as ChapterKey, sub: parseInt(m[2], 10) };
 }
@@ -745,7 +829,7 @@ export function questNeedByLv(lv: number): number {
 /** vc142 (#5) — 후반 몬스터 HP ×10: 유저 지시 "후반만 4스테이지 쯤 부터 몬스터 체력좀 10배 씩 정도 늘려".
  *  후반 4개 챕터(7 스바르트알프헤임 · 8 니다벨리르 · 9 헬 · 10 세계수의 뿌리)의 4구역부터 적용
  *  (구역 1~3은 진입 완충 유지). 공격력/경험치/골드 곡선은 현행 유지 — 체력만 상향. */
-const LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss"];
+const LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss", "dlcstargate", "dlcprisma", "dlcocean"];
 const LATE_HP_FROM_SUB = 4;
 const LATE_HP_MUL = 4; // v1.2.2 — 10은 과했다(7~10챕터 50~64타). 4로 낮춰 17~20타대.
 

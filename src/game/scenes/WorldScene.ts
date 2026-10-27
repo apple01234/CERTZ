@@ -2942,6 +2942,18 @@ export class WorldScene extends Phaser.Scene {
    */
   private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }, force = false) {
     if (this.transitioning && !force) return;
+    /* ═══ vc186b DLC 잠금 — 세계 구원(아부디토스 격파) 전에는 입장 불가 ═══
+     *  기존 9챕터 흐름은 건드리지 않는다. DLC 플래그가 붙은 챕터만 검사한다. */
+    {
+      const spec = chapterSpec(next);
+      if (spec?.dlc && !this.cleared) {
+        EventBus.emit("banner:show", {
+          text: "DLC는 세계를 구원한 뒤에 열립니다 — 무한의 탑 최심부의 주인을 쓰러뜨리세요",
+        });
+        this.transitioning = false;
+        return;
+      }
+    }
     this.transitioning = true;
     /* v1.0.15 (피드백 #3) — 맵 이동 시 스킬 쿨타임 유지: restart로 Player가 재생성되기 전에
      *  남은 쿨타임을 메모에 기록하고, 새 맵의 Player 생성자에서 복원한다 (맵을 건너도 쿨타임이 이어짐) */
