@@ -5108,7 +5108,6 @@ function HeroAwakenSection({ rpg, onClose }: { rpg: RpgState; onClose: () => voi
                 <div className="flex items-start gap-2">
                   {/* NPC 초상화를 그대로 사용 (사용자 지시: "NPC 모습 그대로를 넣어") */}
                   {h.portrait ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={`/assets/${h.portrait}`}
                       alt={h.character}
