@@ -174,6 +174,9 @@ export class WorldScene extends Phaser.Scene {
   totalKills = 0;
   startTime = 0;
   cleared = false;
+  /* vc186b DLC — 본마을 NPC(리안)와 그랜드플래닛 안내 대화를 마쳤는지.
+   *  cleared 와 함께 참이면 마을에 DLC 게이트가 생성된다. */
+  dlcTalked = false;
 
   private fragment: Phaser.Physics.Arcade.Sprite | null = null;
   private portal: Phaser.Physics.Arcade.Sprite | null = null;
@@ -616,7 +619,7 @@ export class WorldScene extends Phaser.Scene {
    *  남는 자리는 마을 초행자 훈련장(작업2)으로 대체했다.
    *  buildLayeredKeep/유적 텍스처 로드는 제거 — tickKeepLayer(층 전환)도 함께 폐지.
    *  v1.4.4 — 유저 리포트 ②에 따라 하루 1회 보물상자(keepchest)만 부활(buildVillageChest). */
-  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest" | "chibi" | "decor"; dlg?: string; npcId?: string; label: string }[] = [];
+  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest" | "chibi" | "decor" | "dlcgate"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
   private activeNpcId: string | null = null;
   private talkedNpcs = new Set<string>();
@@ -1182,6 +1185,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.26 (#76) — 스토리 클리어 플래그 복원: 기존엔 런타임 리셋(init false) 후
      *  복원이 누락돼 재접속 시 cleared 상태가 유실됐다. 일퀘 해금 판정의 전제 */
     this.cleared = savedPlayer.cleared ?? false;
+    this.dlcTalked = savedPlayer.dlcTalked ?? false;   /* vc186b DLC */
     /* v3.0.6 — 자동 물약/자동 버프 설정 복원 (지시 #5) */
     if (savedPlayer.autoUse) {
       this.player.autoUse = {
@@ -1677,6 +1681,11 @@ export class WorldScene extends Phaser.Scene {
     if (this.isInterior) {
       /* 실내 — 출구 문은 interactables로 처리 */
     } else if (this.stageDef.isVillage) {
+      /* vc186b DLC — 세계 구원(아부디토스 격파) 후 본마을에 그랜드플래닛 게이트를 세운다.
+       *  사용자 지시: "NPC대화후 마을포탈 생성"
+       *  → npcDlcTalked(리안과 대화 완료) + cleared(세계 구원) 두 조건이 모두 참일 때만.
+       *  기존 9챕터 마을 흐름은 건드리지 않는다(조건 불충족 시 아무것도 안 생김). */
+      if (this.isDlcPortalOpen()) this.spawnDlcPortal();
       /* v2.9 — 본마을 + 챕터 마을 공용 마을 빌드 (우물/여관/전직관/주민) */
       this.buildVillage();
       /* vc182 (지시 #11) — 마을에 설치해 둔 가구 복원 렌더 */
@@ -2898,6 +2907,83 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════
+   * vc186b DLC — 본마을 「그랜드플래닛 게이트」
+   *
+   * 사용자 지시: "NPC대화후 마을포탈 생성"
+   *  1) 세계 구원(cleared) — 아부디토스 격파
+   *  2) 마을 NPC(리안)와 DLC 안내 대화 완료(dlcTalked)
+   *  두 조건이 모두 참일 때 본마을 중앙 광장 동쪽에 게이트가 선다.
+   *
+   * 마을에는 NEXT_STAGE 가 없어 기존 spawnPortal 을 쓸 수 없다.
+   * 기존 포탈 필드를 건드리면 진행 포탈과 충돌하므로 전용 오브젝트로 만든다.
+   * ═══════════════════════════════════════════════════════════════════════ */
+  private dlcPortal: Phaser.Physics.Arcade.Sprite | null = null;
+  private dlcPortalGlow: Phaser.GameObjects.Image | null = null;
+
+  /** DLC 게이트 개방 조건 — 세계 구원 + 리안과의 대화 */
+  private isDlcPortalOpen(): boolean {
+    return this.cleared && this.dlcTalked && !this.isInterior;
+  }
+
+  /** 본마을에 그랜드플래닛 게이트 생성 (조건 충족 시에만 호출됨) */
+  private spawnDlcPortal() {
+    if (this.dlcPortal) return;
+    const cx = this.stageW / 2;
+    const cy = this.stageH / 2;
+    /* 광장 동쪽 — 우물/여관/전직관과 겹치지 않는 자리 */
+    const x = cx + 360;
+    const y = cy + 40;
+
+    this.dlcPortalGlow = this.add
+      .image(x, y, "pk_magic_01")
+      .setScale(1.5)
+      .setAlpha(0.55)
+      .setTint(0x9a7cff)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(2);
+    this.tweens.add({ targets: this.dlcPortalGlow, alpha: 0.22, scale: 1.85, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+
+    this.dlcPortal = this.physics.add.sprite(x, y, "portal0").setDepth(3).setTint(0xb49aff);
+    this.dlcPortal.play("portal-spin");
+    (this.dlcPortal.body as Phaser.Physics.Arcade.Body).setSize(34, 44).setOffset(15, 10);
+
+    this.add
+      .text(x, y - 52, "→ 그랜드플래닛", {
+        fontFamily: "Galmuri11, sans-serif",
+        fontSize: "12px",
+        color: "#c8b0ff",
+        stroke: "#14001e",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(60);
+
+    this.interactables.push({ x, y, kind: "dlcgate", label: "그랜드플래닛 게이트 — 입장" });
+
+    this.physics.add.overlap(this.player, this.dlcPortal, () => {
+      if (!this.dlcPortal?.active || this.transitioning) return;
+      if (this.autoHunt) {
+        this.showBanner("자동전투 중에는 게이트를 탈 수 없다 — 자동전투를 먼저 끄자");
+        return;
+      }
+      this.enterDlcGate();
+    });
+  }
+
+  /** DLC 첫 챕터로 이동 */
+  enterDlcGate() {
+    if (!this.player || this.transitioning) return;
+    if (!this.isDlcPortalOpen()) {
+      this.showBanner("아직 그랜드플래닛으로 갈 수 없다");
+      return;
+    }
+    audio.sfx.portal();
+    this.showBanner("그랜드플래닛 — 제1행성 스타게이트로 향한다");
+    this.startTransition("dlcstargate1", { delay: 520 });
+  }
+
   private activatePortal(silent = false) {
     if (!this.portal) return;
     this.portalActive = true;
@@ -3360,7 +3446,12 @@ export class WorldScene extends Phaser.Scene {
           { x: cx - 90, y: cy - 90, tex: vSpec.npcB.tex, name: vSpec.npcB.name, dlg: vSpec.npcB.dlg },
         ]
       : [
-          { x: cx + 210, y: cy + 120, tex: "spum_villager_m", name: "주민", dlg: "villager1" },
+          /* vc186b DLC — 세계를 구원한 뒤에는 본마을 주민이 그랜드플래닛 안내를 한다.
+           *  대화를 끝내면 마을 동쪽에 게이트가 열린다(resumeFromDialogue 훅). */
+          {
+            x: cx + 210, y: cy + 120, tex: "spum_villager_m", name: "주민",
+            dlg: this.cleared ? "dlcVillage" : "villager1",
+          },
           { x: cx - 90, y: cy - 90, tex: "spum_villager_f", name: "마을 아이", dlg: "villager2" },
         ];
     for (const v of villagers) {
@@ -13294,6 +13385,9 @@ export class WorldScene extends Phaser.Scene {
         })
         .catch(() => EventBus.emit("banner:show", { text: "권한 확인에 실패했다 (관리자 전용)" }))
         .finally(() => { this.gmCheckBusy = false; });
+    } else if (it.kind === "dlcgate") {
+      /* vc186b DLC — 본마을 그랜드플래닛 게이트 (E키 상호작용) */
+      this.enterDlcGate();
     } else if (it.kind === "inn") {
       this.enterInterior("interior_inn");
     } else if (it.kind === "house") {
@@ -15486,6 +15580,7 @@ export class WorldScene extends Phaser.Scene {
       maxMp: this.player.maxMp,
       atk: this.player.atk,
       cleared: this.cleared,
+      dlcTalked: this.dlcTalked,   /* vc186b DLC — 마을 NPC 대화 완료 여부 */
       gold: this.player.gold,
       potions: { ...this.player.potions },
       weapon: this.player.weapon,
@@ -15804,6 +15899,16 @@ export class WorldScene extends Phaser.Scene {
 
   resumeFromDialogue() {
     this.restoreBossIntroCam(); // v1.0.2 (#보스컷씬) — 대사 종료 후에만 플레이어 시점 복귀
+    /* ═══ vc186b DLC — 마을 NPC와 안내 대화를 마치면 그랜드플래닛 게이트가 열린다 ═══
+     *  사용자 지시: "NPC대화후 마을포탈 생성"
+     *  조건: 본마을 + 세계 구원(cleared) + 아직 게이트 없음 → dlcTalked 를 켜고 포탈 생성. */
+    if (!this.isInterior && this.stageDef.isVillage && this.cleared && !this.dlcTalked) {
+      this.dlcTalked = true;
+      this.save();
+      this.spawnDlcPortal();
+      this.showBanner("리안의 말이 끝나자 광장 동쪽에 빛의 문이 열렸다 — 그랜드플래닛 게이트");
+      audio.sfx.portal();
+    }
     this.dialoguing = false;
     this.dialogueSince = 0; // v3.3.0 — 붙임 시각 리셋
     this.portalHoldSince = 0; // v2.7 — 정상 종료면 강제개방 카운터도 리셋

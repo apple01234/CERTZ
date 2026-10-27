@@ -57,6 +57,10 @@ export type SaveData = {
   maxHp: number;
   atk: number;
   cleared: boolean;
+  /* vc186b DLC — 마을 NPC(리안)와 DLC 안내 대화를 마쳤는지.
+   *  cleared(세계 구원) 와 이 플래그가 모두 참이면 본마을에 그랜드플래닛 게이트가 열린다.
+   *  구 세이브 호환: 없으면 undefined → false 취급. */
+  dlcTalked?: boolean;
   /* ↓ 레벨업 MP 성장 복원 (v1.9 — 구 세이브 호환: 없으면 60 기본) */
   maxMp?: number;
   /* ↓ 플레이어 이름 (인트로 플레이 시퀀스에서 지정 — 구 세이브 호환 기본값) */
