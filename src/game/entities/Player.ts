@@ -8,9 +8,11 @@ import {
   POT_PITY_MAX, STAR_PITY_STEP, STAR_PITY_MAX, STAR_PITY_FROM,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
 } from "../data";
+/* vc192 — 기획서 인물 직업 (모험가와 별개 계통) */
+import { HERO_JOBS, heroSkillKinds, type HeroKey } from "../heroJobs";
 import {
   classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf, tier2RootOf,
-  resolveSkill1Of, resolveSkill2Of, resolveSkill5Of,
+  resolveSkill1Of, resolveSkill2Of, resolveSkill5Of, classLabel,
   type ClassKey, type ClassBonus, SKILL_LABELS, SKILL3_KIND, SKILL4_KIND,
   SKILL5_INFO, SKILL5B_INFO, FIFTH_SKILL_MULT, FIFTH_CD_MULT, FIFTH_LEVEL, FIFTH1_MULT, FIFTH2_MULT,
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
@@ -143,6 +145,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   startCls: ClassKey | null = null;
   /** 경로 누적 보너스 캐시 — cls 변경 시에만 갱신 (getter 프레임 호출 부담 제거) */
   private clsBonus: ClassBonus = bonusOf(null);
+
+  /* ═══ vc192 (지시: "기획서 스토리의 주요 인물을 직업으로 — 모험가와 별개의 직업") ═══
+   *  모험가 직업(cls)과 **별개 슬롯**으로 인물 직업을 보유한다.
+   *  · heroClass: 각성한 인물 직업 키 (없으면 null = 모험가로 플레이)
+   *  · heroActive: 지금 인물 직업을 쓰고 있는지. false 면 cls 성능을 그대로 쓴다.
+   *  스탯은 **합산하지 않고 대체**한다 — 둘을 더하면 밸런스가 무너진다. */
+  heroClass: HeroKey | null = null;
+  heroActive = false;
+  /** 각성한(해금한) 인물 목록 — 여러 명을 모아 두고 자유롭게 전환한다 */
+  heroUnlocked: HeroKey[] = [];
   private potCd = 0;
 
   /* ----- AP 스탯 (v1.9 — 메이플식 4스탯, 레벨업당 AP +5) ----- */
@@ -248,11 +260,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
   /** 3차기 해금 — 3차 전직부터 (스킬 3개) */
   get skill3Unlocked(): boolean {
-    return this.tier >= 3 && !!SKILL3_KIND[this.cls ?? ""];
+    return this.tier >= 3 && !!this.skill3KindNow;
   }
   /** 4차기 해금 — 4차 각성부터 (스킬 4개) */
   get skill4Unlocked(): boolean {
-    return this.tier >= 4 && !!SKILL4_KIND[this.cls ?? ""];
+    return this.tier >= 4 && !!this.skill4KindNow;
   }
   /** v3.2.0 — 5차 궁극기 해금 — Lv.200 도달 (전직 티어 무관)
    *  v3.3.0 — GM 5차전직(임시)/각성 시련 완료(fifth)여도 해금 (레벨 무관) */
@@ -1098,7 +1110,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.netEmitAction("s1"); // v4.1.0
     this.tutNotify("skill"); // v1.0.11 — 튜토리얼 스킬 학습 판정
     this.tierFlair(false, "s1"); // v1.0.11 — N차 기존 스킬 강화 (전직 단계 비례 3D VFX)
-    const kind = resolveSkill1Of(this.cls) ?? "spin";
+    const kind = this.skill1KindNow;
     /* v3.0.11 — 3차/4차 주력기 진화감: 상위직은 클래스색 오라 링이 터지며 시전
      *  (2차기 승계라 이름만 바뀌어 보이던 문제를 시각적으로도 "강화판"임을 드러냄) */
     if (this.tier >= 3) {
@@ -1977,7 +1989,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // v3.0.6 — 기동기(C) 12종 클래스 고유 파라미터 (겹침 0 — 지시 #4)
     //  3차/4차는 계열 체인에서 2차기 승계(강화판)
-    const kind = resolveSkill2Of(this.cls) ?? "dash";
+    const kind = this.skill2KindNow;
     /* v3.0.24 — 기동기 직업별 사운드 (기존 전원 sfxDash 공용 → 클래스 정체성 분리)
      *  전사=질주 / 마법사=점멸(worp) / 도적=암흑 / 궁수=질풍 / 버서커·가디언=중장 돌진 / 어세신=암습 */
     const DASH_SND: Record<string, [string, number]> = {
@@ -2440,7 +2452,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   useSkill3() {
     if (this.state !== "idle" || !this.skill3Unlocked || this.skill3Cd > 0 || this.mp < 25) return;
-    const kind = SKILL3_KIND[this.cls ?? ""] as Skill3Kind | undefined;
+    const kind = this.skill3KindNow;
     if (!kind) return;
     this.mp -= 25;
     this.skill3Cd = this.skill3MaxEff;
@@ -2528,7 +2540,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnBurstAt(this.x + aim.x * 16, this.y - 8 + aim.y * 16, 12, 0xbaf3ff);
         this.scene.time.delayedCall(90, () => {
           if (this.state === "dead") return;
-          const dmg = Math.round(this.atkTotal * 4.5 * this.clsBonus.skillMult);
+          const dmg = Math.round(this.atkTotal * 4.5 * this.activeBonus.skillMult);
           this.scene.firePlayerProj({
             x: this.x, y: this.y - 8, angle, speed: 980, pierce: 99,
             dmg, crit: true, tint: 0xbaf3ff, knock: 380, scale: 2.0,
@@ -3014,7 +3026,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   useSkill4() {
     if (this.state !== "idle" || !this.skill4Unlocked || this.skill4Cd > 0 || this.mp < 40) return;
-    const kind = SKILL4_KIND[this.cls ?? ""] as Skill4Kind | undefined;
+    const kind = this.skill4KindNow;
     if (!kind) return;
     this.mp -= 40;
     this.skill4Cd = this.skill4MaxEff;
@@ -5785,6 +5797,111 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
+  /* ═══════════ vc192 — 인물 직업 각성 / 전환 ═══════════
+   *  모험가 전직(applyClass)과 완전히 별개다. 인물 직업은 "각성"으로 열리고,
+   *  각성 후에는 모험가/인물 중 **하나만 활성**된다(스탯 대체, 합산 아님). */
+
+  /** 현재 활성 직업의 보너스 — 인물 직업이 켜져 있으면 인물 보너스를 쓴다 */
+  /* ══ vc192 — 인물 활성 시 스킬 종류 (모험가 스킬을 대체) ══
+   *  각성한 인물을 사용 중이면 그 인물의 스킬 구현을 쓴다.
+   *  모험가로 돌아가면 원래 cls 의 스킬로 복귀한다. */
+  get skill1KindNow(): Skill1Kind {
+    const hk = this.heroActive && this.heroClass ? heroSkillKinds(this.heroClass) : null;
+    return hk?.s1 ?? resolveSkill1Of(this.cls) ?? "spin";
+  }
+  get skill2KindNow(): Skill2Kind {
+    const hk = this.heroActive && this.heroClass ? heroSkillKinds(this.heroClass) : null;
+    return hk?.s2 ?? resolveSkill2Of(this.cls) ?? "dash";
+  }
+  get skill3KindNow(): Skill3Kind | undefined {
+    const hk = this.heroActive && this.heroClass ? heroSkillKinds(this.heroClass) : null;
+    return hk?.s3 ?? (SKILL3_KIND[this.cls ?? ""] as Skill3Kind | undefined);
+  }
+  get skill4KindNow(): Skill4Kind | undefined {
+    const hk = this.heroActive && this.heroClass ? heroSkillKinds(this.heroClass) : null;
+    return hk?.s4 ?? (SKILL4_KIND[this.cls ?? ""] as Skill4Kind | undefined);
+  }
+
+  get activeBonus(): ClassBonus {
+    if (this.heroActive && this.heroClass) {
+      const h = HERO_JOBS[this.heroClass];
+      /* 인물 보너스는 ClassBonus 전체 필드를 명시해 채운다(누락 필드로 인한 NaN 방지).
+       *  movement: spdMul → speedPct 로 환산(1.10 → +10%). */
+      return {
+        atkPct: 0,
+        critAdd: 0,
+        defAdd: 0,
+        hpAdd: h.bonus.hpAdd,
+        mpAdd: h.bonus.mpAdd,
+        speedPct: Math.round((h.bonus.spdMul - 1) * 100),
+        cdMult: 1,
+        skillMult: 1,
+        bossDmgPct: 0,
+        mobDmgPct: 0,
+      } satisfies ClassBonus;
+    }
+    return this.clsBonus;
+  }
+
+  /** 인물 직업의 고정 공격력 가산 (activeBonus 와 별도 — atkTotal 에서 더한다) */
+  get heroAtkAdd(): number {
+    if (!this.heroActive || !this.heroClass) return 0;
+    return HERO_JOBS[this.heroClass].bonus.atkAdd;
+  }
+
+  /** 각성 가능 여부 (레벨 조건만 — 챕터/재료는 씬이 검사) */
+  canAwakenHero(key: HeroKey): boolean {
+    const h = HERO_JOBS[key];
+    if (!h) return false;
+    if (this.heroUnlocked.includes(key)) return false;
+    return this.lv >= h.unlock.lv;
+  }
+
+  /** 인물 각성 — 성공 시 true. 스탯은 즉시 재계산된다. */
+  awakenHero(key: HeroKey): boolean {
+    const h = HERO_JOBS[key];
+    if (!h || this.heroUnlocked.includes(key) || this.lv < h.unlock.lv) return false;
+    this.heroUnlocked.push(key);
+    /* 첫 각성이면 곧바로 그 인물로 전환한다 */
+    if (!this.heroClass) {
+      this.heroClass = key;
+      this.heroActive = true;
+    }
+    this.recalcSpeed();
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 인물 ↔ 모험가 전환. 인물을 처음 켜는 순간 HP/MP 상한이 바뀌므로 클램프한다. */
+  setHeroActive(on: boolean): boolean {
+    if (on && !this.heroClass) return false;
+    if (this.heroActive === on) return true;
+    this.heroActive = on;
+    this.hp = Math.min(this.hp, this.maxHp);
+    this.mp = Math.min(this.mp, this.maxMp);
+    this.recalcSpeed();
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 각성한 인물 중 다른 인물로 교체 활성화 */
+  switchHero(key: HeroKey): boolean {
+    if (!this.heroUnlocked.includes(key)) return false;
+    this.heroClass = key;
+    this.heroActive = true;
+    this.hp = Math.min(this.hp, this.maxHp);
+    this.mp = Math.min(this.mp, this.maxMp);
+    this.recalcSpeed();
+    this.scene.emitHud();
+    return true;
+  }
+
+  /** 인물 직업이 있으면 그 표시명, 없으면 모험가 클래스명 */
+  get activeJobName(): string {
+    if (this.heroActive && this.heroClass) return HERO_JOBS[this.heroClass].name;
+    return classLabel(this.cls);
+  }
+
   /** 자유 전직 (메이플 자유전직 재현) — 같은 단계·같은 계열 반대 경로로 전환. 골드 소모는 씬에서 검사.
    *  전직과 달리 풀회복 없음 — HP/MP는 새 상한으로 클램프 */
   switchClass(key: ClassKey): boolean {
@@ -5963,7 +6080,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  v4.0.0 — 배지 이속 + 게이트 인런 카드 이속 */
     const dexPct = Math.min(60, this.stats.dex * 0.5);
     const starPct = Math.min(15, (this.weaponStars + this.armorStars) * 0.5);
-    this.speed = Math.round(Player.BASE_SPEED * (1 + (this.clsBonus.speedPct + dexPct + starPct + this.extBonus.speedPct + this.runBuffs.speedPct) / 100) * buff * sky * slow);
+    /* vc192 — 인물 직업 활성 시 인물 보너스가 적용되도록 activeBonus 사용 */
+    this.speed = Math.round(Player.BASE_SPEED * (1 + (this.activeBonus.speedPct + dexPct + starPct + this.extBonus.speedPct + this.runBuffs.speedPct) / 100) * buff * sky * slow);
   }
 
   /* ---------------- RPG 기본 요소 ---------------- */
@@ -6011,7 +6129,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const blessFlat = this.worldtreeBlessing ? WORLDTREE_BLESSING.atk : 0;
     const blessPct = this.worldtreeBlessing ? WORLDTREE_BLESSING.atkPct : 0;
     /* v1.1.9 (#개편 A47) — 요리 공격 버프 반영(곱연산 아님, % 가산) */
-    return Math.round((base + blessFlat) * (1 + (this.clsBonus.atkPct + setPct + colPct + blessPct + this.extBonus.atkPct + this.runBuffs.atkPct + this.dishAtkPct * 100) / 100) * buff * king);
+    /* vc192 — 인물 직업 활성 시: 인물 고정 공격력(heroAtkAdd)을 더하고 배율은 activeBonus 기준 */
+    const ab = this.activeBonus;
+    return Math.round((base + blessFlat + this.heroAtkAdd) * (1 + (ab.atkPct + setPct + colPct + blessPct + this.extBonus.atkPct + this.runBuffs.atkPct + this.dishAtkPct * 100) / 100) * buff * king);
   }
 
   /* ---------------- v3.0.16 — 세트 아이템 효과 (메이플 세트 아이템) ---------------- */

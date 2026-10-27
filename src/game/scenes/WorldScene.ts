@@ -6,6 +6,9 @@ import { CameraFx, type CameraFxHost } from "../scene/cameraFx"; // vc189 — Wo
 import { openPointRng as spOpenPointRng, openPointAny as spOpenPointAny, inOpenArea as spInOpenArea, nearSolidObstacle as spNearSolidObstacle, type SpawnPointHost } from "../scene/spawnPoints"; // vc189 — 분할 2차
 import { spawnBurstAt as fxBurstAt, spawnPillar as fxPillar, spawnPickupText as fxPickupText, type FxAtomHost } from "../scene/fxAtoms"; // vc189 — 분할 3차
 import { familyOf, FAMILY_KO, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
+/* vc192 — 기획서 인물 직업 (모험가와 별개 계통) */
+import { HERO_JOBS, HERO_PLAYABLE_ACT1, type HeroKey } from "../heroJobs";
+import { ELEMENTS } from "../lore";
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
 import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
@@ -9640,6 +9643,59 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:adDrop", onAdDrop); // v4.5.0 — 광고 버프 물약
     EventBus.on("job:select", onJobSelect);
     EventBus.on("job:switch", onJobSwitch);
+    /* ═══ vc192 — 인물 각성 / 전환 (기획서 인물을 직업으로) ═══ */
+    const onHeroAwaken = (v: { key: HeroKey }) => {
+      if (!this.player || this.player.state === "dead") return;
+      if (this.dialoguing) { EventBus.emit("banner:show", { text: "대화 중에는 각성할 수 없습니다" }); return; }
+      const h = HERO_JOBS[v.key];
+      if (!h) return;
+      if (!HERO_PLAYABLE_ACT1.includes(v.key)) {
+        EventBus.emit("banner:show", { text: `${h.name} — 아직 이 세계의 인연이 닿지 않았다 (2·3기에서 개방)` });
+        return;
+      }
+      if (this.player.heroUnlocked.includes(v.key)) return;
+      if (this.player.lv < h.unlock.lv) {
+        EventBus.emit("banner:show", { text: `${h.name} 각성에는 Lv ${h.unlock.lv} 이 필요해요 (현재 Lv ${this.player.lv})` });
+        return;
+      }
+      if (!this.player.awakenHero(v.key)) return;
+      audio.sfx.levelup();
+      this.spawnPillar(this.player.x, this.player.y, ELEMENTS[h.element].hex, 220);
+      this.spawnBurstAt(this.player.x, this.player.y, 36, ELEMENTS[h.element].hex);
+      this.cameras.main.flash(200, (ELEMENTS[h.element].hex >> 16) & 0xff, (ELEMENTS[h.element].hex >> 8) & 0xff, ELEMENTS[h.element].hex & 0xff);
+      EventBus.emit("banner:show", { text: `✦ 각성 — ${h.name} (${h.character}) · ${h.weapon}` });
+      this.refreshPlayerTag();
+      this.save();
+      this.emitHud();
+      this.emitRpgState();
+      net.netAnnounceJob(this.player.cls ?? "novice");
+    };
+    const onHeroSwitch = (v: { key: HeroKey }) => {
+      if (!this.player || this.player.state === "dead") return;
+      const h = HERO_JOBS[v.key];
+      if (!h || !this.player.switchHero(v.key)) return;
+      audio.sfx.uiClick();
+      EventBus.emit("banner:show", { text: `인물 전환 — ${h.name} (${h.character})` });
+      this.refreshPlayerTag();
+      this.save();
+      this.emitHud();
+      this.emitRpgState();
+    };
+    const onHeroToggle = (v: { on: boolean }) => {
+      if (!this.player || this.player.state === "dead") return;
+      if (!this.player.setHeroActive(!!v.on)) return;
+      audio.sfx.uiClick();
+      EventBus.emit("banner:show", {
+        text: this.player.heroActive ? `인물 직업 활성 — ${this.player.activeJobName}` : "모험가 직업으로 전환",
+      });
+      this.refreshPlayerTag();
+      this.save();
+      this.emitHud();
+      this.emitRpgState();
+    };
+    EventBus.on("rpg:heroAwaken", onHeroAwaken);
+    EventBus.on("rpg:heroSwitch", onHeroSwitch);
+    EventBus.on("rpg:heroToggle", onHeroToggle);
     EventBus.on("friend:goto", onFriendGoto);
     EventBus.on("rpg:useItem", onUseItem);
     EventBus.on("rpg:warp", onWarp);
@@ -10358,6 +10414,9 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:adDrop", onAdDrop); // v4.5.0
       EventBus.off("job:select", onJobSelect);
       EventBus.off("job:switch", onJobSwitch);
+      EventBus.off("rpg:heroAwaken", onHeroAwaken);
+      EventBus.off("rpg:heroSwitch", onHeroSwitch);
+      EventBus.off("rpg:heroToggle", onHeroToggle);
       EventBus.off("friend:goto", onFriendGoto);
       EventBus.off("rpg:useItem", onUseItem);
       EventBus.off("rpg:warp", onWarp);
@@ -15354,6 +15413,11 @@ export class WorldScene extends Phaser.Scene {
       bmStock: [...BM_STOCK],
       autoUse: { ...this.player.autoUse },
       cls: this.player.cls,
+      /* vc192 — 인물 직업 상태 (각성 UI 가 읽는다) */
+      lv: this.player.lv,
+      heroClass: this.player.heroClass,
+      heroActive: this.player.heroActive,
+      heroUnlocked: [...this.player.heroUnlocked],
       /* v3.0.22 (#38) — 전직은 레벨 + 전직 퀘스트 완료가 모두 필요. jobLock = 미완료 사유 */
       canJob: canJobNow(this.player.lv, this.player.cls) && this.jobQuestCleared(),
       jobLock: this.jobQuestLockText(),

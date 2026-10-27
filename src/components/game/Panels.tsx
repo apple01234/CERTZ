@@ -20,6 +20,9 @@ import { GATHER_DEFS, COOK_RECIPES } from "@/game/gathering"; // v1.1.9 (#개편
 import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, FAMILY_KO, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 /* vc191 (#6) — 집 꾸미기 격자 정의를 씬과 공유 (두 곳이 어긋나면 배치가 몰린다) */
 import { WorldScene } from "@/game/scenes/WorldScene";
+/* vc192 — 기획서 인물 직업 (모험가와 별개 계통) */
+import { HERO_JOBS, HERO_ORDER, HERO_PLAYABLE_ACT1, HERO_GRADE_KO, type HeroKey } from "@/game/heroJobs";
+import { ELEMENTS } from "@/game/lore";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
 import { loadKeyMap, applyKeyBinding, resetKeyMap, loadMoveScheme, writeMoveScheme, keyLabel, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap, type MoveScheme } from "@/game/keymap";
 import { getPlayerName, loadSave, mutateFriends, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도 / v1.0.13 피드백#12 — 친구 추가( FriendsWidget 동일 스토어 API)
@@ -5034,7 +5037,136 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
         ) : null}
 
         <p className="mt-2 text-center text-[10px] text-white/55">K키로 열기 · ESC로 닫기</p>
+
+        {/* ═══ vc192 — 인물 각성 (기획서 주요 인물을 직업으로) ═══
+         *  모험가 전직 트리와 **별개 계통**이다. 전직이 아니라 각성으로 열린다. */}
+        <HeroAwakenSection rpg={rpg} onClose={onClose} />
       </div>
+    </div>
+  );
+}
+
+/* ---------- vc192 — 인물 각성 섹션 ----------
+ *  기획서 등장인물을 직업으로 각성시킨다. 모험가(cls)와 별개 슬롯이며,
+ *  각성 후에는 모험가/인물 중 하나만 활성된다(스탯 대체). */
+function HeroAwakenSection({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+  const [open, setOpen] = useState(false);
+  const unlocked = rpg.heroUnlocked ?? [];
+  const active = rpg.heroActive === true;
+  const cur = rpg.heroClass ? HERO_JOBS[rpg.heroClass as HeroKey] : null;
+
+  return (
+    <div className="mt-4 border-t border-amber-300/25 pt-3">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="mb-1.5 flex w-full items-center justify-between text-[11px] font-black text-amber-200"
+      >
+        <span>✦ 인물 각성 — 기획서의 인물로 싸운다</span>
+        <span className="text-white/50">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {/* 현재 상태 요약 */}
+      <p className="mb-2 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[10px] font-bold text-white/65">
+        {cur ? (
+          <>
+            각성: <span className="text-amber-200">{cur.name}</span>
+            <span className="text-white/45"> ({cur.character})</span>
+            <span className="ml-1.5 text-white/40">· {HERO_GRADE_KO[cur.grade]} · {ELEMENTS[cur.element].name}</span>
+          </>
+        ) : (
+          <>아직 각성한 인물이 없습니다 — 아래에서 첫 인물을 각성시키세요</>
+        )}
+      </p>
+
+      {/* 모험가 ↔ 인물 전환 */}
+      {cur ? (
+        <button
+          onClick={() => EventBus.emit("rpg:heroToggle", { on: !active })}
+          className={`mb-2 w-full rounded-md px-2.5 py-1.5 text-[11px] font-black transition ${
+            active ? "bg-amber-400 text-slate-900" : "border border-white/20 bg-black/40 text-white/75"
+          }`}
+        >
+          {active ? "▶ 인물 직업 사용 중 — 눌러서 모험가로" : "모험가로 플레이 중 — 눌러서 인물로"}
+        </button>
+      ) : null}
+
+      {open ? (
+        <div className="flex flex-col gap-1.5">
+          {HERO_ORDER.map((hk) => {
+            const h = HERO_JOBS[hk];
+            const has = unlocked.includes(hk);
+            const isCur = rpg.heroClass === hk;
+            const lvOk = (rpg.lv ?? 0) >= h.unlock.lv;
+            const playable = HERO_PLAYABLE_ACT1.includes(hk);
+            return (
+              <div
+                key={hk}
+                className={`rounded-lg border px-2.5 py-2 ${
+                  isCur ? "border-amber-300/80 bg-amber-400/[0.10]" : "border-white/10 bg-white/[0.03]"
+                }`}
+              >
+                <div className="flex items-start gap-2">
+                  {/* NPC 초상화를 그대로 사용 (사용자 지시: "NPC 모습 그대로를 넣어") */}
+                  {h.portrait ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/assets/${h.portrait}`}
+                      alt={h.character}
+                      className="mt-0.5 h-11 w-11 shrink-0 rounded-md border object-cover"
+                      style={{
+                        borderColor: `#${ELEMENTS[h.element].hex.toString(16).padStart(6, "0")}88`,
+                        backgroundColor: "#0b0f18",
+                      }}
+                    />
+                  ) : (
+                    <span className="mt-0.5 h-11 w-11 shrink-0 rounded-md bg-white/10" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="flex flex-wrap items-center gap-1 text-[12px] font-black text-white">
+                      {h.name}
+                      <span className="rounded bg-white/10 px-1 text-[9px] font-bold text-white/60">{HERO_GRADE_KO[h.grade]}</span>
+                      <span className="text-[10px] font-normal text-white/45">{h.character}</span>
+                    </p>
+                    <p className="text-[10px] text-emerald-300/85">{h.weapon} · {ELEMENTS[h.element].name}</p>
+                    <p className="mt-0.5 text-[10px] leading-snug text-white/50">{h.blurb}</p>
+                    {/* 스킬 3계층 미리보기 */}
+                    <p className="mt-1 text-[9px] text-white/40">
+                      {h.skills.elem.name} → {h.skills.field.name} → <span className="text-amber-200/70">{h.skills.master.name}</span>
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    {!playable ? (
+                      <span className="rounded bg-white/[0.06] px-2 py-1 text-[9px] font-bold text-white/40">
+                        {h.unlock.chapter ? "2·3기" : "잠금"}
+                      </span>
+                    ) : has ? (
+                      isCur ? (
+                        <span className="rounded bg-amber-400/20 px-2 py-1 text-[9px] font-black text-amber-200">사용 중</span>
+                      ) : (
+                        <button
+                          onClick={() => { EventBus.emit("rpg:heroSwitch", { key: hk }); onClose(); }}
+                          className="rounded-md bg-sky-400 px-2 py-1 text-[10px] font-black text-slate-900 active:scale-95"
+                        >
+                          전환
+                        </button>
+                      )
+                    ) : lvOk ? (
+                      <button
+                        onClick={() => { EventBus.emit("rpg:heroAwaken", { key: hk }); onClose(); }}
+                        className="rounded-md bg-amber-400 px-2 py-1 text-[10px] font-black text-slate-900 active:scale-95"
+                      >
+                        각성
+                      </button>
+                    ) : (
+                      <span className="rounded bg-black/40 px-2 py-1 text-[9px] font-bold text-white/45">Lv {h.unlock.lv}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

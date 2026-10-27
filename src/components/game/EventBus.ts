@@ -74,6 +74,11 @@ export type RpgState = {
   fieldDecor?: { key: string; x: number; y: number; rot?: number; stage?: string }[];
   /** v1.0.5 — 서버 롤 기반 관리자 여부 (GM 콘텐츠 입장 버튼 게이트 — 비관리자 노출 방지) */
   admin?: boolean;
+  /* vc192 — 기획서 인물 직업 (모험가와 별개 계통) */
+  lv?: number;
+  heroClass?: string | null;
+  heroActive?: boolean;
+  heroUnlocked?: string[];
   /* v3.0.6 — BM 상점 재고 + 자동 사용 설정 */
   bmStock?: string[];
   autoUse?: { hpPct: number; mpPct?: number; mpOn: boolean; buffs: string[] };
