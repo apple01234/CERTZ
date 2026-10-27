@@ -3297,7 +3297,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     /* vc147 (#18) — 1차 궁극기 피해 ×300% (FIFTH1_MULT): 궁극기 시전 중 rollDamage에
      *  슬롯 계수를 태워 n차 사다리/FIFTH_SKILL_MULT 중복 대신 요구치 그대로 3.0배 단일 배율 적용 */
-    const rd = (m: number, forceCrit = false) => { this.ultSlot = 1; const r = this.rollDamage(m, true, forceCrit); this.ultSlot = 0; return r; };
+    // vc195 — ultSlot 을 try/finally 로 복원한다.
+    //  종전엔 rollDamage() 가 예외를 던지면(타겟 파괴·상태이상 콜백 오류 등)
+    //  this.ultSlot = 0 복원에 도달하지 못해 슬롯이 1 로 **영구 고정**됐고,
+    //  이후 일반 스킬 전부가 ×3 배율(FIFTH1_MULT)로 오염됐다.
+    //  rollDamage 는 순수 계산이 아니므로(내부에서 상태 조회·이벤트 발생)
+    //  예외 가능성을 배제할 수 없다.
+    const rd = (m: number, forceCrit = false) => {
+      const prev = this.ultSlot;
+      this.ultSlot = 1;
+      try {
+        return this.rollDamage(m, true, forceCrit);
+      } finally {
+        this.ultSlot = prev;
+      }
+    };
 
     /* 공통 인트로 — 시간 정지 + 차원 균열 + 궁극기 발동 안내 */
     this.scene.sfxSkill("timestop", 1.06);
@@ -3983,6 +3997,137 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* #11 — 암전 Rect 최종 수거 (정상 종결 소산 뒤 — 모든 경로에서 파괴 보장) */
         ovAt(totalMs + 1500, () => {
           if (blackRect && !ovGone) { try { blackRect.destroy(); } catch { /* 무시 */ } blackRect = null; }
+        });
+        break;
+      }
+
+      /* ══════════════════════════════════════════════════════════════════
+       * vc195 — 기획서 §4.9 시킹 「해왕 — 대해일」
+       *
+       *  조준 방향으로 파도가 전진하며 충격파를 9단으로 일으킨다.
+       *  종전엔 case 가 없어 default(도적 심연 참수극)로 떨어졌다 —
+       *  해적이 도적 궁극기를 쓰던 상태.
+       *
+       *  설계 가드(기획서): 화면 크기가 아니라 **월드 단위** 공격선을 쓴다
+       *  (해상도에 따라 범위가 달라지면 안 된다). 넉백 방향은 조준각과 일치.
+       * ══════════════════════════════════════════════════════════════════ */
+      case "seaking": {
+        const face = this.flipX ? -1 : 1;
+        const dir = new Phaser.Math.Vector2(face, 0);
+        /* 물결 압축 — 발동 예고 */
+        this.scene.spawnShockwave(this.x, this.y, 0x4fd2e8, 1.2, 260, 2.2);
+        this.scene.sfxSkill("water", 0.82);
+        for (let i = 0; i < 9; i++) {
+          this.scene.time.delayedCall(200 + i * 145, () => {
+            if (this.state === "dead") return;
+            /* 파도 전진선 — i 단계마다 전방으로 밀려간다 (월드 단위) */
+            const px = this.x + dir.x * (90 + i * 78);
+            const py = this.y + (i % 2 === 0 ? 10 : -10);
+            const wave = this.scene.add.rectangle(px, py, 34, 190, 0x6fe0f5, 0.72)
+              .setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
+            this.scene.tweens.add({
+              targets: wave, scaleX: 2.1, alpha: 0, duration: 320,
+              onComplete: () => { try { wave.destroy(); } catch { /* 무시 */ } },
+            });
+            this.scene.spawnBurstAt(px, py, 14, 0x9af0ff);
+            this.scene.doShake?.(80, 0.007);
+            this.scene.sfxSkill("wave", 0.7 + (i % 3) * 0.06);
+            for (const e of this.getAllTargetsIn(999)) {
+              /* 전진 파도 폭 — 각 단계의 타격 창 */
+              if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 150) continue;
+              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const { dmg, crit } = rd(2.3 + i * 0.12);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 380, crit);
+            }
+          });
+        }
+        /* 종결 역류 — 바닷물이 되돌아오며 전장을 삼킨다 */
+        this.scene.time.delayedCall(200 + 9 * 145 + 180, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnPillar(this.x + dir.x * 260, this.y, 0x4fd2e8, 300);
+          this.scene.spawnBurstAt(this.x + dir.x * 260, this.y, 64, 0x8ae6ff);
+          this.scene.spawnField({
+            x: this.x + dir.x * 260, y: this.y, radius: 260, dur: 5000,
+            dps: Math.max(18, Math.round(this.atkTotal * 1.5)),
+            kind: "light", owner: "player",
+          });
+          this.scene.cameras.main.flash(190, 120, 220, 255);
+          this.scene.cameras.main.shake(440, 0.019);
+          this.scene.sfxSkill("superhit", 0.88);
+          for (const e of this.getAllTargetsIn(620)) {
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = rd(6.2);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 620, crit);
+          }
+        });
+        break;
+      }
+
+      /* ══════════════════════════════════════════════════════════════════
+       * vc195 — 기획서 §4.10 드레드노트 「공포 — 종말 포격」
+       *
+       *  세 단계로 커지는 포격 + 방사형 충격파.
+       *  설계 가드(기획서): 각 포격의 착탄 지점을 **먼저 읽게** 하고
+       *  마지막 타격만 확실히 크게 만든다. 반경 증가와 연출 크기를 일치.
+       * ══════════════════════════════════════════════════════════════════ */
+      case "dreadnought": {
+        /* 3단계 — 반경과 피해가 함께 커진다 */
+        const stages = [
+          { r: 150, n: 3, mul: 2.2, delay: 260 },
+          { r: 230, n: 4, mul: 3.0, delay: 700 },
+          { r: 340, n: 5, mul: 5.4, delay: 1300 },
+        ];
+        this.scene.sfxSkill("cannon", 0.85);
+        for (let si = 0; si < stages.length; si++) {
+          const st = stages[si];
+          this.scene.time.delayedCall(st.delay, () => {
+            if (this.state === "dead") return;
+            /* 착탄 예고 — 먼저 읽히게 */
+            for (let i = 0; i < st.n; i++) {
+              const ang = (Math.PI * 2 * i) / st.n + si * 0.4;
+              const px = this.x + Math.cos(ang) * st.r * 0.7;
+              const py = this.y + Math.sin(ang) * st.r * 0.7;
+              /* 예고 링 → 실제 폭발 */
+              this.scene.spawnShockwave(px, py, 0xffa040, 0.6, 140, 2.0);
+              this.scene.time.delayedCall(140 + si * 20, () => {
+                if (this.state === "dead") return;
+                this.scene.spawnBurstAt(px, py, 16 + si * 6, 0xffb060);
+                this.scene.spawnShockwave(px, py, 0xffcc80, 1.4 + si * 0.3, 220, 2.4);
+                this.scene.doShake?.(90 + si * 30, 0.008 + si * 0.003);
+                this.scene.sfxSkill("explosion", 0.78 + si * 0.05);
+                for (const e of this.getAllTargetsIn(999)) {
+                  if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 120 + si * 25) continue;
+                  const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+                  const { dmg, crit } = rd(st.mul);
+                  if (crit) this.scene.sfxCrit();
+                  e.takeDamage(dmg, away, 420 + si * 60, crit);
+                }
+              });
+            }
+          });
+        }
+        /* 종결 — 방사형 대충격파 + 연기 잔류 */
+        this.scene.time.delayedCall(1300 + 320, () => {
+          if (this.state === "dead") return;
+          this.scene.cameras.main.flash(240, 255, 190, 120);
+          this.scene.spawnPillar(this.x, this.y, 0xffa040, 340);
+          this.scene.spawnBurstAt(this.x, this.y, 82, 0xffcf90);
+          this.scene.spawnShockwave(this.x, this.y, 0xffe0b0, 4.2, 420, 3.2);
+          this.scene.spawnField({
+            x: this.x, y: this.y, radius: 300, dur: 4500,
+            dps: Math.max(20, Math.round(this.atkTotal * 1.6)),
+            kind: "fire", owner: "player",
+          });
+          this.scene.cameras.main.shake(520, 0.024);
+          this.scene.sfxSkill("quake", 0.92);
+          for (const e of this.getAllTargetsIn(680)) {
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = rd(7.4);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 700, crit);
+          }
         });
         break;
       }
@@ -4893,7 +5038,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const info = SKILL5B_INFO[key5];
 
     /* vc147 (#18) — 제2궁극기 피해 ×500% (FIFTH2_MULT) — 1차(rd×300%)와 동일 메커니즘 */
-    const rd = (m: number, forceCrit = false) => { this.ultSlot = 2; const r = this.rollDamage(m, true, forceCrit); this.ultSlot = 0; return r; };
+    // vc195 — 위 useSkill5 와 동일한 이유로 try/finally 복원.
+    //  제2궁극기는 ×5(FIFTH2_MULT)라 오염 시 피해가 더 크게 튄다.
+    const rd = (m: number, forceCrit = false) => {
+      const prev = this.ultSlot;
+      this.ultSlot = 2;
+      try {
+        return this.rollDamage(m, true, forceCrit);
+      } finally {
+        this.ultSlot = prev;
+      }
+    };
 
     /* 공통 인트로 — 제2의 궁극기: 붉은보라 차원 균열 + 이중 마법진 */
     this.scene.sfxSkill("timestop", 0.92);
@@ -5212,10 +5367,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(540, 0.024);
           this.scene.sfxSkill("timestop", 0.86);
           this.scene.sfxSkill("superhit", 0.78);
-          for (const e of this.getAllTargetsIn(620)) {
+          /* vc195 — getAllTargetsIn() 은 **공유 스크래치 버퍼**를 반환한다
+           *  (O9 최적화 — 매 호출 out.length=0 으로 재사용). 따라서 for...of 로
+           *  순회하는 도중 같은 함수를 다시 부르면 **순회 중인 배열이 재구성**된다.
+           *  for...of 는 내부 인덱스를 계속 증가시키며 같은 배열을 읽으므로,
+           *    · 대상이 죽어 active=false 가 되면 → 배열이 줄어 **뒤 원소를 건너뛴다**
+           *      (하네스 실측: 6마리 중 4마리만 피해)
+           *    · 새 적이 스폰되면 → 배열이 늘어 **원래 대상이 아닌 적까지 맞는다**
+           *  대상 수와 목록을 루프 밖에서 한 번만 확정한다. */
+          const reproTargets = this.getAllTargetsIn(620).slice();
+          const share = Math.max(1, Math.round(reenact / Math.max(1, reproTargets.length)));
+          for (const e of reproTargets) {
             const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
             /* 재현 배분 — 로그 합을 전 대상에 균등 분배(단일 보스에겐 전액) */
-            const share = Math.max(1, Math.round(reenact / Math.max(1, this.getAllTargetsIn(620).length)));
             e.takeDamage(share, away, 640, true);
           }
           this.scene.spawnPickupText(this.x, this.y - 96, `거스르는 시간 — ${reenact.toLocaleString()} 재현!`, "#d8ccff");
@@ -5313,6 +5477,137 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
           }
+        });
+        break;
+      }
+
+      /* ══════════════════════════════════════════════════════════════════
+       * vc195 — 기획서 §4.9 시킹 제2궁극기 「해신: 침묵의 심연」
+       *
+       *  전장을 수몰시켜 적을 감속시킨 뒤 6초 압박, 물이 빠지며 수압 종결.
+       *  종전엔 case 가 없어 default 로 떨어졌다.
+       *
+       *  설계 가드(기획서): 대상 스냅샷 정책을 정한다 — 여기서는 **발동 시점
+       *  수면 내 대상**을 스냅샷하고, 종료 시 생존 여부를 재검사한다.
+       *  수면 오버레이는 실루엣·HUD 가독성을 유지해야 하므로 알파를 0.30 으로 제한.
+       * ══════════════════════════════════════════════════════════════════ */
+      case "seaking": {
+        this.scene.sfxSkill("water", 0.9);
+        /* 수면 상승 — 전장 오버레이 (가독성 상한 0.30) */
+        const flood = this.scene.add.rectangle(this.x, this.y, 1400, 900, 0x2f9fd8, 0.30)
+          .setDepth(6).setBlendMode(Phaser.BlendModes.ADD);
+        this.scene.tweens.add({ targets: flood, alpha: 0.10, duration: 6000, ease: "Quad.easeIn" });
+        /* 감속·수압 필드 */
+        this.scene.spawnField({
+          x: this.x, y: this.y, radius: 320, dur: 6000,
+          dps: Math.max(22, Math.round(this.atkTotal * 1.8)),
+          kind: "light", owner: "player", slow: true,
+        });
+        /* 발동 시점 스냅샷 */
+        const drowned = this.getAllTargetsIn(340).slice();
+        this.scene.cameras.main.flash(220, 60, 160, 230);
+        this.scene.cameras.main.shake(600, 0.014);
+        for (let i = 0; i < 6; i++) {
+          this.scene.time.delayedCall(400 + i * 900, () => {
+            if (this.state === "dead") return;
+            this.scene.spawnBurstAt(this.x + (Math.random() - 0.5) * 300, this.y + (Math.random() - 0.5) * 240, 18, 0x6fc8ff);
+            this.scene.sfxSkill("wave", 0.62 + (i % 3) * 0.05);
+          });
+        }
+        /* 종료 — 물이 빠지며 수압 종결 (스냅샷 대상 재검사) */
+        this.scene.time.delayedCall(6000, () => {
+          if (this.state === "dead") return;
+          try { flood.destroy(); } catch { /* 무시 */ }
+          this.scene.cameras.main.flash(260, 140, 220, 255);
+          this.scene.cameras.main.shake(620, 0.026);
+          this.scene.spawnPillar(this.x, this.y, 0x2f9fd8, 360);
+          this.scene.spawnBurstAt(this.x, this.y, 90, 0x8ae6ff);
+          this.scene.spawnShockwave(this.x, this.y, 0x8ae6ff, 3.4, 520, 0.8);
+          this.scene.sfxSkill("superhit", 0.95);
+          for (const e of drowned) {
+            /* 스냅샷 후 사망·제거된 대상은 건너뛴다 */
+            if (!e.active || e.hp <= 0) continue;
+            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = rd(11.0);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 760, crit);
+          }
+        });
+        break;
+      }
+
+      /* ══════════════════════════════════════════════════════════════════
+       * vc195 — 기획서 §4.10 드레드노트 제2궁극기 「종말: 최후의 포성」
+       *
+       *  화면 전역 조준선 + 12발 순차 포탄 + 마지막 초대형 탄환.
+       *
+       *  설계 가드(기획서): **월드 좌표**로 계산한다(카메라 이동·줌과 무관).
+       *  무작위 타격도 공정하게 보이도록 착탄 예고 + 최소 회피 시간을 준다.
+       * ══════════════════════════════════════════════════════════════════ */
+      case "dreadnought": {
+        this.scene.sfxSkill("cannon", 0.95);
+        /* 카메라 뷰 기준 월드 좌표를 고정한다 — 카메라가 움직여도 착탄점 불변 */
+        const cam = this.scene.cameras.main;
+        const wx0 = cam.scrollX + cam.width * 0.5;
+        const wy0 = cam.scrollY + cam.height * 0.5;
+        const spanX = cam.width * 0.62;
+        const spanY = cam.height * 0.42;
+        /* 조준선 도색 — 0.6초 예고 */
+        const reticle = this.scene.add.rectangle(wx0, wy0, spanX * 2, 2, 0xffcc66, 0.75).setDepth(12);
+        const reticle2 = this.scene.add.rectangle(wx0, wy0, 2, spanY * 2, 0xffcc66, 0.75).setDepth(12);
+        this.scene.tweens.add({
+          targets: [reticle, reticle2], alpha: 0.2, duration: 300, yoyo: true, repeat: 3,
+          onComplete: () => { try { reticle.destroy(); reticle2.destroy(); } catch { /* 무시 */ } },
+        });
+        /* 12발 순차 낙하 — 착탄 예고 후 실제 판정 */
+        for (let i = 0; i < 12; i++) {
+          this.scene.time.delayedCall(600 + i * 170, () => {
+            if (this.state === "dead") return;
+            const px = wx0 + (Math.random() - 0.5) * spanX * 2;
+            const py = wy0 + (Math.random() - 0.5) * spanY * 2;
+            /* 예고 — 바닥에 작은 링 */
+            this.scene.spawnShockwave(px, py, 0xffcc66, 0.5, 130, 0.7);
+            this.scene.time.delayedCall(130, () => {
+              if (this.state === "dead") return;
+              this.scene.spawnBurstAt(px, py, 14, 0xffb060);
+              this.scene.spawnShockwave(px, py, 0xffa040, 1.1, 200, 0.7);
+              this.scene.doShake?.(70, 0.006);
+              this.scene.sfxSkill("explosion", 0.68 + (i % 4) * 0.04);
+              for (const e of this.getAllTargetsIn(999)) {
+                if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 130) continue;
+                const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+                const { dmg, crit } = rd(3.2);
+                if (crit) this.scene.sfxCrit();
+                e.takeDamage(dmg, away, 400, crit);
+              }
+            });
+          });
+        }
+        /* 마지막 초대형 탄환 — 사전 경고 후 대충격파 */
+        this.scene.time.delayedCall(600 + 12 * 170 + 200, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnShockwave(wx0, wy0, 0xffe0b0, 5.0, 620, 0.9);
+          this.scene.cameras.main.flash(280, 255, 200, 140);
+          this.scene.time.delayedCall(220, () => {
+            if (this.state === "dead") return;
+            this.scene.spawnPillar(wx0, wy0, 0xffa040, 420);
+            this.scene.spawnBurstAt(wx0, wy0, 110, 0xffcf90);
+            this.scene.spawnShockwave(wx0, wy0, 0xffe0b0, 6.4, 780, 0.85);
+            this.scene.spawnField({
+              x: wx0, y: wy0, radius: 340, dur: 5000,
+              dps: Math.max(24, Math.round(this.atkTotal * 2.0)),
+              kind: "fire", owner: "player",
+            });
+            this.scene.cameras.main.shake(700, 0.030);
+            this.scene.sfxSkill("quake", 1.0);
+            for (const e of this.getAllTargetsIn(999)) {
+              if (Phaser.Math.Distance.Between(e.x, e.y, wx0, wy0) > 400) continue;
+              const away = new Phaser.Math.Vector2(e.x - wx0, e.y - wy0).normalize();
+              const { dmg, crit } = rd(14.5);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 820, crit);
+            }
+          });
         });
         break;
       }

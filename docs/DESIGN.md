@@ -2,7 +2,7 @@
 
 ## 한 줄 요약
 
-SERTZ(이그드라실 : 아홉 왕국) — 본게임 고유 세계관의 모바일 세로→가로 대응 2D 액션 MORPG (Phaser 3 + React).
+SERTZ(이그드라실 : 아홉 왕국) — 본게임 고유 세계관의 모바일 세로→가로 대응 2D 액션 MORPG (Phaser 4 + React).
 
 ## 배경 / 목적
 
@@ -32,7 +32,7 @@ SERTZ(이그드라실 : 아홉 왕국) — 본게임 고유 세계관의 모바�
 
 ## 기술 스택 / 실행 방법
 
-- Next.js(React 19) + Phaser 3.90 + EventBus 브릿지 + Tailwind, Capacitor 8 (android)
+- Next.js(React 19) + Phaser 4.2.1 + EventBus 브릿지 + Tailwind, Capacitor 8 (android)
 - 실행: `npm run dev` (localhost:3000) / 검사: `npx tsc --noEmit`, `npx eslint src --max-warnings 0`
 - 에셋: public/assets/ (외부 CC0/CC-BY — CREDITS.md 참조), 생성 스크립트 scripts/build_*.py
 
