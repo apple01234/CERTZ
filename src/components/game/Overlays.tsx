@@ -491,7 +491,13 @@ export function InteractPrompt() {
             : "border-emerald-200/80 bg-gradient-to-b from-emerald-400 to-emerald-600 text-slate-900"
         }`}
       >
-        {st.kind === "shop" ? <Store size={16} /> : st.kind === "job" ? <Sparkles size={16} /> : <MessageCircle size={16} />}
+        {st.kind === "shop" ? (
+          <img src="/assets/ui/ui_trade.webp" alt="" draggable={false} className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
+        ) : st.kind === "job" ? (
+          <img src="/assets/ui/ui_profession.webp" alt="" draggable={false} className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
+        ) : (
+          <img src="/assets/ui2/ab_sword2.webp" alt="" draggable={false} className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
+        )}
         {st.label}
         <span className={`rounded px-1 text-[9px] font-black ${st.kind === "job" ? "bg-slate-900/85 text-amber-200" : "bg-slate-900/85 text-emerald-200"}`}>E</span>
       </button>
@@ -517,7 +523,13 @@ export function InteractPrompt() {
           : "border-emerald-200/80 bg-gradient-to-b from-emerald-400 to-emerald-600 text-slate-900"
       }`}
     >
-      {st.kind === "shop" ? <Store size={16} /> : st.kind === "job" ? <Sparkles size={16} /> : <MessageCircle size={16} />}
+      {st.kind === "shop" ? (
+        <img src="/assets/ui/ui_trade.webp" alt="" draggable={false} className="h-[18px] w-[18px]" style={{ imageRendering: "pixelated" }} />
+      ) : st.kind === "job" ? (
+        <img src="/assets/ui/ui_profession.webp" alt="" draggable={false} className="h-[18px] w-[18px]" style={{ imageRendering: "pixelated" }} />
+      ) : (
+        <img src="/assets/ui2/ab_sword2.webp" alt="" draggable={false} className="h-[18px] w-[18px]" style={{ imageRendering: "pixelated" }} />
+      )}
       {st.label}
       <span className={`rounded px-1 text-[9px] font-black ${st.kind === "job" ? "bg-slate-900/85 text-amber-200" : "bg-slate-900/85 text-emerald-200"}`}>E</span>
     </button>

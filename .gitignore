@@ -185,3 +185,4 @@ download/gdrive_vfx/
 # v1.2.2 — SFX 정규화 원본 백업 (배포·커밋 대상 아님, 118MB)
 public/assets/audio/.orig/
 public/assets/audio/sfx/.orig/
+__pycache__/

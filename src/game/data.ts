@@ -2833,6 +2833,77 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
     npcA: { name: "폐허 학자 테일", tex: "spum_mage", dlg: "vlgAbyssA" },
     npcB: { name: "마지막 항해사", tex: "spum_fisher", dlg: "vlgAbyssB" },
   },
+
+  /* ══════════════════════════════════════════════════════════════════════════
+   * vc193 (버그 #3 "DLC 챕터면 분위기 및 에셋들이 전부 달라야 되는거 아님??")
+   *
+   *  종전엔 DLC 10챕터가 이 표에 없어서 vSpec 이 undefined 가 되고,
+   *  마을 빌드가 1기 기본값(주민/마을 아이 + 초록 잔디 + 집 3채)으로 폴백했다.
+   *  그래서 그랜드플래닛 행성에 가도 라일락 월드 마을과 똑같이 보였다.
+   *
+   *  행성별로 houseTint(건물 색조)와 주민 2인(이름·스프라이트·대사키)을 분리한다.
+   *  대사는 아래 VLG 표에 vlgDlc* 키로 등록한다.
+   * ══════════════════════════════════════════════════════════════════════════ */
+  dlcstargate: {
+    houseTint: 0x8fa8ff,
+    signColor: "#a8c0ff",
+    npcA: { name: "별의 기록관", tex: "spum_mage", dlg: "vlgDlcStarA" },
+    npcB: { name: "게이트 파수꾼", tex: "spum_knight", dlg: "vlgDlcStarB" },
+  },
+  dlcprisma: {
+    houseTint: 0xc8a0f0,
+    signColor: "#d8b8ff",
+    npcA: { name: "공방 장인", tex: "spum_devil", dlg: "vlgDlcPrismaA" },
+    npcB: { name: "마법공학 견습", tex: "spum_elf", dlg: "vlgDlcPrismaB" },
+  },
+  dlcocean: {
+    houseTint: 0x7ac0e8,
+    signColor: "#9adcff",
+    npcA: { name: "꿈을 건지는 자", tex: "spum_fisher", dlg: "vlgDlcOceanA" },
+    npcB: { name: "별빛 뱃사공", tex: "spum_villager_f", dlg: "vlgDlcOceanB" },
+  },
+  dlcreverse: {
+    houseTint: 0x9aa8c0,
+    signColor: "#a8b8d8",
+    npcA: { name: "지하 상인", tex: "spum_villager_m", dlg: "vlgDlcReverseA" },
+    npcB: { name: "반란군 연락책", tex: "spum_knight", dlg: "vlgDlcReverseB" },
+  },
+  dlcneocity: {
+    houseTint: 0x8a9ae8,
+    signColor: "#a0b0ff",
+    npcA: { name: "부호 안내인", tex: "spum_mage", dlg: "vlgDlcNeoA" },
+    npcB: { name: "컴퍼니 감시관", tex: "spum_devil", dlg: "vlgDlcNeoB" },
+  },
+  dlcmech: {
+    houseTint: 0xb09a80,
+    signColor: "#c8b090",
+    npcA: { name: "기계 수리공", tex: "spum_butler", dlg: "vlgDlcMechA" },
+    npcB: { name: "무덤지기", tex: "spum_villager_m", dlg: "vlgDlcMechB" },
+  },
+  dlcswallow: {
+    houseTint: 0x9a8ab0,
+    signColor: "#b0a0c8",
+    npcA: { name: "전함 항해사", tex: "spum_fisher", dlg: "vlgDlcSwallowA" },
+    npcB: { name: "갑판 정비병", tex: "spum_knight", dlg: "vlgDlcSwallowB" },
+  },
+  dlcopinicia: {
+    houseTint: 0xe0c890,
+    signColor: "#f0dca8",
+    npcA: { name: "가문 서기", tex: "spum_mage", dlg: "vlgDlcOpiniciaA" },
+    npcB: { name: "학원 교사", tex: "spum_butler", dlg: "vlgDlcOpiniciaB" },
+  },
+  dlcnovel: {
+    houseTint: 0xb8e8a8,
+    signColor: "#c8f0b8",
+    npcA: { name: "정원사", tex: "spum_forager", dlg: "vlgDlcNovelA" },
+    npcB: { name: "꽃지기 소녀", tex: "spum_elf", dlg: "vlgDlcNovelB" },
+  },
+  dlcsernium: {
+    houseTint: 0xf0dca0,
+    signColor: "#fff0c0",
+    npcA: { name: "세르니움 장로", tex: "spum_mage", dlg: "vlgDlcSerniumA" },
+    npcB: { name: "왕궁 시녀", tex: "spum_villager_f", dlg: "vlgDlcSerniumB" },
+  },
 };
 
 /* 챕터 마을 주민 대사 일괄 등록 — 각 챕터 분위기에 맞는 3줄 멘트 */
@@ -2944,6 +3015,131 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
         "뿌리가 땅을 감고 있어, {name}. 저 균열 위를 지날 수 있는 배는 없어.",
         "모든 항로가 끝났다. 남은 건 네 발뿐이야.",
         "마지막 결정을 박아 넣을 자리… 왕좌의 가장 깊은 곳에 있을 거야.",
+      ] },
+    },
+
+    /* ══════════════════════════════════════════════════════════════════════
+     * vc193 (버그 #3) — DLC 10행성 마을 주민 대사.
+     *  키 이름이 곧 `vlg{Key}A/B` 로 등록되므로 DLC 키와 정확히 맞춘다.
+     * ══════════════════════════════════════════════════════════════════════ */
+    dlcstargate: {
+      a: { sp: "별의 기록관", lines: [
+        "여긴 제1행성 스타게이트. 별이 모여 만든 문이지, {name}.",
+        "장미 한 송이가 이 행성 전체의 동력원이야. 누가 꺾으면 행성이 멈춰.",
+        "지면이 뒤틀리는 건 행성이 아직 살아 있다는 뜻이야. 조심해.",
+      ] },
+      b: { sp: "게이트 파수꾼", lines: [
+        "문지기는 이곳에 오는 자를 시험한다. 힘으로만 통과할 순 없어.",
+        "네가 세계를 구했다는 소문이 별까지 닿았구나.",
+        "다음 행성은 프라이즈 프리즈마 — 마법공학의 도시야.",
+      ] },
+    },
+    dlcprisma: {
+      a: { sp: "공방 장인", lines: [
+        "프라이즈 프리즈마에 온 걸 환영한다, {name}. 기계가 스스로 걷는 도시지.",
+        "시장님이 요즘 실험실에 틀어박혀 있어. 위험한 냄새가 나.",
+        "룬 골렘이 통제를 벗어났다는 소식 들었어? 공방은 대피 중이야.",
+      ] },
+      b: { sp: "마법공학 견습", lines: [
+        "설계도만 있으면 뭐든 만들 수 있어요! …시장님 설계도는 달라요.",
+        "혼혈 웨폰마스터라는 말 들어봤어요? 그게 여기서 시작됐대요.",
+        "조심하세요. 기계는 말을 듣지 않을 때가 있어요.",
+      ] },
+    },
+    dlcocean: {
+      a: { sp: "꿈을 건지는 자", lines: [
+        "오션코멘 — 꿈이 가라앉는 바다야, {name}.",
+        "여기선 누구든 가장 행복했던 기억을 꿈으로 다시 봐. 나오기 싫어지지.",
+        "기억의 오르골 소리가 들리면 발을 조심해. 그게 꿈의 초대야.",
+      ] },
+      b: { sp: "별빛 뱃사공", lines: [
+        "이 바다를 건너면 신의도시 세르니움이 나와.",
+        "꿈을 다루는 웨폰마스터가 있어. 현실처럼 만드는 능력이지.",
+        "행복해서 못 나오는 사람도, 아파서 못 나오는 사람도 있어.",
+      ] },
+    },
+    dlcreverse: {
+      a: { sp: "지하 상인", lines: [
+        "안전구역을 넘으면 브로커와 갱들이다, {name}. 각오해.",
+        "세비지 플레이스? 무법자들의 성지지만 반란군 본거지이기도 하지.",
+        "지하선로를 벗어나면 안개가 목까지 차올라. 앞이 안 보여.",
+      ] },
+      b: { sp: "반란군 연락책", lines: [
+        "지하전력소에 가면 리버스사이버의 진실을 알게 될 거야.",
+        "전력소가 아니라 독가스로 가득한 연구실이야. 조심해.",
+        "누군가 열차 선로를 바꿨어. 중앙 컨트롤타워를 봐야 해.",
+      ] },
+    },
+    dlcneocity: {
+      a: { sp: "부호 안내인", lines: [
+        "네오시티는 다크 플래닛 컴퍼니가 만든 행성이야, {name}.",
+        "5부호 — 힘, 용기, 지혜, 운명, 선택. 각각 초월자를 모방했지.",
+        "홀로그램 지도에 없는 이유는 이곳이 다른 세계이기 때문이야.",
+      ] },
+      b: { sp: "컴퍼니 감시관", lines: [
+        "외부 방문자로군. 부호를 넘을 자격이 있는지 지켜보겠다.",
+        "이 도시의 모든 것은 컴퍼니가 설계했다. 너희도 포함해서.",
+        "선택의 부호가 마지막이다. 거기서 많은 이들이 무너졌지.",
+      ] },
+    },
+    dlcmech: {
+      a: { sp: "기계 수리공", lines: [
+        "기계무덤 메카닉 블러드시티, {name}. 죽은 기계가 도시째 묻힌 곳이야.",
+        "아직 뛰는 심장이 있어. 죽은 게 아니라 잠든 거지.",
+        "골렘이 깨어나면 도시 전체가 무기로 변해. 조용히 움직여.",
+      ] },
+      b: { sp: "무덤지기", lines: [
+        "도시가 왜 스스로를 묻었는지 아나? 기록에 남아 있어.",
+        "블러드시티라 불린 이유는 전쟁이 아니라… 실험이었어.",
+        "무덤을 지키는 거인이 있어. 문을 열려면 지나야 해.",
+      ] },
+    },
+    dlcswallow: {
+      a: { sp: "전함 항해사", lines: [
+        "대공전함 다크스왈로해브니스 — 하늘을 삼킨다는 이름값을 하지, {name}.",
+        "갑판이 흔들리면 배가 아니라 이 전함이 살아 있다고 봐.",
+        "항법석을 확보해야 방향을 돌릴 수 있어. 함교에 있어.",
+      ] },
+      b: { sp: "갑판 정비병", lines: [
+        "하늘을 날면서 하늘을 삼킨다… 말이 안 되지만 사실이야.",
+        "이 전함이 무엇을 삼켜왔는지 알면 소름 돋을 거야.",
+        "포격이 시작되면 난간에 붙어 있어. 갑판이 사라져.",
+      ] },
+    },
+    dlcopinicia: {
+      a: { sp: "가문 서기", lines: [
+        "오피니시아는 순력과 혼력의 대립점, {name}. 5대 가문이 모여 있지.",
+        "카르리온과 자칭 오르페우스가 너희를 초대했어. 믿지 마.",
+        "엘리자베스가 도와줄 거야. 그녀는 몰락한 가문의 계획을 알아.",
+      ] },
+      b: { sp: "학원 교사", lines: [
+        "마스터학원에 잠입하려면 임시 교사가 되는 게 빠르겠군.",
+        "웨폰마스터 능력을 복제하는 자가 있다는 소문이 사실이었어.",
+        "시니프 왕의 실험… 혼혈 웨폰마스터를 만드는 거야.",
+      ] },
+    },
+    dlcnovel: {
+      a: { sp: "정원사", lines: [
+        "비밀의 화원 노벨 플로스, {name}. 아무도 모르는 정원이지.",
+        "이곳에만 피는 꽃이 있어. 씨앗 하나가 답일지도 몰라.",
+        "정원을 가꾼 자의 편지가 남아 있어. 아무도 모르게.",
+      ] },
+      b: { sp: "꽃지기 소녀", lines: [
+        "화원의 주인이 아직 정원을 지키고 있어요. 조심하세요!",
+        "꽃을 꺾으면 정원이 화를 내요. 저는 그렇게 혼났어요.",
+        "여기 있는 동안만큼은 아무도 아프지 않아요. 정말이에요.",
+      ] },
+    },
+    dlcsernium: {
+      a: { sp: "세르니움 장로", lines: [
+        "신의도시 세르니움… 고향에 돌아왔구나, {name}.",
+        "황실의 분위기가 좋지 못하다. 섭정이 왕좌를 빼앗았어.",
+        "검의 성전에 두 자루의 검이 꽂혀 있다. 태양과 달의 검.",
+      ] },
+      b: { sp: "왕궁 시녀", lines: [
+        "리안 왕자를 찾고 계신가요? 장로들은 환영하지만 황실은 냉담해요.",
+        "아버지 왕이 병으로 돌아가신 뒤부터 모든 게 뒤바뀌었어요.",
+        "태양과 달이 합쳐질 때 진정한 힘이 깨어난다고 들었어요.",
       ] },
     },
   };

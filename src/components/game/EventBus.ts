@@ -247,6 +247,9 @@ export type QuestState = {
 export type QuestLogState = {
   stageName: string;
   list: { title: string; desc: string; state: "done" | "active" | "locked"; canAccept?: boolean; accepted?: boolean }[];
+  /* vc193 (버그 #2) — 마을·실내(안전 지대)에서는 트래커를 접는다.
+   *  종전엔 마을에서도 이전 사냥터 퀘스트가 남아 "마을인데 몬스터 260마리" 가 떴다. */
+  closed?: boolean;
   /* vc150 (#신규6) — 다수 의뢰(2~4개) 목록 추가 */
   repeat: { title: string; desc: string; bounties?: { label: string; count: number; need: number }[] | null } | null;
   /* v2.3 — 반복 의뢰 수주 여부 (미수주 시 NPC 수주 안내 표시) */

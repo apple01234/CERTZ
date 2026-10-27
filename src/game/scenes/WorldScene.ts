@@ -371,6 +371,9 @@ export class WorldScene extends Phaser.Scene {
   dojangScore = 0;
   private dojangEndsAt = 0;
   private dojangFrom: StageKey = "village";
+  /* vc193 (버그 #3) — 재림(r5/r10/r15) 진입 직전 마을. 재림에서 긴급 귀환할 때
+   *  미드가르드로 튕기지 않고 이 마을로 돌아가게 한다. */
+  private reincFrom: StageKey = "village";
   private dojangText: Phaser.GameObjects.Text | null = null;
   private dojangTextAcc = 0;
   /* vc146 (#6) — 무릉도장 실시간 피해량: 최근 3초 롤링 DPS + 최고 일격 */
@@ -1615,7 +1618,7 @@ export class WorldScene extends Phaser.Scene {
     this.syncUpgradeGlow();
 
     /* ---------- 적 배치 (v2.0 — 챕터/구역 난이도 배율 적용 / v3.0 — 개방 셀 스폰) ---------- */
-    const sc = stageScale(stageKey);
+    const sc = stageScale(stageKey, this.player?.lv);
     const rng = new Phaser.Math.RandomDataGenerator([stageKey]);
     for (const group of this.stageDef.enemies) {
       for (let i = 0; i < group.count; i++) {
@@ -3078,6 +3081,11 @@ export class WorldScene extends Phaser.Scene {
      *  모든 구역 전환을 차단한다. 전진/복귀 포탈·부적 워프·친구 따라가기·공동토벌전
      *  입장·긴급귀환이 전부 startTransition 단일 통로를 지나므로 여기서 한 번만 막으면
      *  커버된다 — 보스를 두고 다른 맵으로 도망가는 사례를 원천 차단. */
+    /* vc193 (버그 #3) — 재림 스테이지로 들어갈 때 직전 마을을 기록.
+     *  재림 안에서 긴급 귀환하면 이 마을로 돌아간다(미드가르드 튕김 방지). */
+    if (/^r\d+$/.test(target) && this.stageDef?.key && !/^r\d+$/.test(this.stageDef.key)) {
+      this.reincFrom = this.stageDef.key;
+    }
     if (this.bossFightActive()) {
       audio.sfx.deny();
       this.showBanner("보스 전투 중에는 이동할 수 없어요!");
@@ -4658,13 +4666,19 @@ export class WorldScene extends Phaser.Scene {
 
   /** 골드를 코인 여러 개로 분산 드롭 */
   dropLootGold(x: number, y: number, total: number) {
-    const n = total >= 150 ? 5 : total >= 40 ? 3 : 2;
-    const per = Math.max(1, Math.round(total / n));
-    for (let i = 0; i < n; i++) {
-      const d = this.acquireDrop();
-      if (!d) break;
-      d.spawn("gold", x, y, i === n - 1 ? total - per * (n - 1) : per);
-    }
+    /* vc193 (지시: "골드 스프라이트를 여러개 드롭하는 것이 아닌 코인 1개당 주는 골드량이
+     *  후반 몬스터일수록 증가되게해 — 최적화 목적")
+     *
+     *  종전: 총액에 비례해 코인 2~5개를 스폰 → 후반 몬스터(수천 G)를 잡으면
+     *  코인 5개가 매번 물리 바디·스프라이트·픽업 판정을 잡아먹었다.
+     *  지금: **항상 코인 1개**를 떨어뜨리고 그 하나가 총액을 전부 담는다.
+     *  "후반일수록 코인 1개당 금액이 커진다"는 요구를 그대로 만족한다
+     *  (액면가는 골드량이므로 별도 스케일 없이 total 을 그대로 넘긴다).
+     *
+     *  드롭 오브젝트 1개 = 물리 바디 1개 → 후반 사냥터에서 드롭 스폰 비용이 2~5배 줄어든다. */
+    const d = this.acquireDrop();
+    if (!d) return;
+    d.spawn("gold", x, y, total);
   }
 
   dropLootItem(x: number, y: number, key: DropKind) {
@@ -7904,7 +7918,7 @@ export class WorldScene extends Phaser.Scene {
     // v3.0.22 (#50 — "챕터 지날수록 쎄져야"): 잡몹 곡선 강화에 맞춰 보스 가중치 HP ×1.6·ATK ×1.15로 재상향
     //  + Boss 내부 관통 50%·페이즈별 태진 단축·탄막 증가가 함께 적용된다
     // v3.0.28 (#보스난이도) — 이지 0.65 / 노말 1.0 / 하드 1.8 / 카오스 2.8 배율 (보상은 reward 배율)
-    const sc = stageScale(this.stageDef.key);
+    const sc = stageScale(this.stageDef.key, this.player?.lv);
     const dif = BOSS_DIFFS[this.bossDiff];
     const def: BossDef = {
       ...base,
@@ -7965,7 +7979,7 @@ export class WorldScene extends Phaser.Scene {
     const bossKey = isRebirth ? STAGES[ch as StageKey]?.bossKey : spec?.boss;
     if (!bossKey) return;
     const base = BOSS_DEFS[bossKey];
-    const sc = stageScale((isRebirth ? ch : `${ch}10`) as StageKey);
+    const sc = stageScale((isRebirth ? ch : `${ch}10`) as StageKey, this.player?.lv);
     /* v3.0.28 (#보스난이도) — 재림판 기준 수치(HP ×5.0 · ATK ×2.2 · 보상 ×3)에 난이도 배율 추가 적용 */
     const lv = this.pendingReplayBossDiff ?? "normal";
     const dif = BOSS_DIFFS[lv];
@@ -8019,7 +8033,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.player || this.boss || this.isInterior) return;
     const base = BOSS_DEFS[bossKey as BossKey];
     if (!base) return;
-    const sc = stageScale(this.stageDef.key);
+    const sc = stageScale(this.stageDef.key, this.player?.lv);
     const dif = BOSS_DIFFS[this.bossDiff]; // GM 체험은 현재 선택 난이도(기본 노말) 배율
     const def: BossDef = {
       ...base,
@@ -10712,6 +10726,14 @@ export class WorldScene extends Phaser.Scene {
     } else {
       this.player.update(dt, move, this.attackQueued);
     }
+    /* vc193 (버그 #1 "이동할때 기본 스프라이트로 고정되는 버그") —
+     *  Player.tickBodyPending() 은 동적 외형 시트(코스튬·직업·GM) 로드 완료를
+     *  매 프레임 폴링해 재적용하는 함수인데 **호출부가 어디에도 없었다.**
+     *  그래서 applyBodyLook 이 미로드 시트를 만나 bodyPrefix 를 비우면
+     *  bodyKey() 가 hero_* 기본 캐릭터를 반환하고, 로드가 끝나도 재적용되지 않아
+     *  이동/대기 내내 회색 기본 스프라이트로 고정됐다(유저 스크린샷 실측).
+     *  게임 루프에서 폴링하면 로드 성공 즉시 원래 외형으로 복귀한다. */
+    this.player.tickBodyPending();
     this.attackQueued = false;
 
     // 물약 퀵슬롯 + 상점/패널 열기 + E키 상호작용 (v1.9 — 모두 키 매핑 대응)
@@ -12370,6 +12392,26 @@ export class WorldScene extends Phaser.Scene {
     if (spec) {
       const vk = (spec.num <= 1 ? "village" : `${spec.key}v`) as StageKey;
       if (STAGES[vk]) return vk;
+    }
+    /* vc193 (버그 #3 "재림 지역에서 가까운 마을로 가면 미드가르드 마을로 가지는 버그") —
+     *  재림 스테이지는 key 가 `r5` / `r10` / `r15` 이고 parseStage() 가
+     *  ch="village" 를 반환한다(챕터 정규식에 없음). 그래서 위 spec 분기를 못 타고
+     *  곧장 "village"(미드가르드)로 떨어졌다.
+     *  재림은 10챕터(심연) 종료 후 열리는 후반 콘텐츠이므로 가장 가까운 마을은
+     *  재림 진입 직전 마을이다. 재림에 들어올 때 기록해 둔 마을로 보낸다. */
+    if (/^r\d+$/.test(cur)) {
+      const base = this.reincFrom;
+      if (base) {
+        if (STAGES[base]?.isVillage) return base;
+        const bspec = chapterSpec(base);
+        if (bspec) {
+          const bvk = (bspec.num <= 1 ? "village" : `${bspec.key}v`) as StageKey;
+          if (STAGES[bvk]) return bvk;
+        }
+      }
+      /* 기록이 없으면 심연(10챕터) 마을로 — 미드가르드로 튕기지 않게 */
+      const av = "abyssv" as StageKey;
+      if (STAGES[av]) return av;
     }
     return "village";
   }
@@ -15536,9 +15578,17 @@ export class WorldScene extends Phaser.Scene {
       });
     }
     const r = this.stageDef.repeat;
+    /* vc193 (버그 #2 "마을 등에 있는 UI 사냥터에 남아있는 버그") —
+     *  마을(안전 지대)에서는 사냥 의뢰·추적 목록을 비운다.
+     *  종전엔 마을에서도 이전 사냥터의 수락 퀘스트(trackedList)와 반복 의뢰가
+     *  그대로 노출돼 "마을인데 심연 유령 260마리 처치" 가 떠 있었다(유저 스크린샷).
+     *  마을은 안전 지대이므로 사냥 관련 트래커를 전부 숨긴다. */
+    const safeZone = !!this.stageDef.isVillage || this.isInterior;
     const payload: QuestLogState = {
       stageName: `${this.stageDef.name} — ${this.stageDef.subtitle}`,
-      list,
+      list: safeZone ? [] : list,
+      trackedList: safeZone ? [] : tracked,
+      closed: safeZone ? true : undefined,
       /* v3.0.26 (#76) — 스토리 미완료 시 반복 의뢰 섹션 자체를 숨김 ("스토리 다 완료 후 창이 뜨게") */
       /* vc150 (#신규6) — 다수 의뢰(2~4개)를 개별 진행도와 함께 목록으로 노출 */
       repeat: this.cleared && r ? {
@@ -15550,7 +15600,6 @@ export class WorldScene extends Phaser.Scene {
       } : null,
       repeatActive: this.repeatActive(),
       repeatUnlocked: this.repeatOn,
-      trackedList: tracked,
       /* vc153 (#신규4) — 5차전직 2차각성 퀘스트 "각성의 대가"를 퀘스트 로그에 표시.
        *  기존엔 스테이지 체인+반복 의뢰만 노출돼 유저가 진행 상황을 전혀 볼 수 없었다.
        *  220렙 미만(수주 자격 없음)이면 null — 로그에 섹션 자체를 숨긴다 */

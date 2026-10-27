@@ -65,6 +65,59 @@ const PROFILES: Record<string, UltBurstProfile> = {
   pirate: { darken: 0.68, darkenMs: 1500, hitStop: 85, shake: [400, 0.015], zoomPunch: 1.050, auraKey: "fx_glow", runeKey: "fx_shockwave", burstKey: "fx_flarebig" },
   raider: { darken: 0.66, darkenMs: 1400, hitStop: 80, shake: [360, 0.013], zoomPunch: 1.045, auraKey: "fx_glow", runeKey: "fx_shockwave", burstKey: "fx_flarebig" },
   corsair: { darken: 0.70, darkenMs: 1500, hitStop: 90, shake: [420, 0.016], zoomPunch: 1.050, auraKey: "fx_flarew", runeKey: "fx_shockwave", burstKey: "fx_flarebig" },
+
+  /* ══════════════════════════════════════════════════════════════════════════
+   * vc194 — 누락 20직업 프로파일 추가.
+   *
+   *  [발견한 문제] 위 표는 15개 키만 정의하고 있었고, ClassKey 는 30개다.
+   *  그래서 warlord·paladin·eagleeye·tempest·stormbringer·chronicle·nightblade·
+   *  duelist·warbringer·crusader·deadeye·skylord·arclord·eternal·shadowlord·
+   *  blademaster·stormcaptain·powdermaster·seaking·dreadnought **20직업이 전부
+   *  DEFAULT_PROFILE 하나로 떨어져 궁극기 연출이 완전히 동일**했다.
+   *  (유저 지적: "궁극기가 다 똑같다"의 실제 원인)
+   *
+   *  [설계 원칙] 각 직업의 SKILL5_INFO 정체성(무기·속성·역할)을 수치로 옮긴다.
+   *   - 전사형: 긴 암전 + 강한 흔들림 + 큰 줌 (묵직함)
+   *   - 궁수형: 짧은 암전 + 정밀 단발 (히트스톱 길고 흔들림 작게)
+   *   - 마법형: 가장 긴 암전 + 낮은 흔들림 (발광 극대화·가독성)
+   *   - 도적형: 가장 짧은 암전 + 잦은 히트스톱 (연격감)
+   *   - 해적형: 넓은 암전 + 최대 흔들림 (포격)
+   *  auraKey/runeKey/burstKey 는 ultLayers 가 실제로 쓰는 fx_* 18종 안에서만 고른다.
+   * ══════════════════════════════════════════════════════════════════════════ */
+
+  /* ── 4차 전사 계열 (warlord/paladin) ── */
+  warlord: { darken: 0.72, darkenMs: 1600, hitStop: 120, shake: [420, 0.018], zoomPunch: 1.060, auraKey: "fx_aura", runeKey: "fx_shockwave", burstKey: "fx_flarebig" },
+  paladin: { darken: 0.60, darkenMs: 1700, hitStop: 95, shake: [300, 0.011], zoomPunch: 1.045, auraKey: "fx_glowyellow", runeKey: "fx_hex", burstKey: "fx_flarew" },
+
+  /* ── 4차 궁수 계열 (eagleeye/tempest/stormbringer) ── */
+  eagleeye: { darken: 0.66, darkenMs: 1100, hitStop: 90, shake: [240, 0.009], zoomPunch: 1.055, auraKey: "fx_glowblue", runeKey: "fx_hex", burstKey: "fx_burst" },
+  tempest: { darken: 0.60, darkenMs: 1200, hitStop: 60, shake: [320, 0.012], zoomPunch: 1.030, auraKey: "fx_caustic", runeKey: "fx_electro", burstKey: "fx_shockwave" },
+  stormbringer: { darken: 0.68, darkenMs: 1300, hitStop: 70, shake: [360, 0.014], zoomPunch: 1.040, auraKey: "fx_electro", runeKey: "fx_electro", burstKey: "fx_flarebig" },
+
+  /* ── 4차 마법 계열 (chronicle) ── */
+  chronicle: { darken: 0.72, darkenMs: 1800, hitStop: 75, shake: [300, 0.009], zoomPunch: 1.050, auraKey: "fx_purple", runeKey: "fx_hex", burstKey: "fx_flarew" },
+
+  /* ── 4차 도적 계열 (nightblade/duelist) ── */
+  nightblade: { darken: 0.70, darkenMs: 850, hitStop: 60, shake: [170, 0.007], zoomPunch: 1.038, auraKey: "fx_noise", runeKey: "fx_electro", burstKey: "fx_burst" },
+  duelist: { darken: 0.62, darkenMs: 950, hitStop: 70, shake: [200, 0.009], zoomPunch: 1.042, auraKey: "fx_noise", runeKey: "fx_hex", burstKey: "fx_burst" },
+
+  /* ── 5차 궁극 4직업 (warbringer 이하 전용) ── */
+  warbringer: { darken: 0.74, darkenMs: 1700, hitStop: 130, shake: [460, 0.020], zoomPunch: 1.065, auraKey: "fx_aura", runeKey: "fx_shockwave", burstKey: "fx_flarebig" },
+  crusader: { darken: 0.62, darkenMs: 1800, hitStop: 100, shake: [310, 0.012], zoomPunch: 1.048, auraKey: "fx_glowyellow", runeKey: "fx_hex", burstKey: "fx_flarew" },
+  deadeye: { darken: 0.68, darkenMs: 1150, hitStop: 100, shake: [250, 0.010], zoomPunch: 1.058, auraKey: "fx_glowblue", runeKey: "fx_hex", burstKey: "fx_burst" },
+  skylord: { darken: 0.66, darkenMs: 1350, hitStop: 75, shake: [380, 0.015], zoomPunch: 1.042, auraKey: "fx_caustic", runeKey: "fx_electro", burstKey: "fx_flarebig" },
+  arclord: { darken: 0.70, darkenMs: 1400, hitStop: 85, shake: [400, 0.016], zoomPunch: 1.046, auraKey: "fx_electro", runeKey: "fx_electro", burstKey: "fx_flarebig" },
+  eternal: { darken: 0.74, darkenMs: 1900, hitStop: 110, shake: [340, 0.012], zoomPunch: 1.055, auraKey: "fx_purple", runeKey: "fx_hex", burstKey: "fx_flarew" },
+  shadowlord: { darken: 0.76, darkenMs: 900, hitStop: 80, shake: [180, 0.008], zoomPunch: 1.040, auraKey: "fx_noise", runeKey: "fx_electro", burstKey: "fx_burst" },
+
+  /* ── 5차 검성·혼혈 직업 (blademaster) ── */
+  blademaster: { darken: 0.72, darkenMs: 1500, hitStop: 115, shake: [390, 0.017], zoomPunch: 1.058, auraKey: "fx_glow", runeKey: "fx_hex", burstKey: "fx_flarebig" },
+
+  /* ── 해적 4·5차 (stormcaptain/powdermaster/seaking/dreadnought) ── */
+  stormcaptain: { darken: 0.68, darkenMs: 1450, hitStop: 88, shake: [410, 0.015], zoomPunch: 1.048, auraKey: "fx_electro", runeKey: "fx_shockwave", burstKey: "fx_flarebig" },
+  powdermaster: { darken: 0.72, darkenMs: 1500, hitStop: 95, shake: [470, 0.019], zoomPunch: 1.052, auraKey: "fx_flarew", runeKey: "fx_shockwave", burstKey: "fx_flarebig" },
+  seaking: { darken: 0.70, darkenMs: 1600, hitStop: 100, shake: [430, 0.016], zoomPunch: 1.050, auraKey: "fx_caustic", runeKey: "fx_shockwave", burstKey: "fx_flarew" },
+  dreadnought: { darken: 0.76, darkenMs: 1700, hitStop: 135, shake: [500, 0.021], zoomPunch: 1.068, auraKey: "fx_aura", runeKey: "fx_shockwave", burstKey: "fx_flarebig" },
 };
 
 /** 폴백 — 계열을 못 찾았을 때(무직·1차) */

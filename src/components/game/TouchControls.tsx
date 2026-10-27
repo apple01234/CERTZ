@@ -404,7 +404,26 @@ export function TouchControls({
           }}
         >
           <div className="flex flex-col items-center">
-            <Swords size={26} />
+            {/* vc193 (버그 #2 "기본 공격키&상호작용키 등 저런 개짜치는 ai가 만든듯한 UI 전부 에셋 UI로 바꿔") —
+             *  종전엔 lucide <Swords> 벡터 + CSS 그라데이션으로 버튼을 그려서
+             *  "AI가 만든 듯한" 느낌이었다. 저장소에 이미 ui2/ab_sword.webp 등
+             *  전투 아이콘 에셋 6종이 있었는데 **한 곳에서도 쓰이지 않았다**.
+             *  에셋이 있으면 에셋을 쓰고, 로드 실패 시에만 벡터로 폴백한다. */}
+            <img
+              src="/assets/ui2/ab_sword.webp"
+              alt=""
+              draggable={false}
+              onError={(e) => {
+                const el = e.currentTarget;
+                if (el.dataset.fb) return;
+                el.dataset.fb = "1";
+                el.style.display = "none";
+                el.nextElementSibling?.classList.remove("hidden");
+              }}
+              className="h-[26px] w-[26px] drop-shadow-[0_2px_2px_rgba(0,0,0,0.55)]"
+              style={{ imageRendering: "pixelated" }}
+            />
+            <Swords size={26} className="hidden" />
             <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
           </div>
           {/* vc154 (지시 #1) — 기본공격 단축키 키탭 제거 (유저 지시 "기본공격 단축키 X 아이콘 없애").
@@ -571,8 +590,14 @@ function SkillButton({
           {keyHint}
         </span>
       )}
-      <span className={`max-w-[42px] truncate text-[7px] font-bold leading-tight sm:max-w-none sm:text-[8px] ${ult ? "text-amber-100" : ult2 ? "text-fuchsia-100" : ""}`}>{label}</span>
-      <span className={`text-[7px] font-bold sm:text-[8px] ${ult ? "text-amber-200" : ult2 ? "text-fuchsia-200" : "text-[#a8c0ff]"}`}>{mp}MP</span>
+      {/* vc193 (버그 #1 "스킬 아이콘 안에 글자 짤림") —
+       *  종전엔 max-w-[42px] truncate + text-[7px] 라서 "천둥연격"·"용의분노" 같은
+       *  4글자 스킬명이 말줄임(…)으로 잘렸다. 버튼 폭 자체를 넓히고
+       *  글자는 8~9px 로 올려 아이콘 안에서 온전히 읽히게 한다.
+       *  (모바일 42px 슬롯에 4글자를 넣으려면 2줄 허용이 가장 안전 —
+       *   leading-tight 로 두 줄 높이를 확보하고 truncate 를 제거한다.) */}
+      <span className={`w-full break-keep px-0.5 text-center text-[8px] font-bold leading-[1.15] sm:text-[9px] ${ult ? "text-amber-100" : ult2 ? "text-fuchsia-100" : ""}`}>{label}</span>
+      <span className={`text-[8px] font-bold leading-none sm:text-[9px] ${ult ? "text-amber-200" : ult2 ? "text-fuchsia-200" : "text-[#a8c0ff]"}`}>{mp}MP</span>
       {cdPct > 0 && (
         <>
           <div
