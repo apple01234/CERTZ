@@ -8,13 +8,13 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.4.5";
-const LATEST_CODE = 194;
+const LATEST_VERSION = "1.4.34";
+const LATEST_CODE = 198;
 const VERSION_NOTE =
-  "v1.3.8 (vc186) — ①스킬 아이콘 30개 교체: 4차 직업의 s3·s4 아이콘이 전부 단순 사각형 플레이스홀더였고 s5는 없었다. 제공 팩의 사람이 그린 skill_frame에 직업별 시그니처를 도트로 작화해 10직업×3슬롯=30개를 새로 만들었다(직업별 색 통일, Vision 9.8/10). ②5차 궁극기 아이콘이 모든 직업에서 동일했다 — s5Icon 하드코딩을 제거하고 직업별로 연결. 2차 궁극기 버튼이 1차 아이콘을 재사용하던 버그도 수정. 이전 사이클 누적: 4·5차 3D 연출 직업별 분화·5차 스킬 멈춤 수리(프레임 313→75ms)·쉐이더·고대비 튜토리얼(6→8단계)·유니온 보스 난이도(HP 21배 과다→정상)·Vercel CDN 캐시 복구(폴링 부하 40%↓).";
+  "v1.4.34 (vc198) — 긴급수정 9건. ①[치명] 효과음 누락 시 게임이 통째로 멈추던 크래시 수정(Audio key not found). ②포탈 탈 때마다 최대 HP가 늘어나던 버그 수정. ③효과음 36종을 원본으로 복구(먹먹하던 소리). ④타일맵 47종 원본 복구. ⑤집 가구가 한 칸에 몰리던 배치 버그 수정(24x22 격자). ⑥전사 스킬 사용 시 캐릭터가 멈추던 프레임 정지 완화. ⑦바닥에 흩어져 있던 불필요한 오브젝트 정리. ⑧직업별 무기 오버레이의 잔상·크기·회전 제거. ⑨WASD 모드에서 마우스 조준·클릭 공격 추가.";
 const APK_MIRROR =
   /* vc179 — APK는 릴리스 태그 v1.3.1에 있다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.5/SERTZ-vc194.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.34/SERTZ-vc198.apk";
 
 export async function GET() {
   return NextResponse.json({
