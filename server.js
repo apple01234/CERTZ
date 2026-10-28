@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc177 — APK는 릴리스 태그 v1.2.5에 있다(이전 태그는 vc176까지 보유).
    *  태그와 파일명이 어긋나면 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.37/SERTZ-vc199.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.38/SERTZ-vc200.apk";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -69,8 +69,8 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.37";
-  const LATEST_CODE = 199;
+  const LATEST_VERSION = "1.4.38";
+  const LATEST_CODE = 200;
     const VERSION_NOTE =
       "v1.4.37 (vc199) — 전직 외형 + 스킬 개편. ①3·4차 20직업이 드디어 자기 모습을 갖는다(종전엔 2차 외형을 그대로 승계해 '전직해도 그대로'였다). 남녀 40종 x 28프레임 = 1,120장 신규. ②Z(주력기)·C(기동기) 3·4차 20직업 전원 고유화(종전 16직업이 2차 스킬 재사용). ③좌우 이동 시 외형이 __MISSING 으로 깨지던 walkside 4프레임 누락 수리. ④차수 사다리 유지: 스킬 배율 1차 1.25 / 2차 1.53 / 3차 1.80 / 4차 2.08 / 5차 2.36.";
   if (url === "/api/version") {
