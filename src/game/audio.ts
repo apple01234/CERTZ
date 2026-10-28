@@ -115,13 +115,25 @@ const SFX_VOL_DEFAULT = 0.42;
 function play(key: string, vol: number, rate = 1) {
   if (!game || muted) return;
   if (!Number.isFinite(vol)) vol = SFX_VOL_DEFAULT;
+  /* v1.4.33 (긴급수정 — "Uncaught Error: Audio key \"sfx_aoe_air_cast\" not found in cache")
+   *  부팅 로드 목록에 없는 키를 재생하면 Phaser 가 예외를 던져 **게임 전체가 멈춘다**.
+   *  sfx 객체의 모든 재생은 이 함수를 지나므로, 여기서 캐시 유무를 먼저 확인해
+   *  없는 사운드는 조용히 건너뛴다(효과음 하나 없는 것이 게임 정지보다 낫다). */
+  try {
+    const cache = game.cache?.audio;
+    if (cache && !cache.exists(key)) return;
+  } catch { /* cache 미지원 환경 — 아래 play 를 그대로 시도 */ }
   const now = typeof performance !== "undefined" ? performance.now() : Date.now();
   if (lastPlayed[key] && now - lastPlayed[key] < SFX_THROTTLE_MS) return;
   if (activeSounds >= SFX_MAX_CONCURRENT) return;
   lastPlayed[key] = now;
   activeSounds++;
   /* v3.1.0 — SFX 마스터 게인(sfxVol) 배율 적용 (설정 슬라이더 반영) */
-  game.sound.play(key, { volume: vol * sfxVol, rate });
+  try {
+    game.sound.play(key, { volume: vol * sfxVol, rate });
+  } catch {
+    /* 재생 실패(디코드 오류·디바이스 전환)도 게임을 멈추지 않는다 */
+  }
   // 1.6초 후 예비 감소 — complete 이벤트 유실 대비 단일 감소 경로 (정확한 캡은 아니어도 밸런스 목적 충분)
   setTimeout(() => {
     activeSounds = Math.max(0, activeSounds - 1);

@@ -83,6 +83,11 @@ export type SaveData = {
   starMap?: Record<string, number>;
   /* v3.0.5 — 스타포스 마일스톤 HP 보너스 (이미 maxHp에 가산된 총액 — 중복 가산 방지) */
   sfHp?: number;
+  /* v1.4.33 (긴급수정 — 포탈 탈 때마다 최대 HP 증가) —
+   *  컬렉션·세트·세계수·피규어 등으로 maxHp 에 가산된 보너스 총액.
+   *  씬 전환 시 Player 가 새로 생성되면 이 값으로 bonusHpApplied 를 복원해
+   *  같은 보너스가 다시 더해지는 것을 막는다. */
+  bonusHp?: number;
   /* v3.0.7 — 장신구 스타포스 (itemKey → 성) + 강화 주문서 충전 수 */
   accUp?: Record<string, number>;
   starBless?: number;

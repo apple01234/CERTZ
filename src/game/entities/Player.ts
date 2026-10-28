@@ -419,8 +419,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(dt: number, move: Phaser.Math.Vector2, attackPressed: boolean) {
-    /* v1.4.32 (지시 #10) — 무기 오버레이가 캐릭터를 따라가게 매 프레임 동기화 */
-    this.syncWeaponVisual();
     if (this.state === "dead") return;
     const ms = dt;
 
@@ -8260,69 +8258,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.scene.anims.exists(mapped)) this.play(mapped, true);
     }
     this.applyLookTint();
-    this.refreshWeaponVisual();
-  }
-
-  /* ================= v1.4.32 (유저 지시 #10 "직업별 무기 어디감???") =================
-   *  종전엔 weapon 필드가 스탯 계산에만 쓰이고 화면에는 아무것도 그려지지 않았다.
-   *  캐릭터 시트에 무기가 이미 그려져 있지 않으므로, 장착 무기를 작은 오버레이
-   *  이미지로 손 옆에 붙인다.
-   *  · 계열(family)에 따라 무기 아이콘을 고른다 — 검/활/지팡이/단검
-   *  · 방향(facing)에 따라 좌우 반전 + 위치 오프셋
-   *  · syncWeaponVisual 이 매 프레임 플레이어를 따라간다 */
-  private weaponImg: Phaser.GameObjects.Image | null = null;
-
-  /** 계열별 무기 아이콘 텍스처 (없으면 장착 무기 아이콘) */
-  private weaponTexOf(): string {
-    const fam = familyOf(this.cls);
-    const byFam: Record<string, string> = {
-      warrior: "item_weapon_3",   // 대검
-      archer: "item_weapon_2",    // 활 대용 검
-      mage: "item_weapon_5",      // 마검(스태프 대용)
-      rogue: "item_weapon_1",     // 단검
-      priest: "item_weapon_4",
-    };
-    const famTex = fam ? byFam[fam] : null;
-    if (famTex && this.scene.textures.exists(famTex)) return famTex;
-    const icon = (ITEMS as Record<string, { icon?: string } | undefined>)[this.weapon]?.icon;
-    if (icon && this.scene.textures.exists(icon)) return icon;
-    return "";
-  }
-
-  /** 무기 오버레이 생성/교체 — 무기 변경·전직 시 호출 */
-  refreshWeaponVisual() {
-    const tex = this.weaponTexOf();
-    if (!tex) {
-      if (this.weaponImg) { this.weaponImg.destroy(); this.weaponImg = null; }
-      return;
-    }
-    if (!this.weaponImg || !this.weaponImg.active) {
-      this.weaponImg = this.scene.add.image(this.x, this.y, tex)
-        .setDepth((this.depth || 0) + 1)
-        .setScale(0.42)
-        .setOrigin(0.15, 0.85);
-    } else if (this.weaponImg.texture.key !== tex) {
-      this.weaponImg.setTexture(tex);
-    }
-  }
-
-  /** 무기 오버레이를 플레이어 위치·방향에 맞춘다 */
-  private syncWeaponVisual() {
-    const w = this.weaponImg;
-    if (!w) return;
-    if (!w.active) { this.weaponImg = null; return; }
-    const faceLeft = this.facing.x < 0;
-    /* 손 위치 — 몸 중심에서 바라보는 쪽으로 조금 앞, 아래로 살짝 */
-    w.setPosition(this.x + (faceLeft ? -10 : 10), this.y + 4);
-    w.setFlipX(faceLeft);
-    w.setDepth((this.depth || 0) + 1);
-    /* 공격 중이면 휘두르는 느낌 — 회전 */
-    if (this.state === "attack") {
-      const t = Phaser.Math.Clamp(1 - this.lungeTime / 160, 0, 1);
-      w.setRotation((faceLeft ? 1 : -1) * (0.9 - t * 1.7));
-    } else {
-      w.setRotation(faceLeft ? -0.35 : 0.35);
-    }
   }
 
   /** 로비 생성 시 고른 외형 색조 설정 (소유권 검사 불요 — 외형은 무료 커스텀) */

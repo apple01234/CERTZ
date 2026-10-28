@@ -1061,6 +1061,14 @@ export class WorldScene extends Phaser.Scene {
     if (typeof savedPlayer.maxHp === "number" && savedPlayer.maxHp > 0) {
       this.player.maxHp = savedPlayer.maxHp;
       this.player.hp = this.player.maxHp;
+      /* v1.4.33 (긴급수정 — "포탈 탈 때마다 체력량이 늘어나는 버그")
+       *  세이브의 maxHp 에는 각종 보너스(컬렉션·세트·세계수·피규어)가 **이미 포함**돼 있다.
+       *  그런데 씬 전환마다 new Player() 가 bonusHpApplied=0 으로 시작하므로
+       *  syncBonusHp() 가 "보너스가 아직 안 더해졌다"고 오판해 같은 값을 또 더했다.
+       *  → 포탈을 탈 때마다 최대 HP 가 계속 증가.
+       *  세이브에 기록된 적용분을 복원해 델타를 0으로 만든다.
+       *  (구 세이브에 bonusHp 항목이 없으면 0 → 첫 1회만 더해지고 이후 안정) */
+      this.player.restoreBonusHp(savedPlayer.bonusHp ?? 0);
     }
     // 레벨업 MP 성장 복원 (v1.9 — 구 세이브는 60 유지)
     if (typeof savedPlayer.maxMp === "number") {
@@ -14011,16 +14019,16 @@ export class WorldScene extends Phaser.Scene {
 
   /** 집 격자 좌표 → 월드 좌표 (실내 832x832, 벽 여백 제외 32~800) */
   private homeCellX(cx: number): number {
-    /* v1.4.32 (유저 지시 #4 "집에서 가구 배치시 집 전체가 아닌 한곳에만 몰려서 배치되는 버그") —
-     *  HomePanel 은 8x6 격자(HOME_GRID_COLS/ROWS)의 셀 인덱스를 보내는데, 여기서는
-     *  24x22 로 클램프하고 있었다. 패널이 보낼 수 있는 최대값이 7/5 인데 23/21 까지
-     *  허용하니 좌표가 좁은 영역에만 몰려 배치됐다. 격자를 패널과 일치시킨다. */
-    const HOME_COLS = 8, HOME_ROWS = 6;
-    return 32 + Math.max(0, Math.min(HOME_COLS - 1, Math.round(cx))) * 32 + 16;
+    /* v1.4.33 (긴급수정 — "또 가구 배치 1칸안에 다되는 버그") —
+     *  v1.4.32 에서 HomePanel 의 8x6 격자에 맞춰 클램프를 8/6 으로 줄였는데,
+     *  실제 집 실내는 832x832(24x22 격자)이다. 그래서 8칸까지만 배치되고
+     *  나머지 공간이 전부 같은 자리로 눌려 "한 칸에 다 몰리는" 것처럼 보였다.
+     *  벽 여백(32~800)을 채우는 원래 격자로 되돌린다. */
+    return 32 + Math.max(0, Math.min(23, Math.round(cx))) * 32 + 16;
   }
   private homeCellY(cy: number): number {
-    const HOME_ROWS = 6;
-    return 104 + Math.max(0, Math.min(HOME_ROWS - 1, Math.round(cy))) * 32 + 16;
+    /* v1.4.33 (긴급수정) — X 와 동일 이유로 22칸으로 복원 */
+    return 104 + Math.max(0, Math.min(21, Math.round(cy))) * 32 + 16;
   }
 
   /** 꾸미기 상호작용 지점 — 집 실내 우측 하단 */
@@ -15451,6 +15459,7 @@ export class WorldScene extends Phaser.Scene {
       upArm: this.player.upgrades.armor,
       starMap: { ...this.player.starMap }, // vc145 (#16) — 아이템 단위 스타포스 (진짜 원천)
       sfHp: this.player.starHpApplied,
+      bonusHp: this.player.bonusHpAppliedVal, // v1.4.33 — 포탈 이동 시 HP 중복 가산 방지
       accUp: { ...this.player.accUp },
       starBless: this.player.starBless,
       accHp: this.player.accHpAppliedVal,
@@ -15748,6 +15757,7 @@ export class WorldScene extends Phaser.Scene {
       upArm: this.player.upgrades.armor,
       starMap: { ...this.player.starMap }, // vc145 (#16) — 아이템 단위 스타포스 (진짜 원천)
       sfHp: this.player.starHpApplied,
+      bonusHp: this.player.bonusHpAppliedVal, // v1.4.33 — 포탈 이동 시 HP 중복 가산 방지
       accUp: { ...this.player.accUp },
       starBless: this.player.starBless,
       accHp: this.player.accHpAppliedVal,

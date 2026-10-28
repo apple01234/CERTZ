@@ -137,6 +137,13 @@ export function spawnSkillImpact(
   opts: { scale?: number; ringTex?: string; hitTex?: string; ringDep?: number; hitDep?: number } = {},
 ) {
   const s = opts.scale ?? 1;
+  /* v1.4.33 (긴급수정 — "전사 스킬 사용시 캐릭터 멈추는 버그")
+   *  스킬 1·3·4 가 한 번에 2겹씩 만들면 기존 vf_* 연출과 합쳐져 프레임이 끊겼다.
+   *  저사양 게이트(__sertzFxLevel===0)에서는 아예 생략하고, 평소에도 1겹만 쓴다. */
+  try {
+    if ((scene.game as unknown as { __sertzFxLevel?: number }).__sertzFxLevel === 0) return;
+  } catch { /* 무시 */ }
+
   const ring = vfImage(scene, opts.ringTex ?? "fx_Circle2", x, y, tint);
   if (ring) {
     /* vfImage 가 depth 24 를 기본으로 잡으므로 **호출 후** 덮어써야 한다(순서 중요). */
@@ -146,7 +153,9 @@ export function spawnSkillImpact(
       onComplete: () => ring.destroy(),
     });
   }
-  const hit = vfImage(scene, opts.hitTex ?? "fx_FlashFree1", x, y, tint);
+  /* 히트 섬광은 궁극기에서만 쓴다 — 일반 스킬은 링 하나로 충분(부하 절감). */
+  if (opts.hitTex === undefined) return;
+  const hit = vfImage(scene, opts.hitTex, x, y, tint);
   if (hit) {
     hit.setDepth(opts.hitDep ?? 23).setAlpha(0.9).setScale(0.35 * s);
     scene.tweens.add({

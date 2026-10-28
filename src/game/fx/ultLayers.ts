@@ -327,11 +327,13 @@ export function playUltLayers(
   addFx(p.burstKey, 22, 0.35, 2.2, 0.9, 420, 100);
 
   /* v1.4.32 (지시 #5·#7·#13) — 밀집 타격 레이어.
-   *  각 직업의 피해 스케줄(200~280ms 간격)은 그대로 두고, 그 사이를 40ms 간격의
-   *  시각 전용 잔상으로 채운다. 이 한 줄로 34직업 전부의 시간 밀도가 올라간다. */
+   *  v1.4.33 (긴급수정 — "전사 스킬 사용시 캐릭터 멈추는 버그")
+   *  16개를 40ms 간격으로 만들면 전사 스킬의 기존 연출(9연타 + 종결)과 겹쳐
+   *  한 프레임에 오브젝트가 몰린다. 저사양·Canvas 렌더러에서 프레임이 끊겨
+   *  캐릭터가 멈춘 것처럼 보였다. 개수를 절반으로 줄이고 간격을 늘린다. */
   playUltBarrage(scene, x, y, tint, {
-    count: Math.round(16 * s),
-    spanMs: Math.round(900 * s),
+    count: Math.max(6, Math.round(8 * s)),
+    spanMs: Math.round(1100 * s),
     radius: 140 * s,
     scale: s,
   });
