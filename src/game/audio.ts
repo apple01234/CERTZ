@@ -985,6 +985,23 @@ export const sfx = {
   metalScrape() { play("metal_scrape", 0.36, 1.05); },
   /** 플레이어 기합 — 스킬 발동(낮은 확률로 얹어 생동감) */
   playerEffort() { play("pc_effort", 0.26, 0.95 + Math.random() * 0.1); },
+
+  /* ================= v1.4.32 (유저 지시 #1 "Sfx 개별로임 + 적절히 배치가 안됨") =================
+   *  원소별 SFX 48종(sfx_aoe_*_cast / _burst)이 부팅 때 로드만 되고 실제로는
+   *  한 번도 재생되지 않았다(호출부 0건). 스킬마다 원소를 판정해 개별 사운드를 낸다.
+   *  cast = 시전음, burst = 폭발/종결음. 원소가 없으면 기존 swing() 폴백. */
+  /** 스킬 시전음 — 원소별 */
+  elemCast(elem: string) {
+    const e = normalizeElem(elem);
+    if (e) { play(`sfx_aoe_${e}_cast`, SFX_VOLUMES[`sfx_aoe_${e}_cast`] ?? SFX_VOLUMES.sfx_aoe_cast, 0.96 + Math.random() * 0.08); return; }
+    play("sfx_aoe_cast", SFX_VOLUMES.sfx_aoe_cast, 0.96 + Math.random() * 0.08);
+  },
+  /** 스킬 폭발·종결음 — 원소별 */
+  elemBurst(elem: string) {
+    const e = normalizeElem(elem);
+    if (e) { play(`sfx_aoe_${e}_burst`, SFX_VOLUMES[`sfx_aoe_${e}_burst`] ?? SFX_VOLUMES.sfx_aoe_burst, 0.96 + Math.random() * 0.08); return; }
+    play("sfx_aoe_burst", SFX_VOLUMES.sfx_aoe_burst, 0.96 + Math.random() * 0.08);
+  },
 };
 
 /** v1.3.0 — 원소 → Drive 팩 AoE 사운드 파일 접두 매핑 */
