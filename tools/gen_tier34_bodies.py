@@ -42,8 +42,8 @@ TIER34 = [
     ("chronicle",     "sage",        0xe2e8ff),
     ("nightblade",    "assassin",    0xc08aff),
     ("duelist",       "swashbuckler", 0xffd8ff),
-    ("stormcaptain",  "berserker",   0x8fe8ff),   # 2차 corsair/raider 시트 자체가 없다(실측 0장)
-    ("powdermaster",  "berserker",   0xff9a5c),   # → 실루엣이 가장 가까운 전사형에서 색조만 돌린다
+    ("stormcaptain",  "corsair",     0x8fe8ff),
+    ("powdermaster",  "raider",      0xff9a5c),
     # 4차
     ("warbringer",    "berserker",   0xff3c1c),
     ("crusader",      "guardian",    0xffe29a),
@@ -53,8 +53,20 @@ TIER34 = [
     ("eternal",       "sage",        0xffffff),
     ("shadowlord",    "assassin",    0xa86aff),
     ("blademaster",   "swashbuckler", 0xffaaff),
-    ("seaking",       "berserker",   0x5fd4ff),
-    ("dreadnought",   "berserker",   0xff6a3d),
+    ("seaking",       "corsair",     0x5fd4ff),
+    ("dreadnought",   "raider",      0xff6a3d),
+]
+
+# v1.4.38 (#4 "해적류 직업 전직시 외형 안바뀜") —
+#  원본 배급 팩에 해적 2차 시트(corsair/raider/pirate)가 **아예 없었다**(실측 0장).
+#  그래서 해적 계열은 2차 전직에서도 외형이 안 바뀌고, 3·4차도 berserker 를 베이스로
+#  만들 수밖에 없었다. 여기서 해적 2차 3종을 먼저 만들고, 위 TIER34 가 그것을
+#  베이스로 쓰게 한다 — 그래야 해적 계열 전체가 일관된 실루엣을 갖는다.
+#  베이스는 swashbuckler(검을 든 날렵한 실루엣) — 해적의 커틀러스/사브르와 가장 가깝다.
+TIER2_PIRATE = [
+    ("pirate",   "swashbuckler", 0xffd76a),   # 1차 해적 계열 색
+    ("raider",   "swashbuckler", 0xffb347),   # 2차 — 포격형(주황)
+    ("corsair",  "swashbuckler", 0x64e0c8),   # 2차 — 커틀러스형(청록)
 ]
 
 # 2차 시트의 28프레임 (7상태 x 4)
@@ -114,29 +126,37 @@ def main():
         return 1
 
     made = skipped = 0
-    for key, base, hexc in TIER34:
-        for gender in ("m", "f"):
-            src_pref = f"job{gender}_{base}"
-            dst_pref = f"job{gender}_{key}"
-            # 이미 있으면 건너뛴다(멱등)
-            probe = os.path.join(ASSETS, f"{dst_pref}_idle0.webp")
-            if os.path.exists(probe):
-                skipped += 1
-                continue
-            n = 0
-            for st in STATES:
-                for i in range(4):
-                    sp = os.path.join(ASSETS, f"{src_pref}_{st}{i}.webp")
-                    if not os.path.exists(sp):
-                        continue
-                    src = np.array(Image.open(sp).convert("RGBA"))
-                    out = recolor(src, hexc)
-                    dp = os.path.join(ASSETS, f"{dst_pref}_{st}{i}.webp")
-                    if args.apply:
-                        Image.fromarray(out, "RGBA").save(dp, "WEBP", quality=95, method=6)
-                    n += 1
-            made += 1
-            print(f"  {dst_pref:26s} ← {src_pref:24s} {n}프레임  hex=#{hexc:06x}")
+    # v1.4.38 (#4) — 해적 2차를 **먼저** 만든다. TIER34 의 해적 3·4차가
+    #  corsair/raider 를 베이스로 참조하므로 순서가 중요하다.
+    for group in (TIER2_PIRATE, TIER34):
+        for key, base, hexc in group:
+            for gender in ("m", "f"):
+                src_pref = f"job{gender}_{base}"
+                dst_pref = f"job{gender}_{key}"
+                # 이미 있으면 건너뛴다(멱등)
+                probe = os.path.join(ASSETS, f"{dst_pref}_idle0.webp")
+                if os.path.exists(probe):
+                    skipped += 1
+                    continue
+                # 베이스 시트가 없으면 건너뛴다(조용한 __MISSING 방지)
+                if not os.path.exists(os.path.join(ASSETS, f"{src_pref}_idle0.webp")):
+                    print(f"  SKIP {dst_pref} — 베이스 {src_pref} 없음")
+                    skipped += 1
+                    continue
+                n = 0
+                for st in STATES:
+                    for i in range(4):
+                        sp = os.path.join(ASSETS, f"{src_pref}_{st}{i}.webp")
+                        if not os.path.exists(sp):
+                            continue
+                        src = np.array(Image.open(sp).convert("RGBA"))
+                        out = recolor(src, hexc)
+                        dp = os.path.join(ASSETS, f"{dst_pref}_{st}{i}.webp")
+                        if args.apply:
+                            Image.fromarray(out, "RGBA").save(dp, "WEBP", quality=95, method=6)
+                        n += 1
+                made += 1
+                print(f"  {dst_pref:26s} ← {src_pref:24s} {n}프레임  hex=#{hexc:06x}")
 
     print(f"\n생성 {made}종 / 건너뜀 {skipped}종 / 모드={'APPLY' if args.apply else 'DRY-RUN'}")
     return 0

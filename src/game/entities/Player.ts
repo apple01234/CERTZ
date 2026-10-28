@@ -307,10 +307,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   readonly skill2Max = 6000;
   /** 클래스 cdMult 반영 실효 쿨다운 (v3.3.0 — 5차 각성 시 -15%) */
   get skill1MaxEff(): number {
-    return Math.round(this.skill1Max * this.clsBonus.cdMult * (this.isFifth ? FIFTH_CD_MULT : 1));
+    /* v1.4.38 (유저 지시 #13 "스킬 개편에 많은 시간을 투자해") —
+     *  차수가 올라가도 쿨다운이 그대로여서 "강해진 느낌"이 없었다.
+     *  n차 사다리를 쿨다운에도 적용: 1차 ×1.00 / 2차 ×0.92 / 3차 ×0.84 / 4차 ×0.76 / 5차 ×0.68.
+     *  (배율은 rollDamage 의 tierScl 이 이미 올려준다 — 쿨다운은 손대지 않아 체감 DPS 가
+     *   차수마다 정체되던 부분을 여기서 회수한다.) */
+    const tierCd = Math.max(0.68, 1 - 0.08 * Math.max(0, this.sTier - 1));
+    return Math.round(this.skill1Max * this.clsBonus.cdMult * tierCd * (this.isFifth ? FIFTH_CD_MULT : 1));
   }
   get skill2MaxEff(): number {
-    return Math.round(this.skill2Max * this.clsBonus.cdMult * (this.isFifth ? FIFTH_CD_MULT : 1));
+    /* v1.4.38 (지시 #13) — skill1 과 동일한 n차 쿨다운 사다리 */
+    const tierCd = Math.max(0.68, 1 - 0.08 * Math.max(0, this.sTier - 1));
+    return Math.round(this.skill2Max * this.clsBonus.cdMult * tierCd * (this.isFifth ? FIFTH_CD_MULT : 1));
   }
   private mpRegenAcc = 0;
 
