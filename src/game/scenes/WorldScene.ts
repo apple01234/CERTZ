@@ -1463,6 +1463,11 @@ export class WorldScene extends Phaser.Scene {
     const CH_GROUND_TINT: Record<string, number> = { niflheim: 0xc4d6ea }; // vc147 (#21) — 0x70819c→밝은 설원톤 (눈 지형 체감 복원)
     const gTint = CH_GROUND_TINT[parseStage(stageKey).ch];
     const groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
+    /* v1.4.31 (타일 에셋 교체) — 지면 타일이 47종 전부 256x256 이다.
+     *  TileSprite 는 텍스처를 원본 크기(256px)로 반복하므로 그대로 두면 화면에
+     *  256px 짜리 거대한 격자가 찍힌다(바둑판). 게임 타일 격자는 32px 이므로
+     *  1/8 로 축소해 반복 단위를 맞춘다. */
+    groundTs.setTileScale(0.125);
     if (gTint) groundTs.setTint(gTint);
     // v3.0.14 — 도로 표시 완전 제거: 가로/세로 일자 도로가 단조롭다는 피드백 ("길이 일자로만 되어있어")
     //  지형은 테마 바닥 타일링만 남기고, 빈 지형은 placeDecor의 나무·바위·장식 배치로 자연감을 채운다.
