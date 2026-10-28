@@ -371,6 +371,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* ---------------- 메인 업데이트 ---------------- */
 
   update(dt: number, move: Phaser.Math.Vector2, attackPressed: boolean) {
+    /* v1.4.32 (지시 #10) — 무기 오버레이가 캐릭터를 따라가게 매 프레임 동기화 */
+    this.syncWeaponVisual();
     if (this.state === "dead") return;
     const ms = dt;
 
@@ -7333,6 +7335,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* ---------------- v3.0.22 (#50) — 세계수의 가호 ---------------- */
   /** 결정 전부 수집 보너스 활성 여부 (세이브) */
   worldtreeBlessing = false;
+  /* v1.4.32 (유저 지시 #9 "n차 즉 차수가 점점 올라갈수록 예전 스킬 및 기본공격도
+   * 눈에 띄게 강화해") — 환생 차수(rebirths)를 데미지 배율에 직접 반영한다.
+   *  종전엔 환생 보너스가 atkPct(스탯)에만 들어가 스킬 자체는 그대로였다.
+   *  여기서는 기본공격과 모든 스킬에 공통으로 곱해 차수 체감을 만든다.
+   *  rebirths 1회당 +12%, 상한 없음(무한 성장은 infinite 시스템 설계 의도). */
+  rebirths = 0;
+  /** 환생 차수 설정 — 데미지 배율에 즉시 반영 */
+  setRebirths(n: number) {
+    const v = Math.max(0, Math.floor(Number.isFinite(n) ? n : 0));
+    if (this.rebirths === v) return;
+    this.rebirths = v;
+  }
+  /** 환생 차수 데미지 배율 (1.0 = 0차) */
+  private get rebirthDmgMult(): number {
+    return 1 + 0.12 * this.rebirths;
+  }
   /** 세계수의 가호 설정/해제 — atkTotal/defTotal/syncBonusHp에 즉시 반영 */
   setWorldtreeBlessing(on: boolean) {
     if (this.worldtreeBlessing === on) return;
@@ -7460,7 +7478,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  "높은 차수 스킬이 평타보다 약하다" 해소 — 평타 대비 스킬 격차를 차수마다 확대
      *  1차 ×1.25 / 2차 ×1.53 / 3차 ×1.80 / 4차 ×2.08 / 5차 ×2.36 (×skillMult 곱) */
     const tierScl = isSkill && !isUlt ? (1 + 0.22 * Math.max(0, this.sTier - 1)) * Player.SKILL_PWR : 1;
-    const m = (isSkill ? mult * this.clsBonus.skillMult * fifth * runSkl * tierScl * ultMult : mult) * rage;
+    const m = (isSkill ? mult * this.clsBonus.skillMult * fifth * runSkl * tierScl * ultMult : mult) * rage * this.rebirthDmgMult;
     const dmg = Math.round(this.atkTotal * m * (crit ? this.critDmg : 1));
     /* vc146 (#2) — 시간 역행 로그 적산 (최근 6초 유지 — 이터널 제2궁극기가 재현 배수로 사용)
      *  v1.0.16 — 링 버퍼 기록 (cap 도달 전까지는 growth, 이후 슬롯 재사용 — 할당 0) */
@@ -8185,6 +8203,69 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.scene.anims.exists(mapped)) this.play(mapped, true);
     }
     this.applyLookTint();
+    this.refreshWeaponVisual();
+  }
+
+  /* ================= v1.4.32 (유저 지시 #10 "직업별 무기 어디감???") =================
+   *  종전엔 weapon 필드가 스탯 계산에만 쓰이고 화면에는 아무것도 그려지지 않았다.
+   *  캐릭터 시트에 무기가 이미 그려져 있지 않으므로, 장착 무기를 작은 오버레이
+   *  이미지로 손 옆에 붙인다.
+   *  · 계열(family)에 따라 무기 아이콘을 고른다 — 검/활/지팡이/단검
+   *  · 방향(facing)에 따라 좌우 반전 + 위치 오프셋
+   *  · syncWeaponVisual 이 매 프레임 플레이어를 따라간다 */
+  private weaponImg: Phaser.GameObjects.Image | null = null;
+
+  /** 계열별 무기 아이콘 텍스처 (없으면 장착 무기 아이콘) */
+  private weaponTexOf(): string {
+    const fam = familyOf(this.cls);
+    const byFam: Record<string, string> = {
+      warrior: "item_weapon_3",   // 대검
+      archer: "item_weapon_2",    // 활 대용 검
+      mage: "item_weapon_5",      // 마검(스태프 대용)
+      rogue: "item_weapon_1",     // 단검
+      priest: "item_weapon_4",
+    };
+    const famTex = fam ? byFam[fam] : null;
+    if (famTex && this.scene.textures.exists(famTex)) return famTex;
+    const icon = (ITEMS as Record<string, { icon?: string } | undefined>)[this.weapon]?.icon;
+    if (icon && this.scene.textures.exists(icon)) return icon;
+    return "";
+  }
+
+  /** 무기 오버레이 생성/교체 — 무기 변경·전직 시 호출 */
+  refreshWeaponVisual() {
+    const tex = this.weaponTexOf();
+    if (!tex) {
+      if (this.weaponImg) { this.weaponImg.destroy(); this.weaponImg = null; }
+      return;
+    }
+    if (!this.weaponImg || !this.weaponImg.active) {
+      this.weaponImg = this.scene.add.image(this.x, this.y, tex)
+        .setDepth((this.depth || 0) + 1)
+        .setScale(0.42)
+        .setOrigin(0.15, 0.85);
+    } else if (this.weaponImg.texture.key !== tex) {
+      this.weaponImg.setTexture(tex);
+    }
+  }
+
+  /** 무기 오버레이를 플레이어 위치·방향에 맞춘다 */
+  private syncWeaponVisual() {
+    const w = this.weaponImg;
+    if (!w) return;
+    if (!w.active) { this.weaponImg = null; return; }
+    const faceLeft = this.facing.x < 0;
+    /* 손 위치 — 몸 중심에서 바라보는 쪽으로 조금 앞, 아래로 살짝 */
+    w.setPosition(this.x + (faceLeft ? -10 : 10), this.y + 4);
+    w.setFlipX(faceLeft);
+    w.setDepth((this.depth || 0) + 1);
+    /* 공격 중이면 휘두르는 느낌 — 회전 */
+    if (this.state === "attack") {
+      const t = Phaser.Math.Clamp(1 - this.lungeTime / 160, 0, 1);
+      w.setRotation((faceLeft ? 1 : -1) * (0.9 - t * 1.7));
+    } else {
+      w.setRotation(faceLeft ? -0.35 : 0.35);
+    }
   }
 
   /** 로비 생성 시 고른 외형 색조 설정 (소유권 검사 불요 — 외형은 무료 커스텀) */

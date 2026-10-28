@@ -1243,6 +1243,8 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.22 (#43/#44/#50) — 결정 수집 기록 + 세계수의 가호 복원 */
     this.fragmentsFound = { ...(savedPlayer.fragmentsFound ?? {}) };
     this.player.setWorldtreeBlessing(!!savedPlayer.worldtreeBlessing);
+    /* v1.4.32 (지시 #9) — 환생 차수를 데미지 배율에 주입 (기본공격·모든 스킬 공통) */
+    this.player.setRebirths(this.inf.rebirths);
     /* v3.0.28 (#보스난이도) — 진행 중이던 보스전 난이도 복원 (재접속 시 이지 선택 후 노말로 나오는 문제 방지) */
     if (savedPlayer.bossDiff && savedPlayer.bossDiff in BOSS_DIFFS) {
       this.bossDiff = savedPlayer.bossDiff as BossDiffKey;
@@ -1463,11 +1465,12 @@ export class WorldScene extends Phaser.Scene {
     const CH_GROUND_TINT: Record<string, number> = { niflheim: 0xc4d6ea }; // vc147 (#21) — 0x70819c→밝은 설원톤 (눈 지형 체감 복원)
     const gTint = CH_GROUND_TINT[parseStage(stageKey).ch];
     const groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
-    /* v1.4.31 (타일 에셋 교체) — 지면 타일이 47종 전부 256x256 이다.
-     *  TileSprite 는 텍스처를 원본 크기(256px)로 반복하므로 그대로 두면 화면에
-     *  256px 짜리 거대한 격자가 찍힌다(바둑판). 게임 타일 격자는 32px 이므로
-     *  1/8 로 축소해 반복 단위를 맞춘다. */
-    groundTs.setTileScale(0.125);
+    /* v1.4.32 (유저 지시 #3 "타일맵 ㅈㄴ 작은게 여러개 배치되있는 버그. 크게크게 배치 ㄱㄱ") —
+     *  vc201 에서 256px 에셋 타일을 반복 단위 32px 에 맞추려고 setTileScale(0.125) 를 걸었는데,
+     *  그 결과 256px 짜리 질감이 32px 로 눌려 화면 전체가 잘게 반복되는 격자로 보였다.
+     *  타일 에셋은 256px 그대로 크게 깔아야 질감이 읽힌다 → 배율 1.0 (원본 크기 반복).
+     *  반복 주기가 256px 이므로 격자도 눈에 덜 띄고, 에셋 질감이 그대로 살아난다. */
+    groundTs.setTileScale(1);
     if (gTint) groundTs.setTint(gTint);
     // v3.0.14 — 도로 표시 완전 제거: 가로/세로 일자 도로가 단조롭다는 피드백 ("길이 일자로만 되어있어")
     //  지형은 테마 바닥 타일링만 남기고, 빈 지형은 placeDecor의 나무·바위·장식 배치로 자연감을 채운다.
@@ -1735,6 +1738,9 @@ export class WorldScene extends Phaser.Scene {
     }
     /* ---------- 복귀 차원문 (v2.0 — 이전 구역 자유 왕복, 지시 #8 / 실내 제외) ---------- */
     if (!this.isInterior) this.spawnReturnPortal();
+    /* v1.4.32 (유저 지시 #8) — DLC 해금(세계수 구원 판정) 후 미드가르드 마을 스타게이트.
+     *  worldtreeBlessing 이 켜지면 마을 중앙에 스타게이트가 열린다. */
+    if (!this.isInterior) this.spawnStargate();
     /* v4.1.0 — 포탈 화면 밖 방향 가이드 (지시 #14) */
     this.createPortalGuides();
 
@@ -3224,6 +3230,40 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /* ================= 복귀 차원문 (v2.0 — 메이플식 자유 왕복, 지시 #8) ================= */
+
+  /* v1.4.32 (유저 지시 #8) — DLC 해금 후 미드가르드 스타게이트.
+   *  세계수의 가호(worldtreeBlessing, 아홉 결정 전부 수집)를 얻으면 마을 중앙에
+   *  별빛 게이트가 열린다. 미해금 상태에서는 옅은 잔광만 남겨 "아직 닫혀 있다"를
+   *  시각적으로 알린다(진입 불가). */
+  private stargate: Phaser.GameObjects.Image | null = null;
+  private spawnStargate() {
+    if (this.stageDef.key !== "village" || !this.player) return;
+    const open = !!this.player.worldtreeBlessing;
+    const gx = this.stageW * 0.5;
+    const gy = this.stageH * 0.42;
+    /* 닫힌 상태에서도 위치를 알 수 있게 흐린 석조 표식은 항상 둔다 */
+    const base = this.add.image(gx, gy + 26, "tile_marble").setDepth(1).setScale(0.5).setAlpha(open ? 0.55 : 0.28);
+    if (!open) {
+      this.add.text(gx, gy - 6, "봉인된 성문", {
+        fontFamily: "Galmuri11, sans-serif", fontSize: "10px", color: "#9fb0c8",
+      }).setOrigin(0.5).setDepth(3).setAlpha(0.7);
+      void base;
+      return;
+    }
+    const gate = this.add.image(gx, gy, "glow").setDepth(2).setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0x9ad0ff).setScale(1.25).setAlpha(0.5);
+    this.stargate = gate;
+    this.tweens.add({ targets: gate, alpha: 0.85, scale: 1.5, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.add.particles(gx, gy, "cfxr_mstar", {
+      lifespan: 1100, frequency: 180, quantity: 1,
+      scale: { start: 0.5, end: 0 }, alpha: { start: 0.9, end: 0 },
+      x: { min: -22, max: 22 }, y: { min: -26, max: 26 },
+      tint: [0x9ad0ff, 0xd8ecff, 0x7fa8ff],
+    }).setDepth(3);
+    this.add.text(gx, gy - 54, "스타게이트 — 열렸다", {
+      fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#bfe0ff",
+    }).setOrigin(0.5).setDepth(4);
+  }
 
   /** 이전 구역으로 돌아가는 청록 차원문 — 스폰 지점 왼쪽에 항상 활성 */
   private spawnReturnPortal() {
@@ -7217,6 +7257,8 @@ export class WorldScene extends Phaser.Scene {
     ].slice(-30);
     this.inf.rebirths++;
     this.inf.abyss += REBIRTH_ABYSS;
+    /* v1.4.32 (지시 #9) — 환생 직후 새 차수를 즉시 반영 (기본공격·스킬 강화) */
+    this.player.setRebirths(this.inf.rebirths);
     /* 레벨/경험치/AP 초기화 — 자동배분이 켜져 있으면 레벨업마다 자동 재분배 */
     this.player.lv = 1;
     this.player.exp = 0;
@@ -13969,10 +14011,16 @@ export class WorldScene extends Phaser.Scene {
 
   /** 집 격자 좌표 → 월드 좌표 (실내 832x832, 벽 여백 제외 32~800) */
   private homeCellX(cx: number): number {
-    return 32 + Math.max(0, Math.min(23, Math.round(cx))) * 32 + 16;
+    /* v1.4.32 (유저 지시 #4 "집에서 가구 배치시 집 전체가 아닌 한곳에만 몰려서 배치되는 버그") —
+     *  HomePanel 은 8x6 격자(HOME_GRID_COLS/ROWS)의 셀 인덱스를 보내는데, 여기서는
+     *  24x22 로 클램프하고 있었다. 패널이 보낼 수 있는 최대값이 7/5 인데 23/21 까지
+     *  허용하니 좌표가 좁은 영역에만 몰려 배치됐다. 격자를 패널과 일치시킨다. */
+    const HOME_COLS = 8, HOME_ROWS = 6;
+    return 32 + Math.max(0, Math.min(HOME_COLS - 1, Math.round(cx))) * 32 + 16;
   }
   private homeCellY(cy: number): number {
-    return 104 + Math.max(0, Math.min(21, Math.round(cy))) * 32 + 16;
+    const HOME_ROWS = 6;
+    return 104 + Math.max(0, Math.min(HOME_ROWS - 1, Math.round(cy))) * 32 + 16;
   }
 
   /** 꾸미기 상호작용 지점 — 집 실내 우측 하단 */

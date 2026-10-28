@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { EventBus, type PanelKind, type RpgState, type HudState, type QuestLogState } from "./EventBus";
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, upgradeCost, autoAllocPlan,
@@ -639,7 +640,17 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
     setConfirmBuy({ key: k, qty: stack ? n : 1, cost: unit * (stack ? n : 1), label: it.name });
   };
   /* v1.0.3 (#0르쯔) — 이중 방어: bmPrice(에메랄드 가격)가 없는 아이템은 데이터에 남아있어도 진열하지 않는다 */
-  const stock = BM_STOCK.filter((k) => (ITEMS[k]?.bmPrice ?? 0) > 0 && (cat === "all" || catOf(k) === cat));
+  /* v1.4.32 (유저 지시 #11 "가방에 검색기능 있는거 처럼 상점에도 검색기능 만들어") —
+   *  가방(InventoryPanel)의 검색과 같은 방식: 소문자 부분일치로 이름/키를 모두 본다. */
+  const [q, setQ] = useState("");
+  const stock = BM_STOCK.filter((k) => {
+    if ((ITEMS[k]?.bmPrice ?? 0) <= 0) return false;
+    if (cat !== "all" && catOf(k) !== cat) return false;
+    if (!q.trim()) return true;
+    const needle = q.trim().toLowerCase();
+    const nm = (ITEMS[k]?.name ?? "").toLowerCase();
+    return nm.includes(needle) || String(k).toLowerCase().includes(needle);
+  });
   /* v1.0.16 (F1) — 캐시상점 키보드 내비. 골드상점·전직에만 있던 useListNav를 여기에도 붙인다.
    *  같은 훅을 재사용하므로 방향키 순회·E 확정·자동 스크롤·게임 키 차단이 그대로 동작한다.
    *  확정은 B2의 확인 모달(askBuy)을 거치므로 E 연타로도 즉시 결제되지 않는다. */
@@ -733,6 +744,21 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
         </div>
 
         {/* v4.3.0 — 카테고리 탭 (BM 카탈로그 {BM_STOCK.length}종) */}
+        {/* v1.4.32 (지시 #11) — 상점 검색. 가방 검색과 동일한 소문자 부분일치. */}
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="상점 아이템 검색…"
+            aria-label="상점 아이템 검색"
+            className="min-w-0 flex-1 rounded-md border border-white/15 bg-black/50 px-2.5 py-1.5 text-[11px] font-bold text-white placeholder:text-white/35 focus:border-cyan-300/60 focus:outline-none"
+          />
+          {q && (
+            <button onClick={() => setQ("")} aria-label="검색어 지우기" className="shrink-0 rounded-md border border-white/15 bg-black/40 px-2 py-1.5 text-[11px] font-black text-white/65 hover:bg-black/60">
+              ✕
+            </button>
+          )}
+        </div>
         <div className="mb-1.5 flex flex-wrap gap-1">
           {CATS.map((c) => (
             <button
@@ -958,8 +984,8 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
             inset-0이 패널의 전체 스크롤 높이를 기준으로 잡혔다 → 처음 위치(맨 위)에 깔리고
             스크롤하면 화면 밖으로 밀려났다.
             해결: `fixed`로 뷰포트 고정(scroll 컨테이너 밖 기준). 배경 탭 취소·구분선은 유지. */}
-        {confirmBuy && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-3" onPointerDown={(e) => { e.stopPropagation(); setConfirmBuy(null); }}>
+        {confirmBuy && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-3" onPointerDown={(e) => { e.stopPropagation(); setConfirmBuy(null); }}>
             <div className="game-panel w-full max-w-[300px] p-3.5" onPointerDown={(e) => e.stopPropagation()}>
               <p className="text-[13px] font-black text-amber-200">정말 구매하시겠습니까?</p>
               <p className="mt-1 text-[11px] font-bold leading-relaxed text-white/65">
@@ -989,7 +1015,8 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>

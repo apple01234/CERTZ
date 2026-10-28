@@ -334,7 +334,11 @@ export class Cinematic3D {
     }
 
     if (group.children.length === 0) return false;
+    /* v1.4.32 (유저 지시 #6 "그냥 블렌더로 만든 짜치는 3d 모델 쓸꺼면 3d 효과 쓰지마
+     * (단, 3d 카메라 제외)") — 저품질 GLB 모델을 화면에 얹지 않는다.
+     *  모델 그룹은 씬에 붙이지 않고, 카메라 워크(줌·틸트·흔들림)만 재생한다. */
     this.scene.add(group);
+    group.visible = false;
     this.active = { root: group, startedAt: performance.now(), duration: job.duration, preset: job.preset };
     this.canvas.style.display = "block";
     this.startLoop(job);
