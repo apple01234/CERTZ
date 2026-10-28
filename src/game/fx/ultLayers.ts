@@ -148,6 +148,94 @@ type Scene3 = Phaser.Scene & {
 };
 
 /**
+ * v1.4.32 (지시 #5·#7·#13 "스킬 개편에 많은 시간을 투자해") — 밀집 타격 레이어.
+ *
+ *  [문제] 기존 궁극기의 타격 간격은 직업별 200~280ms 였다(warbringer 210ms,
+ *  crusader 200ms). 메이플 5·6차가 화려하게 읽히는 실제 이유는 색이나 폭발
+ *  크기가 아니라 **0.05초 간격의 15~30연타**라는 시간 밀도다. 간격이 4배
+ *  느리면 같은 오브젝트 수를 써도 "폭발 한 번"으로 읽힌다.
+ *
+ *  [해결] 피해 판정은 건드리지 않는다(밸런스 불변 — 각 직업의 delayedCall 은
+ *  그대로). 대신 그 사이를 채우는 **시각 전용 잔상 타격**을 45~55ms 간격으로
+ *  흩뿌린다. 실제 피해는 기존 스케줄이 결정하므로 프레임률·연출 시간에
+ *  피해가 의존하지 않는다는 원칙도 유지된다.
+ *
+ *  [에셋] fx2/(Hovl 512px 흰색 마스크) 8종만 사용 — tint 로 원소색을 입힌다.
+ */
+export function playUltBarrage(
+  scene: Scene3,
+  x: number,
+  y: number,
+  tint: number,
+  opts?: { count?: number; spanMs?: number; radius?: number; scale?: number },
+) {
+  const webgl = scene.game.renderer.type === Phaser.WEBGL;
+  const count = opts?.count ?? 18;
+  const span = opts?.spanMs ?? 820;
+  const radius = opts?.radius ?? 130;
+  const baseScale = (opts?.scale ?? 1) * 0.55;
+
+  /* 원소색에서 살짝 변주를 줘 단조로움을 피한다(같은 tint 반복은 도장 찍은 듯 보인다). */
+  const variants = [tint, 0xffffff, tint];
+
+  for (let i = 0; i < count; i++) {
+    const delay = Math.round((span / count) * i);
+    scene.time.delayedCall(delay, () => {
+      try {
+        const key = i % 5 === 4 ? "fx_Flare" : i % 3 === 2 ? "fx_Circle" : "fx_FlashFree3";
+        if (!scene.textures.exists(key)) return;
+        /* 플레이어 주변에 도넛 형태로 흩뿌린다 — 중앙에 몰리면 캐릭터가 가려진다. */
+        const a = (i / count) * Math.PI * 2 + Math.random() * 0.7;
+        const r = radius * (0.42 + Math.random() * 0.58);
+        const ix = x + Math.cos(a) * r;
+        const iy = y + Math.sin(a) * r * 0.62;
+        const im = scene.add
+          .image(ix, iy, key)
+          .setDepth(i % 2 === 0 ? 21 : 7)
+          .setScale(baseScale * (0.8 + Math.random() * 0.7))
+          .setAlpha(0.9)
+          .setTint(variants[i % variants.length])
+          .setRotation(Math.random() * Math.PI * 2);
+        if (webgl) im.setBlendMode(Phaser.BlendModes.ADD); // Canvas 는 ADD 미지원 — 알파만
+        scene.tweens.add({
+          targets: im,
+          scale: im.scale * (1.7 + Math.random() * 0.8),
+          alpha: 0,
+          duration: 170 + Math.random() * 90,
+          ease: "Quad.out",
+          onComplete: () => im.destroy(),
+        });
+      } catch { /* 씬 종료 경합 무시 */ }
+    });
+  }
+
+  /* 저속 잔상 — 화면 전체에 얇은 빛줄기를 3~4개 흘려 "시간이 늘어난" 느낌을 준다. */
+  for (let k = 0; k < 3; k++) {
+    scene.time.delayedCall(90 + k * 130, () => {
+      try {
+        if (!scene.textures.exists("fx_Flare")) return;
+        const im = scene.add
+          .image(x + (Math.random() - 0.5) * 90, y + (Math.random() - 0.5) * 50, "fx_Flare")
+          .setDepth(20)
+          .setScale(baseScale * 2.4, baseScale * 0.5)
+          .setAlpha(0.5)
+          .setTint(tint)
+          .setRotation((Math.random() - 0.5) * 0.9);
+        if (webgl) im.setBlendMode(Phaser.BlendModes.ADD);
+        scene.tweens.add({
+          targets: im,
+          alpha: 0,
+          scaleX: im.scaleX * 1.9,
+          duration: 260,
+          ease: "Cubic.out",
+          onComplete: () => im.destroy(),
+        });
+      } catch { /* 무시 */ }
+    });
+  }
+}
+
+/**
  * 극딜 3단계 연출을 한 번에 재생한다.
  *  - 암전: 카메라 위 고정(fixed) 검은 사각형을 알파 0→darken으로 올렸다 서서히 복귀
  *  - 후면 오라 / 지면 룬 / 전면 폭발: 서로 다른 depth로 분리해 공간감 형성
@@ -237,6 +325,16 @@ export function playUltLayers(
 
   // 전면 폭발 — 캐릭터 앞(depth 22). 짧고 강하게.
   addFx(p.burstKey, 22, 0.35, 2.2, 0.9, 420, 100);
+
+  /* v1.4.32 (지시 #5·#7·#13) — 밀집 타격 레이어.
+   *  각 직업의 피해 스케줄(200~280ms 간격)은 그대로 두고, 그 사이를 40ms 간격의
+   *  시각 전용 잔상으로 채운다. 이 한 줄로 34직업 전부의 시간 밀도가 올라간다. */
+  playUltBarrage(scene, x, y, tint, {
+    count: Math.round(16 * s),
+    spanMs: Math.round(900 * s),
+    radius: 140 * s,
+    scale: s,
+  });
 
   /* ── ③ 카메라·스크린 피드백 ── */
   try {
