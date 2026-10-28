@@ -58,7 +58,10 @@ TIER34 = [
 ]
 
 # 2차 시트의 28프레임 (7상태 x 4)
-STATES = ["idle", "walk", "walkup", "atk", "atkup", "atkdown", "die"]
+#  v1.4.36 후속 — walkside 누락 수리. BODY_FRAME_NAMES(textures.ts)는 28프레임을 요구하는데
+#  종전 STATES 에 walkside 가 없어 24프레임만 생성됐고, 좌우 이동 시
+#  jobm_<3·4차>_walkside*.webp 가 404 → __MISSING 텍스처로 떨어졌다(실측: HTTP 404).
+STATES = ["idle", "walk", "walkside", "walkup", "atk", "atkup", "atkdown", "die"]
 
 
 def hex_to_hls(h):
