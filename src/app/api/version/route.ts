@@ -8,13 +8,13 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.4.34";
-const LATEST_CODE = 198;
+const LATEST_VERSION = "1.4.37";
+const LATEST_CODE = 199;
 const VERSION_NOTE =
-  "v1.4.34 (vc198) — 긴급수정 9건. ①[치명] 효과음 누락 시 게임이 통째로 멈추던 크래시 수정(Audio key not found). ②포탈 탈 때마다 최대 HP가 늘어나던 버그 수정. ③효과음 36종을 원본으로 복구(먹먹하던 소리). ④타일맵 47종 원본 복구. ⑤집 가구가 한 칸에 몰리던 배치 버그 수정(24x22 격자). ⑥전사 스킬 사용 시 캐릭터가 멈추던 프레임 정지 완화. ⑦바닥에 흩어져 있던 불필요한 오브젝트 정리. ⑧직업별 무기 오버레이의 잔상·크기·회전 제거. ⑨WASD 모드에서 마우스 조준·클릭 공격 추가.";
+  "v1.4.37 (vc199) — 전직 외형 + 스킬 개편. ①3·4차 20직업이 드디어 자기 모습을 갖는다(종전엔 2차 외형을 그대로 승계해 '전직해도 그대로'였다). 남녀 40종 x 28프레임 = 1,120장 신규. ②Z(주력기)·C(기동기) 3·4차 20직업 전원 고유화(종전 16직업이 2차 스킬 재사용). ③좌우 이동 시 외형이 __MISSING 으로 깨지던 walkside 4프레임 누락 수리. ④차수 사다리 유지: 스킬 배율 1차 1.25 / 2차 1.53 / 3차 1.80 / 4차 2.08 / 5차 2.36.";
 const APK_MIRROR =
   /* vc179 — APK는 릴리스 태그 v1.3.1에 있다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.34/SERTZ-vc198.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.37/SERTZ-vc199.apk";
 
 export async function GET() {
   return NextResponse.json({
