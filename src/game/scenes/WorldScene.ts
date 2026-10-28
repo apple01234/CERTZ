@@ -9682,6 +9682,34 @@ export class WorldScene extends Phaser.Scene {
     const onTutNotify = (v: { ev?: string }) => { if (v?.ev) this.tut?.notify(v.ev); };
     EventBus.on("tut:notify", onTutNotify);
 
+    /* v1.4.33 (긴급수정 — "컴퓨터에서 wasd 배치로 바꿨을때 마우스로 공격 조준 및
+     * 클릭으로 기본 공격 기능 없는 버그")
+     *  WASD 스킴은 오른손이 마우스로 가므로 클릭 공격이 필수다.
+     *  · 마우스 위치 → 플레이어 기준 방향을 facing 에 넣어 조준(8방향 자유).
+     *  · 좌클릭 = 기본 공격(attackQueued), 우클릭 = 상호작용.
+     *  화살표 스킴에서는 종전과 동일하게 동작하지 않게 스킴을 검사한다. */
+    const onPointerAim = (ptr: Phaser.Input.Pointer) => {
+      if (this.moveScheme !== "wasd" || this.isInterior || !this.player || !this.player.active) return;
+      /* UI 위 클릭은 무시 — 패널/버튼 조작이 공격으로 새지 않게 */
+      if ((ptr.event?.target as HTMLElement | null)?.closest?.("button, input, a, [role=button]")) return;
+      const wp = this.cameras.main.getWorldPoint(ptr.x, ptr.y);
+      const dx = wp.x - this.player.x;
+      const dy = wp.y - this.player.y;
+      if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) return;
+      this.player.facing.set(dx, dy).normalize();
+      this.player.setFlipX(dx > 0);
+    };
+    const onPointerDown = (ptr: Phaser.Input.Pointer) => {
+      if (this.moveScheme !== "wasd") return;
+      if ((ptr.event?.target as HTMLElement | null)?.closest?.("button, input, a, [role=button]")) return;
+      if (this.dialoguing || this.panelNavOpen) return; // 대화/패널 중 오발 방지
+      if (ptr.rightButtonDown()) { EventBus.emit("input:interact"); return; }
+      onPointerAim(ptr);
+      this.attackQueued = true;
+    };
+    this.input.on("pointermove", onPointerAim);
+    this.input.on("pointerdown", onPointerDown);
+
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
     EventBus.on("input:skill1", onS1);
