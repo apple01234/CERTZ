@@ -8736,14 +8736,26 @@ export class WorldScene extends Phaser.Scene {
     const kb = this.input.keyboard!;
     // v1.9 키 매핑 — 모든 배정 가능 키를 미리 등록해 두고 keymap에서 조회
     // (재배치 시 키 재등록 불필요, 이동 W/A/S/D + 화살표는 고정)
+    // v1.4.35 (지시 #7) — WASD 스킴에서 물약·UI 를 숫자열/ESC 로 옮겼으므로
+    //  ONE~FIVE·ESC·TAB 까지 등록한다. 등록되지 않은 키는 keymap 에 배정돼 있어도
+    //  Phaser 가 이벤트를 만들어 주지 않아 "키가 먹지 않는" 증상이 된다.
     const allKeys =
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,Q,E,R,T,Y,U,I,O,P,F,G,H,J,K,L,V,B,N,M,Z,X,C";
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,ESC,TAB,Q,E,R,T,Y,U,I,O,P,F,G,H,J,K,L,V,B,N,M,Z,X,C," +
+      "ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT,NINE,ZERO";
     const raw = kb.addKeys(allKeys) as Record<string, Phaser.Input.Keyboard.Key>;
     this.keys = raw;
-    /* v1.1.1 — SPACE처럼 여러 글자인 코드도 keyObjs에 등록 (키 재배치 조회 대비) */
+    /* v1.1.1 — SPACE처럼 여러 글자인 코드도 keyObjs에 등록 (키 재배치 조회 대비)
+     * v1.4.35 — 숫자키는 keymap 표기("1".."0")와 Phaser 코드(ONE..ZERO)가 달라
+     *  두 이름을 모두 등록해야 조회가 성립한다. ESC 역시 "Escape" 표기와 매핑. */
+    const ALIAS: Record<string, string> = {
+      ONE: "1", TWO: "2", THREE: "3", FOUR: "4", FIVE: "5",
+      SIX: "6", SEVEN: "7", EIGHT: "8", NINE: "9", ZERO: "0",
+      ESC: "Escape",
+    };
     for (const letter of allKeys.split(",")) {
       if (letter.length === 1) this.keyObjs[letter] = raw[letter];
       else if (letter === "SPACE") this.keyObjs[letter] = raw[letter];
+      if (ALIAS[letter]) this.keyObjs[ALIAS[letter]] = raw[letter];
     }
 
     const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);

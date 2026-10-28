@@ -73,32 +73,40 @@ export const DEFAULT_KEYMAP: KeyMap = {
   fishing: "H",
 };
 
-/** v1.0.17 — WASD 이동 스킴 기본 배치. 이동이 왼손(WASD)으로 넘어가므로 전투 키는 오른손
- *  클러스터(J K L I U O P)로 이동한다 — 화살표 모드의 좌우 손 분업을 그대로 거울 대칭 이식.
- *  공격=J(검지 홈) 스킬1=K 스킬2=L 스킬3=I 스킬4=U 궁극기=O 제2궁=P / 물약=N M (엄지 인접 하단)
- *  UI 키는 전투가 비켜난 왼손 알파벳(Z X C V F)으로 재배치해 오른손 부담을 없앤다.
- *  interact=E는 WASD 바로 옆 왼손 엄지 영역 — 이동 중 상호작용에 최적이라 양쪽 스킴 모두 유지. */
+/** v1.0.17 — WASD 이동 스킴 기본 배치.
+ *  v1.4.35 (유저 지시 #7 "WASD 배치 사용시 다른 창 단축키랑 스킬 단축키 안겹치게 해
+ *   (스킬:Q, E, Z, X, C, F, R 등등)") —
+ *  종전엔 전투 키를 오른손 클러스터(J K L I U O P)로 밀어냈는데,
+ *  ⓐ 그 자리는 다른 프로그램·브라우저 확장이 즐겨 잡는 영역이고
+ *  ⓑ UI 키(X 가방·C 전직·V 퀘스트·F 설정)가 오히려 왼손 홈에 남아
+ *     사용자가 스킬로 쓰고 싶은 Q/E/Z/X/C/F/R 과 정면으로 겹쳤다.
+ *  → 스킬·공격을 **왼손 홈열(Q E R F C X Z)** 로 모으고,
+ *    UI 키는 오른손/숫자열(1~5, G, T, B, H)로 밀어 서로 영역을 침범하지 않게 한다.
+ *  이동 WASD 는 왼손이지만 스킬은 그 바로 옆 열이라 이동 중에도 눌린다.
+ */
 export const WASD_KEYMAP: KeyMap = {
-  attack: "J",
-  skill1: "K",
-  skill2: "L",
-  skill3: "I",
-  skill4: "U",
-  skill5: "O",
-  skill5b: "P",
-  potHp: "N",
-  potMp: "M",
-  interact: "E",
-  bag: "X",
-  shop: "G",
-  job: "C",
-  stat: "T",
-  quest: "V",
-  opt: "F",
-  collection: "Z",
-  autohunt: "B",
-  friends: "R",
-  fishing: "H",
+  /* ── 전투 (왼손 홈열) ── */
+  attack: "X",   /* 손가락 바로 아래 · 가장 자주 누르는 키 */
+  skill1: "Z",   /* X 왼쪽 */
+  skill2: "C",   /* X 오른쪽 */
+  skill3: "F",   /* 검지 홈 */
+  skill4: "R",   /* 검지 위 */
+  skill5: "Q",   /* 약지 위 — 궁극기 */
+  skill5b: "E",  /* 중지 위 — 제2궁극기 */
+  potHp: "1",
+  potMp: "2",
+  /* ── UI (오른손·숫자열 — 전투 키와 물리적으로 분리) ── */
+  interact: "Space",
+  bag: "G",
+  shop: "T",
+  job: "5",
+  stat: "4",
+  quest: "3",
+  opt: "Escape",
+  collection: "Y",
+  autohunt: "V",
+  friends: "H",
+  fishing: "B",
 };
 
 /** 스킴별 기본 프리셋 */
@@ -150,6 +158,10 @@ export const ASSIGNABLE_KEYS = [
   "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
   "A", "S", "D", "F", "G", "H", "J", "K", "L",
   "Z", "X", "C", "V", "B", "N", "M",
+  /* v1.4.35 (지시 #7) — WASD 스킴에서 물약·UI 를 숫자열로 옮겼는데
+   *  이 목록에 없으면 배정 자체가 거부되어 키가 먹지 않는다. */
+  "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+  "Space", "Escape", "Tab",
 ] as const;
 
 /** 화살표 코드 (WASD 스킴에서 액션 배정 가능) */

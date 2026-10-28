@@ -558,7 +558,14 @@ function SkillButton({
     <button
       aria-label={label}
       disabled={!ready}
-      className={`relative flex h-full w-full touch-none select-none flex-col items-center justify-center overflow-hidden rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 ${
+      /* v1.4.35 (유저 지시 #3 "스킬 아이콘 안에 텍스트 짤림") —
+       *  원인은 overflow-hidden + flex-col 이었다. 모바일 SK=56px 원형 안에
+       *  아이콘(24~28px) + 스킬명(최대 4글자) + "100MP" + 단축키 탭을 세로로
+       *  쌓으면 합계가 56px 를 넘어 아래쪽 글자와 MP 가 잘렸다.
+       *  → 아이콘을 배경 레이어(absolute)로 깔고, 텍스트는 그 위 그라데이션 위에
+       *    올려 세로 공간 경쟁을 없앤다. 스킬명은 2줄 허용 + 아주 작은 폰트로
+       *    원 안에 맞춘다(잘림 대신 줄바꿈). */
+      className={`relative flex h-full w-full touch-none select-none items-end justify-center overflow-hidden rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 ${
         ready
           ? ult
             ? "border-amber-100/90 bg-gradient-to-b from-amber-300 via-amber-500 to-orange-700 shadow-[0_0_14px_rgba(255,190,60,0.65)]"
@@ -572,32 +579,33 @@ function SkillButton({
         if (ready) onDown();
       }}
     >
-      {/* v3.0.8 디자인 개편 — 클래스별 스킬 아이콘 (RPG Icons Pixel Art). 없으면 기존 lucide 폴백 */}
+      {/* v3.0.8 — 클래스별 스킬 아이콘(RPG Icons Pixel Art). 배경 레이어로 깔아 텍스트와 경쟁하지 않게 한다.
+       *  v1.4.35 — 원형 안을 꽉 채우고 위쪽에 어둡게 덮어 스킬명 가독성 확보 */}
       {showIcon ? (
         <img
           src={icon}
           alt=""
           onError={() => setIconErr(true)}
-          className={`tap-safe ${compact ? "h-7 w-7" : "h-6 w-6 sm:h-7 sm:w-7"} rounded-sm`}
+          className="tap-safe pointer-events-none absolute inset-0 h-full w-full rounded-full object-cover opacity-95"
           style={{ imageRendering: "pixelated" }}
         />
       ) : (
-        children
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-90">{children}</span>
       )}
-      {/* vc147 (#11) — 단축키 키탭 (버튼 내부 좌상단 — overflow-hidden이라 외부 음수 오프셋 불가) */}
+      {/* 스킬명 가독성용 하단 그라데이션 (아이콘 위) */}
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] rounded-b-full bg-gradient-to-t from-black/92 via-black/72 to-transparent" />
+      {/* vc147 (#11) — 단축키 키탭 (좌상단). v1.4.35 — 아이콘 위에서도 읽히게 테두리 추가 */}
       {keyHint && (
-        <span className="pointer-events-none absolute left-1 top-1 rounded bg-slate-900/85 px-1 text-[8px] font-black leading-[12px] text-amber-200">
+        <span className="pointer-events-none absolute left-0.5 top-0.5 z-10 rounded bg-slate-950/90 px-1 text-[8px] font-black leading-[12px] text-amber-200 ring-1 ring-amber-300/40">
           {keyHint}
         </span>
       )}
-      {/* vc193 (버그 #1 "스킬 아이콘 안에 글자 짤림") —
-       *  종전엔 max-w-[42px] truncate + text-[7px] 라서 "천둥연격"·"용의분노" 같은
-       *  4글자 스킬명이 말줄임(…)으로 잘렸다. 버튼 폭 자체를 넓히고
-       *  글자는 8~9px 로 올려 아이콘 안에서 온전히 읽히게 한다.
-       *  (모바일 42px 슬롯에 4글자를 넣으려면 2줄 허용이 가장 안전 —
-       *   leading-tight 로 두 줄 높이를 확보하고 truncate 를 제거한다.) */}
-      <span className={`w-full break-keep px-0.5 text-center text-[8px] font-bold leading-[1.15] sm:text-[9px] ${ult ? "text-amber-100" : ult2 ? "text-fuchsia-100" : ""}`}>{label}</span>
-      <span className={`text-[8px] font-bold leading-none sm:text-[9px] ${ult ? "text-amber-200" : ult2 ? "text-fuchsia-200" : "text-[#a8c0ff]"}`}>{mp}MP</span>
+      {/* v1.4.35 (#3 텍스트 짤림) — 아이콘 위 오버레이. 세로 스택을 없애고
+       *  스킬명(최대 2줄) + MP 를 하단에 붙인다. 잘림 대신 줄바꿈을 쓴다. */}
+      <span className="pointer-events-none relative z-10 flex w-full flex-col items-center justify-end px-0.5 pb-[3px]">
+        <span className={`w-full break-keep text-center text-[7.5px] font-bold leading-[1.1] sm:text-[8.5px] [text-shadow:0_1px_2px_#000] ${ult ? "text-amber-100" : ult2 ? "text-fuchsia-100" : "text-white"}`}>{label}</span>
+        <span className={`text-[7.5px] font-bold leading-[1.1] sm:text-[8.5px] [text-shadow:0_1px_2px_#000] ${ult ? "text-amber-200" : ult2 ? "text-fuchsia-200" : "text-[#bcd0ff]"}`}>{mp}MP</span>
+      </span>
       {cdPct > 0 && (
         <>
           <div
