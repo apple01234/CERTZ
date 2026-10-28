@@ -485,10 +485,10 @@ export function InteractPrompt() {
           if (st.kind === "shop") EventBus.emit("ui:panel", { panel: "shop" });
           else EventBus.emit("input:interact");
         }}
-        className={`pointer-events-auto absolute bottom-24 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border-2 px-4 py-2 text-[13px] font-black shadow-xl transition-transform active:scale-95 ${
+        className={`pointer-events-auto absolute bottom-24 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-md border px-3.5 py-1.5 text-[12px] font-bold shadow-lg backdrop-blur-[2px] transition-transform active:scale-95 ${
           st.kind === "job"
-            ? "border-amber-200/80 bg-gradient-to-b from-amber-300 to-amber-600 text-slate-900"
-            : "border-emerald-200/80 bg-gradient-to-b from-emerald-400 to-emerald-600 text-slate-900"
+            ? "border-amber-300/45 bg-slate-950/80 text-amber-100"
+            : "border-emerald-300/35 bg-slate-950/80 text-emerald-50"
         }`}
       >
         {st.kind === "shop" ? (
@@ -499,7 +499,9 @@ export function InteractPrompt() {
           <img src="/assets/ui2/ab_sword2.webp" alt="" draggable={false} className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
         )}
         {st.label}
-        <span className={`rounded px-1 text-[9px] font-black ${st.kind === "job" ? "bg-slate-900/85 text-amber-200" : "bg-slate-900/85 text-emerald-200"}`}>E</span>
+        <span className={`ml-0.5 rounded border px-1.5 py-0.5 text-[9px] font-black leading-none ${
+          st.kind === "job" ? "border-amber-300/50 bg-amber-400/15 text-amber-200" : "border-emerald-300/40 bg-emerald-400/15 text-emerald-200"
+        }`}>E</span>
       </button>
     );
   }
@@ -515,12 +517,12 @@ export function InteractPrompt() {
         else EventBus.emit("input:interact");
       }}
       style={anchored ? { left: -9999, top: -9999, transform: "translate(-50%, -100%)" } : undefined}
-      className={`pointer-events-auto absolute flex items-center gap-1.5 rounded-full border-2 px-5 py-2.5 text-[13px] font-black shadow-xl transition-transform active:scale-95 ${
+      className={`pointer-events-auto absolute flex items-center gap-2 rounded-md border px-3.5 py-2 text-[12px] font-bold shadow-lg backdrop-blur-[2px] transition-transform active:scale-95 ${
         anchored ? "" : "bottom-24 left-1/2 -translate-x-1/2"
       } ${
         st.kind === "job"
-          ? "border-amber-200/80 bg-gradient-to-b from-amber-300 to-amber-600 text-slate-900"
-          : "border-emerald-200/80 bg-gradient-to-b from-emerald-400 to-emerald-600 text-slate-900"
+          ? "border-amber-300/45 bg-slate-950/80 text-amber-100"
+          : "border-emerald-300/35 bg-slate-950/80 text-emerald-50"
       }`}
     >
       {st.kind === "shop" ? (
@@ -531,7 +533,9 @@ export function InteractPrompt() {
         <img src="/assets/ui2/ab_sword2.webp" alt="" draggable={false} className="h-[18px] w-[18px]" style={{ imageRendering: "pixelated" }} />
       )}
       {st.label}
-      <span className={`rounded px-1 text-[9px] font-black ${st.kind === "job" ? "bg-slate-900/85 text-amber-200" : "bg-slate-900/85 text-emerald-200"}`}>E</span>
+      <span className={`ml-0.5 rounded border px-1.5 py-0.5 text-[9px] font-black leading-none ${
+        st.kind === "job" ? "border-amber-300/50 bg-amber-400/15 text-amber-200" : "border-emerald-300/40 bg-emerald-400/15 text-emerald-200"
+      }`}>E</span>
     </button>
   );
 }
