@@ -57,17 +57,17 @@ MAP = {
     "ui_fight":      ("Swords", 0),                 # 검
     "ui_honor":      ("Sigils", 0),                 # 방패 문장
     "ui_menu":       ("Books", 0),                  # 닫힌 책 = 메뉴/저널
-    "ui_options":    ("Engineering skills pack", 1), # 톱니
-    "ui_profession": ("Engineering skills pack", 0), # 렌치+톱니
+    "ui_options":    ("Minerals", 1),               # 광물(알파 자연)
+    "ui_profession": ("Craft_materials2", 23),      # 제작 재료(알파 자연)
     "ui_quest":      ("Scrolls", 1),                # 두루마리
-    "ui_skull":      ("Undead Skills Icons", 8),    # 왕관 해골
-    "ui_boss":       ("Undead Skills Icons", 8),    # 왕관 해골
-    "ui_close":      ("Undead Skills Icons", 7),    # X자 교차검
+    "ui_skull":      ("Bones_sculls", 20),          # 해골(알파 자연)
+    "ui_boss":       ("Demons Loot Icons", 5),      # 악마 전리품(알파 자연)
+    "ui_close":      ("Runes", 25),                 # 룬(알파 자연)
     "ui_greed":      ("Gems1", 0),                  # 보석
     "ui_need":       ("Potions", 0),                # 물약
     "ui_runes":      ("Runes", 8),                  # 룬석
     "ui_skills":     ("Books", 0),                  # 스킬북
-    "ui_trade":      ("Engineering skills pack", 20), # 쇼핑 바구니
+    "ui_trade":      ("Gems2", 37),                 # 보석(알파 자연)
 }
 
 
