@@ -243,21 +243,21 @@ export function buildAllAnims(scene: Phaser.Scene) {
  *  · 프레임은 슬라이서 실측 크기(시트별 상이) — BOSS_ATLAS의 fw/fh와 정확히 일치해야 한다
  *  · 프로그램 키는 기존과 동일(tex-idle·tex-walk·…) — Boss.ts 로직 무수정 호환 */
 export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number; fh: number; cols?: number }> = {
-  boss:        { key: "atl_boss",        file: "atl_boss.webp",        fw: 191, fh: 146, cols: 8 }, // 수정 왕 — 스바르트알프헤임 (v1.0.16 신규 시트 8열×7행)
-  boss2:       { key: "atl_boss2",       file: "atl_boss2.webp",       fw: 330, fh: 212 }, // 눈보라의 거수·파수꾼 — 미드가르드 해적선 (v1.4.32 유령선 고해상)
-  boss3:       { key: "atl_boss3",       file: "atl_boss3.webp",       fw: 191, fh: 146, cols: 8 }, // 심연의 군주 — 헬 악령 여왕 (v1.0.16 신규 시트 8열×7행)
-  boss_nidhog: { key: "atl_boss_nidhog", file: "atl_boss_nidhog.webp", fw: 156, fh: 162, cols: 11 }, // 니드호그 — 알프헤임 수목룡 (v1.4.32 고해상 11프레임)
-  boss_surt:   { key: "atl_boss_surt",   file: "atl_boss_surt.webp",   fw: 272, fh: 186, cols: 6 }, // 수르트 — 무스펠 용암골렘 (v1.0.16 신규 시트 6열×6행)
+  boss:         { key: "atl_boss", file: "atl_boss.webp", fw: 191, fh: 146, cols: 8 }, // 수정 왕 — 스바르트알프헤임 (8열×7행 + 패딩)
+  boss2:        { key: "atl_boss2", file: "atl_boss2.webp", fw: 128, fh: 171, cols: 12 }, // 눈보라의 거수·파수꾼 — 미드가르드 해적선 (12열×7행 + 패딩)
+  boss3:        { key: "atl_boss3", file: "atl_boss3.webp", fw: 192, fh: 171, cols: 8 }, // 심연의 군주 — 헬 악령 여왕 (8열×7행 + 패딩)
+  boss_nidhog: { key: "atl_boss_nidhog", file: "atl_boss_nidhog.webp", fw: 246, fh: 232, cols: 11 }, // 니드호그 — 알프헤임 수목룡 (원본 11열×7행 + 패딩)
+  boss_surt:    { key: "atl_boss_surt", file: "atl_boss_surt.webp", fw: 256, fh: 171, cols: 6 }, // 수르트 — 무스펠 용암골렘 (6열×7행 + 패딩)
   boss_fenrir: { key: "atl_boss_fenrir", file: "atl_boss_fenrir.webp", fw: 220, fh: 200, cols: 6 }, // 펜리르 — 니플헤임 설원 백랑 (v1.0.16 신규 시트 6열×6행)
-  boss_skoll:  { key: "atl_boss_skoll",  file: "atl_boss_skoll.webp",  fw: 126, fh: 200, cols: 11 }, // 스콜 — 얼음 늑대룡 (v1.0.16 신규 시트 8열×7행)
-  boss_nagr:   { key: "atl_boss_nagr",   file: "atl_boss_nagr.webp",   fw: 156, fh: 162, cols: 11 }, // 요툰헤임 얼음 골렘 (v1.0.16 신규 시트 8열×7행)
+  boss_skoll:  { key: "atl_boss_skoll",  file: "atl_boss_skoll.webp",  fw: 204, fh: 184, cols: 6 }, // 스콜 — 얼음 늑대룡 (bsw 원본 6열×7행 재슬라이스)
+  boss_nagr:   { key: "atl_boss_nagr",   file: "atl_boss_nagr.webp",   fw: 192, fh: 146, cols: 8 }, // 요툰헤임 얼음 골렘 (원본 아틀라스 8열×7행 + 패딩)
   boss_hati:   { key: "atl_boss_hati",   file: "atl_boss_hati.webp",   fw: 191, fh: 146, cols: 8 }, // 하티 — 쌍둥이 늑대(좌 얼음/우 화염) (v1.0.16 신규 시트 8열×7행)
-  boss_jorm:   { key: "atl_boss_jorm",   file: "atl_boss_jorm.webp",   fw: 272, fh: 162, cols: 6 }, // 요르문간드 — 잎날개 녹룡 (v1.0.16 신규 시트 6열×6행)
+  boss_jorm:    { key: "atl_boss_jorm", file: "atl_boss_jorm.webp", fw: 256, fh: 147, cols: 6 }, // 요르문간드 — 잎날개 녹룡 (6열×7행 + 패딩)
   /* vc148 (#보스그리드) — vc137 잔재 3종 HD 재슬라이싱: 이질 아트 혼합(컬러 전방+흑룡 실루엣 특수기/
    *  보라 악마+붉은 늑대) + 프레임 잘림 수리 — bsw_ 원본 그리드(8열×7행 192.5×147 / 6열×7행 204×184) 그대로 */
-  boss_abudditos: { key: "atl_boss_abudditos", file: "atl_boss_abudditos.webp", fw: 156, fh: 162, cols: 11 }, // 종언의 마룡 아부디토스 — 흑룡 8열×7행
-  boss_vord:      { key: "atl_boss_vord",      file: "atl_boss_vord.webp",      fw: 156, fh: 162, cols: 11 }, // 재림의 파수꾼 베오르드 — 흑룡 (기존 boss2 유령선 공유 해제)
-  boss_gram:      { key: "atl_boss_gram",      file: "atl_boss_gram.webp",      fw: 220, fh: 200, cols: 6 }, // 혈안의 문지기 가름 — 지옥견 늑대 (신화 고증 Garmr)
+  boss_abudditos: { key: "atl_boss_abudditos", file: "atl_boss_abudditos.webp", fw: 240, fh: 180, cols: 6 }, // 종언의 마룡 아부디토스 — 화룡 (개별 프레임 42장 재조립 6열×7행)
+  boss_vord:      { key: "atl_boss_vord",      file: "atl_boss_vord.webp",      fw: 240, fh: 180, cols: 6 }, // 재림의 파수꾼 베오르드 — 암흑기사 (개별 프레임 42장 재조립 6열×7행)
+  boss_gram:      { key: "atl_boss_gram",      file: "atl_boss_gram.webp",      fw: 240, fh: 180, cols: 6 }, // 혈안의 문지기 가름 — 악마 (개별 프레임 42장 재조립 6열×7행)
 };
 
 /** 아틀라스 행별 유효 프레임 수 (슬라이서 실측 — 뒤쪽 빈 프레임 트리밍).
@@ -265,20 +265,20 @@ export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number;
  *  v1.0.16 — 신규 시트는 소스 순서 [idle,run,atk,die,sp1,sp2(,sp3)]를 게임 규약
  *  [idle,walk,atk,sp1,sp2(,sp3),die]로 재배치한 결과다(빌더가 remap 수행). */
 export const BOSS_ATLAS_ROWS: Record<string, number[]> = {
-  boss:        [8, 8, 8, 8, 8, 8, 8],              // v1.0.16 수정 왕 8프레임×7행
-  boss2:       [6, 6, 6, 6, 6, 6, 6],              // idle walk atk sp1 sp2 sp3 die (v1.4.32 고해상 유령선)
+  boss:        [11, 11, 11, 11, 11, 11, 11],              // v1.0.16 수정 왕 8프레임×7행
+  boss2:       [12, 12, 12, 12, 12, 12, 12],              // idle walk atk sp1 sp2 sp3 die (v1.4.32 고해상 유령선)
   boss3:       [8, 8, 8, 8, 8, 8, 8],              // v1.0.16 악령 여왕 8프레임×7행
-  boss_nidhog: [11, 11, 10, 11, 11, 11, 11],      // vc182 — 11x7 픽셀 실측(행 3만 10프레임)
+  boss_nidhog: [11, 11, 11, 11, 11, 11, 11],      // 원본 11열×7행
   boss_surt:   [6, 6, 6, 6, 6, 6, 6],              // vc182 — 6x7 픽셀 실측(fh 187→186 정정)
   boss_fenrir: [6, 6, 6, 6, 6, 6, 6],              // v1.2.4 원본 6x7 복원
   boss_hati:   [8, 8, 8, 8, 8, 8, 8],              // v1.0.16 쌍둥이 늑대 8프레임×7행
-  boss_skoll:  [11, 11, 11, 11, 11, 11, 11],       // vc182 — 11x7 픽셀 실측(전 행 11프레임)
-  boss_nagr:   [11, 11, 10, 11, 11, 11, 11],       // vc182 — 11x7 픽셀 실측
-  boss_jorm:   [6, 6, 5, 6, 6, 6, 6],              // vc182 — 6x7 픽셀 실측
+  boss_skoll:     [6, 6, 6, 6, 6, 6, 6],           // bsw 원본 6열×7행 재슬라이스 — 전 행 6
+  boss_nagr:   [8, 8, 8, 8, 8, 8, 8],            // 원본 8열×7행
+  boss_jorm:   [6, 6, 6, 6, 6, 6, 6],              // 개별 프레임 42장 재조립 — 전 행 6
   /* vc148 (#보스그리드) — 슬라이서 실측 행별 프레임 수 */
-  boss_abudditos: [11, 11, 10, 11, 11, 11, 11],    // vc182 — 11x7 픽셀 실측
-  boss_vord:      [11, 11, 10, 11, 11, 11, 11],    // vc182 — 11x7 픽셀 실측
-  boss_gram:      [6, 6, 6, 6, 6, 6, 6],           // v1.2.4 원본 6x7 복원
+  boss_abudditos: [6, 6, 6, 6, 6, 6, 6],           // 개별 프레임 42장 재조립 — 전 행 6
+  boss_vord:      [6, 6, 6, 6, 6, 6, 6],           // 개별 프레임 42장 재조립 — 전 행 6
+  boss_gram:      [6, 6, 6, 6, 6, 6, 6],           // 개별 프레임 42장 재조립 — 전 행 6
 };
 
 /** 보스 초기 텍스처/프레임 — 아틀라스 보스는 시트 frame 0, 구형은 개별 idle0 이미지 */
