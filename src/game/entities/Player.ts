@@ -7596,8 +7596,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     else have = this.owned.includes(slotKey);
     /* v1.1.0 (#5) — 운영자는 보유와 무관하게 회복되고 소모되지 않는다 (무한 물약/엘릭서) */
     if (!have && !this.gmInfinite) return false;
-    /* v3.0.20 (#7) — 엘릭서(healFull)는 HP/MP 전부 100% 회복 */
-    const used = item.healFull ? this.restoreAll() : isHp ? this.heal(item.heal ?? 0) : this.restore(item.restore ?? 0);
+    /* v3.0.20 (#7) — 엘릭서(healFull)는 HP/MP 전부 100% 회복
+     * v1.4.35 (#11) — 비율 물약(healPct)은 최대치 기준으로 회복한다.
+     *  고정 heal/restore 만 쓰면 상위 물약이 의미 없어지므로 우선순위를 둔다. */
+    const pctAmt = item.healPct
+      ? Math.max(1, Math.round((isHp ? this.maxHp : this.maxMp) * item.healPct))
+      : 0;
+    const used = item.healFull
+      ? this.restoreAll()
+      : isHp
+        ? this.heal(item.healPct ? pctAmt : (item.heal ?? 0))
+        : this.restore(item.healPct ? pctAmt : (item.restore ?? 0));
     if (!used) return false;
     if (slotKey === "potion_hp") { if (this.potions.hp > 0) this.potions.hp--; }
     else if (slotKey === "potion_mp") { if (this.potions.mp > 0) this.potions.mp--; }
@@ -7607,9 +7616,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     else if (have && !this.gmInfinite) this.consumeConsumable(slotKey);
     this.potCd = 800;
     this.scene.sfxPotion();
+    const pctPct = item.healPct ? Math.round(item.healPct * 100) : 0;
     this.scene.spawnPickupText(
       this.x, this.y - 30,
-      item.healFull ? "HP/MP 전부 회복!" : isHp ? `+${item.heal} HP` : `+${item.restore} MP`,
+      item.healFull
+        ? "HP/MP 전부 회복!"
+        : item.healPct
+          ? `+${pctPct}% ${isHp ? "HP" : "MP"} (${pctAmt})`
+          : isHp ? `+${item.heal} HP` : `+${item.restore} MP`,
       item.healFull ? "#ffd76a" : "#7dffa8",
     );
     this.scene.emitHud();
@@ -8221,13 +8235,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  v1.1.1 (#7 성별 치장 분리) — 같은 코스튬 키도 성별에 따라 여성형(cost_*)/남성형(costm_*) 시트 분기
    *  v1.2.0 (#13 8직업 외형) — 코스튬 미착용 + 2차 이상 직업이면 jobf_/jobm_ 시트로 완전 교체
    *  (전직하면 외형 자체가 바뀐다 — 버서커는 붉은 머리 광전사로, 아크메이지는 제비꽃 로브 대마법사로).
-   *  3·4차는 계열 2차 외형 승계. v1.2.0 (#7 GM 외형) — gmSkin 플래그가 최우선 (GM 계정 전용) */
+   *  v1.4.36 (유저 지시 #8 "왜 전직 할때마다 직업별로 모습 안바뀜??") — **3·4차도 자기 시트를 쓴다.**
+   *   종전엔 tier2RootOf() 로 2차 외형에 고정돼 3차·4차로 올라가도 그림이 그대로였다(실측 근거:
+   *   2차 8직업 시트만 존재, 3·4차 20직업 시트는 0장). 이제 tools/gen_tier34_bodies.py 가 만든
+   *   jobm_/jobf_<3·4차직업> 시트를 우선 사용하고, 없을 때만 2차 루트로 폴백한다.
+   *  v1.2.0 (#7 GM 외형) — gmSkin 플래그가 최우선 (GM 계정 전용) */
   applyBodyLook() {
     const prevAnim = this.anims?.currentAnim?.key ?? "";
     const playing = this.anims?.isPlaying ?? false;
     const outfitKey = this.outfit?.replace("outfit_", "") ?? null;
+    /* 자기 직업 전용 시트가 있으면 그것을 쓴다(3·4차 포함). 없으면 2차 루트로 폴백. */
+    const ownPrefix = (key: string) => (this.gender === "m" ? `jobm_${key}` : `jobf_${key}`);
     const jobRoot = tier2RootOf(this.cls);
-    const jobPrefix = jobRoot ? (this.gender === "m" ? `jobm_${jobRoot}` : `jobf_${jobRoot}`) : null;
+    const jobPrefix = (() => {
+      if (!jobRoot) return null;
+      const ownKey = this.cls;
+      if (ownKey) {
+        const own = ownPrefix(ownKey);
+        if (this.scene.textures.exists(`${own}_idle0`)) return own;
+      }
+      return ownPrefix(jobRoot);
+    })();
     this.bodyPrefix = this.gmSkin && this.gmApproved
       ? "gm"
       : outfitKey

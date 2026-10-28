@@ -706,6 +706,27 @@ export const SKILL1_KIND: Partial<Record<ClassKey, Skill1Kind>> = {
   seaking: "dreadvolley",
   powdermaster: "dreadvolley",
   dreadnought: "manowar",
+  /* v1.4.36 (유저 지시 #12 "스킬 강화 및 개편 & 아예 교체 한거 맞음??") —
+   *  종전 3·4차 16직업의 Z(주력기)가 SKILL1_KIND 에 없어 resolveSkill1Of 가
+   *  2차 스킬을 그대로 승계했다(실측: 3·4차 고유 4/20). 계열 정체성 안에서
+   *  상위 메커니즘을 배정해 20/20 고유화. 실행부는 기존 skill1* 를 쓰며,
+   *  sTier 로 배율·반경·부가효과가 자동 강화된다(3차/4차 전용 오라 연출 포함). */
+  warlord: "wallsmash",      // 3차 전사 — 방벽 강타
+  warbringer: "ragespin",    // 4차 전사 — 파괴의 회전베기
+  crusader: "wallsmash",     // 4차 전사 — 성역 강타
+  paladin: "ragespin",       // 4차 전사 — 심판의 회전
+  eagleeye: "snipe",         // 3차 궁수 — 매안 저격
+  tempest: "gustarrow",      // 3차 궁수 — 폭풍 화살
+  deadeye: "snipe",          // 4차 궁수 — 사신 저격
+  skylord: "gustarrow",      // 4차 궁수 — 천공 화살
+  stormbringer: "arcbolt",   // 3차 마법 — 뇌전 볼트
+  chronicle: "purify",       // 3차 마법 — 기록의 정화
+  arclord: "arcbolt",        // 4차 마법 — 아크 폭발
+  eternal: "purify",         // 4차 마법 — 영원의 정화
+  nightblade: "shadowexec",  // 3차 도적 — 야습 참수
+  duelist: "flurrydance",    // 3차 도적 — 결투 난무
+  shadowlord: "shadowexec",  // 4차 도적 — 그림자 참수
+  blademaster: "flurrydance",// 4차 도적 — 검무 난무
 };
 
 export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
@@ -731,6 +752,24 @@ export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
   powdermaster: "smokestep",
   seaking: "grappleswing",
   dreadnought: "smokestep",
+  /* v1.4.36 (지시 #12) — 3·4차 C(기동기) 16직업 고유화 (종전 4/20 → 20/20).
+   *  Z 와 동일 원칙: 계열 정체성 안에서 상위 이동기를 배정, sTier 로 자동 강화. */
+  warlord: "bulwarkdash",      // 3차 전사
+  warbringer: "savagerush",    // 4차 전사
+  crusader: "savagerush",      // 4차 전사
+  paladin: "bulwarkdash",      // 4차 전사
+  eagleeye: "falconwind",      // 3차 궁수
+  tempest: "windslash",        // 3차 궁수
+  deadeye: "falconwind",       // 4차 궁수
+  skylord: "windslash",        // 4차 궁수
+  stormbringer: "grandblink",  // 3차 마법
+  chronicle: "cycleblink",     // 3차 마법
+  arclord: "grandblink",       // 4차 마법
+  eternal: "cycleblink",       // 4차 마법
+  nightblade: "ambushdash",    // 3차 도적
+  duelist: "flashydash",       // 3차 도적
+  shadowlord: "ambushdash",    // 4차 도적
+  blademaster: "flashydash",   // 4차 도적
 };
 
 /** 스킬 종류 승계 — 현재 클래스부터 루트까지 거슬러 처음 정의된 종류 (3차/4차는 2차기 강화판)
