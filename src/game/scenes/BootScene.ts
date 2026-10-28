@@ -158,6 +158,12 @@ export const VFX3_LIST = [
   "vfx_petal",
 ] as const;
 
+/** v1.4.32 (지시 #7) — Hovl Magic effects 팩 이펙트 텍스처 8종 (public/assets/fx2/) */
+export const FX2_LIST = [
+  "fx_Circle", "fx_Circle2", "fx_Electro", "fx_Flare",
+  "fx_Flash", "fx_FlashFree1", "fx_FlashFree2", "fx_FlashFree3",
+] as const;
+
 /** v1.3.0 — Drive 팩 VFX 사운드 48종 (Vefects WAV → OGG 변환, public/assets/audio/sfx/) */
 export const SFX3_LIST = [
   "sfx_hit_basic", "sfx_arrow_cast", "sfx_arrow_hit", "sfx_bomb_cast", "sfx_bomb_exp",
@@ -610,6 +616,11 @@ export class BootScene extends Phaser.Scene {
     /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 이펙트 6종.
      *  ASSET_LIST는 `assets/<key>.webp` 평면 경로를 쓰므로 하위 폴더(vfx/)는 별도 로드. */
     for (const k of VFX_PACK_LIST) this.load.image(k, `vfx/${k}.webp`);
+    /* v1.4.32 (유저 지시 #7 "메이플 5차&6차 보면 2d로도 엄청난 퀄리티의 스킬들을
+     * 뽑아내잖아 그것도 못함??!") — Hovl Studio Magic effects 팩의 고해상도
+     * 이펙트 텍스처 8종을 스킬 연출용으로 추가 로드한다. 흰색 마스크라
+     * setTint 로 원소색을 입혀 쓴다. */
+    for (const k of FX2_LIST) this.load.image(k, `fx2/${k}.webp`);
     /* v1.4.31 (#4 보스 개편) — 유저 제공 9보스 아틀라스 (보스당 1장 · 부팅 직접 로드).
      *  프레임 크기는 슬라이서 실측값 — BOSS_ATLAS 설정과 정확히 일치 (textures.ts) */
     for (const { key, file, fw, fh } of Object.values(BOSS_ATLAS)) {
