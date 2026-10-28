@@ -2439,14 +2439,32 @@ export class WorldScene extends Phaser.Scene {
     for (let i = 0; i < clusterN; i++)
       clusters.push([rng.between(200, this.stageW - 200), rng.between(140, this.stageH - 140)]);
     const natPoint = (): [number, number] => {
-      if (rng.frac() < 0.55) {
-        const [kx, ky] = rng.pick(clusters);
-        return [
-          Phaser.Math.Clamp(kx + (rng.frac() + rng.frac() - 1) * 250, 80, this.stageW - 80),
-          Phaser.Math.Clamp(ky + (rng.frac() + rng.frac() - 1) * 180, 90, this.stageH - 80),
-        ];
+      /* v1.4.33 (긴급수정 — "맵 바닥에 쓸데없는 오브젝트들이 떨어져있는 문제")
+       *  종전엔 화면 어디에나(가장자리 포함) 나무·바위를 뿌려, 바닥 한가운데와
+       *  벽 틈에 어정쩡하게 놓인 오브제가 눈에 띄었다. 지형은 가장자리에 몰고
+       *  중앙 통로(플레이어 동선)는 비운다 — 배경처럼 읽히고 진로도 트인다. */
+      for (let guard = 0; guard < 12; guard++) {
+        let x: number, y: number;
+        if (rng.frac() < 0.55) {
+          const [kx, ky] = rng.pick(clusters);
+          x = kx + (rng.frac() + rng.frac() - 1) * 250;
+          y = ky + (rng.frac() + rng.frac() - 1) * 180;
+        } else {
+          x = rng.between(80, this.stageW - 80);
+          y = rng.between(90, this.stageH - 80);
+        }
+        x = Phaser.Math.Clamp(x, 80, this.stageW - 80);
+        y = Phaser.Math.Clamp(y, 90, this.stageH - 80);
+        /* 중앙 가로 통로(화면 높이의 30%)는 비워 둔다 — 바닥에 떨어진 오브제 방지 */
+        const band = this.stageH * 0.16;
+        const dy = Math.abs(y - this.stageH / 2);
+        if (dy < band) continue;
+        /* 좌우 가장자리 여백 — 벽 틈에 끼어 어색하게 보이던 것 제거 */
+        if (x < 150 || x > this.stageW - 150) continue;
+        return [x, y];
       }
-      return [rng.between(80, this.stageW - 80), rng.between(90, this.stageH - 80)];
+      /* 안전 폴백: 통로 밖 상단 */
+      return [rng.between(180, this.stageW - 180), this.stageH * 0.28];
     };
     /* v3.0.15 (#18) — 오브젝트 수 축소: 진로 방해 완화. 배치수 0.7배 + 간격 48px.
      *  (v3.0.14에서 1.5배로 늘려 산맥처럼 막히던 문제 되돌림) */
