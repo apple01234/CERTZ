@@ -124,6 +124,38 @@ export function spawnRingPop(
   });
 }
 
+/* ---------------- v1.4.32 (지시 #5·#7·#13) — 일반 스킬용 고해상도 임팩트 ---------------- *
+ * 궁극기(ultLayers)에만 fx2 고해상도 텍스처가 붙어 있어 1~4차 스킬은 여전히
+ * 256px 패턴 이펙트만 써서 같은 화면에서 품질 격차가 났다.
+ * 이 함수 하나로 "링(지면 파동) + 히트 섬광(캐릭터 앞)" 2겹을 얹는다.
+ *  - 원소별로 이미 쓰던 vf_* 연출은 그대로 두고 **위에 한 겹만** 더한다(제거 없음).
+ *  - 피해 판정과 무관한 순수 시각 레이어다(판정은 호출부에서 이미 확정).
+ *  - 미로드 텍스처면 조용히 생략 — vfImage 가 null 을 돌려준다.
+ */
+export function spawnSkillImpact(
+  scene: SceneLike, x: number, y: number, tint: number,
+  opts: { scale?: number; ringTex?: string; hitTex?: string; ringDep?: number; hitDep?: number } = {},
+) {
+  const s = opts.scale ?? 1;
+  const ring = vfImage(scene, opts.ringTex ?? "fx_Circle2", x, y, tint);
+  if (ring) {
+    /* vfImage 가 depth 24 를 기본으로 잡으므로 **호출 후** 덮어써야 한다(순서 중요). */
+    ring.setDepth(opts.ringDep ?? 6).setAlpha(0.7).setScale(0.4 * s);
+    scene.tweens.add({
+      targets: ring, scale: 3.0 * s, alpha: 0, duration: 560, ease: "Cubic.out",
+      onComplete: () => ring.destroy(),
+    });
+  }
+  const hit = vfImage(scene, opts.hitTex ?? "fx_FlashFree1", x, y, tint);
+  if (hit) {
+    hit.setDepth(opts.hitDep ?? 23).setAlpha(0.9).setScale(0.35 * s);
+    scene.tweens.add({
+      targets: hit, scale: 1.9 * s, alpha: 0, duration: 340, ease: "Quad.out",
+      onComplete: () => hit.destroy(),
+    });
+  }
+}
+
 /* ---------------- 5차 궁극기 공통 인트로 (마법진+링+코어 4중 합성) ----------------
  * 기존: 단색 원 링 1개 + 파티클 버스트 → "밋밋하다"는 유저 지시.
  * 신규: 3D 프리렌더 펜타클(클래스 컬러 틴트·스핀) + 이중 확장 링 + 임팩트 코어 + 4방향 스파크 */

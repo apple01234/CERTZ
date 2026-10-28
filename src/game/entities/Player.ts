@@ -17,7 +17,7 @@ import {
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
-import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
+import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
 import * as audio from "../audio";
@@ -373,6 +373,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* v1.4.32 (유저 지시 #1) — 스킬 kind → 원소 판정.
    *  원소별 SFX 48종이 로드만 되고 재생되지 않던 문제를 해결한다.
    *  매핑에 없으면 계열 색으로 폴백. */
+  /** v1.4.32 (지시 #5·#7·#13) — 일반 스킬 임팩트 텍스처 선택.
+   *  원소 정체성에 맞춰 fx2(고해상도) 텍스처를 고른다. 전격만 Electro, 나머지는 섬광/버스트 계열. */
+  private impactTexOf(elem: string): { ringTex: string; hitTex: string } {
+    switch (elem) {
+      case "elec": return { ringTex: "fx_Circle2", hitTex: "fx_Electro" };
+      case "fire": case "magma": return { ringTex: "fx_Circle2", hitTex: "fx_FlashFree2" };
+      case "ice": case "water": return { ringTex: "fx_Circle2", hitTex: "fx_FlashFree1" };
+      case "light": case "nature": return { ringTex: "fx_Circle2", hitTex: "fx_FlashFree3" };
+      case "dark": case "void": return { ringTex: "fx_Circle", hitTex: "fx_FlashFree1" };
+      default: return { ringTex: "fx_Circle2", hitTex: "fx_FlashFree1" };
+    }
+  }
+
   private elemOfSkill(kind: string): string {
     const M: Record<string, string> = {
       /* 화염 */
@@ -1123,6 +1136,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.tierFlair(); // v1.0.11 — N차 기존 스킬 강화 (전직 단계 비례 3D VFX)
     const kind = resolveSkill1Of(this.cls) ?? "spin";
     audio.sfx.elemCast(this.elemOfSkill(kind)); // v1.4.32 (지시 #1) — 원소별 개별 시전음
+    /* v1.4.32 (지시 #5·#7·#13) — 고해상도 임팩트 2겹(링+섬광). 기존 원소 연출 위에 얹기만 한다. */
+    { const _it = this.impactTexOf(this.elemOfSkill(kind)); spawnSkillImpact(this.scene, this.x, this.y, this.clsHex(), { ..._it, scale: 0.9 }); }
     /* v3.0.11 — 3차/4차 주력기 진화감: 상위직은 클래스색 오라 링이 터지며 시전
      *  (2차기 승계라 이름만 바뀌어 보이던 문제를 시각적으로도 "강화판"임을 드러냄) */
     if (this.tier >= 3) {
@@ -2288,6 +2303,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const kind = SKILL3_KIND[this.cls ?? ""] as Skill3Kind | undefined;
     if (!kind) return;
     audio.sfx.elemCast(this.elemOfSkill(kind)); // v1.4.32 (지시 #1) — 원소별 개별 시전음
+    /* v1.4.32 (지시 #5·#7·#13) — 고해상도 임팩트 2겹(링+섬광). 기존 원소 연출 위에 얹기만 한다. */
+    { const _it = this.impactTexOf(this.elemOfSkill(kind)); spawnSkillImpact(this.scene, this.x, this.y, this.clsHex(), { ..._it, scale: 0.9 }); }
     this.mp -= 25;
     this.skill3Cd = this.skill3MaxEff;
     this.state = "attack";
@@ -2856,6 +2873,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const kind = SKILL4_KIND[this.cls ?? ""] as Skill4Kind | undefined;
     if (!kind) return;
     audio.sfx.elemCast(this.elemOfSkill(kind)); // v1.4.32 (지시 #1) — 원소별 개별 시전음
+    /* v1.4.32 (지시 #5·#7·#13) — 고해상도 임팩트 2겹(링+섬광). 기존 원소 연출 위에 얹기만 한다. */
+    { const _it = this.impactTexOf(this.elemOfSkill(kind)); spawnSkillImpact(this.scene, this.x, this.y, this.clsHex(), { ..._it, scale: 0.9 }); }
     this.mp -= 40;
     this.skill4Cd = this.skill4MaxEff;
     this.state = "attack";
