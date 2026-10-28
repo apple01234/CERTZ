@@ -1468,18 +1468,68 @@ export class WorldScene extends Phaser.Scene {
       this.buildInterior(stageKey);
     } else {
     const groundTex = theme.ground;
+    /* v1.4.35 (유저 지시 #5 "DLC 및 재림 스테이지 빼고는 종이쪼가리 같은 너가 쳐 만든
+     *  타일맵 쓰지마. 분명 예전 이런 느낌의 타일맵 에셋을 써라고 했을텐데??")
+     *  — 기존 tile_grass 등은 절차 생성한 노이즈 텍스처라 "물감 뭉갠 종이"로 보였다.
+     *  → 정식 타일셋(TopDown 2D RPG BE3 / Tiles.png)에서 뽑은 tile_*_pack 으로 교체.
+     *  DLC·재림(dlc:true)은 고유 테마를 유지하라는 지시이므로 손대지 않는다.
+     *  같은 무늬가 64px 주기로 규칙 반복되는 것을 막으려고 변형 3종을 섞는다. */
+    const NATIVE_TILE: Record<string, string> = {
+      tile_grass: "tile_grass_pack",
+      tile_grass2: "tile_grass_pack",
+      tile_forest: "tile_grass_pack",
+      tile_moss: "tile_grass_pack",
+      tile_garden: "tile_grass_pack",
+      tile_path: "tile_sand_pack",
+      tile_snow: "tile_sand_pack",
+      tile_sand: "tile_sand_pack",
+      tile_desert: "tile_sand_pack",
+      tile_water: "tile_water_pack",
+      tile_magma: "tile_dirt_pack",
+      tile_rock: "tile_dirt_pack",
+      tile_stone: "tile_dirt_pack",
+      tile_cave: "tile_dirt_pack",
+      tile_dark: "tile_dirt_pack",
+    };
+    /* dlc 플래그는 StageDef 가 아니라 ChapterSpec 에 있다(챕터 단위 구분).
+     *  현재 스테이지의 챕터를 찾아 DLC·재림 여부를 판정한다. */
+    const curCh = parseStage(stageKey).ch;
+    const isDlcStage = CHAPTERS.some((c) => c.key === curCh && c.dlc === true);
+    const packBase = isDlcStage ? null : NATIVE_TILE[groundTex];
+    const packTex = packBase && this.textures.exists(packBase) ? packBase : groundTex;
+    const canVary = !!packBase && this.textures.exists(`${packBase}_v1`);
     /* v1.4.30 (#11 니플헤임 눈부심) — 흰 눈바닥 타일이 화면을 압도하므로 챕터별 지면 틴트 도입.
      *  흰색 타일을 청회색으로 곱해 전체 톤 다운 (암전과 별개로 원본 자체가 밝은 타일 보정). */
     const CH_GROUND_TINT: Record<string, number> = { niflheim: 0xc4d6ea }; // vc147 (#21) — 0x70819c→밝은 설원톤 (눈 지형 체감 복원)
     const gTint = CH_GROUND_TINT[parseStage(stageKey).ch];
-    const groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
-    /* v1.4.32 (유저 지시 #3 "타일맵 ㅈㄴ 작은게 여러개 배치되있는 버그. 크게크게 배치 ㄱㄱ") —
-     *  vc201 에서 256px 에셋 타일을 반복 단위 32px 에 맞추려고 setTileScale(0.125) 를 걸었는데,
-     *  그 결과 256px 짜리 질감이 32px 로 눌려 화면 전체가 잘게 반복되는 격자로 보였다.
-     *  타일 에셋은 256px 그대로 크게 깔아야 질감이 읽힌다 → 배율 1.0 (원본 크기 반복).
-     *  반복 주기가 256px 이므로 격자도 눈에 덜 띄고, 에셋 질감이 그대로 살아난다. */
-    groundTs.setTileScale(1);
-    if (gTint) groundTs.setTint(gTint);
+    /* v1.4.35 (#5) — 팩 타일을 변형 3종과 섞어 깐다.
+     *  TileSprite 는 단일 텍스처만 반복하므로, 변형이 있으면 같은 크기의
+     *  TileSprite 를 타일 1칸(64px) 격자로 나눠 각 칸에 v0/v1/v2 를 무작위로 깐다.
+     *  맵 전체를 64px 격자로 쪼개도 오브젝트 수가 과도하지 않도록,
+     *  한 타일당 4칸(256px) 단위로 묶어 변형을 고른다(20x12 → 약 240개).
+     *  변형이 없으면(DLC·재림) 기존 단일 TileSprite 경로 그대로. */
+    let groundTs: Phaser.GameObjects.TileSprite | null = null;
+    if (canVary) {
+      const CELL = 64;
+      const BLK = CELL * 4; // 256px 블록마다 변형 선택
+      const rng = new Phaser.Math.RandomDataGenerator([`${stageKey}-ground`]);
+      const variants = [packTex, `${packTex}_v1`, `${packTex}_v2`].filter((k) => this.textures.exists(k));
+      for (let by = 0; by < this.stageH; by += BLK) {
+        for (let bx = 0; bx < this.stageW; bx += BLK) {
+          const w = Math.min(BLK, this.stageW - bx);
+          const h = Math.min(BLK, this.stageH - by);
+          const key = variants[rng.between(0, variants.length - 1)];
+          const ts = this.add.tileSprite(bx, by, w, h, key).setOrigin(0).setDepth(0);
+          ts.setTileScale(1);
+          if (gTint) ts.setTint(gTint);
+          if (!groundTs) groundTs = ts;
+        }
+      }
+    } else {
+      groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
+      groundTs.setTileScale(1);
+      if (gTint) groundTs.setTint(gTint);
+    }
     // v3.0.14 — 도로 표시 완전 제거: 가로/세로 일자 도로가 단조롭다는 피드백 ("길이 일자로만 되어있어")
     //  지형은 테마 바닥 타일링만 남기고, 빈 지형은 placeDecor의 나무·바위·장식 배치로 자연감을 채운다.
     // v3.0.13 — 지면 변형 스캐터(gvar) 완전 제거: 타 세트 색상의 64px 사각형이

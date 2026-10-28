@@ -164,6 +164,9 @@ export type ItemKey =
   | "gun_flint" | "gun_broadside" | "gun_abyss"
   /* v4.3.0 — BM 대확장 (유저 지시: BM 수익 구조·도파민 100+ 기획/제작)
    *  물약 8티어 ×2 · 장신구 12 · 가챠 상자 4 · 패키지 6 (신규 아이템 46종 + 펫 6 + 치장 6 + 버프 3 = 61종) */
+  /* v1.4.35 (지시 #11) — 비율 회복 물약 10%/25%/50% (HP·MP 각 3종) */
+  | "potion_hp_p10" | "potion_hp_p25" | "potion_hp_p50"
+  | "potion_mp_p10" | "potion_mp_p25" | "potion_mp_p50"
   | "potion_hp3" | "potion_hp4" | "potion_hp5" | "potion_hp6" | "potion_hp7" | "potion_hp8" | "potion_hp9" | "potion_hp10"
   | "potion_mp3" | "potion_mp4" | "potion_mp5" | "potion_mp6" | "potion_mp7" | "potion_mp8" | "potion_mp9" | "potion_mp10"
   | "ring_might" | "ring_swift" | "ring_fortune" | "ring_dragon" | "ring_titan" | "ring_phantom" | "ring_ancient"
@@ -307,6 +310,10 @@ export type ItemDef = {
   restore?: number; // MP 회복
   /** v3.0.20 (#7) — 엘릭서: 사용 시 HP/MP 전부 100% 회복 */
   healFull?: boolean;
+  /* v1.4.35 (유저 지시 #11 "체력&마나 물약 중 10% 25% 50% 물약들을 만들고 상점에서 팔아줘") —
+   *  최대 HP/MP 의 비율로 회복한다. 고정 회복(heal)은 후반에 무의미해지므로
+   *  비율 회복을 별도 필드로 두고, 사용 시 healPct 가 있으면 그쪽을 우선한다. */
+  healPct?: number;
   /** v3.0.20 (#9) — 판매가 직접 지정 (eert 큐브 5000G 등 — 상점 구매가와 무관) */
   sellPrice?: number;
   /** v1.2.4 (버그 6) — 이 장비를 쓸 수 있는 계열(없으면 전 직업 공용).
@@ -335,11 +342,21 @@ export type ItemDef = {
 export const ITEMS: Record<ItemKey, ItemDef> = {
   potion_hp: { key: "potion_hp", kind: "consumable", name: "HP 물약", icon: "item_potion_hp", price: 30, tier: "common", heal: 80 },
   potion_mp: { key: "potion_mp", kind: "consumable", name: "MP 물약", icon: "item_potion_mp", price: 25, tier: "common", restore: 50 },
+  /* v1.4.35 (#11) — 비율 회복 물약. 레벨이 올라도 회복량이 비례해 계속 쓸모 있다.
+   *  가격은 회복률에 비례(10% 120G / 25% 320G / 50% 700G). */
+  potion_hp_p10: { key: "potion_hp_p10", kind: "consumable", name: "HP 물약 (10%)", icon: "item_potion_hp", price: 120, tier: "common",   healPct: 0.10 },
+  potion_hp_p25: { key: "potion_hp_p25", kind: "consumable", name: "HP 물약 (25%)", icon: "item_potion_hp", price: 320, tier: "rare",     healPct: 0.25 },
+  potion_hp_p50: { key: "potion_hp_p50", kind: "consumable", name: "HP 물약 (50%)", icon: "item_potion_hp", price: 700, tier: "epic",     healPct: 0.50 },
+  potion_mp_p10: { key: "potion_mp_p10", kind: "consumable", name: "MP 물약 (10%)", icon: "item_potion_mp", price: 110, tier: "common",   healPct: 0.10 },
+  potion_mp_p25: { key: "potion_mp_p25", kind: "consumable", name: "MP 물약 (25%)", icon: "item_potion_mp", price: 300, tier: "rare",     healPct: 0.25 },
+  potion_mp_p50: { key: "potion_mp_p50", kind: "consumable", name: "MP 물약 (50%)", icon: "item_potion_mp", price: 660, tier: "epic",     healPct: 0.50 },
   /* v2.5 — 상급 물약 (지시 #5 아이템 확장) */
   potion_hp2: { key: "potion_hp2", kind: "consumable", name: "상급 HP 물약", icon: "item_potion_hp2", price: 70, tier: "rare", heal: 220 },
   potion_mp2: { key: "potion_mp2", kind: "consumable", name: "상급 MP 물약", icon: "item_potion_mp2", price: 60, tier: "rare", restore: 130 },
-  /* v3.0.20 (#7) — 엘릭서: HP/MP 한 번에 100% 회복 (전투 지속력 최고급 소모품) */
-  potion_elixir: { key: "potion_elixir", kind: "consumable", name: "엘릭서", icon: "item_potion_elixir", price: 400, tier: "epic", healFull: true },
+  /* v3.0.20 (#7) — 엘릭서: HP/MP 한 번에 100% 회복 (전투 지속력 최고급 소모품)
+   * v1.4.35 (유저 지시 #12 "엘릭서는 캐시상점에서 2 에메랄드로 구입 가능하게 해") —
+   *  bmPrice=2 + bmOnly 로 캐시상점(BmShopPanel) 전용 진열. bmOnly 라 골드로는 못 산다. */
+  potion_elixir: { key: "potion_elixir", kind: "consumable", name: "엘릭서", icon: "item_potion_elixir", price: 400, tier: "epic", healFull: true, bmPrice: 2 },
   /* v2.5 — 이동 소모품 (지시 #6 귀환서 / #7 지역 워프 부적) */
   scroll_return: { key: "scroll_return", kind: "consumable", name: "마을 귀환서", icon: "item_scroll_return", price: 40, tier: "common" },
   scroll_warp: { key: "scroll_warp", kind: "consumable", name: "지역 이동 부적", icon: "item_scroll_warp", price: 120, tier: "rare" },
@@ -852,6 +869,14 @@ export const SHOP_STOCK: ItemKey[] = [
    *  엘릭서의 4단으로 정리. ITEMS 정의는 구 세이브 보유분 호환을 위해 유지(획득 경로만 제거). */
   "potion_hp3", // v1.0.16 — 고급 물약이 사다리 최상위 (회복량 700/450으로 상향, 가격 조정)
   "potion_mp3",
+  /* v1.4.35 (유저 지시 #11) — 비율 회복 물약 10%/25%/50%. 레벨이 올라도 회복량이
+   *  최대치에 비례해 계속 유효하므로 고정 회복 물약 위 계단으로 진열한다. */
+  "potion_hp_p10",
+  "potion_hp_p25",
+  "potion_hp_p50",
+  "potion_mp_p10",
+  "potion_mp_p25",
+  "potion_mp_p50",
   /* v1.4.30 (#5) — 강화 주문서 골드 상점 철수: 에메랄드 전용 판매로 이관 */
   "weapon_2",
   "armor_2",

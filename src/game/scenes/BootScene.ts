@@ -182,6 +182,15 @@ export const SFX3_LIST = [
 const ASSET_LIST = [
   // 타일
   "tile_grass",
+  /* v1.4.35 (유저 지시 #5) — 정식 타일셋(TopDown 2D RPG BE3 / Tiles.png)에서 추출한
+   *  지면 타일. WorldScene 이 tile_grass 등을 이 팩 타일로 치환해 깐다.
+   *  ⚠ 여기 등록되지 않으면 textures.exists() 가 false 라 치환이 조용히 무시되고
+   *    기존 절차 생성 타일이 그대로 나온다(실제로 그렇게 한 번 놓쳤다).
+   *  변형(_v1/_v2)은 64px 주기 규칙 반복을 깨기 위한 것이다. */
+  "tile_grass_pack", "tile_grass_pack_v1", "tile_grass_pack_v2",
+  "tile_sand_pack", "tile_sand_pack_v1", "tile_sand_pack_v2",
+  "tile_water_pack", "tile_water_pack_v1", "tile_water_pack_v2",
+  "tile_dirt_pack", "tile_dirt_pack_v1", "tile_dirt_pack_v2",
   "tile_path",
   "tile_dark",
   "tile_snow",
