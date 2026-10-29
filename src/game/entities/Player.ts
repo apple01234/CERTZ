@@ -17,6 +17,7 @@ import {
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
+import { ult5HoldOf, ult5bHoldOf } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
@@ -3396,7 +3397,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
     /* vc183 — 극딜 3단계 연출(암전 → 후면오라/지면룬/전면폭발 → 히트스톱·흔들림·줌).
      *  계열별 강도표(ultLayers.ts)로 전사는 묵직, 도적은 짧고 날카롭게 자동 분기된다. */
-    playUltLayers(this.scene, this.x, this.y, hex, key5);
+    /* v1.4.41 (#3) — 연출 길이를 시전 시간에 비례시킨다.
+     *  경직(ult5HoldOf)은 5~30초인데 연출이 2.6초로 고정이면 다시 어긋난다.
+     *  1차 프로파일 평균 연출은 약 1,374ms 이므로, hold/1374 배율로 늘린다(1~6배 클램프). */
+    playUltLayers(this.scene, this.x, this.y, hex, key5, {
+      timeScale: Math.max(1, Math.min(6, ult5HoldOf(resolveSkill5Of(this.cls), familyOf(this.cls)) / 1374)),
+    });
     const ring = this.scene.add.circle(this.x, this.y, 34)
       .setStrokeStyle(3, hex, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.scene.tweens.add({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
@@ -5077,8 +5083,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    /* 공통 마무리 — 시전 후 경직 해제 */
-    this.scene.time.delayedCall(300, () => {
+    /* 공통 마무리 — 시전 후 경직 해제.
+     *  v1.4.41 (#3) — 종전 300ms 고정이라 연출(1.3초)보다 먼저 조작이 풀렸다.
+     *  "쿨타임에 비해 시전시간이 너무 짧다"는 체감의 실제 원인.
+     *  이제 직업별 시전 시간(1차 5~30초)만큼 경직을 유지한다. */
+    this.scene.time.delayedCall(ult5HoldOf(resolveSkill5Of(this.cls), familyOf(this.cls)), () => {
       if (this.state === "attack") this.state = "idle";
     });
     this.scene.emitHud();
@@ -5130,7 +5139,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* vc181 (지시 #1·#2) — 제2궁극기는 3D 나선 카메라 워크 (1차보다 길고 웅장하게) */
     void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: 2400, fam: this.ultKeyFor3D() });
     /* vc183 — 제2궁극기(120초)는 극딜의 정점: 암전·연출을 1차보다 강하게(scale 1.15) */
-    playUltLayers(this.scene, this.x, this.y, 0xb06aff, key5, { scale: 1.15 });
+    /* v1.4.41 (#3) — 2차 궁극기(쿨 120초)는 1차(60초)보다 길게. 연출 6초대 유지. */
+    playUltLayers(this.scene, this.x, this.y, 0xb06aff, key5, {
+      scale: 1.15,
+      timeScale: Math.max(1, Math.min(10, ult5bHoldOf(resolveSkill5Of(this.cls), familyOf(this.cls)) / 1374)),
+    });
 
     switch (key5) {
       /* 워브링어 — 천멸전격: 5회 관통 돌진(용암 균열 잔존) + 대지 분쇄 지진 종결 */
@@ -6792,7 +6805,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     /* 공통 마무리 — 시전 후 경직 해제 (1차 궁극기와 동일 게이트)
      *  vc153 — 3D 시네마틱(사(死)의 일섬) 재생 중엔 cineLock이 해제를 막는다 (종료 시 onEnd에서 해제) */
-    this.scene.time.delayedCall(300, () => {
+    this.scene.time.delayedCall(ult5bHoldOf(resolveSkill5Of(this.cls), familyOf(this.cls)), () => {
       if (this.state === "attack" && !this.cineLock) this.state = "idle";
     });
     this.scene.emitHud();

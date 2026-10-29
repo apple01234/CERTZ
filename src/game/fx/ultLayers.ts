@@ -249,10 +249,17 @@ export function playUltLayers(
   y: number,
   tint: number,
   profileKey?: string | null,
-  opts?: { scale?: number },
+  opts?: { scale?: number; timeScale?: number },
 ) {
   const p = ultProfile(profileKey);
   const s = opts?.scale ?? 1;
+  /* v1.4.41 (#3 "궁극기 쿨타임에 비해 시전시간이 다들 너무 짧아") —
+   *  종전 1차 궁극기 연출은 darkenMs 평균 1,374ms(최소 850~최대 1,900)뿐이었는데
+   *  쿨타임은 60초였다. 실측상 60초를 기다려 1.4초 보고 끝나는 비율이라
+   *  "궁극기를 썼다"는 감각이 남지 않았다. timeScale 로 암전·이펙트·연타 구간을
+   *  함께 늘려 1차는 약 2.6초, 2차는 opts 로 더 길게 잡는다.
+   *  피해 판정 시점(아래 각 case 의 delayedCall)은 건드리지 않는다 — 연출만 늘린다. */
+  const ts = Math.max(1, opts?.timeScale ?? 1.9);
   const cam = scene.cameras.main;
   const webgl = scene.game.renderer.type === Phaser.WEBGL;
 
@@ -274,7 +281,7 @@ export function playUltLayers(
         scene.tweens.add({
           targets: veil,
           alpha: 0,
-          duration: p.darkenMs,
+          duration: Math.round(p.darkenMs * ts),
           ease: "Quad.in",
           onComplete: () => veil?.destroy(),
         });
@@ -311,20 +318,20 @@ export function playUltLayers(
   /* v1.4.32 (지시 #7) — depth 12 → 8 로 교정. 플레이어 depth 는 perspDepthOf() = 9~10 이라
    *  종전 12 는 "캐릭터 뒤"가 아니라 **앞**이었고, ADD 블렌드 오라가 스프라이트를 덮어
    *  캐릭터가 하얗게 씻겨 보였다(주석과 실제 렌더 순서 불일치). */
-  addFx(p.auraKey, 8, 0.6, 2.6, 0.75, 620);
+  addFx(p.auraKey, 8, 0.6, 2.6, 0.75, Math.round(620 * ts));
   // 지면 룬 — 바닥에 깔리는 평면 연출(depth 5). 살짝 늦게 떠서 층이 생긴다.
-  addFx(p.runeKey, 5, 0.4, 3.2, 0.6, 780, 60);
+  addFx(p.runeKey, 5, 0.4, 3.2, 0.6, Math.round(780 * ts), Math.round(60 * ts));
 
   /* v1.4.32 (지시 #5·#7·#13) — 고해상도 임팩트 레이어.
    *  기존 3레이어만으로는 "큰 폭발 하나"로 읽혀 메이플 5·6차의 다층 타격감이 안 났다.
    *  fx2 는 512px 흰색 마스크라 tint 시 실루엣이 살아 있다.
    *  순서: 링(지면 파동, depth 6) → 히트 섬광(depth 23, 캐릭터 앞).
    *  히트스톱과 같은 프레임에 떠야 타격으로 읽히므로 delay 를 주지 않는다. */
-  if (p.ringKey) addFx(p.ringKey, 6, 0.5, 3.6, 0.7, 700, 30);
-  if (p.hitKey) addFx(p.hitKey, 23, 0.4, 2.4, 0.95, 380);
+  if (p.ringKey) addFx(p.ringKey, 6, 0.5, 3.6, 0.7, Math.round(700 * ts), Math.round(30 * ts));
+  if (p.hitKey) addFx(p.hitKey, 23, 0.4, 2.4, 0.95, Math.round(380 * ts));
 
   // 전면 폭발 — 캐릭터 앞(depth 22). 짧고 강하게.
-  addFx(p.burstKey, 22, 0.35, 2.2, 0.9, 420, 100);
+  addFx(p.burstKey, 22, 0.35, 2.2, 0.9, Math.round(420 * ts), Math.round(100 * ts));
 
   /* v1.4.32 (지시 #5·#7·#13) — 밀집 타격 레이어.
    *  v1.4.33 (긴급수정 — "전사 스킬 사용시 캐릭터 멈추는 버그")
@@ -333,7 +340,7 @@ export function playUltLayers(
    *  캐릭터가 멈춘 것처럼 보였다. 개수를 절반으로 줄이고 간격을 늘린다. */
   playUltBarrage(scene, x, y, tint, {
     count: Math.max(6, Math.round(8 * s)),
-    spanMs: Math.round(1100 * s),
+    spanMs: Math.round(1100 * s * ts),
     radius: 140 * s,
     scale: s,
   });
