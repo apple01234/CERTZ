@@ -13228,7 +13228,7 @@ export class WorldScene extends Phaser.Scene {
       const d = Phaser.Math.Distance.Between(p.x, p.y, this.player.x, this.player.y);
       if (d <= 26 && this.player.state !== "dead") {
         const dir = new Phaser.Math.Vector2(p.body!.velocity.x, p.body!.velocity.y).normalize();
-        this.player.takeDamage(p.getData("dmg") as number, dir, 0, DMG_PCT.mob); // v3.0.6 — 적 투사체 % 하한
+        this.player.takeDamage(p.getData("dmg") as number, dir, 0, 0); // v1.4.41 (#8) — 적 투사체 고정 % 폐지
         this.spawnBurstAt(p.x, p.y, 6, (p.getData("tint") as number) ?? 0xffffff);
         p.disableBody(true, true);
       }

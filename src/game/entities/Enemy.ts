@@ -380,7 +380,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
           return "chargeDash";
         }
         if (c.dist <= 58) {
-          c.player.takeDamage(e.def.atk, c.toPlayer, 0, e.dmgPct); // v3.0.6 — maxHP % 하한
+          c.player.takeDamage(e.def.atk, c.toPlayer, 0, 0); /* v1.4.41 (#8) — 유저 지시: 고정 % 피해는 '식인초·카오스 보스 특정 패턴'에만.
+         *  일반 몹 접촉에 4.5% 고정 하한이 걸려 밸런스가 무너져 있었다 → 수치 피해만. */
           /* v3.0.3 — 접촉 공격 상태이상 (출혈/독/감속) */
           const ap = prof?.apply;
           if (ap && e.rnd.chance(ap.chance)) {
@@ -405,7 +406,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         c.vy = e.chargeDir.y * prof2.speed;
         // 돌진 접촉 판정 — 플레이어 원판
         if (c.dist <= 40 && c.player.hp > 0) {
-          c.player.takeDamage(e.def.atk * 1.3, e.chargeDir, 0, Math.min(0.09, e.dmgPct * 1.3)); // v3.0.6
+          c.player.takeDamage(e.def.atk * 1.3, e.chargeDir, 0, 0); // v1.4.41 (#8) — 고정 % 폐지
           const ap = e.def.profile?.apply;
           if (ap && e.rnd.chance(ap.chance)) c.player.applyEnemyStatus(ap.kind, ap.dps, ap.dur);
           e.modeTimer = 700;

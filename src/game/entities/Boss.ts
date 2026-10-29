@@ -350,7 +350,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           orb.getData("dmg"),
           new Phaser.Math.Vector2(orb.body!.velocity.x, orb.body!.velocity.y).normalize(),
           0.5,
-          0.09 // v3.0.6 — 보스 탄막 maxHP % 하한
+          /* v1.4.41 (#8) — 고정 % 피해는 카오스 보스에만. 일반 보스 탄막은 수치 피해만. */
+          this.chaos ? 0.09 : 0
         );
         this.killOrb(orb);
       }
@@ -397,7 +398,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.setVelocity(this.chargeDir.x * 520 + this.knockVec.x, this.chargeDir.y * 520 + this.knockVec.y);
         if (!this.chargeHitDone && dist < 64) {
           this.chargeHitDone = true;
-          player.takeDamage(Math.round(this.def.atk * 1.1), this.chargeDir.clone(), 0.5, 0.10); // v3.0.6 — 관통 + maxHP % 하한
+          player.takeDamage(Math.round(this.def.atk * 1.1), this.chargeDir.clone(), 0.5, this.chaos ? 0.10 : 0); // v3.0.6 — 관통 + maxHP % 하한
         }
         if (this.modeTimer <= 0) {
           // v4.1.4 — 돌진 연쇄 (fenrir/skoll 고유성, 카오스 +1): 끝나면 짧은 예고 뒤 재돌진
@@ -692,7 +693,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.scene.driveFx?.shockHeavy(tx, ty, 0xffc890, 1.15);
       if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 118) {
         const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
-        player.takeDamage(Math.round(this.def.atk * 1.35), dir, 0.5, 0.12); // v3.0.6 — 관통 + 강타 maxHP % 하한
+        player.takeDamage(Math.round(this.def.atk * 1.35), dir, 0.5, this.chaos ? 0.12 : 0); // v3.0.6 — 관통 + 강타 maxHP % 하한
       }
       this.scene.tweens.add({
         targets: ring,
@@ -982,7 +983,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(70, 0.004);
             if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 92) {
               const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
-              player.takeDamage(Math.round(atk * 1.15), dir, 0.5, 0.10);
+              player.takeDamage(Math.round(atk * 1.15), dir, 0.5, this.chaos ? 0.10 : 0);
             }
             this.scene.time.delayedCall(230, strike);
           });
@@ -1008,7 +1009,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(90, 0.005);
             if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < radius) {
               const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
-              player.takeDamage(Math.round(atk * dmgMul), dir, 0.5, 0.09);
+              player.takeDamage(Math.round(atk * dmgMul), dir, 0.5, this.chaos ? 0.09 : 0);
             }
           });
         };
@@ -1038,7 +1039,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
               this.scene.cameras.main.shake(60, 0.004);
               if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 86) {
                 const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
-                player.takeDamage(Math.round(atk * 0.95), dir, 0.5, 0.09);
+                player.takeDamage(Math.round(atk * 0.95), dir, 0.5, this.chaos ? 0.09 : 0);
               }
               this.scene.time.delayedCall(220, drop);
             });
@@ -1086,7 +1087,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(220, 0.009);
           if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 244) {
             const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
-            player.takeDamage(Math.round(atk * 1.3), dir, 0.5, 0.12);
+            player.takeDamage(Math.round(atk * 1.3), dir, 0.5, this.chaos ? 0.12 : 0);
           }
         });
         this.endAttack(1500);
@@ -1137,7 +1138,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSwing();
           if (Phaser.Math.Distance.Between(nx, ny, player.x, player.y) < 118) {
             const dir = new Phaser.Math.Vector2(player.x - nx, player.y - ny).normalize();
-            player.takeDamage(Math.round(atk * 0.95), dir, 0.5, 0.09);
+            player.takeDamage(Math.round(atk * 0.95), dir, 0.5, this.chaos ? 0.09 : 0);
           }
           this.scene.time.delayedCall(320, swing);
         };
@@ -1330,7 +1331,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.scene.cameras.main.shake(90, 0.005);
         if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 170) {
           const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
-          player.takeDamage(Math.round(this.def.atk * mul), dir, 0.5, 0.08);
+          player.takeDamage(Math.round(this.def.atk * mul), dir, 0.5, this.chaos ? 0.08 : 0);
         }
       });
     };
@@ -1412,7 +1413,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(240, 0.011);
           if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 250) {
             const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
-            player.takeDamage(Math.round(atk * 1.3), dir, 0.5, 0.12);
+            player.takeDamage(Math.round(atk * 1.3), dir, 0.5, this.chaos ? 0.12 : 0);
           }
           this.endAttack(1200);
         });
@@ -1428,7 +1429,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.scene.cameras.main.shake(70, 0.004);
         if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 92) {
           const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
-          player.takeDamage(Math.round(atk * 1.0), dir, 0.5, 0.09);
+          player.takeDamage(Math.round(atk * 1.0), dir, 0.5, this.chaos ? 0.09 : 0);
         }
         strike();
       });

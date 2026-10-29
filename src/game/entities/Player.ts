@@ -6872,7 +6872,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   takeDamage(dmg: number, fromDir: Phaser.Math.Vector2, pierce = 0, hpPct = 0, trueDmg = false) {
     if (this.iframes > 0 || this.state === "dead") return;
     /* v4.2.0 — trueDmg: 방어력/피해 하한 무시 고정 피해 (식인초 최대체력 10% 고정데미지 전용) */
-    const pctFloor = trueDmg ? 0 : hpPct > 0 && this.stageCh >= 4 ? Math.round(this.maxHp * hpPct) : 0;
+    /* v1.4.41 (#8) — 유저 지시: 고정 % 피해는 '식인초(trueDmg)·카오스 보스 특정 패턴'에만.
+     *  종전에는 챕터 4 이상 전투 전부에 % 하한이 걸려 육성·방어 투자가 무의미했다.
+     *  이제 hpPct 는 호출부가 chaos 여부를 판단해 넘긴다(기본 0). */
+    const pctFloor = trueDmg ? 0 : hpPct > 0 ? Math.round(this.maxHp * hpPct) : 0;
     const final = trueDmg ? dmg : Math.max(this.applyDefense(dmg, pierce), pctFloor);
     this.hp -= final;
     this.iframes = 600;
