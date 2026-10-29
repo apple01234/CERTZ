@@ -10,6 +10,7 @@ import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
 /* v1.4.41 (씬 분해 1단계) — 순수 헬퍼 4종을 worldHelpers.ts 로 분리. 동작 변경 0. */
 import { AURA_ANIM, AURA_LUT, AURA_LUT_STEPS, HIT_FLIPBOOK, adFailText } from "./worldHelpers";
+import { FifthAuraRig } from "../fx/FifthAura"; // v1.4.41 (#9) — 5차 블룸·라이트
 import { Lighting, ambientFor } from "../fx/Lighting";
 import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
 import { Pet } from "../entities/Pet";
@@ -710,6 +711,8 @@ export class WorldScene extends Phaser.Scene {
 
   /* ----- v3.0.3: 무기 스프라이트 (활/지팡이/단검 — 손에 들고 다니는 장비 비주얼) ----- */
   private weaponImg: Phaser.GameObjects.Image | null = null;
+  /** v1.4.41 (#9) — 5차 각성 시 캐릭터에 붙는 지속 블룸·라이트 */
+  private fifthAura: FifthAuraRig | null = null;
   private weaponKey: "x3_sword" | "x3_bow" | "x3_staff" | "x3_dagger" | "x3_shuriken" | "x3_gun" | null = null;
 
   /* ----- v3.0.3: 그림자 칼날 오비트 (나이트블레이드/섀도우로드 3차기) ----- */
@@ -10619,6 +10622,10 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:infRebirth", onInfRebirth);
       EventBus.off("rpg:marketList", onMarketList);
       EventBus.off("rpg:marketBuy", onMarketBuy);
+      /* v1.4.41 (#9) — 5차 발광 이미지 정리. 씬 재진입(마을 이동 등)마다 누적되면
+       *  맵을 오갈수록 캐릭터가 점점 하얗게 타오른다. */
+      this.fifthAura?.destroy();
+      this.fifthAura = null;
       EventBus.off("rpg:marketCancel", onMarketCancel);
       EventBus.off("rpg:marketCollect", onMarketCollect);
       EventBus.off("rpg:starScroll", onStarScroll);
@@ -10818,6 +10825,17 @@ export class WorldScene extends Phaser.Scene {
     this.tickFields(dt);
     this.tickOrbitBlades(dt);
     if (this.player && this.player.state !== "dead") this.syncWeaponSprite();
+    /* v1.4.41 (#9) — 5차 각성 발광. 외형은 색조만 바뀌어도 되지만 5차는 빛나야 한다. */
+    if (this.player) {
+      if (!this.fifthAura) this.fifthAura = new FifthAuraRig(this);
+      this.fifthAura.update(
+        this.player.x,
+        this.player.y,
+        this.player.isFifth && this.player.state !== "dead",
+        this.player.clsHexPublic,
+        this.player.flipX,
+      );
+    }
     else if (this.weaponImg) { this.weaponImg.setVisible(false); }
 
     /* v1.0.4 — 어떤 DOM 입력(로그인/수량/이름 등)이든 포커스 중이면 게임 키 전면 차단.

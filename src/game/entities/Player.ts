@@ -2291,6 +2291,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return classDef(this.cls)?.hex ?? 0xffffff;
   }
 
+  /** v1.4.41 (#9) — 5차 발광 등 **씬 외부**에서 직업 색이 필요할 때 쓰는 공개 접근자.
+   *  clsHex() 는 private 이라 WorldScene 이 부를 수 없어 읽기 전용으로 노출한다. */
+  get clsHexPublic(): number {
+    return this.clsHex();
+  }
+
   /** vc179 (지시 #11) — 사용자 제공 VFX 팩을 계열 정체성에 맞춰 고른다.
    *  직접 그린 도형 대신 이미 받아 둔 텍스처를 쓰라는 지시의 수리.
    *  각 계열의 상징(전사=충격파, 마법사=번개, 도적=보라 파동, 궁수=바람, 해적=화약)에 대응. */

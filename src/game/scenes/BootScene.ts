@@ -692,7 +692,10 @@ export class BootScene extends Phaser.Scene {
         this.load.image(`${k}_${f}`, `${k}_${f}.webp`);
       }
     }
-    for (const k of ["x3_bow", "x3_staff", "x3_dagger", "x3_shuriken", "x3_gun", "npc_gm"]) {
+    /* v1.4.41 (#6) — x3_sword 누락 수리. syncWeaponSprite 가 5계열 1:1로 무기를 고르는데
+     *  (전사=검 / 궁수=활 / 마법사=지팡이 / 도적=표창 / 해적=총) 검만 이 목록에 없어
+     *  전사 계열만 무기가 렌더되지 않았다(Phaser 가 없는 텍스처에 __MISSING 를 넣는다). */
+    for (const k of ["x3_sword", "x3_bow", "x3_staff", "x3_shuriken", "x3_gun", "npc_gm"]) {
       this.load.image(k, `${k}.webp`);
     }
     for (const [k, w, h] of X2_SPELLS) this.load.spritesheet(k, `${k}.webp`, { frameWidth: h, frameHeight: h });
