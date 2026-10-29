@@ -45,7 +45,9 @@ const BIND_CODE_RE = /^(UP|DOWN|LEFT|RIGHT|[A-Z])$/;
 /** 기본 배치 — v1.0.4: 이동 화살표 전용, 전투 키는 Z X C V + A S D F 클러스터 (유저 지시)
  *  Z=스킬1 X=공격 C=스킬2 V=스킬3 (기존 유지) / A=스킬4 S=스킬5 D=HP물약 F=MP물약
  *  vc145 (#4) — 친구 창 기본 단축키 R 신설. 기존 FriendsWidget의 B 하드코딩은
- *  자동전투(B)와 충돌하는 버그(#10)의 근원 — 키맵 체계로 일원화해 해지 */
+ *  자동전투(B)와 충돌하는 버그(#10)의 근원 — 키맵 체계로 일원화해 해지
+ *  v1.4.41 (#7) — 화살표 이동 스킴에서는 A/S/D/F 가 이동키가 아니므로 그대로 유효하다.
+ *  (WASD 스킴은 아래 WASD_KEYMAP 을 쓴다 — 이동키와 충돌하지 않는 별도 배치) */
 export const DEFAULT_KEYMAP: KeyMap = {
   attack: "X",
   skill1: "Z",
