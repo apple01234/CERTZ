@@ -39,7 +39,7 @@ app.prepare().then(() => {
   "https://github.com/apple01234/CERTZ/releases/download/v1.4.43/SERTZ-vc203.apk";
   /* v1.4.39 — 데스크톱 클라이언트 자동 업데이트. electron/main.js checkForUpdates() 가 읽는다. */
   const EXE_MIRROR =
-    "https://github.com/apple01234/CERTZ/releases/download/v1.4.40/SERTZ-vc202-setup.exe";
+    "https://github.com/apple01234/CERTZ/releases/download/v1.4.43/SERTZ-vc203-setup.exe";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {

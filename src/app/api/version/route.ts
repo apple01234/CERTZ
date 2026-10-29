@@ -20,7 +20,7 @@ const APK_MIRROR =
  *  사용자가 릴리스 페이지에서 직접 받아 재설치해야 했다.
  *  electron/main.js 의 checkForUpdates() 가 이 값을 읽어 자동 다운로드·설치한다. */
 const EXE_MIRROR =
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.40/SERTZ-vc202-setup.exe";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.43/SERTZ-vc203-setup.exe";
 
 export async function GET() {
   return NextResponse.json({
