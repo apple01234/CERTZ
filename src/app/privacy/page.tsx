@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "SERTZ 개인정보처리방침",
-  description: "SERTZ(이그드라실: 아홉 왕국)의 개인정보 수집·이용·삭제 안내",
+  description: "SERTZ(인피니트보석: 다섯 왕국)의 개인정보 수집·이용·삭제 안내",
 };
 
 /**

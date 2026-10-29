@@ -90,6 +90,16 @@ check("파괴 경로가 있다 (씬 종료/해제 시 누수 방지)", () => {
   if (!/\.destroy\(\)/.test(auraSrc)) throw new Error("오브젝트 파괴 없음");
 });
 
+check("Unity VFX 팩 텍스처를 실제로 쓴다 (범용 원형 대신)", () => {
+  const tex = auraSrc.match(/const TEX_CORE = "([^"]+)"/);
+  const hal = auraSrc.match(/const TEX_HALO = "([^"]+)"/);
+  const gnd = auraSrc.match(/const TEX_GROUND = "([^"]+)"/);
+  if (!tex || !hal || !gnd) throw new Error("텍스처 상수를 찾지 못함");
+  const used = [tex[1], hal[1], gnd[1]];
+  const pack = used.filter((t) => t.startsWith("gvb_") || t.startsWith("gvu_"));
+  if (pack.length < 2) throw new Error(`팩 텍스처 ${pack.length}/3 — 범용 원형으로 되돌아감: ${used.join(",")}`);
+});
+
 check("직업 색을 반영한다 (전직 시 색 변화)", () => {
   if (!/clsHexPublic/.test(sceneSrc)) throw new Error("clsHexPublic 미사용");
   if (!/get clsHexPublic\(\)/.test(playerSrc)) throw new Error("접근자 미정의");

@@ -31,7 +31,7 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "땅의 요정 여왕": { tex: "spum_elf", tone: "#a7f3d0" },
   "난쟁이 광산 조합장": { tex: "spum_miner", tone: "#fcd34d" },
   "마법사 흐레스": { tex: "npc_gm", tone: "#c4b5fd" },
-  "세계수 이그드라실": { tex: "tree", tone: "#7dd3fc" },
+  "세계수 인피니트보석": { tex: "tree", tone: "#7dd3fc" },
   // v4.1.8 — 챕터 마을 주민 (게임 내 SPUM NPC와 동일 비주얼)
   "허브 채집가 베르": { tex: "spum_forager", tone: "#b8f0a0" },
   "신전 관리인 노아": { tex: "spum_mage", tone: "#b8f0a0" },

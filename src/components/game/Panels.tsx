@@ -3085,7 +3085,7 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
           </p>
           <p className="mt-0.5 text-[10px] font-bold text-white/50">
             {rpg.blessing
-              ? "아홉 왕국의 결정이 모두 모였다 — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)"
+              ? "다섯 왕국의 결정이 모두 모였다 — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)"
               : "챕터마다 다른 결정이 숨어 있다. 전부 모으면 세계수의 가호를 얻는다 (ATK+20 · DEF+8 · HP+200 · 공격 +3%)"}
           </p>
         </div>

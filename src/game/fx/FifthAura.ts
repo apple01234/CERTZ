@@ -30,9 +30,13 @@ export type FifthAura = {
   baseY: number;
 };
 
-const TEX_CORE = "fx_glow";
-const TEX_HALO = "fx_aura";
-const TEX_GROUND = "fx_glow";
+/* v1.4.41 — 범용 원형 대신 **Unity VFX 팩 전용 텍스처**를 쓴다(유저 지적: 왜 안 씀?).
+ *  gvb_shield_hex   = GameVFX FX_Buff_EnergyShield 의 육각 보호막 → 5차 각성에 의미가 맞다
+ *  gvb_glow_blurry  = FX_Buff_MagicAir 의 부드러운 광 → 헤일로
+ *  gvb_ring_soft    = HexagonShield 의 바깥 링 → 지면 */
+const TEX_CORE = "gvb_shield_hex";
+const TEX_HALO = "gvb_glow_blurry";
+const TEX_GROUND = "gvb_ring_soft";
 
 export class FifthAuraRig {
   private scene: Phaser.Scene;
@@ -76,9 +80,11 @@ export class FifthAuraRig {
     r.core.setScale(0.95 * breath * s + 0.05);
     r.core.setDepth(10.4); // 몸통 뒤·발밑 (플레이어 depth 9~10)
 
-    r.halo.setPosition(x, y - 26);
+    /* 육각 보호막은 천천히 회전해야 "살아있는 방어막"으로 읽힌다 */
+    r.halo.setPosition(x, y - 18);
     r.halo.setAlpha(0.30 * s * breath);
-    r.halo.setScale(0.62 * breath * s + 0.08);
+    r.halo.setScale(0.95 * breath * s + 0.1);
+    r.halo.setRotation(this.scene.time.now / 5200);
     r.halo.setDepth(10.45);
 
     r.ground.setPosition(x, y + 8);

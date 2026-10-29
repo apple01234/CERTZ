@@ -107,6 +107,12 @@ check("2차가 1차보다 큰 규모로 재생된다", () => {
   if (!/scale: 1\.35/.test(player)) throw new Error("2차 scale 배율 없음");
 });
 
+check("Unity VFX 팩 텍스처를 연출에 실제로 쓴다", () => {
+  const used = [...cine.matchAll(/"(gv[bu]_[a-z0-9_]+)"/g)].map((m) => m[1]);
+  const uniq = [...new Set(used)];
+  if (uniq.length < 3) throw new Error(`팩 텍스처 ${uniq.length}종만 사용 — 3종 이상 필요`);
+});
+
 check("연출이 판정에 관여하지 않는다 (피해 계산 없음)", () => {
   if (/takeDamage|rollDamage|applyDamage/.test(cine)) {
     throw new Error("연출 파일에서 피해를 계산한다 — view/rule 분리 위반");

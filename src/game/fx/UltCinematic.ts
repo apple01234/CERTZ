@@ -161,7 +161,8 @@ export function playUltCinematic(scene: S3, x: number, y: number, opts: Cinemati
     const delay = Math.round(dur * (0.10 + Math.random() * 0.30));
     scene.time.delayedCall(delay, () => {
       try {
-        const key = i % 3 === 0 ? "fx_ball" : i % 2 === 0 ? "fx_Flare" : "fx_Circle";
+        /* v1.4.41 — UNI VFX 확산 파편 텍스처 우선 사용 */
+        const key = i % 3 === 0 ? "gvu_specks" : i % 2 === 0 ? "gvu_trail_ghost" : "fx_Flare";
         const useKey = scene.textures.exists(key) ? key : "fx_Flare";
         if (!scene.textures.exists(useKey)) return;
         const sx = x + (Math.random() - 0.5) * 260 * s;
@@ -189,7 +190,9 @@ export function playUltCinematic(scene: S3, x: number, y: number, opts: Cinemati
   for (let i = 0; i < 4; i++) {
     at(0.12 + i * 0.13, () => {
       shake.add(0.18 - i * 0.03);
-      add("fx_shockwave", x, y + 6, 5 + i, 0.25, 3.4 + i * 0.5, 0.62 - i * 0.09, 520 + i * 60);
+      /* v1.4.41 — UNI VFX 의 전용 충격파 텍스처로 교체(기존 범용 원형보다 결이 살아 있다).
+       *  없으면 기존 키로 폴백. */
+      add("gvu_shockwave_fiery", x, y + 6, 5 + i, 0.25, 3.4 + i * 0.5, 0.62 - i * 0.09, 520 + i * 60);
       add("fx_Circle2", x, y + 4, 6, 0.3, 3.0 + i * 0.4, 0.45, 460);
     });
   }
@@ -247,6 +250,9 @@ export function playUltCinematic(scene: S3, x: number, y: number, opts: Cinemati
     cam.flash(160, 255, 255, 255);
     cam.shake(260, 0.010 * s);
     add("fx_FlashFree3", x, y, 24, 0.8, 4.0, 1.0, 560, 0, 0xffffff);
+    /* UNI VFX 폭발 코어 — 백색 섬광 뒤에 계열색 코어를 겹쳐 깊이를 만든다 */
+    add("gvu_exp_core", x, y, 23, 0.4, 3.8, 0.95, 620);
+    add("gvu_circle_aggr", x, y, 21, 0.5, 3.0, 0.8, 560);
     add("fx_flarebig", x, y, 22, 0.6, 3.6, 0.9, 620);
     for (let i = 0; i < 2; i++) {
       add("fx_shockwave", x, y + 6, 5, 0.4, 4.6 + i, 0.7, 620 + i * 80);

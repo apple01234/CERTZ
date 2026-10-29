@@ -40,7 +40,7 @@ export const FIGURES: FigureDef[] = [
   { icon: "runegolem_idle0", key: "fig_golem", name: "룬 골렘", grade: 2, desc: "고대 룬이 깨어났다", bonus: { atkPct: 2, hp: 150 } },
   { icon: "emberwolf_idle0", key: "fig_fenrir", name: "펜리르 그림자", grade: 2, desc: "포효가 남겨둔 흔적", bonus: { atkPct: 3 } },
   { icon: "cos_wings", key: "fig_valk", name: "발키리 날개", grade: 2, desc: "빛의 결정 날개", bonus: { crit: 4, def: 8 } },
-  { icon: "gw_crystal", key: "fig_worldtree", name: "세계수의 심장", grade: 3, desc: "아홉 왕국을 지탱하는 전설", bonus: { atkPct: 4, hp: 300, crit: 2 } },
+  { icon: "gw_crystal", key: "fig_worldtree", name: "세계수의 심장", grade: 3, desc: "다섯 왕국을 지탱하는 전설", bonus: { atkPct: 4, hp: 300, crit: 2 } },
 ];
 
 export const FIGURE_MAP: Record<string, FigureDef> = Object.fromEntries(FIGURES.map((f) => [f.key, f]));

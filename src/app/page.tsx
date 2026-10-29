@@ -33,7 +33,7 @@ const GameRoot = dynamic(() => import("@/components/game/GameRoot"), {
       <p className="mb-1 text-2xl font-black tracking-[0.3em] text-[#ffe49a] [text-shadow:0_2px_0_#6b4a1c,0_5px_14px_rgba(0,0,0,0.9)]">
         SERTZ
       </p>
-      <p className="mb-5 text-[10px] font-bold tracking-[0.22em] text-[#cbb88a]/80">이그드라실 : 아홉 왕국</p>
+      <p className="mb-5 text-[10px] font-bold tracking-[0.22em] text-[#cbb88a]/80">인피니트보석 : 다섯 왕국</p>
 
       {/* 금장 진행 바 — 폭을 알 수 없는 최초 로딩이라 무한 왕복으로 표시 */}
       <div className="h-1 w-44 overflow-hidden rounded-full border border-[#8a6a34]/60 bg-black/60">

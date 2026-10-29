@@ -511,7 +511,7 @@ export class BootScene extends Phaser.Scene {
       );
       container.add(
         this.add
-          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "이그드라실 : 아홉 왕국", {
+          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "인피니트보석 : 다섯 왕국", {
             fontFamily: "Galmuri11, sans-serif",
             fontSize: `${Math.max(12, Math.round(W * 0.02))}px`,
             color: "#cbb88a",
@@ -696,6 +696,22 @@ export class BootScene extends Phaser.Scene {
      *  (전사=검 / 궁수=활 / 마법사=지팡이 / 도적=표창 / 해적=총) 검만 이 목록에 없어
      *  전사 계열만 무기가 렌더되지 않았다(Phaser 가 없는 텍스처에 __MISSING 를 넣는다). */
     for (const k of ["x3_sword", "x3_bow", "x3_staff", "x3_shuriken", "x3_gun", "npc_gm"]) {
+      this.load.image(k, `${k}.webp`);
+    }
+    /* v1.4.41 — Unity VFX 팩 2종 이관분 (gvb_ = GameVFX Buff, gvu_ = UNI VFX).
+     *  프리팹은 못 쓰지만 텍스처는 PNG/TGA 1024² 이고 팩의 Additive.shader = Phaser ADD 블렌드.
+     *  알파 없는 가산광 마스크는 휘도→알파로 변환해 두었다(tools/extract_vfx_alpha.py).
+     *  로드 키 목록은 tools/import_vfx_packs.py 의 IMPORT 표와 1:1 이어야 한다. */
+    for (const k of [
+      "gvb_shield_hex", "gvb_ring_soft", "gvb_electric_splat", "gvb_lightning_blue",
+      "gvb_buff_air", "gvb_grad_soft", "gvb_trail_stylized", "gvb_twinkle",
+      "gvb_glow_white", "gvb_star4", "gvb_star_green", "gvb_twink_01",
+      "gvb_shard", "gvb_lensflare", "gvb_glow_blurry", "gvb_smoke_pink", "gvb_glow_blue",
+      "gvu_exp_core", "gvu_circle_aggr", "gvu_shockwave_fiery", "gvu_trail_wave",
+      "gvu_energybolts", "gvu_linelong", "gvu_energyweb", "gvu_energynoise",
+      "gvu_mask_ommi", "gvu_mask_razor", "gvu_trail_ghost", "gvu_streaks",
+      "gvu_specks", "gvu_flare_xo", "gvu_glow", "gvu_spark",
+    ]) {
       this.load.image(k, `${k}.webp`);
     }
     for (const [k, w, h] of X2_SPELLS) this.load.spritesheet(k, `${k}.webp`, { frameWidth: h, frameHeight: h });
