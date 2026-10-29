@@ -8,13 +8,13 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.4.40";
-const LATEST_CODE = 202;
+const LATEST_VERSION = "1.4.43";
+const LATEST_CODE = 203;
 const VERSION_NOTE =
-  "v1.4.40 (vc202) — ①계열별 무기 5종 완성: 전사=검(신규 제작)·궁수=활·마법사=지팡이·도적=표창·해적=총. 종전엔 전사가 무기를 들지 않았고 도적 표창 에셋이 등록만 된 채 미사용이었다. ②모바일 3D 연출 복구 — 기기 판정이 모바일 UA만 보고 3D VFX 를 전면 차단해 Galaxy S20+ 같은 상위 기기에서도 궁극기 3D 카메라·이펙트가 사라지던 문제를 코어 수·메모리 기준으로 교체. ③스킬 아이콘 텍스트는 아이콘 배경 레이어 분리로 잘림 없이 2줄 표시.";
+  "v1.4.43 (vc203) — ①Unity VFX 팩 2종(GameVFX Buff · UNI VFX) 텍스처 33장 투입: 프리팹은 Unity 직렬화라 못 쓰지만 내부 텍스처는 1024² PNG/TGA 이고 팩의 Additive 셰이더 = Phaser ADD 블렌드로 그대로 재현된다. 5차 오라가 육각 보호막으로 바뀌고 궁극기 충격파·폭발 코어·파편이 전용 텍스처로 교체됐다. ②FBX 586개 중 VFX 메시 39개를 Blender 로 GLB 변환(2D 굽기 없음 — 3D 그대로): 2차 궁극기 4개 직업에 메시 층 추가. ③세계관 치환 누락 40건 수리 — UI·타이틀·적 이름에 옛 명칭이 그대로 노출되고 있었다.";
 const APK_MIRROR =
-  /* vc179 — APK는 릴리스 태그 v1.3.1에 있다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.40/SERTZ-vc202.apk";
+  /* v1.4.43 — 파일명의 vc{code} 는 build.gradle versionCode 와 일치해야 한다(불일치 시 404). */
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.43/SERTZ-vc203.apk";
 /* v1.4.39 — 데스크톱 클라이언트 자동 업데이트용 EXE 주소.
  *  종전엔 클라이언트가 스스로 업데이트를 확인하는 코드가 아예 없어, 새 빌드마다
  *  사용자가 릴리스 페이지에서 직접 받아 재설치해야 했다.

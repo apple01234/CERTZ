@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc177 — APK는 릴리스 태그 v1.2.5에 있다(이전 태그는 vc176까지 보유).
    *  태그와 파일명이 어긋나면 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.40/SERTZ-vc202.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.43/SERTZ-vc203.apk";
   /* v1.4.39 — 데스크톱 클라이언트 자동 업데이트. electron/main.js checkForUpdates() 가 읽는다. */
   const EXE_MIRROR =
     "https://github.com/apple01234/CERTZ/releases/download/v1.4.40/SERTZ-vc202-setup.exe";
@@ -72,10 +72,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.40";
-  const LATEST_CODE = 202;
+  const LATEST_VERSION = "1.4.43";
+  const LATEST_CODE = 203;
     const VERSION_NOTE =
-      "v1.4.40 (vc202) — ①계열별 무기 5종 완성: 전사=검(신규 제작)·궁수=활·마법사=지팡이·도적=표창·해적=총. 종전엔 전사가 무기를 들지 않았고 도적 표창 에셋이 등록만 된 채 미사용이었다. ②모바일 3D 연출 복구 — 기기 판정이 모바일 UA만 보고 3D VFX 를 전면 차단해 Galaxy S20+ 같은 상위 기기에서도 궁극기 3D 카메라·이펙트가 사라지던 문제를 코어 수·메모리 기준으로 교체. ③스킬 아이콘 텍스트는 아이콘 배경 레이어 분리로 잘림 없이 2줄 표시.";
+      "v1.4.43 (vc203) — ①Unity VFX 팩 2종 텍스처 33장 투입(프리팹은 못 쓰지만 내부 텍스처는 ADD 블렌드로 그대로 재현 — 5차 오라가 육각 보호막, 궁격기 충격파·폭발 코어·파편이 전용 텍스처로 교체). ②FBX 586개 중 VFX 메시 39개를 GLB 로 변환해 2차 궁극기 4개 직업에 메시 층 추가(2D 굽기 없음). ③세계관 치환 누락 40건 수리.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
