@@ -10189,7 +10189,12 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       this.player.gold -= v.price; // 시세 왜곡 방지 — buff_gold 배율 미적용 (직접 차감)
-      this.player.owned.push(v.itemKey as ItemKey);
+      /* v1.4.41 (감사 #1) — 아이템 지급은 이제 **서버(creditOwned)** 가 클라우드 세이브에 한다.
+       *  종전엔 여기서 로컬 owned.push 만 해서 서버가 아무것도 주지 않았고, 세이브를 되올리면
+       *  무한 구매가 성립했다. 다만 즉시 반영이 필요하므로 로컬에도 넣는다(다음 업로드에서
+       *  서버 차감 로직과 합쳐져 중복되지 않는다 — 서버가 유일한 진실).
+       *  TODO(후속): 세이브 업로드 → 서버 재조회로 교체해 로컬 push 를 제거한다. */
+      if (!this.player.owned.includes(v.itemKey as ItemKey)) this.player.owned.push(v.itemKey as ItemKey);
       if (v.up > 0) {
         if (!this.player.accUp) this.player.accUp = {};
         this.player.accUp[v.itemKey] = v.up;
@@ -10203,7 +10208,8 @@ export class WorldScene extends Phaser.Scene {
     };
     const onMarketCancel = (v: { itemKey: string; up: number; qty?: number }) => {
       if (!this.player) return;
-      /* vc153 (#신규8) — 다수 등록 취소: 수량만큼 보유 복원 */
+      /* v1.4.41 (감사 #1) — 반환은 서버(creditOwned)가 클라우드 세이브에 이미 했다.
+       *  로컬은 표시용으로만 맞춘다(서버가 유일한 진실 — 업로드 시 서버 값과 합쳐진다). */
       const n = Math.max(1, Math.min(99, v.qty ?? 1));
       for (let i = 0; i < n; i++) this.player.owned.push(v.itemKey as ItemKey);
       if (v.up > 0) {

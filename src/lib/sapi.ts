@@ -200,6 +200,56 @@ export function ownedCountOf(db: DbShape, uid: string, itemKey: string): number 
   return owned.filter((k) => k === itemKey).length;
 }
 
+/* ---------------- 거래소 에스크로 (v1.4.41 — 감사 #1 무한 복제 수리) ----------------
+ *  문제: 종전엔 등록해도 클라우드 세이브의 owned 가 그대로 남았다. 서버는 "가지고 있는지"만
+ *  확인하고 실제로 빼앗지 않았으므로, 물건을 걸어놓고 팔아도 내 세이브에는 그대로 있었다.
+ *  게다가 owned 는 클라가 업로드하는 값이라, 등록 후 예전 세이브를 다시 올리면 복원됐다.
+ *  해법: 등록 시점에 서버가 owned 에서 수량을 빼서 등록글이 보관(에스크로)하고,
+ *  취소·구매 시에만 돌려준다. 업로드 경로에서도 에스크로분을 다시 차감해 복원을 막는다. */
+
+/** 내 활성 등록분의 아이템별 수량 합계 (에스크로 잔량) */
+export function escrowedCounts(db: DbShape, uid: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const l of Object.values(db.market.listings)) {
+    if (l.seller !== uid) continue;
+    out[l.itemKey] = (out[l.itemKey] ?? 0) + (l.qty ?? 1);
+  }
+  return out;
+}
+
+/** 세이브 owned 에서 에스크로 수량을 제거한다(보유량을 넘지 않게). 제거한 개수 반환.
+ *  클라가 이미 로컬에서 뺀 경우 0개가 제거되고, 예전 세이브를 되올린 경우 정확히 다시 빠진다. */
+export function deductEscrow(save: Record<string, unknown>, esc: Record<string, number>): number {
+  const owned = Array.isArray(save.owned) ? (save.owned as unknown[]) : null;
+  if (!owned) return 0;
+  let removed = 0;
+  for (const [key, qty] of Object.entries(esc)) {
+    for (let i = 0; i < qty; i++) {
+      const idx = owned.indexOf(key);
+      if (idx < 0) break;
+      owned.splice(idx, 1);
+      removed++;
+    }
+  }
+  return removed;
+}
+
+/** 에스크로 해제 — 취소·구매 시 판매자/구매자 세이브에 수량을 되돌려 넣는다. */
+export function creditOwned(db: DbShape, uid: string, itemKey: string, qty: number, up: number): void {
+  const rec = db.saves[uid];
+  if (!rec || !rec.data || typeof rec.data !== "object") return; // 세이브 없는 계정은 지급 불가(등록 자체가 막혀 실제로는 도달하지 않음)
+  const d = rec.data;
+  const owned = Array.isArray(d.owned) ? (d.owned as unknown[]) : [];
+  for (let i = 0; i < qty; i++) owned.push(itemKey);
+  d.owned = owned;
+  if (up > 0) {
+    const accUp = (d.accUp && typeof d.accUp === "object" ? d.accUp : {}) as Record<string, number>;
+    accUp[itemKey] = up;
+    d.accUp = accUp;
+  }
+  rec.updatedAt = Date.now();
+}
+
 /** v1.0.6 계승 — 등록자 실보유 검증(클라우드 세이브 owned + 장착 accessories) */
 export function ownsListableItem(db: DbShape, uid: string, itemKey: string): { ok: boolean; error?: string } {
   if (!MARKET_LISTABLE.has(itemKey)) return { ok: false, error: "거래할 수 없는 아이템이에요 (GM 전용 제외 전체 등록 가능)" };

@@ -5,7 +5,7 @@
  */
 import { NextRequest } from "next/server";
 import { loadDb, mutateDb } from "@/lib/ghdb";
-import { currentUser, json, marketSnapshot, options, ownedCountOf, ownsListableItem, rateLimit, audit } from "@/lib/sapi";
+import { currentUser, json, marketSnapshot, options, ownedCountOf, ownsListableItem, rateLimit, audit, deductEscrow } from "@/lib/sapi";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -39,6 +39,13 @@ export async function POST(req: NextRequest) {
       /* vc153 (#신규8) — 수량 실보유 검증: owned 멀티셋 개수 ≥ 등록 수량 (복제 익스플로잇 차단 계승) */
       const have = ownedCountOf(fdb, me.id, itemKey);
       if (have < qty) return { status: 403, body: { error: `보유 수량이 부족해요 (${have}개 보유 — ${qty}개 등록 요청)` } };
+      /* v1.4.41 (감사 #1) — 등록분을 세이브 owned 에서 **실제로 차감**한다(에스크로).
+       *  종전엔 검증만 하고 빼지 않아, 등록해도 물건이 그대로 남았다 → 계정 2개로 골드 무한 복제.
+       *  이 차감이 있으면 등록된 물건은 취소·구매 전까지 세이브에서 사라지므로 복제가 성립하지 않는다. */
+      const saveRec = fdb.saves[me.id];
+      if (!saveRec?.data) return { status: 403, body: { error: "클라우드 세이브를 먼저 동기화해 주세요" } };
+      deductEscrow(saveRec.data, { [itemKey]: qty });
+      saveRec.updatedAt = Date.now();
       const id = `m${fdb.market.nextId++}`;
       fdb.market.listings[id] = { id, seller: me.id, sellerName: me.name, itemKey, up, price, qty, ts: Date.now() };
       success = { status: 200, body: { ok: true, id, ...marketSnapshot(fdb, me.id) } };

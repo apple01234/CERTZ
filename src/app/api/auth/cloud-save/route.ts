@@ -5,7 +5,7 @@
  */
 import { NextRequest } from "next/server";
 import { loadDb, mutateDb } from "@/lib/ghdb";
-import { currentUser, json, options, rateLimit } from "@/lib/sapi";
+import { currentUser, deductEscrow, escrowedCounts, json, options, rateLimit } from "@/lib/sapi";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -70,19 +70,25 @@ export async function POST(req: NextRequest) {
       return json(req, 400, { error: "세이브 구조가 올바르지 않아요" });
     }
     let updatedAt = 0;
+    let removedEscrow = 0;
     const r = await mutateDb((fdb) => {
       if (!fdb.users[user.id]) return { status: 401, body: { error: "로그인이 필요해요" } };
       updatedAt = Date.now();
       /* v1.0.16 보안 — chars 미포함 요청(거래소 등록 전 선동기화 등)이 기존 캐릭터 백업을
        *  통째로 지우던 데이터 손실을 막는다. 미포함이면 기존 chars를 그대로 보존한다. */
       const prev = fdb.saves[user.id];
-      fdb.saves[user.id] = chars
+      const next: typeof prev = chars
         ? { data: d as Record<string, unknown>, chars, updatedAt }
         : { data: d as Record<string, unknown>, ...(prev?.chars ? { chars: prev.chars } : {}), updatedAt };
+      /* v1.4.41 (감사 #1) — 거래소에 걸어둔 수량은 업로드 세이브에서 다시 차감한다.
+       *  이게 없으면 등록 후 예전 세이브를 되올려 에스크로를 무효화하고 물건을 복제할 수 있다. */
+      const esc = escrowedCounts(fdb, user.id);
+      if (Object.keys(esc).length > 0) removedEscrow = deductEscrow(next.data, esc);
+      fdb.saves[user.id] = next;
       return null; // 쓰기
     });
     if (r.status !== 200) return json(req, r.status, r.body);
-    return json(req, 200, { ok: true, updatedAt });
+    return json(req, 200, { ok: true, updatedAt, escrowDeducted: removedEscrow });
   } catch (e) {
     console.error("[SERTZ-api] cloud-save POST 실패", e);
     return json(req, 500, { error: "서버 오류" });

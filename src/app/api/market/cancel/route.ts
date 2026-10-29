@@ -4,7 +4,7 @@
  */
 import { NextRequest } from "next/server";
 import { loadDb, mutateDb } from "@/lib/ghdb";
-import { currentUser, json, marketSnapshot, options, rateLimit } from "@/lib/sapi";
+import { currentUser, json, marketSnapshot, options, rateLimit, creditOwned } from "@/lib/sapi";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -26,8 +26,10 @@ export async function POST(req: NextRequest) {
       const l = fdb.market.listings[id];
       if (!l) return { status: 404, body: { error: "이미 판매된 등록이에요" } };
       if (l.seller !== me.id) return { status: 403, body: { error: "본인 등록만 취소할 수 있어요" } };
-      const item = { itemKey: l.itemKey, up: l.up ?? 0 };
+      const item = { itemKey: l.itemKey, up: l.up ?? 0, qty: l.qty ?? 1 };
       delete fdb.market.listings[id];
+      /* v1.4.41 (감사 #1) — 취소분을 세이브 owned 로 반환(에스크로 해제) */
+      creditOwned(fdb, me.id, item.itemKey, item.qty, item.up);
       success = { status: 200, body: { ok: true, item, ...marketSnapshot(fdb, me.id) } };
       return null; // 쓰기
     });

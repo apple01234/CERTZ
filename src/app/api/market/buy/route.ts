@@ -5,7 +5,7 @@
  */
 import { NextRequest } from "next/server";
 import { loadDb, mutateDb } from "@/lib/ghdb";
-import { MARKET_FEE_PCT, currentUser, json, marketSnapshot, options, rateLimit, audit } from "@/lib/sapi";
+import { MARKET_FEE_PCT, creditOwned, currentUser, json, marketSnapshot, options, rateLimit, audit } from "@/lib/sapi";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -38,6 +38,9 @@ export async function POST(req: NextRequest) {
       fdb.payouts[l.seller] ||= { gold: 0, count: 0 };
       fdb.payouts[l.seller].gold += Math.floor((l.price * units * (100 - MARKET_FEE_PCT)) / 100);
       fdb.payouts[l.seller].count += units;
+      /* v1.4.41 (감사 #1) — 구매자 세이브에 구매분을 지급. 종전엔 서버가 아무것도 주지 않고
+       *  클라 핸들러가 로컬에서 push 하는 방식이라, 세이브를 되올리면 무한 구매가 성립했다. */
+      creditOwned(fdb, me.id, item.itemKey, units, item.up);
       success = { status: 200, body: { ok: true, item, ...marketSnapshot(fdb, me.id) } };
       audit("market_buy", { ip: "serverless", uid: me.id, listingId: l.id, itemKey: l.itemKey, price: l.price, units, seller: l.seller });
       return null; // 쓰기
