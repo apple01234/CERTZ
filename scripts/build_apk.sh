@@ -18,7 +18,12 @@ if [ -z "${JAVA_HOME:-}" ]; then
   # v1.4.19 — PATH의 java가 JRE만 깔린 시스템 JVM(javac 없음)을 잡아
   # "does not provide the required capabilities: [JAVA_COMPILER]"로 실패하던 것 수정:
   # 툴체인 스크립트(rebuild_toolchain.sh)가 설치하는 풀 JDK(/home/z/jdk)를 우선 사용.
-  if [ -x /home/z/jdk/bin/javac ]; then
+  # v1.4.43 — Capacitor 8.5 는 sourceCompatibility 21 을 요구한다. 시스템 JDK 17 로 빌드하면
+  #  ":capacitor-android:compileReleaseJavaWithJavac — invalid source release: 21" 로 실패(실측).
+  #  JDK 21 이 있으면 그쪽을 우선한다(x86_64 CI 러너는 JAVA_HOME 을 이미 설정해 둔다).
+  if [ -x /opt/jdk21/bin/javac ]; then
+    JAVA_HOME=/opt/jdk21
+  elif [ -x /home/z/jdk/bin/javac ]; then
     JAVA_HOME=/home/z/jdk
   else
     JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
@@ -83,6 +88,16 @@ mv "$PROJECT_ROOT/.apk-hold/"*.apk public/ 2>/dev/null || true
 
 echo "[3/5] Gradle assembleRelease (lint 3종 제외 — OOM 방지)"
 cd android
+# v1.4.43 — aarch64 호스트에서 AAPT2 를 qemu 래퍼로 강제.
+#  Google 은 aapt2 linux-arm64 를 배포하지 않고(404), build-tools 의 aapt2 는 x86-64 ELF 라
+#  aarch64 커널이 exec 하지 못해 "AAPT2 Daemon startup failed" 로 죽는다(실측: aapt2 version 무출력).
+#  /opt/aapt2/aapt2 = exec qemu-x86_64-static aapt2-bin "$@" — vc192 에서 만들어 둔 래퍼.
+#  x86_64 CI 러너에는 없으므로 존재할 때만 주입한다(Gradle 은 없는 경로에서 실패한다).
+if [ -x /opt/aapt2/aapt2 ]; then
+  echo "  aapt2 → qemu 래퍼 주입 (/opt/aapt2/aapt2)"
+  grep -q "android.aapt2FromMavenOverride" gradle.properties \
+    || echo "android.aapt2FromMavenOverride=/opt/aapt2/aapt2" >> gradle.properties
+fi
 ./gradlew assembleRelease --no-daemon -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease
 
 echo "[4/5] APK 복사"
