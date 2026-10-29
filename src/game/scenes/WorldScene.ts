@@ -724,7 +724,7 @@ export class WorldScene extends Phaser.Scene {
 
   /* ----- v3.0.3: 무기 스프라이트 (활/지팡이/단검 — 손에 들고 다니는 장비 비주얼) ----- */
   private weaponImg: Phaser.GameObjects.Image | null = null;
-  private weaponKey: "x3_bow" | "x3_staff" | "x3_dagger" | "x3_gun" | null = null;
+  private weaponKey: "x3_sword" | "x3_bow" | "x3_staff" | "x3_dagger" | "x3_shuriken" | "x3_gun" | null = null;
 
   /* ----- v3.0.3: 그림자 칼날 오비트 (나이트블레이드/섀도우로드 3차기) ----- */
   private orbitBlades: { imgs: Phaser.GameObjects.Image[]; angle: number; until: number; dmgMul: number; tint: number; hitCd: Map<unknown, number> } | null = null;
@@ -13437,11 +13437,12 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= v3.0.3 — 무기 스프라이트 (활/지팡이/단검 손에 들기) =================
    *  사용자 지시 #6 — "궁수가 왜 활을 안씀? 마법사가 왜 지팡이를 안씀? 도적이 왜 단검을 안씀?":
-   *  계열별 무기를 항상 손에 든 채로 렌더링. 바라보는 방향에 따라 앞/뒤 레이어가 바뀐다. */
+   *  계열별 무기를 항상 손에 든 채로 렌더링. 바라보는 방향에 따라 앞/뒤 레이어가 바뀐다.
+   *  v1.4.40 — 5계열 1:1 대응으로 확장: 전사=검 / 궁수=활 / 마법사=지팡이 / 도적=표창 / 해적=총 */
   private syncWeaponSprite() {
     if (!this.player) return;
     const fam = familyOf(this.player.cls);
-    const want = fam === "ranger" ? "x3_bow" : fam === "mage" ? "x3_staff" : fam === "thief" ? "x3_dagger" : fam === "pirate" ? "x3_gun" : null;
+    const want = fam === "warrior" ? "x3_sword" : fam === "ranger" ? "x3_bow" : fam === "mage" ? "x3_staff" : fam === "thief" ? "x3_shuriken" : fam === "pirate" ? "x3_gun" : null;
     if (!want) {
       if (this.weaponImg) { this.weaponImg.setVisible(false); }
       return;
@@ -13467,6 +13468,13 @@ export class WorldScene extends Phaser.Scene {
       w.setRotation(ang);
       w.setPosition(p.x + f.x * 14, p.y - 8 + f.y * 10);
       w.setScale(0.62);
+    } else if (want === "x3_sword") {
+      /* 검 — 손잡이가 몸쪽, 칼끝이 조준 방향. 텍스처는 칼끝이 +x 이므로 조준각 그대로. */
+      const ang = Math.atan2(f.y, f.x);
+      w.setRotation(ang);
+      w.setPosition(p.x + f.x * 13, p.y - 5 + f.y * 9);
+      w.setScale(1.0);
+      w.setDepth(aimingUp ? 12 : 11);
     } else if (want === "x3_staff") {
       // 지팡이 — 어깨 옆에 세워 들기 (위를 보면 뒤로 기울임)
       w.setRotation(aimingUp ? -0.35 : aimingDown ? 0.15 : 0.1);
@@ -13480,6 +13488,13 @@ export class WorldScene extends Phaser.Scene {
       w.setPosition(p.x + f.x * 13, p.y - 7 + f.y * 8);
       w.setScale(0.82);
       // 위를 조준하면 총이 몸 뒤로 가려지지 않게 살짝 띄운다
+      w.setDepth(aimingUp ? 12 : 11);
+    } else if (want === "x3_shuriken") {
+      /* 표창 — 던지는 무기라 조준 방향으로 들고, 손은 몸 앞쪽. 회전은 조준각 그대로. */
+      const ang = Math.atan2(f.y, f.x);
+      w.setRotation(ang);
+      w.setPosition(p.x + f.x * 12, p.y - 6 + f.y * 8);
+      w.setScale(0.95);
       w.setDepth(aimingUp ? 12 : 11);
     } else {
       // 단검 — 허리 옆 (역습 시 그림자연타 스윕과 함께)

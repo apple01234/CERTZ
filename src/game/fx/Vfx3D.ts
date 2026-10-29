@@ -23,14 +23,21 @@ type Preset = "boom" | "pillar" | "ring" | "spiral";
 const MAX_LIVE = 6;
 const TINT = 0xffffff;
 
-/** 절전/저사양 판정 — 모바일 UA 또는 초저코스 기기만 (데스크톱 4코어도 허용).
- *  ?vfx3d=1 쿼리로 강제 활성 (진단/E2E용) */
+/** 절전/저사양 판정 — 초저코어 기기만 차단 (데스크톱 4코어도 허용).
+ *  ?vfx3d=1 쿼리로 강제 활성 (진단/E2E용)
+ *
+ *  v1.4.40 (지시 #2 — 모바일에서 3D 카메라/이펙트가 안 걸림):
+ *  종전엔 모바일 UA면 무조건 차단했다. 그래서 Galaxy S20+(8코어) 같은 상위 기기에서도
+ *  궁극기 3D 연출이 통째로 사라졌다. 기기 성능은 UA가 아니라 코어 수/메모리로 판정한다. */
 function lowPerf(): boolean {
   try {
     if (new URLSearchParams(window.location.search).get("vfx3d") === "1") return false;
     const cores = navigator.hardwareConcurrency ?? 4;
-    const mobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
-    return mobile || cores <= 2;
+    // deviceMemory 는 Chromium 계열만 제공 (GB). 없으면 코어 수만으로 판정.
+    const mem = (navigator as unknown as { deviceMemory?: number }).deviceMemory ?? 0;
+    if (cores <= 2) return true;
+    if (mem > 0 && mem <= 2) return true;
+    return false;
   } catch {
     return false;
   }

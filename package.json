@@ -1,6 +1,6 @@
 {
   "name": "nextjs_tailwind_shadcn_ts",
-  "version": "1.4.39",
+  "version": "1.4.40",
   "private": true,
   "scripts": {
     "dev": "node server.js 2>&1 | tee dev.log",

@@ -36,10 +36,10 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc177 — APK는 릴리스 태그 v1.2.5에 있다(이전 태그는 vc176까지 보유).
    *  태그와 파일명이 어긋나면 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.39/SERTZ-vc201.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.40/SERTZ-vc202.apk";
   /* v1.4.39 — 데스크톱 클라이언트 자동 업데이트. electron/main.js checkForUpdates() 가 읽는다. */
   const EXE_MIRROR =
-    "https://github.com/apple01234/CERTZ/releases/download/v1.4.39/SERTZ-vc201-setup.exe";
+    "https://github.com/apple01234/CERTZ/releases/download/v1.4.40/SERTZ-vc202-setup.exe";
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -72,10 +72,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.39";
-  const LATEST_CODE = 201;
+  const LATEST_VERSION = "1.4.40";
+  const LATEST_CODE = 202;
     const VERSION_NOTE =
-      "v1.4.39 (vc201) — ①데스크톱 클라이언트 자동 업데이트: 앱 시작 3초 후 /api/version 을 조회해 새 빌드가 있으면 다이얼로그로 알리고, 설치파일을 받아 바로 실행한다(제목줄에 진행률 %). 이제 EXE 를 다시 받으러 릴리스 페이지에 갈 필요가 없다. ②이펙트 알파 채널 복구 — 게임 이펙트 8종이 알파값이 전부 255(불투명)라 원형 이펙트가 회색 사각형으로 그려지던 문제를 고품질 이펙트 27종으로 교체. ③스킬 이펙트 3겹 다층 연출.";
+      "v1.4.40 (vc202) — ①계열별 무기 5종 완성: 전사=검(신규 제작)·궁수=활·마법사=지팡이·도적=표창·해적=총. 종전엔 전사가 무기를 들지 않았고 도적 표창 에셋이 등록만 된 채 미사용이었다. ②모바일 3D 연출 복구 — 기기 판정이 모바일 UA만 보고 3D VFX 를 전면 차단해 Galaxy S20+ 같은 상위 기기에서도 궁극기 3D 카메라·이펙트가 사라지던 문제를 코어 수·메모리 기준으로 교체. ③스킬 아이콘 텍스트는 아이콘 배경 레이어 분리로 잘림 없이 2줄 표시.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
