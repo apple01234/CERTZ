@@ -301,6 +301,23 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   (window as unknown as { __SERTZ__?: unknown }).__SERTZ__ = { game };
   /* v1.3.1 (#9) — 부팅 판정 노출 (모바일 절전 기본 — 월드 진입 없이도 E2E 검증 가능) */
   (window as unknown as { __SERTZ_BOOT__?: unknown }).__SERTZ_BOOT__ = { fxMode: WorldScene.DEFAULT_FX_MODE };
+  /* v1.4.39 (이펙트 강화) — **죽은 게이트 연결.**
+   *  fx 계층(StudioFX/DriveFX)이 `game.__sertzFxLevel` 을 읽어 연출 겹수를 결정하는데,
+   *  이 값을 **쓰는 곳이 아무 데도 없었다**(grep 결과 읽기 3곳·쓰기 0곳). 그래서 항상
+   *  undefined → `?? 2` 로 폴백해 저사양 기기에서도 풀 연출이 돌았다.
+   *  WorldScene.DEFAULT_FX_MODE(auto|high|low) → 0|1|2 로 변환해 실제로 설정한다.
+   *    high → 2(풀) / auto → 저사양 여부에 따라 1|2 / low → 1(축소)
+   *  ⚠️ 0(완전 생략)은 사용자가 설정에서 low 를 고른 경우에만 준다 — 이펙트 강화 요청과
+   *     정면으로 충돌하므로 auto 에서는 0 을 쓰지 않는다. */
+  try {
+    const mode = WorldScene.DEFAULT_FX_MODE;
+    const lowPerf =
+      typeof navigator !== "undefined" &&
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const level = mode === "high" ? 2 : mode === "low" ? 1 : lowPerf ? 1 : 2;
+    (game as unknown as { __sertzFxLevel?: number }).__sertzFxLevel = level;
+    console.info(`[SERTZ] 이펙트 레벨 ${level} (모드=${mode}, 저사양UA=${lowPerf})`);
+  } catch { /* 무시 */ }
 
   /* vc147 (#29) — 30FPS 절전 모드: 프레임 상한을 런타임에 전환한다.
    *  기기 발열 → GPU 서멀 스로틀 → 프리즈의 직접 대책. 설정 패널에서 토글. */

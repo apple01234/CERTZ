@@ -81,14 +81,25 @@ jobs:
           test -f electron/game/index.html
 
       # v1.0.13 — electron 버전·artifactName 동기화 (vc 하드코딩 사고 클래스 근본 차단)
-      - name: Sync version → electron/package.json (version + artifactName ×2)
+      # v1.4.39 — sertzVersionCode 주입: 자동 업데이트가 원격 vc 와 비교할 로컬 값.
+      #   없으면 버전 문자열(1.4.38→38)로 폴백해 매번 "업데이트 있음" 오판이 난다.
+      - name: Sync version → electron/package.json (version + artifactName ×2 + versionCode)
         shell: bash
         run: |
           set -e
           sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${VERSION}\"/" electron/package.json
           sed -i "s/SERTZ-vc[0-9]*-setup\.\${ext}/SERTZ-vc${CODE}-setup.\${ext}/g" electron/package.json
+          node -e '
+            const fs = require("fs");
+            const p = "electron/package.json";
+            const j = JSON.parse(fs.readFileSync(p, "utf8"));
+            /* build 밖 최상위에 둔다 — electron-builder 의 build 스키마는
+             * 미지의 키를 거부할 수 있다(스키마 검증이 warningsAsErrors 와 얽힘). */
+            j.sertzVersionCode = Number(process.env.CODE);
+            fs.writeFileSync(p, JSON.stringify(j, null, 2) + "\n");
+          '
           echo "--- 동기화 확인 ---"
-          grep -nE '"version"|artifactName' electron/package.json
+          grep -nE '"version"|artifactName|sertzVersionCode' electron/package.json
 
       - name: Build EXE (nsis setup only, x64) — v1.0.6 portable 폐지
         run: |

@@ -8,13 +8,19 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.4.38";
-const LATEST_CODE = 200;
+const LATEST_VERSION = "1.4.39";
+const LATEST_CODE = 201;
 const VERSION_NOTE =
-  "v1.4.38 (vc200) — 스킬 화력 밀도 개편. ①Z(주력기)·C(기동기) 쿨다운에 차수 사다리 적용(1차 1.00 → 5차 0.68) — 그동안 배율만 오르고 쿨다운이 고정이라 상위 차수의 체감 DPS 가 정체돼 있었다. ②해적 3·4차 스킬 이름 중복 2건 해소(도화선 도약 / 철갑 돌파). ③3·4차 외형 1,120장 + Z/C 20/20 고유화 유지. ④클래스 계약 검증기 추가 — 외형 프레임 누락·스킬 승계 회귀를 커밋 전에 잡는다.";
+  "v1.4.39 (vc201) — ①데스크톱 클라이언트 자동 업데이트: 앱 시작 3초 후 /api/version 을 조회해 새 빌드가 있으면 다이얼로그로 알리고, 설치파일을 받아 바로 실행한다(제목줄에 진행률 %). 이제 EXE 를 다시 받으러 릴리스 페이지에 갈 필요가 없다. ②이펙트 알파 채널 복구 — 게임 이펙트 8종이 알파값이 전부 255(불투명)라 원형 이펙트가 회색 사각형으로 그려지던 문제를 고품질 이펙트 27종으로 교체. ③스킬 이펙트 3겹 다층 연출.";
 const APK_MIRROR =
   /* vc179 — APK는 릴리스 태그 v1.3.1에 있다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.38/SERTZ-vc200.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.39/SERTZ-vc201.apk";
+/* v1.4.39 — 데스크톱 클라이언트 자동 업데이트용 EXE 주소.
+ *  종전엔 클라이언트가 스스로 업데이트를 확인하는 코드가 아예 없어, 새 빌드마다
+ *  사용자가 릴리스 페이지에서 직접 받아 재설치해야 했다.
+ *  electron/main.js 의 checkForUpdates() 가 이 값을 읽어 자동 다운로드·설치한다. */
+const EXE_MIRROR =
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.39/SERTZ-vc201-setup.exe";
 
 export async function GET() {
   return NextResponse.json({
@@ -22,6 +28,7 @@ export async function GET() {
     code: LATEST_CODE,
     note: VERSION_NOTE,
     apk: APK_MIRROR,
+    exe: EXE_MIRROR,
     guide: "/apk-guide.html",
   });
 }

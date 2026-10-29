@@ -187,6 +187,211 @@ function createWindow(port) {
   win.on("closed", () => { win = null; });
 }
 
+/* ---------- 자동 업데이트 (v1.4.39) ----------
+ *  유저 지적: "클라이언트인데 왜 매번 다운해야함? 실행시 자동 업데이트 못함??"
+ *
+ *  종전엔 업데이트 확인 코드가 아예 없어서, 새 빌드가 나오면 사용자가 릴리스
+ *  페이지를 직접 찾아가 EXE 를 다시 받아 덮어설치해야 했다.
+ *
+ *  electron-updater 는 쓰지 않는다 — latest.yml·publish 설정·서명 검증이 필요해
+ *  이 저장소 구조(정적 export 내장 + Vercel API 프록시)와 맞지 않는다.
+ *  이미 살아 있는 /api/version 을 재사용해 자체 구현한다(서버·워크플로 무변경).
+ *
+ *  동작:
+ *    1) 앱 시작 직후(창 표시 후 3초) /api/version 을 1회 조회
+ *    2) 서버의 code > 로컬 versionCode 면 업데이트 있음
+ *    3) 다이얼로그로 물어보고, 수락하면 설치파일을 받아 실행 후 종료
+ *    4) 사용자가 '나중에'를 고르면 하루 뒤에 다시 확인
+ */
+const API_BASE = "https://sertz.vercel.app";
+/* 로컬 versionCode 의 단일 진실은 android/app/build.gradle 이다(워크플로가 여기서 파싱).
+ *  버전 문자열(1.4.38)에서 숫자를 뽑으면 38 이 나와 vc200 과 비교가 어긋나
+ *  매번 "업데이트 있음"으로 오판한다 — 반드시 versionCode 를 쓴다.
+ *  build 시점에 주입된다: electron-builder 가 package.json 의 build.sertzVersionCode 를
+ *  읽어 넣고, 없으면(개발 실행) package.json version 의 re 릴리스 번호를 쓴다. */
+const LOCAL_VERSION = require("./package.json").version;
+const LOCAL_CODE = (() => {
+  const pkg = require("./package.json");
+  /* 1) 명시 주입값 최우선 (electron-builder 가 주입 — 최상위 키) */
+  if (Number.isFinite(pkg.sertzVersionCode)) return pkg.sertzVersionCode;
+  if (pkg.build && Number.isFinite(pkg.build.sertzVersionCode)) return pkg.build.sertzVersionCode;
+  /* 2) gradle 파일이 함께 있으면 파싱 (개발 실행 시) */
+  try {
+    const g = fs.readFileSync(path.join(__dirname, "..", "android", "app", "build.gradle"), "utf8");
+    const m = g.match(/versionCode\s+(\d+)/);
+    if (m) return parseInt(m[1], 10);
+  } catch {}
+  /* 3) 최후 폴백 — patch 번호(구버전 호환) */
+  const m = String(LOCAL_VERSION).match(/(\d+)\s*$/);
+  return m ? parseInt(m[1], 10) : 0;
+})();
+let updateDismissedAt = 0;
+
+function parseCode(v) {
+  /* "vc200" / 200 / "200" → 200. 숫자가 없으면 0. */
+  const m = String(v == null ? "" : v).match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+function httpGetJson(url, timeoutMs = 10000) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { headers: { "User-Agent": "SERTZ-Desktop/" + LOCAL_VERSION } }, (res) => {
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error("HTTP " + res.statusCode));
+      }
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", (c) => { body += c; });
+      res.on("end", () => {
+        try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+      });
+    });
+    req.setTimeout(timeoutMs, () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+  });
+}
+
+/* 설치파일을 userData/updates 로 스트리밍 다운로드. 진행률을 창 제목에 표시. */
+function downloadInstaller(url, onProgress) {
+  return new Promise((resolve, reject) => {
+    const dir = path.join(app.getPath("userData"), "updates");
+    try { fs.mkdirSync(dir, { recursive: true }); } catch {}
+    const dest = path.join(dir, path.basename(new URL(url).pathname) || "SERTZ-setup.exe");
+    const tmp = dest + ".part";
+    const file = fs.createWriteStream(tmp);
+
+    const follow = (u, depth = 0) => {
+      if (depth > 5) return reject(new Error("리다이렉트 과다"));
+      const mod = String(u).startsWith("http://") ? http : https;
+      mod.get(u, { headers: { "User-Agent": "SERTZ-Desktop/" + LOCAL_VERSION } }, (res) => {
+        if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+          res.resume();
+          /* GitHub 릴리스는 S3 로 302 리다이렉트한다 — 상대/절대 둘 다 처리 */
+          return follow(new URL(res.headers.location, u).toString(), depth + 1);
+        }
+        if (res.statusCode !== 200) {
+          res.resume();
+          return reject(new Error("HTTP " + res.statusCode));
+        }
+        const total = parseInt(res.headers["content-length"] || "0", 10);
+        let got = 0;
+        res.on("data", (c) => {
+          got += c.length;
+          if (total && onProgress) onProgress(got, total);
+        });
+        res.pipe(file);
+        file.on("finish", () => {
+          file.close(() => {
+            try { fs.renameSync(tmp, dest); } catch (e) { return reject(e); }
+            resolve(dest);
+          });
+        });
+      }).on("error", reject);
+    };
+    follow(url);
+  });
+}
+
+async function checkForUpdates(interactive = false) {
+  /* 사용자가 '나중에'를 누른 뒤 24시간 안에는 조용히 넘어간다(성가심 방지). */
+  if (!interactive && Date.now() - updateDismissedAt < 24 * 3600 * 1000) return;
+
+  let info;
+  try {
+    info = await httpGetJson(API_BASE + "/api/version");
+  } catch (e) {
+    appendShellLog("update check failed: " + (e && e.message));
+    return;
+  }
+
+  const remoteCode = Number(info && info.code) || 0;
+  const localCode = LOCAL_CODE;
+  appendShellLog(`update check: local=${LOCAL_VERSION}(vc${localCode}) remote=${info && info.latest}(vc${remoteCode})`);
+
+  if (!remoteCode || remoteCode <= localCode) {
+    if (interactive) {
+      dialog.showMessageBox(win, {
+        type: "info",
+        title: "업데이트 확인",
+        message: "최신 버전을 사용 중입니다.",
+        detail: `현재 버전 ${LOCAL_VERSION} (vc${localCode})`,
+        buttons: ["확인"],
+      });
+    }
+    return;
+  }
+
+  const target = win || undefined;
+  const ask = await dialog.showMessageBox(target, {
+    type: "question",
+    title: "업데이트 있음",
+    message: `새 버전 ${info.latest} (vc${remoteCode}) 이 있습니다.`,
+    detail:
+      (info.note ? String(info.note).slice(0, 400) + "\n\n" : "") +
+      `현재 ${LOCAL_VERSION} (vc${localCode}) → 새 버전으로 지금 업데이트할까요?\n` +
+      "다운로드가 끝나면 설치 프로그램이 실행되고, 게임은 자동으로 종료됩니다.",
+    buttons: ["지금 업데이트", "나중에"],
+    defaultId: 0,
+    cancelId: 1,
+  });
+
+  if (ask.response !== 0) {
+    updateDismissedAt = Date.now();
+    return;
+  }
+
+  if (!info.exe) {
+    dialog.showMessageBox(target, {
+      type: "warning",
+      title: "업데이트 실패",
+      message: "설치 파일 주소를 받지 못했습니다.",
+      detail: "브라우저에서 릴리스 페이지를 직접 열어 받아 주세요.",
+      buttons: ["확인"],
+    });
+    return;
+  }
+
+  /* 다운로드 — 창 제목으로 진행률 표시(별도 창 없이 눈에 띄게) */
+  const origTitle = win ? win.getTitle() : "";
+  try {
+    const file = await downloadInstaller(info.exe, (got, total) => {
+      if (!win) return;
+      const pct = total ? Math.floor((got / total) * 100) : 0;
+      win.setTitle(`SERTZ — 업데이트 내려받는 중… ${pct}% (${(got / 1048576).toFixed(0)}/${(total / 1048576).toFixed(0)}MB)`);
+    });
+    if (win) win.setTitle(origTitle);
+    appendShellLog("update downloaded: " + file);
+
+    const ok = await dialog.showMessageBox(target, {
+      type: "info",
+      title: "업데이트 준비 완료",
+      message: "설치 프로그램을 실행합니다.",
+      detail: "게임이 종료되고 설치가 시작됩니다. 설치 후 다시 실행해 주세요.",
+      buttons: ["설치 시작", "취소"],
+      defaultId: 0,
+      cancelId: 1,
+    });
+    if (ok.response !== 0) return;
+
+    /* 설치 프로그램 실행 후 종료 — oneClick NSIS 라 사용자 조작 최소 */
+    const { spawn } = require("node:child_process");
+    spawn(file, [], { detached: true, stdio: "ignore" }).unref();
+    quitting = true;
+    app.quit();
+  } catch (e) {
+    if (win) win.setTitle(origTitle);
+    appendShellLog("update download failed: " + (e && e.message));
+    dialog.showMessageBox(target, {
+      type: "error",
+      title: "업데이트 실패",
+      message: "다운로드에 실패했습니다.",
+      detail: String((e && e.message) || e),
+      buttons: ["확인"],
+    });
+  }
+}
+
 /* ---------- 메인 프로세스 예외 가드 ----------
  * API 프록시 등 비치명적 예외가 게임을 죽이지 않도록 함.
  * Electron 기본 동작(모달 오류 다이얼로그) 대신 로그 파일에 기록만 하고 계속 진행.
@@ -223,8 +428,16 @@ if (!gotLock) {
 
   app.whenReady().then(async () => {
     const port = await startServer();
-    if (port) createWindow(port);
-    else app.quit();
+    if (port) {
+      createWindow(port);
+      /* v1.4.39 — 창이 뜬 뒤 3초 후 자동 업데이트 확인(첫 로딩을 방해하지 않게).
+       *  실패해도 조용히 로그만 남기고 게임 진행에는 영향이 없다. */
+      if (win) {
+        win.once("ready-to-show", () => {
+          setTimeout(() => { checkForUpdates(false); }, 3000);
+        });
+      }
+    } else app.quit();
   });
 
   app.on("window-all-closed", () => app.quit());

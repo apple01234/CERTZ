@@ -140,10 +140,18 @@ export function spawnSkillImpact(
   /* v1.4.33 (긴급수정 — "전사 스킬 사용시 캐릭터 멈추는 버그")
    *  스킬 1·3·4 가 한 번에 2겹씩 만들면 기존 vf_* 연출과 합쳐져 프레임이 끊겼다.
    *  저사양 게이트(__sertzFxLevel===0)에서는 아예 생략하고, 평소에도 1겹만 쓴다. */
-  try {
-    if ((scene.game as unknown as { __sertzFxLevel?: number }).__sertzFxLevel === 0) return;
-  } catch { /* 무시 */ }
+  const fxLevel = (() => {
+    try { return (scene.game as unknown as { __sertzFxLevel?: number }).__sertzFxLevel ?? 2; } catch { return 2; }
+  })();
+  if (fxLevel === 0) return;
 
+  /* v1.4.39 (이펙트 강화) — 종전엔 링 1겹(0.4→3.0, 560ms)뿐이라 밋밋했다.
+   *  Hovl 텍스처로 교체하면서 **3겹 합성**으로 올린다. 단, 저사양(1)은 링만 유지한다.
+   *    ① 확산 링  : 바닥에서 퍼지는 원(기존)
+   *    ② 코어 섬광: 중심에서 짧고 강하게 터지는 flash (가산)
+   *    ③ 잔류 슬라이스: 진행 방향을 따라 남는 참격 잔상
+   *  오브젝트 수는 1 → 3 이지만 수명이 340~560ms 로 짧고, 생성은 스킬 시전 시점 1회뿐이라
+   *  매 프레임 생성하지 않는다(멈춤의 원인이던 배라주와 다르다). */
   const ring = vfImage(scene, opts.ringTex ?? "fx_Circle2", x, y, tint);
   if (ring) {
     /* vfImage 가 depth 24 를 기본으로 잡으므로 **호출 후** 덮어써야 한다(순서 중요). */
@@ -153,7 +161,29 @@ export function spawnSkillImpact(
       onComplete: () => ring.destroy(),
     });
   }
-  /* 히트 섬광은 궁극기에서만 쓴다 — 일반 스킬은 링 하나로 충분(부하 절감). */
+  if (fxLevel >= 2) {
+    /* ② 코어 섬광 — 중심에서 아주 짧게. 확산 링보다 먼저 사라져 "터지는" 느낌을 만든다. */
+    const core = vfImage(scene, "vf_impact", x, y, 0xffffff);
+    if (core) {
+      core.setDepth(opts.hitDep ?? 23).setAlpha(0.85).setScale(0.22 * s)
+        .setBlendMode(Phaser.BlendModes.ADD);
+      scene.tweens.add({
+        targets: core, scale: 0.9 * s, alpha: 0, duration: 280, ease: "Quad.out",
+        onComplete: () => core.destroy(),
+      });
+    }
+    /* ③ 참격 잔상 — 회전하며 옅게 남는다. 스킬마다 방향이 달라도 자연스럽게 겹친다. */
+    const slice = vfImage(scene, "vf_slash", x, y, tint);
+    if (slice) {
+      slice.setDepth((opts.hitDep ?? 23) - 1).setAlpha(0.6).setScale(0.7 * s)
+        .setAngle(-24).setBlendMode(Phaser.BlendModes.ADD);
+      scene.tweens.add({
+        targets: slice, angle: 24, scale: 1.35 * s, alpha: 0, duration: 420, ease: "Sine.out",
+        onComplete: () => slice.destroy(),
+      });
+    }
+  }
+  /* 히트 섬광은 궁극기에서만 쓴다 — 일반 스킬은 위 3겹으로 충분(부하 절감). */
   if (opts.hitTex === undefined) return;
   const hit = vfImage(scene, opts.hitTex, x, y, tint);
   if (hit) {
@@ -167,12 +197,33 @@ export function spawnSkillImpact(
 
 /* ---------------- 5차 궁극기 공통 인트로 (마법진+링+코어 4중 합성) ----------------
  * 기존: 단색 원 링 1개 + 파티클 버스트 → "밋밋하다"는 유저 지시.
- * 신규: 3D 프리렌더 펜타클(클래스 컬러 틴트·스핀) + 이중 확장 링 + 임팩트 코어 + 4방향 스파크 */
+ * 신규: 3D 프리렌더 펜타클(클래스 컬러 틴트·스핀) + 이중 확장 링 + 임팩트 코어 + 4방향 스파크
+ * v1.4.39 (이펙트 강화) — 저사양 게이트 도입 + Hovl 텍스처. 종전엔 게이트가 없어
+ *  저사양 기기에서도 궁극기마다 6~8겹을 만들어 프레임이 끊겼다(멈춤 신고의 잔여 원인).
+ *  이제 fxLevel 0=생략 / 1=3겹 / 2=풀(6겹 + 스모크 잔향)으로 나눈다. */
 export function spawnUltimateIntro(scene: SceneLike, x: number, y: number, tint: number) {
+  const fxLevel = (() => {
+    try { return (scene.game as unknown as { __sertzFxLevel?: number }).__sertzFxLevel ?? 2; } catch { return 2; }
+  })();
+  if (fxLevel === 0) return;
+
   spawnPentacle(scene, x, y, tint, { scale: 1.25, duration: 1000, spin: true, alpha: 0.62 });
   spawnRingPop(scene, x, y, "vf_ring", tint, 2.4, 720);
   spawnRingPop(scene, x, y, "vf_ring", 0xffffff, 1.6, 520);
   spawnFlarePop(scene, x, y - 4, "vf_impact", { tint, scale: 0.9, duration: 560 });
+  if (fxLevel < 2) return;
+  /* 5겹·6겹 — 풀 연출에서만. 짧은 수명(420~620ms)이라 프레임 부담이 제한적이다. */
+  spawnRingPop(scene, x, y, "vf_ring", tint, 3.1, 900);           // 3차 확산(가장 느린 외곽)
+  spawnFlarePop(scene, x, y, "vf_star", { tint: 0xffffff, scale: 0.5, duration: 420 });
+  /* ⑥ 잔향 — 축복/심판 계열은 스모크가 남아 "여파"가 보인다. */
+  const haze = vfImage(scene, "vf_flare_dark", x, y, tint);
+  if (haze) {
+    haze.setDepth(5).setAlpha(0.28).setScale(1.1).setBlendMode(Phaser.BlendModes.ADD);
+    scene.tweens.add({
+      targets: haze, scale: 2.6, alpha: 0, duration: 1100, ease: "Cubic.out",
+      onComplete: () => haze.destroy(),
+    });
+  }
   /* 4방향 스파크 — 십자 광륜 */
   for (let i = 0; i < 4; i++) {
     const ang = (Math.PI / 2) * i + 0.4;
