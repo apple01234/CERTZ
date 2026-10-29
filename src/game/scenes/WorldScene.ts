@@ -8,6 +8,8 @@ import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
 import { Drop, type DropKind } from "../entities/Drop";
+/* v1.4.41 (씬 분해 1단계) — 순수 헬퍼 4종을 worldHelpers.ts 로 분리. 동작 변경 0. */
+import { AURA_ANIM, AURA_LUT, AURA_LUT_STEPS, HIT_FLIPBOOK, adFailText } from "./worldHelpers";
 import { Lighting, ambientFor } from "../fx/Lighting";
 import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
 import { Pet } from "../entities/Pet";
@@ -85,42 +87,6 @@ import {
  *  미러링이라 dx 부호는 코드에서 반전한다. 텍스처: scripts/gen_v111_gender_assets.py */
 /* v1.2.0 — 포니테일 헤어는 유저 지시(#1)로 완전 제거 — 위치 고정이 계속 어긋나 대신 삭제.
  *   보유분은 18 에메랄드로 자동 환수(config.ts 마이그레이션), 세이브 hair 슬롯은 null 강제. */
-
-/* v1.1.1 (#5 무지개 오라) — 이름과 외양이 일치하는 순환 틴트 테이블.
- *  sp: 위상 속도(초당) · s/l: HSL 채도/명도 · min/max: hue 범위 (0~1, rainbow=전체) */
-const AURA_ANIM: Record<string, { sp: number; s: number; l: number; min: number; max: number }> = {
-  cos_rainbow: { sp: 0.10, s: 0.9, l: 0.62, min: 0, max: 1 },
-  cos_aurora: { sp: 0.035, s: 0.75, l: 0.66, min: 0.33, max: 0.82 },
-  cos_galaxy: { sp: 0.05, s: 0.6, l: 0.7, min: 0.55, max: 0.85 },
-};
-
-/** v1.0.16 — 보상형 광고 실패 사유 → 안내 문구 (호출부 3곳 공용).
- *  종전엔 세 곳이 동일한 2분기 삼항식을 복사해 쓰고 있었다. */
-function adFailText(reason?: string): string {
-  if (reason === "web") return "광고 보상은 폰 버전(APK)에서 볼 수 있어";
-  if (reason === "offline") return "인터넷이 끊겨 있어 — 연결한 뒤 다시 시도하자";
-  if (reason === "no-reward") return "보상이 확인되지 않았다 — 다시 시도하자";
-  return "광고를 못 봤다 — 다시 시도하자";
-}
-
-/** v1.0.16 — 타격 스파크 플립북 3종. 매 타격마다 배열 리터럴을 만들지 않도록 모듈 상수로 둔다. */
-const HIT_FLIPBOOK = ["fx2-hit1", "fx2-hit3", "fx2-hit5"];
-
-/* v1.4.3 (작업3 최적화) — 오라 색 LUT(64단계) 사전 계산:
- *  매 프레임 HSLToColor + Color 객체 할당(GC 압박)을 제거하고 테이블 조회로 대체.
- *  기존 hue 곡선(min/max 범위 + 코사인 왕복)을 그대로 재현 — 퀄리티 동일. */
-const AURA_LUT_STEPS = 64;
-const AURA_LUT: Record<string, number[]> = {};
-for (const key of Object.keys(AURA_ANIM)) {
-  const cfg = AURA_ANIM[key];
-  const lut: number[] = [];
-  for (let i = 0; i < AURA_LUT_STEPS; i++) {
-    const phase = i / AURA_LUT_STEPS;
-    const hue = cfg.min + (cfg.max - cfg.min) * (0.5 - 0.5 * Math.cos(phase * Math.PI * 2));
-    lut.push(Phaser.Display.Color.HSLToColor(hue, cfg.s, cfg.l).color);
-  }
-  AURA_LUT[key] = lut;
-}
 
 /* v1.4.32 (#게임멈춤) — 저사양 환경(모바일 브라우저·APK 웹뷰) 판정.
  *  보스전 카메라 블룸(프레임버퍼 이중 패스)이 유발하는 GPU 프리즈는 무스펠(v1.4.30)·
