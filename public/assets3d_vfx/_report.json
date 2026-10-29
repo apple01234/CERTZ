@@ -1,0 +1,37 @@
+{
+ "summary": {
+  "total": 2,
+  "ok": 2,
+  "failed": 0,
+  "totalVerts": 3623,
+  "totalPolys": 3256,
+  "animated": 0,
+  "glbBytes": 481304
+ },
+ "items": [
+  {
+   "file": "suzanne.fbx",
+   "ok": true,
+   "glb": "suzanne.fbx__suzanne.glb",
+   "glb_bytes": 69676,
+   "meshes": 1,
+   "verts": 507,
+   "polys": 500,
+   "materials": [],
+   "actions": [],
+   "objects": 3
+  },
+  {
+   "file": "worm.fbx",
+   "ok": true,
+   "glb": "worm.fbx__worm.glb",
+   "glb_bytes": 411628,
+   "meshes": 13,
+   "verts": 3116,
+   "polys": 2756,
+   "materials": [],
+   "actions": [],
+   "objects": 15
+  }
+ ]
+}

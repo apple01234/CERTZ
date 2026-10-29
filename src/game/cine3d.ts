@@ -120,16 +120,21 @@ const ULT_2: Record<UltKey, string[]> = {
   mage:    ["uni__Crystal1", "uni__cfxr_electric_arc_circle", "uni__cfxr_electric_barrier", "uni__cfxr_mesh_star8"],
   thief:   ["uni__uni_scythe", "uni__Slash", "uni__uni_arc", "uni__cfxr_mesh_star4"],
   pirate:  ["uni__uni_razor_missile", "uni__cfxr_mesh_donut", "uni__uni_hitfan", "uni__uni_onslaught"],
-  warbringer: ["uni__cfxr_mesh_sword_slashes", "uni__uni_onslaught", "uni__cfxr_mesh_star8", "uni__cfxr_mesh_donut"],
+  /* v1.4.41 — FBX→GLB 변환분(vfx__*)을 2차 궁극기에 투입. 검기 + 폭격 + 별 + 도넛에
+   *  낫(회전 참격)과 균열 링을 더해 층을 늘린다. */
+  warbringer: ["uni__cfxr_mesh_sword_slashes", "uni__uni_onslaught", "uni__cfxr_mesh_star8", "vfx__uni_ring_warped", "vfx__uni_skull"],
   crusader:   ["uni__cfxr_electric_barrier", "uni__cfxr_mesh_star8", "uni__cfxr_mesh_ring", "uni__Torus1"],
   deadeye:    ["uni__uni_missile_blade", "uni__uni_streak", "uni__cfxr_mesh_star4", "uni__uni_orb_swoosh"],
   skylord:    ["uni__uni_orb_swoosh", "uni__cfxr_mesh_star6", "uni__uni_arc", "uni__cfxr_electric_arc_circle"],
-  arclord:    ["uni__Crystal1", "uni__cfxr_particle_electric_arc", "uni__cfxr_electric_arc_circle", "uni__cfxr_mesh_star8"],
+  /* v1.4.41 — 원소 폭발: 수정 + 전격 아크 2종 + 별 + 전자기 소용돌이(vfx__uni_orb_swoosh) */
+  arclord:    ["uni__Crystal1", "uni__cfxr_particle_electric_arc", "uni__cfxr_electric_arc_circle", "uni__cfxr_mesh_star8", "vfx__uni_orb_swoosh"],
   eternal:    ["uni__Torus1", "uni__uni_ring_warped", "uni__cfxr_mesh_ring", "uni__cfxr_mesh_star6"],
-  shadowlord: ["uni__uni_scythe", "uni__uni_skull2", "uni__uni_arc", "uni__cfxr_mesh_star4"],
+  /* v1.4.41 — 그림자 군주: 낫 + 해골 2종(vfx__uni_skull·skull2) + 아크 */
+  shadowlord: ["uni__uni_scythe", "uni__uni_skull2", "vfx__uni_skull", "uni__uni_arc", "uni__cfxr_mesh_star4"],
   blademaster:["uni__uni_hitfan", "uni__cfxr_mesh_sword_slashes", "uni__uni_arc", "uni__Slash"],
   seaking:    ["uni__uni_razor_missile", "uni__cfxr_mesh_foam", "uni__cfxr_mesh_donut", "uni__uni_orb_swoosh"],
-  dreadnought:["uni__uni_onslaught", "uni__cfxr_mesh_disk", "uni__uni_hitfan", "uni__cfxr_mesh_star8"],
+  /* v1.4.41 — 중포격: 기존 4종 + 미사일 난사(vfx__uni_missile_blade) + 충격 구멍(vfx__uni_hole) */
+  dreadnought:["uni__uni_onslaught", "uni__cfxr_mesh_disk", "uni__uni_hitfan", "vfx__uni_missile_blade", "vfx__uni_hole"],
 };
 
 /** 4차기 — 2종으로 가볍게(남발 슬롯). 직업 무기만 즉시 읽히게. */
