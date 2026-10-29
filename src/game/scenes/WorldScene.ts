@@ -11,6 +11,7 @@ import { Drop, type DropKind } from "../entities/Drop";
 /* v1.4.41 (씬 분해 1단계) — 순수 헬퍼 4종을 worldHelpers.ts 로 분리. 동작 변경 0. */
 import { AURA_ANIM, AURA_LUT, AURA_LUT_STEPS, HIT_FLIPBOOK, adFailText } from "./worldHelpers";
 import { FifthAuraRig } from "../fx/FifthAura"; // v1.4.41 (#9) — 5차 블룸·라이트
+import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱
 import { Lighting, ambientFor } from "../fx/Lighting";
 import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
 import { Pet } from "../entities/Pet";
@@ -713,6 +714,8 @@ export class WorldScene extends Phaser.Scene {
   private weaponImg: Phaser.GameObjects.Image | null = null;
   /** v1.4.41 (#9) — 5차 각성 시 캐릭터에 붙는 지속 블룸·라이트 */
   private fifthAura: FifthAuraRig | null = null;
+  /** v1.4.41 (#13) — 궁극기 trauma 셰이크 (팔로우 뒤에 합성) */
+  private ultShake: ReturnType<typeof getTraumaShake> | null = null;
   private weaponKey: "x3_sword" | "x3_bow" | "x3_staff" | "x3_dagger" | "x3_shuriken" | "x3_gun" | null = null;
 
   /* ----- v3.0.3: 그림자 칼날 오비트 (나이트블레이드/섀도우로드 3차기) ----- */
@@ -1400,6 +1403,9 @@ export class WorldScene extends Phaser.Scene {
       }
     };
     window.addEventListener("sertz:gpu-unstable", this.onGpuUnstable);
+    /* v1.4.41 (#13) — 궁극기 trauma 셰이크. 팔로우(applyManualCameraFollow)가 매 프레임
+     *  scroll 을 확정하므로 셰이크는 **오프셋 제공자**로만 동작하고 팔로우 끝에서 더해진다. */
+    this.ultShake = getTraumaShake(this);
     this.impactFX = new ImpactFX(this);
     this.driveFx = new DriveFX(this);
     /* v4.8.0 — 충격파 링 풀 (WebGL 전용 — Canvas 폴백은 풀이 비어 no-op) */
@@ -2164,6 +2170,14 @@ export class WorldScene extends Phaser.Scene {
     const k = 1 - Math.pow(1 - 0.18, Math.min(dt, 100) / 16.667);
     cam.scrollX += (tx - cam.scrollX) * k;
     cam.scrollY += (ty - cam.scrollY) * k;
+    /* v1.4.41 (#13) — trauma 셰이크를 **팔로우 결과 위에** 더한다.
+     *  camera-systems: "smooth follow first, add shake offset last".
+     *  순서를 뒤집으면 팔로우가 셰이크를 매 프레임 상쇄해 흔들림이 사라진다. */
+    if (this.ultShake) {
+      this.ultShake.update(Math.min(dt, 100));
+      cam.scrollX += this.ultShake.ox;
+      cam.scrollY += this.ultShake.oy;
+    }
   }
 
   /* ================= v5.0.1 — 카메라 수동 추적 (v4.10.0 보정 전면 대체) =================
@@ -10626,6 +10640,8 @@ export class WorldScene extends Phaser.Scene {
        *  맵을 오갈수록 캐릭터가 점점 하얗게 타오른다. */
       this.fifthAura?.destroy();
       this.fifthAura = null;
+      this.ultShake?.reset();
+      this.ultShake = null;
       EventBus.off("rpg:marketCancel", onMarketCancel);
       EventBus.off("rpg:marketCollect", onMarketCollect);
       EventBus.off("rpg:starScroll", onStarScroll);

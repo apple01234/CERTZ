@@ -18,6 +18,7 @@ import {
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
 import { ult5HoldOf, ult5bHoldOf } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간
+import { playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱 연출
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
@@ -3409,6 +3410,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     playUltLayers(this.scene, this.x, this.y, hex, key5, {
       timeScale: Math.max(1, Math.min(6, ult5HoldOf(resolveSkill5Of(this.cls), familyOf(this.cls)) / 1374)),
     });
+    /* v1.4.41 (#13) — 기존 5레이어 위에 시네마틱 채널(프리즈·trauma셰이크·충격파 4단·
+     *  광주·파편·궤도링·복귀 크로스페이드)을 겹친다. 판정에는 관여하지 않는다. */
+    playUltCinematic(this.scene, this.x, this.y, {
+      durationMs: ult5HoldOf(resolveSkill5Of(this.cls), familyOf(this.cls)),
+      tint: hex,
+      scale: 1,
+    });
     const ring = this.scene.add.circle(this.x, this.y, 34)
       .setStrokeStyle(3, hex, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.scene.tweens.add({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
@@ -5149,6 +5157,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     playUltLayers(this.scene, this.x, this.y, 0xb06aff, key5, {
       scale: 1.15,
       timeScale: Math.max(1, Math.min(10, ult5bHoldOf(resolveSkill5Of(this.cls), familyOf(this.cls)) / 1374)),
+    });
+    playUltCinematic(this.scene, this.x, this.y, {
+      durationMs: ult5bHoldOf(resolveSkill5Of(this.cls), familyOf(this.cls)),
+      tint: hex,
+      scale: 1.35,
     });
 
     switch (key5) {
