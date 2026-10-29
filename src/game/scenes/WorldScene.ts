@@ -95,25 +95,45 @@ import {
  *  이제 저사양 환경에서는 챕터 무관하게 카메라 블룸(앰비언트·보스전 모두)을 생략한다.
  *  보스라이트·비네트·잉걸불·툰 림라이트는 유지 — 분위기 손실 최소화. PC는 기존과 동일. */
 let lowPerfEnvCache: boolean | null = null;
-function isLowPerfEnv(): boolean {
-  if (lowPerfEnvCache === null) {
-    try {
-      const ua = navigator.userAgent || "";
-      const byUA = /Android|iPhone|iPad|Mobile/i.test(ua) || navigator.maxTouchPoints >= 2;
-      /* vc196 (#WebGL 무한 재부팅) — UA 문자열만으로는 **headless 리눅스·에뮬레이터·
-       *  원격 데스크톱·GPU 드라이버 없는 VM** 을 "고사양"으로 오판한다. 그런 환경은
-       *  실제 GPU 대신 SwiftShader/llvmpipe 로 돌아가는데, 위 판정이 false 를 돌려주는
-       *  바람에 블룸(프레임버퍼 이중 패스)을 풀가동 → 컨텍스트 손실 2회 → 4회 → Canvas
-       *  폴백 재부팅 → 새로고침 루프에 갇혔다.
-       *
-       *  이미 같은 목적의 WorldScene.isSoftwareGL() 이 있었지만 DEFAULT_FX_MODE 에서만
-       *  쓰이고 이 함수와 연결돼 있지 않았다(두 판정이 서로 다른 답을 냄). 여기서 합친다.
-       *  판정 비용은 캐시되므로 부팅 시 1회뿐이다. */
-      lowPerfEnvCache = byUA || WorldScene.isSoftwareGL();
-    } catch {
-      lowPerfEnvCache = false;
-    }
+
+/** v1.4.41 (#2) — 저사양 판정을 "모바일이면 무조건"에서 **실제 GPU/메모리 기반**으로 교체.
+ *
+ *  종전: `byUA = /Android|iPhone|Mobile/.test(ua) || maxTouchPoints>=2` → 모바일이면 전부 true.
+ *  그래서 Galaxy S20+ 같은 정상 GPU 기기에서도 카메라 후처리(toon filters)·3D VFX·블룸이
+ *  전부 꺼졌다. 유저 지적 "모바일에서는 특정 스킬 사용시 화면 3D 카메라 적용 안되는 버그"의
+ *  실제 원인이 이 오분류였다(SwiftShader/llvmpipe 여부와 무관하게 UA만 보고 판정).
+ *
+ *  이제 판정 근거는 셋뿐이다:
+ *    ① 소프트웨어 렌더러(SwiftShader/llvmpipe/softpipe) — 진짜 저사양
+ *    ② deviceMemory ≤ 2GB — 안드로이드 구형 실기기
+ *    ③ 동시 텍스처 유닛 < 8 — 프레임버퍼 이중 패스(블룸)를 못 버티는 GPU
+ *  터치 여부·UA 문자열은 **더 이상 판정에 쓰지 않는다**(입력 방식과 렌더 성능은 무관).
+ *  판정 비용은 캐시되므로 부팅 시 1회뿐이다.
+ */
+function detectLowPerfEnv(): boolean {
+  try {
+    /* ① 소프트웨어 렌더러 — 이건 진짜로 셰이더 경로를 못 버틴다 */
+    if (WorldScene.isSoftwareGL()) return true;
+
+    /* ② 메모리가 극히 적은 기기 (Chrome 전용 API — 없으면 통과) */
+    const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+    if (typeof mem === "number" && mem > 0 && mem <= 2) return true;
+
+    /* ③ 동시 텍스처 한도가 낮은 GPU — 블룸의 프레임버퍼 이중 패스가 실패한다 */
+    const c = document.createElement("canvas");
+    const gl = (c.getContext("webgl2") || c.getContext("webgl")) as WebGLRenderingContext | null;
+    if (!gl) return false; // WebGL 부재 → Phaser Canvas 폴백, 셰이더 경로 자체가 없음
+    const maxTex = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) as number;
+    if (typeof maxTex === "number" && maxTex > 0 && maxTex < 8) return true;
+
+    return false;
+  } catch {
+    return false;
   }
+}
+
+function isLowPerfEnv(): boolean {
+  if (lowPerfEnvCache === null) lowPerfEnvCache = detectLowPerfEnv();
   return lowPerfEnvCache;
 }
 
