@@ -152,6 +152,8 @@ export type SaveData = {
   gmSkin?: boolean; // v1.2.0 (#7) — GM 외형 캐릭터 (서버 롤 admin일 때만 렌더)
   ponyRefund?: boolean; // v1.2.0 (#1) — 포니테일 환수 완료 플래그
   introSeen?: boolean; // v1.1.0 (#18) — 프롤로그/인트로 시청 완료 (false=미시청 신규, undefined=구세이브 스킵)
+  /** v1.4.41 — 챕터 진입 컷씬을 이미 본 챕터 키 목록 (한 번만 보여준다) */
+  cutsceneSeen?: string[];
   skinIdx?: number; // v1.1.0 (#21) — 피부 0~5
   /* ↓ 친구 시스템 (v2.1 — 구 세이브 호환: 로드 시 자동 발급/기본값) */
   fcode?: string;

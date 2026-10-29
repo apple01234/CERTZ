@@ -12,6 +12,8 @@ import { Drop, type DropKind } from "../entities/Drop";
 import { AURA_ANIM, AURA_LUT, AURA_LUT_STEPS, HIT_FLIPBOOK, adFailText } from "./worldHelpers";
 import { FifthAuraRig } from "../fx/FifthAura"; // v1.4.41 (#9) — 5차 블룸·라이트
 import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱
+import { playStoryCutscene, storyCutscenePlaying } from "../fx/StoryCutscene"; // v1.4.41 — 스토리 컷씬
+import { chapterIntroOf } from "../storyCutscenes"; // v1.4.41 — 챕터별 진입 연출 데이터
 import { Lighting, ambientFor } from "../fx/Lighting";
 import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
 import { Pet } from "../entities/Pet";
@@ -328,6 +330,8 @@ export class WorldScene extends Phaser.Scene {
   private transitioning = false;
   /** v4.1.2 — 전환 워치독 재시작용 마지막 캐리 스냅샷 (restart 유실 대비) */
   private lastCarry?: SaveData;
+  /** v1.4.41 — 이미 본 챕터 진입 컷씬 키. 세이브에 영속되고 씬 재시작 시 캐리된다. */
+  private cutsceneSeen: string[] = [];
   /** v4.1.2 — 페이드 스타크 감지 누적 (update 자가치유) */
   private fadeDarkMs = 0;
   /* v3.2.0 (#흑화 근본 수정) — 부팅 시각/재부팅 이력 (create 래퍼 + 카메라 자가치유용) */
@@ -798,6 +802,8 @@ export class WorldScene extends Phaser.Scene {
     this.killTotals = {};
     this.spawnRecords = [];
     this.savedQuestIdx = {};
+    /* v1.4.41 — 챕터 컷씬 시청 기록 복원 (구세이브는 빈 배열 — 첫 진입에 한 번 본다) */
+    this.cutsceneSeen = [...(data.save?.cutsceneSeen ?? [])];
     this.wellPos = null;
     this.wellCd = 0;
     this.pendingPortal = false;
@@ -1614,6 +1620,9 @@ export class WorldScene extends Phaser.Scene {
     }
     /* vc146 (#5) — 2.5D 카메라 초기화 (심도 안개 + y-depth 정렬. 설정에서 끌 수 있음) */
     this.initPerspective();
+    /* v1.4.41 — 챕터 첫 진입 스토리 컷씬. 보스 컷씬과 같은 camCinema 패턴을 쓰므로
+     * 서로 겹치지 않는다(보스 인트로는 zone 10 진입 시점, 이건 씬 생성 직후). */
+    this.playChapterIntroCutscene(stageKey);
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
     this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
     if (savedPlayer) this.restoreFromSave(savedPlayer, stageKey);
@@ -2127,7 +2136,9 @@ export class WorldScene extends Phaser.Scene {
   private zoomTimer: Phaser.Time.TimerEvent | null = null;
 
   /* v5.0.1 — 맵전환·보스 인트로 팬(pan) 시네마틱 중 수동 추적 보류 플래그 */
-  private camCinema = false;
+  /** v1.4.41 — 스토리 컷씬(StoryCutscene)도 이 플래그를 공유한다.
+   *  private 이면 외부 연출 모듈이 팬 중임을 알릴 수 없어 팔로우와 충돌한다. */
+  camCinema = false;
 
   /* ================= vc146 (#5) — 2.5D 카메라 (의사 원근) =================
    *  유저 지시 "카메라를 약간 2,5D 느낌으로". 3요소:
@@ -2148,6 +2159,59 @@ export class WorldScene extends Phaser.Scene {
    *  스무딩은 프레임률 무관 지수 감쇠(k = 1-(1-0.18)^(dt/16.67))로 기존 lerp 0.18@60fps 체감 승계.
    *  팬 시네마틱 중엔 camCinema로 보류 — 팬 완료 해제 시 현재 스크롤에서 자연 이어받는다.
    *  앱(줌 1)도 동일 공식 — 정중앙 추적으로 체감 동일, 무영향. */
+  /** v1.4.41 — 챕터 첫 진입 스토리 컷씬.
+   *
+   *  조건: ① 챕터의 구역 1(첫 진입) ② 이 챕터 연출을 아직 안 봤음
+   *  챕터마다 **한 번만** 재생하고 세이브에 기록한다(재방문 시 방해 금지).
+   *  보스 인트로(zone 10)와 시점이 달라 겹치지 않지만, 만약 겹치면 StoryCutscene 의
+   *  playing 가드가 두 번째를 거부한다. */
+  private playChapterIntroCutscene(stageKey: StageKey) {
+    try {
+      if (!this.player) return;
+      /* 구역 1에서만 — 중간 구역 재진입마다 컷씬이 뜨면 사냥 흐름을 끊는다 */
+      const parsed = parseStage(stageKey);
+      if (parsed.sub !== 1) return;
+      /* 마을/실내는 제외 */
+      if (!parsed.ch || parsed.ch === "village") return;
+      const spec = chapterIntroOf(parsed.ch);
+      if (!spec || spec.shots.length === 0) return;
+      if (spec.once !== false && this.cutsceneSeen.includes(parsed.ch)) return;
+
+      /* 맵 크기 대비 비율 좌표를 월드 좌표로 환산 */
+      const shots = spec.shots.map((s) => ({
+        x: s.rx * this.stageW,
+        y: s.ry * this.stageH,
+        panMs: s.panMs,
+        holdMs: s.holdMs,
+        zoom: s.zoom,
+        dialogue: s.dialogue,
+      }));
+
+      const started = playStoryCutscene(this, {
+        shots,
+        showDialogue: (key) => this.showDialogueOnce(key),
+        onDone: () => {
+          /* 본 것으로 기록 — 세이브에 남겨 재방문 시 생략 */
+          try {
+            if (!this.cutsceneSeen.includes(parsed.ch)) {
+              this.cutsceneSeen = [...this.cutsceneSeen, parsed.ch];
+              this.save();
+            }
+          } catch { /* 세이브 실패는 연출에 영향 없음 */ }
+        },
+      });
+      if (started) {
+        /* 컷씬 동안 입력·대화 상태 정합 */
+        this.dialoguing = true;
+        this.time.delayedCall(80, () => { this.dialoguing = false; });
+      }
+    } catch (err) {
+      /* 연출 실패가 게임을 막으면 안 된다 — 조용히 생략 */
+      console.warn("[SERTZ] 챕터 컷씬 생략", err);
+      try { this.camCinema = false; this.physics.world.resume(); } catch { /* 무시 */ }
+    }
+  }
+
   private applyManualCameraFollow(dt: number) {
     const cam = this.cameras?.main;
     if (!cam || this.camCinema || !this.player?.active) return;
@@ -15897,6 +15961,7 @@ export class WorldScene extends Phaser.Scene {
       atk: this.player.atk,
       cleared: this.cleared,
       dlcTalked: this.dlcTalked,   /* vc186b DLC — 마을 NPC 대화 완료 여부 */
+      cutsceneSeen: this.cutsceneSeen, /* v1.4.41 — 챕터 진입 컷씬 시청 기록 */
       gold: this.player.gold,
       potions: { ...this.player.potions },
       weapon: this.player.weapon,
