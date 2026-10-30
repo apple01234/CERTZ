@@ -440,6 +440,13 @@ export function runDeathSlashCinematic(
       glyph.style.transform = "translate(-50%,-50%) scale(1.5)";
       glyph.style.opacity = "0";
       ink.style.opacity = "0";
+      /* vc206 (지시 #1 "카메라 줌 아웃시 스킬이 다 안 끝났는데도 원래대로 돌아오는 버그")
+       *  줌 연출은 반드시 camFxUntil 을 선언해야 한다. WorldScene 의 줌 복귀 워치독이
+       *  fxActive(=camFxUntil > now) 를 보고 개입 여부를 정하는데, 이 연출이 선언을
+       *  빠뜨리면 워치독이 500ms 만에 줌을 기준값으로 끌어내려 스킬이 잘린 것처럼 보였다.
+       *  punch 180ms + back 220ms + 여유 120ms = 520ms 를 미리 예약한다. */
+      const sc = scene as unknown as { camFxUntil?: number; time: { now: number } };
+      sc.camFxUntil = Math.max(sc.camFxUntil ?? 0, sc.time.now + 180 + 220 + 120);
       scene.cameras.main.zoomTo(Math.max(0.9, scene.cameras.main.zoom * 1.06), 180); // 짧은 줌
       scene.time.delayedCall(220, () => scene.cameras.main.zoomTo(scene.cameras.main.zoom / 1.06, 220)); // 되돌리기
     });

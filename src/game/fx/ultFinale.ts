@@ -175,8 +175,10 @@ export function runUltFinale(
     aimAngle: number;
     /** 데미지 롤 — 배율을 받아 {dmg, crit} 반환 */
     roll: (mul: number) => { dmg: number; crit: boolean };
-    /** 좌표 기준 대상에게 피해를 준다 */
-    hitAt: (x: number, y: number, dmg: number, crit: boolean) => void;
+    /** 좌표 기준 대상에게 피해를 준다.
+     *  vc206 (지시 #4) — reach 를 함께 넘긴다. 호출부(Player)가 판정 반경을
+     *  연출 사거리에 맞춰 넓혀야 먼 지점의 적이 실제로 맞는다. */
+    hitAt: (x: number, y: number, dmg: number, crit: boolean, reach: number) => void;
     lite?: boolean;
   },
 ) {
@@ -219,7 +221,7 @@ export function runUltFinale(
         scene.time.delayedCall(i * 90, () => {
           burst(bx, by, 1.4 + i * 0.5);
           const { dmg: d, crit } = dmg(1.7);
-          opts.hitAt(bx, by, d, crit);
+          opts.hitAt(bx, by, d, crit, def.reach);
         });
       }
       break;
@@ -234,7 +236,7 @@ export function runUltFinale(
         scene.time.delayedCall((i + 1) * 80, () => {
           burst(bx, by, 2.0);
           const { dmg: d, crit } = dmg(1.8);
-          opts.hitAt(bx, by, d, crit);
+          opts.hitAt(bx, by, d, crit, def.reach);
         });
       }
       break;
@@ -248,7 +250,7 @@ export function runUltFinale(
         scene.time.delayedCall(i * 110, () => {
           burst(bx, by, 1.5);
           const { dmg: d, crit } = dmg(1.25);
-          opts.hitAt(bx, by, d, crit);
+          opts.hitAt(bx, by, d, crit, def.reach);
         });
       }
       break;
@@ -262,7 +264,7 @@ export function runUltFinale(
         scene.time.delayedCall(i * 70, () => {
           burst(bx, by, 1.7);
           const { dmg: d, crit } = dmg(1.5);
-          opts.hitAt(bx, by, d, crit);
+          opts.hitAt(bx, by, d, crit, def.reach);
         });
       }
       break;
@@ -279,7 +281,7 @@ export function runUltFinale(
           onComplete: () => im.destroy() });
       }
       const { dmg: d, crit } = dmg(2.2);
-      opts.hitAt(x, y, d, crit);
+      opts.hitAt(x, y, d, crit, def.reach);
       break;
     }
     case "ring": {
@@ -290,14 +292,14 @@ export function runUltFinale(
         duration: 560, ease: "Cubic.out", onComplete: () => ring.destroy() });
       burst(x, y, 1.2);
       const { dmg: d, crit } = dmg(0.9);
-      opts.hitAt(x, y, d, crit);
+      opts.hitAt(x, y, d, crit, def.reach);
       break;
     }
     case "circle":
     default: {
       burst(x, y, 2.4);
       const { dmg: d, crit } = dmg(2.0);
-      opts.hitAt(x, y, d, crit);
+      opts.hitAt(x, y, d, crit, def.reach);
       break;
     }
   }

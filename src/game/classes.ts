@@ -988,6 +988,17 @@ export type Skill5Key =
   | "archmage" | "sage" | "chronicle"
   | "assassin" | "swashbuckler" | "nightblade" | "duelist"
   | "raider" | "corsair" | "stormcaptain" | "powdermaster" | "seaking" | "dreadnought";
+/* vc206 (지시 #6) — 궁극기 보유 직업 = **4차 10직업 전용**.
+ *  유저 지시: "1~3차 직업 궁극기를 없애고 4차만 5차전직이 가능하니 4차 직업 궁극기 2개를 강하게 개편"
+ *  5차 전직은 4차에서만 가능하므로, 1~3차·계열 기본 직업은 궁극기를 갖지 않는다. */
+export const ULT_CLASSES: Set<string> = new Set([
+  "warbringer", "crusader",      // 전사
+  "deadeye", "skylord",          // 궁수
+  "arclord", "eternal",          // 마법사
+  "shadowlord", "blademaster",   // 도적
+  "seaking", "dreadnought",      // 해적
+]);
+
 export const SKILL5_INFO: Record<Skill5Key, { name: string; desc: string }> = {
   /* ── 계열 폴백 (1~3차에서 5차 해금 시) ── */
   warrior: {

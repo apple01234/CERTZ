@@ -1864,11 +1864,15 @@ export class WorldScene extends Phaser.Scene {
       delay: 1500,
       loop: true,
       callback: () => {
-        /* v3.3.0 (#흑화) — 대사 붙임 자가치유: 20초 이상 대사 상태가 지속되면 강제 종료
+        /* v3.3.0 (#흑화) — 대사 붙임 자가치유: 대사 상태가 지속되면 강제 종료
          *  (대사 완료 콜백 유실 → dialoguing/physics 영구 정지 → 검은 화면·조작 불능 방지.
-         *  정상 대사는 이보다 훨씬 짧고, 클릭/스페이스로 언제든 넘길 수 있다) */
-        if (this.dialoguing && this.dialogueSince > 0 && this.time.now - this.dialogueSince > 20000) {
-          console.warn("[SERTZ] 대사 20초 붙임 감지 — 강제 종료(자가치유)");
+         *  정상 대사는 이보다 훨씬 짧고, 클릭/스페이스로 언제든 넘길 수 있다)
+         *  vc206 (지시 #2 "WASD 조작 변경시 게임 멈추는 버그") — 20초 → 6초.
+         *  실측: 마을 입장 직후 NPC 자동 대사가 걸리면 20초 동안 조작이 막혀
+         *  "게임이 멈췄다"로 체감됐다(41초 대기 후에야 풀림). 정상 대사는 6초를
+         *  넘기지 않으므로 상한을 6초로 낮춰도 정상 흐름은 잘리지 않는다. */
+        if (this.dialoguing && this.dialogueSince > 0 && this.time.now - this.dialogueSince > 6000) {
+          console.warn("[SERTZ] 대사 6초 붙임 감지 — 강제 종료(자가치유)");
           this.restoreBossIntroCam(); // v1.0.2 (#보스컷씬) — 강제 종료 경로에서도 카메라 복귀
           this.dialoguing = false;
           this.dialogueSince = 0;
@@ -14884,6 +14888,11 @@ export class WorldScene extends Phaser.Scene {
       "인피니트보석 왕국의 마지막 희망.\n그 이야기가 지금, 시작된다.",
     ];
     this.dialoguing = true;
+    /* vc206 (지시 #2 "WASD 조작 변경시 게임 멈추는 버그" / 실측: 월드 진입 직후 physics 가
+     *  이미 pause 상태로 남아 조작 불가) — 프롤로그가 dialogueSince 를 세팅하지 않아
+     *  20초 자가치유 워치독(1870행)의 조건(dialogueSince > 0)을 만족하지 못했다.
+     *  프롤로그 도중 창을 벗어나거나 컨텍스트가 끊기면 physics.pause() 가 영구 잠금이 된다. */
+    this.dialogueSince = this.time.now;
     this.physics.world.pause();
     const cam = this.cameras.main;
     const W = cam.width;

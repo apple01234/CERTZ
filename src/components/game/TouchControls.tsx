@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { SkillButton } from "./SkillButton"; // vc206 — 아이콘 아래 스킬명 레이아웃
 import { EventBus } from "./EventBus";
 import { Swords, Bot, Pause, Star, Sparkles } from "lucide-react";
 import type { Skills } from "./useGameUi";
@@ -216,8 +217,17 @@ export function TouchControls({
   const s5bPct = (skills.s5bCd ?? 0) > 0 ? ((skills.s5bCd ?? 0) / Math.max(1, skills.s5bMax ?? 120000)) * 100 : 0;
 
   const sm = !isTouch; // PC(넓은 화면)에선 살짝 큰 크기
-  /* vc147 (#11) — 스킬/공격 버튼에 단축키 키탭 표시 (키맵 재배치 따라감) */
-  const km = loadKeyMap();
+  /* vc147 (#11) — 스킬/공격 버튼에 단축키 키탭 표시 (키맵 재배치 따라감)
+   *  vc206 (지시 #12) — "10시 방향 끝에 **자동 동기화** 스킬 단축키 버튼".
+   *  종전엔 `loadKeyMap()` 을 렌더 중에 한 번만 읽어, 설정에서 키를 바꿔도(키맵 변경)
+   *  컴포넌트가 리렌더되지 않는 한 **단축키 탭이 옛 값으로 남았다.**
+   *  이제 keymap:changed 를 구독해 상태로 들고 있으므로 즉시 반영된다. */
+  const [km, setKm] = useState(() => loadKeyMap());
+  useEffect(() => {
+    const onKm = () => setKm(loadKeyMap());
+    EventBus.on("keymap:changed", onKm);
+    return () => { EventBus.off("keymap:changed", onKm); };
+  }, []);
   /* v1.4.18 (#4) — 공격 버튼 100 (모바일) / 112 (PC) · v1.4.14 — 스킬 56/66 (현행 크기 유지)
    * vc143 (#7) — 화면 배율 곱연산: 넓은 화면(PC 전체화면 등)에서 버튼이 화면에 맞게 커진다 */
   const ATK = Math.round((sm ? 112 : 100) * uiScale); // 공격 버튼 지름
@@ -338,7 +348,10 @@ export function TouchControls({
           style={{ maxWidth: SK * 2 + 26 }}
         >
           {unlocked.map((s) => (
-            <div key={s.key} style={{ width: SK, height: SK }}>
+            /* vc206 (지시 #12) — 래퍼 높이를 SK 로 고정하면 버튼 **아래** 스킬명이 잘린다.
+             *  버튼만 SK×SK 로 두고 래퍼는 내용 높이만큼 늘어나게 한다. */
+            <div key={s.key} style={{ width: SK }}>
+              <div style={{ width: SK, height: SK }}>
               <SkillButton
                 ready={s.ready}
                 cdPct={s.cd}
@@ -351,10 +364,12 @@ export function TouchControls({
                 keyHint={isTouch ? undefined : keyLabel(s.hint)} /* vc149 #4 터치 기기엔 키보드 힌트 무의미 · v1.0.17 화살표 코드 기호 표기 */
                 onDown={() => EventBus.emit(s.emit as "input:skill1")}
               />
+              </div>
             </div>
           ))}
           {hasUlt && (
-            <div style={{ width: SK + 6, height: SK + 6 }}>
+            <div style={{ width: SK + 6 }}>
+              <div style={{ width: SK + 6, height: SK + 6 }}>
               <SkillButton
                 ready={s5Ready}
                 cdPct={s5Pct}
@@ -369,13 +384,15 @@ export function TouchControls({
               >
                 <Star size={18} />
               </SkillButton>
+              </div>
             </div>
           )}
           {/* vc146 (#2) — 제2궁극기 보라 금강 버튼 (쿨 2분 · MP 150)
            *  vc147 (#3) — 그리드 maxWidth를 2SK+14→2SK+26으로 확대: 궁극기 행(2×(SK+6)+간격6=2SK+18)이
            *  기존 폭보다 넓어 s5b가 s5 옆이 아닌 새 줄로 밀려나던 배치 버그 수정 — 이제 1차 궁극기 바로 옆 */}
           {hasUlt2 && (
-            <div style={{ width: SK + 6, height: SK + 6 }}>
+            <div style={{ width: SK + 6 }}>
+              <div style={{ width: SK + 6, height: SK + 6 }}>
               <SkillButton
                 ready={s5bReady}
                 cdPct={s5bPct}
@@ -393,6 +410,7 @@ export function TouchControls({
                 <Sparkles size={18} />
               </SkillButton>
             </div>
+              </div>
           )}
         </div>
         {/* [공격] — 행 끝 대형 원형 버튼 (현행 스타일·크기 유지) */}
@@ -512,126 +530,3 @@ function PotionButton({
   );
 }
 
-function SkillButton({
-  children,
-  label,
-  mp,
-  ready,
-  cdPct,
-  cdMax,
-  onDown,
-  icon,
-  ult,
-  ult2,
-  compact,
-  keyHint,
-  tutGlow,
-}: {
-  children?: React.ReactNode;
-  label: string;
-  mp: number;
-  ready: boolean;
-  cdPct: number;
-  /** v1.1.3 — 쿨 전체 길이(ms). 남은 초 표시용 (없으면 초를 숨긴다) */
-  cdMax?: number;
-  onDown: () => void;
-  icon?: string;
-  /** v3.2.0 — 궁극기 전용 황금 스타일 */
-  ult?: boolean;
-  /** vc146 (#2) — 제2궁극기 전용 보라·진홍 스타일 (쿨 2분) */
-  ult2?: boolean;
-  /** v1.4.12 (#8) — 컨테이너가 크기를 결정하므로 버튼은 h-full w-full */
-  compact?: boolean;
-  /** vc147 (#11) — 버튼 좌상단 단축키 키탭 (키맵 재배치 따라감) */
-  keyHint?: string;
-  /** v1.0.13 피드백#17 — 튜토리얼 ⑤(스킬 사용) 대상 하이라이트 (tut:dom → pulsing ring) */
-  tutGlow?: boolean;
-}) {
-  /* v3.0.27 — 아이콘 로드 실패 시 lucide 폴백 (웹뷰 캐시 오류 등 어떤 환경에서도 버튼이 깨지지 않게)
-     전직 등으로 icon 경로가 바뀌면 렌더 중 상태 조정 패턴으로 에러 플래그 리셋 */
-  const [prevIcon, setPrevIcon] = useState(icon);
-  const [iconErr, setIconErr] = useState(false);
-  if (prevIcon !== icon) {
-    setPrevIcon(icon);
-    setIconErr(false);
-  }
-  const showIcon = !!icon && !iconErr;
-  return (
-    <button
-      aria-label={label}
-      disabled={!ready}
-      /* v1.4.35 (유저 지시 #3 "스킬 아이콘 안에 텍스트 짤림") —
-       *  원인은 overflow-hidden + flex-col 이었다. 모바일 SK=56px 원형 안에
-       *  아이콘(24~28px) + 스킬명(최대 4글자) + "100MP" + 단축키 탭을 세로로
-       *  쌓으면 합계가 56px 를 넘어 아래쪽 글자와 MP 가 잘렸다.
-       *  → 아이콘을 배경 레이어(absolute)로 깔고, 텍스트는 그 위 그라데이션 위에
-       *    올려 세로 공간 경쟁을 없앤다. 스킬명은 2줄 허용 + 아주 작은 폰트로
-       *    원 안에 맞춘다(잘림 대신 줄바꿈). */
-      className={`relative flex h-full w-full touch-none select-none items-end justify-center overflow-hidden rounded-full border-2 text-white shadow-lg transition-transform active:scale-90 ${
-        ready
-          ? ult
-            ? "border-amber-100/90 bg-gradient-to-b from-amber-300 via-amber-500 to-orange-700 shadow-[0_0_14px_rgba(255,190,60,0.65)]"
-            : ult2
-              ? "border-fuchsia-100/90 bg-gradient-to-b from-fuchsia-400 via-purple-600 to-indigo-900 shadow-[0_0_16px_rgba(200,120,255,0.7)]"
-              : "border-[#e8c064]/80 bg-gradient-to-b from-[#2c3f6e] to-[#101827] shadow-[inset_0_1px_0_rgba(232,192,100,0.35),0_3px_0_rgba(0,0,0,0.45)]"
-          : "border-white/20 bg-slate-700/70 opacity-60"
-      } ${tutGlow ? "ring-4 ring-amber-300/90 animate-pulse" : ""}`}
-      onPointerDown={(e) => {
-        e.preventDefault();
-        if (ready) onDown();
-      }}
-    >
-      {/* v3.0.8 — 클래스별 스킬 아이콘(RPG Icons Pixel Art). 배경 레이어로 깔아 텍스트와 경쟁하지 않게 한다.
-       *  v1.4.35 — 원형 안을 꽉 채우고 위쪽에 어둡게 덮어 스킬명 가독성 확보 */}
-      {/* vc204 (#3) — 아이콘은 object-contain + 여백. 종전 object-cover 는 정사각 아이콘을
-          원형에 맞춰 잘라냈다(아이콘 규격이 32/64/256 으로 제각각이던 시절 잘림이 두드러짐).
-          이제 전 아이콘이 64×64 로 통일돼 contain 으로도 원 안을 충분히 채운다. */}
-      {showIcon ? (
-        <img
-          src={icon}
-          alt=""
-          onError={() => setIconErr(true)}
-          className="tap-safe pointer-events-none absolute inset-0 h-full w-full rounded-full object-contain p-[6%] opacity-95"
-          style={{ imageRendering: "pixelated" }}
-        />
-      ) : (
-        <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-90">{children}</span>
-      )}
-      {/* 스킬명 가독성용 하단 그라데이션 (아이콘 위) */}
-      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] rounded-b-full bg-gradient-to-t from-black/92 via-black/72 to-transparent" />
-      {/* vc147 (#11) — 단축키 키탭 (좌상단). v1.4.35 — 아이콘 위에서도 읽히게 테두리 추가 */}
-      {keyHint && (
-        <span className="pointer-events-none absolute left-0.5 top-0.5 z-10 rounded bg-slate-950/90 px-1 text-[8px] font-black leading-[12px] text-amber-200 ring-1 ring-amber-300/40">
-          {keyHint}
-        </span>
-      )}
-      {/* v1.4.35 (#3 텍스트 짤림) — 아이콘 위 오버레이. 세로 스택을 없애고
-       *  스킬명(최대 2줄) + MP 를 하단에 붙인다. 잘림 대신 줄바꿈을 쓴다. */}
-      <span className="pointer-events-none relative z-10 flex w-full flex-col items-center justify-end px-0.5 pb-[3px]">
-        <span className={`w-full break-keep text-center text-[7.5px] font-bold leading-[1.1] sm:text-[8.5px] [text-shadow:0_1px_2px_#000] ${ult ? "text-amber-100" : ult2 ? "text-fuchsia-100" : "text-white"}`}>{label}</span>
-        <span className={`text-[7.5px] font-bold leading-[1.1] sm:text-[8.5px] [text-shadow:0_1px_2px_#000] ${ult ? "text-amber-200" : ult2 ? "text-fuchsia-200" : "text-[#bcd0ff]"}`}>{mp}MP</span>
-      </span>
-      {cdPct > 0 && (
-        <>
-          <div
-            className="pointer-events-none absolute inset-0 bg-black/60"
-            style={{ clipPath: `inset(${100 - cdPct}% 0 0 0)` }}
-          />
-          {/* v1.1.4 (#쿨표시버그) — 남은 쿨다운 초.
-              ⚠️ cdPct는 이미 "남은 비율"이다(WorldScene이 skill1Cd=남은ms, s1Max=총ms을 보내고
-              부모가 cd/max*100을 넘긴다). 종전엔 (100-cdPct)로 계산해 남은 1초를 3초로,
-              남은 3초를 1초로 표시하던 역방향 버그가 있었다.
-              1초 이상은 정수(올림 — 0.2초 남았는데 0으로 보이면 누르게 되므로), 1초 미만은 소수. */}
-          {cdMax !== undefined && cdMax > 0 && (
-            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[11px] font-black text-white [text-shadow:0_1px_3px_#000,0_0_4px_#000]">
-              {(() => {
-                const remain = (cdMax * cdPct) / 100 / 1000;
-                return remain >= 1 ? Math.ceil(remain) : remain.toFixed(1);
-              })()}
-            </span>
-          )}
-        </>
-      )}
-    </button>
-  );
-}

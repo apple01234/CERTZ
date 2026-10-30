@@ -20,6 +20,7 @@
 import Phaser from "phaser";
 import { FIFTH_LOOKS, type FifthLook } from "./fifthLooks";
 import { familyOf } from "../classes";
+import { ensureAtlasAnim } from "./atlasAnim"; // vc206 (#8) — 아틀라스 애니메이션
 
 export type FifthAura = {
   core: Phaser.GameObjects.Image;
@@ -144,11 +145,17 @@ export class FifthAuraRig {
 
   private build(hex: number, cls: string | null): void {
     const look = (cls && FIFTH_LOOKS[cls]) || fallbackLook(cls);
+    /* vc206 (지시 #8) — 아틀라스면 애니메이션으로 재생한다.
+     *  종전엔 `gvu_shockwave_fiery`(512×256 = 2프레임), `gvu_trail_wave` 같은
+     *  프레임 시트를 add.image 로 1장만 그려 "사진 한 장"으로 보였다. */
     const mk = (tex: string, depth: number) => {
-      const im = this.scene.add.image(0, -9999, tex);
+      const anim = ensureAtlasAnim(this.scene, tex, 10);
+      const im: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite = anim
+        ? this.scene.add.sprite(0, -9999, tex, 0).play(anim.animKey)
+        : this.scene.add.image(0, -9999, tex);
       im.setBlendMode(Phaser.BlendModes.ADD).setDepth(depth).setAlpha(0);
       if (!this.scene.textures.exists(tex)) im.setVisible(false);
-      return im;
+      return im as Phaser.GameObjects.Image;
     };
     const tint = look.tint === 0xffffff ? hex : look.tint;
     this.lastHex = hex;

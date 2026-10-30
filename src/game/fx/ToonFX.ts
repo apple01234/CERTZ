@@ -15,7 +15,22 @@ import type Phaser from "phaser";
 import { loadFx } from "../config"; // vc145 (#11) — 셰이더 강도 조절바 값을 툰 파이프라인에 연결
 
 type ColorMatrixCtrl = { colorMatrix: { contrast: (v: number, m?: boolean) => unknown; saturate: (v: number, m?: boolean) => unknown } };
-type FilteredList = { addColorMatrix: () => ColorMatrixCtrl; addGlow: (cfg: Record<string, unknown>) => unknown; clear: () => void };
+type FilteredList = {
+  addColorMatrix: () => ColorMatrixCtrl;
+  /* vc206 (지시 #3) — Phaser 4 FilteredList.addGlow 는 **위치인자** 시그니처다
+   *  (color, outerStrength, innerStrength, scale, knockout, quality, distance).
+   *  종전 선언은 config 객체 1개로 잘못 잡혀 있어 인자 7개 호출이 TS2554 로 막혔다. */
+  addGlow: (
+    color?: number,
+    outerStrength?: number,
+    innerStrength?: number,
+    scale?: number,
+    knockout?: boolean,
+    quality?: number,
+    distance?: number
+  ) => unknown;
+  clear: () => void;
+};
 
 export type ToonOpts = {
   /** 림라이트 색 (기본: 하늘색 — 플레이어, 보스는 오브색 권장) */
@@ -54,21 +69,33 @@ export function applyToonStyle(obj: Filterable, opts: ToonOpts = {}): unknown[] 
   } catch { /* 무시 — 기본값 */ }
   try {
     const cm = list.addColorMatrix();
-    /* vc147 (#1) 강화 → vc150 (#신규7) 추가 증폭 — 예전 툰셰이더 체감 회복 */
-    cm.colorMatrix.contrast(opts.contrast ?? 1.14);
-    cm.colorMatrix.saturate(opts.saturate ?? 1.32);
+    /* vc147 (#1) 강화 → vc150 (#신규7) 추가 증폭 — 예전 툰셰이더 체감 회복
+     * vc206 (지시 #3 "툰 쉐이딩 적용시 블러같은 이상한거 있음(화면 깨짐)")
+     *  대비를 올리면 툰 느낌이 나야 하는데, 기존 1.14 는 물러서 Glow 번짐이
+     *  남아 전체가 뿌옇게 보였다. 명암 계단을 더 세게 세운다. */
+    cm.colorMatrix.contrast(opts.contrast ?? 1.34);
+    cm.colorMatrix.saturate(opts.saturate ?? 1.38);
     created.push(cm);
   } catch {
     return created.length ? created : null;
   }
+  /* vc206 (지시 #3) — Glow 번짐 축소.
+   *  종전 glow(distance:9, quality:4)는 외곽선이 아니라 **넓게 번지는 발광**이라
+   *  1280×720 전체에 얹히면 화면이 뿌옇게(블러처럼) 보였다. 특히 모바일에서
+   *  quality 4 는 다운샘플 블러와 구분되지 않았다.
+   *  Phaser 4 의 FilteredList 에는 addShadow 가 없어 외곽선을 따로 만들 수 없으므로,
+   *  Glow 를 **짧은 거리 + 품질 상향**으로 조여 번짐을 외곽선 수준까지 줄인다.
+   *  (addGlow 시그니처는 위치인자: color, outerStrength, innerStrength, scale, knockout, quality, distance) */
   try {
-    const glow = list.addGlow({
-      color: opts.rim ?? 0x9fd8ff,
-      outerStrength: (opts.rimStrength ?? 2.8) * fxk, // 2.0→2.8 + 강도 연동 (vc150)
-      innerStrength: 0.6,
-      distance: 9,
-      quality: 4, // 모바일 예산 — 낮은 품질 고정
-    });
+    const glow = list.addGlow(
+      opts.rim ?? 0x9fd8ff,
+      Math.min(1.2, 0.5 * fxk), // outerStrength 2.8 → 1.2 : 번짐 세기 억제
+      0, // innerStrength 0.6 → 0 : 내부 발광이 뿌옇게 만드는 주범
+      1, // scale
+      false, // knockout
+      2, // quality 4 → 2 : 다운샘플 블러 제거
+      2 // distance 9 → 2 : 퍼짐 폭을 외곽선 수준으로
+    );
     created.push(glow);
   } catch { /* Glow 실패 시 ColorMatrix만이라도 유지 */ }
   return created.length ? created : null;

@@ -8,7 +8,7 @@ import {
   POT_PITY_MAX, STAR_PITY_STEP, STAR_PITY_MAX, STAR_PITY_FROM,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
 } from "../data";
-import {
+import { ULT_CLASSES,
   classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf, tier2RootOf,
   resolveSkill1Of, resolveSkill2Of, resolveSkill5Of,
   type ClassKey, type ClassBonus, SKILL_LABELS, SKILL3_KIND, SKILL4_KIND,
@@ -257,15 +257,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   get skill4Unlocked(): boolean {
     return this.tier >= 4 && !!SKILL4_KIND[this.cls ?? ""];
   }
-  /** v3.2.0 — 5차 궁극기 해금 — Lv.200 도달 (전직 티어 무관)
-   *  v3.3.0 — GM 5차전직(임시)/각성 시련 완료(fifth)여도 해금 (레벨 무관) */
+  /** 5차 궁극기 해금 — **4차 직업만**.
+   *
+   *  vc206 (지시 #6) — 종전엔 `lv >= FIFTH_LEVEL || fifth` 만 봤다. 그래서 1~3차 직업도
+   *  200레벨만 되면 계열 폴백 궁극기를 썼다("1~3차 직업에게 왜 궁극기를 다르게 하는거임").
+   *  5차 전직은 4차에서만 가능하므로, 궁극기는 **4차 10직업 전용**으로 잠근다.
+   *  · ULT_CLASSES 에 없는 직업(1~4차 하위·계열 기본)은 궁극기 없음
+   *  · 4차 10직업은 Lv.200 도달 또는 GM 부여(fifth)로 해금
+   */
   get skill5Unlocked(): boolean {
+    if (!ULT_CLASSES.has(this.cls ?? "")) return false;
     return this.lv >= FIFTH_LEVEL || this.fifth;
   }
   /** vc146 (#2) — 제2궁극기 해금 — vc147 (#19): Lv.200 동시 해금 폐지.
    *  · 스토리 퀘스트 "각성의 대가"(fifth2.ts, 12단계) 완료 시 해금 — 수주 조건 Lv.220
    *  · 각성 시련 완료/GM 부여(fifth)는 기존대로 전부 해금 (테스트/GM 편의 유지) */
   get skill5bUnlocked(): boolean {
+    /* vc206 (지시 #6) — 제2궁극기도 4차 직업 전용 */
+    if (!ULT_CLASSES.has(this.cls ?? "")) return false;
     return this.fifth2Done || this.fifth;
   }
   get skill5bName(): string {
@@ -5169,11 +5178,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       x: this.x, y: this.y, hex: this.clsHex(), cls: this.cls,
       aimAngle: this.aimDirFree().angle(),
       roll: (mul) => this.rollDamage(mul, false),
-      hitAt: (bx, by, d, crit) => {
-        for (const e of this.getAllTargetsIn(220)) {
+      hitAt: (bx, by, d, crit, reach) => {
+        /* vc206 (지시 #4 "궁극기 이펙트에 히트박스 없음(즉, 공격안됨)")
+         *  종전엔 getAllTargetsIn(220) — **플레이어 위치 고정** 반경 220px 로 후보를 모은 뒤
+         *  마무리 지점(bx,by)에서 다시 220px 를 검사했다. 그런데 ULT_FINALE 의 reach 는
+         *  300~620px 이라, 직선/부채꼴/십자형의 먼 폭발 지점은 후보 수집 단계에서 이미
+         *  전부 걸러져 **데미지가 0** 이었다(이펙트만 보이고 적은 멀쩡 = "공격안됨").
+         *  → vc194 에서 추가된 targetsAround(cx,cy,r) 로 **폭발 지점 기준** 후보를 모으고,
+         *    반경을 reach 에 비례해 넓힌다. */
+        const HIT_R = Math.max(220, Math.min(680, reach * 0.55 + 60));
+        for (const e of this.targetsAround(bx, by, HIT_R)) {
           if (!e.active) continue;
-          /* 마무리 지점(bx,by) 기준으로 반경 안의 대상에게 피해 */
-          if (Phaser.Math.Distance.Between(bx, by, e.x, e.y) > 220) continue;
           const away = this.awayScratch.set(e.x - bx, e.y - by).normalize();
           if (crit) this.scene.sfxCrit();
           e.takeDamage(d, away, 560, crit);

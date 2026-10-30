@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { TILE_PNG_KEYS } from "../tilePng"; // vc206 (#11) — PNG 원본 우선 로드
 import { buildAllAnims, registerBossAnims, BOSS_ATLAS } from "../textures";
 import { CORE_BODY_PREFIXES } from "../data";
 import { BGM_PRELOAD_TRACKS, SKILL_SFX_TRACKS } from "../audio";
@@ -632,7 +633,11 @@ export class BootScene extends Phaser.Scene {
     /* v1.0.20 — 로딩 UI를 에셋 로드 시작 "직전"에 띄운다 (검은 화면 구간 0) */
     this.buildLoadingUi();
     this.load.setPath("assets");
+    /* vc206 (지시 #11) — webp 우선 로드 후, PNG 원본이 있는 타일은 PNG 로 덮어 로드한다.
+     *  Phaser 는 같은 키를 두 번 큐잉하면 나중 것이 이기므로 PNG 가 최종 텍스처가 된다.
+     *  (webp 5종이 PNG 대비 색이 40~93% 뭉개져 있어 "종이 쪼가리"로 보였다) */
     for (const key of ASSET_LIST) this.load.image(key, `${key}.webp`);
+    for (const key of TILE_PNG_KEYS) this.load.image(key, `${key}.png`);
     /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 이펙트 6종.
      *  ASSET_LIST는 `assets/<key>.webp` 평면 경로를 쓰므로 하위 폴더(vfx/)는 별도 로드. */
     for (const k of VFX_PACK_LIST) this.load.image(k, `vfx/${k}.webp`);
