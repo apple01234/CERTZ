@@ -1,3 +1,4 @@
+import { viewZoom } from "../PhaserGame";
 /**
  * vc183 (지시 — 극딜 스킬 메커니즘 설계 문서) — 극딜 연출 3단계 레이어.
  *
@@ -359,20 +360,35 @@ export function playUltLayers(
        *  종전엔 base = cam.zoom 이라, 레벨업 연출(WorldScene 7763) 등 다른 줌 연출이
        *  겹치면 1.25 를 base 로 잡아 영구히 남았다(실측: 시전 후 zoom 1.25 고정).
        *  기준값(absoluteBase)에서 복원하면 어떤 연출과 겹쳐도 원위치로 돌아온다. */
+      /* vc206 (지시 #1) — 복원 기준을 **실제 기준 줌**으로 잡는다.
+       *  종전엔 `scene.perspZoom` 을 읽었는데 그 프로퍼티는 WorldScene 에 **존재하지 않아**
+       *  항상 1.0 으로 폴백했다. viewZoom() 은 화면 높이에 따라 1.0~2.5 로 달라지므로,
+       *  세로가 긴 모바일(S20+ 등)에서 기준이 1.0 으로 잘못 잡혀 연출이 끝나면
+       *  화면이 갑자기 확대/축소되며 "원래대로 돌아오는" 것처럼 보였다.
+       *  → viewZoom() 을 정본으로 쓰고, 없으면 현재값 → 1.0 순으로 폴백. */
       const absoluteBase = (() => {
         try {
-          const sc = scene as unknown as { perspZoom?: number; cameras: { main: { zoom: number } } };
-          // 기준 줌을 알 수 있으면 그걸, 모르면 1.0 (Phaser 기본)
-          return typeof sc.perspZoom === "number" && sc.perspZoom > 0 ? sc.perspZoom : 1;
+          const sc = scene as unknown as { baseZoom?: number };
+          if (typeof sc.baseZoom === "number" && sc.baseZoom > 0) return sc.baseZoom;
+          return viewZoom();
         } catch { return 1; }
       })();
       const from = cam.zoom;
-      cam.zoomTo(from * p.zoomPunch, 120);
-      scene.time.delayedCall(160, () => {
+      /* vc206 (지시 #1) — 줌 연출 구간을 씬에 알린다(워치독이 끼어들지 않게).
+       *  연출이 길수록 복귀도 늦춰야 "스킬이 안 끝났는데 원래대로 돌아오는" 현상이 없다. */
+      const punchMs = 120;
+      const holdMs = 240;
+      const backMs = 320;
+      try {
+        const sc = scene as unknown as { camFxUntil?: number; time: { now: number } };
+        sc.camFxUntil = Math.max(sc.camFxUntil ?? 0, sc.time.now + punchMs + holdMs + backMs + 120);
+      } catch { /* 무시 */ }
+      cam.zoomTo(from * p.zoomPunch, punchMs);
+      scene.time.delayedCall(punchMs + holdMs, () => {
         try {
           /* 1) 복귀 트윈 2) 최종 보정 — 다른 연출이 그 사이에 끼어들어도 원위치 보장 */
-          cam.zoomTo(absoluteBase, 240);
-          scene.time.delayedCall(300, () => {
+          cam.zoomTo(absoluteBase, backMs);
+          scene.time.delayedCall(backMs + 60, () => {
             try { cam.zoom = absoluteBase; } catch { /* 씬 종료 무시 */ }
           });
         } catch { /* 씬 종료 경합 무시 */ }

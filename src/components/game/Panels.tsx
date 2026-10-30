@@ -1551,7 +1551,11 @@ function MarketBoard({ rpg }: { rpg: RpgState }) {
     const r = await marketCollect();
     setBusy(false);
     if (!r.ok) { setMsg(String(r.data.error ?? "수령 실패")); return; }
-    EventBus.emit("rpg:marketCollect", { gold: Number(r.data.gold ?? 0) });
+    /* vc205 (감사 #17) — 서버가 지급한 확정 잔액(serverGold)을 함께 넘겨 이중 가산을 막는다. */
+    EventBus.emit("rpg:marketCollect", {
+      gold: Number(r.data.gold ?? 0),
+      serverGold: typeof r.data.serverGold === "number" ? r.data.serverGold : undefined,
+    });
     setMk(takeMarketSnapshot(r.data));
     setMsg("");
   };

@@ -690,7 +690,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const { dmg, crit } = this.rollDamage(0.55 + tier * 0.06, false);
     for (const e of this.getAllTargetsIn(radius)) {
       if (!e.active) continue;
-      const away = new Phaser.Math.Vector2(e.x - bx, e.y - by).normalize();
+      const away = this.awayScratch.set(e.x - bx, e.y - by).normalize();
       e.takeDamage(dmg, away, 200, crit);
     }
     this.scene.spawnBurstAt?.(bx, by, 10 + tier * 3, 0xffd27a);
@@ -1347,7 +1347,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
         if (d <= radius) {
           this.hitSet.add(e);
-          const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+          const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg, crit } = this.rollDamage(dmgMul, true);
           if (crit) this.scene.sfxCrit();
           e.takeDamage(dmg, away, 300, crit);
@@ -1358,7 +1358,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.time.delayedCall(dl, () => {
                 if (!eb.active || this.state === "dead") return;
                 const { dmg: d2 } = this.rollDamage(0.35, true);
-                eb.takeDamage(d2, new Phaser.Math.Vector2(0, 0.1).normalize(), 60, false);
+                eb.takeDamage(d2, this.awayScratch.set(0, 0.1).normalize(), 60, false);
                 this.scene.spawnBurstAt(eb.x, eb.y, 3, 0xff4d4d);
               });
             }
@@ -1517,7 +1517,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const d = Phaser.Math.Distance.Between(px, py, e.x, e.y);
           if (d <= 104 + 8 * t) {
             this.hitSet.add(e);
-            const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+            const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
             const { dmg, crit } = this.rollDamage(1.0 + 0.1 * t, true);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 320, crit);
@@ -1651,7 +1651,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (d <= radius) {
             this.hitSet.add(e);
             hits++;
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = this.rollDamage(1.5 + 0.12 * t, true);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 200, crit);
@@ -1724,7 +1724,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.time.delayedCall(200, () => {
           if (!eb.active) return;
           const { dmg: d2 } = this.rollDamage(0.6, true);
-          eb.takeDamage(d2, new Phaser.Math.Vector2(0, 0.1).normalize(), 40, false);
+          eb.takeDamage(d2, this.awayScratch.set(0, 0.1).normalize(), 40, false);
           this.scene.spawnBurstAt(eb.x, eb.y, 4, 0xff4d4d);
         });
         this.scene.onMeleeConnect(1, "crit");
@@ -1883,7 +1883,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       for (const e of this.getAllTargetsIn(999)) {
         const d = Phaser.Math.Distance.Between(nx, ny, e.x, e.y);
         if (d > 120 + 6 * t) continue;
-        const away = new Phaser.Math.Vector2(e.x - nx, e.y - ny).normalize();
+        const away = this.awayScratch.set(e.x - nx, e.y - ny).normalize();
         e.takeDamage(dmg, away, 260, crit);
       }
       if (crit) this.scene.sfxCrit();
@@ -2066,7 +2066,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.time.delayedCall(160, () => {
                 if (!eb.active) return;
                 const { dmg: d2 } = this.rollDamage(0.5, true);
-                eb.takeDamage(d2, new Phaser.Math.Vector2(0, 0.1).normalize(), 40, false);
+                eb.takeDamage(d2, this.awayScratch.set(0, 0.1).normalize(), 40, false);
                 this.scene.spawnBurstAt(eb.x, eb.y, 3, 0xff4d4d);
               });
             }
@@ -2102,7 +2102,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
           if (d <= r) {
             this.hitSet.add(e);
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = this.rollDamage(mul, true);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, knock, crit);
@@ -2422,7 +2422,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.cameras.main.shake(140, 0.009);
         this.scene.cameras.main.flash(90, 255, 120, 90);
         for (const e of this.getAllTargetsIn(280)) {
-          const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+          const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg, crit } = this.rollDamage(2.0, true);
           if (crit) this.scene.sfxCrit();
           e.takeDamage(dmg, away, 380, crit);
@@ -2498,7 +2498,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnBurstAt(e.x, e.y, 10, 0x9dd8ff);
             const { dmg, crit } = this.rollDamage(3.4, true);
             if (crit) this.scene.sfxCrit();
-            e.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 220, crit);
+            e.takeDamage(dmg, this.awayScratch.set(0, 0.1).normalize(), 220, crit);
             (e as Enemy).applyStun?.(400);
           });
         });
@@ -2537,7 +2537,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.state === "dead") return;
             const e = target && target.active ? target : null;
             const dir2 = e
-              ? new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize()
+              ? this.awayScratch.set(e.x - this.x, e.y - this.y).normalize()
               : this.aimDir();
             this.scene.spawnSlash(this.x, this.y, dir2, i % 2 === 0, i === hits - 1 ? 1.6 : 1.1, hex);
             if (e) {
@@ -2562,7 +2562,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.cameras.main.shake(130, 0.008);
         this.scene.cameras.main.flash(90, 255, 60, 60);
         for (const e of this.getAllTargetsIn(250)) {
-          const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+          const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg } = this.rollDamage(1.2, true);
           e.takeDamage(dmg, away, 120, false);
           // 출혈 — 3틱 지속 피해 (피의 격노 상징)
@@ -2571,7 +2571,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.time.delayedCall(dl, () => {
               if (!eb.active || this.state === "dead") return;
               const { dmg: d2 } = this.rollDamage(0.5, true);
-              eb.takeDamage(d2, new Phaser.Math.Vector2(0, 0.1).normalize(), 40, false);
+              eb.takeDamage(d2, this.awayScratch.set(0, 0.1).normalize(), 40, false);
               this.scene.spawnBurstAt(eb.x, eb.y, 3, 0xff4d4d);
             });
           }
@@ -2589,7 +2589,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.cameras.main.flash(120, 255, 240, 190);
         this.scene.cameras.main.shake(150, 0.009);
         for (const e of this.getAllTargetsIn(280)) {
-          const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+          const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg, crit } = this.rollDamage(2.6, true);
           if (crit) this.scene.sfxCrit();
           e.takeDamage(dmg, away, 380, crit);
@@ -2680,7 +2680,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnBurstAt(e.x, e.y, 9, hex);
           const { dmg, crit } = this.rollDamage(2.4 - hop * 0.2, true);
           if (crit) this.scene.sfxCrit();
-          e.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 120, crit);
+          e.takeDamage(dmg, this.awayScratch.set(0, 0.1).normalize(), 120, crit);
           hitList.push(e);
           hop++;
           const next =
@@ -2727,7 +2727,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(150, 0.01);
           this.scene.cameras.main.flash(100, 200, 180, 255);
           for (const e of this.getAllTargetsIn(190 + 10 * t)) {
-            const away = new Phaser.Math.Vector2(e.x - cx, e.y - cy).normalize();
+            const away = this.awayScratch.set(e.x - cx, e.y - cy).normalize();
             const { dmg, crit } = this.rollDamage(2.8 + 0.25 * t, true);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 300, crit);
@@ -2768,7 +2768,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.scene.cameras.main.shake(80, 0.005);
                 const targets2 = this.scene.getAllTargets().filter((e) => e.active && Phaser.Math.Distance.Between(mx, my, e.x, e.y) <= 110);
                 for (const e of targets2) {
-                  const away = new Phaser.Math.Vector2(e.x - mx, e.y - my).normalize();
+                  const away = this.awayScratch.set(e.x - mx, e.y - my).normalize();
                   const { dmg } = this.rollDamage(2.2, true);
                   e.takeDamage(dmg, away, 260, false);
                   // 출혈 2틱
@@ -2777,7 +2777,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                     this.scene.time.delayedCall(dl, () => {
                       if (!eb.active || this.state === "dead") return;
                       const { dmg: d2 } = this.rollDamage(0.45, true);
-                      eb.takeDamage(d2, new Phaser.Math.Vector2(0, 0.1).normalize(), 40, false);
+                      eb.takeDamage(d2, this.awayScratch.set(0, 0.1).normalize(), 40, false);
                       this.scene.spawnBurstAt(eb.x, eb.y, 3, 0xc08aff);
                     });
                   }
@@ -2886,7 +2886,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               if (this.hitSet.has(e)) continue;
               if (Phaser.Math.Distance.Between(px, py, e.x, e.y) > 130 + 10 * t) continue;
               this.hitSet.add(e);
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = this.rollDamage(2.1 + 0.12 * t, true);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 340, crit); // 강한 넉백 — 밀려나는 게 보이게
@@ -2915,7 +2915,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               if (this.hitSet.has(e)) continue;
               if (Phaser.Math.Distance.Between(ex, ey, e.x, e.y) > 120 + 8 * t) continue;
               this.hitSet.add(e);
-              const away = new Phaser.Math.Vector2(e.x - ex, e.y - ey).normalize();
+              const away = this.awayScratch.set(e.x - ex, e.y - ey).normalize();
               const { dmg, crit } = this.rollDamage(2.3 + 0.14 * t, true);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 280, crit);
@@ -2995,7 +2995,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(200, 0.014);
           this.scene.cameras.main.flash(120, 255, 90, 50);
           for (const e of this.getAllTargetsIn(300)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = this.rollDamage(4.8, true);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 520, crit);
@@ -3021,7 +3021,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             spawnRingPop(this.scene, e.x, e.y, "vf_ring", 0xffe9a0, 2.2, 440);
             const { dmg, crit } = this.rollDamage(4.2, true);
             if (crit) this.scene.sfxCrit();
-            e.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 300, crit);
+            e.takeDamage(dmg, this.awayScratch.set(0, 0.1).normalize(), 300, crit);
           });
         });
         this.selfDefBuff = { add: 20, until: now + 7000 };
@@ -3104,7 +3104,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.cameras.main.shake(180, 0.012);
         this.scene.cameras.main.flash(110, 120, 140, 255);
         for (const e of this.getAllTargetsIn(350)) {
-          const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+          const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg, crit } = this.rollDamage(mult, true);
           if (crit) this.scene.sfxCrit();
           e.takeDamage(dmg, away, 460, crit);
@@ -3123,7 +3123,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         });
         for (const e of this.getAllTargetsIn(380)) {
           (e as Enemy).applyStun?.(3200);
-          const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+          const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg } = this.rollDamage(4.4 + 0.3 * t, true);
           e.takeDamage(dmg, away, 60, false);
         }
@@ -3190,7 +3190,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnBurstAt(this.x, this.y, 7, hex);
             (this.body as Phaser.Physics.Arcade.Body).reset(nx, ny);
             this.setPosition(nx, ny);
-            const dir2 = new Phaser.Math.Vector2(e.x - nx, e.y - ny).normalize();
+            const dir2 = this.awayScratch.set(e.x - nx, e.y - ny).normalize();
             this.scene.spawnSlash(nx, ny, dir2, i % 2 === 0, 1.45, hex);
             /* v1.0.10 — GameStudio FX: 점멸 타격 임팩트+애니 참격 교차 (홀수번째) */
             spawnFlarePop(this.scene, e.x, e.y - 6, "vf_impact", { tint: hex, scale: 0.9, duration: 380 });
@@ -3227,7 +3227,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(999)) {
               const d = Phaser.Math.Distance.Between(cx, cy, e.x, e.y);
               if (d > 320 || d < 12) continue;
-              const pull = new Phaser.Math.Vector2(cx - e.x, cy - e.y).normalize();
+              const pull = this.awayScratch.set(cx - e.x, cy - e.y).normalize();
               e.takeDamage(Math.round(this.atkTotal * 0.25), pull, 0, false);
               /* 위치를 직접 당긴다(물리 없이) */
               e.x += pull.x * 26;
@@ -3244,7 +3244,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(280, 0.012);
           this.scene.sfxSkill("quake", 0.85);
           for (const e of this.getAllTargetsIn(360)) {
-            const away = new Phaser.Math.Vector2(e.x - cx, e.y - cy).normalize();
+            const away = this.awayScratch.set(e.x - cx, e.y - cy).normalize();
             const { dmg, crit } = this.rollDamage(6.5, true);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 500, crit);
@@ -3272,7 +3272,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               if (this.hitSet.has(e)) continue;
               if (Phaser.Math.Distance.Between(px, py, e.x, e.y) > 145) continue;
               this.hitSet.add(e);
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = this.rollDamage(4.2, true);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 420, crit);
@@ -3295,6 +3295,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  한 틱 안에서 버퍼를 재사용해도 안전하다(자동전투 autoLiveScratch와 같은 방식).
    *  ⚠️ 반환 배열을 보관하거나 다음 호출 뒤에 쓰면 덮어써진다 — 이번 틱에서만 유효. */
   private targetScratch: (Enemy | Boss)[] = [];
+  /* vc205 (감사 #22) — 반경 루프에서 매번 new Vector2 하던 것을 재사용한다.
+   *  적 하나당 객체 1개가 쓰레기로 남아 대규모 전투에서 GC 스파이크를 만들었다.
+   *  normalize() 결과는 호출 직후 takeDamage 로 넘기므로 재사용해도 안전하다. */
+  private awayScratch = new Phaser.Math.Vector2();
 
   /** 반경 내 대상 목록 — 3차/4차 광역 스킬 판정용 (반환 배열은 다음 호출까지 유효) */
   getAllTargetsIn(radius: number): (Enemy | Boss)[] {
@@ -3491,7 +3495,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(120, 0.009 + i * 0.0012);
             this.scene.sfxSkill("bigsword", 0.9 + (i % 4) * 0.06);
             for (const e of this.getAllTargetsIn(440)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(2.6);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 440, crit);
@@ -3513,7 +3517,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.flash(170, 255, 110, 50);
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(620)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
@@ -3541,7 +3545,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("holy", 0.95 + (i % 3) * 0.07);
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 200) continue;
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(3.2);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 440, crit);
@@ -3562,7 +3566,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("holy", 0.72);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(580)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(6.2);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
@@ -3655,7 +3659,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               spawnRingPop(this.scene, t.x, t.y, "vf_ring", 0xaed8ff, 2.0, 420);
               this.scene.cameras.main.shake(110, 0.011);
               this.scene.sfxSkill("thunder", 0.82 + (i % 3) * 0.08);
-              const away = new Phaser.Math.Vector2(0, 0.1).normalize();
+              const away = this.awayScratch.set(0, 0.1).normalize();
               const { dmg, crit } = rd(3.4);
               if (crit) this.scene.sfxCrit();
               t.takeDamage(dmg, away, 420, crit);
@@ -3688,7 +3692,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("thunder", 0.88 + (i % 3) * 0.08);
             for (const e of this.getAllTargetsIn(310)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 200) continue;
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(3.0);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
@@ -3745,7 +3749,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 for (const e of arclordTargets) {
                   if (!e.active) continue;
                   if (Phaser.Math.Distance.Between(hx, hy, e.x, e.y) > 140) continue;
-                  const away = new Phaser.Math.Vector2(e.x - hx, e.y - hy).normalize();
+                  const away = this.awayScratch.set(e.x - hx, e.y - hy).normalize();
                   const { dmg, crit } = rd(1.8); // 마법진 1장당 피해
                   if (crit) this.scene.sfxCrit();
                   e.takeDamage(dmg, away, 520, crit);
@@ -3768,7 +3772,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("manaburst", 0.72);
           this.scene.sfxSkill("superhit", 0.8);
           for (const e of this.getAllTargetsIn(650)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(6.0 + 3.0 * ratio); // MP 비례 최대 +3.0배
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
@@ -3811,7 +3815,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("timestop", 1.1 + (i % 3) * 0.08);
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 210) continue;
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(4.0);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 400, crit);
@@ -3841,7 +3845,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(480, 0.02);
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(580)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(8.0); // v1.4.30 (#7) 6.4→8.0
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
@@ -3863,7 +3867,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("iainuki", 0.9 + (i % 4) * 0.05);
             const { dmg, crit } = rd(3.4);
             if (crit) this.scene.sfxCrit();
-            t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 300, crit);
+            t.takeDamage(dmg, this.awayScratch.set(0, 0.1).normalize(), 300, crit);
           });
         });
         /* 그림자 분신 3기 — 살아남은 적을 추적해 자폭 */
@@ -3889,7 +3893,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("dark", 0.66);
           this.scene.sfxSkill("superhit", 0.8);
           for (const e of this.getAllTargetsIn(560)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(6.9);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 600, crit);
@@ -4056,7 +4060,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.spawnBurstAt(tgt.x, tgt.y, i % 2 === 0 ? 10 : 6, hex);
               const { dmg, crit } = rd(0.80);
               if (crit) this.scene.sfxCrit();
-              tgt.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 240, crit);
+              tgt.takeDamage(dmg, this.awayScratch.set(0, 0.1).normalize(), 240, crit);
             } else {
               /* 대상 부재 — 주변 공중 베기 (검무 자체는 유지) */
               const px = this.x + Math.cos(ang) * 46, py = this.y + Math.sin(ang) * 26;
@@ -4126,7 +4130,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("iainuki", 0.6);
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(560)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.5);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
@@ -4175,7 +4179,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(999)) {
               /* 전진 파도 폭 — 각 단계의 타격 창 */
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 150) continue;
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(2.3 + i * 0.12);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 380, crit);
@@ -4196,7 +4200,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(440, 0.019);
           this.scene.sfxSkill("superhit", 0.88);
           for (const e of this.getAllTargetsIn(620)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(6.2);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
@@ -4239,7 +4243,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.scene.sfxSkill("explosion", 0.78 + si * 0.05);
                 for (const e of this.getAllTargetsIn(999)) {
                   if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 120 + si * 25) continue;
-                  const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+                  const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
                   const { dmg, crit } = rd(st.mul);
                   if (crit) this.scene.sfxCrit();
                   e.takeDamage(dmg, away, 420 + si * 60, crit);
@@ -4263,7 +4267,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(520, 0.024);
           this.scene.sfxSkill("quake", 0.92);
           for (const e of this.getAllTargetsIn(680)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 700, crit);
@@ -4285,7 +4289,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(110, 0.008 + i * 0.001);
             this.scene.sfxSkill("bigsword", 0.9 + i * 0.05);
             for (const e of this.getAllTargetsIn(400)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(2.4);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 420, crit);
@@ -4302,7 +4306,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.flash(160, 255, 120, 60);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(560)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(6.5);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
@@ -4370,7 +4374,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("thunder", 0.9 + (i % 3) * 0.08);
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 190) continue;
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(2.9);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
@@ -4392,7 +4396,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("manaburst", 0.8);
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(600)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.5);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
@@ -4447,7 +4451,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.doShake?.(90, 0.006);
               for (const e of this.getAllTargetsIn(999)) {
                 if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 130) continue;
-                const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+                const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
                 const { dmg, crit } = rd(3.1);
                 if (crit) this.scene.sfxCrit();
                 e.takeDamage(dmg, away, 480, crit);
@@ -4468,7 +4472,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(460, 0.02);
             this.scene.sfxSkill("superhit", 0.86);
             for (const e of this.getAllTargetsIn(560)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(6.6);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 580, crit);
@@ -4492,7 +4496,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("iainuki", 0.92 + (i % 4) * 0.05);
             const { dmg, crit } = rd(3.3);
             if (crit) this.scene.sfxCrit();
-            t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 300, crit);
+            t.takeDamage(dmg, this.awayScratch.set(0, 0.1).normalize(), 300, crit);
           });
         });
         /* 심연 종결 폭발 */
@@ -4506,7 +4510,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("dark", 0.72);
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(540)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(6.8);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 600, crit);
@@ -4540,7 +4544,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(90, 0.008 + i * 0.0009);
             this.scene.sfxSkill("bigsword", 0.92 + (i % 3) * 0.05);
             for (const e of this.getAllTargetsIn(400)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(2.2 + lost * 1.8);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 380, crit);
@@ -4556,7 +4560,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(450, 0.021);
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(520)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(6.0 + lost * 4.0);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 560, crit);
@@ -4579,7 +4583,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(70, 0.005);
             this.scene.sfxSkill("warcry", 0.9);
             for (const e of this.getAllTargetsIn(RAD)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(1.5);
               e.takeDamage(dmg, away, 720, crit);
             }
@@ -4591,7 +4595,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnBurstAt(this.x, this.y, 60, 0xffd76a);
           this.scene.cameras.main.flash(150, 255, 230, 160);
           for (const e of this.getAllTargetsIn(RAD + 60)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(4.2);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 700, crit);
@@ -4614,7 +4618,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(200, 0.014);
             this.scene.sfxSkill("bigsword", 0.86);
             for (const e of this.getAllTargetsIn(340)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(3.0);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
@@ -4628,7 +4632,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.flash(160, 255, 190, 120);
           this.scene.cameras.main.shake(480, 0.019);
           for (const e of this.getAllTargetsIn(480)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(5.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 520, crit);
@@ -4651,7 +4655,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.flash(90, 255, 245, 200);
             this.scene.sfxSkill("holy", 0.9);
             for (const e of this.targetsAround(px, py, 150)) {
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(2.4);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 300, crit);
@@ -4684,7 +4688,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.hitStop(120);
             this.scene.sfxSkill("snipe", 0.9);
             this.scene.spawnBurstAt(tgt.x, tgt.y, 40, 0xff4040);
-            const away = new Phaser.Math.Vector2(tgt.x - this.x, tgt.y - this.y).normalize();
+            const away = this.awayScratch.set(tgt.x - this.x, tgt.y - this.y).normalize();
             const { dmg } = rd(9.5, true);
             tgt.takeDamage(dmg, away, 260, true);
           });
@@ -4700,7 +4704,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnBurstAt(this.x, this.y, 18, 0x60e0ff);
             this.scene.sfxSkill("arrow", 0.9);
             for (const e of this.getAllTargetsIn(240)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(2.0);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 200, crit);
@@ -4725,7 +4729,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSlash(t.x, t.y, new Phaser.Math.Vector2(0, 1), i % 2 === 0, 1.6, 0xff6060);
             this.scene.spawnBurstAt(t.x, t.y, 20, 0xff6060);
             this.scene.sfxSkill("snipe", 0.85);
-            const away = new Phaser.Math.Vector2(t.x - this.x, t.y - this.y).normalize();
+            const away = this.awayScratch.set(t.x - this.x, t.y - this.y).normalize();
             const { dmg, crit } = rd(3.2);
             if (crit) this.scene.sfxCrit();
             t.takeDamage(dmg, away, 220, crit);
@@ -4747,7 +4751,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.tweens.add({ targets: bolt, alpha: 0, duration: 220, onComplete: () => bolt.destroy() });
             this.scene.spawnBurstAt(t.x, t.y, 22, 0x80d8ff);
             this.scene.sfxSkill("thunder", 0.9);
-            const away = new Phaser.Math.Vector2(t.x - prev.x, t.y - prev.y).normalize();
+            const away = this.awayScratch.set(t.x - prev.x, t.y - prev.y).normalize();
             const { dmg, crit } = rd(2.6);
             if (crit) this.scene.sfxCrit();
             t.takeDamage(dmg, away, 200, crit);
@@ -4770,7 +4774,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(60, 0.006);
             this.scene.sfxSkill("thunder", 0.84);
             for (const e of this.targetsAround(px, py, 130)) {
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(1.6);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 180, crit);
@@ -4785,7 +4789,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(520, 0.022);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(560)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(6.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 500, crit);
@@ -4808,7 +4812,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(80, 0.007);
             this.scene.sfxSkill("gravity", 0.88);
             for (const e of this.targetsAround(px, py, 140)) {
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(2.8);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 240, crit);
@@ -4823,7 +4827,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(460, 0.018);
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(520)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.2);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 480, crit);
@@ -4843,7 +4847,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("timestop", 0.86);
             for (const e of frozen) {
               if (!e.active) continue;
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(1.8);
               accum += dmg;
               if (crit) this.scene.sfxCrit();
@@ -4860,7 +4864,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const bonus = Math.max(1, Math.round(accum * 0.5));
           for (const e of this.getAllTargetsIn(600)) {
             if (!e.active) continue;
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             e.takeDamage(bonus, away, 380, false);
           }
         });
@@ -4881,7 +4885,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnBurstAt(this.x, this.y, 30, 0xf0e0b0);
             this.scene.sfxSkill("manaburst", 0.88);
             for (const e of this.getAllTargetsIn(520)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(2.6);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 220, crit);
@@ -4900,7 +4904,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.state === "dead") return;
             for (const e of this.getAllTargetsIn(520)) {
               if (!e.active) continue;
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const isBoss = e === this.scene.boss;
               const lowHp = e.hp / Math.max(1, e.maxHp) <= 0.3;
               this.scene.spawnSlash(e.x, e.y, away, i % 2 === 0, 1.8, 0x9a40ff);
@@ -4932,7 +4936,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(50, 0.004);
             this.scene.sfxSkill("knife", 0.9);
             for (const e of this.getAllTargetsIn(200)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(1.4);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 120, crit);
@@ -4950,7 +4954,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           const t = this.getAllTargetsIn(560)[0];
           if (t) {
-            const away = new Phaser.Math.Vector2(t.x - this.x, t.y - this.y).normalize();
+            const away = this.awayScratch.set(t.x - this.x, t.y - this.y).normalize();
             this.setPosition(t.x + away.x * 46, t.y + away.y * 46);
             this.scene.spawnSlash(t.x, t.y, away, true, 2.6, 0x60a0ff);
             this.scene.spawnBurstAt(t.x, t.y, 36, 0x60a0ff);
@@ -4968,7 +4972,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "duelist": {
         const foe = this.getAllTargetsIn(600)[0];
         if (foe) {
-          const away = new Phaser.Math.Vector2(foe.x - this.x, foe.y - this.y).normalize();
+          const away = this.awayScratch.set(foe.x - this.x, foe.y - this.y).normalize();
           for (let i = 0; i < 6; i++) {
             this.scene.time.delayedCall(240 + i * 170, () => {
               if (this.state === "dead" || !foe.active) return;
@@ -4997,7 +5001,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnCrack(px, py);
             this.scene.sfxSkill("flame", 0.9);
             for (const e of this.targetsAround(px, py, 150)) {
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(1.8);
               e.takeDamage(dmg, away, 160, crit);
               e.applyDot?.(Math.max(7, Math.round(this.atkTotal * 0.011)), 4500);
@@ -5018,7 +5022,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnBurstAt(px, py, 18, 0xffa040);
             this.scene.sfxSkill("quake", 0.86);
             for (const e of this.targetsAround(px, py, 120)) {
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(1.9);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 220, crit);
@@ -5032,7 +5036,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnShockwave(this.x, this.y, 0xffa040, 2.2, 520, 0.9);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(480)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(4.6);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 480, crit);
@@ -5054,7 +5058,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(100, 0.009);
             this.scene.sfxSkill("thunder", 0.9);
             for (const e of this.targetsAround(px, py, 140)) {
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(2.4);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 260, crit);
@@ -5080,7 +5084,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(110, 0.011);
             this.scene.sfxSkill("quake", 0.9);
             for (const e of this.targetsAround(p.x, p.y, 160)) {
-              const away = new Phaser.Math.Vector2(e.x - p.x, e.y - p.y).normalize();
+              const away = this.awayScratch.set(e.x - p.x, e.y - p.y).normalize();
               const { dmg, crit } = rd(2.2);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 300, crit);
@@ -5094,7 +5098,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(520, 0.024);
           this.scene.sfxSkill("superhit", 0.9);
           for (const e of this.getAllTargetsIn(520)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(6.8);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 520, crit);
@@ -5117,7 +5121,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnBurstAt(px, py, 26, 0x50b0e0);
             this.scene.sfxSkill("wind2", 0.9);
             for (const e of this.getAllTargetsIn(260)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(2.0);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
@@ -5141,7 +5145,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("quake", 0.9);
             this.scene.sfxSkill("superhit", 0.8);
             for (const e of this.getAllTargetsIn(420 + i * 90)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(3.4 + i * 1.2);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 560 + i * 100, crit);
@@ -5170,7 +5174,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (!e.active) continue;
           /* 마무리 지점(bx,by) 기준으로 반경 안의 대상에게 피해 */
           if (Phaser.Math.Distance.Between(bx, by, e.x, e.y) > 220) continue;
-          const away = new Phaser.Math.Vector2(e.x - bx, e.y - by).normalize();
+          const away = this.awayScratch.set(e.x - bx, e.y - by).normalize();
           if (crit) this.scene.sfxCrit();
           e.takeDamage(d, away, 560, crit);
         }
@@ -5279,7 +5283,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.flash(180, 255, 120, 60);
           this.scene.sfxSkill("superhit", 0.76);
           for (const e of this.getAllTargetsIn(760)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(12.0);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 680, crit);
@@ -5308,7 +5312,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("holy", 0.9 + (i % 3) * 0.07);
             for (const e of this.getAllTargetsIn(320)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 210) continue;
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(3.6);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
@@ -5326,7 +5330,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("holy", 0.7);
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(640)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(8.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
@@ -5374,7 +5378,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               if (i % 5 === 0) this.scene.spawnBurstAt(sx, sy, 3, 0x7dffb0);
             }
             const { dmg, crit } = rd(1.15, true); // 전 탄 확정 크리 — 시간이 멈춘 사이
-            t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 60, crit);
+            t.takeDamage(dmg, this.awayScratch.set(0, 0.1).normalize(), 60, crit);
             if (i % 10 === 9) {
               this.scene.spawnHitSpark(t.x, t.y - 8);
               this.scene.sfxSkill("snipe", 1.06 + (i % 3) * 0.05);
@@ -5393,7 +5397,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (!t.active) continue;
             this.scene.spawnBurstAt(t.x, t.y, 20, 0xffd76a);
             this.scene.spawnShockwave(t.x, t.y, 0xffd76a, 1.0);
-            const away = new Phaser.Math.Vector2(t.x - this.x, t.y - this.y).normalize();
+            const away = this.awayScratch.set(t.x - this.x, t.y - this.y).normalize();
             const { dmg, crit } = rd(3.2, true);
             t.takeDamage(dmg, away, 480, crit);
             n++;
@@ -5428,7 +5432,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             spawnFlarePop(this.scene, t.x, t.y - 10, "vf_lightning", { tint: 0xcfe8ff, scale: 1.4, duration: 430 });
             this.scene.cameras.main.shake(110, 0.011);
             this.scene.sfxSkill("thunder", 0.8 + (b % 3) * 0.08);
-            const away = new Phaser.Math.Vector2(0, 0.1).normalize();
+            const away = this.awayScratch.set(0, 0.1).normalize();
             const { dmg, crit } = rd(3.8);
             if (crit) this.scene.sfxCrit();
             t.takeDamage(dmg, away, 440, crit);
@@ -5449,7 +5453,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("wind", 0.62);
           this.scene.sfxSkill("superhit", 0.8);
           for (const e of this.getAllTargetsIn(560)) {
-            const away = new Phaser.Math.Vector2(e.x - cx, e.y - cy).normalize();
+            const away = this.awayScratch.set(e.x - cx, e.y - cy).normalize();
             const { dmg: d2, crit: c2 } = rd(7.2);
             if (c2) this.scene.sfxCrit();
             e.takeDamage(d2, away, 600, c2);
@@ -5474,7 +5478,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("manaburst", 0.9 + (i % 3) * 0.07);
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 220) continue;
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(4.4);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
@@ -5503,7 +5507,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("manaburst", 0.66);
           this.scene.sfxSkill("superhit", 0.74);
           for (const e of this.getAllTargetsIn(700)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.5 + 3.5 * ratio);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 660, crit);
@@ -5553,7 +5557,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const reproTargets = this.getAllTargetsIn(620).slice();
           const share = Math.max(1, Math.round(reenact / Math.max(1, reproTargets.length)));
           for (const e of reproTargets) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             /* 재현 배분 — 로그 합을 전 대상에 균등 분배(단일 보스에겐 전액) */
             e.takeDamage(share, away, 640, true);
           }
@@ -5584,7 +5588,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("iainuki", 0.86 + (i % 4) * 0.05);
             const { dmg, crit } = rd(3.9);
             if (crit) this.scene.sfxCrit();
-            t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 320, crit);
+            t.takeDamage(dmg, this.awayScratch.set(0, 0.1).normalize(), 320, crit);
           });
         });
         /* 종결 — 왕국이 닫힌다: 심연 처형 */
@@ -5601,7 +5605,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("dark", 0.6);
           this.scene.sfxSkill("superhit", 0.74);
           for (const e of this.getAllTargetsIn(600)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(9.6);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
@@ -5647,7 +5651,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("iainuki", 0.56);
           this.scene.sfxSkill("superhit", 0.76);
           for (const e of this.getAllTargetsIn(600)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(9.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 640, crit);
@@ -5702,7 +5706,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           for (const e of drowned) {
             /* 스냅샷 후 사망·제거된 대상은 건너뛴다 */
             if (!e.active || e.hp <= 0) continue;
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(11.0);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 760, crit);
@@ -5750,7 +5754,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.sfxSkill("explosion", 0.68 + (i % 4) * 0.04);
               for (const e of this.getAllTargetsIn(999)) {
                 if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 130) continue;
-                const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+                const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
                 const { dmg, crit } = rd(3.2);
                 if (crit) this.scene.sfxCrit();
                 e.takeDamage(dmg, away, 400, crit);
@@ -5777,7 +5781,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("quake", 1.0);
             for (const e of this.getAllTargetsIn(999)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, wx0, wy0) > 400) continue;
-              const away = new Phaser.Math.Vector2(e.x - wx0, e.y - wy0).normalize();
+              const away = this.awayScratch.set(e.x - wx0, e.y - wy0).normalize();
               const { dmg, crit } = rd(14.5);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 820, crit);
@@ -5802,7 +5806,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("bigsword", 0.78 + i * 0.06);
             for (const e of this.getAllTargetsIn(280)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 200) continue;
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(5.2);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 460, crit);
@@ -5822,7 +5826,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.flash(180, 255, 120, 60);
           this.scene.sfxSkill("superhit", 0.72);
           for (const e of this.getAllTargetsIn(700)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(10.5);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 660, crit);
@@ -5909,7 +5913,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("manaburst", 0.6);
           this.scene.sfxSkill("superhit", 0.72);
           for (const e of this.getAllTargetsIn(680)) {
-            const away = new Phaser.Math.Vector2(e.x - bx, e.y - by).normalize();
+            const away = this.awayScratch.set(e.x - bx, e.y - by).normalize();
             const { dmg, crit } = rd(9.8);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 680, crit);
@@ -5957,7 +5961,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.doShake?.(110, 0.008);
               for (const e of this.getAllTargetsIn(999)) {
                 if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 150) continue;
-                const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+                const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
                 const { dmg, crit } = rd(2.6);
                 if (crit) this.scene.sfxCrit();
                 e.takeDamage(dmg, away, 420, crit);
@@ -5977,7 +5981,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.7);
           this.scene.sfxSkill("manaburst", 0.8);
           for (const e of this.getAllTargetsIn(700)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(8.2);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 680, crit);
@@ -6002,7 +6006,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             /* 유저 스펙 ④ — 즉발 450%(forceCrit: 큰 피해 숫자+크리티컬) + 출혈 장판(기존 필드 시스템 재사용) */
             for (const e of this.getAllTargetsIn(560)) {
               if (!e.active) continue;
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = this.rollDamage(DEATH_SLASH_CFG.instantMult, true, true);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 560, crit); // 하드히트 — 넉백 560
@@ -6046,7 +6050,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.spawnBurstAt(t.x, t.y, 18, 0x8a4aff);
               this.scene.sfxSkill("iainuki", 0.9 + (i % 4) * 0.05);
               const { dmg, crit } = rd(5.5, true); // 각인된 대상은 반드시 벤다
-              t.takeDamage(dmg, new Phaser.Math.Vector2(0, 0.1).normalize(), 340, crit);
+              t.takeDamage(dmg, this.awayScratch.set(0, 0.1).normalize(), 340, crit);
             });
           });
           /* 종결 — 심연 소화기 */
@@ -6061,7 +6065,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("dark", 0.64);
             this.scene.sfxSkill("superhit", 0.78);
             for (const e of this.getAllTargetsIn(580)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(8.8);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 620, crit);
@@ -6101,7 +6105,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(180, 0.014);
             this.scene.sfxSkill("bigsword", 0.9);
             for (const e of this.getAllTargetsIn(460)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(power / 3);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 480, crit);
@@ -6132,7 +6136,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnShockwave(this.x, this.y, 0xa8d8ff, 2.0, 520, 0.8);
             this.scene.sfxSkill("warcry", 0.86);
             for (const e of this.getAllTargetsIn(WALL_R + 80)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(2.4);
               e.takeDamage(dmg, away, 640, crit);
             }
@@ -6147,7 +6151,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(480, 0.018);
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(WALL_R + 120)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(6.2);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
@@ -6173,7 +6177,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.spawnShockwave(px, py, 0xffc060, 1.1, 320, 0.75);
               this.scene.sfxSkill("bigsword", 0.86);
               for (const e of this.targetsAround(px, py, 170)) {
-                const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+                const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
                 const { dmg, crit } = rd(2.6);
                 if (crit) this.scene.sfxCrit();
                 e.takeDamage(dmg, away, 420, crit);
@@ -6187,7 +6191,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xffd080, 460);
           this.scene.cameras.main.shake(520, 0.022);
           for (const e of this.getAllTargetsIn(540)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.0);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 540, crit);
@@ -6219,7 +6223,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               if (!e.active) continue;
               /* HP 비율이 높을수록 더 큰 피해 — 심판의 저울 */
               const ratio = e.hp / Math.max(1, e.maxHp);
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(2.0 + ratio * 4.0);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 280, crit);
@@ -6254,7 +6258,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.hitStop(60);
             this.scene.sfxSkill("snipe", 0.88);
             for (const e of this.targetsAround(tx, ty, 130)) {
-              const away = new Phaser.Math.Vector2(e.x - tx, e.y - ty).normalize();
+              const away = this.awayScratch.set(e.x - tx, e.y - ty).normalize();
               const { dmg, crit } = rd(3.2);
               e.takeDamage(dmg, away, 200, crit);
             }
@@ -6289,7 +6293,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.spawnShockwave(p.x, p.y, 0x80f0ff, 1.0, 300, 0.8);
               this.scene.sfxSkill("wind", 0.9);
               for (const e of this.targetsAround(p.x, p.y, 150)) {
-                const away = new Phaser.Math.Vector2(e.x - p.x, e.y - p.y).normalize();
+                const away = this.awayScratch.set(e.x - p.x, e.y - p.y).normalize();
                 const { dmg, crit } = rd(2.6);
                 if (crit) this.scene.sfxCrit();
                 e.takeDamage(dmg, away, 320, crit);
@@ -6323,7 +6327,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(110, 0.010);
             this.scene.sfxSkill("arrowpierce", 0.9);
             for (const e of this.targetsAround(s.x, s.y, 170)) {
-              const away = new Phaser.Math.Vector2(e.x - s.x, e.y - s.y).normalize();
+              const away = this.awayScratch.set(e.x - s.x, e.y - s.y).normalize();
               const { dmg, crit } = rd(3.0);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 260, crit);
@@ -6349,7 +6353,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.sfxSkill("wind2", 0.9);
               for (const e of this.targetsAround(px, py, 120)) {
                 /* 중앙으로 끌어온다 */
-                const toward = new Phaser.Math.Vector2(this.x - e.x, this.y - e.y).normalize();
+                const toward = this.awayScratch.set(this.x - e.x, this.y - e.y).normalize();
                 const { dmg, crit } = rd(1.8);
                 e.takeDamage(dmg, toward, 340, crit);
               }
@@ -6365,7 +6369,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(500, 0.020);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(520)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 560, crit);
@@ -6398,7 +6402,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.targetsAround(this.x, this.y, 110)) hitSet.add(e);
             for (const e of hitSet) {
               if (!e.active) continue;
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(2.2);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 120, crit);
@@ -6429,7 +6433,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.spawnBurstAt(px, py, 22, el.tint);
               this.scene.spawnShockwave(px, py, el.tint, 1.3, 340, 0.8);
               for (const e of this.targetsAround(px, py, 160)) {
-                const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+                const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
                 const { dmg, crit } = rd(2.4);
                 e.takeDamage(dmg, away, 300, crit);
               }
@@ -6447,7 +6451,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("manaburst", 0.82);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(580)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(8.4);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
@@ -6472,7 +6476,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnShockwave(px, py, tint, 1.2, 320, 0.8);
             this.scene.sfxSkill("manaburst", 0.9);
             for (const e of this.targetsAround(px, py, 150)) {
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(2.0);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 240, crit);
@@ -6505,7 +6509,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("cast", 0.9);
             for (const e of this.getAllTargetsIn(620)) {
               if (!e.active) continue;
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               /* 누적 피해 분배 — 고정 피해라 rd 를 쓰지 않는다(밸런스 상한) */
               e.takeDamage(share, away, 240, false);
             }
@@ -6523,7 +6527,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           const t = this.getAllTargetsIn(600)[0];
           if (!t) return;
-          const away = new Phaser.Math.Vector2(t.x - this.x, t.y - this.y).normalize();
+          const away = this.awayScratch.set(t.x - this.x, t.y - this.y).normalize();
           this.setPosition(t.x + away.x * 40, t.y + away.y * 40);
           this.scene.spawnSlash(t.x, t.y, away, true, 3.4, 0x9a40ff);
           this.scene.spawnBurstAt(t.x, t.y, 50, 0x9a40ff);
@@ -6555,7 +6559,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSlash(px, py, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 1.2, 0xfff0a0);
             if (i % 4 === 0) this.scene.sfxSkill("swift", 0.9 + (i % 3) * 0.04);
             for (const e of this.getAllTargetsIn(210)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(1.2);
               e.takeDamage(dmg, away, 80, crit);
             }
@@ -6570,7 +6574,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.hitStop(120);
           this.scene.sfxSkill("superhit", 0.9);
           for (const e of this.getAllTargetsIn(300)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(8.0);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 420, crit);
@@ -6596,12 +6600,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const ty = t?.y ?? this.y + (Math.random() - 0.5) * 300;
             const ang = Math.random() * Math.PI * 2;
             this.setPosition(tx + Math.cos(ang) * 50, ty + Math.sin(ang) * 50);
-            const away = new Phaser.Math.Vector2(tx - this.x, ty - this.y).normalize();
+            const away = this.awayScratch.set(tx - this.x, ty - this.y).normalize();
             this.scene.spawnSlash(tx, ty, away, i % 2 === 0, 2.2, 0x80c0ff);
             this.scene.spawnBurstAt(tx, ty, 22, 0x80c0ff);
             this.scene.sfxSkill("knife", 0.94);
             for (const e of this.targetsAround(tx, ty, 150)) {
-              const d = new Phaser.Math.Vector2(e.x - tx, e.y - ty).normalize();
+              const d = this.awayScratch.set(e.x - tx, e.y - ty).normalize();
               const { dmg, crit } = rd(2.8);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, d, 180, crit);
@@ -6624,7 +6628,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const cands = [...this.getAllTargetsIn(600)].sort((a, b) => b.hp - a.hp);
         const foe = cands[0];
         if (foe) {
-          const away = new Phaser.Math.Vector2(foe.x - this.x, foe.y - this.y).normalize();
+          const away = this.awayScratch.set(foe.x - this.x, foe.y - this.y).normalize();
           for (let i = 0; i < 8; i++) {
             this.scene.time.delayedCall(320 + i * 200, () => {
               if (this.state === "dead" || !foe.active) return;
@@ -6644,7 +6648,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.cameras.main.shake(420, 0.016);
               for (const e of this.getAllTargetsIn(620)) {
                 if (!e.active) continue;
-                const d = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+                const d = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
                 e.takeDamage(Math.max(1, Math.round(this.atkTotal * 0.6)), d, 700, false);
               }
             }
@@ -6671,7 +6675,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnBurstAt(px, py, 26, 0xff6020);
             this.scene.sfxSkill("flame", 0.9);
             for (const e of this.targetsAround(px, py, 160)) {
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(2.2);
               e.takeDamage(dmg, away, 260, crit);
               e.applyDot?.(Math.max(8, Math.round(this.atkTotal * 0.013)), 5000);
@@ -6713,7 +6717,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.cameras.main.shake(120, 0.010);
               this.scene.sfxSkill("quake", 0.9);
               for (const e of this.targetsAround(tx, ty, 170)) {
-                const away = new Phaser.Math.Vector2(e.x - tx, e.y - ty).normalize();
+                const away = this.awayScratch.set(e.x - tx, e.y - ty).normalize();
                 const { dmg, crit } = rd(2.8);
                 if (crit) this.scene.sfxCrit();
                 e.takeDamage(dmg, away, 380, crit);
@@ -6744,7 +6748,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnShockwave(this.x, this.y, 0x80e0ff, 1.8, 380, 0.8);
             this.scene.sfxSkill("wind", 0.9);
             for (const e of this.getAllTargetsIn(210)) {
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(1.9);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 420, crit);
@@ -6784,7 +6788,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.cameras.main.shake(70, 0.008);
             if (i % 3 === 0) this.scene.sfxSkill("flame", 0.92);
             for (const e of this.targetsAround(s.x, s.y, 150)) {
-              const away = new Phaser.Math.Vector2(e.x - s.x, e.y - s.y).normalize();
+              const away = this.awayScratch.set(e.x - s.x, e.y - s.y).normalize();
               const { dmg, crit } = rd(2.2);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 280, crit);
@@ -6799,7 +6803,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.shake(560, 0.026);
           this.scene.sfxSkill("superhit", 0.9);
           for (const e of this.getAllTargetsIn(560)) {
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(8.0);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 560, crit);
@@ -6825,7 +6829,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.sfxSkill("wind2", 0.9);
             for (const e of victims) {
               if (!e.active) continue;
-              const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
               const { dmg, crit } = rd(1.6);
               e.takeDamage(dmg, away, 60, crit);
             }
@@ -6841,7 +6845,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of victims) {
             if (!e.active) continue;
-            const away = new Phaser.Math.Vector2(e.x - this.x, e.y - this.y).normalize();
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.2);
             if (crit) this.scene.sfxCrit();
             e.takeDamage(dmg, away, 620, crit);
@@ -6874,7 +6878,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (isLast) this.scene.sfxSkill("superhit", 0.9);
             const range = isLast ? 620 : 240;
             for (const e of this.targetsAround(px, py, range)) {
-              const away = new Phaser.Math.Vector2(e.x - px, e.y - py).normalize();
+              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
               const { dmg, crit } = rd(isLast ? 9.0 : 2.4);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, isLast ? 700 : 420, crit);

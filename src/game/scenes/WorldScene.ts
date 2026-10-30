@@ -2165,6 +2165,14 @@ export class WorldScene extends Phaser.Scene {
   private camCinemaSince = 0;
   private zoomDriftSince = 0;
   /** vc204 (#2) — 진행 중인 카메라 연출(줌/팬)이 있으면 true. 줌 워치독이 끼어들지 않게 한다. */
+  /** vc206 (지시 #1) — 연출이 복원 기준으로 읽는 **실제 기준 줌**.
+   *  ultLayers 가 이 값을 읽어 연출 종료 후 정확히 원래 배율로 돌아간다. */
+  get baseZoom(): number {
+    return this.isInterior ? Math.min(3, viewZoom() * 1.45) : viewZoom();
+  }
+  /** vc206 (지시 #1) — 진행 중인 카메라 연출 종료 시각(ms). 0 이면 연출 없음.
+   *  워치독은 이 시각 전까지 줌을 건드리지 않는다. */
+  camFxUntil = 0;
   private camFxFiring = false;
   /** vc204 (#14) — 룩어헤드 오프셋(월드 px). 이동 방향으로 시야를 앞서 보낸다. */
   private camLookX = 0;
@@ -2269,9 +2277,15 @@ export class WorldScene extends Phaser.Scene {
      *  줌이 기준값(viewZoom)에서 벗어난 채 0.5초 이상 남아 있으면 부드럽게 복귀시킨다.
      *  상대 줌(zoom*1.06 등) 누적 오차로 줌이 어중간한 값에 남는 것을 막는다. */
     {
-      const base = viewZoom();
+      /* vc206 (지시 #1) — "카메라 줌 아웃시 스킬이 다 안 끝났는데도 원래대로 돌아오는 버그".
+       *  종전 워치독은 `camFxFiring` 이 **한 번도 true 가 되지 않는 죽은 플래그**라
+       *  500ms 만 지나면 무조건 줌을 기준값으로 끌어내렸다. 궁극기 줌 연출(수 초)이
+       *  진행 중인데도 중간에 강제 복귀해 스킬이 잘린 것처럼 보였다.
+       *  → 연출이 스스로 선언한 종료 시각(camFxUntil) 전에는 절대 개입하지 않는다. */
+      const base = this.baseZoom;
+      const fxActive = this.camFxUntil > this.time.now;
       const drift = Math.abs((cam.zoom || 1) - base);
-      if (drift > 0.01 && !this.camFxFiring) {
+      if (drift > 0.01 && !this.camFxFiring && !fxActive) {
         if (!this.zoomDriftSince) this.zoomDriftSince = this.time.now;
         if (this.time.now - this.zoomDriftSince > 500) {
           const k2 = 1 - Math.pow(1 - 0.25, Math.min(dt, 100) / 16.667);
@@ -10575,9 +10589,16 @@ export class WorldScene extends Phaser.Scene {
       this.saveSoon();
       this.emitRpgState();
     };
-    const onMarketCollect = (v: { gold: number }) => {
+    const onMarketCollect = (v: { gold: number; serverGold?: number }) => {
       if (!this.player || v.gold <= 0) return;
-      this.player.gold += v.gold; // 정산금 — 버프 배율 미적용
+      /* vc205 (감사 #17) — 서버가 이미 세이브에 지급했다. serverGold 가 오면 **덮어쓴다**.
+       *  로컬에서 += 하면 서버 지급분과 겹쳐 두 배가 되거나, 반대로 응답을 놓쳤을 때
+       *  영영 반영되지 않는다. serverGold 는 서버가 계산한 확정 잔액이다. */
+      if (typeof v.serverGold === "number" && Number.isFinite(v.serverGold)) {
+        this.player.gold = v.serverGold;
+      } else {
+        this.player.gold += v.gold; // 구서버 호환 — 잔액을 못 받으면 기존 방식
+      }
       EventBus.emit("banner:show", { text: `정산금 수령 — +${v.gold.toLocaleString()} G (수수료 10% 제외)` });
       audio.sfx.sell();
       this.saveSoon();
