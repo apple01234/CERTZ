@@ -39,10 +39,13 @@ export type DbShape = {
   rank: Record<string, unknown>;
   /** v1.0.13 피드백#8 — 닉네임 중복 방지 (이름(소문자) → 소유 레코드). node db.charNames와 동일 */
   charNames?: Record<string, CharNameRec>;
+  /** vc205 (감사 #2) — 인앱결제 토큰 1회성 대장 (purchaseToken → 지급 기록).
+   *  같은 토큰으로 두 번 지급받는 것을 막는다. */
+  iapUsed?: Record<string, { uid: string; sku: string; gems: number; at: number; orderId: string }>;
 };
 
 function emptyDb(): DbShape {
-  return { users: {}, tokens: {}, saves: {}, market: { nextId: 1, listings: {} }, payouts: {}, rank: {}, charNames: {} };
+  return { users: {}, tokens: {}, saves: {}, market: { nextId: 1, listings: {} }, payouts: {}, rank: {}, charNames: {}, iapUsed: {} };
 }
 
 /* ---------------- 환경 ---------------- */
@@ -202,6 +205,7 @@ function normalizeDb(db: DbShape): DbShape {
   db.market.listings ||= {};
   db.payouts ||= {};
   db.rank ||= {};
+  db.iapUsed ||= {}; // vc205 (감사 #2) — 인앱결제 토큰 대장
   /* v1.0.13 피드백#8 — 닉네임 레지스트리 기본값 + node 호환 형태 정규화.
    *  문자열 uid(이형 값)는 {by, at, kind}로 승격, 소유자 없는 항목은 제거. */
   db.charNames ||= {};
@@ -279,23 +283,36 @@ export type Resp = { status: number; body: unknown; headers?: Record<string, str
 
 /**
  * 원자적 변경 — fresh 로드 → mutator(db) 변형/조기응답 → PUT(sha 잠금).
- * mutator가 Resp를 반환하면 쓰기 없이 그대로 응답(검증 실패 등),
- * null을 반환하면 변형 완료로 간주하고 PUT 시도. 충돌 시 재조회→재적용 최대 4회.
+ *
+ * vc205 (감사 #4) — **반환값 기반으로 전환.** 종전엔 mutator가 `null` 을 돌려주고
+ * 결과를 바깥 클로저(`let success`)에 담는 방식이었다. 충돌로 재시도하면 mutator가
+ * 다시 실행되는데 클로저에는 이전 시도의 응답이 남아 있어, 재시도 성공 후 **낡은 응답**을
+ * 반환하거나 `removedEscrow` 같은 누적값이 두 배가 될 수 있었다.
+ * 이제 mutator는 `{ resp }`(쓸 응답) 또는 `Resp`(쓰기 없이 즉시 응답)를 돌려준다.
+ * 부수효과가 없으므로 재시도가 몇 번을 돌아도 안전하다.
+ *
+ * vc205 (감사 #7) — 5xx 도 재시도 대상에 넣는다. 종전엔 409/422 만 재시도하고
+ * GitHub 이 500/502 를 한 번 내면 곧바로 503(저장 실패)을 사용자에게 돌려줬다.
  */
-export async function mutateDb(fn: (db: DbShape) => Resp | null): Promise<Resp> {
+export type MutateResult = Resp | { resp: Resp };
+
+export async function mutateDb(fn: (db: DbShape) => MutateResult): Promise<Resp> {
   const busy: Resp = { status: 503, body: { error: "서버가 바빠요 — 잠시 후 다시 시도해 주세요" } };
-  for (let i = 0; i < 4; i++) {
+  const MAX_TRY = 6;
+  for (let i = 0; i < MAX_TRY; i++) {
     const { db, sha } = await loadDb(true);
-    const early = fn(db);
-    if (early) return early;
+    const out = fn(db);
+    /* Resp 를 그대로 주면 "쓰기 없이 이 응답" (검증 실패 등) */
+    if (!("resp" in out)) return out;
     const put = await ghPutRaw(backupEncrypt(JSON.stringify(db)), sha);
     if (put.ok) {
       cache = { db, sha: put.sha, at: Date.now() };
-      /* 성공 응답은 mutator가 클로저로 준비 — 여기선 무해 기본값 */
-      return { status: 200, body: { ok: true } };
+      return out.resp; // mutator 가 준 응답 그대로 — 클로저 부수효과 없음
     }
-    if (!put.conflict) return { status: 503, body: { error: "서버 저장에 실패했어요 — 잠시 후 다시 시도" } };
-    /* 충돌 — 루프 재조회 */
+    /* 일시 오류(5xx/네트워크) 도 재시도 — 지수 백오프로 GitHub 부하를 피한다 */
+    const retryable = put.conflict || put.status >= 500;
+    if (!retryable) return { status: 503, body: { error: "서버 저장에 실패했어요 — 잠시 후 다시 시도" } };
+    if (i < MAX_TRY - 1) await new Promise((r) => setTimeout(r, 60 * (i + 1)));
   }
   return busy;
 }

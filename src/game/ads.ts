@@ -170,7 +170,10 @@ export async function purchaseGems(skuId: string): Promise<{ ok: boolean; reason
     const r = (await P.purchaseProduct({
       productIdentifier: skuId,
       productType: "inapp" as never,
-      isConsumable: false, // 소비는 지급 완료 후 completeGemPurchase에서
+      /* vc205 (감사 #15) — 에메랄드 팩은 **소모품**이다. 종전엔 isConsumable:false(비소모품)로
+       *  선언해놓고 consumePurchase 를 호출해 Play 정책상 동작이 보장되지 않았다(재구매 차단·3일 자동환불 위험).
+       *  소모품으로 선언하고 지급 후 소비한다. */
+      isConsumable: true,
       autoAcknowledgePurchases: false, // 소비가 승인을 대체
     })) as unknown as Txn;
     const token = r?.purchaseToken || r?.transactionId;

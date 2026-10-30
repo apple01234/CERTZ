@@ -18,8 +18,6 @@ export async function POST(req: NextRequest) {
     }
     const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     const id = String(b.id || "");
-
-    let success: { status: number; body: unknown } | null = null;
     const r = await mutateDb((fdb) => {
       const me = fdb.users[user.id];
       if (!me) return { status: 401, body: { error: "거래판은 로그인이 필요해요" } };
@@ -30,11 +28,9 @@ export async function POST(req: NextRequest) {
       delete fdb.market.listings[id];
       /* v1.4.41 (감사 #1) — 취소분을 세이브 owned 로 반환(에스크로 해제) */
       creditOwned(fdb, me.id, item.itemKey, item.qty, item.up);
-      success = { status: 200, body: { ok: true, item, ...marketSnapshot(fdb, me.id) } };
-      return null; // 쓰기
+      return { resp: { status: 200, body: { ok: true, item, ...marketSnapshot(fdb, me.id) } } };
     });
-    const out = success && r.status === 200 ? success : r;
-    return json(req, out.status, out.body);
+    return json(req, r.status, r.body);
   } catch (e) {
     console.error("[SERTZ-api] market/cancel 실패", e);
     return json(req, 500, { error: "서버 오류" });

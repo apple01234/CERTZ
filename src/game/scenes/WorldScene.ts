@@ -43,7 +43,7 @@ import {
 } from "../isekai";
 import { viewZoom } from "../PhaserGame";
 import { runTexGuardCycle, installWorldTexGuard } from "../texGuard"; // v1.4.2 — 텍스처 무결성 감시·수복
-import { authMe, fetchRanking } from "../account"; // v1.0.2 — GM 롤 검증 · v1.3.0 — 랭커 순위 검증
+import { verifyIapPurchase, authMe, fetchRanking } from "../account"; // v1.0.2 — GM 롤 검증 · v1.3.0 — 랭커 순위 검증
 import { showRewardedAd, purchaseGems, purchaseStorePack, GEM_SKUS, restorePendingPurchases, completeGemPurchase, completePackPurchase } from "../ads"; // v4.1.0 — BM 수익 연동 / v1.0.1-beta — 결제 소비·부팅 복구
 import { seasonKey, seasonDaysLeft, passLevel, passXpInLv, PASS_MAX_LV, PASS_PREMIUM_PRICE, PASS_XP_RULES, PASS_TRACKS, SUB_PRICE, SUB_DAYS, SUB_DAILY_EMERALD, SUB_AD_MUL, SUB_AD_LIMIT, AD_CHEST_PER_DAY, AD_DROP_PER_DAY, subActive, subDaysLeft, weekKey, missionsByHook, SEASON_DAILY_MISSIONS, SEASON_WEEKLY_MISSIONS, type MissionHook } from "../pass"; // v4.5.0 — 시즌 패스/구독 + v1.0.1 시즌 미션
 import {
@@ -1654,7 +1654,7 @@ export class WorldScene extends Phaser.Scene {
           grantGems: (skuId, gems) => {
             if (!this.player) return;
             this.player.emerald += gems;
-            this.save();
+            this.saveSoon();
             this.emitRpgState();
             audio.sfx.charge();
             EventBus.emit("reward:show", {
@@ -1666,7 +1666,7 @@ export class WorldScene extends Phaser.Scene {
             const grants = STORE_PACK_CONTENTS[productId];
             if (!grants) return;
             this.grantBmGrants("미지급 패키지 결제 복구 — 감사합니다!", grants);
-            this.save();
+            this.saveSoon();
             this.emitRpgState();
           },
         });
@@ -1686,10 +1686,10 @@ export class WorldScene extends Phaser.Scene {
           });
           audio.sfx.ach();
         });
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
       }
-      if (this.visited.size !== before) this.save();
+      if (this.visited.size !== before) this.saveSoon();
     }
     /* v3.0.6 — 반복 의뢰 진행도: 세이브에 같은 구역 기록이 있으면 유지, 없으면 신규 시작 */
     if (!((savedPlayer as { repeatStage?: string } | undefined)?.repeatStage === this.stageDef.key)) {
@@ -1925,7 +1925,7 @@ export class WorldScene extends Phaser.Scene {
       callback: () => {
         if (!this.scene.isActive() || this.dialoguing || this.transitioning) return;
         try {
-          this.save();
+          this.saveSoon();
           /* vc145 (#1 랭킹 갱신) — 자동저장 시 클라우드 백업도 즉시 푸시.
            *  기존엔 클라우드 업로드가 계정 패널의 3분 인터벌에만 의존해
            *  랭킹(클라우드 세이브 파생)이 영원히 갱신되지 않는 체감이었다. */
@@ -2225,7 +2225,7 @@ export class WorldScene extends Phaser.Scene {
           try {
             if (!this.cutsceneSeen.includes(parsed.ch)) {
               this.cutsceneSeen = [...this.cutsceneSeen, parsed.ch];
-              this.save();
+              this.saveSoon();
             }
           } catch { /* 세이브 실패는 연출에 영향 없음 */ }
         },
@@ -3164,7 +3164,7 @@ export class WorldScene extends Phaser.Scene {
     }
     // 다음 목표 범용 배치 (파편 연속 수확/토벌/개방 등) — 대사 종료 후 자연스럽게 진행
     this.afterAdvance();
-    this.save();
+    this.saveSoon();
   }
 
   private spawnPortal(x: number, y: number) {
@@ -3707,7 +3707,7 @@ export class WorldScene extends Phaser.Scene {
         this.keepChestSprite.once("animationcomplete", () => this.keepChestSprite?.setTexture("map_chest_f", 0));
       } catch { /* 애니 미등록 무시 */ }
     }
-    this.save();
+    this.saveSoon();
     this.emitHud();
     this.emitRpgState();
   }
@@ -4919,7 +4919,7 @@ export class WorldScene extends Phaser.Scene {
       this.fieldReq = null;
       this.refreshFieldReqLabel();
       this.emitRpgState();
-      this.save();
+      this.saveSoon();
       return;
     }
     if (this.fieldReq) {
@@ -5999,7 +5999,7 @@ export class WorldScene extends Phaser.Scene {
     this.ensurePassSeason(); // v4.5.0 — 시즌 키 검증 (월이 바뀌면 새 시즌 개시)
     this.checkAttendance();
     this.checkOfflineReward();
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
   }
 
@@ -6122,7 +6122,7 @@ export class WorldScene extends Phaser.Scene {
     this.addPassXp(m.xp);
     EventBus.emit("banner:show", { text: `미션 수령 — ${m.name} (+패스 XP ${m.xp})` });
     audio.sfx.reward();
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
   }
 
@@ -6181,7 +6181,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.freeGachaAt = Date.now();
     this.gachaTickets += 1;
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
     EventBus.emit("banner:show", { text: "GM 방송 시청 완료! 뽑기권 +1 (10분마다 무료)" });
     audio.sfx.reward();
@@ -6221,7 +6221,7 @@ export class WorldScene extends Phaser.Scene {
         }
         audio.sfx.reward();
         this.syncExtBonus();
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         break;
       }
@@ -6230,7 +6230,7 @@ export class WorldScene extends Phaser.Scene {
         if (!v.key || !this.badges.includes(v.key)) return;
         this.badgeSlots[slot] = v.key;
         this.syncExtBonus();
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         this.emitHud();
         break;
@@ -6239,7 +6239,7 @@ export class WorldScene extends Phaser.Scene {
         const slot = Math.max(0, Math.min(BADGE_SLOTS - 1, Number(v.slot ?? 0)));
         this.badgeSlots[slot] = null;
         this.syncExtBonus();
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         break;
       }
@@ -6255,7 +6255,7 @@ export class WorldScene extends Phaser.Scene {
             EventBus.emit("banner:show", { text: `룬 합성 성공! ${RUNE_META[kind].name} T${t} ×3 → T${t + 1} ×1` });
             audio.sfx.craft();
             this.syncExtBonus();
-            this.save();
+            this.saveSoon();
             this.emitRpgState();
             return;
           }
@@ -6271,7 +6271,7 @@ export class WorldScene extends Phaser.Scene {
         if ((this.runes[v.key] ?? 0) <= equippedSame) return;
         this.runeSlots[slot] = v.key;
         this.syncExtBonus();
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         this.emitHud();
         break;
@@ -6280,7 +6280,7 @@ export class WorldScene extends Phaser.Scene {
         const slot = Math.max(0, Math.min(3, Number(v.slot ?? 0)));
         this.runeSlots[slot] = null;
         this.syncExtBonus();
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         break;
       }
@@ -6298,7 +6298,7 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: `성좌 개방 — ${c.name} 별${idx + 1}!` });
         audio.sfx.craft();
         this.syncExtBonus();
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         break;
       }
@@ -6317,7 +6317,7 @@ export class WorldScene extends Phaser.Scene {
           ] satisfies RewardPopupState["lines"],
         });
         audio.sfx.ach(); /* v4.1.7 — 업적 전용 팡파레 (유료 팩) */
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         break;
       }
@@ -6336,7 +6336,7 @@ export class WorldScene extends Phaser.Scene {
         this.trackMission("dailyClaim"); // v1.0.1 — 주간 미션 "일일 퀘스트 수령" 카운트
         EventBus.emit("banner:show", { text: `일일 퀘스트 완료 — ${g.label}!` });
         audio.sfx.reward();
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         break;
       }
@@ -6356,7 +6356,7 @@ export class WorldScene extends Phaser.Scene {
           lines: [{ text: def.desc, color: "#ffd76a" }] satisfies RewardPopupState["lines"],
         });
         audio.sfx.reward();
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         break;
       }
@@ -6389,7 +6389,7 @@ export class WorldScene extends Phaser.Scene {
         }
         audio.sfx.shop();
         this.syncExtBonus();
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         break;
       }
@@ -6409,7 +6409,7 @@ export class WorldScene extends Phaser.Scene {
         if (nextTier) {
           EventBus.emit("banner:show", { text: `등급업 성공! ${slot === "weapon" ? "무기" : "방어구"} → ${nextTier.toUpperCase()} (스탯 +12%/회)` });
           audio.sfx.upgradeOk(); // v1.4.8 — 등급업 = 강화 성공 계열 사운드
-          this.save();
+          this.saveSoon();
           this.emitRpgState();
           this.emitHud();
         } else {
@@ -6467,7 +6467,7 @@ export class WorldScene extends Phaser.Scene {
     } else {
       this.showBanner("바르가 수비전으로 이동합니다 — 균열의 문을 지켜라!");
     }
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
     this.gotoStage("gate");
   }
@@ -6720,7 +6720,7 @@ export class WorldScene extends Phaser.Scene {
     }
     const partyN = Math.max(1, net.netLastParty()?.members.length ?? 1);
     this.dailyPraid = 1; // 입장 시점 기록 — 중도 퇴장 후 재입장 방지
-    this.save();
+    this.saveSoon();
     this.praidFrom = this.stageDef.key;
     audio.sfx.portal();
     EventBus.emit("ui:panel", { panel: null });
@@ -6956,7 +6956,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.reward();
     this.emitGateState();
     this.emitRpgState();
-    this.save();
+    this.saveSoon();
     /* 랭킹 제출 (멀티 서버 연결 시) */
     net.netRankSubmit("gate", this.gateBest, getPlayerName(), this.player.lv);
     const back: StageKey = STAGES[this.gateFrom] ? this.gateFrom : "village";
@@ -6986,7 +6986,7 @@ export class WorldScene extends Phaser.Scene {
     this.trialMod = null;
     this.trackMission("closet"); // v1.0.1 — 시즌 미션 균열 입장 카운트
     this.showBanner(t > 0 ? `심층 균열 T${t} 입장! — 적 ×${closetTierScale(t).hpMul.toFixed(1)} · 보상 ×${closetTierScale(t).goldMul.toFixed(1)}` : `오늘의 테마 「${this.closetTheme.name}」 — ${this.closetTheme.desc}`);
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
     this.gotoStage("closet");
   }
@@ -7002,7 +7002,7 @@ export class WorldScene extends Phaser.Scene {
     this.closetTheme = closetThemeOf();
     this.trackMission("closet");
     this.showBanner(`일일 시련 「${mod.name}」 — ${mod.desc}`);
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
     this.gotoStage("closet");
   }
@@ -7016,7 +7016,7 @@ export class WorldScene extends Phaser.Scene {
     this.towerFloor = 1;
     /* vc142 (#4 탑 리워크) — 할당제 안내 */
     this.showBanner(`심연의 탑 입장 — 층별 지정 마릿수를 처치해 다음 층으로! 10층마다 보스가 기다린다.`);
-    this.save();
+    this.saveSoon();
     this.gotoStage("tower");
   }
 
@@ -7213,7 +7213,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.towerFloor++;
     this.emitRpgState();
-    this.save();
+    this.saveSoon();
     /* vc142 (#4) — 할당제: 할당을 못 채운 잔여 몬스터는 다음 층 스폰 전에 조용히 정리
      * (탈출 전멸이 아니므로 잔여분이 남는다 — 새 층에서 오개산 방지) */
     /* v1.0.14 피드백#6/#7 — 잔여 몬스터 정리 시 유령 체력바(검은 네모) 잔존 수정:
@@ -7275,7 +7275,7 @@ export class WorldScene extends Phaser.Scene {
     this.parkDiff = Math.max(0, Math.min(2, diff));
     this.parkKills = 0;
     this.parkCoinsEarned = 0;
-    this.save();
+    this.saveSoon();
     this.gotoStage("park");
   }
 
@@ -7475,7 +7475,7 @@ export class WorldScene extends Phaser.Scene {
     });
     audio.sfx.reward();
     this.emitRpgState();
-    this.save();
+    this.saveSoon();
     net.netRankSubmit("closet", this.closetBest, getPlayerName(), this.player.lv);
     const back: StageKey = STAGES[this.closetFrom] ? this.closetFrom : "village";
     this.startTransition(back, { delay: 1800 });
@@ -7589,7 +7589,7 @@ export class WorldScene extends Phaser.Scene {
      *  시작 마을만 즉시 기록 — 재림의 땅(r1~r15)도 abyss10 재해방 후 다시 진입한다. */
     this.visited = new Set(["village"]);
     this.syncExtBonus();
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
     this.emitHud();
     audio.sfx.levelup();
@@ -7625,7 +7625,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: `제작 완료! ${ITEMS[r.out.item as ItemKey]?.name ?? r.out.item} ×${r.out.n}` });
     }
     audio.sfx.craft();
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
   }
 
@@ -7667,7 +7667,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: `${item.name} 각인! (누적 ×${this.inf.orbs[id]}) — ${item.desc}` });
     }
     audio.sfx.shop();
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
   }
 
@@ -7762,7 +7762,7 @@ export class WorldScene extends Phaser.Scene {
     });
     this.emitSkills();
     this.emitRpgState();
-    this.save();
+    this.saveSoon();
   }
 
   /* ================= v3.0.22 (#38) — 전직 퀘스트 게이트 =================
@@ -7843,7 +7843,7 @@ export class WorldScene extends Phaser.Scene {
       const cur = this.chibiState(npcId);
       if (cur.prog > 0 || cur.done !== st.done) return;
       this.chibiQuests[npcId] = { done: cur.done, prog: 0, active: step.id };
-      this.save();
+      this.saveSoon();
       this.showBanner(`퀘스트 수주 — ${step.title}`);
       this.emitChibiHud();
     };
@@ -7885,7 +7885,7 @@ export class WorldScene extends Phaser.Scene {
       if (st.prog >= (step.need ?? 1)) this.completeChibiStep(npcId);
     }
     if (changed) {
-      this.save();
+      this.saveSoon();
       this.emitChibiHud();
     }
   }
@@ -7903,7 +7903,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.levelup();
     this.spawnBurstAt(this.player.x, this.player.y, 18, 0xffe9a8);
     this.showDialogueRaw({ speaker: line.name, lines: step.done });
-    this.save();
+    this.saveSoon();
     this.emitChibiHud();
   }
 
@@ -7992,7 +7992,7 @@ export class WorldScene extends Phaser.Scene {
     this.repeatOn = false;
     this.player.emerald += 1;
     this.spawnPickupText(this.player.x, this.player.y - 58, "+1 에메랄드", "#7de8ff");
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
     this.emitQuest();
     this.emitQuestLog();
@@ -8021,7 +8021,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.6 — 반복 의뢰 사이클 완료 보너스 에메랄드 +1 */
     this.player.emerald += 1;
     this.spawnPickupText(this.player.x, this.player.y - 58, "+1 에메랄드", "#7de8ff");
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
     this.emitQuest();
     this.emitRpgState();
@@ -8045,7 +8045,7 @@ export class WorldScene extends Phaser.Scene {
     this.spawnPickupText(this.player.x - 6, this.player.y - 84, `컬렉션 등록! ${name}`, "#ffe86a");
     audio.sfx.reward();
     this.emitRpgState();
-    this.save();
+    this.saveSoon();
   }
   /** 컬렉션 전체 종수 (잡몹 전 종 + 보스 전 종) */
   get collectionTotal(): number {
@@ -8148,7 +8148,7 @@ export class WorldScene extends Phaser.Scene {
     this.emitRpgState();
     /* vc153 (#신규4) — 퀘스트 로그가 열려 있으면 5차 2차각성 진행도가 즉시 반영되게 */
     this.emitQuestLog();
-    this.save();
+    this.saveSoon();
   }
 
   /** 각성의 대가 현재 안내 문구 (빈 문자열 = 비활성) */
@@ -8235,7 +8235,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.questDone();
     this.advanceQuest();
     this.afterAdvance();
-    this.save();
+    this.saveSoon();
   }
 
   /** v3.0.15 (#8) — 현재 구역 활성 퀘스트의 토벌 기준선 재설정 (수락 시점 킬만 카운트)
@@ -8340,7 +8340,7 @@ export class WorldScene extends Phaser.Scene {
     this.spawnPickupText(this.player.x, this.player.y - 58, `Lv ${q.need} 달성!`, "#8fe84a");
     this.advanceQuest();
     this.afterAdvance();
-    this.save();
+    this.saveSoon();
   }
 
   /** Player.gainExp 레벨업 훅 — 레벨 목표 퀘스트 즉시 판정 (v2.4)
@@ -8430,7 +8430,7 @@ export class WorldScene extends Phaser.Scene {
       this.autoHuntMove.set(0, 0);
       this.autoTarget = null;
       this.emitRpgState();
-      this.save();
+      this.saveSoon();
       EventBus.emit("banner:show", { text: "⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)" });
     }
     this.boss = new Boss(this, bx, by, def, "normal");
@@ -8494,7 +8494,7 @@ export class WorldScene extends Phaser.Scene {
       this.autoHuntMove.set(0, 0);
       this.autoTarget = null;
       this.emitRpgState();
-      this.save();
+      this.saveSoon();
       EventBus.emit("banner:show", { text: "⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)" });
     }
     this.boss = new Boss(this, bx, by, def, lv);
@@ -8895,7 +8895,7 @@ export class WorldScene extends Phaser.Scene {
       });
       this.emitRpgState();
       this.emitHud();
-      this.save();
+      this.saveSoon();
       this.time.delayedCall(1400, () => audio.playStageBGM(this.stageDef.key));
       return;
     }
@@ -8959,7 +8959,7 @@ export class WorldScene extends Phaser.Scene {
     const final = !specialZone && NEXT_STAGE[this.stageDef.key] === null;
     this.cleared = final;
     if (!specialZone) this.advanceQuest(); // 보스 퀘스트 완료 — 골드/경험치 보상 포함 (특수 구역 보스는 제외)
-    this.save();
+    this.saveSoon();
     if (final) {
       this.time.delayedCall(1200, () => {
         this.showDialogueOnce("victory");
@@ -9218,7 +9218,7 @@ export class WorldScene extends Phaser.Scene {
       // v2.4 — 인트로 외 이름 변경 (옵션 패널 → NamePanel 공용) — "이름 지정 어디감?" 해소
       setPlayerName(v.name);
       this.refreshPlayerTag();
-      this.save();
+      this.saveSoon();
       EventBus.emit("banner:show", { text: `이름이 '${v.name}'(으)로 바뀌었어요!` });
     };
     const onBuy = (v: { key: ItemKey; qty?: number }) => {
@@ -9268,14 +9268,14 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       this.emitRpgState(true);
-      this.save();
+      this.saveSoon();
     };
     /* v2.9 (#8) — 장신구 슬롯 클릭 해제 */
     const onUnequip = (v: { key: ItemKey }) => {
       if (!this.player || this.dialoguing) return;
       this.player.unequipAccessory(v.key);
       this.emitRpgState(true);
-      this.save();
+      this.saveSoon();
     };
     const onUse = (v: { kind: "hp" | "mp" }) => {
       this.player?.usePotion(v.kind);
@@ -9283,18 +9283,18 @@ export class WorldScene extends Phaser.Scene {
     const onUseBuff = (v: { key: BuffKey }) => {
       if (!this.player || this.dialoguing) return;
       this.player.useBuffItem(v.key);
-      this.save();
+      this.saveSoon();
       this.emitRpgState(true);
     };
     const onAllocate = (v: { stat: "str" | "dex" | "int" | "luk"; n: number }) => {
       if (!this.player || this.dialoguing) return;
-      if (this.player.allocateStat(v.stat, v.n)) this.save();
+      if (this.player.allocateStat(v.stat, v.n)) this.saveSoon();
       this.emitRpgState(true);
       this.emitHud();
     };
     const onPetSet = (v: { key: PetKey | null }) => {
       if (!this.player || this.dialoguing) return;
-      if (this.player.setPet(v.key)) this.save();
+      if (this.player.setPet(v.key)) this.saveSoon();
       this.emitRpgState(true);
     };
     const onCosmeticSet = (v: { key: CosmeticKey | null; slot?: "aura" | "outfit" | "hair" | "acc" }) => {
@@ -9304,7 +9304,7 @@ export class WorldScene extends Phaser.Scene {
        *  (5차 2차각성은 카이엔 대화 보고가 잦아 체감 빈도가 컸다). 치장 착용은 물리/전투 상태와 무관하므로 안전.
        *  실패(미보유 등) 시에도 조용히 끝나지 않게 배너로 알린다. */
       const ok = v.slot ? this.player.setCosmeticSlot(v.key, v.slot) : this.player.setCosmetic(v.key);
-      if (ok) this.save();
+      if (ok) this.saveSoon();
       else if (v.key) EventBus.emit("banner:show", { text: `${ITEMS[v.key as ItemKey]?.name ?? "치장"}을(를) 착용할 수 없다 — 보유 여부를 확인하세요` });
       this.emitRpgState(true);
     };
@@ -9315,7 +9315,7 @@ export class WorldScene extends Phaser.Scene {
       /* v3.0.5 — 패널에 결과 통보 (성공 금빛/실패 붉은 흔들림 CSS 연출용) */
       if (r === "ok" || r === "fail")
         EventBus.emit("rpg:upgradeResult", { slot: v.slot, result: r, up: this.player.upgrades[v.slot] });
-      this.save();
+      this.saveSoon();
       this.emitRpgState(true);
       this.emitHud();
     };
@@ -9328,7 +9328,7 @@ export class WorldScene extends Phaser.Scene {
       const was = this.autoUpSlot !== null;
       this.autoUpSlot = null;
       if (was) {
-        this.save();
+        this.saveSoon();
         this.emitRpgState(true);
         if (msg) EventBus.emit("banner:show", { text: msg });
       }
@@ -9350,7 +9350,7 @@ export class WorldScene extends Phaser.Scene {
       if (r === "ok" || r === "fail") {
         if (isEq) EventBus.emit("rpg:upgradeResult", { slot, result: r, up: this.player.upgrades[slot as "weapon" | "armor"] });
       }
-      this.save();
+      this.saveSoon();
       this.emitRpgState(true);
       this.emitHud();
     };
@@ -9397,7 +9397,7 @@ export class WorldScene extends Phaser.Scene {
       this.showBanner(emerald > 0 || gold > 0
         ? `${d.label} — 보상: 에메랄드 ${emerald}·골드 ${gold.toLocaleString()}`
         : d.label);
-      this.save();
+      this.saveSoon();
       this.emitHud();
     };
     window.addEventListener("sertz:class-reward", onClassReward);
@@ -9460,7 +9460,7 @@ export class WorldScene extends Phaser.Scene {
       this.dailyAds++;
       this.player.addGold(500 * adMul);
       this.player.emerald += 1 * adMul;
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       audio.sfx.charge();
       /* v1.4.11 — item_emerald 픽업 팝 (에메랄드 지급 시각화 — 미사용 에셋 활성화) */
@@ -9492,12 +9492,25 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: msg });
         return;
       }
-      this.player.emerald += sku.gems;
+      /* vc205 (감사 #2) — 지급은 **서버가 한다**. 종전엔 여기서 바로
+       *  `this.player.emerald += sku.gems` 로 클라가 지급해서, purchaseToken 을 위조하면
+       *  에메랄드가 무한 지급됐다. 이제 토큰만 서버로 보내고 서버가 Google Play 로 검증한 뒤
+       *  세이브에 더한다. 응답의 emerald 를 로컬에 반영해 즉시 표시만 맞춘다. */
+      let granted = 0;
+      const vr = await verifyIapPurchase(sku.id, r.token ?? "");
+      const vj = vr.data as { ok?: boolean; gems?: number; emerald?: number; error?: string; reason?: string };
+      if (!vr.ok || !vj.ok) {
+        EventBus.emit("banner:show", { text: vj.error || "결제 확인에 실패했다 — 고객센터에 문의하자" });
+        return;
+      }
+      granted = vj.gems ?? 0;
+      if (typeof vj.emerald === "number") this.player.emerald = vj.emerald;
+      else this.player.emerald += granted;
       if (r.token) void completeGemPurchase(r.token); // ledger 등록 + 소비(재구매 가능화) — v1.0.1-beta
       this.save();
       this.emitRpgState();
       audio.sfx.charge();
-      EventBus.emit("banner:show", { text: `에메랄드 +${sku.gems} 충전 완료!` });
+      EventBus.emit("banner:show", { text: `에메랄드 +${granted} 충전 완료!` });
     };
     /* v1.0.2 (#현금패키지) — 스토어 결제 패키지 구매: 결제 성공 후 정의된 구성 지급 */
     const onBuyStorePack = async (v: { id: string }) => {
@@ -9522,7 +9535,7 @@ export class WorldScene extends Phaser.Scene {
       this.grantBmGrants("패키지 구매 감사합니다!", grants);
       audio.sfx.charge();
       if (r.token) void completePackPurchase(r.token, !!r.acknowledged); // ledger + 승인 — v1.0.1-beta
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     /* ================= v4.5.0 — 시즌 패스/구독/광고 확장 (BM 표준화) ================= */
@@ -9541,7 +9554,7 @@ export class WorldScene extends Phaser.Scene {
       this.passPrem = true;
       audio.sfx.shop();
       EventBus.emit("banner:show", { text: "프리미엄 패스 해금! 지금까지 도달한 레벨의 프리미엄 보상 전부 수령 가능" });
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     const onPassClaim = (v: { lv: number; track: "free" | "prem" }) => {
@@ -9564,7 +9577,7 @@ export class WorldScene extends Phaser.Scene {
       list.push(lv);
       this.grantBmGrants(`시즌 패스 Lv.${lv} — ${v.track === "free" ? "무료" : "프리미엄"} 보상`, [g]);
       audio.sfx.reward();
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     /* v1.0.2 (#패스일괄수령) — 수령 가능한 패스 보상 전부 지급.
@@ -9596,7 +9609,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.grantBmGrants(`시즌 패스 — 한번에 받기 (${grants.length}건)`, grants);
       audio.sfx.reward();
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     const onSubBuy = () => {
@@ -9617,7 +9630,7 @@ export class WorldScene extends Phaser.Scene {
           { text: "광고 보상 2배 · 광고 한도 5→8회", color: "#ffd76a" },
         ] satisfies RewardPopupState["lines"],
       });
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     /* 광고 확장 1 — 무료 상자 (일 3회, 철 상자 즉시 개봉) */
@@ -9638,7 +9651,7 @@ export class WorldScene extends Phaser.Scene {
       audio.sfx.chest();
       if (this.player) this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor("chest_iron")); // v4.7.0
       this.grantBmGrants(`광고 무료 상자 개봉! (${this.dailyAdChest}/${AD_CHEST_PER_DAY})`, [this.rollChest("chest_iron")]);
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     /* 광고 확장 2 — 버프 물약 세트 (일 2회: 탐욕+행운) */
@@ -9667,7 +9680,7 @@ export class WorldScene extends Phaser.Scene {
           { text: "가방의 자동 버프 또는 인벤에서 사용", color: "#a8ecff" },
         ] satisfies RewardPopupState["lines"],
       });
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     // 전직/승격 선택 (JobPanel → v1.8 다차원 트리)
@@ -9742,7 +9755,7 @@ export class WorldScene extends Phaser.Scene {
       }
       EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
       this.refreshPlayerTag();
-      this.save();
+      this.saveSoon();
       this.emitHud();
       this.emitRpgState();
       net.netAnnounceJob(def.key);
@@ -9768,7 +9781,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", { text: `자유 전직! ${alt.name} — ${alt.title} (-${FREE_JOB_COST}G)` });
       audio.sfx.levelup();
       this.refreshPlayerTag();
-      this.save();
+      this.saveSoon();
       this.emitHud();
       this.emitRpgState();
       net.netAnnounceJob(alt.key);
@@ -9803,7 +9816,7 @@ export class WorldScene extends Phaser.Scene {
           EventBus.emit("banner:show", { text: `경험치 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}` });
           audio.sfx.pickup();
           this.emitRpgState();
-          this.save();
+          this.saveSoon();
         } else {
           EventBus.emit("banner:show", { text: "경험치 책이 없습니다" });
         }
@@ -9827,7 +9840,7 @@ export class WorldScene extends Phaser.Scene {
           audio.sfx.pickup();
           this.emitRpgState();
           this.emitHud();
-          this.save();
+          this.saveSoon();
         } else {
           EventBus.emit("banner:show", { text: failMsg ?? "사용할 수 없습니다" });
         }
@@ -9964,7 +9977,7 @@ export class WorldScene extends Phaser.Scene {
       this.autoDirHoldUntil = 0;
       EventBus.emit("banner:show", { text: this.autoHunt ? "자동사냥 ON — 위협 제거 우선 · 사냥/보스 최적화" : "자동사냥 OFF" });
       this.emitRpgState();
-      this.save();
+      this.saveSoon();
     };
 
     /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
@@ -10014,7 +10027,7 @@ export class WorldScene extends Phaser.Scene {
         }
         this.emitSkills();
         this.emitRpgState();
-        this.save();
+        this.saveSoon();
       } else if (v.type === "gold" && typeof v.value === "number") {
         p.addGold(v.value);
         EventBus.emit("banner:show", { text: `GM — 골드 ${v.value >= 0 ? "+" : ""}${v.value}` });
@@ -10037,7 +10050,7 @@ export class WorldScene extends Phaser.Scene {
         this.spawnPillar(p.x, p.y, 0xffd76a, 240);
         EventBus.emit("banner:show", { text: "GM 장비 지급 완료 — [GM] 대검·갑주·반지·엘릭서" });
         this.emitRpgState();
-        this.save();
+        this.saveSoon();
       } else if (v.type === "em" && typeof v.value === "number") {
         /* v3.0.6 — GM 에메랄드 지급 (BM 상점 테스트용) */
         p.emerald = Math.max(0, p.emerald + v.value);
@@ -10054,7 +10067,7 @@ export class WorldScene extends Phaser.Scene {
         });
         this.emitSkills();
         this.emitRpgState();
-        this.save();
+        this.saveSoon();
       } else if (v.type === "dojang") {
         /* v3.3.0 (지시 #6) — GM → 무릉도장 입장 */
         this.enterDojang();
@@ -10072,7 +10085,7 @@ export class WorldScene extends Phaser.Scene {
         this.ensureTickets();
         this.ticketGate = TICKETS_PER_DAY.gate;
         this.ticketCloset = TICKETS_PER_DAY.closet;
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         EventBus.emit("banner:show", { text: "GM — 오늘 입장 티켓 전량 충전!" });
       } else if (v.type === "boss" && typeof v.value === "string") {
@@ -10224,7 +10237,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.lockedItems = has
         ? this.player.lockedItems.filter((k) => k !== v.key)
         : [...this.player.lockedItems, v.key];
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       EventBus.emit("banner:show", { text: has ? "잠금 해제" : "잠금 — 이제 판매되지 않습니다" });
     };
@@ -10243,7 +10256,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.refreshPlayerTag();
       this.emitRpgState();
-      this.save();
+      this.saveSoon();
     };
     EventBus.on("rpg:setTitle", onSetTitle);
 
@@ -10261,7 +10274,7 @@ export class WorldScene extends Phaser.Scene {
       const qty = Math.max(1, Math.min(999, Math.floor(v.qty ?? 1)));
       const sold = this.player.sell(v.key as ItemKey, qty);
       if (sold > 0) {
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         EventBus.emit("banner:show", {
           text: sold > 1 ? `판매 완료 ×${sold} — 상점가의 40%` : "판매 완료 — 상점가의 40%",
@@ -10274,7 +10287,7 @@ export class WorldScene extends Phaser.Scene {
       const qty = Math.max(1, Math.min(999, Math.floor(v.qty ?? 1)));
       const sold = this.player.sellPotion(v.key as "potion_hp" | "potion_mp" | "potion_hp2" | "potion_mp2" | "potion_elixir", qty);
       if (sold > 0) {
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         EventBus.emit("banner:show", {
           text: sold > 1 ? `물약 판매 완료 ×${sold} — 상점가의 40%` : "물약 판매 완료 — 상점가의 40%",
@@ -10310,7 +10323,7 @@ export class WorldScene extends Phaser.Scene {
         if (this.player) this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor(v.key)); // v4.7.0
         this.grantBmGrants(`${it.name}${n > 1 ? ` ×${n}` : ""} 개봉!`, grants);
         if (v.key === "pack_starter") this.starterPackBought = true; // v4.5.0 — 스타터팩 하이라이트 해제
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         this.emitHud();
         return;
@@ -10320,7 +10333,7 @@ export class WorldScene extends Phaser.Scene {
       const cost = (unitPay ?? it.bmPrice ?? 0) * (it.kind === "consumable" || it.kind === "buff" ? qty : 1);
       const okBuy = this.player.buyBm(v.key as ItemKey, qty, unitPay);
       if (okBuy) {
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         this.emitHud();
         EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost} 에메랄드${deal ? " · 일일특가 30%↓" : ""})` });
@@ -10350,7 +10363,7 @@ export class WorldScene extends Phaser.Scene {
       audio.sfx.chest();
       this.playChestOpenAnim(this.player.x, this.player.y - 14, this.chestRowFor(key)); // v4.7.0
       this.grantBmGrants(`${it.name} 개봉!`, grants);
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       this.emitHud();
     };
@@ -10363,7 +10376,7 @@ export class WorldScene extends Phaser.Scene {
         return `${String(kindOrder[it?.kind ?? "z"] ?? 9).padStart(2, "0")}:${it?.name ?? k}`;
       };
       this.player.owned.sort((a, b) => rank(a).localeCompare(rank(b), "ko"));
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       EventBus.emit("banner:show", { text: "가방을 정리했다 — 깔끔하네" });
     };
@@ -10376,7 +10389,7 @@ export class WorldScene extends Phaser.Scene {
         mpOn: v.mpOn,
         buffs: v.buffs as BuffKey[] | undefined,
       });
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     /* v3.0.7 — 유저 거래소: 구매(에메랄드 차감) */
@@ -10385,7 +10398,7 @@ export class WorldScene extends Phaser.Scene {
       const it = ITEMS[v.key as ItemKey];
       const okBuy = this.player.tradeBuy(v.key as ItemKey);
       if (okBuy) {
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         this.emitHud();
         EventBus.emit("banner:show", { text: `거래소 구매 — ${it?.name ?? "아이템"} (-${TRADE_PRICES[v.key] ?? 0} 에메랄드)` });
@@ -10399,7 +10412,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       const okSell = this.player.tradeSell(v.key as ItemKey);
       if (okSell) {
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         this.emitHud();
         EventBus.emit("banner:show", { text: `거래소 판매 — +${tradeValue(v.key as ItemKey)} 에메랄드` });
@@ -10412,7 +10425,7 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: this.player.starBless >= 3 ? "충전 최대 3장 — 강화부터" : "강화 주문서가 없습니다" });
         return;
       }
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     /* v3.0.7 — 장신구 스타포스 강화 */
@@ -10425,7 +10438,7 @@ export class WorldScene extends Phaser.Scene {
         EventBus.emit("banner:show", { text: "이미 최대 성수입니다 (★15)" });
       }
       if (r === "ok" || r === "fail") {
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         EventBus.emit("rpg:upgradeResult", { slot: "weapon", result: r === "ok" ? "ok" : "fail" });
       }
@@ -10437,7 +10450,7 @@ export class WorldScene extends Phaser.Scene {
       if (this.autoAlloc && this.player && this.player.ap > 0) {
         if (this.player.allocateAutoPoints()) this.emitHud();
       }
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       EventBus.emit("banner:show", { text: v.on ? "레벨업 자동 배분 ON — 스탯을 자동으로 나눕니다" : "레벨업 자동 배분 OFF" });
     };
@@ -10447,7 +10460,7 @@ export class WorldScene extends Phaser.Scene {
       const item = ITEMS[v.key as ItemKey];
       if (!item || item.kind !== "consumable") return;
       this.player.quickPots[v.slot] = v.key;
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       EventBus.emit("banner:show", { text: `${item.name} → ${v.slot === "hp" ? "HP" : "MP"} 버튼에 장착!` });
     };
@@ -10471,7 +10484,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.emit("banner:show", {
         text: `eert 큐브 — ${meta.name} 등급! ${pot.lines.map((l) => potLineText(l)).join(" · ")}`,
       });
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       this.emitHud();
     };
@@ -10489,7 +10502,7 @@ export class WorldScene extends Phaser.Scene {
         this.syncQuestBaseline();
         this.afterAdvance();
       }
-      this.save();
+      this.saveSoon();
       EventBus.emit("banner:show", { text: `퀘스트 수락! — ${def.quests[idx].title}` });
       audio.sfx.questAccept();
       this.emitQuest();
@@ -10498,7 +10511,7 @@ export class WorldScene extends Phaser.Scene {
     /* #8 — 퀘스트 추적 선택 */
     const onQuestTrack = (v: { stage: string | null }) => {
       this.trackedStage = v.stage;
-      this.save();
+      this.saveSoon();
       this.emitQuest();
       this.emitQuestLog();
     };
@@ -10522,7 +10535,7 @@ export class WorldScene extends Phaser.Scene {
       }
       if (v.up > 0) delete this.player.accUp?.[v.key]; // 강화 수치는 서버 등록분으로 이전
       this.trackMission("market"); // 주간 미션 "거래소 이용"
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     const onMarketBuy = (v: { itemKey: string; up: number; price: number }) => {
@@ -10545,7 +10558,7 @@ export class WorldScene extends Phaser.Scene {
       this.trackMission("market"); // 주간 미션 "거래소 이용"
       EventBus.emit("banner:show", { text: `유저 거래판 구매 완료! (-${v.price.toLocaleString()} G)` });
       audio.sfx.shop();
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       this.emitHud();
     };
@@ -10559,7 +10572,7 @@ export class WorldScene extends Phaser.Scene {
         if (!this.player.accUp) this.player.accUp = {};
         this.player.accUp[v.itemKey] = v.up;
       }
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
     const onMarketCollect = (v: { gold: number }) => {
@@ -10567,7 +10580,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.gold += v.gold; // 정산금 — 버프 배율 미적용
       EventBus.emit("banner:show", { text: `정산금 수령 — +${v.gold.toLocaleString()} G (수수료 10% 제외)` });
       audio.sfx.sell();
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       this.emitHud();
     };
@@ -10590,7 +10603,7 @@ export class WorldScene extends Phaser.Scene {
       else this.ticketCloset++;
       EventBus.emit("banner:show", { text: `${v.kind === "gate" ? "바르가 수비전" : "균열 던전"} 티켓 +1 재충전! (-3💎)` });
       audio.sfx.charge();
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     };
 
@@ -10636,7 +10649,7 @@ export class WorldScene extends Phaser.Scene {
         this.player.addGold(v?.n ?? 0);
         this.showBanner(`유니온 상점 — 골드 +${(v?.n ?? 0).toLocaleString()}G`);
       } else return;
-      this.save();
+      this.saveSoon();
       this.emitHud();
       audio.sfx.shop();
     };
@@ -10654,7 +10667,7 @@ export class WorldScene extends Phaser.Scene {
       this.showBanner(`파티 미션 완료! +${r.gold.toLocaleString()}G · EXP +${r.exp}${inParty ? " (파티 풀 보상)" : " (솔로 50% — 파티원과 함께하면 풀 보상!)"}`);
       audio.sfx.reward(); // v1.4.8 — 보상 수령 전용음 (재화음과 구분)
       this.driveFx?.twinkle(this.player.x, this.player.y - 20, 0x9df0c8);
-      this.save();
+      this.saveSoon();
       this.emitHud();
     };
     EventBus.on("rpg:partyClaim", onPartyClaim);
@@ -10679,7 +10692,7 @@ export class WorldScene extends Phaser.Scene {
       it.give();
       this.showBanner(`파크 상점 — ${it.name} 교환 완료! (잔여 ${this.parkCoins}C)`);
       audio.sfx.shop();
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       this.emitHud();
     };
@@ -10731,7 +10744,7 @@ export class WorldScene extends Phaser.Scene {
       }
       const okBuy = this.player.buyBm(key, 1);
       if (okBuy) {
-        this.save();
+        this.saveSoon();
         this.emitRpgState();
         this.emitHud();
         this.onCosmeticChanged();
@@ -10819,7 +10832,7 @@ export class WorldScene extends Phaser.Scene {
         p.emerald += theirs.emerald;
         this.emitRpgState();
         this.emitHud();
-        this.save();
+        this.saveSoon();
       },
       notify: (t) => this.showBanner(t),
     });
@@ -13997,7 +14010,7 @@ export class WorldScene extends Phaser.Scene {
             const cur = FIFTH2_CHAIN[0];
             this.showBanner(`[각성의 대가] ${cur.title} — ${cur.story[cur.story.length - 1]}`);
             this.emitRpgState();
-            this.save();
+            this.saveSoon();
           }
           EventBus.off("dialogue:choice", onChoice as never);
         };
@@ -14403,7 +14416,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.fieldDecor.push({ key, x: Math.round(x), y: Math.round(y), rot: 0, stage: this.stageDef.key });
     audio.sfx.uiClose();
     this.renderFieldDecor();
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
   }
 
@@ -14435,7 +14448,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.fieldDecor.splice(idx, 1);
     audio.sfx.pickup();
     this.renderFieldDecor();
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
   }
 
@@ -14471,7 +14484,7 @@ export class WorldScene extends Phaser.Scene {
       }
       audio.sfx.uiClose();
       this.renderHomeDecor();
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
       return;
     }
@@ -14484,7 +14497,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.homeDecor.push({ key, x: cx, y: cy, rot: 0 });
     audio.sfx.uiClose();
     this.renderHomeDecor();
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
   }
 
@@ -14496,7 +14509,7 @@ export class WorldScene extends Phaser.Scene {
     d.rot = ((d.rot ?? 0) + 1) % 4;
     audio.sfx.uiOpen();
     this.renderHomeDecor();
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
   }
 
@@ -14507,7 +14520,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.homeDecor.splice(idx, 1);
     audio.sfx.pickup();
     this.renderHomeDecor();
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
   }
 
@@ -14577,7 +14590,7 @@ export class WorldScene extends Phaser.Scene {
     this.showDialogue(story.startDialogue);
     this.showBanner(`전직 시련 시작 — ${story.title} (완료 후 전직!)`);
     audio.sfx.questAccept();
-    this.save();
+    this.saveSoon();
     this.emitQuest();
     this.emitRpgState();
     return true;
@@ -14667,7 +14680,7 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     this.emitQuest(); // v4.1.3 (#전직조건표시) — 단계 완료 즉시 트래커 갱신 ([1/3]→[2/3])
-    this.save();
+    this.saveSoon();
     this.emitRpgState();
   }
 
@@ -14693,7 +14706,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshPlayerTag();
     net.netAnnounceJob(def.key);
     this.emitRpgState();
-    this.save();
+    this.saveSoon();
     return true;
   }
 
@@ -14724,7 +14737,7 @@ export class WorldScene extends Phaser.Scene {
       : this.stageDef.key; // 폴백: 방문 기록 부재 → 현재 구역에서 수행
     this.jobStory.tst = target;
     this.jobStory.hunt = 0;
-    this.save();
+    this.saveSoon();
     return target;
   }
 
@@ -14776,7 +14789,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.talkedNpcs.size >= (q.need ?? 0)) {
       this.advanceQuest();
       this.afterAdvance();
-      this.save();
+      this.saveSoon();
     } else {
       this.emitQuest();
     }
@@ -14802,7 +14815,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.showBanner("마을 NPC 3명과의 인사 완료 — 레벨 3 달성!");
     this.spawnPickupText(this.player.x, this.player.y - 56, "Lv.3 달성!", "#ffe66a");
-    this.save();
+    this.saveSoon();
   }
   private npcTrioHintShown = false;
 
@@ -14980,7 +14993,7 @@ export class WorldScene extends Phaser.Scene {
     this.doShake(140, 0.004);
     this.player.healFull();
     // 세이브에 이름 기록
-    this.save();
+    this.saveSoon();
     // 가이드 페이드아웃
     this.tweens.add({
       targets: [this.introGuide, this.introGuideSpark],
@@ -15140,7 +15153,7 @@ export class WorldScene extends Phaser.Scene {
   /** 펫 소환 상태 동기화 — 가방/상점에서 변경 시 호출 */
   onPetChanged() {
     this.syncPet();
-    this.save();
+    this.saveSoon();
   }
 
   private syncPet() {
@@ -16220,6 +16233,29 @@ export class WorldScene extends Phaser.Scene {
     };
   }
 
+  /* vc205 (감사 #18) — 저장 디바운스.
+   *  종전엔 save() 가 호출될 때마다 buildSave() 전체를 만들어 localStorage 에 동기 기록했다.
+   *  호출 지점이 142개라 퀘스트 완료·강화·상점·물약이 겹치면 같은 프레임에 여러 번 직렬화했고,
+   *  세이브가 커지면(chars 24캐릭 4MB 허용) 메인 스레드가 멈춰 모바일에서 끊겼다.
+   *  → saveSoon() 은 250ms 디바운스, save() 는 즉시 기록(포탈 이동·씬 종료 등 확정 지점용).
+   *  호출부는 saveSoon() 을 쓰고, 반드시 즉시여야 하는 곳만 save() 를 유지한다. */
+  private saveTimer: number | null = null;
+  private saveSoon() {
+    if (this.saveTimer !== null) return;
+    this.saveTimer = window.setTimeout(() => {
+      this.saveTimer = null;
+      this.saveSoon();
+    }, 250);
+  }
+  /** 예약된 저장을 즉시 확정 (씬 종료·포탈 이동·백그라운드 진입) */
+  flushSave() {
+    if (this.saveTimer !== null) {
+      window.clearTimeout(this.saveTimer);
+      this.saveTimer = null;
+    }
+    this.save();
+  }
+
   private save() {
     // v2.3 — 실내(여관/집)에서의 저장도 세이브 스테이지는 진행 구역 유지
     //  (설계 의도대로 실내가 세이브에 기록되지 않게 — 재접속 시 마을에서 계속)
@@ -16376,7 +16412,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private saveCleared() {
-    this.save();
+    this.saveSoon();
     const d = loadSave();
     if (d) {
       d.cleared = true;
@@ -16552,7 +16588,7 @@ export class WorldScene extends Phaser.Scene {
   private showDialogueOnce(id: string, npcId: string | null = null): boolean {
     if (!DIALOGUES[id] || this.seenSet.has(id)) return false;
     this.seenSet.add(id);
-    this.save();
+    this.saveSoon();
     this.showDialogue(id, npcId);
     return true;
   }
@@ -16561,7 +16597,7 @@ export class WorldScene extends Phaser.Scene {
   private markSeen(id: string) {
     if (this.seenSet.has(id)) return;
     this.seenSet.add(id);
-    this.save();
+    this.saveSoon();
   }
 
   resumeFromDialogue() {
@@ -16571,7 +16607,7 @@ export class WorldScene extends Phaser.Scene {
      *  조건: 본마을 + 세계 구원(cleared) + 아직 게이트 없음 → dlcTalked 를 켜고 포탈 생성. */
     if (!this.isInterior && this.stageDef.isVillage && this.cleared && !this.dlcTalked) {
       this.dlcTalked = true;
-      this.save();
+      this.saveSoon();
       this.spawnDlcPortal();
       this.showBanner("리안의 말이 끝나자 광장 동쪽에 빛의 문이 열렸다 — 그랜드플래닛 게이트");
       audio.sfx.portal();
@@ -16652,7 +16688,7 @@ export class WorldScene extends Phaser.Scene {
         // v2.3 (지시 #4) — 상인 대화 종료 → 반복 토벌 의뢰 수주
         if (this.repeatUnlockable()) {
           this.repeatOn = true;
-          this.save();
+          this.saveSoon();
           audio.sfx.reward();
           this.showBanner("토벌 의뢰 수주! 구역 체인을 모두 끝낸 사냥터에서 [반복] 의뢰를 진행할 수 있어요");
           this.spawnPickupText(this.player.x, this.player.y - 44, "의뢰 수주!", "#7dffa8");
@@ -16745,7 +16781,7 @@ export class WorldScene extends Phaser.Scene {
     /* 자동 재생은 본 기록을 남긴다 */
     if (auto && !this.player.tutSeen.includes(tutSeenKey(key))) {
       this.player.tutSeen.push(tutSeenKey(key));
-      this.save();
+      this.saveSoon();
       this.emitRpgState();
     }
     this.featureTutOpen = true;
@@ -16854,7 +16890,7 @@ export class WorldScene extends Phaser.Scene {
   /** 단계 통과 시마다 세이브 — 씬 전환(마을→사냥터) 후에도 이어서 재개 */
   saveTutorialProgress(step: number) {
     this.tutStep = step;
-    this.save();
+    this.saveSoon();
   }
 
   /** 완료/스킵 — 세이브 플래그 확정 */
@@ -16862,7 +16898,7 @@ export class WorldScene extends Phaser.Scene {
     this.tutorialDone = true;
     this.tutStep = -1;
     this.tut = null;
-    this.save();
+    this.saveSoon();
   }
 
   /** 축하 연출 — 스파클 버스트 (v1.0.13 — 벚꽃 소나기 제거 대체, 골드 광륜) */
@@ -17006,7 +17042,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.questDone();
     this.emitRpgState();
     this.emitHud();
-    this.save();
+    this.saveSoon();
   }
 
   /** 현재 스테이지 → 낚시 지역 */
@@ -17087,7 +17123,7 @@ export class WorldScene extends Phaser.Scene {
     this.spawnPickupText(node.x, node.y - 20, `+${amount} ${def.name}`, def.color);
     audio.sfx.pickup();
     this.emitRpgState();
-    this.save();
+    this.saveSoon();
     return true;
   }
 
@@ -17119,7 +17155,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.levelup();
     this.emitRpgState();
     this.emitHud();
-    this.save();
+    this.saveSoon();
     return true;
   }
 
@@ -17231,6 +17267,13 @@ export class WorldScene extends Phaser.Scene {
     window.removeEventListener("sertz:gpu-unstable", this.onGpuUnstable);
     /* v1.3.1 (#8) — visibilitychange 리스너 해제 (씬 재시작 후 중복 실행 방지) */
     if (this.onVisChange) document.removeEventListener("visibilitychange", this.onVisChange);
+    /* vc205 (감사 #18) — 씬 종료 시 예약된 디바운스 저장을 확정한다.
+     *  이게 없으면 saveSoon() 으로 미뤄둔 마지막 변경이 씬 재시작과 함께 사라진다. */
+    if (this.saveTimer !== null) {
+      window.clearTimeout(this.saveTimer);
+      this.saveTimer = null;
+      try { if (this.player) this.save(); } catch { /* 종료 중 저장 실패는 무시 */ }
+    }
     this.tut?.destroy(); // v1.0.11 — 튜토리얼 HUD/마커 정리
     this.tut = null;
     this.shockFX?.destroy(); // v4.8.0 — 셰이더 링 풀 정리

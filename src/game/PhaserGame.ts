@@ -221,7 +221,15 @@ export function createGame(parent: HTMLElement): Phaser.Game {
    *   ② 4회 — Canvas 백엔드 폴백 예약 + 예산화된 안전 재부팅 */
   const ctxLossTimes: number[] = [];
   const canvas = game.canvas;
-  canvas.addEventListener("webglcontextlost", (e) => {
+  /* vc205 (감사 #20) — 전역 리스너 1회 등록 가드.
+   *  HMR·StrictMode 처럼 이 모듈이 두 번 실행되면 webglcontextlost 핸들러가 중복 등록돼
+   *  ctxLossTimes 가 두 배로 쌓인다. 그 값이 4회에서 Canvas 폴백 재부팅을 걸기 때문에
+   *  실제 유실 2회로 재부팅 조건이 채워졌다. 캔버스에 표식을 남겨 1회만 붙인다. */
+  const LISTENER_FLAG = "__sertzCtxGuardInstalled";
+  const alreadyGuarded = (canvas as unknown as Record<string, unknown>)[LISTENER_FLAG] === true;
+  if (!alreadyGuarded) (canvas as unknown as Record<string, unknown>)[LISTENER_FLAG] = true;
+
+  if (!alreadyGuarded) canvas.addEventListener("webglcontextlost", (e) => {
     e.preventDefault();
     ctxLostAt = Date.now();
     const now = Date.now();

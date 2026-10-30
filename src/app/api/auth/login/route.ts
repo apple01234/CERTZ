@@ -31,17 +31,14 @@ export async function POST(req: NextRequest) {
       const hash = Buffer.from(hashPw(String(b.pw || ""), user.salt), "hex");
       const stored = Buffer.from(user.hash, "hex");
       if (hash.length === stored.length && timingSafeEqual(hash, stored)) {
-        let success: Resp | null = null;
         const r = await mutateDb((fdb) => {
           const fu = fdb.users[id];
           if (!fu || fu.provider !== "local") return { status: 401, body: { error: LOGIN_FAIL_MSG } };
           const { token, cookie } = issueToken(fdb, fu);
-          success = { status: 200, body: { user: publicUser(fu), token }, headers: { "Set-Cookie": cookie } };
           audit("login", { ip: "serverless", uid: id, role: fu.role === "admin" ? "admin" : "user" });
-          return null; // 토큰 발급 쓰기
+          return { resp: { status: 200, body: { user: publicUser(fu), token }, headers: { "Set-Cookie": cookie } } };
         });
-        const out = success && r.status === 200 ? success : r;
-        return json(req, out.status, out.body, out.headers);
+        return json(req, r.status, r.body, r.headers);
       }
     }
     audit("login_fail", { ip: "serverless", uid: id });

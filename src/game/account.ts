@@ -184,6 +184,12 @@ export async function authGoogle(idToken: string) {
   return r;
 }
 
+/** vc205 (감사 #2) — 인앱결제 서버 검증. 클라는 토큰만 보내고 서버가 Google Play 로 확인 후 지급한다.
+ *  네이티브/웹 토큰 전달 규칙(쿼리 vs Bearer)은 post() 가 그대로 처리한다. */
+export async function verifyIapPurchase(sku: string, token: string) {
+  return post("/api/iap/verify", { sku, token });
+}
+
 export async function authLogout() {
   const r = await post("/api/auth/logout");
   setToken(""); // v1.0.7 — 로컬 토큰 정리 (성공 여부 무관)

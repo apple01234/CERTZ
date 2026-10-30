@@ -40,8 +40,6 @@ export async function POST(req: NextRequest) {
     const fallbackName = `용사${fb.sub.slice(-4)}`;
     const displayName = cleanName(fb.name || fb.email?.split("@")[0] || "", fallbackName);
     const email = fb.email || "";
-
-    let success: Resp | null = null;
     const r = await mutateDb((db) => {
       let user = db.users[uid];
       if (!user) {
@@ -54,12 +52,10 @@ export async function POST(req: NextRequest) {
         return { status: 409, body: { error: "이 아이디는 다른 로그인 방식으로 사용 중이에요" } };
       }
       const { token, cookie } = issueToken(db, user);
-      success = { status: 200, body: { user: publicUser(user), token }, headers: { "Set-Cookie": cookie } };
       audit("login", { ip: "serverless", uid, provider: "google" });
-      return null; // 세션 토큰 발급 쓰기
+      return { resp: { status: 200, body: { user: publicUser(user), token }, headers: { "Set-Cookie": cookie } } };
     });
-    const out = success && r.status === 200 ? success : r;
-    return json(req, out.status, out.body, out.headers);
+    return json(req, r.status, r.body, r.headers);
   } catch (e) {
     console.error("[SERTZ-api] google 로그인 실패", e);
     return json(req, 500, { error: "서버 오류" });

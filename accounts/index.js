@@ -1142,68 +1142,45 @@ async function handle(req, res) {
 
 /** server.js에서 호출 — Next handle을 감싸 /api/auth/*, /api/market/* 를 계정 모듈이 먼저 처리한다 */
 function attachAccountsBefore(handleNext) {
+  /* vc205 (감사 — 이중 구현 제거) — **모든 API 를 Next 라우트로 위임한다.**
+   *
+   *  문제: 이 파일은 `db/accounts.json`(로컬 파일 DB)로 동작하는 별도 서버 구현이었고,
+   *  ghdb.ts 와 **같은 백업 파일(db-backup/accounts.enc)을 공유**하면서도
+   *  에스크로·골드 검증·IAP 검증이 전혀 없었다(마지막 수정 a6a285f — 이후 감사 수정 미반영).
+   *  결과적으로 로컬·FC 배포에서 골드 조작·공짜 구매가 그대로 가능했다.
+   *
+   *  해법: 이 모듈은 더 이상 데이터를 직접 쓰지 않고 Next(`src/app/api/**`)로 넘긴다.
+   *  단일 진실 = Next 라우트 + ghdb.ts. 파일 DB 는 더 이상 읽지도 쓰지도 않는다.
+   *
+   *  남기는 것: OPTIONS 프리플라이트(구 APK 호환 — Next 로 떨어지면 404/405 가 나던 이력).
+   *  ⚠️ `handleAccountRequest`/`handleMarketRequest` export 는 다른 코드가 쓰지 않는지 확인 후
+   *     별도로 제거한다(현재 server.js 는 attachAccountsBefore 만 쓴다).
+   */
   return (req, res) => {
     const u = req.url || "";
     res._cors = corsHeadersFor(req); // v1.4.8 — 화이트리스트 CORS를 응답 헬퍼에 부착
-    /* v1.0.7 — 프리플라이트 OPTIONS: 기존엔 Next로 떨어져 404/405 → APK에서 POST+JSON fetch가 전부 실패 */
-    if ((req.method || "GET").toUpperCase() === "OPTIONS" &&
-        (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") || u.startsWith("/api/market") || u.startsWith("/api/rank"))) {
+    const method = (req.method || "GET").toUpperCase();
+    /* 구버전 APK 프리플라이트 호환 — Next 로 넘기면 404/405 가 나 POST 가 전부 실패했던 이력 */
+    if (method === "OPTIONS" &&
+        (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") ||
+         u.startsWith("/api/market") || u.startsWith("/api/rank") || u.startsWith("/api/iap"))) {
       res.writeHead(204, res._cors).end();
       return;
     }
-    /* v1.3.0 (지시 #7) — 랭킹 조회 (공개 + 로그인 시 내 순위 동봉) */
-    if (u.startsWith("/api/rank")) {
-      const url = u.split("?")[0];
-      const method = (req.method || "GET").toUpperCase();
-      if (url === "/api/rank" && method === "GET") {
-        try {
-          const me = currentUser(req);
-          /* v1.0.13 피드백#7/#16 — ?me=<캐릭터명>(내 순위 정밀 매칭) · ?job=<클래스키>(직업별 랭킹) */
-          const q = new URL(req.url, "http://x").searchParams;
-          sendJson(res, 200, rankListFor(me, q.get("me") || "", q.get("job") || ""));
-        } catch (e) {
-          console.error("[SERTZ-rank] 조회 실패", e);
-          try { sendJson(res, 500, { error: "서버 오류" }); } catch { /* 무시 */ }
-        }
-        return;
-      }
-      sendJson(res, 404, { error: "알 수 없는 랭킹 요청" });
-      return;
-    }
-    if (u.startsWith("/api/auth/") || u.startsWith("/api/admin/") || u === "/api/support") {
-      /* v1.4.30 (#10 구글 로그인 검증 실패 근본 수정) — handle()이 false를 반환하면
-       *  (미매칭 경로 — 예: Next 라우트인 /api/auth/google) 응답자가 없어 요청이
-       *  영원히 hangs → 클라 fetch 타임아웃이 "구글 로그인 검증에 실패했어요"로
-       *  표시됐다. 미매칭 시 Next 핸들러로 반드시 전달한다 (headersSent 가드 포함). */
-      handle(req, res).then((done) => {
-        if (!done && !res.headersSent && !res.writableEnded) handleNext(req, res);
-      }).catch((e) => {
-        console.error("[SERTZ-accounts] 가로채기 실패 — Next로 전달", e);
-        if (!res.headersSent && !res.writableEnded) handleNext(req, res);
-      });
-      return;
-    }
-    if (u.startsWith("/api/market")) {
-      const url = u.split("?")[0];
-      const method = (req.method || "GET").toUpperCase();
-      /* v1.0.7 — 마켓도 Bearer 헤더 인증 지원 (handleMarket 내부 currentUser 공용) */
-      handleMarket(req, res, url, method).catch((e) => {
-        console.error("[SERTZ-market] 요청 처리 실패", e);
-        try { sendJson(res, 500, { error: "서버 오류" }); } catch { /* 무시 */ }
-      });
-      return;
-    }
+    /* 그 외 전부 Next 로 — 인증·세이브·거래소·랭킹·결제검증 모두 단일 구현에서 처리 */
     handleNext(req, res);
   };
 }
 
-/** FC standalone용 — 마켓 요청 직접 처리 (반환값 무시, 응답은 이 모듈이 완료) */
-function handleMarketRequest(req, res, url, method) {
-  return handleMarket(req, res, url, method);
-}
+/* vc205 — 이중 구현 제거.
+ *  `handle`/`handleMarketRequest` 는 더 이상 호출되지 않는다(모든 API 가 Next 로 위임됨).
+ *  외부 호환을 위해 **항상 false(=처리 안 함)** 를 돌려주는 스텁으로 남긴다 —
+ *  구 코드가 이 export 를 부르더라도 데이터를 건드리지 않고 Next 로 흘러간다. */
 
-/* v1.4.8 (#4 보안) — 소켓 GM 플래그 서버 검증용: 토큰이 유효한 admin 계정 세션인지 판정.
- *  클라가 보낸 gm:true를 무조건 믿지 않고, 토큰 검증 통과 시에만 릴레이한다. */
+/* vc205 — 복구: 멀티플레이 소켓의 GM 검증이 이 함수를 쓴다.
+ *  ⚠️ 여기서 읽는 `db` 는 **파일 DB**다. Next 위임 이후로는 파일 DB에 쓰지 않으므로
+ *     이 검증은 사실상 항상 false 다(보수적 = GM 권한 안 줌). GM 표시가 필요해지면
+ *     소켓 경로를 서버리스 검증(/api/auth/gmcheck)으로 바꿔야 한다. */
 function isVerifiedAdmin(token) {
   const t = String(token || "");
   if (!/^[A-Za-z0-9]{16,128}$/.test(t)) return false;
@@ -1212,4 +1189,13 @@ function isVerifiedAdmin(token) {
   const u = db.users[rec.userId];
   return !!u && u.role === "admin";
 }
-module.exports = { attachAccountsBefore, handleAccountRequest: handle, handleMarketRequest, isVerifiedAdmin };
+
+function handleAccountRequestStub() { return false; }
+function handleMarketRequestStub() { return false; }
+
+module.exports = {
+  attachAccountsBefore,
+  handleAccountRequest: handleAccountRequestStub,
+  handleMarketRequest: handleMarketRequestStub,
+  isVerifiedAdmin,
+};

@@ -36,7 +36,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": [
+  "exclude": ["src/lib/__tests__", 
     "node_modules",
     "scripts",
     "examples",

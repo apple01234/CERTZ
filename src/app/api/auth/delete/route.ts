@@ -29,11 +29,10 @@ export async function POST(req: NextRequest) {
         if (fdb.market.listings[k]?.seller === uid) delete fdb.market.listings[k];
       }
       delete fdb.payouts[uid];
-      return null; // 쓰기
+      return { resp: { status: 200, body: { ok: true } } };
     });
-    if (r.status !== 200) return json(req, r.status, r.body);
-    audit("account_delete", { ip: "serverless", uid });
-    return json(req, 200, { ok: true });
+    audit("account_delete", { ip: "serverless", uid, ok: r.status === 200 });
+    return json(req, r.status, r.body);
   } catch (e) {
     console.error("[SERTZ-api] delete 실패", e);
     return json(req, 500, { error: "서버 오류" });

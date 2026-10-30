@@ -37,10 +37,9 @@ export async function POST(req: NextRequest) {
         return { status: 409, body: { error: "계정 이름과 같은 이름은 쓸 수 없어요" } };
       }
       fdb.charNames[key] = { by: me.id, at: Date.now(), kind };
-      return null; // 쓰기
+      return { resp: { status: 200, body: { ok: true, name } } };
     });
-    if (r.status !== 200) return json(req, r.status, r.body);
-    return json(req, 200, { ok: true, name });
+    return json(req, r.status, r.body);
   } catch (e) {
     console.error("[SERTZ-api] claimname 실패", e);
     return json(req, 500, { error: "서버 오류" });

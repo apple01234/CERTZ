@@ -23,13 +23,12 @@ export async function POST(req: NextRequest) {
       const reg = fdb.charNames?.[key];
       if (reg && reg.by === me.id) {
         delete fdb.charNames![key];
-        return null; // 실제 삭제가 있을 때만 쓰기
+        return { resp: { status: 200, body: { ok: true } } }; // 실제 삭제가 있을 때만 쓰기
       }
       /* 내 소유가 아니면 무변경 — 쓰기 없이 성공 (node: 조건 미충족 시 그냥 ok) */
       return { status: 200, body: { ok: true } };
     });
-    if (r.status !== 200) return json(req, r.status, r.body);
-    return json(req, 200, { ok: true });
+    return json(req, r.status, r.body);
   } catch (e) {
     console.error("[SERTZ-api] releasename 실패", e);
     return json(req, 500, { error: "서버 오류" });

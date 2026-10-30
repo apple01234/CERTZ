@@ -26,8 +26,6 @@ export async function POST(req: NextRequest) {
     /* v1.0.15 보안 — 관리자 예약 이름 차단. 관리자 판정은 이제 아이디 기준이지만,
      *  닉네임으로 운영자를 사칭(채팅·이름표)하는 것을 막기 위해 예약어를 거부한다. */
     if (ADMIN_USERS.includes(name.toLowerCase())) return json(req, 400, { error: "사용할 수 없는 이름이에요" });
-
-    let success: Resp | null = null;
     const r = await mutateDb((db) => {
       if (db.users[id]) return { status: 409, body: { error: "이미 존재하는 아이디예요" } };
       /* v1.0.16 보안 — 관리자 예약 ID 선점 차단. 종전엔 db.users에 그 id가 없으면
@@ -43,11 +41,11 @@ export async function POST(req: NextRequest) {
       const user = { id, name, provider: "local", salt, hash: hashPw(pw, salt), createdAt: Date.now(), role };
       db.users[id] = user;
       const { token, cookie } = issueToken(db, user);
-      success = { status: 200, body: { user: publicUser(user), token }, headers: { "Set-Cookie": cookie } };
+      return { resp: { status: 200, body: { user: publicUser(user), token }, headers: { "Set-Cookie": cookie } } };
       audit("register", { ip: "serverless", uid: id, role });
-      return null; // 쓰기 진행
+      return { resp: { status: 200, body: { ok: true } } };
     });
-    const out = success && r.status === 200 ? success : r;
+    const out = r;
     return json(req, out.status, out.body, out.headers);
   } catch (e) {
     console.error("[SERTZ-api] register 실패", e);

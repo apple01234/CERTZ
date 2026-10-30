@@ -100,6 +100,10 @@ export function extractToken(req: NextRequest): string {
   if (auth.startsWith("Bearer ")) return auth.slice(7).trim();
   const c = parseCookies(req)[COOKIE];
   if (c) return c;
+  /* vc205 (감사 #13) — 쿼리 토큰은 **APK 프리플라이트 회피용 최후 수단**으로만 남긴다.
+   *  URL 에 실린 토큰은 프록시·서버 접근 로그·브라우저 기록에 남아 14일간 유효하다.
+   *  신규 클라는 Bearer/쿠키를 쓰고, 이 경로는 구버전 APK 호환 때문에 유지한다.
+   *  ⚠️ 이 경로로 들어온 요청은 로그에 토큰이 남을 수 있으므로 audit() 에 URL 을 넘기지 말 것. */
   try {
     const qt = req.nextUrl.searchParams.get("token") || "";
     if (/^[A-Za-z0-9]{16,128}$/.test(qt)) return qt;
@@ -162,7 +166,15 @@ export function rateLimit(req: NextRequest, bucket: string, max: number, windowM
   let b = buckets.get(key);
   if (!b || b.resetAt < now) { b = { n: 0, resetAt: now + windowMs }; buckets.set(key, b); }
   b.n++;
-  if (buckets.size > 5000) for (const [k, v] of buckets) if (v.resetAt < now) buckets.delete(k);
+  /* vc205 (감사 #14) — 상한 도달 시 만료분을 지우고, 그래도 넘치면 **가장 먼저 만료되는 것부터**
+   *  제거한다. 종전엔 만료분만 지워서, 만료되지 않은 키만 쌓이면 Map 이 무한히 자랐다. */
+  if (buckets.size > 5000) {
+    for (const [k, v] of buckets) if (v.resetAt < now) buckets.delete(k);
+    if (buckets.size > 5000) {
+      const sorted = [...buckets.entries()].sort((a, b2) => a[1].resetAt - b2[1].resetAt);
+      for (let i = 0; i < sorted.length - 4000; i++) buckets.delete(sorted[i][0]);
+    }
+  }
   return b.n <= max;
 }
 
@@ -207,50 +219,20 @@ export function ownedCountOf(db: DbShape, uid: string, itemKey: string): number 
  *  해법: 등록 시점에 서버가 owned 에서 수량을 빼서 등록글이 보관(에스크로)하고,
  *  취소·구매 시에만 돌려준다. 업로드 경로에서도 에스크로분을 다시 차감해 복원을 막는다. */
 
-/** 내 활성 등록분의 아이템별 수량 합계 (에스크로 잔량) */
-export function escrowedCounts(db: DbShape, uid: string): Record<string, number> {
-  const out: Record<string, number> = {};
-  for (const l of Object.values(db.market.listings)) {
-    if (l.seller !== uid) continue;
-    out[l.itemKey] = (out[l.itemKey] ?? 0) + (l.qty ?? 1);
-  }
-  return out;
-}
+/* vc205 (감사 #6) — 에스크로 핵심 함수는 ./escrow 로 분리했다(의존 0 → 테스트 가능).
+ *  기존 호출부 호환을 위해 여기서 re-export 한다. */
+export { escrowedCounts, deductEscrow } from "./escrow";
+import { creditOwnedInto } from "./escrow";
 
-/** 세이브 owned 에서 에스크로 수량을 제거한다(보유량을 넘지 않게). 제거한 개수 반환.
- *  클라가 이미 로컬에서 뺀 경우 0개가 제거되고, 예전 세이브를 되올린 경우 정확히 다시 빠진다. */
-export function deductEscrow(save: Record<string, unknown>, esc: Record<string, number>): number {
-  const owned = Array.isArray(save.owned) ? (save.owned as unknown[]) : null;
-  if (!owned) return 0;
-  let removed = 0;
-  for (const [key, qty] of Object.entries(esc)) {
-    for (let i = 0; i < qty; i++) {
-      const idx = owned.indexOf(key);
-      if (idx < 0) break;
-      owned.splice(idx, 1);
-      removed++;
-    }
-  }
-  return removed;
-}
-
-/** 에스크로 해제 — 취소·구매 시 판매자/구매자 세이브에 수량을 되돌려 넣는다. */
+/** 에스크로 해제 — 취소·구매 시 세이브에 수량을 되돌려 넣는다. */
 export function creditOwned(db: DbShape, uid: string, itemKey: string, qty: number, up: number): void {
   const rec = db.saves[uid];
-  if (!rec || !rec.data || typeof rec.data !== "object") return; // 세이브 없는 계정은 지급 불가(등록 자체가 막혀 실제로는 도달하지 않음)
-  const d = rec.data;
-  const owned = Array.isArray(d.owned) ? (d.owned as unknown[]) : [];
-  for (let i = 0; i < qty; i++) owned.push(itemKey);
-  d.owned = owned;
-  if (up > 0) {
-    const accUp = (d.accUp && typeof d.accUp === "object" ? d.accUp : {}) as Record<string, number>;
-    accUp[itemKey] = up;
-    d.accUp = accUp;
-  }
+  if (!rec || !rec.data || typeof rec.data !== "object") return;
+  creditOwnedInto(rec.data, itemKey, qty, up);
   rec.updatedAt = Date.now();
 }
 
-/** v1.0.6 계승 — 등록자 실보유 검증(클라우드 세이브 owned + 장착 accessories) */
+/** vc205 — 복구: 에스크로 분리 때 함께 잘려나간 등록 자격 검사. */
 export function ownsListableItem(db: DbShape, uid: string, itemKey: string): { ok: boolean; error?: string } {
   if (!MARKET_LISTABLE.has(itemKey)) return { ok: false, error: "거래할 수 없는 아이템이에요 (GM 전용 제외 전체 등록 가능)" };
   const save = db.saves[uid]?.data;
@@ -259,7 +241,6 @@ export function ownsListableItem(db: DbShape, uid: string, itemKey: string): { o
   if (!owned.includes(itemKey)) return { ok: false, error: "보유하지 않은 아이템은 등록할 수 없어요" };
   const acc = Array.isArray(save.accessories) ? save.accessories : [];
   if (acc.includes(itemKey)) return { ok: false, error: "장착 중인 장비는 해제한 뒤 등록하세요" };
-  /* vc146 (#9) — 무기/방어구 장착 중 등록 차단 (장신구와 동일 정책) */
   const sv = save as Record<string, unknown>;
   if (sv.weapon === itemKey || sv.armor === itemKey) return { ok: false, error: "장착 중인 장비는 해제한 뒤 등록하세요" };
   return { ok: true };
