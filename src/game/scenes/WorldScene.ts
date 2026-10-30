@@ -1617,7 +1617,10 @@ export class WorldScene extends Phaser.Scene {
      *  PC는 종전과 동일 (가장 눈에 띄는 시각 효과라 모바일에서만 양보). */
     if (this.game.renderer.type === Phaser.WEBGL && this.fxLevel >= 1 && !isLowPerfEnv()) {
       this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
-        rim: 0x9fd8ff, rimStrength: 2.5, contrast: 1.1, saturate: 1.22, // vc147 (#1) 툰 강화
+        rim: 0x9fd8ff, rimStrength: 2.5, contrast: 1.34, saturate: 1.38,
+        // vc206 (지시 #3 "툰 쉐이딩 적용시 블러같은 이상한거 있음") — 호출부 하드코딩이
+        //  ToonFX 기본값을 덮어써 대비가 물렀다(1.1/1.22). Glow 번짐(distance 9→2)과 함께
+        //  명암 계단을 세워야 툰 느낌이 난다.
       });
       /* v1.0.10 (#GameStudio FX) — 앰비언트 블룸: 보스전 전용이던 쉐이더를 평시 전투에도.
        *  스킬 이펙트/파티클/참격이 카메라 블룸으로 발광 — “보스전에만 적용” 버그 해소 */
@@ -4316,7 +4319,10 @@ export class WorldScene extends Phaser.Scene {
       } else {
         if (this.player && !this.playerToon && this.game.renderer.type === Phaser.WEBGL) {
           this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
-            rim: 0x9fd8ff, rimStrength: 2.5, contrast: 1.1, saturate: 1.22, // vc147 (#1) 툰 강화
+            rim: 0x9fd8ff, rimStrength: 2.5, contrast: 1.34, saturate: 1.38,
+        // vc206 (지시 #3 "툰 쉐이딩 적용시 블러같은 이상한거 있음") — 호출부 하드코딩이
+        //  ToonFX 기본값을 덮어써 대비가 물렀다(1.1/1.22). Glow 번짐(distance 9→2)과 함께
+        //  명암 계단을 세워야 툰 느낌이 난다.
           });
         }
         /* vc142 (#11) — 카메라 툰 셰이딩 복원 (설정 on + 고사양만) */
@@ -4441,7 +4447,10 @@ export class WorldScene extends Phaser.Scene {
           /* v1.0.2 (#툰셰이더) — 복원 시 플레이어 툰 림라이트 재부착 */
           if (this.player && !this.playerToon) {
             this.playerToon = applyToonStyle(this.player as unknown as Parameters<typeof applyToonStyle>[0], {
-              rim: 0x9fd8ff, rimStrength: 2.5, contrast: 1.1, saturate: 1.22, // vc147 (#1) 툰 강화
+              rim: 0x9fd8ff, rimStrength: 2.5, contrast: 1.34, saturate: 1.38,
+        // vc206 (지시 #3 "툰 쉐이딩 적용시 블러같은 이상한거 있음") — 호출부 하드코딩이
+        //  ToonFX 기본값을 덮어써 대비가 물렀다(1.1/1.22). Glow 번짐(distance 9→2)과 함께
+        //  명암 계단을 세워야 툰 느낌이 난다.
             });
           }
         }

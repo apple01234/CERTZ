@@ -100,7 +100,7 @@ export function SkillButton({
             src={src}
             alt=""
             onError={() => setIconErr(true)}
-            className="tap-safe pointer-events-none absolute inset-0 h-full w-full rounded-full object-contain p-[18%] opacity-95"
+            className="tap-safe skill-icon-inset pointer-events-none absolute inset-0 h-full w-full rounded-full object-contain opacity-95"
             style={{ imageRendering: "pixelated" }}
           />
         ) : (

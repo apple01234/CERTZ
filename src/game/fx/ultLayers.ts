@@ -54,29 +54,29 @@ export type UltBurstProfile = {
  */
 const PROFILES: Record<string, UltBurstProfile> = {
   /* ── 전사 — 묵직하고 긴 암전, 강한 흔들림 ── */
-  warrior: { darken: 0.66, darkenMs: 1400, hitStop: 90, shake: [340, 0.013], zoomPunch: 1.045, auraKey: "fx_aura", runeKey: "fx_glow", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
-  berserker: { darken: 0.70, darkenMs: 1500, hitStop: 110, shake: [380, 0.016], zoomPunch: 1.055, auraKey: "fx_aura", runeKey: "fx_glow", burstKey: "fx_flarebig", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
-  guardian: { darken: 0.62, darkenMs: 1300, hitStop: 80, shake: [300, 0.010], zoomPunch: 1.035, auraKey: "fx_glowyellow", runeKey: "fx_hex", burstKey: "fx_flare", hitKey: "fx_FlashFree1", ringKey: "fx_Circle2"},
+  warrior: { darken: 0.66, darkenMs: 1400, hitStop: 90, shake: [340, 0.013], zoomPunch: 1.117, auraKey: "fx_aura", runeKey: "fx_glow", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
+  berserker: { darken: 0.70, darkenMs: 1500, hitStop: 110, shake: [380, 0.016], zoomPunch: 1.143, auraKey: "fx_aura", runeKey: "fx_glow", burstKey: "fx_flarebig", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
+  guardian: { darken: 0.62, darkenMs: 1300, hitStop: 80, shake: [300, 0.010], zoomPunch: 1.091, auraKey: "fx_glowyellow", runeKey: "fx_hex", burstKey: "fx_flare", hitKey: "fx_FlashFree1", ringKey: "fx_Circle2"},
 
   /* ── 궁수 — 짧은 암전, 정밀한 단발 충격 ── */
-  ranger: { darken: 0.60, darkenMs: 1100, hitStop: 60, shake: [240, 0.009], zoomPunch: 1.030, auraKey: "fx_glowblue", runeKey: "fx_hex", burstKey: "fx_burst", hitKey: "fx_Flare", ringKey: "fx_Circle"},
-  sniper: { darken: 0.68, darkenMs: 1200, hitStop: 75, shake: [260, 0.010], zoomPunch: 1.040, auraKey: "fx_glowblue", runeKey: "fx_electro", burstKey: "fx_burst", hitKey: "fx_Flash", ringKey: "fx_Circle2"},
-  windrunner: { darken: 0.58, darkenMs: 1300, hitStop: 55, shake: [300, 0.011], zoomPunch: 1.025, auraKey: "fx_glowblue", runeKey: "fx_caustic", burstKey: "fx_shockwave", hitKey: "fx_Flash", ringKey: "fx_Circle"},
+  ranger: { darken: 0.60, darkenMs: 1100, hitStop: 60, shake: [240, 0.009], zoomPunch: 1.078, auraKey: "fx_glowblue", runeKey: "fx_hex", burstKey: "fx_burst", hitKey: "fx_Flare", ringKey: "fx_Circle"},
+  sniper: { darken: 0.68, darkenMs: 1200, hitStop: 75, shake: [260, 0.010], zoomPunch: 1.104, auraKey: "fx_glowblue", runeKey: "fx_electro", burstKey: "fx_burst", hitKey: "fx_Flash", ringKey: "fx_Circle2"},
+  windrunner: { darken: 0.58, darkenMs: 1300, hitStop: 55, shake: [300, 0.011], zoomPunch: 1.065, auraKey: "fx_glowblue", runeKey: "fx_caustic", burstKey: "fx_shockwave", hitKey: "fx_Flash", ringKey: "fx_Circle"},
 
   /* ── 마법사 — 가장 긴 암전(발광 극대화), 낮은 흔들림(가독성) ── */
-  mage: { darken: 0.70, darkenMs: 1600, hitStop: 70, shake: [320, 0.010], zoomPunch: 1.050, auraKey: "fx_purple", runeKey: "fx_hex", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
-  archmage: { darken: 0.70, darkenMs: 1700, hitStop: 80, shake: [340, 0.011], zoomPunch: 1.055, auraKey: "fx_purple", runeKey: "fx_hex", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
-  sage: { darken: 0.66, darkenMs: 1500, hitStop: 65, shake: [280, 0.008], zoomPunch: 1.040, auraKey: "fx_glowyellow", runeKey: "fx_hex", burstKey: "fx_flarew", hitKey: "fx_FlashFree1", ringKey: "fx_Circle2"},
+  mage: { darken: 0.70, darkenMs: 1600, hitStop: 70, shake: [320, 0.010], zoomPunch: 1.130, auraKey: "fx_purple", runeKey: "fx_hex", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
+  archmage: { darken: 0.70, darkenMs: 1700, hitStop: 80, shake: [340, 0.011], zoomPunch: 1.143, auraKey: "fx_purple", runeKey: "fx_hex", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
+  sage: { darken: 0.66, darkenMs: 1500, hitStop: 65, shake: [280, 0.008], zoomPunch: 1.104, auraKey: "fx_glowyellow", runeKey: "fx_hex", burstKey: "fx_flarew", hitKey: "fx_FlashFree1", ringKey: "fx_Circle2"},
 
   /* ── 도적 — 짧고 날카롭게, 흔들림 최소·히트스톱 다수 ── */
-  thief: { darken: 0.64, darkenMs: 900, hitStop: 55, shake: [180, 0.008], zoomPunch: 1.035, auraKey: "fx_noise", runeKey: "fx_electro", burstKey: "fx_burst", hitKey: "fx_FlashFree1", ringKey: "fx_Circle"},
-  assassin: { darken: 0.68, darkenMs: 900, hitStop: 65, shake: [190, 0.009], zoomPunch: 1.040, auraKey: "fx_noise", runeKey: "fx_electro", burstKey: "fx_burst", hitKey: "fx_FlashFree1", ringKey: "fx_Circle"},
-  swashbuckler: { darken: 0.62, darkenMs: 1000, hitStop: 50, shake: [200, 0.008], zoomPunch: 1.030, auraKey: "fx_noise", runeKey: "fx_hex", burstKey: "fx_shockwave", hitKey: "fx_Flash", ringKey: "fx_Circle"},
+  thief: { darken: 0.64, darkenMs: 900, hitStop: 55, shake: [180, 0.008], zoomPunch: 1.091, auraKey: "fx_noise", runeKey: "fx_electro", burstKey: "fx_burst", hitKey: "fx_FlashFree1", ringKey: "fx_Circle"},
+  assassin: { darken: 0.68, darkenMs: 900, hitStop: 65, shake: [190, 0.009], zoomPunch: 1.104, auraKey: "fx_noise", runeKey: "fx_electro", burstKey: "fx_burst", hitKey: "fx_FlashFree1", ringKey: "fx_Circle"},
+  swashbuckler: { darken: 0.62, darkenMs: 1000, hitStop: 50, shake: [200, 0.008], zoomPunch: 1.078, auraKey: "fx_noise", runeKey: "fx_hex", burstKey: "fx_shockwave", hitKey: "fx_Flash", ringKey: "fx_Circle"},
 
   /* ── 해적 — 화염/포격. 넓은 암전 + 큰 흔들림 ── */
-  pirate: { darken: 0.68, darkenMs: 1500, hitStop: 85, shake: [400, 0.015], zoomPunch: 1.050, auraKey: "fx_glow", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
-  raider: { darken: 0.66, darkenMs: 1400, hitStop: 80, shake: [360, 0.013], zoomPunch: 1.045, auraKey: "fx_glow", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
-  corsair: { darken: 0.70, darkenMs: 1500, hitStop: 90, shake: [420, 0.016], zoomPunch: 1.050, auraKey: "fx_flarew", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
+  pirate: { darken: 0.68, darkenMs: 1500, hitStop: 85, shake: [400, 0.015], zoomPunch: 1.130, auraKey: "fx_glow", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
+  raider: { darken: 0.66, darkenMs: 1400, hitStop: 80, shake: [360, 0.013], zoomPunch: 1.117, auraKey: "fx_glow", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
+  corsair: { darken: 0.70, darkenMs: 1500, hitStop: 90, shake: [420, 0.016], zoomPunch: 1.130, auraKey: "fx_flarew", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
 
   /* ══════════════════════════════════════════════════════════════════════════
    * vc194 — 누락 20직업 프로파일 추가.
@@ -98,43 +98,43 @@ const PROFILES: Record<string, UltBurstProfile> = {
    * ══════════════════════════════════════════════════════════════════════════ */
 
   /* ── 4차 전사 계열 (warlord/paladin) ── */
-  warlord: { darken: 0.72, darkenMs: 1600, hitStop: 120, shake: [420, 0.018], zoomPunch: 1.060, auraKey: "fx_aura", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
-  paladin: { darken: 0.60, darkenMs: 1700, hitStop: 95, shake: [300, 0.011], zoomPunch: 1.045, auraKey: "fx_glowyellow", runeKey: "fx_hex", burstKey: "fx_flarew", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
+  warlord: { darken: 0.72, darkenMs: 1600, hitStop: 120, shake: [420, 0.018], zoomPunch: 1.156, auraKey: "fx_aura", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
+  paladin: { darken: 0.60, darkenMs: 1700, hitStop: 95, shake: [300, 0.011], zoomPunch: 1.117, auraKey: "fx_glowyellow", runeKey: "fx_hex", burstKey: "fx_flarew", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
 
   /* ── 4차 궁수 계열 (eagleeye/tempest/stormbringer) ── */
-  eagleeye: { darken: 0.66, darkenMs: 1100, hitStop: 90, shake: [240, 0.009], zoomPunch: 1.055, auraKey: "fx_glowblue", runeKey: "fx_hex", burstKey: "fx_burst", hitKey: "fx_Flash", ringKey: "fx_Circle2"},
-  tempest: { darken: 0.60, darkenMs: 1200, hitStop: 60, shake: [320, 0.012], zoomPunch: 1.030, auraKey: "fx_caustic", runeKey: "fx_electro", burstKey: "fx_shockwave", hitKey: "fx_Flash", ringKey: "fx_Circle2"},
-  stormbringer: { darken: 0.68, darkenMs: 1300, hitStop: 70, shake: [360, 0.014], zoomPunch: 1.040, auraKey: "fx_electro", runeKey: "fx_electro", burstKey: "fx_flarebig", hitKey: "fx_Electro", ringKey: "fx_Circle2"},
+  eagleeye: { darken: 0.66, darkenMs: 1100, hitStop: 90, shake: [240, 0.009], zoomPunch: 1.143, auraKey: "fx_glowblue", runeKey: "fx_hex", burstKey: "fx_burst", hitKey: "fx_Flash", ringKey: "fx_Circle2"},
+  tempest: { darken: 0.60, darkenMs: 1200, hitStop: 60, shake: [320, 0.012], zoomPunch: 1.078, auraKey: "fx_caustic", runeKey: "fx_electro", burstKey: "fx_shockwave", hitKey: "fx_Flash", ringKey: "fx_Circle2"},
+  stormbringer: { darken: 0.68, darkenMs: 1300, hitStop: 70, shake: [360, 0.014], zoomPunch: 1.104, auraKey: "fx_electro", runeKey: "fx_electro", burstKey: "fx_flarebig", hitKey: "fx_Electro", ringKey: "fx_Circle2"},
 
   /* ── 4차 마법 계열 (chronicle) ── */
-  chronicle: { darken: 0.72, darkenMs: 1800, hitStop: 75, shake: [300, 0.009], zoomPunch: 1.050, auraKey: "fx_purple", runeKey: "fx_hex", burstKey: "fx_flarew", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
+  chronicle: { darken: 0.72, darkenMs: 1800, hitStop: 75, shake: [300, 0.009], zoomPunch: 1.130, auraKey: "fx_purple", runeKey: "fx_hex", burstKey: "fx_flarew", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
 
   /* ── 4차 도적 계열 (nightblade/duelist) ── */
-  nightblade: { darken: 0.70, darkenMs: 850, hitStop: 60, shake: [170, 0.007], zoomPunch: 1.038, auraKey: "fx_noise", runeKey: "fx_electro", burstKey: "fx_burst", hitKey: "fx_FlashFree1", ringKey: "fx_Circle"},
-  duelist: { darken: 0.62, darkenMs: 950, hitStop: 70, shake: [200, 0.009], zoomPunch: 1.042, auraKey: "fx_noise", runeKey: "fx_hex", burstKey: "fx_burst", hitKey: "fx_FlashFree1", ringKey: "fx_Circle"},
+  nightblade: { darken: 0.70, darkenMs: 850, hitStop: 60, shake: [170, 0.007], zoomPunch: 1.099, auraKey: "fx_noise", runeKey: "fx_electro", burstKey: "fx_burst", hitKey: "fx_FlashFree1", ringKey: "fx_Circle"},
+  duelist: { darken: 0.62, darkenMs: 950, hitStop: 70, shake: [200, 0.009], zoomPunch: 1.109, auraKey: "fx_noise", runeKey: "fx_hex", burstKey: "fx_burst", hitKey: "fx_FlashFree1", ringKey: "fx_Circle"},
 
   /* ── 5차 궁극 4직업 (warbringer 이하 전용) ── */
-  warbringer: { darken: 0.74, darkenMs: 1700, hitStop: 130, shake: [460, 0.020], zoomPunch: 1.065, auraKey: "fx_aura", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
-  crusader: { darken: 0.62, darkenMs: 1800, hitStop: 100, shake: [310, 0.012], zoomPunch: 1.048, auraKey: "fx_glowyellow", runeKey: "fx_hex", burstKey: "fx_flarew", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
-  deadeye: { darken: 0.68, darkenMs: 1150, hitStop: 100, shake: [250, 0.010], zoomPunch: 1.058, auraKey: "fx_glowblue", runeKey: "fx_hex", burstKey: "fx_burst", hitKey: "fx_Flash", ringKey: "fx_Circle2"},
-  skylord: { darken: 0.66, darkenMs: 1350, hitStop: 75, shake: [380, 0.015], zoomPunch: 1.042, auraKey: "fx_caustic", runeKey: "fx_electro", burstKey: "fx_flarebig", hitKey: "fx_Flash", ringKey: "fx_Circle2"},
-  arclord: { darken: 0.70, darkenMs: 1400, hitStop: 85, shake: [400, 0.016], zoomPunch: 1.046, auraKey: "fx_electro", runeKey: "fx_electro", burstKey: "fx_flarebig", hitKey: "fx_Electro", ringKey: "fx_Circle2"},
-  eternal: { darken: 0.74, darkenMs: 1900, hitStop: 110, shake: [340, 0.012], zoomPunch: 1.055, auraKey: "fx_purple", runeKey: "fx_hex", burstKey: "fx_flarew", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
-  shadowlord: { darken: 0.76, darkenMs: 900, hitStop: 80, shake: [180, 0.008], zoomPunch: 1.040, auraKey: "fx_noise", runeKey: "fx_electro", burstKey: "fx_burst", hitKey: "fx_FlashFree1", ringKey: "fx_Circle"},
+  warbringer: { darken: 0.74, darkenMs: 1700, hitStop: 130, shake: [460, 0.020], zoomPunch: 1.169, auraKey: "fx_aura", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
+  crusader: { darken: 0.62, darkenMs: 1800, hitStop: 100, shake: [310, 0.012], zoomPunch: 1.125, auraKey: "fx_glowyellow", runeKey: "fx_hex", burstKey: "fx_flarew", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
+  deadeye: { darken: 0.68, darkenMs: 1150, hitStop: 100, shake: [250, 0.010], zoomPunch: 1.151, auraKey: "fx_glowblue", runeKey: "fx_hex", burstKey: "fx_burst", hitKey: "fx_Flash", ringKey: "fx_Circle2"},
+  skylord: { darken: 0.66, darkenMs: 1350, hitStop: 75, shake: [380, 0.015], zoomPunch: 1.109, auraKey: "fx_caustic", runeKey: "fx_electro", burstKey: "fx_flarebig", hitKey: "fx_Flash", ringKey: "fx_Circle2"},
+  arclord: { darken: 0.70, darkenMs: 1400, hitStop: 85, shake: [400, 0.016], zoomPunch: 1.120, auraKey: "fx_electro", runeKey: "fx_electro", burstKey: "fx_flarebig", hitKey: "fx_Electro", ringKey: "fx_Circle2"},
+  eternal: { darken: 0.74, darkenMs: 1900, hitStop: 110, shake: [340, 0.012], zoomPunch: 1.143, auraKey: "fx_purple", runeKey: "fx_hex", burstKey: "fx_flarew", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
+  shadowlord: { darken: 0.76, darkenMs: 900, hitStop: 80, shake: [180, 0.008], zoomPunch: 1.104, auraKey: "fx_noise", runeKey: "fx_electro", burstKey: "fx_burst", hitKey: "fx_FlashFree1", ringKey: "fx_Circle"},
 
   /* ── 5차 검성·혼혈 직업 (blademaster) ── */
-  blademaster: { darken: 0.72, darkenMs: 1500, hitStop: 115, shake: [390, 0.017], zoomPunch: 1.058, auraKey: "fx_glow", runeKey: "fx_hex", burstKey: "fx_flarebig", hitKey: "fx_FlashFree1", ringKey: "fx_Circle2"},
+  blademaster: { darken: 0.72, darkenMs: 1500, hitStop: 115, shake: [390, 0.017], zoomPunch: 1.151, auraKey: "fx_glow", runeKey: "fx_hex", burstKey: "fx_flarebig", hitKey: "fx_FlashFree1", ringKey: "fx_Circle2"},
 
   /* ── 해적 4·5차 (stormcaptain/powdermaster/seaking/dreadnought) ── */
-  stormcaptain: { darken: 0.68, darkenMs: 1450, hitStop: 88, shake: [410, 0.015], zoomPunch: 1.048, auraKey: "fx_electro", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_Electro", ringKey: "fx_Circle2"},
-  powdermaster: { darken: 0.72, darkenMs: 1500, hitStop: 95, shake: [470, 0.019], zoomPunch: 1.052, auraKey: "fx_flarew", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
-  seaking: { darken: 0.70, darkenMs: 1600, hitStop: 100, shake: [430, 0.016], zoomPunch: 1.050, auraKey: "fx_caustic", runeKey: "fx_shockwave", burstKey: "fx_flarew", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
-  dreadnought: { darken: 0.76, darkenMs: 1700, hitStop: 135, shake: [500, 0.021], zoomPunch: 1.068, auraKey: "fx_aura", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
+  stormcaptain: { darken: 0.68, darkenMs: 1450, hitStop: 88, shake: [410, 0.015], zoomPunch: 1.125, auraKey: "fx_electro", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_Electro", ringKey: "fx_Circle2"},
+  powdermaster: { darken: 0.72, darkenMs: 1500, hitStop: 95, shake: [470, 0.019], zoomPunch: 1.135, auraKey: "fx_flarew", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
+  seaking: { darken: 0.70, darkenMs: 1600, hitStop: 100, shake: [430, 0.016], zoomPunch: 1.130, auraKey: "fx_caustic", runeKey: "fx_shockwave", burstKey: "fx_flarew", hitKey: "fx_FlashFree2", ringKey: "fx_Circle2"},
+  dreadnought: { darken: 0.76, darkenMs: 1700, hitStop: 135, shake: [500, 0.021], zoomPunch: 1.177, auraKey: "fx_aura", runeKey: "fx_shockwave", burstKey: "fx_flarebig", hitKey: "fx_FlashFree3", ringKey: "fx_Circle2"},
 };
 
 /** 폴백 — 계열을 못 찾았을 때(무직·1차) */
 const DEFAULT_PROFILE: UltBurstProfile = {
-  darken: 0.64, darkenMs: 1200, hitStop: 70, shake: [280, 0.010], zoomPunch: 1.035,
+  darken: 0.64, darkenMs: 1200, hitStop: 70, shake: [280, 0.010], zoomPunch: 1.091,
   auraKey: "fx_glow", runeKey: "fx_hex", burstKey: "fx_burst",
 };
 

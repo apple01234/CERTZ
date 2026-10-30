@@ -284,6 +284,14 @@ body {
 .tap-safe {
   position: relative;
 }
+/* vc206 (지시 #12 "버튼안에 있는 스킬 아이콘 너무 큰 버그")
+ *  Tailwind 의 `p-[18%]` 는 JIT 스캐너가 이 파일을 놓치면 CSS 가 아예 생성되지 않아
+ *  아이콘이 버튼을 95% 채웠다(실측: 버튼 81px / 아이콘 77px). 여백 비율은 반드시
+ *  실제 CSS 로 보장한다 — Tailwind 유무와 무관하게 적용된다.
+ *  inset 여백 18% → 아이콘은 버튼 지름의 64% 로 그려진다. */
+.skill-icon-inset {
+  padding: 18%;
+}
 .tap-safe::after {
   content: "";
   position: absolute;
