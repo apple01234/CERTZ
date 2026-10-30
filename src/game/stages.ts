@@ -265,7 +265,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "forest", num: 2, title: "숲의 신전", subtitle: "미드가르드 서쪽 숲",
     intro: "intro", boss: "guardian", bossDone: "wolvesDone",
-    width: 2400, height: 1350, groundTint: 0x9adf6a, groundTex: "tile_forest", pathTex: "tile_path", bg: "#0a1408",
+    width: 1900, height: 1070, groundTint: 0x9adf6a, groundTex: "tile_forest", pathTex: "tile_path", bg: "#0a1408",
     flowers: 10, trees: 14, rocks: 8,
     /* v2.9 (지시 #1) — 챕터 몬스터 풀 3종: 2구역마다 1종 로테이션(1~6) → 2종(7~8) → 3종(9) → 보스+3종(10) */
     enemies: [{ key: "wolf", count: 4 }, { key: "spider", count: 4 }, { key: "swampbeast", count: 4 }, { key: "x2_frog", count: 3 }, { key: "x3_swampy", count: 3 }, { key: "x3_goblin", count: 3 }],
@@ -289,7 +289,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "kingdom", num: 3, title: "쿠소디아", subtitle: "선박의 왕국 · 늪지대",
     intro: "kingdomIntro", boss: "behemoth", bossDone: "kingdomDone",
-    width: 2200, height: 1250, groundTint: 0x86c95e, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0d1808",
+    width: 1750, height: 990, groundTint: 0x86c95e, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0d1808",
     flowers: 8, trees: 9, rocks: 6,
     enemies: [{ key: "swampbeast", count: 5 }, { key: "wolf", count: 4 }, { key: "golem", count: 3 }, { key: "x2_rat", count: 2 }, { key: "x3_imp", count: 3 }, { key: "x3_goblin", count: 2 }],
     main: "swampbeast",
@@ -309,7 +309,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "alfheim", num: 4, title: "알프헤임", subtitle: "요정의 성전 · 빛의 결정",
     intro: "alfheimIntro", boss: "nidhog", bossDone: "guardianDone",
-    width: 1900, height: 1080, groundTint: 0x8f7fd8, groundTex: "tile_grass2", pathTex: "tile_garden", bg: "#0d0a1e",
+    width: 1500, height: 860, groundTint: 0x8f7fd8, groundTex: "tile_grass2", pathTex: "tile_garden", bg: "#0d0a1e",
     flowers: 6, trees: 10, rocks: 10,
     enemies: [{ key: "minion", count: 4 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_bat", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_orcshaman", count: 3 }],
     main: "minion",
@@ -354,7 +354,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "niflheim", num: 6, title: "니플헤임", subtitle: "극한의 해역 · 얼음의 성전",
     intro: "niflIntro", boss: "fenrir", bossDone: "fenrirDone",
-    width: 2100, height: 1200, groundTint: 0xdfeaf8, groundTex: "tile_snow", pathTex: "tile_ice", bg: "#0c1826",
+    width: 1670, height: 950, groundTint: 0xdfeaf8, groundTex: "tile_snow", pathTex: "tile_ice", bg: "#0c1826",
     flowers: 0, trees: 10, rocks: 10,
     enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
     main: "frostwolf",
@@ -374,7 +374,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "cave", num: 7, title: "스바르트알프헤임", subtitle: "어둠 요정들의 해역 · 수정 광맥",
     intro: "caveIntro", boss: "abysslord", bossDone: "caveDone",
-    width: 2100, height: 1200, groundTint: 0x8a6a4a, groundTex: "tile_cave", pathTex: "tile_stone", bg: "#100a08",
+    width: 1670, height: 950, groundTint: 0x8a6a4a, groundTex: "tile_cave", pathTex: "tile_stone", bg: "#100a08",
     flowers: 0, trees: 0, rocks: 14,
     enemies: [{ key: "spider", count: 4 }, { key: "minion", count: 4 }, { key: "golem", count: 3 }, { key: "x2_snail", count: 3 }, { key: "x3_imp", count: 3 }, { key: "x3_maskedorc", count: 2 }],
     main: "spider",
@@ -395,7 +395,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "nidavellir", num: 8, title: "니다벨리르", subtitle: "난쟁이들의 해역 · 룬 광산",
     intro: "nidavellirIntro", boss: "skoll", bossDone: "skollDone",
-    width: 2100, height: 1200, groundTint: 0x9a8a6a, groundTex: "tile_ruin", pathTex: "tile_ash", bg: "#121008",
+    width: 1670, height: 950, groundTint: 0x9a8a6a, groundTex: "tile_ruin", pathTex: "tile_ash", bg: "#121008",
     flowers: 0, trees: 0, rocks: 16,
     enemies: [{ key: "runegolem", count: 4 }, { key: "golem", count: 3 }, { key: "spider", count: 3 }, { key: "x2_stonegolem", count: 3 }, { key: "x3_ogre", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
     main: "runegolem",
@@ -415,7 +415,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "hel", num: 9, title: "헬", subtitle: "절벽 너머의 해역 · 대전쟁의 땅",
     intro: "helIntro", boss: "gram", bossDone: "gramDone",
-    width: 2100, height: 1200, groundTint: 0x4a3a5a, groundTex: "tile_hel", pathTex: "tile_abyss", bg: "#0d0616",
+    width: 1670, height: 950, groundTint: 0x4a3a5a, groundTex: "tile_hel", pathTex: "tile_abyss", bg: "#0d0616",
     flowers: 0, trees: 6, rocks: 12,
     enemies: [{ key: "helhound", count: 4 }, { key: "wraith", count: 3 }, { key: "golem", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "x3_chort", count: 3 }, { key: "x3_maskedorc", count: 3 }],
     main: "helhound",
@@ -435,7 +435,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "abyss", num: 10, title: "세계수의 뿌리", subtitle: "심연의 근원 · 종언의 왕좌",
     intro: "abyssIntro", boss: "abudditos", bossDone: "victory",
-    width: 1800, height: 1050, groundTint: 0x3a2c52, groundTex: "tile_morgue", pathTex: "tile_deep", bg: "#0d0616",
+    width: 1430, height: 830, groundTint: 0x3a2c52, groundTex: "tile_morgue", pathTex: "tile_deep", bg: "#0d0616",
     flowers: 0, trees: 0, rocks: 12,
     enemies: [{ key: "wraith", count: 4 }, { key: "minion", count: 4 }, { key: "helhound", count: 3 }, { key: "x2_reeffish", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x3_bigzombie", count: 3 }],
     main: "wraith",
