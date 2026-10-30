@@ -250,3 +250,21 @@
   · acc_* (왕관/리본/후광/날개 5종): 자체 제작 픽셀 아트
   · 상위 라이선스: Mystic Woods 파생물 — 위 Mystic Woods 항목의 조건을 따름
 - SPUM (Unity Asset Store, 유저 구매분 upload/SPUM.7z): 신규 파생물 없음 — 기존 npc_* 초상화만 사용
+
+## vc204 — 2D 타일 후보 팩 (미적용, 소싱만 완료)
+
+`_assets_in/itch/2d-assets` (github.com/Tiddybub/2d-assets @ e0cbe0d) 에서 확보.
+**모두 CC0 1.0** — 상업 이용·수정 허용, 출처 표기 의무 없음. 아래는 기록용.
+
+- **RPG Base** — Kenney (kenney.nl/assets/rpg-base), CC0-1.0, 64×64 PNG 233장
+- **Map Pack** — Kenney (kenney.nl/assets/map-pack), CC0-1.0, 64×64 PNG 188장
+- **Tiny Dungeon** — Kenney (kenney.nl/assets/tiny-dungeon), CC0-1.0, 타일맵 시트
+- **Tiny Town / Tiny Farm** — Kenney, CC0-1.0
+- **Roguelike Caves & Dungeons** — Kenney, CC0-1.0, 16×16 1px 마진 시트
+- **Roguelike Indoors** — Kenney, CC0-1.0
+- **Sketch Desert** — Kenney, CC0-1.0
+- **Platformer Pack Medieval** — Kenney, CC0-1.0
+
+**적용 상태: 미적용.** 실측 결과 화풍(고유색 10~12색 플랫 벡터)이 SERTZ 현재
+지면(고유색 136~3,124색 절차생성 질감)과 크게 달라 플레이 지면에 직접 쓰지 않는다.
+판정 근거는 `docs/TILE_PACK_MATCHING.md` 3-1절.

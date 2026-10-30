@@ -4,10 +4,10 @@ import "./fonts.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SERTZ — 인피니트보석: 다섯 왕국",
+  title: "SERTZ — 하울르스톤: 이그드라실 9개의 바다",
   description:
     "2D 액션 MORPG. 세계수의 파편을 찾고 늑대를 토벌하고 심연의 수호자에 맞서라. 모든 그래픽과 사운드가 코드로 생성됩니다.",
-  keywords: ["SERTZ", "인피니트보석", "다섯 왕국", "픽셀 RPG", "액션 RPG"],
+  keywords: ["SERTZ", "하울르스톤", "이그드라실", "9개의 바다", "픽셀 RPG", "액션 RPG"],
 };
 
 /** F3: 모바일 확대/줌 차단, 세이프에어리어 대응 */

@@ -202,8 +202,19 @@ const ASSET_LIST = [
   "tile_magma", "tile_magma_path", "tile_stone", "tile_hel",
   /* vc196 — 무료 타일맵(Kenney CC0) 128px 심리스 19종 */
   "tile_amber", "tile_ash", "tile_blood", "tile_deep", "tile_desert", "tile_forest", "tile_garden", "tile_grass2", "tile_lava", "tile_morgue", "tile_moss", "tile_nebula", "tile_ruin", "tile_sand", "tile_vault",
+  /* vc204 — 지면으로 승격한 256px 지형 타일. 이전에는 파일만 있고 등록되지 않아
+   *  textures.exists() 가 false 였고 tileThemes.ts 의 치환이 조용히 무시됐다.
+   *  (등록 누락 = 지면이 오염 타일 그대로 나옴. 추가 시 반드시 여기 넣을 것) */
+  "tile_basalt", "tile_bone", "tile_cave_wet", "tile_dirt", "tile_gold", "tile_grass_flower", "tile_metal", "tile_rust", "tile_void",
   // v3.0.23 (#55) — 던전 벽 석벽 텍스처 (구 x2_bricks "검은 카펫" 교체)
   "wall_rock",
+  /* vc204 — 지면 경계(오토타일) 오버레이 아틀라스.
+   *  4x4 = 16프레임(256px), 프레임 인덱스 = 4비트 이웃 마스크.
+   *  내부는 기존 TileSprite 그대로 두고, 벽과 맞닿은 경계 셀에만 이 프레임을
+   *  덮어 지형 경계를 만든다(추가 텍스처 1장, 원본 화질 손실 0).
+   *  생성: tools/build_autotile_edges.py — 마스크 규칙은 게임 빌드 실측
+   *  (tools/autotile_derive.py)에서 역산했다. */
+  "autotile_edge",
   // 장식
   "tree",
   "pine",

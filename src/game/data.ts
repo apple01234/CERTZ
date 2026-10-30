@@ -343,13 +343,20 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   potion_hp: { key: "potion_hp", kind: "consumable", name: "HP 물약", icon: "item_potion_hp", price: 30, tier: "common", heal: 80 },
   potion_mp: { key: "potion_mp", kind: "consumable", name: "MP 물약", icon: "item_potion_mp", price: 25, tier: "common", restore: 50 },
   /* v1.4.35 (#11) — 비율 회복 물약. 레벨이 올라도 회복량이 비례해 계속 쓸모 있다.
-   *  가격은 회복률에 비례(10% 120G / 25% 320G / 50% 700G). */
-  potion_hp_p10: { key: "potion_hp_p10", kind: "consumable", name: "HP 물약 (10%)", icon: "item_potion_hp", price: 120, tier: "common",   healPct: 0.10 },
-  potion_hp_p25: { key: "potion_hp_p25", kind: "consumable", name: "HP 물약 (25%)", icon: "item_potion_hp", price: 320, tier: "rare",     healPct: 0.25 },
-  potion_hp_p50: { key: "potion_hp_p50", kind: "consumable", name: "HP 물약 (50%)", icon: "item_potion_hp", price: 700, tier: "epic",     healPct: 0.50 },
-  potion_mp_p10: { key: "potion_mp_p10", kind: "consumable", name: "MP 물약 (10%)", icon: "item_potion_mp", price: 110, tier: "common",   healPct: 0.10 },
-  potion_mp_p25: { key: "potion_mp_p25", kind: "consumable", name: "MP 물약 (25%)", icon: "item_potion_mp", price: 300, tier: "rare",     healPct: 0.25 },
-  potion_mp_p50: { key: "potion_mp_p50", kind: "consumable", name: "MP 물약 (50%)", icon: "item_potion_mp", price: 660, tier: "epic",     healPct: 0.50 },
+   *  vc204 (지시서 #12 "HP% , MP% 물약은 기본 물약보다 훨씬 비싸야지!!"):
+   *  종전 가격(120/320/700)은 Lv200 에서 10% 물약이 상급(220/70G=3.14 회복/G)보다도
+   *  싸게 먹혔다. 기본 물약(30G)의 10배 이상, 상급(70G)의 3배 이상으로 올린다.
+   *  근거 수치(레벨별 maxHp = 100+18*(lv-1), maxMp = 60+6*(lv-1)):
+   *    Lv30 HP 622 → p10 62 p25 156 p50 311
+   *    Lv200 HP 3682 → p10 368 p25 920 p50 1841
+   *  비율 물약은 "레벨 무관 럭셔리"로 두고 골드당 효율은 상급보다 낮게 유지한다
+   *  (상급은 저레벨용 실속, 비율은 고레벨용 편의 — 용도를 나눈다). */
+  potion_hp_p10: { key: "potion_hp_p10", kind: "consumable", name: "HP 물약 (10%)", icon: "item_potion_hp", price: 320, tier: "common",   healPct: 0.10 },
+  potion_hp_p25: { key: "potion_hp_p25", kind: "consumable", name: "HP 물약 (25%)", icon: "item_potion_hp", price: 780, tier: "rare",     healPct: 0.25 },
+  potion_hp_p50: { key: "potion_hp_p50", kind: "consumable", name: "HP 물약 (50%)", icon: "item_potion_hp", price: 1700, tier: "epic",    healPct: 0.50 },
+  potion_mp_p10: { key: "potion_mp_p10", kind: "consumable", name: "MP 물약 (10%)", icon: "item_potion_mp", price: 300, tier: "common",   healPct: 0.10 },
+  potion_mp_p25: { key: "potion_mp_p25", kind: "consumable", name: "MP 물약 (25%)", icon: "item_potion_mp", price: 720, tier: "rare",     healPct: 0.25 },
+  potion_mp_p50: { key: "potion_mp_p50", kind: "consumable", name: "MP 물약 (50%)", icon: "item_potion_mp", price: 1600, tier: "epic",    healPct: 0.50 },
   /* v2.5 — 상급 물약 (지시 #5 아이템 확장) */
   potion_hp2: { key: "potion_hp2", kind: "consumable", name: "상급 HP 물약", icon: "item_potion_hp2", price: 70, tier: "rare", heal: 220 },
   potion_mp2: { key: "potion_mp2", kind: "consumable", name: "상급 MP 물약", icon: "item_potion_mp2", price: 60, tier: "rare", restore: 130 },
@@ -412,7 +419,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
    *  상점에서 살 수 없음(tradeLock) — 추후 유저 거래소에서 사고팔게 할 예정.
    *  보스별 1종, 100% 드롭. 상점 에픽 대비 확실히 강한 수치. */
   bd_guardian: { key: "bd_guardian", kind: "accessory", name: "수호자의 문장", icon: "i_bd_guardian", price: 0, tier: "legend", maxHp: 90, crit: 5, slot: "ring", tradeLock: true, bossDrop: "심연의 수호자 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_behemoth: { key: "bd_behemoth", kind: "accessory", name: "눈보라의 심장", icon: "i_bd_behemoth", price: 0, tier: "legend", maxHp: 120, def: 2, slot: "pendant", tradeLock: true, bossDrop: "눈보라의 거수 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_behemoth: { key: "bd_behemoth", kind: "accessory", name: "침몰의 심장", icon: "i_bd_behemoth", price: 0, tier: "legend", maxHp: 120, def: 2, slot: "pendant", tradeLock: true, bossDrop: "침몰의 선장 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "니드호그 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_surt: { key: "bd_surt", kind: "accessory", name: "화염 정령의 인장", icon: "i_bd_surt", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "수르트 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_fenrir: { key: "bd_fenrir", kind: "accessory", name: "탐욕의 속니", icon: "i_bd_fenrir", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "펜리르 드롭 — 상점 판매 금지 · 거래소 예정" },
@@ -2141,10 +2148,13 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   bossIntroBehemoth: {
-    speaker: "눈보라의 거수",
+    /* vc204 — 챕터3 '쿠소디아 — 선박의 왕국 · 늪지대' 테마 정합.
+     *  스프라이트(atl_boss2)는 처음부터 해적선(유령선)이었고, 이름만 '거수'라 어긋났다
+     *  (원본 아트 주석도 "미드가르드 해적선"). 늪 바다를 떠도는 유령선으로 정체성을 맞춘다. */
+    speaker: "침몰의 선장",
     lines: [
-      "…이 뿌리는 이제 심연의 것이다. 얼어붙어라!",
-      "세계수가 그랬던 것처럼, 너희의 숨결도 얼음 아래 가라앉힐 것이다!",
+      "…이 뿌리는 이제 심연의 것이다. 늪 물에 잠겨라!",
+      "세계수가 그랬던 것처럼, 너희의 숨결도 안개 아래 가라앉힐 것이다!",
     ],
   },
   bossIntroLord: {

@@ -1,0 +1,762 @@
+[
+ {
+  "objectName": "item-soggypizza",
+  "MoveName": "Soggy pizza",
+  "Description": "A shark flavoured meal",
+  "TargetType": 3,
+  "Damage": 9999,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "item-takoyaki",
+  "MoveName": "Takoyaki ",
+  "Description": "It still asks for bonks",
+  "TargetType": 2,
+  "Damage": 100,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "item-cheapwine",
+  "MoveName": "Cheap Wine",
+  "Description": "It does the job.",
+  "TargetType": 3,
+  "Damage": 60,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "item-bubbacookie",
+  "MoveName": "Bubba Cookie",
+  "Description": "A cookie with the shape of bubba",
+  "TargetType": 2,
+  "Damage": 50,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "item-phoenixnugget",
+  "MoveName": "Phoenix Nugget",
+  "Description": "Straight from the 'usual room'",
+  "TargetType": 2,
+  "Damage": 50,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-supereme",
+  "MoveName": "Super Eme",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 50,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets11.assets"
+ },
+ {
+  "objectName": "item-spookycookie",
+  "MoveName": "Spooky Cookie",
+  "Description": "A cookie with the shape of a skull",
+  "TargetType": 2,
+  "Damage": 44,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-1-chadstride",
+  "MoveName": "Chad Stride",
+  "Description": "",
+  "TargetType": 1,
+  "Damage": 40,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets11.assets"
+ },
+ {
+  "objectName": "move-1-ghuuuhuhhhhh",
+  "MoveName": "GHUUUH UHHHH ~",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 40,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets2.assets"
+ },
+ {
+  "objectName": "move-3-eatbrim",
+  "MoveName": "Eat Brim",
+  "Description": "",
+  "TargetType": 2,
+  "Damage": 25,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets11.assets"
+ },
+ {
+  "objectName": "item-potiontest",
+  "MoveName": "Potion",
+  "Description": "Heal some HP",
+  "TargetType": 2,
+  "Damage": 20,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets2.assets"
+ },
+ {
+  "objectName": "item-cuteball",
+  "MoveName": "Cute Ball",
+  "Description": "Gain some scuff",
+  "TargetType": 3,
+  "Damage": 20,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets4.assets"
+ },
+ {
+  "objectName": "item-redsc",
+  "MoveName": "Super Chat",
+  "Description": "Empty... What a CHAD!",
+  "TargetType": 2,
+  "Damage": 10,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets4.assets"
+ },
+ {
+  "objectName": "move-1-woof",
+  "MoveName": "woof",
+  "Description": "",
+  "TargetType": 1,
+  "Damage": 10,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets8.assets"
+ },
+ {
+  "objectName": "move-2-cloudysheep",
+  "MoveName": "Cloudy sheep",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 10,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets9.assets"
+ },
+ {
+  "objectName": "item-yummyspider",
+  "MoveName": "Yummy Spider ",
+  "Description": "Uhmm....",
+  "TargetType": 2,
+  "Damage": 1,
+  "LeartAtLevel": 0,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-1-limitbonk",
+  "MoveName": "Limit Bonk",
+  "Description": "Bonk an enemy (or tako) for some phy dmg",
+  "TargetType": 0,
+  "Damage": 30,
+  "LeartAtLevel": 1,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-1-moonstrike",
+  "MoveName": "Moon Strike",
+  "Description": "A dying wish. Low PHY dmg",
+  "TargetType": 0,
+  "Damage": 20,
+  "LeartAtLevel": 1,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-jaws",
+  "MoveName": "JAWS",
+  "Description": "Damage a foe and apply bleed",
+  "TargetType": 0,
+  "Damage": 10,
+  "LeartAtLevel": 4,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-3-blackcat",
+  "MoveName": "Black cat",
+  "Description": "Use it to \"save\" your enemy (from life).",
+  "TargetType": 0,
+  "Damage": 20,
+  "LeartAtLevel": 6,
+  "ScuffCost": 0,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-1-education",
+  "MoveName": "Education",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 80,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-1-tastysoup",
+  "MoveName": "Tasty soup",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 55,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets12.assets"
+ },
+ {
+  "objectName": "move-2-redheart",
+  "MoveName": "Red heart",
+  "Description": "",
+  "TargetType": 2,
+  "Damage": 50,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets12.assets"
+ },
+ {
+  "objectName": "move-1-cushionedroll",
+  "MoveName": "Cushioned Roll",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 40,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets14.assets"
+ },
+ {
+  "objectName": "move-2-suspectroll",
+  "MoveName": "Suspect Roll",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 40,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets14.assets"
+ },
+ {
+  "objectName": "move-3-sushiroll",
+  "MoveName": "Sushi Roll",
+  "Description": "",
+  "TargetType": 2,
+  "Damage": 40,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets14.assets"
+ },
+ {
+  "objectName": "move-3-arachnophobia",
+  "MoveName": "Arachnophobia",
+  "Description": "",
+  "TargetType": 1,
+  "Damage": 35,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets12.assets"
+ },
+ {
+  "objectName": "move-1-warcrimes",
+  "MoveName": "War crimes",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 30,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets18.assets"
+ },
+ {
+  "objectName": "move-1-hisssssssss",
+  "MoveName": "hisssssssss ~",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 30,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets2.assets"
+ },
+ {
+  "objectName": "move-1-mah",
+  "MoveName": "mah ~",
+  "Description": "",
+  "TargetType": 3,
+  "Damage": 30,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets9.assets"
+ },
+ {
+  "objectName": "move-2-peck",
+  "MoveName": "Peck",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 25,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets9.assets"
+ },
+ {
+  "objectName": "move-1-HAHAHAHAHA",
+  "MoveName": "HA HA HA HA",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 20,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets18.assets"
+ },
+ {
+  "objectName": "move-1-krah",
+  "MoveName": "krah ~",
+  "Description": "",
+  "TargetType": 2,
+  "Damage": 20,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets9.assets"
+ },
+ {
+  "objectName": "move-1-quak",
+  "MoveName": "quak ~",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 15,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets8.assets"
+ },
+ {
+  "objectName": "move-2-paperplane",
+  "MoveName": "Paper Plane",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 1,
+  "LeartAtLevel": 0,
+  "ScuffCost": 1,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-1-groundpound",
+  "MoveName": "gRounD pouNd",
+  "Description": "gRounD pouNd",
+  "TargetType": 0,
+  "Damage": 40,
+  "LeartAtLevel": 1,
+  "ScuffCost": 1,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-1-doubletap",
+  "MoveName": "Double tap",
+  "Description": "Shoot your handgun and deal some PHY dmg",
+  "TargetType": 0,
+  "Damage": 20,
+  "LeartAtLevel": 1,
+  "ScuffCost": 1,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-3-groundpound",
+  "MoveName": "gRoUnD POUND",
+  "Description": "gRoUnD POUND",
+  "TargetType": 1,
+  "Damage": 20,
+  "LeartAtLevel": 1,
+  "ScuffCost": 1,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-1-kickyricky",
+  "MoveName": "KICKY RICKY",
+  "Description": "SAN dmg to all foes (and wake up everyone)",
+  "TargetType": 1,
+  "Damage": 10,
+  "LeartAtLevel": 1,
+  "ScuffCost": 1,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-4-hic",
+  "MoveName": "HIC",
+  "Description": "Deal dmg to all enemies with cuteness",
+  "TargetType": 1,
+  "Damage": 15,
+  "LeartAtLevel": 8,
+  "ScuffCost": 1,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-4-scheisee",
+  "MoveName": "Scheisse!",
+  "Description": "Prepare to counter an attack",
+  "TargetType": 3,
+  "Damage": 0,
+  "LeartAtLevel": 8,
+  "ScuffCost": 1,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-supaangy",
+  "MoveName": "supa angy",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 45,
+  "LeartAtLevel": 0,
+  "ScuffCost": 2,
+  "_file": "sharedassets2.assets"
+ },
+ {
+  "objectName": "move-1-evilstuff",
+  "MoveName": "Evil stuff",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 40,
+  "LeartAtLevel": 0,
+  "ScuffCost": 2,
+  "_file": "sharedassets18.assets"
+ },
+ {
+  "objectName": "move-2-yubi",
+  "MoveName": "YUBI",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 30,
+  "LeartAtLevel": 0,
+  "ScuffCost": 2,
+  "_file": "sharedassets18.assets"
+ },
+ {
+  "objectName": "move-1-tctctc",
+  "MoveName": "Tc Tc Tc ~",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 10,
+  "LeartAtLevel": 0,
+  "ScuffCost": 2,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-1-plead",
+  "MoveName": "plead for mercy",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 0,
+  "LeartAtLevel": 0,
+  "ScuffCost": 2,
+  "_file": "sharedassets18.assets"
+ },
+ {
+  "objectName": "move-1-sharknado",
+  "MoveName": "Sharknado",
+  "Description": "Flying sharks! Phy dmg to all foes",
+  "TargetType": 1,
+  "Damage": 20,
+  "LeartAtLevel": 1,
+  "ScuffCost": 2,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-caffeinafix",
+  "MoveName": "Caffeina Fix",
+  "Description": "Moderate heal to a party member",
+  "TargetType": 2,
+  "Damage": 60,
+  "LeartAtLevel": 2,
+  "ScuffCost": 2,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-3-concoction",
+  "MoveName": "Concoction",
+  "Description": "Poison a enemy with your concoction",
+  "TargetType": 0,
+  "Damage": 0,
+  "LeartAtLevel": 4,
+  "ScuffCost": 2,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-4-apexpredator",
+  "MoveName": "Apex Predator",
+  "Description": "Bonus damage if the enemy is bleeding",
+  "TargetType": 0,
+  "Damage": 40,
+  "LeartAtLevel": 8,
+  "ScuffCost": 2,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-spiderdance",
+  "MoveName": "Spider dance",
+  "Description": "",
+  "TargetType": 1,
+  "Damage": 5,
+  "LeartAtLevel": 0,
+  "ScuffCost": 3,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-5-groundpound",
+  "MoveName": "GrOUNd Pound",
+  "Description": "GrOUNd Pound",
+  "TargetType": 2,
+  "Damage": 999,
+  "LeartAtLevel": 1,
+  "ScuffCost": 3,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-groundpound",
+  "MoveName": "grOUnD pOuNd",
+  "Description": "grOUnD pOuNd",
+  "TargetType": 0,
+  "Damage": 60,
+  "LeartAtLevel": 1,
+  "ScuffCost": 3,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-groundpound",
+  "MoveName": "Ground Pound",
+  "Description": "Bonus damage against moms",
+  "TargetType": 0,
+  "Damage": 40,
+  "LeartAtLevel": 2,
+  "ScuffCost": 3,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-rekindle",
+  "MoveName": "Rekindle",
+  "Description": "Slight heal to all party",
+  "TargetType": 3,
+  "Damage": 25,
+  "LeartAtLevel": 2,
+  "ScuffCost": 3,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-3-takosupport",
+  "MoveName": "Tako Support",
+  "Description": "Buff PHY and SAN",
+  "TargetType": 2,
+  "Damage": 0,
+  "LeartAtLevel": 6,
+  "ScuffCost": 3,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-3-entrepreneur",
+  "MoveName": "Entrepreneur",
+  "Description": "Gain some food! (don't ask)",
+  "TargetType": 3,
+  "Damage": 0,
+  "LeartAtLevel": 6,
+  "ScuffCost": 3,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-huuuugeleap",
+  "MoveName": "Huuuuge Leap",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 35,
+  "LeartAtLevel": 0,
+  "ScuffCost": 4,
+  "_file": "sharedassets8.assets"
+ },
+ {
+  "objectName": "move-1-hmmmm",
+  "MoveName": "hmmmmmmmm ~",
+  "Description": "",
+  "TargetType": 2,
+  "Damage": 10,
+  "LeartAtLevel": 0,
+  "ScuffCost": 4,
+  "_file": "sharedassets2.assets"
+ },
+ {
+  "objectName": "move-4-groundpound",
+  "MoveName": "gRouND pOunD",
+  "Description": "gRouND pOunD",
+  "TargetType": 0,
+  "Damage": 80,
+  "LeartAtLevel": 1,
+  "ScuffCost": 4,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-witheredrose",
+  "MoveName": "Withered Rose",
+  "Description": "Lose some health, but boost your stats",
+  "TargetType": 2,
+  "Damage": 0,
+  "LeartAtLevel": 4,
+  "ScuffCost": 4,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-3-sharknado2",
+  "MoveName": "Sharknado 2!",
+  "Description": "Big flying sharks! Phy dmg to all foes",
+  "TargetType": 1,
+  "Damage": 40,
+  "LeartAtLevel": 6,
+  "ScuffCost": 4,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-4-inacenttruth",
+  "MoveName": "Inacent truth",
+  "Description": "Whisper puns to the enemy, SAN dmg",
+  "TargetType": 0,
+  "Damage": 60,
+  "LeartAtLevel": 7,
+  "ScuffCost": 4,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-4-badnightmare",
+  "MoveName": "Bad Nightmare",
+  "Description": "Drop sanity of an enemy to 0.",
+  "TargetType": 0,
+  "Damage": 0,
+  "LeartAtLevel": 8,
+  "ScuffCost": 4,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-5-angrydad",
+  "MoveName": "Angry dad",
+  "Description": "Dad is mad. Mad dad.",
+  "TargetType": 1,
+  "Damage": 80,
+  "LeartAtLevel": 10,
+  "ScuffCost": 4,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-5-luminance",
+  "MoveName": "Luminance",
+  "Description": "Revive a party member to full health",
+  "TargetType": 2,
+  "Damage": 999,
+  "LeartAtLevel": 10,
+  "ScuffCost": 5,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-2-aaaaaaaaaaa",
+  "MoveName": "AAAAAAAAAAAA",
+  "Description": "",
+  "TargetType": 1,
+  "Damage": 35,
+  "LeartAtLevel": 0,
+  "ScuffCost": 6,
+  "_file": "sharedassets2.assets"
+ },
+ {
+  "objectName": "move-2-backflip",
+  "MoveName": "dope backflip",
+  "Description": "",
+  "TargetType": 2,
+  "Damage": 15,
+  "LeartAtLevel": 0,
+  "ScuffCost": 6,
+  "_file": "sharedassets8.assets"
+ },
+ {
+  "objectName": "move-2-enlarge",
+  "MoveName": "Enlarge",
+  "Description": "",
+  "TargetType": 2,
+  "Damage": 0,
+  "LeartAtLevel": 0,
+  "ScuffCost": 6,
+  "_file": "sharedassets2.assets"
+ },
+ {
+  "objectName": "move-6-groundpound",
+  "MoveName": "grouNd poUnd",
+  "Description": "grouNd poUnd",
+  "TargetType": 1,
+  "Damage": 69,
+  "LeartAtLevel": 1,
+  "ScuffCost": 6,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-5-humuhumu",
+  "MoveName": "Humu Humu",
+  "Description": "Naruhodo ne ~",
+  "TargetType": 3,
+  "Damage": 9999,
+  "LeartAtLevel": 10,
+  "ScuffCost": 6,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-5-sharknado3",
+  "MoveName": "Sharknado 3!!",
+  "Description": "HUGE flying sharks! Phy dmg to all foes",
+  "TargetType": 1,
+  "Damage": 80,
+  "LeartAtLevel": 10,
+  "ScuffCost": 8,
+  "_file": "sharedassets1.assets"
+ },
+ {
+  "objectName": "move-4-coolroll",
+  "MoveName": "Cool Roll",
+  "Description": "",
+  "TargetType": 0,
+  "Damage": 80,
+  "LeartAtLevel": 0,
+  "ScuffCost": 10,
+  "_file": "sharedassets14.assets"
+ },
+ {
+  "objectName": "move-4-coexist",
+  "MoveName": "Coexist",
+  "Description": "",
+  "TargetType": 99,
+  "Damage": 0,
+  "LeartAtLevel": 0,
+  "ScuffCost": 10,
+  "_file": "sharedassets12.assets"
+ },
+ {
+  "objectName": "move-colab",
+  "MoveName": "Collab",
+  "Description": "ame, kiara, gura, ina",
+  "TargetType": 1,
+  "Damage": 80,
+  "LeartAtLevel": 1,
+  "ScuffCost": 10,
+  "_file": "sharedassets5.assets"
+ },
+ {
+  "objectName": "move-5-herworld",
+  "MoveName": "Her world",
+  "Description": "Wait, is that a....?",
+  "TargetType": 1,
+  "Damage": 0,
+  "LeartAtLevel": 10,
+  "ScuffCost": 10,
+  "_file": "sharedassets1.assets"
+ }
+]

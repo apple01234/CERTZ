@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">SERTZ</string>
+    <string name="app_name">하울르스톤</string>
     <string name="title_activity_main">SERTZ</string>
     <string name="package_name">com.sertz.myapp</string>
     <string name="custom_url_scheme">com.sertz.myapp</string>

@@ -156,7 +156,7 @@ export default function SupportPage() {
           SERTZ 모험자 지원센터
         </h1>
         <p className="mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-violet-200/80">
-          인피니트보석의 다섯 왕국 어디에서도, 모험자의 목소리는 사라지지 않는다.<br />
+          하울르스톤의 이그드라실 9개의 바다 어디에서도, 모험자의 목소리는 사라지지 않는다.<br />
           <span className="text-fuchsia-300">(&gt;^ω^)&lt;</span> 문의·계정·데이터 삭제까지 — 전부 여기서!
         </p>
         <nav className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -283,7 +283,7 @@ export default function SupportPage() {
       </section>
 
       <footer className="mt-10 text-center text-[10px] leading-relaxed text-white/55">
-        SERTZ — 인피니트보석: 다섯 왕국 · v1.4.5<br />
+        SERTZ — 하울르스톤: 이그드라실 9개의 바다 · v1.4.5<br />
         이 페이지는 게임과 같은 서버에서 동작합니다. 문의 데이터는 서버에만 저장되며 전송은 HTTPS로 암호화됩니다.
       </footer>
     </main>

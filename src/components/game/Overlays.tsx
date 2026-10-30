@@ -90,14 +90,14 @@ export function TitleScreen() {
           {/* 양피지 부제 칩 — 우드 프레임 */}
           <p className="game-chip mx-auto mt-3 inline-block max-w-[min(94vw,560px)] px-4 py-1.5">
             <span className="text-sm font-black tracking-[0.3em] text-[#f0e2c0] [text-shadow:0_1px_2px_#000] sm:text-base">
-              인피니트보석 : 다섯 왕국
+              하울르스톤 : 이그드라실 9개의 바다
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프
              *  v1.0.19 (#문구정리) — 패치노트를 타이틀에 늘어놓던 문구를 게임 소개 한 줄로 교체.
              *  "3D VFX · 툰 셰이딩 · 30 FPS · 5분 자동저장" 같은 개발자 체크리스트는 첫 화면에서
              *  완성도가 아니라 프로토타입 인상을 줬다. 기능 나열은 설정/패치노트로 보낸다. */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v{APP_VERSION} — 다섯 왕국을 건너, 세계수의 뿌리까지</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v{APP_VERSION} — 9개의 바다를 건너, 세계수의 뿌리까지</span>
           </p>
         </div>
 

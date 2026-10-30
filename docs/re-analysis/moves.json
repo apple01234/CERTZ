@@ -1,0 +1,2055 @@
+{
+ "moves": [
+  {
+   "objectName": "item-soggypizza",
+   "MoveName": "Soggy pizza",
+   "Description": "A shark flavoured meal",
+   "TargetType": 3,
+   "Damage": 9999,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "item-takoyaki",
+   "MoveName": "Takoyaki ",
+   "Description": "It still asks for bonks",
+   "TargetType": 2,
+   "Damage": 100,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "item-cheapwine",
+   "MoveName": "Cheap Wine",
+   "Description": "It does the job.",
+   "TargetType": 3,
+   "Damage": 60,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "item-bubbacookie",
+   "MoveName": "Bubba Cookie",
+   "Description": "A cookie with the shape of bubba",
+   "TargetType": 2,
+   "Damage": 50,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "item-phoenixnugget",
+   "MoveName": "Phoenix Nugget",
+   "Description": "Straight from the 'usual room'",
+   "TargetType": 2,
+   "Damage": 50,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-2-supereme",
+   "MoveName": "Super Eme",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 50,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "item-spookycookie",
+   "MoveName": "Spooky Cookie",
+   "Description": "A cookie with the shape of a skull",
+   "TargetType": 2,
+   "Damage": 44,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-1-chadstride",
+   "MoveName": "Chad Stride",
+   "Description": "",
+   "TargetType": 1,
+   "Damage": 40,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "move-1-ghuuuhuhhhhh",
+   "MoveName": "GHUUUH UHHHH ~",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 40,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "move-3-eatbrim",
+   "MoveName": "Eat Brim",
+   "Description": "",
+   "TargetType": 2,
+   "Damage": 25,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "item-potiontest",
+   "MoveName": "Potion",
+   "Description": "Heal some HP",
+   "TargetType": 2,
+   "Damage": 20,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "item-cuteball",
+   "MoveName": "Cute Ball",
+   "Description": "Gain some scuff",
+   "TargetType": 3,
+   "Damage": 20,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets4.assets"
+  },
+  {
+   "objectName": "item-redsc",
+   "MoveName": "Super Chat",
+   "Description": "Empty... What a CHAD!",
+   "TargetType": 2,
+   "Damage": 10,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets4.assets"
+  },
+  {
+   "objectName": "move-1-woof",
+   "MoveName": "woof",
+   "Description": "",
+   "TargetType": 1,
+   "Damage": 10,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets8.assets"
+  },
+  {
+   "objectName": "move-2-cloudysheep",
+   "MoveName": "Cloudy sheep",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 10,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets9.assets"
+  },
+  {
+   "objectName": "item-yummyspider",
+   "MoveName": "Yummy Spider ",
+   "Description": "Uhmm....",
+   "TargetType": 2,
+   "Damage": 1,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "721160474",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1035002412",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-332787227",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1446288465",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1324689439",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1714797624",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-522198703",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "739236761",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1165346346",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1502643992",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "57463486",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "5061229",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1721508323",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "197911330",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "544012487",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "65793526",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1795409000",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "396072846",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1354839464",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "2081091037",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-639974006",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1890328403",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "888708744",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-2106727562",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1554821269",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-287572057",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1600329754",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "529622183",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-698414942",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-935512729",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-7950394",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-500636598",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1768430802",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets10.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1152452824",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-388666042",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "2010818600",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-911046601",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-2010043327",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1428516660",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "657453475",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1434424937",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1749706586",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-756690382",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1355402361",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-244681971",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "2029412322",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1490321392",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-149611448",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "60001070",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "1169867553",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-628405173",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "1785172836",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "350378223",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1142286475",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "759191249",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "-163001444",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "2119849411",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "2126310272",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1375949272",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-488822955",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "725688256",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1287724709",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1205290929",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1849036810",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1426385171",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1758462357",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-2026298989",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "771325562",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "996675543",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "2080499971",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1221857208",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets15.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-232992604",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets15.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1678286409",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets15.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "875477808",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets15.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-618784102",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets15.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1362565336",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets15.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1355564626",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets15.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "2139452095",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets15.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "586806699",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets15.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "132038412",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets15.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-627179086",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets16.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1605232062",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets3.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "698402061",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1872573135",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "-1543260711",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "1781296543",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1956806384",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "-887545430",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "554585968",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "1307636253",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "-3442053",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "1068579238",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "100283716",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "864815115",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "2047037776",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "-1381478006",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "137255431",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "515260709",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "-1829706619",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "-1652108393",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "1949631228",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1450609695",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "-1007847370",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "335417927",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "1331750033",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset(Clone)(Clone)",
+   "MoveName": "-742536150",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "2001171511",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-1627563050",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets7.assets"
+  },
+  {
+   "objectName": "ControlPlayableAsset",
+   "MoveName": "-910876655",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 0,
+   "_file": "sharedassets8.assets"
+  },
+  {
+   "objectName": "move-1-education",
+   "MoveName": "Education",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 80,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-1-tastysoup",
+   "MoveName": "Tasty soup",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 55,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "move-2-redheart",
+   "MoveName": "Red heart",
+   "Description": "",
+   "TargetType": 2,
+   "Damage": 50,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "move-1-cushionedroll",
+   "MoveName": "Cushioned Roll",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 40,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "move-2-suspectroll",
+   "MoveName": "Suspect Roll",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 40,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "move-3-sushiroll",
+   "MoveName": "Sushi Roll",
+   "Description": "",
+   "TargetType": 2,
+   "Damage": 40,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "move-3-arachnophobia",
+   "MoveName": "Arachnophobia",
+   "Description": "",
+   "TargetType": 1,
+   "Damage": 35,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets12.assets"
+  },
+  {
+   "objectName": "move-1-warcrimes",
+   "MoveName": "War crimes",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 30,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets18.assets"
+  },
+  {
+   "objectName": "move-1-hisssssssss",
+   "MoveName": "hisssssssss ~",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 30,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "move-1-mah",
+   "MoveName": "mah ~",
+   "Description": "",
+   "TargetType": 3,
+   "Damage": 30,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets9.assets"
+  },
+  {
+   "objectName": "move-2-peck",
+   "MoveName": "Peck",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 25,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets9.assets"
+  },
+  {
+   "objectName": "move-1-HAHAHAHAHA",
+   "MoveName": "HA HA HA HA",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 20,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets18.assets"
+  },
+  {
+   "objectName": "move-1-krah",
+   "MoveName": "krah ~",
+   "Description": "",
+   "TargetType": 2,
+   "Damage": 20,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets9.assets"
+  },
+  {
+   "objectName": "move-1-quak",
+   "MoveName": "quak ~",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 15,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets8.assets"
+  },
+  {
+   "objectName": "move-2-paperplane",
+   "MoveName": "Paper Plane",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 1,
+   "LeartAtLevel": 0,
+   "ScuffCost": 1,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-2-supaangy",
+   "MoveName": "supa angy",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 45,
+   "LeartAtLevel": 0,
+   "ScuffCost": 2,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "move-1-evilstuff",
+   "MoveName": "Evil stuff",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 40,
+   "LeartAtLevel": 0,
+   "ScuffCost": 2,
+   "_file": "sharedassets18.assets"
+  },
+  {
+   "objectName": "move-2-yubi",
+   "MoveName": "YUBI",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 30,
+   "LeartAtLevel": 0,
+   "ScuffCost": 2,
+   "_file": "sharedassets18.assets"
+  },
+  {
+   "objectName": "move-1-tctctc",
+   "MoveName": "Tc Tc Tc ~",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 10,
+   "LeartAtLevel": 0,
+   "ScuffCost": 2,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-1-plead",
+   "MoveName": "plead for mercy",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 2,
+   "_file": "sharedassets18.assets"
+  },
+  {
+   "objectName": "move-2-spiderdance",
+   "MoveName": "Spider dance",
+   "Description": "",
+   "TargetType": 1,
+   "Damage": 5,
+   "LeartAtLevel": 0,
+   "ScuffCost": 3,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-2-huuuugeleap",
+   "MoveName": "Huuuuge Leap",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 35,
+   "LeartAtLevel": 0,
+   "ScuffCost": 4,
+   "_file": "sharedassets8.assets"
+  },
+  {
+   "objectName": "move-1-hmmmm",
+   "MoveName": "hmmmmmmmm ~",
+   "Description": "",
+   "TargetType": 2,
+   "Damage": 10,
+   "LeartAtLevel": 0,
+   "ScuffCost": 4,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "move-2-aaaaaaaaaaa",
+   "MoveName": "AAAAAAAAAAAA",
+   "Description": "",
+   "TargetType": 1,
+   "Damage": 35,
+   "LeartAtLevel": 0,
+   "ScuffCost": 6,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "move-2-backflip",
+   "MoveName": "dope backflip",
+   "Description": "",
+   "TargetType": 2,
+   "Damage": 15,
+   "LeartAtLevel": 0,
+   "ScuffCost": 6,
+   "_file": "sharedassets8.assets"
+  },
+  {
+   "objectName": "move-2-enlarge",
+   "MoveName": "Enlarge",
+   "Description": "",
+   "TargetType": 2,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 6,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "move-4-coolroll",
+   "MoveName": "Cool Roll",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 80,
+   "LeartAtLevel": 0,
+   "ScuffCost": 10,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "npc-gnome",
+   "MoveName": "gnome",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 87,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "npc-knight",
+   "MoveName": "knight",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 119,
+   "_file": "sharedassets8.assets"
+  },
+  {
+   "objectName": "enem-dog",
+   "MoveName": "am  dog",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 124,
+   "_file": "sharedassets8.assets"
+  },
+  {
+   "objectName": "npc-drip",
+   "MoveName": "drip",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 173,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "npc-ghostrider",
+   "MoveName": "go strider",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 197,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "npc-longtako",
+   "MoveName": "long tako",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 216,
+   "_file": "sharedassets9.assets"
+  },
+  {
+   "objectName": "enem-crow",
+   "MoveName": "am crow",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 221,
+   "_file": "sharedassets9.assets"
+  },
+  {
+   "objectName": "npc-tako",
+   "MoveName": "tako",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 231,
+   "_file": "sharedassets9.assets"
+  },
+  {
+   "objectName": "enem-mom",
+   "MoveName": "am  mom",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 258,
+   "_file": "sharedassets18.assets"
+  },
+  {
+   "objectName": "enem-gnome",
+   "MoveName": "am gnome",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 273,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "npc-barrel",
+   "MoveName": "barrel",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 276,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "npc-bubba",
+   "MoveName": "bubba",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 286,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "enem-sheep",
+   "MoveName": "am sheep",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 342,
+   "_file": "sharedassets9.assets"
+  },
+  {
+   "objectName": "enem-koala",
+   "MoveName": "am koala",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 550,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "enem-puyo",
+   "MoveName": "am puyo",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 615,
+   "_file": "sharedassets2.assets"
+  },
+  {
+   "objectName": "enem-book",
+   "MoveName": "am book",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 0,
+   "ScuffCost": 782,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-1-limitbonk",
+   "MoveName": "Limit Bonk",
+   "Description": "Bonk an enemy (or tako) for some phy dmg",
+   "TargetType": 0,
+   "Damage": 30,
+   "LeartAtLevel": 1,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-1-moonstrike",
+   "MoveName": "Moon Strike",
+   "Description": "A dying wish. Low PHY dmg",
+   "TargetType": 0,
+   "Damage": 20,
+   "LeartAtLevel": 1,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-1-groundpound",
+   "MoveName": "gRounD pouNd",
+   "Description": "gRounD pouNd",
+   "TargetType": 0,
+   "Damage": 40,
+   "LeartAtLevel": 1,
+   "ScuffCost": 1,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-1-doubletap",
+   "MoveName": "Double tap",
+   "Description": "Shoot your handgun and deal some PHY dmg",
+   "TargetType": 0,
+   "Damage": 20,
+   "LeartAtLevel": 1,
+   "ScuffCost": 1,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-3-groundpound",
+   "MoveName": "gRoUnD POUND",
+   "Description": "gRoUnD POUND",
+   "TargetType": 1,
+   "Damage": 20,
+   "LeartAtLevel": 1,
+   "ScuffCost": 1,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-1-kickyricky",
+   "MoveName": "KICKY RICKY",
+   "Description": "SAN dmg to all foes (and wake up everyone)",
+   "TargetType": 1,
+   "Damage": 10,
+   "LeartAtLevel": 1,
+   "ScuffCost": 1,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-1-sharknado",
+   "MoveName": "Sharknado",
+   "Description": "Flying sharks! Phy dmg to all foes",
+   "TargetType": 1,
+   "Damage": 20,
+   "LeartAtLevel": 1,
+   "ScuffCost": 2,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-5-groundpound",
+   "MoveName": "GrOUNd Pound",
+   "Description": "GrOUNd Pound",
+   "TargetType": 2,
+   "Damage": 999,
+   "LeartAtLevel": 1,
+   "ScuffCost": 3,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-2-groundpound",
+   "MoveName": "grOUnD pOuNd",
+   "Description": "grOUnD pOuNd",
+   "TargetType": 0,
+   "Damage": 60,
+   "LeartAtLevel": 1,
+   "ScuffCost": 3,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-4-groundpound",
+   "MoveName": "gRouND pOunD",
+   "Description": "gRouND pOunD",
+   "TargetType": 0,
+   "Damage": 80,
+   "LeartAtLevel": 1,
+   "ScuffCost": 4,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-6-groundpound",
+   "MoveName": "grouNd poUnd",
+   "Description": "grouNd poUnd",
+   "TargetType": 1,
+   "Damage": 69,
+   "LeartAtLevel": 1,
+   "ScuffCost": 6,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-colab",
+   "MoveName": "Collab",
+   "Description": "ame, kiara, gura, ina",
+   "TargetType": 1,
+   "Damage": 80,
+   "LeartAtLevel": 1,
+   "ScuffCost": 10,
+   "_file": "sharedassets5.assets"
+  },
+  {
+   "objectName": "move-2-caffeinafix",
+   "MoveName": "Caffeina Fix",
+   "Description": "Moderate heal to a party member",
+   "TargetType": 2,
+   "Damage": 60,
+   "LeartAtLevel": 2,
+   "ScuffCost": 2,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-2-groundpound",
+   "MoveName": "Ground Pound",
+   "Description": "Bonus damage against moms",
+   "TargetType": 0,
+   "Damage": 40,
+   "LeartAtLevel": 2,
+   "ScuffCost": 3,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-2-rekindle",
+   "MoveName": "Rekindle",
+   "Description": "Slight heal to all party",
+   "TargetType": 3,
+   "Damage": 25,
+   "LeartAtLevel": 2,
+   "ScuffCost": 3,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-2-jaws",
+   "MoveName": "JAWS",
+   "Description": "Damage a foe and apply bleed",
+   "TargetType": 0,
+   "Damage": 10,
+   "LeartAtLevel": 4,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-3-concoction",
+   "MoveName": "Concoction",
+   "Description": "Poison a enemy with your concoction",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 4,
+   "ScuffCost": 2,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-2-witheredrose",
+   "MoveName": "Withered Rose",
+   "Description": "Lose some health, but boost your stats",
+   "TargetType": 2,
+   "Damage": 0,
+   "LeartAtLevel": 4,
+   "ScuffCost": 4,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-3-blackcat",
+   "MoveName": "Black cat",
+   "Description": "Use it to \"save\" your enemy (from life).",
+   "TargetType": 0,
+   "Damage": 20,
+   "LeartAtLevel": 6,
+   "ScuffCost": 0,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-3-takosupport",
+   "MoveName": "Tako Support",
+   "Description": "Buff PHY and SAN",
+   "TargetType": 2,
+   "Damage": 0,
+   "LeartAtLevel": 6,
+   "ScuffCost": 3,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-3-entrepreneur",
+   "MoveName": "Entrepreneur",
+   "Description": "Gain some food! (don't ask)",
+   "TargetType": 3,
+   "Damage": 0,
+   "LeartAtLevel": 6,
+   "ScuffCost": 3,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-3-sharknado2",
+   "MoveName": "Sharknado 2!",
+   "Description": "Big flying sharks! Phy dmg to all foes",
+   "TargetType": 1,
+   "Damage": 40,
+   "LeartAtLevel": 6,
+   "ScuffCost": 4,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-4-inacenttruth",
+   "MoveName": "Inacent truth",
+   "Description": "Whisper puns to the enemy, SAN dmg",
+   "TargetType": 0,
+   "Damage": 60,
+   "LeartAtLevel": 7,
+   "ScuffCost": 4,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-4-hic",
+   "MoveName": "HIC",
+   "Description": "Deal dmg to all enemies with cuteness",
+   "TargetType": 1,
+   "Damage": 15,
+   "LeartAtLevel": 8,
+   "ScuffCost": 1,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-4-scheisee",
+   "MoveName": "Scheisse!",
+   "Description": "Prepare to counter an attack",
+   "TargetType": 3,
+   "Damage": 0,
+   "LeartAtLevel": 8,
+   "ScuffCost": 1,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-4-apexpredator",
+   "MoveName": "Apex Predator",
+   "Description": "Bonus damage if the enemy is bleeding",
+   "TargetType": 0,
+   "Damage": 40,
+   "LeartAtLevel": 8,
+   "ScuffCost": 2,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-4-badnightmare",
+   "MoveName": "Bad Nightmare",
+   "Description": "Drop sanity of an enemy to 0.",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 8,
+   "ScuffCost": 4,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "enem-frog",
+   "MoveName": "am frog",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 8,
+   "ScuffCost": 780,
+   "_file": "sharedassets8.assets"
+  },
+  {
+   "objectName": "enem-barrel",
+   "MoveName": "am barrel",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 9,
+   "ScuffCost": 167,
+   "_file": "sharedassets14.assets"
+  },
+  {
+   "objectName": "enem-pekodown",
+   "MoveName": "am peko",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 9,
+   "ScuffCost": 595,
+   "_file": "sharedassets18.assets"
+  },
+  {
+   "objectName": "enem-drip",
+   "MoveName": "am drip",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 9,
+   "ScuffCost": 999,
+   "_file": "sharedassets11.assets"
+  },
+  {
+   "objectName": "move-5-angrydad",
+   "MoveName": "Angry dad",
+   "Description": "Dad is mad. Mad dad.",
+   "TargetType": 1,
+   "Damage": 80,
+   "LeartAtLevel": 10,
+   "ScuffCost": 4,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-5-luminance",
+   "MoveName": "Luminance",
+   "Description": "Revive a party member to full health",
+   "TargetType": 2,
+   "Damage": 999,
+   "LeartAtLevel": 10,
+   "ScuffCost": 5,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-5-humuhumu",
+   "MoveName": "Humu Humu",
+   "Description": "Naruhodo ne ~",
+   "TargetType": 3,
+   "Damage": 9999,
+   "LeartAtLevel": 10,
+   "ScuffCost": 6,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-5-sharknado3",
+   "MoveName": "Sharknado 3!!",
+   "Description": "HUGE flying sharks! Phy dmg to all foes",
+   "TargetType": 1,
+   "Damage": 80,
+   "LeartAtLevel": 10,
+   "ScuffCost": 8,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "move-5-herworld",
+   "MoveName": "Her world",
+   "Description": "Wait, is that a....?",
+   "TargetType": 1,
+   "Damage": 0,
+   "LeartAtLevel": 10,
+   "ScuffCost": 10,
+   "_file": "sharedassets1.assets"
+  },
+  {
+   "objectName": "enem-king",
+   "MoveName": "am queen",
+   "Description": "",
+   "TargetType": 0,
+   "Damage": 0,
+   "LeartAtLevel": 10,
+   "ScuffCost": 531,
+   "_file": "sharedassets12.assets"
+  }
+ ],
+ "errors": []
+}

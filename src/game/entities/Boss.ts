@@ -12,7 +12,7 @@ import { rng, actorStream } from "../sim/deterministic"; // vc183 — 시드 기
 
 /**
  * 보스 (3종 — 스테이지별 정의 주입):
- *  guardian: 심연의 수호자 (알프헤임) / behemoth: 눈보라의 거수 (니플헤임) / abysslord: 심연의 군주 (심연의 왕좌)
+ *  guardian: 심연의 수호자 (알프헤임) / behemoth: 침몰의 선장 (쿠소디아 선박의 왕국) / abysslord: 심연의 군주 (심연의 왕좌)
  * F4 최적화 핵심:
  *  - 투사체는 24발 고정 풀 재사용 (런타임 생성/파괴 없음)
  *  - 텔레그래프는 미리 만든 텍스처 스프라이트 트윈 (매 프레임 Graphics 그리기 없음)

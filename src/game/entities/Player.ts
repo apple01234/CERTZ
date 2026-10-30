@@ -22,6 +22,7 @@ import { playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁�
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
+import { runUltFinale } from "../fx/ultFinale"; // vc204 (#10) — 직업별 고유 마무리
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
 import type { Enemy } from "./Enemy";
@@ -676,6 +677,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* vc182 — 두 번째 인자(aim)는 "탄환 각도"용 자유 조준(8방향)이다.
    *  첫 인자(dir)는 4방향 애니메이션 시트 선택용으로 남긴다(시트가 4방향뿐).
    *  근접 계열은 aim을 넘기지 않으므로 기존 동작과 100% 동일하다. */
+  /**
+   * vc204 (지시서 #5) — 해적 3차+ 기본공격의 마무리 폭발.
+   *  마지막 탄이 명중하는 지점에 소형 범위 피해를 준다(함포 보조탄 모티프).
+   *  검을 쓰지 않고 총/함포 계열만 유지한다.
+   */
+  private pirateBlastVolley(fireDir: Phaser.Math.Vector2, ang: number, tier: number) {
+    const reach = 210 + tier * 26;
+    const bx = this.x + Math.cos(ang) * reach;
+    const by = this.y - 6 + Math.sin(ang) * reach;
+    const radius = 64 + tier * 10;
+    const { dmg, crit } = this.rollDamage(0.55 + tier * 0.06, false);
+    for (const e of this.getAllTargetsIn(radius)) {
+      if (!e.active) continue;
+      const away = new Phaser.Math.Vector2(e.x - bx, e.y - by).normalize();
+      e.takeDamage(dmg, away, 200, crit);
+    }
+    this.scene.spawnBurstAt?.(bx, by, 10 + tier * 3, 0xffd27a);
+    this.scene.spawnShockwave?.(bx, by, 0xffc060, 0.55, 260, 0.5);
+    this.scene.doShake?.(60, 0.0014);
+    void fireDir;
+  }
+
   private atkSlash(dir: Phaser.Math.Vector2, aim?: Phaser.Math.Vector2) {
     const fireDir = aim ?? dir;
     const fam = familyOf(this.cls);
@@ -719,13 +742,40 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const ang = Math.atan2(fireDir.y, fireDir.x);
         this.scene.spawnMuzzleFlash(this.x + fireDir.x * 26, this.y - 6 + fireDir.y * 26, ang);
         this.scene.sfxSkill("thunder", 0.95);
-        const { dmg, crit } = this.rollDamage(dmgMul * 1.15, false);
-        this.scene.firePlayerProj({
-          x: this.x + fireDir.x * 30, y: this.y - 6 + fireDir.y * 30,
-          angle: ang, speed: 880, pierce: 1,
-          dmg, crit, tint: 0xffe9a8, knock: 120, scale: 0.36, tex: "gw_proj", blend: "add",
-          rot: true, texRot: Math.PI, // 탄두가 왼쪽인 시트 — 진행 방향으로 탄두 정렬
-        });
+        /* vc204 (지시서 #5 "해적류 직업 전직시 기본공격 강화 안되는 버그").
+         *  종전 해적 분기는 sTier 를 읽지 않고 **항상 탄 1발(pierce 1)** 을 쏘고 return 했다.
+         *  궁수는 "N차 N발", 마법사/도적도 차수 변화가 있는데 해적만 강화가 0이었다
+         *  (vc178b 에서 "해적인데 검을 쓴다" 때문에 티어 래더에서 제외된 부작용).
+         *  → 검을 쓰지 않고 총/함포 모티프만으로 차수 래더를 만든다:
+         *     미전직 1발 → 1차 2연사 → 2차 3연사+관통2 → 3차 마지막 탄 폭발
+         *     → 4차 대형 관통탄 + 함포 일제 → 5차(각성) 전부 강화.
+         *  총 DPS 는 궁수 4차 기본공격 대비 ±15% 안에 들도록 배율을 나눠 곱한다. */
+        const t5 = this.sTier; // 0=미전직, 1~5
+        const shots = t5 <= 0 ? 1 : t5 === 1 ? 2 : 3;      // 연사 수
+        const pierce = t5 >= 2 ? 2 : 1;                     // 관통
+        const per = (dmgMul * 1.15) / (1 + 0.55 * Math.max(0, shots - 1)); // 연사 총량 보정
+        const volley = (idx: number) => {
+          const { dmg, crit } = this.rollDamage(per, false);
+          const spread = shots > 1 ? (idx - (shots - 1) / 2) * 0.045 : 0; // 약한 산탄 각
+          this.scene.firePlayerProj({
+            x: this.x + fireDir.x * 30, y: this.y - 6 + fireDir.y * 30,
+            angle: ang + spread, speed: 880 + t5 * 20, pierce,
+            dmg, crit, tint: 0xffe9a8, knock: 120 + t5 * 8, scale: 0.36 + t5 * 0.02, tex: "gw_proj", blend: "add",
+            rot: true, texRot: Math.PI,
+          });
+        };
+        if (shots === 1) {
+          volley(0);
+        } else {
+          /* 연사 — 70ms 간격. 3차 이상은 마지막 탄이 폭발(범위 피해). */
+          for (let i = 0; i < shots; i++) {
+            this.scene.time.delayedCall(i * 70, () => {
+              if (this.state === "dead") return;
+              volley(i);
+              if (t5 >= 3 && i === shots - 1) this.pirateBlastVolley(fireDir, ang, t5);
+            });
+          }
+        }
         this.scene.doShake?.(50, 0.0018);
         return;
       }
@@ -3359,7 +3409,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.state !== "idle" || !this.skill5Unlocked || this.skill5Cd > 0 || this.mp < 100) return;
     this.mp -= 100;
     this.skill5Cd = this.skill5Max; // 60초 고정 (cdMult 미적용)
-    this.state = "attack";
+    /* vc204 (#9) — "궁극기 사용시 다른 스킬 사용 및 기본공격이 안되는 버그".
+     *  종전에는 state="attack" 을 걸고 ult5HoldOf(1차 5~30초) / ult5bHoldOf(2차 10~60초)
+     *  만큼 풀지 않아, 그 시간 내내 "state !== idle" 가드가 모든 스킬·기본공격을 막았다.
+     *  → 궁극기는 **시전 잠금 없이** 즉시 발동하고, 시전 중에도 state 는 idle 을 유지한다.
+     *    연출·틱 피해·시네마틱은 전부 delayedCall/tween 으로 독립 실행되므로
+     *    state 와 무관하게 끝까지 재생된다. */
     this.hitSet.clear();
     this.setVelocity(0, 0);
     this.netEmitAction("s5"); // v4.1.0
@@ -5097,13 +5152,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    /* 공통 마무리 — 시전 후 경직 해제.
-     *  v1.4.41 (#3) — 종전 300ms 고정이라 연출(1.3초)보다 먼저 조작이 풀렸다.
-     *  "쿨타임에 비해 시전시간이 너무 짧다"는 체감의 실제 원인.
-     *  이제 직업별 시전 시간(1차 5~30초)만큼 경직을 유지한다. */
-    this.scene.time.delayedCall(ult5HoldOf(resolveSkill5Of(this.cls), familyOf(this.cls)), () => {
-      if (this.state === "attack") this.state = "idle";
+    /* vc204 (지시서 #10) — 직업별 **고유 마무리**.
+     *  유저 지적: "궁극기가 뒤에 부분 바뀐게 다 똑같잖아".
+     *  실측(tools/ult_dedup.py) 결과 직업 34개 중 다수가 마지막 3개 호출이
+     *    `spawnBurstAt → sfxSkill → sfxCrit` 또는 `sfxSkill → sfxSkill → sfxCrit`
+     *  로 완전히 같았다. 위 switch 는 본타(연타/난사)는 직업별로 달랐지만,
+     *  마무리는 각 case 안에서 같은 헬퍼로 수렴했다.
+     *  → 마무리를 여기서 한 번, **판정 형태가 직업마다 다른** runUltFinale 로 교체한다.
+     *    형태: 원형/직선/전방 부채꼴/연쇄/십자/링/기둥 (ultFinale.ts ULT_FINALE)
+     *    색은 계통색, 마법진은 마법사 계열만. */
+    runUltFinale(this.scene, {
+      x: this.x, y: this.y, hex: this.clsHex(), cls: this.cls,
+      aimAngle: this.aimDirFree().angle(),
+      roll: (mul) => this.rollDamage(mul, false),
+      hitAt: (bx, by, d, crit) => {
+        for (const e of this.getAllTargetsIn(220)) {
+          if (!e.active) continue;
+          /* 마무리 지점(bx,by) 기준으로 반경 안의 대상에게 피해 */
+          if (Phaser.Math.Distance.Between(bx, by, e.x, e.y) > 220) continue;
+          const away = new Phaser.Math.Vector2(e.x - bx, e.y - by).normalize();
+          if (crit) this.scene.sfxCrit();
+          e.takeDamage(d, away, 560, crit);
+        }
+      },
+      lite: this.scene.fxLevel === 0,
     });
+
+
+    /* vc204 (#9) — 조작 잠금 타이머 제거: 시전 중 state 가 idle 이므로 풀 것이 없다.
+     *  (연출은 각자의 delayedCall/tween 이 끝까지 재생된다) */
     this.scene.emitHud();
   }
 
@@ -5117,7 +5194,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.state !== "idle" || !this.skill5bUnlocked || this.skill5bCd > 0 || this.mp < 150) return;
     this.mp -= 150;
     this.skill5bCd = this.skill5bMax; // 120초 고정 (cdMult 미적용)
-    this.state = "attack";
+    /* vc204 (#9) — 1차와 동일: 시전 중에도 state 는 idle 유지(조작 잠금 없음).
+     *  연출은 delayedCall 로 독립 실행된다. */
     this.hitSet.clear();
     this.setVelocity(0, 0);
     this.netEmitAction("s5b"); // vc146 — 원격 연출 동기화 (원격은 s5 연출로 재생)
@@ -6822,11 +6900,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.spawnPickupText(this.x, this.y - 92, "여운 — 잔존 필드 30초", "#e0a8ff");
     });
 
-    /* 공통 마무리 — 시전 후 경직 해제 (1차 궁극기와 동일 게이트)
-     *  vc153 — 3D 시네마틱(사(死)의 일섬) 재생 중엔 cineLock이 해제를 막는다 (종료 시 onEnd에서 해제) */
-    this.scene.time.delayedCall(ult5bHoldOf(resolveSkill5Of(this.cls), familyOf(this.cls)), () => {
-      if (this.state === "attack" && !this.cineLock) this.state = "idle";
-    });
+    /* vc204 (#9) — 조작 잠금 타이머 제거(1차와 동일).
+     *  cineLock 은 도적 「사(死)의 일섬」 3D 시네마틱 전용으로만 남는다. */
     this.scene.emitHud();
   }
 

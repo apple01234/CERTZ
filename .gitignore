@@ -186,3 +186,8 @@ download/gdrive_vfx/
 public/assets/audio/.orig/
 public/assets/audio/sfx/.orig/
 __pycache__/
+
+# vc204 — 되돌리기용 백업 (커밋 제외, 로컬 보존)
+public/assets/audio/.pre_vc204/
+public/assets/audio/.orig_vc203/
+public/assets/skillicon/_orig/

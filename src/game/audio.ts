@@ -41,6 +41,9 @@ const bgmInflight = new Map<string, Promise<boolean>>();
  *  ③ 볼륨 래더 재조정 — 전투 기초음 하향/큰 순간 유지/BGM 0.42→0.34 (SFX 가독성 우선) */
 const SFX_THROTTLE_MS = 55;
 const SFX_MAX_CONCURRENT = 12;
+/* vc204 (지시서 #17) — 복귀 직후 SFX 페이드인 구간(ms)과 그 시작 시각. */
+const RESUME_MUTE_MS = 300;
+let resumedAt = 0;
 /** BGM 볼륨 — v3.0.22 밸런스: BGM 존재감 +0.04 (원곡이 묻히지 않게)
  *  v3.1.0 — 유저 지시 "BGM과 SFX를 각각 조절할수 있는 UI": 런타임 조절 변수로 전환
  *  (BGM_VOLUME 상수는 E2E 호환용 기본값 스냅샷으로 유지)
@@ -124,13 +127,28 @@ function play(key: string, vol: number, rate = 1) {
     if (cache && !cache.exists(key)) return;
   } catch { /* cache 미지원 환경 — 아래 play 를 그대로 시도 */ }
   const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  /* vc204 (지시서 #17 "PC에서 창 전환시 효과음 겹쳐서 ㅈㄴ 크게 한꺼번에 들림").
+   *  창이 숨겨진 동안에도 delayedCall/타이머가 계속 돌아 SFX 요청이 큐에 쌓이고,
+   *  복귀하는 순간 그것들이 한꺼번에 재생돼 음량이 합산됐다.
+   *  → 숨김 상태에서는 SFX 요청을 버리고(연출은 계속, 소리만 생략),
+   *    복귀 후 RESUME_MUTE_MS 동안은 신규 SFX를 낮은 볼륨으로 페이드인한다. */
+  if (typeof document !== "undefined" && document.hidden) return;
+  let volScale = 1;
+  if (resumedAt) {
+    const since = now - resumedAt;
+    if (since < RESUME_MUTE_MS) {
+      volScale = Math.max(0, since / RESUME_MUTE_MS) * 0.6; // 0 → 0.6 선형 페이드인
+    } else {
+      resumedAt = 0;
+    }
+  }
   if (lastPlayed[key] && now - lastPlayed[key] < SFX_THROTTLE_MS) return;
   if (activeSounds >= SFX_MAX_CONCURRENT) return;
   lastPlayed[key] = now;
   activeSounds++;
   /* v3.1.0 — SFX 마스터 게인(sfxVol) 배율 적용 (설정 슬라이더 반영) */
   try {
-    game.sound.play(key, { volume: vol * sfxVol, rate });
+    game.sound.play(key, { volume: vol * sfxVol * volScale, rate });
   } catch {
     /* 재생 실패(디코드 오류·디바이스 전환)도 게임을 멈추지 않는다 */
   }
@@ -401,6 +419,10 @@ function attachLifecycle(g: Phaser.Game) {
       } catch {
         /* noop */
       }
+      /* vc204 (지시서 #17) — 복귀 직후 SFX 페이드인 시작점 기록.
+       *  숨김 동안 쌓인 요청은 play() 가 document.hidden 으로 걸러내므로,
+       *  여기서는 "복귀 직후 0.3초는 작게 시작"만 담당한다. */
+      resumedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
       // 복귀 — 음소거 아니고 트랙 지정이 있으면 재개
       if (!muted && bgmKey && !bgmSound) startTrack(bgmKey);
     }

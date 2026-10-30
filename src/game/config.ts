@@ -88,6 +88,10 @@ export type SaveData = {
    *  씬 전환 시 Player 가 새로 생성되면 이 값으로 bonusHpApplied 를 복원해
    *  같은 보너스가 다시 더해지는 것을 막는다. */
   bonusHp?: number;
+  /** vc204 (지시서 #7) — 씹덕 NPC 3단계 미니 퀘스트 진행도 (NPC 키별).
+   *  스테이지 퀘스트(questIdx)와 분리 저장 — 마을당 1명 배치라 NPC 가 마을마다 달라도
+   *  각자의 라인이 독립적으로 이어진다. 구 세이브는 undefined → 빈 객체 폴백. */
+  chibiQuests?: Record<string, { done: number; prog: number; active: string | null }>;
   /* v3.0.7 — 장신구 스타포스 (itemKey → 성) + 강화 주문서 충전 수 */
   accUp?: Record<string, number>;
   starBless?: number;

@@ -32,6 +32,26 @@ export function viewZoom(): number {
   return Math.min(2.5, Math.max(1, Math.round(raw * 4) / 4));
 }
 
+/* vc204 (지시서 #1 "모바일 화질") — 백버퍼 해상도 상한.
+ *  vc178 주석이 계획만 남기고 구현되지 않아, S20+(1440×3200 @ DPR 2.625)처럼
+ *  고밀도 기기에서 매 프레임 460만 픽셀을 그렸다. 이 게임 타일은 16~64px
+ *  픽셀아트라 그 해상도가 시각적으로 의미가 없고, 발열·배터리만 소모한다.
+ *
+ *  상한 규칙: CSS 표시 크기는 그대로 두고 **백버퍼의 긴 변**만 BACKBUF_MAX 로 제한.
+ *   · PC 1920×1080 → 긴 변 1920 ≤ 1600? 아니오 → 0.83배. 다만 PC 는 화질 우선이라
+ *     BACKBUF_MAX 를 1920 으로 두어 1920 화면까지는 원본 유지(초과분만 축소).
+ *   · S20+ 1440×3200 → 긴 변 3200 → 0.6배 → GPU 채우기 약 64% 절감.
+ *  pixelArt + roundPixels 라 축소해도 픽셀 경계가 흐려지지 않는다(정수배 근처). */
+export const BACKBUF_MAX = 1920;
+export function renderResolutionFor(w: number, h: number): number {
+  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return 1;
+  const longSide = Math.max(w, h);
+  if (longSide <= BACKBUF_MAX) return 1; // 상한 이내 — 원본 화질
+  /* 정수배에 가깝게 떨어뜨려 픽셀아트 정렬을 유지한다(0.05 스텝 스냅). */
+  const r = BACKBUF_MAX / longSide;
+  return Math.max(0.5, Math.floor(r * 20) / 20);
+}
+
 /* ================= v1.4.5 (#무한재부팅) — 자가치유 재부팅 예산 =================
  * 유저 리포트: "이상한 돌·ARG 웹페이지 접속 후 복귀 시 게임 무한 재부팅".
  * 원인: 컨텍스트 유실/프리즈 워치독·백그라운드 복귀 재부팅이 전부 무한 reload를
@@ -162,17 +182,32 @@ export function createGame(parent: HTMLElement): Phaser.Game {
       height: GAME_H,
       expandParent: true,
     },
+    /* vc204 (지시서 #1 "모바일 화질") — 백버퍼 해상도 상한.
+     *  vc178 은 주석만 있고 구현이 없었다. Phaser 4 의 Scale.RESIZE 는 뷰포트를
+     *  1:1 로 그리므로 S20+(1440×3200)에서 매 프레임 460만 픽셀을 채웠다.
+     *  이 게임 타일은 16~64px 픽셀아트라 그 해상도가 시각적으로 무의미하다.
+     *  → 백버퍼 긴 변을 BACKBUF_MAX(1920)로 제한한다. CSS 표시 크기는 그대로.
+     *    PC(긴 변 ≤1920)는 1.0 이라 원본 화질이 유지된다. */
+    zoom: renderResolutionFor(
+      typeof window !== "undefined" ? window.innerWidth : GAME_W,
+      typeof window !== "undefined" ? window.innerHeight : GAME_H,
+    ),
     /* vc178 (#5 발열) — 렌더 해상도 상한.
      *  Scale.RESIZE + expandParent는 뷰포트를 1:1로 그린다. S20+(1440×3200)처럼
-     *  고밀도 기기에서는 460만 픽셀을 매 프레임 채우게 되는데, 이 게임은 16~64px
+     *  고밀도 기기에서는 460만 픽셀을 매 프레임 채우게 되는데 이 게임은 16~64px
      *  픽셀아트라 그 해상도가 시각적으로 의미가 없다(업스케일 낭비).
      *  CSS 표시 크기는 그대로 두고 "백버퍼"만 상한을 둔다 — 발열·배터리의 최대 절감.
      *  (render.resolution 은 Phaser가 창 크기에 곱하므로 1 미만으로 두고,
-     *   실제 축소는 scale manager 의 zoom 으로 처리한다.) */
+     *   실제 축소는 scale manager 의 zoom 으로 처리한다.)
+     *
+     *  vc204 (지시서 #1 "모바일 화질") — vc178 은 주석만 있고 구현이 없었다.
+     *  DPR 상한을 실제로 건다: 백버퍼의 긴 변이 BACKBUF_MAX 를 넘지 않게
+     *  render.resolution 을 1 미만으로 낮춘다. pixelArt:true + roundPixels 라
+     *  축소해도 픽셀 경계가 흐려지지 않고, GPU 채우기 비용만 줄어든다.
+     *  PC(넓은 화면)는 상한에 걸리지 않아 원본 화질이 그대로 유지된다. */
 
     scene: [BootScene, TitleScene, WorldScene],
   });
-
   /* v3.2.0 (#흑화) — WebGL 컨텍스트 손실 자가복구.
    *  모바일 WebView/구형 GPU에서 긴 세션 중 컨텍스트가 유실되면 캔버스가 검은 채로
    *  멈춘다(입력도 죽음). lost에서 복구 대기, 4초 내 미복구 시 세이브가 살아있으므로

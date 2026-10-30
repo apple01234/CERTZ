@@ -328,7 +328,13 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "muspelheim", num: 5, title: "무스펠헤임", subtitle: "극열의 해역 · 화산 지대",
     intro: "muspelIntro", boss: "surt", bossDone: "surtDone",
-    width: 2200, height: 1250, groundTint: 0xd88a4a, groundTex: "tile_lava", pathTex: "tile_blood", bg: "#1c0d06",
+    /* vc204 (지시서 #16 "저 꽃게 타일은 도대체 뭐임?") — 무스펠헤임 지면 교체.
+     *  종전 groundTex="tile_lava" 는 128×128·7색짜리 오염 webp 로, 실제로는 붉은 게 그림이
+     *  반복됐다. pathTex="tile_blood" 도 128px·6색 오염본이었다.
+     *  → 정상 256×256 지형으로 교체: 지면 = tile_magma.png(107색, 균열 용암),
+     *    길 = tile_basalt.webp(209색, 어두운 현무암). tint 는 유지해 극열 톤을 보존한다.
+     *  블룸 가드는 채널(muspelheim) 기준이라 타일명이 바뀌어도 그대로 유지된다. */
+    width: 2200, height: 1250, groundTint: 0xd88a4a, groundTex: "tile_magma", pathTex: "tile_basalt", bg: "#1c0d06",
     flowers: 0, trees: 4, rocks: 12,
     enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 3 }, { key: "golem", count: 3 }, { key: "x2_firebird", count: 3 }, { key: "x3_tinyzombie", count: 3 }, { key: "x3_wogol", count: 3 }],
     main: "emberwolf",
@@ -752,7 +758,11 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
   },
   behemoth: {
-    key: "behemoth", name: "눈보라의 거수",
+    key: "behemoth", name: "침몰의 선장",
+    /* vc204 — 챕터3 '쿠소디아 — 선박의 왕국 · 늪지대'.
+     *  스프라이트(tex: boss2 = atl_boss2)는 원본 아트 주석부터 "미드가르드 해적선"이라
+     *  배 그림이 맞다. 종전 이름 '눈보라의 거수'가 테마(선박의 왕국)와 어긋나
+     *  "챕터 테마에 맞는 보스가 아님"으로 보였다. 이름만 테마에 맞춘다(능력/수치는 불변). */
     hp: 5200, atk: 31, speed: 84, exp: 500, gold: 300,
     tex: "boss2", orbTint: 0x8ad4ff, introDialogue: "bossIntroBehemoth",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 spiral · 성향 0.95 */

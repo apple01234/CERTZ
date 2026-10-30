@@ -359,7 +359,11 @@ const DUELIST: ClassDef = {
 const STORMCAPTAIN: ClassDef = {
   key: "stormcaptain", tier: 3, parent: "raider",
   name: "스톰캡틴", title: "폭풍의 선장",
-  color: "#8fe8ff", hex: 0x8fe8ff,
+  /* vc204 (지시서 #4) — "같은 텍스트 색깔의 직업은 같은 직업".
+   *  부모 raider 가 해적 계열 #ffb347 인데 여기만 #8fe8ff(청록)로 계통에서 벗어났다.
+   *  같은 계통의 powdermaster(#ff9a5c) 와도 어긋나 색만 보고 계통을 알 수 없었다.
+   *  → 부모 계열의 밝은 변주로 맞춘다(폭풍의 청록은 스킬 FX 색으로만 쓴다). */
+  color: "#ffd88a", hex: 0xffd88a,
   atkPct: 26, critAdd: 6, defAdd: 4, hpAdd: 120, mpAdd: 40, speedPct: 8,
   bossDmgPct: 10, mobDmgPct: 16,
   cdMult: 0.9, skillMult: 1.2,
@@ -424,7 +428,9 @@ const ARCLORD: ClassDef = {
 const ETERNAL: ClassDef = {
   key: "eternal", tier: 4, parent: "chronicle",
   name: "이터널", title: "시간을 초월한 자",
-  color: "#ffffff", hex: 0xffffff,
+  /* vc204 (#4) — 부모 chronicle(#e2e8ff) 과 132도 벗어난 순백이었다.
+   *  마법사 계열 색으로 맞춘다. */
+  color: "#d8deff", hex: 0xd8deff,
   atkPct: 24, critAdd: 10, defAdd: 10, hpAdd: 220, mpAdd: 200, speedPct: 10,
   /* v1.4.30 (#7 이터널 실성능 강화) — skillMult 1.2→1.4·atkPct 18→24:
    *  특화는 사냥(mob)+보스 골고루 — 지속전 강점(짧은 쿨·CC·힐)이 실제 화력으로 이어지게. */
@@ -456,7 +462,8 @@ const BLADEMASTER: ClassDef = {
 const SEAKING: ClassDef = {
   key: "seaking", tier: 4, parent: "stormcaptain",
   name: "씨킹", title: "바다의 왕",
-  color: "#5fd4ff", hex: 0x5fd4ff,
+  /* vc204 (#4) — 부모 stormcaptain 계열(#ffd88a)로 맞춘다. 4차는 가장 밝은 변주. */
+  color: "#fff0b8", hex: 0xfff0b8,
   atkPct: 28, critAdd: 10, defAdd: 8, hpAdd: 240, mpAdd: 120, speedPct: 12,
   bossDmgPct: 20, mobDmgPct: 14,
   cdMult: 0.78, skillMult: 1.35,

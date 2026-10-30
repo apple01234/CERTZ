@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
+import { resolveGroundTile } from "../tileThemes"; // vc204 — 지역 지면 → 타일 단일 매핑
+import { openMaskAt, patternFor } from "../autotile"; // vc204 — 4비트 이웃 마스크 오토타일
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
 import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
@@ -11,6 +13,8 @@ import { Drop, type DropKind } from "../entities/Drop";
 /* v1.4.41 (씬 분해 1단계) — 순수 헬퍼 4종을 worldHelpers.ts 로 분리. 동작 변경 0. */
 import { AURA_ANIM, AURA_LUT, AURA_LUT_STEPS, HIT_FLIPBOOK, adFailText } from "./worldHelpers";
 import { FifthAuraRig } from "../fx/FifthAura"; // v1.4.41 (#9) — 5차 블룸·라이트
+import { fifthBurstFor } from "../fx/fifthLooks"; // vc204 (#15) — 직업별 각성 버스트
+import { lineByKey as chibiLineByKey, CHIBI_LINES, type ChibiSave } from "../chibiQuests"; // vc204 (#7) — 씹덕 NPC 퀘스트
 import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱
 import { playStoryCutscene, storyCutscenePlaying } from "../fx/StoryCutscene"; // v1.4.41 — 스토리 컷씬
 import { chapterIntroOf } from "../storyCutscenes"; // v1.4.41 — 챕터별 진입 연출 데이터
@@ -84,6 +88,11 @@ import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
   type RoomLayout,
 } from "../mapgen";
+
+/* vc204 (지시서 #2·#18) — 카메라 워치독 상한.
+ *  보스 인트로 팬 등 camCinema 연출의 최대 길이(약 3초)에 여유를 둔 값.
+ *  이 시간을 넘겨 추적이 잠겨 있으면 콜백이 유실된 것으로 보고 강제 해제한다. */
+const CAM_CINEMA_MAX_MS = 6000;
 
 /* v1.1.1 (#4 포니테일) — 방향별 시트/묶음 원점/프레임 오프셋.
  *  묶음(타이) 픽셀 좌표를 원점으로 잡아 setPosition(플레이어+오프셋) 시 묶음이
@@ -1110,6 +1119,8 @@ export class WorldScene extends Phaser.Scene {
     this.player.emerald = Math.max(0, savedPlayer.emerald ?? 0);
     // 퀘스트 진행 복원 (이어하기 — 파편/보상 중복 수령 방지)
     this.savedQuestIdx = { ...(savedPlayer.questIdx ?? {}) };
+    /* vc204 (#7) — 씹덕 NPC 퀘스트 진행도 복원 (구 세이브는 빈 객체) */
+    this.chibiQuests = { ...(savedPlayer.chibiQuests ?? {}) } as typeof this.chibiQuests;
     this.questIdx = Phaser.Math.Clamp(this.savedQuestIdx[stageKey] ?? 0, 0, this.stageDef.quests.length);
     // 플레이어 이름 복원 (인트로에서 지정)
     if (savedPlayer.playerName) setPlayerName(savedPlayer.playerName);
@@ -1474,31 +1485,25 @@ export class WorldScene extends Phaser.Scene {
      *  — 기존 tile_grass 등은 절차 생성한 노이즈 텍스처라 "물감 뭉갠 종이"로 보였다.
      *  → 정식 타일셋(TopDown 2D RPG BE3 / Tiles.png)에서 뽑은 tile_*_pack 으로 교체.
      *  DLC·재림(dlc:true)은 고유 테마를 유지하라는 지시이므로 손대지 않는다.
-     *  같은 무늬가 64px 주기로 규칙 반복되는 것을 막으려고 변형 3종을 섞는다. */
-    const NATIVE_TILE: Record<string, string> = {
-      tile_grass: "tile_grass_pack",
-      tile_grass2: "tile_grass_pack",
-      tile_forest: "tile_grass_pack",
-      tile_moss: "tile_grass_pack",
-      tile_garden: "tile_grass_pack",
-      tile_path: "tile_sand_pack",
-      tile_snow: "tile_sand_pack",
-      tile_sand: "tile_sand_pack",
-      tile_desert: "tile_sand_pack",
-      tile_water: "tile_water_pack",
-      tile_magma: "tile_dirt_pack",
-      tile_rock: "tile_dirt_pack",
-      tile_stone: "tile_dirt_pack",
-      tile_cave: "tile_dirt_pack",
-      tile_dark: "tile_dirt_pack",
-    };
+     *
+     * vc204 — NATIVE_TILE 인라인 표를 tileThemes.ts 로 이관.
+     *  기존 표는 14개 지면 키를 3장(tile_grass_pack/tile_sand_pack/tile_dirt_pack)으로
+     *  붕괴시켰고, 그 3장은 64px·최빈색 89%라 사실상 단색이었다. 그래서 숲·설원·사막·
+     *  용암·동굴이 "같은 바닥에 색만 다른" 화면이 됐다("타일맵이 똑같음" 지적).
+     *  또 tile_lava(붉은 게)·tile_path(나무)·tile_blood(창문) 같은 오브젝트 컷이
+     *  지면으로 깔려 "꽃게 타일"이 나왔다.
+     *  이제 256px 고품질 지형 타일로 지역별 고유 무늬를 깐다. 지역 분위기 조정은
+     *  tileThemes.ts 의 GROUND_TILE_MAP 한 곳만 고치면 된다. */
+    const mappedGround = resolveGroundTile(groundTex);
     /* dlc 플래그는 StageDef 가 아니라 ChapterSpec 에 있다(챕터 단위 구분).
      *  현재 스테이지의 챕터를 찾아 DLC·재림 여부를 판정한다. */
     const curCh = parseStage(stageKey).ch;
     const isDlcStage = CHAPTERS.some((c) => c.key === curCh && c.dlc === true);
-    const packBase = isDlcStage ? null : NATIVE_TILE[groundTex];
-    const packTex = packBase && this.textures.exists(packBase) ? packBase : groundTex;
-    const canVary = !!packBase && this.textures.exists(`${packBase}_v1`);
+    /* 매핑 타일이 실제로 로드돼 있을 때만 치환한다(미등록이면 원본 유지). */
+    const packTex = !isDlcStage && mappedGround !== groundTex && this.textures.exists(mappedGround)
+      ? mappedGround
+      : groundTex;
+    const canVary = !!packTex && this.textures.exists(`${packTex}_v1`);
     /* v1.4.30 (#11 니플헤임 눈부심) — 흰 눈바닥 타일이 화면을 압도하므로 챕터별 지면 틴트 도입.
      *  흰색 타일을 청회색으로 곱해 전체 톤 다운 (암전과 별개로 원본 자체가 밝은 타일 보정). */
     const CH_GROUND_TINT: Record<string, number> = { niflheim: 0xc4d6ea }; // vc147 (#21) — 0x70819c→밝은 설원톤 (눈 지형 체감 복원)
@@ -1527,7 +1532,10 @@ export class WorldScene extends Phaser.Scene {
         }
       }
     } else {
-      groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, groundTex).setOrigin(0).setDepth(0);
+      /* vc204 — 변형 타일이 없어도 매핑 결과(packTex)를 써야 한다.
+       *  이전에는 여기서 groundTex(원본)를 그대로 써서, 변형(_v1/_v2)이 없는 지역은
+       *  tileThemes 매핑이 통째로 무시됐다(무스펠헤임이 계속 붉은 게 타일로 나온 원인). */
+      groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, packTex).setOrigin(0).setDepth(0);
       groundTs.setTileScale(1);
       if (gTint) groundTs.setTint(gTint);
     }
@@ -1539,6 +1547,14 @@ export class WorldScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
     this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
+    /* vc204 — 지면 경계 오버레이(오토타일).
+     *  지면은 위에서 TileSprite 한 장으로 깔았다. 그대로 두면 열린 영역과 벽이
+     *  만나는 경계가 표현되지 않아 "같은 무늬가 끝없이 반복"으로 보인다.
+     *  여기서는 레이아웃 격자의 각 셀에 대해 4비트 이웃 마스크를 구하고,
+     *  가장자리 셀에만 16프레임 오버레이를 덮는다.
+     *  마스크 규칙·프레임 배정은 src/game/autotile.ts, 근거는 게임 빌드 실측
+     *  (tools/autotile_derive.py — 이웃 마스크가 같으면 같은 패턴 86~100%). */
+    if (!this.isInterior && this.layout) this.drawGroundEdges(this.layout);
     /* v4.10.0 (유저 지시 "맵이 지금 위치에서 x축이 화면 정 가운데에 있어야지") —
      *  Phaser follow/clamp 줌 보정 — PC 웹(줌>1)에서 맵이 화면 x축에서 어긋나던 근본 수정.
      *  상세 원인·보정 내용은 setupCameraClampFix 주석 참조. */
@@ -2139,6 +2155,20 @@ export class WorldScene extends Phaser.Scene {
   /** v1.4.41 — 스토리 컷씬(StoryCutscene)도 이 플래그를 공유한다.
    *  private 이면 외부 연출 모듈이 팬 중임을 알릴 수 없어 팔로우와 충돌한다. */
   camCinema = false;
+  /** vc204 (지시서 #7) — 씹덕 NPC 3단계 미니 퀘스트 진행도.
+   *  스테이지 퀘스트(questIdx)와 분리 저장한다 — 마을당 1명 배치(vc178)라 NPC 가
+   *  마을마다 달라도 각자의 라인이 독립적으로 이어진다. */
+  chibiQuests: ChibiSave = {};
+  /* vc204 (지시서 #2·#18) — 카메라 워치독 상태.
+   *  camCinema 가 이 시각 이후로 CAM_CINEMA_MAX_MS 를 넘겨 유지되면 강제 해제한다.
+   *  zoomDriftSince 는 "연출 없이 줌이 기준값에서 벗어난 채 머문 시작 시각". */
+  private camCinemaSince = 0;
+  private zoomDriftSince = 0;
+  /** vc204 (#2) — 진행 중인 카메라 연출(줌/팬)이 있으면 true. 줌 워치독이 끼어들지 않게 한다. */
+  private camFxFiring = false;
+  /** vc204 (#14) — 룩어헤드 오프셋(월드 px). 이동 방향으로 시야를 앞서 보낸다. */
+  private camLookX = 0;
+  private camLookY = 0;
 
   /* ================= vc146 (#5) — 2.5D 카메라 (의사 원근) =================
    *  유저 지시 "카메라를 약간 2,5D 느낌으로". 3요소:
@@ -2214,7 +2244,47 @@ export class WorldScene extends Phaser.Scene {
 
   private applyManualCameraFollow(dt: number) {
     const cam = this.cameras?.main;
-    if (!cam || this.camCinema || !this.player?.active) return;
+    if (!cam || !this.player?.active) return;
+    /* vc204 (지시서 #2·#18) — 카메라 워치독.
+     *  종전에는 camCinema 가 true 인 동안 여기서 즉시 return 했고, 그 플래그를 푸는 곳은
+     *  보스 인트로 팬 완료 콜백 하나뿐이었다(타임아웃 없음). 팬 콜백이 한 번이라도
+     *  불리지 않으면 카메라가 그 자리에 영구 정지했다
+     *  ("카메라 줌 아웃시 원래대로 안돌아오는 버그", "무스펠헤임에서 카메라 안움직이는 버그").
+     *  → camCinema 가 상한(연출 최대 길이 + 여유)을 넘겨 유지되면 강제 해제하고 경고를 남긴다. */
+    if (this.camCinema) {
+      if (!this.camCinemaSince) this.camCinemaSince = this.time.now;
+      const held = this.time.now - this.camCinemaSince;
+      if (held > CAM_CINEMA_MAX_MS) {
+        this.camCinema = false;
+        this.camCinemaSince = 0;
+        try { this.physics.world.resume(); } catch { /* 무시 */ }
+        console.warn(`[SERTZ] camCinema 워치독 발동 — ${held}ms 동안 추적이 잠겨 있어 강제 해제`);
+      } else {
+        return;
+      }
+    } else if (this.camCinemaSince) {
+      this.camCinemaSince = 0;
+    }
+    /* vc204 (지시서 #2) — 줌 복귀 워치독. 진행 중인 카메라 연출이 없는데
+     *  줌이 기준값(viewZoom)에서 벗어난 채 0.5초 이상 남아 있으면 부드럽게 복귀시킨다.
+     *  상대 줌(zoom*1.06 등) 누적 오차로 줌이 어중간한 값에 남는 것을 막는다. */
+    {
+      const base = viewZoom();
+      const drift = Math.abs((cam.zoom || 1) - base);
+      if (drift > 0.01 && !this.camFxFiring) {
+        if (!this.zoomDriftSince) this.zoomDriftSince = this.time.now;
+        if (this.time.now - this.zoomDriftSince > 500) {
+          const k2 = 1 - Math.pow(1 - 0.25, Math.min(dt, 100) / 16.667);
+          cam.setZoom((cam.zoom || 1) + (base - (cam.zoom || 1)) * k2);
+          if (Math.abs(cam.zoom - base) < 0.005) {
+            cam.setZoom(base);
+            this.zoomDriftSince = 0;
+          }
+        }
+      } else {
+        this.zoomDriftSince = 0;
+      }
+    }
     const z = cam.zoom || 1;
     const vw = cam.width / z;
     const vh = cam.height / z;
@@ -2222,8 +2292,30 @@ export class WorldScene extends Phaser.Scene {
      *  앉는 JRPG 프레이밍 (토글 끄면 기존 정중앙 추적 유지) */
     const lift = this.perspOn ? vh * 0.09 : 0;
     /* 원하는 뷰 좌상단(월드): 캐릭터 화면 정중앙 + 맵≥뷰 가장자리 밀착 + 맵<뷰 중앙 고정 */
-    const vx = this.stageW > vw ? Phaser.Math.Clamp(this.player.x - vw / 2, 0, this.stageW - vw) : (this.stageW - vw) / 2;
-    const vy = this.stageH > vh ? Phaser.Math.Clamp(this.player.y - lift - vh / 2, 0, this.stageH - vh) : (this.stageH - vh) / 2;
+    /* vc204 (지시서 #14 "카메라 무빙 너무 짐침") — 룩어헤드 + 데드존.
+     *  종전에는 캐릭터를 항상 화면 정중앙에 고정하는 "따라가기"만 있어 연출감이 없었다.
+     *   · 룩어헤드: 이동 방향으로 시야를 살짝 앞서 보낸다(최대 뷰 폭의 7%).
+     *     속도에 비례하고, 방향을 바꾸면 지수 감쇠로 부드럽게 반전된다.
+     *   · 데드존: 아주 작은 움직임에서는 카메라가 떨지 않도록 중앙에 소폭 여유를 둔다.
+     *  둘 다 카메라 스크롤에만 영향을 주고 판정/좌표계는 건드리지 않는다. */
+    const vel = (this.player.body as Phaser.Physics.Arcade.Body | null)?.velocity;
+    const spd = vel ? Math.hypot(vel.x, vel.y) : 0;
+    const MAX_LOOK = vw * 0.07;
+    const lookTargetX = vel && spd > 8 ? (vel.x / Math.max(1, spd)) * MAX_LOOK * Math.min(1, spd / 260) : 0;
+    const lookTargetY = vel && spd > 8 ? (vel.y / Math.max(1, spd)) * MAX_LOOK * 0.6 * Math.min(1, spd / 260) : 0;
+    const lk = 1 - Math.pow(1 - 0.06, Math.min(dt, 100) / 16.667); // 룩어헤드 감쇠
+    this.camLookX += (lookTargetX - this.camLookX) * lk;
+    this.camLookY += (lookTargetY - this.camLookY) * lk;
+    /* 데드존 — 중앙에서 PLAYER_DEADZONE 이내면 목표를 그대로 둔다(미세 떨림 억제) */
+    const DEAD = 10;
+    const pxW = this.player.x + this.camLookX;
+    const pyW = this.player.y - lift + this.camLookY;
+    const centerW = cam.scrollX + vw / 2;
+    const centerH = cam.scrollY + vh / 2;
+    const dxz = Math.abs(pxW - centerW) < DEAD ? centerW : pxW;
+    const dyz = Math.abs(pyW - centerH) < DEAD ? centerH : pyW;
+    const vx = this.stageW > vw ? Phaser.Math.Clamp(dxz - vw / 2, 0, this.stageW - vw) : (this.stageW - vw) / 2;
+    const vy = this.stageH > vh ? Phaser.Math.Clamp(dyz - vh / 2, 0, this.stageH - vh) : (this.stageH - vh) / 2;
     /* P4 렌더 보정: screen = origin + z×(world - scroll - origin)
      *  → 뷰 좌상단 = scroll + origin×(1-1/z) → scroll = 뷰좌상단 - origin×(1-1/z) */
     const shx = (cam.width * 0.5) * (1 - 1 / z);
@@ -2376,6 +2468,37 @@ export class WorldScene extends Phaser.Scene {
   /* ================= 배치 ================= */
 
   /* ================= v3.0 — 개미굴 던전 레이아웃 (사용자 지시 #7) ================= */
+
+  /**
+   * vc204 — 지면 경계 오버레이(오토타일) 렌더.
+   *
+   * 왜 이 방식인가:
+   *   지면 전체를 타일 단위 이미지로 깔면 오브젝트 수가 폭발한다
+   *   (맵 2200x1250 / 64px = 670개 이상). 대신 내부는 기존 TileSprite 한 장으로
+   *   그대로 두고, **벽과 맞닿은 경계 셀에만** 16프레임 오버레이를 덮는다.
+   *   추가 텍스처 1장(autotile_edge, 4KB)으로 원본 화질 손실 없이 경계를 만든다.
+   *
+   * 마스크: 1=상 2=하 4=좌 8=우 가 열린 셀. 닫힌 방향에 어두운 띠가 그려진
+   * 프레임을 골라 덮으므로, 플레이어 눈에는 지면이 벽에 닿는 모서리가 생긴다.
+   */
+  private drawGroundEdges(lay: RoomLayout) {
+    if (!this.textures.exists("autotile_edge")) return;
+    const { cols, rows, cellW, cellH } = lay;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (!lay.open[r * cols + c]) continue;
+        const mask = openMaskAt(lay.open, cols, rows, c, r);
+        if (mask === 15) continue;            // 사방 열림 = 내부, 오버레이 불필요
+        const frame = patternFor(mask);        // 0~15
+        this.add
+          .image(c * cellW, r * cellH, "autotile_edge", frame)
+          .setOrigin(0)
+          .setDisplaySize(cellW, cellH)
+          .setDepth(0.5)                      // 지면(0) 위, 벽/오브젝트 아래
+          .setAlpha(0.55);
+      }
+    }
+  }
 
   /** 닫힌 셀을 챕터 분위기에 맞는 암벽 타일로 채워 벽(충돌)을 만든다 */
   private buildDungeonWalls(lay: RoomLayout, ch: string) {
@@ -3328,6 +3451,7 @@ export class WorldScene extends Phaser.Scene {
       if (p && p.members.length >= 2) partyContent.partyBoardTick("portal", 1);
     }
     this.tut?.notify("portal"); // v1.0.11 — 튜토리얼 차원문 학습 판정
+    this.chibiProgress("reach", 1); // vc204 (#7) — 도달형 씹덕 퀘스트
     audio.sfx.portal();
     this.player.setVelocity(0, 0);
     this.player.state = "idle";
@@ -5006,7 +5130,10 @@ export class WorldScene extends Phaser.Scene {
     {
       mm.fillStyle(0xffe066, 0.95);
       for (const it of this.interactables) {
-        if (it.kind !== "talk" && it.kind !== "shop" && it.kind !== "job" && it.kind !== "gm" && it.kind !== "innkeeper") continue;
+        /* vc204 (지시서 #7) — chibi NPC 도 노란 점 대상에 포함.
+         *  종전엔 talk/shop/job/gm/innkeeper 만 그려서 씹덕 NPC 는 지도에서 안 보였다. */
+        if (it.kind !== "talk" && it.kind !== "shop" && it.kind !== "job" &&
+            it.kind !== "gm" && it.kind !== "innkeeper" && it.kind !== "chibi") continue;
         mm.fillCircle(mx(it.x), my(it.y), 2.4 / z);
       }
       if (this.jobNpc?.active) mm.fillCircle(mx(this.jobNpc.x), my(this.jobNpc.y), 2.6 / z);
@@ -5017,10 +5144,42 @@ export class WorldScene extends Phaser.Scene {
       mm.fillStyle(0xffd76a, 1);
       mm.fillCircle(mx(t.x), my(t.y), 2.8 / z);
     }
-    // 차원문 (활성 보라 / 비활성 회색)
+    /* vc204 (지시서 #19) — "맵(지도)에 포탈 보라색으로 안보임".
+     *  종전에는 this.portal(진행 차원문) 하나만 그렸고, 비활성은 회색(0x8a8a8a)이라
+     *  "안 보인다"는 지적의 직접 원인이었다. dlcPortal·복귀 차원문은 아예 안 그렸다.
+     *  → 모든 종류의 포탈을 보라 계열로 통일하고, 비활성은 밝기를 낮춘 보라로 둔다.
+     *    점 반경도 2.8 → 4.2로 키우고 링을 둘러 작은 미니맵에서도 눈에 띄게 한다. */
+    const drawPortalDot = (px0: number, py0: number, on: boolean) => {
+      const r = 4.2 / z;
+      if (on) {
+        // 활성: 밝은 보라 링 + 채운 점 + 외곽 글로우
+        mm.fillStyle(0x9d7aff, 0.18);
+        mm.fillCircle(px0, py0, r * 2.1);
+        mm.lineStyle(1.6 / z, 0xc9b6ff, 0.95);
+        mm.strokeCircle(px0, py0, r);
+        mm.fillStyle(0xb79cff, 1);
+        mm.fillCircle(px0, py0, r * 0.55);
+      } else {
+        // 비활성: 어두운 보라(회색 금지 — 배경과 구분이 안 됐다)
+        mm.lineStyle(1.3 / z, 0x6a52a8, 0.9);
+        mm.strokeCircle(px0, py0, r);
+        mm.fillStyle(0x5b47a0, 0.95);
+        mm.fillCircle(px0, py0, r * 0.5);
+      }
+    };
+    // 진행 차원문
     if (this.portal?.active) {
-      mm.fillStyle(this.portalActive ? 0x9d7aff : 0x8a8a8a, 0.9);
-      mm.fillCircle(mx(this.portal.x), my(this.portal.y), 2.8 / z);
+      drawPortalDot(mx(this.portal.x), my(this.portal.y), this.portalActive);
+    }
+    // DLC 포탈 (그랜드플래닛 입구) — 종전 미니맵에 없었다
+    if (this.dlcPortal?.active) {
+      drawPortalDot(mx(this.dlcPortal.x), my(this.dlcPortal.y), true);
+    }
+    /* vc204 (지시서 #19) — 복귀 차원문도 그린다.
+     *  종전엔 진행 차원문 + DLC 포탈만 그렸고 복귀 차원문(returnPortal)은 누락이었다.
+     *  복귀는 항상 사용 가능하므로 활성(밝은 보라)으로 표시한다. */
+    if (this.returnPortal?.active) {
+      drawPortalDot(mx(this.returnPortal.x), my(this.returnPortal.y), true);
     }
     // 플레이어 (흰 점 + 링)
     const px = mx(this.player.x);
@@ -7577,6 +7736,17 @@ export class WorldScene extends Phaser.Scene {
     spawnPentacle(this, p.x, p.y, 0xffe66a, { scale: 3.2, duration: 1600, spin: true, alpha: 0.95 });
     spawnRingPop(this, p.x, p.y, "vf_ring", 0xffe66a, 5.6, 1000);
     spawnFlarePop(this, p.x, p.y - 10, "vf_flare_fire", { tint: 0xffe66a, scale: 2.0, duration: 700 });
+    /* vc204 (지시서 #15) — 직업 고유 등장 버스트(한 번). 상시 외형(FifthAuraRig)과 분리.
+     *  각 직업의 베리어 텍스처를 크게 터뜨려 "이 직업의 각성"임을 즉시 알린다. */
+    {
+      const b = fifthBurstFor(p.cls, p.clsHexPublic);
+      if (this.textures.exists(b.tex)) {
+        const img = this.add.image(p.x, p.y - 14, b.tex).setDepth(29)
+          .setBlendMode(Phaser.BlendModes.ADD).setTint(b.tint).setScale(b.scale * 0.35).setAlpha(0);
+        this.tweens.add({ targets: img, alpha: 0.95, scale: b.scale, duration: 240, ease: "Cubic.out" });
+        this.tweens.add({ targets: img, alpha: 0, scale: b.scale * 1.5, delay: 260, duration: b.life, onComplete: () => img.destroy() });
+      }
+    }
     this.cameras.main.flash(240, 255, 230, 120);
     this.doShake(460, 0.02);
     EventBus.emit("banner:show", {
@@ -7633,6 +7803,110 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** v3.0.22 (#43) — 동적 단발 대사 (DIALOGUES 테이블 밖 — 결정 수확 랜덤 멘트) */
+  /** vc204 (지시서 #7) — 씹덕 NPC 3단계 미니 퀘스트 상호작용.
+   *  기존 대화 시스템(showDialogueRaw + dialogue:choice)을 그대로 쓰고 새 UI 를 만들지 않는다.
+   *  분기: ① 라인 완료 → 잡담 ② 진행 중 → 진행도 보고 ③ 수주 가능 → 수주 제안 ④ 완료 가능 → 보상 */
+  private chibiInteract(npcId: string) {
+    const line = chibiLineByKey(npcId);
+    if (!line) return;
+    const st = this.chibiState(npcId);
+    const step = line.steps[st.done];
+    /* ① 라인 완료 */
+    if (!step) {
+      this.showDialogueRaw({
+        speaker: line.name,
+        lines: [`『${line.persona}』`, "『…네 덕분에 여기까지 왔어. 고마워.』"],
+      });
+      return;
+    }
+    /* ② 진행 중 — 진행도 보고 */
+    if (st.prog > 0) {
+      const need = step.need ?? 1;
+      this.showDialogueRaw({
+        speaker: line.name,
+        lines: [`『${step.title} — ${Math.min(st.prog, need)}/${need}.』`, "『아직이야. 조금만 더!』"],
+      });
+      return;
+    }
+    /* ③·④ 완료 판정 후 수주/보상 */
+    this.showDialogueRaw({
+      speaker: line.name,
+      lines: step.intro,
+      choices: [
+        { label: `[수주] ${step.title}`, id: "chibi_accept" },
+        { label: "나중에", id: "chibi_later" },
+      ],
+    });
+    const onChoice = (v: { id?: string }) => {
+      EventBus.off("dialogue:choice", onChoice as never);
+      if (v?.id !== "chibi_accept") return;
+      const cur = this.chibiState(npcId);
+      if (cur.prog > 0 || cur.done !== st.done) return;
+      this.chibiQuests[npcId] = { done: cur.done, prog: 0, active: step.id };
+      this.save();
+      this.showBanner(`퀘스트 수주 — ${step.title}`);
+      this.emitChibiHud();
+    };
+    EventBus.on("dialogue:choice", onChoice as never);
+  }
+
+  /** 씹덕 퀘스트 상태 조회 (없으면 0/0) */
+  private chibiState(npcId: string) {
+    return this.chibiQuests[npcId] ?? { done: 0, prog: 0, active: null as string | null };
+  }
+
+  /** HUD 갱신 — 퀘스트 로그에 진행도가 보이게 */
+  private emitChibiHud() {
+    const entries = Object.entries(this.chibiQuests)
+      .filter(([, v]) => v.active)
+      .map(([k, v]) => {
+        const line = chibiLineByKey(k);
+        const step = line?.steps[v.done];
+        if (!line || !step) return null;
+        return `${line.name}: ${step.title} (${Math.min(v.prog, step.need ?? 1)}/${step.need ?? 1})`;
+      })
+      .filter(Boolean) as string[];
+    EventBus.emit("hud:chibiQuests", entries);
+  }
+
+  /** vc204 (#7) — 처치/수집/대화/도달 진행도를 씹덕 퀘스트에도 반영한다.
+   *  기존 advanceQuest 옆에서 함께 호출된다. */
+  chibiProgress(kind: "hunt" | "collect" | "talk" | "reach" | "boss", amount = 1) {
+    let changed = false;
+    for (const [npcId, st] of Object.entries(this.chibiQuests)) {
+      if (!st.active) continue;
+      const line = chibiLineByKey(npcId);
+      const step = line?.steps[st.done];
+      if (!step || step.id !== st.active) continue;
+      if (step.type !== kind) continue;
+      st.prog = Math.min((step.need ?? 1), st.prog + amount);
+      changed = true;
+      /* 목표 달성 → 완료 보고를 기다리지 않고 자동 완료 처리 */
+      if (st.prog >= (step.need ?? 1)) this.completeChibiStep(npcId);
+    }
+    if (changed) {
+      this.save();
+      this.emitChibiHud();
+    }
+  }
+
+  /** 단계 완료 — 보상 지급 + 다음 단계로 */
+  private completeChibiStep(npcId: string) {
+    const line = chibiLineByKey(npcId);
+    const st = this.chibiState(npcId);
+    const step = line?.steps[st.done];
+    if (!line || !step || !this.player) return;
+    if (step.reward) this.player.gold += step.reward;
+    if (step.expReward) this.player.gainExp(Math.round(step.expReward * QUEST_EXP_MUL));
+    this.chibiQuests[npcId] = { done: st.done + 1, prog: 0, active: null };
+    this.showBanner(`${step.title} 완료! +${step.reward ?? 0}G`);
+    audio.sfx.levelup();
+    this.spawnBurstAt(this.player.x, this.player.y, 18, 0xffe9a8);
+    this.showDialogueRaw({ speaker: line.name, lines: step.done });
+    this.save();
+    this.emitChibiHud();
+  }
+
   private showDialogueRaw(d: { speaker: string; lines: string[]; choices?: { label: string; id: string }[] }) {
     if (!this.player) return;
     this.activeNpcId = null;
@@ -7951,6 +8225,8 @@ export class WorldScene extends Phaser.Scene {
    * v3.0.28 — targetKeys(자동 토벌) 지정 시 구역 몬스터 전체 합산 판정.
    */
   private tryCompleteHunt(_key: EnemyKey) {
+    /* vc204 (#7) — 씹덕 NPC 토벌 퀘스트에도 처치 1회 반영 */
+    this.chibiProgress("hunt", 1);
     const q = this.currentQuest();
     if (!q || q.type !== "hunt") return;
     const progress = this.huntProgressSum(q);
@@ -10905,15 +11181,17 @@ export class WorldScene extends Phaser.Scene {
     this.tickFields(dt);
     this.tickOrbitBlades(dt);
     if (this.player && this.player.state !== "dead") this.syncWeaponSprite();
-    /* v1.4.41 (#9) — 5차 각성 발광. 외형은 색조만 바뀌어도 되지만 5차는 빛나야 한다. */
+    /* v1.4.41 (#9) — 5차 각성 발광. 외형은 색조만 바뀌어도 되지만 5차는 빛나야 한다.
+     *  vc204 (#15) — 직업별 고유 오라·베리어(cls 전달). 저사양은 헤일로 생략(lite). */
     if (this.player) {
-      if (!this.fifthAura) this.fifthAura = new FifthAuraRig(this);
+      if (!this.fifthAura) this.fifthAura = new FifthAuraRig(this, { lite: isLowPerfEnv() });
       this.fifthAura.update(
         this.player.x,
         this.player.y,
         this.player.isFifth && this.player.state !== "dead",
         this.player.clsHexPublic,
         this.player.flipX,
+        this.player.cls,
       );
     }
     else if (this.weaponImg) { this.weaponImg.setVisible(false); }
@@ -13677,9 +13955,12 @@ export class WorldScene extends Phaser.Scene {
     const it = this.nearInteract;
     if (!it) return;
     this.tut?.notify("talk"); // v1.0.11 — 튜토리얼 대화 학습 판정
-    /* v1.2.4 (버그 3) — 씹덕 NPC 대화. 기존 showDialogue 경로를 그대로 쓴다. */
+    /* v1.2.4 (버그 3) — 씹덕 NPC 대화. 기존 showDialogue 경로를 그대로 쓴다.
+     *  vc204 (지시서 #7) — 이제 3단계 미니 퀘스트 라인을 갖는다(수주→진행→보상).
+     *  "대사만 있고 퀘스트나 상호작용 안됨" 지적의 직접 해소. 새 UI 없이
+     *  기존 showDialogueRaw + dialogue:choice 를 재사용한다. */
     if (it.kind === "chibi") {
-      if (it.dlg) this.showDialogue(it.dlg, it.npcId ?? "guide");
+      this.chibiInteract(it.npcId ?? "");
       return;
     }
     /* vc178 — 집 꾸미기 패널 개방 (내 집 실내 우측 하단 꾸미기 지점) */
@@ -14482,6 +14763,8 @@ export class WorldScene extends Phaser.Scene {
    *  레벨 3이 찍히게 한다. 첫 사냥터 진입 전 레벨을 올릴 곳이 없던 교착의 근본 해결. */
   private onNpcTalked(npcId: string) {
     if (this.talkedNpcs.has(npcId)) return;
+    /* vc204 (#7) — 씹덕 NPC 대화 퀘스트에도 1회 반영 */
+    this.chibiProgress("talk", 1);
     this.talkedNpcs.add(npcId);
     /* v1.4.4 — NPC 3명 대화 완료 보상 (마을, Lv.3 미만일 때만 — 중복 지급 불가) */
     if (this.stageDef.isVillage) this.grantNpcTrioLv3();
@@ -15673,6 +15956,7 @@ export class WorldScene extends Phaser.Scene {
       starMap: { ...this.player.starMap }, // vc145 (#16) — 아이템 단위 스타포스 (진짜 원천)
       sfHp: this.player.starHpApplied,
       bonusHp: this.player.bonusHpAppliedVal, // v1.4.33 — 포탈 이동 시 HP 중복 가산 방지
+      chibiQuests: this.chibiQuests, // vc204 (#7) — 씹덕 NPC 퀘스트 진행도
       accUp: { ...this.player.accUp },
       starBless: this.player.starBless,
       accHp: this.player.accHpAppliedVal,
@@ -15972,6 +16256,7 @@ export class WorldScene extends Phaser.Scene {
       starMap: { ...this.player.starMap }, // vc145 (#16) — 아이템 단위 스타포스 (진짜 원천)
       sfHp: this.player.starHpApplied,
       bonusHp: this.player.bonusHpAppliedVal, // v1.4.33 — 포탈 이동 시 HP 중복 가산 방지
+      chibiQuests: this.chibiQuests, // vc204 (#7) — 씹덕 NPC 퀘스트 진행도
       accUp: { ...this.player.accUp },
       starBless: this.player.starBless,
       accHp: this.player.accHpAppliedVal,

@@ -382,7 +382,9 @@ export function TouchControls({
                 cdMax={skills.s5bMax ?? 120000}
                 label={s5bName || ""}
                 mp={150}
-                icon={skills.s5Icon}
+                /* vc204 (#3) — 종전엔 s5Icon(1차 궁극기 아이콘)을 그대로 써서
+                 *  2차 궁극기 버튼이 1차와 같은 그림이었다. s5bIcon 이 있으면 그것을 쓴다. */
+                icon={skills.s5bIcon ?? skills.s5Icon}
                 ult2
                 compact={!!sm}
                 keyHint={isTouch ? undefined : keyLabel(km.skill5b)}
@@ -581,12 +583,15 @@ function SkillButton({
     >
       {/* v3.0.8 — 클래스별 스킬 아이콘(RPG Icons Pixel Art). 배경 레이어로 깔아 텍스트와 경쟁하지 않게 한다.
        *  v1.4.35 — 원형 안을 꽉 채우고 위쪽에 어둡게 덮어 스킬명 가독성 확보 */}
+      {/* vc204 (#3) — 아이콘은 object-contain + 여백. 종전 object-cover 는 정사각 아이콘을
+          원형에 맞춰 잘라냈다(아이콘 규격이 32/64/256 으로 제각각이던 시절 잘림이 두드러짐).
+          이제 전 아이콘이 64×64 로 통일돼 contain 으로도 원 안을 충분히 채운다. */}
       {showIcon ? (
         <img
           src={icon}
           alt=""
           onError={() => setIconErr(true)}
-          className="tap-safe pointer-events-none absolute inset-0 h-full w-full rounded-full object-cover opacity-95"
+          className="tap-safe pointer-events-none absolute inset-0 h-full w-full rounded-full object-contain p-[6%] opacity-95"
           style={{ imageRendering: "pixelated" }}
         />
       ) : (

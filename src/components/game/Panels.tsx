@@ -1046,9 +1046,17 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
   const shopSections = useMemo(() => {
     const unlocked = new Set(rpg.unlockedSets ?? []);
     const isSetGear = (k: string) => k.startsWith("sfw_") || k.startsWith("sfa_") || k.startsWith("sfr_");
+    /* vc204 (지시서 항목 #11) — "HP나 MP 물약은 기타 소모품이 아니라 물약류잖아".
+     *  종전 분류는 heal/restore/healFull 만 봤는데, 비율 물약 6종
+     *  (potion_hp_p10/25/50, potion_mp_p10/25/50)은 healPct 만 갖고 있어
+     *  회복 물약 조건에 안 걸리고 "기타 소모품"으로 떨어졌다.
+     *  판정을 한 함수로 모아 상점·인벤·퀵슬롯이 같은 기준을 쓰게 한다. */
+    const isRecoveryPotion = (it: (typeof ITEMS)[ItemKey]) =>
+      it.kind === "consumable" &&
+      !!(it.heal || it.restore || it.healFull || (it.healPct ?? 0) > 0);
     return ([
-      { label: "회복 물약", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "consumable" && !!(it.heal || it.restore || it.healFull) },
-      { label: "기타 소모품", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "consumable" && !(it.heal || it.restore || it.healFull) },
+      { label: "회복 물약", test: isRecoveryPotion },
+      { label: "기타 소모품", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "consumable" && !isRecoveryPotion(it) },
       { label: "장비", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "weapon" || it.kind === "armor" || it.kind === "accessory" },
       { label: "버프 물약", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "buff" },
       { label: "펫", test: (it: (typeof ITEMS)[ItemKey]) => it.kind === "pet" },
@@ -1745,7 +1753,7 @@ const TIER_HEX: Record<ItemTier, string> = {
   legend: "#fcce4d",
 };
 
-type InvTab = "equip" | "cash" | "etc" | "ad";
+type InvTab = "equip" | "pot" | "cash" | "etc" | "ad";
 type InvSel = { t: "item" | "buff" | "pet" | "cos"; k: string };
 type InvSlot = {
   uk: string;
@@ -1938,6 +1946,9 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
   const consOrder = (k: string) => {
     const m = /^(potion_hp|potion_mp)(\d+)?$/.exec(k);
     if (m) return (m[1] === "potion_hp" ? 0 : 100) + (m[2] ? Number(m[2]) : 0);
+    /* vc204 (#11) — 비율 물약도 물약류로 정렬(고정 물약 뒤) */
+    const pp = /^potion_(hp|mp)_p(\d+)$/.exec(k);
+    if (pp) return (pp[1] === "hp" ? 50 : 150) + Number(pp[2]) / 100;
     if (k.startsWith("scroll_")) return 200;
     if (k === "eert_cube" || k === "tier_cube") return 300;
     if (k === "exp_book") return 310;
@@ -1946,7 +1957,11 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
     if (k === "exp_book_l") return 330;
     return 400;
   };
-  const etcSlots: InvSlot[] = [
+  /* vc204 (#11) — 회복 물약 판정 단일 기준. 상점 섹션의 isRecoveryPotion 과 동일 규칙. */
+  const isRecoveryPotionItem = (it: (typeof ITEMS)[ItemKey]) =>
+    it.kind === "consumable" &&
+    !!(it.heal || it.restore || it.healFull || (it.healPct ?? 0) > 0);
+  const allConsSlots: InvSlot[] = [
     { uk: "item:potion_hp", t: "item", k: "potion_hp", icon: ITEMS.potion_hp.icon, tier: ITEMS.potion_hp.tier, count: rpg.hpPot, quick: quickTag("potion_hp"), dim: rpg.hpPot <= 0 },
     { uk: "item:potion_mp", t: "item", k: "potion_mp", icon: ITEMS.potion_mp.icon, tier: ITEMS.potion_mp.tier, count: rpg.mpPot, quick: quickTag("potion_mp"), dim: rpg.mpPot <= 0 },
     ...stackEquips(rpg.owned.filter((k) => ITEMS[k as ItemKey]?.kind === "consumable"))
@@ -1960,6 +1975,14 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
       .filter((bk) => bk !== "buff_king" && (rpg.buffItems[bk] ?? 0) > 0)
       .map((bk) => ({ uk: `buff:${bk}`, t: "buff" as const, k: bk, icon: BUFF_DEFS[bk].icon, tier: "rare" as ItemTier, count: rpg.buffItems[bk] ?? 0 })),
   ];
+  /* vc204 (#11) — 물약 탭: 회복 물약(고정·비율·엘릭서)만 모은다. */
+  const potSlots: InvSlot[] = allConsSlots.filter(
+    (s) => s.t === "item" && isRecoveryPotionItem(ITEMS[s.k as ItemKey]),
+  );
+  /* 기타 탭: 회복 물약을 뺀 나머지 소모품 + 버프 */
+  const etcSlots: InvSlot[] = allConsSlots.filter(
+    (s) => !(s.t === "item" && isRecoveryPotionItem(ITEMS[s.k as ItemKey])),
+  );
 
   /* 선택 슬롯 해석 — 사용/판매 등으로 사라지면 자동으로 선택 해제 */
   const selSlot: InvSlot | null = sel
@@ -1968,6 +1991,8 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
 
   const TABS: { id: InvTab; label: string; on: string }[] = [
     { id: "equip", label: "장비", on: "border-amber-200/80 bg-gradient-to-b from-amber-300 to-orange-500 text-white" },
+    /* vc204 (#11) — 물약 전용 탭. 기타 탭에 섞여 "물약이 어디 갔나" 혼동을 없앤다. */
+    { id: "pot", label: "물약", on: "border-emerald-200/80 bg-gradient-to-b from-emerald-300 to-teal-500 text-white" },
     { id: "cash", label: "캐시", on: "border-cyan-200/80 bg-gradient-to-b from-cyan-300 to-sky-500 text-white" },
     { id: "etc", label: "기타", on: "border-violet-200/80 bg-gradient-to-b from-violet-300 to-purple-500 text-white" },
     { id: "ad", label: "AD", on: "border-rose-200/80 bg-gradient-to-b from-rose-300 to-red-500 text-white" },
@@ -2128,7 +2153,7 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
             </>
           )}
 
-          {tab === "etc" && (
+          {tab === "pot" && (
             <>
               {/* v4.6.0 — 자동 사용 설정을 기타 탭 최상단(그리드 위)으로 이동:
                   기존엔 소모품 그리드 아래 깊숙이 있어 "자동 물약·버프 어디감?" 제기 → 열자마자 보이는 자리로 */}
@@ -2187,8 +2212,17 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 </div>
               </div>
 
+              <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-emerald-100/50">
+                물약 <span className="font-bold text-white/55">HP/MP 슬롯 버튼에 장착 — 터치 버튼·<QuickKeyHint slot="potHp"/>/<QuickKeyHint slot="potMp"/> 키로 사용</span>
+              </p>
+              <InvGrid slots={filt(potSlots)} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} />
+            </>
+          )}
+
+          {tab === "etc" && (
+            <>
               <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-violet-100/50">
-                소모품 <span className="font-bold text-white/55">물약은 HP/MP 슬롯 버튼에 장착 — 터치 버튼·<QuickKeyHint slot="potHp"/>/<QuickKeyHint slot="potMp"/> 키로 사용</span>
+                소모품 <span className="font-bold text-white/55">스크롤·큐브·책·버프 — 물약은 [물약] 탭</span>
               </p>
               <InvGrid slots={filt(etcSlots)} sel={sel} onPick={(s) => setSel({ t: s.t, k: s.k })} />
             </>
@@ -3882,7 +3916,7 @@ const GUIDE_SECTIONS: { area: string; icon: string; items: { name: string; desc:
     area: "게임 안의 오브젝트",
     icon: "🗺️",
     items: [
-      { name: "미니맵 (하단 중앙)", desc: "빈 점=나, 빨간 점=적, 금색 점=퀘스트 목표, 보라 점=차원문." },
+      { name: "미니맵 (하단 중앙)", desc: "빈 점=나, 빨간 점=적, 금색 점=퀘스트 목표, 보라 링=차원문(진행·복귀·DLC 모두 보라. 비활성은 어두운 보라)." },
       { name: "차원문 (소용돌이)", desc: "다음 지역으로 이동. 보라가 전진, 청록이 복귀 — 자동전투 중에도 탈 수 있어." },
       { name: "상인 라고스", desc: "마을 상점 NPC. 물약·장비 구매와 잡템 판매가 가능해." },
       { name: "샘물 우물", desc: "가까이 가면 HP/MP가 완전히 회복된다. 마을의 무료 회복 지점!" },
