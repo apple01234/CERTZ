@@ -648,6 +648,8 @@ export class WorldScene extends Phaser.Scene {
   private introGuide: Phaser.GameObjects.Image | null = null;
   private introGuideSpark: Phaser.GameObjects.Sprite | null = null;
   private playerNameTag: Phaser.GameObjects.Text | null = null;
+  /** vc206 (#13 RE 반영) — 캐릭터 발밑 그림자 (Bloodkeeper `Shadow` 레이어 대응) */
+  private playerShadow: Phaser.GameObjects.Image | null = null;
   /** v1.2.0 (#개편 A23·A24) — 현재 장착 칭호 이름 (null이면 미장착) */
   playerTitle: string | null = null;
   private queuedDialogue: string | null = null;
@@ -1610,6 +1612,18 @@ export class WorldScene extends Phaser.Scene {
       this.entryPos?.x ?? (this.isInterior ? this.stageW / 2 : this.entryHome.x),
       this.entryPos?.y ?? (this.isInterior ? this.stageH - 70 : this.entryHome.y)
     );
+    /* vc206 (#13 RE 반영) — 캐릭터 발밑 타원 그림자 (Bloodkeeper `Shadow` 레이어 대응).
+     *  실측: Bloodkeeper(Construct 3) 21레이어 스택에서 `Shadow` 가 `Char` 바로 뒤,
+     *  FeatherPark(Godot)은 StackedSprite 의 hframes=2 [그림자, 본체] 로 같은 역할.
+     *  SERTZ 는 그림자가 없어 캐릭터가 지면에 붙어 보이지 않았다.
+     *  depth 는 `yDepthFor()` 보다 살짝 뒤 → 캐릭터가 항상 위. */
+    if (this.textures.exists("fx_ground_shadow")) {
+      this.playerShadow = this.add
+        .image(this.player.x, this.player.y + 14, "fx_ground_shadow")
+        .setDepth(this.yDepthFor(this.player.y) - 0.05)
+        .setAlpha(0.55)
+        .setScale(0.62, 0.5);
+    }
     /* v1.0.2 (#툰셰이더) — 플레이어 툰 림라이트 (WebGL+fxLevel 게이트, 실패 시 무시) */
     /* vc182 (#2 보스전 멈춤) — 저사양(모바일)은 플레이어 툰도 생략.
      *  플레이어는 화면에 항상 떠 있어 툰 셰이더 패스가 전투 내내 매 프레임 돈다.
@@ -2415,6 +2429,24 @@ export class WorldScene extends Phaser.Scene {
     return 9 + Phaser.Math.Clamp(y / h, 0, 1);
   }
 
+  /**
+   * vc206 (#13 RE 반영) — 장식·NPC·건물용 Y정렬 depth.
+   *
+   * 문제(실측): 플레이어·적·보스는 `perspDepthOf()` = **9~10** 을 쓰는데,
+   *  집·NPC·나무·바위 등은 `Math.floor(y / 10)` = **0~100+** 을 써서
+   *  건물이 플레이어를 **덮어버렸다**(마을에서 캐릭터가 집 뒤로 사라짐).
+   *
+   * Godot 게임(`FeatherPark`) 실측: `YSort` 노드 하나에 Player·Fence·Barn 을 모두
+   * 넣어 **같은 규칙(Y좌표)** 으로 정렬한다. 규칙이 둘로 갈리지 않는다.
+   *
+   * → 장식도 `perspDepthOf()` 와 동일한 9~10 대역으로 맞춘다.
+   *  같은 Y면 `perspDepthOf` 보다 아주 살짝 뒤(…-0.001)에 두어, 경계에서
+   *  캐릭터가 장식에 가려지지 않게 한다.
+   */
+  private yDepthFor(y: number): number {
+    return this.perspDepthOf(y, Math.max(1, this.stageH)) - 0.001;
+  }
+
   /** 매 프레임(80ms 스로틀) — y-depth 정렬 + 안개 크기 유지 */
   private tickPersp(dt: number) {
     this.perspDepthAcc += dt;
@@ -2423,6 +2455,13 @@ export class WorldScene extends Phaser.Scene {
     if (!this.perspOn) return;
     const h = Math.max(1, this.stageH);
     if (this.player?.active) this.player.setDepth(this.perspDepthOf(this.player.y, h));
+    /* vc206 (#13 RE 반영) — 그림자를 발밑에 붙인다. yDepthFor 는 tickPersp 의 80ms
+     *  스로틀보다 자주 갱신되면 깜빡이므로 같은 주기에서 함께 처리한다. */
+    if (this.playerShadow && this.player?.active) {
+      this.playerShadow
+        .setPosition(this.player.x, this.player.y + 14)
+        .setDepth(this.yDepthFor(this.player.y) - 0.05);
+    }
     for (const e of this.enemies) if (e.active) e.setDepth(this.perspDepthOf(e.y, h));
     if (this.boss?.active) this.boss.setDepth(this.perspDepthOf(this.boss.y, h));
     for (const r of this.remotes.values()) if (r.sp?.active) r.sp.setDepth(this.perspDepthOf(r.sp.y, h));
@@ -2738,7 +2777,7 @@ export class WorldScene extends Phaser.Scene {
         if (!this.inOpenArea(x, y)) continue;
         if (this.nearSolidObstacle(x, y, 48)) continue;
         const tex = treePick();
-        const t = this.add.image(x, y, tex).setDepth(Math.floor(y / 10));
+        const t = this.add.image(x, y, tex).setDepth(this.yDepthFor(y));
         this.solidGroup.add(t);
         /* v3.0.10 — 64x96 캔버스 하단 줄기 부근만 충돌 (캐노피는 통과)
          *  v3.0.10 후속 — 신규 나무(bbox 2~62, 하단 밀착) 줄기 폭 실측 (중앙 x20~44)
@@ -2767,7 +2806,7 @@ export class WorldScene extends Phaser.Scene {
         if (blocked(x, y)) continue;
         if (!this.inOpenArea(x, y)) continue;
         if (this.nearSolidObstacle(x, y, 48)) continue;
-        const r = this.add.image(x, y, rockTex).setDepth(Math.floor(y / 10));
+        const r = this.add.image(x, y, rockTex).setDepth(this.yDepthFor(y));
         this.solidGroup.add(r);
         /* v3.0.10 — 64x64 바위 하단 실측
          *  v3.0.18 — 44x28→36x20: 바위 모서리 걸림 완화 (x14~50 / y39~59) */
@@ -2825,7 +2864,7 @@ export class WorldScene extends Phaser.Scene {
     // 마을 횃불 — 이원(cv_torch) 변형: 우물 양옆 (온기 글로우)
     if (STAGES[stageKey]?.isVillage) {
       for (const [tx2, ty2] of [[vx - 60, vy - 40], [vx + 60, vy - 40]] as [number, number][]) {
-        this.add.image(tx2, ty2, "cv_torch").setDepth(Math.floor(ty2 / 10) + 1).setScale(1.1);
+        this.add.image(tx2, ty2, "cv_torch").setDepth(this.yDepthFor(ty2) + 1).setScale(1.1);
         const g2 = this.add.image(tx2, ty2, "glow").setDepth(56).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc878).setScale(1.0).setAlpha(0.2);
         this.tweens.add({ targets: g2, alpha: 0.4, scale: 1.3, duration: 760, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       }
@@ -2915,7 +2954,7 @@ export class WorldScene extends Phaser.Scene {
         const gx4 = rng4.between(140, this.stageW - 140);
         const gy4 = rng4.between(90, this.stageH - 90);
         if (Math.abs(gy4 - this.stageH / 2) < 90) continue;
-        const g4 = this.add.image(gx4, gy4, rng4.pick(graves)).setDepth(Math.floor(gy4 / 10));
+        const g4 = this.add.image(gx4, gy4, rng4.pick(graves)).setDepth(this.yDepthFor(gy4));
         this.solidGroup.add(g4);
         (g4.body as Phaser.Physics.Arcade.StaticBody).setSize(26, 30).setOffset(12, 16);
       }
@@ -2923,7 +2962,7 @@ export class WorldScene extends Phaser.Scene {
         const dx4 = rng4.between(140, this.stageW - 140);
         const dy4 = rng4.between(90, this.stageH - 90);
         if (Math.abs(dy4 - this.stageH / 2) < 90) continue;
-        const dt = this.add.image(dx4, dy4, rng4.pick(["ud_deadtree1", "ud_deadtree2", "ud_deadtree3"])).setDepth(Math.floor(dy4 / 10));
+        const dt = this.add.image(dx4, dy4, rng4.pick(["ud_deadtree1", "ud_deadtree2", "ud_deadtree3"])).setDepth(this.yDepthFor(dy4));
         this.solidGroup.add(dt);
         /* 128² 캔버스 — 줄기 하단 중앙만 충돌 (케노피는 통과) */
         (dt.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 22).setOffset(55, 100);
@@ -2976,7 +3015,7 @@ export class WorldScene extends Phaser.Scene {
     if (STAGES[stageKey]?.isVillage) {
       const fx7 = this.stageW / 2 - 250;
       const fy7 = this.stageH / 2 + 150;
-      const fire = this.add.sprite(fx7, fy7, "sv_campfire").setDepth(Math.floor(fy7 / 10)).play("sv-campfire");
+      const fire = this.add.sprite(fx7, fy7, "sv_campfire").setDepth(this.yDepthFor(fy7)).play("sv-campfire");
       this.lighting.addLight(fx7, fy7 - 8, { tint: 0xff9a40, scale: 0.8, alpha: 0.3, flicker: 0.1 }); // v4.1.5 동적 광원
       this.solidGroup.add(fire);
       (fire.body as Phaser.Physics.Arcade.StaticBody).setSize(24, 14).setOffset(4, 18);
@@ -3677,7 +3716,7 @@ export class WorldScene extends Phaser.Scene {
     }
     const chestX = kx;
     const chestY = ky;
-    const chest = this.add.sprite(chestX, chestY, "map_chest_f", 0).setOrigin(0.5, 1).setScale(0.9).setDepth(Math.floor(chestY / 10));
+    const chest = this.add.sprite(chestX, chestY, "map_chest_f", 0).setOrigin(0.5, 1).setScale(0.9).setDepth(this.yDepthFor(chestY));
     this.keepChestSprite = chest;
     /* v1.0.13 피드백#15 — 일일 상자/긴급귀환 캐릭터당 분리 (활성 캐릭터 id 없으면 "default" — 구 동작 폴백).
      *  캐릭터 전환은 씬 생성 전에 끝나므로 씬 빌드 시점 산출로 충분 */
@@ -3695,7 +3734,7 @@ export class WorldScene extends Phaser.Scene {
         fontStyle: "bold",
       })
       .setOrigin(0.5)
-      .setDepth(Math.floor(chestY / 10));
+      .setDepth(this.yDepthFor(chestY));
   }
 
   /** 유적 상자 — 하루 1회 보상 (골드 + 확률 에메랄드) */
@@ -3746,7 +3785,7 @@ export class WorldScene extends Phaser.Scene {
     this.buildVillageChest(cx + 430, cy + 40);
 
     // 광장 우물 (중앙 랜드마크, 충돌 있음) — 접근 시 샘물 회복
-    const well = this.add.image(cx, cy, "well").setDepth(Math.floor(cy / 10));
+    const well = this.add.image(cx, cy, "well").setDepth(this.yDepthFor(cy));
     this.solidGroup.add(well);
     (well.body as Phaser.Physics.Arcade.StaticBody).setSize(68, 38).setOffset(14, 57); // v3.0.10 — 분수 72x72 하단 실측
     this.wellPos = new Phaser.Math.Vector2(cx, cy);
@@ -3759,7 +3798,7 @@ export class WorldScene extends Phaser.Scene {
         strokeThickness: 3,
       })
       .setOrigin(0.5)
-      .setDepth(Math.floor(cy / 10));
+      .setDepth(this.yDepthFor(cy));
 
     /* v1.4.7 (유저 지시 — 오류나는 페이지 철거) — 이상한 비석 완전 제거:
      *  비석 → /secret/ 웹페이지 개방이 APK WebView에서 게임 언로드→재부팅 루프의
@@ -3777,7 +3816,7 @@ export class WorldScene extends Phaser.Scene {
       { x: cx - 190, y: cy + 215, tex: "house_a", flip: true },
     ];
     for (const h of houses) {
-      const img = this.add.image(h.x, h.y, h.tex).setDepth(Math.floor(h.y / 10));
+      const img = this.add.image(h.x, h.y, h.tex).setDepth(this.yDepthFor(h.y));
       if (vSpec) img.setTint(vSpec.houseTint);
       if (h.flip) img.setFlipX(true);
       this.solidGroup.add(img);
@@ -3815,7 +3854,7 @@ export class WorldScene extends Phaser.Scene {
         ];
     for (const v of villagers) {
       /* v4.1.8 — 유료 SPUM 캐릭터(96px 캔버스) 배율 보정: 32px 무료 NPC × 1.6과 동일 화면 크기 */
-      const img = this.add.image(v.x, v.y, v.tex).setDepth(Math.floor(v.y / 10)).setScale(0.62);
+      const img = this.add.image(v.x, v.y, v.tex).setDepth(this.yDepthFor(v.y)).setScale(0.62);
       this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       this.add
         .text(v.x, v.y - 34, v.name, {
@@ -3826,7 +3865,7 @@ export class WorldScene extends Phaser.Scene {
           strokeThickness: 3,
         })
         .setOrigin(0.5)
-        .setDepth(Math.floor(v.y / 10));
+        .setDepth(this.yDepthFor(v.y));
       this.interactables.push({ x: v.x, y: v.y, kind: "talk", dlg: v.dlg, npcId: v.dlg, label: `${v.name}와 대화` });
     }
 
@@ -3836,7 +3875,7 @@ export class WorldScene extends Phaser.Scene {
     const jglow = this.add.image(jx, jy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.8).setAlpha(0.22);
     this.tweens.add({ targets: jglow, alpha: 0.4, scale: 1.05, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     /* v4.1.8 — 카이엔: 유료 SPUM 기사 캐릭터 (무료 villager 금색 틴트 대체 — 갑옷 자체가 황금색) */
-    this.jobNpc = this.add.image(jx, jy, "spum_knight").setDepth(Math.floor(jy / 10)).setScale(0.66);
+    this.jobNpc = this.add.image(jx, jy, "spum_knight").setDepth(this.yDepthFor(jy)).setScale(0.66);
     this.tweens.add({ targets: this.jobNpc, y: jy - 3, duration: 1000, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(jx, jy - 38, "직업 교관 카이엔", {
@@ -3859,7 +3898,7 @@ export class WorldScene extends Phaser.Scene {
     const gy = jy + 6;
     const gglow = this.add.image(gx, gy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe9a0).setScale(0.75).setAlpha(0.3).setVisible(false);
     this.tweens.add({ targets: gglow, alpha: 0.5, scale: 0.95, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-    const gmNpc = this.add.image(gx, gy, "npc_gm").setDepth(Math.floor(gy / 10)).setScale(1.15).setVisible(false);
+    const gmNpc = this.add.image(gx, gy, "npc_gm").setDepth(this.yDepthFor(gy)).setScale(1.15).setVisible(false);
     this.tweens.add({ targets: gmNpc, y: gy - 3, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     const gmLbl1 = this.add
       .text(gx, gy - 46, "GM", {
@@ -4548,7 +4587,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.textures.exists(key)) return;
     if (this.fxScale < 0.75) return; // 절전 모드에선 생략 (발열 대책)
     const img = this.add.image(x, y, key)
-      .setDepth(Math.max(20, Math.floor(y / 10) + 5))
+      .setDepth(Math.max(20, this.yDepthFor(y) + 5))
       .setScale((o.scale ?? 1) * 0.35)
       .setAlpha(o.alpha ?? 1)
       .setBlendMode(Phaser.BlendModes.ADD);
@@ -4707,7 +4746,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.textures.exists(key)) continue; // 텍스처 없으면 조용히 건너뛴다
       const x = ox + Math.cos(ang) * dist;
       const y = oy + Math.sin(ang) * dist * 0.55; // 세로 압축(2.5D 원근)
-      const depth = Math.floor(y / 10);
+      const depth = this.yDepthFor(y);
       /* v1.2.4 (버그 3) — "씹덕 캐릭터가 다른 지형지물에 가린다".
        *  원인: depth를 y/10으로만 잡아 나무·집보다 낮아지면 뒤로 묻혔다.
        *  NPC는 항상 플레이어 바로 앞 레이어(80)에 두고, 그림자만 지형 depth를 따른다.
@@ -4789,7 +4828,7 @@ export class WorldScene extends Phaser.Scene {
     const my = this.layout ? this.entryHome.y - 40 : this.stageH / 2 - 60;
     const glow = this.add.image(mx, my + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.9).setAlpha(0.25);
     this.tweens.add({ targets: glow, alpha: 0.42, scale: 1.15, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-    this.merchant = this.add.image(mx, my, "npc_merchant").setDepth(Math.floor(my / 10)).setScale(1.7);
+    this.merchant = this.add.image(mx, my, "npc_merchant").setDepth(this.yDepthFor(my)).setScale(1.7);
     this.tweens.add({ targets: this.merchant, y: my - 3, duration: 1200, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.merchantLabel = this.add
       .text(mx, my - 36, "상인 라고스", {
@@ -4872,7 +4911,7 @@ export class WorldScene extends Phaser.Scene {
       const ty = Phaser.Math.Clamp(this.entryHome.y + Phaser.Math.Between(-200, 140), 80, this.stageH - 80);
       if (this.inOpenArea(tx, ty) && !this.nearSolidObstacle(tx, ty, 44)) { px = tx; py = ty; break; }
     }
-    const img = this.add.image(px, py, s.tex).setDepth(Math.floor(py / 10)).setScale(0.62);
+    const img = this.add.image(px, py, s.tex).setDepth(this.yDepthFor(py)).setScale(0.62);
     this.tweens.add({ targets: img, y: py - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(px, py - 34, s.name, {
@@ -4883,7 +4922,7 @@ export class WorldScene extends Phaser.Scene {
         strokeThickness: 3,
       })
       .setOrigin(0.5)
-      .setDepth(Math.floor(py / 10));
+      .setDepth(this.yDepthFor(py));
     /* vc147 (#30) — NPC 반복 의뢰: fieldreq|프로토콜로 대화창에서 수주/보고 */
     this.interactables.push({ x: px, y: py, kind: "talk", dlg: `fieldreq|${s.dlg}|${s.name}|${encodeURIComponent(s.story)}`, npcId: s.dlg, label: `${s.name}와 대화` });
     this.fieldReqNpcPos = { x: px, y: py };
@@ -13122,7 +13161,11 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** 내 이름표에 클래스 반영 (인트로에서 이름표 생성된 뒤 유효)
-   *  v1.0.16 — GM 계정(admin 롤)은 [GM] 접두사 + 금색 이름표 + 황금 오라로 본인도 즉시 식별 */
+   *  v1.0.16 — GM 계정(admin 롤)은 [GM] 접두사 + 금색 이름표 + 황금 오라로 본인도 즉시 식별
+   *  vc206 (#13 RE 반영) — CTF 게임 실측: 이름표/UI를 **같은 좌표에 두 레이어**로 겹쳐
+   *   아래층은 어두운 tint(0.6), 위층은 원색(1.0)으로 두고 origin(0.5,0.5) 중앙 정렬한다.
+   *   SERTZ는 stroke 한 겹이라 밝은 지형(눈·모래) 위에서 획이 묻힌다.
+   *   → `shadow` 를 stroke 안쪽에 겹쳐 이중 테두리 효과를 만든다(레이어 추가 없이 동일 결과). */
   private refreshPlayerTag() {
     if (!this.playerNameTag || !this.player) return;
     const d = classDef(this.player.cls);
@@ -13137,6 +13180,8 @@ export class WorldScene extends Phaser.Scene {
     );
     this.playerNameTag.setColor(gm ? "#ffd76a" : "#baf3ff");
     this.playerNameTag.setStroke(gm ? "#3a2400" : "#0a2030", 4);
+    /* vc206 — 이중 테두리: stroke 바깥에 한 겹 더 (CTF 2-layer 방식의 Phaser 대응) */
+    this.playerNameTag.setShadow(0, 2, gm ? "#1a0d00" : "#04121c", 5, true, true);
     this.syncGmAura();
   }
 
@@ -14436,7 +14481,7 @@ export class WorldScene extends Phaser.Scene {
       const img = this.add.image(d.x, d.y, d.key)
         .setOrigin(0.5, 0.9)
         .setRotation(((d.rot ?? 0) % 4) * (Math.PI / 2))
-        .setDepth(Math.floor(d.y / 10));
+        .setDepth(this.yDepthFor(d.y));
       this.fieldDecorImgs.push(img);
     }
   }

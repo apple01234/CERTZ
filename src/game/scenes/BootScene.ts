@@ -383,6 +383,10 @@ const VFX_PACK_LIST = [
   "fx_electro", "fx_flarew", "fx_hex", "fx_glowblue", "fx_noise", "fx_caustic",
   /* 3차 추출 — 감전/낙뢰/황금 광휘/오라/보라 파동/대형 플레어 */
   "fx_electrichit", "fx_lightning", "fx_glowyellow", "fx_aura", "fx_purple", "fx_flarebig",
+  /* vc206 (#13 RE 반영) — 캐릭터 발밑 타원 그림자. Bloodkeeper(Construct 3)·FeatherPark(Godot)
+   *  모두 `Shadow` 전용 레이어를 캐릭터 바로 뒤에 둔다. SERTZ 에는 없어서 캐릭터가
+   *  지면에 붙어 보이지 않았다. */
+  "fx_ground_shadow",
 ] as const;
 
 const AUDIO_LIST: string[] = [
