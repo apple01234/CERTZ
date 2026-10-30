@@ -8587,7 +8587,19 @@ export class WorldScene extends Phaser.Scene {
        *  기존: 820ms 후 플레이어 복귀 팬 → 대사 도중 시점 복귀 + 대사 종료 전 컷씬 종료 느낌.
        *  복귀는 resumeFromDialogue(대사 완료 이벤트)에서 restoreBossIntroCam()으로 보간 처리 */
       this.bossIntroPending = true;
-      cam.pan(bx, by - 20, 900, "Sine.easeInOut", true);
+      /* vc206 (지시 #7 "맵 입장 카메라 컷씬이 다 똑같고 맵 밖이 보이는 버그") —
+       *  cam.pan(bx, by) 는 **setBounds 를 무시**하고 목표 지점을 화면 중앙에 놓는다.
+       *  보스가 맵 가장자리에 스폰하면 팬 목표가 맵 밖이 되어 배경(검은 여백)이 노출됐다.
+       *  → 뷰 크기/줌을 반영해 목표점을 [뷰 반폭, 맵크기-뷰 반폭] 으로 클램프한다.
+       *  (맵이 뷰보다 작으면 중앙 고정) */
+      const z0 = cam.zoom || 1;
+      const halfW = cam.width / z0 / 2;
+      const halfH = cam.height / z0 / 2;
+      const clampAxis = (v: number, half: number, size: number) =>
+        size <= half * 2 ? size / 2 : Phaser.Math.Clamp(v, half, size - half);
+      const panX = clampAxis(bx, halfW, this.stageW);
+      const panY = clampAxis(by - 20, halfH, this.stageH);
+      cam.pan(panX, panY, 900, "Sine.easeInOut", true);
       this.time.delayedCall(960, () => {
         if (!this.scene.isActive()) return;
         // 이미 본 대사면 보스 연출을 잠깐 유지한 뒤 복귀, 아니면 인트로 대사 재생(복귀는 resumeFromDialogue 담당)

@@ -121,7 +121,21 @@ export function playStoryCutscene(scene: SceneLike, opts: StoryCutsceneOpts): bo
     const holdMs = Math.max(0, sh.holdMs ?? 700);
     try {
       if (sh.zoom !== undefined) cam.zoomTo(sh.zoom, panMs);
-      cam.pan(sh.x, sh.y, panMs, "Sine.easeInOut", true);
+      /* vc206 (지시 #7 "맵 밖이 보이는 버그") — cam.pan 은 setBounds 를 무시하므로
+       *  컷씬 팬 목표를 맵 경계 안으로 클램프한다. 컷씬이 맵 밖 좌표를 지정해도
+       *  검은 여백이 노출되지 않는다. (씬이 stageW/stageH 를 노출하지 않으면 그대로) */
+      const sw = (scene as unknown as { stageW?: number }).stageW ?? 0;
+      const sh2 = (scene as unknown as { stageH?: number }).stageH ?? 0;
+      let tx = sh.x;
+      let ty = sh.y;
+      if (sw > 0 && sh2 > 0) {
+        const z = cam.zoom || 1;
+        const hw = cam.width / z / 2;
+        const hh = cam.height / z / 2;
+        tx = sw <= hw * 2 ? sw / 2 : Math.min(Math.max(sh.x, hw), sw - hw);
+        ty = sh2 <= hh * 2 ? sh2 / 2 : Math.min(Math.max(sh.y, hh), sh2 - hh);
+      }
+      cam.pan(tx, ty, panMs, "Sine.easeInOut", true);
     } catch { /* 무시 */ }
     scene.time.delayedCall(panMs, () => {
       if (done) return;

@@ -668,7 +668,11 @@ export type Skill1Kind =
    *  2차 스킬로 폴백됐고, 그래서 "해적 스킬이 별로"였다. 계열 정체성(화약·함포·심해)을
    *  단계별로 확장: 3차=광역 폭격, 4차=바다를 부수는 일격. */
   | "manowar"     /* stormcaptain — 현측 전열포: 좌우 2열 함포 일제사격 + 폭발 */
-  | "dreadvolley"; /* seaking — 심해 포격진: 적을 추적하는 3연 포탄 + 해일 */
+  | "dreadvolley" /* seaking — 심해 포격진: 적을 추적하는 3연 포탄 + 해일 */
+  /* vc206 (지시 #9 "스카이로드 집중 개편 — 스킬 뜯어 고치기") — 4차 궁수 전용.
+   *  종전엔 3차 tempest 와 S1·S2 가 **완전히 동일**해서 4차 전직이 스킬 변화가 없었다. */
+  | "skyvolley"   /* skylord — 천공 연사: 하늘에서 화살이 3열로 쏟아지는 낙하 폭격 */
+  | "skyrend";    /* skylord — 천공 가르기: 전방 초장거리 관통 화살 + 착탄 폭풍 */
 
 export type Skill2Kind =
   | "dash" /* warrior — 돌진 + 종착 충격파 */
@@ -679,6 +683,8 @@ export type Skill2Kind =
   | "bulwarkdash" /* guardian — 불굴 돌진: 종착 지진파 + 방어 버프 */
   | "falconwind" /* sniper — 매의 질풍: 돌진 후 3발 부채꼴 저격 */
   | "windslash" /* windrunner — 질풍 가르기: 돌진 경로에 관통 화살 잔상 */
+  /* vc206 (지시 #9) — 4차 궁수 전용 S2. 종전엔 3차와 동일했다. */
+  | "skyfall"     /* skylord — 천강: 공중으로 도약 후 3연 낙하 화살 폭격 */
   | "grandblink" /* archmage — 대전이 점멸: 양단 대폭발 (반경 1.5배) */
   | "cycleblink" /* sage — 순환 점멸: MP 회복 + 경로 마나 흡수 */
   | "ambushdash" /* assassin — 암습 돌진: 경로상 적 출혈 부여 */
@@ -725,7 +731,7 @@ export const SKILL1_KIND: Partial<Record<ClassKey, Skill1Kind>> = {
   eagleeye: "snipe",         // 3차 궁수 — 매안 저격
   tempest: "gustarrow",      // 3차 궁수 — 폭풍 화살
   deadeye: "snipe",          // 4차 궁수 — 사신 저격
-  skylord: "gustarrow",      // 4차 궁수 — 천공 화살
+  skylord: "skyvolley",       // 4차 궁수 — 천공 연사 (vc206 #9: 3차와 분리)
   stormbringer: "arcbolt",   // 3차 마법 — 뇌전 볼트
   chronicle: "purify",       // 3차 마법 — 기록의 정화
   arclord: "arcbolt",        // 4차 마법 — 아크 폭발
@@ -768,7 +774,7 @@ export const SKILL2_KIND: Partial<Record<ClassKey, Skill2Kind>> = {
   eagleeye: "falconwind",      // 3차 궁수
   tempest: "windslash",        // 3차 궁수
   deadeye: "falconwind",       // 4차 궁수
-  skylord: "windslash",        // 4차 궁수
+  skylord: "skyfall",           // 4차 궁수 — 천강 (vc206 #9: 3차와 분리)
   stormbringer: "grandblink",  // 3차 마법
   chronicle: "cycleblink",     // 3차 마법
   arclord: "grandblink",       // 4차 마법
@@ -831,7 +837,8 @@ export const SKILL_LABELS: Partial<Record<ClassKey, [string, string, string, str
   warbringer: ["종언의 참격", "전쟁의 회오리", "파멸 돌진", "피의 격노", "종언의 일격"],
   crusader: ["천벌의 참격", "성역의 회전베기", "심판 돌진", "성흔 폭발", "심판의 빛기둥"],
   deadeye: ["신의 사격", "심판의 화살", "차원 사격", "화살 폭우", "신의 화살비"],
-  skylord: ["천공 연사", "하늘의 화망", "천공 질주", "하늘의 희망", "천공의 폭풍"],
+  /* vc206 (지시 #9) — S1 천공 연사(낙하 3열 폭격) · S2 천강(도약 후 3연 낙하) 로 실제 동작과 일치 */
+  skylord: ["천공 연사", "천강", "천공 질주", "하늘의 희망", "천공의 폭풍"],
   arclord: ["절대 마법탄", "아크로드 볼트", "차원 점멸", "연쇄 번개", "마나 붕괴"],
   eternal: ["영겁의 마법탄", "이터널 볼트", "영원의 점멸", "중력 붕괴", "영원의 고리"],
   shadowlord: ["심연 연타", "암흑 회전베기", "그림자 돌진", "그림자 지뢰", "그림자 군주"],

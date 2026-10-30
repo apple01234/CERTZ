@@ -1222,6 +1222,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "wallsmash": return this.skill1WallSmash();
       case "snipe": return this.skill1Snipe();
       case "gustarrow": return this.skill1GustArrow();
+      /* vc206 (지시 #9 "스카이로드 집중 개편") — 4차 궁수 전용 S1 */
+      case "skyvolley": return this.skill1SkyVolley();
       case "arcbolt": return this.skill1ArcBolt();
       case "purify": return this.skill1Purify();
       case "shadowexec": return this.skill1ShadowExec();
@@ -1616,6 +1618,58 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.emitHud();
   }
 
+  /** vc206 (지시 #9 "스카이로드 집중 개편 — 스킬 뜯어 고치기") — 스카이로드 S1.
+   *  천공 연사: 하늘에서 화살이 **3열로 쏟아지는 낙하 폭격**.
+   *  종전엔 3차 tempest 와 똑같은 회오리 화살이었다(4차 전직이 스킬 변화 없음).
+   *  차별점: 전방 낙하 3열 + 착탄마다 소폭 광역 + 마지막 열은 넉백 없이 관통. */
+  private skill1SkyVolley() {
+    const aim = this.aimDirFree();
+    const base = Math.atan2(aim.y, aim.x);
+    const t = this.sTier;
+    const hex = this.clsHex();
+    this.faceAtk(aim);
+    this.play(this.bodyKey("hero-atk"));
+    this.scene.sfxSkill("wind");
+    const cols = 3;
+    const reach = 210 + 26 * t;
+    for (let i = 0; i < cols; i++) {
+      this.scene.time.delayedCall(i * 110, () => {
+        if (this.state === "dead") return;
+        const spread = (i - (cols - 1) / 2) * 0.26;
+        const ang = base + spread;
+        const tx = this.x + Math.cos(ang) * reach;
+        const ty = this.y + Math.sin(ang) * reach;
+        /* 하늘에서 내려오는 화살 — 위에서 착탄 지점으로 낙하 */
+        const arrow = this.scene.add
+          .image(tx, ty - 220, "fx_arrow")
+          .setDepth(14)
+          .setTint(hex)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setScale(1.05)
+          .setRotation(Math.PI / 2);
+        this.scene.tweens.add({
+          targets: arrow, y: ty, duration: 190, ease: "Quad.in",
+          onComplete: () => arrow.destroy(),
+        });
+        const { dmg, crit } = this.rollDamage(1.45 + 0.16 * t, true);
+        if (crit) this.scene.sfxCrit();
+        this.scene.time.delayedCall(190, () => {
+          this.scene.spawnBurstAt(tx, ty, 10 + 2 * t, hex);
+          this.scene.doShake?.(60, 0.0012);
+          for (const e of this.targetsAround(tx, ty, 74 + 6 * t)) {
+            if (!e.active) continue;
+            const away = this.awayScratch.set(e.x - tx, e.y - ty).normalize();
+            e.takeDamage(dmg, away, 150, crit);
+          }
+        });
+      });
+    }
+    this.scene.time.delayedCall(520, () => {
+      if (this.state === "attack") this.state = "idle";
+    });
+    this.scene.emitHud();
+  }
+
   /** 아크메이지 — 아크 볼트: 착탄 광역 폭발 대형 볼트 (매직 볼트와 분리 — 첫 명중 지점에서 폭발)
    *  3차+ 폭발 반경↑ / 4차+ 2차 폭발 */
   private skill1ArcBolt() {
@@ -1922,6 +1976,55 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hitSet.clear();
     this.setFlipX(dir.x > 0); // v3.0.10 — 시트 왼쪽 기준
     this.netEmitAction("s2"); // v4.1.0
+
+    /* vc206 (지시 #9 "스카이로드 집중 개편 — 스킬 뜨거 고치기") — 4차 궁수 S2 천강.
+     *  종전엔 3차 tempest 와 같은 windslash(질풍 가르기)였다.
+     *  새 동작: 제자리에서 **공중 도약** 후 전방 3연 낙하 화살 폭격 + 착지 충격파.
+     *  (돌진 이동 없이 위치 사수 → 원거리 딜러 정체성 강화) */
+    if ((resolveSkill2Of(this.cls) ?? "") === "skyfall") {
+      this.state = "idle"; /* 이동 없이 시전 — 조작 잠금 없음 */
+      const ang2 = Math.atan2(dir.y, dir.x);
+      const hex2 = this.clsHex();
+      const t2 = this.sTier;
+      this.scene.sfxSkill("wind2", 1.1);
+      /* 도약 연출 */
+      this.scene.tweens.add({
+        targets: this, y: this.y - 54, duration: 170, yoyo: true, ease: "Quad.out",
+      });
+      for (let i = 0; i < 3; i++) {
+        this.scene.time.delayedCall(160 + i * 130, () => {
+          if (this.state === "dead") return;
+          const reach = 200 + i * 90 + 14 * t2;
+          const tx = this.x + Math.cos(ang2) * reach;
+          const ty = this.y + Math.sin(ang2) * reach;
+          const arrow = this.scene.add
+            .image(tx, ty - 240, "fx_arrow")
+            .setDepth(16)
+            .setTint(hex2)
+            .setBlendMode(Phaser.BlendModes.ADD)
+            .setScale(1.25)
+            .setRotation(Math.PI / 2);
+          this.scene.tweens.add({
+            targets: arrow, y: ty, duration: 170, ease: "Quad.in",
+            onComplete: () => arrow.destroy(),
+          });
+          this.scene.time.delayedCall(170, () => {
+            this.scene.spawnBurstAt(tx, ty, 14, hex2);
+            this.scene.spawnShockwave?.(tx, ty, hex2, 0.5, 150, 0.4);
+            this.scene.doShake?.(80, 0.0018);
+            const { dmg, crit } = this.rollDamage(1.7 + 0.18 * t2, true);
+            if (crit) this.scene.sfxCrit();
+            for (const e of this.targetsAround(tx, ty, 88 + 6 * t2)) {
+              if (!e.active) continue;
+              const away = this.awayScratch.set(e.x - tx, e.y - ty).normalize();
+              e.takeDamage(dmg, away, 180, crit);
+            }
+          });
+        });
+      }
+      this.scene.emitHud();
+      return;
+    }
 
     // v3.0.6 — 기동기(C) 12종 클래스 고유 파라미터 (겹침 0 — 지시 #4)
     //  3차/4차는 계열 체인에서 2차기 승계(강화판)
