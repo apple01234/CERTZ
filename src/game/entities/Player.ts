@@ -1651,12 +1651,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           targets: arrow, y: ty, duration: 190, ease: "Quad.in",
           onComplete: () => arrow.destroy(),
         });
-        const { dmg, crit } = this.rollDamage(1.45 + 0.16 * t, true);
+        const { dmg, crit } = this.rollDamage(1.3 + 0.15 * t, true); // vc206 — 반경 확대에 맞춰 배율 1.45→1.30
         if (crit) this.scene.sfxCrit();
         this.scene.time.delayedCall(190, () => {
           this.scene.spawnBurstAt(tx, ty, 10 + 2 * t, hex);
           this.scene.doShake?.(60, 0.0012);
-          for (const e of this.targetsAround(tx, ty, 74 + 6 * t)) {
+          /* vc206 — 착탄 반경을 74+6t(≈104) → 120+8t(≈160) 로 확대.
+           *  실측에서 전방 200px·320px 두 적 중 1마리만 맞았다(3열 간격 0.26rad 이
+           *  좁아 착탄점이 겹치고 반경이 적 간격을 못 덮음). 계열 정체성(광역 낙하
+           *  폭격)에 맞게 넓히고, 대신 배율을 1.45→1.30 으로 소폭 낮춰 균형을 잡는다. */
+          for (const e of this.targetsAround(tx, ty, 120 + 8 * t)) {
             if (!e.active) continue;
             const away = this.awayScratch.set(e.x - tx, e.y - ty).normalize();
             e.takeDamage(dmg, away, 150, crit);
