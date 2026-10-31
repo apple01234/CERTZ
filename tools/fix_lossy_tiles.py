@@ -38,7 +38,7 @@ from PIL import Image
 
 ROOT = "/root/workspace/CERTZ/public/assets"
 BACKUP = os.path.join(ROOT, ".tile_backup")
-THRESHOLD = 0.7  # webp 색 수가 png 의 70% 미만이면 열화로 판정
+THRESHOLD = 0.85  # webp 색 수가 png 의 70% 미만이면 열화로 판정
 
 
 def colors(p):

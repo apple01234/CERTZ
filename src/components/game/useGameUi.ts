@@ -43,7 +43,15 @@ export function useGameUi() {
     const onQuest = (v: QuestState) => setQuest(v);
     const onQuestLog = (v: QuestLogState) => setQuestLog(v);
     const onSkills = (v: Skills) => setSkills(v);
-    const onDlgShow = (v: { speaker: string; lines: string[] }) => setDialogue(v);
+    /* vc211 (#표정연동) — expr/exprByLine 이 있으면 그대로 전달한다.
+     *  없으면 DialogueBox 가 문장에서 자동 추론하므로 여기서는 통과만 시킨다. */
+    const onDlgShow = (v: {
+      speaker: string;
+      lines: string[];
+      choices?: { label: string; id: string }[];
+      expr?: "neutral" | "happy" | "angry";
+      exprByLine?: ("neutral" | "happy" | "angry")[];
+    }) => setDialogue(v);
     const onDlgHide = () => setDialogue(null);
     const onBossShow = (v: { name: string; hp: number; maxHp: number }) => setBoss(v);
     const onBossUpdate = (v: { hp: number; maxHp: number }) =>

@@ -374,6 +374,34 @@ const ASSET_LIST = [
   "furn_bench", "furn_table", "furn_chair", "furn_pots",
 ] as const;
 
+/** vc212 (#npc-body) — 자체 제작 월드 NPC 전신 텍스처 키.
+ *  `public/assets/npcbody/<key>.png` (96×96) 에서 로드한다.
+ *  전부 `tools/gen_npc_bodies.py` 가 절차 생성한 오리지널 에셋이다. */
+const NPC_BODY_LIST = [
+  "npcbody_merchant", "npcbody_knight", "npcbody_mage", "npcbody_elf",
+  "npcbody_villager_m", "npcbody_villager_f", "npcbody_smith", "npcbody_fisher",
+  "npcbody_miner", "npcbody_scout", "npcbody_mystic", "npcbody_devil",
+  "npcbody_priest", "npcbody_butler",
+] as const;
+
+/** `spum_*` 키 → 자체 전신 텍스처 키. 매핑에 없으면 기존 spum_* 을 그대로 쓴다. */
+const SPUM_TO_BODY: Record<string, string> = {
+  spum_villager_m: "npcbody_villager_m",
+  spum_villager_f: "npcbody_villager_f",
+  spum_knight: "npcbody_knight",
+  spum_elf: "npcbody_elf",
+  spum_mage: "npcbody_mage",
+  spum_skel: "npcbody_devil",
+  spum_devil: "npcbody_devil",
+  spum_smith: "npcbody_smith",
+  spum_miner: "npcbody_miner",
+  spum_fisher: "npcbody_fisher",
+  spum_forager: "npcbody_villager_m",
+  spum_scout: "npcbody_scout",
+  spum_mystic: "npcbody_mystic",
+  spum_butler: "npcbody_butler",
+};
+
 /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 전투 이펙트 6종.
  *  직접 그리지 않고 제공 에셋을 256px webp(총 58KB)로 경량 변환해 쓴다.
  *  ASSET_LIST와 경로가 다르므로(assets/vfx/) 별도 목록으로 둔다. */
@@ -645,6 +673,11 @@ export class BootScene extends Phaser.Scene {
     /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 이펙트 6종.
      *  ASSET_LIST는 `assets/<key>.webp` 평면 경로를 쓰므로 하위 폴더(vfx/)는 별도 로드. */
     for (const k of VFX_PACK_LIST) this.load.image(k, `vfx/${k}.webp`);
+    /* vc212 (#npc-body) — 대사창 얼굴과 같은 절차 생성 계열의 **월드 NPC 전신**.
+     *  종전 `spum_*`(96×96, Unity 에셋스토어 유료)를 자체 제작본으로 대체한다.
+     *  규격이 96×96 으로 동일해 WorldScene 의 `setScale(0.62)` 를 그대로 쓴다.
+     *  로드 실패 시 해당 NPC 는 기존 spum_* 로 폴백한다(WorldScene 배선 참조). */
+    for (const k of NPC_BODY_LIST) this.load.image(k, `npcbody/${k}.png`);
     /* v1.4.32 (유저 지시 #7 "메이플 5차&6차 보면 2d로도 엄청난 퀄리티의 스킬들을
      * 뽑아내잖아 그것도 못함??!") — Hovl Studio Magic effects 팩의 고해상도
      * 이펙트 텍스처 8종을 스킬 연출용으로 추가 로드한다. 흰색 마스크라

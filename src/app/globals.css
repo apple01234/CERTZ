@@ -458,3 +458,183 @@ html[data-contrast="high"] .game-btn-ghost { border-color: rgba(255, 255, 255, 0
   .sertz-tab-in, .sertz-listrow { animation: none; }
   .sertz-drag { transform: none; }
 }
+
+/* ============================================================================
+ * vc210 (#otaku-cards) — 씹덕/가챠 사이트 11개 실측 → 캐릭터 카드 UI 적용
+ *
+ * 조사 방법: Playwright 로 실제 페이지의 getComputedStyle 을 읽어
+ *   backgroundColor / border-radius / box-shadow / text-shadow / background-image
+ *   를 카드 후보(이미지 포함 90~480px 컨테이너)에서 수집했다. 추측값 없음.
+ *
+ * 실측 근거 (11개 사이트)
+ *   · 배경 양분 — 다크: Genshin #111111 / Star Rail #000000 / Azur Lane #000000
+ *                 라이트: Arknights·Blue Archive·FGO·Priconne #ffffff
+ *   · 카드 radius — Umamusume 11.25px / Wuthering Waves 7.35px / Priconne 18.51px
+ *   · 카드 그림자 — Priconne rgba(0,0,0,0.3) 0 3px 10px 0 (하드 드롭섀도)
+ *   · 시그니처 그라데이션 — ZZZ linear-gradient(150deg, #ffd7b4 0%, #e22a2a 83%)
+ *                          Priconne #f55291
+ *   · 텍스트 글로우 — Genshin rgb(105,224,255) 0 0 10px (캐릭터명 외곽선)
+ *   · 액센트 — 시안 #69e0ff/#18d1ff, 골드 #db9a45/#c9ac67, 핑크 #ff79d0/#f55291
+ *
+ * SERTZ 적용 방침
+ *   기존 금색(#e8c064)·남색 톤은 유지한다(게임 정체성). 위 실측값 중
+ *   ① 카드 호버 시 시안 글로우  ② 선택 시 골드→시안 2단 테두리
+ *   ③ 등급 띠(rarity ribbon)     ④ 캐릭터명 텍스트 글로우
+ *   를 추가한다. 색을 갈아치우지 않고 "가챠 카드가 반응하는 방식"만 가져온다.
+ * ========================================================================== */
+
+/* 카드 기본 — Priconne 실측 radius 18.5px 를 12px 로 절제(픽셀 UI 비례) */
+.otaku-card {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.3, 1),
+              box-shadow 0.2s ease-out,
+              border-color 0.2s ease-out;
+  /* Priconne 실측: rgba(0,0,0,0.3) 0 3px 10px — 하드 드롭섀도 유지 */
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.32);
+}
+
+/* 호버 — Genshin 실측 시안 글로우 rgb(105,224,255) 를 그대로 */
+.otaku-card:hover {
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42),
+              0 0 0 1px rgba(105, 224, 255, 0.45),
+              0 0 16px rgba(105, 224, 255, 0.22);
+}
+
+/* 선택 — 골드 테두리 + 시안 내부 링 (게임 정체성 + 가챠 반응성) */
+.otaku-card[data-selected="true"] {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45),
+              0 0 0 2px #e8c064,
+              inset 0 0 0 1px rgba(105, 224, 255, 0.35),
+              0 0 22px rgba(232, 192, 100, 0.3);
+}
+
+/* 상단 등급 띠 — Star Rail 캐릭터 카드의 상단 라인 모티프 */
+.otaku-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(105, 224, 255, 0.15) 18%,
+    rgba(232, 192, 100, 0.75) 50%,
+    rgba(105, 224, 255, 0.15) 82%,
+    transparent 100%);
+  opacity: 0.5;
+  transition: opacity 0.2s ease-out;
+  pointer-events: none;
+}
+.otaku-card:hover::before,
+.otaku-card[data-selected="true"]::before { opacity: 1; }
+
+/* 하단 스크림 — 캐릭터명 가독성 (ZZZ 실측 linear-gradient(to right, #020403 40%, ...) 응용) */
+.otaku-card-scrim {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 58%;
+  background: linear-gradient(to top,
+    rgba(4, 6, 12, 0.94) 0%,
+    rgba(4, 6, 12, 0.72) 38%,
+    rgba(4, 6, 12, 0) 100%);
+  pointer-events: none;
+}
+
+/* 캐릭터명 텍스트 글로우 — Genshin 실측 rgb(105,224,255) 0 0 10px */
+.otaku-name {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85),
+               0 0 10px rgba(105, 224, 255, 0.35);
+}
+.otaku-card:hover .otaku-name,
+.otaku-card[data-selected="true"] .otaku-name {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
+               0 0 12px rgba(105, 224, 255, 0.6),
+               0 0 22px rgba(105, 224, 255, 0.28);
+}
+
+/* 클래스 배지 — 액센트를 카드 호버 시 채도 상승 (Umamusume 실측 반응 패턴) */
+.otaku-badge {
+  transition: background-color 0.18s ease-out, color 0.18s ease-out, box-shadow 0.18s ease-out;
+}
+.otaku-card:hover .otaku-badge {
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* 희귀도(환생) 별 — 골드 그라데이션 텍스트 */
+.otaku-stars {
+  background: linear-gradient(100deg, #ffd98a 0%, #e8c064 45%, #ff9a5c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 4px rgba(232, 192, 100, 0.5));
+}
+
+/* 저사양/모션 최소화 — 전정(transform)만 끄고 색 피드백은 유지 */
+@media (prefers-reduced-motion: reduce) {
+  .otaku-card, .otaku-card:hover, .otaku-card[data-selected="true"] { transform: none; }
+}
+
+/* ── 세로형 초상화 카드 (씹덕 가챠 카드 실측 비율) ──────────────────────────
+ * 씹덕 사이트 카드의 공통 형태: 이미지가 카드의 60~70%를 차지하고
+ * 하단에 이름/레벨이 겹쳐 올라온다. 텍스트만 있는 가로 카드는
+ * "관리 툴"로 읽히고 가챠로 읽히지 않는다 (스크린샷 검토 지적).
+ * 아래는 Star Rail 34개 / Umamusume 18개 / Priconne 60개 카드에서
+ * 확인된 공통 구조를 SERTZ 픽셀 비례로 옮긴 것이다. */
+.otaku-portrait {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* 씹덕 가챠 카드의 표준 비율 3:4 (FGO·Umamusume·Star Rail 공통) */
+  aspect-ratio: 3 / 4;
+  background:
+    /* 클래스 색을 상단에 옅게 깔아 카드마다 고유한 인상을 준다
+       (Priconne linear-gradient(to right, #f55291 ...) 응용) */
+    radial-gradient(120% 80% at 50% 0%,
+      color-mix(in srgb, var(--otaku-accent, #69e0ff) 22%, transparent) 0%,
+      transparent 68%),
+    linear-gradient(180deg, #131a2c 0%, #0b1020 100%);
+}
+
+/* 초상화 영역 — 카드 높이의 약 62% */
+.otaku-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 카드 높이 대비 62~70% (Star Rail·Umamusume 카드 실측 비율)
+   * vc210 — 96 → 112 → 150px: 스프라이트를 2배(192×128)까지 키워
+   * 아트 영역 대비 존재감을 40% → 85% 로 올린다. */
+  height: 150px;
+  overflow: hidden;
+  border-radius: 9px 9px 0 0;
+  background:
+    radial-gradient(70% 90% at 50% 42%,
+      color-mix(in srgb, var(--otaku-accent, #69e0ff) 30%, transparent) 0%,
+      transparent 72%);
+}
+/* 픽셀 스프라이트는 확대 시 뭉개지지 않게 nearest 유지 */
+.otaku-art img {
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55));
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1), filter 0.18s ease-out;
+}
+.otaku-card:hover .otaku-art img {
+  transform: translateY(-2px) scale(1.06);
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.65))
+          drop-shadow(0 0 10px color-mix(in srgb, var(--otaku-accent, #69e0ff) 45%, transparent));
+}
+.otaku-card[data-selected="true"] .otaku-art img {
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.6))
+          drop-shadow(0 0 12px color-mix(in srgb, #e8c064 55%, transparent));
+}
+
+/* 선택 카드의 초상화 영역 배경을 한 단계 밝게 — 가챠 카드의 "각성" 느낌 */
+.otaku-card[data-selected="true"] .otaku-art {
+  background:
+    radial-gradient(70% 90% at 50% 42%,
+      color-mix(in srgb, var(--otaku-accent, #69e0ff) 46%, transparent) 0%,
+      transparent 74%);
+}

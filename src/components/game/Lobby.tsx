@@ -40,17 +40,44 @@ const SKIN_CHOICES: { idx: number; name: string }[] = [
 const lookSprite = (g: "m" | "f", skin: number): string =>
   g === "f" || skin !== 2 ? `/assets/ch${g}${skin}_idle0.webp` : "/assets/hero_idle0.webp";
 
+/** vc210 (#otaku-cards) — 카드용 **오리지널** 도트 초상화 (192×256, 3:4).
+ *
+ *  ⚠️ 저작권 원칙
+ *    이 이미지는 `tools/gen_otaku_sprites.py` 가 **절차 생성**한 SERTZ 자체 에셋이다.
+ *    참고 사이트의 캐릭터 이미지를 입력으로 쓰지 않았고, 색은 SERTZ 기존
+ *    스프라이트에서 실측한 팔레트를 계승했다. 형태는 관찰된 "구도 문법"
+ *    (전신·SD 3~4등신·직업별 실루엣)만 반영했으며 특정 작품의 표현을 복제하지 않는다.
+ *
+ *  없으면 기존 인게임 스프라이트로 폴백한다(에셋 미배포 환경 보호). */
+const GEN_JOBS = new Set(["warrior", "ranger", "mage", "thief", "pirate"]);
+const portraitOf = (cls: string | null, skinIdx: number): string | null => {
+  if (!cls || !GEN_JOBS.has(cls)) return null;
+  const s = skinIdx >= 0 && skinIdx <= 2 ? skinIdx : 0;
+  return `/assets/gen/${cls}_${s}_portrait.png`;
+};
+
 /** v1.1.0 (#21/#22) — 캐릭터 외형 미리보기: 실제 생성된 변형 스프라이트(chm/chf/hero)를 그대로 노출.
- *  미리보기 = 인게임 외형 100% 일치 (틴트 시뮬레이션 폐기) */
-function CharAvatar({ gender, skinIdx, size = 44 }: { gender?: "m" | "f" | null; skinIdx?: number | null; size?: number }) {
+ *  미리보기 = 인게임 외형 100% 일치 (틴트 시뮬레이션 폐기)
+ *  vc210 (#otaku-cards) — 원본이 96×64(1.5:1)인데 정사각(size×size)으로 강제하면
+ *  object-cover 가 좌우를 잘라 캐릭터가 반쪽만 보였다. 카드용으로 크게 키울 때는
+ *  `fit="natural"` 을 넘겨 높이 기준으로 폭을 비례로 잡는다. */
+function CharAvatar({ gender, skinIdx, size = 44, fit = "square" }: { gender?: "m" | "f" | null; skinIdx?: number | null; size?: number; fit?: "square" | "natural" }) {
   const g = gender ?? "m";
   const s = skinIdx ?? 2;
+  const style: React.CSSProperties =
+    fit === "natural"
+      ? { height: size, width: Math.round((size * 96) / 64), imageRendering: "pixelated" }
+      : { width: size, height: size, imageRendering: "pixelated" };
   return (
     <img
       src={lookSprite(g, s)}
       alt="캐릭터 외형 미리보기"
-      style={{ width: size, height: size, imageRendering: "pixelated" }}
-      className="shrink-0 rounded border border-white/15 bg-black/40 object-cover object-[35%_78%]"
+      style={style}
+      className={
+        fit === "natural"
+          ? "shrink-0 object-contain"
+          : "shrink-0 rounded border border-white/15 bg-black/40 object-cover object-[35%_78%]"
+      }
       draggable={false}
     />
   );
@@ -245,7 +272,11 @@ export function Lobby({ onExit }: { onExit: () => void }) {
         <div className="flex flex-col gap-2 lg:flex-row">
           {/* 캐릭터 카드 그리드 — [A-1] 내부 독자 스크롤 제거(루트 스크롤로 통합) */}
           <div className="flex-1">
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
+            {/* vc210 (#otaku-cards) — 카드 폭을 줄여 세로 비율(≈0.75)을 확보한다.
+             *  종전 2/3/4 컬럼은 카드가 264×111(비율 0.42)로 가로형이 돼
+             *  씹덕 가챠 카드가 아니라 "선택 슬롯"으로 읽혔다(스크린샷 검토 지적).
+             *  컬럼을 늘려 폭을 줄이면 초상화 영역이 카드의 70%를 차지한다. */}
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 lg:grid-cols-6">
               {chars.map((m) => {
                 const active = sel?.id === m.id;
                 const color = clsColor(m.cls);
@@ -254,27 +285,58 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                     key={m.id}
                     onClick={() => { setSelId(m.id); setMsg(null); }}
                     onDoubleClick={() => startChar(m)}
-                    className={`game-chip min-h-[92px] p-2 text-left transition-all ${active ? "scale-[1.02] shadow-[0_0_18px_rgba(232,192,100,0.3),inset_0_0_0_1px_#e8c06440]" : ""}`}
-                    style={{ borderColor: active ? "#e8c064" : "#7a5a2e" }}
+                    data-selected={active ? "true" : "false"}
+                    className="game-chip otaku-card otaku-portrait text-left"
+                    style={{
+                      borderColor: active ? "#e8c064" : "#7a5a2e",
+                      /* 클래스 색을 카드 배경 그라데이션에 반영 (Priconne 실측 #f55291 패턴 응용) */
+                      ["--otaku-accent" as string]: color,
+                    }}
                   >
-                    <div className="flex items-center gap-1.5">
-                      {/* v1.1.0 (#21/#22) — 외형 미리보기 (성별+피부 변형 스프라이트) */}
-                      <CharAvatar gender={m.gender} skinIdx={m.skinIdx} size={40} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <p className="truncate text-[12px] font-black text-white">{m.name}</p>
-                          <span className="shrink-0 rounded px-1 py-0.5 text-[8px] font-black" style={{ color, background: `${color}22` }}>
-                            {classLabel(m.cls as ClassKey) || "모험가"}
-                          </span>
-                        </div>
-                        <p className="mt-0.5 text-[10px] font-black text-amber-200">Lv. {m.lv}{m.rebirths > 0 ? ` · 환생 ${m.rebirths}회` : ""}</p>
-                        <p className="mt-0.5 flex items-center gap-0.5 text-[8px] font-bold text-white/55">
+                    {/* ── 상단 초상화 영역: 카드 높이의 ~62% (씹덕 카드의 실제 비율) ── */}
+                    <div className="otaku-art">
+                      {/* 오리지널 절차 생성 초상화(192×256, 3:4) 우선 — 없으면 인게임 스프라이트 폴백 */}
+                      {portraitOf(m.cls as string | null, m.skinIdx ?? 0) ? (
+                        <img
+                          src={portraitOf(m.cls as string | null, m.skinIdx ?? 0) as string}
+                          alt={`${m.name} 초상화`}
+                          className="h-full w-full object-contain"
+                          style={{ imageRendering: "pixelated" }}
+                          draggable={false}
+                        />
+                      ) : (
+                        <CharAvatar gender={m.gender} skinIdx={m.skinIdx} size={128} fit="natural" />
+                      )}
+                      <div className="otaku-card-scrim" />
+                      {/* 우상단 레어도/환생 별 — Genshin 카드의 별 모티프 */}
+                      {m.rebirths > 0 && (
+                        <span className="otaku-stars absolute right-1 top-1 text-[9px] font-black leading-none">
+                          {"★".repeat(Math.min(5, m.rebirths))}
+                        </span>
+                      )}
+                      {/* 좌상단 클래스 배지 */}
+                      <span
+                        className="otaku-badge absolute left-1 top-1 rounded px-1 py-0.5 text-[8px] font-black backdrop-blur-sm"
+                        style={{ color, background: `${color}33`, border: `1px solid ${color}55` }}
+                      >
+                        {classLabel(m.cls as ClassKey) || "모험가"}
+                      </span>
+                    </div>
+
+                    {/* ── 하단 정보 영역 ── */}
+                    <div className="relative z-10 -mt-3 px-1.5 pb-1.5">
+                      <p className="otaku-name truncate text-[12px] font-black text-white">{m.name}</p>
+                      <div className="mt-0.5 flex items-center justify-between gap-1">
+                        <p className="text-[10px] font-black text-amber-200">
+                          Lv. {m.lv}{m.rebirths > 0 ? ` · 환생 ${m.rebirths}` : ""}
+                        </p>
+                        <p className="flex items-center gap-0.5 text-[8px] font-bold text-white/50">
                           <Clock size={8} />
                           {relTime(m.lastSeen)}
                         </p>
                       </div>
+                      {m.cleared && <p className="mt-0.5 text-[8px] font-black text-emerald-300">세계수 구원 완료</p>}
                     </div>
-                    {m.cleared && <p className="mt-1 text-[8px] font-black text-emerald-300">세계수 구원 완료</p>}
                   </button>
                 );
               })}

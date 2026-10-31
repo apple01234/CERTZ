@@ -156,6 +156,27 @@ function isLowPerfEnv(): boolean {
  *  F2: 목표물 빛기둥 비컨 + 화면 가장자리 화살표 + 실시간 거리 표시
  *  F4: 데미지텍스트·참격·파티클 모두 풀링/공유 이미터 → 보스전 프레임 안정
  */
+
+/** vc212 (#npc-body) — `spum_*` → 자체 제작 전신 텍스처 키.
+ *  BootScene 이 `assets/npcbody/<kind>.png` 를 같은 키로 로드한다.
+ *  매핑에 없거나 로드 실패면 기존 spum_* 을 그대로 쓴다. */
+const NPC_BODY_OF: Record<string, string> = {
+  spum_villager_m: "npcbody_villager_m",
+  spum_villager_f: "npcbody_villager_f",
+  spum_knight: "npcbody_knight",
+  spum_elf: "npcbody_elf",
+  spum_mage: "npcbody_mage",
+  spum_skel: "npcbody_devil",
+  spum_devil: "npcbody_devil",
+  spum_smith: "npcbody_smith",
+  spum_miner: "npcbody_miner",
+  spum_fisher: "npcbody_fisher",
+  spum_forager: "npcbody_villager_m",
+  spum_scout: "npcbody_scout",
+  spum_mystic: "npcbody_mystic",
+  spum_butler: "npcbody_butler",
+};
+
 export class WorldScene extends Phaser.Scene {
   stageDef!: StageDef;
   stageW = 0;
@@ -246,6 +267,10 @@ export class WorldScene extends Phaser.Scene {
   private questTimer: Phaser.Time.TimerEvent | null = null;
   /** 히트스톱/카메라 셰이크 등급 프로파일 (기본공격 절제 / 크리·스킬 강조) */
   impactFX!: ImpactFX;
+  /* vc209 (#ponytail Must #1) — trade 리스너 참조 (wireTradeInput 분리) */
+  private onTradeNearby?: (...args: never[]) => unknown;
+  private onTradeInvite?: (...args: never[]) => unknown;
+  private onTradeAct?: (...args: never[]) => unknown;
   /* v1.3.0 (#에셋통합) — Drive 팩 VFX 통합 레이어 (참격/크리/폭발/낙뢰/마법진/불꽃놀이) */
   driveFx!: DriveFX;
   /* v4.8.0 — 충격파 링 셰이더 풀 (크리티컬/약점/보스 격파 강한 순간) */
@@ -3853,8 +3878,21 @@ export class WorldScene extends Phaser.Scene {
           { x: cx - 90, y: cy - 90, tex: "spum_villager_f", name: "마을 아이", dlg: "villager2" },
         ];
     for (const v of villagers) {
-      /* v4.1.8 — 유료 SPUM 캐릭터(96px 캔버스) 배율 보정: 32px 무료 NPC × 1.6과 동일 화면 크기 */
-      const img = this.add.image(v.x, v.y, v.tex).setDepth(this.yDepthFor(v.y)).setScale(0.62);
+      /* v4.1.8 — 유료 SPUM 캐릭터(96px 캔버스) 배율 보정: 32px 무료 NPC × 1.6과 동일 화면 크기
+       * vc212 (#npc-body) — 자체 제작 전신 텍스처로 교체. 규격이 96×96 으로 같아 배율은 그대로.
+       *  로드 실패(텍스처 없음) 시 기존 spum_* 로 폴백해 NPC 가 사라지지 않게 한다. */
+      const bodyTex = this.textures.exists(NPC_BODY_OF[v.tex] ?? "") ? NPC_BODY_OF[v.tex] : v.tex;
+      /* vc212b — 그림자를 스프라이트에 굽지 않고 **별도 오브젝트**로 깐다.
+       *  스프라이트에 구우면 scale 0.62 + nearest 샘플링에서 반투명 픽셀이
+       *  뭉개져 지면에 안 보였다(스크린샷 실측). 별도 ellipse 는 축소와 무관하다. */
+      /* vc212c — alpha 0.32·26×9 는 실측 밝기차 22/174(13%)로 육안 식별이 어려웠다.
+       *  0.5·34×12 로 키워 지면 접지가 보이게 한다. */
+      /* 그림자 y = 스프라이트 중심 + 40*scale. 스프라이트(96px)의 실제 내용이
+       * y=88 에서 끝나고(하단 여백 8), 발 위치는 중심에서 40px 아래다.
+       * 종전 y+15 는 발보다 10px 위에 떠서 다리에 겹쳤다. */
+      this.add.ellipse(v.x, v.y + 40 * 0.62, 44, 14, 0x000000, 0.55)
+        .setDepth(this.yDepthFor(v.y) - 0.5);
+      const img = this.add.image(v.x, v.y, bodyTex).setDepth(this.yDepthFor(v.y)).setScale(0.62);
       this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       this.add
         .text(v.x, v.y - 34, v.name, {
@@ -3874,8 +3912,11 @@ export class WorldScene extends Phaser.Scene {
     const jy = cy - 120;
     const jglow = this.add.image(jx, jy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.8).setAlpha(0.22);
     this.tweens.add({ targets: jglow, alpha: 0.4, scale: 1.05, duration: 900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-    /* v4.1.8 — 카이엔: 유료 SPUM 기사 캐릭터 (무료 villager 금색 틴트 대체 — 갑옷 자체가 황금색) */
-    this.jobNpc = this.add.image(jx, jy, "spum_knight").setDepth(this.yDepthFor(jy)).setScale(0.66);
+    /* v4.1.8 — 카이엔: 유료 SPUM 기사 캐릭터 (무료 villager 금색 틴트 대체 — 갑옷 자체가 황금색)
+     * vc212 (#npc-body) — 자체 제작 전신으로 교체 + 발밑 그림자 별도 오브젝트.
+     *  여기만 spum_knight 가 하드코딩돼 있어 다른 NPC 와 달리 교체가 빠져 있었다. */
+    this.add.ellipse(jx, jy + 40 * 0.66, 44, 14, 0x000000, 0.55).setDepth(this.yDepthFor(jy) - 0.5);
+    this.jobNpc = this.add.image(jx, jy, "npcbody_knight").setDepth(this.yDepthFor(jy)).setScale(0.66);
     this.tweens.add({ targets: this.jobNpc, y: jy - 3, duration: 1000, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(jx, jy - 38, "직업 교관 카이엔", {
@@ -4752,7 +4793,9 @@ export class WorldScene extends Phaser.Scene {
        *  NPC는 항상 플레이어 바로 앞 레이어(80)에 두고, 그림자만 지형 depth를 따른다.
        *  → 어떤 지형에서도 가려지지 않는다. */
       const npc = this.add.image(x, y, key).setDepth(80).setScale(1.0).setOrigin(0.5, 0.78); // v1.2.4 (64x96) — 발 기준 정렬
-      const sh = this.add.ellipse(x, y + 14, 26, 8, 0x000000, 0.32).setDepth(79);
+      /* origin(0.5,0.78) 이므로 발이 곧 y 다 — 그림자는 발밑에 살짝만 겹치게 둔다.
+       * 종전 y+14 는 그림자가 발에서 14px 아래로 떨어져 떠 보였다. */
+      const sh = this.add.ellipse(x, y + 2, 26, 8, 0x000000, 0.32).setDepth(79);
       void sh;
 
       /* v1.2.4 (버그 3) — 상호작용 미동작 해소.
@@ -4828,7 +4871,11 @@ export class WorldScene extends Phaser.Scene {
     const my = this.layout ? this.entryHome.y - 40 : this.stageH / 2 - 60;
     const glow = this.add.image(mx, my + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.9).setAlpha(0.25);
     this.tweens.add({ targets: glow, alpha: 0.42, scale: 1.15, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-    this.merchant = this.add.image(mx, my, "npc_merchant").setDepth(this.yDepthFor(my)).setScale(1.7);
+    /* vc212 (#npc-body) — 상인도 자체 제작 **전신**으로 교체.
+     *  종전 npc_merchant 는 32×32 흉상형이라 1.7배 확대 시 다른 NPC 와
+     *  비율이 어긋나 "같은 게임 캐릭터"로 보이지 않았다(스크린샷 검토 지적). */
+    this.add.ellipse(mx, my + 40 * 0.62, 44, 14, 0x000000, 0.55).setDepth(this.yDepthFor(my) - 0.5);
+    this.merchant = this.add.image(mx, my, "npcbody_merchant").setDepth(this.yDepthFor(my)).setScale(0.62);
     this.tweens.add({ targets: this.merchant, y: my - 3, duration: 1200, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.merchantLabel = this.add
       .text(mx, my - 36, "상인 라고스", {
@@ -4911,7 +4958,11 @@ export class WorldScene extends Phaser.Scene {
       const ty = Phaser.Math.Clamp(this.entryHome.y + Phaser.Math.Between(-200, 140), 80, this.stageH - 80);
       if (this.inOpenArea(tx, ty) && !this.nearSolidObstacle(tx, ty, 44)) { px = tx; py = ty; break; }
     }
-    const img = this.add.image(px, py, s.tex).setDepth(this.yDepthFor(py)).setScale(0.62);
+    /* vc212b — 챕터 마을 NPC 도 같은 이유로 그림자를 별도 ellipse 로 깐다 */
+    const bodyTex2 = this.textures.exists(NPC_BODY_OF[s.tex] ?? "") ? NPC_BODY_OF[s.tex] : s.tex;
+    this.add.ellipse(px, py + 40 * 0.62, 44, 14, 0x000000, 0.55)
+      .setDepth(this.yDepthFor(py) - 0.5);
+    const img = this.add.image(px, py, bodyTex2).setDepth(this.yDepthFor(py)).setScale(0.62);
     this.tweens.add({ targets: img, y: py - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(px, py - 34, s.name, {
@@ -10882,76 +10933,7 @@ export class WorldScene extends Phaser.Scene {
       this.applyPerspSetting();
     };
     EventBus.on("fx:changed", onFxChanged as never);
-    /* ================= vc142 (#3) — 1:1 플레이어 거래 ================= */
-    initTrade({
-      myName: () => getPlayerName(),
-      canOffer: (key) => {
-        const it = ITEMS[key as ItemKey];
-        if (!it) return { ok: false, why: "존재하지 않는 아이템이에요" };
-        if (it.tradeLock || it.gmOnly) return { ok: false, why: "거래할 수 없는 아이템이에요" };
-        const p = this.player;
-        if (p.weapon === key || p.armor === key || p.accessories.includes(key as ItemKey)) return { ok: false, why: "장착 중인 아이템은 거래할 수 없어요" };
-        if (!p.owned.includes(key as ItemKey)) return { ok: false, why: "보유하지 않은 아이템이에요" };
-        return { ok: true, why: "" };
-      },
-      countOwned: (key) => this.player.owned.filter((k) => k === key).length,
-      gold: () => this.player.gold,
-      emerald: () => this.player.emerald,
-      apply: (mine, theirs) => {
-        const p = this.player;
-        /* 내가 건 것 제거 (잠재/스타포스 부가상태도 함께 소멸 — 상대 클라이언트에서 동일 적용) */
-        for (const k of mine.items) {
-          const i = p.owned.lastIndexOf(k as ItemKey);
-          if (i >= 0) p.owned.splice(i, 1);
-          delete p.potentials[k];
-          delete p.accUp[k];
-          /* vc145 (#16) — 장비 스타포스도 아이템과 함께 소멸 (accUp 동일 정책 — 수령측 부활 방지) */
-          delete p.starMap[k];
-        }
-        /* vc142 — addGold는 탐욕 버프 ×1.4가 붙으므로 거래에선 직접 대입 (버프 오증봉 방지) */
-        p.gold = Math.max(0, p.gold - mine.gold);
-        p.emerald = Math.max(0, p.emerald - mine.emerald);
-        /* 상대가 건 것 수령 */
-        for (const k of theirs.items) p.owned.push(k as ItemKey);
-        p.gold += theirs.gold;
-        p.emerald += theirs.emerald;
-        this.emitRpgState();
-        this.emitHud();
-        this.saveSoon();
-      },
-      notify: (t) => this.showBanner(t),
-    });
-    const onTradeNearby = () => {
-      /* 근처 원격 플레이어 목록 (500px 이내) */
-      const out: { id: string; name: string; lv: number }[] = [];
-      for (const [id, r] of this.remotes) {
-        if (!r.sp.active) continue;
-        if (Phaser.Math.Distance.Between(this.player.x, this.player.y, r.sp.x, r.sp.y) > 500) continue;
-        out.push({ id, name: r.name, lv: r.lv });
-        if (out.length >= 20) break;
-      }
-      /* vc145 (#14 크래시 수정) — 요청(trade:nearby)과 응답(trade:nearby:list) 채널 분리.
-       *  기존엔 같은 채널로 emit→핸들러→재emit 동기 재귀가 무한 루프를 돌아
-       *  "1:1 거래 버튼 클릭 시 Application error" (스택 오버플로)가 발생했다. */
-      EventBus.emit("trade:nearby:list", out);
-    };
-    const onTradeInvite = (v: { id: string; name: string }) => {
-      if (typeof v?.id === "string") tradeInvite(v.id, String(v.name ?? "").slice(0, 8));
-    };
-    EventBus.on("trade:nearby", onTradeNearby as never);
-    EventBus.on("rpg:tradeInvite", onTradeInvite as never);
-    const onTradeAct = (v: { act: string; key?: string; gold?: number; emerald?: number }) => {
-      switch (v?.act) {
-        case "add": if (v.key) tradeAddItem(v.key); break;
-        case "remove": if (v.key) tradeRemoveItem(v.key); break;
-        case "currency": tradeSetCurrency(Number(v.gold) || 0, Number(v.emerald) || 0); break;
-        case "lock": tradeLock(); break;
-        case "cancel": tradeCancel(); EventBus.emit("ui:panel", { panel: null }); break;
-        case "accept": tradeAccept(); break;
-        case "deny": tradeDeny(); EventBus.emit("ui:panel", { panel: null }); break;
-      }
-    };
-    EventBus.on("rpg:tradeAct", onTradeAct as never);
+    this.wireTradeInput();
     /* v1.0.6 — 세션 중 로그인/로그아웃 시 GM NPC·관리자 플래그 즉시 갱신
      *  (기존엔 마을 빌드 시 1회만 조회라, 마을 로드 뒤 admin으로 가입/로그인하면
      *   재입장 전까지 GM NPC가 안 떴다 — 유저 "GM 로그인 어케함?"의 실질 원인) */
@@ -11051,9 +11033,9 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:gm", onGm);
       EventBus.off("rpg:toon", onToonToggle); // vc142 — 툰 셰이딩 토글
       EventBus.off("fx:changed", onFxChanged as never); // vc145 — 셰이더 강도 슬라이더 실시간 재적용
-      EventBus.off("trade:nearby", onTradeNearby as never); // vc142 — 1:1 거래
-      EventBus.off("rpg:tradeInvite", onTradeInvite as never);
-      EventBus.off("rpg:tradeAct", onTradeAct as never);
+      EventBus.off("trade:nearby", this.onTradeNearby as never); // vc142 — 1:1 거래
+      EventBus.off("rpg:tradeInvite", this.onTradeInvite as never);
+      EventBus.off("rpg:tradeAct", this.onTradeAct as never);
       tradeCancel(true);
       EventBus.off("rpg:tradeBuy", onTradeBuy);
       EventBus.off("rpg:tradeSell", onTradeSell);
@@ -11103,6 +11085,82 @@ export class WorldScene extends Phaser.Scene {
 
     /* ================= v3.1.0 (#흑화) — fadeIn/워치독은 create() 래퍼로 이동 (v3.2.0)
      *  초기화 중 예외가 나도 화면이 반드시 밝아지도록 보장하기 위함 */
+  }
+
+
+  /** 1:1 플레이어 거래 배선.
+   *  setupInput() 분해 구획 — 동작 변경 0, 순수 이동. */
+  private wireTradeInput() {
+    /* ================= vc142 (#3) — 1:1 플레이어 거래 ================= */
+    initTrade({
+      myName: () => getPlayerName(),
+      canOffer: (key) => {
+        const it = ITEMS[key as ItemKey];
+        if (!it) return { ok: false, why: "존재하지 않는 아이템이에요" };
+        if (it.tradeLock || it.gmOnly) return { ok: false, why: "거래할 수 없는 아이템이에요" };
+        const p = this.player;
+        if (p.weapon === key || p.armor === key || p.accessories.includes(key as ItemKey)) return { ok: false, why: "장착 중인 아이템은 거래할 수 없어요" };
+        if (!p.owned.includes(key as ItemKey)) return { ok: false, why: "보유하지 않은 아이템이에요" };
+        return { ok: true, why: "" };
+      },
+      countOwned: (key) => this.player.owned.filter((k) => k === key).length,
+      gold: () => this.player.gold,
+      emerald: () => this.player.emerald,
+      apply: (mine, theirs) => {
+        const p = this.player;
+        /* 내가 건 것 제거 (잠재/스타포스 부가상태도 함께 소멸 — 상대 클라이언트에서 동일 적용) */
+        for (const k of mine.items) {
+          const i = p.owned.lastIndexOf(k as ItemKey);
+          if (i >= 0) p.owned.splice(i, 1);
+          delete p.potentials[k];
+          delete p.accUp[k];
+          /* vc145 (#16) — 장비 스타포스도 아이템과 함께 소멸 (accUp 동일 정책 — 수령측 부활 방지) */
+          delete p.starMap[k];
+        }
+        /* vc142 — addGold는 탐욕 버프 ×1.4가 붙으므로 거래에선 직접 대입 (버프 오증봉 방지) */
+        p.gold = Math.max(0, p.gold - mine.gold);
+        p.emerald = Math.max(0, p.emerald - mine.emerald);
+        /* 상대가 건 것 수령 */
+        for (const k of theirs.items) p.owned.push(k as ItemKey);
+        p.gold += theirs.gold;
+        p.emerald += theirs.emerald;
+        this.emitRpgState();
+        this.emitHud();
+        this.saveSoon();
+      },
+      notify: (t) => this.showBanner(t),
+    });
+    this.onTradeNearby = () => {
+      /* 근처 원격 플레이어 목록 (500px 이내) */
+      const out: { id: string; name: string; lv: number }[] = [];
+      for (const [id, r] of this.remotes) {
+        if (!r.sp.active) continue;
+        if (Phaser.Math.Distance.Between(this.player.x, this.player.y, r.sp.x, r.sp.y) > 500) continue;
+        out.push({ id, name: r.name, lv: r.lv });
+        if (out.length >= 20) break;
+      }
+      /* vc145 (#14 크래시 수정) — 요청(trade:nearby)과 응답(trade:nearby:list) 채널 분리.
+       *  기존엔 같은 채널로 emit→핸들러→재emit 동기 재귀가 무한 루프를 돌아
+       *  "1:1 거래 버튼 클릭 시 Application error" (스택 오버플로)가 발생했다. */
+      EventBus.emit("trade:nearby:list", out);
+    };
+    this.onTradeInvite = (v: { id: string; name: string }) => {
+      if (typeof v?.id === "string") tradeInvite(v.id, String(v.name ?? "").slice(0, 8));
+    };
+    EventBus.on("trade:nearby", this.onTradeNearby as never);
+    EventBus.on("rpg:tradeInvite", this.onTradeInvite as never);
+    this.onTradeAct = (v: { act: string; key?: string; gold?: number; emerald?: number }) => {
+      switch (v?.act) {
+        case "add": if (v.key) tradeAddItem(v.key); break;
+        case "remove": if (v.key) tradeRemoveItem(v.key); break;
+        case "currency": tradeSetCurrency(Number(v.gold) || 0, Number(v.emerald) || 0); break;
+        case "lock": tradeLock(); break;
+        case "cancel": tradeCancel(); EventBus.emit("ui:panel", { panel: null }); break;
+        case "accept": tradeAccept(); break;
+        case "deny": tradeDeny(); EventBus.emit("ui:panel", { panel: null }); break;
+      }
+    };
+    EventBus.on("rpg:tradeAct", this.onTradeAct as never);
   }
 
   /** 액션에 배정된 키 객체 (키 매핑 v1.9) */
@@ -14183,10 +14241,12 @@ export class WorldScene extends Phaser.Scene {
   /** 보스 근처에 퇴장 관리인 배치 (스토리/재림/공동토벌전/GM 스폰 4곳에서 호출) */
   private spawnBossExitNpc(bx: number, by: number) {
     this.despawnBossExitNpc();
-    const tex = this.textures.exists("spum_butler") ? "spum_butler" : this.textures.exists("npc_merchant") ? "npc_merchant" : "hero_idle0";
+    /* vc212 (#npc-body) — 보스 퇴장 NPC 도 자체 제작 전신으로. */
+    const tex = this.textures.exists("npcbody_butler") ? "npcbody_butler" : "hero_idle0";
     const nx = bx + 104;
     const ny = by + 64;
-    this.bossExitNpc = this.add.sprite(nx, ny, tex).setDepth(11).setTint(0xa8ccff).setScale(0.92);
+    this.add.ellipse(nx, ny + 40 * 0.62, 40, 13, 0x000000, 0.55).setDepth(10.5);
+    this.bossExitNpc = this.add.sprite(nx, ny, tex).setDepth(11).setTint(0xa8ccff).setScale(0.62);
     this.bossExitChip = this.add
       .text(nx, ny - 58, "퇴장 문의", {
         fontFamily: "Galmuri11, sans-serif",

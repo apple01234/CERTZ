@@ -31,6 +31,8 @@ import { ZERO_EXT, expBookExp, type ExtBonus, type GateCard } from "../isekai";
 import { expToNext } from "../expTable"; // v1.0.15 (피드백 #1) — 메이플 공식 레벨별 경험치표
 import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱 레이어
 import { memoCooldowns, restoreCooldowns } from "../cooldownMemo"; // v1.0.15 (피드백 #3) — 맵 이동 간 쿨타임 유지
+/* vc209 (#ponytail ①) — 데미지 배율 순수함수 (테스트 25케이스가 경계값 고정) */
+import { damageMultiplier } from "../combat/damageModel";
 
 /**
  * 주인공 세르츠.
@@ -7763,21 +7765,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private rollDamage(mult: number, isSkill = false, forceCrit = false): { dmg: number; crit: boolean } {
     const chance = Math.min(this.critRate, 100); // 초과분은 확률에 불반영 — vc145 (#12) 공격력 평가산으로 전환
     const crit = forceCrit || Math.random() * 100 < chance;
-    const rage = this.selfAtkBuff ? this.selfAtkBuff.mult : 1;
-    /* v3.3.0 (지시 #1) — 5차 각성 시 스킬 피해 +12% (기본공격 제외 — 스킬 강화 컨셉)
-     *  v4.0.0 — 게이트 인런 카드 스킬 피해 배율
-     *  vc147 (#18) — 궁극기 시전 중(ultSlot)엔 고정 배율(×300%/×500%) 하나로 계산:
-     *  기존 FIFTH_SKILL_MULT+n차 사다리×SKILL_PWR의 다중 중첩(약 ×3.2)을 대체해 요구치 그대로 3.0/5.0배 */
-    const isUlt = this.ultSlot > 0;
-    const fifth = isSkill && this.isFifth && !isUlt ? FIFTH_SKILL_MULT : 1;
-    const ultMult = this.ultSlot === 1 ? FIFTH1_MULT : this.ultSlot === 2 ? FIFTH2_MULT : 1;
-    const runSkl = isSkill && this.runBuffs.skillPct > 0 ? 1 + this.runBuffs.skillPct / 100 : 1;
-    /* v1.4.30 (#2) — n차 스킬 사다리: 거듭할수록 스킬이 훨씬 쎄진다 (전 스킬 공통 ×계수)
-     *  vc145 (#9 스킬 강화) — 계수 0.12 → 0.22로 상향 + 전 스킬 공통 ×1.25 (SKILL_PWR):
-     *  "높은 차수 스킬이 평타보다 약하다" 해소 — 평타 대비 스킬 격차를 차수마다 확대
-     *  1차 ×1.25 / 2차 ×1.53 / 3차 ×1.80 / 4차 ×2.08 / 5차 ×2.36 (×skillMult 곱) */
-    const tierScl = isSkill && !isUlt ? (1 + 0.22 * Math.max(0, this.sTier - 1)) * Player.SKILL_PWR : 1;
-    const m = (isSkill ? mult * this.clsBonus.skillMult * fifth * runSkl * tierScl * ultMult : mult) * rage * this.rebirthDmgMult;
+    /* vc209 (#ponytail ①) — 배율 계산을 순수함수로 분리했다.
+     *  `src/game/combat/damageModel.ts` 의 damageMultiplier 가 단일 진실원이며,
+     *  경계값은 `__tests__/damageModel.test.ts` 25케이스가 고정한다.
+     *  식이 여기 남아 있으면 다음 밸런스 수정에서 조용히 갈라지므로 **중복 계산을 두지 않는다**. */
+    const m = damageMultiplier({
+      mult,
+      isSkill,
+      clsSkillMult: this.clsBonus.skillMult,
+      isFifth: this.isFifth,
+      sTier: this.sTier,
+      ultSlot: this.ultSlot,
+      rage: this.selfAtkBuff ? this.selfAtkBuff.mult : 1,
+      rebirthDmgMult: this.rebirthDmgMult,
+      runSkillPct: this.runBuffs.skillPct,
+    });
     const dmg = Math.round(this.atkTotal * m * (crit ? this.critDmg : 1));
     /* vc146 (#2) — 시간 역행 로그 적산 (최근 6초 유지 — 이터널 제2궁극기가 재현 배수로 사용)
      *  v1.0.16 — 링 버퍼 기록 (cap 도달 전까지는 growth, 이후 슬롯 재사용 — 할당 0) */

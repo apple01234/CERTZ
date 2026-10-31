@@ -92,10 +92,70 @@ function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: 
   return bossPortrait(speaker);
 }
 
+/** vc210 (#npc-face) — 대사창 전용 **오리지널** NPC 얼굴.
+ *
+ *  ⚠️ 왜 필요한가 (실측)
+ *    기존 경로는 맵용 `spum_*.webp`(96×96)를 80×80 프레임에 object-cover 로 잘라 쓴다.
+ *    원본 얼굴 영역이 3~5px 뿐이라 **눈을 그릴 픽셀이 없다.** 5개를 실측한 결과
+ *    4개가 눈 없는 살구색 블록으로 "얼굴 없는 마네킹"이었다(기사는 투구가 얼굴을 100% 가림).
+ *
+ *  ⚠️ 저작권
+ *    `tools/gen_npc_faces.py` 가 **절차 생성**한 SERTZ 자체 에셋이다(32×32 → 4배 128×128).
+ *    참고 사이트의 캐릭터 이미지를 입력으로 쓰지 않았고, 입력은 수치(팔레트)뿐이다.
+ *    색은 SERTZ 기존 에셋에서 실측했다.
+ *
+ *  스프라이트 이름 → 생성 얼굴 종류 매핑. 없는 이름은 기존 경로로 폴백한다. */
+const SPUM_TO_FACE: Record<string, string> = {
+  spum_merchant: "merchant", npc_merchant: "merchant",
+  spum_knight: "knight", npc_gm: "merchant",
+  spum_mage: "mage", npc_mage_rin: "mage", spum_mystic: "mage",
+  spum_elf: "elf", npc_fairy_aria: "elf", npc_guide_lily: "elf",
+  spum_villager_m: "villager_m", npc_villager1: "villager_m",
+  spum_forager: "villager_m", spum_fisher: "villager_m", spum_scout: "villager_m",
+  spum_villager_f: "villager_f", npc_villager2: "villager_f", npc_witch_nyx: "villager_f",
+  spum_butler: "villager_m", spum_devil: "villager_f", spum_skel: "villager_m",
+  spum_smith: "smith", npc_jobmaster: "smith", spum_miner: "smith",
+  spum_priest: "priest", npc_scholar_mio: "priest",
+};
+
+/** 생성 얼굴이 있으면 그 tex 이름을 돌려준다 (확장자 없이 — 렌더러가 .png 로 붙인다). */
+function faceFor(tex: string, expr: /** vc211 (#표정연동) */ FaceExpr = "neutral"): string | null {
+  const kind = SPUM_TO_FACE[tex];
+  return kind ? `npcface/${kind}_${expr}` : null;
+}
+
+/** vc211 (#표정연동) — 대사창 표정. 생성 얼굴은 3종을 갖는다. */
+export type FaceExpr = "neutral" | "happy" | "angry";
+
+/** 대사 문장에서 표정을 추론한다.
+ *
+ *  왜 자동 추론인가: 대사 데이터(`showDialogueRaw`)가 수백 곳에 흩어져 있어
+ *  전부에 `expr` 를 손으로 붙이면 누락이 생긴다. 문장 부호·어휘는 감정의
+ *  강한 신호라 규칙으로 충분히 잡힌다. 명시 지정(`expr`)이 있으면 그쪽이 이긴다.
+ *
+ *  규칙 순서(먼저 맞는 것 채택): 화남 → 기쁨 → 중립 */
+export function inferExpr(line: string, speakerLike = ""): FaceExpr {
+  const t = `${speakerLike} ${line}`;
+  // 화남/위협 — 느낌표 반복, 강한 부정 어휘, 전투 고지
+  if (/[!！]{2,}|크윽|젠장|빌어먹|죽어|죽인|닥쳐|꺼져|분노|격노|전투|습격|배신|경고|위험|덤벼|각오/.test(t)) return "angry";
+  // 기쁨/환영 — 웃음, 감사, 환영, 칭찬
+  if (/[ㅎ하]{2,}|웃|반가|환영|고맙|감사|축하|좋은|멋지|훌륭|기쁘|행복|어서 오|다행|잘했|사랑/.test(t)) return "happy";
+  // 물음표만 있는 경우는 중립(놀람·의문은 별도 표정이 없다)
+  return "neutral";
+}
+
 export function DialogueBox({
   dialogue,
 }: {
-  dialogue: { speaker: string; lines: string[]; choices?: { label: string; id: string }[] } | null;
+  /** vc211 (#표정연동) — `expr` 를 명시하면 그 표정을, 없으면 문장에서 추론한다.
+   *  `exprByLine` 은 줄마다 다른 표정이 필요할 때 쓴다(인덱스 우선). */
+  dialogue: {
+    speaker: string;
+    lines: string[];
+    choices?: { label: string; id: string }[];
+    expr?: FaceExpr;
+    exprByLine?: FaceExpr[];
+  } | null;
 }) {
   const [idx, setIdx] = useState(0);
   const [shown, setShown] = useState("");
@@ -108,6 +168,16 @@ export function DialogueBox({
   const line = (dialogue?.lines[idx] ?? "").replaceAll("{name}", name);
   const speakerName = (dialogue?.speaker ?? "").replaceAll("{name}", name);
   const portrait = dialogue ? portraitOf(dialogue.speaker ?? "", (dialogue as { portrait?: string }).portrait) : null;
+  /* vc211 (#표정연동) — 표정 결정 우선순위:
+   *  ① exprByLine[idx]  ② dialogue.expr  ③ 문장 자동 추론  ④ neutral
+   *  자동 추론은 `line`(현재 줄)을 쓴다 — 줄마다 감정이 바뀌는 대사가 많다. */
+  const expr: FaceExpr =
+    dialogue?.exprByLine?.[idx] ??
+    dialogue?.expr ??
+    (line ? inferExpr(line, dialogue?.speaker ?? "") : "neutral");
+  /* 생성 얼굴이 있으면 우선 사용. 없으면 기존 경로(.webp). */
+  const genFace = portrait ? faceFor(portrait.tex, expr) : null;
+  const portraitSrc = genFace ? `/assets/${genFace}.png` : portrait ? `/assets/${portrait.tex}.webp` : "";
   /* v3.0.25 (#이미지 안불러와짐) — 초상화 로드 상태 추적: 404 등 실패 시 깨진 이미지 대신
    *  프레임만 표시하고, 로드 완료 시에야 이미지를 보여준다 (깜빡임·깨짐 제거) */
   const [portraitOk, setPortraitOk] = useState(true);
@@ -225,8 +295,8 @@ export function DialogueBox({
             {/* v3.0.25 (#비율 찌그러짐) — object-cover + object-top: 원본 비율 유지하며
                 프레임을 채우고(살짝 크롭 허용), 머리는 상단 고정 — 기존 강제 정사각형 스트레치 제거 */}
             <img
-              key={portrait.tex}
-              src={`/assets/${portrait.tex}.webp`}
+              key={portraitSrc}
+              src={portraitSrc}
               alt=""
               draggable={false}
               onLoad={() => setPortraitOk(true)}
