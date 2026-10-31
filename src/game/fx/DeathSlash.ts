@@ -162,7 +162,7 @@ export function runDeathSlashCinematic(
       ink.style.transition = "opacity 700ms ease-out";
       ink.style.opacity = "0.85";
       /* 붓 터치 미세 진동 — 카메라 쉐이크 */
-      scene.cameras.main.shake(560, 0.006);
+      (scene as unknown as { impactFX: { shake: (a: number, b: number) => void } }).impactFX.shake(560, 0.006);
       scene.cameras.main.flash(140, 120, 10, 10);
     });
     /* 확대 후 붓눌러 자리잡기 */
@@ -407,7 +407,7 @@ export function runDeathSlashCinematic(
       /* 유저 스펙 ④ — 피해는 이미 확정된 콜백 1회 호출 (공격 고유 ID 전달, 중복 판정 없음) */
       try { onStrike(attackId); } catch (e) { console.warn("[DeathSlash] 피해 콜백 예외 — 연출은 계속", e); }
       /* 강한 카메라 쉐이크 + 플래시 + 충격파 */
-      scene.cameras.main.shake(460, 0.024);
+      (scene as unknown as { impactFX: { shake: (a: number, b: number) => void } }).impactFX.shake(460, 0.024);
       scene.cameras.main.flash(180, 255, 40, 40);
       (shock.material as THREE.MeshBasicMaterial).opacity = 0.95;
       shock.scale.setScalar(1);

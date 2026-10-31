@@ -47,10 +47,37 @@ export class ImpactFX {
     });
   }
 
-  /** Camera Shake — 진행 중인 셰이크는 새 파라미터로 대체됨(Phaser 카메라 이펙트 특성) */
+  /** Camera Shake — 진행 중인 흔들림을 **약화시키지 않으면서** 약한 요청도 반영한다.
+   *
+   *  vc209 (#game-feel) — Phaser `Shake.start()` 는 `if (!force && this.isRunning) return`
+   *  이라, 진행 중인 셰이크가 있으면 새 요청을 **통째로 버린다**.
+   *  SERTZ 는 스킬 시전 연출에 420~700ms 셰이크를 47곳(전체 123회 중 38%)에서 걸고 있어,
+   *  그 시간창 안에 들어온 크리티컬/스킬 명중의 셰이크(90~110ms)가 전부 무시됐다.
+   *  → "때리는데 손맛이 없다"의 실제 원인.
+   *
+   *  단 `force = true` 는 답이 아니다 — `update()` 가 `duration` 을 새 값으로 덮어쓰므로
+   *  700ms 궁극기 연출이 90ms 크리티컬에 **잘려나간다**(반대 방향 버그).
+   *
+   *  그래서 남은 시간과 강도를 **비교해서 더 강한 쪽만** 채택한다:
+   *   · 더 센 타격이 오면 → 새로 시작(연출보다 명중이 우선)
+   *   · 더 약한 타격이 오면 → 진행 중인 연출을 건드리지 않는다(손실 없음)
+   *  진행 중인지 판정은 카메라 effect 의 `isRunning` 을 쓴다. */
   shake(ms: number, intensity: number) {
     if (ms <= 0 || intensity <= 0) return;
-    this.scene.cameras.main.shake(ms, intensity);
+    const s = this.scene as unknown as { fxLevel?: number };
+    if (s.fxLevel === 0) return;
+
+    const fx = this.scene.cameras.main.shakeEffect as
+      | { isRunning?: boolean; intensity?: { x: number }; duration?: number; _elapsed?: number }
+      | undefined;
+
+    if (fx?.isRunning && typeof fx.duration === "number" && typeof fx._elapsed === "number") {
+      const remain = fx.duration - fx._elapsed;
+      const curInt = fx.intensity?.x ?? 0;
+      /* 현재 연출이 더 세고 더 오래 남으면 그대로 둔다 — 약한 요청이 강한 연출을 깎지 않게 */
+      if (curInt >= intensity && remain >= ms) return;
+    }
+    this.scene.cameras.main.shake(ms, intensity, true);
   }
 
   /** 등급 프로파일로 히트스톱 + 셰이크를 한 번에 적용 */
@@ -58,5 +85,22 @@ export class ImpactFX {
     const p = IMPACT_PROFILES[kind];
     this.hitStop(p.hitStopMs);
     this.shake(p.shakeMs, p.shakeInt);
+  }
+
+  /**
+   * 매 프레임 호출 — 현재는 트라우마를 쓰지 않는다.
+   *
+   * vc209 설계 노트: 순수 트라우마 기반 셰이크(카메라 scroll 오프셋 직접 제어)는
+   * 이 프로젝트에서 **쓸 수 없다**. `WorldScene.applyManualCameraFollow()` 가
+   * 매 프레임 `setScroll()` 로 카메라 절대 위치를 확정하고(setScroll 호출 35곳),
+   * 내가 오프셋을 더해도 다음 프레임에 덮어써진다.
+   * 따라서 셰이크는 Phaser 내장 effect(카메라 내부 _offsetX/_offsetY 사용)에 맡기고,
+   * 이 모듈은 **우선순위(force)** 와 **저사양 게이트**만 책임진다.
+   *
+   * 훅은 남겨 둔다 — 나중에 applyManualCameraFollow 쪽으로 오프셋을 주입하면
+   * 여기서 감쇠를 담당하게 된다.
+   */
+  update(deltaMs: number) {
+    void deltaMs;
   }
 }

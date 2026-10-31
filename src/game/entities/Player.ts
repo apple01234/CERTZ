@@ -911,7 +911,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           fireOne(0);
         }
       }
-      if (shots >= 3) this.scene.cameras.main.shake(70, 0.0016); // 3발+ 동시 사격 임팩트
+      if (shots >= 3) this.scene.impactFX.shake(70, 0.0016); // 3발+ 동시 사격 임팩트
     });
 
     this.scene.time.delayedCall(200, () => {
@@ -1286,7 +1286,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.state !== "dead") body.setVelocity(0, 0);
       });
       this.scene.spawnPickupText(this.x, this.y - 44, "파괴의 광기!", "#ff5c3c");
-      this.scene.cameras.main.shake(90, 0.004);
+      this.scene.impactFX.shake(90, 0.004);
     } else {
       // 전사 원판 — 360° 궤도 반달 + 충격파 + 스파크 — 티어 2 이상에서 충격 링 추가
       this.scene.spawnSpinSlash(this.x, this.y, spin);
@@ -1418,7 +1418,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     fireVolley(count, 0.125, 1.2, 0);
     // v3.0.4 — 3차+: 2차 연사 추가 (기존 스킬 강화)
     if (t >= 3) fireVolley(count, 0.075, 1.0, count * 100 + 40);
-    if (t >= 3) this.scene.cameras.main.shake(80, 0.0016); // 연사 볼레이 임팩트
+    if (t >= 3) this.scene.impactFX.shake(80, 0.0016); // 연사 볼레이 임팩트
     this.scene.time.delayedCall(count * 100 + (t >= 3 ? count * 100 + 60 : 0) + 260, () => {
       if (this.state === "attack") this.state = "idle";
     });
@@ -1539,7 +1539,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     };
     smash(90, 2.2 + 0.15 * t);
     if (t >= 3) smash(260, 1.3);
-    this.scene.cameras.main.shake(110, 0.006);
+    this.scene.impactFX.shake(110, 0.006);
     this.scene.time.delayedCall(t >= 3 ? 460 : 300, () => {
       if (this.state === "attack") this.state = "idle";
     });
@@ -2535,7 +2535,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnSpinSlash(this.x, this.y, 1);
         this.scene.spawnBurstAt(this.x, this.y, 26, hex);
         this.scene.spawnCrack?.(this.x, this.y);
-        this.scene.cameras.main.shake(140, 0.009);
+        this.scene.impactFX.shake(140, 0.009);
         this.scene.cameras.main.flash(90, 255, 120, 90);
         for (const e of this.getAllTargetsIn(280)) {
           const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -2577,7 +2577,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             dmg, crit: true, tint: 0xbaf3ff, knock: 380, scale: 2.0,
             tex: "x2_arrow", blend: "add", rot: true,
           });
-          this.scene.cameras.main.shake(100, 0.007);
+          this.scene.impactFX.shake(100, 0.007);
           this.scene.cameras.main.flash(70, 160, 230, 255);
         });
         break;
@@ -2601,7 +2601,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
           });
         }
-        this.scene.cameras.main.shake(110, 0.006);
+        this.scene.impactFX.shake(110, 0.006);
         break;
       }
       /* 스톰브링어 — 낙뢰: 하늘에서 다수 직격 — v3.0.4 임팩트 상향 (6타·기절 추가) */
@@ -2618,7 +2618,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             (e as Enemy).applyStun?.(400);
           });
         });
-        this.scene.cameras.main.shake(130, 0.011);
+        this.scene.impactFX.shake(130, 0.011);
         this.scene.cameras.main.flash(90, 170, 210, 255);
         break;
       }
@@ -2641,7 +2641,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "shadowblad": {
         this.scene.startOrbitBlades(1.8, hex, 9000);
         this.scene.spawnBurstAt(this.x, this.y, 18, hex);
-        this.scene.cameras.main.shake(80, 0.004);
+        this.scene.impactFX.shake(80, 0.004);
         break;
       }
       /* 듀얼리스트 — 연격 무도: 연속 급습 + 피해 흡수 — v3.0.4 임팩트 상향 (6연격) */
@@ -2666,7 +2666,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         }
-        this.scene.cameras.main.shake(90, 0.004);
+        this.scene.impactFX.shake(90, 0.004);
         break;
       }
       /* ════════ v3.0.4 — 4차 전용 고유 3차기 (기존 3차 스킬과 완전 별개 — 겹침 0) ════════ */
@@ -2675,7 +2675,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const t = this.sTier; // v1.4.30 — 지속시간 티어 스케일용
         this.scene.spawnSpinSlash(this.x, this.y, 1);
         this.scene.spawnBurstAt(this.x, this.y, 26, 0xff2d2d);
-        this.scene.cameras.main.shake(130, 0.008);
+        this.scene.impactFX.shake(130, 0.008);
         this.scene.cameras.main.flash(90, 255, 60, 60);
         for (const e of this.getAllTargetsIn(250)) {
           const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -2703,7 +2703,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnPillar(this.x, this.y, 0xffe9a0, 210);
         this.scene.spawnBurstAt(this.x, this.y, 34, 0xffe9a0);
         this.scene.cameras.main.flash(120, 255, 240, 190);
-        this.scene.cameras.main.shake(150, 0.009);
+        this.scene.impactFX.shake(150, 0.009);
         for (const e of this.getAllTargetsIn(280)) {
           const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg, crit } = this.rollDamage(2.6, true);
@@ -2738,7 +2738,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
           });
         }
-        this.scene.cameras.main.shake(100, 0.004);
+        this.scene.impactFX.shake(100, 0.004);
         this.scene.spawnPickupText(this.x, this.y - 44, "화살 폭우!", "#1cff5c");
         break;
       }
@@ -2774,7 +2774,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
           });
         }
-        this.scene.cameras.main.shake(110, 0.006);
+        this.scene.impactFX.shake(110, 0.006);
         this.scene.spawnPickupText(this.x, this.y - 44, "하늘의 희망!", "#ccffe8");
         break;
       }
@@ -2808,7 +2808,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (cur) this.scene.time.delayedCall(120, strikeNext);
         };
         strikeNext();
-        this.scene.cameras.main.shake(120, 0.008);
+        this.scene.impactFX.shake(120, 0.008);
         this.scene.cameras.main.flash(80, 170, 210, 255);
         break;
       }
@@ -2840,7 +2840,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           this.scene.spawnPillar(cx, cy, 0xb0a0ff, 190);
           this.scene.spawnBurstAt(cx, cy, 30, hex);
-          this.scene.cameras.main.shake(150, 0.01);
+          this.scene.impactFX.shake(150, 0.01);
           this.scene.cameras.main.flash(100, 200, 180, 255);
           for (const e of this.getAllTargetsIn(190 + 10 * t)) {
             const away = this.awayScratch.set(e.x - cx, e.y - cy).normalize();
@@ -2881,7 +2881,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 timer.remove();
                 mine.destroy();
                 this.scene.spawnBurstAt(mx, my, 18, hex);
-                this.scene.cameras.main.shake(80, 0.005);
+                this.scene.impactFX.shake(80, 0.005);
                 const targets2 = this.scene.getAllTargets().filter((e) => e.active && Phaser.Math.Distance.Between(mx, my, e.x, e.y) <= 110);
                 for (const e of targets2) {
                   const away = this.awayScratch.set(e.x - mx, e.y - my).normalize();
@@ -2927,7 +2927,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         }
-        this.scene.cameras.main.shake(90, 0.005);
+        this.scene.impactFX.shake(90, 0.005);
         this.scene.spawnPickupText(this.x, this.y - 44, "파동 검기!", "#ffaaff");
         break;
       }
@@ -2960,7 +2960,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               }
             }
             this.scene.sfxSkill("thunder", 0.9 + Math.random() * 0.15);
-            this.scene.cameras.main.shake(90, 0.004);
+            this.scene.impactFX.shake(90, 0.004);
           });
         }
         break;
@@ -3026,7 +3026,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnBurstAt(ex, ey, 16, 0xffb347);
             this.scene.spawnPillar(ex, ey, 0xffb347, 150);
             this.scene.sfxSkill("quake", 1.0 + s2 * 0.06);
-            this.scene.cameras.main.shake(110, 0.006);
+            this.scene.impactFX.shake(110, 0.006);
             for (const e of this.getAllTargetsIn(999)) {
               if (this.hitSet.has(e)) continue;
               if (Phaser.Math.Distance.Between(ex, ey, e.x, e.y) > 120 + 8 * t) continue;
@@ -3108,7 +3108,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_fire", 0xffffff, 3.6, 560);
           spawnFlarePop(this.scene, this.x, this.y - 6, "vf_flare_fire", { scale: 1.6, duration: 520 });
           this.scene.driveFx?.gvFireCircle(this.x, this.y, 0xff8a4a, 820, 1.1);
-          this.scene.cameras.main.shake(200, 0.014);
+          this.scene.impactFX.shake(200, 0.014);
           this.scene.cameras.main.flash(120, 255, 90, 50);
           for (const e of this.getAllTargetsIn(300)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -3144,7 +3144,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.hp = Math.min(this.maxHp, this.hp + Math.round(this.maxHp * 0.2));
         this.scene.spawnHealFx(this.x, this.y, 0xffe9a0);
         this.scene.spawnPillar(this.x, this.y, 0xffe9a0, 160);
-        this.scene.cameras.main.shake(120, 0.007);
+        this.scene.impactFX.shake(120, 0.007);
         this.scene.cameras.main.flash(100, 255, 240, 190);
         this.scene.spawnPickupText(this.x, this.y - 44, "심판의 빛! 방어력 상승 + 치유", "#ffd29a");
         break;
@@ -3168,7 +3168,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
          *  vc149 (#14) — 마법진 금지(궁수 계열): gv 바람 부채꼴로 대체 */
         this.scene.driveFx?.gvCone(this.x, this.y, this.aimDirFree().angle(), 0xffe9a0, 1.4);
         spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_elec", { scale: 1.1, duration: 480 });
-        this.scene.cameras.main.shake(80, 0.004);
+        this.scene.impactFX.shake(80, 0.004);
         break;
       }
       /* 스카이로드 — 천공의 폭풍: 나선 미니 토네이도 12기 + 중심 대형 회오리 + 신속 버프
@@ -3201,7 +3201,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const a = (Math.PI * 2 * k) / 3;
           spawnFlarePop(this.scene, this.x + Math.cos(a) * 52, this.y - 8 + Math.sin(a) * 36, "vf_flare_nature", { scale: 0.75, duration: 900, angle: a });
         }
-        this.scene.cameras.main.shake(100, 0.006);
+        this.scene.impactFX.shake(100, 0.006);
         this.scene.spawnPickupText(this.x, this.y - 44, "천공의 폭풍! 신속 버프", "#ccffe8");
         break;
       }
@@ -3217,7 +3217,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         spawnPentacle(this.scene, this.x, this.y, 0x8ab0ff, { tex: "vf_penta_elec", scale: 1.45, duration: 820 });
         spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0x8ab0ff, 3.2, 600);
         spawnFlarePop(this.scene, this.x, this.y - 6, "vf_flare_elec", { scale: 1.5, duration: 500 });
-        this.scene.cameras.main.shake(180, 0.012);
+        this.scene.impactFX.shake(180, 0.012);
         this.scene.cameras.main.flash(110, 120, 140, 255);
         for (const e of this.getAllTargetsIn(350)) {
           const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -3318,7 +3318,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.facing.copy(dir2);
           });
         });
-        this.scene.cameras.main.shake(110, 0.006);
+        this.scene.impactFX.shake(110, 0.006);
         this.scene.time.delayedCall(targets.length * 160 + 120, () => {
           if (this.state === "attack") this.state = "idle";
         });
@@ -3357,7 +3357,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnShockwave(cx, cy, 0xffffff, 2.6, 620, 0.9);
           this.scene.spawnBurstAt(cx, cy, 40, 0x5fd4ff);
           this.scene.cameras.main.flash(200, 200, 240, 255);
-          this.scene.cameras.main.shake(280, 0.012);
+          this.scene.impactFX.shake(280, 0.012);
           this.scene.sfxSkill("quake", 0.85);
           for (const e of this.getAllTargetsIn(360)) {
             const away = this.awayScratch.set(e.x - cx, e.y - cy).normalize();
@@ -3383,7 +3383,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnShockwave(px, py, 0xff8a3d, 1.8, 460, 0.85);
             this.scene.spawnBurstAt(px, py, 18, 0xff6a3d);
             this.scene.sfxSkill("quake", 0.9 + (i % 3) * 0.06);
-            this.scene.cameras.main.shake(100, 0.007);
+            this.scene.impactFX.shake(100, 0.007);
             for (const e of this.getAllTargetsIn(999)) {
               if (this.hitSet.has(e)) continue;
               if (Phaser.Math.Distance.Between(px, py, e.x, e.y) > 145) continue;
@@ -3608,7 +3608,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const oy = this.y + dir.y * (i % 2 === 0 ? 34 : -34);
             this.scene.spawnSlash(ox, oy, dir, i % 2 === 0, 3.4 + i * 0.24, hex);
             this.scene.spawnSpinSlash(ox, oy, 1);
-            this.scene.cameras.main.shake(120, 0.009 + i * 0.0012);
+            this.scene.impactFX.shake(120, 0.009 + i * 0.0012);
             this.scene.sfxSkill("bigsword", 0.9 + (i % 4) * 0.06);
             for (const e of this.getAllTargetsIn(440)) {
               const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -3629,7 +3629,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_fire", 0xffffff, 5.2, 720);
           spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_fire", { scale: 2.3, duration: 640 });
           this.scene.driveFx?.gvFireCircle(this.x, this.y, 0xffa060, 950, 1.5); this.scene.driveFx?.gvCore(this.x, this.y, 0xffd0a0, 1.6); /* vc149 #14 마법진→gv 불서클(전사) */
-          this.scene.cameras.main.shake(460, 0.022);
+          this.scene.impactFX.shake(460, 0.022);
           this.scene.cameras.main.flash(170, 255, 110, 50);
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(620)) {
@@ -3657,7 +3657,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnPillar(px, py, 0xffe9a0, 250);
             this.scene.spawnBurstAt(px, py, 26, 0xffe9a0);
             this.scene.spawnRuneRing(px, py, 0xffe9a0);
-            this.scene.cameras.main.shake(120, 0.009);
+            this.scene.impactFX.shake(120, 0.009);
             this.scene.sfxSkill("holy", 0.95 + (i % 3) * 0.07);
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 200) continue;
@@ -3678,7 +3678,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.driveFx?.gvFireCircle(this.x, this.y, 0xffe9a0, 1150, 1.8); this.scene.driveFx?.gvAura(this.x, this.y, 0xffe9a0, 1500, 1.6); /* vc149 #14 마법진→gv 성역(전사) */
           spawnRingPop(this.scene, this.x, this.y, "vf_ring", 0xffe9a0, 5.0, 800);
           this.scene.cameras.main.flash(200, 255, 245, 200);
-          this.scene.cameras.main.shake(460, 0.02);
+          this.scene.impactFX.shake(460, 0.02);
           this.scene.sfxSkill("holy", 0.72);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(580)) {
@@ -3725,7 +3725,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.state === "dead") return;
             const dir = this.aimDirFree().normalize();
             this.scene.spawnSnipeBeam(this.x, this.y - 8, this.x + dir.x * 1400, this.y + dir.y * 1400, 0xffd76a);
-            this.scene.cameras.main.shake(140, 0.012);
+            this.scene.impactFX.shake(140, 0.012);
             this.scene.sfxSkill("snipe", 0.85);
             /* v1.0.10 — GameStudio FX: 저격선 발사 코어 플레어+스파크 */
             spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_elec", { tint: 0xffd76a, scale: 1.15, duration: 420 });
@@ -3773,7 +3773,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               /* v1.0.10 — GameStudio FX: 낙뢰 3D 플레어+임팩트 (연쇄 낙뢰) */
               spawnFlarePop(this.scene, t.x, t.y - 10, "vf_lightning", { tint: 0xcfe8ff, scale: 1.3, duration: 420 });
               spawnRingPop(this.scene, t.x, t.y, "vf_ring", 0xaed8ff, 2.0, 420);
-              this.scene.cameras.main.shake(110, 0.011);
+              this.scene.impactFX.shake(110, 0.011);
               this.scene.sfxSkill("thunder", 0.82 + (i % 3) * 0.08);
               const away = this.awayScratch.set(0, 0.1).normalize();
               const { dmg, crit } = rd(3.4);
@@ -3804,7 +3804,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const py = t ? t.y + (Math.random() - 0.5) * 70 : this.y + (Math.random() - 0.5) * 560;
             this.scene.spawnPillar(px, py, hex, 260);
             this.scene.spawnBurstAt(px, py, 30, hex);
-            this.scene.cameras.main.shake(130, 0.01);
+            this.scene.impactFX.shake(130, 0.01);
             this.scene.sfxSkill("thunder", 0.88 + (i % 3) * 0.08);
             for (const e of this.getAllTargetsIn(310)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 200) continue;
@@ -3884,7 +3884,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             kind: "light", owner: "player",
           });
           this.scene.cameras.main.flash(220, 220, 200, 255);
-          this.scene.cameras.main.shake(520, 0.024);
+          this.scene.impactFX.shake(520, 0.024);
           this.scene.sfxSkill("manaburst", 0.72);
           this.scene.sfxSkill("superhit", 0.8);
           for (const e of this.getAllTargetsIn(650)) {
@@ -3927,7 +3927,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnPillar(px, py, 0xb0a0ff, 230);
             this.scene.spawnBurstAt(px, py, 26, 0xb0a0ff);
             this.scene.spawnRuneRing(px, py, 0xb0a0ff);
-            this.scene.cameras.main.shake(120, 0.01);
+            this.scene.impactFX.shake(120, 0.01);
             this.scene.sfxSkill("timestop", 1.1 + (i % 3) * 0.08);
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 210) continue;
@@ -3958,7 +3958,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.driveFx?.gvSpecks(this.x, this.y, 0xe8e0ff, 16, 260);
           this.scene.driveFx?.gvCore(this.x, this.y, 0xd8ccff, 2.0);
           this.scene.cameras.main.flash(200, 216, 204, 255);
-          this.scene.cameras.main.shake(480, 0.02);
+          this.scene.impactFX.shake(480, 0.02);
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(580)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4005,7 +4005,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_dark", { scale: 2.2, duration: 640 });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xffffff, 4.8, 780);
           this.scene.cameras.main.flash(190, 90, 40, 160);
-          this.scene.cameras.main.shake(500, 0.022);
+          this.scene.impactFX.shake(500, 0.022);
           this.scene.sfxSkill("dark", 0.66);
           this.scene.sfxSkill("superhit", 0.8);
           for (const e of this.getAllTargetsIn(560)) {
@@ -4242,7 +4242,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnFlarePop(this.scene, this.x + dir.x * 44, this.y - 6, "vf_slash", { tint: 0xffffff, scale: 2.2, duration: 500, angle: dir.angle() + 0.5 });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring", hex, 4.6, 700);
           this.scene.cameras.main.flash(180, 255, 60, 60); // vc154 — 종결은 붉게 (死 한자 톤과 수렴)
-          this.scene.cameras.main.shake(440, 0.021);
+          this.scene.impactFX.shake(440, 0.021);
           this.scene.sfxSkill("iainuki", 0.6);
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(560)) {
@@ -4313,7 +4313,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             kind: "light", owner: "player",
           });
           this.scene.cameras.main.flash(190, 120, 220, 255);
-          this.scene.cameras.main.shake(440, 0.019);
+          this.scene.impactFX.shake(440, 0.019);
           this.scene.sfxSkill("superhit", 0.88);
           for (const e of this.getAllTargetsIn(620)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4380,7 +4380,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             dps: Math.max(20, Math.round(this.atkTotal * 1.6)),
             kind: "fire", owner: "player",
           });
-          this.scene.cameras.main.shake(520, 0.024);
+          this.scene.impactFX.shake(520, 0.024);
           this.scene.sfxSkill("quake", 0.92);
           for (const e of this.getAllTargetsIn(680)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4402,7 +4402,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const oy = this.y + dir.y * (i % 2 === 0 ? 30 : -30);
             this.scene.spawnSlash(ox, oy, dir, i % 2 === 0, 3.1 + i * 0.22, hex);
             this.scene.spawnSpinSlash(ox, oy, 1);
-            this.scene.cameras.main.shake(110, 0.008 + i * 0.001);
+            this.scene.impactFX.shake(110, 0.008 + i * 0.001);
             this.scene.sfxSkill("bigsword", 0.9 + i * 0.05);
             for (const e of this.getAllTargetsIn(400)) {
               const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4418,7 +4418,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnPillar(this.x, this.y, hex, 260);
           this.scene.spawnBurstAt(this.x, this.y, 60, hex);
-          this.scene.cameras.main.shake(420, 0.02);
+          this.scene.impactFX.shake(420, 0.02);
           this.scene.cameras.main.flash(160, 255, 120, 60);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(560)) {
@@ -4469,7 +4469,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             kind: "fire", owner: "player",
           });
           this.scene.cameras.main.flash(130, 255, 220, 140);
-          this.scene.cameras.main.shake(240, 0.012);
+          this.scene.impactFX.shake(240, 0.012);
           this.scene.sfxSkill("arrowpierce", 0.82);
           this.scene.sfxSkill("superhit", 0.94);
         });
@@ -4486,7 +4486,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const py = t ? t.y + (Math.random() - 0.5) * 60 : this.y + (Math.random() - 0.5) * 480;
             this.scene.spawnPillar(px, py, hex, 240);
             this.scene.spawnBurstAt(px, py, 30, hex);
-            this.scene.cameras.main.shake(130, 0.01);
+            this.scene.impactFX.shake(130, 0.01);
             this.scene.sfxSkill("thunder", 0.9 + (i % 3) * 0.08);
             for (const e of this.getAllTargetsIn(300)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 190) continue;
@@ -4508,7 +4508,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             kind: "light", owner: "player",
           });
           this.scene.cameras.main.flash(220, 255, 255, 255);
-          this.scene.cameras.main.shake(500, 0.022);
+          this.scene.impactFX.shake(500, 0.022);
           this.scene.sfxSkill("manaburst", 0.8);
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(600)) {
@@ -4585,7 +4585,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               kind: "light", owner: "player",
             });
             this.scene.cameras.main.flash(200, 140, 210, 255);
-            this.scene.cameras.main.shake(460, 0.02);
+            this.scene.impactFX.shake(460, 0.02);
             this.scene.sfxSkill("superhit", 0.86);
             for (const e of this.getAllTargetsIn(560)) {
               const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4622,7 +4622,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnBurstAt(this.x, this.y, 70, 0x8a4aff);
           this.scene.spawnCrack(this.x, this.y);
           this.scene.cameras.main.flash(180, 90, 40, 160);
-          this.scene.cameras.main.shake(480, 0.02);
+          this.scene.impactFX.shake(480, 0.02);
           this.scene.sfxSkill("dark", 0.72);
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(540)) {
@@ -4657,7 +4657,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const ox = this.x + dir.x * (i % 2 === 0 ? 48 : -48);
             const oy = this.y + dir.y * (i % 2 === 0 ? 32 : -32);
             this.scene.spawnSlash(ox, oy, dir, i % 2 === 0, 3.0 + i * 0.18, 0xd83030);
-            this.scene.cameras.main.shake(90, 0.008 + i * 0.0009);
+            this.scene.impactFX.shake(90, 0.008 + i * 0.0009);
             this.scene.sfxSkill("bigsword", 0.92 + (i % 3) * 0.05);
             for (const e of this.getAllTargetsIn(400)) {
               const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4673,7 +4673,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xd83030, 320);
           this.scene.spawnBurstAt(this.x, this.y, 76, 0xd83030);
           this.scene.cameras.main.flash(170, 200, 40, 40);
-          this.scene.cameras.main.shake(450, 0.021);
+          this.scene.impactFX.shake(450, 0.021);
           this.scene.sfxSkill("superhit", 0.82);
           for (const e of this.getAllTargetsIn(520)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4696,7 +4696,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.time.delayedCall(200 + i * 300, () => {
             if (this.state === "dead") return;
             this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.5, 420, 0.7);
-            this.scene.cameras.main.shake(70, 0.005);
+            this.scene.impactFX.shake(70, 0.005);
             this.scene.sfxSkill("warcry", 0.9);
             for (const e of this.getAllTargetsIn(RAD)) {
               const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4731,7 +4731,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnCrack(this.x, this.y);
             this.scene.spawnShockwave(this.x, this.y, 0xffb060, 1.4, 380, 0.8);
             this.scene.spawnBurstAt(this.x, this.y, 44, 0xffb060);
-            this.scene.cameras.main.shake(200, 0.014);
+            this.scene.impactFX.shake(200, 0.014);
             this.scene.sfxSkill("bigsword", 0.86);
             for (const e of this.getAllTargetsIn(340)) {
               const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4746,7 +4746,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffb060, 340);
           this.scene.cameras.main.flash(160, 255, 190, 120);
-          this.scene.cameras.main.shake(480, 0.019);
+          this.scene.impactFX.shake(480, 0.019);
           for (const e of this.getAllTargetsIn(480)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(5.4);
@@ -4800,7 +4800,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (!line.scene) return;
             line.destroy();
             if (this.state === "dead") return;
-            this.scene.cameras.main.shake(160, 0.010);
+            this.scene.impactFX.shake(160, 0.010);
             this.scene.hitStop(120);
             this.scene.sfxSkill("snipe", 0.9);
             this.scene.spawnBurstAt(tgt.x, tgt.y, 40, 0xff4040);
@@ -4887,7 +4887,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const py = this.y + Math.sin(ang) * dist;
             this.scene.spawnPillar(px, py, 0x90c0ff, 200);
             this.scene.spawnBurstAt(px, py, 20, 0x90c0ff);
-            this.scene.cameras.main.shake(60, 0.006);
+            this.scene.impactFX.shake(60, 0.006);
             this.scene.sfxSkill("thunder", 0.84);
             for (const e of this.targetsAround(px, py, 130)) {
               const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
@@ -4902,7 +4902,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xb0e0ff, 460);
           this.scene.spawnBurstAt(this.x, this.y, 90, 0xb0e0ff);
           this.scene.cameras.main.flash(200, 180, 220, 255);
-          this.scene.cameras.main.shake(520, 0.022);
+          this.scene.impactFX.shake(520, 0.022);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(560)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4925,7 +4925,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const py = this.y + Math.sin(ang) * dist;
             this.scene.spawnBurstAt(px, py, 30, 0xc080ff);
             this.scene.spawnCrack(px, py);
-            this.scene.cameras.main.shake(80, 0.007);
+            this.scene.impactFX.shake(80, 0.007);
             this.scene.sfxSkill("gravity", 0.88);
             for (const e of this.targetsAround(px, py, 140)) {
               const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
@@ -4940,7 +4940,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xd0a0ff, 420);
           this.scene.spawnBurstAt(this.x, this.y, 86, 0xd0a0ff);
           this.scene.cameras.main.flash(190, 200, 160, 255);
-          this.scene.cameras.main.shake(460, 0.018);
+          this.scene.impactFX.shake(460, 0.018);
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(520)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -4974,7 +4974,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.time.delayedCall(300 + 5 * 320 + 200, () => {
           if (this.state === "dead") return;
           this.scene.cameras.main.flash(220, 255, 250, 200);
-          this.scene.cameras.main.shake(420, 0.016);
+          this.scene.impactFX.shake(420, 0.016);
           this.scene.spawnPillar(this.x, this.y, 0xffe080, 400);
           this.scene.sfxSkill("superhit", 0.8);
           const bonus = Math.max(1, Math.round(accum * 0.5));
@@ -5049,7 +5049,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const py = this.y + Math.sin(ang) * r;
             this.scene.spawnSlash(px, py, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), i % 2 === 0, 1.5, 0xffe080);
             this.scene.spawnSpinSlash(px, py, 1);
-            this.scene.cameras.main.shake(50, 0.004);
+            this.scene.impactFX.shake(50, 0.004);
             this.scene.sfxSkill("knife", 0.9);
             for (const e of this.getAllTargetsIn(200)) {
               const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -5074,7 +5074,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.setPosition(t.x + away.x * 46, t.y + away.y * 46);
             this.scene.spawnSlash(t.x, t.y, away, true, 2.6, 0x60a0ff);
             this.scene.spawnBurstAt(t.x, t.y, 36, 0x60a0ff);
-            this.scene.cameras.main.shake(180, 0.011);
+            this.scene.impactFX.shake(180, 0.011);
             this.scene.hitStop(100);
             this.scene.sfxSkill("knife", 0.95);
             const { dmg } = rd(9.0, true);
@@ -5093,7 +5093,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.time.delayedCall(240 + i * 170, () => {
               if (this.state === "dead" || !foe.active) return;
               this.scene.spawnSlash(foe.x, foe.y, away, i % 2 === 0, 2.0 + i * 0.1, 0xffe0a0);
-              this.scene.cameras.main.shake(90, 0.008);
+              this.scene.impactFX.shake(90, 0.008);
               this.scene.sfxSkill("knife", 0.92);
               const { dmg, crit } = rd(3.4);
               if (crit) this.scene.sfxCrit();
@@ -5148,7 +5148,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.time.delayedCall(280 + 16 * 55 + 200, () => {
           if (this.state === "dead") return;
           this.scene.cameras.main.flash(180, 255, 170, 80);
-          this.scene.cameras.main.shake(460, 0.020);
+          this.scene.impactFX.shake(460, 0.020);
           this.scene.spawnShockwave(this.x, this.y, 0xffa040, 2.2, 520, 0.9);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(480)) {
@@ -5171,7 +5171,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const py = this.y;
             this.scene.spawnBurstAt(px, py, 28, 0x60c0ff);
             this.scene.spawnShockwave(px, py, 0x60c0ff, 1.1, 320, 0.75);
-            this.scene.cameras.main.shake(100, 0.009);
+            this.scene.impactFX.shake(100, 0.009);
             this.scene.sfxSkill("thunder", 0.9);
             for (const e of this.targetsAround(px, py, 140)) {
               const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
@@ -5197,7 +5197,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.state === "dead") return;
             this.scene.spawnBurstAt(p.x, p.y, 34, 0xffb040);
             this.scene.spawnShockwave(p.x, p.y, 0xffb040, 1.3, 360, 0.8);
-            this.scene.cameras.main.shake(110, 0.011);
+            this.scene.impactFX.shake(110, 0.011);
             this.scene.sfxSkill("quake", 0.9);
             for (const e of this.targetsAround(p.x, p.y, 160)) {
               const away = this.awayScratch.set(e.x - p.x, e.y - p.y).normalize();
@@ -5211,7 +5211,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffd060, 440);
           this.scene.cameras.main.flash(220, 255, 220, 140);
-          this.scene.cameras.main.shake(520, 0.024);
+          this.scene.impactFX.shake(520, 0.024);
           this.scene.sfxSkill("superhit", 0.9);
           for (const e of this.getAllTargetsIn(520)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -5257,7 +5257,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnShockwave(this.x, this.y, 0xff8040, 1.6 + i * 0.5, 480 + i * 120, 0.9);
             this.scene.spawnBurstAt(this.x, this.y, 60 + i * 20, 0xff8040);
             this.scene.cameras.main.flash(170 + i * 40, 255, 160, 90);
-            this.scene.cameras.main.shake(420, 0.018 + i * 0.004);
+            this.scene.impactFX.shake(420, 0.018 + i * 0.004);
             this.scene.sfxSkill("quake", 0.9);
             this.scene.sfxSkill("superhit", 0.8);
             for (const e of this.getAllTargetsIn(420 + i * 90)) {
@@ -5382,7 +5382,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnCrack(this.x, this.y);
             this.scene.spawnBurstAt(this.x, this.y, 30, 0xff8a4a);
             this.scene.spawnField({ x: this.x, y: this.y, radius: 110, dur: 2600, dps: Math.max(16, Math.round(this.atkTotal * 0.9)), kind: "fire", owner: "player" });
-            this.scene.cameras.main.shake(140, 0.012);
+            this.scene.impactFX.shake(140, 0.012);
             this.scene.sfxSkill("bigsword", 0.82 + (i % 3) * 0.07);
             for (const e of this.getAllTargetsIn(260)) {
               const away = dir;
@@ -5401,7 +5401,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnBurstAt(this.x, this.y, 88, hex);
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_fire", 0xffffff, 5.6, 760);
           this.scene.driveFx?.gvFireCircle(this.x, this.y, 0xffa060, 1050, 1.8); this.scene.driveFx?.gvCore(this.x, this.y, 0xffb080, 1.8); /* vc149 #14 마법진→gv 불서클(전사) */
-          this.scene.cameras.main.shake(520, 0.026);
+          this.scene.impactFX.shake(520, 0.026);
           this.scene.cameras.main.flash(180, 255, 120, 60);
           this.scene.sfxSkill("superhit", 0.76);
           for (const e of this.getAllTargetsIn(760)) {
@@ -5448,7 +5448,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPurifyRing(this.x, this.y, 560, 0xffffff);
           this.scene.driveFx?.gvFireCircle(this.x, this.y, 0xffe9a0, 1150, 1.9); this.scene.driveFx?.gvAura(this.x, this.y, 0xffe9a0, 1600, 1.7); /* vc149 #14 마법진→gv 성역(전사) */
           this.scene.cameras.main.flash(200, 255, 245, 200);
-          this.scene.cameras.main.shake(480, 0.022);
+          this.scene.impactFX.shake(480, 0.022);
           this.scene.sfxSkill("holy", 0.7);
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(640)) {
@@ -5511,7 +5511,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.time.delayedCall(260 + 100 * 26 + 140, () => {
           if (this.state === "dead") return;
           this.scene.cameras.main.flash(160, 255, 240, 180);
-          this.scene.cameras.main.shake(460, 0.022);
+          this.scene.impactFX.shake(460, 0.022);
           this.scene.sfxSkill("superhit", 0.78);
           spawnRingPop(this.scene, this.x, this.y, "vf_ring", 0xffd76a, 5.4, 820);
           let n = 0;
@@ -5552,7 +5552,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnPillar(t.x, t.y, 0xaed8ff, 250);
             this.scene.spawnBurstAt(t.x, t.y, 24, 0xaed8ff);
             spawnFlarePop(this.scene, t.x, t.y - 10, "vf_lightning", { tint: 0xcfe8ff, scale: 1.4, duration: 430 });
-            this.scene.cameras.main.shake(110, 0.011);
+            this.scene.impactFX.shake(110, 0.011);
             this.scene.sfxSkill("thunder", 0.8 + (b % 3) * 0.08);
             const away = this.awayScratch.set(0, 0.1).normalize();
             const { dmg, crit } = rd(3.8);
@@ -5571,7 +5571,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnField({ x: cx, y: cy, radius: 260, dur: 6000, dps: Math.max(20, Math.round(this.atkTotal * 1.6)), kind: "light", owner: "player" });
           spawnRingPop(this.scene, cx, cy, "vf_ring", 0xaed8ff, 5.6, 860);
           this.scene.cameras.main.flash(180, 200, 230, 255);
-          this.scene.cameras.main.shake(500, 0.024);
+          this.scene.impactFX.shake(500, 0.024);
           this.scene.sfxSkill("wind", 0.62);
           this.scene.sfxSkill("superhit", 0.8);
           for (const e of this.getAllTargetsIn(560)) {
@@ -5625,7 +5625,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.driveFx?.gvSpecks(this.x, this.y, 0xcfe0ff, 20, 340);
           this.scene.spawnField({ x: this.x, y: this.y, radius: 270, dur: 8000, dps: Math.max(22, Math.round(this.atkTotal * 1.9)), kind: "light", owner: "player" });
           this.scene.cameras.main.flash(220, 220, 200, 255);
-          this.scene.cameras.main.shake(560, 0.026);
+          this.scene.impactFX.shake(560, 0.026);
           this.scene.sfxSkill("manaburst", 0.66);
           this.scene.sfxSkill("superhit", 0.74);
           for (const e of this.getAllTargetsIn(700)) {
@@ -5665,7 +5665,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnPentacle(this.scene, this.x, this.y, 0xb0a0ff, { scale: 3.2, duration: 1200, spin: true });
           spawnRingPop(this.scene, this.x, this.y + 6, "vf_ring_void", 0xffffff, 5.6, 900);
           this.scene.cameras.main.flash(200, 216, 204, 255);
-          this.scene.cameras.main.shake(540, 0.024);
+          this.scene.impactFX.shake(540, 0.024);
           this.scene.sfxSkill("timestop", 0.86);
           this.scene.sfxSkill("superhit", 0.78);
           /* vc195 — getAllTargetsIn() 은 **공유 스크래치 버퍼**를 반환한다
@@ -5723,7 +5723,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnFlarePop(this.scene, this.x, this.y - 8, "vf_flare_dark", { scale: 2.6, duration: 680 });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xffffff, 5.2, 820);
           this.scene.cameras.main.flash(190, 90, 40, 160);
-          this.scene.cameras.main.shake(540, 0.024);
+          this.scene.impactFX.shake(540, 0.024);
           this.scene.sfxSkill("dark", 0.6);
           this.scene.sfxSkill("superhit", 0.74);
           for (const e of this.getAllTargetsIn(600)) {
@@ -5769,7 +5769,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnFlarePop(this.scene, this.x + dir.x * 44, this.y - 6, "vf_slash", { tint: hex, scale: 2.9, duration: 580, angle: dir.angle() });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring", hex, 5.0, 760);
           this.scene.cameras.main.flash(180, 255, 255, 255);
-          this.scene.cameras.main.shake(480, 0.023);
+          this.scene.impactFX.shake(480, 0.023);
           this.scene.sfxSkill("iainuki", 0.56);
           this.scene.sfxSkill("superhit", 0.76);
           for (const e of this.getAllTargetsIn(600)) {
@@ -5807,7 +5807,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* 발동 시점 스냅샷 */
         const drowned = this.getAllTargetsIn(340).slice();
         this.scene.cameras.main.flash(220, 60, 160, 230);
-        this.scene.cameras.main.shake(600, 0.014);
+        this.scene.impactFX.shake(600, 0.014);
         for (let i = 0; i < 6; i++) {
           this.scene.time.delayedCall(400 + i * 900, () => {
             if (this.state === "dead") return;
@@ -5820,7 +5820,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           try { flood.destroy(); } catch { /* 무시 */ }
           this.scene.cameras.main.flash(260, 140, 220, 255);
-          this.scene.cameras.main.shake(620, 0.026);
+          this.scene.impactFX.shake(620, 0.026);
           this.scene.spawnPillar(this.x, this.y, 0x2f9fd8, 360);
           this.scene.spawnBurstAt(this.x, this.y, 90, 0x8ae6ff);
           this.scene.spawnShockwave(this.x, this.y, 0x8ae6ff, 3.4, 520, 0.8);
@@ -5899,7 +5899,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               dps: Math.max(24, Math.round(this.atkTotal * 2.0)),
               kind: "fire", owner: "player",
             });
-            this.scene.cameras.main.shake(700, 0.030);
+            this.scene.impactFX.shake(700, 0.030);
             this.scene.sfxSkill("quake", 1.0);
             for (const e of this.getAllTargetsIn(999)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, wx0, wy0) > 400) continue;
@@ -5924,7 +5924,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnPillar(px, py, hex, 290);
             this.scene.spawnCrack(px, py);
             this.scene.spawnBurstAt(px, py, 34, hex);
-            this.scene.cameras.main.shake(150, 0.013);
+            this.scene.impactFX.shake(150, 0.013);
             this.scene.sfxSkill("bigsword", 0.78 + i * 0.06);
             for (const e of this.getAllTargetsIn(280)) {
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 200) continue;
@@ -5944,7 +5944,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnBurstAt(this.x, this.y, 72, hex);
           spawnRingPop(this.scene, this.x, this.y, "vf_ring_fire", 0xffffff, 5.4, 820);
-          this.scene.cameras.main.shake(500, 0.024);
+          this.scene.impactFX.shake(500, 0.024);
           this.scene.cameras.main.flash(180, 255, 120, 60);
           this.scene.sfxSkill("superhit", 0.72);
           for (const e of this.getAllTargetsIn(700)) {
@@ -5993,7 +5993,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnField({ x: this.x, y: this.y, radius: 240, dur: 9000, dps: Math.max(18, Math.round(this.atkTotal * 1.5)), kind: "fire", owner: "player" });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring", 0xffd76a, 5.0, 780);
           this.scene.cameras.main.flash(150, 255, 220, 140);
-          this.scene.cameras.main.shake(280, 0.014);
+          this.scene.impactFX.shake(280, 0.014);
           this.scene.sfxSkill("arrowpierce", 0.78);
           this.scene.sfxSkill("superhit", 0.86);
         });
@@ -6031,7 +6031,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           spawnRingPop(this.scene, bx, by, "vf_ring_void", 0xffffff, 5.8, 880);
           spawnFlarePop(this.scene, bx, by - 8, "vf_flare_dark", { scale: 2.6, duration: 680 });
           this.scene.cameras.main.flash(220, 255, 255, 255);
-          this.scene.cameras.main.shake(560, 0.026);
+          this.scene.impactFX.shake(560, 0.026);
           this.scene.sfxSkill("manaburst", 0.6);
           this.scene.sfxSkill("superhit", 0.72);
           for (const e of this.getAllTargetsIn(680)) {
@@ -6099,7 +6099,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnField({ x: this.x, y: this.y, radius: 280, dur: 8000, dps: Math.max(24, Math.round(this.atkTotal * 2.0)), kind: "fire", owner: "player" });
           this.scene.cameras.main.flash(230, 255, 210, 150);
-          this.scene.cameras.main.shake(600, 0.028);
+          this.scene.impactFX.shake(600, 0.028);
           this.scene.sfxSkill("superhit", 0.7);
           this.scene.sfxSkill("manaburst", 0.8);
           for (const e of this.getAllTargetsIn(700)) {
@@ -6183,7 +6183,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnCrack(this.x, this.y);
             spawnRingPop(this.scene, this.x, this.y, "vf_ring_void", 0xffffff, 5.4, 840);
             this.scene.cameras.main.flash(180, 90, 40, 160);
-            this.scene.cameras.main.shake(520, 0.024);
+            this.scene.impactFX.shake(520, 0.024);
             this.scene.sfxSkill("dark", 0.64);
             this.scene.sfxSkill("superhit", 0.78);
             for (const e of this.getAllTargetsIn(580)) {
@@ -6224,7 +6224,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnCrack(this.x, this.y);
             this.scene.spawnShockwave(this.x, this.y, 0xff3030, 1.5, 420, 0.85);
             this.scene.spawnBurstAt(this.x, this.y, 40, 0xff3030);
-            this.scene.cameras.main.shake(180, 0.014);
+            this.scene.impactFX.shake(180, 0.014);
             this.scene.sfxSkill("bigsword", 0.9);
             for (const e of this.getAllTargetsIn(460)) {
               const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -6270,7 +6270,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xa8d8ff, 420);
           this.scene.spawnBurstAt(this.x, this.y, 80, 0xa8d8ff);
           this.scene.cameras.main.flash(200, 180, 220, 255);
-          this.scene.cameras.main.shake(480, 0.018);
+          this.scene.impactFX.shake(480, 0.018);
           this.scene.sfxSkill("superhit", 0.84);
           for (const e of this.getAllTargetsIn(WALL_R + 120)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -6311,7 +6311,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnPillar(this.x, this.y, 0xffd080, 460);
-          this.scene.cameras.main.shake(520, 0.022);
+          this.scene.impactFX.shake(520, 0.022);
           for (const e of this.getAllTargetsIn(540)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.0);
@@ -6446,7 +6446,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.state === "dead") return;
             this.scene.spawnPillar(s.x, s.y, 0xffa0a0, 300);
             this.scene.spawnBurstAt(s.x, s.y, 34, 0xffa0a0);
-            this.scene.cameras.main.shake(110, 0.010);
+            this.scene.impactFX.shake(110, 0.010);
             this.scene.sfxSkill("arrowpierce", 0.9);
             for (const e of this.targetsAround(s.x, s.y, 170)) {
               const away = this.awayScratch.set(e.x - s.x, e.y - s.y).normalize();
@@ -6488,7 +6488,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xa0f0b0, 480);
           this.scene.spawnBurstAt(this.x, this.y, 88, 0xa0f0b0);
           this.scene.cameras.main.flash(200, 180, 255, 200);
-          this.scene.cameras.main.shake(500, 0.020);
+          this.scene.impactFX.shake(500, 0.020);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(520)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -6516,7 +6516,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.state === "dead") return;
             this.scene.spawnPillar(this.x, this.y, 0xa0d8ff, 560);
             this.scene.spawnBurstAt(this.x, this.y, 24, 0xa0d8ff);
-            this.scene.cameras.main.shake(90, 0.009);
+            this.scene.impactFX.shake(90, 0.009);
             this.scene.sfxSkill("electron", 0.9);
             /* 기둥 범위 — 세로로 긴 판정을 원형 2개로 근사 */
             const hitSet = new Set<Enemy | Boss>();
@@ -6569,7 +6569,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnBurstAt(this.x, this.y, 110, 0xffffff);
           this.scene.spawnCrack(this.x, this.y);
           this.scene.cameras.main.flash(240, 255, 255, 255);
-          this.scene.cameras.main.shake(560, 0.024);
+          this.scene.impactFX.shake(560, 0.024);
           this.scene.sfxSkill("manaburst", 0.82);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of this.getAllTargetsIn(580)) {
@@ -6627,7 +6627,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.time.delayedCall(320 + i * 340, () => {
             if (this.state === "dead") return;
             this.scene.spawnBurstAt(this.x, this.y, 34, 0xf0e0b0);
-            this.scene.cameras.main.shake(120, 0.008);
+            this.scene.impactFX.shake(120, 0.008);
             this.scene.sfxSkill("cast", 0.9);
             for (const e of this.getAllTargetsIn(620)) {
               if (!e.active) continue;
@@ -6655,7 +6655,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnBurstAt(t.x, t.y, 50, 0x9a40ff);
           this.scene.spawnPillar(t.x, t.y, 0x9a40ff, 320);
           this.scene.cameras.main.flash(200, 90, 0, 140);
-          this.scene.cameras.main.shake(360, 0.018);
+          this.scene.impactFX.shake(360, 0.018);
           this.scene.hitStop(140);
           this.scene.sfxSkill("dark", 0.7);
           this.scene.sfxSkill("superhit", 0.86);
@@ -6692,7 +6692,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           this.scene.spawnShockwave(this.x, this.y, 0xfff0a0, 2.4, 460, 0.95);
           this.scene.cameras.main.flash(220, 255, 245, 180);
-          this.scene.cameras.main.shake(420, 0.020);
+          this.scene.impactFX.shake(420, 0.020);
           this.scene.hitStop(120);
           this.scene.sfxSkill("superhit", 0.9);
           for (const e of this.getAllTargetsIn(300)) {
@@ -6755,7 +6755,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.time.delayedCall(320 + i * 200, () => {
               if (this.state === "dead" || !foe.active) return;
               this.scene.spawnSlash(foe.x, foe.y, away, i % 2 === 0, 2.4 + i * 0.12, 0xffffff);
-              this.scene.cameras.main.shake(80, 0.008);
+              this.scene.impactFX.shake(80, 0.008);
               this.scene.sfxSkill("sword2", 0.92);
               const { dmg, crit } = rd(3.6);
               if (crit) this.scene.sfxCrit();
@@ -6767,7 +6767,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.state === "dead") return;
             if (!foe.active) {
               this.scene.spawnBurstAt(this.x, this.y, 60, 0xffffff);
-              this.scene.cameras.main.shake(420, 0.016);
+              this.scene.impactFX.shake(420, 0.016);
               for (const e of this.getAllTargetsIn(620)) {
                 if (!e.active) continue;
                 const d = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -6836,7 +6836,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.tweens.add({ targets: trail, alpha: 0, duration: 200, onComplete: () => trail.destroy() });
               this.scene.spawnPillar(tx, ty, 0xffc070, 200);
               this.scene.spawnBurstAt(tx, ty, 30, 0xffc070);
-              this.scene.cameras.main.shake(120, 0.010);
+              this.scene.impactFX.shake(120, 0.010);
               this.scene.sfxSkill("quake", 0.9);
               for (const e of this.targetsAround(tx, ty, 170)) {
                 const away = this.awayScratch.set(e.x - tx, e.y - ty).normalize();
@@ -6907,7 +6907,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.state === "dead") return;
             this.scene.spawnBurstAt(s.x, s.y, 26, 0xffb040);
             this.scene.spawnShockwave(s.x, s.y, 0xffb040, 1.2, 340, 0.8);
-            this.scene.cameras.main.shake(70, 0.008);
+            this.scene.impactFX.shake(70, 0.008);
             if (i % 3 === 0) this.scene.sfxSkill("flame", 0.92);
             for (const e of this.targetsAround(s.x, s.y, 150)) {
               const away = this.awayScratch.set(e.x - s.x, e.y - s.y).normalize();
@@ -6922,7 +6922,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffd060, 520);
           this.scene.cameras.main.flash(240, 255, 220, 140);
-          this.scene.cameras.main.shake(560, 0.026);
+          this.scene.impactFX.shake(560, 0.026);
           this.scene.sfxSkill("superhit", 0.9);
           for (const e of this.getAllTargetsIn(560)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -6963,7 +6963,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.tweens.add({ targets: water, alpha: 0, duration: 700, onComplete: () => water.destroy() });
           this.scene.spawnShockwave(this.x, this.y, 0x60b0e0, 3.0, 700, 0.95);
           this.scene.cameras.main.flash(220, 120, 190, 255);
-          this.scene.cameras.main.shake(520, 0.022);
+          this.scene.impactFX.shake(520, 0.022);
           this.scene.sfxSkill("superhit", 0.86);
           for (const e of victims) {
             if (!e.active) continue;
@@ -6995,7 +6995,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnShockwave(px, py, 0xff8040, scale * 1.8, isLast ? 720 : 420, 0.9);
             this.scene.spawnBurstAt(px, py, isLast ? 110 : 44, 0xff8040);
             this.scene.cameras.main.flash(isLast ? 280 : 140, 255, 160, 90);
-            this.scene.cameras.main.shake(isLast ? 620 : 300, isLast ? 0.030 : 0.014);
+            this.scene.impactFX.shake(isLast ? 620 : 300, isLast ? 0.030 : 0.014);
             this.scene.sfxSkill("quake", 0.9);
             if (isLast) this.scene.sfxSkill("superhit", 0.9);
             const range = isLast ? 620 : 240;
@@ -7113,7 +7113,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hp -= final;
     this.iframes = 600;
     this.scene.sfxHurt();
-    this.scene.cameras.main.shake(70, 0.004);
+    this.scene.impactFX.shake(70, 0.004);
     /* v1.1.3 (#개편 연출) — 피격 방향 표시.
      *  화면 전체가 흔들리기만 하면 "어디서 맞았는지"를 모른다. 특히 자동사냥 중이거나
      *  몬스터가 뒤에서 붙었을 때 대응이 늦는다. 화면 가장자리에 붉은 호를 띄워 알린다.

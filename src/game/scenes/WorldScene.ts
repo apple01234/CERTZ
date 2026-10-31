@@ -4329,7 +4329,7 @@ export class WorldScene extends Phaser.Scene {
    *  히트/피격 21곳에서 호출되는 카메라 쉐이크는 저사양 기기에서 렌더 버스트를 유발한다. */
   doShake(duration: number, intensity: number) {
     if (this.fxLevel === 0) return;
-    this.cameras.main.shake(duration, intensity);
+    this.impactFX.shake(duration, intensity);
   }
 
   /** vc142 (#9) — 3D VFX 프리셋 스폰 (게이트: vfx3dActive). Boss.ts 등에서도 호출 */
@@ -12597,7 +12597,7 @@ export class WorldScene extends Phaser.Scene {
               g.style.transition = "transform 520ms cubic-bezier(0.16,1.3,0.3,1), opacity 200ms ease-out";
               g.style.opacity = "0.9";
               g.style.transform = "translate(-50%,-50%) scale(1.25)";
-              this.cameras.main.shake(420, 0.012);
+              this.impactFX.shake(420, 0.012);
             }, 30);
             window.setTimeout(() => {
               g.style.transition = "opacity 480ms ease-out";

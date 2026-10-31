@@ -224,7 +224,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.twin?.setAlpha(0.95);
         this.scene.spawnShockwave(this.x, this.y + 10, this.def.orbTint, 1.15, 420);
         this.scene.spawnBurstAt(this.x, this.y + 12, 12, 0xffffff);
-        this.scene.cameras.main.shake(150, 0.007);
+        this.scene.impactFX.shake(150, 0.007);
         this.startChaosAura();
       },
     });
@@ -539,7 +539,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       }
     }
     this.scene.sfxRoar();
-    this.scene.cameras.main.shake(220, this.phase === 3 ? 0.01 : 0.007);
+    this.scene.impactFX.shake(220, this.phase === 3 ? 0.01 : 0.007);
     this.scene.spawnBurstAt(this.x, this.y, 20, this.def.orbTint);
     /* v1.1.3 (#개편 연출) — 페이즈 전환 0.18초 슬로우모션.
      *  종전엔 흔들림+플래시만 있어 전투가 계속 굴러가는 느낌이었다. 짧게 시간을 늦추면
@@ -685,7 +685,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     if (ring) {
       const tx = ring.x;
       const ty = ring.y;
-      this.scene.cameras.main.shake(90, 0.006);
+      this.scene.impactFX.shake(90, 0.006);
       this.scene.spawnSlamBurst(tx, ty);
       this.scene.spawnCrack(tx, ty);
       /* vc142 (#7) — hv2_crater 지균 데칼 제거: 가산 블렌드용 순흑 텍스처가 NORMAL로 그려져
@@ -817,7 +817,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   private doZones(player: PlayerLike2) {
     this.clearTint();
-    this.scene.cameras.main.shake(110, 0.005);
+    this.scene.impactFX.shake(110, 0.005);
     for (const ring of this.zoneRings) {
       this.scene.spawnSlamBurst(ring.x, ring.y);
       /* v1.4.11 — 장판 폭발: 결정 파편 + MG 폭발 퍼프 (hv2_crystal·mg_explode) */
@@ -980,7 +980,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSlamBurst(tx, ty);
             /* vc142 (#9) — 3D 빛기둥 + 폭발 (Three.js 오버레이) */
             this.scene.vfx3dFx("pillar", tx, ty, tint, 1.2);
-            this.scene.cameras.main.shake(70, 0.004);
+            this.scene.impactFX.shake(70, 0.004);
             if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 92) {
               const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
               player.takeDamage(Math.round(atk * 1.15), dir, 0.5, this.chaos ? 0.10 : 0);
@@ -1006,7 +1006,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
               const sx = this.scene.add.image(this.x, this.y, "vx_snow").setDepth(22).setBlendMode(Phaser.BlendModes.ADD).setTint(0xbde8ff).setScale(0.5 + Math.random() * 0.4);
               this.scene.tweens.add({ targets: sx, x: this.x + Math.cos(a) * radius * 1.15, y: this.y + Math.sin(a) * radius * 1.15, alpha: 0, scale: 0.2, duration: 520, ease: "Quad.out", onComplete: () => sx.destroy() });
             }
-            this.scene.cameras.main.shake(90, 0.005);
+            this.scene.impactFX.shake(90, 0.005);
             if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < radius) {
               const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
               player.takeDamage(Math.round(atk * dmgMul), dir, 0.5, this.chaos ? 0.09 : 0);
@@ -1036,7 +1036,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
               this.scene.spawnBurstAt(tx, ty, 8, 0xffe08a);
               /* vc142 (#9) — 3D 낙뢰 빛기둥 */
               this.scene.vfx3dFx("pillar", tx, ty, 0xffe08a, 1.0);
-              this.scene.cameras.main.shake(60, 0.004);
+              this.scene.impactFX.shake(60, 0.004);
               if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 86) {
                 const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
                 player.takeDamage(Math.round(atk * 0.95), dir, 0.5, this.chaos ? 0.09 : 0);
@@ -1084,7 +1084,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           this.vxAnimAt(this.x, this.y, "vx-expcore", "vx_expcore", 0xffffff, 2.0);
           /* vc142 (#9) — 마룡 성역 대폭발 (3D) */
           this.scene.vfx3dFx("boom", this.x, this.y, tint, 2.2);
-          this.scene.cameras.main.shake(220, 0.009);
+          this.scene.impactFX.shake(220, 0.009);
           if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 244) {
             const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
             player.takeDamage(Math.round(atk * 1.3), dir, 0.5, this.chaos ? 0.12 : 0);
@@ -1134,7 +1134,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           this.setPosition(nx, ny);
           const rot = Math.random() * Math.PI - Math.PI / 2;
           this.vxAnimAt(player.x, player.y - 12, null, "vx_slash", 0x8affc0, 1.25, rot);
-          this.scene.cameras.main.shake(60, 0.004);
+          this.scene.impactFX.shake(60, 0.004);
           this.scene.sfxSwing();
           if (Phaser.Math.Distance.Between(nx, ny, player.x, player.y) < 118) {
             const dir = new Phaser.Math.Vector2(player.x - nx, player.y - ny).normalize();
@@ -1328,7 +1328,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnSlash(this.x + Math.cos(ang) * 78, this.y + Math.sin(ang) * 78, new Phaser.Math.Vector2(Math.cos(ang), Math.sin(ang)), false, 2.2, tint);
         this.scene.spawnBurstAt(this.x + Math.cos(ang) * 52, this.y + Math.sin(ang) * 52, 12, tint);
         this.scene.sfxSwing();
-        this.scene.cameras.main.shake(90, 0.005);
+        this.scene.impactFX.shake(90, 0.005);
         if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 170) {
           const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
           player.takeDamage(Math.round(this.def.atk * mul), dir, 0.5, this.chaos ? 0.08 : 0);
@@ -1410,7 +1410,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           this.scene.tweens.add({ targets: g, scale: 6.0, alpha: 0, duration: 460, ease: "Quad.out", onComplete: () => g.destroy() });
           this.vxAnimAt(this.x, this.y, "vx-expcore", "vx_expcore", 0xffffff, 1.9);
           this.scene.vfx3dFx("boom", this.x, this.y, tint, 2.0);
-          this.scene.cameras.main.shake(240, 0.011);
+          this.scene.impactFX.shake(240, 0.011);
           if (Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 250) {
             const dir = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y).normalize();
             player.takeDamage(Math.round(atk * 1.3), dir, 0.5, this.chaos ? 0.12 : 0);
@@ -1426,7 +1426,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         if (!this.alive) return;
         this.vxAnimAt(tx, ty, "vx-expcore", "vx_expcore", tint, 1.4);
         this.scene.spawnSlamBurst(tx, ty);
-        this.scene.cameras.main.shake(70, 0.004);
+        this.scene.impactFX.shake(70, 0.004);
         if (Phaser.Math.Distance.Between(tx, ty, player.x, player.y) < 92) {
           const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
           player.takeDamage(Math.round(atk * 1.0), dir, 0.5, this.chaos ? 0.09 : 0);
@@ -1499,7 +1499,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
            * vc142 (#7) — hv2_crater 데칼 제거 (검은 네모 이질 연출 — 유저 지시) */
           this.bossFx("hv2_electro", ring.x, ring.y, { tint: 0xffd28a, scale: 1.25, alpha: 0.95, dur: 200, depth: 27 });
           this.scene.driveFx?.shockHeavy(ring.x, ring.y, 0xffc890, 0.95);
-          this.scene.cameras.main.shake(80, 0.004);
+          this.scene.impactFX.shake(80, 0.004);
           const p = this.scene.playerRef;
           if (p && Phaser.Math.Distance.Between(ring.x, ring.y, p.x, p.y) < 88) {
             const dir = new Phaser.Math.Vector2(p.x - ring.x, p.y - ring.y).normalize();
@@ -1555,7 +1555,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private doCounterPunish(player: PlayerLike2) {
     this.clearTint();
     this.destroyCounterRing();
-    this.scene.cameras.main.shake(200, 0.009);
+    this.scene.impactFX.shake(200, 0.009);
     this.scene.showBanner("반격 실패!");
     this.setTint(0xff7a5a);
     // 즉시 링 2파동 (틀어진 각도)
@@ -1734,7 +1734,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.modeTimer = 2800;
       this.setTint(0x8a7aff);
       this.scene.showBanner("반격 성공 — " + this.def.name + " 대굴! (피해 ×1.6)");
-      this.scene.cameras.main.shake(160, 0.008);
+      this.scene.impactFX.shake(160, 0.008);
       this.scene.spawnBurstAt(this.x, this.y, 22, 0xffe95a);
       EventBus.emit("boss:update", { hp: Math.max(0, this.hp), maxHp: this.maxHp });
       return; // 이 한 대는 그대로 반영 — 이후 타격부터 ×1.6

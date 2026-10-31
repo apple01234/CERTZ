@@ -325,7 +325,7 @@ export class Tutorial {
     try {
       s.spawnCelebrateFX(p.x, p.y, 20);
       s.cameras.main.flash(220, 255, 220, 240);
-      s.cameras.main.shake(120, 0.003);
+      s.impactFX.shake(120, 0.003);
     } catch { /* 연출 실패 — 보상은 정상 지급 */ }
     /* 축하 보상 — 골드 +500 · HP/MP 물약 ×3 · 뽑기권 +1 */
     p.addGold(500);
