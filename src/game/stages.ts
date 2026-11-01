@@ -311,7 +311,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "alfheimIntro", boss: "nidhog", bossDone: "guardianDone",
     width: 1500, height: 860, groundTint: 0x8f7fd8, groundTex: "tile_grass2", pathTex: "tile_garden", bg: "#0d0a1e",
     flowers: 6, trees: 10, rocks: 10,
-    enemies: [{ key: "minion", count: 4 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_bat", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_orcshaman", count: 3 }],
+    enemies: [{ key: "minion", count: 4 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_bat", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x2_darkhound", count: 3 }],
     main: "minion",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "a0", type: "hunt", title: "하수인 소탕", desc: "니드호그가 부린 심연의 하수인 13마리를 처치해 성전의 길을 열자.", need: 13, targetKey: "minion", targetLabel: "심연 하수인", reward: Math.round(80 * G), expReward: 130 } },
@@ -336,7 +336,7 @@ export const CHAPTERS: ChapterSpec[] = [
      *  블룸 가드는 채널(muspelheim) 기준이라 타일명이 바뀌어도 그대로 유지된다. */
     width: 2200, height: 1250, groundTint: 0xd88a4a, groundTex: "tile_magma", pathTex: "tile_basalt", bg: "#1c0d06",
     flowers: 0, trees: 4, rocks: 12,
-    enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 3 }, { key: "golem", count: 3 }, { key: "x2_firebird", count: 3 }, { key: "x3_tinyzombie", count: 3 }, { key: "x3_wogol", count: 3 }],
+    enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 3 }, { key: "golem", count: 3 }, { key: "x2_firebird", count: 3 }, { key: "x3_imp", count: 3 }, { key: "x3_wogol", count: 3 }],
     main: "emberwolf",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "m0", type: "hunt", title: "불꽃 늑대 사냥", desc: "네바다를 내달리는 불꽃 늑대 100마리를 처치해라.", need: 100, targetKey: "emberwolf", targetLabel: "불꽃 늑대", reward: Math.round(1000 * G), expReward: 1860 } },
@@ -356,7 +356,7 @@ export const CHAPTERS: ChapterSpec[] = [
     intro: "niflIntro", boss: "fenrir", bossDone: "fenrirDone",
     width: 1670, height: 950, groundTint: 0xdfeaf8, groundTex: "tile_snow", pathTex: "tile_ice", bg: "#0c1826",
     flowers: 0, trees: 10, rocks: 10,
-    enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
+    enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_bigzombie", count: 3 }],
     main: "frostwolf",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "n0", type: "hunt", title: "서리 늑대 사냥", desc: "설원을 유랑하는 서리 늑대 110마리를 처치해라.", need: 110, targetKey: "frostwolf", targetLabel: "서리 늑대", reward: Math.round(950 * G), expReward: 1760 } },
@@ -701,7 +701,7 @@ export const CHAPTERS: ChapterSpec[] = [
  *  결과: 비율 편차 2.15배 → 1.04배.
  *  생성: tools/rebalance-exp.py (재현 가능) */
 export const ENEMIES: Record<EnemyKey, EnemyDef> = {
-  wolf: { key: "wolf", name: "인피니트보석 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 30, gold: [5, 8], def: 2, defPct: 0.02, dropHp: 0.3, dropMp: 0.2, profile: { charge: { cd: 3600, speed: 430, time: 420 } } },
+  wolf: { key: "wolf", name: "하울르스톤 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 30, gold: [5, 8], def: 2, defPct: 0.02, dropHp: 0.3, dropMp: 0.2, profile: { charge: { cd: 3600, speed: 430, time: 420 } } },
   minion: { key: "minion", name: "심연 하수인", hp: 78, atk: 18, speed: 108, aggro: 320, exp: 41, gold: [9, 13], def: 3, defPct: 0.03, dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "bleed", chance: 0.4, dps: 4, dur: 3500 } } },
   spider: { key: "spider", name: "동굴 거미", hp: 88, atk: 19, speed: 122, aggro: 320, exp: 46, gold: [10, 14], def: 3, defPct: 0.03, dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.45, dps: 5, dur: 4500 }, fieldOnDeath: { kind: "poison", dps: 5, dur: 3500, radius: 80 } } },
   golem: { key: "golem", name: "수정 골렘", hp: 148, atk: 24, speed: 78, aggro: 260, exp: 77, gold: [14, 21], def: 18, defPct: 0.1, dropHp: 0.34, dropMp: 0.26, profile: { charge: { cd: 5200, speed: 330, time: 620 } } },

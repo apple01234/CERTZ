@@ -8,6 +8,7 @@
  *   · 레이트리밋(인스턴스 단위 — 베스트에포트, 플랫폼 DDoS 방어와 병행)
  */
 
+import { saveDataOf, saveCharsOf, packedData } from "./saveAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { scryptSync, randomBytes, timingSafeEqual, createHash } from "node:crypto";
 import type { DbShape, UserRec, ListingRec } from "./ghdb";
@@ -156,8 +157,16 @@ export function issueToken(db: DbShape, user: UserRec): { token: string; cookie:
 /* ---------------- 레이트리밋 (인스턴스 단위 베스트에포트) ---------------- */
 const buckets = new Map<string, { n: number; resetAt: number }>();
 
+/* vc228 (감사 #6) — 클라이언트 IP 를 **마지막 홉**에서 읽는다.
+ *  종전엔 `x-forwarded-for` 의 첫 값을 그대로 믿었다. 그 헤더는 클라이언트가
+ *  직접 쓸 수 있어서, 공격자가 매 요청마다 임의 IP 를 넣으면 버킷 키가 매번
+ *  새로 생겨 레이트리밋이 사실상 무력화됐다(로그인·가입·채팅·파티 전부).
+ *  프록시는 자기 홉을 **뒤에** 덧붙이므로 마지막 값이 신뢰 경계에 가장 가깝다. */
 export function clientIp(req: NextRequest): string {
-  return (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || req.headers.get("x-real-ip") || "?";
+  const xff = req.headers.get("x-forwarded-for") || "";
+  const hops = xff.split(",").map((s) => s.trim()).filter(Boolean);
+  /* 마지막 홉이 실제 연결 피어에 가장 가깝다. 없으면 x-real-ip → "?" */
+  return hops.length > 0 ? hops[hops.length - 1] : req.headers.get("x-real-ip") || "?";
 }
 
 export function rateLimit(req: NextRequest, bucket: string, max: number, windowMs: number): boolean {
@@ -206,8 +215,9 @@ export function marketSnapshot(db: DbShape, uid: string | null) {
 
 /** vc153 (#신규8) — 클라우드 세이브 owned(멀티셋)에서 itemKey 보유 개수 */
 export function ownedCountOf(db: DbShape, uid: string, itemKey: string): number {
-  const save = db.saves[uid]?.data;
-  if (!save || typeof save !== "object") return 0;
+  /* vc229 — 압축 세이브를 풀어서 읽는다(직접 접근 금지). */
+  const save = saveDataOf(db.saves[uid]);
+  if (!save) return 0;
   const owned = Array.isArray(save.owned) ? save.owned : [];
   return owned.filter((k) => k === itemKey).length;
 }
@@ -227,16 +237,23 @@ import { creditOwnedInto } from "./escrow";
 /** 에스크로 해제 — 취소·구매 시 세이브에 수량을 되돌려 넣는다. */
 export function creditOwned(db: DbShape, uid: string, itemKey: string, qty: number, up: number): void {
   const rec = db.saves[uid];
-  if (!rec || !rec.data || typeof rec.data !== "object") return;
-  creditOwnedInto(rec.data, itemKey, qty, up);
+  const plain = saveDataOf(rec);
+  if (!rec || !plain) return;
+  creditOwnedInto(plain, itemKey, qty, up);
+  /* vc229 — 평문을 꺼내 고쳤으면 **압축 형태로 다시 넣어야** 한다.
+   *  rec.data 에 그대로 쓰면 packed 플래그와 어긋나 다음 읽기가 실패한다. */
+  const chars = saveCharsOf(rec);
+  rec.data = packedData(plain) as Record<string, unknown>;
+  if (chars) rec.chars = packedData(chars) as unknown as Record<string, Record<string, unknown>>;
+  rec.packed = true;
   rec.updatedAt = Date.now();
 }
 
 /** vc205 — 복구: 에스크로 분리 때 함께 잘려나간 등록 자격 검사. */
 export function ownsListableItem(db: DbShape, uid: string, itemKey: string): { ok: boolean; error?: string } {
   if (!MARKET_LISTABLE.has(itemKey)) return { ok: false, error: "거래할 수 없는 아이템이에요 (GM 전용 제외 전체 등록 가능)" };
-  const save = db.saves[uid]?.data;
-  if (!save || typeof save !== "object") return { ok: false, error: "클라우드 세이브 동기화 후 등록할 수 있어요 — 로그인 상태로 잠시 플레이하거나 계정 패널에서 백업해 주세요" };
+  const save = saveDataOf(db.saves[uid]);
+  if (!save) return { ok: false, error: "클라우드 세이브 동기화 후 등록할 수 있어요 — 로그인 상태로 잠시 플레이하거나 계정 패널에서 백업해 주세요" };
   const owned = Array.isArray(save.owned) ? save.owned : [];
   if (!owned.includes(itemKey)) return { ok: false, error: "보유하지 않은 아이템은 등록할 수 없어요" };
   const acc = Array.isArray(save.accessories) ? save.accessories : [];
@@ -247,9 +264,9 @@ export function ownsListableItem(db: DbShape, uid: string, itemKey: string): { o
 }
 
 /* ---------------- 랭킹 (계승: 환생·탑·레벨·exp 정렬, GM 제외) ---------------- */
-function rankScore(s: { data?: Record<string, unknown> } | undefined): number[] {
-  const inf = (s?.data?.inf || {}) as Record<string, unknown>;
-  return [Number(inf.rebirths || 0), Number(inf.towerBest || 0), Number(s?.data?.lv || 0), Number(s?.data?.exp || 0)];
+function rankScore(s: Record<string, unknown> | null): number[] {
+  const inf = (s?.inf || {}) as Record<string, unknown>;
+  return [Number(inf.rebirths || 0), Number(inf.towerBest || 0), Number(s?.lv || 0), Number(s?.exp || 0)];
 }
 function rankBetter(a: { data: Record<string, unknown> }, b: { data: Record<string, unknown> }): boolean {
   const sa = rankScore(a), sb = rankScore(b);
@@ -272,16 +289,18 @@ export function rankListFor(db: DbShape, me: UserRec | null, meName = "", job = 
   type Entry = { uid: string; cid: string; data: Record<string, unknown>; name: string };
   const all: Entry[] = [];
   for (const [uid, s] of Object.entries(db.saves)) {
-    if (!s?.data || typeof s.data !== "object") continue;
-    if (!Number((s.data as Record<string, unknown>).lv)) continue;
+    /* vc229 — 압축 세이브를 풀어서 읽는다(직접 `s.data` 접근 금지). */
+    const d = saveDataOf(s);
+    if (!d) continue;
+    if (!Number(d.lv)) continue;
     const u = db.users[uid];
     if (u && u.role === "admin") continue; // GM/관리자 제외 (운영 공정성)
-    const d = s.data as Record<string, unknown>;
     const activeName = String(d.playerName || (u ? u.name : "이름없음") || "이름없음").slice(0, 8);
     all.push({ uid, cid: "active", data: d, name: activeName });
     /* v1.0.13 피드백#7 — chars 백업분 (이름 → 세이브) 캐릭터별 엔트리 확장 */
-    if (s.chars && typeof s.chars === "object") {
-      for (const [cid, cs] of Object.entries(s.chars)) {
+    const packedChars = saveCharsOf(s);
+    if (packedChars) {
+      for (const [cid, cs] of Object.entries(packedChars)) {
         if (!cs || typeof cs !== "object" || Array.isArray(cs)) continue;
         if (!Number((cs as Record<string, unknown>).lv)) continue;
         const cname = String((cs as Record<string, unknown>).playerName || "이름없음").slice(0, 8);

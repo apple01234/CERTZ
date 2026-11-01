@@ -195,3 +195,9 @@ public/assets/skillicon/_orig/
 # vc212 — 타일/VFX 원본 백업 (로컬 전용)
 public/assets/.tile_backup/
 public/assets/.vfx_backup/
+assets_backup/
+
+# vc229 — 작업용 원본 에셋 (원칙: 크롭본만 public/assets에 커밋)
+assets_dl/
+assets_src/
+assets_backup_monster_run/

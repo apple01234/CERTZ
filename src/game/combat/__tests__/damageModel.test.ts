@@ -6,7 +6,7 @@
  * (러너가 없어 자체 실행 가능하게 작성 — assert 만 사용)
  */
 import assert from "node:assert/strict";
-import { calcDamage, damageMultiplier, type DamageInput } from "../damageModel.ts";
+import { calcDamage, damageMultiplier, BUFF_SUM_CAP, type DamageInput } from "../damageModel.ts";
 
 let pass = 0;
 let fail = 0;
@@ -121,17 +121,42 @@ t("5차여도 기본공격엔 +12% 없음", () => {
   assert.equal(m, 1);
 });
 
-console.log("\n[버프 곱연산]");
-t("rage 2배", () => {
+console.log("\n[버프 레이어 — vc219 합산]");
+t("rage 2배 (단일 버프는 종전과 동일)", () => {
   assert.equal(calcDamage({ ...base, rage: 2 }), 2000);
 });
 
-t("rebirth 1.5배", () => {
+t("rebirth 1.5배 (단일 버프는 종전과 동일)", () => {
   assert.equal(calcDamage({ ...base, rebirthDmgMult: 1.5 }), 1500);
 });
 
-t("rage × rebirth 곱연산", () => {
-  assert.equal(calcDamage({ ...base, rage: 2, rebirthDmgMult: 1.5 }), 3000);
+/* vc219 — 종전 계약은 "rage × rebirth 곱연산 → 3000" 이었다.
+ *  곱셈이라 조합이 늘 때마다 지수로 뛰었고(최대 29.7배), 최종 보스가 2.5방에 죽었다.
+ *  이제 레이어 내 합산이다: 1 + (2-1) + (1.5-1) = 2.5배.
+ *  단일 버프는 종전과 같고(위 두 테스트), **2개 이상 겹칠 때만** 약해진다. */
+t("rage × rebirth 합산 → 2.5배 (종전 곱 3.0배)", () => {
+  assert.equal(calcDamage({ ...base, rage: 2, rebirthDmgMult: 1.5 }), 2500);
+});
+
+t("3중 버프 합산 (rage2 + rebirth1.5 + 카드50%)", () => {
+  const e = damageMultiplier({ ...base, isSkill: true, sTier: 1, mult: 1,
+    rage: 2, rebirthDmgMult: 1.5, runSkillPct: 50 });
+  /* 스킬1차 1.25 × (1 + 1.0 + 0.5 + 0.5) = 1.25 × 3.0 = 3.75
+   * (종전 곱셈이면 1.25 × 1.5 × 2 × 1.5 = 5.625) */
+  assert.equal(Math.round(e * 100) / 100, 3.75);
+});
+
+t("버프 합산 상한 BUFF_SUM_CAP 에서 멈춘다", () => {
+  const capped = damageMultiplier({ ...base, isSkill: true, sTier: 1,
+    rage: 5, rebirthDmgMult: 5, runSkillPct: 500 }); // 합 = 4+4+5 = 13 → 2.0 으로 절단
+  assert.equal(Math.round(capped * 100) / 100, Math.round(1.25 * (1 + BUFF_SUM_CAP) * 100) / 100);
+});
+
+t("버프 없으면 종전과 완전히 동일", () => {
+  assert.equal(calcDamage(base), 1000);
+  /* 부동소수점 주의: (1+0.22*4)*1.25 = 2.3499999999999996 이다.
+   *  엄격 비교하면 실패하므로 종전 테스트들과 같은 반올림 비교를 쓴다. */
+  assert.equal(Math.round(damageMultiplier({ ...base, isSkill: true, sTier: 5 }) * 100) / 100, 2.35);
 });
 
 t("인런 카드 +50% (스킬만)", () => {

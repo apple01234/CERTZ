@@ -23,6 +23,24 @@ export const SKILL_PWR = 1.25;
 /** n차 스킬 사다리 계수 (1차 ×1.25 … 5차 ×2.36) */
 export const TIER_LADDER = 0.22;
 
+/**
+ * vc219 — 버프 합산 상한.
+ *
+ *  곱셈 시절엔 상한이 없어 조합이 하나 늘 때마다 배율이 지수로 뛰었다(최대 29.7배).
+ *  합산으로 바꾼 뒤에도 무한정 커지면 의미가 없으므로 레이어 총합을 자른다.
+ *
+ *  2.0 을 고른 근거 (atkTotal 852 = 현실 최대, 최종 보스 HP 95,000):
+ *    CAP 0.5 → 보스 12.5방  (너무 단단 — 템포 없음)
+ *    CAP 1.0 → 보스  9.4방
+ *    CAP 1.5 → 보스  7.5방
+ *    CAP 2.0 → 보스  6.3방  ← 기본공격(111방)과의 편차 44배 → 18배
+ *    CAP 3.0 → 보스  4.7방  (여전히 짧다)
+ *
+ *  상한에 실제로 닿는 조합은 rage 1.5 + 환생 2.0 + 카드 50% = 2.0 이다.
+ *  즉 "모든 버프를 동시에 켠 극단"에서만 걸리고, 평시에는 자유롭게 선형으로 는다.
+ */
+export const BUFF_SUM_CAP = 2.0;
+
 export type DamageInput = {
   /** 누적 공격력 */
   atkTotal: number;
@@ -52,6 +70,28 @@ export type DamageInput = {
 /**
  * 최종 배율을 계산한다 (반올림 전).
  * rollDamage 의 m 계산식과 **완전히 동일**해야 한다 — 한쪽만 고치면 조용히 갈라진다.
+ *
+ * vc219 — 버프 퍼센트를 **합산**으로 바꿨다 (스킬 `agd-rpg` §1 권고).
+ *
+ *  종전에는 rage × rebirthDmgMult × (1+runSkillPct/100) 를 **모두 곱**했다.
+ *  그래서 최대 조합이 29.7배까지 올라가 최종 보스가 2.5방에 죽는 반면,
+ *  버프 없는 기본공격으로는 111방이 걸려 **같은 보스에서 44배 편차**가 났다.
+ *
+ *  스킬 문서의 지침:
+ *    "Sum within a layer by default and reserve multiplicative stacking for a few rare effects."
+ *
+ *  이제 버프는 **한 레이어로 합산**한다:
+ *    buffSum = (rage-1) + (rebirth-1) + runSkillPct/100
+ *    최종 = 스킬배율 × (1 + buffSum)
+ *
+ *  ─ 왜 "1 + 합" 인가: 각 버프가 "없음"일 때 0 이 되도록 (rage=1 → 0) 기준을 옮긴다.
+ *    그래야 버프가 없는 상태의 배율이 정확히 1 이고, 여러 개가 겹쳐도 선형으로만 는다.
+ *  ─ 상한: 합이 무한정 커지지 않게 BUFF_SUM_CAP 으로 자른다. 곱셈 시절엔 상한이
+ *    없어서 조합이 늘 때마다 지수로 뛰었다.
+ *
+ *  호환: rage=1, rebirth=1, runSkillPct=0 (버프 없음) 이면 결과가 종전과 **완전히 같다**.
+ *  단일 버프만 걸린 경우도 종전과 같다((1+(x-1)) = x, (1+p) = 1+p). 즉
+ *  **2개 이상 겹칠 때만** 종전보다 약해진다 — 그게 의도한 수정 지점이다.
  */
 export function damageMultiplier(d: Omit<DamageInput, "atkTotal" | "crit" | "critDmg">): number {
   /* vc209 — `isUlt` 를 `ultSlot > 0` 으로 잡으면 미정의 슬롯(3+)에서 사다리·5차·궁극기
@@ -61,14 +101,22 @@ export function damageMultiplier(d: Omit<DamageInput, "atkTotal" | "crit" | "cri
   const isUlt = d.ultSlot === 1 || d.ultSlot === 2;
   const fifth = d.isSkill && d.isFifth && !isUlt ? FIFTH_SKILL_MULT : 1;
   const ultMult = d.ultSlot === 1 ? FIFTH1_MULT : d.ultSlot === 2 ? FIFTH2_MULT : 1;
-  const runSkl = d.isSkill && d.runSkillPct > 0 ? 1 + d.runSkillPct / 100 : 1;
   const tierScl =
     d.isSkill && !isUlt ? (1 + TIER_LADDER * Math.max(0, d.sTier - 1)) * SKILL_PWR : 1;
-  return (
-    (d.isSkill ? d.mult * d.clsSkillMult * fifth * runSkl * tierScl * ultMult : d.mult) *
-    d.rage *
-    d.rebirthDmgMult
-  );
+
+  /* --- 버프 레이어: 합산 (vc219) --- */
+  /* 각 버프를 "1 기준 초과분"으로 바꿔 더한다. 버프가 없으면 정확히 0. */
+  const rageAdd = Math.max(0, (d.rage || 1) - 1);
+  const rebirthAdd = Math.max(0, (d.rebirthDmgMult || 1) - 1);
+  /* 인런 카드는 종전에도 스킬에만 적용됐다 — 그 제약은 유지한다. */
+  const runAdd = d.isSkill && d.runSkillPct > 0 ? d.runSkillPct / 100 : 0;
+  const buffSum = Math.min(BUFF_SUM_CAP, rageAdd + rebirthAdd + runAdd);
+
+  const skillBase = d.isSkill
+    ? d.mult * d.clsSkillMult * fifth * tierScl * ultMult
+    : d.mult;
+
+  return skillBase * (1 + buffSum);
 }
 
 /** 최종 데미지 (정수). rollDamage 의 반환값 dmg 와 동일해야 한다. */

@@ -22,7 +22,16 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 /* ---------------- 데이터 형태 (accounts/index.js 파일 DB와 동일) ---------------- */
 export type UserRec = { id: string; name: string; provider: string; salt: string; hash: string; createdAt: number; role?: string };
 export type TokenRec = { userId: string; expiresAt: number };
-export type SaveRec = { data: Record<string, unknown>; updatedAt: number; chars?: Record<string, Record<string, unknown>> };
+export type SaveRec = {
+  data: Record<string, unknown>;
+  updatedAt: number;
+  chars?: Record<string, Record<string, unknown>>;
+  /** vc229 — 마지막 저장 시점의 내용 지문. 같으면 쓰기를 건너뛴다(O(N) 전송 절약). */
+  fp?: string;
+  /** vc229 — `data`/`chars` 가 압축 base64(`BR:`/`GZ:`)로 저장됐다는 표시.
+   *  필드 자체가 없으면 종전 그대로 평문 객체다(구 세이브 호환). */
+  packed?: boolean;
+};
 export type ListingRec = { id: string; seller: string; sellerName: string; itemKey: string; up: number; price: number; qty?: number; ts: number };
 export type PayoutRec = { gold: number; count: number };
 /** v1.0.13 피드백#8 — 전역 닉네임 레지스트리 레코드.
@@ -301,12 +310,19 @@ export async function mutateDb(fn: (db: DbShape) => MutateResult): Promise<Resp>
   const MAX_TRY = 6;
   for (let i = 0; i < MAX_TRY; i++) {
     const { db, sha } = await loadDb(true);
-    const out = fn(db);
+    /* vc228 (감사 #2) — **작업 사본**에서 변형한다.
+     *  종전엔 `loadDb(true)` 가 준 객체가 곧 `cache.db` 와 동일 참조라
+     *  `fn(db)` 가 캐시를 직접 고쳤다. PUT 이 6회 모두 실패하면 캐시에는
+     *  **저장된 적 없는 변경**이 남고, 다음 8초(CACHE_TTL_MS) 동안 모든 읽기
+     *  (`market/buy`·`cloud-save` GET·`auth/me`)가 그 거짓 상태를 본다.
+     *  사본에서만 변형하고 성공 시에만 캐시를 갈아끼우면 그 창이 사라진다. */
+    const working = structuredClone(db) as DbShape;
+    const out = fn(working);
     /* Resp 를 그대로 주면 "쓰기 없이 이 응답" (검증 실패 등) */
     if (!("resp" in out)) return out;
-    const put = await ghPutRaw(backupEncrypt(JSON.stringify(db)), sha);
+    const put = await ghPutRaw(backupEncrypt(JSON.stringify(working)), sha);
     if (put.ok) {
-      cache = { db, sha: put.sha, at: Date.now() };
+      cache = { db: working, sha: put.sha, at: Date.now() };
       return out.resp; // mutator 가 준 응답 그대로 — 클로저 부수효과 없음
     }
     /* 일시 오류(5xx/네트워크) 도 재시도 — 지수 백오프로 GitHub 부하를 피한다 */

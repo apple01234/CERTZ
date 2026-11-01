@@ -103,6 +103,34 @@ export function buildAllAnims(scene: Phaser.Scene) {
     frameRate: rate,
     repeat,
   });
+  /* vc226 — FA 애니메이션을 **아틀라스**에서 등록한다.
+   *  프레임 이름은 아틀라스 JSON 에 원래 키(`fa_p1_idle__0`)로 들어 있으므로
+   *  각 프레임을 `{ key: "fa_p1", frame: ... }` 로 가리킨다.
+   *  프레임 수는 원본 시트 실측값(p1 기준)이고, 틀리면 존재하지 않는 프레임을 참조한다. */
+  const FA_N: Record<string, number> = {
+    idle: 7, run: 8, atk: 5, atk2: 5, atk3: 5, atk4: 6, atkup: 5, atkdown: 5,
+    jump: 3, fall: 4, dash: 4, hit: 4, dead: 18, idle2run: 3, run2idle: 3, land: 3,
+  };
+  const FA_RATE: Record<string, number> = {
+    idle: 7, run: 12, atk: 16, atk2: 16, atk3: 16, atk4: 14, atkup: 16, atkdown: 16,
+    jump: 14, fall: 10, dash: 16, hit: 12, dead: 12, idle2run: 14, run2idle: 14, land: 14,
+  };
+  if (scene.textures.exists("fa_p1")) {
+    for (const [an, n] of Object.entries(FA_N)) {
+      const key = `fa-p1-${an}`;
+      if (a.exists(key)) continue;
+      a.create({
+        key,
+        frames: Array.from({ length: n }, (_, i) => ({
+          key: "fa_p1",
+          frame: `fa_p1_${an}__${i}`,
+        })),
+        frameRate: FA_RATE[an] ?? 12,
+        repeat: an === "idle" || an === "run" ? -1 : 0,
+      });
+    }
+  }
+
   // 주인공 (방향별 실제 스윙 프레임)
   a.create({ key: "hero-idle", ...fr("hero_idle", 4, 4, -1) });
   a.create({ key: "hero-walk", ...fr("hero_walk", 4, 9, -1) }); // 아래
@@ -175,8 +203,27 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "frostwolf-run", ...fr("frostwolf_run", 4, 10, -1) });
   a.create({ key: "icegolem-idle", ...fr("icegolem_idle", 2, 2, -1) });
   a.create({ key: "icegolem-run", ...fr("icegolem_run", 4, 6, -1) });
-  a.create({ key: "wraith-idle", ...fr("wraith_idle", 2, 3, -1) });
-  a.create({ key: "wraith-run", ...fr("wraith_run", 4, 7, -1) });
+  /* vc213 (#2 유령 애니메이션 복원) — 심연 유령은 10프레임 실사 애니메이션 시트를 쓴다.
+   *  기존 2프레임 idle / 4프레임 run 텍스처(wraith_idleN·wraith_runN)는 정적 1장을
+   *  변형한 합성본이라 실제 모션이 없었다(4프레임 중 고유 3개). 시트가 있으면
+   *  그쪽을 우선 등록하고, 없을 때만 구형 2/4프레임 폴백을 쓴다. */
+  if (scene.textures.exists("wraith_spirit")) {
+    a.create({
+      key: "wraith-idle",
+      frames: a.generateFrameNumbers("wraith_spirit", { start: 0, end: 9 }),
+      frameRate: 10,
+      repeat: -1,
+    });
+    a.create({
+      key: "wraith-run",
+      frames: a.generateFrameNumbers("wraith_spirit", { start: 0, end: 9 }),
+      frameRate: 14,
+      repeat: -1,
+    });
+  } else {
+    a.create({ key: "wraith-idle", ...fr("wraith_idle", 2, 3, -1) });
+    a.create({ key: "wraith-run", ...fr("wraith_run", 4, 7, -1) });
+  }
   // 보스 3종 (guardian / behemoth / abysslord)
   /* v1.4.31 (#4) — 아틀라스 보스(boss/boss2/boss3·nidhog/surt/fenrir/skoll)는 개별 idle0 이미지가
    *  철수되었으므로 2프레임 폴백을 만들지 않는다 — registerBossAnims가 시트에서 즉시 풀애니 등록 */

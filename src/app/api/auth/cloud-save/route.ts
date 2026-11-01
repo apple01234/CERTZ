@@ -14,8 +14,10 @@
  * vc205 (감사 #4) — 클로저 부수효과 제거. 응답을 반환값으로 돌려준다.
  */
 import { NextRequest } from "next/server";
-import { loadDb, mutateDb } from "@/lib/ghdb";
+import { loadDb, mutateDb, type SaveRec } from "@/lib/ghdb";
 import { currentUser, deductEscrow, escrowedCounts, json, options, rateLimit } from "@/lib/sapi";
+import { saveFingerprint } from "@/lib/saveCodec";
+import { packSaveRec, unpackSaveRec } from "@/lib/saveAccess";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -45,8 +47,12 @@ export async function GET(req: NextRequest) {
     const user = currentUser(db, req);
     if (!user) return json(req, 401, { error: "로그인이 필요해요" });
     const s = db.saves[user.id];
+    /* vc229 — 저장된 세이브가 압축돼 있으면 여기서 푼다.
+     *  클라이언트는 압축을 몰라도 된다(응답 형태는 종전과 동일).
+     *  셋 다 문자열이면 풀고, 하나라도 아니면 종전 평문으로 취급한다. */
+    const unpacked = unpackSaveRec(s);
     /* vc149 (#2) — chars: 전 캐릭터 백업분 동시 반환 */
-    return json(req, 200, { data: s?.data ?? null, chars: s?.chars ?? null, updatedAt: s?.updatedAt ?? null });
+    return json(req, 200, { data: unpacked?.data ?? null, chars: unpacked?.chars ?? null, updatedAt: unpacked?.updatedAt ?? null });
   } catch (e) {
     console.error("[SERTZ-api] cloud-save GET 실패", e);
     return json(req, 500, { error: "서버 오류" });
@@ -98,22 +104,39 @@ export async function POST(req: NextRequest) {
       /* vc205 (감사 #1) — 서버 소유 재화를 정본으로 확정한다.
        *  prev 가 없으면 최초 업로드이므로 클라 값을 1회 시드로 받아들인다(기존 유저 마이그레이션).
        *  prev 가 있으면 서버 값을 그대로 유지 — 클라가 올린 값은 버린다. */
-      if (prev?.data) {
+      /* vc229 — prev.data 가 압축본일 수 있다. 재화 판정은 **평문**으로 해야 하므로
+       *  여기서 한 번 풀어서 읽는다. 종전엔 `prev.data[f]` 를 바로 읽었는데,
+       *  압축 저장으로 바뀌면 그 값이 문자열이라 `asNumber` 가 null 을 주고
+       *  **서버 재화가 통째로 삭제**된다(골드 증발). */
+      const prevPlain = unpackSaveRec(prev)?.data;
+      if (prevPlain) {
         for (const f of SERVER_OWNED_FIELDS) {
-          const serverVal = asNumber(prev.data[f]);
+          const serverVal = asNumber(prevPlain[f]);
           if (serverVal !== null) incoming[f] = serverVal;
           else delete incoming[f]; // 서버에 기록이 없으면 클라 값을 신뢰하지 않는다
         }
       }
 
-      const next: typeof prev = chars
-        ? { data: incoming, chars, updatedAt }
-        : { data: incoming, ...(prev?.chars ? { chars: prev.chars } : {}), updatedAt };
+      const nextData = incoming;
+      const nextChars = chars ?? prev?.chars;
       /* v1.4.41 (감사 #1) — 거래소에 걸어둔 수량은 업로드 세이브에서 다시 차감한다.
        *  이게 없으면 등록 후 예전 세이브를 되올려 에스크로를 무효화하고 물건을 복제할 수 있다. */
       const esc = escrowedCounts(fdb, user.id);
-      const removedEscrow = Object.keys(esc).length > 0 ? deductEscrow(next.data, esc) : 0;
-      fdb.saves[user.id] = next;
+      const removedEscrow = Object.keys(esc).length > 0 ? deductEscrow(nextData, esc) : 0;
+
+      /* vc229 — **내용이 그대로면 쓰기를 건너뛴다.**
+       *  클라이언트가 90초마다 올린다. 그 사이 아무것도 안 바뀐 경우가 대부분인데
+       *  지금은 그때도 DB 전체(유저 수에 비례)를 다시 암호화해 PUT 한다.
+       *  에스크로 차감이 일어났으면 내용이 달라졌으므로 그때는 반드시 저장한다. */
+      const fp = saveFingerprint({ d: nextData, c: nextChars ?? null });
+      if (prev && prev.fp === fp && removedEscrow === 0) {
+        return { resp: { status: 200, body: { ok: true, updatedAt: prev.updatedAt, unchanged: true } } };
+      }
+
+      /* vc229 — 저장은 압축해서 넣는다(실측 13~20%). 읽을 때 `packed` 를 보고 푼다.
+       *  `packSaveRec` 이 data·chars 를 함께 압축하고 fp 를 붙인다 —
+       *  평문으로 쓰던 시절의 형태와 섞이지 않게 한 곳에서 만든다. */
+      fdb.saves[user.id] = packSaveRec(nextData, { chars: nextChars ?? null, updatedAt, fp }) as SaveRec;
       return { resp: { status: 200, body: { ok: true, updatedAt, escrowDeducted: removedEscrow } } };
     });
     return json(req, r.status, r.body);

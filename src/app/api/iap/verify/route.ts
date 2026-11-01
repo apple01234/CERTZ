@@ -17,6 +17,7 @@
  *   GOOGLE_PLAY_PACKAGE_NAME : com.sertz.myapp (기본값)
  *   SERTZ_IAP_ENFORCE        : "0" 이면 검증 생략(개발용). 기본은 강제.
  */
+import { saveDataOf, mutateSaveData } from "@/lib/saveAccess";
 import { NextRequest } from "next/server";
 import { loadDb, mutateDb } from "@/lib/ghdb";
 import { currentUser, json, options, rateLimit, audit } from "@/lib/sapi";
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
 
     /* 이미 지급된 토큰인지 먼저 확인 (재전송 멱등) */
     if (db.iapUsed?.[token]) {
-      return json(req, 200, { ok: true, already: true, gems: 0, emerald: db.saves[user.id]?.data?.emerald ?? null });
+      return json(req, 200, { ok: true, already: true, gems: 0, emerald: saveDataOf(db.saves[user.id])?.emerald ?? null });
     }
 
     let orderId: string | undefined;
@@ -132,11 +133,15 @@ export async function POST(req: NextRequest) {
       if (fdb.iapUsed[token]) {
         return { resp: { status: 200, body: { ok: true, already: true, gems: 0 } } };
       }
+      /* vc229 — 압축 세이브 대응. 지급은 반드시 mutateSaveData 를 거친다. */
       const rec = fdb.saves[user.id];
-      if (!rec?.data) return { status: 409, body: { error: "클라우드 세이브를 먼저 동기화해 주세요" } };
-      const cur = typeof rec.data.emerald === "number" && Number.isFinite(rec.data.emerald) ? rec.data.emerald : 0;
-      rec.data.emerald = cur + gems;
-      rec.updatedAt = Date.now();
+      if (!saveDataOf(rec)) return { status: 409, body: { error: "클라우드 세이브를 먼저 동기화해 주세요" } };
+      let cur = 0;
+      mutateSaveData(rec, (d) => {
+        cur = typeof d.emerald === "number" && Number.isFinite(d.emerald) ? d.emerald : 0;
+        d.emerald = cur + gems;
+        return true;
+      });
       fdb.iapUsed[token] = { uid: user.id, sku, gems, at: Date.now(), orderId: orderId ?? "" };
       audit("iap_grant", { ip: "serverless", uid: user.id, sku, gems, orderId: orderId ?? "" });
       return { resp: { status: 200, body: { ok: true, gems, emerald: cur + gems } } };

@@ -1,4 +1,5 @@
 import { startRun } from "./sim/deterministic"; // vc183 — 세션 시드
+import { loadShakeScale } from "./fx/shakeScale"; // vc222 — 흔들림 접근성
 import Phaser from "phaser";
 import { GAME_W, GAME_H } from "./config";
 import { BootScene } from "./scenes/BootScene";
@@ -378,6 +379,15 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   };
   applyFpsCap((() => { try { return window.localStorage.getItem("sertz_fps30") === "1"; } catch { return false; } })());
   EventBus.on("fx:battery", (on: boolean) => applyFpsCap(!!on));
+
+  /* vc222 (`agd-game-feel` 접근성) — 화면 흔들림 강도 부팅 복원.
+   *  이게 없으면 설정 패널에서 고른 값이 **재시작 후 무시된다**
+   *  (localStorage 에는 남지만 모듈 변수는 기본값으로 시작한다).
+   *  WorldScene 의 "fx:shake" 핸들러는 이후 변경만 담당하므로
+   *  초기값은 여기서 한 번 세팅해야 한다. */
+  loadShakeScale();
+  /* 씬이 늦게 뜨는 경우를 대비해 패널 클릭 경로도 동일 모듈을 쓰므로
+   * 여기서는 초기값만 확정하면 된다. */
   // v3.0.6 — E2E 정적 검증용 모듈 노출 (클래스/사운드/스테이지/아이템 테이블)
   // v3.0.23 — BGM 고정배치 검증 훅 (구역→트랙 매핑 실측)
   (window as unknown as { __SERTZ_DEBUG__?: unknown }).__SERTZ_DEBUG__ = {

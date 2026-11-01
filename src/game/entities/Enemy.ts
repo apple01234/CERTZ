@@ -7,6 +7,8 @@ import { parseStage } from "../stages";
 import { mitigateEnemyDamage } from "../combat/defense"; // vc183 — 적 방어력
 import { actorStream, releaseActor } from "../sim/deterministic"; // vc183 — 액터별 결정론 난수
 import { FSM, type FSMState } from "../ai/FSM";
+import { spawnDissolve } from "../fx/DissolveFX"; // vc214 — 소멸 dissolve 셰이더
+import { decideMorale } from "../ai/morale"; // vc214 — Utility AI 사기 판단
 /** 종별 물리/판정 크기 + 리스폰 버스트 색 */
 const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: number; burst: number }> = {
   wolf: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0x9aa0b4 },
@@ -169,6 +171,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private runAnimKey = "";
   private idleAnimKey = "";
 
+  /* vc214 — Utility AI 사기 판단 상태. 스폰 시 한 번 만들고 매 결정 주기마다
+   * 갱신한다(틱마다 객체 생성 금지 — GC 스파이크 방지). */
+  private morale: "fight" | "retreat" | "flee" = "fight";
+  private moraleAcc = 0;
+  private readonly moraleCtx = { hp01: 1, dist: 0, aggro: 300, allies: 0, playerHp01: 1 };
+
   private ai: FSM<AICtx>;
   private aiCtx: AICtx;
 
@@ -199,7 +207,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     key: EnemyKey,
     opts?: { hp?: number; atk?: number; exp?: number; gold?: number; scale?: number; tint?: number; displayName?: string; dummy?: boolean; abs?: boolean; spd?: number; flee?: boolean }
   ) {
-    super(scene, x, y, `${key}_idle0`);
+    /* vc213 (#2 유령 애니메이션 복원) — 심연 유령은 10프레임 시트(wraith_spirit)를 쓴다.
+     *  기존 `${key}_idle0` 정적 텍스처는 프레임 합성본이라 모션이 없었다. 시트가
+     *  로드돼 있으면 해당 텍스처로 스폰하고, 없으면 기존 경로로 안전 폴백한다. */
+    super(scene, x, y, key === "wraith" && scene.textures.exists("wraith_spirit") ? "wraith_spirit" : `${key}_idle0`);
     const base = ENEMIES[key];
     /* v3.0.15 (#16) — 챕터 테마 원소 부여 */
     this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "none";
@@ -565,6 +576,52 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    /* vc214 — Utility AI 사기 판단. 기존엔 `opts.flee` 정적 플래그(황금 몬스터)만
+     * 도주가 가능했고 일반 몬스터는 체력 1 이어도 계속 돌진했다. 이제 매 프레임이
+     * 아니라 **결정 주기(0.35초)** 로만 채점해 비용을 억제하고(FSM 은 매 프레임 유지),
+     * 결과가 flee/retreat 일 때만 FSM 앞에서 이동을 덮어쓴다.
+     * 허수아비·도주형(황금)은 기존 동작을 그대로 유지하기 위해 건드리지 않는다. */
+    this.moraleAcc += dt;
+    if (this.moraleAcc >= 350) {
+      this.moraleAcc = 0;
+      const mctx = this.moraleCtx;
+      mctx.hp01 = Math.max(0, Math.min(1, this.hp / Math.max(1, this.maxHp)));
+      mctx.dist = c.dist;
+      mctx.aggro = this.def.aggro;
+      mctx.playerHp01 = Math.max(0, Math.min(1, c.player.hp / Math.max(1, (c.player as { maxHp?: number }).maxHp ?? 1)));
+      // 내 주변 같은 편 수 — 매번 배열을 만들지 않고 씬의 적 목록을 직접 순회
+      let allies = 0;
+      for (const other of this.scene.enemies) {
+        if (other === this || !other.alive) continue;
+        if (Phaser.Math.Distance.Squared(other.x, other.y, this.x, this.y) < 220 * 220) {
+          allies++;
+          if (allies >= 3) break; // 3 이상은 더 셀 필요 없다
+        }
+      }
+      mctx.allies = allies;
+      this.morale = decideMorale(mctx, this.morale);
+    }
+
+    /* 사기 판단이 후퇴/도주면 FSM 을 건너뛰고 이탈 이동을 적용한다.
+     * (attack/windup 같은 공격 상태가 남아 있으면 이동이 상쇄되므로 강제 해제) */
+    if (this.morale !== "fight" && !this.flee && this.hp > 0) {
+      const away = this.morale === "flee" ? 1.0 : 0.55;
+      const spd = this.effSpeed * away;
+      const len = Math.max(0.0001, Math.hypot(c.toPlayer.x, c.toPlayer.y));
+      // 도주는 반대 방향 + 약한 지그재그(벽에 몰리지 않게)
+      const sway = this.morale === "flee" ? Math.sin(this.scene.time.now / 240) * 0.5 : 0;
+      const dx = -c.toPlayer.x / len + (-c.toPlayer.y / len) * sway;
+      const dy = -c.toPlayer.y / len + (c.toPlayer.x / len) * sway;
+      const dl = Math.max(0.0001, Math.hypot(dx, dy));
+      c.vx = (dx / dl) * spd;
+      c.vy = (dy / dl) * spd;
+      if (this.ai.current !== "chase" && this.ai.current !== "wander") this.ai.set("wander");
+      this.setVelocity(c.vx + this.knockVec.x, c.vy + this.knockVec.y);
+      if (Math.abs(c.vx) > 0.01) this.setFlipX(c.vx > 0);
+      this.syncHpBar();
+      return;
+    }
+
     this.ai.update(dt);
 
     this.setVelocity(c.vx + this.knockVec.x, c.vy + this.knockVec.y);
@@ -697,6 +754,25 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.scene.sfxEnemyDie();
     /* v1.2.0 (#10) — 격파 히트스톱 70ms — 처치 순간의 무게감 */
     this.scene.hitStop(70);
+    /* vc214 — 소멸 dissolve. 기존엔 파티클만 터지고 60ms 뒤 스프라이트가 즉시
+     * 사라져 "팟 하고 없어지는" 인상이었다. 지금 스프라이트와 같은 텍스처/프레임으로
+     * dissolve 셰이더를 그 자리에 얹어 몸이 재로 흩어지며 사라지게 한다.
+     * WebGL 이 아니면 spawnDissolve 가 null 을 돌려주고 아무 일도 일어나지 않는다
+     * (Canvas 폴백에서도 기존 연출 그대로 동작 — 안전). */
+    /* fxLevel 0(적응형 절전)에서는 dissolve 를 생략한다 — 이 프로젝트는 약한 GPU 에서
+     * 셰이더 경합으로 컨텍스트 유실을 겪은 이력이 있고, 사망 연출은 그 우선순위가 낮다. */
+    const dis = this.scene.fxLevel >= 1 && this.scene.game.renderer.type === Phaser.WEBGL
+      ? spawnDissolve(this.scene, this.texture.key, this.x, this.y, {
+          frame: this.frame?.name,
+          duration: 380,
+          // this.def 는 EnemyDef(정적 정의)라 elem 이 없다 — 인스턴스의 this.elem 을 쓴다
+          edgeColor: this.elem === "ice" ? 0xbfeaff : this.elem === "fire" ? 0xffb066 : 0xffc98a,
+          depth: this.depth + 1,
+          scale: this.scaleX,
+          flipX: this.flipX,
+        })
+      : null;
+    void dis;
     this.scene.spawnDeathBurst(this.x, this.y);
     /* v1.3.0 (#에셋통합) — 사망 폭발 퍼프 + 충격파 (Drive 팩 5-explosion/UNI 코어) */
     this.scene.driveFx?.explosion(this.x, this.y, 0xffb08a);

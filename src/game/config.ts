@@ -51,6 +51,21 @@ export function setPlayerName(name: string) {
 }
 
 export type SaveData = {
+  /* vc219 — 세이브 스키마 버전.
+   *
+   *  왜 필요한가 (스킬 `agd-rpg` 함정 #6):
+   *   종전엔 모든 신규 필드가 "optional + 로드 시 기본값" 방식이었다. 필드를 **추가**만
+   *   하는 동안은 잘 동작하지만, **의미가 바뀌는 변경**(예: exp 를 절대값→퍼센트,
+   *   weaponStars 를 0~15→0~22 로 재정의)에서는 구 세이브와 신 세이브를 구분할 방법이
+   *   없다. 마이그레이션을 강제할 지점도 없다.
+   *
+   *  규칙:
+   *   · 필드를 **추가**만 할 때는 version 을 올리지 않아도 된다(기본값 채우기로 충분).
+   *   · 필드의 **의미/단위**를 바꾸면 반드시 SAVE_VERSION 을 올리고
+   *     migrateSave() 에 변환을 추가한다.
+   *   · version 이 없는 세이브는 0 으로 간주한다(현재 존재하는 모든 구 세이브).
+   */
+  v?: number;
   stage: string;
   lv: number;
   exp: number;
@@ -338,14 +353,52 @@ export function mutateFriends(fn: (list: { code: string; name: string }[]) => { 
   return next;
 }
 
+/**
+ * vc219 — 현재 세이브 스키마 버전.
+ *
+ *  올리는 규칙은 `SaveData.v` 주석 참조: **의미/단위가 바뀔 때만** 올린다.
+ *  필드 추가만 하는 경우는 올리지 않는다(기본값 채우기로 이미 호환되므로,
+ *  불필요하게 올리면 마이그레이션 분기가 쓸데없이 늘어난다).
+ *
+ *  이 값이 필요한 이유는 "지금"이 아니라 "나중"이다. 의미 변경이 일어나는 순간
+ *  이 상수가 없으면 구 세이브를 구분할 방법이 사라진다.
+ */
+export const SAVE_VERSION = 1;
+
+/**
+ * 세이브 마이그레이션 — 로드 직후, 기본값 채우기 **전에** 호출한다.
+ *
+ *  각 단계는 `from` 버전 세이브를 `from + 1` 로 올린다. 순서대로 적용되므로
+ *  한 세이브가 여러 단계를 건너뛰어도 안전하다(0 → 1 → 2 …).
+ *
+ *  현재는 1 단계뿐이고 실제 변환이 없다(도입 시점). 다음 의미 변경 때
+ *  아래 표에 항목을 추가하면 된다 — 이 지점이 없으면 나중에 마이그레이션을
+ *  "끼워넣을 곳"이 사라진다.
+ */
+export function migrateSave(d: SaveData): SaveData {
+  const from = typeof d.v === "number" ? d.v : 0; // v 없음 = 0 (도입 이전 세이브)
+  if (from >= SAVE_VERSION) return d;
+
+  /* ---- 0 → 1 : 버전 도입. 데이터 변환은 없다. ---- */
+  /* (예시) 1 → 2 : 경험치 단위가 절대값 → 퍼센트로 바뀌면 여기서 변환한다.
+   *   if (from < 2) { d.exp = toPercent(d.exp); }  */
+
+  d.v = SAVE_VERSION;
+  return d;
+}
+
 export function loadSave(): SaveData | null {
   if (typeof window === "undefined") return null;
   try {
     /* v1.0.18 — 로비 멀티캐릭터 라우팅: 활성 캐릭터가 있으면 캐릭터 전용 키에서 읽는다 */
     const raw = window.localStorage.getItem(activeSaveKey());
     if (!raw) return null;
-    const d = JSON.parse(raw) as SaveData;
-    if (!d || typeof d.stage !== "string") return null;
+    const parsed = JSON.parse(raw) as SaveData;
+    if (!parsed || typeof parsed.stage !== "string") return null;
+    /* vc219 — 마이그레이션을 기본값 채우기보다 먼저 돌린다.
+     *  순서가 반대면 "기본값으로 채워진 뒤" 마이그레이션이 그 위를 덮어써
+     *  변환 결과가 사라진다. */
+    const d = migrateSave(parsed);
     // 신규 필드 기본값 채우기 (구버전 세이브 호환)
     if (typeof d.gold !== "number") d.gold = 30;
     if (!d.potions) d.potions = { hp: 2, mp: 1 };

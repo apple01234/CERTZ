@@ -14,12 +14,14 @@
 import { NextRequest } from "next/server";
 import { loadDb, mutateDb } from "@/lib/ghdb";
 import { MARKET_FEE_PCT, creditOwned, currentUser, json, marketSnapshot, options, rateLimit, audit } from "@/lib/sapi";
+import { saveDataOf, mutateSaveData } from "@/lib/saveAccess";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
 /** 세이브에서 골드를 읽는다 (손상/부재 시 null) */
-function readGold(fdb: { saves: Record<string, { data?: Record<string, unknown> }> }, uid: string): number | null {
-  const d = fdb.saves[uid]?.data;
+function readGold(fdb: { saves: Record<string, unknown> }, uid: string): number | null {
+  /* vc229 — 압축 세이브를 풀어서 읽는다. */
+  const d = saveDataOf(fdb.saves[uid] as { data?: unknown } | undefined);
   if (!d) return null;
   const g = d.gold;
   return typeof g === "number" && Number.isFinite(g) ? g : null;
@@ -52,11 +54,8 @@ export async function POST(req: NextRequest) {
       const gold = readGold(fdb, me.id);
       if (gold === null) return { status: 409, body: { error: "클라우드 세이브를 먼저 동기화해 주세요" } };
       if (gold < cost) return { status: 402, body: { error: `골드가 부족해요 (필요 ${cost}G · 보유 ${gold}G)` } };
-      const meSave = fdb.saves[me.id];
-      if (meSave?.data) {
-        meSave.data.gold = gold - cost;
-        meSave.updatedAt = Date.now();
-      }
+      /* vc229 — 풀어서 고치고 압축해 되돌린다(mutateSaveData 가 전담). */
+      mutateSaveData(fdb.saves[me.id], (d) => { d.gold = gold - cost; return true; });
 
       const item = { itemKey: l.itemKey, up: l.up ?? 0, price: l.price, qty: units, sellerName: l.sellerName };
       const left = avail - units;

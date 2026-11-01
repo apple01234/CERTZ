@@ -37,7 +37,8 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["src/lib/__tests__", 
+  "exclude": [
+    "src/lib/__tests__",
     "node_modules",
     "scripts",
     "examples",
@@ -47,6 +48,10 @@
     "download",
     "loop",
     "mini-services",
-    "tmp"
+    "tmp",
+    "assets_dl",
+    "assets_src",
+    "reports",
+    "release_docs"
   ]
 }

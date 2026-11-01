@@ -5752,11 +5752,14 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
         <div className="mt-3 rounded-lg border border-sky-300/25 bg-sky-400/[0.06] px-2.5 py-2.5">
           <p className="text-[12px] font-black text-sky-200">그래픽 효과 (셰이더)</p>
           <p className="mt-0.5 text-[10px] leading-snug text-white/50">
-            툰 셰이더·블룸·조명·충격파 셰이더 적용 범위. "자동"은 프레임이 떨어지면 잠시 줄어들 수 있어요.
+            툰 셰이더·블룸·조명·충격파 셰이더 적용 범위.{" "}
+            <span className="font-bold text-sky-200">&quot;자동&quot;만</span> 프레임에 따라 자동으로
+            조정되고, <span className="font-bold text-emerald-200">매우 높음</span>과{" "}
+            <span className="font-bold text-amber-200">절전</span>은 고정값이에요.
           </p>
           <div className="mt-1.5 grid grid-cols-3 gap-1.5">
             {([
-              { m: "high", label: "항상 높음", css: "border-emerald-300/70 bg-emerald-500/20 text-emerald-200" },
+              { m: "high", label: "매우 높음", css: "border-emerald-300/70 bg-emerald-500/20 text-emerald-200" },
               { m: "auto", label: "자동 (기본)", css: "border-sky-300/70 bg-sky-500/20 text-sky-200" },
               { m: "low", label: "절전", css: "border-amber-300/70 bg-amber-500/20 text-amber-200" },
             ] as const).map((o) => {
@@ -5774,8 +5777,42 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
             })}
           </div>
           <p className="mt-1 text-[9px] leading-snug text-white/55">
-            셰이더가 사라졌다면 → "항상 높음" 선택. 프레임 보호용 자동 축소가 켜진 것입니다.
+            셰이더가 사라졌다면 → &quot;매우 높음&quot; 선택. 자동 모드에서 프레임 보호용 축소가 켜진 것입니다.
+            매우 높음·절전은 프레임이 떨어져도 자동으로 바뀌지 않습니다.
           </p>
+        </div>
+
+        {/* vc222 (`agd-game-feel` 접근성) — 화면 흔들림 강도.
+         *  멀미·전정기관 민감 사용자를 위한 옵션. 흔들림만 줄이고 히트스톱·사운드·
+         *  파티클은 그대로라 타격감의 다른 축은 유지된다. 게임플레이 영향 없음. */}
+        <div className="mt-2 rounded-lg border border-violet-300/25 bg-violet-400/[0.06] px-2.5 py-2.5">
+          <p className="text-[12px] font-black text-violet-200">화면 흔들림</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/50">
+            타격·폭발·궁극기에서 카메라가 흔들리는 강도예요.{" "}
+            <span className="font-bold text-violet-200">멀미가 있다면 &quot;끔&quot;이나 &quot;약하게&quot;</span>를
+            고르세요. 타격감의 나머지(히트스톱·효과음·파티클)는 그대로 유지됩니다.
+          </p>
+          <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+            {([
+              { m: "off", label: "끔", css: "border-rose-300/70 bg-rose-500/20 text-rose-200" },
+              { m: "low", label: "약하게", css: "border-amber-300/70 bg-amber-500/20 text-amber-200" },
+              { m: "normal", label: "보통", css: "border-violet-300/70 bg-violet-500/20 text-violet-200" },
+              { m: "strong", label: "강하게", css: "border-emerald-300/70 bg-emerald-500/20 text-emerald-200" },
+            ] as const).map((o) => {
+              const cur = (() => { try { const v = window.localStorage.getItem("sertz_shake_scale"); return v === "off" || v === "low" || v === "strong" ? v : "normal"; } catch { return "normal"; } })();
+              const active = cur === o.m;
+              return (
+                <button
+                  key={o.m}
+                  onClick={() => EventBus.emit("fx:shake", o.m)}
+                  aria-pressed={active}
+                  className={`rounded-md border-2 px-1 py-1.5 text-[11px] font-black transition ${active ? o.css : "border-white/15 bg-black/40 text-white/55 hover:border-white/40"}`}
+                >
+                  {o.label}{active ? " ✓" : ""}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* vc147 (#29) — 30FPS 절전 모드: 기기 발열/배터리/프리즈 대책.

@@ -42,6 +42,12 @@ import { damageMultiplier } from "../combat/damageModel";
  *  - RPG 2차 확장: 크리티컬·장비 강화(+1~+5)·장신구 슬롯
  *  - 월드 경계 충돌
  */
+/* vc224 — Fantasy Adventure 세트 표시 배율.
+ *  FA p1 idle 내용 = 18x36, 기존 hero_idle0 내용 = 26x42.
+ *  높이를 맞추는 배율 42/36 = 1.1667 → 1.17.
+ *  폭 기준(26/18=1.44)을 쓰면 세로가 넘쳐 머리가 잘리므로 **높이 기준**을 쓴다. */
+const FA_DISPLAY_SCALE = 1.17;
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
 
@@ -357,13 +363,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(10);
-    // 96x64 캔버스 (몸 중심 x=48, 발 y=64) 기준 히트박스
+    // 히트박스는 `applyBodyLook()` 이 시트별로 잡는다 (아래 주석 참조).
+    //  캔버스 크기가 시트마다 달라 생성자에서 고정하면 FA 로 바꿀 때 판정이 어긋난다.
     this.body!.setSize(20, 44);
-    this.body!.setOffset(38, 20);
+    this.applyBodyOffset();
     // 맵 밖으로 나가지 않도록 월드 경계 충돌 (러지/넉백/대시 전부 차단)
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     (this.body as Phaser.Physics.Arcade.Body).pushable = false;
-    this.play(this.bodyKey("hero-idle"));
+    this.playAnim("hero-idle");
     /* v1.0.15 (피드백 #3) — 맵 이동 직전에 기록된 스킬 쿨타임 복원.
      *  scene.restart로 Player가 재생성돼도 남은 쿨타임이 이어진다 (1회성 — 복원 후 메모 비움). */
     const cdMemo = restoreCooldowns();
@@ -490,9 +497,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* v3.0.11 — 돌진 중 주행 애니 (기존엔 애니 없이 마지막 프레임이 얼어붙은 채 미끄러짐) */
       {
         const horiz = Math.abs(this.dashDir.x) >= Math.abs(this.dashDir.y);
-        const key = horiz ? this.bodyKey("hero-walk-side") : this.dashDir.y > 0 ? this.bodyKey("hero-walk") : this.bodyKey("hero-walk-up");
+        const key = this.animKey(horiz ? "hero-walk-side" : this.dashDir.y > 0 ? "hero-walk" : "hero-walk-up");
         if (horiz) this.setFlipX(this.dashDir.x > 0); // v3.0.10 — 시트 왼쪽 기준
-        if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) this.play(key);
+        this.ensureMoveAnim(key); // vc224
       }
       /* v4.9.0 — 돌진 잔상 (스킬 전용 셰이더 #1의 짝 — 유저 지시 #1 "돌진 잔상").
        *  현재 프레임 그대로의 고스트를 42ms 간격으로 흘려 궤적을 남긴다.
@@ -559,10 +566,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.facing.copy(move).normalize();
         // 방향 우세 축 기준 실제 걷기 프레임 사용 (아래/위/측면)
         const horiz = Math.abs(move.x) >= Math.abs(move.y);
-        const key = horiz ? this.bodyKey("hero-walk-side") : move.y > 0 ? this.bodyKey("hero-walk") : this.bodyKey("hero-walk-up");
+        const key = this.animKey(horiz ? "hero-walk-side" : move.y > 0 ? "hero-walk" : "hero-walk-up");
         // v3.0.2 — idle에서 setTexture로 전환 후 currentAnim 키가 잔존해 같은 방향 재입력 시 play가 스킵되던 버그:
         // 재생 중이 아니면 항상 재시작 (정지→같은 방향 재입력 애니메이션 복구)
-        if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) this.play(key);
+        this.ensureMoveAnim(key);
         /* v3.0.10 픽스 — Mystic Woods 시트 기본이 "왼쪽" 향함 (기존 주석은 옛 시트 기준).
          *  이제 오른쪽 이동 시에만 뒤집는다 — 좌우 걷기 애니 반전 버그 수정 */
         if (horiz) this.setFlipX(move.x > 0);
@@ -578,7 +585,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           tex = this.bodyKey("hero_walkup0"); // 위쪽 — 뒷모습 서있기
         }
         if (this.anims.isPlaying) this.anims.stop();
-        if (this.texture.key !== tex) this.setTexture(tex);
+        /* vc224 — 정지 시에도 FA 를 쓴다.
+         *  종전엔 bodyKey 로 hero_idle0/walkside0/walkup0 를 setTexture 했는데, FA 활성 시
+         *  그 텍스처는 로드돼 있지 않아 run 애니 키만 남고 그림이 바뀌지 않았다(실측: stop 후
+         *  currentAnim 이 계속 fa-p1-run). FA 활성 시엔 idle 애니를 재생하고 flip 만 맞춘다. */
+        if (this.faActive()) {
+          this.setFlipX(Math.abs(f.x) >= Math.abs(f.y) ? f.x > 0 : this.flipX);
+          const idleKey = "fa-p1-idle";
+          if (this.scene.anims.exists(idleKey)) {
+            if (this.anims.currentAnim?.key !== idleKey) this.play(idleKey);
+          }
+        } else {
+          if (this.texture.key !== tex) this.setTexture(tex);
+        }
       }
     } else if (this.state === "attack" && this.lungeTime <= 0) {
       // v2.2 — 공격 중 이동: 입력 방향 우선(80% 속도), 러지가 입력을 덮어쓰지 않음 → 뚝 끊기는 감삭 제거
@@ -590,8 +609,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // 스윙 판정(65ms) 이후엔 걷기 애니로 복귀 — 공격 포즈로 미끄러지는 얼음막기 감삭 제거
         if (this.swingDone) {
           const horiz = Math.abs(this.facing.x) >= Math.abs(this.facing.y);
-          const key = horiz ? this.bodyKey("hero-walk-side") : this.facing.y > 0 ? this.bodyKey("hero-walk") : this.bodyKey("hero-walk-up");
-          if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) this.play(key); // v3.0.2 — 동일 버그
+          const key = this.animKey(horiz ? "hero-walk-side" : this.facing.y > 0 ? "hero-walk" : "hero-walk-up");
+          this.ensureMoveAnim(key);
           if (horiz) this.setFlipX(move.x > 0); // v1.0.12 — 회복 구간 걷기는 걷기 시트(좌향) 기준 — 공격 플립(우향)과 의미가 달라 직접 갱신
         }
       } else if (this.swingDone) {
@@ -717,14 +736,38 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const empowered = this.nextAtkEmpowered; // v3.0.6 — 그림자 숨기 강화 소모
     this.nextAtkEmpowered = false;
-    const dmgMul = (warrior ? 1.1 : 1.0) + 0.08 * t + (empowered ? 0.5 : 0); // v1.4.30 (#2) 사다리 0.05→0.08
-    const reach = warrior ? 176 : 160; // 전사 — 전방 판정 확대
-    const knock = warrior ? 320 : 280;
+
+    /* vc220 (지시 #1 "근접 직업 전직시마다 평타강화 확실히 — 수치만이 아니라 이펙트도")
+     *
+     *  문제: 종전 dmgMul 은 `(warrior ? 1.1 : 1.0) + 0.08*t` 였다.
+     *  1차 1.18 → 4차 1.42 = 전직 3회를 거쳐 **+20%** 뿐이라 체감이 사실상 없었다.
+     *  이펙트는 더 심각했다 — spawnSlash 의 scale 이 `warrior ? 1.15 : 1` 로
+     *  **tier 를 아예 읽지 않아** 4차 검사도 1차와 같은 크기의 참격이었다.
+     *
+     *  이제 전직 1단계마다 세 축이 함께 오른다(수치 + 판정 + 이펙트):
+     *   · dmgMul  : 0.08/tier → 0.22/tier  (1차 대비 4차 +66%)
+     *   · 이펙트  : 참격 스케일·개수·잔상 강도
+     *   · 판정    : 사거리/폭이 소폭 넓어져 "닿는 느낌"이 커진다
+     *
+     *  tier 스케일(0=미전직) — 1차를 기준점 1.0 으로 둔다:
+     *    tier 0 → 0.00 / 1 → 1.00 / 2 → 1.28 / 3 → 1.56 / 4 → 1.84
+     *  (isFifth 로 sTier 가 5 가 되는 경우도 있어 상한을 둔다) */
+    const tierK = Math.max(0, t - 1); // 1차=0, 2차=1, 3차=2, 4차=3, 5차=4
+    /** 이펙트·판정 배율 — 4차에서 1.44배(판정 폭은 과하지 않게) */
+    const fxK = 1 + 0.11 * tierK;
+    const dmgMul =
+      (warrior ? 1.1 : 1.0) + 0.22 * t + (empowered ? 0.5 : 0);
+    const reach = (warrior ? 176 : 160) * (1 + 0.035 * tierK);
+    const hitW = 116 * fxK; // 판정 폭
+    const knock = (warrior ? 320 : 280) * fxK;
+    /** 참격 스프라이트 배율 — 미전직 1.0 → 4차 1.44 */
+    const slashScale = (warrior ? 1.15 : 1.0) * fxK;
 
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
-    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
+    /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 실측 재검증: 공격 시트도 좌향 네이티브(걷기와 동일) — 기존 우향 가정이 "공격 방향≠바라보는 방향"의 근원
-    this.play(atkKey);
+    this.playAnim(atkKey);
     // v3.0.2 — 도적(단검)은 참격 검기를 보라색으로 (무기 정체성)
     // v3.0.20 (#6) — 근접 직업 전원 검기 색 분리 (전원이 같은 색이었다)
     const slashTint = this.meleeSlashTint();
@@ -798,14 +841,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         } as never);
         return;
       }
-      this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, warrior ? 1.15 : 1, slashTint);
+      this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, slashScale, slashTint);
       /* v3.0.24 — 도적(단검)=나이프음
        * v4.3.0 — 전사·미전직 기본공격음 = 회전베기음(카타나 연속 베기) 스왑 적용 (유저 지시:
        *  "전사 회전베기 소리를 기본공격 소리랑 바꿔") — 매번 피치 변주 유지 */
       if (fam === "thief") this.scene.sfxSkill("knife", 0.98 + Math.random() * 0.06);
       else this.scene.sfxSkill("spin", 0.92 + Math.random() * 0.1);
       // 참격 판정 확대 — 전방 160px x 폭 116px (사용자 지시: 히트박스 크게)
-      this.checkMeleeHit(dir, reach, 116, dmgMul, knock);
+      this.checkMeleeHit(dir, reach, hitW, dmgMul, knock);
     });
 
     /* v3.0.6 (지시 #3 — 전직마다 기본공격 강화) 티어 래더:
@@ -816,17 +859,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (t >= 1 && !isGunner) {
       this.scene.time.delayedCall(195, () => {
         if (this.state !== "attack") return;
-        this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, 0.95, slashTint);
+        this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, slashScale * 0.95, slashTint);
         this.scene.sfxSkill("spin", 1.02 + Math.random() * 0.08); // v4.3.0 — 연타 2타 (고피치 변주)
-        this.checkMeleeHit(dir, reach, 116, dmgMul * 0.8, knock * 0.8);
+        this.checkMeleeHit(dir, reach, hitW, dmgMul * 0.8, knock * 0.8);
       });
     }
     if (t >= 2 && !isGunner) {
       this.scene.time.delayedCall(300, () => {
         if (this.state !== "attack") return;
-        this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 0.9, slashTint);
+        this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, slashScale * 0.9, slashTint);
         this.scene.sfxSkill("spin", 1.1 + Math.random() * 0.08); // v4.3.0 — 연타 3타 (최고피치 변주)
-        this.checkMeleeHit(dir, reach, 116, dmgMul * 0.7, knock * 0.6);
+        this.checkMeleeHit(dir, reach, hitW, dmgMul * 0.7, knock * 0.6);
         if (t >= 3) {
           // 검기 파동 — 관통 투사체 (3차: 관통 3 / 4차: 대형+관통 5)
           const angle = Math.atan2(dir.y, dir.x);
@@ -859,9 +902,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *    부채꼴 확대(차수별 0.13~0.22rad) · 연사 간격 90→60ms · 발사 머즐 플래시 ·
    *    비행 잔상(트레일) · 3발+ 동시 타격감 카메라 마이크로 셰이크 */
   private atkBow(dir: Phaser.Math.Vector2) {
-    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
+    /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일 (faceAtk 주석 참고)
-    this.play(atkKey);
+    this.playAnim(atkKey);
     const angle0 = Math.atan2(dir.y, dir.x);
     this.scene.spawnBow(this.x + dir.x * 10, this.y - 8, angle0);
 
@@ -929,9 +973,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  v3.0.2 — 칼을 휘두르지 않고 시전 이펙트(마나 불꽃) + 마법 구슬 발사 (무기 정체성)
    *  v3.0.15 (#4) — "N차마다 N개" 공식 적용 (1차 1발 ~ 4차 4발) */
   private atkBolt(dir: Phaser.Math.Vector2) {
-    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
+    /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
-    this.play(atkKey);
+    this.playAnim(atkKey);
     this.scene.spawnCast(this.x + dir.x * 12, this.y - 12);
 
     const t = this.sTier;
@@ -987,9 +1032,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  회전하는 표창(24x24 픽셀 아트)이 관통 1로 날아간다.
    */
   private atkShuriken(dir: Phaser.Math.Vector2) {
-    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
+    /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
-    this.play(atkKey);
+    this.playAnim(atkKey);
     const t = this.sTier;
     const empowered = this.nextAtkEmpowered;
     this.nextAtkEmpowered = false;
@@ -1082,7 +1128,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         e.takeDamage(dmg, dir, knock, crit);
         /* v1.3.0 (#에셋통합) — 명중 지점 참격 궤적 + Unity 근접 원음 (마지막 타격 지점 기준) */
-        this.scene.spawnMeleeVfx(e.x, e.y, dir.x, dir.y, crit);
+        /* vc220 — tier 를 넘겨 전직 단계별로 연출이 강해지게 (3차+ 충격파, 4차+ 파편) */
+        this.scene.spawnMeleeVfx(e.x, e.y, dir.x, dir.y, crit, this.sTier);
       }
     }
     if (hits > 0) {
@@ -1326,7 +1373,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // 몸통(스프라이트) 360° 회전 — 검 뻗은 공격 프레임을 돌려 휘두르는 동작
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.scene.tweens.add({
       targets: this,
       rotation: spin * Math.PI * 2,
@@ -1396,7 +1443,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.scene.sfxSkill("arrow", 0.92); // v3.0.24 — 궁수 활발사 (회전베기음 → 활음 교체)
     const count = 3 + t;
     const fireVolley = (n: number, spread: number, dmgMul: number, delay0: number) => {
@@ -1432,7 +1479,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const aim = this.aimDirFree(); // v3.0 — 8방향 자유 조준
     const angle = Math.atan2(aim.y, aim.x);
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.scene.sfxSkill("flame"); // v3.0.24 — 마법사 대관통 볼트 (화염 시전음)
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8); // v3.0.2 — 시전 이펙트
     const t = this.sTier;
@@ -1478,7 +1525,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const count = 5 + (t >= 3 ? 2 : 0);
     const spread = 0.62; // 부채꼴 전체 각 (rad)
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.scene.sfxSkill("knife", 1.05); // v3.0.24 — 도적 단검 다연발
     for (let i = 0; i < count; i++) {
       this.scene.time.delayedCall(60 + i * 55, () => {
@@ -1508,8 +1555,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const dir = this.aimDir();
     const t = this.sTier;
     const hex = this.clsHex();
-    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
-    this.play(atkKey);
+    /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    this.playAnim(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
     this.scene.sfxSkill("quake"); // v3.0.24 — 가디언 성벽 강타 (지진음)
     this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 1.5, hex);
@@ -1557,7 +1605,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const range = 560 + 40 * t;
     const halfW = t >= 4 ? 46 : 26;
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.scene.sfxSkill("arrowpierce"); // v3.0.24 — 스나이퍼 관통 저격음 (샤프 관통 화살)
     // 저격 라인 이펙트 — px 직선 (spawnSlash 대신 씬 그래픽 풀 활용: 라인 + 머즐 플래시)
     const ex = this.x + Math.cos(base) * range;
@@ -1599,7 +1647,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.scene.sfxSkill("wind"); // v3.0.24 — 윈드러너 회오리 화살 (바람음)
     const shots = t >= 3 ? 2 : 1;
     for (let i = 0; i < shots; i++) {
@@ -1630,7 +1678,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(aim);
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.scene.sfxSkill("wind");
     const cols = 3;
     const reach = 210 + 26 * t;
@@ -1684,7 +1732,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.scene.sfxSkill("electron"); // v3.0.24 — 아크메이지 아크 볼트 (전자음)
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8);
     const { dmg, crit } = this.rollDamage(2.4 + 0.45 * t, true); // v1.4.30 (#2) 사다리 0.3→0.45
@@ -1706,7 +1754,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(this.aimDir()); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.scene.sfxSkill("cure"); // v3.0.24 — 세이지 정화의 파동 (성스러운 회복음)
     const wave = (delay: number) => {
       this.scene.time.delayedCall(delay, () => {
@@ -1754,7 +1802,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     this.faceAtk(this.aimDir()); // v1.0.12 — 공격 시트 우향 네이티브 정면화
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.scene.sfxSkill("iainuki"); // v3.0.24 — 어세신 그림자 참수 (발도음)
     const targets = this.nearestTargets(t >= 3 ? 2 : 1, 260);
     if (targets.length === 0) {
@@ -1812,7 +1860,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     const hits = t >= 3 ? 7 : 5;
-    this.play(this.bodyKey("hero-atk"));
+    this.playAnim("hero-atk");
     this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
     this.scene.sfxSkill("swift"); // v3.0.24 — 스와시버클러 연타 난무 (속공 베기)
     let total = 0;
@@ -1858,8 +1906,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hex = this.clsHex();
     /* vc178 — 공격 방향 이펙트 수리: 상/하 조준 시에도 atk-up/down 프레임으로 재생.
      *  기존엔 측면(hero-atk) 고정이라 위/아래로 쏴도 옆을 향해 총을 쏘는 모양이었다. */
-    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
-    this.play(atkKey);
+    /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    this.playAnim(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0);
     const shots = t >= 3 ? 3 : 1;
     const spread = t >= 3 ? 0.07 : 0;
@@ -1912,8 +1961,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const t = this.sTier;
     const hex = this.clsHex();
     /* vc178 — 공격 방향 이펙트 수리: 상/하 조준 시에도 atk-up/down 프레임으로 재생 */
-    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
-    this.play(atkKey);
+    /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    this.playAnim(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0);
     const ang = Math.atan2(dir.y, dir.x);
 
@@ -2351,8 +2401,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const fire = this.aimDirFree(); // vc182 — 대각선 발사
     const t = this.sTier;
     const hex = this.clsHex();
-    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
-    this.play(atkKey);
+    /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    this.playAnim(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0);
     const base = Math.atan2(fire.y, fire.x); // vc182 — 자유 조준
     /* 좌우 2열 × 3문 = 6발, 부채꼴로 퍼진다 */
@@ -2399,8 +2450,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const free = this.aimDirFree(); // vc182 — 대각선 발사
     const t = this.sTier;
     const hex = this.clsHex();
-    const atkKey = dir.y > 0 ? this.bodyKey("hero-atk-down") : dir.y < 0 ? this.bodyKey("hero-atk-up") : this.bodyKey("hero-atk");
-    this.play(atkKey);
+    /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
+    const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
+    this.playAnim(atkKey);
     this.setFlipX(dir.y === 0 && dir.x > 0);
     const base = Math.atan2(free.y, free.x); // vc182 — 자유 조준
     /* 추적 3연 — 가장 가까운 적들을 향해 각각 발사, 없으면 정면 */
@@ -8477,6 +8529,82 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return k;
   }
 
+  /* vc224 — Fantasy Adventure 원본 애니메이션 사용 여부.
+   *
+   *  지적: "에셋 생성하지 말고 다운받아 써라". 기존 hero_* 는 정적 셀 1장을 squash 해
+   *  만든 **합성** 4프레임이었다(run0==run2). FA 팩에 원본 애니메이션이 있으므로
+   *  외형 변형(bodyPrefix: 성별/피부/코스튬/직업)을 쓰지 않는 **기본 외형**에서만
+   *  fa-* 를 재생한다. 변형 시트는 4프레임 합성본뿐이라 그대로 둔다(회귀 방지).
+   *
+   *  전환은 애니메이션 키만 바꾸는 방식이라 판정·물리·쿨다운에 영향이 없다.
+   *  스케일은 FA 내용(18x36)이 hero(26x42)보다 작아 1.17배로 보정한다. */
+  private faReadyCache: boolean | null = null;
+  /** FA 세트를 쓸 수 있는가 (텍스처가 실제로 로드됐고 기본 외형일 때) */
+  faActive(): boolean {
+    if (this.bodyPrefix) return false; // 외형 변형 시트는 기존 경로 유지
+    if (this.faReadyCache === null) {
+      /* vc226 — 아틀라스 키(`fa_p1`)를 본다. 예전엔 개별 프레임 키를 봤는데
+       *  아틀라스로 묶은 뒤 그 키는 텍스처가 아니라 프레임 이름이 됐다. */
+      this.faReadyCache = !!this.scene?.textures?.exists?.("fa_p1");
+    }
+    return this.faReadyCache;
+  }
+
+  /**
+   * vc224 — 이동 애니 재생 판정 단일 지점.
+   *  `!isPlaying || currentAnim.key !== key` 만 보면, 정지 시 setTexture() 로 프레임을
+   *  바꾼 뒤 currentAnim.key 가 남아 play() 가 스킵되어 **run 0프레임에 얼어붙는다**
+   *  (실측: animRun=false, tex=fa_p1_run__0). 현재 텍스처가 대상 애니 프레임인지까지 본다.
+   */
+  private ensureMoveAnim(key: string) {
+    const texNow = this.texture.key;
+    const inAnim = (this.anims.currentAnim?.frames ?? []).some(
+      (f) => (f as { textureKey?: string }).textureKey === texNow
+    );
+    if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key || !inAnim) this.play(key);
+  }
+
+  /** vc224 — 키만 계산(재생 안 함). 걷기 루프처럼 "키 비교 후 재생" 하는 곳에서 쓴다. */
+  private animKey(heroKey: string): string {
+    if (this.faActive()) {
+      const fa = this.faKeyFor(heroKey);
+      if (fa && this.scene.anims.exists(fa)) return fa;
+    }
+    return this.bodyKey(heroKey);
+  }
+
+  /**
+   * vc224 — 애니 재생 단일 지점.
+   *  기존 `this.playAnim("hero-idle")` 를 그대로 두면 FA 를 못 쓴다.
+   *  여기서 bodyKey() → FA 변환을 순서대로 적용한다.
+   *  FA 가 없거나 외형 변형이면 기존 키가 그대로 나온다(폴백 보장).
+   */
+  private playAnim(heroKey: string) {
+    if (this.faActive()) {
+      const fa = this.faKeyFor(heroKey);
+      if (fa && this.scene.anims.exists(fa)) {
+        this.play(fa);
+        return;
+      }
+    }
+    this.play(this.bodyKey(heroKey));
+  }
+
+  /** hero 계열 애니 키를 FA 대응 키로 변환. 대응이 없으면 null */
+  private faKeyFor(k: string): string | null {
+    const map: Record<string, string> = {
+      "hero-idle": "idle",
+      "hero-walk": "run",
+      "hero-walk-side": "run",
+      "hero-walk-up": "run",
+      "hero-atk": "atk",
+      "hero-atk-down": "atkdown",
+      "hero-atk-up": "atkup",
+    };
+    const an = map[k];
+    return an ? `fa-p1-${an}` : null;
+  }
+
   /** 성별+피부(+코스튬) → 스프라이트 시트 전환. 코스튬이 최우선 (SPUM식 완전 교체 — 겹치기 아님)
    *  v1.1.1 (#7 성별 치장 분리) — 같은 코스튬 키도 성별에 따라 여성형(cost_*)/남성형(costm_*) 시트 분기
    *  v1.2.0 (#13 8직업 외형) — 코스튬 미착용 + 2차 이상 직업이면 jobf_/jobm_ 시트로 완전 교체
@@ -8486,6 +8614,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *   2차 8직업 시트만 존재, 3·4차 20직업 시트는 0장). 이제 tools/gen_tier34_bodies.py 가 만든
    *   jobm_/jobf_<3·4차직업> 시트를 우선 사용하고, 없을 때만 2차 루트로 폴백한다.
    *  v1.2.0 (#7 GM 외형) — gmSkin 플래그가 최우선 (GM 계정 전용) */
+  /* vc227 — 시트별 히트박스 오프셋.
+   *
+   *  ponytail-review #1: 종전 오프셋 (38,20) 은 **96x64 hero 캔버스 기준**이었다.
+   *  FA 아틀라스 프레임은 64x85 이고 setScale(1.17) 이 곱해져서,
+   *  같은 38 을 쓰면 바디가 오른쪽으로 44.5px 밀리고(오른쪽 여유 7px)
+   *  세로로도 23.4px 떠서 발밑이 판정 밖이 됐다.
+   *
+   *  계산 근거 (바디 20x44 고정):
+   *    hero : 중앙 (96-20)/2 = 38, 발끝 64-44 = 20   ← 기존 값과 일치
+   *    FA   : 중앙 (64-20)/2 = 22, 발끝 85-44 = 41
+   *
+   *  바디 **크기**는 그대로 둔다. FA 내용(18x36)과 hero 내용(26x42)이 달라도
+   *  20x44 는 두 경우 모두 타당한 판정 크기이고, 크기를 바꾸면 밸런스가 흔들린다.
+   *  고칠 것은 **위치**뿐이다. */
+  private applyBodyOffset() {
+    const fa = this.faActive();
+    this.body!.setOffset(fa ? 22 : 38, fa ? 41 : 20);
+  }
+
   applyBodyLook() {
     const prevAnim = this.anims?.currentAnim?.key ?? "";
     const playing = this.anims?.isPlaying ?? false;
@@ -8526,9 +8673,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     const wantTex = this.bodyKey("hero_idle0");
     if (this.texture.key !== wantTex) this.setTexture(wantTex);
+    /* vc224 — FA 세트 표시 스케일 보정.
+     *  FA p1 내용은 18x36, 기존 hero 는 26x42 다. 그대로 두면 FA 가 약 30% 작게 보인다.
+     *  FA 를 쓸 때만 1.17배(26/18≈1.44 은 폭 기준이므로 높이 기준 42/36=1.17)로 키운다.
+     *  물리 바디(20x44)는 그대로 — 판정은 캐릭터 그림 크기와 독립이어야 한다. */
+    const faOn = this.faActive();
+    this.setScale(faOn ? FA_DISPLAY_SCALE : 1);
+    /* vc227 — 스케일과 함께 바디 오프셋도 다시 잡는다. 둘은 한 몸이다:
+     *  캔버스/스케일이 바뀌면 바디 위치도 같이 바뀌어야 판정이 그림과 맞는다. */
+    this.applyBodyOffset();
     // 진행 중이던 애니를 새 시트로 이어 재생 (프레임 리셋 방지)
     if (prevAnim && playing) {
-      const mapped = this.bodyKey(prevAnim);
+      const mapped = this.animKey(prevAnim);
       if (this.scene.anims.exists(mapped)) this.play(mapped, true);
     }
     this.applyLookTint();
@@ -8635,7 +8791,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setPosition(x, y);
     this.setAlpha(1);
     this.setFlipX(false);
-    this.play(this.bodyKey("hero-idle"));
+    this.playAnim("hero-idle");
     this.scene.emitHud();
   }
 }

@@ -555,7 +555,7 @@ export class BootScene extends Phaser.Scene {
       );
       container.add(
         this.add
-          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "인피니트보석 : 다섯 왕국", {
+          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "하울르스톤 : 다섯 왕국", {
             fontFamily: "Galmuri11, sans-serif",
             fontSize: `${Math.max(12, Math.round(W * 0.02))}px`,
             color: "#cbb88a",
@@ -664,11 +664,28 @@ export class BootScene extends Phaser.Scene {
     this.load.on("loaderror", this.onLoadError as never);
     /* v1.0.20 — 로딩 UI를 에셋 로드 시작 "직전"에 띄운다 (검은 화면 구간 0) */
     this.buildLoadingUi();
+    /* vc224 — 로더 병렬도 제한.
+     *  헤드리스 검증에서 1,678개 중 32개(1.9%)에서 무한 정체가 재현됐다(실패 0건, pending 1646).
+     *  pending 파일 state 가 전부 LOADING 으로 남아 있어 동시 요청이 브라우저 커넥션 한도에
+     *  걸린 것으로 보인다. Phaser 기본값 4 → 2 로 낮춰 정체를 회피한다.
+     *  로드 총량이 같으므로 완료 시간은 거의 동일하고, 대신 멈추지 않는다. */
+    this.load.maxParallelDownloads = 2;
     this.load.setPath("assets");
     /* vc206 (지시 #11) — webp 우선 로드 후, PNG 원본이 있는 타일은 PNG 로 덮어 로드한다.
      *  Phaser 는 같은 키를 두 번 큐잉하면 나중 것이 이기므로 PNG 가 최종 텍스처가 된다.
      *  (webp 5종이 PNG 대비 색이 40~93% 뭉개져 있어 "종이 쪼가리"로 보였다) */
     for (const key of ASSET_LIST) this.load.image(key, `${key}.webp`);
+    /* vc226 (최적화) — FA 프레임을 **아틀라스 1장**으로 로드한다.
+     *
+     *  종전: 268개 개별 `load.image` = HTTP 요청 268개(부팅 요청의 26%).
+     *  이제: `fa/p1.png`(87KB) + `fa/p1.json` 2개 요청.
+     *
+     *  `fa/p1.json` 은 프레임 이름을 **원래 키 그대로**(`fa_p1_idle__0`) 담고 있다.
+     *  그래서 textures.ts 는 `{ key: "fa_p1", frame: "fa_p1_idle__0" }` 처럼 참조한다.
+     *
+     *  p2/p3 은 로드하지 않는다 — 참조하는 코드가 0곳이라 180프레임이 버려지고 있었다.
+     *  아트는 `public/assets/fa/p2·p3` 에 남아 있고, 캐릭터 선택에 붙일 때 로드하면 된다. */
+    this.load.atlas("fa_p1", "fa/p1.png", "fa/p1.json");
     for (const key of TILE_PNG_KEYS) this.load.image(key, `${key}.png`);
     /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 이펙트 6종.
      *  ASSET_LIST는 `assets/<key>.webp` 평면 경로를 쓰므로 하위 폴더(vfx/)는 별도 로드. */
@@ -782,12 +799,32 @@ export class BootScene extends Phaser.Scene {
     for (const k of ["vfx2_boom", "vfx2_blood"]) this.load.image(k, `${k}.webp`);
     /* v3.0.11 — 토네이도 전용 스프라이트 (gen_tornado_fx.py — 스카이로드 폭풍 소용돌이/천공의 폭풍) */
     this.load.spritesheet("fx_tornado", "fx_tornado.webp", { frameWidth: 64, frameHeight: 64 });
+    /* vc213 (#2 유령 애니메이션 복원) — 심연 유령(wraith) 전용 10프레임 시트.
+     *  기존 wraith_* 는 정적 셀 1장을 스쿼시 사이클로 복제한 것이라 run 4프레임 중
+     *  고유 프레임이 3개뿐이었고("제자리 껑충"), 사용자는 이를 "4프레임이 한 장에
+     *  다 들어간 아틀라스"로 인식했다. 이 시트는 OpenGameArt ghost_balmer(25x35,
+     *  10프레임 전부 고유 · 꼬리 물결 실제 모션)를 무손실 PNG로 재조립한 것이다. */
+    this.load.spritesheet("wraith_spirit", "anim/wraith_spirit.png", { frameWidth: 25, frameHeight: 35 });
     /* v4.7.0 — Cainos 상자 개봉 애니 (가방 개봉/BM 구매/광고 상자 공용 연출) */
     this.load.spritesheet("chest_anim", "chest_anim.webp", { frameWidth: 64, frameHeight: 64 });
     // 지형 전환 타일 5세트 x 9종 (build_tile_transitions.py — 타일맵 경계 부자연 개선)
     for (const s of TX_SETS) for (const k of TX_KINDS) this.load.image(`tx_${s}_${k}`, `tx_${s}_${k}.webp`);
     this.load.setPath("assets/audio");
     for (const key of AUDIO_LIST) this.load.audio(key, `${key}.ogg`);
+    /* vc213 (#3·#5·#6 타일맵) — Kenney Tiny Dungeon/Tiny Town (CC0, 16px · 12x11 = 192x176)
+     *  tilemap_packed.png 는 **간격 없는** 팩 시트다(192 = 12*16, 176 = 11*16 실측).
+     *  1px 간격이 있는 원본은 tilemap.png(203x186)이며 우리는 packed 를 쓴다 —
+     *  margin/spacing 을 주면 11x10 으로 잘려 마지막 행/열 타일이 사라진다. */
+    this.load.setPath("assets/tiles");
+    this.load.spritesheet("kenney_tinydungeon", "kenney_tinydungeon.png", {
+      frameWidth: 16,
+      frameHeight: 16,
+    });
+    this.load.spritesheet("kenney_tinytown", "kenney_tinytown.png", {
+      frameWidth: 16,
+      frameHeight: 16,
+    });
+    this.load.setPath("assets");
     /* v1.3.0 (#에셋통합) — Drive 팩 VFX 사운드 48종 + 텍스처 58종 (scripts/prep_drive_assets.py) */
     this.load.setPath("assets/vfx2");
     for (const key of VFX3_LIST) this.load.image(key, `${key}.png`);

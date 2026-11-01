@@ -1,0 +1,132 @@
+{
+ "source": "SPUM (Unity Asset Store, 유저 구매분) — Unity 프리팹 파츠 합성",
+ "tool": "scripts/spum_compose.py (경로만 현재 환경에 맞춰 수정)",
+ "items": [
+  {
+   "file": "npcbody_knight.png",
+   "from": "Human_639234.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "d2eb3d8c57f40381"
+  },
+  {
+   "file": "npcbody_villager_m.png",
+   "from": "Human_638389.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "570c331825c3ebdc"
+  },
+  {
+   "file": "npcbody_villager_f.png",
+   "from": "Human_639662.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "61f96fd37e185a5c"
+  },
+  {
+   "file": "npcbody_elf.png",
+   "from": "Human_639316.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "56943959bffb571b"
+  },
+  {
+   "file": "npcbody_mage.png",
+   "from": "Human_639152.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "246b663e5555f379"
+  },
+  {
+   "file": "npcbody_devil.png",
+   "from": "Human_638814.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "1489a983f7e9ecb4"
+  },
+  {
+   "file": "npcbody_smith.png",
+   "from": "Human_639748.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "ea49ddec0c7b8d9e"
+  },
+  {
+   "file": "npcbody_miner.png",
+   "from": "Human_639580.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "cc1281cf7c2ecfa8"
+  },
+  {
+   "file": "npcbody_fisher.png",
+   "from": "Human_638897.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "1681a9d0a4db75ce"
+  },
+  {
+   "file": "npcbody_scout.png",
+   "from": "Human_639069.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "2ed7d5e52a1d06f7"
+  },
+  {
+   "file": "npcbody_mystic.png",
+   "from": "Human_638558.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "8515dd37a89e186b"
+  },
+  {
+   "file": "npcbody_butler.png",
+   "from": "Human_639405.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "5bb4696882af0628"
+  },
+  {
+   "file": "npcbody_priest.png",
+   "from": "Human_638731.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "dbb2f36e74c280b8"
+  },
+  {
+   "file": "npcbody_merchant.png",
+   "from": "Human_638643.png",
+   "size": [
+    96,
+    96
+   ],
+   "sha256": "9ce1eaeeb05c4c81"
+  }
+ ]
+}

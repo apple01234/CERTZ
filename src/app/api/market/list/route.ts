@@ -3,6 +3,7 @@
  *  등록: 로그인 필수 · 동시 3칸 · 가격 1G~10,000,000G · 보스 드롭 화이트리스트 +
  *  클라우드 세이브 실보유 검증(미보유 등록 → 복제 익스플로잇 차단 계승).
  */
+import { saveDataOf, saveCharsOf, packedData } from "@/lib/saveAccess";
 import { NextRequest } from "next/server";
 import { loadDb, mutateDb } from "@/lib/ghdb";
 import { currentUser, json, marketSnapshot, options, ownedCountOf, ownsListableItem, rateLimit, audit, deductEscrow, MARKET_MAX_LISTINGS } from "@/lib/sapi";
@@ -42,9 +43,15 @@ export async function POST(req: NextRequest) {
       /* v1.4.41 (감사 #1) — 등록분을 세이브 owned 에서 **실제로 차감**한다(에스크로).
        *  종전엔 검증만 하고 빼지 않아, 등록해도 물건이 그대로 남았다 → 계정 2개로 골드 무한 복제.
        *  이 차감이 있으면 등록된 물건은 취소·구매 전까지 세이브에서 사라지므로 복제가 성립하지 않는다. */
+      /* vc229 — 압축 세이브 대응: 풀어서 차감하고 압축해 되돌린다. */
       const saveRec = fdb.saves[me.id];
-      if (!saveRec?.data) return { status: 403, body: { error: "클라우드 세이브를 먼저 동기화해 주세요" } };
-      deductEscrow(saveRec.data, { [itemKey]: qty });
+      const plain = saveDataOf(saveRec);
+      if (!plain || !saveRec) return { status: 403, body: { error: "클라우드 세이브를 먼저 동기화해 주세요" } };
+      deductEscrow(plain, { [itemKey]: qty });
+      const ks = saveCharsOf(saveRec);
+      saveRec.data = packedData(plain) as Record<string, unknown>;
+      if (ks) saveRec.chars = packedData(ks) as Record<string, Record<string, unknown>>;
+      saveRec.packed = true;
       saveRec.updatedAt = Date.now();
       const id = `m${fdb.market.nextId++}`;
       fdb.market.listings[id] = { id, seller: me.id, sellerName: me.name, itemKey, up, price, qty, ts: Date.now() };

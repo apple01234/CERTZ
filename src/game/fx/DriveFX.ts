@@ -30,19 +30,24 @@ export class DriveFX {
   }
 
   /** 근접 참격 궤적 — Matthew Guz 5-Slash (방향 회전 + 스케일 펄스). angle: 라디안(진행 방향) */
-  slashArc(x: number, y: number, angle: number, tint = 0xffffff, big = false) {
+  slashArc(x: number, y: number, angle: number, tint = 0xffffff, big = false, scaleMul = 1) {
     const key = big ? "vfx_slash_m" : "vfx_slash";
+    /* vc220 — scaleMul: 전직 tier 에 따라 궤적 크기를 키운다(1차 대비 4차 1.3배).
+     *  종전엔 big 여부만 있어 4차 검사도 1차와 같은 크기로 그려졌다. */
+    const sm = Math.max(0.2, Math.min(3, scaleMul));
+    const from = (big ? 1.15 : 0.72) * sm;
+    const to = (big ? 1.5 : 0.95) * sm;
     const im = this.scene.add
       .image(x, y, key)
       .setDepth(25)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setTint(tint)
       .setRotation(angle)
-      .setScale(big ? 1.15 : 0.72)
+      .setScale(from)
       .setAlpha(0.95);
     this.scene.tweens.add({
       targets: im,
-      scale: big ? 1.5 : 0.95,
+      scale: to,
       alpha: 0,
       duration: 200,
       ease: "Quad.out",

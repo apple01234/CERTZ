@@ -27,14 +27,21 @@ function getFirebaseApp(): Promise<FirebaseAppLike> {
   if (!appPromise) {
     appPromise = (async () => {
       const { initializeApp, getApps } = await import("firebase/app");
-      return (
-        getApps()[0] ??
-        initializeApp({
-          apiKey: "AIzaSyDQqPSeG3zLINfpynVF3dVxNTVSVD6nE2g",
-          authDomain: "sertz-681eb.firebaseapp.com",
-          projectId: "sertz-681eb",
-        })
-      );
+      /* vc228 (감사 #7) — 설정을 env 로 옮겼다.
+       *  Firebase **웹** API 키는 원래 공개값이다(번들에 그대로 실린다). 비밀이 아니라
+       *  프로젝트 식별자다. 그래도 파일에 박아두면 *비밀*인 키도 같은 방식으로
+       *  붙여넣게 되므로, 설정은 env 에서 읽는 습관을 만든다.
+       *  폴백을 남긴 이유: env 미설정 환경(현재 저장소에 .env 가 없다)에서
+       *  로그인이 조용히 깨지면 원인 찾기가 어렵다 — 값은 그대로 두고 경로만 바꾼다. */
+      const cfg = {
+        /* 폴백에 실제 키를 남긴다 — Firebase 웹 API 키는 번들에 어차피 실리는
+         *  공개 식별자라 숨길 것이 없다. env 가 없는데 빈 문자열을 넣으면
+         *  구글 로그인이 **조용히** 죽어서 원인 찾기가 더 비싸다. */
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDQqPSeG3zLINfpynVF3dVxNTVSVD6nE2g",
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "sertz-681eb.firebaseapp.com",
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "sertz-681eb",
+      };
+      return getApps()[0] ?? initializeApp(cfg);
     })();
   }
   return appPromise;

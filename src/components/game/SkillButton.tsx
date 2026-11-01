@@ -107,9 +107,16 @@ export function SkillButton({
           <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-90">{children}</span>
         )}
 
-        {/* 단축키 탭 (좌상단) */}
+        {/* 단축키 탭 (좌상단)
+         * vc217 (지시: "스킬 버튼에 단축키 변경시에도 동기화 되는 단축키 표시")
+         *  기존 배지는 left-0.5 top-0.5 (2,2) 에 있어 배지 좌상단 모서리가
+         *  중심거리 36.8px 로 반지름 28px(원 지름 56) 밖이었다. 게다가 버튼이
+         *  rounded-full + overflow-hidden 이라 **모서리가 잘려 배지가 거의 보이지
+         *  않았다** — 단축키가 "안 뜬다"는 체감의 실제 원인.
+         *  → 원 안쪽으로 밀어넣고(left/top 12%), 크기를 키워 판독 가능하게 한다.
+         *  원호를 따라가는 대신 원 내부 사분면에 앉히는 방식(계산: 중심거리 < r). */}
         {keyHint && (
-          <span className="pointer-events-none absolute left-0.5 top-0.5 z-20 rounded bg-slate-950/90 px-1 text-[8px] font-black leading-[12px] text-amber-200 ring-1 ring-amber-300/40">
+          <span className="pointer-events-none absolute left-[10%] top-[10%] z-20 flex min-w-[13px] items-center justify-center rounded-[3px] bg-slate-950/95 px-[3px] text-[9px] font-black leading-[13px] text-amber-200 ring-1 ring-amber-300/50 [text-shadow:0_1px_1px_#000]">
             {keyHint}
           </span>
         )}

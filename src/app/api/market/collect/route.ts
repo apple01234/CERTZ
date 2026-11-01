@@ -10,6 +10,7 @@
  *
  * vc205 (감사 #4) — 클로저 부수효과 제거(반환값 기반).
  */
+import { mutateSaveData, saveDataOf } from "@/lib/saveAccess";
 import { NextRequest } from "next/server";
 import { loadDb, mutateDb } from "@/lib/ghdb";
 import { currentUser, json, marketSnapshot, options, rateLimit, audit } from "@/lib/sapi";
@@ -37,12 +38,16 @@ export async function POST(req: NextRequest) {
       }
 
       /* vc205 (감사 #17) — 서버가 세이브에 직접 지급 */
+      /* vc229 — 압축 세이브 대응: 풀어서 더하고 압축해 되돌린다. */
       const rec = fdb.saves[me.id];
-      if (!rec?.data) return { status: 409, body: { error: "클라우드 세이브를 먼저 동기화해 주세요" } };
-      const cur = typeof rec.data.gold === "number" && Number.isFinite(rec.data.gold) ? rec.data.gold : 0;
-      const next = cur + gold;
-      rec.data.gold = next;
-      rec.updatedAt = Date.now();
+      if (!saveDataOf(rec)) return { status: 409, body: { error: "클라우드 세이브를 먼저 동기화해 주세요" } };
+      let next = 0;
+      mutateSaveData(rec, (d) => {
+        const cur = typeof d.gold === "number" && Number.isFinite(d.gold) ? d.gold : 0;
+        next = cur + gold;
+        d.gold = next;
+        return true;
+      });
       fdb.payouts[me.id] = { gold: 0, count: 0 };
 
       audit("market_collect", { ip: "serverless", uid: me.id, gold, serverGold: next });

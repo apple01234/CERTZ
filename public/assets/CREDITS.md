@@ -221,8 +221,16 @@
   · 레벨업 중앙 스타 플래시(pfx_star), 보스 등장 룬 마법진(pfx_runic)/오라 광선(pfx_aura)
 - FireworksEffect2D (유료 구매) — 네온 불꽃놀이 텍스처: /assets/pfx_fw_b·pfx_fw_y
   · 레벨업 2색 불꽃놀이 폭발 (중력 낙하 궤적)
-- 미사용 보관: SPUM(캐릭터 제작은 Unity 에디터 필요 — 웹/Phaser 직접 사용 불가),
-  Sci-Fi Irregular Frames(스타일 불일치), CFXR 잉걸불/해골 등 예비 텍스처
+- SPUM (Unity Asset Store, 유저 구매분 — `_assets_in/x2/SPUM`): **복원 완료 (vc213, #1)**
+  · PR #1 지적 "NPC 전부 SPUM 에셋이었는데 왜 바꿈?" 에 대한 조치.
+  · 유니티 없이도 쓸 수 있는 경로를 확보했다: `scripts/spum_compose.py` 가 프리팹(Unity YAML)의
+    Transform 계층·SpriteRenderer z-order·스프라이트 피벗(PPU=32)을 그대로 해석해
+    PIL 레이어 합성으로 완성 캐릭터를 렌더한다. 즉 "웹/Phaser 직접 사용 불가"는
+    런타임 로딩이 불가하다는 뜻이고, **정적 렌더는 가능**하다.
+  · 현재 `public/assets/npcbody/*.png` 14종이 SPUM Human 프리팹 렌더본이다
+    (배정 내역: `docs/assets_license/spum_npc_restore.json`).
+  · 재생성: `python3 scripts/spum_compose.py --race Human` (ROOT/OUT 상단 상수만 로컬 경로로 수정)
+- 미사용 보관: Sci-Fi Irregular Frames(스타일 불일치), CFXR 잉걸불/해골 등 예비 텍스처
   (upload/ 원본 보존 — 추출 경로: scripts/_unity_extract/)
 
 ## v1.0.10 — Vefects (Unity 3D VFX, 유료 — 유저 업로드)
@@ -250,6 +258,23 @@
   · acc_* (왕관/리본/후광/날개 5종): 자체 제작 픽셀 아트
   · 상위 라이선스: Mystic Woods 파생물 — 위 Mystic Woods 항목의 조건을 따름
 - SPUM (Unity Asset Store, 유저 구매분 upload/SPUM.7z): 신규 파생물 없음 — 기존 npc_* 초상화만 사용
+
+## vc213 — CC0 타일셋 · 유령 애니메이션 (신규, 라이선스=CC0 1.0)
+
+PR #2/3/5/6 지적(유령 애니메이션·타일맵) 해결용으로 도입. 전부 **CC0 1.0 (퍼블릭 도메인)** —
+출처 표기는 권장 사항이며 법적 의무는 아니다. 원본·라이선스 사본: `assets_dl/` · `docs/assets_license/`.
+
+| 파일 | 원본 | 라이선스 | 규격 |
+|---|---|---|---|
+| `public/assets/anim/wraith_spirit.png` | Balmer, "Skeleton and Ghost spritesheets (Ars Notoria)" | CC0 1.0 | 25×35 × 10프레임 (5×2 → 10×1 재배열, PNG 무손실) |
+| `public/assets/tiles/kenney_tinydungeon.png` | Kenney, "Tiny Dungeon 1.0" (`tilemap_packed.png`) | CC0 1.0 | 16px, 간격 없음, 12×11 = 132타일 (192×176) |
+| `public/assets/tiles/kenney_tinytown.png` | Kenney, "Tiny Town 1.1" (`tilemap_packed.png`) | CC0 1.0 | 16px, 간격 없음, 12×11 = 132타일 (192×176) |
+
+추가로 확보했으나 미적용(후속 후보): Kenney Roguelike 1700+ (16px, 968×526),
+ArMM1998 Zelda-like overworld/cave/indoors/objects (16px, CC0),
+Buch outdoor 32px, Classic RPG Tileset 16px, ghost_11variations(11색 × 6프레임),
+ghostIce_48x32(3동작×6프레임), wraith 21프레임 HD(150×159) 등 35종.
+전체 목록·출처 URL·해상도·sha256: `assets_dl/assets_manifest.json`, `assets_dl/README_ASSETS.md`.
 
 ## vc204 — 2D 타일 후보 팩 (미적용, 소싱만 완료)
 

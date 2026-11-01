@@ -361,7 +361,12 @@ export function TouchControls({
                 icon={s.icon}
                 compact={!!sm}
                 tutGlow={s.key === "s1" && !!tutDom.skill} /* v1.0.13 피드백#17 — 튜토리얼 ⑤는 첫 스킬(회전베기) 대상 */
-                keyHint={isTouch ? undefined : keyLabel(s.hint)} /* vc149 #4 터치 기기엔 키보드 힌트 무의미 · v1.0.17 화살표 코드 기호 표기 */
+                /* vc217 — 터치에서도 표시. 종전엔 isTouch 면 무조건 숨겼는데,
+                 *  pointer:coarse 판정은 **블루투스 키보드를 붙인 태블릿/폰도 포함**한다.
+                 *  그 기기에서는 키가 실제로 동작하는데 힌트만 사라져 "단축키가
+                 *  동기화 안 된다"처럼 보였다. 키보드가 없으면 배지가 보일 뿐 손해가 없으므로
+                 *  기기와 무관하게 키를 노출한다(사용자 지시: 단축키를 표시). */
+                keyHint={keyLabel(s.hint)}
                 onDown={() => EventBus.emit(s.emit as "input:skill1")}
               />
               </div>
@@ -379,7 +384,7 @@ export function TouchControls({
                 icon={skills.s5Icon}
                 ult
                 compact={!!sm}
-                keyHint={isTouch ? undefined : keyLabel(km.skill5)}
+                keyHint={keyLabel(km.skill5)} /* vc217 — 터치에서도 표시 */
                 onDown={() => EventBus.emit("input:skill5")}
               >
                 <Star size={18} />
@@ -404,7 +409,7 @@ export function TouchControls({
                 icon={skills.s5bIcon ?? skills.s5Icon}
                 ult2
                 compact={!!sm}
-                keyHint={isTouch ? undefined : keyLabel(km.skill5b)}
+                keyHint={keyLabel(km.skill5b)} /* vc217 — 터치에서도 표시 */
                 onDown={() => EventBus.emit("input:skill5b")}
               >
                 <Sparkles size={18} />
@@ -416,13 +421,21 @@ export function TouchControls({
         {/* [공격] — 행 끝 대형 원형 버튼 (현행 스타일·크기 유지) */}
         <button
           aria-label="공격"
-          className="pointer-events-auto flex touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
+          className="pointer-events-auto relative flex touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
           style={{ width: ATK, height: ATK }}
           onPointerDown={(e) => {
             e.preventDefault();
             EventBus.emit("input:attack");
           }}
         >
+          {/* vc217 — 공격 단축키 배지. 종전엔 공격 버튼에 키 표시가 아예 없어
+           *  "스킬엔 있는데 공격은 왜 없나"가 불일치로 보였다. 스킬과 같은 규칙
+           *  (원 안쪽 10% 지점)으로 맞추고, 키맵 변경 시 함께 갱신된다. */}
+          {keyLabel(km.attack) && (
+            <span className="pointer-events-none absolute left-[10%] top-[10%] z-20 flex min-w-[13px] items-center justify-center rounded-[3px] bg-slate-950/95 px-[3px] text-[9px] font-black leading-[13px] text-rose-200 ring-1 ring-rose-300/50 [text-shadow:0_1px_1px_#000]">
+              {keyLabel(km.attack)}
+            </span>
+          )}
           <div className="flex flex-col items-center">
             {/* vc193 (버그 #2 "기본 공격키&상호작용키 등 저런 개짜치는 ai가 만든듯한 UI 전부 에셋 UI로 바꿔") —
              *  종전엔 lucide <Swords> 벡터 + CSS 그라데이션으로 버튼을 그려서

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { shakeFactor } from "./shakeScale"; // vc222 — 흔들림 강도(접근성)
 
 /**
  * 타격감 통합 모듈 (Hit Stop + Camera Shake)
@@ -24,6 +25,16 @@ export type ImpactKind = keyof typeof IMPACT_PROFILES;
 
 export class ImpactFX {
   private frozen = false;
+  /** vc221 — 히트스톱 세대/종료 시각. 최신 호출만 resume 하도록 판별한다. */
+  private hitStopSeq = 0;
+  private hitStopUntil = 0;
+
+  /** vc221 — 현재 히트스톱 종료 시각(time.now 기준). 씬의 물리 자가치유 블록이
+   *  "정지가 히트스톱 때문인지" 판정하는 데 쓴다. 이 값을 노출하지 않으면
+   *  자가치유가 다음 프레임에 히트스톱을 잘라버린다. */
+  get hitStopEndsAt(): number {
+    return this.hitStopUntil;
+  }
 
   constructor(private scene: Phaser.Scene) {}
 
@@ -34,12 +45,28 @@ export class ImpactFX {
    *  기존엔 무조건 resume() → 대사 중 히트스톱이 물리를 깨워 정지 규약을 깨고,
    *  씬 전환 경합 시 정지/재개 순서가 어긋나면 "조작 죽은 멈춤"으로 이어졌다.
    */
+  /* vc221 (`agd-game-feel`) — 겹침 버그 수정.
+   *
+   *  종전 주석은 "연타로 여러 번 걸려도 한 번만 정지, 정지 중 새 요청은 무시"라고
+   *  의도했지만, `if (this.frozen || ms <= 0) return;` 는 **두 번째 타격의 지속시간을
+   *  통째로 버린다.** 30ms 간격 2연타에서 첫 55ms 타이머가 발동하면 두 번째 freeze 는
+   *  이미 사라진 뒤라 타격감이 두 번째 타에서 끊긴다.
+   *
+   *  스킬 처방: 세대 ID 로 **최신 호출만** 복원하고, 지속시간은 **최댓값**을 쓴다.
+   *  (남은 시간을 더하면 연타 폭격에서 무한 연장된다) */
   hitStop(ms: number) {
-    if (this.frozen || ms <= 0) return;
+    if (ms <= 0) return;
     const world = this.scene.physics.world;
-    this.frozen = true;
-    world.pause();
-    this.scene.time.delayedCall(ms, () => {
+    const now = this.scene.time.now;
+    const target = Math.max(this.hitStopUntil, now + ms);
+    this.hitStopUntil = target;
+    const myId = ++this.hitStopSeq;
+    if (!this.frozen) {
+      this.frozen = true;
+      world.pause();
+    }
+    this.scene.time.delayedCall(Math.max(0, target - now), () => {
+      if (myId !== this.hitStopSeq) return; // 최신 호출이 소유권을 갖는다
       this.frozen = false;
       const s = this.scene as unknown as { dialoguing?: boolean; transitioning?: boolean };
       if (s.dialoguing || s.transitioning) return; // 정지한 주인(대사/전환)이 회수 — 무단 재개 금지
@@ -66,6 +93,12 @@ export class ImpactFX {
     if (ms <= 0 || intensity <= 0) return;
     const s = this.scene as unknown as { fxLevel?: number };
     if (s.fxLevel === 0) return;
+
+    /* vc222 — 접근성 배율. "끔"이면 0 이 되어 연출을 건너뛴다.
+     *  히트스톱·사운드는 건드리지 않는다(타격감의 다른 축은 유지). */
+    const k = shakeFactor();
+    if (k <= 0) return;
+    intensity *= k;
 
     const fx = this.scene.cameras.main.shakeEffect as
       | { isRunning?: boolean; intensity?: { x: number }; duration?: number; _elapsed?: number }

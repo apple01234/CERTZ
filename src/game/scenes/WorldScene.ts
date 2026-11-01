@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { createGameState, type GameState } from "../state/gameState";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { resolveGroundTile } from "../tileThemes"; // vc204 — 지역 지면 → 타일 단일 매핑
@@ -22,6 +23,9 @@ import { Lighting, ambientFor } from "../fx/Lighting";
 import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
 import { Pet } from "../entities/Pet";
 import { EventBus, type QuestState, type InteractState, type QuestLogState, type RewardPopupState } from "../../components/game/EventBus";
+import { ALL_KEYS, fillKeyObjects } from "./input/keyRegistration";
+import { notice } from "../fx/Notice";
+import { SkillInputBuffer, type SkillCaster, type SkillId } from "./input/skillBuffer";
 import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱 레이어
 import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
 import { createSimRunner, SIM_STEP_MS } from "../sim/fixedStep"; // vc183 — 20Hz 고정 틱 시뮬레이션
@@ -199,6 +203,16 @@ export class WorldScene extends Phaser.Scene {
   private weatherSnow: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   /* v1.0.13 — 마을 벚꽃 날림 제거 (유저 지시: "벚꽃 그냥 없애") — 날씨는 니플헤임 눈보라만 유지 */
 
+  /* vc226 — 상태 정의·미러 (state/gameState.ts).
+   *
+   *  ⚠️ **아직 신뢰 대상이 아니다.** 이 미러는 `restoreFromSave` 직후 한 번만 채워지고,
+   *  그 뒤로 씬 필드가 바뀌어도 따라가지 않는다. 지금 읽는 코드는 0곳이며
+   *  그 상태를 유지해야 한다 — 여기서 값을 읽으면 저장 이후 변경분이 반영되지 않아
+   *  표시가 어긋난다(`ponytail-review` #3).
+   *
+   *  `syncStateMirror` 로 채우고, 실제 사용은 2단계(buildSave/restoreFromSave 이전)
+   *  이후에 한다. 그 전까지는 "정의만 있는 상태"로 취급한다. */
+  private readonly state: GameState = createGameState();
   questIdx = 0;
   huntCount = 0;
   totalKills = 0;
@@ -238,6 +252,8 @@ export class WorldScene extends Phaser.Scene {
   /** v1.1.4 (#개편 입력버퍼링) — 대기 중인 스킬 발동. update에서 idle이 되는 순간 실행된다.
    *  setupInput이 실제 구현을 주입한다(입력 이벤트는 거기서 등록되므로 버퍼 상태를 그 스코프에 둔다). */
   private flushBufferedSkill: () => void = () => {};
+  /* vc225 — 스킬 입력 버퍼 (기존 setupInput 지역변수 bufferedSkill 대체) */
+  private readonly skillBuf = new SkillInputBuffer();
   /** v1.3.1 (#8) — 앱 전환 복귀 자가치유 핸들러 (cleanup에서 해제) */
   private onVisChange: (() => void) | null = null;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -1083,6 +1099,142 @@ export class WorldScene extends Phaser.Scene {
   /** vc182 (지시 #19 코드 최적화) — 세이브 복원을 createInner에서 분리.
    *  createInner에 318줄짜리 if(savedPlayer){...} 블록이 인라인돼 있어
    *  초기화 흐름을 읽기 어려웠다. 로직은 한 줄도 바꾸지 않고 그대로 옮겼다. */
+  /* vc226 — GameState 미러.
+   *
+   *  목적: 83개 상태 필드를 `state/gameState.ts` 한 곳에 정의하고, 씬 필드와
+   *  **동기화**한다. 지금은 아무도 읽지 않으므로 동작 변화가 없다.
+   *
+   *  왜 미러인가: 필드를 `this.state.x` 로 일괄 치환하면 17,000줄에 걸친 수백 곳이
+   *  바뀌고 한 곳만 틀려도 진행도가 조용히 깨진다. 그래서 순서를 이렇게 나눈다.
+   *    1단계(지금) — 정의 + 미러. 동작 변화 0
+   *    2단계 — buildSave/restoreFromSave 를 GameState 기준으로 이전
+   *    3단계 — 읽는 쪽을 파일 단위로 조금씩 치환
+   *
+   *  배열/객체는 **얕은 복사**로 넣는다. 참조를 그대로 넘기면 나중에 씬이
+   *  새 배열을 할당했을 때 미러가 옛 배열을 붙들고 있게 된다. */
+  private syncStateMirror() {
+    const s = this.state;
+    s.questIdx = this.questIdx;
+    s.savedQuestIdx = { ...this.savedQuestIdx };
+    s.huntCount = this.huntCount;
+    s.monsterKills = { ...this.monsterKills };
+    s.fragmentsFound = { ...this.fragmentsFound };
+    s.cleared = this.cleared;
+    s.dlcTalked = this.dlcTalked;
+
+    s.repeatOn = this.repeatOn;
+    s.repeatNeed = this.repeatNeed;
+    s.migratedTutSeen = this.migratedTutSeen;
+
+    s.jobStory = this.jobStory ? { ...this.jobStory } : null;
+    s.jobStoryDone = [...this.jobStoryDone];
+    s.pendingJobClass = this.pendingJobClass;
+    s.pendingPonyRefund = this.pendingPonyRefund;
+
+    s.figures = [...this.figures];
+    s.shards = this.shards;
+    s.gachaTickets = this.gachaTickets;
+    s.badges = [...this.badges];
+    s.badgeSlots = [...this.badgeSlots];
+    s.freeGachaAt = this.freeGachaAt;
+    s.starterPackBought = this.starterPackBought;
+
+    s.runes = { ...this.runes };
+    s.runeSlots = [...this.runeSlots];
+    s.constel = [...this.constel];
+    s.unlockedSets = new Set(this.unlockedSets);
+
+    s.attendLast = this.attendLast;
+    s.attendCount = this.attendCount;
+    s.daily = {
+      date: this.dailyDate,
+      hunts: this.dailyHunts,
+      gate: this.dailyGate,
+      closet: this.dailyCloset,
+      farms: this.dailyFarms,
+      bosses: this.dailyBosses,
+      praid: this.dailyPraid,
+      claimed: [...this.dailyClaimed],
+      ads: this.dailyAds,
+      adChest: this.dailyAdChest,
+      adDrop: this.dailyAdDrop,
+    };
+
+    s.couponsUsed = [...this.couponsUsed];
+
+    s.pass = {
+      season: this.passSeason,
+      xp: this.passXp,
+      prem: this.passPrem,
+      claimedFree: [...this.passClaimedF],
+      claimedPrem: [...this.passClaimedP],
+      subUntil: this.subUntil,
+    };
+
+    s.missions = {
+      day: this.missionDay,
+      week: this.missionWeek,
+      daily: { ...this.missionD },
+      weekly: { ...this.missionW },
+      claimedDaily: [...this.missionCd],
+      claimedWeekly: [...this.missionCw],
+    };
+
+    s.tickets = {
+      date: this.ticketDate,
+      gate: this.ticketGate,
+      closet: this.ticketCloset,
+      refills: this.ticketRefills,
+    };
+
+    s.achClaimed = [...this.achClaimed];
+
+    s.bossKillCount = this.bossKillCount;
+    s.stat = {
+      deaths: this.statDeaths,
+      bestHit: this.statBestHit,
+      bestLv: this.statBestLv,
+      savedSec: this.statSavedSec,
+      chaosKills: this.chaosKillCount,
+      invasionKills: this.invasionKillCount,
+    };
+    s.bossDiff = this.bossDiff;
+    s.gateBest = this.gateBest;
+    s.closetBest = this.closetBest;
+    s.gateStars = [...this.gateStars];
+
+    s.parkCoins = this.parkCoins;
+    s.parkBest = this.parkBest;
+    s.parkTickets = { ...this.parkTickets };
+
+    s.inf = {
+      towerBest: this.inf.towerBest,
+      closetTier: this.inf.closetTier,
+      trialDone: this.inf.trialDone,
+      rebirths: this.inf.rebirths,
+      mats: { ...this.inf.mats },
+      petLv: this.inf.petLv,
+      petExp: this.inf.petExp,
+      abyss: this.inf.abyss,
+      orbs: { ...this.inf.orbs },
+      rebirthEss: this.inf.rebirthEss,
+      rebirthLog: this.inf.rebirthLog ? [...this.inf.rebirthLog] : undefined,
+    };
+
+    s.seenSet = new Set(this.seenSet);
+    s.visited = new Set(this.visited);
+
+    s.autoHunt = this.autoHunt;
+    s.autoAlloc = this.autoAlloc;
+
+    s.acceptedQuests = { ...this.acceptedQuests };
+    s.trackedStage = this.trackedStage;
+
+    s.playerTitle = this.playerTitle;
+    s.chibiQuests = { ...this.chibiQuests };
+    s.lastSeenAt = this.lastSeenAt;
+  }
+
   private restoreFromSave(savedPlayer: SaveData, stageKey: StageKey) {
     this.player.lv = savedPlayer.lv;
     /* v3.0 (사용자 지시 #1) — 경험치 복원 누락 수정:
@@ -1412,6 +1564,11 @@ export class WorldScene extends Phaser.Scene {
     this.player.tierUpBoost = this.player.tierUpTargets.weapon + this.player.tierUpTargets.armor;
     /* 외부 보너스(피규어/배지/룬/성좌/스킨) 주입 — HP 델타 동기화 포함 */
     this.syncExtBonus();
+    /* vc226 — GameState 미러 갱신.
+     *  상태 정의(`src/game/state/gameState.ts`)를 복원 직후 한 번 채운다.
+     *  아직 읽는 쪽은 씬 필드 그대로라 **동작 변화 0**이고, 2단계에서 저장/복원을
+     *  GameState 기준으로 옮길 때 이 미러가 기준점이 된다. */
+    this.syncStateMirror();
   }
 
   private initPerspective() {
@@ -1723,9 +1880,9 @@ export class WorldScene extends Phaser.Scene {
       if (SET_GEAR[chKey] && !this.unlockedSets.has(chKey)) {
         this.unlockedSets.add(chKey);
         this.time.delayedCall(1600, () => {
-          EventBus.emit("banner:show", {
-            text: `장비 세트 해금! ${SET_GEAR[chKey].title} — 마을 상점에서 구매 가능`,
-          });
+          notice(
+            `장비 세트 해금! ${SET_GEAR[chKey].title} — 마을 상점에서 구매 가능`,
+          );
           audio.sfx.ach();
         });
         this.saveSoon();
@@ -3416,9 +3573,9 @@ export class WorldScene extends Phaser.Scene {
     {
       const spec = chapterSpec(next);
       if (spec?.dlc && !this.cleared) {
-        EventBus.emit("banner:show", {
-          text: "DLC는 세계를 구원한 뒤에 열립니다 — 무한의 탑 최심부의 주인을 쓰러뜨리세요",
-        });
+        notice(
+          "DLC는 세계를 구원한 뒤에 열립니다 — 무한의 탑 최심부의 주인을 쓰러뜨리세요",
+        );
         this.transitioning = false;
         return;
       }
@@ -3768,7 +3925,7 @@ export class WorldScene extends Phaser.Scene {
     try {
       const opened = window.localStorage.getItem(this.keepChestKey);
       if (opened) {
-        EventBus.emit("banner:show", { text: "오늘은 이미 상자를 열었다 — 내일 다시 도전!" });
+        notice("오늘은 이미 상자를 열었다 — 내일 다시 도전!");
         return;
       }
       window.localStorage.setItem(this.keepChestKey, "1");
@@ -3782,7 +3939,7 @@ export class WorldScene extends Phaser.Scene {
       msg += " · 에메랄드 +1💎";
     }
     this.spawnPickupText(this.player.x, this.player.y - 40, "유적 상자!", "#ffd76a");
-    EventBus.emit("banner:show", { text: msg });
+    notice(msg);
     audio.sfx.chest();
     this.driveFx?.twinkle(this.player.x, this.player.y - 20, 0xffd76a);
     /* 상자 개봉 프레임 애니 (몇 프레임 진행 후 원위치) */
@@ -4208,19 +4365,16 @@ export class WorldScene extends Phaser.Scene {
    *  timeScale이 0.28에 고정되면 게임이 "멈춘 것처럼" 보이므로 update에서 강제 복원한다. */
   private slowmoUntil = 0;
 
+  /* vc225 — vc221 에서 "ImpactFX 로 위임" 했다고 기록했지만 **실제로는 위임하지 않았다**.
+   *  이 함수는 여전히 자체적으로 `world.pause()` 를 호출해 ImpactFX 와 소유자가 둘이었다.
+   *  두 쪽이 각자 resume 타이머를 걸면 먼저 도는 쪽이 물리를 재개해
+   *  hit-stop 이 짧게 끊긴다(연타 시 체감 정지가 사라짐).
+   *  이제 ImpactFX 단일 소유자로 넘긴다 — 세대 ID 로 최신 호출만 복원하고,
+   *  지속시간은 최댓값을 써서 연타로 무한 연장되지 않는다.
+   *  `hitStopUntil` 은 ImpactFX 값과 동기화해 update() 의 물리 자가치유가 존중하게 한다. */
   hitStop(ms = 26) {
-    const now = this.time.now;
-    if (now < this.hitStopUntil) {
-      this.hitStopUntil = Math.min(this.hitStopUntil + 12, now + 90); // 연타 시 누적 상한 90ms
-      return;
-    }
-    this.hitStopUntil = now + ms;
-    const world = this.physics.world;
-    if (world.isPaused) return;
-    world.pause();
-    this.time.delayedCall(ms, () => {
-      if (this.scene.isActive() && this.physics.world === world) world.resume();
-    });
+    this.impactFX.hitStop(ms);
+    this.hitStopUntil = this.impactFX.hitStopEndsAt;
   }
 
   spawnHitSpark(x: number, y: number) {
@@ -4493,7 +4647,7 @@ export class WorldScene extends Phaser.Scene {
         console.info("[SERTZ] 적응형 품질 — FX 축소 모드", Math.round(fps));
         /* v1.0.8 — 축소 진입 공지: "쉐이더 어디감?" 방지 — 이유와 해제 경로를 안내 */
         try {
-          EventBus.emit("banner:show", { text: "프레임 안정화 — 셰이더·이펙트 축소 (설정 → 그래픽 효과: 항상 높음)" });
+          notice("프레임 안정화 — 셰이더·이펙트 축소 (설정 → 그래픽 효과: 항상 높음)");
         } catch { /* 배너 실패 무시 */ }
         /* v4.9.0 — 축소 모드 진입: 보스 블룸 즉시 해제 (프레임버퍼 다중 패스 = 모바일 최대 부하원) */
         if (this.bossFilters.length > 0) this.clearBossPostFX();
@@ -5499,9 +5653,14 @@ export class WorldScene extends Phaser.Scene {
    *  checkMeleeHit에서 타격 1건 이상일 때 마지막 타격 지점 기준으로 1회 호출.
    *  v1.4.8 (#6 사운드 분리) — basicHit 재생 제거: onMeleeConnect의 sfx_hit과 근접 1회 명중에
    *  두 파일이 동시 재생되어 잡음 원인이었다. 명중음은 onMeleeConnect 단일 경로로 통일. */
-  spawnMeleeVfx(x: number, y: number, dirX: number, dirY: number, crit: boolean) {
+  /* vc220 — 전직 단계(tier)를 받아 참격 연출을 강화한다.
+   *  기존엔 tier 인자가 없어 1차든 4차든 같은 크기의 검기만 나갔다.
+   *  tierK = max(0, tier-1) 로 2차부터 배율이 붙고, 4차에서 가장 크다. */
+  spawnMeleeVfx(x: number, y: number, dirX: number, dirY: number, crit: boolean, tier = 1) {
     const ang = Math.atan2(dirY, dirX);
-    this.driveFx.slashArc(x - dirX * 6, y - 6, ang, crit ? 0xffd76a : 0xfff0d0, crit);
+    const tierK = Math.max(0, tier - 1);
+    const k = 1 + 0.11 * tierK;
+    this.driveFx.slashArc(x - dirX * 6, y - 6, ang, crit ? 0xffd76a : 0xfff0d0, crit, k);
   }
 
   /** v4.8.0 — 충격파 링 (강한 순간 강조 — 크리티컬/약점/보스 격파).
@@ -6169,7 +6328,7 @@ export class WorldScene extends Phaser.Scene {
     const after = passLevel(this.passXp);
     if (after > before) {
       audio.sfx.levelup();
-      EventBus.emit("banner:show", { text: `시즌 패스 Lv.${after} 달성! — 패스 보상을 수령하세요` });
+      notice(`시즌 패스 Lv.${after} 달성! — 패스 보상을 수령하세요`);
     }
   }
 
@@ -6216,7 +6375,7 @@ export class WorldScene extends Phaser.Scene {
     /* 완료 순간 도파민 배너 (수령은 패스 패널에서) */
     if (completed) {
       audio.sfx.reward();
-      EventBus.emit("banner:show", { text: `시즌 미션 완료 — ${completed}! 패스 패널에서 수령하세요` });
+      notice(`시즌 미션 완료 — ${completed}! 패스 패널에서 수령하세요`);
     }
   }
 
@@ -6232,12 +6391,12 @@ export class WorldScene extends Phaser.Scene {
     if (claimed.includes(m.id)) return;
     const prog = (v.kind === "daily" ? this.missionD[m.id] : this.missionW[m.id]) ?? 0;
     if (prog < m.target) {
-      EventBus.emit("banner:show", { text: "아직 완료되지 않은 미션이다" });
+      notice("아직 완료되지 않은 미션이다");
       return;
     }
     claimed.push(m.id);
     this.addPassXp(m.xp);
-    EventBus.emit("banner:show", { text: `미션 수령 — ${m.name} (+패스 XP ${m.xp})` });
+    notice(`미션 수령 — ${m.name} (+패스 XP ${m.xp})`);
     audio.sfx.reward();
     this.saveSoon();
     this.emitRpgState();
@@ -6293,14 +6452,14 @@ export class WorldScene extends Phaser.Scene {
   freeGacha() {
     const remain = this.freeGachaAt + 600000 - Date.now();
     if (remain > 0) {
-      EventBus.emit("banner:show", { text: `무료 뽑기 쿨타임 — ${Math.ceil(remain / 60000)}분 후 다시!` });
+      notice(`무료 뽑기 쿨타임 — ${Math.ceil(remain / 60000)}분 후 다시!`);
       return;
     }
     this.freeGachaAt = Date.now();
     this.gachaTickets += 1;
     this.saveSoon();
     this.emitRpgState();
-    EventBus.emit("banner:show", { text: "GM 방송 시청 완료! 뽑기권 +1 (10분마다 무료)" });
+    notice("GM 방송 시청 완료! 뽑기권 +1 (10분마다 무료)");
     audio.sfx.reward();
   }
 
@@ -6311,7 +6470,7 @@ export class WorldScene extends Phaser.Scene {
     const p = this.player;
     switch (v.action) {
       case "gacha": {
-        if (this.gachaTickets <= 0) { EventBus.emit("banner:show", { text: "뽑기권이 없습니다 — 출석/일일 퀘스트/게이트로 획득!" }); return; }
+        if (this.gachaTickets <= 0) { notice("뽑기권이 없습니다 — 출석/일일 퀘스트/게이트로 획득!"); return; }
         this.gachaTickets--;
         const res = rollFigure(this.figures);
         const def = FIGURE_MAP[res.key];
@@ -6369,7 +6528,7 @@ export class WorldScene extends Phaser.Scene {
             this.runes[k] = (this.runes[k] ?? 0) - RUNE_SYNTH_COST;
             const up = runeKey(kind, t + 1);
             this.runes[up] = (this.runes[up] ?? 0) + 1;
-            EventBus.emit("banner:show", { text: `룬 합성 성공! ${RUNE_META[kind].name} T${t} ×3 → T${t + 1} ×1` });
+            notice(`룬 합성 성공! ${RUNE_META[kind].name} T${t} ×3 → T${t + 1} ×1`);
             audio.sfx.craft();
             this.syncExtBonus();
             this.saveSoon();
@@ -6377,7 +6536,7 @@ export class WorldScene extends Phaser.Scene {
             return;
           }
         }
-        EventBus.emit("banner:show", { text: `같은 룬 ${RUNE_SYNTH_COST}개가 모이면 합성할 수 있어요` });
+        notice(`같은 룬 ${RUNE_SYNTH_COST}개가 모이면 합성할 수 있어요`);
         break;
       }
       case "runeEquip": {
@@ -6407,12 +6566,12 @@ export class WorldScene extends Phaser.Scene {
         if (!c || idx < 0 || idx >= c.nodes.length) return;
         const id = `${c.key}:${idx}`;
         if (this.constel.includes(id)) return;
-        if (idx > 0 && !this.constel.includes(`${c.key}:${idx - 1}`)) { EventBus.emit("banner:show", { text: "이전 별부터 개방해야 합니다" }); return; }
+        if (idx > 0 && !this.constel.includes(`${c.key}:${idx - 1}`)) { notice("이전 별부터 개방해야 합니다"); return; }
         const cost = CONSTEL_NODE_COST[idx] ?? 999;
-        if (this.shards < cost) { EventBus.emit("banner:show", { text: `피규어 조각 ${cost}개가 필요합니다` }); return; }
+        if (this.shards < cost) { notice(`피규어 조각 ${cost}개가 필요합니다`); return; }
         this.shards -= cost;
         this.constel.push(id);
-        EventBus.emit("banner:show", { text: `성좌 개방 — ${c.name} 별${idx + 1}!` });
+        notice(`성좌 개방 — ${c.name} 별${idx + 1}!`);
         audio.sfx.craft();
         this.syncExtBonus();
         this.saveSoon();
@@ -6423,7 +6582,7 @@ export class WorldScene extends Phaser.Scene {
         const ach = ACHIEVEMENTS.find((a) => a.id === v.id);
         if (!ach || this.achClaimed.includes(ach.id)) return;
         const snap = this.achSnapshot();
-        if (ach.prog(snap) < ach.goal) { EventBus.emit("banner:show", { text: "아직 달성하지 못했습니다" }); return; }
+        if (ach.prog(snap) < ach.goal) { notice("아직 달성하지 못했습니다"); return; }
         this.achClaimed.push(ach.id);
         this.shards += ach.shards;
         EventBus.emit("reward:show", {
@@ -6443,7 +6602,7 @@ export class WorldScene extends Phaser.Scene {
         const q = DAILY_QUESTS.find((d) => d.id === v.id);
         if (!q || this.dailyClaimed.includes(q.id)) return;
         const prog = q.id === "hunt" ? this.dailyHunts : q.id === "farm" ? this.dailyFarms : q.id === "boss" ? this.dailyBosses : q.id === "gate" ? this.dailyGate : this.dailyCloset;
-        if (prog < q.goal) { EventBus.emit("banner:show", { text: `진행도 부족 (${prog}/${q.goal})` }); return; }
+        if (prog < q.goal) { notice(`진행도 부족 (${prog}/${q.goal})`); return; }
         this.dailyClaimed.push(q.id);
         const g = q.reward;
         if (g.gold) p.addGold(g.gold);
@@ -6451,7 +6610,7 @@ export class WorldScene extends Phaser.Scene {
         if (g.tickets) this.gachaTickets += g.tickets;
         this.addPassXp(PASS_XP_RULES.daily); // v4.5.0 — 일일 퀘스트 수령 시 패스 XP +40
         this.trackMission("dailyClaim"); // v1.0.1 — 주간 미션 "일일 퀘스트 수령" 카운트
-        EventBus.emit("banner:show", { text: `일일 퀘스트 완료 — ${g.label}!` });
+        notice(`일일 퀘스트 완료 — ${g.label}!`);
         audio.sfx.reward();
         this.saveSoon();
         this.emitRpgState();
@@ -6460,8 +6619,8 @@ export class WorldScene extends Phaser.Scene {
       case "coupon": {
         const code = (v.code ?? "").trim().toUpperCase();
         const def = COUPONS.find((c) => c.code === code);
-        if (!def) { EventBus.emit("banner:show", { text: "잘못된 쿠폰 코드입니다" }); return; }
-        if (this.couponsUsed.includes(code)) { EventBus.emit("banner:show", { text: "이미 사용한 쿠폰입니다" }); return; }
+        if (!def) { notice("잘못된 쿠폰 코드입니다"); return; }
+        if (this.couponsUsed.includes(code)) { notice("이미 사용한 쿠폰입니다"); return; }
         this.couponsUsed.push(code);
         const g = def.grant;
         if (g.gold) p.addGold(g.gold);
@@ -6480,21 +6639,21 @@ export class WorldScene extends Phaser.Scene {
       case "shardBuy": {
         const item = SHARD_SHOP.find((s) => s.id === v.id);
         if (!item) return;
-        if (this.shards < item.cost) { EventBus.emit("banner:show", { text: `피규어 조각 ${item.cost}개가 필요합니다` }); return; }
+        if (this.shards < item.cost) { notice(`피규어 조각 ${item.cost}개가 필요합니다`); return; }
         this.shards -= item.cost;
         if (item.grant === "ticket") {
           this.gachaTickets += 1;
         } else if (item.grant === "badge") {
           const unowned = Object.keys(BADGE_MAP).filter((k) => !this.badges.includes(k));
-          if (unowned.length === 0) { this.shards += item.cost; EventBus.emit("banner:show", { text: "모든 배지를 보유 중입니다" }); return; }
+          if (unowned.length === 0) { this.shards += item.cost; notice("모든 배지를 보유 중입니다"); return; }
           const pick = unowned[Math.floor(Math.random() * unowned.length)];
           this.badges.push(pick);
-          EventBus.emit("banner:show", { text: `배지 획득 — ${BADGE_MAP[pick].name}!` });
+          notice(`배지 획득 — ${BADGE_MAP[pick].name}!`);
         } else if (item.grant === "rune") {
           const kind = RUNE_KINDS[Math.floor(Math.random() * RUNE_KINDS.length)];
           const k = runeKey(kind, 1);
           this.runes[k] = (this.runes[k] ?? 0) + 1;
-          EventBus.emit("banner:show", { text: `룬 획득 — ${RUNE_META[kind].name} T1!` });
+          notice(`룬 획득 — ${RUNE_META[kind].name} T1!`);
         } else if (item.grant === "tier_cube") {
           p.owned.push("tier_cube");
         } else {
@@ -6502,7 +6661,7 @@ export class WorldScene extends Phaser.Scene {
           const key = item.grant;
           if (!p.owned.includes(key as ItemKey)) p.owned.push(key as ItemKey);
           if (!p.cosmetics.includes(key as CosmeticKey)) p.cosmetics.push(key as CosmeticKey);
-          EventBus.emit("banner:show", { text: `스킨 획득 — 인벤토리에서 착용!` });
+          notice(`스킨 획득 — 인벤토리에서 착용!`);
         }
         audio.sfx.shop();
         this.syncExtBonus();
@@ -6514,23 +6673,23 @@ export class WorldScene extends Phaser.Scene {
         const slot = v.slot === "armor" ? "armor" : "weapon";
         /* v1.4.3 (#등급업큐브 사용안됨) — 실패 원인을 분리해 안내 (큐브 부재 vs 전설 상한) */
         if (!p.owned.includes("tier_cube")) {
-          EventBus.emit("banner:show", { text: "등급업 큐브가 없습니다 — 캐시상점(에메랄드 15💎)에서 구매할 수 있어요" });
+          notice("등급업 큐브가 없습니다 — 캐시상점(에메랄드 15💎)에서 구매할 수 있어요");
           break;
         }
         const curTier = ITEMS[slot === "weapon" ? p.weapon : p.armor].tier;
         if (curTier === "legend") {
-          EventBus.emit("banner:show", { text: `${slot === "weapon" ? "무기" : "방어구"}가 이미 최고 등급(전설)입니다` });
+          notice(`${slot === "weapon" ? "무기" : "방어구"}가 이미 최고 등급(전설)입니다`);
           break;
         }
         const nextTier = p.upgradeTier(slot);
         if (nextTier) {
-          EventBus.emit("banner:show", { text: `등급업 성공! ${slot === "weapon" ? "무기" : "방어구"} → ${nextTier.toUpperCase()} (스탯 +12%/회)` });
+          notice(`등급업 성공! ${slot === "weapon" ? "무기" : "방어구"} → ${nextTier.toUpperCase()} (스탯 +12%/회)`);
           audio.sfx.upgradeOk(); // v1.4.8 — 등급업 = 강화 성공 계열 사운드
           this.saveSoon();
           this.emitRpgState();
           this.emitHud();
         } else {
-          EventBus.emit("banner:show", { text: "등급업 큐브가 없거나 이미 최고 등급입니다" });
+          notice("등급업 큐브가 없거나 이미 최고 등급입니다");
         }
         break;
       }
@@ -6567,7 +6726,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.stageDef.key === "gate") return;
     this.ensureTickets();
     if (this.ticketGate <= 0) {
-      EventBus.emit("banner:show", { text: "오늘의 게이트 티켓 소진! (매일 3장 — 내일 다시 도전)" });
+      notice("오늘의 게이트 티켓 소진! (매일 3장 — 내일 다시 도전)");
       return;
     }
     this.ticketGate--;
@@ -6580,7 +6739,7 @@ export class WorldScene extends Phaser.Scene {
     const tw = teamworkBuff(party?.members.length ?? 1, roles);
     if (tw.pct > 0 && tw.label) {
       this.player.applyRunCard([{ id: "tw", tier: 2, name: "팀워크", desc: tw.label, stat: { atkPct: tw.pct, hpPct: tw.pct } }]);
-      EventBus.emit("banner:show", { text: tw.label });
+      notice(tw.label);
     } else {
       this.showBanner("바르가 수비전으로 이동합니다 — 균열의 문을 지켜라!");
     }
@@ -6841,7 +7000,7 @@ export class WorldScene extends Phaser.Scene {
     this.praidFrom = this.stageDef.key;
     audio.sfx.portal();
     EventBus.emit("ui:panel", { panel: null });
-    EventBus.emit("banner:show", { text: partyN > 1 ? `공동 토벌전 — 파티 ${partyN}인 동시 토벌!` : "공동 토벌전으로 이동합니다" });
+    notice(partyN > 1 ? `공동 토벌전 — 파티 ${partyN}인 동시 토벌!` : "공동 토벌전으로 이동합니다");
     this.startTransition("praid", { delay: 440 });
   }
 
@@ -6986,7 +7145,7 @@ export class WorldScene extends Phaser.Scene {
     this.gateBreakUntil = this.time.now + 3200;
     this.gatePendingCards = [];
     EventBus.emit("gate:cards", { open: false, wave: this.gateWave, silver: this.gateSilver, cards: [] });
-    EventBus.emit("banner:show", { text: `[${card.tier}성] ${card.name} — ${card.desc}` });
+    notice(`[${card.tier}성] ${card.name} — ${card.desc}`);
     audio.sfx.equip();
     this.emitGateState();
   }
@@ -6995,12 +7154,12 @@ export class WorldScene extends Phaser.Scene {
     if (!this.gateActive) return;
     const item = SILVER_SHOP.find((s) => s.id === id);
     if (!item) return;
-    if (this.gateSilver < item.cost) { EventBus.emit("banner:show", { text: `실버가 부족합니다 (${item.cost} 필요)` }); return; }
+    if (this.gateSilver < item.cost) { notice(`실버가 부족합니다 (${item.cost} 필요)`); return; }
     this.gateSilver -= item.cost;
     const p = this.player;
     if (id === "sh_heal") {
       p.heal(Math.round(p.maxHp * 0.6));
-      EventBus.emit("banner:show", { text: "응급 키트 — HP 60% 회복!" });
+      notice("응급 키트 — HP 60% 회복!");
     } else if (id === "sh_bomb") {
       const dmg = Math.round(p.atkTotal * 9);
       for (const e of [...this.enemies]) {
@@ -7008,13 +7167,13 @@ export class WorldScene extends Phaser.Scene {
       }
       this.cameras.main.flash(160, 255, 220, 140);
       this.doShake(200, 0.008);
-      EventBus.emit("banner:show", { text: "차원 폭탄! 전 적에게 대미지!" });
+      notice("차원 폭탄! 전 적에게 대미지!");
     } else if (id === "sh_repair") {
       this.gateCoreHp = Math.min(this.gateCoreMax, this.gateCoreHp + this.gateCoreMax * 0.3);
-      EventBus.emit("banner:show", { text: "게이트 수리 — HP 30% 복구!" });
+      notice("게이트 수리 — HP 30% 복구!");
     } else if (id === "sh_mp") {
       p.mp = Math.min(p.maxMp, p.mp + p.maxMp);
-      EventBus.emit("banner:show", { text: "정신 안정제 — MP 회복!" });
+      notice("정신 안정제 — MP 회복!");
     }
     audio.sfx.cardHeal();
     this.emitGateState();
@@ -7088,7 +7247,7 @@ export class WorldScene extends Phaser.Scene {
     this.ensureTickets();
     if (this.ticketCloset <= 0) {
       const left = Math.max(0, 3 - this.ticketRefills);
-      EventBus.emit("banner:show", { text: left > 0 ? `오늘의 균열 던전 티켓 소진! (혜택 패널에서 재충전 ${left}회 가능 — 3💎)` : "오늘의 균열 던전 티켓 소진! (재충전 한도 초과)" });
+      notice(left > 0 ? `오늘의 균열 던전 티켓 소진! (혜택 패널에서 재충전 ${left}회 가능 — 3💎)` : "오늘의 균열 던전 티켓 소진! (재충전 한도 초과)");
       return;
     }
     /* v1.0.8 — 심층 균열: 티어 잠금 검증 (클리어한 티어+1까지 입장 가능) */
@@ -7380,11 +7539,11 @@ export class WorldScene extends Phaser.Scene {
     const today = todayKey();
     if (this.parkTickets.date !== today) this.parkTickets = { date: today, n: PARK_TICKETS };
     if (this.parkTickets.n <= 0) {
-      EventBus.emit("banner:show", { text: "파크 입장권이 소진됐다 (하루 2장 — 내일 다시!)" });
+      notice("파크 입장권이 소진됐다 (하루 2장 — 내일 다시!)");
       return;
     }
     if (this.player.lv < d.minLv) {
-      EventBus.emit("banner:show", { text: `${d.name} 난이도는 Lv ${d.minLv}부터 입장할 수 있다` });
+      notice(`${d.name} 난이도는 Lv ${d.minLv}부터 입장할 수 있다`);
       return;
     }
     this.parkTickets.n--;
@@ -7569,13 +7728,13 @@ export class WorldScene extends Phaser.Scene {
       if (this.inf.closetTier <= tier) {
         this.inf.closetTier = tier + 1;
         this.inf.abyss += closetTierAbyss(tier);
-        EventBus.emit("banner:show", { text: `심층 균열 T${this.inf.closetTier} 해금! (심연 코인 +${closetTierAbyss(tier)})` });
+        notice(`심층 균열 T${this.inf.closetTier} 해금! (심연 코인 +${closetTierAbyss(tier)})`);
       }
     } else if (tier === 0 && this.closetGold >= 2600 && this.inf.closetTier < 1) {
       /* 첫 심층 진입 해금 — 기본 균열에서 2,600G 이상 */
       this.inf.closetTier = 1;
       this.inf.abyss += closetTierAbyss(0);
-      EventBus.emit("banner:show", { text: "심층 균열 T1 해금! — 콘텐츠 패널에서 도전!" });
+      notice("심층 균열 T1 해금! — 콘텐츠 패널에서 도전!");
     }
     const record = this.closetGold > this.closetBest;
     if (record) this.closetBest = this.closetGold;
@@ -7655,7 +7814,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.player) return;
     const req = rebirthReqLv(this.inf.rebirthEss);
     if (this.player.lv < req) {
-      EventBus.emit("banner:show", { text: `환생하려면 Lv ${req}이 필요하다 (현재 Lv ${this.player.lv})` });
+      notice(`환생하려면 Lv ${req}이 필요하다 (현재 Lv ${this.player.lv})`);
       return;
     }
     if (
@@ -7729,17 +7888,17 @@ export class WorldScene extends Phaser.Scene {
     const r = CRAFT_RECIPES.find((x) => x.id === id);
     if (!r) return;
     if (!canCraft(r, this.inf.mats)) {
-      EventBus.emit("banner:show", { text: "재료가 부족하다 — 사냥으로 재료를 모아보자!" });
+      notice("재료가 부족하다 — 사냥으로 재료를 모아보자!");
       audio.sfx.deny();
       return;
     }
     for (const [k, n] of Object.entries(r.mats)) this.inf.mats[k] -= n;
     if (r.out.item === "__abyss15") {
       this.inf.abyss += 15;
-      EventBus.emit("banner:show", { text: "제작 완료! 심연 코인 +15" });
+      notice("제작 완료! 심연 코인 +15");
     } else {
       for (let i = 0; i < r.out.n; i++) this.player.owned.push(r.out.item as ItemKey);
-      EventBus.emit("banner:show", { text: `제작 완료! ${ITEMS[r.out.item as ItemKey]?.name ?? r.out.item} ×${r.out.n}` });
+      notice(`제작 완료! ${ITEMS[r.out.item as ItemKey]?.name ?? r.out.item} ×${r.out.n}`);
     }
     audio.sfx.craft();
     this.saveSoon();
@@ -7752,36 +7911,36 @@ export class WorldScene extends Phaser.Scene {
     const item = ABYSS_SHOP.find((x) => x.id === id);
     if (!item) return;
     if (this.inf.abyss < item.cost) {
-      EventBus.emit("banner:show", { text: `심연 코인이 부족하다 (${item.cost} 필요 · 보유 ${this.inf.abyss})` });
+      notice(`심연 코인이 부족하다 (${item.cost} 필요 · 보유 ${this.inf.abyss})`);
       audio.sfx.deny();
       return;
     }
     if (id === "rebirth_ess") {
       this.inf.abyss -= item.cost;
       this.inf.rebirthEss++;
-      EventBus.emit("banner:show", { text: `환생의 정수 구매! — 환생 요구 레벨 ${rebirthReqLv(this.inf.rebirthEss)}` });
+      notice(`환생의 정수 구매! — 환생 요구 레벨 ${rebirthReqLv(this.inf.rebirthEss)}`);
     } else if (id === "cos_box") {
       /* 미보유 치장 1종 랜덤 — 전부 보유 시 에메랄드 5 환불 보상 */
       const pool = (Object.keys(COSMETIC_DEFS) as CosmeticKey[]).filter((k) => !(this.player.cosmetics as string[]).includes(k));
       this.inf.abyss -= item.cost;
       if (pool.length === 0) {
         this.player.emerald += 5;
-        EventBus.emit("banner:show", { text: "치장 콜렉션 완성! 대신 에메랄드 +5" });
+        notice("치장 콜렉션 완성! 대신 에메랄드 +5");
       } else {
         const pick = pool[Math.floor(Math.random() * pool.length)];
         this.player.cosmetics.push(pick as CosmeticKey);
-        EventBus.emit("banner:show", { text: `치장 상자 개봉! ${COSMETIC_DEFS[pick as CosmeticKey]?.name ?? pick} 획득!` });
+        notice(`치장 상자 개봉! ${COSMETIC_DEFS[pick as CosmeticKey]?.name ?? pick} 획득!`);
       }
     } else if (id === "legend_chest") {
       this.inf.abyss -= item.cost;
       this.player.owned.push("chest_legend");
-      EventBus.emit("banner:show", { text: "전설 상자 획득! — 인벤토리에서 개봉" });
+      notice("전설 상자 획득! — 인벤토리에서 개봉");
     } else {
       /* 부여아 — 영구 스탯 (중복 구매) */
       this.inf.abyss -= item.cost;
       this.inf.orbs[id] = (this.inf.orbs[id] ?? 0) + 1;
       this.syncExtBonus();
-      EventBus.emit("banner:show", { text: `${item.name} 각인! (누적 ×${this.inf.orbs[id]}) — ${item.desc}` });
+      notice(`${item.name} 각인! (누적 ×${this.inf.orbs[id]}) — ${item.desc}`);
     }
     audio.sfx.shop();
     this.saveSoon();
@@ -7866,9 +8025,9 @@ export class WorldScene extends Phaser.Scene {
     }
     this.cameras.main.flash(240, 255, 230, 120);
     this.doShake(460, 0.02);
-    EventBus.emit("banner:show", {
-      text: "5차 각성 완료! 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(S) 해금", // v1.0.5 — 스킬5 기본키 N→S 반영
-    });
+    notice(
+      "5차 각성 완료! 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(S) 해금", // v1.0.5 — 스킬5 기본키 N→S 반영
+    );
     this.showDialogueRaw({
       speaker: "카이엔",
       lines: [
@@ -8548,7 +8707,7 @@ export class WorldScene extends Phaser.Scene {
       this.autoTarget = null;
       this.emitRpgState();
       this.saveSoon();
-      EventBus.emit("banner:show", { text: "⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)" });
+      notice("⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)");
     }
     this.boss = new Boss(this, bx, by, def, "normal");
     this.spawnBossRunic(bx, by, false); /* v4.1.7 — 유료 팩 룬 마법진 */
@@ -8612,7 +8771,7 @@ export class WorldScene extends Phaser.Scene {
       this.autoTarget = null;
       this.emitRpgState();
       this.saveSoon();
-      EventBus.emit("banner:show", { text: "⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)" });
+      notice("⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)");
     }
     this.boss = new Boss(this, bx, by, def, lv);
     this.spawnBossRunic(bx, by, lv === "chaos"); /* v4.1.7 — 룬 마법진 (카오스는 붉은룬) */
@@ -9175,9 +9334,9 @@ export class WorldScene extends Phaser.Scene {
       p.gold = Math.max(0, p.gold - goldLoss);
       this.spawnPickupText(p.x, p.y - 40, `EXP -${expLoss.toLocaleString()}`, "#ff8a8a");
       this.spawnPickupText(p.x, p.y - 60, `골드 -${goldLoss.toLocaleString()}`, "#ffc46a");
-      EventBus.emit("banner:show", {
-        text: `사망 패널티 — EXP -${expLoss.toLocaleString()}, 골드 -${goldLoss.toLocaleString()}`,
-      });
+      notice(
+        `사망 패널티 — EXP -${expLoss.toLocaleString()}, 골드 -${goldLoss.toLocaleString()}`,
+      );
       this.emitHud();
       this.emitRpgState();
     }
@@ -9221,7 +9380,7 @@ export class WorldScene extends Phaser.Scene {
       const spawn = this.villageSpawnPos(def);
       audio.playStageBGM(village, false);
       this.gotoStage(village, { entry: spawn }, true);
-      EventBus.emit("banner:show", { text: `${STAGE_SHORT[village] ?? "마을"}에서 부활했다` });
+      notice(`${STAGE_SHORT[village] ?? "마을"}에서 부활했다`);
       return;
     }
     this.cameras.main.fadeIn(400, 20, 0, 0);
@@ -9261,24 +9420,10 @@ export class WorldScene extends Phaser.Scene {
     // v1.4.35 (지시 #7) — WASD 스킴에서 물약·UI 를 숫자열/ESC 로 옮겼으므로
     //  ONE~FIVE·ESC·TAB 까지 등록한다. 등록되지 않은 키는 keymap 에 배정돼 있어도
     //  Phaser 가 이벤트를 만들어 주지 않아 "키가 먹지 않는" 증상이 된다.
-    const allKeys =
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,ESC,TAB,Q,E,R,T,Y,U,I,O,P,F,G,H,J,K,L,V,B,N,M,Z,X,C," +
-      "ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT,NINE,ZERO";
-    const raw = kb.addKeys(allKeys) as Record<string, Phaser.Input.Keyboard.Key>;
+    /* vc225 — 키 등록을 `scenes/input/keyRegistration.ts` 로 분리. */
+    const raw = kb.addKeys(ALL_KEYS) as Record<string, Phaser.Input.Keyboard.Key>;
     this.keys = raw;
-    /* v1.1.1 — SPACE처럼 여러 글자인 코드도 keyObjs에 등록 (키 재배치 조회 대비)
-     * v1.4.35 — 숫자키는 keymap 표기("1".."0")와 Phaser 코드(ONE..ZERO)가 달라
-     *  두 이름을 모두 등록해야 조회가 성립한다. ESC 역시 "Escape" 표기와 매핑. */
-    const ALIAS: Record<string, string> = {
-      ONE: "1", TWO: "2", THREE: "3", FOUR: "4", FIVE: "5",
-      SIX: "6", SEVEN: "7", EIGHT: "8", NINE: "9", ZERO: "0",
-      ESC: "Escape",
-    };
-    for (const letter of allKeys.split(",")) {
-      if (letter.length === 1) this.keyObjs[letter] = raw[letter];
-      else if (letter === "SPACE") this.keyObjs[letter] = raw[letter];
-      if (ALIAS[letter]) this.keyObjs[ALIAS[letter]] = raw[letter];
-    }
+    fillKeyObjects(raw as unknown as Record<string, unknown>, this.keyObjs as unknown as Record<string, unknown>);
 
     const onMove = (v: { x: number; y: number }) => this.touchMove.set(v.x, v.y);
     const onAtk = () => (this.attackQueued = true);
@@ -9289,10 +9434,9 @@ export class WorldScene extends Phaser.Scene {
      *  해결: 누른 스킬을 300ms 동안 보관했다가 idle이 되는 순간 자동 발동한다.
      *  (공격과 같은 방식 — attackQueued가 이미 그렇게 동작한다)
      *  대기 중 다른 스킬을 누르면 최신 입력이 이전 입력을 대체한다(의도한 행동 우선). */
-    const SKILL_BUFFER_MS = 300;
-    let bufferedSkill: { id: "s1" | "s2" | "s3" | "s4" | "s5" | "s5b"; at: number } | null = null;
-    const queueSkill = (id: "s1" | "s2" | "s3" | "s4" | "s5" | "s5b") => {
-      bufferedSkill = { id, at: this.time.now };
+    /* vc225 — 스킬 입력 버퍼를 `scenes/input/skillBuffer.ts` 로 분리. */
+    const queueSkill = (id: SkillId) => {
+      this.skillBuf.queue(id, this.time.now);
       this.flushBufferedSkill();
     };
     const onS1 = () => queueSkill("s1");
@@ -9304,21 +9448,7 @@ export class WorldScene extends Phaser.Scene {
     const onS5b = () => queueSkill("s5b"); // vc146 (#2) — 제2궁극기 (쿨 2분)
     /** 버퍼에 담긴 스킬을 지금 발동 가능하면 실행하고 비운다 */
     this.flushBufferedSkill = () => {
-      if (!bufferedSkill || !this.player) return;
-      if (this.time.now - bufferedSkill.at > SKILL_BUFFER_MS) {
-        bufferedSkill = null; // 만료 — 낡은 입력은 버린다
-        return;
-      }
-      const p = this.player;
-      if (p.state !== "idle") return; // 아직 모션 중 — 다음 프레임에 재시도
-      const id = bufferedSkill.id;
-      bufferedSkill = null;
-      if (id === "s1") p.useSkill1();
-      else if (id === "s2") p.useSkill2();
-      else if (id === "s3") p.useSkill3();
-      else if (id === "s4") p.useSkill4();
-      else if (id === "s5") p.useSkill5();
-      else p.useSkill5b();
+      this.skillBuf.flush(this.player as unknown as SkillCaster | null, this.time.now);
     };
     const onRespawn = () => this.respawnPlayer();
     const onDialogueDone = () => this.resumeFromDialogue();
@@ -9348,7 +9478,7 @@ export class WorldScene extends Phaser.Scene {
       setPlayerName(v.name);
       this.refreshPlayerTag();
       this.saveSoon();
-      EventBus.emit("banner:show", { text: `이름이 '${v.name}'(으)로 바뀌었어요!` });
+      notice(`이름이 '${v.name}'(으)로 바뀌었어요!`);
     };
     const onBuy = (v: { key: ItemKey; qty?: number }) => {
       if (!this.player || this.dialoguing) return;
@@ -9362,7 +9492,7 @@ export class WorldScene extends Phaser.Scene {
         if (kind === "pet") this.syncPet();
         else if (kind === "cosmetic") this.syncCosmeticAura();
         this.save();
-        EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost}G)` });
+        notice(`${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost}G)`);
       }
       this.emitRpgState(true);
       this.emitHud();
@@ -9377,23 +9507,23 @@ export class WorldScene extends Phaser.Scene {
         const fam = familyOf(this.player.cls);
         if (!fam || !def.clsOnly.includes(fam)) {
           const need = def.clsOnly.map((f) => WorldScene.FAM_KO[f] ?? f).join("·");
-          EventBus.emit("banner:show", { text: `${def.name}은(는) ${need} 전용 장비입니다` });
+          notice(`${def.name}은(는) ${need} 전용 장비입니다`);
           return;
         }
       }
       /* vc181 (지시 #15) — 장착 요구 레벨. 상점 구매는 허용하되(미리 사 둘 수 있음)
        *  장착은 레벨을 채워야 한다. 상위 등급 장비가 1렙에 바로 붙던 문제 차단. */
       if ((def?.reqLv ?? 0) > this.player.lv) {
-        EventBus.emit("banner:show", {
-          text: `${def?.name ?? "장비"}은(는) Lv${def?.reqLv}부터 장착할 수 있어요 (현재 Lv${this.player.lv})`,
-        });
+        notice(
+          `${def?.name ?? "장비"}은(는) Lv${def?.reqLv}부터 장착할 수 있어요 (현재 Lv${this.player.lv})`,
+        );
         return;
       }
       /* v1.0.3 (#반지중첩) — 장착 실패 안내: 같은 장신구 중복 장착 시도 등에 조용히 무시되지 않게 */
       if (!this.player.equip(v.key)) {
         const it = ITEMS[v.key];
         const dup = it?.kind === "accessory" && this.player.accessories.includes(v.key);
-        EventBus.emit("banner:show", { text: dup ? "같은 장신구는 1개만 장착할 수 있어요" : "장착할 수 없어요" });
+        notice(dup ? "같은 장신구는 1개만 장착할 수 있어요" : "장착할 수 없어요");
         return;
       }
       this.emitRpgState(true);
@@ -9434,7 +9564,7 @@ export class WorldScene extends Phaser.Scene {
        *  실패(미보유 등) 시에도 조용히 끝나지 않게 배너로 알린다. */
       const ok = v.slot ? this.player.setCosmeticSlot(v.key, v.slot) : this.player.setCosmetic(v.key);
       if (ok) this.saveSoon();
-      else if (v.key) EventBus.emit("banner:show", { text: `${ITEMS[v.key as ItemKey]?.name ?? "치장"}을(를) 착용할 수 없다 — 보유 여부를 확인하세요` });
+      else if (v.key) notice(`${ITEMS[v.key as ItemKey]?.name ?? "치장"}을(를) 착용할 수 없다 — 보유 여부를 확인하세요`);
       this.emitRpgState(true);
     };
     const onUpgrade = (v: { slot: "weapon" | "armor" }) => {
@@ -9459,7 +9589,7 @@ export class WorldScene extends Phaser.Scene {
       if (was) {
         this.saveSoon();
         this.emitRpgState(true);
-        if (msg) EventBus.emit("banner:show", { text: msg });
+        if (msg) notice(msg);
       }
     };
     const autoUpTick = () => {
@@ -9485,29 +9615,33 @@ export class WorldScene extends Phaser.Scene {
     };
     const onAutoUpgrade = (v: { slot: string; target: number }) => {
       if (!this.player || this.dialoguing) return;
-      if (this.autoUpTimer) return EventBus.emit("banner:show", { text: "자동 강화가 이미 진행 중이다" });
+      if (this.autoUpTimer) return notice("자동 강화가 이미 진행 중이다");
       const slot = String(v?.slot || "");
       if (slot !== "weapon" && slot !== "armor") {
         const it = ITEMS[slot as ItemKey];
         if (!it || it.kind !== "accessory") return;
         if (!(this.player.accessories ?? []).includes(slot as ItemKey)) {
-          EventBus.emit("banner:show", { text: "장착 중인 장신구만 자동 강화할 수 있다" });
+          notice("장착 중인 장신구만 자동 강화할 수 있다");
           return;
         }
       }
       const target = Math.max(1, Math.min(15, Math.floor(v.target || 0)));
       const cur = slot === "weapon" || slot === "armor" ? this.player.upgrades[slot as "weapon" | "armor"] : (this.player.accUp[slot] ?? 0);
       if (target <= cur) {
-        EventBus.emit("banner:show", { text: `목표가 현재 강화(★${cur})보다 높아야 한다` });
+        notice(`목표가 현재 강화(★${cur})보다 높아야 한다`);
         return;
       }
       this.autoUpSlot = slot;
       this.autoUpTarget = target;
-      EventBus.emit("banner:show", { text: `자동 강화 시작 — ★${cur} → ★${target}` });
+      notice(`자동 강화 시작 — ★${cur} → ★${target}`);
       this.autoUpTimer = this.time.addEvent({ delay: 330, loop: true, callback: autoUpTick });
     };
     EventBus.on("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 목표 자동 강화
-    EventBus.on("rpg:autoUpgradeStop", () => stopAutoUpgrade("자동 강화를 취소했다"));
+    /* vc225 — 종전엔 on/off 에 **각각 다른 람다**를 넘겨 off 가 아무것도 해제하지 못했다.
+     *  씬 재진입(마을 이동·재접속)마다 리스너가 누적되어 자동강화 취소가 N번 실행됐다.
+     *  이름 있는 핸들러로 바꿔 on/off 가 같은 참조를 쓰게 한다. */
+    const onAutoUpgradeStop = () => stopAutoUpgrade("자동 강화를 취소했다");
+    EventBus.on("rpg:autoUpgradeStop", onAutoUpgradeStop);
     /* v1.4.30 (#9 클래스룸) — 교실 활동 성공 보상 지급 (classroom.ts 완료 판정 → window 이벤트)
      *  협동 보상: 에메랄드 2 + 골드 500 (경쟁전 우승은 5+2000) — 각 클라가 스스로 수령 */
     const onClassReward = (ev: Event) => {
@@ -9575,13 +9709,13 @@ export class WorldScene extends Phaser.Scene {
       const adLimit = subActive(this.subUntil) ? SUB_AD_LIMIT : 5;
       if (this.dailyAds >= adLimit) {
         audio.sfx.deny(); // v1.4.8 — 한도 초과 차단음 신설
-        EventBus.emit("banner:show", { text: `오늘의 광고 보상은 끝났다 (일 ${adLimit}회${adLimit > 5 ? " · 구독 특전" : ""}) — 내일 다시` });
+        notice(`오늘의 광고 보상은 끝났다 (일 ${adLimit}회${adLimit > 5 ? " · 구독 특전" : ""}) — 내일 다시`);
         return;
       }
-      EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
+      notice("광고를 준비 중이니 잠시만…");
       const r = await showRewardedAd();
       if (!r.ok) {
-        EventBus.emit("banner:show", { text: adFailText(r.reason) });
+        notice(adFailText(r.reason));
         return;
       }
       /* v4.5.0 — 구독자 광고 보상 2배 (💎+2 · 골드+1,000) */
@@ -9607,7 +9741,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player) return;
       const sku = GEM_SKUS.find((s) => s.id === v.sku);
       if (!sku) return;
-      EventBus.emit("banner:show", { text: "구글 플레이 결제창을 여는 중…" });
+      notice("구글 플레이 결제창을 여는 중…");
       const r = await purchaseGems(sku.id);
       if (!r.ok) {
         /* v1.1.1 (#3 결제 취소) — 유저 취소/상품 미준비/오류를 정확히 구분 (기존: 전부 "취소됐다")
@@ -9618,7 +9752,7 @@ export class WorldScene extends Phaser.Scene {
           : r.reason === "pending" ? "결제가 확정 대기 중이다 — 확정되면 게임 재부팅 때 자동 지급된다"
           : r.reason === "unavailable" ? "아직 스토어에 상품이 등록 전이다 — 준비 후 다시"
           : "결제에 실패했다 — 네트워크를 확인하고 다시 시도하자";
-        EventBus.emit("banner:show", { text: msg });
+        notice(msg);
         return;
       }
       /* vc205 (감사 #2) — 지급은 **서버가 한다**. 종전엔 여기서 바로
@@ -9629,7 +9763,7 @@ export class WorldScene extends Phaser.Scene {
       const vr = await verifyIapPurchase(sku.id, r.token ?? "");
       const vj = vr.data as { ok?: boolean; gems?: number; emerald?: number; error?: string; reason?: string };
       if (!vr.ok || !vj.ok) {
-        EventBus.emit("banner:show", { text: vj.error || "결제 확인에 실패했다 — 고객센터에 문의하자" });
+        notice(vj.error || "결제 확인에 실패했다 — 고객센터에 문의하자");
         return;
       }
       granted = vj.gems ?? 0;
@@ -9639,14 +9773,14 @@ export class WorldScene extends Phaser.Scene {
       this.save();
       this.emitRpgState();
       audio.sfx.charge();
-      EventBus.emit("banner:show", { text: `에메랄드 +${granted} 충전 완료!` });
+      notice(`에메랄드 +${granted} 충전 완료!`);
     };
     /* v1.0.2 (#현금패키지) — 스토어 결제 패키지 구매: 결제 성공 후 정의된 구성 지급 */
     const onBuyStorePack = async (v: { id: string }) => {
       if (!this.player || this.dialoguing) return;
       const grants = STORE_PACK_CONTENTS[v.id];
       if (!grants) {
-        EventBus.emit("banner:show", { text: "아직 등록되지 않은 상품이다" });
+        notice("아직 등록되지 않은 상품이다");
         return;
       }
       const r = await purchaseStorePack(v.id);
@@ -9658,7 +9792,7 @@ export class WorldScene extends Phaser.Scene {
           : r.reason === "pending" ? "결제가 확정 대기 중이다 — 확정되면 게임 재부팅 때 자동 지급된다"
           : r.reason === "unavailable" ? "아직 스토어에 상품이 등록 전이다 — 준비 후 다시"
           : "결제에 실패했다 — 네트워크를 확인하고 다시 시도하자";
-        EventBus.emit("banner:show", { text: msg });
+        notice(msg);
         return;
       }
       this.grantBmGrants("패키지 구매 감사합니다!", grants);
@@ -9672,17 +9806,17 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       this.ensurePassSeason();
       if (this.passPrem) {
-        EventBus.emit("banner:show", { text: "이미 프리미엄 패스 보유 중이다" });
+        notice("이미 프리미엄 패스 보유 중이다");
         return;
       }
       if (this.player.emerald < PASS_PREMIUM_PRICE) {
-        EventBus.emit("banner:show", { text: `에메랄드가 부족하다 (프리미엄 패스 ${PASS_PREMIUM_PRICE}💎 — 충전소 이용)` });
+        notice(`에메랄드가 부족하다 (프리미엄 패스 ${PASS_PREMIUM_PRICE}💎 — 충전소 이용)`);
         return;
       }
       this.player.emerald -= PASS_PREMIUM_PRICE;
       this.passPrem = true;
       audio.sfx.shop();
-      EventBus.emit("banner:show", { text: "프리미엄 패스 해금! 지금까지 도달한 레벨의 프리미엄 보상 전부 수령 가능" });
+      notice("프리미엄 패스 해금! 지금까지 도달한 레벨의 프리미엄 보상 전부 수령 가능");
       this.saveSoon();
       this.emitRpgState();
     };
@@ -9692,11 +9826,11 @@ export class WorldScene extends Phaser.Scene {
       const lv = Math.floor(v.lv);
       if (lv < 1 || lv > PASS_MAX_LV) return;
       if (lv > passLevel(this.passXp)) {
-        EventBus.emit("banner:show", { text: `아직 도달하지 않은 레벨이다 (현재 Lv.${passLevel(this.passXp)})` });
+        notice(`아직 도달하지 않은 레벨이다 (현재 Lv.${passLevel(this.passXp)})`);
         return;
       }
       if (v.track === "prem" && !this.passPrem) {
-        EventBus.emit("banner:show", { text: "프리미엄 트랙은 해금이 필요하다 (30💎)" });
+        notice("프리미엄 트랙은 해금이 필요하다 (30💎)");
         return;
       }
       const list = v.track === "free" ? this.passClaimedF : this.passClaimedP;
@@ -9733,7 +9867,7 @@ export class WorldScene extends Phaser.Scene {
         }
       }
       if (!grants.length) {
-        EventBus.emit("banner:show", { text: "지금 수령 가능한 보상이 없다 (레벨이 오르면 다시 시도)" });
+        notice("지금 수령 가능한 보상이 없다 (레벨이 오르면 다시 시도)");
         return;
       }
       this.grantBmGrants(`시즌 패스 — 한번에 받기 (${grants.length}건)`, grants);
@@ -9744,7 +9878,7 @@ export class WorldScene extends Phaser.Scene {
     const onSubBuy = () => {
       if (!this.player || this.dialoguing) return;
       if (this.player.emerald < SUB_PRICE) {
-        EventBus.emit("banner:show", { text: `에메랄드가 부족하다 (SERTZ 패스 ${SUB_PRICE}💎 — 충전소 이용)` });
+        notice(`에메랄드가 부족하다 (SERTZ 패스 ${SUB_PRICE}💎 — 충전소 이용)`);
         return;
       }
       this.player.emerald -= SUB_PRICE;
@@ -9767,13 +9901,13 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player) return;
       this.ensureDaily();
       if (this.dailyAdChest >= AD_CHEST_PER_DAY) {
-        EventBus.emit("banner:show", { text: `오늘의 무료 상자는 끝났다 (일 ${AD_CHEST_PER_DAY}회) — 내일 다시` });
+        notice(`오늘의 무료 상자는 끝났다 (일 ${AD_CHEST_PER_DAY}회) — 내일 다시`);
         return;
       }
-      EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
+      notice("광고를 준비 중이니 잠시만…");
       const r = await showRewardedAd();
       if (!r.ok) {
-        EventBus.emit("banner:show", { text: adFailText(r.reason) });
+        notice(adFailText(r.reason));
         return;
       }
       this.dailyAdChest++;
@@ -9788,13 +9922,13 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player) return;
       this.ensureDaily();
       if (this.dailyAdDrop >= AD_DROP_PER_DAY) {
-        EventBus.emit("banner:show", { text: `오늘의 광고 버프는 끝났다 (일 ${AD_DROP_PER_DAY}회) — 내일 다시` });
+        notice(`오늘의 광고 버프는 끝났다 (일 ${AD_DROP_PER_DAY}회) — 내일 다시`);
         return;
       }
-      EventBus.emit("banner:show", { text: "광고를 준비 중이니 잠시만…" });
+      notice("광고를 준비 중이니 잠시만…");
       const r = await showRewardedAd();
       if (!r.ok) {
-        EventBus.emit("banner:show", { text: adFailText(r.reason) });
+        notice(adFailText(r.reason));
         return;
       }
       this.dailyAdDrop++;
@@ -9819,18 +9953,18 @@ export class WorldScene extends Phaser.Scene {
     const onJobSelect = (v: { key: string }) => {
       if (!this.player || this.player.state === "dead") return;
       if (this.dialoguing) {
-        EventBus.emit("banner:show", { text: "대화 중에는 전직할 수 없습니다" });
+        notice("대화 중에는 전직할 수 없습니다");
         return;
       }
       const def = classDef(v.key);
       if (!def) return;
       const need = nextJobLevel(this.player.cls);
       if (need === null) {
-        EventBus.emit("banner:show", { text: "이미 최종 전직 완료 — 자유 전직을 이용하세요" });
+        notice("이미 최종 전직 완료 — 자유 전직을 이용하세요");
         return;
       }
       if (this.player.lv < need) {
-        EventBus.emit("banner:show", { text: `전직은 Lv ${need}부터 가능합니다` });
+        notice(`전직은 Lv ${need}부터 가능합니다`);
         return;
       }
       /* ---------- 미전직: 계열 선택 → 1차 시련 스토리 ---------- */
@@ -9839,7 +9973,7 @@ export class WorldScene extends Phaser.Scene {
         if (!fam) return;
         if (this.jobStory?.tier === 1 && !this.player.cls) {
           if (this.jobStory.fam === fam) {
-            EventBus.emit("banner:show", { text: "이미 전직 시련 진행 중 — 스토리를 완료하면 전직한다!" });
+            notice("이미 전직 시련 진행 중 — 스토리를 완료하면 전직한다!");
             return;
           }
           if (this.jobStory.step === 0) {
@@ -9849,7 +9983,7 @@ export class WorldScene extends Phaser.Scene {
             this.startJobStory(fam, 1);
             return;
           }
-          EventBus.emit("banner:show", { text: "시련 도중에는 계열을 바꿀 수 없다" });
+          notice("시련 도중에는 계열을 바꿀 수 없다");
           return;
         }
         /* v1.4.12 (#19 유저 지시 "전직 버튼을 누르고 전직 퀘스트를 완료해야 전직을 시켜줘") —
@@ -9865,9 +9999,9 @@ export class WorldScene extends Phaser.Scene {
         return;
       } else if (!this.jobQuestCleared()) {
         // 2차/3차 승격 — 다음 차수 시련 완료 필수 (패널 우회 방지 scene-side 재검증)
-        EventBus.emit("banner:show", {
-          text: `📜 ${this.jobQuestLockText() ?? "전직 시련을 먼저 완료하세요"}`,
-        });
+        notice(
+          `📜 ${this.jobQuestLockText() ?? "전직 시련을 먼저 완료하세요"}`,
+        );
         return;
       }
       if (!this.player.applyClass(def.key)) return;
@@ -9882,7 +10016,7 @@ export class WorldScene extends Phaser.Scene {
         this.doShake(200, 0.008);
         this.spawnPickupText(this.player.x, this.player.y - 56, `${def.name} 각성! 스킬 강화`, `#${jhex.toString(16).padStart(6, "0")}`);
       }
-      EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
+      notice(`전직 완료! ${def.name} — ${def.title}`);
       this.refreshPlayerTag();
       this.saveSoon();
       this.emitHud();
@@ -9896,18 +10030,18 @@ export class WorldScene extends Phaser.Scene {
     const onJobSwitch = (v: { key: string }) => {
       if (!this.player || this.player.state === "dead") return;
       if (this.dialoguing) {
-        EventBus.emit("banner:show", { text: "대화 중에는 전직할 수 없습니다" });
+        notice("대화 중에는 전직할 수 없습니다");
         return;
       }
       const alt = freeJobOption(this.player.cls);
       if (!alt || alt.key !== v.key) return;
       if (this.player.gold < FREE_JOB_COST) {
-        EventBus.emit("banner:show", { text: `자유 전직에는 ${FREE_JOB_COST}G가 필요합니다` });
+        notice(`자유 전직에는 ${FREE_JOB_COST}G가 필요합니다`);
         return;
       }
       if (!this.player.switchClass(alt.key)) return;
       this.player.gold -= FREE_JOB_COST;
-      EventBus.emit("banner:show", { text: `자유 전직! ${alt.name} — ${alt.title} (-${FREE_JOB_COST}G)` });
+      notice(`자유 전직! ${alt.name} — ${alt.title} (-${FREE_JOB_COST}G)`);
       audio.sfx.levelup();
       this.refreshPlayerTag();
       this.saveSoon();
@@ -9942,12 +10076,12 @@ export class WorldScene extends Phaser.Scene {
           used++;
         }
         if (used > 0) {
-          EventBus.emit("banner:show", { text: `경험치 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}` });
+          notice(`경험치 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}`);
           audio.sfx.pickup();
           this.emitRpgState();
           this.saveSoon();
         } else {
-          EventBus.emit("banner:show", { text: "경험치 책이 없습니다" });
+          notice("경험치 책이 없습니다");
         }
         return;
       }
@@ -9964,14 +10098,14 @@ export class WorldScene extends Phaser.Scene {
           used++;
         }
         if (used > 0) {
-          EventBus.emit("banner:show", { text: `${NAME} 성장의 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}` });
+          notice(`${NAME} 성장의 책 사용${used > 1 ? ` ×${used}` : ""}! EXP +${total.toLocaleString()}`);
           this.spawnPickupText(this.player.x, this.player.y - 34, `EXP +${total.toLocaleString()}`, "#8fe84a");
           audio.sfx.pickup();
           this.emitRpgState();
           this.emitHud();
           this.saveSoon();
         } else {
-          EventBus.emit("banner:show", { text: failMsg ?? "사용할 수 없습니다" });
+          notice(failMsg ?? "사용할 수 없습니다");
         }
         return;
       }
@@ -9986,7 +10120,7 @@ export class WorldScene extends Phaser.Scene {
          *  기존엔 onUseItem 분기가 없어 조용히 무시됐다(아무 반응 없음 버그) */
         this.player.hp = this.player.maxHp;
         this.player.mp = this.player.maxMp;
-        EventBus.emit("banner:show", { text: "운영자 무한 엘릭서 — HP/MP 전부 회복!" });
+        notice("운영자 무한 엘릭서 — HP/MP 전부 회복!");
         this.spawnPickupText(this.player.x, this.player.y - 30, "HP/MP 전부 회복!", "#ffd76a");
         this.emote("heart", this.player.x, this.player.y - 44); // v1.2.0 (#8) 감정 버블
         this.emitHud();
@@ -9996,7 +10130,7 @@ export class WorldScene extends Phaser.Scene {
       if (key === "scroll_return") {
         // v2.9 (지시 #6) — 마을 귀환서: “가장 가까운 마을(현재 챕터의 마을)”로 즉시 귀환
         if (this.stageDef.isVillage) {
-          EventBus.emit("banner:show", { text: "이미 마을에 있습니다" });
+          notice("이미 마을에 있습니다");
           return;
         }
         if (!this.player.hasConsumable(key)) return;
@@ -10004,14 +10138,14 @@ export class WorldScene extends Phaser.Scene {
         audio.sfx.portal();
         const { ch } = parseStage(this.stageDef.key);
         const vk: StageKey = ch === "village" ? "village" : `${ch}v`;
-        EventBus.emit("banner:show", { text: `마을 귀환서 사용! ${STAGES[vk]?.name ?? "마을"}로 이동합니다…` });
+        notice(`마을 귀환서 사용! ${STAGES[vk]?.name ?? "마을"}로 이동합니다…`);
         this.startTransition(vk, { delay: 440 });
         return;
       }
       if (key === "scroll_warp") {
         // 지역 이동 부적 — 방문한 구역 선택 UI 오픈 (차감은 워프 실행 시)
         if (this.visited.size === 0) {
-          EventBus.emit("banner:show", { text: "기록된 방문 구역이 없습니다" });
+          notice("기록된 방문 구역이 없습니다");
           return;
         }
         EventBus.emit("ui:panel", { panel: "warp" });
@@ -10025,22 +10159,22 @@ export class WorldScene extends Phaser.Scene {
       const target = resolveStage(String(v?.stage || ""));
       if (!target) return;
       if (!this.visited.has(target)) {
-        EventBus.emit("banner:show", { text: "한 번이라도 도착한 구역만 이동할 수 있어요" });
+        notice("한 번이라도 도착한 구역만 이동할 수 있어요");
         return;
       }
       if (target === this.stageDef.key) {
-        EventBus.emit("banner:show", { text: "이미 있는 구역입니다" });
+        notice("이미 있는 구역입니다");
         return;
       }
       if (!this.player.hasConsumable("scroll_warp")) {
-        EventBus.emit("banner:show", { text: "지역 이동 부적이 없습니다 — 상인 라고스에게서 구매" });
+        notice("지역 이동 부적이 없습니다 — 상인 라고스에게서 구매");
         EventBus.emit("ui:panel", { panel: null });
         return;
       }
       this.player.consumeConsumable("scroll_warp");
       audio.sfx.portal();
       EventBus.emit("ui:panel", { panel: null });
-      EventBus.emit("banner:show", { text: `부적 사용! ${STAGE_SHORT[target] ?? target}(으)로 이동합니다…` });
+      notice(`부적 사용! ${STAGE_SHORT[target] ?? target}(으)로 이동합니다…`);
       this.startTransition(target, { delay: 440 });
     };
 
@@ -10062,12 +10196,12 @@ export class WorldScene extends Phaser.Scene {
       if (isRebirth) {
         const cleared = (this.monsterKills[`boss_${rbBoss}`] ?? 0) > 0;
         if (!cleared) {
-          EventBus.emit("banner:show", { text: "재림의 땅 스토리를 먼저 완료하세요 — 해당 보스를 처치해야 합니다" });
+          notice("재림의 땅 스토리를 먼저 완료하세요 — 해당 보스를 처치해야 합니다");
           return;
         }
         audio.sfx.portal();
         EventBus.emit("ui:panel", { panel: null });
-        EventBus.emit("banner:show", { text: `재림 — ${BOSS_DEFS[rbBoss].name}의 재도전! [${BOSS_DIFFS[lv].label}]` });
+        notice(`재림 — ${BOSS_DEFS[rbBoss].name}의 재도전! [${BOSS_DIFFS[lv].label}]`);
         this.startTransition(target, { delay: 440, replayBoss: ch, replayDiff: lv });
         return;
       }
@@ -10077,12 +10211,12 @@ export class WorldScene extends Phaser.Scene {
       const bossIdx = stageQuests.findIndex((q) => q.type === "boss");
       const cleared = bossIdx >= 0 ? (this.savedQuestIdx[target] ?? 0) > bossIdx : false;
       if (!cleared) {
-        EventBus.emit("banner:show", { text: "아직 스토리를 완료하지 않은 챕터의 보스입니다" });
+        notice("아직 스토리를 완료하지 않은 챕터의 보스입니다");
         return;
       }
       audio.sfx.portal();
       EventBus.emit("ui:panel", { panel: null });
-      EventBus.emit("banner:show", { text: `재림 — ${BOSS_DEFS[spec.boss].name}의 재도전! [${BOSS_DIFFS[lv].label}]` });
+      notice(`재림 — ${BOSS_DEFS[spec.boss].name}의 재도전! [${BOSS_DIFFS[lv].label}]`);
       this.startTransition(target, { delay: 440, replayBoss: ch, replayDiff: lv });
     };
     /* v3.0.28 (#보스난이도) — 스토리 보스 난이도 선택 수신은 v3.1.0에서 제거됐다:
@@ -10096,7 +10230,7 @@ export class WorldScene extends Phaser.Scene {
        *  보스전 개시 중엔 켜기 금지: 보스는 패턴 회피·타이밍이 전부인 전투라
        *  알고리즘 자동전투로는 패턴을 읽지 못하고 무조건 사망한다. */
       if (!this.autoHunt && this.bossFightActive()) {
-        EventBus.emit("banner:show", { text: "⚔ 보스전에서는 자동전투를 쓸 수 없다! 보스의 패턴을 직접 피하고, 공격 타이밍을 잡아 싸워야 한다" });
+        notice("⚔ 보스전에서는 자동전투를 쓸 수 없다! 보스의 패턴을 직접 피하고, 공격 타이밍을 잡아 싸워야 한다");
         audio.sfx.deny();
         return;
       }
@@ -10104,7 +10238,7 @@ export class WorldScene extends Phaser.Scene {
       this.autoHuntMove.set(0, 0);
       this.autoTarget = null;
       this.autoDirHoldUntil = 0;
-      EventBus.emit("banner:show", { text: this.autoHunt ? "자동사냥 ON — 위협 제거 우선 · 사냥/보스 최적화" : "자동사냥 OFF" });
+      notice(this.autoHunt ? "자동사냥 ON — 위협 제거 우선 · 사냥/보스 최적화" : "자동사냥 OFF");
       this.emitRpgState();
       this.saveSoon();
     };
@@ -10133,11 +10267,11 @@ export class WorldScene extends Phaser.Scene {
           this.interactables = this.interactables.filter((it) => it.kind !== "dlcgate");
         }
         this.save();
-        EventBus.emit("banner:show", {
-          text: on
+        notice(
+          on
             ? "GM — DLC 임시 해금 (그랜드플래닛 게이트가 열렸다)"
             : "GM — DLC 해금 취소",
-        });
+        );
         audio.sfx.portal();
         this.emitRpgState();
         return;
@@ -10145,7 +10279,7 @@ export class WorldScene extends Phaser.Scene {
       if (v.type === "job" && typeof v.value === "string") {
         if (!isClassKey(v.value)) return;
         const ok = p.gmSetClass(v.value);
-        EventBus.emit("banner:show", { text: ok ? `GM 전직 완료 — ${classLabel(v.value)}` : "전직 실패" });
+        notice(ok ? `GM 전직 완료 — ${classLabel(v.value)}` : "전직 실패");
         if (ok) {
           /* v3.0.4 — GM 전직도 강화 연출 동일 적용 */
           const jhex = classDef(v.value)?.hex ?? 0xffffff;
@@ -10159,41 +10293,41 @@ export class WorldScene extends Phaser.Scene {
         this.saveSoon();
       } else if (v.type === "gold" && typeof v.value === "number") {
         p.addGold(v.value);
-        EventBus.emit("banner:show", { text: `GM — 골드 ${v.value >= 0 ? "+" : ""}${v.value}` });
+        notice(`GM — 골드 ${v.value >= 0 ? "+" : ""}${v.value}`);
       } else if (v.type === "lv" && typeof v.value === "number") {
         p.gmSetLevel(v.value);
-        EventBus.emit("banner:show", { text: `GM — 레벨 ${p.lv}` });
+        notice(`GM — 레벨 ${p.lv}`);
         this.emitSkills();
       } else if (v.type === "heal") {
         p.healFull();
-        EventBus.emit("banner:show", { text: "GM — HP/MP 완전 회복" });
+        notice("GM — HP/MP 완전 회복");
       } else if (v.type === "ap" && typeof v.value === "number") {
         p.ap += v.value;
         this.emitHud();
-        EventBus.emit("banner:show", { text: `GM — AP +${v.value}` });
+        notice(`GM — AP +${v.value}`);
       } else if (v.type === "gmitems") {
         /* v1.0.2 (#GM아이템) — GM 전용 장비 4종 지급 (gmOnly — 상점/드롭/거래 불가, 관리자 테스트용) */
         for (const k of ["gm_sword", "gm_armor", "gm_ring", "gm_elixir"]) {
           if (!p.owned.includes(k as ItemKey)) p.owned.push(k as ItemKey);
         }
         this.spawnPillar(p.x, p.y, 0xffd76a, 240);
-        EventBus.emit("banner:show", { text: "GM 장비 지급 완료 — [GM] 대검·갑주·반지·엘릭서" });
+        notice("GM 장비 지급 완료 — [GM] 대검·갑주·반지·엘릭서");
         this.emitRpgState();
         this.saveSoon();
       } else if (v.type === "em" && typeof v.value === "number") {
         /* v3.0.6 — GM 에메랄드 지급 (BM 상점 테스트용) */
         p.emerald = Math.max(0, p.emerald + v.value);
         this.emitRpgState();
-        EventBus.emit("banner:show", { text: `GM — 에메랄드 ${v.value >= 0 ? "+" : ""}${v.value}` });
+        notice(`GM — 에메랄드 ${v.value >= 0 ? "+" : ""}${v.value}`);
       } else if (v.type === "fifth") {
         /* v3.3.0 (지시 #3) — GM 5차전직(임시): 부여/해제 토글 */
         const on = v.value === 1 || v.value === "1";
         p.gmGrantFifth(on);
-        EventBus.emit("banner:show", {
-          text: on
+        notice(
+          on
             ? "GM 5차 전직 완료(임시)! 전 스킬 ·극 강화 + 고유 궁귁기(S) 해금" // v1.0.5 — 스킬5 기본키 반영
             : "5차 각성 해제 — 일반 상태로 복귀",
-        });
+        );
         this.emitSkills();
         this.emitRpgState();
         this.saveSoon();
@@ -10216,14 +10350,14 @@ export class WorldScene extends Phaser.Scene {
         this.ticketCloset = TICKETS_PER_DAY.closet;
         this.saveSoon();
         this.emitRpgState();
-        EventBus.emit("banner:show", { text: "GM — 오늘 입장 티켓 전량 충전!" });
+        notice("GM — 오늘 입장 티켓 전량 충전!");
       } else if (v.type === "boss" && typeof v.value === "string") {
         /* v4.6.0 — GM 전 보스 체험: 해당 보스 구역으로 이동 후 스토리 스펙 보스 즉시 스폰.
          *  처치 처리는 재림 분리 경로 — 스토리 퀘스트/포탈 진행 영향 0 */
         const bk = BOSS_DEFS[v.value as BossKey];
         const ch = CHAPTERS.find((c) => c.boss === (v.value as BossKey));
         if (!bk || !ch) return;
-        EventBus.emit("banner:show", { text: `GM 보스 체험 — ${bk.name} (${STAGE_SHORT[`${ch.key}10` as StageKey] ?? ch.title})` });
+        notice(`GM 보스 체험 — ${bk.name} (${STAGE_SHORT[`${ch.key}10` as StageKey] ?? ch.title})`);
         this.startTransition(`${ch.key}10` as StageKey, { gmBoss: v.value });
       }
     };
@@ -10368,7 +10502,7 @@ export class WorldScene extends Phaser.Scene {
         : [...this.player.lockedItems, v.key];
       this.saveSoon();
       this.emitRpgState();
-      EventBus.emit("banner:show", { text: has ? "잠금 해제" : "잠금 — 이제 판매되지 않습니다" });
+      notice(has ? "잠금 해제" : "잠금 — 이제 판매되지 않습니다");
     };
     EventBus.on("rpg:lockItem", onLockItem);
 
@@ -10397,7 +10531,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       /* v1.1.7 (#개편 A87) — 잠근 아이템은 판매 불가. 실수로 좋은 장비를 파는 사고 방지. */
       if (this.player.lockedItems.includes(v.key)) {
-        EventBus.emit("banner:show", { text: "잠근 아이템은 판매할 수 없습니다 — 잠금을 먼저 해제하세요" });
+        notice("잠근 아이템은 판매할 수 없습니다 — 잠금을 먼저 해제하세요");
         return;
       }
       const qty = Math.max(1, Math.min(999, Math.floor(v.qty ?? 1)));
@@ -10405,9 +10539,9 @@ export class WorldScene extends Phaser.Scene {
       if (sold > 0) {
         this.saveSoon();
         this.emitRpgState();
-        EventBus.emit("banner:show", {
-          text: sold > 1 ? `판매 완료 ×${sold} — 상점가의 40%` : "판매 완료 — 상점가의 40%",
-        });
+        notice(
+          sold > 1 ? `판매 완료 ×${sold} — 상점가의 40%` : "판매 완료 — 상점가의 40%",
+        );
       }
     };
     /* v3.0.20 (#7) — 물약 판매 (기본은 카운터 차감, 상급/엘릭서는 owned) · v3.1.0 — 수량 지정 */
@@ -10418,9 +10552,9 @@ export class WorldScene extends Phaser.Scene {
       if (sold > 0) {
         this.saveSoon();
         this.emitRpgState();
-        EventBus.emit("banner:show", {
-          text: sold > 1 ? `물약 판매 완료 ×${sold} — 상점가의 40%` : "물약 판매 완료 — 상점가의 40%",
-        });
+        notice(
+          sold > 1 ? `물약 판매 완료 ×${sold} — 상점가의 40%` : "물약 판매 완료 — 상점가의 40%",
+        );
       }
     };
     /* v3.0.6 (지시 #1) — BM 상점 구매 (에메랄드) · v3.0.24 — 수량 지정 + 소모품 재구매 버그 수정 */
@@ -10439,7 +10573,7 @@ export class WorldScene extends Phaser.Scene {
         const n = Math.max(1, Math.min(10, Math.floor(v.qty ?? 1)));
         const cost = (unitPay ?? it.bmPrice ?? 0) * n;
         if (this.player.emerald < cost) {
-          EventBus.emit("banner:show", { text: "에메랄드가 부족합니다" });
+          notice("에메랄드가 부족합니다");
           return;
         }
         this.player.emerald -= cost;
@@ -10465,12 +10599,12 @@ export class WorldScene extends Phaser.Scene {
         this.saveSoon();
         this.emitRpgState();
         this.emitHud();
-        EventBus.emit("banner:show", { text: `${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost} 에메랄드${deal ? " · 일일특가 30%↓" : ""})` });
+        notice(`${it?.name ?? "아이템"}${qty > 1 ? ` ×${qty}` : ""} 구매 완료! (-${cost} 에메랄드${deal ? " · 일일특가 30%↓" : ""})`);
         if (it?.kind === "pet") this.onPetChanged();
         if (it?.kind === "cosmetic") this.onCosmeticChanged();
         audio.sfx.shop();
       } else {
-        EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
+        notice("에메랄드가 부족하거나 이미 보유 중입니다");
       }
     };
     /* v4.6.0 — 인벤토리에서 상자/패키지 개봉: 보유 소모 후 구매 개봉과 동일한 가중치 롤 지급.
@@ -10481,7 +10615,7 @@ export class WorldScene extends Phaser.Scene {
       const it = ITEMS[key as ItemKey];
       if (!it || !(key.startsWith("chest_") || key.startsWith("pack_"))) return;
       if (!this.player.hasConsumable(key as ItemKey)) {
-        EventBus.emit("banner:show", { text: "개봉할 상자가 없습니다" });
+        notice("개봉할 상자가 없습니다");
         return;
       }
       this.player.consumeConsumable(key as ItemKey);
@@ -10507,7 +10641,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.owned.sort((a, b) => rank(a).localeCompare(rank(b), "ko"));
       this.saveSoon();
       this.emitRpgState();
-      EventBus.emit("banner:show", { text: "가방을 정리했다 — 깔끔하네" });
+      notice("가방을 정리했다 — 깔끔하네");
     };
     /* v3.0.6 (지시 #5) — 자동 물약/자동 버프 설정 */
     const onAutoSet = (v: { hpPct?: number; mpPct?: number; mpOn?: boolean; buffs?: string[] }) => {
@@ -10530,10 +10664,10 @@ export class WorldScene extends Phaser.Scene {
         this.saveSoon();
         this.emitRpgState();
         this.emitHud();
-        EventBus.emit("banner:show", { text: `거래소 구매 — ${it?.name ?? "아이템"} (-${TRADE_PRICES[v.key] ?? 0} 에메랄드)` });
+        notice(`거래소 구매 — ${it?.name ?? "아이템"} (-${TRADE_PRICES[v.key] ?? 0} 에메랄드)`);
         audio.sfx.shop();
       } else {
-        EventBus.emit("banner:show", { text: "에메랄드가 부족하거나 이미 보유 중입니다" });
+        notice("에메랄드가 부족하거나 이미 보유 중입니다");
       }
     };
     /* v3.0.7 — 유저 거래소: 판매(에메랄드 환급) */
@@ -10544,14 +10678,14 @@ export class WorldScene extends Phaser.Scene {
         this.saveSoon();
         this.emitRpgState();
         this.emitHud();
-        EventBus.emit("banner:show", { text: `거래소 판매 — +${tradeValue(v.key as ItemKey)} 에메랄드` });
+        notice(`거래소 판매 — +${tradeValue(v.key as ItemKey)} 에메랄드`);
       }
     };
     /* v3.0.7 — 강화 주문서 사용 (충전) */
     const onStarScroll = () => {
       if (!this.player || this.dialoguing) return;
       if (!this.player.useStarScroll()) {
-        EventBus.emit("banner:show", { text: this.player.starBless >= 3 ? "충전 최대 3장 — 강화부터" : "강화 주문서가 없습니다" });
+        notice(this.player.starBless >= 3 ? "충전 최대 3장 — 강화부터" : "강화 주문서가 없습니다");
         return;
       }
       this.saveSoon();
@@ -10562,9 +10696,9 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       const r = this.player.tryUpgradeAcc(v.key as ItemKey);
       if (r === "poor") {
-        EventBus.emit("banner:show", { text: "골드가 부족합니다" });
+        notice("골드가 부족합니다");
       } else if (r === "max") {
-        EventBus.emit("banner:show", { text: "이미 최대 성수입니다 (★15)" });
+        notice("이미 최대 성수입니다 (★15)");
       }
       if (r === "ok" || r === "fail") {
         this.saveSoon();
@@ -10581,7 +10715,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.saveSoon();
       this.emitRpgState();
-      EventBus.emit("banner:show", { text: v.on ? "레벨업 자동 배분 ON — 스탯을 자동으로 나눕니다" : "레벨업 자동 배분 OFF" });
+      notice(v.on ? "레벨업 자동 배분 ON — 스탯을 자동으로 나눕니다" : "레벨업 자동 배분 OFF");
     };
     /* #7 — 물약 퀵슬롯 장착 (인벤토리에서) */
     const onQuickPot = (v: { slot: "hp" | "mp"; key: string }) => {
@@ -10591,7 +10725,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.quickPots[v.slot] = v.key;
       this.saveSoon();
       this.emitRpgState();
-      EventBus.emit("banner:show", { text: `${item.name} → ${v.slot === "hp" ? "HP" : "MP"} 버튼에 장착!` });
+      notice(`${item.name} → ${v.slot === "hp" ? "HP" : "MP"} 버튼에 장착!`);
     };
     /* #13 — eert 큐브 리롤 */
     const onEert = (v: { key: string }) => {
@@ -10603,16 +10737,16 @@ export class WorldScene extends Phaser.Scene {
       this.eertBusyUntil = this.time.now + 260;
       const pot = this.player.rerollPotentials(v.key as ItemKey);
       if (!pot) {
-        EventBus.emit("banner:show", { text: "eert 큐브가 없습니다 (캐시상점 8💎)" }); // v1.0.5 — 캐시상점 명칭 통일
+        notice("eert 큐브가 없습니다 (캐시상점 8💎)"); // v1.0.5 — 캐시상점 명칭 통일
         return;
       }
       const meta = POT_GRADE_META[pot.grade];
       const gradeHex = pot.grade === 3 ? 0xff8a5c : pot.grade === 2 ? 0xffd76a : pot.grade === 1 ? 0xc08aff : 0x6fb8ff;
       this.spawnPillar(this.player.x, this.player.y, gradeHex, 220);
       this.spawnBurstAt(this.player.x, this.player.y, 20, gradeHex);
-      EventBus.emit("banner:show", {
-        text: `eert 큐브 — ${meta.name} 등급! ${pot.lines.map((l) => potLineText(l)).join(" · ")}`,
-      });
+      notice(
+        `eert 큐브 — ${meta.name} 등급! ${pot.lines.map((l) => potLineText(l)).join(" · ")}`,
+      );
       this.saveSoon();
       this.emitRpgState();
       this.emitHud();
@@ -10622,7 +10756,7 @@ export class WorldScene extends Phaser.Scene {
       const idx = v.stage === this.stageDef.key ? this.questIdx : this.savedQuestIdx[v.stage] ?? 0;
       const def = STAGES[v.stage as StageKey];
       if (!def || idx >= def.quests.length) {
-        EventBus.emit("banner:show", { text: "수락할 퀘스트가 없습니다" });
+        notice("수락할 퀘스트가 없습니다");
         return;
       }
       this.acceptedQuests[v.stage] = idx;
@@ -10632,7 +10766,7 @@ export class WorldScene extends Phaser.Scene {
         this.afterAdvance();
       }
       this.saveSoon();
-      EventBus.emit("banner:show", { text: `퀘스트 수락! — ${def.quests[idx].title}` });
+      notice(`퀘스트 수락! — ${def.quests[idx].title}`);
       audio.sfx.questAccept();
       this.emitQuest();
       this.emitQuestLog();
@@ -10652,7 +10786,7 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       /* v1.0.2 (#GM아이템) — GM 전용 아이템은 거래판 등록 불가 */
       if (ITEMS[v.key as ItemKey]?.gmOnly) {
-        EventBus.emit("banner:show", { text: "GM 전용 아이템은 거래할 수 없다" });
+        notice("GM 전용 아이템은 거래할 수 없다");
         return;
       }
       /* vc153 (#신규8) — 다수 등록: 보유 목록에서 qty개 제거 */
@@ -10670,7 +10804,7 @@ export class WorldScene extends Phaser.Scene {
     const onMarketBuy = (v: { itemKey: string; up: number; price: number }) => {
       if (!this.player || this.dialoguing) return;
       if (this.player.gold < v.price) {
-        EventBus.emit("banner:show", { text: "골드가 부족하다" });
+        notice("골드가 부족하다");
         return;
       }
       this.player.gold -= v.price; // 시세 왜곡 방지 — buff_gold 배율 미적용 (직접 차감)
@@ -10685,7 +10819,7 @@ export class WorldScene extends Phaser.Scene {
         this.player.accUp[v.itemKey] = v.up;
       }
       this.trackMission("market"); // 주간 미션 "거래소 이용"
-      EventBus.emit("banner:show", { text: `유저 거래판 구매 완료! (-${v.price.toLocaleString()} G)` });
+      notice(`유저 거래판 구매 완료! (-${v.price.toLocaleString()} G)`);
       audio.sfx.shop();
       this.saveSoon();
       this.emitRpgState();
@@ -10714,7 +10848,7 @@ export class WorldScene extends Phaser.Scene {
       } else {
         this.player.gold += v.gold; // 구서버 호환 — 잔액을 못 받으면 기존 방식
       }
-      EventBus.emit("banner:show", { text: `정산금 수령 — +${v.gold.toLocaleString()} G (수수료 10% 제외)` });
+      notice(`정산금 수령 — +${v.gold.toLocaleString()} G (수수료 10% 제외)`);
       audio.sfx.sell();
       this.saveSoon();
       this.emitRpgState();
@@ -10725,19 +10859,19 @@ export class WorldScene extends Phaser.Scene {
       if (!this.player || this.dialoguing) return;
       this.ensureTickets();
       if (this.ticketRefills >= 3) {
-        EventBus.emit("banner:show", { text: "오늘의 재충전 한도 초과 — 내일 다시!" });
+        notice("오늘의 재충전 한도 초과 — 내일 다시!");
         return;
       }
       const cost = 3;
       if (this.player.emerald < cost) {
-        EventBus.emit("banner:show", { text: "에메랄드가 부족하다 (3💎 필요)" });
+        notice("에메랄드가 부족하다 (3💎 필요)");
         return;
       }
       this.player.emerald -= cost;
       this.ticketRefills++;
       if (v.kind === "gate") this.ticketGate++;
       else this.ticketCloset++;
-      EventBus.emit("banner:show", { text: `${v.kind === "gate" ? "바르가 수비전" : "균열 던전"} 티켓 +1 재충전! (-3💎)` });
+      notice(`${v.kind === "gate" ? "바르가 수비전" : "균열 던전"} 티켓 +1 재충전! (-3💎)`);
       audio.sfx.charge();
       this.saveSoon();
       this.emitRpgState();
@@ -10753,11 +10887,11 @@ export class WorldScene extends Phaser.Scene {
       try { window.localStorage.setItem("sertz_fx_mode", this.fxMode); } catch { /* 저장 실패 무시 */ }
       const forced: 0 | 1 = this.fxMode === "high" ? 1 : this.fxMode === "low" ? 0 : this.fxLevel;
       if (this.fxLevel !== forced) this.applyFxMode(this.fxLevel = forced);
-      EventBus.emit("banner:show", {
-        text: this.fxMode === "high" ? "그래픽 효과: 항상 높음 — 셰이더·블룸 항상 적용"
+      notice(
+        this.fxMode === "high" ? "그래픽 효과: 항상 높음 — 셰이더·블룸 항상 적용"
           : this.fxMode === "low" ? "그래픽 효과: 절전 — 셰이더 비활성"
           : "그래픽 효과: 자동 — 프레임에 따라 조정",
-      });
+      );
     };
     EventBus.on("fx:mode", onFxMode);
     /* v1.0.8 — 무한 콘텐츠 허브 리스너 (탑/시련/티어균열/제작/심연상점/환생) */
@@ -10821,7 +10955,7 @@ export class WorldScene extends Phaser.Scene {
       const it = SHOP[v?.id ?? ""];
       if (!it) return;
       if (this.parkCoins < it.cost) {
-        EventBus.emit("banner:show", { text: `파크 코인이 부족하다 (${it.cost} 필요 — 현재 ${this.parkCoins})` });
+        notice(`파크 코인이 부족하다 (${it.cost} 필요 — 현재 ${this.parkCoins})`);
         return;
       }
       this.parkCoins -= it.cost;
@@ -10865,17 +10999,17 @@ export class WorldScene extends Phaser.Scene {
       const it = ITEMS[key];
       if (!it || (key !== "rank_aura" && key !== "rank_crown_gold")) return;
       if (this.player.cosmetics.includes(key as CosmeticKey)) {
-        EventBus.emit("banner:show", { text: "이미 보유 중인 랭커 치장이에요" });
+        notice("이미 보유 중인 랭커 치장이에요");
         return;
       }
-      EventBus.emit("banner:show", { text: "랭킹 서버에서 순위를 확인하는 중…" });
+      notice("랭킹 서버에서 순위를 확인하는 중…");
       const r = await fetchRanking();
       if (!r.ok || !r.state?.me || !r.state.me.rank) {
-        EventBus.emit("banner:show", { text: "랭킹 확인 실패 — 로그인 + 클라우드 백업(3분 자동) 후 이용할 수 있어요" });
+        notice("랭킹 확인 실패 — 로그인 + 클라우드 백업(3분 자동) 후 이용할 수 있어요");
         return;
       }
       if (r.state.me.rank > 10) {
-        EventBus.emit("banner:show", { text: `랭커 전용 치장 — 현재 ${r.state.me.rank}위! 10위 안으로 진입하면 구매 가능` });
+        notice(`랭커 전용 치장 — 현재 ${r.state.me.rank}위! 10위 안으로 진입하면 구매 가능`);
         return;
       }
       const okBuy = this.player.buyBm(key, 1);
@@ -10884,10 +11018,10 @@ export class WorldScene extends Phaser.Scene {
         this.emitRpgState();
         this.emitHud();
         this.onCosmeticChanged();
-        EventBus.emit("banner:show", { text: `${it.name} 구매 완료! (-${it.bmPrice} 에메랄드) — 랭커의 증표` });
+        notice(`${it.name} 구매 완료! (-${it.bmPrice} 에메랄드) — 랭커의 증표`);
         audio.sfx.shop();
       } else {
-        EventBus.emit("banner:show", { text: "에메랄드가 부족해요" });
+        notice("에메랄드가 부족해요");
       }
     };
     EventBus.on("rpg:rankBuy", onRankBuy);
@@ -11006,10 +11140,8 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:passBuy", onPassBuy); // v4.5.0
       EventBus.off("rpg:passClaim", onPassClaim); // v4.5.0
       EventBus.off("rpg:passClaimAll", onPassClaimAll); // v1.0.2 — 한번에 받기
-      EventBus.off("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 자동 강화
-      EventBus.off("rpg:autoUpgradeStop", () => stopAutoUpgrade("자동 강화를 취소했다")); // v1.0.2
-      EventBus.off("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 자동 강화
-      EventBus.off("rpg:autoUpgradeStop", () => stopAutoUpgrade("자동 강화를 취소했다")); // v1.0.2
+      EventBus.off("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — vc225 중복 등록문 1줄로 정리
+      EventBus.off("rpg:autoUpgradeStop", onAutoUpgradeStop); // vc225 — 이름 있는 핸들러로 해제
       EventBus.off("rpg:subBuy", onSubBuy); // v4.5.0
       EventBus.off("rpg:adChest", onAdChest); // v4.5.0
       EventBus.off("rpg:adDrop", onAdDrop); // v4.5.0
@@ -14189,10 +14321,10 @@ export class WorldScene extends Phaser.Scene {
           if (this.adminRole === "admin") {
             EventBus.emit("ui:panel", { panel: "gm" });
           } else {
-            EventBus.emit("banner:show", { text: "GM 기능은 관리자 계정 전용입니다" });
+            notice("GM 기능은 관리자 계정 전용입니다");
           }
         })
-        .catch(() => EventBus.emit("banner:show", { text: "권한 확인에 실패했다 (관리자 전용)" }))
+        .catch(() => notice("권한 확인에 실패했다 (관리자 전용)"))
         .finally(() => { this.gmCheckBusy = false; });
     } else if (it.kind === "dlcgate") {
       /* vc186b DLC — 본마을 그랜드플래닛 게이트 (E키 상호작용) */
@@ -14551,7 +14683,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.player) return;
     if (!ITEMS[key]?.key?.startsWith?.("furn_")) return;
     if (this.stageDef.key !== "village") {
-      EventBus.emit("banner:show", { text: "가구는 마을에서만 설치할 수 있다" });
+      notice("가구는 마을에서만 설치할 수 있다");
       return;
     }
     const owned = this.player.owned.filter((k) => k === key).length;
@@ -14559,7 +14691,7 @@ export class WorldScene extends Phaser.Scene {
     const placedField = this.player.fieldDecor.filter((d) => d.key === key).length;
     if (owned === 0) return;
     if (placedHome + placedField >= owned) {
-      EventBus.emit("banner:show", { text: "이미 보유한 만큼 다 놓았다 — 더 사거나 회수하자" });
+      notice("이미 보유한 만큼 다 놓았다 — 더 사거나 회수하자");
       return;
     }
     /* 플레이어 발밑과 너무 가까우면 겹쳐 보인다 — 최소 거리 확보 */
@@ -14575,12 +14707,12 @@ export class WorldScene extends Phaser.Scene {
   private beginFieldPlace(key: ItemKey) {
     if (!this.player) return;
     if (this.stageDef.key !== "village") {
-      EventBus.emit("banner:show", { text: "가구는 마을에서만 설치할 수 있다" });
+      notice("가구는 마을에서만 설치할 수 있다");
       return;
     }
     this.fieldPending = key;
     const name = ITEMS[key]?.name ?? "가구";
-    EventBus.emit("banner:show", { text: `${name} — 마을 바닥을 눌러 설치` });
+    notice(`${name} — 마을 바닥을 눌러 설치`);
     this.input.once("pointerdown", (ptr: Phaser.Input.Pointer) => {
       if (!this.fieldPending) return;
       const k2 = this.fieldPending;
@@ -14796,7 +14928,7 @@ export class WorldScene extends Phaser.Scene {
           this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
           this.doShake(200, 0.008);
           this.spawnPickupText(this.player.x, this.player.y - 56, `${def.name} 각성! 스킬 강화`, `#${jhex.toString(16).padStart(6, "0")}`);
-          EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
+          notice(`전직 완료! ${def.name} — ${def.title}`);
           this.refreshPlayerTag();
           net.netAnnounceJob(def.key);
           this.time.delayedCall(1400, () => this.showBanner("카이엔과 대화하면 2차 전직 시련이 이어집니다"));
@@ -14853,7 +14985,7 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.flash(180, (jhex >> 16) & 0xff, (jhex >> 8) & 0xff, jhex & 0xff);
     this.doShake(200, 0.008);
     this.spawnPickupText(this.player.x, this.player.y - 56, `${def.name} 각성! 스킬 강화`, `#${jhex.toString(16).padStart(6, "0")}`);
-    EventBus.emit("banner:show", { text: `전직 완료! ${def.name} — ${def.title}` });
+    notice(`전직 완료! ${def.name} — ${def.title}`);
     this.refreshPlayerTag();
     net.netAnnounceJob(def.key);
     this.emitRpgState();
@@ -15605,7 +15737,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.cameras.main.flash(240, (col >> 16) & 0xff, (col >> 8) & 0xff, col & 0xff);
     this.doShake(260, 0.006);
-    EventBus.emit("banner:show", { text: `${slot === "weapon" ? "무기" : "방어구"} ★${next} 돌파!` });
+    notice(`${slot === "weapon" ? "무기" : "방어구"} ★${next} 돌파!`);
   }
 
   /* ================= 가독성 (F2) ================= */
@@ -17316,7 +17448,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   showBanner(text: string) {
-    EventBus.emit("banner:show", { text });
+    notice(text);
   }
 
   sfxSwing() {

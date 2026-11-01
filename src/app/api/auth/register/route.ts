@@ -41,9 +41,11 @@ export async function POST(req: NextRequest) {
       const user = { id, name, provider: "local", salt, hash: hashPw(pw, salt), createdAt: Date.now(), role };
       db.users[id] = user;
       const { token, cookie } = issueToken(db, user);
-      return { resp: { status: 200, body: { user: publicUser(user), token }, headers: { "Set-Cookie": cookie } } };
+      /* vc228 (감사 #5) — audit 를 return **위**로 옮겼다.
+       *  종전엔 return 다음 줄이라 영원히 실행되지 않았다 — 가입 감사 로그가
+       *  통째로 비어 있었고, 뒤따른 중복 return 이 그 사실을 가렸다. */
       audit("register", { ip: "serverless", uid: id, role });
-      return { resp: { status: 200, body: { ok: true } } };
+      return { resp: { status: 200, body: { user: publicUser(user), token }, headers: { "Set-Cookie": cookie } } };
     });
     const out = r;
     return json(req, out.status, out.body, out.headers);

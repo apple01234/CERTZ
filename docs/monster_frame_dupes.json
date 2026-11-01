@@ -1,0 +1,444 @@
+{
+ "emberwolf": {
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  }
+ },
+ "firespirit": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  }
+ },
+ "frostwolf": {
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  }
+ },
+ "golem": {
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  }
+ },
+ "helhound": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  }
+ },
+ "hero": {
+  "idle": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 4,
+   "unique": 4
+  }
+ },
+ "icegolem": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  }
+ },
+ "minion": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  }
+ },
+ "runegolem": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  }
+ },
+ "spider": {
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  }
+ },
+ "swampbeast": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  }
+ },
+ "wolf": {
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  }
+ },
+ "wraith": {
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  }
+ },
+ "x2_bat": {
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x2_darkhound": {
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  }
+ },
+ "x2_firebird": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  }
+ },
+ "x2_frog": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x2_frostfly": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  }
+ },
+ "x2_rat": {
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  }
+ },
+ "x2_reeffish": {
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x2_snail": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x2_stonegolem": {
+  "idle": {
+   "frames": 2,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x3_bigzombie": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x3_chort": {
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x3_goblin": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x3_icezombie": {
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  },
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  }
+ },
+ "x3_imp": {
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  },
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  }
+ },
+ "x3_maskedorc": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x3_necromancer": {
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x3_ogre": {
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x3_orcshaman": {
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  }
+ },
+ "x3_orcwarrior": {
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x3_swampy": {
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x3_tinyzombie": {
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ },
+ "x3_wogol": {
+  "run": {
+   "frames": 4,
+   "unique": 3
+  },
+  "idle": {
+   "frames": 4,
+   "unique": 2
+  },
+  "atk": {
+   "frames": 1,
+   "unique": 1
+  }
+ }
+}

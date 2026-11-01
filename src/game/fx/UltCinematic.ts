@@ -25,6 +25,7 @@
  * 저사양·Canvas: ADD 블렌드가 없으면 알파만으로 그리고, 파편 수를 줄인다.
  */
 import Phaser from "phaser";
+import { shakeFactor } from "./shakeScale"; // vc222 — 흔들림 강도(접근성)
 
 type S3 = Phaser.Scene;
 
@@ -66,8 +67,10 @@ class TraumaShake {
     const s = this.trauma * this.trauma; // 제곱: 약한 흔들림은 거의 안 보이고 강한 것만 확실히
     this.t += dtMs / 1000 * 34;
     /* 매 프레임 Math.random 은 정전기처럼 떨린다 → 샘플링된 사인 두 축 */
-    this.ox = Math.sin(this.t * 1.7) * 18 * s;
-    this.oy = Math.sin(this.t * 2.3) * 11 * s;
+    /* vc222 — 접근성 배율. "끔"이면 오프셋이 0 이 되어 화면이 고정된다. */
+    const k = shakeFactor();
+    this.ox = Math.sin(this.t * 1.7) * 18 * s * k;
+    this.oy = Math.sin(this.t * 2.3) * 11 * s * k;
   }
 
   reset(): void {
