@@ -24,6 +24,14 @@ export type ChapterKey =
 /** 스테이지 키 — "village" | "forest1".."abyss10" (구 세이브 키도 런타임 폴백 처리) */
 export type StageKey = string;
 
+/** 표시 전용 순서. 본편 1장=village, 2~10장=기존 9개 필드. 저장키/인덱스 보존. */
+export const STORY_SEQUENCE = [
+  { id: "atlantis", title: "아뜰란티스 기반 스토리", chapters: [1, 10], status: "existing" },
+  { id: "howlrstone", title: "하울르스톤: 영준 프린세스", status: "not-implemented" },
+  { id: "grandplanet", title: "그랜드 플레닛", status: "existing-dlc" },
+] as const;
+export const STORY_SEQUENCE_LABEL = "아뜰란티스 기반 스토리 1~10챕터 → 하울르스톤: 영준 프린세스 → 그랜드 플레닛";
+
 export type EnemyKey =
   | "wolf" | "minion" | "spider" | "golem" | "frostwolf" | "icegolem" | "wraith"
   | "swampbeast" | "emberwolf" | "firespirit" | "runegolem" | "helhound"
@@ -1395,6 +1403,18 @@ for (let ci = 0; ci < CHAPTERS.length; ci++) {
   PREV_STAGE[vk] = ci > 0 ? `${CHAPTERS[ci - 1].key}10` : "village";
 }
 
+STAGES.youngprincessv = {
+  key: "youngprincessv", name: "하울르스톤: 영준 프린세스 — 시작 마을",
+  subtitle: "본편 이후의 세계 — 영프 엔딩 후 이 마을에서 그랜드 플레닛으로",
+  width: 1500, height: 860, groundTint: 0xffffff,
+  flowerCount: 6, treeCount: 6, rockCount: 2,
+  quests: [], enemies: [], boss: false, isVillage: true,
+};
+STAGE_SHORT.youngprincessv = "영준 프린세스 시작 마을";
+NEXT_STAGE.youngprincessv = null;
+PREV_STAGE.youngprincessv = "village";
+PREV_STAGE.dlcstargatev = "youngprincessv";
+
 /* v2.9 (사용자 지시 #5) — 챕터별 마을: 모든 챕터에 안전 마을(여관/전직관/우물)을 둔다.
  *  진행 경로: 이전 챕터 10구역 → 다음 챕터 마을(Xv) → 다음 챕터 1구역 */
 function buildChapterVillageDef(spec: ChapterSpec): StageDef {
@@ -1832,6 +1852,7 @@ export function stageIntro(key: StageKey): string {
 /** 스테이지 지형 테마 (WorldScene 배치용) */
 export const STAGE_THEME: Record<StageKey, { ground: string; path: string; bg: string }> = {
   village: { ground: "tile_grass", path: "tile_path", bg: "#15270f" },
+  youngprincessv: { ground: "tile_grass", path: "tile_path", bg: "#15270f" },
 };
 for (const spec of CHAPTERS) {
   /* v2.9 — 챕터 마을도 챕터 지형 테마를 따른다 */

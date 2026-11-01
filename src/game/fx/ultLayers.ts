@@ -146,6 +146,7 @@ export function ultProfile(key?: string | null): UltBurstProfile {
 type Scene3 = Phaser.Scene & {
   cameras: Phaser.Cameras.Scene2D.CameraManager;
   hitStop?: (ms?: number) => void;
+  doShake?: (ms: number, intensity: number) => void;
 };
 
 /**
@@ -349,7 +350,7 @@ export function playUltLayers(
   /* ── ③ 카메라·스크린 피드백 ── */
   try {
     scene.hitStop?.(p.hitStop);
-    cam.shake(p.shake[0], p.shake[1] * s);
+    scene.doShake?.(p.shake[0], p.shake[1] * s);
     /* vc185 (지시 #2 — 5차 스킬 사용 시 게임 멈춤) — 줌 펀치를 콜백 재귀에서 delayedCall 로 교체.
      *  종전엔 zoomTo 의 onUpdate 콜백 안에서 prog>=1 일 때 다시 zoomTo 를 호출했다.
      *  Phaser 콜백은 조건이 참인 프레임마다 반복 호출되므로 복귀 트윈이 매 프레임 새로

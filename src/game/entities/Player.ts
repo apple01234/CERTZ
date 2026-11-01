@@ -9,7 +9,7 @@ import {
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
 } from "../data";
 import { ULT_CLASSES,
-  classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf, tier2RootOf,
+  classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf,
   resolveSkill1Of, resolveSkill2Of, resolveSkill5Of,
   type ClassKey, type ClassBonus, SKILL_LABELS, SKILL3_KIND, SKILL4_KIND,
   SKILL5_INFO, SKILL5B_INFO, FIFTH_SKILL_MULT, FIFTH_CD_MULT, FIFTH_LEVEL, FIFTH1_MULT, FIFTH2_MULT,
@@ -17,12 +17,14 @@ import { ULT_CLASSES,
 } from "../classes";
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
+import { resolveBodyPrefix } from "../characterAppearance";
 import { ult5HoldOf, ult5bHoldOf } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간
 import { playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱 연출
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
 import { runUltFinale } from "../fx/ultFinale"; // vc204 (#10) — 직업별 고유 마무리
+import { finaleTargetOrder, ultimateFinalePlan } from "../fx/ultFinalePlan";
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
 import type { Enemy } from "./Enemy";
@@ -5337,19 +5339,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *    색은 계통색, 마법진은 마법사 계열만. */
     runUltFinale(this.scene, {
       x: this.x, y: this.y, hex: this.clsHex(), cls: this.cls,
+      slot: 1,
       aimAngle: this.aimDirFree().angle(),
       roll: (mul) => this.rollDamage(mul, false),
-      hitAt: (bx, by, d, crit, reach) => {
+      hitAt: (bx, by, d, crit, reach, geometry) => {
         /* vc206 (지시 #4 "궁극기 이펙트에 히트박스 없음(즉, 공격안됨)")
          *  종전엔 getAllTargetsIn(220) — **플레이어 위치 고정** 반경 220px 로 후보를 모은 뒤
          *  마무리 지점(bx,by)에서 다시 220px 를 검사했다. 그런데 ULT_FINALE 의 reach 는
          *  300~620px 이라, 직선/부채꼴/십자형의 먼 폭발 지점은 후보 수집 단계에서 이미
          *  전부 걸러져 **데미지가 0** 이었다(이펙트만 보이고 적은 멀쩡 = "공격안됨").
-         *  → vc194 에서 추가된 targetsAround(cx,cy,r) 로 **폭발 지점 기준** 후보를 모으고,
-         *    반경을 reach 에 비례해 넓힌다. */
-        const HIT_R = Math.max(220, Math.min(680, reach * 0.55 + 60));
+         *  → 비4차 폴백은 기존 폭발 반경을 보존한다. 4차 geometry의 원은 후보 수집만
+         *    담당하며 실제 피해는 아래 finaleTargetOrder의 정확한 zone 합집합으로 제한한다. */
+        const HIT_R = geometry ? reach : Math.max(220, Math.min(680, reach * 0.55 + 60));
         for (const e of this.targetsAround(bx, by, HIT_R)) {
           if (!e.active) continue;
+          if (geometry && finaleTargetOrder(geometry.plan, bx, by, geometry.angle, e.x, e.y) < 0) continue;
           const away = this.awayScratch.set(e.x - bx, e.y - by).normalize();
           if (crit) this.scene.sfxCrit();
           e.takeDamage(d, away, 560, crit);
@@ -5394,6 +5398,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       } finally {
         this.ultSlot = prev;
       }
+    };
+
+    // Slot 2 changes only the existing final hit's target shape, never its roll,
+    // delay, knockback or primary attacks. Snapshot plans/aim for the whole cast.
+    const residuePlan = ultimateFinalePlan(this.cls, 2);
+    const residueAngle = this.aimDirFree().angle();
+    const residueX = this.x, residueY = this.y;
+    const finaleReach = residuePlan ? Math.max(...residuePlan.zones.map(z => Math.hypot(z.x, z.y)
+      + (z.kind === "beam" ? Math.hypot(z.length, z.width / 2)
+        : z.radius + (z.kind === "ring" ? z.width / 2 : 0)))) : 0;
+    const finaleTargets = (x: number, y: number, legacyRadius: number, snapshot?: (Enemy | Boss)[]) => {
+      const candidates = snapshot ?? this.targetsAround(x, y, Math.max(legacyRadius, finaleReach));
+      return candidates.filter(e => e.active && (!residuePlan
+        || finaleTargetOrder(residuePlan, x, y, residueAngle, e.x, e.y) >= 0));
     };
 
     /* 공통 인트로 — 제2의 궁극기: 붉은보라 차원 균열 + 이중 마법진 */
@@ -5458,7 +5476,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.impactFX.shake(520, 0.026);
           this.scene.cameras.main.flash(180, 255, 120, 60);
           this.scene.sfxSkill("superhit", 0.76);
-          for (const e of this.getAllTargetsIn(760)) {
+          for (const e of finaleTargets(this.x, this.y, 760)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(12.0);
             if (crit) this.scene.sfxCrit();
@@ -5505,7 +5523,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.impactFX.shake(480, 0.022);
           this.scene.sfxSkill("holy", 0.7);
           this.scene.sfxSkill("superhit", 0.84);
-          for (const e of this.getAllTargetsIn(640)) {
+          for (const e of finaleTargets(this.x, this.y, 640)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(8.4);
             if (crit) this.scene.sfxCrit();
@@ -5569,7 +5587,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.sfxSkill("superhit", 0.78);
           spawnRingPop(this.scene, this.x, this.y, "vf_ring", 0xffd76a, 5.4, 820);
           let n = 0;
-          for (const t of struck) {
+          for (const t of finaleTargets(this.x, this.y, 860, [...struck])) {
             if (!t.active) continue;
             this.scene.spawnBurstAt(t.x, t.y, 20, 0xffd76a);
             this.scene.spawnShockwave(t.x, t.y, 0xffd76a, 1.0);
@@ -5628,7 +5646,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.impactFX.shake(500, 0.024);
           this.scene.sfxSkill("wind", 0.62);
           this.scene.sfxSkill("superhit", 0.8);
-          for (const e of this.getAllTargetsIn(560)) {
+          for (const e of finaleTargets(cx, cy, 560)) {
             const away = this.awayScratch.set(e.x - cx, e.y - cy).normalize();
             const { dmg: d2, crit: c2 } = rd(7.2);
             if (c2) this.scene.sfxCrit();
@@ -5682,7 +5700,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.impactFX.shake(560, 0.026);
           this.scene.sfxSkill("manaburst", 0.66);
           this.scene.sfxSkill("superhit", 0.74);
-          for (const e of this.getAllTargetsIn(700)) {
+          for (const e of finaleTargets(this.x, this.y, 700)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(7.5 + 3.5 * ratio);
             if (crit) this.scene.sfxCrit();
@@ -5730,7 +5748,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
            *      (하네스 실측: 6마리 중 4마리만 피해)
            *    · 새 적이 스폰되면 → 배열이 늘어 **원래 대상이 아닌 적까지 맞는다**
            *  대상 수와 목록을 루프 밖에서 한 번만 확정한다. */
-          const reproTargets = this.getAllTargetsIn(620).slice();
+          const reproTargets = finaleTargets(this.x, this.y, 620);
           const share = Math.max(1, Math.round(reenact / Math.max(1, reproTargets.length)));
           for (const e of reproTargets) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -5780,7 +5798,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.impactFX.shake(540, 0.024);
           this.scene.sfxSkill("dark", 0.6);
           this.scene.sfxSkill("superhit", 0.74);
-          for (const e of this.getAllTargetsIn(600)) {
+          for (const e of finaleTargets(this.x, this.y, 600)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(9.6);
             if (crit) this.scene.sfxCrit();
@@ -5826,7 +5844,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.impactFX.shake(480, 0.023);
           this.scene.sfxSkill("iainuki", 0.56);
           this.scene.sfxSkill("superhit", 0.76);
-          for (const e of this.getAllTargetsIn(600)) {
+          for (const e of finaleTargets(this.x, this.y, 600)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             const { dmg, crit } = rd(9.4);
             if (crit) this.scene.sfxCrit();
@@ -5879,7 +5897,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnBurstAt(this.x, this.y, 90, 0x8ae6ff);
           this.scene.spawnShockwave(this.x, this.y, 0x8ae6ff, 3.4, 520, 0.8);
           this.scene.sfxSkill("superhit", 0.95);
-          for (const e of drowned) {
+          for (const e of finaleTargets(this.x, this.y, 340, drowned)) {
             /* 스냅샷 후 사망·제거된 대상은 건너뛴다 */
             if (!e.active || e.hp <= 0) continue;
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -5955,8 +5973,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
             this.scene.impactFX.shake(700, 0.030);
             this.scene.sfxSkill("quake", 1.0);
-            for (const e of this.getAllTargetsIn(999)) {
-              if (Phaser.Math.Distance.Between(e.x, e.y, wx0, wy0) > 400) continue;
+            for (const e of finaleTargets(wx0, wy0, 400)) {
               const away = this.awayScratch.set(e.x - wx0, e.y - wy0).normalize();
               const { dmg, crit } = rd(14.5);
               if (crit) this.scene.sfxCrit();
@@ -7073,11 +7090,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const fam = familyOf(this.cls);
       const kind = fam === "warrior" ? "fire" : fam === "mage" ? "time" : fam === "thief" ? "poison" : "light";
       this.scene.spawnField({
-        x: this.x, y: this.y, radius: 240, dur: 30000,
+        x: residueX, y: residueY, radius: 240, dur: 30000,
         dps: Math.max(12, Math.round(this.atkTotal * 0.55)), kind, owner: "player",
+        geometry: residuePlan ? { plan: residuePlan, angle: residueAngle } : undefined,
       });
-      this.scene.driveFx?.gvAura(this.x, this.y, hex, 2600, 1.5);
+      this.scene.driveFx?.gvAura(residueX, residueY, hex, 2600, 1.5);
       this.scene.spawnPickupText(this.x, this.y - 92, "여운 — 잔존 필드 30초", "#e0a8ff");
+    });
+    this.scene.time.delayedCall(Math.max(0, ult5bHoldOf(key5, familyOf(this.cls)) - 620), () => {
+      if (this.state === "dead") return;
+      runUltFinale(this.scene, {
+        x: residueX, y: residueY, hex, cls: this.cls, slot: 2,
+        aimAngle: residueAngle, lite: this.scene.fxLevel === 0,
+        // 연출 전용 재표시. 실제 종결 피해는 각 case의 기존 시점/rd를 그대로
+        // 유지하고 finaleTargets(slot 2 narrowphase)로 이미 처리했다. 재타격 금지.
+        roll: () => ({ dmg: 0, crit: false }), hitAt: () => {},
+      });
     });
 
     /* vc204 (#9) — 조작 잠금 타이머 제거(1차와 동일).
@@ -8634,27 +8662,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   applyBodyLook() {
+    const prevPrefix = this.bodyPrefix;
     const prevAnim = this.anims?.currentAnim?.key ?? "";
     const playing = this.anims?.isPlaying ?? false;
-    const outfitKey = this.outfit?.replace("outfit_", "") ?? null;
-    /* 자기 직업 전용 시트가 있으면 그것을 쓴다(3·4차 포함). 없으면 2차 루트로 폴백. */
-    const ownPrefix = (key: string) => (this.gender === "m" ? `jobm_${key}` : `jobf_${key}`);
-    const jobRoot = tier2RootOf(this.cls);
-    const jobPrefix = (() => {
-      if (!jobRoot) return null;
-      const ownKey = this.cls;
-      if (ownKey) {
-        const own = ownPrefix(ownKey);
-        if (this.scene.textures.exists(`${own}_idle0`)) return own;
-      }
-      return ownPrefix(jobRoot);
-    })();
-    this.bodyPrefix = this.gmSkin && this.gmApproved
-      ? "gm"
-      : outfitKey
-        ? this.gender === "m" ? `costm_${outfitKey}` : `cost_${outfitKey}`
-        : jobPrefix
-          ?? (this.gender === "f" || this.skinIdx !== 2 ? `ch${this.gender}${this.skinIdx}` : "");
+    // 미로드는 파일 부재가 아니다. 선택창과 같은 전용 시트를 요청한다.
+    this.bodyPrefix = resolveBodyPrefix(this);
     /* v1.5.0 — 타이틀 37종 일괄 지연 로드 폐지(캐릭터 선택 후 진입 프리징 근본 수정)의 후속 방어:
      *  게임 중 전직/GM 승인 등으로 미로드 외형 시트가 필요해지면 그 시트만 로드 후 재적용.
      *  로드 완료까지 bodyPrefix를 비워둔다 — bodyKey가 hero_*(부트 로드분)를 가리켜
@@ -8671,20 +8683,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.bodyPending = null;
     }
-    const wantTex = this.bodyKey("hero_idle0");
-    if (this.texture.key !== wantTex) this.setTexture(wantTex);
+
     /* vc224 — FA 세트 표시 스케일 보정.
      *  FA p1 내용은 18x36, 기존 hero 는 26x42 다. 그대로 두면 FA 가 약 30% 작게 보인다.
      *  FA 를 쓸 때만 1.17배(26/18≈1.44 은 폭 기준이므로 높이 기준 42/36=1.17)로 키운다.
      *  물리 바디(20x44)는 그대로 — 판정은 캐릭터 그림 크기와 독립이어야 한다. */
     const faOn = this.faActive();
+    const wantTex = faOn ? "fa_p1" : this.bodyKey("hero_idle0");
+    this.anims?.stop();
+    if (faOn) this.setTexture(wantTex, "fa_p1_idle__0");
+    else this.setTexture(wantTex);
     this.setScale(faOn ? FA_DISPLAY_SCALE : 1);
     /* vc227 — 스케일과 함께 바디 오프셋도 다시 잡는다. 둘은 한 몸이다:
      *  캔버스/스케일이 바뀌면 바디 위치도 같이 바뀌어야 판정이 그림과 맞는다. */
     this.applyBodyOffset();
     // 진행 중이던 애니를 새 시트로 이어 재생 (프레임 리셋 방지)
     if (prevAnim && playing) {
-      const mapped = this.animKey(prevAnim);
+      const heroAnim = prevAnim.startsWith("fa-p1-")
+        ? `hero-${prevAnim.slice(6) === "run" ? "walk" : prevAnim.slice(6)}`
+        : prevPrefix && prevAnim.startsWith(`${prevPrefix}-`)
+          ? `hero-${prevAnim.slice(prevPrefix.length + 1)}` : prevAnim;
+      const mapped = this.animKey(heroAnim);
       if (this.scene.anims.exists(mapped)) this.play(mapped, true);
     }
     this.applyLookTint();

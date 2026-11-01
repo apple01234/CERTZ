@@ -73,8 +73,8 @@ export function applyToonStyle(obj: Filterable, opts: ToonOpts = {}): unknown[] 
      * vc206 (지시 #3 "툰 쉐이딩 적용시 블러같은 이상한거 있음(화면 깨짐)")
      *  대비를 올리면 툰 느낌이 나야 하는데, 기존 1.14 는 물러서 Glow 번짐이
      *  남아 전체가 뿌옇게 보였다. 명암 계단을 더 세게 세운다. */
-    cm.colorMatrix.contrast(opts.contrast ?? 1.34);
-    cm.colorMatrix.saturate(opts.saturate ?? 1.38);
+    cm.colorMatrix.contrast((opts.contrast ?? 1.34) - 1);
+    cm.colorMatrix.saturate((opts.saturate ?? 1.38) - 1, true);
     created.push(cm);
   } catch {
     return created.length ? created : null;
@@ -96,6 +96,9 @@ export function applyToonStyle(obj: Filterable, opts: ToonOpts = {}): unknown[] 
       2, // quality 4 → 2 : 다운샘플 블러 제거
       2 // distance 9 → 2 : 퍼짐 폭을 외곽선 수준으로
     );
+    if (glow && typeof (glow as { setPaddingOverride?: unknown }).setPaddingOverride === "function") {
+      (glow as { setPaddingOverride: (padding: null) => void }).setPaddingOverride(null);
+    }
     created.push(glow);
   } catch { /* Glow 실패 시 ColorMatrix만이라도 유지 */ }
   return created.length ? created : null;
@@ -134,7 +137,14 @@ export function setToonEnabled(on: boolean) {
   } catch { /* 무시 */ }
 }
 
-type CamFilterable = { filters?: { external?: FilteredList & { addBlocky?: (cfg?: Record<string, unknown>) => unknown } } | null; enableFilters?: () => unknown } | null;
+type CamFilterable = { filters?: { external?: FilteredList & { remove: (filter: unknown) => unknown } } | null; enableFilters?: () => unknown } | null;
+
+/** 툰 소유 필터만 제거한다. 블룸·보스 필터를 함께 지우지 않는다. */
+export function clearToonCamera(camera: unknown, filters: unknown[] | null): void {
+  const list = (camera as CamFilterable)?.filters?.external;
+  if (!list) return;
+  for (const filter of filters ?? []) list.remove(filter);
+}
 
 /** 메인 카메라에 툰 셰이딩 부착 — 실패 시 null (기존 렌더 유지)
  *  vc145 (#3 강도 완화 + #11 조절바 연동):
@@ -153,13 +163,7 @@ export function applyToonCamera(camera: unknown): unknown[] | null {
   const list = cam?.filters?.external;
   if (!list) return null;
   const created: unknown[] = [];
-  try {
-    /* Blocky(포스터라이즈)는 강도 낮을 땐 생략 — 픽셀 뭉개짐 최소화 */
-    if (list.addBlocky && k >= 0.45) {
-      const blocky = list.addBlocky({ size: 2 });
-      created.push(blocky);
-    }
-  } catch { /* Blocky 미지원 — ColorMatrix만이라도 */ }
+  // Blocky는 색 단계가 아니라 화면 해상도를 줄인다. 툰은 명암·채도와 림으로 표현한다.
   try {
     const cm = list.addColorMatrix();
     /* vc147 (#1 툰 강화 + #2 역방향 수정):
@@ -167,10 +171,10 @@ export function applyToonCamera(camera: unknown): unknown[] | null {
      *    역방향 동작이었다(유저 제보 "쉐이더 강도 조절기능 반대로 되있음"의 근원).
      *  - 이제 밝기/대비/채도 전부 정방향(강도↑ = 더 밝고 더 툰닝)이며 기본 밝기 1.0 복원.
      *  - 툰 체감 강화: 대비 1+0.09k(기본 1.09)·채도 1+0.22k(기본 1.22). */
-    cm.colorMatrix.contrast(1 + 0.09 * k);
-    cm.colorMatrix.saturate(1 + 0.22 * k);
+    cm.colorMatrix.contrast(0.09 * k);
+    cm.colorMatrix.saturate(0.22 * k, true);
     (cm.colorMatrix as unknown as { brightness: (v: number, m?: boolean) => unknown }).brightness(
-      Math.min(1.08, 0.94 + 0.06 * k),
+      Math.min(1.08, 0.94 + 0.06 * k), true,
     );
     created.push(cm);
   } catch {

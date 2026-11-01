@@ -22,6 +22,7 @@ import { loadSave, writeSave } from "@/game/config";
 import { authMe, nameTaken, claimName, releaseName } from "@/game/account"; // v1.2.0 (#7) — GM 외형 옵션은 admin 롤에만 노출 · v1.0.6 — 닉네임 중복 방지
 import { classDef, isClassKey, classLabel, familyOf, type ClassKey } from "@/game/classes";
 import type { SaveData } from "@/game/config";
+import { resolveCharacterPreview, type CharacterAppearance } from "@/game/characterAppearance";
 
 /* v1.4.30 (#8 모험가 시작) — 캐릭터 생성 시 직업 선택 단계를 철거:
  *  모든 캐릭터는 공통 직업 "모험가"로 태어나고, 마을 퀘스트 체인(전직 퀘스트) 완료 후
@@ -37,49 +38,20 @@ const SKIN_CHOICES: { idx: number; name: string }[] = [
   { idx: 4, name: "구릿빛" },
   { idx: 5, name: "초콜릿" },
 ];
-const lookSprite = (g: "m" | "f", skin: number): string =>
-  g === "f" || skin !== 2 ? `/assets/ch${g}${skin}_idle0.webp` : "/assets/hero_idle0.webp";
-
-/** vc210 (#otaku-cards) — 카드용 **오리지널** 도트 초상화 (192×256, 3:4).
- *
- *  ⚠️ 저작권 원칙
- *    이 이미지는 `tools/gen_otaku_sprites.py` 가 **절차 생성**한 SERTZ 자체 에셋이다.
- *    참고 사이트의 캐릭터 이미지를 입력으로 쓰지 않았고, 색은 SERTZ 기존
- *    스프라이트에서 실측한 팔레트를 계승했다. 형태는 관찰된 "구도 문법"
- *    (전신·SD 3~4등신·직업별 실루엣)만 반영했으며 특정 작품의 표현을 복제하지 않는다.
- *
- *  없으면 기존 인게임 스프라이트로 폴백한다(에셋 미배포 환경 보호). */
-const GEN_JOBS = new Set(["warrior", "ranger", "mage", "thief", "pirate"]);
-const portraitOf = (cls: string | null, skinIdx: number): string | null => {
-  if (!cls || !GEN_JOBS.has(cls)) return null;
-  const s = skinIdx >= 0 && skinIdx <= 2 ? skinIdx : 0;
-  return `/assets/gen/${cls}_${s}_portrait.png`;
-};
-
-/** v1.1.0 (#21/#22) — 캐릭터 외형 미리보기: 실제 생성된 변형 스프라이트(chm/chf/hero)를 그대로 노출.
- *  미리보기 = 인게임 외형 100% 일치 (틴트 시뮬레이션 폐기)
- *  vc210 (#otaku-cards) — 원본이 96×64(1.5:1)인데 정사각(size×size)으로 강제하면
- *  object-cover 가 좌우를 잘라 캐릭터가 반쪽만 보였다. 카드용으로 크게 키울 때는
- *  `fit="natural"` 을 넘겨 높이 기준으로 폭을 비례로 잡는다. */
-function CharAvatar({ gender, skinIdx, size = 44, fit = "square" }: { gender?: "m" | "f" | null; skinIdx?: number | null; size?: number; fit?: "square" | "natural" }) {
-  const g = gender ?? "m";
-  const s = skinIdx ?? 2;
-  const style: React.CSSProperties =
-    fit === "natural"
-      ? { height: size, width: Math.round((size * 96) / 64), imageRendering: "pixelated" }
-      : { width: size, height: size, imageRendering: "pixelated" };
+/** 선택창도 Player와 같은 기존 몸체/FA 프레임을 사용한다. 아우라는 표시하지 않는다. */
+function CharAvatar({ size = 44, fit = "square", ...look }: CharacterAppearance & { size?: number; fit?: "square" | "natural" }) {
+  const preview = resolveCharacterPreview(look);
+  const width = fit === "natural" ? size * preview.width / preview.height : size;
+  const scale = Math.min(width / preview.width, size / preview.height);
+  const crop = preview.crop;
   return (
-    <img
-      src={lookSprite(g, s)}
-      alt="캐릭터 외형 미리보기"
-      style={style}
-      className={
-        fit === "natural"
-          ? "shrink-0 object-contain"
-          : "shrink-0 rounded border border-white/15 bg-black/40 object-cover object-[35%_78%]"
-      }
-      draggable={false}
-    />
+    <span role="img" aria-label="캐릭터 외형 미리보기" className="relative inline-flex shrink-0 items-center justify-center overflow-hidden" style={{ width, height: size }}>
+      {crop && preview.sheet ? (
+        <span style={{ display: "block", width: crop.w * scale, height: crop.h * scale, imageRendering: "pixelated", backgroundImage: `url(${preview.src})`, backgroundSize: `${preview.sheet.w * scale}px ${preview.sheet.h * scale}px`, backgroundPosition: `${-crop.x * scale}px ${-crop.y * scale}px`, backgroundRepeat: "no-repeat" }} />
+      ) : (
+        <img src={preview.src} alt="" style={{ width: preview.width * scale, height: preview.height * scale, imageRendering: "pixelated" }} draggable={false} />
+      )}
+    </span>
   );
 }
 
@@ -278,6 +250,8 @@ export function Lobby({ onExit }: { onExit: () => void }) {
              *  컬럼을 늘려 폭을 줄이면 초상화 영역이 카드의 70%를 차지한다. */}
             <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 lg:grid-cols-6">
               {chars.map((m) => {
+                const saved = readCharSave(m.id);
+                const look = { ...m, ...saved, gmApproved: gmOk };
                 const active = sel?.id === m.id;
                 const color = clsColor(m.cls);
                 return (
@@ -295,18 +269,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                   >
                     {/* ── 상단 초상화 영역: 카드 높이의 ~62% (씹덕 카드의 실제 비율) ── */}
                     <div className="otaku-art">
-                      {/* 오리지널 절차 생성 초상화(192×256, 3:4) 우선 — 없으면 인게임 스프라이트 폴백 */}
-                      {portraitOf(m.cls as string | null, m.skinIdx ?? 0) ? (
-                        <img
-                          src={portraitOf(m.cls as string | null, m.skinIdx ?? 0) as string}
-                          alt={`${m.name} 초상화`}
-                          className="h-full w-full object-contain"
-                          style={{ imageRendering: "pixelated" }}
-                          draggable={false}
-                        />
-                      ) : (
-                        <CharAvatar gender={m.gender} skinIdx={m.skinIdx} size={128} fit="natural" />
-                      )}
+                      <CharAvatar {...look} size={128} fit="natural" />
                       <div className="otaku-card-scrim" />
                       {/* 우상단 레어도/환생 별 — Genshin 카드의 별 모티프 */}
                       {m.rebirths > 0 && (
@@ -415,11 +378,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                   <div>
                     <p className="text-[10px] font-bold leading-relaxed text-white/55">성별과 피부를 골라 외형을 꾸며라. 언제든 로비에서 다른 캐릭터를 만들 수 있다.</p>
                     <div className="mt-2 flex items-center gap-3 rounded-lg border border-white/12 bg-black/40 p-2.5">
-                      {lookGm ? (
-                        <img src="/assets/gm_idle0.webp" alt="GM 외형 미리보기" style={{ width: 64, height: 64, imageRendering: "pixelated", objectFit: "cover", objectPosition: "35% 78%" }} draggable={false} />
-                      ) : (
-                        <CharAvatar gender={lookGender} skinIdx={lookSkin} size={64} />
-                      )}
+                      <CharAvatar gender={lookGender} skinIdx={lookSkin} gmSkin={lookGm} gmApproved={gmOk} size={64} />
                       <div>
                         <p className="text-[11px] font-black text-white">{nameInput.trim() || "이름 미정"}</p>
                         <p className="text-[9px] font-bold text-[#9fb3d9]">모험가 · Lv.1 — 마을 퀘스트 완료 후 전직관에서 직업 선택!</p>
@@ -428,7 +387,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                     </div>
                     <p className="mt-2 text-[9px] font-black text-white/50">성별</p>
                     <div className="mt-1 grid grid-cols-2 gap-1.5">
-                      {([["m", "남캐", "hero"], ["f", "여캐", "chf2"]] as const).map(([g, label, spr]) => {
+                      {([["m", "남캐"], ["f", "여캐"]] as const).map(([g, label]) => {
                         const on = lookGender === g;
                         return (
                           <button
@@ -436,7 +395,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                             onClick={() => setLookGender(g)}
                             className={`flex items-center gap-2 rounded-lg border-2 px-2 py-1.5 transition-transform active:scale-95 ${on ? "border-amber-300 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"}`}
                           >
-                            <img src={`/assets/${spr}_idle0.webp`} alt="" style={{ width: 30, height: 30, imageRendering: "pixelated", objectFit: "cover", objectPosition: "35% 78%" }} draggable={false} />
+                            <CharAvatar gender={g} skinIdx={2} size={30} />
                             <span className={`text-[10px] font-black ${on ? "text-amber-200" : "text-white/60"}`}>{label}</span>
                           </button>
                         );
@@ -450,7 +409,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                           onClick={() => setLookGm((v) => !v)}
                           className={`mt-1 flex w-full items-center gap-2 rounded-lg border-2 px-2 py-1.5 transition-transform active:scale-95 ${lookGm ? "border-amber-300 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"}`}
                         >
-                          <img src="/assets/gm_idle0.webp" alt="GM 외형" style={{ width: 30, height: 30, imageRendering: "pixelated", objectFit: "cover", objectPosition: "35% 78%" }} draggable={false} />
+                          <CharAvatar gmSkin gmApproved={gmOk} size={30} />
                           <span className={`text-[10px] font-black ${lookGm ? "text-amber-200" : "text-white/60"}`}>GM 형태 (무지개)</span>
                           <span className="ml-auto rounded bg-amber-400/20 px-1 text-[8px] font-black text-amber-200">[GM]</span>
                         </button>
@@ -466,7 +425,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                             onClick={() => setLookSkin(s.idx)}
                             className={`flex flex-col items-center gap-0.5 rounded-lg border-2 px-1 py-1 transition-transform active:scale-95 ${on ? "border-amber-300 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"}`}
                           >
-                            <img src={lookSprite(lookGender, s.idx)} alt={s.name} style={{ width: 32, height: 32, imageRendering: "pixelated", objectFit: "cover", objectPosition: "35% 78%" }} draggable={false} />
+                            <CharAvatar gender={lookGender} skinIdx={s.idx} size={32} />
                             <span className={`text-[8px] font-black ${on ? "text-amber-200" : "text-white/55"}`}>{s.name}</span>
                           </button>
                         );
@@ -492,7 +451,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
             ) : sel ? (
               <div>
                 <div className="flex items-center gap-2.5">
-                  <CharAvatar gender={sel.gender} skinIdx={sel.skinIdx} size={52} />
+                  <CharAvatar {...sel} {...selSave} gmApproved={gmOk} size={52} />
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-black text-white">{sel.name}</p>
                     <p className="text-[10px] font-bold" style={{ color: clsColor(sel.cls) }}>

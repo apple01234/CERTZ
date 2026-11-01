@@ -6,6 +6,8 @@ import { getPlayerName } from "@/game/config";
 import { BOSS_DEFS } from "@/game/data";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 아틀라스 초상화 분기
 import * as audio from "@/game/audio"; // v1.4.8 — 대화 진행 클릭음
+import portraitCrops from "../../../public/assets/npcportrait/_map.json";
+import { STORY_SEQUENCE_LABEL } from "@/game/stages";
 
 /**
  * 대화창: 타이프라이터 + 스페이스/엔터·탭으로 진행, 마지막 줄 완료 시 게임 재개.
@@ -92,39 +94,14 @@ function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: 
   return bossPortrait(speaker);
 }
 
-/** vc210 (#npc-face) — 대사창 전용 **오리지널** NPC 얼굴.
- *
- *  ⚠️ 왜 필요한가 (실측)
- *    기존 경로는 맵용 `spum_*.webp`(96×96)를 80×80 프레임에 object-cover 로 잘라 쓴다.
- *    원본 얼굴 영역이 3~5px 뿐이라 **눈을 그릴 픽셀이 없다.** 5개를 실측한 결과
- *    4개가 눈 없는 살구색 블록으로 "얼굴 없는 마네킹"이었다(기사는 투구가 얼굴을 100% 가림).
- *
- *  ⚠️ 저작권
- *    `tools/gen_npc_faces.py` 가 **절차 생성**한 SERTZ 자체 에셋이다(32×32 → 4배 128×128).
- *    참고 사이트의 캐릭터 이미지를 입력으로 쓰지 않았고, 입력은 수치(팔레트)뿐이다.
- *    색은 SERTZ 기존 에셋에서 실측했다.
- *
- *  스프라이트 이름 → 생성 얼굴 종류 매핑. 없는 이름은 기존 경로로 폴백한다. */
-const SPUM_TO_FACE: Record<string, string> = {
-  spum_merchant: "merchant", npc_merchant: "merchant",
-  spum_knight: "knight", npc_gm: "merchant",
-  spum_mage: "mage", npc_mage_rin: "mage", spum_mystic: "mage",
-  spum_elf: "elf", npc_fairy_aria: "elf", npc_guide_lily: "elf",
-  spum_villager_m: "villager_m", npc_villager1: "villager_m",
-  spum_forager: "villager_m", spum_fisher: "villager_m", spum_scout: "villager_m",
-  spum_villager_f: "villager_f", npc_villager2: "villager_f", npc_witch_nyx: "villager_f",
-  spum_butler: "villager_m", spum_devil: "villager_f", spum_skel: "villager_m",
-  spum_smith: "smith", npc_jobmaster: "smith", spum_miner: "smith",
-  spum_priest: "priest", npc_scholar_mio: "priest",
-};
-
-/** 생성 얼굴이 있으면 그 tex 이름을 돌려준다 (확장자 없이 — 렌더러가 .png 로 붙인다). */
-function faceFor(tex: string, expr: /** vc211 (#표정연동) */ FaceExpr = "neutral"): string | null {
-  const kind = SPUM_TO_FACE[tex];
-  return kind ? `npcface/${kind}_${expr}` : null;
+/** 현재 월드의 npcbody/SPUM 원본을 그대로 crop한 파일만 사용한다.
+ * 기존 npcface 절차 생성 얼굴은 더 이상 참조하지 않는다. 라고스는 현재 외형 보존일 뿐 확정 디자인이 아니다. */
+function faceFor(tex: string): string | null {
+  const crops: Record<string, { src: string }> = portraitCrops;
+  return crops[tex]?.src ?? null;
 }
 
-/** vc211 (#표정연동) — 대사창 표정. 생성 얼굴은 3종을 갖는다. */
+/** 기존 대사 데이터 호환 타입. 원본 crop에 없는 표정은 합성하지 않는다. */
 export type FaceExpr = "neutral" | "happy" | "angry";
 
 /** 대사 문장에서 표정을 추론한다.
@@ -168,16 +145,9 @@ export function DialogueBox({
   const line = (dialogue?.lines[idx] ?? "").replaceAll("{name}", name);
   const speakerName = (dialogue?.speaker ?? "").replaceAll("{name}", name);
   const portrait = dialogue ? portraitOf(dialogue.speaker ?? "", (dialogue as { portrait?: string }).portrait) : null;
-  /* vc211 (#표정연동) — 표정 결정 우선순위:
-   *  ① exprByLine[idx]  ② dialogue.expr  ③ 문장 자동 추론  ④ neutral
-   *  자동 추론은 `line`(현재 줄)을 쓴다 — 줄마다 감정이 바뀌는 대사가 많다. */
-  const expr: FaceExpr =
-    dialogue?.exprByLine?.[idx] ??
-    dialogue?.expr ??
-    (line ? inferExpr(line, dialogue?.speaker ?? "") : "neutral");
-  /* 생성 얼굴이 있으면 우선 사용. 없으면 기존 경로(.webp). */
-  const genFace = portrait ? faceFor(portrait.tex, expr) : null;
-  const portraitSrc = genFace ? `/assets/${genFace}.png` : portrait ? `/assets/${portrait.tex}.webp` : "";
+  // 원본에 없는 표정을 그려 넣지 않는다. 현재 월드와 같은 픽셀 crop만 사용한다.
+  const croppedFace = portrait ? faceFor(portrait.tex) : null;
+  const portraitSrc = croppedFace ?? (portrait ? `/assets/${portrait.tex}.webp` : "");
   /* v3.0.25 (#이미지 안불러와짐) — 초상화 로드 상태 추적: 404 등 실패 시 깨진 이미지 대신
    *  프레임만 표시하고, 로드 완료 시에야 이미지를 보여준다 (깜빡임·깨짐 제거) */
   const [portraitOk, setPortraitOk] = useState(true);
@@ -310,6 +280,7 @@ export function DialogueBox({
         )}
 
         <div className="min-w-0 flex-1">
+          <div className="mb-1 text-[9px] leading-snug text-white/50">{STORY_SEQUENCE_LABEL}</div>
           <div className="mb-1 flex items-center gap-1.5">
             {/* v3.0.24 — 화자명 옆 초상 톤 마커 (보스/정령/NPC 색 구분) */}
             {portrait && (

@@ -20,7 +20,7 @@
 import Phaser from "phaser";
 import { FIFTH_LOOKS, type FifthLook } from "./fifthLooks";
 import { familyOf } from "../classes";
-import { ensureAtlasAnim } from "./atlasAnim"; // vc206 (#8) — 아틀라스 애니메이션
+import { auraTextureKey, auraScale, ensureAuraAnim, AURA_WORLD_CAPS } from "./auraTextures";
 
 export type FifthAura = {
   core: Phaser.GameObjects.Image;
@@ -57,7 +57,7 @@ function fallbackLook(cls: string | null | undefined): FifthLook {
         barrier: "gvu_shockwave_fiery", barrierSpin: 0.0003, barrierScale: 1.3, barrierPulse: 0.14,
         groundAspect: 0.9, tint: 0xffffff };
     default:
-      return { core: "gvb_glow_white", halo: "gvb_shockwave_fiery", ground: "gvb_ring_soft",
+      return { core: "gvb_glow_white", halo: "gvu_shockwave_fiery", ground: "gvb_ring_soft",
         barrier: "gvb_shield_hex", barrierSpin: 0.00024, barrierScale: 1.15, barrierPulse: 0.10,
         groundAspect: 0.42, tint: 0xffffff };
   }
@@ -112,20 +112,21 @@ export class FifthAuraRig {
 
     r.core.setPosition(x, y - 10);
     r.core.setAlpha(0.42 * s * breath);
-    r.core.setScale(0.95 * breath * s + 0.05);
+    r.core.setScale(auraScale(r.core, AURA_WORLD_CAPS.core, 0.95 * breath * s + 0.05));
     r.core.setDepth(10.4);
 
     if (r.halo.visible) {
       r.halo.setPosition(x, y - 18);
       r.halo.setAlpha(0.30 * s * breath);
-      r.halo.setScale(0.95 * breath * s + 0.1);
+      r.halo.setScale(auraScale(r.halo, AURA_WORLD_CAPS.halo, (0.95 * breath * s + 0.1) / 1.05));
       r.halo.setRotation(now / 5200);
       r.halo.setDepth(10.45);
     }
 
     r.ground.setPosition(x, y + 8);
     r.ground.setAlpha(0.22 * s);
-    r.ground.setScale(1.25 * s + 0.1, (1.25 * s + 0.1) * r.look.groundAspect);
+    const gs = auraScale(r.ground, AURA_WORLD_CAPS.ground, (1.25 * s + 0.1) / 1.35);
+    r.ground.setScale(gs, gs * Math.min(1, r.look.groundAspect));
     r.ground.setDepth(5);
     r.ground.setFlipX(flipX);
 
@@ -136,7 +137,8 @@ export class FifthAuraRig {
       const sc = r.look.barrierScale * pulse * (0.55 + 0.45 * s);
       r.barrier.setPosition(x, y - 14);
       r.barrier.setAlpha(0.26 * s * breath);
-      r.barrier.setScale(sc);
+      // Largest profile is 1.35 × (1 + 0.18). Include pulse in the hard cap.
+      r.barrier.setScale(auraScale(r.barrier, AURA_WORLD_CAPS.barrier, sc / (1.35 * 1.18)));
       if (r.look.barrierSpin > 0) r.barrier.setRotation(now * r.look.barrierSpin);
       r.barrier.setDepth(10.5);
       r.barrier.setFlipX(flipX);
@@ -145,16 +147,16 @@ export class FifthAuraRig {
 
   private build(hex: number, cls: string | null): void {
     const look = (cls && FIFTH_LOOKS[cls]) || fallbackLook(cls);
-    /* vc206 (지시 #8) — 아틀라스면 애니메이션으로 재생한다.
-     *  종전엔 `gvu_shockwave_fiery`(512×256 = 2프레임), `gvu_trail_wave` 같은
-     *  프레임 시트를 add.image 로 1장만 그려 "사진 한 장"으로 보였다. */
+    // Explicit source metadata only: aspect ratio does not establish a sprite sheet.
+    // circle_aggr = 4×4; the remaining masks retain one full static source shape.
     const mk = (tex: string, depth: number) => {
-      const anim = ensureAtlasAnim(this.scene, tex, 10);
+      const anim = ensureAuraAnim(this.scene, tex);
+      const key = auraTextureKey(tex);
       const im: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite = anim
-        ? this.scene.add.sprite(0, -9999, tex, 0).play(anim.animKey)
-        : this.scene.add.image(0, -9999, tex);
+        ? this.scene.add.sprite(0, -9999, key, 0).play(anim)
+        : this.scene.add.image(0, -9999, key);
       im.setBlendMode(Phaser.BlendModes.ADD).setDepth(depth).setAlpha(0);
-      if (!this.scene.textures.exists(tex)) im.setVisible(false);
+      if (!this.scene.textures.exists(key)) im.setVisible(false);
       return im as Phaser.GameObjects.Image;
     };
     const tint = look.tint === 0xffffff ? hex : look.tint;

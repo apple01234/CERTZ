@@ -2,6 +2,9 @@ import Phaser from "phaser";
 import { createGameState, type GameState } from "../state/gameState";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
+import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFinalePlan";
+import { storyPortalDestination, storyEntryAllowed, YOUNG_PRINCESS_VILLAGE } from "../storyProgression";
+import { fieldNpcLook } from "../npcThemes";
 import { resolveGroundTile } from "../tileThemes"; // vc204 — 지역 지면 → 타일 단일 매핑
 import { openMaskAt, patternFor } from "../autotile"; // vc204 — 4비트 이웃 마스크 오토타일
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
@@ -64,11 +67,12 @@ import { loadUnion, unionEffects, activeBuffValues } from "../union"; // v1.0.18
 import * as classroom from "../classroom"; // v1.4.30 (#9 클래스룸 — 교실 모드 합산 카운터)
 import { loadSlots } from "../slots"; // v1.0.18 — 캐릭터 슬롯
 import { loadFx } from "../config"; // v1.0.18 — 셰이더 강도 설정
+import { setShakeScale, type ShakeScale } from "../fx/shakeScale";
 import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
 import { DriveFX } from "../fx/DriveFX"; // v1.3.0 — Drive 팩 VFX 통합 (참격/크리/폭발/낙뢰/불꽃놀이)
-import { applyToonStyle, clearToonStyle, applyToonCamera, toonEnabled, setToonEnabled } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일) · vc142 — 화면 전체 툰 셰이딩
+import { applyToonStyle, clearToonStyle, applyToonCamera, clearToonCamera, toonEnabled, setToonEnabled } from "../fx/ToonFX"; // v1.0.2 — 캐릭터/보스 툰 림라이트 (툰 셰이더 스타일) · vc142 — 화면 전체 툰 셰이딩
 import { Vfx3D } from "../fx/Vfx3D"; // vc142 (#9) — Three.js 3D VFX 오버레이 (phas3d식)
 import { initTrade, tradeInvite, tradeAccept, tradeDeny, tradeCancel, tradeAddItem, tradeRemoveItem, tradeSetCurrency, tradeLock } from "../trade"; // vc142 (#3) — 1:1 플레이어 거래
 /** v1.1.9 (#개편 A48) — 채집 노드 */
@@ -179,6 +183,7 @@ const NPC_BODY_OF: Record<string, string> = {
   spum_scout: "npcbody_scout",
   spum_mystic: "npcbody_mystic",
   spum_butler: "npcbody_butler",
+  spum_merchant: "npcbody_merchant",
 };
 
 export class WorldScene extends Phaser.Scene {
@@ -218,8 +223,8 @@ export class WorldScene extends Phaser.Scene {
   totalKills = 0;
   startTime = 0;
   cleared = false;
-  /* vc186b DLC — 본마을 NPC(리안)와 그랜드플래닛 안내 대화를 마쳤는지.
-   *  cleared 와 함께 참이면 마을에 DLC 게이트가 생성된다. */
+  youngPrincessCleared = false;
+  /** 구 세이브의 DLC 안내 대화 기록. 엔딩 해금 조건으로 쓰지 않는다. */
   dlcTalked = false;
 
   private fragment: Phaser.Physics.Arcade.Sprite | null = null;
@@ -756,13 +761,14 @@ export class WorldScene extends Phaser.Scene {
 
   /* ----- v3.0.3: 지면 장판 (독/화염/성역/시간왜곡) — owner별 판정 분기 ----- */
   private fields: {
-    zone: Phaser.GameObjects.Arc;
+    zone: Phaser.GameObjects.Arc | Phaser.GameObjects.Graphics;
     x: number; y: number; radius: number;
     dur: number; dps: number; kind: "poison" | "fire" | "light" | "time";
     owner: "enemy" | "player";
     tickAcc: number;
     heal?: boolean; slow?: boolean; stun?: boolean;
     /** v3.0.7 — 크로니컬 시간왜곡: 필드가 자신의 HP를 틱마다 회복 (플레이어 소유 장판 한정) */
+    geometry?: { plan: FinalePlan; angle: number };
     selfHealPerTick?: number;
   }[] = [];
 
@@ -1394,7 +1400,8 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.26 (#76) — 스토리 클리어 플래그 복원: 기존엔 런타임 리셋(init false) 후
      *  복원이 누락돼 재접속 시 cleared 상태가 유실됐다. 일퀘 해금 판정의 전제 */
     this.cleared = savedPlayer.cleared ?? false;
-    this.dlcTalked = savedPlayer.dlcTalked ?? false;   /* vc186b DLC */
+    this.youngPrincessCleared = savedPlayer.youngPrincessCleared ?? false;
+    this.dlcTalked = savedPlayer.dlcTalked ?? false;
     /* v3.0.6 — 자동 물약/자동 버프 설정 복원 (지시 #5) */
     if (savedPlayer.autoUse) {
       this.player.autoUse = {
@@ -1679,14 +1686,8 @@ export class WorldScene extends Phaser.Scene {
      *  이제 256px 고품질 지형 타일로 지역별 고유 무늬를 깐다. 지역 분위기 조정은
      *  tileThemes.ts 의 GROUND_TILE_MAP 한 곳만 고치면 된다. */
     const mappedGround = resolveGroundTile(groundTex);
-    /* dlc 플래그는 StageDef 가 아니라 ChapterSpec 에 있다(챕터 단위 구분).
-     *  현재 스테이지의 챕터를 찾아 DLC·재림 여부를 판정한다. */
-    const curCh = parseStage(stageKey).ch;
-    const isDlcStage = CHAPTERS.some((c) => c.key === curCh && c.dlc === true);
-    /* 매핑 타일이 실제로 로드돼 있을 때만 치환한다(미등록이면 원본 유지). */
-    const packTex = !isDlcStage && mappedGround !== groundTex && this.textures.exists(mappedGround)
-      ? mappedGround
-      : groundTex;
+    /* DLC·재림도 동일한 검증 지면을 사용한다. 오염 원본으로 폴백하지 않는다. */
+    const packTex = this.textures.exists(mappedGround) ? mappedGround : "ground_slate";
     const canVary = !!packTex && this.textures.exists(`${packTex}_v1`);
     /* v1.4.30 (#11 니플헤임 눈부심) — 흰 눈바닥 타일이 화면을 압도하므로 챕터별 지면 틴트 도입.
      *  흰색 타일을 청회색으로 곱해 전체 톤 다운 (암전과 별개로 원본 자체가 밝은 타일 보정). */
@@ -3461,14 +3462,16 @@ export class WorldScene extends Phaser.Scene {
   private dlcPortal: Phaser.Physics.Arcade.Sprite | null = null;
   private dlcPortalGlow: Phaser.GameObjects.Image | null = null;
 
-  /** DLC 게이트 개방 조건 — 세계 구원 + 리안과의 대화 */
+  /** 현재 세계의 시작 마을에서만 다음 세계 포탈을 연다. */
   private isDlcPortalOpen(): boolean {
-    return this.cleared && this.dlcTalked && !this.isInterior;
+    return !this.isInterior && storyPortalDestination(this.stageDef.key, this) !== null;
   }
 
   /** 본마을에 그랜드플래닛 게이트 생성 (조건 충족 시에만 호출됨) */
   private spawnDlcPortal() {
-    if (this.dlcPortal) return;
+    const destination = storyPortalDestination(this.stageDef.key, this);
+    if (this.dlcPortal || !destination || this.isInterior) return;
+    const destinationLabel = destination === YOUNG_PRINCESS_VILLAGE ? "영준 프린세스" : "그랜드 플레닛";
     const cx = this.stageW / 2;
     const cy = this.stageH / 2;
     /* 광장 동쪽 — 우물/여관/전직관과 겹치지 않는 자리 */
@@ -3489,7 +3492,7 @@ export class WorldScene extends Phaser.Scene {
     (this.dlcPortal.body as Phaser.Physics.Arcade.Body).setSize(34, 44).setOffset(15, 10);
 
     this.add
-      .text(x, y - 52, "→ 그랜드플래닛", {
+      .text(x, y - 52, `→ ${destinationLabel}`, {
         fontFamily: "Galmuri11, sans-serif",
         fontSize: "12px",
         color: "#c8b0ff",
@@ -3500,7 +3503,7 @@ export class WorldScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(60);
 
-    this.interactables.push({ x, y, kind: "dlcgate", label: "그랜드플래닛 게이트 — 입장" });
+    this.interactables.push({ x, y, kind: "dlcgate", label: `${destinationLabel} 포탈 — 입장` });
 
     this.physics.add.overlap(this.player, this.dlcPortal, () => {
       if (!this.dlcPortal?.active || this.transitioning) return;
@@ -3512,16 +3515,19 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** DLC 첫 챕터로 이동 */
+  /** 본편 마을→영프 / 영프 엔딩 후 영프 시작 마을→그랜드 플레닛. */
   enterDlcGate() {
     if (!this.player || this.transitioning) return;
-    if (!this.isDlcPortalOpen()) {
-      this.showBanner("아직 그랜드플래닛으로 갈 수 없다");
+    const destination = storyPortalDestination(this.stageDef.key, this);
+    if (!destination || !this.isDlcPortalOpen()) {
+      this.showBanner("영프 엔딩 후 영준 프린세스 시작 마을에서 그랜드 플레닛으로 갈 수 있다");
       return;
     }
     audio.sfx.portal();
-    this.showBanner("그랜드플래닛 — 제1행성 스타게이트로 향한다");
-    this.startTransition("dlcstargate1", { delay: 520 });
+    this.showBanner(destination === YOUNG_PRINCESS_VILLAGE
+      ? "하울르스톤: 영준 프린세스 — 시작 마을로 향한다"
+      : "그랜드 플레닛 — 제1행성 스타게이트로 향한다");
+    this.startTransition(destination, { delay: 520 });
   }
 
   private activatePortal(silent = false) {
@@ -3568,17 +3574,12 @@ export class WorldScene extends Phaser.Scene {
    */
   private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }, force = false) {
     if (this.transitioning && !force) return;
-    /* ═══ vc186b DLC 잠금 — 세계 구원(아부디토스 격파) 전에는 입장 불가 ═══
-     *  기존 9챕터 흐름은 건드리지 않는다. DLC 플래그가 붙은 챕터만 검사한다. */
-    {
-      const spec = chapterSpec(next);
-      if (spec?.dlc && !this.cleared) {
-        notice(
-          "DLC는 세계를 구원한 뒤에 열립니다 — 무한의 탑 최심부의 주인을 쓰러뜨리세요",
-        );
-        this.transitioning = false;
-        return;
-      }
+    if (!storyEntryAllowed(next, this)) {
+      notice(next.startsWith("dlc")
+        ? "그랜드 플레닛은 영준 프린세스 엔딩 이후에 열립니다"
+        : "영준 프린세스는 본편 엔딩 이후에 열립니다");
+      this.transitioning = false;
+      return;
     }
     this.transitioning = true;
     /* v1.0.15 (피드백 #3) — 맵 이동 시 스킬 쿨타임 유지: restart로 Player가 재생성되기 전에
@@ -4540,7 +4541,7 @@ export class WorldScene extends Phaser.Scene {
         if (this.ambientFilters.length > 0) detachAmbientBloom(this.cameras.main, this.ambientFilters);
         /* vc142 (#11) — 절전 모드: 카메라 툰 셰이딩 해제 */
         if (this.toonCamFilters) {
-          try { (this.cameras.main as unknown as { filters?: { external?: { clear?: () => void } } }).filters?.external?.clear?.(); } catch { /* 무시 */ }
+          clearToonCamera(this.cameras.main, this.toonCamFilters);
           this.toonCamFilters = null;
         }
         if (this.playerToon && this.player) {
@@ -5103,7 +5104,8 @@ export class WorldScene extends Phaser.Scene {
     };
     const list = SPEC[ch];
     if (!list) return; // 재림/특수 구역은 제외
-    const s = list[((ps.sub ?? 1) - 1 + list.length) % list.length];
+    const npcVariant = ((ps.sub ?? 1) - 1 + list.length) % list.length;
+    const s = { ...list[npcVariant], tex: fieldNpcLook(ch, npcVariant, list[npcVariant].tex) };
     /* 위치: 입구 근처 열린 지점 (포탈·스폰 보호 170px 안이면 재추첨) */
     let px = this.entryHome.x + 96;
     let py = this.entryHome.y - 96;
@@ -5116,6 +5118,7 @@ export class WorldScene extends Phaser.Scene {
     const bodyTex2 = this.textures.exists(NPC_BODY_OF[s.tex] ?? "") ? NPC_BODY_OF[s.tex] : s.tex;
     this.add.ellipse(px, py + 40 * 0.62, 44, 14, 0x000000, 0.55)
       .setDepth(this.yDepthFor(py) - 0.5);
+    this.fieldNpcPortrait = bodyTex2;
     const img = this.add.image(px, py, bodyTex2).setDepth(this.yDepthFor(py)).setScale(0.62);
     this.tweens.add({ targets: img, y: py - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
@@ -5140,6 +5143,7 @@ export class WorldScene extends Phaser.Scene {
    *  · 구역 이동 시 초기화 (구역 단위 반복 컨텐츠 — 파밍 루트의 뼈대) */
   private fieldReq: { mob: string; mobName: string; need: number; count: number; gold: number; exp: number; npcName: string } | null = null;
   private fieldReqNpcPos: { x: number; y: number } | null = null;
+  private fieldNpcPortrait: string | undefined;
   private fieldReqBonus = 0;
 
   /** 의뢰 상태를 NPC 상호작용 라벨에 반영 ("!" 수주 가능 / "..." 진행 / "↩ 보고") */
@@ -5196,6 +5200,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.fieldReq) {
       this.showDialogueRaw({
         speaker: npcName,
+        portrait: this.fieldNpcPortrait,
         lines: [`아직이야... ${this.fieldReq.mobName} ${this.fieldReq.count}/${this.fieldReq.need}. 조심하고!`],
       });
       return;
@@ -5213,6 +5218,7 @@ export class WorldScene extends Phaser.Scene {
     const dlg = DIALOGUES[baseDlg];
     this.showDialogueRaw({
       speaker: npcName,
+      portrait: this.fieldNpcPortrait,
       lines: [
         story,
         ...(dlg ? dlg.lines.slice(0, 1) : []),
@@ -8183,7 +8189,7 @@ export class WorldScene extends Phaser.Scene {
     this.emitChibiHud();
   }
 
-  private showDialogueRaw(d: { speaker: string; lines: string[]; choices?: { label: string; id: string }[] }) {
+  private showDialogueRaw(d: { speaker: string; portrait?: string; lines: string[]; choices?: { label: string; id: string }[] }) {
     if (!this.player) return;
     this.activeNpcId = null;
     this.dialoguing = true;
@@ -10884,6 +10890,9 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.8 — 그래픽 효과 모드 실시간 전환 (설정 패널 → 셰이더 즉시 부착/해제) */
     const onFxMode = (m: "auto" | "high" | "low") => {
       this.fxMode = m === "high" || m === "low" ? m : "auto";
+      this.fxLowStreak = 0;
+      this.fxHighStreak = 0;
+      this.fxSampleAt = 0;
       try { window.localStorage.setItem("sertz_fx_mode", this.fxMode); } catch { /* 저장 실패 무시 */ }
       const forced: 0 | 1 = this.fxMode === "high" ? 1 : this.fxMode === "low" ? 0 : this.fxLevel;
       if (this.fxLevel !== forced) this.applyFxMode(this.fxLevel = forced);
@@ -10894,6 +10903,14 @@ export class WorldScene extends Phaser.Scene {
       );
     };
     EventBus.on("fx:mode", onFxMode);
+    const onFxShake = (mode: ShakeScale) => {
+      setShakeScale(mode);
+      if (mode === "off") {
+        this.cameras.main.shakeEffect.reset();
+        this.ultShake?.reset();
+      }
+    };
+    EventBus.on("fx:shake", onFxShake);
     /* v1.0.8 — 무한 콘텐츠 허브 리스너 (탑/시련/티어균열/제작/심연상점/환생) */
     const onInfTower = () => this.enterTower();
     const onInfTrial = () => this.enterTrial();
@@ -11036,17 +11053,13 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("rpg:autohunt", onAutoHunt);
     EventBus.on("rpg:gm", onGm);
     /* vc142 (#11) — 툰 셰이딩 토글 (설정 패널 버튼) */
-    const onToonToggle = () => {
-      const next = !toonEnabled();
+    const onToonToggle = (value?: { on?: boolean }) => {
+      const next = typeof value?.on === "boolean" ? value.on : !toonEnabled();
       setToonEnabled(next);
-      try {
-        (this.cameras.main as unknown as { filters?: { external?: { clear?: () => void } } }).filters?.external?.clear?.();
-      } catch { /* 무시 */ }
+      clearToonCamera(this.cameras.main, this.toonCamFilters);
       this.toonCamFilters = null;
-      this.ambientFilters = [];
       if (next && this.fxLevel === 1 && this.game.renderer.type === Phaser.WEBGL && !isLowPerfEnv()) {
         this.toonCamFilters = applyToonCamera(this.cameras.main);
-        this.ambientFilters = addAmbientBloom(this.cameras.main);
       }
       this.showBanner(next ? "툰 셰이딩 ON — 셀룰룩 화면" : "툰 셰이딩 OFF — 기본 화면");
     };
@@ -11054,14 +11067,12 @@ export class WorldScene extends Phaser.Scene {
     /* vc145 (#11 조절바 버그) — 설정 "효과 강도" 슬라이더 변경 시 툰/앰비언트 후처리를 즉시 재적용.
      *  기존엔 writeFx만 하고 재부착이 없어 슬라이더를 움직여도 화면이 변하지 않았다. */
     const onFxChanged = () => {
-      try {
-        (this.cameras.main as unknown as { filters?: { external?: { clear?: () => void } } }).filters?.external?.clear?.();
-      } catch { /* 무시 */ }
+      clearToonCamera(this.cameras.main, this.toonCamFilters);
+      detachAmbientBloom(this.cameras.main, this.ambientFilters);
       this.toonCamFilters = null;
-      this.ambientFilters = [];
       if (this.fxLevel === 1 && this.game.renderer.type === Phaser.WEBGL && !isLowPerfEnv()) {
-        this.toonCamFilters = applyToonCamera(this.cameras.main); // 강도 0이면 내부에서 null — 자동 해제
-        if (loadFx().intensity > 0) this.ambientFilters = addAmbientBloom(this.cameras.main);
+        if (toonEnabled()) this.toonCamFilters = applyToonCamera(this.cameras.main);
+        if (!this.boss?.active && this.ambientBloomAllowed()) this.ambientFilters = addAmbientBloom(this.cameras.main);
       }
       /* vc146 (#5) — 2.5D 카메라 토글도 동일 이벤트로 즉시 반영 */
       this.applyPerspSetting();
@@ -11174,6 +11185,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("rpg:missionClaim", onMissionClaim);
       EventBus.off("rpg:ticketRefill", onTicketRefill);
       EventBus.off("fx:mode", onFxMode); // v1.0.8
+      EventBus.off("fx:shake", onFxShake);
       EventBus.off("rpg:infTower", onInfTower); // v1.0.8
       EventBus.off("rpg:dojangEnter", onDojangEnter); // v1.1.1 — 무릉도장 일반 진입
       EventBus.off("rpg:unionReward", onUnionReward); // v1.0.18 — 유니온 상점
@@ -13933,16 +13945,47 @@ export class WorldScene extends Phaser.Scene {
     kind: "poison" | "fire" | "light" | "time";
     owner: "enemy" | "player";
     heal?: boolean; slow?: boolean; stun?: boolean;
+    geometry?: { plan: FinalePlan; angle: number };
     selfHealPerTick?: number;
   }) {
     const tint = cfg.kind === "poison" ? 0x7ade4a : cfg.kind === "fire" ? 0xff8a3a : cfg.kind === "light" ? 0xffe9a0 : 0xb0a0ff;
-    const zone = this.add.circle(cfg.x, cfg.y, cfg.radius, tint, 0.22).setDepth(2).setStrokeStyle(2, tint, 0.55);
+    const geometry = cfg.geometry;
+    const radius = geometry ? finalePlanReach(geometry.plan) : cfg.radius;
+    let zone: Phaser.GameObjects.Arc | Phaser.GameObjects.Graphics;
+    if (geometry) {
+      const g = this.add.graphics().setPosition(cfg.x, cfg.y).setRotation(geometry.angle)
+        .setDepth(this.yDepthFor(cfg.y) - 3);
+      for (const z of geometry.plan.zones) {
+        g.fillStyle(tint, 0.12).lineStyle(2, tint, 0.6);
+        if (z.kind === "beam") {
+          const c = Math.cos(z.angle), s = Math.sin(z.angle), w = z.width / 2;
+          g.beginPath();
+          [[0, -w], [z.length, -w], [z.length, w], [0, w]].forEach(([u, v], i) => {
+            const x = z.x + u * c - v * s, y = z.y + u * s + v * c;
+            if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+          });
+          g.closePath().fillPath().strokePath();
+        } else if (z.kind === "disc") {
+          g.fillCircle(z.x, z.y, z.radius).strokeCircle(z.x, z.y, z.radius);
+        } else if (z.kind === "ring") {
+          g.lineStyle(z.width, tint, 0.24).strokeCircle(z.x, z.y, z.radius);
+        } else {
+          g.beginPath().moveTo(z.x, z.y);
+          g.arc(z.x, z.y, z.radius, z.angle - z.arc / 2, z.angle + z.arc / 2, false);
+          g.closePath().fillPath().strokePath();
+        }
+      }
+      zone = g;
+    } else {
+      zone = this.add.circle(cfg.x, cfg.y, radius, tint, 0.22)
+        .setDepth(2).setStrokeStyle(2, tint, 0.55);
+    }
     this.tweens.add({ targets: zone, alpha: { from: 0.85, to: 0.5 }, duration: 900, yoyo: true, repeat: -1 });
     this.fields.push({
-      zone, x: cfg.x, y: cfg.y, radius: cfg.radius,
+      zone, x: cfg.x, y: cfg.y, radius,
       dur: cfg.dur, dps: cfg.dps, kind: cfg.kind, owner: cfg.owner,
       tickAcc: 0, heal: cfg.heal, slow: cfg.slow, stun: cfg.stun,
-      selfHealPerTick: cfg.selfHealPerTick,
+      selfHealPerTick: cfg.selfHealPerTick, geometry: cfg.geometry,
     });
   }
 
@@ -13972,6 +14015,7 @@ export class WorldScene extends Phaser.Scene {
         for (const e of this.getAllTargets()) {
           if (!e.active) continue;
           if (Phaser.Math.Distance.Between(f.x, f.y, e.x, e.y) > f.radius) continue;
+          if (f.geometry && finaleTargetOrder(f.geometry.plan, f.x, f.y, f.geometry.angle, e.x, e.y) < 0) continue;
           /* v1.0.16 — 장판 틱마다 대상 수만큼 Vector2를 새로 만들던 것을 재사용 버퍼로 교체.
            *  takeDamage가 away를 보관하지 않고 즉시 normalize한 값만 쓰므로 공유해도 안전하다. */
           const away = this.fieldAwayVec.set(e.x - f.x, e.y - f.y).normalize();
@@ -16568,7 +16612,8 @@ export class WorldScene extends Phaser.Scene {
       maxMp: this.player.maxMp,
       atk: this.player.atk,
       cleared: this.cleared,
-      dlcTalked: this.dlcTalked,   /* vc186b DLC — 마을 NPC 대화 완료 여부 */
+      youngPrincessCleared: this.youngPrincessCleared,
+      dlcTalked: this.dlcTalked,
       cutsceneSeen: this.cutsceneSeen, /* v1.4.41 — 챕터 진입 컷씬 시청 기록 */
       gold: this.player.gold,
       potions: { ...this.player.potions },
@@ -16890,16 +16935,8 @@ export class WorldScene extends Phaser.Scene {
 
   resumeFromDialogue() {
     this.restoreBossIntroCam(); // v1.0.2 (#보스컷씬) — 대사 종료 후에만 플레이어 시점 복귀
-    /* ═══ vc186b DLC — 마을 NPC와 안내 대화를 마치면 그랜드플래닛 게이트가 열린다 ═══
-     *  사용자 지시: "NPC대화후 마을포탈 생성"
-     *  조건: 본마을 + 세계 구원(cleared) + 아직 게이트 없음 → dlcTalked 를 켜고 포탈 생성. */
-    if (!this.isInterior && this.stageDef.isVillage && this.cleared && !this.dlcTalked) {
-      this.dlcTalked = true;
-      this.saveSoon();
-      this.spawnDlcPortal();
-      this.showBanner("리안의 말이 끝나자 광장 동쪽에 빛의 문이 열렸다 — 그랜드플래닛 게이트");
-      audio.sfx.portal();
-    }
+    // 일반 NPC 대화는 어느 세계의 엔딩도 대신하지 않는다.
+    // 다음 세계 포탈은 해당 세계의 엔딩 기록으로만 개방한다.
     this.dialoguing = false;
     this.dialogueSince = 0; // v3.3.0 — 붙임 시각 리셋
     this.portalHoldSince = 0; // v2.7 — 정상 종료면 강제개방 카운터도 리셋

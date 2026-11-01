@@ -22,6 +22,7 @@
  *   저사양 게이트에서는 카메라 셰이크와 이미지 장수를 줄인다.
  */
 import Phaser from "phaser";
+import { ultimateFinalePlan, finalePlanReach, type FinalePlan, type UltimateSlot } from "./ultFinalePlan";
 
 /** 마무리 판정 형태 — 직업마다 다르게 준다 */
 export type FinaleShape =
@@ -173,12 +174,14 @@ export function runUltFinale(
   opts: {
     x: number; y: number; hex: number; cls: string | null;
     aimAngle: number;
+    slot?: UltimateSlot;
     /** 데미지 롤 — 배율을 받아 {dmg, crit} 반환 */
     roll: (mul: number) => { dmg: number; crit: boolean };
     /** 좌표 기준 대상에게 피해를 준다.
      *  vc206 (지시 #4) — reach 를 함께 넘긴다. 호출부(Player)가 판정 반경을
      *  연출 사거리에 맞춰 넓혀야 먼 지점의 적이 실제로 맞는다. */
-    hitAt: (x: number, y: number, dmg: number, crit: boolean, reach: number) => void;
+    hitAt: (x: number, y: number, dmg: number, crit: boolean, reach: number,
+      geometry?: { plan: FinalePlan; angle: number }) => void;
     lite?: boolean;
   },
 ) {
@@ -210,7 +213,49 @@ export function runUltFinale(
 
   const dmg = (mul: number) => opts.roll(mul * (def.shape === "ring" ? 0.4 : 1));
 
-  switch (def.shape) {
+  const plan = ultimateFinalePlan(opts.cls, opts.slot ?? 1);
+  if (plan) {
+    // Preserve the original roll count, coefficients and pulse times. Every pulse
+    // uses the union once, so crossing beams never multiply a target's damage.
+    const pulses: [number, number][] = def.shape === "line" ? [[0, 1.7], [90, 1.7], [180, 1.7]]
+      : def.shape === "cone" ? [[0, 1.8], [80, 1.8], [160, 1.8]]
+      : def.shape === "chain" ? [[0, 1.25], [110, 1.25], [220, 1.25], [330, 1.25]]
+      : def.shape === "cross" ? [[0, 1.5], [70, 1.5], [140, 1.5], [210, 1.5]]
+      : [[0, 2]];
+    const reach = finalePlanReach(plan);
+    for (const [delay, mul] of pulses) {
+      scene.time.delayedCall(delay, () => {
+        const g = scene.add.graphics().setPosition(x, y).setRotation(a)
+          .setDepth(24).setBlendMode(Phaser.BlendModes.ADD);
+        for (const z of plan.zones) {
+          g.fillStyle(tint, 0.22).lineStyle(3, tint, 0.95);
+          if (z.kind === "beam") {
+            const c = Math.cos(z.angle), s = Math.sin(z.angle), w = z.width / 2;
+            const points = [[0, -w], [z.length, -w], [z.length, w], [0, w]];
+            g.beginPath();
+            points.forEach(([u, v], i) => {
+              const px = z.x + u * c - v * s, py = z.y + u * s + v * c;
+              if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+            });
+            g.closePath().fillPath().strokePath();
+          } else if (z.kind === "disc") {
+            g.fillCircle(z.x, z.y, z.radius).strokeCircle(z.x, z.y, z.radius);
+          } else if (z.kind === "ring") {
+            g.lineStyle(z.width, tint, 0.3).strokeCircle(z.x, z.y, z.radius);
+          } else {
+            g.beginPath().moveTo(z.x, z.y);
+            g.arc(z.x, z.y, z.radius, z.angle - z.arc / 2, z.angle + z.arc / 2, false);
+            g.closePath().fillPath().strokePath();
+          }
+        }
+        // Fade only: scaling would advertise a different damage boundary.
+        scene.tweens.add({ targets: g, alpha: 0, delay: 200, duration: 420,
+          onComplete: () => g.destroy() });
+        const { dmg: d, crit } = dmg(mul);
+        opts.hitAt(x, y, d, crit, reach, { plan, angle: a });
+      });
+    }
+  } else switch (def.shape) {
     case "line": {
       /* 직선 관통 — 조준 방향으로 3개 지점을 차례로 폭발시킨다 */
       const steps = 3;
@@ -316,7 +361,8 @@ export function runUltFinale(
 
   /* 카메라 — 직업별 강도, 저사양은 절반 */
   const [ms, amt] = def.shake;
-  scene.cameras.main.shake(ms, opts.lite ? amt * 0.5 : amt);
+  (scene as unknown as { doShake?: (ms: number, amount: number) => void })
+    .doShake?.(ms, opts.lite ? amt * 0.5 : amt);
   /* WorldScene 은 sfxSkill 을 제공하지만 Phaser.Scene 타입에는 없다. */
   (scene as unknown as { sfxSkill?: (k: string, r?: number) => void }).sfxSkill?.(def.sfx, 1.0);
 }

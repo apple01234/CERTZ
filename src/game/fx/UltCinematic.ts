@@ -251,7 +251,7 @@ export function playUltCinematic(scene: S3, x: number, y: number, opts: Cinemati
     shake.add(1.0);
     stop(scene, 110);
     cam.flash(160, 255, 255, 255);
-    cam.shake(260, 0.010 * s);
+    (scene as S3 & { doShake?: (ms: number, intensity: number) => void }).doShake?.(260, 0.010 * s);
     add("fx_FlashFree3", x, y, 24, 0.8, 4.0, 1.0, 560, 0, 0xffffff);
     /* UNI VFX 폭발 코어 — 백색 섬광 뒤에 계열색 코어를 겹쳐 깊이를 만든다 */
     add("gvu_exp_core", x, y, 23, 0.4, 3.8, 0.95, 620);

@@ -72,9 +72,9 @@ export type SaveData = {
   maxHp: number;
   atk: number;
   cleared: boolean;
-  /* vc186b DLC — 마을 NPC(리안)와 DLC 안내 대화를 마쳤는지.
-   *  cleared(세계 구원) 와 이 플래그가 모두 참이면 본마을에 그랜드플래닛 게이트가 열린다.
-   *  구 세이브 호환: 없으면 undefined → false 취급. */
+  /** 영프 엔딩을 실제로 본 기록. 본편 cleared/dlcTalked에서 자동 승격하지 않는다. */
+  youngPrincessCleared?: boolean;
+  /* 기존 DLC 안내 대화 기록(구 세이브 호환). 세계관 엔딩 판정으로 사용하지 않는다. */
   dlcTalked?: boolean;
   /* ↓ 레벨업 MP 성장 복원 (v1.9 — 구 세이브 호환: 없으면 60 기본) */
   maxMp?: number;

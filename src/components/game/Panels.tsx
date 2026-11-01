@@ -22,6 +22,8 @@ import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, fam
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
 import { loadKeyMap, applyKeyBinding, resetKeyMap, loadMoveScheme, writeMoveScheme, keyLabel, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap, type MoveScheme } from "@/game/keymap";
 import { getPlayerName, loadSave, mutateFriends, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도 / v1.0.13 피드백#12 — 친구 추가( FriendsWidget 동일 스토어 API)
+import { toonEnabled } from "@/game/fx/ToonFX";
+import { loadShakeScale, setShakeScale } from "@/game/fx/shakeScale";
 import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0 — 텍스트 입력 단축키 차단 (지시 #5)
 import { GEM_SKUS, fetchStorePrices } from "@/game/ads"; // v4.1.0 — 구글 플레이 충전 상품 / v1.0.1-beta — 스토어 실가격
@@ -5633,6 +5635,8 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
   const [recording, setRecording] = useState<GameAction | null>(null);
   /* v1.0.18 — 셰이더 효과 강도 표시값 */
   const [fxLabel, setFxLabel] = useState(() => loadFx().intensity);
+  const [shakeScale, updateShakeScale] = useState(() => loadShakeScale());
+  const [toonOn, updateToonOn] = useState(() => toonEnabled());
   /* v1.1.4 — UI 확대 비율(%). 저장값을 그대로 읽어 슬라이더 위치를 복원한다. */
   /* v1.1.6 (#개편 B77) — 고대비 모드 (html[data-contrast]) */
   const [highContrast, setHighContrast] = useState(() => {
@@ -5799,12 +5803,15 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
               { m: "normal", label: "보통", css: "border-violet-300/70 bg-violet-500/20 text-violet-200" },
               { m: "strong", label: "강하게", css: "border-emerald-300/70 bg-emerald-500/20 text-emerald-200" },
             ] as const).map((o) => {
-              const cur = (() => { try { const v = window.localStorage.getItem("sertz_shake_scale"); return v === "off" || v === "low" || v === "strong" ? v : "normal"; } catch { return "normal"; } })();
-              const active = cur === o.m;
+              const active = shakeScale === o.m;
               return (
                 <button
                   key={o.m}
-                  onClick={() => EventBus.emit("fx:shake", o.m)}
+                  onClick={() => {
+                    setShakeScale(o.m);
+                    updateShakeScale(o.m);
+                    EventBus.emit("fx:shake", o.m);
+                  }}
                   aria-pressed={active}
                   className={`rounded-md border-2 px-1 py-1.5 text-[11px] font-black transition ${active ? o.css : "border-white/15 bg-black/40 text-white/55 hover:border-white/40"}`}
                 >
@@ -5850,13 +5857,13 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
               { on: true, label: "켬 (기본)", css: "border-fuchsia-300/70 bg-fuchsia-500/20 text-fuchsia-200" },
               { on: false, label: "끔", css: "border-amber-300/70 bg-amber-500/20 text-amber-200" },
             ] as const).map((o) => {
-              const cur = (() => { try { return window.localStorage.getItem("sertz_toon") !== "0"; } catch { return true; } })();
-              const active = cur === o.on;
+              const active = toonOn === o.on;
               return (
                 <button
                   key={String(o.on)}
                   onClick={() => {
-                    EventBus.emit("rpg:toon", {});
+                    updateToonOn(o.on);
+                    EventBus.emit("rpg:toon", { on: o.on });
                     /* vc185 (#3) — 쉐이더 튜토리얼: 실제로 조작했을 때만 완료 처리 */
                     EventBus.emit("tut:notify", { ev: "shader" });
                   }}

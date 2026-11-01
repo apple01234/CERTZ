@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import { GROUND_TILE_MAP } from "../tileThemes";
+import { AURA_TEXTURE_LOADS } from "../fx/auraTextures";
 import { TILE_PNG_KEYS } from "../tilePng"; // vc206 (#11) — PNG 원본 우선 로드
 import { buildAllAnims, registerBossAnims, BOSS_ATLAS } from "../textures";
 import { CORE_BODY_PREFIXES } from "../data";
@@ -674,7 +676,13 @@ export class BootScene extends Phaser.Scene {
     /* vc206 (지시 #11) — webp 우선 로드 후, PNG 원본이 있는 타일은 PNG 로 덮어 로드한다.
      *  Phaser 는 같은 키를 두 번 큐잉하면 나중 것이 이기므로 PNG 가 최종 텍스처가 된다.
      *  (webp 5종이 PNG 대비 색이 40~93% 뭉개져 있어 "종이 쪼가리"로 보였다) */
-    for (const key of ASSET_LIST) this.load.image(key, `${key}.webp`);
+    for (const key of ASSET_LIST) {
+      if (!TILE_PNG_KEYS.includes(key)) this.load.image(key, `${key}.webp`);
+    }
+    for (const key of new Set(Object.values(GROUND_TILE_MAP))) {
+      if (key.startsWith("ground_")) this.load.image(key, `ground/${key}.png`);
+    }
+    for (const { key, file } of AURA_TEXTURE_LOADS) this.load.image(key, file);
     /* vc226 (최적화) — FA 프레임을 **아틀라스 1장**으로 로드한다.
      *
      *  종전: 268개 개별 `load.image` = HTTP 요청 268개(부팅 요청의 26%).

@@ -1,0 +1,152 @@
+{
+  "ground_meadow": {
+    "source": "public/assets/tiles/kenney_tinytown.png",
+    "sourceSha256": "bfed80c64fc7ff8caee3098dfddc99584890ee5bb53865fd768b851a79cec03f",
+    "crop": [
+      16,
+      0,
+      16,
+      16
+    ],
+    "integerScale": 4,
+    "pack": "Kenney Tiny Town",
+    "license": "CC0-1.0",
+    "width": 64,
+    "height": 64
+  },
+  "ground_dirt": {
+    "source": "assets_dl/tilesets/simple_tiles_32px.png",
+    "sourceSha256": "2a7977993c48191dbad9095305d8c886142037d01be1f4ebf7cf711fdfe30ce5",
+    "crop": [
+      34,
+      2,
+      28,
+      28
+    ],
+    "integerScale": 3,
+    "pack": "Simple tiles",
+    "license": "CC0-1.0",
+    "width": 84,
+    "height": 84
+  },
+  "ground_sand": {
+    "source": "assets_dl/tilesets/simple_tiles_32px.png",
+    "sourceSha256": "2a7977993c48191dbad9095305d8c886142037d01be1f4ebf7cf711fdfe30ce5",
+    "crop": [
+      66,
+      2,
+      28,
+      28
+    ],
+    "integerScale": 3,
+    "pack": "Simple tiles",
+    "license": "CC0-1.0",
+    "width": 84,
+    "height": 84
+  },
+  "ground_forest": {
+    "source": "assets_dl/tilesets/simple_tiles_32px.png",
+    "sourceSha256": "2a7977993c48191dbad9095305d8c886142037d01be1f4ebf7cf711fdfe30ce5",
+    "crop": [
+      192,
+      32,
+      32,
+      32
+    ],
+    "integerScale": 3,
+    "pack": "Simple tiles",
+    "license": "CC0-1.0",
+    "width": 96,
+    "height": 96
+  },
+  "ground_slate": {
+    "source": "assets_dl/tilesets/simple_tiles_32px.png",
+    "sourceSha256": "2a7977993c48191dbad9095305d8c886142037d01be1f4ebf7cf711fdfe30ce5",
+    "crop": [
+      224,
+      32,
+      32,
+      32
+    ],
+    "integerScale": 3,
+    "pack": "Simple tiles",
+    "license": "CC0-1.0",
+    "width": 96,
+    "height": 96
+  },
+  "ground_ash": {
+    "source": "assets_dl/tilesets/simple_tiles_32px.png",
+    "sourceSha256": "2a7977993c48191dbad9095305d8c886142037d01be1f4ebf7cf711fdfe30ce5",
+    "crop": [
+      224,
+      0,
+      32,
+      32
+    ],
+    "integerScale": 3,
+    "pack": "Simple tiles",
+    "license": "CC0-1.0",
+    "width": 96,
+    "height": 96
+  },
+  "ground_violet": {
+    "source": "assets_dl/tilesets/buch_outdoor_32px.png",
+    "sourceSha256": "831785af95da3da0093c0c06a6c1df69c1f4e20be6681234b631e8ede70ba728",
+    "crop": [
+      160,
+      96,
+      32,
+      32
+    ],
+    "integerScale": 3,
+    "pack": "Buch outdoor tiles",
+    "license": "CC0-1.0",
+    "width": 96,
+    "height": 96
+  },
+  "ground_cavern": {
+    "source": "assets_dl/tilesets/buch_outdoor_32px.png",
+    "sourceSha256": "831785af95da3da0093c0c06a6c1df69c1f4e20be6681234b631e8ede70ba728",
+    "crop": [
+      160,
+      224,
+      32,
+      32
+    ],
+    "integerScale": 3,
+    "pack": "Buch outdoor tiles",
+    "license": "CC0-1.0",
+    "width": 96,
+    "height": 96
+  },
+  "ground_snow": {
+    "source": "public/assets/.tile_pack_backup/tile_snow.png",
+    "sourceSha256": "21937aa49a2760e2f9c957285979924d643932d807b20bceeb47fdb8efb6da91",
+    "crop": [
+      0,
+      0,
+      256,
+      256
+    ],
+    "integerScale": 1,
+    "pack": "Preserved snow terrain before incorrect border replacement",
+    "license": "Existing project asset; see public/assets/CREDITS.md",
+    "width": 256,
+    "height": 256
+  },
+  "ground_lava": {
+    "source": "public/assets/.tile_pack_backup/tile_magma.png",
+    "sourceSha256": "b3721aa7dc1a4a8aff012195b9864346af88447420f4bbf0e406c811ee26635f",
+    "crop": [
+      0,
+      0,
+      256,
+      256
+    ],
+    "integerScale": 1,
+    "pack": "Preserved volcanic terrain before incorrect border replacement",
+    "license": "Existing project asset; see public/assets/CREDITS.md",
+    "width": 256,
+    "height": 256
+  }
+}

@@ -20,6 +20,7 @@
  *   ADD 블렌드 4장은 저사양에서도 프레임 영향이 작다 — 실측은 docs/FIFTH_LOOK_AUDIT.md.
  */
 import Phaser from "phaser";
+import { AURA_TEXTURES, AURA_WORLD_CAPS, auraTextureKey } from "./auraTextures";
 
 /** 직업별 외형 정의 — 텍스처 키는 public/assets 의 gvb_/gvu_ 계열 */
 export type FifthLook = {
@@ -33,7 +34,7 @@ export type FifthLook = {
   barrier: string;
   /** 베리어 회전 속도(rad/ms). 0 이면 고정 */
   barrierSpin: number;
-  /** 베리어 기본 스케일 */
+  /** 베리어 상대 크기 (런타임에서 프레임 px와 맥동 상한으로 정규화) */
   barrierScale: number;
   /** 베리어 맥동 진폭 (0~1). 0 이면 정적 */
   barrierPulse: number;
@@ -53,7 +54,7 @@ export type FifthLook = {
 export const FIFTH_LOOKS: Record<string, FifthLook> = {
   /* 전사 계통 */
   warbringer: {
-    core: "gvb_glow_white", halo: "gvb_shockwave_fiery", ground: "gvb_ring_soft",
+    core: "gvb_glow_white", halo: "gvu_shockwave_fiery", ground: "gvb_ring_soft",
     barrier: "gvb_shield_hex", barrierSpin: 0.00022, barrierScale: 1.15, barrierPulse: 0.10,
     groundAspect: 0.42, tint: 0xffd0b0, // 전장의 함성 — 붉은 충격
   },
@@ -117,9 +118,13 @@ export type FifthBurst = { tex: string; scale: number; life: number; tint: numbe
 
 export function fifthBurstFor(cls: string | null | undefined, hex: number): FifthBurst {
   const look = (cls && FIFTH_LOOKS[cls]) || null;
+  const source = look?.barrier ?? "gvu_glow";
+  const def = AURA_TEXTURES[source];
+  // WorldScene's fade-out grows to scale × 1.5: include that in the 110px cap.
+  const edge = Math.max(def.width, def.height);
   return {
-    tex: look?.barrier ?? "gvu_exp_core",
-    scale: (look?.barrierScale ?? 1.2) * 2.6,
+    tex: auraTextureKey(source),
+    scale: AURA_WORLD_CAPS.barrier / edge / 1.5,
     life: 720,
     tint: (look?.tint ?? 0xffffff) === 0xffffff ? hex : look!.tint,
   };

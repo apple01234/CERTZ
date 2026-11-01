@@ -338,10 +338,21 @@ const BOSS_OF: Record<string, string> = {
 };
 /** 재림 보스 — splitStage("r5")는 ch="r", zone=5/10/15로 파싱된다 */
 const REBIRTH_BOSS_OF: Record<number, string> = { 5: "bgm_kingdom_boss", 10: "bgm_hel_boss", 15: "bgm_abyss_boss" };
+/** 기존 음원 재사용: 추가 사냥터도 이름/지형 정서별로 명시 배정한다. */
+export const HUNT_THEME_OF: Record<string, string> = {
+  dlcstargate: "nidavellir", dlcprisma: "alfheim", dlcocean: "abyss",
+  dlcreverse: "cave", dlcneocity: "kingdom", dlcmech: "nidavellir",
+  dlcswallow: "hel", dlcopinicia: "kingdom", dlcnovel: "alfheim", dlcsernium: "alfheim",
+};
+export const REBIRTH_THEME_OF: Record<number, string> = {
+  1: "forest", 2: "niflheim", 3: "cave", 4: "kingdom", 5: "kingdom",
+  6: "abyss", 7: "muspelheim", 8: "niflheim", 9: "hel", 10: "hel",
+  11: "alfheim", 12: "abyss", 13: "nidavellir", 14: "hel", 15: "abyss",
+};
 /** 챕터/재림 공용 보스 트랙 선택 (미지의 챕터 → 첫 보스곡 폴백) */
 function bossTrackOfCh(ch: string, zone: number): string {
   if (ch === "r") return REBIRTH_BOSS_OF[zone] ?? BOSS_TRACKS[0];
-  return BOSS_OF[ch] ?? BOSS_TRACKS[0];
+  return BOSS_OF[HUNT_THEME_OF[ch] ?? ch] ?? BOSS_TRACKS[0];
 }
 /** 챕터 일반 구역 폴백 (미지의 챕터 키) */
 const FALLBACK_TRACKS = [CHAPTER_THEME.forest];
@@ -372,7 +383,10 @@ function chIndexOf(ch: string): number {
 export function stageTrack(stage: string): string {
   if (stage === "interior_inn") return "bgm_interior_inn";
   if (stage === "interior_home") return "bgm_interior_home";
-  const { ch, zone } = splitStage(stage);
+  const parsed = splitStage(stage);
+  const zone = parsed.zone;
+  const ch = parsed.ch === "r" ? REBIRTH_THEME_OF[zone] ?? "abyss" : HUNT_THEME_OF[parsed.ch] ?? parsed.ch;
+  if (parsed.ch === "r" && REBIRTH_BOSS_OF[zone]) return REBIRTH_BOSS_OF[zone];
   if (zone === 10) return bossTrackOfCh(ch, zone); // 보스 구역 — 챕터 전용 전투곡
   if (zone <= 0) return VILLAGE_OF[ch] ?? VILLAGE_TRACKS[Math.max(0, chIndexOf(ch)) % VILLAGE_TRACKS.length];
   const slots = STAGE_BGM[ch];
@@ -655,7 +669,7 @@ export function bgmDebugState() {
     playing: !!bgmSound?.isPlaying,
     loop: true,
     stage: bgmStage,
-    playlistCount: kind ? BGM_PLAYLISTS[kind].length : 0,
+    playlistCount: kind ? BGM_PLAYLISTS[kind]?.length ?? 0 : 0,
     /* v3.0.24 — 지연 로딩 상태 (디코드 캐시 개수 / LRU 캡) */
     decoded: decodedLru.length,
     decodedMax: MAX_DECODED_BGM,
