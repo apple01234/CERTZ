@@ -36,7 +36,7 @@ app.prepare().then(() => {
    *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
   /* vc177 — APK는 릴리스 태그 v1.2.5에 있다(이전 태그는 vc176까지 보유).
    *  태그와 파일명이 어긋나면 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.43/SERTZ-vc203.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.54/SERTZ-vc214.apk";
   /* v1.4.39 — 데스크톱 클라이언트 자동 업데이트. electron/main.js checkForUpdates() 가 읽는다. */
   const EXE_MIRROR =
     "https://github.com/apple01234/CERTZ/releases/download/v1.4.43/SERTZ-vc203-setup.exe";
@@ -72,10 +72,10 @@ app.prepare().then(() => {
     /* v1.0.17 — 클라 버전 게이트: 타이틀 화면이 이 API로 최신 버전을 조회해
    *  구버전 APK 사용자에게 증상 수정(화살 방향 등)이 담긴 재설치를 안내한다.
    *  유저가 구버전을 계속 쓰면 최신 수정을 못 받아 같은 증상이 재보고되는 문제를 원천 차단. */
-  const LATEST_VERSION = "1.4.43";
-  const LATEST_CODE = 203;
+  const LATEST_VERSION = "1.4.54";
+  const LATEST_CODE = 214;
     const VERSION_NOTE =
-      "v1.4.43 (vc203) — ①Unity VFX 팩 2종 텍스처 33장 투입(프리팹은 못 쓰지만 내부 텍스처는 ADD 블렌드로 그대로 재현 — 5차 오라가 육각 보호막, 궁격기 충격파·폭발 코어·파편이 전용 텍스처로 교체). ②FBX 586개 중 VFX 메시 39개를 GLB 로 변환해 2차 궁극기 4개 직업에 메시 층 추가(2D 굽기 없음). ③세계관 치환 누락 40건 수리.";
+      "v1.4.54 (vc214) — ①NPC 초상화를 npcface 절차 생성 얼굴에서 월드 npcbody 원본 픽셀 crop으로 교체(15종·31키 — 대사창과 월드 인물이 같은 픽셀). ②로비 미리보기가 인게임과 같은 몸체/FA 프레임 공유(코스튬>GM>전직>피부). ③DLC 10개·재림 15개 사냥터 테마별 BGM 명시 배정(숲 기본곡 fallback 제거). ④5차 아우라 24종·지면 타일 11종 투입, 궁극기 명중 영역 정확화(피해·지연·넉백 불변). ⑤영준 프린세스 시작 마을 추가 + 그랜드 플레닛이 영구 잠기던 게이트 수정.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

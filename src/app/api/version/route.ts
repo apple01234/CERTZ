@@ -8,13 +8,13 @@ import { NextResponse } from "next/server";
  *  - force-static: 버전 응답은 빌드 시점에 고정이므로 정적 프리렌더로 무료 서빙. */
 export const dynamic = "force-static";
 
-const LATEST_VERSION = "1.4.43";
-const LATEST_CODE = 203;
+const LATEST_VERSION = "1.4.54";
+const LATEST_CODE = 214;
 const VERSION_NOTE =
-  "v1.4.43 (vc203) — ①Unity VFX 팩 2종(GameVFX Buff · UNI VFX) 텍스처 33장 투입: 프리팹은 Unity 직렬화라 못 쓰지만 내부 텍스처는 1024² PNG/TGA 이고 팩의 Additive 셰이더 = Phaser ADD 블렌드로 그대로 재현된다. 5차 오라가 육각 보호막으로 바뀌고 궁극기 충격파·폭발 코어·파편이 전용 텍스처로 교체됐다. ②FBX 586개 중 VFX 메시 39개를 Blender 로 GLB 변환(2D 굽기 없음 — 3D 그대로): 2차 궁극기 4개 직업에 메시 층 추가. ③세계관 치환 누락 40건 수리 — UI·타이틀·적 이름에 옛 명칭이 그대로 노출되고 있었다.";
+  "v1.4.54 (vc214) — ①NPC 초상화를 npcface 절차 생성 얼굴에서 월드 npcbody 원본 픽셀 crop으로 교체(15종·31키 — 대사창과 월드 인물이 같은 픽셀). ②로비 미리보기가 인게임과 같은 몸체/FA 프레임 공유(코스튬>GM>전직>피부). ③DLC 10개·재림 15개 사냥터 테마별 BGM 명시 배정(숲 기본곡 fallback 제거). ④5차 아우라 24종·지면 타일 11종 투입, 궁극기 명중 영역 정확화(피해·지연·넉백 불변). ⑤영준 프린세스 시작 마을 추가 + 그랜드 플레닛이 영구 잠기던 게이트 수정.";
 const APK_MIRROR =
   /* v1.4.43 — 파일명의 vc{code} 는 build.gradle versionCode 와 일치해야 한다(불일치 시 404). */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.43/SERTZ-vc203.apk";
+  "https://github.com/apple01234/CERTZ/releases/download/v1.4.54/SERTZ-vc214.apk";
 /* v1.4.39 — 데스크톱 클라이언트 자동 업데이트용 EXE 주소.
  *  종전엔 클라이언트가 스스로 업데이트를 확인하는 코드가 아예 없어, 새 빌드마다
  *  사용자가 릴리스 페이지에서 직접 받아 재설치해야 했다.
