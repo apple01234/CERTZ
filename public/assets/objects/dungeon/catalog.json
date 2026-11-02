@@ -1,0 +1,240 @@
+[
+ {
+  "src": [
+   25,
+   24,
+   4,
+   3
+  ],
+  "scaled": 1,
+  "name": "throne",
+  "file": "obj_dungeon_throne.png",
+  "tag": "big",
+  "w": 58,
+  "h": 32
+ },
+ {
+  "src": [
+   10,
+   8,
+   2,
+   2
+  ],
+  "scaled": 4,
+  "name": "bookshelf",
+  "file": "obj_dungeon_bookshelf.png",
+  "tag": "wall",
+  "w": 64,
+  "h": 128
+ },
+ {
+  "src": [
+   20,
+   27,
+   2,
+   2
+  ],
+  "scaled": 4,
+  "name": "table",
+  "file": "obj_dungeon_table.png",
+  "tag": "floor",
+  "w": 112,
+  "h": 52
+ },
+ {
+  "src": [
+   12,
+   6,
+   1,
+   1
+  ],
+  "scaled": 4,
+  "name": "chest",
+  "file": "obj_dungeon_chest.png",
+  "tag": "small",
+  "w": 48,
+  "h": 40
+ },
+ {
+  "src": [
+   23,
+   25,
+   1,
+   3
+  ],
+  "scaled": 4,
+  "name": "barrel",
+  "file": "obj_dungeon_barrel.png",
+  "tag": "small",
+  "w": 64,
+  "h": 72
+ },
+ {
+  "src": [
+   21,
+   28,
+   1,
+   2
+  ],
+  "scaled": 4,
+  "name": "jar",
+  "file": "obj_dungeon_jar.png",
+  "tag": "small",
+  "w": 48,
+  "h": 116
+ },
+ {
+  "src": [
+   14,
+   6,
+   1,
+   1
+  ],
+  "scaled": 4,
+  "name": "anvil",
+  "file": "obj_dungeon_anvil.png",
+  "tag": "small",
+  "w": 52,
+  "h": 36
+ },
+ {
+  "src": [
+   18,
+   28,
+   1,
+   1
+  ],
+  "scaled": 4,
+  "name": "torch",
+  "file": "obj_dungeon_torch.png",
+  "tag": "wall",
+  "w": 28,
+  "h": 52
+ },
+ {
+  "src": [
+   19,
+   28,
+   1,
+   1
+  ],
+  "scaled": 4,
+  "name": "candle",
+  "file": "obj_dungeon_candle.png",
+  "tag": "small",
+  "w": 24,
+  "h": 40
+ },
+ {
+  "src": [
+   24,
+   13,
+   3,
+   9
+  ],
+  "scaled": 1,
+  "name": "carpet_v",
+  "file": "obj_dungeon_carpet_v.png",
+  "tag": "floor",
+  "w": 28,
+  "h": 124
+ },
+ {
+  "src": [
+   20,
+   7,
+   4,
+   3
+  ],
+  "scaled": 1,
+  "name": "tree_dead",
+  "file": "obj_dungeon_tree_dead.png",
+  "tag": "big",
+  "w": 61,
+  "h": 33
+ },
+ {
+  "src": [
+   12,
+   22,
+   1,
+   1
+  ],
+  "scaled": 4,
+  "name": "stump",
+  "file": "obj_dungeon_stump.png",
+  "tag": "small",
+  "w": 12,
+  "h": 16
+ },
+ {
+  "src": [
+   9,
+   16,
+   1,
+   1
+  ],
+  "scaled": 4,
+  "name": "rock_small",
+  "file": "obj_dungeon_rock_small.png",
+  "tag": "small",
+  "w": 64,
+  "h": 64
+ },
+ {
+  "src": [
+   34,
+   15,
+   3,
+   3
+  ],
+  "scaled": 1,
+  "name": "pentagram",
+  "file": "obj_dungeon_pentagram.png",
+  "tag": "floor",
+  "w": 48,
+  "h": 46
+ },
+ {
+  "src": [
+   3,
+   6,
+   2,
+   1
+  ],
+  "scaled": 4,
+  "name": "grave",
+  "file": "obj_dungeon_grave.png",
+  "tag": "small",
+  "w": 116,
+  "h": 64
+ },
+ {
+  "src": [
+   9,
+   6,
+   3,
+   1
+  ],
+  "scaled": 1,
+  "name": "fence",
+  "file": "obj_dungeon_fence.png",
+  "tag": "wall",
+  "w": 46,
+  "h": 13
+ },
+ {
+  "src": [
+   7,
+   6,
+   1,
+   1
+  ],
+  "scaled": 4,
+  "name": "sign",
+  "file": "obj_dungeon_sign.png",
+  "tag": "wall",
+  "w": 56,
+  "h": 56
+ }
+]

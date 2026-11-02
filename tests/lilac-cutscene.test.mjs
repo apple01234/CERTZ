@@ -32,10 +32,16 @@ for (const ch of Object.keys(LILAC_CHAPTER_MAP)) {
 }
 for (const id of ids) ok(`매핑 존재: ${id}`, placed.has(id));
 
-/* 4) 조회 함수 동작 */
-ok("forest/1 → lilac00", lilacScenarioIdAt("forest", 1) === "lilac00");
-ok("abyss/1 → lilac15", lilacScenarioIdAt("abyss", 1) === "lilac15");
-ok("미배치 구역은 null", lilacScenarioIdAt("forest", 2) === null);
+/* 4) 조회 함수 동작
+ *  vc234 — 영프 편은 본편 챕터와 키를 공유하지 않는다. 종전엔 forest/1 에
+ *  lilac00 이 배치돼 본편을 진행하다 라일락 컷씬이 튀어나왔다(유저 지적:
+ *  "아뜰란티스 → 영준프린세스 → 그랜드 플레닛 순서인데 왜 스토리를 섞나").
+ *  이제 본편 키는 전부 null 이고, howlrstone 만 매핑을 가진다. */
+ok("howlrstone1/1 → lilac00", lilacScenarioIdAt("howlrstone1", 1) === "lilac00");
+ok("howlrstone5/10 → lilac15", lilacScenarioIdAt("howlrstone5", 10) === "lilac15");
+ok("howlrstone1/2 미배치 구역은 null", lilacScenarioIdAt("howlrstone1", 2) === null);
+ok("본편 forest 는 영프 연출 없음", lilacScenarioIdAt("forest", 1) === null);
+ok("본편 abyss 도 영프 연출 없음", lilacScenarioIdAt("abyss", 1) === null);
 ok("없는 챕터는 null", lilacScenarioIdAt("nope", 1) === null);
 ok("null 챕터는 null", lilacScenarioIdAt(null, 1) === null);
 

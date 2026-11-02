@@ -1,0 +1,83 @@
+[
+ {
+  "src": "sliced/tree-orange",
+  "scaled": 1,
+  "name": "tree_orange",
+  "file": "obj_forest_tree_orange.png",
+  "tag": "big",
+  "w": 65,
+  "h": 80
+ },
+ {
+  "src": "sliced/tree-pink",
+  "scaled": 1,
+  "name": "tree_pink",
+  "file": "obj_forest_tree_pink.png",
+  "tag": "big",
+  "w": 65,
+  "h": 80
+ },
+ {
+  "src": "sliced/tree-dried",
+  "scaled": 1,
+  "name": "tree_dried",
+  "file": "obj_forest_tree_dried.png",
+  "tag": "big",
+  "w": 96,
+  "h": 104
+ },
+ {
+  "src": "sliced/rock-monument",
+  "scaled": 1,
+  "name": "rock_monument",
+  "file": "obj_forest_rock_monument.png",
+  "tag": "big",
+  "w": 100,
+  "h": 89
+ },
+ {
+  "src": "sliced/rock",
+  "scaled": 4,
+  "name": "rock",
+  "file": "obj_forest_rock.png",
+  "tag": "small",
+  "w": 124,
+  "h": 112
+ },
+ {
+  "src": "sliced/bush",
+  "scaled": 4,
+  "name": "bush",
+  "file": "obj_forest_bush.png",
+  "tag": "small",
+  "w": 116,
+  "h": 92
+ },
+ {
+  "src": "sliced/bush-tall",
+  "scaled": 4,
+  "name": "bush_tall",
+  "file": "obj_forest_bush_tall.png",
+  "tag": "small",
+  "w": 64,
+  "h": 108
+ },
+ {
+  "src": "sliced/sign",
+  "scaled": 4,
+  "name": "sign",
+  "file": "obj_forest_sign.png",
+  "tag": "wall",
+  "w": 72,
+  "h": 88
+ },
+ {
+  "src": "sliced/trunk",
+  "scaled": 1,
+  "name": "trunk",
+  "file": "obj_forest_trunk.png",
+  "tag": "small",
+  "w": 37,
+  "h": 33
+ }
+]

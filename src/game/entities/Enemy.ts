@@ -710,7 +710,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.hitFlash = 90;
       this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
       this.scene.spawnDamageText(this.x, this.y - 20, dealtD, crit);
-      this.scene.spawnHitSpark(this.x, this.y);
+      this.scene.spawnHitSpark(this.x, this.y, crit);
       if (crit) {
         this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.05);
         this.scene.spawnCritSplat(this.x, this.y);
@@ -770,7 +770,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       if (R.slowMult && R.slowMs) this.applySlow(R.slowMult, R.slowMs);
       this.scene.applyReactionSplash(this.x, this.y, dealt, R.splashMul, this, atkElem);
     }
-    this.scene.spawnHitSpark(this.x, this.y);
+    this.scene.spawnHitSpark(this.x, this.y, crit);
     /* v1.2.0 (#10 타격감) — 히트스톱: 일반 26ms · 크리티컬 55ms + 미세 카메라 흔들림.
      *  플래시·스쿼시·넉백과 함께 "얻어맞은 순간이 멈춘다"는 손맛을 만드는 핵심 장치 */
     this.scene.hitStop(crit ? 55 : 26);

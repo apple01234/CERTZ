@@ -1,6 +1,6 @@
 {
   "name": "nextjs_tailwind_shadcn_ts",
-  "version": "1.4.60",
+  "version": "1.4.61",
   "private": true,
   "scripts": {
     "dev": "node server.js 2>&1 | tee dev.log",
@@ -9,6 +9,8 @@
     "build": "prisma generate && next build && (bun scripts/fc-server/postbuild.js || node scripts/fc-server/postbuild.js)",
     "build:next": "prisma generate && next build",
     "start": "NODE_ENV=production node server.js",
+    "//test": "vc235 — 테스트 30개가 있었지만 실행 스크립트가 없어 CI 에서 한 번도 돌지 않았다. ts-resolve-hook 이 확장자 없는 상대 import 를 .ts 로 해석한다.",
+    "test": "node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs \"tests/*.test.mjs\"",
     "//lint": "v1.0.16 (R8) — 저장소 게이트와 같은 명령. lint는 로컬 편의용(경고 허용), lint:strict는 CI 강제용",
     "lint": "eslint .",
     "lint:strict": "eslint src --max-warnings 0",

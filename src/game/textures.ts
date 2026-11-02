@@ -313,21 +313,40 @@ export function buildAllAnims(scene: Phaser.Scene) {
  *  · 프레임은 슬라이서 실측 크기(시트별 상이) — BOSS_ATLAS의 fw/fh와 정확히 일치해야 한다
  *  · 프로그램 키는 기존과 동일(tex-idle·tex-walk·…) — Boss.ts 로직 무수정 호환 */
 export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number; fh: number; cols?: number }> = {
-  boss:         { key: "atl_boss", file: "atl_boss.webp", fw: 191, fh: 146, cols: 8 }, // 수정 왕 — 스바르트알프헤임 (8열×7행 + 패딩)
-  boss2:        { key: "atl_boss2", file: "atl_boss2.webp", fw: 128, fh: 171, cols: 12 }, // 눈보라의 거수·파수꾼 — 미드가르드 해적선 (12열×7행 + 패딩)
-  boss3:        { key: "atl_boss3", file: "atl_boss3.webp", fw: 192, fh: 171, cols: 8 }, // 심연의 군주 — 헬 악령 여왕 (8열×7행 + 패딩)
-  boss_nidhog: { key: "atl_boss_nidhog", file: "atl_boss_nidhog.webp", fw: 246, fh: 232, cols: 11 }, // 니드호그 — 알프헤임 수목룡 (원본 11열×7행 + 패딩)
-  boss_surt:    { key: "atl_boss_surt", file: "atl_boss_surt.webp", fw: 256, fh: 171, cols: 6 }, // 수르트 — 무스펠 용암골렘 (6열×7행 + 패딩)
-  boss_fenrir: { key: "atl_boss_fenrir", file: "atl_boss_fenrir.webp", fw: 220, fh: 200, cols: 6 }, // 펜리르 — 니플헤임 설원 백랑 (v1.0.16 신규 시트 6열×6행)
-  boss_skoll:  { key: "atl_boss_skoll",  file: "atl_boss_skoll.webp",  fw: 204, fh: 184, cols: 6 }, // 스콜 — 얼음 늑대룡 (bsw 원본 6열×7행 재슬라이스)
-  boss_nagr:   { key: "atl_boss_nagr",   file: "atl_boss_nagr.webp",   fw: 192, fh: 146, cols: 8 }, // 요툰헤임 얼음 골렘 (원본 아틀라스 8열×7행 + 패딩)
-  boss_hati:   { key: "atl_boss_hati",   file: "atl_boss_hati.webp",   fw: 191, fh: 146, cols: 8 }, // 하티 — 쌍둥이 늑대(좌 얼음/우 화염) (v1.0.16 신규 시트 8열×7행)
-  boss_jorm:    { key: "atl_boss_jorm", file: "atl_boss_jorm.webp", fw: 256, fh: 147, cols: 6 }, // 요르문간드 — 잎날개 녹룡 (6열×7행 + 패딩)
+  boss:         { key: "atl_boss", file: "boss_golem.png", fw: 100, fh: 100, cols: 10 }, // 수정 왕 → 바위 골렘 (vc235 교체: 27% 하단 잘림)
+  boss2:        { key: "atl_boss2", file: "boss_skeleton.png", fw: 100, fh: 100, cols: 18 }, // 유령선 → 언데드 집행자 (vc235 교체: 79% 하단 잘림, 최우선)
+  boss3:        { key: "atl_boss3", file: "boss_slime.png", fw: 288, fh: 160, cols: 22 }, // 악령 여왕 → 데몬 슬라임 (vc235 교체: 21% 잘림)
+  boss_nidhog: { key: "atl_boss_nidhog", file: "boss_dragon.png", fw: 256, fh: 157, cols: 16 }, // 니드호그 → 드래곤 (vc235 교체: 23% 잘림)
+  boss_surt:    { key: "atl_boss_surt", file: "boss_slime.png", fw: 288, fh: 160, cols: 22 }, // 수르트 → 데몬 슬라임 (화염 악마, vc235 교체)
+  boss_fenrir: { key: "atl_boss_fenrir", file: "boss_mino.png", fw: 288, fh: 160, cols: 16 }, // 펜리르 → 미노타우르스(야수형, vc235 교체: 43% 잘림)
+  boss_skoll:  { key: "atl_boss_skoll",  file: "boss_mino.png",  fw: 288, fh: 160, cols: 16 }, // 스콜 → 미노타우르스 (쌍랑도 야수형, vc235 교체: 43% 잘림)
+  boss_nagr:   { key: "atl_boss_nagr",   file: "boss_frost.png",   fw: 192, fh: 128, cols: 16 }, // 나그라파르 → 프로스트 가디언 (얼음 거수, vc235 교체: 48% 잘림)
+  boss_hati:   { key: "atl_boss_hati",   file: "boss_frost.png",   fw: 192, fh: 128, cols: 16 }, // 하티 → 프로스트 가디언 (쌍랑, vc235 교체: 77% 잘림)
+  boss_jorm:    { key: "atl_boss_jorm", file: "boss_dragon.png", fw: 256, fh: 157, cols: 16 }, // 요르문간드 → 드래곤 (뱀/드래곤, vc235 교체: 59% 잘림)
   /* vc148 (#보스그리드) — vc137 잔재 3종 HD 재슬라이싱: 이질 아트 혼합(컬러 전방+흑룡 실루엣 특수기/
    *  보라 악마+붉은 늑대) + 프레임 잘림 수리 — bsw_ 원본 그리드(8열×7행 192.5×147 / 6열×7행 204×184) 그대로 */
-  boss_abudditos: { key: "atl_boss_abudditos", file: "atl_boss_abudditos.webp", fw: 240, fh: 180, cols: 6 }, // 종언의 마룡 아부디토스 — 화룡 (개별 프레임 42장 재조립 6열×7행)
-  boss_vord:      { key: "atl_boss_vord",      file: "atl_boss_vord.webp",      fw: 240, fh: 180, cols: 6 }, // 재림의 파수꾼 베오르드 — 암흑기사 (개별 프레임 42장 재조립 6열×7행)
-  boss_gram:      { key: "atl_boss_gram",      file: "atl_boss_gram.webp",      fw: 240, fh: 180, cols: 6 }, // 혈안의 문지기 가름 — 악마 (개별 프레임 42장 재조립 6열×7행)
+  boss_abudditos: { key: "atl_boss_abudditos", file: "boss_dragon.png", fw: 256, fh: 157, cols: 16 }, // 아부디토스 → 드래곤 (마룡, vc235 교체: 68% 잘림)
+  boss_vord:      { key: "atl_boss_vord",      file: "boss_golem.png",      fw: 100, fh: 100, cols: 10 }, // 베오르드 → 바위 골렘(파수꾼, vc235 교체: 15% 잘림)
+  boss_gram:      { key: "atl_boss_gram",      file: "boss_skeleton.png",      fw: 100, fh: 100, cols: 18 }, // 가름 → 언데드 집행자(사신형 문지기, vc235 교체: 45% 잘림)
+
+  /* ═════════ vc235 — 실제 제작 애니메이션 팩으로 교체 ═════════
+   *  [왜] 기존 13종 중 11종이 프레임 하단에서 아트가 수평으로 잘려 있었다
+   *   (유령선 79%, 하티 77%, 아부디토스 68%). 격자는 정확했고 **아트 자체가**
+   *   y=188 같은 높이에서 끊겨 있었다 — AI 생성 원본이라 격자에 그림이 안 맞는다.
+   *   격자를 고쳐도 해결되지 않으므로 애니메이션이 실제로 제작된 팩으로 바꾼다.
+   *
+   *  [방식] 위 항목들의 `file`/`fw`/`fh`/`cols` 만 새 시트로 바꿨다.
+   *   `key`(atl_boss·atl_boss2 …)를 그대로 두었으므로 BOSS_DEFS 의 `tex` 와
+   *   Boss.ts·registerBossAnims 는 무수정으로 호환된다.
+   *
+   *  [규격] `tools/pack_bosses.py` 가 원본 팩을 행 순서 규약
+   *   (0 idle 1 walk 2 atk 3 sp1 4 sp2 5 sp3 6 die) 으로 재배열해 굽는다.
+   *   프레임 크기는 팩 원본 그대로 보존하고(확대 없음), `Boss.ts` 가 320px
+   *   높이로 정규화하므로 체급은 자동으로 맞는다.
+   *
+   *  [공유] boss_dragon.png 1장을 니드호그·아부디토스·요르문간드가 같이 쓴다
+   *   — 셋 다 용이고, 시트를 3벌 두면 부팅 전송량만 4MB 늘어난다.
+   *   같은 이유로 boss_golem(수정왕·베오르드)·boss_skeleton(유령선·가름)도 공유. */
 };
 
 /** 아틀라스 행별 유효 프레임 수 (슬라이서 실측 — 뒤쪽 빈 프레임 트리밍).
@@ -335,20 +354,28 @@ export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number;
  *  v1.0.16 — 신규 시트는 소스 순서 [idle,run,atk,die,sp1,sp2(,sp3)]를 게임 규약
  *  [idle,walk,atk,sp1,sp2(,sp3),die]로 재배치한 결과다(빌더가 remap 수행). */
 export const BOSS_ATLAS_ROWS: Record<string, number[]> = {
-  boss:        [11, 11, 11, 11, 11, 11, 11],              // v1.0.16 수정 왕 8프레임×7행
-  boss2:       [12, 12, 12, 12, 12, 12, 12],              // idle walk atk sp1 sp2 sp3 die (v1.4.32 고해상 유령선)
-  boss3:       [8, 8, 8, 8, 8, 8, 8],              // v1.0.16 악령 여왕 8프레임×7행
-  boss_nidhog: [11, 11, 11, 11, 11, 11, 11],      // 원본 11열×7행
-  boss_surt:   [6, 6, 6, 6, 6, 6, 6],              // vc182 — 6x7 픽셀 실측(fh 187→186 정정)
-  boss_fenrir: [6, 6, 6, 6, 6, 6, 6],              // v1.2.4 원본 6x7 복원
-  boss_hati:   [8, 8, 8, 8, 8, 8, 8],              // v1.0.16 쌍둥이 늑대 8프레임×7행
-  boss_skoll:     [6, 6, 6, 6, 6, 6, 6],           // bsw 원본 6열×7행 재슬라이스 — 전 행 6
-  boss_nagr:   [8, 8, 8, 8, 8, 8, 8],            // 원본 8열×7행
-  boss_jorm:   [6, 6, 6, 6, 6, 6, 6],              // 개별 프레임 42장 재조립 — 전 행 6
-  /* vc148 (#보스그리드) — 슬라이서 실측 행별 프레임 수 */
-  boss_abudditos: [6, 6, 6, 6, 6, 6, 6],           // 개별 프레임 42장 재조립 — 전 행 6
-  boss_vord:      [6, 6, 6, 6, 6, 6, 6],           // 개별 프레임 42장 재조립 — 전 행 6
-  boss_gram:      [6, 6, 6, 6, 6, 6, 6],           // 개별 프레임 42장 재조립 — 전 행 6
+  /* ═════════ vc235 — 팩 원본 실측 프레임 수 ═════════
+   *  [왜 행마다 다른가] 외부 팩은 클립별 프레임 수가 제각각이다
+   *   (드래곤 idle 8 / death 16, 슬라임 death 22 …). 예전처럼 전 행을 같은
+   *   수로 맞추면 짧은 클립이 끝에서 멈춰 보이거나 긴 클립이 잘린다.
+   *   `registerBossAnims` 가 이 배열을 그대로 써서 행별로 start/end 를 잡는다.
+   *
+   *  [순서] 0 idle  1 walk  2 atk  3 sp1  4 sp2  5 sp3  6 die
+   *   팩에 없는 클립은 `pack_bosses.py` 가 가까운 동작으로 채운다
+   *   (sp3←atk, sp2←sp1, die←idle). 빈 행을 두면 그 기술 때 보스가 굳는다. */
+  boss:        [4, 8, 9, 7, 10, 9, 10],            // 바위 골렘 (구 수정 왕)
+  boss2:       [4, 8, 13, 12, 5, 13, 18],          // 언데드 집행자 (구 유령선 — 79% 잘림이던 최악)
+  boss3:       [6, 12, 15, 5, 5, 15, 22],          // 데몬 슬라임 (구 악령 여왕)
+  boss_nidhog: [8, 12, 12, 12, 5, 12, 16],         // 드래곤
+  boss_surt:   [6, 12, 15, 5, 5, 15, 22],          // 데몬 슬라임 (화염 악마)
+  boss_fenrir: [16, 12, 16, 16, 16, 16, 16],       // 미노타우르스 (야수형)
+  boss_hati:   [6, 10, 14, 7, 7, 14, 16],          // 프로스트 가디언
+  boss_skoll:  [16, 12, 16, 16, 16, 16, 16],       // 미노타우르스 (쌍랑)
+  boss_nagr:   [6, 10, 14, 7, 7, 14, 16],          // 프로스트 가디언 (얼음 거수)
+  boss_jorm:   [8, 12, 12, 12, 5, 12, 16],         // 드래곤 (뱀/드래곤)
+  boss_abudditos: [8, 12, 12, 12, 5, 12, 16],      // 드래곤 (마룡)
+  boss_vord:      [4, 8, 9, 7, 10, 9, 10],         // 바위 골렘 (파수꾼)
+  boss_gram:      [4, 8, 13, 12, 5, 13, 18],       // 언데드 집행자 (사신형 문지기)
 };
 
 /** 보스 초기 텍스처/프레임 — 아틀라스 보스는 시트 frame 0, 구형은 개별 idle0 이미지 */
@@ -386,7 +413,13 @@ export function registerBossAnims(scene: Phaser.Scene, tex: string) {
     if (!six) plan.push(["sp3", 12, 0]);
     plan.push(["die", 10, 0]);
     plan.forEach(([nm, rate, rep], row) => {
-      const n = Math.min(counts[row] ?? 0, 12);
+      /* vc235 — 종전엔 `Math.min(counts[row], 12)` 로 **모든 애니를 12프레임으로
+       *  잘라냈다**. 외부 팩은 클립마다 길이가 달라서(슬라임 death 22, 미노 16,
+       *  드래곤 death 16) 뒤쪽 프레임이 통째로 사라졌고, `pack_bosses.py` 가
+       *  정성껏 구운 프레임이 절반만 재생됐다(검증에서 33건 불일치).
+       *  상한은 아틀라스의 실제 열 수(cols)여야 한다 — 그보다 큰 값은 존재하지
+       *  않는 프레임을 가리켜 보스가 사라진다. */
+      const n = Math.min(counts[row] ?? 0, at.cols ?? 12);
       if (n < 2) return;
       const key = `${tex}-${nm}`;
       if (a.exists(key)) a.remove(key);

@@ -1,0 +1,114 @@
+[
+ {
+  "src": [
+   2,
+   0,
+   10,
+   7
+  ],
+  "scaled": 1,
+  "name": "house_blue",
+  "file": "obj_town_house_blue.png",
+  "tag": "big",
+  "w": 160,
+  "h": 112
+ },
+ {
+  "src": [
+   24,
+   0,
+   14,
+   7
+  ],
+  "scaled": 1,
+  "name": "shop_black",
+  "file": "obj_town_shop_black.png",
+  "tag": "big",
+  "w": 224,
+  "h": 112
+ },
+ {
+  "src": [
+   24,
+   4,
+   8,
+   4
+  ],
+  "scaled": 1,
+  "name": "stall_stripe",
+  "file": "obj_town_stall_stripe.png",
+  "tag": "big",
+  "w": 118,
+  "h": 58
+ },
+ {
+  "src": [
+   26,
+   6,
+   2,
+   2
+  ],
+  "scaled": 4,
+  "name": "vending",
+  "file": "obj_town_vending.png",
+  "tag": "wall",
+  "w": 88,
+  "h": 24
+ },
+ {
+  "src": [
+   24,
+   8,
+   2,
+   2
+  ],
+  "scaled": 4,
+  "name": "bench",
+  "file": "obj_town_bench.png",
+  "tag": "small",
+  "w": 88,
+  "h": 128
+ },
+ {
+  "src": [
+   28,
+   8,
+   2,
+   2
+  ],
+  "scaled": 4,
+  "name": "barrel",
+  "file": "obj_town_barrel.png",
+  "tag": "small",
+  "w": 20,
+  "h": 104
+ },
+ {
+  "src": [
+   34,
+   6,
+   2,
+   2
+  ],
+  "scaled": 4,
+  "name": "planter",
+  "file": "obj_town_planter.png",
+  "tag": "small",
+  "w": 112,
+  "h": 80
+ },
+ {
+  "src": [
+   36,
+   10,
+   2,
+   4
+  ],
+  "scaled": 4,
+  "name": "waterfall",
+  "file": "obj_town_waterfall.png",
+  "tag": "wall",
+  "w": 32,
+  "h": 48
+ }
+]

@@ -327,9 +327,14 @@ export function TouchControls({
        *  컨테이너는 pointer-events-none, 개별 버튼만 pointer-events-auto — 빈 공간 터치 통과 */}
       <div
         className="pointer-events-none absolute z-20 flex items-end gap-2"
+        /* vc235 (#4 "스킬 단축키 아직도 겹침 좀 더 안쪽으로") —
+         *  종전 right 0.5rem 은 화면 우측 끝에 붙어, 우측 상단 퀘스트 창의
+         *  하단 모서리와 스킬 그리드 첫 열이 겹쳤다(스크린샷 실측: S·Q 버튼이
+         *  퀘스트 본문을 가림). 안쪽으로 더 들여 충돌을 없앤다.
+         *  bottom 도 함께 올려 미니맵·EXP 바와의 접촉을 줄인다. */
         style={{
-          right: "max(0.5rem, env(safe-area-inset-right))",
-          bottom: "max(0.75rem, env(safe-area-inset-bottom))",
+          right: "max(1.75rem, calc(env(safe-area-inset-right) + 1rem))",
+          bottom: "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))",
         }}
       >
         {/* [자동+물약] 세로열 — 옛날 좌측 클러스터. 좁은 세로 화면(clusterFloat)은

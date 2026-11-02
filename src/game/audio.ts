@@ -1,4 +1,6 @@
 import type Phaser from "phaser";
+/* vc235 — 영프 편 15챕터 스펙(보스 구역 판정용). 순환 import 없이 값만 읽는다. */
+import { HOWLRSTONE_CHAPTERS } from "./howlrstone";
 
 /**
  * 외부 오디오 에셋 재생 (public/assets/audio/)
@@ -327,11 +329,26 @@ const STAGE_BGM: Record<string, [string, string, string]> = {
    *   본편과 다른 구간의 곡을 쓰게 해 "본편에서 들은 그 곡"이 반복되지 않게 한다.
    *   (음원을 새로 만들지 않고 정서만 바꾸는 DLC 방식과 동일한 접근)
    */
-  howlrstone1: ["bgm_hw1_1", "bgm_hw1_2", "bgm_hw1_3"],   // 해변·바다 — medieval/adventure/underwater
-  howlrstone2: ["bgm_hw2_1", "bgm_hw2_2", "bgm_hw2_3"],   // 왕국 연합 — townshop/cozy/garden
-  howlrstone3: ["bgm_hw3_1", "bgm_hw3_2", "bgm_hw3_3"],   // 격전 — fantasybattle/skirmish/rpgbattle
-  howlrstone4: ["bgm_hw4_1", "bgm_hw4_2", "bgm_hw4_3"],   // 어둠의 성채 — darkfantasy/mystery/cave
-  howlrstone5: ["bgm_hw5_1", "bgm_hw5_2", "bgm_hw5_3"],   // 최후의 왕좌 — bossbattle/finalbattle/oceanboss
+  /* vc235 — 15챕터(1화=1챕터)에 맞춰 전용 15곡을 재배분한다.
+   *  종전엔 5챕터 × 3구간 = 15슬롯에 1:1로 넣었는데, 챕터가 15개가 되면서
+   *  6장 이후가 전부 폴백(bgm_forest_1)으로 떨어졌다.
+   *  이제 **챕터당 1곡**을 원문 화의 정서에 맞춰 배정한다(4~5스테이지는
+   *  같은 곡을 쓰되, 구간 슬롯 3칸을 그대로 채워 챕터 안에서도 변화를 준다). */
+  howlrstone1:  ["bgm_hw1_1", "bgm_hw1_2", "bgm_hw1_3"],   // 왕립도서관 — 잔잔한 도입
+  howlrstone2:  ["bgm_hw1_2", "bgm_hw2_1", "bgm_hw1_3"],   // 어둠이 커지다 — 긴장
+  howlrstone3:  ["bgm_hw3_1", "bgm_hw3_2", "bgm_hw3_3"],   // 시작된 전쟁 — 격전
+  howlrstone4:  ["bgm_hw2_1", "bgm_hw2_2", "bgm_hw1_1"],   // 석양의 바다 — 서정
+  howlrstone5:  ["bgm_hw2_2", "bgm_hw2_3", "bgm_hw1_2"],   // 협상과 연합 — 희망
+  howlrstone6:  ["bgm_hw4_1", "bgm_hw4_2", "bgm_hw4_3"],   // 초월자 — 신비·압도
+  howlrstone7:  ["bgm_hw3_2", "bgm_hw3_3", "bgm_hw3_1"],   // 군단장 전투 — 격전
+  howlrstone8:  ["bgm_hw3_3", "bgm_hw5_1", "bgm_hw3_2"],   // 두 전사의 격전 — 최고조
+  howlrstone9:  ["bgm_hw2_3", "bgm_hw1_1", "bgm_hw2_2"],   // 라일락의 희생 — 애상
+  howlrstone10: ["bgm_hw4_2", "bgm_hw4_3", "bgm_hw4_1"],   // 어둠의 성채 — 공포
+  howlrstone11: ["bgm_hw4_3", "bgm_hw5_2", "bgm_hw4_1"],   // 어둠의 왕좌 — 장엄
+  howlrstone12: ["bgm_hw5_2", "bgm_hw4_2", "bgm_hw5_3"],   // 운명 — 비장
+  howlrstone13: ["bgm_hw5_1", "bgm_hw5_3", "bgm_hw5_2"],   // 최후의 일격 — 결전
+  howlrstone14: ["bgm_hw5_3", "bgm_hw5_1", "bgm_hw3_3"],   // THE END TIME — 종말
+  howlrstone15: ["bgm_hw1_1", "bgm_hw2_3", "bgm_hw2_1"],   // New Beginning — 회복
   
 };
 /** 챕터 대표곡(폴백·목록용) — 구간 배정의 첫 곡 */
@@ -359,12 +376,24 @@ const VILLAGE_OF: Record<string, string> = {
   niflheim: "bgm_village_niflheim",
   cave: "bgm_village_cave",
   nidavellir: "bgm_village_nidavellir",
-  /* vc232 (#7) — 영프 편 마을곡. */
+  /* vc232 (#7) — 영프 편 마을곡.
+   * vc235 — 15챕터 마을 BGM. 5개만 있으면 6장 이후 마을이 폴백으로 떨어진다.
+   *  기존 5곡을 챕터 정서에 맞춰 3개씩 순환 배정한다(신규 음원 없이 커버). */
   howlrstone1: "bgm_village_kingdom",
-  howlrstone2: "bgm_village_alfheim",
-  howlrstone3: "bgm_village_muspelheim",
-  howlrstone4: "bgm_village_hel",
-  howlrstone5: "bgm_village_abyss",
+  howlrstone2: "bgm_village_kingdom",
+  howlrstone3: "bgm_village_kingdom",
+  howlrstone4: "bgm_village_alfheim",
+  howlrstone5: "bgm_village_alfheim",
+  howlrstone6: "bgm_village_alfheim",
+  howlrstone7: "bgm_village_muspelheim",
+  howlrstone8: "bgm_village_muspelheim",
+  howlrstone9: "bgm_village_hel",
+  howlrstone10: "bgm_village_hel",
+  howlrstone11: "bgm_village_hel",
+  howlrstone12: "bgm_village_abyss",
+  howlrstone13: "bgm_village_abyss",
+  howlrstone14: "bgm_village_abyss",
+  howlrstone15: "bgm_village_kingdom",
   hel: "bgm_village_hel",
   abyss: "bgm_village_abyss",
 };
@@ -384,11 +413,23 @@ const BOSS_OF: Record<string, string> = {
   abyss: "bgm_abyss_boss",
   /* vc232 (#7) — 영프 편 보스곡. 본편 해당 챕터 보스곡과 겹치지 않게 교차 배정.
    *  (보스곡은 챕터당 1곡뿐이라 신규 생성 전까지는 교차 배정으로 중복을 피한다) */
+  /* vc235 — 15챕터 보스곡. 보스가 있는 장(3·7·8·10·14)은 전용곡,
+   *  없는 장도 구역 4~5에서 전투가 이어지므로 인접 곡을 배정해 폴백을 없앤다. */
   howlrstone1: "bgm_cave_boss",
-  howlrstone2: "bgm_kingdom_boss",
-  howlrstone3: "bgm_nidavellir_boss",
-  howlrstone4: "bgm_niflheim_boss",
-  howlrstone5: "bgm_abyss_boss",
+  howlrstone2: "bgm_cave_boss",
+  howlrstone3: "bgm_kingdom_boss",
+  howlrstone4: "bgm_kingdom_boss",
+  howlrstone5: "bgm_nidavellir_boss",
+  howlrstone6: "bgm_nidavellir_boss",
+  howlrstone7: "bgm_niflheim_boss",
+  howlrstone8: "bgm_niflheim_boss",
+  howlrstone9: "bgm_abyss_boss",
+  howlrstone10: "bgm_abyss_boss",
+  howlrstone11: "bgm_niflheim_boss",
+  howlrstone12: "bgm_abyss_boss",
+  howlrstone13: "bgm_niflheim_boss",
+  howlrstone14: "bgm_abyss_boss",
+  howlrstone15: "bgm_abyss_boss",
 };
 /** 재림 보스 — splitStage("r5")는 ch="r", zone=5/10/15로 파싱된다 */
 const REBIRTH_BOSS_OF: Record<number, string> = { 5: "bgm_kingdom_boss", 10: "bgm_hel_boss", 15: "bgm_abyss_boss" };
@@ -409,6 +450,9 @@ export const REBIRTH_THEME_OF: Record<number, string> = {
 /** 챕터/재림 공용 보스 트랙 선택 (미지의 챕터 → 첫 보스곡 폴백) */
 function bossTrackOfCh(ch: string, zone: number): string {
   if (ch === "r") return REBIRTH_BOSS_OF[zone] ?? BOSS_TRACKS[0];
+  /* vc235 — 영프(hw*)는 전용 보스곡을 아직 만들지 않아 챕터 정서의 본편 보스곡을
+   *  빌려온다. BOSS_OF 에 howlrstone 키가 없으므로 아래 ?? 가 그 역할을 한다.
+   *  (일반 구역은 STAGE_BGM 의 bgm_hw* 를 쓰므로 폴백이 아니다) */
   return BOSS_OF[HUNT_THEME_OF[ch] ?? ch] ?? BOSS_TRACKS[0];
 }
 /** 챕터 일반 구역 폴백 (미지의 챕터 키) */
@@ -418,6 +462,17 @@ const FALLBACK_TRACKS = [CHAPTER_THEME.forest];
 function splitStage(stage: string): { ch: string; zone: number; isVillageStage: boolean } {
   if (stage === "village") return { ch: "village", zone: 0, isVillageStage: true };
   if (stage.endsWith("v")) return { ch: stage.slice(0, -1), zone: 0, isVillageStage: true };
+  /* vc235 — 챕터 키 자체가 숫자로 끝나는 경우(howlrstone1 ~ howlrstone5)를
+   *  먼저 분리한다. 종전 정규식 `^([a-z]+)(\d+)$` 는 `howlrstone11` 을
+   *  ch="howlrstone", zone=11 로 잘라 STAGE_BGM["howlrstone1"] 에 닿지 못했고,
+   *  영프 50개 구역 전부가 FALLBACK_TRACKS[0](= bgm_forest_1)로 떨어졌다.
+   *  stages.ts:parseStage 와 같은 우선순위로 맞춘다. */
+  /* vc235 — `howlrstone{장}x{구역}` (예 howlrstone15x4). 챕터가 두 자리라
+   *  붙여쓰기는 모호하다. 구 세이브 키(`howlrstone11`)도 계속 인정한다. */
+  const hwx = /^(howlrstone(?:[1-9]|1[0-5]))x([1-9]|10)$/.exec(stage);
+  if (hwx) return { ch: hwx[1], zone: parseInt(hwx[2], 10), isVillageStage: false };
+  const hw = /^(howlrstone[1-5])(\d{1,2})$/.exec(stage);
+  if (hw) return { ch: hw[1], zone: parseInt(hw[2], 10), isVillageStage: false };
   const m = stage.match(/^([a-z]+)(\d+)$/);
   if (m) return { ch: m[1], zone: parseInt(m[2], 10), isVillageStage: false };
   return { ch: stage, zone: 0, isVillageStage: false };
@@ -444,6 +499,12 @@ export function stageTrack(stage: string): string {
   const zone = parsed.zone;
   const ch = parsed.ch === "r" ? REBIRTH_THEME_OF[zone] ?? "abyss" : HUNT_THEME_OF[parsed.ch] ?? parsed.ch;
   if (parsed.ch === "r" && REBIRTH_BOSS_OF[zone]) return REBIRTH_BOSS_OF[zone];
+  /* vc235 — 영프 편은 챕터당 스테이지가 4~5개라 "10구역 = 보스" 가 성립하지 않는다.
+   *  마지막 구역이 곧 보스 구역이므로 그때만 전투곡을 쓴다. */
+  const hwSpec = HOWLRSTONE_CHAPTERS.find((c) => c.key === parsed.ch);
+  if (hwSpec) {
+    return zone >= hwSpec.stages ? bossTrackOfCh(ch, zone) : (STAGE_BGM[ch]?.[zoneSlot(zone)] ?? bossTrackOfCh(ch, zone));
+  }
   if (zone === 10) return bossTrackOfCh(ch, zone); // 보스 구역 — 챕터 전용 전투곡
   if (zone <= 0) return VILLAGE_OF[ch] ?? VILLAGE_TRACKS[Math.max(0, chIndexOf(ch)) % VILLAGE_TRACKS.length];
   const slots = STAGE_BGM[ch];

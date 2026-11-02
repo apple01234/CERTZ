@@ -154,9 +154,14 @@ export function SkillButton({
        *  vc206 (지시 #12) — max-w-[76px] 는 원(66px)보다 10px 넓은 정도라 긴 이름이
        *  여전히 1~2글자씩 세로로 쌓였다. 래퍼 폭까지 허용(max-w-none)하고
        *  좌우로 넘칠 때만 말줄임하지 않고 2줄로 감싼다. */}
+      {/* vc235 (#3 "스킬 이름 좀 더 위로 배치해 지금 겹치는 버그 있음") —
+       *  종전엔 w-[calc(100%+22px)] 로 원보다 22px 넓게 잡아 옆 버튼의 이름과
+       *  겹쳤다(스크린샷 실측: "화살 폭우 · 극"과 "신의 차원… · 극"이 한 줄에서 충돌).
+       *  이제 폭을 원 지름에 맞추고, 좌우로 삐져나가지 않게 잘라낸다.
+       *  이름이 길면 2줄로 감싸고(leading 1.1) 그마저 넘치면 말줄임한다. */}
       {!compact && (
         <span
-          className={`pointer-events-none w-[calc(100%+22px)] break-keep text-center text-[9px] font-bold leading-[1.15] [text-shadow:0_1px_2px_#000,0_0_3px_#000] ${
+          className={`pointer-events-none block w-full max-w-full overflow-hidden text-ellipsis break-keep text-center text-[8.5px] font-bold leading-[1.1] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] [text-shadow:0_1px_2px_#000,0_0_3px_#000] ${
             ult ? "text-amber-100" : ult2 ? "text-fuchsia-100" : "text-white"
           }`}
         >

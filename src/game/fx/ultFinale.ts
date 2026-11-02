@@ -257,12 +257,30 @@ export function runUltFinale(
     }
   } else switch (def.shape) {
     case "line": {
-      /* 직선 관통 — 조준 방향으로 3개 지점을 차례로 폭발시킨다 */
-      const steps = 3;
+      /* vc235 (#6 "궁극기를 쓰면 레일 같은 게 나가는데 그거에 맞게 따라서
+       *  이펙트가 계속 나가던지 해야지!! 장판만 깔리면 어떡해") —
+       *  종전엔 3개 지점만 폭발시켜, 화면을 가로지르는 레일(직선 궤적)과
+       *  이펙트가 따로 놀았다. 레일 위를 **연속으로** 따라가며 터뜨린다.
+       *
+       *  판정은 3개 지점 그대로 둔다(데미지 총량 불변 — 밸런스 회귀 금지).
+       *  연출만 촘촘하게 깐다: reach 를 일정 간격으로 나눠 매 스텝마다
+       *  작은 폭발을 얹고, 마지막에 큰 폭발로 마무리한다. */
+      const steps = 3;                 // 판정 지점 수(불변)
+      const trail = 12;                // 연출 스텝 수 — 레일을 따라 흐른다
+      const cosA = Math.cos(a), sinA = Math.sin(a);
+      for (let i = 0; i < trail; i++) {
+        const t = (i + 1) / trail;
+        const bx = x + cosA * def.reach * t;
+        const by = y + sinA * def.reach * t;
+        /* 12스텝을 90ms 간격의 3판정 구간에 고르게 매핑 */
+        scene.time.delayedCall(Math.round(i * 22), () => {
+          burst(bx, by, 0.55 + t * 0.6);
+        });
+      }
       for (let i = 0; i < steps; i++) {
         const t = (i + 1) / steps;
-        const bx = x + Math.cos(a) * def.reach * t;
-        const by = y + Math.sin(a) * def.reach * t;
+        const bx = x + cosA * def.reach * t;
+        const by = y + sinA * def.reach * t;
         scene.time.delayedCall(i * 90, () => {
           burst(bx, by, 1.4 + i * 0.5);
           const { dmg: d, crit } = dmg(1.7);

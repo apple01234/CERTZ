@@ -22,8 +22,10 @@ OUT.mkdir(parents=True, exist_ok=True)
 for src in sorted((ROOT / 'public/assets/npcbody').glob('*.png')):
     key = src.stem
     im = Image.open(src).convert('RGBA')
-    # 현재 96x96 원본의 머리/어깨. 배율/팔레트/얼굴 파츠 변경 금지.
-    rect = (20, 12, 80, 72)
+    # vc235 (#5 "NPC 초상화 좀 줌 아웃해 얼굴이 너무 크게 보여서 잘려서 보임") —
+    # 종전 (20,12,80,72) = 60x60 은 얼굴만 꽉 잡아 턱·머리카락이 잘렸다.
+    # 96x96 원본에서 상체까지 담기도록 넓힌다(84x84). 중앙 정렬 유지.
+    rect = (6, 6, 90, 90)
     crop = im.crop(rect)
     dest = OUT / f'{key}.png'
     if '--check' in sys.argv:

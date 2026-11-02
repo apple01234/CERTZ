@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { DECOR_BUDGET, decorSetFor, pickByTag, type DecorObj } from "../decorObjects";
 import { createGameState, type GameState } from "../state/gameState";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
@@ -1964,6 +1965,10 @@ export class WorldScene extends Phaser.Scene {
           /* v3.0 (#8) — 몬스터 경험치 +35% (레벨업 속도 개선, 곡선 완화와 합산) */
           hp: sc.hp, atk: sc.atk, exp: sc.exp * 1.35, gold: sc.gold,
         });
+        /* vc235 — pixelfx "spawn.enemy" 연결 (정의만 되고 호출 0이었다).
+         *  적이 나타나는 순간이 전투 리듬의 시작점이라 여기 붙인다.
+         *  스로틀·동시상한은 PixelFxManager 가 관리하므로 대량 스폰도 안전하다. */
+        try { this.pxFx?.play("spawn.enemy", p.x, p.y, { scale: 0.7, depth: 8 }); } catch { /* 무시 */ }
         this.enemies.push(e);
         this.spawnRecords.push({ key: group.key, x: p.x, y: p.y });
         this.physics.add.collider(e, this.solidGroup);
@@ -3148,6 +3153,14 @@ export class WorldScene extends Phaser.Scene {
       this.add.image(x, y, rng.pick(flowers)).setDepth(1).setAlpha(0.95);
     }
 
+    /* vc235 — 장식 오브젝트(왕좌·책장·항아리·횃불·천막·가구).
+     *  [왜 추가했나] 위의 나무·바위·꽃은 전부 단순 텍스처(tree/rock/flower_*)라
+     *  맵이 "같은 바닥이 반복되는" 화면이었다. `_assets_in` 타일셋에서 뽑은
+     *  실제 오브젝트는 배치 코드가 없어 한 번도 화면에 나오지 않았다.
+     *  [예산] vc232 에서 사용자가 "쓸데없는 오브젝트 줄이기"를 지적했으므로
+     *  챕터별 상한(DECOR_BUDGET)을 두고, 통행로를 비우는 기존 규칙을 그대로 쓴다. */
+    this.placeDecorObjects(ch, rng, blocked);
+
     /* v1.4.11 — 지면 변형 스캐터 (tx_* 전환타일 세트 활성화 — 로드만 되고 배치 0이던 45종).
      *  v3.0.13 민원(타 세트 색상 사각형 뒤죽박죽)과 달리 같은 세트의 pvar/gvar 변형만
      *  저밀도(열린 셀의 ~2.5%)·저알파로 깔아 바닥 리듬감만 더한다.
@@ -3415,6 +3428,133 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** v2.6 — 육식 식물(jawsplant류) 접촉 데미지. 피격 처리(무적시간·연출)는 Player.takeDamage 재사용 */
+  /**
+   * vc235 — 장식 오브젝트 배치.
+   *
+   * [설계]
+   *  · big(왕좌·나무·건물)  → 통행로를 피해 가장자리 위주로 드물게
+   *  · wall(횃불·책장·간판) → 벽에 붙여 (열린 셀 중 위쪽이 닫힌 곳)
+   *  · floor(카펫·식탁)     → 방 안쪽 평평한 곳
+   *  · small(항아리·상자)   → 바닥 여기저기 소량
+   *
+   *  모든 후보는 기존 규칙(blocked / inOpenArea / nearSolidObstacle)을 통과해야
+   *  한다 — 포탈·스폰·기존 장식을 가리지 않는다.
+   *
+   *  충돌은 big 오브젝트에만 준다. 소품까지 막으면 통행로가 좁아져
+   *  "진행이 막힌다"는 불만(v1.3.1)이 재발한다.
+   */
+  private placeDecorObjects(
+    ch: string,
+    rng: Phaser.Math.RandomDataGenerator,
+    blocked: (x: number, y: number) => boolean,
+  ) {
+    const setKey = decorSetFor(ch);
+    const budget = DECOR_BUDGET[setKey];
+    if (!budget) return;
+
+    /* 로드되지 않은 키는 Phaser 가 __MISSING(검은 사각형)으로 그린다.
+     *  부팅 로드 목록과 카탈로그가 어긋나는 사고를 여기서 차단한다. */
+    const usable = (list: DecorObj[]) => list.filter((o) => this.textures.exists(o.key));
+
+    const tryPlace = (
+      list: DecorObj[],
+      count: number,
+      place: (o: DecorObj, x: number, y: number) => void,
+      pickPos: () => [number, number] | null,
+    ) => {
+      if (!list.length) return;
+      let placed = 0;
+      let guard = 0;
+      while (placed < count && guard < count * 14) {
+        guard++;
+        const pos = pickPos();
+        if (!pos) break;
+        const [x, y] = pos;
+        if (blocked(x, y)) continue;
+        if (!this.inOpenArea(x, y)) continue;
+        const o = rng.pick(list);
+        if (this.nearSolidObstacle(x, y, o.tag === "big" ? 90 : 46)) continue;
+        place(o, x, y);
+        placed++;
+      }
+    };
+
+    const openPos = (): [number, number] | null => {
+      for (let i = 0; i < 10; i++) {
+        const x = rng.between(90, this.stageW - 90);
+        const y = rng.between(110, this.stageH - 90);
+        if (this.inOpenArea(x, y)) return [x, y];
+      }
+      return null;
+    };
+
+    /* 벽 부착 — 셀 위쪽이 닫혀 있으면 벽면으로 본다. */
+    const wallPos = (): [number, number] | null => {
+      const lay = this.layout;
+      if (!lay) return null;
+      for (let i = 0; i < 14; i++) {
+        const cell = rng.between(0, lay.open.length - 1);
+        if (!lay.open[cell]) continue;
+        const c = cell % lay.cols;
+        const r = Math.floor(cell / lay.cols);
+        const upOpen = r > 0 ? lay.open[(r - 1) * lay.cols + c] : false;
+        if (upOpen) continue; // 위가 열려 있으면 벽이 아니다
+        const p = cellCenterOf(lay, cell);
+        return [p.x + rng.between(-20, 20), p.y - lay.cellH * 0.28];
+      }
+      return null;
+    };
+
+    // 1) 큰 오브젝트 — 가장자리 위주, 충돌 부여
+    tryPlace(
+      usable(pickByTag(setKey, "big")),
+      budget.big,
+      (o, x, y) => {
+        const img = this.add.image(x, y, o.key).setDepth(this.yDepthFor(y));
+        /* 나무·건물은 발밑만 충돌한다. 스프라이트 전체를 막으면 캐릭터가
+         *  허공에서 걸린다(그림자 위를 못 지나감). */
+        this.solidGroup.add(img);
+        const bh = Math.max(18, Math.round(o.h * 0.30));
+        const bw = Math.max(20, Math.round(o.w * 0.55));
+        (img.body as Phaser.Physics.Arcade.StaticBody)
+          .setSize(bw, bh)
+          .setOffset(Math.round((o.w - bw) / 2), Math.max(0, o.h - bh - 2));
+        img.setData("obstacle", true);
+      },
+      openPos,
+    );
+
+    // 2) 벽 부착물 — 충돌 없음
+    tryPlace(
+      usable(pickByTag(setKey, "wall")),
+      budget.wall,
+      (o, x, y) => {
+        this.add.image(x, y, o.key).setDepth(this.yDepthFor(y) - 1).setAlpha(0.98);
+      },
+      wallPos,
+    );
+
+    // 3) 바닥 가구 — 충돌 없음
+    tryPlace(
+      usable(pickByTag(setKey, "floor")),
+      budget.floor,
+      (o, x, y) => {
+        this.add.image(x, y, o.key).setDepth(1).setAlpha(0.96);
+      },
+      openPos,
+    );
+
+    // 4) 잡동사니 — 충돌 없음
+    tryPlace(
+      usable(pickByTag(setKey, "small")),
+      budget.small,
+      (o, x, y) => {
+        this.add.image(x, y, o.key).setDepth(this.yDepthFor(y)).setAlpha(0.96);
+      },
+      openPos,
+    );
+  }
+
   private hitPlantHazard(plant: Phaser.GameObjects.Image) {
     const p = this.player;
     if (p.state === "dead" || this.time.now < this.plantCd) return;
@@ -3443,11 +3583,43 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * vc235 (#2 "각 퀘스트가 요구하는 물건들에 맞는 스프라이트가 아닌 전부 나무 결정인 버그") —
+   * 수집 퀘스트의 목표물 스프라이트를 **퀘스트 내용에 맞춰** 고른다.
+   *
+   * 종전엔 어떤 퀘스트든 텍스처 `fragment`(결정) 하나만 썼다. 그래서 "정리서의
+   * 페이지"를 모으라 해도, "연합의 증표"를 세우라 해도 화면엔 똑같은 결정이 떴다.
+   *
+   * targetLabel 의 키워드로 분류한다 — QuestDef 에 아이템 키 필드를 새로 넣으면
+   * 스테이지 데이터 65개를 전부 손봐야 하고, 라벨은 이미 사람이 읽는 이름이라
+   * 의미가 정확하다. 분류에 없는 라벨은 기존 결정으로 폴백한다(회귀 없음).
+   */
+  private questItemTexture(label: string | undefined): { key: string; tint?: number } {
+    const L = label ?? "";
+    /* 책·문서·서류 — 종이/책 스프라이트 */
+    if (/정리서|페이지|서신|편지|문서|기록|증서|보고서|편성표/.test(L)) return { key: "i_exp_book", tint: 0xf2e2b8 };
+    /* 증표·인장·휘장 — 금속/문장 */
+    if (/증표|인장|휘장|문양/.test(L)) return { key: "fragment", tint: 0xffd76a };
+    /* 염원·기억·영혼 — 푸른 빛 */
+    if (/염원|기억|영혼|추억|꽃/.test(L)) return { key: "fragment", tint: 0xd48aff };
+    /* 먹물·액체·약 — 병 */
+    if (/먹물|잉크|물약|액|독/.test(L)) return { key: "i_potion_mp3", tint: 0x7ad8ff };
+    /* 파편·조각·결정 — 원래 결정 */
+    if (/파편|조각|결정|보석|수정/.test(L)) return { key: "fragment" };
+    /* 그 외 — 결정 기본값 (기존 동작 유지) */
+    return { key: "fragment" };
+  }
+
   private spawnFragment(x: number, y: number) {
     /* v3.0.22 (#44) — 챕터별 결정 색상 (결정 본체+글로우+비컨 틴트) */
     const fmeta = FRAGMENT_META[parseStage(this.stageDef.key).ch];
-    this.fragment = this.physics.add.sprite(x, y, "fragment").setDepth(4);
-    if (fmeta) this.fragment.setTint(fmeta.color);
+    /* vc235 — 퀘스트 목표물에 맞는 텍스처. 로드되지 않은 키는 결정으로 폴백해
+     *  Phaser __MISSING(검은 사각형) 글리치를 막는다. */
+    const pick = this.questItemTexture(this.currentQuest()?.targetLabel);
+    const tex = this.textures.exists(pick.key) ? pick.key : "fragment";
+    this.fragment = this.physics.add.sprite(x, y, tex).setDepth(4);
+    if (pick.tint) this.fragment.setTint(pick.tint);
+    else if (fmeta) this.fragment.setTint(fmeta.color);
     (this.fragment.body as Phaser.Physics.Arcade.Body).setCircle(13, 3, 3);
 
     // 실제 에셋 수정 위 반짝임 (objects.png 별/다이아 프레임)
@@ -3552,6 +3724,9 @@ export class WorldScene extends Phaser.Scene {
   private spawnPortal(x: number, y: number) {
     // 외부 에셋 차원문(varkalandar CC-BY, 8프레임 소용돌이) — 비활성 시 회색 틴트
     this.portal = this.physics.add.sprite(x, y, "portal0").setDepth(3).setTint(0x777777);
+    /* vc235 — pixelfx "portal" 이벤트가 정의돼 있는데 한 번도 호출되지 않았다.
+     *  차원문이 열리는 순간이 가장 눈에 띄는 연출 지점이라 여기 붙인다. */
+    try { this.pxFx?.play("portal", x, y, { scale: 0.9, depth: 3 }); } catch { /* 무시 */ }
     /* v4.7.0 — Phaser 4 GLSL 소용돌이 오라 (셰이더 기반 3D 느낌 VFX 첫 단계 — 기존 스프라이트/입자 유지,
      *  실패 시 null로 기존 포탈만 동작) */
     this.portalSwirl?.destroy();
@@ -4517,11 +4692,16 @@ export class WorldScene extends Phaser.Scene {
     this.hitStopUntil = this.impactFX.hitStopEndsAt;
   }
 
-  spawnHitSpark(x: number, y: number) {
+  spawnHitSpark(x: number, y: number, crit = false) {
     /* v4.9.3 — pixelfx 타격 연출. 모든 근접/투사체 히트가 여기로 모이므로
      *  한 곳에 연결하면 전투 전체가 픽셀 이펙트를 얻는다.
-     *  스로틀·상한은 PixelFxManager 가 처리한다(연타 폭주 방지). */
-    try { this.pxFx?.play("hit.slash", x, y - 4, { scale: 0.42 }); } catch { /* 무시 */ }
+     *  스로틀·상한은 PixelFxManager 가 처리한다(연타 폭주 방지).
+     *
+     *  vc235 — 크리티컬은 "hit.crit" 으로 분기한다(정의만 되고 호출 0이었다).
+     *  크리티컬이 기본 타격과 같은 이펙트면 때리는 맛이 안 산다. */
+    try {
+      this.pxFx?.play(crit ? "hit.crit" : "hit.slash", x, y - 4, { scale: crit ? 0.62 : 0.42 });
+    } catch { /* 무시 */ }
     /* v3.3.0 (지시 #9) — 타격 스파크 5→9개로 증량 (화면이 더 밝게 터진다)
      *  v1.0.7 — 가림 축소: 9→6개 (유저 지시 — 타격감은 히트스톱+사운드가 담당) */
     this.hitEmitter.setParticleTint(0xfff0a0);
@@ -13733,6 +13913,10 @@ export class WorldScene extends Phaser.Scene {
     /** v3.0.16 (#4) — 비행 잔상(트레일) 색. 지정하면 진행 경로가 발광 잔상으로 남는다 */
     trail?: number;
   }) {
+    /* vc235 — pixelfx "hit.ranged" 연결 (정의만 되고 호출 0이었다).
+     *  발사 순간에 총구 이펙트를 붙여 근접(hit.slash)과 손맛을 구분한다.
+     *  판정·탄도는 건드리지 않는다(연출 전용). */
+    try { this.pxFx?.play("hit.ranged", cfg.x, cfg.y, { scale: 0.34, depth: 13 }); } catch { /* 무시 */ }
     if (this.pProjPool.length === 0) {
       for (let i = 0; i < 24; i++) {
         const p = this.physics.add.sprite(0, 0, "orb");
@@ -14331,6 +14515,9 @@ export class WorldScene extends Phaser.Scene {
 
   /** 힐 이펙트 — 상승하는 초록/빛 반짝임 */
   spawnHealFx(x: number, y: number, tint = 0x7dffa8) {
+    /* vc235 — pixelfx "heal" 이벤트 연결 (정의만 되고 호출 0이었다).
+     *  회복은 초당 여러 번 틱할 수 있어 스로틀(PixelFxManager 내장)이 자연히 막아준다. */
+    try { this.pxFx?.play("heal", x, y - 10, { scale: 0.6, depth: 24 }); } catch { /* 무시 */ }
     this.burstEmitter.setParticleTint(tint);
     this.burstEmitter.explode(10, x, y - 10);
     const ring = this.add.image(x, y - 6, "shock_ring").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.18).setAlpha(0.9);

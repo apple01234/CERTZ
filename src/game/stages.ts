@@ -29,7 +29,11 @@ export type ChapterKey =
   /* vc231 — 영준 프린세스 편(하울르스톤) 5챕터. 기획서 1기 15화 원문 기반.
    *  본편(DLC 포함) 계약을 건드리지 않기 위해 `CHAPTERS` 에 넣지 않고
    *  `howlrstone.ts` 의 `HOWLRSTONE_CHAPTERS` 에서 생성한다(회귀 0). */
-  | "howlrstone1" | "howlrstone2" | "howlrstone3" | "howlrstone4" | "howlrstone5";
+  /* vc235 — 영프 편을 원문 1기 15화에 맞춰 **15챕터**로 확장(1화=1챕터).
+   *  챕터가 두 자리가 되면서 스테이지 키는 `howlrstone{장}x{구역}` 형식을 쓴다. */
+  | "howlrstone1" | "howlrstone2" | "howlrstone3" | "howlrstone4" | "howlrstone5"
+  | "howlrstone6" | "howlrstone7" | "howlrstone8" | "howlrstone9" | "howlrstone10"
+  | "howlrstone11" | "howlrstone12" | "howlrstone13" | "howlrstone14" | "howlrstone15";
 
 /** 스테이지 키 — "village" | "forest1".."abyss10" (구 세이브 키도 런타임 폴백 처리) */
 export type StageKey = string;
@@ -1031,7 +1035,12 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
   /* v2.9 — 챕터 마을(Xv)도 챕터 소속으로 파싱 */
   const v = /^([a-z]+)v$/.exec(key);
   if (v) return { ch: v[1] as ChapterKey, sub: 0 };
-  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss|dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech|dlcswallow|dlcopinicia|dlcnovel|dlcsernium|howlrstone[1-5])([1-9]|10)$/.exec(key);
+  /* vc235 — 영프 편은 `howlrstone{장}x{구역}` (예 howlrstone15x4).
+   *  챕터가 두 자리라 붙여쓰기는 모호해진다("1장12구역" vs "11장2구역").
+   *  본편/DLC 는 기존 형식 그대로 둔다. */
+  const hw = /^(howlrstone(?:[1-9]|1[0-5]))x([1-9]|10)$/.exec(key);
+  if (hw) return { ch: hw[1] as ChapterKey, sub: parseInt(hw[2], 10) };
+  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss|dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech|dlcswallow|dlcopinicia|dlcnovel|dlcsernium)([1-9]|10)$/.exec(key);
   if (!m) return { ch: "village", sub: 0 };
   return { ch: m[1] as ChapterKey, sub: parseInt(m[2], 10) };
 }
@@ -1051,9 +1060,13 @@ export function chapterSpec(key: StageKey): ChapterSpec | null {
 export function howlrstoneSpec(key: StageKey): HowlrstoneChapterSpec | null {
   const exact = HOWLRSTONE_CHAPTERS.find((c) => c.key === key);
   if (exact) return exact;
-  /* 스테이지 키(howlrstone11) → 챕터 키(howlrstone1). 뒤 번호가 붙은 형태만 인정한다. */
-  const m = /^(howlrstone[1-5])\d{1,2}$/.exec(key);
-  return m ? (HOWLRSTONE_CHAPTERS.find((c) => c.key === m[1]) ?? null) : null;
+  /* 스테이지 키(`howlrstone1x1`) → 챕터 키(`howlrstone1`).
+   *  vc235 — 챕터가 두 자리가 되면서 `x` 구분자를 쓴다. 붙여쓰기(`howlrstone15x4`
+   *  를 `howlrstone15`+`4` 로) 파싱도 함께 지원해 구 세이브 키를 살린다. */
+  const m = /^(howlrstone(?:[1-9]|1[0-5]))x(?:[1-9]|10)$/.exec(key);
+  if (m) return HOWLRSTONE_CHAPTERS.find((c) => c.key === m[1]) ?? null;
+  const legacy = /^(howlrstone[1-5])\d{1,2}$/.exec(key);
+  return legacy ? (HOWLRSTONE_CHAPTERS.find((c) => c.key === legacy[1]) ?? null) : null;
 }
 
 /** v1.4.0 (Task 1-6 — 유저 지시 #14) — 레벨 구간별 퀘스트 요구 마릿수 곡선
@@ -1492,9 +1505,12 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
   const hwKeys: ChapterKey[] = HOWLRSTONE_CHAPTERS.map((c) => c.key);
   for (let ci = 0; ci < HOWLRSTONE_CHAPTERS.length; ci++) {
     const spec = HOWLRSTONE_CHAPTERS[ci];
-    for (let sub = 1; sub <= 10; sub++) {
-      const key = `${spec.key}${sub}`;
-      const isBoss = sub === 10;
+    /* vc235 — 챕터당 스테이지 수가 가변(spec.stages, 4~5개). 키는 `장x구역`.
+     *  마지막 구역이 보스전이고, 보스가 없는 장은 일반 토벌로 끝난다. */
+    const stageCount = spec.stages;
+    for (let sub = 1; sub <= stageCount; sub++) {
+      const key = `${spec.key}x${sub}`;
+      const isBoss = spec.boss !== null && sub === stageCount;
       /* 구역별 몬스터 조합 — 2구역마다 주력 교체 (본편 subEnemyMix 와 같은 규칙). */
       const pool = spec.enemies.map((g) => g.key);
       const n = Math.min(20, 8 + Math.floor(sub / 2) * 2);
@@ -1576,23 +1592,28 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
         scaleMul: { ...spec.scaleMul },
       };
       STAGE_SHORT[key] = `${ci + 1}-${sub}`;
-      /* 체인: 영프 내부는 순차, 마지막 구역 다음은 그랜드 플래닛 첫 구역. */
+      /* 체인: 영프 내부는 순차, 마지막 구역 다음은 그랜드 플래닛 첫 구역.
+       *  vc235 — 스테이지 수가 챕터마다 다르므로(4~5) `sub < 10` 하드코딩을
+       *  spec.stages 로 바꾸고, 키도 `장x구역` 형식에 맞춘다.
+       *  (종전엔 마지막 다음이 존재하지 않는 `howlrstone155` 를 가리켰다) */
+      const stageKeyOf = (chIdx: number, subNo: number) =>
+        `${HOWLRSTONE_CHAPTERS[chIdx].key}x${subNo}`;
       NEXT_STAGE[key] =
-        sub < 10
-          ? `${spec.key}${sub + 1}`
+        sub < stageCount
+          ? stageKeyOf(ci, sub + 1)
           : ci < HOWLRSTONE_CHAPTERS.length - 1
-            ? `${HOWLRSTONE_CHAPTERS[ci + 1].key}1`
+            ? stageKeyOf(ci + 1, 1)
             : "dlcstargate1";
       PREV_STAGE[key] =
         sub > 1
-          ? `${spec.key}${sub - 1}`
+          ? stageKeyOf(ci, sub - 1)
           : ci > 0
-            ? `${HOWLRSTONE_CHAPTERS[ci - 1].key}10`
+            ? stageKeyOf(ci - 1, HOWLRSTONE_CHAPTERS[ci - 1].stages)
             : "youngprincessv";
     }
   }
   /* 영프 마을 → 영프 편 1-1. (예전엔 null 이라 막다른 길이었다 — vc230 미해결분) */
-  NEXT_STAGE.youngprincessv = `${HOWLRSTONE_CHAPTERS[0].key}1`;
+  NEXT_STAGE.youngprincessv = `${HOWLRSTONE_CHAPTERS[0].key}x1`;
   void hwKeys;
 }
 
@@ -2051,6 +2072,15 @@ for (const spec of CHAPTERS) {
   STAGE_THEME[`${spec.key}v`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
   for (let sub = 1; sub <= 10; sub++) {
     STAGE_THEME[`${spec.key}${sub}`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
+  }
+}
+/* vc235 — 영프 편 15챕터 지형 테마. 종전엔 5챕터 × 10구역만 등록됐는데
+ *  15챕터 × 4~5구역(`장x구역` 키)으로 바뀌어 등록이 비었다.
+ *  이게 없으면 "지형 테마 필요" 로 스테이지가 지면 없이 뜬다.
+ *  (STAGE_THEME 선언 뒤에서 돌려야 TDZ 오류가 없다) */
+for (const spec of HOWLRSTONE_CHAPTERS) {
+  for (let sub = 1; sub <= spec.stages; sub++) {
+    STAGE_THEME[`${spec.key}x${sub}`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
   }
 }
 /* v1.0.19 (A-3) — 재림 지역 15구역 지형 테마 등록 */

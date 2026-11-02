@@ -1391,6 +1391,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.setTint(0x9ad8ff);
     this.scene.showBanner(`${this.def.name} — 심연의 결정 방어막! (피해 무효)`);
     this.scene.sfxSkill("shield", 0.8);
+    /* vc235 — pixelfx "shield" 이벤트 연결 (정의만 되고 호출 0이었다).
+     *  보스가 방어막을 두르는 순간이 "지금은 안 통한다"를 알리는 핵심 신호다. */
+    try { this.scene.pxFx?.play("shield", this.x, this.y, { scale: 1.1 }); } catch { /* 무시 */ }
   }
 
   /** 방어막 종료 → ⑥ MagicBurst(Once) 반격 — 추적 기둥 3연 + 종결 대폭발 */
@@ -1784,7 +1787,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.setAlpha(1);
       this.cleanupSvartStates(); // vc153 — 방어막 오라/무적 잔존 정리 (사망 시에도)
       /* v4.9.3 — pixelfx 보스 사망 연출 (대형 폭발 + 영혼 상승) */
-      try { this.scene.pxFx?.boss("boss.death", this.x, this.y, { scale: 1.8 }); } catch { /* 무시 */ }
+      try {
+        this.scene.pxFx?.boss("boss.death", this.x, this.y, { scale: 1.8 });
+        /* vc235 — death.boss 이벤트도 함께 (정의만 되고 호출 0이었다).
+         *  보스 격파는 게임에서 가장 큰 순간이라 대형 폭발·영혼 상승을 겹친다. */
+        this.scene.pxFx?.play("death.boss", this.x, this.y, { scale: 1.6, depth: 26 });
+      } catch { /* 무시 */ }
       /* v1.4.9 — 사망 연출 강화: 오라색 잔상 3겹 확산 + 본체 소멸 트윈 + 2중 충격파 */
       {
         const gx = this.x, gy = this.y;

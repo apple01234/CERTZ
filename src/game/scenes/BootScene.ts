@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { GROUND_TILE_MAP } from "../tileThemes";
 import { AURA_TEXTURE_LOADS } from "../fx/auraTextures";
+import { DECOR_SETS } from "../decorObjects";
 import { TILE_PNG_KEYS } from "../tilePng"; // vc206 (#11) — PNG 원본 우선 로드
 import { buildAllAnims, registerBossAnims, BOSS_ATLAS } from "../textures";
 import { CORE_BODY_PREFIXES } from "../data";
@@ -575,7 +576,7 @@ export class BootScene extends Phaser.Scene {
       );
       container.add(
         this.add
-          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "하울르스톤 : 다섯 왕국", {
+          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "이그드라실 : 9개의 바다", {
             fontFamily: "Galmuri11, sans-serif",
             fontSize: `${Math.max(12, Math.round(W * 0.02))}px`,
             color: "#cbb88a",
@@ -700,7 +701,15 @@ export class BootScene extends Phaser.Scene {
     for (const key of new Set(Object.values(GROUND_TILE_MAP))) {
       if (key.startsWith("ground_")) this.load.image(key, `ground/${key}.png`);
     }
+    /* vc235 (#최적화) — aura 는 `setPath("assets")` 의 영향을 받으면 안 된다.
+     *  manifest 의 `file` 은 `/assets/aura/gvb_*.png` 처럼 루트부터의 전체 경로다.
+     *  setPath 가 걸린 상태로 넘기면 Phaser 가 `assets/` 를 앞에 붙여
+     *  `/assets/assets/aura/...` 를 요청해 23종 전부 404 가 났다.
+     *  (부팅마다 aura 텍스처 없음 → 재시도 3회 → 부팅 지연)
+     *  로드 직전에 경로를 비우고, 끝나면 원래 경로로 되돌린다. */
+    this.load.setPath("");
     for (const { key, file } of AURA_TEXTURE_LOADS) this.load.image(key, file);
+    this.load.setPath("assets");
     /* vc226 (최적화) — FA 프레임을 **아틀라스 1장**으로 로드한다.
      *
      *  종전: 268개 개별 `load.image` = HTTP 요청 268개(부팅 요청의 26%).
@@ -727,9 +736,21 @@ export class BootScene extends Phaser.Scene {
      * setTint 로 원소색을 입혀 쓴다. */
     for (const k of FX2_LIST) this.load.image(k, `fx2/${k}.webp`);
     /* v1.4.31 (#4 보스 개편) — 유저 제공 9보스 아틀라스 (보스당 1장 · 부팅 직접 로드).
-     *  프레임 크기는 슬라이서 실측값 — BOSS_ATLAS 설정과 정확히 일치 (textures.ts) */
+     *  프레임 크기는 슬라이서 실측값 — BOSS_ATLAS 설정과 정확히 일치 (textures.ts)
+     *  vc235 — 부팅 로드 제거를 시도했다가 되돌렸다: Boss.ts:170 의 `loadBossFrames`
+     *  는 `assets/<tex>_idle0.webp` 같은 **개별 프레임**을 받는 구형 경로라
+     *  아틀라스 보스에는 그 파일이 없다. 부팅에서 빼면 아틀라스 보스가 텍스처
+     *  없이 스폰돼 애니 등록이 조기 return 하고 그려지지 않는다. */
     for (const { key, file, fw, fh } of Object.values(BOSS_ATLAS)) {
       this.load.spritesheet(key, file, { frameWidth: fw, frameHeight: fh });
+    }
+    /* vc235 — 장식 오브젝트 (왕좌·책장·항아리·횃불·천막·가구·나무).
+     *  `_assets_in` 의 던전/숲/마을 타일셋에서 추출한 것을
+     *  `tools/collect_objects.py` 가 굽고 `decorObjects.ts` 가 목록을 갖는다.
+     *  종전엔 tree/rock/pine 같은 단순 텍스처만 깔려서 맵이 "같은 바닥 반복"으로
+     *  보였다. 총 34개·37KB 라 부팅 부담은 사실상 없다. */
+    for (const [setName, list] of Object.entries(DECOR_SETS)) {
+      for (const o of list) this.load.image(o.key, `objects/${setName}/${o.key}.png`);
     }
     /* v1.1.0 (#1/#19/#21/#22) — 외형 시스템: 여성(chf)/피부(chm) 변형 11종 + SPUM식 코스튬 완전교체(cost_*) 10종 × 28프레임
      *  + 어태치 장식 5종 (scripts/gen_char_system.py 산출). 구 outfit_* 재색상 오버레이는 폐기(미로드)

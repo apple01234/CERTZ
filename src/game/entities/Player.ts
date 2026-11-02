@@ -867,7 +867,43 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         } as never);
         return;
       }
+      /* vc235 (#8 "근접 캐릭 기본공격 이펙트 종류 자체를 바꾸삼") —
+       *  종전엔 전직할수록 spawnSlash 의 **크기만** 커졌다(모양·종류 동일).
+       *  이제 차수에 따라 이펙트가 실제로 달라진다:
+       *   0~1차 : 기본 참격 1장
+       *   2차   : 참격 + 반대 방향 잔상(교차)
+       *   3차   : 참격 + 충격 링(충격파)
+       *   4차+  : 참격 + 충격 링 + 파편 버스트(극)
+       *  판정(checkMeleeHit)은 그대로 — 이펙트만 강화한다(밸런스 회귀 없음). */
+      const _t = this.sTier;
       this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, slashScale, slashTint);
+      if (_t >= 2) {
+        /* 2차+ — 45ms 뒤 반대 방향 잔상. 교차 참격으로 "두 번 벴다"는 인상 */
+        this.scene.time.delayedCall(45, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, slashScale * 0.82, slashTint);
+        });
+      }
+      if (_t >= 3) {
+        /* 3차+ — 충격 링: 참격이 지나간 자리에서 원형 충격파가 퍼진다 */
+        this.scene.time.delayedCall(30, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnShockwave?.(
+            this.x + dir.x * 46, this.y - 6 + dir.y * 30,
+            slashTint ?? 0xfff2c0, 0.5 + 0.08 * tierK, 190 + 26 * tierK, 0.42,
+          );
+        });
+      }
+      if (_t >= 4) {
+        /* 4차+ — 파편 버스트: 광역기처럼 보이는 파편이 튄다 */
+        this.scene.time.delayedCall(60, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnBurstAt?.(
+            this.x + dir.x * 54, this.y - 6 + dir.y * 34,
+            14 + Math.round(tierK * 4), slashTint ?? 0xffd27a,
+          );
+        });
+      }
       /* v3.0.24 — 도적(단검)=나이프음
        * v4.3.0 — 전사·미전직 기본공격음 = 회전베기음(카타나 연속 베기) 스왑 적용 (유저 지시:
        *  "전사 회전베기 소리를 기본공격 소리랑 바꿔") — 매번 피치 변주 유지 */
@@ -3566,11 +3602,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  4차 궁극기들이 그걸 호출해 "적을 때렸는데 내가 출혈" 상태가 됐다(실측 확인).
    *  문서가 요구하는 기절(Stun)·감속(Slow)을 적에게 정확히 적용한다.
    *  보스는 applyStun 내부에서 최대 경직으로 캡되므로 그대로 넘겨도 안전하다. */
-  applyStatusTo(targets: Array<{ applyStun?: (ms: number) => void; applySlow?: (m: number, ms: number) => void }>, opts: { stunMs?: number; slowMult?: number; slowMs?: number }) {
+  applyStatusTo(targets: Array<{ applyStun?: (ms: number) => void; applySlow?: (m: number, ms: number) => void; x?: number; y?: number }>, opts: { stunMs?: number; slowMult?: number; slowMs?: number }) {
+    const sc = this.scene as Phaser.Scene & { pxFx?: { play?: (e: string, x: number, y: number, o?: object) => void } };
     for (const t of targets) {
       try {
         if (opts.stunMs && t.applyStun) t.applyStun(opts.stunMs);
         if (opts.slowMult !== undefined && opts.slowMs && t.applySlow) t.applySlow(opts.slowMult, opts.slowMs);
+        /* vc235 — pixelfx "debuff" 연결 (정의만 되고 호출 0이었다).
+         *  상태이상이 실제로 걸린 대상 위에만 재생한다(면역 개체는 위 catch 로 빠짐).
+         *  행렬 좌표가 없는 대상은 건너뛴다. */
+        if (typeof t.x === "number" && typeof t.y === "number") {
+          sc.pxFx?.play?.("debuff", t.x, t.y - 8, { scale: 0.5, depth: 22 });
+        }
       } catch { /* 제어 면역/미지원 개체 무시 */ }
     }
   }
@@ -7602,6 +7645,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.emitHud();
   }
 
+  /** vc235 — pixelfx 상태이상 연출. buff/debuff 이벤트가 정의만 되고
+   *  호출 0이었는데, 버프를 받는 순간이 가장 알기 쉬운 피드백 지점이다.
+   *  scene 은 WorldScene 이지만 pxFx 는 그쪽에만 있으므로 느슨하게 접근한다. */
+  private pxStatusFx(kind: "buff" | "debuff") {
+    const sc = this.scene as Phaser.Scene & { pxFx?: { play?: (e: string, x: number, y: number, o?: object) => void } };
+    try { sc.pxFx?.play?.(kind, this.x, this.y - 10, { scale: 0.65, depth: 24 }); } catch { /* 무시 */ }
+  }
+
   /** 버프 물약 사용 — 소지품 차감 + 활성 버프 갱신 */
   useBuffItem(key: BuffKey): boolean {
     const def = BUFF_DEFS[key];
@@ -7616,6 +7667,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     this.recalcSpeed(); // 신속 물약 반영
     this.scene.sfxPotion();
+    this.pxStatusFx("buff"); // vc235 — pixelfx buff 연출
     this.scene.spawnPickupText(this.x, this.y - 34, `${def.name}! ${def.desc}`, def.color);
     this.scene.emitHud();
     return true;
