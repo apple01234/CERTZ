@@ -1,343 +1,343 @@
 {
-  "npcbody_butler": {
-    "src": "/assets/npcportrait/npcbody_butler.png",
-    "source": "/assets/npcbody/npcbody_butler.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "5bb4696882af0628cd5668cf369d12a30041770cf4d452695dead0e82f542f9a"
-  },
-  "spum_butler": {
-    "src": "/assets/npcportrait/npcbody_butler.png",
-    "source": "/assets/npcbody/npcbody_butler.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "5bb4696882af0628cd5668cf369d12a30041770cf4d452695dead0e82f542f9a"
-  },
-  "npcbody_devil": {
-    "src": "/assets/npcportrait/npcbody_devil.png",
-    "source": "/assets/npcbody/npcbody_devil.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58"
-  },
-  "spum_skel": {
-    "src": "/assets/npcportrait/npcbody_devil.png",
-    "source": "/assets/npcbody/npcbody_devil.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58"
-  },
-  "spum_devil": {
-    "src": "/assets/npcportrait/npcbody_devil.png",
-    "source": "/assets/npcbody/npcbody_devil.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58"
-  },
-  "npcbody_elf": {
-    "src": "/assets/npcportrait/npcbody_elf.png",
-    "source": "/assets/npcbody/npcbody_elf.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "56943959bffb571b7a1af281b17dbcfd46f5ea487a30832a58a4f7fb57724877"
-  },
-  "spum_elf": {
-    "src": "/assets/npcportrait/npcbody_elf.png",
-    "source": "/assets/npcbody/npcbody_elf.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "56943959bffb571b7a1af281b17dbcfd46f5ea487a30832a58a4f7fb57724877"
-  },
-  "npcbody_fisher": {
-    "src": "/assets/npcportrait/npcbody_fisher.png",
-    "source": "/assets/npcbody/npcbody_fisher.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "1681a9d0a4db75ce83570259997f035bd67ca744ab728eca6586e6a13bcb3c7d"
-  },
-  "spum_fisher": {
-    "src": "/assets/npcportrait/npcbody_fisher.png",
-    "source": "/assets/npcbody/npcbody_fisher.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "1681a9d0a4db75ce83570259997f035bd67ca744ab728eca6586e6a13bcb3c7d"
-  },
-  "npcbody_knight": {
-    "src": "/assets/npcportrait/npcbody_knight.png",
-    "source": "/assets/npcbody/npcbody_knight.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "d2eb3d8c57f403814a3b8d8162d46e7d0fc16407815a58d0600a749a2649db56"
-  },
-  "spum_knight": {
-    "src": "/assets/npcportrait/npcbody_knight.png",
-    "source": "/assets/npcbody/npcbody_knight.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "d2eb3d8c57f403814a3b8d8162d46e7d0fc16407815a58d0600a749a2649db56"
-  },
-  "npcbody_mage": {
-    "src": "/assets/npcportrait/npcbody_mage.png",
-    "source": "/assets/npcbody/npcbody_mage.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "246b663e5555f379f15a346f63b91fa6198c67b0496fcf858ab88d159d121bb0"
-  },
-  "spum_mage": {
-    "src": "/assets/npcportrait/npcbody_mage.png",
-    "source": "/assets/npcbody/npcbody_mage.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "246b663e5555f379f15a346f63b91fa6198c67b0496fcf858ab88d159d121bb0"
-  },
-  "npcbody_merchant": {
-    "src": "/assets/npcportrait/npcbody_merchant.png",
-    "source": "/assets/npcbody/npcbody_merchant.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "9ce1eaeeb05c4c813185ce4fea14b11bb1a2a5abd3efa57fd7145e99eb6f3d29"
-  },
-  "npc_merchant": {
-    "src": "/assets/npcportrait/npcbody_merchant.png",
-    "source": "/assets/npcbody/npcbody_merchant.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "9ce1eaeeb05c4c813185ce4fea14b11bb1a2a5abd3efa57fd7145e99eb6f3d29"
-  },
-  "spum_merchant": {
-    "src": "/assets/npcportrait/npcbody_merchant.png",
-    "source": "/assets/npcbody/npcbody_merchant.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "9ce1eaeeb05c4c813185ce4fea14b11bb1a2a5abd3efa57fd7145e99eb6f3d29"
-  },
-  "npcbody_miner": {
-    "src": "/assets/npcportrait/npcbody_miner.png",
-    "source": "/assets/npcbody/npcbody_miner.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "cc1281cf7c2ecfa8907e4f042e81a81a2bf93f86d30722ee9cfc2d85846f7562"
-  },
-  "spum_miner": {
-    "src": "/assets/npcportrait/npcbody_miner.png",
-    "source": "/assets/npcbody/npcbody_miner.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "cc1281cf7c2ecfa8907e4f042e81a81a2bf93f86d30722ee9cfc2d85846f7562"
-  },
-  "npcbody_mystic": {
-    "src": "/assets/npcportrait/npcbody_mystic.png",
-    "source": "/assets/npcbody/npcbody_mystic.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "8515dd37a89e186b1902fce996facd5b850673a8db9226a1dbedad1741498596"
-  },
-  "spum_mystic": {
-    "src": "/assets/npcportrait/npcbody_mystic.png",
-    "source": "/assets/npcbody/npcbody_mystic.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "8515dd37a89e186b1902fce996facd5b850673a8db9226a1dbedad1741498596"
-  },
-  "npcbody_priest": {
-    "src": "/assets/npcportrait/npcbody_priest.png",
-    "source": "/assets/npcbody/npcbody_priest.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "dbb2f36e74c280b80bd30b73e302f5cc93d69b29cffd81376a7a9b15e6b663ca"
-  },
-  "npcbody_scout": {
-    "src": "/assets/npcportrait/npcbody_scout.png",
-    "source": "/assets/npcbody/npcbody_scout.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "2ed7d5e52a1d06f747660fa19894a5a2fe4232c861b8db5e0f20991ade19c373"
-  },
-  "spum_scout": {
-    "src": "/assets/npcportrait/npcbody_scout.png",
-    "source": "/assets/npcbody/npcbody_scout.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "2ed7d5e52a1d06f747660fa19894a5a2fe4232c861b8db5e0f20991ade19c373"
-  },
-  "npcbody_smith": {
-    "src": "/assets/npcportrait/npcbody_smith.png",
-    "source": "/assets/npcbody/npcbody_smith.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "ea49ddec0c7b8d9e665dab9342b807a5bdbb5cb9080b7ed500ae7220ace69c7e"
-  },
-  "spum_smith": {
-    "src": "/assets/npcportrait/npcbody_smith.png",
-    "source": "/assets/npcbody/npcbody_smith.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "ea49ddec0c7b8d9e665dab9342b807a5bdbb5cb9080b7ed500ae7220ace69c7e"
-  },
-  "npcbody_villager_f": {
-    "src": "/assets/npcportrait/npcbody_villager_f.png",
-    "source": "/assets/npcbody/npcbody_villager_f.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "61f96fd37e185a5c5784791207c663348c07e49c9755c66c6096229573f27ced"
-  },
-  "spum_villager_f": {
-    "src": "/assets/npcportrait/npcbody_villager_f.png",
-    "source": "/assets/npcbody/npcbody_villager_f.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "61f96fd37e185a5c5784791207c663348c07e49c9755c66c6096229573f27ced"
-  },
-  "npcbody_villager_m": {
-    "src": "/assets/npcportrait/npcbody_villager_m.png",
-    "source": "/assets/npcbody/npcbody_villager_m.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "570c331825c3ebdc9a2947e22ed94324fff6a2e304d6406ffa1eedd097b363d3"
-  },
-  "spum_villager_m": {
-    "src": "/assets/npcportrait/npcbody_villager_m.png",
-    "source": "/assets/npcbody/npcbody_villager_m.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "570c331825c3ebdc9a2947e22ed94324fff6a2e304d6406ffa1eedd097b363d3"
-  },
-  "spum_forager": {
-    "src": "/assets/npcportrait/npcbody_villager_m.png",
-    "source": "/assets/npcbody/npcbody_villager_m.png",
-    "crop": [
-      20,
-      12,
-      80,
-      72
-    ],
-    "sha256": "570c331825c3ebdc9a2947e22ed94324fff6a2e304d6406ffa1eedd097b363d3"
-  },
-  "npc_gm": {
-    "src": "/assets/npcportrait/npc_gm.png",
-    "source": "/assets/npc_gm.webp",
-    "crop": [
-      0,
-      16,
-      30,
-      46
-    ],
-    "sha256": "ca55660e397bc78647d3b2073e061594c5262ce448e74b550af3e41ecdd48e2b"
-  }
+ "npcbody_butler": {
+  "src": "/assets/npcportrait/npcbody_butler.png",
+  "source": "/assets/npcbody/npcbody_butler.png",
+  "crop": [
+   27,
+   22,
+   40,
+   40
+  ],
+  "sha256": "5bb4696882af0628cd5668cf369d12a30041770cf4d452695dead0e82f542f9a"
+ },
+ "spum_butler": {
+  "src": "/assets/npcportrait/npcbody_butler.png",
+  "source": "/assets/npcbody/npcbody_butler.png",
+  "crop": [
+   27,
+   22,
+   40,
+   40
+  ],
+  "sha256": "5bb4696882af0628cd5668cf369d12a30041770cf4d452695dead0e82f542f9a"
+ },
+ "npcbody_devil": {
+  "src": "/assets/npcportrait/npcbody_devil.png",
+  "source": "/assets/npcbody/npcbody_devil.png",
+  "crop": [
+   27,
+   13,
+   40,
+   40
+  ],
+  "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58"
+ },
+ "spum_skel": {
+  "src": "/assets/npcportrait/npcbody_devil.png",
+  "source": "/assets/npcbody/npcbody_devil.png",
+  "crop": [
+   27,
+   13,
+   40,
+   40
+  ],
+  "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58"
+ },
+ "spum_devil": {
+  "src": "/assets/npcportrait/npcbody_devil.png",
+  "source": "/assets/npcbody/npcbody_devil.png",
+  "crop": [
+   27,
+   13,
+   40,
+   40
+  ],
+  "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58"
+ },
+ "npcbody_elf": {
+  "src": "/assets/npcportrait/npcbody_elf.png",
+  "source": "/assets/npcbody/npcbody_elf.png",
+  "crop": [
+   27,
+   25,
+   40,
+   40
+  ],
+  "sha256": "56943959bffb571b7a1af281b17dbcfd46f5ea487a30832a58a4f7fb57724877"
+ },
+ "spum_elf": {
+  "src": "/assets/npcportrait/npcbody_elf.png",
+  "source": "/assets/npcbody/npcbody_elf.png",
+  "crop": [
+   27,
+   25,
+   40,
+   40
+  ],
+  "sha256": "56943959bffb571b7a1af281b17dbcfd46f5ea487a30832a58a4f7fb57724877"
+ },
+ "npcbody_fisher": {
+  "src": "/assets/npcportrait/npcbody_fisher.png",
+  "source": "/assets/npcbody/npcbody_fisher.png",
+  "crop": [
+   27,
+   22,
+   40,
+   40
+  ],
+  "sha256": "1681a9d0a4db75ce83570259997f035bd67ca744ab728eca6586e6a13bcb3c7d"
+ },
+ "spum_fisher": {
+  "src": "/assets/npcportrait/npcbody_fisher.png",
+  "source": "/assets/npcbody/npcbody_fisher.png",
+  "crop": [
+   27,
+   22,
+   40,
+   40
+  ],
+  "sha256": "1681a9d0a4db75ce83570259997f035bd67ca744ab728eca6586e6a13bcb3c7d"
+ },
+ "npcbody_knight": {
+  "src": "/assets/npcportrait/npcbody_knight.png",
+  "source": "/assets/npcbody/npcbody_knight.png",
+  "crop": [
+   27,
+   13,
+   40,
+   40
+  ],
+  "sha256": "d2eb3d8c57f403814a3b8d8162d46e7d0fc16407815a58d0600a749a2649db56"
+ },
+ "spum_knight": {
+  "src": "/assets/npcportrait/npcbody_knight.png",
+  "source": "/assets/npcbody/npcbody_knight.png",
+  "crop": [
+   27,
+   13,
+   40,
+   40
+  ],
+  "sha256": "d2eb3d8c57f403814a3b8d8162d46e7d0fc16407815a58d0600a749a2649db56"
+ },
+ "npcbody_mage": {
+  "src": "/assets/npcportrait/npcbody_mage.png",
+  "source": "/assets/npcbody/npcbody_mage.png",
+  "crop": [
+   27,
+   25,
+   40,
+   40
+  ],
+  "sha256": "246b663e5555f379f15a346f63b91fa6198c67b0496fcf858ab88d159d121bb0"
+ },
+ "spum_mage": {
+  "src": "/assets/npcportrait/npcbody_mage.png",
+  "source": "/assets/npcbody/npcbody_mage.png",
+  "crop": [
+   27,
+   25,
+   40,
+   40
+  ],
+  "sha256": "246b663e5555f379f15a346f63b91fa6198c67b0496fcf858ab88d159d121bb0"
+ },
+ "npcbody_merchant": {
+  "src": "/assets/npcportrait/npcbody_merchant.png",
+  "source": "/assets/npcbody/npcbody_merchant.png",
+  "crop": [
+   27,
+   25,
+   40,
+   40
+  ],
+  "sha256": "9ce1eaeeb05c4c813185ce4fea14b11bb1a2a5abd3efa57fd7145e99eb6f3d29"
+ },
+ "npc_merchant": {
+  "src": "/assets/npcportrait/npcbody_merchant.png",
+  "source": "/assets/npcbody/npcbody_merchant.png",
+  "crop": [
+   27,
+   25,
+   40,
+   40
+  ],
+  "sha256": "9ce1eaeeb05c4c813185ce4fea14b11bb1a2a5abd3efa57fd7145e99eb6f3d29"
+ },
+ "spum_merchant": {
+  "src": "/assets/npcportrait/npcbody_merchant.png",
+  "source": "/assets/npcbody/npcbody_merchant.png",
+  "crop": [
+   27,
+   25,
+   40,
+   40
+  ],
+  "sha256": "9ce1eaeeb05c4c813185ce4fea14b11bb1a2a5abd3efa57fd7145e99eb6f3d29"
+ },
+ "npcbody_miner": {
+  "src": "/assets/npcportrait/npcbody_miner.png",
+  "source": "/assets/npcbody/npcbody_miner.png",
+  "crop": [
+   27,
+   19,
+   40,
+   40
+  ],
+  "sha256": "cc1281cf7c2ecfa8907e4f042e81a81a2bf93f86d30722ee9cfc2d85846f7562"
+ },
+ "spum_miner": {
+  "src": "/assets/npcportrait/npcbody_miner.png",
+  "source": "/assets/npcbody/npcbody_miner.png",
+  "crop": [
+   27,
+   19,
+   40,
+   40
+  ],
+  "sha256": "cc1281cf7c2ecfa8907e4f042e81a81a2bf93f86d30722ee9cfc2d85846f7562"
+ },
+ "npcbody_mystic": {
+  "src": "/assets/npcportrait/npcbody_mystic.png",
+  "source": "/assets/npcbody/npcbody_mystic.png",
+  "crop": [
+   27,
+   19,
+   40,
+   40
+  ],
+  "sha256": "8515dd37a89e186b1902fce996facd5b850673a8db9226a1dbedad1741498596"
+ },
+ "spum_mystic": {
+  "src": "/assets/npcportrait/npcbody_mystic.png",
+  "source": "/assets/npcbody/npcbody_mystic.png",
+  "crop": [
+   27,
+   19,
+   40,
+   40
+  ],
+  "sha256": "8515dd37a89e186b1902fce996facd5b850673a8db9226a1dbedad1741498596"
+ },
+ "npcbody_priest": {
+  "src": "/assets/npcportrait/npcbody_priest.png",
+  "source": "/assets/npcbody/npcbody_priest.png",
+  "crop": [
+   27,
+   28,
+   40,
+   40
+  ],
+  "sha256": "dbb2f36e74c280b80bd30b73e302f5cc93d69b29cffd81376a7a9b15e6b663ca"
+ },
+ "npcbody_scout": {
+  "src": "/assets/npcportrait/npcbody_scout.png",
+  "source": "/assets/npcbody/npcbody_scout.png",
+  "crop": [
+   27,
+   19,
+   40,
+   40
+  ],
+  "sha256": "2ed7d5e52a1d06f747660fa19894a5a2fe4232c861b8db5e0f20991ade19c373"
+ },
+ "spum_scout": {
+  "src": "/assets/npcportrait/npcbody_scout.png",
+  "source": "/assets/npcbody/npcbody_scout.png",
+  "crop": [
+   27,
+   19,
+   40,
+   40
+  ],
+  "sha256": "2ed7d5e52a1d06f747660fa19894a5a2fe4232c861b8db5e0f20991ade19c373"
+ },
+ "npcbody_smith": {
+  "src": "/assets/npcportrait/npcbody_smith.png",
+  "source": "/assets/npcbody/npcbody_smith.png",
+  "crop": [
+   27,
+   16,
+   40,
+   40
+  ],
+  "sha256": "ea49ddec0c7b8d9e665dab9342b807a5bdbb5cb9080b7ed500ae7220ace69c7e"
+ },
+ "spum_smith": {
+  "src": "/assets/npcportrait/npcbody_smith.png",
+  "source": "/assets/npcbody/npcbody_smith.png",
+  "crop": [
+   27,
+   16,
+   40,
+   40
+  ],
+  "sha256": "ea49ddec0c7b8d9e665dab9342b807a5bdbb5cb9080b7ed500ae7220ace69c7e"
+ },
+ "npcbody_villager_f": {
+  "src": "/assets/npcportrait/npcbody_villager_f.png",
+  "source": "/assets/npcbody/npcbody_villager_f.png",
+  "crop": [
+   27,
+   22,
+   40,
+   40
+  ],
+  "sha256": "61f96fd37e185a5c5784791207c663348c07e49c9755c66c6096229573f27ced"
+ },
+ "spum_villager_f": {
+  "src": "/assets/npcportrait/npcbody_villager_f.png",
+  "source": "/assets/npcbody/npcbody_villager_f.png",
+  "crop": [
+   27,
+   22,
+   40,
+   40
+  ],
+  "sha256": "61f96fd37e185a5c5784791207c663348c07e49c9755c66c6096229573f27ced"
+ },
+ "npcbody_villager_m": {
+  "src": "/assets/npcportrait/npcbody_villager_m.png",
+  "source": "/assets/npcbody/npcbody_villager_m.png",
+  "crop": [
+   27,
+   22,
+   40,
+   40
+  ],
+  "sha256": "570c331825c3ebdc9a2947e22ed94324fff6a2e304d6406ffa1eedd097b363d3"
+ },
+ "spum_villager_m": {
+  "src": "/assets/npcportrait/npcbody_villager_m.png",
+  "source": "/assets/npcbody/npcbody_villager_m.png",
+  "crop": [
+   27,
+   22,
+   40,
+   40
+  ],
+  "sha256": "570c331825c3ebdc9a2947e22ed94324fff6a2e304d6406ffa1eedd097b363d3"
+ },
+ "spum_forager": {
+  "src": "/assets/npcportrait/npcbody_villager_m.png",
+  "source": "/assets/npcbody/npcbody_villager_m.png",
+  "crop": [
+   27,
+   22,
+   40,
+   40
+  ],
+  "sha256": "570c331825c3ebdc9a2947e22ed94324fff6a2e304d6406ffa1eedd097b363d3"
+ },
+ "npc_gm": {
+  "src": "/assets/npcportrait/npc_gm.png",
+  "source": "/assets/npc_gm.webp",
+  "crop": [
+   0,
+   14,
+   32,
+   40
+  ],
+  "sha256": "ca55660e397bc78647d3b2073e061594c5262ce448e74b550af3e41ecdd48e2b"
+ }
 }
