@@ -11519,545 +11519,574 @@ export class WorldScene extends Phaser.Scene {
 
   /** 액션에 배정된 키 객체 (키 매핑 v1.9) */
   private keyFor(a: GameAction): Phaser.Input.Keyboard.Key {
-    return this.keyObjs[this.keymap[a]] ?? this.keys[this.keymap[a]];
+    /* vc233 (#1 WASD 프리즈 재발 방지) — 종전에는 이 함수가 undefined 를 반환할 수
+     *  있었고, 호출부의 Phaser.Input.Keyboard.JustDown(undefined) 가 TypeError 를 던졌다.
+     *  Phaser 의 rAF 루프는 콜백 예외 시 requestAnimationFrame 재예약에 도달하지 못해
+     *  게임 전체가 영구 정지한다(복구 예산 소진 후 "멈춤"으로 보임).
+     *  키맵 키가 테이블에 없으면(오타·신규 액션) 정의된 첫 키로 폴백하고, 그마저
+     *  없으면 null 을 돌려 호출부가 건너뛰게 한다. */
+    const want = this.keymap[a];
+    const k = this.keyObjs[want] ?? this.keys[want];
+    if (k) return k;
+    /* 폴백: SPACE/W/E 등록분 중 하나라도 있으면 재사용 (프리즈보다는 오동작이 낫다) */
+    const fb = this.keys["SPACE"] ?? this.keys["E"] ?? this.keys["W"];
+    if (fb) {
+      try { console.warn(`[keymap] 알 수 없는 키 "${want}" (액션 ${a}) — 폴백 사용`); } catch { /* 무시 */ }
+      return fb;
+    }
+    return undefined as unknown as Phaser.Input.Keyboard.Key;
   }
 
   update(_time: number, delta: number) {
-    const dt = Math.min(delta, 50);
+    /* vc233 (#1) — update 전체를 try/catch 로 감싼다.
+     *  Phaser 의 rAF 루프는 Scene.step → update 예외 시 다음 프레임을 예약하지
+     *  못하고 영구 정지한다(RequestAnimationFrame.js: callback 실행 후 재예약).
+     *  즉 게임 로직 어디서든 예외 하나로 "게임 멈춤"이 재발할 수 있었다.
+     *  여기서 삼키고 프레임을 계속 돌린다 — 단, 같은 예외가 매 프레임 반복되면
+     *  콘솔이 폭주하므로 1초에 1회만 기록한다. */
+    try {
+        const dt = Math.min(delta, 50);
 
-    /* vc145 (#13) — 식인초 거리 판정 폴백: 물리 오버랩이 조건(스케일 트윈·스태틱바디 리프레시
-     *  타이밍 등)에서 놓치는 프레임을 거리 체크가 보완한다. 식물 6그루 × 거리식 = 프레임 비용 무시 수준. */
-    this.tickPlantHazards();
+      /* vc145 (#13) — 식인초 거리 판정 폴백: 물리 오버랩이 조건(스케일 트윈·스태틱바디 리프레시
+       *  타이밍 등)에서 놓치는 프레임을 거리 체크가 보완한다. 식물 6그루 × 거리식 = 프레임 비용 무시 수준. */
+      this.tickPlantHazards();
 
-    /* vc142 (#9) — Three.js 3D VFX 오버레이가 Phaser 카메라와 동기화 (유휴 시 no-op) */
-    if (this.vfx3dActive) Vfx3D.sync(this.cameras.main);
+      /* vc142 (#9) — Three.js 3D VFX 오버레이가 Phaser 카메라와 동기화 (유휴 시 no-op) */
+      if (this.vfx3dActive) Vfx3D.sync(this.cameras.main);
 
-    /* v5.0.1 — 카메라 수동 추적 (엔진 follow 폐지 — applyManualCameraFollow 주석 참조).
-     *  대화 중에도 갱신 — 내부에서 camCinema(팬 시네마틱)만 존중 */
-    this.applyManualCameraFollow(dt);
+      /* v5.0.1 — 카메라 수동 추적 (엔진 follow 폐지 — applyManualCameraFollow 주석 참조).
+       *  대화 중에도 갱신 — 내부에서 camCinema(팬 시네마틱)만 존중 */
+      this.applyManualCameraFollow(dt);
 
-    /* vc146 (#5) — 2.5D 카메라: y-depth 정렬 + 심도 안개 유지 (80ms 스로틀) */
-    this.tickPersp(dt);
+      /* vc146 (#5) — 2.5D 카메라: y-depth 정렬 + 심도 안개 유지 (80ms 스로틀) */
+      this.tickPersp(dt);
 
-    /* vc232 (#5 "영프 스토리에서도 몬스터 겹침") — 적끼리 밀어내기.
-     *  원인: 이 게임은 적 이동을 물리 바디가 아니라 직접 좌표로 처리해서
-     *  collide() 도, 분리 로직도 없었다 → 적이 한 점에 겹쳐 한 덩어리로 보였다.
-     *  해결: 위치 기반 O(n²) 분리를 20ms 스로틀로 돌린다. 적 수가 많은 구역에서도
-     *  프레임당 1회·최대 24쌍만 검사하도록 상한을 둬 비용을 예측 가능하게 만든다. */
-    this.tickEnemySeparation(dt);
+      /* vc232 (#5 "영프 스토리에서도 몬스터 겹침") — 적끼리 밀어내기.
+       *  원인: 이 게임은 적 이동을 물리 바디가 아니라 직접 좌표로 처리해서
+       *  collide() 도, 분리 로직도 없었다 → 적이 한 점에 겹쳐 한 덩어리로 보였다.
+       *  해결: 위치 기반 O(n²) 분리를 20ms 스로틀로 돌린다. 적 수가 많은 구역에서도
+       *  프레임당 1회·최대 24쌍만 검사하도록 상한을 둬 비용을 예측 가능하게 만든다. */
+      this.tickEnemySeparation(dt);
 
-    /* v1.4.0 (Task 3-2) — 이스터에그 600ms 틱 — v1.4.11 제거 (eggs.ts 삭제와 세트) */
+      /* v1.4.0 (Task 3-2) — 이스터에그 600ms 틱 — v1.4.11 제거 (eggs.ts 삭제와 세트) */
 
-    /* v1.1.1 (#5 무지개 오라) — 이름=외양: 무지개는 전 색상 순환, 오로라는 초록↔보라,
-     *  은하수는 파랑↔보라 맥동. 오라+본체 오버레이 틴트가 함께 흐른다.
-     *  대사/입력 중 조기 리턴 앞에서 갱신 — 대화 중에도 오라가 살아 있게 (순수 치장 연출) */
-    const auraKey = this.player?.cosmetic ?? null;
-    const auraCfg = auraKey ? AURA_ANIM[auraKey] : undefined;
+      /* v1.1.1 (#5 무지개 오라) — 이름=외양: 무지개는 전 색상 순환, 오로라는 초록↔보라,
+       *  은하수는 파랑↔보라 맥동. 오라+본체 오버레이 틴트가 함께 흐른다.
+       *  대사/입력 중 조기 리턴 앞에서 갱신 — 대화 중에도 오라가 살아 있게 (순수 치장 연출) */
+      const auraKey = this.player?.cosmetic ?? null;
+      const auraCfg = auraKey ? AURA_ANIM[auraKey] : undefined;
 
-    /* v1.4.10 — 저HP 경고 힌트 (부연 설명 강화): HP 30% 이하 최초 1회 — 물약 사용법 즉시 안내 */
-    if (this.player?.hp > 0 && this.player.maxHp > 0 && this.player.hp <= this.player.maxHp * 0.3) {
-      this.hintOnce(
-        "lowhp",
-        "HP가 위험하다! 공격 버튼 옆 빨간 물약 버튼(PC는 D 키)으로 회복하자 — 물약이 없으면 상점에서 사자!"
-      );
-    }
+      /* v1.4.10 — 저HP 경고 힌트 (부연 설명 강화): HP 30% 이하 최초 1회 — 물약 사용법 즉시 안내 */
+      if (this.player?.hp > 0 && this.player.maxHp > 0 && this.player.hp <= this.player.maxHp * 0.3) {
+        this.hintOnce(
+          "lowhp",
+          "HP가 위험하다! 공격 버튼 옆 빨간 물약 버튼(PC는 D 키)으로 회복하자 — 물약이 없으면 상점에서 사자!"
+        );
+      }
 
-    /* v1.4.11 — 사쿠라 코스튬 착용자 전용 벚꽃 파티클 (CherryPetal 팩 — 순수 치장 연출).
-     *  v1.0.13의 "벚꽃 전면 제거"는 전역 날씨/축하 연출 대상 — 착용자 한정 반복 소량은 의도 유지. */
-    this.sakuraPetalAcc += dt;
-    if (this.player?.outfit === "outfit_sakura" && this.sakuraPetalAcc > 420) {
-      this.sakuraPetalAcc = 0;
-      this.driveFx?.petal(
-        this.player.x + Phaser.Math.Between(-130, 130),
-        this.player.y - Phaser.Math.Between(70, 110),
-        30
-      );
-    }
-    if (auraCfg && (this.cosmeticAura || this.cosmeticOverlay)) {
-      this.auraPhase = (this.auraPhase + auraCfg.sp * (dt / 1000)) % 1;
-      /* v1.4.3 (작업3 최적화) — 매 프레임 HSLToColor 대신 64단계 LUT 조회 (GC 할당 0) */
-      const lut = AURA_LUT[auraKey as string];
-      const idx = Math.min(AURA_LUT_STEPS - 1, Math.max(0, Math.floor(this.auraPhase * AURA_LUT_STEPS * 0.999))) ;
-      const col = lut ? lut[idx] : 0xffffff;
-      this.cosmeticAura?.setTint(col);
-      this.cosmeticOverlay?.setTint(col);
-    }
+      /* v1.4.11 — 사쿠라 코스튬 착용자 전용 벚꽃 파티클 (CherryPetal 팩 — 순수 치장 연출).
+       *  v1.0.13의 "벚꽃 전면 제거"는 전역 날씨/축하 연출 대상 — 착용자 한정 반복 소량은 의도 유지. */
+      this.sakuraPetalAcc += dt;
+      if (this.player?.outfit === "outfit_sakura" && this.sakuraPetalAcc > 420) {
+        this.sakuraPetalAcc = 0;
+        this.driveFx?.petal(
+          this.player.x + Phaser.Math.Between(-130, 130),
+          this.player.y - Phaser.Math.Between(70, 110),
+          30
+        );
+      }
+      if (auraCfg && (this.cosmeticAura || this.cosmeticOverlay)) {
+        this.auraPhase = (this.auraPhase + auraCfg.sp * (dt / 1000)) % 1;
+        /* v1.4.3 (작업3 최적화) — 매 프레임 HSLToColor 대신 64단계 LUT 조회 (GC 할당 0) */
+        const lut = AURA_LUT[auraKey as string];
+        const idx = Math.min(AURA_LUT_STEPS - 1, Math.max(0, Math.floor(this.auraPhase * AURA_LUT_STEPS * 0.999))) ;
+        const col = lut ? lut[idx] : 0xffffff;
+        this.cosmeticAura?.setTint(col);
+        this.cosmeticOverlay?.setTint(col);
+      }
 
-    /* v4.1.5 — 동적 조명: 플레이어 횃불 광원 추적 + 플리커 */
-    if (this.lighting) this.lighting.update(this.player.x, this.player.y, dt);
-    if (this.bossLight?.scene && this.boss?.active) {
-      this.bossLight.setPosition(this.boss.x, this.boss.y - 6);
-    }
+      /* v4.1.5 — 동적 조명: 플레이어 횃불 광원 추적 + 플리커 */
+      if (this.lighting) this.lighting.update(this.player.x, this.player.y, dt);
+      if (this.bossLight?.scene && this.boss?.active) {
+        this.bossLight.setPosition(this.boss.x, this.boss.y - 6);
+      }
 
-    /* v4.1.0 — 적응형 품질/포탈 가이드/긴급귀환 쿨다운 */
-    /* vc181 (지시 #2) — 슬로우모션 워치독: 예외·씬전환·백그라운드 복귀로 복원 콜백이
-     *  유실되면 timeScale 0.28이 영구 고정되어 게임이 3.5배 느려진다(체감 "멈춤").
-     *  기준 시각을 넘기면 무조건 원복한다. */
-    if (this.slowmoUntil > 0 && Date.now() > this.slowmoUntil) {
-      this.time.timeScale = 1;
-      this.tweens.timeScale = 1;
-      this.slowmoUntil = 0;
-    }
-    this.tickFxQuality(dt);
-    /* vc178 (지시 #2) — 기능 개방 튜토리얼 큐 처리 (전투/대사 중엔 자동 연기) */
-    this.tickFeatureTutorial();
-    this.tickBossShare(this.time.now); // vc143 (#4) — 공유 보스 릴레이·브로드캐스트·호스트 재선출
-    this.updatePortalGuides();
-    this.escapeCd = Math.max(0, this.escapeCd - dt);
-    /* v1.4.3 (작업4) — 파티 보드: 파티 순찰 시간 (1분마다 +1, 파티 중일 때만) */
-    this.partyTimeAcc += dt;
-    if (this.partyTimeAcc >= 60000) {
-      this.partyTimeAcc = 0;
-      const p = net.netLastParty();
-      if (p && p.members.length >= 2) partyContent.partyBoardTick("time", 1);
-    }
+      /* v4.1.0 — 적응형 품질/포탈 가이드/긴급귀환 쿨다운 */
+      /* vc181 (지시 #2) — 슬로우모션 워치독: 예외·씬전환·백그라운드 복귀로 복원 콜백이
+       *  유실되면 timeScale 0.28이 영구 고정되어 게임이 3.5배 느려진다(체감 "멈춤").
+       *  기준 시각을 넘기면 무조건 원복한다. */
+      if (this.slowmoUntil > 0 && Date.now() > this.slowmoUntil) {
+        this.time.timeScale = 1;
+        this.tweens.timeScale = 1;
+        this.slowmoUntil = 0;
+      }
+      this.tickFxQuality(dt);
+      /* vc178 (지시 #2) — 기능 개방 튜토리얼 큐 처리 (전투/대사 중엔 자동 연기) */
+      this.tickFeatureTutorial();
+      this.tickBossShare(this.time.now); // vc143 (#4) — 공유 보스 릴레이·브로드캐스트·호스트 재선출
+      this.updatePortalGuides();
+      this.escapeCd = Math.max(0, this.escapeCd - dt);
+      /* v1.4.3 (작업4) — 파티 보드: 파티 순찰 시간 (1분마다 +1, 파티 중일 때만) */
+      this.partyTimeAcc += dt;
+      if (this.partyTimeAcc >= 60000) {
+        this.partyTimeAcc = 0;
+        const p = net.netLastParty();
+        if (p && p.members.length >= 2) partyContent.partyBoardTick("time", 1);
+      }
 
-    /* v3.2.0 (#흑화) — 카메라 자가치유 (v3.3.0: 상시화 — 6초 한정 제거):
-     *  페이드 이펙트가 실행 중이 아닌데 알파가 1 미만으로 남아있으면(WebView에서
-     *  fadeOut 완료 콜백 유실 등) 매 프레임 강제로 밝힌다. 사망 페이드아웃은 fadeEffect가
-     *  실행 중이라 미간섭 — 죽은 뒤 어두운 화면도 정상 유지된다. */
-    {
-      const cam = this.cameras.main as unknown as {
-        fadeEffect?: { isRunning: boolean; progress: number; direction: boolean };
-        alpha: number; setAlpha(a: number): void; resetFX?(): void;
-      };
-      if (!cam.fadeEffect?.isRunning && cam.alpha < 1) cam.setAlpha(1);
-      /* v4.1.2 — 페이드 스타크 자가치유: Phaser 3.60+ 페이드는 postFX 방식(카메라 alpha 불변)이라
-       *  완료된 fadeOut이 검은 화면으로 남아도 위 알파 치유가 못 본다. 전환·사망·취침·대사가
-       *  아닌데 어둡게 머물면(실행 중 3.5초+ 또는 완료된 fadeOut 1.2초+) resetFX로 강제 복구 —
-       *  "검은 화면이 화면을 가리고 멈춤"의 마지막 방어선. */
-      const fx = cam.fadeEffect;
-      const protectedDark = this.transitioning || this.player?.state === "dead" || this.sleeping || this.dialoguing;
-      if (fx && !protectedDark) {
-        const stuckCompleted = fx.direction === true && fx.progress >= 0.99 && !fx.isRunning;
-        if (fx.isRunning || stuckCompleted) {
-          this.fadeDarkMs += dt;
-          if (this.fadeDarkMs > (stuckCompleted ? 1200 : 3500)) {
-            try { cam.resetFX?.(); } catch { /* 미지원 환경 무시 */ }
-            cam.setAlpha(1);
+      /* v3.2.0 (#흑화) — 카메라 자가치유 (v3.3.0: 상시화 — 6초 한정 제거):
+       *  페이드 이펙트가 실행 중이 아닌데 알파가 1 미만으로 남아있으면(WebView에서
+       *  fadeOut 완료 콜백 유실 등) 매 프레임 강제로 밝힌다. 사망 페이드아웃은 fadeEffect가
+       *  실행 중이라 미간섭 — 죽은 뒤 어두운 화면도 정상 유지된다. */
+      {
+        const cam = this.cameras.main as unknown as {
+          fadeEffect?: { isRunning: boolean; progress: number; direction: boolean };
+          alpha: number; setAlpha(a: number): void; resetFX?(): void;
+        };
+        if (!cam.fadeEffect?.isRunning && cam.alpha < 1) cam.setAlpha(1);
+        /* v4.1.2 — 페이드 스타크 자가치유: Phaser 3.60+ 페이드는 postFX 방식(카메라 alpha 불변)이라
+         *  완료된 fadeOut이 검은 화면으로 남아도 위 알파 치유가 못 본다. 전환·사망·취침·대사가
+         *  아닌데 어둡게 머물면(실행 중 3.5초+ 또는 완료된 fadeOut 1.2초+) resetFX로 강제 복구 —
+         *  "검은 화면이 화면을 가리고 멈춤"의 마지막 방어선. */
+        const fx = cam.fadeEffect;
+        const protectedDark = this.transitioning || this.player?.state === "dead" || this.sleeping || this.dialoguing;
+        if (fx && !protectedDark) {
+          const stuckCompleted = fx.direction === true && fx.progress >= 0.99 && !fx.isRunning;
+          if (fx.isRunning || stuckCompleted) {
+            this.fadeDarkMs += dt;
+            if (this.fadeDarkMs > (stuckCompleted ? 1200 : 3500)) {
+              try { cam.resetFX?.(); } catch { /* 미지원 환경 무시 */ }
+              cam.setAlpha(1);
+              this.fadeDarkMs = 0;
+            }
+          } else {
             this.fadeDarkMs = 0;
           }
-        } else {
+        } else if (!fx) {
           this.fadeDarkMs = 0;
         }
-      } else if (!fx) {
-        this.fadeDarkMs = 0;
       }
-    }
-    /* v3.3.0 (#흑화) — 물리 월드 자가치유: 대사/취침/사망도 아닌데 정지돼 있으면
-     *  (보스 시네마틱 도중 예외, 복구 경로 실패 등) 즉시 복원해 조작 불능을 막는다.
-     *  v1.0.16 — **히트스톱을 존중한다.** 종전엔 이 블록이 isPaused만 보고 즉시 resume해
-     *  v1.2.0의 히트스톱(일반 26ms·크리 55ms·격파 70ms)을 다음 프레임(≈16ms)에 잘라버렸다.
-     *  히트스톱이 끝나면(hitStopUntil 경과) 이 블록이 정상 복원하므로 자가치유 기능은 유지된다. */
-    if (
-      this.physics.world.isPaused && this.time.now >= this.hitStopUntil &&
-      !this.dialoguing && !this.sleeping &&
-      this.player && this.player.state !== "dead"
-    ) {
-      this.physics.world.resume();
-    }
-    /* v3.3.0 (지시 #6) — 무릉도장 타이머/기록 UI 진행 */
-    if (this.dojangActive) this.tickDojang(dt);
-    /* v4.0.0 — 바르가 수비전 웨이브 / 균열 던전 진행 */
-    if (this.gateActive) this.tickGate(dt);
-    if (this.closetActive) this.tickCloset(dt);
-    if (this.parkActive) this.tickPark(dt); // v1.0.18 — 몬스터 파크
-    /* v1.0.8 — ⑦ 황금 몬스터 러시: 일반 필드 구역에서만 랜덤 스폰 (평균 60~100초) */
-    this.tickGolden(dt);
-    /* vc150 (#26번항목21) — 좀비 몬스터 청소 (2초 주기): 사망 처리됐는데 스프라이트가
-     *  파괴되지 못하고 맵에 남는 케이스(사망 delayedCall 취소/예외 등 엣지)를 강제 수거 */
-    if (this.time.now - this.zombieSweepAt > 2000) {
-      this.zombieSweepAt = this.time.now;
-      let swept = false;
-      for (const e of this.enemies) {
-        if (!e.alive && e.active) { e.destroyAll(); swept = true; }
-      }
-      if (swept) this.enemies = this.enemies.filter((e) => e.alive);
-      if (this.goldenRef && !this.goldenRef.alive) this.goldenRef = null;
-      if (this.fieldEliteRef && !this.fieldEliteRef.alive) this.fieldEliteRef = null;
-    }
-
-    // 원격 플레이어 보간 — 대화/채팅/사망과 무관하게 항상 갱신 (v1.7 멀티플레이)
-    // v1.4.3 (작업3 최적화) — 화면 밖 원격(1700px+)은 보간만 하고 애니/이름표/오라 갱신 생략
-    const lerpK = Math.min(1, (dt / 1000) * 9);
-    for (const r of this.remotes.values()) {
-      r.sp.x += (r.tx - r.sp.x) * lerpK;
-      r.sp.y += (r.ty - r.sp.y) * lerpK;
-      if (this.player && Phaser.Math.Distance.Between(r.sp.x, r.sp.y, this.player.x, this.player.y) > 1700) continue;
-      r.sp.setFlipX(r.flip);
-      r.tag.setPosition(r.sp.x, r.sp.y - 52);
-      r.aura?.setPosition(r.sp.x, r.sp.y + 6); // v1.0.16 — GM 황금 오라 추적
-      const want = r.moving ? "hero-walk-side" : "hero-idle";
-      if (r.sp.anims.currentAnim?.key !== want) r.sp.play(want);
-    }
-
-    // 플레이어 투사체 진행/판정 — 대화/채팅 중에도 날아가는 것은 계속 (v1.8)
-    this.tickPlayerProjs(dt);
-    // v3.0.3 — 몬스터 투사체/장판/오비트 칼날 + 무기 비주얼 (사망/대화 중에도 진행)
-    this.tickEnemyProjs(dt);
-    this.tickFields(dt);
-    this.tickOrbitBlades(dt);
-    if (this.player && this.player.state !== "dead") this.syncWeaponSprite();
-    /* v1.4.41 (#9) — 5차 각성 발광. 외형은 색조만 바뀌어도 되지만 5차는 빛나야 한다.
-     *  vc204 (#15) — 직업별 고유 오라·베리어(cls 전달). 저사양은 헤일로 생략(lite). */
-    if (this.player) {
-      if (!this.fifthAura) this.fifthAura = new FifthAuraRig(this, { lite: isLowPerfEnv() });
-      this.fifthAura.update(
-        this.player.x,
-        this.player.y,
-        this.player.isFifth && this.player.state !== "dead",
-        this.player.clsHexPublic,
-        this.player.flipX,
-        this.player.cls,
-      );
-    }
-    else if (this.weaponImg) { this.weaponImg.setVisible(false); }
-
-    /* v1.0.4 — 어떤 DOM 입력(로그인/수량/이름 등)이든 포커스 중이면 게임 키 전면 차단.
-     *  비게이트 인풋(비밀번호 등)에서 단축키가 발동하던 문제의 공용 방어선 —
-     *  입력 중엔 매 프레임 입력 상태를 리셋해 keyup 유실 고착도 동시 청소 */
-    const ae = document.activeElement as HTMLElement | null;
-    const typing = !!ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable);
-    if (typing) this.resetInputState();
-    if (this.chatFocused || this.dialoguing || typing || !this.player) return;
-    if (this.player.state === "dead") return;
-
-    this.wellCd = Math.max(0, this.wellCd - dt);
-    this.restCd = Math.max(0, this.restCd - dt);
-
-    // 마을 우물 샘물 — 근접 시 풀회복 (HP/MP가 꽉 차 있으면 미발동, 8초 쿨다운)
-    if (this.wellPos && this.stageDef.isVillage && this.wellCd <= 0) {
-      const nearWell = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.wellPos.x, this.wellPos.y) < 86;
-      if (nearWell && (this.player.hp < this.player.maxHp || this.player.mp < this.player.maxMp)) {
-        this.wellCd = 8000;
-        this.player.healFull();
-        this.sfxPotion();
-        this.spawnPickupText(this.player.x, this.player.y - 34, "샘물로 완전히 회복!", "#7dffa8");
-        this.spawnBurstAt(this.player.x, this.player.y, 8, 0x7de8ff);
-      }
-    }
-
-    // 키보드 이동 (v2.0 — 지시 #16: 같은 축 방향키 동시 입력 시 마지막으로 누른 키 우선)
-    const mv = this.resolveDirVec();
-    if (mv.lengthSq() > 0) mv.normalize();
-
-    // 터치 우선
-    const useTouch = this.touchMove.lengthSq() > 0.01;
-    // v2.5 — 자동사냥 (펫 보유 시): 가장 가까운 적 추적·공격 — 조이스틱/키보드 입력 시 수동 우선
-    this.tickAutoHunt();
-    /* v1.1.9 (#개편 A48) — 채집 노드 리스폰/근접 판정 */
-    this.tickGatherNodes(this.time.now);
-    /* v1.4.12 (#15 유저 지시 "자동전투시 식인초를 피해서 가게 해줘") — 식인초 회피 후처리 */
-    this.autoPlantAvoid();
-    // v3.0.14 — 끼임 탈출: 이동 명령 중 제자리면 측면 탈출로 autoHuntMove 덮어씀
-    this.tickAutoUnstuck(dt);
-    let move = useTouch ? this.touchMove : mv;
-    /* vc143 (#8 PC 자동전투 이동) — 자동전투 중에도 화살표 키를 누르면 수동 이동 우선.
-     *  기존엔 자동전투가 키보드 입력을 완전히 덮어써 PC에서 자동 켜놓으면 꼼짝 못 했다.
-     *  키를 떼면 자동 이동이 자연 복귀된다 — 토글 재시작 불필요 */
-    if (this.autoHunt && !useTouch && mv.lengthSq() === 0) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
-
-    /* v1.1.8 (#개편 A46) — 낚시가 진행 중이면 공격 키는 "멈추기"로 소비된다.
-     *  낚시 중 공격/스킬이 발동되면 캐릭터가 튀어나가 손맛이 깨지므로 최우선 처리. */
-    if (this.fishingActive) {
-      this.tickFishing(dt);
+      /* v3.3.0 (#흑화) — 물리 월드 자가치유: 대사/취침/사망도 아닌데 정지돼 있으면
+       *  (보스 시네마틱 도중 예외, 복구 경로 실패 등) 즉시 복원해 조작 불능을 막는다.
+       *  v1.0.16 — **히트스톱을 존중한다.** 종전엔 이 블록이 isPaused만 보고 즉시 resume해
+       *  v1.2.0의 히트스톱(일반 26ms·크리 55ms·격파 70ms)을 다음 프레임(≈16ms)에 잘라버렸다.
+       *  히트스톱이 끝나면(hitStopUntil 경과) 이 블록이 정상 복원하므로 자가치유 기능은 유지된다. */
       if (
-        Phaser.Input.Keyboard.JustDown(this.keys.SPACE) ||
-        Phaser.Input.Keyboard.JustDown(this.keyFor("attack"))
+        this.physics.world.isPaused && this.time.now >= this.hitStopUntil &&
+        !this.dialoguing && !this.sleeping &&
+        this.player && this.player.state !== "dead"
       ) {
-        this.resolveFishing();
+        this.physics.world.resume();
+      }
+      /* v3.3.0 (지시 #6) — 무릉도장 타이머/기록 UI 진행 */
+      if (this.dojangActive) this.tickDojang(dt);
+      /* v4.0.0 — 바르가 수비전 웨이브 / 균열 던전 진행 */
+      if (this.gateActive) this.tickGate(dt);
+      if (this.closetActive) this.tickCloset(dt);
+      if (this.parkActive) this.tickPark(dt); // v1.0.18 — 몬스터 파크
+      /* v1.0.8 — ⑦ 황금 몬스터 러시: 일반 필드 구역에서만 랜덤 스폰 (평균 60~100초) */
+      this.tickGolden(dt);
+      /* vc150 (#26번항목21) — 좀비 몬스터 청소 (2초 주기): 사망 처리됐는데 스프라이트가
+       *  파괴되지 못하고 맵에 남는 케이스(사망 delayedCall 취소/예외 등 엣지)를 강제 수거 */
+      if (this.time.now - this.zombieSweepAt > 2000) {
+        this.zombieSweepAt = this.time.now;
+        let swept = false;
+        for (const e of this.enemies) {
+          if (!e.alive && e.active) { e.destroyAll(); swept = true; }
+        }
+        if (swept) this.enemies = this.enemies.filter((e) => e.alive);
+        if (this.goldenRef && !this.goldenRef.alive) this.goldenRef = null;
+        if (this.fieldEliteRef && !this.fieldEliteRef.alive) this.fieldEliteRef = null;
+      }
+
+      // 원격 플레이어 보간 — 대화/채팅/사망과 무관하게 항상 갱신 (v1.7 멀티플레이)
+      // v1.4.3 (작업3 최적화) — 화면 밖 원격(1700px+)은 보간만 하고 애니/이름표/오라 갱신 생략
+      const lerpK = Math.min(1, (dt / 1000) * 9);
+      for (const r of this.remotes.values()) {
+        r.sp.x += (r.tx - r.sp.x) * lerpK;
+        r.sp.y += (r.ty - r.sp.y) * lerpK;
+        if (this.player && Phaser.Math.Distance.Between(r.sp.x, r.sp.y, this.player.x, this.player.y) > 1700) continue;
+        r.sp.setFlipX(r.flip);
+        r.tag.setPosition(r.sp.x, r.sp.y - 52);
+        r.aura?.setPosition(r.sp.x, r.sp.y + 6); // v1.0.16 — GM 황금 오라 추적
+        const want = r.moving ? "hero-walk-side" : "hero-idle";
+        if (r.sp.anims.currentAnim?.key !== want) r.sp.play(want);
+      }
+
+      // 플레이어 투사체 진행/판정 — 대화/채팅 중에도 날아가는 것은 계속 (v1.8)
+      this.tickPlayerProjs(dt);
+      // v3.0.3 — 몬스터 투사체/장판/오비트 칼날 + 무기 비주얼 (사망/대화 중에도 진행)
+      this.tickEnemyProjs(dt);
+      this.tickFields(dt);
+      this.tickOrbitBlades(dt);
+      if (this.player && this.player.state !== "dead") this.syncWeaponSprite();
+      /* v1.4.41 (#9) — 5차 각성 발광. 외형은 색조만 바뀌어도 되지만 5차는 빛나야 한다.
+       *  vc204 (#15) — 직업별 고유 오라·베리어(cls 전달). 저사양은 헤일로 생략(lite). */
+      if (this.player) {
+        if (!this.fifthAura) this.fifthAura = new FifthAuraRig(this, { lite: isLowPerfEnv() });
+        this.fifthAura.update(
+          this.player.x,
+          this.player.y,
+          this.player.isFifth && this.player.state !== "dead",
+          this.player.clsHexPublic,
+          this.player.flipX,
+          this.player.cls,
+        );
+      }
+      else if (this.weaponImg) { this.weaponImg.setVisible(false); }
+
+      /* v1.0.4 — 어떤 DOM 입력(로그인/수량/이름 등)이든 포커스 중이면 게임 키 전면 차단.
+       *  비게이트 인풋(비밀번호 등)에서 단축키가 발동하던 문제의 공용 방어선 —
+       *  입력 중엔 매 프레임 입력 상태를 리셋해 keyup 유실 고착도 동시 청소 */
+      const ae = document.activeElement as HTMLElement | null;
+      const typing = !!ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable);
+      if (typing) this.resetInputState();
+      if (this.chatFocused || this.dialoguing || typing || !this.player) return;
+      if (this.player.state === "dead") return;
+
+      this.wellCd = Math.max(0, this.wellCd - dt);
+      this.restCd = Math.max(0, this.restCd - dt);
+
+      // 마을 우물 샘물 — 근접 시 풀회복 (HP/MP가 꽉 차 있으면 미발동, 8초 쿨다운)
+      if (this.wellPos && this.stageDef.isVillage && this.wellCd <= 0) {
+        const nearWell = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.wellPos.x, this.wellPos.y) < 86;
+        if (nearWell && (this.player.hp < this.player.maxHp || this.player.mp < this.player.maxMp)) {
+          this.wellCd = 8000;
+          this.player.healFull();
+          this.sfxPotion();
+          this.spawnPickupText(this.player.x, this.player.y - 34, "샘물로 완전히 회복!", "#7dffa8");
+          this.spawnBurstAt(this.player.x, this.player.y, 8, 0x7de8ff);
+        }
+      }
+
+      // 키보드 이동 (v2.0 — 지시 #16: 같은 축 방향키 동시 입력 시 마지막으로 누른 키 우선)
+      const mv = this.resolveDirVec();
+      if (mv.lengthSq() > 0) mv.normalize();
+
+      // 터치 우선
+      const useTouch = this.touchMove.lengthSq() > 0.01;
+      // v2.5 — 자동사냥 (펫 보유 시): 가장 가까운 적 추적·공격 — 조이스틱/키보드 입력 시 수동 우선
+      this.tickAutoHunt();
+      /* v1.1.9 (#개편 A48) — 채집 노드 리스폰/근접 판정 */
+      this.tickGatherNodes(this.time.now);
+      /* v1.4.12 (#15 유저 지시 "자동전투시 식인초를 피해서 가게 해줘") — 식인초 회피 후처리 */
+      this.autoPlantAvoid();
+      // v3.0.14 — 끼임 탈출: 이동 명령 중 제자리면 측면 탈출로 autoHuntMove 덮어씀
+      this.tickAutoUnstuck(dt);
+      let move = useTouch ? this.touchMove : mv;
+      /* vc143 (#8 PC 자동전투 이동) — 자동전투 중에도 화살표 키를 누르면 수동 이동 우선.
+       *  기존엔 자동전투가 키보드 입력을 완전히 덮어써 PC에서 자동 켜놓으면 꼼짝 못 했다.
+       *  키를 떼면 자동 이동이 자연 복귀된다 — 토글 재시작 불필요 */
+      if (this.autoHunt && !useTouch && mv.lengthSq() === 0) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
+
+      /* v1.1.8 (#개편 A46) — 낚시가 진행 중이면 공격 키는 "멈추기"로 소비된다.
+       *  낚시 중 공격/스킬이 발동되면 캐릭터가 튀어나가 손맛이 깨지므로 최우선 처리. */
+      if (this.fishingActive) {
+        this.tickFishing(dt);
+        if (
+          Phaser.Input.Keyboard.JustDown(this.keys.SPACE) ||
+          Phaser.Input.Keyboard.JustDown(this.keyFor("attack"))
+        ) {
+          this.resolveFishing();
+          return;
+        }
+        // 낚시 중에는 다른 입력을 막는다(이동은 허용하지 않음 — 자리 고정)
+        this.player.setVelocity(0, 0);
         return;
       }
-      // 낚시 중에는 다른 입력을 막는다(이동은 허용하지 않음 — 자리 고정)
-      this.player.setVelocity(0, 0);
-      return;
-    }
 
-    // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
-    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
-      this.attackQueued = true;
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
-    /* v3.0.3 — 3차기(V) / 4차기(A): 해금 티어 미달/쿨/MP 무시하고 호출하면 내부에서 무시된다 (v1.0.4 키맵 B→A) */
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill3"))) this.player.useSkill3();
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill4"))) this.player.useSkill4();
-    /* v3.2.0 — 5차 궁극기(S): Lv.200 해금, 쿨타임 60초 (v1.0.4 키맵 N→S) */
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5"))) this.player.useSkill5();
-    /* vc146 (#2) — 제2궁극기(Q 기본·재배치 가능): 쿨타임 120초 */
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5b"))) this.player.useSkill5b();
+      // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
+      if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
+        this.attackQueued = true;
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
+      /* v3.0.3 — 3차기(V) / 4차기(A): 해금 티어 미달/쿨/MP 무시하고 호출하면 내부에서 무시된다 (v1.0.4 키맵 B→A) */
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill3"))) this.player.useSkill3();
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill4"))) this.player.useSkill4();
+      /* v3.2.0 — 5차 궁극기(S): Lv.200 해금, 쿨타임 60초 (v1.0.4 키맵 N→S) */
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5"))) this.player.useSkill5();
+      /* vc146 (#2) — 제2궁극기(Q 기본·재배치 가능): 쿨타임 120초 */
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5b"))) this.player.useSkill5b();
 
-    /* v1.0.15 (피드백 #6 씽덕요소) — 감정표현 단축키: Y=♥ 하트 · U=♪ 노래 · H=！ 인사 · N=💢 분노.
-     *  메이플식 감정표현 — 캐릭터 머리 위 귀여운 말풍선. 대화/수면 중엔 무시한다. */
-    if (!this.dialoguing && !this.sleeping && !this.transitioning) {
-      const ex = this.player.x;
-      const ey = this.player.y - 42;
-      if (Phaser.Input.Keyboard.JustDown(this.keys.Y)) this.emote("heart", ex, ey);
-      else if (Phaser.Input.Keyboard.JustDown(this.keys.U)) this.emote("note", ex, ey);
-      else if (Phaser.Input.Keyboard.JustDown(this.keys.H)) this.emote("excl", ex, ey);
-      else if (Phaser.Input.Keyboard.JustDown(this.keys.N)) this.emote("anger", ex, ey);
-    }
+      /* v1.0.15 (피드백 #6 씽덕요소) — 감정표현 단축키: Y=♥ 하트 · U=♪ 노래 · H=！ 인사 · N=💢 분노.
+       *  메이플식 감정표현 — 캐릭터 머리 위 귀여운 말풍선. 대화/수면 중엔 무시한다. */
+      if (!this.dialoguing && !this.sleeping && !this.transitioning) {
+        const ex = this.player.x;
+        const ey = this.player.y - 42;
+        if (Phaser.Input.Keyboard.JustDown(this.keys.Y)) this.emote("heart", ex, ey);
+        else if (Phaser.Input.Keyboard.JustDown(this.keys.U)) this.emote("note", ex, ey);
+        else if (Phaser.Input.Keyboard.JustDown(this.keys.H)) this.emote("excl", ex, ey);
+        else if (Phaser.Input.Keyboard.JustDown(this.keys.N)) this.emote("anger", ex, ey);
+      }
 
-    // 수면 연출 중 — 입력 봉인 (v2.2)
-    if (this.sleeping) {
-      this.player.update(dt, Phaser.Math.Vector2.ZERO, false);
-    } else {
-      this.player.update(dt, move, this.attackQueued);
-    }
-    /* vc193 (버그 #1 "이동할때 기본 스프라이트로 고정되는 버그") —
-     *  Player.tickBodyPending() 은 동적 외형 시트(코스튬·직업·GM) 로드 완료를
-     *  매 프레임 폴링해 재적용하는 함수인데 **호출부가 어디에도 없었다.**
-     *  그래서 applyBodyLook 이 미로드 시트를 만나 bodyPrefix 를 비우면
-     *  bodyKey() 가 hero_* 기본 캐릭터를 반환하고, 로드가 끝나도 재적용되지 않아
-     *  이동/대기 내내 회색 기본 스프라이트로 고정됐다(유저 스크린샷 실측).
-     *  게임 루프에서 폴링하면 로드 성공 즉시 원래 외형으로 복귀한다. */
-    this.player.tickBodyPending();
-    this.attackQueued = false;
+      // 수면 연출 중 — 입력 봉인 (v2.2)
+      if (this.sleeping) {
+        this.player.update(dt, Phaser.Math.Vector2.ZERO, false);
+      } else {
+        this.player.update(dt, move, this.attackQueued);
+      }
+      /* vc193 (버그 #1 "이동할때 기본 스프라이트로 고정되는 버그") —
+       *  Player.tickBodyPending() 은 동적 외형 시트(코스튬·직업·GM) 로드 완료를
+       *  매 프레임 폴링해 재적용하는 함수인데 **호출부가 어디에도 없었다.**
+       *  그래서 applyBodyLook 이 미로드 시트를 만나 bodyPrefix 를 비우면
+       *  bodyKey() 가 hero_* 기본 캐릭터를 반환하고, 로드가 끝나도 재적용되지 않아
+       *  이동/대기 내내 회색 기본 스프라이트로 고정됐다(유저 스크린샷 실측).
+       *  게임 루프에서 폴링하면 로드 성공 즉시 원래 외형으로 복귀한다. */
+      this.player.tickBodyPending();
+      this.attackQueued = false;
 
-    // 물약 퀵슬롯 + 상점/패널 열기 + E키 상호작용 (v1.9 — 모두 키 매핑 대응)
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("potHp"))) this.player.usePotion("hp");
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("potMp"))) this.player.usePotion("mp");
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("interact"))) this.tryInteract();
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("shop")) && this.nearShop) EventBus.emit("ui:panel", { panel: "shop" });
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("bag"))) EventBus.emit("ui:panel", { panel: "inv" });
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("job"))) EventBus.emit("ui:panel", { panel: "job" });
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("stat"))) EventBus.emit("ui:panel", { panel: "stat" });
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("quest"))) EventBus.emit("ui:panel", { panel: "quest" });
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("opt"))) EventBus.emit("ui:panel", { panel: "opt" });
-    /* v3.0.16 — 몬스터 컬렉션 패널 (M키) */
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
-    /* v1.1.8 (#개편 A46) — 낚시 (기본 H). 필드에서만 동작한다. */
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("fishing"))) this.startFishing();
-    /* vc142 (#1) — PC 자동전투 토글 단축키 (기본 B · 설정에서 재배치 가능) */
-    if (Phaser.Input.Keyboard.JustDown(this.keyFor("autohunt"))) EventBus.emit("rpg:autohunt", {});
-    /* v1.1.4 (#개편 입력버퍼링) — 공격/스킬 모션이 끝나면 대기 중인 스킬을 발동한다. */
-    this.flushBufferedSkill();
+      // 물약 퀵슬롯 + 상점/패널 열기 + E키 상호작용 (v1.9 — 모두 키 매핑 대응)
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("potHp"))) this.player.usePotion("hp");
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("potMp"))) this.player.usePotion("mp");
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("interact"))) this.tryInteract();
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("shop")) && this.nearShop) EventBus.emit("ui:panel", { panel: "shop" });
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("bag"))) EventBus.emit("ui:panel", { panel: "inv" });
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("job"))) EventBus.emit("ui:panel", { panel: "job" });
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("stat"))) EventBus.emit("ui:panel", { panel: "stat" });
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("quest"))) EventBus.emit("ui:panel", { panel: "quest" });
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("opt"))) EventBus.emit("ui:panel", { panel: "opt" });
+      /* v3.0.16 — 몬스터 컬렉션 패널 (M키) */
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
+      /* v1.1.8 (#개편 A46) — 낚시 (기본 H). 필드에서만 동작한다. */
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("fishing"))) this.startFishing();
+      /* vc142 (#1) — PC 자동전투 토글 단축키 (기본 B · 설정에서 재배치 가능) */
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("autohunt"))) EventBus.emit("rpg:autohunt", {});
+      /* v1.1.4 (#개편 입력버퍼링) — 공격/스킬 모션이 끝나면 대기 중인 스킬을 발동한다. */
+      this.flushBufferedSkill();
 
-    // E키 상호작용 감지 — 가장 가까운 NPC/상점 프롬프트 갱신
-    this.updateInteractPrompt();
+      // E키 상호작용 감지 — 가장 가까운 NPC/상점 프롬프트 갱신
+      this.updateInteractPrompt();
 
-    // 플레이어 이름표 추적 (인트로에서 지정 후)
-    this.playerNameTag?.setPosition(this.player.x, this.player.y - 48);
-    this.gmAura?.setPosition(this.player.x, this.player.y + 6); // v1.0.16 — GM 황금 오라 추적
+      // 플레이어 이름표 추적 (인트로에서 지정 후)
+      this.playerNameTag?.setPosition(this.player.x, this.player.y - 48);
+      this.gmAura?.setPosition(this.player.x, this.player.y + 6); // v1.0.16 — GM 황금 오라 추적
 
-    // 인트로 플레이 시퀀스 (이동 학습 → 우물 → 이름 짓기)
-    if (this.introStep >= 0 && this.introStep < 2) this.tickIntro(dt, move);
+      // 인트로 플레이 시퀀스 (이동 학습 → 우물 → 이름 짓기)
+      if (this.introStep >= 0 && this.introStep < 2) this.tickIntro(dt, move);
 
-    this.tut?.update(); // v1.0.11 — 튜토리얼 마커 추적
+      this.tut?.update(); // v1.0.11 — 튜토리얼 마커 추적
 
-    /* v1.0.12 — 날씨 emitter 카메라 추적 (emit 구간을 화면 상단에 유지) */
-    if (this.weatherSnow) this.weatherSnow.setPosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
+      /* v1.0.12 — 날씨 emitter 카메라 추적 (emit 구간을 화면 상단에 유지) */
+      if (this.weatherSnow) this.weatherSnow.setPosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
 
-    /* v1.0.12 (#횃불장치) — 근접 점등 판정: 96px 진입 시 5초 점등 → 종료 0.8초 전 소등 예고 페이드.
-     *  프레임당 거리 제곱 비교 8개 — 저비용. 꺼진 횃불은 재접근 시 다시 타오른다. */
-    if (this.torches.length > 0 && this.player) {
-      const nowMs = this.time.now;
-      const px = this.player.x, py = this.player.y;
-      for (const t of this.torches) {
-        if (t.litUntil > nowMs) {
-          if (t.litUntil - nowMs < 800 && !t.prop.getData("fading")) {
-            t.prop.setData("fading", true);
-            this.tweens.add({ targets: t.glow, alpha: 0, duration: 700, onComplete: () => t.prop.setData("fading", false) });
+      /* v1.0.12 (#횃불장치) — 근접 점등 판정: 96px 진입 시 5초 점등 → 종료 0.8초 전 소등 예고 페이드.
+       *  프레임당 거리 제곱 비교 8개 — 저비용. 꺼진 횃불은 재접근 시 다시 타오른다. */
+      if (this.torches.length > 0 && this.player) {
+        const nowMs = this.time.now;
+        const px = this.player.x, py = this.player.y;
+        for (const t of this.torches) {
+          if (t.litUntil > nowMs) {
+            if (t.litUntil - nowMs < 800 && !t.prop.getData("fading")) {
+              t.prop.setData("fading", true);
+              this.tweens.add({ targets: t.glow, alpha: 0, duration: 700, onComplete: () => t.prop.setData("fading", false) });
+            }
+            continue;
           }
-          continue;
-        }
-        if (nowMs < t.cdUntil) continue;
-        const dx = px - t.x, dy = py - t.y;
-        if (dx * dx + dy * dy < 96 * 96) {
-          t.litUntil = nowMs + 5000;
-          t.cdUntil = t.litUntil + 1200;
-          this.tweens.killTweensOf(t.glow);
-          t.glow.setAlpha(0).setScale(0.5);
-          this.tweens.add({ targets: t.glow, alpha: 0.55, scale: 0.95, duration: 260, ease: "Cubic.out" });
-          t.prop.clearTint();
-          if (t.prop.anims.isPaused) t.prop.anims.resume();
-          audio.sfx.torch();
-        }
-      }
-    }
-
-    /* v1.0.11 — 튜토리얼 지연 시작 재시도 (update 루프 — 컷신/대사 레이스에도 확실하게 착화).
-     *  tutRetryMs>0이면 미시작 상태 — 1.5초마다 대화·실내가 아닐 때 시도, 시작되면 0으로 해제 */
-    if (this.tutRetryMs > 0 && !this.tut && !this.tutorialDone) {
-      this.tutRetryMs += dt;
-      if (this.tutRetryMs >= 1500) {
-        this.tutRetryMs = 1;
-        /* v1.1.0 (#10) — 콘텐츠(탑/파크/게이트/옷장/도장)에선 튜토리얼 재개하지 않음 */
-        const cs = this.stageDef?.key ?? "";
-        const contentStage = cs === "tower" || cs === "park" || cs === "gate" || cs === "closet" || cs === "dojang";
-        if (!this.dialoguing && !this.isInterior && !contentStage) this.startTutorial(this.tutStep);
-      }
-    }
-
-    /* vc183 (액터 기반 결정적 시뮬 문서) — 적/보스 AI를 20Hz 고정 스텝으로 분리.
-     *  종전엔 매 프레임(dt 가변)이라 60fps 기기와 30fps 기기에서 몬스터 반응이
-     *  달랐고(저사양일수록 굼뜸), 프레임이 튀면 AI 판정이 한꺼번에 몰려 발열 스파이크가 났다.
-     *  이제 실제 시간을 모아 50ms 마다 한 번만 갱신한다 — 연산 1/3, 기기 무관 동일 속도.
-     *  플레이어 입력·충돌은 즉시 반응이 생명이므로 매 프레임 유지(여기 넣지 않는다). */
-    /* 주의: dt 는 이미 밀리초(Phaser delta, 상한 50ms). *1000 하면 20Hz 가 228Hz 가 된다(실측). */
-    this.simAI.update(dt, () => {
-      for (const e of this.enemies) {
-        if (e.active && e.alive) e.tick(SIM_STEP_MS, this.player);
-      }
-      if (this.boss) this.boss.tick(SIM_STEP_MS, this.player);
-    });
-
-    // 드롭 아이템 (자석/픽업) — 펫이 소환 중이면 근처 드롭을 펫이 직접 줍는다 (v1.9)
-    for (const d of this.drops) {
-      if (!d.active) continue;
-      d.tick(dt, this.player.x, this.player.y);
-      if (d.active && this.pet && Phaser.Math.Distance.Between(d.x, d.y, this.pet.x, this.pet.y) < 26) {
-        this.collectDrop(d.kind, d.amount, d.x, d.y, true);
-        d.release();
-      }
-    }
-    // 펫 추적 — 드롭이 있으면 그쪽으로 헤엄침
-    this.pet?.tick(dt, this.player.x, this.player.y);
-
-    // 추적 오브젝트 (치장 오라/강화 오라) 위치 갱신
-    if (this.cosmeticAura) this.cosmeticAura.setPosition(this.player.x, this.player.y - 8);
-    /* v1.3.0 (#오로라 수정) — 림 링/궤도 트윙클 추적 (오로라류 가시성 강화) */
-    if (this.auroraRings.length && this.player) {
-      for (const r of this.auroraRings) r.setPosition(this.player.x, this.player.y - 10);
-    }
-    if (this.auroraTwinkles.length && this.player) {
-      const t0 = this.time.now / 1000;
-      for (let i = 0; i < this.auroraTwinkles.length; i++) {
-        const a = t0 * 1.5 + (i * Math.PI * 2) / this.auroraTwinkles.length;
-        this.auroraTwinkles[i].setPosition(
-          this.player.x + Math.cos(a) * 24,
-          this.player.y - 12 + Math.sin(a) * 15
-        );
-        this.auroraTwinkles[i].setAlpha(0.55 + 0.4 * Math.sin(t0 * 4 + i));
-      }
-    }
-    /* v1.3.0 (#요정날개) — cos_wings 날개 이미지 추적 (항상 등 뒤·오프셋 등 쪽) */
-    if (this.cosWingsImg && this.player) {
-      const animKeyW = this.player.anims?.currentAnim?.key ?? "";
-      const dyW = animKeyW.includes("up") ? 2 : animKeyW.includes("side") ? -2 : -5;
-      this.cosWingsImg.setPosition(this.player.x, this.player.y + (dyW - 6));
-      this.cosWingsImg.setScale(this.player.scaleX * 1.35, this.player.scaleY * 1.35);
-      this.cosWingsImg.setDepth(this.player.depth - 0.2);
-    }
-    /* v1.0.2 (#치장외형) — 치장 오버레이가 플레이어와 완전 동기화(위치·텍스처·좌우반전·스케일·depth) */
-    if (this.cosmeticOverlay && this.player) {
-      const ov = this.cosmeticOverlay;
-      ov.setPosition(this.player.x, this.player.y);
-      if (ov.texture.key !== this.player.texture.key) ov.setTexture(this.player.texture.key);
-      ov.setFlipX(this.player.flipX);
-      ov.setScale(this.player.scaleX, this.player.scaleY);
-      ov.setDepth(this.player.depth + 0.2);
-    }
-    /* v1.2.1 (#1 치장위치) — 앵커 기반 부착 (유저 지시 "마왕의 날개 같은 착용 치장 위치가 이상해"):
-     *  기존 고정 오프셋은 시트별 머리 높이(여캠 긴머리/직업 시트/GM)가 달라 어긋났다.
-     *  ACC_ANCHORS(프레임별 headTop/hair 경계 스캔 테이블)로 실루엣에 정확히 붙인다.
-     *  왕관=머리꼭대기에 1~2px 겹침 · 리본=머리 옆 · 후광=머리 위 공중 보브(시간 기반 — 트윈 충돌 제거)
-     *  날개=어깨 높이 + ×1.35 확대로 몸 실루엣 밖까지 퍼져 보인다(기존엔 몸 뒤에 숨음). */
-    if (this.accOverlays.length && this.player) {
-      const animKey = this.player.anims?.currentAnim?.key ?? "";
-      const back = animKey.includes("up"); // 뒷모습
-      /* v1.3.0 (#날개방향) — 진행 방향 판정: 아래(정면)를 볼수록 날개를 위(등 쪽)로 밀어
-       *  항상 등 뒤에 붙어 있게 유지 — "방향 이동에 따라 앞뒤가 바뀐다" 체감 차단 */
-      const an = ACC_ANCHORS[this.player.texture.key] ?? ACC_DEFAULT_ANCHOR;
-      const px = this.player.x, py = this.player.y;
-      const sx = this.player.scaleX || 1, sy = this.player.scaleY || 1;
-      const ht = py + (an[0] - 32) * sy; // 머리 꼭대기 (월드 좌표)
-      const hw = Math.max(3, Math.min(48 - an[1], an[2] - 48) - 1) * sx; // 머리 반폭
-      const bob = Math.sin(this.time.now / 320) * 1.6;
-      for (const a of this.accOverlays) {
-        const im = a.img;
-        let wing = false;
-        if (a.key === "acc_crown") {
-          im.setPosition(px + (this.player.flipX ? 1 : -1), ht - 2 * sy);
-        } else if (a.key === "acc_ribbon") {
-          im.setPosition(px + (this.player.flipX ? -1 : 1) * hw, ht + 4 * sy);
-        } else if (a.key === "acc_halo") {
-          im.setPosition(px, ht - 9 * sy + bob);
-        } else if (a.key === "acc_wings_devil" || a.key === "acc_wings_fairy") {
-          /* v1.3.0 (#날개방향) — 날개는 "항상 등 뒤" 고정:
-           *  ① depth는 어떤 방향이든 본체 뒤 (앞으로 튀어나오지 않음)
-           *  ② 진행 방향이 아래(정면)면 위로 −5px, 옆이면 −2px, 위(뒷모습)면 +2px — 등 쪽 유지
-           *  ③ flipX 제거 — 좌우 전환에 날개가 앞뒤로 뒤집혀 보이지 않게 (대칭 시트라 반전 무의미) */
-          const dy = back ? 2 : animKey.includes("side") ? -2 : -5;
-          im.setPosition(px, py + (an[0] + 11 + dy - 32) * sy);
-          wing = true;
-        }
-        im.setScale(wing ? sx * 1.35 : sx, wing ? sy * 1.35 : sy);
-        im.setDepth(a.key.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3);
-      }
-    }
-    /* v1.2.0 — 포니테일 동기화 루프 제거(아이템 폐지) */
-    if (this.upgradeGlow) this.upgradeGlow.setPosition(this.player.x, this.player.y - 10);
-    /* v3.0.5 — 스타포스: 궤도성 회전(★15) + 주변 스파클(★8+) */
-    if (this.sfOrbits.length && this.player) {
-      this.sfOrbitAng += dt * 0.0026;
-      for (let i = 0; i < this.sfOrbits.length; i++) {
-        const ang = this.sfOrbitAng + (i * Math.PI * 2) / this.sfOrbits.length;
-        this.sfOrbits[i].setPosition(
-          this.player.x + Math.cos(ang) * 27,
-          this.player.y - 12 + Math.sin(ang) * 11
-        );
-      }
-    }
-    if (this.upgradeGlow && this.player) {
-      const wUp = this.player.upgrades.weapon;
-      if (wUp >= 8 && this.fxLevel === 1) { // v1.2.1 (#4) — 절전 모드 스파클 스폰 중지
-        this.sfSparkTimer -= dt;
-        if (this.sfSparkTimer <= 0) {
-          this.sfSparkTimer = wUp >= 12 ? 230 : 420;
-          const sx = this.player.x + (Math.random() - 0.5) * 44;
-          const sy = this.player.y - 6 - Math.random() * 36;
-          const sp = this.add
-            .image(sx, sy, "sparkle0")
-            .setDepth(11)
-            .setBlendMode(Phaser.BlendModes.ADD)
-            .setScale(0.5 + Math.random() * 0.4)
-            .setAlpha(0.9);
-          this.tweens.add({
-            targets: sp,
-            y: sy - 16,
-            alpha: 0,
-            duration: 520,
-            onComplete: () => sp.destroy(),
-          });
+          if (nowMs < t.cdUntil) continue;
+          const dx = px - t.x, dy = py - t.y;
+          if (dx * dx + dy * dy < 96 * 96) {
+            t.litUntil = nowMs + 5000;
+            t.cdUntil = t.litUntil + 1200;
+            this.tweens.killTweensOf(t.glow);
+            t.glow.setAlpha(0).setScale(0.5);
+            this.tweens.add({ targets: t.glow, alpha: 0.55, scale: 0.95, duration: 260, ease: "Cubic.out" });
+            t.prop.clearTint();
+            if (t.prop.anims.isPaused) t.prop.anims.resume();
+            audio.sfx.torch();
+          }
         }
       }
-    }
 
-    // 상점 NPC 접근 감지
-    if (this.merchant) {
-      const near = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.merchant.x, this.merchant.y) < 92;
-      if (near !== this.nearShop) {
-        this.nearShop = near;
-        this.emitRpgState();
+      /* v1.0.11 — 튜토리얼 지연 시작 재시도 (update 루프 — 컷신/대사 레이스에도 확실하게 착화).
+       *  tutRetryMs>0이면 미시작 상태 — 1.5초마다 대화·실내가 아닐 때 시도, 시작되면 0으로 해제 */
+      if (this.tutRetryMs > 0 && !this.tut && !this.tutorialDone) {
+        this.tutRetryMs += dt;
+        if (this.tutRetryMs >= 1500) {
+          this.tutRetryMs = 1;
+          /* v1.1.0 (#10) — 콘텐츠(탑/파크/게이트/옷장/도장)에선 튜토리얼 재개하지 않음 */
+          const cs = this.stageDef?.key ?? "";
+          const contentStage = cs === "tower" || cs === "park" || cs === "gate" || cs === "closet" || cs === "dojang";
+          if (!this.dialoguing && !this.isInterior && !contentStage) this.startTutorial(this.tutStep);
+        }
       }
-    }
 
-    // F2 핵심 2: 화면 가장자리 화살표 — 목표물이 안 보일 때 방향 안내
-    this.updateEdgeArrow();
-
-    // 멀티플레이 상태 송신 (약 8Hz — v1.7)
-    this.netAcc += dt;
-    if (this.netAcc >= 120) {
-      this.netAcc = 0;
-      net.netState({
-        x: Math.round(this.player.x),
-        y: Math.round(this.player.y),
-        /* v1.0.14 — 물리 방향(오른쪽=true)으로 정규화. 공격 중 flipX는 걷기와
-         *  의미가 반대(공격 시트 우향 네이티브 — 왼쪽 조준=true)라 원격 캐릭터가
-         *  반대를 보고, 원격 화살도 등 뒤로 나갔다 (투사체 좌우반전 · 멀티). */
-        flip: this.player.netFacingFlip,
-        moving: move.lengthSq() > 0.01 || this.player.state === "attack",
-        lv: this.player.lv,
-        cls: this.player.cls,
-        stage: this.stageDef.key,
+      /* vc183 (액터 기반 결정적 시뮬 문서) — 적/보스 AI를 20Hz 고정 스텝으로 분리.
+       *  종전엔 매 프레임(dt 가변)이라 60fps 기기와 30fps 기기에서 몬스터 반응이
+       *  달랐고(저사양일수록 굼뜸), 프레임이 튀면 AI 판정이 한꺼번에 몰려 발열 스파이크가 났다.
+       *  이제 실제 시간을 모아 50ms 마다 한 번만 갱신한다 — 연산 1/3, 기기 무관 동일 속도.
+       *  플레이어 입력·충돌은 즉시 반응이 생명이므로 매 프레임 유지(여기 넣지 않는다). */
+      /* 주의: dt 는 이미 밀리초(Phaser delta, 상한 50ms). *1000 하면 20Hz 가 228Hz 가 된다(실측). */
+      this.simAI.update(dt, () => {
+        for (const e of this.enemies) {
+          if (e.active && e.alive) e.tick(SIM_STEP_MS, this.player);
+        }
+        if (this.boss) this.boss.tick(SIM_STEP_MS, this.player);
       });
-      /* vc184 (액터 결정 문서 ③) — 3초에 1회 상태 해시 대조.
-       *  서버가 같은 FNV-1a 로 재계산해 어긋남을 세고, 클라가 그 통계를 들고 있는다.
-       *  게임 진행에 영향 없음(판정만) — 잘못된 되감기가 정상 상태를 망치기 때문. */
-      this.hashAcc = (this.hashAcc ?? 0) + 120;
-      if (this.hashAcc >= 3000) {
-        this.hashAcc = 0;
-        net.netSendHash({ x: this.player.x, y: this.player.y, lv: this.player.lv, cls: this.player.cls, stage: this.stageDef.key });
+
+      // 드롭 아이템 (자석/픽업) — 펫이 소환 중이면 근처 드롭을 펫이 직접 줍는다 (v1.9)
+      for (const d of this.drops) {
+        if (!d.active) continue;
+        d.tick(dt, this.player.x, this.player.y);
+        if (d.active && this.pet && Phaser.Math.Distance.Between(d.x, d.y, this.pet.x, this.pet.y) < 26) {
+          this.collectDrop(d.kind, d.amount, d.x, d.y, true);
+          d.release();
+        }
+      }
+      // 펫 추적 — 드롭이 있으면 그쪽으로 헤엄침
+      this.pet?.tick(dt, this.player.x, this.player.y);
+
+      // 추적 오브젝트 (치장 오라/강화 오라) 위치 갱신
+      if (this.cosmeticAura) this.cosmeticAura.setPosition(this.player.x, this.player.y - 8);
+      /* v1.3.0 (#오로라 수정) — 림 링/궤도 트윙클 추적 (오로라류 가시성 강화) */
+      if (this.auroraRings.length && this.player) {
+        for (const r of this.auroraRings) r.setPosition(this.player.x, this.player.y - 10);
+      }
+      if (this.auroraTwinkles.length && this.player) {
+        const t0 = this.time.now / 1000;
+        for (let i = 0; i < this.auroraTwinkles.length; i++) {
+          const a = t0 * 1.5 + (i * Math.PI * 2) / this.auroraTwinkles.length;
+          this.auroraTwinkles[i].setPosition(
+            this.player.x + Math.cos(a) * 24,
+            this.player.y - 12 + Math.sin(a) * 15
+          );
+          this.auroraTwinkles[i].setAlpha(0.55 + 0.4 * Math.sin(t0 * 4 + i));
+        }
+      }
+      /* v1.3.0 (#요정날개) — cos_wings 날개 이미지 추적 (항상 등 뒤·오프셋 등 쪽) */
+      if (this.cosWingsImg && this.player) {
+        const animKeyW = this.player.anims?.currentAnim?.key ?? "";
+        const dyW = animKeyW.includes("up") ? 2 : animKeyW.includes("side") ? -2 : -5;
+        this.cosWingsImg.setPosition(this.player.x, this.player.y + (dyW - 6));
+        this.cosWingsImg.setScale(this.player.scaleX * 1.35, this.player.scaleY * 1.35);
+        this.cosWingsImg.setDepth(this.player.depth - 0.2);
+      }
+      /* v1.0.2 (#치장외형) — 치장 오버레이가 플레이어와 완전 동기화(위치·텍스처·좌우반전·스케일·depth) */
+      if (this.cosmeticOverlay && this.player) {
+        const ov = this.cosmeticOverlay;
+        ov.setPosition(this.player.x, this.player.y);
+        if (ov.texture.key !== this.player.texture.key) ov.setTexture(this.player.texture.key);
+        ov.setFlipX(this.player.flipX);
+        ov.setScale(this.player.scaleX, this.player.scaleY);
+        ov.setDepth(this.player.depth + 0.2);
+      }
+      /* v1.2.1 (#1 치장위치) — 앵커 기반 부착 (유저 지시 "마왕의 날개 같은 착용 치장 위치가 이상해"):
+       *  기존 고정 오프셋은 시트별 머리 높이(여캠 긴머리/직업 시트/GM)가 달라 어긋났다.
+       *  ACC_ANCHORS(프레임별 headTop/hair 경계 스캔 테이블)로 실루엣에 정확히 붙인다.
+       *  왕관=머리꼭대기에 1~2px 겹침 · 리본=머리 옆 · 후광=머리 위 공중 보브(시간 기반 — 트윈 충돌 제거)
+       *  날개=어깨 높이 + ×1.35 확대로 몸 실루엣 밖까지 퍼져 보인다(기존엔 몸 뒤에 숨음). */
+      if (this.accOverlays.length && this.player) {
+        const animKey = this.player.anims?.currentAnim?.key ?? "";
+        const back = animKey.includes("up"); // 뒷모습
+        /* v1.3.0 (#날개방향) — 진행 방향 판정: 아래(정면)를 볼수록 날개를 위(등 쪽)로 밀어
+         *  항상 등 뒤에 붙어 있게 유지 — "방향 이동에 따라 앞뒤가 바뀐다" 체감 차단 */
+        const an = ACC_ANCHORS[this.player.texture.key] ?? ACC_DEFAULT_ANCHOR;
+        const px = this.player.x, py = this.player.y;
+        const sx = this.player.scaleX || 1, sy = this.player.scaleY || 1;
+        const ht = py + (an[0] - 32) * sy; // 머리 꼭대기 (월드 좌표)
+        const hw = Math.max(3, Math.min(48 - an[1], an[2] - 48) - 1) * sx; // 머리 반폭
+        const bob = Math.sin(this.time.now / 320) * 1.6;
+        for (const a of this.accOverlays) {
+          const im = a.img;
+          let wing = false;
+          if (a.key === "acc_crown") {
+            im.setPosition(px + (this.player.flipX ? 1 : -1), ht - 2 * sy);
+          } else if (a.key === "acc_ribbon") {
+            im.setPosition(px + (this.player.flipX ? -1 : 1) * hw, ht + 4 * sy);
+          } else if (a.key === "acc_halo") {
+            im.setPosition(px, ht - 9 * sy + bob);
+          } else if (a.key === "acc_wings_devil" || a.key === "acc_wings_fairy") {
+            /* v1.3.0 (#날개방향) — 날개는 "항상 등 뒤" 고정:
+             *  ① depth는 어떤 방향이든 본체 뒤 (앞으로 튀어나오지 않음)
+             *  ② 진행 방향이 아래(정면)면 위로 −5px, 옆이면 −2px, 위(뒷모습)면 +2px — 등 쪽 유지
+             *  ③ flipX 제거 — 좌우 전환에 날개가 앞뒤로 뒤집혀 보이지 않게 (대칭 시트라 반전 무의미) */
+            const dy = back ? 2 : animKey.includes("side") ? -2 : -5;
+            im.setPosition(px, py + (an[0] + 11 + dy - 32) * sy);
+            wing = true;
+          }
+          im.setScale(wing ? sx * 1.35 : sx, wing ? sy * 1.35 : sy);
+          im.setDepth(a.key.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3);
+        }
+      }
+      /* v1.2.0 — 포니테일 동기화 루프 제거(아이템 폐지) */
+      if (this.upgradeGlow) this.upgradeGlow.setPosition(this.player.x, this.player.y - 10);
+      /* v3.0.5 — 스타포스: 궤도성 회전(★15) + 주변 스파클(★8+) */
+      if (this.sfOrbits.length && this.player) {
+        this.sfOrbitAng += dt * 0.0026;
+        for (let i = 0; i < this.sfOrbits.length; i++) {
+          const ang = this.sfOrbitAng + (i * Math.PI * 2) / this.sfOrbits.length;
+          this.sfOrbits[i].setPosition(
+            this.player.x + Math.cos(ang) * 27,
+            this.player.y - 12 + Math.sin(ang) * 11
+          );
+        }
+      }
+      if (this.upgradeGlow && this.player) {
+        const wUp = this.player.upgrades.weapon;
+        if (wUp >= 8 && this.fxLevel === 1) { // v1.2.1 (#4) — 절전 모드 스파클 스폰 중지
+          this.sfSparkTimer -= dt;
+          if (this.sfSparkTimer <= 0) {
+            this.sfSparkTimer = wUp >= 12 ? 230 : 420;
+            const sx = this.player.x + (Math.random() - 0.5) * 44;
+            const sy = this.player.y - 6 - Math.random() * 36;
+            const sp = this.add
+              .image(sx, sy, "sparkle0")
+              .setDepth(11)
+              .setBlendMode(Phaser.BlendModes.ADD)
+              .setScale(0.5 + Math.random() * 0.4)
+              .setAlpha(0.9);
+            this.tweens.add({
+              targets: sp,
+              y: sy - 16,
+              alpha: 0,
+              duration: 520,
+              onComplete: () => sp.destroy(),
+            });
+          }
+        }
+      }
+
+      // 상점 NPC 접근 감지
+      if (this.merchant) {
+        const near = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.merchant.x, this.merchant.y) < 92;
+        if (near !== this.nearShop) {
+          this.nearShop = near;
+          this.emitRpgState();
+        }
+      }
+
+      // F2 핵심 2: 화면 가장자리 화살표 — 목표물이 안 보일 때 방향 안내
+      this.updateEdgeArrow();
+
+      // 멀티플레이 상태 송신 (약 8Hz — v1.7)
+      this.netAcc += dt;
+      if (this.netAcc >= 120) {
+        this.netAcc = 0;
+        net.netState({
+          x: Math.round(this.player.x),
+          y: Math.round(this.player.y),
+          /* v1.0.14 — 물리 방향(오른쪽=true)으로 정규화. 공격 중 flipX는 걷기와
+           *  의미가 반대(공격 시트 우향 네이티브 — 왼쪽 조준=true)라 원격 캐릭터가
+           *  반대를 보고, 원격 화살도 등 뒤로 나갔다 (투사체 좌우반전 · 멀티). */
+          flip: this.player.netFacingFlip,
+          moving: move.lengthSq() > 0.01 || this.player.state === "attack",
+          lv: this.player.lv,
+          cls: this.player.cls,
+          stage: this.stageDef.key,
+        });
+        /* vc184 (액터 결정 문서 ③) — 3초에 1회 상태 해시 대조.
+         *  서버가 같은 FNV-1a 로 재계산해 어긋남을 세고, 클라가 그 통계를 들고 있는다.
+         *  게임 진행에 영향 없음(판정만) — 잘못된 되감기가 정상 상태를 망치기 때문. */
+        this.hashAcc = (this.hashAcc ?? 0) + 120;
+        if (this.hashAcc >= 3000) {
+          this.hashAcc = 0;
+          net.netSendHash({ x: this.player.x, y: this.player.y, lv: this.player.lv, cls: this.player.cls, stage: this.stageDef.key });
+        }
+      }
+    } catch (e) {
+      const now = this.time?.now ?? 0;
+      if (!this._updErrAt || now - this._updErrAt > 1000) {
+        this._updErrAt = now;
+        try { console.error("[WorldScene.update] 예외 — 프레임 유지", e); } catch { /* 무시 */ }
       }
     }
   }
@@ -12070,6 +12099,9 @@ export class WorldScene extends Phaser.Scene {
    *  두 개의 독립 게이트(텍스트 입력 포커스 / UI 패널 키 잠금) 중 하나라도 켜져 있으면
    *  키보드를 끈다. 각 핸들러가 자기 지역 상태만 보고 덮어쓰면 서로의 잠금을 풀거나
    *  영구 비활성으로 굳는다(#1 WASD 전환 프리즈의 원인). */
+  /** vc233 (#1) — update 예외 로그 스로틀 (매 프레임 콘솔 폭주 방지) */
+  private _updErrAt = 0;
+
   private syncKeyboardGate(km: Phaser.Input.Keyboard.KeyboardPlugin | null | undefined) {
     if (!km?.manager) return;
     km.manager.enabled = !this.chatFocused && !this.panelNavOpen;

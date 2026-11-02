@@ -98,7 +98,9 @@ export const WASD_KEYMAP: KeyMap = {
   potHp: "1",
   potMp: "2",
   /* ── UI (오른손·숫자열 — 전투 키와 물리적으로 분리) ── */
-  interact: "Space",
+  interact: "SPACE", // vc233 (#1) — Phaser 키 코드는 "SPACE"(전대문자)다. "Space" 는
+  //  keyObjs/keys 어느 테이블에도 없어 keyFor("interact") 가 undefined 를 반환했고,
+  //  JustDown(undefined) 가 TypeError 를 던져 rAF 루프가 재예약되지 못했다(WASD 프리즈).
   bag: "G",
   shop: "T",
   job: "5",
@@ -163,7 +165,12 @@ export const ASSIGNABLE_KEYS = [
   /* v1.4.35 (지시 #7) — WASD 스킴에서 물약·UI 를 숫자열로 옮겼는데
    *  이 목록에 없으면 배정 자체가 거부되어 키가 먹지 않는다. */
   "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
-  "Space", "Escape", "Tab",
+  /* vc233 (#1) — Phaser 키 코드는 "SPACE"/"ESC"/"TAB" 이다.
+   *  종전 "Space"/"Escape"/"Tab" 은 keyObjs·keys 어느 테이블에도 없어,
+   *  이 키를 액션에 배정하면 keyFor() 가 undefined 를 반환하고
+   *  JustDown(undefined) 가 TypeError 로 rAF 루프를 정지시켰다(WASD 프리즈와 동일 경로).
+   *  등록 코드(ALL_KEYS)와 동일한 표기를 쓴다. */
+  "SPACE", "ESC", "TAB",
 ] as const;
 
 /** 화살표 코드 (WASD 스킴에서 액션 배정 가능) */

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="utf-8"><title>SERTZ 렌더 성능 실측</title>
+<style>html,body{margin:0;background:#0a0a12;color:#9f9;font:12px monospace}#out{padding:10px;white-space:pre-wrap}</style></head>
+<body>
+<div id="out">측정 준비…</div>
+<script type="importmap">{ "imports": { "phaser": "/node_modules/phaser/dist/phaser.esm.js" } }</script>
+<script type="module">
+import Phaser from "phaser";
+
+const out=document.getElementById("out");
+const log=[]; const say=s=>{log.push(s); out.textContent=log.join("\n");};
+
+/* 더미 씬에서 오브젝트 수에 따른 drawCalls/FPS 를 측정한다 */
+class Bench extends Phaser.Scene {
+  constructor(){ super("bench"); }
+  create(){
+    const C = this.add.container(); void C;
+    /* 텍스처 하나 만들기 */
+    const g=this.make.graphics({x:0,y:0}, false);
+    g.fillStyle(0x88ccff,1).fillRect(0,0,32,32);
+    g.generateTexture("px32",32,32); g.destroy();
+
+    const results=[];
+    const N=800;
+    for(let i=0;i<N;i++){
+      this.add.image(Math.random()*760, Math.random()*460, "px32")
+        .setDepth(Math.random()*100).setAlpha(0.9);
+    }
+    /* 60프레임 후 통계 */
+    this.time.delayedCall(1200, ()=>{
+      const r=this.game.renderer;
+      say(`오브젝트 ${N}개`);
+      say(`drawCalls: ${r.drawCalls ?? "?"}`);
+      say(`fps: ${Math.round(this.game.loop.actualFps)}`);
+      say(`textures: ${Object.keys(this.textures.list).length}`);
+      /* 정렬 비용 확인 — depth 변경 */
+      const t0=performance.now();
+      for(const ch of this.children.list) ch.setDepth(Math.random()*100);
+      say(`setDepth 800회: ${(performance.now()-t0).toFixed(2)}ms`);
+      window.__BENCH={calls:r.drawCalls, fps:this.game.loop.actualFps, depthMs:performance.now()-t0};
+      say("DONE");
+    });
+  }
+}
+new Phaser.Game({type:Phaser.AUTO,width:800,height:480,parent:document.body,
+  backgroundColor:"#0a0a12",scene:[Bench],render:{pixelArt:true, antialias:false}});
+</script>
+</body></html>

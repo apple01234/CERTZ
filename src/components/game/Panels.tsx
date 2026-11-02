@@ -1997,8 +1997,15 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
   );
 
   /* 선택 슬롯 해석 — 사용/판매 등으로 사라지면 자동으로 선택 해제 */
+  /* vc233 (#9 "물약 선택시 추가옵션(hp, mp 지정 등) 안뜨는 버그" — 진짜 원인)
+   *  [문제] vc204 에서 물약을 etcSlots 에서 떼어 potSlots 로 분리했는데,
+   *   이 selSlot 탐색 배열은 갱신하지 않았다. 그래서 물약 탭에서 물약을 누르면
+   *   선택 상태(sel)는 세팅되지만 selSlot 이 null 이 되어 상세 패널이
+   *   "아이템을 선택하면 정보와 버튼이 여기에 나타납니다"로 남았다.
+   *   → 사용/HP·MP 장착/수량(MAX)/판매 버튼이 전부 렌더되지 않았다.
+   *  [해결] potSlots 를 탐색 대상에 포함한다(etcSlots 와 중복 없음 — 상호 배타 분할). */
   const selSlot: InvSlot | null = sel
-    ? [...equipSlots, ...buffSlots, ...petSlots, ...cosSlots, ...etcSlots].find((s) => s.uk === `${sel.t}:${sel.k}`) ?? null
+    ? [...equipSlots, ...buffSlots, ...petSlots, ...cosSlots, ...potSlots, ...etcSlots].find((s) => s.uk === `${sel.t}:${sel.k}`) ?? null
     : null;
 
   const TABS: { id: InvTab; label: string; on: string }[] = [
@@ -2617,8 +2624,12 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                 }
                 /* consumable */
                 const starScroll = s.k === "scroll_star";
-                const usable = isBasicPot || it.healFull || it.heal || it.restore || s.k === "scroll_return" || s.k === "scroll_warp" || starScroll || s.k === "exp_book" || s.k === "exp_book_s" || s.k === "exp_book_m" || s.k === "exp_book_l"; // v1.2.0 (#15) 경험치 책 3종
-                const useLabel = starScroll ? "충전" : it.healFull || it.heal || it.restore ? "마시기" : "사용";
+                /* vc233 (#9 2차 결함) — 비율 회복 물약(potion_hp_p10/p25/p50 등 6종)은
+                 *  healPct 만 갖고 heal/restore 가 없다. 종전 조건에 healPct 가 빠져
+                 *  selSlot 을 고쳐도 "마시기" 버튼이 뜨지 않았다.
+                 *  판정 기준을 isRecoveryPotionItem() 한 곳으로 통일한다. */
+                const usable = isBasicPot || isRecoveryPotionItem(it) || s.k === "scroll_return" || s.k === "scroll_warp" || starScroll || s.k === "exp_book" || s.k === "exp_book_s" || s.k === "exp_book_m" || s.k === "exp_book_l"; // v1.2.0 (#15) 경험치 책 3종
+                const useLabel = starScroll ? "충전" : isRecoveryPotionItem(it) ? "마시기" : "사용";
                 const chestLike = s.k.startsWith("chest_") || s.k.startsWith("pack_");
                 const eertCubeIt = s.k === "eert_cube";
                 /* v1.4.3 (유저 리포트 ③ 등급업 큐브 사용안됨) — 큐브 행에서 직접 사용 경로 신설.
