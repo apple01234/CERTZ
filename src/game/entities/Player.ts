@@ -407,13 +407,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v1.4.32 (지시 #5·#7·#13) — 일반 스킬 임팩트 텍스처 선택.
    *  원소 정체성에 맞춰 fx2(고해상도) 텍스처를 고른다. 전격만 Electro, 나머지는 섬광/버스트 계열. */
   private impactTexOf(elem: string): { ringTex: string; hitTex: string } {
+    /* vc232 (#2 "바람 궁수 Z,C 스킬 쓸 때마다 스프라이트가 안 불러와져")
+     *
+     *  [원인] 여기서 반환하던 `fx_Circle2` / `fx_FlashFree1` / `fx_Electro` /
+     *   `fx_Circle` 는 **로드 목록에 존재하지 않는 키**였다(VFX_PACK_LIST 는
+     *   소문자 `fx_electro` 등만 싣는다). spawnSkillImpact 가 없는 텍스처를
+     *   잡으려다 실패했고, 그 결과 Z/C 로 발동하는 스킬마다 임팩트 스프라이트가
+     *   통째로 사라졌다(바람 궁수 ranger 계열이 특히 눈에 띔 — ice 원소 경로).
+     *
+     *  [해결] 실제로 로드되는 `hv2_*` 세트로 교체한다.
+     *   · ring : hv2_circle2 (원형 링) / 다크는 hv2_circle
+     *   · hit  : 원소별 hv2_flash 계열 (0~3 이 실제로 존재)
+     *   텍스처가 없어도 spawnSkillImpact 가 조용히 생략하므로 안전하다. */
     switch (elem) {
-      case "elec": return { ringTex: "fx_Circle2", hitTex: "fx_Electro" };
-      case "fire": case "magma": return { ringTex: "fx_Circle2", hitTex: "fx_FlashFree2" };
-      case "ice": case "water": return { ringTex: "fx_Circle2", hitTex: "fx_FlashFree1" };
-      case "light": case "nature": return { ringTex: "fx_Circle2", hitTex: "fx_FlashFree3" };
-      case "dark": case "void": return { ringTex: "fx_Circle", hitTex: "fx_FlashFree1" };
-      default: return { ringTex: "fx_Circle2", hitTex: "fx_FlashFree1" };
+      case "elec": return { ringTex: "hv2_circle2", hitTex: "hv2_electro" };
+      case "fire": case "magma": return { ringTex: "hv2_circle2", hitTex: "hv2_flash1" };
+      case "ice": case "water": return { ringTex: "hv2_circle2", hitTex: "hv2_flash2" };
+      case "light": case "nature": return { ringTex: "hv2_circle2", hitTex: "hv2_flash3" };
+      case "dark": case "void": return { ringTex: "hv2_circle", hitTex: "hv2_flash0" };
+      default: return { ringTex: "hv2_circle2", hitTex: "hv2_flash0" };
     }
   }
 
@@ -1728,7 +1740,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const ty = this.y + Math.sin(ang) * reach;
         /* 하늘에서 내려오는 화살 — 위에서 착탄 지점으로 낙하 */
         const arrow = this.scene.add
-          .image(tx, ty - 220, "fx_arrow")
+          .image(tx, ty - 220, "hv2_arrow")
           .setDepth(14)
           .setTint(hex)
           .setBlendMode(Phaser.BlendModes.ADD)
@@ -2091,7 +2103,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const tx = this.x + Math.cos(ang2) * reach;
           const ty = this.y + Math.sin(ang2) * reach;
           const arrow = this.scene.add
-            .image(tx, ty - 240, "fx_arrow")
+            .image(tx, ty - 240, "hv2_arrow")
             .setDepth(16)
             .setTint(hex2)
             .setBlendMode(Phaser.BlendModes.ADD)
