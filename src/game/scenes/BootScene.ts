@@ -407,6 +407,25 @@ const SPUM_TO_BODY: Record<string, string> = {
 /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 전투 이펙트 6종.
  *  직접 그리지 않고 제공 에셋을 256px webp(총 58KB)로 경량 변환해 쓴다.
  *  ASSET_LIST와 경로가 다르므로(assets/vfx/) 별도 목록으로 둔다. */
+/* v4.9.2 — pixelfx 시트 키. tools/import-pixelfx.mjs 로 추가한 것만 여기 적는다.
+ *  (파일이 없으면 로더가 404 를 내므로 목록과 실제 파일을 일치시켜야 한다) */
+const PIXELFX_SHEETS = [
+  "arcane-orb", "ball-lightning", "big-explosion", "black-hole", "bleeding", "blink-in",
+  "blizzard-vortex", "blunt-hit", "bullet-impact", "chain-lightning", "charge-up",
+  "claw-swipe", "coin-spin", "collect-burst", "crit-hit", "crystal-shard", "dark-explosion",
+  "dirt-explosion", "dissolve-burn", "divine-shield", "earth-spike", "eclipse", "fire-ring",
+  "fire-tornado", "fireball", "flame-pillar", "frost-nova", "frozen", "gem-spin", "geyser",
+  "ground-slam", "hammer-smash", "haste", "heal", "healing-bloom", "heavy-cleave", "hit-flash",
+  "hit-spark", "holy-pillar", "ice-shatter", "ice-spikes", "impact-frame", "implosion",
+  "leaf-storm", "level-up", "lightning-strike", "magic-circle-cast", "mana-burst",
+  "necro-skulls", "nuke", "pixel-dissolve", "plasma-explosion", "poisoned", "poof", "portal",
+  "quest-complete", "rage", "resurrection", "rune-circle", "shadow-flames", "shatter-death",
+  "shield-block", "smite", "snowflake-burst", "soul-rise", "spawn-portal", "spell-charge",
+  "spin-slash", "splash", "spore-burst", "storm-cloud", "summon-rise", "sunburst",
+  "sword-slash", "time-stop", "torch", "vine-whip", "void-orb", "water-jet", "wave-crash",
+  "zap-hit",
+];
+
 const VFX_PACK_LIST = [
   "fx_shockwave", "fx_impact", "fx_glow", "fx_burst", "fx_flare", "fx_smoke",
   /* sertz.7z(GameVFX Buff Collection) 추가 추출분 — 원소/번개/육각 마법진/수중 */
@@ -891,6 +910,15 @@ export class BootScene extends Phaser.Scene {
      *  gv_rune_* 2종은 마법 계열 전용 룬 — 타 계열 지면 연출은 gv_ 계열별 대체 FX 사용 */
     this.load.setPath("assets/vfx3");
     for (const k of GVFX3_LIST) this.load.image(k, `${k}.webp`);
+    /* v4.9.2 — pixelfx(픽셀 VFX, MIT) 스프라이트시트.
+     *  tools/import-pixelfx.mjs 가 public/assets/fx 에 넣은 시트만 로드한다.
+     *  atlas + json__meta 두 번 읽는 이유: Phaser atlas 는 이미지 프레임만 만들고
+     *  meta.pixelfx(pivot·fps·loop)는 캐시에 남기지 않는다. pixelfxBridge 가 그걸 쓴다. */
+    this.load.setPath("assets/fx");
+    for (const k of PIXELFX_SHEETS) {
+      this.load.atlas(k, `${k}.png`, `${k}.json`);
+      this.load.json(`${k}__meta`, `${k}.json`);
+    }
   }
 
   async create() {

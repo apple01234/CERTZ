@@ -23,6 +23,7 @@ import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.4
 import { playStoryCutscene, storyCutscenePlaying } from "../fx/StoryCutscene"; // v1.4.41 — 스토리 컷씬
 import { chapterIntroOf } from "../storyCutscenes"; // v1.4.41 — 챕터별 진입 연출 데이터
 import { playAutoCutscene } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
+import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
 import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
 import { Lighting, ambientFor } from "../fx/Lighting";
 import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
@@ -290,6 +291,8 @@ export class WorldScene extends Phaser.Scene {
   private questTimer: Phaser.Time.TimerEvent | null = null;
   /** 히트스톱/카메라 셰이크 등급 프로파일 (기본공격 절제 / 크리·스킬 강조) */
   impactFX!: ImpactFX;
+  /* v4.9.3 — pixelfx(픽셀 VFX) 통합 매니저. 보스·전투·연출 전반에 쓴다. */
+  pxFx!: PixelFxManager;
   /* vc209 (#ponytail Must #1) — trade 리스너 참조 (wireTradeInput 분리) */
   private onTradeNearby?: (...args: never[]) => unknown;
   private onTradeInvite?: (...args: never[]) => unknown;
@@ -1617,6 +1620,8 @@ export class WorldScene extends Phaser.Scene {
      *  scroll 을 확정하므로 셰이크는 **오프셋 제공자**로만 동작하고 팔로우 끝에서 더해진다. */
     this.ultShake = getTraumaShake(this);
     this.impactFX = new ImpactFX(this);
+    /* v4.9.3 — pixelfx 매니저. 로드된 시트가 없으면 안전하게 비활성으로 동작한다. */
+    this.pxFx = new PixelFxManager(this);
     this.driveFx = new DriveFX(this);
     /* v4.8.0 — 충격파 링 풀 (WebGL 전용 — Canvas 폴백은 풀이 비어 no-op) */
     this.shockFX = new ShockwaveFX(this);
@@ -4426,6 +4431,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   spawnHitSpark(x: number, y: number) {
+    /* v4.9.3 — pixelfx 타격 연출. 모든 근접/투사체 히트가 여기로 모이므로
+     *  한 곳에 연결하면 전투 전체가 픽셀 이펙트를 얻는다.
+     *  스로틀·상한은 PixelFxManager 가 처리한다(연타 폭주 방지). */
+    try { this.pxFx?.play("hit.slash", x, y - 4, { scale: 0.42 }); } catch { /* 무시 */ }
     /* v3.3.0 (지시 #9) — 타격 스파크 5→9개로 증량 (화면이 더 밝게 터진다)
      *  v1.0.7 — 가림 축소: 9→6개 (유저 지시 — 타격감은 히트스톱+사운드가 담당) */
     this.hitEmitter.setParticleTint(0xfff0a0);
@@ -4851,6 +4860,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   spawnLevelUpFx(x: number, y: number) {
+    /* v4.9.3 — pixelfx 레벨업 연출 (빛 기둥 + 파티클) */
+    try { this.pxFx?.play("levelup", this.player?.x ?? x, (this.player?.y ?? y) - 10, { scale: 1.2, depth: 9300 }); } catch { /* 무시 */ }
     const ring = this.add.image(x, y, "shock_ring").setDepth(26).setBlendMode(Phaser.BlendModes.ADD).setTint(0x86d9ff).setScale(0.2);
     this.tweens.add({
       targets: ring,
@@ -5342,6 +5353,10 @@ export class WorldScene extends Phaser.Scene {
 
   /** 픽업 처리 (Drop가 접촉 시 호출 — viaPet은 펫 자동 줍기) */
   collectDrop(kind: DropKind, amount: number, x: number, y: number, viaPet = false) {
+    /* v4.9.3 — pixelfx 픽업 연출 (골드/아이템 구분) */
+    try {
+      this.pxFx?.play(kind === "gold" ? "pickup.gold" : "pickup.item", x, y, { scale: 0.5 });
+    } catch { /* 무시 */ }
     this.tut?.notify("pickup"); // v1.0.11 — 튜토리얼 줍기 학습 판정
     if (kind !== "gold") this.dailyFarms++; // v1.0.7 — 오늘의 파밍 (아이템 드롭 수집 카운트)
     if (kind === "gold") {
@@ -5728,6 +5743,16 @@ export class WorldScene extends Phaser.Scene {
   /** v1.4.16 — 원소 반응 발동 연출: 반응명 텍스트 + 폭발 + 이중 충격파 + 원소 파편 + 히트스톱/흔들림.
    *  Enemy.takeDamage/Boss.takeDamage의 반응 경로에서 호출. */
   spawnElementReaction(x: number, y: number, reactKey: ElemReactionKey) {
+    /* v4.9.3 — pixelfx 원소 반응 연출. 반응 키를 원소 이벤트로 매핑한다. */
+    try {
+      const evMap: Record<string, "elem.fire" | "elem.ice" | "elem.lightning" | "elem.holy" | "elem.shadow" | "elem.nature" | "elem.water"> = {
+        blast: "elem.fire", melt: "elem.fire", frostbite: "elem.ice",
+        shock: "elem.lightning", erosion: "elem.nature", bloom: "elem.nature",
+        annihilate: "elem.holy",
+      };
+      const ev = evMap[reactKey] ?? "elem.arcane";
+      this.pxFx?.play(ev, x, y, { scale: 0.9, depth: 9150 });
+    } catch { /* 무시 */ }
     const R = ELEM_REACTION_META[reactKey];
     /* 반응명 텍스트 — 원소색 강조, 살짝 위로 떠오르며 펀치 스케일 */
     const rt = this.reactTextPool.find((d) => d.scene && !d.active) ?? this.reactTextPool[0];

@@ -1,0 +1,1623 @@
+{
+ "frames": [
+  {
+   "filename": "shadow-flames 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 1",
+   "frame": {
+    "x": 104,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 2",
+   "frame": {
+    "x": 208,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 3",
+   "frame": {
+    "x": 312,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 4",
+   "frame": {
+    "x": 416,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 5",
+   "frame": {
+    "x": 520,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 6",
+   "frame": {
+    "x": 624,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 7",
+   "frame": {
+    "x": 728,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 8",
+   "frame": {
+    "x": 832,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 9",
+   "frame": {
+    "x": 0,
+    "y": 112,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 10",
+   "frame": {
+    "x": 104,
+    "y": 112,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 11",
+   "frame": {
+    "x": 208,
+    "y": 112,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 12",
+   "frame": {
+    "x": 312,
+    "y": 112,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 13",
+   "frame": {
+    "x": 416,
+    "y": 112,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 14",
+   "frame": {
+    "x": 520,
+    "y": 112,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 15",
+   "frame": {
+    "x": 624,
+    "y": 112,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 16",
+   "frame": {
+    "x": 728,
+    "y": 112,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 17",
+   "frame": {
+    "x": 832,
+    "y": 112,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 18",
+   "frame": {
+    "x": 0,
+    "y": 224,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 19",
+   "frame": {
+    "x": 104,
+    "y": 224,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 20",
+   "frame": {
+    "x": 208,
+    "y": 224,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 21",
+   "frame": {
+    "x": 312,
+    "y": 224,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 22",
+   "frame": {
+    "x": 416,
+    "y": 224,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 23",
+   "frame": {
+    "x": 520,
+    "y": 224,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 24",
+   "frame": {
+    "x": 624,
+    "y": 224,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 25",
+   "frame": {
+    "x": 728,
+    "y": 224,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 26",
+   "frame": {
+    "x": 832,
+    "y": 224,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 27",
+   "frame": {
+    "x": 0,
+    "y": 336,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 28",
+   "frame": {
+    "x": 104,
+    "y": 336,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 29",
+   "frame": {
+    "x": 208,
+    "y": 336,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 30",
+   "frame": {
+    "x": 312,
+    "y": 336,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 31",
+   "frame": {
+    "x": 416,
+    "y": 336,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 32",
+   "frame": {
+    "x": 520,
+    "y": 336,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 33",
+   "frame": {
+    "x": 624,
+    "y": 336,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 34",
+   "frame": {
+    "x": 728,
+    "y": 336,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 35",
+   "frame": {
+    "x": 832,
+    "y": 336,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 36",
+   "frame": {
+    "x": 0,
+    "y": 448,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 37",
+   "frame": {
+    "x": 104,
+    "y": 448,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 38",
+   "frame": {
+    "x": 208,
+    "y": 448,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 39",
+   "frame": {
+    "x": 312,
+    "y": 448,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 40",
+   "frame": {
+    "x": 416,
+    "y": 448,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 41",
+   "frame": {
+    "x": 520,
+    "y": 448,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 42",
+   "frame": {
+    "x": 624,
+    "y": 448,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 43",
+   "frame": {
+    "x": 728,
+    "y": 448,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 44",
+   "frame": {
+    "x": 832,
+    "y": 448,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 45",
+   "frame": {
+    "x": 0,
+    "y": 560,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 46",
+   "frame": {
+    "x": 104,
+    "y": 560,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 47",
+   "frame": {
+    "x": 208,
+    "y": 560,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 48",
+   "frame": {
+    "x": 312,
+    "y": 560,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 49",
+   "frame": {
+    "x": 416,
+    "y": 560,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 50",
+   "frame": {
+    "x": 520,
+    "y": 560,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 51",
+   "frame": {
+    "x": 624,
+    "y": 560,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 52",
+   "frame": {
+    "x": 728,
+    "y": 560,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 53",
+   "frame": {
+    "x": 832,
+    "y": 560,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 54",
+   "frame": {
+    "x": 0,
+    "y": 672,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 55",
+   "frame": {
+    "x": 104,
+    "y": 672,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 56",
+   "frame": {
+    "x": 208,
+    "y": 672,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 57",
+   "frame": {
+    "x": 312,
+    "y": 672,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 58",
+   "frame": {
+    "x": 416,
+    "y": 672,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 59",
+   "frame": {
+    "x": 520,
+    "y": 672,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 60",
+   "frame": {
+    "x": 624,
+    "y": 672,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 61",
+   "frame": {
+    "x": 728,
+    "y": 672,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 62",
+   "frame": {
+    "x": 832,
+    "y": 672,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 63",
+   "frame": {
+    "x": 0,
+    "y": 784,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 64",
+   "frame": {
+    "x": 104,
+    "y": 784,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 65",
+   "frame": {
+    "x": 208,
+    "y": 784,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 66",
+   "frame": {
+    "x": 312,
+    "y": 784,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 67",
+   "frame": {
+    "x": 416,
+    "y": 784,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 68",
+   "frame": {
+    "x": 520,
+    "y": 784,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 69",
+   "frame": {
+    "x": 624,
+    "y": 784,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 70",
+   "frame": {
+    "x": 728,
+    "y": 784,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shadow-flames 71",
+   "frame": {
+    "x": 832,
+    "y": 784,
+    "w": 104,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 112
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "shadow-flames.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 936,
+   "h": 896
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "shadow-flames",
+    "from": 0,
+    "to": 71,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "shadow/shadow-flames",
+   "name": "Shadow flames",
+   "fps": 30,
+   "loop": true,
+   "frames": 72,
+   "frameSize": [
+    104,
+    112
+   ],
+   "pivot": [
+    52,
+    102
+   ],
+   "columns": 9
+  }
+ }
+}

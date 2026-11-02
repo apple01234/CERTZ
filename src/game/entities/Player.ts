@@ -613,7 +613,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const horiz = Math.abs(this.facing.x) >= Math.abs(this.facing.y);
           const key = this.animKey(horiz ? "hero-walk-side" : this.facing.y > 0 ? "hero-walk" : "hero-walk-up");
           this.ensureMoveAnim(key);
-          if (horiz) this.setFlipX(move.x > 0); // v1.0.12 — 회복 구간 걷기는 걷기 시트(좌향) 기준 — 공격 플립(우향)과 의미가 달라 직접 갱신
+          /* v4.9.4 (버그: 방향 있는 스킬이 캐릭터를 안 따라감)
+           *  종전엔 공격 중 이동 입력의 x 부호로 flipX 를 덮어써, 스킬 조준이
+           *  오른쪽인데 왼쪽으로 걸으면 캐릭터가 왼쪽을 보고 오른쪽으로 쏘았다.
+           *  공격 상태에서는 **조준(facing)** 이 자세를 결정하게 한다.
+           *  이동 방향 반영은 idle 상태(위 분기)에서만 한다. */
+          if (horiz && this.facing.x !== 0) this.setFlipX(this.facing.x > 0);
         }
       } else if (this.swingDone) {
         this.setVelocity(0, 0);
@@ -768,7 +773,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 실측 재검증: 공격 시트도 좌향 네이티브(걷기와 동일) — 기존 우향 가정이 "공격 방향≠바라보는 방향"의 근원
+    this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다 // v1.0.16 — 실측 재검증: 공격 시트도 좌향 네이티브(걷기와 동일) — 기존 우향 가정이 "공격 방향≠바라보는 방향"의 근원
     this.playAnim(atkKey);
     // v3.0.2 — 도적(단검)은 참격 검기를 보라색으로 (무기 정체성)
     // v3.0.20 (#6) — 근접 직업 전원 검기 색 분리 (전원이 같은 색이었다)
@@ -906,7 +911,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private atkBow(dir: Phaser.Math.Vector2) {
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일 (faceAtk 주석 참고)
+    this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다 // v1.0.16 — 좌향 네이티브 통일 (faceAtk 주석 참고)
     this.playAnim(atkKey);
     const angle0 = Math.atan2(dir.y, dir.x);
     this.scene.spawnBow(this.x + dir.x * 10, this.y - 8, angle0);
@@ -977,7 +982,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private atkBolt(dir: Phaser.Math.Vector2) {
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
+    this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다 // v1.0.16 — 좌향 네이티브 통일
     this.playAnim(atkKey);
     this.scene.spawnCast(this.x + dir.x * 12, this.y - 12);
 
@@ -1036,7 +1041,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private atkShuriken(dir: Phaser.Math.Vector2) {
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
-    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
+    this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다 // v1.0.16 — 좌향 네이티브 통일
     this.playAnim(atkKey);
     const t = this.sTier;
     const empowered = this.nextAtkEmpowered;
@@ -1074,7 +1079,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  이제 걷기와 동일 컨벤션(오른쪽 조준 시 flip) — 시트 전반이 좌향으로 통일.
    *  부수 효과: 공격 중 flipX == 걷기 flipX == 물리 방향(오른쪽=true) 단일 컨벤션. */
   private faceAtk(aim: Phaser.Math.Vector2) {
+    /* v4.9.4 (버그: 방향 있는 스킬이 캐릭터를 안 따라감)
+     *  종전엔 |x| >= |y| 일 때만 flipX 를 갱신해서, 위/아래(세로) 조준이면
+     *  flipX 가 이전 값에 머물렀다 → 스킬은 위로 날아가는데 캐릭터는 옆을 봄.
+     *  이제 항상 갱신한다: 좌우가 우세하면 그 부호, 세로면 **기존 flip 유지**
+     *  (정면/후면 자세에서 좌우 반전은 의미가 없으므로 직전 값을 보존한다).
+     *  그리고 조준 벡터를 facing 에 반영해 다음 발·연출이 같은 방향을 쓰게 한다. */
     if (Math.abs(aim.x) >= Math.abs(aim.y)) this.setFlipX(aim.x > 0);
+    /* 세로 우세: flipX 는 그대로. 다만 facing 은 조준으로 갱신(아래에서 공통 처리) */
+    if (aim.lengthSq() > 0.001) this.facing.copy(aim).normalize();
   }
 
   /** v1.0.14 — 네트워크 flip 정규화: "지금 오른쪽을 보고 있는가?" (물리 방향)
@@ -1560,7 +1573,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.playAnim(atkKey);
-    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
+    this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다 // v1.0.16 — 좌향 네이티브 통일
     this.scene.sfxSkill("quake"); // v3.0.24 — 가디언 성벽 강타 (지진음)
     this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, 1.5, hex);
     // 방어 버프 — 성벽 정체성 (전장의 함성 공격 버프와 별개 축)
@@ -1863,7 +1876,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hex = this.clsHex();
     const hits = t >= 3 ? 7 : 5;
     this.playAnim("hero-atk");
-    this.setFlipX(dir.y === 0 && dir.x > 0); // v1.0.16 — 좌향 네이티브 통일
+    this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다 // v1.0.16 — 좌향 네이티브 통일
     this.scene.sfxSkill("swift"); // v3.0.24 — 스와시버클러 연타 난무 (속공 베기)
     let total = 0;
     for (let i = 0; i < hits; i++) {
@@ -1911,7 +1924,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.playAnim(atkKey);
-    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.faceAtk(fire); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다
     const shots = t >= 3 ? 3 : 1;
     const spread = t >= 3 ? 0.07 : 0;
     for (let i = 0; i < shots; i++) {
@@ -1966,7 +1979,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.playAnim(atkKey);
-    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다
     const ang = Math.atan2(dir.y, dir.x);
 
     /* 1) 원거리 사격 2발 — vc178: 방향성 머즐 + 탄환 회전 */
@@ -2406,7 +2419,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.playAnim(atkKey);
-    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.faceAtk(fire); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다
     const base = Math.atan2(fire.y, fire.x); // vc182 — 자유 조준
     /* 좌우 2열 × 3문 = 6발, 부채꼴로 퍼진다 */
     const shots = 6;
@@ -2455,7 +2468,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.playAnim(atkKey);
-    this.setFlipX(dir.y === 0 && dir.x > 0);
+    this.faceAtk(free); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다
     const base = Math.atan2(free.y, free.x); // vc182 — 자유 조준
     /* 추적 3연 — 가장 가까운 적들을 향해 각각 발사, 없으면 정면 */
     const targets = this.nearestTargets(3, 420);

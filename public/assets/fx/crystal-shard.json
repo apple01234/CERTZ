@@ -1,0 +1,2151 @@
+{
+ "frames": [
+  {
+   "filename": "crystal-shard 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 1",
+   "frame": {
+    "x": 64,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 2",
+   "frame": {
+    "x": 128,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 3",
+   "frame": {
+    "x": 192,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 4",
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 5",
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 6",
+   "frame": {
+    "x": 384,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 7",
+   "frame": {
+    "x": 448,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 8",
+   "frame": {
+    "x": 512,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 9",
+   "frame": {
+    "x": 576,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 10",
+   "frame": {
+    "x": 640,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 11",
+   "frame": {
+    "x": 0,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 12",
+   "frame": {
+    "x": 64,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 13",
+   "frame": {
+    "x": 128,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 14",
+   "frame": {
+    "x": 192,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 15",
+   "frame": {
+    "x": 256,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 16",
+   "frame": {
+    "x": 320,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 17",
+   "frame": {
+    "x": 384,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 18",
+   "frame": {
+    "x": 448,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 19",
+   "frame": {
+    "x": 512,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 20",
+   "frame": {
+    "x": 576,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 21",
+   "frame": {
+    "x": 640,
+    "y": 76,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 22",
+   "frame": {
+    "x": 0,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 23",
+   "frame": {
+    "x": 64,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 24",
+   "frame": {
+    "x": 128,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 25",
+   "frame": {
+    "x": 192,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 26",
+   "frame": {
+    "x": 256,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 27",
+   "frame": {
+    "x": 320,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 28",
+   "frame": {
+    "x": 384,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 29",
+   "frame": {
+    "x": 448,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 30",
+   "frame": {
+    "x": 512,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 31",
+   "frame": {
+    "x": 576,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 32",
+   "frame": {
+    "x": 640,
+    "y": 152,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 33",
+   "frame": {
+    "x": 0,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 34",
+   "frame": {
+    "x": 64,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 35",
+   "frame": {
+    "x": 128,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 36",
+   "frame": {
+    "x": 192,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 37",
+   "frame": {
+    "x": 256,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 38",
+   "frame": {
+    "x": 320,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 39",
+   "frame": {
+    "x": 384,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 40",
+   "frame": {
+    "x": 448,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 41",
+   "frame": {
+    "x": 512,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 42",
+   "frame": {
+    "x": 576,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 43",
+   "frame": {
+    "x": 640,
+    "y": 228,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 44",
+   "frame": {
+    "x": 0,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 45",
+   "frame": {
+    "x": 64,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 46",
+   "frame": {
+    "x": 128,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 47",
+   "frame": {
+    "x": 192,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 48",
+   "frame": {
+    "x": 256,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 49",
+   "frame": {
+    "x": 320,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 50",
+   "frame": {
+    "x": 384,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 51",
+   "frame": {
+    "x": 448,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 52",
+   "frame": {
+    "x": 512,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 53",
+   "frame": {
+    "x": 576,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 54",
+   "frame": {
+    "x": 640,
+    "y": 304,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 55",
+   "frame": {
+    "x": 0,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 56",
+   "frame": {
+    "x": 64,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 57",
+   "frame": {
+    "x": 128,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 58",
+   "frame": {
+    "x": 192,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 59",
+   "frame": {
+    "x": 256,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 60",
+   "frame": {
+    "x": 320,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 61",
+   "frame": {
+    "x": 384,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 62",
+   "frame": {
+    "x": 448,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 63",
+   "frame": {
+    "x": 512,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 64",
+   "frame": {
+    "x": 576,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 65",
+   "frame": {
+    "x": 640,
+    "y": 380,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 66",
+   "frame": {
+    "x": 0,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 67",
+   "frame": {
+    "x": 64,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 68",
+   "frame": {
+    "x": 128,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 69",
+   "frame": {
+    "x": 192,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 70",
+   "frame": {
+    "x": 256,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 71",
+   "frame": {
+    "x": 320,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 72",
+   "frame": {
+    "x": 384,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 73",
+   "frame": {
+    "x": 448,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 74",
+   "frame": {
+    "x": 512,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 75",
+   "frame": {
+    "x": 576,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 76",
+   "frame": {
+    "x": 640,
+    "y": 456,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 77",
+   "frame": {
+    "x": 0,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 78",
+   "frame": {
+    "x": 64,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 79",
+   "frame": {
+    "x": 128,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 80",
+   "frame": {
+    "x": 192,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 81",
+   "frame": {
+    "x": 256,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 82",
+   "frame": {
+    "x": 320,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 83",
+   "frame": {
+    "x": 384,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 84",
+   "frame": {
+    "x": 448,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 85",
+   "frame": {
+    "x": 512,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 86",
+   "frame": {
+    "x": 576,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 87",
+   "frame": {
+    "x": 640,
+    "y": 532,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 88",
+   "frame": {
+    "x": 0,
+    "y": 608,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 89",
+   "frame": {
+    "x": 64,
+    "y": 608,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 90",
+   "frame": {
+    "x": 128,
+    "y": 608,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 91",
+   "frame": {
+    "x": 192,
+    "y": 608,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 92",
+   "frame": {
+    "x": 256,
+    "y": 608,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 93",
+   "frame": {
+    "x": 320,
+    "y": 608,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 94",
+   "frame": {
+    "x": 384,
+    "y": 608,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  },
+  {
+   "filename": "crystal-shard 95",
+   "frame": {
+    "x": 448,
+    "y": 608,
+    "w": 64,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 76
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "crystal-shard.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 704,
+   "h": 684
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "crystal-shard",
+    "from": 0,
+    "to": 95,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "pickups/crystal-shard",
+   "name": "Crystal shard",
+   "fps": 30,
+   "loop": true,
+   "frames": 96,
+   "frameSize": [
+    64,
+    76
+   ],
+   "pivot": [
+    32,
+    68
+   ],
+   "columns": 11
+  }
+ }
+}

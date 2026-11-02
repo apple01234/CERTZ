@@ -293,3 +293,9 @@ ghostIce_48x32(3동작×6프레임), wraith 21프레임 HD(150×159) 등 35종.
 **적용 상태: 미적용.** 실측 결과 화풍(고유색 10~12색 플랫 벡터)이 SERTZ 현재
 지면(고유색 136~3,124색 절차생성 질감)과 크게 달라 플레이 지면에 직접 쓰지 않는다.
 판정 근거는 `docs/TILE_PACK_MATCHING.md` 3-1절.
+
+## pixelfx (Pixel Art VFX) — MIT
+- Source: https://github.com/patch-gg/pixelfx (commit a841596)
+- License: MIT — pixelfx © 2026 Patch, Hugo Duprez
+- 사용 범위: 스프라이트시트(public/assets/fx). Patch Pixel 폰트는 사용하지 않음.
+- 수정: 16px 원본을 게임 해상도에 맞춰 시트로 렌더(도구 옵션만 사용, 코드 수정 없음)

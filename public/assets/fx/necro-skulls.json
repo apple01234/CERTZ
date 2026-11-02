@@ -1,0 +1,2019 @@
+{
+ "frames": [
+  {
+   "filename": "necro-skulls 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 1",
+   "frame": {
+    "x": 136,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 2",
+   "frame": {
+    "x": 272,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 3",
+   "frame": {
+    "x": 408,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 4",
+   "frame": {
+    "x": 544,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 5",
+   "frame": {
+    "x": 680,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 6",
+   "frame": {
+    "x": 816,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 7",
+   "frame": {
+    "x": 952,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 8",
+   "frame": {
+    "x": 1088,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 9",
+   "frame": {
+    "x": 0,
+    "y": 116,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 10",
+   "frame": {
+    "x": 136,
+    "y": 116,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 11",
+   "frame": {
+    "x": 272,
+    "y": 116,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 12",
+   "frame": {
+    "x": 408,
+    "y": 116,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 13",
+   "frame": {
+    "x": 544,
+    "y": 116,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 14",
+   "frame": {
+    "x": 680,
+    "y": 116,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 15",
+   "frame": {
+    "x": 816,
+    "y": 116,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 16",
+   "frame": {
+    "x": 952,
+    "y": 116,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 17",
+   "frame": {
+    "x": 1088,
+    "y": 116,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 18",
+   "frame": {
+    "x": 0,
+    "y": 232,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 19",
+   "frame": {
+    "x": 136,
+    "y": 232,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 20",
+   "frame": {
+    "x": 272,
+    "y": 232,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 21",
+   "frame": {
+    "x": 408,
+    "y": 232,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 22",
+   "frame": {
+    "x": 544,
+    "y": 232,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 23",
+   "frame": {
+    "x": 680,
+    "y": 232,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 24",
+   "frame": {
+    "x": 816,
+    "y": 232,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 25",
+   "frame": {
+    "x": 952,
+    "y": 232,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 26",
+   "frame": {
+    "x": 1088,
+    "y": 232,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 27",
+   "frame": {
+    "x": 0,
+    "y": 348,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 28",
+   "frame": {
+    "x": 136,
+    "y": 348,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 29",
+   "frame": {
+    "x": 272,
+    "y": 348,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 30",
+   "frame": {
+    "x": 408,
+    "y": 348,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 31",
+   "frame": {
+    "x": 544,
+    "y": 348,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 32",
+   "frame": {
+    "x": 680,
+    "y": 348,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 33",
+   "frame": {
+    "x": 816,
+    "y": 348,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 34",
+   "frame": {
+    "x": 952,
+    "y": 348,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 35",
+   "frame": {
+    "x": 1088,
+    "y": 348,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 36",
+   "frame": {
+    "x": 0,
+    "y": 464,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 37",
+   "frame": {
+    "x": 136,
+    "y": 464,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 38",
+   "frame": {
+    "x": 272,
+    "y": 464,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 39",
+   "frame": {
+    "x": 408,
+    "y": 464,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 40",
+   "frame": {
+    "x": 544,
+    "y": 464,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 41",
+   "frame": {
+    "x": 680,
+    "y": 464,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 42",
+   "frame": {
+    "x": 816,
+    "y": 464,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 43",
+   "frame": {
+    "x": 952,
+    "y": 464,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 44",
+   "frame": {
+    "x": 1088,
+    "y": 464,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 45",
+   "frame": {
+    "x": 0,
+    "y": 580,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 46",
+   "frame": {
+    "x": 136,
+    "y": 580,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 47",
+   "frame": {
+    "x": 272,
+    "y": 580,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 48",
+   "frame": {
+    "x": 408,
+    "y": 580,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 49",
+   "frame": {
+    "x": 544,
+    "y": 580,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 50",
+   "frame": {
+    "x": 680,
+    "y": 580,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 51",
+   "frame": {
+    "x": 816,
+    "y": 580,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 52",
+   "frame": {
+    "x": 952,
+    "y": 580,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 53",
+   "frame": {
+    "x": 1088,
+    "y": 580,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 54",
+   "frame": {
+    "x": 0,
+    "y": 696,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 55",
+   "frame": {
+    "x": 136,
+    "y": 696,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 56",
+   "frame": {
+    "x": 272,
+    "y": 696,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 57",
+   "frame": {
+    "x": 408,
+    "y": 696,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 58",
+   "frame": {
+    "x": 544,
+    "y": 696,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 59",
+   "frame": {
+    "x": 680,
+    "y": 696,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 60",
+   "frame": {
+    "x": 816,
+    "y": 696,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 61",
+   "frame": {
+    "x": 952,
+    "y": 696,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 62",
+   "frame": {
+    "x": 1088,
+    "y": 696,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 63",
+   "frame": {
+    "x": 0,
+    "y": 812,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 64",
+   "frame": {
+    "x": 136,
+    "y": 812,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 65",
+   "frame": {
+    "x": 272,
+    "y": 812,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 66",
+   "frame": {
+    "x": 408,
+    "y": 812,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 67",
+   "frame": {
+    "x": 544,
+    "y": 812,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 68",
+   "frame": {
+    "x": 680,
+    "y": 812,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 69",
+   "frame": {
+    "x": 816,
+    "y": 812,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 70",
+   "frame": {
+    "x": 952,
+    "y": 812,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 71",
+   "frame": {
+    "x": 1088,
+    "y": 812,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 72",
+   "frame": {
+    "x": 0,
+    "y": 928,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 73",
+   "frame": {
+    "x": 136,
+    "y": 928,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 74",
+   "frame": {
+    "x": 272,
+    "y": 928,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 75",
+   "frame": {
+    "x": 408,
+    "y": 928,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 76",
+   "frame": {
+    "x": 544,
+    "y": 928,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 77",
+   "frame": {
+    "x": 680,
+    "y": 928,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 78",
+   "frame": {
+    "x": 816,
+    "y": 928,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 79",
+   "frame": {
+    "x": 952,
+    "y": 928,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 80",
+   "frame": {
+    "x": 1088,
+    "y": 928,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 81",
+   "frame": {
+    "x": 0,
+    "y": 1044,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 82",
+   "frame": {
+    "x": 136,
+    "y": 1044,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 83",
+   "frame": {
+    "x": 272,
+    "y": 1044,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 84",
+   "frame": {
+    "x": 408,
+    "y": 1044,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 85",
+   "frame": {
+    "x": 544,
+    "y": 1044,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 86",
+   "frame": {
+    "x": 680,
+    "y": 1044,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 87",
+   "frame": {
+    "x": 816,
+    "y": 1044,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 88",
+   "frame": {
+    "x": 952,
+    "y": 1044,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "necro-skulls 89",
+   "frame": {
+    "x": 1088,
+    "y": 1044,
+    "w": 136,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 116
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "necro-skulls.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1224,
+   "h": 1160
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "necro-skulls",
+    "from": 0,
+    "to": 89,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "shadow/necro-skulls",
+   "name": "Necro skulls",
+   "fps": 30,
+   "loop": true,
+   "frames": 90,
+   "frameSize": [
+    136,
+    116
+   ],
+   "pivot": [
+    68,
+    108
+   ],
+   "columns": 9
+  }
+ }
+}

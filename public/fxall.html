@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>pixelfx 81종 로드 검증</title>
+<style>html,body{margin:0;background:#0b0b12}#out{padding:8px;color:#9f9;font:12px monospace;white-space:pre-wrap}</style>
+</head>
+<body>
+<div id="out">부팅…</div>
+<script type="importmap">
+{ "imports": { "phaser": "/node_modules/phaser/dist/phaser.esm.js" } }
+</script>
+<script type="module">
+import Phaser from "phaser";
+import { registerFxSheet, playFx } from "/.fxtest/pixelfxBridge.js";
+
+const KEYS = window.__FX_KEYS || [];
+const out = document.getElementById("out");
+const log = [];
+const say = (s) => { log.push(s); out.textContent = log.join("\n"); };
+
+class AllScene extends Phaser.Scene {
+  constructor(){ super("all"); }
+  preload(){
+    for (const k of KEYS) {
+      this.load.atlas(k, `/assets/fx/${k}.png`, `/assets/fx/${k}.json`);
+      this.load.json(`${k}__meta`, `/assets/fx/${k}.json`);
+    }
+    const total = KEYS.length;
+    this.load.on("progress", (v) => { if (Math.round(v*100) % 25 === 0) say(`로드 ${Math.round(v*100)}%`); });
+    this.load.on("loaderror", (f) => say(`LOADERROR ${f.key}`));
+    say(`로드 시작: ${total}종`);
+  }
+  create(){
+    let regFail = [], playFail = [], animMissing = [];
+    for (const k of KEYS) {
+      const sheet = registerFxSheet(this, k);
+      if (!sheet) { regFail.push(k); continue; }
+      if (!this.anims.exists(`${k}-play`)) { animMissing.push(k); continue; }
+      const sp = playFx(this, k, 100, 100, { depth: 1 });
+      if (!sp) playFail.push(k);
+      else sp.destroy();
+    }
+    say(`\n등록 성공: ${KEYS.length - regFail.length}/${KEYS.length}`);
+    say(`등록 실패: ${regFail.length ? regFail.join(",") : "없음"}`);
+    say(`애니메이션 누락: ${animMissing.length ? animMissing.join(",") : "없음"}`);
+    say(`재생 실패: ${playFail.length ? playFail.join(",") : "없음"}`);
+
+    // 실제 재생 테스트: 첫 10개를 화면에 뿌린다
+    const shown = KEYS.slice(0, 10).map((k, i) => playFx(this, k, 80 + i*60, 300, { scale: 0.4, depth: 10 }));
+    this.time.delayedCall(200, () => {
+      const playing = shown.filter((s) => s && s.anims && s.anims.isPlaying).length;
+      say(`\n동시 재생 중: ${playing}/${shown.length}`);
+      window.__FX_OK = regFail.length === 0 && animMissing.length === 0 && playFail.length === 0 && playing > 0;
+      window.__FX_COUNT = KEYS.length;
+      say(`RESULT=${window.__FX_OK ? "PASS" : "FAIL"}`);
+    });
+  }
+}
+
+new Phaser.Game({
+  type: Phaser.AUTO, width: 800, height: 480, parent: document.body,
+  backgroundColor: "#0b0b12", scene: [AllScene], pixelArt: true,
+});
+</script>
+</body>
+</html>

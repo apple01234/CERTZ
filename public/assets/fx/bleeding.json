@@ -1,0 +1,1740 @@
+{
+ "frames": [
+  {
+   "filename": "bleeding 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 1",
+   "frame": {
+    "x": 60,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 2",
+   "frame": {
+    "x": 120,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 3",
+   "frame": {
+    "x": 180,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 4",
+   "frame": {
+    "x": 240,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 5",
+   "frame": {
+    "x": 300,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 6",
+   "frame": {
+    "x": 360,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 7",
+   "frame": {
+    "x": 420,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 8",
+   "frame": {
+    "x": 480,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 9",
+   "frame": {
+    "x": 0,
+    "y": 56,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 10",
+   "frame": {
+    "x": 60,
+    "y": 56,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 11",
+   "frame": {
+    "x": 120,
+    "y": 56,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 12",
+   "frame": {
+    "x": 180,
+    "y": 56,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 13",
+   "frame": {
+    "x": 240,
+    "y": 56,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 14",
+   "frame": {
+    "x": 300,
+    "y": 56,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 15",
+   "frame": {
+    "x": 360,
+    "y": 56,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 16",
+   "frame": {
+    "x": 420,
+    "y": 56,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 17",
+   "frame": {
+    "x": 480,
+    "y": 56,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 18",
+   "frame": {
+    "x": 0,
+    "y": 112,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 19",
+   "frame": {
+    "x": 60,
+    "y": 112,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 20",
+   "frame": {
+    "x": 120,
+    "y": 112,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 21",
+   "frame": {
+    "x": 180,
+    "y": 112,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 22",
+   "frame": {
+    "x": 240,
+    "y": 112,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 23",
+   "frame": {
+    "x": 300,
+    "y": 112,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 24",
+   "frame": {
+    "x": 360,
+    "y": 112,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 25",
+   "frame": {
+    "x": 420,
+    "y": 112,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 26",
+   "frame": {
+    "x": 480,
+    "y": 112,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 27",
+   "frame": {
+    "x": 0,
+    "y": 168,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 28",
+   "frame": {
+    "x": 60,
+    "y": 168,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 29",
+   "frame": {
+    "x": 120,
+    "y": 168,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 30",
+   "frame": {
+    "x": 180,
+    "y": 168,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 31",
+   "frame": {
+    "x": 240,
+    "y": 168,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 32",
+   "frame": {
+    "x": 300,
+    "y": 168,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 33",
+   "frame": {
+    "x": 360,
+    "y": 168,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 34",
+   "frame": {
+    "x": 420,
+    "y": 168,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 35",
+   "frame": {
+    "x": 480,
+    "y": 168,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 36",
+   "frame": {
+    "x": 0,
+    "y": 224,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 37",
+   "frame": {
+    "x": 60,
+    "y": 224,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 38",
+   "frame": {
+    "x": 120,
+    "y": 224,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 39",
+   "frame": {
+    "x": 180,
+    "y": 224,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 40",
+   "frame": {
+    "x": 240,
+    "y": 224,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 41",
+   "frame": {
+    "x": 300,
+    "y": 224,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 42",
+   "frame": {
+    "x": 360,
+    "y": 224,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 43",
+   "frame": {
+    "x": 420,
+    "y": 224,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 44",
+   "frame": {
+    "x": 480,
+    "y": 224,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 45",
+   "frame": {
+    "x": 0,
+    "y": 280,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 46",
+   "frame": {
+    "x": 60,
+    "y": 280,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 47",
+   "frame": {
+    "x": 120,
+    "y": 280,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 48",
+   "frame": {
+    "x": 180,
+    "y": 280,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 49",
+   "frame": {
+    "x": 240,
+    "y": 280,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 50",
+   "frame": {
+    "x": 300,
+    "y": 280,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 51",
+   "frame": {
+    "x": 360,
+    "y": 280,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 52",
+   "frame": {
+    "x": 420,
+    "y": 280,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 53",
+   "frame": {
+    "x": 480,
+    "y": 280,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 54",
+   "frame": {
+    "x": 0,
+    "y": 336,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 55",
+   "frame": {
+    "x": 60,
+    "y": 336,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 56",
+   "frame": {
+    "x": 120,
+    "y": 336,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 57",
+   "frame": {
+    "x": 180,
+    "y": 336,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 58",
+   "frame": {
+    "x": 240,
+    "y": 336,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 59",
+   "frame": {
+    "x": 300,
+    "y": 336,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 60",
+   "frame": {
+    "x": 360,
+    "y": 336,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 61",
+   "frame": {
+    "x": 420,
+    "y": 336,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 62",
+   "frame": {
+    "x": 480,
+    "y": 336,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 63",
+   "frame": {
+    "x": 0,
+    "y": 392,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 64",
+   "frame": {
+    "x": 60,
+    "y": 392,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 65",
+   "frame": {
+    "x": 120,
+    "y": 392,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 66",
+   "frame": {
+    "x": 180,
+    "y": 392,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 67",
+   "frame": {
+    "x": 240,
+    "y": 392,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 68",
+   "frame": {
+    "x": 300,
+    "y": 392,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 69",
+   "frame": {
+    "x": 360,
+    "y": 392,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 70",
+   "frame": {
+    "x": 420,
+    "y": 392,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  },
+  {
+   "filename": "bleeding 71",
+   "frame": {
+    "x": 480,
+    "y": 392,
+    "w": 60,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 56
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "bleeding.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 540,
+   "h": 448
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "bleeding",
+    "from": 0,
+    "to": 71,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "status/bleeding",
+   "name": "Bleeding",
+   "fps": 30,
+   "loop": true,
+   "frames": 72,
+   "frameSize": [
+    60,
+    56
+   ],
+   "pivot": [
+    30,
+    46
+   ],
+   "columns": 9,
+   "act": {
+    "windup": 0,
+    "recovery": 0,
+    "onBody": true,
+    "targets": [],
+    "hits": [],
+    "poses": [
+     {
+      "t": 0,
+      "how": "smooth",
+      "pose": {
+       "turn": 0.7,
+       "crouch": 5,
+       "lean": 4,
+       "fx": 2,
+       "fy": -21,
+       "bx": 8,
+       "by": -14,
+       "ffx": 3,
+       "fbx": -3,
+       "hy": 1
+      }
+     },
+     {
+      "t": 0.18,
+      "how": "smooth",
+      "pose": {
+       "turn": 0.7,
+       "crouch": 3,
+       "lean": 2,
+       "fx": 2,
+       "fy": -21,
+       "bx": 8,
+       "by": -14,
+       "ffx": 3,
+       "fbx": -3
+      }
+     },
+     {
+      "t": 1.2,
+      "how": "smooth",
+      "pose": {
+       "turn": 0.7,
+       "crouch": 3,
+       "lean": 2,
+       "fx": 2,
+       "fy": -21,
+       "bx": 8,
+       "by": -14,
+       "ffx": 3,
+       "fbx": -3
+      }
+     },
+     {
+      "t": 1.2,
+      "how": "snap",
+      "pose": {
+       "turn": 0.7,
+       "crouch": 5,
+       "lean": 4,
+       "fx": 2,
+       "fy": -21,
+       "bx": 8,
+       "by": -14,
+       "ffx": 3,
+       "fbx": -3,
+       "hy": 1
+      }
+     },
+     {
+      "t": 1.38,
+      "how": "smooth",
+      "pose": {
+       "turn": 0.7,
+       "crouch": 3,
+       "lean": 2,
+       "fx": 2,
+       "fy": -21,
+       "bx": 8,
+       "by": -14,
+       "ffx": 3,
+       "fbx": -3
+      }
+     },
+     {
+      "t": 2.4,
+      "how": "smooth",
+      "pose": {
+       "turn": 0.7,
+       "crouch": 3,
+       "lean": 2,
+       "fx": 2,
+       "fy": -21,
+       "bx": 8,
+       "by": -14,
+       "ffx": 3,
+       "fbx": -3
+      }
+     },
+     {
+      "t": 2.4,
+      "how": "snap",
+      "pose": {
+       "turn": 0.7,
+       "crouch": 5,
+       "lean": 4,
+       "fx": 2,
+       "fy": -21,
+       "bx": 8,
+       "by": -14,
+       "ffx": 3,
+       "fbx": -3,
+       "hy": 1
+      }
+     }
+    ]
+   }
+  }
+ }
+}

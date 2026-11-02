@@ -1,0 +1,2173 @@
+{
+ "frames": [
+  {
+   "filename": "snowflake-burst 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 1",
+   "frame": {
+    "x": 140,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 2",
+   "frame": {
+    "x": 280,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 3",
+   "frame": {
+    "x": 420,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 4",
+   "frame": {
+    "x": 560,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 5",
+   "frame": {
+    "x": 700,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 6",
+   "frame": {
+    "x": 840,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 7",
+   "frame": {
+    "x": 980,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 8",
+   "frame": {
+    "x": 1120,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 9",
+   "frame": {
+    "x": 1260,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 10",
+   "frame": {
+    "x": 0,
+    "y": 120,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 11",
+   "frame": {
+    "x": 140,
+    "y": 120,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 12",
+   "frame": {
+    "x": 280,
+    "y": 120,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 13",
+   "frame": {
+    "x": 420,
+    "y": 120,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 14",
+   "frame": {
+    "x": 560,
+    "y": 120,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 15",
+   "frame": {
+    "x": 700,
+    "y": 120,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 16",
+   "frame": {
+    "x": 840,
+    "y": 120,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 17",
+   "frame": {
+    "x": 980,
+    "y": 120,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 18",
+   "frame": {
+    "x": 1120,
+    "y": 120,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 19",
+   "frame": {
+    "x": 1260,
+    "y": 120,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 20",
+   "frame": {
+    "x": 0,
+    "y": 240,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 21",
+   "frame": {
+    "x": 140,
+    "y": 240,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 22",
+   "frame": {
+    "x": 280,
+    "y": 240,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 23",
+   "frame": {
+    "x": 420,
+    "y": 240,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 24",
+   "frame": {
+    "x": 560,
+    "y": 240,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 25",
+   "frame": {
+    "x": 700,
+    "y": 240,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 26",
+   "frame": {
+    "x": 840,
+    "y": 240,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 27",
+   "frame": {
+    "x": 980,
+    "y": 240,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 28",
+   "frame": {
+    "x": 1120,
+    "y": 240,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 29",
+   "frame": {
+    "x": 1260,
+    "y": 240,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 30",
+   "frame": {
+    "x": 0,
+    "y": 360,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 31",
+   "frame": {
+    "x": 140,
+    "y": 360,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 32",
+   "frame": {
+    "x": 280,
+    "y": 360,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 33",
+   "frame": {
+    "x": 420,
+    "y": 360,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 34",
+   "frame": {
+    "x": 560,
+    "y": 360,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 35",
+   "frame": {
+    "x": 700,
+    "y": 360,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 36",
+   "frame": {
+    "x": 840,
+    "y": 360,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 37",
+   "frame": {
+    "x": 980,
+    "y": 360,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 38",
+   "frame": {
+    "x": 1120,
+    "y": 360,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 39",
+   "frame": {
+    "x": 1260,
+    "y": 360,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 40",
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 41",
+   "frame": {
+    "x": 140,
+    "y": 480,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 42",
+   "frame": {
+    "x": 280,
+    "y": 480,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 43",
+   "frame": {
+    "x": 420,
+    "y": 480,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 44",
+   "frame": {
+    "x": 560,
+    "y": 480,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 45",
+   "frame": {
+    "x": 700,
+    "y": 480,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 46",
+   "frame": {
+    "x": 840,
+    "y": 480,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 47",
+   "frame": {
+    "x": 980,
+    "y": 480,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 48",
+   "frame": {
+    "x": 1120,
+    "y": 480,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 49",
+   "frame": {
+    "x": 1260,
+    "y": 480,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 50",
+   "frame": {
+    "x": 0,
+    "y": 600,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 51",
+   "frame": {
+    "x": 140,
+    "y": 600,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 52",
+   "frame": {
+    "x": 280,
+    "y": 600,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 53",
+   "frame": {
+    "x": 420,
+    "y": 600,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 54",
+   "frame": {
+    "x": 560,
+    "y": 600,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 55",
+   "frame": {
+    "x": 700,
+    "y": 600,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 56",
+   "frame": {
+    "x": 840,
+    "y": 600,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 57",
+   "frame": {
+    "x": 980,
+    "y": 600,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 58",
+   "frame": {
+    "x": 1120,
+    "y": 600,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 59",
+   "frame": {
+    "x": 1260,
+    "y": 600,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 60",
+   "frame": {
+    "x": 0,
+    "y": 720,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 61",
+   "frame": {
+    "x": 140,
+    "y": 720,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 62",
+   "frame": {
+    "x": 280,
+    "y": 720,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 63",
+   "frame": {
+    "x": 420,
+    "y": 720,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 64",
+   "frame": {
+    "x": 560,
+    "y": 720,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 65",
+   "frame": {
+    "x": 700,
+    "y": 720,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 66",
+   "frame": {
+    "x": 840,
+    "y": 720,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 67",
+   "frame": {
+    "x": 980,
+    "y": 720,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 68",
+   "frame": {
+    "x": 1120,
+    "y": 720,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 69",
+   "frame": {
+    "x": 1260,
+    "y": 720,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 70",
+   "frame": {
+    "x": 0,
+    "y": 840,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 71",
+   "frame": {
+    "x": 140,
+    "y": 840,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 72",
+   "frame": {
+    "x": 280,
+    "y": 840,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 73",
+   "frame": {
+    "x": 420,
+    "y": 840,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 74",
+   "frame": {
+    "x": 560,
+    "y": 840,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 75",
+   "frame": {
+    "x": 700,
+    "y": 840,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 76",
+   "frame": {
+    "x": 840,
+    "y": 840,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 77",
+   "frame": {
+    "x": 980,
+    "y": 840,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 78",
+   "frame": {
+    "x": 1120,
+    "y": 840,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 79",
+   "frame": {
+    "x": 1260,
+    "y": 840,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 80",
+   "frame": {
+    "x": 0,
+    "y": 960,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 81",
+   "frame": {
+    "x": 140,
+    "y": 960,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 82",
+   "frame": {
+    "x": 280,
+    "y": 960,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 83",
+   "frame": {
+    "x": 420,
+    "y": 960,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 84",
+   "frame": {
+    "x": 560,
+    "y": 960,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 85",
+   "frame": {
+    "x": 700,
+    "y": 960,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 86",
+   "frame": {
+    "x": 840,
+    "y": 960,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 87",
+   "frame": {
+    "x": 980,
+    "y": 960,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 88",
+   "frame": {
+    "x": 1120,
+    "y": 960,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 89",
+   "frame": {
+    "x": 1260,
+    "y": 960,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 90",
+   "frame": {
+    "x": 0,
+    "y": 1080,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 91",
+   "frame": {
+    "x": 140,
+    "y": 1080,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 92",
+   "frame": {
+    "x": 280,
+    "y": 1080,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 93",
+   "frame": {
+    "x": 420,
+    "y": 1080,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 94",
+   "frame": {
+    "x": 560,
+    "y": 1080,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 95",
+   "frame": {
+    "x": 700,
+    "y": 1080,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "snowflake-burst 96",
+   "frame": {
+    "x": 840,
+    "y": 1080,
+    "w": 140,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 140,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 140,
+    "h": 120
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "snowflake-burst.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1400,
+   "h": 1200
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "snowflake-burst",
+    "from": 0,
+    "to": 96,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "ice/snowflake-burst",
+   "name": "Snowflake burst",
+   "fps": 30,
+   "loop": false,
+   "frames": 97,
+   "frameSize": [
+    140,
+    120
+   ],
+   "pivot": [
+    70,
+    106
+   ],
+   "columns": 10
+  }
+ }
+}

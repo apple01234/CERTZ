@@ -1,0 +1,2569 @@
+{
+ "frames": [
+  {
+   "filename": "dark-explosion 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 1",
+   "frame": {
+    "x": 280,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 2",
+   "frame": {
+    "x": 560,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 3",
+   "frame": {
+    "x": 840,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 4",
+   "frame": {
+    "x": 1120,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 5",
+   "frame": {
+    "x": 1400,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 6",
+   "frame": {
+    "x": 1680,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 7",
+   "frame": {
+    "x": 1960,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 8",
+   "frame": {
+    "x": 2240,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 9",
+   "frame": {
+    "x": 2520,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 10",
+   "frame": {
+    "x": 2800,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 11",
+   "frame": {
+    "x": 0,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 12",
+   "frame": {
+    "x": 280,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 13",
+   "frame": {
+    "x": 560,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 14",
+   "frame": {
+    "x": 840,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 15",
+   "frame": {
+    "x": 1120,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 16",
+   "frame": {
+    "x": 1400,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 17",
+   "frame": {
+    "x": 1680,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 18",
+   "frame": {
+    "x": 1960,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 19",
+   "frame": {
+    "x": 2240,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 20",
+   "frame": {
+    "x": 2520,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 21",
+   "frame": {
+    "x": 2800,
+    "y": 248,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 22",
+   "frame": {
+    "x": 0,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 23",
+   "frame": {
+    "x": 280,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 24",
+   "frame": {
+    "x": 560,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 25",
+   "frame": {
+    "x": 840,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 26",
+   "frame": {
+    "x": 1120,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 27",
+   "frame": {
+    "x": 1400,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 28",
+   "frame": {
+    "x": 1680,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 29",
+   "frame": {
+    "x": 1960,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 30",
+   "frame": {
+    "x": 2240,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 31",
+   "frame": {
+    "x": 2520,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 32",
+   "frame": {
+    "x": 2800,
+    "y": 496,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 33",
+   "frame": {
+    "x": 0,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 34",
+   "frame": {
+    "x": 280,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 35",
+   "frame": {
+    "x": 560,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 36",
+   "frame": {
+    "x": 840,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 37",
+   "frame": {
+    "x": 1120,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 38",
+   "frame": {
+    "x": 1400,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 39",
+   "frame": {
+    "x": 1680,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 40",
+   "frame": {
+    "x": 1960,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 41",
+   "frame": {
+    "x": 2240,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 42",
+   "frame": {
+    "x": 2520,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 43",
+   "frame": {
+    "x": 2800,
+    "y": 744,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 44",
+   "frame": {
+    "x": 0,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 45",
+   "frame": {
+    "x": 280,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 46",
+   "frame": {
+    "x": 560,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 47",
+   "frame": {
+    "x": 840,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 48",
+   "frame": {
+    "x": 1120,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 49",
+   "frame": {
+    "x": 1400,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 50",
+   "frame": {
+    "x": 1680,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 51",
+   "frame": {
+    "x": 1960,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 52",
+   "frame": {
+    "x": 2240,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 53",
+   "frame": {
+    "x": 2520,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 54",
+   "frame": {
+    "x": 2800,
+    "y": 992,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 55",
+   "frame": {
+    "x": 0,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 56",
+   "frame": {
+    "x": 280,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 57",
+   "frame": {
+    "x": 560,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 58",
+   "frame": {
+    "x": 840,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 59",
+   "frame": {
+    "x": 1120,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 60",
+   "frame": {
+    "x": 1400,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 61",
+   "frame": {
+    "x": 1680,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 62",
+   "frame": {
+    "x": 1960,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 63",
+   "frame": {
+    "x": 2240,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 64",
+   "frame": {
+    "x": 2520,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 65",
+   "frame": {
+    "x": 2800,
+    "y": 1240,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 66",
+   "frame": {
+    "x": 0,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 67",
+   "frame": {
+    "x": 280,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 68",
+   "frame": {
+    "x": 560,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 69",
+   "frame": {
+    "x": 840,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 70",
+   "frame": {
+    "x": 1120,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 71",
+   "frame": {
+    "x": 1400,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 72",
+   "frame": {
+    "x": 1680,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 73",
+   "frame": {
+    "x": 1960,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 74",
+   "frame": {
+    "x": 2240,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 75",
+   "frame": {
+    "x": 2520,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 76",
+   "frame": {
+    "x": 2800,
+    "y": 1488,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 77",
+   "frame": {
+    "x": 0,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 78",
+   "frame": {
+    "x": 280,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 79",
+   "frame": {
+    "x": 560,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 80",
+   "frame": {
+    "x": 840,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 81",
+   "frame": {
+    "x": 1120,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 82",
+   "frame": {
+    "x": 1400,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 83",
+   "frame": {
+    "x": 1680,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 84",
+   "frame": {
+    "x": 1960,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 85",
+   "frame": {
+    "x": 2240,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 86",
+   "frame": {
+    "x": 2520,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 87",
+   "frame": {
+    "x": 2800,
+    "y": 1736,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 88",
+   "frame": {
+    "x": 0,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 89",
+   "frame": {
+    "x": 280,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 90",
+   "frame": {
+    "x": 560,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 91",
+   "frame": {
+    "x": 840,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 92",
+   "frame": {
+    "x": 1120,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 93",
+   "frame": {
+    "x": 1400,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 94",
+   "frame": {
+    "x": 1680,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 95",
+   "frame": {
+    "x": 1960,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 96",
+   "frame": {
+    "x": 2240,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 97",
+   "frame": {
+    "x": 2520,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 98",
+   "frame": {
+    "x": 2800,
+    "y": 1984,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 99",
+   "frame": {
+    "x": 0,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 100",
+   "frame": {
+    "x": 280,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 101",
+   "frame": {
+    "x": 560,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 102",
+   "frame": {
+    "x": 840,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 103",
+   "frame": {
+    "x": 1120,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 104",
+   "frame": {
+    "x": 1400,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 105",
+   "frame": {
+    "x": 1680,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 106",
+   "frame": {
+    "x": 1960,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 107",
+   "frame": {
+    "x": 2240,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 108",
+   "frame": {
+    "x": 2520,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 109",
+   "frame": {
+    "x": 2800,
+    "y": 2232,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 110",
+   "frame": {
+    "x": 0,
+    "y": 2480,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 111",
+   "frame": {
+    "x": 280,
+    "y": 2480,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 112",
+   "frame": {
+    "x": 560,
+    "y": 2480,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 113",
+   "frame": {
+    "x": 840,
+    "y": 2480,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dark-explosion 114",
+   "frame": {
+    "x": 1120,
+    "y": 2480,
+    "w": 280,
+    "h": 248
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 280,
+    "h": 248
+   },
+   "sourceSize": {
+    "w": 280,
+    "h": 248
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "dark-explosion.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 3080,
+   "h": 2728
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "dark-explosion",
+    "from": 0,
+    "to": 114,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "shadow/dark-explosion",
+   "name": "Dark explosion",
+   "fps": 30,
+   "loop": false,
+   "frames": 115,
+   "frameSize": [
+    280,
+    248
+   ],
+   "pivot": [
+    140,
+    206
+   ],
+   "columns": 11
+  }
+ }
+}

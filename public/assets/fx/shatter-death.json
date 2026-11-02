@@ -1,0 +1,2336 @@
+{
+ "frames": [
+  {
+   "filename": "shatter-death 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 1",
+   "frame": {
+    "x": 172,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 2",
+   "frame": {
+    "x": 344,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 3",
+   "frame": {
+    "x": 516,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 4",
+   "frame": {
+    "x": 688,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 5",
+   "frame": {
+    "x": 860,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 6",
+   "frame": {
+    "x": 1032,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 7",
+   "frame": {
+    "x": 1204,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 8",
+   "frame": {
+    "x": 0,
+    "y": 96,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 9",
+   "frame": {
+    "x": 172,
+    "y": 96,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 10",
+   "frame": {
+    "x": 344,
+    "y": 96,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 11",
+   "frame": {
+    "x": 516,
+    "y": 96,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 12",
+   "frame": {
+    "x": 688,
+    "y": 96,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 13",
+   "frame": {
+    "x": 860,
+    "y": 96,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 14",
+   "frame": {
+    "x": 1032,
+    "y": 96,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 15",
+   "frame": {
+    "x": 1204,
+    "y": 96,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 16",
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 17",
+   "frame": {
+    "x": 172,
+    "y": 192,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 18",
+   "frame": {
+    "x": 344,
+    "y": 192,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 19",
+   "frame": {
+    "x": 516,
+    "y": 192,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 20",
+   "frame": {
+    "x": 688,
+    "y": 192,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 21",
+   "frame": {
+    "x": 860,
+    "y": 192,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 22",
+   "frame": {
+    "x": 1032,
+    "y": 192,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 23",
+   "frame": {
+    "x": 1204,
+    "y": 192,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 24",
+   "frame": {
+    "x": 0,
+    "y": 288,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 25",
+   "frame": {
+    "x": 172,
+    "y": 288,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 26",
+   "frame": {
+    "x": 344,
+    "y": 288,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 27",
+   "frame": {
+    "x": 516,
+    "y": 288,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 28",
+   "frame": {
+    "x": 688,
+    "y": 288,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 29",
+   "frame": {
+    "x": 860,
+    "y": 288,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 30",
+   "frame": {
+    "x": 1032,
+    "y": 288,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 31",
+   "frame": {
+    "x": 1204,
+    "y": 288,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 32",
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 33",
+   "frame": {
+    "x": 172,
+    "y": 384,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 34",
+   "frame": {
+    "x": 344,
+    "y": 384,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 35",
+   "frame": {
+    "x": 516,
+    "y": 384,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 36",
+   "frame": {
+    "x": 688,
+    "y": 384,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 37",
+   "frame": {
+    "x": 860,
+    "y": 384,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 38",
+   "frame": {
+    "x": 1032,
+    "y": 384,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 39",
+   "frame": {
+    "x": 1204,
+    "y": 384,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 40",
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 41",
+   "frame": {
+    "x": 172,
+    "y": 480,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 42",
+   "frame": {
+    "x": 344,
+    "y": 480,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 43",
+   "frame": {
+    "x": 516,
+    "y": 480,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 44",
+   "frame": {
+    "x": 688,
+    "y": 480,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 45",
+   "frame": {
+    "x": 860,
+    "y": 480,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 46",
+   "frame": {
+    "x": 1032,
+    "y": 480,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 47",
+   "frame": {
+    "x": 1204,
+    "y": 480,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 48",
+   "frame": {
+    "x": 0,
+    "y": 576,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 49",
+   "frame": {
+    "x": 172,
+    "y": 576,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 50",
+   "frame": {
+    "x": 344,
+    "y": 576,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 51",
+   "frame": {
+    "x": 516,
+    "y": 576,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 52",
+   "frame": {
+    "x": 688,
+    "y": 576,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 53",
+   "frame": {
+    "x": 860,
+    "y": 576,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 54",
+   "frame": {
+    "x": 1032,
+    "y": 576,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 55",
+   "frame": {
+    "x": 1204,
+    "y": 576,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 56",
+   "frame": {
+    "x": 0,
+    "y": 672,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 57",
+   "frame": {
+    "x": 172,
+    "y": 672,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 58",
+   "frame": {
+    "x": 344,
+    "y": 672,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 59",
+   "frame": {
+    "x": 516,
+    "y": 672,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 60",
+   "frame": {
+    "x": 688,
+    "y": 672,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 61",
+   "frame": {
+    "x": 860,
+    "y": 672,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 62",
+   "frame": {
+    "x": 1032,
+    "y": 672,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 63",
+   "frame": {
+    "x": 1204,
+    "y": 672,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 64",
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 65",
+   "frame": {
+    "x": 172,
+    "y": 768,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 66",
+   "frame": {
+    "x": 344,
+    "y": 768,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 67",
+   "frame": {
+    "x": 516,
+    "y": 768,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 68",
+   "frame": {
+    "x": 688,
+    "y": 768,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 69",
+   "frame": {
+    "x": 860,
+    "y": 768,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 70",
+   "frame": {
+    "x": 1032,
+    "y": 768,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 71",
+   "frame": {
+    "x": 1204,
+    "y": 768,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 72",
+   "frame": {
+    "x": 0,
+    "y": 864,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 73",
+   "frame": {
+    "x": 172,
+    "y": 864,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 74",
+   "frame": {
+    "x": 344,
+    "y": 864,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 75",
+   "frame": {
+    "x": 516,
+    "y": 864,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 76",
+   "frame": {
+    "x": 688,
+    "y": 864,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 77",
+   "frame": {
+    "x": 860,
+    "y": 864,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 78",
+   "frame": {
+    "x": 1032,
+    "y": 864,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 79",
+   "frame": {
+    "x": 1204,
+    "y": 864,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 80",
+   "frame": {
+    "x": 0,
+    "y": 960,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 81",
+   "frame": {
+    "x": 172,
+    "y": 960,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 82",
+   "frame": {
+    "x": 344,
+    "y": 960,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 83",
+   "frame": {
+    "x": 516,
+    "y": 960,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 84",
+   "frame": {
+    "x": 688,
+    "y": 960,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 85",
+   "frame": {
+    "x": 860,
+    "y": 960,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 86",
+   "frame": {
+    "x": 1032,
+    "y": 960,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 87",
+   "frame": {
+    "x": 1204,
+    "y": 960,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 88",
+   "frame": {
+    "x": 0,
+    "y": 1056,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 89",
+   "frame": {
+    "x": 172,
+    "y": 1056,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 90",
+   "frame": {
+    "x": 344,
+    "y": 1056,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 91",
+   "frame": {
+    "x": 516,
+    "y": 1056,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 92",
+   "frame": {
+    "x": 688,
+    "y": 1056,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 93",
+   "frame": {
+    "x": 860,
+    "y": 1056,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 94",
+   "frame": {
+    "x": 1032,
+    "y": 1056,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 95",
+   "frame": {
+    "x": 1204,
+    "y": 1056,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 96",
+   "frame": {
+    "x": 0,
+    "y": 1152,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 97",
+   "frame": {
+    "x": 172,
+    "y": 1152,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 98",
+   "frame": {
+    "x": 344,
+    "y": 1152,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "shatter-death 99",
+   "frame": {
+    "x": 516,
+    "y": 1152,
+    "w": 172,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 172,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 172,
+    "h": 96
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "shatter-death.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1376,
+   "h": 1248
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "shatter-death",
+    "from": 0,
+    "to": 99,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "spawn/shatter-death",
+   "name": "Shatter death",
+   "fps": 30,
+   "loop": false,
+   "frames": 100,
+   "frameSize": [
+    172,
+    96
+   ],
+   "pivot": [
+    84,
+    84
+   ],
+   "columns": 8,
+   "act": {
+    "windup": 0.2,
+    "recovery": 0,
+    "onBody": true,
+    "targets": [],
+    "hits": [
+     {
+      "t": 0.5,
+      "freeze": 0.02,
+      "shake": 0.06,
+      "amp": 1,
+      "push": 1.2
+     },
+     {
+      "t": 1.4,
+      "freeze": 0.09,
+      "shake": 0.26,
+      "amp": 3,
+      "push": 1.2
+     }
+    ],
+    "poses": [
+     {
+      "t": -0.2,
+      "how": "smooth",
+      "pose": {
+       "crouch": 3,
+       "fx": 11,
+       "fy": -21,
+       "bx": 9,
+       "by": -21,
+       "ffx": 7,
+       "fbx": -7
+      }
+     },
+     {
+      "t": 0.08,
+      "how": "snap",
+      "pose": {
+       "turn": 0.9,
+       "lean": -2,
+       "crouch": 2,
+       "fx": -9,
+       "fy": -31,
+       "bx": 9,
+       "by": -31,
+       "ffx": -3,
+       "fbx": 4
+      }
+     },
+     {
+      "t": 0.3,
+      "how": "smooth",
+      "pose": {
+       "turn": 0.9,
+       "lean": -3,
+       "crouch": 2,
+       "fx": -9,
+       "fy": -34,
+       "bx": 9,
+       "by": -31,
+       "ffx": -3,
+       "fbx": 4
+      }
+     },
+     {
+      "t": 0.5,
+      "how": "smooth",
+      "pose": {
+       "turn": 0.9,
+       "lean": -2,
+       "crouch": 2,
+       "fx": -9,
+       "fy": -31,
+       "bx": 9,
+       "by": -31,
+       "ffx": -3,
+       "fbx": 4
+      }
+     },
+     {
+      "t": 3.3,
+      "how": "smooth",
+      "pose": {
+       "turn": 0.9,
+       "lean": -2,
+       "crouch": 2,
+       "fx": -9,
+       "fy": -31,
+       "bx": 9,
+       "by": -31,
+       "ffx": -3,
+       "fbx": 4
+      }
+     }
+    ]
+   }
+  }
+ }
+}

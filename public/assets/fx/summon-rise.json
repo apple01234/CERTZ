@@ -1,0 +1,3097 @@
+{
+ "frames": [
+  {
+   "filename": "summon-rise 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 1",
+   "frame": {
+    "x": 176,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 2",
+   "frame": {
+    "x": 352,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 3",
+   "frame": {
+    "x": 528,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 4",
+   "frame": {
+    "x": 704,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 5",
+   "frame": {
+    "x": 880,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 6",
+   "frame": {
+    "x": 1056,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 7",
+   "frame": {
+    "x": 1232,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 8",
+   "frame": {
+    "x": 1408,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 9",
+   "frame": {
+    "x": 1584,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 10",
+   "frame": {
+    "x": 0,
+    "y": 116,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 11",
+   "frame": {
+    "x": 176,
+    "y": 116,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 12",
+   "frame": {
+    "x": 352,
+    "y": 116,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 13",
+   "frame": {
+    "x": 528,
+    "y": 116,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 14",
+   "frame": {
+    "x": 704,
+    "y": 116,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 15",
+   "frame": {
+    "x": 880,
+    "y": 116,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 16",
+   "frame": {
+    "x": 1056,
+    "y": 116,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 17",
+   "frame": {
+    "x": 1232,
+    "y": 116,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 18",
+   "frame": {
+    "x": 1408,
+    "y": 116,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 19",
+   "frame": {
+    "x": 1584,
+    "y": 116,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 20",
+   "frame": {
+    "x": 0,
+    "y": 232,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 21",
+   "frame": {
+    "x": 176,
+    "y": 232,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 22",
+   "frame": {
+    "x": 352,
+    "y": 232,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 23",
+   "frame": {
+    "x": 528,
+    "y": 232,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 24",
+   "frame": {
+    "x": 704,
+    "y": 232,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 25",
+   "frame": {
+    "x": 880,
+    "y": 232,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 26",
+   "frame": {
+    "x": 1056,
+    "y": 232,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 27",
+   "frame": {
+    "x": 1232,
+    "y": 232,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 28",
+   "frame": {
+    "x": 1408,
+    "y": 232,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 29",
+   "frame": {
+    "x": 1584,
+    "y": 232,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 30",
+   "frame": {
+    "x": 0,
+    "y": 348,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 31",
+   "frame": {
+    "x": 176,
+    "y": 348,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 32",
+   "frame": {
+    "x": 352,
+    "y": 348,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 33",
+   "frame": {
+    "x": 528,
+    "y": 348,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 34",
+   "frame": {
+    "x": 704,
+    "y": 348,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 35",
+   "frame": {
+    "x": 880,
+    "y": 348,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 36",
+   "frame": {
+    "x": 1056,
+    "y": 348,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 37",
+   "frame": {
+    "x": 1232,
+    "y": 348,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 38",
+   "frame": {
+    "x": 1408,
+    "y": 348,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 39",
+   "frame": {
+    "x": 1584,
+    "y": 348,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 40",
+   "frame": {
+    "x": 0,
+    "y": 464,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 41",
+   "frame": {
+    "x": 176,
+    "y": 464,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 42",
+   "frame": {
+    "x": 352,
+    "y": 464,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 43",
+   "frame": {
+    "x": 528,
+    "y": 464,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 44",
+   "frame": {
+    "x": 704,
+    "y": 464,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 45",
+   "frame": {
+    "x": 880,
+    "y": 464,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 46",
+   "frame": {
+    "x": 1056,
+    "y": 464,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 47",
+   "frame": {
+    "x": 1232,
+    "y": 464,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 48",
+   "frame": {
+    "x": 1408,
+    "y": 464,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 49",
+   "frame": {
+    "x": 1584,
+    "y": 464,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 50",
+   "frame": {
+    "x": 0,
+    "y": 580,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 51",
+   "frame": {
+    "x": 176,
+    "y": 580,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 52",
+   "frame": {
+    "x": 352,
+    "y": 580,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 53",
+   "frame": {
+    "x": 528,
+    "y": 580,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 54",
+   "frame": {
+    "x": 704,
+    "y": 580,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 55",
+   "frame": {
+    "x": 880,
+    "y": 580,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 56",
+   "frame": {
+    "x": 1056,
+    "y": 580,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 57",
+   "frame": {
+    "x": 1232,
+    "y": 580,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 58",
+   "frame": {
+    "x": 1408,
+    "y": 580,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 59",
+   "frame": {
+    "x": 1584,
+    "y": 580,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 60",
+   "frame": {
+    "x": 0,
+    "y": 696,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 61",
+   "frame": {
+    "x": 176,
+    "y": 696,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 62",
+   "frame": {
+    "x": 352,
+    "y": 696,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 63",
+   "frame": {
+    "x": 528,
+    "y": 696,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 64",
+   "frame": {
+    "x": 704,
+    "y": 696,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 65",
+   "frame": {
+    "x": 880,
+    "y": 696,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 66",
+   "frame": {
+    "x": 1056,
+    "y": 696,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 67",
+   "frame": {
+    "x": 1232,
+    "y": 696,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 68",
+   "frame": {
+    "x": 1408,
+    "y": 696,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 69",
+   "frame": {
+    "x": 1584,
+    "y": 696,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 70",
+   "frame": {
+    "x": 0,
+    "y": 812,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 71",
+   "frame": {
+    "x": 176,
+    "y": 812,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 72",
+   "frame": {
+    "x": 352,
+    "y": 812,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 73",
+   "frame": {
+    "x": 528,
+    "y": 812,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 74",
+   "frame": {
+    "x": 704,
+    "y": 812,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 75",
+   "frame": {
+    "x": 880,
+    "y": 812,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 76",
+   "frame": {
+    "x": 1056,
+    "y": 812,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 77",
+   "frame": {
+    "x": 1232,
+    "y": 812,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 78",
+   "frame": {
+    "x": 1408,
+    "y": 812,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 79",
+   "frame": {
+    "x": 1584,
+    "y": 812,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 80",
+   "frame": {
+    "x": 0,
+    "y": 928,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 81",
+   "frame": {
+    "x": 176,
+    "y": 928,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 82",
+   "frame": {
+    "x": 352,
+    "y": 928,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 83",
+   "frame": {
+    "x": 528,
+    "y": 928,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 84",
+   "frame": {
+    "x": 704,
+    "y": 928,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 85",
+   "frame": {
+    "x": 880,
+    "y": 928,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 86",
+   "frame": {
+    "x": 1056,
+    "y": 928,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 87",
+   "frame": {
+    "x": 1232,
+    "y": 928,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 88",
+   "frame": {
+    "x": 1408,
+    "y": 928,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 89",
+   "frame": {
+    "x": 1584,
+    "y": 928,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 90",
+   "frame": {
+    "x": 0,
+    "y": 1044,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 91",
+   "frame": {
+    "x": 176,
+    "y": 1044,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 92",
+   "frame": {
+    "x": 352,
+    "y": 1044,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 93",
+   "frame": {
+    "x": 528,
+    "y": 1044,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 94",
+   "frame": {
+    "x": 704,
+    "y": 1044,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 95",
+   "frame": {
+    "x": 880,
+    "y": 1044,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 96",
+   "frame": {
+    "x": 1056,
+    "y": 1044,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 97",
+   "frame": {
+    "x": 1232,
+    "y": 1044,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 98",
+   "frame": {
+    "x": 1408,
+    "y": 1044,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 99",
+   "frame": {
+    "x": 1584,
+    "y": 1044,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 100",
+   "frame": {
+    "x": 0,
+    "y": 1160,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 101",
+   "frame": {
+    "x": 176,
+    "y": 1160,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 102",
+   "frame": {
+    "x": 352,
+    "y": 1160,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 103",
+   "frame": {
+    "x": 528,
+    "y": 1160,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 104",
+   "frame": {
+    "x": 704,
+    "y": 1160,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 105",
+   "frame": {
+    "x": 880,
+    "y": 1160,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 106",
+   "frame": {
+    "x": 1056,
+    "y": 1160,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 107",
+   "frame": {
+    "x": 1232,
+    "y": 1160,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 108",
+   "frame": {
+    "x": 1408,
+    "y": 1160,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 109",
+   "frame": {
+    "x": 1584,
+    "y": 1160,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 110",
+   "frame": {
+    "x": 0,
+    "y": 1276,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 111",
+   "frame": {
+    "x": 176,
+    "y": 1276,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 112",
+   "frame": {
+    "x": 352,
+    "y": 1276,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 113",
+   "frame": {
+    "x": 528,
+    "y": 1276,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 114",
+   "frame": {
+    "x": 704,
+    "y": 1276,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 115",
+   "frame": {
+    "x": 880,
+    "y": 1276,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 116",
+   "frame": {
+    "x": 1056,
+    "y": 1276,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 117",
+   "frame": {
+    "x": 1232,
+    "y": 1276,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 118",
+   "frame": {
+    "x": 1408,
+    "y": 1276,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 119",
+   "frame": {
+    "x": 1584,
+    "y": 1276,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 120",
+   "frame": {
+    "x": 0,
+    "y": 1392,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 121",
+   "frame": {
+    "x": 176,
+    "y": 1392,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 122",
+   "frame": {
+    "x": 352,
+    "y": 1392,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 123",
+   "frame": {
+    "x": 528,
+    "y": 1392,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 124",
+   "frame": {
+    "x": 704,
+    "y": 1392,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 125",
+   "frame": {
+    "x": 880,
+    "y": 1392,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 126",
+   "frame": {
+    "x": 1056,
+    "y": 1392,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 127",
+   "frame": {
+    "x": 1232,
+    "y": 1392,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 128",
+   "frame": {
+    "x": 1408,
+    "y": 1392,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 129",
+   "frame": {
+    "x": 1584,
+    "y": 1392,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 130",
+   "frame": {
+    "x": 0,
+    "y": 1508,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 131",
+   "frame": {
+    "x": 176,
+    "y": 1508,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 132",
+   "frame": {
+    "x": 352,
+    "y": 1508,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 133",
+   "frame": {
+    "x": 528,
+    "y": 1508,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 134",
+   "frame": {
+    "x": 704,
+    "y": 1508,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 135",
+   "frame": {
+    "x": 880,
+    "y": 1508,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 136",
+   "frame": {
+    "x": 1056,
+    "y": 1508,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 137",
+   "frame": {
+    "x": 1232,
+    "y": 1508,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "summon-rise 138",
+   "frame": {
+    "x": 1408,
+    "y": 1508,
+    "w": 176,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 116
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "summon-rise.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1760,
+   "h": 1624
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "summon-rise",
+    "from": 0,
+    "to": 138,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "spawn/summon-rise",
+   "name": "Summon rise",
+   "fps": 30,
+   "loop": false,
+   "frames": 139,
+   "frameSize": [
+    176,
+    116
+   ],
+   "pivot": [
+    88,
+    94
+   ],
+   "columns": 10
+  }
+ }
+}

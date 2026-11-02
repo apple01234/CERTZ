@@ -1,0 +1,2305 @@
+{
+ "frames": [
+  {
+   "filename": "earth-spike 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 1",
+   "frame": {
+    "x": 272,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 2",
+   "frame": {
+    "x": 544,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 3",
+   "frame": {
+    "x": 816,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 4",
+   "frame": {
+    "x": 1088,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 5",
+   "frame": {
+    "x": 1360,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 6",
+   "frame": {
+    "x": 1632,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 7",
+   "frame": {
+    "x": 1904,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 8",
+   "frame": {
+    "x": 0,
+    "y": 150,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 9",
+   "frame": {
+    "x": 272,
+    "y": 150,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 10",
+   "frame": {
+    "x": 544,
+    "y": 150,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 11",
+   "frame": {
+    "x": 816,
+    "y": 150,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 12",
+   "frame": {
+    "x": 1088,
+    "y": 150,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 13",
+   "frame": {
+    "x": 1360,
+    "y": 150,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 14",
+   "frame": {
+    "x": 1632,
+    "y": 150,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 15",
+   "frame": {
+    "x": 1904,
+    "y": 150,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 16",
+   "frame": {
+    "x": 0,
+    "y": 300,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 17",
+   "frame": {
+    "x": 272,
+    "y": 300,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 18",
+   "frame": {
+    "x": 544,
+    "y": 300,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 19",
+   "frame": {
+    "x": 816,
+    "y": 300,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 20",
+   "frame": {
+    "x": 1088,
+    "y": 300,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 21",
+   "frame": {
+    "x": 1360,
+    "y": 300,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 22",
+   "frame": {
+    "x": 1632,
+    "y": 300,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 23",
+   "frame": {
+    "x": 1904,
+    "y": 300,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 24",
+   "frame": {
+    "x": 0,
+    "y": 450,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 25",
+   "frame": {
+    "x": 272,
+    "y": 450,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 26",
+   "frame": {
+    "x": 544,
+    "y": 450,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 27",
+   "frame": {
+    "x": 816,
+    "y": 450,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 28",
+   "frame": {
+    "x": 1088,
+    "y": 450,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 29",
+   "frame": {
+    "x": 1360,
+    "y": 450,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 30",
+   "frame": {
+    "x": 1632,
+    "y": 450,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 31",
+   "frame": {
+    "x": 1904,
+    "y": 450,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 32",
+   "frame": {
+    "x": 0,
+    "y": 600,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 33",
+   "frame": {
+    "x": 272,
+    "y": 600,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 34",
+   "frame": {
+    "x": 544,
+    "y": 600,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 35",
+   "frame": {
+    "x": 816,
+    "y": 600,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 36",
+   "frame": {
+    "x": 1088,
+    "y": 600,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 37",
+   "frame": {
+    "x": 1360,
+    "y": 600,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 38",
+   "frame": {
+    "x": 1632,
+    "y": 600,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 39",
+   "frame": {
+    "x": 1904,
+    "y": 600,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 40",
+   "frame": {
+    "x": 0,
+    "y": 750,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 41",
+   "frame": {
+    "x": 272,
+    "y": 750,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 42",
+   "frame": {
+    "x": 544,
+    "y": 750,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 43",
+   "frame": {
+    "x": 816,
+    "y": 750,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 44",
+   "frame": {
+    "x": 1088,
+    "y": 750,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 45",
+   "frame": {
+    "x": 1360,
+    "y": 750,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 46",
+   "frame": {
+    "x": 1632,
+    "y": 750,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 47",
+   "frame": {
+    "x": 1904,
+    "y": 750,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 48",
+   "frame": {
+    "x": 0,
+    "y": 900,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 49",
+   "frame": {
+    "x": 272,
+    "y": 900,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 50",
+   "frame": {
+    "x": 544,
+    "y": 900,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 51",
+   "frame": {
+    "x": 816,
+    "y": 900,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 52",
+   "frame": {
+    "x": 1088,
+    "y": 900,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 53",
+   "frame": {
+    "x": 1360,
+    "y": 900,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 54",
+   "frame": {
+    "x": 1632,
+    "y": 900,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 55",
+   "frame": {
+    "x": 1904,
+    "y": 900,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 56",
+   "frame": {
+    "x": 0,
+    "y": 1050,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 57",
+   "frame": {
+    "x": 272,
+    "y": 1050,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 58",
+   "frame": {
+    "x": 544,
+    "y": 1050,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 59",
+   "frame": {
+    "x": 816,
+    "y": 1050,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 60",
+   "frame": {
+    "x": 1088,
+    "y": 1050,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 61",
+   "frame": {
+    "x": 1360,
+    "y": 1050,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 62",
+   "frame": {
+    "x": 1632,
+    "y": 1050,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 63",
+   "frame": {
+    "x": 1904,
+    "y": 1050,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 64",
+   "frame": {
+    "x": 0,
+    "y": 1200,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 65",
+   "frame": {
+    "x": 272,
+    "y": 1200,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 66",
+   "frame": {
+    "x": 544,
+    "y": 1200,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 67",
+   "frame": {
+    "x": 816,
+    "y": 1200,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 68",
+   "frame": {
+    "x": 1088,
+    "y": 1200,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 69",
+   "frame": {
+    "x": 1360,
+    "y": 1200,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 70",
+   "frame": {
+    "x": 1632,
+    "y": 1200,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 71",
+   "frame": {
+    "x": 1904,
+    "y": 1200,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 72",
+   "frame": {
+    "x": 0,
+    "y": 1350,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 73",
+   "frame": {
+    "x": 272,
+    "y": 1350,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 74",
+   "frame": {
+    "x": 544,
+    "y": 1350,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 75",
+   "frame": {
+    "x": 816,
+    "y": 1350,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 76",
+   "frame": {
+    "x": 1088,
+    "y": 1350,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 77",
+   "frame": {
+    "x": 1360,
+    "y": 1350,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 78",
+   "frame": {
+    "x": 1632,
+    "y": 1350,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 79",
+   "frame": {
+    "x": 1904,
+    "y": 1350,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 80",
+   "frame": {
+    "x": 0,
+    "y": 1500,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 81",
+   "frame": {
+    "x": 272,
+    "y": 1500,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 82",
+   "frame": {
+    "x": 544,
+    "y": 1500,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 83",
+   "frame": {
+    "x": 816,
+    "y": 1500,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 84",
+   "frame": {
+    "x": 1088,
+    "y": 1500,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 85",
+   "frame": {
+    "x": 1360,
+    "y": 1500,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 86",
+   "frame": {
+    "x": 1632,
+    "y": 1500,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 87",
+   "frame": {
+    "x": 1904,
+    "y": 1500,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 88",
+   "frame": {
+    "x": 0,
+    "y": 1650,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 89",
+   "frame": {
+    "x": 272,
+    "y": 1650,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 90",
+   "frame": {
+    "x": 544,
+    "y": 1650,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 91",
+   "frame": {
+    "x": 816,
+    "y": 1650,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 92",
+   "frame": {
+    "x": 1088,
+    "y": 1650,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 93",
+   "frame": {
+    "x": 1360,
+    "y": 1650,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 94",
+   "frame": {
+    "x": 1632,
+    "y": 1650,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 95",
+   "frame": {
+    "x": 1904,
+    "y": 1650,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 96",
+   "frame": {
+    "x": 0,
+    "y": 1800,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 97",
+   "frame": {
+    "x": 272,
+    "y": 1800,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 98",
+   "frame": {
+    "x": 544,
+    "y": 1800,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 99",
+   "frame": {
+    "x": 816,
+    "y": 1800,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 100",
+   "frame": {
+    "x": 1088,
+    "y": 1800,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 101",
+   "frame": {
+    "x": 1360,
+    "y": 1800,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "earth-spike 102",
+   "frame": {
+    "x": 1632,
+    "y": 1800,
+    "w": 272,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 272,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 272,
+    "h": 150
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "earth-spike.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 2176,
+   "h": 1950
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "earth-spike",
+    "from": 0,
+    "to": 102,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "nature/earth-spike",
+   "name": "Earth spike",
+   "fps": 30,
+   "loop": false,
+   "frames": 103,
+   "frameSize": [
+    272,
+    150
+   ],
+   "pivot": [
+    136,
+    132
+   ],
+   "columns": 8
+  }
+ }
+}

@@ -752,6 +752,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private die() {
     this.alive = false;
     this.scene.sfxEnemyDie();
+    /* v4.9.3 — pixelfx 사망 연출 (몸이 부서지며 흩어진다) */
+    try { this.scene.pxFx?.play("death.normal", this.x, this.y, { scale: 0.7 }); } catch { /* 무시 */ }
     /* v1.2.0 (#10) — 격파 히트스톱 70ms — 처치 순간의 무게감 */
     this.scene.hitStop(70);
     /* vc214 — 소멸 dissolve. 기존엔 파티클만 터지고 60ms 뒤 스프라이트가 즉시

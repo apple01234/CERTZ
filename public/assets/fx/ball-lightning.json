@@ -1,0 +1,2679 @@
+{
+ "frames": [
+  {
+   "filename": "ball-lightning 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 1",
+   "frame": {
+    "x": 136,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 2",
+   "frame": {
+    "x": 272,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 3",
+   "frame": {
+    "x": 408,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 4",
+   "frame": {
+    "x": 544,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 5",
+   "frame": {
+    "x": 680,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 6",
+   "frame": {
+    "x": 816,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 7",
+   "frame": {
+    "x": 952,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 8",
+   "frame": {
+    "x": 1088,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 9",
+   "frame": {
+    "x": 1224,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 10",
+   "frame": {
+    "x": 0,
+    "y": 104,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 11",
+   "frame": {
+    "x": 136,
+    "y": 104,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 12",
+   "frame": {
+    "x": 272,
+    "y": 104,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 13",
+   "frame": {
+    "x": 408,
+    "y": 104,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 14",
+   "frame": {
+    "x": 544,
+    "y": 104,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 15",
+   "frame": {
+    "x": 680,
+    "y": 104,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 16",
+   "frame": {
+    "x": 816,
+    "y": 104,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 17",
+   "frame": {
+    "x": 952,
+    "y": 104,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 18",
+   "frame": {
+    "x": 1088,
+    "y": 104,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 19",
+   "frame": {
+    "x": 1224,
+    "y": 104,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 20",
+   "frame": {
+    "x": 0,
+    "y": 208,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 21",
+   "frame": {
+    "x": 136,
+    "y": 208,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 22",
+   "frame": {
+    "x": 272,
+    "y": 208,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 23",
+   "frame": {
+    "x": 408,
+    "y": 208,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 24",
+   "frame": {
+    "x": 544,
+    "y": 208,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 25",
+   "frame": {
+    "x": 680,
+    "y": 208,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 26",
+   "frame": {
+    "x": 816,
+    "y": 208,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 27",
+   "frame": {
+    "x": 952,
+    "y": 208,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 28",
+   "frame": {
+    "x": 1088,
+    "y": 208,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 29",
+   "frame": {
+    "x": 1224,
+    "y": 208,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 30",
+   "frame": {
+    "x": 0,
+    "y": 312,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 31",
+   "frame": {
+    "x": 136,
+    "y": 312,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 32",
+   "frame": {
+    "x": 272,
+    "y": 312,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 33",
+   "frame": {
+    "x": 408,
+    "y": 312,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 34",
+   "frame": {
+    "x": 544,
+    "y": 312,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 35",
+   "frame": {
+    "x": 680,
+    "y": 312,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 36",
+   "frame": {
+    "x": 816,
+    "y": 312,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 37",
+   "frame": {
+    "x": 952,
+    "y": 312,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 38",
+   "frame": {
+    "x": 1088,
+    "y": 312,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 39",
+   "frame": {
+    "x": 1224,
+    "y": 312,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 40",
+   "frame": {
+    "x": 0,
+    "y": 416,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 41",
+   "frame": {
+    "x": 136,
+    "y": 416,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 42",
+   "frame": {
+    "x": 272,
+    "y": 416,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 43",
+   "frame": {
+    "x": 408,
+    "y": 416,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 44",
+   "frame": {
+    "x": 544,
+    "y": 416,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 45",
+   "frame": {
+    "x": 680,
+    "y": 416,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 46",
+   "frame": {
+    "x": 816,
+    "y": 416,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 47",
+   "frame": {
+    "x": 952,
+    "y": 416,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 48",
+   "frame": {
+    "x": 1088,
+    "y": 416,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 49",
+   "frame": {
+    "x": 1224,
+    "y": 416,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 50",
+   "frame": {
+    "x": 0,
+    "y": 520,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 51",
+   "frame": {
+    "x": 136,
+    "y": 520,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 52",
+   "frame": {
+    "x": 272,
+    "y": 520,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 53",
+   "frame": {
+    "x": 408,
+    "y": 520,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 54",
+   "frame": {
+    "x": 544,
+    "y": 520,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 55",
+   "frame": {
+    "x": 680,
+    "y": 520,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 56",
+   "frame": {
+    "x": 816,
+    "y": 520,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 57",
+   "frame": {
+    "x": 952,
+    "y": 520,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 58",
+   "frame": {
+    "x": 1088,
+    "y": 520,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 59",
+   "frame": {
+    "x": 1224,
+    "y": 520,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 60",
+   "frame": {
+    "x": 0,
+    "y": 624,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 61",
+   "frame": {
+    "x": 136,
+    "y": 624,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 62",
+   "frame": {
+    "x": 272,
+    "y": 624,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 63",
+   "frame": {
+    "x": 408,
+    "y": 624,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 64",
+   "frame": {
+    "x": 544,
+    "y": 624,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 65",
+   "frame": {
+    "x": 680,
+    "y": 624,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 66",
+   "frame": {
+    "x": 816,
+    "y": 624,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 67",
+   "frame": {
+    "x": 952,
+    "y": 624,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 68",
+   "frame": {
+    "x": 1088,
+    "y": 624,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 69",
+   "frame": {
+    "x": 1224,
+    "y": 624,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 70",
+   "frame": {
+    "x": 0,
+    "y": 728,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 71",
+   "frame": {
+    "x": 136,
+    "y": 728,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 72",
+   "frame": {
+    "x": 272,
+    "y": 728,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 73",
+   "frame": {
+    "x": 408,
+    "y": 728,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 74",
+   "frame": {
+    "x": 544,
+    "y": 728,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 75",
+   "frame": {
+    "x": 680,
+    "y": 728,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 76",
+   "frame": {
+    "x": 816,
+    "y": 728,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 77",
+   "frame": {
+    "x": 952,
+    "y": 728,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 78",
+   "frame": {
+    "x": 1088,
+    "y": 728,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 79",
+   "frame": {
+    "x": 1224,
+    "y": 728,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 80",
+   "frame": {
+    "x": 0,
+    "y": 832,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 81",
+   "frame": {
+    "x": 136,
+    "y": 832,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 82",
+   "frame": {
+    "x": 272,
+    "y": 832,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 83",
+   "frame": {
+    "x": 408,
+    "y": 832,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 84",
+   "frame": {
+    "x": 544,
+    "y": 832,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 85",
+   "frame": {
+    "x": 680,
+    "y": 832,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 86",
+   "frame": {
+    "x": 816,
+    "y": 832,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 87",
+   "frame": {
+    "x": 952,
+    "y": 832,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 88",
+   "frame": {
+    "x": 1088,
+    "y": 832,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 89",
+   "frame": {
+    "x": 1224,
+    "y": 832,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 90",
+   "frame": {
+    "x": 0,
+    "y": 936,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 91",
+   "frame": {
+    "x": 136,
+    "y": 936,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 92",
+   "frame": {
+    "x": 272,
+    "y": 936,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 93",
+   "frame": {
+    "x": 408,
+    "y": 936,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 94",
+   "frame": {
+    "x": 544,
+    "y": 936,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 95",
+   "frame": {
+    "x": 680,
+    "y": 936,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 96",
+   "frame": {
+    "x": 816,
+    "y": 936,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 97",
+   "frame": {
+    "x": 952,
+    "y": 936,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 98",
+   "frame": {
+    "x": 1088,
+    "y": 936,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 99",
+   "frame": {
+    "x": 1224,
+    "y": 936,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 100",
+   "frame": {
+    "x": 0,
+    "y": 1040,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 101",
+   "frame": {
+    "x": 136,
+    "y": 1040,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 102",
+   "frame": {
+    "x": 272,
+    "y": 1040,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 103",
+   "frame": {
+    "x": 408,
+    "y": 1040,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 104",
+   "frame": {
+    "x": 544,
+    "y": 1040,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 105",
+   "frame": {
+    "x": 680,
+    "y": 1040,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 106",
+   "frame": {
+    "x": 816,
+    "y": 1040,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 107",
+   "frame": {
+    "x": 952,
+    "y": 1040,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 108",
+   "frame": {
+    "x": 1088,
+    "y": 1040,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 109",
+   "frame": {
+    "x": 1224,
+    "y": 1040,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 110",
+   "frame": {
+    "x": 0,
+    "y": 1144,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 111",
+   "frame": {
+    "x": 136,
+    "y": 1144,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 112",
+   "frame": {
+    "x": 272,
+    "y": 1144,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 113",
+   "frame": {
+    "x": 408,
+    "y": 1144,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 114",
+   "frame": {
+    "x": 544,
+    "y": 1144,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 115",
+   "frame": {
+    "x": 680,
+    "y": 1144,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 116",
+   "frame": {
+    "x": 816,
+    "y": 1144,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 117",
+   "frame": {
+    "x": 952,
+    "y": 1144,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 118",
+   "frame": {
+    "x": 1088,
+    "y": 1144,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ball-lightning 119",
+   "frame": {
+    "x": 1224,
+    "y": 1144,
+    "w": 136,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 136,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 136,
+    "h": 104
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "ball-lightning.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1360,
+   "h": 1248
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "ball-lightning",
+    "from": 0,
+    "to": 119,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "lightning/ball-lightning",
+   "name": "Ball lightning",
+   "fps": 30,
+   "loop": true,
+   "frames": 120,
+   "frameSize": [
+    136,
+    104
+   ],
+   "pivot": [
+    68,
+    92
+   ],
+   "columns": 10
+  }
+ }
+}

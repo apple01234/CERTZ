@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>pixelfx bridge test</title>
+<style>
+  html,body{margin:0;background:#111;color:#ccc;font-family:monospace}
+  #out{padding:8px;font-size:12px;white-space:pre}
+  canvas{image-rendering:pixelated}
+</style>
+</head>
+<body>
+<div id="out">부팅…</div>
+<script type="importmap">
+{ "imports": { "phaser": "/node_modules/phaser/dist/phaser.esm.js" } }
+</script>
+<script type="module">
+import Phaser from "phaser";
+import { registerFxSheet, playFx } from "/.fxtest/pixelfxBridge.js";
+
+const log = [];
+const out = document.getElementById("out");
+const say = (s) => { log.push(s); out.textContent = log.join("\n"); };
+
+class TestScene extends Phaser.Scene {
+  constructor(){ super("test"); }
+  preload(){
+    this.load.atlas("frost-nova", "/assets/fx/frost-nova.png", "/assets/fx/frost-nova.json");
+    this.load.json("frost-nova__meta", "/assets/fx/frost-nova.json");
+    this.load.atlas("torch", "/assets/fx/torch.png", "/assets/fx/torch.json");
+    this.load.json("torch__meta", "/assets/fx/torch.json");
+  }
+  create(){
+    try {
+      const a = registerFxSheet(this, "frost-nova");
+      const b = registerFxSheet(this, "torch");
+      say(`register frost-nova: ${a ? "OK frames=" + a.meta.frames + " fps=" + a.meta.fps : "FAIL"}`);
+      say(`register torch      : ${b ? "OK frames=" + b.meta.frames + " loop=" + b.meta.loop : "FAIL"}`);
+      say(`anim frost-nova-play exists: ${this.anims.exists("frost-nova-play")}`);
+      say(`anim torch-play exists     : ${this.anims.exists("torch-play")}`);
+
+      const fx1 = playFx(this, "frost-nova", 200, 300);
+      say(`playFx frost-nova -> ${fx1 ? "sprite created depth=" + fx1.depth + " origin=" + fx1.originX.toFixed(3) + "," + fx1.originY.toFixed(3) : "null"}`);
+      const fx2 = playFx(this, "torch", 400, 300, { scale: 1 });
+      say(`playFx torch      -> ${fx2 ? "sprite created" : "null"}`);
+
+      // 3프레임 뒤 애니메이션이 실제로 진행하는지
+      this.time.delayedCall(120, () => {
+        say(`frost-nova currentFrame after 120ms: ${fx1 ? fx1.anims.currentFrame?.index : "-"}`);
+        say(`torch isPlaying: ${fx2 ? fx2.anims.isPlaying : "-"}`);
+        window.__FX_OK =
+          !!(a && b) &&
+          this.anims.exists("frost-nova-play") &&
+          this.anims.exists("torch-play") &&
+          !!fx1 && !!fx2 &&
+          fx2.anims.isPlaying === true;
+        say(`RESULT=${window.__FX_OK ? "PASS" : "FAIL"}`);
+      });
+    } catch (e) {
+      say("EXCEPTION " + e.message);
+      window.__FX_OK = false;
+    }
+  }
+}
+
+new Phaser.Game({
+  type: Phaser.AUTO, width: 640, height: 480, parent: document.body,
+  backgroundColor: "#0b0b12", scene: [TestScene], pixelArt: true,
+});
+</script>
+</body>
+</html>

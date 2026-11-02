@@ -1,0 +1,1359 @@
+{
+ "frames": [
+  {
+   "filename": "torch 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 1",
+   "frame": {
+    "x": 72,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 2",
+   "frame": {
+    "x": 144,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 3",
+   "frame": {
+    "x": 216,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 4",
+   "frame": {
+    "x": 288,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 5",
+   "frame": {
+    "x": 360,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 6",
+   "frame": {
+    "x": 432,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 7",
+   "frame": {
+    "x": 504,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 8",
+   "frame": {
+    "x": 576,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 9",
+   "frame": {
+    "x": 648,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 10",
+   "frame": {
+    "x": 0,
+    "y": 120,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 11",
+   "frame": {
+    "x": 72,
+    "y": 120,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 12",
+   "frame": {
+    "x": 144,
+    "y": 120,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 13",
+   "frame": {
+    "x": 216,
+    "y": 120,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 14",
+   "frame": {
+    "x": 288,
+    "y": 120,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 15",
+   "frame": {
+    "x": 360,
+    "y": 120,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 16",
+   "frame": {
+    "x": 432,
+    "y": 120,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 17",
+   "frame": {
+    "x": 504,
+    "y": 120,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 18",
+   "frame": {
+    "x": 576,
+    "y": 120,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 19",
+   "frame": {
+    "x": 648,
+    "y": 120,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 20",
+   "frame": {
+    "x": 0,
+    "y": 240,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 21",
+   "frame": {
+    "x": 72,
+    "y": 240,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 22",
+   "frame": {
+    "x": 144,
+    "y": 240,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 23",
+   "frame": {
+    "x": 216,
+    "y": 240,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 24",
+   "frame": {
+    "x": 288,
+    "y": 240,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 25",
+   "frame": {
+    "x": 360,
+    "y": 240,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 26",
+   "frame": {
+    "x": 432,
+    "y": 240,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 27",
+   "frame": {
+    "x": 504,
+    "y": 240,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 28",
+   "frame": {
+    "x": 576,
+    "y": 240,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 29",
+   "frame": {
+    "x": 648,
+    "y": 240,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 30",
+   "frame": {
+    "x": 0,
+    "y": 360,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 31",
+   "frame": {
+    "x": 72,
+    "y": 360,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 32",
+   "frame": {
+    "x": 144,
+    "y": 360,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 33",
+   "frame": {
+    "x": 216,
+    "y": 360,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 34",
+   "frame": {
+    "x": 288,
+    "y": 360,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 35",
+   "frame": {
+    "x": 360,
+    "y": 360,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 36",
+   "frame": {
+    "x": 432,
+    "y": 360,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 37",
+   "frame": {
+    "x": 504,
+    "y": 360,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 38",
+   "frame": {
+    "x": 576,
+    "y": 360,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 39",
+   "frame": {
+    "x": 648,
+    "y": 360,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 40",
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 41",
+   "frame": {
+    "x": 72,
+    "y": 480,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 42",
+   "frame": {
+    "x": 144,
+    "y": 480,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 43",
+   "frame": {
+    "x": 216,
+    "y": 480,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 44",
+   "frame": {
+    "x": 288,
+    "y": 480,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 45",
+   "frame": {
+    "x": 360,
+    "y": 480,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 46",
+   "frame": {
+    "x": 432,
+    "y": 480,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 47",
+   "frame": {
+    "x": 504,
+    "y": 480,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 48",
+   "frame": {
+    "x": 576,
+    "y": 480,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 49",
+   "frame": {
+    "x": 648,
+    "y": 480,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 50",
+   "frame": {
+    "x": 0,
+    "y": 600,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 51",
+   "frame": {
+    "x": 72,
+    "y": 600,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 52",
+   "frame": {
+    "x": 144,
+    "y": 600,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 53",
+   "frame": {
+    "x": 216,
+    "y": 600,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 54",
+   "frame": {
+    "x": 288,
+    "y": 600,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 55",
+   "frame": {
+    "x": 360,
+    "y": 600,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 56",
+   "frame": {
+    "x": 432,
+    "y": 600,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 57",
+   "frame": {
+    "x": 504,
+    "y": 600,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 58",
+   "frame": {
+    "x": 576,
+    "y": 600,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "torch 59",
+   "frame": {
+    "x": 648,
+    "y": 600,
+    "w": 72,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 120
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "torch.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 720,
+   "h": 720
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "torch",
+    "from": 0,
+    "to": 59,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "fire/torch",
+   "name": "Torch",
+   "fps": 30,
+   "loop": true,
+   "frames": 60,
+   "frameSize": [
+    72,
+    120
+   ],
+   "pivot": [
+    36,
+    94
+   ],
+   "columns": 10
+  }
+ }
+}

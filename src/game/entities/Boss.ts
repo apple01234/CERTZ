@@ -516,6 +516,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     /* vc181 (지시 #1·#2) — 페이즈 전환은 보스전의 최대 고비다. 3D 파편/링이
      *  사방으로 터지며 카메라가 풀백하는 연출을 얹어 "지금 뭔가 변했다"를 각인시킨다. */
     void cine3d().play({ preset: "bossPattern", x: this.x, y: this.y, tint: this.phase === 3 ? 0xff4a3a : 0xffa24a, duration: 1300 });
+    try { this.scene.pxFx?.boss("boss.intro", this.x, this.y, { scale: 1.4 }); } catch { /* 무시 */ }
     this.volleyTimer?.remove();
     this.clearTint();
     /* vc153 — 스바르트알프헤임 방어막/투명화 잔존 정리 (페이즈 전환 시에도 상태 유출 금지) */
@@ -540,6 +541,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     }
     this.scene.sfxRoar();
     this.scene.impactFX.shake(220, this.phase === 3 ? 0.01 : 0.007);
+    /* v4.9.3 — 페이즈 전환 픽셀 연출. 3페이즈(격노)는 더 크게 터뜨린다. */
+    try {
+      this.scene.pxFx?.impact(this.phase === 3 ? "boss.enrage" : "boss.phase", this.x, this.y, 0.012, { scale: 1.6 });
+    } catch { /* 연출 실패는 전투를 막지 않는다 */ }
     this.scene.spawnBurstAt(this.x, this.y, 20, this.def.orbTint);
     /* v1.1.3 (#개편 연출) — 페이즈 전환 0.18초 슬로우모션.
      *  종전엔 흔들림+플래시만 있어 전투가 계속 굴러가는 느낌이었다. 짧게 시간을 늦추면
@@ -1778,6 +1783,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.scene.tweens.killTweensOf(this); // v4.1.4 — 카오스 오라 펄스 정지
       this.setAlpha(1);
       this.cleanupSvartStates(); // vc153 — 방어막 오라/무적 잔존 정리 (사망 시에도)
+      /* v4.9.3 — pixelfx 보스 사망 연출 (대형 폭발 + 영혼 상승) */
+      try { this.scene.pxFx?.boss("boss.death", this.x, this.y, { scale: 1.8 }); } catch { /* 무시 */ }
       /* v1.4.9 — 사망 연출 강화: 오라색 잔상 3겹 확산 + 본체 소멸 트윈 + 2중 충격파 */
       {
         const gx = this.x, gy = this.y;

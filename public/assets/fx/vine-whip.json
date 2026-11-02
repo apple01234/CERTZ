@@ -1,0 +1,985 @@
+{
+ "frames": [
+  {
+   "filename": "vine-whip 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 1",
+   "frame": {
+    "x": 216,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 2",
+   "frame": {
+    "x": 432,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 3",
+   "frame": {
+    "x": 648,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 4",
+   "frame": {
+    "x": 864,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 5",
+   "frame": {
+    "x": 1080,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 6",
+   "frame": {
+    "x": 0,
+    "y": 128,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 7",
+   "frame": {
+    "x": 216,
+    "y": 128,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 8",
+   "frame": {
+    "x": 432,
+    "y": 128,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 9",
+   "frame": {
+    "x": 648,
+    "y": 128,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 10",
+   "frame": {
+    "x": 864,
+    "y": 128,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 11",
+   "frame": {
+    "x": 1080,
+    "y": 128,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 12",
+   "frame": {
+    "x": 0,
+    "y": 256,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 13",
+   "frame": {
+    "x": 216,
+    "y": 256,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 14",
+   "frame": {
+    "x": 432,
+    "y": 256,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 15",
+   "frame": {
+    "x": 648,
+    "y": 256,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 16",
+   "frame": {
+    "x": 864,
+    "y": 256,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 17",
+   "frame": {
+    "x": 1080,
+    "y": 256,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 18",
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 19",
+   "frame": {
+    "x": 216,
+    "y": 384,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 20",
+   "frame": {
+    "x": 432,
+    "y": 384,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 21",
+   "frame": {
+    "x": 648,
+    "y": 384,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 22",
+   "frame": {
+    "x": 864,
+    "y": 384,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 23",
+   "frame": {
+    "x": 1080,
+    "y": 384,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 24",
+   "frame": {
+    "x": 0,
+    "y": 512,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 25",
+   "frame": {
+    "x": 216,
+    "y": 512,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 26",
+   "frame": {
+    "x": 432,
+    "y": 512,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 27",
+   "frame": {
+    "x": 648,
+    "y": 512,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 28",
+   "frame": {
+    "x": 864,
+    "y": 512,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 29",
+   "frame": {
+    "x": 1080,
+    "y": 512,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 30",
+   "frame": {
+    "x": 0,
+    "y": 640,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 31",
+   "frame": {
+    "x": 216,
+    "y": 640,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 32",
+   "frame": {
+    "x": 432,
+    "y": 640,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 33",
+   "frame": {
+    "x": 648,
+    "y": 640,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 34",
+   "frame": {
+    "x": 864,
+    "y": 640,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 35",
+   "frame": {
+    "x": 1080,
+    "y": 640,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 36",
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 37",
+   "frame": {
+    "x": 216,
+    "y": 768,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 38",
+   "frame": {
+    "x": 432,
+    "y": 768,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 39",
+   "frame": {
+    "x": 648,
+    "y": 768,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 40",
+   "frame": {
+    "x": 864,
+    "y": 768,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 41",
+   "frame": {
+    "x": 1080,
+    "y": 768,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "vine-whip 42",
+   "frame": {
+    "x": 0,
+    "y": 896,
+    "w": 216,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 216,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 216,
+    "h": 128
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "vine-whip.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1296,
+   "h": 1024
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "vine-whip",
+    "from": 0,
+    "to": 42,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "nature/vine-whip",
+   "name": "Vine whip",
+   "fps": 30,
+   "loop": false,
+   "frames": 43,
+   "frameSize": [
+    216,
+    128
+   ],
+   "pivot": [
+    60,
+    114
+   ],
+   "columns": 6
+  }
+ }
+}

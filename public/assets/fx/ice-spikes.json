@@ -1,0 +1,2041 @@
+{
+ "frames": [
+  {
+   "filename": "ice-spikes 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 1",
+   "frame": {
+    "x": 264,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 2",
+   "frame": {
+    "x": 528,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 3",
+   "frame": {
+    "x": 792,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 4",
+   "frame": {
+    "x": 1056,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 5",
+   "frame": {
+    "x": 1320,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 6",
+   "frame": {
+    "x": 1584,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 7",
+   "frame": {
+    "x": 0,
+    "y": 112,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 8",
+   "frame": {
+    "x": 264,
+    "y": 112,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 9",
+   "frame": {
+    "x": 528,
+    "y": 112,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 10",
+   "frame": {
+    "x": 792,
+    "y": 112,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 11",
+   "frame": {
+    "x": 1056,
+    "y": 112,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 12",
+   "frame": {
+    "x": 1320,
+    "y": 112,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 13",
+   "frame": {
+    "x": 1584,
+    "y": 112,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 14",
+   "frame": {
+    "x": 0,
+    "y": 224,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 15",
+   "frame": {
+    "x": 264,
+    "y": 224,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 16",
+   "frame": {
+    "x": 528,
+    "y": 224,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 17",
+   "frame": {
+    "x": 792,
+    "y": 224,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 18",
+   "frame": {
+    "x": 1056,
+    "y": 224,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 19",
+   "frame": {
+    "x": 1320,
+    "y": 224,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 20",
+   "frame": {
+    "x": 1584,
+    "y": 224,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 21",
+   "frame": {
+    "x": 0,
+    "y": 336,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 22",
+   "frame": {
+    "x": 264,
+    "y": 336,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 23",
+   "frame": {
+    "x": 528,
+    "y": 336,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 24",
+   "frame": {
+    "x": 792,
+    "y": 336,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 25",
+   "frame": {
+    "x": 1056,
+    "y": 336,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 26",
+   "frame": {
+    "x": 1320,
+    "y": 336,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 27",
+   "frame": {
+    "x": 1584,
+    "y": 336,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 28",
+   "frame": {
+    "x": 0,
+    "y": 448,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 29",
+   "frame": {
+    "x": 264,
+    "y": 448,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 30",
+   "frame": {
+    "x": 528,
+    "y": 448,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 31",
+   "frame": {
+    "x": 792,
+    "y": 448,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 32",
+   "frame": {
+    "x": 1056,
+    "y": 448,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 33",
+   "frame": {
+    "x": 1320,
+    "y": 448,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 34",
+   "frame": {
+    "x": 1584,
+    "y": 448,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 35",
+   "frame": {
+    "x": 0,
+    "y": 560,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 36",
+   "frame": {
+    "x": 264,
+    "y": 560,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 37",
+   "frame": {
+    "x": 528,
+    "y": 560,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 38",
+   "frame": {
+    "x": 792,
+    "y": 560,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 39",
+   "frame": {
+    "x": 1056,
+    "y": 560,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 40",
+   "frame": {
+    "x": 1320,
+    "y": 560,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 41",
+   "frame": {
+    "x": 1584,
+    "y": 560,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 42",
+   "frame": {
+    "x": 0,
+    "y": 672,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 43",
+   "frame": {
+    "x": 264,
+    "y": 672,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 44",
+   "frame": {
+    "x": 528,
+    "y": 672,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 45",
+   "frame": {
+    "x": 792,
+    "y": 672,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 46",
+   "frame": {
+    "x": 1056,
+    "y": 672,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 47",
+   "frame": {
+    "x": 1320,
+    "y": 672,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 48",
+   "frame": {
+    "x": 1584,
+    "y": 672,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 49",
+   "frame": {
+    "x": 0,
+    "y": 784,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 50",
+   "frame": {
+    "x": 264,
+    "y": 784,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 51",
+   "frame": {
+    "x": 528,
+    "y": 784,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 52",
+   "frame": {
+    "x": 792,
+    "y": 784,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 53",
+   "frame": {
+    "x": 1056,
+    "y": 784,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 54",
+   "frame": {
+    "x": 1320,
+    "y": 784,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 55",
+   "frame": {
+    "x": 1584,
+    "y": 784,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 56",
+   "frame": {
+    "x": 0,
+    "y": 896,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 57",
+   "frame": {
+    "x": 264,
+    "y": 896,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 58",
+   "frame": {
+    "x": 528,
+    "y": 896,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 59",
+   "frame": {
+    "x": 792,
+    "y": 896,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 60",
+   "frame": {
+    "x": 1056,
+    "y": 896,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 61",
+   "frame": {
+    "x": 1320,
+    "y": 896,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 62",
+   "frame": {
+    "x": 1584,
+    "y": 896,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 63",
+   "frame": {
+    "x": 0,
+    "y": 1008,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 64",
+   "frame": {
+    "x": 264,
+    "y": 1008,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 65",
+   "frame": {
+    "x": 528,
+    "y": 1008,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 66",
+   "frame": {
+    "x": 792,
+    "y": 1008,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 67",
+   "frame": {
+    "x": 1056,
+    "y": 1008,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 68",
+   "frame": {
+    "x": 1320,
+    "y": 1008,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 69",
+   "frame": {
+    "x": 1584,
+    "y": 1008,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 70",
+   "frame": {
+    "x": 0,
+    "y": 1120,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 71",
+   "frame": {
+    "x": 264,
+    "y": 1120,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 72",
+   "frame": {
+    "x": 528,
+    "y": 1120,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 73",
+   "frame": {
+    "x": 792,
+    "y": 1120,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 74",
+   "frame": {
+    "x": 1056,
+    "y": 1120,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 75",
+   "frame": {
+    "x": 1320,
+    "y": 1120,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 76",
+   "frame": {
+    "x": 1584,
+    "y": 1120,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 77",
+   "frame": {
+    "x": 0,
+    "y": 1232,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 78",
+   "frame": {
+    "x": 264,
+    "y": 1232,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 79",
+   "frame": {
+    "x": 528,
+    "y": 1232,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 80",
+   "frame": {
+    "x": 792,
+    "y": 1232,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 81",
+   "frame": {
+    "x": 1056,
+    "y": 1232,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 82",
+   "frame": {
+    "x": 1320,
+    "y": 1232,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 83",
+   "frame": {
+    "x": 1584,
+    "y": 1232,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 84",
+   "frame": {
+    "x": 0,
+    "y": 1344,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 85",
+   "frame": {
+    "x": 264,
+    "y": 1344,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 86",
+   "frame": {
+    "x": 528,
+    "y": 1344,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 87",
+   "frame": {
+    "x": 792,
+    "y": 1344,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 88",
+   "frame": {
+    "x": 1056,
+    "y": 1344,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 89",
+   "frame": {
+    "x": 1320,
+    "y": 1344,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-spikes 90",
+   "frame": {
+    "x": 1584,
+    "y": 1344,
+    "w": 264,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 264,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 264,
+    "h": 112
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "ice-spikes.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1848,
+   "h": 1456
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "ice-spikes",
+    "from": 0,
+    "to": 90,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "ice/ice-spikes",
+   "name": "Ice spikes",
+   "fps": 30,
+   "loop": false,
+   "frames": 91,
+   "frameSize": [
+    264,
+    112
+   ],
+   "pivot": [
+    24,
+    96
+   ],
+   "columns": 7
+  }
+ }
+}

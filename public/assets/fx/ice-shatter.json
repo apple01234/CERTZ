@@ -1,0 +1,1909 @@
+{
+ "frames": [
+  {
+   "filename": "ice-shatter 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 1",
+   "frame": {
+    "x": 224,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 2",
+   "frame": {
+    "x": 448,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 3",
+   "frame": {
+    "x": 672,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 4",
+   "frame": {
+    "x": 896,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 5",
+   "frame": {
+    "x": 1120,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 6",
+   "frame": {
+    "x": 1344,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 7",
+   "frame": {
+    "x": 0,
+    "y": 112,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 8",
+   "frame": {
+    "x": 224,
+    "y": 112,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 9",
+   "frame": {
+    "x": 448,
+    "y": 112,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 10",
+   "frame": {
+    "x": 672,
+    "y": 112,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 11",
+   "frame": {
+    "x": 896,
+    "y": 112,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 12",
+   "frame": {
+    "x": 1120,
+    "y": 112,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 13",
+   "frame": {
+    "x": 1344,
+    "y": 112,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 14",
+   "frame": {
+    "x": 0,
+    "y": 224,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 15",
+   "frame": {
+    "x": 224,
+    "y": 224,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 16",
+   "frame": {
+    "x": 448,
+    "y": 224,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 17",
+   "frame": {
+    "x": 672,
+    "y": 224,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 18",
+   "frame": {
+    "x": 896,
+    "y": 224,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 19",
+   "frame": {
+    "x": 1120,
+    "y": 224,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 20",
+   "frame": {
+    "x": 1344,
+    "y": 224,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 21",
+   "frame": {
+    "x": 0,
+    "y": 336,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 22",
+   "frame": {
+    "x": 224,
+    "y": 336,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 23",
+   "frame": {
+    "x": 448,
+    "y": 336,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 24",
+   "frame": {
+    "x": 672,
+    "y": 336,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 25",
+   "frame": {
+    "x": 896,
+    "y": 336,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 26",
+   "frame": {
+    "x": 1120,
+    "y": 336,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 27",
+   "frame": {
+    "x": 1344,
+    "y": 336,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 28",
+   "frame": {
+    "x": 0,
+    "y": 448,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 29",
+   "frame": {
+    "x": 224,
+    "y": 448,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 30",
+   "frame": {
+    "x": 448,
+    "y": 448,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 31",
+   "frame": {
+    "x": 672,
+    "y": 448,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 32",
+   "frame": {
+    "x": 896,
+    "y": 448,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 33",
+   "frame": {
+    "x": 1120,
+    "y": 448,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 34",
+   "frame": {
+    "x": 1344,
+    "y": 448,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 35",
+   "frame": {
+    "x": 0,
+    "y": 560,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 36",
+   "frame": {
+    "x": 224,
+    "y": 560,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 37",
+   "frame": {
+    "x": 448,
+    "y": 560,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 38",
+   "frame": {
+    "x": 672,
+    "y": 560,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 39",
+   "frame": {
+    "x": 896,
+    "y": 560,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 40",
+   "frame": {
+    "x": 1120,
+    "y": 560,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 41",
+   "frame": {
+    "x": 1344,
+    "y": 560,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 42",
+   "frame": {
+    "x": 0,
+    "y": 672,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 43",
+   "frame": {
+    "x": 224,
+    "y": 672,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 44",
+   "frame": {
+    "x": 448,
+    "y": 672,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 45",
+   "frame": {
+    "x": 672,
+    "y": 672,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 46",
+   "frame": {
+    "x": 896,
+    "y": 672,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 47",
+   "frame": {
+    "x": 1120,
+    "y": 672,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 48",
+   "frame": {
+    "x": 1344,
+    "y": 672,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 49",
+   "frame": {
+    "x": 0,
+    "y": 784,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 50",
+   "frame": {
+    "x": 224,
+    "y": 784,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 51",
+   "frame": {
+    "x": 448,
+    "y": 784,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 52",
+   "frame": {
+    "x": 672,
+    "y": 784,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 53",
+   "frame": {
+    "x": 896,
+    "y": 784,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 54",
+   "frame": {
+    "x": 1120,
+    "y": 784,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 55",
+   "frame": {
+    "x": 1344,
+    "y": 784,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 56",
+   "frame": {
+    "x": 0,
+    "y": 896,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 57",
+   "frame": {
+    "x": 224,
+    "y": 896,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 58",
+   "frame": {
+    "x": 448,
+    "y": 896,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 59",
+   "frame": {
+    "x": 672,
+    "y": 896,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 60",
+   "frame": {
+    "x": 896,
+    "y": 896,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 61",
+   "frame": {
+    "x": 1120,
+    "y": 896,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 62",
+   "frame": {
+    "x": 1344,
+    "y": 896,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 63",
+   "frame": {
+    "x": 0,
+    "y": 1008,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 64",
+   "frame": {
+    "x": 224,
+    "y": 1008,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 65",
+   "frame": {
+    "x": 448,
+    "y": 1008,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 66",
+   "frame": {
+    "x": 672,
+    "y": 1008,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 67",
+   "frame": {
+    "x": 896,
+    "y": 1008,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 68",
+   "frame": {
+    "x": 1120,
+    "y": 1008,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 69",
+   "frame": {
+    "x": 1344,
+    "y": 1008,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 70",
+   "frame": {
+    "x": 0,
+    "y": 1120,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 71",
+   "frame": {
+    "x": 224,
+    "y": 1120,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 72",
+   "frame": {
+    "x": 448,
+    "y": 1120,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 73",
+   "frame": {
+    "x": 672,
+    "y": 1120,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 74",
+   "frame": {
+    "x": 896,
+    "y": 1120,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 75",
+   "frame": {
+    "x": 1120,
+    "y": 1120,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 76",
+   "frame": {
+    "x": 1344,
+    "y": 1120,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 77",
+   "frame": {
+    "x": 0,
+    "y": 1232,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 78",
+   "frame": {
+    "x": 224,
+    "y": 1232,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 79",
+   "frame": {
+    "x": 448,
+    "y": 1232,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 80",
+   "frame": {
+    "x": 672,
+    "y": 1232,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 81",
+   "frame": {
+    "x": 896,
+    "y": 1232,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 82",
+   "frame": {
+    "x": 1120,
+    "y": 1232,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 83",
+   "frame": {
+    "x": 1344,
+    "y": 1232,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  },
+  {
+   "filename": "ice-shatter 84",
+   "frame": {
+    "x": 0,
+    "y": 1344,
+    "w": 224,
+    "h": 112
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 112
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 112
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "ice-shatter.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1568,
+   "h": 1456
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "ice-shatter",
+    "from": 0,
+    "to": 84,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "ice/ice-shatter",
+   "name": "Ice shatter",
+   "fps": 30,
+   "loop": false,
+   "frames": 85,
+   "frameSize": [
+    224,
+    112
+   ],
+   "pivot": [
+    68,
+    90
+   ],
+   "columns": 7
+  }
+ }
+}

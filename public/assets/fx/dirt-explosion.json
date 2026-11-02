@@ -1,0 +1,2437 @@
+{
+ "frames": [
+  {
+   "filename": "dirt-explosion 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 1",
+   "frame": {
+    "x": 260,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 2",
+   "frame": {
+    "x": 520,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 3",
+   "frame": {
+    "x": 780,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 4",
+   "frame": {
+    "x": 1040,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 5",
+   "frame": {
+    "x": 1300,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 6",
+   "frame": {
+    "x": 1560,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 7",
+   "frame": {
+    "x": 1820,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 8",
+   "frame": {
+    "x": 2080,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 9",
+   "frame": {
+    "x": 2340,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 10",
+   "frame": {
+    "x": 2600,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 11",
+   "frame": {
+    "x": 0,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 12",
+   "frame": {
+    "x": 260,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 13",
+   "frame": {
+    "x": 520,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 14",
+   "frame": {
+    "x": 780,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 15",
+   "frame": {
+    "x": 1040,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 16",
+   "frame": {
+    "x": 1300,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 17",
+   "frame": {
+    "x": 1560,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 18",
+   "frame": {
+    "x": 1820,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 19",
+   "frame": {
+    "x": 2080,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 20",
+   "frame": {
+    "x": 2340,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 21",
+   "frame": {
+    "x": 2600,
+    "y": 240,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 22",
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 23",
+   "frame": {
+    "x": 260,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 24",
+   "frame": {
+    "x": 520,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 25",
+   "frame": {
+    "x": 780,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 26",
+   "frame": {
+    "x": 1040,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 27",
+   "frame": {
+    "x": 1300,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 28",
+   "frame": {
+    "x": 1560,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 29",
+   "frame": {
+    "x": 1820,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 30",
+   "frame": {
+    "x": 2080,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 31",
+   "frame": {
+    "x": 2340,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 32",
+   "frame": {
+    "x": 2600,
+    "y": 480,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 33",
+   "frame": {
+    "x": 0,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 34",
+   "frame": {
+    "x": 260,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 35",
+   "frame": {
+    "x": 520,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 36",
+   "frame": {
+    "x": 780,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 37",
+   "frame": {
+    "x": 1040,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 38",
+   "frame": {
+    "x": 1300,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 39",
+   "frame": {
+    "x": 1560,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 40",
+   "frame": {
+    "x": 1820,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 41",
+   "frame": {
+    "x": 2080,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 42",
+   "frame": {
+    "x": 2340,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 43",
+   "frame": {
+    "x": 2600,
+    "y": 720,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 44",
+   "frame": {
+    "x": 0,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 45",
+   "frame": {
+    "x": 260,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 46",
+   "frame": {
+    "x": 520,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 47",
+   "frame": {
+    "x": 780,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 48",
+   "frame": {
+    "x": 1040,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 49",
+   "frame": {
+    "x": 1300,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 50",
+   "frame": {
+    "x": 1560,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 51",
+   "frame": {
+    "x": 1820,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 52",
+   "frame": {
+    "x": 2080,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 53",
+   "frame": {
+    "x": 2340,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 54",
+   "frame": {
+    "x": 2600,
+    "y": 960,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 55",
+   "frame": {
+    "x": 0,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 56",
+   "frame": {
+    "x": 260,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 57",
+   "frame": {
+    "x": 520,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 58",
+   "frame": {
+    "x": 780,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 59",
+   "frame": {
+    "x": 1040,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 60",
+   "frame": {
+    "x": 1300,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 61",
+   "frame": {
+    "x": 1560,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 62",
+   "frame": {
+    "x": 1820,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 63",
+   "frame": {
+    "x": 2080,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 64",
+   "frame": {
+    "x": 2340,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 65",
+   "frame": {
+    "x": 2600,
+    "y": 1200,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 66",
+   "frame": {
+    "x": 0,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 67",
+   "frame": {
+    "x": 260,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 68",
+   "frame": {
+    "x": 520,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 69",
+   "frame": {
+    "x": 780,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 70",
+   "frame": {
+    "x": 1040,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 71",
+   "frame": {
+    "x": 1300,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 72",
+   "frame": {
+    "x": 1560,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 73",
+   "frame": {
+    "x": 1820,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 74",
+   "frame": {
+    "x": 2080,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 75",
+   "frame": {
+    "x": 2340,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 76",
+   "frame": {
+    "x": 2600,
+    "y": 1440,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 77",
+   "frame": {
+    "x": 0,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 78",
+   "frame": {
+    "x": 260,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 79",
+   "frame": {
+    "x": 520,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 80",
+   "frame": {
+    "x": 780,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 81",
+   "frame": {
+    "x": 1040,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 82",
+   "frame": {
+    "x": 1300,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 83",
+   "frame": {
+    "x": 1560,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 84",
+   "frame": {
+    "x": 1820,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 85",
+   "frame": {
+    "x": 2080,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 86",
+   "frame": {
+    "x": 2340,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 87",
+   "frame": {
+    "x": 2600,
+    "y": 1680,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 88",
+   "frame": {
+    "x": 0,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 89",
+   "frame": {
+    "x": 260,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 90",
+   "frame": {
+    "x": 520,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 91",
+   "frame": {
+    "x": 780,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 92",
+   "frame": {
+    "x": 1040,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 93",
+   "frame": {
+    "x": 1300,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 94",
+   "frame": {
+    "x": 1560,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 95",
+   "frame": {
+    "x": 1820,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 96",
+   "frame": {
+    "x": 2080,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 97",
+   "frame": {
+    "x": 2340,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 98",
+   "frame": {
+    "x": 2600,
+    "y": 1920,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 99",
+   "frame": {
+    "x": 0,
+    "y": 2160,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 100",
+   "frame": {
+    "x": 260,
+    "y": 2160,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 101",
+   "frame": {
+    "x": 520,
+    "y": 2160,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 102",
+   "frame": {
+    "x": 780,
+    "y": 2160,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 103",
+   "frame": {
+    "x": 1040,
+    "y": 2160,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 104",
+   "frame": {
+    "x": 1300,
+    "y": 2160,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 105",
+   "frame": {
+    "x": 1560,
+    "y": 2160,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 106",
+   "frame": {
+    "x": 1820,
+    "y": 2160,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 107",
+   "frame": {
+    "x": 2080,
+    "y": 2160,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  },
+  {
+   "filename": "dirt-explosion 108",
+   "frame": {
+    "x": 2340,
+    "y": 2160,
+    "w": 260,
+    "h": 240
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 260,
+    "h": 240
+   },
+   "sourceSize": {
+    "w": 260,
+    "h": 240
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "dirt-explosion.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 2860,
+   "h": 2400
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "dirt-explosion",
+    "from": 0,
+    "to": 108,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "explosions/dirt-explosion",
+   "name": "Dirt explosion",
+   "fps": 30,
+   "loop": false,
+   "frames": 109,
+   "frameSize": [
+    260,
+    240
+   ],
+   "pivot": [
+    130,
+    206
+   ],
+   "columns": 11
+  }
+ }
+}

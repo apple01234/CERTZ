@@ -1,0 +1,2173 @@
+{
+ "frames": [
+  {
+   "filename": "spore-burst 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 1",
+   "frame": {
+    "x": 212,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 2",
+   "frame": {
+    "x": 424,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 3",
+   "frame": {
+    "x": 636,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 4",
+   "frame": {
+    "x": 848,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 5",
+   "frame": {
+    "x": 1060,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 6",
+   "frame": {
+    "x": 1272,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 7",
+   "frame": {
+    "x": 1484,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 8",
+   "frame": {
+    "x": 0,
+    "y": 132,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 9",
+   "frame": {
+    "x": 212,
+    "y": 132,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 10",
+   "frame": {
+    "x": 424,
+    "y": 132,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 11",
+   "frame": {
+    "x": 636,
+    "y": 132,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 12",
+   "frame": {
+    "x": 848,
+    "y": 132,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 13",
+   "frame": {
+    "x": 1060,
+    "y": 132,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 14",
+   "frame": {
+    "x": 1272,
+    "y": 132,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 15",
+   "frame": {
+    "x": 1484,
+    "y": 132,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 16",
+   "frame": {
+    "x": 0,
+    "y": 264,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 17",
+   "frame": {
+    "x": 212,
+    "y": 264,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 18",
+   "frame": {
+    "x": 424,
+    "y": 264,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 19",
+   "frame": {
+    "x": 636,
+    "y": 264,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 20",
+   "frame": {
+    "x": 848,
+    "y": 264,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 21",
+   "frame": {
+    "x": 1060,
+    "y": 264,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 22",
+   "frame": {
+    "x": 1272,
+    "y": 264,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 23",
+   "frame": {
+    "x": 1484,
+    "y": 264,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 24",
+   "frame": {
+    "x": 0,
+    "y": 396,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 25",
+   "frame": {
+    "x": 212,
+    "y": 396,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 26",
+   "frame": {
+    "x": 424,
+    "y": 396,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 27",
+   "frame": {
+    "x": 636,
+    "y": 396,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 28",
+   "frame": {
+    "x": 848,
+    "y": 396,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 29",
+   "frame": {
+    "x": 1060,
+    "y": 396,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 30",
+   "frame": {
+    "x": 1272,
+    "y": 396,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 31",
+   "frame": {
+    "x": 1484,
+    "y": 396,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 32",
+   "frame": {
+    "x": 0,
+    "y": 528,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 33",
+   "frame": {
+    "x": 212,
+    "y": 528,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 34",
+   "frame": {
+    "x": 424,
+    "y": 528,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 35",
+   "frame": {
+    "x": 636,
+    "y": 528,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 36",
+   "frame": {
+    "x": 848,
+    "y": 528,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 37",
+   "frame": {
+    "x": 1060,
+    "y": 528,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 38",
+   "frame": {
+    "x": 1272,
+    "y": 528,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 39",
+   "frame": {
+    "x": 1484,
+    "y": 528,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 40",
+   "frame": {
+    "x": 0,
+    "y": 660,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 41",
+   "frame": {
+    "x": 212,
+    "y": 660,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 42",
+   "frame": {
+    "x": 424,
+    "y": 660,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 43",
+   "frame": {
+    "x": 636,
+    "y": 660,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 44",
+   "frame": {
+    "x": 848,
+    "y": 660,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 45",
+   "frame": {
+    "x": 1060,
+    "y": 660,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 46",
+   "frame": {
+    "x": 1272,
+    "y": 660,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 47",
+   "frame": {
+    "x": 1484,
+    "y": 660,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 48",
+   "frame": {
+    "x": 0,
+    "y": 792,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 49",
+   "frame": {
+    "x": 212,
+    "y": 792,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 50",
+   "frame": {
+    "x": 424,
+    "y": 792,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 51",
+   "frame": {
+    "x": 636,
+    "y": 792,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 52",
+   "frame": {
+    "x": 848,
+    "y": 792,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 53",
+   "frame": {
+    "x": 1060,
+    "y": 792,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 54",
+   "frame": {
+    "x": 1272,
+    "y": 792,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 55",
+   "frame": {
+    "x": 1484,
+    "y": 792,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 56",
+   "frame": {
+    "x": 0,
+    "y": 924,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 57",
+   "frame": {
+    "x": 212,
+    "y": 924,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 58",
+   "frame": {
+    "x": 424,
+    "y": 924,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 59",
+   "frame": {
+    "x": 636,
+    "y": 924,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 60",
+   "frame": {
+    "x": 848,
+    "y": 924,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 61",
+   "frame": {
+    "x": 1060,
+    "y": 924,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 62",
+   "frame": {
+    "x": 1272,
+    "y": 924,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 63",
+   "frame": {
+    "x": 1484,
+    "y": 924,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 64",
+   "frame": {
+    "x": 0,
+    "y": 1056,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 65",
+   "frame": {
+    "x": 212,
+    "y": 1056,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 66",
+   "frame": {
+    "x": 424,
+    "y": 1056,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 67",
+   "frame": {
+    "x": 636,
+    "y": 1056,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 68",
+   "frame": {
+    "x": 848,
+    "y": 1056,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 69",
+   "frame": {
+    "x": 1060,
+    "y": 1056,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 70",
+   "frame": {
+    "x": 1272,
+    "y": 1056,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 71",
+   "frame": {
+    "x": 1484,
+    "y": 1056,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 72",
+   "frame": {
+    "x": 0,
+    "y": 1188,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 73",
+   "frame": {
+    "x": 212,
+    "y": 1188,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 74",
+   "frame": {
+    "x": 424,
+    "y": 1188,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 75",
+   "frame": {
+    "x": 636,
+    "y": 1188,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 76",
+   "frame": {
+    "x": 848,
+    "y": 1188,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 77",
+   "frame": {
+    "x": 1060,
+    "y": 1188,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 78",
+   "frame": {
+    "x": 1272,
+    "y": 1188,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 79",
+   "frame": {
+    "x": 1484,
+    "y": 1188,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 80",
+   "frame": {
+    "x": 0,
+    "y": 1320,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 81",
+   "frame": {
+    "x": 212,
+    "y": 1320,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 82",
+   "frame": {
+    "x": 424,
+    "y": 1320,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 83",
+   "frame": {
+    "x": 636,
+    "y": 1320,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 84",
+   "frame": {
+    "x": 848,
+    "y": 1320,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 85",
+   "frame": {
+    "x": 1060,
+    "y": 1320,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 86",
+   "frame": {
+    "x": 1272,
+    "y": 1320,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 87",
+   "frame": {
+    "x": 1484,
+    "y": 1320,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 88",
+   "frame": {
+    "x": 0,
+    "y": 1452,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 89",
+   "frame": {
+    "x": 212,
+    "y": 1452,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 90",
+   "frame": {
+    "x": 424,
+    "y": 1452,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 91",
+   "frame": {
+    "x": 636,
+    "y": 1452,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 92",
+   "frame": {
+    "x": 848,
+    "y": 1452,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 93",
+   "frame": {
+    "x": 1060,
+    "y": 1452,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 94",
+   "frame": {
+    "x": 1272,
+    "y": 1452,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 95",
+   "frame": {
+    "x": 1484,
+    "y": 1452,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spore-burst 96",
+   "frame": {
+    "x": 0,
+    "y": 1584,
+    "w": 212,
+    "h": 132
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 212,
+    "h": 132
+   },
+   "sourceSize": {
+    "w": 212,
+    "h": 132
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "spore-burst.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1696,
+   "h": 1716
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "spore-burst",
+    "from": 0,
+    "to": 96,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "nature/spore-burst",
+   "name": "Spore burst",
+   "fps": 30,
+   "loop": false,
+   "frames": 97,
+   "frameSize": [
+    212,
+    132
+   ],
+   "pivot": [
+    106,
+    118
+   ],
+   "columns": 8
+  }
+ }
+}

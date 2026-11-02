@@ -1,0 +1,1704 @@
+{
+ "frames": [
+  {
+   "filename": "leaf-storm 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 1",
+   "frame": {
+    "x": 112,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 2",
+   "frame": {
+    "x": 224,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 3",
+   "frame": {
+    "x": 336,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 4",
+   "frame": {
+    "x": 448,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 5",
+   "frame": {
+    "x": 560,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 6",
+   "frame": {
+    "x": 672,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 7",
+   "frame": {
+    "x": 784,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 8",
+   "frame": {
+    "x": 896,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 9",
+   "frame": {
+    "x": 0,
+    "y": 104,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 10",
+   "frame": {
+    "x": 112,
+    "y": 104,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 11",
+   "frame": {
+    "x": 224,
+    "y": 104,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 12",
+   "frame": {
+    "x": 336,
+    "y": 104,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 13",
+   "frame": {
+    "x": 448,
+    "y": 104,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 14",
+   "frame": {
+    "x": 560,
+    "y": 104,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 15",
+   "frame": {
+    "x": 672,
+    "y": 104,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 16",
+   "frame": {
+    "x": 784,
+    "y": 104,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 17",
+   "frame": {
+    "x": 896,
+    "y": 104,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 18",
+   "frame": {
+    "x": 0,
+    "y": 208,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 19",
+   "frame": {
+    "x": 112,
+    "y": 208,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 20",
+   "frame": {
+    "x": 224,
+    "y": 208,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 21",
+   "frame": {
+    "x": 336,
+    "y": 208,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 22",
+   "frame": {
+    "x": 448,
+    "y": 208,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 23",
+   "frame": {
+    "x": 560,
+    "y": 208,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 24",
+   "frame": {
+    "x": 672,
+    "y": 208,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 25",
+   "frame": {
+    "x": 784,
+    "y": 208,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 26",
+   "frame": {
+    "x": 896,
+    "y": 208,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 27",
+   "frame": {
+    "x": 0,
+    "y": 312,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 28",
+   "frame": {
+    "x": 112,
+    "y": 312,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 29",
+   "frame": {
+    "x": 224,
+    "y": 312,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 30",
+   "frame": {
+    "x": 336,
+    "y": 312,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 31",
+   "frame": {
+    "x": 448,
+    "y": 312,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 32",
+   "frame": {
+    "x": 560,
+    "y": 312,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 33",
+   "frame": {
+    "x": 672,
+    "y": 312,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 34",
+   "frame": {
+    "x": 784,
+    "y": 312,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 35",
+   "frame": {
+    "x": 896,
+    "y": 312,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 36",
+   "frame": {
+    "x": 0,
+    "y": 416,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 37",
+   "frame": {
+    "x": 112,
+    "y": 416,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 38",
+   "frame": {
+    "x": 224,
+    "y": 416,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 39",
+   "frame": {
+    "x": 336,
+    "y": 416,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 40",
+   "frame": {
+    "x": 448,
+    "y": 416,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 41",
+   "frame": {
+    "x": 560,
+    "y": 416,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 42",
+   "frame": {
+    "x": 672,
+    "y": 416,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 43",
+   "frame": {
+    "x": 784,
+    "y": 416,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 44",
+   "frame": {
+    "x": 896,
+    "y": 416,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 45",
+   "frame": {
+    "x": 0,
+    "y": 520,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 46",
+   "frame": {
+    "x": 112,
+    "y": 520,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 47",
+   "frame": {
+    "x": 224,
+    "y": 520,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 48",
+   "frame": {
+    "x": 336,
+    "y": 520,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 49",
+   "frame": {
+    "x": 448,
+    "y": 520,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 50",
+   "frame": {
+    "x": 560,
+    "y": 520,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 51",
+   "frame": {
+    "x": 672,
+    "y": 520,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 52",
+   "frame": {
+    "x": 784,
+    "y": 520,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 53",
+   "frame": {
+    "x": 896,
+    "y": 520,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 54",
+   "frame": {
+    "x": 0,
+    "y": 624,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 55",
+   "frame": {
+    "x": 112,
+    "y": 624,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 56",
+   "frame": {
+    "x": 224,
+    "y": 624,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 57",
+   "frame": {
+    "x": 336,
+    "y": 624,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 58",
+   "frame": {
+    "x": 448,
+    "y": 624,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 59",
+   "frame": {
+    "x": 560,
+    "y": 624,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 60",
+   "frame": {
+    "x": 672,
+    "y": 624,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 61",
+   "frame": {
+    "x": 784,
+    "y": 624,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 62",
+   "frame": {
+    "x": 896,
+    "y": 624,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 63",
+   "frame": {
+    "x": 0,
+    "y": 728,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 64",
+   "frame": {
+    "x": 112,
+    "y": 728,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 65",
+   "frame": {
+    "x": 224,
+    "y": 728,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 66",
+   "frame": {
+    "x": 336,
+    "y": 728,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 67",
+   "frame": {
+    "x": 448,
+    "y": 728,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 68",
+   "frame": {
+    "x": 560,
+    "y": 728,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 69",
+   "frame": {
+    "x": 672,
+    "y": 728,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 70",
+   "frame": {
+    "x": 784,
+    "y": 728,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "leaf-storm 71",
+   "frame": {
+    "x": 896,
+    "y": 728,
+    "w": 112,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 104
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "leaf-storm.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1008,
+   "h": 832
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "leaf-storm",
+    "from": 0,
+    "to": 71,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "nature/leaf-storm",
+   "name": "Leaf storm",
+   "fps": 30,
+   "loop": true,
+   "frames": 72,
+   "frameSize": [
+    112,
+    104
+   ],
+   "pivot": [
+    56,
+    92
+   ],
+   "columns": 9,
+   "act": {
+    "windup": 0,
+    "recovery": 0,
+    "onBody": false,
+    "targets": [],
+    "hits": [],
+    "poses": [
+     {
+      "t": 0,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.1,
+       "crouch": 0,
+       "fx": -13,
+       "fy": -37,
+       "bx": 13,
+       "by": -37,
+       "ffx": -3,
+       "fbx": 4
+      }
+     },
+     {
+      "t": 0.6,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.1,
+       "crouch": 0,
+       "fx": -13,
+       "fy": -40,
+       "bx": 13,
+       "by": -33,
+       "ffx": -3,
+       "fbx": 4,
+       "lean": 2
+      }
+     },
+     {
+      "t": 1.2,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.1,
+       "crouch": -1,
+       "fx": -13,
+       "fy": -37,
+       "bx": 13,
+       "by": -37,
+       "ffx": -3,
+       "fbx": 4
+      }
+     },
+     {
+      "t": 1.8,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.1,
+       "crouch": 0,
+       "fx": -13,
+       "fy": -33,
+       "bx": 13,
+       "by": -40,
+       "ffx": -3,
+       "fbx": 4,
+       "lean": -2
+      }
+     },
+     {
+      "t": 2.4,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.1,
+       "crouch": 0,
+       "fx": -13,
+       "fy": -37,
+       "bx": 13,
+       "by": -37,
+       "ffx": -3,
+       "fbx": 4
+      }
+     }
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,843 @@
+{
+ "frames": [
+  {
+   "filename": "claw-swipe 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 1",
+   "frame": {
+    "x": 128,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 2",
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 3",
+   "frame": {
+    "x": 384,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 4",
+   "frame": {
+    "x": 512,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 5",
+   "frame": {
+    "x": 0,
+    "y": 96,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 6",
+   "frame": {
+    "x": 128,
+    "y": 96,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 7",
+   "frame": {
+    "x": 256,
+    "y": 96,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 8",
+   "frame": {
+    "x": 384,
+    "y": 96,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 9",
+   "frame": {
+    "x": 512,
+    "y": 96,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 10",
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 11",
+   "frame": {
+    "x": 128,
+    "y": 192,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 12",
+   "frame": {
+    "x": 256,
+    "y": 192,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 13",
+   "frame": {
+    "x": 384,
+    "y": 192,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 14",
+   "frame": {
+    "x": 512,
+    "y": 192,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 15",
+   "frame": {
+    "x": 0,
+    "y": 288,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 16",
+   "frame": {
+    "x": 128,
+    "y": 288,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 17",
+   "frame": {
+    "x": 256,
+    "y": 288,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 18",
+   "frame": {
+    "x": 384,
+    "y": 288,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 19",
+   "frame": {
+    "x": 512,
+    "y": 288,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 20",
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 21",
+   "frame": {
+    "x": 128,
+    "y": 384,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 22",
+   "frame": {
+    "x": 256,
+    "y": 384,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 23",
+   "frame": {
+    "x": 384,
+    "y": 384,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 24",
+   "frame": {
+    "x": 512,
+    "y": 384,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 25",
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 26",
+   "frame": {
+    "x": 128,
+    "y": 480,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  },
+  {
+   "filename": "claw-swipe 27",
+   "frame": {
+    "x": 256,
+    "y": 480,
+    "w": 128,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 96
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "claw-swipe.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 640,
+   "h": 576
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "claw-swipe",
+    "from": 0,
+    "to": 27,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "melee/claw-swipe",
+   "name": "Claw swipe",
+   "fps": 30,
+   "loop": false,
+   "frames": 28,
+   "frameSize": [
+    128,
+    96
+   ],
+   "pivot": [
+    36,
+    84
+   ],
+   "columns": 5,
+   "act": {
+    "windup": 0.46,
+    "recovery": 0,
+    "onBody": false,
+    "targets": [
+     58
+    ],
+    "hits": [
+     {
+      "t": 0.04,
+      "freeze": 0.03,
+      "shake": 0,
+      "amp": 0,
+      "push": 0.9
+     },
+     {
+      "t": 0.08,
+      "freeze": 0.03,
+      "shake": 0,
+      "amp": 0,
+      "push": 0.9
+     },
+     {
+      "t": 0.12,
+      "freeze": 0.08,
+      "shake": 0.14,
+      "amp": 2,
+      "push": 1.4
+     }
+    ],
+    "poses": [
+     {
+      "t": -0.46,
+      "how": "smooth",
+      "pose": {
+       "crouch": 5,
+       "fx": 14,
+       "fy": -21,
+       "bx": 8,
+       "by": -25,
+       "ffx": 9,
+       "fbx": -8,
+       "weapon": "claw",
+       "offWeapon": "claw",
+       "sa": -0.4,
+       "sb": -0.9,
+       "lean": 3,
+       "x": -6
+      }
+     },
+     {
+      "t": -0.2,
+      "how": "smooth",
+      "pose": {
+       "crouch": 4,
+       "fx": 3,
+       "fy": -41,
+       "bx": 7,
+       "by": -18,
+       "ffx": 10,
+       "fbx": -8,
+       "weapon": "claw",
+       "offWeapon": "claw",
+       "sa": -1.4,
+       "sb": -0.3,
+       "lean": -3,
+       "x": -6
+      }
+     },
+     {
+      "t": -0.05,
+      "how": "smooth",
+      "pose": {
+       "crouch": 5,
+       "fx": 3,
+       "fy": -41,
+       "bx": 7,
+       "by": -18,
+       "ffx": 10,
+       "fbx": -8,
+       "weapon": "claw",
+       "offWeapon": "claw",
+       "sa": -1.4,
+       "sb": -0.3,
+       "lean": -3,
+       "x": -6
+      }
+     },
+     {
+      "t": 0,
+      "how": "snap",
+      "pose": {
+       "crouch": 3,
+       "fx": 19,
+       "fy": -36,
+       "bx": -7,
+       "by": -24,
+       "ffx": 9,
+       "fbx": -8,
+       "weapon": "claw",
+       "offWeapon": "claw",
+       "sa": -0.9,
+       "sb": -0.9,
+       "lean": 4,
+       "x": 0,
+       "ghost": 1
+      }
+     },
+     {
+      "t": 0.05,
+      "how": "snap",
+      "pose": {
+       "crouch": 5,
+       "fx": 23,
+       "fy": -24,
+       "bx": -7,
+       "by": -24,
+       "ffx": 13,
+       "fbx": -10,
+       "weapon": "claw",
+       "offWeapon": "claw",
+       "sa": 0.5,
+       "sb": -0.9,
+       "lean": 6,
+       "x": 2,
+       "toeB": true
+      }
+     },
+     {
+      "t": 0.1,
+      "how": "snap",
+      "pose": {
+       "crouch": 7,
+       "fx": 22,
+       "fy": -12,
+       "bx": -7,
+       "by": -24,
+       "ffx": 13,
+       "fbx": -10,
+       "weapon": "claw",
+       "offWeapon": "claw",
+       "sa": 1.2,
+       "sb": -0.9,
+       "lean": 7,
+       "x": 3,
+       "toeB": true
+      }
+     },
+     {
+      "t": 0.42,
+      "how": "smooth",
+      "pose": {
+       "crouch": 6,
+       "fx": 21,
+       "fy": -13,
+       "bx": -6,
+       "by": -22,
+       "ffx": 13,
+       "fbx": -10,
+       "weapon": "claw",
+       "offWeapon": "claw",
+       "sa": 1.1,
+       "sb": -0.9,
+       "lean": 5,
+       "x": 3
+      }
+     },
+     {
+      "t": 0.9,
+      "how": "smooth",
+      "pose": {
+       "crouch": 5,
+       "fx": 14,
+       "fy": -21,
+       "bx": 8,
+       "by": -25,
+       "ffx": 9,
+       "fbx": -8,
+       "weapon": "claw",
+       "offWeapon": "claw",
+       "sa": -0.4,
+       "sb": -0.9,
+       "lean": 3,
+       "x": -6
+      }
+     }
+    ]
+   }
+  }
+ }
+}

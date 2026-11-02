@@ -1,0 +1,963 @@
+{
+ "frames": [
+  {
+   "filename": "collect-burst 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 1",
+   "frame": {
+    "x": 112,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 2",
+   "frame": {
+    "x": 224,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 3",
+   "frame": {
+    "x": 336,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 4",
+   "frame": {
+    "x": 448,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 5",
+   "frame": {
+    "x": 560,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 6",
+   "frame": {
+    "x": 672,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 7",
+   "frame": {
+    "x": 0,
+    "y": 108,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 8",
+   "frame": {
+    "x": 112,
+    "y": 108,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 9",
+   "frame": {
+    "x": 224,
+    "y": 108,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 10",
+   "frame": {
+    "x": 336,
+    "y": 108,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 11",
+   "frame": {
+    "x": 448,
+    "y": 108,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 12",
+   "frame": {
+    "x": 560,
+    "y": 108,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 13",
+   "frame": {
+    "x": 672,
+    "y": 108,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 14",
+   "frame": {
+    "x": 0,
+    "y": 216,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 15",
+   "frame": {
+    "x": 112,
+    "y": 216,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 16",
+   "frame": {
+    "x": 224,
+    "y": 216,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 17",
+   "frame": {
+    "x": 336,
+    "y": 216,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 18",
+   "frame": {
+    "x": 448,
+    "y": 216,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 19",
+   "frame": {
+    "x": 560,
+    "y": 216,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 20",
+   "frame": {
+    "x": 672,
+    "y": 216,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 21",
+   "frame": {
+    "x": 0,
+    "y": 324,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 22",
+   "frame": {
+    "x": 112,
+    "y": 324,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 23",
+   "frame": {
+    "x": 224,
+    "y": 324,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 24",
+   "frame": {
+    "x": 336,
+    "y": 324,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 25",
+   "frame": {
+    "x": 448,
+    "y": 324,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 26",
+   "frame": {
+    "x": 560,
+    "y": 324,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 27",
+   "frame": {
+    "x": 672,
+    "y": 324,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 28",
+   "frame": {
+    "x": 0,
+    "y": 432,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 29",
+   "frame": {
+    "x": 112,
+    "y": 432,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 30",
+   "frame": {
+    "x": 224,
+    "y": 432,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 31",
+   "frame": {
+    "x": 336,
+    "y": 432,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 32",
+   "frame": {
+    "x": 448,
+    "y": 432,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 33",
+   "frame": {
+    "x": 560,
+    "y": 432,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 34",
+   "frame": {
+    "x": 672,
+    "y": 432,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 35",
+   "frame": {
+    "x": 0,
+    "y": 540,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 36",
+   "frame": {
+    "x": 112,
+    "y": 540,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 37",
+   "frame": {
+    "x": 224,
+    "y": 540,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 38",
+   "frame": {
+    "x": 336,
+    "y": 540,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 39",
+   "frame": {
+    "x": 448,
+    "y": 540,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 40",
+   "frame": {
+    "x": 560,
+    "y": 540,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "collect-burst 41",
+   "frame": {
+    "x": 672,
+    "y": 540,
+    "w": 112,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 108
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "collect-burst.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 784,
+   "h": 648
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "collect-burst",
+    "from": 0,
+    "to": 41,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "pickups/collect-burst",
+   "name": "Collect burst",
+   "fps": 30,
+   "loop": false,
+   "frames": 42,
+   "frameSize": [
+    112,
+    108
+   ],
+   "pivot": [
+    56,
+    94
+   ],
+   "columns": 7
+  }
+ }
+}
