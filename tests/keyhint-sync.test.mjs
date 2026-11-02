@@ -1,5 +1,5 @@
 // vc217 — 단축키 배지 동기화 계약 검증
-import { applyKeyBinding, keyLabel, DEFAULT_KEYMAP, resetKeyMap } from "/root/workspace/CERTZ/src/game/keymap.ts";
+import { applyKeyBinding, keyLabel, DEFAULT_KEYMAP, resetKeyMap } from "../src/game/keymap.ts";
 
 let pass=0, fail=0;
 const t=(n,c,x='')=>{ if(c){pass++;console.log(`PASS  ${n} ${x}`);} else {fail++;console.log(`FAIL  ${n} ${x}`);} };

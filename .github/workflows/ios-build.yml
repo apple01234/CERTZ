@@ -63,7 +63,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -78,7 +78,7 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=4096
         run: |
           set -e
-          ROUTE_DIRS="admin auth market rank support chat party"
+          ROUTE_DIRS="admin auth market rank support chat party campaign iap"
           mkdir -p .apk-hold/api-routes
           for d in $ROUTE_DIRS; do
             if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" ".apk-hold/api-routes/"; fi
@@ -97,6 +97,7 @@ jobs:
           }
           trap restore EXIT
           APK_EXPORT=1 npx next build
+          node campaign-assets.mjs
           test -f .next-apk/index.html || { echo "export 실패 — index.html 없음"; exit 1; }
 
       - name: Capacitor sync iOS

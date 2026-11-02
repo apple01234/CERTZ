@@ -45,7 +45,7 @@ find public -maxdepth 1 -name "*.apk" -exec mv {} "$PROJECT_ROOT/.apk-hold/" \; 
 
 echo "[0.6/5] ②안 serverless 라우트 5개 임시 격리 (output:export 비호환 — trap EXIT로 항상 복원)"
 mkdir -p "$PROJECT_ROOT/.apk-hold/api-routes"
-ROUTE_DIRS="admin auth market rank support chat party"
+ROUTE_DIRS="admin auth market rank support chat party campaign iap"
 for d in $ROUTE_DIRS; do
   if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" "$PROJECT_ROOT/.apk-hold/api-routes/"; fi
 done
@@ -76,6 +76,7 @@ trap restore_routes EXIT
 
 echo "[1/5] 정적 export 빌드 (APK_EXPORT=1 next build)"
 APK_EXPORT=1 npx next build
+node campaign-assets.mjs
 
 echo "[1.3/5] .next-apk 잔여 APK 이중 제거 (안전벨트)"
 rm -f .next-apk/*.apk

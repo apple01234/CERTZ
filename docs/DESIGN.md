@@ -1,3 +1,5 @@
+> **v2.0.0 이후 현재 기준:** 기억의 서약. 과거의 9개 바다 보존/DLC 진입 규칙은 폐기되었습니다. 새 정본은 `docs/campaign/CANON.md`, 실행·저장·온라인 계약은 `docs/campaign/OPERATIONS.md`를 따릅니다. 아래는 이전 작업 기록입니다.
+
 # DESIGN — 무엇을 만드는가
 
 ## 한 줄 요약

@@ -16,3 +16,17 @@ server.log
 dev.log
 *.apk
 *.keystore
+
+# Ship only the unified, licensed campaign art.
+public/assets/**
+!public/assets/tiles/
+!public/assets/tiles/kenney_tinydungeon.png
+!public/assets/tiles/kenney_tinytown.png
+!public/assets/campaign/
+!public/assets/campaign/**
+
+public/assets3d/
+public/assets3d_vfx/
+public/fxall.html
+public/fxtest.html
+public/perfbench.html

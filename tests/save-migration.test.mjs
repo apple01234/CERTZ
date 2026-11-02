@@ -1,6 +1,6 @@
 // vc219 — 세이브 마이그레이션 검증
 // 핵심: 구 세이브(v 없음)가 깨지지 않고, 신 세이브는 재변환되지 않는다.
-import { migrateSave, SAVE_VERSION } from "/root/workspace/CERTZ/src/game/config.ts";
+import { migrateSave, SAVE_VERSION } from "../src/game/config.ts";
 
 let pass=0, fail=0;
 const t=(n,c,x='')=>{ if(c){pass++;console.log(`PASS  ${n} ${x}`);} else {fail++;console.log(`FAIL  ${n} ${x}`);} };

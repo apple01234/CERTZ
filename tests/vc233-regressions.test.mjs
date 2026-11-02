@@ -111,7 +111,7 @@ const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
 /* ── ④ 부제목: 하울르스톤 → 이그드라실 ── */
 {
   const lay = read("src/app/layout.tsx");
-  ok("부제목이 '이그드라실: 9개의 바다'", lay.includes("이그드라실: 9개의 바다"));
+  ok("부제목이 새 캠페인 기억의 서약", lay.includes("기억의 서약") && !lay.includes("9개의 바다"));
   ok("부제목에 '하울르스톤:' 없음", !/하울르스톤\s*:\s*이그드라실/.test(lay));
 }
 

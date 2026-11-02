@@ -1,4 +1,39 @@
-# SERTZ — 자율 개발 루프 세트
+# SERTZ — 기억의 서약
+
+초기 15화 연재본을 바탕으로 만든 2D 스토리 어드벤처입니다. 커스텀 연합원으로 왕국 전쟁(15장), 별의 항로(10장), 영점권(9장)을 여행합니다. 9개의 바다는 새 게임에서 제거했습니다.
+
+- 스토리 진행에 레벨·반복 사냥·결제를 요구하지 않습니다. 보스는 공격 예고·회피·빈틈 공략이 필요합니다.
+- 솔로 도전과 3인 협동전은 별도 Node·Socket.IO 서버가 판정합니다. 외형/슬롯 상품은 전투 능력을 판매하지 않습니다.
+- 캐릭터·맵·소품·초상·아이콘은 16px 픽셀 스타일로 통일했습니다. 새 빌드에는 허용된 에셋만 포함합니다.
+- 기존 저장과 자산은 보관용으로 유지하고, 새 캠페인의 저장·거래·랭킹·구매 기록과 분리합니다.
+
+## 실행
+
+Node 24 이상을 사용합니다.
+
+```sh
+npm ci
+npx prisma generate
+npm run dev:next
+```
+
+```sh
+npm test
+npm run test:campaign:browser # 실행 중인 웹 서버 필요; npx playwright install chromium 선행
+npm run lint:strict
+npm run build
+```
+
+실시간 서버: `npm run campaign:server`. 서명 키·접속 주소·계정 저장 설정은 [운영 안내](docs/campaign/OPERATIONS.md)를 따릅니다. 설정이 없어도 게스트 본편은 기기 저장으로 플레이할 수 있습니다.
+
+[정본/명칭표](docs/campaign/CANON.md) · [아트와 라이선스](docs/campaign/ART_DIRECTION.md) · [검증 기록](docs/campaign/VALIDATION.md)
+
+앱용 정적 export와 웹 빌드는 같은 체크아웃에서 동시에 실행하지 않습니다. 서명 APK와 운영 서버는 별도 릴리스 절차가 필요합니다.
+
+---
+
+## 기존 개발 도구: 자율 개발 루프
+
 
 한 바퀴마다 **새 헤드리스 AI 세션**을 열어 개발을 이어가는 무한 루프.
 기억은 대화가 아니라 **파일**에 쌓는다 (DESIGN / STATUS / INBOX).

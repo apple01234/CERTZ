@@ -4,10 +4,10 @@ import "./fonts.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SERTZ — 이그드라실: 9개의 바다",
+  title: "SERTZ — 기억의 서약",
   description:
-    "2D 액션 MORPG. 세계수의 파편을 찾고 늑대를 토벌하고 심연의 수호자에 맞서라. 9개의 바다를 건너는 2D 액션 MORPG.",
-  keywords: ["SERTZ", "하울르스톤", "이그드라실", "9개의 바다", "픽셀 RPG", "액션 RPG"],
+    "당신만의 연합원으로 함께하는 2D 스토리 어드벤처. 왕국의 전쟁부터 별 너머의 귀향까지, 지워지지 않는 기억을 잇는 여정.",
+  keywords: ["SERTZ", "기억의 서약", "스토리 어드벤처", "픽셀 RPG", "협동 보스"],
 };
 
 /** F3: 모바일 확대/줌 차단, 세이프에어리어 대응 */
