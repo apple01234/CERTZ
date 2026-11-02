@@ -26,10 +26,10 @@ import pkg from "../../../../package.json";
 const LATEST_VERSION: string = (pkg as { version: string }).version;
 /* versionCode 는 package.json 에 없다 — 릴리스마다 1씩 증가하는 별도 축이다.
  *  아래 값은 **현재 릴리스** 기준이며, 버전을 올릴 때 함께 올려야 APK 미러가 유효하다. */
-const LATEST_CODE = 217;
+const LATEST_CODE = 218;
 const VERSION_NOTE =
   /* vc233 — 버전을 올릴 때 이 문구도 함께 갱신한다(업데이트 배너 본문). */
-  "v1.4.57 (vc217) — ①WASD 이동 스킴 전환 시 게임이 멈추던 버그 근본 수정(키맵 'Space' 표기 불일치로 키 조회가 undefined → Phaser 루프 정지). ②클라이언트 자동 업데이트 복구 — 서버 최신 버전이 1.4.54 에 멈춰 있어 배너가 뜨지 않던 문제(이제 package.json 에서 파생). ③물약 탭에서 아이템을 선택해도 상세·사용·수량 버튼이 뜨지 않던 버그(selSlot 에 potSlots 누락). ④영프 BGM 중복 제거(전용 15곡). ⑤궁극기 후속 이펙트 해적 2직업 누락 수정. ⑥바람 궁수 Z/C 스킬 스프라이트 미로딩(존재하지 않는 텍스처 키). ⑦근접 기본공격 전직 강화 폭 상향·블레이드마스터 2차 궁극기 재구현.";
+  "v1.4.58 (vc218) — ①WASD 이동 스킴 전환 시 게임이 멈추던 버그 근본 수정(키맵 'Space' 표기 불일치로 키 조회가 undefined → Phaser 루프 정지). ②클라이언트 자동 업데이트 복구 — 서버 최신 버전이 1.4.54 에 멈춰 있어 배너가 뜨지 않던 문제(이제 package.json 에서 파생). ③물약 탭에서 아이템을 선택해도 상세·사용·수량 버튼이 뜨지 않던 버그(selSlot 에 potSlots 누락). ④영프 BGM 중복 제거(전용 15곡). ⑤궁극기 후속 이펙트 해적 2직업 누락 수정. ⑥바람 궁수 Z/C 스킬 스프라이트 미로딩(존재하지 않는 텍스처 키). ⑦근접 기본공격 전직 강화 폭 상향·블레이드마스터 2차 궁극기 재구현.";
 const RELEASE_BASE = `https://github.com/apple01234/CERTZ/releases/download/v${LATEST_VERSION}`;
 const APK_MIRROR =
   /* 파일명의 vc{code} 는 build.gradle versionCode 와 일치해야 한다(불일치 시 404).
