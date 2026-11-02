@@ -108,4 +108,39 @@ const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
   ok("usable 이 isRecoveryPotionItem 사용", pn.includes("isBasicPot || isRecoveryPotionItem(it)"));
 }
 
+/* ── ④ 부제목: 하울르스톤 → 이그드라실 ── */
+{
+  const lay = read("src/app/layout.tsx");
+  ok("부제목이 '이그드라실: 9개의 바다'", lay.includes("이그드라실: 9개의 바다"));
+  ok("부제목에 '하울르스톤:' 없음", !/하울르스톤\s*:\s*이그드라실/.test(lay));
+}
+
+/* ── ⑤ 직업별 전용 무기: clsOnly 무기의 아이콘이 무기 종류와 맞아야 한다 ── */
+{
+  const data = read("src/game/data.ts");
+  const rows = [...data.matchAll(/kind: "weapon"[^}]*?icon: "([^"]+)"[^}]*?clsOnly: \[([^\]]*)\]/g)];
+  ok("clsOnly 무기 20종 이상", rows.length >= 20);
+
+  /* 계열별 기대 아이콘 — 마법사는 지팡이, 궁수는 활, 해적은 총/곡도, 도적은 단검 */
+  const expect = { mage: ["item_wpn_staff"], ranger: ["item_wpn_bow", "item_weapon_"], pirate: ["x3_gun", "item_wpn_cutlass"], thief: ["item_wpn_dagger", "item_weapon_"] };
+  const bad = [];
+  for (const m of rows) {
+    const icon = m[1];
+    const cls = [...m[2].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
+    for (const c of cls) {
+      if (!expect[c]) continue;                     // warrior 등은 검 허용
+      if (!expect[c].some((pre) => icon.startsWith(pre))) bad.push(`${c}:${icon}`);
+    }
+  }
+  ok(`직업-아이콘 불일치 없음 (불일치: ${bad.join(",") || "없음"})`, bad.length === 0);
+
+  /* 모든 무기 아이콘 파일이 실제로 존재 */
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const assetDir = fileURLToPath(new URL("../public/assets", import.meta.url));
+  const icons = [...data.matchAll(/kind: "weapon"[^}]*?icon: "([^"]+)"/g)].map((m) => m[1]);
+  const missing = [...new Set(icons)].filter((ic) => !fs.existsSync(path.join(assetDir, `${ic}.webp`)));
+  ok(`무기 아이콘 파일 전부 존재 (누락: ${missing.join(",") || "없음"})`, missing.length === 0);
+}
+
 console.log(`vc233-regressions: ${checks} checks passed`);

@@ -90,7 +90,7 @@ export function TitleScreen() {
           {/* 양피지 부제 칩 — 우드 프레임 */}
           <p className="game-chip mx-auto mt-3 inline-block max-w-[min(94vw,560px)] px-4 py-1.5">
             <span className="text-sm font-black tracking-[0.3em] text-[#f0e2c0] [text-shadow:0_1px_2px_#000] sm:text-base">
-              하울르스톤 : 이그드라실 9개의 바다
+              이그드라실: 9개의 바다
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프

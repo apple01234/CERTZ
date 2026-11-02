@@ -79,7 +79,7 @@ app.prepare().then(() => {
     try { _pkgVer = require("./package.json").version || _pkgVer; } catch { /* 번들 환경 — 아래 값 유지 */ }
     const LATEST_VERSION = _pkgVer;
     /* versionCode 는 package.json 에 없다 — 릴리스마다 1 증가하는 별도 축. */
-    const LATEST_CODE = 218;
+    const LATEST_CODE = 219;
     const VERSION_NOTE =
       "v1.4.54 (vc214) — ①NPC 초상화를 npcface 절차 생성 얼굴에서 월드 npcbody 원본 픽셀 crop으로 교체(15종·31키 — 대사창과 월드 인물이 같은 픽셀). ②로비 미리보기가 인게임과 같은 몸체/FA 프레임 공유(코스튬>GM>전직>피부). ③DLC 10개·재림 15개 사냥터 테마별 BGM 명시 배정(숲 기본곡 fallback 제거). ④5차 아우라 24종·지면 타일 11종 투입, 궁극기 명중 영역 정확화(피해·지연·넉백 불변). ⑤영준 프린세스 시작 마을 추가 + 그랜드 플레닛이 영구 잠기던 게이트 수정.";
   if (url === "/api/version") {

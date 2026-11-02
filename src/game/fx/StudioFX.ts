@@ -650,7 +650,7 @@ export function spawnUltFlourish(scene: SceneLike, x: number, y: number, key5: U
       break;
     case "skylord": // 궁극 폭풍 — 설풍 소용돌이 + 클라우드 링 (vfx_snow·vfx_cl1)
       flashSprite("vfx_cl1", 2.4, 640, 0x9fd8ff);
-      orbit("vfx_snow", 6, 90, 0.6, 0.85, 1400);
+      orbit("vfx_cl1", 5, 90, 0.7, 0.85, 1400); // vc234 (#1) vfx_snow(비/눈) 제거 — 구름 소용돌이로
       break;
     case "arclord": // 아르카나 — 크리스탈 붕괴 + 마나 링 (vfx_crystal·vfx_ring3)
       flashSprite("vfx_crystal", 2.0, 700, 0xc08aff);
@@ -674,8 +674,11 @@ export function spawnUltFlourish(scene: SceneLike, x: number, y: number, key5: U
      *   이 둘만 default(vfx_explosion + vfx_pt1)로 떨어져 다른 직업과 똑같은
      *   연출이 나왔다. 10직업 전부 자기 연출을 갖도록 나머지 둘을 채운다. */
     case "seaking":      // 해신 — 심해 소용돌이 + 물기둥
+      /* vc234 (#1 "궁극기 후딜에 비내리는 듯한 이펙트 그거 쓰지마")
+       *  vfx_snow 는 위에서 눈/비가 흩날리는 텍스처라 '비 내리는' 인상을 준다.
+       *  물 계열이지만 물기둥·소용돌이로 읽혀야 하므로 snow 를 쓰지 않는다. */
       flashSprite("vfx_ring3", 2.4, 680, tint);
-      orbit("vfx_snow", 5, 94, 0.7, 0.85, 1500);
+      orbit("vfx_crystal", 4, 88, 0.8, 0.85, 1500);
       break;
     case "dreadnought":  // 드레드노트 — 중갑 충격 + 포연
       flashSprite("vfx_explosion", 2.8, 700, tint);

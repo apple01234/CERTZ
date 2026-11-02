@@ -653,15 +653,25 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
 export type LilacPlacement = { sub: number; id: string };
 
 export const LILAC_CHAPTER_MAP: Record<string, LilacPlacement[]> = {
-  forest:      [{ sub: 1, id: "lilac00" }, { sub: 5, id: "lilac01" }],
-  kingdom:     [{ sub: 1, id: "lilac02" }, { sub: 5, id: "lilac03" }],
-  alfheim:     [{ sub: 1, id: "lilac04" }, { sub: 5, id: "lilac05" }],
-  muspelheim:  [{ sub: 1, id: "lilac06" }, { sub: 5, id: "lilac07" }],
-  niflheim:    [{ sub: 1, id: "lilac08" }, { sub: 5, id: "lilac09" }],
-  cave:        [{ sub: 1, id: "lilac10" }],
-  nidavellir:  [{ sub: 1, id: "lilac11" }, { sub: 5, id: "lilac12" }],
-  hel:         [{ sub: 1, id: "lilac13" }, { sub: 5, id: "lilac14" }],
-  abyss:       [{ sub: 1, id: "lilac15" }],
+  /* ══════════════════════════════════════════════════════════════════════
+   * vc234 (#2 "아뜰란티스 → 영준프린세스 → 그랜드 플레닛 순서인데 왜 스토리 섞음")
+   *
+   * [잘못된 배치 — 제거] 종전 이 표는 영프 16편을 **본편 챕터**(forest·kingdom·
+   *  alfheim·muspelheim·niflheim·cave·nidavellir·hel·abyss)의 sub 1/5 에 끼워
+   *  넣었다. 그 결과 본편(아뜰란티스 기반 1~10챕터)을 진행하다가 갑자기 라일락
+   *  월드 컷씬이 튀어나와 **세계관·시간순이 뒤섞였다.** 영준 프린세스는 본편을
+   *  끝낸 뒤 `youngprincessv` 마을에서 시작하는 **독립 편**이며, 본편과 같은
+   *  챕터 키를 공유하지 않는다.
+   *
+   * [올바른 배치] 영프 편은 howlrstone1~5 로만 진행한다.
+   *  각 장(章)의 sub 1 = 도입, sub 5 = 전환부에 시나리오를 둔다.
+   *  (본편 키는 이제 하나도 매핑하지 않는다 — 본편엔 영프 연출이 없다)
+   * ══════════════════════════════════════════════════════════════════════ */
+  howlrstone1: [{ sub: 1, id: "lilac00" }, { sub: 5, id: "lilac01" }, { sub: 9, id: "lilac02" }],
+  howlrstone2: [{ sub: 1, id: "lilac03" }, { sub: 5, id: "lilac04" }, { sub: 9, id: "lilac05" }],
+  howlrstone3: [{ sub: 1, id: "lilac06" }, { sub: 5, id: "lilac07" }, { sub: 9, id: "lilac08" }],
+  howlrstone4: [{ sub: 1, id: "lilac09" }, { sub: 5, id: "lilac10" }, { sub: 9, id: "lilac11" }],
+  howlrstone5: [{ sub: 1, id: "lilac12" }, { sub: 5, id: "lilac13" }, { sub: 9, id: "lilac14" }, { sub: 10, id: "lilac15" }],
 };
 
 /** 챕터·구역에 해당하는 시나리오 id (없으면 null) */

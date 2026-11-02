@@ -6053,10 +6053,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const drowned = this.getAllTargetsIn(340).slice();
         this.scene.cameras.main.flash(220, 60, 160, 230);
         this.scene.impactFX.shake(600, 0.014);
-        for (let i = 0; i < 6; i++) {
-          this.scene.time.delayedCall(400 + i * 900, () => {
+        /* vc234 (#3 "해적류 직업 궁극기 길이 짧은 버그 개편")
+         *  [문제] seaking 2차 궁극기는 시전 시간(ultHold)이 56초인데
+         *   실제 연출은 6회 × 900ms = 4.9초로 끝나, 나머지 51초는 아무 연출 없는
+         *   빈 후딜이었다. dreadnought 는 12회 × 170ms ≈ 2.9초로 더 짧았다.
+         *   "궁극기를 썼는데 화면이 비어 있다"로 보이는 직접 원인.
+         *  [해결] 파도를 14회로 늘리고 간격을 800ms 로 잡아 약 11초 지속시킨다.
+         *   동시에 물결이 밀려오는 방향성을 주기 위해 좌→우로 훑는다. */
+        for (let i = 0; i < 14; i++) {
+          this.scene.time.delayedCall(300 + i * 800, () => {
             if (this.state === "dead") return;
-            this.scene.spawnBurstAt(this.x + (Math.random() - 0.5) * 300, this.y + (Math.random() - 0.5) * 240, 18, 0x6fc8ff);
+            /* 좌→우 파도 진행 — 매회 x 오프셋을 이동시켜 '밀려온다'로 읽히게 */
+            const sweep = -300 + (i / 13) * 600;
+            this.scene.spawnBurstAt(this.x + sweep + (Math.random() - 0.5) * 120, this.y + (Math.random() - 0.5) * 240, 18, 0x6fc8ff);
             this.scene.sfxSkill("wave", 0.62 + (i % 3) * 0.05);
           });
         }
@@ -6105,9 +6114,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           targets: [reticle, reticle2], alpha: 0.2, duration: 300, yoyo: true, repeat: 3,
           onComplete: () => { try { reticle.destroy(); reticle2.destroy(); } catch { /* 무시 */ } },
         });
-        /* 12발 순차 낙하 — 착탄 예고 후 실제 판정 */
-        for (let i = 0; i < 12; i++) {
-          this.scene.time.delayedCall(600 + i * 170, () => {
+        /* 22발 순차 낙하 — 착탄 예고 후 실제 판정 (vc234 #3: 12발→22발) */
+        for (let i = 0; i < 22; i++) {
+          /* vc234 (#3) — 12회 × 170ms(2.9초)는 시전 시간 60초 대비 너무 짧아
+           *  후딜이 통째로 비었다. 22회 × 380ms ≈ 9초로 늘려 포격이 이어지게 한다. */
+          this.scene.time.delayedCall(600 + i * 380, () => {
             if (this.state === "dead") return;
             const px = wx0 + (Math.random() - 0.5) * spanX * 2;
             const py = wy0 + (Math.random() - 0.5) * spanY * 2;
@@ -6130,7 +6141,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 마지막 초대형 탄환 — 사전 경고 후 대충격파 */
-        this.scene.time.delayedCall(600 + 12 * 170 + 200, () => {
+        this.scene.time.delayedCall(600 + 22 * 380 + 200, () => {
           if (this.state === "dead") return;
           this.scene.spawnShockwave(wx0, wy0, 0xffe0b0, 5.0, 620, 0.9);
           this.scene.cameras.main.flash(280, 255, 200, 140);
