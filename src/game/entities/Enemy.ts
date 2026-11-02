@@ -9,6 +9,7 @@ import { actorStream, releaseActor } from "../sim/deterministic"; // vc183 — �
 import { FSM, type FSMState } from "../ai/FSM";
 import { spawnDissolve } from "../fx/DissolveFX"; // vc214 — 소멸 dissolve 셰이더
 import { decideMorale } from "../ai/morale"; // vc214 — Utility AI 사기 판단
+import { EnemyBrain, type BrainAction } from "../ai/enemyBrain"; // vc234 — BT 우선순위 분기
 /** 종별 물리/판정 크기 + 리스폰 버스트 색 */
 const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: number; burst: number }> = {
   wolf: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0x9aa0b4 },
@@ -178,6 +179,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private readonly moraleCtx = { hp01: 1, dist: 0, aggro: 300, allies: 0, playerHp01: 1 };
 
   private ai: FSM<AICtx>;
+  /** vc234 — BT 우선순위 분기 (죽음/유예/기절/게이트/사기 를 트리로 판정) */
+  private brain = new EnemyBrain();
+  /** vc234 — BT 에 넘길 사실(재사용 — 틱당 할당 없음) */
+  private readonly brainFacts = {
+    alive: true, dummy: false, prologueSafe: false, stunned: false,
+    hasGateTarget: false, distToPlayer: 0, aggro: 0, fleeing: false,
+  };
   private aiCtx: AICtx;
 
   /** 화면 표시명 (정예/시험 상대 등 변형 개체 — null이면 종명 사용) */
@@ -499,19 +507,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    /* v3.0.3 — 기절(시간 정지): FSM 정지 + 애니 정지 + 반짝임 */
-    if (this.scene.time.now < this.stunUntil) {
-      this.setVelocity(0, 0);
-      if (this.anims.isPlaying) this.anims.pause();
-      this.setTint(0xb0a0ff);
-      this.syncHpBar();
-      return;
-    } else if (this.anims.isPaused) {
-      this.anims.resume();
-      this.clearTint();
-    }
-
-    // 넉백 감쇠 (죽은 뒤 제외 — destroy 후 접근 방지)
+    /* 넉백 감쇠 (죽은 뒤 제외 — destroy 후 접근 방지) */
     if (this.active) this.knockVec.scale(Math.pow(0.0016, dt / 1000));
 
     // FSM 문맥 갱신 — 거리/방향을 1회 계산해 상태들과 공유
@@ -522,12 +518,61 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     c.vx = 0;
     c.vy = 0;
 
+    /* ══════════════════════════════════════════════════════════════════
+     * vc234 — 우선순위 분기를 BT 로 위임한다.
+     *
+     * [종전] tick() 안에 if/return 4겹이 순서대로 늘어서 있었다:
+     *   기절 → 프롤로그 유예 → 게이트 진군 → 사기 이탈 → FSM
+     *  각 분기가 함수 앞쪽을 차지해, 새 규칙을 넣을 때마다 "어디에 끼워야
+     *  다른 분기를 가리지 않는가"를 사람이 판단해야 했다.
+     *
+     * [지금] 위 순서가 EnemyBrain 의 Selector 자식 순서로 그대로 표현된다.
+     *  트리 모양이 곧 우선순위 문서이고, ReactiveSequence 라서 상위 조건이
+     *  깨지면(예: 유예 종료, 플레이어 접근) 즉시 하위 분기로 내려온다.
+     *
+     *  판정만 위임하고 실행은 아래에서 그대로 한다 — 부수효과(애니·틴트·
+     *  HP바)를 트리 안에 넣으면 Running 재개 의미와 충돌하기 때문.
+     * ══════════════════════════════════════════════════════════════════ */
+    const stunned = this.scene.time.now < this.stunUntil;
+    const f = this.brainFacts;
+    f.alive = this.alive;
+    f.dummy = !!this.dummy;
+    f.prologueSafe = !!this.scene.isPrologueSafe;
+    f.stunned = stunned;
+    f.hasGateTarget = !!this.gateTarget;
+    f.distToPlayer = c.dist;
+    f.aggro = this.def.aggro;
+    /* 사기 판단은 아래에서 갱신되므로, 이번 틱 판정에는 직전 값을 쓴다.
+     * (한 틱 지연은 180ms 판단 주기 안에서 무시할 수 있다) */
+    f.fleeing = this.morale !== "fight" && !this.flee && this.hp > 0;
+    const decision: BrainAction = this.brain.think(f, dt);
+
+    if (decision === "halt") {
+      /* 정지 계열 — 원인별 표현만 다르게 유지한다(종전 동작 보존). */
+      if (stunned) {
+        this.setVelocity(0, 0);
+        if (this.anims.isPlaying) this.anims.pause();
+        this.setTint(0xb0a0ff);
+      } else {
+        this.setVelocity(0, 0);
+        if (this.anims.currentAnim?.key !== `${this.def.key}-idle`) this.play(`${this.def.key}-idle`);
+        if (this.anims.isPaused) this.anims.resume();
+      }
+      this.syncHpBar();
+      return;
+    }
+    if (stunned) {
+      /* 기절이 방금 풀린 프레임 — 애니/틴트 복구 */
+      if (this.anims.isPaused) this.anims.resume();
+      this.clearTint();
+    }
+
     /* v1.0.15 (피드백 #4) — 게이트 방어 진군: 코어를 향해 달려온다.
      *  기존에는 어그로 밖 몬스터가 제자리 배회만 해 "몬스터가 게이트로 안 달려오는" 버그였다
      *  (tickGate의 340px 보정은 같은 프레임 FSM 속도에 덮여 무력).
      *  FSM 원거리 스로틀보다 앞단에서 처리해 화면 밖 몬스터도 멈추지 않고 진군한다.
      *  플레이어가 어그로 반경 내로 다가오면 그때는 기존 전투 FSM으로 교전한다. */
-    if (this.gateTarget && c.dist > this.def.aggro) {
+    if (decision === "gate" && this.gateTarget) {
       const gdx = this.gateTarget.x - this.x;
       const gdy = this.gateTarget.y - this.y;
       const gd = Math.hypot(gdx, gdy) || 0.0001;
@@ -604,7 +649,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     /* 사기 판단이 후퇴/도주면 FSM 을 건너뛰고 이탈 이동을 적용한다.
      * (attack/windup 같은 공격 상태가 남아 있으면 이동이 상쇄되므로 강제 해제) */
-    if (this.morale !== "fight" && !this.flee && this.hp > 0) {
+    if (decision === "flee") {
       const away = this.morale === "flee" ? 1.0 : 0.55;
       const spd = this.effSpeed * away;
       const len = Math.max(0.0001, Math.hypot(c.toPlayer.x, c.toPlayer.y));
