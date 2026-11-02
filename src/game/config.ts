@@ -150,6 +150,20 @@ export type SaveData = {
     /** 보스 처치 누계 */
     bossKills: number;
   };
+  /* vc232 (#4 "크라켓 먹물 획득 불가능") — 토벌 퀘스트 진행 영속화.
+   *
+   *  [문제] killTotals / huntBaseline 이 WorldScene 인스턴스 필드였다. 씬을 나가거나
+   *   사망해 씬이 재생성되면 860·961행에서 `{}` 로 초기화 → 누적 처치수가 0 이 된다.
+   *   영프 퀘스트는 "한 스테이지에서 18~28마리"를 요구하는데 스폰은 3~4마리뿐이다.
+   *   리스폰(3.2~4.8s)을 기다려 6~9배를 채우려면 오래 머물러야 하고, 그 사이 한 번만
+   *   죽어도 진행도가 통째로 날아갔다 → 사실상 클리어 불가.
+   *
+   *  [해결] 종족별 누적 처치수를 세이브에 남긴다. huntBaseline(퀘스트 수락 시점의
+   *   기준선)도 함께 남겨, 저장→로드 후에도 "수락 이후 몇 마리"가 유지되게 한다.
+   *   구 세이브는 undefined → {} 로 채운다(마이그레이션 불필요).
+   */
+  huntKills?: Record<string, number>;
+  huntBase?: Record<string, number>;
   /* ↓ BM (v1.9 — 버프 물약/펫/치장) */
   buffItems?: Record<string, number>;
   buffs?: { key: string; remain: number; total: number }[];

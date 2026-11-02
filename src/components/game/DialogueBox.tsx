@@ -7,7 +7,6 @@ import { BOSS_DEFS } from "@/game/data";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 아틀라스 초상화 분기
 import * as audio from "@/game/audio"; // v1.4.8 — 대화 진행 클릭음
 import portraitCrops from "../../../public/assets/npcportrait/_map.json";
-import { STORY_SEQUENCE_LABEL } from "@/game/stages";
 
 /**
  * 대화창: 타이프라이터 + 스페이스/엔터·탭으로 진행, 마지막 줄 완료 시 게임 재개.
@@ -280,7 +279,6 @@ export function DialogueBox({
         )}
 
         <div className="min-w-0 flex-1">
-          <div className="mb-1 text-[9px] leading-snug text-white/50">{STORY_SEQUENCE_LABEL}</div>
           <div className="mb-1 flex items-center gap-1.5">
             {/* v3.0.24 — 화자명 옆 초상 톤 마커 (보스/정령/NPC 색 구분) */}
             {portrait && (

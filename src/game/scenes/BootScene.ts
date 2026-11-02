@@ -409,21 +409,20 @@ const SPUM_TO_BODY: Record<string, string> = {
  *  ASSET_LIST와 경로가 다르므로(assets/vfx/) 별도 목록으로 둔다. */
 /* v4.9.2 — pixelfx 시트 키. tools/import-pixelfx.mjs 로 추가한 것만 여기 적는다.
  *  (파일이 없으면 로더가 404 를 내므로 목록과 실제 파일을 일치시켜야 한다) */
+/* vc232 (#20 "최적화") — 부팅 프리로드 목록을 **실제 쓰는 이펙트만**으로 축소.
+ *  [문제] 81종(52.1MB)을 부팅에 전부 받았다. 그중 36종은 PixelFxManager 의
+ *   EVENT_FX 에 등장조차 하지 않아 한 번도 재생되지 않는데 매 실행마다 31MB 를
+ *   내려받고 디코드했다. 모바일에서 첫 진입 지연·메모리 압박의 주 원인.
+ *  [해결] EVENT_FX 가 참조하는 45종(21.2MB)만 프리로드한다.
+ *   나머지는 필요 시 loadFxSheet 로 지연 로드할 수 있다(경로는 그대로 유효). */
 const PIXELFX_SHEETS = [
-  "arcane-orb", "ball-lightning", "big-explosion", "black-hole", "bleeding", "blink-in",
-  "blizzard-vortex", "blunt-hit", "bullet-impact", "chain-lightning", "charge-up",
-  "claw-swipe", "coin-spin", "collect-burst", "crit-hit", "crystal-shard", "dark-explosion",
-  "dirt-explosion", "dissolve-burn", "divine-shield", "earth-spike", "eclipse", "fire-ring",
-  "fire-tornado", "fireball", "flame-pillar", "frost-nova", "frozen", "gem-spin", "geyser",
-  "ground-slam", "hammer-smash", "haste", "heal", "healing-bloom", "heavy-cleave", "hit-flash",
-  "hit-spark", "holy-pillar", "ice-shatter", "ice-spikes", "impact-frame", "implosion",
-  "leaf-storm", "level-up", "lightning-strike", "magic-circle-cast", "mana-burst",
-  "necro-skulls", "nuke", "pixel-dissolve", "plasma-explosion", "poisoned", "poof", "portal",
-  "quest-complete", "rage", "resurrection", "rune-circle", "shadow-flames", "shatter-death",
-  "shield-block", "smite", "snowflake-burst", "soul-rise", "spawn-portal", "spell-charge",
-  "spin-slash", "splash", "spore-burst", "storm-cloud", "summon-rise", "sunburst",
-  "sword-slash", "time-stop", "torch", "vine-whip", "void-orb", "water-jet", "wave-crash",
-  "zap-hit",
+  "arcane-orb", "big-explosion", "bleeding", "blink-in", "blunt-hit", "bullet-impact",
+  "claw-swipe", "coin-spin", "collect-burst", "crit-hit", "crystal-shard", "dissolve-burn",
+  "divine-shield", "fireball", "frozen", "gem-spin", "hammer-smash", "haste", "heal",
+  "healing-bloom", "hit-spark", "ice-spikes", "impact-frame", "implosion", "leaf-storm",
+  "level-up", "pixel-dissolve", "poisoned", "poof", "portal", "quest-complete", "rage",
+  "resurrection", "shadow-flames", "shatter-death", "shield-block", "smite", "soul-rise",
+  "spawn-portal", "spin-slash", "splash", "summon-rise", "sunburst", "sword-slash", "zap-hit",
 ];
 
 const VFX_PACK_LIST = [

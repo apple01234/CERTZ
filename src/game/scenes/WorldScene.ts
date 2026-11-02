@@ -862,7 +862,9 @@ export class WorldScene extends Phaser.Scene {
     this.fragSparkle = null;
     this.dialoguing = false;
     this.attackQueued = false;
-    this.killTotals = {};
+    /* vc232 (#4) — 토벌 진행도를 세이브에서 복원한다. 종전엔 여기서 무조건 {} 로
+     *  비워 씬 재진입(스테이지 이동·사망)마다 퀘스트 카운트가 0 이 됐다. */
+    this.killTotals = { ...(data.save?.huntKills ?? {}) };
     this.spawnRecords = [];
     this.savedQuestIdx = {};
     /* v1.4.41 — 챕터 컷씬 시청 기록 복원 (구세이브는 빈 배열 — 첫 진입에 한 번 본다) */
@@ -958,7 +960,8 @@ export class WorldScene extends Phaser.Scene {
     this.fragmentsFound = {}; // v3.0.22 (#44) — 세이브 복원 전 초기화
     this.fieldEliteRef = null;
     this.agroHoldUntil = 0;
-    this.huntBaseline = {};
+    /* vc232 (#4) — 퀘스트 수락 시점 기준선도 복원 (없으면 로드 후 카운트가 전부 리셋) */
+    this.huntBaseline = { ...(data.save?.huntBase ?? {}) };
     /* v2.2 실내/취침 */
     this.isInterior = false;
     this.sleeping = false;
@@ -1710,8 +1713,33 @@ export class WorldScene extends Phaser.Scene {
     if (canVary) {
       const CELL = 64;
       const BLK = CELL * 4; // 256px 블록마다 변형 선택
-      const rng = new Phaser.Math.RandomDataGenerator([`${stageKey}-ground`]);
-      const variants = [packTex, `${packTex}_v1`, `${packTex}_v2`].filter((k) => this.textures.exists(k));
+      /* vc232 (#11 "1챕터에서 노래가 바뀔 때마다 (3 3 3 1) 타일맵도 조금씩 바뀌어야") 
+       *  [문제] 변형 선택 시드가 `${stageKey}-ground` 라 스테이지마다 완전히 달랐고,
+       *   BGM 이 바뀌는 구간(1~3 / 4~6 / 7~9 / 10보스)과 지면 무늬가 무관했다.
+       *  [해결] 시드를 **챕터+구간**으로 잡아 같은 곡이 흐르는 동안은 같은 지면 톤이
+       *   유지되고, 곡이 바뀌는 지점에서 지면 변형 비중이 달라지게 한다.
+       *   구간 = BGM 의 zoneSlot 과 동일한 3/3/3/1 경계. */
+      const _z = (() => {
+        const m = String(stageKey).match(/^([a-z]+)(\d+)$/);
+        return m ? parseInt(m[2], 10) : 0;
+      })();
+      const _seg = _z >= 10 ? 3 : _z <= 3 ? 0 : _z <= 6 ? 1 : 2;
+      const rng = new Phaser.Math.RandomDataGenerator([`${stageKey.slice(0, -1)}-seg${_seg}-ground`]);
+      /* 구간마다 변형 비중을 다르게: 0구간=기본 위주, 1구간=중간, 2구간=변형 위주,
+       *  3구간(보스)=가장 거친 변형. 같은 챕터 안에서도 곡이 바뀌면 바닥 결이 달라진다. */
+      const _v1 = `${packTex}_v1`, _v2 = `${packTex}_v2`;
+      const has1 = this.textures.exists(_v1), has2 = this.textures.exists(_v2);
+      /* vc232 (#11) — 구간마다 **변형 비중 자체**를 바꾼다. 순서만 뒤집으면
+       *  난수 분포가 같아 화면이 사실상 동일하다(체감 0).
+       *  0구간 7:3:0 / 1구간 4:4:2 / 2구간 2:4:4 / 3구간(보스) 0:4:6 — 곡이 바뀌면 결이 바뀐다. */
+      const _w = _seg === 0 ? [7, 3, 0] : _seg === 1 ? [4, 4, 2] : _seg === 2 ? [2, 4, 4] : [0, 4, 6];
+      const variants: string[] = [];
+      const _pool: [string | null, number][] = [[packTex, _w[0]], [has1 ? _v1 : null, _w[1]], [has2 ? _v2 : null, _w[2]]];
+      for (const [k, w] of _pool) {
+        if (!k) continue;
+        for (let n = 0; n < w; n++) variants.push(k);   // 가중치만큼 중복 → rng 가중 선택
+      }
+      if (!variants.length) variants.push(packTex);
       for (let by = 0; by < this.stageH; by += BLK) {
         for (let bx = 0; bx < this.stageW; bx += BLK) {
           const w = Math.min(BLK, this.stageW - bx);
@@ -2683,6 +2711,53 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** 매 프레임(80ms 스로틀) — y-depth 정렬 + 안개 크기 유지 */
+  /* vc232 (#5) — 적 겹침 방지.
+   *
+   *  [문제] 적 이동은 물리 바디 없이 좌표를 직접 미는 방식이라, 같은 지점으로
+   *   몰려오는 적들이 서로를 통과해 한 덩어리로 렌더됐다. 영프 스토리처럼
+   *   넓은 필드에 적이 몰리는 구간에서 특히 눈에 띄었다.
+   *
+   *  [해결] 위치만 보고 서로를 밀어낸다(물리 엔진 미도입 — 기존 이동 코드를
+   *   건드리지 않기 위해). 20ms 스로틀 + 최대 24쌍으로 프레임 비용을 고정한다.
+   *   밀어낸 결과는 즉시 반영하되, 벽/경계는 건드리지 않는다(맵 클램프는
+   *   각 적의 이동 코드가 이미 보장).
+   */
+  private sepAcc = 0;
+  private tickEnemySeparation(dt: number) {
+    this.sepAcc += dt;
+    if (this.sepAcc < 20) return;      // 50Hz → 20ms 스로틀
+    this.sepAcc = 0;
+    const list = this.enemies.filter((e) => e.active && e.alive !== false);
+    if (list.length < 2) return;
+
+    /* 최소 분리 거리 — 적 몸체 폭의 절반 수준. 너무 크면 밀려나는 게 티가 나고,
+     *  너무 작으면 겹침이 그대로 보인다. */
+    const MIN_D = 22;
+    const MIN_D2 = MIN_D * MIN_D;
+    let pairs = 0;
+    for (let i = 0; i < list.length && pairs < 24; i++) {
+      const a = list[i];
+      for (let j = i + 1; j < list.length && pairs < 24; j++) {
+        const b = list[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 >= MIN_D2 || d2 < 0.0001) continue;
+        pairs++;
+        /* 겹친 만큼 절반씩 밀어낸다. 위/아래보다 좌우를 조금 더 밀어
+         *  y-depth 정렬이 흔들리지 않게 한다(2.5D 시점에서 세로 이동은 어색하다). */
+        const d = Math.sqrt(d2);
+        const push = (MIN_D - d) * 0.5;
+        const nx = dx / d;
+        const ny = dy / d;
+        a.x -= nx * push * 1.35;
+        a.y -= ny * push * 0.75;
+        b.x += nx * push * 1.35;
+        b.y += ny * push * 0.75;
+      }
+    }
+  }
+
   private tickPersp(dt: number) {
     this.perspDepthAcc += dt;
     if (this.perspDepthAcc < 80) return;
@@ -2693,9 +2768,13 @@ export class WorldScene extends Phaser.Scene {
     /* vc206 (#13 RE 반영) — 그림자를 발밑에 붙인다. yDepthFor 는 tickPersp 의 80ms
      *  스로틀보다 자주 갱신되면 깜빡이므로 같은 주기에서 함께 처리한다. */
     if (this.playerShadow && this.player?.active) {
-      this.playerShadow
-        .setPosition(this.player.x, this.player.y + 14)
-        .setDepth(this.yDepthFor(this.player.y) - 0.05);
+      /* vc232 (#2 "플레이어 그림자 없애던가 최적화") — setDepth 는 DisplayList
+       *  재정렬(sort)을 유발한다. 매 80ms 무조건 호출하면 적이 많을수록 비싸다.
+       *  depth 는 y 에 대한 계단 함수라 값이 바뀔 때만 갱신하면 시각 차이가 없다. */
+      const sy = this.player.y + 14;
+      this.playerShadow.setPosition(this.player.x, sy);
+      const wantDepth = this.yDepthFor(sy);
+      if (this.playerShadow.depth !== wantDepth) this.playerShadow.setDepth(wantDepth);
     }
     for (const e of this.enemies) if (e.active) e.setDepth(this.perspDepthOf(e.y, h));
     if (this.boss?.active) this.boss.setDepth(this.perspDepthOf(this.boss.y, h));
@@ -2923,6 +3002,13 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private placeDecor(stageKey: StageKey) {
+    /* vc232 (#14 "쓸데없는 오브젝트 배치 줄이기")
+     *  [문제] 스테이지 정의의 flowers/trees/rocks 가 장식 밀도를 그대로 결정해서,
+     *   한 화면에 장식물이 수십 개 깔렸다. 전투 중 시각 노이즈가 되고 드로우콜도 늘었다.
+     *  [해결] 장식은 "자연스러운 빈 공간"을 채우는 용도이므로 **일괄 감축**한다
+     *   (꽃 60%↓ / 바위 30%↓ / 나무 30%↓). 충돌·길찾기용 바위는 남기되 수를 줄인다.
+     *   스테이지 정의 자체는 건드리지 않아 다른 시스템(미니맵 등)에 영향이 없다. */
+    const decorScale = { flower: 0.4, rock: 0.7, tree: 0.7 };
     const def = this.stageDef;
     const ch = parseStage(stageKey).ch;
     const rng = new Phaser.Math.RandomDataGenerator([stageKey + "-decor"]);
@@ -3003,7 +3089,7 @@ export class WorldScene extends Phaser.Scene {
     };
     /* v3.0.15 (#18) — 오브젝트 수 축소: 진로 방해 완화. 배치수 0.7배 + 간격 48px.
      *  (v3.0.14에서 1.5배로 늘려 산맥처럼 막히던 문제 되돌림) */
-    const treeN = Math.round(def.treeCount * 0.7);
+    const treeN = Math.round(def.treeCount * 0.7 * decorScale.tree); // vc232 (#14) 장식 감축
     for (let i = 0; i < treeN; i++) {
       for (let tries = 0; tries < 6; tries++) {
         const [x, y] = natPoint();
@@ -3034,7 +3120,7 @@ export class WorldScene extends Phaser.Scene {
         break;
       }
     }
-    const rockN = Math.round(def.rockCount * 0.7);
+    const rockN = Math.round(def.rockCount * 0.7 * decorScale.rock); // vc232 (#14) 장식 감축
     for (let i = 0; i < rockN; i++) {
       for (let tries = 0; tries < 6; tries++) {
         const [x, y] = natPoint();
@@ -3053,7 +3139,8 @@ export class WorldScene extends Phaser.Scene {
 
     // F1 핵심: 꽃은 def.flowerCount 송이만 (10 이하)
     const flowers = ["flower_r", "flower_y", "flower_w"];
-    for (let i = 0; i < def.flowerCount; i++) {
+    const flowerN = Math.round(def.flowerCount * decorScale.flower); // vc232 (#14)
+    for (let i = 0; i < flowerN; i++) {
       const x = rng.between(60, this.stageW - 60);
       const y = rng.between(60, this.stageH - 60);
       if (blocked(x, y)) continue;
@@ -5084,11 +5171,15 @@ export class WorldScene extends Phaser.Scene {
     const my = this.layout ? this.entryHome.y - 40 : this.stageH / 2 - 60;
     const glow = this.add.image(mx, my + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffd76a).setScale(0.9).setAlpha(0.25);
     this.tweens.add({ targets: glow, alpha: 0.42, scale: 1.15, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-    /* vc212 (#npc-body) — 상인도 자체 제작 **전신**으로 교체.
-     *  종전 npc_merchant 는 32×32 흉상형이라 1.7배 확대 시 다른 NPC 와
-     *  비율이 어긋나 "같은 게임 캐릭터"로 보이지 않았다(스크린샷 검토 지적). */
-    this.add.ellipse(mx, my + 40 * 0.62, 44, 14, 0x000000, 0.55).setDepth(this.yDepthFor(my) - 0.5);
-    this.merchant = this.add.image(mx, my, "npcbody_merchant").setDepth(this.yDepthFor(my)).setScale(0.62);
+    /* vc232 (#3 "내가 아는 라고스 상점 스프라이트는 이건데?")
+     *  [문제] vc212 에서 npc_merchant(32×32 · 회청색 후드/긴머리 + 주황갈색 로브 +
+     *   작고 둥근 웅크린 노인 상인)를 npcbody_merchant(적갈색 머리 + 노란 튜닉 +
+     *   보라 망토 + 도끼를 든 전사형)로 교체했다. 비율 문제를 고치려던 변경이었지만
+     *   **캐릭터 정체성 자체가 바뀌어** "내가 아는 라고스가 아니다"가 됐다.
+     *  [해결] 원래 스프라이트로 되돌린다. 비율은 32→전신 확대 대신 스케일을 올려 맞춘다
+     *   (0.62 → 1.7 · 32px 기준 ≈ 54px 높이로 다른 NPC 와 어긋나지 않게). */
+    this.add.ellipse(mx, my + 22, 30, 10, 0x000000, 0.5).setDepth(this.yDepthFor(my) - 0.5);
+    this.merchant = this.add.image(mx, my, "npc_merchant").setDepth(this.yDepthFor(my)).setScale(1.7);
     this.tweens.add({ targets: this.merchant, y: my - 3, duration: 1200, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.merchantLabel = this.add
       .text(mx, my - 36, "상인 라고스", {
@@ -5751,7 +5842,7 @@ export class WorldScene extends Phaser.Scene {
         annihilate: "elem.holy",
       };
       const ev = evMap[reactKey] ?? "elem.arcane";
-      this.pxFx?.play(ev, x, y, { scale: 0.9, depth: 9150 });
+      this.pxFx?.play(ev, x, y, { scale: 0.6, depth: 9150 }); // vc232 (#6) 0.9→0.6 — 연계 연쇄 시 화면을 덮지 않게
     } catch { /* 무시 */ }
     const R = ELEM_REACTION_META[reactKey];
     /* 반응명 텍스트 — 원소색 강조, 살짝 위로 떠오르며 펀치 스케일 */
@@ -6006,6 +6097,10 @@ export class WorldScene extends Phaser.Scene {
       this.spawnPickupText(this.player.x, this.player.y - 52 + (this.comboStreak % 2) * 12, `연속킬 x${this.comboStreak}! EXP +${pct}%`, "#ffd76a");
     }
     this.killTotals[key] = (this.killTotals[key] ?? 0) + 1;
+    /* vc232 (#4) — 토벌 누적을 세이브에 반영한다.
+     *  여기서 저장하지 않으면 사망/스테이지 이탈 시 진행도가 사라진다(원 버그).
+     *  buildSave→writeSave 경로(this.save)를 그대로 써서 다른 필드를 덮어쓰지 않는다. */
+    this.save();
     /* v1.4.31 (#3) — 정예 킬은 보물 사냥(교실) 카운터에도 합산 */
     const isEliteKill = !!(ref && !(ref instanceof Boss) && (ref as Enemy).displayName?.startsWith("정예"));
     classroom.trackKill(isEliteKill ? "elite" : undefined); // v1.4.30 (#9) — 교실 모드 합산 킬 카운터
@@ -9635,8 +9730,17 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState(true);
       this.saveSoon();
     };
-    const onUse = (v: { kind: "hp" | "mp" }) => {
-      this.player?.usePotion(v.kind);
+    const onUse = (v: { kind: "hp" | "mp"; qty?: number }) => {
+      /* vc232 (#9 "물약 선택시 추가옵션(hp, mp 지정 등) 안뜨는 버그")
+       *  [문제] 기본 물약 버튼은 `rpg:use` 로 가는데 핸들러가 종류(kind)만 받고
+       *   **수량(qty)을 아예 전달·처리하지 않았다.** 인벤토리의 일반 소모품은
+       *   `rpg:useItem` 으로 qty 를 넘겨 수량 지정 UI(MAX 버튼)가 뜨는데,
+       *   정작 가장 많이 쓰는 HP/MP 물약만 그 경로를 타지 않아 옵션이 없었다.
+       *  [해결] qty 를 받아 연속 사용한다(상한: 보유량). 1회 사용은 종전과 동일. */
+      const p = this.player;
+      if (!p) return;
+      const n = Math.max(1, Math.floor(v?.qty ?? 1));
+      for (let i = 0; i < n; i++) p.usePotion(v.kind);
     };
     const onUseBuff = (v: { key: BuffKey }) => {
       if (!this.player || this.dialoguing) return;
@@ -9777,7 +9881,15 @@ export class WorldScene extends Phaser.Scene {
        *    입력 상태를 완전 리셋한다. */
       try {
         const km = this.input.keyboard;
-        if (km?.manager) km.manager.enabled = !v.focus && !this.panelNavOpen;
+        /* vc232 (#1 "WASD 배치로 변경시 게임 멈추는 버그") — 두 게이트를 **독립**으로 관리한다.
+         *  종전엔 이 줄이 `!v.focus && !this.panelNavOpen` 이고, onPanelKeys 는
+         *  `!v.active && !this.chatFocused` 였다. 즉 **나중에 실행된 쪽이 상대 상태를
+         *  자기 지역 변수로만 보고 덮어썼다.** 예: 설정 패널을 열어 panelNavOpen=true 가
+         *  된 상태에서 채팅 인풋이 blur 되면 chatFocused=false → enabled=true 로 복구되어
+         *  패널 키 잠금이 풀리고, 반대로 패널이 닫힌 뒤 chatFocused=true 잔재가 있으면
+         *  enabled=false 로 굳어 **키보드가 영구 비활성**된다(게임이 멈춘 것처럼 보임).
+         *  → 단일 헬퍼로 두 플래그의 OR 만 보고 결정한다. */
+        this.syncKeyboardGate(km);
       } catch { /* 키보드 미지원 환경 무시 */ }
       this.resetInputState();
     };
@@ -9787,9 +9899,14 @@ export class WorldScene extends Phaser.Scene {
     const onPanelKeys = (v: { active: boolean }) => {
       this.panelNavOpen = !!v.active;
       if (v.active) this.touchMove.set(0, 0);
+      /* vc232 (#1) — 패널이 닫히는 순간 키보드가 반드시 살아나야 한다.
+       *  WASD 전환은 설정 패널을 거치므로, 이 경로가 막히면 "게임 멈춤"으로 보인다. */
+      if (!v.active) {
+        try { this.syncKeyboardGate(this.input.keyboard ?? undefined); } catch { /* 무시 */ }
+      }
       try {
         const km = this.input.keyboard;
-        if (km?.manager) km.manager.enabled = !v.active && !this.chatFocused;
+        this.syncKeyboardGate(km); // vc232 (#1) — chat:focus 와 동일 헬퍼
       } catch { /* 키보드 미지원 환경 무시 */ }
       this.resetInputState();
     };
@@ -11422,6 +11539,13 @@ export class WorldScene extends Phaser.Scene {
     /* vc146 (#5) — 2.5D 카메라: y-depth 정렬 + 심도 안개 유지 (80ms 스로틀) */
     this.tickPersp(dt);
 
+    /* vc232 (#5 "영프 스토리에서도 몬스터 겹침") — 적끼리 밀어내기.
+     *  원인: 이 게임은 적 이동을 물리 바디가 아니라 직접 좌표로 처리해서
+     *  collide() 도, 분리 로직도 없었다 → 적이 한 점에 겹쳐 한 덩어리로 보였다.
+     *  해결: 위치 기반 O(n²) 분리를 20ms 스로틀로 돌린다. 적 수가 많은 구역에서도
+     *  프레임당 1회·최대 24쌍만 검사하도록 상한을 둬 비용을 예측 가능하게 만든다. */
+    this.tickEnemySeparation(dt);
+
     /* v1.4.0 (Task 3-2) — 이스터에그 600ms 틱 — v1.4.11 제거 (eggs.ts 삭제와 세트) */
 
     /* v1.1.1 (#5 무지개 오라) — 이름=외양: 무지개는 전 색상 순환, 오로라는 초록↔보라,
@@ -11942,6 +12066,15 @@ export class WorldScene extends Phaser.Scene {
    *  호출 시점: 텍스트 입력 게이트 경계(채팅/이름 패널 열·닫), 인트로 이름 입력 시작/종료,
    *  대사 종료. keydown은 도달했는데 keyup이 DOM 인풋 swallow로 유실돼 Key.isDown이
    *  true로 남는(=resolveDirVec가 마지막 방향을 영구 유지하는) 상태를 즉시 청소한다. */
+  /* vc232 (#1) — Phaser 키보드 관리자 활성/비활성의 **단일 진입점**.
+   *  두 개의 독립 게이트(텍스트 입력 포커스 / UI 패널 키 잠금) 중 하나라도 켜져 있으면
+   *  키보드를 끈다. 각 핸들러가 자기 지역 상태만 보고 덮어쓰면 서로의 잠금을 풀거나
+   *  영구 비활성으로 굳는다(#1 WASD 전환 프리즈의 원인). */
+  private syncKeyboardGate(km: Phaser.Input.Keyboard.KeyboardPlugin | null | undefined) {
+    if (!km?.manager) return;
+    km.manager.enabled = !this.chatFocused && !this.panelNavOpen;
+  }
+
   private resetInputState() {
     this.touchMove.set(0, 0);
     this.attackQueued = false;
@@ -12197,6 +12330,21 @@ export class WorldScene extends Phaser.Scene {
       if (p.skill4Unlocked && p.skill4Cd <= 0 && p.mp >= 60 && (best instanceof Boss || this.countTargetsNear(320) >= 3)) {
         p.useSkill4();
       }
+    }
+
+    /* vc232 (#17 "자동전투 알고리즘 개편") — 궁극기 자동 사용.
+     *  [문제] 종전 자동전투는 skill1~4 만 썼다. 5차 궁극기(쿨 60s)·제2궁극기(쿨 120s)는
+     *   자동사냥 중 **한 번도 발동하지 않아** 쿨이 항상 가득 찬 채로 낭비됐다.
+     *  [해결] 위협 상황에서만 발동한다(남발 방지 — 사냥 흐름을 끊지 않게):
+     *   · 1차 궁극기: 보스전 또는 주변 3+ (광역이 의미 있는 상황)
+     *   · 2차 궁극기: 보스전 또는 주변 4+ (쿨이 2배라 더 보수적으로)
+     *  MP 여유분도 확인해 물약이 바닥나지 않게 한다. */
+    const near = this.countTargetsNear(380);
+    const bossHere = best instanceof Boss || this.bossFightActive?.() === true;
+    if (p.skill5Unlocked && p.skill5Cd <= 0 && p.mp >= 220 && (bossHere || near >= 3)) {
+      p.useSkill5();
+    } else if (p.skill5bUnlocked && p.skill5bCd <= 0 && p.mp >= 180 && (bossHere || near >= 4)) {
+      p.useSkill5b();
     }
   }
 
@@ -14679,17 +14827,40 @@ export class WorldScene extends Phaser.Scene {
     const isInn = stageKey === "interior_inn";
     this.cameras.main.setBackgroundColor("#150e08");
 
-    // 상단 벽 + 나무판 바닥
-    this.add.rectangle(0, 0, W, 104, 0x34220f).setOrigin(0).setDepth(0);
+    /* vc232 (#10 "여관&내 집 타일맵 이상함")
+     *  [문제] ①바닥이 `tile_path`(야외 흙길)라 실내가 흙바닥으로 보였다.
+     *   ②벽이 단색 rectangle 4장이라 타일 감이 없고 경계가 칼로 자른 듯했다.
+     *   ③러그가 ellipse 단색이라 "칠한 원"으로 보였다.
+     *  [해결] 실내 전용 나무 마루(tn_floor) + 벽 타일(tn_concrete)로 교체하고,
+     *   벽·바닥 경계에 걸레받이(베이스보드)를 넣어 원근이 읽히게 한다. */
+    const floorTex = this.textures.exists("tn_floor") ? "tn_floor" : "tile_path";
+    const wallTex = this.textures.exists("tn_concrete") ? "tn_concrete" : null;
+    /* 상단 벽 — 타일이 있으면 타일로, 없으면 기존 단색 유지(구세이브 환경 안전) */
+    if (wallTex) {
+      const wts = this.add.tileSprite(0, 0, W, 104, wallTex).setOrigin(0).setDepth(0).setAlpha(0.92);
+      wts.setTint(isInn ? 0xb08a5e : 0x9a8f7c); // 여관=따뜻한 목재 / 집=차분한 석재
+    } else {
+      this.add.rectangle(0, 0, W, 104, 0x34220f).setOrigin(0).setDepth(0);
+    }
+    /* 벽 하단 어두운 띠 = 걸레받이 */
     this.add.rectangle(0, 96, W, 8, 0x1c1108).setOrigin(0).setDepth(1);
-    this.add.tileSprite(0, 104, W, H - 104, "tile_path").setOrigin(0).setDepth(0).setAlpha(0.96);
-    // 좌우 벽 — 정사각 방 테두리 (원목 패널 + 어두운 베이스보드 라인)
-    this.add.rectangle(0, 104, 22, H - 104, 0x2c1c0c).setOrigin(0).setDepth(2);
+    /* 바닥 — 나무 마루 */
+    const fts = this.add.tileSprite(0, 104, W, H - 104, floorTex).setOrigin(0).setDepth(0).setAlpha(0.98);
+    fts.setTint(isInn ? 0xd8b88a : 0xc8c0b0);
+    /* 좌우 벽 — 타일 + 걸레받이 */
+    if (wallTex) {
+      this.add.tileSprite(0, 104, 22, H - 104, wallTex).setOrigin(0).setDepth(2).setTint(isInn ? 0xa07a52 : 0x8a8072);
+      this.add.tileSprite(W - 22, 104, 22, H - 104, wallTex).setOrigin(0).setDepth(2).setTint(isInn ? 0xa07a52 : 0x8a8072);
+    } else {
+      this.add.rectangle(0, 104, 22, H - 104, 0x2c1c0c).setOrigin(0).setDepth(2);
+      this.add.rectangle(W - 22, 104, 22, H - 104, 0x2c1c0c).setOrigin(0).setDepth(2);
+    }
     this.add.rectangle(22, 104, 5, H - 104, 0x1c1108).setOrigin(0).setDepth(2);
-    this.add.rectangle(W - 22, 104, 22, H - 104, 0x2c1c0c).setOrigin(0).setDepth(2);
     this.add.rectangle(W - 27, 104, 5, H - 104, 0x1c1108).setOrigin(0).setDepth(2);
-    // 원형 러그 — 방 중앙
-    this.add.ellipse(W / 2, H / 2 + 30, 300, 210, isInn ? 0x7a3030 : 0x2f5a7a, 0.55).setDepth(0);
+    /* 러그 — 이중 타원(테두리+면)으로 직물 느낌. 단색 원 → 겹친 원 2장 */
+    const rugC = isInn ? 0x7a3030 : 0x2f5a7a;
+    this.add.ellipse(W / 2, H / 2 + 30, 312, 222, rugC, 0.30).setDepth(0);
+    this.add.ellipse(W / 2, H / 2 + 30, 286, 198, rugC, 0.55).setDepth(0);
 
     // 충돌 (보이지 않는 벽) — 상단 벽 + 좌우 벽
     const wall = this.add.rectangle(W / 2, 92, W, 28, 0x000000, 0);
@@ -16699,6 +16870,9 @@ export class WorldScene extends Phaser.Scene {
   private buildSave(stageOverride?: StageKey): SaveData {
     return {
       stage: stageOverride ?? this.stageDef.key,
+      /* vc232 (#4) — 토벌 진행도 영속화 (씬 재진입 시 복원) */
+      huntKills: { ...this.killTotals },
+      huntBase: { ...this.huntBaseline },
       lv: this.player.lv,
       exp: this.player.exp,
       maxHp: this.player.maxHp,

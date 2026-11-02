@@ -38,14 +38,17 @@ const EVENT_FX: Record<FxEvent, string[]> = {
   "hit.ranged":    ["impacts/bullet-impact", "impacts/hit-spark"],
   "hit.crit":      ["impacts/crit-hit", "impacts/impact-frame"],
 
-  "elem.fire":     ["fire/fireball", "fire/flame-pillar", "fire/fire-ring"],
-  "elem.ice":      ["ice/frost-nova", "ice/ice-spikes", "ice/snowflake-burst"],
-  "elem.lightning": ["lightning/lightning-strike", "lightning/zap-hit", "lightning/chain-lightning"],
-  "elem.holy":     ["holy/smite", "holy/holy-pillar", "holy/sunburst"],
-  "elem.shadow":   ["shadow/shadow-flames", "shadow/dark-explosion", "shadow/void-orb"],
-  "elem.nature":   ["nature/leaf-storm", "nature/earth-spike", "nature/spore-burst"],
-  "elem.water":    ["water/splash", "water/water-jet", "water/wave-crash"],
-  "elem.arcane":   ["arcane/arcane-orb", "arcane/mana-burst", "arcane/magic-circle-cast"],
+  /* vc232 (#6 "속성 연계 이펙트 적절한 걸 골라서 써 (+과도하지 않게)")
+   *  종전엔 원소마다 3종을 랜덤 선택했다. 연계가 연쇄되면 화면이 이펙트로 덮여
+   *  전투 판독이 어려웠다(사용자 지적). 원소당 대표 1종만 남겨 "읽히는" 연출로 만든다. */
+  "elem.fire":     ["fire/fireball"],
+  "elem.ice":      ["ice/ice-spikes"],
+  "elem.lightning": ["lightning/zap-hit"],
+  "elem.holy":     ["holy/smite"],
+  "elem.shadow":   ["shadow/shadow-flames"],
+  "elem.nature":   ["nature/leaf-storm"],
+  "elem.water":    ["water/splash"],
+  "elem.arcane":   ["arcane/arcane-orb"],
 
   "death.normal":  ["spawn/shatter-death", "spawn/dissolve-burn", "spawn/poof"],
   "death.boss":    ["explosions/big-explosion", "explosions/implosion", "spawn/soul-rise"],
@@ -127,9 +130,11 @@ export class PixelFxManager {
     const all = EVENT_FX[ev] ?? [];
     const have = all.filter((k) => this.scene.textures.exists(k.replace(/\//g, "-")) || this.scene.textures.exists(k));
     if (have.length) return this.lowEnd ? have.slice(0, 1) : have;
-    /* 후보가 하나도 없으면 로드된 아무 시트라도 쓴다(무연출 방지) */
-    const fallback = ["frost-nova", "torch"].filter((k) => this.scene.textures.exists(k));
-    return fallback.slice(0, 1);
+    /* vc232 (#16 "몬스터가 죽을 때마다 얼음장판") — 여기가 원인이었다.
+     *  후보가 없을 때 `frost-nova` 로 떨어졌는데, 사망 이펙트(death.normal)가
+     *  아직 로드되지 않은 프레임에서는 **모든 몬스터 사망이 얼음장판**으로 보였다.
+     *  이제 "무연출"을 기본으로 둔다 — 엉뚱한 이펙트보다 안 나오는 게 낫다. */
+    return [];
   }
 
   /** 이벤트 재생. 중복·상한·스로틀을 모두 통과해야 실제로 그린다. */

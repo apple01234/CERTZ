@@ -252,6 +252,13 @@ export function AuthPanel() {
         setMsg(`구글 로그인 서버 설정이 아직 완료되지 않았어요 (운영자: Firebase 콘솔 Google 공급자 활성화 + Android 앱 SHA-1 등록 + google-services.json) [${msg.slice(0, 40)}] — 자체 계정을 이용해 주세요`);
       } else if (msg.includes("configuration-not-found") || msg.includes("operation-not-allowed") || msg.includes("api key") || msg.includes("firebaseapp") || msg.includes("not configured") || msg.includes("identitytoolkit") || msg.includes("permission_denied")) {
         setMsg("구글 로그인이 아직 서버에서 활성화되지 않았어요 (Firebase 설정 준비 중) — 자체 계정을 이용해 주세요");
+      } else if (msg.includes("unauthorized-domain") || msg.includes("auth/unauthorized")) {
+        /* vc232 (#1 "PC 구글 로그인 안됨") — PC 웹에서 가장 흔한 원인이다.
+         *  Firebase 는 로그인을 시작한 **도메인**을 허용목록에서 확인한다. localhost 나
+         *  운영 도메인이 등록돼 있지 않으면 팝업이 열렸다가 즉시 닫히고, 사용자에게는
+         *  "그냥 안 됨"으로만 보인다. 실제 도메인을 함께 보여줘 바로 조치할 수 있게 한다. */
+        const host = typeof window !== "undefined" ? window.location.hostname : "?";
+        setMsg(`이 도메인(${host})이 Firebase 승인 목록에 없어요 — 운영자: Firebase 콘솔 > Authentication > Settings > 승인된 도메인에 추가해 주세요`);
       } else {
         setMsg(`구글 로그인 중 오류가 발생했어요 — 자체 계정을 이용해 주세요 (${msg.slice(0, 60)})`);
       }

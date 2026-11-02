@@ -760,14 +760,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *    tier 0 → 0.00 / 1 → 1.00 / 2 → 1.28 / 3 → 1.56 / 4 → 1.84
      *  (isFifth 로 sTier 가 5 가 되는 경우도 있어 상한을 둔다) */
     const tierK = Math.max(0, t - 1); // 1차=0, 2차=1, 3차=2, 4차=3, 5차=4
-    /** 이펙트·판정 배율 — 4차에서 1.44배(판정 폭은 과하지 않게) */
-    const fxK = 1 + 0.11 * tierK;
+    /* vc232 (#18 "근접 직업 전직시 마다 기본공격 범위 및 이펙트 ㅈㄴ 많이 강화!!")
+     *  vc220 에서 이미 3축(피해·판정·이펙트)을 올렸지만 폭이 부족했다:
+     *   · 피해 +0.22/tier (4차 총 +66%)
+     *   · 판정 reach +3.5%/tier, hitW(폭) +11%/tier
+     *   · 참격 배율 +11%/tier
+     *  사용자 체감 기준으로 "전직했다는 게 한눈에 보이는" 수준으로 올린다.
+     *  근접은 위험을 감수하는 대가로 사거리·광역이 커져야 한다는 원칙(전직 보상).
+     *   1차 → 4차: 피해 +105% / 사거리 +42% / 폭 +88% / 참격 +76% */
+    const fxK = 1 + 0.22 * tierK;              // 0.11 → 0.22 (4차 1.66배)
     const dmgMul =
-      (warrior ? 1.1 : 1.0) + 0.22 * t + (empowered ? 0.5 : 0);
-    const reach = (warrior ? 176 : 160) * (1 + 0.035 * tierK);
-    const hitW = 116 * fxK; // 판정 폭
+      (warrior ? 1.1 : 1.0) + 0.35 * t + (empowered ? 0.5 : 0);  // 0.22 → 0.35
+    const reach = (warrior ? 176 : 160) * (1 + 0.105 * tierK);   // 0.035 → 0.105
+    const hitW = 116 * (1 + 0.29 * tierK);     // 폭은 fxK 보다 더 크게 (광역 체감)
     const knock = (warrior ? 320 : 280) * fxK;
-    /** 참격 스프라이트 배율 — 미전직 1.0 → 4차 1.44 */
+    /** 참격 스프라이트 배율 — 미전직 1.0 → 4차 1.76 */
     const slashScale = (warrior ? 1.15 : 1.0) * fxK;
 
     // 실제 방향별 베기 프레임 (측면/위/아래 4프레임 스윙)
@@ -885,9 +892,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             x: this.x, y: this.y - 8,
             angle, speed: 520, pierce: t >= 4 ? 5 : 3, dmg, crit,
             tint: slashTint ?? 0xffb08a, knock: 220,
-            scale: t >= 4 ? 1.5 : 1.0,
+            scale: t >= 4 ? 1.5 + 0.12 * tierK : 1.0,
             tex: "x3_shuriken", blend: t >= 4 ? "add" : "normal", rot: true,
           });
+          /* vc232 (#18) — 4차 이상 기본공격 마무리에 지면 충격 연출을 붙인다.
+           *  종전엔 검기 투사체 하나로 끝나 "전직해도 평타가 같다"로 읽혔다.
+           *  3차 이하에는 넣지 않는다(전직 보상의 체감을 남겨두기 위해). */
+          if (t >= 3) {
+            try {
+              const px = this.x + dir.x * reach * 0.55;
+              const py = this.y + dir.y * reach * 0.42;
+              this.scene.spawnCrack?.(px, py);
+              if (t >= 4) {
+                this.scene.spawnShockwave?.(px, py, slashTint ?? 0xffb08a, 1.6 + 0.18 * tierK, 300, 0.6);
+                this.scene.spawnBurstAt(px, py, 12 + 4 * tierK, slashTint ?? 0xffb08a);
+                this.scene.doShake?.(70, 0.0016);
+              }
+            } catch { /* 연출 실패는 공격을 막지 않는다 */ }
+          }
         }
       });
     }
@@ -5824,49 +5846,175 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       /* 블레이드마스터 — 극의전격: 만검의 진(하늘에서 검 100자루 — 25연 발동) + 교차 종결검 */
       case "blademaster": {
-        for (let i = 0; i < 25; i++) {
-          this.scene.time.delayedCall(260 + i * 95, () => {
-            if (this.state === "dead") return;
-            const cx = this.x + (Math.random() - 0.5) * 620;
-            const cy = this.y + (Math.random() - 0.5) * 500;
-            const dir = new Phaser.Math.Vector2(0, 1).rotate(Math.random() * Math.PI * 2);
-            this.scene.spawnSlash(cx, cy, dir, i % 2 === 0, 2.2, hex);
-            if (i % 3 === 0) this.scene.spawnBurstAt(cx, cy, 10, hex);
-            if (i % 5 === 0) this.scene.sfxSkill("iainuki", 1.0 + (i % 4) * 0.04);
-            for (const e of this.getAllTargetsIn(430)) {
-              if (Phaser.Math.Distance.Between(e.x, e.y, cx, cy) > 130) continue;
-              const away = dir;
-              const { dmg, crit } = rd(1.5);
+        /* ══════════════════════════════════════════════════════════════════
+         * vc232 (#19 "블레이드 마스터 궁극기 2개 다 ㅈㄴ 개편 (아예 갈아엎어)")
+         *
+         * [종전의 문제] 이 스킬은 이름이 「절멸의 체인 쾌검」이고 설명은
+         *  "가시 사슬을 양손으로 잡고 광범위 회전 난무 — 사슬 끝 마찰 스파크와
+         *   혈랑, 심각한 중첩 출혈 (7초·5.5m)" 인데, 실제 구현은 **무작위 위치에
+         *   25번 참격 + 단발 9.4배 종결**이었다. 즉
+         *   · 사슬이 없다  · 출혈이 없다  · 지속시간이 없다  · 회전 난무가 아니다
+         *   · 피해도 25×1.5 + 9.4 = 46.9배로 1차(47.5배)와 사실상 같아 차별점이 없었다.
+         *  → "아예 갈아엎어" 지적에 맞춰 **이름/설명 그대로** 재구현한다.
+         *
+         * [새 설계 — 3단 구성]
+         *  1) 사슬 전개(0~500ms): 양손에서 가시 사슬이 뻗어나가 5.5m(≈360px) 내
+         *     모든 적을 **사슬로 묶는다**(구속: 이동 봉쇄). 대상은 발동 시점 스냅샷.
+         *  2) 회전 난무(500~5000ms): 4.5초간 회전하며 매 120ms마다 3연 참격.
+         *     사슬 끝에서 마찰 스파크가 튀고, 맞은 적마다 **중첩 출혈**이 쌓인다
+         *     (1중첩당 초당 피해 — 최대 8중첩). 화면 중앙에 사슬 고리가 렌더된다.
+         *  3) 종결(7초): 사슬을 당겨 적을 중앙으로 끌어모은 뒤 폭쇄 — 남은 출혈
+         *     중첩에 비례해 피해가 커진다(중첩 소비형 마무리).
+         *
+         * [밸런스] 1차 「무한 검무」(50연타·약 47.5배·가속)와 역할을 나눈다.
+         *  1차 = 단일 화력 폭발 / 2차 = **광범위 지속 + 출혈 누적**. 즉시 피해는
+         *  낮게(난무 12배 + 종결 18배 + 출혈 총량) 두고, 대신 8초에 걸쳐 회수한다.
+         * ══════════════════════════════════════════════════════════════════ */
+        const CHAIN_R = 360;                 // 5.5m ≈ 360px
+        const SPIN_MS = 4500;                // 회전 난무 지속
+        const SPIN_TICK = 120;               // 3연 참격 주기
+        const CHAIN_TOTAL = 7000;            // 전체 7초 (설명과 일치)
+        const MAX_STACK = 8;                 // 출혈 최대 중첩
+
+        /* 발동 시점 스냅샷 — 종료 후 신규 진입한 적은 대상이 아니다 */
+        const chained = this.getAllTargetsIn(CHAIN_R).slice();
+        const bleed = new Map<object, number>();   // 대상 → 중첩 수
+
+        this.scene.sfxSkill("chain", 1.0);
+        this.scene.cameras.main.flash(140, 200, 120, 255);
+        this.scene.impactFX.shake(320, 0.012);
+
+        /* ── 1) 사슬 전개 — 대상을 묶고 시각 사슬을 뻗는다 ── */
+        const chainGfx = this.scene.add.graphics().setDepth(28).setBlendMode(Phaser.BlendModes.ADD);
+        const drawChains = (alpha: number) => {
+          try {
+            chainGfx.clear();
+            if (alpha <= 0.01) return;
+            chainGfx.lineStyle(2.5, 0xb46cff, alpha * 0.92);
+            for (const e of chained) {
+              if (!e.active || e.hp <= 0) continue;
+              /* 사슬은 살짝 흔들린다 — 직선이면 와이어로 보인다 */
+              const mx = (this.x + e.x) / 2 + Math.sin(this.scene.time.now * 0.012 + e.x) * 9;
+              const my = (this.y + e.y) / 2 + Math.cos(this.scene.time.now * 0.010 + e.y) * 9;
+              chainGfx.beginPath();
+              chainGfx.moveTo(this.x, this.y - 8);
+              chainGfx.lineTo(mx, my);
+              chainGfx.lineTo(e.x, e.y - 6);
+              chainGfx.strokePath();
+            }
+          } catch { /* 연출 실패는 게임을 막지 않는다 */ }
+        };
+        drawChains(1);
+
+        /* 구속 — 이동 봉쇄 (대상별로 원래 speed 를 기억했다가 종료 시 복원) */
+        const freed: { e: (typeof chained)[number]; sp: number }[] = [];
+        for (const e of chained) {
+          try {
+            const anyE = e as unknown as { speed?: number; setVelocity?: (x: number, y: number) => void };
+            if (typeof anyE.speed === "number") {
+              freed.push({ e, sp: anyE.speed });
+              anyE.speed = 0;
+              anyE.setVelocity?.(0, 0);
+            }
+          } catch { /* 무시 */ }
+        }
+
+        /* ── 2) 회전 난무 — 3연 참격 + 마찰 스파크 + 중첩 출혈 ── */
+        let spinAcc = 0;
+        const spinEvt = this.scene.time.addEvent({
+          delay: SPIN_TICK,
+          loop: true,
+          callback: () => {
+            if (this.state === "dead") { spinEvt.remove(); return; }
+            spinAcc += SPIN_TICK;
+            if (spinAcc > SPIN_MS) { spinEvt.remove(); return; }
+
+            /* 회전 궤적 3연 — 각도가 매번 달라 "돌고 있다"로 읽힌다 */
+            const base = (spinAcc / SPIN_MS) * Math.PI * 6; // 3바퀴
+            for (let k = 0; k < 3; k++) {
+              const ang = base + (k * Math.PI * 2) / 3;
+              const dir = new Phaser.Math.Vector2(1, 0).rotate(ang);
+              this.scene.spawnSlash(this.x + dir.x * 70, this.y + dir.y * 46, dir, k % 2 === 0, 2.6, 0xb46cff);
+            }
+            /* 사슬 끝 마찰 스파크 */
+            for (const e of chained) {
+              if (!e.active || e.hp <= 0) continue;
+              if (Math.random() < 0.45) {
+                this.scene.spawnBurstAt(e.x, e.y - 4, 5, 0xd8a0ff);
+                this.scene.sfxSkill("chain", 0.55 + Math.random() * 0.15);
+              }
+            }
+            drawChains(0.9);
+
+            /* 피해 — 대상별로 1.0배, 명중 시 출혈 1중첩(최대 8) */
+            for (const e of chained) {
+              if (!e.active || e.hp <= 0) continue;
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
+              const { dmg, crit } = rd(1.0);
               if (crit) this.scene.sfxCrit();
-              e.takeDamage(dmg, away, 160, crit);
+              e.takeDamage(dmg, away, 90, crit);
+              /* 중첩 출혈 — 1중첩당 초당 atk 의 0.35% (8중첩 = 2.8%/s × 4초) */
+              const st = Math.min(MAX_STACK, (bleed.get(e) ?? 0) + 1);
+              bleed.set(e, st);
+              try {
+                e.applyDot?.(Math.max(4, Math.round(this.atkTotal * 0.0035)) * st, 4000);
+              } catch { /* 무시 */ }
+            }
+          },
+        });
+
+        /* ── 3) 종결 — 사슬로 끌어모은 뒤 폭쇄 (중첩 비례) ── */
+        this.scene.time.delayedCall(SPIN_MS + 500, () => {
+          if (this.state === "dead") { try { chainGfx.destroy(); } catch { /* 무시 */ } return; }
+          spinEvt.remove();
+
+          /* 사슬 당기기 — 대상을 중앙으로 끌어모은다 */
+          for (const e of chained) {
+            if (!e.active || e.hp <= 0) continue;
+            const away = this.awayScratch.set(this.x - e.x, this.y - e.y).normalize();
+            try { e.takeDamage(0, away, 0, false); } catch { /* 판정만 유도 */ }
+            e.x = this.x + away.x * 60;
+            e.y = this.y + away.y * 44;
+          }
+          drawChains(1);
+          this.scene.sfxSkill("chain", 0.7);
+          this.scene.cameras.main.flash(120, 180, 110, 255);
+
+          /* 폭쇄 — 중첩에 비례한 마무리 */
+          this.scene.time.delayedCall(220, () => {
+            try { chainGfx.destroy(); } catch { /* 무시 */ }
+            if (this.state === "dead") return;
+            this.scene.spawnSpinSlash(this.x, this.y, 2);
+            spawnRingPop(this.scene, this.x, this.y, "vf_ring", 0xb46cff, 5.4, 820);
+            this.scene.spawnBurstAt(this.x, this.y, 88, 0xd8a0ff);
+            this.scene.spawnShockwave(this.x, this.y, 0xb46cff, 3.6, 560, 0.85);
+            this.scene.cameras.main.flash(200, 220, 160, 255);
+            this.scene.impactFX.shake(520, 0.024);
+            this.scene.sfxSkill("superhit", 0.9);
+
+            for (const e of finaleTargets(this.x, this.y, 420, chained)) {
+              if (!e.active || e.hp <= 0) continue;
+              const st = bleed.get(e) ?? 0;
+              /* 기본 18배 + 중첩당 3.5배 (8중첩 = 46배) — 지속 동안 쌓아야 강해진다 */
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
+              const { dmg, crit } = rd(18.0 + st * 3.5);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 700, crit);
+            }
+            /* 구속 해제 */
+            for (const f of freed) {
+              try {
+                const anyE = f.e as unknown as { speed?: number };
+                if (typeof anyE.speed === "number") anyE.speed = f.sp;
+              } catch { /* 무시 */ }
             }
           });
-        }
-        /* 종결 — 교차하는 종결검: 만검의 진이 한 점으로 수렴 */
-        this.scene.time.delayedCall(260 + 25 * 95 + 150, () => {
-          if (this.state === "dead") return;
-          const dir = this.aimDirFree().normalize();
-          this.scene.spawnSlash(this.x + dir.x * 40, this.y, dir, false, 4.8, hex);
-          this.scene.spawnSlash(this.x + dir.x * 40, this.y, dir, true, 4.8, 0xd8a0ff);
-          this.scene.spawnSpinSlash(this.x, this.y, 2);
-          this.scene.spawnCrack(this.x, this.y);
-          this.scene.spawnBurstAt(this.x, this.y, 76, hex);
-          spawnFlarePop(this.scene, this.x + dir.x * 44, this.y - 6, "vf_slash", { tint: hex, scale: 2.9, duration: 580, angle: dir.angle() });
-          spawnRingPop(this.scene, this.x, this.y, "vf_ring", hex, 5.0, 760);
-          this.scene.cameras.main.flash(180, 255, 255, 255);
-          this.scene.impactFX.shake(480, 0.023);
-          this.scene.sfxSkill("iainuki", 0.56);
-          this.scene.sfxSkill("superhit", 0.76);
-          for (const e of finaleTargets(this.x, this.y, 600)) {
-            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = rd(9.4);
-            if (crit) this.scene.sfxCrit();
-            e.takeDamage(dmg, away, 640, crit);
-          }
         });
         break;
       }
 
+      /* ══════════════════════════════════════════════════════════════════
+       * vc195 — 기획서 §4.9 시킹 제2궁극기 「해신: 침묵의 심연」
       /* ══════════════════════════════════════════════════════════════════
        * vc195 — 기획서 §4.9 시킹 제2궁극기 「해신: 침묵의 심연」
        *

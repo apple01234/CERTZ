@@ -264,7 +264,7 @@ function SellQtyBox({
 
 /** v1.3.0 (지시 #6) — 소모품 사용 개수 지정 박스: 수량 입력 + MAX 버튼 + 사용.
  *  경험치 책류처럼 "한 번에 여러 개 쓰기"가 필요한 소모품용 (SellQtyBox 패턴 재사용). */
-function UseQtyBox({ count, keyName, label }: { count: number; keyName: string; label?: string }) {
+function UseQtyBox({ count, keyName, label, isPot, potKind }: { count: number; keyName: string; label?: string; isPot?: boolean; potKind?: "hp" | "mp" }) {
   const [qty, setQty] = useState("1");
   const gate = useKeyGate();
   const parsed = parseInt(qty || "1", 10);
@@ -297,7 +297,13 @@ function UseQtyBox({ count, keyName, label }: { count: number; keyName: string; 
       </button>
       <button
         disabled={disabled}
-        onClick={() => EventBus.emit("rpg:useItem", { key: keyName, qty: n })}
+        onClick={() =>
+          /* vc232 (#9) — 기본 물약은 rpg:use 경로(HP/MP 종류)로 보내고 qty 를 함께 전달한다.
+           *  일반 소모품은 종전대로 rpg:useItem. */
+          isPot && potKind
+            ? EventBus.emit("rpg:use", { kind: potKind, qty: n })
+            : EventBus.emit("rpg:useItem", { key: keyName, qty: n })
+        }
         aria-label={`${count > 1 ? `${n}개` : ""} 사용`}
         className="rounded-md border border-sky-300/50 bg-sky-500/15 px-1.5 py-0.5 text-[9px] font-black text-sky-100 hover:bg-sky-500/30 active:scale-95 disabled:opacity-40"
       >
@@ -2661,9 +2667,13 @@ export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () =>
                           {useLabel}
                         </InvBtn>
                       )}
-                      {/* v1.3.0 (지시 #6) — 소모품 개수 지정 + MAX 사용: 경험치 책/귀환서류 (보유 2개 이상일 때 표시) */}
-                      {(s.k === "exp_book" || s.k === "exp_book_s" || s.k === "exp_book_m" || s.k === "exp_book_l" || s.k === "scroll_return") && s.count > 1 && (
-                        <UseQtyBox count={s.count} keyName={s.k} />
+                      {/* v1.3.0 (지시 #6) — 소모품 개수 지정 + MAX 사용: 경험치 책/귀환서류 (보유 2개 이상일 때 표시)
+                       *  vc232 (#9 "물약 선택시 추가옵션(hp, mp 지정 등) 안뜨는 버그")
+                       *   — 종전엔 물약이 이 목록에서 빠져 있어 수량 지정·MAX 가 없었다.
+                       *   정작 가장 자주 쓰는 소모품이 물약인데 옵션이 없었던 것이 원인.
+                       *   물약도 2개 이상이면 수량 상자를 노출한다. */}
+                      {(s.k === "exp_book" || s.k === "exp_book_s" || s.k === "exp_book_m" || s.k === "exp_book_l" || s.k === "scroll_return" || isBasicPot) && s.count > 1 && (
+                        <UseQtyBox count={s.count} keyName={s.k} isPot={isBasicPot} potKind={s.k === "potion_hp" ? "hp" : "mp"} />
                       )}
                       {isPot && (
                         <>

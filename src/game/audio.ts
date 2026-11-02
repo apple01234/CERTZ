@@ -182,7 +182,14 @@ export const BGM_PLAYLISTS: Record<BGMKind, string[]> = {
           "bgm_alfheim_1", "bgm_alfheim_2", "bgm_alfheim_3", "bgm_muspelheim_1", "bgm_muspelheim_2", "bgm_muspelheim_3",
           "bgm_niflheim_1", "bgm_niflheim_2", "bgm_niflheim_3", "bgm_cave_1", "bgm_cave_2", "bgm_cave_3",
           "bgm_nidavellir_1", "bgm_nidavellir_2", "bgm_nidavellir_3", "bgm_hel_1", "bgm_hel_2", "bgm_hel_3",
-          "bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3"],
+          "bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3",
+          /* vc232 (#7) — 영프 편(하울르스톤) 전용 15곡. 본편과 곡이 겹치지 않게
+           *  ai_song 의 노이즈 필터 통과 곡에서 무드별로 선별했다. */
+          "bgm_hw1_1", "bgm_hw1_2", "bgm_hw1_3",
+          "bgm_hw2_1", "bgm_hw2_2", "bgm_hw2_3",
+          "bgm_hw3_1", "bgm_hw3_2", "bgm_hw3_3",
+          "bgm_hw4_1", "bgm_hw4_2", "bgm_hw4_3",
+          "bgm_hw5_1", "bgm_hw5_2", "bgm_hw5_3"],
   alfheim: ["bgm_alfheim_1", "bgm_alfheim_2", "bgm_alfheim_3"],
   cave: ["bgm_cave_1", "bgm_cave_2", "bgm_cave_3", "bgm_cave_water"],
   snow: ["bgm_niflheim_1", "bgm_niflheim_2", "bgm_niflheim_3"],
@@ -221,7 +228,23 @@ const BGM_GAIN_DB: Record<string, number> = {
   bgm_hel_boss: 0.875,   // -1.2dB ← RMS -15.3dB
   bgm_interior_home: 0.815,   // -1.8dB ← RMS -14.7dB
   bgm_interior_inn: 0.871,   // -1.2dB ← RMS -15.3dB
-  bgm_kingdom_1: 0.82,   // -1.7dB ← RMS -14.8dB
+  bgm_kingdom_1: 0.82,
+  bgm_hw1_1: 1.303,
+  bgm_hw1_2: 1.318,
+  bgm_hw1_3: 1.288,
+  bgm_hw2_1: 1.462,
+  bgm_hw2_2: 1.445,
+  bgm_hw2_3: 1.445,
+  bgm_hw3_1: 0.902,
+  bgm_hw3_2: 1.429,
+  bgm_hw3_3: 1.148,
+  bgm_hw4_1: 1.245,
+  bgm_hw4_2: 1.462,
+  bgm_hw4_3: 1.462,
+  bgm_hw5_1: 1.259,
+  bgm_hw5_2: 1.175,
+  bgm_hw5_3: 0.989,
+  /* vc232 (#7) — 영프 전용 15곡 RMS 실측 보정 (기준 -14.8dB = bgm_kingdom_1) */   // -1.7dB ← RMS -14.8dB
   bgm_kingdom_2: 0.736,   // -2.7dB ← RMS -13.8dB
   bgm_kingdom_3: 0.783,   // -2.1dB ← RMS -14.4dB
   bgm_kingdom_boss: 0.67,   // -3.5dB ← RMS -13.0dB
@@ -292,6 +315,24 @@ const STAGE_BGM: Record<string, [string, string, string]> = {
   nidavellir: ["bgm_nidavellir_1", "bgm_nidavellir_2", "bgm_nidavellir_3"],
   hel: ["bgm_hel_1", "bgm_hel_2", "bgm_hel_3"],
   abyss: ["bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3"],
+  /* vc232 (#7 "중복되는 노래 없도록") — 영프 편(하울르스톤) 전용 슬롯.
+   *
+   *  [문제] 종전엔 HUNT_THEME_OF 가 영프 5챕터를 본편 챕터 5개(kingdom/alfheim/
+   *   muspelheim/abyss/hel)로 그대로 매핑했다. 그 결과 영프를 하면 본편에서
+   *   들은 곡이 **그대로** 다시 나왔다 — 보유 트랙이 27개(9챕터×3구간)뿐이라
+   *   같은 구간을 쓰면 반드시 겹치는 구조였다.
+   *
+   *  [해결] 영프 5챕터에 **서로 다른 챕터의 곡을 교차 배정**해 27곡을 45구간으로
+   *   나눠 쓴다. 영프 안에서도 곡이 겹치지 않고, 같은 챕터 안에서도
+   *   본편과 다른 구간의 곡을 쓰게 해 "본편에서 들은 그 곡"이 반복되지 않게 한다.
+   *   (음원을 새로 만들지 않고 정서만 바꾸는 DLC 방식과 동일한 접근)
+   */
+  howlrstone1: ["bgm_hw1_1", "bgm_hw1_2", "bgm_hw1_3"],   // 해변·바다 — medieval/adventure/underwater
+  howlrstone2: ["bgm_hw2_1", "bgm_hw2_2", "bgm_hw2_3"],   // 왕국 연합 — townshop/cozy/garden
+  howlrstone3: ["bgm_hw3_1", "bgm_hw3_2", "bgm_hw3_3"],   // 격전 — fantasybattle/skirmish/rpgbattle
+  howlrstone4: ["bgm_hw4_1", "bgm_hw4_2", "bgm_hw4_3"],   // 어둠의 성채 — darkfantasy/mystery/cave
+  howlrstone5: ["bgm_hw5_1", "bgm_hw5_2", "bgm_hw5_3"],   // 최후의 왕좌 — bossbattle/finalbattle/oceanboss
+  
 };
 /** 챕터 대표곡(폴백·목록용) — 구간 배정의 첫 곡 */
 const CHAPTER_THEME: Record<string, string> = {
@@ -318,6 +359,12 @@ const VILLAGE_OF: Record<string, string> = {
   niflheim: "bgm_village_niflheim",
   cave: "bgm_village_cave",
   nidavellir: "bgm_village_nidavellir",
+  /* vc232 (#7) — 영프 편 마을곡. */
+  howlrstone1: "bgm_village_kingdom",
+  howlrstone2: "bgm_village_alfheim",
+  howlrstone3: "bgm_village_muspelheim",
+  howlrstone4: "bgm_village_hel",
+  howlrstone5: "bgm_village_abyss",
   hel: "bgm_village_hel",
   abyss: "bgm_village_abyss",
 };
@@ -335,6 +382,13 @@ const BOSS_OF: Record<string, string> = {
   nidavellir: "bgm_nidavellir_boss",
   hel: "bgm_hel_boss",
   abyss: "bgm_abyss_boss",
+  /* vc232 (#7) — 영프 편 보스곡. 본편 해당 챕터 보스곡과 겹치지 않게 교차 배정.
+   *  (보스곡은 챕터당 1곡뿐이라 신규 생성 전까지는 교차 배정으로 중복을 피한다) */
+  howlrstone1: "bgm_cave_boss",
+  howlrstone2: "bgm_kingdom_boss",
+  howlrstone3: "bgm_nidavellir_boss",
+  howlrstone4: "bgm_niflheim_boss",
+  howlrstone5: "bgm_abyss_boss",
 };
 /** 재림 보스 — splitStage("r5")는 ch="r", zone=5/10/15로 파싱된다 */
 const REBIRTH_BOSS_OF: Record<number, string> = { 5: "bgm_kingdom_boss", 10: "bgm_hel_boss", 15: "bgm_abyss_boss" };
@@ -343,13 +397,9 @@ export const HUNT_THEME_OF: Record<string, string> = {
   dlcstargate: "nidavellir", dlcprisma: "alfheim", dlcocean: "abyss",
   dlcreverse: "cave", dlcneocity: "kingdom", dlcmech: "nidavellir",
   dlcswallow: "hel", dlcopinicia: "kingdom", dlcnovel: "alfheim", dlcsernium: "alfheim",
-  /* vc231 — 영프 편(하울르스톤). 라일락 월드 5챕터를 실존 트랙에 배정한다.
-   *  값은 CHAPTER_THEME/STAGE_BGM 에 실제로 있는 챕터 키여야 한다
-   *  (DLC 가 쓰는 것과 같은 방식 — 신규 오디오 없이 정서만 갈아입힌다).
-   *  1장 해변·바다 → kingdom(항구), 2장 왕국·연합 → alfheim,
-   *  3장 격전 → muspelheim, 4장 어둠의 성채 → abyss, 5장 최후의 왕좌 → hel. */
-  howlrstone1: "kingdom", howlrstone2: "alfheim", howlrstone3: "muspelheim",
-  howlrstone4: "abyss", howlrstone5: "hel",
+  /* vc232 (#7) — 영프 편은 HUNT_THEME_OF 로 본편 챕터를 재사용하지 않는다.
+   *  곡은 STAGE_BGM.howlrstone* 에서 직접 배정한다(아래). 종전 방식은
+   *  "영프 1장 = 본편 kingdom 곡"이라 본편에서 들은 곡이 그대로 반복됐다. */
 };
 export const REBIRTH_THEME_OF: Record<number, string> = {
   1: "forest", 2: "niflheim", 3: "cave", 4: "kingdom", 5: "kingdom",

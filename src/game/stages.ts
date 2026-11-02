@@ -332,7 +332,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "alfheim", num: 4, title: "알프헤임", subtitle: "요정의 성전 · 빛의 결정",
     intro: "alfheimIntro", boss: "nidhog", bossDone: "guardianDone",
-    width: 1500, height: 860, groundTint: 0x8f7fd8, groundTex: "tile_grass2", pathTex: "tile_garden", bg: "#0d0a1e",
+    width: 1500, height: 860, groundTint: 0x8f7fd8, groundTex: "tile_moss", pathTex: "tile_garden", bg: "#0d0a1e",
     flowers: 6, trees: 10, rocks: 10,
     enemies: [{ key: "minion", count: 4 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_bat", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x2_darkhound", count: 3 }],
     main: "minion",

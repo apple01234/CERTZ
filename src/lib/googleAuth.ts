@@ -94,6 +94,9 @@ export async function googleWebSignIn(): Promise<string> {
     const code = String((e as { code?: string })?.code ?? "");
     /* 유저가 스스로 닫은 것(사용자 취소)은 오류 아님 — 그대로 위로 던져 기존 무시 로직이 처리 */
     if (code.includes("popup-closed-by-user") || code.includes("user-cancelled")) throw e;
+    /* vc232 (#1) — PC 실패의 실제 원인을 남긴다. 이 코드가 없으면 "안 됨"만 보인다. */
+    console.warn(`[googleAuth] popup 실패: ${code}`, e);
+    lastAuthError = code;
     if (REDIRECT_FALLBACK_CODES.some((k) => code.includes(k))) {
       await signInWithRedirect(auth, provider); // 팝업 차단/미지원 환경 → 전체 페이지 리다이렉트
       return "";
@@ -103,6 +106,11 @@ export async function googleWebSignIn(): Promise<string> {
 }
 
 let redirectConsumed = false;
+/** vc232 (#1) — 마지막 인증 실패 코드. 로그인 화면이 원인을 표시할 수 있게 노출한다. */
+let lastAuthError = "";
+export function lastGoogleAuthError(): string {
+  return lastAuthError;
+}
 
 /**
  * 리다이렉트 복귀 처리 — AuthPanel 마운트 시 1회 호출.
@@ -117,8 +125,14 @@ export async function googleWebRedirectToken(): Promise<string> {
     const res = await getRedirectResult(auth);
     if (!res || !res.user) return "";
     return await res.user.getIdToken();
-  } catch {
-    /* 리다이렉트 결과 없음/만료 — 조용히 무시(일반 로그인 UI 사용) */
+  } catch (e) {
+    /* vc232 (#1 "PC 구글 로그인 안됨") — 종전엔 모든 예외를 조용히 삼켰다.
+     *  그래서 인증 도메인 미승인·팝업 차단·쿠키 차단 같은 실제 원인이
+     *  화면에 아무 흔적도 남기지 않아 "로그인이 그냥 안 되는" 상태로 보였다.
+     *  이제 콘솔에 코드를 남기고, 호출부가 사용자에게 안내할 수 있게 코드를 보관한다. */
+    const code = String((e as { code?: string })?.code ?? "unknown");
+    console.warn(`[googleAuth] redirect 실패: ${code}`, e);
+    lastAuthError = code;
     return "";
   }
 }

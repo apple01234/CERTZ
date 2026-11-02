@@ -9,17 +9,40 @@ const read = p => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const oldSrc = execFileSync('git', ['show', 'HEAD:src/game/stages.ts'], { encoding: 'utf8' });
 const before = await import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(oldSrc)).toString('base64')}`);
 assert.deepEqual(CHAPTERS, before.CHAPTERS, '기존 챕터/인덱스/대사/밸런스 보존');
-// 영프 시작 마을 추가분만 허용하고, 그 외 기존 저장키·순서는 그대로여야 한다.
-assert.deepEqual(NEXT_STAGE, { ...before.NEXT_STAGE, youngprincessv: null }, '진행 저장키 보존 (신규 youngprincessv만 추가)');
-assert.deepEqual(PREV_STAGE, { ...before.PREV_STAGE, youngprincessv: 'village', dlcstargatev: 'youngprincessv' }, '복귀 저장키 보존 (신규 youngprincessv 경유)');
+/* vc231 — 영프 편 50필드가 추가됐다. 계약의 본질은 "기존 저장키/순서가 그대로"이므로
+ * 신규 키 집합을 명시적으로 열거해 고정하고, 기존 키는 전부 그대로인지 본다. */
+const HW_KEYS = [];
+for (const n of [1, 2, 3, 4, 5]) {
+  for (let sub = 1; sub <= 10; sub++) HW_KEYS.push(`howlrstone${n}${sub}`);
+}
+assert.deepEqual(
+  NEXT_STAGE,
+  {
+    ...before.NEXT_STAGE,
+    youngprincessv: 'howlrstone11',
+    ...Object.fromEntries(HW_KEYS.map((k, i) => [k, i < HW_KEYS.length - 1 ? HW_KEYS[i + 1] : 'dlcstargate1'])),
+  },
+  '진행 저장키 보존 (신규 영프 마을 + 영프 편 50필드만 추가)',
+);
+assert.deepEqual(
+  PREV_STAGE,
+  {
+    ...before.PREV_STAGE,
+    youngprincessv: 'village',
+    dlcstargatev: 'youngprincessv',
+    ...Object.fromEntries(HW_KEYS.map((k, i) => [k, i === 0 ? 'youngprincessv' : HW_KEYS[i - 1]])),
+  },
+  '복귀 저장키 보존 (신규 영프 편 50필드 경유)',
+);
 const oldKeys = Object.keys(before.STAGES), newKeys = Object.keys(STAGES);
-assert.deepEqual(newKeys.filter(k => !oldKeys.includes(k)), ['youngprincessv'], '신규 스테이지는 영프 시작 마을 하나뿐');
+/* youngprincessv 는 vc230 에서 이미 추가됐으므로 신규분은 영프 편 50필드뿐이다. */
+assert.deepEqual(newKeys.filter(k => !oldKeys.includes(k)).sort(), HW_KEYS.sort(), '신규 스테이지 = 영프 편 50필드 (영프 마을은 vc230 기존분)');
 assert.ok(oldKeys.every(k => newKeys.includes(k)), '기존 스테이지 키 전부 유지');
 assert.equal(CHAPTERS.filter(c => !c.dlc).length, 9);
 assert.deepEqual(CHAPTERS.filter(c => !c.dlc).map(c => c.num), [2,3,4,5,6,7,8,9,10]);
 assert.equal(STAGES.village.name, '제1장 미드가르드');
-assert.equal(STORY_SEQUENCE[1].status, 'not-implemented');
-assert.equal(STORY_SEQUENCE_LABEL, '아뜰란티스 기반 스토리 1~10챕터 → 하울르스톤: 영준 프린세스 → 그랜드 플레닛');
+assert.equal(STORY_SEQUENCE[1].status, 'implemented', 'vc231 — 영프 편 콘텐츠 투입');
+assert.equal(STORY_SEQUENCE_LABEL, '아뜰란티스 기반 스토리 1~10챕터 → 하울르스톤: 영준 프린세스(1기 15화) → 그랜드 플레닛');
 const tracks = new Set(BGM_ALL_TRACKS);
 let stages = 0;
 for (const ch of CHAPTERS) {

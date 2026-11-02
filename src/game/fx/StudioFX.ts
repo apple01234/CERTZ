@@ -668,6 +668,99 @@ export function spawnUltFlourish(scene: SceneLike, x: number, y: number, key5: U
       flashSprite("vfx_slash_turn", 2.4, 560, tint);
       orbit("vfx_arc", 4, 80, 0.7, 0.9, 1100);
       break;
+    /* vc232 (#12 "5차 스킬 끝나고 후속 이펙트가 전 직업이 같고 너무 짜침")
+     *  [문제] 5차 직업은 30개(TIER4_ULTIMATES)인데 이 switch 는 9개만 처리했다.
+     *   나머지 21개가 default 로 떨어져 **전부 같은** explosion+pt1 연출이 나왔다.
+     *  [해결] 나머지 21직업을 각자의 무기/정체성에 맞는 조합으로 채운다.
+     *   텍스처가 없으면 flashSprite/orbit 이 스스로 생략하므로 안전하다. */
+    case "berserker":   // 광전사 — 붉은 참격 난무
+      flashSprite("vfx_slash_m", 2.2, 520, tint);
+      orbit("vfx_splat", 6, 84, 0.8, 0.85, 1300);
+      break;
+    case "guardian":    // 수호기사 — 방패 파동 + 빛 링
+      flashSprite("vfx_ring1", 2.4, 700, tint);
+      orbit("vfx_flash", 3, 70, 1.0, 0.9, 1600);
+      break;
+    case "warlord":     // 군주 — 대검 강타 + 충격파
+      flashSprite("vfx_slash_turn", 2.6, 600, tint);
+      orbit("vfx_pt1", 6, 92, 0.7, 0.85, 1200);
+      break;
+    case "paladin":     // 성기사 — 성광 삼중 링
+      flashSprite("vfx_flash", 2.2, 640, tint);
+      orbit("vfx_ring1", 3, 88, 0.9, 0.9, 1500);
+      break;
+    case "sniper":      // 저격수 — 크리티컬 십자 + 탄흔
+      flashSprite("vfx_crit", 2.4, 480, tint);
+      orbit("vfx_arrowp", 4, 74, 0.75, 0.85, 1100);
+      break;
+    case "windrunner":  // 질풍 — 회오리 + 잎
+      flashSprite("vfx_snow", 2.2, 560, tint);
+      orbit("vfx_pt1", 6, 80, 0.65, 0.8, 1150);
+      break;
+    case "eagleeye":    // 매의 눈 — 화살 폭풍
+      flashSprite("vfx_arrowp", 2.4, 520, tint);
+      orbit("vfx_crit", 3, 82, 0.8, 0.9, 1300);
+      break;
+    case "tempest":     // 폭풍 — 소용돌이 링
+      flashSprite("vfx_cl1", 2.4, 620, tint);
+      orbit("vfx_snow", 5, 90, 0.85, 0.85, 1400);
+      break;
+    case "stormbringer": // 폭풍군주 — 번개 방사
+      flashSprite("vfx_cl1", 2.6, 560, tint);
+      orbit("vfx_crystal", 4, 86, 0.8, 0.9, 1250);
+      break;
+    case "archmage":    // 대마법사 — 마나 육각진
+      flashSprite("vfx_hex", 2.6, 700, tint);
+      orbit("vfx_ring3", 4, 92, 0.9, 0.9, 1600);
+      break;
+    case "sage":        // 현자 — 시간 트윙클
+      flashSprite("vfx_twinkle", 2.2, 680, tint);
+      orbit("vfx_hex", 3, 84, 0.85, 0.9, 1500);
+      break;
+    case "chronicle":   // 연대기 — 룬 기록 붕괴
+      flashSprite("vfx_ring3", 2.4, 640, tint);
+      orbit("vfx_twinkle", 5, 88, 0.75, 0.85, 1450);
+      break;
+    case "assassin":    // 어세신 — 잔상 단검
+      flashSprite("vfx_ist", 2.2, 460, tint);
+      orbit("vfx_is2", 4, 72, 0.7, 0.85, 1050);
+      break;
+    case "swashbuckler":// 낭만검객 — 회전 검기
+      flashSprite("vfx_slash_turn", 2.2, 560, tint);
+      orbit("vfx_arc", 4, 78, 0.75, 0.9, 1200);
+      break;
+    case "nightblade":  // 야습 — 그림자 사슬
+      flashSprite("vfx_is2", 2.4, 520, tint);
+      orbit("vfx_ist", 5, 80, 0.8, 0.85, 1150);
+      break;
+    case "duelist":     // 결투가 — 연속 찌르기
+      flashSprite("vfx_slash_m", 2.0, 480, tint);
+      orbit("vfx_arc", 3, 70, 0.7, 0.9, 1100);
+      break;
+    case "raider":      // 약탈자 — 거친 강타
+      flashSprite("vfx_splat", 2.2, 540, tint);
+      orbit("vfx_pt1", 5, 84, 0.7, 0.8, 1250);
+      break;
+    case "corsair":     // 해적 — 포격
+      flashSprite("vfx_explosion", 2.2, 560, tint);
+      orbit("vfx_crit", 3, 86, 0.85, 0.9, 1300);
+      break;
+    case "stormcaptain":// 폭풍선장 — 파도 회오리
+      flashSprite("vfx_snow", 2.4, 600, tint);
+      orbit("vfx_cl1", 4, 88, 0.8, 0.85, 1350);
+      break;
+    case "powdermaster":// 화약명인 — 연쇄 폭발
+      flashSprite("vfx_explosion", 2.6, 580, tint);
+      orbit("vfx_splat", 4, 90, 0.9, 0.9, 1200);
+      break;
+    case "seaking":     // 해왕 — 심해 소용돌이
+      flashSprite("vfx_ring3", 2.4, 680, tint);
+      orbit("vfx_snow", 5, 94, 0.7, 0.85, 1500);
+      break;
+    case "dreadnought": // 드레드노트 — 중갑 충격
+      flashSprite("vfx_flash", 2.8, 700, tint);
+      orbit("vfx_pt1", 7, 96, 0.85, 0.9, 1400);
+      break;
     default: // 계열 폴백(전사/궁수/마법사/도적) — 계열색 코어 플래시 + 링
       flashSprite("vfx_explosion", 2.0, 620, tint);
       orbit("vfx_pt1", 4, 76, 0.6, 0.8, 1400);
