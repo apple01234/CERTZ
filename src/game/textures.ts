@@ -160,6 +160,29 @@ export function buildAllAnims(scene: Phaser.Scene) {
     a.create({ key: `${k}-run`, ...fr(`${k}_run`, 4, 10, -1) });
     a.create({ key: `${k}-atk`, ...fr(`${k}_atk`, 1, 1, 0) });
   }
+  /* v4.8.0 — 영준프린세스 1기(라일락 월드) 전용 몬스터 40종.
+   *  0x72 DungeonTileset II(CC0) 원본 16px 를 ×4 업스케일한 시트를 쓴다.
+   *  이그드라실(x3_*)과 키가 겹치지 않도록 lil_ 접두사를 유지하고,
+   *  같은 팩 계열이라 화풍은 기존 챕터와 일치한다. */
+  for (const k of [
+    "lil_rat", "lil_shadowmoth", "lil_bookwisp",
+    "lil_deckhand", "lil_sharkling", "lil_tridenter", "lil_bilgehorror",
+    "lil_imugi", "lil_dokkaebi", "lil_gwisin", "lil_hwansu",
+    "lil_corrupt_knight", "lil_void_lancer", "lil_abyss_hound", "lil_gloom_wraith",
+    "lil_blight_soldier", "lil_water_echo", "lil_wind_echo",
+    "lil_thunder_echo", "lil_fire_echo",
+    "lil_throne_shade", "lil_curse_marker", "lil_end_herald",
+    "lil_boss_harold", "lil_boss_kraken", "lil_boss_dokkaebi", "lil_boss_feron",
+    "lil_boss_blackdragon", "lil_boss_angelic", "lil_boss_veronica", "lil_boss_din",
+    "lil_boss_water", "lil_boss_wind", "lil_boss_thunder", "lil_boss_fire",
+    "lil_boss_aion", "lil_boss_aldabaoth", "lil_boss_scarlet1",
+    "lil_boss_scarlet2", "lil_boss_scarlet3",
+  ]) {
+    if (!scene.textures.exists(`${k}_idle0`)) continue; // 미설치 시 스킵(안전)
+    a.create({ key: `${k}-idle`, ...fr(`${k}_idle`, 4, 4, -1) });
+    a.create({ key: `${k}-run`, ...fr(`${k}_run`, 4, 10, -1) });
+    a.create({ key: `${k}-atk`, ...fr(`${k}_atk`, 1, 1, 0) });
+  }
   /* v3.0.3 — 0x72 DungeonTileset II (itch.io, CC0) 신규 몬스터 7종: idle4+run4 */
   for (const k of [
     "x3_swampy", "x3_imp", "x3_icezombie", "x3_tinyzombie",

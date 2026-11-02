@@ -343,6 +343,13 @@ export const HUNT_THEME_OF: Record<string, string> = {
   dlcstargate: "nidavellir", dlcprisma: "alfheim", dlcocean: "abyss",
   dlcreverse: "cave", dlcneocity: "kingdom", dlcmech: "nidavellir",
   dlcswallow: "hel", dlcopinicia: "kingdom", dlcnovel: "alfheim", dlcsernium: "alfheim",
+  /* vc231 — 영프 편(하울르스톤). 라일락 월드 5챕터를 실존 트랙에 배정한다.
+   *  값은 CHAPTER_THEME/STAGE_BGM 에 실제로 있는 챕터 키여야 한다
+   *  (DLC 가 쓰는 것과 같은 방식 — 신규 오디오 없이 정서만 갈아입힌다).
+   *  1장 해변·바다 → kingdom(항구), 2장 왕국·연합 → alfheim,
+   *  3장 격전 → muspelheim, 4장 어둠의 성채 → abyss, 5장 최후의 왕좌 → hel. */
+  howlrstone1: "kingdom", howlrstone2: "alfheim", howlrstone3: "muspelheim",
+  howlrstone4: "abyss", howlrstone5: "hel",
 };
 export const REBIRTH_THEME_OF: Record<number, string> = {
   1: "forest", 2: "niflheim", 3: "cave", 4: "kingdom", 5: "kingdom",

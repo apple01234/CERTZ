@@ -1,0 +1,136 @@
+name: Windows Build (SERTZ EXE)
+
+# Windows 데스크톱(NSIS 설치본) 빌드.
+#  · 로컬(ARM64 컨테이너)에서는 wine 이 동작하지 않아 EXE 를 만들 수 없다
+#    (app-builder 가 wine 을 호출하는 순간 Illegal instruction).
+#  · 그래서 android-build.yml 과 같은 방식으로 windows-latest 러너에 넘긴다.
+#  · 산출물: SERTZ-vc{code}-setup.exe — android-build.yml 의 APK 와 동일 태그에 첨부된다.
+#  · 트리거: 수동(workflow_dispatch) 또는 electron/** · android/app/build.gradle 푸시
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "릴리스 업로드 태그 (비우면 v{versionName} 자동)"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths:
+      - "electron/**"
+      - "android/app/build.gradle"
+      - ".github/workflows/windows-build.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse version (build.gradle → versionName/versionCode)
+        shell: bash
+        run: |
+          set -e
+          VERSION=$(grep -oE 'versionName "[^"]+"' android/app/build.gradle | head -1 | sed 's/versionName "//; s/"$//')
+          CODE=$(grep -oE 'versionCode [0-9]+' android/app/build.gradle | head -1 | sed 's/versionCode //')
+          VERSION="${VERSION:-0.0.0}"
+          CODE="${CODE:-0}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "CODE=$CODE" >> "$GITHUB_ENV"
+          echo "버전 파싱 결과: v${VERSION} (vc${CODE})"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      # EXE 에 넣을 정적 export — webDir 은 .next-apk (capacitor.config.ts 와 동일)
+      - name: Static export (.next-apk)
+        shell: bash
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          set -e
+          ROUTE_DIRS="admin auth market rank support chat party"
+          mkdir -p .apk-hold/api-routes
+          for d in $ROUTE_DIRS; do
+            if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" ".apk-hold/api-routes/"; fi
+          done
+          MIDDLEWARE_FILES="src/middleware.ts src/middleware.js src/proxy.ts src/proxy.js"
+          for f in $MIDDLEWARE_FILES; do
+            if [ -f "$f" ]; then mv "$f" ".apk-hold/"; fi
+          done
+          restore() {
+            for d in $ROUTE_DIRS; do
+              if [ -d ".apk-hold/api-routes/$d" ]; then mv ".apk-hold/api-routes/$d" "src/app/api/$d"; fi
+            done
+            for f in middleware.ts middleware.js proxy.ts proxy.js; do
+              if [ -f ".apk-hold/$f" ]; then mv ".apk-hold/$f" "src/$f"; fi
+            done
+          }
+          trap restore EXIT
+          VERCEL_EXPORT=1 npx next build
+          test -f .next-apk/index.html || { echo "export 실패 — index.html 없음"; exit 1; }
+
+      - name: Stage game assets into electron/
+        shell: bash
+        run: |
+          set -e
+          rm -rf electron/game
+          cp -r .next-apk electron/game
+          test -f electron/game/index.html || { echo "electron/game 비었음"; exit 1; }
+          du -sh electron/game
+
+      - name: Install electron deps
+        working-directory: electron
+        run: npm install --no-audit --no-fund
+
+      # Windows 러너이므로 wine 없이 네이티브로 NSIS 를 만든다.
+      - name: Build Windows installer
+        working-directory: electron
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npx electron-builder --win nsis --x64 --publish never
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          set -e
+          EXE=$(find electron/dist -maxdepth 1 -name "*.exe" | head -1)
+          test -n "$EXE" || { echo "EXE 미검출"; ls -R electron/dist | head -40; exit 1; }
+          cp "$EXE" "SERTZ-vc${CODE}-setup.exe"
+          ls -lh "SERTZ-vc${CODE}-setup.exe"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SERTZ-vc${{ env.CODE }}-windows
+          path: SERTZ-vc${{ env.CODE }}-setup.exe
+          retention-days: 30
+
+      - name: Attach to GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -e
+          TAG="${INPUT_TAG:-}"
+          if [ -z "$TAG" ]; then TAG="v${VERSION}"; fi
+          echo "릴리스 태그: $TAG · 업로드: SERTZ-vc${CODE}-setup.exe"
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "릴리스 없음 → 신규 생성"
+            gh release create "$TAG" --title "$TAG" --notes "SERTZ — v${VERSION} (vc${CODE})" --repo "$GITHUB_REPOSITORY"
+          fi
+          gh release upload "$TAG" "SERTZ-vc${CODE}-setup.exe" --clobber --repo "$GITHUB_REPOSITORY"
+          echo "--- release assets ---"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'

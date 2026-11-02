@@ -3,7 +3,7 @@ import { createGameState, type GameState } from "../state/gameState";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFinalePlan";
-import { storyPortalDestination, storyEntryAllowed, YOUNG_PRINCESS_VILLAGE } from "../storyProgression";
+import { storyPortalDestination, storyEntryAllowed, howlFinalStage, YOUNG_PRINCESS_VILLAGE } from "../storyProgression";
 import { fieldNpcLook } from "../npcThemes";
 import { resolveGroundTile } from "../tileThemes"; // vc204 — 지역 지면 → 타일 단일 매핑
 import { openMaskAt, patternFor } from "../autotile"; // vc204 — 4비트 이웃 마스크 오토타일
@@ -22,6 +22,8 @@ import { lineByKey as chibiLineByKey, CHIBI_LINES, type ChibiSave } from "../chi
 import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱
 import { playStoryCutscene, storyCutscenePlaying } from "../fx/StoryCutscene"; // v1.4.41 — 스토리 컷씬
 import { chapterIntroOf } from "../storyCutscenes"; // v1.4.41 — 챕터별 진입 연출 데이터
+import { playAutoCutscene } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
+import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
 import { Lighting, ambientFor } from "../fx/Lighting";
 import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
 import { Pet } from "../entities/Pet";
@@ -1839,6 +1841,11 @@ export class WorldScene extends Phaser.Scene {
     /* v1.4.41 — 챕터 첫 진입 스토리 컷씬. 보스 컷씬과 같은 camCinema 패턴을 쓰므로
      * 서로 겹치지 않는다(보스 인트로는 zone 10 진입 시점, 이건 씬 생성 직후). */
     this.playChapterIntroCutscene(stageKey);
+    /* v4.9.0 — 영준프린세스 1기(라일락 월드) 자동 진행 컷씬.
+     *  기존 chapterIntroOf(카메라 팬만)와 달리 레터박스 + 배우 등장/퇴장 +
+     *  자동 대사 진행을 포함한다. 재생 중이면 기존 인트로는 자동으로 건너뛴다
+     *  (playChapterIntroCutscene 이 playing 게이트로 막힌다). */
+    this.playLilacOpeningCutscene(stageKey);
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
     this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
     if (savedPlayer) this.restoreFromSave(savedPlayer, stageKey);
@@ -2407,6 +2414,46 @@ export class WorldScene extends Phaser.Scene {
    *  챕터마다 **한 번만** 재생하고 세이브에 기록한다(재방문 시 방해 금지).
    *  보스 인트로(zone 10)와 시점이 달라 겹치지 않지만, 만약 겹치면 StoryCutscene 의
    *  playing 가드가 두 번째를 거부한다. */
+  /* v4.9.0 — 영준프린세스 1기 자동 진행 컷씬 실행기.
+   *  메이플식: 레터박스 → 카메라 팬 → 배우 등장 → 자동 대사 → 퇴장.
+   *  챕터당 1회만(세이브 기록). 재생 중이면 기존 인트로가 playing 게이트로 밀린다. */
+  private playLilacOpeningCutscene(stageKey: StageKey) {
+    try {
+      const parsed = parseStage(stageKey);
+      if (!parsed.ch || parsed.ch === "village") return;
+      /* 챕터·구역 → 시나리오 id 매핑 (1기 16편을 9개 챕터의 구역에 배치) */
+      const scenId = lilacScenarioIdAt(parsed.ch, parsed.sub);
+      if (!scenId) return;
+      const scen = LILAC_SCENARIOS[scenId];
+      if (!scen) return;
+      const seenKey = `lilacCut_${scen.id}`;
+      if (this.cutsceneSeen.includes(seenKey)) return;
+
+      const started = playAutoCutscene(this, {
+        id: scen.id,
+        stageW: this.stageW,
+        stageH: this.stageH,
+        steps: scen.steps,
+      }, () => {
+        try {
+          if (!this.cutsceneSeen.includes(seenKey)) {
+            this.cutsceneSeen = [...this.cutsceneSeen, seenKey];
+            this.saveSoon();
+          }
+        } catch { /* 세이브 실패는 연출에 영향 없음 */ }
+      });
+
+      if (started) {
+        this.dialoguing = true;
+        this.time.delayedCall(80, () => { this.dialoguing = false; });
+      }
+    } catch (err) {
+      /* 연출 실패가 게임을 막으면 안 된다 */
+      console.warn("[SERTZ] 자동 컷씬 생략", err);
+      try { this.camCinema = false; this.physics.world.resume(); } catch { /* 무시 */ }
+    }
+  }
+
   private playChapterIntroCutscene(stageKey: StageKey) {
     try {
       if (!this.player) return;
@@ -9251,8 +9298,29 @@ export class WorldScene extends Phaser.Scene {
       this.stageDef.key === "tower" || this.stageDef.key === "closet" || this.stageDef.key === "gate" ||
       this.stageDef.key === "dojang" || this.stageDef.key === "park" || this.stageDef.key === "praid";
     const final = !specialZone && NEXT_STAGE[this.stageDef.key] === null;
-    this.cleared = final;
+    /* vc231 — 영프 편 마지막 구역은 NEXT_STAGE 가 dlcstargate1 이라 final 이 아니다.
+     *  `this.cleared`(본편 세계 구원) 를 건드리지 않는다 — 영프 엔딩은 별도 플래그다. */
+    if (!howlFinalStage(this.stageDef.key)) this.cleared = final;
     if (!specialZone) this.advanceQuest(); // 보스 퀘스트 완료 — 골드/경험치 보상 포함 (특수 구역 보스는 제외)
+    /* ══════════════════════════════════════════════════════════════════════════
+     * vc231 — 영프 편 엔딩 처리 (vc230 이 남긴 숙제)
+     *
+     * vc230 은 `youngPrincessCleared` 를 **읽기만 하고 세우는 코드가 없어서**
+     * 영프 마을 → 그랜드 플레닛이 영구 잠기는 막다른 길을 데이터 파생으로 우회했다.
+     * 이제 영프 편 실제 콘텐츠가 들어왔으므로, 영프 편 마지막 보스(스칼렛) 격파 시
+     * 이 플래그를 세운다 — 그러면 `MIDDLE_CHAPTER_IMPLEMENTED` 가 자동으로 true 가 되어
+     * 게이트가 정상적으로 "엔딩을 봐야 열린다" 로 잠긴다.
+     *
+     * `next === null` 로 판정하지 않는 이유: 영프 편 5-10 의 NEXT_STAGE 는
+     * `dlcstargate1` 이다(체인 연결). 즉 null 이 아니므로 `final` 로 잡히지 않는다.
+     * ══════════════════════════════════════════════════════════════════════════ */
+    const howlFinal = howlFinalStage(this.stageDef.key);
+    if (howlFinal) {
+      this.youngPrincessCleared = true;
+      this.time.delayedCall(1200, () => {
+        this.showDialogueOnce("howlrstoneEnding");
+      });
+    }
     this.saveSoon();
     if (final) {
       this.time.delayedCall(1200, () => {

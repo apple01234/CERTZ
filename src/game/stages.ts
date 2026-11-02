@@ -5,6 +5,12 @@
  *  - 구역 5 = 정예 토벌(미드 보스급), 구역 10 = 챕터 보스 결전
  *  - 이전 작업분(v1.5) 스토리 데이터(대사/보스/몬스터/퀘스트) 전부 이관 + 복귀 차원문 체인
  */
+import {
+  HOWLRSTONE_CHAPTERS,
+  HOWLRSTONE_BOSSES,
+  type HowlrstoneBossKey,
+  type HowlrstoneChapterSpec,
+} from "./howlrstone";
 
 /* ================= 타입 ================= */
 
@@ -19,7 +25,11 @@ export type ChapterKey =
    *  "스타게이트,프라이즈프리즈마,리버스사이버,네오시티,기계무덤 메카닉블러드시티,
    *   대공전함 다크스왈로해브니스,별빛속 바다 오션코멘, 순력과 혼력의 대립점 오피니시아,
    *   비밀의 화원 노벨 플로스, 신의도시 세르니움" */
-  | "dlcreverse" | "dlcneocity" | "dlcmech" | "dlcswallow" | "dlcopinicia" | "dlcnovel" | "dlcsernium";
+  | "dlcreverse" | "dlcneocity" | "dlcmech" | "dlcswallow" | "dlcopinicia" | "dlcnovel" | "dlcsernium"
+  /* vc231 — 영준 프린세스 편(하울르스톤) 5챕터. 기획서 1기 15화 원문 기반.
+   *  본편(DLC 포함) 계약을 건드리지 않기 위해 `CHAPTERS` 에 넣지 않고
+   *  `howlrstone.ts` 의 `HOWLRSTONE_CHAPTERS` 에서 생성한다(회귀 0). */
+  | "howlrstone1" | "howlrstone2" | "howlrstone3" | "howlrstone4" | "howlrstone5";
 
 /** 스테이지 키 — "village" | "forest1".."abyss10" (구 세이브 키도 런타임 폴백 처리) */
 export type StageKey = string;
@@ -27,10 +37,13 @@ export type StageKey = string;
 /** 표시 전용 순서. 본편 1장=village, 2~10장=기존 9개 필드. 저장키/인덱스 보존. */
 export const STORY_SEQUENCE = [
   { id: "atlantis", title: "아뜰란티스 기반 스토리", chapters: [1, 10], status: "existing" },
-  { id: "howlrstone", title: "하울르스톤: 영준 프린세스", status: "not-implemented" },
+  /* vc231 — 영프 편 콘텐츠 투입. 이 status 가 "not-implemented" 를 벗어나는 순간
+   *  `storyProgression.MIDDLE_CHAPTER_IMPLEMENTED` 가 true 가 되어
+   *  "영프 엔딩을 봐야 그랜드 플래닛이 열린다" 로 게이트가 정상 잠긴다(vc230 설계 그대로). */
+  { id: "howlrstone", title: "하울르스톤: 영준 프린세스", chapters: [1, 5], status: "implemented" },
   { id: "grandplanet", title: "그랜드 플레닛", status: "existing-dlc" },
 ] as const;
-export const STORY_SEQUENCE_LABEL = "아뜰란티스 기반 스토리 1~10챕터 → 하울르스톤: 영준 프린세스 → 그랜드 플레닛";
+export const STORY_SEQUENCE_LABEL = "아뜰란티스 기반 스토리 1~10챕터 → 하울르스톤: 영준 프린세스(1기 15화) → 그랜드 플레닛";
 
 export type EnemyKey =
   | "wolf" | "minion" | "spider" | "golem" | "frostwolf" | "icegolem" | "wraith"
@@ -110,7 +123,9 @@ export const QUEST_EXP_MUL = 12;
 export type BossKey =
   | "guardian" | "behemoth" | "abysslord"
   | "nidhog" | "surt" | "fenrir" | "skoll" | "gram" | "abudditos"
-  | "vord" | "jorm" | "nagr";
+  | "vord" | "jorm" | "nagr"
+  /* vc231 — 영프 편 보스 5종. 정의는 `howlrstone.ts` 의 HOWLRSTONE_BOSSES. */
+  | "harold" | "verodin" | "feron" | "shadow" | "scarlet";
 
 /* ================= v3.0.28 (#보스난이도) — 메이플식 보스 난이도 =================
  *  이지 / 노말 / 하드 / 카오스 4단계. 스토리 보스·재림 보스 공통 적용.
@@ -948,6 +963,35 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
     summonKey: "x3_necromancer",
   },
+  /* ══════════════════════════════════════════════════════════════════════════
+   * vc231 — 영프 편 보스 5종 (기획서 1기 15화)
+   *
+   * 정의 원본은 `howlrstone.ts` 의 `HOWLRSTONE_BOSSES` 다. 여기서는 그 데이터를
+   * `BossDef` 형태로 펼쳐 넣는다 — 보스 스폰/패턴/BGM/드롭 경로가 기존 보스와
+   * 똑같이 동작하도록 `BOSS_DEFS` 레지스트리에 반드시 올라와야 하기 때문.
+   *
+   * 신규 아트는 만들지 않고 기존 아틀라스를 재사용한다(텍스처 키는 원본 데이터에 지정).
+   * ══════════════════════════════════════════════════════════════════════════ */
+  ...Object.fromEntries(
+    Object.values(HOWLRSTONE_BOSSES).map((b) => [
+      b.key,
+      {
+        key: b.key as BossKey,
+        name: b.name,
+        hp: b.hp, atk: b.atk, speed: b.speed, exp: b.exp, gold: b.gold,
+        tex: b.tex, orbTint: b.orbTint, introDialogue: b.introDialogue,
+        sig: b.sig as BossDef["sig"],
+        aggr: b.aggr,
+        chargeChain: b.chargeChain,
+        patterns: {
+          p1: b.patterns.p1 as BossDef["patterns"]["p1"],
+          p2: b.patterns.p2 as BossDef["patterns"]["p2"],
+          p3: b.patterns.p3 as BossDef["patterns"]["p3"],
+        },
+        summonKey: b.summonKey as EnemyKey | undefined,
+      } satisfies BossDef,
+    ]),
+  ) as Record<HowlrstoneBossKey, BossDef>,
 };
 
 /* ================= 스테이지 생성기 ================= */
@@ -987,7 +1031,7 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
   /* v2.9 — 챕터 마을(Xv)도 챕터 소속으로 파싱 */
   const v = /^([a-z]+)v$/.exec(key);
   if (v) return { ch: v[1] as ChapterKey, sub: 0 };
-  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss|dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech|dlcswallow|dlcopinicia|dlcnovel|dlcsernium)([1-9]|10)$/.exec(key);
+  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss|dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech|dlcswallow|dlcopinicia|dlcnovel|dlcsernium|howlrstone[1-5])([1-9]|10)$/.exec(key);
   if (!m) return { ch: "village", sub: 0 };
   return { ch: m[1] as ChapterKey, sub: parseInt(m[2], 10) };
 }
@@ -995,6 +1039,21 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
 export function chapterSpec(key: StageKey): ChapterSpec | null {
   const { ch } = parseStage(key);
   return CHAPTERS.find((c) => c.key === ch) ?? null;
+}
+
+/**
+ * vc231 — 영프 편 챕터 스펙 조회.
+ *
+ * `chapterSpec()` 은 `CHAPTERS`(본편+DLC)만 본다. 영프 편은 그 배열에 없으므로
+ * 별도 조회가 필요하다 — 인트로/보스 접근 대사, 챕터 카드 등에서 쓴다.
+ * 인자는 스테이지 키(`howlrstone11`)든 챕터 키(`howlrstone1`)든 받는다.
+ */
+export function howlrstoneSpec(key: StageKey): HowlrstoneChapterSpec | null {
+  const exact = HOWLRSTONE_CHAPTERS.find((c) => c.key === key);
+  if (exact) return exact;
+  /* 스테이지 키(howlrstone11) → 챕터 키(howlrstone1). 뒤 번호가 붙은 형태만 인정한다. */
+  const m = /^(howlrstone[1-5])\d{1,2}$/.exec(key);
+  return m ? (HOWLRSTONE_CHAPTERS.find((c) => c.key === m[1]) ?? null) : null;
 }
 
 /** v1.4.0 (Task 1-6 — 유저 지시 #14) — 레벨 구간별 퀘스트 요구 마릿수 곡선
@@ -1415,6 +1474,128 @@ NEXT_STAGE.youngprincessv = null;
 PREV_STAGE.youngprincessv = "village";
 PREV_STAGE.dlcstargatev = "youngprincessv";
 
+/* ══════════════════════════════════════════════════════════════════════════
+ * vc231 — 영준 프린세스 편(하울르스톤) 5챕터 × 10구역 (기획서 1기 15화)
+ *
+ * `CHAPTERS` 배열에는 넣지 않는다. 그 배열은 `tests/story-portraits-audio.test.mjs`
+ * 가 "기존 챕터/인덱스/대사/밸런스 보존"으로 불변식을 걸어 둔 계약이고,
+ * 거기에 챕터를 끼우면 num 기반 인덱스(CH_EXP[num-2], ELITE_TITLE[num-2])가
+ * 전부 어긋나 기존 밸런스가 회귀한다.
+ *
+ * 대신 `howlrstone.ts` 의 데이터로 여기서 직접 스테이지를 만든다.
+ *  · 밸런스는 각 챕터의 전용 `scaleMul` — `stageScale()` 이 우선 사용하므로
+ *    기존 곡선(CH_HP/CH_ATK/CH_EXP)을 건드리지 않는다.
+ *  · 체인은 `youngprincessv` 마을 → howlrstone11 … howlrstone510 → `dlcstargate1`.
+ *    즉 "본편 → 영프 편 → 그랜드 플래닛" 이 끊김 없이 이어진다.
+ * ══════════════════════════════════════════════════════════════════════════ */
+{
+  const hwKeys: ChapterKey[] = HOWLRSTONE_CHAPTERS.map((c) => c.key);
+  for (let ci = 0; ci < HOWLRSTONE_CHAPTERS.length; ci++) {
+    const spec = HOWLRSTONE_CHAPTERS[ci];
+    for (let sub = 1; sub <= 10; sub++) {
+      const key = `${spec.key}${sub}`;
+      const isBoss = sub === 10;
+      /* 구역별 몬스터 조합 — 2구역마다 주력 교체 (본편 subEnemyMix 와 같은 규칙). */
+      const pool = spec.enemies.map((g) => g.key);
+      const n = Math.min(20, 8 + Math.floor(sub / 2) * 2);
+      const grp = (k: string, c: number) => ({ key: k as EnemyKey, count: c });
+      const mix =
+        sub <= 2 ? [grp(pool[0], n)]
+        : sub <= 4 ? [grp(pool[0], Math.ceil(n * 0.6)), grp(pool[1] ?? pool[0], Math.ceil(n * 0.4))]
+        : sub <= 6 ? [grp(pool[1] ?? pool[0], Math.ceil(n * 0.6)), grp(pool[2] ?? pool[0], Math.ceil(n * 0.4))]
+        : sub <= 8 ? [grp(pool[0], Math.ceil(n * 0.4)), grp(pool[1] ?? pool[0], Math.ceil(n * 0.35)), grp(pool[2] ?? pool[0], Math.ceil(n * 0.25))]
+        : [grp(pool[2] ?? pool[0], Math.ceil(n * 0.5)), grp(pool[0], Math.ceil(n * 0.3)), grp(pool[1] ?? pool[0], Math.ceil(n * 0.2))];
+
+      /* 퀘스트 — 고정 비트가 있으면 그것, 없으면 레벨 게이트/자동 토벌로 채운다. */
+      const beat = spec.beats.find((b) => b.sub === sub);
+      let quests: QuestDef[];
+      if (beat) {
+        quests = [{
+          ...beat.quest,
+          targetKey: beat.quest.targetKey as EnemyKey | undefined,
+          id: `${spec.key.slice(-1)}${sub}-${beat.quest.id}`,
+        } as QuestDef];
+      } else {
+        const gateLv = sub === 1 ? spec.lvGate.enter : sub === 4 ? spec.lvGate.mid : null;
+        if (gateLv) {
+          quests = [{
+            id: `${spec.key.slice(-1)}${sub}-lv`,
+            type: "level",
+            title: `${gateLv}레벨 달성!`,
+            desc: `영프 편을 이어가려면 ${gateLv}레벨이 필요하다. 사냥으로 힘을 기르자.`,
+            need: gateLv,
+            targetLabel: `${gateLv}레벨`,
+            reward: Math.round(140 * spec.scaleMul.gold * G),
+            expReward: Math.round(200 * spec.scaleMul.exp),
+          }];
+        } else {
+          const t = mix[0];
+          const label = ENEMIES[t.key]?.name ?? t.key;
+          quests = [{
+            id: `${spec.key.slice(-1)}${sub}-h`,
+            type: "hunt",
+            title: `${label} 소탕`,
+            desc: `${label} ${t.count + 4}마리를 처치해 전선을 밀어 올려라.`,
+            need: t.count + 4,
+            targetKey: t.key,
+            targetLabel: label,
+            reward: Math.round((90 + sub * 18) * spec.scaleMul.gold * 0.5 * G),
+            expReward: Math.round((110 + sub * 20) * spec.scaleMul.exp * 0.5),
+          }];
+        }
+      }
+
+      STAGES[key] = {
+        key,
+        name: `${spec.title} ${sub}구역`,
+        subtitle: `${spec.episodes} — ${spec.subtitle}`,
+        width: spec.width + sub * 130,
+        height: spec.height + sub * 30,
+        groundTint: spec.groundTint,
+        flowerCount: spec.flowers,
+        treeCount: spec.trees,
+        rockCount: spec.rocks,
+        quests,
+        enemies: mix,
+        boss: isBoss,
+        bossKey: isBoss ? (spec.boss as BossKey) : undefined,
+        repeat: {
+          targetKey: spec.main as EnemyKey,
+          need: spec.repeat.need,
+          gold: Math.round(spec.repeat.gold * spec.scaleMul.gold * 0.9),
+          exp: Math.round(spec.repeat.exp * spec.scaleMul.exp * 1.3),
+          title: spec.repeat.title,
+          desc: spec.repeat.desc,
+          bounties: spec.enemies.slice(0, 3).map((e) => ({
+            targetKey: e.key as EnemyKey,
+            label: ENEMIES[e.key as EnemyKey]?.name ?? e.key,
+            need: Math.max(25, spec.repeat.need),
+          })),
+        },
+        /* 전용 밸런스 — stageScale 이 이 값을 최우선으로 쓴다(기존 곡선 무영향). */
+        scaleMul: { ...spec.scaleMul },
+      };
+      STAGE_SHORT[key] = `${ci + 1}-${sub}`;
+      /* 체인: 영프 내부는 순차, 마지막 구역 다음은 그랜드 플래닛 첫 구역. */
+      NEXT_STAGE[key] =
+        sub < 10
+          ? `${spec.key}${sub + 1}`
+          : ci < HOWLRSTONE_CHAPTERS.length - 1
+            ? `${HOWLRSTONE_CHAPTERS[ci + 1].key}1`
+            : "dlcstargate1";
+      PREV_STAGE[key] =
+        sub > 1
+          ? `${spec.key}${sub - 1}`
+          : ci > 0
+            ? `${HOWLRSTONE_CHAPTERS[ci - 1].key}10`
+            : "youngprincessv";
+    }
+  }
+  /* 영프 마을 → 영프 편 1-1. (예전엔 null 이라 막다른 길이었다 — vc230 미해결분) */
+  NEXT_STAGE.youngprincessv = `${HOWLRSTONE_CHAPTERS[0].key}1`;
+  void hwKeys;
+}
+
 /* v2.9 (사용자 지시 #5) — 챕터별 마을: 모든 챕터에 안전 마을(여관/전직관/우물)을 둔다.
  *  진행 경로: 이전 챕터 10구역 → 다음 챕터 마을(Xv) → 다음 챕터 1구역 */
 function buildChapterVillageDef(spec: ChapterSpec): StageDef {
@@ -1834,6 +2015,17 @@ export function resolveStage(key: string): StageKey {
 export function stageIntro(key: StageKey): string {
   const spec = chapterSpec(key);
   if (!spec) {
+    /* vc231 — 영프 편은 CHAPTERS 밖이라 여기서 별도 처리한다.
+     *  1구역 = 챕터 인트로, 5구역 = 정예 경고, 10구역 = 보스 접근, 나머지 = 걷는 대사. */
+    const hw = howlrstoneSpec(parseStage(key).ch as StageKey);
+    if (hw) {
+      const { sub } = parseStage(key);
+      if (sub === 1) return hw.intro;
+      const n = hw.key.slice(-1);
+      if (sub === 5) return `howlEliteWarn${n}`;
+      if (sub === 10) return `howlBossApproach${n}`;
+      return `howlWalk${n}_${((sub - 2) % 3) + 1}`;
+    }
     const rb = /^r(\d+)$/.exec(key);
     if (rb) {
       const n = parseInt(rb[1], 10);
@@ -1864,4 +2056,10 @@ for (const spec of CHAPTERS) {
 /* v1.0.19 (A-3) — 재림 지역 15구역 지형 테마 등록 */
 for (const spec of REBIRTH_STAGES) {
   STAGE_THEME[spec.key] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
+}
+/* vc231 — 영프 편 5챕터 × 10구역 지형 테마 (STAGE_THEME 선언 이후에 등록 — TDZ 회피) */
+for (const spec of HOWLRSTONE_CHAPTERS) {
+  for (let sub = 1; sub <= 10; sub++) {
+    STAGE_THEME[`${spec.key}${sub}`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
+  }
 }
