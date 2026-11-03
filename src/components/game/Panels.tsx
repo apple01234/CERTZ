@@ -16,7 +16,6 @@ import {
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
 import { UNLOCKS, unlockLevel, unlockDef, type FeatureKey } from "@/game/unlocks"; // vc178 (지시 #1·#2) — 레벨 개방 표 + 튜토리얼 다시보기
-import { FISH_DEFS, FISH_TIER_META, fishCollectionPct } from "@/game/fishing";
 import { GATHER_DEFS, COOK_RECIPES } from "@/game/gathering"; // v1.1.9 (#개편 A47·A48) // v1.1.8 (#개편 A46) 낚시 도감
 import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
@@ -2876,6 +2875,22 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
           >
             DLC 해금 취소
           </button>
+          {/* vc236 (지시 #4) — 영프 DLC 해금. 본편 cleared 만 세우는 위 버튼과 달리
+              영프 엔딩 플래그(youngPrincessCleared)까지 세워 "영프를 본 것"으로 만든다.
+              영프 진입은 cleared, 그랜드플래닛 게이트는 youngPrincessCleared 로 갈리므로
+              두 플래그를 함께 다뤄야 막다른 길이 생기지 않는다. */}
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "youngprincess" })}
+            className="col-span-2 rounded-lg border border-pink-300/50 bg-gradient-to-br from-pink-400/20 to-fuchsia-500/10 px-2 py-2 text-[11px] font-black text-pink-100 hover:from-pink-400/30 active:scale-95"
+          >
+            👑 영프 DLC 해금 (진입 + 엔딩)
+          </button>
+          <button
+            onClick={() => EventBus.emit("rpg:gm", { type: "youngprincess", value: "off" })}
+            className="col-span-2 rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-[10px] font-black text-white/55 hover:bg-black/60 active:scale-95"
+          >
+            영프 엔딩 플래그만 해제
+          </button>
           {/* v3.0.6 — BM 상점 테스트용 에메랄드 지급 */}
           <button
             onClick={() => EventBus.emit("rpg:gm", { type: "em", value: 50 })}
@@ -3044,45 +3059,6 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
           </div>
         </div>
 
-        {/* v1.1.8 (#개편 A46) — 낚시 도감. 전투 외 수집 루프.
-            필드에서 H키로 낚시 → 성공 구간에서 멈추면 물고기 획득. 지역마다 다른 어종. */}
-        {rpg.fishing && (() => {
-          const fsx = rpg.fishing;
-          const pct = fishCollectionPct(fsx.caught);
-          const totalC = fsx.totalCatch + fsx.totalMiss;
-          const rate = totalC > 0 ? Math.round((fsx.totalCatch / totalC) * 100) : 0;
-          return (
-            <div className="mb-2 rounded-lg border border-cyan-300/30 bg-cyan-400/[0.06] p-2.5">
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-black text-cyan-200">🎣 낚시 도감</p>
-                <span className="rounded bg-cyan-500/25 px-1.5 py-0.5 text-[10px] font-black text-cyan-100">
-                  {fsx.caught.length} / {FISH_DEFS.length} ({pct}%)
-                </span>
-              </div>
-              <p className="mt-0.5 text-[9px] font-bold text-white/55">
-                필드에서 <b className="text-cyan-200">H</b>키로 낚시 — 성공 구간에서 멈추면 획득 · 성공률 {rate}% · 최대 {fsx.bestWeight}kg
-              </p>
-              <div className="mt-1.5 grid grid-cols-4 gap-1">
-                {FISH_DEFS.map((f) => {
-                  const got = fsx.caught.includes(f.key);
-                  const tm = FISH_TIER_META[f.tier];
-                  return (
-                    <div
-                      key={f.key}
-                      title={got ? `${f.name} (${tm.label}) — ${f.desc}` : `미등록 — ${tm.label}`}
-                      className={`truncate rounded border px-1 py-1 text-center text-[9px] font-black ${
-                        got ? "border-cyan-300/50 bg-cyan-400/10" : "border-white/10 bg-white/[0.02] text-white/30"
-                      }`}
-                      style={got ? { color: tm.color } : undefined}
-                    >
-                      {got ? f.name : "???"}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
 
         {/* v1.1.9 (#개편 A47·A48) — 요리. 채집/낚시 재료로 전투 버프를 만든다. */}
         {rpg.gatherBag && (
@@ -3113,9 +3089,8 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
             <div className="mt-1.5 space-y-1">
               {COOK_RECIPES.map((r) => {
                 const bag = rpg.gatherBag ?? {};
-                const fishOk = r.need.every((n) => !n.item.startsWith("fish_") || (rpg.fishing?.caught ?? []).includes(n.item));
-                const matOk = r.need.every((n) => n.item.startsWith("fish_") || (bag[n.item] ?? 0) >= n.n);
-                const ok = fishOk && matOk;
+                /* vc236 (지시 #2) — 낚시 제거로 물고기 재료 분기 삭제. 채집 재료만 본다. */
+                const ok = r.need.every((n) => (bag[n.item] ?? 0) >= n.n);
                 return (
                   <div key={r.key} className="flex items-center gap-1.5 rounded border border-white/10 bg-white/[0.03] px-1.5 py-1">
                     <div className="min-w-0 flex-1">
@@ -5659,12 +5634,14 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
   const [shakeScale, updateShakeScale] = useState(() => loadShakeScale());
   const [toonOn, updateToonOn] = useState(() => toonEnabled());
   /* v1.1.4 — UI 확대 비율(%). 저장값을 그대로 읽어 슬라이더 위치를 복원한다. */
-  /* v1.1.6 (#개편 B77) — 고대비 모드 (html[data-contrast]) */
+  /* v1.1.6 (#개편 B77) — 고대비 모드 (html[data-contrast])
+   *  vc236 (지시 #3) — 기본값이 high 로 바뀌었으므로 토글도 같은 규칙으로 읽는다.
+   *  (`=== "high"` 로 두면 기본 상태에서 켜져 있는데 체크는 꺼져 보인다) */
   const [highContrast, setHighContrast] = useState(() => {
     try {
-      return window.localStorage.getItem("sertz_contrast") === "high";
+      return window.localStorage.getItem("sertz_contrast") !== "normal";
     } catch {
-      return false;
+      return true;
     }
   });
   const [uiPct, setUiPct] = useState(() => {

@@ -84,6 +84,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   hp: number;
   maxHp: number;
   alive = true;
+  /* ═══ vc236 (지시 #5 "게임이 전체적으로 ㅈㄴ 짐") — 적 발밑 그림자 ═══
+   *
+   *  종전엔 **플레이어에만** fx_ground_shadow 가 있어(WorldScene:1861),
+   *  같은 화면에서 플레이어는 땅에 붙고 적은 풀밭에 붙은 스티커처럼 떠 보였다.
+   *  접지감이 개체마다 다르면 "조잡하다"는 인상의 직접 원인이 된다.
+   *
+   *  hpBar 와 같은 소유 패턴을 쓴다: 스프라이트와 별개 씬 오브젝트이므로
+   *  destroy() 오버라이드에서 함께 정리하지 않으면 유령 그림자가 남는다.
+   *  (hpBar 가 그 정리 누락으로 "검은 네모"로 남았던 vc183 전례가 있다) */
+  private shadow: Phaser.GameObjects.Image | null = null;
   // 근접 판정용 목표 크기 (스프라이트 실제 크기 기준)
   hitW = 40;
   hitH = 30;
@@ -265,6 +275,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
      * (무릉도장 허수아비가 한도 없이 납작해지던 근본 원인). 기준은 생성 시점 1회만 캡처한다 */
     this.baseSX = this.scaleX;
     this.baseSY = this.scaleY;
+    /* vc236 (지시 #5) — 적 발밑 그림자. 플레이어(WorldScene:1861)와 같은 텍스처·같은
+     *  depth 규약(yDepthFor - 0.05)을 써서 접지감을 통일한다.
+     *  허수아비(dummy)는 훈련장 전용 정적 오브젝트라 그림자를 생략한다.
+     *  알파는 플레이어(0.55)와 같은 값을 쓴다 — 규약이 다르면 같은 화면에서
+     *  적만 진하거나 옅어져 오히려 이질감이 생긴다. */
+    if (!opts?.dummy && scene.textures.exists("fx_ground_shadow")) {
+      this.shadow = scene.add
+        .image(x, y + 14, "fx_ground_shadow")
+        .setDepth(scene.yDepthFor(y) - 0.05)
+        .setAlpha(0.55)
+        .setScale(0.62, 0.5);
+    }
     if (opts?.tint !== undefined) {
       this.setTint(opts.tint);
       if (opts.dummy) this.dummyTint = opts.tint; // v3.3.0 — 플래시 후 원색 복원용
@@ -684,6 +706,17 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   /** HP바 표시/위치 갱신 — 풀피(비가시)면 스킵 (v1.0.16 최적화 공용 경로) */
   private syncHpBar() {
+    /* vc236 (지시 #5) — 그림자 위치·depth 동기화. hpBar 와 달리 **항상** 보이므로
+     *  풀피 스킵 경로에 넣지 않고 맨 앞에서 처리한다. yDepthFor 를 매 프레임 다시
+     *  계산해야 적이 건물·플레이어 앞뒤로 지날 때 그림자도 같이 가려진다. */
+    if (this.shadow) {
+      /* vc236 (지시 #5) — 매 프레임 setPosition 은 필요하지만 setDepth 는 **값이
+       *  바뀔 때만** 호출한다. Phaser 의 setDepth 는 깊이 정렬을 유발하므로
+       *  적 20마리 × 60fps 로 매 프레임 호출하면 낭비다(그림자는 y 만 따라가면 된다). */
+      this.shadow.setPosition(this.x, this.y + 14);
+      const d = this.scene.yDepthFor(this.y) - 0.05;
+      if (this.shadow.depth !== d) this.shadow.setDepth(d);
+    }
     if (this.hpBar && this.hpBarBg) {
       const show = this.hp < this.maxHp;
       if (!show) {
@@ -887,6 +920,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (this.hpBarBg) {
       this.hpBarBg.destroy();
       this.hpBarBg = null;
+    }
+    /* vc236 (지시 #5) — 그림자도 별개 씬 오브젝트라 여기서 정리해야 유령이 남지 않는다. */
+    if (this.shadow) {
+      this.shadow.destroy();
+      this.shadow = null;
     }
     super.destroy(fromScene);
   }

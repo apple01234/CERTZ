@@ -79,9 +79,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   owned: ItemKey[] = ["weapon_1", "armor_1"];
   /** v1.1.7 (#개편 A87) — 판매 잠금 아이템 키. 실수 판매 방지용. */
   lockedItems: string[] = [];
-  /** v1.1.8 (#개편 A46) — 낚시 도감/기록 (세이브 미러) */
-  fishSave: { caught: string[]; totalCatch: number; totalMiss: number; bestWeight: number } =
-    { caught: [], totalCatch: 0, totalMiss: 0, bestWeight: 0 };
   /** v1.1.9 (#개편 A48) — 채집 재료 보유량 (요리/제작 재료) */
   gatherBag: Record<string, number> = {};
   /** vc178 — 집 꾸미기: 배치된 가구 { 가구키, 격자 좌표 }. 보유는 owned(furn_*)로, 이 배열이 배치 상태. */

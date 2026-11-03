@@ -87,26 +87,26 @@ export type RecipeDef = {
  */
 export const COOK_RECIPES: RecipeDef[] = [
   /* ── 초급 (재료 2종) ── */
-  { key: "dish_fishgrill", name: "숯불 생선구이", need: [{ item: "fish_minnow", n: 2 }, { item: "salt_rock", n: 1 }], buff: "atk", power: 0.12, duration: 90_000, desc: "공격력 +12% · 90초" },
+  { key: "dish_fishgrill", name: "숯불 버섯구이", need: [{ item: "mush_red", n: 2 }, { item: "salt_rock", n: 1 }], buff: "atk", power: 0.12, duration: 90_000, desc: "공격력 +12% · 90초" },
   { key: "dish_herbsoup", name: "햇살풀 수프", need: [{ item: "herb_sun", n: 2 }, { item: "mush_red", n: 1 }], buff: "def", power: 4, duration: 90_000, desc: "방어력 +4 · 90초" },
   { key: "dish_berrytea", name: "벌꿀 차", need: [{ item: "honey_drop", n: 1 }, { item: "herb_sun", n: 1 }], buff: "spd", power: 0.15, duration: 75_000, desc: "이동속도 +15% · 75초" },
 
   /* ── 중급 (재료 3종 / 물고기 활용) ── */
-  { key: "dish_carpsteak", name: "잉어 스테이크", need: [{ item: "fish_carp", n: 1 }, { item: "salt_rock", n: 1 }, { item: "herb_ember", n: 1 }], buff: "atk", power: 0.20, duration: 110_000, desc: "공격력 +20% · 110초" },
-  { key: "dish_frostsashimi", name: "서리 회", need: [{ item: "fish_icefish", n: 3 }, { item: "herb_frost", n: 1 }], buff: "crit", power: 8, duration: 100_000, desc: "치명타 +8% · 100초" },
-  { key: "dish_troutbake", name: "송어 구이", need: [{ item: "fish_trout", n: 2 }, { item: "salt_rock", n: 1 }, { item: "mush_blue", n: 1 }], buff: "exp", power: 0.25, duration: 130_000, desc: "경험치 +25% · 130초" },
+  { key: "dish_carpsteak", name: "화염 스테이크", need: [{ item: "mush_red", n: 1 }, { item: "salt_rock", n: 1 }, { item: "herb_ember", n: 1 }], buff: "atk", power: 0.20, duration: 110_000, desc: "공격력 +20% · 110초" },
+  { key: "dish_frostsashimi", name: "서리 무침", need: [{ item: "mush_blue", n: 3 }, { item: "herb_frost", n: 1 }], buff: "crit", power: 8, duration: 100_000, desc: "치명타 +8% · 100초" },
+  { key: "dish_troutbake", name: "약초 구이", need: [{ item: "herb_sun", n: 2 }, { item: "salt_rock", n: 1 }, { item: "mush_blue", n: 1 }], buff: "exp", power: 0.25, duration: 130_000, desc: "경험치 +25% · 130초" },
   { key: "dish_mushpot", name: "버섯 전골", need: [{ item: "mush_red", n: 2 }, { item: "mush_blue", n: 2 }, { item: "herb_sun", n: 1 }], buff: "def", power: 7, duration: 110_000, desc: "방어력 +7 · 110초" },
 
   /* ── 고급 (희귀 재료) ── */
-  { key: "dish_salmonplate", name: "은연어 플레이트", need: [{ item: "fish_salmon", n: 1 }, { item: "salt_rock", n: 2 }, { item: "honey_drop", n: 1 }], buff: "gold", power: 0.30, duration: 140_000, desc: "골드 획득 +30% · 140초" },
-  { key: "dish_crystaldish", name: "수정비늘 정찬", need: [{ item: "fish_crystal", n: 1 }, { item: "ore_crystal", n: 1 }, { item: "herb_frost", n: 2 }], buff: "atk", power: 0.28, duration: 150_000, desc: "공격력 +28% · 150초" },
-  { key: "dish_emberhotpot", name: "용암 전골", need: [{ item: "fish_ember", n: 1 }, { item: "herb_ember", n: 2 }, { item: "ore_iron", n: 1 }], buff: "crit", power: 12, duration: 140_000, desc: "치명타 +12% · 140초" },
+  { key: "dish_salmonplate", name: "벌꿀 정찬", need: [{ item: "honey_drop", n: 2 }, { item: "salt_rock", n: 2 }, { item: "herb_sun", n: 1 }], buff: "gold", power: 0.30, duration: 140_000, desc: "골드 획득 +30% · 140초" },
+  { key: "dish_crystaldish", name: "수정 정찬", need: [{ item: "ore_crystal", n: 2 }, { item: "herb_frost", n: 2 }], buff: "atk", power: 0.28, duration: 150_000, desc: "공격력 +28% · 150초" },
+  { key: "dish_emberhotpot", name: "용암 전골", need: [{ item: "mush_red", n: 2 }, { item: "herb_ember", n: 2 }, { item: "ore_iron", n: 1 }], buff: "crit", power: 12, duration: 140_000, desc: "치명타 +12% · 140초" },
   { key: "dish_runebread", name: "룬 빵", need: [{ item: "ore_rune", n: 1 }, { item: "herb_sun", n: 2 }, { item: "honey_drop", n: 1 }], buff: "exp", power: 0.35, duration: 160_000, desc: "경험치 +35% · 160초" },
 
   /* ── 최고급 (전설 재료) ── */
-  { key: "dish_voidstew", name: "공허 스튜", need: [{ item: "fish_void", n: 1 }, { item: "herb_shadow", n: 2 }, { item: "ore_abyss", n: 1 }], buff: "atk", power: 0.40, duration: 180_000, desc: "공격력 +40% · 180초" },
-  { key: "dish_aurorafeast", name: "오로라 만찬", need: [{ item: "fish_aurora", n: 1 }, { item: "herb_frost", n: 2 }, { item: "ore_crystal", n: 2 }], buff: "crit", power: 18, duration: 180_000, desc: "치명타 +18% · 180초" },
-  { key: "dish_yggfeast", name: "세계수 잎새 요리", need: [{ item: "fish_yggdrasil", n: 1 }, { item: "ore_abyss", n: 1 }, { item: "honey_drop", n: 2 }], buff: "exp", power: 0.60, duration: 200_000, desc: "경험치 +60% · 200초" },
+  { key: "dish_voidstew", name: "공허 스튜", need: [{ item: "mush_blue", n: 2 }, { item: "herb_shadow", n: 2 }, { item: "ore_abyss", n: 1 }], buff: "atk", power: 0.40, duration: 180_000, desc: "공격력 +40% · 180초" },
+  { key: "dish_aurorafeast", name: "오로라 만찬", need: [{ item: "herb_frost", n: 3 }, { item: "honey_drop", n: 1 }, { item: "ore_crystal", n: 2 }], buff: "crit", power: 18, duration: 180_000, desc: "치명타 +18% · 180초" },
+  { key: "dish_yggfeast", name: "세계수 만찬", need: [{ item: "ore_abyss", n: 2 }, { item: "herb_shadow", n: 2 }, { item: "honey_drop", n: 2 }], buff: "exp", power: 0.60, duration: 200_000, desc: "경험치 +60% · 200초" },
 ];
 
 export const COOK_BY_KEY: Record<string, RecipeDef> = Object.fromEntries(COOK_RECIPES.map((r) => [r.key, r]));
