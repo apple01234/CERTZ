@@ -89,7 +89,9 @@ type GatherNode = {
 };
 
 import { gatherPoolFor, GATHER_BY_KEY, COOK_RECIPES, COOK_BY_KEY, canCook, applyCook, dishBuffText, COOK_PERFECT_CHANCE, type GatherKey } from "../gathering"; // v1.1.9 (#개편 A47·A48)
-import { rollFish, rollWeight, makeCatch, FISH_TIER_META, type FishingZone } from "../fishing"; // v1.1.8 (#개편 A46) 낚시
+/* vc236 (지시 #2 "낚시 기능 없애") — 낚시 모듈은 지역 키 타입 하나만 남았다.
+ *  채집(gatherPoolFor)이 지역별 재료 풀을 고르는 데 계속 쓰므로 타입만 가져온다. */
+import type { FishingZone } from "../fishing";
 import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
 import * as partyContent from "../partyContent"; // v1.4.3 (작업4) — 파티 시너지/파티 퀘스트 보드
@@ -1525,15 +1527,6 @@ export class WorldScene extends Phaser.Scene {
     this.bossKillCount = savedPlayer.bossKills ?? 0;
     /* v1.1.7 (#개편 A87) — 판매 잠금 목록 복원 (구 세이브는 undefined → 빈 배열) */
     this.player.lockedItems = Array.isArray(savedPlayer.lockedItems) ? [...savedPlayer.lockedItems] : [];
-    /* v1.1.8 (#개편 A46) — 낚시 도감 복원 (구 세이브는 빈 도감) */
-    const fs2 = savedPlayer.fishing;
-    this.player.fishSave = {
-      caught: Array.isArray(fs2?.caught) ? [...fs2.caught] : [],
-      totalCatch: Math.max(0, Math.round(fs2?.totalCatch ?? 0)),
-      totalMiss: Math.max(0, Math.round(fs2?.totalMiss ?? 0)),
-      bestWeight: Math.max(0, Number(fs2?.bestWeight ?? 0)),
-    };
-    /* v1.1.9 (#개편 A48) — 채집 재료 복원 */
     this.player.gatherBag = savedPlayer.gatherBag && typeof savedPlayer.gatherBag === "object"
       ? { ...savedPlayer.gatherBag } : {};
     /* vc178 — 집 꾸미기 배치 상태 복원 (구 세이브 undefined → 빈 집) */
@@ -1747,7 +1740,27 @@ export class WorldScene extends Phaser.Scene {
           const h = Math.min(BLK, this.stageH - by);
           const key = variants[rng.between(0, variants.length - 1)];
           const ts = this.add.tileSprite(bx, by, w, h, key).setOrigin(0).setDepth(0);
-          ts.setTileScale(1);
+          /* ═══ vc236 (지시 #1 "타일맵 배치 정신없고 ㅈ같음") — 진짜 원인은 위상 리셋 ═══
+           *
+           * [증상] 바닥이 256px 사각형으로 갈라진 **패치워크**처럼 보인다.
+           *
+           * [원인] 블록은 256px(BLK = CELL*4) 단위로 나누는데 지면 타일 주기는
+           *  64 / 84 / 96 / 256px 로 제각각이다. TileSprite 는 **자기 원점에서**
+           *  텍스처를 반복하므로, 블록 크기가 타일 주기의 정수배가 아니면
+           *  (예: 256 ÷ 96 = 2.67) 블록마다 무늬 위상이 0으로 리셋된다.
+           *  → 블록 경계마다 결이 끊겨 눈에 띄는 이음선이 생긴다.
+           *  변형 타일(_v1/_v2)이 실존하지 않는 지역이 대부분이라, 종전엔
+           *  **모든 블록이 같은 텍스처인데도** 위상만 어긋나 패치워크로 보였다.
+           *
+           * [해결] 타일을 늘리거나 줄이지 않고(화질 보존), 각 블록의 **타일 오프셋**을
+           *  전역 좌표계에 맞춘다: offset = (bx mod 타일주기, by mod 타일주기).
+           *  그러면 블록이 몇 개로 쪼개져도 무늬가 한 장처럼 이어진다.
+           *  (setTileScale 은 건드리지 않는다 — pixelArt:true 게임에서 비정수 배율은
+           *   픽셀 폭이 들쭉날쭉해져 지글거리고, 256px 원본을 0.5배로 줄이면 화질 손실이다.) */
+          const __src = this.textures.get(key).getSourceImage();
+          const __tw = __src?.width ?? 128;
+          const __th = __src?.height ?? 128;
+          ts.setTilePosition(bx % __tw, by % __th);
           if (gTint) ts.setTint(gTint);
           if (!groundTs) groundTs = ts;
         }
@@ -1757,7 +1770,16 @@ export class WorldScene extends Phaser.Scene {
        *  이전에는 여기서 groundTex(원본)를 그대로 써서, 변형(_v1/_v2)이 없는 지역은
        *  tileThemes 매핑이 통째로 무시됐다(무스펠헤임이 계속 붉은 게 타일로 나온 원인). */
       groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, packTex).setOrigin(0).setDepth(0);
-      groundTs.setTileScale(1);
+      /* ═══ vc236 (지시 #1 "타일맵 배치 정신없고 ㅈ같음") ═══
+       *
+       * 이 경로(전체를 한 장으로 덮는 경우)는 블록 분할이 없어 위상 리셋이 없다.
+       *  처음엔 "타일 원본이 64/84/96/256px 로 제각각이라 격자가 어긋난다"고 보고
+       *  128px 로 setTileScale 정규화를 넣었지만, 되돌렸다:
+       *   · 이 게임은 pixelArt:true + roundPixels:true 라 84·96px 를 1.33~1.52배로
+       *     늘리면 픽셀 폭이 1px/2px 로 번갈아 렌더돼 지글거린다.
+       *   · 256px 를 0.5배로 줄이는 건 픽셀아트 화질 손실이다(유저 제약: 품질 저하 금지).
+       *  타일 주기가 달라도 **한 장으로 이어 깔리므로** 격자 충돌은 원래 없었다.
+       *  실제 패치워크 원인은 블록 분할 경로의 위상 리셋이며 그쪽에서 고쳤다. */
       if (gTint) groundTs.setTint(gTint);
     }
     // v3.0.14 — 도로 표시 완전 제거: 가로/세로 일자 도로가 단조롭다는 피드백 ("길이 일자로만 되어있어")
@@ -2711,7 +2733,11 @@ export class WorldScene extends Phaser.Scene {
    *  같은 Y면 `perspDepthOf` 보다 아주 살짝 뒤(…-0.001)에 두어, 경계에서
    *  캐릭터가 장식에 가려지지 않게 한다.
    */
-  private yDepthFor(y: number): number {
+  /* vc236 (지시 #5) — `private` → 공개. Enemy(적 그림자)와 WorldScene 이 같은
+   *  Y정렬 규칙을 공유해야 해서다. Enemy 는 이미 이 메서드를 호출하고 있었고
+   *  (declaration 만 private 이라 타입 오류), 그림자 depth 도 같은 규약을 써야
+   *  적·플레이어·장식의 앞뒤 관계가 한 규칙으로 유지된다. */
+  yDepthFor(y: number): number {
     return this.perspDepthOf(y, Math.max(1, this.stageH)) - 0.001;
   }
 
@@ -2863,18 +2889,53 @@ export class WorldScene extends Phaser.Scene {
   private drawGroundEdges(lay: RoomLayout) {
     if (!this.textures.exists("autotile_edge")) return;
     const { cols, rows, cellW, cellH } = lay;
+    /* ═══ vc236 (지시 #1 "타일맵 배치 정신없고 ㅈ같음") ═══
+     *
+     * [증상] 바닥이 바둑판처럼 큰 블록으로 갈라져 보인다.
+     *
+     * [원인] 종전엔 레이아웃 셀 크기(≈367×313px)에 256px 아틀라스를
+     *  `setDisplaySize(cellW, cellH)` 로 **비정수 배율(1.43×/1.22×)** 확대해 덮었다.
+     *  게다가 셀 하나가 256px 타일의 1.4칸이라, 겹쳐 놓은 경계 띠의 위상이 셀마다
+     *  어긋나 바닥 타일 격자(64~256px)와 맞지 않는 **이중 격자**가 생겼다.
+     *  여기에 알파 0.55 × 띠 면적 54% 라, 어두운 사각형이 눈에 띄게 남았다.
+     *
+     * [해결] 셀을 **아틀라스 원본 크기(256px) 격자로 잘라** 각 조각을 정수 배율(1.0)로
+     *  덮는다. 그러면 띠의 위상이 바닥 타일과 같은 격자에 물려 이중 격자가 사라진다.
+     *  강도(알파)도 0.55 → 0.32 로 낮춰 "경계"로만 읽히게 한다.
+     *
+     *  · 마스크 0(사방 막힘)은 그리지 않는다 — 벽에 완전히 둘러싸인 1칸짜리 구멍에
+     *    네 방향 어두운 띠를 전부 덮으면 그 칸만 검게 죽는다.
+     */
+    const EDGE = 256;       // 아틀라스 프레임 원본 크기
+    const ALPHA = 0.32;     // 0.55 → 0.32 (경계선으로만 읽히게)
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         if (!lay.open[r * cols + c]) continue;
         const mask = openMaskAt(lay.open, cols, rows, c, r);
-        if (mask === 15) continue;            // 사방 열림 = 내부, 오버레이 불필요
-        const frame = patternFor(mask);        // 0~15
-        this.add
-          .image(c * cellW, r * cellH, "autotile_edge", frame)
-          .setOrigin(0)
-          .setDisplaySize(cellW, cellH)
-          .setDepth(0.5)                      // 지면(0) 위, 벽/오브젝트 아래
-          .setAlpha(0.55);
+        if (mask === 15 || mask === 0) continue; // 내부 / 완전 고립
+        const frame = patternFor(mask);
+        const x0 = Math.round(c * cellW);
+        const y0 = Math.round(r * cellH);
+        const x1 = Math.round((c + 1) * cellW);
+        const y1 = Math.round((r + 1) * cellH);
+        /* 셀을 256px 격자로 분할 — 마지막 조각은 남는 크기만큼만(원본 크롭) */
+        for (let ty = y0; ty < y1; ty += EDGE) {
+          for (let tx = x0; tx < x1; tx += EDGE) {
+            const w = Math.min(EDGE, x1 - tx);
+            const h = Math.min(EDGE, y1 - ty);
+            const img = this.add
+              .image(tx, ty, "autotile_edge", frame)
+              .setOrigin(0)
+              .setDepth(0.5)                   // 지면(0) 위, 벽/오브젝트 아래
+              .setAlpha(ALPHA);
+            if (w !== EDGE || h !== EDGE) {
+              /* 잘린 조각은 원본의 같은 픽셀만 보여준다(늘리지 않음).
+               *  setCrop 만 쓰면 렌더 크기 = 크롭 크기 × scale(1) 이므로 추가 보정이 없다.
+               *  setDisplaySize 를 함께 주면 크롭 영역을 다시 늘려 이중 스케일이 된다. */
+              img.setCrop(0, 0, w, h);
+            }
+          }
+        }
       }
     }
   }
@@ -10642,9 +10703,40 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
      *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가
      *  v4.0.0 — 바르가 수비전/균열 던전 입장 + 무료 뽑기 + 티켓 충전 */
-    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss" | "gmitems" | "dlc"; value?: number | string }) => {
+    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss" | "gmitems" | "dlc" | "youngprincess"; value?: number | string }) => {
       if (!this.player) return;
       const p = this.player;
+      /* ═══ vc236 (지시 #4) — 영프 DLC 해금 ═══
+       *  사용자 지시: "GM 패널에서 영프 DLC 해금 기능도 만들어줘"
+       *
+       *  기존 `dlc` 명령은 **본편 세계 구원(cleared)** 을 대신 세워 그랜드플래닛 게이트를
+       *  여는 것이었다. 그런데 영프 편 진입은 `storyEntryAllowed("youngprincess*")` 가
+       *  `cleared` 만 보므로 그걸로도 열리지만, **영프 엔딩 플래그(youngPrincessCleared)**
+       *  는 세울 방법이 없어 "영프를 끝까지 본 것"으로는 만들 수 없었다.
+       *  그래서 영프 전용 해금을 따로 둔다:
+       *   · on  = cleared + youngPrincessCleared 둘 다 세움 (영프 진입·엔딩 후 게이트 모두 통과)
+       *   · off = youngPrincessCleared 만 해제 (본편 cleared 는 건드리지 않는다)
+       *  마을에 있으면 게이트를 즉시 다시 세운다. */
+      if (v.type === "youngprincess") {
+        const on = v.value !== "off";
+        this.cleared = true;
+        this.youngPrincessCleared = on;
+        this.dlcPortal?.destroy();
+        this.dlcPortal = null;
+        this.dlcPortalGlow?.destroy();
+        this.dlcPortalGlow = null;
+        this.interactables = this.interactables.filter((it) => it.kind !== "dlcgate");
+        if (this.stageDef.isVillage) this.spawnDlcPortal();
+        this.save();
+        notice(
+          on
+            ? "GM — 영프 DLC 해금 (영준 프린세스 진입 · 엔딩 게이트 모두 열림)"
+            : "GM — 영프 엔딩 플래그 해제 (본편 클리어는 유지)",
+        );
+        audio.sfx.portal();
+        this.emitRpgState();
+        return;
+      }
       if (v.type === "dlc") {
         /* ═══ vc186b — 운영자(GM) DLC 임시 해금 ═══
          *  사용자 지시: "운영자 임시해금"
@@ -11959,22 +12051,6 @@ export class WorldScene extends Phaser.Scene {
        *  키를 떼면 자동 이동이 자연 복귀된다 — 토글 재시작 불필요 */
       if (this.autoHunt && !useTouch && mv.lengthSq() === 0) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
 
-      /* v1.1.8 (#개편 A46) — 낚시가 진행 중이면 공격 키는 "멈추기"로 소비된다.
-       *  낚시 중 공격/스킬이 발동되면 캐릭터가 튀어나가 손맛이 깨지므로 최우선 처리. */
-      if (this.fishingActive) {
-        this.tickFishing(dt);
-        if (
-          Phaser.Input.Keyboard.JustDown(this.keys.SPACE) ||
-          Phaser.Input.Keyboard.JustDown(this.keyFor("attack"))
-        ) {
-          this.resolveFishing();
-          return;
-        }
-        // 낚시 중에는 다른 입력을 막는다(이동은 허용하지 않음 — 자리 고정)
-        this.player.setVelocity(0, 0);
-        return;
-      }
-
       // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
       if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
         this.attackQueued = true;
@@ -12027,8 +12103,6 @@ export class WorldScene extends Phaser.Scene {
       if (Phaser.Input.Keyboard.JustDown(this.keyFor("opt"))) EventBus.emit("ui:panel", { panel: "opt" });
       /* v3.0.16 — 몬스터 컬렉션 패널 (M키) */
       if (Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
-      /* v1.1.8 (#개편 A46) — 낚시 (기본 H). 필드에서만 동작한다. */
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("fishing"))) this.startFishing();
       /* vc142 (#1) — PC 자동전투 토글 단축키 (기본 B · 설정에서 재배치 가능) */
       if (Phaser.Input.Keyboard.JustDown(this.keyFor("autohunt"))) EventBus.emit("rpg:autohunt", {});
       /* v1.1.4 (#개편 입력버퍼링) — 공격/스킬 모션이 끝나면 대기 중인 스킬을 발동한다. */
@@ -16727,7 +16801,6 @@ export class WorldScene extends Phaser.Scene {
       })(),
       /* v1.1.5 (#개편 통계) — 스탯 창 실시간 표시 */
       lockedItems: [...this.player.lockedItems], // v1.1.7 (#개편 A87)
-      fishing: { ...this.player.fishSave, caught: [...this.player.fishSave.caught] }, // v1.1.8 (#개편 A46)
       gatherBag: { ...this.player.gatherBag }, // v1.1.9 (#개편 A48)
       homeDecor: this.player.homeDecor.map((d) => ({ ...d })), // vc178 — 집 꾸미기 배치 상태
       fieldDecor: this.player.fieldDecor.map((d) => ({ ...d })), // vc182 — 마을 배치 가구
@@ -17739,125 +17812,8 @@ export class WorldScene extends Phaser.Scene {
     this.showBanner(text);
   }
 
-  /* ================= v1.1.8 (#개편 A46) — 낚시 =================
-   *  전투 외 유일한 손맛 콘텐츠. 진행 방식:
-   *    1) 낚싯대를 던지면 "성공 구간"이 좌우로 움직이는 바가 화면 하단에 뜬다
-   *    2) 플레이어는 스페이스(공격키)로 멈춘다 — 구간 안이면 성공, 밖이면 실패
-   *    3) 성공하면 등급 추첨으로 물고기가 결정된다(숙련도가 높을수록 상위 확률↑)
-   *  실패 페널티 없음(미끼만 소모) — "한 번 더"를 유도하는 설계.
-   *  상태는 세이브에 저장되고, 도감을 모두 채우면 영구 골드 보너스가 붙는다. */
-  private fishingActive = false;
-  private fishingBar = 0; // 0~100 (좌우 왕복)
-  private fishingDir = 1;
-  private fishingZoneLo = 38;
-  private fishingZoneHi = 62;
-  private fishingGfx: Phaser.GameObjects.Graphics | null = null;
-  private fishingSkill = 0; // 연속 성공 (0~1 정규화)
-
-  /** 낚시 시작 — 필드에서만. 이미 진행 중이면 무시. */
-  startFishing() {
-    if (this.fishingActive || !this.player || this.dialoguing) return;
-    if (this.player.state === "dead") return;
-    this.fishingActive = true;
-    this.fishingBar = 0;
-    this.fishingDir = 1;
-    /* 성공 구간은 매번 다르게 — 좁을수록 상위 등급 기회(대신 성공률 낮음).
-     * 여기서는 난이도를 랜덤 폭 18~30%로 둔다. */
-    const half = 9 + Math.random() * 6;
-    const center = 30 + Math.random() * 40;
-    this.fishingZoneLo = Math.max(4, center - half);
-    this.fishingZoneHi = Math.min(96, center + half);
-    this.showBanner("물고기가 물었다! 공격 키로 멈춰라");
-    audio.sfx.pickup();
-  }
-
-  /** 낚시 취소 (지역 이동·사망 등) */
-  cancelFishing() {
-    if (!this.fishingActive) return;
-    this.fishingActive = false;
-    this.fishingGfx?.destroy();
-    this.fishingGfx = null;
-  }
-
-  /** 매 프레임 바 이동 + 렌더. 반환값은 없고, 공격 입력은 resolveFishing()이 처리. */
-  private tickFishing(dt: number) {
-    if (!this.fishingActive) return;
-    // 초당 78% 속도로 왕복 (약 1.3초에 한 번 끝→끝)
-    this.fishingBar += this.fishingDir * (dt / 1000) * 78;
-    if (this.fishingBar >= 100) { this.fishingBar = 100; this.fishingDir = -1; }
-    if (this.fishingBar <= 0) { this.fishingBar = 0; this.fishingDir = 1; }
-
-    const cam = this.cameras.main;
-    const w = Math.min(420, cam.width * 0.62);
-    const h = 26;
-    const x = cam.width / 2 - w / 2;
-    const y = cam.height - h - 96;
-    if (!this.fishingGfx) this.fishingGfx = this.add.graphics().setDepth(8900).setScrollFactor(0);
-    const g = this.fishingGfx;
-    g.clear();
-    // 트랙
-    g.fillStyle(0x000000, 0.72);
-    g.fillRect(x - 3, y - 3, w + 6, h + 6);
-    // 성공 구간
-    const zx = x + (w * this.fishingZoneLo) / 100;
-    const zw = (w * (this.fishingZoneHi - this.fishingZoneLo)) / 100;
-    g.fillStyle(0x34d399, 0.55);
-    g.fillRect(zx, y, zw, h);
-    // 바늘
-    const bx = x + (w * this.fishingBar) / 100;
-    g.fillStyle(0xffd98a, 1);
-    g.fillRect(bx - 3, y - 1, 6, h + 2);
-  }
-
-  /** 공격 키 입력 시 호출 — 구간 안이면 성공 */
-  resolveFishing() {
-    if (!this.fishingActive) return;
-    const hit = this.fishingBar >= this.fishingZoneLo && this.fishingBar <= this.fishingZoneHi;
-    this.fishingActive = false;
-    this.fishingGfx?.destroy();
-    this.fishingGfx = null;
-
-    const f = this.player?.fishSave ?? { caught: [], totalCatch: 0, totalMiss: 0, bestWeight: 0 };
-    if (!hit) {
-      f.totalMiss++;
-      this.player!.fishSave = f;
-      this.showBanner("놓쳤다… 다시 던져보자");
-      audio.sfx.uiClick();
-      this.save();
-      return;
-    }
-
-    const zone = this.currentFishingZone();
-    const skill = Math.min(1, this.fishingSkill / 5); // 5연속이면 최대
-    const fish = rollFish(zone, skill);
-    const weight = rollWeight(fish);
-    const isFirst = !f.caught.includes(fish.key);
-    const gain = makeCatch(fish, weight, isFirst);
-
-    f.totalCatch++;
-    if (weight > f.bestWeight) f.bestWeight = weight;
-    if (isFirst) f.caught = [...f.caught, fish.key];
-    this.player!.fishSave = f;
-    this.fishingSkill = Math.min(5, this.fishingSkill + 1);
-
-    this.player!.gold += gain.gold;
-    if (gain.firstAbyss > 0) {
-      this.inf.abyss = (this.inf.abyss ?? 0) + gain.firstAbyss;
-    }
-    const tierMeta = FISH_TIER_META[fish.tier];
-    this.showBanner(
-      `${isFirst ? "★ 신규 도감! " : ""}${fish.name} ${weight}kg — ${gain.gold}G${gain.firstAbyss > 0 ? ` +심연 ${gain.firstAbyss}` : ""}`,
-    );
-    this.spawnPickupText(this.player!.x, this.player!.y - 56, fish.name, tierMeta.color);
-    this.spawnCelebrateFX(this.player!.x, this.player!.y - 10, 10);
-    audio.sfx.questDone();
-    this.emitRpgState();
-    this.emitHud();
-    this.saveSoon();
-  }
-
-  /** 현재 스테이지 → 낚시 지역 */
-  private currentFishingZone(): FishingZone {
+  /** 현재 스테이지 → 지역 키 (채집 풀 판정용). 낚시 제거 후에도 채집이 쓴다. */
+  private currentZone(): FishingZone {
     const key = this.stageDef.key;
     const ch = key.replace(/\d+$/, "").replace(/v$/, "");
     const valid: FishingZone[] = ["forest", "kingdom", "alfheim", "muspelheim", "niflheim", "cave", "nidavellir", "hel", "abyss"];
@@ -17875,7 +17831,7 @@ export class WorldScene extends Phaser.Scene {
   private spawnGatherNodes() {
     for (const n of this.gatherNodes) { try { n.sprite.destroy(); } catch { /* 이미 파괴 */ } }
     this.gatherNodes = [];
-    const zone = this.currentFishingZone();
+    const zone = this.currentZone();
     const pool = gatherPoolFor(zone);
     if (pool.length === 0) return;
     const n = 6 + Math.floor(Math.random() * 4);
@@ -17943,20 +17899,11 @@ export class WorldScene extends Phaser.Scene {
     const r = COOK_BY_KEY[recipeKey];
     if (!r || !this.player) return false;
     const have: Record<string, number> = { ...this.player.gatherBag };
-    // 물고기도 재료로 쓸 수 있게 도감(잡은 개수) 대신 별도 카운트가 필요하지만,
-    // 현재 구조상 낚시는 즉시 골드화되므로 물고기 재료는 "잡은 적 있으면 1개 소모"로 처리한다.
-    for (const n of r.need) {
-      if (n.item.startsWith("fish_")) {
-        if (!this.player.fishSave.caught.includes(n.item)) return false;
-      }
-    }
-    if (!canCook(r, have) && !r.need.every((n) => n.item.startsWith("fish_"))) {
-      // 물고기 외 재료가 부족하면 실패
-      const onlyFishOk = r.need.every((n) => n.item.startsWith("fish_") || (have[n.item] ?? 0) >= n.n);
-      if (!onlyFishOk) {
-        this.showBanner("재료가 부족합니다");
-        return false;
-      }
+    /* vc236 (지시 #2 "낚시 기능 없애") — 물고기 재료 분기 제거.
+     *  낚시가 사라져 fish_ 키를 얻을 경로가 없으므로, 레시피는 채집 재료만 쓴다. */
+    if (!canCook(r, have)) {
+      this.showBanner("재료가 부족합니다");
+      return false;
     }
     const perfect = Math.random() < COOK_PERFECT_CHANCE;
     this.player.gatherBag = applyCook(r, have);

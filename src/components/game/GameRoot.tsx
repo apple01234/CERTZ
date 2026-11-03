@@ -73,7 +73,10 @@ export default function GameRoot() {
         document.documentElement.style.fontSize = `${Math.min(140, Math.max(100, v))}%`;
       }
       // v1.1.6 (#개편 B77) — 고대비 모드 복원
-      if (window.localStorage.getItem("sertz_contrast") === "high") {
+      /* vc236 (지시 #3 "고대비 모드를 기본으로 해") — 저장값이 없는 신규 유저는
+       *  **고대비가 기본**이다. 명시적으로 "normal" 을 저장한 경우에만 해제한다.
+       *  (기존엔 반대로 "high" 일 때만 켜서, 기본 상태에서 글씨가 묻혔다) */
+      if (window.localStorage.getItem("sertz_contrast") !== "normal") {
         document.documentElement.setAttribute("data-contrast", "high");
       }
     } catch { /* 저장값 없음/차단 — 기본 100% 유지 */ }

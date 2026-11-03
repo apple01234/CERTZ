@@ -16,7 +16,6 @@ export type GameAction =
   | "skill4"
   | "skill5"
   | "skill5b"
-  | "fishing"
   | "potHp"
   | "potMp"
   | "interact"
@@ -72,7 +71,6 @@ export const DEFAULT_KEYMAP: KeyMap = {
   /* vc145 (#4) — 친구 창 토글 (FriendsWidget이 키맵을 읽어 처리) */
   friends: "R",
   /* v1.1.8 (#개편 A46) — 낚시. 필드에서 낚싯대를 던진다. */
-  fishing: "H",
 };
 
 /** v1.0.17 — WASD 이동 스킴 기본 배치.
@@ -110,7 +108,6 @@ export const WASD_KEYMAP: KeyMap = {
   collection: "Y",
   autohunt: "V",
   friends: "H",
-  fishing: "B",
 };
 
 /** 스킴별 기본 프리셋 */
@@ -153,7 +150,6 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   collection: "몬스터 컬렉션",
   autohunt: "자동전투 토글",
   friends: "친구 창",
-  fishing: "낚시 (필드)",
 };
 
 /** 설정 UI에서 쓸 수 있는 키 후보 — v1.0.4: 이동이 화살표 전용이라 알파벳 전체 자유 배치

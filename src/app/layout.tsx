@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" data-contrast="high">
       <body className="bg-[#05070d] text-white antialiased">
         {/* v4.1.6 성능 최적화 — Galmuri woff2 4종 선도 다운로드 (React 19 head 호이스팅).
          *  BootScene의 document.fonts 대기 시간 단축 + 캔버스 텍스트 FOUT 제거. */}
