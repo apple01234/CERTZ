@@ -4,7 +4,7 @@
 
 - 스토리 진행에 레벨·반복 사냥·결제를 요구하지 않습니다. 보스는 공격 예고·회피·빈틈 공략이 필요합니다.
 - 솔로 도전과 3인 협동전은 별도 Node·Socket.IO 서버가 판정합니다. 외형/슬롯 상품은 전투 능력을 판매하지 않습니다.
-- 캐릭터·맵·소품·초상·아이콘은 16px 픽셀 스타일로 통일했습니다. 새 빌드에는 허용된 에셋만 포함합니다.
+- 사용자 Drive의 SPUM 인물·원본 초상과 숲/마을/던전 소품, 상세 32px 지형·보스를 연결했습니다. 기존 장식 카탈로그·배치 예산을 재사용하고 새 빌드에는 선택한 에셋만 포함합니다.
 - 기존 저장과 자산은 보관용으로 유지하고, 새 캠페인의 저장·거래·랭킹·구매 기록과 분리합니다.
 
 ## 실행
@@ -26,7 +26,9 @@ npm run build
 
 실시간 서버: `npm run campaign:server`. 서명 키·접속 주소·계정 저장 설정은 [운영 안내](docs/campaign/OPERATIONS.md)를 따릅니다. 설정이 없어도 게스트 본편은 기기 저장으로 플레이할 수 있습니다.
 
-[정본/명칭표](docs/campaign/CANON.md) · [아트와 라이선스](docs/campaign/ART_DIRECTION.md) · [검증 기록](docs/campaign/VALIDATION.md)
+[정본/명칭표](docs/campaign/CANON.md) · [아트와 라이선스](docs/campaign/ART_DIRECTION.md) · [검증 기록](docs/campaign/VALIDATION.md) · [13개 레퍼런스 분석](docs/campaign/REFERENCE_ANALYSIS.md)
+
+개발 도구는 [skills 안내](skills/README.md)를 따릅니다. `.mcp.json`에 Playwright와 REA가 구성되어 있으며, REA는 별도 Node 24.22.1 런타임으로 실행됩니다.
 
 앱용 정적 export와 웹 빌드는 같은 체크아웃에서 동시에 실행하지 않습니다. 서명 APK와 운영 서버는 별도 릴리스 절차가 필요합니다.
 

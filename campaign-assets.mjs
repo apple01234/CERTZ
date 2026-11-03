@@ -2,12 +2,14 @@
 import { readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import art from "./public/assets/campaign/drive/manifest.json" with { type: "json" };
+const suppliedAssets = new Set(
+  [...Object.values(art.projectFiles), ...Object.values(art.audioFiles)].map(
+    (a) => a.url.slice("/assets/".length),
+  ),
+);
 export function allowedCampaignAsset(name) {
-  return (
-    name === "tiles/kenney_tinydungeon.png" ||
-    name === "tiles/kenney_tinytown.png" ||
-    name.startsWith("campaign/")
-  );
+  return name.startsWith("campaign/") || suppliedAssets.has(name);
 }
 export async function pruneCampaignAssets(root) {
   let entries;

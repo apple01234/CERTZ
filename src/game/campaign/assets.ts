@@ -1,25 +1,51 @@
-/** One 16px art family. No hero_*, SPUM, AI portraits, 3D, or unidentified packs. */
-export const CAMPAIGN_ASSETS = {
-  town: {
-    key: "oath-town",
-    url: "/assets/tiles/kenney_tinytown.png",
-    frameWidth: 16,
-    frameHeight: 16,
-  },
-  dungeon: {
-    key: "oath-dungeon",
-    url: "/assets/tiles/kenney_tinydungeon.png",
-    frameWidth: 16,
-    frameHeight: 16,
-  },
+import manifest from "../../../public/assets/campaign/drive/manifest.json";
+import portraitCrops from "../../../public/assets/npcportrait/_map.json";
+import type { ChapterDefinition, Family } from "./catalog";
+
+/** Original 32px artwork from the user's archive; no recolored replacement sprites. */
+export const CAMPAIGN_ASSETS: {
+  key: string;
+  url: string;
+  frameWidth?: number;
+  frameHeight?: number;
+}[] = Object.entries(manifest.files)
+  .map(([name, art]) => ({
+    key: `oath-${name}`,
+    url: `/assets/campaign/drive/${art.file}`,
+  }))
+  .concat(
+    Object.entries(manifest.projectFiles).map(([name, art]) => ({
+      key: `oath-${name}`,
+      ...art,
+    })),
+  );
+export function portraitSource(art: string) {
+  const url = CAMPAIGN_ASSETS.find((a) => a.key === `oath-${art}`)?.url;
+  const key = url
+    ?.split("/")
+    .pop()
+    ?.replace(/\.png$/, "");
+  // Same exact-source portrait crops as the existing DialogueBox, without legacy speaker names.
+  return (
+    (portraitCrops as Record<string, { src: string }>)[key ?? ""]?.src ?? url
+  );
+}
+export const FAMILY_ART: Record<Family, string> = {
+  warrior: "knight",
+  ranger: "archer",
+  mage: "mage",
+  thief: "duelist",
+  pirate: "captain",
 } as const;
-export const FAMILY_FRAMES = {
-  warrior: 84,
-  ranger: 85,
-  mage: 87,
-  thief: 86,
-  pirate: 88,
-} as const;
+export function guideArt(name: string) {
+  if (["엘리아", "네메아", "리세아"].includes(name)) return "guardian";
+  if (["카르엔", "벨노아"].includes(name)) return "shadow-knight";
+  if (["바르델", "이셀", "루엔"].includes(name)) return "captain";
+  return ["세리안", "오르시안"].includes(name) ? "sage" : "healer";
+}
+export function bossArt(chapter: ChapterDefinition) {
+  return `boss-${chapter.id}`;
+}
 export const WORLD_PALETTES = {
   garden: [0x5c8457, 0x739560, 0xe3ca87],
   forest: [0x476b53, 0x59795a, 0xb4c487],

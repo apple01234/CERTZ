@@ -62,20 +62,25 @@ test("build whitelist removes old art while preserving unified licensed assets",
   try {
     await mkdir(path.join(root, "tiles"));
     await mkdir(path.join(root, "campaign"));
+    await mkdir(path.join(root, "campaign/drive"));
     for (const f of [
       "hero_old.png",
       "tiles/kenney_tinytown.png",
       "tiles/kenney_tinydungeon.png",
       "campaign/skill-sunburst.png",
+      "campaign/drive/knight.png",
     ])
       await writeFile(path.join(root, f), "fixture");
     await pruneCampaignAssets(root);
     await assert.rejects(access(path.join(root, "hero_old.png")));
+    await assert.rejects(access(path.join(root, "tiles/kenney_tinytown.png")));
+    await assert.rejects(access(path.join(root, "tiles/kenney_tinydungeon.png")));
     assert.equal(
       await readFile(path.join(root, "campaign/skill-sunburst.png"), "utf8"),
       "fixture",
     );
     assert.equal(allowedCampaignAsset("hero_old.png"), false);
+    assert.equal(await readFile(path.join(root, "campaign/drive/knight.png"), "utf8"), "fixture");
   } finally {
     await rm(root, { recursive: true });
   }

@@ -1,0 +1,247 @@
+{
+  "tool": {
+    "package": "rea-agents",
+    "version": "6.8.0",
+    "mcpToolCount": 229,
+    "source": "https://github.com/morluto/rea",
+    "workflow": "skills/reverse-engineer-anything/SKILL.md"
+  },
+  "scope": "13 artifacts individually inspected; not 13 complete runtime playthroughs",
+  "references": [
+    {
+      "source": "Veronikka's To-Do ENG 1.1.1.rar",
+      "sourceSha256": "3cc9488d903037b31dc7a4e7e2f8b746b3ab852b6b6f9d575e4fd2ed78fced23",
+      "bytes": 18102414,
+      "analysis": "Unity Mono / RAR",
+      "observed": [
+        "153 archive entries",
+        "DialogueManager, DialogueOptions, PlayerMovement, PlayerState declarations; movement state fields walk/attack/interact"
+      ],
+      "reaEvidence": [
+        "ev_5a741e76083585f007c27409fca948dc19c672e4dff67a0c293ccc8ba07eb156"
+      ],
+      "appliedOrRetained": [
+        "Keep dialogue/menu input separate from world movement; reuse existing pause/input-reset flow"
+      ],
+      "limits": [
+        "Static metadata/CIL and selected assets only; full story and runtime not played"
+      ]
+    },
+    {
+      "source": "BloodkeeperDemo2020_Window.zip",
+      "sourceSha256": "c74c056c0c7588f2fb0ee4abafd3f77c695ac2237d50df51c4abaddc4d550728",
+      "bytes": 252434938,
+      "analysis": "NW.js / Construct",
+      "observed": [
+        "273 entries in inner NW.js package; Construct project JSON",
+        "Tile_Ground, Collision, Tile_Foreground layer declarations and separate BossRoom_Collision"
+      ],
+      "reaEvidence": [],
+      "appliedOrRetained": [
+        "Separate visual terrain, blocking structures and collision flags; keep boss arenas open"
+      ],
+      "limits": [
+        "Project declarations read; event execution and boss balance not observed"
+      ]
+    },
+    {
+      "source": "Morfosi_Windows_1.2.0.zip",
+      "sourceSha256": "6dbb68bcd298efa3e77a6e46b3c30318f8d5589c84d92aa4cf61ce3b9dd94aa8",
+      "bytes": 60503423,
+      "analysis": "Unity Mono",
+      "observed": [
+        "PlayerInventory.CheckInventory / ItemObtained; CheckpointInteractable.StartedInteraction / SavingText",
+        "DoorController fields locked/linkedDoor/lockedDialogue/unlockDialogue"
+      ],
+      "reaEvidence": [
+        "ev_b4d12efa4cbf893e89f7ad30ba6c4bb6d1ba9430076d795942b9c23057304234"
+      ],
+      "appliedOrRetained": [
+        "Retain item/interaction state independently from dialogue and visual objects; persistent storage-failure recovery banner"
+      ],
+      "limits": [
+        "Static CIL/metadata and selected textures; no full native playthrough"
+      ]
+    },
+    {
+      "source": "flooded_burials_new_demo_fix_2.zip",
+      "sourceSha256": "126d8a0513a9e6539cf12118b1fb9642c88d35686d411058708c9db4ef61c20d",
+      "bytes": 185933276,
+      "analysis": "GameMaker FORM",
+      "observed": [
+        "230 serialized GameMaker rooms",
+        "rlevel_select and separate rparent_area_1_stage_0; per-room sizes read"
+      ],
+      "reaEvidence": [],
+      "appliedOrRetained": [
+        "Retain chapter journal/revisit navigation and bounded encounter rooms"
+      ],
+      "limits": [
+        "FORM/ROOM/STRG parsed; bytecode and compressed texture pages not fully decoded"
+      ]
+    },
+    {
+      "source": "Vampire_NoSurvivors_Windows.zip",
+      "sourceSha256": "48aaf878251165ce4c182fe0fb972a353881cd0e94d8fba7c7cd6f285d228e6c",
+      "bytes": 20796769,
+      "analysis": "GameMaker FORM",
+      "observed": [
+        "4 rooms including rmBattlefield 2000x400 and separate rmGameOver",
+        "objChest/objLootedChest/objTrapChest and upgrade/attack sprite declarations"
+      ],
+      "reaEvidence": [],
+      "appliedOrRetained": [
+        "Keep idempotent one-time story rewards and distinct defeat/retry presentation"
+      ],
+      "limits": [
+        "Serialized rooms and identifiers; chest event behavior not executed"
+      ]
+    },
+    {
+      "source": "holodungeon-windows-1.3.1.zip",
+      "sourceSha256": "93bdc48e6f7d1575077afb09723e1c485ee7d4872cd116984e5e77f41e674118",
+      "bytes": 165938381,
+      "analysis": "Unity Mono",
+      "observed": [
+        "RoomManager.StartCombat / EndCombat / ResetPositions; separate overworld/combat BGM fields",
+        "SaveSystem.SaveGameExists / SaveGame / LoadGame and SaveData declarations; selected sprite/animation metadata"
+      ],
+      "reaEvidence": [
+        "ev_4934d49b8a7b6c771496479c26591d253a0a4079198eb5c519c80a1aadaafeb2"
+      ],
+      "appliedOrRetained": [
+        "Keep authoritative encounter state separate from story progression, restore campaign view after battle, stream contextual combat music"
+      ],
+      "limits": [
+        "Selected asset file and managed code only; unexamined asset files remain unknown"
+      ]
+    },
+    {
+      "source": "NightShift.zip",
+      "sourceSha256": "f6645fb54566de6fe31f9518ccdcbf47af845cab14e828c1f41c084c966c465d",
+      "bytes": 45649362,
+      "analysis": "PE executable; embedded game container not decoded",
+      "observed": [
+        "PE import table read statically",
+        "Supplied readme explicitly describes no Save/Load, 30-40 minute duration and seven day/night jump controls"
+      ],
+      "reaEvidence": [
+        "ev_5d78becfa5c4e0098327a8831713812855b81b28cfe59174193214f73763692f"
+      ],
+      "appliedOrRetained": [
+        "Keep automatic story saves, export recovery and chapter selection; make save-failure warnings persist"
+      ],
+      "limits": [
+        "Embedded game data not decoded; only PE metadata and supplied readme, no gameplay"
+      ]
+    },
+    {
+      "source": "WYDTTM-Windows.zip",
+      "sourceSha256": "37899eb3ae85da508485599f67a278f0910928844a734792707e4a23ed56aaf0",
+      "bytes": 415491444,
+      "analysis": "RPG Maker MV",
+      "observed": [
+        "23 RPG Maker MV maps with six layers and separate event pages",
+        "2 selected JavaScript files parsed, 81292 AST nodes visited; layer/priority/passage code available"
+      ],
+      "reaEvidence": [
+        "ev_a1c4a8c6e6d8651ad7985eec06976a1d155f36cdc1a6132f61fc28e7756cbe27"
+      ],
+      "appliedOrRetained": [
+        "Own 16x10 layered maps, explicit passage flags and one-time progress state; do not import reference story/events"
+      ],
+      "limits": [
+        "Selected source analysis only; semantic node ceilings reached, references through unselected sources remain unknown"
+      ]
+    },
+    {
+      "source": "FeatherPark.zip",
+      "sourceSha256": "5efcd0207b8cb3fb5b176b401f32e94ead1d2661e7545427afd078d1d8399c48",
+      "bytes": 30919624,
+      "analysis": "Godot 3.5.0",
+      "observed": [
+        "Godot 3.5 PCK format 1: 735 resource entries read by a separate bounded parser",
+        "EastArea YSort and Camera2D bounds; Barn collision shapes; Interactable Area2D radius and UI prompt nodes"
+      ],
+      "reaEvidence": [],
+      "appliedOrRetained": [
+        "Sort characters/props by foot Y; use localized interaction prompts and reserved routes"
+      ],
+      "limits": [
+        "REA 6.8 rejects PCK format 1; these scene observations are from the local parser, not REA; no runtime"
+      ]
+    },
+    {
+      "source": "AerevenAdvance_jam.gba",
+      "sourceSha256": "de968dca9f86f1648bb2bb992d6ce4aa4007d3bf7a064b4bbfd82a96e29409ab",
+      "bytes": 5564940,
+      "analysis": "GBA ROM",
+      "observed": [
+        "Header title Aereven2 Adv; valid GBA header checksum; input ROM hashed"
+      ],
+      "reaEvidence": [],
+      "appliedOrRetained": [
+        "No direct art/feature import from opaque ROM data"
+      ],
+      "limits": [
+        "No emulator or map/behavior decoder; header inspection is not gameplay analysis"
+      ]
+    },
+    {
+      "source": "windows.zip",
+      "sourceSha256": "5330bbc1ba4a774bb25928cb2a4eaafd04781cdc5e8c8cc81b26186335fa32ff",
+      "bytes": 52569188,
+      "analysis": "Godot 4.3 embedded PCK",
+      "observed": [
+        "820 resources extracted with containment verification; 821 inventory occurrences hash-verified",
+        "Interaction area, dialogue resource/timeline, mob wave and weapon resource paths"
+      ],
+      "reaEvidence": [
+        "ev_a1a412ada5e4b67e3c0bb979292e8157eb99874f72c2eb852e7b44f5e63e9f5b",
+        "ev_f00ea97516001f89b3e9281fdf9250d08ab2195d7ff2699d3129e2ccac931fe6"
+      ],
+      "appliedOrRetained": [
+        "Keep map/interaction data, combat rules and presentation in separate modules"
+      ],
+      "limits": [
+        "Resource identities and selected metadata; compiled Godot behavior not decompiled or played"
+      ]
+    },
+    {
+      "source": "SangTDB_v0.26a_64bit.zip",
+      "sourceSha256": "9f4ae587b093c498ab342c1e69b26e1476a00f52c804ae8bb693efb4f0488f76",
+      "bytes": 147510115,
+      "analysis": "GameMaker FORM",
+      "observed": [
+        "27 GameMaker rooms; rm_main_class_pick and rm_tutorial_begin_secret",
+        "Directional player sprite declarations; separate boss intro/victory/death music files"
+      ],
+      "reaEvidence": [],
+      "appliedOrRetained": [
+        "Keep class selection, visible skill/dodge readiness and distinct boss feedback"
+      ],
+      "limits": [
+        "Static room/sprite/audio declarations; action timings not measured at runtime"
+      ]
+    },
+    {
+      "source": "COBB CAN MOVE v1.7 webview2.zip",
+      "sourceSha256": "747ec5936da8db39d7c8d680b1c6b69650fc6e4dee6797d2df6f0c9aeba4060b",
+      "bytes": 16734779,
+      "analysis": "Construct web build",
+      "observed": [
+        "63 archive artifacts extracted by REA with containment verification",
+        "Construct data declares Tilemap, interactBox, interactable, hunger/freeze bars and global layers"
+      ],
+      "reaEvidence": [
+        "ev_ff90995db651215e7aa9891d4d21584a80bae61061d895c72962726184089b61"
+      ],
+      "appliedOrRetained": [
+        "Keep context-sensitive interaction and compact, distinct cooldown/status feedback"
+      ],
+      "limits": [
+        "Declarations and extracted resources; generated runtime events not executed"
+      ]
+    }
+  ]
+}

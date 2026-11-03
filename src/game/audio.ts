@@ -279,7 +279,7 @@ const BGM_GAIN_DB: Record<string, number> = {
   bgm_village_village: 0.727,   // -2.8dB ← RMS -13.7dB
 };
 /** 곡별 정규화 게인 (표에 없으면 1.0 — 신규 곡은 보정 없이 원음) */
-function bgmGain(key: string): number {
+export function bgmGain(key: string): number {
   return BGM_GAIN_DB[key] ?? 1;
 }
 

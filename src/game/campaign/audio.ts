@@ -1,78 +1,93 @@
-/** Original quiet score, synthesized with browser primitives; no unlicensed recordings. */
+import {
+  bgmGain,
+  SFX_VOLUMES,
+  SFX_THROTTLE_MS,
+  SFX_MAX_CONCURRENT,
+} from "../audio";
+import type { Theme } from "./catalog";
+
+/** Use the supplied recordings and existing mix limits; stream one track at a time. */
 export class OathAudio {
-  private context: AudioContext | null = null;
-  private timer: ReturnType<typeof setInterval> | null = null;
-  private step = 0;
-  private act = 1;
+  private bgm: HTMLAudioElement | null = null;
+  private effects = new Set<HTMLAudioElement>();
+  private track = "bgm_village_forest";
   private volume = 0.12;
-  setVolume(v: number) {
-    this.volume = Math.max(0, Math.min(0.3, v));
+  private playing = false;
+  private lastEffect = -Infinity;
+  setVolume(value: number) {
+    this.volume = Math.max(0, Math.min(0.3, value));
+    if (this.bgm)
+      this.bgm.volume = Math.min(1, this.volume * bgmGain(this.track));
   }
-  setAct(act: number) {
-    this.act = act;
-  }
-  private tone(
-    frequency: number,
-    when: number,
-    duration: number,
-    gain: number,
-  ) {
-    const c = this.context;
-    if (!c || !this.volume) return;
-    const osc = c.createOscillator(),
-      env = c.createGain();
-    osc.type = "triangle";
-    osc.frequency.value = frequency;
-    env.gain.setValueAtTime(0, when);
-    env.gain.linearRampToValueAtTime(gain * this.volume, when + 0.04);
-    env.gain.exponentialRampToValueAtTime(0.0001, when + duration);
-    osc.connect(env);
-    env.connect(c.destination);
-    osc.start(when);
-    osc.stop(when + duration + 0.05);
-    osc.onended = () => {
-      osc.disconnect();
-      env.disconnect();
-    };
+  setScene(theme: Theme, combat: boolean) {
+    const track = combat
+      ? "bgm_forest_boss"
+      : theme === "snow"
+        ? "bgm_niflheim_1"
+        : ["ruin", "machine", "volcano"].includes(theme)
+          ? "bgm_cave_1"
+          : theme === "astral"
+            ? "bgm_alfheim_1"
+            : ["garden", "forest", "desert"].includes(theme)
+              ? "bgm_forest_1"
+              : "bgm_village_forest";
+    if (track === this.track) return;
+    this.track = track;
+    if (this.bgm) {
+      this.bgm.src = `/assets/audio/${track}.ogg`;
+      this.setVolume(this.volume);
+      if (this.playing) void this.bgm.play().catch(() => {});
+    }
   }
   async start() {
-    this.context ??= new AudioContext();
-    await this.context.resume();
-    if (this.timer) return;
-    this.timer = setInterval(() => {
-      const c = this.context;
-      if (!c || c.state !== "running") return;
-      const melody =
-        this.act === 1
-          ? [0, 7, 10, 7, 3, 7, 5, 2]
-          : this.act === 2
-            ? [0, 3, 7, 10, 12, 10, 7, 3]
-            : [0, 5, 7, 10, 7, 5, 3, 0];
-      const n = melody[this.step % melody.length];
-      this.tone(220 * 2 ** (n / 12), c.currentTime, 0.9, 0.35);
-      if (this.step % 4 === 0)
-        this.tone(
-          110 * 2 ** ((this.step % 8 === 0 ? 0 : 5) / 12),
-          c.currentTime,
-          2.8,
-          0.3,
-        );
-      this.step++;
-    }, 800);
+    this.playing = true;
+    if (!this.bgm) {
+      this.bgm = new Audio(`/assets/audio/${this.track}.ogg`);
+      this.bgm.loop = true;
+      this.setVolume(this.volume);
+    }
+    if (this.bgm.paused) await this.bgm.play();
   }
   chime() {
-    const c = this.context;
-    if (!c) return;
-    [0, 4, 7].forEach((n, i) =>
-      this.tone(440 * 2 ** (n / 12), c.currentTime + i * 0.08, 0.45, 0.45),
-    );
+    const now = performance.now();
+    if (
+      !this.playing ||
+      !this.volume ||
+      now - this.lastEffect < SFX_THROTTLE_MS ||
+      this.effects.size >= SFX_MAX_CONCURRENT
+    )
+      return;
+    this.lastEffect = now;
+    const sound = new Audio("/assets/audio/sfx_quest.ogg");
+    sound.volume = Math.min(1, this.volume * SFX_VOLUMES.sfx_quest * 2);
+    this.effects.add(sound);
+    const clear = () => {
+      this.effects.delete(sound);
+      sound.onended = null;
+      sound.onerror = null;
+      sound.removeAttribute("src");
+      sound.load();
+    };
+    sound.onended = clear;
+    sound.onerror = clear;
+    void sound.play().catch(clear);
   }
   suspend() {
-    void this.context?.suspend();
+    this.playing = false;
+    this.bgm?.pause();
+    for (const sound of this.effects) {
+      sound.onended = null;
+      sound.onerror = null;
+      sound.pause();
+      sound.removeAttribute("src");
+      sound.load();
+    }
+    this.effects.clear();
   }
   dispose() {
-    if (this.timer) clearInterval(this.timer);
-    this.timer = null;
-    void this.context?.close();
+    this.suspend();
+    this.bgm?.removeAttribute("src");
+    this.bgm?.load();
+    this.bgm = null;
   }
 }

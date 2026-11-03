@@ -11,3 +11,10 @@ The pixel VFX skill and runtime are already vendored under
 Browser MCP configuration is `.mcp.json`; it launches pinned Playwright MCP
 0.0.84 through the project's installed browser. Run
 `npx playwright install chromium` after installing dependencies.
+
+REA 6.8.0 (morluto/rea, MIT) and its bundled `reverse-engineer-anything`
+workflow are installed for this task. The exact installed skill and references
+are copied to `reverse-engineer-anything/`; retain `LICENSE.rea`.
+The project MCP launcher is `scripts/rea-mcp.mjs`, pinned to REA 6.8.0 and
+its supported Node 24.22.1 runtime. They are development tools, not game runtime
+dependencies. MCP initialize/tools-list was verified against the installed server.

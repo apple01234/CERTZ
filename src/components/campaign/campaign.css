@@ -129,6 +129,62 @@
   image-rendering: pixelated;
   vertical-align: middle;
 }
+.oath-objective .oath-location {
+  font-size: 9px;
+  color: #c5b9a4;
+  margin: -8px 0 11px;
+}
+.oath-objective-progress {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin: 0 0 14px;
+  border: 0;
+  background: #444458;
+  accent-color: #dfc38b;
+}
+.oath-objective-progress::-webkit-progress-bar {
+  background: #444458;
+}
+.oath-objective-progress::-webkit-progress-value {
+  background: #dfc38b;
+}
+.oath-objective-progress::-moz-progress-bar {
+  background: #dfc38b;
+}
+.oath-cooldowns {
+  display: flex;
+  gap: 20px;
+  margin-top: 9px;
+  font-size: 9px;
+  color: #bcb8ca;
+}
+.oath-cooldowns b {
+  color: #dfc38b;
+  margin-left: 6px;
+}
+.oath-earned {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 25px;
+  margin-top: 20px;
+  padding: 14px;
+  background: #ddc18b0d;
+  border-top: 1px solid #cbb17a55;
+  border-bottom: 1px solid #cbb17a55;
+  font-size: 11px;
+  color: #ded0b0;
+}
+.oath-earned b {
+  color: #eac980;
+  margin-left: 6px;
+}
+.oath-earned small {
+  flex-basis: 100%;
+  font-size: 8px;
+}
 .oath-title-screen {
   position: absolute;
   inset: 0;
@@ -137,7 +193,7 @@
   justify-content: center;
   gap: clamp(40px, 10vw, 180px);
   padding: 48px;
-  background: linear-gradient(90deg, #141c32e8, #1c2547b5 55%, #192135e0);
+  background: linear-gradient(90deg, #141b2ce8, #1c243b99 55%, #161d2edf);
   overflow: auto;
 }
 .oath-title-copy {
@@ -673,6 +729,23 @@
   text-align: center;
   font-size: 12px;
   box-shadow: 0 5px 25px #131b3299;
+}
+.oath-storage-warning {
+  position: absolute;
+  z-index: 45;
+  top: 70px;
+  right: 16px;
+  max-width: min(350px, calc(100vw - 32px));
+  display: grid;
+  gap: 9px;
+  padding: 16px;
+  border: 1px solid #e8b2a0;
+  background: #422e3df5;
+  color: #f5d8c3;
+  font-size: 11px;
+}
+.oath-storage-warning button {
+  font-size: 11px;
 }
 .oath-touch {
   display: none;

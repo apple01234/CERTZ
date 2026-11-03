@@ -5,7 +5,13 @@ import {
   currentObjective,
   type CampaignProgress,
 } from "./progress";
-import { CAMPAIGN_ASSETS, FAMILY_FRAMES, WORLD_PALETTES } from "./assets";
+import {
+  CAMPAIGN_ASSETS,
+  FAMILY_ART,
+  WORLD_PALETTES,
+  guideArt,
+  bossArt,
+} from "./assets";
 import {
   FAMILIES,
   COSMETICS,
@@ -13,6 +19,15 @@ import {
   type ChapterDefinition,
 } from "./catalog";
 import { createDefense, stepDefense, type Defense } from "./defense";
+import { DECOR_BUDGET, DECOR_SETS, type ObjTag } from "@/game/decorObjects";
+import {
+  buildCampaignMap,
+  canWalkAt,
+  walkingRoute,
+  TILE_SIZE,
+  MAP_COLS,
+  type CampaignMap,
+} from "./world";
 import {
   createBattle,
   stepBattle,
@@ -42,12 +57,21 @@ const TARGET_SPOTS = [
   { x: 765, y: 470 },
   { x: 400, y: 510 },
 ];
+const DECOR_BY_KEY = new Map(
+  Object.values(DECOR_SETS)
+    .flat()
+    .map((item) => [item.key, item]),
+);
+const ART_BY_KEY = new Map(CAMPAIGN_ASSETS.map((item) => [item.key, item]));
 export class CampaignScene extends Phaser.Scene {
   private defense: Defense | null = null;
   private defenseSprites: Phaser.GameObjects.Sprite[] = [];
   private progress!: CampaignProgress;
   private player!: Phaser.GameObjects.Sprite;
-  private dynamicLayer!: Phaser.GameObjects.Container;
+  private dynamicLayer!: Phaser.GameObjects.Group;
+  private scenery!: Phaser.GameObjects.Group;
+  private map!: CampaignMap;
+  private route: { x: number; y: number }[] = [];
   private worldLayer!: Phaser.GameObjects.Container;
   private effects!: Phaser.GameObjects.Graphics;
   private controls!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -70,13 +94,23 @@ export class CampaignScene extends Phaser.Scene {
   private remoteSprites = new Map<string, Phaser.GameObjects.Sprite>();
   private walkGoal: { x: number; y: number } | null = null;
   private skillFx!: Phaser.GameObjects.Sprite;
+  private damageLabel?: Phaser.GameObjects.Text;
+  private lastBossHp = 0;
+  private damageUntil = 0;
   constructor(progress: CampaignProgress) {
     super("MemoryOath");
     this.progress = progress;
   }
   preload() {
-    for (const a of Object.values(CAMPAIGN_ASSETS))
-      this.load.spritesheet(a.key, a.url, { frameWidth: 16, frameHeight: 16 });
+    for (const a of CAMPAIGN_ASSETS) {
+      if (a.frameWidth && a.frameHeight)
+        this.load.spritesheet(a.key, a.url, {
+          frameWidth: a.frameWidth,
+          frameHeight: a.frameHeight,
+          endFrame: 0,
+        });
+      else this.load.image(a.key, a.url);
+    }
     this.load.atlas(
       "oath-skill",
       "/assets/campaign/skill-sunburst.png",
@@ -91,7 +125,8 @@ export class CampaignScene extends Phaser.Scene {
   }
   create() {
     this.worldLayer = this.add.container(0, 0);
-    this.dynamicLayer = this.add.container(0, 0);
+    this.dynamicLayer = this.add.group();
+    this.scenery = this.add.group();
     this.effects = this.add.graphics().setDepth(1000);
     this.skillFx = this.add
       .sprite(512, 230, "oath-skill", "sunburst 0")
@@ -111,8 +146,8 @@ export class CampaignScene extends Phaser.Scene {
       });
     this.skillFx.on("animationcomplete", () => this.skillFx.setVisible(false));
     this.player = this.add
-      .sprite(512, 485, "oath-dungeon", FAMILY_FRAMES[this.progress.family])
-      .setScale(3)
+      .sprite(512, 485, `oath-${FAMILY_ART[this.progress.family]}`)
+      .setScale(0.8)
       .setDepth(800);
     const keyboard = this.input.keyboard!;
     this.controls = keyboard.addKeys({
@@ -140,6 +175,7 @@ export class CampaignScene extends Phaser.Scene {
           this.held = {};
           this.input.keyboard?.resetKeys();
           this.walkGoal = null;
+          this.route = [];
         }
       }
       if (c.reducedMotion !== undefined) this.reducedMotion = c.reducedMotion;
@@ -200,11 +236,19 @@ export class CampaignScene extends Phaser.Scene {
         Object.values(this.controls).forEach((k) => k.destroy());
     });
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      if (!this.pauseInput && !this.battle)
-        this.walkGoal = {
+      if (!this.pauseInput && !this.battle) {
+        const goal = {
           x: Phaser.Math.Clamp(pointer.worldX, 60, 964),
-          y: Phaser.Math.Clamp(pointer.worldY, 170, 550),
+          y: Phaser.Math.Clamp(pointer.worldY, 142, 550),
         };
+        this.route = walkingRoute(this.map, this.player, goal);
+        this.walkGoal = this.route.shift() ?? null;
+        if (!this.walkGoal)
+          EventBus.emit(
+            "campaign:error",
+            "벽이나 물은 건널 수 없습니다. 열린 길을 선택하세요.",
+          );
+      }
     });
     const resize = () => {
       const camera = this.cameras.main;
@@ -226,7 +270,7 @@ export class CampaignScene extends Phaser.Scene {
     EventBus.emit("campaign:ready");
   }
   private tintPlayer() {
-    this.player.setFrame(FAMILY_FRAMES[this.progress.family]);
+    this.player.setTexture(`oath-${FAMILY_ART[this.progress.family]}`);
     const cosmetic = COSMETICS.find((c) => c.id === this.progress.equipped);
     this.player.setTint(cosmetic?.color ?? 0xffffff);
   }
@@ -234,6 +278,8 @@ export class CampaignScene extends Phaser.Scene {
   startTransition() {
     this.pauseInput = true;
     this.battle = null;
+    this.walkGoal = null;
+    this.route = [];
     const cam = this.cameras.main;
     if (!this.reducedMotion) cam.fadeOut(180, 8, 10, 23);
     this.time.delayedCall(this.reducedMotion ? 0 : 185, () => {
@@ -246,83 +292,181 @@ export class CampaignScene extends Phaser.Scene {
   }
   private drawWorld(override?: ChapterDefinition) {
     this.worldLayer.removeAll(true);
+    this.scenery.clear(true, true);
     const chapter = override ?? currentChapter(this.progress),
       palette = WORLD_PALETTES[chapter.theme],
-      outdoor = ["garden", "forest", "snow", "desert"].includes(chapter.theme);
-    const ground = this.add.graphics();
-    ground.fillStyle(palette[0]);
-    ground.fillRect(0, 0, 1024, 640);
-    ground.fillStyle(palette[1], 0.38);
-    for (let y = 32; y < 608; y += 16)
-      for (let x = 32; x < 992; x += 16)
-        if ((x / 16 + y / 16) % 2 === 0) ground.fillRect(x, y, 16, 16);
-    ground.fillStyle(0x202535, 0.25);
-    ground.fillRect(80, 112, 864, 440);
-    ground.lineStyle(2, palette[2], 0.24);
-    ground.strokeRect(80, 112, 864, 440);
-    ground.fillStyle(palette[2], 0.12);
-    ground.fillRect(486, 180, 52, 390);
-    ground.fillRect(180, 374, 660, 38);
-    this.worldLayer.add(ground);
+      outdoor = ["garden", "forest", "snow", "desert"].includes(chapter.theme),
+      harbor = chapter.theme === "harbor";
+    const budget =
+      DECOR_BUDGET[harbor ? "town" : outdoor ? "forest" : "dungeon"];
+    const placed: Record<ObjTag, number> = {
+      big: 0,
+      wall: 0,
+      floor: 0,
+      small: 0,
+    };
+    const prop = (key: string, x: number, y: number, scale = 2) => {
+      const object = this.add.image(x, y, `oath-${key}`).setScale(scale);
+      const sourceKey = ART_BY_KEY.get(`oath-${key}`)
+        ?.url.split("/")
+        .pop()
+        ?.replace(/\.(png|webp)$/, "");
+      const decor = sourceKey ? DECOR_BY_KEY.get(sourceKey) : undefined;
+      if (decor) {
+        // Reuse WorldScene.placeDecor's budget and reserved-route rules on the smaller story map.
+        const blocked = [
+          ...TARGET_SPOTS,
+          { x: 512, y: 300 },
+          { x: 512, y: 485 },
+        ].some(
+          (p) =>
+            Math.hypot(p.x - x, p.y - y) <
+            Math.min(object.displayWidth, object.displayHeight) / 2 + 38,
+        );
+        if (blocked || placed[decor.tag] >= budget[decor.tag])
+          object.setVisible(false);
+        else placed[decor.tag]++;
+      }
+      const terrain =
+        key.startsWith("floor-") ||
+        key.startsWith("wall-") ||
+        ["path", "water", "lava"].includes(key);
+      if (terrain) this.worldLayer.add(object);
+      else {
+        object.setDepth(y + object.displayHeight / 2);
+        this.scenery.add(object);
+      }
+      return object;
+    };
+    // Real floor tiles and material transitions replace the old checkerboard room.
+    this.map = buildCampaignMap(chapter.theme, chapter.episode, !!chapter.boss);
+    this.map.ground.forEach((key, index) =>
+      prop(
+        key,
+        (index % MAP_COLS) * TILE_SIZE,
+        Math.floor(index / MAP_COLS) * TILE_SIZE,
+        2,
+      )
+        .setOrigin(0)
+        .setTint(0xc8c2be),
+    );
+    this.map.structures.forEach((key, index) => {
+      if (key)
+        prop(
+          key,
+          (index % MAP_COLS) * TILE_SIZE,
+          Math.floor(index / MAP_COLS) * TILE_SIZE,
+          2,
+        ).setOrigin(0);
+    });
+    const trim = this.add.graphics();
+    trim.fillStyle(0x101420, 0.25);
+    trim.fillRect(0, 0, 1024, 112);
+    trim.fillRect(0, 568, 1024, 72);
+    this.worldLayer.add(trim);
     if (outdoor) {
-      for (let i = 0; i < 30; i++) {
-        const x = 40 + (i % 15) * 67,
-          y = i < 15 ? 88 : 583;
-        const tree = this.add
-          .image(x, y, "oath-town", [5, 6, 7, 8][i % 4])
-          .setScale(3);
-        this.worldLayer.add(tree);
+      for (let i = 0; i < 18; i++) {
+        const x = 36 + i * 58;
+        if (i % 2 === 0)
+          prop(
+            i % 3 ? "garden-tree" : "garden-tree-gold",
+            x,
+            90 - (i % 2) * 18,
+            1.1,
+          );
+        if ((i < 7 || i > 10) && i % 2)
+          prop(i % 3 ? "garden-tree-gold" : "garden-tree", x, 585, 1);
+      }
+      prop("fountain", 512, 195, 2.7);
+      prop("town-house", 220, 170, 1.2);
+      prop("town-stall", 805, 180, 1.1);
+      for (const [x, y] of [
+        [130, 280],
+        [870, 330],
+        [200, 490],
+        [900, 505],
+      ])
+        prop("garden-tree", x, y, 1.3);
+      for (const x of [365, 655]) prop("garden-bush", x, 565, 1.4);
+      for (const x of [115, 910]) {
+        prop("statue", x, 345, 2.5);
+        prop("tree-gold", x, 455, 2.8);
+      }
+    } else if (harbor) {
+      prop("town-house", 265, 110, 1.3);
+      prop("town-stall", 790, 125, 1.3);
+      for (const x of [195, 825]) {
+        prop("town-barrel", x, 340, 1.4);
+        prop("town-barrel", x + 42, 520, 1);
+        prop("town-bench", x, 220, 1.1);
       }
     } else {
-      for (let i = 0; i < 22; i++) {
-        const x = 65 + i * 43;
-        this.worldLayer.add(
-          this.add
-            .image(x, 95, "oath-dungeon", chapter.theme === "machine" ? 17 : 65)
-            .setScale(3),
-        );
-        this.worldLayer.add(
-          this.add.image(x, 580, "oath-dungeon", 72).setScale(3),
-        );
+      const wall =
+        chapter.theme === "machine"
+          ? "wall-machine"
+          : chapter.theme === "desert"
+            ? "wall-desert"
+            : chapter.theme === "ruin"
+              ? "wall-ruin"
+              : "wall-castle";
+      for (let x = 0; x < 1024; x += 48) {
+        prop(wall, x, 24, 1.5).setOrigin(0);
+        prop(wall, x, 72, 1.5).setOrigin(0).setTint(0xc5bdab);
+        prop(wall, x, 590, 1.5).setOrigin(0).setTint(0x777584);
+      }
+      for (const x of [24, 976])
+        for (let y = 120; y < 590; y += 48) prop(wall, x, y, 1.5).setOrigin(0);
+      if (chapter.theme === "castle") {
+        const carpet = this.add.graphics();
+        carpet.fillStyle(0x4a263a, 0.92);
+        carpet.fillRect(447, 127, 130, 420);
+        carpet.lineStyle(2, 0xc19c63, 0.8);
+        carpet.strokeRect(453, 133, 118, 408);
+        this.worldLayer.add(carpet);
+        for (const x of [172, 292, 732, 852]) {
+          prop("library-shelf", x, 175, 1.6);
+          prop("library-shelf", x, 535, 1.4);
+        }
+        for (const x of [190, 835]) {
+          prop("library-table", x, 365, 1);
+          prop("book", x - 25, 345, 0.7);
+          prop("library-candle", x + 22, 342, 0.6);
+        }
+      }
+      for (const x of [100, 920]) {
+        prop("pillar", x, 200, 2.7);
+        prop(chapter.theme === "ruin" ? "column" : "statue", x, 440, 2.5);
+      }
+      prop("door", 512, 90, 2.4);
+      if (chapter.theme === "machine") {
+        for (const x of [180, 840])
+          for (const y of [215, 485]) prop("armory", x, y, 3);
+      } else if (chapter.theme !== "castle") {
+        prop("altar", 512, 195, 2.5);
       }
     }
-    // Architectural silhouettes stay on the same 16px grid as the character tiles.
-    for (let i = 0; i < 6; i++) {
-      const x = 120 + (i % 3) * 390,
-        y = i < 3 ? 195 : 495;
-      const prop = this.add
-        .image(
-          x,
-          y,
-          outdoor ? "oath-town" : "oath-dungeon",
-          outdoor ? 65 : chapter.theme === "castle" ? 63 : 66,
-        )
-        .setScale(3);
-      this.worldLayer.add(prop);
+    const light = this.add.graphics();
+    for (const x of [144, 880]) {
+      for (const [radius, alpha] of [
+        [100, 0.025],
+        [65, 0.045],
+        [28, 0.08],
+      ]) {
+        light.fillStyle(palette[2], alpha);
+        light.fillCircle(x, 265, radius);
+      }
     }
-    const title = this.add
-      .text(512, 120, chapter.location, {
-        fontFamily: "Galmuri11, monospace",
-        fontSize: "16px",
-        color: "#e7d5a4",
-        stroke: "#1c2236",
-        strokeThickness: 4,
-      })
-      .setOrigin(0.5);
-    this.worldLayer.add(title);
-    for (let i = 0; i < 18; i++) {
-      const x = 100 + ((i * 149) % 830),
-        y = 180 + ((i * 97) % 330);
-      const s = this.add.rectangle(x, y, 2, 2, palette[2], 0.4);
-      this.worldLayer.add(s);
-    }
+    light.fillStyle(0x080e1c, 0.22);
+    light.fillRect(0, 0, 65, 640);
+    light.fillRect(960, 0, 64, 640);
+    this.worldLayer.add(light);
   }
   private rebuildTargets() {
     this.defense = null;
     this.defenseSprites.forEach((s) => s.destroy());
     this.defenseSprites = [];
     this.effects.clear();
-    this.dynamicLayer.removeAll(true);
+    this.dynamicLayer.clear(true, true);
     this.targetNodes = [];
     const objective = currentObjective(this.progress);
     if (!objective) return;
@@ -334,10 +478,10 @@ export class CampaignScene extends Phaser.Scene {
           .sprite(
             point.x,
             point.y,
-            "oath-dungeon",
-            108 + (currentChapter(this.progress).episode % 8),
+            `oath-${bossArt(currentChapter(this.progress))}`,
           )
-          .setScale(5),
+          .setScale(3.8)
+          .setDepth(point.y + 60),
       );
       this.dynamicLayer.add(
         this.add
@@ -353,7 +497,8 @@ export class CampaignScene extends Phaser.Scene {
               strokeThickness: 4,
             },
           )
-          .setOrigin(0.5),
+          .setOrigin(0.5)
+          .setDepth(900),
       );
       return;
     }
@@ -367,21 +512,16 @@ export class CampaignScene extends Phaser.Scene {
       const ring = this.add.graphics();
       ring.lineStyle(2, 0xf0ce85, 0.8);
       ring.strokeEllipse(spot.x, spot.y + 20, 48, 18);
+      ring.setDepth(spot.y);
       this.dynamicLayer.add(ring);
       const sprite = this.add
         .image(
           spot.x,
           spot.y,
-          objective.kind === "talk" ? "oath-dungeon" : "oath-town",
-          objective.kind === "talk"
-            ? 85 + i
-            : objective.kind === "puzzle"
-              ? 121
-              : objective.kind === "collect"
-                ? 118
-                : 101,
+          `oath-${objective.kind === "talk" ? guideArt(label) : objective.kind === "puzzle" ? "rune" : objective.kind === "defend" ? "altar" : objective.kind === "collect" ? "potion" : i % 2 ? "scroll" : "book"}`,
         )
-        .setScale(3);
+        .setScale(objective.kind === "talk" ? 0.85 : 1.2)
+        .setDepth(spot.y + 32);
       this.dynamicLayer.add(sprite);
       this.dynamicLayer.add(
         this.add
@@ -392,14 +532,15 @@ export class CampaignScene extends Phaser.Scene {
             backgroundColor: "#22283c",
             padding: { x: 7, y: 4 },
           })
-          .setOrigin(0.5),
+          .setOrigin(0.5)
+          .setDepth(900),
       );
     });
   }
   private beginBoss() {
     const chapter = currentChapter(this.progress);
     if (!chapter.boss) return;
-    this.dynamicLayer.removeAll(true);
+    this.dynamicLayer.clear(true, true);
     this.battle = createBattle(
       crypto.randomUUID(),
       chapter.id,
@@ -476,6 +617,7 @@ export class CampaignScene extends Phaser.Scene {
         this.effects.clear();
         this.player.setAlpha(1);
         EventBus.emit("campaign:boss-won");
+        this.startTransition();
       }
     } else if (!this.pauseInput) {
       if (this.walkGoal && Math.abs(vector.x) + Math.abs(vector.y) < 0.1) {
@@ -483,26 +625,32 @@ export class CampaignScene extends Phaser.Scene {
           dy = this.walkGoal.y - this.player.y,
           d = Math.hypot(dx, dy);
         if (d < 8) {
-          this.walkGoal = null;
-          this.interact();
+          this.walkGoal = this.route.shift() ?? null;
+          if (!this.walkGoal) this.interact();
         } else {
           vector.x = dx / d;
           vector.y = dy / d;
         }
-      } else if (Math.abs(vector.x) + Math.abs(vector.y) > 0.1)
+      } else if (Math.abs(vector.x) + Math.abs(vector.y) > 0.1) {
         this.walkGoal = null;
+        this.route = [];
+      }
       const length = Math.hypot(vector.x, vector.y) || 1,
         scale = Math.min(delta, 50) * 0.2;
-      this.player.x = Phaser.Math.Clamp(
+      const nextX = Phaser.Math.Clamp(
         this.player.x + (vector.x / Math.max(1, length)) * scale,
         60,
         964,
       );
-      this.player.y = Phaser.Math.Clamp(
+      const nextY = Phaser.Math.Clamp(
         this.player.y + (vector.y / Math.max(1, length)) * scale,
-        170,
+        142,
         550,
       );
+      if (canWalkAt(this.map, { x: nextX, y: this.player.y }))
+        this.player.x = nextX;
+      if (canWalkAt(this.map, { x: this.player.x, y: nextY }))
+        this.player.y = nextY;
       if (vector.x) this.player.setFlipX(vector.x < 0);
     }
     if (this.defense && !this.pauseInput) {
@@ -516,12 +664,15 @@ export class CampaignScene extends Phaser.Scene {
         let sprite = this.defenseSprites[i];
         if (!sprite) {
           sprite = this.add
-            .sprite(enemy.x, enemy.y, "oath-dungeon", 109)
-            .setScale(3)
+            .sprite(enemy.x, enemy.y, "oath-minion")
+            .setScale(2)
             .setDepth(780);
           this.defenseSprites.push(sprite);
         }
-        sprite.setPosition(enemy.x, enemy.y).setVisible(true);
+        sprite
+          .setPosition(enemy.x, enemy.y)
+          .setDepth(enemy.y + 32)
+          .setVisible(true);
       });
       if (d.status !== "defending") {
         this.defense = null;
@@ -542,6 +693,7 @@ export class CampaignScene extends Phaser.Scene {
         )
       : null;
     this.nearby = nearest?.label ?? null;
+    this.player.setDepth(this.player.y + 32);
     if (_time - this.emitAt > 80) {
       this.emitAt = _time;
       EventBus.emit("campaign:view", {
@@ -588,18 +740,30 @@ export class CampaignScene extends Phaser.Scene {
     this.effects.clear();
     if (this.battleVisualId !== b.id) {
       this.battleVisualId = b.id;
-      this.dynamicLayer.removeAll(true);
+      this.dynamicLayer.clear(true, true);
       this.remoteSprites.clear();
       this.lastHit = 0;
+      this.lastBossHp = b.boss.hp;
       this.bossSprite = this.add
         .sprite(
           b.boss.x,
           b.boss.y,
-          "oath-dungeon",
-          108 + (currentChapter(this.progress).episode % 8),
+          `oath-${bossArt(CHAPTER_BY_ID[b.chapterId])}`,
         )
-        .setScale(5);
+        .setScale(3.8)
+        .setDepth(b.boss.y + 60);
       this.dynamicLayer.add(this.bossSprite);
+      this.damageLabel = this.add
+        .text(b.boss.x, b.boss.y - 70, "", {
+          fontFamily: "Galmuri11",
+          fontSize: "22px",
+          color: "#f5d79c",
+          stroke: "#201a28",
+          strokeThickness: 5,
+        })
+        .setOrigin(0.5)
+        .setDepth(950);
+      this.dynamicLayer.add(this.damageLabel);
       this.battleLabel = this.add
         .text(512, 165, "", {
           fontFamily: "Galmuri11",
@@ -607,7 +771,8 @@ export class CampaignScene extends Phaser.Scene {
           backgroundColor: "#23283c",
           padding: { x: 8, y: 4 },
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(900);
       this.dynamicLayer.add(this.battleLabel);
       this.sealLabel = this.add
         .text(512, 340, "각자 하나씩 · 세 봉인 위에 서세요", {
@@ -617,7 +782,8 @@ export class CampaignScene extends Phaser.Scene {
           backgroundColor: "#1c263c",
         })
         .setOrigin(0.5)
-        .setVisible(false);
+        .setVisible(false)
+        .setDepth(900);
       this.dynamicLayer.add(this.sealLabel);
     }
     this.sealLabel?.setVisible(b.hazards.some((h) => h.kind === "seals"));
@@ -652,11 +818,26 @@ export class CampaignScene extends Phaser.Scene {
       }
     }
     const weak = b.time >= b.boss.weakFrom && b.time < b.boss.weakUntil;
+    if (b.boss.hp < this.lastBossHp) {
+      this.damageLabel?.setText(
+        `${weak ? "빈틈! " : ""}${Math.round(this.lastBossHp - b.boss.hp)}`,
+      );
+      this.damageUntil = b.time + 420;
+    }
+    this.lastBossHp = b.boss.hp;
+    this.damageLabel
+      ?.setVisible(b.time < this.damageUntil)
+      .setPosition(
+        b.boss.x,
+        b.boss.y -
+          75 -
+          (this.reducedMotion
+            ? 0
+            : Math.max(0, 420 - (this.damageUntil - b.time)) / 24),
+      );
     this.bossSprite
       ?.setPosition(b.boss.x, b.boss.y)
-      .setTint(
-        weak ? 0xe9cb89 : (CHAPTER_BY_ID[b.chapterId].boss?.color ?? 0xffffff),
-      );
+      .setTint(weak ? 0xffdf9b : 0xffffff);
     this.battleLabel
       ?.setText(weak ? "빈틈! 지금 공격하세요" : "공격 예고를 확인하세요")
       .setColor(weak ? "#efdba7" : "#e5b6be");
@@ -667,17 +848,24 @@ export class CampaignScene extends Phaser.Scene {
         let sprite = this.remoteSprites.get(p.id);
         if (!sprite) {
           sprite = this.add
-            .sprite(p.x, p.y, "oath-dungeon", FAMILY_FRAMES[p.family])
-            .setScale(3);
+            .sprite(p.x, p.y, `oath-${FAMILY_ART[p.family]}`)
+            .setScale(0.8);
           this.remoteSprites.set(p.id, sprite);
           this.dynamicLayer.add(sprite);
         }
-        sprite.setPosition(p.x, p.y).setAlpha(p.hp <= 0 ? 0.3 : 1);
+        sprite
+          .setPosition(p.x, p.y)
+          .setDepth(p.y + 32)
+          .setAlpha(p.hp <= 0 ? 0.3 : 1);
       }
       this.effects.fillStyle(0x182438);
       this.effects.fillRect(p.x - 21, p.y + 29, 42, 5);
       this.effects.fillStyle(0xa4d2a2);
       this.effects.fillRect(p.x - 21, p.y + 29, (42 * p.hp) / p.maxHp, 5);
+      if (p.dodgeAt > b.time + 930) {
+        this.effects.lineStyle(2, 0x9bd9df, 0.8);
+        this.effects.strokeEllipse(p.x, p.y + 25, 58, 22);
+      }
       if (p.lastHit > b.time - 130) {
         this.effects.lineStyle(3, FAMILIES[p.family].color, 1);
         this.effects.lineBetween(p.x, p.y, b.boss.x, b.boss.y);

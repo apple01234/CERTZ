@@ -39,6 +39,6 @@ Mark deliberate ceilings with a `ponytail:` comment naming the upgrade path.
 - 사용자 최신 지시가 과거의 ‘기존 9챕터 유지’ 규칙보다 우선한다. **9개의 바다를 새 게임에 되살리지 않는다.**
 - 진입점: `src/components/campaign/CampaignRoot.tsx`. 정본·진행·전투: `src/game/campaign/`. 이전 WorldScene/데이터는 호환성 검사 및 과거 소스이며 새 게임 진입점이 아니다.
 - 초기 15화 정본, 2부 10장, 새 각색 3부 9장. 후반 하루 리부트와 혼합 금지.
-- 에셋은 Kenney Tiny Town/Tiny Dungeon 16px, 자체 픽셀 UI, 검증된 pixelfx로 통일. `campaign-assets.mjs` 배포 허용 목록을 유지한다.
+- 에셋은 사용자 Drive 소스의 SPUM 캐릭터·원본 초상·숲/마을/던전 소품과 DCSS 32px 지형/보스를 사용한다. Kenney Tiny Town/Tiny Dungeon을 새 캠페인에 다시 연결하지 않는다. 기존 `DECOR_SETS`/`DECOR_BUDGET`와 `npcportrait/_map.json`을 재사용하고 `campaign-assets.mjs` 배포 허용 목록을 유지한다.
 - 구 저장 키/계정 자산은 읽기 전용 보관. 새 캠페인의 저장·거래·랭킹·구매 대장은 `memory-oath-v1`로 분리한다.
 - 새 캠페인 테스트: `npm run test:campaign`, 브라우저: `npm run test:campaign:browser`. 온라인 전투는 별도 Node 24 서버가 판정한다.

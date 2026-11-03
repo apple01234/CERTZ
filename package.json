@@ -18,7 +18,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
-    "test:campaign": "node --test tests/campaign/*.test.mjs",
+    "test:campaign": "node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs --test tests/campaign/*.test.mjs",
     "campaign:server": "node multiplayer/campaign/server.mjs",
     "test:campaign:browser": "node scripts/playtest-campaign.mjs"
   },

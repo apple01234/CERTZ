@@ -69,6 +69,7 @@ import {
 } from "@/game/campaign/storage";
 import { mountCampaign, type CampaignViewState } from "@/game/campaign/Scene";
 import { OathAudio } from "@/game/campaign/audio";
+import { FAMILY_ART, guideArt, portraitSource } from "@/game/campaign/assets";
 import { purchaseCosmetic, restoreCosmetics } from "@/game/campaign/purchases";
 import type { Battle, BattleInput } from "@/game/campaign/battle";
 import type {
@@ -108,14 +109,13 @@ function Portrait({
   family = "warrior",
   size = 48,
   tint,
+  art,
 }: {
   family?: Family;
   size?: number;
   tint?: number;
+  art?: string;
 }) {
-  const frame = { warrior: 84, ranger: 85, mage: 87, thief: 86, pirate: 88 }[
-    family
-  ];
   return (
     <span
       aria-hidden="true"
@@ -123,9 +123,10 @@ function Portrait({
       style={{
         width: size,
         height: size,
-        backgroundImage: "url('/assets/tiles/kenney_tinydungeon.png')",
-        backgroundSize: `${size * 12}px ${size * 11}px`,
-        backgroundPosition: `-${(frame % 12) * size}px -${Math.floor(frame / 12) * size}px`,
+        backgroundImage: `url('${portraitSource(art ?? FAMILY_ART[family])}')`,
+        backgroundSize: "contain",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
         ...(tint
           ? { filter: `drop-shadow(0 0 6px #${tint.toString(16)})` }
           : {}),
@@ -181,6 +182,7 @@ export default function CampaignRoot() {
   dialogueRef.current = dialogue;
   const music = useRef<OathAudio | null>(null);
   const [volume, setVolume] = useState(0.12);
+  const [saveError, setSaveError] = useState(false);
   const [reduced, setReduced] = useState(
     () =>
       typeof matchMedia !== "undefined" &&
@@ -190,6 +192,7 @@ export default function CampaignRoot() {
     objective = currentObjective(progress),
     done = !objective,
     paused = !playing || !!dialogue || !!panel || showLog;
+  const inBattle = !!(onlineBattle ?? view.battle);
   const playingRef = useRef(playing);
   playingRef.current = playing;
   const pausedRef = useRef(paused);
@@ -198,7 +201,9 @@ export default function CampaignRoot() {
     const nextSlots = putCharacter(next, slotsRef.current);
     try {
       writeSlots(nextSlots);
+      setSaveError(false);
     } catch {
+      setSaveError(true);
       setNotice("기기 저장에 실패했습니다. 설정에서 저장 파일을 내보내세요.");
     }
     slotsRef.current = nextSlots;
@@ -213,11 +218,19 @@ export default function CampaignRoot() {
       if (next !== prev) {
         commit(next);
         if (next.completed.length > prev.completed.length) {
-          EventBus.emit("reward:show", {
-            title: "기억을 새겼습니다",
-            lines: [{ text: "서약 주화 +60 · 기억의 결정 +1" }],
-          });
+          music.current?.chime();
           setNotice("기억을 새겼습니다 · 서약 주화 +60 · 기억의 결정 +1");
+        } else if (
+          (action.kind === "interact" || action.kind === "boss-won") &&
+          (next.objective > prev.objective ||
+            next.targets.length > prev.targets.length)
+        ) {
+          music.current?.chime();
+          setNotice(
+            next.objective > prev.objective
+              ? `목표 달성 · ${currentObjective(next)?.title ?? "기억을 새겼습니다"}`
+              : `${next.targets.length} / ${currentObjective(next)?.targets.length ?? 0} · ${action.kind === "interact" ? action.target : "전선 돌파"}`,
+          );
         }
       }
     },
@@ -464,6 +477,7 @@ export default function CampaignRoot() {
       return;
     }
     const p = newCampaign(name, family, crypto.randomUUID());
+    void music.current?.start().catch(() => {});
     commit(p);
     setPlaying(true);
     setPanel(null);
@@ -655,11 +669,11 @@ export default function CampaignRoot() {
     };
   }, []);
   useEffect(() => {
-    music.current?.setAct(chapter.act);
+    music.current?.setScene(chapter.theme, inBattle);
     music.current?.setVolume(volume);
     if (playing) void music.current?.start().catch(() => {});
     else music.current?.suspend();
-  }, [chapter.act, volume, playing]);
+  }, [chapter.theme, volume, playing, inBattle]);
   useEffect(() => {
     const overlay =
       document.querySelector<HTMLElement>(
@@ -707,6 +721,15 @@ export default function CampaignRoot() {
         ref={host}
         aria-label="기억의 서약 탐험 지도"
       />
+      {saveError && (
+        <div className="oath-storage-warning" role="alert">
+          <strong>기기 저장에 실패했습니다</strong>
+          <span>현재 진행을 보관하려면 저장 파일을 내보내세요.</span>
+          <button onClick={() => openPanel("settings")}>
+            저장 파일 보관하기
+          </button>
+        </div>
+      )}
       {!playing ? (
         <section className="oath-title-screen">
           <div className="oath-title-copy">
@@ -803,17 +826,18 @@ export default function CampaignRoot() {
             </button>
             <nav aria-label="게임 메뉴">
               <button
+                aria-label="수첩"
                 onClick={() => openPanel("journal")}
                 title="기억 수첩 (J)"
               >
                 <BookOpen size={18} />
                 <span>수첩</span>
               </button>
-              <button onClick={() => openPanel("wardrobe")}>
+              <button aria-label="외형" onClick={() => openPanel("wardrobe")}>
                 <Crown size={18} />
                 <span>외형</span>
               </button>
-              <button onClick={() => openPanel("online")}>
+              <button aria-label="연합" onClick={() => openPanel("online")}>
                 <Users size={18} />
                 <span>연합</span>
               </button>
@@ -827,6 +851,13 @@ export default function CampaignRoot() {
               {ACT_NAMES[chapter.act]} · {chapter.episode}장
             </span>
             <h2>{chapter.title}</h2>
+            <small className="oath-location">{chapter.location}</small>
+            <progress
+              className="oath-objective-progress"
+              aria-label="현재 장 진행"
+              max={chapter.objectives.length}
+              value={progress.objective}
+            />
             <div>
               <Compass size={16} />
               <span>{objective?.title ?? "기억을 새겼습니다"}</span>
@@ -886,6 +917,24 @@ export default function CampaignRoot() {
                 <Heart size={13} /> {me?.hp ?? 0} / 100　·　공격 Space　원소술
                 K　회피 Shift　{battle.mode === "coop" ? "구조 E" : ""}
               </small>
+              <div className="oath-cooldowns" aria-label="전투 기술 상태">
+                <span>
+                  원소술 K{" "}
+                  <b>
+                    {me && me.skillAt > battle.time
+                      ? `${((me.skillAt - battle.time) / 1000).toFixed(1)}초`
+                      : "준비"}
+                  </b>
+                </span>
+                <span>
+                  회피 Shift{" "}
+                  <b>
+                    {me && me.dodgeAt > battle.time
+                      ? `${((me.dodgeAt - battle.time) / 1000).toFixed(1)}초`
+                      : "준비"}
+                  </b>
+                </span>
+              </div>
             </div>
           )}
           {!paused && !battle && view.nearby && (
@@ -910,6 +959,15 @@ export default function CampaignRoot() {
                   : "우리의 서약은 계속됩니다"}
               </h2>
               <p>{chapter.memory}</p>
+              <div className="oath-earned" aria-label="이 장의 최초 완료 보상">
+                <span>
+                  서약 주화 <b>+60</b>
+                </span>
+                <span>
+                  기억의 결정 <b>+1</b>
+                </span>
+                <small>최초 완료 보상 · 재방문 시 중복 지급되지 않습니다</small>
+              </div>
               <div className="oath-choice">
                 <button
                   className={
@@ -1078,6 +1136,7 @@ export default function CampaignRoot() {
         >
           <div className="oath-dialogue-portrait">
             <Portrait
+              art={guideArt(dialogue.lines[dialogue.index].speaker)}
               family={
                 dialogue.lines[dialogue.index].speaker === chapter.guide
                   ? "mage"
@@ -1611,9 +1670,10 @@ export default function CampaignRoot() {
                   </p>
                   <hr />
                   <p className="oath-small">
-                    에셋: Kenney Tiny Town / Tiny Dungeon (CC0), pixelfx (MIT).
-                    모든 월드·인물은 16px 픽셀 스타일로 통일합니다. 초상과
-                    아이콘도 같은 아틀라스를 사용합니다.
+                    사용자 제공 에셋: SPUM 캐릭터·초상, 기존 숲·마을·던전 소품,
+                    Dungeon Crawl Stone Soup 타일·보스(CC0), pixelfx(MIT).
+                    인물과 초상은 같은 원본을 사용하고 최근접 픽셀 렌더링을
+                    유지합니다.
                   </p>
                   <a
                     href="https://github.com/apple01234/CERTZ"

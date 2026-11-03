@@ -31,12 +31,21 @@ try {
   });
   const page = await context.newPage();
   page.on("pageerror", (e) => errors.push(e.message));
+  page.on("response", (r) => {
+    if (r.url().includes("/assets/") && r.status() >= 400)
+      errors.push(`Asset ${r.status()}: ${r.url()}`);
+  });
   await page.addInitScript(() => {
     if (!localStorage.getItem("sertz_save_v2"))
       localStorage.setItem("sertz_save_v2", ' {"stage":"forest1", "lv":99} ');
   });
   await page.goto(base);
   await page.getByRole("button", { name: "서약을 시작하다" }).waitFor();
+  await page.waitForFunction(
+    () =>
+      document.querySelector(".oath-start-card > .oath-primary")?.disabled ===
+      false,
+  );
   await page.screenshot({ path: `${output}/title.png` });
   await page.getByLabel("캐릭터 이름").fill("별의증인");
   await page.getByRole("button", { name: "서약을 시작하다" }).click();
@@ -76,6 +85,7 @@ try {
   assert.equal(p.coins, 60);
   assert.equal(p.inventory["memory-fragment"], 1);
   await page.screenshot({ path: `${output}/chapter-complete.png` });
+  assert.equal(await page.locator(".oath-earned").count(), 1);
   await page.reload();
   await page.getByRole("button", { name: /별의증인/ }).click();
   await page
@@ -164,6 +174,12 @@ try {
   assert.ok(won, "active boss playthrough must win");
   await page.keyboard.up("Space");
   await page.keyboard.up("k");
+  await page.waitForTimeout(650);
+  await go(page, 512, 300);
+  await skip(page);
+  await page
+    .getByRole("heading", { name: "다음 이야기가 기다립니다" })
+    .waitFor();
   await context.close();
   const mobile = await browser.newContext({
     viewport: { width: 390, height: 844 },
@@ -182,6 +198,32 @@ try {
   await mp.getByRole("button", { name: "설정", exact: true }).click();
   await mp.screenshot({ path: `${output}/mobile-settings.png` });
   await mobile.close();
+  const quotaContext = await browser.newContext();
+  try {
+    const quotaPage = await quotaContext.newPage();
+    quotaPage.on("pageerror", (e) => errors.push(e.message));
+    await quotaPage.addInitScript((key) => {
+      const write = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (name, value) {
+        if (name === key)
+          throw new DOMException("Storage full", "QuotaExceededError");
+        return write.call(this, name, value);
+      };
+    }, key);
+    await quotaPage.goto(base);
+    await quotaPage.getByRole("button", { name: "서약을 시작하다" }).click();
+    await quotaPage
+      .getByRole("alert")
+      .filter({ hasText: "기기 저장에 실패했습니다" })
+      .waitFor();
+    await quotaPage.getByRole("button", { name: "저장 파일 보관하기" }).click();
+    const download = quotaPage.waitForEvent("download");
+    await quotaPage.getByRole("button", { name: "새 기록 내보내기" }).click();
+    assert.equal((await download).suggestedFilename(), "memory-oath-save.json");
+    assert.equal(await quotaPage.getByRole("alert").filter({ hasText: "기기 저장에 실패했습니다" }).count(), 1);
+  } finally {
+    await quotaContext.close();
+  }
   // Browser → authenticated ticket → real Socket.IO service → shared simulation → receipt → UI restoration.
   const secret = "browser-test-secret-not-production-123456",
     server = createCampaignServer({ secret });
